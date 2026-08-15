@@ -150,17 +150,17 @@ proc ho1 {
     topic[0x05A0] = "rien"
     say 0x055A voice=0xFF flags=0x10 display=0x80 loop=block_04CE control=none : "Click quick, Cap'n Bob is waiting..." choices "explanations" "game"
     guard_push block_04C6
-    concept_guard "game" 0
+    require choice == "game"
     guard_pop
     say 0x055A voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "GAME"
     run_profile 0x02
-    clear_alternate_concept
+    choice = none
     record_clear 0x0594
     block_04C6:
     guard_push block_04CE
-    concept_guard "explanations" 0
+    require choice == "explanations"
     guard_pop
-    clear_alternate_concept
+    choice = none
     block_04CE:
     say 0x055A voice=0xFF flags=0x00 display=0x80 loop=none control=none : "You can modify the text speed by clicking on \"OPTION\""
     say 0x055A voice=0xFF flags=0x00 display=0x80 loop=none control=none : "You can wake Cap'n Bob by clicking on \"CRYOBOX\""
@@ -205,15 +205,15 @@ proc BOB1 {
     say 0x004A voice=0x02 flags=0x00 display=0x80 loop=none control=none : "My ears are fragile, Commander..."
     say 0x004A voice=0x02 flags=0x10 display=0x80 loop=block_083D control=none : "Do you want me to explain your mission to you, Commander?" choices "yes" "no"
     guard_push block_0834
-    concept_guard "no" 0
+    require choice == "no"
     guard_pop
     say 0x004A voice=0x06 flags=0x08 display=0x80 loop=none control=none : "I'm going to explain it all the same... It's important..."
-    clear_alternate_concept
+    choice = none
     block_0834:
     guard_push block_083D
-    concept_guard "no" 1
+    require choice != "no"
     guard_pop
-    clear_alternate_concept
+    choice = none
     block_083D:
     say 0x004A voice=0x01 flags=0x00 display=0x80 loop=none control=none : "I'm more than 800,000 years old... I feel ancient, Commander..."
     say 0x004A voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Too ancient to go looking for adventure. That's where you come in: I DON'T WANT TO DIE STUPID. I WANT TO SEE THE BIG BANG..."

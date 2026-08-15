@@ -280,11 +280,11 @@ proc clay1 {
     say Anna_Haf voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Let's teleport it, Commander|. You never know when these things can come in handy..."
     say Anna_Haf voice=0xFF flags=0x10 display=0x80 loop=clay2 control=none : "TELEPORT ROBOT TO ARK..." choices "teleport"
     when clay2 {
-        concept_guard "teleport" 0
+        require choice == "teleport"
     } then {
         say Anna_Haf voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "TELEPORTING ROBOT TO CRYOBOX"
         Anna_Haf.current_location = aboard
-        clear_alternate_concept
+        choice = none
         record_clear Anna_Haf.s13
     }
 }
@@ -469,12 +469,12 @@ proc kra4 {
         say Kran_Dobu voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Here's my bionic guitar, as promised... You be careful with it..."
         say Kran_Dobu voice=0xFF flags=0x10 display=0x80 loop=block_0C0E control=none : "TELEPORT GUITAR TO ARK..." choices "teleport"
         when block_0C0E {
-            concept_guard "teleport" 0
+            require choice == "teleport"
         } then {
             say Kran_Dobu voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "TELEPORTING GUITAR TO CRYOBOX..."
             record_triple Kran_Dobu.s13 0x137E 0x0028 0
             state[0x13F2] = 0x0003
-            clear_alternate_concept
+            choice = none
         }
     }
     block_0C0E:
@@ -510,19 +510,19 @@ proc morn1 {
         say Morning_Oil voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Teleport him over to the KRANER, Commander|. He'll soon fix Mister Kran Dobu's breakdown..."
         say Morning_Oil voice=0xFF flags=0x10 display=0x80 loop=block_0D69 control=none : "TELEPORT MORNING OIL TO KRANER..." choices "teleport" "refuse"
         when block_0D42 {
-            concept_guard "teleport" 0
+            require choice == "teleport"
         } then {
             say Morning_Oil voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "TELEPORTING MORNING OIL TO KRANER..."
             Morning_Oil.current_location = Trashlando
-            clear_alternate_concept
+            choice = none
             record_clear Morning_Oil.s13
         }
         block_0D42:
         when block_0D69 {
-            concept_guard "refuse" 0
+            require choice == "refuse"
         } then {
             say Morning_Oil voice=0xFF flags=0x28 display=0x90 loop=none control=none : "OK, Commander|. Your wish is my command..."
-            clear_alternate_concept
+            choice = none
             record_clear Morning_Oil.s13
         }
     }
@@ -638,20 +638,20 @@ proc bronk2 {
         say Bronko voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Let's teleport him|, Commander|. He'll keep us informed by radio..."
         say Bronko voice=0xFF flags=0x10 display=0x80 loop=block_12E2 control=none : "TELEPORT BRONKO TO ERAZOR" choices "YES" "NO"
         when block_12C6 {
-            concept_guard "YES" 0
+            require choice == "YES"
         } then {
             say Bronko voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "TELEPORTING BRONKO TO ERAZOR"
             state[0x13F8] = 0x0001
             Bronko.current_location = Erazor
-            clear_alternate_concept
+            choice = none
             record_clear Bronko.s13
         }
         block_12C6:
         when block_12E2 {
-            concept_guard "NO" 0
+            require choice == "NO"
         } then {
             say Bronko voice=0xFF flags=0x08 display=0x80 loop=none control=none : "As you wish, Commander|..."
-            clear_alternate_concept
+            choice = none
         }
     }
     block_12E2:
@@ -709,11 +709,11 @@ proc bronk4 {
             say Bronko voice=0xFF flags=0x20 display=0x80 loop=none control=none : "How can I say this, Commander|... Mister Bronko is so... so|... admirable!|..."
             say Bronko voice=0xFF flags=0x10 display=0x80 loop=block_15BA control=none : "TELEPORT TRANSMITTER KEYRING TO BRONKO..." choices "teleport"
             when block_15BA {
-                concept_guard "teleport" 0
+                require choice == "teleport"
             } then {
                 say Bronko voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING SPY KEYRING TRANSMITTER TO BRONKO..."
                 record_triple blood.s13 0x1396 0x043A 0
-                clear_alternate_concept
+                choice = none
             }
         }
         block_15BA:
@@ -749,13 +749,13 @@ proc bronk5 {
         say Bronko voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Great work, Mister Bronko!|..."
         say Bronko voice=0xFF flags=0x10 display=0x80 loop=bronk6 control=none : "TELEPORT BRONKO TO CRYOBOX" choices "teleport"
         when bronk6 {
-            concept_guard "teleport" 0
+            require choice == "teleport"
         } then {
             say Bronko voice=0xFF flags=0x08 display=0xC0 loop=none control=none : "TELEPORTING BRONKO TO CRYOBOX"
             Bronko.current_location = aboard
             state[0x13FA] = 0x0001
             Bronko.in_play = false
-            clear_alternate_concept
+            choice = none
             record_clear Bronko.s13
         }
     }
@@ -878,30 +878,30 @@ proc hom1 {
         say Hom voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Me catch your print, friend|... Me read TRUTH in print..."
         say Hom voice=0x03 flags=0x10 display=0x80 loop=block_1C00 control=none : "You click hard, friend. Me catch your print on mouse button..." choices "click" "refuse"
         when block_1BB1 {
-            concept_guard "click" 0
+            require choice == "click"
         } then {
             say Hom voice=0x03 flags=0x08 display=0x80 loop=none control=none : "You not click hard enough..."
-            clear_alternate_concept
+            choice = none
         }
         block_1BB1:
         when block_1C00 {
-            concept_guard "refuse" 0
+            require choice == "refuse"
         } then {
             say Hom voice=0x04 flags=0x00 display=0x80 loop=none control=none : "You refuse... Me not like that... Me suspect you..."
             say Hom voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Bye bye|... Me not like you refuse..."
             say Hom voice=0x02 flags=0x08 display=0x90 loop=none control=none : "..."
-            clear_alternate_concept
+            choice = none
             record_clear Hom.s13
         }
     }
     block_1C00:
     say Hom voice=0x03 flags=0x10 display=0x80 loop=block_1C61 control=none : "You click very very hard, friend. Me catch print on mouse..." choices "click"
     when block_1C61 {
-        concept_guard "click" 0
+        require choice == "click"
     } then {
         say Hom voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Ahh|! Me catch print... Ohh, you nice print..."
         load_string "scandoig.hnm"
-        clear_alternate_concept
+        choice = none
     }
     block_1C61:
     say Hom voice=0x06 flags=0x08 display=0x80 loop=none control=none : "Ooooouh! Me see you|, friend|... You have pretty box with picture of Hom inside..."
@@ -938,20 +938,20 @@ proc hom2 {
     say Hom voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Me catch your print, friend|... Me again read your print..."
     say Hom voice=0x03 flags=0x10 display=0x80 loop=block_1F96 control=none : "You click hard, friend. Me catch your print on mouse button..." choices "click" "refuse"
     when block_1F47 {
-        concept_guard "click" 0
+        require choice == "click"
     } then {
         say Hom voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Me recognize you|, friend|..."
         load_string "scandoig.hnm"
-        clear_alternate_concept
+        choice = none
     }
     block_1F47:
     when block_1F96 {
-        concept_guard "refuse" 0
+        require choice == "refuse"
     } then {
         say Hom voice=0x04 flags=0x00 display=0x80 loop=none control=none : "You refuse... Me not like that... Me suspect you..."
         say Hom voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Bye bye|... Me not like you refuse..."
         say Hom voice=0xFF flags=0x08 display=0x90 loop=none control=none : "..."
-        clear_alternate_concept
+        choice = none
         record_clear Hom.s13
     }
     block_1F96:
@@ -987,19 +987,19 @@ proc hom3 {
         say Hom voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Brain scrambler be powerful weapon..."
         say Hom voice=0xFF flags=0x10 display=0x80 loop=block_213F control=none : "TELEPORT BRAIN SCRAMBLER TO CRYOBOX" choices "teleport" "refuse"
         when block_2116 {
-            concept_guard "teleport" 0
+            require choice == "teleport"
         } then {
             say Hom voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING BRAIN SCRAMBLER TO CRYOBOX"
             record_triple Hom.s13 0x13AE 0x0028 0
-            clear_alternate_concept
+            choice = none
         }
         block_2116:
         when block_213F {
-            concept_guard "refuse" 0
+            require choice == "refuse"
         } then {
             say Hom voice=0xFF flags=0x08 display=0x90 loop=none control=none : "YOU CANNOT REFUSE. YOUR BRAIN IS SCRAMBLED..."
             record_triple Hom.s13 0x13AE 0x0028 0
-            clear_alternate_concept
+            choice = none
         }
         block_213F:
         say Hom voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Me concentrate..."
@@ -1095,11 +1095,11 @@ proc dork_ok {
     say Cyberquizz voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Here is your official DORK diploma..."
     say Cyberquizz voice=0xFF flags=0x10 display=0x80 loop=block_2414 control=none : "TELEPORT DIPLOMA TO ARK" choices "teleport"
     when block_2414 {
-        concept_guard "teleport" 0
+        require choice == "teleport"
     } then {
         say Cyberquizz voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING DORK DIPLOMA TO ARK"
         record_triple Cyberquizz.s13 0x1156 0x0028 0
-        clear_alternate_concept
+        choice = none
     }
     block_2414:
     say Cyberquizz voice=0x03 flags=0x00 display=0x80 loop=none control=none : "You are now ready to pass the S.U.C.K.E.R. exam, to become a Specialised Universal Cosmic Knowledge Expert Recognizer..."
@@ -1137,20 +1137,20 @@ proc Q1 {
     guard_pop
     say Cyberquizz voice=0x09 flags=0x10 display=0x80 loop=block_25C7 control=none : "Name one satelite of the Oddland black hole..." choices "pterra" "proxima" "magnus" "ondoya"
     when block_258D {
-        concept_guard "pterra" 0
+        require choice == "pterra"
     } then {
         say Cyberquizz voice=0x02 flags=0x08 display=0xA0 loop=none control=none : "Pterra, of course. You've been studying your black holes|, Commander|..."
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_258D:
     when block_25C7 {
-        concept_guard "pterra" 1
+        require choice != "pterra"
     } then {
         say Cyberquizz voice=0x05 flags=0x08 display=0x90 loop=none control=none : "Not so hot on satellites, eh, Commander|? Maybe you're not ready for this."
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_25C7:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1164,20 +1164,20 @@ proc Q2 {
     guard_pop
     say Cyberquizz voice=0x06 flags=0x10 display=0x80 loop=block_2670 control=none : "Which great Slimer is buried on the planet Vista?" choices "gluxx" "gelati" "gumy" "yolk"
     when block_2642 {
-        concept_guard "yolk" 0
+        require choice == "yolk"
     } then {
         say Cyberquizz voice=0x07 flags=0x08 display=0xA0 loop=none control=none : "Right! The Great Yolk, our inspiration... Hare Yolk. Hare Hare..."
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_2642:
     when block_2670 {
-        concept_guard "yolk" 1
+        require choice != "yolk"
     } then {
         say Cyberquizz voice=0x08 flags=0x08 display=0x90 loop=none control=none : "I said Vista! Stop dreaming about ondoyants and concentrate..."
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_2670:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1192,20 +1192,20 @@ proc Q3 {
     say Cyberquizz voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Very well. Think carefully..."
     say Cyberquizz voice=0x01 flags=0x10 display=0x80 loop=block_2731 control=none : "One plus one equals what?" choices "two" "three" "four" "twelve"
     when block_26F5 {
-        concept_guard "three" 0
+        require choice == "three"
     } then {
         say Cyberquizz voice=0x04 flags=0x08 display=0xA0 loop=none control=none : "Yes indeed. Such is the marvel of cybernetic reproduction..."
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_26F5:
     when block_2731 {
-        concept_guard "three" 1
+        require choice != "three"
     } then {
         say Cyberquizz voice=0x03 flags=0x08 display=0x90 loop=none control=none : "You mean you know nothing of cybernetic reproduction? That's a flabby brain you have there, Commander..."
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_2731:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1219,20 +1219,20 @@ proc Q4 {
     guard_pop
     say Cyberquizz voice=0x00 flags=0x10 display=0x80 loop=block_27D2 control=none : "Which Croolis triggered the Universal War?" choices "emasculator" "eviscerator" "lord_krater" "lord_sirtaki" "alig_athor"
     when block_27A0 {
-        concept_guard "lord_krater" 0
+        require choice == "lord_krater"
     } then {
         say Cyberquizz voice=0x09 flags=0x08 display=0xA0 loop=none control=none : "That wasn't one of his best ideas..."
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_27A0:
     when block_27D2 {
-        concept_guard "lord_krater" 1
+        require choice != "lord_krater"
     } then {
         say Cyberquizz voice=0x08 flags=0x08 display=0x90 loop=none control=none : "Dummy! It starts with a K and ends with another letter..."
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_27D2:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1246,20 +1246,20 @@ proc Q5 {
     guard_pop
     say Cyberquizz voice=0x07 flags=0x10 display=0x80 loop=block_2879 control=none : "Who said: \"A murffalo belongs to whoever eats it\"?" choices "eviscerator" "beauregard" "tromp_la_mort" "otto_von_smile"
     when block_284F {
-        concept_guard "eviscerator" 0
+        require choice == "eviscerator"
     } then {
         say Cyberquizz voice=0x05 flags=0x08 display=0xA0 loop=none control=none : "Mmm. can't beat a juicy murffalo steak... Good answer..."
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_284F:
     when block_2879 {
-        concept_guard "eviscerator" 1
+        require choice != "eviscerator"
     } then {
         say Cyberquizz voice=0x06 flags=0x08 display=0x90 loop=none control=none : "Double dummy! Try thinking before you answer..."
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_2879:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1273,20 +1273,20 @@ proc Q6 {
     guard_pop
     say Cyberquizz voice=0x04 flags=0x10 display=0x80 loop=block_2926 control=none : "Who is the legendary Jeph d'Ulikan?" choices "slimer" "izwal" "croolis" "migrax" "robot"
     when block_28EC {
-        concept_guard "migrax" 0
+        require choice == "migrax"
     } then {
         say Cyberquizz voice=0x03 flags=0x08 display=0xA0 loop=none control=none : "yes, the conqueror of the Black Larsen Hordes..."
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_28EC:
     when block_2926 {
-        concept_guard "migrax" 1
+        require choice != "migrax"
     } then {
         say Cyberquizz voice=0x02 flags=0x08 display=0x90 loop=none control=none : "Jeph d'Ulikan? That's a new one to me. You trying to be wise guy?"
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_2926:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1300,20 +1300,20 @@ proc Q7 {
     guard_pop
     say Cyberquizz voice=0x01 flags=0x10 display=0x80 loop=block_29C1 control=none : "Who said: \"Every time a planet blows up, I throws up\"?" choices "eviscerator" "emasculator" "lord_raptor" "tina_burner"
     when block_299D {
-        concept_guard "tina_burner" 0
+        require choice == "tina_burner"
     } then {
         say Cyberquizz voice=0x02 flags=0x08 display=0xA0 loop=none control=none : "Yes. A great song..."
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_299D:
     when block_29C1 {
-        concept_guard "tina_burner" 1
+        require choice != "tina_burner"
     } then {
         say Cyberquizz voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Don't you have a radio?"
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_29C1:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1327,20 +1327,20 @@ proc Q8 {
     guard_pop
     say Cyberquizz voice=0x04 flags=0x10 display=0x80 loop=block_2A5C control=none : "Who did Jeph d'Ulikan conquer?" choices "pagos_tagos" "black_larsen" "hom" "lord_krater"
     when block_2A2A {
-        concept_guard "black_larsen" 0
+        require choice == "black_larsen"
     } then {
         say Cyberquizz voice=0x05 flags=0x08 display=0xA0 loop=none control=none : "The Black Larsen Hordes, yes..."
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_2A2A:
     when block_2A5C {
-        concept_guard "black_larsen" 1
+        require choice != "black_larsen"
     } then {
         say Cyberquizz voice=0x06 flags=0x08 display=0x90 loop=none control=none : "No. I hate it when people don't know the right answer..."
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_2A5C:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1354,20 +1354,20 @@ proc Q9 {
     guard_pop
     say Cyberquizz voice=0x07 flags=0x10 display=0x80 loop=block_2AF7 control=none : "Who said: \"A gram of splatch is worth two rituals\"?" choices "lord_krater" "metro_paul" "yolk"
     when block_2AD1 {
-        concept_guard "yolk" 0
+        require choice == "yolk"
     } then {
         say Cyberquizz voice=0x08 flags=0x08 display=0xA0 loop=none control=none : "That Yolk|. What a cool guy..."
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_2AD1:
     when block_2AF7 {
-        concept_guard "yolk" 1
+        require choice != "yolk"
     } then {
         say Cyberquizz voice=0x09 flags=0x08 display=0x90 loop=none control=none : "Bone up on your classics, numbskull..."
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_2AF7:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1381,20 +1381,20 @@ proc Q10 {
     guard_pop
     say Cyberquizz voice=0x08 flags=0x10 display=0x80 loop=block_2B9A control=none : "How many murffalos does it take to reproduce?" choices "two" "four" "six" "eight" "thirteen"
     when block_2B72 {
-        concept_guard "thirteen" 0
+        require choice == "thirteen"
     } then {
         say Cyberquizz voice=0x07 flags=0x08 display=0xA0 loop=none control=none : "Right. One in the middle and the others all around..."
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_2B72:
     when block_2B9A {
-        concept_guard "thirteen" 1
+        require choice != "thirteen"
     } then {
         say Cyberquizz voice=0x06 flags=0x08 display=0x90 loop=none control=none : "No, that wouldn't work for murffalos..."
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_2B9A:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1408,20 +1408,20 @@ proc Q11 {
     guard_pop
     say Cyberquizz voice=0x05 flags=0x10 display=0x80 loop=block_2C2B control=none : "Name a planet of the Gran Arber?" choices "qx20" "tumul" "vista" "ebony" "mastachok"
     when block_2C03 {
-        concept_guard "vista" 0
+        require choice == "vista"
     } then {
         say Cyberquizz voice=0x04 flags=0x08 display=0xA0 loop=none control=none : "Pretty sharp on geography."
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_2C03:
     when block_2C2B {
-        concept_guard "vista" 1
+        require choice != "vista"
     } then {
         say Cyberquizz voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Geography's not exactly your specialisation, huh?"
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_2C2B:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1435,20 +1435,20 @@ proc Q12 {
     guard_pop
     say Cyberquizz voice=0x02 flags=0x10 display=0x80 loop=block_2CBE control=none : "Who invented Buggol democracy?" choices "strum" "Bob_Morlock" "cyborg_1st" "exxos"
     when block_2C94 {
-        concept_guard "cyborg_1st" 0
+        require choice == "cyborg_1st"
     } then {
         say Cyberquizz voice=0x01 flags=0x08 display=0xA0 loop=none control=none : "Say, you're pretty hot on history..."
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_2C94:
     when block_2CBE {
-        concept_guard "cyborg_1st" 1
+        require choice != "cyborg_1st"
     } then {
         say Cyberquizz voice=0x00 flags=0x08 display=0x90 loop=none control=none : "History never was your strong point, huh?"
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_2CBE:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1462,20 +1462,20 @@ proc Q13 {
     guard_pop
     say Cyberquizz voice=0x01 flags=0x10 display=0x80 loop=block_2D53 control=none : "What do Tubular Brains eat?" choices "klakos" "plastok" "radium" "hay" "murffalos"
     when block_2D21 {
-        concept_guard "plastok" 0
+        require choice == "plastok"
     } then {
         say Cyberquizz voice=0x02 flags=0x08 display=0xA0 loop=none control=none : "Protein enriched plastok."
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_2D21:
     when block_2D53 {
-        concept_guard "plastok" 1
+        require choice != "plastok"
     } then {
         say Cyberquizz voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Just don't bother taking a job as a cook for Tubular Brains."
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_2D53:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1489,20 +1489,20 @@ proc Q14 {
     guard_pop
     say Cyberquizz voice=0x04 flags=0x10 display=0x80 loop=block_2DE8 control=none : "Name a planet with rings..." choices "erazor" "rondo" "bonus" "pterra"
     when block_2DBE {
-        concept_guard "bonus" 0
+        require choice == "bonus"
     } then {
         say Cyberquizz voice=0x05 flags=0x08 display=0xA0 loop=none control=none : "Bonus has the universe's most beautiful rings."
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_2DBE:
     when block_2DE8 {
-        concept_guard "bonus" 1
+        require choice != "bonus"
     } then {
         say Cyberquizz voice=0x06 flags=0x08 display=0x90 loop=none control=none : "Rings... You know, those round things."
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_2DE8:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1516,20 +1516,20 @@ proc Q15 {
     guard_pop
     say Cyberquizz voice=0x07 flags=0x10 display=0x80 loop=block_2E81 control=none : "How do Scorps reproduce?" choices "vivisection" "parthenogenesis" "mimicry" "chance"
     when block_2E57 {
-        concept_guard "parthenogenesis" 0
+        require choice == "parthenogenesis"
     } then {
         say Cyberquizz voice=0x08 flags=0x08 display=0xA0 loop=none control=none : "Yes, you chop 'em up up and they regrow."
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_2E57:
     when block_2E81 {
-        concept_guard "parthenogenesis" 1
+        require choice != "parthenogenesis"
     } then {
         say Cyberquizz voice=0x09 flags=0x08 display=0x90 loop=none control=none : "Maybe you should splash out on a dictionary."
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_2E81:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1543,20 +1543,20 @@ proc Q16 {
     guard_pop
     say Cyberquizz voice=0x0A flags=0x10 display=0x80 loop=block_2F18 control=none : "Name a powerful highly concentrated explosive..." choices "big_bang" "splach" "plastok" "fuzz"
     when block_2EF4 {
-        concept_guard "splach" 0
+        require choice == "splach"
     } then {
         say Cyberquizz voice=0x01 flags=0x08 display=0xA0 loop=none control=none : "Well done. Splatch is composed of oxydised Larsen liver..."
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_2EF4:
     when block_2F18 {
-        concept_guard "splach" 1
+        require choice != "splach"
     } then {
         say Cyberquizz voice=0x02 flags=0x08 display=0x90 loop=none control=none : "You sure blew that one!"
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_2F18:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1570,20 +1570,20 @@ proc Q17 {
     guard_pop
     say Cyberquizz voice=0x03 flags=0x10 display=0x80 loop=block_2FC1 control=none : "What is the name of the queen of the PATAGOS?" choices "tina_burner" "scorpia" "pistilla" "umatika"
     when block_2F95 {
-        concept_guard "umatika" 0
+        require choice == "umatika"
     } then {
         say Cyberquizz voice=0x04 flags=0x08 display=0xA0 loop=none control=none : "Scorpia, daughter to king Betakam fourth, of the eighteenth dynasty..."
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_2F95:
     when block_2FC1 {
-        concept_guard "umatika" 1
+        require choice != "umatika"
     } then {
         say Cyberquizz voice=0x05 flags=0x08 display=0x90 loop=none control=none : "How could you not know the answer to that?"
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_2FC1:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1597,20 +1597,20 @@ proc Q18 {
     guard_pop
     say Cyberquizz voice=0x01 flags=0x10 display=0x80 loop=block_305A control=none : "Who said Trump tails came straight from their backsides?" choices "lord_segelaxx" "inquisitor" "slim_gelati" "tromp_deustache"
     when block_3038 {
-        concept_guard "lord_segelaxx" 0
+        require choice == "lord_segelaxx"
     } then {
         say Cyberquizz voice=0x02 flags=0x08 display=0xA0 loop=none control=none : "Smoking Trump tails is very bad for your health."
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_3038:
     when block_305A {
-        concept_guard "lord_segelaxx" 1
+        require choice != "lord_segelaxx"
     } then {
         say Cyberquizz voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Not an easy question..."
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_305A:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1624,20 +1624,20 @@ proc Q19 {
     guard_pop
     say Cyberquizz voice=0x04 flags=0x10 display=0x80 loop=block_30ED control=none : "In what city is sex sold illicitly?" choices "los_demonios" "venusia" "attroxcity" "trashtown"
     when block_30C9 {
-        concept_guard "attroxcity" 0
+        require choice == "attroxcity"
     } then {
         say Cyberquizz voice=0x05 flags=0x08 display=0xA0 loop=none control=none : "Yes. Attroxcity, the city of Slimers!"
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_30C9:
     when block_30ED {
-        concept_guard "attroxcity" 1
+        require choice != "attroxcity"
     } then {
         say Cyberquizz voice=0x06 flags=0x08 display=0x90 loop=none control=none : "That answer was so poor..."
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_30ED:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1651,20 +1651,20 @@ proc Q20 {
     guard_pop
     say Cyberquizz voice=0x07 flags=0x10 display=0x80 loop=block_3194 control=none : "Who painted the famous portrait of the Great Yolk?" choices "van_ish" "van_gelis" "van_et" "van_deta" "van_tage" "van_gogue"
     when block_316A {
-        concept_guard "van_gogue" 0
+        require choice == "van_gogue"
     } then {
         say Cyberquizz voice=0x08 flags=0x08 display=0xA0 loop=none control=none : "Van Gogue painted it with the Great Yolk's own yellow blood|..."
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_316A:
     when block_3194 {
-        concept_guard "van_gogue" 1
+        require choice != "van_gogue"
     } then {
         say Cyberquizz voice=0x09 flags=0x08 display=0x90 loop=none control=none : "That was supposed to be an easy one..."
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_3194:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1678,20 +1678,20 @@ proc Q21 {
     guard_pop
     say Cyberquizz voice=0x0A flags=0x10 display=0x80 loop=block_322B control=none : "Who wrote the famous book called the Croolicum?" choices "lord_raptor" "lord_ship" "von_spacecraft" "nobody"
     when block_3203 {
-        concept_guard "nobody" 0
+        require choice == "nobody"
     } then {
         say Cyberquizz voice=0x00 flags=0x08 display=0xA0 loop=none control=none : "You avoided the trap most skilfully!"
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_3203:
     when block_322B {
-        concept_guard "nobody" 1
+        require choice != "nobody"
     } then {
         say Cyberquizz voice=0x01 flags=0x08 display=0x90 loop=none control=none : "The Croolicum? You can't be serious!"
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_322B:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1705,20 +1705,20 @@ proc Q22 {
     guard_pop
     say Cyberquizz voice=0x02 flags=0x10 display=0x80 loop=block_32BE control=none : "Who was the universe's first trump tail smoker?" choices "al_hure" "sebasto_paul" "lord_sirtaki" "jeph_dulikan"
     when block_329E {
-        concept_guard "al_hure" 0
+        require choice == "al_hure"
     } then {
         say Cyberquizz voice=0x02 flags=0x08 display=0xA0 loop=none control=none : "That was an answer to be proud of..."
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_329E:
     when block_32BE {
-        concept_guard "al_hure" 1
+        require choice != "al_hure"
     } then {
         say Cyberquizz voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Bad mistake there..."
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_32BE:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1732,20 +1732,20 @@ proc Q23 {
     guard_pop
     say Cyberquizz voice=0x04 flags=0x10 display=0x80 loop=block_335F control=none : "Who said: \"Silence feeds on thunder and fury\"?" choices "yolk" "joy_stica" "hom" "super_zen"
     when block_3331 {
-        concept_guard "yolk" 0
+        require choice == "yolk"
     } then {
         say Cyberquizz voice=0x04 flags=0x08 display=0xA0 loop=none control=none : "Yes. May his soul blow bubbles..."
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_3331:
     when block_335F {
-        concept_guard "yolk" 1
+        require choice != "yolk"
     } then {
         say Cyberquizz voice=0x05 flags=0x08 display=0x90 loop=none control=none : "You really ought to take an interest in the classics..."
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_335F:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1759,20 +1759,20 @@ proc Q24 {
     guard_pop
     say Cyberquizz voice=0x06 flags=0x10 display=0x80 loop=block_33E0 control=none : "Name one hit by the Migrators?" choices "crush_me_baby" "space_maker" "hello_dolly" "love_me_do"
     when block_33C4 {
-        concept_guard "crush_me_baby" 0
+        require choice == "crush_me_baby"
     } then {
         say Cyberquizz voice=0x07 flags=0x08 display=0xA0 loop=none control=none : "Cruuuush meee baaaayybeeee!"
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_33C4:
     when block_33E0 {
-        concept_guard "crush_me_baby.." 1
+        require choice != "crush_me_baby.."
     } then {
         say Cyberquizz voice=0x08 flags=0x08 display=0x90 loop=none control=none : "Ouch..."
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_33E0:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1786,20 +1786,20 @@ proc Q25 {
     guard_pop
     say Cyberquizz voice=0x08 flags=0x10 display=0x80 loop=block_346D control=none : "Who is the oldest living being in the universe?" choices "otto_von_smile" "Bob_Morlock" "super_tromp" "techno_paul"
     when block_344B {
-        concept_guard "Bob_Morlock" 0
+        require choice == "Bob_Morlock"
     } then {
         say Cyberquizz voice=0x08 flags=0x08 display=0xA0 loop=none control=none : "Good ol' Bob!"
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_344B:
     when block_346D {
-        concept_guard "Bob_Morlock" 1
+        require choice != "Bob_Morlock"
     } then {
         say Cyberquizz voice=0x06 flags=0x08 display=0x90 loop=none control=none : "I said the oldest..."
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_346D:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1814,20 +1814,20 @@ proc Q26 {
     bonjour.enabled = false
     say Cyberquizz voice=0x08 flags=0x10 display=0x80 loop=block_350A control=none : "Which famous dancer is the star of \"Hold me in your tentacles\"?" choices "torka" "tina_burner" "cybertha" "joy_stika"
     when block_34E2 {
-        concept_guard "tina_burner" 0
+        require choice == "tina_burner"
     } then {
         say Cyberquizz voice=0x06 flags=0x08 display=0xA0 loop=none control=none : "What a star!"
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_34E2:
     when block_350A {
-        concept_guard "tina_burner" 1
+        require choice != "tina_burner"
     } then {
         say Cyberquizz voice=0x09 flags=0x08 display=0x90 loop=none control=none : "Come on!! You're such a nitwit..."
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_350A:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1841,20 +1841,20 @@ proc Q27 {
     guard_pop
     say Cyberquizz voice=0x06 flags=0x10 display=0x80 loop=block_359F control=none : "What do Migrax prefer to drink?" choices "processed_liver" "frozen_migrata" "fermented_egg" "heavy_water"
     when block_3579 {
-        concept_guard "processed_liver" 0
+        require choice == "processed_liver"
     } then {
         say Cyberquizz voice=0x09 flags=0x08 display=0xA0 loop=none control=none : "Well, that was a little too easy..."
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_3579:
     when block_359F {
-        concept_guard "processed_liver" 1
+        require choice != "processed_liver"
     } then {
         say Cyberquizz voice=0x03 flags=0x08 display=0x90 loop=none control=none : "You can't have met many Migrax."
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_359F:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1868,20 +1868,20 @@ proc Q28 {
     guard_pop
     say Cyberquizz voice=0x06 flags=0x10 display=0x80 loop=block_3642 control=none : "Who said:\"ondoyant pretty, Croolis drool. ondoyant ugly, Croolis get cruel.\"" choices "nobody" "maxxon" "yolk"
     when block_361C {
-        concept_guard "maxxon" 0
+        require choice == "maxxon"
     } then {
         say Cyberquizz voice=0x00 flags=0x08 display=0xA0 loop=none control=none : "Ah, Maxxon. Such a poetic soul..."
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_361C:
     when block_3642 {
-        concept_guard "maxxon" 1
+        require choice != "maxxon"
     } then {
         say Cyberquizz voice=0x03 flags=0x08 display=0x90 loop=none control=none : "You have no feeling for poetry..."
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_3642:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1895,20 +1895,20 @@ proc Q29 {
     guard_pop
     say Cyberquizz voice=0x00 flags=0x10 display=0x80 loop=block_36DB control=none : "The tomb of the Great Yolk is on which planet?" choices "rondo" "ekatomb" "vista" "magnus"
     when block_36B5 {
-        concept_guard "vista" 0
+        require choice == "vista"
     } then {
         say Cyberquizz voice=0x06 flags=0x08 display=0xA0 loop=none control=none : "In the S.C.R.U.T. palace on Vista."
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_36B5:
     when block_36DB {
-        concept_guard "vista" 1
+        require choice != "vista"
     } then {
         say Cyberquizz voice=0x09 flags=0x08 display=0x90 loop=none control=none : "You don't know the S.C.R.U.T. palace?"
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_36DB:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1922,20 +1922,20 @@ proc Q30 {
     guard_pop
     say Cyberquizz voice=0x07 flags=0x10 display=0x80 loop=block_3774 control=none : "On which planet can you hear voices?" choices "pterra" "cyberock" "kult" "tumul"
     when block_374E {
-        concept_guard "kult" 0
+        require choice == "kult"
     } then {
         say Cyberquizz voice=0x03 flags=0x08 display=0xA0 loop=none control=none : "Yes, the voice which foretells the future, Commander..."
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_374E:
     when block_3774 {
-        concept_guard "kult" 1
+        require choice != "kult"
     } then {
         say Cyberquizz voice=0x00 flags=0x08 display=0x90 loop=none control=none : "You just have to be deaf..."
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_3774:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1949,20 +1949,20 @@ proc Q31 {
     guard_pop
     say Cyberquizz voice=0x01 flags=0x10 display=0x80 loop=block_3805 control=none : "Which sun shines on the planet Tumul?" choices "ex897" "gladis" "corpo" "negratom"
     when block_37DF {
-        concept_guard "gladis" 0
+        require choice == "gladis"
     } then {
         say Cyberquizz voice=0x03 flags=0x08 display=0xA0 loop=none control=none : "Gladis, the smart star."
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_37DF:
     when block_3805 {
-        concept_guard "gladis" 1
+        require choice != "gladis"
     } then {
         say Cyberquizz voice=0x01 flags=0x08 display=0x90 loop=none control=none : "Havn't you ever been to Tumul?"
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_3805:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
@@ -1976,20 +1976,20 @@ proc Q32 {
     guard_pop
     say Cyberquizz voice=0x0A flags=0x10 display=0x80 loop=block_38A0 control=none : "How many moons does the planet Moskito have?" choices "five" "twelve" "zero" "thirty_two"
     when block_3876 {
-        concept_guard "zero" 0
+        require choice == "zero"
     } then {
         say Cyberquizz voice=0x01 flags=0x08 display=0xA0 loop=none control=none : "Good answer. Moskito has no moons."
         state[0x1404] += 0x0001
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_3876:
     when block_38A0 {
-        concept_guard "zero" 1
+        require choice != "zero"
     } then {
         say Cyberquizz voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Maybe you shouldn't trust your intuition so much..."
         state[0x1402] += 0x0001
-        clear_alternate_concept
+        choice = none
     }
     block_38A0:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "That was the final question..."
@@ -2045,17 +2045,17 @@ proc eda {
     say Tina_Burner voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander|, your pulse rate is way too high... I'll just give you a shot of something... Commander|, are you listening?"
     say Tina_Burner voice=0x04 flags=0x10 display=0x80 loop=block_3B6F control=none : "Hey! handsome! Still living with mommy and daddy?" choices "yes" "no"
     when block_3B37 {
-        concept_guard "yes" 0
+        require choice == "yes"
     } then {
         say Tina_Burner voice=0x05 flags=0x00 display=0x80 loop=none control=none : "AAAARHHH! He still needs his mommy... Ha|! Ha|! Hee|! Hee|!|..."
-        clear_alternate_concept
+        choice = none
     }
     block_3B37:
     when block_3B6F {
-        concept_guard "no" 0
+        require choice == "no"
     } then {
         say Tina_Burner voice=0x06 flags=0x00 display=0x80 loop=none control=none : "Say! You're blushing... Is he a shy little man? Ha|! Ha|! Hee|! Hee|!"
-        clear_alternate_concept
+        choice = none
     }
     block_3B6F:
     say Tina_Burner voice=0x07 flags=0x00 display=0x80 loop=none control=none : "You know I'm a star, right? On the planet Eden, all the males are crazy about me..."
@@ -2086,18 +2086,18 @@ proc ed2 {
         say Tina_Burner voice=0xFF flags=0x20 display=0x80 loop=none control=none : "It might calm her down..."
         say Tina_Burner voice=0xFF flags=0x10 display=0x80 loop=block_3D64 control=none : "TELEPORT GUITAR TO PLANET EDEN" choices "teleport" "refuse"
         when block_3D48 {
-            concept_guard "teleport" 0
+            require choice == "teleport"
         } then {
             say Tina_Burner voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING GUITAR TO TINA BURNER"
             record_triple blood.s13 0x137E 0x0872 0
-            clear_alternate_concept
+            choice = none
         }
         block_3D48:
         when block_3D64 {
-            concept_guard "refuse" 0
+            require choice == "refuse"
         } then {
             say Tina_Burner voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Whatever you say, Commander|..."
-            clear_alternate_concept
+            choice = none
         }
     }
     block_3D64:
@@ -2135,16 +2135,16 @@ proc ed3 {
         say Tina_Burner voice=0xFF flags=0x20 display=0x80 loop=none control=none : "No! Don't do it, Commander|... It wouldn't be good for the Ark|... Commander! Cap'n Bob's gonna be mad at you..."
         say Tina_Burner voice=0xFF flags=0x10 display=0x80 loop=block_4003 control=none : "TELEPORT TINA BURNER TO CRYOBOX:" choices "TELEPORT" "REFUSE"
         when block_3F44 {
-            concept_guard "TELEPORT" 0
+            require choice == "TELEPORT"
         } then {
             say Tina_Burner voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "TINA BURNER TELEPORTED TO CRYOBOX"
             Tina_Burner.current_location = aboard
-            clear_alternate_concept
+            choice = none
             record_clear Tina_Burner.s13
         }
         block_3F44:
         when block_4003 {
-            concept_guard "REFUSE" 0
+            require choice == "REFUSE"
         } then {
             say Tina_Burner voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Smart thinking, Commander!!!"
             say Tina_Burner voice=0x03 flags=0x00 display=0x80 loop=none control=none : "What!!! You refuse to take me with you!!! You dirty son of a Croolas..."
@@ -2153,7 +2153,7 @@ proc ed3 {
             say Tina_Burner voice=0x06 flags=0x00 display=0x80 loop=none control=none : "SNIFF... CRY CRY... HOT TEARS..."
             say Tina_Burner voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Maybe we should have said yes, Commander|... She's taking it badly..."
             say Tina_Burner voice=0xFF flags=0x08 display=0x90 loop=none control=none : "..."
-            clear_alternate_concept
+            choice = none
             record_clear Tina_Burner.s13
         }
     }
@@ -2208,51 +2208,51 @@ proc migrator1 {
     say Migrator voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Mmm! What strange thing... Who you be?"
     say Migrator voice=0x01 flags=0x10 display=0x80 loop=block_43E0 control=none : "What your name, stranger?" choices "princy" "ziggie" "michael" "commander_blood" "jimmy" "billy"
     when block_42C8 {
-        concept_guard "commander_blood" 0
+        require choice == "commander_blood"
     } then {
         say Migrator voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Me greet you|, Commander|."
         say Migrator voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Me hear about you. You be friend of Bronko|..."
-        clear_alternate_concept
+        choice = none
     }
     block_42C8:
     when block_42FE {
-        concept_guard "princy" 0
+        require choice == "princy"
     } then {
         say Migrator voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Me greet you|, friend Princy"
         say Migrator voice=0x05 flags=0x08 display=0x80 loop=none control=none : "You be Princy... You not small???..."
-        clear_alternate_concept
+        choice = none
     }
     block_42FE:
     when block_4338 {
-        concept_guard "ziggie" 0
+        require choice == "ziggie"
     } then {
         say Migrator voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Me greet you|, friend Ziggie"
         say Migrator voice=0x03 flags=0x08 display=0x80 loop=none control=none : "You have nice makeup today. Me not recognize you..."
-        clear_alternate_concept
+        choice = none
     }
     block_4338:
     when block_436C {
-        concept_guard "michael" 0
+        require choice == "michael"
     } then {
         say Migrator voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Me greet you|, friend Michael"
         say Migrator voice=0x04 flags=0x08 display=0x80 loop=none control=none : "You much changed. Marriage change you...."
-        clear_alternate_concept
+        choice = none
     }
     block_436C:
     when block_43A6 {
-        concept_guard "jimmy" 0
+        require choice == "jimmy"
     } then {
         say Migrator voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Me greet you|, friend Jimi"
         say Migrator voice=0x03 flags=0x08 display=0x80 loop=none control=none : "You want eat guitar? Me have delicious electric guitars..."
-        clear_alternate_concept
+        choice = none
     }
     block_43A6:
     when block_43E0 {
-        concept_guard "billy" 0
+        require choice == "billy"
     } then {
         say Migrator voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Me greet you|, friend Billy"
         say Migrator voice=0x02 flags=0x08 display=0x80 loop=none control=none : "You not have twisted mouth today? You have accident????"
-        clear_alternate_concept
+        choice = none
     }
     block_43E0:
     say Migrator voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Me MIGRATOR, great musician... Important artist..."
@@ -2302,10 +2302,10 @@ proc migrator2 {
     say Migrator voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Let's get rid of her, Commander|..."
     say Migrator voice=0xFF flags=0x30 display=0x80 loop=block_460F control=none : "TELEPORT TINA BURNER TO AIRPORT" choices "teleport"
     when block_460F {
-        concept_guard "teleport" 0
+        require choice == "teleport"
     } then {
         say Migrator voice=0xFF flags=0x08 display=0x80 loop=none control=none : "TELEPORTING TINA BURNER TO MOSKITO"
-        clear_alternate_concept
+        choice = none
     }
     block_460F:
     say Migrator voice=0xFF flags=0x08 display=0x90 loop=none control=none : "Thank you|, friend|... Me be happy...."
@@ -2365,11 +2365,11 @@ proc migrator4 {
         say Migrator voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander, teleport him the ring. Make him happy...."
         say Migrator voice=0xFF flags=0x10 display=0x80 loop=block_4866 control=none : "TELEPORT RING TO MIGRATOR" choices "TELEPORT"
         when block_4866 {
-            concept_guard "TELEPORT" 0
+            require choice == "TELEPORT"
         } then {
             say Migrator voice=0xFF flags=0x08 display=0x90 loop=none control=none : "RING TELEPORTED TO MOSKITO AIRPORT ZONE."
             record_triple blood.s13 0x1366 0x0512 0
-            clear_alternate_concept
+            choice = none
         }
         block_4866:
         say Migrator voice=0x02 flags=0x00 display=0x80 loop=none control=none : "WOW! Nice nice ring... Me like... Me thank you|, friend|...."
@@ -2429,18 +2429,18 @@ proc masta1 {
     say Scruter_Mac voice=0x10 flags=0x00 display=0x80 loop=none control=none : "You give code..."
     say Scruter_Mac voice=0x01 flags=0x10 display=0x80 loop=block_4BBC control=none : "Quick, stranger!" choices "1" "2" "3" "4" "code" "6" "7" "8" "9" "0"
     when block_4BA1 {
-        concept_guard "code" 0
+        require choice == "code"
     } then {
         say Scruter_Mac voice=0x0C flags=0x00 display=0x80 loop=none control=none : "Code have changed. Code not code now. Code too easy..."
         say Scruter_Mac voice=0x0E flags=0x08 display=0x80 loop=none control=none : "Me suspect you... Me not like..."
-        clear_alternate_concept
+        choice = none
     }
     block_4BA1:
     when block_4BBC {
-        concept_guard "code" 1
+        require choice != "code"
     } then {
         say Scruter_Mac voice=0x02 flags=0x08 display=0x80 loop=none control=none : "You did forget code..."
-        clear_alternate_concept
+        choice = none
     }
     block_4BBC:
     say Scruter_Mac voice=0x06 flags=0x00 display=0x80 loop=none control=none : "You make funny face, friend|..."
@@ -2542,22 +2542,22 @@ proc masta4 {
     say Scruter_K voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Cd blood... blood.exe... Eviscerator equals Fatal error... error... error..."
     say Scruter_K voice=0xFF flags=0x30 display=0x80 loop=masta6 control=none : "Teleport him into the Ark, Commander|?" choices "teleport" "refuse"
     when block_5066 {
-        concept_guard "teleport" 0
+        require choice == "teleport"
     } then {
         say Scruter_K voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "TELEPORT SCRUTER MAC'S BODY TO ARK"
         record_triple Scruter_K.s13 0x113E 0x0028 0
         Scruter_K.current_location = Trashlando
-        clear_alternate_concept
+        choice = none
         record_clear Scruter_K.s13
     }
     block_5066:
     when masta6 {
-        concept_guard "refuse" 0
+        require choice == "refuse"
     } then {
         say Scruter_K voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Poor Mister Scruter Mac... What a way to go|... A minute's silence..."
         say Scruter_K voice=0xFF flags=0x20 display=0x80 loop=none control=none : "PEACE BE UPON HIS LUBRICANT NOZZLES... CRY..."
         say Scruter_K voice=0xFF flags=0x08 display=0x90 loop=none control=none : "..."
-        clear_alternate_concept
+        choice = none
         record_clear Scruter_K.s13
     }
 }
@@ -2578,11 +2578,11 @@ proc masta6 {
         say Eviscerator voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Give him the splatch, Commander... We need that treasure..."
         say Eviscerator voice=0xFF flags=0x10 display=0x80 loop=block_517A control=none : "TELEPORT SPLATCH TO EVISCERATOR" choices "teleport"
         when block_517A {
-            concept_guard "teleport" 0
+            require choice == "teleport"
         } then {
             say Eviscerator voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING SPLATCH TO EVISCERATOR"
             record_triple blood.s13 0x1306 0x028A 0
-            clear_alternate_concept
+            choice = none
         }
     }
     block_517A:
@@ -2677,19 +2677,19 @@ proc tum1 {
         say Beauregard voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Give him SCRUTER MAC's body, Commander|..."
         say Beauregard voice=0xFF flags=0x10 display=0x80 loop=tum3 control=none : "TELEPORT SCRUTER MAC'S BODY TO PLANET TUMUL" choices "teleport" "refuse"
         when block_54BF {
-            concept_guard "teleport" 0
+            require choice == "teleport"
         } then {
             say Beauregard voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "TELEPORTING SCRUTER BODY TO TUMUL"
             record_triple blood.s13 0x113E 0x05A2 0
             state[0x141A] = 0x0001
-            clear_alternate_concept
+            choice = none
         }
         block_54BF:
         when tum3 {
-            concept_guard "refuse" 0
+            require choice == "refuse"
         } then {
             say Beauregard voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Whatever you say, Commander|..."
-            clear_alternate_concept
+            choice = none
             record_clear Beauregard.s13
         }
     }
@@ -2799,20 +2799,20 @@ proc tum6 {
         say Beauregard voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Let's teleport him the SPLATCH|, Commander|..."
         say Beauregard voice=0xFF flags=0x10 display=0x80 loop=block_5913 control=none : "TELEPORT SPLATCH TO TUMUL" choices "teleport" "refuse"
         when block_58DB {
-            concept_guard "teleport" 0
+            require choice == "teleport"
         } then {
             say Beauregard voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "TELEPORTING SPLATCH TO TUMUL"
             record_triple blood.s13 0x1306 0x05A2 0
             state[0x141A] = 0x0004
-            clear_alternate_concept
+            choice = none
         }
         block_58DB:
         when block_5913 {
-            concept_guard "refuse" 0
+            require choice == "refuse"
         } then {
             say Beauregard voice=0xFF flags=0x28 display=0xA0 loop=none control=none : "Whatever you say, Commander|. But allow me to say you're a big dummy..."
             rubble.in_play = true
-            clear_alternate_concept
+            choice = none
             record_clear Beauregard.s13
         }
     }
@@ -2856,7 +2856,7 @@ proc tum7 {
     say Beauregard voice=0x07 flags=0x00 display=0x80 loop=none control=none : "You earned it... As for me, I shall study this astonishing site..."
     say Beauregard voice=0xFF flags=0x10 display=0x80 loop=tum8 control=none : "TELEPORT MUMMY TO ARK" choices "teleport"
     when tum8 {
-        concept_guard "teleport" 0
+        require choice == "teleport"
     } then {
         character_slot 0x01 "maledict"
         character_slot 0x02 "maledict"
@@ -2867,7 +2867,7 @@ proc tum7 {
         say Beauregard voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "TELEPORTING MUMMY TO ARK"
         record_triple Beauregard.s13 0x116E 0x0028 0
         state[0x1422] = 0x0001
-        clear_alternate_concept
+        choice = none
         state[0x141A] = 0x0006
     }
 }
@@ -2887,14 +2887,14 @@ proc tum8 {
     say Beauregard voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Better teleport him aboard for treatment, Commander|. We can't leave him like that..."
     say Beauregard voice=0xFF flags=0x10 display=0x80 loop=tum9 control=none : "TELEPORT BEAUREGARD TO ARK" choices "teleport"
     when tum9 {
-        concept_guard "teleport" 0
+        require choice == "teleport"
     } then {
         say Beauregard voice=0x1C flags=0x00 display=0x80 loop=none control=none : "aaaaaaaaa"
         say Beauregard voice=0xFF flags=0x08 display=0xC0 loop=none control=none : "TELEPORTING BEAUREGARD TO ARK"
         Beauregard.current_location = aboard
         rubble.in_play = false
         tumulus.in_play = true
-        clear_alternate_concept
+        choice = none
         record_clear Beauregard.s13
     }
 }
@@ -2937,43 +2937,43 @@ proc amig2 {
     say Amigo voice=0x03 flags=0x00 display=0x80 loop=none control=none : "HALT STRANGER!!!"
     say Amigo voice=0x02 flags=0x10 display=0x80 loop=amig3 control=none : "Do you know any of our customers??? The PURPLE HAZE doesn't accept just anybody..." choices "Morning_Oil" "Eviscerator" "Izwalito" "Bronko" "Tina_Burner"
     when block_5D32 {
-        concept_guard "Morning_Oil" 0
+        require choice == "Morning_Oil"
     } then {
         say Amigo voice=0x04 flags=0x08 display=0x90 loop=none control=none : "I don't know any Morning Oil, stranger. You'd better leave if you don't want trouble...."
-        clear_alternate_concept
+        choice = none
         record_clear Amigo.s13
     }
     block_5D32:
     when block_5D6F {
-        concept_guard "Tina_Burner" 0
+        require choice == "Tina_Burner"
     } then {
         say Amigo voice=0x03 flags=0x08 display=0x90 loop=none control=none : "That old bag Tina Burner! She's got a nerve sending people here... Out of my sight, stranger..."
-        clear_alternate_concept
+        choice = none
         record_clear Amigo.s13
     }
     block_5D6F:
     when block_5DA4 {
-        concept_guard "Izwalito" 0
+        require choice == "Izwalito"
     } then {
         say Amigo voice=0x04 flags=0x08 display=0x90 loop=none control=none : "I don't know any Izwalito, stranger. You'd better leave if you don't want trouble........"
-        clear_alternate_concept
+        choice = none
         record_clear Amigo.s13
     }
     block_5DA4:
     when block_5DD9 {
-        concept_guard "Bronko" 0
+        require choice == "Bronko"
     } then {
         say Amigo voice=0x04 flags=0x08 display=0x90 loop=none control=none : "I don't know any Bronko, stranger. You'd better leave if you don't want trouble...."
-        clear_alternate_concept
+        choice = none
         record_clear Amigo.s13
     }
     block_5DD9:
     when amig3 {
-        concept_guard "Eviscerator" 0
+        require choice == "Eviscerator"
     } then {
         say Amigo voice=0x04 flags=0x08 display=0x90 loop=none control=none : "EVISCERATOR!!! Eviscerator sent you?"
         state[0x1428] = 0x0001
-        clear_alternate_concept
+        choice = none
     }
 }
 
@@ -2987,31 +2987,31 @@ proc amig3 {
     say Amigo voice=0x03 flags=0x00 display=0x80 loop=none control=none : "The password,"
     say Amigo voice=0x02 flags=0x10 display=0x80 loop=block_5EB7 control=none : "You know the PASSWORD, stranger?" choices "croolas" "meteorut" "galabar" "Mastachok"
     when block_5E5D {
-        concept_guard "croolas" 0
+        require choice == "croolas"
     } then {
         say Amigo voice=0x02 flags=0x08 display=0x80 loop=none control=none : "CROOLAS GETS YOU EVERYTIME...."
-        clear_alternate_concept
+        choice = none
     }
     block_5E5D:
     when block_5E7B {
-        concept_guard "meteorut" 0
+        require choice == "meteorut"
     } then {
         say Amigo voice=0x02 flags=0x08 display=0x80 loop=none control=none : "THE SCARLET METEORITE RUPTURES YOUR SPLEEN...."
-        clear_alternate_concept
+        choice = none
     }
     block_5E7B:
     when block_5E97 {
-        concept_guard "galabar" 0
+        require choice == "galabar"
     } then {
         say Amigo voice=0x02 flags=0x08 display=0x80 loop=none control=none : "GALABAR BARMEN MAKE KILLER COCKTAILS...."
-        clear_alternate_concept
+        choice = none
     }
     block_5E97:
     when block_5EB7 {
-        concept_guard "Mastachok" 0
+        require choice == "Mastachok"
     } then {
         say Amigo voice=0x02 flags=0x08 display=0x80 loop=none control=none : "MASTAR OF MASTACHOK MUNCHES MOUNTAINS OF MEAT....."
-        clear_alternate_concept
+        choice = none
     }
     block_5EB7:
     say Amigo voice=0x03 flags=0x08 display=0x90 loop=none control=none : "What do you want, stranger?"
@@ -3025,16 +3025,16 @@ proc amig3 {
         say Amigo voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Be careful, stranger. That stuff is sensitive..."
         say Amigo voice=0xFF flags=0x30 display=0x80 loop=yok0 control=none : "TELEPORT SPLATCH TO ARK." choices "teleport" "refuse"
         when block_5F59 {
-            concept_guard "teleport" 0
+            require choice == "teleport"
         } then {
             say Amigo voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "SPLATCH TELEPORTED TO ARK..."
             record_triple Amigo.s13 0x1306 0x0028 0
             Amigo.current_location = Trashlando
-            clear_alternate_concept
+            choice = none
         }
         block_5F59:
         when yok0 {
-            concept_guard "refuse" 0
+            require choice == "refuse"
         } then {
             say Amigo voice=0x02 flags=0x00 display=0x80 loop=none control=none : "You can refuse if you want..."
             say Amigo voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Don't hang around here... It's dangerous..."
@@ -3091,20 +3091,20 @@ proc yok1 {
         say Yoko voice=0xFF flags=0x20 display=0x80 loop=none control=none : "How about teleporting Morning to the planet Rondo?"
         say Yoko voice=0xFF flags=0x10 display=0x80 loop=block_61A5 control=none : "TELEPORT MORNING OIL TO PLANET RONDO" choices "teleport" "refuse"
         when block_6156 {
-            concept_guard "teleport" 0
+            require choice == "teleport"
         } then {
             say Yoko voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING MORNING OIL TO PLANET RONDO"
             Morning_Oil.current_location = observatory
-            clear_alternate_concept
+            choice = none
         }
         block_6156:
         when block_61A5 {
-            concept_guard "refuse" 0
+            require choice == "refuse"
         } then {
             say Yoko voice=0xFF flags=0x20 display=0x80 loop=none control=none : "You're running the show, Commander|..."
             say Yoko voice=0x05 flags=0x00 display=0x80 loop=none control=none : "You not leave me alone, friend Commander... CRY CRY... Me scared..."
             say Yoko voice=0xFF flags=0x08 display=0x90 loop=none control=none : "..."
-            clear_alternate_concept
+            choice = none
             record_clear Yoko.s13
         }
     }
@@ -3366,19 +3366,19 @@ proc monop1 {
     say Bug_Deluxe voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Hi there, Consumer Comrade. Welcome to VENUSIA SUPRAMARKET!"
     say Bug_Deluxe voice=0x04 flags=0x10 display=0x80 loop=monop2 control=none : "wanna buy a SUPRA product from VENUSIA?" choices "yes" "no"
     when block_6A5C {
-        concept_guard "yes" 0
+        require choice == "yes"
     } then {
         monop2.enabled = true
-        clear_alternate_concept
+        choice = none
     }
     block_6A5C:
     when monop2 {
-        concept_guard "no" 0
+        require choice == "no"
     } then {
         say Bug_Deluxe voice=0x06 flags=0x00 display=0x80 loop=none control=none : "NO! HA HA!! left your creds at home or what?"
         say Bug_Deluxe voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Bye bye, comrade..."
         say Bug_Deluxe voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
-        clear_alternate_concept
+        choice = none
         record_clear Bug_Deluxe.s13
     }
 }
@@ -3407,7 +3407,7 @@ proc monop2 {
         say Bug_Deluxe voice=0x05 flags=0x00 display=0x80 loop=none control=none : "It's your lucky day, consumer comrade. We're happy to offer you a FREE CRED!!"
         say Bug_Deluxe voice=0xFF flags=0x30 display=0x80 loop=block_6BCC control=none : "TELEPORT CRED TO ARK" choices "teleport"
         when block_6BCC {
-            concept_guard "teleport" 0
+            require choice == "teleport"
         } then {
             say Bug_Deluxe voice=0xFF flags=0x28 display=0x80 loop=none control=none : "TELEPORTING CRED TO ARK"
             load_string "parf1_2.hnm"
@@ -3415,7 +3415,7 @@ proc monop2 {
             say Bug_Deluxe voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "stop"
             state[0x1434] = state[0x1436]
             record_triple Bug_Deluxe.s13 0x1186 0x0028 0
-            clear_alternate_concept
+            choice = none
             record_clear Bug_Deluxe.s13
         }
     }

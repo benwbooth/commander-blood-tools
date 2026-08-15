@@ -118,6 +118,16 @@ compiler restores the target address as `procedure + 1`. The low-level
 shipped statement needs it. All 118,787 shipped COD bytes now compile from
 typed statements with zero generic `OP` coverage.
 
+Opcode `A3` is the choice condition used after dialogue menus. Native routine
+`0x6596` compares its DIC operand with `GS:0x6762`, the clicked concept word, or
+with the saved copy at `GS:0x6764` while `GS:0x67B1` bit 1 is active. An inline
+`A1` before the operand inverts equality. The 239 direct and 80 inverted shipped
+forms are therefore `require choice == "word"` and `require choice != "word"`.
+Opcode `CF` at `0x64C0` clears the resume byte and saved choice, represented by
+`choice = none`. The corpus contains 314 resets. Five guards intentionally lack
+a procedure-local reset because their successful bodies end or hand off the
+current presentation flow; the compiler does not add or remove resets.
+
 The remaining 3,780 BAS bytes form 1,003 complete records: three one-topic menus,
 19 presentation-register writes, three string loads, 37 `0xAA` yields, 321
 `0xAC` yields, 321 linked selector nodes, and 299 shared state/record operations
@@ -198,8 +208,8 @@ bytes.
 The first structured COD pass recovers 7,010 basic blocks and 17,287 edges. It
 models the native query bit and guard-target stack, direct jumps, text skips and
 deferred frame resumes, and both possible states of self-modified `A9` block
-flags. Every one of the 413 shipped `POKE_BYTE` instructions targets an `A9`
-flag byte. All branch-capable instructions resolve to a concrete guard target.
+flags. Every one of the 413 shipped `AB` writes targets an `A9` flag byte. All
+branch-capable instructions resolve to a concrete guard target.
 Exactly five block bodies are unreachable because their opener flag remains
 zero; they are preserved rather than deleted from the source evidence.
 

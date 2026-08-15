@@ -1282,6 +1282,11 @@ fn normalize_modern_statement(
         "text" | "text_tokens" => normalize_modern_text(&fields, line_number),
         "require" => {
             if let Some(statement) =
+                normalize_modern_choice_expression(&fields[1..], line_number)?
+            {
+                return Ok(statement);
+            }
+            if let Some(statement) =
                 normalize_modern_clock_expression(&fields[1..], line_number)?
             {
                 return Ok(statement);
@@ -1299,6 +1304,12 @@ fn normalize_modern_statement(
             normalize_modern_shared_expression(&fields[1..], true, line_number)
         }
         _ => {
+            if fields.first() == Some(&"choice") {
+                if fields.as_slice() == ["choice", "=", "none"] {
+                    return Ok("CLEAR_ALTERNATE_CONCEPT".to_string());
+                }
+                bail!("line {line_number}: expected 'choice = none'");
+            }
             if fields.len() == 3 && fields[1] == "=" {
                 if let Some(procedure) = fields[0].strip_suffix(".enabled") {
                     validate_identifier(procedure, line_number)?;
@@ -1339,6 +1350,30 @@ fn normalize_modern_statement(
             }
         }
     }
+}
+
+fn normalize_modern_choice_expression(
+    fields: &[&str],
+    line_number: usize,
+) -> Result<Option<String>> {
+    if fields.first() != Some(&"choice") {
+        return Ok(None);
+    }
+    if fields.len() != 3 {
+        bail!("line {line_number}: expected 'require choice ==|!= WORD'");
+    }
+    let inverted = match fields[1] {
+        "==" => false,
+        "!=" => true,
+        operator => bail!(
+            "line {line_number}: choice comparison operator must be '==' or '!=', found {operator:?}"
+        ),
+    };
+    Ok(Some(format!(
+        "CONCEPT_GUARD {} {}",
+        modern_operand_to_canonical(fields[2], line_number)?,
+        bool_digit(inverted)
+    )))
 }
 
 fn normalize_modern_clock_expression(
@@ -1860,6 +1895,24 @@ fn modern_statement(
         "RECORD_WILDCARD" => modern_record_wildcard(args, query_mode, line_number),
         "GLOBAL_WORD_COMPARE" => modern_rtc_hour_compare(args, line_number),
         "GLOBAL_PAIR_COMPARE" => modern_rtc_date_compare(args, line_number),
+        "CONCEPT_GUARD" => {
+            if args.len() != 2 || !matches!(args[1], "0" | "1") {
+                bail!("line {line_number}: malformed generated CONCEPT_GUARD statement");
+            }
+            Ok(format!(
+                "require choice {} {}",
+                if args[1] == "1" { "!=" } else { "==" },
+                canonical_operand_to_modern(args[0])
+            ))
+        }
+        "CLEAR_ALTERNATE_CONCEPT" => {
+            if !args.is_empty() {
+                bail!(
+                    "line {line_number}: malformed generated CLEAR_ALTERNATE_CONCEPT statement"
+                );
+            }
+            Ok("choice = none".to_string())
+        }
         "CONDITIONAL_BLOCK" if matches!(args.first().copied(), Some("00" | "01")) => {
             if args.len() != 2 {
                 bail!("line {line_number}: malformed generated CONDITIONAL_BLOCK statement");
@@ -4339,7 +4392,7 @@ mod tests {
             assert!(decompiled.source.contains(statement), "missing {statement}");
         }
         assert!(decompiled.source.contains("when block_000B {\n"));
-        assert!(decompiled.source.contains("    concept_guard"));
+        assert!(decompiled.source.contains("    require choice == 0x1234"));
         assert!(!decompiled.source.contains("// GUARD_POP"));
         assert_eq!(compile(&decompiled.source).unwrap(), image);
 
@@ -4522,7 +4575,7 @@ mod tests {
         assert_eq!(decompiled.dictionary_offsets, 1);
         assert_eq!(decompiled.dictionary_uses, 2);
         for statement in [
-            "concept_guard \"TALK\" 0",
+            "require choice == \"TALK\"",
             "say 0x2000 voice=0xFF flags=0x00 display=0x80 loop=none control=none : \"TALK\"",
         ] {
             assert!(
@@ -4569,7 +4622,11 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            ambiguous.source.matches("concept_guard \"SAME\" 0").count(),
+            ambiguous
+                .source
+                .lines()
+                .filter(|line| line.trim() == "require choice == \"SAME\"")
+                .count(),
             2
         );
         assert_eq!(ambiguous.source.matches("\"SAME\"@0x5678").count(), 1);
@@ -4716,12 +4773,12 @@ mod tests {
         let decompiled = decompile(ImageKind::Cod, &expected, &HashMap::new()).unwrap();
         assert_eq!(decompiled.generic_op_statements, 0);
         for statement in [
-            "concept_guard 0x0D26 0",
-            "concept_guard 0x0EE8 1",
+            "require choice == 0x0D26",
+            "require choice != 0x0EE8",
             "load_string \"fin.hnm\"",
             "poke_byte 0x1234 0x56",
             "character_slot 0x02 \"scrut\"",
-            "clear_alternate_concept",
+            "choice = none",
             "branch_flag_274f",
         ] {
             assert!(decompiled.source.contains(statement), "missing {statement}");

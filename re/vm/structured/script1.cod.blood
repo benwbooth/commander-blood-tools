@@ -166,18 +166,18 @@ proc ho1 {
     Izwalito.topic = "rien"
     say Izwalito voice=0xFF flags=0x10 display=0x80 loop=block_04CE control=none : "Click quick, Cap'n Bob is waiting..." choices "explanations" "game"
     when block_04C6 {
-        concept_guard "game" 0
+        require choice == "game"
     } then {
         say Izwalito voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "GAME"
         run_profile 0x02
-        clear_alternate_concept
+        choice = none
         record_clear Izwalito.s13
     }
     block_04C6:
     when block_04CE {
-        concept_guard "explanations" 0
+        require choice == "explanations"
     } then {
-        clear_alternate_concept
+        choice = none
     }
     block_04CE:
     say Izwalito voice=0xFF flags=0x00 display=0x80 loop=none control=none : "You can modify the text speed by clicking on \"OPTION\""
@@ -223,16 +223,16 @@ proc BOB1 {
     say Bob_Morlock voice=0x02 flags=0x00 display=0x80 loop=none control=none : "My ears are fragile, Commander..."
     say Bob_Morlock voice=0x02 flags=0x10 display=0x80 loop=block_083D control=none : "Do you want me to explain your mission to you, Commander?" choices "yes" "no"
     when block_0834 {
-        concept_guard "no" 0
+        require choice == "no"
     } then {
         say Bob_Morlock voice=0x06 flags=0x08 display=0x80 loop=none control=none : "I'm going to explain it all the same... It's important..."
-        clear_alternate_concept
+        choice = none
     }
     block_0834:
     when block_083D {
-        concept_guard "no" 1
+        require choice != "no"
     } then {
-        clear_alternate_concept
+        choice = none
     }
     block_083D:
     say Bob_Morlock voice=0x01 flags=0x00 display=0x80 loop=none control=none : "I'm more than 800,000 years old... I feel ancient, Commander..."

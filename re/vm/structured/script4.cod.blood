@@ -326,13 +326,13 @@ proc fif {
     say Fifi voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander, maybe we could use the Mind Scrambler..."
     say Fifi voice=0xFF flags=0x10 display=0x80 loop=block_0888 control=none : "USE MIND SCRAMBLER" choices "use" "refuse"
     when block_0802 {
-        concept_guard "use" 0
+        require choice == "use"
     } then {
-        clear_alternate_concept
+        choice = none
     }
     block_0802:
     when block_0888 {
-        concept_guard "refuse" 0
+        require choice == "refuse"
     } then {
         say Fifi voice=0xFF flags=0x20 display=0x80 loop=none control=none : "You're calling the shots, Commander..."
         say Fifi voice=0x00 flags=0x00 display=0x80 loop=none control=none : "Bye bye|... Me go phone female Tromp"
@@ -342,7 +342,7 @@ proc fif {
         say Fifi voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "Bye bye..."
         fif.enabled = false
         fif1.enabled = true
-        clear_alternate_concept
+        choice = none
         record_clear Fifi.s13
     }
     block_0888:
@@ -375,18 +375,18 @@ proc fif1 {
         say Fifi voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Give him the picture of the ondoyant, Commander... That'll make him happy..."
         say Fifi voice=0xFF flags=0x10 display=0x80 loop=block_09EA control=none : "TELEPORT PICTURE TO FIFI" choices "teleport" "refuse"
         when block_09C8 {
-            concept_guard "teleport" 0
+            require choice == "teleport"
         } then {
             say Fifi voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING PICTURE TO FIFI"
             record_triple blood.s13 0x122E 0x079A 0
-            clear_alternate_concept
+            choice = none
         }
         block_09C8:
         when block_09EA {
-            concept_guard "refuse" 0
+            require choice == "refuse"
         } then {
             say Fifi voice=0xFF flags=0x28 display=0x80 loop=none control=none : "If that's the way you want it, Commander..."
-            clear_alternate_concept
+            choice = none
         }
     }
     block_09EA:
@@ -423,11 +423,11 @@ proc fif2 {
         say Fifi voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Me give you nice hat..."
         say Fifi voice=0xFF flags=0x10 display=0x80 loop=block_0B3F control=none : "TELEPORT HAT TO CRYOBOX" choices "teleport"
         when block_0B3F {
-            concept_guard "teleport" 0
+            require choice == "teleport"
         } then {
             say Fifi voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING HAT TO CRYOBOX"
             record_triple Fifi.s13 0x14CE 0x0028 0
-            clear_alternate_concept
+            choice = none
         }
         block_0B3F:
         say Fifi voice=0xFF flags=0x20 display=0x80 loop=none control=none : "But Commander, that's EVISCERATOR's hat... Where did he find it?"
@@ -470,21 +470,21 @@ proc fif4 {
     say Fifi voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Howzabout we teleport him|, Commander. He's such a character..."
     say Fifi voice=0xFF flags=0x10 display=0x80 loop=fif5 control=none : "TELEPORT FIFI TO CRYOBOX" choices "teleport" "refuse"
     when block_0CEE {
-        concept_guard "teleport" 0
+        require choice == "teleport"
     } then {
         say Fifi voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING FIFI TO CRYOBOX"
         Fifi.current_location = aboard
-        clear_alternate_concept
+        choice = none
         record_clear Fifi.s13
     }
     block_0CEE:
     when fif5 {
-        concept_guard "refuse" 0
+        require choice == "refuse"
     } then {
         say Fifi voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Me not happy... CRY CRY..."
         say Fifi voice=0xFF flags=0x20 display=0x80 loop=none control=none : "How can you be so heartless, Commander|?"
         say Fifi voice=0xFF flags=0x08 display=0x90 loop=none control=none : "..."
-        clear_alternate_concept
+        choice = none
         record_clear Fifi.s13
     }
 }
@@ -515,12 +515,12 @@ proc fif5 {
         say Fifi voice=0xFF flags=0x20 display=0x80 loop=none control=none : "You can teleport him|, Commander|... We've arrived..."
         say Fifi voice=0xFF flags=0x10 display=0x80 loop=fif6 control=none : "TELEPORT FIFI TO PLANET MALUS" choices "teleport"
         when fif6 {
-            concept_guard "teleport" 0
+            require choice == "teleport"
         } then {
             say Fifi voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "TELEPORTING FIFI TO MALUS"
             Fifi.current_location = Malus
             record_clear Fifi.s13
-            clear_alternate_concept
+            choice = none
         }
     }
 }
@@ -569,11 +569,11 @@ proc ondo1 {
     say ondoyant voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Let's teleport her and fast..."
     say ondoyant voice=0xFF flags=0x10 display=0x80 loop=ondo1_1080 control=none : "TELEPORT ondoyant TO ARK..." choices "teleport"
     when ondo1_1080 {
-        concept_guard "teleport" 0
+        require choice == "teleport"
     } then {
         say ondoyant voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "TELEPORTING ondoyant VERY GENTLY TO ARK"
         ondoyant.current_location = aboard
-        clear_alternate_concept
+        choice = none
         record_clear ondoyant.s13
     }
 }
@@ -605,17 +605,17 @@ proc tromp1 {
     say Maziok voice=0x03 flags=0x00 display=0x80 loop=none control=none : "GA..."
     say Maziok voice=0x02 flags=0x10 display=0x80 loop=block_11A2 control=none : "Ga ga?" choices "ga" "hello" "planet" "laugh" "joke"
     guard_push block_1199 // unstructured_guard=alternate_exit
-    concept_guard "ga" 0
+    require choice == "ga"
     guard_pop
     say Maziok voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "ga ga ga ga ga..."
     tromp1.enabled = false
-    clear_alternate_concept
+    choice = none
     jump block_136E
     block_1199:
     when block_11A2 {
-        concept_guard "ga" 1
+        require choice != "ga"
     } then {
-        clear_alternate_concept
+        choice = none
     }
     block_11A2:
     say Maziok voice=0x06 flags=0x00 display=0x80 loop=none control=none : "GA|..."
@@ -644,18 +644,18 @@ proc tromp2 {
     say Maziok voice=0x05 flags=0x00 display=0x80 loop=none control=none : "GA..."
     say Maziok voice=0x02 flags=0x10 display=0x80 loop=block_136E control=none : "Ga..." choices "ga" "hello" "weather_report" "work" "family" "fatherland"
     when block_1348 {
-        concept_guard "ga" 0
+        require choice == "ga"
     } then {
         say Maziok voice=0x04 flags=0x08 display=0x80 loop=none control=none : "You are most polite, stranger..."
-        clear_alternate_concept
+        choice = none
     }
     block_1348:
     when block_136E {
-        concept_guard "ga" 1
+        require choice != "ga"
     } then {
         say Maziok voice=0x03 flags=0x08 display=0x90 loop=none control=none : "You are so rude... Bye bye|, stranger..."
         record_clear Maziok.s13
-        clear_alternate_concept
+        choice = none
     }
     block_136E:
     say Maziok voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Smart thinking, Commander|..."
@@ -695,18 +695,18 @@ proc tromp2bis {
     guard_pop
     say Maziok voice=0x02 flags=0x10 display=0x80 loop=block_152A control=none : "Ga..." choices "ga" "hello" "weather_report" "work" "family" "fatherland"
     when block_1504 {
-        concept_guard "ga" 0
+        require choice == "ga"
     } then {
         say Maziok voice=0x04 flags=0x08 display=0x80 loop=none control=none : "You are most polite, stranger..."
-        clear_alternate_concept
+        choice = none
     }
     block_1504:
     when block_152A {
-        concept_guard "ga" 1
+        require choice != "ga"
     } then {
         say Maziok voice=0x03 flags=0x08 display=0x90 loop=none control=none : "You are so rude... Bye bye|, stranger..."
         record_clear Maziok.s13
-        clear_alternate_concept
+        choice = none
     }
     block_152A:
     say Maziok voice=0x07 flags=0x00 display=0x80 loop=none control=none : "You're weird, stranger. You look like you have the evil eye..."
@@ -727,18 +727,18 @@ proc tromp3 {
     say Maziok voice=0x05 flags=0x00 display=0x80 loop=none control=none : "GA..."
     say Maziok voice=0x02 flags=0x10 display=0x80 loop=block_1628 control=none : "Ga..." choices "ga" "hello" "weather_report" "work" "family" "fatherland"
     when block_1602 {
-        concept_guard "ga" 0
+        require choice == "ga"
     } then {
         say Maziok voice=0xFF flags=0x08 display=0x80 loop=none control=none : "ga ga ga ga ga..."
-        clear_alternate_concept
+        choice = none
     }
     block_1602:
     when block_1628 {
-        concept_guard "ga" 1
+        require choice != "ga"
     } then {
         say Maziok voice=0x05 flags=0x08 display=0x90 loop=none control=none : "You are so rude... Bye bye|, stranger..."
         record_clear Maziok.s13
-        clear_alternate_concept
+        choice = none
     }
     block_1628:
     say Maziok voice=0x02 flags=0x08 display=0x80 loop=none control=none : "What do you want to know?"
@@ -806,11 +806,11 @@ proc bra1 {
         Bratakas.topic = "rien"
         say Bratakas voice=0xFF flags=0x10 display=0x80 loop=block_192B control=none : "TELEPORT OLD DECODER TO PLANET VISTAR" choices "teleport"
         when block_192B {
-            concept_guard "teleport" 0
+            require choice == "teleport"
         } then {
             say Bratakas voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORT DECODER TO BRATAKAS"
             record_triple blood.s13 0x12BE 0x004A 0
-            clear_alternate_concept
+            choice = none
         }
     }
     block_192B:
@@ -827,17 +827,17 @@ proc bra1 {
         say Bratakas voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Don't look at it too often... And don't show it to anybody..."
         say Bratakas voice=0xFF flags=0x10 display=0x80 loop=block_1A43 control=none : "TELEPORT PICTURE TO CRYOBOX" choices "teleport"
         when block_1A43 {
-            concept_guard "teleport" 0
+            require choice == "teleport"
         } then {
             say Bratakas voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "TELEPORT PICTURE TO CRYOBOX"
             record_triple Bratakas.s13 0x122E 0x0028 0
             Bratakas.topic = "talk"
-            clear_alternate_concept
+            choice = none
         }
     }
     block_1A43:
     when block_1A62 {
-        concept_guard "bye_bye" 0
+        require choice == "bye_bye"
         require state[0x151C] == 0x0000
     } then {
         say Bratakas voice=0xFF flags=0x08 display=0x80 loop=none control=none : "Bye bye|..."
@@ -845,7 +845,7 @@ proc bra1 {
     }
     block_1A62:
     when braz {
-        concept_guard "bye_bye" 0
+        require choice == "bye_bye"
         require state[0x151C] == 0x0001
     } then {
         say Bratakas voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Bye bye|... Leaving so soon?"
@@ -882,10 +882,10 @@ proc bra2 {
         say Hom voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Probably didn't exist at this time|..."
         say Hom voice=0x04 flags=0x10 display=0x80 loop=block_1BCE control=none : "YOU CLICK HARD? FRIEND... ME CATCH PRINT..." choices "click"
         when block_1BCE {
-            concept_guard "click" 0
+            require choice == "click"
         } then {
             say Hom voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Forget I spoke, Commander|..."
-            clear_alternate_concept
+            choice = none
         }
         block_1BCE:
         say Hom voice=0x05 flags=0x08 display=0x80 loop=none control=none : "Ohh! Nice print..."
@@ -901,11 +901,11 @@ proc bra2 {
         say Hom voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Maybe that'll remind him of something..."
         say Hom voice=0xFF flags=0x10 display=0x80 loop=block_1C84 control=none : "TELEPORT D.O.R.K. TO HOM" choices "teleport"
         when block_1C84 {
-            concept_guard "teleport" 0
+            require choice == "teleport"
         } then {
             say Hom voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING D.O.R.K. TO HOM..."
             record_triple blood.s13 0x125E 0x03AA 0
-            clear_alternate_concept
+            choice = none
         }
     }
     block_1C84:
@@ -928,11 +928,11 @@ proc bra2 {
         Hom.topic = "hello"
         say Hom voice=0xFF flags=0x10 display=0x80 loop=block_1E26 control=none : "TELEPORT HOM TO ARK" choices "teleport"
         when block_1E26 {
-            concept_guard "teleport" 0
+            require choice == "teleport"
         } then {
             say Hom voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "TELEPORTING HOM TO CRYOBOX"
             Hom.current_location = aboard
-            clear_alternate_concept
+            choice = none
             record_clear Hom.s13
         }
     }
@@ -940,7 +940,7 @@ proc bra2 {
     say Hom voice=0x04 flags=0x08 display=0x80 loop=none control=none : "What you want know|, friend? Me be OMNISCIENT... ME KNOW EVERYTHING..."
     Hom.topic = "hello"
     when HO {
-        concept_guard "bye_bye" 0
+        require choice == "bye_bye"
     } then {
         record_clear Hom.s13
     }
@@ -986,15 +986,15 @@ proc zen1 {
     say Super_Zen voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Ha! Ha! He thought your story was very funny|..."
     say Super_Zen voice=0x04 flags=0x10 display=0x80 loop=block_20B2 control=none : "So... How much have you got?" choices "nothing" "ship" "hope"
     when block_20A9 {
-        concept_guard "nothing" 0
+        require choice == "nothing"
     } then {
-        clear_alternate_concept
+        choice = none
     }
     block_20A9:
     when block_20B2 {
-        concept_guard "nothing" 1
+        require choice != "nothing"
     } then {
-        clear_alternate_concept
+        choice = none
     }
     block_20B2:
     say Super_Zen voice=0x02 flags=0x00 display=0x80 loop=none control=none : "I see..."
@@ -1030,11 +1030,11 @@ proc zen3 {
     say Super_Zen voice=0x00 flags=0x00 display=0x80 loop=none control=none : "Well... You are indeed talented..."
     say Super_Zen voice=0xFF flags=0x10 display=0x80 loop=zen4 control=none : "Teleport him the painting, Commander..." choices "teleport"
     when zen4 {
-        concept_guard "teleport" 0
+        require choice == "teleport"
     } then {
         say Super_Zen voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING PAINTING TO PLANET CRAZYSTONE"
         record_triple blood.s13 0x1216 0x0992 0
-        clear_alternate_concept
+        choice = none
     }
 }
 
@@ -1109,18 +1109,18 @@ proc zen6 {
         say Super_Zen voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Why don't we give him Eviscerator's hat|, Commander|... He might give us some information..."
         say Super_Zen voice=0xFF flags=0x10 display=0x80 loop=block_2577 control=none : "TELEPORT HAT TO SUPER ZEN" choices "teleport" "refuse"
         when block_255D {
-            concept_guard "teleport" 0
+            require choice == "teleport"
         } then {
             say Super_Zen voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING HAT TO SUPER ZEN"
             record_triple blood.s13 0x14CE 0x0992 0
-            clear_alternate_concept
+            choice = none
         }
         block_255D:
         when block_2577 {
-            concept_guard "refuse" 0
+            require choice == "refuse"
         } then {
             say Super_Zen voice=0xFF flags=0x20 display=0x80 loop=none control=none : "It's your decision, Commander..."
-            clear_alternate_concept
+            choice = none
         }
     }
     block_2577:
@@ -1177,17 +1177,17 @@ proc beta1 {
     say Betakam voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander|, I'd like to wake up Mister Beauregard. He's the only one who can explain some of this..."
     say Betakam voice=0xFF flags=0x30 display=0x80 loop=block_28E3 control=none : "Is that okay with you|, Commander|?" choices "accept" "refuse"
     when block_28A6 {
-        concept_guard "accept" 0
+        require choice == "accept"
     } then {
-        clear_alternate_concept
+        choice = none
     }
     block_28A6:
     when block_28E3 {
-        concept_guard "refuse" 0
+        require choice == "refuse"
     } then {
         say Betakam voice=0xFF flags=0x20 display=0x80 loop=none control=none : "You're the bossman, Commander..."
         say Betakam voice=0xFF flags=0x28 display=0x90 loop=none control=none : "But I have a feeling we're out of our depth here|..."
-        clear_alternate_concept
+        choice = none
         record_clear Betakam.s13
     }
     block_28E3:
@@ -1211,18 +1211,18 @@ proc beta1 {
     load_string "hboc.hnm"
     say Betakam voice=0xFF flags=0x10 display=0x80 loop=block_2B13 control=none : "TELEPORT MIND SCRAMBLER TO KING BETAKAM IV" choices "teleport" "refuse"
     when block_2AF1 {
-        concept_guard "teleport" 0
+        require choice == "teleport"
     } then {
         say Betakam voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING MIND SCRAMBLER"
         record_triple blood.s13 0x14B6 0x0122 0
-        clear_alternate_concept
+        choice = none
     }
     block_2AF1:
     when block_2B13 {
-        concept_guard "refuse" 0
+        require choice == "refuse"
     } then {
         say Betakam voice=0xFF flags=0x08 display=0x80 loop=none control=none : "If that's the way you want it, Commander..."
-        clear_alternate_concept
+        choice = none
     }
     block_2B13:
     when block_2BF3 {
@@ -1236,11 +1236,11 @@ proc beta1 {
         say Betakam voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Nice and easy, Commander|... This is all new to him..."
         say Betakam voice=0xFF flags=0x10 display=0x80 loop=block_2BF3 control=none : "TELEPORT BETAKAM IV TO CRYOBOX" choices "teleport"
         when block_2BF3 {
-            concept_guard "teleport" 0
+            require choice == "teleport"
         } then {
             say Betakam voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "TELEPORTING BETAKAM IV TO ARK"
             Betakam.current_location = aboard
-            clear_alternate_concept
+            choice = none
             record_clear Betakam.s13
         }
     }
@@ -1266,11 +1266,11 @@ proc beta2 {
         say Betakam voice=0xFF flags=0x00 display=0x80 loop=none control=none : "All right... leave me on Sat... The murffalo intestines are favorable..."
         say Betakam voice=0xFF flags=0x10 display=0x80 loop=block_2CEE control=none : "TELEPORT BETAKAM TO SAT" choices "teleport"
         when block_2CEE {
-            concept_guard "teleport" 0
+            require choice == "teleport"
         } then {
             say Betakam voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "TELEPORTING BETAKAM TO PLANET SAT"
             Betakam.current_location = Sat
-            clear_alternate_concept
+            choice = none
             record_clear Betakam.s13
         }
     }
@@ -1331,17 +1331,17 @@ proc sin1 {
     say Sinox voice=0x03 flags=0x00 display=0x80 loop=none control=none : "You may light a murffalo grease candle. It will bring you good fortune..."
     say Sinox voice=0xFF flags=0x10 display=0x80 loop=block_2F6C control=none : "LIGHT A CANDLE..." choices "accept" "refuse"
     when block_2F50 {
-        concept_guard "accept" 0
+        require choice == "accept"
     } then {
         say Sinox voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Your candle will burn for three years..."
-        clear_alternate_concept
+        choice = none
     }
     block_2F50:
     when block_2F6C {
-        concept_guard "refuse" 0
+        require choice == "refuse"
     } then {
         say Sinox voice=0x05 flags=0x00 display=0x80 loop=none control=none : "You're wasting a fine opportunity..."
-        clear_alternate_concept
+        choice = none
     }
     block_2F6C:
     say Sinox voice=0x06 flags=0x00 display=0x80 loop=none control=none : "You cannot see the portrait of the Great Yolk|, painted with his own yellow blood..."
@@ -1366,11 +1366,11 @@ proc clay1 {
     say Anna_Haf voice=0xFF flags=0x00 display=0x80 loop=none control=none : "..."
     say Anna_Haf voice=0xFF flags=0x10 display=0x80 loop=clay2 control=none : "BROKEN ROBOT" choices "bye_bye"
     when clay2 {
-        concept_guard "bye_bye" 0
+        require choice == "bye_bye"
     } then {
         say Anna_Haf voice=0xFF flags=0x08 display=0x80 loop=none control=none : "..."
         record_clear Anna_Haf.s13
-        clear_alternate_concept
+        choice = none
     }
 }
 
@@ -1416,21 +1416,21 @@ proc clay3 {
         say Anna_Haf voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Honk filled me in on the problem|, Commander|. An easy job..."
         say Anna_Haf voice=0xFF flags=0x10 display=0x80 loop=block_32DF control=none : "TELEPORT HAF TO PLANET VISTA" choices "teleport" "refuse"
         when block_32A4 {
-            concept_guard "teleport" 0
+            require choice == "teleport"
         } then {
             say Anna_Haf voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "TELEPORTING HAF TO PLANET VISTA"
             Anna_Haf.current_location = tombeau
             clay3.enabled = false
-            clear_alternate_concept
+            choice = none
             record_clear Anna_Haf.s13
         }
         block_32A4:
         when block_32DF {
-            concept_guard "refuse" 0
+            require choice == "refuse"
         } then {
             say Anna_Haf voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Whatever you say, Commander|..."
             say Anna_Haf voice=0x02 flags=0x08 display=0x90 loop=none control=none : "Maybe you ought to think about it, Commander|..."
-            clear_alternate_concept
+            choice = none
             record_clear Anna_Haf.s13
         }
     }
@@ -1520,21 +1520,21 @@ proc clay8 {
     say Anna_Haf voice=0xFF flags=0x20 display=0x80 loop=none control=none : "YES!!! Commander, he did it!"
     say Anna_Haf voice=0xFF flags=0x10 display=0x80 loop=block_3637 control=none : "TELEPORT PAINTING TO ARK" choices "teleport"
     when block_3637 {
-        concept_guard "teleport" 0
+        require choice == "teleport"
     } then {
         say Anna_Haf voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING PAINTING TO ARK"
         record_triple Anna_Haf.s13 0x1216 0x0028 0
-        clear_alternate_concept
+        choice = none
     }
     block_3637:
     say Anna_Haf voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Teleport me, Commander|. Hurry..."
     say Anna_Haf voice=0xFF flags=0x10 display=0x80 loop=clay9 control=none : "Teleport him|, Commander..." choices "teleport"
     when clay9 {
-        concept_guard "teleport" 0
+        require choice == "teleport"
     } then {
         say Anna_Haf voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "TELEPORT HAF TO ARK"
         Anna_Haf.current_location = aboard
-        clear_alternate_concept
+        choice = none
         record_clear Anna_Haf.s13
     }
 }
@@ -1599,11 +1599,11 @@ proc masta2 {
     say Outrageor voice=0x06 flags=0x00 display=0x80 loop=none control=none : "We know it's safe inside a mummy. We're the ones who hid it there!"
     say Outrageor voice=0xFF flags=0x10 display=0x80 loop=block_3AEE control=none : "TELEPORT MUMMY TO CROOLIS OUTRAGEOR" choices "teleport"
     when block_3AEE {
-        concept_guard "teleport" 0
+        require choice == "teleport"
     } then {
         say Outrageor voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING MUMMY TO OUTRAGEOR"
         record_triple blood.s13 0x11FE 0x016A 0
-        clear_alternate_concept
+        choice = none
     }
     block_3AEE:
     say Outrageor voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Ha! Ha! Ha! Everything in its place, as I always say..."
@@ -1703,13 +1703,13 @@ proc kuka1 {
     load_string "aready40.hnm"
     say Yoko voice=0xFF flags=0x30 display=0x80 loop=yoo control=none : "Teleport them, Commander, quick..." choices "teleport"
     when yoo {
-        concept_guard "teleport" 0
+        require choice == "teleport"
     } then {
         say Yoko voice=0xFF flags=0x08 display=0xC0 loop=none control=none : "TELEPORTING MAXXON AND YOKO TO ARK"
         Maxxon.current_location = aboard
         Yoko.current_location = aboard
         Kukaracha.in_play = false
-        clear_alternate_concept
+        choice = none
         record_clear Yoko.s13
     }
 }

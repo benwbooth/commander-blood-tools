@@ -152,11 +152,18 @@ values retain the explicit `poke_byte` fallback rather than receiving guessed
 semantics. Branch destinations are symbolic labels or procedure names; the
 compiler resolves them without reordering statements or changing layout.
 
-The remaining native handlers provide typed concept guards, presentation-name
-loads, self-modifying COD byte writes, character-slot bindings, alternate
-concept clears, and the `0x274F` flag branch. String-bearing opcodes are lifted
-only when they match the shipped printable-ASCII plus `00 00` representation;
-other payload shapes retain the generic lossless fallback.
+Opcode `A3` compares a DIC word against the logical current menu choice. The
+native handler selects either the newly clicked word at `GS:0x6762` or its
+resume copy at `GS:0x6764`; an inline `A1` inverts equality. BloodScript renders
+the 239 direct and 80 inverted shipped forms as `require choice ==|!= "word"`.
+Opcode `CF` clears the resume bit and saved word, represented by the 314 explicit
+`choice = none` statements. Resets are not inferred or inserted, because five
+shipped choice guards deliberately have no matching `CF` in their procedure.
+
+The remaining native handlers provide typed presentation-name loads,
+character-slot bindings, and the `0x274F` flag branch. String-bearing opcodes
+are lifted only when they match the shipped printable-ASCII plus `00 00`
+representation; other payload shapes retain the generic lossless fallback.
 
 `re/vm/source/manifest.tsv` records semantic and unresolved byte coverage for
 all ten program images. The BAS decoder now walks the recovered sequential

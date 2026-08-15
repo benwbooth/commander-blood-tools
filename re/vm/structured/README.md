@@ -42,6 +42,20 @@ native `0xFFFF` ship-slot sentinel. Kind-2 selector `0x0F` is `topic`; its `BC`
 assignment accepts an interned DIC string and reproduces the exact dictionary
 offset.
 
+Menu choices use ordinary conditions. Opcode `A3` becomes `require choice ==
+"word"`; its inline inversion byte becomes `!=`. The native handler reads the
+newly selected DIC word or its saved resume copy, so both storage paths are one
+logical `choice` in source. Opcode `CF` remains the explicit `choice = none`
+statement that clears the saved choice and resume state. The corpus has 319
+choice requirements and 314 resets; the compiler preserves that difference
+instead of pairing them heuristically.
+
+Each kind-2 procedure begins with an `activation enabled|disabled until target`
+header backed by its native `A9` flag byte. Writes to those bytes are named
+assignments such as `dialogue.enabled = false`. All 413 shipped writes target a
+named procedure exactly; arbitrary byte writes retain `poke_byte` as a lossless
+fallback.
+
 The `when target { ... } then { ... }` syntax is a lossless structural form of
 the native `A0 target` / `A1` guard protocol. `when` and `then` emit those
 original bytes. The closing brace emits no bytes and must occur exactly at the
