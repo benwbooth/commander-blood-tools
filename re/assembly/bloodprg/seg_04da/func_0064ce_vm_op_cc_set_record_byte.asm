@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
 ; label: vm_op_cc_set_record_byte
-; label_comment: VM opcode 0xCC: bp=0x6cde + (operand1-1)*16; [bp]=operand2. Writes a byte into a 16-byte-record table at gs:0x6cde indexed by (operand-1) - a set-property/set-variable op
+; label_comment: VM opcode 0xCC binds one of six rotating presentation slots to a NUL-terminated DESCRIPT.DES Sequence-record name. BP=0x6CDE+(slot-1)*16; the copy includes NUL and SI then skips one pad byte. All 36 shipped names resolve to Sequence records.
 ; incoming: vm_opcode_handlers:opcode_0xcc
 ; byte_count: 23
 ; boundary: cfg_blocks_3_terminals_1

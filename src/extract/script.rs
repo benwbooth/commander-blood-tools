@@ -2037,7 +2037,7 @@ fn push_vm_token_disassembly(
                 offset: *offset,
                 len: *len,
                 opcode: "cc".to_string(),
-                mnemonic: "character_slot".to_string(),
+                mnemonic: "sequence_slot".to_string(),
                 operands: format!("slot=0x{slot:02x} name={name:?}"),
                 actor_record: current_actor_record(current_actor),
                 text: None,

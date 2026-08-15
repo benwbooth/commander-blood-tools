@@ -206,12 +206,12 @@ proc INIT2 {
     Otto_Von_Smile.current_location = Trashlando
     state[0x13EC] = 0x0001
     state[0x13EE] = 0x0003
-    character_slot 0x01 "microkid"
-    character_slot 0x02 "ppit"
-    character_slot 0x03 "hatetv"
-    character_slot 0x04 "venus"
-    character_slot 0x05 "scrut"
-    character_slot 0x06 "match"
+    sequence_slots[1] = "microkid"
+    sequence_slots[2] = "ppit"
+    sequence_slots[3] = "hatetv"
+    sequence_slots[4] = "venus"
+    sequence_slots[5] = "scrut"
+    sequence_slots[6] = "match"
     Anna_Haf.current_location = Magnus
     INIT2.enabled = false
 }
@@ -2859,12 +2859,12 @@ proc tum7 {
     when tum8 {
         require choice == "teleport"
     } then {
-        character_slot 0x01 "maledict"
-        character_slot 0x02 "maledict"
-        character_slot 0x03 "maledict"
-        character_slot 0x04 "maledict"
-        character_slot 0x05 "maledict"
-        character_slot 0x06 "maledict"
+        sequence_slots[1] = "maledict"
+        sequence_slots[2] = "maledict"
+        sequence_slots[3] = "maledict"
+        sequence_slots[4] = "maledict"
+        sequence_slots[5] = "maledict"
+        sequence_slots[6] = "maledict"
         say Beauregard voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "TELEPORTING MUMMY TO ARK"
         transfer mummy from Beauregard to aboard
         state[0x1422] = 0x0001

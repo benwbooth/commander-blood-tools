@@ -92,6 +92,16 @@ form to 20 bytes so its NUL cannot cross into the next descriptor. An unusual
 A8 payload that does not meet those established constraints is rendered as the
 explicit `load_string` fallback.
 
+The six-entry rotating presentation playlist uses
+`sequence_slots[n] = "name"`. Opcode `CC` copies that name into one 16-byte slot
+at `GS:0x6CDE + (n-1)*16`. The presentation driver cycles all six indices,
+renders noise for an empty slot, and resolves a nonempty name by exact lookup in
+`DESCRIPT.DES`. All 36 shipped assignments use indices `1..6`, fit in 15 bytes
+plus NUL, and name one of ten existing `Sequence` records. The first slot's
+first character also selects the native 128-byte subtitle-table page, so slot
+order is semantically significant. An out-of-range slot or overlong synthetic
+name retains the lossless `character_slot` spelling.
+
 Presentation relationships are also source-level. The native post-VM object
 scan resolves selector `0x13` as a six-byte typed action record, so the 115
 unambiguous field declarations now use `object.action` instead of `object.s13`.

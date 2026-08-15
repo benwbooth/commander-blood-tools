@@ -179,12 +179,12 @@ proc init5 {
     Otto_Von_Smile.current_location = Trashlando
     state[0x1366] = 0x0001
     state[0x1368] = 0x0003
-    character_slot 0x01 "match"
-    character_slot 0x02 "ppit"
-    character_slot 0x03 "hatetv"
-    character_slot 0x04 "venus"
-    character_slot 0x05 "scrut"
-    character_slot 0x06 "present"
+    sequence_slots[1] = "match"
+    sequence_slots[2] = "ppit"
+    sequence_slots[3] = "hatetv"
+    sequence_slots[4] = "venus"
+    sequence_slots[5] = "scrut"
+    sequence_slots[6] = "present"
     init5.enabled = false
 }
 

@@ -133,7 +133,7 @@ proc pter {
     say Scruter_Jo voice=0x01 flags=0x00 display=0x80 loop=none control=none : "ME SCRUTER JO: SCANNING STRANGER...XRAY....STOP"
     say Scruter_Jo voice=0x01 flags=0x00 display=0x80 loop=none control=none : "ZONE ULTRAFORBIDDEN YOU NOT STAY HERE... YOU GO AWAY..."
     say Scruter_Jo voice=0x01 flags=0x08 display=0x80 loop=none control=none : "FIRST WARNING..."
-    character_slot 0x04 "scrut"
+    sequence_slots[4] = "scrut"
     when block_00AC {
         require Scruter_Jo.encounter_count > 0x0001
     } then {
@@ -1529,14 +1529,14 @@ proc tim1B {
         require clock.date == 1994-12-25 using month_day_only
     } then {
         say Ulikan voice=0xFF flags=0x00 display=0x80 loop=none control=none : "MERRY CHRISTMAS..."
-        character_slot 0x02 "christmas"
+        sequence_slots[2] = "christmas"
     }
     block_33C2:
     when block_33E4 {
         require clock.date == 1994-01-01 using month_day_only
     } then {
         say Ulikan voice=0xFF flags=0x00 display=0x80 loop=none control=none : "HAPPY NEW YEAR..."
-        character_slot 0x02 "year"
+        sequence_slots[2] = "year"
     }
     block_33E4:
     say Ulikan voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Network|..."
@@ -2429,8 +2429,8 @@ proc Corpo3 {
         say Izwalito voice=0x05 flags=0x00 display=0x80 loop=none control=none : "You can see TV with DECODER. Me give you DECODER for IZWAL CHANNEL..."
         say Izwalito voice=0xFF flags=0x20 display=0x80 loop=none control=none : "A decoder, Commander|! Now we can have some fun for a change..."
         say Izwalito voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Thanks to DECODER, you can see TV, friend..."
-        character_slot 0x01 "ppit"
-        character_slot 0x05 "present"
+        sequence_slots[1] = "ppit"
+        sequence_slots[5] = "present"
         say Izwalito voice=0xFF flags=0x10 display=0x80 loop=block_51DF control=none : "TELEPORT DECODER TO ARK" choices "teleport"
         when block_51DF {
             require choice == "teleport"
@@ -3166,7 +3166,7 @@ proc morntv {
     say Morning_Oil voice=0xFF flags=0x20 display=0x80 loop=none control=none : "THE HONK REPORT:"
     say Morning_Oil voice=0xFF flags=0x20 display=0x80 loop=none control=none : "You're gonna love this, Commander. I put the robot's principal memories together..."
     say Morning_Oil voice=0xFF flags=0x28 display=0x80 loop=none control=none : "You can watch them on TV channel two..."
-    character_slot 0x02 "match"
+    sequence_slots[2] = "match"
     say Morning_Oil voice=0xFF flags=0x20 display=0x80 loop=none control=none : "That droid has seen some weird stuff, Commander|. That hidden treasure story could be true. We'll have to find that planet|."
     say Morning_Oil voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Give me a little time|... I have to change a couple of blown fuses..."
     say Morning_Oil voice=0xFF flags=0x20 display=0x80 loop=none control=none : "..."
@@ -4068,7 +4068,7 @@ proc pub2 {
     require presentation == Bug_Deluxe
     guard_pop
     say Bug_Deluxe voice=0xFF flags=0x08 display=0x80 loop=none control=none : "COMMERCIAL... COMMERCIAL... COMMERCIAL..."
-    character_slot 0x03 "venus"
+    sequence_slots[3] = "venus"
     say Bug_Deluxe voice=0xFF flags=0x00 display=0x80 loop=none control=none : "FOR ALL SPENDING MOMENTS, COME TO VENUSIA"
     say Bug_Deluxe voice=0xFF flags=0x00 display=0x80 loop=none control=none : "FABULOUS BARGAINS... BRING PLENTY OF CREDS..."
     say Bug_Deluxe voice=0xFF flags=0x00 display=0x80 loop=none control=none : "MORE FOR YOUR CREDS AT VENU-USIA-AA... Watch tv channel three..."

@@ -3797,8 +3797,7 @@ fn main() {
             }
         };
         rec_dump(&rt, "start");
-        // CHARDUMP: print the 0x60-byte character-slot block (gs:0x6CDE) — the
-        // SETCHAR bindings (which crew/overlay occupies each slot).
+        // CHARDUMP: print the six-entry DESCRIPT sequence-slot block (gs:0x6CDE).
         if std::env::var("CHARDUMP").is_ok() {
             let bytes: Vec<u8> = (0..0x60u32).map(|i| rt.m.read8(g, 0x6cde + i)).collect();
             for (i, ch) in bytes.chunks(16).enumerate() {

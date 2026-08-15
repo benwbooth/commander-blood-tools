@@ -146,7 +146,7 @@ operand not found in the companion DIC stays `presentation_register`.
 
 The final six native-handler families accounted for those remaining 4,567 bytes:
 concept guards (`0xA3`), string loads (`0xA8`), procedure activation writes
-(`0xAB`), character-slot bindings (`0xCC`), alternate-concept clears (`0xCF`),
+(`0xAB`), sequence-slot bindings (`0xCC`), alternate-concept clears (`0xCF`),
 and the contact-scene branch (`0xD1`). Every one of the 413 shipped `AB` writes
 stores zero or one at exactly one byte after a named kind-2 procedure start,
 which is the procedure's `A9` flag byte. The corpus contains 149 enables and 264
@@ -185,6 +185,25 @@ uses `request sequence "name.hnm"` for the established high-level shape. Its
 20-byte limit follows from the 21-byte writable region before the descriptor at
 `DS:0x2135`, including the trailing NUL. Other possible A8 payloads remain
 `load_string`, preserving their bytes without extending the proven semantics.
+
+Opcode `CC` owns the six-slot DESCRIPT sequence playlist, not a generic
+character table. Its handler copies a NUL-terminated operand into
+`GS:0x6CDE + (slot-1)*16` and consumes one pad byte. The presentation-box driver
+at `0x79E5` cycles selector `DS:0x27E3` through indices `0..5`; an empty slot
+draws the noise fallback, while a nonempty slot is passed as the exact directory
+key to `vm_c2_descript_lookup` at `0x7409`. That lookup opens `DESCRIPT.DES`,
+matches the 16-byte directory name, and dispatches the record's media, subtitle,
+sound, and music commands. It also places opcode-`0x0C` subtitle rows in a
+128-byte page selected by the first character of slot 1, which proves that the
+slot order is load-bearing rather than an unordered name set.
+
+All 36 shipped CC instructions use slots `1..6`, contain at most 9 visible
+bytes, and resolve to ten existing records; every referenced record has native
+kind `Sequence`. BloodScript therefore emits
+`sequence_slots[n] = "descriptor-name"`. The high-level form enforces the six
+slots and the native 15-byte-plus-NUL capacity. An out-of-range slot or overlong
+synthetic payload retains `character_slot` so no unproved shape gains playlist
+semantics.
 
 Selector `0x13` is the per-object action-record field. Native
 `presentation_scan` at `0x5816` resolves that selector through the field matrix

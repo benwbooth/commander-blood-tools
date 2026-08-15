@@ -189,6 +189,14 @@ descriptor at `DS:0x2135`, leaving room for the terminating NUL. A non-HNM or
 otherwise nonconforming A8 operand retains the exact low-level `load_string`
 fallback rather than being assigned sequence semantics.
 
+Opcode `CC` assigns one of six rotating DESCRIPT sequence slots. The native
+presentation-box driver cycles those slots, draws noise for an empty one, and
+looks up a nonempty name in `DESCRIPT.DES` before dispatching its HNM, subtitle,
+sound, and music commands. All 36 shipped assignments name existing
+kind-`Sequence` records and fit the native 16-byte entries, so BloodScript uses
+`sequence_slots[n] = "name"`. Invalid slot numbers and overlong synthetic names
+retain the explicit `character_slot` fallback.
+
 Selector `0x13` is now named `action` rather than the opaque `s13`. The native
 post-VM scan resolves that selector for every active object and dispatches its
 six-byte typed record through `record_c1_ship3d_action`. Presentation pairing is
@@ -202,9 +210,8 @@ contains C4 the native handler also clears the reciprocal `blood.action` pair,
 represented as `end presentation object`.
 
 Other C3/C4 operand shapes retain `record_link` or `actor`, and a C9 target that
-cannot be proven to be an action retains `record_clear`. The remaining native
-handlers provide typed character-slot bindings and the `0x274F` flag branch.
-String-bearing opcodes are lifted only when they match the shipped
+cannot be proven to be an action retains `record_clear`. String-bearing opcodes
+are lifted only when they match the shipped
 printable-ASCII plus `00 00` representation; other payload shapes retain the
 generic lossless fallback.
 

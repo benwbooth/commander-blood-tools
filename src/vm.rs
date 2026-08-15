@@ -273,7 +273,8 @@ pub const OP_YIELD_A: u8 = 0xAA;
 pub const OP_YIELD_B: u8 = 0xAC;
 /// `0xAB` poke a byte to `[address operand]` (set-variable). Handler 0x684c.
 pub const OP_POKE_BYTE: u8 = 0xAB;
-/// `0xCC` bind a NUL-terminated name to a 16-byte character slot. Handler 0x64ce.
+/// `0xCC` bind a DESCRIPT sequence name to one of six 16-byte presentation slots.
+/// Handler 0x64ce.
 pub const OP_SET_CHARACTER_SLOT: u8 = 0xCC;
 /// `0xCE` requires the bridge-render-active bit at `GS:0x2793`; it branches when clear.
 /// Handler 0x06494 (`vm_op_ce_cond_branch`) — dispatch table `0x142D0`, the entry for 0xCE.
@@ -960,8 +961,8 @@ pub enum VmToken {
         value: u8,
         len: usize,
     },
-    /// `0xCC <slot:u8> <ascii> 00 00` binds a name in the native 16-byte
-    /// character-slot table.
+    /// `0xCC <slot:u8> <ascii> 00 00` binds a DESCRIPT sequence name in the
+    /// native six-entry, 16-byte presentation-slot table.
     CharacterSlot {
         offset: usize,
         slot: u8,
@@ -5783,7 +5784,7 @@ pub struct VmMachine {
     pub query: bool,
     /// The state WORD array (`gs:0x6ADE`, 0x100 words) — 0xA5's target.
     pub state: Vec<u16>,
-    /// The 16-byte-record table (`gs:0x6CDE`, 6 records) — 0xCC's target.
+    /// Six 16-byte DESCRIPT sequence slots (`gs:0x6CDE`) — 0xCC's target.
     pub records16: Vec<u8>,
     /// The line-record/object state table (`gs:0x6724` far table) — A6/record ops
     /// address it by byte offset. Sized generously; the game allocates per script.
@@ -6336,7 +6337,7 @@ impl VmMachine {
 
     /// Serialize the machine state as a DOS `blood.sav` (the layout the game's
     /// save path @0x1C3F writes): u16 current profile, 0x200 bytes of the state
-    /// word array (gs:0x6ADE), 0x60 bytes of the character slots (gs:0x6CDE),
+    /// word array (gs:0x6ADE), six DESCRIPT sequence slots (gs:0x6CDE),
     /// then the line-record table at its VAR size (the resource's stored size).
     /// (The game appends a presentation work-buffer block; the engine's runtime
     /// state is rebuilt on load, so an empty tail is written.)
@@ -6355,7 +6356,7 @@ impl VmMachine {
     }
 
     /// Load a DOS `blood.sav` (the read path @0x1CBD): restores the state array,
-    /// character slots, and line-record table; returns the saved profile word
+    /// DESCRIPT sequence slots, and line-record table; returns the saved profile word
     /// (the script to re-select). Returns None if the file is too short.
     pub fn apply_dos_save(&mut self, bytes: &[u8]) -> Option<u16> {
         if bytes.len() < 2 + 0x200 + 0x60 {
@@ -8410,10 +8411,9 @@ impl VmMachine {
                     self.branch();
                 }
             }
-            // 0xCC SETCHAR (0x64CE): bp = 0x6CDE+(op1-1)*16, then copy the
-            // NUL-terminated NAME into the 16-byte character slot (lodsb/[bp++]
-            // loop), then one pad-byte `inc si` — the DESCRIPT record-name
-            // binding (slot0="present", slot4="scrut"). The old two-byte model
+            // 0xCC (0x64CE): bp = 0x6CDE+(op1-1)*16, then copy the NUL-terminated
+            // DESCRIPT sequence name into the selected presentation slot
+            // (lodsb/[bp++] loop), then one pad-byte `inc si`. The old two-byte model
             // left pc INSIDE the name, executing its bytes as opcodes (masked
             // before the skip-law fix because the skip always jumped the token).
             0xCC => {
@@ -8949,7 +8949,7 @@ pub fn decompile_script(
                     .map(|p| pc + 2 + p)
                     .unwrap_or(end);
                 line = format!(
-                    "SETCHAR slot {idx} = \"{}\"",
+                    "SEQUENCE SLOT {idx} = \"{}\"",
                     String::from_utf8_lossy(&cod[pc + 2..nul])
                 );
                 pc = end;
@@ -10348,7 +10348,7 @@ mod tests {
         // ACT TWO OPENS: perform the D2 switch (load SCRIPT3's COD + VAR — the
         // loader's clean-reload model; each script's opening init block writes
         // its own world) and let the self-disabling init run: the world
-        // relocates (rec_0722 = 4070 @0073), the character slots bind their
+        // relocates (rec_0722 = 4070 @0073), the sequence slots bind their
         // DESCRIPT names (slot 4 = "venus" @00A4), and vbio arrives at 3.
         let cod3 = std::fs::read(std::path::Path::new(iso).join("SCRIPT3.COD")).unwrap();
         let var3 = std::fs::read(std::path::Path::new(iso).join("SCRIPT3.VAR")).unwrap();

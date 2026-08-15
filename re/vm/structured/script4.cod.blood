@@ -141,12 +141,12 @@ field orxx.action = orxx + 0x000A // VAR kind 0x0200, selector(s) 13
 proc init {
     activation enabled until bronk2
     guard_pop
-    character_slot 0x02 "maledict"
-    character_slot 0x03 "maledict"
-    character_slot 0x04 "maledict"
-    character_slot 0x05 "maledict"
-    character_slot 0x01 "maledict"
-    character_slot 0x06 "present"
+    sequence_slots[2] = "maledict"
+    sequence_slots[3] = "maledict"
+    sequence_slots[4] = "maledict"
+    sequence_slots[5] = "maledict"
+    sequence_slots[1] = "maledict"
+    sequence_slots[6] = "present"
     Ron.in_play = true
     Morning_Oil.current_location = Trashlando
     Outrageor.current_location = machine
@@ -1067,11 +1067,11 @@ proc zen4 {
     say Super_Zen voice=0x00 flags=0x00 display=0x80 loop=none control=none : "He can't figure out how you were cursed by his mummy|, since he's still alive..."
     say Super_Zen voice=0x01 flags=0x08 display=0x80 loop=none control=none : "You'll find him on the planet Attrox, coordinates x342 y765..."
     Attrox.in_play = true
-    character_slot 0x01 "present"
-    character_slot 0x02 "present"
-    character_slot 0x03 "present"
-    character_slot 0x04 "present"
-    character_slot 0x05 "present"
+    sequence_slots[1] = "present"
+    sequence_slots[2] = "present"
+    sequence_slots[3] = "present"
+    sequence_slots[4] = "present"
+    sequence_slots[5] = "present"
     say Super_Zen voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander... This is just great!"
     say Super_Zen voice=0x00 flags=0x08 display=0xB0 loop=none control=none : "Bye bye|..."
     state[0x150C] = 0x0000

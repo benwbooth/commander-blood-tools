@@ -121,8 +121,8 @@ From decompiled/SCRIPT2.bas + COD operand reads (assembly-first):
 - **rec_0722 == 65535** gates Bob's no-BIONIUM begging block (@0BCA).
 - Driver chain for the outer ring, in order: start 1860 (Scruter Jo — EXECUTED, the
   script2_scruter_jo test locks his cyberspace block) -> his world binds via
-  **SETCHAR slot 4 = "scrut"** (@004E, the 0xCC opcode — the entry citation) ->
-  enter the cyber world (port: visit_world through the SETCHAR binding; tested by
+  **sequence_slots[4] = "scrut"** (@004E, opcode 0xCC) ->
+  enter the cyber world (port: visit_world through the sequence binding; tested by
   cyberspace_traversal + the playthrough gate) -> BIOXX touches raise vbio (WIRED:
   add_record(0x126C,1) on cyber arrival) -> Bob's vbio==0/1/2 blocks unlock ->
   nav destinations activate (entity flags 0x15..0x1F — the FSM decoded+ported in

@@ -276,7 +276,8 @@ extern bloodprg_vm_opcode_handler CB_NEAR *CB_NEAR
 extern volatile cb_u16 vm_state_words[];     /* SS:0x6ADE here; SS=GS at runtime */
 extern volatile cb_u16 CB_GAME_DATA
         vm_state_words_gs[];                 /* explicit GS/SS:0x6ADE alias */
-extern volatile char vm_record_string_slots[][16]; /* SS:0x6CDE; SS=GS at runtime */
+/* Six rotating DESCRIPT sequence names; SS=GS at runtime. */
+extern volatile char vm_record_string_slots[][16]; /* SS:0x6CDE */
 extern volatile char CB_GAME_DATA vm_scene_name_buffer[]; /* ES=GS:0x209E */
 extern volatile cb_u16
         vm_special_slots[BLOODPRG_VM_SPECIAL_SLOT_COUNT]; /* SS:0x6D3E; SS=DS */

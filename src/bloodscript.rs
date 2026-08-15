@@ -1423,6 +1423,11 @@ fn normalize_modern_statement(
             normalize_modern_shared_expression(&fields[1..], true, line_number)
         }
         _ => {
+            if let Some(statement) =
+                normalize_modern_sequence_slot_assignment(&fields, line_number)?
+            {
+                return Ok(statement);
+            }
             if fields.first() == Some(&"choice") {
                 if fields.as_slice() == ["choice", "=", "none"] {
                     return Ok("CLEAR_ALTERNATE_CONCEPT".to_string());
@@ -1513,6 +1518,36 @@ fn normalize_modern_statement(
             }
         }
     }
+}
+
+fn normalize_modern_sequence_slot_assignment(
+    fields: &[&str],
+    line_number: usize,
+) -> Result<Option<String>> {
+    let Some(slot_text) = fields
+        .first()
+        .and_then(|value| value.strip_prefix("sequence_slots["))
+        .and_then(|value| value.strip_suffix(']'))
+    else {
+        return Ok(None);
+    };
+    if fields.len() != 3 || fields[1] != "=" {
+        bail!("line {line_number}: expected 'sequence_slots[1..6] = \"NAME\"'");
+    }
+    let slot = slot_text.parse::<u8>().map_err(|_| {
+        anyhow!("line {line_number}: sequence slot {slot_text:?} must be a decimal index")
+    })?;
+    if !(1..=6).contains(&slot) {
+        bail!("line {line_number}: sequence slot must be in 1..6, found {slot}");
+    }
+    let name = parse_simple_ascii(fields[2], line_number, "sequence name")?;
+    if name.len() > 15 {
+        bail!(
+            "line {line_number}: sequence name is {} bytes; a 16-byte native slot allows at most 15 plus NUL",
+            name.len()
+        );
+    }
+    Ok(Some(format!("CHARACTER_SLOT {slot:02X} {}", fields[2])))
 }
 
 fn normalize_modern_presentation_expression(
@@ -2350,6 +2385,22 @@ fn modern_statement(
                 args[0],
                 if args[1] == "1" { "true" } else { "false" }
             ))
+        }
+        "CHARACTER_SLOT" => {
+            if args.len() != 2 {
+                bail!("line {line_number}: malformed generated CHARACTER_SLOT statement");
+            }
+            let slot = parse_byte(args[0], line_number, "sequence slot")?;
+            let name = parse_simple_ascii(args[1], line_number, "sequence name")?;
+            if (1..=6).contains(&slot) && name.len() <= 15 {
+                Ok(format!("sequence_slots[{slot}] = {}", args[1]))
+            } else {
+                Ok(format!(
+                    "character_slot {} {}",
+                    canonical_operand_to_modern(args[0]),
+                    canonical_operand_to_modern(args[1])
+                ))
+            }
         }
         "BRANCH_PRESENTATION" if args.is_empty() => Ok("during bridge".to_string()),
         "BRANCH_GAMEFLAG" if args.is_empty() => Ok("during travel".to_string()),
@@ -6328,13 +6379,19 @@ mod tests {
             "require choice != 0x0EE8",
             "request sequence \"fin.hnm\"",
             "poke_byte 0x1234 0x56",
-            "character_slot 0x02 \"scrut\"",
+            "sequence_slots[2] = \"scrut\"",
             "choice = none",
             "during contact",
         ] {
             assert!(decompiled.source.contains(statement), "missing {statement}");
         }
         assert_eq!(compile(&decompiled.source).unwrap(), expected);
+
+        let invalid_slot = vec![0xCC, 0x07, b'x', 0, 0, 0xFF];
+        let fallback = decompile(ImageKind::Cod, &invalid_slot, &HashMap::new()).unwrap();
+        assert!(fallback.source.contains("character_slot 0x07 \"x\""));
+        assert_eq!(compile(&fallback.source).unwrap(), invalid_slot);
+        assert!(compile("sequence_slots[7] = \"scrut\"\nhalt\n").is_err());
     }
 
     #[test]
@@ -6563,6 +6620,50 @@ mod tests {
         }
 
         assert_eq!((bridge, travel, contact), (113, 224, 65));
+    }
+
+    #[test]
+    fn every_shipped_sequence_slot_names_a_descript_sequence() {
+        let Some(root) = game_dir() else { return };
+        let descript = crate::descript::DescriptDb::parse_file(root.join("DESCRIPT.DES")).unwrap();
+        let sequence_names = descript
+            .records
+            .iter()
+            .filter(|record| record.kind == crate::descript::RecordKind::Sequence)
+            .map(|record| record.name.as_str())
+            .collect::<std::collections::BTreeSet<_>>();
+        let mut assignments = 0;
+
+        for script in 1..=5 {
+            let read = |extension: &str| {
+                std::fs::read(root.join(format!("SCRIPT{script}.{extension}"))).unwrap()
+            };
+            let cod = read("COD");
+            let var = read("VAR");
+            let dictionary = crate::script::parse_dictionary(&read("DIC"));
+            let symbols = crate::script::parse_deb(&read("DEB"));
+            let source =
+                decompile_structured_cod_with_symbols(&cod, &var, &dictionary, &symbols).unwrap();
+
+            assignments += source.source.matches("sequence_slots[").count();
+            assert!(!source.source.contains("character_slot"));
+            for token in vm::walk(&cod, 0, cod.len()) {
+                if let VmToken::CharacterSlot { slot, name, .. } = token {
+                    assert!((1..=6).contains(&slot));
+                    assert!(name.len() <= 15);
+                    assert!(
+                        sequence_names.contains(name.as_str()),
+                        "SCRIPT{script} sequence slot {slot} names missing or non-sequence DESCRIPT record {name:?}"
+                    );
+                }
+            }
+            assert_eq!(
+                compile_with_dictionary(&source.source, &dictionary).unwrap(),
+                cod
+            );
+        }
+
+        assert_eq!(assignments, 36);
     }
 
     #[test]

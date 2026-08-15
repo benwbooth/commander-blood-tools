@@ -537,13 +537,13 @@ pub(crate) fn token_comment(token: &VmToken, dictionary: &HashMap<u16, String>) 
             format!("POKE_BYTE address=0x{address:04X} value=0x{value:02X}")
         }
         VmToken::CharacterSlot { slot, name, .. } => {
-            format!("CHARACTER_SLOT slot=0x{slot:02X} name={name:?}")
+            format!("SEQUENCE_SLOT slot=0x{slot:02X} name={name:?}")
         }
         VmToken::ClearAlternateConcept { .. } => "CLEAR_ALTERNATE_CONCEPT".to_string(),
         VmToken::FlagBranch { opcode, .. } => match *opcode {
-            vm::OP_COND_BRANCH_PRESENTATION => "BRANCH_PRESENTATION".to_string(),
-            vm::OP_COND_BRANCH_GAMEFLAG => "BRANCH_GAMEFLAG".to_string(),
-            vm::OP_COND_BRANCH_FLAG_274F => "BRANCH_FLAG_274F".to_string(),
+            vm::OP_COND_BRANCH_PRESENTATION => "DURING_BRIDGE".to_string(),
+            vm::OP_COND_BRANCH_GAMEFLAG => "DURING_TRAVEL".to_string(),
+            vm::OP_COND_BRANCH_FLAG_274F => "DURING_CONTACT".to_string(),
             _ => format!("FLAG_BRANCH opcode=0x{opcode:02X}"),
         },
         VmToken::Actor {

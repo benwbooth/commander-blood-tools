@@ -1631,6 +1631,28 @@ All 402 are operand-free one-byte conditions and recompile byte exactly. The
 source word `during` expresses a positive context requirement; it does not
 imply a scheduler wait or consume time by itself.
 
+### 0xCC DESCRIPT sequence slots @ file 0x64CE (DECODED)
+
+`CC <slot:u8> <name:asciiz> 00` copies the name, including its terminating NUL,
+to `GS:0x6CDE + (slot-1)*16`, then advances `SI` over one pad byte. The DOS save
+path preserves exactly six of these 16-byte entries. Their consumer establishes
+their purpose: the presentation-box driver at `0x79E5` rotates selector
+`DS:0x27E3` through indices `0..5`, draws noise for an empty entry, and passes a
+nonempty entry to `vm_c2_descript_lookup` at `0x7409`.
+
+That lookup exact-matches the 16-byte name against the `DESCRIPT.DES` directory
+and dispatches the selected record's HNM, subtitle, sound, and music commands.
+Its opcode-`0x0C` parser stores subtitle rows in a 128-byte page selected by the
+first character of slot 1. The records are therefore an ordered six-entry
+DESCRIPT sequence playlist, not generic character properties.
+
+The shipped corpus contains 36 assignments using only slots `1..6`. Their ten
+distinct names all resolve to existing kind-`Sequence` records and the longest
+name is nine visible bytes. BloodScript renders the proven form as
+`sequence_slots[n] = "name"` and enforces the native 15-byte-plus-NUL limit. A
+synthetic out-of-range slot or overlong name retains the lossless
+`character_slot` fallback instead of receiving unproved high-level semantics.
+
 ### 0xB7 bit-flag handler @ file 0x6AA7 — state flag set/test (DECODED)
 
 `0xB7` is a 4-byte state/line-record bit flag operation, with an optional `0xA1`
@@ -5654,8 +5676,8 @@ grammar from raw dumps before rediscovering that. Genuinely new from this pass:
 record offset}, then per-record: u16 total length + TAGGED FIELDS. Directory covers
 EVERY named presentation: items (bionium, cred...), planets (Corpo, Pterra,
 Venusia...), locations (bar, prison, factory...), characters (Scruter_Jo,
-Bob_Morlock, Bigbang...), and the boot credit ("present" — the name held in char
-slot 0 at the hub!). Field kinds decoded from present/Corpo/Bigbang/Scruter_Jo:
+Bob_Morlock, Bigbang...), and the boot credit ("present" — the name held in the
+first sequence slot at the hub). Field kinds decoded from present/Corpo/Bigbang/Scruter_Jo:
 0x01=end, 0x03 <face 1..4> <lbm> = the world-room LBM faces (2kkult1f/d/g/b),
 0x05 <asciiz> = THE LOCATION CAPTION ("planet Corpo" — the green header's source,
 closing that open question), 0x06 <hnm> = approach video, 0x07 <param> <hnm> =
@@ -5664,10 +5686,10 @@ video trio (main + cd/cg companions), 0x0D <u16 delay> <asciiz> = CREDIT/TEXT cu
 ("CRYO Interactive Entertainment 1995", "Commander BLOOD  V 1.0" — presenter (b)'s
 cues), 0x0E=spr, 0x11=snd, 0x12=voc. The presentation dispatch the interpreter lacks
 = walking these fields and routing each kind to its presenter (the string-sink
-family are the text-kind loaders). SETCHAR binds a character's DESCRIPT name into a
-slot; the engine resolves it through this directory. NEW facts worth keeping from
-this pass: (1) the hub state's char slot 0 holds the DESCRIPT record NAME "present"
-— SETCHAR slots are DESCRIPT directory keys, tying the char-slot system to the
+family are the text-kind loaders). Opcode `CC` binds a DESCRIPT Sequence-record
+name into one of six rotating presentation slots; the engine resolves it through
+this directory. NEW facts worth keeping from this pass: (1) the hub state's first
+sequence slot holds the DESCRIPT record name "present", tying the playlist to the
 descriptor bank; (2) the missing interpreter presentation dispatch = walking these
 already-parsed fields and routing per kind (the string-sink family are the text-kind
 presenters); the port-side parser gives the exact cue list the oracle should show.
@@ -5873,8 +5895,8 @@ writer cs:ip.
 
 STORY POSITION OF THE HUB STATE (RECDUMP/CHARDUMP tooling, VERIFYSCRIPT): the
 script2.state record block (8681:0000) matches SCRIPT2.VAR initials EXACTLY and the
-character-slot block (gs:0x6CDE, 16-byte slots) holds only slot0="present" — record
-1860 (Scruter arrival, SETCHAR slot4="scrut" @004E) has NOT run. The scan that writes
+sequence-slot block (gs:0x6CDE, six 16-byte slots) holds only slot 1="present" — record
+1860 (Scruter arrival, `sequence_slots[4] = "scrut"` @004E) has NOT run. The scan that writes
 scr is Scruter Jo's ARRIVAL X-RAY ("SCANNING STRANGER...XRAY"), after which he is
 teleported INTO the cryobox (@0298). Driving the arrival in the oracle is the next
 gate — suspect it routes through the blood.dat presentation dispatch (the documented
