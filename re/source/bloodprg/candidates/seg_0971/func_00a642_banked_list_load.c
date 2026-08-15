@@ -1,3 +1,5 @@
+#include <dos.h>
+
 #include "../include/bloodprg_list.h"
 
 int CB_NEAR banked_list_load(void)
@@ -14,7 +16,8 @@ int CB_NEAR banked_list_load(void)
     entry_start = (cb_u16)(
             list_d8c_buffer_end_offset - entry_extent - 2u);
     list_d8c_tail_offset = entry_start;
-    *(volatile cb_u16 CB_FAR *)(list_d8c_buffer + entry_start) = entry_extent;
+    *(volatile cb_u16 CB_FAR *)MK_FP(
+            list_d8c_head_segment, entry_start) = entry_extent;
     entry_start += 2u;
     list_d8c_head_offset = entry_start;
 

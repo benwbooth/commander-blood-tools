@@ -609,13 +609,19 @@ the compact carry/AX/ES:SI result remains an isolated assembly ABI boundary.
 For `0x00A642`, six direct-file vectors execute the real `0x00A757` queue init,
 `0x00A622` extent read, and `0x00A664` body read. They cover initial and body
 failure, zero and `0xFFFF` wrapped body lengths, header relocation, repeated
-short reads even when carry is set, and all source/queue accounting. Open
-Watcom 1.9 medium emits 32 instructions and 80 bytes; Turbo C 2.01 medium emits
-48 instructions. The original has a 12-instruction, 34-byte unique prefix and
-then physically falls through the complete `0x00A664` body, making its indexed
-span 100 instructions and 252 bytes. The natural helper composition is
-behaviorally equivalent, but output parameters, logical returns, and a normal
-call replace the original AX/ES:SI/carry ABI and shared-tail placement.
+short reads even when carry is set, and all source/queue accounting. The
+candidate now stores the relocated extent through the live head segment rather
+than a fixed buffer symbol, and the compiler-corpus sample includes that source
+directly. Open Watcom 1.9 medium `-3 -os -s -mm -zdf` emits 27
+instructions/65 bytes; Turbo C 2.01 medium emits 37 instructions and assembles
+warning-free to OBJ.
+
+The original has a 12-instruction, 34-byte unique prefix and then physically
+falls through the complete 88-instruction `0x00A664` body, making its indexed
+span 100 instructions and 252 bytes. The accepted natural helper composition
+calls the separately recovered transport function. Output parameters, logical
+returns, and a normal call replace the original AX/ES:SI/carry ABI and shared
+tail placement without dropping loader behavior.
 
 For `0x00A664`, nine direct cases cover all three source backends and execute
 the common `0x00A734` queue tail. The EMS path maps four consecutive logical
