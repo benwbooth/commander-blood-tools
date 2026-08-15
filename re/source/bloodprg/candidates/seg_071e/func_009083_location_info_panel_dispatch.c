@@ -163,7 +163,7 @@ void CB_NEAR location_info_panel_dispatch(
 
         ship_3d_nav_source_list_build_full(
                 (const volatile bloodprg_vm_object_header CB_FAR *)selected,
-                (cb_u16 CB_NEAR *)ship_3d_nav_source_offsets);
+                ship_3d_nav_source_offsets);
         source_offset = ship_3d_nav_source_offsets;
         for (;;) {
             cb_u16 offset;

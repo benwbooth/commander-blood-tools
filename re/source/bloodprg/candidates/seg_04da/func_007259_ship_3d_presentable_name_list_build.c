@@ -16,15 +16,15 @@
 volatile cb_u16 CB_NEAR *CB_FAR ship_3d_presentable_name_list_build(
         const volatile bloodprg_vm_object_header CB_FAR *target)
 {
-    const volatile cb_u16 *source;
+    const volatile cb_u16 CB_GAME_DATA *source;
     volatile cb_u16 *destination;
     const volatile bloodprg_vm_object_header CB_FAR *object;
     cb_u16 object_offset;
 
     ship_3d_nav_source_list_build_full(
-        target, (cb_u16 CB_NEAR *)ship_3d_nav_source_offsets);
+        target, ship_3d_nav_source_offsets);
 
-    source = (const volatile cb_u16 CB_NEAR *)ship_3d_nav_source_offsets;
+    source = ship_3d_nav_source_offsets;
     destination = ship_3d_presentable_name_offsets;
     object_offset = SHIP_3D_PRESENTABLE_OBJECT_OFFSET(target);
 

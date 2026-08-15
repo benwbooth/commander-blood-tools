@@ -247,9 +247,9 @@ ship_3d_position_field_resolve(
         cb_u16 kind100_compare_word);        /* 0x0061A6 */
 int CB_NEAR ship_3d_object_table_bit_test_full(cb_u16 object_offset,
         const volatile cb_u8 CB_NEAR *bitset_base); /* 0x006210 */
-cb_u16 CB_NEAR *CB_FAR ship_3d_nav_source_list_build_full(
+volatile cb_u16 CB_GAME_DATA *CB_FAR ship_3d_nav_source_list_build_full(
         const volatile bloodprg_vm_object_header CB_FAR *target,
-        cb_u16 CB_NEAR *output);              /* 0x00624B */
+        volatile cb_u16 CB_GAME_DATA *output); /* 0x00624B */
 void CB_FAR ship_3d_navigation_candidate_build(
         const volatile bloodprg_vm_object_header CB_FAR *target);
                                                 /* 0x0070EE */

@@ -10,7 +10,7 @@ void CB_FAR ship_3d_navigation_candidate_build(
     cb_u16 object_offset;
 
     ship_3d_nav_source_list_build_full(
-        target, (cb_u16 CB_NEAR *)ship_3d_nav_source_offsets);
+        target, ship_3d_nav_source_offsets);
 
     source = ship_3d_nav_source_offsets;
     destination = ship_3d_navigation_candidate_offsets;

@@ -119,7 +119,7 @@ void CB_NEAR nav_state_gate(void)
 
     ship_3d_nav_source_list_build_full(
             (const volatile bloodprg_vm_object_header CB_FAR *)location,
-            (cb_u16 CB_NEAR *)ship_3d_nav_source_offsets);
+            ship_3d_nav_source_offsets);
     source_offset = ship_3d_nav_source_offsets;
     ark_object = vm_named_ark_object_gs;
     for (;;) {

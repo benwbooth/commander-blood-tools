@@ -117,7 +117,7 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_c1_record_state(
 
     if (target->kind == VM_C1_NAV_TARGET_KIND) {
         ship_3d_nav_source_list_build_full(
-            target, (cb_u16 CB_NEAR *)ship_3d_nav_source_offsets);
+            target, ship_3d_nav_source_offsets);
         source_cursor = ship_3d_nav_source_offsets;
         for (;;) {
             source_offset = *source_cursor++;

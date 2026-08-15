@@ -13,16 +13,16 @@
     ((cb_u16)((const volatile cb_u8 *)(target) - vm_record_base))
 #endif
 
-cb_u16 CB_NEAR *CB_FAR ship_3d_nav_source_list_build_full(
+volatile cb_u16 CB_GAME_DATA *CB_FAR ship_3d_nav_source_list_build_full(
         const volatile bloodprg_vm_object_header CB_FAR *target,
-        cb_u16 CB_NEAR *output)
+        volatile cb_u16 CB_GAME_DATA *output)
 {
     const volatile bloodprg_vm_directory_entry CB_FAR *entry;
     const volatile bloodprg_vm_object_header CB_FAR *object;
     const volatile cb_u16 CB_FAR *parent;
     cb_u16 field_offset;
 
-    entry = vm_record_directory;
+    entry = vm_record_directory_gs;
     do {
         object = SHIP_3D_OBJECT_AT(target, entry->object_offset);
         field_offset = (cb_u16)vm_field_offset(

@@ -1485,13 +1485,23 @@ register/segment other than the advanced BP cursor, the far recursion/return
 boundary, and flags from the outer terminating directory-kind comparison.
 
 The natural candidate is one recursive C function over a far object pointer and
-a returned near output cursor. Open Watcom `-3 -ox -mm` cannot bind BP as a
-pragma-aux parameter or result, so the codegen probe binds the real ES:DI target
-and substitutes BX for the cursor. It emits 51 instructions/113 bytes versus
-34/72 original, with mnemonic multiset overlap 0.9118; Turbo C 2.01 medium emits
-54 instructions. Exact integration needs GS data placement, the recovered
-runtime SS=DS alias, and a narrow BP/BX adapter, but no register emulation is
-present in the recovered algorithm.
+a returned volatile game-data output cursor. It now binds both the directory
+pointer and output list through shared `GAME_DATA` declarations, eliminating the
+former DS-narrowing casts in all five callers. The compiler probe includes that
+maintained source directly. Open Watcom medium size mode (`-3 -os -s -mm -zdp
+-we`) emits 55 instructions/130 bytes versus 34/72 original, with 91.18 percent
+mnemonic-multiset and 79.41 percent ordered overlap; Turbo C 2.01 medium emits
+57 instructions.
+
+A linked Turbo C DOS executable passes all 5,040 acyclic parent assignments for
+six directory objects, comparing the function against an independent recursive
+tree walk. A final case combines a directory beginning at offset `0xFFF0`, an
+object whose parent field wraps through offset zero, and an output cursor that
+wraps from `0xFFFE` to zero. All 5,041 cases pass through a valid 3,053-byte OMF
+object. The routine is accepted for source-port integration. Direct replacement
+still needs a narrow adapter between the binary's SS:BP cursor and Watcom's BX
+cursor because Open Watcom C16 reserves BP from pragma-aux parameter and result
+lists; no register emulation is present in the recovered algorithm.
 
 Ship 3D navigation-candidate filter `0x0070EE` calls that source-list builder
 with inherited ES:DI as the target and SS:BP at `0x6886`. It then switches DS
@@ -1512,7 +1522,7 @@ already be zero because LES only replaces DI.
 Open Watcom 1.9 medium size mode (`-3 -os -s -mm -we`) compiles the actual
 natural candidate warning-free to 29 instructions/71 bytes versus the original
 32/79, with 71.88 percent mnemonic-multiset overlap and no inline assembly.
-Turbo C 2.01 medium emits 50 instructions. The real Turbo probe also exposed
+Turbo C 2.01 medium emits 41 instructions. The real Turbo probe also exposed
 nine shared-header identifier groups that collided at its 32-character
 significance limit; shortening those declarations and their users makes the
 actual candidate compile cleanly instead of relying on the old miniature probe.
@@ -1602,9 +1612,9 @@ exact sentinel handling, DS/GS/SS/ES ownership, complete output and BP result,
 register and flag effects, stack integrity, and far return.
 
 Open Watcom 1.9 medium (`-3 -ox -mm -zdf -we`) compiles the actual natural
-candidate warning-free to 38 instructions/83 bytes versus the original 36/79,
+candidate warning-free to 42 instructions/91 bytes versus the original 36/79,
 with 88.89 percent mnemonic-multiset overlap and no inline assembly. Turbo C
-2.01 medium emits 53 instructions. The compiler probe now includes the actual
+2.01 medium emits 46 instructions. The compiler probe now includes the actual
 candidate rather than a copied miniature; doing so exposed and fixed the
 shared Ship 3D header's missing direct include for `bloodprg_rect_i16`.
 Returning the destination terminator naturally exposes the original BP result.
@@ -3915,7 +3925,7 @@ LCS and then mnemonic similarity:
 | `ship_3d_position_distance` | medium, `-os -s`, register | 88/113 | 0.0682 | 0.7159 | 0.1477 |
 | `ship_3d_position_field_resolve` | medium, `-ox`, register | 45/50 | 0.1111 | 0.6667 | 0.2444 |
 | `ship_3d_object_table_bit_test` | medium, `-os -s`, register | 31/34 | 0.2581 | 0.7742 | 0.3548 |
-| `ship_3d_nav_source_list_build` | medium, `-ox`, register | 34/51 | 0.1765 | 0.7647 | 0.2059 |
+| `ship_3d_nav_source_list_build` | medium, `-os -s`, register | 34/55 | 0.1765 | 0.7941 | 0.2059 |
 | `vm_token_special` | medium, `-ox`, register | 9/9 | 0.3333 | 1.0000 | 1.0000 |
 | `vm_condition_5` | medium, `-os -s`, register | 104/151 | 0.0481 | 0.6346 | 0.0769 |
 | `presentation_line_step` | medium, `-ox`, register | 60/59 | 0.1833 | 0.6500 | 0.2333 |
@@ -6782,7 +6792,7 @@ source filter, close triggering, completed cleanup, inherited entity extent
 context, DS/SS/record/frame ownership, stack, and near return.
 
 Open Watcom 1.9 large (`-3 -os -s -ml -we`) compiles the one natural typed C
-function warning-free to 190 instructions/600 bytes versus 136/445 original,
+function warning-free to 190 instructions/597 bytes versus 136/445 original,
 with 79.41 percent mnemonic-multiset overlap and 63.24 percent ordered mnemonic
 overlap. The function contains no inline assembly or register-state facade.
 Full-source integration requires the shipped `DS=GS=SS` aliases and narrow
