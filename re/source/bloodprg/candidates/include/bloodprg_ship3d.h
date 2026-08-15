@@ -124,6 +124,7 @@ typedef char ship_3d_hud_layout_entry_size_must_be_22[
         sizeof(ship_3d_hud_layout_entry) == 22 ? 1 : -1];
 
 extern volatile cb_u16 CB_GAME_DATA ship_3d_depth_offset; /* DS/GS:0x2527 */
+extern volatile cb_u16 ship_3d_depth_offset_ds; /* explicit DS:0x2527 alias */
 extern volatile cb_u8 CB_GAME_DATA
         ship_3d_plane_blit_crop_enabled; /* DS/GS:0x252E */
 extern volatile cb_u8

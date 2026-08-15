@@ -13,7 +13,7 @@ void CB_NEAR ship_3d_depth_scroll_step(void)
     ship_3d_depth_word depth;
 
     if ((ship_3d_depth_opening & 1u) != 0) {
-        depth.value = ship_3d_depth_offset;
+        depth.value = ship_3d_depth_offset_ds;
         if (depth.value == 0x0041u) {
             ship_3d_depth_opening = 0;
             return;
@@ -21,9 +21,9 @@ void CB_NEAR ship_3d_depth_scroll_step(void)
 
         depth.byte.low += ship_3d_depth_step;
         if ((cb_i16)depth.value < (cb_i16)0x0041) {
-            ship_3d_depth_offset = depth.value;
+            ship_3d_depth_offset_ds = depth.value;
         } else {
-            ship_3d_depth_offset = 0x0041u;
+            ship_3d_depth_offset_ds = 0x0041u;
         }
         return;
     }
@@ -32,7 +32,7 @@ void CB_NEAR ship_3d_depth_scroll_step(void)
         return;
     }
 
-    depth.value = ship_3d_depth_offset;
+    depth.value = ship_3d_depth_offset_ds;
     if (depth.value == 0) {
         ship_3d_depth_closing = 0;
         return;
@@ -40,8 +40,8 @@ void CB_NEAR ship_3d_depth_scroll_step(void)
 
     depth.byte.low -= ship_3d_depth_step;
     if ((cb_i8)depth.byte.low >= 0) {
-        ship_3d_depth_offset = depth.value;
+        ship_3d_depth_offset_ds = depth.value;
     } else {
-        ship_3d_depth_offset = 0;
+        ship_3d_depth_offset_ds = 0;
     }
 }

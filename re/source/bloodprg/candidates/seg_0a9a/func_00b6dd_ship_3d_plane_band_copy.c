@@ -40,11 +40,11 @@ void CB_FAR ship_3d_plane_band_copy(void)
     cb_u16 byte_count;
     cb_u8 graphics_mode;
 
-    if ((ship_3d_plane_blit_crop_enabled & 1u) == 0u) {
+    if ((ship_3d_plane_blit_crop_enabled_ds & 1u) == 0u) {
         return;
     }
 
-    depth = ship_3d_depth_offset;
+    depth = ship_3d_depth_offset_ds;
     if (palette_transition_increment != 10u) {
         doubled_depth = (cb_u16)(depth + depth);
         if ((cb_i16)doubled_depth > 100) {

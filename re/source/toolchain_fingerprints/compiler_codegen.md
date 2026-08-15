@@ -2981,16 +2981,22 @@ They also prove DS ownership against GS/ES/SS decoys, untouched adjacent bytes,
 all-register preservation, path-specific defined flags, and near return.
 
 Representing the local as a natural little-endian word/byte union is materially
-closer than splitting and recombining a word and byte. Open Watcom `-3 -ox -mm`
-compiles the actual candidate without warnings to 27 instructions/75 bytes
-versus 29/76 original and emits the exact `ADD AL,[step]` and `SUB AL,[step]`
-operations. It still leaves AX clobbered, emits separate returns instead of the
+closer than splitting and recombining a word and byte. The compiler-corpus
+sample now includes the maintained candidate directly instead of duplicating
+its body, and the candidate names the DS-owned depth alias explicitly. Open
+Watcom `-3 -ox -s -mm -we` compiles it without warnings to 27 instructions/75
+bytes versus 29/76 original, with 72.41 percent mnemonic-multiset and 62.07
+percent ordered overlap, and emits the exact `ADD AL,[step]` and
+`SUB AL,[step]` operations. Turbo C 2.01 medium (`-mm -O -Z`) emits 36
+instructions with 79.31 percent multiset and 68.97 percent ordered overlap and
+assembles cleanly to a 696-byte OMF object.
+
+Watcom still leaves AX clobbered, emits separate returns instead of the
 original AX/BX-preserving shared epilogue, uses an immediate clamp store, and
 inserts `TEST AL,AL` before the closing branch, changing final flags from the
-original SUB. Turbo C 2.01 medium emits 36 instructions with a stack-resident
-union. The sole caller immediately invokes `0x00B6DD` and does not branch on
-the returned flags, so these are integration boundaries rather than missing
-game-state logic.
+original SUB. The sole caller immediately invokes `0x00B6DD` and does not
+branch on the returned flags. The candidate is accepted for source integration;
+those differences remain explicit boundaries for a direct binary replacement.
 
 SND driver wrapper `0x00BB9D` saves AX/DS/ES, switches DS to GS, zeroes AX,
 far-calls the external reset vector at DS:0x0CDF, and clears DS:0x0BA0 after
@@ -3892,7 +3898,7 @@ LCS and then mnemonic similarity:
 | `resource_pair_lz_decode` | huge, `-ox`, register | 53/109 | 0.0566 | 0.4528 | 0.0566 |
 | `resource_payload_decode_rect` | huge, `-ox`, register | 483/306 | 0.0104 | 0.2857 | 0.0145 |
 | `gfx_scanline_advance` | medium, `-ox`, register | 11/13 | 0.1818 | 0.5455 | 0.1818 |
-| `ship_presentation_fsm` | large, `-os -s`, register | 68/79 | 0.0294 | 0.9118 | 0.1471 |
+| `ship_presentation_fsm` | large, `-os -s`, register | 68/78 | 0.0294 | 0.9118 | 0.1618 |
 | `bloodprg_main` | large, `-os -s`, register | 337/431 | 0.0059 | 0.7181 | 0.0564 |
 | `list_d8c_active_present` | medium, `-ox`, register | 87/115 | 0.1264 | 0.5747 | 0.1379 |
 | `resource_rect_blit` | medium, `-ox`, register | 51/92 | 0.0000 | 0.6275 | 0.0392 |
@@ -6312,17 +6318,18 @@ The depth-step routine constrains shipped depth to `0..0x41`, and runtime captur
 places the framebuffer at `A000:8000`; at the resulting maximum 8,000-byte
 extent, both source/destination pairs are nonoverlapping.
 
-Open Watcom 1.9 medium (`-3 -os -s -mm -we`) emits one warning-free
-87-instruction/192-byte function versus 67/127 original, with 82.09 percent
-mnemonic-multiset and 73.13 percent ordered overlap. Turbo C 2.01 medium
-(`-mm -O -Z`) also emits 87 instructions, with 80.60 percent multiset and 62.69
-percent ordered overlap, and assembles cleanly to a 1,070-byte OMF object. The
-VGA operations compile to direct IN/OUT instructions, while Watcom's intrinsic
-`_fmemcpy` emits REP MOVSW plus an optional MOVSB tail rather than the original
-byte-only REP MOVSB. The natural source is accepted under the clear-DF and
-nonoverlap invariants with no inline assembly. Direct replacement still needs
-fixed DS placement, exact segment construction, the original preserve-all
-envelope, reverse-direction behavior, and terminal flags.
+Using the explicit DS crop and depth aliases, Open Watcom 1.9 medium
+(`-3 -os -s -mm -we`) emits one warning-free 85-instruction/185-byte function
+versus 67/127 original, with 82.09 percent mnemonic-multiset and 73.13 percent
+ordered overlap. Turbo C 2.01 medium (`-mm -O -Z`) emits 83 instructions, with
+80.60 percent multiset and 62.69 percent ordered overlap, and assembles cleanly
+to a 1,056-byte OMF object. The VGA operations compile to direct IN/OUT
+instructions, while Watcom's intrinsic `_fmemcpy` emits REP MOVSW plus an
+optional MOVSB tail rather than the original byte-only REP MOVSB. The natural
+source is accepted under the clear-DF and nonoverlap invariants with no inline
+assembly. Direct replacement still needs exact linker placement and segment
+construction, the original preserve-all envelope, reverse-direction behavior,
+and terminal flags.
 
 ## BLOODPRG per-frame VM owner candidate
 
@@ -6376,12 +6383,13 @@ a GS decoy, state writes, helper inputs, tail AX/DX clobber propagation, DS/SI
 restoration, flags, stack, and far return. The corrected C boundary receives
 `bloodprg_main`'s live scene-link cursor explicitly and forwards that cursor to
 the scene dispatcher; the prior source incorrectly passed the ship phase word.
-Open Watcom 1.9 large (`-3 -os -s -ml -we`) compiles the direct maintained
-source warning-free to 79 instructions/254 bytes versus 68/217 original, with
-91.18 percent ordered and 92.65 percent mnemonic-multiset overlap. Turbo C
-2.01 large emits 85 instructions with the same multiset overlap and assembles
-cleanly to OBJ. The candidate is one natural state coordinator with no inline
-assembly or register-state facade.
+The initialization path uses the explicit DS-owned depth alias. Open Watcom
+1.9 large (`-3 -os -s -ml -we`) compiles the direct maintained source
+warning-free to 78 instructions/250 bytes versus 68/217 original, with 91.18
+percent ordered and 92.65 percent mnemonic-multiset overlap. Turbo C 2.01 large
+emits 83 instructions with 89.71 percent ordered and 92.65 percent multiset
+overlap and assembles cleanly to a 1,602-byte OMF object. The candidate is one
+natural state coordinator with no inline assembly or register-state facade.
 
 The explicit link cursor, ordinary helper calls, and local phase snapshot are
 accepted for source integration. Direct binary replacement would additionally

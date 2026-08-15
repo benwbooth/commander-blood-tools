@@ -21,7 +21,7 @@ void CB_FAR ship_presentation_fsm(cb_u16 link_target_offset)
         vm_ship_active_flags_low |= SHIP_PRESENTATION_DIALOGUE;
         ship_3d_dialogue_cycle_line = 4u;
         ship_3d_scene_dispatch_blocked = 0u;
-        ship_3d_depth_offset = 0u;
+        ship_3d_depth_offset_ds = 0u;
         ship_3d_depth_opening = 0u;
         return;
     }
