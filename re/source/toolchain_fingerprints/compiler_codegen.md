@@ -6388,14 +6388,16 @@ full-EAX record probe as an explicit direct-replacement boundary.
 Open Watcom 1.9 large (`-3 -os -s -ml -we`) emits one warning-free
 212-instruction/674-byte function versus 160/578 original, with 86.88 percent
 mnemonic-multiset overlap and 75.62 percent ordered mnemonic overlap. The
+direct maintained source also compiles under Turbo C 2.01 large (`-ml -O -Z`)
+to 241 instructions, with 86.88 percent multiset and 68.75 percent ordered
+overlap, and assembles cleanly to a 4,091-byte OMF object. The accepted
 candidate is one natural typed C function with no inline assembly or
 register-state facade.
 
-Full-source integration requires the shipped `SS=DS=GS` aliases and the
-intended zero-upper-EAX invariant when following the 16-bit record link. Direct
-binary replacement additionally needs the original inherited-ES palette copy,
-32-bit EAX probe address, preserve envelope, helper residue, and terminal
-flags.
+The typed 16-bit record-link probe is accepted because the link and every
+subsequent record offset are 16-bit. Direct binary replacement additionally
+needs the original inherited-ES palette copy, 32-bit EAX probe address,
+preserve envelope, helper residue, and terminal flags.
 
 ## BLOODPRG subtitle-reveal pump candidate
 

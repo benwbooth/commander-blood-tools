@@ -62,6 +62,8 @@ void CB_NEAR ship_3d_hud_init(void)
                 (const volatile bloodprg_vm_object_header CB_FAR *)record);
         target = *(volatile cb_u16 CB_FAR *)(
                 record + SHIP_3D_RECORD_LINK_OFFSET);
+        /* The binary probes ES:EAX here, but the link and every later record
+         * access are 16-bit offsets. */
         if ((*(volatile cb_u16 CB_FAR *)SHIP_3D_RECORD_AT(target)
                 & SHIP_3D_RECORD_PROBE_MASK) == 0u) {
             record = SHIP_3D_RECORD_AT(target);
