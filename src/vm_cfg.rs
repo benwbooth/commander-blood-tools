@@ -70,6 +70,7 @@ pub struct BlockEdge {
     pub from_block: usize,
     pub from_instruction: usize,
     pub to_block: usize,
+    pub to_instruction: usize,
     pub kind: EdgeKind,
 }
 
@@ -426,10 +427,13 @@ pub fn analyze_structured_guards(
         for edge in &graph.edges {
             let source_inside =
                 edge.from_instruction >= guard.start && edge.from_instruction < guard.end;
-            let target_inside = edge.to_block >= guard.start && edge.to_block < guard.end;
-            let enters_interior =
-                !source_inside && edge.to_block > guard.start && edge.to_block < guard.end;
-            let exits_elsewhere = source_inside && !target_inside && edge.to_block != guard.end;
+            let target_inside =
+                edge.to_instruction >= guard.start && edge.to_instruction < guard.end;
+            let enters_interior = !source_inside
+                && edge.to_instruction > guard.start
+                && edge.to_instruction < guard.end;
+            let exits_elsewhere =
+                source_inside && !target_inside && edge.to_instruction != guard.end;
             if enters_interior {
                 rejected
                     .entry(guard.start)
@@ -648,6 +652,7 @@ fn build_blocks(
             from_block,
             from_instruction: edge.from,
             to_block,
+            to_instruction: edge.to,
             kind: edge.kind,
         });
     }
@@ -769,6 +774,37 @@ mod tests {
         assert_eq!(
             recovery.rejected.get(&3),
             Some(&BTreeSet::from([GuardRejection::ExternalEntry]))
+        );
+
+        let mid_block = vec![
+            0xAA, // ordinary fallthrough before the guard
+            0xA0, 0x0C, 0x00, // guard -> END
+            0xA3, 0x34, 0x12, // condition
+            0xA1, // then
+            0xA5, 0x02, 0x78, 0x56, // body
+            0xFF,
+        ];
+        assert_eq!(
+            recover_structured_guards("SCRIPTX", &mid_block, &[]).unwrap(),
+            vec![StructuredGuard {
+                start: 1,
+                then_offset: 7,
+                end: 12,
+            }]
+        );
+
+        let alternate_exit = vec![
+            0xA0, 0x0A, 0x00, // guard -> offset 0x000A
+            0xA3, 0x34, 0x12, // condition
+            0xA1, // then
+            0xA4, 0x0E, 0x00, // body exits somewhere other than 0x000A
+            0xA5, 0x02, 0x78, 0x56, // guard end
+            0xFF,
+        ];
+        let recovery = analyze_structured_guards("SCRIPTX", &alternate_exit, &[]).unwrap();
+        assert_eq!(
+            recovery.rejected.get(&0),
+            Some(&BTreeSet::from([GuardRejection::AlternateExit]))
         );
     }
 

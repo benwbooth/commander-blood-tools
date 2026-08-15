@@ -82,6 +82,11 @@ cargo run --bin cbvm -- compile-bloodscript \
   re/vm/bloodscript/script1.cod.blood /tmp/SCRIPT1.COD
 ```
 
+Generated `bloodscript-v2` source has no per-line address column. A layout pass
+derives label and procedure offsets before encoding, while indentation exposes
+procedure, guard, selector-list, and case nesting. The compiler still accepts
+the earlier address-bearing `bloodscript-ir-v1` form for compatibility.
+
 BloodData keeps the known physical structures explicit without inventing
 unrecovered field names. DEB source has one exact 20-byte `SYMBOL` record per
 line, DIC source has one NUL-owning `STRING` entry per dictionary offset, and
@@ -173,13 +178,12 @@ textual proximity, zero matrix entries, ambiguous owners, and unmatched
 addresses do not produce an alias. The compiler resolves the declared wrapping
 base-plus-delta expression back to the original `u16` address.
 
-The structured COD and BAS sources also use 13,699 zero-byte `DIC_WORD`
-declarations for exact referenced DIC string offsets. They replace 53,194
-dictionary operands in `TEXT`, `CONCEPT_GUARD`, `MENU`, `CASE`, and low-level
-selector-node statements. Each generated identifier includes its numeric offset,
-so duplicate dictionary text remains distinct. The compiler accepts these aliases
-only in dictionary-typed operand positions and lowers them back to their declared
-`u16` values.
+The structured COD and BAS sources inline 13,699 distinct referenced DIC offsets
+as readable `"text"@offset` operands, with 53,194 uses in `TEXT`,
+`CONCEPT_GUARD`, `MENU`, `CASE`, and low-level selector-node statements. The
+offset suffix keeps duplicate dictionary strings distinct. These references are
+accepted only in dictionary-typed operand positions and lower to the exact
+original `u16`; the DIC companion source remains the owner of the string bytes.
 
 The current BloodScript corpus recompiles all 183,523 program bytes exactly. It
 contains 13,524 typed statements covering every byte with no shipped generic
@@ -189,7 +193,7 @@ statements for all 134,312 companion bytes, making the complete 25-resource,
 framed and typed. The COD pass now recovers 7,010 basic blocks and 17,287 typed
 edges across all 480 DEB procedures, with no unresolved guard target. Five
 disabled block bodies are retained as unreachable evidence. The structured pass
-proves 443 of 682 `A0` guard regions and classifies the remaining 239 explicit
+proves 633 of 682 `A0` guard regions and classifies the remaining 49 explicit
 low-level guards as `alternate_exit`: at least one CFG edge leaves the candidate
 interval somewhere other than its declared end. Each generated fallback records
 that reason as a non-semantic comment. See `bloodscript/manifest.tsv` for

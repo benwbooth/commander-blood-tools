@@ -17,7 +17,14 @@ use crate::vm::{self, VmToken};
 use crate::vm_cfg::{GuardRecovery, GuardRejection, StructuredGuard, analyze_structured_guards};
 use crate::vm_source::{self, ImageKind};
 
-const SOURCE_FORMAT: &str = "bloodscript-ir-v1";
+const SOURCE_FORMAT: &str = "bloodscript-v2";
+const LEGACY_SOURCE_FORMAT: &str = "bloodscript-ir-v1";
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum SourceFormat {
+    LegacyOffsets,
+    Readable,
+}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Decompilation {
@@ -34,8 +41,8 @@ pub struct Decompilation {
     pub guard_rejection_counts: BTreeMap<String, usize>,
     pub object_aliases: usize,
     pub object_alias_uses: usize,
-    pub dictionary_aliases: usize,
-    pub dictionary_alias_uses: usize,
+    pub dictionary_offsets: usize,
+    pub dictionary_uses: usize,
     pub field_aliases: usize,
     pub field_alias_uses: usize,
     pub structured_selector_lists: usize,
@@ -56,8 +63,8 @@ struct BodyStats {
     guard_rejection_counts: BTreeMap<String, usize>,
     object_aliases: usize,
     object_alias_uses: usize,
-    dictionary_aliases: usize,
-    dictionary_alias_uses: usize,
+    dictionary_offsets: usize,
+    dictionary_uses: usize,
     field_aliases: usize,
     field_alias_uses: usize,
     structured_selector_lists: usize,
@@ -102,7 +109,6 @@ struct ObjectAlias {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct DictionaryAlias {
-    identifier: String,
     value: String,
 }
 
@@ -159,14 +165,7 @@ pub fn decompile_structured_cod_with_symbols(
     dictionary: &HashMap<u16, String>,
     symbols: &[DebSymbol],
 ) -> Result<Decompilation> {
-    decompile_mode(
-        ImageKind::Cod,
-        image,
-        dictionary,
-        symbols,
-        true,
-        Some(var),
-    )
+    decompile_mode(ImageKind::Cod, image, dictionary, symbols, true, Some(var))
 }
 
 pub fn decompile_structured_bas_with_symbols(
@@ -202,11 +201,10 @@ fn decompile_mode(
     writeln!(source)?;
 
     let stats = match kind {
-        ImageKind::Cod => {
-            decompile_cod(&mut source, image, dictionary, symbols, structured, var)?
-        }
+        ImageKind::Cod => decompile_cod(&mut source, image, dictionary, symbols, structured, var)?,
         ImageKind::Bas => decompile_bas(&mut source, image, dictionary, &[], None, None)?,
     };
+    let source = format_readable_source(&source)?;
     Ok(Decompilation {
         source,
         typed_statements: stats.typed_statements,
@@ -221,8 +219,8 @@ fn decompile_mode(
         guard_rejection_counts: stats.guard_rejection_counts,
         object_aliases: stats.object_aliases,
         object_alias_uses: stats.object_alias_uses,
-        dictionary_aliases: stats.dictionary_aliases,
-        dictionary_alias_uses: stats.dictionary_alias_uses,
+        dictionary_offsets: stats.dictionary_offsets,
+        dictionary_uses: stats.dictionary_uses,
         field_aliases: stats.field_aliases,
         field_alias_uses: stats.field_alias_uses,
         structured_selector_lists: stats.structured_selector_lists,
@@ -252,6 +250,7 @@ fn decompile_mode_with_bas_graph(
         Some(var),
         Some(graph),
     )?;
+    let source = format_readable_source(&source)?;
     Ok(Decompilation {
         source,
         typed_statements: stats.typed_statements,
@@ -266,8 +265,8 @@ fn decompile_mode_with_bas_graph(
         guard_rejection_counts: stats.guard_rejection_counts,
         object_aliases: stats.object_aliases,
         object_alias_uses: stats.object_alias_uses,
-        dictionary_aliases: stats.dictionary_aliases,
-        dictionary_alias_uses: stats.dictionary_alias_uses,
+        dictionary_offsets: stats.dictionary_offsets,
+        dictionary_uses: stats.dictionary_uses,
         field_aliases: stats.field_aliases,
         field_alias_uses: stats.field_alias_uses,
         structured_selector_lists: stats.structured_selector_lists,
@@ -276,14 +275,10 @@ fn decompile_mode_with_bas_graph(
 }
 
 pub fn compile(source: &str) -> Result<Vec<u8>> {
-    let (lines, saw_format) = parse_source_lines(source)?;
-    if !saw_format {
-        bail!("missing '; format: {SOURCE_FORMAT}' header");
-    }
-
-    let mut labels = HashMap::new();
+    let (mut lines, format) = parse_source_lines(source)?;
     let mut objects = HashMap::new();
     let mut dictionary_words = HashMap::new();
+    let mut label_names = HashMap::new();
     for line in &lines {
         match line.name {
             "OBJECT" => {
@@ -313,14 +308,7 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
             "LABEL" | "PROCEDURE" => {
                 require_count(&line.args, 1, line.line_number, line.name)?;
                 validate_identifier(line.args[0], line.line_number)?;
-                let address = u16::try_from(line.offset).map_err(|_| {
-                    anyhow!(
-                        "line {}: label offset 0x{:08X} exceeds the VM address space",
-                        line.line_number,
-                        line.offset
-                    )
-                })?;
-                if labels.insert(line.args[0], address).is_some() {
+                if label_names.insert(line.args[0], 0).is_some() {
                     bail!(
                         "line {}: duplicate label {:?}",
                         line.line_number,
@@ -360,6 +348,45 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
         if var_addresses.insert(name, address).is_some() {
             bail!("field {name:?} conflicts with an object declaration");
         }
+    }
+
+    if format == SourceFormat::Readable {
+        let mut offset = 0usize;
+        for line in &mut lines {
+            line.offset = offset;
+            if is_zero_byte_statement(line.name) {
+                continue;
+            }
+            let encoded = compile_statement(
+                line.name,
+                &line.args,
+                line.line_number,
+                &label_names,
+                &var_addresses,
+                &dictionary_words,
+            )?;
+            if encoded.is_empty() {
+                bail!("line {}: statement emitted no bytes", line.line_number);
+            }
+            offset = offset.checked_add(encoded.len()).ok_or_else(|| {
+                anyhow!("line {}: compiled image size overflows", line.line_number)
+            })?;
+        }
+    }
+
+    let mut labels = HashMap::new();
+    for line in &lines {
+        if !matches!(line.name, "LABEL" | "PROCEDURE") {
+            continue;
+        }
+        let address = u16::try_from(line.offset).map_err(|_| {
+            anyhow!(
+                "line {}: label offset 0x{:08X} exceeds the VM address space",
+                line.line_number,
+                line.offset
+            )
+        })?;
+        labels.insert(line.args[0], address);
     }
 
     let mut image = Vec::new();
@@ -423,8 +450,7 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
             }
             "WHEN" => {
                 require_count(&line.args, 1, line.line_number, line.name)?;
-                let target =
-                    parse_address(line.args[0], &labels, line.line_number, "WHEN target")?;
+                let target = parse_address(line.args[0], &labels, line.line_number, "WHEN target")?;
                 if usize::from(target) <= line.offset {
                     bail!("line {}: WHEN target must be forward", line.line_number);
                 }
@@ -544,10 +570,7 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
                     bail!("line {}: CASE outside SELECTOR_LIST", line.line_number);
                 };
                 if !open.prefix_emitted || image.last() != Some(&vm::OP_YIELD_B) {
-                    bail!(
-                        "line {}: CASE is not preceded by YIELD_B",
-                        line.line_number
-                    );
+                    bail!("line {}: CASE is not preceded by YIELD_B", line.line_number);
                 }
                 if open.case_count == 0 {
                     if line.offset != open.prefix_offset + 1 {
@@ -558,10 +581,7 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
                     }
                 } else {
                     if !open.case_terminated {
-                        bail!(
-                            "line {}: prior CASE body has no YIELD_B",
-                            line.line_number
-                        );
+                        bail!("line {}: prior CASE body has no YIELD_B", line.line_number);
                     }
                     if usize::from(open.last_next) != line.offset {
                         bail!(
@@ -603,10 +623,7 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
                         );
                     }
                     if open.needs_menu && line.name != "MENU" {
-                        bail!(
-                            "line {}: CASE body must begin with MENU",
-                            line.line_number
-                        );
+                        bail!("line {}: CASE body must begin with MENU", line.line_number);
                     }
                     match line.name {
                         "YIELD_B" if open.last_next == 0 => bail!(
@@ -617,10 +634,9 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
                             "line {}: nonterminal CASE must end in YIELD_B",
                             line.line_number
                         ),
-                        "SELECTOR_NODE" => bail!(
-                            "line {}: use CASE inside SELECTOR_LIST",
-                            line.line_number
-                        ),
+                        "SELECTOR_NODE" => {
+                            bail!("line {}: use CASE inside SELECTOR_LIST", line.line_number)
+                        }
                         _ => {}
                     }
                 }
@@ -665,42 +681,226 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
     Ok(image)
 }
 
-fn parse_source_lines(source: &str) -> Result<(Vec<ParsedSourceLine<'_>>, bool)> {
+fn parse_source_lines(source: &str) -> Result<(Vec<ParsedSourceLine<'_>>, SourceFormat)> {
+    let mut format = None;
+    for (line_index, original_line) in source.lines().enumerate() {
+        let trimmed = original_line.trim();
+        let Some(value) = trimmed.strip_prefix("; format:") else {
+            continue;
+        };
+        let parsed = match value.trim() {
+            SOURCE_FORMAT => SourceFormat::Readable,
+            LEGACY_SOURCE_FORMAT => SourceFormat::LegacyOffsets,
+            value => bail!("line {}: unsupported format {value:?}", line_index + 1),
+        };
+        if format.replace(parsed).is_some() {
+            bail!("line {}: duplicate format header", line_index + 1);
+        }
+    }
+    let format = format.ok_or_else(|| anyhow!("missing '; format: {SOURCE_FORMAT}' header"))?;
     let mut lines = Vec::new();
-    let mut saw_format = false;
     for (line_index, original_line) in source.lines().enumerate() {
         let line_number = line_index + 1;
         let trimmed = original_line.trim();
-        if let Some(value) = trimmed.strip_prefix("; format:") {
-            if value.trim() != SOURCE_FORMAT {
-                bail!("line {line_number}: unsupported format {:?}", value.trim());
-            }
-            saw_format = true;
-            continue;
-        }
         if trimmed.is_empty() || trimmed.starts_with(';') {
             continue;
         }
-        let code = trimmed
-            .split_once(';')
-            .map_or(trimmed, |(code, _)| code)
-            .trim();
-        let (offset_text, statement) = code
-            .split_once(':')
-            .ok_or_else(|| anyhow!("line {line_number}: expected OFFSET: STATEMENT"))?;
-        let offset = parse_hex_usize(offset_text.trim(), line_number, "offset")?;
-        let mut fields = statement.split_whitespace();
+        let code = code_before_comment(trimmed, line_number)?.trim();
+        if code.is_empty() {
+            continue;
+        }
+        let (offset, statement) = match format {
+            SourceFormat::LegacyOffsets => {
+                let (offset_text, statement) = code
+                    .split_once(':')
+                    .ok_or_else(|| anyhow!("line {line_number}: expected OFFSET: STATEMENT"))?;
+                (
+                    parse_hex_usize(offset_text.trim(), line_number, "offset")?,
+                    statement.trim(),
+                )
+            }
+            SourceFormat::Readable => (0, code),
+        };
+        let fields = split_source_fields(statement, line_number)?;
         let name = fields
-            .next()
+            .first()
+            .copied()
             .ok_or_else(|| anyhow!("line {line_number}: missing statement"))?;
+
         lines.push(ParsedSourceLine {
             line_number,
             offset,
             name,
-            args: fields.collect(),
+            args: fields[1..].to_vec(),
         });
     }
-    Ok((lines, saw_format))
+    Ok((lines, format))
+}
+
+fn is_zero_byte_statement(name: &str) -> bool {
+    matches!(
+        name,
+        "OBJECT"
+            | "DIC_WORD"
+            | "FIELD"
+            | "LABEL"
+            | "PROCEDURE"
+            | "END_PROCEDURE"
+            | "END_WHEN"
+            | "SELECTOR_LIST"
+            | "END_SELECTOR_LIST"
+    )
+}
+
+fn code_before_comment(line: &str, line_number: usize) -> Result<&str> {
+    let mut quoted = false;
+    let mut escaped = false;
+    for (index, byte) in line.bytes().enumerate() {
+        if quoted {
+            if escaped {
+                escaped = false;
+            } else if byte == b'\\' {
+                escaped = true;
+            } else if byte == b'"' {
+                quoted = false;
+            }
+        } else if byte == b'"' {
+            quoted = true;
+        } else if byte == b';' {
+            return Ok(&line[..index]);
+        }
+    }
+    if quoted {
+        bail!("line {line_number}: unterminated quoted string");
+    }
+    Ok(line)
+}
+
+fn split_source_fields(statement: &str, line_number: usize) -> Result<Vec<&str>> {
+    let mut fields = Vec::new();
+    let mut start = None;
+    let mut quoted = false;
+    let mut escaped = false;
+    for (index, character) in statement.char_indices() {
+        if quoted {
+            if escaped {
+                escaped = false;
+            } else if character == '\\' {
+                escaped = true;
+            } else if character == '"' {
+                quoted = false;
+            }
+            continue;
+        }
+        if character == '"' {
+            quoted = true;
+            start.get_or_insert(index);
+        } else if character.is_whitespace() {
+            if let Some(start) = start.take() {
+                fields.push(&statement[start..index]);
+            }
+        } else {
+            start.get_or_insert(index);
+        }
+    }
+    if quoted {
+        bail!("line {line_number}: unterminated quoted string");
+    }
+    if let Some(start) = start {
+        fields.push(&statement[start..]);
+    }
+    Ok(fields)
+}
+
+fn format_readable_source(source: &str) -> Result<String> {
+    let mut output = String::new();
+    let mut indent = 0usize;
+    let mut selector_case_open = false;
+
+    for (line_index, original_line) in source.lines().enumerate() {
+        let line_number = line_index + 1;
+        let trimmed = original_line.trim();
+        if trimmed.is_empty() {
+            output.push('\n');
+            continue;
+        }
+        if trimmed.starts_with(';') {
+            writeln!(output, "{trimmed}")?;
+            continue;
+        }
+
+        let code = code_before_comment(trimmed, line_number)?.trim();
+        let statement = code
+            .split_once(':')
+            .map_or(code, |(_, statement)| statement)
+            .trim();
+        let fields = split_source_fields(statement, line_number)?;
+        let name = fields
+            .first()
+            .copied()
+            .ok_or_else(|| anyhow!("line {line_number}: missing statement"))?;
+
+        if matches!(name, "PROCEDURE" | "SELECTOR_LIST")
+            && !output.is_empty()
+            && !output.ends_with("\n\n")
+        {
+            output.push('\n');
+        }
+
+        match name {
+            "END_PROCEDURE" | "THEN" | "END_WHEN" => {
+                indent = indent.saturating_sub(1);
+            }
+            "CASE" => {
+                if selector_case_open {
+                    indent = indent.saturating_sub(1);
+                    selector_case_open = false;
+                }
+            }
+            "END_SELECTOR_LIST" => {
+                if selector_case_open {
+                    indent = indent.saturating_sub(1);
+                    selector_case_open = false;
+                }
+                indent = indent.saturating_sub(1);
+            }
+            _ => {}
+        }
+
+        write!(output, "{}{statement}", "    ".repeat(indent))?;
+        let useful_comment = if name == "FIELD" || name == "RAW" {
+            comment_after_code(trimmed, line_number)?.map(str::trim)
+        } else {
+            trimmed
+                .find("unstructured_guard=")
+                .map(|start| trimmed[start..].trim())
+        };
+        if let Some(comment) = useful_comment.filter(|comment| !comment.is_empty()) {
+            write!(output, " ; {comment}")?;
+        }
+        output.push('\n');
+
+        match name {
+            "PROCEDURE" | "WHEN" | "THEN" | "SELECTOR_LIST" => indent += 1,
+            "CASE" => {
+                indent += 1;
+                selector_case_open = true;
+            }
+            _ => {}
+        }
+        if matches!(name, "END_PROCEDURE" | "END_SELECTOR_LIST") {
+            output.push('\n');
+        }
+    }
+    while output.ends_with("\n\n") {
+        output.pop();
+    }
+    Ok(output)
+}
+
+fn comment_after_code(line: &str, line_number: usize) -> Result<Option<&str>> {
+    let code = code_before_comment(line, line_number)?;
+    Ok(line.get(code.len() + usize::from(code.len() < line.len())..))
 }
 
 fn decompile_cod(
@@ -719,14 +919,8 @@ fn decompile_cod(
         StructuredAnnotations::default()
     };
     let field_aliases = if structured_source {
-        var.map(|var| {
-            field_aliases(
-                tokens.iter().flat_map(object_operand_values),
-                symbols,
-                var,
-            )
-        })
-        .unwrap_or_default()
+        var.map(|var| field_aliases(tokens.iter().flat_map(object_operand_values), symbols, var))
+            .unwrap_or_default()
     } else {
         BTreeMap::new()
     };
@@ -736,17 +930,12 @@ fn decompile_cod(
         BTreeMap::new()
     };
     add_field_owner_objects(&mut object_aliases, &field_aliases);
-    let dictionary_aliases = if structured_source {
-        dictionary_aliases(
-            tokens.iter().flat_map(dictionary_operand_values),
-            dictionary,
-        )
-    } else {
-        BTreeMap::new()
-    };
+    let dictionary_aliases = dictionary_aliases(
+        tokens.iter().flat_map(dictionary_operand_values),
+        dictionary,
+    );
     emit_object_declarations(output, &object_aliases)?;
     emit_field_declarations(output, &field_aliases, &object_aliases)?;
-    emit_dictionary_declarations(output, &dictionary_aliases)?;
     let mut cursor = 0usize;
     let mut stats = BodyStats {
         symbolic_labels: annotations.labels.len(),
@@ -760,8 +949,8 @@ fn decompile_cod(
             .flat_map(object_operand_values)
             .filter(|value| object_aliases.contains_key(value))
             .count(),
-        dictionary_aliases: dictionary_aliases.len(),
-        dictionary_alias_uses: tokens
+        dictionary_offsets: dictionary_aliases.len(),
+        dictionary_uses: tokens
             .iter()
             .flat_map(dictionary_operand_values)
             .filter(|value| dictionary_aliases.contains_key(value))
@@ -867,14 +1056,9 @@ fn decompile_bas(
     };
     add_field_owner_objects(&mut object_aliases, &field_aliases);
     let dictionary_values = bas_dictionary_operand_values(image, dictionary);
-    let dictionary_aliases = if graph.is_some() {
-        dictionary_aliases(dictionary_values.iter().copied(), dictionary)
-    } else {
-        BTreeMap::new()
-    };
+    let dictionary_aliases = dictionary_aliases(dictionary_values.iter().copied(), dictionary);
     emit_object_declarations(output, &object_aliases)?;
     emit_field_declarations(output, &field_aliases, &object_aliases)?;
-    emit_dictionary_declarations(output, &dictionary_aliases)?;
     let annotations = bas_annotations(image, dictionary)?;
     let structured = bas_structured_annotations(graph);
     let mut cursor = 0usize;
@@ -883,8 +1067,8 @@ fn decompile_bas(
         symbolic_labels: annotations.labels.len(),
         structured_selector_lists: structured.starts.len(),
         structured_cases: structured.cases.len(),
-        dictionary_aliases: dictionary_aliases.len(),
-        dictionary_alias_uses: dictionary_values
+        dictionary_offsets: dictionary_aliases.len(),
+        dictionary_uses: dictionary_values
             .iter()
             .filter(|value| dictionary_aliases.contains_key(value))
             .count(),
@@ -914,9 +1098,9 @@ fn decompile_bas(
                 )?;
                 stats.raw_bytes += cursor - raw_start;
             }
-            let encoded = token.encode().ok_or_else(|| {
-                anyhow!("BAS token at 0x{cursor:08X} cannot be encoded")
-            })?;
+            let encoded = token
+                .encode()
+                .ok_or_else(|| anyhow!("BAS token at 0x{cursor:08X} cannot be encoded"))?;
             if image.get(cursor..end) != Some(encoded.as_slice()) {
                 bail!("BAS token at 0x{cursor:08X} does not re-encode exactly");
             }
@@ -976,10 +1160,7 @@ fn decompile_bas(
                     )?;
                 }
                 vm_source::BasToken::PresentationRegister { value, .. } => {
-                    writeln!(
-                        output,
-                        "{cursor:08X}: PRESENTATION_REGISTER {value:04X}"
-                    )?;
+                    writeln!(output, "{cursor:08X}: PRESENTATION_REGISTER {value:04X}")?;
                 }
                 vm_source::BasToken::End { .. } => {
                     writeln!(output, "{cursor:08X}: END")?;
@@ -1121,9 +1302,7 @@ fn bas_annotations(image: &[u8], dictionary: &HashMap<u16, String>) -> Result<So
     for target in next_nodes {
         let offset = usize::from(target);
         if !nodes.contains(&offset) {
-            bail!(
-                "BAS selector next offset 0x{target:04X} does not resolve to a selector node"
-            );
+            bail!("BAS selector next offset 0x{target:04X} does not resolve to a selector node");
         }
         let identifier = format!("selector_{offset:04X}");
         annotations
@@ -1395,7 +1574,6 @@ fn dictionary_aliases(
                 (
                     offset,
                     DictionaryAlias {
-                        identifier: format!("dic_{}_{offset:04X}", identifier_component(value)),
                         value: value.clone(),
                     },
                 )
@@ -1507,23 +1685,6 @@ fn emit_object_declarations(
     Ok(())
 }
 
-fn emit_dictionary_declarations(
-    output: &mut String,
-    aliases: &BTreeMap<u16, DictionaryAlias>,
-) -> Result<()> {
-    for (offset, alias) in aliases {
-        writeln!(
-            output,
-            "00000000: DIC_WORD {} {offset:04X} ; {:?}",
-            alias.identifier, alias.value
-        )?;
-    }
-    if !aliases.is_empty() {
-        output.push('\n');
-    }
-    Ok(())
-}
-
 fn emit_field_declarations(
     output: &mut String,
     aliases: &BTreeMap<u16, FieldAlias>,
@@ -1574,7 +1735,12 @@ fn object_operand(
 fn dictionary_operand(value: u16, aliases: &BTreeMap<u16, DictionaryAlias>) -> String {
     aliases
         .get(&value)
-        .map(|alias| alias.identifier.clone())
+        .map(|alias| {
+            format!(
+                "{}@{value:04X}",
+                serde_json::to_string(&alias.value).expect("serializing a String cannot fail")
+            )
+        })
         .unwrap_or_else(|| format!("{value:04X}"))
 }
 
@@ -1903,7 +2069,10 @@ fn compile_statement(
         "PRESENTATION_REGISTER" => {
             require_count(args, 1, line, name)?;
             output.push(0xA7);
-            word(&mut output, parse_word(args[0], line, "presentation value")?);
+            word(
+                &mut output,
+                parse_word(args[0], line, "presentation value")?,
+            );
         }
         "GUARD_PUSH" | "WHEN" => {
             require_count(args, 1, line, name)?;
@@ -2238,11 +2407,15 @@ fn parse_dictionary_address(
     line: usize,
     field: &str,
 ) -> Result<u16> {
-    dictionary_words
-        .get(value)
-        .copied()
-        .map(Ok)
-        .unwrap_or_else(|| parse_word(value, line, field))
+    if let Some(address) = dictionary_words.get(value).copied() {
+        return Ok(address);
+    }
+    if let Some((text, address)) = value.rsplit_once('@') {
+        let _: String = serde_json::from_str(text)
+            .map_err(|_| anyhow!("line {line}: invalid inline dictionary text {text:?}"))?;
+        return parse_word(address, line, "inline dictionary offset");
+    }
+    parse_word(value, line, field)
 }
 
 fn parse_address(
@@ -2267,7 +2440,10 @@ fn parse_byte(value: &str, line: usize, field: &str) -> Result<u8> {
 }
 
 fn parse_simple_ascii<'a>(value: &'a str, line: usize, field: &str) -> Result<&'a str> {
-    let Some(value) = value.strip_prefix('"').and_then(|value| value.strip_suffix('"')) else {
+    let Some(value) = value
+        .strip_prefix('"')
+        .and_then(|value| value.strip_suffix('"'))
+    else {
         bail!("line {line}: {field} must be a quoted ASCII atom");
     };
     if !value
@@ -2386,6 +2562,38 @@ mod tests {
     }
 
     #[test]
+    fn readable_source_derives_layout_without_line_addresses() {
+        let source = concat!(
+            "; format: bloodscript-v2\n",
+            "PROCEDURE entry\n",
+            "    LOAD_STRING \"a;b.hnm\"\n",
+            "    JUMP done\n",
+            "    LABEL done\n",
+            "    END\n",
+            "END_PROCEDURE entry\n",
+        );
+        assert_eq!(
+            compile(source).unwrap(),
+            vec![
+                vm::OP_LOAD_STRING,
+                b'a',
+                b';',
+                b'b',
+                b'.',
+                b'h',
+                b'n',
+                b'm',
+                0,
+                0,
+                vm::OP_JUMP,
+                0x0D,
+                0x00,
+                0xFF,
+            ]
+        );
+    }
+
+    #[test]
     fn shared_state_families_compile_exact_bytes() {
         let source = concat!(
             "; format: bloodscript-ir-v1\n",
@@ -2473,9 +2681,12 @@ mod tests {
             decompile_structured_with_symbols(ImageKind::Cod, &image, &HashMap::new(), &[])
                 .unwrap();
         assert_eq!(decompiled.structured_guards, 1);
-        for statement in ["WHEN block_000B", "THEN ; GUARD_POP", "END_WHEN block_000B"] {
+        for statement in ["WHEN block_000B", "THEN", "END_WHEN block_000B"] {
             assert!(decompiled.source.contains(statement), "missing {statement}");
         }
+        assert!(decompiled.source.contains("WHEN block_000B\n"));
+        assert!(decompiled.source.contains("    CONCEPT_GUARD"));
+        assert!(!decompiled.source.contains("; GUARD_POP"));
         assert_eq!(compile(&decompiled.source).unwrap(), image);
 
         let malformed = decompiled
@@ -2502,9 +2713,11 @@ mod tests {
             decompiled.guard_rejection_counts.get("external_entry"),
             Some(&1)
         );
-        assert!(decompiled.source.contains(
-            "GUARD_PUSH block_000E ; GUARD_PUSH target=0x000E ; unstructured_guard=external_entry"
-        ));
+        assert!(
+            decompiled
+                .source
+                .contains("GUARD_PUSH block_000E ; unstructured_guard=external_entry")
+        );
         assert_eq!(compile(&decompiled.source).unwrap(), image);
     }
 
@@ -2561,13 +2774,8 @@ mod tests {
             offset: 0x0100,
             kind: 1,
         }];
-        let decompiled = decompile_structured_cod_with_symbols(
-            &image,
-            &var,
-            &HashMap::new(),
-            &symbols,
-        )
-        .unwrap();
+        let decompiled =
+            decompile_structured_cod_with_symbols(&image, &var, &HashMap::new(), &symbols).unwrap();
         assert_eq!(decompiled.object_aliases, 1);
         assert_eq!(decompiled.object_alias_uses, 0);
         assert_eq!(decompiled.field_aliases, 1);
@@ -2640,11 +2848,15 @@ mod tests {
         .unwrap();
         assert_eq!(exact_base.field_aliases, 0);
         assert_eq!(exact_base.object_aliases, 1);
-        assert!(exact_base.source.contains("SHARED_STATE BF object_exact_0102"));
+        assert!(
+            exact_base
+                .source
+                .contains("SHARED_STATE BF object_exact_0102")
+        );
     }
 
     #[test]
-    fn dictionary_aliases_compile_only_in_dictionary_operand_positions() {
+    fn inline_dictionary_words_compile_only_in_dictionary_operand_positions() {
         let image = vec![
             0xA3, 0x34, 0x12, // concept guard
             0xA6, 0x00, 0x20, 0xFF, 0x00, 0x80, 0x34, 0x12, 0x00, 0x00, // text
@@ -2653,15 +2865,15 @@ mod tests {
         let dictionary = HashMap::from([(0x1234, "TALK".to_string())]);
         let decompiled =
             decompile_structured_with_symbols(ImageKind::Cod, &image, &dictionary, &[]).unwrap();
-        assert_eq!(decompiled.dictionary_aliases, 1);
-        assert_eq!(decompiled.dictionary_alias_uses, 2);
+        assert_eq!(decompiled.dictionary_offsets, 1);
+        assert_eq!(decompiled.dictionary_uses, 2);
         for statement in [
-            "DIC_WORD dic_TALK_1234 1234",
-            "CONCEPT_GUARD dic_TALK_1234 0",
-            "TEXT 2000 FF 00 80 - - dic_TALK_1234",
+            "CONCEPT_GUARD \"TALK\"@1234 0",
+            "TEXT 2000 FF 00 80 - - \"TALK\"@1234",
         ] {
             assert!(decompiled.source.contains(statement), "missing {statement}");
         }
+        assert!(!decompiled.source.contains("DIC_WORD"));
         assert_eq!(compile(&decompiled.source).unwrap(), image);
 
         let duplicate = concat!(
@@ -2693,22 +2905,20 @@ mod tests {
             decompile_with_symbols(ImageKind::Cod, &image, &HashMap::new(), &symbols).unwrap();
         assert_eq!(decompiled.procedures, 1);
         assert_eq!(decompiled.symbolic_labels, 2);
-        assert!(
-            decompiled
-                .source
-                .contains("00000000: PROCEDURE proc_entry_0000")
-        );
+        assert!(decompiled.source.contains("PROCEDURE proc_entry_0000"));
         assert!(
             decompiled
                 .source
                 .contains("CONDITIONAL_BLOCK 01 block_0004")
         );
-        assert!(decompiled.source.contains("00000004: LABEL block_0004"));
-        assert!(
-            decompiled
-                .source
-                .contains("00000005: END_PROCEDURE proc_entry_0000")
-        );
+        assert!(decompiled.source.contains("    LABEL block_0004"));
+        assert!(decompiled.source.contains("END_PROCEDURE proc_entry_0000"));
+        assert!(!decompiled.source.lines().any(|line| {
+            let line = line.trim_start();
+            line.get(..9).is_some_and(|prefix| {
+                prefix.ends_with(':') && prefix[..8].bytes().all(|byte| byte.is_ascii_hexdigit())
+            })
+        }));
         assert_eq!(compile(&decompiled.source).unwrap(), image);
     }
 
@@ -2785,8 +2995,8 @@ mod tests {
             "00000013: END\n",
         );
         let expected = vec![
-            0xAA, 0xAC, 0x34, 0x12, 0x0C, 0x00, 0xA3, 0x34, 0x12, 0x00, 0x00, 0xAC, 0x34,
-            0x12, 0x00, 0x00, 0xA7, 0xBC, 0x9A, 0xFF,
+            0xAA, 0xAC, 0x34, 0x12, 0x0C, 0x00, 0xA3, 0x34, 0x12, 0x00, 0x00, 0xAC, 0x34, 0x12,
+            0x00, 0x00, 0xA7, 0xBC, 0x9A, 0xFF,
         ];
         assert_eq!(compile(source).unwrap(), expected);
 
@@ -2796,9 +3006,9 @@ mod tests {
         for statement in [
             "YIELD",
             "YIELD_B",
-            "SELECTOR_NODE 1234 selector_000C",
+            "SELECTOR_NODE \"topic\"@1234 selector_000C",
             "LABEL selector_000C",
-            "MENU 1234",
+            "MENU \"topic\"@1234",
             "PRESENTATION_REGISTER 9ABC",
         ] {
             assert!(decompiled.source.contains(statement), "missing {statement}");
@@ -2809,66 +3019,56 @@ mod tests {
     #[test]
     fn structured_selector_lists_compile_to_the_exact_low_level_tokens() {
         let image = vec![
-            0xAA,
-            0xAC,
-            0x34, 0x12, 0x0C, 0x00,
-            0xA3, 0x00, 0x20, 0x00, 0x00,
-            0xAC,
-            0x00, 0x20, 0x00, 0x00,
-            0xA3, 0x34, 0x12, 0x00, 0x00,
-            0xFF,
+            0xAA, 0xAC, 0x34, 0x12, 0x0C, 0x00, 0xA3, 0x00, 0x20, 0x00, 0x00, 0xAC, 0x00, 0x20,
+            0x00, 0x00, 0xA3, 0x34, 0x12, 0x00, 0x00, 0xFF,
         ];
         let mut var = vec![0; 0x1C];
         var[0..2].copy_from_slice(&2u16.to_le_bytes());
         var[0x1A..0x1C].copy_from_slice(&1u16.to_le_bytes());
-        let dictionary = HashMap::from([
-            (0x1234, "talk".to_string()),
-            (0x2000, "leave".to_string()),
-        ]);
+        let dictionary =
+            HashMap::from([(0x1234, "talk".to_string()), (0x2000, "leave".to_string())]);
         let symbols = vec![DebSymbol {
             name: "actor".to_string(),
             offset: 0,
             kind: 1,
         }];
 
-        let decompiled = decompile_structured_bas_with_symbols(
-            &image,
-            &var,
-            &dictionary,
-            &symbols,
-        )
-        .unwrap();
+        let decompiled =
+            decompile_structured_bas_with_symbols(&image, &var, &dictionary, &symbols).unwrap();
         assert_eq!(decompiled.structured_selector_lists, 1);
         assert_eq!(decompiled.structured_cases, 2);
-        assert_eq!(decompiled.dictionary_aliases, 2);
-        assert_eq!(decompiled.dictionary_alias_uses, 4);
+        assert_eq!(decompiled.dictionary_offsets, 2);
+        assert_eq!(decompiled.dictionary_uses, 4);
         for statement in [
             "SELECTOR_LIST list_actor_0001",
-            "DIC_WORD dic_talk_1234 1234",
-            "DIC_WORD dic_leave_2000 2000",
-            "CASE dic_talk_1234 selector_000C",
-            "CASE dic_leave_2000 0000",
-            "MENU dic_leave_2000",
-            "MENU dic_talk_1234",
+            "CASE \"talk\"@1234 selector_000C",
+            "CASE \"leave\"@2000 0000",
+            "MENU \"leave\"@2000",
+            "MENU \"talk\"@1234",
             "END_SELECTOR_LIST list_actor_0001",
         ] {
             assert!(decompiled.source.contains(statement), "missing {statement}");
         }
+        assert!(!decompiled.source.contains("DIC_WORD"));
         assert_eq!(compile(&decompiled.source).unwrap(), image);
 
-        let malformed = decompiled
-            .source
-            .replace(
-                "CASE dic_talk_1234 selector_000C",
-                "CASE dic_talk_1234 0000",
-            );
+        let malformed = decompiled.source.replace(
+            "CASE \"talk\"@1234 selector_000C",
+            "CASE \"talk\"@1234 0000",
+        );
         assert!(compile(&malformed).is_err());
     }
 
     #[test]
     fn every_shipped_bas_structures_into_exact_selector_lists() {
         let Some(root) = game_dir() else { return };
-        let expected = [(1, 1, 1), (2, 10, 122), (3, 12, 98), (4, 10, 43), (5, 4, 57)];
+        let expected = [
+            (1, 1, 1),
+            (2, 10, 122),
+            (3, 12, 98),
+            (4, 10, 43),
+            (5, 4, 57),
+        ];
         for (script, list_count, case_count) in expected {
             let read = |extension: &str| {
                 std::fs::read(root.join(format!("SCRIPT{script}.{extension}"))).unwrap()
@@ -2877,13 +3077,8 @@ mod tests {
             let var = read("VAR");
             let dictionary = crate::script::parse_dictionary(&read("DIC"));
             let symbols = crate::script::parse_deb(&read("DEB"));
-            let source = decompile_structured_bas_with_symbols(
-                &image,
-                &var,
-                &dictionary,
-                &symbols,
-            )
-            .unwrap();
+            let source =
+                decompile_structured_bas_with_symbols(&image, &var, &dictionary, &symbols).unwrap();
             assert_eq!(source.structured_selector_lists, list_count);
             assert_eq!(source.structured_cases, case_count);
             assert_eq!(compile(&source.source).unwrap(), image);

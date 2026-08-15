@@ -42,7 +42,8 @@ already-zero flag at `SCRIPT3:0x7B81`.
 | `text_skip` | Text flags skip a recovered number of following tokens. |
 | `frame_resume` | Text schedules a future-frame resume; this is not an immediate transfer. |
 
-`from_block` and `to_block` are byte offsets of block leaders. The
-`from_instruction` field preserves the exact instruction responsible for each
-edge. Procedure names include their starting offset so duplicate DEB names stay
-unambiguous.
+`from_block` and `to_block` are byte offsets of block leaders.
+`from_instruction` and `to_instruction` preserve the exact transfer endpoints;
+structured-region proofs use these exact addresses rather than treating a block
+leader as the destination. Procedure names include their starting offset so
+duplicate DEB names stay unambiguous.

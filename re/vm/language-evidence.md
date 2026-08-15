@@ -24,7 +24,7 @@ routine boundaries; `.DIC` and `.VAR` establish separate interned-text and
 initial-state inputs.
 
 All ten shipped `.COD` and `.BAS` images now round-trip byte exactly through
-both `CBVM-ASM` and `bloodscript-ir-v1`. The current BloodScript manifest records
+both `CBVM-ASM` and `bloodscript-v2`. The current BloodScript manifest records
 the unresolved generic-opcode and raw-byte totals rather than folding them into
 semantic coverage.
 
@@ -112,12 +112,12 @@ bases priority over fields. Other numeric subrecord addresses remain hexadecimal
 rather than being assigned to a nearby object.
 
 Exact DIC string boundaries establish a second symbolic namespace. The
-structured corpus declares 13,699 referenced offsets as `DIC_WORD` and uses
-those declarations in 53,194 proven dictionary operands across COD and BAS.
-The generated identifier is reconstructed from the decoded text plus its offset;
-it is not claimed as an original source identifier. Offset suffixes keep equal
-text at different addresses distinct, and the compiler rejects a dictionary
-alias in an ordinary numeric or VAR-address operand.
+structured corpus uses 13,699 referenced offsets in 53,194 proven dictionary
+operands across COD and BAS. Each is written inline as `"text"@offset` rather
+than through a generated declaration. Offset suffixes keep equal text at
+different addresses distinct, and the compiler rejects an inline dictionary
+reference in an ordinary numeric or VAR-address operand. The DIC companion
+source remains the owner of the actual string bytes.
 
 The first structured COD pass recovers 7,010 basic blocks and 17,287 edges. It
 models the native query bit and guard-target stack, direct jumps, text skips and
@@ -127,16 +127,22 @@ flag byte. All branch-capable instructions resolve to a concrete guard target.
 Exactly five block bodies are unreachable because their opener flag remains
 zero; they are preserved rather than deleted from the source evidence.
 
-The first source-structuring pass converts 443 of the 682 `A0` guards into
+The source-structuring pass converts 633 of the 682 `A0` guards into
 balanced `WHEN`/`THEN`/`END_WHEN` regions. A region is accepted only when it is
 forward, procedure-local, non-crossing, single-entry, and single-exit according
-to the recovered CFG. The other 239 guards remain explicit low-level tokens.
+to the recovered CFG. The other 49 guards remain explicit low-level tokens.
 Every retained guard is deterministically classified `alternate_exit`: at
 least one recovered edge leaves its candidate interval somewhere other than
 the guard's declared end. Each generated `GUARD_PUSH` records the reason in a
 non-semantic comment, and the manifest reports the reason counts per image.
 Both forms compile through the same exact backend, and all ten structured
 sources reproduce the shipped bytes.
+
+The earlier 443-region count was an analyzer artifact: destination membership
+was tested against the destination basic-block leader instead of the exact
+target instruction. A guard beginning in the middle of a block could therefore
+appear to exit its own interval. CFG edges now retain both addresses; regression
+tests distinguish this case from a real jump to an alternate exit.
 
 ## What is not established
 
@@ -188,9 +194,9 @@ specific byte range and must never be labelled as the original 1994 source.
 3. Use the recovered procedures and symbolic targets to construct typed basic
    blocks and per-procedure control-flow graphs. Complete for shipped COD.
 4. Lift reducible graph regions into guards and conditional blocks while
-   retaining address labels and explicit rejection evidence for irreducible
-   regions. The first guard lift proves 443 of 682 `A0` regions and classifies
-   all 239 retained low-level guards.
+   retaining symbolic labels and explicit rejection evidence for irreducible
+   regions. The current guard lift proves 633 of 682 `A0` regions and classifies
+   all 49 retained low-level guards.
 5. Add symbolic object, field, and dictionary names without changing numeric
    identity in the compiler IR. Exact DEB object bases and referenced dictionary
    words are complete for the currently proven operand families. The first field

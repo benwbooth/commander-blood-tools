@@ -242,7 +242,7 @@ mod tests {
                         "script{script}.{}.blood",
                         extension.to_ascii_lowercase()
                     )),
-                    "; format: bloodscript-ir-v1\n00000000: END\n",
+                    "; format: bloodscript-v2\nEND\n",
                 )
                 .unwrap();
                 fs::write(original.join(format!("SCRIPT{script}.{extension}")), [0xFF]).unwrap();

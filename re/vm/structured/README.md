@@ -8,11 +8,17 @@ cargo run --bin cbvm -- decompile-structured \
   accuracy/cblood_install/cblood re/vm/structured
 ```
 
+`bloodscript-v2` has no address column. The compiler lays out statements first,
+then resolves every `LABEL`, `PROCEDURE`, branch, selector link, and guard
+target. Generated source uses four-space indentation for procedure, guard,
+selector-list, and case bodies. Redundant disassembly comments are omitted;
+comments remain only for recovery evidence that is not expressed by syntax.
+
 The `WHEN target` / `THEN` / `END_WHEN target` syntax is a lossless structural
 form of the native `A0 target` / `A1` guard protocol. `WHEN` and `THEN` emit
 those original bytes. `END_WHEN` emits no bytes and must occur exactly at its
 resolved target. The compiler validates nesting, matching names, procedure
-boundaries, and target offsets.
+boundaries, and derived target offsets.
 
 The BAS pass uses `SELECTOR_LIST name` / `CASE selector next` /
 `END_SELECTOR_LIST name`. List boundaries emit no bytes; `CASE` emits the same
@@ -35,12 +41,12 @@ A guard is lifted only when all of these are established:
 - no CFG edge enters its interior from outside;
 - no CFG edge exits it except through its declared end.
 
-The shipped COD corpus contains 682 `A0` guards. This pass structures 443
-(65.0 percent) and deliberately leaves 239 as `GUARD_PUSH`/`GUARD_POP`.
+The shipped COD corpus contains 682 `A0` guards. This pass structures 633
+(92.8 percent) and deliberately leaves 49 as `GUARD_PUSH`/`GUARD_POP`.
 Fallback is evidence that the region has not met the structural proof, not an
 invitation to guess. Each retained `GUARD_PUSH` has an
 `unstructured_guard=<reason>` comment, and `manifest.tsv` records the reason
-counts per image. All 239 shipped fallbacks are `alternate_exit`: at least one
+counts per image. All 49 shipped fallbacks are `alternate_exit`: at least one
 CFG edge leaves the candidate interval somewhere other than its declared end.
 The analyzer also distinguishes non-forward targets, cross-procedure targets,
 missing balanced pops, crossing regions, shared pops, and external entries when
@@ -62,12 +68,13 @@ uses. The compiler computes the wrapping base-plus-delta address; comments retai
 the VAR kind and matrix selectors. Zero matrix entries, ambiguous owners, and
 unmatched addresses remain hexadecimal rather than using nearest-object guesses.
 
-COD and BAS sources also declare exact referenced DIC offsets with zero-byte
-`DIC_WORD name offset` directives. The current corpus has 13,699 declarations
-and 53,194 symbolic uses in dictionary-typed `TEXT`, `CONCEPT_GUARD`, `MENU`,
-`CASE`, and `SELECTOR_NODE` operands. Names are generated from decoded text and
-always include the offset, so repeated strings retain separate identities. The
-compiler does not accept these aliases in numeric or VAR-address operands.
+COD and BAS sources inline exact DIC references as `"text"@offset` operands.
+The current corpus has 13,699 distinct referenced offsets and 53,194 uses in
+dictionary-typed `TEXT`, `CONCEPT_GUARD`, `MENU`, `CASE`, and `SELECTOR_NODE`
+operands. The suffix preserves exact identity when text is duplicated. The
+quoted portion makes the reference readable but does not duplicate or replace
+the separately compiled DIC string; edit `script*.dic.blooddata` to change text.
+The compiler accepts inline references only in dictionary-typed positions.
 
 This syntax is reconstructed by this project. It is not claimed to be the
 original 1994 source spelling.

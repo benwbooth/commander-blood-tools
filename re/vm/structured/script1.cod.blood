@@ -1,698 +1,283 @@
 ; BloodScript typed VM source
-; format: bloodscript-ir-v1
+; format: bloodscript-v2
 ; image: COD
 ; size: 0x00000C0C
 
-00000000: OBJECT object_blood_0028 0028 ; DEB kind 1 "blood"
-00000000: OBJECT object_Bob_Morlock_004A 004A ; DEB kind 1 "Bob_Morlock"
-00000000: OBJECT object_Bronko_031A 031A ; DEB kind 1 "Bronko"
-00000000: OBJECT object_Izwalito_055A 055A ; DEB kind 1 "Izwalito"
-00000000: OBJECT object_Honk_082A 082A ; DEB kind 1 "Honk"
-00000000: OBJECT object_menu_0872 0872 ; DEB kind 1 "menu"
+OBJECT object_blood_0028 0028
+OBJECT object_Bob_Morlock_004A 004A
+OBJECT object_Bronko_031A 031A
+OBJECT object_Izwalito_055A 055A
+OBJECT object_Honk_082A 082A
+OBJECT object_menu_0872 0872
 
-00000000: FIELD field_Bob_Morlock_004A_s08_0080 object_Bob_Morlock_004A 0036 ; VAR kind 0x0002, selector(s) 08
-00000000: FIELD field_Bob_Morlock_004A_s13_0084 object_Bob_Morlock_004A 003A ; VAR kind 0x0002, selector(s) 13
-00000000: FIELD field_Bronko_031A_s11_0332 object_Bronko_031A 0018 ; VAR kind 0x0002, selector(s) 11
-00000000: FIELD field_Izwalito_055A_s13_0594 object_Izwalito_055A 003A ; VAR kind 0x0002, selector(s) 13
-00000000: FIELD field_Izwalito_055A_s0F_05A0 object_Izwalito_055A 0046 ; VAR kind 0x0002, selector(s) 0F
-00000000: FIELD field_Honk_082A_s08_0860 object_Honk_082A 0036 ; VAR kind 0x0002, selector(s) 08
-00000000: FIELD field_Honk_082A_s13_0864 object_Honk_082A 003A ; VAR kind 0x0002, selector(s) 13
-00000000: FIELD field_menu_0872_s13_08AC object_menu_0872 003A ; VAR kind 0x0002, selector(s) 13
+FIELD field_Bob_Morlock_004A_s08_0080 object_Bob_Morlock_004A 0036 ; VAR kind 0x0002, selector(s) 08
+FIELD field_Bob_Morlock_004A_s13_0084 object_Bob_Morlock_004A 003A ; VAR kind 0x0002, selector(s) 13
+FIELD field_Bronko_031A_s11_0332 object_Bronko_031A 0018 ; VAR kind 0x0002, selector(s) 11
+FIELD field_Izwalito_055A_s13_0594 object_Izwalito_055A 003A ; VAR kind 0x0002, selector(s) 13
+FIELD field_Izwalito_055A_s0F_05A0 object_Izwalito_055A 0046 ; VAR kind 0x0002, selector(s) 0F
+FIELD field_Honk_082A_s08_0860 object_Honk_082A 0036 ; VAR kind 0x0002, selector(s) 08
+FIELD field_Honk_082A_s13_0864 object_Honk_082A 003A ; VAR kind 0x0002, selector(s) 13
+FIELD field_menu_0872_s13_08AC object_menu_0872 003A ; VAR kind 0x0002, selector(s) 13
 
-00000000: DIC_WORD dic_talk_0001 0001 ; "talk"
-00000000: DIC_WORD dic__22IMPROVED_000C 000C ; "\"IMPROVED"
-00000000: DIC_WORD dic_MENU_22_0016 0016 ; "MENU\""
-00000000: DIC_WORD dic_Today_001C 001C ; "Today"
-00000000: DIC_WORD dic_CHEF_0022 0022 ; "CHEF"
-00000000: DIC_WORD dic_BRONKO_0027 0027 ; "BRONKO"
-00000000: DIC_WORD dic_has_002E 002E ; "has"
-00000000: DIC_WORD dic_laid_0032 0032 ; "laid"
-00000000: DIC_WORD dic_on_0037 0037 ; "on"
-00000000: DIC_WORD dic_for_003A 003A ; "for"
-00000000: DIC_WORD dic_you_003E 003E ; "you"
-00000000: DIC_WORD dic__3A_0042 0042 ; ":"
-00000000: DIC_WORD dic_Tasty_0044 0044 ; "Tasty"
-00000000: DIC_WORD dic_MURFFALO_004A 004A ; "MURFFALO"
-00000000: DIC_WORD dic_soup_0053 0053 ; "soup"
-00000000: DIC_WORD dic_Bronko_2Dstyle_0058 0058 ; "Bronko-style"
-00000000: DIC_WORD dic__2E_0065 0065 ; "."
-00000000: DIC_WORD dic_kidneys_0067 0067 ; "kidneys"
-00000000: DIC_WORD dic_hamburger_006F 006F ; "hamburger"
-00000000: DIC_WORD dic_with_0079 0079 ; "with"
-00000000: DIC_WORD dic_Bar_2DB_2DQ_007E 007E ; "Bar-B-Q"
-00000000: DIC_WORD dic_recycled_2Doil_0086 0086 ; "recycled-oil"
-00000000: DIC_WORD dic_dip_0093 0093 ; "dip"
-00000000: DIC_WORD dic_Smooth_0097 0097 ; "Smooth"
-00000000: DIC_WORD dic_MURFFALO_2Dchip_009E 009E ; "MURFFALO-chip"
-00000000: DIC_WORD dic_ice_00AC 00AC ; "ice"
-00000000: DIC_WORD dic_cream_00B0 00B0 ; "cream"
-00000000: DIC_WORD dic_Recycled_00B6 00B6 ; "Recycled"
-00000000: DIC_WORD dic_water_00BF 00BF ; "water"
-00000000: DIC_WORD dic_Chef_00C5 00C5 ; "Chef"
-00000000: DIC_WORD dic_Bronko_00CA 00CA ; "Bronko"
-00000000: DIC_WORD dic_says_00D1 00D1 ; "says"
-00000000: DIC_WORD dic__2E_2E_2E_00D6 00D6 ; "..."
-00000000: DIC_WORD dic_Burping_27s_00DA 00DA ; "Burping's"
-00000000: DIC_WORD dic_bad_00E4 00E4 ; "bad"
-00000000: DIC_WORD dic_manners_00E8 00E8 ; "manners"
-00000000: DIC_WORD dic__21_00F0 00F0 ; "!"
-00000000: DIC_WORD dic_stop_00F2 00F2 ; "stop"
-00000000: DIC_WORD dic__22MENU_22_00F7 00F7 ; "\"MENU\""
-00000000: DIC_WORD dic_Today_27s_00FE 00FE ; "Today's"
-00000000: DIC_WORD dic_fare_0106 0106 ; "fare"
-00000000: DIC_WORD dic_PLASMA_010B 010B ; "PLASMA"
-00000000: DIC_WORD dic_HONK_2Dstyle_0112 0112 ; "HONK-style"
-00000000: DIC_WORD dic_WRIGGLER_011D 011D ; "WRIGGLER"
-00000000: DIC_WORD dic_belly_0126 0126 ; "belly"
-00000000: DIC_WORD dic_in_012C 012C ; "in"
-00000000: DIC_WORD dic_slobber_012F 012F ; "slobber"
-00000000: DIC_WORD dic_sauce_0137 0137 ; "sauce"
-00000000: DIC_WORD dic_Jellied_013D 013D ; "Jellied"
-00000000: DIC_WORD dic_URTIKAN_0145 0145 ; "URTIKAN"
-00000000: DIC_WORD dic_bone_014D 014D ; "bone"
-00000000: DIC_WORD dic_marrow_0152 0152 ; "marrow"
-00000000: DIC_WORD dic_GLOK_0159 0159 ; "GLOK"
-00000000: DIC_WORD dic_eye_015E 015E ; "eye"
-00000000: DIC_WORD dic_pie_0162 0162 ; "pie"
-00000000: DIC_WORD dic_The_0166 0166 ; "The"
-00000000: DIC_WORD dic_chef_016A 016A ; "chef"
-00000000: DIC_WORD dic_Don_27t_016F 016F ; "Don't"
-00000000: DIC_WORD dic_eat_0175 0175 ; "eat"
-00000000: DIC_WORD dic_your_0179 0179 ; "your"
-00000000: DIC_WORD dic_mouth_017E 017E ; "mouth"
-00000000: DIC_WORD dic_full_0184 0184 ; "full"
-00000000: DIC_WORD dic_Stop_0189 0189 ; "Stop"
-00000000: DIC_WORD dic_snout_018E 018E ; "snout"
-00000000: DIC_WORD dic_stew_0194 0194 ; "stew"
-00000000: DIC_WORD dic_seeds_0199 0199 ; "seeds"
-00000000: DIC_WORD dic_venom_019F 019F ; "venom"
-00000000: DIC_WORD dic_juice_01A5 01A5 ; "juice"
-00000000: DIC_WORD dic_dessert_01AB 01AB ; "dessert"
-00000000: DIC_WORD dic_open_01B3 01B3 ; "open"
-00000000: DIC_WORD dic_feet_01B8 01B8 ; "feet"
-00000000: DIC_WORD dic_emulsive_01BD 01BD ; "emulsive"
-00000000: DIC_WORD dic_leaves_01C6 01C6 ; "leaves"
-00000000: DIC_WORD dic_sweat_01CD 01CD ; "sweat"
-00000000: DIC_WORD dic_flake_01D3 01D3 ; "flake"
-00000000: DIC_WORD dic_Somebody_01D9 01D9 ; "Somebody"
-00000000: DIC_WORD dic_didn_27t_01E2 01E2 ; "didn't"
-00000000: DIC_WORD dic_finish_01E9 01E9 ; "finish"
-00000000: DIC_WORD dic_his_01F0 01F0 ; "his"
-00000000: DIC_WORD dic_wrigglers_01F4 01F4 ; "wrigglers"
-00000000: DIC_WORD dic_yesterday_01FE 01FE ; "yesterday"
-00000000: DIC_WORD dic_brain_0208 0208 ; "brain"
-00000000: DIC_WORD dic__2C_020E 020E ; ","
-00000000: DIC_WORD dic_stewed_0210 0210 ; "stewed"
-00000000: DIC_WORD dic_its_0217 0217 ; "its"
-00000000: DIC_WORD dic_own_021B 021B ; "own"
-00000000: DIC_WORD dic_trunk_021F 021F ; "trunk"
-00000000: DIC_WORD dic_stuffed_0225 0225 ; "stuffed"
-00000000: DIC_WORD dic_liver_022D 022D ; "liver"
-00000000: DIC_WORD dic_dee_2Dlite_0233 0233 ; "dee-lite"
-00000000: DIC_WORD dic_Plenty_023C 023C ; "Plenty"
-00000000: DIC_WORD dic_more_0243 0243 ; "more"
-00000000: DIC_WORD dic_the_0248 0248 ; "the"
-00000000: DIC_WORD dic_kitchen_024C 024C ; "kitchen"
-00000000: DIC_WORD dic_Soup_0254 0254 ; "Soup"
-00000000: DIC_WORD dic_of_0259 0259 ; "of"
-00000000: DIC_WORD dic_hearts_025C 025C ; "hearts"
-00000000: DIC_WORD dic_green_0263 0263 ; "green"
-00000000: DIC_WORD dic_blood_0269 0269 ; "blood"
-00000000: DIC_WORD dic_coagulate_026F 026F ; "coagulate"
-00000000: DIC_WORD dic_roots_0279 0279 ; "roots"
-00000000: DIC_WORD dic_deep_027F 027F ; "deep"
-00000000: DIC_WORD dic_fried_0284 0284 ; "fried"
-00000000: DIC_WORD dic_recycled_028A 028A ; "recycled"
-00000000: DIC_WORD dic_oil_0293 0293 ; "oil"
-00000000: DIC_WORD dic_Candied_0297 0297 ; "Candied"
-00000000: DIC_WORD dic_tongue_029F 029F ; "tongue"
-00000000: DIC_WORD dic_You_02A6 02A6 ; "You"
-00000000: DIC_WORD dic_what_02AA 02AA ; "what"
-00000000: DIC_WORD dic_are_02AF 02AF ; "are"
-00000000: DIC_WORD dic_found_02B3 02B3 ; "found"
-00000000: DIC_WORD dic_right_02B9 02B9 ; "right"
-00000000: DIC_WORD dic_button_02BF 02BF ; "button"
-00000000: DIC_WORD dic_So_02C6 02C6 ; "So"
-00000000: DIC_WORD dic_far_02C9 02C9 ; "far"
-00000000: DIC_WORD dic_so_02CD 02CD ; "so"
-00000000: DIC_WORD dic_good_02D0 02D0 ; "good"
-00000000: DIC_WORD dic_Click_02DA 02DA ; "Click"
-00000000: DIC_WORD dic_quick_2C_02E0 02E0 ; "quick,"
-00000000: DIC_WORD dic_Cap_27n_02E7 02E7 ; "Cap'n"
-00000000: DIC_WORD dic_Bob_02ED 02ED ; "Bob"
-00000000: DIC_WORD dic_is_02F1 02F1 ; "is"
-00000000: DIC_WORD dic_waiting_02F4 02F4 ; "waiting"
-00000000: DIC_WORD dic_explanations_02FC 02FC ; "explanations"
-00000000: DIC_WORD dic_game_0309 0309 ; "game"
-00000000: DIC_WORD dic_GAME_030E 030E ; "GAME"
-00000000: DIC_WORD dic_can_0313 0313 ; "can"
-00000000: DIC_WORD dic_modify_0317 0317 ; "modify"
-00000000: DIC_WORD dic_text_031E 031E ; "text"
-00000000: DIC_WORD dic_speed_0323 0323 ; "speed"
-00000000: DIC_WORD dic_by_0329 0329 ; "by"
-00000000: DIC_WORD dic_clicking_032C 032C ; "clicking"
-00000000: DIC_WORD dic__22OPTION_22_0335 0335 ; "\"OPTION\""
-00000000: DIC_WORD dic_wake_033E 033E ; "wake"
-00000000: DIC_WORD dic__22CRYOBOX_22_0343 0343 ; "\"CRYOBOX\""
-00000000: DIC_WORD dic_Or_034D 034D ; "Or"
-00000000: DIC_WORD dic_load_0350 0350 ; "load"
-00000000: DIC_WORD dic_a_0355 0355 ; "a"
-00000000: DIC_WORD dic__22Saved_0357 0357 ; "\"Saved"
-00000000: DIC_WORD dic_Game_22_035E 035E ; "Game\""
-00000000: DIC_WORD dic_OPTION_0364 0364 ; "OPTION"
-00000000: DIC_WORD dic__22LAST_22_036B 036B ; "\"LAST\""
-00000000: DIC_WORD dic__22AUTOMATIC_0372 0372 ; "\"AUTOMATIC"
-00000000: DIC_WORD dic_PERMANENT_037D 037D ; "PERMANENT"
-00000000: DIC_WORD dic_SAVE_22_2E_0387 0387 ; "SAVE\"."
-00000000: DIC_WORD dic_If_038E 038E ; "If"
-00000000: DIC_WORD dic_forget_0391 0391 ; "forget"
-00000000: DIC_WORD dic_to_0398 0398 ; "to"
-00000000: DIC_WORD dic_save_2C_039B 039B ; "save,"
-00000000: DIC_WORD dic_click_03A2 03A2 ; "click"
-00000000: DIC_WORD dic__22LAST_22_2E_2E_2E_03A8 03A8 ; "\"LAST\"..."
-00000000: DIC_WORD dic_We_03B2 03B2 ; "We"
-00000000: DIC_WORD dic_would_03B5 03B5 ; "would"
-00000000: DIC_WORD dic_like_03BB 03BB ; "like"
-00000000: DIC_WORD dic_draw_03C0 03C0 ; "draw"
-00000000: DIC_WORD dic_ATTENTION_03C5 03C5 ; "ATTENTION"
-00000000: DIC_WORD dic_certain_03CF 03CF ; "certain"
-00000000: DIC_WORD dic_RISKS_03D7 03D7 ; "RISKS"
-00000000: DIC_WORD dic_experience_03DD 03DD ; "experience"
-00000000: DIC_WORD dic_UNUSUAL_03E8 03E8 ; "UNUSUAL"
-00000000: DIC_WORD dic_SENSATIONS_03F0 03F0 ; "SENSATIONS"
-00000000: DIC_WORD dic_DIZZINESS_03FB 03FB ; "DIZZINESS"
-00000000: DIC_WORD dic_or_0405 0405 ; "or"
-00000000: DIC_WORD dic_FACIAL_0408 0408 ; "FACIAL"
-00000000: DIC_WORD dic_DISTORTION_040F 040F ; "DISTORTION"
-00000000: DIC_WORD dic_Stay_041A 041A ; "Stay"
-00000000: DIC_WORD dic_CALM_041F 041F ; "CALM"
-00000000: DIC_WORD dic_It_0424 0424 ; "It"
-00000000: DIC_WORD dic_may_0427 0427 ; "may"
-00000000: DIC_WORD dic_only_042B 042B ; "only"
-00000000: DIC_WORD dic_be_0430 0430 ; "be"
-00000000: DIC_WORD dic_CRISIS_2C_0433 0433 ; "CRISIS,"
-00000000: DIC_WORD dic_SPELL_043B 043B ; "SPELL"
-00000000: DIC_WORD dic_CURSE_0441 0441 ; "CURSE"
-00000000: DIC_WORD dic_at_0447 0447 ; "at"
-00000000: DIC_WORD dic_worst_044A 044A ; "worst"
-00000000: DIC_WORD dic_SCRAMBLED_0450 0450 ; "SCRAMBLED"
-00000000: DIC_WORD dic_BRAIN_045A 045A ; "BRAIN"
-00000000: DIC_WORD dic_In_0460 0460 ; "In"
-00000000: DIC_WORD dic_which_0463 0463 ; "which"
-00000000: DIC_WORD dic_case_0469 0469 ; "case"
-00000000: DIC_WORD dic_write_046E 046E ; "write"
-00000000: DIC_WORD dic_SUPER_0474 0474 ; "SUPER"
-00000000: DIC_WORD dic_ZEN_047A 047A ; "ZEN"
-00000000: DIC_WORD dic_end_047E 047E ; "end"
-00000000: DIC_WORD dic_corridor_0482 0482 ; "corridor"
-00000000: DIC_WORD dic_CRAZYSTONE_048B 048B ; "CRAZYSTONE"
-00000000: DIC_WORD dic_planet_0496 0496 ; "planet"
-00000000: DIC_WORD dic_BABY1_049D 049D ; "BABY1"
-00000000: DIC_WORD dic_UNIVERSE_04A3 04A3 ; "UNIVERSE"
-00000000: DIC_WORD dic_quick_04AC 04AC ; "quick"
-00000000: DIC_WORD dic__22HONK_22_04B2 04B2 ; "\"HONK\""
-00000000: DIC_WORD dic_He_04B9 04B9 ; "He"
-00000000: DIC_WORD dic_important_04BC 04BC ; "important"
-00000000: DIC_WORD dic_information_04C6 04C6 ; "information"
-00000000: DIC_WORD dic_YOU_04D2 04D2 ; "YOU"
-00000000: DIC_WORD dic_Welcome_04D6 04D6 ; "Welcome"
-00000000: DIC_WORD dic_aboard_04DE 04DE ; "aboard"
-00000000: DIC_WORD dic_ARK_04E5 04E5 ; "ARK"
-00000000: DIC_WORD dic_Commander_04E9 04E9 ; "Commander"
-00000000: DIC_WORD dic_I_27m_04F3 04F3 ; "I'm"
-00000000: DIC_WORD dic_HONK_04F7 04F7 ; "HONK"
-00000000: DIC_WORD dic_trusted_04FC 04FC ; "trusted"
-00000000: DIC_WORD dic_computer_0504 0504 ; "computer"
-00000000: DIC_WORD dic_here_050D 050D ; "here"
-00000000: DIC_WORD dic_help_0512 0512 ; "help"
-00000000: DIC_WORD dic_lot_0517 0517 ; "lot"
-00000000: DIC_WORD dic_phone_051B 051B ; "phone"
-00000000: DIC_WORD dic_rings_0521 0521 ; "rings"
-00000000: DIC_WORD dic_just_0527 0527 ; "just"
-00000000: DIC_WORD dic_hit_052C 052C ; "hit"
-00000000: DIC_WORD dic__22RED_0530 0530 ; "\"RED"
-00000000: DIC_WORD dic_BUTTON_22_0535 0535 ; "BUTTON\""
-00000000: DIC_WORD dic_front_053D 053D ; "front"
-00000000: DIC_WORD dic_Bob_2C_0543 0543 ; "Bob,"
-00000000: DIC_WORD dic_our_0548 0548 ; "our"
-00000000: DIC_WORD dic_revered_054C 054C ; "revered"
-00000000: DIC_WORD dic_leader_0554 0554 ; "leader"
-00000000: DIC_WORD dic_cryonized_055B 055B ; "cryonized"
-00000000: DIC_WORD dic_CRYOBOX_0565 0565 ; "CRYOBOX"
-00000000: DIC_WORD dic_Of_056D 056D ; "Of"
-00000000: DIC_WORD dic_course_0570 0570 ; "course"
-00000000: DIC_WORD dic_and_0577 0577 ; "and"
-00000000: DIC_WORD dic_question_057B 057B ; "question"
-00000000: DIC_WORD dic_him_0584 0584 ; "him"
-00000000: DIC_WORD dic_But_0588 0588 ; "But"
-00000000: DIC_WORD dic_not_058C 058C ; "not"
-00000000: DIC_WORD dic_too_0590 0590 ; "too"
-00000000: DIC_WORD dic_often_0594 0594 ; "often"
-00000000: DIC_WORD dic_okay_059A 059A ; "okay"
-00000000: DIC_WORD dic__3F_059F 059F ; "?"
-00000000: DIC_WORD dic_knows_05A2 05A2 ; "knows"
-00000000: DIC_WORD dic_everything_05A8 05A8 ; "everything"
-00000000: DIC_WORD dic_That_27s_05B3 05B3 ; "That's"
-00000000: DIC_WORD dic_why_05BA 05BA ; "why"
-00000000: DIC_WORD dic_he_27s_05BE 05BE ; "he's"
-00000000: DIC_WORD dic_boss_05C3 05C3 ; "boss"
-00000000: DIC_WORD dic_Our_05C8 05C8 ; "Our"
-00000000: DIC_WORD dic_ship_05CC 05CC ; "ship"
-00000000: DIC_WORD dic_currently_05D1 05D1 ; "currently"
-00000000: DIC_WORD dic_surrounded_05DB 05DB ; "surrounded"
-00000000: DIC_WORD dic_things_05E6 05E6 ; "things"
-00000000: DIC_WORD dic_called_05ED 05ED ; "called"
-00000000: DIC_WORD dic_stars_05F4 05F4 ; "stars"
-00000000: DIC_WORD dic_Remember_05FA 05FA ; "Remember"
-00000000: DIC_WORD dic_space_0603 0603 ; "space"
-00000000: DIC_WORD dic_no_0609 0609 ; "no"
-00000000: DIC_WORD dic_place_060C 060C ; "place"
-00000000: DIC_WORD dic_night_0612 0612 ; "night"
-00000000: DIC_WORD dic_clubs_0618 0618 ; "clubs"
-00000000: DIC_WORD dic_have_061E 061E ; "have"
-00000000: DIC_WORD dic_questions_2C_0623 0623 ; "questions,"
-00000000: DIC_WORD dic_I_062E 062E ; "I"
-00000000: DIC_WORD dic_all_0630 0630 ; "all"
-00000000: DIC_WORD dic_answers_0634 0634 ; "answers"
-00000000: DIC_WORD dic_End_063C 063C ; "End"
-00000000: DIC_WORD dic_report_0640 0640 ; "report"
-00000000: DIC_WORD dic_Good_0647 0647 ; "Good"
-00000000: DIC_WORD dic_day_064C 064C ; "day"
-00000000: DIC_WORD dic_COMMANDER_0650 0650 ; "COMMANDER"
-00000000: DIC_WORD dic_My_065A 065A ; "My"
-00000000: DIC_WORD dic_name_065D 065D ; "name"
-00000000: DIC_WORD dic_BOB_0662 0662 ; "BOB"
-00000000: DIC_WORD dic_MORLOCK_0666 0666 ; "MORLOCK"
-00000000: DIC_WORD dic_press_066E 066E ; "press"
-00000000: DIC_WORD dic_radio_0674 0674 ; "radio"
-00000000: DIC_WORD dic_answer_067A 067A ; "answer"
-00000000: DIC_WORD dic_ears_0681 0681 ; "ears"
-00000000: DIC_WORD dic_fragile_2C_0686 0686 ; "fragile,"
-00000000: DIC_WORD dic_Do_068F 068F ; "Do"
-00000000: DIC_WORD dic_want_0692 0692 ; "want"
-00000000: DIC_WORD dic_me_0697 0697 ; "me"
-00000000: DIC_WORD dic_explain_069A 069A ; "explain"
-00000000: DIC_WORD dic_mission_06A2 06A2 ; "mission"
-00000000: DIC_WORD dic_yes_06AA 06AA ; "yes"
-00000000: DIC_WORD dic_going_06AE 06AE ; "going"
-00000000: DIC_WORD dic_it_06B4 06B4 ; "it"
-00000000: DIC_WORD dic_same_06B7 06B7 ; "same"
-00000000: DIC_WORD dic_It_27s_06BC 06BC ; "It's"
-00000000: DIC_WORD dic_than_06C1 06C1 ; "than"
-00000000: DIC_WORD dic_800_2C000_06C6 06C6 ; "800,000"
-00000000: DIC_WORD dic_years_06CE 06CE ; "years"
-00000000: DIC_WORD dic_old_06D4 06D4 ; "old"
-00000000: DIC_WORD dic_feel_06D8 06D8 ; "feel"
-00000000: DIC_WORD dic_ancient_06DD 06DD ; "ancient"
-00000000: DIC_WORD dic_Too_06E5 06E5 ; "Too"
-00000000: DIC_WORD dic_go_06E9 06E9 ; "go"
-00000000: DIC_WORD dic_looking_06EC 06EC ; "looking"
-00000000: DIC_WORD dic_adventure_06F4 06F4 ; "adventure"
-00000000: DIC_WORD dic_where_06FE 06FE ; "where"
-00000000: DIC_WORD dic_come_0704 0704 ; "come"
-00000000: DIC_WORD dic_DON_27T_0709 0709 ; "DON'T"
-00000000: DIC_WORD dic_WANT_070F 070F ; "WANT"
-00000000: DIC_WORD dic_TO_0714 0714 ; "TO"
-00000000: DIC_WORD dic_DIE_0717 0717 ; "DIE"
-00000000: DIC_WORD dic_STUPID_071B 071B ; "STUPID"
-00000000: DIC_WORD dic_SEE_0722 0722 ; "SEE"
-00000000: DIC_WORD dic_THE_0726 0726 ; "THE"
-00000000: DIC_WORD dic_BIG_072A 072A ; "BIG"
-00000000: DIC_WORD dic_BANG_072E 072E ; "BANG"
-00000000: DIC_WORD dic_This_0733 0733 ; "This"
-00000000: DIC_WORD dic_specially_0738 0738 ; "specially"
-00000000: DIC_WORD dic_built_0742 0742 ; "built"
-00000000: DIC_WORD dic_true_0748 0748 ; "true"
-00000000: DIC_WORD dic_marvel_074D 074D ; "marvel"
-00000000: DIC_WORD dic_technology_0754 0754 ; "technology"
-00000000: DIC_WORD dic_Just_075F 075F ; "Just"
-00000000: DIC_WORD dic__22SPACE_22_0764 0764 ; "\"SPACE\""
-00000000: DIC_WORD dic_bar_076C 076C ; "bar"
-00000000: DIC_WORD dic_if_0770 0770 ; "if"
-00000000: DIC_WORD dic_you_27ve_0773 0773 ; "you've"
-00000000: DIC_WORD dic_had_077A 077A ; "had"
-00000000: DIC_WORD dic_enough_077E 077E ; "enough"
-00000000: DIC_WORD dic_understand_0785 0785 ; "understand"
-00000000: DIC_WORD dic_world_0790 0790 ; "world"
-00000000: DIC_WORD dic_WHERE_0796 0796 ; "WHERE"
-00000000: DIC_WORD dic_COME_079C 079C ; "COME"
-00000000: DIC_WORD dic_FROM_07A2 07A2 ; "FROM"
-00000000: DIC_WORD dic_WHY_07A7 07A7 ; "WHY"
-00000000: DIC_WORD dic_EXIST_07AB 07AB ; "EXIST"
-00000000: DIC_WORD dic_travel_07B1 07B1 ; "travel"
-00000000: DIC_WORD dic_through_07B8 07B8 ; "through"
-00000000: DIC_WORD dic_SPACE_07C0 07C0 ; "SPACE"
-00000000: DIC_WORD dic_TIME_2C_07C6 07C6 ; "TIME,"
-00000000: DIC_WORD dic_BLACK_07CC 07CC ; "BLACK"
-00000000: DIC_WORD dic_HOLES_07D2 07D2 ; "HOLES"
-00000000: DIC_WORD dic_And_07D8 07D8 ; "And"
-00000000: DIC_WORD dic_quite_07DC 07DC ; "quite"
-00000000: DIC_WORD dic_few_07E2 07E2 ; "few"
-00000000: DIC_WORD dic_later_07E6 07E6 ; "later"
-00000000: DIC_WORD dic_we_27ll_07EC 07EC ; "we'll"
-00000000: DIC_WORD dic_get_07F2 07F2 ; "get"
-00000000: DIC_WORD dic_tough_07F6 07F6 ; "tough"
-00000000: DIC_WORD dic_part_07FC 07FC ; "part"
-00000000: DIC_WORD dic_will_0801 0801 ; "will"
-00000000: DIC_WORD dic_finding_0806 0806 ; "finding"
-00000000: DIC_WORD dic_those_080E 080E ; "those"
-00000000: DIC_WORD dic_because_0814 0814 ; "because"
-00000000: DIC_WORD dic_UNDETECTABLE_081C 081C ; "UNDETECTABLE"
-00000000: DIC_WORD dic_universe_0829 0829 ; "universe"
-00000000: DIC_WORD dic_We_27ll_0832 0832 ; "We'll"
-00000000: DIC_WORD dic_need_0838 0838 ; "need"
-00000000: DIC_WORD dic_make_083D 083D ; "make"
-00000000: DIC_WORD dic_contact_0842 0842 ; "contact"
-00000000: DIC_WORD dic_ALIEN_084A 084A ; "ALIEN"
-00000000: DIC_WORD dic_BEINGS_0850 0850 ; "BEINGS"
-00000000: DIC_WORD dic_expect_0857 0857 ; "expect"
-00000000: DIC_WORD dic_see_085E 085E ; "see"
-00000000: DIC_WORD dic_bloodchilling_0862 0862 ; "bloodchilling"
-00000000: DIC_WORD dic_WARS_0870 0870 ; "WARS"
-00000000: DIC_WORD dic_astonishing_0875 0875 ; "astonishing"
-00000000: DIC_WORD dic_PHENOMENA_2E_2E_2E_0881 0881 ; "PHENOMENA..."
-00000000: DIC_WORD dic_age_088E 088E ; "age"
-00000000: DIC_WORD dic_dictates_0892 0892 ; "dictates"
-00000000: DIC_WORD dic_sleep_089B 089B ; "sleep"
-00000000: DIC_WORD dic_most_08A2 08A2 ; "most"
-00000000: DIC_WORD dic_WAKE_08A7 08A7 ; "WAKE"
-00000000: DIC_WORD dic_ME_08AC 08AC ; "ME"
-00000000: DIC_WORD dic_ONLY_08AF 08AF ; "ONLY"
-00000000: DIC_WORD dic_IN_08B4 08B4 ; "IN"
-00000000: DIC_WORD dic_AN_08B7 08B7 ; "AN"
-00000000: DIC_WORD dic_EMERGENCY_08BA 08BA ; "EMERGENCY"
-00000000: DIC_WORD dic_time_08C4 08C4 ; "time"
-00000000: DIC_WORD dic_very_08C9 08C9 ; "very"
-00000000: DIC_WORD dic_precious_08CE 08CE ; "precious"
-00000000: DIC_WORD dic_provided_08D7 08D7 ; "provided"
-00000000: DIC_WORD dic_an_08E0 08E0 ; "an"
-00000000: DIC_WORD dic_ONBOARD_08E3 08E3 ; "ONBOARD"
-00000000: DIC_WORD dic_COMPUTER_08EB 08EB ; "COMPUTER"
-00000000: DIC_WORD dic_THERE_08F4 08F4 ; "THERE"
-00000000: DIC_WORD dic_HONK_3A_08FA 08FA ; "HONK:"
-00000000: DIC_WORD dic_Yes_0900 0900 ; "Yes"
-00000000: DIC_WORD dic_sir_2C_0904 0904 ; "sir,"
-00000000: DIC_WORD dic_Present_0909 0909 ; "Present"
-00000000: DIC_WORD dic_willing_0911 0911 ; "willing"
-00000000: DIC_WORD dic_able_0919 0919 ; "able"
-00000000: DIC_WORD dic_Why_2C_091E 091E ; "Why,"
-00000000: DIC_WORD dic_hunk_0923 0923 ; "hunk"
-00000000: DIC_WORD dic__27o_0928 0928 ; "'o"
-00000000: DIC_WORD dic_junk_092B 092B ; "junk"
-00000000: DIC_WORD dic_WERE_0930 0930 ; "WERE"
-00000000: DIC_WORD dic_ASLEEP_0935 0935 ; "ASLEEP"
-00000000: DIC_WORD dic__21_21_21_093C 093C ; "!!!"
-00000000: DIC_WORD dic_No_0940 0940 ; "No"
-00000000: DIC_WORD dic_was_0943 0943 ; "was"
-00000000: DIC_WORD dic_calculating_0947 0947 ; "calculating"
-00000000: DIC_WORD dic_trajectory_0953 0953 ; "trajectory"
-00000000: DIC_WORD dic_black_095E 095E ; "black"
-00000000: DIC_WORD dic_hole_0964 0964 ; "hole"
-00000000: DIC_WORD dic_swear_0969 0969 ; "swear"
-00000000: DIC_WORD dic_my_096F 096F ; "my"
-00000000: DIC_WORD dic_mother_27s_0972 0972 ; "mother's"
-00000000: DIC_WORD dic_head_097B 097B ; "head"
-00000000: DIC_WORD dic_Your_0980 0980 ; "Your"
-00000000: DIC_WORD dic_mother_0985 0985 ; "mother"
-00000000: DIC_WORD dic__21_21_098C 098C ; "!!"
-00000000: DIC_WORD dic_I_27ve_098F 098F ; "I've"
-00000000: DIC_WORD dic_mind_0994 0994 ; "mind"
-00000000: DIC_WORD dic_short_2Dcircuit_0999 0999 ; "short-circuit"
-00000000: DIC_WORD dic_every_09A7 09A7 ; "every"
-00000000: DIC_WORD dic_wire_09AD 09AD ; "wire"
-00000000: DIC_WORD dic_lazy_09B2 09B2 ; "lazy"
-00000000: DIC_WORD dic_carcass_09B7 09B7 ; "carcass"
-00000000: DIC_WORD dic_Keep_09BF 09BF ; "Keep"
-00000000: DIC_WORD dic_GET_09C4 09C4 ; "GET"
-00000000: DIC_WORD dic_WORK_09C8 09C8 ; "WORK"
-00000000: DIC_WORD dic_Sure_09CD 09CD ; "Sure"
-00000000: DIC_WORD dic_thing_2C_09D2 09D2 ; "thing,"
-00000000: DIC_WORD dic_crunching_09D9 09D9 ; "crunching"
-00000000: DIC_WORD dic_numbers_09E3 09E3 ; "numbers"
-00000000: DIC_WORD dic_as_09EB 09EB ; "as"
-00000000: DIC_WORD dic_speak_09EE 09EE ; "speak"
-00000000: DIC_WORD dic_can_27t_09F4 09F4 ; "can't"
-00000000: DIC_WORD dic_thing_09FA 09FA ; "thing"
-00000000: DIC_WORD dic_Feel_0A00 0A00 ; "Feel"
-00000000: DIC_WORD dic_weak_0A05 0A05 ; "weak"
-00000000: DIC_WORD dic_IF_0A0A 0A0A ; "IF"
-00000000: DIC_WORD dic_NEED_0A0D 0A0D ; "NEED"
-00000000: DIC_WORD dic_UP_0A12 0A12 ; "UP"
-00000000: DIC_WORD dic_See_0A15 0A15 ; "See"
-00000000: DIC_WORD dic_do_0A19 0A19 ; "do"
-00000000: DIC_WORD dic_mean_0A1C 0A1C ; "mean"
-00000000: DIC_WORD dic_earlier_0A21 0A21 ; "earlier"
-00000000: DIC_WORD dic_cryonizing_0A29 0A29 ; "cryonizing"
-00000000: DIC_WORD dic_Aaaahhhh_0A34 0A34 ; "Aaaahhhh"
-00000000: DIC_WORD dic_turkey_27s_0A3D 0A3D ; "turkey's"
-00000000: DIC_WORD dic_out_0A46 0A46 ; "out"
-00000000: DIC_WORD dic_count_0A4A 0A4A ; "count"
+PROCEDURE proc_menbr_0000
+    CONDITIONAL_BLOCK 01 proc_men1_00B3
+    BRANCH_PRESENTATION
+    ACTOR field_menu_0872_s13_08AC object_blood_0028 0
+    RECORD_WILDCARD AF field_Bronko_031A_s11_0332 FFFF 0
+    GUARD_POP
+    TEXT object_menu_0872 FF 00 80 - - "\"IMPROVED"@000C "MENU\""@0016
+    TEXT object_menu_0872 FF 00 80 - - "Today"@001C "CHEF"@0022 "BRONKO"@0027 "has"@002E "laid"@0032 "on"@0037 "for"@003A "you"@003E ":"@0042
+    TEXT object_menu_0872 FF 00 80 - - "Tasty"@0044 "MURFFALO"@004A "soup"@0053 "Bronko-style"@0058 "."@0065
+    TEXT object_menu_0872 FF 00 80 - - "MURFFALO"@004A "kidneys"@0067 "Bronko-style"@0058 "."@0065
+    TEXT object_menu_0872 FF 00 80 - - "MURFFALO"@004A "hamburger"@006F "with"@0079 "Bar-B-Q"@007E "recycled-oil"@0086 "dip"@0093 "."@0065
+    TEXT object_menu_0872 FF 00 80 - - "Smooth"@0097 "MURFFALO-chip"@009E "ice"@00AC "cream"@00B0 "."@0065
+    TEXT object_menu_0872 FF 00 80 - - "Recycled"@00B6 "water"@00BF
+    TEXT object_menu_0872 FF 00 80 - - "Chef"@00C5 "Bronko"@00CA "says"@00D1 "..."@00D6 "Burping's"@00DA "bad"@00E4 "manners"@00E8 "!"@00F0 "..."@00D6
+    TEXT object_menu_0872 FF 08 80 - - "stop"@00F2
+    RECORD_CLEAR field_menu_0872_s13_08AC
+END_PROCEDURE proc_menbr_0000
 
-00000000: PROCEDURE proc_menbr_0000 ; DEB kind 2 "menbr", encoded offset 0x0001
-00000000: CONDITIONAL_BLOCK 01 proc_men1_00B3 ; CONDITIONAL_BLOCK flags=0x01 target=0x00B3
-00000004: BRANCH_PRESENTATION ; BRANCH_PRESENTATION
-00000005: ACTOR field_menu_0872_s13_08AC object_blood_0028 0 ; ACTOR record=0x08AC related=0x0028 inverted=false
-0000000A: RECORD_WILDCARD AF field_Bronko_031A_s11_0332 FFFF 0 ; OP_AF RECORD_WILDCARD record=0x0332 value=0xFFFF inverted=false
-0000000F: GUARD_POP ; GUARD_POP
-00000010: TEXT object_menu_0872 FF 00 80 - - dic__22IMPROVED_000C dic_MENU_22_0016 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "\"IMPROVED MENU\""
-0000001C: TEXT object_menu_0872 FF 00 80 - - dic_Today_001C dic_CHEF_0022 dic_BRONKO_0027 dic_has_002E dic_laid_0032 dic_on_0037 dic_for_003A dic_you_003E dic__3A_0042 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Today CHEF BRONKO has laid on for you :"
-00000036: TEXT object_menu_0872 FF 00 80 - - dic_Tasty_0044 dic_MURFFALO_004A dic_soup_0053 dic_Bronko_2Dstyle_0058 dic__2E_0065 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Tasty MURFFALO soup Bronko-style ."
-00000048: TEXT object_menu_0872 FF 00 80 - - dic_MURFFALO_004A dic_kidneys_0067 dic_Bronko_2Dstyle_0058 dic__2E_0065 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "MURFFALO kidneys Bronko-style ."
-00000058: TEXT object_menu_0872 FF 00 80 - - dic_MURFFALO_004A dic_hamburger_006F dic_with_0079 dic_Bar_2DB_2DQ_007E dic_recycled_2Doil_0086 dic_dip_0093 dic__2E_0065 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "MURFFALO hamburger with Bar-B-Q recycled-oil dip ."
-0000006E: TEXT object_menu_0872 FF 00 80 - - dic_Smooth_0097 dic_MURFFALO_2Dchip_009E dic_ice_00AC dic_cream_00B0 dic__2E_0065 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Smooth MURFFALO-chip ice cream ."
-00000080: TEXT object_menu_0872 FF 00 80 - - dic_Recycled_00B6 dic_water_00BF ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Recycled water"
-0000008C: TEXT object_menu_0872 FF 00 80 - - dic_Chef_00C5 dic_Bronko_00CA dic_says_00D1 dic__2E_2E_2E_00D6 dic_Burping_27s_00DA dic_bad_00E4 dic_manners_00E8 dic__21_00F0 dic__2E_2E_2E_00D6 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Chef Bronko says ... Burping's bad manners ! ..."
-000000A6: TEXT object_menu_0872 FF 08 80 - - dic_stop_00F2 ; TEXT line=0x0872 voice=0xFF flags=0x08,0x80 "stop"
-000000B0: RECORD_CLEAR field_menu_0872_s13_08AC ; RECORD_CLEAR record=0x08AC
-000000B3: END_PROCEDURE proc_menbr_0000
-000000B3: PROCEDURE proc_men1_00B3 ; DEB kind 2 "men1", encoded offset 0x00B4
-000000B3: CONDITIONAL_BLOCK 01 proc_men2_0163 ; CONDITIONAL_BLOCK flags=0x01 target=0x0163
-000000B7: BRANCH_PRESENTATION ; BRANCH_PRESENTATION
-000000B8: ACTOR field_menu_0872_s13_08AC object_blood_0028 0 ; ACTOR record=0x08AC related=0x0028 inverted=false
-000000BD: RECORD_WILDCARD AF field_Bronko_031A_s11_0332 FFFF 1 ; OP_AF RECORD_WILDCARD record=0x0332 value=0xFFFF inverted=true
-000000C3: GUARD_POP ; GUARD_POP
-000000C4: TEXT object_menu_0872 FF 00 80 - - dic__22MENU_22_00F7 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "\"MENU\""
-000000CE: TEXT object_menu_0872 FF 00 80 - - dic_Today_27s_00FE dic_fare_0106 dic__3A_0042 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Today's fare :"
-000000DC: TEXT object_menu_0872 FF 00 80 - - dic_PLASMA_010B dic_soup_0053 dic_HONK_2Dstyle_0112 dic__2E_0065 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "PLASMA soup HONK-style ."
-000000EC: TEXT object_menu_0872 FF 00 80 - - dic_WRIGGLER_011D dic_belly_0126 dic_in_012C dic_slobber_012F dic_sauce_0137 dic__2E_0065 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "WRIGGLER belly in slobber sauce ."
-00000100: TEXT object_menu_0872 FF 00 80 - - dic_Jellied_013D dic_URTIKAN_0145 dic_with_0079 dic_MURFFALO_004A dic_bone_014D dic_marrow_0152 dic__2E_0065 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Jellied URTIKAN with MURFFALO bone marrow ."
-00000116: TEXT object_menu_0872 FF 00 80 - - dic_GLOK_0159 dic_eye_015E dic_pie_0162 dic__2E_0065 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "GLOK eye pie ."
-00000126: TEXT object_menu_0872 FF 00 80 - - dic_Recycled_00B6 dic_water_00BF ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Recycled water"
-00000132: TEXT object_menu_0872 FF 00 80 - - dic_The_0166 dic_chef_016A dic_says_00D1 dic__2E_2E_2E_00D6 dic_Don_27t_016F dic_eat_0175 dic_with_0079 dic_your_0179 dic_mouth_017E dic_full_0184 dic__21_00F0 dic__2E_2E_2E_00D6 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "The chef says ... Don't eat with your mouth full ! ..."
-00000152: TEXT object_menu_0872 FF 08 90 - - dic_Stop_0189 ; TEXT line=0x0872 voice=0xFF flags=0x08,0x90 "Stop"
-0000015C: POKE_BYTE 00B4 00 ; POKE_BYTE address=0x00B4 value=0x00
-00000160: RECORD_CLEAR field_menu_0872_s13_08AC ; RECORD_CLEAR record=0x08AC
-00000163: END_PROCEDURE proc_men1_00B3
-00000163: PROCEDURE proc_men2_0163 ; DEB kind 2 "men2", encoded offset 0x0164
-00000163: CONDITIONAL_BLOCK 01 proc_men3_020D ; CONDITIONAL_BLOCK flags=0x01 target=0x020D
-00000167: BRANCH_PRESENTATION ; BRANCH_PRESENTATION
-00000168: ACTOR field_menu_0872_s13_08AC object_blood_0028 0 ; ACTOR record=0x08AC related=0x0028 inverted=false
-0000016D: RECORD_WILDCARD AF field_Bronko_031A_s11_0332 FFFF 1 ; OP_AF RECORD_WILDCARD record=0x0332 value=0xFFFF inverted=true
-00000173: GUARD_POP ; GUARD_POP
-00000174: TEXT object_menu_0872 FF 00 80 - - dic__22MENU_22_00F7 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "\"MENU\""
-0000017E: TEXT object_menu_0872 FF 00 80 - - dic_Today_27s_00FE dic_fare_0106 dic__3A_0042 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Today's fare :"
-0000018C: TEXT object_menu_0872 FF 00 80 - - dic_PLASMA_010B dic_soup_0053 dic_HONK_2Dstyle_0112 dic__2E_0065 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "PLASMA soup HONK-style ."
-0000019C: TEXT object_menu_0872 FF 00 80 - - dic_WRIGGLER_011D dic_snout_018E dic_stew_0194 dic__2E_0065 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "WRIGGLER snout stew ."
-000001AC: TEXT object_menu_0872 FF 00 80 - - dic_URTIKAN_0145 dic_seeds_0199 dic_in_012C dic_MURFFALO_004A dic_venom_019F dic__2E_0065 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "URTIKAN seeds in MURFFALO venom ."
-000001C0: TEXT object_menu_0872 FF 00 80 - - dic_GLOK_0159 dic_juice_01A5 dic_dessert_01AB dic__2E_0065 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "GLOK juice dessert ."
-000001D0: TEXT object_menu_0872 FF 00 80 - - dic_Recycled_00B6 dic_water_00BF ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Recycled water"
-000001DC: TEXT object_menu_0872 FF 00 80 - - dic_The_0166 dic_chef_016A dic_says_00D1 dic__2E_2E_2E_00D6 dic_Don_27t_016F dic_talk_0001 dic_with_0079 dic_your_0179 dic_mouth_017E dic_open_01B3 dic__21_00F0 dic__2E_2E_2E_00D6 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "The chef says ... Don't talk with your mouth open ! ..."
-000001FC: TEXT object_menu_0872 FF 08 90 - - dic_stop_00F2 ; TEXT line=0x0872 voice=0xFF flags=0x08,0x90 "stop"
-00000206: POKE_BYTE 0164 00 ; POKE_BYTE address=0x0164 value=0x00
-0000020A: RECORD_CLEAR field_menu_0872_s13_08AC ; RECORD_CLEAR record=0x08AC
-0000020D: END_PROCEDURE proc_men2_0163
-0000020D: PROCEDURE proc_men3_020D ; DEB kind 2 "men3", encoded offset 0x020E
-0000020D: CONDITIONAL_BLOCK 01 proc_men4_02B9 ; CONDITIONAL_BLOCK flags=0x01 target=0x02B9
-00000211: BRANCH_PRESENTATION ; BRANCH_PRESENTATION
-00000212: RECORD_WILDCARD AF field_Bronko_031A_s11_0332 FFFF 1 ; OP_AF RECORD_WILDCARD record=0x0332 value=0xFFFF inverted=true
-00000218: ACTOR field_menu_0872_s13_08AC object_blood_0028 0 ; ACTOR record=0x08AC related=0x0028 inverted=false
-0000021D: GUARD_POP ; GUARD_POP
-0000021E: TEXT object_menu_0872 FF 00 80 - - dic__22MENU_22_00F7 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "\"MENU\""
-00000228: TEXT object_menu_0872 FF 00 80 - - dic_Today_27s_00FE dic_fare_0106 dic__3A_0042 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Today's fare :"
-00000236: TEXT object_menu_0872 FF 00 80 - - dic_PLASMA_010B dic_soup_0053 dic_HONK_2Dstyle_0112 dic__2E_0065 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "PLASMA soup HONK-style ."
-00000246: TEXT object_menu_0872 FF 00 80 - - dic_WRIGGLER_011D dic_feet_01B8 dic_in_012C dic_emulsive_01BD dic_sauce_0137 dic__2E_0065 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "WRIGGLER feet in emulsive sauce ."
-0000025A: TEXT object_menu_0872 FF 00 80 - - dic_URTIKAN_0145 dic_leaves_01C6 dic_in_012C dic_MURFFALO_004A dic_sweat_01CD dic__2E_0065 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "URTIKAN leaves in MURFFALO sweat ."
-0000026E: TEXT object_menu_0872 FF 00 80 - - dic_GLOK_0159 dic_flake_01D3 dic_dessert_01AB dic__2E_0065 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "GLOK flake dessert ."
-0000027E: TEXT object_menu_0872 FF 00 80 - - dic_Recycled_00B6 dic_water_00BF ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Recycled water"
-0000028A: TEXT object_menu_0872 FF 00 80 - - dic_The_0166 dic_chef_016A dic_says_00D1 dic__2E_2E_2E_00D6 dic_Somebody_01D9 dic_didn_27t_01E2 dic_finish_01E9 dic_his_01F0 dic_wrigglers_01F4 dic_yesterday_01FE dic__2E_2E_2E_00D6 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "The chef says ... Somebody didn't finish his wrigglers yesterday ..."
-000002A8: TEXT object_menu_0872 FF 08 90 - - dic_stop_00F2 ; TEXT line=0x0872 voice=0xFF flags=0x08,0x90 "stop"
-000002B2: POKE_BYTE 020E 00 ; POKE_BYTE address=0x020E value=0x00
-000002B6: RECORD_CLEAR field_menu_0872_s13_08AC ; RECORD_CLEAR record=0x08AC
-000002B9: END_PROCEDURE proc_men3_020D
-000002B9: PROCEDURE proc_men4_02B9 ; DEB kind 2 "men4", encoded offset 0x02BA
-000002B9: CONDITIONAL_BLOCK 01 proc_men5_036D ; CONDITIONAL_BLOCK flags=0x01 target=0x036D
-000002BD: BRANCH_PRESENTATION ; BRANCH_PRESENTATION
-000002BE: ACTOR field_menu_0872_s13_08AC object_blood_0028 0 ; ACTOR record=0x08AC related=0x0028 inverted=false
-000002C3: RECORD_WILDCARD AF field_Bronko_031A_s11_0332 FFFF 1 ; OP_AF RECORD_WILDCARD record=0x0332 value=0xFFFF inverted=true
-000002C9: GUARD_POP ; GUARD_POP
-000002CA: TEXT object_menu_0872 FF 00 80 - - dic__22MENU_22_00F7 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "\"MENU\""
-000002D4: TEXT object_menu_0872 FF 00 80 - - dic_Today_27s_00FE dic_fare_0106 dic__3A_0042 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Today's fare :"
-000002E2: TEXT object_menu_0872 FF 00 80 - - dic_HONK_2Dstyle_0112 dic_PLASMA_010B dic_soup_0053 dic__2E_0065 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "HONK-style PLASMA soup ."
-000002F2: TEXT object_menu_0872 FF 00 80 - - dic_WRIGGLER_011D dic_brain_0208 dic__2C_020E dic_stewed_0210 dic_in_012C dic_its_0217 dic_own_021B dic_juice_01A5 dic__2E_0065 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "WRIGGLER brain , stewed in its own juice ."
-0000030C: TEXT object_menu_0872 FF 00 80 - - dic_URTIKAN_0145 dic_trunk_021F dic__2C_020E dic_stuffed_0225 dic_with_0079 dic_MURFFALO_004A dic_liver_022D dic__2E_0065 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "URTIKAN trunk , stuffed with MURFFALO liver ."
-00000324: TEXT object_menu_0872 FF 00 80 - - dic_GLOK_0159 dic_dee_2Dlite_0233 dic__2E_0065 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "GLOK dee-lite ."
-00000332: TEXT object_menu_0872 FF 00 80 - - dic_Recycled_00B6 dic_water_00BF ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Recycled water"
-0000033E: TEXT object_menu_0872 FF 00 80 - - dic_The_0166 dic_chef_016A dic_says_00D1 dic__2E_2E_2E_00D6 dic_Plenty_023C dic_more_0243 dic_in_012C dic_the_0248 dic_kitchen_024C dic__21_00F0 dic__2E_2E_2E_00D6 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "The chef says ... Plenty more in the kitchen ! ..."
-0000035C: TEXT object_menu_0872 FF 08 90 - - dic_stop_00F2 ; TEXT line=0x0872 voice=0xFF flags=0x08,0x90 "stop"
-00000366: POKE_BYTE 02BA 00 ; POKE_BYTE address=0x02BA value=0x00
-0000036A: RECORD_CLEAR field_menu_0872_s13_08AC ; RECORD_CLEAR record=0x08AC
-0000036D: END_PROCEDURE proc_men4_02B9
-0000036D: PROCEDURE proc_men5_036D ; DEB kind 2 "men5", encoded offset 0x036E
-0000036D: CONDITIONAL_BLOCK 01 proc_men6_0429 ; CONDITIONAL_BLOCK flags=0x01 target=0x0429
-00000371: BRANCH_PRESENTATION ; BRANCH_PRESENTATION
-00000372: ACTOR field_menu_0872_s13_08AC object_blood_0028 0 ; ACTOR record=0x08AC related=0x0028 inverted=false
-00000377: RECORD_WILDCARD AF field_Bronko_031A_s11_0332 FFFF 1 ; OP_AF RECORD_WILDCARD record=0x0332 value=0xFFFF inverted=true
-0000037D: GUARD_POP ; GUARD_POP
-0000037E: TEXT object_menu_0872 FF 00 80 - - dic__22IMPROVED_000C dic_MENU_22_0016 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "\"IMPROVED MENU\""
-0000038A: TEXT object_menu_0872 FF 00 80 - - dic_Today_27s_00FE dic_fare_0106 dic__3A_0042 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Today's fare :"
-00000398: TEXT object_menu_0872 FF 00 80 - - dic_Soup_0254 dic_of_0259 dic_PLASMA_010B dic_HONK_2Dstyle_0112 dic__2E_0065 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Soup of PLASMA HONK-style ."
-000003AA: TEXT object_menu_0872 FF 00 80 - - dic_WRIGGLER_011D dic_hearts_025C dic_in_012C dic_green_0263 dic_blood_0269 dic_coagulate_026F dic__2E_0065 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "WRIGGLER hearts in green blood coagulate ."
-000003C0: TEXT object_menu_0872 FF 00 80 - - dic_URTIKAN_0145 dic_roots_0279 dic__2C_020E dic_deep_027F dic_fried_0284 dic_in_012C dic_recycled_028A dic_oil_0293 dic__2E_0065 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "URTIKAN roots , deep fried in recycled oil ."
-000003DA: TEXT object_menu_0872 FF 00 80 - - dic_Candied_0297 dic_GLOK_0159 dic_tongue_029F dic__2E_0065 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Candied GLOK tongue ."
-000003EA: TEXT object_menu_0872 FF 00 80 - - dic_Recycled_00B6 dic_water_00BF ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Recycled water"
-000003F6: TEXT object_menu_0872 FF 00 80 - - dic_The_0166 dic_chef_016A dic_says_00D1 dic__2E_2E_2E_00D6 dic_You_02A6 dic_eat_0175 dic_what_02AA dic_you_003E dic_are_02AF dic__21_00F0 dic__2E_2E_2E_00D6 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "The chef says ... You eat what you are ! ..."
-00000414: TEXT object_menu_0872 FF 08 A0 - - dic_stop_00F2 ; TEXT line=0x0872 voice=0xFF flags=0x08,0xA0 "stop"
-0000041E: POKE_BYTE 036E 00 ; POKE_BYTE address=0x036E value=0x00
-00000422: POKE_BYTE 042A 01 ; POKE_BYTE address=0x042A value=0x01
-00000426: RECORD_CLEAR field_menu_0872_s13_08AC ; RECORD_CLEAR record=0x08AC
-00000429: END_PROCEDURE proc_men5_036D
-00000429: PROCEDURE proc_men6_0429 ; DEB kind 2 "men6", encoded offset 0x042A
-00000429: CONDITIONAL_BLOCK 00 proc_tima_0446 ; CONDITIONAL_BLOCK flags=0x00 target=0x0446
-0000042D: GUARD_POP ; GUARD_POP
-0000042E: POKE_BYTE 00B4 01 ; POKE_BYTE address=0x00B4 value=0x01
-00000432: POKE_BYTE 0164 01 ; POKE_BYTE address=0x0164 value=0x01
-00000436: POKE_BYTE 020E 01 ; POKE_BYTE address=0x020E value=0x01
-0000043A: POKE_BYTE 02BA 01 ; POKE_BYTE address=0x02BA value=0x01
-0000043E: POKE_BYTE 036E 01 ; POKE_BYTE address=0x036E value=0x01
-00000442: POKE_BYTE 042A 00 ; POKE_BYTE address=0x042A value=0x00
-00000446: END_PROCEDURE proc_men6_0429
-00000446: PROCEDURE proc_tima_0446 ; DEB kind 2 "tima", encoded offset 0x0447
-00000446: CONDITIONAL_BLOCK 01 proc_ho_0453 ; CONDITIONAL_BLOCK flags=0x01 target=0x0453
-0000044A: GUARD_POP ; GUARD_POP
-0000044B: STATE_ARRAY_SET 16 0005 ; STATE_ARRAY_SET index=0x16 value=0x0005
-0000044F: POKE_BYTE 0447 00 ; POKE_BYTE address=0x0447 value=0x00
-00000453: END_PROCEDURE proc_tima_0446
-00000453: PROCEDURE proc_ho_0453 ; DEB kind 2 "ho", encoded offset 0x0454
-00000453: CONDITIONAL_BLOCK 01 proc_ho1_0463 ; CONDITIONAL_BLOCK flags=0x01 target=0x0463
-00000457: STATE_ARRAY_TEST 16 ; STATE_ARRAY_TEST index=0x16
-00000459: GUARD_POP ; GUARD_POP
-0000045A: RECORD_LINK field_Izwalito_055A_s13_0594 object_blood_0028 0 ; RECORD_LINK record=0x0594 related=0x0028 inverted=false
-0000045F: POKE_BYTE 0454 00 ; POKE_BYTE address=0x0454 value=0x00
-00000463: END_PROCEDURE proc_ho_0453
-00000463: PROCEDURE proc_ho1_0463 ; DEB kind 2 "ho1", encoded offset 0x0464
-00000463: CONDITIONAL_BLOCK 01 proc_hon_061D ; CONDITIONAL_BLOCK flags=0x01 target=0x061D
-00000467: BRANCH_PRESENTATION ; BRANCH_PRESENTATION
-00000468: ACTOR field_Izwalito_055A_s13_0594 object_blood_0028 0 ; ACTOR record=0x0594 related=0x0028 inverted=false
-0000046D: GUARD_POP ; GUARD_POP
-0000046E: TEXT object_Izwalito_055A FF 08 80 - - dic_You_02A6 dic_found_02B3 dic_the_0248 dic_right_02B9 dic_button_02BF dic__2E_0065 dic_So_02C6 dic_far_02C9 dic_so_02CD dic_good_02D0 dic__2E_2E_2E_00D6 ; TEXT line=0x055A voice=0xFF flags=0x08,0x80 "You found the right button . So far so good ..."
-0000048C: RECORD_WILDCARD BC field_Izwalito_055A_s0F_05A0 02D5 0 ; OP_BC RECORD_WILDCARD record=0x05A0 value=0x02D5 inverted=false
-00000491: TEXT object_Izwalito_055A FF 10 80 block_04CE - dic_Click_02DA dic_quick_2C_02E0 dic_Cap_27n_02E7 dic_Bob_02ED dic_is_02F1 dic_waiting_02F4 dic__2E_2E_2E_00D6 FFFF dic_explanations_02FC dic_game_0309 ; TEXT line=0x055A voice=0xFF flags=0x10,0x80 "Click quick, Cap'n Bob is waiting ..."
-000004AF: GUARD_PUSH block_04C6 ; GUARD_PUSH target=0x04C6 ; unstructured_guard=alternate_exit
-000004B2: CONCEPT_GUARD dic_game_0309 0 ; CONCEPT_GUARD word=0x0309 inverted=false "game"
-000004B5: GUARD_POP ; GUARD_POP
-000004B6: TEXT object_Izwalito_055A FF 08 A0 - - dic_GAME_030E ; TEXT line=0x055A voice=0xFF flags=0x08,0xA0 "GAME"
-000004C0: RUN_PROFILE 02 ; RUN_PROFILE operand=0x02 profile=0x0001
-000004C2: CLEAR_ALTERNATE_CONCEPT ; CLEAR_ALTERNATE_CONCEPT
-000004C3: RECORD_CLEAR field_Izwalito_055A_s13_0594 ; RECORD_CLEAR record=0x0594
-000004C6: LABEL block_04C6
-000004C6: WHEN block_04CE ; GUARD_PUSH target=0x04CE
-000004C9: CONCEPT_GUARD dic_explanations_02FC 0 ; CONCEPT_GUARD word=0x02FC inverted=false "explanations"
-000004CC: THEN ; GUARD_POP
-000004CD: CLEAR_ALTERNATE_CONCEPT ; CLEAR_ALTERNATE_CONCEPT
-000004CE: END_WHEN block_04CE
-000004CE: LABEL block_04CE
-000004CE: TEXT object_Izwalito_055A FF 00 80 - - dic_You_02A6 dic_can_0313 dic_modify_0317 dic_the_0248 dic_text_031E dic_speed_0323 dic_by_0329 dic_clicking_032C dic_on_0037 dic__22OPTION_22_0335 ; TEXT line=0x055A voice=0xFF flags=0x00,0x80 "You can modify the text speed by clicking on \"OPTION\""
-000004EA: TEXT object_Izwalito_055A FF 00 80 - - dic_You_02A6 dic_can_0313 dic_wake_033E dic_Cap_27n_02E7 dic_Bob_02ED dic_by_0329 dic_clicking_032C dic_on_0037 dic__22CRYOBOX_22_0343 ; TEXT line=0x055A voice=0xFF flags=0x00,0x80 "You can wake Cap'n Bob by clicking on \"CRYOBOX\""
-00000504: TEXT object_Izwalito_055A FF 00 80 - - dic_Or_034D dic_load_0350 dic_a_0355 dic__22Saved_0357 dic_Game_22_035E dic_by_0329 dic_clicking_032C dic_on_0037 dic__22OPTION_22_0335 ; TEXT line=0x055A voice=0xFF flags=0x00,0x80 "Or load a \"Saved Game\" by clicking on \"OPTION\""
-0000051E: TEXT object_Izwalito_055A FF 00 80 - - dic_The_0166 dic_OPTION_0364 dic__22LAST_22_036B dic_is_02F1 dic_the_0248 dic__22AUTOMATIC_0372 dic_PERMANENT_037D dic_SAVE_22_2E_0387 dic_If_038E dic_you_003E dic_forget_0391 dic_to_0398 dic_save_2C_039B dic_click_03A2 dic_on_0037 dic__22LAST_22_2E_2E_2E_03A8 ; TEXT line=0x055A voice=0xFF flags=0x00,0x80 "The OPTION \"LAST\" is the \"AUTOMATIC PERMANENT SAVE\". If you forget to save, click on \"LAST\"..."
-00000546: TEXT object_Izwalito_055A FF 00 80 - - dic_We_03B2 dic_would_03B5 dic_like_03BB dic_to_0398 dic_draw_03C0 dic_your_0179 dic_ATTENTION_03C5 dic_to_0398 dic_certain_03CF dic_RISKS_03D7 dic__2E_2E_2E_00D6 ; TEXT line=0x055A voice=0xFF flags=0x00,0x80 "We would like to draw your ATTENTION to certain RISKS ..."
-00000564: TEXT object_Izwalito_055A FF 00 80 - - dic_If_038E dic_you_003E dic_experience_03DD dic_UNUSUAL_03E8 dic_SENSATIONS_03F0 dic__2C_020E dic_DIZZINESS_03FB dic_or_0405 dic_FACIAL_0408 dic_DISTORTION_040F dic__2E_2E_2E_00D6 ; TEXT line=0x055A voice=0xFF flags=0x00,0x80 "If you experience UNUSUAL SENSATIONS , DIZZINESS or FACIAL DISTORTION ..."
-00000582: TEXT object_Izwalito_055A FF 00 80 - - dic_Stay_041A dic_CALM_041F dic__2E_2E_2E_00D6 ; TEXT line=0x055A voice=0xFF flags=0x00,0x80 "Stay CALM ..."
-00000590: TEXT object_Izwalito_055A FF 00 80 - - dic_It_0424 dic_may_0427 dic_only_042B dic_be_0430 dic_a_0355 dic_CRISIS_2C_0433 dic_a_0355 dic_SPELL_043B dic__2C_020E dic_a_0355 dic_CURSE_0441 dic_or_0405 dic__2C_020E dic_at_0447 dic_worst_044A dic__2C_020E dic_a_0355 dic_SCRAMBLED_0450 dic_BRAIN_045A dic__2E_2E_2E_00D6 ; TEXT line=0x055A voice=0xFF flags=0x00,0x80 "It may only be a CRISIS, a SPELL , a CURSE or , at worst , a SCRAMBLED BRAIN ..."
-000005C0: TEXT object_Izwalito_055A FF 00 80 - - dic_In_0460 dic_which_0463 dic_case_0469 dic__2C_020E dic_write_046E dic_to_0398 dic__3A_0042 dic_SUPER_0474 dic_ZEN_047A dic__2C_020E dic_end_047E dic_of_0259 dic_corridor_0482 dic__2C_020E dic_CRAZYSTONE_048B dic_planet_0496 dic__2C_020E dic_BABY1_049D dic_UNIVERSE_04A3 dic__2E_2E_2E_00D6 ; TEXT line=0x055A voice=0xFF flags=0x00,0x80 "In which case , write to : SUPER ZEN , end of corridor , CRAZYSTONE planet , BABY1 UNIVERSE ..."
-000005F0: TEXT object_Izwalito_055A FF 00 80 - - dic_Click_02DA dic_quick_04AC dic_on_0037 dic__22HONK_22_04B2 dic__2E_0065 dic_He_04B9 dic_has_002E dic_important_04BC dic_information_04C6 dic_for_003A dic_YOU_04D2 dic__2E_2E_2E_00D6 ; TEXT line=0x055A voice=0xFF flags=0x00,0x80 "Click quick on \"HONK\" . He has important information for YOU ..."
-00000610: TEXT object_Izwalito_055A FF 08 80 - - dic__2E_2E_2E_00D6 ; TEXT line=0x055A voice=0xFF flags=0x08,0x80 "..."
-0000061A: RECORD_CLEAR field_Izwalito_055A_s13_0594 ; RECORD_CLEAR record=0x0594
-0000061D: END_PROCEDURE proc_ho1_0463
-0000061D: PROCEDURE proc_hon_061D ; DEB kind 2 "hon", encoded offset 0x061E
-0000061D: CONDITIONAL_BLOCK 01 proc_BOB1_077D ; CONDITIONAL_BLOCK flags=0x01 target=0x077D
-00000621: BRANCH_PRESENTATION ; BRANCH_PRESENTATION
-00000622: ACTOR field_Honk_082A_s13_0864 object_blood_0028 0 ; ACTOR record=0x0864 related=0x0028 inverted=false
-00000627: GUARD_POP ; GUARD_POP
-00000628: TEXT object_Honk_082A FF 20 80 - - dic_Welcome_04D6 dic_aboard_04DE dic_the_0248 dic_ARK_04E5 dic__2C_020E dic_Commander_04E9 dic__2E_0065 dic_I_27m_04F3 dic_HONK_04F7 dic__2C_020E dic_your_0179 dic_trusted_04FC dic_computer_0504 dic__2E_2E_2E_00D6 ; TEXT line=0x082A voice=0xFF flags=0x20,0x80 "Welcome aboard the ARK , Commander . I'm HONK , your trusted computer ..."
-0000064C: TEXT object_Honk_082A FF 20 80 - - dic_I_27m_04F3 dic_here_050D dic_to_0398 dic_help_0512 dic_you_003E dic_a_0355 dic_lot_0517 dic__2E_2E_2E_00D6 ; TEXT line=0x082A voice=0xFF flags=0x20,0x80 "I'm here to help you a lot ..."
-00000664: TEXT object_Honk_082A FF 20 80 - - dic_If_038E dic_the_0248 dic_phone_051B dic_rings_0521 dic__2C_020E dic_just_0527 dic_hit_052C dic_the_0248 dic__22RED_0530 dic_BUTTON_22_0535 dic_in_012C dic_front_053D dic_of_0259 dic_you_003E dic__2E_2E_2E_00D6 ; TEXT line=0x082A voice=0xFF flags=0x20,0x80 "If the phone rings , just hit the \"RED BUTTON\" in front of you ..."
-0000068A: TEXT object_Honk_082A FF 20 80 - - dic_Cap_27n_02E7 dic_Bob_2C_0543 dic_our_0548 dic_revered_054C dic_leader_0554 dic__2C_020E dic_is_02F1 dic_cryonized_055B dic_in_012C dic_the_0248 dic_CRYOBOX_0565 dic__2E_2E_2E_00D6 ; TEXT line=0x082A voice=0xFF flags=0x20,0x80 "Cap'n Bob, our revered leader , is cryonized in the CRYOBOX ..."
-000006AA: TEXT object_Honk_082A FF 20 80 - - dic_Of_056D dic_course_0570 dic_you_003E dic_can_0313 dic_wake_033E dic_Cap_27n_02E7 dic_Bob_02ED dic_and_0577 dic_question_057B dic_him_0584 dic__2E_2E_2E_00D6 dic_But_0588 dic_like_03BB dic_not_058C dic_too_0590 dic_often_0594 dic__2C_020E dic_okay_059A dic__3F_059F dic__2E_2E_2E_00D6 ; TEXT line=0x082A voice=0xFF flags=0x20,0x80 "Of course you can wake Cap'n Bob and question him ... But like not too often , okay ? ..."
-000006DA: TEXT object_Honk_082A FF 20 80 - - dic_Cap_27n_02E7 dic_Bob_02ED dic_knows_05A2 dic_everything_05A8 dic__2E_2E_2E_00D6 dic_That_27s_05B3 dic_why_05BA dic_he_27s_05BE dic_the_0248 dic_boss_05C3 dic__2E_2E_2E_00D6 ; TEXT line=0x082A voice=0xFF flags=0x20,0x80 "Cap'n Bob knows everything ... That's why he's the boss ..."
-000006F8: TEXT object_Honk_082A FF 20 80 - - dic_Our_05C8 dic_ship_05CC dic_is_02F1 dic_currently_05D1 dic_surrounded_05DB dic_by_0329 dic_things_05E6 dic_called_05ED dic_stars_05F4 dic__2E_2E_2E_00D6 ; TEXT line=0x082A voice=0xFF flags=0x20,0x80 "Our ship is currently surrounded by things called stars ..."
-00000714: TEXT object_Honk_082A FF 20 80 - - dic_Remember_05FA dic__2C_020E dic_deep_027F dic_space_0603 dic_is_02F1 dic_no_0609 dic_place_060C dic_for_003A dic_night_0612 dic_clubs_0618 dic__21_00F0 dic__2E_2E_2E_00D6 ; TEXT line=0x082A voice=0xFF flags=0x20,0x80 "Remember , deep space is no place for night clubs ! ..."
-00000734: TEXT object_Honk_082A FF 20 80 - - dic_If_038E dic_you_003E dic_have_061E dic_questions_2C_0623 dic_I_062E dic_have_061E dic_all_0630 dic_the_0248 dic_answers_0634 dic__2E_2E_2E_00D6 ; TEXT line=0x082A voice=0xFF flags=0x20,0x80 "If you have questions, I have all the answers ..."
-00000750: TEXT object_Honk_082A FF 20 80 - - dic_Click_02DA dic_quick_04AC dic_on_0037 dic__22CRYOBOX_22_0343 dic_Cap_27n_02E7 dic_Bob_02ED dic_is_02F1 dic_waiting_02F4 dic__2E_2E_2E_00D6 ; TEXT line=0x082A voice=0xFF flags=0x20,0x80 "Click quick on \"CRYOBOX\" Cap'n Bob is waiting ..."
-0000076A: TEXT object_Honk_082A FF 28 80 - - dic_End_063C dic_of_0259 dic_report_0640 dic__2E_2E_2E_00D6 ; TEXT line=0x082A voice=0xFF flags=0x28,0x80 "End of report ..."
-0000077A: RECORD_CLEAR field_Honk_082A_s13_0864 ; RECORD_CLEAR record=0x0864
-0000077D: END_PROCEDURE proc_hon_061D
-0000077D: PROCEDURE proc_BOB1_077D ; DEB kind 2 "BOB1", encoded offset 0x077E
-0000077D: CONDITIONAL_BLOCK 01 proc_scr2_0BF6 ; CONDITIONAL_BLOCK flags=0x01 target=0x0BF6
-00000781: BRANCH_FLAG_274F ; BRANCH_FLAG_274F
-00000782: ACTOR field_Bob_Morlock_004A_s13_0084 object_blood_0028 0 ; ACTOR record=0x0084 related=0x0028 inverted=false
-00000787: GUARD_POP ; GUARD_POP
-00000788: TEXT object_Bob_Morlock_004A 03 00 80 - - dic_Good_0647 dic_day_064C dic_COMMANDER_0650 dic__2E_0065 dic_My_065A dic_name_065D dic_is_02F1 dic_BOB_0662 dic__2C_020E dic_BOB_0662 dic_MORLOCK_0666 dic__2E_2E_2E_00D6 ; TEXT line=0x004A voice=0x03 flags=0x00,0x80 "Good day COMMANDER . My name is BOB , BOB MORLOCK ..."
-000007A8: TEXT object_Bob_Morlock_004A 01 00 80 - - dic_If_038E dic_the_0248 dic_phone_051B dic_rings_0521 dic__2C_020E dic_press_066E dic_the_0248 dic__22RED_0530 dic_BUTTON_22_0535 dic_on_0037 dic_the_0248 dic_radio_0674 dic_to_0398 dic_answer_067A dic__2E_2E_2E_00D6 ; TEXT line=0x004A voice=0x01 flags=0x00,0x80 "If the phone rings , press the \"RED BUTTON\" on the radio to answer ..."
-000007CE: TEXT object_Bob_Morlock_004A 02 00 80 - - dic_My_065A dic_ears_0681 dic_are_02AF dic_fragile_2C_0686 dic_Commander_04E9 dic__2E_2E_2E_00D6 ; TEXT line=0x004A voice=0x02 flags=0x00,0x80 "My ears are fragile, Commander ..."
-000007E2: TEXT object_Bob_Morlock_004A 02 10 80 block_083D - dic_Do_068F dic_you_003E dic_want_0692 dic_me_0697 dic_to_0398 dic_explain_069A dic_your_0179 dic_mission_06A2 dic_to_0398 dic_you_003E dic__2C_020E dic_Commander_04E9 dic__3F_059F FFFF dic_yes_06AA dic_no_0609 ; TEXT line=0x004A voice=0x02 flags=0x10,0x80 "Do you want me to explain your mission to you , Commander ?"
-0000080C: GUARD_PUSH block_0834 ; GUARD_PUSH target=0x0834 ; unstructured_guard=alternate_exit
-0000080F: CONCEPT_GUARD dic_no_0609 0 ; CONCEPT_GUARD word=0x0609 inverted=false "no"
-00000812: GUARD_POP ; GUARD_POP
-00000813: TEXT object_Bob_Morlock_004A 06 08 80 - - dic_I_27m_04F3 dic_going_06AE dic_to_0398 dic_explain_069A dic_it_06B4 dic_all_0630 dic_the_0248 dic_same_06B7 dic__2E_2E_2E_00D6 dic_It_27s_06BC dic_important_04BC dic__2E_2E_2E_00D6 ; TEXT line=0x004A voice=0x06 flags=0x08,0x80 "I'm going to explain it all the same ... It's important ..."
-00000833: CLEAR_ALTERNATE_CONCEPT ; CLEAR_ALTERNATE_CONCEPT
-00000834: LABEL block_0834
-00000834: WHEN block_083D ; GUARD_PUSH target=0x083D
-00000837: CONCEPT_GUARD dic_no_0609 1 ; CONCEPT_GUARD word=0x0609 inverted=true "no"
-0000083B: THEN ; GUARD_POP
-0000083C: CLEAR_ALTERNATE_CONCEPT ; CLEAR_ALTERNATE_CONCEPT
-0000083D: END_WHEN block_083D
-0000083D: LABEL block_083D
-0000083D: TEXT object_Bob_Morlock_004A 01 00 80 - - dic_I_27m_04F3 dic_more_0243 dic_than_06C1 dic_800_2C000_06C6 dic_years_06CE dic_old_06D4 dic__2E_2E_2E_00D6 dic_I_062E dic_feel_06D8 dic_ancient_06DD dic__2C_020E dic_Commander_04E9 dic__2E_2E_2E_00D6 ; TEXT line=0x004A voice=0x01 flags=0x00,0x80 "I'm more than 800,000 years old ... I feel ancient , Commander ..."
-0000085F: TEXT object_Bob_Morlock_004A 02 00 80 - - dic_Too_06E5 dic_ancient_06DD dic_to_0398 dic_go_06E9 dic_looking_06EC dic_for_003A dic_adventure_06F4 dic__2E_0065 dic_That_27s_05B3 dic_where_06FE dic_you_003E dic_come_0704 dic_in_012C dic__3A_0042 dic_I_062E dic_DON_27T_0709 dic_WANT_070F dic_TO_0714 dic_DIE_0717 dic_STUPID_071B dic__2E_0065 dic_I_062E dic_WANT_070F dic_TO_0714 dic_SEE_0722 dic_THE_0726 dic_BIG_072A dic_BANG_072E dic__2E_2E_2E_00D6 ; TEXT line=0x004A voice=0x02 flags=0x00,0x80 "Too ancient to go looking for adventure . That's where you come in : I DON'T WANT TO DIE STUPID . I WANT TO SEE THE BIG BANG ..."
-000008A1: TEXT object_Bob_Morlock_004A 01 00 80 - - dic_This_0733 dic_ship_05CC dic__2C_020E dic_specially_0738 dic_built_0742 dic_for_003A dic_you_003E dic__2C_020E dic_is_02F1 dic_called_05ED dic_the_0248 dic_ARK_04E5 dic__2E_0065 dic_It_27s_06BC dic_a_0355 dic_true_0748 dic_marvel_074D dic_of_0259 dic_technology_0754 dic__2E_0065 ; TEXT line=0x004A voice=0x01 flags=0x00,0x80 "This ship , specially built for you , is called the ARK . It's a true marvel of technology ."
-000008D1: TEXT object_Bob_Morlock_004A 03 08 A0 - - dic_Just_075F dic_hit_052C dic_the_0248 dic__22SPACE_22_0764 dic_bar_076C dic_if_0770 dic_you_27ve_0773 dic_had_077A dic_enough_077E dic__2E_2E_2E_00D6 ; TEXT line=0x004A voice=0x03 flags=0x08,0xA0 "Just hit the \"SPACE\" bar if you've had enough ..."
-000008ED: LOAD_STRING "aarche10.hnm" ; LOAD_STRING "aarche10.hnm"
-000008FC: TEXT object_Bob_Morlock_004A FF 08 80 - - ; TEXT line=0x004A voice=0xFF flags=0x08,0x80 ""
-00000904: LOAD_STRING "aarche20.hnm" ; LOAD_STRING "aarche20.hnm"
-00000913: TEXT object_Bob_Morlock_004A FF 08 80 - - ; TEXT line=0x004A voice=0xFF flags=0x08,0x80 ""
-0000091B: LOAD_STRING "aarche30.hnm" ; LOAD_STRING "aarche30.hnm"
-0000092A: TEXT object_Bob_Morlock_004A FF 08 80 - - ; TEXT line=0x004A voice=0xFF flags=0x08,0x80 ""
-00000932: LOAD_STRING "aarche40.hnm" ; LOAD_STRING "aarche40.hnm"
-00000941: TEXT object_Bob_Morlock_004A 05 00 80 - - dic_I_062E dic_want_0692 dic_to_0398 dic_understand_0785 dic_the_0248 dic_world_0790 dic_and_0577 dic_WHERE_0796 dic_I_062E dic_COME_079C dic_FROM_07A2 dic__2E_2E_2E_00D6 dic_WHY_07A7 dic_I_062E dic_EXIST_07AB dic__2E_2E_2E_00D6 ; TEXT line=0x004A voice=0x05 flags=0x00,0x80 "I want to understand the world and WHERE I COME FROM ... WHY I EXIST ..."
-00000969: TEXT object_Bob_Morlock_004A 02 00 80 - - dic_You_02A6 dic_and_0577 dic_me_0697 dic_are_02AF dic_going_06AE dic_to_0398 dic_travel_07B1 dic_through_07B8 dic_SPACE_07C0 dic_and_0577 dic_TIME_2C_07C6 dic_through_07B8 dic_BLACK_07CC dic_HOLES_07D2 dic__2E_2E_2E_00D6 ; TEXT line=0x004A voice=0x02 flags=0x00,0x80 "You and me are going to travel through SPACE and TIME, through BLACK HOLES ..."
-0000098F: TEXT object_Bob_Morlock_004A 01 00 80 - - dic_And_07D8 dic_quite_07DC dic_a_0355 dic_few_07E2 dic_BLACK_07CC dic_HOLES_07D2 dic_later_07E6 dic__2C_020E dic_we_27ll_07EC dic_get_07F2 dic_to_0398 dic_the_0248 dic_BIG_072A dic_BANG_072E dic__2E_2E_2E_00D6 ; TEXT line=0x004A voice=0x01 flags=0x00,0x80 "And quite a few BLACK HOLES later , we'll get to the BIG BANG ..."
-000009B5: TEXT object_Bob_Morlock_004A 02 00 80 - - dic_The_0166 dic_tough_07F6 dic_part_07FC dic_will_0801 dic_be_0430 dic_finding_0806 dic_those_080E dic_BLACK_07CC dic_HOLES_07D2 dic__2C_020E dic_Commander_04E9 dic__2E_2E_2E_00D6 ; TEXT line=0x004A voice=0x02 flags=0x00,0x80 "The tough part will be finding those BLACK HOLES , Commander ..."
-000009D5: TEXT object_Bob_Morlock_004A 01 00 80 - - dic_That_27s_05B3 dic_because_0814 dic_BLACK_07CC dic_HOLES_07D2 dic_are_02AF dic_UNDETECTABLE_081C dic_in_012C dic_the_0248 dic_universe_0829 dic__2E_0065 dic_We_27ll_0832 dic_need_0838 dic_to_0398 dic_make_083D dic_contact_0842 dic_with_0079 dic_ALIEN_084A dic_BEINGS_0850 dic__2E_2E_2E_00D6 ; TEXT line=0x004A voice=0x01 flags=0x00,0x80 "That's because BLACK HOLES are UNDETECTABLE in the universe . We'll need to make contact with ALIEN BEINGS ..."
-00000A03: TEXT object_Bob_Morlock_004A 04 00 80 - - dic_You_02A6 dic_can_0313 dic_expect_0857 dic_to_0398 dic_see_085E dic_bloodchilling_0862 dic_WARS_0870 dic_and_0577 dic_astonishing_0875 dic_PHENOMENA_2E_2E_2E_0881 ; TEXT line=0x004A voice=0x04 flags=0x00,0x80 "You can expect to see bloodchilling WARS and astonishing PHENOMENA..."
-00000A1F: TEXT object_Bob_Morlock_004A 04 00 80 - - dic_My_065A dic_age_088E dic_dictates_0892 dic_I_062E dic_sleep_089B dic_through_07B8 dic_most_08A2 dic_of_0259 dic_it_06B4 dic_in_012C dic_the_0248 dic_CRYOBOX_0565 dic__2E_0065 dic_WAKE_08A7 dic_ME_08AC dic_ONLY_08AF dic_IN_08B4 dic_AN_08B7 dic_EMERGENCY_08BA dic__2E_0065 dic_My_065A dic_time_08C4 dic_is_02F1 dic_very_08C9 dic_precious_08CE dic__2E_2E_2E_00D6 ; TEXT line=0x004A voice=0x04 flags=0x00,0x80 "My age dictates I sleep through most of it in the CRYOBOX . WAKE ME ONLY IN AN EMERGENCY . My time is very precious ..."
-00000A5B: TEXT object_Bob_Morlock_004A 02 00 80 - - dic_I_062E dic_have_061E dic_provided_08D7 dic_you_003E dic_with_0079 dic_an_08E0 dic_ONBOARD_08E3 dic_COMPUTER_08EB dic_called_05ED dic_HONK_04F7 dic__2E_2E_2E_00D6 ; TEXT line=0x004A voice=0x02 flags=0x00,0x80 "I have provided you with an ONBOARD COMPUTER called HONK ..."
-00000A79: TEXT object_Bob_Morlock_004A 02 00 80 - - dic_YOU_04D2 dic_THERE_08F4 dic__2C_020E dic_HONK_04F7 dic__3F_059F ; TEXT line=0x004A voice=0x02 flags=0x00,0x80 "YOU THERE , HONK ?"
-00000A8B: TEXT object_Bob_Morlock_004A FF 20 80 - - dic_HONK_3A_08FA dic_Yes_0900 dic_sir_2C_0904 dic_Cap_27n_02E7 dic_Bob_02ED dic__2E_0065 dic_Present_0909 dic__2C_020E dic_willing_0911 dic_and_0577 dic_able_0919 dic__2E_2E_2E_00D6 ; TEXT line=0x004A voice=0xFF flags=0x20,0x80 "HONK: Yes sir, Cap'n Bob . Present , willing and able ..."
-00000AAB: TEXT object_Bob_Morlock_004A 05 00 80 - - dic_Why_2C_091E dic_you_003E dic_hunk_0923 dic__27o_0928 dic_junk_092B dic__2E_2E_2E_00D6 dic_YOU_04D2 dic_WERE_0930 dic_ASLEEP_0935 dic__21_21_21_093C ; TEXT line=0x004A voice=0x05 flags=0x00,0x80 "Why, you hunk 'o junk ... YOU WERE ASLEEP !!!"
-00000AC7: TEXT object_Bob_Morlock_004A FF 20 80 - - dic_HONK_3A_08FA dic_No_0940 dic__2C_020E dic_Cap_27n_02E7 dic_Bob_02ED dic__2E_0065 dic_I_062E dic_was_0943 dic_calculating_0947 dic_our_0548 dic_trajectory_0953 dic_to_0398 dic_the_0248 dic_black_095E dic_hole_0964 dic__21_00F0 dic_I_062E dic_swear_0969 dic_it_06B4 dic_on_0037 dic_my_096F dic_old_06D4 dic_mother_27s_0972 dic_head_097B dic__21_00F0 ; TEXT line=0x004A voice=0xFF flags=0x20,0x80 "HONK: No , Cap'n Bob . I was calculating our trajectory to the black hole ! I swear it on my old mother's head !"
-00000B01: TEXT object_Bob_Morlock_004A 02 00 80 - - dic_Your_0980 dic_mother_0985 dic__21_21_098C dic_I_27ve_098F dic_a_0355 dic_good_02D0 dic_mind_0994 dic_to_0398 dic_short_2Dcircuit_0999 dic_every_09A7 dic_wire_09AD dic_in_012C dic_your_0179 dic_lazy_09B2 dic_carcass_09B7 dic__21_00F0 dic_Keep_09BF dic_an_08E0 dic_eye_015E dic_on_0037 dic_him_0584 dic__2C_020E dic_Commander_04E9 dic__2E_2E_2E_00D6 ; TEXT line=0x004A voice=0x02 flags=0x00,0x80 "Your mother !! I've a good mind to short-circuit every wire in your lazy carcass ! Keep an eye on him , Commander ..."
-00000B39: TEXT object_Bob_Morlock_004A 05 00 80 - - dic_GET_09C4 dic_TO_0714 dic_WORK_09C8 dic__2C_020E dic_HONK_04F7 dic__21_21_21_093C ; TEXT line=0x004A voice=0x05 flags=0x00,0x80 "GET TO WORK , HONK !!!"
-00000B4D: TEXT object_Bob_Morlock_004A FF 20 80 - - dic_HONK_3A_08FA dic_Sure_09CD dic_thing_2C_09D2 dic_Cap_27n_02E7 dic_Bob_02ED dic__2E_2E_2E_00D6 dic_I_27m_04F3 dic_crunching_09D9 dic_numbers_09E3 dic_as_09EB dic_I_062E dic_speak_09EE dic__2E_2E_2E_00D6 ; TEXT line=0x004A voice=0xFF flags=0x20,0x80 "HONK: Sure thing, Cap'n Bob ... I'm crunching numbers as I speak ..."
-00000B6F: TEXT object_Bob_Morlock_004A 09 00 80 - - dic_I_062E dic_can_27t_09F4 dic_see_085E dic_a_0355 dic_thing_09FA dic__2E_2E_2E_00D6 dic_Feel_0A00 dic_so_02CD dic_weak_0A05 dic__2E_2E_2E_00D6 ; TEXT line=0x004A voice=0x09 flags=0x00,0x80 "I can't see a thing ... Feel so weak ..."
-00000B8B: TEXT object_Bob_Morlock_004A 02 00 80 - - dic_IF_0A0A dic_YOU_04D2 dic_NEED_0A0D dic_ME_08AC dic__2C_020E dic_WAKE_08A7 dic_ME_08AC dic_UP_0A12 dic__2E_2E_2E_00D6 ; TEXT line=0x004A voice=0x02 flags=0x00,0x80 "IF YOU NEED ME , WAKE ME UP ..."
-00000BA5: TEXT object_Bob_Morlock_004A 04 00 80 - - dic_See_0A15 dic_you_003E dic_later_07E6 dic__2C_020E dic_Commander_04E9 dic__2E_0065 dic_Or_034D dic_do_0A19 dic_I_062E dic_mean_0A1C dic_earlier_0A21 dic__3F_059F dic_I_27m_04F3 dic_cryonizing_0A29 dic__2E_2E_2E_00D6 dic_Aaaahhhh_0A34 dic__21_00F0 ; TEXT line=0x004A voice=0x04 flags=0x00,0x80 "See you later , Commander . Or do I mean earlier ? I'm cryonizing ... Aaaahhhh !"
-00000BCF: TEXT object_Bob_Morlock_004A FF 20 80 - - dic_The_0166 dic_old_06D4 dic_turkey_27s_0A3D dic_out_0A46 dic_for_003A dic_the_0248 dic_count_0A4A dic__2E_2E_2E_00D6 ; TEXT line=0x004A voice=0xFF flags=0x20,0x80 "The old turkey's out for the count ..."
-00000BE7: TEXT object_Bob_Morlock_004A FF 08 90 - - dic_stop_00F2 ; TEXT line=0x004A voice=0xFF flags=0x08,0x90 "stop"
-00000BF1: RUN_PROFILE 02 ; RUN_PROFILE operand=0x02 profile=0x0001
-00000BF3: RECORD_CLEAR field_Bob_Morlock_004A_s13_0084 ; RECORD_CLEAR record=0x0084
-00000BF6: END_PROCEDURE proc_BOB1_077D
-00000BF6: PROCEDURE proc_scr2_0BF6 ; DEB kind 2 "scr2", encoded offset 0x0BF7
-00000BF6: CONDITIONAL_BLOCK 01 block_0C0B ; CONDITIONAL_BLOCK flags=0x01 target=0x0C0B
-00000BFA: SHARED_STATE BF field_Honk_082A_s08_0860 F5 C1 0001 ; OP_BF SHARED_STATE field=0x0860 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-00000C01: SHARED_STATE BF field_Bob_Morlock_004A_s08_0080 F5 C1 0001 ; OP_BF SHARED_STATE field=0x0080 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-00000C08: GUARD_POP ; GUARD_POP
-00000C09: RUN_PROFILE 02 ; RUN_PROFILE operand=0x02 profile=0x0001
-00000C0B: LABEL block_0C0B
-00000C0B: END
-00000C0C: END_PROCEDURE proc_scr2_0BF6
+PROCEDURE proc_men1_00B3
+    CONDITIONAL_BLOCK 01 proc_men2_0163
+    BRANCH_PRESENTATION
+    ACTOR field_menu_0872_s13_08AC object_blood_0028 0
+    RECORD_WILDCARD AF field_Bronko_031A_s11_0332 FFFF 1
+    GUARD_POP
+    TEXT object_menu_0872 FF 00 80 - - "\"MENU\""@00F7
+    TEXT object_menu_0872 FF 00 80 - - "Today's"@00FE "fare"@0106 ":"@0042
+    TEXT object_menu_0872 FF 00 80 - - "PLASMA"@010B "soup"@0053 "HONK-style"@0112 "."@0065
+    TEXT object_menu_0872 FF 00 80 - - "WRIGGLER"@011D "belly"@0126 "in"@012C "slobber"@012F "sauce"@0137 "."@0065
+    TEXT object_menu_0872 FF 00 80 - - "Jellied"@013D "URTIKAN"@0145 "with"@0079 "MURFFALO"@004A "bone"@014D "marrow"@0152 "."@0065
+    TEXT object_menu_0872 FF 00 80 - - "GLOK"@0159 "eye"@015E "pie"@0162 "."@0065
+    TEXT object_menu_0872 FF 00 80 - - "Recycled"@00B6 "water"@00BF
+    TEXT object_menu_0872 FF 00 80 - - "The"@0166 "chef"@016A "says"@00D1 "..."@00D6 "Don't"@016F "eat"@0175 "with"@0079 "your"@0179 "mouth"@017E "full"@0184 "!"@00F0 "..."@00D6
+    TEXT object_menu_0872 FF 08 90 - - "Stop"@0189
+    POKE_BYTE 00B4 00
+    RECORD_CLEAR field_menu_0872_s13_08AC
+END_PROCEDURE proc_men1_00B3
+
+PROCEDURE proc_men2_0163
+    CONDITIONAL_BLOCK 01 proc_men3_020D
+    BRANCH_PRESENTATION
+    ACTOR field_menu_0872_s13_08AC object_blood_0028 0
+    RECORD_WILDCARD AF field_Bronko_031A_s11_0332 FFFF 1
+    GUARD_POP
+    TEXT object_menu_0872 FF 00 80 - - "\"MENU\""@00F7
+    TEXT object_menu_0872 FF 00 80 - - "Today's"@00FE "fare"@0106 ":"@0042
+    TEXT object_menu_0872 FF 00 80 - - "PLASMA"@010B "soup"@0053 "HONK-style"@0112 "."@0065
+    TEXT object_menu_0872 FF 00 80 - - "WRIGGLER"@011D "snout"@018E "stew"@0194 "."@0065
+    TEXT object_menu_0872 FF 00 80 - - "URTIKAN"@0145 "seeds"@0199 "in"@012C "MURFFALO"@004A "venom"@019F "."@0065
+    TEXT object_menu_0872 FF 00 80 - - "GLOK"@0159 "juice"@01A5 "dessert"@01AB "."@0065
+    TEXT object_menu_0872 FF 00 80 - - "Recycled"@00B6 "water"@00BF
+    TEXT object_menu_0872 FF 00 80 - - "The"@0166 "chef"@016A "says"@00D1 "..."@00D6 "Don't"@016F "talk"@0001 "with"@0079 "your"@0179 "mouth"@017E "open"@01B3 "!"@00F0 "..."@00D6
+    TEXT object_menu_0872 FF 08 90 - - "stop"@00F2
+    POKE_BYTE 0164 00
+    RECORD_CLEAR field_menu_0872_s13_08AC
+END_PROCEDURE proc_men2_0163
+
+PROCEDURE proc_men3_020D
+    CONDITIONAL_BLOCK 01 proc_men4_02B9
+    BRANCH_PRESENTATION
+    RECORD_WILDCARD AF field_Bronko_031A_s11_0332 FFFF 1
+    ACTOR field_menu_0872_s13_08AC object_blood_0028 0
+    GUARD_POP
+    TEXT object_menu_0872 FF 00 80 - - "\"MENU\""@00F7
+    TEXT object_menu_0872 FF 00 80 - - "Today's"@00FE "fare"@0106 ":"@0042
+    TEXT object_menu_0872 FF 00 80 - - "PLASMA"@010B "soup"@0053 "HONK-style"@0112 "."@0065
+    TEXT object_menu_0872 FF 00 80 - - "WRIGGLER"@011D "feet"@01B8 "in"@012C "emulsive"@01BD "sauce"@0137 "."@0065
+    TEXT object_menu_0872 FF 00 80 - - "URTIKAN"@0145 "leaves"@01C6 "in"@012C "MURFFALO"@004A "sweat"@01CD "."@0065
+    TEXT object_menu_0872 FF 00 80 - - "GLOK"@0159 "flake"@01D3 "dessert"@01AB "."@0065
+    TEXT object_menu_0872 FF 00 80 - - "Recycled"@00B6 "water"@00BF
+    TEXT object_menu_0872 FF 00 80 - - "The"@0166 "chef"@016A "says"@00D1 "..."@00D6 "Somebody"@01D9 "didn't"@01E2 "finish"@01E9 "his"@01F0 "wrigglers"@01F4 "yesterday"@01FE "..."@00D6
+    TEXT object_menu_0872 FF 08 90 - - "stop"@00F2
+    POKE_BYTE 020E 00
+    RECORD_CLEAR field_menu_0872_s13_08AC
+END_PROCEDURE proc_men3_020D
+
+PROCEDURE proc_men4_02B9
+    CONDITIONAL_BLOCK 01 proc_men5_036D
+    BRANCH_PRESENTATION
+    ACTOR field_menu_0872_s13_08AC object_blood_0028 0
+    RECORD_WILDCARD AF field_Bronko_031A_s11_0332 FFFF 1
+    GUARD_POP
+    TEXT object_menu_0872 FF 00 80 - - "\"MENU\""@00F7
+    TEXT object_menu_0872 FF 00 80 - - "Today's"@00FE "fare"@0106 ":"@0042
+    TEXT object_menu_0872 FF 00 80 - - "HONK-style"@0112 "PLASMA"@010B "soup"@0053 "."@0065
+    TEXT object_menu_0872 FF 00 80 - - "WRIGGLER"@011D "brain"@0208 ","@020E "stewed"@0210 "in"@012C "its"@0217 "own"@021B "juice"@01A5 "."@0065
+    TEXT object_menu_0872 FF 00 80 - - "URTIKAN"@0145 "trunk"@021F ","@020E "stuffed"@0225 "with"@0079 "MURFFALO"@004A "liver"@022D "."@0065
+    TEXT object_menu_0872 FF 00 80 - - "GLOK"@0159 "dee-lite"@0233 "."@0065
+    TEXT object_menu_0872 FF 00 80 - - "Recycled"@00B6 "water"@00BF
+    TEXT object_menu_0872 FF 00 80 - - "The"@0166 "chef"@016A "says"@00D1 "..."@00D6 "Plenty"@023C "more"@0243 "in"@012C "the"@0248 "kitchen"@024C "!"@00F0 "..."@00D6
+    TEXT object_menu_0872 FF 08 90 - - "stop"@00F2
+    POKE_BYTE 02BA 00
+    RECORD_CLEAR field_menu_0872_s13_08AC
+END_PROCEDURE proc_men4_02B9
+
+PROCEDURE proc_men5_036D
+    CONDITIONAL_BLOCK 01 proc_men6_0429
+    BRANCH_PRESENTATION
+    ACTOR field_menu_0872_s13_08AC object_blood_0028 0
+    RECORD_WILDCARD AF field_Bronko_031A_s11_0332 FFFF 1
+    GUARD_POP
+    TEXT object_menu_0872 FF 00 80 - - "\"IMPROVED"@000C "MENU\""@0016
+    TEXT object_menu_0872 FF 00 80 - - "Today's"@00FE "fare"@0106 ":"@0042
+    TEXT object_menu_0872 FF 00 80 - - "Soup"@0254 "of"@0259 "PLASMA"@010B "HONK-style"@0112 "."@0065
+    TEXT object_menu_0872 FF 00 80 - - "WRIGGLER"@011D "hearts"@025C "in"@012C "green"@0263 "blood"@0269 "coagulate"@026F "."@0065
+    TEXT object_menu_0872 FF 00 80 - - "URTIKAN"@0145 "roots"@0279 ","@020E "deep"@027F "fried"@0284 "in"@012C "recycled"@028A "oil"@0293 "."@0065
+    TEXT object_menu_0872 FF 00 80 - - "Candied"@0297 "GLOK"@0159 "tongue"@029F "."@0065
+    TEXT object_menu_0872 FF 00 80 - - "Recycled"@00B6 "water"@00BF
+    TEXT object_menu_0872 FF 00 80 - - "The"@0166 "chef"@016A "says"@00D1 "..."@00D6 "You"@02A6 "eat"@0175 "what"@02AA "you"@003E "are"@02AF "!"@00F0 "..."@00D6
+    TEXT object_menu_0872 FF 08 A0 - - "stop"@00F2
+    POKE_BYTE 036E 00
+    POKE_BYTE 042A 01
+    RECORD_CLEAR field_menu_0872_s13_08AC
+END_PROCEDURE proc_men5_036D
+
+PROCEDURE proc_men6_0429
+    CONDITIONAL_BLOCK 00 proc_tima_0446
+    GUARD_POP
+    POKE_BYTE 00B4 01
+    POKE_BYTE 0164 01
+    POKE_BYTE 020E 01
+    POKE_BYTE 02BA 01
+    POKE_BYTE 036E 01
+    POKE_BYTE 042A 00
+END_PROCEDURE proc_men6_0429
+
+PROCEDURE proc_tima_0446
+    CONDITIONAL_BLOCK 01 proc_ho_0453
+    GUARD_POP
+    STATE_ARRAY_SET 16 0005
+    POKE_BYTE 0447 00
+END_PROCEDURE proc_tima_0446
+
+PROCEDURE proc_ho_0453
+    CONDITIONAL_BLOCK 01 proc_ho1_0463
+    STATE_ARRAY_TEST 16
+    GUARD_POP
+    RECORD_LINK field_Izwalito_055A_s13_0594 object_blood_0028 0
+    POKE_BYTE 0454 00
+END_PROCEDURE proc_ho_0453
+
+PROCEDURE proc_ho1_0463
+    CONDITIONAL_BLOCK 01 proc_hon_061D
+    BRANCH_PRESENTATION
+    ACTOR field_Izwalito_055A_s13_0594 object_blood_0028 0
+    GUARD_POP
+    TEXT object_Izwalito_055A FF 08 80 - - "You"@02A6 "found"@02B3 "the"@0248 "right"@02B9 "button"@02BF "."@0065 "So"@02C6 "far"@02C9 "so"@02CD "good"@02D0 "..."@00D6
+    RECORD_WILDCARD BC field_Izwalito_055A_s0F_05A0 02D5 0
+    TEXT object_Izwalito_055A FF 10 80 block_04CE - "Click"@02DA "quick,"@02E0 "Cap'n"@02E7 "Bob"@02ED "is"@02F1 "waiting"@02F4 "..."@00D6 FFFF "explanations"@02FC "game"@0309
+    WHEN block_04C6
+        CONCEPT_GUARD "game"@0309 0
+    THEN
+        TEXT object_Izwalito_055A FF 08 A0 - - "GAME"@030E
+        RUN_PROFILE 02
+        CLEAR_ALTERNATE_CONCEPT
+        RECORD_CLEAR field_Izwalito_055A_s13_0594
+    END_WHEN block_04C6
+    LABEL block_04C6
+    WHEN block_04CE
+        CONCEPT_GUARD "explanations"@02FC 0
+    THEN
+        CLEAR_ALTERNATE_CONCEPT
+    END_WHEN block_04CE
+    LABEL block_04CE
+    TEXT object_Izwalito_055A FF 00 80 - - "You"@02A6 "can"@0313 "modify"@0317 "the"@0248 "text"@031E "speed"@0323 "by"@0329 "clicking"@032C "on"@0037 "\"OPTION\""@0335
+    TEXT object_Izwalito_055A FF 00 80 - - "You"@02A6 "can"@0313 "wake"@033E "Cap'n"@02E7 "Bob"@02ED "by"@0329 "clicking"@032C "on"@0037 "\"CRYOBOX\""@0343
+    TEXT object_Izwalito_055A FF 00 80 - - "Or"@034D "load"@0350 "a"@0355 "\"Saved"@0357 "Game\""@035E "by"@0329 "clicking"@032C "on"@0037 "\"OPTION\""@0335
+    TEXT object_Izwalito_055A FF 00 80 - - "The"@0166 "OPTION"@0364 "\"LAST\""@036B "is"@02F1 "the"@0248 "\"AUTOMATIC"@0372 "PERMANENT"@037D "SAVE\"."@0387 "If"@038E "you"@003E "forget"@0391 "to"@0398 "save,"@039B "click"@03A2 "on"@0037 "\"LAST\"..."@03A8
+    TEXT object_Izwalito_055A FF 00 80 - - "We"@03B2 "would"@03B5 "like"@03BB "to"@0398 "draw"@03C0 "your"@0179 "ATTENTION"@03C5 "to"@0398 "certain"@03CF "RISKS"@03D7 "..."@00D6
+    TEXT object_Izwalito_055A FF 00 80 - - "If"@038E "you"@003E "experience"@03DD "UNUSUAL"@03E8 "SENSATIONS"@03F0 ","@020E "DIZZINESS"@03FB "or"@0405 "FACIAL"@0408 "DISTORTION"@040F "..."@00D6
+    TEXT object_Izwalito_055A FF 00 80 - - "Stay"@041A "CALM"@041F "..."@00D6
+    TEXT object_Izwalito_055A FF 00 80 - - "It"@0424 "may"@0427 "only"@042B "be"@0430 "a"@0355 "CRISIS,"@0433 "a"@0355 "SPELL"@043B ","@020E "a"@0355 "CURSE"@0441 "or"@0405 ","@020E "at"@0447 "worst"@044A ","@020E "a"@0355 "SCRAMBLED"@0450 "BRAIN"@045A "..."@00D6
+    TEXT object_Izwalito_055A FF 00 80 - - "In"@0460 "which"@0463 "case"@0469 ","@020E "write"@046E "to"@0398 ":"@0042 "SUPER"@0474 "ZEN"@047A ","@020E "end"@047E "of"@0259 "corridor"@0482 ","@020E "CRAZYSTONE"@048B "planet"@0496 ","@020E "BABY1"@049D "UNIVERSE"@04A3 "..."@00D6
+    TEXT object_Izwalito_055A FF 00 80 - - "Click"@02DA "quick"@04AC "on"@0037 "\"HONK\""@04B2 "."@0065 "He"@04B9 "has"@002E "important"@04BC "information"@04C6 "for"@003A "YOU"@04D2 "..."@00D6
+    TEXT object_Izwalito_055A FF 08 80 - - "..."@00D6
+    RECORD_CLEAR field_Izwalito_055A_s13_0594
+END_PROCEDURE proc_ho1_0463
+
+PROCEDURE proc_hon_061D
+    CONDITIONAL_BLOCK 01 proc_BOB1_077D
+    BRANCH_PRESENTATION
+    ACTOR field_Honk_082A_s13_0864 object_blood_0028 0
+    GUARD_POP
+    TEXT object_Honk_082A FF 20 80 - - "Welcome"@04D6 "aboard"@04DE "the"@0248 "ARK"@04E5 ","@020E "Commander"@04E9 "."@0065 "I'm"@04F3 "HONK"@04F7 ","@020E "your"@0179 "trusted"@04FC "computer"@0504 "..."@00D6
+    TEXT object_Honk_082A FF 20 80 - - "I'm"@04F3 "here"@050D "to"@0398 "help"@0512 "you"@003E "a"@0355 "lot"@0517 "..."@00D6
+    TEXT object_Honk_082A FF 20 80 - - "If"@038E "the"@0248 "phone"@051B "rings"@0521 ","@020E "just"@0527 "hit"@052C "the"@0248 "\"RED"@0530 "BUTTON\""@0535 "in"@012C "front"@053D "of"@0259 "you"@003E "..."@00D6
+    TEXT object_Honk_082A FF 20 80 - - "Cap'n"@02E7 "Bob,"@0543 "our"@0548 "revered"@054C "leader"@0554 ","@020E "is"@02F1 "cryonized"@055B "in"@012C "the"@0248 "CRYOBOX"@0565 "..."@00D6
+    TEXT object_Honk_082A FF 20 80 - - "Of"@056D "course"@0570 "you"@003E "can"@0313 "wake"@033E "Cap'n"@02E7 "Bob"@02ED "and"@0577 "question"@057B "him"@0584 "..."@00D6 "But"@0588 "like"@03BB "not"@058C "too"@0590 "often"@0594 ","@020E "okay"@059A "?"@059F "..."@00D6
+    TEXT object_Honk_082A FF 20 80 - - "Cap'n"@02E7 "Bob"@02ED "knows"@05A2 "everything"@05A8 "..."@00D6 "That's"@05B3 "why"@05BA "he's"@05BE "the"@0248 "boss"@05C3 "..."@00D6
+    TEXT object_Honk_082A FF 20 80 - - "Our"@05C8 "ship"@05CC "is"@02F1 "currently"@05D1 "surrounded"@05DB "by"@0329 "things"@05E6 "called"@05ED "stars"@05F4 "..."@00D6
+    TEXT object_Honk_082A FF 20 80 - - "Remember"@05FA ","@020E "deep"@027F "space"@0603 "is"@02F1 "no"@0609 "place"@060C "for"@003A "night"@0612 "clubs"@0618 "!"@00F0 "..."@00D6
+    TEXT object_Honk_082A FF 20 80 - - "If"@038E "you"@003E "have"@061E "questions,"@0623 "I"@062E "have"@061E "all"@0630 "the"@0248 "answers"@0634 "..."@00D6
+    TEXT object_Honk_082A FF 20 80 - - "Click"@02DA "quick"@04AC "on"@0037 "\"CRYOBOX\""@0343 "Cap'n"@02E7 "Bob"@02ED "is"@02F1 "waiting"@02F4 "..."@00D6
+    TEXT object_Honk_082A FF 28 80 - - "End"@063C "of"@0259 "report"@0640 "..."@00D6
+    RECORD_CLEAR field_Honk_082A_s13_0864
+END_PROCEDURE proc_hon_061D
+
+PROCEDURE proc_BOB1_077D
+    CONDITIONAL_BLOCK 01 proc_scr2_0BF6
+    BRANCH_FLAG_274F
+    ACTOR field_Bob_Morlock_004A_s13_0084 object_blood_0028 0
+    GUARD_POP
+    TEXT object_Bob_Morlock_004A 03 00 80 - - "Good"@0647 "day"@064C "COMMANDER"@0650 "."@0065 "My"@065A "name"@065D "is"@02F1 "BOB"@0662 ","@020E "BOB"@0662 "MORLOCK"@0666 "..."@00D6
+    TEXT object_Bob_Morlock_004A 01 00 80 - - "If"@038E "the"@0248 "phone"@051B "rings"@0521 ","@020E "press"@066E "the"@0248 "\"RED"@0530 "BUTTON\""@0535 "on"@0037 "the"@0248 "radio"@0674 "to"@0398 "answer"@067A "..."@00D6
+    TEXT object_Bob_Morlock_004A 02 00 80 - - "My"@065A "ears"@0681 "are"@02AF "fragile,"@0686 "Commander"@04E9 "..."@00D6
+    TEXT object_Bob_Morlock_004A 02 10 80 block_083D - "Do"@068F "you"@003E "want"@0692 "me"@0697 "to"@0398 "explain"@069A "your"@0179 "mission"@06A2 "to"@0398 "you"@003E ","@020E "Commander"@04E9 "?"@059F FFFF "yes"@06AA "no"@0609
+    WHEN block_0834
+        CONCEPT_GUARD "no"@0609 0
+    THEN
+        TEXT object_Bob_Morlock_004A 06 08 80 - - "I'm"@04F3 "going"@06AE "to"@0398 "explain"@069A "it"@06B4 "all"@0630 "the"@0248 "same"@06B7 "..."@00D6 "It's"@06BC "important"@04BC "..."@00D6
+        CLEAR_ALTERNATE_CONCEPT
+    END_WHEN block_0834
+    LABEL block_0834
+    WHEN block_083D
+        CONCEPT_GUARD "no"@0609 1
+    THEN
+        CLEAR_ALTERNATE_CONCEPT
+    END_WHEN block_083D
+    LABEL block_083D
+    TEXT object_Bob_Morlock_004A 01 00 80 - - "I'm"@04F3 "more"@0243 "than"@06C1 "800,000"@06C6 "years"@06CE "old"@06D4 "..."@00D6 "I"@062E "feel"@06D8 "ancient"@06DD ","@020E "Commander"@04E9 "..."@00D6
+    TEXT object_Bob_Morlock_004A 02 00 80 - - "Too"@06E5 "ancient"@06DD "to"@0398 "go"@06E9 "looking"@06EC "for"@003A "adventure"@06F4 "."@0065 "That's"@05B3 "where"@06FE "you"@003E "come"@0704 "in"@012C ":"@0042 "I"@062E "DON'T"@0709 "WANT"@070F "TO"@0714 "DIE"@0717 "STUPID"@071B "."@0065 "I"@062E "WANT"@070F "TO"@0714 "SEE"@0722 "THE"@0726 "BIG"@072A "BANG"@072E "..."@00D6
+    TEXT object_Bob_Morlock_004A 01 00 80 - - "This"@0733 "ship"@05CC ","@020E "specially"@0738 "built"@0742 "for"@003A "you"@003E ","@020E "is"@02F1 "called"@05ED "the"@0248 "ARK"@04E5 "."@0065 "It's"@06BC "a"@0355 "true"@0748 "marvel"@074D "of"@0259 "technology"@0754 "."@0065
+    TEXT object_Bob_Morlock_004A 03 08 A0 - - "Just"@075F "hit"@052C "the"@0248 "\"SPACE\""@0764 "bar"@076C "if"@0770 "you've"@0773 "had"@077A "enough"@077E "..."@00D6
+    LOAD_STRING "aarche10.hnm"
+    TEXT object_Bob_Morlock_004A FF 08 80 - -
+    LOAD_STRING "aarche20.hnm"
+    TEXT object_Bob_Morlock_004A FF 08 80 - -
+    LOAD_STRING "aarche30.hnm"
+    TEXT object_Bob_Morlock_004A FF 08 80 - -
+    LOAD_STRING "aarche40.hnm"
+    TEXT object_Bob_Morlock_004A 05 00 80 - - "I"@062E "want"@0692 "to"@0398 "understand"@0785 "the"@0248 "world"@0790 "and"@0577 "WHERE"@0796 "I"@062E "COME"@079C "FROM"@07A2 "..."@00D6 "WHY"@07A7 "I"@062E "EXIST"@07AB "..."@00D6
+    TEXT object_Bob_Morlock_004A 02 00 80 - - "You"@02A6 "and"@0577 "me"@0697 "are"@02AF "going"@06AE "to"@0398 "travel"@07B1 "through"@07B8 "SPACE"@07C0 "and"@0577 "TIME,"@07C6 "through"@07B8 "BLACK"@07CC "HOLES"@07D2 "..."@00D6
+    TEXT object_Bob_Morlock_004A 01 00 80 - - "And"@07D8 "quite"@07DC "a"@0355 "few"@07E2 "BLACK"@07CC "HOLES"@07D2 "later"@07E6 ","@020E "we'll"@07EC "get"@07F2 "to"@0398 "the"@0248 "BIG"@072A "BANG"@072E "..."@00D6
+    TEXT object_Bob_Morlock_004A 02 00 80 - - "The"@0166 "tough"@07F6 "part"@07FC "will"@0801 "be"@0430 "finding"@0806 "those"@080E "BLACK"@07CC "HOLES"@07D2 ","@020E "Commander"@04E9 "..."@00D6
+    TEXT object_Bob_Morlock_004A 01 00 80 - - "That's"@05B3 "because"@0814 "BLACK"@07CC "HOLES"@07D2 "are"@02AF "UNDETECTABLE"@081C "in"@012C "the"@0248 "universe"@0829 "."@0065 "We'll"@0832 "need"@0838 "to"@0398 "make"@083D "contact"@0842 "with"@0079 "ALIEN"@084A "BEINGS"@0850 "..."@00D6
+    TEXT object_Bob_Morlock_004A 04 00 80 - - "You"@02A6 "can"@0313 "expect"@0857 "to"@0398 "see"@085E "bloodchilling"@0862 "WARS"@0870 "and"@0577 "astonishing"@0875 "PHENOMENA..."@0881
+    TEXT object_Bob_Morlock_004A 04 00 80 - - "My"@065A "age"@088E "dictates"@0892 "I"@062E "sleep"@089B "through"@07B8 "most"@08A2 "of"@0259 "it"@06B4 "in"@012C "the"@0248 "CRYOBOX"@0565 "."@0065 "WAKE"@08A7 "ME"@08AC "ONLY"@08AF "IN"@08B4 "AN"@08B7 "EMERGENCY"@08BA "."@0065 "My"@065A "time"@08C4 "is"@02F1 "very"@08C9 "precious"@08CE "..."@00D6
+    TEXT object_Bob_Morlock_004A 02 00 80 - - "I"@062E "have"@061E "provided"@08D7 "you"@003E "with"@0079 "an"@08E0 "ONBOARD"@08E3 "COMPUTER"@08EB "called"@05ED "HONK"@04F7 "..."@00D6
+    TEXT object_Bob_Morlock_004A 02 00 80 - - "YOU"@04D2 "THERE"@08F4 ","@020E "HONK"@04F7 "?"@059F
+    TEXT object_Bob_Morlock_004A FF 20 80 - - "HONK:"@08FA "Yes"@0900 "sir,"@0904 "Cap'n"@02E7 "Bob"@02ED "."@0065 "Present"@0909 ","@020E "willing"@0911 "and"@0577 "able"@0919 "..."@00D6
+    TEXT object_Bob_Morlock_004A 05 00 80 - - "Why,"@091E "you"@003E "hunk"@0923 "'o"@0928 "junk"@092B "..."@00D6 "YOU"@04D2 "WERE"@0930 "ASLEEP"@0935 "!!!"@093C
+    TEXT object_Bob_Morlock_004A FF 20 80 - - "HONK:"@08FA "No"@0940 ","@020E "Cap'n"@02E7 "Bob"@02ED "."@0065 "I"@062E "was"@0943 "calculating"@0947 "our"@0548 "trajectory"@0953 "to"@0398 "the"@0248 "black"@095E "hole"@0964 "!"@00F0 "I"@062E "swear"@0969 "it"@06B4 "on"@0037 "my"@096F "old"@06D4 "mother's"@0972 "head"@097B "!"@00F0
+    TEXT object_Bob_Morlock_004A 02 00 80 - - "Your"@0980 "mother"@0985 "!!"@098C "I've"@098F "a"@0355 "good"@02D0 "mind"@0994 "to"@0398 "short-circuit"@0999 "every"@09A7 "wire"@09AD "in"@012C "your"@0179 "lazy"@09B2 "carcass"@09B7 "!"@00F0 "Keep"@09BF "an"@08E0 "eye"@015E "on"@0037 "him"@0584 ","@020E "Commander"@04E9 "..."@00D6
+    TEXT object_Bob_Morlock_004A 05 00 80 - - "GET"@09C4 "TO"@0714 "WORK"@09C8 ","@020E "HONK"@04F7 "!!!"@093C
+    TEXT object_Bob_Morlock_004A FF 20 80 - - "HONK:"@08FA "Sure"@09CD "thing,"@09D2 "Cap'n"@02E7 "Bob"@02ED "..."@00D6 "I'm"@04F3 "crunching"@09D9 "numbers"@09E3 "as"@09EB "I"@062E "speak"@09EE "..."@00D6
+    TEXT object_Bob_Morlock_004A 09 00 80 - - "I"@062E "can't"@09F4 "see"@085E "a"@0355 "thing"@09FA "..."@00D6 "Feel"@0A00 "so"@02CD "weak"@0A05 "..."@00D6
+    TEXT object_Bob_Morlock_004A 02 00 80 - - "IF"@0A0A "YOU"@04D2 "NEED"@0A0D "ME"@08AC ","@020E "WAKE"@08A7 "ME"@08AC "UP"@0A12 "..."@00D6
+    TEXT object_Bob_Morlock_004A 04 00 80 - - "See"@0A15 "you"@003E "later"@07E6 ","@020E "Commander"@04E9 "."@0065 "Or"@034D "do"@0A19 "I"@062E "mean"@0A1C "earlier"@0A21 "?"@059F "I'm"@04F3 "cryonizing"@0A29 "..."@00D6 "Aaaahhhh"@0A34 "!"@00F0
+    TEXT object_Bob_Morlock_004A FF 20 80 - - "The"@0166 "old"@06D4 "turkey's"@0A3D "out"@0A46 "for"@003A "the"@0248 "count"@0A4A "..."@00D6
+    TEXT object_Bob_Morlock_004A FF 08 90 - - "stop"@00F2
+    RUN_PROFILE 02
+    RECORD_CLEAR field_Bob_Morlock_004A_s13_0084
+END_PROCEDURE proc_BOB1_077D
+
+PROCEDURE proc_scr2_0BF6
+    CONDITIONAL_BLOCK 01 block_0C0B
+    SHARED_STATE BF field_Honk_082A_s08_0860 F5 C1 0001
+    SHARED_STATE BF field_Bob_Morlock_004A_s08_0080 F5 C1 0001
+    GUARD_POP
+    RUN_PROFILE 02
+    LABEL block_0C0B
+    END
+END_PROCEDURE proc_scr2_0BF6

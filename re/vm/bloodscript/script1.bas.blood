@@ -1,11 +1,11 @@
 ; BloodScript typed VM source
-; format: bloodscript-ir-v1
+; format: bloodscript-v2
 ; image: BAS
 ; size: 0x00000020
 
-00000000: YIELD ; opcode AA
-00000001: YIELD_B ; opcode AC
-00000002: SELECTOR_NODE 0A50 0000 ; "parler"
-00000006: MENU 0A57 ; adieu
-0000000B: TEXT 082A FF 61 80 - - 0900 00F0 04E9 059F FFFF 0A5D ; TEXT line=0x082A voice=0xFF flags=0x61,0x80 "Yes ! Commander ?"
-0000001F: END
+YIELD
+YIELD_B
+SELECTOR_NODE "parler"@0A50 0000
+MENU "adieu"@0A57
+TEXT 082A FF 61 80 - - "Yes"@0900 "!"@00F0 "Commander"@04E9 "?"@059F FFFF "bye_bye"@0A5D
+END

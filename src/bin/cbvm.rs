@@ -387,7 +387,7 @@ fn main() -> Result<()> {
             }
             std::fs::create_dir_all(&output_dir)?;
             let mut manifest = String::from(
-                "script\timage\tinput_bytes\ttyped_statements\ttyped_bytes\tgeneric_op_statements\tgeneric_op_bytes\traw_bytes\tsymbolic_labels\tprocedures\tobject_aliases\tobject_alias_uses\tfield_aliases\tfield_alias_uses\tdictionary_aliases\tdictionary_alias_uses\tstructured_guards\tunstructured_guards\tguard_rejections\tselector_lists\tcases\troundtrip\n",
+                "script\timage\tinput_bytes\ttyped_statements\ttyped_bytes\tgeneric_op_statements\tgeneric_op_bytes\traw_bytes\tsymbolic_labels\tprocedures\tobject_aliases\tobject_alias_uses\tfield_aliases\tfield_alias_uses\tdictionary_offsets\tdictionary_uses\tstructured_guards\tunstructured_guards\tguard_rejections\tselector_lists\tcases\troundtrip\n",
             );
             for script in 1..=5 {
                 let dictionary = game_dir.join(format!("SCRIPT{script}.DIC"));
@@ -422,8 +422,8 @@ fn main() -> Result<()> {
                         source.object_alias_uses,
                         source.field_aliases,
                         source.field_alias_uses,
-                        source.dictionary_aliases,
-                        source.dictionary_alias_uses,
+                        source.dictionary_offsets,
+                        source.dictionary_uses,
                         source.structured_guards,
                         source.unstructured_guards,
                         guard_rejection_summary(&source.guard_rejection_counts),
