@@ -408,14 +408,19 @@ For `0x00A778`, four direct cases patch only the palette-parser call and prove
 that the routine discards the queue head offset, retains its segment, replaces
 SI with the `pl` payload offset at DS:0x0D9E, and returns the parser's ES:SI
 stream result. The queue initializer at `0x00A757` is the only recovered writer
-of DS:0x0D8E and always stores the queue-buffer base segment, supporting the
-natural buffer-relative expression. With the proven parser and wrapper ES:SI
-ABI declared through `#pragma aux`, Open Watcom 1.9 medium emits 8 instructions
-and 18 bytes; Turbo C 2.01 medium emits 9 instructions, versus 4 instructions
-and 12 bytes in the original. Watcom preserves AX and the returned ES:SI, but
-materializes the buffer symbol's segment through AX and adds the payload offset
-to its relocatable base instead of using the original `LES` plus replacement
-`MOV SI` pair.
+of DS:0x0D8E and always stores the queue-buffer base segment. The corrected
+candidate reads that live segment before the payload offset and constructs the
+far stream explicitly instead of relying on a fixed buffer symbol. The
+compiler-corpus sample includes this authoritative source directly.
+
+With the proven parser and wrapper ES:SI ABI declared through `#pragma aux`,
+Open Watcom 1.9 medium `-3 -os -s -mm -zdf` emits six instructions and 16 bytes
+versus four instructions and 12 bytes original, with 75 percent
+mnemonic-multiset and ordered overlap. It preserves AX and the parser's returned
+ES:SI. Turbo C 2.01 medium emits 14 instructions with the same overlap and
+assembles warning-free to OBJ. The sole recovered resource-flush caller ignores
+the result, so the natural wrapper is accepted for source integration; isolated
+replacement retains only compact far-pointer and terminal-residue adaptation.
 
 For `0x00A141`, seven direct-execution cases cover zero and reserved-handle
 skips, successful and failed DOS closes, the clear-before-interrupt ordering,
