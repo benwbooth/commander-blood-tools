@@ -2437,16 +2437,27 @@ boundaries additionally prove the resource loader receives DS:SI at
 `FS:0x0C04 + (resource_id << 4)` and ES:DI from DS:0x0A80, while the entity
 setter receives AX=4, the same ES:DI, BX/CX coordinates, and the frame in BP.
 
-The natural typed candidate now represents the actor as an explicit near pointer
-and the filename as a real far pointer. Watcom consequently emits SS-qualified
-actor accesses plus a segment relocation for the FS filename table. Open
-Watcom `-3 -os -s -mh -we` compiles the actual candidate without warnings to
-62 instructions/179 bytes versus 60/152 original, with 83.33 percent
-mnemonic-multiset overlap. The similar counts are not an ABI match: Watcom uses
-AX for the record pointer, ordinary helper-call conventions, and AX for the
-logical Boolean result. An attempted BP parameter pragma is rejected by Watcom
-with E1122, so BP input and carry output remain narrow integration boundaries
-rather than inline-assembly code in the candidate.
+The natural typed candidate represents the line as an explicit near pointer
+and the filename as a real far pointer. It also keeps the resource terminal
+frame in a local across the line-record store, matching the original value flow
+instead of rereading volatile storage. Watcom consequently emits SS-qualified
+line accesses plus a segment relocation for the FS filename table.
+
+Open Watcom large (`-3 -os -s -ml -we`) compiles the actual candidate without
+warnings to 62 instructions/175 bytes versus 60/152 original, with 86.67
+percent mnemonic-multiset and 73.33 percent ordered-mnemonic overlap. Turbo C
+2.01 large (`-ml -O -Z`) emits 77 instructions, with 85.00 percent multiset and
+66.67 percent ordered overlap. Watcom medium emits 60 instructions but accesses
+the line through DS rather than the proven SS, so that superficially smaller
+result is rejected. Large and huge both preserve SS; large is sufficient and
+is the authoritative model.
+
+The natural candidate is accepted for source-port integration. The similar
+counts are not an ABI match: Watcom uses AX for the record pointer, ordinary
+helper-call conventions, and AX for the logical Boolean result. An attempted
+BP parameter pragma is rejected by Watcom with E1122, so BP input, both helper
+register ABIs, and carry output remain narrow integration boundaries rather
+than inline-assembly code in the candidate.
 
 Navigation actor handler 2 at `0x00813A` gates on either UI bit `0x10` or
 `0x80`, marks its SS:BP line record present, and requires line bit three before

@@ -17,9 +17,9 @@ int CB_NEAR presentation_line_helper(
 
         resource = (const volatile bloodprg_presentation_resource_header CB_FAR *)
             nav_resource_buffer;
-        line->terminal_frame = resource->terminal_frame;
-
-        frame = (cb_u16)(line->terminal_frame - 1u);
+        frame = resource->terminal_frame;
+        line->terminal_frame = frame;
+        --frame;
         if ((nav_presentation_reverse & 1u) == 0) {
             frame = 0;
             nav_presentation_reverse = 0;
