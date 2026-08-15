@@ -6484,14 +6484,24 @@ Open Watcom 1.9 large (`-3 -os -s -ml -we`) emits one warning-free
 104-instruction/293-byte function versus 90/258 original, with 84.44 percent
 mnemonic-multiset overlap and 73.33 percent ordered mnemonic overlap. The
 candidate uses natural resource-result structs, far pointers, direct function
-calls, and structured control flow with no inline assembly.
+calls, and structured control flow with no inline assembly. Turbo C 2.01 large
+(`-ml -O -Z`) emits 142 instructions with 83.33 percent mnemonic-multiset and
+66.67 percent ordered overlap, and assembles warning-free to a 1,592-byte OMF
+object.
+
+The DOS entry establishes `DS=SS=GS`, and all three real callers retain that
+data group. Opcode bounds, stream termination, skip mask, resume bit, and yield
+values are now declared once in the shared VM header and used by both this owner
+and the nested block scanner; the refactor leaves both compiler outputs
+unchanged.
 
 Full-source integration requires the shipped `DS=SS=GS` data layout, clear DF,
 linker aliases between the five-pointer array and the individually named VM
-images, and valid A0-based top-level opcodes. A direct binary replacement also
-needs the original resolver's simultaneous AX plus conditional DS:SI result,
-the enabled path's upper-register clearing and BP residue, and path-specific
-flags.
+images, and valid A0-based top-level opcodes. Those are proven runtime/linker
+invariants rather than missing C logic, so the routine is accepted for source
+integration. A direct binary replacement still needs the original resolver's
+simultaneous AX plus conditional DS:SI result, the enabled path's upper-register
+clearing and BP residue, and path-specific flags.
 
 ## BLOODPRG ship-presentation phase-owner candidate
 

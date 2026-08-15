@@ -5,13 +5,6 @@
 #include "../include/bloodprg_resource.h"
 #include "../include/bloodprg_vm.h"
 
-#define VM_FIRST_OPCODE 0xA0u
-#define VM_STREAM_END 0xFFu
-#define VM_SKIP_COUNT_MASK 0x0Fu
-#define VM_RESUME_ACTIVE 0x02u
-#define VM_YIELD_CONTINUE 2u
-#define VM_YIELD_SAVE_CURSOR 3u
-
 cb_i16 CB_FAR vm_run_wrapper(void)
 {
     bloodprg_resource_resolve_result resolved;
@@ -45,23 +38,24 @@ cb_i16 CB_FAR vm_run_wrapper(void)
     vm_block_scan_flags = 0u;
 
     cursor = vm_resource_images[0];
-    if ((vm_resume_state & VM_RESUME_ACTIVE) != 0u) {
+    if ((vm_resume_state & BLOODPRG_VM_RESUME_ACTIVE) != 0u) {
         cursor = (bloodprg_vm_image_ptr)MK_FP(
                 FP_SEG(cursor), vm_resume_cursor);
     }
 
     for (;;) {
         opcode = *cursor++;
-        if (opcode == VM_STREAM_END) {
+        if (opcode == BLOODPRG_VM_STREAM_END) {
             break;
         }
 
         vm_yield_flag = 0u;
-        cursor = vm_opcode_handlers[(cb_u8)(opcode - VM_FIRST_OPCODE)](cursor);
+        cursor = vm_opcode_handlers[
+                (cb_u8)(opcode - BLOODPRG_VM_OPCODE_MIN)](cursor);
         signal = vm_yield_flag;
 
         if (signal == 0u) {
-            if ((vm_skip_count & VM_SKIP_COUNT_MASK) != 0u) {
+            if ((vm_skip_count & BLOODPRG_VM_SKIP_COUNT_MASK) != 0u) {
                 do {
                     cursor = vm_token_advance(cursor);
                 } while (--vm_skip_count != 0u);
@@ -73,9 +67,9 @@ cb_i16 CB_FAR vm_run_wrapper(void)
             }
         } else {
             vm_presentation_start_lock = 1u;
-            if (signal == VM_YIELD_CONTINUE) {
+            if (signal == BLOODPRG_VM_YIELD_CONTINUE) {
                 vm_skip_count = 0u;
-            } else if (signal == VM_YIELD_SAVE_CURSOR) {
+            } else if (signal == BLOODPRG_VM_YIELD_SAVE_CURSOR) {
                 ++vm_resume_state;
                 vm_resume_cursor = FP_OFF(cursor);
             } else {
@@ -84,7 +78,7 @@ cb_i16 CB_FAR vm_run_wrapper(void)
             }
         }
 
-        if ((vm_resume_state & VM_RESUME_ACTIVE) != 0u
+        if ((vm_resume_state & BLOODPRG_VM_RESUME_ACTIVE) != 0u
                 && FP_OFF(cursor) >= vm_text_loop_target) {
             break;
         }
