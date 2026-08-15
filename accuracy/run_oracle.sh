@@ -12,6 +12,7 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
 ISO="$(readlink -f "$HERE/output/CMDR_BLOOD.iso")"
+GAME_DIR="${ORACLE_GAME_DIR:-}"
 DUR="${1:-40}" # total seconds to let the game run
 INTERVAL="${ORACLE_CAPTURE_INTERVAL:-4}"
 DISP="${ORACLE_DISPLAY:-:99}"
@@ -50,11 +51,23 @@ mkdir -p "$CAP"
 mkdir -p "$(dirname "$MANIFEST")"
 CDRIVE="$HERE/accuracy/cdrive"
 mkdir -p "$CDRIVE"
-# Materialise a config with the real ISO path + writable C: + absolute captures.
-sed -e "s|ISO_PATH_PLACEHOLDER|$ISO|" \
-    -e "s|CDRIVE_PLACEHOLDER|$CDRIVE|" \
-    -e "s|^captures .*|captures = $CAP|" \
-    "$HERE/accuracy/dosbox.conf" > "$CONF"
+# Materialise a config with the real game source + writable C: + captures.
+if [ -n "$GAME_DIR" ]; then
+  GAME_DIR="$(readlink -f "$GAME_DIR")"
+  [ -f "$GAME_DIR/BLOODPRG.EXE" ] || {
+    echo "ORACLE_GAME_DIR does not contain BLOODPRG.EXE: $GAME_DIR"
+    exit 1
+  }
+  sed -e "s|^imgmount D .*|mount D \"$GAME_DIR\"|" \
+      -e "s|CDRIVE_PLACEHOLDER|$CDRIVE|" \
+      -e "s|^captures .*|captures = $CAP|" \
+      "$HERE/accuracy/dosbox.conf" > "$CONF"
+else
+  sed -e "s|ISO_PATH_PLACEHOLDER|$ISO|" \
+      -e "s|CDRIVE_PLACEHOLDER|$CDRIVE|" \
+      -e "s|^captures .*|captures = $CAP|" \
+      "$HERE/accuracy/dosbox.conf" > "$CONF"
+fi
 
 command -v Xvfb     >/dev/null || { echo "Xvfb not found"; exit 1; }
 command -v dosbox-x >/dev/null || { echo "dosbox-x not found (use nix develop)"; exit 1; }
@@ -64,7 +77,11 @@ if [ -n "$INPUT_SCRIPT" ]; then
   command -v xdotool >/dev/null || { echo "xdotool not found (use nix develop)"; exit 1; }
 fi
 
-echo "ISO     : $ISO"
+if [ -n "$GAME_DIR" ]; then
+  echo "game dir: $GAME_DIR"
+else
+  echo "ISO     : $ISO"
+fi
 echo "display : $DISP (isolated Xvfb)"
 echo "duration: ${DUR}s"
 echo "interval: ${INTERVAL}s"

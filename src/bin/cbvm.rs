@@ -3,12 +3,13 @@ use std::path::{Path, PathBuf};
 use anyhow::{bail, Context, Result};
 use commander_blood_tools::bas_cfg::{self, BasControlFlow};
 use commander_blood_tools::bloodscript;
+use commander_blood_tools::vm_bundle;
 use commander_blood_tools::vm_cfg::{self, CodControlFlow};
 use commander_blood_tools::vm_source::{self, ImageKind};
 
 fn usage() -> ! {
     eprintln!(
-        "usage:\n  cbvm disassemble <cod|bas> <image> <dictionary> <output>\n  cbvm assemble <source> <output>\n  cbvm decompile-bundle <game-dir> <output-dir>\n  cbvm decompile-bloodscript <game-dir> <output-dir>\n  cbvm decompile-structured <game-dir> <output-dir>\n  cbvm compile-bloodscript <source> <output>\n  cbvm analyze-control-flow <game-dir> <output-dir>\n  cbvm analyze-bas-control-flow <game-dir> <output-dir>"
+        "usage:\n  cbvm disassemble <cod|bas> <image> <dictionary> <output>\n  cbvm assemble <source> <output>\n  cbvm decompile-bundle <game-dir> <output-dir>\n  cbvm decompile-bloodscript <game-dir> <output-dir>\n  cbvm decompile-structured <game-dir> <output-dir>\n  cbvm compile-bloodscript <source> <output>\n  cbvm compile-bundle <source-dir> <game-dir> <output-dir>\n  cbvm build-runtime-tree <source-dir> <game-dir> <output-dir>\n  cbvm analyze-control-flow <game-dir> <output-dir>\n  cbvm analyze-bas-control-flow <game-dir> <output-dir>"
     );
     std::process::exit(2);
 }
@@ -65,17 +66,11 @@ fn write_bloodscript(
         .transpose()?
         .unwrap_or_default();
     let source = if structured && kind == ImageKind::Bas {
-        let var_path = var_path.ok_or_else(|| {
-            anyhow::anyhow!("structured BAS decompilation requires a VAR image")
-        })?;
+        let var_path = var_path
+            .ok_or_else(|| anyhow::anyhow!("structured BAS decompilation requires a VAR image"))?;
         let var = std::fs::read(var_path)
             .with_context(|| format!("reading VM object data {}", var_path.display()))?;
-        bloodscript::decompile_structured_bas_with_symbols(
-            &image,
-            &var,
-            &dictionary,
-            &symbols,
-        )?
+        bloodscript::decompile_structured_bas_with_symbols(&image, &var, &dictionary, &symbols)?
     } else if structured {
         bloodscript::decompile_structured_with_symbols(kind, &image, &dictionary, &symbols)?
     } else {
@@ -207,6 +202,45 @@ fn main() -> Result<()> {
             std::fs::write(&output, &image)
                 .with_context(|| format!("writing {}", output.display()))?;
             println!("wrote {}: {} byte(s)", output.display(), image.len());
+        }
+        Some("compile-bundle") => {
+            let source_dir = PathBuf::from(args.next().unwrap_or_else(|| usage()));
+            let game_dir = PathBuf::from(args.next().unwrap_or_else(|| usage()));
+            let output_dir = PathBuf::from(args.next().unwrap_or_else(|| usage()));
+            if args.next().is_some() {
+                usage();
+            }
+            let entries = vm_bundle::compile_bundle(&source_dir, &game_dir, &output_dir)?;
+            std::fs::write(
+                output_dir.join("cbvm-bundle-manifest.tsv"),
+                vm_bundle::manifest(&entries),
+            )?;
+            println!(
+                "wrote {}: {} byte-exact VM resource(s)",
+                output_dir.display(),
+                entries.len()
+            );
+        }
+        Some("build-runtime-tree") => {
+            let source_dir = PathBuf::from(args.next().unwrap_or_else(|| usage()));
+            let game_dir = PathBuf::from(args.next().unwrap_or_else(|| usage()));
+            let output_dir = PathBuf::from(args.next().unwrap_or_else(|| usage()));
+            if args.next().is_some() {
+                usage();
+            }
+            let (entries, stats) =
+                vm_bundle::build_runtime_tree(&source_dir, &game_dir, &output_dir)?;
+            std::fs::write(
+                output_dir.join("cbvm-bundle-manifest.tsv"),
+                vm_bundle::manifest(&entries),
+            )?;
+            println!(
+                "wrote {}: {} byte-exact VM resource(s), {} hardlinked asset(s), {} copied asset(s)",
+                output_dir.display(),
+                entries.len(),
+                stats.hardlinked_files,
+                stats.copied_files
+            );
         }
         Some("decompile-bundle") => {
             let game_dir = PathBuf::from(args.next().unwrap_or_else(|| usage()));

@@ -164,6 +164,9 @@ nix develop --command python accuracy/compare_oracle.py \
 - `accuracy/dosbox.conf` mounts the CD image (`output/CMDR_BLOOD.iso`) as `D:`,
   a writable `accuracy/cdrive` as `C:`, with `svga_s3` / `cputype=auto` /
   `cycles=max`, EMS + XMS enabled (the game requires both).
+- Setting `ORACLE_GAME_DIR` replaces the ISO mount with an extracted runtime
+  tree. This is the substitution path used by `cbvm build-runtime-tree`: the
+  original `BLOODPRG.EXE` and assets run against freshly compiled script images.
 - **`BLOOD.EXE` is only the installer/launcher** ("Previously stored
   configuration has not been found on drive C:" → "I want to start a new
   installation"). It expects an HD install of `BLOOD.BAT`.

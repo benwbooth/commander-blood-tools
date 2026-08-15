@@ -123,6 +123,14 @@ The structured corpus now renders these as 37 named `SELECTOR_LIST` regions and
 321 `CASE` headers. Those directives retain the explicit native yield bytes and
 compile back to all 64,736 BAS bytes exactly.
 
+`cbvm compile-bundle` turns the structured corpus into a complete 25-file VM
+resource set. It refuses any compiled COD/BAS image that differs from the
+shipped file and preserves the DEB/DIC/VAR companions. `cbvm
+build-runtime-tree` installs the result into an extracted-CD asset tree without
+retaining the original script resources. The original DOS executable boots and
+runs that tree in DOSBox-X; see [runtime-validation.md](runtime-validation.md)
+and `bundle-manifest.tsv`.
+
 The shipped address conventions are now enforced rather than inferred during
 display. All 480 kind-2 `.DEB` routine values are one-based: subtracting one
 lands on a COD token boundary, while the encoded value never does. The 284

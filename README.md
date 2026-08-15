@@ -21,6 +21,8 @@ nix develop --command cargo run -- inspect-bloodprg [re/bin/BLOODPRG.EXE]
 nix develop --command cargo run -- inspect-vm /path/to/SCRIPT1.COD [/path/to/SCRIPT1.VAR]
 nix develop --command cargo run --bin cbvm -- decompile-bundle /path/to/game re/vm/source
 nix develop --command cargo run --bin cbvm -- decompile-bloodscript /path/to/game re/vm/bloodscript
+nix develop --command cargo run --bin cbvm -- compile-bundle re/vm/structured /path/to/game /tmp/cbvm-bundle
+nix develop --command cargo run --bin cbvm -- build-runtime-tree re/vm/structured /path/to/extracted-cd /tmp/cblood-runtime
 nix develop --command cargo run -- inspect-descript /path/to/DESCRIPT.DES
 nix develop --command cargo run -- inspect-scripts /path/to/extracted-iso
 nix develop --command cargo run -- inspect-character-combinations /path/to/extracted-iso
@@ -39,6 +41,10 @@ and five `.BAS` VM images, then assembles each result and requires byte equality
 and also requires byte equality. See [re/vm/README.md](re/vm/README.md) for the
 verification ladder and [re/vm/language-evidence.md](re/vm/language-evidence.md)
 for the boundary between recovered facts and reconstructed source syntax.
+`cbvm compile-bundle` compiles the ten structured COD/BAS sources and preserves
+their fifteen DEB/DIC/VAR companions, refusing any result that differs from the
+shipped resource. `cbvm build-runtime-tree` installs that bundle into a
+hard-linked extracted-CD tree for DOSBox substitution testing.
 `inspect-descript` emits typed JSON for `DESCRIPT.DES`.
 `inspect-scripts` emits typed JSON for `SCRIPT*.DEB`, `SCRIPT*.VAR`,
 `SCRIPT*.DIC`, and recovered speech bytecode events.
