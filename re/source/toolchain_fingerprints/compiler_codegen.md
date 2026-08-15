@@ -2402,13 +2402,22 @@ byte with one only if changed bit zero is clear at the stop. Eleven vectors
 cover unusual inputs such as backtick and brace, preexisting even and odd
 changed values, source wrap, segment ownership, outputs, flags, and return.
 
-Their one-to-one candidates now consume and return far DS:SI cursors and use named
-FS/game-data objects. Open Watcom `-3 -os -s -mh -we` compiles the actual
-candidates without warnings to 46 instructions/114 bytes and 67/179
-respectively, versus originals of 16/33 and 20/52. Watcom preserves the natural
-operations, but its register saves and named
-segment reloads do not reproduce the original ambient ES/GS/FS setup or string
-instruction allocation.
+The compiler probes now include both authoritative one-to-one candidates. They
+consume and return far DS:SI cursors and directly index their named FS or game-
+data arrays. This removes two `__PIA` calls from `0x007788` and three from
+`0x0077A9` without changing either segment ownership contract.
+
+Open Watcom `-3 -os -s -mh -we` compiles the FS handler warning-free to 24
+instructions/54 bytes versus 16/33 original, with 75.00 percent mnemonic-
+multiset overlap; Turbo C emits 38 instructions. It compiles the MUSIC patcher
+to 34 instructions/86 bytes versus 20/52 original, with 80.00 percent overlap;
+Turbo C emits 55 instructions. The generated MUSIC flow retains transform,
+compare-before-write, exact changed assignment, and conditional unchanged OR.
+
+Both candidates are accepted for source-port integration. Fixed FS_DATA and
+GAME_DATA placement supplies the intended destinations. Original ES save/
+restore or ambient ES=GS, DI plus LODSB/STOSB allocation, direct GS accesses,
+and exact register/flag residue remain direct-binary-replacement differences.
 
 Presentation-line helper `0x007E1C` is entered with its 24-byte record at
 SS:BP and returns completion in carry. Twelve direct vectors prove its busy
