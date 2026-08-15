@@ -3,13 +3,13 @@
 const cb_u8 CB_FAR *CB_NEAR credit_presenter_b_cryo(
     const cb_u8 CB_FAR *script_bytes)
 {
-    char CB_GAME_DATA *dst;
+    cb_u16 dst_index;
     cb_u8 ch;
 
-    dst = credit_text_buffer;
+    dst_index = 0u;
     do {
         ch = *script_bytes++;
-        *dst++ = (char)ch;
+        credit_text_buffer[dst_index++] = (char)ch;
     } while (ch != '\0');
 
     credit_reveal_active = 1;

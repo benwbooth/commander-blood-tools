@@ -2159,13 +2159,20 @@ ordinary, high-byte, and segment-wrapped sources; distinct DS, ES, and GS
 ownership; exact state-write order; registers, segments, flags, source
 immutability, and near-return stack behavior.
 
-The corrected candidate returns the advanced far DS:SI cursor and places the
-destination and state symbols in one named based segment. Open Watcom
-`-3 -os -s -mh -we` compiles it without warnings to 33 instructions/79 bytes
-versus 8/23 original. Watcom loads `GAME_DATA`
-into ES, saves BX/DX/ES, emits a scalar indexed copy, and zero-extends the final
-AL through AH before storing the timer. Exact integration needs the original
-ambient ES=GS contract, DI allocation, LODSB/STOSB loop, and GS state accesses.
+The compiler probe now includes the authoritative candidate. It returns the
+advanced far DS:SI cursor and places the destination and state symbols in one
+named based segment. Replacing a decayed based pointer with a direct 16-bit
+array index removes Watcom's generated `__PIA` helper and reduces the body from
+33 instructions/79 bytes to 17 instructions/37 bytes. The original is 8/23;
+mnemonic-multiset overlap is 62.50 percent, and Turbo C 2.01 emits 33
+instructions.
+
+The natural function is accepted for source-port integration. Shipped callers
+establish the required `ES == GS` invariant, and the source preserves NUL
+consumption plus active-before-timer write order. The original body's ability
+to use an ES destination distinct from GS state, its DI plus LODSB/STOSB
+allocation, and exact register/flag residue remain direct-binary-replacement
+differences rather than missing credit-presentation logic.
 
 Byte-parser handlers `0x007629`, `0x00766F`, `0x0076C0`, and `0x0076D5`
 share one 21-byte copy shape with destination offsets 0x20B8, 0x24C6, 0x2460,
