@@ -1295,12 +1295,16 @@ EDI must enter zero, and the base-plus-offset sum does not wrap at 64 KiB.
 
 Open Watcom 1.9 medium (`-3 -ox -mm -zdf -we`) compiles the actual natural
 candidate warning-free to 35 instructions/77 bytes versus the original 33/75,
-with 93.94 percent mnemonic-multiset overlap and no inline assembly. A `huge`
-pointer experiment preserved wider arithmetic but expanded to 114 bytes and a
-`__PIA` runtime call, so it was rejected. The natural candidate instead keeps
-the shipped shared-data, clear-DF, and in-range record-sum invariants explicit;
-direct binary replacement would additionally need the original helper input,
-clobber, full-EAX clearing, and upper-EDI conventions.
+with 93.94 percent mnemonic-multiset overlap and no inline assembly; Turbo C
+2.01 medium emits 51 instructions. A `huge` pointer experiment preserved wider
+arithmetic but expanded to 114 bytes and a `__PIA` runtime call, so it was
+rejected. Runtime captures instead prove that shipped record blocks are allocated
+at offset zero. The sole caller at `0x00873C` ignores the returned count and then
+walks the generated list with forward `LODSW`, independently requiring the same
+clear-DF state assumed by the C ABI. The natural shared-data and 16-bit pointer
+operations are therefore accepted for source-port integration. Direct binary
+replacement would additionally need the original helper input, clobber,
+full-EAX clearing, inherited-DF behavior, and upper-EDI conventions.
 
 Ship 3D presentable-name-list builder `0x007259` calls the recursive source-list
 builder with inherited ES:DI as the target and SS:BP at `0x6886`. It filters the
