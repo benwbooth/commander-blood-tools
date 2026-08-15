@@ -11,7 +11,7 @@
 const cb_u8 CB_NEAR *CB_NEAR vm_op_cd_state_gated(
     const cb_u8 CB_NEAR *script_bytes)
 {
-    int inverted;
+    cb_u8 inverted;
     cb_u16 first_record;
     cb_u16 second_record;
     cb_u16 third_record;
@@ -22,8 +22,8 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_cd_state_gated(
     volatile cb_u8 CB_FAR *record_base;
     volatile cb_u16 CB_FAR *triple;
 
-    record_base = vm_record_base;
-    if ((vm_query_mode & 1u) != 0) {
+    record_base = vm_record_base_gs;
+    if ((vm_query_mode_gs & 1u) != 0) {
         inverted = 0;
         if (*script_bytes == 0xa1u) {
             inverted = 1;
@@ -38,12 +38,16 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_cd_state_gated(
 
         triple = (volatile cb_u16 CB_FAR *)VM_CD_RECORD_AT(
             record_base, first_record);
-        if ((triple[0] == 0xcdu
+        if (triple[0] == 0xcdu
                 && triple[1] == second_record
-                && triple[2] == third_record) == inverted) {
-            return (const cb_u8 CB_NEAR *)vm_branch_fail();
+                && triple[2] == third_record) {
+            if (!inverted) {
+                return script_bytes;
+            }
+        } else if (inverted) {
+            return script_bytes;
         }
-        return script_bytes;
+        return (const cb_u8 CB_NEAR *)vm_branch_fail();
     }
 
     first_record = *(const cb_u16 CB_NEAR *)script_bytes;
@@ -65,7 +69,7 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_cd_state_gated(
         record_base, second_record);
     (void)vm_field_offset(0x11u, kind);
 
-    if (owner == vm_wildcard_ref_value) {
+    if (owner == vm_wildcard_ref_value_gs) {
         vm_special_slot_remove(second_record);
     }
 
@@ -73,7 +77,7 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_cd_state_gated(
         record_base, second_record);
     field_offset = (cb_i16)vm_field_offset(0x11u, kind);
     value = third_record;
-    if (third_record == vm_wildcard_ref_value) {
+    if (third_record == vm_wildcard_ref_value_gs) {
         if (!vm_special_slot_insert(second_record)) {
             return script_bytes;
         }
@@ -83,17 +87,17 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_cd_state_gated(
     *(volatile cb_u16 CB_FAR *)VM_CD_RECORD_AT(
         record_base, (cb_u16)(second_record + field_offset)) = value;
 
-    if ((vm_ui_flags & 1u) != 0
-            || (vm_presentation_request_flags & 2u) != 0
+    if ((vm_ui_state_gs.bytes.flags & 1u) != 0
+            || (vm_presentation_request_flags_gs & 2u) != 0
             || kind != 0x0400u) {
         return script_bytes;
     }
 
     if (vm_c2_descript_lookup(
             VM_CD_RECORD_AT(record_base, second_record + 4u)) != 0) {
-        vm_c2_presentation_gate = 0;
-        vm_presentation_request_flags |= 2u;
-        vm_active_line = 0x2bu;
+        vm_c2_presentation_gate_gs = 0;
+        vm_presentation_request_flags_gs |= 2u;
+        vm_active_line_gs = 0x2bu;
     }
 
     return script_bytes;

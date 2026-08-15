@@ -5,22 +5,31 @@
 typedef unsigned char u8;
 typedef unsigned int u16;
 
-#if defined(__TURBOC__) || defined(__BORLANDC__) || defined(__WATCOMC__)
+#if defined(__WATCOMC__)
 #include <dos.h>
 #define FAR far
 #define NEAR near
+#define GAME_DATA __based(__segname("GAME_DATA"))
+#define RECORD_OFFSET(base, offset) ((u16)(FP_OFF(base) + (offset)))
+#define RECORD_AT(base, offset) ((volatile u8 FAR *)MK_FP(FP_SEG(base), (offset)))
+#elif defined(__TURBOC__) || defined(__BORLANDC__)
+#include <dos.h>
+#define FAR far
+#define NEAR near
+#define GAME_DATA far
 #define RECORD_OFFSET(base, offset) ((u16)(FP_OFF(base) + (offset)))
 #define RECORD_AT(base, offset) ((volatile u8 FAR *)MK_FP(FP_SEG(base), (offset)))
 #else
 #define FAR
 #define NEAR
+#define GAME_DATA
 #define RECORD_OFFSET(base, offset) (offset)
 #define RECORD_AT(base, offset) ((base) + (offset))
 #endif
 
-extern volatile u8 FAR *record_base_global;
-extern volatile u8 query_mode;
-extern volatile u16 secondary_record_offset;
+extern volatile u8 FAR * GAME_DATA record_base_global;
+extern volatile u8 GAME_DATA query_mode;
+extern volatile u16 GAME_DATA secondary_record_offset;
 
 #if defined(__WATCOMC__)
 #pragma aux branch_fail_probe value [si] modify exact [ax si]

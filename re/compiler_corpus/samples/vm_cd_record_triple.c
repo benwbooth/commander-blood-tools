@@ -6,25 +6,34 @@ typedef unsigned char u8;
 typedef unsigned int u16;
 typedef signed int i16;
 
-#if defined(__TURBOC__) || defined(__BORLANDC__) || defined(__WATCOMC__)
+#if defined(__WATCOMC__)
 #include <dos.h>
 #define FAR far
 #define NEAR near
+#define GAME_DATA __based(__segname("GAME_DATA"))
+#define RECORD_AT(base, offset) \
+    ((volatile u8 FAR *)MK_FP(FP_SEG(base), (offset)))
+#elif defined(__TURBOC__) || defined(__BORLANDC__)
+#include <dos.h>
+#define FAR far
+#define NEAR near
+#define GAME_DATA far
 #define RECORD_AT(base, offset) \
     ((volatile u8 FAR *)MK_FP(FP_SEG(base), (offset)))
 #else
 #define FAR
 #define NEAR
+#define GAME_DATA
 #define RECORD_AT(base, offset) ((base) + (offset))
 #endif
 
-extern volatile u8 FAR *record_base_global;
-extern volatile u8 query_mode;
-extern volatile u16 wildcard_ref_value;
-extern volatile u8 ui_flags;
-extern volatile u8 presentation_request_flags;
-extern volatile u8 c2_presentation_gate;
-extern volatile u16 active_line;
+extern volatile u8 FAR * GAME_DATA record_base_global;
+extern volatile u8 GAME_DATA query_mode;
+extern volatile u16 GAME_DATA wildcard_ref_value;
+extern volatile u8 GAME_DATA ui_flags;
+extern volatile u8 GAME_DATA presentation_request_flags;
+extern volatile u8 GAME_DATA c2_presentation_gate;
+extern volatile u16 GAME_DATA active_line;
 
 #if defined(__WATCOMC__)
 #pragma aux branch_fail_probe value [si] modify exact [ax si]
@@ -45,7 +54,7 @@ extern int FAR c2_lookup_probe(const volatile u8 FAR *record_name);
 
 const u8 NEAR *NEAR vm_cd_record_triple_probe(const u8 NEAR *script_bytes)
 {
-    int inverted;
+    u8 inverted;
     u16 first_record;
     u16 second_record;
     u16 third_record;
@@ -70,12 +79,16 @@ const u8 NEAR *NEAR vm_cd_record_triple_probe(const u8 NEAR *script_bytes)
         third_record = *(const u16 NEAR *)script_bytes;
         script_bytes += sizeof(u16);
         triple = (volatile u16 FAR *)RECORD_AT(record_base, first_record);
-        if ((triple[0] == 0xcdu
+        if (triple[0] == 0xcdu
                 && triple[1] == second_record
-                && triple[2] == third_record) == inverted) {
-            return (const u8 NEAR *)branch_fail_probe();
+                && triple[2] == third_record) {
+            if (!inverted) {
+                return script_bytes;
+            }
+        } else if (inverted) {
+            return script_bytes;
         }
-        return script_bytes;
+        return (const u8 NEAR *)branch_fail_probe();
     }
 
     first_record = *(const u16 NEAR *)script_bytes;

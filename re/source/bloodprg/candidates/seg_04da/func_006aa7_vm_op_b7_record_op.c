@@ -3,16 +3,15 @@
 const cb_u8 CB_NEAR *CB_NEAR vm_op_b7_record_op(
     const cb_u8 CB_NEAR *script_bytes)
 {
-    int inverted;
+    cb_u8 inverted;
     cb_u16 offset;
     cb_u8 bit_index;
     cb_u8 bit_in_byte;
     cb_u8 mask;
     volatile cb_u8 CB_FAR *record_base;
     volatile cb_u8 CB_FAR *field;
-    int is_set;
 
-    record_base = vm_record_base;
+    record_base = vm_record_base_gs;
     inverted = 0;
     if (*script_bytes == 0xa1u) {
         inverted = 1;
@@ -25,12 +24,15 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_b7_record_op(
     bit_in_byte = (cb_u8)(bit_index & 7u);
     field = record_base + (cb_u16)(offset + (bit_index >> 3));
 
-    if ((vm_query_mode & 1u) != 0) {
-        is_set = (((cb_u8)(*field << bit_in_byte) & 0x80u) != 0);
-        if (is_set == inverted) {
-            return (const cb_u8 CB_NEAR *)vm_branch_fail();
+    if ((vm_query_mode_gs & 1u) != 0) {
+        if (((cb_u8)(*field << bit_in_byte) & 0x80u) != 0) {
+            if (!inverted) {
+                return script_bytes;
+            }
+        } else if (inverted) {
+            return script_bytes;
         }
-        return script_bytes;
+        return (const cb_u8 CB_NEAR *)vm_branch_fail();
     }
 
     mask = (cb_u8)(1u << (7u - bit_in_byte));
