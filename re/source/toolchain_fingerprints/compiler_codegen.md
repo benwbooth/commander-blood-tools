@@ -3926,6 +3926,7 @@ LCS and then mnemonic similarity:
 | `ship_3d_position_field_resolve` | medium, `-ox`, register | 45/50 | 0.1111 | 0.6667 | 0.2444 |
 | `ship_3d_object_table_bit_test` | medium, `-os -s`, register | 31/34 | 0.2581 | 0.7742 | 0.3548 |
 | `ship_3d_nav_source_list_build` | medium, `-os -s`, register | 34/55 | 0.1765 | 0.7941 | 0.2059 |
+| `vm_token_advance` | large, `-os -s`, register | 60/74 | 0.1167 | 0.7000 | 0.2000 |
 | `vm_token_special` | medium, `-ox`, register | 9/9 | 0.3333 | 1.0000 | 1.0000 |
 | `vm_condition_5` | medium, `-os -s`, register | 104/151 | 0.0481 | 0.6346 | 0.0769 |
 | `presentation_line_step` | medium, `-ox`, register | 60/59 | 0.1833 | 0.6500 | 0.2333 |
@@ -6762,11 +6763,19 @@ Seventeen direct original-binary vectors cover both fixed modes, all four
 sentinels and optional-prefix variants, block-scan diversion, both variable
 forms, DD/E4 extended-window reads, signed and ordinary cursor wrap, helper
 calls, split DS/GS/SS ownership, exact memory effects, register preservation,
-flags, stack, and near return. Open Watcom 1.9 large
-(`-3 -os -s -ml -we`) emits one warning-free 74-instruction/170-byte function
-versus 60/131 original, with 85.00 percent mnemonic-multiset overlap and 70.00
-percent ordered mnemonic overlap. The candidate is one natural typed C
-function with no inline assembly or register-state facade.
+flags, stack, and near return. The compiler probe now includes the maintained
+function directly. Open Watcom 1.9 large (`-3 -os -s -ml -we`) emits one
+warning-free 74-instruction/170-byte function versus 60/131 original, with
+85.00 percent mnemonic-multiset and 70.00 percent ordered overlap; Turbo C 2.01
+large emits 99 instructions.
+
+A linked Turbo C DOS executable embeds the exact 192 bytes beginning at shipped
+file offset `0x14338`. It tests all 96 A0-FF descriptor pairs under both query
+modes, block-scan clear/set, A1/non-A1 prefix bytes, and present/absent optional
+trailing zero bytes. Three additional cases cover fixed-length wrap, signed
+`0xFF`-length wrap, and an A6 word list crossing offset zero. All 1,539 cases
+pass through a valid 3,218-byte OMF object. The candidate is accepted as one
+natural typed C function with no inline assembly or register-state facade.
 
 Full-source integration requires `SS=GS`, a 96-pair observable descriptor
 window, query mode constrained to zero or one, and the direct DS:SI helper
