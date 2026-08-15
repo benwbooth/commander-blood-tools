@@ -68,13 +68,14 @@ uses. The compiler computes the wrapping base-plus-delta address; comments retai
 the VAR kind and matrix selectors. Zero matrix entries, ambiguous owners, and
 unmatched addresses remain hexadecimal rather than using nearest-object guesses.
 
-COD and BAS sources inline exact DIC references as `"text"@offset` operands.
-The current corpus has 13,699 distinct referenced offsets and 53,194 uses in
-dictionary-typed `TEXT`, `CONCEPT_GUARD`, `MENU`, `CASE`, and `SELECTOR_NODE`
-operands. The suffix preserves exact identity when text is duplicated. The
-quoted portion makes the reference readable but does not duplicate or replace
-the separately compiled DIC string; edit `script*.dic.blooddata` to change text.
-The compiler accepts inline references only in dictionary-typed positions.
+COD and BAS sources intern exact DIC references as string operands. The current
+corpus has 13,699 distinct referenced offsets and 53,194 uses in dictionary-typed
+`TEXT`, `CONCEPT_GUARD`, `MENU`, `CASE`, and `SELECTOR_NODE` operands. A unique
+string's first use carries `@offset`; later uses are bare quoted text. Equal text
+at multiple offsets always keeps `@offset`, preserving exact identity. The
+quoted portion does not duplicate or replace the separately compiled DIC string;
+edit `script*.dic.blooddata` to change text. The compiler accepts these
+references only in dictionary-typed positions.
 
 This syntax is reconstructed by this project. It is not claimed to be the
 original 1994 source spelling.

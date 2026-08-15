@@ -112,6 +112,49 @@ struct DictionaryAlias {
     value: String,
 }
 
+struct DictionaryOperandFormatter<'a> {
+    aliases: &'a BTreeMap<u16, DictionaryAlias>,
+    unique_values: BTreeMap<&'a str, u16>,
+    emitted: BTreeSet<u16>,
+}
+
+impl<'a> DictionaryOperandFormatter<'a> {
+    fn new(aliases: &'a BTreeMap<u16, DictionaryAlias>) -> Self {
+        let mut unique_values = BTreeMap::new();
+        let mut ambiguous_values = BTreeSet::new();
+        for (offset, alias) in aliases {
+            match unique_values.insert(alias.value.as_str(), *offset) {
+                Some(previous) if previous != *offset => {
+                    ambiguous_values.insert(alias.value.as_str());
+                }
+                _ => {}
+            }
+        }
+        for value in ambiguous_values {
+            unique_values.remove(value);
+        }
+        Self {
+            aliases,
+            unique_values,
+            emitted: BTreeSet::new(),
+        }
+    }
+
+    fn operand(&mut self, value: u16) -> String {
+        let Some(alias) = self.aliases.get(&value) else {
+            return format!("{value:04X}");
+        };
+        let quoted = serde_json::to_string(&alias.value).expect("serializing a String cannot fail");
+        if self.unique_values.get(alias.value.as_str()) == Some(&value)
+            && !self.emitted.insert(value)
+        {
+            quoted
+        } else {
+            format!("{quoted}@{value:04X}")
+        }
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct FieldAlias {
     identifier: String,
@@ -319,6 +362,7 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
             _ => {}
         }
     }
+    let interned_dictionary_words = collect_interned_dictionary_words(&lines)?;
     let mut fields = HashMap::new();
     for line in &lines {
         if line.name != "FIELD" {
@@ -364,6 +408,7 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
                 &label_names,
                 &var_addresses,
                 &dictionary_words,
+                &interned_dictionary_words,
             )?;
             if encoded.is_empty() {
                 bail!("line {}: statement emitted no bytes", line.line_number);
@@ -649,6 +694,7 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
             &labels,
             &var_addresses,
             &dictionary_words,
+            &interned_dictionary_words,
         )?;
         if encoded.is_empty() {
             bail!("line {}: statement emitted no bytes", line.line_number);
@@ -934,6 +980,7 @@ fn decompile_cod(
         tokens.iter().flat_map(dictionary_operand_values),
         dictionary,
     );
+    let mut dictionary_operands = DictionaryOperandFormatter::new(&dictionary_aliases);
     emit_object_declarations(output, &object_aliases)?;
     emit_field_declarations(output, &field_aliases, &object_aliases)?;
     let mut cursor = 0usize;
@@ -1001,7 +1048,7 @@ fn decompile_cod(
                 &annotations.labels,
                 &object_aliases,
                 &field_aliases,
-                &dictionary_aliases,
+                &mut dictionary_operands,
                 structured.rejected.get(&offset),
             )?;
         }
@@ -1057,6 +1104,7 @@ fn decompile_bas(
     add_field_owner_objects(&mut object_aliases, &field_aliases);
     let dictionary_values = bas_dictionary_operand_values(image, dictionary);
     let dictionary_aliases = dictionary_aliases(dictionary_values.iter().copied(), dictionary);
+    let mut dictionary_operands = DictionaryOperandFormatter::new(&dictionary_aliases);
     emit_object_declarations(output, &object_aliases)?;
     emit_field_declarations(output, &field_aliases, &object_aliases)?;
     let annotations = bas_annotations(image, dictionary)?;
@@ -1110,11 +1158,7 @@ fn decompile_bas(
                 vm_source::BasToken::Menu { word_offsets, .. } => {
                     write!(output, "{cursor:08X}: MENU")?;
                     for word in word_offsets {
-                        write!(
-                            output,
-                            " {}",
-                            dictionary_operand(*word, &dictionary_aliases)
-                        )?;
+                        write!(output, " {}", dictionary_operands.operand(*word))?;
                     }
                     writeln!(
                         output,
@@ -1135,7 +1179,7 @@ fn decompile_bas(
                         &HashMap::new(),
                         &object_aliases,
                         &field_aliases,
-                        &dictionary_aliases,
+                        &mut dictionary_operands,
                         None,
                     )?;
                 }
@@ -1154,7 +1198,7 @@ fn decompile_bas(
                     writeln!(
                         output,
                         "{cursor:08X}: {statement} {} {} ; {:?}",
-                        dictionary_operand(*selector, &dictionary_aliases),
+                        dictionary_operands.operand(*selector),
                         bas_next_operand(*next, &annotations.labels),
                         dictionary.get(selector).map(String::as_str).unwrap_or("")
                     )?;
@@ -1732,18 +1776,6 @@ fn object_operand(
         .unwrap_or_else(|| format!("{value:04X}"))
 }
 
-fn dictionary_operand(value: u16, aliases: &BTreeMap<u16, DictionaryAlias>) -> String {
-    aliases
-        .get(&value)
-        .map(|alias| {
-            format!(
-                "{}@{value:04X}",
-                serde_json::to_string(&alias.value).expect("serializing a String cannot fail")
-            )
-        })
-        .unwrap_or_else(|| format!("{value:04X}"))
-}
-
 fn emit_token(
     output: &mut String,
     token: &VmToken,
@@ -1751,7 +1783,7 @@ fn emit_token(
     labels: &HashMap<u16, String>,
     object_aliases: &BTreeMap<u16, ObjectAlias>,
     field_aliases: &BTreeMap<u16, FieldAlias>,
-    dictionary_aliases: &BTreeMap<u16, DictionaryAlias>,
+    dictionary_operands: &mut DictionaryOperandFormatter<'_>,
     guard_rejections: Option<&BTreeSet<GuardRejection>>,
 ) -> Result<()> {
     let offset = token.offset();
@@ -1775,7 +1807,7 @@ fn emit_token(
                 option_word(*control_word)
             )?;
             for word in word_offsets {
-                write!(output, " {}", dictionary_operand(*word, dictionary_aliases))?;
+                write!(output, " {}", dictionary_operands.operand(*word))?;
             }
         }
         VmToken::GuardPush { target, .. } => {
@@ -1789,7 +1821,7 @@ fn emit_token(
         } => write!(
             output,
             "CONCEPT_GUARD {} {}",
-            dictionary_operand(*word_offset, dictionary_aliases),
+            dictionary_operands.operand(*word_offset),
             bool_digit(*inverted)
         )?,
         VmToken::Jump { target, .. } => {
@@ -2018,6 +2050,7 @@ fn compile_statement(
     labels: &HashMap<&str, u16>,
     objects: &HashMap<&str, u16>,
     dictionary_words: &HashMap<&str, u16>,
+    interned_dictionary_words: &HashMap<String, Option<u16>>,
 ) -> Result<Vec<u8>> {
     let mut output = Vec::new();
     let word = |output: &mut Vec<u8>, value: u16| {
@@ -2042,7 +2075,13 @@ fn compile_statement(
             for value in args {
                 word(
                     &mut output,
-                    parse_dictionary_address(value, dictionary_words, line, "menu word")?,
+                    parse_dictionary_address(
+                        value,
+                        dictionary_words,
+                        interned_dictionary_words,
+                        line,
+                        "menu word",
+                    )?,
                 );
             }
             word(&mut output, 0);
@@ -2059,7 +2098,13 @@ fn compile_statement(
             require_count(args, 2, line, name)?;
             word(
                 &mut output,
-                parse_dictionary_address(args[0], dictionary_words, line, "selector")?,
+                parse_dictionary_address(
+                    args[0],
+                    dictionary_words,
+                    interned_dictionary_words,
+                    line,
+                    "selector",
+                )?,
             );
             word(
                 &mut output,
@@ -2097,6 +2142,7 @@ fn compile_statement(
                 parse_dictionary_address(
                     args[0],
                     dictionary_words,
+                    interned_dictionary_words,
                     line,
                     "dictionary word offset",
                 )?,
@@ -2192,7 +2238,13 @@ fn compile_statement(
             for value in &args[6..] {
                 word(
                     &mut output,
-                    parse_dictionary_address(value, dictionary_words, line, "dictionary word")?,
+                    parse_dictionary_address(
+                        value,
+                        dictionary_words,
+                        interned_dictionary_words,
+                        line,
+                        "dictionary word",
+                    )?,
                 );
             }
             word(&mut output, 0);
@@ -2401,19 +2453,73 @@ fn parse_object_address(
         .unwrap_or_else(|| parse_word(value, line, field))
 }
 
+fn collect_interned_dictionary_words(
+    lines: &[ParsedSourceLine<'_>],
+) -> Result<HashMap<String, Option<u16>>> {
+    let mut words = HashMap::new();
+    for line in lines {
+        for value in &line.args {
+            let Some((text, offset)) = parse_inline_dictionary_address(value, line.line_number)?
+            else {
+                continue;
+            };
+            if let Some(existing) = words.get_mut(&text) {
+                if matches!(*existing, Some(previous) if previous != offset) {
+                    *existing = None;
+                }
+            } else {
+                words.insert(text, Some(offset));
+            }
+        }
+    }
+    Ok(words)
+}
+
+fn parse_inline_dictionary_address(value: &str, line: usize) -> Result<Option<(String, u16)>> {
+    let Some((text, address)) = value.rsplit_once('@') else {
+        return Ok(None);
+    };
+    if !text.starts_with('"') {
+        return Ok(None);
+    }
+    let text: String = serde_json::from_str(text)
+        .map_err(|_| anyhow!("line {line}: invalid inline dictionary text {text:?}"))?;
+    let address = parse_word(address, line, "inline dictionary offset")?;
+    Ok(Some((text, address)))
+}
+
+fn parse_dictionary_literal(value: &str, line: usize) -> Result<Option<String>> {
+    if !value.starts_with('"') {
+        return Ok(None);
+    }
+    serde_json::from_str(value)
+        .map(Some)
+        .map_err(|_| anyhow!("line {line}: invalid interned dictionary text {value:?}"))
+}
+
 fn parse_dictionary_address(
     value: &str,
     dictionary_words: &HashMap<&str, u16>,
+    interned_dictionary_words: &HashMap<String, Option<u16>>,
     line: usize,
     field: &str,
 ) -> Result<u16> {
     if let Some(address) = dictionary_words.get(value).copied() {
         return Ok(address);
     }
-    if let Some((text, address)) = value.rsplit_once('@') {
-        let _: String = serde_json::from_str(text)
-            .map_err(|_| anyhow!("line {line}: invalid inline dictionary text {text:?}"))?;
-        return parse_word(address, line, "inline dictionary offset");
+    if let Some((_, address)) = parse_inline_dictionary_address(value, line)? {
+        return Ok(address);
+    }
+    if let Some(text) = parse_dictionary_literal(value, line)? {
+        return match interned_dictionary_words.get(&text) {
+            Some(Some(address)) => Ok(*address),
+            Some(None) => bail!(
+                "line {line}: interned dictionary text {text:?} has multiple offsets; use an explicit @offset"
+            ),
+            None => bail!(
+                "line {line}: interned dictionary text {text:?} has no explicit @offset in this source"
+            ),
+        };
     }
     parse_word(value, line, field)
 }
@@ -2856,7 +2962,7 @@ mod tests {
     }
 
     #[test]
-    fn inline_dictionary_words_compile_only_in_dictionary_operand_positions() {
+    fn inline_dictionary_words_are_interned_without_losing_offsets() {
         let image = vec![
             0xA3, 0x34, 0x12, // concept guard
             0xA6, 0x00, 0x20, 0xFF, 0x00, 0x80, 0x34, 0x12, 0x00, 0x00, // text
@@ -2869,7 +2975,7 @@ mod tests {
         assert_eq!(decompiled.dictionary_uses, 2);
         for statement in [
             "CONCEPT_GUARD \"TALK\"@1234 0",
-            "TEXT 2000 FF 00 80 - - \"TALK\"@1234",
+            "TEXT 2000 FF 00 80 - - \"TALK\"",
         ] {
             assert!(decompiled.source.contains(statement), "missing {statement}");
         }
@@ -2891,6 +2997,39 @@ mod tests {
             "00000007: END\n",
         );
         assert!(compile(alias_as_immediate).is_err());
+
+        let ambiguous_image = vec![
+            0xA3, 0x34, 0x12, // first concept guard
+            0xA3, 0x78, 0x56, // same text at a different DIC offset
+            0xA3, 0x34, 0x12, // first offset again
+            0xFF,
+        ];
+        let ambiguous_dictionary =
+            HashMap::from([(0x1234, "SAME".to_string()), (0x5678, "SAME".to_string())]);
+        let ambiguous = decompile_structured_with_symbols(
+            ImageKind::Cod,
+            &ambiguous_image,
+            &ambiguous_dictionary,
+            &[],
+        )
+        .unwrap();
+        assert_eq!(ambiguous.source.matches("\"SAME\"@1234").count(), 2);
+        assert_eq!(ambiguous.source.matches("\"SAME\"@5678").count(), 1);
+        assert_eq!(compile(&ambiguous.source).unwrap(), ambiguous_image);
+
+        let ambiguous_bare = concat!(
+            "; format: bloodscript-v2\n",
+            "CONCEPT_GUARD \"SAME\"@1234 0\n",
+            "CONCEPT_GUARD \"SAME\"@5678 0\n",
+            "CONCEPT_GUARD \"SAME\" 0\n",
+            "END\n",
+        );
+        assert!(
+            compile(ambiguous_bare)
+                .unwrap_err()
+                .to_string()
+                .contains("multiple offsets")
+        );
     }
 
     #[test]
@@ -3008,7 +3147,7 @@ mod tests {
             "YIELD_B",
             "SELECTOR_NODE \"topic\"@1234 selector_000C",
             "LABEL selector_000C",
-            "MENU \"topic\"@1234",
+            "MENU \"topic\"",
             "PRESENTATION_REGISTER 9ABC",
         ] {
             assert!(decompiled.source.contains(statement), "missing {statement}");
@@ -3042,9 +3181,9 @@ mod tests {
         for statement in [
             "SELECTOR_LIST list_actor_0001",
             "CASE \"talk\"@1234 selector_000C",
-            "CASE \"leave\"@2000 0000",
+            "CASE \"leave\" 0000",
             "MENU \"leave\"@2000",
-            "MENU \"talk\"@1234",
+            "MENU \"talk\"",
             "END_SELECTOR_LIST list_actor_0001",
         ] {
             assert!(decompiled.source.contains(statement), "missing {statement}");

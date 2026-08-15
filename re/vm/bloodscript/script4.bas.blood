@@ -7,550 +7,550 @@ YIELD
 YIELD_B
 SELECTOR_NODE "talk"@0001 0000
 MENU "bye_bye"@0752 "painting"@1221 "culture"@2511 "yolk"@2519
-TEXT 01B2 00 40 80 - - "The"@0424 "GREAT"@1202 "YOLK"@1208 "was"@0B6D "a"@0139 "Slimer"@251E "..."@0048 "An"@1618 "important"@2525 "thinker"@252F "..."@0048 FFFF "yolk"@2519
-TEXT 01B2 01 40 80 - - "He"@0DF6 "died"@17AA "a"@0139 "long"@141C "time"@0073 "ago"@2537 "and"@04EB "he's"@11B1 "buried"@253B "here"@088E "on"@015D "Vista..."@2542 FFFF "yolk"@2519
-TEXT 01B2 02 40 80 - - "This"@02C3 "palace"@254B "was"@0B6D "specially"@2552 "built"@16CD "to"@0090 "house"@255C "the"@0176 "remains"@2562 "of"@00C1 "the"@0176 "GREAT"@1202 "YOLK"@1208 "..."@0048 FFFF "yolk"@2519
-TEXT 01B2 03 48 80 - - "The"@0424 "whole"@256A "universe"@1083 "admires"@2570 "the"@0176 "GREAT"@1202 "YOLK"@1208 "..."@0048 FFFF "yolk"@2519
+TEXT 01B2 00 40 80 - - "The"@0424 "GREAT"@1202 "YOLK"@1208 "was"@0B6D "a"@0139 "Slimer"@251E "..."@0048 "An"@1618 "important"@2525 "thinker"@252F "..." FFFF "yolk"
+TEXT 01B2 01 40 80 - - "He"@0DF6 "died"@17AA "a" "long"@141C "time"@0073 "ago"@2537 "and"@04EB "he's"@11B1 "buried"@253B "here"@088E "on"@015D "Vista..."@2542 FFFF "yolk"
+TEXT 01B2 02 40 80 - - "This"@02C3 "palace"@254B "was" "specially"@2552 "built"@16CD "to"@0090 "house"@255C "the"@0176 "remains"@2562 "of"@00C1 "the" "GREAT" "YOLK" "..." FFFF "yolk"
+TEXT 01B2 03 48 80 - - "The" "whole"@256A "universe"@1083 "admires"@2570 "the" "GREAT" "YOLK" "..." FFFF "yolk"
 SHARED_STATE C0 151E F5 C1 0001
-TEXT 01B2 FF 40 80 - - "The"@0424 "portrait"@11F9 "in"@00B3 "this"@0CA2 "palace"@254B "was"@0B6D "painted"@1230 "with"@0123 "the"@0176 "GREAT"@1202 "YOLK's"@1238 "own"@123F "yellow"@1243 "blood"@124A "..."@0048 FFFF "painting"@1221
-TEXT 01B2 FF 40 80 - - "The"@0424 "painting"@1221 "is"@02C8 "beyond"@2578 "price"@257F "..."@0048 "It"@0357 "is"@02C8 "magical"@1774 "..."@0048 FFFF "painting"@1221
-TEXT 01B2 FF 40 80 - - "It"@0357 "is"@02C8 "said"@0B45 "that"@01E2 "he"@0871 "who"@0D62 "possesses"@2585 "it"@021E "is"@02C8 "immortal"@258F "..."@0048 FFFF "painting"@1221
-TEXT 01B2 FF 40 80 - - "The"@0424 "GREAT"@1202 "YOLK"@1208 "said"@0B45 ":"@1EE9 "\"One"@2598 "plus"@259D "one"@0F7F "equals"@25A2 "three"@173A ","@005C "thanks"@25A9 "to"@0090 "the"@0176 "coefficient"@25B0 "of"@00C1 "reproduction\""@25BC "..."@0048 FFFF "culture"@2511
-TEXT 01B2 FF 40 80 - - "The"@0424 "GREAT"@1202 "YOLK"@1208 "said"@0B45 ":\"Silence"@25CA "feeds"@25D4 "on"@015D "sound"@0454 "and"@04EB "fury\""@25DA "."@0027 FFFF "culture"@2511
-TEXT 01B2 FF 40 80 - - "The"@0424 "GREAT"@1202 "YOLK"@1208 "said"@0B45 ":"@1EE9 "\"It"@25E0 "takes"@25E4 "thirteen"@25EA "murffalos"@25F3 "to"@0090 "reproduce"@25FD ","@005C "but"@0DFE "one"@0F7F "day"@2607 "it"@021E "will"@1544 "take"@08F0 "fourteen\""@260B FFFF "culture"@2511
+TEXT 01B2 FF 40 80 - - "The" "portrait"@11F9 "in"@00B3 "this"@0CA2 "palace" "was" "painted"@1230 "with"@0123 "the" "GREAT" "YOLK's"@1238 "own"@123F "yellow"@1243 "blood"@124A "..." FFFF "painting"
+TEXT 01B2 FF 40 80 - - "The" "painting" "is"@02C8 "beyond"@2578 "price"@257F "..." "It"@0357 "is" "magical"@1774 "..." FFFF "painting"
+TEXT 01B2 FF 40 80 - - "It" "is" "said"@0B45 "that"@01E2 "he"@0871 "who"@0D62 "possesses"@2585 "it"@021E "is" "immortal"@258F "..." FFFF "painting"
+TEXT 01B2 FF 40 80 - - "The" "GREAT" "YOLK" "said" ":"@1EE9 "\"One"@2598 "plus"@259D "one"@0F7F "equals"@25A2 "three"@173A ","@005C "thanks"@25A9 "to" "the" "coefficient"@25B0 "of" "reproduction\""@25BC "..." FFFF "culture"
+TEXT 01B2 FF 40 80 - - "The" "GREAT" "YOLK" "said" ":\"Silence"@25CA "feeds"@25D4 "on" "sound"@0454 "and" "fury\""@25DA "."@0027 FFFF "culture"
+TEXT 01B2 FF 40 80 - - "The" "GREAT" "YOLK" "said" ":" "\"It"@25E0 "takes"@25E4 "thirteen"@25EA "murffalos"@25F3 "to" "reproduce"@25FD "," "but"@0DFE "one" "day"@2607 "it" "will"@1544 "take"@08F0 "fourteen\""@260B FFFF "culture"
 YIELD
 YIELD_B
-SELECTOR_NODE "talk"@0001 selector_0282
-MENU "bye_bye"@0752 "medicine"@2615 "curse"@0BFC
-TEXT 00DA 02 40 80 - - "Me"@000C "know"@0A85 "good"@031C "medicine"@2615 "and"@04EB "good"@031C "doctor"@204B "..."@0048 "You"@00E9 "be"@00FE "very"@0984 "sick"@239A "..."@0048 FFFF "medicine"@2615
-TEXT 00DA 03 48 80 - - "You"@00E9 "have"@009B "nightmares"@1D53 "and"@04EB "you"@00A0 "not"@0097 "be"@00FE "lucky"@261E "..."@0048 FFFF "medicine"@2615
+SELECTOR_NODE "talk" selector_0282
+MENU "bye_bye" "medicine"@2615 "curse"@0BFC
+TEXT 00DA 02 40 80 - - "Me"@000C "know"@0A85 "good"@031C "medicine" "and" "good" "doctor"@204B "..." "You"@00E9 "be"@00FE "very"@0984 "sick"@239A "..." FFFF "medicine"
+TEXT 00DA 03 48 80 - - "You" "have"@009B "nightmares"@1D53 "and" "you"@00A0 "not"@0097 "be" "lucky"@261E "..." FFFF "medicine"
 PRESENTATION_REGISTER 2624
-TEXT 00DA 04 48 80 - - "You"@00E9 "need"@0349 "sorceror"@2624 "medicine"@2615 "???"@14B2 FFFF "medicine"@2615
+TEXT 00DA 04 48 80 - - "You" "need"@0349 "sorceror"@2624 "medicine" "???"@14B2 FFFF "medicine"
 PRESENTATION_REGISTER 2624
-TEXT 00DA 05 40 80 - - "Curse"@262D "come"@022C "from"@0236 "land"@2633 "of"@00C1 "dead"@2638 "..."@0048 "You"@00E9 "did"@029A "be"@00FE "bad"@062A "to"@0090 "dead"@2638 "..."@0048 FFFF "curse"@0BFC
-TEXT 00DA 00 40 80 - - "Me"@000C "scared"@0639 "..."@0048 FFFF "curse"@0BFC
-TEXT 00DA 02 48 80 - - "Yes"@0212 ","@005C "yes"@1576 "..."@0048 "Me"@000C "know"@0A85 "good"@031C "sorceror"@2624 ","@005C "friend"@0321 "..."@0048 FFFF "sorceror"@2624
+TEXT 00DA 05 40 80 - - "Curse"@262D "come"@022C "from"@0236 "land"@2633 "of" "dead"@2638 "..." "You" "did"@029A "be" "bad"@062A "to" "dead" "..." FFFF "curse"
+TEXT 00DA 00 40 80 - - "Me" "scared"@0639 "..." FFFF "curse"
+TEXT 00DA 02 48 80 - - "Yes"@0212 "," "yes"@1576 "..." "Me" "know" "good" "sorceror" "," "friend"@0321 "..." FFFF "sorceror"
 PRESENTATION_REGISTER 2624
-TEXT 00DA 03 48 80 - - "Him"@263D "live"@06AF "alone"@2641 "on"@015D "desert"@0CD8 "planet"@04DC "..."@0048 FFFF "sorceror"@2624
+TEXT 00DA 03 48 80 - - "Him"@263D "live"@06AF "alone"@2641 "on" "desert"@0CD8 "planet"@04DC "..." FFFF "sorceror"
 SHARED_STATE C0 1512 F5 C1 0001
 YIELD_B
 LABEL selector_0282
-SELECTOR_NODE "planet"@04DC 0000
-MENU "bye_bye"@0752 "vista"@2647 "tromp"@264D "ondoyant"@093A "tourism"@0CF6
-TEXT 00DA 03 40 80 - - "The"@0424 "planet"@04DC "Vista"@166F "is"@02C8 "where"@157F "I'm"@0403 "from"@0236 "..."@0048 "It"@0357 "suits"@2653 "me"@0146 "..."@0048 FFFF "vista"@2647
-TEXT 00DA 02 48 80 - - "There's"@0E97 "a"@0139 "saying"@2659 "which"@2660 "goes"@1A7F ":"@1EE9 "\"Hasta"@2666 "la"@266D "Vista\""@2670 FFFF "vista"@2647
+SELECTOR_NODE "planet" 0000
+MENU "bye_bye" "vista"@2647 "tromp"@264D "ondoyant"@093A "tourism"@0CF6
+TEXT 00DA 03 40 80 - - "The" "planet" "Vista"@166F "is" "where"@157F "I'm"@0403 "from" "..." "It" "suits"@2653 "me"@0146 "..." FFFF "vista"
+TEXT 00DA 02 48 80 - - "There's"@0E97 "a" "saying"@2659 "which"@2660 "goes"@1A7F ":" "\"Hasta"@2666 "la"@266D "Vista\""@2670 FFFF "vista"
 PRESENTATION_REGISTER 0C64
-TEXT 00DA 02 40 80 - - "We"@0256 "Trumps"@2677 "are"@0BC3 "an"@0F6B "ancient"@0565 "people"@0B5D "..."@0048 "We"@0256 "like"@0134 "peace"@16BD "..."@0048 FFFF "tromp"@264D
-TEXT 00DA 02 40 80 - - "We"@0256 "fear"@0D47 "nothing"@0D4C "as"@0183 "much"@0364 "as"@0183 "the"@0176 "Trump"@0E51 "tail"@267E "hunters"@2683 "..."@0048 FFFF "tromp"@264D
-TEXT 00DA 02 00 80 - - "They"@268B "come"@022C "in"@00B3 "big"@0989 "ships,"@2690 "with"@0123 "enormous"@2697 "weapons"@26A0 "attached"@26A8 "to"@0090 "their"@26B1 "arms"@26B7 "."@0027 "They"@268B "are"@0BC3 "vulgar"@26BC "and"@04EB "uncouth"@26C3 ".."@0C58
-TEXT 00DA 01 48 80 - - "To"@0229 "think"@0994 "there"@0C37 "are"@0BC3 "those"@1FEC "who"@0D62 "would"@0E39 "smoke"@26CB "our"@04A6 "tails"@26D1 "..."@0048 FFFF "tromp"@264D
+TEXT 00DA 02 40 80 - - "We"@0256 "Trumps"@2677 "are"@0BC3 "an"@0F6B "ancient"@0565 "people"@0B5D "..." "We" "like"@0134 "peace"@16BD "..." FFFF "tromp"
+TEXT 00DA 02 40 80 - - "We" "fear"@0D47 "nothing"@0D4C "as"@0183 "much"@0364 "as" "the" "Trump"@0E51 "tail"@267E "hunters"@2683 "..." FFFF "tromp"
+TEXT 00DA 02 00 80 - - "They"@268B "come" "in" "big"@0989 "ships,"@2690 "with" "enormous"@2697 "weapons"@26A0 "attached"@26A8 "to" "their"@26B1 "arms"@26B7 "." "They" "are" "vulgar"@26BC "and" "uncouth"@26C3 ".."@0C58
+TEXT 00DA 01 48 80 - - "To"@0229 "think"@0994 "there"@0C37 "are" "those"@1FEC "who" "would"@0E39 "smoke"@26CB "our"@04A6 "tails"@26D1 "..." FFFF "tromp"
 PRESENTATION_REGISTER 0C64
-TEXT 00DA 02 40 80 - - "There"@196E "are"@0BC3 "even"@02FB "fools"@26D7 "that"@01E2 "believe"@14BD "in"@00B3 "ondoyants"@0A29 "..."@0048 FFFF "ondoyant"@093A
-TEXT 00DA 01 48 80 - - "ondoyants"@0A29 "live"@06AF "only"@1472 "in"@00B3 "dreams"@0E4A "..."@0048 FFFF "ondoyant"@093A
+TEXT 00DA 02 40 80 - - "There"@196E "are" "even"@02FB "fools"@26D7 "that" "believe"@14BD "in" "ondoyants"@0A29 "..." FFFF "ondoyant"
+TEXT 00DA 01 48 80 - - "ondoyants" "live" "only"@1472 "in" "dreams"@0E4A "..." FFFF "ondoyant"
 PRESENTATION_REGISTER 0C64
 YIELD
 YIELD_B
 SELECTOR_NODE "hello"@0006 0000
-MENU "bye_bye"@0752 "planet"@04DC "information"@1352 "races"@26DD
-TEXT 079A 04 40 80 - - "Uhh"@26E3 "..."@0048 "Me"@000C "not"@0097 "remember"@26E7 "planet"@04DC "..."@0048 FFFF "planet"@04DC
-TEXT 079A 05 40 80 - - "Information..."@26F0 "Me"@000C "not"@0097 "understand"@0249 "information"@1352 "..."@0048 "Uhh"@26E3 "!"@06C3 FFFF "information"@1352
-TEXT 079A 05 40 80 - - "You"@00E9 "be"@00FE "sure"@0FF6 "you"@00A0 "know"@0A85 "talk"@0001 ","@005C "friend"@0321 "?"@0254 FFFF "races"@26DD
-TEXT 079A 02 01 80 - - "Uhh"@26E3 "..."@0048 "Me"@000C "sick"@239A "..."@0048
+MENU "bye_bye" "planet" "information"@1352 "races"@26DD
+TEXT 079A 04 40 80 - - "Uhh"@26E3 "..." "Me" "not" "remember"@26E7 "planet" "..." FFFF "planet"
+TEXT 079A 05 40 80 - - "Information..."@26F0 "Me" "not" "understand"@0249 "information" "..." "Uhh" "!"@06C3 FFFF "information"
+TEXT 079A 05 40 80 - - "You" "be" "sure"@0FF6 "you" "know" "talk" "," "friend" "?"@0254 FFFF "races"
+TEXT 079A 02 01 80 - - "Uhh" "..." "Me" "sick" "..."
 YIELD
 YIELD_B
-SELECTOR_NODE "talk"@0001 0000
-MENU "bye_bye"@0752 "Vistar"@1FA4 "planet"@04DC "race"@2700 "croolis"@2705
-TEXT 004A 02 40 80 - - "You"@00E9 "want"@07E2 "to"@0090 "talk"@0001 ","@005C "friend..."@270D FFFF "talk"@0001
-TEXT 004A 02 40 80 - - "Vistar"@1FA4 "is"@02C8 "the"@0176 "name"@0608 "of"@00C1 "my"@09F1 "planet"@04DC "."@0027 "I"@0216 "am"@0D6E "alone"@2641 "here"@088E "..."@0048 FFFF "Vistar"@1FA4
-TEXT 004A 00 48 80 - - "I"@0216 "find"@00ED "peace"@16BD "here"@088E "..."@0048 "Nobody"@2717 "to"@0090 "bother"@271E "me"@0146 "..."@0048 FFFF "Vistar"@1FA4
+SELECTOR_NODE "talk" 0000
+MENU "bye_bye" "Vistar"@1FA4 "planet" "race"@2700 "croolis"@2705
+TEXT 004A 02 40 80 - - "You" "want"@07E2 "to" "talk" "," "friend..."@270D FFFF "talk"
+TEXT 004A 02 40 80 - - "Vistar" "is" "the" "name"@0608 "of" "my"@09F1 "planet" "." "I"@0216 "am"@0D6E "alone" "here" "..." FFFF "Vistar"
+TEXT 004A 00 48 80 - - "I" "find"@00ED "peace" "here" "..." "Nobody"@2717 "to" "bother"@271E "me" "..." FFFF "Vistar"
 PRESENTATION_REGISTER 2725
-TEXT 004A 01 48 80 - - "It's"@0068 "calm"@272D "here"@088E "."@0027 "No"@1CC6 "neighbors"@2732 ","@005C "no"@0AFD "noise"@16A2 ","@005C "no"@0AFD "TV"@1D6B "..."@0048 FFFF "Vistar"@1FA4
+TEXT 004A 01 48 80 - - "It's"@0068 "calm"@272D "here" "." "No"@1CC6 "neighbors"@2732 "," "no"@0AFD "noise"@16A2 "," "no" "TV"@1D6B "..." FFFF "Vistar"
 PRESENTATION_REGISTER 2725
-TEXT 004A 02 48 80 - - "Ah"@273C ","@005C "It's"@0068 "true"@1801 "that"@01E2 "the"@0176 "winter"@273F "nights"@2746 "would"@0E39 "be"@00FE "nicer"@274D "with"@0123 "TV"@1D6B "..."@0048 FFFF "leisure"@2725
+TEXT 004A 02 48 80 - - "Ah"@273C "," "It's" "true"@1801 "that" "the" "winter"@273F "nights"@2746 "would" "be" "nicer"@274D "with" "TV" "..." FFFF "leisure"@2725
 PRESENTATION_REGISTER 2725
-TEXT 004A 00 48 80 - - "To"@0229 "watch"@2753 "TV"@1D6B ","@005C "I'd"@01D5 "need"@0349 "a"@0139 "good"@031C "decoder"@0DEE "..."@0048 FFFF "leisure"@2725
+TEXT 004A 00 48 80 - - "To" "watch"@2753 "TV" "," "I'd"@01D5 "need" "a" "good" "decoder"@0DEE "..." FFFF "leisure"
 SHARED_STATE C0 151C F5 C1 0001
-TEXT 004A 00 40 80 - - "No"@1CC6 "shortage"@2759 "of"@00C1 "planets"@2762 ","@005C "that's"@07D7 "for"@003A "sure"@0FF6 "..."@0048 FFFF "planet"@04DC
-TEXT 004A 02 48 80 - - "Planets"@276A "!"@06C3 "You're"@067C "quite"@0E1D "fascinated"@2772 "by"@1317 "them"@1DF8 "..."@0048 FFFF "planet"@04DC
+TEXT 004A 00 40 80 - - "No" "shortage"@2759 "of" "planets"@2762 "," "that's"@07D7 "for"@003A "sure" "..." FFFF "planet"
+TEXT 004A 02 48 80 - - "Planets"@276A "!" "You're"@067C "quite"@0E1D "fascinated"@2772 "by"@1317 "them"@1DF8 "..." FFFF "planet"
 SHARED_STATE C0 151A F5 C1 0001
-TEXT 004A 02 40 80 - - "Only"@277D "Tromps"@0DA0 "here.."@2782 "We"@0256 "seldom"@2789 "get"@00A7 "strangers"@2790 "..."@0048 FFFF "race"@2700
-TEXT 004A 01 48 80 - - "Big"@104D "ships"@13A2 "pass"@279A "nearby"@279F "from"@0236 "time"@0073 "to"@0090 "time"@0073 "..."@0048 FFFF "race"@2700
+TEXT 004A 02 40 80 - - "Only"@277D "Tromps"@0DA0 "here.."@2782 "We" "seldom"@2789 "get"@00A7 "strangers"@2790 "..." FFFF "race"
+TEXT 004A 01 48 80 - - "Big"@104D "ships"@13A2 "pass"@279A "nearby"@279F "from" "time" "to" "time" "..." FFFF "race"
 PRESENTATION_REGISTER 2725
-TEXT 004A 00 40 80 - - "Aren't"@27A6 "you"@00A0 "feeling"@0C3D "well"@1A66 "?"@0254 FFFF "croolis"@2705
-TEXT 004A 01 40 80 - - "I'm"@0403 "sure"@0FF6 "you're"@02B6 "insulting"@27AD "me"@0146 "...I"@27B7 "don't"@0374 "like"@0134 "insults"@27BC "I"@0216 "don't"@0374 "understand"@0249 "..."@0048 FFFF "croolis"@2705
-TEXT 004A 02 40 80 - - "Don't"@0E6C "insult"@27C4 "me"@0146 ","@005C "stranger"@0C4A "..."@0048 "I"@0216 "don't"@0374 "like"@0134 "it"@021E "..."@0048 FFFF "croolis"@2705
+TEXT 004A 00 40 80 - - "Aren't"@27A6 "you" "feeling"@0C3D "well"@1A66 "?" FFFF "croolis"
+TEXT 004A 01 40 80 - - "I'm" "sure" "you're"@02B6 "insulting"@27AD "me" "...I"@27B7 "don't"@0374 "like" "insults"@27BC "I" "don't" "understand" "..." FFFF "croolis"
+TEXT 004A 02 40 80 - - "Don't"@0E6C "insult"@27C4 "me" "," "stranger"@0C4A "..." "I" "don't" "like" "it" "..." FFFF "croolis"
 YIELD
 YIELD_B
-SELECTOR_NODE "talk"@0001 0000
-MENU "bye_bye"@0752 "listen"@27CB "insist"@27D2 "treat"@27D9
-TEXT 067A 0C 41 80 - - "Aaaah"@27DF "..."@0048 "Eeeerrr..."@27E5 FFFF "listen"@27CB
-TEXT 067A 0D 40 80 - - "Aaaa"@27F0 "..."@0048 FFFF "bye_bye"@0752
-TEXT 067A 0E 40 80 - - "I've"@09F4 "been"@09F9 "struck"@27F5 "by"@1317 "the"@0176 "CURSE"@0428 "of"@00C1 "BETAKAM"@04BF "IV"@04C7 "..."@0048 FFFF "insist"@27D2
-TEXT 067A FF 68 80 - - "That"@0447 "sounds"@27FC "like"@0134 "a"@0139 "bad"@062A "thing"@059A "to"@0090 "get"@00A7 "struck"@27F5 "by"@1317 ","@005C "Commander"@005E "..."@0048 FFFF "insist"@27D2
+SELECTOR_NODE "talk" 0000
+MENU "bye_bye" "listen"@27CB "insist"@27D2 "treat"@27D9
+TEXT 067A 0C 41 80 - - "Aaaah"@27DF "..." "Eeeerrr..."@27E5 FFFF "listen"
+TEXT 067A 0D 40 80 - - "Aaaa"@27F0 "..." FFFF "bye_bye"
+TEXT 067A 0E 40 80 - - "I've"@09F4 "been"@09F9 "struck"@27F5 "by" "the" "CURSE"@0428 "of" "BETAKAM"@04BF "IV"@04C7 "..." FFFF "insist"
+TEXT 067A FF 68 80 - - "That"@0447 "sounds"@27FC "like" "a" "bad" "thing"@059A "to" "get" "struck" "by" "," "Commander"@005E "..." FFFF "insist"
 PRESENTATION_REGISTER 2803
-TEXT 067A 0F 48 80 - - "Gladis"@1529 "is"@02C8 "the"@0176 "sun"@143B "of"@00C1 "the"@0176 "Tumul"@057C "system"@1A09 "."@0027 "It"@0357 "exploded"@280A "..."@0048 FFFF "gladis"@2803
+TEXT 067A 0F 48 80 - - "Gladis"@1529 "is" "the" "sun"@143B "of" "the" "Tumul"@057C "system"@1A09 "." "It" "exploded"@280A "..." FFFF "gladis"@2803
 PRESENTATION_REGISTER 2803
-TEXT 067A FF 68 80 - - "What"@09B6 "do"@0014 "you"@00A0 "mean"@2813 ","@005C "a"@0139 "sun"@143B "?"@0254 FFFF "gladis"@2803
+TEXT 067A FF 68 80 - - "What"@09B6 "do"@0014 "you" "mean"@2813 "," "a" "sun" "?" FFFF "gladis"
 PRESENTATION_REGISTER 2803
-TEXT 067A 10 40 80 - - "Gladis"@1529 "killed"@2818 "every"@17E5 "living"@0521 "thing"@059A "."@0027 "It's"@0068 "miracle"@281F "I"@0216 "survived"@2827 "..."@0048 "Aaarr.."@2830 FFFF "insist"@27D2
-TEXT 067A 11 40 80 - - "My"@02D9 "body"@1ABC "is"@02C8 "completely"@2838 "fried"@2270 "..."@0048 "I"@0216 "must"@0884 "have"@009B "a"@0139 "new"@15F8 "body"@1ABC "..."@0048 "Friend"@2843 "..."@0048 FFFF "treat"@27D9
-TEXT 067A 12 40 80 - - "My"@02D9 "brain"@1072 "is"@02C8 "intact"@284A "but"@0DFE "the"@0176 "rest"@2851 "is"@02C8 "history"@2856 "..."@0048 "Ash"@285E "..."@0048 "Aaaarrr"@2862 "..."@0048 FFFF "treat"@27D9
-TEXT 067A FF 60 80 - - "Better"@286A "not"@0097 "tire"@2871 "him"@0050 "out"@1307 ","@005C "Commander"@005E "..."@0048 FFFF "treat"@27D9
-TEXT 067A 13 41 80 - - "I"@0216 "must"@0884 "have"@009B "a"@0139 "new"@15F8 "body"@1ABC "..."@0048 FFFF "treat"@27D9
-TEXT 067A 14 01 80 - - "Aaaarrr"@2862
+TEXT 067A 10 40 80 - - "Gladis" "killed"@2818 "every"@17E5 "living"@0521 "thing" "." "It's" "miracle"@281F "I" "survived"@2827 "..." "Aaarr.."@2830 FFFF "insist"
+TEXT 067A 11 40 80 - - "My"@02D9 "body"@1ABC "is" "completely"@2838 "fried"@2270 "..." "I" "must"@0884 "have" "a" "new"@15F8 "body" "..." "Friend"@2843 "..." FFFF "treat"
+TEXT 067A 12 40 80 - - "My" "brain"@1072 "is" "intact"@284A "but" "the" "rest"@2851 "is" "history"@2856 "..." "Ash"@285E "..." "Aaaarrr"@2862 "..." FFFF "treat"
+TEXT 067A FF 60 80 - - "Better"@286A "not" "tire"@2871 "him"@0050 "out"@1307 "," "Commander" "..." FFFF "treat"
+TEXT 067A 13 41 80 - - "I" "must" "have" "a" "new" "body" "..." FFFF "treat"
+TEXT 067A 14 01 80 - - "Aaaarrr"
 YIELD
 YIELD_B
-SELECTOR_NODE "talk"@0001 0000
-MENU "bye_bye"@0752 "help"@0313 "message"@2014
-TEXT 0A6A FF 61 80 - - "I"@0216 "hear"@206B "and"@04EB "obey"@228E ","@005C "Commander"@005E "..."@0048 FFFF "talk"@0001
-TEXT 0A6A FF 61 80 - - "Hup"@2876 "!"@06C3 "Commander"@005E "..."@0048 FFFF "bye_bye"@0752
+SELECTOR_NODE "talk" 0000
+MENU "bye_bye" "help"@0313 "message"@2014
+TEXT 0A6A FF 61 80 - - "I" "hear"@206B "and" "obey"@228E "," "Commander" "..." FFFF "talk"
+TEXT 0A6A FF 61 80 - - "Hup"@2876 "!" "Commander" "..." FFFF "bye_bye"
 YIELD
 YIELD_B
-SELECTOR_NODE "talk"@0001 selector_07FD
-MENU "hello"@0006 "say_nothing"@287A "laugh"@0AAA "bye_bye"@0752
-TEXT 0482 00 40 80 - - "Hi"@2886 "Commander"@005E FFFF "hello"@0006
-TEXT 0482 01 40 80 - - "Such"@2889 "silence"@288E "..."@0048 FFFF "say_nothing"@287A
-TEXT 0482 02 40 80 - - "Ha"@0AE8 "ha"@2896 "ha"@2896 "ha"@2896 "ha"@2896 "ha..."@2899 FFFF "laugh"@0AAA
-TEXT 0482 03 40 80 - - "Bye"@038A "bye"@038E "Commander"@005E FFFF "bye_bye"@0752
+SELECTOR_NODE "talk" selector_07FD
+MENU "hello" "say_nothing"@287A "laugh"@0AAA "bye_bye"
+TEXT 0482 00 40 80 - - "Hi"@2886 "Commander" FFFF "hello"
+TEXT 0482 01 40 80 - - "Such"@2889 "silence"@288E "..." FFFF "say_nothing"
+TEXT 0482 02 40 80 - - "Ha"@0AE8 "ha"@2896 "ha" "ha" "ha" "ha..."@2899 FFFF "laugh"
+TEXT 0482 03 40 80 - - "Bye"@038A "bye"@038E "Commander" FFFF "bye_bye"
 YIELD_B
 LABEL selector_07FD
-SELECTOR_NODE "history"@2856 selector_0811
-MENU "bye_bye"@0752 "war"@1BF1 "croolis"@2705 "treasure"@1C64 "battles"@289F "mastachok"@28A7
+SELECTOR_NODE "history" selector_0811
+MENU "bye_bye" "war"@1BF1 "croolis" "treasure"@1C64 "battles"@289F "mastachok"@28A7
 YIELD_B
 LABEL selector_0811
-SELECTOR_NODE "war"@1BF1 selector_0951
-MENU "bye_bye"@0752 "match"@28B1
-TEXT 0482 05 40 80 - - "That"@0447 "was"@0B6D "a"@0139 "real"@0D0B "bad"@062A "war"@1BF1 "..."@0048 "It"@0357 "all"@0A39 "started"@28B7 "the"@0176 "day"@2607 "of"@00C1 "the"@0176 "boxing"@28BF "match"@28B1 "between"@28C6 "EVISCERATOR"@0878 "and"@04EB "EMASCULATOR..."@28CE FFFF "war"@1BF1
-TEXT 0482 02 40 80 - - "You"@00E9 "should've"@28DD "seen"@28E7 "it"@021E ","@005C "Commander"@005E "..."@0048 "What"@09B6 "a"@0139 "fight"@28EC "..."@0048 FFFF "war"@1BF1
-TEXT 0482 03 40 80 - - "They"@268B "made"@28F2 "BIONIUM"@00AB "bombs"@28F7 "..."@0048 "Those"@28FD "things"@0B95 "could"@0646 "blow"@2903 "away"@03E9 "whole"@256A "planets"@2762 "..."@0048 FFFF "war"@1BF1
-TEXT 0482 05 40 80 - - "The"@0424 "whole"@256A "galaxy"@0CC2 "seemed"@2908 "to"@0090 "be"@00FE "burning"@290F "..."@0048 "BBOOOOMMM"@2917 "!!!"@017A "BAM"@2921 "!"@06C3 "RA"@2925 "TA"@2928 "TA"@2928 "TA"@2928 "TA"@2928 "..."@0048 "Ha!"@0360 "Ha!"@0360 "Ha!"@0360 FFFF "war"@1BF1
-TEXT 0482 04 40 80 - - "The"@0424 "boxing"@28BF "match"@28B1 "ended"@292B "badly"@2931 "."@0027 "They"@268B "televised"@2937 "it"@021E "throughout"@0DA7 "the"@0176 "universe"@1083 "..."@0048 FFFF "match"@28B1
-TEXT 0482 03 40 80 - - "The"@0424 "war"@1BF1 "was"@0B6D "between"@28C6 "the"@0176 "two"@22CF "Croolis"@1625 "chiefs"@2941 ","@005C "Eviscerator"@1E34 "and"@04EB "Emasculator..."@2948 "It"@0357 "was"@0B6D "a"@0139 "bad"@062A "one"@0F7F "..."@0048 FFFF "match"@28B1
-TEXT 0482 03 40 80 - - "The"@0424 "match"@28B1 "was"@0B6D "televised"@2937 "throughout"@0DA7 "the"@0176 "universe"@1083 "..."@0048 "Ahh"@2957 ","@005C "I"@0216 "can"@018F "picture"@0786 "it"@021E "now"@046F "..."@0048 FFFF "match"@28B1
+SELECTOR_NODE "war" selector_0951
+MENU "bye_bye" "match"@28B1
+TEXT 0482 05 40 80 - - "That" "was" "a" "real"@0D0B "bad" "war" "..." "It" "all"@0A39 "started"@28B7 "the" "day" "of" "the" "boxing"@28BF "match" "between"@28C6 "EVISCERATOR"@0878 "and" "EMASCULATOR..."@28CE FFFF "war"
+TEXT 0482 02 40 80 - - "You" "should've"@28DD "seen"@28E7 "it" "," "Commander" "..." "What" "a" "fight"@28EC "..." FFFF "war"
+TEXT 0482 03 40 80 - - "They" "made"@28F2 "BIONIUM"@00AB "bombs"@28F7 "..." "Those"@28FD "things"@0B95 "could"@0646 "blow"@2903 "away"@03E9 "whole" "planets" "..." FFFF "war"
+TEXT 0482 05 40 80 - - "The" "whole" "galaxy"@0CC2 "seemed"@2908 "to" "be" "burning"@290F "..." "BBOOOOMMM"@2917 "!!!"@017A "BAM"@2921 "!" "RA"@2925 "TA"@2928 "TA" "TA" "TA" "..." "Ha!"@0360 "Ha!" "Ha!" FFFF "war"
+TEXT 0482 04 40 80 - - "The" "boxing" "match" "ended"@292B "badly"@2931 "." "They" "televised"@2937 "it" "throughout"@0DA7 "the" "universe" "..." FFFF "match"
+TEXT 0482 03 40 80 - - "The" "war" "was" "between" "the" "two"@22CF "Croolis"@1625 "chiefs"@2941 "," "Eviscerator"@1E34 "and" "Emasculator..."@2948 "It" "was" "a" "bad" "one" "..." FFFF "match"
+TEXT 0482 03 40 80 - - "The" "match" "was" "televised" "throughout" "the" "universe" "..." "Ahh"@2957 "," "I" "can"@018F "picture"@0786 "it" "now"@046F "..." FFFF "match"
 YIELD_B
 LABEL selector_0951
-SELECTOR_NODE "croolis"@2705 selector_0AD8
-MENU "bye_bye"@0752 "history"@2856 "terror"@0D8A "eviscerator"@295B "emasculator"@2967
-TEXT 0482 05 40 80 - - "Croolis"@1625 "are"@0BC3 "exceptional"@2973 "warriors"@297F FFFF "croolis"@2705
-TEXT 0482 04 40 80 - - "My"@02D9 "master"@2988 ","@005C "EVISCERATOR"@0878 "specialised"@298F "in"@00B3 "BIONIUM"@00AB "prospection"@299B "..."@0048 FFFF "croolis"@2705
-TEXT 0482 05 40 80 - - "he"@0871 "found"@19E2 "BIONIUN"@29A7 "in"@00B3 "the"@0176 "galactic"@29AF "cyberspace"@29B8 "contraction"@29C3 "..."@0048 FFFF "croolis"@2705
-TEXT 0482 06 40 80 - - "Those"@28FD "Croolis"@1625 "are"@0BC3 "serious"@1BCF "dingbats"@29CF "!!!"@017A FFFF "croolis"@2705
-TEXT 0482 07 40 80 - - "The"@0424 "planets"@2762 "lived"@29D8 "in"@00B3 "terror"@0D8A "for"@003A "countless"@29DE "years"@0A0F "..."@0048 FFFF "terror"@0D8A
-TEXT 0482 05 40 80 - - "Terror"@29E8 "was"@0B6D "the"@0176 "Croolis"@1625 "secret"@098D "weapon"@29EF "..."@0048 FFFF "terror"@0D8A
-TEXT 0482 02 40 80 - - "We"@0256 "robots"@29F6 "were"@130B "programmed"@29FD "to"@0090 "feel"@0284 "no"@0AFD "fear"@0D47 "..."@0048 FFFF "terror"@0D8A
-TEXT 0482 03 40 80 - - "Eviscerator"@1E34 "finished"@12E4 "up"@037F "badly"@2931 "."@0027 "When"@0B0F "SCRUT"@2A08 "put"@2A0E "a"@0139 "stop"@2133 "to"@0090 "the"@0176 "war"@1BF1 ","@005C "they"@157A "jailed"@2A12 "him"@0050 FFFF "eviscerator"@295B
-TEXT 0482 04 40 80 - - "Eviscerator"@1E34 "is"@02C8 "dangerous"@2A19 ","@005C "Commander"@005E "."@0027 "He's"@073F "a"@0139 "ruthless"@2A23 "killer"@2A2C "..."@0048 FFFF "eviscerator"@295B
-TEXT 0482 FF 68 80 - - "Commander"@005E "..."@0048 "I'm"@0403 "worried"@2A33 "that"@01E2 "memories"@2A3B "of"@00C1 "his"@0054 "old"@0DEA "master"@2988 "might"@0E02 "make"@0029 "him"@0050 "violent"@2A44 "..."@0048 FFFF "eviscerator"@295B
+SELECTOR_NODE "croolis" selector_0AD8
+MENU "bye_bye" "history" "terror"@0D8A "eviscerator"@295B "emasculator"@2967
+TEXT 0482 05 40 80 - - "Croolis" "are" "exceptional"@2973 "warriors"@297F FFFF "croolis"
+TEXT 0482 04 40 80 - - "My" "master"@2988 "," "EVISCERATOR" "specialised"@298F "in" "BIONIUM" "prospection"@299B "..." FFFF "croolis"
+TEXT 0482 05 40 80 - - "he" "found"@19E2 "BIONIUN"@29A7 "in" "the" "galactic"@29AF "cyberspace"@29B8 "contraction"@29C3 "..." FFFF "croolis"
+TEXT 0482 06 40 80 - - "Those" "Croolis" "are" "serious"@1BCF "dingbats"@29CF "!!!" FFFF "croolis"
+TEXT 0482 07 40 80 - - "The" "planets" "lived"@29D8 "in" "terror" "for" "countless"@29DE "years"@0A0F "..." FFFF "terror"
+TEXT 0482 05 40 80 - - "Terror"@29E8 "was" "the" "Croolis" "secret"@098D "weapon"@29EF "..." FFFF "terror"
+TEXT 0482 02 40 80 - - "We" "robots"@29F6 "were"@130B "programmed"@29FD "to" "feel"@0284 "no" "fear" "..." FFFF "terror"
+TEXT 0482 03 40 80 - - "Eviscerator" "finished"@12E4 "up"@037F "badly" "." "When"@0B0F "SCRUT"@2A08 "put"@2A0E "a" "stop"@2133 "to" "the" "war" "," "they"@157A "jailed"@2A12 "him" FFFF "eviscerator"
+TEXT 0482 04 40 80 - - "Eviscerator" "is" "dangerous"@2A19 "," "Commander" "." "He's"@073F "a" "ruthless"@2A23 "killer"@2A2C "..." FFFF "eviscerator"
+TEXT 0482 FF 68 80 - - "Commander" "..." "I'm" "worried"@2A33 "that" "memories"@2A3B "of" "his"@0054 "old"@0DEA "master" "might"@0E02 "make"@0029 "him" "violent"@2A44 "..." FFFF "eviscerator"
 SHARED_STATE C0 1530 F5 C1 0001
-TEXT 0482 05 40 80 - - "Emasculator"@2A4C "is"@02C8 "completely"@2838 "brainless"@2A58 "..."@0048 "Mean"@2A62 "and"@04EB "stupid"@2A67 "..."@0048 FFFF "emasculator"@2967
-TEXT 0482 02 40 80 - - "That's"@0531 "one"@0F7F "Croolis"@1625 "I"@0216 "hate"@2A6E "..."@0048 FFFF "emasculator"@2967
+TEXT 0482 05 40 80 - - "Emasculator"@2A4C "is" "completely" "brainless"@2A58 "..." "Mean"@2A62 "and" "stupid"@2A67 "..." FFFF "emasculator"
+TEXT 0482 02 40 80 - - "That's"@0531 "one" "Croolis" "I" "hate"@2A6E "..." FFFF "emasculator"
 YIELD_B
 LABEL selector_0AD8
-SELECTOR_NODE "treasure"@1C64 selector_0C43
-MENU "bye_bye"@0752 "history"@2856 "hiding_place"@2A73
-TEXT 0482 02 40 80 - - "Ah"@273C "!"@06C3 "The"@0424 "treasure"@1C64 "."@0027 "You"@00E9 "should've"@28DD "seen"@28E7 "it"@021E ","@005C "Commander"@005E "..."@0048 "Incredible"@2A80 "..."@0048 FFFF "treasure"@1C64
-TEXT 0482 03 40 80 - - "Stones"@2A8B "from"@0236 "Galabar"@2A92 ","@005C "horns"@2A9A "from"@0236 "Rla"@2AA0 ","@005C "authentic"@2AA4 "Rhinox"@2AAE "bone"@2185 "vases"@2AB5 "..."@0048 FFFF "treasure"@1C64
-TEXT 0482 06 40 80 - - "Ha!"@0360 "Ha!"@0360 "Hard"@2ABB "to"@0090 "say"@0DE6 "where"@157F "he"@0871 "hid"@1CDF "it"@021E ","@005C "Commander"@005E "..."@0048 FFFF "hiding_place"@2A73
-TEXT 0482 05 40 80 - - "I"@0216 "don't"@0374 "mind"@2AC0 "giving"@2AC5 "you"@00A0 "a"@0139 "few"@0DB2 "clues"@2ACC ","@005C "but"@0DFE "it's"@1CD5 "confidential"@2AD2 "information"@1352 "..."@0048 FFFF "hiding_place"@2A73
-TEXT 0482 06 48 80 - - "I"@0216 "don't"@0374 "want"@07E2 "HONK"@2ADF "to"@0090 "hear"@206B "..."@0048 FFFF "hiding_place"@2A73
+SELECTOR_NODE "treasure" selector_0C43
+MENU "bye_bye" "history" "hiding_place"@2A73
+TEXT 0482 02 40 80 - - "Ah" "!" "The" "treasure" "." "You" "should've" "seen" "it" "," "Commander" "..." "Incredible"@2A80 "..." FFFF "treasure"
+TEXT 0482 03 40 80 - - "Stones"@2A8B "from" "Galabar"@2A92 "," "horns"@2A9A "from" "Rla"@2AA0 "," "authentic"@2AA4 "Rhinox"@2AAE "bone"@2185 "vases"@2AB5 "..." FFFF "treasure"
+TEXT 0482 06 40 80 - - "Ha!" "Ha!" "Hard"@2ABB "to" "say"@0DE6 "where" "he" "hid"@1CDF "it" "," "Commander" "..." FFFF "hiding_place"
+TEXT 0482 05 40 80 - - "I" "don't" "mind"@2AC0 "giving"@2AC5 "you" "a" "few"@0DB2 "clues"@2ACC "," "but" "it's"@1CD5 "confidential"@2AD2 "information" "..." FFFF "hiding_place"
+TEXT 0482 06 48 80 - - "I" "don't" "want" "HONK"@2ADF "to" "hear" "..." FFFF "hiding_place"
 SHARED_STATE C0 1532 F5 C1 0001
-TEXT 0482 04 40 80 - - "Millions"@2AE4 "were"@130B "wiped"@2AED "out"@1307 "in"@00B3 "the"@0176 "battles"@289F "."@0027 "Planets"@276A "were"@130B "stripped"@2AF3 "to"@0090 "the"@0176 "bone"@2185 "..."@0048 FFFF "battle"@2AFC
-TEXT 0482 05 40 80 - - "The"@0424 "Izwals"@2B03 "suffered"@2B0A "heavy"@2B13 "losses"@2B19 "."@0027 "They"@268B "weren't"@2B20 "ready"@128E "..."@0048 FFFF "battle"@2AFC
-TEXT 0482 06 40 80 - - "The"@0424 "SCRUT"@2A08 "armies"@2B28 "finally"@2B2F "won"@2B37 "after"@0A33 "a"@0139 "gigantic"@2B3B "battle"@2AFC "that"@01E2 "shook"@2B44 "the"@0176 "galaxy"@0CC2 "to"@0090 "its"@1782 "knees"@2B4A ".."@0C58 FFFF "battle"@2AFC
-TEXT 0482 05 40 80 - - "The"@0424 "defeated"@16E1 "Croolis"@1625 "ended"@292B "up"@037F "on"@015D "Trashlando"@2B50 "."@0027 "That's"@0531 "a"@0139 "BAD"@2B5B "place"@01AB ","@005C "Commander"@005E "..."@0048 FFFF "battle"@2AFC
+TEXT 0482 04 40 80 - - "Millions"@2AE4 "were" "wiped"@2AED "out" "in" "the" "battles" "." "Planets" "were" "stripped"@2AF3 "to" "the" "bone" "..." FFFF "battle"@2AFC
+TEXT 0482 05 40 80 - - "The" "Izwals"@2B03 "suffered"@2B0A "heavy"@2B13 "losses"@2B19 "." "They" "weren't"@2B20 "ready"@128E "..." FFFF "battle"
+TEXT 0482 06 40 80 - - "The" "SCRUT" "armies"@2B28 "finally"@2B2F "won"@2B37 "after"@0A33 "a" "gigantic"@2B3B "battle" "that" "shook"@2B44 "the" "galaxy" "to" "its"@1782 "knees"@2B4A ".." FFFF "battle"
+TEXT 0482 05 40 80 - - "The" "defeated"@16E1 "Croolis" "ended" "up" "on" "Trashlando"@2B50 "." "That's" "a" "BAD"@2B5B "place"@01AB "," "Commander" "..." FFFF "battle"
 YIELD_B
 LABEL selector_0C43
-SELECTOR_NODE "mastachok"@28A7 0000
-MENU "bye_bye"@0752 "history"@2856 "information"@1352
-TEXT 0482 05 40 80 - - "Mastachok"@13D3 "is"@02C8 "a"@0139 "dead"@2638 "planet"@04DC "..."@0048 "Nothing"@2B5F "lives"@2B67 "any"@0D59 "more"@020D "on"@015D "its"@1782 "surface"@2B6D "..."@0048 FFFF "mastachok"@28A7
-TEXT 0482 06 40 80 - - "The"@0424 "factory"@2B75 "was"@0B6D "replaced"@2B7D "by"@1317 "the"@0176 "jail"@2B86 "..."@0048 "With"@2B8B "permanent"@2B90 "SCRUT"@2A08 "guards"@2B9A "..."@0048 FFFF "mastachok"@28A7
-TEXT 0482 02 40 80 - - "Mastachok"@13D3 "is"@02C8 "absolutely"@2BA2 "polluted"@2BAD "..."@0048 "Nothing"@2B5F "more"@020D "than"@0D7C "a"@0139 "cinder"@2BB6 "block"@2BBD "..."@0048 FFFF "mastachok"@28A7
+SELECTOR_NODE "mastachok" 0000
+MENU "bye_bye" "history" "information"
+TEXT 0482 05 40 80 - - "Mastachok"@13D3 "is" "a" "dead" "planet" "..." "Nothing"@2B5F "lives"@2B67 "any"@0D59 "more"@020D "on" "its" "surface"@2B6D "..." FFFF "mastachok"
+TEXT 0482 06 40 80 - - "The" "factory"@2B75 "was" "replaced"@2B7D "by" "the" "jail"@2B86 "..." "With"@2B8B "permanent"@2B90 "SCRUT" "guards"@2B9A "..." FFFF "mastachok"
+TEXT 0482 02 40 80 - - "Mastachok" "is" "absolutely"@2BA2 "polluted"@2BAD "..." "Nothing" "more" "than"@0D7C "a" "cinder"@2BB6 "block"@2BBD "..." FFFF "mastachok"
 YIELD
 YIELD_B
-SELECTOR_NODE "talk"@0001 selector_0CD6
-MENU "bye_bye"@0752 "robot"@18E9 "cred"@2BC3 "murffalos"@25F3 "weapons"@26A0
+SELECTOR_NODE "talk" selector_0CD6
+MENU "bye_bye" "robot"@18E9 "cred"@2BC3 "murffalos" "weapons"
 YIELD_B
 LABEL selector_0CD6
-SELECTOR_NODE "robot"@18E9 selector_0E73
-MENU "talk"@0001 "bye_bye"@0752 "robot"@18E9 "intelligence"@2BC8 "energy"@0107 "technology"@2BD5 "retirement"@2BE0
-TEXT 0512 05 48 80 - - "See"@05CF "you"@00A0 "soon"@0E8D ","@005C "friend"@0321 "..."@0048 FFFF "bye_bye"@0752
+SELECTOR_NODE "robot" selector_0E73
+MENU "talk" "bye_bye" "robot" "intelligence"@2BC8 "energy"@0107 "technology"@2BD5 "retirement"@2BE0
+TEXT 0512 05 48 80 - - "See"@05CF "you" "soon"@0E8D "," "friend" "..." FFFF "bye_bye"
 RECORD_CLEAR 054C
-TEXT 0512 02 40 80 - - "Me"@000C "robot"@18E9 "Bronko"@211A "AX34"@2BEB "BUTCHER"@2BF0 "model"@2BF8 "..."@0048 FFFF "robot"@18E9
-TEXT 0512 03 40 80 - - "Robot"@1880 "be"@00FE "strong"@2BFE "friend"@0321 "."@0027 "Robot"@1880 "Bronko"@211A "know"@0A85 "how"@00DA "chop"@2C05 "meat"@1605 "with"@0123 "chopper"@2C0A "..."@0048 FFFF "robot"@18E9
-TEXT 0512 01 40 80 - - "Me"@000C "big"@0989 "robot"@18E9 "..."@0048 "Sophisticated"@2C12 "..."@0048 FFFF "robot"@18E9
-TEXT 0512 01 40 80 - - "Me"@000C "big"@0989 "cybernetic"@0199 "intelligence"@2BC8 "."@0027 "Much"@2C20 "cheap"@2C25 "memory"@2C2B "..."@0048 FFFF "intelligence"@2BC8
-TEXT 0512 02 40 80 - - "Me"@000C "know"@0A85 "think"@0994 "."@0027 "Me"@000C "smart"@2C32 "..."@0048 FFFF "intelligence"@2BC8
-TEXT 0512 03 40 80 - - "Me"@000C "big"@0989 "CDROM"@1078 "in"@00B3 "head..."@2C38 "Ha!"@0360 "Ha!"@0360 "Ha!"@0360 "Ha!"@0360 FFFF "intelligence"@2BC8
-TEXT 0512 02 40 80 - - "Bronko"@211A "intelligent..."@05C0 FFFF "intelligence"@2BC8
-TEXT 0512 04 40 80 - - "Me"@000C "much"@0364 "energy"@0107 ":"@1EE9 "Bronko"@211A "have"@009B "fresh"@2C40 "batteries"@2C46 ","@005C "friend"@0321 "...."@0244 FFFF "energy"@0107
-TEXT 0512 05 40 80 - - "Me"@000C "munch"@2C50 "high"@2C56 "energy"@0107 "zinc"@2C5B "flakes"@2C60 "with"@0123 "mercury"@2C67 "every"@17E5 "day"@2607 "..."@0048 FFFF "energy"@0107
-TEXT 0512 01 40 80 - - "You"@00E9 "look"@0B81 "for"@003A "batteries"@2C46 ","@005C "friend"@0321 "..."@0048 "Me"@000C "buy"@2C6F "batteries"@2C46 "at"@06D0 "VENUSIA"@2C73 "Supramarket"@2C7B FFFF "energy"@0107
-TEXT 0512 04 40 80 - - "VENUSIA"@2C73 "Supramarket"@2C7B "sell"@2C87 "cheap"@2C25 "batteries"@2C46 "."@0027 "You"@00E9 "not"@0097 "see"@01DE "commercial"@2C8C "on"@015D "TV"@1D6B ","@005C "friend"@0321 "?"@0254 FFFF "energy"@0107
-TEXT 0512 01 40 80 - - "Bronko"@211A "big"@0989 "technology"@2BD5 ","@005C "friend"@0321 "..."@0048 FFFF "technology"@2BD5
+TEXT 0512 02 40 80 - - "Me" "robot" "Bronko"@211A "AX34"@2BEB "BUTCHER"@2BF0 "model"@2BF8 "..." FFFF "robot"
+TEXT 0512 03 40 80 - - "Robot"@1880 "be" "strong"@2BFE "friend" "." "Robot" "Bronko" "know" "how"@00DA "chop"@2C05 "meat"@1605 "with" "chopper"@2C0A "..." FFFF "robot"
+TEXT 0512 01 40 80 - - "Me" "big" "robot" "..." "Sophisticated"@2C12 "..." FFFF "robot"
+TEXT 0512 01 40 80 - - "Me" "big" "cybernetic"@0199 "intelligence" "." "Much"@2C20 "cheap"@2C25 "memory"@2C2B "..." FFFF "intelligence"
+TEXT 0512 02 40 80 - - "Me" "know" "think" "." "Me" "smart"@2C32 "..." FFFF "intelligence"
+TEXT 0512 03 40 80 - - "Me" "big" "CDROM"@1078 "in" "head..."@2C38 "Ha!" "Ha!" "Ha!" "Ha!" FFFF "intelligence"
+TEXT 0512 02 40 80 - - "Bronko" "intelligent..."@05C0 FFFF "intelligence"
+TEXT 0512 04 40 80 - - "Me" "much" "energy" ":" "Bronko" "have" "fresh"@2C40 "batteries"@2C46 "," "friend" "...."@0244 FFFF "energy"
+TEXT 0512 05 40 80 - - "Me" "munch"@2C50 "high"@2C56 "energy" "zinc"@2C5B "flakes"@2C60 "with" "mercury"@2C67 "every" "day" "..." FFFF "energy"
+TEXT 0512 01 40 80 - - "You" "look"@0B81 "for" "batteries" "," "friend" "..." "Me" "buy"@2C6F "batteries" "at"@06D0 "VENUSIA"@2C73 "Supramarket"@2C7B FFFF "energy"
+TEXT 0512 04 40 80 - - "VENUSIA" "Supramarket" "sell"@2C87 "cheap" "batteries" "." "You" "not" "see"@01DE "commercial"@2C8C "on" "TV" "," "friend" "?" FFFF "energy"
+TEXT 0512 01 40 80 - - "Bronko" "big" "technology" "," "friend" "..." FFFF "technology"
 YIELD_B
 LABEL selector_0E73
-SELECTOR_NODE "cred"@2BC3 selector_0F5F
-MENU "talk"@0001 "bye_bye"@0752 "cred"@2BC3 "buy"@2C6F
-TEXT 0512 01 40 80 - - "Me"@000C "work"@0295 "to"@0090 "earn"@2C97 "much"@0364 "CRED"@2C9C ","@005C "friend"@0321 "..."@0048 FFFF "cred"@2BC3
-TEXT 0512 02 40 80 - - "Creds"@2CA2 "be"@00FE "hard"@18B7 "to"@0090 "earn"@2C97 "..."@0048 FFFF "cred"@2BC3
-TEXT 0512 03 41 80 - - "You"@00E9 "like"@0134 "creds"@2CA8 ","@005C "friend"@0321 "..."@0048 FFFF "cred"@2BC3
-TEXT 0512 04 40 80 - - "Me"@000C "want"@07E2 "buy"@2C6F "big"@0989 "ship"@1019 "..."@0048 "Take"@0A24 "vacation"@2CAE "through"@02EE "universe"@1083 "..."@0048 FFFF "buy"@2C6F
-TEXT 0512 03 40 80 - - "Me"@000C "want"@07E2 "buy"@2C6F "home"@1E9C "on"@015D "planet"@04DC "Troma"@2CB7 "..."@0048 "Grow"@2CBD "nuts"@2CC2 ","@005C "bolts"@2CC7 ","@005C "screws"@2CCD "..."@0048 FFFF "buy"@2C6F
-TEXT 0512 02 40 80 - - "Me"@000C "want"@07E2 "breed"@2CD4 "cybernetic"@0199 "wheelbarrows"@2CDA ","@005C "lawnmowers"@2CE7 "..."@0048 "Me"@000C "dream"@2CF2 ","@005C "friend"@0321 "..."@0048 FFFF "buy"@2C6F
-TEXT 0512 04 40 80 - - "To"@0229 "buy"@2C6F ","@005C "me"@0146 "must"@0884 "earn"@2C97 "creds"@2CA8 "..."@0048 FFFF "buy"@2C6F
+SELECTOR_NODE "cred" selector_0F5F
+MENU "talk" "bye_bye" "cred" "buy"
+TEXT 0512 01 40 80 - - "Me" "work"@0295 "to" "earn"@2C97 "much" "CRED"@2C9C "," "friend" "..." FFFF "cred"
+TEXT 0512 02 40 80 - - "Creds"@2CA2 "be" "hard"@18B7 "to" "earn" "..." FFFF "cred"
+TEXT 0512 03 41 80 - - "You" "like" "creds"@2CA8 "," "friend" "..." FFFF "cred"
+TEXT 0512 04 40 80 - - "Me" "want" "buy" "big" "ship"@1019 "..." "Take"@0A24 "vacation"@2CAE "through"@02EE "universe" "..." FFFF "buy"
+TEXT 0512 03 40 80 - - "Me" "want" "buy" "home"@1E9C "on" "planet" "Troma"@2CB7 "..." "Grow"@2CBD "nuts"@2CC2 "," "bolts"@2CC7 "," "screws"@2CCD "..." FFFF "buy"
+TEXT 0512 02 40 80 - - "Me" "want" "breed"@2CD4 "cybernetic" "wheelbarrows"@2CDA "," "lawnmowers"@2CE7 "..." "Me" "dream"@2CF2 "," "friend" "..." FFFF "buy"
+TEXT 0512 04 40 80 - - "To" "buy" "," "me" "must" "earn" "creds" "..." FFFF "buy"
 YIELD_B
 LABEL selector_0F5F
-SELECTOR_NODE "murffalos"@25F3 selector_1017
-MENU "talk"@0001 "bye_bye"@0752 "hunt"@2CF8
-TEXT 0512 01 40 80 - - "Thirteen"@2CFD "murffalos"@25F3 "to"@0090 "reproduce..."@2D06 "One"@2D13 "in"@00B3 "middle"@149E "."@0027 "twelve"@2D17 "around"@1A3D "."@0027 "That"@0447 "be"@00FE "murffalo"@15FC "reproduction"@2D1E "..."@0048 FFFF "murffalos"@25F3
-TEXT 0512 02 40 80 - - "Me"@000C "not"@0097 "like"@0134 "murffalo"@15FC "..."@0048 "Not"@0318 "good"@031C ","@005C "too"@03E1 "tender"@2D2B "..."@0048 "Me"@000C "like"@0134 "lawnmower"@2D32 "leg"@2D3C "..."@0048 FFFF "murffalos"@25F3
-TEXT 0512 03 40 80 - - "Me"@000C "know"@0A85 "chop"@2C05 "murffalos"@25F3 "..."@0048 FFFF "murffalos"@25F3
-TEXT 0512 04 40 80 - - "Me"@000C "like"@0134 "hunt"@2CF8 "satellite"@2D40 "game"@2D4A "with"@0123 "laser-pulper"@1AAF "..."@0048 "Bang"@2D4F "Bang"@2D4F "at"@06D0 "satellites"@2D54 "..."@0048 FFFF "hunt"@2CF8
-TEXT 0512 03 40 80 - - "Hunting"@2D5F "be"@00FE "nice"@07EA "sport"@2D67 "..."@0048 FFFF "hunt"@2CF8
+SELECTOR_NODE "murffalos" selector_1017
+MENU "talk" "bye_bye" "hunt"@2CF8
+TEXT 0512 01 40 80 - - "Thirteen"@2CFD "murffalos" "to" "reproduce..."@2D06 "One"@2D13 "in" "middle"@149E "." "twelve"@2D17 "around"@1A3D "." "That" "be" "murffalo"@15FC "reproduction"@2D1E "..." FFFF "murffalos"
+TEXT 0512 02 40 80 - - "Me" "not" "like" "murffalo" "..." "Not"@0318 "good" "," "too"@03E1 "tender"@2D2B "..." "Me" "like" "lawnmower"@2D32 "leg"@2D3C "..." FFFF "murffalos"
+TEXT 0512 03 40 80 - - "Me" "know" "chop" "murffalos" "..." FFFF "murffalos"
+TEXT 0512 04 40 80 - - "Me" "like" "hunt" "satellite"@2D40 "game"@2D4A "with" "laser-pulper"@1AAF "..." "Bang"@2D4F "Bang" "at" "satellites"@2D54 "..." FFFF "hunt"
+TEXT 0512 03 40 80 - - "Hunting"@2D5F "be" "nice"@07EA "sport"@2D67 "..." FFFF "hunt"
 YIELD_B
 LABEL selector_1017
-SELECTOR_NODE "weapons"@26A0 selector_10A7
-MENU "talk"@0001 "bye_bye"@0752 "planets"@2762 "war"@1BF1
-TEXT 0512 04 40 80 - - "To"@0229 "buy"@2C6F "good"@031C "weapons"@26A0 ","@005C "must"@0884 "pay"@2D6D "much"@0364 "creds"@2CA8 ","@005C "Commander"@005E FFFF "weapons"@26A0
-TEXT 0512 02 40 80 - - "Me"@000C "have"@009B "weapons"@26A0 "at"@06D0 "end"@2D71 "of"@00C1 "arms"@26B7 "..."@0048 FFFF "weapons"@26A0
-TEXT 0512 02 40 80 - - "You"@00E9 "be"@00FE "big"@0989 "traveller"@2D75 "."@0027 "Know"@2D7F "planets"@2762 ","@005C "friend"@0321 "..."@0048 FFFF "planets"@2762
-TEXT 0512 03 40 80 - - "Croolis"@1625 "war"@1BF1 "do"@0014 "much"@0364 "damage"@2D84 "..."@0048 "Bad"@1379 "war"@1BF1 ","@005C "friend"@0321 "..."@0048 FFFF "war"@1BF1
+SELECTOR_NODE "weapons" selector_10A7
+MENU "talk" "bye_bye" "planets" "war"
+TEXT 0512 04 40 80 - - "To" "buy" "good" "weapons" "," "must" "pay"@2D6D "much" "creds" "," "Commander" FFFF "weapons"
+TEXT 0512 02 40 80 - - "Me" "have" "weapons" "at" "end"@2D71 "of" "arms" "..." FFFF "weapons"
+TEXT 0512 02 40 80 - - "You" "be" "big" "traveller"@2D75 "." "Know"@2D7F "planets" "," "friend" "..." FFFF "planets"
+TEXT 0512 03 40 80 - - "Croolis" "war" "do" "much" "damage"@2D84 "..." "Bad"@1379 "war" "," "friend" "..." FFFF "war"
 YIELD_B
 LABEL selector_10A7
-SELECTOR_NODE "retirement"@2BE0 0000
-MENU "talk"@0001 "bye_bye"@0752 "Magnus"@2D8B
-TEXT 0512 01 40 80 - - "Ah"@273C "retirement"@2BE0 "!"@06C3 "Them"@2D92 "send"@1DDB "me"@0146 "to"@0090 "planet"@04DC "Magnus"@2D8B ","@005C "with"@0123 "other"@0D76 "old"@0DEA "old"@0DEA "robots"@29F6 "..."@0048 "CRY"@090F "CRY"@090F "..."@0048 FFFF "retirement"@2BE0
+SELECTOR_NODE "retirement" 0000
+MENU "talk" "bye_bye" "Magnus"@2D8B
+TEXT 0512 01 40 80 - - "Ah" "retirement" "!" "Them"@2D92 "send"@1DDB "me" "to" "planet" "Magnus" "," "with" "other"@0D76 "old" "old" "robots" "..." "CRY"@090F "CRY" "..." FFFF "retirement"
 YIELD
 YIELD_B
-SELECTOR_NODE "talk"@0001 selector_157B
-MENU "bye_bye"@0752 "black_hole"@2D97 "Big_Bang"@2DA2 "Bob_Morlock"@2DAB "kanary"@2DB7 "mission"@11EB "corpo"@2DBE "good_"@2DC4
-TEXT 0242 02 42 80 - - "What"@09B6 "do"@0014 "you"@00A0 "want"@07E2 "to"@0090 "know"@0A85 ","@005C "Commander?"@0270 FFFF "talk"@0001
-TEXT 0242 03 48 80 - - "Goodbye"@180B ","@005C "Commander"@005E "..."@0048 FFFF "bye_bye"@0752
+SELECTOR_NODE "talk" selector_157B
+MENU "bye_bye" "black_hole"@2D97 "Big_Bang"@2DA2 "Bob_Morlock"@2DAB "kanary"@2DB7 "mission"@11EB "corpo"@2DBE "good_"@2DC4
+TEXT 0242 02 42 80 - - "What" "do" "you" "want" "to" "know" "," "Commander?"@0270 FFFF "talk"
+TEXT 0242 03 48 80 - - "Goodbye"@180B "," "Commander" "..." FFFF "bye_bye"
 RECORD_CLEAR 027C
-TEXT 0242 02 40 80 - - "After"@0617 "years"@0A0F "of"@00C1 "research"@2DCA ","@005C "I"@0216 "was"@0B6D "able"@2DD3 "to"@0090 "isolate"@2DD8 "time"@0073 ","@005C "Commander"@005E FFFF "black_hole"@2D97
-TEXT 0242 01 40 80 - - "Certain"@2DE0 "black"@1EAA "holes"@105F "can"@018F "be"@00FE "used"@0C82 "to"@0090 "travel"@1421 "back"@0231 "in"@00B3 "time"@0073 "."@0027 FFFF "black_hole"@2D97
-TEXT 0242 02 48 80 - - "Honk"@0493 "has"@0498 "been"@09F9 "programmed"@29FD "to"@0090 "identify"@2DE8 "appropriate"@2DF1 "black"@1EAA "holes"@105F FFFF "black_hole"@2D97
+TEXT 0242 02 40 80 - - "After"@0617 "years" "of" "research"@2DCA "," "I" "was" "able"@2DD3 "to" "isolate"@2DD8 "time" "," "Commander" FFFF "black_hole"
+TEXT 0242 01 40 80 - - "Certain"@2DE0 "black"@1EAA "holes"@105F "can" "be" "used"@0C82 "to" "travel"@1421 "back"@0231 "in" "time" "." FFFF "black_hole"
+TEXT 0242 02 48 80 - - "Honk"@0493 "has"@0498 "been" "programmed" "to" "identify"@2DE8 "appropriate"@2DF1 "black" "holes" FFFF "black_hole"
 SHARED_STATE B4 0274 F6 C1 0001
-TEXT 0242 01 48 80 - - "To"@0229 "reach"@2DFD "the"@0176 "BIG"@103A "BANG,"@2E03 "you"@00A0 "must"@0884 "travel"@1421 "through"@02EE "a"@0139 "number"@2E09 "of"@00C1 "black"@1EAA "holes"@105F "..."@0048 FFFF "black_hole"@2D97
+TEXT 0242 01 48 80 - - "To" "reach"@2DFD "the" "BIG"@103A "BANG,"@2E03 "you" "must" "travel" "through" "a" "number"@2E09 "of" "black" "holes" "..." FFFF "black_hole"
 SHARED_STATE B4 0274 F6 C1 0001
-TEXT 0242 02 49 80 - - "Black"@1059 "holes"@105F "are"@0BC3 "amazing"@1EEF "natural"@2E10 "devices"@2E18 ","@005C "Commander"@005E "..."@0048 FFFF "black_hole"@2D97
+TEXT 0242 02 49 80 - - "Black"@1059 "holes" "are" "amazing"@1EEF "natural"@2E10 "devices"@2E18 "," "Commander" "..." FFFF "black_hole"
 SHARED_STATE B4 0274 F6 C1 0001
-TEXT 0242 03 40 80 - - "I"@0216 "have"@009B "devoted"@2E20 "my"@09F1 "life"@2311 "to"@0090 "the"@0176 "pursuit"@2E28 "of"@00C1 "Truth"@2E30 ","@005C "Commander"@005E "..."@0048 FFFF "Big_Bang"@2DA2
-TEXT 0242 02 40 80 - - "I"@0216 "know"@0A85 "that"@01E2 "truth"@23D0 "lies"@2E36 "beyond"@2578 "the"@0176 "BIG"@103A "BANG,"@2E03 "Commander"@005E "!"@06C3 FFFF "Big_Bang"@2DA2
-TEXT 0242 01 41 80 - - "My"@02D9 "memory"@2C2B "is"@02C8 "not"@0097 "what"@0A8A "it"@021E "used"@0C82 "to"@0090 "be"@00FE "..."@0048 FFFF "Big_Bang"@2DA2
-TEXT 0242 02 40 80 - - "Thanks"@1410 "to"@0090 "the"@0176 "scientists"@2E3B "of"@00C1 "KANARY"@2E46 ","@005C "I"@0216 "am"@0D6E "the"@0176 "oldest"@2E4D "being"@1765 "in"@00B3 "the"@0176 "UNIVERSE"@2E54 FFFF "Bob_Morlock"@2DAB
-TEXT 0242 01 40 80 - - "In"@1D93 "my"@09F1 "time"@0073 ","@005C "I've"@09F4 "been"@09F9 "a"@0139 "crooner"@2E5D ","@005C "a"@0139 "magician"@2E65 ","@005C "an"@0F6B "adventurer"@2E6E "..."@0048 "I"@0216 "created"@2E79 "KANARY"@2E46 ","@005C "the"@0176 "biggest"@2E81 "business"@2E89 "empire"@2E92 "in"@00B3 "the"@0176 "universe"@1083 "."@0027 FFFF "Bob_Morlock"@2DAB
-TEXT 0242 02 40 80 - - "Women"@2E99 "have"@009B "found"@19E2 "me"@0146 "irresistible"@2E9F "."@0027 "Thousands"@17A0 "of"@00C1 "generations"@0B39 "have"@009B "admired"@2EAC "me."@2EB4 "I"@0216 "am"@0D6E "immortal"@258F "!"@06C3 FFFF "Bob_Morlock"@2DAB
-TEXT 0242 02 48 80 - - "Commander"@005E ","@005C "you"@00A0 "are"@0BC3 "going"@1133 "to"@0090 "relive"@249D "my"@09F1 "past"@2EB8 "."@0027 "I"@0216 "envy"@2EBD "you"@00A0 "..."@0048 FFFF "Bob_Morlock"@2DAB
+TEXT 0242 03 40 80 - - "I" "have" "devoted"@2E20 "my" "life"@2311 "to" "the" "pursuit"@2E28 "of" "Truth"@2E30 "," "Commander" "..." FFFF "Big_Bang"
+TEXT 0242 02 40 80 - - "I" "know" "that" "truth"@23D0 "lies"@2E36 "beyond" "the" "BIG" "BANG," "Commander" "!" FFFF "Big_Bang"
+TEXT 0242 01 41 80 - - "My" "memory" "is" "not" "what"@0A8A "it" "used" "to" "be" "..." FFFF "Big_Bang"
+TEXT 0242 02 40 80 - - "Thanks"@1410 "to" "the" "scientists"@2E3B "of" "KANARY"@2E46 "," "I" "am" "the" "oldest"@2E4D "being"@1765 "in" "the" "UNIVERSE"@2E54 FFFF "Bob_Morlock"
+TEXT 0242 01 40 80 - - "In"@1D93 "my" "time" "," "I've" "been" "a" "crooner"@2E5D "," "a" "magician"@2E65 "," "an" "adventurer"@2E6E "..." "I" "created"@2E79 "KANARY" "," "the" "biggest"@2E81 "business"@2E89 "empire"@2E92 "in" "the" "universe" "." FFFF "Bob_Morlock"
+TEXT 0242 02 40 80 - - "Women"@2E99 "have" "found" "me" "irresistible"@2E9F "." "Thousands"@17A0 "of" "generations"@0B39 "have" "admired"@2EAC "me."@2EB4 "I" "am" "immortal" "!" FFFF "Bob_Morlock"
+TEXT 0242 02 48 80 - - "Commander" "," "you" "are" "going"@1133 "to" "relive"@249D "my" "past"@2EB8 "." "I" "envy"@2EBD "you" "..." FFFF "Bob_Morlock"
 SHARED_STATE B4 0274 F6 C1 0001
-TEXT 0242 01 48 80 - - "Ah"@273C "..."@0048 "Otto"@1E82 "Von"@1E87 "Smile"@1E8B ","@005C "Eviscerator"@1E34 ","@005C "Jeph"@16D3 "d'Ulikan"@16D8 ","@005C "Yolk"@0D2C ","@005C "old"@0DEA "Tina"@2EC2 "Burner"@2EC7 ","@005C "and"@04EB "all"@0A39 "the"@0176 "others"@2ECE "..."@0048 FFFF "Bob_Morlock"@2DAB
+TEXT 0242 01 48 80 - - "Ah" "..." "Otto"@1E82 "Von"@1E87 "Smile"@1E8B "," "Eviscerator" "," "Jeph"@16D3 "d'Ulikan"@16D8 "," "Yolk"@0D2C "," "old" "Tina"@2EC2 "Burner"@2EC7 "," "and" "all" "the" "others"@2ECE "..." FFFF "Bob_Morlock"
 SHARED_STATE B4 0274 F6 C1 0001
-TEXT 0242 01 49 80 - - "Ahh!"@027F "Those"@28FD "were"@130B "good"@031C "times"@18BC ","@005C "Commander"@005E "..."@0048 FFFF "Bob_Morlock"@2DAB
+TEXT 0242 01 49 80 - - "Ahh!"@027F "Those" "were" "good" "times"@18BC "," "Commander" "..." FFFF "Bob_Morlock"
 PRESENTATION_REGISTER 2ED5
-TEXT 0242 02 48 80 - - "You"@00E9 "want"@07E2 "revelations"@2EE0 ","@005C "Commander"@005E "?"@0254 FFFF "revelation"@2ED5
+TEXT 0242 02 48 80 - - "You" "want" "revelations"@2EE0 "," "Commander" "?" FFFF "revelation"@2ED5
 SHARED_STATE C0 152C F5 C1 0001
-TEXT 0242 02 40 80 - - "Your"@1730 "mission"@11EB "is"@02C8 "to"@0090 "find"@00ED "and"@04EB "travel"@1421 "through"@02EE "the"@0176 "right"@15F2 "black"@1EAA "holes,"@2EEC "taking"@2EF3 "us"@121E "back"@0231 "through"@02EE "time"@0073 "to"@0090 "the"@0176 "BIG"@103A "BANG"@103E FFFF "mission"@11EB
-TEXT 0242 01 40 80 - - "You'll"@0C29 "meet"@04EF "fabulous"@2EFA "beings"@2F03 ","@005C "some"@0C87 "of"@00C1 "them"@1DF8 "very"@0984 "dangerous"@2A19 "."@0027 "You'll"@0C29 "need"@0349 "all"@0A39 "your"@0164 "talents,"@2F0A "Commander"@005E FFFF "mission"@11EB
-TEXT 0242 02 40 80 - - "You'll"@0C29 "see"@01DE "terrible"@2F13 "wars"@2F1C ","@005C "cross"@2F21 "impossible"@2F27 "frontiers"@2F32 "..."@0048 FFFF "mission"@11EB
-TEXT 0242 01 40 80 - - "You"@00E9 "must"@0884 "rally"@2F3C "strange"@2F42 "beings"@2F03 "to"@0090 "your"@0164 "cause"@2F4A "..."@0048 FFFF "mission"@11EB
-TEXT 0242 02 49 80 - - "You"@00E9 "will"@1544 "be"@00FE "in"@00B3 "sole"@2F50 "command"@2F55 ","@005C "unless"@2F5D "you"@00A0 "decide"@2F64 "to"@0090 "wake"@146D "me"@0146 "..."@0048 FFFF "mission"@11EB
+TEXT 0242 02 40 80 - - "Your"@1730 "mission" "is" "to" "find" "and" "travel" "through" "the" "right"@15F2 "black" "holes,"@2EEC "taking"@2EF3 "us"@121E "back" "through" "time" "to" "the" "BIG" "BANG"@103E FFFF "mission"
+TEXT 0242 01 40 80 - - "You'll"@0C29 "meet"@04EF "fabulous"@2EFA "beings"@2F03 "," "some"@0C87 "of" "them" "very" "dangerous" "." "You'll" "need" "all" "your"@0164 "talents,"@2F0A "Commander" FFFF "mission"
+TEXT 0242 02 40 80 - - "You'll" "see" "terrible"@2F13 "wars"@2F1C "," "cross"@2F21 "impossible"@2F27 "frontiers"@2F32 "..." FFFF "mission"
+TEXT 0242 01 40 80 - - "You" "must" "rally"@2F3C "strange"@2F42 "beings" "to" "your" "cause"@2F4A "..." FFFF "mission"
+TEXT 0242 02 49 80 - - "You" "will" "be" "in" "sole"@2F50 "command"@2F55 "," "unless"@2F5D "you" "decide"@2F64 "to" "wake"@146D "me" "..." FFFF "mission"
 SHARED_STATE B4 0274 F6 C1 0001
-TEXT 0242 01 40 80 - - "Corpo"@2F6B "is"@02C8 "my"@09F1 "home"@1E9C "planet"@04DC FFFF "It"@0357
-TEXT 0242 03 49 80 - - "Corpo"@2F6B "is"@02C8 "a"@0139 "rare"@2F71 "and"@04EB "fabulous"@2EFA "planet"@04DC "..."@0048 "Its"@1450 "resources"@2F76 "are"@0BC3 "unlimited"@2F80 "."@0027 FFFF "corpo"@2DBE
+TEXT 0242 01 40 80 - - "Corpo"@2F6B "is" "my" "home" "planet" FFFF "It"
+TEXT 0242 03 49 80 - - "Corpo" "is" "a" "rare"@2F71 "and" "fabulous" "planet" "..." "Its"@1450 "resources"@2F76 "are" "unlimited"@2F80 "." FFFF "corpo"
 SHARED_STATE B4 0274 F6 C1 0002
-TEXT 0242 02 40 80 - - "Truth"@2E30 "is"@02C8 "to"@0090 "be"@00FE "found"@19E2 "at"@06D0 "the"@0176 "creation"@2F8A "of"@00C1 "the"@0176 "universe"@1083 ","@005C "just"@11A3 "before"@0EA5 "the"@0176 "BIG"@103A "BANG"@103E "..."@0048 FFFF "truth"@23D0
-TEXT 0242 01 49 80 - - "Ah!"@2F93 "Truth"@2E30 "..."@0048 FFFF "truth"@23D0
+TEXT 0242 02 40 80 - - "Truth" "is" "to" "be" "found" "at" "the" "creation"@2F8A "of" "the" "universe" "," "just"@11A3 "before"@0EA5 "the" "BIG" "BANG" "..." FFFF "truth"
+TEXT 0242 01 49 80 - - "Ah!"@2F93 "Truth" "..." FFFF "truth"
 SHARED_STATE B4 0274 F6 C1 0001
-TEXT 0242 FF 48 80 - - "I'm"@0403 "getting"@1C46 "pictures"@2F97 "from"@0236 "the"@0176 "Ark"@1469 ","@005C "Commander."@03D0 "All"@15EE "systems"@2FA0 "are"@0BC3 "nominal"@2FA8 "..."@0048 FFFF "good_"@2DC4
+TEXT 0242 FF 48 80 - - "I'm" "getting"@1C46 "pictures"@2F97 "from" "the" "Ark"@1469 "," "Commander."@03D0 "All"@15EE "systems"@2FA0 "are" "nominal"@2FA8 "..." FFFF "good_"
 LOAD_STRING "arch01.hnm"
-TEXT 0242 01 40 80 - - "You"@00E9 "flatter"@2FB0 "me"@0146 ","@005C "Commander"@005E "..."@0048 FFFF "good_"@2DC4
-TEXT 0242 02 4A 80 - - "You're"@067C "embarrassing"@2FB8 "me"@0146 ","@005C "Commander"@005E "..."@0048 FFFF "good_"@2DC4
+TEXT 0242 01 40 80 - - "You" "flatter"@2FB0 "me" "," "Commander" "..." FFFF "good_"
+TEXT 0242 02 4A 80 - - "You're" "embarrassing"@2FB8 "me" "," "Commander" "..." FFFF "good_"
 SHARED_STATE B4 0274 F6 C1 0001
-TEXT 0242 01 43 80 - - "Heh"@05F0 "heh"@081F "..."@0048 FFFF "good_"@2DC4
+TEXT 0242 01 43 80 - - "Heh"@05F0 "heh"@081F "..." FFFF "good_"
 YIELD_B
 LABEL selector_157B
-SELECTOR_NODE "kanary"@2DB7 0000
-MENU "talk"@0001 "bye_bye"@0752 "cottage"@2FC5 "clones"@2FCD "employees"@2FD4 "reports"@2FDE
-TEXT 0242 01 40 80 - - "The"@0424 "Cottage"@2FE6 "Research"@2FEE "department"@2FF7 "is"@02C8 "my"@09F1 "secret"@098D "project"@3002 FFFF "cottage"@2FC5
-TEXT 0242 01 40 80 - - "The"@0424 "vegetable"@300A "kingdom"@3014 "is"@02C8 "a"@0139 "marvel"@301C "of"@00C1 "nature"@3023 FFFF "cottage"@2FC5
-TEXT 0242 01 40 80 - - "The"@0424 "Cottage"@2FE6 "Research"@2FEE "department"@2FF7 "develops"@302A "miracles"@3033 "of"@00C1 "nature"@3023 FFFF "cottage"@2FC5
-TEXT 0242 03 40 80 - - "Kanary's"@303C "lawns"@3045 "mow"@304B "themselves"@304F "every"@17E5 "weekend"@305A "..."@0048 FFFF "cottage"@2FC5
-TEXT 0242 02 49 80 - - "Kanary's"@303C "artificial"@3062 "orchids"@306D "produce"@3075 "centuries"@16AC "old"@0DEA "whiskey"@307D FFFF "cottage"@2FC5
+SELECTOR_NODE "kanary" 0000
+MENU "talk" "bye_bye" "cottage"@2FC5 "clones"@2FCD "employees"@2FD4 "reports"@2FDE
+TEXT 0242 01 40 80 - - "The" "Cottage"@2FE6 "Research"@2FEE "department"@2FF7 "is" "my" "secret" "project"@3002 FFFF "cottage"
+TEXT 0242 01 40 80 - - "The" "vegetable"@300A "kingdom"@3014 "is" "a" "marvel"@301C "of" "nature"@3023 FFFF "cottage"
+TEXT 0242 01 40 80 - - "The" "Cottage" "Research" "department" "develops"@302A "miracles"@3033 "of" "nature" FFFF "cottage"
+TEXT 0242 03 40 80 - - "Kanary's"@303C "lawns"@3045 "mow"@304B "themselves"@304F "every" "weekend"@305A "..." FFFF "cottage"
+TEXT 0242 02 49 80 - - "Kanary's" "artificial"@3062 "orchids"@306D "produce"@3075 "centuries"@16AC "old" "whiskey"@307D FFFF "cottage"
 SHARED_STATE B4 0274 F6 C1 0005
-TEXT 0242 01 40 80 - - "Kanary"@3085 "has"@0498 "devoted"@2E20 "itself"@308C "to"@0090 "synthetic"@3093 "cloning"@309D FFFF "clones"@2FCD
-TEXT 0242 02 40 80 - - "Kanary's"@303C "four"@22D9 "million"@30A5 "employees"@2FD4 "were"@130B "built"@16CD "by"@1317 "and"@04EB "for"@003A "Kanary"@3085 FFFF "clones"@2FCD
-TEXT 0242 01 40 80 - - "I"@0216 "am"@0D6E "the"@0176 "last"@09EC "natural"@2E10 "bio-being"@30AD "and"@04EB "I"@0216 "control"@30B7 "everything"@24F5 "..."@0048 FFFF "clones"@2FCD
-TEXT 0242 01 40 80 - - "Every"@30BF "year"@16F8 ","@005C "my"@09F1 "employees"@2FD4 "wake"@146D "me"@0146 "for"@003A "ten"@16A8 "minutes"@30C5 "on"@015D "my"@09F1 "birthday"@30CD "..."@0048 "I"@0216 "blow"@2903 "out"@1307 "the"@0176 "candles"@30D6 "on"@015D "my"@09F1 "cake"@0141 "and"@04EB "sign"@30DE "the"@0176 "company"@30E3 "reports"@2FDE FFFF "clones"@2FCD
-TEXT 0242 01 49 80 - - "I"@0216 "instructed"@30EB "Kanary's"@303C "scientists"@2E3B "to"@0090 "to"@0090 "create"@30F6 "the"@0176 "perfect"@30FD "adventurer"@2E6E "to"@0090 "take"@08F0 "me"@0146 "to"@0090 "the"@0176 "BIG"@103A "BANG"@103E "..."@0048 FFFF "clones"@2FCD
+TEXT 0242 01 40 80 - - "Kanary"@3085 "has" "devoted" "itself"@308C "to" "synthetic"@3093 "cloning"@309D FFFF "clones"
+TEXT 0242 02 40 80 - - "Kanary's" "four"@22D9 "million"@30A5 "employees" "were" "built" "by" "and" "for" "Kanary" FFFF "clones"
+TEXT 0242 01 40 80 - - "I" "am" "the" "last"@09EC "natural" "bio-being"@30AD "and" "I" "control"@30B7 "everything"@24F5 "..." FFFF "clones"
+TEXT 0242 01 40 80 - - "Every"@30BF "year"@16F8 "," "my" "employees" "wake" "me" "for" "ten"@16A8 "minutes"@30C5 "on" "my" "birthday"@30CD "..." "I" "blow" "out" "the" "candles"@30D6 "on" "my" "cake"@0141 "and" "sign"@30DE "the" "company"@30E3 "reports" FFFF "clones"
+TEXT 0242 01 49 80 - - "I" "instructed"@30EB "Kanary's" "scientists" "to" "to" "create"@30F6 "the" "perfect"@30FD "adventurer" "to" "take" "me" "to" "the" "BIG" "BANG" "..." FFFF "clones"
 SHARED_STATE B4 0274 F6 C1 0003
-TEXT 0242 03 40 80 - - "All"@15EE "Kanary"@3085 "employees"@2FD4 "were"@130B "built"@16CD "by"@1317 "the"@0176 "CLONE"@3105 "CONSORTIUM"@310B "."@0027 "Including"@3116 "YOU"@027B ","@005C "Commander"@005E FFFF "employees"@2FD4
-TEXT 0242 04 40 80 - - "You"@00E9 "are"@0BC3 "all"@0A39 "my"@09F1 "employees"@2FD4 ":"@1EE9 "YOU"@027B "Honk"@0493 ","@005C "YOU"@027B "Commander"@005E ","@005C "YOU"@027B "Olga"@233E "..."@0048 "ALL"@3120 "OF"@0FC6 "YOU"@027B "..."@0048 FFFF "employees"@2FD4
-TEXT 0242 05 49 80 - - "Kanary"@3085 "builds"@3124 "the"@0176 "cheapest"@312B "and"@04EB "most"@0BC7 "efficient"@3134 "employees"@2FD4 "in"@00B3 "the"@0176 "universe"@1083 "..."@0048 FFFF "employees"@2FD4
+TEXT 0242 03 40 80 - - "All" "Kanary" "employees" "were" "built" "by" "the" "CLONE"@3105 "CONSORTIUM"@310B "." "Including"@3116 "YOU"@027B "," "Commander" FFFF "employees"
+TEXT 0242 04 40 80 - - "You" "are" "all" "my" "employees" ":" "YOU" "Honk" "," "YOU" "Commander" "," "YOU" "Olga"@233E "..." "ALL"@3120 "OF"@0FC6 "YOU" "..." FFFF "employees"
+TEXT 0242 05 49 80 - - "Kanary" "builds"@3124 "the" "cheapest"@312B "and" "most"@0BC7 "efficient"@3134 "employees" "in" "the" "universe" "..." FFFF "employees"
 SHARED_STATE C0 1528 F5 C1 0001
-TEXT 0242 01 42 80 - - "Kanary"@3085 "is"@02C8 "the"@0176 "biggest"@2E81 "company"@30E3 "in"@00B3 "the"@0176 "known"@313E "universe"@1083 FFFF "kanary"@2DB7
-TEXT 0242 02 49 80 - - "Kanary"@3085 "invents"@3144 ","@005C "builds"@3124 ","@005C "consumes"@314C "and"@04EB "controls"@3155 "everything"@24F5 "in"@00B3 "the"@0176 "universe"@1083 FFFF "kanary"@2DB7
+TEXT 0242 01 42 80 - - "Kanary" "is" "the" "biggest" "company" "in" "the" "known"@313E "universe" FFFF "kanary"
+TEXT 0242 02 49 80 - - "Kanary" "invents"@3144 "," "builds" "," "consumes"@314C "and" "controls"@3155 "everything" "in" "the" "universe" FFFF "kanary"
 SHARED_STATE B4 0274 F6 C1 0001
-TEXT 0242 03 40 80 - - "Kanary"@3085 "is"@02C8 "so"@05B3 "well"@1A66 "managed"@315E "that"@01E2 "its"@1782 "products"@3166 "are"@0BC3 "built"@16CD "at"@06D0 "negative"@316F "cost"@3178 FFFF "reports"@2FDE
-TEXT 0242 02 40 80 - - "A"@0A9B "complete"@317D "cottage"@2FC5 "costs"@3186 "100,990"@318C "Negabucks..."@3194 FFFF "reports"@2FDE
-TEXT 0242 05 40 80 - - "Our"@1B94 "turnover"@31A2 "is"@02C8 "so"@05B3 "big"@0989 "that"@01E2 "nobody"@1567 "can"@018F "say"@0DE6 "the"@0176 "figure"@1300 "in"@00B3 "a"@0139 "normal"@31AB "life"@2311 "span"@31B2 FFFF "reports"@2FDE
-TEXT 0242 06 49 80 - - "Our"@1B94 "only"@1472 "competitor"@31B7 "is"@02C8 "CRYO"@31C2 FFFF "They"@268B
+TEXT 0242 03 40 80 - - "Kanary" "is" "so"@05B3 "well" "managed"@315E "that" "its" "products"@3166 "are" "built" "at" "negative"@316F "cost"@3178 FFFF "reports"
+TEXT 0242 02 40 80 - - "A"@0A9B "complete"@317D "cottage" "costs"@3186 "100,990"@318C "Negabucks..."@3194 FFFF "reports"
+TEXT 0242 05 40 80 - - "Our"@1B94 "turnover"@31A2 "is" "so" "big" "that" "nobody"@1567 "can" "say" "the" "figure"@1300 "in" "a" "normal"@31AB "life" "span"@31B2 FFFF "reports"
+TEXT 0242 06 49 80 - - "Our" "only" "competitor"@31B7 "is" "CRYO"@31C2 FFFF "They"
 SHARED_STATE B4 0274 F6 C1 0002
 YIELD
 YIELD_B
-SELECTOR_NODE "hello"@0006 selector_1932
-MENU "bye_bye"@0752 "talk"@0001 "not_talk"@31C7
-TEXT 03AA 02 40 80 - - "My"@02D9 "name"@0608 "Hom."@31D0 "Me"@000C "big"@0989 "tube"@31D5 "brain"@1072 FFFF "not_talk"@31C7
-TEXT 03AA 01 42 80 - - "Ooooh!"@31DA "Stranger"@31E1 "what"@0A8A "you"@00A0 "want?"@31EA FFFF "talk"@0001
-TEXT 03AA 00 42 80 - - "Oooooh!"@31F0 "You"@00E9 "strange"@2F42 "intelligence."@31F8 "You"@00E9 "know"@0A85 "talk?"@3206 FFFF "talk"@0001
-TEXT 03AA 03 42 80 - - "Stranger"@31E1 "from"@0236 "sky."@320C "Me"@000C "say"@0DE6 "hi"@3211 "there..."@3214 FFFF "talk"@0001
-TEXT 03AA 04 42 80 - - "Me"@000C "salute"@321D "you,"@3224 "handsome"@3229 "stranger..."@0BD3 FFFF "talk"@0001
-TEXT 03AA 06 40 80 - - "You"@00E9 "no"@0AFD "tongue?"@3232 FFFF "not_talk"@31C7
-TEXT 03AA 07 40 80 - - "You"@00E9 "tongue,"@323A "me"@0146 "like"@0134 "conversation"@14A5 FFFF "talk"@0001
-TEXT 03AA 08 40 80 - - "You"@00E9 "dumb..."@3242 FFFF "not_talk"@31C7
-TEXT 03AA 0B 40 80 - - "You"@00E9 "deaf"@324A "too..."@324F FFFF "not_talk"@31C7
-TEXT 03AA 06 48 80 - - "Me"@000C "tired."@3256 "Bye"@038A "bye..."@06EC FFFF "not_talk"@31C7
+SELECTOR_NODE "hello" selector_1932
+MENU "bye_bye" "talk" "not_talk"@31C7
+TEXT 03AA 02 40 80 - - "My" "name" "Hom."@31D0 "Me" "big" "tube"@31D5 "brain" FFFF "not_talk"
+TEXT 03AA 01 42 80 - - "Ooooh!"@31DA "Stranger"@31E1 "what" "you" "want?"@31EA FFFF "talk"
+TEXT 03AA 00 42 80 - - "Oooooh!"@31F0 "You" "strange" "intelligence."@31F8 "You" "know" "talk?"@3206 FFFF "talk"
+TEXT 03AA 03 42 80 - - "Stranger" "from" "sky."@320C "Me" "say" "hi"@3211 "there..."@3214 FFFF "talk"
+TEXT 03AA 04 42 80 - - "Me" "salute"@321D "you,"@3224 "handsome"@3229 "stranger..."@0BD3 FFFF "talk"
+TEXT 03AA 06 40 80 - - "You" "no" "tongue?"@3232 FFFF "not_talk"
+TEXT 03AA 07 40 80 - - "You" "tongue,"@323A "me" "like" "conversation"@14A5 FFFF "talk"
+TEXT 03AA 08 40 80 - - "You" "dumb..."@3242 FFFF "not_talk"
+TEXT 03AA 0B 40 80 - - "You" "deaf"@324A "too..."@324F FFFF "not_talk"
+TEXT 03AA 06 48 80 - - "Me" "tired."@3256 "Bye" "bye..."@06EC FFFF "not_talk"
 RECORD_CLEAR 03E4
 YIELD_B
 LABEL selector_1932
-SELECTOR_NODE "talk"@0001 selector_19DE
-MENU "bye_bye"@0752 "race"@2700 "planet"@04DC "science"@325D "politics"@3265 "art"@326E "consumption"@3272
-TEXT 03AA 02 00 80 - - "What"@09B6 "you"@00A0 "want"@07E2 "know,"@327E "friend..."@270D
-TEXT 03AA 05 40 80 - - "Race"@3284 "big"@0989 "subject,"@3289 "friend..."@270D FFFF "race"@2700
-TEXT 03AA 07 40 80 - - "Science"@3292 "big"@0989 "subject"@329A FFFF "science"@325D
-TEXT 03AA 06 40 80 - - "Planet."@32A2 "Me"@000C "know"@0A85 "planet"@04DC FFFF "planet"@04DC
-TEXT 03AA 07 40 80 - - "You"@00E9 "interested"@32AA "politics..."@32B5 FFFF "politics"@3265
-TEXT 03AA 05 40 80 - - "Me"@000C "know"@0A85 "plenty"@32C1 "people..."@32C8 FFFF "politics"@3265
-TEXT 03AA 0A 40 80 - - "Me"@000C "like"@0134 "artists..."@32D2 FFFF "art"@326E
-TEXT 03AA 0A 40 80 - - "Consumerism"@32DD "big"@0989 "fun"@045A FFFF "consumption"@3272
+SELECTOR_NODE "talk" selector_19DE
+MENU "bye_bye" "race" "planet" "science"@325D "politics"@3265 "art"@326E "consumption"@3272
+TEXT 03AA 02 00 80 - - "What" "you" "want" "know,"@327E "friend..."
+TEXT 03AA 05 40 80 - - "Race"@3284 "big" "subject,"@3289 "friend..." FFFF "race"
+TEXT 03AA 07 40 80 - - "Science"@3292 "big" "subject"@329A FFFF "science"
+TEXT 03AA 06 40 80 - - "Planet."@32A2 "Me" "know" "planet" FFFF "planet"
+TEXT 03AA 07 40 80 - - "You" "interested"@32AA "politics..."@32B5 FFFF "politics"
+TEXT 03AA 05 40 80 - - "Me" "know" "plenty"@32C1 "people..."@32C8 FFFF "politics"
+TEXT 03AA 0A 40 80 - - "Me" "like" "artists..."@32D2 FFFF "art"
+TEXT 03AA 0A 40 80 - - "Consumerism"@32DD "big" "fun"@045A FFFF "consumption"
 YIELD_B
 LABEL selector_19DE
-SELECTOR_NODE "race"@2700 selector_1A1C
-MENU "talk"@0001 "bye_bye"@0752 "izwal"@32E9 "croolis"@2705 "slimer"@32EF "tubular_brain"@32F6 "sinox"@3304 "buggol"@330A "migrax"@3311 "ondoyant"@093A
-TEXT 03AA 01 02 80 - - "Race"@3284 "big"@0989 "metaphysical"@3318 "thing."@3325 "Natural"@332C "magic"@10CD
-TEXT 03AA 00 02 80 - - "Race"@3284 "heavy"@2B13 "mystery..."@3334
+SELECTOR_NODE "race" selector_1A1C
+MENU "talk" "bye_bye" "izwal"@32E9 "croolis" "slimer"@32EF "tubular_brain"@32F6 "sinox"@3304 "buggol"@330A "migrax"@3311 "ondoyant"
+TEXT 03AA 01 02 80 - - "Race" "big" "metaphysical"@3318 "thing."@3325 "Natural"@332C "magic"@10CD
+TEXT 03AA 00 02 80 - - "Race" "heavy" "mystery..."@3334
 YIELD_B
 LABEL selector_1A1C
-SELECTOR_NODE "izwal"@32E9 selector_1C5D
-MENU "bye_bye"@0752 "race"@2700 "talk"@0001 "planet"@04DC "intelligence"@2BC8 "food"@333F "science"@325D
-TEXT 03AA 05 40 80 - - "Izwal"@3344 "small"@0101 "brain."@334A "very"@0984 "nice."@3351 FFFF "intelligence"@2BC8
-TEXT 03AA 06 40 80 - - "Intelligence"@3357 "Izwal"@3344 "lively."@3364 "Very"@336C "noisy"@1390 "primitive"@3371 "brain"@1072 FFFF "intelligence"@2BC8
-TEXT 03AA 06 40 80 - - "Neuronal"@337B "intelligence"@2BC8 "yuk."@3384 "Tube"@3389 "brain"@1072 "big"@0989 "progress"@338E FFFF "intelligence"@2BC8
-TEXT 03AA 00 40 80 - - "Calculate"@3397 "4234543"@33A2 "plus"@259D "67754355"@33AA "over"@1806 "4533555"@33B3 "minus"@33BB "4234557.94508"@33C1 "equals"@25A2 "0."@33CF FFFF "intelligence"@2BC8
-TEXT 03AA 03 40 80 - - "Intelligence,"@33D2 "entropy,"@33E0 "power."@33E9 "Too"@33F0 "complex"@33F4 "for"@003A "you,"@3224 "friend."@33FC FFFF "intelligence"@2BC8
-TEXT 03AA 07 40 80 - - "They"@268B "catch"@3404 "flies"@340A "with"@0123 "trunk."@3410 "Hom"@0EB4 "not"@0097 "like"@0134 "flies"@340A FFFF "food"@333F
-TEXT 03AA 08 40 80 - - "Izwals"@2B03 "like"@0134 "good"@031C "food."@3417 "They"@268B "delicate"@341D "stomach"@3426 FFFF "food"@333F
-TEXT 03AA 09 40 80 - - "I"@0216 "eat"@0093 "spiritual"@342E "food"@333F FFFF "food"@333F
-TEXT 03AA 0A 40 80 - - "You"@00E9 "always"@08C9 "talk"@0001 "food."@3417 "You"@00E9 "hungry"@3438 "maybe..."@343F FFFF "food"@333F
-TEXT 03AA 00 48 80 - - "Now"@3448 "you"@00A0 "make"@0029 "me"@0146 "hungry."@344C "I"@0216 "go"@00A4 "eat."@3454 "Bye"@038A "bye,"@074D "friend..."@270D FFFF "food"@333F
+SELECTOR_NODE "izwal" selector_1C5D
+MENU "bye_bye" "race" "talk" "planet" "intelligence" "food"@333F "science"
+TEXT 03AA 05 40 80 - - "Izwal"@3344 "small"@0101 "brain."@334A "very" "nice."@3351 FFFF "intelligence"
+TEXT 03AA 06 40 80 - - "Intelligence"@3357 "Izwal" "lively."@3364 "Very"@336C "noisy"@1390 "primitive"@3371 "brain" FFFF "intelligence"
+TEXT 03AA 06 40 80 - - "Neuronal"@337B "intelligence" "yuk."@3384 "Tube"@3389 "brain" "big" "progress"@338E FFFF "intelligence"
+TEXT 03AA 00 40 80 - - "Calculate"@3397 "4234543"@33A2 "plus" "67754355"@33AA "over"@1806 "4533555"@33B3 "minus"@33BB "4234557.94508"@33C1 "equals" "0."@33CF FFFF "intelligence"
+TEXT 03AA 03 40 80 - - "Intelligence,"@33D2 "entropy,"@33E0 "power."@33E9 "Too"@33F0 "complex"@33F4 "for" "you," "friend."@33FC FFFF "intelligence"
+TEXT 03AA 07 40 80 - - "They" "catch"@3404 "flies"@340A "with" "trunk."@3410 "Hom"@0EB4 "not" "like" "flies" FFFF "food"
+TEXT 03AA 08 40 80 - - "Izwals" "like" "good" "food."@3417 "They" "delicate"@341D "stomach"@3426 FFFF "food"
+TEXT 03AA 09 40 80 - - "I" "eat"@0093 "spiritual"@342E "food" FFFF "food"
+TEXT 03AA 0A 40 80 - - "You" "always"@08C9 "talk" "food." "You" "hungry"@3438 "maybe..."@343F FFFF "food"
+TEXT 03AA 00 48 80 - - "Now"@3448 "you" "make" "me" "hungry."@344C "I" "go"@00A4 "eat."@3454 "Bye" "bye,"@074D "friend..." FFFF "food"
 RECORD_CLEAR 03E4
-TEXT 03AA 0D 40 80 - - "Izwals"@2B03 "like"@0134 "astronomy,"@3459 "like"@0134 "stars"@1FF2 FFFF "science"@325D
-TEXT 03AA 0B 40 80 - - "Izwal"@3344 "small"@0101 "science,"@3464 "big"@0989 "telescope"@346D FFFF "science"@325D
-TEXT 03AA 0C 40 80 - - "They"@268B "build"@3477 "wood"@347D "space"@1813 "ships..."@3482 "laugh"@0AAA "laugh..."@348B FFFF "science"@325D
-TEXT 03AA 07 40 80 - - "Me"@000C "like"@0134 "Izwal"@3344 "science."@3494 "Funny..."@349D "laugh"@0AAA "laugh..."@348B FFFF "science"@325D
-TEXT 03AA 06 40 80 - - "Science,"@34A6 "science,"@3464 "you"@00A0 "talk"@0001 "science"@325D "all"@0A39 "time.."@34AF FFFF "science"@325D
-TEXT 03AA 05 40 80 - - "They"@268B "live"@06AF "on"@015D "planet."@34B6 "Planet"@0943 "name"@0608 "Rondo"@34BE FFFF "planet"@04DC
-TEXT 03AA 03 40 80 - - "Izwal"@3344 "planet"@04DC "name"@0608 "Rondo."@34C4 "Nice"@07F8 FFFF "planet"@04DC "rondo"@34CB
-TEXT 03AA 05 40 80 - - "Izwal"@3344 "palace"@254B "wood."@34D1 "Built"@34D7 "around"@1A3D "Rondo."@34C4 "Nice"@07F8 FFFF "planet"@04DC "rondo"@34CB
-TEXT 03AA 05 40 80 - - "Izwal"@3344 "like"@0134 "sing"@34DD "by"@1317 "planet"@04DC "light"@1707 FFFF "info"@34E2
-TEXT 03AA 02 40 80 - - "Izwal"@3344 "house"@255C "funny."@34E7 "Complicated."@34EE "Nice,"@34FB "but"@0DFE "not"@0097 "practical..."@3501 FFFF "info"@34E2
-TEXT 03AA 09 02 80 - - "Me"@000C "like,"@350E "they"@157A "nice"@07EA
-TEXT 03AA 0A 02 80 - - "They"@268B "soft"@3514 "fur..."@3519
+TEXT 03AA 0D 40 80 - - "Izwals" "like" "astronomy,"@3459 "like" "stars"@1FF2 FFFF "science"
+TEXT 03AA 0B 40 80 - - "Izwal" "small" "science,"@3464 "big" "telescope"@346D FFFF "science"
+TEXT 03AA 0C 40 80 - - "They" "build"@3477 "wood"@347D "space"@1813 "ships..."@3482 "laugh" "laugh..."@348B FFFF "science"
+TEXT 03AA 07 40 80 - - "Me" "like" "Izwal" "science."@3494 "Funny..."@349D "laugh" "laugh..." FFFF "science"
+TEXT 03AA 06 40 80 - - "Science,"@34A6 "science," "you" "talk" "science" "all" "time.."@34AF FFFF "science"
+TEXT 03AA 05 40 80 - - "They" "live" "on" "planet."@34B6 "Planet"@0943 "name" "Rondo"@34BE FFFF "planet"
+TEXT 03AA 03 40 80 - - "Izwal" "planet" "name" "Rondo."@34C4 "Nice"@07F8 FFFF "planet" "rondo"@34CB
+TEXT 03AA 05 40 80 - - "Izwal" "palace" "wood."@34D1 "Built"@34D7 "around" "Rondo." "Nice" FFFF "planet" "rondo"
+TEXT 03AA 05 40 80 - - "Izwal" "like" "sing"@34DD "by" "planet" "light"@1707 FFFF "info"@34E2
+TEXT 03AA 02 40 80 - - "Izwal" "house" "funny."@34E7 "Complicated."@34EE "Nice,"@34FB "but" "not" "practical..."@3501 FFFF "info"
+TEXT 03AA 09 02 80 - - "Me" "like,"@350E "they" "nice"
+TEXT 03AA 0A 02 80 - - "They" "soft"@3514 "fur..."@3519
 YIELD_B
 LABEL selector_1C5D
-SELECTOR_NODE "croolis"@2705 selector_1DC3
-MENU "bye_bye"@0752 "race"@2700 "war"@1BF1 "science"@325D "info"@34E2 "joke"@0AB0 "planet"@04DC
-TEXT 03AA 06 40 80 - - "Me"@000C "not"@0097 "like"@0134 "war."@3520 "Not"@0318 "like"@0134 "ships..."@3482 FFFF "war"@1BF1
-TEXT 03AA 06 40 80 - - "Us"@3525 "Tubular"@3528 "Brain"@3530 "despise"@3536 "Croolis"@1625 FFFF "war"@1BF1
-TEXT 03AA 03 40 80 - - "War"@353E "favorite"@3542 "sport"@2D67 "Croolis"@1625 FFFF "war"@1BF1
-TEXT 03AA 07 40 80 - - "Croolis"@1625 "know"@0A85 "muscle"@354B "science,"@3464 "them"@1DF8 "muscle"@354B "brain"@1072 FFFF "war"@1BF1 "science"@325D
-TEXT 03AA 0A 40 80 - - "Croolis"@1625 "mean"@2813 FFFF "war"@1BF1
-TEXT 03AA 04 40 80 - - "Croolis"@1625 "cruel,"@3552 "fool,"@3559 "drool,"@355F "laugh"@0AAA "laugh..."@348B FFFF "joke"@0AB0
-TEXT 03AA 03 40 80 - - "Croolis"@1625 "crude"@3566 "crud..."@356C "laugh"@0AAA "laugh"@0AAA "laugh"@0AAA "cry"@3574 "laugh"@0AAA FFFF "joke"@0AB0
-TEXT 03AA 02 40 80 - - "You"@00E9 "like"@0134 "laugh"@0AAA FFFF "joke"@0AB0
-TEXT 03AA 07 40 80 - - "Croolis"@1625 "stupid,"@3578 "big"@0989 "muscle,"@3580 "where"@157F "brain"@1072 "go?"@3588 FFFF "info"@34E2
-TEXT 03AA 09 40 80 - - "Croolis"@1625 "planet"@04DC "Mastachok"@13D3 FFFF "info"@34E2 "planet"@04DC
-TEXT 03AA 0A 40 80 - - "Oh,"@358C "Commander,me"@3590 "hallucinate"@359D "when"@0B4A "see"@01DE "violence"@35A9 FFFF "info"@34E2
-TEXT 03AA 0B 40 80 - - "Mastachok"@13D3 "be"@00FE "black"@1EAA "planet."@34B6 "Full"@35B2 "of"@00C1 "holes"@105F FFFF "planet"@04DC "mastachok"@28A7
-TEXT 03AA 0E 40 80 - - "Croolis"@1625 "like"@0134 "smash"@35B7 "planets,"@35BD "kill"@35C6 "life"@2311 FFFF "planet"@04DC "mastachok"@28A7
-TEXT 03AA 0B 40 80 - - "Croolis"@1625 "hate"@2A6E "peace,"@35CB "spit"@35D2 "on"@015D "life."@35D7 "Hate"@35DD "nature"@3023 FFFF "planet"@04DC "mastachok"@28A7
+SELECTOR_NODE "croolis" selector_1DC3
+MENU "bye_bye" "race" "war" "science" "info" "joke"@0AB0 "planet"
+TEXT 03AA 06 40 80 - - "Me" "not" "like" "war."@3520 "Not" "like" "ships..." FFFF "war"
+TEXT 03AA 06 40 80 - - "Us"@3525 "Tubular"@3528 "Brain"@3530 "despise"@3536 "Croolis" FFFF "war"
+TEXT 03AA 03 40 80 - - "War"@353E "favorite"@3542 "sport" "Croolis" FFFF "war"
+TEXT 03AA 07 40 80 - - "Croolis" "know" "muscle"@354B "science," "them" "muscle" "brain" FFFF "war" "science"
+TEXT 03AA 0A 40 80 - - "Croolis" "mean" FFFF "war"
+TEXT 03AA 04 40 80 - - "Croolis" "cruel,"@3552 "fool,"@3559 "drool,"@355F "laugh" "laugh..." FFFF "joke"
+TEXT 03AA 03 40 80 - - "Croolis" "crude"@3566 "crud..."@356C "laugh" "laugh" "laugh" "cry"@3574 "laugh" FFFF "joke"
+TEXT 03AA 02 40 80 - - "You" "like" "laugh" FFFF "joke"
+TEXT 03AA 07 40 80 - - "Croolis" "stupid,"@3578 "big" "muscle,"@3580 "where" "brain" "go?"@3588 FFFF "info"
+TEXT 03AA 09 40 80 - - "Croolis" "planet" "Mastachok" FFFF "info" "planet"
+TEXT 03AA 0A 40 80 - - "Oh,"@358C "Commander,me"@3590 "hallucinate"@359D "when"@0B4A "see" "violence"@35A9 FFFF "info"
+TEXT 03AA 0B 40 80 - - "Mastachok" "be" "black" "planet." "Full"@35B2 "of" "holes" FFFF "planet" "mastachok"
+TEXT 03AA 0E 40 80 - - "Croolis" "like" "smash"@35B7 "planets,"@35BD "kill"@35C6 "life" FFFF "planet" "mastachok"
+TEXT 03AA 0B 40 80 - - "Croolis" "hate" "peace,"@35CB "spit"@35D2 "on" "life."@35D7 "Hate"@35DD "nature" FFFF "planet" "mastachok"
 YIELD_B
 LABEL selector_1DC3
-SELECTOR_NODE "slimer"@32EF selector_1FA9
-MENU "bye_bye"@0752 "race"@2700 "planet"@04DC "science"@325D "politics"@3265 "yolk"@2519 "info"@34E2
-TEXT 03AA 10 40 80 - - "Slimer"@251E "strange"@2F42 "creatures."@35E2 "Me"@000C "personally"@35ED "know"@0A85 "great"@030D "Yolk"@0D2C FFFF "yolk"@2519
-TEXT 03AA 0B 40 80 - - "Yolk"@0D2C "big"@0989 "thinker,"@35F8 "great"@030D "master."@3601 "Me"@000C "respect"@0B00 FFFF "yolk"@2519
-TEXT 03AA 02 40 80 - - "Yolk"@0D2C "invent"@3609 "respect"@0B00 "between"@28C6 "races."@3610 "Yolk"@0D2C "was"@0B6D "big"@0989 "friend"@0321 FFFF "politics"@3265 "yolk"@2519
-TEXT 03AA 01 40 80 - - "Yolk"@0D2C "lots"@3617 "ideas,"@361C "mental"@3623 "science"@325D FFFF "science"@325D "yolk"@2519
-TEXT 03AA 03 40 80 - - "Yolk"@0D2C "buried"@253B "in"@00B3 "big"@0989 "mausoleum,"@362A "planet"@04DC "Vista"@166F FFFF "planet"@04DC "yolk"@2519
-TEXT 03AA 05 40 80 - - "Slimer"@251E "not"@0097 "go"@00A4 "away"@03E9 FFFF "info"@34E2
-TEXT 03AA 01 40 80 - - "Portrait"@3635 "of"@00C1 "Great"@0D26 "Yolk,"@363E "famous"@3644 "painting..."@364B FFFF "info"@34E2 "art"@326E
-TEXT 03AA 05 40 80 - - "Slimers"@3657 "live"@06AF "strange"@2F42 "houses,"@365F "planet"@04DC "Ekatomb"@3667 FFFF "info"@34E2 "planet"@04DC
-TEXT 03AA 06 40 80 - - "Slimers"@3657 "good"@031C "and"@04EB "Slimers"@3657 "bad"@062A "also"@366F FFFF "info"@34E2
-TEXT 03AA 05 40 80 - - "Slimer"@251E "planet"@04DC "name"@0608 "Ekatomb."@3674 "Exotic"@367D "planet."@34B6 "Nice..."@080D FFFF "planet"@04DC "ekatomb"@3684
-TEXT 03AA 09 40 80 - - "Slimer"@251E "like"@0134 "low"@368C "gravity."@3690 FFFF "planet"@04DC
-TEXT 03AA 0A 40 80 - - "Me"@000C "like"@0134 "exotic"@3699 "Slimer"@251E "planet."@34B6 "Nice"@07F8 FFFF "planet"@04DC
-TEXT 03AA 07 40 80 - - "Ha"@0AE8 "ha"@2896 "ha"@2896 "ha"@2896 "Slimer"@251E "science."@3494 "You"@00E9 "joke."@36A0 "You"@00E9 "not"@0097 "know"@0A85 "Doctor"@1E7B "Otto"@1E82 "Von"@1E87 "Smile?"@36A6 FFFF "science"@325D
-TEXT 03AA 05 40 80 - - "Slimers"@3657 "want"@07E2 "live"@06AF "forever."@36AD "Afraid"@36B6 "oldness"@36BD FFFF "science"@325D
-TEXT 03AA 0A 40 80 - - "Slimers"@3657 "eat"@0093 "lot"@36C5 "vitamins,"@36C9 "ho"@36D3 "ho"@36D3 "ho..."@36D6 FFFF "science"@325D
-TEXT 03AA 0B 40 80 - - "Slimer"@251E "politics"@3265 "simple."@36DC "They"@268B "want"@07E2 "live"@06AF "forever..."@36E4 FFFF "politics"@3265
-TEXT 03AA 0B 40 80 - - "Slimers"@3657 "weird"@0B71 "race"@2700 FFFF "race"@2700
-TEXT 03AA 10 40 80 - - "Slimers"@3657 "evolve"@36EF "from"@0236 "space"@1813 "jellyfish"@0C78 FFFF "race"@2700
+SELECTOR_NODE "slimer" selector_1FA9
+MENU "bye_bye" "race" "planet" "science" "politics" "yolk" "info"
+TEXT 03AA 10 40 80 - - "Slimer" "strange" "creatures."@35E2 "Me" "personally"@35ED "know" "great"@030D "Yolk" FFFF "yolk"
+TEXT 03AA 0B 40 80 - - "Yolk" "big" "thinker,"@35F8 "great" "master."@3601 "Me" "respect"@0B00 FFFF "yolk"
+TEXT 03AA 02 40 80 - - "Yolk" "invent"@3609 "respect" "between" "races."@3610 "Yolk" "was" "big" "friend" FFFF "politics" "yolk"
+TEXT 03AA 01 40 80 - - "Yolk" "lots"@3617 "ideas,"@361C "mental"@3623 "science" FFFF "science" "yolk"
+TEXT 03AA 03 40 80 - - "Yolk" "buried" "in" "big" "mausoleum,"@362A "planet" "Vista" FFFF "planet" "yolk"
+TEXT 03AA 05 40 80 - - "Slimer" "not" "go" "away" FFFF "info"
+TEXT 03AA 01 40 80 - - "Portrait"@3635 "of" "Great"@0D26 "Yolk,"@363E "famous"@3644 "painting..."@364B FFFF "info" "art"
+TEXT 03AA 05 40 80 - - "Slimers"@3657 "live" "strange" "houses,"@365F "planet" "Ekatomb"@3667 FFFF "info" "planet"
+TEXT 03AA 06 40 80 - - "Slimers" "good" "and" "Slimers" "bad" "also"@366F FFFF "info"
+TEXT 03AA 05 40 80 - - "Slimer" "planet" "name" "Ekatomb."@3674 "Exotic"@367D "planet." "Nice..."@080D FFFF "planet" "ekatomb"@3684
+TEXT 03AA 09 40 80 - - "Slimer" "like" "low"@368C "gravity."@3690 FFFF "planet"
+TEXT 03AA 0A 40 80 - - "Me" "like" "exotic"@3699 "Slimer" "planet." "Nice" FFFF "planet"
+TEXT 03AA 07 40 80 - - "Ha" "ha" "ha" "ha" "Slimer" "science." "You" "joke."@36A0 "You" "not" "know" "Doctor"@1E7B "Otto" "Von" "Smile?"@36A6 FFFF "science"
+TEXT 03AA 05 40 80 - - "Slimers" "want" "live" "forever."@36AD "Afraid"@36B6 "oldness"@36BD FFFF "science"
+TEXT 03AA 0A 40 80 - - "Slimers" "eat" "lot"@36C5 "vitamins,"@36C9 "ho"@36D3 "ho" "ho..."@36D6 FFFF "science"
+TEXT 03AA 0B 40 80 - - "Slimer" "politics" "simple."@36DC "They" "want" "live" "forever..."@36E4 FFFF "politics"
+TEXT 03AA 0B 40 80 - - "Slimers" "weird"@0B71 "race" FFFF "race"
+TEXT 03AA 10 40 80 - - "Slimers" "evolve"@36EF "from" "space" "jellyfish"@0C78 FFFF "race"
 YIELD_B
 LABEL selector_1FA9
-SELECTOR_NODE "tubular_brain"@32F6 selector_2029
-MENU "bye_bye"@0752 "brain"@1072 "info"@34E2
-TEXT 03AA 01 40 80 - - "Tubular"@3528 "Brain"@3530 "think"@0994 "good."@36F6 FFFF "brain"@1072
-TEXT 03AA 00 40 80 - - "Tube"@3389 "brain"@1072 "complex."@36FC "You"@00E9 "not"@0097 "understand."@3705 FFFF "brain"@1072
-TEXT 03AA 03 40 80 - - "Tubes"@3711 "resonate"@3717 "far"@03E5 "in"@00B3 "space,"@3720 "capture"@3727 "mind"@2AC0 "force"@372F FFFF "brain"@1072
-TEXT 03AA 0B 40 80 - - "Me"@000C "big"@0989 "Tubular"@3528 "Brain."@3735 FFFF "info"@34E2
-TEXT 03AA 0D 40 80 - - "Tubular"@3528 "Brain"@3530 "be"@00FE "superior"@373C "race"@2700 FFFF "info"@34E2
+SELECTOR_NODE "tubular_brain" selector_2029
+MENU "bye_bye" "brain" "info"
+TEXT 03AA 01 40 80 - - "Tubular" "Brain" "think" "good."@36F6 FFFF "brain"
+TEXT 03AA 00 40 80 - - "Tube" "brain" "complex."@36FC "You" "not" "understand."@3705 FFFF "brain"
+TEXT 03AA 03 40 80 - - "Tubes"@3711 "resonate"@3717 "far"@03E5 "in" "space,"@3720 "capture"@3727 "mind" "force"@372F FFFF "brain"
+TEXT 03AA 0B 40 80 - - "Me" "big" "Tubular" "Brain."@3735 FFFF "info"
+TEXT 03AA 0D 40 80 - - "Tubular" "Brain" "be" "superior"@373C "race" FFFF "info"
 YIELD_B
 LABEL selector_2029
-SELECTOR_NODE "sinox"@3304 selector_20B3
-MENU "bye_bye"@0752 "race"@2700 "science"@325D "technology"@2BD5 "info"@34E2
-TEXT 03AA 05 40 80 - - "Sinox"@3745 "hard"@18B7 "workers."@374B "Big"@104D "big"@0989 "technology"@2BD5 FFFF "technology"@2BD5
-TEXT 03AA 09 40 80 - - "Sinox"@3745 "build"@3477 "computers,"@3754 "machines,"@375F "Sinox"@3745 "like"@0134 "money"@3769 FFFF "info"@34E2
-TEXT 03AA 0A 40 80 - - "Sinox"@3745 "science"@325D "most"@0BC7 "powerful"@376F "in"@00B3 "universe"@1083 FFFF "science"@325D
-TEXT 03AA 02 40 80 - - "Sinox"@3745 "want"@07E2 "total"@3778 "power."@33E9 "You"@00E9 "careful"@377E FFFF "race"@2700 "sinox"@3304
-TEXT 03AA 05 40 80 - - "Sinox"@3745 "powerful"@376F "people"@0B5D FFFF "race"@2700 "sinox"@3304
+SELECTOR_NODE "sinox" selector_20B3
+MENU "bye_bye" "race" "science" "technology" "info"
+TEXT 03AA 05 40 80 - - "Sinox"@3745 "hard" "workers."@374B "Big" "big" "technology" FFFF "technology"
+TEXT 03AA 09 40 80 - - "Sinox" "build" "computers,"@3754 "machines,"@375F "Sinox" "like" "money"@3769 FFFF "info"
+TEXT 03AA 0A 40 80 - - "Sinox" "science" "most" "powerful"@376F "in" "universe" FFFF "science"
+TEXT 03AA 02 40 80 - - "Sinox" "want" "total"@3778 "power." "You" "careful"@377E FFFF "race" "sinox"
+TEXT 03AA 05 40 80 - - "Sinox" "powerful" "people" FFFF "race" "sinox"
 YIELD_B
 LABEL selector_20B3
-SELECTOR_NODE "migrax"@3311 selector_2139
-MENU "bye_bye"@0752 "race"@2700 "talk"@0001 "info"@34E2 "murffalos"@25F3
-TEXT 03AA 06 40 80 - - "Migrax"@3786 "not"@0097 "much"@0364 "in"@00B3 "brain"@1072 FFFF "info"@34E2
-TEXT 03AA 0B 40 80 - - "Migrax"@3786 "like"@0134 "lot"@36C5 "money."@378D "Sell"@3794 "dad."@3799 "Sell"@3794 "mom."@379E "Bad"@1379 FFFF "info"@34E2
-TEXT 03AA 0E 40 80 - - "Migrax"@3786 "eat"@0093 "murffalos"@25F3 "boiled"@37A3 "in"@00B3 "mercury."@37AA "Ugh..."@37B3 FFFF "murffalos"@25F3
-TEXT 03AA 07 40 80 - - "Migrax"@3786 "talk"@0001 "too"@03E1 "much..."@37BA FFFF "talk"@0001
-TEXT 03AA 06 40 80 - - "You"@00E9 "like"@0134 "talk?"@3206 FFFF "talk"@0001
+SELECTOR_NODE "migrax" selector_2139
+MENU "bye_bye" "race" "talk" "info" "murffalos"
+TEXT 03AA 06 40 80 - - "Migrax"@3786 "not" "much" "in" "brain" FFFF "info"
+TEXT 03AA 0B 40 80 - - "Migrax" "like" "lot" "money."@378D "Sell"@3794 "dad."@3799 "Sell" "mom."@379E "Bad" FFFF "info"
+TEXT 03AA 0E 40 80 - - "Migrax" "eat" "murffalos" "boiled"@37A3 "in" "mercury."@37AA "Ugh..."@37B3 FFFF "murffalos"
+TEXT 03AA 07 40 80 - - "Migrax" "talk" "too" "much..."@37BA FFFF "talk"
+TEXT 03AA 06 40 80 - - "You" "like" "talk?" FFFF "talk"
 YIELD_B
 LABEL selector_2139
-SELECTOR_NODE "buggol"@330A selector_2173
-MENU "bye_bye"@0752 "race"@2700 "politics"@3265 "info"@34E2 "joke"@0AB0
-TEXT 03AA 05 40 80 - - "Democracy"@37C2 "Buggol"@37CC "wise"@37D3 FFFF "politics"@3265
-TEXT 03AA 03 40 80 - - "Me"@000C "not"@0097 "ever"@1C84 "see"@01DE "Buggol..."@37D8 FFFF "race"@2700
+SELECTOR_NODE "buggol" selector_2173
+MENU "bye_bye" "race" "politics" "info" "joke"
+TEXT 03AA 05 40 80 - - "Democracy"@37C2 "Buggol"@37CC "wise"@37D3 FFFF "politics"
+TEXT 03AA 03 40 80 - - "Me" "not" "ever"@1C84 "see" "Buggol..."@37D8 FFFF "race"
 YIELD_B
 LABEL selector_2173
-SELECTOR_NODE "ondoyant"@093A selector_21D1
-MENU "bye_bye"@0752 "talk"@0001 "info"@34E2 "reproduction"@2D1E
-TEXT 03AA 01 40 80 - - "Ahhhhh!"@37E2 "ondoyant,"@078E "you"@00A0 "not"@0097 "say"@0DE6 "such"@0900 "word..."@37EA FFFF "info"@34E2
-TEXT 03AA 03 40 80 - - "Love,"@37F2 "all"@0A39 "time,"@37F8 "big"@0989 "magic,"@37FE "big"@0989 "hot..."@3805 FFFF "reproduction"@2D1E
-TEXT 03AA 0B 40 80 - - "Hom"@0EB4 "eternal."@380C "Hom"@0EB4 "not"@0097 "reproduce,"@3815 "cry"@3574 "cry..."@3820 FFFF "reproduction"@2D1E
+SELECTOR_NODE "ondoyant" selector_21D1
+MENU "bye_bye" "talk" "info" "reproduction"
+TEXT 03AA 01 40 80 - - "Ahhhhh!"@37E2 "ondoyant,"@078E "you" "not" "say" "such"@0900 "word..."@37EA FFFF "info"
+TEXT 03AA 03 40 80 - - "Love,"@37F2 "all" "time,"@37F8 "big" "magic,"@37FE "big" "hot..."@3805 FFFF "reproduction"
+TEXT 03AA 0B 40 80 - - "Hom" "eternal."@380C "Hom" "not" "reproduce,"@3815 "cry" "cry..."@3820 FFFF "reproduction"
 YIELD_B
 LABEL selector_21D1
-SELECTOR_NODE "murffalos"@25F3 selector_225D
-MENU "bye_bye"@0752 "planet"@04DC "reproduction"@2D1E "consumption"@3272 "info"@34E2
-TEXT 03AA 02 40 80 - - "Murffalos"@3827 "be"@00FE "creatures"@010E "with"@0123 "horn."@3831 FFFF "info"@34E2
-TEXT 03AA 05 40 80 - - "Murffalos"@3827 "tender"@2D2B "meat."@3837 "Tasty"@2092 FFFF "consumption"@3272
-TEXT 03AA 09 40 80 - - "Can"@383D "buy"@2C6F "frozen"@3841 "murffallos"@3848 "on"@015D "planet"@04DC "Moskito"@3853 FFFF "planet"@04DC
-TEXT 03AA 09 40 80 - - "Murffalos"@3827 "13"@385B "to"@0090 "reproduce."@385E "One"@2D13 "in"@00B3 "middle,"@3869 "12"@3871 "surround"@3874 FFFF "reproduction"@2D1E
-TEXT 03AA 05 40 80 - - "Murffalos"@3827 "small"@0101 "small"@0101 "brain."@334A "Meat"@387D "nice"@07EA FFFF "consumption"@3272
+SELECTOR_NODE "murffalos" selector_225D
+MENU "bye_bye" "planet" "reproduction" "consumption" "info"
+TEXT 03AA 02 40 80 - - "Murffalos"@3827 "be" "creatures"@010E "with" "horn."@3831 FFFF "info"
+TEXT 03AA 05 40 80 - - "Murffalos" "tender" "meat."@3837 "Tasty"@2092 FFFF "consumption"
+TEXT 03AA 09 40 80 - - "Can"@383D "buy" "frozen"@3841 "murffallos"@3848 "on" "planet" "Moskito"@3853 FFFF "planet"
+TEXT 03AA 09 40 80 - - "Murffalos" "13"@385B "to" "reproduce."@385E "One" "in" "middle,"@3869 "12"@3871 "surround"@3874 FFFF "reproduction"
+TEXT 03AA 05 40 80 - - "Murffalos" "small" "small" "brain." "Meat"@387D "nice" FFFF "consumption"
 YIELD_B
 LABEL selector_225D
-SELECTOR_NODE "planet"@04DC selector_2493
-MENU "bye_bye"@0752 "talk"@0001 "erazor"@3882 "mastachok"@28A7 "qx20"@3889 "tumul"@388E "rondo"@34CB "cyberock"@3894 "troma"@389D "ekatomb"@3684 "attrox"@38A3 "Oddland"@1EA2 "corpo"@2DBE
-TEXT 03AA 05 40 80 - - "Nice"@07F8 "Sinox"@3745 "planet"@04DC FFFF "venusia"@38AA
-TEXT 03AA 09 40 80 - - "Me"@000C "not"@0097 "ever"@1C84 "be"@00FE "to"@0090 "Venusia"@38B2 FFFF "venusia"@38AA
-TEXT 03AA 07 40 80 - - "Me"@000C "sense"@10C7 "badness."@38BA "Bad"@1379 "vibe"@38C3 FFFF "erazor"@3882
-TEXT 03AA 08 40 80 - - "Erazor"@38C8 "Slimer"@251E "planet."@34B6 "Weird"@38CF "doctor"@204B "live"@06AF "there"@0C37 FFFF "erazor"@3882
-TEXT 03AA 0E 40 80 - - "Mastachok"@13D3 "Croolis"@1625 "planet."@34B6 "Vibe"@38D5 "no"@0AFD "good"@031C FFFF "mastachok"@28A7
-TEXT 03AA 0F 40 80 - - "Me"@000C "not"@0097 "like"@0134 "Mastachok"@13D3 FFFF "mastachok"@28A7
-TEXT 03AA 0B 40 80 - - "Sinox"@3745 "live"@06AF "Qx20"@38DA FFFF "qx20"@3889
-TEXT 03AA 10 40 80 - - "Qx20"@38DA "big"@0989 "store."@38DF "Nice"@07F8 "products"@3166 FFFF "qx20"@3889
-TEXT 03AA 09 40 80 - - "Planet"@0943 "of"@00C1 "Pago-tagos."@38E6 "Nice"@07F8 FFFF "tumul"@388E
-TEXT 03AA 0A 40 80 - - "Tumul"@057C "orbit"@38F2 "round"@38F8 "sun"@143B "Gladis"@1529 FFFF "tumul"@388E
-TEXT 03AA 02 40 80 - - "Round"@38FE "planet..."@0CDF FFFF "rondo"@34CB
-TEXT 03AA 05 40 80 - - "Izwals"@2B03 "live"@06AF "there..."@3214 FFFF "rondo"@34CB
-TEXT 03AA 05 40 80 - - "Big"@104D "cyber"@3904 "college,"@390A "big"@0989 "culture..."@3913 FFFF "cyberock"@3894
-TEXT 03AA 0A 40 80 - - "Cyberock"@391E "be"@00FE "place"@01AB "for"@003A "big"@0989 "knowledge"@3927 FFFF "cyberock"@3894
-TEXT 03AA 05 40 80 - - "Problem"@3931 "war"@1BF1 "against"@3939 "Scorps."@3941 "Insects."@3949 "Big"@104D "danger"@3952 FFFF "troma"@389D
-TEXT 03AA 0A 40 80 - - "Troma"@2CB7 "cursed"@1310 "planet..."@0CDF FFFF "troma"@389D
-TEXT 03AA 05 40 80 - - "Oddland"@1EA2 "be"@00FE "black"@1EAA "hole"@1ED8 "near"@0889 "planet"@04DC "Pterra"@3959 FFFF "Oddland"@1EA2
-TEXT 03AA 06 40 80 - - "Big"@104D "fun"@045A "town."@3960 "Money,"@3966 "good"@031C "times,"@396D "wink"@3974 "wink"@3974 FFFF "attrox"@38A3
-TEXT 03AA 0A 40 80 - - "Ah,"@3979 "planet"@04DC "of"@00C1 "great"@030D "Yolk."@397D "Nice"@07F8 "one"@0F7F FFFF "ekatomb"@3684
-TEXT 03AA 0A 40 80 - - "Corpo"@2F6B "big"@0989 "planet"@04DC FFFF "corpo"@2DBE
-TEXT 03AA 09 40 80 - - "Lot"@3983 "people"@0B5D "visit"@1687 "Corpo"@2F6B FFFF "corpo"@2DBE
-TEXT 03AA 05 40 80 - - "Eden"@3987 "Migrax"@3786 "planet"@04DC FFFF "eden"@398C
-TEXT 03AA 0A 40 80 - - "Me"@000C "sense"@10C7 "Eden,"@3991 "friend..."@270D FFFF "eden"@398C
-TEXT 03AA 02 03 80 - - "Stars"@3997 "explode,"@399D "big"@0989 "bang,"@39A6 "plasma"@39AC "boom!!!"@39B3
+SELECTOR_NODE "planet" selector_2493
+MENU "bye_bye" "talk" "erazor"@3882 "mastachok" "qx20"@3889 "tumul"@388E "rondo" "cyberock"@3894 "troma"@389D "ekatomb" "attrox"@38A3 "Oddland"@1EA2 "corpo"
+TEXT 03AA 05 40 80 - - "Nice" "Sinox" "planet" FFFF "venusia"@38AA
+TEXT 03AA 09 40 80 - - "Me" "not" "ever" "be" "to" "Venusia"@38B2 FFFF "venusia"
+TEXT 03AA 07 40 80 - - "Me" "sense"@10C7 "badness."@38BA "Bad" "vibe"@38C3 FFFF "erazor"
+TEXT 03AA 08 40 80 - - "Erazor"@38C8 "Slimer" "planet." "Weird"@38CF "doctor" "live" "there" FFFF "erazor"
+TEXT 03AA 0E 40 80 - - "Mastachok" "Croolis" "planet." "Vibe"@38D5 "no" "good" FFFF "mastachok"
+TEXT 03AA 0F 40 80 - - "Me" "not" "like" "Mastachok" FFFF "mastachok"
+TEXT 03AA 0B 40 80 - - "Sinox" "live" "Qx20"@38DA FFFF "qx20"
+TEXT 03AA 10 40 80 - - "Qx20" "big" "store."@38DF "Nice" "products" FFFF "qx20"
+TEXT 03AA 09 40 80 - - "Planet" "of" "Pago-tagos."@38E6 "Nice" FFFF "tumul"
+TEXT 03AA 0A 40 80 - - "Tumul" "orbit"@38F2 "round"@38F8 "sun" "Gladis" FFFF "tumul"
+TEXT 03AA 02 40 80 - - "Round"@38FE "planet..."@0CDF FFFF "rondo"
+TEXT 03AA 05 40 80 - - "Izwals" "live" "there..." FFFF "rondo"
+TEXT 03AA 05 40 80 - - "Big" "cyber"@3904 "college,"@390A "big" "culture..."@3913 FFFF "cyberock"
+TEXT 03AA 0A 40 80 - - "Cyberock"@391E "be" "place" "for" "big" "knowledge"@3927 FFFF "cyberock"
+TEXT 03AA 05 40 80 - - "Problem"@3931 "war" "against"@3939 "Scorps."@3941 "Insects."@3949 "Big" "danger"@3952 FFFF "troma"
+TEXT 03AA 0A 40 80 - - "Troma" "cursed"@1310 "planet..." FFFF "troma"
+TEXT 03AA 05 40 80 - - "Oddland" "be" "black" "hole"@1ED8 "near"@0889 "planet" "Pterra"@3959 FFFF "Oddland"
+TEXT 03AA 06 40 80 - - "Big" "fun" "town."@3960 "Money,"@3966 "good" "times,"@396D "wink"@3974 "wink" FFFF "attrox"
+TEXT 03AA 0A 40 80 - - "Ah,"@3979 "planet" "of" "great" "Yolk."@397D "Nice" "one" FFFF "ekatomb"
+TEXT 03AA 0A 40 80 - - "Corpo" "big" "planet" FFFF "corpo"
+TEXT 03AA 09 40 80 - - "Lot"@3983 "people" "visit"@1687 "Corpo" FFFF "corpo"
+TEXT 03AA 05 40 80 - - "Eden"@3987 "Migrax" "planet" FFFF "eden"@398C
+TEXT 03AA 0A 40 80 - - "Me" "sense" "Eden,"@3991 "friend..." FFFF "eden"
+TEXT 03AA 02 03 80 - - "Stars"@3997 "explode,"@399D "big" "bang,"@39A6 "plasma"@39AC "boom!!!"@39B3
 TEXT 03AA 00 03 80 - - "Heat,"@39BB "fusion,"@39C1 "sun."@39C9 "Bang!"@39CE
 YIELD_B
 LABEL selector_2493
 SELECTOR_NODE "television"@39D4 selector_251F
-MENU "bye_bye"@0752 "info"@34E2 "consumption"@3272 "politics"@3265
-TEXT 03AA 0E 42 80 - - "Me"@000C "Hom."@31D0 "Me"@000C "big"@0989 "power.Television"@39DF "inside"@1CCE "head..."@2C38 FFFF "television"@39D4
-TEXT 03AA 0D 40 80 - - "Television"@39F0 "not"@0097 "good"@031C "for"@003A "reproduction..."@39FB FFFF "television"@39D4
-TEXT 03AA 03 42 80 - - "Television"@39F0 "good"@031C "info"@34E2 "for"@003A "weak"@232A "brain"@1072 FFFF "info"@34E2
-TEXT 03AA 06 40 80 - - "Me"@000C "not"@0097 "watch"@2753 "television."@3A0B "Programs"@3A17 "no"@0AFD "good"@031C FFFF "info"@34E2
-TEXT 03AA 06 40 80 - - "Watch"@3A20 "television,"@3A26 "always"@08C9 "buy"@2C6F "more"@020D "and"@04EB "more"@020D FFFF "consumption"@3272
+MENU "bye_bye" "info" "consumption" "politics"
+TEXT 03AA 0E 42 80 - - "Me" "Hom." "Me" "big" "power.Television"@39DF "inside"@1CCE "head..." FFFF "television"
+TEXT 03AA 0D 40 80 - - "Television"@39F0 "not" "good" "for" "reproduction..."@39FB FFFF "television"
+TEXT 03AA 03 42 80 - - "Television" "good" "info" "for" "weak"@232A "brain" FFFF "info"
+TEXT 03AA 06 40 80 - - "Me" "not" "watch" "television."@3A0B "Programs"@3A17 "no" "good" FFFF "info"
+TEXT 03AA 06 40 80 - - "Watch"@3A20 "television,"@3A26 "always" "buy" "more" "and" "more" FFFF "consumption"
 YIELD_B
 LABEL selector_251F
-SELECTOR_NODE "art"@326E selector_259B
-MENU "bye_bye"@0752 "talk"@0001 "info"@34E2 "painting"@1221
-TEXT 03AA 05 40 80 - - "Me"@000C "like"@0134 "painting"@1221 FFFF "info"@34E2
-TEXT 03AA 0A 40 80 - - "Me"@000C "like"@0134 "art"@326E "food."@3417 "And"@0AC5 "murffalos"@25F3 "liver"@222B "boiled"@37A3 "in"@00B3 "mercury"@2C67 FFFF "info"@34E2
-TEXT 03AA 09 40 80 - - "Jeph"@16D3 "d'Ulikan"@16D8 "big"@0989 "artist,"@3A32 "big"@0989 "thoughts."@3A3A "You"@00E9 "read"@166A "thoughts"@3A44 "of"@00C1 "Jeph."@3A4D FFFF "info"@34E2
-TEXT 03AA 05 40 80 - - "Portrait"@3635 "Great"@0D26 "Yolk."@397D "Great"@0D26 "painting."@3A53 "Famous"@3A5D FFFF "painting"@1221
+SELECTOR_NODE "art" selector_259B
+MENU "bye_bye" "talk" "info" "painting"
+TEXT 03AA 05 40 80 - - "Me" "like" "painting" FFFF "info"
+TEXT 03AA 0A 40 80 - - "Me" "like" "art" "food." "And"@0AC5 "murffalos" "liver"@222B "boiled" "in" "mercury" FFFF "info"
+TEXT 03AA 09 40 80 - - "Jeph" "d'Ulikan" "big" "artist,"@3A32 "big" "thoughts."@3A3A "You" "read"@166A "thoughts"@3A44 "of" "Jeph."@3A4D FFFF "info"
+TEXT 03AA 05 40 80 - - "Portrait" "Great" "Yolk." "Great" "painting."@3A53 "Famous"@3A5D FFFF "painting"
 YIELD_B
 LABEL selector_259B
-SELECTOR_NODE "peace"@16BD selector_260B
-MENU "bye_bye"@0752 "politics"@3265 "friendship"@3A64 "izwal"@32E9
-TEXT 03AA 01 40 80 - - "Peace"@3A6F "good"@031C "idea."@3A75 "Me"@000C "like"@0134 FFFF "Friendship"@3A7B
-TEXT 03AA 0A 40 80 - - "Friendship"@3A7B "among"@1FE6 "peoples,"@3A86 "races."@3610 "Me"@000C "like,"@350E "friend..."@270D FFFF "friendship"@3A64
-TEXT 03AA 05 40 80 - - "Izwal"@3344 "weak."@3A8F "Like"@3A95 "peace."@3A9A "they"@157A "not"@0097 "violent"@2A44 FFFF "izwal"@32E9
-TEXT 03AA 0A 40 80 - - "Peace"@3A6F "make"@0029 "mind"@2AC0 "connections."@3AA2 "Progress"@3AAF FFFF "peace"@16BD
+SELECTOR_NODE "peace" selector_260B
+MENU "bye_bye" "politics" "friendship"@3A64 "izwal"
+TEXT 03AA 01 40 80 - - "Peace"@3A6F "good" "idea."@3A75 "Me" "like" FFFF "Friendship"@3A7B
+TEXT 03AA 0A 40 80 - - "Friendship" "among"@1FE6 "peoples,"@3A86 "races." "Me" "like," "friend..." FFFF "friendship"
+TEXT 03AA 05 40 80 - - "Izwal" "weak."@3A8F "Like"@3A95 "peace."@3A9A "they" "not" "violent" FFFF "izwal"
+TEXT 03AA 0A 40 80 - - "Peace" "make" "mind" "connections."@3AA2 "Progress"@3AAF FFFF "peace"
 YIELD_B
 LABEL selector_260B
-SELECTOR_NODE "war"@1BF1 selector_265D
-MENU "bye_bye"@0752 "politics"@3265 "croolis"@2705
-TEXT 03AA 06 40 80 - - "Croolis"@1625 "like"@0134 "fight,"@3AB8 "like"@0134 "kill"@35C6 FFFF "croolis"@2705
-TEXT 03AA 06 40 80 - - "War"@353E "stupid."@3ABF "Destroy,"@3AC7 "hate,"@3AD0 "die,"@3AD6 "die"@3ADB FFFF "war"@1BF1
-TEXT 03AA 0E 40 80 - - "Why"@0370 "hate?"@3ADF "Lot"@3983 "hate."@3AE5 "Why?"@3AEB FFFF "war"@1BF1
+SELECTOR_NODE "war" selector_265D
+MENU "bye_bye" "politics" "croolis"
+TEXT 03AA 06 40 80 - - "Croolis" "like" "fight,"@3AB8 "like" "kill" FFFF "croolis"
+TEXT 03AA 06 40 80 - - "War" "stupid."@3ABF "Destroy,"@3AC7 "hate,"@3AD0 "die,"@3AD6 "die"@3ADB FFFF "war"
+TEXT 03AA 0E 40 80 - - "Why"@0370 "hate?"@3ADF "Lot" "hate."@3AE5 "Why?"@3AEB FFFF "war"
 YIELD_B
 LABEL selector_265D
-SELECTOR_NODE "politics"@3265 selector_26EB
-MENU "bye_bye"@0752 "race"@2700 "democracy"@3AF0 "television"@39D4 "joke"@0AB0 "peace"@16BD "war"@1BF1
-TEXT 03AA 0B 40 80 - - "Democracy"@37C2 "important."@3AFA "Cyborg"@3B05 "planet"@04DC "big"@0989 "democracy"@3AF0 FFFF "democracy"@3AF0
-TEXT 03AA 0C 40 80 - - "Politics"@3B0C "bad"@062A "vibe."@3B15 "Me"@000C "prefer"@3B1B "ondoyants"@0A29 FFFF "race"@2700
-TEXT 03AA 01 40 80 - - "Television"@39F0 "big"@0989 "political"@3B22 "power."@33E9 "Fascination."@3B2C "Lie"@3B39 FFFF "television"@39D4
-TEXT 03AA 10 40 80 - - "Polly"@3B3D "ticks..."@3B43 "laugh"@0AAA "laugh"@0AAA "laugh"@0AAA FFFF "joke"@0AB0
-TEXT 03AA 0C 40 80 - - "Politics"@3B0C "big"@0989 "business,"@3B4C "money,"@3B56 "power,"@3B5D "bad"@062A "vibe..."@3B64 FFFF "politics"@3265
+SELECTOR_NODE "politics" selector_26EB
+MENU "bye_bye" "race" "democracy"@3AF0 "television" "joke" "peace" "war"
+TEXT 03AA 0B 40 80 - - "Democracy" "important."@3AFA "Cyborg"@3B05 "planet" "big" "democracy" FFFF "democracy"
+TEXT 03AA 0C 40 80 - - "Politics"@3B0C "bad" "vibe."@3B15 "Me" "prefer"@3B1B "ondoyants" FFFF "race"
+TEXT 03AA 01 40 80 - - "Television" "big" "political"@3B22 "power." "Fascination."@3B2C "Lie"@3B39 FFFF "television"
+TEXT 03AA 10 40 80 - - "Polly"@3B3D "ticks..."@3B43 "laugh" "laugh" "laugh" FFFF "joke"
+TEXT 03AA 0C 40 80 - - "Politics" "big" "business,"@3B4C "money,"@3B56 "power,"@3B5D "bad" "vibe..."@3B64 FFFF "politics"
 YIELD_B
 LABEL selector_26EB
-SELECTOR_NODE "reproduction"@2D1E selector_2743
-MENU "bye_bye"@0752 "race"@2700 "hom"@3B6C "ondoyant"@093A "info"@34E2 "joke"@0AB0
-TEXT 03AA 0D 40 80 - - "Not"@0318 "know"@0A85 "reproduction."@3B70 "Hom"@0EB4 "not"@0097 "reproduce."@385E "Hom"@0EB4 "eternal"@3B7E FFFF "hom"@3B6C
-TEXT 03AA 09 40 80 - - "ondoyants"@0A29 "like"@0134 "reproduction"@2D1E FFFF "ondoyant"@093A
-TEXT 03AA 0A 40 80 - - "Reproduction"@3B86 "Hom"@0EB4 "forbidden."@3B93 "Big"@104D "copyright..."@3B9E FFFF "joke"@0AB0
+SELECTOR_NODE "reproduction" selector_2743
+MENU "bye_bye" "race" "hom"@3B6C "ondoyant" "info" "joke"
+TEXT 03AA 0D 40 80 - - "Not" "know" "reproduction."@3B70 "Hom" "not" "reproduce." "Hom" "eternal"@3B7E FFFF "hom"
+TEXT 03AA 09 40 80 - - "ondoyants" "like" "reproduction" FFFF "ondoyant"
+TEXT 03AA 0A 40 80 - - "Reproduction"@3B86 "Hom" "forbidden."@3B93 "Big" "copyright..."@3B9E FFFF "joke"
 YIELD_B
 LABEL selector_2743
-SELECTOR_NODE "science"@325D selector_2859
-MENU "bye_bye"@0752 "talk"@0001 "race"@2700 "planet"@04DC "universe"@1083 "info"@34E2 "origin"@3BAB "mind"@2AC0
-TEXT 03AA 01 40 80 - - "Hom"@0EB4 "detect,"@3BB2 "sense,"@3BBA "understand"@0249 "universe."@3BC1 FFFF "universe"@1083
-TEXT 03AA 02 40 80 - - "Universe"@3BCB "filled"@191C "with"@0123 "small"@0101 "creatures..."@3BD4 FFFF "universe"@1083
-TEXT 03AA 07 40 80 - - "Hom"@0EB4 "big"@0989 "mind"@2AC0 "power."@33E9 "Me"@000C "know"@0A85 "you,"@3224 "stranger."@0B77 FFFF "info"@34E2
-TEXT 03AA 05 40 80 - - "Izwal"@3344 "like"@0134 "dream"@2CF2 "science,"@3464 "astronomy."@3BE1 FFFF "race"@2700
-TEXT 03AA 02 40 80 - - "You"@00E9 "want"@07E2 "know"@0A85 "origin"@3BAB "universe."@3BC1 FFFF "origin"@3BAB
-TEXT 03AA 0B 40 80 - - "Origin"@3BEC "universe"@1083 "big"@0989 "major"@3BF3 "mystery."@3BF9 FFFF "origin"@3BAB "universe"@1083
-TEXT 03AA 0C 40 80 - - "Me"@000C "know"@0A85 "origin"@3BAB "universe?"@3C02 "Me"@000C "promised"@3C0C "not"@0097 "tell."@3C15 FFFF "origin"@3BAB
-TEXT 03AA 0B 40 80 - - "Univers"@3C1B "have"@009B "billions"@0A06 "planets"@2762 FFFF "universe"@1083 "planet"@04DC
-TEXT 03AA 02 40 80 - - "Mind"@0650 "more"@020D "big"@0989 "than"@0D7C "universe"@1083 FFFF "mind"@2AC0
-TEXT 03AA 01 40 80 - - "Big"@104D "power,"@3B5D "major"@3BF3 "wisdom,"@3C23 "beauty..."@3C2B FFFF "mind"@2AC0
-TEXT 03AA 07 40 80 - - "Me"@000C "like"@0134 "crunch"@3C35 "numbers."@3C3C FFFF "science"@325D
+SELECTOR_NODE "science" selector_2859
+MENU "bye_bye" "talk" "race" "planet" "universe" "info" "origin"@3BAB "mind"
+TEXT 03AA 01 40 80 - - "Hom" "detect,"@3BB2 "sense,"@3BBA "understand" "universe."@3BC1 FFFF "universe"
+TEXT 03AA 02 40 80 - - "Universe"@3BCB "filled"@191C "with" "small" "creatures..."@3BD4 FFFF "universe"
+TEXT 03AA 07 40 80 - - "Hom" "big" "mind" "power." "Me" "know" "you," "stranger."@0B77 FFFF "info"
+TEXT 03AA 05 40 80 - - "Izwal" "like" "dream" "science," "astronomy."@3BE1 FFFF "race"
+TEXT 03AA 02 40 80 - - "You" "want" "know" "origin" "universe." FFFF "origin"
+TEXT 03AA 0B 40 80 - - "Origin"@3BEC "universe" "big" "major"@3BF3 "mystery."@3BF9 FFFF "origin" "universe"
+TEXT 03AA 0C 40 80 - - "Me" "know" "origin" "universe?"@3C02 "Me" "promised"@3C0C "not" "tell."@3C15 FFFF "origin"
+TEXT 03AA 0B 40 80 - - "Univers"@3C1B "have" "billions"@0A06 "planets" FFFF "universe" "planet"
+TEXT 03AA 02 40 80 - - "Mind"@0650 "more" "big" "than" "universe" FFFF "mind"
+TEXT 03AA 01 40 80 - - "Big" "power," "major" "wisdom,"@3C23 "beauty..."@3C2B FFFF "mind"
+TEXT 03AA 07 40 80 - - "Me" "like" "crunch"@3C35 "numbers."@3C3C FFFF "science"
 YIELD_B
 LABEL selector_2859
 SELECTOR_NODE "consuption"@3C45 selector_28CB
-MENU "bye_bye"@0752 "talk"@0001 "sinox"@3304 "food"@333F
-TEXT 03AA 05 40 80 - - "Sinox"@3745 "build"@3477 "hi"@3211 "tech"@3C50 "products"@3166 FFFF "sinox"@3304
-TEXT 03AA 06 40 80 - - "Food"@3C55 "big"@0989 "problem."@3C5A "Murffalos"@3827 "big"@0989 "solution"@3C63 FFFF "food"@333F
-TEXT 03AA 0A 41 80 - - "Me"@000C "not"@0097 "big"@0989 "consumer."@3C6C "Me"@000C "eat"@0093 "mind"@2AC0 "food,"@3C76 "friend..."@270D FFFF "food"@333F
-TEXT 03AA 02 40 80 - - "You"@00E9 "want"@07E2 "talk"@0001 "consumption,"@3C7C "friend"@0321 FFFF "consuption"@3C45
+MENU "bye_bye" "talk" "sinox" "food"
+TEXT 03AA 05 40 80 - - "Sinox" "build" "hi" "tech"@3C50 "products" FFFF "sinox"
+TEXT 03AA 06 40 80 - - "Food"@3C55 "big" "problem."@3C5A "Murffalos" "big" "solution"@3C63 FFFF "food"
+TEXT 03AA 0A 41 80 - - "Me" "not" "big" "consumer."@3C6C "Me" "eat" "mind" "food,"@3C76 "friend..." FFFF "food"
+TEXT 03AA 02 40 80 - - "You" "want" "talk" "consumption,"@3C7C "friend" FFFF "consuption"
 YIELD_B
 LABEL selector_28CB
-SELECTOR_NODE "joke"@0AB0 0000
-MENU "bye_bye"@0752 "talk"@0001 "race"@2700 "planet"@04DC "info"@34E2 "laugh"@0AAA
-TEXT 03AA 0C 40 80 - - "Hom"@0EB4 "not"@0097 "like"@0134 "joke..."@3C89 "laugh,"@3C91 "laugh,"@3C91 "cry,"@3C98 "laugh,"@3C91 "laugh,"@3C91 "laugh"@0AAA FFFF "laugh"@0AAA
-TEXT 03AA 0B 40 80 - - "Izwal"@3344 "build"@3477 "telescope,"@3C9D "laugh,"@3C91 "laugh"@0AAA FFFF "izwal"@32E9 "joke"@0AB0
-TEXT 03AA 10 40 80 - - "Me"@000C "eat"@0093 "Izwal"@3344 "telescope."@3CA8 "Telesteak,"@3CB3 "laugh,"@3C91 "laugh,"@3C91 "cry,"@3C98 "laugh,"@3C91 "laugh"@0AAA FFFF "joke"@0AB0
-TEXT 03AA 0B 00 80 - - "You"@00E9 "want"@07E2 "me"@0146 "sing?"@3CBE
-TEXT 03AA 02 03 80 - - "You"@00E9 "talk"@0001 "all"@0A39 "time,"@37F8 "friend..."@270D
+SELECTOR_NODE "joke" 0000
+MENU "bye_bye" "talk" "race" "planet" "info" "laugh"
+TEXT 03AA 0C 40 80 - - "Hom" "not" "like" "joke..."@3C89 "laugh,"@3C91 "laugh," "cry,"@3C98 "laugh," "laugh," "laugh" FFFF "laugh"
+TEXT 03AA 0B 40 80 - - "Izwal" "build" "telescope,"@3C9D "laugh," "laugh" FFFF "izwal" "joke"
+TEXT 03AA 10 40 80 - - "Me" "eat" "Izwal" "telescope."@3CA8 "Telesteak,"@3CB3 "laugh," "laugh," "cry," "laugh," "laugh" FFFF "joke"
+TEXT 03AA 0B 00 80 - - "You" "want" "me" "sing?"@3CBE
+TEXT 03AA 02 03 80 - - "You" "talk" "all" "time," "friend..."
 END

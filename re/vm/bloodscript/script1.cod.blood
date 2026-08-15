@@ -12,11 +12,11 @@ PROCEDURE proc_menbr_0000
     TEXT 0872 FF 00 80 - - "\"IMPROVED"@000C "MENU\""@0016
     TEXT 0872 FF 00 80 - - "Today"@001C "CHEF"@0022 "BRONKO"@0027 "has"@002E "laid"@0032 "on"@0037 "for"@003A "you"@003E ":"@0042
     TEXT 0872 FF 00 80 - - "Tasty"@0044 "MURFFALO"@004A "soup"@0053 "Bronko-style"@0058 "."@0065
-    TEXT 0872 FF 00 80 - - "MURFFALO"@004A "kidneys"@0067 "Bronko-style"@0058 "."@0065
-    TEXT 0872 FF 00 80 - - "MURFFALO"@004A "hamburger"@006F "with"@0079 "Bar-B-Q"@007E "recycled-oil"@0086 "dip"@0093 "."@0065
-    TEXT 0872 FF 00 80 - - "Smooth"@0097 "MURFFALO-chip"@009E "ice"@00AC "cream"@00B0 "."@0065
+    TEXT 0872 FF 00 80 - - "MURFFALO" "kidneys"@0067 "Bronko-style" "."
+    TEXT 0872 FF 00 80 - - "MURFFALO" "hamburger"@006F "with"@0079 "Bar-B-Q"@007E "recycled-oil"@0086 "dip"@0093 "."
+    TEXT 0872 FF 00 80 - - "Smooth"@0097 "MURFFALO-chip"@009E "ice"@00AC "cream"@00B0 "."
     TEXT 0872 FF 00 80 - - "Recycled"@00B6 "water"@00BF
-    TEXT 0872 FF 00 80 - - "Chef"@00C5 "Bronko"@00CA "says"@00D1 "..."@00D6 "Burping's"@00DA "bad"@00E4 "manners"@00E8 "!"@00F0 "..."@00D6
+    TEXT 0872 FF 00 80 - - "Chef"@00C5 "Bronko"@00CA "says"@00D1 "..."@00D6 "Burping's"@00DA "bad"@00E4 "manners"@00E8 "!"@00F0 "..."
     TEXT 0872 FF 08 80 - - "stop"@00F2
     RECORD_CLEAR 08AC
 END_PROCEDURE proc_menbr_0000
@@ -28,13 +28,13 @@ PROCEDURE proc_men1_00B3
     RECORD_WILDCARD AF 0332 FFFF 1
     GUARD_POP
     TEXT 0872 FF 00 80 - - "\"MENU\""@00F7
-    TEXT 0872 FF 00 80 - - "Today's"@00FE "fare"@0106 ":"@0042
-    TEXT 0872 FF 00 80 - - "PLASMA"@010B "soup"@0053 "HONK-style"@0112 "."@0065
-    TEXT 0872 FF 00 80 - - "WRIGGLER"@011D "belly"@0126 "in"@012C "slobber"@012F "sauce"@0137 "."@0065
-    TEXT 0872 FF 00 80 - - "Jellied"@013D "URTIKAN"@0145 "with"@0079 "MURFFALO"@004A "bone"@014D "marrow"@0152 "."@0065
-    TEXT 0872 FF 00 80 - - "GLOK"@0159 "eye"@015E "pie"@0162 "."@0065
-    TEXT 0872 FF 00 80 - - "Recycled"@00B6 "water"@00BF
-    TEXT 0872 FF 00 80 - - "The"@0166 "chef"@016A "says"@00D1 "..."@00D6 "Don't"@016F "eat"@0175 "with"@0079 "your"@0179 "mouth"@017E "full"@0184 "!"@00F0 "..."@00D6
+    TEXT 0872 FF 00 80 - - "Today's"@00FE "fare"@0106 ":"
+    TEXT 0872 FF 00 80 - - "PLASMA"@010B "soup" "HONK-style"@0112 "."
+    TEXT 0872 FF 00 80 - - "WRIGGLER"@011D "belly"@0126 "in"@012C "slobber"@012F "sauce"@0137 "."
+    TEXT 0872 FF 00 80 - - "Jellied"@013D "URTIKAN"@0145 "with" "MURFFALO" "bone"@014D "marrow"@0152 "."
+    TEXT 0872 FF 00 80 - - "GLOK"@0159 "eye"@015E "pie"@0162 "."
+    TEXT 0872 FF 00 80 - - "Recycled" "water"
+    TEXT 0872 FF 00 80 - - "The"@0166 "chef"@016A "says" "..." "Don't"@016F "eat"@0175 "with" "your"@0179 "mouth"@017E "full"@0184 "!" "..."
     TEXT 0872 FF 08 90 - - "Stop"@0189
     POKE_BYTE 00B4 00
     RECORD_CLEAR 08AC
@@ -46,15 +46,15 @@ PROCEDURE proc_men2_0163
     ACTOR 08AC 0028 0
     RECORD_WILDCARD AF 0332 FFFF 1
     GUARD_POP
-    TEXT 0872 FF 00 80 - - "\"MENU\""@00F7
-    TEXT 0872 FF 00 80 - - "Today's"@00FE "fare"@0106 ":"@0042
-    TEXT 0872 FF 00 80 - - "PLASMA"@010B "soup"@0053 "HONK-style"@0112 "."@0065
-    TEXT 0872 FF 00 80 - - "WRIGGLER"@011D "snout"@018E "stew"@0194 "."@0065
-    TEXT 0872 FF 00 80 - - "URTIKAN"@0145 "seeds"@0199 "in"@012C "MURFFALO"@004A "venom"@019F "."@0065
-    TEXT 0872 FF 00 80 - - "GLOK"@0159 "juice"@01A5 "dessert"@01AB "."@0065
-    TEXT 0872 FF 00 80 - - "Recycled"@00B6 "water"@00BF
-    TEXT 0872 FF 00 80 - - "The"@0166 "chef"@016A "says"@00D1 "..."@00D6 "Don't"@016F "talk"@0001 "with"@0079 "your"@0179 "mouth"@017E "open"@01B3 "!"@00F0 "..."@00D6
-    TEXT 0872 FF 08 90 - - "stop"@00F2
+    TEXT 0872 FF 00 80 - - "\"MENU\""
+    TEXT 0872 FF 00 80 - - "Today's" "fare" ":"
+    TEXT 0872 FF 00 80 - - "PLASMA" "soup" "HONK-style" "."
+    TEXT 0872 FF 00 80 - - "WRIGGLER" "snout"@018E "stew"@0194 "."
+    TEXT 0872 FF 00 80 - - "URTIKAN" "seeds"@0199 "in" "MURFFALO" "venom"@019F "."
+    TEXT 0872 FF 00 80 - - "GLOK" "juice"@01A5 "dessert"@01AB "."
+    TEXT 0872 FF 00 80 - - "Recycled" "water"
+    TEXT 0872 FF 00 80 - - "The" "chef" "says" "..." "Don't" "talk"@0001 "with" "your" "mouth" "open"@01B3 "!" "..."
+    TEXT 0872 FF 08 90 - - "stop"
     POKE_BYTE 0164 00
     RECORD_CLEAR 08AC
 END_PROCEDURE proc_men2_0163
@@ -65,15 +65,15 @@ PROCEDURE proc_men3_020D
     RECORD_WILDCARD AF 0332 FFFF 1
     ACTOR 08AC 0028 0
     GUARD_POP
-    TEXT 0872 FF 00 80 - - "\"MENU\""@00F7
-    TEXT 0872 FF 00 80 - - "Today's"@00FE "fare"@0106 ":"@0042
-    TEXT 0872 FF 00 80 - - "PLASMA"@010B "soup"@0053 "HONK-style"@0112 "."@0065
-    TEXT 0872 FF 00 80 - - "WRIGGLER"@011D "feet"@01B8 "in"@012C "emulsive"@01BD "sauce"@0137 "."@0065
-    TEXT 0872 FF 00 80 - - "URTIKAN"@0145 "leaves"@01C6 "in"@012C "MURFFALO"@004A "sweat"@01CD "."@0065
-    TEXT 0872 FF 00 80 - - "GLOK"@0159 "flake"@01D3 "dessert"@01AB "."@0065
-    TEXT 0872 FF 00 80 - - "Recycled"@00B6 "water"@00BF
-    TEXT 0872 FF 00 80 - - "The"@0166 "chef"@016A "says"@00D1 "..."@00D6 "Somebody"@01D9 "didn't"@01E2 "finish"@01E9 "his"@01F0 "wrigglers"@01F4 "yesterday"@01FE "..."@00D6
-    TEXT 0872 FF 08 90 - - "stop"@00F2
+    TEXT 0872 FF 00 80 - - "\"MENU\""
+    TEXT 0872 FF 00 80 - - "Today's" "fare" ":"
+    TEXT 0872 FF 00 80 - - "PLASMA" "soup" "HONK-style" "."
+    TEXT 0872 FF 00 80 - - "WRIGGLER" "feet"@01B8 "in" "emulsive"@01BD "sauce" "."
+    TEXT 0872 FF 00 80 - - "URTIKAN" "leaves"@01C6 "in" "MURFFALO" "sweat"@01CD "."
+    TEXT 0872 FF 00 80 - - "GLOK" "flake"@01D3 "dessert" "."
+    TEXT 0872 FF 00 80 - - "Recycled" "water"
+    TEXT 0872 FF 00 80 - - "The" "chef" "says" "..." "Somebody"@01D9 "didn't"@01E2 "finish"@01E9 "his"@01F0 "wrigglers"@01F4 "yesterday"@01FE "..."
+    TEXT 0872 FF 08 90 - - "stop"
     POKE_BYTE 020E 00
     RECORD_CLEAR 08AC
 END_PROCEDURE proc_men3_020D
@@ -84,15 +84,15 @@ PROCEDURE proc_men4_02B9
     ACTOR 08AC 0028 0
     RECORD_WILDCARD AF 0332 FFFF 1
     GUARD_POP
-    TEXT 0872 FF 00 80 - - "\"MENU\""@00F7
-    TEXT 0872 FF 00 80 - - "Today's"@00FE "fare"@0106 ":"@0042
-    TEXT 0872 FF 00 80 - - "HONK-style"@0112 "PLASMA"@010B "soup"@0053 "."@0065
-    TEXT 0872 FF 00 80 - - "WRIGGLER"@011D "brain"@0208 ","@020E "stewed"@0210 "in"@012C "its"@0217 "own"@021B "juice"@01A5 "."@0065
-    TEXT 0872 FF 00 80 - - "URTIKAN"@0145 "trunk"@021F ","@020E "stuffed"@0225 "with"@0079 "MURFFALO"@004A "liver"@022D "."@0065
-    TEXT 0872 FF 00 80 - - "GLOK"@0159 "dee-lite"@0233 "."@0065
-    TEXT 0872 FF 00 80 - - "Recycled"@00B6 "water"@00BF
-    TEXT 0872 FF 00 80 - - "The"@0166 "chef"@016A "says"@00D1 "..."@00D6 "Plenty"@023C "more"@0243 "in"@012C "the"@0248 "kitchen"@024C "!"@00F0 "..."@00D6
-    TEXT 0872 FF 08 90 - - "stop"@00F2
+    TEXT 0872 FF 00 80 - - "\"MENU\""
+    TEXT 0872 FF 00 80 - - "Today's" "fare" ":"
+    TEXT 0872 FF 00 80 - - "HONK-style" "PLASMA" "soup" "."
+    TEXT 0872 FF 00 80 - - "WRIGGLER" "brain"@0208 ","@020E "stewed"@0210 "in" "its"@0217 "own"@021B "juice" "."
+    TEXT 0872 FF 00 80 - - "URTIKAN" "trunk"@021F "," "stuffed"@0225 "with" "MURFFALO" "liver"@022D "."
+    TEXT 0872 FF 00 80 - - "GLOK" "dee-lite"@0233 "."
+    TEXT 0872 FF 00 80 - - "Recycled" "water"
+    TEXT 0872 FF 00 80 - - "The" "chef" "says" "..." "Plenty"@023C "more"@0243 "in" "the"@0248 "kitchen"@024C "!" "..."
+    TEXT 0872 FF 08 90 - - "stop"
     POKE_BYTE 02BA 00
     RECORD_CLEAR 08AC
 END_PROCEDURE proc_men4_02B9
@@ -103,15 +103,15 @@ PROCEDURE proc_men5_036D
     ACTOR 08AC 0028 0
     RECORD_WILDCARD AF 0332 FFFF 1
     GUARD_POP
-    TEXT 0872 FF 00 80 - - "\"IMPROVED"@000C "MENU\""@0016
-    TEXT 0872 FF 00 80 - - "Today's"@00FE "fare"@0106 ":"@0042
-    TEXT 0872 FF 00 80 - - "Soup"@0254 "of"@0259 "PLASMA"@010B "HONK-style"@0112 "."@0065
-    TEXT 0872 FF 00 80 - - "WRIGGLER"@011D "hearts"@025C "in"@012C "green"@0263 "blood"@0269 "coagulate"@026F "."@0065
-    TEXT 0872 FF 00 80 - - "URTIKAN"@0145 "roots"@0279 ","@020E "deep"@027F "fried"@0284 "in"@012C "recycled"@028A "oil"@0293 "."@0065
-    TEXT 0872 FF 00 80 - - "Candied"@0297 "GLOK"@0159 "tongue"@029F "."@0065
-    TEXT 0872 FF 00 80 - - "Recycled"@00B6 "water"@00BF
-    TEXT 0872 FF 00 80 - - "The"@0166 "chef"@016A "says"@00D1 "..."@00D6 "You"@02A6 "eat"@0175 "what"@02AA "you"@003E "are"@02AF "!"@00F0 "..."@00D6
-    TEXT 0872 FF 08 A0 - - "stop"@00F2
+    TEXT 0872 FF 00 80 - - "\"IMPROVED" "MENU\""
+    TEXT 0872 FF 00 80 - - "Today's" "fare" ":"
+    TEXT 0872 FF 00 80 - - "Soup"@0254 "of"@0259 "PLASMA" "HONK-style" "."
+    TEXT 0872 FF 00 80 - - "WRIGGLER" "hearts"@025C "in" "green"@0263 "blood"@0269 "coagulate"@026F "."
+    TEXT 0872 FF 00 80 - - "URTIKAN" "roots"@0279 "," "deep"@027F "fried"@0284 "in" "recycled"@028A "oil"@0293 "."
+    TEXT 0872 FF 00 80 - - "Candied"@0297 "GLOK" "tongue"@029F "."
+    TEXT 0872 FF 00 80 - - "Recycled" "water"
+    TEXT 0872 FF 00 80 - - "The" "chef" "says" "..." "You"@02A6 "eat" "what"@02AA "you" "are"@02AF "!" "..."
+    TEXT 0872 FF 08 A0 - - "stop"
     POKE_BYTE 036E 00
     POKE_BYTE 042A 01
     RECORD_CLEAR 08AC
@@ -148,11 +148,11 @@ PROCEDURE proc_ho1_0463
     BRANCH_PRESENTATION
     ACTOR 0594 0028 0
     GUARD_POP
-    TEXT 055A FF 08 80 - - "You"@02A6 "found"@02B3 "the"@0248 "right"@02B9 "button"@02BF "."@0065 "So"@02C6 "far"@02C9 "so"@02CD "good"@02D0 "..."@00D6
+    TEXT 055A FF 08 80 - - "You" "found"@02B3 "the" "right"@02B9 "button"@02BF "." "So"@02C6 "far"@02C9 "so"@02CD "good"@02D0 "..."
     RECORD_WILDCARD BC 05A0 02D5 0
-    TEXT 055A FF 10 80 block_04CE - "Click"@02DA "quick,"@02E0 "Cap'n"@02E7 "Bob"@02ED "is"@02F1 "waiting"@02F4 "..."@00D6 FFFF "explanations"@02FC "game"@0309
+    TEXT 055A FF 10 80 block_04CE - "Click"@02DA "quick,"@02E0 "Cap'n"@02E7 "Bob"@02ED "is"@02F1 "waiting"@02F4 "..." FFFF "explanations"@02FC "game"@0309
     GUARD_PUSH block_04C6
-    CONCEPT_GUARD "game"@0309 0
+    CONCEPT_GUARD "game" 0
     GUARD_POP
     TEXT 055A FF 08 A0 - - "GAME"@030E
     RUN_PROFILE 02
@@ -160,21 +160,21 @@ PROCEDURE proc_ho1_0463
     RECORD_CLEAR 0594
     LABEL block_04C6
     GUARD_PUSH block_04CE
-    CONCEPT_GUARD "explanations"@02FC 0
+    CONCEPT_GUARD "explanations" 0
     GUARD_POP
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_04CE
-    TEXT 055A FF 00 80 - - "You"@02A6 "can"@0313 "modify"@0317 "the"@0248 "text"@031E "speed"@0323 "by"@0329 "clicking"@032C "on"@0037 "\"OPTION\""@0335
-    TEXT 055A FF 00 80 - - "You"@02A6 "can"@0313 "wake"@033E "Cap'n"@02E7 "Bob"@02ED "by"@0329 "clicking"@032C "on"@0037 "\"CRYOBOX\""@0343
-    TEXT 055A FF 00 80 - - "Or"@034D "load"@0350 "a"@0355 "\"Saved"@0357 "Game\""@035E "by"@0329 "clicking"@032C "on"@0037 "\"OPTION\""@0335
-    TEXT 055A FF 00 80 - - "The"@0166 "OPTION"@0364 "\"LAST\""@036B "is"@02F1 "the"@0248 "\"AUTOMATIC"@0372 "PERMANENT"@037D "SAVE\"."@0387 "If"@038E "you"@003E "forget"@0391 "to"@0398 "save,"@039B "click"@03A2 "on"@0037 "\"LAST\"..."@03A8
-    TEXT 055A FF 00 80 - - "We"@03B2 "would"@03B5 "like"@03BB "to"@0398 "draw"@03C0 "your"@0179 "ATTENTION"@03C5 "to"@0398 "certain"@03CF "RISKS"@03D7 "..."@00D6
-    TEXT 055A FF 00 80 - - "If"@038E "you"@003E "experience"@03DD "UNUSUAL"@03E8 "SENSATIONS"@03F0 ","@020E "DIZZINESS"@03FB "or"@0405 "FACIAL"@0408 "DISTORTION"@040F "..."@00D6
-    TEXT 055A FF 00 80 - - "Stay"@041A "CALM"@041F "..."@00D6
-    TEXT 055A FF 00 80 - - "It"@0424 "may"@0427 "only"@042B "be"@0430 "a"@0355 "CRISIS,"@0433 "a"@0355 "SPELL"@043B ","@020E "a"@0355 "CURSE"@0441 "or"@0405 ","@020E "at"@0447 "worst"@044A ","@020E "a"@0355 "SCRAMBLED"@0450 "BRAIN"@045A "..."@00D6
-    TEXT 055A FF 00 80 - - "In"@0460 "which"@0463 "case"@0469 ","@020E "write"@046E "to"@0398 ":"@0042 "SUPER"@0474 "ZEN"@047A ","@020E "end"@047E "of"@0259 "corridor"@0482 ","@020E "CRAZYSTONE"@048B "planet"@0496 ","@020E "BABY1"@049D "UNIVERSE"@04A3 "..."@00D6
-    TEXT 055A FF 00 80 - - "Click"@02DA "quick"@04AC "on"@0037 "\"HONK\""@04B2 "."@0065 "He"@04B9 "has"@002E "important"@04BC "information"@04C6 "for"@003A "YOU"@04D2 "..."@00D6
-    TEXT 055A FF 08 80 - - "..."@00D6
+    TEXT 055A FF 00 80 - - "You" "can"@0313 "modify"@0317 "the" "text"@031E "speed"@0323 "by"@0329 "clicking"@032C "on" "\"OPTION\""@0335
+    TEXT 055A FF 00 80 - - "You" "can" "wake"@033E "Cap'n" "Bob" "by" "clicking" "on" "\"CRYOBOX\""@0343
+    TEXT 055A FF 00 80 - - "Or"@034D "load"@0350 "a"@0355 "\"Saved"@0357 "Game\""@035E "by" "clicking" "on" "\"OPTION\""
+    TEXT 055A FF 00 80 - - "The" "OPTION"@0364 "\"LAST\""@036B "is" "the" "\"AUTOMATIC"@0372 "PERMANENT"@037D "SAVE\"."@0387 "If"@038E "you" "forget"@0391 "to"@0398 "save,"@039B "click"@03A2 "on" "\"LAST\"..."@03A8
+    TEXT 055A FF 00 80 - - "We"@03B2 "would"@03B5 "like"@03BB "to" "draw"@03C0 "your" "ATTENTION"@03C5 "to" "certain"@03CF "RISKS"@03D7 "..."
+    TEXT 055A FF 00 80 - - "If" "you" "experience"@03DD "UNUSUAL"@03E8 "SENSATIONS"@03F0 "," "DIZZINESS"@03FB "or"@0405 "FACIAL"@0408 "DISTORTION"@040F "..."
+    TEXT 055A FF 00 80 - - "Stay"@041A "CALM"@041F "..."
+    TEXT 055A FF 00 80 - - "It"@0424 "may"@0427 "only"@042B "be"@0430 "a" "CRISIS,"@0433 "a" "SPELL"@043B "," "a" "CURSE"@0441 "or" "," "at"@0447 "worst"@044A "," "a" "SCRAMBLED"@0450 "BRAIN"@045A "..."
+    TEXT 055A FF 00 80 - - "In"@0460 "which"@0463 "case"@0469 "," "write"@046E "to" ":" "SUPER"@0474 "ZEN"@047A "," "end"@047E "of" "corridor"@0482 "," "CRAZYSTONE"@048B "planet"@0496 "," "BABY1"@049D "UNIVERSE"@04A3 "..."
+    TEXT 055A FF 00 80 - - "Click" "quick"@04AC "on" "\"HONK\""@04B2 "." "He"@04B9 "has" "important"@04BC "information"@04C6 "for" "YOU"@04D2 "..."
+    TEXT 055A FF 08 80 - - "..."
     RECORD_CLEAR 0594
 END_PROCEDURE proc_ho1_0463
 
@@ -183,17 +183,17 @@ PROCEDURE proc_hon_061D
     BRANCH_PRESENTATION
     ACTOR 0864 0028 0
     GUARD_POP
-    TEXT 082A FF 20 80 - - "Welcome"@04D6 "aboard"@04DE "the"@0248 "ARK"@04E5 ","@020E "Commander"@04E9 "."@0065 "I'm"@04F3 "HONK"@04F7 ","@020E "your"@0179 "trusted"@04FC "computer"@0504 "..."@00D6
-    TEXT 082A FF 20 80 - - "I'm"@04F3 "here"@050D "to"@0398 "help"@0512 "you"@003E "a"@0355 "lot"@0517 "..."@00D6
-    TEXT 082A FF 20 80 - - "If"@038E "the"@0248 "phone"@051B "rings"@0521 ","@020E "just"@0527 "hit"@052C "the"@0248 "\"RED"@0530 "BUTTON\""@0535 "in"@012C "front"@053D "of"@0259 "you"@003E "..."@00D6
-    TEXT 082A FF 20 80 - - "Cap'n"@02E7 "Bob,"@0543 "our"@0548 "revered"@054C "leader"@0554 ","@020E "is"@02F1 "cryonized"@055B "in"@012C "the"@0248 "CRYOBOX"@0565 "..."@00D6
-    TEXT 082A FF 20 80 - - "Of"@056D "course"@0570 "you"@003E "can"@0313 "wake"@033E "Cap'n"@02E7 "Bob"@02ED "and"@0577 "question"@057B "him"@0584 "..."@00D6 "But"@0588 "like"@03BB "not"@058C "too"@0590 "often"@0594 ","@020E "okay"@059A "?"@059F "..."@00D6
-    TEXT 082A FF 20 80 - - "Cap'n"@02E7 "Bob"@02ED "knows"@05A2 "everything"@05A8 "..."@00D6 "That's"@05B3 "why"@05BA "he's"@05BE "the"@0248 "boss"@05C3 "..."@00D6
-    TEXT 082A FF 20 80 - - "Our"@05C8 "ship"@05CC "is"@02F1 "currently"@05D1 "surrounded"@05DB "by"@0329 "things"@05E6 "called"@05ED "stars"@05F4 "..."@00D6
-    TEXT 082A FF 20 80 - - "Remember"@05FA ","@020E "deep"@027F "space"@0603 "is"@02F1 "no"@0609 "place"@060C "for"@003A "night"@0612 "clubs"@0618 "!"@00F0 "..."@00D6
-    TEXT 082A FF 20 80 - - "If"@038E "you"@003E "have"@061E "questions,"@0623 "I"@062E "have"@061E "all"@0630 "the"@0248 "answers"@0634 "..."@00D6
-    TEXT 082A FF 20 80 - - "Click"@02DA "quick"@04AC "on"@0037 "\"CRYOBOX\""@0343 "Cap'n"@02E7 "Bob"@02ED "is"@02F1 "waiting"@02F4 "..."@00D6
-    TEXT 082A FF 28 80 - - "End"@063C "of"@0259 "report"@0640 "..."@00D6
+    TEXT 082A FF 20 80 - - "Welcome"@04D6 "aboard"@04DE "the" "ARK"@04E5 "," "Commander"@04E9 "." "I'm"@04F3 "HONK"@04F7 "," "your" "trusted"@04FC "computer"@0504 "..."
+    TEXT 082A FF 20 80 - - "I'm" "here"@050D "to" "help"@0512 "you" "a" "lot"@0517 "..."
+    TEXT 082A FF 20 80 - - "If" "the" "phone"@051B "rings"@0521 "," "just"@0527 "hit"@052C "the" "\"RED"@0530 "BUTTON\""@0535 "in" "front"@053D "of" "you" "..."
+    TEXT 082A FF 20 80 - - "Cap'n" "Bob,"@0543 "our"@0548 "revered"@054C "leader"@0554 "," "is" "cryonized"@055B "in" "the" "CRYOBOX"@0565 "..."
+    TEXT 082A FF 20 80 - - "Of"@056D "course"@0570 "you" "can" "wake" "Cap'n" "Bob" "and"@0577 "question"@057B "him"@0584 "..." "But"@0588 "like" "not"@058C "too"@0590 "often"@0594 "," "okay"@059A "?"@059F "..."
+    TEXT 082A FF 20 80 - - "Cap'n" "Bob" "knows"@05A2 "everything"@05A8 "..." "That's"@05B3 "why"@05BA "he's"@05BE "the" "boss"@05C3 "..."
+    TEXT 082A FF 20 80 - - "Our"@05C8 "ship"@05CC "is" "currently"@05D1 "surrounded"@05DB "by" "things"@05E6 "called"@05ED "stars"@05F4 "..."
+    TEXT 082A FF 20 80 - - "Remember"@05FA "," "deep" "space"@0603 "is" "no"@0609 "place"@060C "for" "night"@0612 "clubs"@0618 "!" "..."
+    TEXT 082A FF 20 80 - - "If" "you" "have"@061E "questions,"@0623 "I"@062E "have" "all"@0630 "the" "answers"@0634 "..."
+    TEXT 082A FF 20 80 - - "Click" "quick" "on" "\"CRYOBOX\"" "Cap'n" "Bob" "is" "waiting" "..."
+    TEXT 082A FF 28 80 - - "End"@063C "of" "report"@0640 "..."
     RECORD_CLEAR 0864
 END_PROCEDURE proc_hon_061D
 
@@ -202,25 +202,25 @@ PROCEDURE proc_BOB1_077D
     BRANCH_FLAG_274F
     ACTOR 0084 0028 0
     GUARD_POP
-    TEXT 004A 03 00 80 - - "Good"@0647 "day"@064C "COMMANDER"@0650 "."@0065 "My"@065A "name"@065D "is"@02F1 "BOB"@0662 ","@020E "BOB"@0662 "MORLOCK"@0666 "..."@00D6
-    TEXT 004A 01 00 80 - - "If"@038E "the"@0248 "phone"@051B "rings"@0521 ","@020E "press"@066E "the"@0248 "\"RED"@0530 "BUTTON\""@0535 "on"@0037 "the"@0248 "radio"@0674 "to"@0398 "answer"@067A "..."@00D6
-    TEXT 004A 02 00 80 - - "My"@065A "ears"@0681 "are"@02AF "fragile,"@0686 "Commander"@04E9 "..."@00D6
-    TEXT 004A 02 10 80 block_083D - "Do"@068F "you"@003E "want"@0692 "me"@0697 "to"@0398 "explain"@069A "your"@0179 "mission"@06A2 "to"@0398 "you"@003E ","@020E "Commander"@04E9 "?"@059F FFFF "yes"@06AA "no"@0609
+    TEXT 004A 03 00 80 - - "Good"@0647 "day"@064C "COMMANDER"@0650 "." "My"@065A "name"@065D "is" "BOB"@0662 "," "BOB" "MORLOCK"@0666 "..."
+    TEXT 004A 01 00 80 - - "If" "the" "phone" "rings" "," "press"@066E "the" "\"RED" "BUTTON\"" "on" "the" "radio"@0674 "to" "answer"@067A "..."
+    TEXT 004A 02 00 80 - - "My" "ears"@0681 "are" "fragile,"@0686 "Commander" "..."
+    TEXT 004A 02 10 80 block_083D - "Do"@068F "you" "want"@0692 "me"@0697 "to" "explain"@069A "your" "mission"@06A2 "to" "you" "," "Commander" "?" FFFF "yes"@06AA "no"
     GUARD_PUSH block_0834
-    CONCEPT_GUARD "no"@0609 0
+    CONCEPT_GUARD "no" 0
     GUARD_POP
-    TEXT 004A 06 08 80 - - "I'm"@04F3 "going"@06AE "to"@0398 "explain"@069A "it"@06B4 "all"@0630 "the"@0248 "same"@06B7 "..."@00D6 "It's"@06BC "important"@04BC "..."@00D6
+    TEXT 004A 06 08 80 - - "I'm" "going"@06AE "to" "explain" "it"@06B4 "all" "the" "same"@06B7 "..." "It's"@06BC "important" "..."
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_0834
     GUARD_PUSH block_083D
-    CONCEPT_GUARD "no"@0609 1
+    CONCEPT_GUARD "no" 1
     GUARD_POP
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_083D
-    TEXT 004A 01 00 80 - - "I'm"@04F3 "more"@0243 "than"@06C1 "800,000"@06C6 "years"@06CE "old"@06D4 "..."@00D6 "I"@062E "feel"@06D8 "ancient"@06DD ","@020E "Commander"@04E9 "..."@00D6
-    TEXT 004A 02 00 80 - - "Too"@06E5 "ancient"@06DD "to"@0398 "go"@06E9 "looking"@06EC "for"@003A "adventure"@06F4 "."@0065 "That's"@05B3 "where"@06FE "you"@003E "come"@0704 "in"@012C ":"@0042 "I"@062E "DON'T"@0709 "WANT"@070F "TO"@0714 "DIE"@0717 "STUPID"@071B "."@0065 "I"@062E "WANT"@070F "TO"@0714 "SEE"@0722 "THE"@0726 "BIG"@072A "BANG"@072E "..."@00D6
-    TEXT 004A 01 00 80 - - "This"@0733 "ship"@05CC ","@020E "specially"@0738 "built"@0742 "for"@003A "you"@003E ","@020E "is"@02F1 "called"@05ED "the"@0248 "ARK"@04E5 "."@0065 "It's"@06BC "a"@0355 "true"@0748 "marvel"@074D "of"@0259 "technology"@0754 "."@0065
-    TEXT 004A 03 08 A0 - - "Just"@075F "hit"@052C "the"@0248 "\"SPACE\""@0764 "bar"@076C "if"@0770 "you've"@0773 "had"@077A "enough"@077E "..."@00D6
+    TEXT 004A 01 00 80 - - "I'm" "more" "than"@06C1 "800,000"@06C6 "years"@06CE "old"@06D4 "..." "I" "feel"@06D8 "ancient"@06DD "," "Commander" "..."
+    TEXT 004A 02 00 80 - - "Too"@06E5 "ancient" "to" "go"@06E9 "looking"@06EC "for" "adventure"@06F4 "." "That's" "where"@06FE "you" "come"@0704 "in" ":" "I" "DON'T"@0709 "WANT"@070F "TO"@0714 "DIE"@0717 "STUPID"@071B "." "I" "WANT" "TO" "SEE"@0722 "THE"@0726 "BIG"@072A "BANG"@072E "..."
+    TEXT 004A 01 00 80 - - "This"@0733 "ship" "," "specially"@0738 "built"@0742 "for" "you" "," "is" "called" "the" "ARK" "." "It's" "a" "true"@0748 "marvel"@074D "of" "technology"@0754 "."
+    TEXT 004A 03 08 A0 - - "Just"@075F "hit" "the" "\"SPACE\""@0764 "bar"@076C "if"@0770 "you've"@0773 "had"@077A "enough"@077E "..."
     LOAD_STRING "aarche10.hnm"
     TEXT 004A FF 08 80 - -
     LOAD_STRING "aarche20.hnm"
@@ -228,26 +228,26 @@ PROCEDURE proc_BOB1_077D
     LOAD_STRING "aarche30.hnm"
     TEXT 004A FF 08 80 - -
     LOAD_STRING "aarche40.hnm"
-    TEXT 004A 05 00 80 - - "I"@062E "want"@0692 "to"@0398 "understand"@0785 "the"@0248 "world"@0790 "and"@0577 "WHERE"@0796 "I"@062E "COME"@079C "FROM"@07A2 "..."@00D6 "WHY"@07A7 "I"@062E "EXIST"@07AB "..."@00D6
-    TEXT 004A 02 00 80 - - "You"@02A6 "and"@0577 "me"@0697 "are"@02AF "going"@06AE "to"@0398 "travel"@07B1 "through"@07B8 "SPACE"@07C0 "and"@0577 "TIME,"@07C6 "through"@07B8 "BLACK"@07CC "HOLES"@07D2 "..."@00D6
-    TEXT 004A 01 00 80 - - "And"@07D8 "quite"@07DC "a"@0355 "few"@07E2 "BLACK"@07CC "HOLES"@07D2 "later"@07E6 ","@020E "we'll"@07EC "get"@07F2 "to"@0398 "the"@0248 "BIG"@072A "BANG"@072E "..."@00D6
-    TEXT 004A 02 00 80 - - "The"@0166 "tough"@07F6 "part"@07FC "will"@0801 "be"@0430 "finding"@0806 "those"@080E "BLACK"@07CC "HOLES"@07D2 ","@020E "Commander"@04E9 "..."@00D6
-    TEXT 004A 01 00 80 - - "That's"@05B3 "because"@0814 "BLACK"@07CC "HOLES"@07D2 "are"@02AF "UNDETECTABLE"@081C "in"@012C "the"@0248 "universe"@0829 "."@0065 "We'll"@0832 "need"@0838 "to"@0398 "make"@083D "contact"@0842 "with"@0079 "ALIEN"@084A "BEINGS"@0850 "..."@00D6
-    TEXT 004A 04 00 80 - - "You"@02A6 "can"@0313 "expect"@0857 "to"@0398 "see"@085E "bloodchilling"@0862 "WARS"@0870 "and"@0577 "astonishing"@0875 "PHENOMENA..."@0881
-    TEXT 004A 04 00 80 - - "My"@065A "age"@088E "dictates"@0892 "I"@062E "sleep"@089B "through"@07B8 "most"@08A2 "of"@0259 "it"@06B4 "in"@012C "the"@0248 "CRYOBOX"@0565 "."@0065 "WAKE"@08A7 "ME"@08AC "ONLY"@08AF "IN"@08B4 "AN"@08B7 "EMERGENCY"@08BA "."@0065 "My"@065A "time"@08C4 "is"@02F1 "very"@08C9 "precious"@08CE "..."@00D6
-    TEXT 004A 02 00 80 - - "I"@062E "have"@061E "provided"@08D7 "you"@003E "with"@0079 "an"@08E0 "ONBOARD"@08E3 "COMPUTER"@08EB "called"@05ED "HONK"@04F7 "..."@00D6
-    TEXT 004A 02 00 80 - - "YOU"@04D2 "THERE"@08F4 ","@020E "HONK"@04F7 "?"@059F
-    TEXT 004A FF 20 80 - - "HONK:"@08FA "Yes"@0900 "sir,"@0904 "Cap'n"@02E7 "Bob"@02ED "."@0065 "Present"@0909 ","@020E "willing"@0911 "and"@0577 "able"@0919 "..."@00D6
-    TEXT 004A 05 00 80 - - "Why,"@091E "you"@003E "hunk"@0923 "'o"@0928 "junk"@092B "..."@00D6 "YOU"@04D2 "WERE"@0930 "ASLEEP"@0935 "!!!"@093C
-    TEXT 004A FF 20 80 - - "HONK:"@08FA "No"@0940 ","@020E "Cap'n"@02E7 "Bob"@02ED "."@0065 "I"@062E "was"@0943 "calculating"@0947 "our"@0548 "trajectory"@0953 "to"@0398 "the"@0248 "black"@095E "hole"@0964 "!"@00F0 "I"@062E "swear"@0969 "it"@06B4 "on"@0037 "my"@096F "old"@06D4 "mother's"@0972 "head"@097B "!"@00F0
-    TEXT 004A 02 00 80 - - "Your"@0980 "mother"@0985 "!!"@098C "I've"@098F "a"@0355 "good"@02D0 "mind"@0994 "to"@0398 "short-circuit"@0999 "every"@09A7 "wire"@09AD "in"@012C "your"@0179 "lazy"@09B2 "carcass"@09B7 "!"@00F0 "Keep"@09BF "an"@08E0 "eye"@015E "on"@0037 "him"@0584 ","@020E "Commander"@04E9 "..."@00D6
-    TEXT 004A 05 00 80 - - "GET"@09C4 "TO"@0714 "WORK"@09C8 ","@020E "HONK"@04F7 "!!!"@093C
-    TEXT 004A FF 20 80 - - "HONK:"@08FA "Sure"@09CD "thing,"@09D2 "Cap'n"@02E7 "Bob"@02ED "..."@00D6 "I'm"@04F3 "crunching"@09D9 "numbers"@09E3 "as"@09EB "I"@062E "speak"@09EE "..."@00D6
-    TEXT 004A 09 00 80 - - "I"@062E "can't"@09F4 "see"@085E "a"@0355 "thing"@09FA "..."@00D6 "Feel"@0A00 "so"@02CD "weak"@0A05 "..."@00D6
-    TEXT 004A 02 00 80 - - "IF"@0A0A "YOU"@04D2 "NEED"@0A0D "ME"@08AC ","@020E "WAKE"@08A7 "ME"@08AC "UP"@0A12 "..."@00D6
-    TEXT 004A 04 00 80 - - "See"@0A15 "you"@003E "later"@07E6 ","@020E "Commander"@04E9 "."@0065 "Or"@034D "do"@0A19 "I"@062E "mean"@0A1C "earlier"@0A21 "?"@059F "I'm"@04F3 "cryonizing"@0A29 "..."@00D6 "Aaaahhhh"@0A34 "!"@00F0
-    TEXT 004A FF 20 80 - - "The"@0166 "old"@06D4 "turkey's"@0A3D "out"@0A46 "for"@003A "the"@0248 "count"@0A4A "..."@00D6
-    TEXT 004A FF 08 90 - - "stop"@00F2
+    TEXT 004A 05 00 80 - - "I" "want" "to" "understand"@0785 "the" "world"@0790 "and" "WHERE"@0796 "I" "COME"@079C "FROM"@07A2 "..." "WHY"@07A7 "I" "EXIST"@07AB "..."
+    TEXT 004A 02 00 80 - - "You" "and" "me" "are" "going" "to" "travel"@07B1 "through"@07B8 "SPACE"@07C0 "and" "TIME,"@07C6 "through" "BLACK"@07CC "HOLES"@07D2 "..."
+    TEXT 004A 01 00 80 - - "And"@07D8 "quite"@07DC "a" "few"@07E2 "BLACK" "HOLES" "later"@07E6 "," "we'll"@07EC "get"@07F2 "to" "the" "BIG" "BANG" "..."
+    TEXT 004A 02 00 80 - - "The" "tough"@07F6 "part"@07FC "will"@0801 "be" "finding"@0806 "those"@080E "BLACK" "HOLES" "," "Commander" "..."
+    TEXT 004A 01 00 80 - - "That's" "because"@0814 "BLACK" "HOLES" "are" "UNDETECTABLE"@081C "in" "the" "universe"@0829 "." "We'll"@0832 "need"@0838 "to" "make"@083D "contact"@0842 "with" "ALIEN"@084A "BEINGS"@0850 "..."
+    TEXT 004A 04 00 80 - - "You" "can" "expect"@0857 "to" "see"@085E "bloodchilling"@0862 "WARS"@0870 "and" "astonishing"@0875 "PHENOMENA..."@0881
+    TEXT 004A 04 00 80 - - "My" "age"@088E "dictates"@0892 "I" "sleep"@089B "through" "most"@08A2 "of" "it" "in" "the" "CRYOBOX" "." "WAKE"@08A7 "ME"@08AC "ONLY"@08AF "IN"@08B4 "AN"@08B7 "EMERGENCY"@08BA "." "My" "time"@08C4 "is" "very"@08C9 "precious"@08CE "..."
+    TEXT 004A 02 00 80 - - "I" "have" "provided"@08D7 "you" "with" "an"@08E0 "ONBOARD"@08E3 "COMPUTER"@08EB "called" "HONK" "..."
+    TEXT 004A 02 00 80 - - "YOU" "THERE"@08F4 "," "HONK" "?"
+    TEXT 004A FF 20 80 - - "HONK:"@08FA "Yes"@0900 "sir,"@0904 "Cap'n" "Bob" "." "Present"@0909 "," "willing"@0911 "and" "able"@0919 "..."
+    TEXT 004A 05 00 80 - - "Why,"@091E "you" "hunk"@0923 "'o"@0928 "junk"@092B "..." "YOU" "WERE"@0930 "ASLEEP"@0935 "!!!"@093C
+    TEXT 004A FF 20 80 - - "HONK:" "No"@0940 "," "Cap'n" "Bob" "." "I" "was"@0943 "calculating"@0947 "our" "trajectory"@0953 "to" "the" "black"@095E "hole"@0964 "!" "I" "swear"@0969 "it" "on" "my"@096F "old" "mother's"@0972 "head"@097B "!"
+    TEXT 004A 02 00 80 - - "Your"@0980 "mother"@0985 "!!"@098C "I've"@098F "a" "good" "mind"@0994 "to" "short-circuit"@0999 "every"@09A7 "wire"@09AD "in" "your" "lazy"@09B2 "carcass"@09B7 "!" "Keep"@09BF "an" "eye" "on" "him" "," "Commander" "..."
+    TEXT 004A 05 00 80 - - "GET"@09C4 "TO" "WORK"@09C8 "," "HONK" "!!!"
+    TEXT 004A FF 20 80 - - "HONK:" "Sure"@09CD "thing,"@09D2 "Cap'n" "Bob" "..." "I'm" "crunching"@09D9 "numbers"@09E3 "as"@09EB "I" "speak"@09EE "..."
+    TEXT 004A 09 00 80 - - "I" "can't"@09F4 "see" "a" "thing"@09FA "..." "Feel"@0A00 "so" "weak"@0A05 "..."
+    TEXT 004A 02 00 80 - - "IF"@0A0A "YOU" "NEED"@0A0D "ME" "," "WAKE" "ME" "UP"@0A12 "..."
+    TEXT 004A 04 00 80 - - "See"@0A15 "you" "later" "," "Commander" "." "Or" "do"@0A19 "I" "mean"@0A1C "earlier"@0A21 "?" "I'm" "cryonizing"@0A29 "..." "Aaaahhhh"@0A34 "!"
+    TEXT 004A FF 20 80 - - "The" "old" "turkey's"@0A3D "out"@0A46 "for" "the" "count"@0A4A "..."
+    TEXT 004A FF 08 90 - - "stop"
     RUN_PROFILE 02
     RECORD_CLEAR 0084
 END_PROCEDURE proc_BOB1_077D

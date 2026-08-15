@@ -56,7 +56,7 @@ PROCEDURE proc_Beau_00F6
     ACTOR 0504 0028 0
     GUARD_POP
     TEXT 04CA 01 00 80 - - "Let"@000C "me"@0010 "sleep"@0013 "..."@0019 "Commander..."@001D
-    TEXT 04CA 00 08 80 - - "..."@0019
+    TEXT 04CA 00 08 80 - - "..."
     RECORD_CLEAR 0504
 END_PROCEDURE proc_Beau_00F6
 
@@ -65,8 +65,8 @@ PROCEDURE proc_cla_0120
     BRANCH_FLAG_274F
     ACTOR 042C 0028 0
     GUARD_POP
-    TEXT 03F2 01 00 80 - - "Let"@000C "me"@0010 "sleep"@0013 "..."@0019 "Commander..."@001D
-    TEXT 03F2 FF 08 80 - - "..."@0019
+    TEXT 03F2 01 00 80 - - "Let" "me" "sleep" "..." "Commander..."
+    TEXT 03F2 FF 08 80 - - "..."
     RECORD_CLEAR 042C
 END_PROCEDURE proc_cla_0120
 
@@ -75,8 +75,8 @@ PROCEDURE proc_recept_014A
     BRANCH_FLAG_274F
     ACTOR 01A4 0028 0
     GUARD_POP
-    TEXT 016A FF 00 80 - - "Shhhhhh"@002A "..."@0019 "Shhhhh..."@0032
-    TEXT 016A FF 08 80 - - "..."@0019
+    TEXT 016A FF 00 80 - - "Shhhhhh"@002A "..." "Shhhhh..."@0032
+    TEXT 016A FF 08 80 - - "..."
     RECORD_CLEAR 01A4
 END_PROCEDURE proc_recept_014A
 
@@ -85,8 +85,8 @@ PROCEDURE proc_morn_0170
     BRANCH_FLAG_274F
     ACTOR 030C 0028 0
     GUARD_POP
-    TEXT 02D2 01 00 80 - - "Let"@000C "me"@0010 "sleep"@0013 "..."@0019 "Commander..."@001D
-    TEXT 02D2 FF 08 80 - - "..."@0019
+    TEXT 02D2 01 00 80 - - "Let" "me" "sleep" "..." "Commander..."
+    TEXT 02D2 FF 08 80 - - "..."
     RECORD_CLEAR 030C
 END_PROCEDURE proc_morn_0170
 
@@ -110,23 +110,23 @@ PROCEDURE proc_kult_01B8
     RECORD_WILDCARD AF 103A 0E5A 0
     ACTOR 06FC 0028 0
     GUARD_POP
-    TEXT 06C2 00 08 80 - - "Turn"@003C "around"@0041 "..."@0019 "Move"@0048 "on"@004D "..."@0019 "There"@0050 "are"@0056 "too"@005A "many"@005E "pilgrims"@0063 "..."@0019 "The"@006C "planet's"@0070 "inaccessible"@0079 "..."@0019
+    TEXT 06C2 00 08 80 - - "Turn"@003C "around"@0041 "..." "Move"@0048 "on"@004D "..." "There"@0050 "are"@0056 "too"@005A "many"@005E "pilgrims"@0063 "..." "The"@006C "planet's"@0070 "inaccessible"@0079 "..."
     LOAD_STRING "1kkult20.hnm"
-    TEXT 06C2 01 00 80 - - "The"@006C "planet"@0086 "KULT"@008D "is"@0092 "inaccessible"@0079 "."@0095 "There"@0050 "are"@0056 "too"@005A "many"@005E "pilgrims..."@0097
+    TEXT 06C2 01 00 80 - - "The" "planet"@0086 "KULT"@008D "is"@0092 "inaccessible" "."@0095 "There" "are" "too" "many" "pilgrims..."@0097
     GUARD_PUSH block_02FC
     SHARED_STATE BF 06F8 F1 C1 0003
     GUARD_POP
-    TEXT 06C2 FF 28 80 - - "Commander..."@001D "Commander"@00A3 "..."@0019 "It's"@00AD "the"@00B2 "planet"@0086 "TUMUL"@00B6 "with"@00BC "a"@00C1 "new"@00C3 "name"@00C7 ".."@00CC
+    TEXT 06C2 FF 28 80 - - "Commander..." "Commander"@00A3 "..." "It's"@00AD "the"@00B2 "planet" "TUMUL"@00B6 "with"@00BC "a"@00C1 "new"@00C3 "name"@00C7 ".."@00CC
     LOAD_STRING "1kkult20.hnm"
-    TEXT 06C2 FF 08 80 - - "That's"@00CF "right"@00D6 ","@00DC "Commander..."@001D "When"@00DE "we"@00E3 "saved"@00E6 "BETAKAM"@00EC "IV,"@00F4 "king"@00F8 "of"@00FD "the"@00B2 "Patagos,"@0100 "we"@00E3 "altered"@0109 "history..."@0111
+    TEXT 06C2 FF 08 80 - - "That's"@00CF "right"@00D6 ","@00DC "Commander..." "When"@00DE "we"@00E3 "saved"@00E6 "BETAKAM"@00EC "IV,"@00F4 "king"@00F8 "of"@00FD "the" "Patagos,"@0100 "we" "altered"@0109 "history..."@0111
     LOAD_STRING "hboc.hnm"
-    TEXT 06C2 FF 08 80 - - "Pilgrims"@011C "now"@0125 "flock"@0129 "to"@012F "hear"@0132 "the"@00B2 "VOICE"@0137 "that"@013D "saved"@00E6 "BETAKAM"@00EC "and"@0142 "his"@0146 "people"@014A "from"@0151 "the"@00B2 "catastrophe..."@0156
+    TEXT 06C2 FF 08 80 - - "Pilgrims"@011C "now"@0125 "flock"@0129 "to"@012F "hear"@0132 "the" "VOICE"@0137 "that"@013D "saved" "BETAKAM" "and"@0142 "his"@0146 "people"@014A "from"@0151 "the" "catastrophe..."@0156
     LOAD_STRING "hboc.hnm"
-    TEXT 06C2 FF 20 80 - - "How"@0165 "about"@0169 "that"@013D "..."@0019 "What"@016F "a"@00C1 "story"@0174 "..."@0019
-    TEXT 06C2 00 08 80 - - "Turn"@003C "around"@0041 "..."@0019 "Keep"@017A "moving..."@017F "There"@0050 "are"@0056 "too"@005A "many"@005E "pilgrims..."@0097 "The"@006C "planet"@0086 "is"@0092 "inaccessible..."@0189
+    TEXT 06C2 FF 20 80 - - "How"@0165 "about"@0169 "that" "..." "What"@016F "a" "story"@0174 "..."
+    TEXT 06C2 00 08 80 - - "Turn" "around" "..." "Keep"@017A "moving..."@017F "There" "are" "too" "many" "pilgrims..." "The" "planet" "is" "inaccessible..."@0189
     RECORD_CLEAR 06FC
     LABEL block_02FC
-    TEXT 06C2 FF 08 80 - - "..."@0019
+    TEXT 06C2 FF 08 80 - - "..."
     RECORD_CLEAR 06FC
 END_PROCEDURE proc_kult_01B8
 
@@ -135,31 +135,31 @@ PROCEDURE proc_ondo1_0309
     BRANCH_FLAG_274F
     ACTOR 03E4 0028 0
     GUARD_POP
-    TEXT 03AA 11 00 80 - - "..."@0019
-    TEXT 03AA 12 00 80 - - "..."@0019
-    TEXT 03AA 00 00 80 - - "I"@0199 "am"@019B "yours"@019E "to"@012F "command"@01A4 ","@00DC "Commander"@00A3 "..."@0019
-    TEXT 03AA FF 20 80 - - "Commander"@00A3 "..."@0019 "My"@01AC "knees"@01AF "are"@0056 "weak"@01B5 "..."@0019
-    TEXT 03AA 01 00 80 - - "You"@01BA "want"@01BE "a"@00C1 "little"@01C3 "kiss"@01CA "?"@01CF
-    TEXT 03AA FF 20 80 - - "Holy"@01D1 "hen"@01D6 "gizzards"@01DA ","@00DC "Commander"@00A3 "..."@0019 "I'm"@01E3 "starting"@01E7 "to"@012F "overheat"@01F0 "..."@0019
-    TEXT 03AA 02 00 80 - - "You"@01BA "can"@01F9 "talk"@0001 "to"@012F "me"@0010 "Commander"@00A3 "..."@0019 "Tell"@01FD "me"@0010 "about"@0169 "yourself"@0202 "..."@0019
-    TEXT 03AA FF 20 80 - - "Where"@020B "did"@0211 "she"@0215 "learn"@0219 "to"@012F "swim"@021F "like"@0224 "that"@013D "?"@01CF "..."@0019 "You"@01BA "think"@0229 "she'd"@022F "agree"@0235 "to"@012F "give"@023B "me"@0010 "lessons"@0240 ","@00DC "Commander"@00A3 "?"@01CF
+    TEXT 03AA 11 00 80 - - "..."
+    TEXT 03AA 12 00 80 - - "..."
+    TEXT 03AA 00 00 80 - - "I"@0199 "am"@019B "yours"@019E "to" "command"@01A4 "," "Commander" "..."
+    TEXT 03AA FF 20 80 - - "Commander" "..." "My"@01AC "knees"@01AF "are" "weak"@01B5 "..."
+    TEXT 03AA 01 00 80 - - "You"@01BA "want"@01BE "a" "little"@01C3 "kiss"@01CA "?"@01CF
+    TEXT 03AA FF 20 80 - - "Holy"@01D1 "hen"@01D6 "gizzards"@01DA "," "Commander" "..." "I'm"@01E3 "starting"@01E7 "to" "overheat"@01F0 "..."
+    TEXT 03AA 02 00 80 - - "You" "can"@01F9 "talk"@0001 "to" "me" "Commander" "..." "Tell"@01FD "me" "about" "yourself"@0202 "..."
+    TEXT 03AA FF 20 80 - - "Where"@020B "did"@0211 "she"@0215 "learn"@0219 "to" "swim"@021F "like"@0224 "that" "?" "..." "You" "think"@0229 "she'd"@022F "agree"@0235 "to" "give"@023B "me" "lessons"@0240 "," "Commander" "?"
     GUARD_PUSH block_051E
     SHARED_STATE BF 07D0 F2 C1 0000
     SHARED_STATE C0 136A F5 C1 0001
     GUARD_POP
-    TEXT 03AA 05 00 80 - - "Oh"@0248 "!"@024B "Commander"@00A3 ","@00DC "Honk"@024D "told"@0252 "me"@0010 "you"@0257 "needed"@025B "a"@00C1 "ring"@0262 "..."@0019
-    TEXT 03AA FF 20 80 - - "Commander"@00A3 ","@00DC "I"@0199 "swear"@0267 "I"@0199 "didn't"@026D "say"@0274 "a"@00C1 "thing"@0278 "..."@0019
-    TEXT 03AA 06 00 80 - - "Ha"@027E "!"@024B "Ha"@027E "!"@024B "Who's"@0281 "a"@00C1 "little"@01C3 "fibber"@0287 "?"@01CF "..."@0019 "You"@01BA "ogle"@028E "me"@0010 "as"@0293 "soon"@0296 "as"@0293 "the"@00B2 "Commander's"@029B "back"@02A7 "is"@0092 "turned"@02AC "..."@0019
-    TEXT 03AA FF 20 80 - - "Commander"@00A3 "..."@0019 "She's"@02B3 "making"@02B9 "this"@02C0 "up"@02C5 "..."@0019
-    TEXT 03AA FF 08 80 - - "Really"@02C8 ","@00DC "Mister"@02CF "Honk"@024D "???"@02D6 "I'm"@01E3 "a"@00C1 "little"@01C3 "disappointed"@02DA "in"@02E7 "you"@0257 "..."@0019
+    TEXT 03AA 05 00 80 - - "Oh"@0248 "!"@024B "Commander" "," "Honk"@024D "told"@0252 "me" "you"@0257 "needed"@025B "a" "ring"@0262 "..."
+    TEXT 03AA FF 20 80 - - "Commander" "," "I" "swear"@0267 "I" "didn't"@026D "say"@0274 "a" "thing"@0278 "..."
+    TEXT 03AA 06 00 80 - - "Ha"@027E "!" "Ha" "!" "Who's"@0281 "a" "little" "fibber"@0287 "?" "..." "You" "ogle"@028E "me" "as"@0293 "soon"@0296 "as" "the" "Commander's"@029B "back"@02A7 "is" "turned"@02AC "..."
+    TEXT 03AA FF 20 80 - - "Commander" "..." "She's"@02B3 "making"@02B9 "this"@02C0 "up"@02C5 "..."
+    TEXT 03AA FF 08 80 - - "Really"@02C8 "," "Mister"@02CF "Honk" "???"@02D6 "I'm" "a" "little" "disappointed"@02DA "in"@02E7 "you" "..."
     LOAD_STRING "rgbtr9.hnm"
-    TEXT 03AA FF 20 80 - - "No"@02EA "no"@02ED ","@00DC "Mister"@02CF "Bronko"@02F0 "..."@0019 "Don't"@02F7 "believe"@02FD "a"@00C1 "word"@0305 "she"@0215 "says"@030A "..."@0019
-    TEXT 03AA 04 00 80 - - "Ha"@027E "!"@024B "Ha"@027E "!"@024B "Ha"@027E "!"@024B "Ha..."@030F
-    TEXT 03AA 06 08 80 - - "Commander"@00A3 "..."@0019 "I"@0199 "have"@0315 "a"@00C1 "ring"@0262 "..."@0019 "I"@0199 "want"@01BE "you"@0257 "to"@012F "have"@0315 "it"@031A "..."@0019 "It's"@00AD "yours"@019E "..."@0019
+    TEXT 03AA FF 20 80 - - "No"@02EA "no"@02ED "," "Mister" "Bronko"@02F0 "..." "Don't"@02F7 "believe"@02FD "a" "word"@0305 "she" "says"@030A "..."
+    TEXT 03AA 04 00 80 - - "Ha" "!" "Ha" "!" "Ha" "!" "Ha..."@030F
+    TEXT 03AA 06 08 80 - - "Commander" "..." "I" "have"@0315 "a" "ring" "..." "I" "want" "you" "to" "have" "it"@031A "..." "It's" "yours" "..."
     RECORD_WILDCARD AF 12F0 FFFF 0
-    TEXT 03AA FF 20 80 - - "Commander"@00A3 "..."@0019 "She"@031D "gave"@0321 "us"@0326 "the"@00B2 "ring"@0262 "..."@0019
+    TEXT 03AA FF 20 80 - - "Commander" "..." "She"@031D "gave"@0321 "us"@0326 "the" "ring" "..."
     LABEL block_051E
-    TEXT 03AA 14 08 80 - - "..."@0019
+    TEXT 03AA 14 08 80 - - "..."
     RECORD_CLEAR 03E4
 END_PROCEDURE proc_ondo1_0309
 
@@ -169,24 +169,24 @@ PROCEDURE proc_big1_052B
     RECORD_WILDCARD AF 103A 0FB8 0
     ACTOR 00CC 0028 0
     GUARD_POP
-    TEXT 0092 00 00 80 - - "You"@01BA "here"@0329 ","@00DC "Consumer"@032E "Comrade"@0337 "?"@01CF
-    TEXT 0092 FF 20 80 - - "Commander"@00A3 "!!!"@033F "It's"@00AD "Bug"@0343 "Deluxe"@0347 ","@00DC "the"@00B2 "sales"@034E "assistant"@0354 "from"@0151 "VENUSIA"@035E "..."@0019 "How"@0165 "about"@0169 "that"@013D "..."@0019
-    TEXT 0092 02 00 80 - - "Are"@0366 "you"@0257 "here"@0329 "for"@036A "the"@00B2 "wedding"@036E "?"@01CF "..."@0019
-    TEXT 0092 FF 20 80 - - "Wedding"@0376 "?"@01CF "What"@016F "wedding"@036E "???"@02D6
-    TEXT 0092 03 00 80 - - "You"@01BA "mean"@037E "to"@012F "say"@0274 "you"@0257 "haven't"@0383 "heard"@038B "?"@01CF
-    TEXT 0092 04 00 80 - - "MIGRATOR"@0391 "and"@0142 "TINA"@039A "BURNER"@039F "are"@0056 "getting"@03A6 "married"@03AE "..."@0019
-    TEXT 0092 05 00 80 - - "They're"@03B6 "giving"@03BE "a"@00C1 "big"@03C5 "show"@03C9 "here"@0329 "at"@03CE "the"@00B2 "BIG"@03D1 "BAND"@03D5 "CLUB..."@03DA
-    TEXT 0092 FF 20 80 - - "At"@03E2 "the"@00B2 "what"@03E5 "???"@02D6 "Was"@03EA "that"@013D "BIG"@03D1 "BAND"@03D5 "or"@03EE "BIG"@03D1 "BANG"@03F1 "???"@02D6
-    TEXT 0092 06 00 80 - - "Right"@03F6 "here"@0329 "at"@03CE "the"@00B2 "BIG"@03D1 "BAND"@03D5 "CLUB"@03FC "!"@024B "WITH"@0401 "A"@0406 "\"D\""@0408 "AT"@040C "THE"@040F "END"@0413 "..."@0019
-    TEXT 0092 FF 20 80 - - "This"@0417 "isn't"@041C "right"@00D6 ","@00DC "Commander"@00A3 "..."@0019 "This"@0417 "is"@0092 "the"@00B2 "BIG"@03D1 "BAND"@03D5 ","@00DC "not"@0422 "the"@00B2 "BIG"@03D1 "BANG"@03F1 "..."@0019
-    TEXT 0092 FF 20 80 - - "Cap'n"@0426 "Bob"@042C "isn't"@041C "going"@0430 "to"@012F "like"@0224 "this"@02C0 "..."@0019
-    TEXT 0092 FF 08 80 - - "What's"@0436 "going"@0430 "on"@004D "here"@0329 "???"@02D6 "What"@016F "the"@00B2 "blazes"@043D "are"@0056 "we"@00E3 "doing"@0444 "in"@02E7 "a"@00C1 "NIGHT"@044A "CLUB"@03FC "???"@02D6
+    TEXT 0092 00 00 80 - - "You" "here"@0329 "," "Consumer"@032E "Comrade"@0337 "?"
+    TEXT 0092 FF 20 80 - - "Commander" "!!!"@033F "It's" "Bug"@0343 "Deluxe"@0347 "," "the" "sales"@034E "assistant"@0354 "from" "VENUSIA"@035E "..." "How" "about" "that" "..."
+    TEXT 0092 02 00 80 - - "Are"@0366 "you" "here" "for"@036A "the" "wedding"@036E "?" "..."
+    TEXT 0092 FF 20 80 - - "Wedding"@0376 "?" "What" "wedding" "???"
+    TEXT 0092 03 00 80 - - "You" "mean"@037E "to" "say" "you" "haven't"@0383 "heard"@038B "?"
+    TEXT 0092 04 00 80 - - "MIGRATOR"@0391 "and" "TINA"@039A "BURNER"@039F "are" "getting"@03A6 "married"@03AE "..."
+    TEXT 0092 05 00 80 - - "They're"@03B6 "giving"@03BE "a" "big"@03C5 "show"@03C9 "here" "at"@03CE "the" "BIG"@03D1 "BAND"@03D5 "CLUB..."@03DA
+    TEXT 0092 FF 20 80 - - "At"@03E2 "the" "what"@03E5 "???" "Was"@03EA "that" "BIG" "BAND" "or"@03EE "BIG" "BANG"@03F1 "???"
+    TEXT 0092 06 00 80 - - "Right"@03F6 "here" "at" "the" "BIG" "BAND" "CLUB"@03FC "!" "WITH"@0401 "A"@0406 "\"D\""@0408 "AT"@040C "THE"@040F "END"@0413 "..."
+    TEXT 0092 FF 20 80 - - "This"@0417 "isn't"@041C "right" "," "Commander" "..." "This" "is" "the" "BIG" "BAND" "," "not"@0422 "the" "BIG" "BANG" "..."
+    TEXT 0092 FF 20 80 - - "Cap'n"@0426 "Bob"@042C "isn't" "going"@0430 "to" "like" "this" "..."
+    TEXT 0092 FF 08 80 - - "What's"@0436 "going" "on" "here" "???" "What" "the" "blazes"@043D "are" "we" "doing"@0444 "in" "a" "NIGHT"@044A "CLUB" "???"
     LOAD_STRING "boba2.hnm"
-    TEXT 0092 FF 20 80 - - "There's"@0450 "been"@0458 "a"@00C1 "mix"@045D "up"@02C5 ","@00DC "Cap'n"@0426 "Bob"@042C "sir"@0461 "..."@0019
-    TEXT 0092 FF 08 90 - - "ALL"@0465 "OF"@0469 "YOU"@046C ","@00DC "INTO"@0470 "THE"@040F "CRYOBOX"@0475 "RIGHT"@047D "AWAY"@0483 "..."@0019
+    TEXT 0092 FF 20 80 - - "There's"@0450 "been"@0458 "a" "mix"@045D "up" "," "Cap'n" "Bob" "sir"@0461 "..."
+    TEXT 0092 FF 08 90 - - "ALL"@0465 "OF"@0469 "YOU"@046C "," "INTO"@0470 "THE" "CRYOBOX"@0475 "RIGHT"@047D "AWAY"@0483 "..."
     LOAD_STRING "bobb.hnm"
     SHARED_STATE C0 136C F5 C1 0001
-    TEXT 0092 FF 08 B0 - - "NOW"@0488 "..."@0019
+    TEXT 0092 FF 08 B0 - - "NOW"@0488 "..."
     LOAD_STRING "bobb.hnm"
     RECORD_WILDCARD AF 00AA 0F2C 0
     RECORD_WILDCARD AF 07B2 0FB8 0
@@ -199,44 +199,44 @@ PROCEDURE proc_boba0_0719
     ACTOR 0084 0028 0
     SHARED_STATE C0 136C F5 C1 0001
     GUARD_POP
-    TEXT 004A 01 00 80 - - "What's"@0436 "the"@00B2 "story"@0174 "???"@02D6 "What's"@0436 "this"@02C0 "BIG"@03D1 "BANG"@03F1 "business"@048C "???..."@0495
-    TEXT 004A 02 00 80 - - "Did"@049C "we"@00E3 "get"@04A0 "to"@012F "the"@00B2 "BIG"@03D1 "BANG"@03F1 ","@00DC "yes"@04A4 "or"@03EE "no"@02ED "???"@02D6 "I'm"@01E3 "listening"@04A8 ","@00DC "Commander"@00A3 "..."@0019
-    TEXT 004A FF 20 80 - - "Uh"@04B2 ","@00DC "there's"@04B5 "been"@0458 "a"@00C1 "mix"@045D "up"@02C5 ","@00DC "sir"@0461 "..."@0019
-    TEXT 004A FF 20 80 - - "I"@0199 "think"@0229 "OLGA"@04BD "the"@00B2 "onboard"@04C2 "interpreter"@04CA "mixed"@04D6 "up"@02C5 "BIG"@03D1 "BANG"@03F1 "and"@0142 "BIG"@03D1 "BAND"@03D5 "..."@0019
-    TEXT 004A 02 00 80 - - "WHAT"@04DC "DO"@04E1 "YOU"@046C "MEAN"@04E4 "SHE"@04E9 "MIXED"@04ED "UP"@04F3 "BIG"@03D1 "BANG"@03F1 "AND"@04F6 "BIG"@03D1 "BAND"@03D5 "..."@0019 "TELL"@04FA "ME"@0500 "THIS"@0503 "IS"@0508 "JUST"@050B "A"@0406 "BAD"@0510 "DREAM"@0514 "!!!"@033F
-    TEXT 004A FF 20 80 - - "Afraid"@051A "not"@0422 ","@00DC "sir"@0461 "..."@0019 "She"@031D "mixed"@04D6 "up"@02C5 "BANG"@03F1 "and"@0142 "BAND..."@0521
-    TEXT 004A FF 20 80 - - "It's"@00AD "the"@00B2 "only"@0529 "explanation"@052E "..."@0019
-    TEXT 004A FF 20 80 - - "BIO-TRANSLATOR"@053A "OLGA"@04BD "REPORTING"@0549 ":"@0553
-    TEXT 004A FF 20 80 - - "MISTER"@0555 "HONK"@055C "IS"@0508 "A"@0406 "DIRTY"@0561 "LIAR"@0567 "!!!"@033F "I"@0199 "didn't"@026D "mix"@045D "anything"@056C "up"@02C5 "..."@0019
-    TEXT 004A 06 00 80 - - "OLGA"@04BD "..."@0019 "CHILL"@0575 "OUT"@057B "..."@0019 "We"@057F "can"@01F9 "clear"@0582 "the"@00B2 "question"@0588 "up"@02C5 "real"@0591 "easy"@0596 "..."@0019 "We'll"@059B "just"@05A2 "run"@05A7 "a"@00C1 "test"@05AB "..."@0019
-    TEXT 004A 03 00 80 - - "OLGA"@04BD ","@00DC "say"@0274 "\"BIG"@05B0 "BANG\""@05B5 "out"@05BB "loud"@05BF "three"@05C4 "times"@05CA "..."@0019
-    TEXT 004A FF 20 80 - - "OLGA"@04BD "REPORTING"@0549 ":"@0553
-    TEXT 004A FF 20 80 - - "BIG"@03D1 "BANG"@03F1 "..."@0019 "BIG"@03D1 "BANG"@03F1 "..."@0019 "BIG"@03D1 "BANG"@03F1 "..."@0019
-    TEXT 004A 02 00 80 - - "Okay"@05D0 "..."@0019 "Now"@05D5 "say"@0274 "\"BIG"@05B0 "BAND\""@05D9 "with"@00BC "a"@00C1 "\"D\""@0408 "..."@0019
-    TEXT 004A FF 20 80 - - "OLGA"@04BD "REPORTING"@0549 ":"@0553
-    TEXT 004A FF 20 80 - - "BIG"@03D1 "BANG"@03F1 "..."@0019 "BIG"@03D1 "BANG"@03F1 "..."@0019 "BIG"@03D1 "BANG"@03F1 "..."@0019
-    TEXT 004A FF 20 80 - - "Satisfied"@05DF "?"@01CF
-    TEXT 004A 03 00 80 - - "Olga"@05E9 "..."@0019 "I"@0199 "said"@05EE "BIG"@03D1 "BAND"@03D5 ","@00DC "not"@0422 "BIG"@03D1 "BANG"@03F1 "..."@0019 "You"@01BA "mixed"@04D6 "them"@05F3 "up"@02C5 "..."@0019 "GOSH"@05F8 "DARN"@05FD "IT"@0602 "!!!"@033F
-    TEXT 004A FF 20 80 - - "What"@016F "did"@0211 "I"@0199 "tell"@0605 "you"@0257 "?"@01CF "Don't"@02F7 "say"@0274 "I"@0199 "didn't"@026D "..."@0019 "She"@031D "fouled"@060A "up"@02C5 "..."@0019
-    TEXT 004A FF 20 80 - - "She"@031D "can't"@0611 "tell"@0605 "\"D\""@0408 "from"@0151 "\"G\""@0617 "..."@0019
-    TEXT 004A 05 00 80 - - "Honk"@024D "!"@024B "Misbegotten"@061B "junkheap"@0627 "..."@0019 "It's"@00AD "all"@0630 "your"@0634 "fault"@0639 "!!!"@033F "Check"@063F "her"@0645 "multiplexers"@0649 "..."@0019
-    TEXT 004A FF 20 80 - - "Right"@03F6 "away"@0656 ","@00DC "Cap'n"@0426 "Bob"@042C "sir"@0461 "..."@0019 "I'm"@01E3 "on"@004D "it"@031A "..."@0019
-    TEXT 004A 02 00 80 - - "Ah"@065B "!!!"@033F "Commander"@00A3 "..."@0019 "Remind"@065E "me"@0010 "to"@012F "tell"@0605 "you"@0257 "how"@0665 "much"@0669 "I"@0199 "hate"@066E "machines"@0673 "..."@0019
-    TEXT 004A FF 20 80 - - "Got"@067C "it"@031A "!"@024B "Cap'n"@0426 "Bob..."@0680 "I"@0199 "found"@0687 "the"@00B2 "glitch"@068D "..."@0019 "It's"@00AD "a"@00C1 "MOSQUITO"@0694 "stuck"@069D "to"@012F "the"@00B2 "letter"@06A3 "\"D\""@0408 "in"@02E7 "the"@00B2 "multiplexer"@06AA "..."@0019
-    TEXT 004A FF 20 80 - - "I"@0199 "hate"@066E "mosquitos"@06B6 "..."@0019
-    TEXT 004A FF 20 80 - - "MESSAGE"@06C0 "FROM"@06C8 "OLGA"@04BD ":"@0553
-    TEXT 004A FF 20 80 - - "IF"@06CD "THIS"@0503 "PLACE"@06D0 "WAS"@06D6 "CLEANED"@06DA "UP"@04F3 "MORE"@06E2 "OFTEN"@06E7 "THIS"@0503 "KIND"@06ED "OF"@0469 "THING"@06F2 "WOULDN'T"@06F8 "HAPPEN"@0701 "..."@0019
-    TEXT 004A 07 00 80 - - "She's"@02B3 "right"@00D6 "..."@0019 "This"@0417 "Ark"@0708 "is"@0092 "a"@00C1 "pigsty"@070C "!!!"@033F "This"@0417 "mess"@0713 "makes"@0718 "me"@0010 "sick"@071E "!!!"@033F
-    TEXT 004A FF 20 80 - - "Dont'"@0723 "look"@0729 "at"@03CE "me"@0010 "!"@024B "Mister"@02CF "BEAUREGARD's"@072E "on"@004D "cleaning"@073B "duty"@0744 "this"@02C0 "week"@0749 "!!!"@033F
-    TEXT 004A FF 08 80 - - "What"@016F "!!!"@033F "Don't"@02F7 "drag"@074E "me"@0010 "into"@0753 "this"@02C0 "!"@024B "That"@0758 "does"@075D "it"@031A "!"@024B "I've"@0762 "had"@0767 "it"@031A "with"@00BC "this"@02C0 "stupid"@076B "ship"@0772 "..."@0019
+    TEXT 004A 01 00 80 - - "What's" "the" "story" "???" "What's" "this" "BIG" "BANG" "business"@048C "???..."@0495
+    TEXT 004A 02 00 80 - - "Did"@049C "we" "get"@04A0 "to" "the" "BIG" "BANG" "," "yes"@04A4 "or" "no" "???" "I'm" "listening"@04A8 "," "Commander" "..."
+    TEXT 004A FF 20 80 - - "Uh"@04B2 "," "there's"@04B5 "been" "a" "mix" "up" "," "sir" "..."
+    TEXT 004A FF 20 80 - - "I" "think" "OLGA"@04BD "the" "onboard"@04C2 "interpreter"@04CA "mixed"@04D6 "up" "BIG" "BANG" "and" "BIG" "BAND" "..."
+    TEXT 004A 02 00 80 - - "WHAT"@04DC "DO"@04E1 "YOU" "MEAN"@04E4 "SHE"@04E9 "MIXED"@04ED "UP"@04F3 "BIG" "BANG" "AND"@04F6 "BIG" "BAND" "..." "TELL"@04FA "ME"@0500 "THIS"@0503 "IS"@0508 "JUST"@050B "A" "BAD"@0510 "DREAM"@0514 "!!!"
+    TEXT 004A FF 20 80 - - "Afraid"@051A "not" "," "sir" "..." "She" "mixed" "up" "BANG" "and" "BAND..."@0521
+    TEXT 004A FF 20 80 - - "It's" "the" "only"@0529 "explanation"@052E "..."
+    TEXT 004A FF 20 80 - - "BIO-TRANSLATOR"@053A "OLGA" "REPORTING"@0549 ":"@0553
+    TEXT 004A FF 20 80 - - "MISTER"@0555 "HONK"@055C "IS" "A" "DIRTY"@0561 "LIAR"@0567 "!!!" "I" "didn't" "mix" "anything"@056C "up" "..."
+    TEXT 004A 06 00 80 - - "OLGA" "..." "CHILL"@0575 "OUT"@057B "..." "We"@057F "can" "clear"@0582 "the" "question"@0588 "up" "real"@0591 "easy"@0596 "..." "We'll"@059B "just"@05A2 "run"@05A7 "a" "test"@05AB "..."
+    TEXT 004A 03 00 80 - - "OLGA" "," "say" "\"BIG"@05B0 "BANG\""@05B5 "out"@05BB "loud"@05BF "three"@05C4 "times"@05CA "..."
+    TEXT 004A FF 20 80 - - "OLGA" "REPORTING" ":"
+    TEXT 004A FF 20 80 - - "BIG" "BANG" "..." "BIG" "BANG" "..." "BIG" "BANG" "..."
+    TEXT 004A 02 00 80 - - "Okay"@05D0 "..." "Now"@05D5 "say" "\"BIG" "BAND\""@05D9 "with" "a" "\"D\"" "..."
+    TEXT 004A FF 20 80 - - "OLGA" "REPORTING" ":"
+    TEXT 004A FF 20 80 - - "BIG" "BANG" "..." "BIG" "BANG" "..." "BIG" "BANG" "..."
+    TEXT 004A FF 20 80 - - "Satisfied"@05DF "?"
+    TEXT 004A 03 00 80 - - "Olga"@05E9 "..." "I" "said"@05EE "BIG" "BAND" "," "not" "BIG" "BANG" "..." "You" "mixed" "them"@05F3 "up" "..." "GOSH"@05F8 "DARN"@05FD "IT"@0602 "!!!"
+    TEXT 004A FF 20 80 - - "What" "did" "I" "tell"@0605 "you" "?" "Don't" "say" "I" "didn't" "..." "She" "fouled"@060A "up" "..."
+    TEXT 004A FF 20 80 - - "She" "can't"@0611 "tell" "\"D\"" "from" "\"G\""@0617 "..."
+    TEXT 004A 05 00 80 - - "Honk" "!" "Misbegotten"@061B "junkheap"@0627 "..." "It's" "all"@0630 "your"@0634 "fault"@0639 "!!!" "Check"@063F "her"@0645 "multiplexers"@0649 "..."
+    TEXT 004A FF 20 80 - - "Right" "away"@0656 "," "Cap'n" "Bob" "sir" "..." "I'm" "on" "it" "..."
+    TEXT 004A 02 00 80 - - "Ah"@065B "!!!" "Commander" "..." "Remind"@065E "me" "to" "tell" "you" "how"@0665 "much"@0669 "I" "hate"@066E "machines"@0673 "..."
+    TEXT 004A FF 20 80 - - "Got"@067C "it" "!" "Cap'n" "Bob..."@0680 "I" "found"@0687 "the" "glitch"@068D "..." "It's" "a" "MOSQUITO"@0694 "stuck"@069D "to" "the" "letter"@06A3 "\"D\"" "in" "the" "multiplexer"@06AA "..."
+    TEXT 004A FF 20 80 - - "I" "hate" "mosquitos"@06B6 "..."
+    TEXT 004A FF 20 80 - - "MESSAGE"@06C0 "FROM"@06C8 "OLGA" ":"
+    TEXT 004A FF 20 80 - - "IF"@06CD "THIS" "PLACE"@06D0 "WAS"@06D6 "CLEANED"@06DA "UP" "MORE"@06E2 "OFTEN"@06E7 "THIS" "KIND"@06ED "OF" "THING"@06F2 "WOULDN'T"@06F8 "HAPPEN"@0701 "..."
+    TEXT 004A 07 00 80 - - "She's" "right" "..." "This" "Ark"@0708 "is" "a" "pigsty"@070C "!!!" "This" "mess"@0713 "makes"@0718 "me" "sick"@071E "!!!"
+    TEXT 004A FF 20 80 - - "Dont'"@0723 "look"@0729 "at" "me" "!" "Mister" "BEAUREGARD's"@072E "on" "cleaning"@073B "duty"@0744 "this" "week"@0749 "!!!"
+    TEXT 004A FF 08 80 - - "What" "!!!" "Don't" "drag"@074E "me" "into"@0753 "this" "!" "That"@0758 "does"@075D "it" "!" "I've"@0762 "had"@0767 "it" "with" "this" "stupid"@076B "ship"@0772 "..."
     LOAD_STRING "hboc.hnm"
-    TEXT 004A FF 08 80 - - "I"@0199 "want"@01BE "to"@012F "go"@0777 "home"@077A "..."@0019
+    TEXT 004A FF 08 80 - - "I" "want" "to" "go"@0777 "home"@077A "..."
     LOAD_STRING "hboc.hnm"
-    TEXT 004A 03 00 80 - - "That's"@00CF "enough"@077F ","@00DC "Mister"@02CF "Beauregard"@0786 "..."@0019 "Return"@0791 "to"@012F "your"@0634 "cryobox"@0798 "..."@0019
-    TEXT 004A FF 20 80 - - "I"@0199 "told"@0252 "you"@0257 "so"@07A0 "..."@0019 "I"@0199 "told"@0252 "you"@0257 "..."@0019
-    TEXT 004A 05 00 80 - - "Commander,"@07A3 "drop"@07AE "Mister"@02CF "BEAUREGARD"@07B3 "off"@07BE "on"@004D "the"@00B2 "planet"@0086 "Tumul"@07C2 "..."@0019
-    TEXT 004A 02 00 80 - - "AND"@04F6 "GET"@07C8 "BACK"@07CC "TO"@07D1 "WORK"@07D4 "!!!"@033F
-    TEXT 004A FF 28 A0 - - "Yes"@07D9 "sir"@0461 ","@00DC "Cap'n"@0426 "Bob"@042C "sir"@0461 "..."@0019
+    TEXT 004A 03 00 80 - - "That's" "enough"@077F "," "Mister" "Beauregard"@0786 "..." "Return"@0791 "to" "your" "cryobox"@0798 "..."
+    TEXT 004A FF 20 80 - - "I" "told" "you" "so"@07A0 "..." "I" "told" "you" "..."
+    TEXT 004A 05 00 80 - - "Commander,"@07A3 "drop"@07AE "Mister" "BEAUREGARD"@07B3 "off"@07BE "on" "the" "planet" "Tumul"@07C2 "..."
+    TEXT 004A 02 00 80 - - "AND" "GET"@07C8 "BACK"@07CC "TO"@07D1 "WORK"@07D4 "!!!"
+    TEXT 004A FF 28 A0 - - "Yes"@07D9 "sir" "," "Cap'n" "Bob" "sir" "..."
     SHARED_STATE C0 136A F5 C1 0001
     POKE_BYTE 071A 00
     RECORD_CLEAR 0084
@@ -250,23 +250,23 @@ PROCEDURE proc_boba1_0B87
     GUARD_PUSH block_0CA7
     SHARED_BIT_STATE AE 0FBA 0002 1
     GUARD_POP
-    TEXT 004A 02 00 80 - - "Aaaah"@07DD "..."@0019
-    TEXT 004A 03 00 80 - - "When"@00DE "will"@07E3 "we"@00E3 "get"@04A0 "to"@012F "the"@00B2 "Big"@07E8 "Bang"@07EC "?"@01CF "It's"@00AD "URGENT"@07F1 ","@00DC "Commander"@00A3 "..."@0019
-    TEXT 004A 04 00 80 - - "WE"@07F8 "MUST"@07FB "FIND"@0800 "the"@00B2 "Big"@07E8 "Bang"@07EC "..."@0019 "THAT'S"@0805 "YOUR"@080C "MISSION"@0811 ","@00DC "REMEMBER"@0819 "?"@01CF
-    TEXT 004A FF 20 80 - - "Yes"@07D9 "sir"@0461 "."@0095 "All"@0822 "efforts"@0826 "are"@0056 "directed"@082E "toward"@0837 "achieving"@083E "the"@00B2 "mission"@0848 "objective"@0850 "..."@0019
-    TEXT 004A FF 00 80 - - "SILENCE"@085A "HONK"@055C "!!!"@033F
-    TEXT 004A 05 00 80 - - "I'm"@01E3 "mad"@0862 "as"@0293 "mad"@0862 "can"@01F9 "be"@0866 ","@00DC "Commander"@00A3 "!!!"@033F "You're"@0869 "flitting"@0870 "around"@0041 "like"@0224 "some"@0879 "gosh"@087E "darn"@0883 "butterfly"@0888 "..."@0019
-    TEXT 004A 04 00 80 - - "You're"@0869 "using"@0892 "my"@0898 "time"@089B "and"@0142 "money"@08A0 "to"@012F "go"@0777 "after"@08A6 "ondoyants"@08AC "!!!"@033F
-    TEXT 004A 05 00 80 - - "That's"@00CF "what"@03E5 "I"@0199 "call"@08B6 "IN-TO-LE-RA-BLE"@08BB "!!!"@033F
-    TEXT 004A 06 00 80 - - "I"@0199 "hope"@08CB "I've"@0762 "made"@08D0 "my"@0898 "feelings"@08D5 "clear"@0582 "..."@0019
-    TEXT 004A 06 08 80 - - "Now"@05D5 "leave"@08DE "me"@0010 "..."@0019
+    TEXT 004A 02 00 80 - - "Aaaah"@07DD "..."
+    TEXT 004A 03 00 80 - - "When" "will"@07E3 "we" "get" "to" "the" "Big"@07E8 "Bang"@07EC "?" "It's" "URGENT"@07F1 "," "Commander" "..."
+    TEXT 004A 04 00 80 - - "WE"@07F8 "MUST"@07FB "FIND"@0800 "the" "Big" "Bang" "..." "THAT'S"@0805 "YOUR"@080C "MISSION"@0811 "," "REMEMBER"@0819 "?"
+    TEXT 004A FF 20 80 - - "Yes" "sir" "." "All"@0822 "efforts"@0826 "are" "directed"@082E "toward"@0837 "achieving"@083E "the" "mission"@0848 "objective"@0850 "..."
+    TEXT 004A FF 00 80 - - "SILENCE"@085A "HONK" "!!!"
+    TEXT 004A 05 00 80 - - "I'm" "mad"@0862 "as" "mad" "can" "be"@0866 "," "Commander" "!!!" "You're"@0869 "flitting"@0870 "around" "like" "some"@0879 "gosh"@087E "darn"@0883 "butterfly"@0888 "..."
+    TEXT 004A 04 00 80 - - "You're" "using"@0892 "my"@0898 "time"@089B "and" "money"@08A0 "to" "go" "after"@08A6 "ondoyants"@08AC "!!!"
+    TEXT 004A 05 00 80 - - "That's" "what" "I" "call"@08B6 "IN-TO-LE-RA-BLE"@08BB "!!!"
+    TEXT 004A 06 00 80 - - "I" "hope"@08CB "I've" "made"@08D0 "my" "feelings"@08D5 "clear" "..."
+    TEXT 004A 06 08 80 - - "Now" "leave"@08DE "me" "..."
     RECORD_CLEAR 0084
     LABEL block_0CA7
     GUARD_PUSH proc_big2_0CCF
     SHARED_BIT_STATE AE 0FBA 0002 0
     GUARD_POP
-    TEXT 004A 02 00 80 - - "Lets"@08E4 "go"@0777 "to"@012F "the"@00B2 "Bigbang..."@08E9
-    TEXT 004A FF 08 80 - - "..."@0019
+    TEXT 004A 02 00 80 - - "Lets"@08E4 "go" "to" "the" "Bigbang..."@08E9
+    TEXT 004A FF 08 80 - - "..."
     RECORD_CLEAR 0084
 END_PROCEDURE proc_boba1_0B87
 
@@ -276,19 +276,19 @@ PROCEDURE proc_big2_0CCF
     RECORD_WILDCARD AF 103A 0FB8 0
     ACTOR 07D4 0028 0
     GUARD_POP
-    TEXT 079A 00 00 80 - - "Ohhh"@08F4 "..."@0019 "It's"@00AD "you"@0257 ","@00DC "Commander"@00A3 "..."@0019
-    TEXT 079A FF 20 80 - - "Oh"@0248 "no"@02ED "..."@0019 "Her"@08F9 "again"@08FD "..."@0019
-    TEXT 079A 04 00 80 - - "AH"@0903 "!"@024B "How"@0165 "delightful"@0906 "to"@012F "see"@0911 "you"@0257 "again"@08FD ","@00DC "sweeties"@0915 "..."@0019 "I"@0199 "so"@07A0 "much"@0669 "wanted"@091E "to"@012F "invite"@0925 "you"@0257 "along"@092C "..."@0019
-    TEXT 079A 06 00 80 - - "But"@0932 "I"@0199 "didn't"@026D "know"@0936 "where"@093B "to"@012F "send"@0941 "the"@00B2 "invitations"@0946 "..."@0019
-    TEXT 079A 06 00 80 - - "I'm"@01E3 "getting"@03A6 "married"@03AE ","@00DC "you"@0257 "see"@0911 "..."@0019 "Hee"@0952 "!"@024B "Hee"@0952 "!"@024B "Hee"@0952 "!"@024B "To"@0956 "darling"@0959 "MIGRATOR"@0391 "..."@0019 "Hee"@0952 "!"@024B "Hee"@0952 "!"@024B "Hee"@0952 "!"@024B
-    TEXT 079A FF 20 80 - - "Holy"@01D1 "homeostatics"@0961 "..."@0019 "Poor"@096E "guy"@0973 "..."@0019
-    TEXT 079A 07 00 80 - - "We're"@0977 "giving"@03BE "a"@00C1 "concert"@097D "here"@0329 "at"@03CE "the"@00B2 "BIG"@03D1 "BAND"@03D5 "CLUB"@03FC "..."@0019 "It's"@00AD "such"@0985 "a"@00C1 "fashionable"@098A "place"@0996 ","@00DC "you"@0257 "know"@0936 "..."@0019 "Why"@099C ","@00DC "the"@00B2 "whole"@09A0 "galaxy'll"@09A6 "be"@0866 "here"@0329 "!"@024B
-    TEXT 079A 08 00 80 - - "Our"@09B0 "concert's"@09B4 "going"@0430 "to"@012F "be"@0866 "broadcast"@09BE "by"@09C8 "all"@0630 "the"@00B2 "TV"@09CB "stations"@09CE "in"@02E7 "the"@00B2 "universe"@09D7 "!!"@09E0
-    TEXT 079A 09 00 80 - - "I'm"@01E3 "so"@07A0 "famous"@09E3 ","@00DC "Commander"@00A3 "..."@0019 "Hee"@0952 "!"@024B "Hee"@0952 "!"@024B "Hee"@0952 "!"@024B
-    TEXT 079A FF 20 80 - - "I"@0199 "can't"@0611 "help"@09EA "wishing"@09EF "we'd"@09F7 "gone"@09FC "somewhere"@0A01 "else"@0A0B "..."@0019 "This"@0417 "place"@0996 "has"@0A10 "an"@0A14 "end"@0A17 "of"@00FD "the"@00B2 "world"@0A1B "feel"@0A21 "..."@0019
-    TEXT 079A 02 00 80 - - "Darling"@0A26 "Migra's"@0A2E "at"@03CE "the"@00B2 "bar"@0A36 ","@00DC "drinking"@0A3A "a"@00C1 "frozen"@0A43 "Migrita"@0A4A "..."@0019
-    TEXT 079A 02 00 80 - - "MIGRA"@0A52 "OH"@0A58 "MIGRA"@0A52 "SWEETIE"@0A5B "..."@0019 "GUESS"@0A63 "WHO'S"@0A69 "COME"@0A6F "..."@0019
-    TEXT 079A 01 08 B0 - - "Go"@0A74 "join"@0A77 "him"@0A7C "for"@036A "a"@00C1 "stiff"@0A80 "one"@0A86 ","@00DC "Commander"@00A3 "..."@0019
+    TEXT 079A 00 00 80 - - "Ohhh"@08F4 "..." "It's" "you" "," "Commander" "..."
+    TEXT 079A FF 20 80 - - "Oh" "no" "..." "Her"@08F9 "again"@08FD "..."
+    TEXT 079A 04 00 80 - - "AH"@0903 "!" "How" "delightful"@0906 "to" "see"@0911 "you" "again" "," "sweeties"@0915 "..." "I" "so" "much" "wanted"@091E "to" "invite"@0925 "you" "along"@092C "..."
+    TEXT 079A 06 00 80 - - "But"@0932 "I" "didn't" "know"@0936 "where"@093B "to" "send"@0941 "the" "invitations"@0946 "..."
+    TEXT 079A 06 00 80 - - "I'm" "getting" "married" "," "you" "see" "..." "Hee"@0952 "!" "Hee" "!" "Hee" "!" "To"@0956 "darling"@0959 "MIGRATOR" "..." "Hee" "!" "Hee" "!" "Hee" "!"
+    TEXT 079A FF 20 80 - - "Holy" "homeostatics"@0961 "..." "Poor"@096E "guy"@0973 "..."
+    TEXT 079A 07 00 80 - - "We're"@0977 "giving" "a" "concert"@097D "here" "at" "the" "BIG" "BAND" "CLUB" "..." "It's" "such"@0985 "a" "fashionable"@098A "place"@0996 "," "you" "know" "..." "Why"@099C "," "the" "whole"@09A0 "galaxy'll"@09A6 "be" "here" "!"
+    TEXT 079A 08 00 80 - - "Our"@09B0 "concert's"@09B4 "going" "to" "be" "broadcast"@09BE "by"@09C8 "all" "the" "TV"@09CB "stations"@09CE "in" "the" "universe"@09D7 "!!"@09E0
+    TEXT 079A 09 00 80 - - "I'm" "so" "famous"@09E3 "," "Commander" "..." "Hee" "!" "Hee" "!" "Hee" "!"
+    TEXT 079A FF 20 80 - - "I" "can't" "help"@09EA "wishing"@09EF "we'd"@09F7 "gone"@09FC "somewhere"@0A01 "else"@0A0B "..." "This" "place" "has"@0A10 "an"@0A14 "end"@0A17 "of" "the" "world"@0A1B "feel"@0A21 "..."
+    TEXT 079A 02 00 80 - - "Darling"@0A26 "Migra's"@0A2E "at" "the" "bar"@0A36 "," "drinking"@0A3A "a" "frozen"@0A43 "Migrita"@0A4A "..."
+    TEXT 079A 02 00 80 - - "MIGRA"@0A52 "OH"@0A58 "MIGRA" "SWEETIE"@0A5B "..." "GUESS"@0A63 "WHO'S"@0A69 "COME"@0A6F "..."
+    TEXT 079A 01 08 B0 - - "Go"@0A74 "join"@0A77 "him"@0A7C "for" "a" "stiff"@0A80 "one"@0A86 "," "Commander" "..."
     POKE_BYTE 0CD0 00
     RECORD_WILDCARD AF 0452 0FDC 0
     RECORD_WILDCARD AF 07B2 0F2C 0
@@ -301,16 +301,16 @@ PROCEDURE proc_bar1_0EBA
     RECORD_WILDCARD AF 103A 0FB8 0
     ACTOR 0474 0028 0
     GUARD_POP
-    TEXT 043A 01 00 80 - - "You"@01BA "here"@0329 ","@00DC "Commander"@00A3 "!"@024B "My"@01AC "good"@0A8A "friend"@0A8F "..."@0019 "Did"@049C "Burny"@0A96 "tell"@0605 "you"@0257 "the"@00B2 "news"@0A9C "?"@01CF
-    TEXT 043A 02 00 80 - - "We're"@0977 "getting"@03A6 "married"@03AE "..."@0019 "Ah"@065B "!!!"@033F "She's"@02B3 "so"@07A0 "sexy"@0AA2 ","@00DC "and"@0142 "smart"@0AA7 "..."@0019
-    TEXT 043A FF 20 80 - - "Commander"@00A3 "..."@0019 "Howzabout"@0AAD "a"@00C1 "strategic"@0AB7 "withdrawal"@0AC1 "here"@0329 "?"@01CF "..."@0019 "Commander"@00A3 "?"@01CF
-    TEXT 043A 05 00 80 - - "And"@0ACC "it's"@0AD0 "all"@0630 "thanks"@0AD5 "to"@012F "you"@0257 "..."@0019 "I'd"@0ADC "like"@0224 "you"@0257 "to"@012F "be"@0866 "my"@0898 "best"@0AE0 "man"@0AE5 "!"@024B
-    TEXT 043A FF 20 80 - - "Oh"@0248 "NO"@0AE9 "..."@0019
-    TEXT 043A 06 00 80 - - "You'll"@0AEC "give"@023B "her"@0645 "the"@00B2 "wedding"@036E "band"@0AF3 "..."@0019
-    TEXT 043A FF 20 80 - - "THE"@040F "WEDDING"@0AF8 "BAND"@03D5 "..."@0019 "How"@0165 "about"@0169 "a"@00C1 "ring"@0262 "for"@036A "her"@0645 "nose"@0B00 "..."@0019
-    TEXT 043A 05 00 80 - - "Hurry"@0B05 "up"@02C5 ","@00DC "Commander"@00A3 "..."@0019 "We"@057F "can't"@0611 "have"@0315 "the"@00B2 "ceremony"@0B0B "without"@0B14 "a"@00C1 "ring"@0262 "..."@0019
-    TEXT 043A FF 20 80 - - "Holy"@01D1 "handouts"@0B1C "..."@0019 "Where"@020B "do"@0B25 "we"@00E3 "find"@0B28 "a"@00C1 "wedding"@036E "band"@0AF3 "at"@03CE "this"@02C0 "time"@089B "of"@00FD "day"@0B2D "or"@03EE "night"@0B31 "?"@01CF
-    TEXT 043A 02 08 C0 - - "See"@0B37 "you"@0257 "soon"@0296 ","@00DC "Commander"@00A3 "..."@0019
+    TEXT 043A 01 00 80 - - "You" "here" "," "Commander" "!" "My" "good"@0A8A "friend"@0A8F "..." "Did" "Burny"@0A96 "tell" "you" "the" "news"@0A9C "?"
+    TEXT 043A 02 00 80 - - "We're" "getting" "married" "..." "Ah" "!!!" "She's" "so" "sexy"@0AA2 "," "and" "smart"@0AA7 "..."
+    TEXT 043A FF 20 80 - - "Commander" "..." "Howzabout"@0AAD "a" "strategic"@0AB7 "withdrawal"@0AC1 "here" "?" "..." "Commander" "?"
+    TEXT 043A 05 00 80 - - "And"@0ACC "it's"@0AD0 "all" "thanks"@0AD5 "to" "you" "..." "I'd"@0ADC "like" "you" "to" "be" "my" "best"@0AE0 "man"@0AE5 "!"
+    TEXT 043A FF 20 80 - - "Oh" "NO"@0AE9 "..."
+    TEXT 043A 06 00 80 - - "You'll"@0AEC "give" "her" "the" "wedding" "band"@0AF3 "..."
+    TEXT 043A FF 20 80 - - "THE" "WEDDING"@0AF8 "BAND" "..." "How" "about" "a" "ring" "for" "her" "nose"@0B00 "..."
+    TEXT 043A 05 00 80 - - "Hurry"@0B05 "up" "," "Commander" "..." "We" "can't" "have" "the" "ceremony"@0B0B "without"@0B14 "a" "ring" "..."
+    TEXT 043A FF 20 80 - - "Holy" "handouts"@0B1C "..." "Where" "do"@0B25 "we" "find"@0B28 "a" "wedding" "band" "at" "this" "time" "of" "day"@0B2D "or" "night"@0B31 "?"
+    TEXT 043A 02 08 C0 - - "See"@0B37 "you" "soon" "," "Commander" "..."
     POKE_BYTE 0EBB 00
     RECORD_WILDCARD AF 0452 0F2C 0
     RECORD_WILDCARD AF 07B2 0FF4 0
@@ -324,24 +324,24 @@ PROCEDURE proc_big3_1018
     RECORD_WILDCARD AF 103A 0FB8 0
     ACTOR 027C 0028 0
     GUARD_POP
-    TEXT 0242 01 00 80 - - "Commander"@00A3 "!"@024B "Yoko"@0B3B "happy"@0B40 "to"@012F "see"@0911 "you"@0257 "again"@08FD "..."@0019
-    TEXT 0242 FF 20 80 - - "Commander"@00A3 "..."@0019 "It's"@00AD "young"@0B46 "Yoko"@0B3B "..."@0019
-    TEXT 0242 02 00 80 - - "Migrator"@0B4C "and"@0142 "Tina"@0B55 "wait"@0B5A "for"@036A "wedding"@036E "ring"@0262 "..."@0019
+    TEXT 0242 01 00 80 - - "Commander" "!" "Yoko"@0B3B "happy"@0B40 "to" "see" "you" "again" "..."
+    TEXT 0242 FF 20 80 - - "Commander" "..." "It's" "young"@0B46 "Yoko" "..."
+    TEXT 0242 02 00 80 - - "Migrator"@0B4C "and" "Tina"@0B55 "wait"@0B5A "for" "wedding" "ring" "..."
     GUARD_PUSH block_10E3
     RECORD_WILDCARD AF 12F0 0028 0
     GUARD_POP
-    TEXT 0242 05 00 80 - - "You"@01BA "have"@0315 "ring"@0262 "?"@01CF
-    TEXT 0242 FF 20 80 - - "No"@02EA "problem"@0B5F ","@00DC "Mister"@02CF "Yoko"@0B3B "..."@0019 "We"@057F "have"@0315 "the"@00B2 "wedding"@036E "band"@0AF3 "right"@00D6 "here"@0329 "..."@0019
-    TEXT 0242 06 00 80 - - "YES"@0B67 "!!!"@033F "Me"@0B6B "happy"@0B40 "..."@0019
-    TEXT 0242 07 08 A0 - - "You"@01BA "go"@0777 "bar"@0A36 ","@00DC "Tina"@0B55 "be"@0866 "impatient"@0B6E "..."@0019
+    TEXT 0242 05 00 80 - - "You" "have" "ring" "?"
+    TEXT 0242 FF 20 80 - - "No" "problem"@0B5F "," "Mister" "Yoko" "..." "We" "have" "the" "wedding" "band" "right" "here" "..."
+    TEXT 0242 06 00 80 - - "YES"@0B67 "!!!" "Me"@0B6B "happy" "..."
+    TEXT 0242 07 08 A0 - - "You" "go" "bar" "," "Tina" "be" "impatient"@0B6E "..."
     POKE_BYTE 1019 00
     RECORD_WILDCARD AF 00F2 0FDC 0
     RECORD_STATE C1 1346 0FDC 0
     LABEL block_10E3
-    TEXT 0242 FF 20 80 - - "You"@01BA "agreed"@0B78 "to"@012F "get"@04A0 "a"@00C1 "ring"@0262 ","@00DC "Commander"@00A3 "."@0095 "You'll"@0AEC "have"@0315 "to"@012F "deliver"@0B7F "..."@0019
-    TEXT 0242 FF 20 80 - - "Whatever"@0B87 "it"@031A "takes"@0B90 "..."@0019
-    TEXT 0242 04 00 80 - - "You"@01BA "hurry"@0B96 ","@00DC "Commander"@00A3 "."@0095 "Everybody"@0B9C "wait"@0B5A "..."@0019
-    TEXT 0242 FF 28 80 - - "Let's"@0BA6 "get"@04A0 "to"@012F "it"@031A ","@00DC "Commander"@00A3 "."@0095 "I"@0199 "want"@01BE "to"@012F "know"@0936 "how"@0665 "this"@02C0 "thing"@0278 "turns"@0BAC "out"@05BB "..."@0019
+    TEXT 0242 FF 20 80 - - "You" "agreed"@0B78 "to" "get" "a" "ring" "," "Commander" "." "You'll" "have" "to" "deliver"@0B7F "..."
+    TEXT 0242 FF 20 80 - - "Whatever"@0B87 "it" "takes"@0B90 "..."
+    TEXT 0242 04 00 80 - - "You" "hurry"@0B96 "," "Commander" "." "Everybody"@0B9C "wait" "..."
+    TEXT 0242 FF 28 80 - - "Let's"@0BA6 "get" "to" "it" "," "Commander" "." "I" "want" "to" "know" "how" "this" "thing" "turns"@0BAC "out" "..."
     RECORD_CLEAR 027C
 END_PROCEDURE proc_big3_1018
 
@@ -352,11 +352,11 @@ PROCEDURE proc_bar2_115C
     ACTOR 0114 0028 0
     GUARD_POP
     TEXT 00DA 01 00 80 - - "Ga..."@0BB2
-    TEXT 00DA 02 00 80 - - "Ga"@0BB8 "..."@0019 "Fifi"@0BBB "eat"@0BC0 "..."@0019
-    TEXT 00DA FF 20 80 - - "Fifi"@0BBB "!"@024B "What"@016F "are"@0056 "you"@0257 "doing"@0444 "here"@0329 "?"@01CF
-    TEXT 00DA 03 00 80 - - "Fifi"@0BBB "come"@0BC4 "for"@036A "party"@0BC9 "..."@0019 "Fifi"@0BBB "like"@0224 "eat"@0BC0 "also"@0BCF "..."@0019
-    TEXT 00DA 04 00 80 - - "Beautiful"@0BD4 "Tina"@0B55 "look"@0729 "for"@036A "you"@0257 ","@00DC "Commander"@00A3 "."@0095 "She"@031D "be"@0866 "at"@03CE "other"@0BDE "bar"@0A36 "..."@0019
-    TEXT 00DA 05 08 A0 - - "You"@01BA "hurry"@0B96 ","@00DC "Commander"@00A3 "..."@0019 "Hee"@0952 "!"@024B "Hee!"@0BE4 "Hee!"@0BE4
+    TEXT 00DA 02 00 80 - - "Ga"@0BB8 "..." "Fifi"@0BBB "eat"@0BC0 "..."
+    TEXT 00DA FF 20 80 - - "Fifi" "!" "What" "are" "you" "doing" "here" "?"
+    TEXT 00DA 03 00 80 - - "Fifi" "come"@0BC4 "for" "party"@0BC9 "..." "Fifi" "like" "eat" "also"@0BCF "..."
+    TEXT 00DA 04 00 80 - - "Beautiful"@0BD4 "Tina" "look" "for" "you" "," "Commander" "." "She" "be" "at" "other"@0BDE "bar" "..."
+    TEXT 00DA 05 08 A0 - - "You" "hurry" "," "Commander" "..." "Hee" "!" "Hee!"@0BE4 "Hee!"
     RECORD_WILDCARD AF 00F2 0F2C 0
     RECORD_WILDCARD AF 0452 0FDC 0
     RECORD_STATE C1 1346 0FF4 0
@@ -369,25 +369,25 @@ PROCEDURE proc_bar3_1209
     RECORD_WILDCARD AF 1340 0FF4 0
     ACTOR 07D4 0028 0
     GUARD_POP
-    TEXT 079A 01 00 80 - - "Ah"@065B "!!"@09E0 "There"@0050 "you"@0257 "are"@0056 "at"@03CE "last"@0BE9 ","@00DC "Commander"@00A3 "..."@0019 "Everyone's"@0BEE "waiting"@0BF9 "for"@036A "you"@0257 "..."@0019
-    TEXT 079A FF 20 80 - - "Holy"@01D1 "handstands"@0C01 "!!!"@033F
-    TEXT 079A 02 00 80 - - "MIGRA's"@0C0C "so"@07A0 "worried"@0C14 "..."@0019 "You"@01BA "do"@0B25 "have"@0315 "the"@00B2 "wedding"@036E "band"@0AF3 ","@00DC "Commander"@00A3 "?"@01CF
-    TEXT 079A FF 20 80 - - "Yeah"@0C1C "..."@0019 "We"@057F "have"@0315 "your"@0634 "ring"@0262 ","@00DC "Miss"@0C21 "Burner"@0C26 "..."@0019
-    TEXT 079A 04 00 80 - - "WHAT"@04DC "!!"@09E0 "That"@0758 "cybernetic"@0C2D "sex"@0C38 "fiend"@0C3C "is"@0092 "here"@0329 "?"@01CF "No"@02EA "!!"@09E0 "I"@0199 "don't"@0C42 "want"@01BE "him"@0A7C "at"@03CE "my"@0898 "wedding"@036E "..."@0019
-    TEXT 079A 05 00 80 - - "He's"@0C48 "definitely"@0C4D "not"@0422 "invited"@0C58 "!!!"@033F "I"@0199 "can't"@0611 "get"@04A0 "married"@03AE "with"@00BC "him"@0A7C "ogling"@0C60 "me"@0010 "!!!"@033F
-    TEXT 079A FF 20 80 - - "WHAT"@04DC "???"@02D6 "The"@006C "old"@0C67 "bag"@0C6B "insulted"@0C6F "me"@0010 "..."@0019 "Are"@0366 "you"@0257 "gonna"@0C78 "let"@0C7E "her"@0645 "get"@04A0 "away"@0656 "with"@00BC "that"@013D ","@00DC "Commander"@00A3 "?"@01CF
-    TEXT 079A FF 20 80 - - "Get"@0C82 "lost"@0C86 ","@00DC "you"@0257 "old"@0C67 "sow"@0C8B "!"@024B "..."@0019 "..."@0019
-    TEXT 079A 08 00 80 - - "SOW"@0C8F "!!"@09E0 "BOO"@0C93 "HOO"@0C97 "HOO"@0C97 "..."@0019 "MIGRA"@0A52 "..."@0019 "MIGRATOR"@0391 "..."@0019 "Come"@0C9B "!"@024B "I"@0199 "need"@0CA0 "you"@0257 "..."@0019 "BOO"@0C93 "HOO"@0C97 "HOO"@0C97 "..."@0019
-    TEXT 079A FF 20 80 - - "She's"@02B3 "so"@07A0 "gross"@0CA5 ","@00DC "Commander"@00A3 "..."@0019
-    TEXT 079A FF 08 80 - - "What's"@0436 "all"@0630 "this"@02C0 "racket"@0CAB "?"@01CF "Can't"@0CB2 "a"@00C1 "guy"@0973 "get"@04A0 "any"@0CB8 "sleep"@0013 "around"@0041 "here"@0329 "?"@01CF
+    TEXT 079A 01 00 80 - - "Ah" "!!" "There" "you" "are" "at" "last"@0BE9 "," "Commander" "..." "Everyone's"@0BEE "waiting"@0BF9 "for" "you" "..."
+    TEXT 079A FF 20 80 - - "Holy" "handstands"@0C01 "!!!"
+    TEXT 079A 02 00 80 - - "MIGRA's"@0C0C "so" "worried"@0C14 "..." "You" "do" "have" "the" "wedding" "band" "," "Commander" "?"
+    TEXT 079A FF 20 80 - - "Yeah"@0C1C "..." "We" "have" "your" "ring" "," "Miss"@0C21 "Burner"@0C26 "..."
+    TEXT 079A 04 00 80 - - "WHAT" "!!" "That" "cybernetic"@0C2D "sex"@0C38 "fiend"@0C3C "is" "here" "?" "No" "!!" "I" "don't"@0C42 "want" "him" "at" "my" "wedding" "..."
+    TEXT 079A 05 00 80 - - "He's"@0C48 "definitely"@0C4D "not" "invited"@0C58 "!!!" "I" "can't" "get" "married" "with" "him" "ogling"@0C60 "me" "!!!"
+    TEXT 079A FF 20 80 - - "WHAT" "???" "The" "old"@0C67 "bag"@0C6B "insulted"@0C6F "me" "..." "Are" "you" "gonna"@0C78 "let"@0C7E "her" "get" "away" "with" "that" "," "Commander" "?"
+    TEXT 079A FF 20 80 - - "Get"@0C82 "lost"@0C86 "," "you" "old" "sow"@0C8B "!" "..." "..."
+    TEXT 079A 08 00 80 - - "SOW"@0C8F "!!" "BOO"@0C93 "HOO"@0C97 "HOO" "..." "MIGRA" "..." "MIGRATOR" "..." "Come"@0C9B "!" "I" "need"@0CA0 "you" "..." "BOO" "HOO" "HOO" "..."
+    TEXT 079A FF 20 80 - - "She's" "so" "gross"@0CA5 "," "Commander" "..."
+    TEXT 079A FF 08 80 - - "What's" "all" "this" "racket"@0CAB "?" "Can't"@0CB2 "a" "guy" "get" "any"@0CB8 "sleep" "around" "here" "?"
     LOAD_STRING "bobb.hnm"
-    TEXT 079A FF 20 80 - - "She"@031D "started"@0CBC "it"@031A ","@00DC "Cap'n"@0426 "Bob"@042C "sir"@0461 "..."@0019 "Ask"@0CC4 "the"@00B2 "Commander"@00A3 "..."@0019
-    TEXT 079A 07 00 80 - - "BOO"@0C93 "HOO"@0C97 "HOO"@0C97
-    TEXT 079A FF 08 80 - - "Just"@0CC8 "keep"@0CCD "the"@00B2 "noise"@0CD2 "down"@0CD8 ","@00DC "okay"@0CDD "?"@01CF
+    TEXT 079A FF 20 80 - - "She" "started"@0CBC "it" "," "Cap'n" "Bob" "sir" "..." "Ask"@0CC4 "the" "Commander" "..."
+    TEXT 079A 07 00 80 - - "BOO" "HOO" "HOO"
+    TEXT 079A FF 08 80 - - "Just"@0CC8 "keep"@0CCD "the" "noise"@0CD2 "down"@0CD8 "," "okay"@0CDD "?"
     LOAD_STRING "bobb.hnm"
-    TEXT 079A FF 00 80 - - "YES"@0B67 "sir"@0461 "..."@0019 "Right"@03F6 "down"@0CD8 "..."@0019
-    TEXT 079A FF 20 80 - - "Okay"@05D0 "..."@0019 "Let's"@0BA6 "go"@0777 "see"@0911 "MIGRATOR"@0391 ","@00DC "Commander"@00A3 "..."@0019
-    TEXT 079A 04 08 80 - - "MIGRATOR"@0391 "..."@0019 "BOO"@0C93 "..."@0019 "MIGRA"@0A52 "HOO"@0C97 "HOO"@0C97 "HOO"@0C97 "..."@0019
+    TEXT 079A FF 00 80 - - "YES" "sir" "..." "Right" "down" "..."
+    TEXT 079A FF 20 80 - - "Okay" "..." "Let's" "go" "see" "MIGRATOR" "," "Commander" "..."
+    TEXT 079A 04 08 80 - - "MIGRATOR" "..." "BOO" "..." "MIGRA" "HOO" "HOO" "HOO" "..."
     RECORD_STATE C1 1346 0FDC 0
 END_PROCEDURE proc_bar3_1209
 
@@ -398,18 +398,18 @@ PROCEDURE proc_bar4_143D
     RECORD_WILDCARD AF 1340 0FDC 0
     ACTOR 0474 0028 0
     GUARD_POP
-    TEXT 043A 06 00 80 - - "What's"@0436 "going"@0430 "on"@004D "?"@01CF "My"@01AC "Tina's"@0CE2 "in"@02E7 "tears"@0CE9 "..."@0019
-    TEXT 043A FF 20 80 - - "It's"@00AD "not"@0422 "my"@0898 "fault..."@0CEF "She"@031D "didn't"@026D "want"@01BE "to"@012F "invite"@0925 "me"@0010 "to"@012F "her"@0645 "wedding"@036E "concert..."@0CF8
-    TEXT 043A 07 00 80 - - "Okay.."@0D03 "Okay..."@0D0A "I'll"@0D12 "see"@0911 "what"@03E5 "I"@0199 "can"@01F9 "do..."@0D17
-    TEXT 043A 02 10 80 block_14EB - "Do"@0D1D "you"@0257 "have"@0315 "the"@00B2 "ring,"@0D20 "Commander"@00A3 "?"@01CF "The"@006C "wedding"@036E "band"@0AF3 "?"@01CF FFFF "teleport"@0D26
+    TEXT 043A 06 00 80 - - "What's" "going" "on" "?" "My" "Tina's"@0CE2 "in" "tears"@0CE9 "..."
+    TEXT 043A FF 20 80 - - "It's" "not" "my" "fault..."@0CEF "She" "didn't" "want" "to" "invite" "me" "to" "her" "wedding" "concert..."@0CF8
+    TEXT 043A 07 00 80 - - "Okay.."@0D03 "Okay..."@0D0A "I'll"@0D12 "see" "what" "I" "can" "do..."@0D17
+    TEXT 043A 02 10 80 block_14EB - "Do"@0D1D "you" "have" "the" "ring,"@0D20 "Commander" "?" "The" "wedding" "band" "?" FFFF "teleport"@0D26
     GUARD_PUSH block_14EB
-    CONCEPT_GUARD "teleport"@0D26 0
+    CONCEPT_GUARD "teleport" 0
     GUARD_POP
-    TEXT 043A FF 08 90 - - "TELEPORT"@0D2F "RING"@0D38 "TO"@07D1 "MIGRATOR"@0391
+    TEXT 043A FF 08 90 - - "TELEPORT"@0D2F "RING"@0D38 "TO" "MIGRATOR"
     RECORD_TRIPLE 0030 12DC 043A 0
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_14EB
-    TEXT 043A 08 08 90 - - "Thank"@0D3D "you,"@0D43 "COMMANDER..."@0D48 "Get"@0C82 "comfortable..."@0D55 "The"@006C "show's"@0D64 "about"@0169 "to"@012F "start.."@0D6B
+    TEXT 043A 08 08 90 - - "Thank"@0D3D "you,"@0D43 "COMMANDER..."@0D48 "Get" "comfortable..."@0D55 "The" "show's"@0D64 "about" "to" "start.."@0D6B
     RECORD_STATE C1 1346 100C 0
     RECORD_WILDCARD AF 0452 100C 0
 END_PROCEDURE proc_bar4_143D
@@ -421,15 +421,15 @@ PROCEDURE proc_finalmen_1511
     RECORD_WILDCARD AF 1340 100C 0
     ACTOR 0474 0028 0
     GUARD_POP
-    TEXT 043A FF 28 80 - - "SILENCE"@085A "IT'S"@0D73 "STARTING...."@0D78
+    TEXT 043A FF 28 80 - - "SILENCE" "IT'S"@0D73 "STARTING...."@0D78
     LOAD_STRING "lpm6sc1.hnm"
-    TEXT 043A FF 08 80 - - "Ah"@065B "at"@03CE "last"@0BE9 "..."@0019 "It"@0D85 "looks"@0D88 "like"@0224 "it's"@0AD0 "showtime..."@0D8E
+    TEXT 043A FF 08 80 - - "Ah" "at" "last" "..." "It"@0D85 "looks"@0D88 "like" "it's" "showtime..."@0D8E
     LOAD_STRING "bobb.hnm"
-    TEXT 043A FF 08 80 - - "Move"@0048 "over"@0D9A "..."@0019 "I"@0199 "wanna"@0D9F "see"@0911 "too..."@0DA5
+    TEXT 043A FF 08 80 - - "Move" "over"@0D9A "..." "I" "wanna"@0D9F "see" "too..."@0DA5
     LOAD_STRING "hboc.hnm"
-    TEXT 043A FF 20 80 - - "Take"@0DAC "it"@031A "easy..."@0DB1 "We're"@0977 "not"@0422 "gonna"@0C78 "fight"@0DB9 "over"@0D9A "this..."@0DBF
-    TEXT 043A FF 20 80 - - "You"@01BA "think"@0229 "this"@02C0 "is"@0092 "the"@00B2 "end"@0A17 "of"@00FD "the"@00B2 "game,"@0DC7 "Cap'n"@0426 "Bob???"@0DCD
-    TEXT 043A FF 08 80 - - "Gosh"@0DD4 "darn"@0883 "it"@031A "NO,"@0DD9 "Mister"@02CF "Honk..."@0DDD "The"@006C "Commander"@00A3 "still"@0DE5 "hasn't"@0DEB "found"@0687 "the"@00B2 "BIG"@03D1 "BANG..."@0DF2
+    TEXT 043A FF 20 80 - - "Take"@0DAC "it" "easy..."@0DB1 "We're" "not" "gonna" "fight"@0DB9 "over" "this..."@0DBF
+    TEXT 043A FF 20 80 - - "You" "think" "this" "is" "the" "end" "of" "the" "game,"@0DC7 "Cap'n" "Bob???"@0DCD
+    TEXT 043A FF 08 80 - - "Gosh"@0DD4 "darn" "it" "NO,"@0DD9 "Mister" "Honk..."@0DDD "The" "Commander" "still"@0DE5 "hasn't"@0DEB "found" "the" "BIG" "BANG..."@0DF2
     LOAD_STRING "bobb.hnm"
     TEXT 043A FF 08 80 - -
     LOAD_STRING "lpl7sc1.hnm"
@@ -476,12 +476,12 @@ PROCEDURE proc_corpo1_1777
     RECORD_WILDCARD AF 103A 0D5E 0
     ACTOR 05DC 0028 0
     GUARD_POP
-    TEXT 05A2 02 00 80 - - "Izwalito"@0DFA "happy"@0B40 "see"@0911 "you"@0257 "again"@08FD ","@00DC "friend"@0A8F "..."@0019
-    TEXT 05A2 00 00 80 - - "Me"@0B6B "get"@04A0 "ready"@0E03 "to"@012F "leave"@08DE ","@00DC "friend"@0A8F
-    TEXT 05A2 03 00 80 - - "Me"@0B6B "go"@0777 "big"@03C5 "party"@0BC9 "with"@00BC "friends"@0E09 "..."@0019
-    TEXT 05A2 02 00 80 - - "Sorry"@0E11 "..."@0019 "me"@0010 "not"@0422 "have"@0315 "much"@0669 "time"@089B "..."@0019
-    TEXT 05A2 05 00 80 - - "Me"@0B6B "in"@02E7 "hurry"@0B96 ","@00DC "Bossanova"@0E17 "impatient"@0B6E "..."@0019
-    TEXT 05A2 05 08 90 - - "Bye"@0E21 "bye"@0E25 ","@00DC "friend"@0A8F "Commander"@00A3 "..."@0019
+    TEXT 05A2 02 00 80 - - "Izwalito"@0DFA "happy" "see" "you" "again" "," "friend" "..."
+    TEXT 05A2 00 00 80 - - "Me" "get" "ready"@0E03 "to" "leave" "," "friend"
+    TEXT 05A2 03 00 80 - - "Me" "go" "big" "party" "with" "friends"@0E09 "..."
+    TEXT 05A2 02 00 80 - - "Sorry"@0E11 "..." "me" "not" "have" "much" "time" "..."
+    TEXT 05A2 05 00 80 - - "Me" "in" "hurry" "," "Bossanova"@0E17 "impatient" "..."
+    TEXT 05A2 05 08 90 - - "Bye"@0E21 "bye"@0E25 "," "friend" "Commander" "..."
     RECORD_WILDCARD AF 05BA 0F2C 0
     RECORD_CLEAR 05DC
 END_PROCEDURE proc_corpo1_1777
@@ -506,15 +506,15 @@ PROCEDURE proc_krapp1_1839
     BRANCH_PRESENTATION
     ACTOR 054C 0028 0
     GUARD_POP
-    TEXT 0512 FF 00 80 - - "This"@0417 "is"@0092 "Kran"@0E29 "Dobu"@0E2E ","@00DC "Space"@0E33 "Knight"@0E39 "of"@00FD "the"@00B2 "Stars"@0E40 "..."@0019
-    TEXT 0512 FF 00 80 - - "Radio"@0E46 "message"@0E4C "to"@012F "Ark"@0708 "..."@0019 "Ha"@027E "!"@024B "Ha"@027E "!"@024B "You"@01BA "okay"@0CDD "?"@01CF "..."@0019
-    TEXT 0512 FF 00 80 - - "Ha"@027E "!"@024B "Ha"@027E "!"@024B "I"@0199 "hear"@0132 "you're"@0E54 "looking"@0E5B "for"@036A "the"@00B2 "the"@00B2 "Big"@07E8 "Bang"@07EC "too"@005A "..."@0019
-    TEXT 0512 FF 20 80 - - "I've"@0762 "pinpointed"@0E63 "his"@0146 "ship"@0772 ","@00DC "Commander"@00A3 "..."@0019
-    TEXT 0512 FF 00 80 - - "That's"@00CF "where"@093B "I'm"@01E3 "headed"@0E6E ","@00DC "except"@0E75 "I"@0199 "don't"@0C42 "have"@0315 "the"@00B2 "address"@0E7C "..."@0019 "Ha"@027E "!"@024B "Ha"@027E "!"@024B "..."@0019
-    TEXT 0512 FF 00 80 - - "We'll"@059B "meet"@0E84 "up"@02C5 "there"@0E89 "..."@0019 "Ha"@027E "!"@024B "Ha"@027E "!"@024B "Ha"@027E "!"@024B "..."@0019
-    TEXT 0512 FF 20 80 - - "He's"@0C48 "talking"@0E8F "about"@0169 "the"@00B2 "Big"@07E8 "Bang"@07EC "..."@0019
-    TEXT 0512 FF 00 80 - - "See"@0B37 "you"@0257 "..."@0019 "Ha"@027E "!"@024B "Ha"@027E "!"@024B "Ha"@027E "!"@024B
-    TEXT 0512 FF 08 90 - - "Bye"@0E21 "bye"@0E25
+    TEXT 0512 FF 00 80 - - "This" "is" "Kran"@0E29 "Dobu"@0E2E "," "Space"@0E33 "Knight"@0E39 "of" "the" "Stars"@0E40 "..."
+    TEXT 0512 FF 00 80 - - "Radio"@0E46 "message"@0E4C "to" "Ark" "..." "Ha" "!" "Ha" "!" "You" "okay" "?" "..."
+    TEXT 0512 FF 00 80 - - "Ha" "!" "Ha" "!" "I" "hear" "you're"@0E54 "looking"@0E5B "for" "the" "the" "Big" "Bang" "too" "..."
+    TEXT 0512 FF 20 80 - - "I've" "pinpointed"@0E63 "his" "ship" "," "Commander" "..."
+    TEXT 0512 FF 00 80 - - "That's" "where" "I'm" "headed"@0E6E "," "except"@0E75 "I" "don't" "have" "the" "address"@0E7C "..." "Ha" "!" "Ha" "!" "..."
+    TEXT 0512 FF 00 80 - - "We'll" "meet"@0E84 "up" "there"@0E89 "..." "Ha" "!" "Ha" "!" "Ha" "!" "..."
+    TEXT 0512 FF 20 80 - - "He's" "talking"@0E8F "about" "the" "Big" "Bang" "..."
+    TEXT 0512 FF 00 80 - - "See" "you" "..." "Ha" "!" "Ha" "!" "Ha" "!"
+    TEXT 0512 FF 08 90 - - "Bye" "bye"
     POKE_BYTE 183A 00
     RECORD_CLEAR 054C
 END_PROCEDURE proc_krapp1_1839
@@ -524,30 +524,30 @@ PROCEDURE proc_masta1_194D
     BRANCH_GAMEFLAG
     ACTOR 06FC 0028 0
     GUARD_POP
-    TEXT 06C2 12 00 80 - - "YOU"@046C "IN"@0E97 "FORBIDDEN"@0E9A "ZONE"@0EA4 "..."@0019 "ME"@0500 "GIVE"@0EA9 "WARNING"@0EAE ","@00DC "STRANGER"@0EB6
-    TEXT 06C2 11 00 80 - - "Me"@0B6B "not"@0422 "know"@0936 "you"@0257 "."@0095
-    TEXT 06C2 FF 20 80 - - "It"@0D85 "must"@0EBF "be"@0866 "Scruter"@0EC4 "Mac's"@0ECC "twin"@0ED2 "brother"@0ED7 ","@00DC "Commander"@00A3 "..."@0019 "Took"@0EDF "over"@0D9A "his"@0146 "job"@0EE4 "..."@0019
-    TEXT 06C2 10 00 80 - - "You"@01BA "say"@0274 "code"@0EE8
-    TEXT 06C2 01 10 80 block_1A77 - "Hurry"@0B05 ","@00DC "stranger!"@0EED FFFF "croolas"@0EF7 "galabar"@0F00 "code"@0EE8 "pterra"@0F08 "exxos"@0F0F
+    TEXT 06C2 12 00 80 - - "YOU" "IN"@0E97 "FORBIDDEN"@0E9A "ZONE"@0EA4 "..." "ME" "GIVE"@0EA9 "WARNING"@0EAE "," "STRANGER"@0EB6
+    TEXT 06C2 11 00 80 - - "Me" "not" "know" "you" "."
+    TEXT 06C2 FF 20 80 - - "It" "must"@0EBF "be" "Scruter"@0EC4 "Mac's"@0ECC "twin"@0ED2 "brother"@0ED7 "," "Commander" "..." "Took"@0EDF "over" "his" "job"@0EE4 "..."
+    TEXT 06C2 10 00 80 - - "You" "say" "code"@0EE8
+    TEXT 06C2 01 10 80 block_1A77 - "Hurry" "," "stranger!"@0EED FFFF "croolas"@0EF7 "galabar"@0F00 "code" "pterra"@0F08 "exxos"@0F0F
     GUARD_PUSH block_1A1C
-    CONCEPT_GUARD "code"@0EE8 0
+    CONCEPT_GUARD "code" 0
     GUARD_POP
-    TEXT 06C2 0C 00 80 - - "You"@01BA "say"@0274 "code"@0EE8 "..."@0019
-    TEXT 06C2 0E 00 80 - - "You"@01BA "not"@0422 "stupid"@076B "..."@0019 "But"@0932 "me"@0010 "smarter"@0F15 "than"@0F1D "you"@0257 "..."@0019
-    TEXT 06C2 07 08 80 - - "You"@01BA "want"@01BE "see"@0911 "prisoner"@0F22 "..."@0019
+    TEXT 06C2 0C 00 80 - - "You" "say" "code" "..."
+    TEXT 06C2 0E 00 80 - - "You" "not" "stupid" "..." "But" "me" "smarter"@0F15 "than"@0F1D "you" "..."
+    TEXT 06C2 07 08 80 - - "You" "want" "see" "prisoner"@0F22 "..."
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_1A1C
     GUARD_PUSH block_1A77
-    CONCEPT_GUARD "code"@0EE8 1
+    CONCEPT_GUARD "code" 1
     GUARD_POP
-    TEXT 06C2 09 00 80 - - "You"@01BA "not"@0422 "say"@0274 "code"@0EE8 "..."@0019 "Me"@0B6B "not"@0422 "like"@0224 "..."@0019 "Not"@0F2B "like"@0224 "..."@0019
-    TEXT 06C2 07 00 80 - - "You"@01BA "meet"@0E84 "my"@0898 "laser-pulper"@0F2F "..."@0019
-    TEXT 06C2 08 08 A0 - - "BYE"@0F3C "BYE"@0F3C "FRIEND"@0F40 "..."@0019
+    TEXT 06C2 09 00 80 - - "You" "not" "say" "code" "..." "Me" "not" "like" "..." "Not"@0F2B "like" "..."
+    TEXT 06C2 07 00 80 - - "You" "meet" "my" "laser-pulper"@0F2F "..."
+    TEXT 06C2 08 08 A0 - - "BYE"@0F3C "BYE" "FRIEND"@0F40 "..."
     LOAD_STRING "explo3.hnm"
     CLEAR_ALTERNATE_CONCEPT
     RECORD_CLEAR 06FC
     LABEL block_1A77
-    TEXT 06C2 05 08 80 - - "You"@01BA "know"@0936 "code"@0EE8 ","@00DC "me"@0010 "open"@0F47 "door"@0F4C "..."@0019
+    TEXT 06C2 05 08 80 - - "You" "know" "code" "," "me" "open"@0F47 "door"@0F4C "..."
     RECORD_STATE C1 1346 0A64 0
 END_PROCEDURE proc_masta1_194D
 
@@ -558,26 +558,26 @@ PROCEDURE proc_masta5_1A94
     ACTOR 01EC 0028 0
     RECORD_WILDCARD AF 103A 0A2E 0
     GUARD_POP
-    TEXT 01B2 05 00 80 - - "Me"@0B6B "know"@0936 "you"@0257 "..."@0019 "You"@01BA "give"@023B "me"@0010 "mummy"@0F51 "..."@0019 "and"@0142 "CURSE"@0F57 "..."@0019
-    TEXT 01B2 04 00 80 - - "ME"@0500 "HATE"@0F5D "YOU"@046C "..."@0019
-    TEXT 01B2 07 08 80 - - "WHAT"@04DC "YOU"@046C "WANT"@0F62 "STRANGER"@0EB6 "?"@01CF
+    TEXT 01B2 05 00 80 - - "Me" "know" "you" "..." "You" "give" "me" "mummy"@0F51 "..." "and" "CURSE"@0F57 "..."
+    TEXT 01B2 04 00 80 - - "ME" "HATE"@0F5D "YOU" "..."
+    TEXT 01B2 07 08 80 - - "WHAT" "YOU" "WANT"@0F62 "STRANGER" "?"
     RECORD_WILDCARD BC 01F8 0001 0
     GUARD_PUSH block_1B1F
     SHARED_STATE C0 1372 F5 C1 0001
     GUARD_POP
-    TEXT 01B2 06 08 90 - - "You"@01BA "like"@0224 "secrets"@0F67 "..."@0019 "Me"@0B6B "tell"@0605 "secrets"@0F67
+    TEXT 01B2 06 08 90 - - "You" "like" "secrets"@0F67 "..." "Me" "tell" "secrets"
     RECORD_WILDCARD BC 01F8 0F67 0
     SHARED_STATE C0 1372 F5 C1 0000
     LABEL block_1B1F
     GUARD_PUSH block_1C11
     SHARED_STATE C0 1374 F5 C1 0001
     GUARD_POP
-    TEXT 01B2 0A 00 80 - - "SPLATCH"@0F6F "be"@0866 "highly"@0F77 "concentrated"@0F7E "explosive"@0F8B "."@0095 "SPLATCH"@0F6F "blow"@0F95 "up"@02C5 "jail"@0F9A "..."@0019 "LAUGH"@0F9F "..."@0019 "FOUL"@0FA5 "SWEAR"@0FAA
-    TEXT 01B2 08 00 80 - - "You"@01BA "bring"@0FB0 "me"@0010 "SPLATCH"@0F6F ","@00DC "friend"@0A8F "..."@0019 "And"@0ACC "me"@0010 "give"@023B "you"@0257 "..."@0019
-    TEXT 01B2 FF 20 80 - - "He's"@0C48 "gonna"@0C78 "offer"@0FB6 "us"@0326 "the"@00B2 "treasure"@0FBC "again"@08FD ","@00DC "Commander"@00A3 "..."@0019 "Ol'"@0FC5 "Turkey-face"@0FC9 "Bob'll"@0FD5 "love"@0FDC "this"@02C0 "..."@0019
-    TEXT 01B2 05 00 80 - - "You"@01BA "go"@0777 "see"@0911 "friends"@0E09 "at"@03CE "\"Galaxian"@0FE1 "Bar\""@0FEB "on"@004D "planet"@0086 "MASTAGLUK"@0FF0 "..."@0019 "Them"@0FFA "help"@09EA "you"@0257 "..."@0019
-    TEXT 01B2 FF 20 80 - - "No..."@1000 "No"@02EA "..."@0019 "That's"@00CF "enough,"@1006 "Commander"@00A3 "..."@0019 "This"@0417 "is"@0092 "not"@0422 "a"@00C1 "never"@100E "ending"@1014 "story"@0174 "..."@0019
-    TEXT 01B2 09 08 A0 - - "You"@01BA "understand"@101B "?"@01CF "Bye"@0E21 "bye"@0E25 "..."@0019 "ME"@0500 "WAIT"@1026 "YOU"@046C "..."@0019
+    TEXT 01B2 0A 00 80 - - "SPLATCH"@0F6F "be" "highly"@0F77 "concentrated"@0F7E "explosive"@0F8B "." "SPLATCH" "blow"@0F95 "up" "jail"@0F9A "..." "LAUGH"@0F9F "..." "FOUL"@0FA5 "SWEAR"@0FAA
+    TEXT 01B2 08 00 80 - - "You" "bring"@0FB0 "me" "SPLATCH" "," "friend" "..." "And" "me" "give" "you" "..."
+    TEXT 01B2 FF 20 80 - - "He's" "gonna" "offer"@0FB6 "us" "the" "treasure"@0FBC "again" "," "Commander" "..." "Ol'"@0FC5 "Turkey-face"@0FC9 "Bob'll"@0FD5 "love"@0FDC "this" "..."
+    TEXT 01B2 05 00 80 - - "You" "go" "see" "friends" "at" "\"Galaxian"@0FE1 "Bar\""@0FEB "on" "planet" "MASTAGLUK"@0FF0 "..." "Them"@0FFA "help" "you" "..."
+    TEXT 01B2 FF 20 80 - - "No..."@1000 "No" "..." "That's" "enough,"@1006 "Commander" "..." "This" "is" "not" "a" "never"@100E "ending"@1014 "story" "..."
+    TEXT 01B2 09 08 A0 - - "You" "understand"@101B "?" "Bye" "bye" "..." "ME" "WAIT"@1026 "YOU" "..."
     SHARED_STATE C0 1374 F5 C1 0000
     SHARED_STATE C0 1370 F5 C1 0001
     RECORD_CLEAR 01EC
@@ -585,15 +585,15 @@ PROCEDURE proc_masta5_1A94
     GUARD_PUSH block_1C40
     SHARED_STATE C0 1368 F5 C1 0000
     GUARD_POP
-    TEXT 01B2 FF 20 80 - - "Commander"@00A3 ","@00DC "if"@102B "I'd"@0ADC "had"@0767 "some"@0879 "BIONIUM"@102E ","@00DC "I"@0199 "could"@1036 "have"@0315 "helped"@103C "you"@0257 "...."@1043
+    TEXT 01B2 FF 20 80 - - "Commander" "," "if"@102B "I'd" "had" "some" "BIONIUM"@102E "," "I" "could"@1036 "have" "helped"@103C "you" "...."@1043
     LABEL block_1C40
     GUARD_PUSH block_1C6A
     SHARED_STATE C0 1368 F2 C1 0003
     GUARD_POP
-    TEXT 01B2 FF 28 80 - - "Commander"@00A3 ","@00DC "there's"@04B5 "no"@02ED "percentage"@1048 "staying"@1053 "here"@0329 "..."@0019
+    TEXT 01B2 FF 28 80 - - "Commander" "," "there's" "no" "percentage"@1048 "staying"@1053 "here" "..."
     SHARED_STATE C0 1368 F7 C1 0003
     LABEL block_1C6A
-    TEXT 01B2 06 48 80 - - "Bye"@0E21 "bye"@0E25 "."@0095 "You"@01BA "come"@0BC4 "back"@02A7 "see"@0911 "me"@0010 "."@0095 "Me"@0B6B "like"@0224 "visits"@105B "..."@0019 FFFF "bye_bye"@1062
+    TEXT 01B2 06 48 80 - - "Bye" "bye" "." "You" "come" "back" "see" "me" "." "Me" "like" "visits"@105B "..." FFFF "bye_bye"@1062
     RECORD_CLEAR 01EC
 END_PROCEDURE proc_masta5_1A94
 
@@ -604,24 +604,24 @@ PROCEDURE proc_masta6_1C93
     RECORD_WILDCARD AF 1340 0A64 0
     ACTOR 01EC 0028 0
     GUARD_POP
-    TEXT 01B2 08 00 80 - - "You"@01BA "have"@0315 "splatch"@106A "???"@02D6
-    TEXT 01B2 01 00 80 - - "Me"@0B6B "big"@03C5 "CROOLIS"@1072 "EVISCERATOR"@107A "."@0095 "Me"@0B6B "want"@01BE "escape"@1086 "..."@0019 "CRY"@108D "..."@0019 "CRY"@108D "..."@0019 "GNASH"@1091 "..."@0019
-    TEXT 01B2 01 08 80 - - "CRY"@108D "..."@0019 "GNASH"@1091 "..."@0019
+    TEXT 01B2 08 00 80 - - "You" "have" "splatch"@106A "???"
+    TEXT 01B2 01 00 80 - - "Me" "big" "CROOLIS"@1072 "EVISCERATOR"@107A "." "Me" "want" "escape"@1086 "..." "CRY"@108D "..." "CRY" "..." "GNASH"@1091 "..."
+    TEXT 01B2 01 08 80 - - "CRY" "..." "GNASH" "..."
     RECORD_WILDCARD BC 01F8 066E 0
     GUARD_PUSH block_1D35
     RECORD_WILDCARD AF 1290 0028 0
     GUARD_POP
-    TEXT 01B2 FF 20 80 - - "Give"@1097 "him"@0A7C "the"@00B2 "splatch"@106A ","@00DC "Commander"@00A3 "..."@0019 "We"@057F "need"@0CA0 "the"@00B2 "treasure"@0FBC "..."@0019
-    TEXT 01B2 FF 08 80 - - "TELEPORT"@0D2F "SPLATCH"@0F6F "TO"@07D1 "EVISCERATOR"@107A
+    TEXT 01B2 FF 20 80 - - "Give"@1097 "him" "the" "splatch" "," "Commander" "..." "We" "need" "the" "treasure" "..."
+    TEXT 01B2 FF 08 80 - - "TELEPORT" "SPLATCH" "TO" "EVISCERATOR"
     RECORD_TRIPLE 0030 127C 01B2 0
     LABEL block_1D35
     GUARD_PUSH block_1DAC
     RECORD_WILDCARD AF 1290 01B2 0
     GUARD_POP
-    TEXT 01B2 06 00 80 - - "You"@01BA "want"@01BE "know"@0936 "where"@093B "be"@0866 "treasure"@0FBC "..."@0019
-    TEXT 01B2 08 00 80 - - "Treasure"@109C "be"@0866 "on"@004D "planet"@0086 "TUMUL..."@10A5
-    TEXT 01B2 05 00 80 - - "Coordinates"@10AE "AX329"@10BA "Tumulus"@10C0 "constellation"@10C8 "..."@0019
-    TEXT 01B2 FF 28 90 - - "That"@0758 "sounded"@10D6 "like"@0224 "a"@00C1 "treasure"@0FBC "location"@10DE "to"@012F "me"@0010 ","@00DC "Commander"@00A3 "..."@0019 "Way"@10E7 "to"@012F "go"@0777 ","@00DC "champ"@10EB "!!!"@033F
+    TEXT 01B2 06 00 80 - - "You" "want" "know" "where" "be" "treasure" "..."
+    TEXT 01B2 08 00 80 - - "Treasure"@109C "be" "on" "planet" "TUMUL..."@10A5
+    TEXT 01B2 05 00 80 - - "Coordinates"@10AE "AX329"@10BA "Tumulus"@10C0 "constellation"@10C8 "..."
+    TEXT 01B2 FF 28 90 - - "That" "sounded"@10D6 "like" "a" "treasure" "location"@10DE "to" "me" "," "Commander" "..." "Way"@10E7 "to" "go" "," "champ"@10EB "!!!"
     SHARED_STATE C0 1370 F5 C1 0002
     RECORD_CLEAR 01EC
     LABEL block_1DAC
@@ -629,9 +629,9 @@ PROCEDURE proc_masta6_1C93
     RECORD_WILDCARD AF 1290 0028 1
     RECORD_WILDCARD AF 1290 01B2 1
     GUARD_POP
-    TEXT 01B2 0A 00 80 - - "INSULT"@10F1 "..."@0019 "UGLY"@10F8 "SWEAR"@0FAA "..."@0019 "GNASH"@1091 "..."@0019 "GNASH"@1091 "..."@0019 "UGLY"@10F8 "LAUGH"@0F9F "..."@0019
-    TEXT 01B2 0C 00 80 - - "ME"@0500 "HATE"@0F5D "YOU"@046C "..."@0019 "INSULT"@10F1 "...."@1043
-    TEXT 01B2 0B 08 80 - - "ME"@0500 "NOT"@10FD "SAY"@1101 "BYE"@0F3C "BYE"@0F3C "..."@0019
+    TEXT 01B2 0A 00 80 - - "INSULT"@10F1 "..." "UGLY"@10F8 "SWEAR" "..." "GNASH" "..." "GNASH" "..." "UGLY" "LAUGH" "..."
+    TEXT 01B2 0C 00 80 - - "ME" "HATE" "YOU" "..." "INSULT" "...."
+    TEXT 01B2 0B 08 80 - - "ME" "NOT"@10FD "SAY"@1101 "BYE" "BYE" "..."
     RECORD_CLEAR 01EC
 END_PROCEDURE proc_masta6_1C93
 
@@ -643,13 +643,13 @@ PROCEDURE proc_amig2_1E07
     RECORD_WILDCARD AF 103A 0BDE 0
     SHARED_STATE C0 1376 F5 C1 0000
     GUARD_POP
-    TEXT 05EA 03 00 80 - - "HALT"@1105 "HIC"@110A "STRANGER"@0EB6 "!!!"@033F
-    TEXT 05EA 05 00 80 - - "The"@006C "Bar's"@110E "hic"@1114 "!"@024B "shut"@1118 "..."@0019 "Hic"@111D "!"@024B
-    TEXT 05EA 06 00 80 - - "They've"@1121 "all"@0630 "gone"@09FC "..."@0019 "Hic"@111D "..."@0019 "Just"@0CC8 "me"@0010 "left"@1129 "..."@0019
-    TEXT 05EA FF 20 80 - - "Commander..."@001D "I"@0199 "feel"@0A21 "sorry"@112E "for"@036A "this"@02C0 "buzzard"@1134 "..."@0019
-    TEXT 05EA 06 00 80 - - "Me"@0B6B "thirsty"@113C "..."@0019 "Hic"@111D "..."@0019
-    TEXT 05EA 06 00 80 - - "Me"@0B6B "need"@0CA0 "hic"@1114 "drinky"@1144 "hic"@1114 "!!!"@033F
-    TEXT 05EA 00 08 80 - - "Bye"@0E21 "hic"@1114 "bye"@0E25 "..."@0019
+    TEXT 05EA 03 00 80 - - "HALT"@1105 "HIC"@110A "STRANGER" "!!!"
+    TEXT 05EA 05 00 80 - - "The" "Bar's"@110E "hic"@1114 "!" "shut"@1118 "..." "Hic"@111D "!"
+    TEXT 05EA 06 00 80 - - "They've"@1121 "all" "gone" "..." "Hic" "..." "Just" "me" "left"@1129 "..."
+    TEXT 05EA FF 20 80 - - "Commander..." "I" "feel" "sorry"@112E "for" "this" "buzzard"@1134 "..."
+    TEXT 05EA 06 00 80 - - "Me" "thirsty"@113C "..." "Hic" "..."
+    TEXT 05EA 06 00 80 - - "Me" "need" "hic" "drinky"@1144 "hic" "!!!"
+    TEXT 05EA 00 08 80 - - "Bye" "hic" "bye" "..."
     RECORD_CLEAR 0624
 END_PROCEDURE proc_amig2_1E07
 
@@ -658,24 +658,24 @@ PROCEDURE proc_yok1_1EB8
     BRANCH_FLAG_274F
     ACTOR 027C 0028 0
     GUARD_POP
-    TEXT 0242 01 00 80 - - "Commander"@00A3 "..."@0019 "MAXXON"@114B "and"@0142 "me"@0010 "would"@1152 "like"@0224 "to"@012F "get"@04A0 "back"@02A7 "to"@012F "our"@1158 "home"@077A "on"@004D "the"@00B2 "planet"@0086 "RONDO"@115C "..."@0019
-    TEXT 0242 03 00 80 - - "Can"@1162 "you"@0257 "drop"@07AE "us"@0326 "off"@07BE "there"@0E89 "?"@01CF "..."@0019
+    TEXT 0242 01 00 80 - - "Commander" "..." "MAXXON"@114B "and" "me" "would"@1152 "like" "to" "get" "back" "to" "our"@1158 "home" "on" "the" "planet" "RONDO"@115C "..."
+    TEXT 0242 03 00 80 - - "Can"@1162 "you" "drop" "us" "off" "there" "?" "..."
     GUARD_PUSH block_1F75
     RECORD_WILDCARD AF 103A 0B72 0
     GUARD_POP
-    TEXT 0242 FF 30 80 block_1F75 - "Why"@099C "don't"@0C42 "we"@00E3 "teleport"@0D26 "them"@05F3 ","@00DC "Commander"@00A3 "..."@0019 FFFF "teleport"@0D26 "refuse"@1166
+    TEXT 0242 FF 30 80 block_1F75 - "Why" "don't" "we" "teleport" "them" "," "Commander" "..." FFFF "teleport" "refuse"@1166
     GUARD_PUSH block_1F56
-    CONCEPT_GUARD "teleport"@0D26 0
+    CONCEPT_GUARD "teleport" 0
     GUARD_POP
-    TEXT 0242 FF 08 A0 - - "TELEPORT"@0D2F "YOKO"@116D "AND"@04F6 "MAXXON"@114B "ON"@1172 "RONDO"@115C
+    TEXT 0242 FF 08 A0 - - "TELEPORT" "YOKO"@116D "AND" "MAXXON" "ON"@1172 "RONDO"
     RECORD_WILDCARD AF 025A 0B72 0
     RECORD_WILDCARD AF 0572 0BA8 0
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_1F56
     GUARD_PUSH block_1F75
-    CONCEPT_GUARD "refuse"@1166 0
+    CONCEPT_GUARD "refuse" 0
     GUARD_POP
-    TEXT 0242 FF 28 90 - - "Whatever"@0B87 "you"@0257 "say"@0274 ","@00DC "Commander"@00A3 "..."@0019
+    TEXT 0242 FF 28 90 - - "Whatever" "you" "say" "," "Commander" "..."
     CLEAR_ALTERNATE_CONCEPT
     RECORD_CLEAR 027C
     LABEL block_1F75
@@ -683,10 +683,10 @@ PROCEDURE proc_yok1_1EB8
     RECORD_WILDCARD AF 103A 0B72 1
     SHARED_STATE C0 1368 F2 C1 0003
     GUARD_POP
-    TEXT 0242 FF 28 80 - - "We'll"@059B "need"@0CA0 "to"@012F "get"@04A0 "closer"@1175 "to"@012F "RONDO"@115C "to"@012F "teleport"@0D26 "them"@05F3 "..."@0019
+    TEXT 0242 FF 28 80 - - "We'll" "need" "to" "get" "closer"@1175 "to" "RONDO" "to" "teleport" "them" "..."
     SHARED_STATE C0 1368 F7 C1 0003
     LABEL block_1FAB
-    TEXT 0242 01 08 80 - - "We're"@0977 "waiting"@0BF9 ","@00DC "Commander"@00A3 "..."@0019
+    TEXT 0242 01 08 80 - - "We're" "waiting" "," "Commander" "..."
     RECORD_CLEAR 027C
 END_PROCEDURE proc_yok1_1EB8
 
@@ -695,24 +695,24 @@ PROCEDURE proc_max1_1FC0
     BRANCH_FLAG_274F
     ACTOR 0594 0028 0
     GUARD_POP
-    TEXT 055A 01 00 80 - - "Commander"@00A3 "..."@0019 "Yoko"@0B3B "and"@0142 "me"@0010 "would"@1152 "like"@0224 "to"@012F "get"@04A0 "back"@02A7 "to"@012F "our"@1158 "home"@077A "on"@004D "the"@00B2 "planet"@0086 "RONDO"@115C "..."@0019
-    TEXT 055A 03 00 80 - - "Can"@1162 "you"@0257 "drop"@07AE "us"@0326 "off"@07BE "there"@0E89 "?"@01CF "..."@0019
+    TEXT 055A 01 00 80 - - "Commander" "..." "Yoko" "and" "me" "would" "like" "to" "get" "back" "to" "our" "home" "on" "the" "planet" "RONDO" "..."
+    TEXT 055A 03 00 80 - - "Can" "you" "drop" "us" "off" "there" "?" "..."
     GUARD_PUSH block_2079
     RECORD_WILDCARD AF 103A 0B72 0
     GUARD_POP
-    TEXT 055A FF 30 80 block_2079 - "Why"@099C "don't"@0C42 "we"@00E3 "teleport"@0D26 "them"@05F3 ","@00DC "Commander..."@001D FFFF "teleport"@0D26 "refuse"@1166
+    TEXT 055A FF 30 80 block_2079 - "Why" "don't" "we" "teleport" "them" "," "Commander..." FFFF "teleport" "refuse"
     GUARD_PUSH block_205C
-    CONCEPT_GUARD "teleport"@0D26 0
+    CONCEPT_GUARD "teleport" 0
     GUARD_POP
-    TEXT 055A FF 08 A0 - - "TELEPORT"@0D2F "YOKO"@116D "AND"@04F6 "MAXXON"@114B "TO"@07D1 "RONDO"@115C
+    TEXT 055A FF 08 A0 - - "TELEPORT" "YOKO" "AND" "MAXXON" "TO" "RONDO"
     RECORD_WILDCARD AF 0572 0BA8 0
     RECORD_WILDCARD AF 025A 0B72 0
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_205C
     GUARD_PUSH block_2079
-    CONCEPT_GUARD "refuse"@1166 0
+    CONCEPT_GUARD "refuse" 0
     GUARD_POP
-    TEXT 055A FF 28 90 - - "You're"@0869 "the"@00B2 "commander"@117C ","@00DC "Commander..."@001D
+    TEXT 055A FF 28 90 - - "You're" "the" "commander"@117C "," "Commander..."
     CLEAR_ALTERNATE_CONCEPT
     RECORD_CLEAR 0594
     LABEL block_2079
@@ -720,10 +720,10 @@ PROCEDURE proc_max1_1FC0
     RECORD_WILDCARD AF 103A 0B72 1
     SHARED_STATE C0 1368 F2 C1 0003
     GUARD_POP
-    TEXT 055A FF 28 80 - - "We'll"@059B "need"@0CA0 "to"@012F "get"@04A0 "closer"@1175 "to"@012F "RONDO"@115C "to"@012F "teleport"@0D26 "them"@05F3 "..."@0019
+    TEXT 055A FF 28 80 - - "We'll" "need" "to" "get" "closer" "to" "RONDO" "to" "teleport" "them" "..."
     SHARED_STATE C0 1368 F7 C1 0003
     LABEL block_20AF
-    TEXT 055A 01 08 80 - - "We're"@0977 "waiting"@0BF9 ","@00DC "Commander"@00A3 "..."@0019
+    TEXT 055A 01 08 80 - - "We're" "waiting" "," "Commander" "..."
     RECORD_CLEAR 0594
 END_PROCEDURE proc_max1_1FC0
 
@@ -733,12 +733,12 @@ PROCEDURE proc_ronda_20C4
     RECORD_WILDCARD AF 103A 0B72 0
     ACTOR 027C 0028 0
     GUARD_POP
-    TEXT 0242 00 00 80 - - "Me"@0B6B "happy"@0B40 "be"@0866 "back"@02A7 "on"@004D "my"@0898 "planet"@0086 ","@00DC "Commander"@00A3 "..."@0019
-    TEXT 0242 02 00 80 - - "Hello"@1186 "Mister"@02CF "Honk..."@0DDD
-    TEXT 0242 FF 20 80 - - "Yo"@118C "Mister"@02CF "Yoko..."@118F "How's"@1197 "my"@0898 "main"@119D "man"@0AE5 "?"@01CF
-    TEXT 0242 04 00 80 - - "Good"@11A2 ","@00DC "Mister"@02CF "Honk"@024D "..."@0019
-    TEXT 0242 FF 20 80 - - "Ha"@027E "!"@024B "Ha"@027E "!"@024B "ha"@11A7 "!"@024B "You"@01BA "gotta"@11AA "love"@0FDC "that"@013D "Yoko"@0B3B "..."@0019
-    TEXT 0242 05 48 A0 - - "See"@0B37 "you"@0257 "soon"@0296 ","@00DC "Commander"@00A3 "..."@0019 FFFF "bye_bye"@1062
+    TEXT 0242 00 00 80 - - "Me" "happy" "be" "back" "on" "my" "planet" "," "Commander" "..."
+    TEXT 0242 02 00 80 - - "Hello"@1186 "Mister" "Honk..."
+    TEXT 0242 FF 20 80 - - "Yo"@118C "Mister" "Yoko..."@118F "How's"@1197 "my" "main"@119D "man" "?"
+    TEXT 0242 04 00 80 - - "Good"@11A2 "," "Mister" "Honk" "..."
+    TEXT 0242 FF 20 80 - - "Ha" "!" "Ha" "!" "ha"@11A7 "!" "You" "gotta"@11AA "love" "that" "Yoko" "..."
+    TEXT 0242 05 48 A0 - - "See" "you" "soon" "," "Commander" "..." FFFF "bye_bye"
     RECORD_WILDCARD AF 025A 0BA8 0
     RECORD_WILDCARD AF 0572 0B72 0
     RECORD_CLEAR 027C
@@ -750,13 +750,13 @@ PROCEDURE proc_max3_216D
     RECORD_WILDCARD AF 103A 0B72 0
     ACTOR 0594 0028 0
     GUARD_POP
-    TEXT 055A 09 00 80 - - "Hello"@1186 ","@00DC "friend"@0A8F "..."@0019
-    TEXT 055A 02 00 80 - - "Yoko"@0B3B "went"@11B0 "to"@012F "a"@00C1 "party"@0BC9 "..."@0019
-    TEXT 055A 06 00 80 - - "He's"@0C48 "young"@0B46 "..."@0019 "he"@11B5 "needs"@11B8 "his"@0146 "fun"@11BE "..."@0019 "Heh"@11C2 "heh"@11C6 "..."@0019
-    TEXT 055A 07 00 80 - - "What"@016F "can"@01F9 "I"@0199 "do"@0B25 "for"@036A "you"@0257 ","@00DC "Commander"@00A3 "?"@01CF
-    TEXT 055A 04 00 80 - - "All"@0822 "these"@11CA "adventures"@11D0 "have"@0315 "tired"@11DB "me"@0010 "out"@05BB "..."@0019
-    TEXT 055A 07 00 80 - - "I'm"@01E3 "going"@0430 "to"@012F "have"@0315 "a"@00C1 "vacation"@11E1 "here"@0329 "..."@0019
-    TEXT 055A FF 08 80 - - "See"@0B37 "you"@0257 "soon"@0296 ","@00DC "Commander"@00A3 "..."@0019
+    TEXT 055A 09 00 80 - - "Hello" "," "friend" "..."
+    TEXT 055A 02 00 80 - - "Yoko" "went"@11B0 "to" "a" "party" "..."
+    TEXT 055A 06 00 80 - - "He's" "young" "..." "he"@11B5 "needs"@11B8 "his" "fun"@11BE "..." "Heh"@11C2 "heh"@11C6 "..."
+    TEXT 055A 07 00 80 - - "What" "can" "I" "do" "for" "you" "," "Commander" "?"
+    TEXT 055A 04 00 80 - - "All" "these"@11CA "adventures"@11D0 "have" "tired"@11DB "me" "out" "..."
+    TEXT 055A 07 00 80 - - "I'm" "going" "to" "have" "a" "vacation"@11E1 "here" "..."
+    TEXT 055A FF 08 80 - - "See" "you" "soon" "," "Commander" "..."
     RECORD_CLEAR 0594
 END_PROCEDURE proc_max3_216D
 
@@ -766,16 +766,16 @@ PROCEDURE proc_glu2_2220
     RECORD_WILDCARD AF 103A 0F0E 0
     ACTOR 04BC 0028 0
     GUARD_POP
-    TEXT 0482 01 00 80 - - "Ho"@11EA "!"@024B "The"@006C "visitor"@11ED "from"@0151 "far"@11F5 "away"@0656 "in"@02E7 "space"@11F9 "and"@0142 "time"@089B "..."@0019
-    TEXT 0482 02 00 80 - - "You've"@1200 "come"@0BC4 "back"@02A7 ","@00DC "stranger"@1207 "..."@0019
-    TEXT 0482 03 00 80 - - "My"@01AC "children"@1210 ","@00DC "Gelatine"@1219 ","@00DC "Rubber"@1222 ","@00DC "Gooseberry"@1229 "and"@0142 "Latex"@1234 "thank"@123A "you..."@1240
-    TEXT 0482 04 00 80 - - "Thanks"@1247 "to"@012F "you"@0257 "and"@0142 "Inspector"@124E "Jerry"@1258 "Khan,"@125E "they"@1264 "were"@1269 "saved"@00E6 "from"@0151 "the"@00B2 "claws"@126E "of"@00FD "that"@013D "awful"@1274 "doctor"@127A "..."@0019
-    TEXT 0482 05 00 80 - - "Thank"@0D3D "you"@0257 "again"@08FD "..."@0019
-    TEXT 0482 FF 20 80 - - "Don't"@02F7 "you"@0257 "just"@05A2 "love"@0FDC "it"@031A "when"@1281 "they're"@1286 "grateful"@128E ","@00DC "Commander"@00A3 "..."@0019
-    TEXT 0482 00 00 80 - - "We're"@0977 "going"@0430 "to"@012F "take"@1297 "a"@00C1 "few"@129C "days"@12A0 "break"@12A5 "..."@0019 "My"@01AC "kids"@12AB "want"@01BE "to"@012F "see"@0911 "the"@00B2 "BIG"@03D1 "BANG"@03F1 "..."@0019
-    TEXT 0482 04 00 80 - - "After"@12B0 "what"@03E5 "they've"@12B6 "been"@0458 "through"@12BE ","@00DC
-    TEXT 0482 01 00 80 - - "I"@0199 "can't"@0611 "refuse"@1166 "them"@05F3 "anything"@056C "..."@0019 "Ha"@027E "!"@024B "Ha"@027E "!"@024B "Ha"@027E "..."@0019
-    TEXT 0482 FF 08 90 - - "Bye"@0E21 "bye"@0E25 ","@00DC "Commander"@00A3 "..."@0019 "You'll"@0AEC "always"@12C6 "be"@0866 "welcome"@12CD "here"@0329 "..."@0019
+    TEXT 0482 01 00 80 - - "Ho"@11EA "!" "The" "visitor"@11ED "from" "far"@11F5 "away" "in" "space"@11F9 "and" "time" "..."
+    TEXT 0482 02 00 80 - - "You've"@1200 "come" "back" "," "stranger"@1207 "..."
+    TEXT 0482 03 00 80 - - "My" "children"@1210 "," "Gelatine"@1219 "," "Rubber"@1222 "," "Gooseberry"@1229 "and" "Latex"@1234 "thank"@123A "you..."@1240
+    TEXT 0482 04 00 80 - - "Thanks"@1247 "to" "you" "and" "Inspector"@124E "Jerry"@1258 "Khan,"@125E "they"@1264 "were"@1269 "saved" "from" "the" "claws"@126E "of" "that" "awful"@1274 "doctor"@127A "..."
+    TEXT 0482 05 00 80 - - "Thank" "you" "again" "..."
+    TEXT 0482 FF 20 80 - - "Don't" "you" "just" "love" "it" "when"@1281 "they're"@1286 "grateful"@128E "," "Commander" "..."
+    TEXT 0482 00 00 80 - - "We're" "going" "to" "take"@1297 "a" "few"@129C "days"@12A0 "break"@12A5 "..." "My" "kids"@12AB "want" "to" "see" "the" "BIG" "BANG" "..."
+    TEXT 0482 04 00 80 - - "After"@12B0 "what" "they've"@12B6 "been" "through"@12BE ","
+    TEXT 0482 01 00 80 - - "I" "can't" "refuse" "them" "anything" "..." "Ha" "!" "Ha" "!" "Ha" "..."
+    TEXT 0482 FF 08 90 - - "Bye" "bye" "," "Commander" "..." "You'll" "always"@12C6 "be" "welcome"@12CD "here" "..."
     RECORD_WILDCARD AF 049A 0F2C 0
     RECORD_CLEAR 04BC
 END_PROCEDURE proc_glu2_2220
@@ -785,10 +785,10 @@ PROCEDURE proc_monop1_2364
     RECORD_WILDCARD AF 103A 0968 0
     ACTOR 00CC 0028 0
     GUARD_POP
-    TEXT 0092 01 00 80 - - "Hi"@12D5 "there"@0E89 ","@00DC "Consumer"@032E "Comrade"@0337 "."@0095 "The"@006C "VENUSIA"@035E "SUPRAMARKET"@12D8 "is"@0092 "shut"@1118 "today"@12E4 "..."@0019
-    TEXT 0092 02 00 80 - - "It's"@00AD "a"@00C1 "vacation"@11E1 "for"@036A "everybody"@12EA "..."@0019
-    TEXT 0092 03 00 80 - - "Come"@0C9B "back"@02A7 "another"@12F4 "time"@089B "..."@0019 "Oh"@0248 "and"@0142 ","@00DC "Consumer"@032E "Comrade"@0337 "..."@0019 "Remember"@12FC "to"@012F "bring"@0FB0 "your"@0634 "creds"@1305
-    TEXT 0092 00 08 90 - - "Bye"@0E21 "bye"@0E25 ","@00DC "Consumer"@032E "Comrade"@0337 "..."@0019
+    TEXT 0092 01 00 80 - - "Hi"@12D5 "there" "," "Consumer" "Comrade" "." "The" "VENUSIA" "SUPRAMARKET"@12D8 "is" "shut" "today"@12E4 "..."
+    TEXT 0092 02 00 80 - - "It's" "a" "vacation" "for" "everybody"@12EA "..."
+    TEXT 0092 03 00 80 - - "Come" "back" "another"@12F4 "time" "..." "Oh" "and" "," "Consumer" "Comrade" "..." "Remember"@12FC "to" "bring" "your" "creds"@1305
+    TEXT 0092 00 08 90 - - "Bye" "bye" "," "Consumer" "Comrade" "..."
     RECORD_WILDCARD AF 00AA 0FB8 0
     RECORD_CLEAR 00CC
 END_PROCEDURE proc_monop1_2364
@@ -799,34 +799,34 @@ PROCEDURE proc_bronk1_23ED
     SHARED_STATE C0 1378 F5 C1 0000
     ACTOR 039C 0028 0
     GUARD_POP
-    TEXT 0362 02 00 80 - - "Everything's"@130B "okay"@0CDD ","@00DC "Commander"@00A3 "..."@0019
-    TEXT 0362 03 00 80 - - "Don't"@02F7 "hesitate"@1318 "if"@102B "you"@0257 "need"@0CA0 "me"@0010 "..."@0019
+    TEXT 0362 02 00 80 - - "Everything's"@130B "okay" "," "Commander" "..."
+    TEXT 0362 03 00 80 - - "Don't" "hesitate"@1318 "if" "you" "need" "me" "..."
     GUARD_PUSH block_268E
     SHARED_BIT_STATE AE 0FBA 0002 0
     GUARD_POP
-    TEXT 0362 05 00 80 - - "Teleport"@1321 "me"@0010 "to"@012F "the"@00B2 "BIG"@03D1 "BANG"@03F1 ","@00DC "Commander"@00A3 "..."@0019 "I"@0199 "want"@01BE "to"@012F "party"@0BC9 "!"@024B "Gee"@132A ","@00DC "I"@0199 "love"@0FDC "weddings"@132E "..."@0019
-    TEXT 0362 FF 20 80 - - "Oh"@0248 "!"@024B "You're"@0869 "not"@0422 "going"@0430 "to"@012F "leave"@08DE "me"@0010 "here"@0329 "alone"@1337 ","@00DC "are"@0056 "you"@0257 ","@00DC "Mister"@02CF "Bronko"@02F0 "?"@01CF "I'm"@01E3 "a"@00C1 "sucker"@133D "for"@036A "weddings"@132E "too"@005A "..."@0019
-    TEXT 0362 FF 20 80 - - "I'll"@0D12 "feel"@0A21 "so"@07A0 "loneley"@1344 "if"@102B "you"@0257 "go"@0777 "..."@0019
-    TEXT 0362 06 00 80 - - "Well"@134C ","@00DC "I"@0199 "sure"@1351 "don't"@0C42 "want"@01BE "to"@012F "to"@012F "make"@1356 "you"@0257 "unhappy"@135B ","@00DC "Mister"@02CF "Honk"@024D "..."@0019 "That'll"@1363 "make"@1356 "me"@0010 "unhappy"@135B "..."@0019
-    TEXT 0362 07 00 80 - - "You're"@0869 "such"@0985 "an"@0A14 "understanding"@136B "being"@1379 "..."@0019
-    TEXT 0362 FF 20 80 - - "Oh"@0248 "!"@024B "And"@0ACC "you"@0257 ","@00DC "Mister"@02CF "Bronko,"@137F "you"@0257 "have"@0315 "so"@07A0 "much"@0669 "to"@012F "offer"@0FB6 "..."@0019 "Your"@1387 "cooking"@138C "is"@0092 "out"@05BB "of"@00FD "this"@02C0 "world"@0A1B "..."@0019
-    TEXT 0362 FF 20 80 - - "IF"@06CD "YOU"@046C "GO"@1394 "..."@0019 "I'M"@1397 "COMING"@139B "WITH"@0401 "YOU"@046C "..."@0019
-    TEXT 0362 FF 08 80 - - "What's"@0436 "going"@0430 "on"@004D "now"@0125 "?"@01CF "HONK"@055C "!"@024B "Your"@1387 "sentimentality"@13A2 "makes"@0718 "me"@0010 "sick"@071E "!!!"@033F
+    TEXT 0362 05 00 80 - - "Teleport"@1321 "me" "to" "the" "BIG" "BANG" "," "Commander" "..." "I" "want" "to" "party" "!" "Gee"@132A "," "I" "love" "weddings"@132E "..."
+    TEXT 0362 FF 20 80 - - "Oh" "!" "You're" "not" "going" "to" "leave" "me" "here" "alone"@1337 "," "are" "you" "," "Mister" "Bronko" "?" "I'm" "a" "sucker"@133D "for" "weddings" "too" "..."
+    TEXT 0362 FF 20 80 - - "I'll" "feel" "so" "loneley"@1344 "if" "you" "go" "..."
+    TEXT 0362 06 00 80 - - "Well"@134C "," "I" "sure"@1351 "don't" "want" "to" "to" "make"@1356 "you" "unhappy"@135B "," "Mister" "Honk" "..." "That'll"@1363 "make" "me" "unhappy" "..."
+    TEXT 0362 07 00 80 - - "You're" "such" "an" "understanding"@136B "being"@1379 "..."
+    TEXT 0362 FF 20 80 - - "Oh" "!" "And" "you" "," "Mister" "Bronko,"@137F "you" "have" "so" "much" "to" "offer" "..." "Your"@1387 "cooking"@138C "is" "out" "of" "this" "world" "..."
+    TEXT 0362 FF 20 80 - - "IF" "YOU" "GO"@1394 "..." "I'M"@1397 "COMING"@139B "WITH" "YOU" "..."
+    TEXT 0362 FF 08 80 - - "What's" "going" "on" "now" "?" "HONK" "!" "Your" "sentimentality"@13A2 "makes" "me" "sick" "!!!"
     LOAD_STRING "bobb.hnm"
-    TEXT 0362 FF 20 80 - - "Boo"@13B1 "!"@024B "Hoo"@13B5 "!"@024B "Sniff"@13B9 "..."@0019 "I'm"@01E3 "unhappy"@135B "..."@0019 "Mister"@02CF "Bronko"@02F0 "wants"@13BF "to"@012F "party"@0BC9 "at"@03CE "the"@00B2 "BIG"@03D1 "BANG"@03F1 "..."@0019
-    TEXT 0362 FF 08 80 - - "Honk"@024D "!"@024B "Can"@1162 "it"@031A "..."@0019 "I"@0199 "think"@0229 "I'm"@01E3 "going"@0430 "to"@012F "switch"@13C5 "you"@0257 "off"@07BE "!!!"@033F
+    TEXT 0362 FF 20 80 - - "Boo"@13B1 "!" "Hoo"@13B5 "!" "Sniff"@13B9 "..." "I'm" "unhappy" "..." "Mister" "Bronko" "wants"@13BF "to" "party" "at" "the" "BIG" "BANG" "..."
+    TEXT 0362 FF 08 80 - - "Honk" "!" "Can" "it" "..." "I" "think" "I'm" "going" "to" "switch"@13C5 "you" "off" "!!!"
     LOAD_STRING "bobb.hnm"
-    TEXT 0362 FF 20 80 - - "NO"@0AE9 "!"@024B "No"@02EA "!"@024B "Please"@13CC "don't"@0C42 "do"@0B25 "that"@013D ","@00DC "Cap'n"@0426 "Bob"@042C "..."@0019
-    TEXT 0362 04 00 80 - - "Okay"@05D0 "okay"@0CDD "..."@0019 "I'll"@0D12 "stay"@13D3 "here"@0329 "..."@0019 "I"@0199 "don't"@0C42 "really"@13D8 "like"@0224 "to"@012F "party"@0BC9 "anyhow"@13DF "..."@0019
-    TEXT 0362 FF 20 80 - - "Oh"@0248 ","@00DC "Mister"@02CF "Bronko"@02F0 "..."@0019 "Such"@13E6 "a"@00C1 "lesson"@13EB "in"@02E7 "bigheartedness"@13F2 "..."@0019 "CRY"@108D "..."@0019 "WEEP"@1401 "..."@0019
-    TEXT 0362 FF 08 80 - - "Commander"@00A3 "..."@0019 "Your"@1387 "computer's"@1406 "losing"@1411 "it"@031A "..."@0019 "Something"@1418 "needs"@11B8 "to"@012F "be"@0866 "done"@1422 "!!!"@033F
+    TEXT 0362 FF 20 80 - - "NO" "!" "No" "!" "Please"@13CC "don't" "do" "that" "," "Cap'n" "Bob" "..."
+    TEXT 0362 04 00 80 - - "Okay" "okay" "..." "I'll" "stay"@13D3 "here" "..." "I" "don't" "really"@13D8 "like" "to" "party" "anyhow"@13DF "..."
+    TEXT 0362 FF 20 80 - - "Oh" "," "Mister" "Bronko" "..." "Such"@13E6 "a" "lesson"@13EB "in" "bigheartedness"@13F2 "..." "CRY" "..." "WEEP"@1401 "..."
+    TEXT 0362 FF 08 80 - - "Commander" "..." "Your" "computer's"@1406 "losing"@1411 "it" "..." "Something"@1418 "needs" "to" "be" "done"@1422 "!!!"
     LOAD_STRING "bobb.hnm"
-    TEXT 0362 06 08 80 - - "Well"@134C ","@00DC "if"@102B "you'll"@1427 "excuse"@142E "me"@0010 "..."@0019 "I've"@0762 "got"@1435 "a"@00C1 "murffalo"@1439 "in"@02E7 "the"@00B2 "oven"@1442 "..."@0019
+    TEXT 0362 06 08 80 - - "Well" "," "if" "you'll"@1427 "excuse"@142E "me" "..." "I've" "got"@1435 "a" "murffalo"@1439 "in" "the" "oven"@1442 "..."
     RECORD_CLEAR 039C
     LABEL block_268E
-    TEXT 0362 05 20 80 - - "Oh"@0248 "Mister"@02CF "Bronko"@02F0 "..."@0019 "You're"@0869 "looking"@0E5B "well,"@1447 "I"@0199 "must"@0EBF "say"@0274 "!!!."@144D
-    TEXT 0362 05 00 80 - - "See"@0B37 "you"@0257 "soon"@0296 ","@00DC "Commander"@00A3 "..."@0019
-    TEXT 0362 FF 08 80 - - "..."@0019
+    TEXT 0362 05 20 80 - - "Oh" "Mister" "Bronko" "..." "You're" "looking" "well,"@1447 "I" "must" "say" "!!!."@144D
+    TEXT 0362 05 00 80 - - "See" "you" "soon" "," "Commander" "..."
+    TEXT 0362 FF 08 80 - - "..."
     RECORD_CLEAR 039C
 END_PROCEDURE proc_bronk1_23ED
 
@@ -836,11 +836,11 @@ PROCEDURE proc_emasc0_26CD
     ACTOR 08AC 0028 0
     SHARED_STATE C0 137A F5 C1 0000
     GUARD_POP
-    TEXT 0872 01 00 80 - - "What"@016F "you"@0257 "want"@01BE ","@00DC "stranger"@1207 "?"@01CF "You"@01BA "want"@01BE "murffalo"@1439 "meat"@1452 "?"@01CF
-    TEXT 0872 02 00 80 - - "Me"@0B6B "not"@0422 "can"@01F9 "sell"@1457 "murffalo"@1439 "..."@0019 "Me"@0B6B "shut"@1118 "store"@145C "..."@0019
-    TEXT 0872 04 00 80 - - "Me"@0B6B "go"@0777 "party"@0BC9 "..."@0019
-    TEXT 0872 04 00 80 - - "Me"@0B6B "pack"@1462 "bags"@1467 "..."@0019 "You"@01BA "not"@0422 "waste"@146C "my"@0898 "time"@089B "..."@0019
-    TEXT 0872 05 00 80 - - "BYE"@0F3C "BYE"@0F3C "..."@0019
+    TEXT 0872 01 00 80 - - "What" "you" "want" "," "stranger" "?" "You" "want" "murffalo" "meat"@1452 "?"
+    TEXT 0872 02 00 80 - - "Me" "not" "can" "sell"@1457 "murffalo" "..." "Me" "shut" "store"@145C "..."
+    TEXT 0872 04 00 80 - - "Me" "go" "party" "..."
+    TEXT 0872 04 00 80 - - "Me" "pack"@1462 "bags"@1467 "..." "You" "not" "waste"@146C "my" "time" "..."
+    TEXT 0872 05 00 80 - - "BYE" "BYE" "..."
     TEXT 0872 FF 08 90 - - "stop"@1472
     RECORD_WILDCARD AF 088A 0F2C 0
     RECORD_CLEAR 08AC
@@ -852,11 +852,11 @@ PROCEDURE proc_hom0_2765
     RECORD_WILDCARD AF 025A FFFF 0
     ACTOR 0234 0028 0
     GUARD_POP
-    TEXT 01FA 01 00 80 - - "Ha"@027E "!"@024B "ha"@11A7 "!"@024B "Big"@07E8 "Bang"@07EC "..."@0019 "Black"@1477 "holes"@147D "..."@0019 "You're"@0869 "out"@05BB "of"@00FD "your"@0634 "mind"@1483 "..."@0019
-    TEXT 01FA 05 00 80 - - "Commander"@00A3 "..."@0019 "Yoko"@0B3B "and"@0142 "Maxxon"@1488 "would"@1152 "like"@0224 "to"@012F "get"@04A0 "back"@02A7 "home"@077A "on"@004D "the"@00B2 "planet"@0086 "RONDO"@115C "..."@0019
-    TEXT 01FA 06 08 80 - - "They're"@03B6 "impatient"@0B6E "..."@0019
+    TEXT 01FA 01 00 80 - - "Ha" "!" "ha" "!" "Big" "Bang" "..." "Black"@1477 "holes"@147D "..." "You're" "out" "of" "your" "mind"@1483 "..."
+    TEXT 01FA 05 00 80 - - "Commander" "..." "Yoko" "and" "Maxxon"@1488 "would" "like" "to" "get" "back" "home" "on" "the" "planet" "RONDO" "..."
+    TEXT 01FA 06 08 80 - - "They're" "impatient" "..."
     RECORD_WILDCARD BC 0240 0001 0
-    TEXT 01FA 07 48 80 - - "Bye"@0E21 "bye..."@148F "Me"@0B6B "sleep"@0013 "in"@02E7 "star"@1496 "dust..."@149B FFFF "bye_bye"@1062
+    TEXT 01FA 07 48 80 - - "Bye" "bye..."@148F "Me" "sleep" "in" "star"@1496 "dust..."@149B FFFF "bye_bye"
     RECORD_CLEAR 0234
 END_PROCEDURE proc_hom0_2765
 
@@ -866,15 +866,15 @@ PROCEDURE proc_hom1_27F5
     RECORD_WILDCARD AF 025A FFFF 1
     ACTOR 0234 0028 0
     GUARD_POP
-    TEXT 01FA 01 00 80 - - "Ha"@027E "!"@024B "ha"@11A7 "!"@024B "Big"@07E8 "Bang"@07EC "..."@0019 "Black"@1477 "holes"@147D "..."@0019 "You're"@0869 "out"@05BB "of"@00FD "your"@0634 "mind"@1483 "..."@0019
-    TEXT 01FA FF 20 80 - - "Don't"@02F7 "laugh"@14A3 ","@00DC "Mister"@02CF "Hom"@14A9 "..."@0019 "It's"@00AD "not"@0422 "a"@00C1 "joke"@14AD "..."@0019
-    TEXT 01FA 05 00 80 - - "Wrong"@14B2 ","@00DC "my"@0898 "friend"@0A8F "."@0095 "It's"@00AD "a"@00C1 "big"@03C5 "joke"@14AD "..."@0019 "I'm"@01E3 "leaving"@14B8 ","@00DC "Commander"@00A3 "..."@0019
-    TEXT 01FA 06 00 80 - - "I'm"@01E3 "going"@0430 "to"@012F "vanish"@14C0 "into"@0753 "the"@00B2 "cybernight"@14C7 "..."@0019 "And"@0ACC "pick"@14D2 "me"@0010 "up"@02C5 "some"@0879 "star"@1496 "dust"@14D7 "..."@0019
-    TEXT 01FA 07 00 80 - - "I'm"@01E3 "going"@0430 "to"@012F "melt"@14DC "into"@0753 "the"@00B2 "azure"@14E1 "cyberworld"@14E7 "..."@0019
-    TEXT 01FA 06 00 80 - - "I'll"@0D12 "travel"@14F2 "faster"@14F9 "than"@0F1D "the"@00B2 "fastest"@1500 "ship"@0772 "..."@0019
-    TEXT 01FA 05 00 80 - - "And"@0ACC "blur"@1508 "into"@0753 "a"@00C1 "cybertrip"@150D "..."@0019
-    TEXT 01FA FF 20 80 - - "Wasn't"@1517 "that"@013D "beautiful"@151E ","@00DC "Commander"@00A3 "..."@0019 "We"@057F "just"@05A2 "experienced"@1528 "poetic"@1534 "creation"@153B "..."@0019
-    TEXT 01FA 04 08 90 - - "Bye"@0E21 "bye"@0E25 ","@00DC "my"@0898 "friends"@0E09 "..."@0019 "BYE"@0F3C "BYE"@0F3C "..."@0019
+    TEXT 01FA 01 00 80 - - "Ha" "!" "ha" "!" "Big" "Bang" "..." "Black" "holes" "..." "You're" "out" "of" "your" "mind" "..."
+    TEXT 01FA FF 20 80 - - "Don't" "laugh"@14A3 "," "Mister" "Hom"@14A9 "..." "It's" "not" "a" "joke"@14AD "..."
+    TEXT 01FA 05 00 80 - - "Wrong"@14B2 "," "my" "friend" "." "It's" "a" "big" "joke" "..." "I'm" "leaving"@14B8 "," "Commander" "..."
+    TEXT 01FA 06 00 80 - - "I'm" "going" "to" "vanish"@14C0 "into" "the" "cybernight"@14C7 "..." "And" "pick"@14D2 "me" "up" "some" "star" "dust"@14D7 "..."
+    TEXT 01FA 07 00 80 - - "I'm" "going" "to" "melt"@14DC "into" "the" "azure"@14E1 "cyberworld"@14E7 "..."
+    TEXT 01FA 06 00 80 - - "I'll" "travel"@14F2 "faster"@14F9 "than" "the" "fastest"@1500 "ship" "..."
+    TEXT 01FA 05 00 80 - - "And" "blur"@1508 "into" "a" "cybertrip"@150D "..."
+    TEXT 01FA FF 20 80 - - "Wasn't"@1517 "that" "beautiful"@151E "," "Commander" "..." "We" "just" "experienced"@1528 "poetic"@1534 "creation"@153B "..."
+    TEXT 01FA 04 08 90 - - "Bye" "bye" "," "my" "friends" "..." "BYE" "BYE" "..."
     RECORD_WILDCARD AF 0212 0B36 0
     RECORD_CLEAR 0234
 END_PROCEDURE proc_hom1_27F5
@@ -885,29 +885,29 @@ PROCEDURE proc_hom1_2922
     RECORD_WILDCARD AF 10F8 0028 1
     ACTOR 0234 0028 0
     GUARD_POP
-    TEXT 01FA 02 00 80 - - "Welcome"@1544 "stranger"@1207 "..."@0019 "You"@01BA "be"@0866 "big"@03C5 "traveller"@154C "..."@0019
-    TEXT 01FA 02 00 80 - - "Me"@0B6B "HOM."@1556 "Me"@0B6B "big"@03C5 "Tubular"@155B "Brain"@1563 "."@0095 "Me"@0B6B "welcome"@12CD "you"@0257 ","@00DC "Commander"@00A3 "..."@0019
-    TEXT 01FA 02 00 80 - - "Me"@0B6B "catch"@1569 "your"@0634 "print"@156F ","@00DC "friend"@0A8F "..."@0019 "Me"@0B6B "read"@1575 "truth"@157A "in"@02E7 "your"@0634 "prints"@1580 "..."@0019
-    TEXT 01FA 03 10 80 block_29F0 - "You"@01BA "click"@1587 "very"@158D "very"@158D "hard"@1592 ","@00DC "friend"@0A8F "."@0095 "Me"@0B6B "catch"@1569 "print"@156F "on"@004D "mouse"@1597 "..."@0019 FFFF "click"@1587
+    TEXT 01FA 02 00 80 - - "Welcome"@1544 "stranger" "..." "You" "be" "big" "traveller"@154C "..."
+    TEXT 01FA 02 00 80 - - "Me" "HOM."@1556 "Me" "big" "Tubular"@155B "Brain"@1563 "." "Me" "welcome" "you" "," "Commander" "..."
+    TEXT 01FA 02 00 80 - - "Me" "catch"@1569 "your" "print"@156F "," "friend" "..." "Me" "read"@1575 "truth"@157A "in" "your" "prints"@1580 "..."
+    TEXT 01FA 03 10 80 block_29F0 - "You" "click"@1587 "very"@158D "very" "hard"@1592 "," "friend" "." "Me" "catch" "print" "on" "mouse"@1597 "..." FFFF "click"
     GUARD_PUSH block_29F0
-    CONCEPT_GUARD "click"@1587 0
+    CONCEPT_GUARD "click" 0
     GUARD_POP
-    TEXT 01FA 03 08 90 - - "Ahh"@159D "!"@024B "Me"@0B6B "catch"@1569 "print"@156F "..."@0019 "Ohh"@15A2 "!"@024B "Nice"@15A6 "print"@156F "..."@0019
+    TEXT 01FA 03 08 90 - - "Ahh"@159D "!" "Me" "catch" "print" "..." "Ohh"@15A2 "!" "Nice"@15A6 "print" "..."
     LOAD_STRING "scandoig.hnm"
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_29F0
-    TEXT 01FA 04 00 80 - - "Ohh"@15A2 "...Me"@15AB "see"@0911 "you"@0257 "look"@0729 "for"@036A "Big"@07E8 "Bang"@07EC "..."@0019
-    TEXT 01FA 09 00 80 - - "You"@01BA "be"@0866 "with"@00BC "GUILD"@15B1 "OF"@0469 "MEMBERS"@15B7 "..."@0019 "Me"@0B6B "help"@09EA "you"@0257 "..."@0019
-    TEXT 01FA 0A 00 80 - - "GUILD"@15B1 "OF"@0469 "MEMBERS"@15B7 "be"@0866 "big"@03C5 "cybernetic"@0C2D "Organization"@15BF "..."@0019
-    TEXT 01FA 03 00 80 - - "Me"@0B6B "hear"@0132 "of"@00FD "Big"@07E8 "Bang"@07EC "but"@15CC "me"@0010 "forget"@15D0 "..."@0019
-    TEXT 01FA 05 00 80 - - "Me"@0B6B "find"@0B28 "out"@05BB "and"@0142 "me"@0010 "tell"@0605 "you"@0257 "where"@093B "be"@0866 "Big"@07E8 "Bang"@07EC "."@0095 "But"@0932 "you"@0257 "take"@1297 "exam"@15D7 "..."@0019
-    TEXT 01FA 04 00 80 - - "You"@01BA "go"@0777 "planet"@0086 "CYBEROCK"@15DC "..."@0019
-    TEXT 01FA 04 00 80 - - "You"@01BA "study"@15E5 "cyberknowledge"@15EB ","@00DC "friend"@0A8F "..."@0019
-    TEXT 01FA 05 08 80 - - "Cyberock"@15FA "be"@0866 "in"@02E7 "Cyberius"@1603 "system"@160C ","@00DC "coordinates"@1613 "X234"@161F "Y546"@1624 "..."@0019
+    TEXT 01FA 04 00 80 - - "Ohh" "...Me"@15AB "see" "you" "look" "for" "Big" "Bang" "..."
+    TEXT 01FA 09 00 80 - - "You" "be" "with" "GUILD"@15B1 "OF" "MEMBERS"@15B7 "..." "Me" "help" "you" "..."
+    TEXT 01FA 0A 00 80 - - "GUILD" "OF" "MEMBERS" "be" "big" "cybernetic" "Organization"@15BF "..."
+    TEXT 01FA 03 00 80 - - "Me" "hear" "of" "Big" "Bang" "but"@15CC "me" "forget"@15D0 "..."
+    TEXT 01FA 05 00 80 - - "Me" "find" "out" "and" "me" "tell" "you" "where" "be" "Big" "Bang" "." "But" "you" "take" "exam"@15D7 "..."
+    TEXT 01FA 04 00 80 - - "You" "go" "planet" "CYBEROCK"@15DC "..."
+    TEXT 01FA 04 00 80 - - "You" "study"@15E5 "cyberknowledge"@15EB "," "friend" "..."
+    TEXT 01FA 05 08 80 - - "Cyberock"@15FA "be" "in" "Cyberius"@1603 "system"@160C "," "coordinates"@1613 "X234"@161F "Y546"@1624 "..."
     SHARED_BIT_STATE AE 0D42 0002 0
-    TEXT 01FA FF 20 80 - - "We"@057F "already"@1629 "know"@0936 "that"@013D ","@00DC "Commander"@00A3 "..."@0019 "Old"@1631 "Tube-head's"@1635 "going"@0430 "gaga"@1641 "..."@0019
-    TEXT 01FA 06 00 80 - - "Me"@0B6B "wait"@0B5A "here"@0329 "with"@00BC "U.R.O.U.T"@1646 "..."@0019
-    TEXT 01FA FF 08 A0 - - "Bye"@0E21 "bye"@0E25 "friend"@0A8F "..."@0019
+    TEXT 01FA FF 20 80 - - "We" "already"@1629 "know" "that" "," "Commander" "..." "Old"@1631 "Tube-head's"@1635 "going" "gaga"@1641 "..."
+    TEXT 01FA 06 00 80 - - "Me" "wait" "here" "with" "U.R.O.U.T"@1646 "..."
+    TEXT 01FA FF 08 A0 - - "Bye" "bye" "friend" "..."
     POKE_BYTE 27F6 00
     SHARED_STATE C0 137C F5 C1 0001
     RECORD_CLEAR 0234
@@ -919,36 +919,36 @@ PROCEDURE proc_hom2_2B1D
     SHARED_STATE C0 137C F5 C1 0001
     ACTOR 0234 0028 0
     GUARD_POP
-    TEXT 01FA 02 00 80 - - "Welcome"@1544 "stranger"@1207 "..."@0019 "You"@01BA "be"@0866 "big"@03C5 "traveller"@154C "..."@0019
-    TEXT 01FA 02 00 80 - - "Me"@0B6B "HOM."@1556 "Me"@0B6B "big"@03C5 "Tubular"@155B "Brain"@1563 "."@0095 "Me"@0B6B "welcome"@12CD "you"@0257 ","@00DC "Commander"@00A3 "..."@0019
-    TEXT 01FA 02 00 80 - - "Me"@0B6B "catch"@1569 "your"@0634 "print"@156F ","@00DC "friend"@0A8F "..."@0019 "Me"@0B6B "read"@1575 "truth"@157A "in"@02E7 "your"@0634 "prints"@1580 "..."@0019
-    TEXT 01FA FF 20 80 - - "Commander"@00A3 ","@00DC "he's"@1650 "getting"@03A6 "up"@02C5 "my"@0898 "nose"@0B00 "with"@00BC "his"@0146 "print"@156F "..."@0019
-    TEXT 01FA 03 10 80 block_2C0A - "You"@01BA "click"@1587 "very"@158D "very"@158D "hard"@1592 ","@00DC "friend"@0A8F "."@0095 "Me"@0B6B "catch"@1569 "print"@156F "on"@004D "mouse"@1597 "..."@0019 FFFF "click"@1587
+    TEXT 01FA 02 00 80 - - "Welcome" "stranger" "..." "You" "be" "big" "traveller" "..."
+    TEXT 01FA 02 00 80 - - "Me" "HOM." "Me" "big" "Tubular" "Brain" "." "Me" "welcome" "you" "," "Commander" "..."
+    TEXT 01FA 02 00 80 - - "Me" "catch" "your" "print" "," "friend" "..." "Me" "read" "truth" "in" "your" "prints" "..."
+    TEXT 01FA FF 20 80 - - "Commander" "," "he's"@1650 "getting" "up" "my" "nose" "with" "his" "print" "..."
+    TEXT 01FA 03 10 80 block_2C0A - "You" "click" "very" "very" "hard" "," "friend" "." "Me" "catch" "print" "on" "mouse" "..." FFFF "click"
     GUARD_PUSH block_2C0A
-    CONCEPT_GUARD "click"@1587 0
+    CONCEPT_GUARD "click" 0
     GUARD_POP
-    TEXT 01FA 03 08 90 - - "Ahh"@159D "!"@024B "Me"@0B6B "catch"@1569 "print"@156F "..."@0019 "Ohh"@15A2 "!"@024B "Nice"@15A6 "print"@156F "..."@0019
+    TEXT 01FA 03 08 90 - - "Ahh" "!" "Me" "catch" "print" "..." "Ohh" "!" "Nice" "print" "..."
     LOAD_STRING "scandoig.hnm"
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_2C0A
     GUARD_PUSH block_2C59
     RECORD_WILDCARD AF 10F8 0028 1
     GUARD_POP
-    TEXT 01FA FF 00 80 - - "You"@01BA "must"@0EBF "take"@1297 "U.R.O.U.T"@1646 "exam"@15D7 "on"@004D "planet"@0086 "CYBEROCK"@15DC "..."@0019
-    TEXT 01FA FF 00 80 - - "Me"@0B6B "wait"@0B5A "for"@036A "you"@0257 "..."@0019
-    TEXT 01FA FF 48 80 - - "Bye"@0E21 "bye"@0E25 ","@00DC "friend"@0A8F "..."@0019 FFFF "bye_bye"@1062
+    TEXT 01FA FF 00 80 - - "You" "must" "take" "U.R.O.U.T" "exam" "on" "planet" "CYBEROCK" "..."
+    TEXT 01FA FF 00 80 - - "Me" "wait" "for" "you" "..."
+    TEXT 01FA FF 48 80 - - "Bye" "bye" "," "friend" "..." FFFF "bye_bye"
     RECORD_CLEAR 0234
     LABEL block_2C59
     GUARD_PUSH proc_jour_2D05
     RECORD_WILDCARD AF 10F8 0028 0
     GUARD_POP
-    TEXT 01FA FF 00 80 - - "Bravo"@1655 "Commander"@00A3 "."@0095 "You"@01BA "be"@0866 "talented"@165B "..."@0019
-    TEXT 01FA FF 00 80 - - "Me"@0B6B "have"@0315 "good"@0A8A "news"@0A9C "for"@036A "you"@0257 "..."@0019 "Me"@0B6B "know"@0936 "where"@093B "be"@0866 "Big"@07E8 "Bang"@07EC "..."@0019
-    TEXT 01FA FF 08 80 - - "Big"@07E8 "Bang"@07EC "be"@0866 "at"@03CE "coordinates"@1613 "X543"@1664 "Y769..."@1669
+    TEXT 01FA FF 00 80 - - "Bravo"@1655 "Commander" "." "You" "be" "talented"@165B "..."
+    TEXT 01FA FF 00 80 - - "Me" "have" "good" "news" "for" "you" "..." "Me" "know" "where" "be" "Big" "Bang" "..."
+    TEXT 01FA FF 08 80 - - "Big" "Bang" "be" "at" "coordinates" "X543"@1664 "Y769..."@1669
     SHARED_BIT_STATE AE 0FBA 0002 0
-    TEXT 01FA FF 00 80 - - "Bye"@0E21 "bye"@0E25 ","@00DC "friend"@0A8F "..."@0019 "ME"@0500 "see"@0911 "you"@0257 "at"@03CE "Big"@07E8 "Bang"@07EC "...."@1043 "Ha"@027E "Ha"@027E "Ha"@027E "..."@0019
-    TEXT 01FA FF 20 80 - - "Well"@134C ","@00DC "how"@0665 "about"@0169 "that"@013D "!"@024B
-    TEXT 01FA FF 08 90 - - "..."@0019
+    TEXT 01FA FF 00 80 - - "Bye" "bye" "," "friend" "..." "ME" "see" "you" "at" "Big" "Bang" "...." "Ha" "Ha" "Ha" "..."
+    TEXT 01FA FF 20 80 - - "Well" "," "how" "about" "that" "!"
+    TEXT 01FA FF 08 90 - - "..."
     RECORD_WILDCARD AF 0212 0F2C 0
     RECORD_CLEAR 0234
 END_PROCEDURE proc_hom2_2B1D
@@ -961,8 +961,8 @@ PROCEDURE proc_jour_2D05
     RECORD_WILDCARD AF 10F8 028A 1
     RECORD_WILDCARD AF 103A 0D40 0
     GUARD_POP
-    TEXT 028A 01 00 80 - - "Bye"@0E21 "bye"@0E25 ","@00DC "student"@1671 "Commander"@00A3 "Blood"@1679 "."@0095 "You"@01BA "are"@0056 "a"@00C1 "member"@167F "of"@00FD "the"@00B2 "\"GUILD"@1686 "OF"@0469 "MEMBERS\""@168D "..."@0019
-    TEXT 028A 02 08 80 - - "..."@0019
+    TEXT 028A 01 00 80 - - "Bye" "bye" "," "student"@1671 "Commander" "Blood"@1679 "." "You" "are" "a" "member"@167F "of" "the" "\"GUILD"@1686 "OF" "MEMBERS\""@168D "..."
+    TEXT 028A 02 08 80 - - "..."
     RECORD_CLEAR 02C4
 END_PROCEDURE proc_jour_2D05
 
@@ -1018,13 +1018,13 @@ PROCEDURE proc_bonj2_2E06
     ACTOR 02C4 0028 0
     RECORD_WILDCARD AF 103A 0D40 0
     GUARD_POP
-    TEXT 028A 01 00 80 - - "Student"@1696 "Commander"@00A3 "Blood"@1679 "..."@0019 "This"@0417 "is"@0092 "a"@00C1 "big"@03C5 "day"@0B2D "in"@02E7 "your"@0634 "life"@169E "..."@0019
-    TEXT 028A FF 20 80 - - "Holy"@01D1 "harpoons"@16A3 "!"@024B "That"@0758 "is"@0092 "hideous"@16AC ","@00DC "Commander..."@001D
-    TEXT 028A 02 00 80 - - "I'm"@01E3 "going"@0430 "to"@012F "be"@0866 "your"@0634 "U.R.O.U.T."@16B4 "examiner"@16BF
+    TEXT 028A 01 00 80 - - "Student"@1696 "Commander" "Blood" "..." "This" "is" "a" "big" "day" "in" "your" "life"@169E "..."
+    TEXT 028A FF 20 80 - - "Holy" "harpoons"@16A3 "!" "That" "is" "hideous"@16AC "," "Commander..."
+    TEXT 028A 02 00 80 - - "I'm" "going" "to" "be" "your" "U.R.O.U.T."@16B4 "examiner"@16BF
     TEXT 028A 03 00 80 - - "Universal"@16C8 "Revolutionary"@16D2 "Omniscient"@16E0 "Ubiquity"@16EB "Test"@16F4
-    TEXT 028A 03 00 80 - - "Stupid"@16F9 "animal"@1700 "!"@024B "At"@03E2 "your"@0634 "age"@1707 ","@00DC "I"@0199 "already"@1629 "had"@0767 "my"@0898 "U.R.O.U.T.F.O.R.T.H.E.C.O.U.N.T."@170B
-    TEXT 028A FF 20 80 - - "Don't"@02F7 "let"@0C7E "him"@0A7C "scare"@172C "you,"@0D43 "Commander."@1732 "He's"@0C48 "just"@05A2 "jealous..."@173D
-    TEXT 028A 04 08 80 - - "Here"@1748 "are"@0056 "the"@00B2 "questions."@174D "Are"@0366 "you"@0257 "ready?"@1758
+    TEXT 028A 03 00 80 - - "Stupid"@16F9 "animal"@1700 "!" "At" "your" "age"@1707 "," "I" "already" "had" "my" "U.R.O.U.T.F.O.R.T.H.E.C.O.U.N.T."@170B
+    TEXT 028A FF 20 80 - - "Don't" "let" "him" "scare"@172C "you," "Commander."@1732 "He's" "just" "jealous..."@173D
+    TEXT 028A 04 08 80 - - "Here"@1748 "are" "the" "questions."@174D "Are" "you" "ready?"@1758
 END_PROCEDURE proc_bonj2_2E06
 
 PROCEDURE proc_Bof_ok_2ECF
@@ -1033,21 +1033,21 @@ PROCEDURE proc_Bof_ok_2ECF
     ACTOR 02C4 0028 0
     SHARED_STATE C0 1382 F5 C1 0005
     GUARD_POP
-    TEXT 028A 01 00 80 - - "Believe"@175F "it"@031A "or"@03EE "not"@0422 "..."@0019 "You"@01BA "have"@0315 "passed"@1767 "your"@0634 "U.R.O.U.T."@16B4
-    TEXT 028A FF 28 80 - - "YESSS!!!!"@176E "I"@0199 "KNEW"@1778 "YOU"@046C "COULD"@177D "DO"@04E1 "IT"@0602 "COMMANDER..."@0D48
+    TEXT 028A 01 00 80 - - "Believe"@175F "it" "or" "not" "..." "You" "have" "passed"@1767 "your" "U.R.O.U.T."
+    TEXT 028A FF 28 80 - - "YESSS!!!!"@176E "I" "KNEW"@1778 "YOU" "COULD"@177D "DO" "IT" "COMMANDER..."
     LOAD_STRING "cadeaux.hnm"
-    TEXT 028A 01 00 80 - - "I"@0199 "present"@1783 "you"@0257 "with"@00BC "your"@0634 "magnificent"@178B "diploma..."@1797
-    TEXT 028A FF 10 80 block_2F6E - "TELEPORT"@0D2F "UROUT"@17A2 "to"@012F "Ark"@0708 FFFF "teleport"@0D26
+    TEXT 028A 01 00 80 - - "I" "present"@1783 "you" "with" "your" "magnificent"@178B "diploma..."@1797
+    TEXT 028A FF 10 80 block_2F6E - "TELEPORT" "UROUT"@17A2 "to" "Ark" FFFF "teleport"
     GUARD_PUSH block_2F6E
-    CONCEPT_GUARD "teleport"@0D26 0
+    CONCEPT_GUARD "teleport" 0
     GUARD_POP
-    TEXT 028A FF 08 90 - - "TELEPORTING"@17A8 "DIPLOMA"@17B4 "TO"@07D1 "ARK"@17BC
+    TEXT 028A FF 08 90 - - "TELEPORTING"@17A8 "DIPLOMA"@17B4 "TO" "ARK"@17BC
     RECORD_TRIPLE 02C4 10E4 0028 0
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_2F6E
-    TEXT 028A 03 00 80 - - "Never"@17C0 "forget"@15D0 "your"@0634 "happy"@0B40 "student"@1671 "days."@17C6 "Be"@17CC "true"@17CF "to"@012F "your"@0634 "school!"@17D4
-    TEXT 028A 02 00 80 - - "See"@0B37 "you"@0257 "soon,"@17DC "Commander..."@001D
-    TEXT 028A FF 08 B0 - - "stop"@1472
+    TEXT 028A 03 00 80 - - "Never"@17C0 "forget" "your" "happy" "student" "days."@17C6 "Be"@17CC "true"@17CF "to" "your" "school!"@17D4
+    TEXT 028A 02 00 80 - - "See" "you" "soon,"@17DC "Commander..."
+    TEXT 028A FF 08 B0 - - "stop"
     SHARED_STATE C0 1382 F5 C1 0000
     SHARED_STATE C0 1380 F5 C1 0000
     SHARED_BIT_STATE AE 0D42 0002 1
@@ -1061,11 +1061,11 @@ PROCEDURE proc_perdu_2FBD
     SHARED_STATE C0 1380 F5 C1 0020
     SHARED_STATE C0 1382 F1 C1 000A
     GUARD_POP
-    TEXT 028A 0A 00 80 - - "You"@01BA "failed!"@17E2
-    TEXT 028A FF 20 80 - - "I"@0199 "knew"@17EA "this"@02C0 "would"@1152 "happen..."@17EF "I"@0199 "feel"@0A21 "pity"@17F9 "for"@036A "you"@0257 ","@00DC "Commander..."@001D
-    TEXT 028A 09 00 80 - - "May"@17FE "your"@0634 "liver"@1802 "turn"@1808 "into"@0753 "oxidized"@180D "mercury"@1816 "sauce!!"@181E "How"@0165 "could"@1036 "you"@0257 "do"@0B25 "this??..."@1826
-    TEXT 028A FF 20 80 - - "I"@0199 "didn't"@026D "deserve"@1830 "this"@02C0 "humiliation...."@1838
-    TEXT 028A FF 08 B0 - - "stop"@1472
+    TEXT 028A 0A 00 80 - - "You" "failed!"@17E2
+    TEXT 028A FF 20 80 - - "I" "knew"@17EA "this" "would" "happen..."@17EF "I" "feel" "pity"@17F9 "for" "you" "," "Commander..."
+    TEXT 028A 09 00 80 - - "May"@17FE "your" "liver"@1802 "turn"@1808 "into" "oxidized"@180D "mercury"@1816 "sauce!!"@181E "How" "could" "you" "do" "this??..."@1826
+    TEXT 028A FF 20 80 - - "I" "didn't" "deserve"@1830 "this" "humiliation...."@1838
+    TEXT 028A FF 08 B0 - - "stop"
     POKE_BYTE 2D5A 01
     SHARED_STATE C0 1380 F5 C1 0000
     SHARED_STATE C0 1382 F5 C1 0000
@@ -1077,19 +1077,19 @@ PROCEDURE proc_Q1_3055
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 09 10 80 block_30EE - "Who"@1848 "said"@05EE "\"It"@184C "takes"@0B90 "thirteen"@1850 "murffalos"@1859 "to"@012F "reproduce"@1863 "but"@15CC "soon"@0296 "it'll"@186D "take"@1297 "fourteen?"@1873 FFFF "Jeph_DUlikan"@187D "Yolk"@188A "Kran_Dobu"@188F "Tina_Burner"@1899
+    TEXT 028A 09 10 80 block_30EE - "Who"@1848 "said" "\"It"@184C "takes" "thirteen"@1850 "murffalos"@1859 "to" "reproduce"@1863 "but" "soon" "it'll"@186D "take" "fourteen?"@1873 FFFF "Jeph_DUlikan"@187D "Yolk"@188A "Kran_Dobu"@188F "Tina_Burner"@1899
     GUARD_PUSH block_30C2
-    CONCEPT_GUARD "Yolk"@188A 0
+    CONCEPT_GUARD "Yolk" 0
     GUARD_POP
-    TEXT 028A 02 08 A0 - - "The"@006C "Great"@18A5 "Yolk,"@18AB "of"@00FD "course."@18B1 "You've"@1200 "been"@0458 "boning"@18B9 "up"@02C5 ","@00DC "Commander..."@001D
+    TEXT 028A 02 08 A0 - - "The" "Great"@18A5 "Yolk,"@18AB "of" "course."@18B1 "You've" "been" "boning"@18B9 "up" "," "Commander..."
     SHARED_STATE C0 1382 F6 C1 0001
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_30C2
     GUARD_PUSH block_30EE
-    CONCEPT_GUARD "Yolk"@188A 1
+    CONCEPT_GUARD "Yolk" 1
     GUARD_POP
-    TEXT 028A 05 08 90 - - "History's"@18C0 "not"@0422 "your"@0634 "speciality."@18CA "Maybe"@18D6 "you're"@0E54 "not"@0422 "ready"@0E03 "for"@036A "this"@02C0
+    TEXT 028A 05 08 90 - - "History's"@18C0 "not" "your" "speciality."@18CA "Maybe"@18D6 "you're" "not" "ready" "for" "this"
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_30EE
@@ -1102,23 +1102,23 @@ PROCEDURE proc_Q2_30FE
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 06 10 80 block_3195 - "Which"@18EB "great"@18F1 "Slimer"@18F7 "is"@0092 "buried"@18FE "on"@004D "the"@00B2 "planet"@0086 "Vista?"@1905 FFFF "gluxx"@190C "gelati"@1912 "gumy"@1919 "yolk"@191E
+    TEXT 028A 06 10 80 block_3195 - "Which"@18EB "great"@18F1 "Slimer"@18F7 "is" "buried"@18FE "on" "the" "planet" "Vista?"@1905 FFFF "gluxx"@190C "gelati"@1912 "gumy"@1919 "yolk"@191E
     GUARD_PUSH block_3163
-    CONCEPT_GUARD "yolk"@191E 0
+    CONCEPT_GUARD "yolk" 0
     GUARD_POP
-    TEXT 028A 07 08 A0 - - "Yes"@07D9 "indeed"@1923 ","@00DC "the"@00B2 "incomparably"@192A "Great"@18A5 "Yolk..."@1937 "Hare"@193F "Yolk"@188A "Hare"@193F "Hare..."@1944
+    TEXT 028A 07 08 A0 - - "Yes" "indeed"@1923 "," "the" "incomparably"@192A "Great" "Yolk..."@1937 "Hare"@193F "Yolk" "Hare" "Hare..."@1944
     SHARED_STATE C0 1382 F6 C1 0001
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3163
     GUARD_PUSH block_3195
-    CONCEPT_GUARD "yolk"@191E 1
+    CONCEPT_GUARD "yolk" 1
     GUARD_POP
-    TEXT 028A 08 08 90 - - "On"@194C "Vista"@194F ","@00DC "I"@0199 "said"@05EE "."@0095 "Get"@0C82 "those"@1955 "ondoyants"@08AC "out"@05BB "of"@00FD "your"@0634 "brain..."@195B
+    TEXT 028A 08 08 90 - - "On"@194C "Vista"@194F "," "I" "said" "." "Get" "those"@1955 "ondoyants" "out" "of" "your" "brain..."@195B
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3195
-    TEXT 028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT 028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 30FF 00
 END_PROCEDURE proc_Q2_30FE
 
@@ -1128,23 +1128,23 @@ PROCEDURE proc_Q3_31A5
     ACTOR 02C4 0028 0
     GUARD_POP
     TEXT 028A 05 00 80 - - "Concentrate"@1964 "now..."@1970
-    TEXT 028A 01 10 80 block_3218 - "Name"@1977 "a"@00C1 "stuttering"@197C "Croolis?"@1987 FFFF "Cybernator"@1990 "Rotator"@199B "Emasculator"@19A3 "Outrageor"@19AF "Lord_Krater"@19B9
+    TEXT 028A 01 10 80 block_3218 - "Name"@1977 "a" "stuttering"@197C "Croolis?"@1987 FFFF "Cybernator"@1990 "Rotator"@199B "Emasculator"@19A3 "Outrageor"@19AF "Lord_Krater"@19B9
     GUARD_PUSH block_31FE
-    CONCEPT_GUARD "Rotator"@199B 0
+    CONCEPT_GUARD "Rotator" 0
     GUARD_POP
-    TEXT 028A 04 08 A0 - - "That's"@00CF "right"@00D6 "..."@0019
+    TEXT 028A 04 08 A0 - - "That's" "right" "..."
     SHARED_STATE C0 1382 F6 C1 0001
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_31FE
     GUARD_PUSH block_3218
-    CONCEPT_GUARD "Rotator"@199B 1
+    CONCEPT_GUARD "Rotator" 1
     GUARD_POP
-    TEXT 028A 03 08 90 - - "..."@0019
+    TEXT 028A 03 08 90 - - "..."
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3218
-    TEXT 028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT 028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 31A6 00
 END_PROCEDURE proc_Q3_31A5
 
@@ -1153,9 +1153,9 @@ PROCEDURE proc_Q4_3228
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 00 10 80 block_32B1 - "What"@016F "was"@19C5 "king"@00F8 "Betakam"@19C9 "IV's"@19D1 "planet"@0086 "of"@00FD "origin?"@19D6 FFFF "Sat"@19DE "Vistar"@19E2 "Ron"@19E9 "Golgos"@19ED "Pterra"@19F4 "Attrox"@19FB
+    TEXT 028A 00 10 80 block_32B1 - "What" "was"@19C5 "king" "Betakam"@19C9 "IV's"@19D1 "planet" "of" "origin?"@19D6 FFFF "Sat"@19DE "Vistar"@19E2 "Ron"@19E9 "Golgos"@19ED "Pterra"@19F4 "Attrox"@19FB
     GUARD_PUSH block_327D
-    CONCEPT_GUARD "Attrox"@19FB 0
+    CONCEPT_GUARD "Attrox" 0
     GUARD_POP
     TEXT 028A 09 08 A0 - - "Excellent"@1A02 "answer..."@1A0C
     SHARED_STATE C0 1382 F6 C1 0001
@@ -1163,13 +1163,13 @@ PROCEDURE proc_Q4_3228
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_327D
     GUARD_PUSH block_32B1
-    CONCEPT_GUARD "Attrox"@19FB 1
+    CONCEPT_GUARD "Attrox" 1
     GUARD_POP
-    TEXT 028A 08 08 90 - - "For"@1A16 "goodness"@1A1A "sakes"@1A23 "!"@024B "It"@0D85 "starts"@1A29 "with"@00BC "an"@0A14 "A"@0406 "and"@0142 "ends"@1A30 "with"@00BC "an"@0A14 "X..."@1A35
+    TEXT 028A 08 08 90 - - "For"@1A16 "goodness"@1A1A "sakes"@1A23 "!" "It" "starts"@1A29 "with" "an" "A" "and" "ends"@1A30 "with" "an" "X..."@1A35
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_32B1
-    TEXT 028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT 028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 3229 00
 END_PROCEDURE proc_Q4_3228
 
@@ -1178,23 +1178,23 @@ PROCEDURE proc_Q5_32C1
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 07 10 80 block_3340 - "Which"@18EB "Trump"@1A3A "has"@0A10 "a"@00C1 "friend"@0A8F "called"@1A40 "Trompette?"@1A47 FFFF "eviscerator"@1A52 "Fifi"@0BBB "beauregard"@1A5E "tromp_la_mort"@1A69 "otto_von_smile"@1A77
+    TEXT 028A 07 10 80 block_3340 - "Which" "Trump"@1A3A "has" "a" "friend" "called"@1A40 "Trompette?"@1A47 FFFF "eviscerator"@1A52 "Fifi" "beauregard"@1A5E "tromp_la_mort"@1A69 "otto_von_smile"@1A77
     GUARD_PUSH block_331A
-    CONCEPT_GUARD "Fifi"@0BBB 0
+    CONCEPT_GUARD "Fifi" 0
     GUARD_POP
-    TEXT 028A 05 08 A0 - - "Fifi,"@1A86 "that's"@1A8C "the"@00B2 "right"@00D6 "answer"@1A93 "..."@0019
+    TEXT 028A 05 08 A0 - - "Fifi,"@1A86 "that's"@1A8C "the" "right" "answer"@1A93 "..."
     SHARED_STATE C0 1382 F6 C1 0001
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_331A
     GUARD_PUSH block_3340
-    CONCEPT_GUARD "Fifi"@0BBB 1
+    CONCEPT_GUARD "Fifi" 1
     GUARD_POP
-    TEXT 028A 06 08 90 - - "For"@1A16 "goodness"@1A1A "sakes!"@1A9A "Get"@0C82 "a"@00C1 "grip"@1AA2 "guy..."@1AA7
+    TEXT 028A 06 08 90 - - "For" "goodness" "sakes!"@1A9A "Get" "a" "grip"@1AA2 "guy..."@1AA7
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3340
-    TEXT 028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT 028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 32C2 00
 END_PROCEDURE proc_Q5_32C1
 
@@ -1203,23 +1203,23 @@ PROCEDURE proc_Q6_3350
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 04 10 80 block_33C7 - "The"@006C "Great"@18A5 "Yolk"@188A "is"@0092 "a...?"@1AAE FFFF "slimer"@1AB4 "izwal"@1ABB "croolis"@1AC1 "migrax"@1AC9 "robot"@1AD0
+    TEXT 028A 04 10 80 block_33C7 - "The" "Great" "Yolk" "is" "a...?"@1AAE FFFF "slimer"@1AB4 "izwal"@1ABB "croolis"@1AC1 "migrax"@1AC9 "robot"@1AD0
     GUARD_PUSH block_339F
-    CONCEPT_GUARD "slimer"@1AB4 0
+    CONCEPT_GUARD "slimer" 0
     GUARD_POP
-    TEXT 028A 03 08 A0 - - "Yes,"@1AD6 "a"@00C1 "Slimer..."@1ADB
+    TEXT 028A 03 08 A0 - - "Yes,"@1AD6 "a" "Slimer..."@1ADB
     SHARED_STATE C0 1382 F6 C1 0001
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_339F
     GUARD_PUSH block_33C7
-    CONCEPT_GUARD "slimer"@1AB4 1
+    CONCEPT_GUARD "slimer" 1
     GUARD_POP
-    TEXT 028A 02 08 90 - - "The"@006C "Great"@18A5 "Yolk?"@1AE5 "That"@0758 "was"@19C5 "a"@00C1 "mediocre"@1AEB "effort"@1AF4
+    TEXT 028A 02 08 90 - - "The" "Great" "Yolk?"@1AE5 "That" "was" "a" "mediocre"@1AEB "effort"@1AF4
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_33C7
-    TEXT 028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT 028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 3351 00
 END_PROCEDURE proc_Q6_3350
 
@@ -1228,23 +1228,23 @@ PROCEDURE proc_Q7_33D7
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 01 10 80 block_3454 - "Who"@1848 "said:"@1AFB "\"Commander,"@1B01 "Honk"@024D "keeps"@1B0D "scanning"@1B13 "me"@0010 "with"@00BC "his"@0146 "equipment\"?"@1B1C FFFF "eviscerator"@1A52 "emasculator"@1B28 "lord_raptor"@1B34 "tina_burner"@1B40
+    TEXT 028A 01 10 80 block_3454 - "Who" "said:"@1AFB "\"Commander,"@1B01 "Honk" "keeps"@1B0D "scanning"@1B13 "me" "with" "his" "equipment\"?"@1B1C FFFF "eviscerator" "emasculator"@1B28 "lord_raptor"@1B34 "tina_burner"@1B40
     GUARD_PUSH block_3432
-    CONCEPT_GUARD "tina_burner"@1B40 0
+    CONCEPT_GUARD "tina_burner" 0
     GUARD_POP
-    TEXT 028A 02 08 A0 - - "Quite"@1B4C "right."@1B52 "In"@1B59 "the"@00B2 "cryobox..."@1B5C
+    TEXT 028A 02 08 A0 - - "Quite"@1B4C "right."@1B52 "In"@1B59 "the" "cryobox..."@1B5C
     SHARED_STATE C0 1382 F6 C1 0001
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3432
     GUARD_PUSH block_3454
-    CONCEPT_GUARD "tina_burner"@1B40 1
+    CONCEPT_GUARD "tina_burner" 1
     GUARD_POP
-    TEXT 028A 03 08 90 - - "Don't"@02F7 "you"@0257 "have"@0315 "a"@00C1 "radio?"@1B67
+    TEXT 028A 03 08 90 - - "Don't" "you" "have" "a" "radio?"@1B67
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3454
-    TEXT 028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT 028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 33D8 00
 END_PROCEDURE proc_Q7_33D7
 
@@ -1255,21 +1255,21 @@ PROCEDURE proc_Q8_3464
     GUARD_POP
     TEXT 028A 04 10 80 block_34D3 - "Jeph"@1B6E "d'Ulikan"@1B73 "defeated?"@1B7C FFFF "pagos_tagos"@1B86 "black_larsen"@1B92 "hom"@1B9F "lord_krater"@1BA3
     GUARD_PUSH block_34B1
-    CONCEPT_GUARD "black_larsen"@1B92 0
+    CONCEPT_GUARD "black_larsen" 0
     GUARD_POP
-    TEXT 028A 05 08 A0 - - "The"@006C "Black"@1477 "Larsen"@1BAF "Hordes,"@1BB6 "yes..."@1BBE
+    TEXT 028A 05 08 A0 - - "The" "Black" "Larsen"@1BAF "Hordes,"@1BB6 "yes..."@1BBE
     SHARED_STATE C0 1382 F6 C1 0001
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_34B1
     GUARD_PUSH block_34D3
-    CONCEPT_GUARD "black_larsen"@1B92 1
+    CONCEPT_GUARD "black_larsen" 1
     GUARD_POP
-    TEXT 028A 06 08 90 - - "No"@02EA ","@00DC "no"@02ED "and"@0142 "NO..."@1BC5
+    TEXT 028A 06 08 90 - - "No" "," "no" "and" "NO..."@1BC5
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_34D3
-    TEXT 028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT 028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 3465 00
 END_PROCEDURE proc_Q8_3464
 
@@ -1278,23 +1278,23 @@ PROCEDURE proc_Q9_34E3
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 07 10 80 block_3556 - "Who"@1848 "said:"@1AFB "\"One"@1BCB "plus"@1BD0 "one"@0A86 "equals"@1BD5 "three\"?"@1BDC FFFF "lord_krater"@1BA3 "metro_paul"@1BE4 "yolk"@191E
+    TEXT 028A 07 10 80 block_3556 - "Who" "said:" "\"One"@1BCB "plus"@1BD0 "one" "equals"@1BD5 "three\"?"@1BDC FFFF "lord_krater" "metro_paul"@1BE4 "yolk"
     GUARD_PUSH block_3532
-    CONCEPT_GUARD "yolk"@191E 0
+    CONCEPT_GUARD "yolk" 0
     GUARD_POP
-    TEXT 028A 08 08 A0 - - "The"@006C "incredible"@1BEF "Yolk..."@1937
+    TEXT 028A 08 08 A0 - - "The" "incredible"@1BEF "Yolk..."
     SHARED_STATE C0 1382 F6 C1 0001
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3532
     GUARD_PUSH block_3556
-    CONCEPT_GUARD "yolk"@191E 1
+    CONCEPT_GUARD "yolk" 1
     GUARD_POP
-    TEXT 028A 09 08 90 - - "You're"@0869 "not"@0422 "up"@02C5 "on"@004D "your"@0634 "classics..."@1BFA
+    TEXT 028A 09 08 90 - - "You're" "not" "up" "on" "your" "classics..."@1BFA
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3556
-    TEXT 028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT 028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 34E4 00
 END_PROCEDURE proc_Q9_34E3
 
@@ -1303,23 +1303,23 @@ PROCEDURE proc_Q10_3566
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 08 10 80 block_35EB - "How"@0165 "many"@005E "murffalos"@1859 "does"@075D "it"@031A "take"@1297 "to"@012F "reproduce?"@1C06 FFFF "two"@1C11 "four"@1C15 "six"@1C1A "eight"@1C1E "thirteen"@1850
+    TEXT 028A 08 10 80 block_35EB - "How" "many" "murffalos" "does" "it" "take" "to" "reproduce?"@1C06 FFFF "two"@1C11 "four"@1C15 "six"@1C1A "eight"@1C1E "thirteen"
     GUARD_PUSH block_35C7
-    CONCEPT_GUARD "thirteen"@1850 0
+    CONCEPT_GUARD "thirteen" 0
     GUARD_POP
-    TEXT 028A 07 08 A0 - - "One"@1C24 "in"@02E7 "the"@00B2 "middle"@1C28 "and"@0142 "twelve"@1C2F "all"@0630 "around."@1C36 "Good..."@1C3E
+    TEXT 028A 07 08 A0 - - "One"@1C24 "in" "the" "middle"@1C28 "and" "twelve"@1C2F "all" "around."@1C36 "Good..."@1C3E
     SHARED_STATE C0 1382 F6 C1 0001
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_35C7
     GUARD_PUSH block_35EB
-    CONCEPT_GUARD "thirteen"@1850 1
+    CONCEPT_GUARD "thirteen" 1
     GUARD_POP
-    TEXT 028A 06 08 90 - - "Murffalos?"@1C46 "That"@0758 "was"@19C5 "the"@00B2 "easy"@0596 "question..."@1C51
+    TEXT 028A 06 08 90 - - "Murffalos?"@1C46 "That" "was" "the" "easy" "question..."@1C51
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_35EB
-    TEXT 028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT 028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 3567 00
 END_PROCEDURE proc_Q10_3566
 
@@ -1328,22 +1328,22 @@ PROCEDURE proc_Q11_35FB
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 05 10 80 block_365F - "Name"@1977 "a"@00C1 "paralleloped"@1C5D "planet"@0086 FFFF "qx20"@1C6A "tumul"@1C6F "vista"@1C75 "ebony"@1C7B "mastachok"@1C81
+    TEXT 028A 05 10 80 block_365F - "Name" "a" "paralleloped"@1C5D "planet" FFFF "qx20"@1C6A "tumul"@1C6F "vista"@1C75 "ebony"@1C7B "mastachok"@1C81
     GUARD_PUSH block_3643
-    CONCEPT_GUARD "vista"@1C75 0
+    CONCEPT_GUARD "vista" 0
     GUARD_POP
     TEXT 028A 04 08 90 - - "Paralleloped?"@1C8B "Try"@1C99 "contact"@1C9D "lenses..."@1CA5
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3643
     GUARD_PUSH block_365F
-    CONCEPT_GUARD "vista"@1C75 1
+    CONCEPT_GUARD "vista" 1
     GUARD_POP
-    TEXT 028A 03 08 90 - - "You're"@0869 "hopeless...."@1CAF
+    TEXT 028A 03 08 90 - - "You're" "hopeless...."@1CAF
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_365F
-    TEXT 028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT 028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 35FC 00
 END_PROCEDURE proc_Q11_35FB
 
@@ -1352,23 +1352,23 @@ PROCEDURE proc_Q12_366F
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 02 10 80 block_36E6 - "Buggol"@1CBC "democracy"@1CC3 "was"@19C5 "invented"@1CCD "by?"@1CD6 FFFF "strum"@1CDA "Bob_Morlock"@1CE0 "cyborg_1er"@1CEC "exxos"@0F0F
+    TEXT 028A 02 10 80 block_36E6 - "Buggol"@1CBC "democracy"@1CC3 "was" "invented"@1CCD "by?"@1CD6 FFFF "strum"@1CDA "Bob_Morlock"@1CE0 "cyborg_1er"@1CEC "exxos"
     GUARD_PUSH block_36C8
-    CONCEPT_GUARD "cyborg_1er"@1CEC 0
+    CONCEPT_GUARD "cyborg_1er" 0
     GUARD_POP
-    TEXT 028A 01 08 A0 - - "A"@0406 "bit"@1CF7 "of"@00FD "a"@00C1 "history"@1CFB "buff"@1D03 ","@00DC "eh"@1D08 "?..."@1D0B
+    TEXT 028A 01 08 A0 - - "A" "bit"@1CF7 "of" "a" "history"@1CFB "buff"@1D03 "," "eh"@1D08 "?..."@1D0B
     SHARED_STATE C0 1382 F6 C1 0001
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_36C8
     GUARD_PUSH block_36E6
-    CONCEPT_GUARD "cyborg_1er"@1CEC 1
+    CONCEPT_GUARD "cyborg_1er" 1
     GUARD_POP
-    TEXT 028A 00 08 90 - - "No!"@1D10 "No!"@1D10 "Commander..."@001D
+    TEXT 028A 00 08 90 - - "No!"@1D10 "No!" "Commander..."
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_36E6
-    TEXT 028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT 028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 3670 00
 END_PROCEDURE proc_Q12_366F
 
@@ -1377,9 +1377,9 @@ PROCEDURE proc_Q13_36F6
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 01 10 80 block_3767 - "What"@016F "do"@0B25 "Tubular"@155B "Brains"@1D14 "eat?"@1D1B FFFF "klakos"@1D20 "plastok"@1D27 "radium"@1D2F "hay"@1D36 "murffalos"@1859
+    TEXT 028A 01 10 80 block_3767 - "What" "do" "Tubular" "Brains"@1D14 "eat?"@1D1B FFFF "klakos"@1D20 "plastok"@1D27 "radium"@1D2F "hay"@1D36 "murffalos"
     GUARD_PUSH block_3743
-    CONCEPT_GUARD "plastok"@1D27 0
+    CONCEPT_GUARD "plastok" 0
     GUARD_POP
     TEXT 028A 02 08 A0 - - "Protein-enriched"@1D3A "Plastok."@1D4B
     SHARED_STATE C0 1382 F6 C1 0001
@@ -1387,13 +1387,13 @@ PROCEDURE proc_Q13_36F6
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3743
     GUARD_PUSH block_3767
-    CONCEPT_GUARD "plastok"@1D27 1
+    CONCEPT_GUARD "plastok" 1
     GUARD_POP
-    TEXT 028A 03 08 90 - - "You"@01BA "got"@1435 "something"@1D54 "against"@1D5E "Tubulars"@1D66 "?"@01CF
+    TEXT 028A 03 08 90 - - "You" "got" "something"@1D54 "against"@1D5E "Tubulars"@1D66 "?"
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3767
-    TEXT 028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT 028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 36F7 00
 END_PROCEDURE proc_Q13_36F6
 
@@ -1402,23 +1402,23 @@ PROCEDURE proc_Q14_3777
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 04 10 80 block_37F4 - "Name"@1977 "a"@00C1 "planet"@0086 "with"@00BC "rings"@1D6F FFFF "erazor"@1D75 "rondo"@1D7C "bonus"@1D82 "pterra"@0F08
+    TEXT 028A 04 10 80 block_37F4 - "Name" "a" "planet" "with" "rings"@1D6F FFFF "erazor"@1D75 "rondo"@1D7C "bonus"@1D82 "pterra"
     GUARD_PUSH block_37CE
-    CONCEPT_GUARD "bonus"@1D82 0
+    CONCEPT_GUARD "bonus" 0
     GUARD_POP
-    TEXT 028A 05 08 A0 - - "Bonus"@1D88 "has"@0A10 "the"@00B2 "finest"@1D8E "rings"@1D6F "in"@02E7 "the"@00B2 "universe."@1D95
+    TEXT 028A 05 08 A0 - - "Bonus"@1D88 "has" "the" "finest"@1D8E "rings" "in" "the" "universe."@1D95
     SHARED_STATE C0 1382 F6 C1 0001
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_37CE
     GUARD_PUSH block_37F4
-    CONCEPT_GUARD "bonus"@1D82 1
+    CONCEPT_GUARD "bonus" 1
     GUARD_POP
-    TEXT 028A 06 08 90 - - "Rings..."@1D9F "You"@01BA "know"@0936 ","@00DC "those"@1955 "round"@1DA8 "things..."@1DAE
+    TEXT 028A 06 08 90 - - "Rings..."@1D9F "You" "know" "," "those" "round"@1DA8 "things..."@1DAE
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_37F4
-    TEXT 028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT 028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 3778 00
 END_PROCEDURE proc_Q14_3777
 
@@ -1427,23 +1427,23 @@ PROCEDURE proc_Q15_3804
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 07 10 80 block_3889 - "How"@0165 "do"@0B25 "Scorps"@1DB8 "reproduce?"@1C06 FFFF "vivisection"@1DBF "parthenogenesis"@1DCB "mimicry"@1DDB "chance"@1DE3
+    TEXT 028A 07 10 80 block_3889 - "How" "do" "Scorps"@1DB8 "reproduce?" FFFF "vivisection"@1DBF "parthenogenesis"@1DCB "mimicry"@1DDB "chance"@1DE3
     GUARD_PUSH block_385F
-    CONCEPT_GUARD "parthenogenesis"@1DCB 0
+    CONCEPT_GUARD "parthenogenesis" 0
     GUARD_POP
-    TEXT 028A 08 08 A0 - - "Yes..."@1DEA "Just"@0CC8 "cut"@1DF1 "'em"@1DF5 "up"@02C5 "and"@0142 "you've"@1DF9 "got"@1435 "a"@00C1 "family"@1E00 "tree."@1E07
+    TEXT 028A 08 08 A0 - - "Yes..."@1DEA "Just" "cut"@1DF1 "'em"@1DF5 "up" "and" "you've"@1DF9 "got" "a" "family"@1E00 "tree."@1E07
     SHARED_STATE C0 1382 F6 C1 0001
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_385F
     GUARD_PUSH block_3889
-    CONCEPT_GUARD "parthenogenesis"@1DCB 1
+    CONCEPT_GUARD "parthenogenesis" 1
     GUARD_POP
-    TEXT 028A 09 08 90 - - "You"@01BA "should"@1E0D "open"@0F47 "a"@00C1 "dictionary"@1E14 "from"@0151 "time"@089B "to"@012F "time"@089B
+    TEXT 028A 09 08 90 - - "You" "should"@1E0D "open" "a" "dictionary"@1E14 "from" "time" "to" "time"
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3889
-    TEXT 028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT 028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 3805 00
 END_PROCEDURE proc_Q15_3804
 
@@ -1452,23 +1452,23 @@ PROCEDURE proc_Q16_3899
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 0A 10 80 block_3910 - "Name"@1977 "a"@00C1 "highly"@0F77 "concentrated"@0F7E "explosive"@0F8B FFFF "Big_bang"@1E1F "splach"@1E28 "plastok"@1D27 "fuzz"@1E2F
+    TEXT 028A 0A 10 80 block_3910 - "Name" "a" "highly" "concentrated" "explosive" FFFF "Big_bang"@1E1F "splach"@1E28 "plastok" "fuzz"@1E2F
     GUARD_PUSH block_38EC
-    CONCEPT_GUARD "splach"@1E28 0
+    CONCEPT_GUARD "splach" 0
     GUARD_POP
-    TEXT 028A 01 08 A0 - - "Yes..."@1DEA "Made"@1E34 "from"@0151 "oxidized"@180D "Larsen"@1BAF "liver..."@1E39
+    TEXT 028A 01 08 A0 - - "Yes..." "Made"@1E34 "from" "oxidized" "Larsen" "liver..."@1E39
     SHARED_STATE C0 1382 F6 C1 0001
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_38EC
     GUARD_PUSH block_3910
-    CONCEPT_GUARD "splach"@1E28 1
+    CONCEPT_GUARD "splach" 1
     GUARD_POP
-    TEXT 028A 02 08 90 - - "Well,"@1E42 "that"@013D "answer"@1A93 "wasn't"@1E48 "too"@005A "explosive!"@1E4F
+    TEXT 028A 02 08 90 - - "Well,"@1E42 "that" "answer" "wasn't"@1E48 "too" "explosive!"@1E4F
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3910
-    TEXT 028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT 028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 389A 00
 END_PROCEDURE proc_Q16_3899
 
@@ -1477,23 +1477,23 @@ PROCEDURE proc_Q17_3920
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 03 10 80 block_39A9 - "Who"@1848 "is"@0092 "the"@00B2 "queen"@1E5A "of"@00FD "the"@00B2 "PAGO"@1E60 "TAGO,"@1E65 "wife"@1E6B "of"@00FD "king"@00F8 "Betakam"@19C9 "IV?"@1E70 FFFF "umatika"@1E74 "tina_burner"@1B40 "scorpia"@1E7C "pistilla"@1E84 "etamina"@1E8D
+    TEXT 028A 03 10 80 block_39A9 - "Who" "is" "the" "queen"@1E5A "of" "the" "PAGO"@1E60 "TAGO,"@1E65 "wife"@1E6B "of" "king" "Betakam" "IV?"@1E70 FFFF "umatika"@1E74 "tina_burner" "scorpia"@1E7C "pistilla"@1E84 "etamina"@1E8D
     GUARD_PUSH block_398B
-    CONCEPT_GUARD "umatika"@1E74 0
+    CONCEPT_GUARD "umatika" 0
     GUARD_POP
-    TEXT 028A 04 08 A0 - - "Umatika"@1E95 ","@00DC "wife"@1E6B "of"@00FD "king"@00F8 "Betakam"@19C9 "fourth,"@1E9D "eighteenth"@1EA5 "dynasty..."@1EB0
+    TEXT 028A 04 08 A0 - - "Umatika"@1E95 "," "wife" "of" "king" "Betakam" "fourth,"@1E9D "eighteenth"@1EA5 "dynasty..."@1EB0
     SHARED_STATE C0 1382 F6 C1 0001
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_398B
     GUARD_PUSH block_39A9
-    CONCEPT_GUARD "umatika"@1E74 1
+    CONCEPT_GUARD "umatika" 1
     GUARD_POP
-    TEXT 028A 05 08 90 - - "Not"@0F2B "even"@1EBB "close..."@1EC0
+    TEXT 028A 05 08 90 - - "Not" "even"@1EBB "close..."@1EC0
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_39A9
-    TEXT 028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT 028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 3921 00
 END_PROCEDURE proc_Q17_3920
 
@@ -1502,9 +1502,9 @@ PROCEDURE proc_Q18_39B9
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 01 10 80 block_3A2E - "Who"@1848 "said"@05EE "Trump"@1A3A "tails"@1EC9 "are"@0056 "dung?"@1ECF FFFF "lord_segelaxx"@1ED5 "inquisitor"@1EE3 "slim_gelati"@1EEE "tromp_deustache"@1EFA
+    TEXT 028A 01 10 80 block_3A2E - "Who" "said" "Trump" "tails"@1EC9 "are" "dung?"@1ECF FFFF "lord_segelaxx"@1ED5 "inquisitor"@1EE3 "slim_gelati"@1EEE "tromp_deustache"@1EFA
     GUARD_PUSH block_3A08
-    CONCEPT_GUARD "lord_segelaxx"@1ED5 0
+    CONCEPT_GUARD "lord_segelaxx" 0
     GUARD_POP
     TEXT 028A 02 08 A0 - - "Avoid"@1F0A "smoking"@1F10 "them!"@1F18
     SHARED_STATE C0 1382 F6 C1 0001
@@ -1512,13 +1512,13 @@ PROCEDURE proc_Q18_39B9
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3A08
     GUARD_PUSH block_3A2E
-    CONCEPT_GUARD "lord_segelaxx"@1ED5 1
+    CONCEPT_GUARD "lord_segelaxx" 1
     GUARD_POP
-    TEXT 028A 03 08 90 - - "Well,"@1E42 "maybe"@1F1E "it"@031A "was"@19C5 "a"@00C1 "tough"@1F24 "question..."@1C51
+    TEXT 028A 03 08 90 - - "Well," "maybe"@1F1E "it" "was" "a" "tough"@1F24 "question..."
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3A2E
-    TEXT 028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT 028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 39BA 00
 END_PROCEDURE proc_Q18_39B9
 
@@ -1527,23 +1527,23 @@ PROCEDURE proc_Q19_3A3E
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 04 10 80 block_3ABF - "On"@194C "what"@03E5 "planet"@0086 "is"@0092 "sex"@0C38 "sold"@1F2A "illicitly?"@1F2F FFFF "los_demonios"@1F3A "venusia"@1F47 "attroxcity"@1F4F "trashtown"@1F5A
+    TEXT 028A 04 10 80 block_3ABF - "On" "what" "planet" "is" "sex" "sold"@1F2A "illicitly?"@1F2F FFFF "los_demonios"@1F3A "venusia"@1F47 "attroxcity"@1F4F "trashtown"@1F5A
     GUARD_PUSH block_3A97
-    CONCEPT_GUARD "attroxcity"@1F4F 0
+    CONCEPT_GUARD "attroxcity" 0
     GUARD_POP
-    TEXT 028A 05 08 A0 - - "Attroxcity,"@1F64 "the"@00B2 "Slimer"@18F7 "city"@1F70 "..."@0019 "Quite"@1B4C "right!"@1F75
+    TEXT 028A 05 08 A0 - - "Attroxcity,"@1F64 "the" "Slimer" "city"@1F70 "..." "Quite" "right!"@1F75
     SHARED_STATE C0 1382 F6 C1 0001
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3A97
     GUARD_PUSH block_3ABF
-    CONCEPT_GUARD "attroxcity"@1F4F 1
+    CONCEPT_GUARD "attroxcity" 1
     GUARD_POP
-    TEXT 028A 06 08 90 - - "No"@02EA ","@00DC "that"@013D "was"@19C5 "a"@00C1 "very"@158D "wrong"@1F7C "answer..."@1A0C
+    TEXT 028A 06 08 90 - - "No" "," "that" "was" "a" "very" "wrong"@1F7C "answer..."
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3ABF
-    TEXT 028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT 028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 3A3F 00
 END_PROCEDURE proc_Q19_3A3E
 
@@ -1552,23 +1552,23 @@ PROCEDURE proc_Q20_3ACF
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 07 10 80 block_3B58 - "Who"@1848 "painted"@1F82 "the"@00B2 "famous"@09E3 "portrait"@1F8A "of"@00FD "Yolk?"@1AE5 FFFF "van_ish"@1F93 "van_gelis"@1F9B "van_et"@1FA5 "van_deta"@1FAC "van_tage"@1FB5 "van_gogue"@1FBE
+    TEXT 028A 07 10 80 block_3B58 - "Who" "painted"@1F82 "the" "famous" "portrait"@1F8A "of" "Yolk?" FFFF "van_ish"@1F93 "van_gelis"@1F9B "van_et"@1FA5 "van_deta"@1FAC "van_tage"@1FB5 "van_gogue"@1FBE
     GUARD_PUSH block_3B34
-    CONCEPT_GUARD "van_gogue"@1FBE 0
+    CONCEPT_GUARD "van_gogue" 0
     GUARD_POP
-    TEXT 028A 08 08 A0 - - "Van"@1FC8 "Gogue"@1FCC "painted"@1F82 "it"@031A "with"@00BC "the"@00B2 "Great"@18A5 "One's"@1FD2 "own"@1FD8 "yellow"@1FDC "blood..."@1FE3
+    TEXT 028A 08 08 A0 - - "Van"@1FC8 "Gogue"@1FCC "painted" "it" "with" "the" "Great" "One's"@1FD2 "own"@1FD8 "yellow"@1FDC "blood..."@1FE3
     SHARED_STATE C0 1382 F6 C1 0001
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3B34
     GUARD_PUSH block_3B58
-    CONCEPT_GUARD "van_gogue"@1FBE 1
+    CONCEPT_GUARD "van_gogue" 1
     GUARD_POP
-    TEXT 028A 09 08 90 - - "That"@0758 "was"@19C5 "supposed"@1FEC "to"@012F "be"@0866 "easy..."@0DB1
+    TEXT 028A 09 08 90 - - "That" "was" "supposed"@1FEC "to" "be" "easy..."
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3B58
-    TEXT 028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT 028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 3AD0 00
 END_PROCEDURE proc_Q20_3ACF
 
@@ -1577,23 +1577,23 @@ PROCEDURE proc_Q21_3B68
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 0A 10 80 block_3BDB - "Who"@1848 "wrote"@1FF5 "the"@00B2 "famous"@09E3 "Croolicum?"@1FFB FFFF "lord_raptor"@1B34 "lord_ship"@2006 "von_spacecraft"@2010 "nobody"@201F
+    TEXT 028A 0A 10 80 block_3BDB - "Who" "wrote"@1FF5 "the" "famous" "Croolicum?"@1FFB FFFF "lord_raptor" "lord_ship"@2006 "von_spacecraft"@2010 "nobody"@201F
     GUARD_PUSH block_3BBD
-    CONCEPT_GUARD "nobody"@201F 0
+    CONCEPT_GUARD "nobody" 0
     GUARD_POP
-    TEXT 028A 00 08 A0 - - "There's"@0450 "no"@02ED "catching"@2026 "you"@0257 "out"@05BB ","@00DC "eh?"@202F
+    TEXT 028A 00 08 A0 - - "There's" "no" "catching"@2026 "you" "out" "," "eh?"@202F
     SHARED_STATE C0 1382 F6 C1 0001
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3BBD
     GUARD_PUSH block_3BDB
-    CONCEPT_GUARD "nobody"@201F 1
+    CONCEPT_GUARD "nobody" 1
     GUARD_POP
-    TEXT 028A 01 08 90 - - "What's"@0436 "the"@00B2 "Croolicum?"@1FFB
+    TEXT 028A 01 08 90 - - "What's" "the" "Croolicum?"
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3BDB
-    TEXT 028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT 028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 3B69 00
 END_PROCEDURE proc_Q21_3B68
 
@@ -1602,23 +1602,23 @@ PROCEDURE proc_Q22_3BEB
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 02 10 80 block_3C5C - "Who"@1848 "was"@19C5 "the"@00B2 "first"@2033 "Trump"@1A3A "tail"@2039 "smoker"@203E "in"@02E7 "the"@00B2 "universe?"@2045 FFFF "al_hure"@204F "sebasto_paul"@2057 "lord_sirtaki"@2064 "jeph_dulikan"@2071
+    TEXT 028A 02 10 80 block_3C5C - "Who" "was" "the" "first"@2033 "Trump" "tail"@2039 "smoker"@203E "in" "the" "universe?"@2045 FFFF "al_hure"@204F "sebasto_paul"@2057 "lord_sirtaki"@2064 "jeph_dulikan"@2071
     GUARD_PUSH block_3C42
-    CONCEPT_GUARD "al_hure"@204F 0
+    CONCEPT_GUARD "al_hure" 0
     GUARD_POP
-    TEXT 028A 02 08 A0 - - "Good"@11A2 "ol'"@207E "Al..."@2082
+    TEXT 028A 02 08 A0 - - "Good" "ol'"@207E "Al..."@2082
     SHARED_STATE C0 1382 F6 C1 0001
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3C42
     GUARD_PUSH block_3C5C
-    CONCEPT_GUARD "al_hure"@204F 1
+    CONCEPT_GUARD "al_hure" 1
     GUARD_POP
     TEXT 028A 03 08 90 - - "Sorry..."@2088
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3C5C
-    TEXT 028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT 028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 3BEC 00
 END_PROCEDURE proc_Q22_3BEB
 
@@ -1627,23 +1627,23 @@ PROCEDURE proc_Q23_3C6C
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 04 10 80 block_3CE5 - "Who"@1848 "said"@05EE ":\"Silence"@2091 "feeds"@209B "on"@004D "thunder"@20A2 "and"@0142 "fury\"?"@20AA FFFF "yolk"@191E "joy_stica"@20B1 "hom"@1B9F "super_zen"@20BB
+    TEXT 028A 04 10 80 block_3CE5 - "Who" "said" ":\"Silence"@2091 "feeds"@209B "on" "thunder"@20A2 "and" "fury\"?"@20AA FFFF "yolk" "joy_stica"@20B1 "hom" "super_zen"@20BB
     GUARD_PUSH block_3CC5
-    CONCEPT_GUARD "yolk"@191E 0
+    CONCEPT_GUARD "yolk" 0
     GUARD_POP
-    TEXT 028A 04 08 A0 - - "Peace"@20C5 "to"@012F "his"@0146 "yellow"@1FDC "soul..."@20CB "Bravo."@20D3
+    TEXT 028A 04 08 A0 - - "Peace"@20C5 "to" "his" "yellow" "soul..."@20CB "Bravo."@20D3
     SHARED_STATE C0 1382 F6 C1 0001
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3CC5
     GUARD_PUSH block_3CE5
-    CONCEPT_GUARD "yolk"@191E 1
+    CONCEPT_GUARD "yolk" 1
     GUARD_POP
-    TEXT 028A 05 08 90 - - "Read"@20DA "your"@0634 "classics"@20DF "..."@0019
+    TEXT 028A 05 08 90 - - "Read"@20DA "your" "classics"@20DF "..."
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3CE5
-    TEXT 028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT 028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 3C6D 00
 END_PROCEDURE proc_Q23_3C6C
 
@@ -1652,9 +1652,9 @@ PROCEDURE proc_Q24_3CF5
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 06 10 80 block_3D60 - "Name"@1977 "one"@0A86 "hit"@20E8 "by"@09C8 "the"@00B2 "Migrators"@20EC FFFF "crush_me_baby"@20F6 "space_maker"@2104 "hello_dolly"@2110 "love_me_do"@211C
+    TEXT 028A 06 10 80 block_3D60 - "Name" "one" "hit"@20E8 "by" "the" "Migrators"@20EC FFFF "crush_me_baby"@20F6 "space_maker"@2104 "hello_dolly"@2110 "love_me_do"@211C
     GUARD_PUSH block_3D44
-    CONCEPT_GUARD "crush_me_baby"@20F6 0
+    CONCEPT_GUARD "crush_me_baby" 0
     GUARD_POP
     TEXT 028A 07 08 A0 - - "Cruuuush"@2127 "meee"@2130 "baaaabbbyyyy!"@2135
     SHARED_STATE C0 1382 F6 C1 0001
@@ -1664,11 +1664,11 @@ PROCEDURE proc_Q24_3CF5
     GUARD_PUSH block_3D60
     CONCEPT_GUARD "crush_me_baby.."@2143 1
     GUARD_POP
-    TEXT 028A 08 08 90 - - "Ouch"@2153 "..."@0019
+    TEXT 028A 08 08 90 - - "Ouch"@2153 "..."
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3D60
-    TEXT 028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT 028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 3CF6 00
 END_PROCEDURE proc_Q24_3CF5
 
@@ -1677,23 +1677,23 @@ PROCEDURE proc_Q25_3D70
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 08 10 80 block_3DE5 - "Who"@1848 "is"@0092 "the"@00B2 "oldest"@2158 "living"@215F "being"@1379 "in"@02E7 "the"@00B2 "universe?"@2045 FFFF "otto_von_smile"@1A77 "Bob_Morlock"@1CE0 "super_tromp"@2166 "techno_paul"@2172
+    TEXT 028A 08 10 80 block_3DE5 - "Who" "is" "the" "oldest"@2158 "living"@215F "being" "in" "the" "universe?" FFFF "otto_von_smile" "Bob_Morlock" "super_tromp"@2166 "techno_paul"@2172
     GUARD_PUSH block_3DC5
-    CONCEPT_GUARD "Bob_Morlock"@1CE0 0
+    CONCEPT_GUARD "Bob_Morlock" 0
     GUARD_POP
-    TEXT 028A 08 08 A0 - - "Good"@11A2 "ol'"@207E "Bob!"@217E
+    TEXT 028A 08 08 A0 - - "Good" "ol'" "Bob!"@217E
     SHARED_STATE C0 1382 F6 C1 0001
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3DC5
     GUARD_PUSH block_3DE5
-    CONCEPT_GUARD "Bob_Morlock"@1CE0 1
+    CONCEPT_GUARD "Bob_Morlock" 1
     GUARD_POP
-    TEXT 028A 06 08 90 - - "I"@0199 "said"@05EE "the"@00B2 "OLDEST..."@2183
+    TEXT 028A 06 08 90 - - "I" "said" "the" "OLDEST..."@2183
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3DE5
-    TEXT 028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT 028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 3D71 00
 END_PROCEDURE proc_Q25_3D70
 
@@ -1702,23 +1702,23 @@ PROCEDURE proc_Q26_3DF5
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 08 10 80 block_3E74 - "Which"@18EB "famous"@09E3 "dancer"@218D "starred"@2194 "in"@02E7 "\"Squeeze"@219C "me"@0010 "in"@02E7 "your"@0634 "tentacles"@21A5 "darling\"?"@21AF FFFF "torka"@21B9 "tina_burner"@1B40 "cybertha"@21BF "joy_stika"@21C8
+    TEXT 028A 08 10 80 block_3E74 - "Which" "famous" "dancer"@218D "starred"@2194 "in" "\"Squeeze"@219C "me" "in" "your" "tentacles"@21A5 "darling\"?"@21AF FFFF "torka"@21B9 "tina_burner" "cybertha"@21BF "joy_stika"@21C8
     GUARD_PUSH block_3E50
-    CONCEPT_GUARD "tina_burner"@1B40 0
+    CONCEPT_GUARD "tina_burner" 0
     GUARD_POP
-    TEXT 028A 06 08 A0 - - "What"@016F "a"@00C1 "performance"@21D2 "!"@024B
+    TEXT 028A 06 08 A0 - - "What" "a" "performance"@21D2 "!"
     SHARED_STATE C0 1382 F6 C1 0001
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3E50
     GUARD_PUSH block_3E74
-    CONCEPT_GUARD "tina_burner"@1B40 1
+    CONCEPT_GUARD "tina_burner" 1
     GUARD_POP
-    TEXT 028A 09 08 90 - - "How"@0165 "can"@01F9 "you"@0257 "not"@0422 "know"@0936 "that?"@21DE
+    TEXT 028A 09 08 90 - - "How" "can" "you" "not" "know" "that?"@21DE
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3E74
-    TEXT 028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT 028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 3DF6 00
 END_PROCEDURE proc_Q26_3DF5
 
@@ -1727,23 +1727,23 @@ PROCEDURE proc_Q27_3E84
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 06 10 80 block_3EFD - "What"@016F "is"@0092 "the"@00B2 "preferred"@21E4 "drink"@21EE "of"@00FD "the"@00B2 "Migrax?"@21F4 FFFF "processed_liver"@21FC "frozen_migrita"@220C "fermented_egg"@221B "heavy_water"@2229
+    TEXT 028A 06 10 80 block_3EFD - "What" "is" "the" "preferred"@21E4 "drink"@21EE "of" "the" "Migrax?"@21F4 FFFF "processed_liver"@21FC "frozen_migrita"@220C "fermented_egg"@221B "heavy_water"@2229
     GUARD_PUSH block_3ED7
-    CONCEPT_GUARD "processed_liver"@21FC 0
+    CONCEPT_GUARD "processed_liver" 0
     GUARD_POP
-    TEXT 028A 09 08 A0 - - "Way"@10E7 "too"@005A "easy..."@0DB1
+    TEXT 028A 09 08 A0 - - "Way" "too" "easy..."
     SHARED_STATE C0 1382 F6 C1 0001
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3ED7
     GUARD_PUSH block_3EFD
-    CONCEPT_GUARD "processed_liver"@21FC 1
+    CONCEPT_GUARD "processed_liver" 1
     GUARD_POP
-    TEXT 028A 03 08 90 - - "You"@01BA "mean"@037E "you"@0257 "don't"@0C42 "know"@0936 "the"@00B2 "Migrax?"@21F4
+    TEXT 028A 03 08 90 - - "You" "mean" "you" "don't" "know" "the" "Migrax?"
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3EFD
-    TEXT 028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT 028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 3E85 00
 END_PROCEDURE proc_Q27_3E84
 
@@ -1752,23 +1752,23 @@ PROCEDURE proc_Q28_3F0D
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 06 10 80 block_3F8E - "Who"@1848 "said:\"ondoyant"@2235 "pretty,"@2244 "Croolis"@224C "drool."@2254 "ondoyant"@225B "ugly,"@2264 "Croolis"@224C "cruel\""@226A FFFF "nobody"@201F "maxxon"@2271 "yolk"@191E
+    TEXT 028A 06 10 80 block_3F8E - "Who" "said:\"ondoyant"@2235 "pretty,"@2244 "Croolis"@224C "drool."@2254 "ondoyant"@225B "ugly,"@2264 "Croolis" "cruel\""@226A FFFF "nobody" "maxxon"@2271 "yolk"
     GUARD_PUSH block_3F66
-    CONCEPT_GUARD "maxxon"@2271 0
+    CONCEPT_GUARD "maxxon" 0
     GUARD_POP
-    TEXT 028A 00 08 A0 - - "What"@016F "a"@00C1 "poet"@2278 ","@00DC "that"@013D "Maxxon."@227D
+    TEXT 028A 00 08 A0 - - "What" "a" "poet"@2278 "," "that" "Maxxon."@227D
     SHARED_STATE C0 1382 F6 C1 0001
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3F66
     GUARD_PUSH block_3F8E
-    CONCEPT_GUARD "maxxon"@2271 1
+    CONCEPT_GUARD "maxxon" 1
     GUARD_POP
-    TEXT 028A 03 08 90 - - "No"@02EA "poetry"@2285 "in"@02E7 "your"@0634 "withered"@228C "soul"@2295 ","@00DC "eh?"@202F
+    TEXT 028A 03 08 90 - - "No" "poetry"@2285 "in" "your" "withered"@228C "soul"@2295 "," "eh?"
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3F8E
-    TEXT 028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT 028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 3F0E 00
 END_PROCEDURE proc_Q28_3F0D
 
@@ -1777,23 +1777,23 @@ PROCEDURE proc_Q29_3F9E
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 00 10 80 block_401D - "The"@006C "Great"@18A5 "Yolk's"@229A "tomb"@22A2 "is"@0092 "on"@004D "which"@22A7 "planet?"@22AD FFFF "rondo"@1D7C "ekatomb"@22B5 "vista"@1C75 "magnus"@22BD
+    TEXT 028A 00 10 80 block_401D - "The" "Great" "Yolk's"@229A "tomb"@22A2 "is" "on" "which"@22A7 "planet?"@22AD FFFF "rondo" "ekatomb"@22B5 "vista" "magnus"@22BD
     GUARD_PUSH block_3FF7
-    CONCEPT_GUARD "vista"@1C75 0
+    CONCEPT_GUARD "vista" 0
     GUARD_POP
-    TEXT 028A 06 08 A0 - - "In"@1B59 "the"@00B2 "SCRUT"@22C4 "palace"@22CA "on"@004D "Vista"@194F
+    TEXT 028A 06 08 A0 - - "In" "the" "SCRUT"@22C4 "palace"@22CA "on" "Vista"
     SHARED_STATE C0 1382 F6 C1 0001
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_3FF7
     GUARD_PUSH block_401D
-    CONCEPT_GUARD "vista"@1C75 1
+    CONCEPT_GUARD "vista" 1
     GUARD_POP
-    TEXT 028A 09 08 90 - - "You"@01BA "never"@100E "heard"@038B "of"@00FD "the"@00B2 "SCRUT"@22C4 "palace?"@22D1
+    TEXT 028A 09 08 90 - - "You" "never" "heard" "of" "the" "SCRUT" "palace?"@22D1
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_401D
-    TEXT 028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT 028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 3F9F 00
 END_PROCEDURE proc_Q29_3F9E
 
@@ -1802,23 +1802,23 @@ PROCEDURE proc_Q30_402D
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 07 10 80 block_40A4 - "On"@194C "which"@22A7 "planet"@0086 "may"@22D9 "the"@00B2 "voice"@22DD "be"@0866 "heard?"@22E3 FFFF "pterra"@0F08 "cyberock"@22EA "kult"@22F3 "tumul"@1C6F
+    TEXT 028A 07 10 80 block_40A4 - "On" "which" "planet" "may"@22D9 "the" "voice"@22DD "be" "heard?"@22E3 FFFF "pterra" "cyberock"@22EA "kult"@22F3 "tumul"
     GUARD_PUSH block_4080
-    CONCEPT_GUARD "kult"@22F3 0
+    CONCEPT_GUARD "kult" 0
     GUARD_POP
-    TEXT 028A 03 08 A0 - - "Indeed"@22F8 ","@00DC "Commander..."@001D
+    TEXT 028A 03 08 A0 - - "Indeed"@22F8 "," "Commander..."
     SHARED_STATE C0 1382 F6 C1 0001
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_4080
     GUARD_PUSH block_40A4
-    CONCEPT_GUARD "kult"@22F3 1
+    CONCEPT_GUARD "kult" 1
     GUARD_POP
-    TEXT 028A 00 08 90 - - "You're"@0869 "not"@0422 "deaf"@2300 "by"@09C8 "any"@0CB8 "chance?"@2305
+    TEXT 028A 00 08 90 - - "You're" "not" "deaf"@2300 "by" "any" "chance?"@2305
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_40A4
-    TEXT 028A 03 08 80 - - "next"@230D "question:"@18E1
+    TEXT 028A 03 08 80 - - "next"@230D "question:"
     POKE_BYTE 402E 00
 END_PROCEDURE proc_Q30_402D
 
@@ -1827,23 +1827,23 @@ PROCEDURE proc_Q31_40B4
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 01 10 80 block_412F - "What"@016F "is"@0092 "the"@00B2 "planet"@0086 "Tumul's"@2312 "sun?"@231A FFFF "ex897"@231F "gladis"@2325 "corpo"@232C "negratom"@2332
+    TEXT 028A 01 10 80 block_412F - "What" "is" "the" "planet" "Tumul's"@2312 "sun?"@231A FFFF "ex897"@231F "gladis"@2325 "corpo"@232C "negratom"@2332
     GUARD_PUSH block_4109
-    CONCEPT_GUARD "gladis"@2325 0
+    CONCEPT_GUARD "gladis" 0
     GUARD_POP
-    TEXT 028A 03 08 A0 - - "Gladis"@233B ","@00DC "the"@00B2 "smart"@0AA7 "star"@1496 "."@0095
+    TEXT 028A 03 08 A0 - - "Gladis"@233B "," "the" "smart" "star" "."
     SHARED_STATE C0 1382 F6 C1 0001
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_4109
     GUARD_PUSH block_412F
-    CONCEPT_GUARD "gladis"@2325 1
+    CONCEPT_GUARD "gladis" 1
     GUARD_POP
-    TEXT 028A 01 08 90 - - "You"@01BA "mean"@037E "you"@0257 "never"@100E "went"@11B0 "to"@012F "Tumul?"@2342
+    TEXT 028A 01 08 90 - - "You" "mean" "you" "never" "went" "to" "Tumul?"@2342
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_412F
-    TEXT 028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT 028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 40B5 00
 END_PROCEDURE proc_Q31_40B4
 
@@ -1852,23 +1852,23 @@ PROCEDURE proc_Q32_413F
     BRANCH_GAMEFLAG
     ACTOR 02C4 0028 0
     GUARD_POP
-    TEXT 028A 0A 10 80 block_41B6 - "How"@0165 "many"@005E "moons"@2349 "has"@0A10 "Moskito?"@234F FFFF "five"@2358 "twelve"@1C2F "zero"@235D "thirty_two"@2362
+    TEXT 028A 0A 10 80 block_41B6 - "How" "many" "moons"@2349 "has" "Moskito?"@234F FFFF "five"@2358 "twelve" "zero"@235D "thirty_two"@2362
     GUARD_PUSH block_4190
-    CONCEPT_GUARD "zero"@235D 0
+    CONCEPT_GUARD "zero" 0
     GUARD_POP
-    TEXT 028A 01 08 A0 - - "Absolutely"@236D "right."@1B52 "Moskito"@2378 "is"@0092 "moonless."@2380
+    TEXT 028A 01 08 A0 - - "Absolutely"@236D "right." "Moskito"@2378 "is" "moonless."@2380
     SHARED_STATE C0 1382 F6 C1 0001
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_4190
     GUARD_PUSH block_41B6
-    CONCEPT_GUARD "zero"@235D 1
+    CONCEPT_GUARD "zero" 1
     GUARD_POP
-    TEXT 028A 03 08 90 - - "Maybe"@18D6 "you"@0257 "have"@0315 "mosquitoes"@238A "for"@036A "a"@00C1 "brain"@2395
+    TEXT 028A 03 08 90 - - "Maybe" "you" "have" "mosquitoes"@238A "for" "a" "brain"@2395
     SHARED_STATE C0 1380 F6 C1 0001
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_41B6
-    TEXT 028A 03 08 80 - - "And"@0ACC "that"@013D "wraps"@239B "it"@031A "up"@02C5 "question-wise..."@23A2
+    TEXT 028A 03 08 80 - - "And" "that" "wraps"@239B "it" "up" "question-wise..."@23A2
     POKE_BYTE 4140 00
 END_PROCEDURE proc_Q32_413F
 
@@ -1877,48 +1877,48 @@ PROCEDURE proc_scrujo_41CE
     BRANCH_FLAG_274F
     ACTOR 078C 0028 0
     GUARD_POP
-    TEXT 0752 13 00 80 - - "Commander"@00A3 ","@00DC "you"@0257 "go"@0777 "search"@23B3 "BIONIUM"@102E "in"@02E7 "SCRUTER"@23BA "JO's"@23C2 "cyberspace"@23C7 "..."@0019
+    TEXT 0752 13 00 80 - - "Commander" "," "you" "go" "search"@23B3 "BIONIUM" "in" "SCRUTER"@23BA "JO's"@23C2 "cyberspace"@23C7 "..."
     GUARD_PUSH block_43A6
     SHARED_STATE C0 1366 F5 C1 0000
     GUARD_POP
-    TEXT 0752 FF 00 80 - - "Me"@0B6B "explain"@23D2 "how"@0665 "you"@0257 "pick"@14D2 "up"@02C5 "BIONIUM"@102E ".."@00CC
-    TEXT 0752 FF 00 80 - - "You"@01BA "find"@0B28 "BIOXX"@23DA "."@0095 "Bioxx"@23E0 "be"@0866 "small"@23E6 "energy"@23EC "creatures"@23F3 "..."@0019
-    TEXT 0752 01 00 80 - - "You"@01BA "touch"@23FD "BIOXX"@23DA "with"@00BC "hand"@2403 "once"@2408 "."@0095
-    TEXT 0752 FF 20 80 - - "Sounds"@240D "like"@0224 "a"@00C1 "piece"@2414 "of"@00FD "cake"@241A "to"@012F "me"@0010 ","@00DC "Commander"@00A3 "!!"@09E0
-    TEXT 0752 02 00 80 - - "If"@241F "you"@0257 "touch"@23FD "BIOXX"@23DA "twice"@2422 ","@00DC "you"@0257 "CAPTURE"@2428 "BIOXX"@23DA "on"@004D "tip"@2430 "of"@00FD "your"@0634 "finger"@2434 "..."@0019
-    TEXT 0752 FF 20 80 - - "You"@01BA "catch"@1569 "it"@031A "on"@004D "the"@00B2 "tip"@2430 "of"@00FD "your"@0634 "finger"@2434 "!!!"@033F "How"@0165 "about"@0169 "that"@013D "..."@0019
-    TEXT 0752 03 00 80 - - "Then"@243B "you"@0257 "can"@01F9 "carry"@2440 "BIOXX"@23DA "to"@012F "Cybernetic"@2446 "MANTAS"@2451
-    TEXT 0752 05 00 80 - - "You"@01BA "put"@2458 "BIOXX"@23DA "in"@02E7 "belly"@245C "of"@00FD "Manta"@2462 "..."@0019
-    TEXT 0752 04 00 80 - - "BIOXX"@23DA "stick"@2468 "to"@012F "MANTAS"@2451 "..."@0019
-    TEXT 0752 FF 20 80 - - "That's"@00CF "something"@1D54 "I"@0199 "wanna"@0D9F "see"@0911 "..."@0019
-    TEXT 0752 06 00 80 - - "Mantas"@246E "change"@2475 "BIOXX"@23DA "into"@0753 "BIONIUM..."@247C
-    TEXT 0752 05 00 80 - - "More"@2487 "BIOXX"@23DA "you"@0257 "give"@023B "to"@012F "Mantas"@246E ","@00DC "more"@248C "BIONIUM"@102E "you"@0257 "get"@04A0 "..."@0019
-    TEXT 0752 FF 20 80 - - "Lead"@2491 "me"@0010 "to"@012F "those"@1955 "BIOXXes"@2496 "!!!"@033F "BIONIUM"@102E "..."@0019 "Yummy"@249E "..."@0019
-    TEXT 0752 04 00 80 - - "To"@0956 "come"@0BC4 "back"@02A7 "from"@0151 "CYBERSPACE"@24A4 ","@00DC "you"@0257 "touch"@23FD "BLUE"@24AF "BOX"@24B4 "...."@1043
-    TEXT 0752 06 00 80 - - "You"@01BA "understand"@101B "?"@01CF
-    TEXT 0752 FF 20 80 - - "We"@057F "get"@04A0 "the"@00B2 "picture"@24B8 ","@00DC "Mister"@02CF "SCRUTER"@23BA "JO"@24C0 "..."@0019 "Right"@03F6 ","@00DC "Commander"@00A3 "?"@01CF
+    TEXT 0752 FF 00 80 - - "Me" "explain"@23D2 "how" "you" "pick" "up" "BIONIUM" ".."
+    TEXT 0752 FF 00 80 - - "You" "find" "BIOXX"@23DA "." "Bioxx"@23E0 "be" "small"@23E6 "energy"@23EC "creatures"@23F3 "..."
+    TEXT 0752 01 00 80 - - "You" "touch"@23FD "BIOXX" "with" "hand"@2403 "once"@2408 "."
+    TEXT 0752 FF 20 80 - - "Sounds"@240D "like" "a" "piece"@2414 "of" "cake"@241A "to" "me" "," "Commander" "!!"
+    TEXT 0752 02 00 80 - - "If"@241F "you" "touch" "BIOXX" "twice"@2422 "," "you" "CAPTURE"@2428 "BIOXX" "on" "tip"@2430 "of" "your" "finger"@2434 "..."
+    TEXT 0752 FF 20 80 - - "You" "catch" "it" "on" "the" "tip" "of" "your" "finger" "!!!" "How" "about" "that" "..."
+    TEXT 0752 03 00 80 - - "Then"@243B "you" "can" "carry"@2440 "BIOXX" "to" "Cybernetic"@2446 "MANTAS"@2451
+    TEXT 0752 05 00 80 - - "You" "put"@2458 "BIOXX" "in" "belly"@245C "of" "Manta"@2462 "..."
+    TEXT 0752 04 00 80 - - "BIOXX" "stick"@2468 "to" "MANTAS" "..."
+    TEXT 0752 FF 20 80 - - "That's" "something" "I" "wanna" "see" "..."
+    TEXT 0752 06 00 80 - - "Mantas"@246E "change"@2475 "BIOXX" "into" "BIONIUM..."@247C
+    TEXT 0752 05 00 80 - - "More"@2487 "BIOXX" "you" "give" "to" "Mantas" "," "more"@248C "BIONIUM" "you" "get" "..."
+    TEXT 0752 FF 20 80 - - "Lead"@2491 "me" "to" "those" "BIOXXes"@2496 "!!!" "BIONIUM" "..." "Yummy"@249E "..."
+    TEXT 0752 04 00 80 - - "To" "come" "back" "from" "CYBERSPACE"@24A4 "," "you" "touch" "BLUE"@24AF "BOX"@24B4 "...."
+    TEXT 0752 06 00 80 - - "You" "understand" "?"
+    TEXT 0752 FF 20 80 - - "We" "get" "the" "picture"@24B8 "," "Mister" "SCRUTER" "JO"@24C0 "..." "Right" "," "Commander" "?"
     LABEL block_43A6
-    TEXT 0752 14 00 80 - - "YOU"@046C "go"@0777 ","@00DC "Commander"@00A3 "..."@0019
-    TEXT 0752 15 00 80 - - "Ahh"@159D "..."@0019 "Me"@0B6B "feel"@0A21 "better"@24C3 "..."@0019
+    TEXT 0752 14 00 80 - - "YOU" "go" "," "Commander" "..."
+    TEXT 0752 15 00 80 - - "Ahh" "..." "Me" "feel" "better"@24C3 "..."
     GUARD_PUSH block_4456
     SHARED_STATE C0 1368 F2 C1 0000
     GUARD_POP
-    TEXT 0752 02 00 80 - - "Good"@11A2 "work"@24CA "..."@0019 "You"@01BA "did"@0211 "be"@0866 "successful"@24CF "..."@0019
-    TEXT 0752 03 00 80 - - "You"@01BA "did"@0211 "get"@04A0 "BIONIUM"@102E "..."@0019
-    TEXT 0752 FF 20 80 - - "YES"@0B67 "!!!"@033F "Commander"@00A3 ","@00DC "did"@0211 "I"@0199 "ever"@24DA "tell"@0605 "you"@0257 "what"@03E5 "a"@00C1 "cool"@24DF "dude"@24E4 "you"@0257 "are"@0056 "?"@01CF
-    TEXT 0752 FF 20 80 - - "The"@006C "BIONIUM"@102E "will"@07E3 "make"@1356 "me"@0010 "smarter"@0F15 "and"@0142 "I'll"@0D12 "be"@0866 "able"@24E9 "to"@012F "help"@09EA "you"@0257 "better"@24C3 "..."@0019
+    TEXT 0752 02 00 80 - - "Good" "work"@24CA "..." "You" "did" "be" "successful"@24CF "..."
+    TEXT 0752 03 00 80 - - "You" "did" "get" "BIONIUM" "..."
+    TEXT 0752 FF 20 80 - - "YES" "!!!" "Commander" "," "did" "I" "ever"@24DA "tell" "you" "what" "a" "cool"@24DF "dude"@24E4 "you" "are" "?"
+    TEXT 0752 FF 20 80 - - "The" "BIONIUM" "will" "make" "me" "smarter" "and" "I'll" "be" "able"@24E9 "to" "help" "you" "better" "..."
     SHARED_STATE C0 1366 F5 C1 0001
     LABEL block_4456
     GUARD_PUSH block_44F1
     SHARED_STATE C0 1368 F5 C1 0000
     GUARD_POP
-    TEXT 0752 04 00 80 - - "Not"@0F2B "good"@0A8A ","@00DC "friend"@0A8F "..."@0019 "You"@01BA "fail"@24EE "..."@0019
-    TEXT 0752 FF 20 80 - - "You"@01BA "didn't"@026D "understand"@101B "the"@00B2 "idea"@24F3 ","@00DC "huh"@24F8 ","@00DC "Commander"@00A3 "..."@0019
-    TEXT 0752 FF 20 80 - - "I"@0199 "have"@0315 "to"@012F "have"@0315 "BIONIUM"@102E ","@00DC "Commander"@00A3 "."@0095 "It"@0D85 "makes"@0718 "me"@0010 "smarter"@0F15 "..."@0019
-    TEXT 0752 04 00 80 - - "Ha"@027E "!"@024B "Ha"@027E "!"@024B "You"@01BA "need"@0CA0 "much"@0669 "bionium"@24FC "BIONIUM"@102E "..."@0019 "Ha"@027E "!"@024B "Ha"@027E "!"@024B "..."@0019
-    TEXT 0752 FF 20 80 - - "That's"@00CF "enough"@077F "out"@05BB "of"@00FD "you"@0257 "!!!"@033F
+    TEXT 0752 04 00 80 - - "Not" "good" "," "friend" "..." "You" "fail"@24EE "..."
+    TEXT 0752 FF 20 80 - - "You" "didn't" "understand" "the" "idea"@24F3 "," "huh"@24F8 "," "Commander" "..."
+    TEXT 0752 FF 20 80 - - "I" "have" "to" "have" "BIONIUM" "," "Commander" "." "It" "makes" "me" "smarter" "..."
+    TEXT 0752 04 00 80 - - "Ha" "!" "Ha" "!" "You" "need" "much" "bionium"@24FC "BIONIUM" "..." "Ha" "!" "Ha" "!" "..."
+    TEXT 0752 FF 20 80 - - "That's" "enough" "out" "of" "you" "!!!"
     LABEL block_44F1
-    TEXT 0752 07 08 80 - - "Bye"@0E21 "bye"@0E25 ","@00DC "Commander"@00A3 "."@0095 "Me"@0B6B "go"@0777 "back"@02A7 "to"@012F "CYBERSPACE..."@2504
+    TEXT 0752 07 08 80 - - "Bye" "bye" "," "Commander" "." "Me" "go" "back" "to" "CYBERSPACE..."@2504
     RECORD_CLEAR 078C
 END_PROCEDURE proc_scrujo_41CE
 
@@ -1928,32 +1928,32 @@ PROCEDURE proc_bigb1_4510
     RECORD_WILDCARD AF 07B2 0F2C 0
     ACTOR 0474 0028 0
     GUARD_POP
-    TEXT 043A 05 00 80 - - "Me"@0B6B "greet"@2512 "you"@0257 ","@00DC "friend"@0A8F "..."@0019
-    TEXT 043A 02 00 80 - - "You"@01BA "have"@0315 "ring"@0262 "???..."@0495
-    TEXT 043A 03 00 80 - - "Me"@0B6B "soon"@0296 "marry"@2518 "TINA..."@251E "YOU"@046C "COME"@0A6F "WEDDING"@0AF8 "."@0095 "ME"@0500 "INVITE"@2526 "YOU"@046C "."@0095 "WE"@07F8 "MAKE"@252D "BIG"@03D1 "CONCERT"@2532 "..."@0019
+    TEXT 043A 05 00 80 - - "Me" "greet"@2512 "you" "," "friend" "..."
+    TEXT 043A 02 00 80 - - "You" "have" "ring" "???..."
+    TEXT 043A 03 00 80 - - "Me" "soon" "marry"@2518 "TINA..."@251E "YOU" "COME" "WEDDING" "." "ME" "INVITE"@2526 "YOU" "." "WE" "MAKE"@252D "BIG" "CONCERT"@2532 "..."
     GUARD_PUSH block_4650
     RECORD_WILDCARD AF 12F0 0028 0
     GUARD_POP
-    TEXT 043A FF 20 80 - - "Teleport"@1321 "him"@0A7C "the"@00B2 "ring"@0262 ","@00DC "Commander"@00A3 "."@0095 "That'll"@1363 "make"@1356 "his"@0146 "day"@0B2D "...."@1043
-    TEXT 043A FF 10 80 block_45D2 - "RING"@0D38 "TELEPORTED"@253A "TO"@07D1 "MIGRATOR"@0391 FFFF "TELEPORT"@0D2F
+    TEXT 043A FF 20 80 - - "Teleport" "him" "the" "ring" "," "Commander" "." "That'll" "make" "his" "day" "...."
+    TEXT 043A FF 10 80 block_45D2 - "RING" "TELEPORTED"@253A "TO" "MIGRATOR" FFFF "TELEPORT"
     GUARD_PUSH block_45D2
-    CONCEPT_GUARD "TELEPORT"@0D2F 0
+    CONCEPT_GUARD "TELEPORT" 0
     GUARD_POP
-    TEXT 043A FF 08 90 - - "RING"@0D38 "TELEPORTED"@253A "TO"@07D1 "MOSKITO"@2545 "AIRPORT"@254D "ZONE"@0EA4 "."@0095
+    TEXT 043A FF 08 90 - - "RING" "TELEPORTED" "TO" "MOSKITO"@2545 "AIRPORT"@254D "ZONE" "."
     RECORD_TRIPLE 0030 12DC 043A 0
     CLEAR_ALTERNATE_CONCEPT
     LABEL block_45D2
-    TEXT 043A 02 00 80 - - "WOWWWW"@2555 "!"@024B "Ring"@255C "be"@0866 "nice"@2561 "nice"@2561 "..."@0019 "Me"@0B6B "like"@0224 "..."@0019 "Me"@0B6B "thank"@123A "you"@0257 ","@00DC "friend"@0A8F "...."@1043
-    TEXT 043A 03 00 80 - - "Thank"@0D3D "you"@0257 "..."@0019 "Thank"@0D3D "you"@0257 "..."@0019 "YOU"@046C "COME"@0A6F "WEDDING"@0AF8 "..."@0019 "WE"@07F8 "MAKE"@252D "BIG"@03D1 "CONCERT"@2532 "..."@0019
-    TEXT 043A 02 00 80 - - "BYE"@0F3C "BYE"@0F3C "FRIEND"@0F40 "...."@1043 "TINA"@039A "SEND"@2566 "YOU"@046C "BIG"@03D1 "KISS"@256B "..."@0019
-    TEXT 043A FF 08 90 - - "..."@0019
+    TEXT 043A 02 00 80 - - "WOWWWW"@2555 "!" "Ring"@255C "be" "nice"@2561 "nice" "..." "Me" "like" "..." "Me" "thank" "you" "," "friend" "...."
+    TEXT 043A 03 00 80 - - "Thank" "you" "..." "Thank" "you" "..." "YOU" "COME" "WEDDING" "..." "WE" "MAKE" "BIG" "CONCERT" "..."
+    TEXT 043A 02 00 80 - - "BYE" "BYE" "FRIEND" "...." "TINA" "SEND"@2566 "YOU" "BIG" "KISS"@256B "..."
+    TEXT 043A FF 08 90 - - "..."
     SHARED_STATE C0 1384 F5 C1 0001
     RECORD_CLEAR 0474
     LABEL block_4650
-    TEXT 043A 02 00 80 - - "You"@01BA "not"@0422 "have"@0315 "ring"@0262 "..."@0019 "Me"@0B6B "worried"@0C14 "friend"@0A8F "..."@0019
-    TEXT 043A 03 00 80 - - "You"@01BA "quick"@2570 "go"@0777 "get"@04A0 "ring"@0262 "..."@0019
-    TEXT 043A 02 00 80 - - "Me"@0B6B "wait"@0B5A "you"@0257 "."@0095 "Bye"@0E21 "bye"@0E25 "friend"@0A8F "..."@0019
-    TEXT 043A FF 08 80 - - "..."@0019
+    TEXT 043A 02 00 80 - - "You" "not" "have" "ring" "..." "Me" "worried" "friend" "..."
+    TEXT 043A 03 00 80 - - "You" "quick"@2570 "go" "get" "ring" "..."
+    TEXT 043A 02 00 80 - - "Me" "wait" "you" "." "Bye" "bye" "friend" "..."
+    TEXT 043A FF 08 80 - - "..."
     RECORD_CLEAR 0474
 END_PROCEDURE proc_bigb1_4510
 
@@ -1971,16 +1971,16 @@ PROCEDURE proc_veuv1_46BB
     CONDITIONAL_BLOCK 00 proc_menbr_480C
     BRANCH_PRESENTATION
     GUARD_POP
-    TEXT 070A FF 00 80 - - "Come"@0C9B "in"@02E7 "come"@0BC4 "in"@02E7 "...THIS"@2576 "BE"@257E "HANNA"@2581 "SCRUTA"@2587 "."@0095 "My"@01AC "husband"@258E "SCRUTER"@23BA "JO"@24C0 "be"@0866 "fighter"@2596 "pilot"@259E "..."@0019
-    TEXT 070A FF 00 80 - - "You"@01BA "blow"@0F95 "up"@02C5 "his"@0146 "fighter"@2596 "in"@02E7 "combat"@25A4 "..."@0019 "ME"@0500 "WIDOW"@25AB "NOW"@0488 "..."@0019 "CRY"@108D "..."@0019 "CRY"@108D "..."@0019
-    TEXT 070A FF 00 80 - - "ME"@0500 "NOT"@10FD "CAN"@25B1 "PAY"@25B5 "RENT"@25B9 "..."@0019 "YOUR"@080C "FAULT"@25BE "..."@0019 "INSURANCE"@25C4 "NOT"@10FD "GIVE"@0EA9 "ANYTHING"@25CE "..."@0019
-    TEXT 070A FF 00 80 - - "ME"@0500 "WIDOW"@25AB "..."@0019 "CRY"@108D "..."@0019 "CRY"@108D "..."@0019 "DESPAIRING"@25D7 "WAIL"@25E2 "...."@1043 "YOU"@046C "KILL"@25E7 "SCRUTER"@23BA "JO"@24C0 "..."@0019
-    TEXT 070A FF 20 80 - - "Commander"@00A3 "?"@01CF "They're"@03B6 "giving"@03BE "out"@05BB "your"@0634 "phone"@25EC "number"@25F2 "to"@012F "widows"@25F9 "now"@0125 "..."@0019
-    TEXT 070A FF 20 80 - - "It's"@00AD "not"@0422 "right"@00D6 "."@0095 "They're"@03B6 "trying"@2600 "to"@012F "psych"@2607 "you"@0257 "out"@05BB ","@00DC "Commander"@00A3 "..."@0019 "Don't"@02F7 "answer"@1A93 "..."@0019
-    TEXT 070A FF 00 80 - - "YOU"@046C "MUST"@07FB "PAY"@25B5 "..."@0019 "CRY"@108D "..."@0019 "CRY"@108D "..."@0019 "YOU"@046C "DID"@260D "KILL"@25E7 "MY"@2611 "SCRUTER"@23BA "JO"@24C0 "..."@0019 "CRY"@108D "..."@0019 "CRY"@108D "...."@1043
+    TEXT 070A FF 00 80 - - "Come" "in" "come" "in" "...THIS"@2576 "BE"@257E "HANNA"@2581 "SCRUTA"@2587 "." "My" "husband"@258E "SCRUTER" "JO" "be" "fighter"@2596 "pilot"@259E "..."
+    TEXT 070A FF 00 80 - - "You" "blow" "up" "his" "fighter" "in" "combat"@25A4 "..." "ME" "WIDOW"@25AB "NOW" "..." "CRY" "..." "CRY" "..."
+    TEXT 070A FF 00 80 - - "ME" "NOT" "CAN"@25B1 "PAY"@25B5 "RENT"@25B9 "..." "YOUR" "FAULT"@25BE "..." "INSURANCE"@25C4 "NOT" "GIVE" "ANYTHING"@25CE "..."
+    TEXT 070A FF 00 80 - - "ME" "WIDOW" "..." "CRY" "..." "CRY" "..." "DESPAIRING"@25D7 "WAIL"@25E2 "...." "YOU" "KILL"@25E7 "SCRUTER" "JO" "..."
+    TEXT 070A FF 20 80 - - "Commander" "?" "They're" "giving" "out" "your" "phone"@25EC "number"@25F2 "to" "widows"@25F9 "now" "..."
+    TEXT 070A FF 20 80 - - "It's" "not" "right" "." "They're" "trying"@2600 "to" "psych"@2607 "you" "out" "," "Commander" "..." "Don't" "answer" "..."
+    TEXT 070A FF 00 80 - - "YOU" "MUST" "PAY" "..." "CRY" "..." "CRY" "..." "YOU" "DID"@260D "KILL" "MY"@2611 "SCRUTER" "JO" "..." "CRY" "..." "CRY" "...."
     TEXT 070A FF 00 80 - - "KRUIKKK..."@2614
-    TEXT 070A FF 20 80 - - "She"@031D "hung"@261F "up"@02C5 "..."@0019 "I"@0199 "don't"@0C42 "like"@0224 "it"@031A ","@00DC "Commander"@00A3 "..."@0019
-    TEXT 070A FF 08 90 - - "stop"@1472
+    TEXT 070A FF 20 80 - - "She" "hung"@261F "up" "..." "I" "don't" "like" "it" "," "Commander" "..."
+    TEXT 070A FF 08 90 - - "stop"
     POKE_BYTE 46BC 00
     RECORD_CLEAR 0744
 END_PROCEDURE proc_veuv1_46BB
@@ -1992,14 +1992,14 @@ PROCEDURE proc_menbr_480C
     RECORD_WILDCARD AF 037A FFFF 0
     GUARD_POP
     TEXT 0902 FF 00 80 - - "\"IMPROVED"@2624 "MENU\""@262E
-    TEXT 0902 FF 00 80 - - "Today"@2634 "CHEF"@263A "BRONKO"@263F "has"@0A10 "laid"@2646 "out"@05BB "for"@036A "you"@0257 ":"@0553
-    TEXT 0902 FF 00 80 - - "Tasty"@264B "MUFFALO"@2651 "soup"@2659 "Bronko-style"@265E "."@0095
-    TEXT 0902 FF 00 80 - - "MURFFALO"@266B "kidneys"@2674 "Bronko-style"@265E "."@0095
-    TEXT 0902 FF 00 80 - - "MURFFALO"@266B "hamburger"@267C "with"@00BC "Bar-B-Q"@2686 "recycled-oil"@268E "dip"@269B "."@0095
-    TEXT 0902 FF 00 80 - - "Smooth"@269F "MURFFALO-chip"@26A6 "ice"@26B4 "cream"@26B8 "."@0095
+    TEXT 0902 FF 00 80 - - "Today"@2634 "CHEF"@263A "BRONKO"@263F "has" "laid"@2646 "out" "for" "you" ":"
+    TEXT 0902 FF 00 80 - - "Tasty"@264B "MUFFALO"@2651 "soup"@2659 "Bronko-style"@265E "."
+    TEXT 0902 FF 00 80 - - "MURFFALO"@266B "kidneys"@2674 "Bronko-style" "."
+    TEXT 0902 FF 00 80 - - "MURFFALO" "hamburger"@267C "with" "Bar-B-Q"@2686 "recycled-oil"@268E "dip"@269B "."
+    TEXT 0902 FF 00 80 - - "Smooth"@269F "MURFFALO-chip"@26A6 "ice"@26B4 "cream"@26B8 "."
     TEXT 0902 FF 00 80 - - "Recycled"@26BE "water"@26C7
-    TEXT 0902 FF 00 80 - - "Chef"@26CD "Bronko"@02F0 "says"@030A "..."@0019 "Burping's"@26D2 "bad"@26DC "manners"@26E0 "!"@024B "..."@0019
-    TEXT 0902 FF 08 80 - - "stop"@1472
+    TEXT 0902 FF 00 80 - - "Chef"@26CD "Bronko" "says" "..." "Burping's"@26D2 "bad"@26DC "manners"@26E0 "!" "..."
+    TEXT 0902 FF 08 80 - - "stop"
     RECORD_CLEAR 093C
 END_PROCEDURE proc_menbr_480C
 
@@ -2010,13 +2010,13 @@ PROCEDURE proc_men1_48BF
     RECORD_WILDCARD AF 037A FFFF 1
     GUARD_POP
     TEXT 0902 FF 00 80 - - "\"MENU\""@26E8
-    TEXT 0902 FF 00 80 - - "Today's"@26EF "fare"@26F7 ":"@0553
-    TEXT 0902 FF 00 80 - - "PLASMA"@26FC "soup"@2659 "HONK-style"@2703 "."@0095
-    TEXT 0902 FF 00 80 - - "WRIGGLER"@270E "belly"@245C "in"@02E7 "slobber"@2717 "sauce"@271F "."@0095
-    TEXT 0902 FF 00 80 - - "Jellied"@2725 "URTIKAN"@272D "with"@00BC "MURFFALO"@266B "bone"@2735 "marrow"@273A "."@0095
-    TEXT 0902 FF 00 80 - - "GLOK"@2741 "eye"@2746 "pie"@274A "."@0095
-    TEXT 0902 FF 00 80 - - "Recycled"@26BE "water"@26C7
-    TEXT 0902 FF 00 80 - - "The"@006C "chef"@274E "says"@030A "..."@0019 "Don't"@02F7 "eat"@0BC0 "with"@00BC "your"@0634 "mouth"@2753 "full"@2759 "!"@024B "..."@0019
+    TEXT 0902 FF 00 80 - - "Today's"@26EF "fare"@26F7 ":"
+    TEXT 0902 FF 00 80 - - "PLASMA"@26FC "soup" "HONK-style"@2703 "."
+    TEXT 0902 FF 00 80 - - "WRIGGLER"@270E "belly" "in" "slobber"@2717 "sauce"@271F "."
+    TEXT 0902 FF 00 80 - - "Jellied"@2725 "URTIKAN"@272D "with" "MURFFALO" "bone"@2735 "marrow"@273A "."
+    TEXT 0902 FF 00 80 - - "GLOK"@2741 "eye"@2746 "pie"@274A "."
+    TEXT 0902 FF 00 80 - - "Recycled" "water"
+    TEXT 0902 FF 00 80 - - "The" "chef"@274E "says" "..." "Don't" "eat" "with" "your" "mouth"@2753 "full"@2759 "!" "..."
     TEXT 0902 FF 08 90 - - "Stop"@275E
     POKE_BYTE 48C0 00
     RECORD_CLEAR 093C
@@ -2028,15 +2028,15 @@ PROCEDURE proc_men2_496F
     ACTOR 093C 0028 0
     RECORD_WILDCARD AF 037A FFFF 1
     GUARD_POP
-    TEXT 0902 FF 00 80 - - "\"MENU\""@26E8
-    TEXT 0902 FF 00 80 - - "Today's"@26EF "fare"@26F7 ":"@0553
-    TEXT 0902 FF 00 80 - - "PLASMA"@26FC "soup"@2659 "HONK-style"@2703 "."@0095
-    TEXT 0902 FF 00 80 - - "WRIGGLER"@270E "snout"@2763 "stew"@2769 "."@0095
-    TEXT 0902 FF 00 80 - - "URTIKAN"@272D "seeds"@276E "in"@02E7 "MURFFALO"@266B "venom"@2774 "."@0095
-    TEXT 0902 FF 00 80 - - "GLOK"@2741 "juice"@277A "dessert"@2780 "."@0095
-    TEXT 0902 FF 00 80 - - "Recycled"@26BE "water"@26C7
-    TEXT 0902 FF 00 80 - - "The"@006C "chef"@274E "says"@030A "..."@0019 "Don't"@02F7 "talk"@0001 "with"@00BC "your"@0634 "mouth"@2753 "open"@0F47 "!"@024B "..."@0019
-    TEXT 0902 FF 08 90 - - "stop"@1472
+    TEXT 0902 FF 00 80 - - "\"MENU\""
+    TEXT 0902 FF 00 80 - - "Today's" "fare" ":"
+    TEXT 0902 FF 00 80 - - "PLASMA" "soup" "HONK-style" "."
+    TEXT 0902 FF 00 80 - - "WRIGGLER" "snout"@2763 "stew"@2769 "."
+    TEXT 0902 FF 00 80 - - "URTIKAN" "seeds"@276E "in" "MURFFALO" "venom"@2774 "."
+    TEXT 0902 FF 00 80 - - "GLOK" "juice"@277A "dessert"@2780 "."
+    TEXT 0902 FF 00 80 - - "Recycled" "water"
+    TEXT 0902 FF 00 80 - - "The" "chef" "says" "..." "Don't" "talk" "with" "your" "mouth" "open" "!" "..."
+    TEXT 0902 FF 08 90 - - "stop"
     POKE_BYTE 4970 00
     RECORD_CLEAR 093C
 END_PROCEDURE proc_men2_496F
@@ -2047,15 +2047,15 @@ PROCEDURE proc_men3_4A19
     RECORD_WILDCARD AF 037A FFFF 1
     ACTOR 093C 0028 0
     GUARD_POP
-    TEXT 0902 FF 00 80 - - "\"MENU\""@26E8
-    TEXT 0902 FF 00 80 - - "Today's"@26EF "fare"@26F7 ":"@0553
-    TEXT 0902 FF 00 80 - - "PLASMA"@26FC "soup"@2659 "HONK-style"@2703 "."@0095
-    TEXT 0902 FF 00 80 - - "WRIGGLER"@270E "feet"@2788 "in"@02E7 "emulsive"@278D "sauce"@271F "."@0095
-    TEXT 0902 FF 00 80 - - "URTIKAN"@272D "leaves"@2796 "in"@02E7 "MURFFALO"@266B "sweat"@279D "."@0095
-    TEXT 0902 FF 00 80 - - "GLOK"@2741 "flake"@27A3 "dessert"@2780 "."@0095
-    TEXT 0902 FF 00 80 - - "Recycled"@26BE "water"@26C7
-    TEXT 0902 FF 00 80 - - "The"@006C "chef"@274E "says"@030A "..."@0019 "Somebody"@27A9 "didn't"@026D "finish"@27B2 "his"@0146 "wrigglers"@27B9 "yesterday"@27C3 "..."@0019
-    TEXT 0902 FF 08 90 - - "stop"@1472
+    TEXT 0902 FF 00 80 - - "\"MENU\""
+    TEXT 0902 FF 00 80 - - "Today's" "fare" ":"
+    TEXT 0902 FF 00 80 - - "PLASMA" "soup" "HONK-style" "."
+    TEXT 0902 FF 00 80 - - "WRIGGLER" "feet"@2788 "in" "emulsive"@278D "sauce" "."
+    TEXT 0902 FF 00 80 - - "URTIKAN" "leaves"@2796 "in" "MURFFALO" "sweat"@279D "."
+    TEXT 0902 FF 00 80 - - "GLOK" "flake"@27A3 "dessert" "."
+    TEXT 0902 FF 00 80 - - "Recycled" "water"
+    TEXT 0902 FF 00 80 - - "The" "chef" "says" "..." "Somebody"@27A9 "didn't" "finish"@27B2 "his" "wrigglers"@27B9 "yesterday"@27C3 "..."
+    TEXT 0902 FF 08 90 - - "stop"
     POKE_BYTE 4A1A 00
     RECORD_CLEAR 093C
 END_PROCEDURE proc_men3_4A19
@@ -2066,15 +2066,15 @@ PROCEDURE proc_men4_4AC5
     ACTOR 093C 0028 0
     RECORD_WILDCARD AF 037A FFFF 1
     GUARD_POP
-    TEXT 0902 FF 00 80 - - "\"MENU\""@26E8
-    TEXT 0902 FF 00 80 - - "Today's"@26EF "fare"@26F7 ":"@0553
-    TEXT 0902 FF 00 80 - - "HONK-style"@2703 "PLASMA"@26FC "soup"@2659 "."@0095
-    TEXT 0902 FF 00 80 - - "WRIGGLER"@270E "brain"@2395 ","@00DC "stewed"@27CD "in"@02E7 "its"@27D4 "own"@1FD8 "juice"@277A "."@0095
-    TEXT 0902 FF 00 80 - - "URTIKAN"@272D "trunk"@27D8 ","@00DC "stuffed"@27DE "with"@00BC "MURFFALO"@266B "liver"@1802 "."@0095
-    TEXT 0902 FF 00 80 - - "GLOK"@2741 "dee-lite"@27E6 "."@0095
-    TEXT 0902 FF 00 80 - - "Recycled"@26BE "water"@26C7
-    TEXT 0902 FF 00 80 - - "The"@006C "chef"@274E "says"@030A "..."@0019 "Plenty"@27EF "more"@248C "in"@02E7 "the"@00B2 "kitchen"@27F6 "!"@024B "..."@0019
-    TEXT 0902 FF 08 90 - - "stop"@1472
+    TEXT 0902 FF 00 80 - - "\"MENU\""
+    TEXT 0902 FF 00 80 - - "Today's" "fare" ":"
+    TEXT 0902 FF 00 80 - - "HONK-style" "PLASMA" "soup" "."
+    TEXT 0902 FF 00 80 - - "WRIGGLER" "brain" "," "stewed"@27CD "in" "its"@27D4 "own" "juice" "."
+    TEXT 0902 FF 00 80 - - "URTIKAN" "trunk"@27D8 "," "stuffed"@27DE "with" "MURFFALO" "liver" "."
+    TEXT 0902 FF 00 80 - - "GLOK" "dee-lite"@27E6 "."
+    TEXT 0902 FF 00 80 - - "Recycled" "water"
+    TEXT 0902 FF 00 80 - - "The" "chef" "says" "..." "Plenty"@27EF "more" "in" "the" "kitchen"@27F6 "!" "..."
+    TEXT 0902 FF 08 90 - - "stop"
     POKE_BYTE 4AC6 00
     RECORD_CLEAR 093C
 END_PROCEDURE proc_men4_4AC5
@@ -2085,15 +2085,15 @@ PROCEDURE proc_men5_4B79
     ACTOR 093C 0028 0
     RECORD_WILDCARD AF 037A FFFF 1
     GUARD_POP
-    TEXT 0902 FF 00 80 - - "\"IMPROVED"@2624 "MENU\""@262E
-    TEXT 0902 FF 00 80 - - "Today's"@26EF "fare"@26F7 ":"@0553
-    TEXT 0902 FF 00 80 - - "Soup"@27FE "of"@00FD "PLASMA"@26FC "HONK-style"@2703 "."@0095
-    TEXT 0902 FF 00 80 - - "WRIGGLER"@270E "hearts"@2803 "in"@02E7 "green"@280A "blood"@2810 "coagulate"@2816 "."@0095
-    TEXT 0902 FF 00 80 - - "URTIKAN"@272D "roots"@2820 ","@00DC "deep"@2826 "fried"@282B "in"@02E7 "recycled"@2831 "oil"@283A "."@0095
-    TEXT 0902 FF 00 80 - - "Candied"@283E "GLOK"@2741 "tongue"@2846 "."@0095
-    TEXT 0902 FF 00 80 - - "Recycled"@26BE "water"@26C7
-    TEXT 0902 FF 00 80 - - "The"@006C "chef"@274E "says"@030A "..."@0019 "You"@01BA "eat"@0BC0 "what"@03E5 "you"@0257 "are"@0056 "!"@024B "..."@0019
-    TEXT 0902 FF 08 A0 - - "stop"@1472
+    TEXT 0902 FF 00 80 - - "\"IMPROVED" "MENU\""
+    TEXT 0902 FF 00 80 - - "Today's" "fare" ":"
+    TEXT 0902 FF 00 80 - - "Soup"@27FE "of" "PLASMA" "HONK-style" "."
+    TEXT 0902 FF 00 80 - - "WRIGGLER" "hearts"@2803 "in" "green"@280A "blood"@2810 "coagulate"@2816 "."
+    TEXT 0902 FF 00 80 - - "URTIKAN" "roots"@2820 "," "deep"@2826 "fried"@282B "in" "recycled"@2831 "oil"@283A "."
+    TEXT 0902 FF 00 80 - - "Candied"@283E "GLOK" "tongue"@2846 "."
+    TEXT 0902 FF 00 80 - - "Recycled" "water"
+    TEXT 0902 FF 00 80 - - "The" "chef" "says" "..." "You" "eat" "what" "you" "are" "!" "..."
+    TEXT 0902 FF 08 A0 - - "stop"
     POKE_BYTE 4B7A 00
     POKE_BYTE 4C36 01
     RECORD_CLEAR 093C
@@ -2116,21 +2116,21 @@ PROCEDURE proc_revel_4C52
     ACTOR 0084 0028 0
     SHARED_STATE C0 1386 F5 C1 0000
     GUARD_POP
-    TEXT 004A 07 00 80 - - "Would"@284D "you"@0257 "care"@2853 "to"@012F "know"@0936 "an"@0A14 "unbearable"@2858 "truth"@157A ","@00DC "Commander"@00A3 "?"@01CF
-    TEXT 004A 06 00 80 - - "HONK"@055C "!"@024B "Switch"@2863 "yourself"@0202 "off"@07BE "for"@036A "ten"@286A "seconds"@286E "!!!"@033F
-    TEXT 004A FF 20 80 - - "But"@0932 ","@00DC "Cap'n"@0426 "Bob"@042C "!"@024B "I"@0199 "..."@0019
-    TEXT 004A 05 00 80 - - "SWITCH"@2876 "OFF"@287D "I"@0199 "SAID"@2881 "!!!"@033F
-    TEXT 004A FF 20 80 - - "Yes"@07D9 "sir"@0461 "....."@2886
-    TEXT 004A FF 20 80 - - "KRUIIIIK"@288C "!!!"@033F "AAAaaaaaaaaaaaaahhhhh"@2895 "!!!"@033F
-    TEXT 004A 05 00 80 - - "COMMANDER"@28AB ","@00DC "YOU"@046C "ARE"@28B5 "ME"@0500 "...."@1043
-    TEXT 004A 06 00 80 - - "WE"@07F8 "ARE"@28B5 "THE"@040F "SAME"@28B9 "BEING"@28BE "AT"@040C "TWO"@28C4 "DIFFERENT"@28C8 "AGES"@28D2 "..."@0019
-    TEXT 004A 04 00 80 - - "YOU"@046C "ARE"@28B5 "MORE"@06E2 "THAN"@28D7 "MY"@2611 "SON"@28DC "..."@0019
-    TEXT 004A 05 00 80 - - "We"@057F "are"@0056 "the"@00B2 "same"@28E0 "person"@28E5 "..."@0019 "I"@0199 "am"@019B "the"@00B2 "first"@2033 "being"@1379 "to"@012F "create"@28EC "itself"@28F3 "..."@0019
-    TEXT 004A 04 00 80 - - "And"@0ACC ","@00DC "thanks"@0AD5 "to"@012F "space-time"@28FA "contorsion,"@2905 "to"@012F "watch"@2911 "itself"@28F3 "relive"@2917 ":"@0553 "YOU"@046C "ARE"@28B5 "BOB"@291E ","@00DC "COMMANDER"@28AB "..."@0019
-    TEXT 004A 02 00 80 - - "I"@0199 "am"@019B "what"@03E5 "you'll"@1427 "be"@0866 "in"@02E7 "a"@00C1 "few"@129C "hundred"@2922 "thousand"@292A "years"@2933 "..."@0019
-    TEXT 004A 06 00 80 - - "OK"@2939 "Honk"@024D ","@00DC "you"@0257 "can"@01F9 "switch"@13C5 "yourself"@0202 "back"@02A7 "on"@004D "..."@0019
-    TEXT 004A FF 20 80 - - "KROIIIIkkk"@293C "!!!"@033F "-&KRUIIIIkkk"@2947 "!!!"@033F "-&I"@2954 "AM"@2958 "supposed"@1FEC "to"@012F "be"@0866 "aware"@295B "of"@00FD "everything"@2961 "that"@013D "goes"@296C "on"@004D "round"@1DA8 "here"@0329 ","@00DC "being"@1379 "the"@00B2 "onboard"@04C2 "computer"@2971 "..."@0019 "Don't"@02F7 "tell"@0605 "me"@0010 "you"@0257 "switched"@297A "off"@07BE "Olga"@05E9 "???"@02D6
-    TEXT 004A 05 08 90 - - "Can"@1162 "it"@031A "and"@0142 "do"@0B25 "some"@0879 "work"@24CA "!!"@09E0
+    TEXT 004A 07 00 80 - - "Would"@284D "you" "care"@2853 "to" "know" "an" "unbearable"@2858 "truth" "," "Commander" "?"
+    TEXT 004A 06 00 80 - - "HONK" "!" "Switch"@2863 "yourself" "off" "for" "ten"@286A "seconds"@286E "!!!"
+    TEXT 004A FF 20 80 - - "But" "," "Cap'n" "Bob" "!" "I" "..."
+    TEXT 004A 05 00 80 - - "SWITCH"@2876 "OFF"@287D "I" "SAID"@2881 "!!!"
+    TEXT 004A FF 20 80 - - "Yes" "sir" "....."@2886
+    TEXT 004A FF 20 80 - - "KRUIIIIK"@288C "!!!" "AAAaaaaaaaaaaaaahhhhh"@2895 "!!!"
+    TEXT 004A 05 00 80 - - "COMMANDER"@28AB "," "YOU" "ARE"@28B5 "ME" "...."
+    TEXT 004A 06 00 80 - - "WE" "ARE" "THE" "SAME"@28B9 "BEING"@28BE "AT" "TWO"@28C4 "DIFFERENT"@28C8 "AGES"@28D2 "..."
+    TEXT 004A 04 00 80 - - "YOU" "ARE" "MORE" "THAN"@28D7 "MY" "SON"@28DC "..."
+    TEXT 004A 05 00 80 - - "We" "are" "the" "same"@28E0 "person"@28E5 "..." "I" "am" "the" "first" "being" "to" "create"@28EC "itself"@28F3 "..."
+    TEXT 004A 04 00 80 - - "And" "," "thanks" "to" "space-time"@28FA "contorsion,"@2905 "to" "watch"@2911 "itself" "relive"@2917 ":" "YOU" "ARE" "BOB"@291E "," "COMMANDER" "..."
+    TEXT 004A 02 00 80 - - "I" "am" "what" "you'll" "be" "in" "a" "few" "hundred"@2922 "thousand"@292A "years"@2933 "..."
+    TEXT 004A 06 00 80 - - "OK"@2939 "Honk" "," "you" "can" "switch" "yourself" "back" "on" "..."
+    TEXT 004A FF 20 80 - - "KROIIIIkkk"@293C "!!!" "-&KRUIIIIkkk"@2947 "!!!" "-&I"@2954 "AM"@2958 "supposed" "to" "be" "aware"@295B "of" "everything"@2961 "that" "goes"@296C "on" "round" "here" "," "being" "the" "onboard" "computer"@2971 "..." "Don't" "tell" "me" "you" "switched"@297A "off" "Olga" "???"
+    TEXT 004A 05 08 90 - - "Can" "it" "and" "do" "some" "work" "!!"
     POKE_BYTE 4C53 00
     RECORD_CLEAR 0084
 END_PROCEDURE proc_revel_4C52
@@ -2140,65 +2140,65 @@ PROCEDURE proc_honk1_4E17
     BRANCH_PRESENTATION
     ACTOR 08F4 0028 0
     GUARD_POP
-    TEXT 08BA FF 20 80 - - "I"@0199 "exist"@2983 "only"@0529 "to"@012F "obey"@2989 ","@00DC "Commander"@00A3
+    TEXT 08BA FF 20 80 - - "I" "exist"@2983 "only" "to" "obey"@2989 "," "Commander"
     GUARD_PUSH block_4EAD
     SHARED_STATE C0 1368 F5 C1 0000
     GUARD_POP
-    TEXT 08BA FF 20 80 - - "Commander"@00A3 ","@00DC "we"@00E3 "don't"@0C42 "have"@0315 "any"@0CB8 "BIONIUM"@102E "..."@0019 "COMMANDER"@28AB ","@00DC "please"@298E "..."@0019
-    TEXT 08BA FF 20 80 - - "I"@0199 "need"@0CA0 "that"@013D "energy"@23EC "..."@0019
-    TEXT 08BA FF 20 80 - - "You"@01BA "must"@0EBF "enter"@2995 "Scruter"@0EC4 "Jo's"@299B "CYBERSPACE"@24A4 "..."@0019
-    TEXT 08BA FF 20 80 - - "Wake"@29A0 "up"@02C5 "Scruter"@0EC4 "Jo"@29A5 ","@00DC "Commander"@00A3 "."@0095 "He's"@0C48 "sleeping"@29A8 "in"@02E7 "the"@00B2 "Cryobox"@29B1 "..."@0019
+    TEXT 08BA FF 20 80 - - "Commander" "," "we" "don't" "have" "any" "BIONIUM" "..." "COMMANDER" "," "please"@298E "..."
+    TEXT 08BA FF 20 80 - - "I" "need" "that" "energy" "..."
+    TEXT 08BA FF 20 80 - - "You" "must" "enter"@2995 "Scruter" "Jo's"@299B "CYBERSPACE" "..."
+    TEXT 08BA FF 20 80 - - "Wake"@29A0 "up" "Scruter" "Jo"@29A5 "," "Commander" "." "He's" "sleeping"@29A8 "in" "the" "Cryobox"@29B1 "..."
     LABEL block_4EAD
     GUARD_PUSH block_4F0E
     SHARED_STATE C0 1368 F5 C1 0001
     GUARD_POP
-    TEXT 08BA FF 20 80 - - "We've"@29B9 "got"@1435 "one"@0A86 "dose"@29BF "of"@00FD "BIONIUM"@102E "left"@1129 ","@00DC "Commander"@00A3
-    TEXT 08BA FF 20 80 - - "You"@01BA "must"@0EBF "enter"@2995 "Scruter"@0EC4 "Jo's"@299B "CYBERSPACE"@24A4 "..."@0019
-    TEXT 08BA FF 20 80 - - "I"@0199 "don't"@0C42 "feel"@0A21 "too"@005A "sure"@1351 "of"@00FD "myself"@29C4 ","@00DC "Commander..."@001D "I"@0199 "really"@13D8 "need"@0CA0 "that"@013D "energy"@23EC "..."@0019
+    TEXT 08BA FF 20 80 - - "We've"@29B9 "got" "one" "dose"@29BF "of" "BIONIUM" "left" "," "Commander"
+    TEXT 08BA FF 20 80 - - "You" "must" "enter" "Scruter" "Jo's" "CYBERSPACE" "..."
+    TEXT 08BA FF 20 80 - - "I" "don't" "feel" "too" "sure" "of" "myself"@29C4 "," "Commander..." "I" "really" "need" "that" "energy" "..."
     LABEL block_4F0E
     GUARD_PUSH block_4F49
     SHARED_STATE C0 1368 F5 C1 0002
     GUARD_POP
-    TEXT 08BA FF 20 80 - - "We've"@29B9 "got"@1435 "two"@1C11 "doses"@29CB "of"@00FD "BIONIUM"@102E "left"@1129 ","@00DC "Commander"@00A3
-    TEXT 08BA FF 20 80 - - "You"@01BA "must"@0EBF "enter"@2995 "Scruter"@0EC4 "Jo's"@299B "CYBERSPACE"@24A4 "..."@0019
+    TEXT 08BA FF 20 80 - - "We've" "got" "two" "doses"@29CB "of" "BIONIUM" "left" "," "Commander"
+    TEXT 08BA FF 20 80 - - "You" "must" "enter" "Scruter" "Jo's" "CYBERSPACE" "..."
     LABEL block_4F49
     GUARD_PUSH block_4F6E
     SHARED_STATE C0 1368 F5 C1 0003
     GUARD_POP
-    TEXT 08BA FF 20 80 - - "We've"@29B9 "got"@1435 "three"@05C4 "doses"@29CB "of"@00FD "BIONIUM"@102E "left"@1129 ","@00DC "Commander"@00A3
+    TEXT 08BA FF 20 80 - - "We've" "got" "three" "doses" "of" "BIONIUM" "left" "," "Commander"
     LABEL block_4F6E
     GUARD_PUSH block_4F93
     SHARED_STATE C0 1368 F5 C1 0004
     GUARD_POP
-    TEXT 08BA FF 20 80 - - "We've"@29B9 "got"@1435 "four"@1C15 "doses"@29CB "of"@00FD "BIONIUM"@102E "left"@1129 ","@00DC "Commander"@00A3
+    TEXT 08BA FF 20 80 - - "We've" "got" "four" "doses" "of" "BIONIUM" "left" "," "Commander"
     LABEL block_4F93
     GUARD_PUSH block_4FB8
     SHARED_STATE C0 1368 F5 C1 0005
     GUARD_POP
-    TEXT 08BA FF 20 80 - - "We've"@29B9 "got"@1435 "five"@2358 "doses"@29CB "of"@00FD "BIONIUM"@102E "left"@1129 ","@00DC "Commander"@00A3
+    TEXT 08BA FF 20 80 - - "We've" "got" "five" "doses" "of" "BIONIUM" "left" "," "Commander"
     LABEL block_4FB8
     GUARD_PUSH block_4FDD
     SHARED_STATE C0 1368 F5 C1 0006
     GUARD_POP
-    TEXT 08BA FF 20 80 - - "We've"@29B9 "got"@1435 "six"@1C1A "doses"@29CB "of"@00FD "BIONIUM"@102E "left"@1129 ","@00DC "Commander"@00A3
+    TEXT 08BA FF 20 80 - - "We've" "got" "six" "doses" "of" "BIONIUM" "left" "," "Commander"
     LABEL block_4FDD
     GUARD_PUSH block_5002
     SHARED_STATE C0 1368 F5 C1 0007
     GUARD_POP
-    TEXT 08BA FF 20 80 - - "We've"@29B9 "got"@1435 "seven"@29D1 "doses"@29CB "of"@00FD "BIONIUM"@102E "left"@1129 ","@00DC "Commander"@00A3
+    TEXT 08BA FF 20 80 - - "We've" "got" "seven"@29D1 "doses" "of" "BIONIUM" "left" "," "Commander"
     LABEL block_5002
     GUARD_PUSH block_503B
     SHARED_STATE C0 1368 F5 C1 0008
     GUARD_POP
-    TEXT 08BA FF 20 80 - - "We've"@29B9 "got"@1435 "eight"@1C1E "doses"@29CB "of"@00FD "BIONIUM"@102E "left"@1129 ","@00DC "Commander"@00A3
-    TEXT 08BA FF 20 80 - - "You're"@0869 "the"@00B2 "best"@0AE0 ","@00DC "Commander"@00A3 "..."@0019
+    TEXT 08BA FF 20 80 - - "We've" "got" "eight" "doses" "of" "BIONIUM" "left" "," "Commander"
+    TEXT 08BA FF 20 80 - - "You're" "the" "best" "," "Commander" "..."
     LABEL block_503B
     GUARD_PUSH block_5088
     SHARED_STATE C0 1368 F2 C1 0002
     SHARED_STATE BF 0230 F1 C1 0002
     SHARED_BIT_STATE AE 0FBA 0002 1
     GUARD_POP
-    TEXT 08BA FF 28 80 - - "Commander"@00A3 ","@00DC "I'm"@01E3 "sure"@1351 "that"@013D "HOM"@29D7 "is"@0092 "a"@00C1 "vital"@29DB "link"@29E1 "in"@02E7 "the"@00B2 "chain"@29E6 "that"@013D "leads"@29EC "to"@012F "the"@00B2 "Big"@07E8 "Bang..."@29F2
+    TEXT 08BA FF 28 80 - - "Commander" "," "I'm" "sure" "that" "HOM"@29D7 "is" "a" "vital"@29DB "link"@29E1 "in" "the" "chain"@29E6 "that" "leads"@29EC "to" "the" "Big" "Bang..."@29F2
     SHARED_STATE C0 1368 F7 C1 0003
     LABEL block_5088
     GUARD_PUSH block_50C6
@@ -2206,7 +2206,7 @@ PROCEDURE proc_honk1_4E17
     SHARED_STATE C0 136A F5 C1 0000
     SHARED_STATE BF 0470 F2 C1 0000
     GUARD_POP
-    TEXT 08BA FF 28 80 - - "Commander"@00A3 ","@00DC "Mister"@02CF "Bob"@042C "want"@01BE "to"@012F "see"@0911 "you"@0257 "in"@02E7 "the"@00B2 "Cryobox..."@29FA
+    TEXT 08BA FF 28 80 - - "Commander" "," "Mister" "Bob" "want" "to" "see" "you" "in" "the" "Cryobox..."@29FA
     SHARED_STATE C0 1368 F7 C1 0003
     LABEL block_50C6
     GUARD_PUSH block_50FC
@@ -2214,7 +2214,7 @@ PROCEDURE proc_honk1_4E17
     RECORD_WILDCARD AF 025A FFFF 0
     SHARED_STATE BF 0278 F5 C1 0000
     GUARD_POP
-    TEXT 08BA FF 28 80 - - "Commander,"@07A3 "don't"@0C42 "forget"@15D0 "Yoko"@0B3B "and"@0142 "Maxxon"@1488 "asleep"@2A05 "CRYOBOX..."@2A0C
+    TEXT 08BA FF 28 80 - - "Commander," "don't" "forget" "Yoko" "and" "Maxxon" "asleep"@2A05 "CRYOBOX..."@2A0C
     SHARED_STATE C0 1368 F7 C1 0003
     LABEL block_50FC
     GUARD_PUSH block_5146
@@ -2222,14 +2222,14 @@ PROCEDURE proc_honk1_4E17
     RECORD_WILDCARD AF 025A FFFF 0
     SHARED_STATE BF 0278 F2 C1 0000
     GUARD_POP
-    TEXT 08BA FF 28 80 - - "Approach"@2A17 "the"@00B2 "planet"@0086 "RONDO"@115C "and"@0142 "talk"@0001 "to"@012F "Yoko"@0B3B "or"@03EE "Maxxon"@1488 "in"@02E7 "the"@00B2 "CRYOBOX"@0475 "in"@02E7 "order"@2A20 "to"@012F "teleport"@0D26 "them..."@2A26
+    TEXT 08BA FF 28 80 - - "Approach"@2A17 "the" "planet" "RONDO" "and" "talk" "to" "Yoko" "or" "Maxxon" "in" "the" "CRYOBOX" "in" "order"@2A20 "to" "teleport" "them..."@2A26
     SHARED_STATE C0 1368 F7 C1 0003
     LABEL block_5146
     GUARD_PUSH block_5175
     SHARED_STATE C0 1368 F2 C1 0002
     SHARED_STATE BF 00C8 F5 C1 0000
     GUARD_POP
-    TEXT 08BA FF 28 80 - - "Better"@2A2E "go"@0777 "see"@0911 "Bug"@0343 "Deluxe"@0347 "on"@004D "Venusia..."@2A35
+    TEXT 08BA FF 28 80 - - "Better"@2A2E "go" "see" "Bug" "Deluxe" "on" "Venusia..."@2A35
     SHARED_STATE C0 1368 F7 C1 0003
     LABEL block_5175
     GUARD_PUSH block_51B6
@@ -2238,12 +2238,12 @@ PROCEDURE proc_honk1_4E17
     SHARED_STATE C0 1388 F5 C0 138A
     SHARED_STATE BF 0470 F2 C1 0000
     GUARD_POP
-    TEXT 08BA FF 28 80 - - "Commander..."@001D "Maybe"@18D6 "the"@00B2 "ondoyant"@225B "has"@0A10 "a"@00C1 "ring"@0262 "for"@036A "us"@0326 "..."@0019
+    TEXT 08BA FF 28 80 - - "Commander..." "Maybe" "the" "ondoyant" "has" "a" "ring" "for" "us" "..."
     SHARED_STATE C0 1368 F7 C1 0003
     LABEL block_51B6
-    TEXT 08BA FF 28 80 - - "More"@2487 "information"@2A40 "?"@01CF
+    TEXT 08BA FF 28 80 - - "More" "information"@2A40 "?"
     RECORD_WILDCARD BC 0900 0001 0
-    TEXT 08BA FF 68 80 - - "Bye"@0E21 "bye"@0E25 ","@00DC "Commander"@00A3 "..."@0019 FFFF "bye_bye"@1062
+    TEXT 08BA FF 68 80 - - "Bye" "bye" "," "Commander" "..." FFFF "bye_bye"
     RECORD_CLEAR 08F4
     LABEL block_51E2
     END

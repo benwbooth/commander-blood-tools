@@ -178,12 +178,14 @@ textual proximity, zero matrix entries, ambiguous owners, and unmatched
 addresses do not produce an alias. The compiler resolves the declared wrapping
 base-plus-delta expression back to the original `u16` address.
 
-The structured COD and BAS sources inline 13,699 distinct referenced DIC offsets
-as readable `"text"@offset` operands, with 53,194 uses in `TEXT`,
-`CONCEPT_GUARD`, `MENU`, `CASE`, and low-level selector-node statements. The
-offset suffix keeps duplicate dictionary strings distinct. These references are
-accepted only in dictionary-typed operand positions and lower to the exact
-original `u16`; the DIC companion source remains the owner of the string bytes.
+The structured COD and BAS sources intern 13,699 distinct referenced DIC offsets
+as readable string operands, with 53,194 uses in `TEXT`, `CONCEPT_GUARD`,
+`MENU`, `CASE`, and low-level selector-node statements. The first use of text
+that maps to one referenced offset is written as `"text"@offset`; later uses are
+just `"text"`. Equal text at multiple offsets always keeps the suffix. These
+references are accepted only in dictionary-typed operand positions and lower to
+the exact original `u16`; the DIC companion source remains the owner of the
+string bytes.
 
 The current BloodScript corpus recompiles all 183,523 program bytes exactly. It
 contains 13,524 typed statements covering every byte with no shipped generic

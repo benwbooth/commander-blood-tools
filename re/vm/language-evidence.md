@@ -113,11 +113,12 @@ rather than being assigned to a nearby object.
 
 Exact DIC string boundaries establish a second symbolic namespace. The
 structured corpus uses 13,699 referenced offsets in 53,194 proven dictionary
-operands across COD and BAS. Each is written inline as `"text"@offset` rather
-than through a generated declaration. Offset suffixes keep equal text at
-different addresses distinct, and the compiler rejects an inline dictionary
-reference in an ordinary numeric or VAR-address operand. The DIC companion
-source remains the owner of the actual string bytes.
+operands across COD and BAS. Each unique mapping is introduced inline as
+`"text"@offset`, and later uses are interned as bare `"text"` rather than routed
+through generated declarations. Equal text at different addresses always keeps
+its suffix. The compiler rejects dictionary references in ordinary numeric or
+VAR-address operands, and the DIC companion source remains the owner of the
+actual string bytes.
 
 The first structured COD pass recovers 7,010 basic blocks and 17,287 edges. It
 models the native query bit and guard-target stack, direct jumps, text skips and
