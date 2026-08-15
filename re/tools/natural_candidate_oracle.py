@@ -58333,7 +58333,7 @@ def ship_3d_navigation_update_vectors() -> list[dict[str, object]]:
         {
             "name": "trigger_accepts_unrestricted_candidate",
             "trigger": 1,
-            "current_flags": 2,
+            "filter_flags": 2,
             "candidate": 0x3000,
             "presentation_active": 1,
             "calls": [
@@ -58352,11 +58352,10 @@ def ship_3d_navigation_update_vectors() -> list[dict[str, object]]:
             ],
         },
         {
-            "name": "trigger_accepts_candidate_related_to_current",
+            "name": "trigger_accepts_candidate_related_to_record_base",
             "trigger": 1,
             "candidate": 0x3000,
-            "candidate_relation": 0x1200,
-            "ark": 0x1200,
+            "candidate_relation": 0x0100,
             "presentation_active": 1,
             "calls": [
                 "candidate_build", "c2", "back_fill", "pbm", "palette",
@@ -58364,9 +58363,20 @@ def ship_3d_navigation_update_vectors() -> list[dict[str, object]]:
             ],
         },
         {
+            "name": "trigger_rejects_candidate_related_only_to_current",
+            "trigger": 1,
+            "candidate": 0x3000,
+            "candidate_relation": 0x1200,
+            "presentation_active": 1,
+            "calls": [
+                "candidate_build", "layout", "back_fill", "pbm", "palette",
+                "alien", "bridge",
+            ],
+        },
+        {
             "name": "trigger_ark_relation_opens_target_list",
             "trigger": 1,
-            "current_flags": 2,
+            "filter_flags": 2,
             "candidate": 0x3000,
             "candidate_relation": 0x4444,
             "ark": 0x4444,
@@ -58399,6 +58409,7 @@ def ship_3d_navigation_update_vectors() -> list[dict[str, object]]:
     caller_sp = 0xF800
     return_address = 0xF34E
     current = 0x1200
+    record_base_offset = 0x0100
     frame_offset = 0x3200
     helpers = {
         0x6AEE: ("candidate_build", "far"),
@@ -58440,6 +58451,7 @@ def ship_3d_navigation_update_vectors() -> list[dict[str, object]]:
         candidate_relation = int(case.get("candidate_relation", 0x5555))
         current_kind = int(case.get("current_kind", 0x0002))
         current_flags = int(case.get("current_flags", 0))
+        filter_flags = int(case.get("filter_flags", 0))
         counter_link = int(case.get("counter_link", 0))
         ark = int(case.get("ark", 0x4444))
 
@@ -58479,7 +58491,11 @@ def ship_3d_navigation_update_vectors() -> list[dict[str, object]]:
         put_word(data_before, 0x251B, current)
         put_word(data_before, 0x0A36, 0xA636)
         put_word(data_before, 0x0A32, 0xA232)
-        put_word(data_before, 0x6726, record_segment)
+        put_dword(
+            data_before,
+            0x6724,
+            (record_segment << 16) | record_base_offset,
+        )
         put_word(data_before, 0x6758, ark)
         put_word(data_before, 0x6768, 0x6868)
         put_word(data_before, 0x676A, 0x6A6A)
@@ -58525,6 +58541,7 @@ def ship_3d_navigation_update_vectors() -> list[dict[str, object]]:
 
         put_word(record_before, current, current_kind)
         record_before[current + 2] = current_flags
+        record_before[record_base_offset + 2] = filter_flags
         put_word(record_before, current + 0x14, counter_link)
         if counter_link != 0:
             put_word(record_before, counter_link + 0x14, 0x7FFE)
@@ -58545,8 +58562,8 @@ def ship_3d_navigation_update_vectors() -> list[dict[str, object]]:
             put_word(record_expected, counter_record + 0x14, count + 1)
 
             accepted = candidate != 0
-            if accepted and (current_flags & 2) == 0:
-                accepted = candidate_relation == current
+            if accepted and (filter_flags & 2) == 0:
+                accepted = candidate_relation == record_base_offset
             opens_list = not accepted
             if accepted and ark != current and candidate_relation == ark:
                 opens_list = True
@@ -58670,7 +58687,10 @@ def ship_3d_navigation_update_vectors() -> list[dict[str, object]]:
                     "sp": machine.reg_read(UC_X86_REG_SP),
                 }
             )
-            if helper_name == "layout":
+            if helper_name == "candidate_build":
+                machine.reg_write(UC_X86_REG_ES, record_segment)
+                machine.reg_write(UC_X86_REG_DI, record_base_offset)
+            elif helper_name == "layout":
                 machine.reg_write(UC_X86_REG_AX, layout_result)
             elif helper_name == "interpolate":
                 flags = machine.reg_read(UC_X86_REG_EFLAGS)
@@ -58799,6 +58819,8 @@ def ship_3d_navigation_update_vectors() -> list[dict[str, object]]:
                 "layout_result": layout_result,
                 "candidate": candidate,
                 "candidate_relation": candidate_relation,
+                "record_base_offset": record_base_offset,
+                "filter_flags": filter_flags,
                 "calls": calls,
                 "data_sha256": hashlib.sha256(data_expected).hexdigest(),
                 "game_sha256": hashlib.sha256(game_expected).hexdigest(),

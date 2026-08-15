@@ -33,9 +33,11 @@ typedef char ship_3d_navigation_record_relation_must_be_at_18[
 #define SHIP_3D_NAV_RECORD_AT(offset) \
     ((volatile ship_3d_navigation_record CB_FAR *) \
         MK_FP(FP_SEG(vm_record_base), (offset)))
+#define SHIP_3D_NAV_RECORD_BASE_OFFSET() ((cb_u16)FP_OFF(vm_record_base))
 #else
 #define SHIP_3D_NAV_RECORD_AT(offset) \
     ((volatile ship_3d_navigation_record CB_FAR *)(vm_record_base + (offset)))
+#define SHIP_3D_NAV_RECORD_BASE_OFFSET() 0u
 #endif
 
 void CB_NEAR ship_3d_navigation_update(void)
@@ -43,9 +45,11 @@ void CB_NEAR ship_3d_navigation_update(void)
     volatile ship_3d_navigation_record CB_FAR *current_record;
     volatile ship_3d_navigation_record CB_FAR *counter_record;
     volatile ship_3d_navigation_record CB_FAR *candidate_record;
+    volatile ship_3d_navigation_record CB_FAR *filter_record;
     const volatile cb_u16 CB_NEAR *candidate_cursor;
     cb_u16 current;
     cb_u16 candidate;
+    cb_u16 filter_offset;
     cb_i16 selection;
     int accepted;
     int interpolation_complete;
@@ -64,6 +68,9 @@ void CB_NEAR ship_3d_navigation_update(void)
         ship_3d_navigation_candidate_build(
                 (const volatile bloodprg_vm_object_header CB_FAR *)
                     current_record);
+        filter_record = (volatile ship_3d_navigation_record CB_FAR *)
+                vm_record_base;
+        filter_offset = SHIP_3D_NAV_RECORD_BASE_OFFSET();
         candidate_cursor = ship_3d_navigation_candidate_offsets;
         accepted = 0;
         for (;;) {
@@ -73,9 +80,9 @@ void CB_NEAR ship_3d_navigation_update(void)
             }
 
             candidate_record = SHIP_3D_NAV_RECORD_AT(candidate);
-            if ((current_record->flags
+            if ((filter_record->flags
                     & SHIP_3D_CANDIDATE_UNRESTRICTED_FLAG) == 0u
-                    && candidate_record->relation != current) {
+                    && candidate_record->relation != filter_offset) {
                 continue;
             }
             if (vm_named_ark_object != current
@@ -166,7 +173,8 @@ void CB_NEAR ship_3d_navigation_update(void)
         framebuffer_rect_interpolate_and_remap_step(
                 (const bloodprg_rect_i16 CB_NEAR *)
                     presentation_choice_current_rect,
-                &presentation_word_choice_target_rect);
+                (const bloodprg_rect_i16 CB_NEAR *)
+                    &presentation_word_choice_target_rect);
         if (!interpolation_complete) {
             return;
         }
@@ -217,3 +225,4 @@ reset_navigation:
 }
 
 #undef SHIP_3D_NAV_RECORD_AT
+#undef SHIP_3D_NAV_RECORD_BASE_OFFSET

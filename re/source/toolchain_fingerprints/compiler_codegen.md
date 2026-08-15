@@ -6438,28 +6438,36 @@ flags.
 
 `0x00B34E` owns the navigation trigger and the remainder of the ship sequence.
 The trigger path copies the requested presentation state, increments the active
-record's access counter (following its `0x0080` redirect when present), scans
-the candidate offsets built at `SS:0x2B53`, and either publishes a deferred
-`0x00C4` record or opens the target list. It then stages the target PBM, copies
-the 192-byte high-palette block through the inherited `ES`, and arms closing.
+record's access counter (following its `0x0080` redirect when present), and
+calls the candidate builder. That helper returns with `ES:DI` set to
+`vm_record_base`; the coordinator deliberately uses that pointer's flags and
+offset for its candidate relation filter, rather than the current target. It
+then scans the candidate offsets built at `SS:0x2B53` and either publishes a
+deferred `0x00C4` record or opens the target list. It stages the target PBM,
+copies the 192-byte high-palette block through inherited `ES`, and arms closing.
 The steady path services the alien overlay and bridge update, presents the
 framebuffer, waits for rectangle interpolation and a nonnegative list result,
 or performs the complete HUD, dialogue, palette, and camera reset.
 
-Fourteen patched-helper original-binary vectors cover unrestricted and
-relation-gated candidates, Ark fallback, an empty candidate list, redirected
-counter increments, x/width-only rectangle capture, blocked and copied frames,
-both interpolation outcomes, negative and accepted list results, defer/opening
-gates, and final teardown. They verify helper order and arguments, the original
-`SS:BP` list read, DS/GS/ES/record/frame ownership, copy extents, preserved
-registers and segments, stack integrity, and the near return against the
-untouched 579-byte body.
+Fifteen patched-helper original-binary vectors cover the candidate builder's
+returned `ES:DI` with a nonzero record-base offset, unrestricted and
+record-base-relation acceptance, rejection of a relation to only the current
+target, Ark fallback, an empty candidate list, redirected counter increments,
+x/width-only rectangle capture, blocked and copied frames, both interpolation
+outcomes, negative and accepted list results, defer/opening gates, and final
+teardown. They verify helper order and arguments, the original `SS:BP` list
+read, DS/GS/ES/record/frame ownership, copy extents, preserved registers and
+segments, stack integrity, and the near return against the untouched 579-byte
+body.
 
 Open Watcom 1.9 large (`-3 -os -s -ml -we`) emits one warning-free
-222-instruction function versus 162 instructions in the original, with 88.27
+222-instruction/759-byte function versus 162/579 in the original, with 88.27
 percent mnemonic-multiset overlap and 75.31 percent ordered mnemonic overlap.
-The candidate uses typed records, normal pointers, direct calls, and ordinary C
-control flow, with no inline assembly or register-state facade.
+Turbo C 2.01 large (`-ml -O -Z`) emits 267 instructions with 87.04 percent
+multiset and 77.16 percent ordered overlap and assembles cleanly to a 4,302-byte
+OMF object. The accepted candidate uses typed records, normal far pointers,
+direct calls, and ordinary C control flow, with no inline assembly or
+register-state facade.
 
 Full-source integration requires the shipped `SS=DS` candidate-list alias and
 the record segment used for list strings. Direct binary replacement also needs

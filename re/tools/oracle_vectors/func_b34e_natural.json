@@ -12,11 +12,13 @@
     "layout_result": 65535,
     "candidate": 0,
     "candidate_relation": 21845,
+    "record_base_offset": 256,
+    "filter_flags": 0,
     "calls": [],
-    "data_sha256": "a7c8fdcb225d627865911f7445f46a386bb0cc9fa5c78fe3a6889c75dd41368b",
+    "data_sha256": "0f1eb262a8b187fb9a4b8cc96ca7b92863f76a1c7c9d290b71137d4216eb064c",
     "game_sha256": "cd58d82e3d972aebc88665be29b4ead57afdbd5490c43db17b5b2b29a8925802",
     "incoming_es_sha256": "f759a6903d06952908dd4bf7af49c3571fa43416531a91cf2a8ffaf93242854c",
-    "record_sha256": "f345c00f39f72ffd3e005f414a1515ab6a304baa6ff4cf34353d2a9f0e795331",
+    "record_sha256": "4d163763d4a8a6308989847eb2b4891703d7d728a5bac96f15f4d6544a1de18e",
     "registers_after": {
       "eax": 2711687732,
       "ax": 4660,
@@ -55,11 +57,13 @@
     "layout_result": 65535,
     "candidate": 0,
     "candidate_relation": 21845,
+    "record_base_offset": 256,
+    "filter_flags": 0,
     "calls": [],
-    "data_sha256": "b8e61ca2a318effd5957ebb647f3edf8dfd6c3d42c2bd90830cd857b73fca718",
+    "data_sha256": "e42c2e17299d4c99ef2cafdf780187ab1c9274c198033d4eb10d2c49cc1d6291",
     "game_sha256": "7b58be8e9749b180773996d1eed231eb843a57abb806cc60474455d8d2706667",
     "incoming_es_sha256": "ea7404bc3be693dd5a3eb67910d269011a7ea35fb44451b9de55f50aaa4a7d58",
-    "record_sha256": "b368d8dc488df6fed09353ef6be3f364da31759a8dbc7a1e7a449346c2a15f79",
+    "record_sha256": "4f7c126826521de7cbb04d6661f18c3984633041d5ca84939f8c618483186f96",
     "registers_after": {
       "eax": 2711687732,
       "ax": 4660,
@@ -98,6 +102,8 @@
     "layout_result": 65535,
     "candidate": 0,
     "candidate_relation": 21845,
+    "record_base_offset": 256,
+    "filter_flags": 0,
     "calls": [
       {
         "name": "alien",
@@ -126,10 +132,10 @@
         "sp": 63476
       }
     ],
-    "data_sha256": "58f60a8cbae2dea192aff5c18359af6c6c87d0183a81b4534514b07b0d4eac9d",
+    "data_sha256": "caeda37b35198dee8ef7d435cea8292aedf58c2b62a8c21885e2834a3aeeab82",
     "game_sha256": "78a797bbafaece1033be4bf82c2ba919b619e98c81414377b1ca8e6a7fbcb787",
     "incoming_es_sha256": "3af6f61788579f029748a9a2b51e4dc1c20e78299a891e5b06406168ec68bfda",
-    "record_sha256": "dae6e67ddb6b23534bf03554229bd4a1bcaf64f856de64ee5e76577a3469146c",
+    "record_sha256": "ac5f4bba65108da4da2f0b0e106cd9363a525b6df4904b6756884946f8580ef5",
     "registers_after": {
       "eax": 2711687732,
       "ax": 4660,
@@ -168,6 +174,8 @@
     "layout_result": 65535,
     "candidate": 0,
     "candidate_relation": 21845,
+    "record_base_offset": 256,
+    "filter_flags": 0,
     "calls": [
       {
         "name": "alien",
@@ -209,10 +217,10 @@
         "sp": 63474
       }
     ],
-    "data_sha256": "ac1a47e6a1599e10e79048acbe32f734d46a03516b0b8a7b89e3a9dd9dbb0079",
+    "data_sha256": "1b6f9bfdd4a5b04bc07f35200e301ff523f14048cba6b7b8481e54a9dba2790d",
     "game_sha256": "31a4ef3e8b5449a005031e8c1adfeb879047391b2ba631fc1f5d95278687b440",
     "incoming_es_sha256": "9479b521596bdb6c69a5d305017e9d8e044e66b313420d18341f428419325200",
-    "record_sha256": "6e5849ebd9dfe43cb8c34199322778f2510343d8d285b1ef16bd14ae56ee1f63",
+    "record_sha256": "1a71296f2b3364819c6df1f0f2bcb250c5692ccb29362122db207fc0f0060604",
     "registers_after": {
       "eax": 2711687732,
       "ax": 4660,
@@ -251,6 +259,8 @@
     "layout_result": 65535,
     "candidate": 0,
     "candidate_relation": 21845,
+    "record_base_offset": 256,
+    "filter_flags": 0,
     "calls": [
       {
         "name": "alien",
@@ -305,10 +315,10 @@
         "sp": 63476
       }
     ],
-    "data_sha256": "25172d619dd0b49e23b5f53f4ed4cc77bf62d628db33ed6ad92aa9612a51ef23",
+    "data_sha256": "7e11807c362285ec5d7b9a62e8b6d92e61f4d6512dab06e82be8fd7821189825",
     "game_sha256": "4a60981c74a28e0f82d8506dfdab3eb5a813e01168a6e5de1e66e20654f1d5b2",
     "incoming_es_sha256": "e4ba9868e4bdcfaf45be3736ca39ea520be31e5579f22f4b90674b6fe69101d2",
-    "record_sha256": "8466bcb931081ee22f047e00d507a94c91cbeb2039cc155c086fd364f75bd45b",
+    "record_sha256": "c55cfe0f9aa599c510c0c65508d8ab5ee9f70521d4277efd4a0852206bcce979",
     "registers_after": {
       "eax": 2711687732,
       "ax": 4660,
@@ -347,6 +357,8 @@
     "layout_result": 65535,
     "candidate": 0,
     "candidate_relation": 21845,
+    "record_base_offset": 256,
+    "filter_flags": 0,
     "calls": [
       {
         "name": "alien",
@@ -414,10 +426,10 @@
         "sp": 63476
       }
     ],
-    "data_sha256": "f2e24253c9ca02688ff4711266271e34e8db40efc060f12591c1e38035bdf4b1",
+    "data_sha256": "8259a4964d8bb8ef3383cd8b355dcda86261fbe4a6ef0543d0b9bed87811cdbb",
     "game_sha256": "150ce9404df11e112e215b23320a8d56d1dea5cd12fe6056e2a07aef9d8362a0",
     "incoming_es_sha256": "2ff4f50411f60e406b73b837992c10fc4698199f27557b0256de27c35aed1291",
-    "record_sha256": "23bce3fc9c58fc40b7e861ca41b4483b9b1882e0681096c9f96f8247426f6153",
+    "record_sha256": "5d27bef9b5eaffb0f4e975640e53a2a96ca1898048696c9afe8ce7913f16c6cc",
     "registers_after": {
       "eax": 2711687732,
       "ax": 4660,
@@ -456,6 +468,8 @@
     "layout_result": 2,
     "candidate": 0,
     "candidate_relation": 21845,
+    "record_base_offset": 256,
+    "filter_flags": 0,
     "calls": [
       {
         "name": "alien",
@@ -523,10 +537,10 @@
         "sp": 63476
       }
     ],
-    "data_sha256": "dee403dca2fda357436f18ffc3dcb876a567289ee915014172b318447b50f67a",
+    "data_sha256": "5244b5132947c9b139b686a2a04f3c8e38949c38db285795aed28c3b8b20dc72",
     "game_sha256": "7bcc84f5a8242405fbe8e615f0f5823ee3494a96a4327c4c4a1b9a147f9a2c93",
     "incoming_es_sha256": "c939ca30a834d97968a0fb944a64f1afaf1c473d2ce3812dd9d6056af0687373",
-    "record_sha256": "4367499734f6a2c1990c993f86d444ca1f2e96108bf38363b1c340bfba99c29c",
+    "record_sha256": "ffe6ce5c4107f6b3e69f2a275a35a7b707cc355a6afe2da9fa96735771902e10",
     "registers_after": {
       "eax": 2711687732,
       "ax": 4660,
@@ -565,6 +579,8 @@
     "layout_result": 65535,
     "candidate": 0,
     "candidate_relation": 21845,
+    "record_base_offset": 256,
+    "filter_flags": 0,
     "calls": [
       {
         "name": "alien",
@@ -593,10 +609,10 @@
         "sp": 63476
       }
     ],
-    "data_sha256": "39d56d1b7a74ff01df5eddd0055b37b0bfdf90ae2d6ecddcada27fa02bb35968",
+    "data_sha256": "db57d472282a9498d3bd783f5eb43c09c9eb37a4ecf959de3118f5c4f712afe3",
     "game_sha256": "fb5f9b3ecf1ea6e7a0424009f9c1d7ed0007f702dd6327627e04407eec74a0d0",
     "incoming_es_sha256": "60b2397836fd736309789316d7c7d3341cefa4541e50313d2c33fd3c7ac62b87",
-    "record_sha256": "ed81bc2c206cb8048cfe1e042c13f1d17f43948ce9e4c292397f74de1047b68b",
+    "record_sha256": "1fb07f64c989016d98600f4debef4cae467be8d514e9d84289511774742e4b6a",
     "registers_after": {
       "eax": 2711687732,
       "ax": 4660,
@@ -635,6 +651,8 @@
     "layout_result": 65535,
     "candidate": 0,
     "candidate_relation": 21845,
+    "record_base_offset": 256,
+    "filter_flags": 0,
     "calls": [
       {
         "name": "display_fill",
@@ -689,10 +707,10 @@
         "sp": 63476
       }
     ],
-    "data_sha256": "86d9a222ac5e521cef474125c63ade0d30163685a9ae000001fca0f2e3401669",
+    "data_sha256": "1108ebda7267e643067f73e1a0b886ab0f0f510f16b13399ab21c80273118f06",
     "game_sha256": "93720cd310ea2f2e7c1ad9ad3b889148c457b77f64b6adf3625c135f566775bd",
     "incoming_es_sha256": "6516db36644ab2bd7379234d9b7dcfcf922f50a6e5eecc5bad4e7ea07d94edfe",
-    "record_sha256": "9698d4ca99b955bc94327f4e14ec7a233c3c133faae9ac50fa7bbedff63ee8d1",
+    "record_sha256": "5e5e0f0d4be750172da48ae1f4bdaca86368e174377bd003870affa5ef6bae9b",
     "registers_after": {
       "eax": 2711687732,
       "ax": 4660,
@@ -731,6 +749,8 @@
     "layout_result": 65535,
     "candidate": 12288,
     "candidate_relation": 21845,
+    "record_base_offset": 256,
+    "filter_flags": 2,
     "calls": [
       {
         "name": "candidate_build",
@@ -824,10 +844,10 @@
         "sp": 63476
       }
     ],
-    "data_sha256": "26258444c7f95df9809a30f30892e7e843d371d36b4513ca876af27004c85dc8",
+    "data_sha256": "5b91fcc8659425360925cf57a8c5b1f2b697aa55267587ca2d1604c02d7a9120",
     "game_sha256": "caaa33d440041f4783f825999dadf01f88f61408ae9c2eae21403a6b0342e5c2",
     "incoming_es_sha256": "c8b6c66f9cccdc88a643a0f58e941409269a8eb248cbec9fb42b00e7eec9a4fc",
-    "record_sha256": "1ff77792138b98a078fe5058c97ecd6701d88e6acb366ac6222f1410db94e985",
+    "record_sha256": "af1597f2e15cea00c2b2fd0cb54fc618a96a6df1a5cc08845d2de026e8241e94",
     "registers_after": {
       "eax": 2711687732,
       "ax": 4660,
@@ -866,6 +886,8 @@
     "layout_result": 65535,
     "candidate": 0,
     "candidate_relation": 21845,
+    "record_base_offset": 256,
+    "filter_flags": 0,
     "calls": [
       {
         "name": "candidate_build",
@@ -887,7 +909,7 @@
         "cx": 13398,
         "dx": 17767,
         "si": 9531,
-        "di": 4608,
+        "di": 256,
         "bp": 11093,
         "ds": 8192,
         "es": 36864,
@@ -900,7 +922,7 @@
         "cx": 13398,
         "dx": 17767,
         "si": 9531,
-        "di": 4608,
+        "di": 256,
         "bp": 11093,
         "ds": 8192,
         "es": 28672,
@@ -959,10 +981,10 @@
         "sp": 63476
       }
     ],
-    "data_sha256": "04b187b2c7d2a80b3360d19111575b76f3ba64c7f42e49644ab923413093b8e9",
+    "data_sha256": "59a751f2526765a583496f94a04f35c6a6777fd5b011a31c4bd04fd2c349e2e2",
     "game_sha256": "514ac7c030233dc7acd7b39387399818b8520df74709757d5b3eba4f07a4faaa",
     "incoming_es_sha256": "3dc6cd233e4fc1a8074d23c3a0a44d8883345d0cabe0215dd7f24ab36c2b3bcf",
-    "record_sha256": "96e7cfdfbf265363c2cbffb92d2265d88b8023b3275007a4f4cd93a0d660d579",
+    "record_sha256": "ae948d7423fd0fbc78e8e5eb323832b1d8a40ce051c12b866a5aa5b45af7c8a7",
     "registers_after": {
       "eax": 2711687732,
       "ax": 4660,
@@ -989,7 +1011,7 @@
     "return": "near"
   },
   {
-    "name": "trigger_accepts_candidate_related_to_current",
+    "name": "trigger_accepts_candidate_related_to_record_base",
     "trigger": 1,
     "sequence": 0,
     "exit_pending": 0,
@@ -1000,7 +1022,9 @@
     "interpolation_complete": 0,
     "layout_result": 65535,
     "candidate": 12288,
-    "candidate_relation": 4608,
+    "candidate_relation": 256,
+    "record_base_offset": 256,
+    "filter_flags": 0,
     "calls": [
       {
         "name": "candidate_build",
@@ -1018,7 +1042,7 @@
       {
         "name": "c2",
         "ax": 12292,
-        "bx": 4608,
+        "bx": 17476,
         "cx": 13398,
         "dx": 17767,
         "si": 22136,
@@ -1031,7 +1055,7 @@
       {
         "name": "back_fill",
         "ax": 0,
-        "bx": 4608,
+        "bx": 17476,
         "cx": 13398,
         "dx": 17767,
         "si": 22136,
@@ -1044,7 +1068,7 @@
       {
         "name": "pbm",
         "ax": 0,
-        "bx": 4608,
+        "bx": 17476,
         "cx": 13398,
         "dx": 17767,
         "si": 3543,
@@ -1094,10 +1118,10 @@
         "sp": 63476
       }
     ],
-    "data_sha256": "91da4cb54c4a80ee0345a769a7260cf636c93122a0eafc44ca6fc6d3f282fdd6",
+    "data_sha256": "29b69c48bd285b5186feb01f186ab05b9c8a97b8a00e79cbb0ab48cd3e7138ae",
     "game_sha256": "07583c5b32dec49a3f2c96e0beda43fce6df33d6311c937856820b26ea4fa73f",
     "incoming_es_sha256": "945c3ffcc32060876caa219c856ca7db348f2e4131e7055068f3fa887a316443",
-    "record_sha256": "2487ecfae6b0cf670a3a851048db3de474873947f1009652aad108312286f144",
+    "record_sha256": "cc0ab41bc1c10d35c7c52e84bc43bb348c9df6f19ad79ec7508df46a534ba284",
     "registers_after": {
       "eax": 2711687732,
       "ax": 4660,
@@ -1113,6 +1137,143 @@
       "di": 24337,
       "bp": 11093,
       "ebp": 2543266645,
+      "sp": 63490,
+      "ds": 8192,
+      "es": 28672,
+      "fs": 45056,
+      "gs": 20480,
+      "ss": 61440,
+      "flags": 514
+    },
+    "return": "near"
+  },
+  {
+    "name": "trigger_rejects_candidate_related_only_to_current",
+    "trigger": 1,
+    "sequence": 0,
+    "exit_pending": 0,
+    "opening": 0,
+    "defer": 0,
+    "presentation_active": 1,
+    "duration": 6,
+    "interpolation_complete": 0,
+    "layout_result": 65535,
+    "candidate": 12288,
+    "candidate_relation": 4608,
+    "record_base_offset": 256,
+    "filter_flags": 0,
+    "calls": [
+      {
+        "name": "candidate_build",
+        "ax": 42550,
+        "bx": 9029,
+        "cx": 13398,
+        "dx": 17767,
+        "si": 22136,
+        "di": 4608,
+        "bp": 30874,
+        "ds": 8192,
+        "es": 36864,
+        "sp": 63474
+      },
+      {
+        "name": "layout",
+        "ax": 0,
+        "bx": 12288,
+        "cx": 13398,
+        "dx": 17767,
+        "si": 9531,
+        "di": 256,
+        "bp": 11095,
+        "ds": 8192,
+        "es": 36864,
+        "sp": 63474
+      },
+      {
+        "name": "back_fill",
+        "ax": 0,
+        "bx": 12288,
+        "cx": 13398,
+        "dx": 17767,
+        "si": 9531,
+        "di": 256,
+        "bp": 11095,
+        "ds": 8192,
+        "es": 28672,
+        "sp": 63476
+      },
+      {
+        "name": "pbm",
+        "ax": 0,
+        "bx": 12288,
+        "cx": 13398,
+        "dx": 17767,
+        "si": 3543,
+        "di": 12800,
+        "bp": 11095,
+        "ds": 8192,
+        "es": 53248,
+        "sp": 63474
+      },
+      {
+        "name": "palette",
+        "ax": 65486,
+        "bx": 0,
+        "cx": 0,
+        "dx": 0,
+        "si": 21649,
+        "di": 24337,
+        "bp": 11095,
+        "ds": 8192,
+        "es": 28672,
+        "sp": 63476
+      },
+      {
+        "name": "alien",
+        "ax": 65486,
+        "bx": 0,
+        "cx": 0,
+        "dx": 0,
+        "si": 21649,
+        "di": 24337,
+        "bp": 11095,
+        "ds": 8192,
+        "es": 28672,
+        "sp": 63476
+      },
+      {
+        "name": "bridge",
+        "ax": 65486,
+        "bx": 0,
+        "cx": 0,
+        "dx": 0,
+        "si": 21649,
+        "di": 24337,
+        "bp": 11095,
+        "ds": 8192,
+        "es": 28672,
+        "sp": 63476
+      }
+    ],
+    "data_sha256": "07394c8bb71bcb3e6c51380d629f330f2af04379582ac74b2d35f85ec1358808",
+    "game_sha256": "722f76d6e3c0f54d602a3535c074181a4d92b906f947c7d944ee593414783ce1",
+    "incoming_es_sha256": "4efc5a8493a6a28eee74496d0a497eedba7852c5d0d748702f26d9d31f5548d5",
+    "record_sha256": "138cf3db8e4a6d8540316bd256ed8c90796d3ecde9eb3a069792c426d5f25c4c",
+    "registers_after": {
+      "eax": 2711687732,
+      "ax": 4660,
+      "ebx": 2998018885,
+      "bx": 9029,
+      "ecx": 3284350038,
+      "cx": 13398,
+      "edx": 3570663424,
+      "dx": 0,
+      "esi": 3857011857,
+      "si": 21649,
+      "edi": 4143341329,
+      "di": 24337,
+      "bp": 11095,
+      "ebp": 2543266647,
       "sp": 63490,
       "ds": 8192,
       "es": 28672,
@@ -1136,6 +1297,8 @@
     "layout_result": 65535,
     "candidate": 12288,
     "candidate_relation": 17476,
+    "record_base_offset": 256,
+    "filter_flags": 2,
     "calls": [
       {
         "name": "candidate_build",
@@ -1229,10 +1392,10 @@
         "sp": 63476
       }
     ],
-    "data_sha256": "15df2c62b01b24ccde5385061c3f9e2fe4d9dde82c1a3c77322901a04a7fc004",
-    "game_sha256": "722f76d6e3c0f54d602a3535c074181a4d92b906f947c7d944ee593414783ce1",
-    "incoming_es_sha256": "4efc5a8493a6a28eee74496d0a497eedba7852c5d0d748702f26d9d31f5548d5",
-    "record_sha256": "7884d86f38d7c268a55a0353facbbf029d0bccda686814dfbe124f775cc84870",
+    "data_sha256": "ba37b2d763ae66d79bb1c5d515fd81f567f4d479c91d49a6991159e67405212c",
+    "game_sha256": "d4c6380923bd3921eb76073ae398f19b016b7552ac7368f131e4d0f9b00417e3",
+    "incoming_es_sha256": "f2e298e0a46f9ab249f302e94e10ca35b804ac20d30c6eae4557ed5a151522df",
+    "record_sha256": "1e07f415f0549f5d3b812d55604603a2d408402d46bbe253f76001d352aba607",
     "registers_after": {
       "eax": 2711687732,
       "ax": 4660,
@@ -1271,6 +1434,8 @@
     "layout_result": 65535,
     "candidate": 0,
     "candidate_relation": 21845,
+    "record_base_offset": 256,
+    "filter_flags": 0,
     "calls": [
       {
         "name": "candidate_build",
@@ -1292,7 +1457,7 @@
         "cx": 13398,
         "dx": 17767,
         "si": 9531,
-        "di": 4608,
+        "di": 256,
         "bp": 11093,
         "ds": 8192,
         "es": 36864,
@@ -1305,7 +1470,7 @@
         "cx": 13398,
         "dx": 17767,
         "si": 9531,
-        "di": 4608,
+        "di": 256,
         "bp": 11093,
         "ds": 8192,
         "es": 28672,
@@ -1364,10 +1529,10 @@
         "sp": 63476
       }
     ],
-    "data_sha256": "ba66582fb7190593c444eb19b6c520d09a4daafe9207c02ed55e87cc5011d26c",
-    "game_sha256": "d4c6380923bd3921eb76073ae398f19b016b7552ac7368f131e4d0f9b00417e3",
-    "incoming_es_sha256": "f2e298e0a46f9ab249f302e94e10ca35b804ac20d30c6eae4557ed5a151522df",
-    "record_sha256": "88e54b10d06a5a78d14558033e836f5d2209b1a9e47a5088c0b876e60a2ab052",
+    "data_sha256": "bbde2647ade315a405e935d056b32177d85b73910792a4236ebf6ba631ab40be",
+    "game_sha256": "df1783fa0657dc864a78f67f27727179c331c9057120a147a42097fc69326981",
+    "incoming_es_sha256": "286e952c402f3e98b9f8ce00325b8bd4290e316d5db00dae518d8ab2120ed21d",
+    "record_sha256": "76b72792603fc3fe8e3209bbd2d5fec0ce19f59df0c91d2fb53d4154d8007d20",
     "registers_after": {
       "eax": 2711687732,
       "ax": 4660,
