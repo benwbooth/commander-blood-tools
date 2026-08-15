@@ -1243,14 +1243,18 @@ wrap, read-only table access, the unloaded `AX=0` plus unchanged `DS:SI` result,
 the loaded `AX=1` plus `DS=segment`/`SI=0` result, unrelated-register
 preservation, and the far-return boundary.
 
-Open Watcom compiles the actual six-byte structured-result candidate without
-warnings; `-3 -ox -mm` emits 32 instructions/70 bytes versus 12/28 original.
-Standalone 8086/286/386 probes emit 36/32/32 instructions and 75/70/70 bytes,
-while Turbo C 2.01 emits 31 instructions. Both compiler families implement a
-hidden structure-return convention. That is suitable for natural integrated C,
-but it cannot reproduce the binary's simultaneous status in `AX` and conditional
-pointer in `DS:SI`; exact binary integration requires a narrow ABI adapter plus
-FS table placement.
+The compiler sample now includes the maintained source directly. Open Watcom
+1.9 medium (`-3 -ox -mm -zdp -we`) compiles the six-byte structured result
+warning-free to 32 instructions/70 bytes versus 12/28 original, with 83.33
+percent mnemonic-multiset and ordered overlap. Turbo C 2.01 medium (`-mm -O
+-Z`) emits 31 instructions with 83.33 percent multiset and 75.00 percent
+ordered overlap and assembles warning-free to a 447-byte OMF object. Both
+compiler families use a hidden structure-return convention. Loaded results are
+exact. Unloaded results deliberately define segment and offset as zero instead
+of retaining dead incoming `DS:SI`; callers either test `loaded` or carry the
+original loaded-resource precondition. The source is accepted for natural
+integration, while direct binary use requires a narrow adapter for simultaneous
+status in `AX`, conditional pointer in `DS:SI`, and FS table placement.
 
 Resource dword getter `0x00533C` has eight deterministic direct vectors. They
 prove zero, high, and wrapped handles, 16-bit `handle * 8` indexing, full dword
