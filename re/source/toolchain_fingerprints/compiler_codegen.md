@@ -1776,15 +1776,16 @@ and query/top ownership, ES record ownership, DS script ownership, SS branch
 stack ownership, offset and script-segment wrap, real branch-helper effects,
 path registers, final flags, and near return.
 
-The corrected natural candidate returns either the six-byte-advanced cursor or
-the branch helper's replacement cursor directly. Open Watcom `-3 -ox -mm`
-compiles it without warnings to 87 instructions/198 bytes versus 69/159
-original; Turbo C 2.01 medium emits 111 instructions. Watcom retains all signed
-SETcc relations and the SI result, but creates a frame and integer Boolean,
-keeps current in AX and markers in BL/CL instead of CX and AH/AL, and addresses
-the far-base/query globals through DS rather than fixed GS. Exact integration
-needs the original segmented placement and narrow register allocation, not a
-different algorithm or an emulation layer.
+The accepted natural candidate snapshots the explicit GAME_DATA far base once
+before parsing, returns either the six-byte-advanced cursor or the branch
+helper's replacement cursor directly, and keeps the SETcc truth value byte
+sized. Open Watcom size mode `-3 -os -s -mm` compiles it without warnings to
+85 instructions/195 bytes versus 69/159 original; Turbo C 2.01 emits 122
+instructions. Watcom retains all signed relations and the SI result, but
+materializes GAME_DATA segments, creates a frame, keeps current in AX and the
+markers/truth value in BL/BH instead of CX and AH/AL, and stores far pointers
+in locals. Those are reviewed compiler and internal-ABI differences, not
+missing handler logic.
 
 Shared VM bit-state handler `0x006902` serves opcodes AE and B0. Fourteen direct
 vectors prove that optional A1 consumes one byte and flips query polarity; the
@@ -1795,14 +1796,15 @@ ownership, ES record ownership, DS script ownership, SS branch-stack ownership,
 record-offset and script-segment wrap, real branch-helper effects, path
 registers, final flags, and near return.
 
-The corrected candidate loads the far base before parsing and directly returns
-either the parsed cursor or branch target. Open Watcom `-3 -ox -mm` compiles it
-without warnings to 36 instructions/80 bytes versus 31/68 original; Turbo C
-2.01 medium emits 54 instructions. Watcom retains the far field and SI result,
-but creates a local for the base offset, represents inversion in AX and the mask
-in DX, lowers query polarity through TEST/SETNE/CMP, and addresses query mode
-through DS. Exact integration needs fixed GS placement and the original
-frameless DL/AX/BX allocation, not an emulation layer.
+The accepted candidate snapshots the explicit GAME_DATA far base before
+parsing, uses a byte inversion flag, expresses the query as the original direct
+bit-test branches, and returns either the parsed cursor or branch target. Open
+Watcom size mode `-3 -os -s -mm` compiles it without warnings to 49
+instructions/93 bytes versus 31/68 original; Turbo C 2.01 emits 60
+instructions. Watcom retains the far field, mask update operations, and SI
+result, but materializes GAME_DATA segments, creates a local for the base, and
+uses a different register/epilogue allocation. Those differences are accepted
+at the typed handler boundary.
 
 Shared VM record-wildcard handler `0x006946` serves opcodes AD, AF, B2, B3,
 BA, BB, and BC. Seventeen direct vectors cover ordinary and A1-inverted equality,
@@ -1813,16 +1815,17 @@ directory lookup, remove, insert, and branch helpers and prove their call order,
 SS slot ownership, all other segment ownership, record and script wrap, path
 registers, final flags, and near return.
 
-The new natural candidate directly returns either the parsed cursor or branch
-target and reads the dispatch opcode through `script_bytes[-5]`, matching the
-original post-parse SI-relative access. Open Watcom `-3 -ox -mm` compiles it
-without warnings to 56 instructions/139 bytes versus 55/129 original; Turbo C
-2.01 medium emits 88 instructions. The one-instruction delta is not byte
-equivalence: Watcom materializes the far base in BX/DI, reallocates offset/value
-to CX/DX, creates an AX Boolean for query equality, addresses globals through
-DS, and consumes Boolean AX results where the original slot helpers return
-carry while preserving AX. Exact integration needs segmented placement and
-narrow carry adapters, not different C logic.
+The accepted natural candidate directly returns either the parsed cursor or
+branch target, reads the dispatch opcode through `script_bytes[-5]`, and uses
+explicit GAME_DATA aliases for the record base, mode, wildcard, and BC result.
+Its byte inversion flag and direct equality branches preserve the original
+decision structure. Open Watcom size mode `-3 -os -s -mm` compiles it without
+warnings to 76 instructions/174 bytes versus 55/129 original; Turbo C 2.01
+emits 105 instructions. Watcom materializes GAME_DATA segments and stack-held
+far pointers and consumes Boolean AX results where the original slot helpers
+return carry. The coherent C graph gives those helpers ordinary Boolean
+contracts, so the differences are accepted without embedding an assembly
+adapter in this handler.
 
 VM opcode-CD handler `0x0069C7` has two modes. Query mode optionally consumes
 an A1 inversion prefix and matches `{0x00CD, second, third}` at the first record
@@ -3439,9 +3442,9 @@ LCS and then mnemonic similarity:
 | `vm_conditional_jump` | medium, `-ox`, register | 10/18 | 0.1000 | 0.7000 | 0.4000 |
 | `vm_poke_byte` | medium, `-ox`, register | 5/6 | 0.2000 | 0.8000 | 0.8000 |
 | `vm_yield` | medium, `-ox`, register | 2/4 | 0.5000 | 1.0000 | 0.5000 |
-| `vm_shared_state` | medium, `-ox`, register | 69/87 | 0.1304 | 0.7971 | 0.2464 |
-| `vm_shared_bit_state` | medium, `-ox`, register | 31/36 | 0.0323 | 0.4839 | 0.0645 |
-| `vm_record_wildcard` | medium, `-ox`, register | 55/56 | 0.0545 | 0.5455 | 0.1273 |
+| `vm_shared_state` | medium, `-os -s`, register | 69/85 | 0.0580 | 0.8696 | 0.2319 |
+| `vm_shared_bit_state` | medium, `-os -s`, register | 31/49 | 0.1290 | 0.6129 | 0.1613 |
+| `vm_record_wildcard` | medium, `-os -s`, register | 55/76 | 0.0727 | 0.6545 | 0.1818 |
 | `vm_cd_record_triple` | medium, `-ox`, register | 82/86 | 0.0366 | 0.6341 | 0.0732 |
 | `vm_b7_record_bit` | medium, `-ox`, register | 43/51 | 0.0698 | 0.5116 | 0.0930 |
 | `vm_b8_record_pair` | medium, `-ox`, register | 26/37 | 0.1154 | 0.7308 | 0.1154 |

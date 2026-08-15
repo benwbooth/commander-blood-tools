@@ -6,16 +6,22 @@ typedef unsigned char u8;
 typedef unsigned int u16;
 typedef signed int i16;
 
-#if defined(__TURBOC__) || defined(__BORLANDC__) || defined(__WATCOMC__)
+#if defined(__WATCOMC__)
 #define FAR far
 #define NEAR near
+#define GAME_DATA __based(__segname("GAME_DATA"))
+#elif defined(__TURBOC__) || defined(__BORLANDC__)
+#define FAR far
+#define NEAR near
+#define GAME_DATA far
 #else
 #define FAR
 #define NEAR
+#define GAME_DATA
 #endif
 
-extern volatile u8 FAR *record_base;
-extern volatile u8 query_mode;
+extern volatile u8 FAR * GAME_DATA record_base_global;
+extern volatile u8 GAME_DATA query_mode;
 
 #if defined(__WATCOMC__)
 #pragma aux branch_fail_probe value [si] modify exact [ax si]
@@ -31,9 +37,11 @@ const u8 NEAR *NEAR vm_shared_state_probe(const u8 NEAR *script_bytes)
     u8 rhs_mode;
     u16 rhs;
     u16 current;
+    volatile u8 FAR *record_base;
     volatile u16 FAR *field;
-    int pass;
+    u8 pass;
 
+    record_base = record_base_global;
     offset = *(const u16 NEAR *)script_bytes;
     field = (volatile u16 FAR *)(record_base + offset);
     current = *field;

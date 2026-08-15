@@ -8,11 +8,13 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_shared_state_marker(
     cb_u8 rhs_mode;
     cb_u16 rhs;
     cb_u16 current;
+    volatile cb_u8 CB_FAR *record_base;
     volatile cb_u16 CB_FAR *field;
-    int pass;
+    cb_u8 pass;
 
+    record_base = vm_record_base_gs;
     offset = *(const cb_u16 CB_NEAR *)script_bytes;
-    field = (volatile cb_u16 CB_FAR *)(vm_record_base + offset);
+    field = (volatile cb_u16 CB_FAR *)(record_base + offset);
     current = *field;
     script_bytes += sizeof(cb_u16);
 
@@ -20,11 +22,11 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_shared_state_marker(
     rhs_mode = *script_bytes++;
     rhs = *(const cb_u16 CB_NEAR *)script_bytes;
     if (rhs_mode == 0xc0u || rhs_mode == 0xc2u) {
-        rhs = *(volatile cb_u16 CB_FAR *)(vm_record_base + rhs);
+        rhs = *(volatile cb_u16 CB_FAR *)(record_base + rhs);
     }
     script_bytes += sizeof(cb_u16);
 
-    if ((vm_query_mode & 1u) != 0) {
+    if ((vm_query_mode_gs & 1u) != 0) {
         pass = 0;
         if (op == 0xf0u) {
             pass = current != rhs;
