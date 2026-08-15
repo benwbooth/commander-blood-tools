@@ -6,7 +6,6 @@
 #include "../include/bloodprg_vm.h"
 
 #define VM_PROFILE_STATE_WORD_COUNT 128u
-#define VM_PROFILE_SPECIAL_SLOT_COUNT 16u
 
 cb_i16 CB_FAR vm_resource_profile_select(cb_u16 profile)
 {
@@ -43,7 +42,7 @@ cb_i16 CB_FAR vm_resource_profile_select(cb_u16 profile)
         vm_state_words[resource_index] = 0xffffu;
     }
     for (resource_index = 0u;
-            resource_index < VM_PROFILE_SPECIAL_SLOT_COUNT;
+            resource_index < BLOODPRG_VM_SPECIAL_SLOT_COUNT;
             ++resource_index) {
         vm_special_slots[resource_index] = 0u;
     }

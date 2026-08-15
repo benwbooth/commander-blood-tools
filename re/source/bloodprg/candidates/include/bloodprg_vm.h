@@ -18,6 +18,7 @@ typedef bloodprg_vm_image_ptr CB_NEAR bloodprg_vm_opcode_handler(
         bloodprg_vm_image_ptr script_bytes);
 
 #define BLOODPRG_VM_RESOURCE_COUNT 5u
+#define BLOODPRG_VM_SPECIAL_SLOT_COUNT 16u
 #define BLOODPRG_VM_OPCODE_MIN 0xa0u
 #define BLOODPRG_VM_OPCODE_MAX 0xd2u
 #define BLOODPRG_VM_OPCODE_WINDOW_COUNT 0x60u
@@ -279,7 +280,8 @@ extern volatile cb_u16 CB_GAME_DATA
         vm_state_words_gs[];                 /* explicit GS/SS:0x6ADE alias */
 extern volatile char vm_record_string_slots[][16]; /* SS:0x6CDE; SS=GS at runtime */
 extern volatile char CB_GAME_DATA vm_scene_name_buffer[]; /* ES=GS:0x209E */
-extern volatile cb_u16 vm_special_slots[16]; /* SS:0x6D3E in helpers; runtime SS=DS */
+extern volatile cb_u16
+        vm_special_slots[BLOODPRG_VM_SPECIAL_SLOT_COUNT]; /* SS:0x6D3E; SS=DS */
 extern const cb_i8 CB_FAR vm_field_offset_table[]; /* GS:0x6D60 */
 extern const cb_i8 CB_GAME_DATA
         vm_field_offset_table_gs[];          /* explicit GS:0x6D60 alias */

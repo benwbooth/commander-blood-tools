@@ -2,14 +2,16 @@
 
 int CB_NEAR vm_special_slot_remove(cb_u16 owner)
 {
-    cb_u16 i;
+    volatile cb_u16 *slot;
 
-    for (i = 0; i < 16u; ++i) {
-        if (vm_special_slots[i] == owner) {
-            vm_special_slots[i] = 0;
+    slot = vm_special_slots;
+    do {
+        if (*slot == owner) {
+            *slot = 0;
             return 1;
         }
-    }
+        ++slot;
+    } while (slot != vm_special_slots + BLOODPRG_VM_SPECIAL_SLOT_COUNT);
 
     return 0;
 }

@@ -1295,13 +1295,29 @@ register/segment preservation. Distinct arrays placed at `SS:0x6D3E`,
 SI-based consumers use DS for the same array, establishing an `SS=DS` runtime
 alias rather than GS ownership.
 
-Open Watcom compiles both actual candidates without warnings; `-3 -ox -mm`
-emits 21 instructions/40 bytes for removal versus 15/30 original and 29/60 for
-insertion versus 21/45 original. The 8086/286/386 outputs have the same counts;
-Turbo C 2.01 emits 22 and 32 instructions. The natural C preserves the exact
-list algorithms, but emits DS-symbol accesses and Boolean results in AX. Exact
-binary integration therefore needs a narrow carry adapter that preserves the
-input AX plus the recovered `SS=DS` placement contract.
+The codegen samples now include the maintained sources directly. Replacing
+array indices and explicit counters with unconditional-first, tail-tested
+pointers states the recovered traversal naturally while materially improving
+both compiler outputs. Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) emits
+14 instructions/30 bytes for removal versus 15/30 original, with 66.67 percent
+mnemonic-multiset and 53.33 percent ordered overlap. Insertion emits exactly 21
+instructions/47 bytes versus 21/45 original, with 71.43 percent multiset and
+57.14 percent ordered overlap. Turbo C 2.01 medium emits 18 and 26 instructions
+and valid 419- and 446-byte OMF objects. A linked Turbo C DOS executable that
+calls the maintained functions passes misses, every list position,
+first-duplicate removal, duplicate-before-earlier-empty insertion, full-list
+failure, and zero-owner behavior.
+
+The shared 16-entry bound now lives in `bloodprg_vm.h`; the profile reset and
+both helpers use that declaration instead of private literals. The generated
+Watcom loops preserve every register except conventional Boolean result AX and
+emit ordinary DS-symbol accesses. This is accepted for full-source integration:
+the recovered startup establishes `SS=DS`, and all maintained C callers consume
+zero/one rather than carry. Watcom auxiliary pragmas cannot name a condition
+flag as a scalar return location, so direct replacement remains a narrow
+Boolean-AX-to-carry adapter boundary that must also restore the original AX
+owner and enforce SS-relative storage. Keeping that boundary outside these
+natural functions avoids inline assembly in the recovered algorithms.
 
 VM field-offset resolver `0x006023` has eight deterministic direct vectors.
 They prove selector input in AX, a nonzero kind bitmask in BX, lowest-set-bit
