@@ -6164,14 +6164,21 @@ prove the original's address-size-prefixed field read: the effective offset is
 the signed result in EAX plus ESI, so it can cross 64 KiB and inherits ESI's
 high word. Both real callers first execute the active VM wrapper path that
 zeros ESI, making the inherited high word a verified runtime precondition.
+All 640 active entries in the five shipped DEB images resolve their
+selector-`0x11` field inside the corresponding VAR image. The largest effective
+offset is `0x14EA`, so the shipped object domain cannot exercise 64 KiB crossing.
 
 Open Watcom 1.9 medium (`-3 -os -s -mm -we`) emits one warning-free
-43-instruction/100-byte function versus 33/73 original, with 78.79 percent
-mnemonic-multiset overlap. The directory, object, field, and sentinel logic is
-natural typed C. Direct replacement still needs GS placement, the runtime
-SS=DS slot alias, the preserve-all envelope, and a narrow field-read lowering
-for the original 32-bit effective offset because Watcom's 16:16 far-pointer
-arithmetic wraps it to 16 bits.
+46-instruction/109-byte function versus 33/73 original, with 78.79 percent
+mnemonic-multiset overlap. Turbo C 2.01 medium (`-mm -O -Z`) emits 46
+instructions with 75.76 percent multiset overlap and assembles warning-free to
+a 603-byte OMF object. The directory, object, field, and sentinel logic is
+natural typed C, and the maintained source names the GS-owned record pointer
+explicitly. The compilers' wrapping 16-bit far-pointer addition is accepted for
+source-port integration on the proven shipped domain. Direct replacement still
+needs GS placement, the runtime SS=DS slot alias, the preserve-all envelope, and
+a narrow addr32 field-read adapter for adversarial effective offsets above 64
+KiB.
 
 ## BLOODPRG nested VM block executor candidate
 

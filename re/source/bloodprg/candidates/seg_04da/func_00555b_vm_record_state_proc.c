@@ -19,7 +19,7 @@ void CB_FAR vm_record_state_proc(void)
     entry = vm_record_directory_gs;
     while (entry->entry_kind == BLOODPRG_VM_DIRECTORY_ACTIVE_KIND) {
         object = VM_RECORD_STATE_OBJECT_AT(
-            vm_record_base, entry->object_offset);
+            vm_record_base_gs, entry->object_offset);
         field_offset = (cb_i16)vm_field_offset(
             0x0011u, *(volatile cb_u16 CB_FAR *)object);
         if (*(volatile cb_i16 CB_FAR *)(object + field_offset) == -1) {
