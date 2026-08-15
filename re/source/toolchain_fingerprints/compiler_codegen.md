@@ -1262,14 +1262,18 @@ loads, read-only table ownership, preservation of BX and every unrelated
 register/segment, the `RETF` boundary, and the architecturally defined
 CF/PF/ZF/SF results left by `SHL AX,3`.
 
-Open Watcom compiles the actual candidate without warnings; `-3 -ox -mm` emits
-7 instructions/16 bytes versus 6/13 original. Standalone 8086/286/386 probes
-emit 10/7/7 instructions and 19/16/16 bytes, while Turbo C 2.01 emits 10
-instructions. Watcom preserves the original mnemonic set and AX input, but uses
-DS table placement, shifts BX, and returns the natural 32-bit value in DX:AX.
-Its C16 pragma parser rejects EAX register names, so exact integration needs a
-narrow FS/EAX adapter rather than contaminating the natural field getter with
-inline assembly.
+The compiler sample now includes the maintained one-line source directly. Open
+Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles it warning-free to 7
+instructions/16 bytes versus 6/13 original. Turbo C 2.01 medium (`-mm -O -Z`)
+emits 10 instructions and assembles warning-free to a 368-byte OMF object. Both
+compilers preserve the complete original mnemonic sequence and multiset. The
+source is accepted for natural integration. Direct replacement still needs FS
+table placement and EAX rather than conventional DX:AX return packing; Watcom's
+C16 pragma parser rejects EAX register names, so that belongs in a narrow
+adapter rather than inline assembly in the field getter. The original terminal
+shift flags and EAX high half are dead at both call sites: each caller copies AX
+to CX and immediately executes `MOV AH` before its next status-sensitive
+operation.
 
 VM special-slot helpers `0x005FD8` and `0x005FF6` have six removal and seven
 insertion vectors. They prove absent, first/middle/last, duplicate, full-list,
