@@ -5510,13 +5510,23 @@ seek/reset priority, doubled-frame wrap, and handler mutation of the next slot.
 They prove SS slot versus DS/GS ownership, call order and state, all writes,
 register preservation, final flags, stack integrity, and near return.
 
-Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the actual natural
-candidate warning-free to 63 instructions/163 bytes versus the original
-64/161, with 81.25 percent mnemonic-multiset overlap and no inline assembly.
-The compiler emits bytewise busy accumulation and a genuine CS-based indirect
-handler call. Direct replacement still needs SS slot placement, the ambient
-`SI`/`BP` mouse boundary, inherited-`BP` handler input, and the exact preserve-all
-and `LOOP` flag envelope.
+The authoritative candidate expresses the loop as a six-to-one countdown,
+advances the typed slot pointer by one record, and dispatches handler
+`index - 1`. This is the source-level shape of the original `CX` countdown and
+reverse code-table lookup without exposing registers in C.
+
+Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles that candidate
+warning-free to 60 instructions/154 bytes versus the original 64/161. It has
+82.81 percent mnemonic-multiset overlap, 78.12 percent ordered-mnemonic overlap,
+and 15/64 matching byte lines in order. Turbo C 2.01 medium (`-mm -O -Z`)
+emits 88 instructions, with 87.50 percent mnemonic-multiset and 75.00 percent
+ordered overlap. Watcom emits bytewise busy accumulation and a genuine
+CS-based indirect handler call; neither candidate uses inline assembly.
+
+The natural candidate is accepted for source-port integration. Direct
+replacement still needs SS slot placement, the ambient `SI`/`BP` mouse
+boundary, inherited-`BP` handler input, and the exact preserve-all and `LOOP`
+flag envelope.
 
 ## BLOODPRG navigation actor handler 1 candidate
 

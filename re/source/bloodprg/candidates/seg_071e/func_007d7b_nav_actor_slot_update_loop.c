@@ -31,7 +31,8 @@ void CB_NEAR nav_actor_slot_update_loop(void)
     }
 
     slot = nav_actor_slots;
-    for (index = 0u; index < NAV_ACTOR_SLOT_COUNT; ++index, ++slot) {
+    index = NAV_ACTOR_SLOT_COUNT;
+    do {
         flags = slot->flags;
         if ((flags & NAV_ACTOR_ACTIVE_FLAG) != 0u) {
             if ((flags & NAV_ACTOR_CLEAR_MOUSE_FLAG) != 0u) {
@@ -55,7 +56,9 @@ void CB_NEAR nav_actor_slot_update_loop(void)
             }
         }
 
-        nav_actor_handlers[NAV_ACTOR_SLOT_COUNT - 1u - index](
+        nav_actor_handlers[index - 1u](
                 (volatile bloodprg_presentation_line_record CB_NEAR *)slot);
-    }
+        ++slot;
+        --index;
+    } while (index != 0u);
 }
