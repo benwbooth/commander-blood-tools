@@ -4575,17 +4575,27 @@ stack balance, final flags, and far return. A reverse-direction vector records
 the binary's inherited `LODSW` behavior outside the normal clear-DF C runtime
 domain.
 
-Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles both the probe and the
-actual candidate without warnings to 31 instructions/60 bytes versus the
-original 33/63. The mnemonic-sequence LCS is 69.70 percent and the mnemonic
-multiset overlap is 78.79 percent. The natural function uses typed object
-headers, pointers, and a signed terminator test with no inline assembly.
-Watcom reloads the far record pointer inside the loop and uses ordinary DS
-near data for the output. It also calls the argument-free helper before
-materializing zero and returns only the C-visible AX value instead of clearing
-upper EAX. Those helper-entry registers, fixed placement under the runtime
-`SS=DS` invariant, upper EAX, and the clear direction flag are the remaining
-integration boundaries.
+Open Watcom 1.9 medium (`-3 -ox -mm -zdf -we`) compiles the actual candidate
+without warnings to 33 instructions/65 bytes versus the original 33/63. The
+mnemonic-sequence LCS is 75.76 percent and the mnemonic-multiset overlap is
+81.82 percent. Medium size mode emits 32 instructions/56 bytes, and Turbo C
+2.01 medium emits 41 instructions. The speed build naturally keeps the count
+in CX, scans each offset through AX, uses stack-segment-qualified near-list
+storage, and returns the count in AX. It reloads the far record pointer inside
+the loop and chooses different cursor registers, but the typed object-header,
+pointer, signed-terminator, mask, append, and count operations remain one to
+one with the assembly and require no inline assembly.
+
+Runtime captures place the relocatable record block at offsets `8681:0000` and
+`7838:0000`, so every nonnegative offset accepted by this routine stays within
+the original segment and ordinary 16-bit far-pointer addition is equivalent to
+the binary's address-size-overridden lookup on shipped data. The sole caller
+uses only the returned AX count and the generated list, and runs with the
+shipped `SS=DS=GS` data group. Its other forward `LODSW` loops also confirm the
+normal clear-DF C runtime convention. The helper's scratch-register setup,
+upper-EAX result, exact BP cursor, and terminal flags remain direct binary
+replacement details, not missing source-level logic, so this candidate is
+accepted for source-port integration.
 
 ## BLOODPRG ship HUD palette snapshot candidate
 
