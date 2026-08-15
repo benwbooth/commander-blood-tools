@@ -944,13 +944,16 @@ the nine-bit width mask, the 130-row clamp, exact AABC/main-pass segment and
 stack state, real AD96 entries, both code-byte stores, memory ownership,
 registers, flags, stack, and near return. The natural C replaces the unrolled
 cases with one `min(length, row_remaining)` loop and turns AD96's nonlocal exit
-into an ordinary Boolean return. Open Watcom `-3 -ox -mh` compiles the actual
-candidate and probe warning-free to 310 instructions and 884 bytes versus
-483/1136 original. The probe has a 28.78 percent mnemonic-sequence LCS, 38.51
-percent mnemonic-multiset overlap, and 1.45 percent byte-line LCS. Exact
-replacement still needs the original GS-owned configuration, DS/ES/FS handoff,
-sentinel-flag refill, string stores, and nonlocal final-row unwind; the shared
-natural row loop accounts for the decoded game-domain behavior.
+into an ordinary Boolean return. Its single recovered caller obtains the width
+from a D8C layout extent; the assembly and structured loop both rely on that
+masked extent being nonzero. Open Watcom `-3 -ox -mh` compiles the authoritative
+source warning-free to 306 instructions and 860 bytes versus 483/1136 original.
+The direct sample has a 28.57 percent mnemonic-sequence LCS, 38.30 percent
+mnemonic-multiset overlap, and 1.45 percent byte-line LCS. Turbo C 2.01 huge
+emits 305 instructions and assembles cleanly to OBJ. The ordinary parameters,
+shared row loop, and normal return are accepted source-integration boundaries;
+they preserve the decoded game-resource behavior while replacing GS-owned
+setup, sentinel flags, string stores, and 22 unrolled AD96 call sites.
 
 For `0x00AD96`, five direct cases execute both forms of this outlined local
 helper from `0x00AB25`. They verify the low-byte-only row decrement, preserved
@@ -958,11 +961,13 @@ high byte, zero-to-255 underflow, 16-bit 320-byte offset wrap, CX/DI reloads,
 and the last-row path that discards the helper return address and unwinds the
 enclosing decoder's SP/BP/DS frame. The natural six-byte state structure keeps
 the same three fields and returns a Boolean so the eventual `0x00AB25` C body
-can perform a normal return. Open Watcom 1.9 medium emits 13 instructions and
-27 bytes; Turbo C 2.01 medium emits 16 instructions, versus 11 instructions
-and 25 bytes in the complete original span. The close size does not make the
-code drop-in: the natural form materializes a Boolean instead of performing a
-nonlocal stack unwind.
+can perform a normal return. Open Watcom 1.9 medium compiles the authoritative
+source warning-free to 13 instructions and 30 bytes versus 11/25 original,
+with 54.55 percent mnemonic-sequence LCS, 72.73 percent mnemonic-multiset
+overlap, and 18.18 percent byte-line LCS. Turbo C 2.01 medium emits 16
+instructions and assembles cleanly to OBJ. The Boolean plus AB25's normal
+return is accepted as the structured equivalent of the nonlocal stack unwind,
+not as a drop-in machine-code replacement.
 
 For the four hardware leaves at `0x000CC0`, `0x002DD3`, `0x002F90`, and
 `0x002FA6`, 19 direct-execution vectors now hook the actual `INT`, `IN`, and
@@ -3881,7 +3886,8 @@ LCS and then mnemonic similarity:
 | `resource_payload_decode_ab` | huge, `-ox`, register | 73/120 | 0.0411 | 0.5616 | 0.0959 |
 | `resource_payload_decode_ad` | huge, `-ox`, register | 207/208 | 0.0145 | 0.3140 | 0.0338 |
 | `resource_pair_lz_decode` | huge, `-ox`, register | 53/109 | 0.0566 | 0.4528 | 0.0566 |
-| `resource_payload_decode_rect` | huge, `-ox`, register | 483/310 | 0.0104 | 0.2878 | 0.0145 |
+| `resource_payload_decode_rect` | huge, `-ox`, register | 483/306 | 0.0104 | 0.2857 | 0.0145 |
+| `gfx_scanline_advance` | medium, `-ox`, register | 11/13 | 0.1818 | 0.5455 | 0.1818 |
 | `list_d8c_active_present` | medium, `-ox`, register | 87/115 | 0.1264 | 0.5747 | 0.1379 |
 | `resource_rect_blit` | medium, `-ox`, register | 51/92 | 0.0000 | 0.6275 | 0.0392 |
 | `resource_load_sequence` | huge, `-ox`, register | 43/42 | 0.2093 | 0.4419 | 0.2093 |
