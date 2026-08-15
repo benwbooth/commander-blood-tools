@@ -347,12 +347,17 @@ the separately proven malformed edge described above.
 
 The natural candidate contains only the logical latch-call-reset operation and
 exposes BP as a typed argument. It has no register model, memory emulator,
-inline assembly, or simulated unwind. Open Watcom `-3 -ox -mh` emits 10
-instructions and 26 bytes versus the complete assembly tail's 14/25. The probe
-has a 14.29 percent instruction LCS, 50 percent mnemonic-sequence and multiset
-overlap, and 21.43 percent byte-line LCS. A structured C recovery of A1B4 must
-return immediately after this helper; encoding A1B4's POP/RET sequence inside
-the helper would violate the C call model and obscure the recovered logic.
+inline assembly, or simulated unwind. The compiler-corpus sample now includes
+that authoritative source. Open Watcom 1.9 medium (`-3 -ox -mm -zdf -we`)
+emits 10 instructions/26 bytes versus the complete assembly tail's 14/25, with
+50 percent mnemonic-multiset and ordered overlap. Turbo C 2.01 medium (`-mm -O
+-Z`) emits 11 instructions with 57.14 percent multiset and 50 percent ordered
+overlap and assembles warning-free to OBJ.
+
+This is accepted as the natural source logical unit paired with the accepted
+A1B4 parent's immediate return. A binary-mixing build still needs the original
+parent-frame tail or an assembly adapter rather than pretending the unwind is
+an ordinary standalone C ABI.
 
 For `0x00A20C`, seven direct cases cover an existing active entry, an empty
 queue, ordinary incomplete/exact/excess extents, the `0x6D6D` link-marker
