@@ -577,11 +577,16 @@ is accepted because it retains every observable state transition and both
 
 For `0x00A40B`, exhaustive direct execution over all 256 state-byte values
 confirms that ZF is set exactly for zero and one and that all registers are
-preserved. Open Watcom 1.9 and Turbo C 2.01 retain the natural source's two
-comparisons, but emit eight and ten instructions respectively versus the
-original four. The extra instructions materialize a C Boolean in AX; the
-original sole caller consumes ZF directly, making this a confirmed flag-ABI
-boundary rather than an unresolved algorithm.
+preserved. The authoritative source retains the ordered volatile zero and one
+comparisons. Open Watcom 1.9 medium emits 8 instructions/24 bytes versus 4/15
+original with 75 percent mnemonic-multiset and ordered overlap. Turbo C 2.01
+medium emits 10 instructions with the same overlap and assembles warning-free
+to OBJ.
+
+The accepted scene dispatcher consumes the natural Boolean. The extra
+instructions only materialize that result in AX; the original caller consumes
+ZF directly. This is an accepted source predicate with a narrow flag-ABI
+boundary for isolated binary replacement, not an unresolved algorithm.
 
 For `0x00A622`, six direct-file cases execute the original `0x00A664` transport
 and its `0x00A734` shared tail without patching either routine. They verify
