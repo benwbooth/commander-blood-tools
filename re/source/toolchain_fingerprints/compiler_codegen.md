@@ -363,11 +363,17 @@ For `0x00A20C`, seven direct cases cover an existing active entry, an empty
 queue, ordinary incomplete/exact/excess extents, the `0x6D6D` link-marker
 bypass, both storage-segment choices, and far-pointer offset wrap. The patched
 activation boundary receives exactly the original AX extent, ES:SI payload
-pointer, and BP storage segment. Open Watcom 1.9 medium emits 32 instructions
-and 79 bytes; Turbo C 2.01 medium emits 56 instructions, versus 18 instructions
-and 52 bytes in the original. The natural far-pointer decision tree is
-verified, but Boolean materialization and typed parameter passing replace the
-original carry result and register-call boundary.
+pointer, and BP storage segment. The compiler-corpus sample now includes the
+authoritative recovered source. Open Watcom 1.9 medium (`-3 -ox -mm -zdf -we`)
+emits 32 instructions/79 bytes versus 18/52 original, with 66.67 percent
+mnemonic-multiset and 61.11 percent ordered overlap. Turbo C 2.01 medium (`-mm
+-O -Z`) emits 39 instructions with 72.22 percent multiset and 66.67 percent
+ordered overlap and assembles warning-free to OBJ.
+
+The accepted queue-service loop is its sole recovered C caller and consumes a
+Boolean result. The far-pointer decision tree is accepted for source-port
+integration; a direct replacement still needs carry status and the original
+AX/ES:SI/BP activation boundary.
 
 For `0x00A240`, twelve direct cases execute the routine's actual indirect far
 callback and cover both audio-phase threshold boundaries, signed-negative
