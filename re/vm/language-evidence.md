@@ -55,9 +55,24 @@ traces independently establish `0xAC` as the response-block terminator. All
 64,736 BAS bytes now compile with no `RAW` fallback.
 
 The whole ten-image corpus therefore compiles byte-for-byte from typed
-BloodScript IR. This closes byte framing, not source structuring: numeric branch
-targets, continuation offsets, record fields, and routine boundaries still
-need to be lifted into labels, procedures, and reducible control-flow blocks.
+BloodScript IR. This closes byte framing, not source structuring: record fields
+and reducible control-flow blocks still need to be lifted above the exact IR.
+
+Address correlation establishes three corpus-wide rules:
+
+- all 480 kind-2 `.DEB` routine values are one-based COD addresses;
+- 284 image-local distinct nonzero BAS targets are one-based BAS addresses;
+- 1,054 image-local distinct explicit COD targets are zero-based COD addresses.
+
+Every address resolves to a decoded token boundary under its respective rule.
+The contrary interpretation fails universally for the `.DEB` routine values and
+BAS continuations: none of their raw encoded values is a token boundary.
+
+BloodScript now emits 480 balanced `PROCEDURE`/`END_PROCEDURE` regions from the
+DEB names, plus `LABEL` directives for other COD blocks and BAS responses. Its
+two-pass compiler resolves symbolic operands while retaining explicit source
+offsets and exact statement order. Across the corpus this yields 1,059 distinct
+COD symbols and 284 BAS labels without changing any output byte.
 
 ## What is not established
 
@@ -106,9 +121,9 @@ specific byte range and must never be labelled as the original 1994 source.
    operand semantics are proven.
 2. Decode the remaining BAS structures without changing a byte of the rebuilt
    images.
-3. Use `.DEB` routine offsets and proven branch targets to construct a control
-   flow graph.
-4. Lift reducible graph regions into guards, blocks, and procedures while
+3. Use the recovered procedures and symbolic targets to construct typed basic
+   blocks and per-procedure control-flow graphs.
+4. Lift reducible graph regions into guards and conditional blocks while
    retaining address labels for irreducible regions.
 5. Add symbolic object, field, and dictionary names without changing numeric
    identity in the compiler IR.

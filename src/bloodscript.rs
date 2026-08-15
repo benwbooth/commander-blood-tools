@@ -6,11 +6,12 @@
 //! syntax is reconstructed for this project; it is not claimed to be the lost
 //! historical source syntax.
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fmt::Write as _;
 
 use anyhow::{Result, anyhow, bail};
 
+use crate::script::DebSymbol;
 use crate::vm::{self, VmToken};
 use crate::vm_source::{self, ImageKind};
 
@@ -24,12 +25,49 @@ pub struct Decompilation {
     pub generic_op_statements: usize,
     pub generic_op_bytes: usize,
     pub raw_bytes: usize,
+    pub symbolic_labels: usize,
+    pub procedures: usize,
+}
+
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+struct BodyStats {
+    typed_statements: usize,
+    typed_bytes: usize,
+    generic_op_statements: usize,
+    generic_op_bytes: usize,
+    raw_bytes: usize,
+    symbolic_labels: usize,
+    procedures: usize,
+}
+
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+struct SourceAnnotations {
+    directives: BTreeMap<usize, Vec<String>>,
+    labels: HashMap<u16, String>,
+    procedure_count: usize,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct ParsedSourceLine<'a> {
+    line_number: usize,
+    offset: usize,
+    name: &'a str,
+    args: Vec<&'a str>,
 }
 
 pub fn decompile(
     kind: ImageKind,
     image: &[u8],
     dictionary: &HashMap<u16, String>,
+) -> Result<Decompilation> {
+    decompile_with_symbols(kind, image, dictionary, &[])
+}
+
+pub fn decompile_with_symbols(
+    kind: ImageKind,
+    image: &[u8],
+    dictionary: &HashMap<u16, String>,
+    symbols: &[DebSymbol],
 ) -> Result<Decompilation> {
     let mut source = String::new();
     writeln!(source, "; BloodScript typed VM source")?;
@@ -45,25 +83,110 @@ pub fn decompile(
     writeln!(source, "; size: 0x{:08X}", image.len())?;
     writeln!(source)?;
 
-    let (typed_statements, typed_bytes, generic_op_statements, generic_op_bytes, raw_bytes) =
-        match kind {
-            ImageKind::Cod => decompile_cod(&mut source, image, dictionary)?,
-            ImageKind::Bas => decompile_bas(&mut source, image, dictionary)?,
-        };
+    let stats = match kind {
+        ImageKind::Cod => decompile_cod(&mut source, image, dictionary, symbols)?,
+        ImageKind::Bas => decompile_bas(&mut source, image, dictionary)?,
+    };
     Ok(Decompilation {
         source,
-        typed_statements,
-        typed_bytes,
-        generic_op_statements,
-        generic_op_bytes,
-        raw_bytes,
+        typed_statements: stats.typed_statements,
+        typed_bytes: stats.typed_bytes,
+        generic_op_statements: stats.generic_op_statements,
+        generic_op_bytes: stats.generic_op_bytes,
+        raw_bytes: stats.raw_bytes,
+        symbolic_labels: stats.symbolic_labels,
+        procedures: stats.procedures,
     })
 }
 
 pub fn compile(source: &str) -> Result<Vec<u8>> {
-    let mut image = Vec::new();
-    let mut saw_format = false;
+    let (lines, saw_format) = parse_source_lines(source)?;
+    if !saw_format {
+        bail!("missing '; format: {SOURCE_FORMAT}' header");
+    }
 
+    let mut labels = HashMap::new();
+    for line in &lines {
+        if !matches!(line.name, "LABEL" | "PROCEDURE") {
+            continue;
+        }
+        require_count(&line.args, 1, line.line_number, line.name)?;
+        validate_identifier(line.args[0], line.line_number)?;
+        let address = u16::try_from(line.offset).map_err(|_| {
+            anyhow!(
+                "line {}: label offset 0x{:08X} exceeds the VM address space",
+                line.line_number,
+                line.offset
+            )
+        })?;
+        if labels.insert(line.args[0], address).is_some() {
+            bail!(
+                "line {}: duplicate label {:?}",
+                line.line_number,
+                line.args[0]
+            );
+        }
+    }
+
+    let mut image = Vec::new();
+    let mut current_procedure: Option<&str> = None;
+    for line in lines {
+        if line.offset != image.len() {
+            bail!(
+                "line {}: offset 0x{:08X} does not follow 0x{:08X}",
+                line.line_number,
+                line.offset,
+                image.len()
+            );
+        }
+        match line.name {
+            "LABEL" => {
+                require_count(&line.args, 1, line.line_number, line.name)?;
+                continue;
+            }
+            "PROCEDURE" => {
+                require_count(&line.args, 1, line.line_number, line.name)?;
+                if let Some(open) = current_procedure {
+                    bail!(
+                        "line {}: PROCEDURE {:?} starts before {:?} ends",
+                        line.line_number,
+                        line.args[0],
+                        open
+                    );
+                }
+                current_procedure = Some(line.args[0]);
+                continue;
+            }
+            "END_PROCEDURE" => {
+                require_count(&line.args, 1, line.line_number, line.name)?;
+                if current_procedure != Some(line.args[0]) {
+                    bail!(
+                        "line {}: END_PROCEDURE {:?} does not match {:?}",
+                        line.line_number,
+                        line.args[0],
+                        current_procedure
+                    );
+                }
+                current_procedure = None;
+                continue;
+            }
+            _ => {}
+        }
+        let encoded = compile_statement(line.name, &line.args, line.line_number, &labels)?;
+        if encoded.is_empty() {
+            bail!("line {}: statement emitted no bytes", line.line_number);
+        }
+        image.extend_from_slice(&encoded);
+    }
+    if let Some(open) = current_procedure {
+        bail!("procedure {open:?} has no END_PROCEDURE");
+    }
+    Ok(image)
+}
+
+fn parse_source_lines(source: &str) -> Result<(Vec<ParsedSourceLine<'_>>, bool)> {
+    let mut lines = Vec::new();
+    let mut saw_format = false;
     for (line_index, original_line) in source.lines().enumerate() {
         let line_number = line_index + 1;
         let trimmed = original_line.trim();
@@ -77,7 +200,6 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
         if trimmed.is_empty() || trimmed.starts_with(';') {
             continue;
         }
-
         let code = trimmed
             .split_once(';')
             .map_or(trimmed, |(code, _)| code)
@@ -86,52 +208,44 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
             .split_once(':')
             .ok_or_else(|| anyhow!("line {line_number}: expected OFFSET: STATEMENT"))?;
         let offset = parse_hex_usize(offset_text.trim(), line_number, "offset")?;
-        if offset != image.len() {
-            bail!(
-                "line {line_number}: offset 0x{offset:08X} does not follow 0x{:08X}",
-                image.len()
-            );
-        }
-
         let mut fields = statement.split_whitespace();
         let name = fields
             .next()
             .ok_or_else(|| anyhow!("line {line_number}: missing statement"))?;
-        let args: Vec<&str> = fields.collect();
-        let encoded = compile_statement(name, &args, line_number)?;
-        if encoded.is_empty() {
-            bail!("line {line_number}: statement emitted no bytes");
-        }
-        image.extend_from_slice(&encoded);
+        lines.push(ParsedSourceLine {
+            line_number,
+            offset,
+            name,
+            args: fields.collect(),
+        });
     }
-
-    if !saw_format {
-        bail!("missing '; format: {SOURCE_FORMAT}' header");
-    }
-    Ok(image)
+    Ok((lines, saw_format))
 }
 
 fn decompile_cod(
     output: &mut String,
     image: &[u8],
     dictionary: &HashMap<u16, String>,
-) -> Result<(usize, usize, usize, usize, usize)> {
+    symbols: &[DebSymbol],
+) -> Result<BodyStats> {
+    let tokens = vm::walk(image, 0, image.len());
+    let annotations = cod_annotations(&tokens, image, symbols)?;
     let mut cursor = 0usize;
-    let mut typed_statements = 0usize;
-    let mut typed_bytes = 0usize;
-    let mut generic_op_statements = 0usize;
-    let mut generic_op_bytes = 0usize;
-    let mut raw_bytes = 0usize;
+    let mut stats = BodyStats {
+        symbolic_labels: annotations.labels.len(),
+        procedures: annotations.procedure_count,
+        ..BodyStats::default()
+    };
 
-    for token in vm::walk(image, 0, image.len()) {
+    for token in tokens {
         let offset = token.offset();
         if offset > cursor {
             emit_raw(output, cursor, &image[cursor..offset], "undecoded gap")?;
-            raw_bytes += offset - cursor;
+            stats.raw_bytes += offset - cursor;
         }
         let Some(encoded) = vm::encode_token(&token) else {
             emit_raw(output, offset, &image[offset..], "invalid token tail")?;
-            raw_bytes += image.len() - offset;
+            stats.raw_bytes += image.len() - offset;
             cursor = image.len();
             break;
         };
@@ -141,45 +255,44 @@ fn decompile_cod(
         if image.get(offset..end) != Some(encoded.as_slice()) {
             bail!("token at 0x{offset:08X} does not re-encode exactly");
         }
-        emit_token(output, &token, dictionary)?;
-        typed_statements += 1;
-        typed_bytes += encoded.len();
+        emit_directives(output, offset, &annotations)?;
+        emit_token(output, &token, dictionary, &annotations.labels)?;
+        stats.typed_statements += 1;
+        stats.typed_bytes += encoded.len();
         if matches!(token, VmToken::Op { .. }) {
-            generic_op_statements += 1;
-            generic_op_bytes += encoded.len();
+            stats.generic_op_statements += 1;
+            stats.generic_op_bytes += encoded.len();
         }
         cursor = end;
     }
 
     if cursor < image.len() && image[cursor] == 0xFF {
+        emit_directives(output, cursor, &annotations)?;
         writeln!(output, "{cursor:08X}: END")?;
-        typed_statements += 1;
-        typed_bytes += 1;
+        stats.typed_statements += 1;
+        stats.typed_bytes += 1;
         cursor += 1;
     }
     if cursor < image.len() {
         emit_raw(output, cursor, &image[cursor..], "trailing bytes")?;
-        raw_bytes += image.len() - cursor;
+        stats.raw_bytes += image.len() - cursor;
     }
-    Ok((
-        typed_statements,
-        typed_bytes,
-        generic_op_statements,
-        generic_op_bytes,
-        raw_bytes,
-    ))
+    emit_directives(output, image.len(), &annotations)?;
+    Ok(stats)
 }
 
 fn decompile_bas(
     output: &mut String,
     image: &[u8],
     dictionary: &HashMap<u16, String>,
-) -> Result<(usize, usize, usize, usize, usize)> {
+) -> Result<BodyStats> {
+    let annotations = bas_annotations(image, dictionary)?;
     let mut cursor = 0usize;
     let mut raw_start = 0usize;
-    let mut typed_statements = 0usize;
-    let mut typed_bytes = 0usize;
-    let mut raw_bytes = 0usize;
+    let mut stats = BodyStats {
+        symbolic_labels: annotations.labels.len(),
+        ..BodyStats::default()
+    };
 
     while cursor < image.len() {
         if let Some((end, token)) = vm_source::bas_token_at(image, cursor, dictionary) {
@@ -190,7 +303,7 @@ fn decompile_bas(
                     &image[raw_start..cursor],
                     "BAS structure",
                 )?;
-                raw_bytes += cursor - raw_start;
+                stats.raw_bytes += cursor - raw_start;
             }
             let encoded = token.encode().ok_or_else(|| {
                 anyhow!("BAS token at 0x{cursor:08X} cannot be encoded")
@@ -198,6 +311,7 @@ fn decompile_bas(
             if image.get(cursor..end) != Some(encoded.as_slice()) {
                 bail!("BAS token at 0x{cursor:08X} does not re-encode exactly");
             }
+            emit_directives(output, cursor, &annotations)?;
             match &token {
                 vm_source::BasToken::Menu { word_offsets, .. } => {
                     write!(output, "{cursor:08X}: MENU")?;
@@ -216,7 +330,7 @@ fn decompile_bas(
                     )?;
                 }
                 vm_source::BasToken::Text(token) | vm_source::BasToken::Vm(token) => {
-                    emit_token(output, token, dictionary)?;
+                    emit_token(output, token, dictionary, &HashMap::new())?;
                 }
                 vm_source::BasToken::Yield { .. } => {
                     writeln!(output, "{cursor:08X}: YIELD ; opcode AA")?;
@@ -228,7 +342,8 @@ fn decompile_bas(
                 } => {
                     writeln!(
                         output,
-                        "{cursor:08X}: BAS_BLOCK_END {selector:04X} {continuation:04X} ; {:?}",
+                        "{cursor:08X}: BAS_BLOCK_END {selector:04X} {} ; {:?}",
+                        bas_continuation_operand(*continuation, &annotations.labels),
                         dictionary.get(selector).map(String::as_str).unwrap_or("")
                     )?;
                 }
@@ -242,8 +357,8 @@ fn decompile_bas(
                     writeln!(output, "{cursor:08X}: END")?;
                 }
             }
-            typed_statements += 1;
-            typed_bytes += encoded.len();
+            stats.typed_statements += 1;
+            stats.typed_bytes += encoded.len();
             cursor = end;
             raw_start = cursor;
             continue;
@@ -253,15 +368,200 @@ fn decompile_bas(
 
     if raw_start < image.len() {
         emit_raw(output, raw_start, &image[raw_start..], "BAS structure")?;
-        raw_bytes += image.len() - raw_start;
+        stats.raw_bytes += image.len() - raw_start;
     }
-    Ok((typed_statements, typed_bytes, 0, 0, raw_bytes))
+    Ok(stats)
+}
+
+fn cod_annotations(
+    tokens: &[VmToken],
+    image: &[u8],
+    symbols: &[DebSymbol],
+) -> Result<SourceAnnotations> {
+    let mut annotations = SourceAnnotations::default();
+    let mut boundaries: BTreeSet<usize> = tokens.iter().map(VmToken::offset).collect();
+    if image.last() == Some(&0xFF) {
+        boundaries.insert(image.len() - 1);
+    }
+
+    let mut procedures = BTreeMap::new();
+    for symbol in symbols.iter().filter(|symbol| symbol.kind == 2) {
+        if symbol.offset == 0xFFFF {
+            continue;
+        }
+        if symbol.offset == 0 {
+            bail!(
+                "DEB kind-2 symbol {:?} has invalid one-based offset zero",
+                symbol.name
+            );
+        }
+        let offset = usize::from(symbol.offset - 1);
+        if !boundaries.contains(&offset) {
+            bail!(
+                "DEB kind-2 symbol {:?} encoded as 0x{:04X} does not resolve to a COD token boundary",
+                symbol.name,
+                symbol.offset
+            );
+        }
+        if procedures.contains_key(&offset) {
+            bail!("multiple DEB kind-2 symbols resolve to COD offset 0x{offset:04X}");
+        }
+        let identifier = format!("proc_{}_{offset:04X}", identifier_component(&symbol.name));
+        procedures.insert(offset, (identifier, symbol));
+    }
+
+    let mut prior_procedure: Option<String> = None;
+    for (&offset, (identifier, symbol)) in &procedures {
+        if let Some(prior) = prior_procedure.replace(identifier.clone()) {
+            annotations
+                .directives
+                .entry(offset)
+                .or_default()
+                .push(format!("END_PROCEDURE {prior}"));
+        }
+        annotations
+            .directives
+            .entry(offset)
+            .or_default()
+            .push(format!(
+                "PROCEDURE {identifier} ; DEB kind 2 {:?}, encoded offset 0x{:04X}",
+                symbol.name, symbol.offset
+            ));
+        annotations.labels.insert(offset as u16, identifier.clone());
+        annotations.procedure_count += 1;
+    }
+    if let Some(prior) = prior_procedure {
+        annotations
+            .directives
+            .entry(image.len())
+            .or_default()
+            .push(format!("END_PROCEDURE {prior}"));
+    }
+
+    let targets: BTreeSet<u16> = tokens.iter().filter_map(cod_target).collect();
+    for target in targets {
+        if !boundaries.contains(&usize::from(target)) {
+            bail!("COD target 0x{target:04X} does not resolve to a token boundary");
+        }
+        if annotations.labels.contains_key(&target) {
+            continue;
+        }
+        let identifier = format!("block_{target:04X}");
+        annotations
+            .directives
+            .entry(usize::from(target))
+            .or_default()
+            .push(format!("LABEL {identifier}"));
+        annotations.labels.insert(target, identifier);
+    }
+    Ok(annotations)
+}
+
+fn cod_target(token: &VmToken) -> Option<u16> {
+    match token {
+        VmToken::Text {
+            loop_target: Some(target),
+            ..
+        }
+        | VmToken::GuardPush { target, .. }
+        | VmToken::Jump { target, .. }
+        | VmToken::ConditionalBlock { target, .. } => Some(*target),
+        _ => None,
+    }
+}
+
+fn bas_annotations(image: &[u8], dictionary: &HashMap<u16, String>) -> Result<SourceAnnotations> {
+    let mut cursor = 0usize;
+    let mut boundaries = BTreeSet::new();
+    let mut continuations = BTreeSet::new();
+    while cursor < image.len() {
+        if let Some((end, token)) = vm_source::bas_token_at(image, cursor, dictionary) {
+            boundaries.insert(cursor);
+            if let vm_source::BasToken::BlockEnd { continuation, .. } = token {
+                if continuation != 0 {
+                    continuations.insert(continuation);
+                }
+            }
+            cursor = end;
+        } else {
+            cursor += 1;
+        }
+    }
+
+    let mut annotations = SourceAnnotations::default();
+    for encoded in continuations {
+        let offset = usize::from(encoded - 1);
+        if !boundaries.contains(&offset) {
+            bail!(
+                "one-based BAS continuation 0x{encoded:04X} does not resolve to a token boundary"
+            );
+        }
+        let identifier = format!("response_{offset:04X}");
+        annotations
+            .directives
+            .entry(offset)
+            .or_default()
+            .push(format!("LABEL {identifier}"));
+        annotations.labels.insert(offset as u16, identifier);
+    }
+    Ok(annotations)
+}
+
+fn emit_directives(
+    output: &mut String,
+    offset: usize,
+    annotations: &SourceAnnotations,
+) -> Result<()> {
+    if let Some(directives) = annotations.directives.get(&offset) {
+        for directive in directives {
+            writeln!(output, "{offset:08X}: {directive}")?;
+        }
+    }
+    Ok(())
+}
+
+fn identifier_component(name: &str) -> String {
+    let mut output = String::new();
+    for byte in name.bytes() {
+        if byte.is_ascii_alphanumeric() || byte == b'_' {
+            output.push(char::from(byte));
+        } else {
+            write!(output, "_{byte:02X}").expect("writing to String cannot fail");
+        }
+    }
+    if output.is_empty() {
+        output.push_str("unnamed");
+    }
+    output
+}
+
+fn address_operand(address: u16, labels: &HashMap<u16, String>) -> String {
+    labels
+        .get(&address)
+        .cloned()
+        .unwrap_or_else(|| format!("{address:04X}"))
+}
+
+fn optional_address_operand(address: Option<u16>, labels: &HashMap<u16, String>) -> String {
+    address.map_or_else(
+        || "-".to_string(),
+        |address| address_operand(address, labels),
+    )
+}
+
+fn bas_continuation_operand(encoded: u16, labels: &HashMap<u16, String>) -> String {
+    encoded
+        .checked_sub(1)
+        .and_then(|offset| labels.get(&offset))
+        .cloned()
+        .unwrap_or_else(|| format!("{encoded:04X}"))
 }
 
 fn emit_token(
     output: &mut String,
     token: &VmToken,
     dictionary: &HashMap<u16, String>,
+    labels: &HashMap<u16, String>,
 ) -> Result<()> {
     let offset = token.offset();
     write!(output, "{offset:08X}: ")?;
@@ -279,14 +579,16 @@ fn emit_token(
             write!(
                 output,
                 "TEXT {line_index:04X} {voice_selector:02X} {flags_b4:02X} {flags_b5:02X} {} {}",
-                option_word(*loop_target),
+                optional_address_operand(*loop_target, labels),
                 option_word(*control_word)
             )?;
             for word in word_offsets {
                 write!(output, " {word:04X}")?;
             }
         }
-        VmToken::GuardPush { target, .. } => write!(output, "GUARD_PUSH {target:04X}")?,
+        VmToken::GuardPush { target, .. } => {
+            write!(output, "GUARD_PUSH {}", address_operand(*target, labels))?
+        }
         VmToken::GuardPop { .. } => write!(output, "GUARD_POP")?,
         VmToken::ConceptGuard {
             word_offset,
@@ -297,7 +599,9 @@ fn emit_token(
             "CONCEPT_GUARD {word_offset:04X} {}",
             bool_digit(*inverted)
         )?,
-        VmToken::Jump { target, .. } => write!(output, "JUMP {target:04X}")?,
+        VmToken::Jump { target, .. } => {
+            write!(output, "JUMP {}", address_operand(*target, labels))?
+        }
         VmToken::StateArray {
             index,
             value: Some(value),
@@ -306,9 +610,11 @@ fn emit_token(
         VmToken::StateArray {
             index, value: None, ..
         } => write!(output, "STATE_ARRAY_TEST {index:02X}")?,
-        VmToken::ConditionalBlock { flags, target, .. } => {
-            write!(output, "CONDITIONAL_BLOCK {flags:02X} {target:04X}")?
-        }
+        VmToken::ConditionalBlock { flags, target, .. } => write!(
+            output,
+            "CONDITIONAL_BLOCK {flags:02X} {}",
+            address_operand(*target, labels)
+        )?,
         VmToken::LoadString { value, .. } => write!(output, "LOAD_STRING \"{value}\"")?,
         VmToken::PokeByte { address, value, .. } => {
             write!(output, "POKE_BYTE {address:04X} {value:02X}")?
@@ -476,7 +782,12 @@ fn emit_raw(output: &mut String, offset: usize, bytes: &[u8], comment: &str) -> 
     Ok(())
 }
 
-fn compile_statement(name: &str, args: &[&str], line: usize) -> Result<Vec<u8>> {
+fn compile_statement(
+    name: &str,
+    args: &[&str],
+    line: usize,
+    labels: &HashMap<&str, u16>,
+) -> Result<Vec<u8>> {
     let mut output = Vec::new();
     let word = |output: &mut Vec<u8>, value: u16| {
         output.extend_from_slice(&value.to_le_bytes());
@@ -510,7 +821,10 @@ fn compile_statement(name: &str, args: &[&str], line: usize) -> Result<Vec<u8>> 
             require_count(args, 2, line, name)?;
             output.push(vm::OP_YIELD_B);
             word(&mut output, parse_word(args[0], line, "selector")?);
-            word(&mut output, parse_word(args[1], line, "continuation")?);
+            word(
+                &mut output,
+                parse_one_based_address(args[1], labels, line, "continuation")?,
+            );
         }
         "PRESENTATION_REGISTER" => {
             require_count(args, 1, line, name)?;
@@ -520,7 +834,10 @@ fn compile_statement(name: &str, args: &[&str], line: usize) -> Result<Vec<u8>> 
         "GUARD_PUSH" => {
             require_count(args, 1, line, name)?;
             output.push(vm::OP_PUSH);
-            word(&mut output, parse_word(args[0], line, "guard target")?);
+            word(
+                &mut output,
+                parse_address(args[0], labels, line, "guard target")?,
+            );
         }
         "GUARD_POP" => {
             require_count(args, 0, line, name)?;
@@ -540,7 +857,10 @@ fn compile_statement(name: &str, args: &[&str], line: usize) -> Result<Vec<u8>> 
         "JUMP" => {
             require_count(args, 1, line, name)?;
             output.push(vm::OP_JUMP);
-            word(&mut output, parse_word(args[0], line, "jump target")?);
+            word(
+                &mut output,
+                parse_address(args[0], labels, line, "jump target")?,
+            );
         }
         "STATE_ARRAY_TEST" => {
             require_count(args, 1, line, name)?;
@@ -559,7 +879,7 @@ fn compile_statement(name: &str, args: &[&str], line: usize) -> Result<Vec<u8>> 
             output.push(parse_byte(args[0], line, "conditional flags")?);
             word(
                 &mut output,
-                parse_word(args[1], line, "conditional target")?,
+                parse_address(args[1], labels, line, "conditional target")?,
             );
         }
         "LOAD_STRING" => {
@@ -572,7 +892,10 @@ fn compile_statement(name: &str, args: &[&str], line: usize) -> Result<Vec<u8>> 
             require_count(args, 2, line, name)?;
             output.push(vm::OP_POKE_BYTE);
             output.push(parse_byte(args[1], line, "value")?);
-            word(&mut output, parse_word(args[0], line, "address")?);
+            word(
+                &mut output,
+                parse_address(args[0], labels, line, "address")?,
+            );
         }
         "CHARACTER_SLOT" => {
             require_count(args, 2, line, name)?;
@@ -599,7 +922,7 @@ fn compile_statement(name: &str, args: &[&str], line: usize) -> Result<Vec<u8>> 
             let voice = parse_byte(args[1], line, "voice")?;
             let flags_b4 = parse_byte(args[2], line, "control flags")?;
             let flags_b5 = parse_byte(args[3], line, "display flags")?;
-            let loop_target = parse_optional_word(args[4], line, "loop target")?;
+            let loop_target = parse_optional_address(args[4], labels, line, "loop target")?;
             let control_word = parse_optional_word(args[5], line, "control word")?;
             if (flags_b4 & 0x10 != 0) != loop_target.is_some() {
                 bail!("line {line}: TEXT loop target disagrees with flag 0x10");
@@ -756,6 +1079,33 @@ fn parse_word(value: &str, line: usize, field: &str) -> Result<u16> {
         .map_err(|_| anyhow!("line {line}: invalid hexadecimal {field} {value:?}"))
 }
 
+fn parse_address(
+    value: &str,
+    labels: &HashMap<&str, u16>,
+    line: usize,
+    field: &str,
+) -> Result<u16> {
+    labels
+        .get(value)
+        .copied()
+        .map(Ok)
+        .unwrap_or_else(|| parse_word(value, line, field))
+}
+
+fn parse_one_based_address(
+    value: &str,
+    labels: &HashMap<&str, u16>,
+    line: usize,
+    field: &str,
+) -> Result<u16> {
+    let Some(address) = labels.get(value).copied() else {
+        return parse_word(value, line, field);
+    };
+    address
+        .checked_add(1)
+        .ok_or_else(|| anyhow!("line {line}: one-based {field} {value:?} overflows"))
+}
+
 fn parse_byte(value: &str, line: usize, field: &str) -> Result<u8> {
     if value.len() != 2 {
         bail!("line {line}: {field} {value:?} must have two hex digits");
@@ -784,6 +1134,32 @@ fn parse_optional_word(value: &str, line: usize, field: &str) -> Result<Option<u
     } else {
         parse_word(value, line, field).map(Some)
     }
+}
+
+fn parse_optional_address(
+    value: &str,
+    labels: &HashMap<&str, u16>,
+    line: usize,
+    field: &str,
+) -> Result<Option<u16>> {
+    if value == "-" {
+        Ok(None)
+    } else {
+        parse_address(value, labels, line, field).map(Some)
+    }
+}
+
+fn validate_identifier(value: &str, line: usize) -> Result<()> {
+    let mut bytes = value.bytes();
+    let Some(first) = bytes.next() else {
+        bail!("line {line}: identifier cannot be empty");
+    };
+    if !(first.is_ascii_alphabetic() || first == b'_')
+        || !bytes.all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
+    {
+        bail!("line {line}: invalid identifier {value:?}");
+    }
+    Ok(())
 }
 
 fn parse_bool(value: &str, line: usize, field: &str) -> Result<bool> {
@@ -885,32 +1261,32 @@ mod tests {
     fn control_flow_families_compile_exact_bytes() {
         let source = concat!(
             "; format: bloodscript-ir-v1\n",
-            "00000000: GUARD_PUSH 1234\n",
+            "00000000: GUARD_PUSH 0005\n",
             "00000003: STATE_ARRAY_TEST FE\n",
             "00000005: GUARD_POP\n",
             "00000006: STATE_ARRAY_SET 02 5678\n",
-            "0000000A: JUMP 9ABC\n",
-            "0000000D: CONDITIONAL_BLOCK 01 DEF0\n",
+            "0000000A: JUMP 000D\n",
+            "0000000D: CONDITIONAL_BLOCK 01 0011\n",
             "00000011: BRANCH_PRESENTATION\n",
             "00000012: BRANCH_GAMEFLAG\n",
             "00000013: GUARD_POP\n",
             "00000014: END\n",
         );
         let expected = vec![
-            0xA0, 0x34, 0x12, 0xA5, 0xFE, 0xA1, 0xA5, 0x02, 0x78, 0x56, 0xA4, 0xBC,
-            0x9A, 0xA9, 0x01, 0xF0, 0xDE, 0xCE, 0xD0, 0xA1, 0xFF,
+            0xA0, 0x05, 0x00, 0xA5, 0xFE, 0xA1, 0xA5, 0x02, 0x78, 0x56, 0xA4, 0x0D, 0x00, 0xA9,
+            0x01, 0x11, 0x00, 0xCE, 0xD0, 0xA1, 0xFF,
         ];
         assert_eq!(compile(source).unwrap(), expected);
 
         let decompiled = decompile(ImageKind::Cod, &expected, &HashMap::new()).unwrap();
         assert_eq!(decompiled.generic_op_statements, 0);
         for statement in [
-            "GUARD_PUSH 1234",
+            "GUARD_PUSH block_0005",
             "STATE_ARRAY_TEST FE",
             "GUARD_POP",
             "STATE_ARRAY_SET 02 5678",
-            "JUMP 9ABC",
-            "CONDITIONAL_BLOCK 01 DEF0",
+            "JUMP block_000D",
+            "CONDITIONAL_BLOCK 01 block_0011",
             "BRANCH_PRESENTATION",
             "BRANCH_GAMEFLAG",
         ] {
@@ -920,10 +1296,61 @@ mod tests {
     }
 
     #[test]
+    fn symbolic_procedures_and_cod_targets_compile_exact_bytes() {
+        let image = vec![vm::OP_COND_JUMP, 0x01, 0x04, 0x00, 0xFF];
+        let symbols = vec![DebSymbol {
+            name: "entry".to_string(),
+            offset: 1,
+            kind: 2,
+        }];
+        let decompiled =
+            decompile_with_symbols(ImageKind::Cod, &image, &HashMap::new(), &symbols).unwrap();
+        assert_eq!(decompiled.procedures, 1);
+        assert_eq!(decompiled.symbolic_labels, 2);
+        assert!(
+            decompiled
+                .source
+                .contains("00000000: PROCEDURE proc_entry_0000")
+        );
+        assert!(
+            decompiled
+                .source
+                .contains("CONDITIONAL_BLOCK 01 block_0004")
+        );
+        assert!(decompiled.source.contains("00000004: LABEL block_0004"));
+        assert!(
+            decompiled
+                .source
+                .contains("00000005: END_PROCEDURE proc_entry_0000")
+        );
+        assert_eq!(compile(&decompiled.source).unwrap(), image);
+    }
+
+    #[test]
+    fn symbolic_decompilation_rejects_unaligned_addresses() {
+        let bad_cod_target = vec![vm::OP_COND_JUMP, 0x01, 0x02, 0x00, 0xFF];
+        assert!(decompile(ImageKind::Cod, &bad_cod_target, &HashMap::new()).is_err());
+
+        let symbols = vec![DebSymbol {
+            name: "inside_instruction".to_string(),
+            offset: 2,
+            kind: 2,
+        }];
+        let valid_cod = vec![vm::OP_COND_JUMP, 0x01, 0x04, 0x00, 0xFF];
+        assert!(
+            decompile_with_symbols(ImageKind::Cod, &valid_cod, &HashMap::new(), &symbols).is_err()
+        );
+
+        let dictionary = HashMap::from([(0x1234, "topic".to_string())]);
+        let bad_bas_continuation = vec![0xAC, 0x34, 0x12, 0x02, 0x00, 0xFF];
+        assert!(decompile(ImageKind::Bas, &bad_bas_continuation, &dictionary).is_err());
+    }
+
+    #[test]
     fn residual_opcode_families_compile_exact_bytes() {
         let source = concat!(
             "; format: bloodscript-ir-v1\n",
-            "00000000: GUARD_PUSH 1234\n",
+            "00000000: GUARD_PUSH 000A\n",
             "00000003: CONCEPT_GUARD 0D26 0\n",
             "00000006: CONCEPT_GUARD 0EE8 1\n",
             "0000000A: GUARD_POP\n",
@@ -935,9 +1362,9 @@ mod tests {
             "00000024: END\n",
         );
         let expected = vec![
-            0xA0, 0x34, 0x12, 0xA3, 0x26, 0x0D, 0xA3, 0xA1, 0xE8, 0x0E, 0xA1, 0xA8,
-            b'f', b'i', b'n', b'.', b'h', b'n', b'm', 0, 0, 0xAB, 0x56, 0x34, 0x12, 0xCC,
-            0x02, b's', b'c', b'r', b'u', b't', 0, 0, 0xCF, 0xD1, 0xFF,
+            0xA0, 0x0A, 0x00, 0xA3, 0x26, 0x0D, 0xA3, 0xA1, 0xE8, 0x0E, 0xA1, 0xA8, b'f', b'i',
+            b'n', b'.', b'h', b'n', b'm', 0, 0, 0xAB, 0x56, 0x34, 0x12, 0xCC, 0x02, b's', b'c',
+            b'r', b'u', b't', 0, 0, 0xCF, 0xD1, 0xFF,
         ];
         assert_eq!(compile(source).unwrap(), expected);
 
@@ -962,14 +1389,15 @@ mod tests {
         let source = concat!(
             "; format: bloodscript-ir-v1\n",
             "00000000: YIELD\n",
-            "00000001: BAS_BLOCK_END 1234 0006\n",
+            "00000001: BAS_BLOCK_END 1234 response_0006\n",
+            "00000006: LABEL response_0006\n",
             "00000006: MENU 1234\n",
             "0000000B: PRESENTATION_REGISTER 9ABC\n",
             "0000000E: END\n",
         );
         let expected = vec![
-            0xAA, 0xAC, 0x34, 0x12, 0x06, 0x00, 0xA3, 0x34, 0x12, 0x00, 0x00, 0xA7,
-            0xBC, 0x9A, 0xFF,
+            0xAA, 0xAC, 0x34, 0x12, 0x07, 0x00, 0xA3, 0x34, 0x12, 0x00, 0x00, 0xA7, 0xBC, 0x9A,
+            0xFF,
         ];
         assert_eq!(compile(source).unwrap(), expected);
 
@@ -978,7 +1406,8 @@ mod tests {
         assert_eq!(decompiled.raw_bytes, 0);
         for statement in [
             "YIELD",
-            "BAS_BLOCK_END 1234 0006",
+            "BAS_BLOCK_END 1234 response_0006",
+            "LABEL response_0006",
             "MENU 1234",
             "PRESENTATION_REGISTER 9ABC",
         ] {

@@ -76,8 +76,9 @@ weakening the byte-exact compiler contract.
 The native control-flow handlers at `0x6559`, `0x6572`, `0x65DB`, `0x65EB`,
 `0x6830`, `0x6494`, and `0x64A0` are represented as guard push/pop, jump,
 state-array test/set, conditional-block, and flag-branch statements. Their
-numeric targets, flags, indices, and values remain explicit in source; the
-compiler does not recalculate or normalize addresses.
+flags, indices, and values remain explicit in source. Branch destinations are
+now symbolic `LABEL` or `PROCEDURE` names; the compiler resolves them without
+reordering statements or changing layout.
 
 The remaining native handlers provide typed concept guards, presentation-name
 loads, self-modifying COD byte writes, character-slot bindings, alternate
@@ -96,6 +97,20 @@ The 321 BAS block links each carry a dictionary selector and an in-image
 continuation offset. Runtime tracing establishes that `0xAC` terminates the
 current menu response block; reconstructing those links into structured source
 control flow remains a separate step.
+
+The shipped address conventions are now enforced rather than inferred during
+display. All 480 kind-2 `.DEB` routine values are one-based: subtracting one
+lands on a COD token boundary, while the encoded value never does. The 284
+image-local distinct nonzero BAS continuation targets are also one-based. By
+contrast, the 1,054 image-local distinct explicit COD branch destinations are
+zero-based token offsets.
+An unaligned address in any of these sets makes decompilation fail.
+
+`PROCEDURE`/`END_PROCEDURE` directives delimit the 480 named COD routines.
+`LABEL` directives name remaining COD blocks and BAS responses. These directives
+emit no bytes, but symbolic operands are resolved and range-checked by the
+two-pass BloodScript compiler. The generated corpus contains 1,059 distinct COD
+symbols and 284 BAS response labels while retaining exact layout.
 
 The current BloodScript corpus recompiles all 183,523 input bytes exactly. It
 contains 13,203 typed statements covering every byte with no shipped generic

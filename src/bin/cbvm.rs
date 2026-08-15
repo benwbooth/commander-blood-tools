@@ -46,12 +46,21 @@ fn write_bloodscript(
     kind: ImageKind,
     image_path: &Path,
     dictionary_path: &Path,
+    symbol_path: Option<&Path>,
     output_path: &Path,
 ) -> Result<bloodscript::Decompilation> {
     let image = std::fs::read(image_path)
         .with_context(|| format!("reading VM image {}", image_path.display()))?;
     let dictionary = read_dictionary(dictionary_path)?;
-    let source = bloodscript::decompile(kind, &image, &dictionary)?;
+    let symbols = symbol_path
+        .map(|path| {
+            std::fs::read(path)
+                .with_context(|| format!("reading symbol table {}", path.display()))
+                .map(|bytes| commander_blood_tools::script::parse_deb(&bytes))
+        })
+        .transpose()?
+        .unwrap_or_default();
+    let source = bloodscript::decompile_with_symbols(kind, &image, &dictionary, &symbols)?;
     let rebuilt = bloodscript::compile(&source.source)?;
     if rebuilt != image {
         bail!(
@@ -153,25 +162,34 @@ fn main() -> Result<()> {
             }
             std::fs::create_dir_all(&output_dir)?;
             let mut manifest = String::from(
-                "script\timage\tinput_bytes\ttyped_statements\ttyped_bytes\tgeneric_op_statements\tgeneric_op_bytes\traw_bytes\troundtrip\n",
+                "script\timage\tinput_bytes\ttyped_statements\ttyped_bytes\tgeneric_op_statements\tgeneric_op_bytes\traw_bytes\tsymbolic_labels\tprocedures\troundtrip\n",
             );
             for script in 1..=5 {
                 let dictionary = game_dir.join(format!("SCRIPT{script}.DIC"));
+                let symbols = game_dir.join(format!("SCRIPT{script}.DEB"));
                 for (extension, kind) in [("COD", ImageKind::Cod), ("BAS", ImageKind::Bas)] {
                     let image = game_dir.join(format!("SCRIPT{script}.{extension}"));
                     let output = output_dir.join(format!(
                         "script{script}.{}.blood",
                         extension.to_ascii_lowercase()
                     ));
-                    let source = write_bloodscript(kind, &image, &dictionary, &output)?;
+                    let source = write_bloodscript(
+                        kind,
+                        &image,
+                        &dictionary,
+                        (kind == ImageKind::Cod).then_some(symbols.as_path()),
+                        &output,
+                    )?;
                     let input_bytes = std::fs::metadata(&image)?.len();
                     manifest.push_str(&format!(
-                        "SCRIPT{script}\t{extension}\t{input_bytes}\t{}\t{}\t{}\t{}\t{}\tbyte_exact\n",
+                        "SCRIPT{script}\t{extension}\t{input_bytes}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\tbyte_exact\n",
                         source.typed_statements,
                         source.typed_bytes,
                         source.generic_op_statements,
                         source.generic_op_bytes,
-                        source.raw_bytes
+                        source.raw_bytes,
+                        source.symbolic_labels,
+                        source.procedures
                     ));
                     println!("verified {} -> {}", image.display(), output.display());
                 }

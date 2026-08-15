@@ -163,13 +163,15 @@ pub fn functions_from_symbols(
     symbols: &[DebSymbol],
     cod_len: usize,
 ) -> Vec<ScriptFunction> {
+    // Kind-2 code addresses are one-based. Across all 480 shipped entries,
+    // offset - 1 is a COD token boundary and the encoded offset never is.
     let mut functions: Vec<_> = symbols
         .iter()
-        .filter(|symbol| symbol.kind == 2 && symbol.offset != 0xffff)
+        .filter(|symbol| symbol.kind == 2 && !matches!(symbol.offset, 0 | 0xffff))
         .map(|symbol| ScriptFunction {
             script: script.to_string(),
             name: symbol.name.clone(),
-            offset: symbol.offset as usize,
+            offset: usize::from(symbol.offset - 1),
         })
         .filter(|function| function.offset < cod_len)
         .collect();
@@ -547,6 +549,23 @@ mod tests {
                 name: "Bob_Morlock".to_string(),
                 offset: 0x1234,
                 kind: 1,
+            }]
+        );
+    }
+
+    #[test]
+    fn kind_two_function_offsets_are_one_based() {
+        let symbols = vec![DebSymbol {
+            name: "entry".to_string(),
+            offset: 1,
+            kind: 2,
+        }];
+        assert_eq!(
+            functions_from_symbols("SCRIPT1", &symbols, 1),
+            vec![ScriptFunction {
+                script: "SCRIPT1".to_string(),
+                name: "entry".to_string(),
+                offset: 0,
             }]
         );
     }
