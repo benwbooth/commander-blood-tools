@@ -238,12 +238,20 @@ MOVZX loads rather than the original AX selector, DS:SI text, GS-prefixed XLAT
 and indexed advance read. Turbo C 2.01 medium uses stack arguments and a stack
 frame, so neither result reproduces the routine boundary.
 
-For `0x007CB4`, Turbo C 2.01 and Open Watcom 1.9 medium preserve the recovered
-signed table index, big-endian row construction, set-bit-only writes, fixed
-framebuffer offset, and 320-byte row advance. They emit 51 and 40 instructions
-respectively, versus the original 26, and do not reproduce its compact
-LODSW/XCHG/shift-until-zero/LOOP form or register effects. The natural source is
-therefore behaviorally verified but remains a codegen mismatch.
+For `0x007CB4`, the compiler probe now includes the authoritative natural
+candidate. Turbo C 2.01 and Open Watcom 1.9 medium preserve the recovered signed
+table index, big-endian row construction, set-bit-only writes, fixed framebuffer
+offset, and 320-byte row advance. Watcom medium size optimization emits 42
+instructions/93 bytes versus the original 26/52, with 73.08 percent mnemonic-
+multiset overlap; Turbo C emits 53 instructions. Watcom speed optimization also
+emits 42 instructions but grows to 95 bytes while raising mnemonic overlap to
+76.92 percent.
+
+The candidate is accepted for source-port integration. Six patterned direct
+vectors include nonzero discarded framebuffer offsets and prove pixel output,
+segment ownership, and the variable shift-until-zero width. The original compact
+LODSW/XCHG/LOOP allocation, selective preservation, and terminal flags remain
+direct-binary-replacement differences rather than missing overlay logic.
 
 For `0x00A117`, four direct-execution cases confirm the GS bit-0 gate and the
 exact 384-byte copy from caller ES:0x5251 to ES:0x5851 under the C ABI's clear
