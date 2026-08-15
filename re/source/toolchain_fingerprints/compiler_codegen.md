@@ -449,13 +449,20 @@ the original close, list initialization, bounds reset, descriptor lookup, and
 palette routines execute unchanged. They verify the extent word is used only
 for ring-wrap detection, palette data begins immediately after that word unless
 the record wraps to offset zero, `0xFF` metadata padding is skipped, and both
-32-bit absolute/remaining range pairs use the recovered relative offsets. Open
-Watcom 1.9 medium compiles the corrected far-path natural body to 178
-instructions and 536 bytes, versus 103 instructions and 309 bytes in the
-original. The excess is primarily the conventional Boolean and pointer
-interfaces replacing the original AX,
-BX, ES:SI, and carry conventions, so this is a behaviorally verified natural C
-body with unresolved assembly boundaries rather than an exact codegen match.
+32-bit absolute/remaining range pairs use the recovered relative offsets. The
+compiler-corpus sample now includes the authoritative recovered source. Open
+Watcom 1.9 medium (`-3 -ox -mm -zdf -we`) compiles it warning-free to 181
+instructions/576 bytes versus 103/309 original, with 85.44 percent
+mnemonic-multiset and 65.05 percent ordered overlap. Turbo C 2.01 medium (`-mm
+-O -Z`) emits 222 instructions with 87.38 percent multiset and 76.70 percent
+ordered overlap and assembles warning-free to OBJ.
+
+The excess is primarily conventional Boolean and output-pointer interfaces
+replacing the original AX, BX, ES:SI, and carry conventions. The sole recovered
+C caller consumes `resource_switch` as a Boolean, so the function is accepted
+for source-port integration. An isolated replacement still needs the original
+AX input/full-EAX preservation, carry result, direct DOS interrupts, and
+ES:SI/carry helper boundaries.
 
 For `0x00A0C3`, five direct-execution cases confirm the complete palette-block
 loop, including immediate termination, a nonterminating zero-count block,
