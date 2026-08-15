@@ -1356,15 +1356,24 @@ cover immutable directory data, upper-EAX and full unrelated-state
 preservation, the near return, and every flag class left by `SUB SI,20`.
 
 Replacing a tracked `previous` variable with the faithful natural sequence
-"scan, then decrement once" reduces the actual Watcom candidate from 37 to 27
-bytes. With the AX-only preserve-all pragma, `-3 -ox -mm` emits 12 instructions/
-27 bytes versus 12/26 original; the 8086/286/386 probes are identical, while
-Turbo C 2.01 emits 18 instructions. Watcom even folds the predecessor load to
-`ES:[BX-4]` and leaves the final flags from a following `SUB BX,20`. The remaining
-mismatch is segmented data placement: it loads a DS-held far pointer into ES:BX,
-whereas the binary loads a GS-held pointer into DS:SI. The natural algorithm and
-observable ABI are retained; exact register bytes need linker/segment binding or
-a narrow adapter.
+"scan, then decrement once" keeps the original control flow and its pre-first
+read. The maintained source now reads `vm_record_directory_gs`, not the generic
+DS alias that is invalid while VM callers retain a script-image DS. Open Watcom
+1.9 medium size mode (`-3 -os -s -mm -zdp -we`) compiles that source directly
+without warnings to 14 instructions/33 bytes versus 12/26 original, with 91.67
+percent mnemonic-multiset and ordered overlap. It emits an ES-overridden `LES`
+from `GAME_DATA`, preserves upper EAX and all unrelated state, and leaves flags
+from the final `SUB BX,20`. Turbo C 2.01 medium emits 20 instructions and a
+valid 449-byte OMF object.
+
+A linked Turbo C DOS executable places the directory at offset `0xFFE0`, so its
+20-byte entries cross through offset zero, and calls the maintained function for
+all 65,536 threshold values. Every result matches an independent boundary
+oracle, including equality, pre-first, sentinel, and wrapped-entry cases. The
+routine is accepted for full-source integration with `GAME_DATA` bound to the
+runtime game segment. Direct replacement still needs the binary's compact
+fixed-GS `LDS DS:SI` allocation instead of Watcom's saved ES:BX sequence; that
+instruction-selection boundary does not justify assembly in the natural logic.
 
 Active-object list builder `0x00604E` has five focused direct vectors in addition
 to the earlier lifted/native sweep. They prove immediate and later early-stop
@@ -3873,7 +3882,7 @@ LCS and then mnemonic similarity:
 | --- | --- | ---: | ---: | ---: | ---: |
 | `far_strlen` | medium, `-ox`, register | 11/11 | 0.2727 | 0.4545 | 0.2727 |
 | `field_offset` | medium, `-ox`, register | 8/20 | 0.3750 | 0.7500 | 0.3750 |
-| `vm_record_lookup_by_threshold` | medium, `-ox`, register | 12/12 | 0.0833 | 0.8333 | 0.1667 |
+| `vm_record_lookup_by_threshold` | medium, `-os -s`, register | 12/14 | 0.0833 | 0.9167 | 0.1667 |
 | `active_object_list_build` | medium, `-ox`, register | 32/28 | 0.2188 | 0.6562 | 0.2500 |
 | `ship_3d_position_distance` | medium, `-ox`, register | 88/117 | 0.0682 | 0.5341 | 0.1023 |
 | `ship_3d_position_field_resolve` | medium, `-ox`, register | 45/50 | 0.1111 | 0.6667 | 0.2444 |
