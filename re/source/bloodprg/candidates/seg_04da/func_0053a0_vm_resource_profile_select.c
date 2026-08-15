@@ -7,7 +7,7 @@
 
 #define VM_PROFILE_STATE_WORD_COUNT 128u
 
-cb_i16 CB_FAR vm_resource_profile_select(cb_u16 profile)
+cb_i16 CB_SAVE_REGS CB_FAR vm_resource_profile_select(cb_u16 profile)
 {
     const cb_u16 CB_FS_DATA *profile_resource;
     const volatile bloodprg_vm_directory_entry CB_FAR *entry;

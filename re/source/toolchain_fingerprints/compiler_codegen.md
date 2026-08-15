@@ -7071,13 +7071,20 @@ failures, wrapped profile indexing, split `DS`/`GS` ownership, every reset,
 complete and missing name maps, helper ordering, preserved memory and
 registers, and the far-return stack boundary.
 
-Open Watcom 1.9 large (`-3 -os -s -ml -we`) compiles the warning-free natural
-C89 function to 207 instructions/613 bytes versus 158/443 original, with 77.85
-percent mnemonic-multiset overlap and 72.78 percent ordered mnemonic overlap.
-It contains no inline assembly or register-state facade. Full-source integration
-requires `FS_DATA` placement and the shipped `DS=GS` aliases; direct replacement
-also needs the original carry-return string comparison and segmented helper
-ABIs.
+The first direct compiler probe exposed that the plain function declaration let
+Watcom return with DS on the directory segment and did not preserve ES. The
+definition now uses `CB_SAVE_REGS`, and its declaration explicitly takes and
+returns AX while modifying only AX. The generated body consequently preserves
+BX/CX/DX/SI/DI/BP/DS/ES like the original.
+
+Open Watcom 1.9 large (`-3 -os -s -ml -we`) compiles the corrected warning-free
+natural C89 function to 211 instructions/617 bytes versus 158/443 original,
+with 80.38 percent mnemonic-multiset overlap and 75.32 percent ordered mnemonic
+overlap. It contains no inline assembly or register-state facade. Natural loops,
+compiler temporaries, based-segment loads, and ordinary typed calls are accepted
+for source-port integration under `FS_DATA` placement and the shipped `DS=GS`
+aliases. Isolated direct replacement still needs the original carry-return
+string comparison and segmented helper ABIs.
 
 ## BLOODPRG VM control-flow owner at 0x0056FE
 
