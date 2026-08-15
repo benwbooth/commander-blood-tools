@@ -3,19 +3,21 @@
 const cb_u8 CB_FAR *CB_NEAR byte_parser_stream_0f18_append(
     const cb_u8 CB_FAR *script_bytes)
 {
-    cb_game_char_ptr dst;
+    cb_u16 dst_offset;
+    cb_u16 leading_word;
     cb_u8 ch;
 
-    dst = byte_parser_stream_0f18_cursor;
-    *(cb_game_word_ptr)dst = *(const cb_u16 CB_FAR *)script_bytes;
-    dst += 2;
+    dst_offset = (cb_u16)byte_parser_stream_0f18_cursor;
+    leading_word = *(const cb_u16 CB_FAR *)script_bytes;
     script_bytes += 2;
+    byte_parser_stream_segment[dst_offset++] = (cb_u8)leading_word;
+    byte_parser_stream_segment[dst_offset++] = (cb_u8)(leading_word >> 8);
 
     do {
         ch = *script_bytes++;
-        *dst++ = (char)ch;
+        byte_parser_stream_segment[dst_offset++] = ch;
     } while (ch != '\0');
 
-    byte_parser_stream_0f18_cursor = dst;
+    byte_parser_stream_0f18_cursor = (cb_game_char_ptr)dst_offset;
     return script_bytes;
 }

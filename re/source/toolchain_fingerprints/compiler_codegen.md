@@ -2371,15 +2371,24 @@ Seven vectors for `0x007776` prove aligned and unaligned leading-word copies,
 arbitrary high string bytes, embedded and consumed NUL, both wraps, DS/ES/GS
 ownership, final cursor, outputs, zero-test flags, preservation, and return.
 
-Their one-to-one candidates now return far DS:SI cursors and use volatile named-data
-based pointers. The first retains a natural printable loop and fixed slot/count
-updates; the second uses a typed word assignment followed by a do-while byte
-copy. Open Watcom `-3 -os -s -mh -we` compiles them without warnings to 49
-instructions/126 bytes and 49/118 respectively, versus originals of 13/34 and
-8/18. Watcom preserves the
-operations but saves BX/DX/ES, loads `GAME_DATA`, and uses scalar loads, stores,
-and pointer additions instead of the original ambient ES=GS and compact
-LODSB/STOSB/MOVSW forms.
+The compiler probes now include both authoritative one-to-one candidates. They
+return far DS:SI cursors and treat the GS-owned cursor values as 16-bit offsets
+into the existing game-data arena. The first retains a natural printable loop,
+an independently fixed 16-byte slot advance, and count increment. The second
+snapshots its leading far word before ordered little-endian destination writes,
+then uses a do-while byte copy. This removes two `__PIA` calls from each former
+based-pointer form.
+
+Open Watcom `-3 -os -s -mh -we` compiles `0x007754` warning-free to 29
+instructions/68 bytes versus 13/34 original, with 69.23 percent mnemonic-
+multiset overlap; Turbo C emits 50 instructions. It compiles `0x007776` to 25
+instructions/57 bytes versus 8/18 original, with 50.00 percent overlap; Turbo C
+emits 53 instructions.
+
+Both candidates are accepted for source-port integration. They preserve cursor
+wrap, stopping/NUL behavior, update ordering, and final cursor values. Shipped
+dispatch establishes `ES == GS`; original DI and LODSB/STOSB/MOVSW allocation
+plus exact register residue remain direct-binary-replacement differences.
 
 Byte-parser opcode-0E handler `0x007788` copies bytes `0x20..0x7F` from DS:SI
 to a fixed FS buffer, leaves the stopping byte unconsumed, terminates the
