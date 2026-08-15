@@ -5,14 +5,29 @@ void CB_NEAR mouse_hit_test(
     volatile cb_u8 CB_NEAR *flags
 )
 {
+    cb_i16 coordinate;
+
     if ((mouse_primary_pressed & BLOODPRG_MOUSE_BUTTON_PRIMARY) == 0) {
         return;
     }
-    if (mouse_x < rect->x || mouse_x - rect->width > rect->x) {
+
+    coordinate = mouse_x;
+    if (coordinate < rect->x) {
         return;
     }
-    if (mouse_y < rect->y || mouse_y - rect->height > rect->y) {
+    coordinate = (cb_i16)((cb_u16)coordinate - (cb_u16)rect->width);
+    if (coordinate > rect->x) {
         return;
     }
+
+    coordinate = mouse_y;
+    if (coordinate < rect->y) {
+        return;
+    }
+    coordinate = (cb_i16)((cb_u16)coordinate - (cb_u16)rect->height);
+    if (coordinate > rect->y) {
+        return;
+    }
+
     *flags |= BLOODPRG_UI_HIT_FLAG;
 }

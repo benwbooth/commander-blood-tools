@@ -224,10 +224,16 @@ layout remains a separate translation-unit/linker problem.
 
 Open Watcom 1.9 medium instead materializes zero and `0xFFFF` in AX before
 storing, producing 18-byte and 15-byte routines that clobber AX and flags. It
-does not match these routines. Turbo C and Watcom medium both preserve the core
-signed subtract/compare order of the `0x008269` and `0x008295` hit tests, but
-neither reproduces their live SI/BP pointer ABI or the latter routine's carry
-return from ordinary C declarations.
+does not match these routines. For `0x008269`, the authoritative natural source
+uses one coordinate temporary and an explicit unsigned 16-bit subtraction
+before each signed upper-bound comparison. Open Watcom medium size optimization
+then emits all 18 original mnemonics in order: 22 instructions/49 bytes versus
+18/44 original, with only pointer argument moves and their save/restore
+instructions added. Turbo C medium emits 35 instructions, retains all 18
+original mnemonics, and has 14/18 ordered mnemonic overlap. Neither compiler
+reproduces the original DS:SI rectangle and SS:BP result-pointer boundary from
+ordinary declarations. The nearby `0x008295` hit test additionally returns its
+result in carry and therefore remains behind the ABI evidence gate.
 
 The `0x0030CD` text-width probe is a useful near miss. Open Watcom 1.9 medium
 `-3 -ox` emits 60 bytes and 31 instructions versus the original 57 bytes and 28

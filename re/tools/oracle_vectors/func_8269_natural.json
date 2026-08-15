@@ -1,0 +1,486 @@
+[
+  {
+    "name": "disabled_inside",
+    "primary": 0,
+    "mouse": [
+      10,
+      20
+    ],
+    "rect": [
+      10,
+      20,
+      30,
+      40
+    ],
+    "initial_hit_flags": 82,
+    "hit": false,
+    "result_hit_flags": 82,
+    "terminal": "primary_test",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs",
+      "ss"
+    ],
+    "return": "near"
+  },
+  {
+    "name": "non_primary_button_inside",
+    "primary": 128,
+    "mouse": [
+      20,
+      30
+    ],
+    "rect": [
+      10,
+      20,
+      30,
+      40
+    ],
+    "initial_hit_flags": 82,
+    "hit": false,
+    "result_hit_flags": 82,
+    "terminal": "primary_test",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs",
+      "ss"
+    ],
+    "return": "near"
+  },
+  {
+    "name": "zero_extent_origin",
+    "primary": 1,
+    "mouse": [
+      0,
+      0
+    ],
+    "rect": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "initial_hit_flags": 82,
+    "hit": true,
+    "result_hit_flags": 90,
+    "terminal": "hit_or",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs",
+      "ss"
+    ],
+    "return": "near"
+  },
+  {
+    "name": "x_below",
+    "primary": 1,
+    "mouse": [
+      9,
+      20
+    ],
+    "rect": [
+      10,
+      20,
+      30,
+      40
+    ],
+    "initial_hit_flags": 82,
+    "hit": false,
+    "result_hit_flags": 82,
+    "terminal": "x_lower_cmp",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs",
+      "ss"
+    ],
+    "return": "near"
+  },
+  {
+    "name": "x_right_boundary",
+    "primary": 1,
+    "mouse": [
+      40,
+      20
+    ],
+    "rect": [
+      10,
+      20,
+      30,
+      40
+    ],
+    "initial_hit_flags": 82,
+    "hit": true,
+    "result_hit_flags": 90,
+    "terminal": "hit_or",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs",
+      "ss"
+    ],
+    "return": "near"
+  },
+  {
+    "name": "x_right_outside",
+    "primary": 1,
+    "mouse": [
+      41,
+      20
+    ],
+    "rect": [
+      10,
+      20,
+      30,
+      40
+    ],
+    "initial_hit_flags": 82,
+    "hit": false,
+    "result_hit_flags": 82,
+    "terminal": "x_upper_cmp",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs",
+      "ss"
+    ],
+    "return": "near"
+  },
+  {
+    "name": "y_bottom_boundary",
+    "primary": 1,
+    "mouse": [
+      10,
+      60
+    ],
+    "rect": [
+      10,
+      20,
+      30,
+      40
+    ],
+    "initial_hit_flags": 82,
+    "hit": true,
+    "result_hit_flags": 90,
+    "terminal": "hit_or",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs",
+      "ss"
+    ],
+    "return": "near"
+  },
+  {
+    "name": "y_bottom_outside",
+    "primary": 1,
+    "mouse": [
+      10,
+      61
+    ],
+    "rect": [
+      10,
+      20,
+      30,
+      40
+    ],
+    "initial_hit_flags": 82,
+    "hit": false,
+    "result_hit_flags": 82,
+    "terminal": "y_upper_cmp",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs",
+      "ss"
+    ],
+    "return": "near"
+  },
+  {
+    "name": "negative_rect_boundary",
+    "primary": 1,
+    "mouse": [
+      -90,
+      -20
+    ],
+    "rect": [
+      -120,
+      -40,
+      30,
+      20
+    ],
+    "initial_hit_flags": 82,
+    "hit": true,
+    "result_hit_flags": 90,
+    "terminal": "hit_or",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs",
+      "ss"
+    ],
+    "return": "near"
+  },
+  {
+    "name": "wrapped_negative_width_hit",
+    "primary": 1,
+    "mouse": [
+      32767,
+      0
+    ],
+    "rect": [
+      0,
+      0,
+      -1,
+      0
+    ],
+    "initial_hit_flags": 82,
+    "hit": true,
+    "result_hit_flags": 90,
+    "terminal": "hit_or",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs",
+      "ss"
+    ],
+    "return": "near"
+  },
+  {
+    "name": "wrapped_positive_result_miss",
+    "primary": 1,
+    "mouse": [
+      -32768,
+      0
+    ],
+    "rect": [
+      -32768,
+      0,
+      1,
+      0
+    ],
+    "initial_hit_flags": 82,
+    "hit": false,
+    "result_hit_flags": 82,
+    "terminal": "x_upper_cmp",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": true
+    },
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs",
+      "ss"
+    ],
+    "return": "near"
+  },
+  {
+    "name": "hit_preserves_other_bits",
+    "primary": 165,
+    "mouse": [
+      5,
+      5
+    ],
+    "rect": [
+      -5,
+      -5,
+      10,
+      10
+    ],
+    "initial_hit_flags": 210,
+    "hit": true,
+    "result_hit_flags": 218,
+    "terminal": "hit_or",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs",
+      "ss"
+    ],
+    "return": "near"
+  }
+]
