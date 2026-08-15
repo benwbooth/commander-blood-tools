@@ -177,6 +177,27 @@ presentations were established or queued earlier, so the syntax does not infer
 an artificial local requirement. Nonmatching C3/C4/C9 forms retain their typed
 low-level statements.
 
+Opcode CD is a transfer rather than a three-word action assignment. In update
+mode handler `0x69C7` threshold-resolves the first operand to its owning object,
+uses the second operand as the moved object, and uses the third as its new
+holder. It resolves selector `0x11` from the moved object's kind and writes the
+new holder there. If the source owner is `blood`, it first removes the moved
+object from the 16-word special-slot list. If the destination is `blood`, it
+must insert the object into that list before writing the `0xFFFF` aboard
+sentinel; a full list cancels the holder write. The first action-field operand
+is not modified. A kind-`0x0400` transfer can additionally request active line
+`0x2B` after a successful `descript.des` lookup and the native presentation
+gates.
+
+The corpus supplies a complete type proof for the readable form. All 182 CD
+uses run in update mode without inversion and target selector-`0x13` action
+fields. Every second operand resolves to a kind-`0x0400` DEB object, and every
+source owner and destination resolves to either the built-in `blood` object or
+a kind-2 character. Of these, 46 occur in COD and 136 in BAS. BloodScript maps
+`blood` to the contextual holder name `aboard` and emits
+`transfer ITEM from SOURCE to DESTINATION`; any other CD shape remains
+`record_triple`.
+
 The remaining 3,780 BAS bytes form 1,003 complete records: three one-topic menus,
 19 presentation-register writes, three string loads, 37 `0xAA` yields, 321
 `0xAC` yields, 321 linked selector nodes, and 299 shared state/record operations
@@ -231,8 +252,9 @@ offsets and exact statement order. Across the corpus this yields 1,059 distinct
 COD symbols and 284 BAS labels without changing any output byte.
 
 Kind-1 DEB entries also establish exact VAR object-base names. The structured
-COD and BAS corpus contains 273 image-local declarations, including object
-values recovered from record relations.
+COD and BAS corpus contains 302 image-local declarations with 6,756 uses,
+including object values recovered from record relations and inventory
+transfers.
 `OBJECT` declarations emit no bytes and retain the original numeric offset.
 
 The native field-offset matrix plus each object's initial VAR kind establishes

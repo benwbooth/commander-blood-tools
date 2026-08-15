@@ -1293,6 +1293,22 @@ fn normalize_modern_statement(
             validate_identifier(fields[2], line_number)?;
             Ok(format!("RECORD_LINK {}.action blood 0", fields[2]))
         }
+        "transfer" => {
+            if fields.len() != 6 || fields[2] != "from" || fields[4] != "to" {
+                bail!(
+                    "line {line_number}: expected 'transfer ITEM from SOURCE to DESTINATION'"
+                );
+            }
+            validate_identifier(fields[1], line_number)?;
+            validate_identifier(fields[3], line_number)?;
+            validate_identifier(fields[5], line_number)?;
+            let source = transfer_holder_to_object(fields[3]);
+            let destination = transfer_holder_to_object(fields[5]);
+            Ok(format!(
+                "TRANSFER {} {source} {destination}",
+                fields[1],
+            ))
+        }
         "request" => {
             if fields.len() != 3 || fields[1] != "sequence" {
                 bail!("line {line_number}: expected 'request sequence \"NAME.hnm\"'");
@@ -1406,6 +1422,14 @@ fn normalize_modern_presentation_expression(
         "ACTOR {}.action blood {inverted}",
         fields[2]
     )))
+}
+
+fn transfer_holder_to_object(value: &str) -> &str {
+    if value == "aboard" {
+        "blood"
+    } else {
+        value
+    }
 }
 
 fn normalize_modern_choice_expression(
@@ -2018,6 +2042,28 @@ fn modern_statement(
                 .expect("suffix checked above");
             Ok(format!("end presentation {actor}"))
         }
+        "TRANSFER" => {
+            if args.len() != 3 {
+                bail!("line {line_number}: malformed generated TRANSFER statement");
+            }
+            for value in args {
+                validate_identifier(value, line_number)?;
+            }
+            Ok(format!(
+                "transfer {} from {} to {}",
+                args[0],
+                if args[1] == "blood" {
+                    "aboard"
+                } else {
+                    args[1]
+                },
+                if args[2] == "blood" {
+                    "aboard"
+                } else {
+                    args[2]
+                }
+            ))
+        }
         "LOAD_STRING" => {
             if args.len() != 1 {
                 bail!("line {line_number}: malformed generated LOAD_STRING statement");
@@ -2445,6 +2491,9 @@ fn decompile_cod(
     };
     add_field_owner_objects(&mut object_aliases, &field_aliases);
     simplify_alias_identifiers(&mut object_aliases, &mut field_aliases);
+    let inventory_transfers = var
+        .map(|var| proven_inventory_transfer_offsets(&tokens, symbols, var, &field_aliases))
+        .unwrap_or_default();
     let dictionary_aliases = dictionary_aliases(
         tokens.iter().flat_map(dictionary_operand_values),
         dictionary,
@@ -2520,6 +2569,7 @@ fn decompile_cod(
                 &field_aliases,
                 &mut dictionary_operands,
                 structured.rejected.get(&offset),
+                inventory_transfers.contains(&offset),
             )?;
         }
         stats.typed_statements += 1;
@@ -2573,6 +2623,11 @@ fn decompile_bas(
     };
     add_field_owner_objects(&mut object_aliases, &field_aliases);
     simplify_alias_identifiers(&mut object_aliases, &mut field_aliases);
+    let inventory_transfers = var
+        .map(|var| {
+            proven_inventory_transfer_offsets(&vm_tokens, symbols, var, &field_aliases)
+        })
+        .unwrap_or_default();
     let dictionary_values = bas_dictionary_operand_values(image, dictionary);
     let dictionary_aliases = dictionary_aliases(dictionary_values.iter().copied(), dictionary);
     let mut dictionary_operands = DictionaryOperandFormatter::new(&dictionary_aliases, dictionary);
@@ -2653,6 +2708,7 @@ fn decompile_bas(
                         &field_aliases,
                         &mut dictionary_operands,
                         None,
+                        inventory_transfers.contains(&token.offset()),
                     )?;
                 }
                 vm_source::BasToken::Yield { .. } => {
@@ -3250,8 +3306,13 @@ fn object_operand_values(token: &VmToken) -> Vec<u16> {
         | VmToken::RecordClear { record_offset, .. }
         | VmToken::RecordWildcard { record_offset, .. }
         | VmToken::RecordState { record_offset, .. }
-        | VmToken::PairRecord { record_offset, .. }
-        | VmToken::RecordTriple { record_offset, .. } => vec![*record_offset],
+        | VmToken::PairRecord { record_offset, .. } => vec![*record_offset],
+        VmToken::RecordTriple {
+            record_offset,
+            first_word,
+            second_word,
+            ..
+        } => vec![*record_offset, *first_word, *second_word],
         VmToken::BitFlag { flag_offset, .. } => vec![*flag_offset],
         VmToken::SharedState {
             field_offset,
@@ -3263,6 +3324,61 @@ fn object_operand_values(token: &VmToken) -> Vec<u16> {
         | VmToken::SharedBitState { field_offset, .. } => vec![*field_offset],
         _ => Vec::new(),
     }
+}
+
+fn proven_inventory_transfer_offsets(
+    tokens: &[VmToken],
+    symbols: &[DebSymbol],
+    var: &[u8],
+    fields: &BTreeMap<u16, FieldAlias>,
+) -> BTreeSet<usize> {
+    let objects: BTreeMap<u16, &DebSymbol> = symbols
+        .iter()
+        .filter(|symbol| symbol.kind == 1)
+        .map(|symbol| (symbol.offset, symbol))
+        .collect();
+    let var_kind = |offset: u16| {
+        let offset = usize::from(offset);
+        var.get(offset..offset + 2)
+            .map(|bytes| u16::from_le_bytes([bytes[0], bytes[1]]))
+    };
+    let is_holder = |offset: u16| {
+        objects.get(&offset).is_some_and(|symbol| {
+            var_kind(offset) == Some(0x0002) || symbol.name.eq_ignore_ascii_case("blood")
+        })
+    };
+
+    let mut query_mode = false;
+    let mut proven = BTreeSet::new();
+    for token in tokens {
+        match token {
+            VmToken::GuardPush { .. } | VmToken::ConditionalBlock { .. } => query_mode = true,
+            VmToken::GuardPop { .. } => query_mode = false,
+            VmToken::RecordTriple {
+                offset,
+                record_offset,
+                first_word,
+                second_word,
+                inverted: false,
+                ..
+            } if !query_mode => {
+                let source = fields.get(record_offset);
+                let source_is_holder = source.is_some_and(|field| {
+                    field.selectors.as_slice() == [0x13]
+                        && is_holder(field.owner_offset)
+                });
+                if source_is_holder
+                    && objects.contains_key(first_word)
+                    && var_kind(*first_word) == Some(0x0400)
+                    && is_holder(*second_word)
+                {
+                    proven.insert(*offset);
+                }
+            }
+            _ => {}
+        }
+    }
+    proven
 }
 
 fn emit_object_declarations(
@@ -3346,6 +3462,7 @@ fn emit_token(
     field_aliases: &BTreeMap<u16, FieldAlias>,
     dictionary_operands: &mut DictionaryOperandFormatter<'_>,
     guard_rejections: Option<&BTreeSet<GuardRejection>>,
+    inventory_transfer: bool,
 ) -> Result<()> {
     let offset = token.offset();
     write!(output, "{offset:08X}: ")?;
@@ -3584,12 +3701,30 @@ fn emit_token(
             second_word,
             inverted,
             ..
-        } => write!(
-            output,
-            "RECORD_TRIPLE {} {first_word:04X} {second_word:04X} {}",
-            object_operand(*record_offset, object_aliases, field_aliases),
-            bool_digit(*inverted)
-        )?,
+        } => {
+            if inventory_transfer {
+                let action = object_operand(*record_offset, object_aliases, field_aliases);
+                let source = action
+                    .strip_suffix(".action")
+                    .expect("proven transfer has an action field");
+                write!(
+                    output,
+                    "TRANSFER {} {} {}",
+                    object_operand(*first_word, object_aliases, field_aliases),
+                    source,
+                    object_operand(*second_word, object_aliases, field_aliases),
+                )?;
+            } else {
+                write!(
+                    output,
+                    "RECORD_TRIPLE {} {} {} {}",
+                    object_operand(*record_offset, object_aliases, field_aliases),
+                    object_operand(*first_word, object_aliases, field_aliases),
+                    object_operand(*second_word, object_aliases, field_aliases),
+                    bool_digit(*inverted)
+                )?;
+            }
+        }
         VmToken::ScriptProfileRequest { operand, .. } => {
             write!(output, "RUN_PROFILE {operand:02X}")?
         }
@@ -4022,8 +4157,31 @@ fn compile_statement(
                 &mut output,
                 parse_object_address(args[0], objects, line, "record")?,
             );
-            word(&mut output, parse_word(args[1], line, "first word")?);
-            word(&mut output, parse_word(args[2], line, "second word")?);
+            word(
+                &mut output,
+                parse_object_address(args[1], objects, line, "transferred object")?,
+            );
+            word(
+                &mut output,
+                parse_object_address(args[2], objects, line, "destination object")?,
+            );
+        }
+        "TRANSFER" => {
+            require_count(args, 3, line, name)?;
+            output.push(vm::OP_RECORD_TRIPLE);
+            let action = format!("{}.action", args[1]);
+            word(
+                &mut output,
+                parse_object_address(&action, objects, line, "source action field")?,
+            );
+            word(
+                &mut output,
+                parse_object_address(args[0], objects, line, "transferred object")?,
+            );
+            word(
+                &mut output,
+                parse_object_address(args[2], objects, line, "destination object")?,
+            );
         }
         "RUN_PROFILE" => {
             require_count(args, 1, line, name)?;
@@ -4541,6 +4699,123 @@ mod tests {
             .chain(image[5..].iter().copied())
             .collect::<Vec<_>>();
         assert_eq!(compile(&inverted).unwrap(), expected);
+    }
+
+    #[test]
+    fn record_triple_transfers_use_inventory_syntax() {
+        let image = vec![
+            vm::OP_RECORD_TRIPLE,
+            0x3A,
+            0x01,
+            0x00,
+            0x02,
+            0x28,
+            0x00,
+            vm::OP_RECORD_TRIPLE,
+            0x30,
+            0x00,
+            0x00,
+            0x02,
+            0x00,
+            0x01,
+            0xFF,
+        ];
+        let mut var = vec![0; 0x300];
+        var[0x28..0x2A].copy_from_slice(&1u16.to_le_bytes());
+        var[0x100..0x102].copy_from_slice(&2u16.to_le_bytes());
+        var[0x200..0x202].copy_from_slice(&0x0400u16.to_le_bytes());
+        let symbols = vec![
+            DebSymbol {
+                name: "blood".to_string(),
+                offset: 0x0028,
+                kind: 1,
+            },
+            DebSymbol {
+                name: "Bug_Deluxe".to_string(),
+                offset: 0x0100,
+                kind: 1,
+            },
+            DebSymbol {
+                name: "perfume".to_string(),
+                offset: 0x0200,
+                kind: 1,
+            },
+        ];
+        let decompiled = decompile_structured_cod_with_symbols(
+            &image,
+            &var,
+            &HashMap::new(),
+            &symbols,
+        )
+        .unwrap();
+        for statement in [
+            "object blood = 0x0028",
+            "object Bug_Deluxe = 0x0100",
+            "object perfume = 0x0200",
+            "field blood.action = blood + 0x0008",
+            "field Bug_Deluxe.action = Bug_Deluxe + 0x003A",
+            "transfer perfume from Bug_Deluxe to aboard",
+            "transfer perfume from aboard to Bug_Deluxe",
+        ] {
+            assert!(decompiled.source.contains(statement), "missing {statement}");
+        }
+        assert!(!decompiled.source.contains("record_triple"));
+        assert_eq!(compile(&decompiled.source).unwrap(), image);
+
+        let query_image = vec![
+            vm::OP_PUSH,
+            0x0B,
+            0x00,
+            vm::OP_RECORD_TRIPLE,
+            0x3A,
+            0x01,
+            0x00,
+            0x02,
+            0x28,
+            0x00,
+            vm::OP_POP,
+            0xFF,
+        ];
+        let query = decompile_structured_cod_with_symbols(
+            &query_image,
+            &var,
+            &HashMap::new(),
+            &symbols,
+        )
+        .unwrap();
+        assert!(
+            query
+                .source
+                .contains("record_triple Bug_Deluxe.action perfume blood 0")
+        );
+        assert!(!query.source.contains("transfer perfume"));
+        assert_eq!(compile(&query.source).unwrap(), query_image);
+
+        let mut wrong_kind_var = var.clone();
+        wrong_kind_var[0x200..0x202].copy_from_slice(&2u16.to_le_bytes());
+        let wrong_kind = decompile_structured_cod_with_symbols(
+            &image,
+            &wrong_kind_var,
+            &HashMap::new(),
+            &symbols,
+        )
+        .unwrap();
+        assert!(
+            wrong_kind
+                .source
+                .contains("record_triple Bug_Deluxe.action perfume blood 0")
+        );
+        assert!(!wrong_kind.source.contains("transfer perfume"));
+        assert_eq!(compile(&wrong_kind.source).unwrap(), image);
+
+        for invalid in [
+            "transfer perfume Bug_Deluxe to aboard",
+            "transfer perfume from Bug_Deluxe aboard",
+            "transfer 0x0200 from Bug_Deluxe to aboard",
+        ] {
+            let source = format!("// format: {SOURCE_FORMAT}\n{invalid}\nhalt\n");
+            assert!(compile(&source).is_err(), "accepted {invalid}");
+        }
     }
 
     #[test]

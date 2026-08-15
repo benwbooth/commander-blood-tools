@@ -62,6 +62,7 @@ object Shark = 0x10AE
 object Kraner = 0x10F6
 object body_scruter = 0x113E
 object dork = 0x1156
+object mummy = 0x116E
 object cred = 0x1186
 object decoder = 0x11B6
 object splatch = 0x1306
@@ -472,7 +473,7 @@ proc kra4 {
             require choice == "teleport"
         } then {
             say Kran_Dobu voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "TELEPORTING GUITAR TO CRYOBOX..."
-            record_triple Kran_Dobu.action 0x137E 0x0028 0
+            transfer guitar from Kran_Dobu to aboard
             state[0x13F2] = 0x0003
             choice = none
         }
@@ -712,7 +713,7 @@ proc bronk4 {
                 require choice == "teleport"
             } then {
                 say Bronko voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING SPY KEYRING TRANSMITTER TO BRONKO..."
-                record_triple blood.action 0x1396 0x043A 0
+                transfer transmitter from aboard to Bronko
                 choice = none
             }
         }
@@ -990,7 +991,7 @@ proc hom3 {
             require choice == "teleport"
         } then {
             say Hom voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING BRAIN SCRAMBLER TO CRYOBOX"
-            record_triple Hom.action 0x13AE 0x0028 0
+            transfer scrambler from Hom to aboard
             choice = none
         }
         block_2116:
@@ -998,7 +999,7 @@ proc hom3 {
             require choice == "refuse"
         } then {
             say Hom voice=0xFF flags=0x08 display=0x90 loop=none control=none : "YOU CANNOT REFUSE. YOUR BRAIN IS SCRAMBLED..."
-            record_triple Hom.action 0x13AE 0x0028 0
+            transfer scrambler from Hom to aboard
             choice = none
         }
         block_213F:
@@ -1098,7 +1099,7 @@ proc dork_ok {
         require choice == "teleport"
     } then {
         say Cyberquizz voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING DORK DIPLOMA TO ARK"
-        record_triple Cyberquizz.action 0x1156 0x0028 0
+        transfer dork from Cyberquizz to aboard
         choice = none
     }
     block_2414:
@@ -2089,7 +2090,7 @@ proc ed2 {
             require choice == "teleport"
         } then {
             say Tina_Burner voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING GUITAR TO TINA BURNER"
-            record_triple blood.action 0x137E 0x0872 0
+            transfer guitar from aboard to Tina_Burner
             choice = none
         }
         block_3D48:
@@ -2368,7 +2369,7 @@ proc migrator4 {
             require choice == "TELEPORT"
         } then {
             say Migrator voice=0xFF flags=0x08 display=0x90 loop=none control=none : "RING TELEPORTED TO MOSKITO AIRPORT ZONE."
-            record_triple blood.action 0x1366 0x0512 0
+            transfer ring from aboard to Migrator
             choice = none
         }
         block_4866:
@@ -2545,7 +2546,7 @@ proc masta4 {
         require choice == "teleport"
     } then {
         say Scruter_K voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "TELEPORT SCRUTER MAC'S BODY TO ARK"
-        record_triple Scruter_K.action 0x113E 0x0028 0
+        transfer body_scruter from Scruter_K to aboard
         Scruter_K.current_location = Trashlando
         choice = none
         end presentation Scruter_K
@@ -2581,7 +2582,7 @@ proc masta6 {
             require choice == "teleport"
         } then {
             say Eviscerator voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING SPLATCH TO EVISCERATOR"
-            record_triple blood.action 0x1306 0x028A 0
+            transfer splatch from aboard to Eviscerator
             choice = none
         }
     }
@@ -2680,7 +2681,7 @@ proc tum1 {
             require choice == "teleport"
         } then {
             say Beauregard voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "TELEPORTING SCRUTER BODY TO TUMUL"
-            record_triple blood.action 0x113E 0x05A2 0
+            transfer body_scruter from aboard to Beauregard
             state[0x141A] = 0x0001
             choice = none
         }
@@ -2802,7 +2803,7 @@ proc tum6 {
             require choice == "teleport"
         } then {
             say Beauregard voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "TELEPORTING SPLATCH TO TUMUL"
-            record_triple blood.action 0x1306 0x05A2 0
+            transfer splatch from aboard to Beauregard
             state[0x141A] = 0x0004
             choice = none
         }
@@ -2865,7 +2866,7 @@ proc tum7 {
         character_slot 0x05 "maledict"
         character_slot 0x06 "maledict"
         say Beauregard voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "TELEPORTING MUMMY TO ARK"
-        record_triple Beauregard.action 0x116E 0x0028 0
+        transfer mummy from Beauregard to aboard
         state[0x1422] = 0x0001
         choice = none
         state[0x141A] = 0x0006
@@ -3028,7 +3029,7 @@ proc amig3 {
             require choice == "teleport"
         } then {
             say Amigo voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "SPLATCH TELEPORTED TO ARK..."
-            record_triple Amigo.action 0x1306 0x0028 0
+            transfer splatch from Amigo to aboard
             Amigo.current_location = Trashlando
             choice = none
         }
@@ -3414,7 +3415,7 @@ proc monop2 {
             say Bug_Deluxe voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Come back soon to VENUSIA, SPACES'S LEADING SUPRA MARKET..."
             say Bug_Deluxe voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "stop"
             state[0x1434] = state[0x1436]
-            record_triple Bug_Deluxe.action 0x1186 0x0028 0
+            transfer cred from Bug_Deluxe to aboard
             choice = none
             end presentation Bug_Deluxe
         }

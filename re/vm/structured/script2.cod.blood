@@ -704,7 +704,7 @@ proc what {
         require state[0x1278] == 0x0001
     } then {
         say Honk voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Commander, I just forged a CRED! Take a look in the Cryobox|..."
-        record_triple Izwalito.action 0x1004 0x0028 0
+        transfer cred from Izwalito to aboard
     }
 }
 
@@ -2098,7 +2098,7 @@ proc Corpo2 {
         require choice == "teleport"
     } then {
         say Izwalito voice=0xFF flags=0x08 display=0x90 loop=none control=none : "CRED TELEPORTED TO ARK"
-        record_triple Izwalito.action 0x1004 0x0028 0
+        transfer cred from Izwalito to aboard
         choice = none
     }
     block_44F0:
@@ -2204,7 +2204,7 @@ proc corrp3 {
         require choice == "teleport"
     } then {
         say Izwalito voice=0xFF flags=0x08 display=0x80 loop=none control=none : "MURFFALO TELEPORTED TO IZWALITO"
-        record_triple blood.action 0x1064 0x055A 0
+        transfer murffalo from aboard to Izwalito
         choice = none
     }
     block_4909:
@@ -2407,7 +2407,7 @@ proc Corpo3 {
             require choice == "teleport"
         } then {
             say Izwalito voice=0xFF flags=0x08 display=0x90 loop=none control=none : "MURFFALO TELEPORTED TO IZWALITO"
-            record_triple blood.action 0x104C 0x055A 0
+            transfer murffalos from aboard to Izwalito
             choice = none
         }
         block_50BB:
@@ -2436,7 +2436,7 @@ proc Corpo3 {
             require choice == "teleport"
         } then {
             say Izwalito voice=0xFF flags=0x08 display=0x90 loop=none control=none : "DECODER TELEPORTED TO ARK"
-            record_triple Izwalito.action 0x1034 0x0028 0
+            transfer decoder from Izwalito to aboard
             choice = none
         }
         block_51DF:
@@ -2448,7 +2448,7 @@ proc Corpo3 {
             require choice == "teleport"
         } then {
             say Izwalito voice=0xFF flags=0x08 display=0x90 loop=none control=none : "CRED TELEPORTED TO ARK"
-            record_triple Izwalito.action 0x1004 0x0028 0
+            transfer cred from Izwalito to aboard
             choice = none
             say Izwalito voice=0x02 flags=0x00 display=0x80 loop=none control=none : "You love cred, friend|..."
         }
@@ -2647,7 +2647,7 @@ proc Mosk1 {
             require choice == "teleport"
         } then {
             say Bronko voice=0xFF flags=0x08 display=0x90 loop=none control=none : "CRED TELEPORTED TO BRONKO"
-            record_triple blood.action 0x1004 0x031A 0
+            transfer cred from aboard to Bronko
             choice = none
         }
         block_5A59:
@@ -2676,7 +2676,7 @@ proc Mosk1 {
             require choice == "teleport"
         } then {
             say Bronko voice=0xFF flags=0x08 display=0x90 loop=none control=none : "MURFFALO TELEPORTING TO ARK"
-            record_triple Bronko.action 0x104C 0x0028 0
+            transfer murffalos from Bronko to aboard
             choice = none
         }
     }
@@ -2855,7 +2855,7 @@ proc emasc0 {
             require choice == "teleport"
         } then {
             say Emasculator voice=0xFF flags=0x08 display=0x90 loop=none control=none : "CRED TELEPORTED TO EMASCULATOR"
-            record_triple blood.action 0x1004 0x031A 0
+            transfer cred from aboard to Bronko
             state[0x1272] = 0x0001
             say Emasculator voice=0x05 flags=0x08 display=0x80 loop=none control=none : "Thank you, stranger Ha! Ha! Ha!..."
             choice = none
@@ -2892,7 +2892,7 @@ proc emasc0 {
             require choice == "teleport"
         } then {
             say Emasculator voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "CONTAINER TELEPORTED TO ARK"
-            record_triple Emasculator.action 0x11B4 0x0028 0
+            transfer bionium from Emasculator to aboard
             state[0x1290] = 0x0001
             state[0x12F0] = 0x0000
             choice = none
@@ -2996,7 +2996,7 @@ proc Magnus2 {
             require choice == "teleport"
         } then {
             say Morning_Oil voice=0xFF flags=0x28 display=0x90 loop=none control=none : "TELEPORTING BATTERIES TO MORNING OIL ROBOT"
-            record_triple blood.action 0x11CC 0x028A 0
+            transfer batteries from aboard to Morning_Oil
             choice = none
         }
     }
@@ -3498,7 +3498,7 @@ proc masta2 {
     } then {
         say Scruter_Mac voice=0xFF flags=0x00 display=0x80 loop=none control=none : "TELEPORT PERFUME TO SCRUT ROBOT MAC"
         say Scruter_Mac voice=0xFF flags=0x28 display=0xA0 loop=none control=none : "Nifty work, Commander|..."
-        record_triple blood.action 0x101C 0x067A 0
+        transfer perfume from aboard to Scruter_Mac
         state[0x12FE] = 0x0001
         choice = none
     }
@@ -3701,7 +3701,7 @@ proc max2 {
         require choice == "teleport"
     } then {
         say Maxxon voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "TELEPORTING LENS TO PLANET RONDO"
-        record_triple blood.action 0x119C 0x0512 0
+        transfer lens from aboard to Maxxon
         state[0x1306] = 0x0001
         choice = none
     }
@@ -3762,7 +3762,7 @@ proc max2ter {
             require choice == "teleport"
         } then {
             say Maxxon voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORT CRED IN CRYOBOX"
-            record_triple Bug_Deluxe.action 0x1004 0x0028 0
+            transfer cred from Bug_Deluxe to aboard
             choice = none
         }
     }
@@ -3973,7 +3973,7 @@ proc oto3 {
         require choice == "teleport"
     } then {
         say Otto_Von_Smile voice=0xFF flags=0x28 display=0x90 loop=none control=none : "LENS TELEPORTED TO CRYOBOX."
-        record_triple Otto_Von_Smile.action 0x119C 0x0028 0
+        transfer lens from Otto_Von_Smile to aboard
         choice = none
     }
     block_9071:
@@ -4133,7 +4133,7 @@ proc monop2 {
             require choice != "teleport"
         } then {
             say Bug_Deluxe voice=0xFF flags=0x08 display=0x80 loop=none control=none : "CRED TELEPORTED TO ARK"
-            record_triple Bug_Deluxe.action 0x1004 0x0028 0
+            transfer cred from Bug_Deluxe to aboard
             say Bug_Deluxe voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Ahhh|! Lady luck loves a consumer, comrade... Happy spending!"
             say Bug_Deluxe voice=0x04 flags=0x00 display=0x80 loop=none control=none : "And remember... \"MORE FOR YOUR CREDS AT VENU-USIA-AAA!\""
             say Bug_Deluxe voice=0x05 flags=0x08 display=0xA0 loop=none control=none : "Bye bye comrade consumer..."
@@ -4191,7 +4191,7 @@ proc scrapp {
         require cred.holder == aboard
     } then {
         say Scruter_K voice=0xFF flags=0x08 display=0x80 loop=none control=none : "ILLEGAL MONEY DETECTED..."
-        record_triple blood.action 0x1004 0x06C2 0
+        transfer cred from aboard to Scruter_K
         say Scruter_K voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Confiscated..."
     }
     block_975F:
@@ -4199,7 +4199,7 @@ proc scrapp {
         require bionium.holder == aboard
     } then {
         say Scruter_K voice=0xFF flags=0x08 display=0x80 loop=none control=none : "BIONIUM container detected... Ultra-illegal item..."
-        record_triple blood.action 0x11B4 0x06C2 0
+        transfer bionium from aboard to Scruter_K
         say Scruter_K voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Confiscated..."
     }
     block_9791:

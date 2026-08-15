@@ -196,6 +196,17 @@ String-bearing opcodes are lifted only when they match the shipped
 printable-ASCII plus `00 00` representation; other payload shapes retain the
 generic lossless fallback.
 
+Opcode `CD` is an inventory transfer. Its first operand identifies the source
+owner through an `action` field, its second operand is the moved object, and its
+third operand is the destination holder. The handler writes selector `0x11` on
+the moved object and synchronizes the 16-word special-slot list when the source
+or destination is `blood`; BloodScript names that special holder `aboard` and
+renders the proven form as `transfer ITEM from SOURCE to DESTINATION`. All 182
+shipped uses are non-inverted updates with a kind-`0x0400` item and a source and
+destination restricted to `blood` or kind-2 characters. There are 46 such
+instructions in COD and 136 in BAS. Other possible shapes retain
+`record_triple` exactly.
+
 `re/vm/source/manifest.tsv` records semantic and unresolved byte coverage for
 all ten program images. The BAS decoder now walks the recovered sequential
 grammar: dictionary-validated menus, text records, both yield opcodes,
@@ -242,10 +253,10 @@ emit no bytes, but symbolic operands are resolved and range-checked by the
 two-pass BloodScript compiler. The generated corpus contains 1,059 distinct COD
 symbols and 284 BAS selector labels while retaining exact layout.
 
-The structured COD and BAS sources additionally use 273 image-local zero-byte
-`OBJECT` declarations recovered from exact kind-1 DEB offsets. They replace
-direct operands and record relation values while retaining the original numeric
-offset in each declaration.
+The structured COD and BAS sources additionally use 302 image-local zero-byte
+`OBJECT` declarations recovered from exact kind-1 DEB offsets. Their 6,756 uses
+replace direct operands, record relation values, and transfer endpoints while
+retaining the original numeric offset in each declaration.
 
 A first subrecord pass adds 367 zero-byte `field name = object + delta`
 declarations and replaces 1,880 direct VAR operands. A field is emitted only

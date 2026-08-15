@@ -1119,8 +1119,11 @@ pub enum VmToken {
         len: usize,
     },
     /// `0xCD` record-triple operation. Optional `0xA1` after the opcode inverts
-    /// the mode-1 comparison path; mode-0 side effects require the resolved
-    /// line-record table model and are not executed yet.
+    /// the mode-1 comparison path. In mode 0 it transfers the second object by
+    /// writing the third object to its selector-`0x11` holder field. The
+    /// built-in `blood` object denotes the aboard inventory: entering it writes
+    /// `0xFFFF` and adds a special slot, while leaving it removes that slot.
+    /// Kind-`0x0400` transfers may also request presentation line `0x2B`.
     RecordTriple {
         offset: usize,
         record_offset: u16,
@@ -1850,8 +1853,9 @@ fn read_u16(cod: &[u8], at: usize) -> Option<u16> {
 //       helper 0x7409 finds a matching `descript.des` entry. Mode-1 direct
 //       compares are evaluated with context.
 //   * 0xCD, 7 bytes plus optional A1 prefix:
-//       compare a direct three-word record in mode 1; mode-0 resolved-table
-//       side effects are still pending the line-record table model.
+//       compare a direct three-word record in mode 1. Mode 0 is the decoded
+//       inventory transfer implemented by `VmMachine`; this bounded trace does
+//       not apply its holder and special-slot side effects.
 //   * 0xC4: actor/record reference. The first operand is the destination record
 //       offset and doubles as object_offset + 0x3A (talk field) for speaker
 //       tracking; the second operand is the related record offset stored by the
@@ -8499,14 +8503,10 @@ impl VmMachine {
                 // 0x64C0 also clears the resume state ([0x67B1]=0/[0x6764]=0).
                 self.resume_pos = None;
             }
-            // 0xCD TRANSFER (0x69C7): the TELEPORT/confiscation op ("TELEPORT
-            // CRED", customs seizures). QUERY: match a typed-CD record
-            // {0xCD, op2, op3} at rec op1 (0xA1 inverts) — "was this transfer
-            // done?". SET: the object transfer — container field 0x11 relink +
-            // special-slot insert/remove when the ship (gs:[0x674E]) is either
-            // side; the port records the typed marker so story guards see the
-            // transfer, and emits an event for the frontend's inventory/world
-            // effects. Full container-graph modeling: ledgered APPROX.
+            // 0xCD TRANSFER (0x69C7). QUERY compares a typed-CD record
+            // {0xCD, op2, op3} at op1. SET treats op1 only as the source-owner
+            // field: it moves object op2 to op3 through selector 0x11 and updates
+            // the special-slot list when either owner is `blood`.
             0xCD => {
                 let mut flipped = false;
                 if self.u8_at(self.pc) == 0xA1 {
@@ -8523,40 +8523,26 @@ impl VmMachine {
                     if pass == flipped {
                         self.branch();
                     }
-                } else {
-                    self.rec_write(op1, 0xCD);
-                    self.rec_write(op1 + 2, op2);
-                    self.rec_write(op1 + 4, op3);
-                    // The transfer's location write (0x6A6B: the moved object's
-                    // field-0x11/location word gets the destination; 0xFFFF
-                    // when it boards the SHIP's special list, 0x6A60): the
-                    // story guards read exactly this (rec_0722 == 65535 =
-                    // Scruter Jo aboard; the customs manifest lines). The
-                    // ship's 16-slot hold (gs:0x6D3E) tracks the cargo:
-                    // insert on boarding (0x5FF6), remove on leaving (0x5FD8).
-                    let dest = if op3 == 0x28 { 0xFFFF } else { op3 };
-                    // Kind-correct relink: the moved object's location field
-                    // offset comes from the engine's matrix (field 0x11 per
-                    // its kind word), not a kind-1 assumption.
-                    let kind = self.rec_read(op2);
-                    let loc = field_offset(kind, 0x11).unwrap_or(LOCATION_FIELD);
-                    if dest == 0xFFFF {
-                        if let Some(slot) = self
-                            .ship_slots
-                            .iter_mut()
-                            .find(|s| **s == op2 || **s == 0)
-                        {
-                            *slot = op2;
-                        }
-                    } else if let Some(slot) =
-                        self.ship_slots.iter_mut().find(|s| **s == op2)
-                    {
-                        *slot = 0;
+                } else if let Some(owner) = self.owner_object_offset(op1) {
+                    let source_is_aboard = self.blood_offset == Some(owner);
+                    let destination_is_aboard = self.blood_offset == Some(op3);
+                    if source_is_aboard {
+                        self.special_slot_remove(op2);
                     }
-                    self.rec_write(op2.wrapping_add(loc), dest);
+                    if destination_is_aboard && !self.special_slot_insert(op2) {
+                        // 0x6A5D returns before the holder write when all 16
+                        // slots are occupied by other objects.
+                        return true;
+                    }
+
+                    let destination = if destination_is_aboard { 0xFFFF } else { op3 };
+                    let kind = self.rec_read(op2);
+                    if let Some(holder_offset) = vm_field_offset(0x11, kind) {
+                        self.rec_write(op2.wrapping_add(holder_offset), destination);
+                    }
                     self.events.push(VmEvent::Transfer {
                         object: op2 as usize,
-                        to: dest as usize,
+                        to: destination as usize,
                         related: op3 as usize,
                     });
                 }
@@ -13405,6 +13391,89 @@ mod tests {
         assert!(!m.world_click_select(0xFFFF), "back row creates no record");
         assert_eq!(m.world_target, None, "current target cleared on exit");
         assert_eq!(m.rec_read_pub(slot), 0xBEEF);
+    }
+
+    #[test]
+    fn live_step_cd_moves_inventory_without_writing_an_action_marker() {
+        let blood = 0x0028u16;
+        let source = 0x0100u16;
+        let item = 0x0200u16;
+        let action = source + 0x3A;
+        let blood_action = blood + 0x08;
+        let holder = item
+            + vm_field_offset(0x11, 0x0400).expect("kind-0x0400 selector-0x11 holder");
+
+        let mut m = VmMachine::new();
+        m.object_offsets = vec![blood, source, item];
+        m.blood_offset = Some(blood);
+        m.rec_write_pub(item, 0x0400);
+        m.rec_write_pub(action, 0xBEEF);
+        m.rec_write_pub(action + 2, 0xCAFE);
+        m.rec_write_pub(action + 4, 0x1234);
+        m.load_cod(&[
+            OP_RECORD_TRIPLE,
+            action as u8,
+            (action >> 8) as u8,
+            item as u8,
+            (item >> 8) as u8,
+            blood as u8,
+            (blood >> 8) as u8,
+            0xFF,
+        ]);
+        assert!(m.step());
+        assert_eq!(m.rec_read_pub(action), 0xBEEF, "op1 is not rewritten");
+        assert_eq!(m.rec_read_pub(action + 2), 0xCAFE);
+        assert_eq!(m.rec_read_pub(action + 4), 0x1234);
+        assert_eq!(m.rec_read_pub(holder), 0xFFFF, "aboard is the holder sentinel");
+        assert!(m.ship_slots.contains(&item));
+        assert_eq!(
+            m.events,
+            vec![VmEvent::Transfer {
+                object: item as usize,
+                to: 0xFFFF,
+                related: blood as usize,
+            }]
+        );
+
+        m.events.clear();
+        m.load_cod(&[
+            OP_RECORD_TRIPLE,
+            blood_action as u8,
+            (blood_action >> 8) as u8,
+            item as u8,
+            (item >> 8) as u8,
+            source as u8,
+            (source >> 8) as u8,
+            0xFF,
+        ]);
+        assert!(m.step());
+        assert_eq!(m.rec_read_pub(holder), source);
+        assert!(!m.ship_slots.contains(&item));
+        assert_eq!(
+            m.events,
+            vec![VmEvent::Transfer {
+                object: item as usize,
+                to: source as usize,
+                related: source as usize,
+            }]
+        );
+
+        m.events.clear();
+        m.ship_slots = std::array::from_fn(|index| 0x0400 + index as u16);
+        m.rec_write_pub(holder, 0x7777);
+        m.load_cod(&[
+            OP_RECORD_TRIPLE,
+            action as u8,
+            (action >> 8) as u8,
+            item as u8,
+            (item >> 8) as u8,
+            blood as u8,
+            (blood >> 8) as u8,
+            0xFF,
+        ]);
+        assert!(m.step());
+        assert_eq!(m.rec_read_pub(holder), 0x7777, "full hold cancels the write");
+        assert!(m.events.is_empty(), "cancelled transfer emits no event");
     }
 
     #[test]

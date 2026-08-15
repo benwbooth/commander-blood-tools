@@ -16,6 +16,20 @@ object Super_Zen = 0x08BA
 object Honk = 0x0992
 object Rondo = 0x0C2C
 object Magnus = 0x0D04
+object cred = 0x1186
+object perfume = 0x119E
+object murffalo = 0x11E6
+object tie = 0x11FE
+object rouge = 0x1216
+object jewel = 0x122E
+object creams = 0x1246
+object ball = 0x125E
+object boxing_gloves = 0x1276
+object coquilles = 0x128E
+object tools = 0x12A6
+object pharmaceutics = 0x12BE
+object hifi = 0x12EE
+object batteries = 0x134E
 
 field blood.action = blood + 0x0008 // VAR kind 0x0001, selector(s) 13
 field Bob_Morlock.conversation_progress = Bob_Morlock + 0x0032 // VAR kind 0x0002, selector(s) 03
@@ -259,8 +273,8 @@ selector Bug_Deluxe_choices {
         menu "department" "buy" "perfume"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Eden, a heady scent for fleshy young females. \"Do not swallow\": 1 CRED" choices "eden"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x119E 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer perfume from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_0F6B:
@@ -269,8 +283,8 @@ selector Bug_Deluxe_choices {
         menu "department" "buy" "perfume"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Dune, perfume for sweaty moments. \"Recommended for reproduction\": 1 CRED" choices "dune"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x119E 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer perfume from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_0FCA:
@@ -279,8 +293,8 @@ selector Bug_Deluxe_choices {
         menu "department" "buy" "perfume"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Kroolence, for males with arms. \"Watch the babes home in on your armpits\": 1 CRED" choices "kroolence"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x119E 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer perfume from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_1033:
@@ -289,8 +303,8 @@ selector Bug_Deluxe_choices {
         menu "department" "buy" "perfume"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Exhaust Nozzle Romeo, droid perfume. Heat up your coolant intakes: 1 CRED" choices "motoroil"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x119E 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer perfume from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_1096:
@@ -299,8 +313,8 @@ selector Bug_Deluxe_choices {
         menu "department" "buy" "perfume"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Turbulence, gravitational vertigo. Scent for the adventurous: 1 CRED" choices "turbulence"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x119E 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer perfume from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_10F3:
@@ -315,8 +329,8 @@ selector Bug_Deluxe_choices {
         menu "department" "buy" "tie"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo hide tie with tentacule lining. The elegance of dead skin: 1 CRED" choices "hide"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x11FE 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer tie from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_1178:
@@ -325,8 +339,8 @@ selector Bug_Deluxe_choices {
         menu "department" "buy" "tie"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Mastachok trunk tie with intestinal stitch: 1 CRED" choices "hair"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x11FE 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer tie from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_11CF:
@@ -335,8 +349,8 @@ selector Bug_Deluxe_choices {
         menu "department" "buy" "tie"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Synthetic tie with built-in altimeter and geiger counter: 4 CREDS" choices "synthetic"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x11FE 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer tie from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_122A:
@@ -356,8 +370,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "lip_rouge"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Crimson rouge for non metal lips: 1 CRED" choices "red"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x1216 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer rouge from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_12B3:
@@ -366,8 +380,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "lip_rouge"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Fluorescent green lip rouge, for tentacles and suckers: 1 CRED" choices "green"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x1216 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer rouge from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_130E:
@@ -376,8 +390,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "lip_rouge"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Black lip rouge, for total discretion: 1 CRED" choices "black"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x1216 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer rouge from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_1365:
@@ -386,8 +400,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "lip_rouge"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Space blue lip rouge. Now someone will hear you scream: 1 CRED" choices "blue"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x1216 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer rouge from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_13C4:
@@ -402,8 +416,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "cream"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Painkiller. Apply to amputated limbs during breaks in combat: 1 CRED" choices "painkiller"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x1246 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer creams from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_1443:
@@ -412,8 +426,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "cream"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Pex, for golden muscles. Win the fight before it starts: 1 CRED" choices "pex"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x1246 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer creams from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_14A4:
@@ -422,8 +436,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "cream"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "METEOR balm: for meteor-induced swelling: 1 CRED" choices "meteor"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x1246 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer creams from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_14F9:
@@ -438,8 +452,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "jewel"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Pearl necklace, for beings with necks: 1 CRED" choices "necklace"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x122E 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer jewel from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_1570:
@@ -448,8 +462,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "jewel"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Elastometal bracelet, fits all body parts: 1 CRED" choices "bracelet"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x122E 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer jewel from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_15C7:
@@ -470,8 +484,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "murffalo"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Tenderloin of murffalo. mouth and eye watering: 1 CRED" choices "tenderloin"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x11E6 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer murffalo from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_1666:
@@ -480,8 +494,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "murffalo"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo steak. Tenderised by the Bronkos of Moskito: 1 CRED" choices "steak"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x11E6 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer murffalo from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_16C1:
@@ -490,8 +504,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "murffalo"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Powdered murffalo horn. For renewed virility: 1 CRED" choices "horn"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x11E6 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer murffalo from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_1718:
@@ -500,8 +514,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "murffalo"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Deodorised murffalo fur. Slip into something meaty: 1 CRED" choices "fur"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x11E6 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer murffalo from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_1771:
@@ -510,8 +524,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "murffalo"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo sausage. Ideal for Bar-B-Q moments: 1 CRED" choices "sausage"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x11E6 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer murffalo from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_17C8:
@@ -520,8 +534,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "murffalo"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo intestines. Forecast weather and race winners: 1 CRED" choices "intestines"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x11E6 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer murffalo from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_1821:
@@ -536,8 +550,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "sport"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Ball. Steel, lead, magnetic iron and antigrav versions: 1 CRED" choices "ball"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x125E 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer ball from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_18A2:
@@ -546,8 +560,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "sport"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Deodorised murffalo hide boxing gloves. The KO with class: 1 CRED" choices "boxing_gloves"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x1276 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer boxing_gloves from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_18FF:
@@ -556,8 +570,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "sport"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo pouch. Perfect fit for all family jewels: 1 CRED" choices "pouch"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x128E 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer coquilles from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_195A:
@@ -578,8 +592,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "handywork"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Remote screwdriver. You watch TV while it screws things down and up: 1 CRED" choices "screwdriver"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x12A6 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer tools from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_19FF:
@@ -588,8 +602,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "handywork"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Ray saw. Saws through it all: 1 CRED" choices "saws"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x12A6 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer tools from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_1A56:
@@ -598,8 +612,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "handywork"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Suction drill. Slurp-free: 1 CRED" choices "drills"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x12A6 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer tools from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_1AA7:
@@ -614,8 +628,8 @@ selector Bug_Deluxe_choices {
         menu "department" "handywork" "buy"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Batteries. Suit all droids: 1 CRED" choices "batteries"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x134E 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer batteries from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_1B1A:
@@ -630,8 +644,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "pharmacy"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Aspirox. Pain relief for iron, stainless steel and nonstick heads. Lead heads contact inquiry desk: 1 CRED" choices "aspirox"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x12BE 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer pharmaceutics from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_1BA7:
@@ -640,8 +654,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "pharmacy"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Snorz. Can't sleep? Hit your head with a Snorz and say hi to the Sandman: 1 CRED" choices "snorz"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x12BE 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer pharmaceutics from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_1C12:
@@ -650,8 +664,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "pharmacy"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Fang brush. For multiple rows of fangs and crushing-type jaws: 1 CRED" choices "fang_brush"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x12BE 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer pharmaceutics from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield_b
         selector_1C6F:
@@ -726,8 +740,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "hifi"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "The latest hit from the MIGRATORS: \"CRUSH MY SKULL\": 1 CRED" choices "CD_audio"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.action 0x12EE 0x0028 0
-        record_triple blood.action 0x1186 0x01B2 0
+        transfer hifi from Bug_Deluxe to aboard
+        transfer cred from aboard to Bug_Deluxe
         state[0x1438] = 0x0001
         yield
     }

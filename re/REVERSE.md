@@ -1570,8 +1570,8 @@ and `0xB529` both reset `gs:0x1FAB`,`gs:0x6788` (→0xFFFF) plus the display gat
 **Remaining for full accuracy:** (1) verify whether audible `tb.snd` chatter is
 triggered by a dynamic callback rather than the now-decoded `gs:0x67BB` hold
 flag; (2) decode any remaining line-record display flags that affect
-subtitle/talk-HNM routing; (3) map the remaining C1/C2/CA/CB/CD line-state and
-global-condition handlers; (4) `gs:0x6724` line-record layout.
+subtitle/talk-HNM routing; (3) map the remaining C1/C2 line-state and
+presentation callback behavior; (4) finish naming the `gs:0x6724` object fields.
 
 ### 0xB7 bit-flag handler @ file 0x6AA7 — state flag set/test (DECODED)
 
@@ -1784,7 +1784,7 @@ The extractor's branch-scenario pass now derives representative RTC replay
 contexts from true `CA`/`CB` tokens, including ordinary Jan 2 baselines plus
 observed seasonal dates (Christmas/New Year) and hour-boundary candidates.
 
-### 0xCD record-triple handler @ file 0x69C7 — token shape (PARTIALLY DECODED)
+### 0xCD inventory-transfer handler @ file 0x69C7 — DECODED
 
 `0xCD` is a 7-byte line-record operation with an optional `0xA1` prefix in
 mode 1:
@@ -1793,14 +1793,29 @@ mode 1:
 
 Mode 1 compares the direct record entry against `{0x00CD, first, second}` and
 calls branch helper `0x6462` when the comparison fails; `A1` inverts the test.
-Mode 0 resolves additional table state through helpers `0x6034`, `0x5FD8`, and
-`0x5FF6`, writes a word into a computed destination, and can trigger the same
-special active-line side effect as `0xC2` (`gs:0x6788 = 0x2B`).
+In mode 0, the first operand identifies a source owner through threshold helper
+`0x6034`; the handler does not write that action record. The second operand is
+the moved object and the third is its destination holder. Selector helper
+`0x6023` resolves field `0x11` from the moved object's kind. A source owner equal
+to `blood` (`gs:0x674E`) removes the object from the 16-word special-slot list
+through `0x5FD8`. A destination equal to `blood` must insert it through `0x5FF6`;
+if the list is full the handler returns without changing the holder. Successful
+boarding writes `0xFFFF`; every other destination writes its object offset.
 
-Rust exposes the consumed token as `VmToken::RecordTriple`, emits `record_triple`
-disassembly rows, and `execute_trace` now evaluates the direct mode-1 compare
-including `A1` inversion. Mode-0 side effects still depend on the resolved
-line-record table model and remain unexecuted.
+For kind `0x0400`, clear UI/request gates followed by a successful
+`descript.des` lookup clear the presentation gate, raise request bit 1, and set
+active line `gs:0x6788` to `0x2B`. The three apparent active-bit reads before
+the transfer are dead: their results do not affect any branch.
+
+All 182 shipped CD instructions are non-inverted mode-0 transfers: 46 in COD
+and 136 in BAS. Their first operand is an `action` field; their second resolves
+to a kind-`0x0400` inventory object; source and destination resolve to `blood` or
+a kind-2 character. BloodScript renders these as
+`transfer ITEM from SOURCE to DESTINATION`, using `aboard` for `blood` in this
+holder context. `VmMachine` applies the holder and slot-list transitions without
+inventing an action-record write. The bounded `execute_trace` path still
+evaluates only the mode-1 comparison; nonconforming bytecode retains the exact
+`record_triple` source form.
 
 ### 0xC3 record-link handler @ file 0x6EEE — relation state (DECODED)
 
@@ -2566,7 +2581,7 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       now decoded as post-reveal hold state rather than a direct SND caller.
 - [ ] Map the presentation opcodes among the handler table: which set background,
       music (mus.snd), HNM actor, voice (son.snd), wait, clear. Start with the
-      remaining C1/C2/CA/CB/CD handlers and presentation callbacks rather than
+      remaining C1/C2 handlers and presentation callbacks rather than
       expecting direct media-play opcodes.
 - [x] Port 0xB7 bit-flag semantics. `src/vm.rs` exposes
       `VmToken::BitFlag`, applies high-bit-first set/clear writes in mode 0, and

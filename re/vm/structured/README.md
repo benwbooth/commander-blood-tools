@@ -67,9 +67,20 @@ The narrower C3/C4/C9 lifecycle is rendered without exposing that storage:
 `queue presentation Actor` writes the C3 scheduled form, and
 `end presentation Actor` clears the action and any reciprocal C4 pair. The
 shipped corpus has 389 requirements, 35 queues, and 371 endings; every C3/C4
-related operand is the built-in `blood` object. The remaining C1/C2/C6/CD uses
-of `action` stay as typed record operations until those distinct behaviors are
+related operand is the built-in `blood` object. The remaining C1/C2/C6 uses of
+`action` stay as typed record operations until those distinct behaviors are
 lifted independently.
+
+Inventory movement uses `transfer ITEM from SOURCE to DESTINATION`. Native
+opcode `CD` derives `SOURCE` from the owner of its first action-field operand,
+writes `DESTINATION` to the kind-specific selector-`0x11` holder field of
+`ITEM`, and maintains the 16-word special-slot list when either endpoint is the
+built-in `blood` object. BloodScript calls that endpoint `aboard`; entering it
+writes the native `0xFFFF` holder sentinel, while leaving it removes the item
+from the slot list. All 182 shipped updates (46 COD and 136 BAS) have this exact
+shape: a non-inverted action field, a kind-`0x0400` item, and a destination that
+is either `blood` or a kind-2 character. Nonmatching or query-mode `CD` tokens
+retain the exact `record_triple` fallback.
 
 Each kind-2 procedure begins with an `activation enabled|disabled until target`
 header backed by its native `A9` flag byte. Writes to those bytes are named
@@ -128,9 +139,10 @@ punctuated spelling and its split form.
 COD and BAS sources also declare exact kind-1 DEB object bases with zero-byte
 `object name = offset` directives. An object name is accepted only in an operand
 position already established as a VAR address, and the compiler lowers it to
-the declared `u16` without changing layout. The current corpus contains 273
-image-local object declarations; record-value aliases now cover locations,
-holders, and other referenced objects as well as direct operands.
+the declared `u16` without changing layout. The current corpus contains 302
+image-local object declarations with 6,756 uses; record-value aliases cover
+locations, holders, inventory transfers, and other referenced objects as well
+as direct operands.
 
 Subrecord addresses use zero-byte `field name = object + delta` declarations only
 when the address has exactly one owner under the native field-offset matrix and

@@ -548,7 +548,7 @@ proc bar4 {
         require choice == "teleport"
     } then {
         say Migrator voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORT RING TO MIGRATOR"
-        record_triple blood.action 0x12DC 0x043A 0
+        transfer ring from aboard to Migrator
         choice = none
     }
     block_14EB:
@@ -762,7 +762,7 @@ proc masta6 {
     } then {
         say Eviscerator voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Give him the splatch, Commander|... We need the treasure..."
         say Eviscerator voice=0xFF flags=0x08 display=0x80 loop=none control=none : "TELEPORT SPLATCH TO EVISCERATOR"
-        record_triple blood.action 0x127C 0x01B2 0
+        transfer splatch from aboard to Eviscerator
     }
     block_1D35:
     when block_1DAC {
@@ -1207,7 +1207,7 @@ proc Bof_ok {
         require choice == "teleport"
     } then {
         say Cyberquizz voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING DIPLOMA TO ARK"
-        record_triple Cyberquizz.action 0x10E4 0x0028 0
+        transfer urout from Cyberquizz to aboard
         choice = none
     }
     block_2F6E:
@@ -2173,7 +2173,7 @@ proc bigb1 {
             require choice == "TELEPORT"
         } then {
             say Migrator voice=0xFF flags=0x08 display=0x90 loop=none control=none : "RING TELEPORTED TO MOSKITO AIRPORT ZONE|."
-            record_triple blood.action 0x12DC 0x043A 0
+            transfer ring from aboard to Migrator
             choice = none
         }
         block_45D2:

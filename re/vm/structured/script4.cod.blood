@@ -378,7 +378,7 @@ proc fif1 {
             require choice == "teleport"
         } then {
             say Fifi voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING PICTURE TO FIFI"
-            record_triple blood.action 0x122E 0x079A 0
+            transfer picture from aboard to Fifi
             choice = none
         }
         block_09C8:
@@ -426,7 +426,7 @@ proc fif2 {
             require choice == "teleport"
         } then {
             say Fifi voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING HAT TO CRYOBOX"
-            record_triple Fifi.action 0x14CE 0x0028 0
+            transfer hat from Fifi to aboard
             choice = none
         }
         block_0B3F:
@@ -809,7 +809,7 @@ proc bra1 {
             require choice == "teleport"
         } then {
             say Bratakas voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORT DECODER TO BRATAKAS"
-            record_triple blood.action 0x12BE 0x004A 0
+            transfer decoder from aboard to Bratakas
             choice = none
         }
     }
@@ -830,7 +830,7 @@ proc bra1 {
             require choice == "teleport"
         } then {
             say Bratakas voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "TELEPORT PICTURE TO CRYOBOX"
-            record_triple Bratakas.action 0x122E 0x0028 0
+            transfer picture from Bratakas to aboard
             Bratakas.topic = "talk"
             choice = none
         }
@@ -904,7 +904,7 @@ proc bra2 {
             require choice == "teleport"
         } then {
             say Hom voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING D.O.R.K. TO HOM..."
-            record_triple blood.action 0x125E 0x03AA 0
+            transfer dork from aboard to Hom
             choice = none
         }
     }
@@ -1033,7 +1033,7 @@ proc zen3 {
         require choice == "teleport"
     } then {
         say Super_Zen voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING PAINTING TO PLANET CRAZYSTONE"
-        record_triple blood.action 0x1216 0x0992 0
+        transfer painting from aboard to Super_Zen
         choice = none
     }
 }
@@ -1112,7 +1112,7 @@ proc zen6 {
             require choice == "teleport"
         } then {
             say Super_Zen voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING HAT TO SUPER ZEN"
-            record_triple blood.action 0x14CE 0x0992 0
+            transfer hat from aboard to Super_Zen
             choice = none
         }
         block_255D:
@@ -1214,7 +1214,7 @@ proc beta1 {
         require choice == "teleport"
     } then {
         say Betakam voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING MIND SCRAMBLER"
-        record_triple blood.action 0x14B6 0x0122 0
+        transfer scrambler from aboard to Betakam
         choice = none
     }
     block_2AF1:
@@ -1523,7 +1523,7 @@ proc clay8 {
         require choice == "teleport"
     } then {
         say Anna_Haf voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING PAINTING TO ARK"
-        record_triple Anna_Haf.action 0x1216 0x0028 0
+        transfer painting from Anna_Haf to aboard
         choice = none
     }
     block_3637:
@@ -1602,7 +1602,7 @@ proc masta2 {
         require choice == "teleport"
     } then {
         say Outrageor voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING MUMMY TO OUTRAGEOR"
-        record_triple blood.action 0x11FE 0x016A 0
+        transfer mummy from aboard to Outrageor
         choice = none
     }
     block_3AEE:
