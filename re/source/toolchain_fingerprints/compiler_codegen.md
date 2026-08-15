@@ -4972,12 +4972,15 @@ miss calls the helper again, the hit result remains in carry, state is read
 through the shipped shared DS/SS data group rather than a GS decoy, and all
 registers except result AX are preserved through the far return.
 
-Open Watcom 1.9 medium (`-3 -ox -mm -zdf -we`) compiles the natural volatile
-retry loop warning-free to 27 instructions/50 bytes versus the original 18/37,
-with 77.78 percent mnemonic-multiset overlap and no inline assembly. The C body
-intentionally omits the dead pointer subtraction. Full-source integration uses
-the typed entity table directly; exact replacement additionally needs the
-callee's inherited `SS:BP` rectangle pointer and carry-return convention.
+The compiler probe now includes the authoritative candidate rather than a
+copied surrogate. Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles it
+warning-free to 21 instructions/41 bytes versus the original 18/37, with 77.78
+percent mnemonic-multiset and 72.22 percent ordered overlap. Turbo C 2.01
+medium emits 24 instructions with 83.33 percent multiset and 77.78 percent
+ordered overlap. The C body intentionally omits the dead pointer subtraction
+and consumes the helper's normalized Boolean result. Those differences are
+accepted inside the coherent source call graph; original-object replacement
+would still need the inherited `SS:BP` rectangle and carry-return adapters.
 
 ## BLOODPRG confirmation-dialog candidate
 
