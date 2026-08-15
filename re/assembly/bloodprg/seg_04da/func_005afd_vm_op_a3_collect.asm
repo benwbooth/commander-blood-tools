@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: recursive_graph
 ; label: vm_op_a3_collect
-; label_comment: opcode 0xA3 handler: copy 0-term word list from COD into gs:0x67f8
+; label_comment: copy the zero-terminated word list from the current BAS A3 menu body into gs:0x67f8
 ; byte_count: 59
 ; boundary: cfg_blocks_8_terminals_2
 ; terminal: jmp 0x5b1a:1, ret:1

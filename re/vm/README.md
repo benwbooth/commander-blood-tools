@@ -102,32 +102,35 @@ other payload shapes retain the generic lossless fallback.
 
 `re/vm/source/manifest.tsv` records semantic and unresolved byte coverage for
 all ten program images. The BAS decoder now walks the recovered sequential
-grammar: dictionary-validated menus, text records, yields, five-byte block
-end/link records, presentation-register writes, and the shared record/state
-operations used by both image kinds.
+grammar: dictionary-validated menus, text records, both yield opcodes,
+four-byte linked selector nodes, presentation-register writes, and the shared
+record/state operations used by both image kinds.
 
 All 118,787 COD bytes and all 64,736 BAS bytes now have decoded token boundaries.
-The 321 BAS block links each carry a dictionary selector and an in-image
-continuation offset. Runtime tracing establishes that `0xAC` terminates the
-current menu response block; reconstructing those links into structured source
-control flow remains a separate step.
+Each of the 321 `0xAC` bytes is a one-byte yield followed by a distinct selector
+node `{selector:u16, next:u16}`. Native `value_scan_match` at `0x577A` compares
+the selector, follows `next` directly on mismatch, and returns the body at node
+offset `+4` on match. Runtime tracing additionally establishes that `0xAC`
+terminates the selected response body. Reconstructing these linked nodes into
+structured source control flow remains a separate step.
 
 The shipped address conventions are now enforced rather than inferred during
 display. All 480 kind-2 `.DEB` routine values are one-based: subtracting one
 lands on a COD token boundary, while the encoded value never does. The 284
-image-local distinct nonzero BAS continuation targets are also one-based. By
-contrast, the 1,054 image-local distinct explicit COD branch destinations are
-zero-based token offsets.
+image-local distinct nonzero BAS `next` values and the 1,054 image-local
+distinct explicit COD branch destinations are zero-based offsets. Every BAS
+`next` value lands on the first byte of a selector node; the former one-based
+reading resulted from incorrectly grouping the preceding `0xAC` with that node.
 An unaligned address in any of these sets makes decompilation fail.
 
 `PROCEDURE`/`END_PROCEDURE` directives delimit the 480 named COD routines.
-`LABEL` directives name remaining COD blocks and BAS responses. These directives
+`LABEL` directives name remaining COD blocks and BAS selector nodes. These directives
 emit no bytes, but symbolic operands are resolved and range-checked by the
 two-pass BloodScript compiler. The generated corpus contains 1,059 distinct COD
-symbols and 284 BAS response labels while retaining exact layout.
+symbols and 284 BAS selector labels while retaining exact layout.
 
 The current BloodScript corpus recompiles all 183,523 input bytes exactly. It
-contains 13,203 typed statements covering every byte with no shipped generic
+contains 13,524 typed statements covering every byte with no shipped generic
 `OP` or `RAW` fallback. This means both instruction streams are fully framed and
 typed. The COD pass now recovers 7,010 basic blocks and 17,287 typed edges across
 all 480 DEB procedures, with no unresolved guard target. Five disabled block

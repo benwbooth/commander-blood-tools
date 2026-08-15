@@ -5806,3 +5806,43 @@ requires DRIVEN story events. The trace MERGES with the oracle story drive — a
 WRITEWATCHLIN=0x795F6 on every deep scenario (Scruter wake / examination / cyberspace)
 until the writer fires. Also banked: gs:0x6728 = the DIC segment far ptr (the text assembler's word
 source), confirming the record/dictionary pointer pair layout.
+
+## BAS selector-node boundary corrected (2026-08-14)
+
+The former five-byte `AC + selector + continuation` grouping was byte-exact but
+semantically wrong. Static instructions establish two separate records:
+
+- `vm_op_ac_yield` at file `0x685C` is a one-byte opcode. It only sets
+  `gs:[0x67B4] = 1` and returns; it consumes no operand.
+- The following four bytes are a linked BAS selector node
+  `{selector:u16, next:u16}`. `value_scan_match` at `0x577A` compares the first
+  word, assigns the second word directly to `SI` on mismatch, and returns the
+  body at node offset `+4` on match.
+- `vm_control_flow` at `0x5715` starts scanning one byte after the saved block
+  pointer, which is why selector nodes immediately follow `AC` in the shipped
+  images.
+
+Therefore BAS `next` values are zero-based offsets to selector-node headers,
+not one-based offsets to `AC`. BloodScript now emits separate `YIELD_B` and
+`SELECTOR_NODE` statements and labels the actual node headers. All five shipped
+BAS files still compile byte-for-byte.
+
+## BAS selector-node boundary corrected (2026-08-14)
+
+The former five-byte `AC + selector + continuation` grouping was byte-exact but
+semantically wrong. Static instructions establish two separate records:
+
+- `vm_op_ac_yield` at file `0x685C` is a one-byte opcode. It only sets
+  `gs:[0x67B4] = 1` and returns; it consumes no operand.
+- The following four bytes are a linked BAS selector node
+  `{selector:u16, next:u16}`. `value_scan_match` at `0x577A` compares the first
+  word, assigns the second word directly to `SI` on mismatch, and returns the
+  body at node offset `+4` on match.
+- `vm_control_flow` at `0x5715` starts scanning one byte after the saved block
+  pointer, which is why selector nodes immediately follow `AC` in the shipped
+  images.
+
+Therefore BAS `next` values are zero-based offsets to selector-node headers,
+not one-based offsets to `AC`. BloodScript now emits separate `YIELD_B` and
+`SELECTOR_NODE` statements and labels the actual node headers. All five shipped
+BAS files still compile byte-for-byte.

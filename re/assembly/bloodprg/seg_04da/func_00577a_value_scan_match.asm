@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: recursive_graph
 ; label: value_scan_match
-; label_comment: scan DS:SI linked {value,next_offset,payload} nodes for AX and return the matching payload offset +4 or zero in AX; natural C: re/source/bloodprg/candidates/seg_04da/func_00577a_value_scan_match.c
+; label_comment: scan BAS DS:SI linked {selector,next_offset,body} nodes for AX; follow next_offset directly on mismatch and return node offset +4 on match; natural C: re/source/bloodprg/candidates/seg_04da/func_00577a_value_scan_match.c
 ; byte_count: 23
 ; boundary: cfg_blocks_6_terminals_2
 ; terminal: jmp 0x577d:1, ret:1

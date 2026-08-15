@@ -46,13 +46,23 @@ concept guards (`0xA3`), string loads (`0xA8`), self-modifying byte writes
 and the `0x274F` flag branch (`0xD1`). All 118,787 shipped COD bytes now compile
 from typed statements with zero generic `OP` coverage.
 
-The remaining 3,780 BAS bytes form 682 complete records: three one-topic menus,
-19 presentation-register writes, three string loads, 37 yields, 321 block links,
-and 299 shared state/record operations and end markers. The sequential decoder
-now types all of them. Every block-link selector resolves through its script's
-dictionary and every continuation is zero or an in-image offset; runtime BASSTEP
-traces independently establish `0xAC` as the response-block terminator. All
+The remaining 3,780 BAS bytes form 1,003 complete records: three one-topic menus,
+19 presentation-register writes, three string loads, 37 `0xAA` yields, 321
+`0xAC` yields, 321 linked selector nodes, and 299 shared state/record operations
+and end markers. The sequential decoder now types all of them. Every node
+selector resolves through its script's dictionary and every nonzero `next`
+value points directly to another selector node. Runtime BASSTEP traces
+independently establish `0xAC` as the selected response-body terminator. All
 64,736 BAS bytes now compile with no `RAW` fallback.
+
+The selector-node boundary is established statically, not inferred from the
+corpus pattern. `vm_op_ac_yield` at executable file offset `0x685C` consumes no
+operand. `vm_control_flow` starts the linked-list scan one byte after its saved
+block pointer (`0x5715..0x5718`). `value_scan_match` at `0x577A` reads the node's
+selector, assigns the second word directly to the scan cursor on mismatch, and
+returns the node address plus four on match. Therefore `0xAC` and
+`{selector,next}` are separate records and `next` is an ordinary zero-based BAS
+offset.
 
 The whole ten-image corpus therefore compiles byte-for-byte from typed
 BloodScript IR. This closes byte framing, not source structuring: record fields
@@ -61,15 +71,16 @@ and reducible control-flow blocks still need to be lifted above the exact IR.
 Address correlation establishes three corpus-wide rules:
 
 - all 480 kind-2 `.DEB` routine values are one-based COD addresses;
-- 284 image-local distinct nonzero BAS targets are one-based BAS addresses;
+- 284 image-local distinct nonzero BAS targets are zero-based selector-node addresses;
 - 1,054 image-local distinct explicit COD targets are zero-based COD addresses.
 
 Every address resolves to a decoded token boundary under its respective rule.
-The contrary interpretation fails universally for the `.DEB` routine values and
-BAS continuations: none of their raw encoded values is a token boundary.
+The one-based rule applies only to `.DEB` routine values. Treating BAS `next`
+values as one-based points at the preceding `0xAC`, not the node that the native
+scanner reads.
 
 BloodScript now emits 480 balanced `PROCEDURE`/`END_PROCEDURE` regions from the
-DEB names, plus `LABEL` directives for other COD blocks and BAS responses. Its
+DEB names, plus `LABEL` directives for other COD blocks and BAS selector nodes. Its
 two-pass compiler resolves symbolic operands while retaining explicit source
 offsets and exact statement order. Across the corpus this yields 1,059 distinct
 COD symbols and 284 BAS labels without changing any output byte.

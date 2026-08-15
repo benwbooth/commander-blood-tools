@@ -452,15 +452,14 @@ fn decompile_bas(
                 vm_source::BasToken::Yield { .. } => {
                     writeln!(output, "{cursor:08X}: YIELD ; opcode AA")?;
                 }
-                vm_source::BasToken::BlockEnd {
-                    selector,
-                    continuation,
-                    ..
-                } => {
+                vm_source::BasToken::YieldB { .. } => {
+                    writeln!(output, "{cursor:08X}: YIELD_B ; opcode AC")?;
+                }
+                vm_source::BasToken::SelectorNode { selector, next, .. } => {
                     writeln!(
                         output,
-                        "{cursor:08X}: BAS_BLOCK_END {selector:04X} {} ; {:?}",
-                        bas_continuation_operand(*continuation, &annotations.labels),
+                        "{cursor:08X}: SELECTOR_NODE {selector:04X} {} ; {:?}",
+                        bas_next_operand(*next, &annotations.labels),
                         dictionary.get(selector).map(String::as_str).unwrap_or("")
                     )?;
                 }
@@ -589,14 +588,14 @@ fn cod_target(token: &VmToken) -> Option<u16> {
 
 fn bas_annotations(image: &[u8], dictionary: &HashMap<u16, String>) -> Result<SourceAnnotations> {
     let mut cursor = 0usize;
-    let mut boundaries = BTreeSet::new();
-    let mut continuations = BTreeSet::new();
+    let mut nodes = BTreeSet::new();
+    let mut next_nodes = BTreeSet::new();
     while cursor < image.len() {
         if let Some((end, token)) = vm_source::bas_token_at(image, cursor, dictionary) {
-            boundaries.insert(cursor);
-            if let vm_source::BasToken::BlockEnd { continuation, .. } = token {
-                if continuation != 0 {
-                    continuations.insert(continuation);
+            if let vm_source::BasToken::SelectorNode { next, .. } = token {
+                nodes.insert(cursor);
+                if next != 0 {
+                    next_nodes.insert(next);
                 }
             }
             cursor = end;
@@ -606,14 +605,14 @@ fn bas_annotations(image: &[u8], dictionary: &HashMap<u16, String>) -> Result<So
     }
 
     let mut annotations = SourceAnnotations::default();
-    for encoded in continuations {
-        let offset = usize::from(encoded - 1);
-        if !boundaries.contains(&offset) {
+    for target in next_nodes {
+        let offset = usize::from(target);
+        if !nodes.contains(&offset) {
             bail!(
-                "one-based BAS continuation 0x{encoded:04X} does not resolve to a token boundary"
+                "BAS selector next offset 0x{target:04X} does not resolve to a selector node"
             );
         }
-        let identifier = format!("response_{offset:04X}");
+        let identifier = format!("selector_{offset:04X}");
         annotations
             .directives
             .entry(offset)
@@ -703,12 +702,11 @@ fn optional_address_operand(address: Option<u16>, labels: &HashMap<u16, String>)
     )
 }
 
-fn bas_continuation_operand(encoded: u16, labels: &HashMap<u16, String>) -> String {
-    encoded
-        .checked_sub(1)
-        .and_then(|offset| labels.get(&offset))
+fn bas_next_operand(target: u16, labels: &HashMap<u16, String>) -> String {
+    labels
+        .get(&target)
         .cloned()
-        .unwrap_or_else(|| format!("{encoded:04X}"))
+        .unwrap_or_else(|| format!("{target:04X}"))
 }
 
 fn emit_token(
@@ -971,13 +969,16 @@ fn compile_statement(
             require_count(args, 0, line, name)?;
             output.push(vm::OP_YIELD_A);
         }
-        "BAS_BLOCK_END" => {
-            require_count(args, 2, line, name)?;
+        "YIELD_B" => {
+            require_count(args, 0, line, name)?;
             output.push(vm::OP_YIELD_B);
+        }
+        "SELECTOR_NODE" => {
+            require_count(args, 2, line, name)?;
             word(&mut output, parse_word(args[0], line, "selector")?);
             word(
                 &mut output,
-                parse_one_based_address(args[1], labels, line, "continuation")?,
+                parse_address(args[1], labels, line, "next selector node")?,
             );
         }
         "PRESENTATION_REGISTER" => {
@@ -1246,20 +1247,6 @@ fn parse_address(
         .unwrap_or_else(|| parse_word(value, line, field))
 }
 
-fn parse_one_based_address(
-    value: &str,
-    labels: &HashMap<&str, u16>,
-    line: usize,
-    field: &str,
-) -> Result<u16> {
-    let Some(address) = labels.get(value).copied() else {
-        return parse_word(value, line, field);
-    };
-    address
-        .checked_add(1)
-        .ok_or_else(|| anyhow!("line {line}: one-based {field} {value:?} overflows"))
-}
-
 fn parse_byte(value: &str, line: usize, field: &str) -> Result<u8> {
     if value.len() != 2 {
         bail!("line {line}: {field} {value:?} must have two hex digits");
@@ -1520,8 +1507,8 @@ mod tests {
         );
 
         let dictionary = HashMap::from([(0x1234, "topic".to_string())]);
-        let bad_bas_continuation = vec![0xAC, 0x34, 0x12, 0x02, 0x00, 0xFF];
-        assert!(decompile(ImageKind::Bas, &bad_bas_continuation, &dictionary).is_err());
+        let bad_bas_next = vec![0xAC, 0x34, 0x12, 0x03, 0x00, 0xFF];
+        assert!(decompile(ImageKind::Bas, &bad_bas_next, &dictionary).is_err());
     }
 
     #[test]
@@ -1567,15 +1554,18 @@ mod tests {
         let source = concat!(
             "; format: bloodscript-ir-v1\n",
             "00000000: YIELD\n",
-            "00000001: BAS_BLOCK_END 1234 response_0006\n",
-            "00000006: LABEL response_0006\n",
+            "00000001: YIELD_B\n",
+            "00000002: SELECTOR_NODE 1234 selector_000C\n",
             "00000006: MENU 1234\n",
-            "0000000B: PRESENTATION_REGISTER 9ABC\n",
-            "0000000E: END\n",
+            "0000000B: YIELD_B\n",
+            "0000000C: LABEL selector_000C\n",
+            "0000000C: SELECTOR_NODE 1234 0000\n",
+            "00000010: PRESENTATION_REGISTER 9ABC\n",
+            "00000013: END\n",
         );
         let expected = vec![
-            0xAA, 0xAC, 0x34, 0x12, 0x07, 0x00, 0xA3, 0x34, 0x12, 0x00, 0x00, 0xA7, 0xBC, 0x9A,
-            0xFF,
+            0xAA, 0xAC, 0x34, 0x12, 0x0C, 0x00, 0xA3, 0x34, 0x12, 0x00, 0x00, 0xAC, 0x34,
+            0x12, 0x00, 0x00, 0xA7, 0xBC, 0x9A, 0xFF,
         ];
         assert_eq!(compile(source).unwrap(), expected);
 
@@ -1584,8 +1574,9 @@ mod tests {
         assert_eq!(decompiled.raw_bytes, 0);
         for statement in [
             "YIELD",
-            "BAS_BLOCK_END 1234 response_0006",
-            "LABEL response_0006",
+            "YIELD_B",
+            "SELECTOR_NODE 1234 selector_000C",
+            "LABEL selector_000C",
             "MENU 1234",
             "PRESENTATION_REGISTER 9ABC",
         ] {

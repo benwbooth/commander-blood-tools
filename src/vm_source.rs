@@ -57,10 +57,13 @@ pub(crate) enum BasToken {
     Yield {
         offset: usize,
     },
-    BlockEnd {
+    YieldB {
+        offset: usize,
+    },
+    SelectorNode {
         offset: usize,
         selector: u16,
-        continuation: u16,
+        next: u16,
     },
     PresentationRegister {
         offset: usize,
@@ -77,7 +80,8 @@ impl BasToken {
         match self {
             Self::Menu { offset, .. }
             | Self::Yield { offset }
-            | Self::BlockEnd { offset, .. }
+            | Self::YieldB { offset }
+            | Self::SelectorNode { offset, .. }
             | Self::PresentationRegister { offset, .. }
             | Self::End { offset } => *offset,
             Self::Text(token) | Self::Vm(token) => token.offset(),
@@ -99,14 +103,10 @@ impl BasToken {
             }
             Self::Text(token) | Self::Vm(token) => return vm::encode_token(token),
             Self::Yield { .. } => bytes.push(vm::OP_YIELD_A),
-            Self::BlockEnd {
-                selector,
-                continuation,
-                ..
-            } => {
-                bytes.push(vm::OP_YIELD_B);
+            Self::YieldB { .. } => bytes.push(vm::OP_YIELD_B),
+            Self::SelectorNode { selector, next, .. } => {
                 word(&mut bytes, *selector);
-                word(&mut bytes, *continuation);
+                word(&mut bytes, *next);
             }
             Self::PresentationRegister { value, .. } => {
                 bytes.push(0xA7);
@@ -121,7 +121,8 @@ impl BasToken {
 /// Disassemble one complete VM image into the parseable CBVM-ASM format.
 ///
 /// COD uses the recovered opcode descriptor grammar. BAS uses its independently
-/// recovered sequential grammar, including menu tables and five-byte block links.
+/// recovered sequential grammar, including menu tables, one-byte `0xAC` yields,
+/// and the four-byte linked selector nodes that follow those yields.
 /// Any byte shape outside those grammars remains an explicit raw span.
 pub fn disassemble(
     kind: ImageKind,
@@ -319,6 +320,28 @@ pub(crate) fn bas_token_at(
     offset: usize,
     dictionary: &HashMap<u16, String>,
 ) -> Option<(usize, BasToken)> {
+    // The BAS control-flow dispatcher receives a pointer to a selector node and
+    // scans `{selector:u16, next:u16, body...}` records. In shipped BAS images
+    // each node immediately follows an AC yield. This structural check must run
+    // before opcode decoding because either byte of a selector is arbitrary.
+    if offset > 0 && image.get(offset - 1) == Some(&vm::OP_YIELD_B) {
+        let end = offset.checked_add(4)?;
+        let selector = read_word(image, offset)?;
+        let next = read_word(image, offset + 2)?;
+        dictionary.get(&selector)?;
+        if next != 0 && next as usize >= image.len() {
+            return None;
+        }
+        return (end <= image.len()).then_some((
+            end,
+            BasToken::SelectorNode {
+                offset,
+                selector,
+                next,
+            },
+        ));
+    }
+
     let opcode = *image.get(offset)?;
     if opcode == 0xFF {
         return Some((offset + 1, BasToken::End { offset }));
@@ -341,21 +364,7 @@ pub(crate) fn bas_token_at(
         return Some((offset + 1, BasToken::Yield { offset }));
     }
     if opcode == vm::OP_YIELD_B {
-        let end = offset.checked_add(5)?;
-        let selector = read_word(image, offset + 1)?;
-        let continuation = read_word(image, offset + 3)?;
-        dictionary.get(&selector)?;
-        if continuation != 0 && continuation as usize >= image.len() {
-            return None;
-        }
-        return (end <= image.len()).then_some((
-            end,
-            BasToken::BlockEnd {
-                offset,
-                selector,
-                continuation,
-            },
-        ));
+        return Some((offset + 1, BasToken::YieldB { offset }));
     }
     if opcode == 0xA7 {
         let end = offset.checked_add(3)?;
@@ -400,12 +409,9 @@ fn bas_token_comment(token: &BasToken, dictionary: &HashMap<u16, String>) -> Str
         ),
         BasToken::Text(token) | BasToken::Vm(token) => token_comment(token, dictionary),
         BasToken::Yield { .. } => "YIELD".to_string(),
-        BasToken::BlockEnd {
-            selector,
-            continuation,
-            ..
-        } => format!(
-            "BAS_BLOCK_END selector=0x{selector:04X} {:?} continuation=0x{continuation:04X}",
+        BasToken::YieldB { .. } => "YIELD_B".to_string(),
+        BasToken::SelectorNode { selector, next, .. } => format!(
+            "SELECTOR_NODE selector=0x{selector:04X} {:?} next=0x{next:04X}",
             dictionary.get(selector).map(String::as_str).unwrap_or("")
         ),
         BasToken::PresentationRegister { value, .. } => {
@@ -700,6 +706,28 @@ mod tests {
     fn assembler_rejects_non_contiguous_offsets() {
         let source = "; format: cbvm-asm-v1\n00000001: .byte AA\n";
         assert!(assemble(source).is_err());
+    }
+
+    #[test]
+    fn bas_selector_node_is_separate_from_the_preceding_ac_yield() {
+        let dictionary = HashMap::from([(0x1234, "topic".to_string())]);
+        let image = [0xAC, 0x34, 0x12, 0x09, 0x00, 0xA3, 0x34, 0x12, 0x00, 0x00];
+
+        assert_eq!(
+            bas_token_at(&image, 0, &dictionary),
+            Some((1, BasToken::YieldB { offset: 0 }))
+        );
+        assert_eq!(
+            bas_token_at(&image, 1, &dictionary),
+            Some((
+                5,
+                BasToken::SelectorNode {
+                    offset: 1,
+                    selector: 0x1234,
+                    next: 9,
+                }
+            ))
+        );
     }
 
     #[test]

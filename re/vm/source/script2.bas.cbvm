@@ -5,12 +5,14 @@
 ; operands are authoritative; comments are non-semantic
 
 00000000: .byte AA ; YIELD
-00000001: .byte AC 01 00 00 00 ; BAS_BLOCK_END selector=0x0001 "talk" continuation=0x0000
+00000001: .byte AC ; YIELD_B
+00000002: .byte 01 00 00 00 ; SELECTOR_NODE selector=0x0001 "talk" next=0x0000
 00000006: .byte A3 7E 18 7F 00 00 00 ; MENU yes | no
 0000000D: .byte A6 6A 01 01 40 80 84 01 FF FF 7E 18 00 00 ; TEXT line=0x016A voice=0x01 flags=0x40,0x80 "Yes"
 0000001B: .byte A6 6A 01 01 40 80 39 29 FF FF 7F 00 00 00 ; TEXT line=0x016A voice=0x01 flags=0x40,0x80 "No"
 00000029: .byte AA ; YIELD
-0000002A: .byte AC 01 00 B3 00 ; BAS_BLOCK_END selector=0x0001 "talk" continuation=0x00B3
+0000002A: .byte AC ; YIELD_B
+0000002B: .byte 01 00 B3 00 ; SELECTOR_NODE selector=0x0001 "talk" next=0x00B3
 0000002F: .byte A3 4E 0B 25 3D 32 3D 56 0B 3F 3D B6 28 49 3D 4D ; MENU bye_bye | optimization | consultation | explanations | calm_down | play | win | lose | help
 0000003F: .byte 3D CF 05 00 00 ; continuation
 00000044: .byte A6 72 08 FF 61 80 D0 01 CF 00 B6 28 DF 01 FF FF ; TEXT line=0x0872 voice=0xFF flags=0x61,0x80 "How to play ?"
@@ -22,7 +24,8 @@
 0000008C: .byte 62 00 FF FF 49 3D 00 00 ; continuation
 00000094: .byte A6 72 08 FF 61 80 41 0B FE 15 CC 01 37 04 CF 00 ; TEXT line=0x0872 voice=0xFF flags=0x61,0x80 "What would you like to optimize , Commander ?"
 000000A4: .byte 81 3D 98 00 8E 00 DF 01 FF FF 25 3D 00 00 ; continuation
-000000B2: .byte AC B6 28 AD 02 ; BAS_BLOCK_END selector=0x28B6 "play" continuation=0x02AD
+000000B2: .byte AC ; YIELD_B
+000000B3: .byte B6 28 AD 02 ; SELECTOR_NODE selector=0x28B6 "play" next=0x02AD
 000000B7: .byte A3 01 00 8A 3D 90 3D 97 3D 00 00 ; MENU talk | click | dialog | fair_play
 000000C2: .byte A6 72 08 FF 60 80 2A 0A 29 01 EB 09 7D 03 CF 00 ; TEXT line=0x0872 voice=0xFF flags=0x60,0x80 "That's the best way to play , Commander . Just keep clickin' !"
 000000D2: .byte B6 28 98 00 8E 00 0F 02 73 12 24 23 A2 3D 82 00 ; continuation
@@ -59,7 +62,8 @@
 0000027E: .byte A6 72 08 FF 60 80 B2 17 98 00 8E 00 62 00 4D 01 ; TEXT line=0x0872 voice=0xFF flags=0x60,0x80 "OK , Commander ... You seem like a fair play guy . I'll tell Cap'n Bob ..."
 0000028E: .byte 1B 26 37 04 BC 02 51 3E B6 28 F3 0C 0F 02 C4 05 ; continuation
 0000029E: .byte 06 02 9F 08 F7 08 62 00 FF FF 97 3D 00 00 ; continuation
-000002AC: .byte AC 49 3D 29 04 ; BAS_BLOCK_END selector=0x3D49 "win" continuation=0x0429
+000002AC: .byte AC ; YIELD_B
+000002AD: .byte 49 3D 29 04 ; SELECTOR_NODE selector=0x3D49 "win" next=0x0429
 000002B1: .byte A3 01 00 62 3E 6C 3E 75 3E 7D 3E 00 00 ; MENU talk | willpower | strength | bravery | pride
 000002BE: .byte A6 72 08 FF 60 80 83 3E 0C 06 BC 02 8D 3E 98 00 ; TEXT line=0x0872 voice=0xFF flags=0x60,0x80 "Willpower makes a winner , Commander . Cap'n Bob knows you've got it ..."
 000002CE: .byte 8E 00 0F 02 9F 08 F7 08 F9 09 2F 26 C3 01 1A 01 ; continuation
@@ -88,7 +92,8 @@
 000003F8: .byte 16 3F EE 03 29 01 D6 3A 1F 3F FE 01 63 04 D7 2C ; continuation
 00000408: .byte 3C 15 26 3F 0F 02 C4 05 CE 0B 51 01 CC 01 BC 02 ; continuation
 00000418: .byte EC 0C 30 13 FE 01 31 3F 62 00 FF FF 7D 3E 00 00 ; continuation
-00000428: .byte AC 4D 3D 13 06 ; BAS_BLOCK_END selector=0x3D4D "lose" continuation=0x0613
+00000428: .byte AC ; YIELD_B
+00000429: .byte 4D 3D 13 06 ; SELECTOR_NODE selector=0x3D4D "lose" next=0x0613
 0000042D: .byte A3 01 00 39 3F 3E 3F 47 3F 50 3F 56 3F CC 2A 00 ; MENU talk | fear | weakness | complain | anger | break | cry
 0000043D: .byte 00 ; continuation
 0000043E: .byte A6 72 08 FF 60 80 31 1D 5C 3F 64 3F CF 00 4D 3D ; TEXT line=0x0872 voice=0xFF flags=0x60,0x80 "There's several ways to lose , Commander . Which do you choose ?"
@@ -125,7 +130,8 @@
 000005E8: .byte A6 72 08 FF 61 80 10 33 62 00 FF FF 56 3F 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x61,0x80 "Ouch ..."
 000005F8: .byte A6 72 08 FF 60 80 38 40 D2 00 CE 0B B2 0F 46 40 ; TEXT line=0x0872 voice=0xFF flags=0x60,0x80 "Everything'll be just fine afterwards , Commander..."
 00000608: .byte 98 00 32 01 FF FF CC 2A 00 00 ; continuation
-00000612: .byte AC CF 05 2D 09 ; BAS_BLOCK_END selector=0x05CF "help" continuation=0x092D
+00000612: .byte AC ; YIELD_B
+00000613: .byte CF 05 2D 09 ; SELECTOR_NODE selector=0x05CF "help" next=0x092D
 00000617: .byte A3 01 00 51 40 56 3F 5C 40 6A 40 37 20 72 40 7B ; MENU talk | switch_off | break | endless_lives | contest | tips | presents | messages
 00000627: .byte 40 00 00 ; continuation
 0000062A: .byte A6 72 08 FF 61 80 84 40 85 03 89 40 90 40 98 00 ; TEXT line=0x0872 voice=0xFF flags=0x61,0x80 "Need some expert guidance , Commander ?"
@@ -185,7 +191,8 @@
 00000908: .byte A6 72 08 FF 60 80 4D 01 CE 0B DC 3E 4F 03 29 01 ; TEXT line=0x0872 voice=0xFF flags=0x60,0x80 "You just clicked on the word \"message\" . Way to go !!!"
 00000918: .byte 32 0E F6 41 0F 02 00 42 CF 00 E3 03 75 04 FF FF ; continuation
 00000928: .byte 0B 0E 00 00 ; continuation
-0000092C: .byte AC 25 3D F5 0B ; BAS_BLOCK_END selector=0x3D25 "optimization" continuation=0x0BF5
+0000092C: .byte AC ; YIELD_B
+0000092D: .byte 25 3D F5 0B ; SELECTOR_NODE selector=0x3D25 "optimization" next=0x0BF5
 00000931: .byte A3 01 00 04 42 0A 42 14 42 99 3E 1D 42 26 42 2D ; MENU talk | speed | telephone | keyboard | mouse | joystick | screen | CDROM | music | sounds
 00000941: .byte 42 AC 0F 33 42 00 00 ; continuation
 00000948: .byte A6 72 08 FF 60 80 4D 01 49 0B CF 00 04 42 2B 06 ; TEXT line=0x0872 voice=0xFF flags=0x60,0x80 "You want to speed up your computer ? No prob... , I'll just double the frequency . Uh , you may want to move back a couple of yards ..."
@@ -237,12 +244,14 @@
 00000BCC: .byte EB 43 EE 03 63 04 F1 43 F7 43 75 04 F4 22 FC 43 ; continuation
 00000BDC: .byte 1A 01 04 44 CE 40 62 00 09 06 0C 44 92 02 47 04 ; continuation
 00000BEC: .byte 62 00 FF FF 33 42 00 00 ; continuation
-00000BF4: .byte AC 32 3D 23 0C ; BAS_BLOCK_END selector=0x3D32 "consultation" continuation=0x0C23
+00000BF4: .byte AC ; YIELD_B
+00000BF5: .byte 32 3D 23 0C ; SELECTOR_NODE selector=0x3D32 "consultation" next=0x0C23
 00000BF9: .byte A3 01 00 12 44 00 00 ; MENU talk | therapy
 00000C00: .byte A6 72 08 FF 61 80 41 0B 94 3E FE 01 32 3D D4 01 ; TEXT line=0x0872 voice=0xFF flags=0x61,0x80 "What kind of consultation did you have in mind , Commander?"
 00000C10: .byte CC 01 0E 09 EE 03 4D 1F 98 00 43 05 FF FF 32 3D ; continuation
 00000C20: .byte 00 00 ; continuation
-00000C22: .byte AC 12 44 87 0F ; BAS_BLOCK_END selector=0x4412 "therapy" continuation=0x0F87
+00000C22: .byte AC ; YIELD_B
+00000C23: .byte 12 44 87 0F ; SELECTOR_NODE selector=0x4412 "therapy" next=0x0F87
 00000C27: .byte A3 01 00 7A 26 1A 44 24 44 2E 44 3B 44 D7 0D 68 ; MENU talk | ego | super_ego | under_ego | end_of_month | libido | who | where | when | what | how | why
 00000C37: .byte 0C 01 02 9A 08 00 04 B0 2D 00 00 ; continuation
 00000C42: .byte A6 72 08 FF 60 80 10 10 69 27 42 44 50 44 62 00 ; TEXT line=0x0872 voice=0xFF flags=0x60,0x80 "A free psychotherapy session ... That's a once in a lifetime offer , Commander ."
@@ -308,7 +317,8 @@
 00000F64: .byte A6 72 08 FF 61 80 3F 01 66 1C 5F 01 B9 45 75 04 ; TEXT line=0x0872 voice=0xFF flags=0x61,0x80 "It's obvious : BECAUSE !!! And don't ask \"Because what ?\""
 00000F74: .byte 07 03 9C 00 CC 25 C1 45 9A 08 CA 45 FF FF B0 2D ; continuation
 00000F84: .byte 00 00 ; continuation
-00000F86: .byte AC 3F 3D EC 10 ; BAS_BLOCK_END selector=0x3D3F "calm_down" continuation=0x10EC
+00000F86: .byte AC ; YIELD_B
+00000F87: .byte 3F 3D EC 10 ; SELECTOR_NODE selector=0x3D3F "calm_down" next=0x10EC
 00000F8B: .byte A3 01 00 61 09 B1 09 CB 09 D1 09 D6 09 DB 09 DF ; MENU talk | one | two | three | four | five | six | seven | eight | nine
 00000F9B: .byte 09 E5 09 CD 45 00 00 ; continuation
 00000FA2: .byte A6 72 08 FF 60 80 D0 01 AD 00 BC 02 D2 45 D9 45 ; TEXT line=0x0872 voice=0xFF flags=0x60,0x80 "How about a simple exercise in mind power ? Choose a number . There's only one right one ..."
@@ -336,7 +346,8 @@
 000010C3: .byte A6 72 08 FF 61 80 CD 45 62 00 EE 20 1C 46 98 00 ; TEXT line=0x0872 voice=0xFF flags=0x61,0x80 "nine ... GOOD WORK , COMMANDER ... I sense you're quite relaxed now ...."
 000010D3: .byte 13 09 62 00 9A 00 21 46 72 05 83 2E 27 46 38 02 ; continuation
 000010E3: .byte 27 05 FF FF CD 45 00 00 ; continuation
-000010EB: .byte AC 56 0B 00 00 ; BAS_BLOCK_END selector=0x0B56 "explanations" continuation=0x0000
+000010EB: .byte AC ; YIELD_B
+000010EC: .byte 56 0B 00 00 ; SELECTOR_NODE selector=0x0B56 "explanations" next=0x0000
 000010F0: .byte A3 4E 0B 01 00 5D 08 2F 46 B5 17 19 0B 3B 46 14 ; MENU bye_bye | talk | blood | Bob_Morlock | Honk | Ark | Ma | Orxx | Olga | Big_Bang | Black_holes
 00001100: .byte 1E F9 15 3E 46 47 46 00 00 ; continuation
 00001109: .byte A6 72 08 FF 61 80 53 46 AD 00 65 12 EE 03 60 46 ; TEXT line=0x0872 voice=0xFF flags=0x61,0x80 "Explanations about anything in particular , Commander ?"
@@ -449,17 +460,20 @@
 000016C1: .byte EC 17 FE 01 BC 02 42 49 62 00 FF FF 47 46 00 00 ; continuation
 000016D1: .byte A6 72 08 FF 20 80 49 49 8E 00 DF 01 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x20,0x80 "Yes, Commander ?"
 000016DF: .byte AA ; YIELD
-000016E0: .byte AC 4E 49 17 17 ; BAS_BLOCK_END selector=0x494E "talk1" continuation=0x1717
+000016E0: .byte AC ; YIELD_B
+000016E1: .byte 4E 49 17 17 ; SELECTOR_NODE selector=0x494E "talk1" next=0x1717
 000016E5: .byte A3 06 00 01 00 00 00 ; MENU hello | talk
 000016EC: .byte A6 5A 05 02 41 80 B5 26 D8 05 62 00 FF FF 06 00 ; TEXT line=0x055A voice=0x02 flags=0x41,0x80 "Hello friend ..."
 000016FC: .byte 00 00 ; continuation
 000016FE: .byte A6 5A 05 03 40 80 4D 01 49 0B 01 00 98 00 D8 05 ; TEXT line=0x055A voice=0x03 flags=0x40,0x80 "You want talk , friend ?"
 0000170E: .byte DF 01 FF FF 01 00 00 00 ; continuation
-00001716: .byte AC 01 00 43 17 ; BAS_BLOCK_END selector=0x0001 "talk" continuation=0x1743
+00001716: .byte AC ; YIELD_B
+00001717: .byte 01 00 43 17 ; SELECTOR_NODE selector=0x0001 "talk" next=0x1743
 0000171B: .byte A3 4E 0B 43 18 66 15 8F 0A 54 49 00 00 ; MENU bye_bye | Izwal | food | planet | reproduction
 00001728: .byte A6 5A 05 04 43 80 41 0B CC 01 49 0B B1 12 98 00 ; TEXT line=0x055A voice=0x04 flags=0x43,0x80 "What you want know , friend ?"
 00001738: .byte D8 05 DF 01 FF FF 01 00 00 00 ; continuation
-00001742: .byte AC 43 18 42 19 ; BAS_BLOCK_END selector=0x1843 "Izwal" continuation=0x1942
+00001742: .byte AC ; YIELD_B
+00001743: .byte 43 18 42 19 ; SELECTOR_NODE selector=0x1843 "Izwal" next=0x1942
 00001747: .byte A3 01 00 4E 0B 61 49 69 49 6F 49 00 00 ; MENU talk | bye_bye | society | ideal | happiness
 00001754: .byte A6 5A 05 02 40 80 43 18 D2 00 C9 05 79 49 E4 0D ; TEXT line=0x055A voice=0x02 flags=0x40,0x80 "Izwal be great pacifist people ..."
 00001764: .byte 62 00 FF FF 43 18 00 00 ; continuation
@@ -498,7 +512,8 @@
 00001923: .byte D8 05 62 00 FF FF 6F 49 00 00 ; continuation
 0000192D: .byte A6 5A 05 03 41 80 4D 01 01 00 16 06 62 00 FF FF ; TEXT line=0x055A voice=0x03 flags=0x41,0x80 "You talk much ..."
 0000193D: .byte 6F 49 00 00 ; continuation
-00001941: .byte AC B1 12 E9 19 ; BAS_BLOCK_END selector=0x12B1 "know" continuation=0x19E9
+00001941: .byte AC ; YIELD_B
+00001942: .byte B1 12 E9 19 ; SELECTOR_NODE selector=0x12B1 "know" next=0x19E9
 00001946: .byte A3 01 00 4E 0B 3C 12 B4 16 00 00 ; MENU talk | bye_bye | Rondo | truth
 00001951: .byte A6 5A 05 03 40 80 41 0B CC 01 49 0B B1 12 98 00 ; TEXT line=0x055A voice=0x03 flags=0x40,0x80 "What you want know , friend ?"
 00001961: .byte D8 05 DF 01 FF FF B1 12 00 00 ; continuation
@@ -513,7 +528,8 @@
 000019CE: .byte B4 16 00 00 ; continuation
 000019D2: .byte A6 5A 05 02 41 80 29 02 78 12 B4 16 98 00 8E 00 ; TEXT line=0x055A voice=0x02 flags=0x41,0x80 "Me say truth , Commander"
 000019E2: .byte FF FF B4 16 00 00 ; continuation
-000019E8: .byte AC 66 15 DD 1A ; BAS_BLOCK_END selector=0x1566 "food" continuation=0x1ADD
+000019E8: .byte AC ; YIELD_B
+000019E9: .byte 66 15 DD 1A ; SELECTOR_NODE selector=0x1566 "food" next=0x1ADD
 000019ED: .byte A3 01 00 4E 0B AC 28 DF 49 00 00 ; MENU talk | bye_bye | murffalos | grass
 000019F8: .byte A6 5A 05 02 40 80 D7 49 37 04 83 07 AC 28 98 00 ; TEXT line=0x055A voice=0x02 flags=0x40,0x80 "Us like eat murffalos , but our planet not have murffalos . Us did eat all ..."
 00001A08: .byte B0 0B 6C 22 8F 0A 84 09 0E 09 AC 28 0F 02 D7 49 ; continuation
@@ -533,7 +549,8 @@
 00001AC4: .byte 00 00 ; continuation
 00001AC6: .byte A6 5A 05 02 41 80 18 4A 84 09 22 4A 80 19 62 00 ; TEXT line=0x055A voice=0x02 flags=0x41,0x80 "Grass not grow here ..."
 00001AD6: .byte FF FF DF 49 00 00 ; continuation
-00001ADC: .byte AC 54 49 AB 1B ; BAS_BLOCK_END selector=0x4954 "reproduction" continuation=0x1BAB
+00001ADC: .byte AC ; YIELD_B
+00001ADD: .byte 54 49 AB 1B ; SELECTOR_NODE selector=0x4954 "reproduction" next=0x1BAB
 00001AE1: .byte A3 01 00 4E 0B D0 04 1E 24 AC 28 00 00 ; MENU talk | bye_bye | love | female | murffalos
 00001AEE: .byte A6 5A 05 02 41 80 29 02 37 04 54 49 62 00 FF FF ; TEXT line=0x055A voice=0x02 flags=0x41,0x80 "Me like reproduction ..."
 00001AFE: .byte 54 49 00 00 ; continuation
@@ -550,7 +567,8 @@
 00001B8E: .byte 5A 4A FF FF AC 28 00 00 ; continuation
 00001B96: .byte A6 5A 05 06 41 80 0A 4A 62 00 0A 4A 62 00 FF FF ; TEXT line=0x055A voice=0x06 flags=0x41,0x80 "Hunger ... Hunger ..."
 00001BA6: .byte AC 28 00 00 ; continuation
-00001BAA: .byte AC 8F 0A 00 00 ; BAS_BLOCK_END selector=0x0A8F "planet" continuation=0x0000
+00001BAA: .byte AC ; YIELD_B
+00001BAB: .byte 8F 0A 00 00 ; SELECTOR_NODE selector=0x0A8F "planet" next=0x0000
 00001BAF: .byte A3 01 00 4E 0B 61 4A CE 21 00 00 ; MENU talk | bye_bye | ecology | stars
 00001BBA: .byte A6 5A 05 02 43 80 B9 0C 2A 24 43 18 8F 0A 62 00 ; TEXT line=0x055A voice=0x02 flags=0x43,0x80 "Corpo nice Izwal planet ..."
 00001BCA: .byte FF FF 8F 0A 00 00 ; continuation
@@ -572,7 +590,8 @@
 00001C95: .byte A6 5A 05 02 41 80 8E 4A 39 1D BA 4A 62 00 FF FF ; TEXT line=0x055A voice=0x02 flags=0x41,0x80 "Stars big science ..."
 00001CA5: .byte CE 21 00 00 ; continuation
 00001CA9: .byte AA ; YIELD
-00001CAA: .byte AC FE 2B 75 1D ; BAS_BLOCK_END selector=0x2BFE "broken_down" continuation=0x1D75
+00001CAA: .byte AC ; YIELD_B
+00001CAB: .byte FE 2B 75 1D ; SELECTOR_NODE selector=0x2BFE "broken_down" next=0x1D75
 00001CAF: .byte A3 4E 0B 4F 03 EF 10 06 00 7E 18 7F 00 C9 05 EE ; MENU bye_bye | on | off | hello | yes | no | great | in | out | more | less
 00001CBF: .byte 03 00 01 F9 04 5B 12 00 00 ; continuation
 00001CC8: .byte A6 8A 02 01 41 80 E5 1B FF FF EF 10 00 00 ; TEXT line=0x028A voice=0x01 flags=0x41,0x80 "ON"
@@ -587,16 +606,19 @@
 00001D46: .byte A6 8A 02 04 41 80 B5 26 FF FF 4E 0B 00 00 ; TEXT line=0x028A voice=0x04 flags=0x41,0x80 "Hello"
 00001D54: .byte A6 8A 02 05 41 80 59 02 0C 29 FF FF 06 00 00 00 ; TEXT line=0x028A voice=0x05 flags=0x41,0x80 "Bye bye..."
 00001D64: .byte A6 8A 02 04 43 80 D1 4A D9 4A FF FF FE 2B 00 00 ; TEXT line=0x028A voice=0x04 flags=0x43,0x80 "bzzz... klk........."
-00001D74: .byte AC 10 30 C3 1D ; BAS_BLOCK_END selector=0x3010 "letar" continuation=0x1DC3
+00001D74: .byte AC ; YIELD_B
+00001D75: .byte 10 30 C3 1D ; SELECTOR_NODE selector=0x3010 "letar" next=0x1DC3
 00001D79: .byte A3 A0 36 ED 12 E6 4A 16 30 00 00 ; MENU dream | sleep | nightmare | snore
 00001D84: .byte A6 8A 02 05 41 80 F0 4A FF FF A0 36 00 00 ; TEXT line=0x028A voice=0x05 flags=0x41,0x80 "AAAAHHH...."
 00001D92: .byte A6 8A 02 04 41 80 FC 4A FF FF ED 12 00 00 ; TEXT line=0x028A voice=0x04 flags=0x41,0x80 "bZZZZZZZZZZ..."
 00001DA0: .byte A6 8A 02 02 41 80 0B 4B 12 4B 18 4B FF FF E6 4A ; TEXT line=0x028A voice=0x02 flags=0x41,0x80 "aaark! oooh! NOOO..."
 00001DB0: .byte 00 00 ; continuation
 00001DB2: .byte A6 8A 02 01 41 80 20 4B 27 4B FF FF 16 30 00 00 ; TEXT line=0x028A voice=0x01 flags=0x41,0x80 "gruhhh pshhhh"
-00001DC2: .byte AC B0 30 D7 1D ; BAS_BLOCK_END selector=0x30B0 "history" continuation=0x1DD7
+00001DC2: .byte AC ; YIELD_B
+00001DC3: .byte B0 30 D7 1D ; SELECTOR_NODE selector=0x30B0 "history" next=0x1DD7
 00001DC7: .byte A3 4E 0B 0F 11 3E 0F 13 11 2E 4B 2E 31 00 00 ; MENU bye_bye | war | Croolis | treasure | battles | mastachok
-00001DD6: .byte AC 0F 11 19 1F ; BAS_BLOCK_END selector=0x110F "war" continuation=0x1F19
+00001DD6: .byte AC ; YIELD_B
+00001DD7: .byte 0F 11 19 1F ; SELECTOR_NODE selector=0x110F "war" next=0x1F19
 00001DDB: .byte A3 4E 0B B0 30 36 4B 00 00 ; MENU bye_bye | history | fight
 00001DE4: .byte A6 8A 02 05 40 80 78 03 E1 0C BC 02 4C 43 0F 11 ; TEXT line=0x028A voice=0x05 flags=0x40,0x80 "That was a nasty war ... It all started the day of the big fight between the Croolis EVISCERATOR and EMASCULATOR..."
 00001DF4: .byte 62 00 09 06 EC 17 C0 10 29 01 D1 12 FE 01 29 01 ; continuation
@@ -620,7 +642,8 @@
 00001EE8: .byte A6 8A 02 03 40 80 95 03 36 4B E1 0C BF 4B 4B 10 ; TEXT line=0x028A voice=0x03 flags=0x40,0x80 "The fight was televised across the universe ... Ahh , I remember it like it was yesterday ..."
 00001EF8: .byte 29 01 0D 3E 62 00 D0 2E 98 00 9A 00 EE 08 1A 01 ; continuation
 00001F08: .byte 37 04 1A 01 E1 0C 00 08 62 00 FF FF 36 4B 00 00 ; continuation
-00001F18: .byte AC 3E 0F A6 20 ; BAS_BLOCK_END selector=0x0F3E "Croolis" continuation=0x20A6
+00001F18: .byte AC ; YIELD_B
+00001F19: .byte 3E 0F A6 20 ; SELECTOR_NODE selector=0x0F3E "Croolis" next=0x20A6
 00001F1D: .byte A3 4E 0B B0 30 C9 4B D0 4B DC 4B 00 00 ; MENU bye_bye | history | terror | eviscerator | emasculator
 00001F2A: .byte A6 8A 02 05 40 80 3E 0F 11 02 E8 4B F2 4B FF FF ; TEXT line=0x028A voice=0x05 flags=0x40,0x80 "Croolis are impresive warriors"
 00001F3A: .byte 3E 0F 00 00 ; continuation
@@ -650,7 +673,8 @@
 00002081: .byte 86 4C EF 00 4B 32 62 00 FF FF DC 4B 00 00 ; continuation
 0000208F: .byte A6 8A 02 02 40 80 9A 00 21 2F B3 00 3E 0F 62 00 ; TEXT line=0x028A voice=0x02 flags=0x40,0x80 "I hate that Croolis ..."
 0000209F: .byte FF FF DC 4B 00 00 ; continuation
-000020A5: .byte AC 13 11 0B 22 ; BAS_BLOCK_END selector=0x1113 "treasure" continuation=0x220B
+000020A5: .byte AC ; YIELD_B
+000020A6: .byte 13 11 0B 22 ; SELECTOR_NODE selector=0x1113 "treasure" next=0x220B
 000020AA: .byte A3 4E 0B B0 30 8B 4C 00 00 ; MENU bye_bye | history | hiding_place
 000020B3: .byte A6 8A 02 02 40 80 4B 4B 82 00 95 03 13 11 0F 02 ; TEXT line=0x028A voice=0x02 flags=0x40,0x80 "Ah ! The treasure . If you could have seen it , Commander ... Beyond imagination ..."
 000020C3: .byte 4D 04 CC 01 C0 28 0E 09 AA 0A 1A 01 98 00 8E 00 ; continuation
@@ -678,7 +702,8 @@
 000021E0: .byte A6 8A 02 05 40 80 95 03 53 4D 3E 0F 5C 4D CF 00 ; TEXT line=0x028A voice=0x05 flags=0x40,0x80 "The defeated Croolis fled to the planet Trashlando , a TERRIBLE place , Commander ..."
 000021F0: .byte 29 01 8F 0A 61 4D 98 00 BC 02 6C 4D A2 04 98 00 ; continuation
 00002200: .byte 8E 00 62 00 FF FF 25 4D 00 00 ; continuation
-0000220A: .byte AC 2E 31 00 00 ; BAS_BLOCK_END selector=0x312E "mastachok" continuation=0x0000
+0000220A: .byte AC ; YIELD_B
+0000220B: .byte 2E 31 00 00 ; SELECTOR_NODE selector=0x312E "mastachok" next=0x0000
 0000220F: .byte A3 4E 0B B0 30 52 0A 00 00 ; MENU bye_bye | history | information
 00002218: .byte A6 8A 02 05 40 80 BC 0A 84 05 38 02 BC 02 75 4D ; TEXT line=0x028A voice=0x05 flags=0x40,0x80 "Mastachok is now a dead planet ... Nothing lives upon its surface ..."
 00002228: .byte 8F 0A 62 00 7A 4D E6 40 82 4D 17 08 87 4D 62 00 ; continuation
@@ -695,7 +720,8 @@
 000022B0: .byte B0 2C 0B 02 00 ; OP_B0 SHARED_BIT_STATE field=0x0B2C mask=0x0002 inverted=false
 000022B5: .byte A6 8A 02 02 01 80 62 00 00 00 ; TEXT line=0x028A voice=0x02 flags=0x01,0x80 "..."
 000022BF: .byte AA ; YIELD
-000022C0: .byte AC C6 3B 04 23 ; BAS_BLOCK_END selector=0x3BC6 "department" continuation=0x2304
+000022C0: .byte AC ; YIELD_B
+000022C1: .byte C6 3B 04 23 ; SELECTOR_NODE selector=0x3BC6 "department" next=0x2304
 000022C5: .byte A3 4E 0B 19 36 66 15 D0 4D D6 4D E0 4D EF 4D F7 ; MENU bye_bye | beauty | food | sport | handywork | pharmaceutical | leisure | hifi
 000022D5: .byte 4D 00 00 ; continuation
 000022D8: .byte A6 92 00 FF 41 80 D1 03 D0 04 6C 22 FC 4D 82 00 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "You'll love our bargains !"
@@ -703,13 +729,16 @@
 000022EE: .byte A6 92 00 FF 48 80 59 02 5D 02 62 00 FF FF 4E 0B ; TEXT line=0x0092 voice=0xFF flags=0x48,0x80 "Bye bye ..."
 000022FE: .byte 00 00 ; continuation
 00002300: .byte C9 CC 00 ; RECORD_CLEAR record=0x00CC
-00002303: .byte AC 19 36 20 23 ; BAS_BLOCK_END selector=0x3619 "beauty" continuation=0x2320
+00002303: .byte AC ; YIELD_B
+00002304: .byte 19 36 20 23 ; SELECTOR_NODE selector=0x3619 "beauty" next=0x2320
 00002308: .byte A3 C6 3B CC 0A 05 4E 0D 4E 00 00 ; MENU department | perfume | necktie | jewel
 00002313: .byte A6 92 00 FF 01 80 13 4E 5F 01 00 00 ; TEXT line=0x0092 voice=0xFF flags=0x01,0x80 "BEAUTY :"
-0000231F: .byte AC CC 0A 42 23 ; BAS_BLOCK_END selector=0x0ACC "perfume" continuation=0x2342
+0000231F: .byte AC ; YIELD_B
+00002320: .byte CC 0A 42 23 ; SELECTOR_NODE selector=0x0ACC "perfume" next=0x2342
 00002324: .byte A3 19 36 1A 4E 1F 4E 24 4E 2E 4E 37 4E 00 00 ; MENU beauty | eden | dune | kroolence | motoroil | turbulence
 00002333: .byte A6 92 00 FF 01 80 62 33 42 4E 5F 01 00 00 ; TEXT line=0x0092 voice=0xFF flags=0x01,0x80 "PERFUME DEPARTMENT :"
-00002341: .byte AC 1A 4E A5 23 ; BAS_BLOCK_END selector=0x4E1A "eden" continuation=0x23A5
+00002341: .byte AC ; YIELD_B
+00002342: .byte 1A 4E A5 23 ; SELECTOR_NODE selector=0x4E1A "eden" next=0x23A5
 00002346: .byte A3 C6 3B 98 24 CC 0A 00 00 ; MENU department | buy | perfume
 0000234F: .byte A6 92 00 FF 41 80 4D 4E BC 02 53 4E CC 0A 92 02 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Eden, a heady perfume for fleshy young females . \"Do not swallow\" : 1 CRED"
 0000235F: .byte 59 4E 60 4E 66 4E 0F 02 6E 4E 84 09 72 4E 5F 01 ; continuation
@@ -719,7 +748,8 @@
 0000238F: .byte CD CC 00 1C 10 28 00 ; RECORD_TRIPLE record=0x00CC first=0x101C second=0x0028 inverted=false
 00002396: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 0000239D: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-000023A4: .byte AC 1F 4E 04 24 ; BAS_BLOCK_END selector=0x4E1F "dune" continuation=0x2404
+000023A4: .byte AC ; YIELD_B
+000023A5: .byte 1F 4E 04 24 ; SELECTOR_NODE selector=0x4E1F "dune" next=0x2404
 000023A9: .byte A3 C6 3B 98 24 CC 0A 00 00 ; MENU department | buy | perfume
 000023B2: .byte A6 92 00 FF 41 80 7B 4E 98 00 29 01 80 4E FE 01 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Dune , the scent of hot passion . \"Promotes reproduction\" : 1 CRED"
 000023C2: .byte C9 14 86 4E 0F 02 8E 4E 98 4E 5F 01 DB 32 DA 0B ; continuation
@@ -729,7 +759,8 @@
 000023EE: .byte CD CC 00 1C 10 28 00 ; RECORD_TRIPLE record=0x00CC first=0x101C second=0x0028 inverted=false
 000023F5: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 000023FC: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-00002403: .byte AC 24 4E 6B 24 ; BAS_BLOCK_END selector=0x4E24 "kroolence" continuation=0x246B
+00002403: .byte AC ; YIELD_B
+00002404: .byte 24 4E 6B 24 ; SELECTOR_NODE selector=0x4E24 "kroolence" next=0x246B
 00002408: .byte A3 C6 3B 98 24 CC 0A 00 00 ; MENU department | buy | perfume
 00002411: .byte A6 92 00 FF 41 80 A6 4E 92 02 B1 4E 2B 04 B7 4E ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Kroolence, for males with armpits . \"Watch the babes home in on your armpits\" : 1 CRED"
 00002421: .byte 0F 02 BF 4E 29 01 C6 4E CC 4E EE 03 4F 03 63 04 ; continuation
@@ -739,7 +770,8 @@
 00002455: .byte CD CC 00 1C 10 28 00 ; RECORD_TRIPLE record=0x00CC first=0x101C second=0x0028 inverted=false
 0000245C: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 00002463: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-0000246A: .byte AC 2E 4E CE 24 ; BAS_BLOCK_END selector=0x4E2E "motoroil" continuation=0x24CE
+0000246A: .byte AC ; YIELD_B
+0000246B: .byte 2E 4E CE 24 ; SELECTOR_NODE selector=0x4E2E "motoroil" next=0x24CE
 0000246F: .byte A3 C6 3B 98 24 CC 0A 00 00 ; MENU department | buy | perfume
 00002478: .byte A6 92 00 FF 41 80 DA 4E 98 00 CC 0A 92 02 0A 2C ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Motoroil , perfume for droid . \"Be an exhaust nozzle Romeo \" : 1 CRED"
 00002488: .byte 0F 02 E3 4E 37 0D E7 4E EF 4E C4 33 F6 4E 5F 01 ; continuation
@@ -749,7 +781,8 @@
 000024B8: .byte CD CC 00 1C 10 28 00 ; RECORD_TRIPLE record=0x00CC first=0x101C second=0x0028 inverted=false
 000024BF: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 000024C6: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-000024CD: .byte AC 37 4E 2B 25 ; BAS_BLOCK_END selector=0x4E37 "turbulence" continuation=0x252B
+000024CD: .byte AC ; YIELD_B
+000024CE: .byte 37 4E 2B 25 ; SELECTOR_NODE selector=0x4E37 "turbulence" next=0x252B
 000024D2: .byte A3 C6 3B 98 24 CC 0A 00 00 ; MENU department | buy | perfume
 000024DB: .byte A6 92 00 FF 41 80 F8 4E 0F 02 03 4F 11 4F 19 4F ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Turbulence . Gravitational vertigo guaranteed . \"A real head-spinner\" : 1 CRED"
 000024EB: .byte 0F 02 24 4F 13 29 27 4F 5F 01 DB 32 DA 0B FF FF ; continuation
@@ -759,11 +792,13 @@
 00002515: .byte CD CC 00 1C 10 28 00 ; RECORD_TRIPLE record=0x00CC first=0x101C second=0x0028 inverted=false
 0000251C: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 00002523: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-0000252A: .byte AC 05 4E 4D 25 ; BAS_BLOCK_END selector=0x4E05 "necktie" continuation=0x254D
+0000252A: .byte AC ; YIELD_B
+0000252B: .byte 05 4E 4D 25 ; SELECTOR_NODE selector=0x4E05 "necktie" next=0x254D
 0000252F: .byte A3 19 36 51 2F 67 25 AC 47 00 00 ; MENU beauty | hide | hair | synthetic
 0000253A: .byte A6 92 00 FF 41 80 35 4F 42 4E 5F 01 FF FF 05 4E ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "NECKTIE DEPARTMENT :"
 0000254A: .byte 00 00 ; continuation
-0000254C: .byte AC 51 2F B0 25 ; BAS_BLOCK_END selector=0x2F51 "hide" continuation=0x25B0
+0000254C: .byte AC ; YIELD_B
+0000254D: .byte 51 2F B0 25 ; SELECTOR_NODE selector=0x2F51 "hide" next=0x25B0
 00002551: .byte A3 C6 3B 98 24 05 4E 00 00 ; MENU department | buy | necktie
 0000255A: .byte A6 92 00 FF 41 80 3D 4F 51 2F D1 29 0F 02 46 4F ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Murffalo hide tie . Embroidered with tentacles . So right for you : 1 CRED"
 0000256A: .byte 2B 04 52 4F 0F 02 D0 10 3C 15 92 02 CC 01 5F 01 ; continuation
@@ -773,7 +808,8 @@
 0000259A: .byte CD CC 00 7C 10 28 00 ; RECORD_TRIPLE record=0x00CC first=0x107C second=0x0028 inverted=false
 000025A1: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 000025A8: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-000025AF: .byte AC 67 25 01 26 ; BAS_BLOCK_END selector=0x2567 "hair" continuation=0x2601
+000025AF: .byte AC ; YIELD_B
+000025B0: .byte 67 25 01 26 ; SELECTOR_NODE selector=0x2567 "hair" next=0x2601
 000025B4: .byte A3 C6 3B 98 24 05 4E 00 00 ; MENU department | buy | necktie
 000025BD: .byte A6 92 00 FF 41 80 5C 4F 67 25 D1 29 5F 01 DB 32 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Tromp hair tie : 1 CRED"
 000025CD: .byte DA 0B FF FF 67 25 00 00 ; continuation
@@ -782,7 +818,8 @@
 000025EB: .byte CD CC 00 7C 10 28 00 ; RECORD_TRIPLE record=0x00CC first=0x107C second=0x0028 inverted=false
 000025F2: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 000025F9: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-00002600: .byte AC AC 47 60 26 ; BAS_BLOCK_END selector=0x47AC "synthetic" continuation=0x2660
+00002600: .byte AC ; YIELD_B
+00002601: .byte AC 47 60 26 ; SELECTOR_NODE selector=0x47AC "synthetic" next=0x2660
 00002605: .byte A3 C6 3B 98 24 05 4E 00 00 ; MENU department | buy | necktie
 0000260E: .byte A6 92 00 FF 41 80 62 4F AC 47 D1 29 98 00 2B 04 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Fully synthetic tie , with integrated altimeter , geiger counter : 4 CREDS"
 0000261E: .byte 68 4F 73 4F 98 00 7D 4F 84 4F 5F 01 87 0B A6 3A ; continuation
@@ -792,13 +829,16 @@
 0000264A: .byte CD CC 00 7C 10 28 00 ; RECORD_TRIPLE record=0x00CC first=0x107C second=0x0028 inverted=false
 00002651: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 00002658: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-0000265F: .byte AC 8C 4F 80 26 ; BAS_BLOCK_END selector=0x4F8C "make_up" continuation=0x2680
+0000265F: .byte AC ; YIELD_B
+00002660: .byte 8C 4F 80 26 ; SELECTOR_NODE selector=0x4F8C "make_up" next=0x2680
 00002664: .byte A3 C6 3B 94 4F DB 06 00 00 ; MENU department | rouge | cream
 0000266D: .byte A6 92 00 FF 41 80 9A 4F 42 4E 5F 01 FF FF 8C 4F ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "COSMETICS DEPARTMENT :"
 0000267D: .byte 00 00 ; continuation
-0000267F: .byte AC 94 4F 94 26 ; BAS_BLOCK_END selector=0x4F94 "rouge" continuation=0x2694
+0000267F: .byte AC ; YIELD_B
+00002680: .byte 94 4F 94 26 ; SELECTOR_NODE selector=0x4F94 "rouge" next=0x2694
 00002684: .byte A3 C6 3B 19 36 A4 4F 57 08 2A 0C DA 49 00 00 ; MENU department | beauty | crimson | green | black | blue
-00002693: .byte AC A4 4F E5 26 ; BAS_BLOCK_END selector=0x4FA4 "crimson" continuation=0x26E5
+00002693: .byte AC ; YIELD_B
+00002694: .byte A4 4F E5 26 ; SELECTOR_NODE selector=0x4FA4 "crimson" next=0x26E5
 00002698: .byte A3 98 24 94 4F 00 00 ; MENU buy | rouge
 0000269F: .byte A6 92 00 FF 41 80 AC 4F 94 4F 92 02 B4 4F BE 4F ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Crimson rouge for non-metal lips: 1 CRED"
 000026AF: .byte DB 32 DA 0B FF FF A4 4F 00 00 ; continuation
@@ -807,7 +847,8 @@
 000026CF: .byte CD CC 00 94 10 28 00 ; RECORD_TRIPLE record=0x00CC first=0x1094 second=0x0028 inverted=false
 000026D6: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 000026DD: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-000026E4: .byte AC 57 08 40 27 ; BAS_BLOCK_END selector=0x0857 "green" continuation=0x2740
+000026E4: .byte AC ; YIELD_B
+000026E5: .byte 57 08 40 27 ; SELECTOR_NODE selector=0x0857 "green" next=0x2740
 000026E9: .byte A3 98 24 94 4F 00 00 ; MENU buy | rouge
 000026F0: .byte A6 92 00 FF 41 80 C4 4F 57 08 94 4F 0F 02 66 38 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Fluorescent green rouge . For tentacles and suction caps : 1 CRED"
 00002700: .byte 52 4F EF 00 D0 4F D8 4F 5F 01 DB 32 DA 0B FF FF ; continuation
@@ -817,7 +858,8 @@
 0000272A: .byte CD CC 00 94 10 28 00 ; RECORD_TRIPLE record=0x00CC first=0x1094 second=0x0028 inverted=false
 00002731: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 00002738: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-0000273F: .byte AC 2A 0C 9D 27 ; BAS_BLOCK_END selector=0x0C2A "black" continuation=0x279D
+0000273F: .byte AC ; YIELD_B
+00002740: .byte 2A 0C 9D 27 ; SELECTOR_NODE selector=0x0C2A "black" next=0x279D
 00002744: .byte A3 98 24 94 4F 00 00 ; MENU buy | rouge
 0000274B: .byte A6 92 00 FF 41 80 F7 48 94 4F 98 00 92 02 29 01 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Black rouge , for the ultimate in discretion ... not : 1 CRED"
 0000275B: .byte 36 4C EE 03 DD 4F 62 00 84 09 5F 01 DB 32 DA 0B ; continuation
@@ -827,7 +869,8 @@
 00002787: .byte CD CC 00 94 10 28 00 ; RECORD_TRIPLE record=0x00CC first=0x1094 second=0x0028 inverted=false
 0000278E: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 00002795: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-0000279C: .byte AC DA 49 02 28 ; BAS_BLOCK_END selector=0x49DA "blue" continuation=0x2802
+0000279C: .byte AC ; YIELD_B
+0000279D: .byte DA 49 02 28 ; SELECTOR_NODE selector=0x49DA "blue" next=0x2802
 000027A1: .byte A3 98 24 94 4F 00 00 ; MENU buy | rouge
 000027A8: .byte A6 92 00 FF 41 80 45 45 DA 49 94 4F 0F 02 E8 4F ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Space blue rouge . In space , somebody can hear you scream at last : 1 CRED"
 000027B8: .byte 60 20 98 00 6E 43 6E 03 02 35 CC 01 EB 4F C8 02 ; continuation
@@ -837,11 +880,13 @@
 000027EC: .byte CD CC 00 94 10 28 00 ; RECORD_TRIPLE record=0x00CC first=0x1094 second=0x0028 inverted=false
 000027F3: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 000027FA: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-00002801: .byte AC DB 06 24 28 ; BAS_BLOCK_END selector=0x06DB "cream" continuation=0x2824
+00002801: .byte AC ; YIELD_B
+00002802: .byte DB 06 24 28 ; SELECTOR_NODE selector=0x06DB "cream" next=0x2824
 00002806: .byte A3 C6 3B F2 4F FD 4F 05 50 00 00 ; MENU department | painkiller | musclor | meteor
 00002811: .byte A6 92 00 FF 41 80 0C 50 14 50 5F 01 FF FF DB 06 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "VARIOUS OINTMENTS :"
 00002821: .byte 00 00 ; continuation
-00002823: .byte AC F2 4F 81 28 ; BAS_BLOCK_END selector=0x4FF2 "painkiller" continuation=0x2881
+00002823: .byte AC ; YIELD_B
+00002824: .byte F2 4F 81 28 ; SELECTOR_NODE selector=0x4FF2 "painkiller" next=0x2881
 00002828: .byte A3 98 24 DB 06 00 00 ; MENU buy | cream
 0000282F: .byte A6 92 00 FF 41 80 1E 50 DB 06 0F 02 29 50 CF 00 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Painkiller cream . Apply to all amputation wounds during combat : 1 CRED"
 0000283F: .byte EC 17 2F 50 3A 50 0E 4D F7 2E 5F 01 DB 32 DA 0B ; continuation
@@ -851,7 +896,8 @@
 0000286B: .byte CD CC 00 C4 10 28 00 ; RECORD_TRIPLE record=0x00CC first=0x10C4 second=0x0028 inverted=false
 00002872: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 00002879: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-00002880: .byte AC FD 4F E0 28 ; BAS_BLOCK_END selector=0x4FFD "musclor" continuation=0x28E0
+00002880: .byte AC ; YIELD_B
+00002881: .byte FD 4F E0 28 ; SELECTOR_NODE selector=0x4FFD "musclor" next=0x28E0
 00002885: .byte A3 98 24 DB 06 00 00 ; MENU buy | cream
 0000288C: .byte A6 92 00 FF 41 80 41 50 49 50 0F 02 66 38 4F 50 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "MUSCLOR salve . For gleaming pectorals . It's half the battle : 1 CRED"
 0000289C: .byte 58 50 0F 02 3F 01 08 3E 29 01 25 4D 5F 01 DB 32 ; continuation
@@ -861,7 +907,8 @@
 000028CA: .byte CD CC 00 C4 10 28 00 ; RECORD_TRIPLE record=0x00CC first=0x10C4 second=0x0028 inverted=false
 000028D1: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 000028D8: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-000028DF: .byte AC 05 50 39 29 ; BAS_BLOCK_END selector=0x5005 "meteor" continuation=0x2939
+000028DF: .byte AC ; YIELD_B
+000028E0: .byte 05 50 39 29 ; SELECTOR_NODE selector=0x5005 "meteor" next=0x2939
 000028E4: .byte A3 98 24 DB 06 00 00 ; MENU buy | cream
 000028EB: .byte A6 92 00 FF 41 80 62 50 22 34 0F 02 B8 29 FA 39 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "METEOR jelly . Say goodbye to meteor bumps : 1 CRED"
 000028FB: .byte CF 00 05 50 69 50 5F 01 DB 32 DA 0B FF FF 05 50 ; continuation
@@ -871,11 +918,13 @@
 00002923: .byte CD CC 00 C4 10 28 00 ; RECORD_TRIPLE record=0x00CC first=0x10C4 second=0x0028 inverted=false
 0000292A: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 00002931: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-00002938: .byte AC 0D 4E 59 29 ; BAS_BLOCK_END selector=0x4E0D "jewel" continuation=0x2959
+00002938: .byte AC ; YIELD_B
+00002939: .byte 0D 4E 59 29 ; SELECTOR_NODE selector=0x4E0D "jewel" next=0x2959
 0000293D: .byte A3 C6 3B 6F 50 78 50 00 00 ; MENU department | necklace | bracelet
 00002946: .byte A6 92 00 FF 41 80 81 50 42 4E 5F 01 FF FF 0D 4E ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "JEWELRY DEPARTMENT :"
 00002956: .byte 00 00 ; continuation
-00002958: .byte AC 6F 50 C6 29 ; BAS_BLOCK_END selector=0x506F "necklace" continuation=0x29C6
+00002958: .byte AC ; YIELD_B
+00002959: .byte 6F 50 C6 29 ; SELECTOR_NODE selector=0x506F "necklace" next=0x29C6
 0000295D: .byte A3 98 24 0D 4E 00 00 ; MENU buy | jewel
 00002964: .byte A6 92 00 FF 41 80 89 50 6F 50 0F 02 8F 50 92 02 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Pearl necklace . suitable for necks situated between head and body . Other cases , see sales personnel : 1 CRED"
 00002974: .byte 98 50 9E 50 F7 45 83 44 EF 00 84 37 0F 02 A7 50 ; continuation
@@ -886,7 +935,8 @@
 000029B0: .byte CD CC 00 AC 10 28 00 ; RECORD_TRIPLE record=0x00CC first=0x10AC second=0x0028 inverted=false
 000029B7: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 000029BE: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-000029C5: .byte AC 78 50 27 2A ; BAS_BLOCK_END selector=0x5078 "bracelet" continuation=0x2A27
+000029C5: .byte AC ; YIELD_B
+000029C6: .byte 78 50 27 2A ; SELECTOR_NODE selector=0x5078 "bracelet" next=0x2A27
 000029CA: .byte A3 98 24 0D 4E 00 00 ; MENU buy | jewel
 000029D1: .byte A6 92 00 FF 41 80 C3 50 EE 03 CC 50 0F 02 D8 50 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Bracelet in elastosteel . Fits all body parts . Amuse your guests : 1 CRED"
 000029E1: .byte EC 17 84 37 DD 50 0F 02 E3 50 63 04 E9 50 5F 01 ; continuation
@@ -896,16 +946,19 @@
 00002A11: .byte CD CC 00 AC 10 28 00 ; RECORD_TRIPLE record=0x00CC first=0x10AC second=0x0028 inverted=false
 00002A18: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 00002A1F: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-00002A26: .byte AC 66 15 45 2A ; BAS_BLOCK_END selector=0x1566 "food" continuation=0x2A45
+00002A26: .byte AC ; YIELD_B
+00002A27: .byte 66 15 45 2A ; SELECTOR_NODE selector=0x1566 "food" next=0x2A45
 00002A2B: .byte A3 C6 3B 17 0D 00 00 ; MENU department | murffalo
 00002A32: .byte A6 92 00 FF 41 80 F0 50 42 4E 5F 01 FF FF 66 15 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "FOOD DEPARTMENT :"
 00002A42: .byte 00 00 ; continuation
-00002A44: .byte AC 17 0D 6D 2A ; BAS_BLOCK_END selector=0x0D17 "murffalo" continuation=0x2A6D
+00002A44: .byte AC ; YIELD_B
+00002A45: .byte 17 0D 6D 2A ; SELECTOR_NODE selector=0x0D17 "murffalo" next=0x2A6D
 00002A49: .byte A3 C6 3B F5 50 FB 50 01 51 06 51 0A 51 13 51 00 ; MENU department | joint | steak | horn | fur | sausages | intestines
 00002A59: .byte 00 ; continuation
 00002A5A: .byte A6 92 00 FF 41 80 7C 06 42 4E 5F 01 FF FF 17 0D ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "MURFFALO DEPARTMENT :"
 00002A6A: .byte 00 00 ; continuation
-00002A6C: .byte AC F5 50 C4 2A ; BAS_BLOCK_END selector=0x50F5 "joint" continuation=0x2AC4
+00002A6C: .byte AC ; YIELD_B
+00002A6D: .byte F5 50 C4 2A ; SELECTOR_NODE selector=0x50F5 "joint" next=0x2AC4
 00002A71: .byte A3 98 24 17 0D 00 00 ; MENU buy | murffalo
 00002A78: .byte A6 92 00 FF 41 80 1E 51 FE 01 17 0D 0F 02 24 51 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Joint of murffalo . tender and spicy : 1 CRED"
 00002A88: .byte EF 00 2B 51 5F 01 DB 32 DA 0B FF FF F5 50 00 00 ; continuation
@@ -914,7 +967,8 @@
 00002AAE: .byte CD CC 00 64 10 28 00 ; RECORD_TRIPLE record=0x00CC first=0x1064 second=0x0028 inverted=false
 00002AB5: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 00002ABC: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-00002AC3: .byte AC FB 50 1B 2B ; BAS_BLOCK_END selector=0x50FB "steak" continuation=0x2B1B
+00002AC3: .byte AC ; YIELD_B
+00002AC4: .byte FB 50 1B 2B ; SELECTOR_NODE selector=0x50FB "steak" next=0x2B1B
 00002AC8: .byte A3 98 24 17 0D 00 00 ; MENU buy | murffalo
 00002ACF: .byte A6 92 00 FF 41 80 3D 4F 31 51 38 51 C6 12 29 01 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Murffalo steak. Tenderized by the Bronkos of Moskito: 1 CRED"
 00002ADF: .byte 43 51 FE 01 4B 51 DB 32 DA 0B FF FF FB 50 00 00 ; continuation
@@ -923,7 +977,8 @@
 00002B05: .byte CD CC 00 64 10 28 00 ; RECORD_TRIPLE record=0x00CC first=0x1064 second=0x0028 inverted=false
 00002B0C: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 00002B13: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-00002B1A: .byte AC 01 51 76 2B ; BAS_BLOCK_END selector=0x5101 "horn" continuation=0x2B76
+00002B1A: .byte AC ; YIELD_B
+00002B1B: .byte 01 51 76 2B ; SELECTOR_NODE selector=0x5101 "horn" next=0x2B76
 00002B1F: .byte A3 98 24 17 0D 00 00 ; MENU buy | murffalo
 00002B26: .byte A6 92 00 FF 41 80 54 51 17 0D 01 51 0F 02 66 38 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Powdered murffalo horn . For males with a mission : 1 CRED"
 00002B36: .byte B1 4E 2B 04 BC 02 86 25 5F 01 DB 32 DA 0B FF FF ; continuation
@@ -933,7 +988,8 @@
 00002B60: .byte CD CC 00 64 10 28 00 ; RECORD_TRIPLE record=0x00CC first=0x1064 second=0x0028 inverted=false
 00002B67: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 00002B6E: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-00002B75: .byte AC 06 51 D5 2B ; BAS_BLOCK_END selector=0x5106 "fur" continuation=0x2BD5
+00002B75: .byte AC ; YIELD_B
+00002B76: .byte 06 51 D5 2B ; SELECTOR_NODE selector=0x5106 "fur" next=0x2BD5
 00002B7A: .byte A3 98 24 17 0D 00 00 ; MENU buy | murffalo
 00002B81: .byte A6 92 00 FF 41 80 3D 4F 06 51 0F 02 5D 51 0F 02 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Murffalo fur . Deodorized . Your neighbors will die of envy : 1 CRED"
 00002B91: .byte 42 15 68 51 D2 0C CF 26 FE 01 72 51 5F 01 DB 32 ; continuation
@@ -943,7 +999,8 @@
 00002BBF: .byte CD CC 00 64 10 28 00 ; RECORD_TRIPLE record=0x00CC first=0x1064 second=0x0028 inverted=false
 00002BC6: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 00002BCD: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-00002BD4: .byte AC 0A 51 2E 2C ; BAS_BLOCK_END selector=0x510A "sausages" continuation=0x2C2E
+00002BD4: .byte AC ; YIELD_B
+00002BD5: .byte 0A 51 2E 2C ; SELECTOR_NODE selector=0x510A "sausages" next=0x2C2E
 00002BD9: .byte A3 98 24 17 0D 00 00 ; MENU buy | murffalo
 00002BE0: .byte A6 92 00 FF 41 80 3D 4F 0A 51 0F 02 61 2E 92 02 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Murffalo sausages . Great for those barbecue moments : 1 CRED"
 00002BF0: .byte FD 1D 77 51 80 51 5F 01 DB 32 DA 0B FF FF 0A 51 ; continuation
@@ -953,7 +1010,8 @@
 00002C18: .byte CD CC 00 64 10 28 00 ; RECORD_TRIPLE record=0x00CC first=0x1064 second=0x0028 inverted=false
 00002C1F: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 00002C26: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-00002C2D: .byte AC 13 51 8B 2C ; BAS_BLOCK_END selector=0x5113 "intestines" continuation=0x2C8B
+00002C2D: .byte AC ; YIELD_B
+00002C2E: .byte 13 51 8B 2C ; SELECTOR_NODE selector=0x5113 "intestines" next=0x2C8B
 00002C32: .byte A3 98 24 17 0D 00 00 ; MENU buy | murffalo
 00002C39: .byte A6 92 00 FF 41 80 3D 4F 13 51 0F 02 88 51 29 01 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Murffalo intestines . Read the future and forecast the weather : 1 CRED"
 00002C49: .byte 8D 51 EF 00 94 51 29 01 9D 51 5F 01 DB 32 DA 0B ; continuation
@@ -963,11 +1021,13 @@
 00002C75: .byte CD CC 00 64 10 28 00 ; RECORD_TRIPLE record=0x00CC first=0x1064 second=0x0028 inverted=false
 00002C7C: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 00002C83: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-00002C8A: .byte AC D0 4D AD 2C ; BAS_BLOCK_END selector=0x4DD0 "sport" continuation=0x2CAD
+00002C8A: .byte AC ; YIELD_B
+00002C8B: .byte D0 4D AD 2C ; SELECTOR_NODE selector=0x4DD0 "sport" next=0x2CAD
 00002C8F: .byte A3 C6 3B 33 43 A5 51 B3 51 00 00 ; MENU department | ball | boxing_gloves | shells
 00002C9A: .byte A6 92 00 FF 41 80 BA 51 42 4E 5F 01 FF FF D0 4D ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "SPORT DEPARTMENT :"
 00002CAA: .byte 00 00 ; continuation
-00002CAC: .byte AC 33 43 0E 2D ; BAS_BLOCK_END selector=0x4333 "ball" continuation=0x2D0E
+00002CAC: .byte AC ; YIELD_B
+00002CAD: .byte 33 43 0E 2D ; SELECTOR_NODE selector=0x4333 "ball" next=0x2D0E
 00002CB1: .byte A3 98 24 D0 4D 00 00 ; MENU buy | sport
 00002CB8: .byte A6 92 00 FF 41 80 C0 51 0F 02 C5 51 EE 03 CB 51 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Ball . Comes in steel , lead , magnetic or gravitational iron : 1 CRED"
 00002CC8: .byte 98 00 D1 51 98 00 D6 51 4A 14 DF 51 ED 51 5F 01 ; continuation
@@ -977,7 +1037,8 @@
 00002CF8: .byte CD CC 00 DC 10 28 00 ; RECORD_TRIPLE record=0x00CC first=0x10DC second=0x0028 inverted=false
 00002CFF: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 00002D06: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-00002D0D: .byte AC A5 51 73 2D ; BAS_BLOCK_END selector=0x51A5 "boxing_gloves" continuation=0x2D73
+00002D0D: .byte AC ; YIELD_B
+00002D0E: .byte A5 51 73 2D ; SELECTOR_NODE selector=0x51A5 "boxing_gloves" next=0x2D73
 00002D12: .byte A3 98 24 D0 4D 00 00 ; MENU buy | sport
 00002D19: .byte A6 92 00 FF 41 80 3D 4F 51 2F F2 51 F9 51 0F 02 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Murffalo hide boxing gloves . Deodorized . Your opponents aren't going to thank you : 1 CRED"
 00002D29: .byte 5D 51 0F 02 42 15 00 52 0A 52 81 14 CF 00 71 2E ; continuation
@@ -987,7 +1048,8 @@
 00002D5D: .byte CD CC 00 F4 10 28 00 ; RECORD_TRIPLE record=0x00CC first=0x10F4 second=0x0028 inverted=false
 00002D64: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 00002D6B: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-00002D72: .byte AC B3 51 E8 2D ; BAS_BLOCK_END selector=0x51B3 "shells" continuation=0x2DE8
+00002D72: .byte AC ; YIELD_B
+00002D73: .byte B3 51 E8 2D ; SELECTOR_NODE selector=0x51B3 "shells" next=0x2DE8
 00002D77: .byte A3 98 24 D0 4D 00 00 ; MENU buy | sport
 00002D7E: .byte A6 92 00 FF 41 80 11 52 0F 02 95 03 A3 49 7D 03 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Shells . The perfect way to protect the family jewels . Pairs , three of a kind , full house or poker : 1 CRED"
 00002D8E: .byte CF 00 18 52 29 01 DD 11 20 52 0F 02 27 52 98 00 ; continuation
@@ -998,13 +1060,16 @@
 00002DD2: .byte CD CC 00 0C 11 28 00 ; RECORD_TRIPLE record=0x00CC first=0x110C second=0x0028 inverted=false
 00002DD9: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 00002DE0: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-00002DE7: .byte AC D6 4D 06 2E ; BAS_BLOCK_END selector=0x4DD6 "handywork" continuation=0x2E06
+00002DE7: .byte AC ; YIELD_B
+00002DE8: .byte D6 4D 06 2E ; SELECTOR_NODE selector=0x4DD6 "handywork" next=0x2E06
 00002DEC: .byte A3 C6 3B 39 52 3F 52 00 00 ; MENU department | tools | robotics
 00002DF5: .byte A6 92 00 FF 41 80 48 52 42 4E FF FF D6 4D 00 00 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "HANDYWORK DEPARTMENT"
-00002E05: .byte AC 39 52 26 2E ; BAS_BLOCK_END selector=0x5239 "tools" continuation=0x2E26
+00002E05: .byte AC ; YIELD_B
+00002E06: .byte 39 52 26 2E ; SELECTOR_NODE selector=0x5239 "tools" next=0x2E26
 00002E0A: .byte A3 C6 3B 17 43 52 52 57 52 00 00 ; MENU department | screwdriver | saws | drills
 00002E15: .byte A6 92 00 FF 41 80 5E 52 42 4E FF FF 39 52 00 00 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "TOOL DEPARTMENT"
-00002E25: .byte AC 17 43 85 2E ; BAS_BLOCK_END selector=0x4317 "screwdriver" continuation=0x2E85
+00002E25: .byte AC ; YIELD_B
+00002E26: .byte 17 43 85 2E ; SELECTOR_NODE selector=0x4317 "screwdriver" next=0x2E85
 00002E2A: .byte A3 98 24 D6 4D 00 00 ; MENU buy | handywork
 00002E31: .byte A6 92 00 FF 41 80 63 52 0F 02 6F 52 76 52 92 02 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Screwdriver . Remote control for doing outdoor jobs from your armchair : 1 CRED"
 00002E41: .byte 6D 31 7E 52 86 52 19 05 63 04 8B 52 5F 01 DB 32 ; continuation
@@ -1014,7 +1079,8 @@
 00002E6F: .byte CD CC 00 24 11 28 00 ; RECORD_TRIPLE record=0x00CC first=0x1124 second=0x0028 inverted=false
 00002E76: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 00002E7D: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-00002E84: .byte AC 52 52 E0 2E ; BAS_BLOCK_END selector=0x5252 "saws" continuation=0x2EE0
+00002E84: .byte AC ; YIELD_B
+00002E85: .byte 52 52 E0 2E ; SELECTOR_NODE selector=0x5252 "saws" next=0x2EE0
 00002E89: .byte A3 98 24 D6 4D 00 00 ; MENU buy | handywork
 00002E90: .byte A6 92 00 FF 41 80 94 52 A0 52 AB 43 0F 02 A4 52 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Unbreakable ray saw . Saws through anything except itself : 1 CRED"
 00002EA0: .byte AA 05 65 12 A9 52 62 17 5F 01 DB 32 DA 0B FF FF ; continuation
@@ -1024,7 +1090,8 @@
 00002ECA: .byte CD CC 00 24 11 28 00 ; RECORD_TRIPLE record=0x00CC first=0x1124 second=0x0028 inverted=false
 00002ED1: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 00002ED8: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-00002EDF: .byte AC 57 52 33 2F ; BAS_BLOCK_END selector=0x5257 "drills" continuation=0x2F33
+00002EDF: .byte AC ; YIELD_B
+00002EE0: .byte 57 52 33 2F ; SELECTOR_NODE selector=0x5257 "drills" next=0x2F33
 00002EE4: .byte A3 98 24 D6 4D 00 00 ; MENU buy | handywork
 00002EEB: .byte A6 92 00 FF 41 80 B0 52 B8 52 0F 02 BE 52 C9 52 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Suction drill . Guaranteed drool-free : 1 CRED"
 00002EFB: .byte 5F 01 DB 32 DA 0B FF FF 57 52 00 00 ; continuation
@@ -1033,10 +1100,12 @@
 00002F1D: .byte CD CC 00 24 11 28 00 ; RECORD_TRIPLE record=0x00CC first=0x1124 second=0x0028 inverted=false
 00002F24: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 00002F2B: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-00002F32: .byte AC 3F 52 4F 2F ; BAS_BLOCK_END selector=0x523F "robotics" continuation=0x2F4F
+00002F32: .byte AC ; YIELD_B
+00002F33: .byte 3F 52 4F 2F ; SELECTOR_NODE selector=0x523F "robotics" next=0x2F4F
 00002F37: .byte A3 C6 3B 8A 10 00 00 ; MENU department | batteries
 00002F3E: .byte A6 92 00 FF 41 80 D4 52 42 4E FF FF 3F 52 00 00 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "ROBOTICS DEPARTMENT"
-00002F4E: .byte AC 8A 10 B2 2F ; BAS_BLOCK_END selector=0x108A "batteries" continuation=0x2FB2
+00002F4E: .byte AC ; YIELD_B
+00002F4F: .byte 8A 10 B2 2F ; SELECTOR_NODE selector=0x108A "batteries" next=0x2FB2
 00002F53: .byte A3 C6 3B D6 4D 98 24 00 00 ; MENU department | handywork | buy
 00002F5C: .byte A6 92 00 FF 41 80 DD 52 0F 02 95 03 A3 49 7D 03 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Batteries . The perfect way to get your droid back to work : 1 CRED"
 00002F6C: .byte CF 00 81 03 63 04 0A 2C 14 05 CF 00 AE 01 5F 01 ; continuation
@@ -1046,10 +1115,12 @@
 00002F9C: .byte CD CC 00 CC 11 28 00 ; RECORD_TRIPLE record=0x00CC first=0x11CC second=0x0028 inverted=false
 00002FA3: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 00002FAA: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-00002FB1: .byte AC E0 4D D2 2F ; BAS_BLOCK_END selector=0x4DE0 "pharmaceutical" continuation=0x2FD2
+00002FB1: .byte AC ; YIELD_B
+00002FB2: .byte E0 4D D2 2F ; SELECTOR_NODE selector=0x4DE0 "pharmaceutical" next=0x2FD2
 00002FB6: .byte A3 C6 3B E7 52 EF 52 F7 52 00 00 ; MENU department | aspirox | snormor | fang_brush
 00002FC1: .byte A6 92 00 FF 41 80 02 53 42 4E FF FF E0 4D 00 00 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "PHARMACEUTICAL DEPARTMENT"
-00002FD1: .byte AC E7 52 43 30 ; BAS_BLOCK_END selector=0x52E7 "aspirox" continuation=0x3043
+00002FD1: .byte AC ; YIELD_B
+00002FD2: .byte E7 52 43 30 ; SELECTOR_NODE selector=0x52E7 "aspirox" next=0x3043
 00002FD6: .byte A3 98 24 E0 4D 00 00 ; MENU buy | pharmaceutical
 00002FDD: .byte A6 92 00 FF 41 80 11 53 0F 02 19 53 19 05 83 44 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Aspirox . Relief from head pain . Suitable for stainless steel and nonstick heads .. See sales personnel for lead heads : 1 CRED"
 00002FED: .byte 20 53 0F 02 25 53 92 02 2E 53 CB 51 EF 00 38 53 ; continuation
@@ -1060,7 +1131,8 @@
 0000302D: .byte CD CC 00 3C 11 28 00 ; RECORD_TRIPLE record=0x00CC first=0x113C second=0x0028 inverted=false
 00003034: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 0000303B: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-00003042: .byte AC EF 52 A8 30 ; BAS_BLOCK_END selector=0x52EF "snormor" continuation=0x30A8
+00003042: .byte AC ; YIELD_B
+00003043: .byte EF 52 A8 30 ; SELECTOR_NODE selector=0x52EF "snormor" next=0x30A8
 00003047: .byte A3 98 24 E0 4D 00 00 ; MENU buy | pharmaceutical
 0000304E: .byte A6 92 00 FF 41 80 4D 53 98 00 29 01 ED 12 55 53 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Snormor , the sleep solution . At bedtime precisely , administer violently to head : 1 CRED"
 0000305E: .byte 0F 02 41 3B 5E 53 66 53 98 00 70 53 7B 53 CF 00 ; continuation
@@ -1070,7 +1142,8 @@
 00003092: .byte CD CC 00 3C 11 28 00 ; RECORD_TRIPLE record=0x00CC first=0x113C second=0x0028 inverted=false
 00003099: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 000030A0: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-000030A7: .byte AC F7 52 1B 31 ; BAS_BLOCK_END selector=0x52F7 "fang_brush" continuation=0x311B
+000030A7: .byte AC ; YIELD_B
+000030A8: .byte F7 52 1B 31 ; SELECTOR_NODE selector=0x52F7 "fang_brush" next=0x311B
 000030AC: .byte A3 98 24 E0 4D 00 00 ; MENU buy | pharmaceutical
 000030B3: .byte A6 92 00 FF 41 80 85 53 8A 53 0F 02 09 06 EC 22 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Fang brush . It doesn't matter how many rows of teeth you have , this brush keeps 'em healthy and pointy : 1 CRED"
 000030C3: .byte 6B 45 00 04 0F 46 90 53 FE 01 4A 25 CC 01 0E 09 ; continuation
@@ -1081,14 +1154,17 @@
 00003105: .byte CD CC 00 3C 11 28 00 ; RECORD_TRIPLE record=0x00CC first=0x113C second=0x0028 inverted=false
 0000310C: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 00003113: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-0000311A: .byte AC EF 4D 37 31 ; BAS_BLOCK_END selector=0x4DEF "leisure" continuation=0x3137
+0000311A: .byte AC ; YIELD_B
+0000311B: .byte EF 4D 37 31 ; SELECTOR_NODE selector=0x4DEF "leisure" next=0x3137
 0000311F: .byte A3 C6 3B A7 53 00 00 ; MENU department | video_games
 00003126: .byte A6 92 00 FF 41 80 B3 53 42 4E FF FF EF 4D 00 00 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "LEISURE DEPARTMENT"
-00003136: .byte AC A7 53 5D 31 ; BAS_BLOCK_END selector=0x53A7 "video_games" continuation=0x315D
+00003136: .byte AC ; YIELD_B
+00003137: .byte A7 53 5D 31 ; SELECTOR_NODE selector=0x53A7 "video_games" next=0x315D
 0000313B: .byte A3 C6 3B BB 53 C7 53 D5 53 DE 53 EE 53 FE 53 00 ; MENU department | Dead_Killer | Fatal_Butcher | Harakira | Commander_Blood | Streetofkarnage | Eat_my_liver
 0000314B: .byte 00 ; continuation
 0000314C: .byte A6 92 00 FF 41 80 0B 54 11 54 FF FF A7 53 00 00 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "VIDEO GAMES"
-0000315C: .byte AC BB 53 B1 31 ; BAS_BLOCK_END selector=0x53BB "Dead_Killer" continuation=0x31B1
+0000315C: .byte AC ; YIELD_B
+0000315D: .byte BB 53 B1 31 ; SELECTOR_NODE selector=0x53BB "Dead_Killer" next=0x31B1
 00003161: .byte A3 98 24 A7 53 00 00 ; MENU buy | video_games
 00003168: .byte A6 92 00 FF 41 80 17 54 1E 54 0F 02 25 54 0F 02 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "MORTAL KILLER . Blood'n'bolts . Hash 'em , slash 'em , bash 'em and mash 'em : 20 CREDS"
 00003178: .byte 33 54 9B 53 98 00 38 54 9B 53 98 00 3E 54 9B 53 ; continuation
@@ -1096,26 +1172,30 @@
 00003198: .byte 00 00 ; continuation
 0000319A: .byte A6 92 00 FF 41 80 4D 01 5E 42 49 2B 48 54 A6 3A ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "You can't pay 20 CREDS"
 000031AA: .byte FF FF 98 24 00 00 ; continuation
-000031B0: .byte AC C7 53 F7 31 ; BAS_BLOCK_END selector=0x53C7 "Fatal_Butcher" continuation=0x31F7
+000031B0: .byte AC ; YIELD_B
+000031B1: .byte C7 53 F7 31 ; SELECTOR_NODE selector=0x53C7 "Fatal_Butcher" next=0x31F7
 000031B5: .byte A3 98 24 A7 53 00 00 ; MENU buy | video_games
 000031BC: .byte A6 92 00 FF 41 80 4B 54 51 54 0F 02 59 54 FD 1D ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "FATAL BUTCHER . Turn those losers into chemical sludge : 40 CRED"
 000031CC: .byte 5E 54 E7 04 65 54 6E 54 5F 01 75 54 DA 0B FF FF ; continuation
 000031DC: .byte C7 53 00 00 ; continuation
 000031E0: .byte A6 92 00 FF 41 80 4D 01 5E 42 49 2B 75 54 A6 3A ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "You can't pay 40 CREDS"
 000031F0: .byte FF FF 98 24 00 00 ; continuation
-000031F6: .byte AC D5 53 4B 32 ; BAS_BLOCK_END selector=0x53D5 "Harakira" continuation=0x324B
+000031F6: .byte AC ; YIELD_B
+000031F7: .byte D5 53 4B 32 ; SELECTOR_NODE selector=0x53D5 "Harakira" next=0x324B
 000031FB: .byte A3 98 24 A7 53 00 00 ; MENU buy | video_games
 00003202: .byte A6 92 00 FF 41 80 78 54 0F 02 81 54 BC 02 87 54 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "HARAKIRA . Wield a postapocalyptic suction drill . Kill 'em an' drill 'em : 200 CREDS"
 00003212: .byte D0 4F B8 52 0F 02 97 54 9B 53 9C 54 B8 52 9B 53 ; continuation
 00003222: .byte 5F 01 A0 54 A6 3A FF FF D5 53 00 00 ; continuation
 0000322E: .byte A6 92 00 FF 41 80 A6 3A 0F 02 4D 01 0E 09 CF 00 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "CREDS . You have to be kidding ."
 0000323E: .byte D2 00 A4 54 0F 02 FF FF 98 24 00 00 ; continuation
-0000324A: .byte AC DE 53 7D 32 ; BAS_BLOCK_END selector=0x53DE "Commander_Blood" continuation=0x327D
+0000324A: .byte AC ; YIELD_B
+0000324B: .byte DE 53 7D 32 ; SELECTOR_NODE selector=0x53DE "Commander_Blood" next=0x327D
 0000324F: .byte A3 98 24 A7 53 00 00 ; MENU buy | video_games
 00003256: .byte A6 92 00 FF 41 80 AC 54 4D 01 04 05 0E 09 1A 01 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Uh!.... You already have it ... You sure you want another one ?"
 00003266: .byte 62 00 4D 01 94 09 CC 01 49 0B 61 0E 61 09 DF 01 ; continuation
 00003276: .byte FF FF DE 53 00 00 ; continuation
-0000327C: .byte AC EE 53 D5 32 ; BAS_BLOCK_END selector=0x53EE "Streetofkarnage" continuation=0x32D5
+0000327C: .byte AC ; YIELD_B
+0000327D: .byte EE 53 D5 32 ; SELECTOR_NODE selector=0x53EE "Streetofkarnage" next=0x32D5
 00003281: .byte A3 98 24 A7 53 00 00 ; MENU buy | video_games
 00003288: .byte A6 92 00 FF 41 80 B4 54 FD 18 BB 54 0F 02 C3 54 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "STREET OF KARNAGE . Intestines litter the city sidewalks at last : 250 CREDS"
 00003298: .byte CE 54 29 01 D5 54 DA 54 C8 02 7B 13 5F 01 E4 54 ; continuation
@@ -1123,7 +1203,8 @@
 000032B0: .byte A6 92 00 FF 41 80 E8 54 5F 01 E4 54 A6 3A 0F 02 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "PRICE : 250 CREDS . You can read , can't you ?"
 000032C0: .byte 4D 01 6E 03 EE 54 98 00 5E 42 CC 01 DF 01 FF FF ; continuation
 000032D0: .byte 98 24 00 00 ; continuation
-000032D4: .byte AC FE 53 39 33 ; BAS_BLOCK_END selector=0x53FE "Eat_my_liver" continuation=0x3339
+000032D4: .byte AC ; YIELD_B
+000032D5: .byte FE 53 39 33 ; SELECTOR_NODE selector=0x53FE "Eat_my_liver" next=0x3339
 000032D9: .byte A3 98 24 A7 53 00 00 ; MENU buy | video_games
 000032E0: .byte A6 92 00 FF 41 80 F3 54 48 17 F7 54 0F 02 FD 54 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "EAT MY LIVER . Game of the year ! Package includes ruptured liver , punctured lung , brain stuff : 400 CREDS"
 000032F0: .byte FE 01 29 01 02 55 82 00 07 55 0F 55 18 55 2D 08 ; continuation
@@ -1131,17 +1212,20 @@
 00003310: .byte A6 3A FF FF FE 53 00 00 ; continuation
 00003318: .byte A6 92 00 FF 41 80 95 03 A2 38 84 05 30 55 A6 3A ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "The price is 400 CREDS , so calm down ."
 00003328: .byte 98 00 6B 03 75 2D 17 2C 0F 02 FF FF 98 24 00 00 ; continuation
-00003338: .byte AC F7 4D 57 33 ; BAS_BLOCK_END selector=0x4DF7 "hifi" continuation=0x3357
+00003338: .byte AC ; YIELD_B
+00003339: .byte F7 4D 57 33 ; SELECTOR_NODE selector=0x4DF7 "hifi" next=0x3357
 0000333D: .byte A3 C6 3B 34 55 3F 55 00 00 ; MENU department | multimedia | audio_CD
 00003346: .byte A6 92 00 FF 41 80 48 55 42 4E FF FF F7 4D 00 00 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "HIFI DEPARTMENT"
-00003356: .byte AC 34 55 99 33 ; BAS_BLOCK_END selector=0x5534 "multimedia" continuation=0x3399
+00003356: .byte AC ; YIELD_B
+00003357: .byte 34 55 99 33 ; SELECTOR_NODE selector=0x5534 "multimedia" next=0x3399
 0000335B: .byte A3 98 24 F7 4D 00 00 ; MENU buy | hifi
 00003362: .byte A6 92 00 FF 41 80 96 12 CC 01 1A 4C 75 04 FF FF ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Are you crazy !!!"
 00003372: .byte 34 55 00 00 ; continuation
 00003376: .byte A6 92 00 FF 41 80 1C 2C 63 04 31 18 92 02 BC 02 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "Keep your money for a nice weekend in the country ..."
 00003386: .byte 2A 24 4D 55 EE 03 29 01 55 55 62 00 FF FF 98 24 ; continuation
 00003396: .byte 00 00 ; continuation
-00003398: .byte AC 3F 55 00 00 ; BAS_BLOCK_END selector=0x553F "audio_CD" continuation=0x0000
+00003398: .byte AC ; YIELD_B
+00003399: .byte 3F 55 00 00 ; SELECTOR_NODE selector=0x553F "audio_CD" next=0x0000
 0000339D: .byte A3 98 24 F7 4D 00 00 ; MENU buy | hifi
 000033A4: .byte A6 92 00 FF 41 80 95 03 5D 55 19 05 29 01 64 55 ; TEXT line=0x0092 voice=0xFF flags=0x41,0x80 "The latest from the MIGRATORS: \"CRUSH MY SKULL\": 1 CRED"
 000033B4: .byte 6F 55 48 17 76 55 DB 32 DA 0B FF FF 3F 55 00 00 ; continuation
@@ -1151,7 +1235,8 @@
 000033E1: .byte CD 30 00 04 10 92 00 ; RECORD_TRIPLE record=0x0030 first=0x1004 second=0x0092 inverted=false
 000033E8: .byte C0 10 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1310 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 000033EF: .byte AA ; YIELD
-000033F0: .byte AC 06 00 85 34 ; BAS_BLOCK_END selector=0x0006 "hello" continuation=0x3485
+000033F0: .byte AC ; YIELD_B
+000033F1: .byte 06 00 85 34 ; SELECTOR_NODE selector=0x0006 "hello" next=0x3485
 000033F5: .byte A3 4E 0B 01 00 7E 55 00 00 ; MENU bye_bye | talk | say_nothing
 000033FE: .byte A6 FA 01 00 40 80 41 0B 47 04 46 0B 92 02 CC 01 ; TEXT line=0x01FA voice=0x00 flags=0x40,0x80 "What me do for you ?"
 0000340E: .byte DF 01 FF FF 7E 55 00 00 ; continuation
@@ -1163,11 +1248,13 @@
 00003462: .byte C1 22 CC 01 62 00 00 00 ; continuation
 0000346A: .byte A6 FA 01 0C 00 80 29 02 B8 55 CC 01 BF 55 19 05 ; TEXT line=0x01FA voice=0x0C flags=0x00,0x80 "Me listen you ,stranger from sky . Welcome ..."
 0000347A: .byte CA 21 0F 02 10 28 62 00 00 00 ; continuation
-00003484: .byte AC 01 00 AF 34 ; BAS_BLOCK_END selector=0x0001 "talk" continuation=0x34AF
+00003484: .byte AC ; YIELD_B
+00003485: .byte 01 00 AF 34 ; SELECTOR_NODE selector=0x0001 "talk" next=0x34AF
 00003489: .byte A3 4E 0B C9 55 CE 55 D2 55 54 49 BA 4A 00 00 ; MENU bye_bye | race | art | politics | reproduction | science
 00003498: .byte A6 FA 01 05 40 80 41 0B CC 01 49 0B B1 12 DF 01 ; TEXT line=0x01FA voice=0x05 flags=0x40,0x80 "What you want know ?"
 000034A8: .byte FF FF 01 00 00 00 ; continuation
-000034AE: .byte AC C9 55 39 35 ; BAS_BLOCK_END selector=0x55C9 "race" continuation=0x3539
+000034AE: .byte AC ; YIELD_B
+000034AF: .byte C9 55 39 35 ; SELECTOR_NODE selector=0x55C9 "race" next=0x3539
 000034B3: .byte A3 4E 0B 01 00 43 18 4A 0A 3E 0F 5C 4F DB 55 E2 ; MENU bye_bye | talk | Izwal | Slimers | Croolis | Tromp | Migrax | ondoyant | Tubular_brain
 000034C3: .byte 55 EB 55 00 00 ; continuation
 000034C8: .byte A6 FA 01 0B 40 80 F9 55 FE 01 0D 3E 01 56 CC 01 ; TEXT line=0x01FA voice=0x0B flags=0x40,0x80 "Peoples of universe interest you , friend ..."
@@ -1178,7 +1265,8 @@
 00003510: .byte DF 01 FF FF C9 55 00 00 ; continuation
 00003518: .byte A6 FA 01 02 40 80 10 56 82 18 98 00 13 0E EE 03 ; TEXT line=0x01FA voice=0x02 flags=0x40,0x80 "Out there , far in universe , much races ..."
 00003528: .byte 0D 3E 98 00 16 06 0A 56 62 00 FF FF C9 55 00 00 ; continuation
-00003538: .byte AC 43 18 79 37 ; BAS_BLOCK_END selector=0x1843 "Izwal" continuation=0x3779
+00003538: .byte AC ; YIELD_B
+00003539: .byte 43 18 79 37 ; SELECTOR_NODE selector=0x1843 "Izwal" next=0x3779
 0000353D: .byte A3 4E 0B 01 00 C9 55 14 56 3F 0A B3 11 8F 0A B8 ; MENU bye_bye | talk | race | peace | Yoko | Maxxon | planet | listen | like
 0000354D: .byte 55 37 04 00 00 ; continuation
 00003552: .byte A6 FA 01 0A 40 80 5A 26 D2 00 C9 05 79 49 E4 0D ; TEXT line=0x01FA voice=0x0A flags=0x40,0x80 "Izwals be great pacifist people ..."
@@ -1226,7 +1314,8 @@
 00003760: .byte 43 18 00 00 ; continuation
 00003764: .byte A6 FA 01 0E 40 80 5A 26 37 04 B6 28 62 00 FF FF ; TEXT line=0x01FA voice=0x0E flags=0x40,0x80 "Izwals like play ..."
 00003774: .byte 43 18 00 00 ; continuation
-00003778: .byte AC 3E 0F 82 38 ; BAS_BLOCK_END selector=0x0F3E "Croolis" continuation=0x3882
+00003778: .byte AC ; YIELD_B
+00003779: .byte 3E 0F 82 38 ; SELECTOR_NODE selector=0x0F3E "Croolis" next=0x3882
 0000377D: .byte A3 4E 0B 01 00 C9 55 0F 11 51 56 0A 08 39 3F 00 ; MENU bye_bye | talk | race | war | news | brain | fear
 0000378D: .byte 00 ; continuation
 0000378E: .byte A6 FA 01 09 48 80 67 2E D2 00 39 1D D4 34 0F 02 ; TEXT line=0x01FA voice=0x09 flags=0x48,0x80 "War be big problem . Life be good if no war ..."
@@ -1247,7 +1336,8 @@
 00003859: .byte 6E 56 6E 56 62 00 FF FF 3E 0F 00 00 ; continuation
 00003865: .byte A6 FA 01 05 40 80 3E 0F D2 00 0B 07 98 00 4B 32 ; TEXT line=0x01FA voice=0x05 flags=0x40,0x80 "Croolis be bad , stupid and violent ..."
 00003875: .byte EF 00 60 2D 62 00 FF FF 3E 0F 00 00 ; continuation
-00003881: .byte AC 5C 4F E0 38 ; BAS_BLOCK_END selector=0x4F5C "Tromp" continuation=0x38E0
+00003881: .byte AC ; YIELD_B
+00003882: .byte 5C 4F E0 38 ; SELECTOR_NODE selector=0x4F5C "Tromp" next=0x38E0
 00003886: .byte A3 4E 0B 01 00 C9 55 B1 12 1F 08 00 00 ; MENU bye_bye | talk | race | know | trunk
 00003893: .byte A6 FA 01 04 40 80 29 02 84 09 B1 12 74 56 62 00 ; TEXT line=0x01FA voice=0x04 flags=0x40,0x80 "Me not know Tromps ..."
 000038A3: .byte FF FF B1 12 00 00 ; continuation
@@ -1256,7 +1346,8 @@
 000038BD: .byte A6 FA 01 06 40 80 29 02 84 09 8E 56 94 56 9A 56 ; TEXT line=0x01FA voice=0x06 flags=0x40,0x80 "Me not smoke Trump tails . So bad for health ..."
 000038CD: .byte 0F 02 D0 10 0B 07 92 02 A0 56 62 00 FF FF 5C 4F ; continuation
 000038DD: .byte 00 00 ; continuation
-000038DF: .byte AC DB 55 54 39 ; BAS_BLOCK_END selector=0x55DB "Migrax" continuation=0x3954
+000038DF: .byte AC ; YIELD_B
+000038E0: .byte DB 55 54 39 ; SELECTOR_NODE selector=0x55DB "Migrax" next=0x3954
 000038E4: .byte A3 4E 0B 01 00 C9 55 0A 08 31 18 00 00 ; MENU bye_bye | talk | race | brain | money
 000038F1: .byte A6 FA 01 09 40 80 DB 55 39 1D 4B 32 0F 02 FF FF ; TEXT line=0x01FA voice=0x09 flags=0x40,0x80 "Migrax big stupid ."
 00003901: .byte 0A 08 00 00 ; continuation
@@ -1266,7 +1357,8 @@
 0000392D: .byte 69 27 62 00 FF FF 31 18 00 00 ; continuation
 00003937: .byte A6 FA 01 0C 40 80 A7 56 D2 00 B1 56 0F 02 29 02 ; TEXT line=0x01FA voice=0x0C flags=0x40,0x80 "Migrators be cool . Me like music ."
 00003947: .byte 37 04 AC 0F 0F 02 FF FF DB 55 00 00 ; continuation
-00003953: .byte AC E2 55 14 3A ; BAS_BLOCK_END selector=0x55E2 "ondoyant" continuation=0x3A14
+00003953: .byte AC ; YIELD_B
+00003954: .byte E2 55 14 3A ; SELECTOR_NODE selector=0x55E2 "ondoyant" next=0x3A14
 00003958: .byte A3 4E 0B 01 00 C9 55 B6 56 51 56 88 09 00 00 ; MENU bye_bye | talk | race | emotion | news | feeling
 00003967: .byte A6 FA 01 06 40 80 59 45 D2 00 94 01 0D 45 0F 02 ; TEXT line=0x01FA voice=0x06 flags=0x40,0x80 "ondoyants be very strange . Them intimidate me ..."
 00003977: .byte 14 34 BE 56 47 04 62 00 FF FF 51 56 00 00 ; continuation
@@ -1281,7 +1373,8 @@
 000039F1: .byte FF FF E2 55 00 00 ; continuation
 000039F7: .byte A6 FA 01 0B 40 80 29 02 49 0B E2 55 2B 04 47 04 ; TEXT line=0x01FA voice=0x0B flags=0x40,0x80 "Me want ondoyant with me , friend ..."
 00003A07: .byte 98 00 D8 05 62 00 FF FF E2 55 00 00 ; continuation
-00003A13: .byte AC EB 55 60 3A ; BAS_BLOCK_END selector=0x55EB "Tubular_brain" continuation=0x3A60
+00003A13: .byte AC ; YIELD_B
+00003A14: .byte EB 55 60 3A ; SELECTOR_NODE selector=0x55EB "Tubular_brain" next=0x3A60
 00003A18: .byte A3 4E 0B 01 00 51 56 00 00 ; MENU bye_bye | talk | news
 00003A21: .byte A6 FA 01 03 41 80 29 02 84 09 B1 12 FD 1D DC 56 ; TEXT line=0x01FA voice=0x03 flags=0x41,0x80 "Me not know those beings ..."
 00003A31: .byte 62 00 FF FF 51 56 00 00 ; continuation
@@ -1289,7 +1382,8 @@
 00003A49: .byte EB 55 00 00 ; continuation
 00003A4D: .byte A6 FA 01 09 41 80 D4 05 B1 12 62 00 FF FF EB 55 ; TEXT line=0x01FA voice=0x09 flags=0x41,0x80 "Not know ..."
 00003A5D: .byte 00 00 ; continuation
-00003A5F: .byte AC 4A 0A 5B 3B ; BAS_BLOCK_END selector=0x0A4A "Slimers" continuation=0x3B5B
+00003A5F: .byte AC ; YIELD_B
+00003A60: .byte 4A 0A 5B 3B ; SELECTOR_NODE selector=0x0A4A "Slimers" next=0x3B5B
 00003A64: .byte A3 4E 0B 01 00 52 0A 00 00 ; MENU bye_bye | talk | information
 00003A6D: .byte A6 FA 01 00 41 80 29 02 B1 12 EB 56 FF FF 4A 0A ; TEXT line=0x01FA voice=0x00 flags=0x41,0x80 "Me know Slimers..."
 00003A7D: .byte 00 00 ; continuation
@@ -1309,7 +1403,8 @@
 00003B3F: .byte A6 FA 01 05 48 80 29 02 D2 00 0F 14 62 00 FF FF ; TEXT line=0x01FA voice=0x05 flags=0x48,0x80 "Me be thirsty ..."
 00003B4F: .byte 52 0A 00 00 ; continuation
 00003B53: .byte C0 E2 12 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x12E2 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-00003B5A: .byte AC CE 55 33 3C ; BAS_BLOCK_END selector=0x55CE "art" continuation=0x3C33
+00003B5A: .byte AC ; YIELD_B
+00003B5B: .byte CE 55 33 3C ; SELECTOR_NODE selector=0x55CE "art" next=0x3C33
 00003B5F: .byte A3 4E 0B 01 00 AC 0F 1D 57 54 49 46 57 00 00 ; MENU bye_bye | talk | music | painting | reproduction | book
 00003B6E: .byte A6 FA 01 0A 40 80 29 02 37 04 AC 0F 0F 02 4D 01 ; TEXT line=0x01FA voice=0x0A flags=0x40,0x80 "Me like music . You know group called Migrators ?"
 00003B7E: .byte B1 12 4B 57 5B 0F A7 56 DF 01 FF FF AC 0F 00 00 ; continuation
@@ -1325,7 +1420,8 @@
 00003C0E: .byte 29 02 90 57 97 57 62 00 FF FF 54 49 00 00 ; continuation
 00003C1C: .byte A6 FA 01 0A 40 80 29 02 37 04 5A 43 DA 49 62 00 ; TEXT line=0x01FA voice=0x0A flags=0x40,0x80 "Me like color blue ..."
 00003C2C: .byte FF FF CE 55 00 00 ; continuation
-00003C32: .byte AC D2 55 FF 3C ; BAS_BLOCK_END selector=0x55D2 "politics" continuation=0x3CFF
+00003C32: .byte AC ; YIELD_B
+00003C33: .byte D2 55 FF 3C ; SELECTOR_NODE selector=0x55D2 "politics" next=0x3CFF
 00003C37: .byte A3 4E 0B 01 00 14 56 0F 11 81 34 00 00 ; MENU bye_bye | talk | peace | war | weapon
 00003C44: .byte A6 FA 01 0A 41 80 D7 49 5A 26 37 04 A2 57 62 00 ; TEXT line=0x01FA voice=0x0A flags=0x41,0x80 "Us Izwals like Peace ..."
 00003C54: .byte FF FF 14 56 00 00 ; continuation
@@ -1342,7 +1438,8 @@
 00003CDA: .byte A6 FA 01 03 40 80 C0 57 79 29 C9 57 CF 00 0F 11 ; TEXT line=0x01FA voice=0x03 flags=0x40,0x80 "Politics always leads to war . People not want same thing ..."
 00003CEA: .byte 0F 02 CF 57 84 09 49 0B 4F 17 76 44 62 00 FF FF ; continuation
 00003CFA: .byte D2 55 00 00 ; continuation
-00003CFE: .byte AC 14 56 85 3D ; BAS_BLOCK_END selector=0x5614 "peace" continuation=0x3D85
+00003CFE: .byte AC ; YIELD_B
+00003CFF: .byte 14 56 85 3D ; SELECTOR_NODE selector=0x5614 "peace" next=0x3D85
 00003D03: .byte A3 4E 0B 01 00 DD 11 00 00 ; MENU bye_bye | talk | family
 00003D0C: .byte A6 FA 01 05 40 80 5A 26 37 04 14 56 FE 01 DD 11 ; TEXT line=0x01FA voice=0x05 flags=0x40,0x80 "Izwals like peace of family ..."
 00003D1C: .byte 62 00 FF FF DD 11 00 00 ; continuation
@@ -1353,7 +1450,8 @@
 00003D5C: .byte A6 FA 01 0A 40 80 29 02 49 0B DB 57 3A 0A 4F 03 ; TEXT line=0x01FA voice=0x0A flags=0x40,0x80 "Me want base life on respect of others . That be only law ..."
 00003D6C: .byte 01 3F FE 01 E0 57 0F 02 78 03 D2 00 5C 09 A3 41 ; continuation
 00003D7C: .byte 62 00 FF FF 14 56 00 00 ; continuation
-00003D84: .byte AC 0F 11 17 3E ; BAS_BLOCK_END selector=0x110F "war" continuation=0x3E17
+00003D84: .byte AC ; YIELD_B
+00003D85: .byte 0F 11 17 3E ; SELECTOR_NODE selector=0x110F "war" next=0x3E17
 00003D89: .byte A3 4E 0B 01 00 14 56 E7 57 87 16 00 00 ; MENU bye_bye | talk | peace | slave | power
 00003D96: .byte A6 FA 01 0C 40 80 29 02 84 09 49 0B D2 00 ED 57 ; TEXT line=0x01FA voice=0x0C flags=0x40,0x80 "Me not want be slaves . POWER make slaves ..."
 00003DA6: .byte 0F 02 08 1D 87 14 ED 57 62 00 FF FF E7 57 00 00 ; continuation
@@ -1365,7 +1463,8 @@
 00003DF2: .byte D6 25 62 00 D6 25 62 00 FF FF 0F 11 00 00 ; continuation
 00003E00: .byte A6 FA 01 09 40 80 67 2E D2 00 94 01 4B 32 62 00 ; TEXT line=0x01FA voice=0x09 flags=0x40,0x80 "War be very stupid ..."
 00003E10: .byte FF FF 0F 11 00 00 ; continuation
-00003E16: .byte AC 54 49 59 3F ; BAS_BLOCK_END selector=0x4954 "reproduction" continuation=0x3F59
+00003E16: .byte AC ; YIELD_B
+00003E17: .byte 54 49 59 3F ; SELECTOR_NODE selector=0x4954 "reproduction" next=0x3F59
 00003E1B: .byte A3 4E 0B 01 00 6E 56 9C 2A 1E 24 00 00 ; MENU bye_bye | talk | laugh | idea | female
 00003E28: .byte A6 FA 01 08 40 80 2C 4A 30 4A 30 4A 30 4A 62 00 ; TEXT line=0x01FA voice=0x08 flags=0x40,0x80 "Hee hee hee hee ..."
 00003E38: .byte FF FF 54 49 00 00 ; continuation
@@ -1390,7 +1489,8 @@
 00003F34: .byte FF FF 1E 24 00 00 ; continuation
 00003F3A: .byte A6 FA 01 0D 40 80 4D 01 37 04 54 49 0F 02 4D 01 ; TEXT line=0x01FA voice=0x0D flags=0x40,0x80 "You like reproduction . You talk much about ..."
 00003F4A: .byte 01 00 16 06 AD 00 62 00 FF FF 1E 24 00 00 ; continuation
-00003F58: .byte AC BA 4A 00 00 ; BAS_BLOCK_END selector=0x4ABA "science" continuation=0x0000
+00003F58: .byte AC ; YIELD_B
+00003F59: .byte BA 4A 00 00 ; SELECTOR_NODE selector=0x4ABA "science" next=0x0000
 00003F5D: .byte A3 4E 0B 01 00 81 34 00 00 ; MENU bye_bye | talk | weapon
 00003F66: .byte A6 FA 01 05 40 80 29 02 84 09 37 04 A6 19 98 00 ; TEXT line=0x01FA voice=0x05 flags=0x40,0x80 "Me not like weapons , friend ..."
 00003F76: .byte D8 05 62 00 FF FF 81 34 00 00 ; continuation
@@ -1409,9 +1509,11 @@
 00004026: .byte FF FF BA 4A 00 00 ; continuation
 0000402C: .byte A6 FA 01 03 01 80 62 00 00 00 ; TEXT line=0x01FA voice=0x03 flags=0x01,0x80 "..."
 00004036: .byte AA ; YIELD
-00004037: .byte AC 01 00 4A 40 ; BAS_BLOCK_END selector=0x0001 "talk" continuation=0x404A
+00004037: .byte AC ; YIELD_B
+00004038: .byte 01 00 4A 40 ; SELECTOR_NODE selector=0x0001 "talk" next=0x404A
 0000403C: .byte A3 4E 0B BE 00 4E 27 AC 28 A6 19 00 00 ; MENU bye_bye | robot | cred | murffalos | weapons
-00004049: .byte AC BE 00 F6 41 ; BAS_BLOCK_END selector=0x00BE "robot" continuation=0x41F6
+00004049: .byte AC ; YIELD_B
+0000404A: .byte BE 00 F6 41 ; SELECTOR_NODE selector=0x00BE "robot" next=0x41F6
 0000404E: .byte A3 01 00 4E 0B BE 00 7E 58 99 03 91 35 8B 58 00 ; MENU talk | bye_bye | robot | intelligence | energy | technology | retirement
 0000405E: .byte 00 ; continuation
 0000405F: .byte A6 1A 03 02 40 80 29 02 BE 00 F5 06 96 58 51 54 ; TEXT line=0x031A voice=0x02 flags=0x40,0x80 "Me robot Bronko AX34 BUTCHER model ..."
@@ -1446,7 +1548,8 @@
 000041D9: .byte 62 00 FF FF 91 35 00 00 ; continuation
 000041E1: .byte A6 1A 03 05 40 80 CA 0B CC 01 FE 22 62 00 FF FF ; TEXT line=0x031A voice=0x05 flags=0x40,0x80 "See you soon ..."
 000041F1: .byte 4E 0B 00 00 ; continuation
-000041F5: .byte AC 4E 27 E2 42 ; BAS_BLOCK_END selector=0x274E "cred" continuation=0x42E2
+000041F5: .byte AC ; YIELD_B
+000041F6: .byte 4E 27 E2 42 ; SELECTOR_NODE selector=0x274E "cred" next=0x42E2
 000041FA: .byte A3 01 00 4E 0B 4E 27 98 24 00 00 ; MENU talk | bye_bye | cred | buy
 00004205: .byte A6 1A 03 01 40 80 29 02 AE 01 16 06 CF 00 FC 58 ; TEXT line=0x031A voice=0x01 flags=0x40,0x80 "Me work much to earn CRED , friend ..."
 00004215: .byte DA 0B 98 00 D8 05 62 00 FF FF 4E 27 00 00 ; continuation
@@ -1465,7 +1568,8 @@
 000042C3: .byte 00 00 ; continuation
 000042C5: .byte A6 1A 03 04 40 80 0C 05 98 24 98 00 47 04 96 0E ; TEXT line=0x031A voice=0x04 flags=0x40,0x80 "To buy , me must work much ..."
 000042D5: .byte AE 01 16 06 62 00 FF FF 98 24 00 00 ; continuation
-000042E1: .byte AC AC 28 9C 43 ; BAS_BLOCK_END selector=0x28AC "murffalos" continuation=0x439C
+000042E1: .byte AC ; YIELD_B
+000042E2: .byte AC 28 9C 43 ; SELECTOR_NODE selector=0x28AC "murffalos" next=0x439C
 000042E6: .byte A3 01 00 4E 0B 34 59 00 00 ; MENU talk | bye_bye | hunt
 000042EF: .byte A6 1A 03 01 40 80 40 4A AC 28 CF 00 49 4A 62 00 ; TEXT line=0x031A voice=0x01 flags=0x40,0x80 "Thirteen murffalos to reproduce ... One in middle , rest around . That be reproduction for Murffalos ..."
 000042FF: .byte 80 29 EE 03 1E 3D 98 00 EB 3D 48 1D 0F 02 78 03 ; continuation
@@ -1480,7 +1584,8 @@
 00004381: .byte FF FF 34 59 00 00 ; continuation
 00004387: .byte A6 1A 03 03 40 80 81 59 39 1D D0 4D 62 00 FF FF ; TEXT line=0x031A voice=0x03 flags=0x40,0x80 "Hunting big sport ..."
 00004397: .byte 34 59 00 00 ; continuation
-0000439B: .byte AC A6 19 2C 44 ; BAS_BLOCK_END selector=0x19A6 "weapons" continuation=0x442C
+0000439B: .byte AC ; YIELD_B
+0000439C: .byte A6 19 2C 44 ; SELECTOR_NODE selector=0x19A6 "weapons" next=0x442C
 000043A0: .byte A3 01 00 4E 0B 56 39 0F 11 00 00 ; MENU talk | bye_bye | planets | war
 000043AB: .byte A6 1A 03 04 40 80 0C 05 04 04 2A 24 A6 19 98 00 ; TEXT line=0x031A voice=0x04 flags=0x40,0x80 "To find nice weapons , pay much creds , Commander ..."
 000043BB: .byte 49 2B 16 06 E5 29 98 00 8E 00 62 00 FF FF A6 19 ; continuation
@@ -1492,14 +1597,16 @@
 00004409: .byte A6 1A 03 03 40 80 3E 0F 0F 11 46 0B 16 06 0B 07 ; TEXT line=0x031A voice=0x03 flags=0x40,0x80 "Croolis war do much bad ... Bad war , friend ..."
 00004419: .byte 62 00 1E 4A 0F 11 98 00 D8 05 62 00 FF FF 0F 11 ; continuation
 00004429: .byte 00 00 ; continuation
-0000442B: .byte AC 8B 58 00 00 ; BAS_BLOCK_END selector=0x588B "retirement" continuation=0x0000
+0000442B: .byte AC ; YIELD_B
+0000442C: .byte 8B 58 00 00 ; SELECTOR_NODE selector=0x588B "retirement" next=0x0000
 00004430: .byte A3 01 00 4E 0B 00 00 ; MENU talk | bye_bye
 00004437: .byte A6 1A 03 01 48 80 4B 4B 98 00 8B 58 62 00 14 34 ; TEXT line=0x031A voice=0x01 flags=0x48,0x80 "Ah , retirement ... Them send me planet Magnus , with other worn-out robots ... CRY CRY ..."
 00004447: .byte 84 29 47 04 8F 0A 52 10 98 00 2B 04 00 0A 89 29 ; continuation
 00004457: .byte 2C 03 62 00 D6 25 D6 25 62 00 FF FF 8B 58 00 00 ; continuation
 00004467: .byte C0 EC 12 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x12EC operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 0000446E: .byte AA ; YIELD
-0000446F: .byte AC 01 00 19 49 ; BAS_BLOCK_END selector=0x0001 "talk" continuation=0x4919
+0000446F: .byte AC ; YIELD_B
+00004470: .byte 01 00 19 49 ; SELECTOR_NODE selector=0x0001 "talk" next=0x4919
 00004474: .byte A3 4E 0B 8E 59 3E 46 2F 46 99 59 86 25 B9 0C A0 ; MENU bye_bye | black_hole | Big_Bang | Bob_Morlock | Kanary | mission | Corpo | Good_ol_Bob
 00004484: .byte 59 00 00 ; continuation
 00004487: .byte A6 4A 00 02 42 80 41 0B 46 0B CC 01 CA 00 CF 00 ; TEXT line=0x004A voice=0x02 flags=0x42,0x80 "What do you need to know , Commander?"
@@ -1595,7 +1702,8 @@
 000048FF: .byte B4 7C 00 F6 C1 01 00 ; OP_B4 SHARED_STATE field=0x007C operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00004906: .byte A6 4A 00 01 42 80 18 23 19 5B 62 00 FF FF A0 59 ; TEXT line=0x004A voice=0x01 flags=0x42,0x80 "Heh heh ..."
 00004916: .byte 00 00 ; continuation
-00004918: .byte AC 99 59 00 00 ; BAS_BLOCK_END selector=0x5999 "Kanary" continuation=0x0000
+00004918: .byte AC ; YIELD_B
+00004919: .byte 99 59 00 00 ; SELECTOR_NODE selector=0x5999 "Kanary" next=0x0000
 0000491D: .byte A3 01 00 4E 0B 1D 5B 25 5B 2C 5B 36 5B 00 00 ; MENU talk | bye_bye | cottage | clones | employees | balance_sheets
 0000492C: .byte A6 4A 00 01 40 80 95 03 45 5B 4D 5B 56 5B 84 05 ; TEXT line=0x004A voice=0x01 flags=0x40,0x80 "The Cottage Research Department is my secret project ..."
 0000493C: .byte 37 0A E7 08 61 5B 62 00 FF FF 1D 5B 00 00 ; continuation
@@ -1665,13 +1773,15 @@
 00004C81: .byte AD 00 4F 2D 98 00 8E 00 0F 02 4D 01 CC 25 90 09 ; continuation
 00004C91: .byte 0F 46 C7 03 62 00 00 00 ; continuation
 00004C99: .byte AA ; YIELD
-00004C9A: .byte AC 01 00 DF 4C ; BAS_BLOCK_END selector=0x0001 "talk" continuation=0x4CDF
+00004C9A: .byte AC ; YIELD_B
+00004C9B: .byte 01 00 DF 4C ; SELECTOR_NODE selector=0x0001 "talk" next=0x4CDF
 00004C9F: .byte A3 4E 0B 30 5D DD 11 4A 0A 3C 5D 00 00 ; MENU bye_bye | Slim_Gelati | family | Slimers | Great_Yolk
 00004CAC: .byte A6 3A 04 02 40 80 59 02 5D 02 98 00 D8 05 62 00 ; TEXT line=0x043A voice=0x02 flags=0x40,0x80 "Bye bye , friend ..."
 00004CBC: .byte FF FF 4E 0B 00 00 ; continuation
 00004CC2: .byte A6 3A 04 04 40 80 E8 36 CC 01 57 25 6C 22 31 2E ; TEXT line=0x043A voice=0x04 flags=0x40,0x80 "Do you speak our language , stranger ?"
 00004CD2: .byte 98 00 0A 22 DF 01 FF FF 01 00 00 00 ; continuation
-00004CDE: .byte AC 30 5D 92 4D ; BAS_BLOCK_END selector=0x5D30 "Slim_Gelati" continuation=0x4D92
+00004CDE: .byte AC ; YIELD_B
+00004CDF: .byte 30 5D 92 4D ; SELECTOR_NODE selector=0x5D30 "Slim_Gelati" next=0x4D92
 00004CE3: .byte A3 4E 0B 01 00 47 5D 00 00 ; MENU bye_bye | talk | treatment
 00004CEC: .byte A6 3A 04 03 40 80 BB 48 51 5D 84 09 29 01 F3 0C ; TEXT line=0x043A voice=0x03 flags=0x40,0x80 "Old Slim's not the guy he used to be . He sold his jelly house . He's throwing away his savings ..."
 00004CFC: .byte DA 08 9B 0E CF 00 D2 00 0F 02 BD 08 BB 36 F2 07 ; continuation
@@ -1686,7 +1796,8 @@
 00004D70: .byte A6 3A 04 03 48 80 9A 00 F1 39 0B 02 CC 04 F0 3F ; TEXT line=0x043A voice=0x03 flags=0x48,0x80 "I promised him I'd never tell ..."
 00004D80: .byte 06 02 62 00 FF FF 47 5D 00 00 ; continuation
 00004D8A: .byte C0 E2 12 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x12E2 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-00004D91: .byte AC DD 11 7A 4E ; BAS_BLOCK_END selector=0x11DD "family" continuation=0x4E7A
+00004D91: .byte AC ; YIELD_B
+00004D92: .byte DD 11 7A 4E ; SELECTOR_NODE selector=0x11DD "family" next=0x4E7A
 00004D96: .byte A3 4E 0B 01 00 F7 35 C8 0E 00 00 ; MENU bye_bye | talk | children | village
 00004DA1: .byte A6 3A 04 00 40 82 7F 2E D0 49 82 00 92 34 C8 02 ; TEXT line=0x043A voice=0x00 flags=0x40,0x82 "Ah! Family ! Look at these fine children . Little Gooseberry and her sister Gelatine... Latex ! Behave yourself !!!"
 00004DB1: .byte 54 13 B2 0F F7 35 0F 02 73 34 8D 5D EF 00 E4 0F ; continuation
@@ -1704,7 +1815,8 @@
 00004E53: .byte 0F 02 09 06 84 05 83 2E F5 5D EE 03 29 01 0D 3E ; continuation
 00004E63: .byte 62 00 8F 02 81 03 BC 02 88 18 FE 01 FC 5D 62 00 ; continuation
 00004E73: .byte FF FF C8 0E 00 00 ; continuation
-00004E79: .byte AC 4A 0A 56 4F ; BAS_BLOCK_END selector=0x0A4A "Slimers" continuation=0x4F56
+00004E79: .byte AC ; YIELD_B
+00004E7A: .byte 4A 0A 56 4F ; SELECTOR_NODE selector=0x0A4A "Slimers" next=0x4F56
 00004E7E: .byte A3 4E 0B 01 00 05 5E 00 00 ; MENU bye_bye | talk | origin
 00004E87: .byte A6 3A 04 02 40 80 4A 0A 11 02 BC 02 94 01 A0 10 ; TEXT line=0x043A voice=0x02 flags=0x40,0x80 "Slimers are a very old race ..."
 00004E97: .byte C9 55 62 00 FF FF 4A 0A 00 00 ; continuation
@@ -1721,7 +1833,8 @@
 00004F31: .byte A6 3A 04 03 40 80 E5 23 84 05 7F 00 50 5E 80 19 ; TEXT line=0x043A voice=0x03 flags=0x40,0x80 "There is no pollution here . Everything is clean and pure ..."
 00004F41: .byte 0F 02 DF 3C 84 05 35 14 EF 00 5A 5E 62 00 FF FF ; continuation
 00004F51: .byte 05 5E 00 00 ; continuation
-00004F55: .byte AC 3C 5D 00 00 ; BAS_BLOCK_END selector=0x5D3C "Great_Yolk" continuation=0x0000
+00004F55: .byte AC ; YIELD_B
+00004F56: .byte 3C 5D 00 00 ; SELECTOR_NODE selector=0x5D3C "Great_Yolk" next=0x0000
 00004F5A: .byte A3 4E 0B 01 00 B0 30 00 00 ; MENU bye_bye | talk | history
 00004F63: .byte A6 3A 04 01 40 80 95 03 61 2E 11 57 62 00 5F 5E ; TEXT line=0x043A voice=0x01 flags=0x40,0x80 "The Great YOLK ... An eminent SLIMER philosopher ... His thoughts are taught to all the children of the universe ..."
 00004F73: .byte 62 5E 6A 5E 71 5E 62 00 46 25 96 44 11 02 7D 5E ; continuation
@@ -1739,11 +1852,13 @@
 0000500F: .byte FF FF B0 30 00 00 ; continuation
 00005015: .byte A6 3A 04 01 01 80 62 00 00 00 ; TEXT line=0x043A voice=0x01 flags=0x01,0x80 "..."
 0000501F: .byte AA ; YIELD
-00005020: .byte AC 01 00 53 50 ; BAS_BLOCK_END selector=0x0001 "talk" continuation=0x5053
+00005020: .byte AC ; YIELD_B
+00005021: .byte 01 00 53 50 ; SELECTOR_NODE selector=0x0001 "talk" next=0x5053
 00005025: .byte A3 4E 0B DA 5E B8 00 97 4D BC 0A 72 40 00 00 ; MENU bye_bye | Scruter_Mac | SCRUT | prison | Mastachok | presents
 00005034: .byte A6 7A 06 06 40 80 59 02 5D 02 0A 22 62 00 29 02 ; TEXT line=0x067A voice=0x06 flags=0x40,0x80 "Bye bye stranger ... Me must stand guard ..."
 00005044: .byte 96 0E F8 33 90 31 62 00 FF FF 4E 0B 00 00 ; continuation
-00005052: .byte AC DA 5E F3 50 ; BAS_BLOCK_END selector=0x5EDA "Scruter_Mac" continuation=0x50F3
+00005052: .byte AC ; YIELD_B
+00005053: .byte DA 5E F3 50 ; SELECTOR_NODE selector=0x5EDA "Scruter_Mac" next=0x50F3
 00005057: .byte A3 01 00 4E 0B BE 00 00 00 ; MENU talk | bye_bye | robot
 00005060: .byte A6 7A 06 05 40 80 4B 4B 98 00 BE 00 D2 00 CE 40 ; TEXT line=0x067A voice=0x05 flags=0x40,0x80 "Ah , robot be hard job ... Me think always of vacation on islands of Sea of Tranquility ... SIGH ..."
 00005070: .byte 37 2B 62 00 29 02 1D 01 79 29 FE 01 07 59 4F 03 ; continuation
@@ -1755,7 +1870,8 @@
 000050C6: .byte A6 7A 06 03 40 80 03 5F 0F 11 98 00 3D 1D B8 10 ; TEXT line=0x067A voice=0x03 flags=0x40,0x80 "After war , them put Croolis brain in SCRUT robot . Me did be Croolis ..."
 000050D6: .byte 3E 0F 0A 08 EE 03 B8 00 BE 00 0F 02 29 02 D4 01 ; continuation
 000050E6: .byte D2 00 3E 0F 62 00 FF FF BE 00 00 00 ; continuation
-000050F2: .byte AC B8 00 4D 52 ; BAS_BLOCK_END selector=0x00B8 "SCRUT" continuation=0x524D
+000050F2: .byte AC ; YIELD_B
+000050F3: .byte B8 00 4D 52 ; SELECTOR_NODE selector=0x00B8 "SCRUT" next=0x524D
 000050F7: .byte A3 01 00 4E 0B D9 3C 9D 49 0F 11 A7 00 00 00 ; MENU talk | bye_bye | order | chief | war | happy
 00005106: .byte A6 7A 06 06 40 80 B8 00 39 1D 09 5F 62 00 B8 00 ; TEXT line=0x067A voice=0x06 flags=0x40,0x80 "SCRUT big army ... SCRUT control universe ..."
 00005116: .byte 76 52 0D 3E 62 00 FF FF B8 00 00 00 ; continuation
@@ -1782,7 +1898,8 @@
 00005228: .byte A6 7A 06 06 40 80 B8 00 BE 00 56 5F D9 3C EE 03 ; TEXT line=0x067A voice=0x06 flags=0x40,0x80 "SCRUT robot enforce order in universe ... Nice ... Me like ..."
 00005238: .byte 0D 3E 62 00 A9 01 62 00 29 02 37 04 62 00 FF FF ; continuation
 00005248: .byte 0F 11 00 00 ; continuation
-0000524C: .byte AC 97 4D E7 53 ; BAS_BLOCK_END selector=0x4D97 "prison" continuation=0x53E7
+0000524C: .byte AC ; YIELD_B
+0000524D: .byte 97 4D E7 53 ; SELECTOR_NODE selector=0x4D97 "prison" next=0x53E7
 00005251: .byte A3 01 00 4E 0B D0 4B 3E 0F 00 00 ; MENU talk | bye_bye | eviscerator | Croolis
 0000525C: .byte A6 7A 06 02 40 80 5E 5F FE 01 BC 0A 65 5F 62 00 ; TEXT line=0x067A voice=0x02 flags=0x40,0x80 "Prison of Mastachok solid ... Big fortress ... Tough ..."
 0000526C: .byte A9 33 6B 5F 62 00 74 5F 62 00 FF FF 97 4D 00 00 ; continuation
@@ -1814,7 +1931,8 @@
 000053C6: .byte 00 00 ; continuation
 000053C8: .byte A6 7A 06 02 40 80 29 02 0E 09 3E 0F 0A 08 B0 0B ; TEXT line=0x067A voice=0x02 flags=0x40,0x80 "Me have Croolis brain but not be chief ..."
 000053D8: .byte 84 09 D2 00 9D 49 62 00 FF FF 3E 0F 00 00 ; continuation
-000053E6: .byte AC BC 0A 47 55 ; BAS_BLOCK_END selector=0x0ABC "Mastachok" continuation=0x5547
+000053E6: .byte AC ; YIELD_B
+000053E7: .byte BC 0A 47 55 ; SELECTOR_NODE selector=0x0ABC "Mastachok" next=0x5547
 000053EB: .byte A3 01 00 4E 0B 8F 0A 3A 0A 00 00 ; MENU talk | bye_bye | planet | life
 000053F6: .byte A6 7A 06 05 40 80 BC 0A D2 00 8F 0A 1D 4D C6 12 ; TEXT line=0x067A voice=0x05 flags=0x40,0x80 "Mastachok be planet ravaged by war ... Here did be big battle ..."
 00005406: .byte 0F 11 62 00 A7 37 D4 01 D2 00 39 1D 25 4D 62 00 ; continuation
@@ -1841,7 +1959,8 @@
 00005522: .byte A6 7A 06 03 40 80 A7 37 84 09 D2 00 E4 33 95 3F ; TEXT line=0x067A voice=0x03 flags=0x40,0x80 "Here not be tekno Night Club ... Life be very lousy ..."
 00005532: .byte E3 5F 62 00 56 56 D2 00 94 01 5D 10 62 00 FF FF ; continuation
 00005542: .byte 3A 0A 00 00 ; continuation
-00005546: .byte AC 72 40 51 56 ; BAS_BLOCK_END selector=0x4072 "presents" continuation=0x5651
+00005546: .byte AC ; YIELD_B
+00005547: .byte 72 40 51 56 ; SELECTOR_NODE selector=0x4072 "presents" next=0x5651
 0000554B: .byte A3 01 00 4E 0B 12 60 37 04 00 00 ; MENU talk | bye_bye | friendship | like
 00005556: .byte A6 7A 06 03 40 80 29 02 37 04 72 40 62 00 1D 60 ; TEXT line=0x067A voice=0x03 flags=0x40,0x80 "Me like presents ... Presents ... Presents ... Me like ..."
 00005566: .byte 62 00 1D 60 62 00 29 02 37 04 62 00 FF FF 72 40 ; continuation
@@ -1861,7 +1980,8 @@
 00005628: .byte A6 7A 06 06 40 80 40 60 84 09 C9 56 EE 03 B8 00 ; TEXT line=0x067A voice=0x06 flags=0x40,0x80 "Friendship not exist in SCRUT army ... Brothers in arms ... Not friends ..."
 00005638: .byte 09 5F 62 00 4B 60 EE 03 89 59 62 00 D4 05 E5 31 ; continuation
 00005648: .byte 62 00 FF FF 12 60 00 00 ; continuation
-00005650: .byte AC 37 04 13 57 ; BAS_BLOCK_END selector=0x0437 "like" continuation=0x5713
+00005650: .byte AC ; YIELD_B
+00005651: .byte 37 04 13 57 ; SELECTOR_NODE selector=0x0437 "like" next=0x5713
 00005655: .byte A3 4E 0B 01 00 66 15 19 36 54 60 00 00 ; MENU bye_bye | talk | food | beauty | perfumes
 00005662: .byte A6 7A 06 09 40 80 29 02 79 29 37 04 4F 17 76 44 ; TEXT line=0x067A voice=0x09 flags=0x40,0x80 "Me always like same thing , go dance in Night Club on planet Galabar where night last six months ..."
 00005672: .byte 98 00 E3 03 DA 31 EE 03 95 3F E3 5F 4F 03 8F 0A ; continuation
@@ -1876,7 +1996,8 @@
 000056E8: .byte A6 7A 06 00 41 80 0C 00 5D 60 62 33 5F 01 62 60 ; TEXT line=0x067A voice=0x00 flags=0x41,0x80 "ME LIKE PERFUME : \"MOTOROIL\" Be exhaust nozzle Romeo ... ME LIKE , friend ..."
 000056F8: .byte 60 13 E7 4E EF 4E C4 33 62 00 0C 00 5D 60 98 00 ; continuation
 00005708: .byte D8 05 62 00 FF FF 54 60 00 00 ; continuation
-00005712: .byte AC A7 00 E5 57 ; BAS_BLOCK_END selector=0x00A7 "happy" continuation=0x57E5
+00005712: .byte AC ; YIELD_B
+00005713: .byte A7 00 E5 57 ; SELECTOR_NODE selector=0x00A7 "happy" next=0x57E5
 00005717: .byte A3 4E 0B 01 00 6D 60 73 60 79 60 00 00 ; MENU bye_bye | talk | beach | party | ballroom
 00005724: .byte A6 7A 06 04 40 80 29 02 84 09 A7 00 62 00 BC 0A ; TEXT line=0x067A voice=0x04 flags=0x40,0x80 "Me not happy ... Mastachok not have Night Club ..."
 00005734: .byte 84 09 0E 09 95 3F E3 5F 62 00 FF FF A7 00 00 00 ; continuation
@@ -1893,7 +2014,8 @@
 000057C8: .byte 62 00 9C 60 84 09 D2 00 E4 33 62 00 FF FF 79 60 ; continuation
 000057D8: .byte 00 00 ; continuation
 000057DA: .byte A6 7A 06 03 01 80 62 00 00 00 ; TEXT line=0x067A voice=0x03 flags=0x01,0x80 "..."
-000057E4: .byte AC 0A 33 00 00 ; BAS_BLOCK_END selector=0x330A "boude" continuation=0x0000
+000057E4: .byte AC ; YIELD_B
+000057E5: .byte 0A 33 00 00 ; SELECTOR_NODE selector=0x330A "boude" next=0x0000
 000057E9: .byte A3 A5 60 4E 0B 00 00 ; MENU grmmph | bye_bye
 000057F0: .byte A6 7A 06 07 40 80 62 00 AC 60 62 00 FF FF A5 60 ; TEXT line=0x067A voice=0x07 flags=0x40,0x80 "... Sulk ..."
 00005800: .byte 00 00 ; continuation

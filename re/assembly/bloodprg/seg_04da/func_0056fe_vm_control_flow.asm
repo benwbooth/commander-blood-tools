@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: recursive_graph
 ; label: vm_control_flow
-; label_comment: select an object control value from selector-0x0f field, first code node, or GS:0x6782 override; write it back, scan linked code nodes, execute the matched block plus collector, then optionally execute the GS:0x6784 parent block; natural C: re/source/bloodprg/candidates/seg_04da/func_0056fe_vm_control_flow.c
+; label_comment: select an object control value from selector-0x0f field, first BAS selector node, or GS:0x6782 override; write it back, scan linked {selector,next,body} nodes, execute the matched body plus menu collector, then optionally execute the GS:0x6784 parent body; natural C: re/source/bloodprg/candidates/seg_04da/func_0056fe_vm_control_flow.c
 ; byte_count: 124
 ; boundary: cfg_blocks_10_terminals_1
 ; terminal: ret:1

@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
 ; label: vm_op_ac_yield
-; label_comment: VM opcode 0xAC: byte-identical alias of opcode AA that sets the GS:0x67B4 yield flag to one
+; label_comment: VM opcode 0xAC: byte-identical alias of opcode AA that sets GS:0x67B4 to one and consumes no operands; each shipped BAS AC is followed by a separate four-byte selector node
 ; incoming: vm_opcode_handlers:opcode_0xac
 ; byte_count: 7
 ; boundary: cfg_blocks_1_terminals_1
