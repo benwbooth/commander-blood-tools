@@ -380,7 +380,7 @@ extern volatile cb_u16 vm_nav_chart_object_offsets[];
 
 #if defined(__WATCOMC__)
 #pragma aux dlg_menu_words_inline_reveal_step modify exact []
-#pragma aux presentation_ready_gate modify exact [ax es]
+#pragma aux presentation_ready_gate modify exact []
 #pragma aux object_heap_access modify exact []
 #pragma aux active_object_list_build modify exact []
 #pragma aux nav_chart_list_build value [ax] modify exact [ax]
