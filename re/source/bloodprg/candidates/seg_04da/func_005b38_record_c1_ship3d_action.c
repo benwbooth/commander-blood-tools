@@ -210,8 +210,9 @@ copy_position:
             }
         }
         /* The shipped success tail has an unmatched POP ES at 0x005D33.
-         * This natural translation preserves its state changes, not the
-         * consequent saved-frame and return-address corruption. */
+         * No shipped VAR image or native deferred-type writer supplies a C2
+         * action record, so the corrupt tail is dormant in original data.
+         * Preserve its intended state changes and return safely. */
         return;
 
     case RECORD_KIND_C3:

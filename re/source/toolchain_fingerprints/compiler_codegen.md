@@ -7198,18 +7198,37 @@ a matching path-local push. The common epilogue then performs a second `POP ES`,
 shifting the saved frame and return address. Two vectors stop immediately before
 `0x005D33` and prove the complete C2 state plus an intact 20-byte saved frame;
 the natural C preserves those state changes but deliberately does not express
-stack corruption.
+stack corruption. The byte is not an MZ relocation target, and the VM patch
+stream writes only to the loaded script image, so runtime loading does not repair
+it.
+
+The corrupt path is dormant in shipped play. None of the five initial VAR
+images contains a `0x00C2` record kind. The COD corpus contains exactly two
+opcode-C2 instructions, both in SCRIPT2, but the native opcode-C2 handler only
+inserts the related object into the aboard table, writes its selector-`0x11`
+parent to `0xFFFF`, and optionally requests presentation; it never writes a C2
+record kind. The complete native cross-reference set for deferred record type
+`0x6768` writes only zero, C1, C3, C4, or C6. Original assets therefore cannot
+enter the defective C2 action tail, while the natural function gives hand-edited
+scripts its intended state changes and a safe return.
 
 Thirty-two patched-helper vectors execute the untouched original body. They
 cover every record type and major gate, both C2 pre-defect states, exact helper
 arguments and order, complete game and record images, segmented ownership,
-normal stack integrity, and the C2 saved frame. Open Watcom 1.9 large
-(`-3 -os -s -ml -we`) compiles the warning-free natural C89 function to 434
-instructions/1,320 bytes versus 368/1,184 original, with 77.99 percent
-mnemonic-multiset overlap and 67.12 percent ordered mnemonic overlap. It uses no
-inline assembly or register-state facade. Full-source integration requires the
-shipped record and `GAME_DATA` segment contracts; direct replacement also needs
-the recovered helper ABIs and an explicit policy for the original C2 defect.
+normal stack integrity, and the C2 saved frame. A declaration and generated-code
+audit confirms each original GS global is `GAME_DATA`-based while object and
+record accesses retain their recovered far segment. Open Watcom 1.9 large
+(`-3 -os -s -ml -we`) compiles the current warning-free natural C89 function to
+444 instructions/1,338 bytes versus 368/1,184 original, with 78.53 percent
+mnemonic-multiset overlap and 68.48 percent ordered mnemonic overlap. It uses no
+inline assembly or register-state facade.
+
+The function is accepted for source-port integration with the shipped record
+and `GAME_DATA` segment contracts. Compiler frames, register allocation,
+segment materialization, and ordinary returns are harmless inside the coherently
+compiled caller/callee graph. Direct binary replacement would still need the
+recovered helper and register ABIs plus deliberate reproduction of the dormant
+C2 stack defect if exact corruption were required.
 
 ## BLOODPRG VM opcode-C1 handler at 0x006B4C
 
