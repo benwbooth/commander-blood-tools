@@ -2507,7 +2507,12 @@ and near return.
 
 Open Watcom `-3 -os -s -mh -we` compiles the natural explicit-near candidate
 warning-free to 40 instructions/132 bytes versus the original 34/125, with
-88.24 percent mnemonic-multiset overlap and no inline assembly. Full-source
+88.24 percent mnemonic-multiset and 82.35 percent ordered-mnemonic overlap.
+Turbo C 2.01 huge (`-mh -O -Z`) emits 74 instructions, with 85.29 percent
+multiset and 76.47 percent ordered overlap. Both preserve the signed zoom
+comparison and post-helper latch reads; neither uses inline assembly.
+
+The natural candidate is accepted for source-port integration. Full-source
 integration needs shared `SS == DS` data and a normal Boolean line-helper
 result. Direct replacement additionally needs BP input, carry-result and far
 helper adapters, the AX entity argument, and the original register/flag
