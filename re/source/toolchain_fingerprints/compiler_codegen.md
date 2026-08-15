@@ -1565,6 +1565,21 @@ whereas the original preserves it. Direct binary replacement therefore needs
 a narrow AX-preservation adapter; the sole real caller at `0x00B0C7` does not
 consume AX after the call.
 
+The checked five-profile domain contains 314 candidate records and 111
+kind-`0x80` links. Every link uses selector `0x11` offset `0x14`, resolves to an
+initially active kind-`0x08` or kind-`0x10` record, and then uses selector
+`0x0B` offset `0x18`; the highest read ends at `0x11F6`. The byte-exact
+BloodScript corpus has 182 CD selector-`0x11` writes, all to kind-`0x0400`, and
+two C2 writes, both to kind-`0x0002`, with no direct reference to a kind-`0x80`
+parent field. Mutability is not otherwise assumed: both the binary and C reload
+the parent link and perform the same wrapping 16-bit field sums on every call.
+
+After the sole call, `0x00B0CC..0x00B0E6` performs fixed memory stores and
+`0x00B0E6..0x00B0F3` replaces AX before its first read. Those stores neither
+consume AX nor branch on the callee flags. The Watcom AX clobber is therefore
+accepted inside the source-port call graph; preserving AX remains an explicit
+isolated binary-replacement boundary.
+
 Kind-2 navigation target-list builder `0x0071CF` first rebuilds the active
 object list, then walks its exact `0xFFFF`-terminated offsets. It excludes the
 Honk record at `GS:0x6754` and the radio/menu record at `GS:0x6756`, looks up
