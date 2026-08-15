@@ -3,6 +3,7 @@
 int CB_NEAR vm_field_offset(cb_u16 selector, cb_u16 kind_mask)
 {
     cb_u16 bit_index;
+    cb_u16 table_index;
 
     /* The binary's BSF has the same nonzero kind-mask precondition. */
     bit_index = 0;
@@ -11,5 +12,6 @@ int CB_NEAR vm_field_offset(cb_u16 selector, cb_u16 kind_mask)
         ++bit_index;
     }
 
-    return (int)vm_field_offset_table[(selector << 4) + bit_index];
+    table_index = (cb_u16)((selector << 4) + bit_index);
+    return (int)vm_field_offset_table_gs[table_index];
 }

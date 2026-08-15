@@ -1328,13 +1328,23 @@ return boundary, and all six arithmetic flags left by the final `ADD`.
 
 The natural candidate counts trailing zeroes by shifting a local copy of the
 kind mask, which is both clearer and smaller than constructing a new bit mask
-for every test. Open Watcom compiles the actual candidate without warnings;
-`-3 -ox -mm` emits 20 instructions/39 bytes versus 8/17 original. Standalone
-8086/286/386 probes emit 24/21/20 instructions and 42/39/39 bytes, while Turbo
-C 2.01 emits 20 instructions. The AX/BX pragma reproduces the entry and return
-registers, but neither compiler lowers natural C to `BSF`, and Watcom resolves
-the far table through ES instead of fixed GS. Exact integration therefore needs
-a narrow BSF/GS adapter, not register-state code in the natural function.
+for every test. The maintained source now states the final wrapping `u16` index
+and reads only the explicit `GAME_DATA` table alias. Open Watcom compiles that
+source directly without warnings; `-3 -ox -mm -zdp -we` emits 20
+instructions/39 bytes versus 8/17 original, with 75.00 percent mnemonic-
+multiset and ordered overlap. It preserves upper EAX, BX, all unrelated state,
+and the result-equivalent final `ADD` flags. Turbo C 2.01 medium emits 22
+instructions and a valid 426-byte OMF object.
+
+A linked Turbo C DOS executable calls the maintained function for every one of
+the 65,535 nonzero masks across all 21 real selector rows and four selector
+values whose left shift wraps. All 1,638,375 calls match an independent
+lowest-isolated-bit oracle, including multibit masks and signed table values
+from -128 through 127. This is accepted for full-source integration: the linker
+must bind `GAME_DATA` to the runtime game segment. Neither tested compiler
+selects `BSF`, and Watcom loads the segment relocation through saved ES instead
+of spelling a fixed GS override, so compact BSF/fixed-GS lowering remains a
+direct-replacement boundary rather than inline assembly in the natural routine.
 
 VM record owner lookup `0x006034` has nine deterministic direct vectors. They
 prove that the result is the greatest directory base strictly less than AX,
@@ -3862,7 +3872,7 @@ LCS and then mnemonic similarity:
 | probe | best configuration | original/generated instructions | instruction LCS | mnemonic LCS | byte-line LCS |
 | --- | --- | ---: | ---: | ---: | ---: |
 | `far_strlen` | medium, `-ox`, register | 11/11 | 0.2727 | 0.4545 | 0.2727 |
-| `field_offset` | compact, `-ox`, register | 8/23 | 0.3750 | 0.7500 | 0.3750 |
+| `field_offset` | medium, `-ox`, register | 8/20 | 0.3750 | 0.7500 | 0.3750 |
 | `vm_record_lookup_by_threshold` | medium, `-ox`, register | 12/12 | 0.0833 | 0.8333 | 0.1667 |
 | `active_object_list_build` | medium, `-ox`, register | 32/28 | 0.2188 | 0.6562 | 0.2500 |
 | `ship_3d_position_distance` | medium, `-ox`, register | 88/117 | 0.0682 | 0.5341 | 0.1023 |
