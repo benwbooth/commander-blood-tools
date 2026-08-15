@@ -4608,14 +4608,19 @@ DOS seek/read registers, forward destination-offset wrap, callback clobber
 boundaries, and final flags. The file backend deliberately attempts the read
 even after a failed seek and ignores both DOS status and returned byte count.
 
-The recovered functions are ordinary C around narrow EMS, XMS, and DOS
-adapters. Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the actual
-candidates warning-free to 34 instructions/61 bytes for EMS versus 23/40
-original, 29/84 for XMS versus 23/63, and 30/57 for DOS-file access versus
-24/42. Separate Turbo C 2.01 medium probes emit 26, 22, and 27 instructions.
-The remaining gaps are segment placement, direct interrupt/driver boundaries,
-Watcom's word-copy lowering, and compiler calling conventions rather than
-missing SND-bank page logic.
+The compiler-corpus samples include all three maintained sources directly.
+Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles them warning-free: EMS
+is 34 instructions/61 bytes versus 23/40 original with 91.30 percent
+mnemonic-multiset and 86.96 percent ordered overlap; XMS is 29/84 versus 23/63
+with 82.61 percent multiset and ordered overlap; and DOS-file access is 30/57
+versus 24/42 with 79.17 percent multiset and 75.00 percent ordered overlap.
+
+Turbo C 2.01 medium (`-mm -O -Z`) emits 30, 37, and 29 instructions with valid
+OMF objects of 541, 564, and 511 bytes respectively. The three candidates are
+accepted for source integration. The remaining gaps are segment placement,
+direct interrupt/driver boundaries, the original REP MOVSD and AL/flag
+carryover details, and compiler calling conventions rather than missing
+SND-bank page logic.
 
 ## BLOODPRG SND stream playback candidates
 
