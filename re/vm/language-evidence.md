@@ -128,6 +128,26 @@ Opcode `CF` at `0x64C0` clears the resume byte and saved choice, represented by
 a procedure-local reset because their successful bodies end or hand off the
 current presentation flow; the compiler does not add or remove resets.
 
+Opcode `A8` has a complete resource-path interpretation. The handler at native
+offset `0x67C8` copies its NUL-terminated operand to `SS:0x2120`, consumes one
+pad byte, and conditionally stages presentation line 7 by writing
+`GS:0x6788 = 7`, setting request bit `GS:0x67AA & 2`, and resetting the related
+presentation fields. The static resource table at `DS:0x1FB5` stores a
+four-byte `{descriptor,image_path}` entry for each line. Entry 7 points to
+`DS:0x211B`, whose bytes begin `00 10 73 71 5C`: flags, variant, then `sq\`.
+The mutable A8 destination starts at `DS:0x2120`, immediately after that prefix,
+so line 7's complete resource filename is `sq\<A8 operand>`. The line dispatcher
+marks line 7 for back-buffer drawing and passes it to `resource_load_sequence`.
+The same A8 handler recognizes the exact lowercase prefix `fin.` and sets the
+separate finale latch at `GS:0x67BD`.
+
+Every one of the 89 shipped A8 operands is a basename ending in `.hnm`; there
+are 36 unique names and the maximum length is 12 bytes. BloodScript therefore
+uses `request sequence "name.hnm"` for the established high-level shape. Its
+20-byte limit follows from the 21-byte writable region before the descriptor at
+`DS:0x2135`, including the trailing NUL. Other possible A8 payloads remain
+`load_string`, preserving their bytes without extending the proven semantics.
+
 The remaining 3,780 BAS bytes form 1,003 complete records: three one-topic menus,
 19 presentation-register writes, three string loads, 37 `0xAA` yields, 321
 `0xAC` yields, 321 linked selector nodes, and 299 shared state/record operations

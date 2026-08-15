@@ -1200,7 +1200,7 @@ selector Bob_Morlock_choices {
         say Bob_Morlock voice=0x01 flags=0x48 display=0x80 loop=none control=none : "Ah! Truth!" choices "truth"
         Bob_Morlock.conversation_progress += 0x0001
         say Bob_Morlock voice=0xFF flags=0x48 display=0x80 loop=none control=none : "I am getting pictures from the Ark, Commander|. Everything is in order..." choices "Good_ol_Bob"
-        load_string "aarche10.hnm"
+        request sequence "aarche10.hnm"
         say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "You flatter me|, Commander|..." choices "Good_ol_Bob"
         say Bob_Morlock voice=0x02 flags=0x4A display=0x80 loop=none control=none : "You embarrass me|, Commander|..." choices "Good_ol_Bob"
         Bob_Morlock.conversation_progress += 0x0001

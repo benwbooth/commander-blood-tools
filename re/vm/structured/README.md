@@ -50,6 +50,15 @@ statement that clears the saved choice and resume state. The corpus has 319
 choice requirements and 314 resets; the compiler preserves that difference
 instead of pairing them heuristically.
 
+HNM cutscene selections use `request sequence "name.hnm"`. Opcode `A8` writes
+the basename at `DS:0x2120`, which is the mutable suffix of resource slot 7's
+`sq\` descriptor, then conditionally stages presentation line 7. All 89 shipped
+uses are `.hnm` basenames (36 unique, at most 12 bytes), and each recompiles to
+the original padded string instruction. The compiler limits this high-level
+form to 20 bytes so its NUL cannot cross into the next descriptor. An unusual
+A8 payload that does not meet those established constraints is rendered as the
+explicit `load_string` fallback.
+
 Each kind-2 procedure begins with an `activation enabled|disabled until target`
 header backed by its native `A9` flag byte. Writes to those bytes are named
 assignments such as `dialogue.enabled = false`. All 413 shipped writes target a

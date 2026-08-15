@@ -249,17 +249,17 @@ proc kult {
     actor Scruter_Mac.s13 blood 0
     guard_pop
     say Scruter_Mac voice=0x00 flags=0x08 display=0x80 loop=none control=none : "Turn around|... Move on... There are too many pilgrims|... The planet's inaccessible|..."
-    load_string "1kkult20.hnm"
+    request sequence "1kkult20.hnm"
     say Scruter_Mac voice=0x01 flags=0x00 display=0x80 loop=none control=none : "The planet KULT is inaccessible. There are too many pilgrims..."
     when block_02FC {
         require Scruter_Mac.encounter_count < 0x0003
     } then {
         say Scruter_Mac voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Commander... Commander|... It's the planet TUMUL with a new name.."
-        load_string "1kkult20.hnm"
+        request sequence "1kkult20.hnm"
         say Scruter_Mac voice=0xFF flags=0x08 display=0x80 loop=none control=none : "That's right, Commander... When we saved BETAKAM IV, king of the Patagos, we altered history..."
-        load_string "hboc.hnm"
+        request sequence "hboc.hnm"
         say Scruter_Mac voice=0xFF flags=0x08 display=0x80 loop=none control=none : "Pilgrims now flock to hear the VOICE that saved BETAKAM and his people from the catastrophe..."
-        load_string "hboc.hnm"
+        request sequence "hboc.hnm"
         say Scruter_Mac voice=0xFF flags=0x20 display=0x80 loop=none control=none : "How about that... What a story..."
         say Scruter_Mac voice=0x00 flags=0x08 display=0x80 loop=none control=none : "Turn around|... Keep moving... There are too many pilgrims... The planet is inaccessible..."
         record_clear Scruter_Mac.s13
@@ -291,7 +291,7 @@ proc ondo1 {
         say ondoyant voice=0x06 flags=0x00 display=0x80 loop=none control=none : "Ha|! Ha|! Who's a little fibber?|... You ogle me as soon as the Commander's back is turned..."
         say ondoyant voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander|... She's making this up..."
         say ondoyant voice=0xFF flags=0x08 display=0x80 loop=none control=none : "Really, Mister Honk??? I'm a little disappointed in you|..."
-        load_string "rgbtr9.hnm"
+        request sequence "rgbtr9.hnm"
         say ondoyant voice=0xFF flags=0x20 display=0x80 loop=none control=none : "No no, Mister Bronko... Don't believe a word she says..."
         say ondoyant voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Ha|! Ha|! Ha|! Ha..."
         say ondoyant voice=0x06 flags=0x08 display=0x80 loop=none control=none : "Commander|... I have a ring... I want you to have it... It's yours..."
@@ -321,13 +321,13 @@ proc big1 {
     say Bug_Deluxe voice=0xFF flags=0x20 display=0x80 loop=none control=none : "This isn't right, Commander|... This is the BIG BAND, not the BIG BANG|..."
     say Bug_Deluxe voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Cap'n Bob isn't going to like this|..."
     say Bug_Deluxe voice=0xFF flags=0x08 display=0x80 loop=none control=none : "What's going on here??? What the blazes are we doing in a NIGHT CLUB???"
-    load_string "boba2.hnm"
+    request sequence "boba2.hnm"
     say Bug_Deluxe voice=0xFF flags=0x20 display=0x80 loop=none control=none : "There's been a mix up, Cap'n Bob sir..."
     say Bug_Deluxe voice=0xFF flags=0x08 display=0x90 loop=none control=none : "ALL OF YOU, INTO THE CRYOBOX RIGHT AWAY..."
-    load_string "bobb.hnm"
+    request sequence "bobb.hnm"
     state[0x136C] = 0x0001
     say Bug_Deluxe voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "NOW..."
-    load_string "bobb.hnm"
+    request sequence "bobb.hnm"
     Bug_Deluxe.current_location = Trashlando
     Tina_Burner.current_location = Bigbang
     record_clear Bug_Deluxe.s13
@@ -369,9 +369,9 @@ proc boba0 {
     say Bob_Morlock voice=0x07 flags=0x00 display=0x80 loop=none control=none : "She's right|... This Ark is a pigsty!!! This mess makes me sick!!!"
     say Bob_Morlock voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Dont' look at me! Mister BEAUREGARD's on cleaning duty this week!!!"
     say Bob_Morlock voice=0xFF flags=0x08 display=0x80 loop=none control=none : "What!!! Don't drag me into this! That does it! I've had it with this stupid ship..."
-    load_string "hboc.hnm"
+    request sequence "hboc.hnm"
     say Bob_Morlock voice=0xFF flags=0x08 display=0x80 loop=none control=none : "I want to go home..."
-    load_string "hboc.hnm"
+    request sequence "hboc.hnm"
     say Bob_Morlock voice=0x03 flags=0x00 display=0x80 loop=none control=none : "That's enough|, Mister Beauregard... Return to your cryobox|..."
     say Bob_Morlock voice=0xFF flags=0x20 display=0x80 loop=none control=none : "I told you so... I told you|..."
     say Bob_Morlock voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Commander, drop Mister BEAUREGARD off on the planet Tumul..."
@@ -522,11 +522,11 @@ proc bar3 {
     say Tina_Burner voice=0x08 flags=0x00 display=0x80 loop=none control=none : "SOW!! BOO HOO HOO... MIGRA... MIGRATOR... Come! I need you|... BOO HOO HOO..."
     say Tina_Burner voice=0xFF flags=0x20 display=0x80 loop=none control=none : "She's so gross, Commander|..."
     say Tina_Burner voice=0xFF flags=0x08 display=0x80 loop=none control=none : "What's all this racket? Can't a guy get any sleep around here?"
-    load_string "bobb.hnm"
+    request sequence "bobb.hnm"
     say Tina_Burner voice=0xFF flags=0x20 display=0x80 loop=none control=none : "She started it, Cap'n Bob sir... Ask the Commander|..."
     say Tina_Burner voice=0x07 flags=0x00 display=0x80 loop=none control=none : "BOO HOO HOO"
     say Tina_Burner voice=0xFF flags=0x08 display=0x80 loop=none control=none : "Just keep the noise down, okay?"
-    load_string "bobb.hnm"
+    request sequence "bobb.hnm"
     say Tina_Burner voice=0xFF flags=0x00 display=0x80 loop=none control=none : "YES sir... Right down..."
     say Tina_Burner voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Okay|... Let's go see MIGRATOR, Commander|..."
     say Tina_Burner voice=0x04 flags=0x08 display=0x80 loop=none control=none : "MIGRATOR... BOO... MIGRA HOO HOO HOO..."
@@ -565,51 +565,51 @@ proc finalmen {
     actor Migrator.s13 blood 0
     guard_pop
     say Migrator voice=0xFF flags=0x28 display=0x80 loop=none control=none : "SILENCE IT'S STARTING...."
-    load_string "lpm6sc1.hnm"
+    request sequence "lpm6sc1.hnm"
     say Migrator voice=0xFF flags=0x08 display=0x80 loop=none control=none : "Ah at last... It looks like it's showtime..."
-    load_string "bobb.hnm"
+    request sequence "bobb.hnm"
     say Migrator voice=0xFF flags=0x08 display=0x80 loop=none control=none : "Move over... I wanna see too..."
-    load_string "hboc.hnm"
+    request sequence "hboc.hnm"
     say Migrator voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Take it easy... We're not gonna fight over this..."
     say Migrator voice=0xFF flags=0x20 display=0x80 loop=none control=none : "You think this is the end of the game, Cap'n Bob???"
     say Migrator voice=0xFF flags=0x08 display=0x80 loop=none control=none : "Gosh darn it NO, Mister Honk... The Commander still hasn't found the BIG BANG..."
-    load_string "bobb.hnm"
+    request sequence "bobb.hnm"
     say Migrator voice=0xFF flags=0x08 display=0x80 loop=none control=none : ""
-    load_string "lpl7sc1.hnm"
+    request sequence "lpl7sc1.hnm"
     say Migrator voice=0xFF flags=0x08 display=0x80 loop=none control=none : ""
-    load_string "lpm1sc1.hnm"
+    request sequence "lpm1sc1.hnm"
     say Migrator voice=0xFF flags=0x08 display=0x80 loop=none control=none : ""
-    load_string "lpm2sc1.hnm"
+    request sequence "lpm2sc1.hnm"
     say Migrator voice=0xFF flags=0x08 display=0x80 loop=none control=none : ""
-    load_string "lpm3sc1.hnm"
+    request sequence "lpm3sc1.hnm"
     say Migrator voice=0xFF flags=0x08 display=0x80 loop=none control=none : ""
-    load_string "lpm4sc1.hnm"
+    request sequence "lpm4sc1.hnm"
     say Migrator voice=0xFF flags=0x08 display=0x80 loop=none control=none : ""
-    load_string "lpm7sc1.hnm"
+    request sequence "lpm7sc1.hnm"
     say Migrator voice=0xFF flags=0x08 display=0x80 loop=none control=none : ""
-    load_string "lpm5sc1.hnm"
+    request sequence "lpm5sc1.hnm"
     say Migrator voice=0xFF flags=0x08 display=0x80 loop=none control=none : ""
-    load_string "lpm6sc1.hnm"
+    request sequence "lpm6sc1.hnm"
     say Migrator voice=0xFF flags=0x08 display=0x80 loop=none control=none : ""
-    load_string "lpl7sc1.hnm"
+    request sequence "lpl7sc1.hnm"
     say Migrator voice=0xFF flags=0x08 display=0x80 loop=none control=none : ""
-    load_string "lpm1sc1.hnm"
+    request sequence "lpm1sc1.hnm"
     say Migrator voice=0xFF flags=0x08 display=0x80 loop=none control=none : ""
-    load_string "lpm2sc1.hnm"
+    request sequence "lpm2sc1.hnm"
     say Migrator voice=0xFF flags=0x08 display=0x80 loop=none control=none : ""
-    load_string "lpm3sc1.hnm"
+    request sequence "lpm3sc1.hnm"
     say Migrator voice=0xFF flags=0x08 display=0x80 loop=none control=none : ""
-    load_string "lpm4sc1.hnm"
+    request sequence "lpm4sc1.hnm"
     say Migrator voice=0xFF flags=0x08 display=0x80 loop=none control=none : ""
-    load_string "lpm7sc1.hnm"
+    request sequence "lpm7sc1.hnm"
     say Migrator voice=0xFF flags=0x08 display=0x80 loop=none control=none : ""
-    load_string "lpm5sc1.hnm"
+    request sequence "lpm5sc1.hnm"
     say Migrator voice=0xFF flags=0x08 display=0x80 loop=none control=none : ""
-    load_string "lpm6sc1.hnm"
+    request sequence "lpm6sc1.hnm"
     say Migrator voice=0xFF flags=0x08 display=0x80 loop=none control=none : ""
-    load_string "lpm7sc1.hnm"
+    request sequence "lpm7sc1.hnm"
     say Migrator voice=0xFF flags=0x08 display=0x80 loop=none control=none : ""
-    load_string "fin.hnm"
+    request sequence "fin.hnm"
 }
 
 proc corpo1 {
@@ -687,7 +687,7 @@ proc masta1 {
         say Scruter_Mac voice=0x09 flags=0x00 display=0x80 loop=none control=none : "You not say code... Me not like... Not like..."
         say Scruter_Mac voice=0x07 flags=0x00 display=0x80 loop=none control=none : "You meet my laser-pulper..."
         say Scruter_Mac voice=0x08 flags=0x08 display=0xA0 loop=none control=none : "BYE BYE FRIEND..."
-        load_string "explo3.hnm"
+        request sequence "explo3.hnm"
         choice = none
         record_clear Scruter_Mac.s13
     }
@@ -972,15 +972,15 @@ proc bronk1 {
         say Bronko voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Oh! And you|, Mister Bronko, you have so much to offer... Your cooking is out of this world..."
         say Bronko voice=0xFF flags=0x20 display=0x80 loop=none control=none : "IF YOU GO... I'M COMING WITH YOU..."
         say Bronko voice=0xFF flags=0x08 display=0x80 loop=none control=none : "What's going on now? HONK! Your sentimentality makes me sick!!!"
-        load_string "bobb.hnm"
+        request sequence "bobb.hnm"
         say Bronko voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Boo! Hoo! Sniff... I'm unhappy... Mister Bronko wants to party at the BIG BANG|..."
         say Bronko voice=0xFF flags=0x08 display=0x80 loop=none control=none : "Honk! Can it... I think I'm going to switch you off!!!"
-        load_string "bobb.hnm"
+        request sequence "bobb.hnm"
         say Bronko voice=0xFF flags=0x20 display=0x80 loop=none control=none : "NO! No|! Please don't do that, Cap'n Bob|..."
         say Bronko voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Okay okay... I'll stay here... I don't really like to party anyhow..."
         say Bronko voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Oh|, Mister Bronko... Such a lesson in bigheartedness... CRY... WEEP..."
         say Bronko voice=0xFF flags=0x08 display=0x80 loop=none control=none : "Commander|... Your computer's losing it... Something needs to be done!!!"
-        load_string "bobb.hnm"
+        request sequence "bobb.hnm"
         say Bronko voice=0x06 flags=0x08 display=0x80 loop=none control=none : "Well|, if you'll excuse me... I've got a murffalo in the oven..."
         record_clear Bronko.s13
     }
@@ -1054,7 +1054,7 @@ proc hom1_2922 {
         require choice == "click"
     } then {
         say Hom voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Ahh! Me catch print... Ohh! Nice print..."
-        load_string "scandoig.hnm"
+        request sequence "scandoig.hnm"
         choice = none
     }
     block_29F0:
@@ -1090,7 +1090,7 @@ proc hom2 {
         require choice == "click"
     } then {
         say Hom voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Ahh! Me catch print... Ohh! Nice print..."
-        load_string "scandoig.hnm"
+        request sequence "scandoig.hnm"
         choice = none
     }
     block_2C0A:
@@ -1200,7 +1200,7 @@ proc Bof_ok {
     guard_pop
     say Cyberquizz voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Believe it or not... You have passed your U.R.O.U.T."
     say Cyberquizz voice=0xFF flags=0x28 display=0x80 loop=none control=none : "YESSS!!!! I KNEW YOU COULD DO IT COMMANDER..."
-    load_string "cadeaux.hnm"
+    request sequence "cadeaux.hnm"
     say Cyberquizz voice=0x01 flags=0x00 display=0x80 loop=none control=none : "I present you with your magnificent diploma..."
     say Cyberquizz voice=0xFF flags=0x10 display=0x80 loop=block_2F6E control=none : "TELEPORT UROUT to Ark" choices "teleport"
     when block_2F6E {

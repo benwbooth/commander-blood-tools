@@ -160,10 +160,27 @@ Opcode `CF` clears the resume bit and saved word, represented by the 314 explici
 `choice = none` statements. Resets are not inferred or inserted, because five
 shipped choice guards deliberately have no matching `CF` in their procedure.
 
-The remaining native handlers provide typed presentation-name loads,
-character-slot bindings, and the `0x274F` flag branch. String-bearing opcodes
-are lifted only when they match the shipped printable-ASCII plus `00 00`
-representation; other payload shapes retain the generic lossless fallback.
+Opcode `A8` requests an HNM presentation sequence rather than merely loading an
+arbitrary string. Its handler at `0x67C8` copies the operand to `SS:0x2120`,
+selects presentation line 7, and raises request bit `GS:0x67AA & 2` when the
+native presentation gates permit it. Resource table slot 7 at `DS:0x1FD1`
+points to the descriptor at `DS:0x211B`; that descriptor's filename begins with
+`sq\` at `DS:0x211D`, exactly three bytes before the mutable A8 buffer. The
+resource loader consequently sees `sq\<operand>`. A case-sensitive `fin.`
+prefix also raises the finale latch at `GS:0x67BD`.
+
+All 89 shipped A8 operands are one of 36 basename-only `.hnm` names, and the
+longest is 12 bytes. BloodScript renders them as
+`request sequence "name.hnm"`. The high-level form allows at most 20 filename
+bytes, which is the space from `DS:0x2120` through the byte before the next
+descriptor at `DS:0x2135`, leaving room for the terminating NUL. A non-HNM or
+otherwise nonconforming A8 operand retains the exact low-level `load_string`
+fallback rather than being assigned sequence semantics.
+
+The remaining native handlers provide typed character-slot bindings and the
+`0x274F` flag branch. String-bearing opcodes are lifted only when they match the
+shipped printable-ASCII plus `00 00` representation; other payload shapes
+retain the generic lossless fallback.
 
 `re/vm/source/manifest.tsv` records semantic and unresolved byte coverage for
 all ten program images. The BAS decoder now walks the recovered sequential

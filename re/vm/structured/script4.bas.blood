@@ -321,7 +321,7 @@ selector Bob_Morlock_choices {
         say Bob_Morlock voice=0x01 flags=0x49 display=0x80 loop=none control=none : "Ah! Truth..." choices "truth"
         Bob_Morlock.conversation_progress += 0x0001
         say Bob_Morlock voice=0xFF flags=0x48 display=0x80 loop=none control=none : "I'm getting pictures from the Ark, Commander. All systems are nominal..." choices "good_"
-        load_string "arch01.hnm"
+        request sequence "arch01.hnm"
         say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "You flatter me, Commander|..." choices "good_"
         say Bob_Morlock voice=0x02 flags=0x4A display=0x80 loop=none control=none : "You're embarrassing me, Commander|..." choices "good_"
         Bob_Morlock.conversation_progress += 0x0001

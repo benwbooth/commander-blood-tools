@@ -1051,7 +1051,7 @@ say 0x004A voice=0x02 flags=0x40 display=0x80 loop=none control=none : "The trut
 say 0x004A voice=0x01 flags=0x48 display=0x80 loop=none control=none : "Ah! Truth!" choices "truth"
 conversation_progress[0x007C] += 0x0001
 say 0x004A voice=0xFF flags=0x48 display=0x80 loop=none control=none : "I am getting pictures from the Ark, Commander|. Everything is in order..." choices "Good_ol_Bob"
-load_string "aarche10.hnm"
+request sequence "aarche10.hnm"
 say 0x004A voice=0x01 flags=0x40 display=0x80 loop=none control=none : "You flatter me|, Commander|..." choices "Good_ol_Bob"
 say 0x004A voice=0x02 flags=0x4A display=0x80 loop=none control=none : "You embarrass me|, Commander|..." choices "Good_ol_Bob"
 conversation_progress[0x007C] += 0x0001

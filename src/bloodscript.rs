@@ -1280,6 +1280,20 @@ fn normalize_modern_statement(
         }
         "say" => normalize_modern_say(&fields, line_number, lexicon),
         "text" | "text_tokens" => normalize_modern_text(&fields, line_number),
+        "request" => {
+            if fields.len() != 3 || fields[1] != "sequence" {
+                bail!("line {line_number}: expected 'request sequence \"NAME.hnm\"'");
+            }
+            if !is_hnm_sequence_atom(fields[2]) {
+                bail!(
+                    "line {line_number}: sequence name must be a quoted .hnm basename of at most 20 printable ASCII bytes"
+                );
+            }
+            Ok(format!(
+                "LOAD_STRING {}",
+                modern_operand_to_canonical(fields[2], line_number)?
+            ))
+        }
         "require" => {
             if let Some(statement) =
                 normalize_modern_choice_expression(&fields[1..], line_number)?
@@ -1796,6 +1810,22 @@ fn canonical_operand_to_modern(value: &str) -> String {
     value.to_string()
 }
 
+fn is_hnm_sequence_atom(value: &str) -> bool {
+    let Some(value) = value
+        .strip_prefix('"')
+        .and_then(|value| value.strip_suffix('"'))
+    else {
+        return false;
+    };
+    value.len() <= 20
+        && value.len() > 4
+        && value
+            .as_bytes()
+            .iter()
+            .all(|byte| byte.is_ascii_graphic() && !matches!(*byte, b'"' | b'\\' | b'/'))
+        && value[value.len() - 4..].eq_ignore_ascii_case(".hnm")
+}
+
 fn looks_like_canonical_hex(value: &str) -> bool {
     matches!(value.len(), 2 | 4 | 8)
         && value.bytes().all(|byte| byte.is_ascii_hexdigit())
@@ -1912,6 +1942,22 @@ fn modern_statement(
                 );
             }
             Ok("choice = none".to_string())
+        }
+        "LOAD_STRING" => {
+            if args.len() != 1 {
+                bail!("line {line_number}: malformed generated LOAD_STRING statement");
+            }
+            if is_hnm_sequence_atom(args[0]) {
+                Ok(format!(
+                    "request sequence {}",
+                    canonical_operand_to_modern(args[0])
+                ))
+            } else {
+                Ok(format!(
+                    "load_string {}",
+                    canonical_operand_to_modern(args[0])
+                ))
+            }
         }
         "CONDITIONAL_BLOCK" if matches!(args.first().copied(), Some("00" | "01")) => {
             if args.len() != 2 {
@@ -4286,6 +4332,65 @@ mod tests {
     }
 
     #[test]
+    fn hnm_loads_use_sequence_request_syntax() {
+        let image = vec![
+            vm::OP_LOAD_STRING,
+            b'f',
+            b'i',
+            b'n',
+            b'.',
+            b'h',
+            b'n',
+            b'm',
+            0,
+            0,
+            0xFF,
+        ];
+        let decompiled = decompile(ImageKind::Cod, &image, &HashMap::new()).unwrap();
+        assert!(decompiled.source.contains("request sequence \"fin.hnm\""));
+        assert_eq!(compile(&decompiled.source).unwrap(), image);
+
+        let edited = concat!(
+            "// format: bloodscript-v5\n",
+            "request sequence \"scene.hnm\"\n",
+            "halt\n",
+        );
+        assert_eq!(
+            compile(edited).unwrap(),
+            vec![
+                vm::OP_LOAD_STRING,
+                b's',
+                b'c',
+                b'e',
+                b'n',
+                b'e',
+                b'.',
+                b'h',
+                b'n',
+                b'm',
+                0,
+                0,
+                0xFF,
+            ]
+        );
+
+        for invalid in [
+            "request sequence scene.hnm",
+            "request sequence \"sq/scene.hnm\"",
+            "request sequence \"scene.dat\"",
+            "request sequence \"12345678901234567.hnm\"",
+        ] {
+            let source = format!("// format: bloodscript-v5\n{invalid}\nhalt\n");
+            assert!(compile(&source).is_err(), "accepted {invalid}");
+        }
+
+        let fallback = vec![vm::OP_LOAD_STRING, b'n', b'o', b't', b'e', 0, 0, 0xFF];
+        let decompiled = decompile(ImageKind::Cod, &fallback, &HashMap::new()).unwrap();
+        assert!(decompiled.source.contains("load_string \"note\""));
+        assert_eq!(compile(&decompiled.source).unwrap(), fallback);
+    }
+
+    #[test]
     fn semantic_flags_and_topics_preserve_query_mode_and_encoding() {
         let image = vec![
             0xA9, 0x01, 0x0F, 0x00, // conditional block -> query mode
@@ -4775,7 +4880,7 @@ mod tests {
         for statement in [
             "require choice == 0x0D26",
             "require choice != 0x0EE8",
-            "load_string \"fin.hnm\"",
+            "request sequence \"fin.hnm\"",
             "poke_byte 0x1234 0x56",
             "character_slot 0x02 \"scrut\"",
             "choice = none",

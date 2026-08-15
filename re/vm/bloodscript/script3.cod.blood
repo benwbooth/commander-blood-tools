@@ -198,7 +198,7 @@ proc kra {
     say 0x05EA voice=0x07 flags=0x00 display=0x80 loop=none control=none : "Set"
     say 0x05EA voice=0x07 flags=0x08 display=0x90 loop=none control=none : "GO..."
     pair_record 0xBD 0x110E 0x000A 0x000A
-    load_string "krando20.hnm"
+    request sequence "krando20.hnm"
     say 0x05EA voice=0x01 flags=0x08 display=0xB0 loop=none control=none : "See you round, comrade..."
     bits(0x10F8,0x0002) = false using alternate_encoding
     bits(0x0F70,0x0002) = true using alternate_encoding
@@ -236,7 +236,7 @@ proc kra2 {
     bits(0x10F8,0x0002) = true
     say 0x05EA voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander|, it sounds like a breakdown... We'd better help him..."
     say 0x05EA voice=0xFF flags=0x08 display=0x80 loop=none control=none : "KRUIIIK..."
-    load_string "krando20.hnm"
+    request sequence "krando20.hnm"
     say 0x05EA voice=0xFF flags=0x08 display=0x80 loop=none control=none : "..."
     record_clear 0x0624
 }
@@ -690,11 +690,11 @@ proc hom1 {
     require choice == "click"
     guard_pop
     say 0x02D2 voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Ahh|! Me catch print... Ohh, you nice print..."
-    load_string "scandoig.hnm"
+    request sequence "scandoig.hnm"
     choice = none
     block_1C61:
     say 0x02D2 voice=0x06 flags=0x08 display=0x80 loop=none control=none : "Ooooouh! Me see you|, friend|... You have pretty box with picture of Hom inside..."
-    load_string "kort.hnm"
+    request sequence "kort.hnm"
     say 0x02D2 voice=0x07 flags=0x00 display=0x80 loop=none control=none : "Me read prints. You have little mouse in hand with long long tail..."
     say 0x02D2 voice=0x08 flags=0x00 display=0x80 loop=none control=none : "Me see keyboard... And oh! CDROM double speed. Nice hard disk... You be lucky, friend|..."
     say 0x02D2 voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Welcome to my planet, stranger..."
@@ -730,7 +730,7 @@ proc hom2 {
     require choice == "click"
     guard_pop
     say 0x02D2 voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Me recognize you|, friend|..."
-    load_string "scandoig.hnm"
+    request sequence "scandoig.hnm"
     choice = none
     block_1F47:
     guard_push block_1F96
@@ -873,7 +873,7 @@ proc dork_ok {
     require state[0x1404] == 0x0005
     guard_pop
     say 0x0362 voice=0x01 flags=0x08 display=0x80 loop=none control=none : "I hereby declare you a DORK!"
-    load_string "cadeaux.hnm"
+    request sequence "cadeaux.hnm"
     say 0x0362 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "YES!!!! WAY TO GO, COMMANDER. I KNEW YOU HAD IT IN YOU..."
     say 0x0362 voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Here is your official DORK diploma..."
     say 0x0362 voice=0xFF flags=0x10 display=0x80 loop=block_2414 control=none : "TELEPORT DIPLOMA TO ARK" choices "teleport"
@@ -902,7 +902,7 @@ proc perdu {
     say 0x0362 voice=0x05 flags=0x00 display=0x80 loop=none control=none : "You failed!"
     say 0x0362 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "I knew you'd foul up, Commander|. How could you be such an airhead?..."
     say 0x0362 voice=0x04 flags=0x08 display=0x80 loop=none control=none : "May oxydised yellow liver reduce you to suppurating pustules!|..."
-    load_string "maledict.hnm"
+    request sequence "maledict.hnm"
     say 0x0362 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "That's the way it goes...."
     say 0x0362 voice=0xFF flags=0x08 display=0xC0 loop=none control=none : "stop"
     bonjo.enabled = true
@@ -2229,7 +2229,7 @@ proc masta4 {
     actor 0x07D4 0x0028 0
     guard_pop
     say 0x079A voice=0x00 flags=0x08 display=0x80 loop=none control=none : "RLA... RLA... LDIR AX,AY... PUSH A... POP MUSIC... GHA... GHA...."
-    load_string "mag_scr.hnm"
+    request sequence "mag_scr.hnm"
     say 0x079A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Holy hamstrings! Commander|, he's lost it... It's our pal Scruter Mac. I recognize the perfume..."
     say 0x079A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "They switched him off, Commander|. It has to be because he let EVISCERATOR get away from Mastachok..."
     say 0x079A voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Cd blood... blood.exe... Eviscerator equals Fatal error... error... error..."
@@ -2331,7 +2331,7 @@ proc rator2 {
     say 0x028A voice=0x01 flags=0x00 display=0x80 loop=none control=none : "YOU FOLLOW ME... SWEAR... INSULT..."
     say 0x028A voice=0x02 flags=0x00 display=0x80 loop=none control=none : "You meet your maker.... Bye bye|..."
     say 0x028A voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "BOOOOOMMM!!!"
-    load_string "explo3.hnm"
+    request sequence "explo3.hnm"
     record[0x02A2] = 0x0FE6
     state[0x1414] = 0x0004
     record_clear 0x02C4
@@ -2512,7 +2512,7 @@ proc tum6bis {
     say 0x05A2 voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Thanks, Commander|. You're a standup guy..."
     say 0x05A2 voice=0x08 flags=0x00 display=0x80 loop=none control=none : "I'm going to make this rubble sorry it was ever born..."
     say 0x05A2 voice=0x07 flags=0x08 display=0x80 loop=none control=none : "Stand back, Commander|..."
-    load_string "explo3.hnm"
+    request sequence "explo3.hnm"
     say 0x05A2 voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "..."
     record[0x05BA] = 0x0DE2
     state[0x141A] = 0x0005
@@ -2583,9 +2583,9 @@ proc tum9 {
     say 0x05A2 voice=0x18 flags=0x00 display=0x80 loop=none control=none : "AAAAAAAAAA!!!"
     say 0x05A2 voice=0x19 flags=0x00 display=0x80 loop=none control=none : "OOOOOOOOhh!!!"
     say 0x05A2 voice=0x1E flags=0x08 display=0x80 loop=none control=none : "B b bLasteD..."
-    load_string "maledict.hnm"
+    request sequence "maledict.hnm"
     say 0x05A2 voice=0x1D flags=0x08 display=0x80 loop=none control=none : "hhhhhhhh"
-    load_string "maledict.hnm"
+    request sequence "maledict.hnm"
     say 0x05A2 voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Holy handguns, Commander|... He caught the curse of the mummy!..."
     state[0x1424] = 0x0001
     record_clear 0x05DC
@@ -3061,7 +3061,7 @@ proc monop2 {
     require choice == "teleport"
     guard_pop
     say 0x01B2 voice=0xFF flags=0x28 display=0x80 loop=none control=none : "TELEPORTING CRED TO ARK"
-    load_string "parf1_2.hnm"
+    request sequence "parf1_2.hnm"
     say 0x01B2 voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Come back soon to VENUSIA, SPACES'S LEADING SUPRA MARKET..."
     say 0x01B2 voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "stop"
     state[0x1434] = state[0x1436]

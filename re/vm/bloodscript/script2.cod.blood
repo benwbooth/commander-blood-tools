@@ -44,7 +44,7 @@ proc pter {
     say 0x070A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Uh oh Commander|. He's gonna zap the Orxx..."
     say 0x070A voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Bye bye, unauthorized strangers..."
     say 0x070A voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "BAAANG!!!"
-    load_string "explo3.hnm"
+    request sequence "explo3.hnm"
     record_clear 0x0744
     choice = none
     block_0227:
@@ -2324,7 +2324,7 @@ proc M0sk0 {
     actor 0x0354 0x0028 0
     guard_pop
     say 0x031A voice=0xFF flags=0x08 display=0x80 loop=none control=none : "MURFFALO FACTORY"
-    load_string "moskit20.hnm"
+    request sequence "moskit20.hnm"
     say 0x031A voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Me not have time to talk|, stranger. Me have much work. You come back later..."
     say 0x031A voice=0x06 flags=0x00 display=0x80 loop=none control=none : "Me have fifty tons of murffalos to chop up|... You come back later..."
     say 0x031A voice=0x07 flags=0x00 display=0x80 loop=none control=none : "Me not play... Me work|... You understand..."
@@ -2358,7 +2358,7 @@ proc Mosk1 {
     require encounter_count[0x0350] > 0x0001
     guard_pop
     say 0x031A voice=0xFF flags=0x08 display=0x80 loop=none control=none : "MURFFALO FACTORY"
-    load_string "moskit20.hnm"
+    request sequence "moskit20.hnm"
     guard_push block_5989
     require encounter_count[0x0350] == 0x0002
     guard_pop
@@ -2621,7 +2621,7 @@ proc emasc0 {
     guard_pop
     say 0x082A voice=0xFF flags=0x08 display=0x90 loop=none control=none : "BIONIUM TELEPORTED TO EMASCULATOR"
     state[0x126C] = 0x0001
-    load_string "star2.hnm"
+    request sequence "star2.hnm"
     say 0x082A voice=0x04 flags=0x00 display=0x80 loop=none control=none : "GOOD GOOD... Me much work now... You waste my time|..."
     say 0x082A voice=0x04 flags=0x08 display=0x90 loop=none control=none : "Bye bye..."
     choice = none
@@ -3009,7 +3009,7 @@ proc mastac {
     say 0x067A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "He's gonna zap the Orxx|..."
     say 0x067A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "You should've listened to me|, Commander... I'll have to tell Cap'n Bob|... Sorry..."
     say 0x067A voice=0x05 flags=0x08 display=0x80 loop=none control=none : "Baaaoooommmm!!!!"
-    load_string "explo3.hnm"
+    request sequence "explo3.hnm"
     say 0x067A voice=0xFF flags=0x08 display=0x80 loop=none control=none : "stop"
     record_clear 0x06B4
 }
@@ -3125,7 +3125,7 @@ proc scr3 {
     say 0x067A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Ouch! That was the wrong code, Commander|. The right code was code|. I thought you knew that..."
     say 0x067A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Cap'n Bob won't be happy when I tell him about this failure...!"
     say 0x067A voice=0x04 flags=0x08 display=0x80 loop=none control=none : "Bye bye, unauthorized strangers..."
-    load_string "explo3.hnm"
+    request sequence "explo3.hnm"
     say 0x067A voice=0xFF flags=0x08 display=0x90 loop=none control=none : "Stop"
     record_clear 0x06B4
     choice = none
@@ -3148,7 +3148,7 @@ proc scr4 {
     say 0x067A voice=0x05 flags=0x00 display=0x80 loop=none control=none : "You go away. Me suspicious of you|..."
     say 0x067A voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Me liquidize you|..."
     say 0x067A voice=0x05 flags=0x08 display=0x80 loop=none control=none : "BBBBAAAAAAAAOOOMMMM!!!!!!!!!!!"
-    load_string "explo3.hnm"
+    request sequence "explo3.hnm"
     say 0x067A voice=0xFF flags=0x08 display=0x80 loop=none control=none : "stop"
     record_clear 0x06B4
 }
@@ -3779,7 +3779,7 @@ proc monop2 {
     require record[0x1018] != 0x0028
     guard_pop
     say 0x0092 voice=0x05 flags=0x08 display=0x80 loop=none control=none : "It's your luck-lucky day, consumer comrade. You just won a free CRED!!!"
-    load_string "pubven1.hnm"
+    request sequence "pubven1.hnm"
     say 0x0092 voice=0xFF flags=0x30 display=0x80 loop=block_95DE control=none : "TELEPORT CRED TO ARK" choices "teleport"
     guard_push block_95DE
     require choice != "teleport"
@@ -3801,7 +3801,7 @@ proc monop2 {
     topic[0x00D8] = "department"
     block_9610:
     say 0x0092 voice=0xFF flags=0x48 display=0x80 loop=none control=none : "TELEPORT CRED ON VENUSIA|..." choices "buy"
-    load_string "pion.hnm"
+    request sequence "pion.hnm"
     guard_push finscr1
     require state[0x1310] == 0x0001
     guard_pop
