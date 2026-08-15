@@ -2492,13 +2492,19 @@ and unaligned loads, SI wrap from 0xFFFE, load-before-store order, distinct
 DS/GS ownership against segment decoys, AX/SI outputs, complete status-flag and
 register preservation, source immutability, exact bytes, and near return.
 
-The one-to-one candidate is a post-incremented far DS:SI word dereference assigned to
-a volatile named based-segment global, with the advanced cursor returned
-directly. Open Watcom `-3 -os -s -mh -we` compiles it without warnings to 9
-instructions/16 bytes versus 3/6 original. Watcom preserves the C behavior but
-saves DX/ES, loads the named
-segment through them, and emits MOV plus ADD instead of the original ambient
-GS store and LODSW. Fixed GS placement remains the only integration boundary.
+The compiler probe now includes the authoritative one-to-one candidate: a
+post-incremented far DS:SI word dereference assigned directly to a volatile
+named based-segment global, with the advanced cursor returned. Open Watcom
+`-3 -os -s -mh -we` compiles it warning-free to 9 instructions/16 bytes versus
+3/6 original, with 66.67 percent mnemonic-multiset overlap and no inline
+assembly. Turbo C 2.01 emits 16 instructions.
+
+The function is accepted for source-port integration without replacing the
+natural assignment by inline assembly. Watcom preserves the C data behavior
+but loads `GAME_DATA` through DX/ES and consumes the word with MOV plus two INC
+instructions. Its final ES and flags therefore differ from the original
+ambient GS store plus flag-preserving LODSW; those are direct-binary-
+replacement boundaries, not missing parser state logic.
 
 Matrix-slot clear `0x00963F` uses BP without an override, so its six stores are
 to SS:0x2A1B rather than the previously recorded GS segment. Each iteration
