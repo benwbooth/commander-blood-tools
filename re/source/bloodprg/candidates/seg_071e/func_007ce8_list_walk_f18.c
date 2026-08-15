@@ -21,11 +21,13 @@ void CB_NEAR list_walk_f18(void)
     cb_u16 line_count;
     cb_u16 line_index;
     cb_u16 line_length;
+    cb_u16 line_y;
     cb_u8 character;
 
     entry_offset = (cb_u16)byte_parser_stream_0f18_cursor;
-    threshold = *(volatile cb_i16 CB_GAME_DATA *)
-            (byte_parser_stream_segment + entry_offset);
+    threshold = (cb_i16)((cb_u16)byte_parser_stream_segment[entry_offset]
+            | ((cb_u16)byte_parser_stream_segment[
+                    (cb_u16)(entry_offset + 1u)] << 8));
     if (threshold < 0 || threshold > byte_parser_table_131c_visible_index) {
         return;
     }
@@ -63,20 +65,24 @@ void CB_NEAR list_walk_f18(void)
     draw_text = (const cb_u8 CB_FAR *)MK_FP(
             FP_SEG((const void CB_FAR *)&byte_parser_stream_0f18_cursor),
             text_offset);
-    for (line_index = 0u; line_index < line_count; ++line_index) {
+    line_index = 0u;
+    line_y = CENTERED_TEXT_FIRST_Y;
+    do {
         draw_text = font8x8_text_draw_display(
                 draw_text,
                 centered_text_line_layout[line_index].centered_x,
-                (cb_u16)(CENTERED_TEXT_FIRST_Y
-                        + line_index * CENTERED_TEXT_LINE_HEIGHT),
+                line_y,
                 (cb_u16)(
                         (centered_text_line_layout[line_index].character_count
                                 << 8)
                         | CENTERED_TEXT_COLOR));
-    }
+        line_y = (cb_u16)(line_y + CENTERED_TEXT_LINE_HEIGHT);
+        ++line_index;
+    } while (line_index != line_count);
 
-    next_threshold = *(volatile cb_i16 CB_GAME_DATA *)
-            (byte_parser_stream_segment + scan_offset);
+    next_threshold = (cb_i16)((cb_u16)byte_parser_stream_segment[scan_offset]
+            | ((cb_u16)byte_parser_stream_segment[
+                    (cb_u16)(scan_offset + 1u)] << 8));
     if (next_threshold >= 0
             && next_threshold <= byte_parser_table_131c_visible_index) {
         byte_parser_stream_0f18_cursor = (cb_game_char_ptr)scan_offset;

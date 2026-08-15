@@ -5470,14 +5470,25 @@ all layout records, helper-return text offsets, post-call rereads, segment
 ownership, call frames, preservation, terminal flags, stack integrity, and near
 return.
 
-Open Watcom 1.9 huge (`-3 -os -s -mh -we`) compiles the natural 16-bit offset
-and named-arena candidate warning-free to 119 instructions/313 bytes versus
-70/147 in the original, with 72.86 percent mnemonic-multiset overlap and no
-inline assembly. The emitted font call loads `DS` from the GAME_DATA relocation
-and accesses layout records through `SS`. Direct replacement still needs the
-original fixed `BP` scratch allocation, `DS = GS`, `LODSB`/`LOOP` lowering,
-preserve-all and final-flag envelope, and the shipped clear-direction C
-invariant.
+The authoritative candidate decodes each packed threshold from two wrapped
+little-endian byte accesses. This preserves odd offsets and 64 KiB wrap while
+removing the two Watcom pointer-adjust calls caused by casting the arena to a
+word pointer. Its guaranteed-nonempty draw loop also reflects the mandatory
+final line directly and increments y by eight like the original.
+
+Open Watcom 1.9 large (`-3 -os -s -ml -we`) compiles that source warning-free
+to 86 instructions/233 bytes versus 70/147 in the original, with 75.71 percent
+mnemonic-multiset and 71.43 percent ordered-mnemonic overlap. It emits no
+`__PIA` pointer-adjust helper. Turbo C 2.01 large (`-ml -O -Z`) emits 171
+instructions, with 82.86 percent mnemonic-multiset and 61.43 percent ordered
+overlap. Medium-model Watcom cannot express the recovered `DS:SI` far-pointer
+return contract, while huge-model normalization adds a pointer-adjust helper;
+large is therefore the authoritative model for this routine.
+
+The natural candidate is accepted for source-port integration. Direct
+replacement still needs the original fixed `BP` scratch allocation, `DS = GS`,
+`LODSB`/`LOOP` lowering, preserve-all and final-flag envelope, and the shipped
+clear-direction C invariant.
 
 ## BLOODPRG navigation actor slot update loop candidate
 
