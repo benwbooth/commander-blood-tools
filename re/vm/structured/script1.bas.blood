@@ -1,0 +1,10 @@
+; BloodScript typed VM source
+; format: bloodscript-ir-v1
+; image: BAS
+; size: 0x00000020
+
+00000000: YIELD ; opcode AA
+00000001: BAS_BLOCK_END 0A50 0000 ; "parler"
+00000006: MENU 0A57 ; adieu
+0000000B: TEXT 082A FF 61 80 - - 0900 00F0 04E9 059F FFFF 0A5D ; TEXT line=0x082A voice=0xFF flags=0x61,0x80 "Yes ! Commander ?"
+0000001F: END

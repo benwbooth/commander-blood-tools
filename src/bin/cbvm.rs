@@ -7,7 +7,7 @@ use commander_blood_tools::vm_source::{self, ImageKind};
 
 fn usage() -> ! {
     eprintln!(
-        "usage:\n  cbvm disassemble <cod|bas> <image> <dictionary> <output>\n  cbvm assemble <source> <output>\n  cbvm decompile-bundle <game-dir> <output-dir>\n  cbvm decompile-bloodscript <game-dir> <output-dir>\n  cbvm compile-bloodscript <source> <output>\n  cbvm analyze-control-flow <game-dir> <output-dir>"
+        "usage:\n  cbvm disassemble <cod|bas> <image> <dictionary> <output>\n  cbvm assemble <source> <output>\n  cbvm decompile-bundle <game-dir> <output-dir>\n  cbvm decompile-bloodscript <game-dir> <output-dir>\n  cbvm decompile-structured <game-dir> <output-dir>\n  cbvm compile-bloodscript <source> <output>\n  cbvm analyze-control-flow <game-dir> <output-dir>"
     );
     std::process::exit(2);
 }
@@ -49,6 +49,7 @@ fn write_bloodscript(
     dictionary_path: &Path,
     symbol_path: Option<&Path>,
     output_path: &Path,
+    structured: bool,
 ) -> Result<bloodscript::Decompilation> {
     let image = std::fs::read(image_path)
         .with_context(|| format!("reading VM image {}", image_path.display()))?;
@@ -61,7 +62,11 @@ fn write_bloodscript(
         })
         .transpose()?
         .unwrap_or_default();
-    let source = bloodscript::decompile_with_symbols(kind, &image, &dictionary, &symbols)?;
+    let source = if structured {
+        bloodscript::decompile_structured_with_symbols(kind, &image, &dictionary, &symbols)?
+    } else {
+        bloodscript::decompile_with_symbols(kind, &image, &dictionary, &symbols)?
+    };
     let rebuilt = bloodscript::compile(&source.source)?;
     if rebuilt != image {
         bail!(
@@ -208,6 +213,7 @@ fn main() -> Result<()> {
                         &dictionary,
                         (kind == ImageKind::Cod).then_some(symbols.as_path()),
                         &output,
+                        false,
                     )?;
                     let input_bytes = std::fs::metadata(&image)?.len();
                     manifest.push_str(&format!(
@@ -219,6 +225,50 @@ fn main() -> Result<()> {
                         source.raw_bytes,
                         source.symbolic_labels,
                         source.procedures
+                    ));
+                    println!("verified {} -> {}", image.display(), output.display());
+                }
+            }
+            std::fs::write(output_dir.join("manifest.tsv"), manifest)?;
+        }
+        Some("decompile-structured") => {
+            let game_dir = PathBuf::from(args.next().unwrap_or_else(|| usage()));
+            let output_dir = PathBuf::from(args.next().unwrap_or_else(|| usage()));
+            if args.next().is_some() {
+                usage();
+            }
+            std::fs::create_dir_all(&output_dir)?;
+            let mut manifest = String::from(
+                "script\timage\tinput_bytes\ttyped_statements\ttyped_bytes\tgeneric_op_statements\tgeneric_op_bytes\traw_bytes\tsymbolic_labels\tprocedures\tstructured_guards\troundtrip\n",
+            );
+            for script in 1..=5 {
+                let dictionary = game_dir.join(format!("SCRIPT{script}.DIC"));
+                let symbols = game_dir.join(format!("SCRIPT{script}.DEB"));
+                for (extension, kind) in [("COD", ImageKind::Cod), ("BAS", ImageKind::Bas)] {
+                    let image = game_dir.join(format!("SCRIPT{script}.{extension}"));
+                    let output = output_dir.join(format!(
+                        "script{script}.{}.blood",
+                        extension.to_ascii_lowercase()
+                    ));
+                    let source = write_bloodscript(
+                        kind,
+                        &image,
+                        &dictionary,
+                        (kind == ImageKind::Cod).then_some(symbols.as_path()),
+                        &output,
+                        kind == ImageKind::Cod,
+                    )?;
+                    let input_bytes = std::fs::metadata(&image)?.len();
+                    manifest.push_str(&format!(
+                        "SCRIPT{script}\t{extension}\t{input_bytes}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\tbyte_exact\n",
+                        source.typed_statements,
+                        source.typed_bytes,
+                        source.generic_op_statements,
+                        source.generic_op_bytes,
+                        source.raw_bytes,
+                        source.symbolic_labels,
+                        source.procedures,
+                        source.structured_guards
                     ));
                     println!("verified {} -> {}", image.display(), output.display());
                 }

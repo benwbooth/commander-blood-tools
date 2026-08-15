@@ -61,6 +61,13 @@ cargo run --bin cbvm -- analyze-control-flow \
   accuracy/cblood_install/cblood re/vm/control-flow
 ```
 
+Generate the first proven structured source view with:
+
+```sh
+cargo run --bin cbvm -- decompile-structured \
+  accuracy/cblood_install/cblood re/vm/structured
+```
+
 Compile one edited BloodScript IR image with:
 
 ```sh
@@ -124,7 +131,10 @@ contains 13,203 typed statements covering every byte with no shipped generic
 `OP` or `RAW` fallback. This means both instruction streams are fully framed and
 typed. The COD pass now recovers 7,010 basic blocks and 17,287 typed edges across
 all 480 DEB procedures, with no unresolved guard target. Five disabled block
-bodies are retained as unreachable evidence. See `bloodscript/manifest.tsv` for
-per-image byte coverage, `control-flow/manifest.tsv` for graph counts, and
+bodies are retained as unreachable evidence. The structured pass proves 443 of
+682 `A0` guard regions and leaves the remaining 239 in explicit low-level form.
+See `bloodscript/manifest.tsv` for per-image byte coverage,
+`control-flow/manifest.tsv` for graph counts, `structured/manifest.tsv` for
+source-lift counts, and
 [language-evidence.md](language-evidence.md) for the source-language
 inference.

@@ -82,6 +82,13 @@ flag byte. All branch-capable instructions resolve to a concrete guard target.
 Exactly five block bodies are unreachable because their opener flag remains
 zero; they are preserved rather than deleted from the source evidence.
 
+The first source-structuring pass converts 443 of the 682 `A0` guards into
+balanced `WHEN`/`THEN`/`END_WHEN` regions. A region is accepted only when it is
+forward, procedure-local, non-crossing, single-entry, and single-exit according
+to the recovered CFG. The other 239 guards remain explicit low-level tokens.
+Both forms compile through the same exact backend, and all ten structured
+sources reproduce the shipped bytes.
+
 ## What is not established
 
 The `.BAS` files are binary data, not surviving text source. No QuickBASIC,
@@ -132,7 +139,8 @@ specific byte range and must never be labelled as the original 1994 source.
 3. Use the recovered procedures and symbolic targets to construct typed basic
    blocks and per-procedure control-flow graphs. Complete for shipped COD.
 4. Lift reducible graph regions into guards and conditional blocks while
-   retaining address labels for irreducible regions.
+   retaining address labels for irreducible regions. Guard lift is in progress:
+   443 of 682 `A0` regions are proven.
 5. Add symbolic object, field, and dictionary names without changing numeric
    identity in the compiler IR.
 6. Compile the structured syntax back through the exact IR and require all ten

@@ -90,6 +90,13 @@ pub struct CodControlFlow {
     pub edges: Vec<BlockEdge>,
 }
 
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct StructuredGuard {
+    pub start: usize,
+    pub then_offset: usize,
+    pub end: usize,
+}
+
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 struct FlowState {
     query: bool,
@@ -277,6 +284,94 @@ pub fn analyze_cod(script: &str, image: &[u8], symbols: &[DebSymbol]) -> Result<
         blocks,
         edges: block_edges,
     })
+}
+
+pub fn recover_structured_guards(
+    script: &str,
+    image: &[u8],
+    symbols: &[DebSymbol],
+) -> Result<Vec<StructuredGuard>> {
+    let graph = analyze_cod(script, image, symbols)?;
+    let tokens = vm::walk(image, 0, image.len());
+    let functions = functions_from_symbols(script, symbols, image.len());
+    let mut candidates = Vec::new();
+
+    for (index, token) in tokens.iter().enumerate() {
+        let VmToken::GuardPush { offset, target, .. } = token else {
+            continue;
+        };
+        let end = usize::from(*target);
+        if end <= *offset {
+            continue;
+        }
+        let procedure_end = functions
+            .iter()
+            .map(|function| function.offset)
+            .find(|&function_offset| function_offset > *offset)
+            .unwrap_or(image.len() - 1);
+        if end > procedure_end {
+            continue;
+        }
+
+        let mut depth = 1usize;
+        let mut then_offset = None;
+        for nested in &tokens[index + 1..] {
+            if nested.offset() >= end {
+                break;
+            }
+            match nested {
+                VmToken::GuardPush { .. } => depth += 1,
+                VmToken::GuardPop { offset, .. } => {
+                    depth -= 1;
+                    if depth == 0 {
+                        then_offset = Some(*offset);
+                        break;
+                    }
+                }
+                _ => {}
+            }
+        }
+        if let Some(then_offset) = then_offset {
+            candidates.push(StructuredGuard {
+                start: *offset,
+                then_offset,
+                end,
+            });
+        }
+    }
+
+    let mut rejected = BTreeSet::new();
+    for (left_index, left) in candidates.iter().enumerate() {
+        for (right_index, right) in candidates.iter().enumerate().skip(left_index + 1) {
+            let crosses =
+                (left.start < right.start && right.start < left.end && left.end < right.end)
+                    || (right.start < left.start && left.start < right.end && right.end < left.end);
+            if crosses || left.then_offset == right.then_offset {
+                rejected.insert(left_index);
+                rejected.insert(right_index);
+            }
+        }
+    }
+
+    for (index, guard) in candidates.iter().enumerate() {
+        if graph.edges.iter().any(|edge| {
+            let source_inside =
+                edge.from_instruction >= guard.start && edge.from_instruction < guard.end;
+            let target_inside = edge.to_block >= guard.start && edge.to_block < guard.end;
+            let enters_interior =
+                !source_inside && edge.to_block > guard.start && edge.to_block < guard.end;
+            let exits_elsewhere = source_inside && !target_inside && edge.to_block != guard.end;
+            enters_interior || exits_elsewhere
+        }) {
+            rejected.insert(index);
+        }
+    }
+
+    Ok(candidates
+        .into_iter()
+        .enumerate()
+        .filter_map(|(index, guard)| (!rejected.contains(&index)).then_some(guard))
+        .collect())
 }
 
 fn validate_typed_stream(image: &[u8], tokens: &[VmToken]) -> Result<usize> {
@@ -556,5 +651,38 @@ mod tests {
                 && edge.to_block == 0x0011
                 && edge.kind == EdgeKind::GuardFailure
         }));
+    }
+
+    #[test]
+    fn recovers_only_single_entry_single_exit_forward_guards() {
+        let reducible = vec![
+            0xA0, 0x0B, 0x00, // guard -> END
+            0xA3, 0x34, 0x12, // condition
+            0xA1, // then
+            0xA5, 0x02, 0x78, 0x56, // body
+            0xFF,
+        ];
+        assert_eq!(
+            recover_structured_guards("SCRIPTX", &reducible, &[]).unwrap(),
+            vec![StructuredGuard {
+                start: 0,
+                then_offset: 6,
+                end: 11,
+            }]
+        );
+
+        let external_entry = vec![
+            0xA4, 0x0A, 0x00, // bypass guard and enter its body
+            0xA0, 0x0E, 0x00, // guard -> END
+            0xA3, 0x34, 0x12, // condition
+            0xA1, // then
+            0xA5, 0x02, 0x78, 0x56, // body
+            0xFF,
+        ];
+        assert!(
+            recover_structured_guards("SCRIPTX", &external_entry, &[])
+                .unwrap()
+                .is_empty()
+        );
     }
 }

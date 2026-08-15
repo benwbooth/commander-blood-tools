@@ -13,6 +13,7 @@ use anyhow::{Result, anyhow, bail};
 
 use crate::script::DebSymbol;
 use crate::vm::{self, VmToken};
+use crate::vm_cfg::{StructuredGuard, recover_structured_guards};
 use crate::vm_source::{self, ImageKind};
 
 const SOURCE_FORMAT: &str = "bloodscript-ir-v1";
@@ -27,6 +28,7 @@ pub struct Decompilation {
     pub raw_bytes: usize,
     pub symbolic_labels: usize,
     pub procedures: usize,
+    pub structured_guards: usize,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -38,6 +40,7 @@ struct BodyStats {
     raw_bytes: usize,
     symbolic_labels: usize,
     procedures: usize,
+    structured_guards: usize,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -55,6 +58,13 @@ struct ParsedSourceLine<'a> {
     args: Vec<&'a str>,
 }
 
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+struct StructuredAnnotations {
+    starts: BTreeMap<usize, StructuredGuard>,
+    thens: BTreeMap<usize, usize>,
+    ends: BTreeMap<usize, Vec<usize>>,
+}
+
 pub fn decompile(
     kind: ImageKind,
     image: &[u8],
@@ -68,6 +78,25 @@ pub fn decompile_with_symbols(
     image: &[u8],
     dictionary: &HashMap<u16, String>,
     symbols: &[DebSymbol],
+) -> Result<Decompilation> {
+    decompile_mode(kind, image, dictionary, symbols, false)
+}
+
+pub fn decompile_structured_with_symbols(
+    kind: ImageKind,
+    image: &[u8],
+    dictionary: &HashMap<u16, String>,
+    symbols: &[DebSymbol],
+) -> Result<Decompilation> {
+    decompile_mode(kind, image, dictionary, symbols, true)
+}
+
+fn decompile_mode(
+    kind: ImageKind,
+    image: &[u8],
+    dictionary: &HashMap<u16, String>,
+    symbols: &[DebSymbol],
+    structured: bool,
 ) -> Result<Decompilation> {
     let mut source = String::new();
     writeln!(source, "; BloodScript typed VM source")?;
@@ -84,7 +113,7 @@ pub fn decompile_with_symbols(
     writeln!(source)?;
 
     let stats = match kind {
-        ImageKind::Cod => decompile_cod(&mut source, image, dictionary, symbols)?,
+        ImageKind::Cod => decompile_cod(&mut source, image, dictionary, symbols, structured)?,
         ImageKind::Bas => decompile_bas(&mut source, image, dictionary)?,
     };
     Ok(Decompilation {
@@ -96,6 +125,7 @@ pub fn decompile_with_symbols(
         raw_bytes: stats.raw_bytes,
         symbolic_labels: stats.symbolic_labels,
         procedures: stats.procedures,
+        structured_guards: stats.structured_guards,
     })
 }
 
@@ -130,6 +160,7 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
 
     let mut image = Vec::new();
     let mut current_procedure: Option<&str> = None;
+    let mut open_whens: Vec<(&str, bool)> = Vec::new();
     for line in lines {
         if line.offset != image.len() {
             bail!(
@@ -146,6 +177,13 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
             }
             "PROCEDURE" => {
                 require_count(&line.args, 1, line.line_number, line.name)?;
+                if let Some((target, _)) = open_whens.last() {
+                    bail!(
+                        "line {}: PROCEDURE reached before END_WHEN {:?}",
+                        line.line_number,
+                        target
+                    );
+                }
                 if let Some(open) = current_procedure {
                     bail!(
                         "line {}: PROCEDURE {:?} starts before {:?} ends",
@@ -159,6 +197,13 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
             }
             "END_PROCEDURE" => {
                 require_count(&line.args, 1, line.line_number, line.name)?;
+                if let Some((target, _)) = open_whens.last() {
+                    bail!(
+                        "line {}: END_PROCEDURE reached before END_WHEN {:?}",
+                        line.line_number,
+                        target
+                    );
+                }
                 if current_procedure != Some(line.args[0]) {
                     bail!(
                         "line {}: END_PROCEDURE {:?} does not match {:?}",
@@ -168,6 +213,54 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
                     );
                 }
                 current_procedure = None;
+                continue;
+            }
+            "WHEN" => {
+                require_count(&line.args, 1, line.line_number, line.name)?;
+                let target =
+                    parse_address(line.args[0], &labels, line.line_number, "WHEN target")?;
+                if usize::from(target) <= line.offset {
+                    bail!("line {}: WHEN target must be forward", line.line_number);
+                }
+                open_whens.push((line.args[0], false));
+            }
+            "THEN" => {
+                require_count(&line.args, 0, line.line_number, line.name)?;
+                let Some((_, saw_then)) = open_whens.last_mut() else {
+                    bail!("line {}: THEN without WHEN", line.line_number);
+                };
+                if *saw_then {
+                    bail!("line {}: duplicate THEN", line.line_number);
+                }
+                *saw_then = true;
+            }
+            "END_WHEN" => {
+                require_count(&line.args, 1, line.line_number, line.name)?;
+                let Some((target, saw_then)) = open_whens.pop() else {
+                    bail!("line {}: END_WHEN without WHEN", line.line_number);
+                };
+                if target != line.args[0] {
+                    bail!(
+                        "line {}: END_WHEN {:?} does not match {:?}",
+                        line.line_number,
+                        line.args[0],
+                        target
+                    );
+                }
+                if !saw_then {
+                    bail!("line {}: END_WHEN reached before THEN", line.line_number);
+                }
+                let target_offset =
+                    parse_address(target, &labels, line.line_number, "END_WHEN target")?;
+                if usize::from(target_offset) != line.offset {
+                    bail!(
+                        "line {}: END_WHEN target {:?} resolves to 0x{:04X}, not 0x{:04X}",
+                        line.line_number,
+                        target,
+                        target_offset,
+                        line.offset
+                    );
+                }
                 continue;
             }
             _ => {}
@@ -180,6 +273,9 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
     }
     if let Some(open) = current_procedure {
         bail!("procedure {open:?} has no END_PROCEDURE");
+    }
+    if let Some((target, _)) = open_whens.last() {
+        bail!("WHEN {target:?} has no END_WHEN");
     }
     Ok(image)
 }
@@ -227,13 +323,20 @@ fn decompile_cod(
     image: &[u8],
     dictionary: &HashMap<u16, String>,
     symbols: &[DebSymbol],
+    structured: bool,
 ) -> Result<BodyStats> {
     let tokens = vm::walk(image, 0, image.len());
     let annotations = cod_annotations(&tokens, image, symbols)?;
+    let structured = if structured {
+        structured_annotations(recover_structured_guards("COD", image, symbols)?)
+    } else {
+        StructuredAnnotations::default()
+    };
     let mut cursor = 0usize;
     let mut stats = BodyStats {
         symbolic_labels: annotations.labels.len(),
         procedures: annotations.procedure_count,
+        structured_guards: structured.starts.len(),
         ..BodyStats::default()
     };
 
@@ -255,8 +358,20 @@ fn decompile_cod(
         if image.get(offset..end) != Some(encoded.as_slice()) {
             bail!("token at 0x{offset:08X} does not re-encode exactly");
         }
+        emit_structured_ends(output, offset, &structured, &annotations.labels)?;
         emit_directives(output, offset, &annotations)?;
-        emit_token(output, &token, dictionary, &annotations.labels)?;
+        if let Some(region) = structured.starts.get(&offset) {
+            writeln!(
+                output,
+                "{offset:08X}: WHEN {} ; GUARD_PUSH target=0x{:04X}",
+                address_operand(region.end as u16, &annotations.labels),
+                region.end
+            )?;
+        } else if structured.thens.contains_key(&offset) {
+            writeln!(output, "{offset:08X}: THEN ; GUARD_POP")?;
+        } else {
+            emit_token(output, &token, dictionary, &annotations.labels)?;
+        }
         stats.typed_statements += 1;
         stats.typed_bytes += encoded.len();
         if matches!(token, VmToken::Op { .. }) {
@@ -267,6 +382,7 @@ fn decompile_cod(
     }
 
     if cursor < image.len() && image[cursor] == 0xFF {
+        emit_structured_ends(output, cursor, &structured, &annotations.labels)?;
         emit_directives(output, cursor, &annotations)?;
         writeln!(output, "{cursor:08X}: END")?;
         stats.typed_statements += 1;
@@ -277,6 +393,7 @@ fn decompile_cod(
         emit_raw(output, cursor, &image[cursor..], "trailing bytes")?;
         stats.raw_bytes += image.len() - cursor;
     }
+    emit_structured_ends(output, image.len(), &structured, &annotations.labels)?;
     emit_directives(output, image.len(), &annotations)?;
     Ok(stats)
 }
@@ -516,6 +633,43 @@ fn emit_directives(
         for directive in directives {
             writeln!(output, "{offset:08X}: {directive}")?;
         }
+    }
+    Ok(())
+}
+
+fn structured_annotations(regions: Vec<StructuredGuard>) -> StructuredAnnotations {
+    let mut annotations = StructuredAnnotations::default();
+    for region in regions {
+        annotations.thens.insert(region.then_offset, region.start);
+        annotations
+            .ends
+            .entry(region.end)
+            .or_default()
+            .push(region.start);
+        annotations.starts.insert(region.start, region);
+    }
+    for starts in annotations.ends.values_mut() {
+        starts.sort_unstable_by(|left, right| right.cmp(left));
+    }
+    annotations
+}
+
+fn emit_structured_ends(
+    output: &mut String,
+    offset: usize,
+    structured: &StructuredAnnotations,
+    labels: &HashMap<u16, String>,
+) -> Result<()> {
+    let Some(starts) = structured.ends.get(&offset) else {
+        return Ok(());
+    };
+    for start in starts {
+        let region = &structured.starts[start];
+        writeln!(
+            output,
+            "{offset:08X}: END_WHEN {}",
+            address_operand(region.end as u16, labels)
+        )?;
     }
     Ok(())
 }
@@ -831,7 +985,7 @@ fn compile_statement(
             output.push(0xA7);
             word(&mut output, parse_word(args[0], line, "presentation value")?);
         }
-        "GUARD_PUSH" => {
+        "GUARD_PUSH" | "WHEN" => {
             require_count(args, 1, line, name)?;
             output.push(vm::OP_PUSH);
             word(
@@ -839,7 +993,7 @@ fn compile_statement(
                 parse_address(args[0], labels, line, "guard target")?,
             );
         }
-        "GUARD_POP" => {
+        "GUARD_POP" | "THEN" => {
             require_count(args, 0, line, name)?;
             output.push(vm::OP_POP);
         }
@@ -1293,6 +1447,30 @@ mod tests {
             assert!(decompiled.source.contains(statement), "missing {statement}");
         }
         assert_eq!(compile(&decompiled.source).unwrap(), expected);
+    }
+
+    #[test]
+    fn structured_guards_compile_to_the_exact_low_level_tokens() {
+        let image = vec![
+            0xA0, 0x0B, 0x00, // guard -> END
+            0xA3, 0x34, 0x12, // condition
+            0xA1, // then
+            0xA5, 0x02, 0x78, 0x56, // body
+            0xFF,
+        ];
+        let decompiled =
+            decompile_structured_with_symbols(ImageKind::Cod, &image, &HashMap::new(), &[])
+                .unwrap();
+        assert_eq!(decompiled.structured_guards, 1);
+        for statement in ["WHEN block_000B", "THEN ; GUARD_POP", "END_WHEN block_000B"] {
+            assert!(decompiled.source.contains(statement), "missing {statement}");
+        }
+        assert_eq!(compile(&decompiled.source).unwrap(), image);
+
+        let malformed = decompiled
+            .source
+            .replace("END_WHEN block_000B", "END_WHEN wrong");
+        assert!(compile(&malformed).is_err());
     }
 
     #[test]
