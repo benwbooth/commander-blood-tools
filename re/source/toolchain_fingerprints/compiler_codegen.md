@@ -2719,14 +2719,21 @@ including AX/CX/DI/ES and far-return stack state, then verify all resulting
 component stores, all scratch words, DS/SS decoys, return registers/segments,
 CX=0, final ADD flags, and RETF.
 
-The natural candidate is a typed GAME_DATA pointer-to-end loop. Open Watcom
-`-3 -ox -mm` compiles it without warnings to 20 instructions/57 bytes versus
-22/49 original, retaining the three AX-register far calls, ordered stores, and
-eight-byte stride. It uses BX and an end-pointer CMP, saves BX/DX, and leaves AX
-and ES clobbered rather than using DI/CX/LOOP and restoring AX/DI/ES. Turbo C
-2.01 medium emits 35 instructions because it passes each modulus on the stack
-and carries a four-byte far pointer. This is close natural codegen, but not yet
-a drop-in ABI match.
+The natural candidate is a typed GAME_DATA pointer-to-end loop, and the
+compiler-corpus sample now includes it directly. Open Watcom
+`-3 -os -s -mm -we` compiles it without warnings to 20 instructions/57 bytes
+versus 22/49 original, with 59.09 percent mnemonic-multiset and ordered overlap,
+while retaining the three AX-register far calls, ordered stores, and eight-byte
+stride. Turbo C 2.01 medium (`-mm -O -Z`) emits 35 instructions with 68.18
+percent multiset and 54.55 percent ordered overlap and assembles cleanly to OBJ.
+
+Watcom uses BX and an end-pointer CMP, saves BX/DX, and leaves AX/ES clobbered
+rather than using DI/CX/LOOP and restoring AX/DI/ES. The declaration now exposes
+that actual AX/ES source clobber set; CX is preserved by the generated body.
+The sole caller is startup initialization and consumes only the initialized
+cloud. The function is accepted for source-port integration. Direct replacement
+still needs the original register allocation, restoration, CX=0 residue, and
+final ADD flags.
 
 Object-sprite projector `0x009B98` walks the 11 six-byte anchors at GS:0x4F09
 while copying eight bytes from each anchor to the work record at GS:0x4F01.

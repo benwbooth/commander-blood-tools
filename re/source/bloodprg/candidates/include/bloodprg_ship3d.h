@@ -221,7 +221,7 @@ extern volatile ship_3d_hud_layout_entry CB_GAME_DATA ship_3d_hud_layout[];
 #pragma aux ship_3d_presentable_name_list_build parm [es di] value [bp] modify exact [bp]
 #pragma aux matrix_table_clear_2a1b modify exact []
 #pragma aux ship_3d_projection_matrix_build modify exact [ax es]
-#pragma aux ship_3d_point_cloud_randomize modify exact [ax cx es]
+#pragma aux ship_3d_point_cloud_randomize modify exact [ax es]
 #pragma aux ship_3d_depth_scroll_step modify exact [ax]
 #pragma aux ship_3d_hud_palette_snapshot_and_camera_reset \
         modify exact []
