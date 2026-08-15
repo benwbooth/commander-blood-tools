@@ -7,6 +7,7 @@
     "phase_after": 0,
     "sequence_before": 0,
     "sequence_after_callbacks": 0,
+    "overlay_pointer_after": 2181042688,
     "tail": "inactive",
     "direction": "forward",
     "viewport_pointer": [
@@ -34,6 +35,7 @@
     "phase_after": 1,
     "sequence_before": 1,
     "sequence_after_callbacks": 1,
+    "overlay_pointer_after": 2181042688,
     "tail": "inactive",
     "direction": "forward",
     "viewport_pointer": [
@@ -61,6 +63,7 @@
     "phase_after": 1,
     "sequence_before": 1,
     "sequence_after_callbacks": 1,
+    "overlay_pointer_after": 2181042688,
     "tail": "sequence",
     "direction": "forward",
     "viewport_pointer": [
@@ -193,6 +196,7 @@
     "phase_after": 2,
     "sequence_before": 0,
     "sequence_after_callbacks": 0,
+    "overlay_pointer_after": 2181042688,
     "tail": "nonsequence",
     "direction": "forward",
     "viewport_pointer": [
@@ -341,6 +345,7 @@
     "phase_after": 0,
     "sequence_before": 0,
     "sequence_after_callbacks": 0,
+    "overlay_pointer_after": 2181042688,
     "tail": "nonsequence",
     "direction": "forward",
     "viewport_pointer": [
@@ -489,6 +494,7 @@
     "phase_after": 1,
     "sequence_before": 129,
     "sequence_after_callbacks": 129,
+    "overlay_pointer_after": 2181042688,
     "tail": "sequence",
     "direction": "forward",
     "viewport_pointer": [
@@ -621,6 +627,7 @@
     "phase_after": 2,
     "sequence_before": 1,
     "sequence_after_callbacks": 0,
+    "overlay_pointer_after": 2181042688,
     "tail": "nonsequence",
     "direction": "forward",
     "viewport_pointer": [
@@ -769,6 +776,7 @@
     "phase_after": 0,
     "sequence_before": 0,
     "sequence_after_callbacks": 1,
+    "overlay_pointer_after": 2181042688,
     "tail": "sequence",
     "direction": "forward",
     "viewport_pointer": [
@@ -894,14 +902,15 @@
     }
   },
   {
-    "name": "back_init_replaces_back_pointer",
+    "name": "overlay_replaces_slot_pointer",
     "trigger": 1,
     "phase_before": 0,
     "selected_path_offset": 135,
     "phase_after": 1,
-    "sequence_before": 0,
-    "sequence_after_callbacks": 0,
-    "tail": "nonsequence",
+    "sequence_before": 1,
+    "sequence_after_callbacks": 1,
+    "overlay_pointer_after": 2250253416,
+    "tail": "sequence",
     "direction": "forward",
     "viewport_pointer": [
       12288,
@@ -1008,54 +1017,39 @@
         "color": 0
       },
       {
-        "call": "back_buffer_init",
+        "call": "backbuffer_clear_flags",
         "cs": 139,
-        "ip": 2345,
+        "ip": 2407,
         "sp": 65274,
-        "back_buffer_before": 2013278976
-      },
-      {
-        "call": "pbm_image_load_and_decode",
-        "cs": 462,
-        "ip": 2333,
-        "sp": 65274,
-        "path": [
-          16384,
-          243
-        ],
-        "file_buffer_end": [
-          31744,
-          13398
-        ],
-        "palette_refresh": 0,
-        "transparent_zero": 0
+        "plane_copy_enabled": 0
       }
     ],
     "defined_flags": {
       "cf": true,
       "pf": true,
       "af": true,
-      "zf": false,
-      "sf": false,
+      "zf": true,
+      "sf": true,
       "df": false,
-      "of": false
+      "of": true
     }
   },
   {
-    "name": "viewport_offset_wrap",
+    "name": "back_init_replaces_back_pointer",
     "trigger": 1,
-    "phase_before": 1,
-    "selected_path_offset": 144,
-    "phase_after": 2,
+    "phase_before": 0,
+    "selected_path_offset": 135,
+    "phase_after": 1,
     "sequence_before": 0,
     "sequence_after_callbacks": 0,
+    "overlay_pointer_after": 2181042688,
     "tail": "nonsequence",
     "direction": "forward",
     "viewport_pointer": [
-      65528,
+      12672,
       28672
     ],
-    "viewport_cursor_after": 8,
+    "viewport_cursor_after": 12688,
     "vbio_timing_before": 27,
     "vbio_timing_after": 28,
     "calls": [
@@ -1066,7 +1060,7 @@
         "sp": 65270,
         "path": [
           16384,
-          144
+          135
         ],
         "destination": [
           33280,
@@ -1107,7 +1101,7 @@
           4978,
           9320
         ],
-        "phase_after": 2,
+        "phase_after": 1,
         "mouse": [
           7117,
           62931
@@ -1172,8 +1166,8 @@
           243
         ],
         "file_buffer_end": [
-          30720,
-          13120
+          31744,
+          13398
         ],
         "palette_refresh": 0,
         "transparent_zero": 0
@@ -1190,20 +1184,21 @@
     }
   },
   {
-    "name": "inherited_reverse_direction",
+    "name": "viewport_offset_wrap",
     "trigger": 1,
-    "phase_before": 2,
-    "selected_path_offset": 156,
-    "phase_after": 0,
-    "sequence_before": 1,
-    "sequence_after_callbacks": 1,
-    "tail": "sequence",
-    "direction": "reverse",
+    "phase_before": 1,
+    "selected_path_offset": 144,
+    "phase_after": 2,
+    "sequence_before": 0,
+    "sequence_after_callbacks": 0,
+    "overlay_pointer_after": 2181042688,
+    "tail": "nonsequence",
+    "direction": "forward",
     "viewport_pointer": [
-      16896,
+      65528,
       28672
     ],
-    "viewport_cursor_after": 16880,
+    "viewport_cursor_after": 8,
     "vbio_timing_before": 28,
     "vbio_timing_after": 29,
     "calls": [
@@ -1214,7 +1209,7 @@
         "sp": 65270,
         "path": [
           16384,
-          156
+          144
         ],
         "destination": [
           33280,
@@ -1255,7 +1250,7 @@
           4981,
           9320
         ],
-        "phase_after": 0,
+        "phase_after": 2,
         "mouse": [
           7390,
           62674
@@ -1295,6 +1290,155 @@
           4608
         ],
         "sound_header": 994796336
+      },
+      {
+        "call": "blit_fill_row_5221",
+        "cs": 665,
+        "ip": 3563,
+        "sp": 65270,
+        "color": 0
+      },
+      {
+        "call": "back_buffer_init",
+        "cs": 139,
+        "ip": 2345,
+        "sp": 65274,
+        "back_buffer_before": 2013279104
+      },
+      {
+        "call": "pbm_image_load_and_decode",
+        "cs": 462,
+        "ip": 2333,
+        "sp": 65274,
+        "path": [
+          16384,
+          243
+        ],
+        "file_buffer_end": [
+          30720,
+          13184
+        ],
+        "palette_refresh": 0,
+        "transparent_zero": 0
+      }
+    ],
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "inherited_reverse_direction",
+    "trigger": 1,
+    "phase_before": 2,
+    "selected_path_offset": 156,
+    "phase_after": 0,
+    "sequence_before": 1,
+    "sequence_after_callbacks": 1,
+    "overlay_pointer_after": 2181042688,
+    "tail": "sequence",
+    "direction": "reverse",
+    "viewport_pointer": [
+      16896,
+      28672
+    ],
+    "viewport_cursor_after": 16880,
+    "vbio_timing_before": 29,
+    "vbio_timing_after": 30,
+    "calls": [
+      {
+        "call": "resource_file_load_overlay",
+        "cs": 462,
+        "ip": 2011,
+        "sp": 65270,
+        "path": [
+          16384,
+          156
+        ],
+        "destination": [
+          33280,
+          4608
+        ]
+      },
+      {
+        "call": "snd_bank_loader_3d",
+        "cs": 2843,
+        "ip": 2133,
+        "sp": 65266,
+        "mode": 0,
+        "path": [
+          16384,
+          3363
+        ],
+        "sound_header": 1011639345,
+        "loader_flags": 42812
+      },
+      {
+        "call": "cdrom_audio_play_track_2",
+        "cs": 139,
+        "ip": 1300,
+        "sp": 65264,
+        "loader_flags": 42752
+      },
+      {
+        "call": "alien_overlay_entry",
+        "cs": 33280,
+        "ip": 4608,
+        "sp": 65264,
+        "bp": 2792,
+        "timing_scale": [
+          14198,
+          40960
+        ],
+        "frame_callback": [
+          4984,
+          9320
+        ],
+        "phase_after": 0,
+        "mouse": [
+          7663,
+          62417
+        ]
+      },
+      {
+        "call": "cdrom_audio_stop",
+        "cs": 139,
+        "ip": 1255,
+        "sp": 65264,
+        "loader_flags": 42752
+      },
+      {
+        "call": "snd_bank_loader_tb",
+        "cs": 2843,
+        "ip": 2133,
+        "sp": 65266,
+        "mode": 0,
+        "path": [
+          16384,
+          3324
+        ],
+        "sound_header": 2779054091,
+        "loader_flags": 42812
+      },
+      {
+        "call": "resource_file_load_manu3",
+        "cs": 462,
+        "ip": 2011,
+        "sp": 65270,
+        "path": [
+          16384,
+          275
+        ],
+        "destination": [
+          33280,
+          4608
+        ],
+        "sound_header": 1011639345
       },
       {
         "call": "blit_fill_row_5221",

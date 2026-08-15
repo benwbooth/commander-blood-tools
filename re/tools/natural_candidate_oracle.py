@@ -60189,6 +60189,12 @@ def alien_overlay_cycle_vectors() -> list[dict[str, object]]:
             "overlay_sequence": 1,
         },
         {
+            "name": "overlay_replaces_slot_pointer",
+            "phase": 0,
+            "sequence": 1,
+            "overlay_pointer_after": 0x86202468,
+        },
+        {
             "name": "back_init_replaces_back_pointer",
             "phase": 0,
             "sequence": 0,
@@ -60266,6 +60272,12 @@ def alien_overlay_cycle_vectors() -> list[dict[str, object]]:
         ) | ((0x3100 + case_index * 0x40) & 0xFFFF)
         back_after_init = int(case.get("back_after_init", back_pointer))
         overlay_sequence = int(case.get("overlay_sequence", sequence)) & 0xFF
+        overlay_pointer_after = int(
+            case.get(
+                "overlay_pointer_after",
+                (overlay_segment << 16) | overlay_offset,
+            )
+        )
         final_sequence = overlay_sequence
         clear_result = (0x4100 + case_index) & 0xFFFF
         clear_dx = (0x5100 + case_index) & 0xFFFF
@@ -60441,6 +60453,7 @@ def alien_overlay_cycle_vectors() -> list[dict[str, object]]:
             expected_heap_value = (word(heap_before, vbio_offset) + 1) & 0xFFFF
             write_word(expected_heap, vbio_offset, expected_heap_value)
             expected_data[0x0A2A : 0x0A2E] = struct.pack("<HH", *original_mouse)
+            write_dword(expected_data, 0x0A96, overlay_pointer_after)
             write_dword(expected_data, 0x0BBB, sound_header)
             write_word(expected_data, 0x0BA0, loader_flags)
 
@@ -60642,6 +60655,10 @@ def alien_overlay_cycle_vectors() -> list[dict[str, object]]:
                     data_segment * 16 + 0x252A,
                     bytes((overlay_sequence,)),
                 )
+                machine.mem_write(
+                    data_segment * 16 + 0x0A96,
+                    struct.pack("<I", overlay_pointer_after),
+                )
             elif generic_name == "blit_fill_row_5221":
                 event["color"] = machine.reg_read(UC_X86_REG_AX)
             elif generic_name == "backbuffer_clear_flags":
@@ -60809,6 +60826,7 @@ def alien_overlay_cycle_vectors() -> list[dict[str, object]]:
                 "phase_after": next_phase,
                 "sequence_before": sequence,
                 "sequence_after_callbacks": final_sequence if trigger & 1 else sequence,
+                "overlay_pointer_after": overlay_pointer_after,
                 "tail": (
                     "inactive"
                     if not trigger & 1

@@ -6260,20 +6260,30 @@ existing sound callback, then invokes the overlay.
 
 The call is bracketed by a temporary `sn\\3D.snd` load and restoration of
 `sn\\tb.snd`, the prior four-byte sound header, and the two-byte loader flags.
-The routine then reloads `manu3.xdb`, clears the display band, writes the exact
+The routine then reloads `manu3.xdb` through the original overlay destination,
+not a fresh read of the slot pointer, clears the display band, writes the exact
 `{u16,u16,u32,u16,u16,u32}` viewport descriptor
 `{0,1,4,320,200,0}`, restores the saved mouse coordinates, clears the idle
 counter, and marks the palette dirty. It deliberately reads `DS:0x252A` only
 after all callbacks: the final value selects either the plane-copy-bracketed
 back-buffer reset or the background-image reload tail.
 
-Eleven patched-callee original-binary vectors cover both inactive triggers, all
+Twelve patched-callee original-binary vectors cover both inactive triggers, all
 three phases and wrap, exact call order and frames, sound and mouse preservation,
 the SS request against a DS decoy, callback-mutated timing/sequence/back-buffer
-state, both tails, forward/reverse/wrapped viewport stores, register residue,
-flags, stack, and far return. Open Watcom 1.9 medium (`-3 -os -s -mm -we`)
-emits one warning-free 94-instruction/318-byte function versus 76/257 original,
-with 64.47 percent mnemonic-multiset overlap and no inline assembly.
+state, and callback replacement of the slot pointer while the final resource
+load retains the original destination. They also cover both tails,
+forward/reverse/wrapped viewport stores, register residue, flags, stack, and far
+return. The three shipped XDB entries independently save and restore all general
+and segment registers, validating the original cross-call `ES:DI` lifetime.
+
+Open Watcom 1.9 medium (`-3 -os -s -mm -we`) emits one warning-free
+97-instruction/323-byte function versus 76/257 original, with 64.47 percent
+mnemonic-multiset and 56.58 percent ordered overlap. Turbo C 2.01 medium
+(`-mm -O -Z`) emits 120 instructions with 67.11 percent multiset and 57.89
+percent ordered overlap and assembles cleanly to a 2,226-byte OMF object. The
+accepted candidate uses a stable far-pointer local and ordinary typed calls with
+no inline assembly or register-state facade.
 
 Full-source equivalence requires the shipped phase range 0..2, SS=DS for the
 request object, and the C runtime's clear-DF invariant. The recovered-source PBM

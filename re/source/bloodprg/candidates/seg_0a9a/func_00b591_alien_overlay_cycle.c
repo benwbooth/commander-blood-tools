@@ -21,6 +21,7 @@ void CB_FAR alien_overlay_cycle(void)
     cb_i16 saved_mouse_y;
     cb_u8 current_overlay;
     cb_u8 next_overlay;
+    volatile cb_u8 CB_FAR *overlay_buffer;
 
     if ((ship_3d_temp_snd_trigger & ALIEN_OVERLAY_TRIGGER) == 0u) {
         return;
@@ -38,9 +39,9 @@ void CB_FAR alien_overlay_cycle(void)
     }
     alien_overlay_index = next_overlay;
 
+    overlay_buffer = alien_overlay_slot.load_buffer;
     (void)resource_file_load(
-            alien_overlay_paths[current_overlay],
-            alien_overlay_slot.load_buffer);
+            alien_overlay_paths[current_overlay], overlay_buffer);
 
     saved_sound_header = snd_bank_header_ds;
     snd_bank_loader(0u, ship_3d_snd_bank_path);
@@ -58,8 +59,7 @@ void CB_FAR alien_overlay_cycle(void)
     snd_bank_loader(0u, default_snd_bank_path);
     snd_bank_header_ds = saved_sound_header;
     (void)resource_file_load(
-            manu3_overlay_path,
-            alien_overlay_slot.load_buffer);
+            manu3_overlay_path, overlay_buffer);
     blit_fill_row_5221(0u);
 
     graphics_viewport_descriptor->field_00 = 0u;
