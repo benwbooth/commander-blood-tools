@@ -4863,14 +4863,26 @@ window at work-surface offset `0x7D00`, or a recreated `son.snd` file. The XMS
 and file paths use 32,000-byte chunks, and XMS lengths are rounded to an even
 byte count exactly as required by the XMS move API.
 
-Nine direct-binary vectors cover the sound gate, embedded and standalone
-sources, both modes, exact SND table transformations, the `SS == GS` table
-placement, all backend chunk boundaries, EMS maps, every XMS request field,
-`son.snd` close/create/write ordering, source closes, and register/far-return
-preservation. Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the
-actual candidate warning-free to 248 instructions/728 bytes versus 187/481
-original. Remaining integration work is segment placement and the narrow
-resource, DOS, EMS, and XMS ABI boundaries, not unresolved bank logic.
+Twelve direct-binary vectors cover the explicit GS sound gate, embedded and
+standalone sources, both modes, exact SND table transformations, the `SS == GS`
+table placement, all backend chunk boundaries, EMS maps, every XMS request
+field, `son.snd` close/create/write ordering, source closes, register/far-return
+preservation, and header/table-only streamed banks. The latter prove that each
+of the EMS, XMS, and file loops executes once with a zero-byte read; XMS still
+issues a zero-length move and advances its cursor, while the file path still
+issues a zero-byte write.
+
+The compiler sample includes the maintained source directly. Open Watcom 1.9
+medium (`-3 -ox -mm -zdp -we`) compiles it warning-free to 247 instructions/732
+bytes versus 187/481 original, with 61.50 percent mnemonic-multiset and 50.80
+percent ordered overlap. Turbo C 2.01 medium (`-mm -O -Z`) emits 367
+instructions with 74.87 percent multiset and 59.89 percent ordered overlap and
+assembles warning-free to a 2,707-byte OMF object. This source is accepted for
+valid-bank integration. A malformed mode-zero bank with `clip_count == 0` is
+the documented exception: natural C exits its `for` loop, while the original
+entered a `LOOP` body and would wrap through 65,536 iterations. Remaining
+direct-replacement work is segment placement and the narrow resource, DOS,
+EMS, and XMS ABI boundaries, not unresolved valid-bank logic.
 
 ## BLOODPRG MSCDEX audio request candidates
 

@@ -19,7 +19,7 @@ void CB_FAR snd_bank_loader(cb_u16 mode,
     cb_u16 logical_page;
     cb_u16 index;
 
-    if ((voc_playback_enabled & 1u) == 0) {
+    if ((voc_playback_enabled_gs & 1u) == 0) {
         return;
     }
 
@@ -57,7 +57,7 @@ void CB_FAR snd_bank_loader(cb_u16 mode,
 
         if (secondary_ems_handle != -1) {
             snd_storage_cursor.ems.logical_page = 0;
-            while (payload_remaining != 0) {
+            do {
                 logical_page = snd_storage_cursor.ems.logical_page;
                 cb_ems_map_page((cb_u16)secondary_ems_handle,
                         logical_page, 0);
@@ -73,12 +73,12 @@ void CB_FAR snd_bank_loader(cb_u16 mode,
                 bytes_read = cb_dos_read(source_handle,
                         ems_page_frame, request_bytes);
                 payload_remaining -= bytes_read;
-            }
+            } while (payload_remaining != 0);
         } else {
             staging = graphics_work_surface + 0x7d00u;
             if (secondary_xms_handle != -1) {
                 snd_storage_cursor.xms_offset = 0;
-                while (payload_remaining != 0) {
+                do {
                     request_bytes = payload_remaining > 0x7d00UL
                             ? 0x7d00u
                             : (cb_u16)payload_remaining;
@@ -96,7 +96,7 @@ void CB_FAR snd_bank_loader(cb_u16 mode,
                     snd_storage_cursor.xms_offset += 0x7d00UL;
                     cb_xms_move(&xms_move_request);
                     payload_remaining -= bytes_read;
-                }
+                } while (payload_remaining != 0);
             } else {
                 if (snd_voice_file_handle != 0) {
                     cb_dos_close(snd_voice_file_handle);
@@ -105,7 +105,7 @@ void CB_FAR snd_bank_loader(cb_u16 mode,
                 (void)cb_dos_create_game_file(
                         snd_voice_temp_filename, &snd_voice_file_handle);
 
-                while (payload_remaining != 0) {
+                do {
                     request_bytes = payload_remaining > 0x7d00UL
                             ? 0x7d00u
                             : (cb_u16)payload_remaining;
@@ -114,7 +114,7 @@ void CB_FAR snd_bank_loader(cb_u16 mode,
                     (void)cb_dos_write(snd_voice_file_handle,
                             staging, bytes_read);
                     payload_remaining -= bytes_read;
-                }
+                } while (payload_remaining != 0);
             }
         }
     }

@@ -63703,15 +63703,18 @@ def snd_bank_loader_vectors() -> list[dict[str, object]]:
         raise AssertionError("0xc005: recovered 481-byte body changed")
 
     cases = [
-        ("sound_disabled", 0, 0, "memory", False, 0x2000, 0),
-        ("memory_external", 1, 0, "memory", False, 0x3456, 0),
-        ("memory_embedded", 1, 0, "memory", True, 0x2345, 0),
-        ("ems_external_two_reads", 1, 1, "ems", False, 0x8001, 0),
-        ("ems_embedded_partial", 1, 1, "ems", True, 0x5000, 0),
-        ("xms_external_two_reads", 1, 1, "xms", False, 0x7D01, 0),
-        ("xms_embedded_odd", 1, 1, "xms", True, 0x1235, 0),
-        ("file_external_two_reads", 1, 1, "file", False, 0x7E01, 0x1357),
-        ("file_embedded_partial", 1, 1, "file", True, 0x4321, 0),
+        ("sound_disabled", 0, 0, "memory", False, 0x2000, 0, 3),
+        ("memory_external", 1, 0, "memory", False, 0x3456, 0, 3),
+        ("memory_embedded", 1, 0, "memory", True, 0x2345, 0, 3),
+        ("ems_external_two_reads", 1, 1, "ems", False, 0x8001, 0, 3),
+        ("ems_embedded_partial", 1, 1, "ems", True, 0x5000, 0, 3),
+        ("xms_external_two_reads", 1, 1, "xms", False, 0x7D01, 0, 3),
+        ("xms_embedded_odd", 1, 1, "xms", True, 0x1235, 0, 3),
+        ("file_external_two_reads", 1, 1, "file", False, 0x7E01, 0x1357, 3),
+        ("file_embedded_partial", 1, 1, "file", True, 0x4321, 0, 3),
+        ("ems_external_empty", 1, 1, "ems", False, 0, 0, 0),
+        ("xms_external_empty", 1, 1, "xms", False, 0, 0, 0),
+        ("file_external_empty", 1, 1, "file", False, 0, 0, 0),
     ]
     game_segment = 0x2C00
     bank_segment = 0x5000
@@ -63739,10 +63742,14 @@ def snd_bank_loader_vectors() -> list[dict[str, object]]:
             embedded,
             payload_size,
             old_temp_handle,
+            clip_count,
         ) = case
         active = bool(sound_enabled & 1)
-        clip_count = 3
-        offsets = [0, payload_size // 3, (payload_size * 2) // 3, payload_size]
+        offsets = (
+            [payload_size * index // clip_count for index in range(clip_count + 1)]
+            if clip_count != 0
+            else [0]
+        )
         table = b"".join(struct.pack("<I", offset) for offset in offsets)
         header = struct.pack("<HH", clip_count, 0xA55A)
         payload = bytes(
@@ -63987,7 +63994,7 @@ def snd_bank_loader_vectors() -> list[dict[str, object]]:
                 chunk_size = 0x8000 if backend == "ems" else 0x7D00
                 expected_chunks = []
                 remaining = payload_size
-                while remaining:
+                while remaining or not expected_chunks:
                     chunk = min(chunk_size, remaining)
                     expected_chunks.append(chunk)
                     remaining -= chunk
@@ -64036,6 +64043,14 @@ def snd_bank_loader_vectors() -> list[dict[str, object]]:
                 else:
                     if ems_calls or xms_calls or b"".join(written_chunks) != payload:
                         raise AssertionError(f"0xc005 {name}: file payload differs")
+                    write_counts = [
+                        call["count"] for call in dos_calls if call["op"] == "write"
+                    ]
+                    if write_counts != expected_chunks:
+                        raise AssertionError(
+                            f"0xc005 {name}: writes={write_counts}, "
+                            f"expected={expected_chunks}"
+                        )
                     created = [call for call in dos_calls if call["op"] == "create"]
                     if len(directory_calls) != 1 or len(created) != 1 or created[0]["dx"] != 0x00A6:
                         raise AssertionError(f"0xc005 {name}: create path differs")

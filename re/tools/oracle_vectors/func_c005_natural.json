@@ -107,5 +107,41 @@
     "payload_chunks": [
       17185
     ]
+  },
+  {
+    "name": "ems_external_empty",
+    "sound_enabled": 1,
+    "mode": 1,
+    "source_kind": "standalone",
+    "backend": "ems",
+    "clip_count": 0,
+    "payload_bytes": 0,
+    "payload_chunks": [
+      0
+    ]
+  },
+  {
+    "name": "xms_external_empty",
+    "sound_enabled": 1,
+    "mode": 1,
+    "source_kind": "standalone",
+    "backend": "xms",
+    "clip_count": 0,
+    "payload_bytes": 0,
+    "payload_chunks": [
+      0
+    ]
+  },
+  {
+    "name": "file_external_empty",
+    "sound_enabled": 1,
+    "mode": 1,
+    "source_kind": "standalone",
+    "backend": "file",
+    "clip_count": 0,
+    "payload_bytes": 0,
+    "payload_chunks": [
+      0
+    ]
   }
 ]
