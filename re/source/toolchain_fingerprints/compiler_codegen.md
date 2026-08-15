@@ -2309,16 +2309,25 @@ wraps, DS/ES/GS ownership, outputs, final flags, source immutability, and near
 return. `DESCRIPT.DES` contains 448 opcode-07 records using IDs 1, 2, 3, 4,
 and 0xFF, so the corrected high-id behavior is exercised by shipped data.
 
-The one-to-one natural candidate models the complete reachable caller contract
-with far DS:SI input/result, 16-bit wrapping arithmetic, and volatile
-named-segment cursor pointers. Open Watcom `-3 -os -s -mh -we` compiles it
-without warnings to 73 instructions/194 bytes versus 22/54 original. Watcom
-preserves the signed load, equivalent
-offset arithmetic (`id*16+0x0DC7`), two 16-bit based pointers, copy bounds, and
-unconsumed stop, but saves BX/DX/ES, reloads `GAME_DATA`, and uses scalar
-loads/stores rather than the original ambient ES=GS and string instructions.
-The out-of-contract incoming-SF branch remains a documented machine-level ABI
-fact rather than an artificial flag parameter in the natural C function.
+The compiler probe now includes the authoritative one-to-one candidate. It
+models the complete reachable caller contract with far DS:SI input/result and
+16-bit wrapping arithmetic. The asset and detail cursors are recovered 16-bit
+offsets into the existing game-data byte arena. Ordered low/high byte stores
+preserve the original unaligned little-endian word write and segment wrap.
+This representation removes all three `__PIA` calls generated for the former
+based-pointer locals.
+
+Open Watcom `-3 -os -s -mh -we` compiles the candidate warning-free to 36
+instructions/95 bytes versus 22/54 original, with 59.09 percent mnemonic-
+multiset overlap. Turbo C 2.01 emits 78 instructions. The generated Watcom body
+retains the signed load, equivalent offset arithmetic (`id*16+0x0DC7`), both
+cursor updates, copy bounds, and unconsumed stop.
+
+The candidate is accepted for source-port integration. Shipped dispatch
+establishes `ES == GS`; original DI plus LODSB/STOSW/STOSB allocation and exact
+register residue remain direct-binary-replacement differences. The out-of-
+contract incoming-SF branch stays documented as a machine-level ABI fact rather
+than becoming an artificial flags parameter in natural C.
 
 Byte-parser opcode-0B handler `0x0076EA` has the same stale-SF shape before a
 larger path-selection tail. Seven real-dispatch vectors and three direct-entry

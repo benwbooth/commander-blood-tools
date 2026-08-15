@@ -4,8 +4,8 @@ const cb_u8 CB_FAR *CB_NEAR dlg_line_asset_table_fill(
     const cb_u8 CB_FAR *script_bytes)
 {
     cb_u16 stored_id;
-    cb_game_word_ptr asset_cursor;
-    cb_game_char_ptr detail_cursor;
+    cb_u16 asset_offset;
+    cb_u16 detail_offset;
     cb_u8 ch;
 
     stored_id = (cb_u16)(cb_i16)(cb_i8)*script_bytes++;
@@ -15,20 +15,24 @@ const cb_u8 CB_FAR *CB_NEAR dlg_line_asset_table_fill(
      */
     stored_id = (cb_u16)(0x0dd7u + ((stored_id - 1u) << 4));
 
-    asset_cursor = byte_parser_asset_cursor;
-    *asset_cursor = stored_id;
-    byte_parser_asset_cursor = asset_cursor + 2;
+    asset_offset = (cb_u16)byte_parser_asset_cursor;
+    byte_parser_stream_segment[asset_offset] = (cb_u8)stored_id;
+    byte_parser_stream_segment[(cb_u16)(asset_offset + 1u)] =
+            (cb_u8)(stored_id >> 8);
+    byte_parser_asset_cursor =
+            (cb_game_word_ptr)(cb_u16)(asset_offset + 4u);
 
-    detail_cursor = byte_parser_detail_cursor;
-    byte_parser_detail_cursor = detail_cursor + 0x1a;
+    detail_offset = (cb_u16)byte_parser_detail_cursor;
+    byte_parser_detail_cursor =
+            (cb_game_char_ptr)(cb_u16)(detail_offset + 0x1au);
     for (;;) {
         ch = *script_bytes++;
         if ((cb_i8)ch < 0 || ch < 0x20u) {
             --script_bytes;
             break;
         }
-        *detail_cursor++ = (char)ch;
+        byte_parser_stream_segment[detail_offset++] = ch;
     }
-    *detail_cursor = '\0';
+    byte_parser_stream_segment[detail_offset] = 0u;
     return script_bytes;
 }
