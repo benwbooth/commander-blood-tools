@@ -1206,13 +1206,15 @@ prove clear, unrelated, individual, and combined loaded-flag paths, 16-bit
 and segment preservation, and the exact push-CS/near-call stack consumed by the
 callee's far return.
 
-Open Watcom compiles the actual `0x005288` candidate without warnings; `-3 -ox
--mm` emits 11 instructions/26 bytes versus 9/20 original. Standalone 8086/286/
-386 probes emit 15/11/11 instructions and 30/26/26 bytes, while Turbo C 2.01
-emits 16 instructions. The natural conditional call is structurally close, but
-Watcom relocates the abstract handle table through DS and emits a direct far
-call; exact integration still needs original FS placement and same-segment
-push-CS/near-call lowering.
+The compiler sample now includes the maintained source directly. Open Watcom
+1.9 medium (`-3 -ox -mm -zdp -we`) compiles it warning-free to 11
+instructions/26 bytes versus 9/20 original, with 77.78 percent
+mnemonic-multiset and ordered overlap. Turbo C 2.01 medium (`-mm -O -Z`) emits
+16 instructions while retaining the complete original mnemonic sequence and
+multiset, and assembles warning-free to a 400-byte OMF object. The natural
+conditional call is accepted for source integration. Direct replacement still
+needs original FS placement and same-segment push-CS/near-call lowering because
+the compilers relocate the abstract table and emit an ordinary far call.
 
 Resource compactor `0x00529C` has six patched-`far_memmove` direct vectors.
 They prove low-two-bit clearing, 32-bit free-byte accounting, floor(size/16)
