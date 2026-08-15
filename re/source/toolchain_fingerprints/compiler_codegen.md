@@ -1383,15 +1383,26 @@ Distinct GS/DS pointer and output slots establish GS ownership. A nonzero offset
 in the object-block far pointer proves the binary discards that half and uses the
 segment with each directory object offset as an absolute offset.
 
-The natural candidate now expresses that segment-only access with the standard
-16-bit `FP_SEG`/`MK_FP` idiom rather than incorrectly adding the far-pointer
-offset. Open Watcom compiles it warning-free at all three CPU targets to 28
-instructions/67 bytes versus 32/65 original; Turbo C 2.01 emits 31 instructions.
-The close sizes are not an ABI match: Watcom binds globals/output through DS,
-uses ES for both far inputs, and leaves AX/ES changed. The binary uses GS-owned
-globals/output, FS object reads, and restores every register and segment. Exact
-integration therefore needs segment binding and a preservation adapter around
-the natural algorithm.
+The maintained candidate expresses segment-only access with the standard 16-bit
+`FP_SEG`/`MK_FP` idiom and now binds the record pointer, directory pointer, and
+output array through explicit `GAME_DATA` aliases. Its output cursor is itself a
+`GAME_DATA` pointer; making only the symbol based would silently discard the
+segment on assignment to an ordinary near pointer. A linked Turbo C 2.01 DOS
+executable starts the 20-byte directory at offset `0xFFF0`, assigns a nonzero
+offset to the record-base far pointer, and exhausts all 65,536 inclusion masks
+plus an immediate-stop case. All 65,537 cases pass, including low-byte-only flag
+selection, object offset wrap, exact output order, and termination.
+
+Open Watcom 1.9 medium size mode (`-3 -os -s -mm -zdp -we`) compiles the final
+source directly without warnings to 43 instructions/97 bytes versus 32/65
+original, with 87.50 percent mnemonic-multiset and ordered overlap. Turbo C emits
+35 instructions and links the harness through a valid 1,965-byte OMF object. The
+established `CB_SAVE_REGS` annotation plus a narrow AX push/pop ABI adapter makes
+Watcom preserve every register and segment while retaining flags from the
+terminating compare. The routine is accepted for source-port integration. Direct
+replacement still needs the original fixed-GS `LDS`/`LFS` setup and
+DS:SI/FS:BX/ES:DI allocation instead of named-segment relocations and repeated ES
+switching; no assembly participates in the recovered list algorithm.
 
 Ship 3D position resolver `0x0061A6` has eight direct vectors covering direct
 kinds `0x0008`, `0x0010`, and `0x0200`, an ordinary selector-`0x11` parent,
@@ -3883,7 +3894,7 @@ LCS and then mnemonic similarity:
 | `far_strlen` | medium, `-ox`, register | 11/11 | 0.2727 | 0.4545 | 0.2727 |
 | `field_offset` | medium, `-ox`, register | 8/20 | 0.3750 | 0.7500 | 0.3750 |
 | `vm_record_lookup_by_threshold` | medium, `-os -s`, register | 12/14 | 0.0833 | 0.9167 | 0.1667 |
-| `active_object_list_build` | medium, `-ox`, register | 32/28 | 0.2188 | 0.6562 | 0.2500 |
+| `active_object_list_build` | medium, `-os -s`, register | 32/43 | 0.2188 | 0.8750 | 0.2500 |
 | `ship_3d_position_distance` | medium, `-ox`, register | 88/117 | 0.0682 | 0.5341 | 0.1023 |
 | `ship_3d_position_field_resolve` | medium, `-ox`, register | 45/50 | 0.1111 | 0.6667 | 0.2444 |
 | `ship_3d_object_table_bit_test` | medium, `-ox`, register | 31/33 | 0.2581 | 0.7419 | 0.3548 |
