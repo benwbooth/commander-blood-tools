@@ -4232,11 +4232,11 @@
 00008380: .byte A6 FA 01 FF 00 80 02 37 08 01 B6 34 3C 08 FA 04 ; TEXT line=0x01FA voice=0xFF flags=0x00,0x80 "Wowee !!! Beauregard and his mummies ... Excellent !!! ..."
 00008390: .byte AF 29 9B 00 08 37 08 01 9B 00 00 00 ; continuation
 0000839C: .byte A0 B4 83 ; GUARD_PUSH target=0x83B4
-0000839F: .byte CB F5 19 0C CA 07 ; GLOBAL_PAIR_COMPARE operator=0xF5 value=0x0C19 reserved=0x07CA
+0000839F: .byte CB F5 19 0C CA 07 ; GLOBAL_PAIR_COMPARE operator=0xF5 month_day=0x0C19 year=0x07CA
 000083A5: .byte A1 ; GUARD_POP
 000083A6: .byte A6 FA 01 FF 00 80 12 37 18 37 9B 00 00 00 ; TEXT line=0x01FA voice=0xFF flags=0x00,0x80 "HAPPY CHRISTMAS ..."
 000083B4: .byte A0 CE 83 ; GUARD_PUSH target=0x83CE
-000083B7: .byte CB F5 01 01 CB 07 ; GLOBAL_PAIR_COMPARE operator=0xF5 value=0x0101 reserved=0x07CB
+000083B7: .byte CB F5 01 01 CB 07 ; GLOBAL_PAIR_COMPARE operator=0xF5 month_day=0x0101 year=0x07CB
 000083BD: .byte A1 ; GUARD_POP
 000083BE: .byte A6 FA 01 FF 00 80 12 37 28 2F 22 37 9B 00 00 00 ; TEXT line=0x01FA voice=0xFF flags=0x00,0x80 "HAPPY NEW YEAR ..."
 000083CE: .byte A0 FE 83 ; GUARD_PUSH target=0x83FE

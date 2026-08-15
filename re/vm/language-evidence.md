@@ -86,6 +86,17 @@ immediately following an `A9` are rendered as `require` expressions rather than
 updates. A focused compiler test pins the `A9` -> `B0` query -> `A1` -> `BC`
 update sequence byte for byte.
 
+The two RTC condition handlers are now fully lifted. `CA` reads an operator,
+the otherwise ignored literal tag `C1`, and an hour; all 80 shipped instances
+are ordinary `clock.hour` comparisons. `CB` reads an operator, day/month bytes,
+and a year. Its four shipped operands decode to `1994-12-25`, `1994-01-01`, and
+`1995-01-01`, matching their Christmas and New Year dialogue. Native routine
+`0x6510` compares only day/month against `GS:0x0AA8/0x0AAA`; exhaustive native
+reference search finds `GS:0x0AAC` written by the BIOS RTC loader but never read.
+BloodScript therefore requires `using month_day_only` on date requirements and
+still re-emits the consumed year exactly. This records a shipped VM behavior,
+not an attempt to repair it.
+
 Seven control-flow encodings now have lossless typed statements: `GUARD_PUSH`
 and `GUARD_POP` (`0xA0`/`0xA1`), `JUMP` (`0xA4`), `STATE_ARRAY_TEST` and
 `STATE_ARRAY_SET` (the query/set forms of `0xA5`), `CONDITIONAL_BLOCK` (`0xA9`),

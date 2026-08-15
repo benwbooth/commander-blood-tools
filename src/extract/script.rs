@@ -2292,7 +2292,7 @@ fn push_vm_token_disassembly(
             offset,
             operator,
             packed_value,
-            reserved,
+            encoded_year,
             len,
         } => {
             rows.push(ScriptDisassemblyLine {
@@ -2303,7 +2303,7 @@ fn push_vm_token_disassembly(
                 opcode: "cb".to_string(),
                 mnemonic: "global_pair_compare".to_string(),
                 operands: format!(
-                    "global=gs:0x0aaa:0x0aa8 op=0x{operator:02x} packed=0x{packed_value:04x} reserved=0x{reserved:04x}"
+                    "global=gs:0x0aaa:0x0aa8 op=0x{operator:02x} month_day=0x{packed_value:04x} year=0x{encoded_year:04x} year_compared=false"
                 ),
                 actor_record: current_actor_record(current_actor),
                 text: None,

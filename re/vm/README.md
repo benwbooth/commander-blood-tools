@@ -116,6 +116,15 @@ assignments and signed `require` comparisons. Script-global words use
 `conversation_progress`, and `current_location`. The compiler reconstructs the
 original family, operator, and RHS-mode bytes from these expressions.
 
+RTC conditions are also source-level requirements. Opcode `CA` becomes
+`require clock.hour <|>|== HOUR`; all 80 shipped forms use the literal tag
+`C1`. Opcode `CB` becomes
+`require clock.date <|>|== YYYY-MM-DD using month_day_only`. Its four shipped
+operands are Christmas or New Year's Day date literals with encoded years 1994
+or 1995. The qualifier is required because the native handler consumes the year
+word but compares only month/day; it never reads the RTC year stored at
+`GS:0x0AAC`. Compilation retains the encoded year byte exactly.
+
 The shared-bit handler at `0x6902` is represented as boolean properties:
 `active`, `in_play`, and `presentable`. These are native masks `0x0001`,
 `0x0002`, and `0x0020` in each object's selector-`0x00` `flags` word. Native

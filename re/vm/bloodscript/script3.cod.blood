@@ -3605,36 +3605,36 @@ proc tim1B {
     say 0x01FA voice=0xFF flags=0x00 display=0x80 loop=none control=none : "TINA IS SOME COOL BABE..."
     say 0x01FA voice=0xFF flags=0x00 display=0x80 loop=none control=none : "THIS IS COSTING ME A FORTUNE... BYE...|...|...|... SEE YA"
     guard_push block_7D23
-    global_word_compare 0xF1 0xC1 0x0008
-    global_word_compare 0xF2 0xC1 0x0003
+    require clock.hour < 8
+    require clock.hour > 3
     guard_pop
     say 0x01FA voice=0x11 flags=0x00 display=0x80 loop=none control=none : "YOU SURE GET UP EARLY TO PLAY... I GOTTA GO... SEE YA!"
     jump block_7DDA
     block_7D23:
     guard_push block_7D46
-    global_word_compare 0xF1 0xC1 0x000C
-    global_word_compare 0xF2 0xC1 0x0008
+    require clock.hour < 12
+    require clock.hour > 8
     guard_pop
     say 0x01FA voice=0x10 flags=0x00 display=0x80 loop=none control=none : "BEAUTIFUL MORNING... SEE YA"
     jump block_7DDA
     block_7D46:
     guard_push block_7D79
-    global_word_compare 0xF2 0xC1 0x0015
-    global_word_compare 0xF1 0xC1 0x0004
+    require clock.hour > 21
+    require clock.hour < 4
     guard_pop
     say 0x01FA voice=0x0F flags=0x00 display=0x80 loop=none control=none : "NITE NITE... DON'T STAY UP TOO LATE. TOMORROW ALWAYS COMES..."
     jump block_7DDA
     block_7D79:
     guard_push block_7DA4
-    global_word_compare 0xF2 0xC1 0x0012
-    global_word_compare 0xF1 0xC1 0x0015
+    require clock.hour > 18
+    require clock.hour < 21
     guard_pop
     say 0x01FA voice=0x0E flags=0x00 display=0x80 loop=none control=none : "HAVE FUN... MY MOM SAYS SUPPER'S READY..."
     jump block_7DDA
     block_7DA4:
     guard_push block_7DDA
-    global_word_compare 0xF2 0xC1 0x000E
-    global_word_compare 0xF1 0xC1 0x0012
+    require clock.hour > 14
+    require clock.hour < 18
     guard_pop
     say 0x01FA voice=0x0D flags=0x00 display=0x80 loop=none control=none : "THINK I'LL GO NOW... AFTERNOON'S A GOOD TIME TO CATCH UP ON SOME ZZZZZ'S..."
     block_7DDA:
@@ -3672,31 +3672,31 @@ proc tim2B {
     say 0x01FA voice=0xFF flags=0x00 display=0x80 loop=none control=none : "MAXXON has been kidnapped..."
     say 0x01FA voice=0xFF flags=0x00 display=0x80 loop=none control=none : "I think EVISCERATOR did it..."
     guard_push block_7EFA
-    global_word_compare 0xF1 0xC1 0x0008
+    require clock.hour < 8
     guard_pop
     say 0x01FA voice=0x11 flags=0x00 display=0x80 loop=none control=none : "YOU SURE GET UP EARLY TO PLAY... I GOTTA GO... SEE YA!"
     jump block_7F9D
     block_7EFA:
     guard_push block_7F18
-    global_word_compare 0xF1 0xC1 0x000C
+    require clock.hour < 12
     guard_pop
     say 0x01FA voice=0x10 flags=0x00 display=0x80 loop=none control=none : "BEAUTIFUL MORNING... SEE YA"
     jump block_7F9D
     block_7F18:
     guard_push block_7F46
-    global_word_compare 0xF2 0xC1 0x0015
+    require clock.hour > 21
     guard_pop
     say 0x01FA voice=0x0F flags=0x00 display=0x80 loop=none control=none : "NITE NITE... DON'T STAY UP TOO LATE. TOMORROW ALWAYS COMES..."
     jump block_7F9D
     block_7F46:
     guard_push block_7F6C
-    global_word_compare 0xF2 0xC1 0x0012
+    require clock.hour > 18
     guard_pop
     say 0x01FA voice=0x0E flags=0x00 display=0x80 loop=none control=none : "HAVE FUN... MY MOM SAYS SUPPER'S READY..."
     jump block_7F9D
     block_7F6C:
     guard_push block_7F9D
-    global_word_compare 0xF2 0xC1 0x000C
+    require clock.hour > 12
     guard_pop
     say 0x01FA voice=0x0D flags=0x00 display=0x80 loop=none control=none : "THINK I'LL GO NOW... AFTERNOON'S A GOOD TIME TO CATCH UP ON SOME ZZZZZ'S..."
     block_7F9D:
@@ -3730,31 +3730,31 @@ proc tim3B {
     say 0x01FA voice=0xFF flags=0x00 display=0x80 loop=none control=none : "CONNECTION... COMMANDER BLOOD GAME"
     say 0x01FA voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Wha!!! That Cyberquizz exam's real tough..."
     guard_push block_807C
-    global_word_compare 0xF1 0xC1 0x0008
+    require clock.hour < 8
     guard_pop
     say 0x01FA voice=0x11 flags=0x00 display=0x80 loop=none control=none : "YOU SURE GET UP EARLY TO PLAY... I GOTTA GO... SEE YA"
     jump block_811F
     block_807C:
     guard_push block_809A
-    global_word_compare 0xF1 0xC1 0x000C
+    require clock.hour < 12
     guard_pop
     say 0x01FA voice=0x10 flags=0x00 display=0x80 loop=none control=none : "BEAUTIFUL MORNING... SEE YA"
     jump block_811F
     block_809A:
     guard_push block_80C8
-    global_word_compare 0xF2 0xC1 0x0015
+    require clock.hour > 21
     guard_pop
     say 0x01FA voice=0x0F flags=0x00 display=0x80 loop=none control=none : "NITE NITE... DON'T STAY UP TOO LATE. TOMORROW ALWAYS COMES..."
     jump block_811F
     block_80C8:
     guard_push block_80EE
-    global_word_compare 0xF2 0xC1 0x0012
+    require clock.hour > 18
     guard_pop
     say 0x01FA voice=0x0E flags=0x00 display=0x80 loop=none control=none : "HAVE FUN... MY MOM SAYS SUPPER'S READY..."
     jump block_811F
     block_80EE:
     guard_push block_811F
-    global_word_compare 0xF2 0xC1 0x000C
+    require clock.hour > 12
     guard_pop
     say 0x01FA voice=0x0D flags=0x00 display=0x80 loop=none control=none : "THINK I'LL GO NOW... AFTERNOON'S A GOOD TIME TO CATCH UP ON SOME ZZZZZ'S..."
     block_811F:
@@ -3791,31 +3791,31 @@ proc tim4B {
     say 0x01FA voice=0xFF flags=0x00 display=0x80 loop=none control=none : "CONNECTION... COMMANDER BLOOD GAME"
     say 0x01FA voice=0xFF flags=0x00 display=0x80 loop=none control=none : "I teleported Bronko to ERAZOR..."
     guard_push block_8226
-    global_word_compare 0xF1 0xC1 0x0008
+    require clock.hour < 8
     guard_pop
     say 0x01FA voice=0x11 flags=0x00 display=0x80 loop=none control=none : "EITHER YOU GET UP EARLY TO PLAY OR YOU DIDN'T GO TO BED... GOTTA GO... SEE YA!"
     jump block_82C5
     block_8226:
     guard_push block_8246
-    global_word_compare 0xF1 0xC1 0x000C
+    require clock.hour < 12
     guard_pop
     say 0x01FA voice=0x10 flags=0x00 display=0x80 loop=none control=none : "BEAUTIFUL MORNING... SEE YA..."
     jump block_82C5
     block_8246:
     guard_push block_8274
-    global_word_compare 0xF2 0xC1 0x0015
+    require clock.hour > 21
     guard_pop
     say 0x01FA voice=0x0F flags=0x00 display=0x80 loop=none control=none : "NITE NITE... DON'T STAY UP TOO LATE. TOMORROW ALWAYS COMES..."
     jump block_82C5
     block_8274:
     guard_push block_829A
-    global_word_compare 0xF2 0xC1 0x0012
+    require clock.hour > 18
     guard_pop
     say 0x01FA voice=0x0E flags=0x00 display=0x80 loop=none control=none : "HAVE FUN... MY MOM SAYS SUPPER'S READY..."
     jump block_82C5
     block_829A:
     guard_push block_82C5
-    global_word_compare 0xF2 0xC1 0x000C
+    require clock.hour > 12
     guard_pop
     say 0x01FA voice=0x0D flags=0x00 display=0x80 loop=none control=none : "I'M GOING TO DIVE IN THE POOL... IT'S A SUNNY AFTERNOON..."
     block_82C5:
@@ -3852,41 +3852,41 @@ proc tim5B {
     say 0x01FA voice=0xFF flags=0x00 display=0x80 loop=none control=none : "CONNECTION... COMMANDER BLOOD GAME"
     say 0x01FA voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Wowee!!! Beauregard and his mummies... Excellent!!!..."
     guard_push block_83B4
-    global_pair_compare 0xF5 0x0C19 0x07CA
+    require clock.date == 1994-12-25 using month_day_only
     guard_pop
     say 0x01FA voice=0xFF flags=0x00 display=0x80 loop=none control=none : "HAPPY CHRISTMAS..."
     block_83B4:
     guard_push block_83CE
-    global_pair_compare 0xF5 0x0101 0x07CB
+    require clock.date == 1995-01-01 using month_day_only
     guard_pop
     say 0x01FA voice=0xFF flags=0x00 display=0x80 loop=none control=none : "HAPPY NEW YEAR..."
     block_83CE:
     guard_push block_83FE
-    global_word_compare 0xF1 0xC1 0x0008
+    require clock.hour < 8
     guard_pop
     say 0x01FA voice=0x11 flags=0x00 display=0x80 loop=none control=none : "YOU SURE GET UP EARLY TO PLAY... GOTTA GO... SEE YA!"
     jump block_84A7
     block_83FE:
     guard_push block_841E
-    global_word_compare 0xF1 0xC1 0x000C
+    require clock.hour < 12
     guard_pop
     say 0x01FA voice=0x10 flags=0x00 display=0x80 loop=none control=none : "BEAUTIFUL MORNING... SEE YA!"
     jump block_84A7
     block_841E:
     guard_push block_844C
-    global_word_compare 0xF2 0xC1 0x0015
+    require clock.hour > 21
     guard_pop
     say 0x01FA voice=0x0F flags=0x00 display=0x80 loop=none control=none : "NITE NITE... DON'T STAY UP TOO LATE. TOMORROW ALWAYS COMES..."
     jump block_84A7
     block_844C:
     guard_push block_8472
-    global_word_compare 0xF2 0xC1 0x0012
+    require clock.hour > 18
     guard_pop
     say 0x01FA voice=0x0E flags=0x00 display=0x80 loop=none control=none : "HAVE FUN... MY MOM SAYS SUPPER'S READY..."
     jump block_84A7
     block_8472:
     guard_push block_84A7
-    global_word_compare 0xF2 0xC1 0x000C
+    require clock.hour > 12
     guard_pop
     say 0x01FA voice=0x0D flags=0x00 display=0x80 loop=none control=none : "IT'S A BEAUTIFUL AFTERNOON... THINK I'LL TAKE MY DOG FOR A WALK... COME ON BOY!"
     block_84A7:

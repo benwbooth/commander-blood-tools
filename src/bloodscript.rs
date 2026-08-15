@@ -1257,6 +1257,11 @@ fn normalize_modern_statement(
         "text" | "text_tokens" => normalize_modern_text(&fields, line_number),
         "require" => {
             if let Some(statement) =
+                normalize_modern_clock_expression(&fields[1..], line_number)?
+            {
+                return Ok(statement);
+            }
+            if let Some(statement) =
                 normalize_modern_bit_expression(&fields[1..], true, line_number)?
             {
                 return Ok(statement);
@@ -1295,6 +1300,67 @@ fn normalize_modern_statement(
                 Ok(format!("{canonical_name} {}", args.join(" ")))
             }
         }
+    }
+}
+
+fn normalize_modern_clock_expression(
+    fields: &[&str],
+    line_number: usize,
+) -> Result<Option<String>> {
+    if fields.first() == Some(&"clock.hour") {
+        if fields.len() != 3 {
+            bail!("line {line_number}: expected 'require clock.hour OP HOUR'");
+        }
+        let operator = modern_rtc_operator(fields[1], line_number)?;
+        let hour = fields[2]
+            .parse::<u16>()
+            .map_err(|_| anyhow!("line {line_number}: clock hour must be decimal"))?;
+        if hour > 23 {
+            bail!("line {line_number}: clock hour {hour} is outside 0..23");
+        }
+        return Ok(Some(format!(
+            "GLOBAL_WORD_COMPARE {operator} C1 {hour:04X}"
+        )));
+    }
+    if fields.first() != Some(&"clock.date") {
+        return Ok(None);
+    }
+    if fields.len() != 5 || fields[3] != "using" || fields[4] != "month_day_only" {
+        bail!(
+            "line {line_number}: expected 'require clock.date OP YYYY-MM-DD using month_day_only'"
+        );
+    }
+    let operator = modern_rtc_operator(fields[1], line_number)?;
+    let mut parts = fields[2].split('-');
+    let year = parts
+        .next()
+        .and_then(|value| value.parse::<u16>().ok())
+        .ok_or_else(|| anyhow!("line {line_number}: date year must be decimal u16"))?;
+    let month = parts
+        .next()
+        .and_then(|value| value.parse::<u8>().ok())
+        .ok_or_else(|| anyhow!("line {line_number}: date month must be decimal"))?;
+    let day = parts
+        .next()
+        .and_then(|value| value.parse::<u8>().ok())
+        .ok_or_else(|| anyhow!("line {line_number}: date day must be decimal"))?;
+    if parts.next().is_some() || !(1..=12).contains(&month) || !(1..=31).contains(&day) {
+        bail!("line {line_number}: invalid calendar date {:?}", fields[2]);
+    }
+    let month_day = u16::from(month) << 8 | u16::from(day);
+    Ok(Some(format!(
+        "GLOBAL_PAIR_COMPARE {operator} {month_day:04X} {year:04X}"
+    )))
+}
+
+fn modern_rtc_operator(operator: &str, line_number: usize) -> Result<&'static str> {
+    match operator {
+        "<" => Ok("F1"),
+        ">" => Ok("F2"),
+        "==" => Ok("F5"),
+        _ => bail!(
+            "line {line_number}: RTC comparison operator must be '<', '>', or '=='"
+        ),
     }
 }
 
@@ -1754,6 +1820,8 @@ fn modern_statement(
         "SHARED_STATE" => modern_shared_state(args, query_mode, line_number),
         "SHARED_BIT_STATE" => modern_shared_bit_state(args, query_mode, line_number),
         "RECORD_WILDCARD" => modern_record_wildcard(args, query_mode, line_number),
+        "GLOBAL_WORD_COMPARE" => modern_rtc_hour_compare(args, line_number),
+        "GLOBAL_PAIR_COMPARE" => modern_rtc_date_compare(args, line_number),
         "END" => Ok("halt".to_string()),
         _ => {
             let args = args
@@ -1768,6 +1836,79 @@ fn modern_statement(
             }
         }
     }
+}
+
+fn modern_rtc_comparison_operator(operator: &str) -> Option<&'static str> {
+    match operator {
+        "F1" => Some("<"),
+        "F2" => Some(">"),
+        "F5" => Some("=="),
+        _ => None,
+    }
+}
+
+fn modern_rtc_hour_compare(args: &[&str], line_number: usize) -> Result<String> {
+    if args.len() != 3 {
+        bail!("line {line_number}: malformed generated GLOBAL_WORD_COMPARE statement");
+    }
+    let Some(operator) = modern_rtc_comparison_operator(args[0]) else {
+        return Ok(format!(
+            "global_word_compare {} {} {}",
+            canonical_operand_to_modern(args[0]),
+            canonical_operand_to_modern(args[1]),
+            canonical_operand_to_modern(args[2])
+        ));
+    };
+    if args[1] != "C1" {
+        return Ok(format!(
+            "global_word_compare {} {} {}",
+            canonical_operand_to_modern(args[0]),
+            canonical_operand_to_modern(args[1]),
+            canonical_operand_to_modern(args[2])
+        ));
+    }
+    let hour = u16::from_str_radix(args[2], 16)
+        .map_err(|_| anyhow!("line {line_number}: invalid generated RTC hour"))?;
+    if hour > 23 {
+        return Ok(format!(
+            "global_word_compare {} {} {}",
+            canonical_operand_to_modern(args[0]),
+            canonical_operand_to_modern(args[1]),
+            canonical_operand_to_modern(args[2])
+        ));
+    }
+    Ok(format!("require clock.hour {operator} {hour}"))
+}
+
+fn modern_rtc_date_compare(args: &[&str], line_number: usize) -> Result<String> {
+    if args.len() != 3 {
+        bail!("line {line_number}: malformed generated GLOBAL_PAIR_COMPARE statement");
+    }
+    let Some(operator) = modern_rtc_comparison_operator(args[0]) else {
+        return Ok(format!(
+            "global_pair_compare {} {} {}",
+            canonical_operand_to_modern(args[0]),
+            canonical_operand_to_modern(args[1]),
+            canonical_operand_to_modern(args[2])
+        ));
+    };
+    let month_day = u16::from_str_radix(args[1], 16)
+        .map_err(|_| anyhow!("line {line_number}: invalid generated RTC month/day"))?;
+    let year = u16::from_str_radix(args[2], 16)
+        .map_err(|_| anyhow!("line {line_number}: invalid generated RTC year"))?;
+    let month = (month_day >> 8) as u8;
+    let day = month_day as u8;
+    if !(1..=12).contains(&month) || !(1..=31).contains(&day) {
+        return Ok(format!(
+            "global_pair_compare {} {} {}",
+            canonical_operand_to_modern(args[0]),
+            canonical_operand_to_modern(args[1]),
+            canonical_operand_to_modern(args[2])
+        ));
+    }
+    Ok(format!(
+        "require clock.date {operator} {year:04}-{month:02}-{day:02} using month_day_only"
+    ))
 }
 
 fn modern_shared_bit_state(args: &[&str], query: bool, line_number: usize) -> Result<String> {
@@ -3166,11 +3307,11 @@ fn emit_token(
         VmToken::GlobalPairCompare {
             operator,
             packed_value,
-            reserved,
+            encoded_year,
             ..
         } => write!(
             output,
-            "GLOBAL_PAIR_COMPARE {operator:02X} {packed_value:04X} {reserved:04X}"
+            "GLOBAL_PAIR_COMPARE {operator:02X} {packed_value:04X} {encoded_year:04X}"
         )?,
         VmToken::PairRecord {
             opcode,
@@ -3588,7 +3729,7 @@ fn compile_statement(
             output.push(vm::OP_GLOBAL_PAIR_COMPARE);
             output.push(parse_byte(args[0], line, "operator")?);
             word(&mut output, parse_word(args[1], line, "packed value")?);
-            word(&mut output, parse_word(args[2], line, "reserved")?);
+            word(&mut output, parse_word(args[2], line, "encoded year")?);
         }
         "PAIR_RECORD" => {
             require_count(args, 4, line, name)?;
@@ -3958,6 +4099,41 @@ mod tests {
                 .contains("require record[0x4567] != aboard")
         );
         assert_eq!(compile(&decompiled.source).unwrap(), expected);
+    }
+
+    #[test]
+    fn rtc_conditions_use_readable_clock_expressions_and_preserve_year_bytes() {
+        let image = vec![
+            vm::OP_GLOBAL_WORD_COMPARE,
+            0xF1,
+            0xC1,
+            0x08,
+            0x00,
+            vm::OP_GLOBAL_PAIR_COMPARE,
+            0xF5,
+            0x19,
+            0x0C,
+            0xCA,
+            0x07,
+            0xFF,
+        ];
+        let decompiled = decompile(ImageKind::Cod, &image, &HashMap::new()).unwrap();
+        assert!(decompiled.source.contains("require clock.hour < 8"));
+        assert!(decompiled.source.contains(
+            "require clock.date == 1994-12-25 using month_day_only"
+        ));
+        assert_eq!(compile(&decompiled.source).unwrap(), image);
+
+        let edited = concat!(
+            "// format: bloodscript-v5\n",
+            "require clock.hour > 21\n",
+            "require clock.date == 1995-01-01 using month_day_only\n",
+            "halt\n",
+        );
+        assert_eq!(
+            compile(edited).unwrap(),
+            vec![0xCA, 0xF2, 0xC1, 0x15, 0x00, 0xCB, 0xF5, 0x01, 0x01, 0xCB, 0x07, 0xFF]
+        );
     }
 
     #[test]

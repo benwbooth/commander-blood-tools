@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
 ; label: vm_op_cb_compare_byte
-; label_comment: VM opcode 0xCB: lodsb tag, lodsw bx, lodsw; if tag==0xf1 compare bh vs gs:[0xaaa] and branch. Byte comparison of a script variable vs game state [0xaaa]. Companion to 0xCA || ALSO RECORDED as `vm_op_cb_global_pair_compare`: 0xCB global pair condition handler; compares packed token value to gs:0x0aaa/0x0aa8 || MERGED 2026-07-25 (#185): one handler under several names.
+; label_comment: VM opcode 0xCB RTC date condition: consumes operator, packed month/day, and encoded year; compares only month/day against gs:0x0aaa/0x0aa8. The loaded year remains in AX and is never compared to rtc_year at gs:0x0aac.
 ; incoming: vm_opcode_handlers:opcode_0xcb
 ; byte_count: 73
 ; boundary: cfg_blocks_15_terminals_4

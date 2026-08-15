@@ -2,6 +2,7 @@
 #define BLOODPRG_VM_H
 
 #include "bloodprg_common.h"
+#include "bloodprg_platform.h"
 #include "bloodprg_random.h"
 
 typedef union bloodprg_vm_ui_state {
@@ -37,9 +38,6 @@ typedef cb_u16 bloodprg_vm_resource_profile[BLOODPRG_VM_RESOURCE_COUNT];
 
 #define vm_ui_flags (vm_ui_state.bytes.flags)
 
-extern volatile cb_i16 vm_compare_word;      /* GS:0x0AA6 */
-extern volatile cb_i8 vm_compare_pair_low;   /* GS:0x0AA8 */
-extern volatile cb_i8 vm_compare_pair_high;  /* GS:0x0AAA */
 extern volatile cb_u8 vm_sequence_active;    /* GS:0x252A */
 extern volatile cb_u8 vm_sequence_active_ds; /* DS:0x252A alias */
 extern volatile cb_u8 CB_GAME_DATA

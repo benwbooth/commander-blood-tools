@@ -628,10 +628,10 @@ pub(crate) fn token_comment(token: &VmToken, dictionary: &HashMap<u16, String>) 
         VmToken::GlobalPairCompare {
             operator,
             packed_value,
-            reserved,
+            encoded_year,
             ..
         } => format!(
-            "GLOBAL_PAIR_COMPARE operator=0x{operator:02X} value=0x{packed_value:04X} reserved=0x{reserved:04X}"
+            "GLOBAL_PAIR_COMPARE operator=0x{operator:02X} month_day=0x{packed_value:04X} year=0x{encoded_year:04X}"
         ),
         VmToken::PairRecord {
             opcode,

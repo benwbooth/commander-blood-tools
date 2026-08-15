@@ -1400,10 +1400,10 @@ fn opcode_metadata(opcode: u8, handler_file_offset: usize) -> OpcodeMetadata {
             notes: "CA compares a token u16 against RTC hour gs:0x0aa6; Rust evaluates branches when ExecutionContext supplies BIOS RTC values",
         },
         vm::OP_GLOBAL_PAIR_COMPARE => OpcodeMetadata {
-            mnemonic: "global_pair_compare",
+            mnemonic: "rtc_date_compare",
             family: "global-condition",
             rust_status: "execution-trace-ported",
-            notes: "CB compares packed month/day against RTC globals gs:0x0aaa/0x0aa8; Rust evaluates branches when ExecutionContext supplies BIOS RTC values",
+            notes: "CB compares encoded month/day against RTC globals gs:0x0aaa/0x0aa8 and consumes but ignores the encoded year; Rust evaluates branches when ExecutionContext supplies BIOS RTC values",
         },
         op if vm::is_pair_record_opcode(op) => OpcodeMetadata {
             mnemonic: "pair_record",
@@ -2175,13 +2175,13 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         comment: "CA global condition handler; compares token value to gs:0x0aa6",
     },
     BinarySymbol {
-        name: "vm_op_cb_global_pair_compare",
+        name: "vm_op_cb_rtc_date_compare",
         file_offset: 0x006510,
         segment: Some(0x04da),
         offset: Some(0x1170),
         ds_offset: None,
         kind: "script-vm",
-        comment: "CB global pair condition handler; compares packed token value to gs:0x0aaa/0x0aa8",
+        comment: "CB RTC date condition; compares encoded month/day to gs:0x0aaa/0x0aa8 and ignores the consumed year",
     },
     BinarySymbol {
         name: "vm_op_d2_script_profile_request",

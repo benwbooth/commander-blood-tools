@@ -1099,13 +1099,14 @@ pub enum VmToken {
         value: u16,
         len: usize,
     },
-    /// `0xCB` compares a packed two-byte token value against globals
-    /// `gs:0x0AAA:0x0AA8`, preserving the final consumed word as `reserved`.
+    /// `0xCB` compares an encoded month/day against RTC globals
+    /// `gs:0x0AAA:0x0AA8`. The token also carries a year, but the shipped
+    /// handler consumes that word without comparing it to `gs:0x0AAC`.
     GlobalPairCompare {
         offset: usize,
         operator: u8,
         packed_value: u16,
-        reserved: u16,
+        encoded_year: u16,
         len: usize,
     },
     /// `0xB8`/`0xB9`/`0xBD` pair-record assignment/compare.
@@ -1373,11 +1374,11 @@ pub fn encode_token(t: &VmToken) -> Option<Vec<u8>> {
             b.push(*tag);
             w(&mut b, *value);
         }
-        VmToken::GlobalPairCompare { operator, packed_value, reserved, .. } => {
+        VmToken::GlobalPairCompare { operator, packed_value, encoded_year, .. } => {
             b.push(OP_GLOBAL_PAIR_COMPARE);
             b.push(*operator);
             w(&mut b, *packed_value);
-            w(&mut b, *reserved);
+            w(&mut b, *encoded_year);
         }
         VmToken::PairRecord { opcode, record_offset, first_word, second_word, .. } => {
             b.push(*opcode);
@@ -1649,7 +1650,7 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
                 offset: pos,
                 operator: cod.get(pos + 1).copied().unwrap_or(0),
                 packed_value: read_u16(cod, pos + 2).unwrap_or(0),
-                reserved: read_u16(cod, pos + 4).unwrap_or(0),
+                encoded_year: read_u16(cod, pos + 4).unwrap_or(0),
                 len,
             });
         } else if is_pair_record_opcode(op) {
@@ -4536,8 +4537,10 @@ fn global_word_condition(context: &ExecutionContext, operator: u8, value: u16) -
     Some(passed)
 }
 
-/// Opcode `0xCB` (`vm_op_cb_compare_byte`, `0x6510`): a packed BYTE PAIR against the
-/// globals at `gs:[0xAAA]` (high) and `gs:[0xAA8]` (low), compared LEXICOGRAPHICALLY.
+/// Opcode `0xCB` (`vm_op_cb_compare_byte`, `0x6510`): encoded MONTH/DAY bytes against
+/// the RTC globals at `gs:[0xAAA]` (month) and `gs:[0xAA8]` (day), compared
+/// LEXICOGRAPHICALLY. The handler's second `lodsw` consumes the encoded year but
+/// never compares it to RTC year at `gs:[0xAAC]`.
 ///
 /// ```text
 /// 0x6517  cmp dl,0xf1 / jne 0x652e
@@ -13803,7 +13806,7 @@ mod tests {
                 offset: 5,
                 operator: 0xF5,
                 packed_value: 0x0C19,
-                reserved: 0x07CA,
+                encoded_year: 0x07CA,
                 len: 6
             }
         );

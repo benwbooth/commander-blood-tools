@@ -1,50 +1,57 @@
 #include "../include/bloodprg_vm.h"
 
-typedef union bloodprg_vm_compare_pair {
+typedef union bloodprg_vm_month_day {
     cb_u16 word;
     struct {
-        cb_i8 low;
-        cb_i8 high;
-    } bytes;
-} bloodprg_vm_compare_pair;
+        cb_i8 day;
+        cb_i8 month;
+    } date;
+} bloodprg_vm_month_day;
+
+typedef struct bloodprg_vm_date_literal {
+    bloodprg_vm_month_day month_day;
+    cb_u16 encoded_year;
+} bloodprg_vm_date_literal;
 
 const cb_u8 CB_NEAR *CB_NEAR vm_op_cb_compare_byte(
     const cb_u8 CB_NEAR *script_bytes)
 {
-    cb_u8 tag;
-    bloodprg_vm_compare_pair pair;
+    cb_u8 operator;
+    const bloodprg_vm_date_literal CB_NEAR *date;
+    bloodprg_vm_month_day month_day;
 
-    tag = *script_bytes++;
-    pair.word = *(const cb_u16 CB_NEAR *)script_bytes;
-    script_bytes += 4;
+    operator = *script_bytes++;
+    date = (const bloodprg_vm_date_literal CB_NEAR *)script_bytes;
+    month_day.word = date->month_day.word;
+    script_bytes += sizeof(*date);
 
-    if (tag == 0xf1u) {
-        if (pair.bytes.high < vm_compare_pair_high) {
+    if (operator == 0xf1u) {
+        if (month_day.date.month < (cb_i8)rtc_month) {
             goto failed;
         }
-        if (pair.bytes.high > vm_compare_pair_high) {
+        if (month_day.date.month > (cb_i8)rtc_month) {
             return script_bytes;
         }
-        if (pair.bytes.low <= vm_compare_pair_low) {
+        if (month_day.date.day <= (cb_i8)rtc_day) {
             goto failed;
         }
         return script_bytes;
-    } else if (tag == 0xf2u) {
-        if (pair.bytes.high > vm_compare_pair_high) {
+    } else if (operator == 0xf2u) {
+        if (month_day.date.month > (cb_i8)rtc_month) {
             goto failed;
         }
-        if (pair.bytes.high < vm_compare_pair_high) {
+        if (month_day.date.month < (cb_i8)rtc_month) {
             return script_bytes;
         }
-        if (pair.bytes.low >= vm_compare_pair_low) {
+        if (month_day.date.day >= (cb_i8)rtc_day) {
             goto failed;
         }
         return script_bytes;
     } else {
-        if (pair.bytes.high != vm_compare_pair_high) {
+        if (month_day.date.month != (cb_i8)rtc_month) {
             goto failed;
         }
-        if (pair.bytes.low == vm_compare_pair_low) {
+        if (month_day.date.day == (cb_i8)rtc_day) {
             return script_bytes;
         }
     }

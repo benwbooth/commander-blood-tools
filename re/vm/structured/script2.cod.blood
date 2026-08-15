@@ -1526,14 +1526,14 @@ proc tim1B {
     require state[0x1278] == 0x0001
     guard_pop
     when block_33C2 {
-        global_pair_compare 0xF5 0x0C19 0x07CA
+        require clock.date == 1994-12-25 using month_day_only
     } then {
         say Ulikan voice=0xFF flags=0x00 display=0x80 loop=none control=none : "MERRY CHRISTMAS..."
         character_slot 0x02 "christmas"
     }
     block_33C2:
     when block_33E4 {
-        global_pair_compare 0xF5 0x0101 0x07CA
+        require clock.date == 1994-01-01 using month_day_only
     } then {
         say Ulikan voice=0xFF flags=0x00 display=0x80 loop=none control=none : "HAPPY NEW YEAR..."
         character_slot 0x02 "year"
@@ -1556,36 +1556,36 @@ proc tim1B {
     say Ulikan voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Buy the batteries at VENUSIA|, the space supramarket..."
     say Ulikan voice=0xFF flags=0x00 display=0x80 loop=none control=none : "This is costing me too much..."
     guard_push block_351F // unstructured_guard=alternate_exit
-    global_word_compare 0xF1 0xC1 0x0008
-    global_word_compare 0xF2 0xC1 0x0002
+    require clock.hour < 8
+    require clock.hour > 2
     guard_pop
     say Ulikan voice=0x11 flags=0x00 display=0x80 loop=none control=none : "YOU SURE GET UP EARLY TO PLAY... I GOTTA GO... SEE YA!"
     jump block_35D6
     block_351F:
     guard_push block_3542 // unstructured_guard=alternate_exit
-    global_word_compare 0xF1 0xC1 0x000C
-    global_word_compare 0xF2 0xC1 0x0008
+    require clock.hour < 12
+    require clock.hour > 8
     guard_pop
     say Ulikan voice=0x10 flags=0x00 display=0x80 loop=none control=none : "BEAUTIFUL MORNING... SEE YA"
     jump block_35D6
     block_3542:
     guard_push block_3575 // unstructured_guard=alternate_exit
-    global_word_compare 0xF2 0xC1 0x0015
-    global_word_compare 0xF1 0xC1 0x0002
+    require clock.hour > 21
+    require clock.hour < 2
     guard_pop
     say Ulikan voice=0x0F flags=0x00 display=0x80 loop=none control=none : "NITE NITE... DON'T STAY UP TOO LATE. TOMORROW ALWAYS COMES..."
     jump block_35D6
     block_3575:
     guard_push block_35A0 // unstructured_guard=alternate_exit
-    global_word_compare 0xF2 0xC1 0x0012
-    global_word_compare 0xF1 0xC1 0x0015
+    require clock.hour > 18
+    require clock.hour < 21
     guard_pop
     say Ulikan voice=0x0E flags=0x00 display=0x80 loop=none control=none : "HAVE FUN... MY MOM SAYS SUPPER'S READY..."
     jump block_35D6
     block_35A0:
     when block_35D6 {
-        global_word_compare 0xF2 0xC1 0x000C
-        global_word_compare 0xF1 0xC1 0x0012
+        require clock.hour > 12
+        require clock.hour < 18
     } then {
         say Ulikan voice=0x0D flags=0x00 display=0x80 loop=none control=none : "THINK I'LL GO NOW... AFTERNOON'S A GOOD TIME TO CATCH UP ON SOME ZZZZZ'S..."
     }
@@ -1624,36 +1624,36 @@ proc tim2B {
     say Ulikan voice=0xFF flags=0x00 display=0x80 loop=none control=none : "I FOUND YOKO ON RONDO. ALSO DOCTOR OTTO VON SMILE|..."
     say Ulikan voice=0xFF flags=0x00 display=0x80 loop=none control=none : "THE GLUXX FAMILY AND SLIM GELATI..."
     guard_push block_3709 // unstructured_guard=alternate_exit
-    global_word_compare 0xF1 0xC1 0x0008
-    global_word_compare 0xF2 0xC1 0x0002
+    require clock.hour < 8
+    require clock.hour > 2
     guard_pop
     say Ulikan voice=0x11 flags=0x00 display=0x80 loop=none control=none : "YOU SURE GET UP EARLY TO PLAY... I GOTTA GO... SEE YA!"
     jump block_37C0
     block_3709:
     guard_push block_372C // unstructured_guard=alternate_exit
-    global_word_compare 0xF1 0xC1 0x000C
-    global_word_compare 0xF2 0xC1 0x0008
+    require clock.hour < 12
+    require clock.hour > 8
     guard_pop
     say Ulikan voice=0x10 flags=0x00 display=0x80 loop=none control=none : "BEAUTIFUL MORNING... SEE YA"
     jump block_37C0
     block_372C:
     guard_push block_375F // unstructured_guard=alternate_exit
-    global_word_compare 0xF2 0xC1 0x0015
-    global_word_compare 0xF1 0xC1 0x0002
+    require clock.hour > 21
+    require clock.hour < 2
     guard_pop
     say Ulikan voice=0x0F flags=0x00 display=0x80 loop=none control=none : "NITE NITE... DON'T STAY UP TOO LATE. TOMORROW ALWAYS COMES..."
     jump block_37C0
     block_375F:
     guard_push block_378A // unstructured_guard=alternate_exit
-    global_word_compare 0xF2 0xC1 0x0012
-    global_word_compare 0xF1 0xC1 0x0015
+    require clock.hour > 18
+    require clock.hour < 21
     guard_pop
     say Ulikan voice=0x0E flags=0x00 display=0x80 loop=none control=none : "HAVE FUN... MY MOM SAYS SUPPER'S READY..."
     jump block_37C0
     block_378A:
     when block_37C0 {
-        global_word_compare 0xF2 0xC1 0x000C
-        global_word_compare 0xF1 0xC1 0x0012
+        require clock.hour > 12
+        require clock.hour < 18
     } then {
         say Ulikan voice=0x0D flags=0x00 display=0x80 loop=none control=none : "THINK I'LL GO NOW... AFTERNOON'S A GOOD TIME TO CATCH UP ON SOME ZZZZZ'S..."
     }
@@ -1688,36 +1688,36 @@ proc tim3B {
     say Ulikan voice=0xFF flags=0x00 display=0x80 loop=none control=none : "CONNECTION... COMMANDER BLOOD GAME"
     say Ulikan voice=0xFF flags=0x00 display=0x80 loop=none control=none : "I FOUND THE LENS FOR MAXXON..."
     guard_push block_38A6 // unstructured_guard=alternate_exit
-    global_word_compare 0xF1 0xC1 0x0008
-    global_word_compare 0xF2 0xC1 0x0002
+    require clock.hour < 8
+    require clock.hour > 2
     guard_pop
     say Ulikan voice=0x11 flags=0x00 display=0x80 loop=none control=none : "YOU SURE GET UP EARLY TO PLAY... I GOTTA GO... SEE YA!"
     jump block_395D
     block_38A6:
     guard_push block_38C9 // unstructured_guard=alternate_exit
-    global_word_compare 0xF1 0xC1 0x000C
-    global_word_compare 0xF2 0xC1 0x0008
+    require clock.hour < 12
+    require clock.hour > 8
     guard_pop
     say Ulikan voice=0x10 flags=0x00 display=0x80 loop=none control=none : "BEAUTIFUL MORNING... SEE YA"
     jump block_395D
     block_38C9:
     guard_push block_38FC // unstructured_guard=alternate_exit
-    global_word_compare 0xF2 0xC1 0x0015
-    global_word_compare 0xF1 0xC1 0x0002
+    require clock.hour > 21
+    require clock.hour < 2
     guard_pop
     say Ulikan voice=0x0F flags=0x00 display=0x80 loop=none control=none : "NITE NITE... DON'T STAY UP TOO LATE. TOMORROW ALWAYS COMES..."
     jump block_395D
     block_38FC:
     guard_push block_3927 // unstructured_guard=alternate_exit
-    global_word_compare 0xF2 0xC1 0x0012
-    global_word_compare 0xF1 0xC1 0x0015
+    require clock.hour > 18
+    require clock.hour < 21
     guard_pop
     say Ulikan voice=0x0E flags=0x00 display=0x80 loop=none control=none : "HAVE FUN... MY MOM SAYS SUPPER'S READY..."
     jump block_395D
     block_3927:
     when block_395D {
-        global_word_compare 0xF2 0xC1 0x000C
-        global_word_compare 0xF1 0xC1 0x0012
+        require clock.hour > 12
+        require clock.hour < 18
     } then {
         say Ulikan voice=0x0D flags=0x00 display=0x80 loop=none control=none : "THINK I'LL GO NOW... AFTERNOON'S A GOOD TIME TO CATCH UP ON SOME ZZZZZ'S..."
     }
@@ -1755,36 +1755,36 @@ proc tim4B {
     say Ulikan voice=0xFF flags=0x00 display=0x80 loop=none control=none : "CONNECTION... COMMANDER BLOOD GAME"
     say Ulikan voice=0xFF flags=0x00 display=0x80 loop=none control=none : "I TELEPORTED BRONKO... HE'S BECOME THE HEAD CHEF... THE FOOD'S BETTER, I THINK..."
     guard_push block_3A77 // unstructured_guard=alternate_exit
-    global_word_compare 0xF1 0xC1 0x0008
-    global_word_compare 0xF2 0xC1 0x0002
+    require clock.hour < 8
+    require clock.hour > 2
     guard_pop
     say Ulikan voice=0x11 flags=0x00 display=0x80 loop=none control=none : "YOU SURE GET UP EARLY TO PLAY... I GOTTA GO... SEE YA!"
     jump block_3B2E
     block_3A77:
     guard_push block_3A9A // unstructured_guard=alternate_exit
-    global_word_compare 0xF1 0xC1 0x000C
-    global_word_compare 0xF2 0xC1 0x0008
+    require clock.hour < 12
+    require clock.hour > 8
     guard_pop
     say Ulikan voice=0x10 flags=0x00 display=0x80 loop=none control=none : "BEAUTIFUL MORNING... SEE YA"
     jump block_3B2E
     block_3A9A:
     guard_push block_3ACD // unstructured_guard=alternate_exit
-    global_word_compare 0xF2 0xC1 0x0015
-    global_word_compare 0xF1 0xC1 0x0002
+    require clock.hour > 21
+    require clock.hour < 2
     guard_pop
     say Ulikan voice=0x0F flags=0x00 display=0x80 loop=none control=none : "NITE NITE... DON'T STAY UP TOO LATE. TOMORROW ALWAYS COMES..."
     jump block_3B2E
     block_3ACD:
     guard_push block_3AF8 // unstructured_guard=alternate_exit
-    global_word_compare 0xF2 0xC1 0x0012
-    global_word_compare 0xF1 0xC1 0x0015
+    require clock.hour > 18
+    require clock.hour < 21
     guard_pop
     say Ulikan voice=0x0E flags=0x00 display=0x80 loop=none control=none : "HAVE FUN... MY MOM SAYS SUPPER'S READY..."
     jump block_3B2E
     block_3AF8:
     when block_3B2E {
-        global_word_compare 0xF2 0xC1 0x000C
-        global_word_compare 0xF1 0xC1 0x0012
+        require clock.hour > 12
+        require clock.hour < 18
     } then {
         say Ulikan voice=0x0D flags=0x00 display=0x80 loop=none control=none : "THINK I'LL GO NOW... AFTERNOON'S A GOOD TIME TO CATCH UP ON SOME ZZZZZ'S..."
     }
@@ -1818,36 +1818,36 @@ proc tim5B {
     say Ulikan voice=0xFF flags=0x00 display=0x80 loop=none control=none : "CONNECTION... COMMANDER BLOOD GAME"
     say Ulikan voice=0xFF flags=0x00 display=0x80 loop=none control=none : "HAVE YOU SEEN HOM... WOW!|..."
     guard_push block_3C10 // unstructured_guard=alternate_exit
-    global_word_compare 0xF1 0xC1 0x0008
-    global_word_compare 0xF2 0xC1 0x0002
+    require clock.hour < 8
+    require clock.hour > 2
     guard_pop
     say Ulikan voice=0x11 flags=0x00 display=0x80 loop=none control=none : "YOU SURE GET UP EARLY TO PLAY... I GOTTA GO... SEE YA!"
     jump block_3CC7
     block_3C10:
     guard_push block_3C33 // unstructured_guard=alternate_exit
-    global_word_compare 0xF1 0xC1 0x000C
-    global_word_compare 0xF2 0xC1 0x0008
+    require clock.hour < 12
+    require clock.hour > 8
     guard_pop
     say Ulikan voice=0x10 flags=0x00 display=0x80 loop=none control=none : "BEAUTIFUL MORNING... SEE YA"
     jump block_3CC7
     block_3C33:
     guard_push block_3C66 // unstructured_guard=alternate_exit
-    global_word_compare 0xF2 0xC1 0x0015
-    global_word_compare 0xF1 0xC1 0x0002
+    require clock.hour > 21
+    require clock.hour < 2
     guard_pop
     say Ulikan voice=0x0F flags=0x00 display=0x80 loop=none control=none : "NITE NITE... DON'T STAY UP TOO LATE. TOMORROW ALWAYS COMES..."
     jump block_3CC7
     block_3C66:
     guard_push block_3C91 // unstructured_guard=alternate_exit
-    global_word_compare 0xF2 0xC1 0x0012
-    global_word_compare 0xF1 0xC1 0x0015
+    require clock.hour > 18
+    require clock.hour < 21
     guard_pop
     say Ulikan voice=0x0E flags=0x00 display=0x80 loop=none control=none : "HAVE FUN... MY MOM SAYS SUPPER'S READY..."
     jump block_3CC7
     block_3C91:
     when block_3CC7 {
-        global_word_compare 0xF2 0xC1 0x000C
-        global_word_compare 0xF1 0xC1 0x0012
+        require clock.hour > 12
+        require clock.hour < 18
     } then {
         say Ulikan voice=0x0D flags=0x00 display=0x80 loop=none control=none : "THINK I'LL GO NOW... AFTERNOON'S A GOOD TIME TO CATCH UP ON SOME ZZZZZ'S..."
     }

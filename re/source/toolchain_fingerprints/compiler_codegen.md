@@ -1875,26 +1875,30 @@ instead of LODSW and CALL/shared-RET. Exact integration needs fixed GS placement
 and the original call boundary, but the comparison logic and register data flow
 need no assembly.
 
-VM tagged-byte-pair comparison `0x006510` has eighteen direct vectors covering
-every F1 lexicographic signed-greater path, every F2 signed-less path, default
-pair equality and mismatch, strict equal boundaries, signed overflow in either
-component, unaligned input, and a padding-word read spanning the segment end.
-They prove the packed low/high byte order, five-byte DS:SI consumption, separate
-GS comparison globals at `0x0AA8` and `0x0AAA`, the real branch-helper effects,
+VM RTC-date comparison `0x006510` has eighteen direct vectors covering every F1
+lexicographic later-month/day path, every F2 earlier-month/day path, default
+equality and mismatch, strict equal boundaries, signed overflow in either
+component, unaligned input, and an encoded-year read spanning the segment end.
+They prove the packed day/month byte order, five-byte DS:SI consumption,
+separate RTC globals at `0x0AA8` and `0x0AAA`, the real branch-helper effects,
 pass-path AX/BX/DL/SI and flags, failure-path helper outputs, preservation,
-immutable input, and near return.
+immutable input, and near return. The four shipped operands decode to Christmas
+or New Year's Day with years 1994/1995. The handler never compares its loaded
+year with the RTC year at `0x0AAC`.
 
-A natural two-byte union plus explicit high-then-low branches avoids shifts and
+A natural date-literal structure containing a two-byte month/day union and an
+encoded-year field, plus explicit month-then-day branches, avoids shifts and
 duplicate comparisons. Open Watcom `-3 -ox -mm` emits 27 instructions/81 bytes
-versus 28/73 original, including DL tag retention, direct signed AH/AL compares,
-and the same decision topology; Turbo C 2.01 medium emits 48 instructions. The
-remaining data-flow difference is bounded: optimizing C skips the otherwise
-unused padding load and therefore retains the pair in AX, while the binary loads
-the pair into BX and padding into AX. Both VM dispatchers observe SI after the
-handler and overwrite AL/BX before their next use. Exact integration still
-needs fixed GS placement and the original CALL/shared-RET boundary; reproducing
-the incidental padding load would require an ABI adapter or a non-natural
-volatile read, so it is intentionally not hidden inside the C logic.
+versus 28/73 original, including DL operator retention, direct signed AH/AL
+compares, and the same decision topology; Turbo C 2.01 medium emits 48
+instructions. The remaining data-flow difference is bounded: optimizing C
+advances over but does not load the behaviorally ignored year and therefore
+retains month/day in AX, while the binary moves month/day to BX and loads year
+into AX. Both VM dispatchers observe SI after the handler and overwrite AL/BX
+before their next use. Exact integration still needs fixed GS placement and the
+original CALL/shared-RET boundary; reproducing the unused year load would
+require an ABI adapter or a non-natural volatile read, so it is intentionally
+not hidden inside the C logic.
 
 VM branch-stack push `0x006559` has nine direct vectors covering the first and
 later stack slots, odd byte offsets, top wrap to zero and one, signed overflow,
