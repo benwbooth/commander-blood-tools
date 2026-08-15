@@ -2536,11 +2536,16 @@ defined flags, stack, and near return.
 
 Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the actual natural
 candidate warning-free to 38 instructions/111 bytes versus the original
-33/110, with 78.79 percent mnemonic-multiset overlap and no inline assembly.
-Huge model grows to 42 instructions/123 bytes. Watcom rejects an attempted BP
-parameter declaration with E1122, so direct replacement still needs the
-inherited BP actor input and carry-return line-helper boundary; ordinary source
-integration uses the explicit near pointer and Boolean helper result directly.
+33/110, with 78.79 percent mnemonic-multiset and 72.73 percent ordered-mnemonic
+overlap. Turbo C 2.01 medium (`-mm -O -Z`) emits 52 instructions, with 84.85
+percent multiset and 72.73 percent ordered overlap. Huge-model Watcom grows to
+42 instructions/123 bytes. No candidate uses inline assembly.
+
+The natural candidate is accepted for source-port integration. Watcom rejects
+an attempted BP parameter declaration with E1122, so direct replacement still
+needs the inherited BP actor input and carry-return line-helper boundary;
+ordinary source integration uses the explicit near pointer and Boolean helper
+result directly.
 
 Byte-parser opcode-08 handler `0x0076BA` is a six-byte leaf: LODSW consumes one
 little-endian word from DS:SI, a GS-qualified store writes it to offset 0x1FA5,
