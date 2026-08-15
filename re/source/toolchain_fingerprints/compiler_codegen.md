@@ -5337,10 +5337,15 @@ register and segment residue, defined flags, stack integrity, and `RETF`.
 Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the natural coordinator
 warning-free to 89 instructions/260 bytes versus the original 78/240, with
 91.03 percent mnemonic-multiset overlap and 80.77 percent ordered mnemonic
-overlap and no inline assembly. Full-source integration uses the explicit
-scene-context contract. Direct replacement still needs adapters for initial
-`ES=GS`, the original carry/live-`BP` steering result, the late `DS=ES=GS`
-transition, and the exact register/flag envelope.
+overlap and no inline assembly. Turbo C 2.01 emits 104 instructions. The
+canonical Watcom comparison intentionally omits `-zdf`; adding it leaves the
+instruction counts unchanged but expands relocation encoding from 260 to 277
+bytes.
+
+The coordinator is accepted for source-port integration using the explicit
+scene-context contract and ordinary Boolean steering result. Direct replacement
+still needs adapters for initial `ES=GS`, the original carry/live-`BP` steering
+result, the late `DS=ES=GS` transition, and the exact register/flag envelope.
 
 ## BLOODPRG presentation mode dispatch candidate
 
