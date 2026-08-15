@@ -1,16 +1,14 @@
-; BloodScript typed VM source
-; format: bloodscript-v2
-; image: BAS
-; size: 0x00000020
+// format: bloodscript-v3
+// image: BAS
 
-OBJECT object_Honk_082A 082A
+object Honk = 0x082A
 
-YIELD
+yield
 
-SELECTOR_LIST list_Honk_0001
-    YIELD_B
-    CASE "parler" 0000
-        MENU "adieu"
-        TEXT object_Honk_082A FF 61 80 - - "Yes" "!" "Commander" "?" FFFF "bye_bye"
-        END
-END_SELECTOR_LIST list_Honk_0001
+selector Honk_choices
+    yield_b
+    case "parler" -> 0x0000
+        menu "adieu"
+        say Honk voice=0xFF flags=0x61 display=0x80 loop=none control=none : "Yes! Commander?" choices "bye_bye"
+        halt
+end selector Honk_choices

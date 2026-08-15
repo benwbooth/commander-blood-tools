@@ -8,22 +8,23 @@ cargo run --bin cbvm -- decompile-structured \
   accuracy/cblood_install/cblood re/vm/structured
 ```
 
-`bloodscript-v2` has no address column. The compiler lays out statements first,
-then resolves every `LABEL`, `PROCEDURE`, branch, selector link, and guard
-target. Generated source uses four-space indentation for procedure, guard,
-selector-list, and case bodies. Redundant disassembly comments are omitted;
-comments remain only for recovery evidence that is not expressed by syntax.
+`bloodscript-v3` has no address column or opcode-style uppercase syntax. The
+compiler lays out statements first, then resolves every label, procedure,
+branch, selector link, and guard target. Generated source uses four-space
+indentation for procedure, guard, selector, and case bodies. Redundant
+disassembly comments are omitted; comments remain only for recovery evidence
+that is not expressed by syntax.
 
-The `WHEN target` / `THEN` / `END_WHEN target` syntax is a lossless structural
+The `when target` / `then` / `end when target` syntax is a lossless structural
 form of the native `A0 target` / `A1` guard protocol. `WHEN` and `THEN` emit
 those original bytes. `END_WHEN` emits no bytes and must occur exactly at its
 resolved target. The compiler validates nesting, matching names, procedure
 boundaries, and derived target offsets.
 
-The BAS pass uses `SELECTOR_LIST name` / `CASE selector next` /
-`END_SELECTOR_LIST name`. List boundaries emit no bytes; `CASE` emits the same
-four-byte `{selector,next}` header as low-level `SELECTOR_NODE`. The existing
-`YIELD_B`, `MENU`, response/state operations, and terminal `YIELD` or `END`
+The BAS pass uses `selector name` / `case selector -> next` / `end selector
+name`. List boundaries emit no bytes; `case` emits the same four-byte
+`{selector,next}` header as low-level `selector_node`. The existing `yield_b`,
+`menu`, response/state operations, and terminal `yield` or `halt`
 remain explicit byte-owning statements. The compiler requires every list to
 begin at one `YIELD_B`, every case body to begin with `MENU`, every nonterminal
 case to end at the `YIELD_B` immediately before its declared next case, and the
@@ -55,13 +56,20 @@ they occur. Comments do not emit bytes.
 All ten generated COD and BAS sources compile to the exact 183,523 shipped
 bytes; per-image guard, rejection, list, and case counts are in `manifest.tsv`.
 
+Every dialogue record is a `say` statement with named control fields and one
+sentence literal. BloodScript uses the companion DIC as the sentence lexicon;
+it inserts exact dictionary offsets rather than storing duplicate strings in
+the program image. `choices` denotes the native `0xFFFF` separator. The rare
+`|` character forces a token boundary where the DIC contains both a combined
+punctuated spelling and its split form.
+
 COD and BAS sources also declare exact kind-1 DEB object bases with zero-byte
-`OBJECT name offset` directives. An object name is accepted only in an operand
+`object name = offset` directives. An object name is accepted only in an operand
 position already established as a VAR address, and the compiler lowers it to
 the declared `u16` without changing layout. The current corpus contains 247
 image-local object declarations and 5,962 symbolic uses.
 
-Subrecord addresses use zero-byte `FIELD name object delta` declarations only
+Subrecord addresses use zero-byte `field name = object + delta` declarations only
 when the address has exactly one owner under the native field-offset matrix and
 that object's initial VAR kind. The current corpus contains 367 fields and 1,880
 uses. The compiler computes the wrapping base-plus-delta address; comments retain
@@ -70,7 +78,7 @@ unmatched addresses remain hexadecimal rather than using nearest-object guesses.
 
 COD and BAS sources intern exact DIC references as string operands. The current
 corpus has 13,699 distinct referenced offsets and 53,194 uses in dictionary-typed
-`TEXT`, `CONCEPT_GUARD`, `MENU`, `CASE`, and `SELECTOR_NODE` operands. All
+`say`, `concept_guard`, `menu`, `case`, and `selector_node` operands. All
 shipped references are bare quoted literals resolved through the companion DIC;
 there are no generated dictionary declarations or address suffixes in the
 corpus. Equal text at multiple physical offsets uses the lowest offset as its

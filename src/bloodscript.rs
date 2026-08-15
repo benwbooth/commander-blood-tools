@@ -17,7 +17,8 @@ use crate::vm::{self, VmToken};
 use crate::vm_cfg::{GuardRecovery, GuardRejection, StructuredGuard, analyze_structured_guards};
 use crate::vm_source::{self, ImageKind};
 
-const SOURCE_FORMAT: &str = "bloodscript-v2";
+const SOURCE_FORMAT: &str = "bloodscript-v3";
+const READABLE_SOURCE_FORMAT: &str = "bloodscript-v2";
 const LEGACY_SOURCE_FORMAT: &str = "bloodscript-ir-v1";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -115,6 +116,169 @@ struct DictionaryAlias {
 struct DictionaryOperandFormatter<'a> {
     aliases: &'a BTreeMap<u16, DictionaryAlias>,
     canonical_offsets: BTreeMap<String, u16>,
+}
+
+struct DictionaryPhraseLexicon {
+    canonical_offsets: HashMap<String, u16>,
+    by_first: HashMap<char, Vec<(String, u16)>>,
+}
+
+impl DictionaryPhraseLexicon {
+    fn new(dictionary: &HashMap<u16, String>) -> Self {
+        let mut canonical_offsets = HashMap::new();
+        for (offset, text) in dictionary {
+            if text.is_empty() || text.contains(char::is_whitespace) || text.contains('|') {
+                continue;
+            }
+            canonical_offsets
+                .entry(text.clone())
+                .and_modify(|canonical: &mut u16| *canonical = (*canonical).min(*offset))
+                .or_insert(*offset);
+        }
+        let mut by_first: HashMap<char, Vec<(String, u16)>> = HashMap::new();
+        for (text, offset) in &canonical_offsets {
+            if let Some(first) = text.chars().next() {
+                by_first
+                    .entry(first)
+                    .or_default()
+                    .push((text.clone(), *offset));
+            }
+        }
+        for candidates in by_first.values_mut() {
+            candidates.sort_by(|left, right| {
+                right
+                    .0
+                    .len()
+                    .cmp(&left.0.len())
+                    .then_with(|| left.0.cmp(&right.0))
+            });
+        }
+        Self {
+            canonical_offsets,
+            by_first,
+        }
+    }
+
+    fn render_exact(&self, offsets: &[u16], dictionary: &HashMap<u16, String>) -> Option<String> {
+        let texts = offsets
+            .iter()
+            .map(|offset| dictionary.get(offset).cloned())
+            .collect::<Option<Vec<_>>>()?;
+        if texts
+            .iter()
+            .any(|text| text.is_empty() || text.contains(char::is_whitespace) || text.contains('|'))
+        {
+            return None;
+        }
+        let mut forced_boundaries = vec![false; texts.len()];
+        for index in 1..texts.len() {
+            if !phrase_needs_space(phrase_ends_open(&texts[index - 1]), &texts[index]) {
+                forced_boundaries[index] = true;
+            }
+        }
+        for index in 1..forced_boundaries.len() {
+            if !forced_boundaries[index] {
+                continue;
+            }
+            forced_boundaries[index] = false;
+            let candidate = render_phrase_texts(&texts, &forced_boundaries);
+            if self.tokenize(&candidate).as_deref() != Some(offsets) {
+                forced_boundaries[index] = true;
+            }
+        }
+        Some(render_phrase_texts(&texts, &forced_boundaries))
+    }
+
+    fn tokenize(&self, phrase: &str) -> Option<Vec<u16>> {
+        let mut memo = HashMap::new();
+        let solutions = self.tokenize_from(phrase, 0, false, true, &mut memo);
+        solutions.first().cloned()
+    }
+
+    fn tokenize_from(
+        &self,
+        phrase: &str,
+        position: usize,
+        prior_ends_open: bool,
+        first: bool,
+        memo: &mut HashMap<(usize, bool, bool), Vec<Vec<u16>>>,
+    ) -> Vec<Vec<u16>> {
+        let key = (position, prior_ends_open, first);
+        if let Some(cached) = memo.get(&key) {
+            return cached.clone();
+        }
+        if position == phrase.len() {
+            return vec![Vec::new()];
+        }
+
+        let separator = (!first)
+            .then(|| phrase.as_bytes().get(position).copied())
+            .flatten()
+            .filter(|byte| matches!(byte, b' ' | b'|'));
+        let start = position
+            + usize::from(matches!(separator, Some(b' ') | Some(b'|')));
+        let Some(first_character) = phrase.get(start..).and_then(|tail| tail.chars().next()) else {
+            return Vec::new();
+        };
+        let mut solutions = Vec::new();
+        if let Some(candidates) = self.by_first.get(&first_character) {
+            for (text, offset) in candidates {
+                let separator_matches = first
+                    || if phrase_needs_space(prior_ends_open, text) {
+                        separator == Some(b' ')
+                    } else {
+                        matches!(separator, None | Some(b'|'))
+                    };
+                if !separator_matches || !phrase[start..].starts_with(text) {
+                    continue;
+                }
+                let next = start + text.len();
+                for mut suffix in
+                    self.tokenize_from(phrase, next, phrase_ends_open(text), false, memo)
+                {
+                    suffix.insert(0, *offset);
+                    if !solutions.contains(&suffix) {
+                        solutions.push(suffix);
+                    }
+                    if !solutions.is_empty() {
+                        memo.insert(key, solutions.clone());
+                        return solutions;
+                    }
+                }
+            }
+        }
+        memo.insert(key, solutions.clone());
+        solutions
+    }
+}
+
+fn render_phrase_texts(texts: &[String], forced_boundaries: &[bool]) -> String {
+    let mut phrase = String::new();
+    for (index, text) in texts.iter().enumerate() {
+        if index != 0 {
+            if phrase_needs_space(phrase_ends_open(&texts[index - 1]), text) {
+                phrase.push(' ');
+            } else if forced_boundaries[index] {
+                phrase.push('|');
+            }
+        }
+        phrase.push_str(text);
+    }
+    phrase
+}
+
+fn phrase_needs_space(prior_ends_open: bool, text: &str) -> bool {
+    !prior_ends_open
+        && !text
+            .chars()
+            .next()
+            .is_some_and(|character| matches!(character, ',' | '.' | '!' | '?' | ';' | ':' | '%' | ')' | ']' | '}'))
+}
+
+fn phrase_ends_open(text: &str) -> bool {
+    text.chars()
+        .next_back()
+        .is_some_and(|character| matches!(character, '(' | '[' | '{'))
 }
 
 impl<'a> DictionaryOperandFormatter<'a> {
@@ -221,7 +385,7 @@ fn decompile_mode(
 ) -> Result<Decompilation> {
     let mut source = String::new();
     writeln!(source, "; BloodScript typed VM source")?;
-    writeln!(source, "; format: {SOURCE_FORMAT}")?;
+    writeln!(source, "; format: {READABLE_SOURCE_FORMAT}")?;
     writeln!(
         source,
         "; image: {}",
@@ -237,7 +401,7 @@ fn decompile_mode(
         ImageKind::Cod => decompile_cod(&mut source, image, dictionary, symbols, structured, var)?,
         ImageKind::Bas => decompile_bas(&mut source, image, dictionary, &[], None, None)?,
     };
-    let source = format_readable_source(&source)?;
+    let source = format_modern_source(&source, dictionary)?;
     Ok(Decompilation {
         source,
         typed_statements: stats.typed_statements,
@@ -270,7 +434,7 @@ fn decompile_mode_with_bas_graph(
 ) -> Result<Decompilation> {
     let mut source = String::new();
     writeln!(source, "; BloodScript typed VM source")?;
-    writeln!(source, "; format: {SOURCE_FORMAT}")?;
+    writeln!(source, "; format: {READABLE_SOURCE_FORMAT}")?;
     writeln!(source, "; image: BAS")?;
     writeln!(source, "; size: 0x{:08X}", image.len())?;
     writeln!(source)?;
@@ -283,7 +447,7 @@ fn decompile_mode_with_bas_graph(
         Some(var),
         Some(graph),
     )?;
-    let source = format_readable_source(&source)?;
+    let source = format_modern_source(&source, dictionary)?;
     Ok(Decompilation {
         source,
         typed_statements: stats.typed_statements,
@@ -312,6 +476,8 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
 }
 
 pub fn compile_with_dictionary(source: &str, dictionary: &HashMap<u16, String>) -> Result<Vec<u8>> {
+    let normalized_source = normalize_modern_source(source, dictionary)?;
+    let source = normalized_source.as_deref().unwrap_or(source);
     let (mut lines, format) = parse_source_lines(source)?;
     let mut objects = HashMap::new();
     let mut dictionary_words = HashMap::new();
@@ -729,7 +895,7 @@ fn parse_source_lines(source: &str) -> Result<(Vec<ParsedSourceLine<'_>>, Source
             continue;
         };
         let parsed = match value.trim() {
-            SOURCE_FORMAT => SourceFormat::Readable,
+            READABLE_SOURCE_FORMAT => SourceFormat::Readable,
             LEGACY_SOURCE_FORMAT => SourceFormat::LegacyOffsets,
             value => bail!("line {}: unsupported format {value:?}", line_index + 1),
         };
@@ -737,7 +903,8 @@ fn parse_source_lines(source: &str) -> Result<(Vec<ParsedSourceLine<'_>>, Source
             bail!("line {}: duplicate format header", line_index + 1);
         }
     }
-    let format = format.ok_or_else(|| anyhow!("missing '; format: {SOURCE_FORMAT}' header"))?;
+    let format = format
+        .ok_or_else(|| anyhow!("missing '; format: {READABLE_SOURCE_FORMAT}' header"))?;
     let mut lines = Vec::new();
     for (line_index, original_line) in source.lines().enumerate() {
         let line_number = line_index + 1;
@@ -852,7 +1019,468 @@ fn split_source_fields(statement: &str, line_number: usize) -> Result<Vec<&str>>
     Ok(fields)
 }
 
-fn format_readable_source(source: &str) -> Result<String> {
+fn normalize_modern_source(
+    source: &str,
+    dictionary: &HashMap<u16, String>,
+) -> Result<Option<String>> {
+    let modern_header = format!("// format: {SOURCE_FORMAT}");
+    let legacy_comment_header = format!("; format: {SOURCE_FORMAT}");
+    if !source.lines().any(|line| {
+        let trimmed = line.trim();
+        trimmed == modern_header || trimmed == legacy_comment_header
+    }) {
+        return Ok(None);
+    }
+
+    let lexicon = DictionaryPhraseLexicon::new(dictionary);
+    let mut normalized = String::new();
+    writeln!(normalized, "; format: {READABLE_SOURCE_FORMAT}")?;
+    for (line_index, original_line) in source.lines().enumerate() {
+        let line_number = line_index + 1;
+        let trimmed = original_line.trim();
+        if trimmed.is_empty() {
+            normalized.push('\n');
+            continue;
+        }
+        if trimmed == modern_header || trimmed == legacy_comment_header {
+            continue;
+        }
+        if let Some(comment) = trimmed.strip_prefix("//") {
+            writeln!(normalized, ";{}", comment)?;
+            continue;
+        }
+        if trimmed.starts_with(';') {
+            writeln!(normalized, "{trimmed}")?;
+            continue;
+        }
+
+        let code = modern_code_before_comment(trimmed, line_number)?.trim();
+        if code.is_empty() {
+            continue;
+        }
+        let statement = normalize_modern_statement(code, line_number, &lexicon)?;
+        write!(normalized, "{statement}")?;
+        if let Some(comment) = modern_comment_after_code(trimmed, line_number)?
+            .map(str::trim)
+            .filter(|comment| !comment.is_empty())
+        {
+            write!(normalized, " ; {comment}")?;
+        }
+        normalized.push('\n');
+    }
+    Ok(Some(normalized))
+}
+
+fn modern_code_before_comment(line: &str, line_number: usize) -> Result<&str> {
+    modern_comment_parts(line, line_number).map(|(code, _)| code)
+}
+
+fn modern_comment_after_code(line: &str, line_number: usize) -> Result<Option<&str>> {
+    modern_comment_parts(line, line_number).map(|(_, comment)| comment)
+}
+
+fn modern_comment_parts(line: &str, line_number: usize) -> Result<(&str, Option<&str>)> {
+    let mut quoted = false;
+    let mut escaped = false;
+    let bytes = line.as_bytes();
+    let mut index = 0usize;
+    while index < bytes.len() {
+        let byte = bytes[index];
+        if quoted {
+            if escaped {
+                escaped = false;
+            } else if byte == b'\\' {
+                escaped = true;
+            } else if byte == b'"' {
+                quoted = false;
+            }
+        } else if byte == b'"' {
+            quoted = true;
+        } else if byte == b'/' && bytes.get(index + 1) == Some(&b'/') {
+            return Ok((&line[..index], Some(&line[index + 2..])));
+        }
+        index += 1;
+    }
+    if quoted {
+        bail!("line {line_number}: unterminated quoted string");
+    }
+    Ok((line, None))
+}
+
+fn normalize_modern_statement(
+    code: &str,
+    line_number: usize,
+    lexicon: &DictionaryPhraseLexicon,
+) -> Result<String> {
+    if let Some(label) = code
+        .strip_suffix(':')
+        .filter(|label| !label.bytes().any(|byte| byte.is_ascii_whitespace()))
+    {
+        let label = label.trim();
+        validate_identifier(label, line_number)?;
+        return Ok(format!("LABEL {label}"));
+    }
+
+    let fields = split_source_fields(code, line_number)?;
+    let Some(name) = fields.first().copied() else {
+        bail!("line {line_number}: missing statement");
+    };
+    let command = name.to_ascii_lowercase();
+
+    match command.as_str() {
+        "object" => {
+            if fields.len() != 4 || fields[2] != "=" {
+                bail!("line {line_number}: expected 'object NAME = 0xOFFSET'");
+            }
+            Ok(format!(
+                "OBJECT {} {}",
+                fields[1],
+                modern_operand_to_canonical(fields[3], line_number)?
+            ))
+        }
+        "field" => {
+            if fields.len() != 6 || fields[2] != "=" || fields[4] != "+" {
+                bail!("line {line_number}: expected 'field NAME = OWNER + 0xOFFSET'");
+            }
+            Ok(format!(
+                "FIELD {} {} {}",
+                fields[1],
+                fields[3],
+                modern_operand_to_canonical(fields[5], line_number)?
+            ))
+        }
+        "proc" => normalize_modern_fixed("PROCEDURE", &fields[1..], 1, line_number),
+        "when" => normalize_modern_fixed("WHEN", &fields[1..], 1, line_number),
+        "then" => normalize_modern_fixed("THEN", &fields[1..], 0, line_number),
+        "selector" => {
+            normalize_modern_fixed("SELECTOR_LIST", &fields[1..], 1, line_number)
+        }
+        "end" => {
+            if fields.len() != 3 {
+                bail!("line {line_number}: expected 'end proc|when|selector NAME'");
+            }
+            let canonical = match fields[1].to_ascii_lowercase().as_str() {
+                "proc" => "END_PROCEDURE",
+                "when" => "END_WHEN",
+                "selector" => "END_SELECTOR_LIST",
+                _ => bail!(
+                    "line {line_number}: expected 'end proc', 'end when', or 'end selector'"
+                ),
+            };
+            Ok(format!("{canonical} {}", fields[2]))
+        }
+        "case" => {
+            if fields.len() != 4 || fields[2] != "->" {
+                bail!("line {line_number}: expected 'case WORD -> TARGET'");
+            }
+            Ok(format!(
+                "CASE {} {}",
+                modern_operand_to_canonical(fields[1], line_number)?,
+                modern_operand_to_canonical(fields[3], line_number)?
+            ))
+        }
+        "say" => normalize_modern_say(&fields, line_number, lexicon),
+        "text" | "text_tokens" => normalize_modern_text(&fields, line_number),
+        _ => {
+            let canonical_name = if command == "halt" {
+                "END".to_string()
+            } else {
+                command.to_ascii_uppercase()
+            };
+            let args = fields[1..]
+                .iter()
+                .map(|value| modern_operand_to_canonical(value, line_number))
+                .collect::<Result<Vec<_>>>()?;
+            if args.is_empty() {
+                Ok(canonical_name)
+            } else {
+                Ok(format!("{canonical_name} {}", args.join(" ")))
+            }
+        }
+    }
+}
+
+fn normalize_modern_fixed(
+    canonical_name: &str,
+    args: &[&str],
+    expected: usize,
+    line_number: usize,
+) -> Result<String> {
+    if args.len() != expected {
+        bail!(
+            "line {line_number}: {canonical_name} expects {expected} argument(s), got {}",
+            args.len()
+        );
+    }
+    if args.is_empty() {
+        Ok(canonical_name.to_string())
+    } else {
+        Ok(format!("{canonical_name} {}", args.join(" ")))
+    }
+}
+
+fn normalize_modern_text(fields: &[&str], line_number: usize) -> Result<String> {
+    if fields.len() < 8 {
+        bail!(
+            "line {line_number}: text expects OBJECT, five named controls, ':', and optional words"
+        );
+    }
+    let expected_names = ["voice", "flags", "display", "loop", "control"];
+    let mut controls = Vec::with_capacity(expected_names.len());
+    for (field, expected_name) in fields[2..7].iter().zip(expected_names) {
+        let Some((name, value)) = field.split_once('=') else {
+            bail!("line {line_number}: expected {expected_name}=VALUE in text statement");
+        };
+        if name != expected_name {
+            bail!(
+                "line {line_number}: expected {expected_name}=VALUE, found {name}=VALUE"
+            );
+        }
+        controls.push(modern_operand_to_canonical(value, line_number)?);
+    }
+    if fields[7] != ":" {
+        bail!("line {line_number}: expected ':' before text words");
+    }
+    let mut args = vec![modern_operand_to_canonical(fields[1], line_number)?];
+    args.extend(controls);
+    args.extend(
+        fields[8..]
+            .iter()
+            .map(|value| modern_operand_to_canonical(value, line_number))
+            .collect::<Result<Vec<_>>>()?,
+    );
+    Ok(format!("TEXT {}", args.join(" ")))
+}
+
+fn normalize_modern_say(
+    fields: &[&str],
+    line_number: usize,
+    lexicon: &DictionaryPhraseLexicon,
+) -> Result<String> {
+    if fields.len() < 9 {
+        bail!(
+            "line {line_number}: say expects OBJECT, five named controls, ':', and a quoted phrase"
+        );
+    }
+    let expected_names = ["voice", "flags", "display", "loop", "control"];
+    let mut controls = Vec::with_capacity(expected_names.len());
+    for (field, expected_name) in fields[2..7].iter().zip(expected_names) {
+        let Some((name, value)) = field.split_once('=') else {
+            bail!("line {line_number}: expected {expected_name}=VALUE in say statement");
+        };
+        if name != expected_name {
+            bail!("line {line_number}: expected {expected_name}=VALUE, found {name}=VALUE");
+        }
+        controls.push(modern_operand_to_canonical(value, line_number)?);
+    }
+    if fields[7] != ":" {
+        bail!("line {line_number}: expected ':' before dialogue phrase");
+    }
+    let phrase: String = serde_json::from_str(fields[8])
+        .map_err(|_| anyhow!("line {line_number}: dialogue phrase must be a quoted string"))?;
+    let word_offsets = lexicon.tokenize(&phrase).ok_or_else(|| {
+        anyhow!(
+            "line {line_number}: dialogue phrase does not have one exact companion-dictionary tokenization"
+        )
+    })?;
+
+    let mut args = vec![modern_operand_to_canonical(fields[1], line_number)?];
+    args.extend(controls);
+    args.extend(word_offsets.iter().map(|offset| format!("{offset:04X}")));
+    if fields.len() > 9 {
+        if fields[9] != "choices" || fields.len() == 10 {
+            bail!("line {line_number}: expected 'choices WORD...' after dialogue phrase");
+        }
+        args.push("FFFF".to_string());
+        args.extend(
+            fields[10..]
+                .iter()
+                .map(|value| modern_operand_to_canonical(value, line_number))
+                .collect::<Result<Vec<_>>>()?,
+        );
+    }
+    Ok(format!("TEXT {}", args.join(" ")))
+}
+
+fn modern_operand_to_canonical(value: &str, line_number: usize) -> Result<String> {
+    let value = value.strip_suffix(',').unwrap_or(value);
+    match value {
+        "none" => return Ok("-".to_string()),
+        "true" => return Ok("1".to_string()),
+        "false" => return Ok("0".to_string()),
+        _ => {}
+    }
+    if let Some(hex) = value
+        .strip_prefix("0x")
+        .or_else(|| value.strip_prefix("0X"))
+    {
+        if hex.is_empty() || !hex.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+            bail!("line {line_number}: invalid hexadecimal operand {value:?}");
+        }
+        return Ok(hex.to_ascii_uppercase());
+    }
+    if value.starts_with('"') {
+        if let Some(index) = value.rfind("@0x").or_else(|| value.rfind("@0X")) {
+            let (quoted, suffix) = value.split_at(index);
+            let hex = &suffix[3..];
+            if hex.is_empty() || !hex.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+                bail!("line {line_number}: invalid dictionary offset {suffix:?}");
+            }
+            return Ok(format!("{quoted}@{}", hex.to_ascii_uppercase()));
+        }
+    }
+    Ok(value.to_string())
+}
+
+fn canonical_operand_to_modern(value: &str) -> String {
+    if value == "-" {
+        return "none".to_string();
+    }
+    if value.starts_with('"') {
+        if let Some(index) = value.rfind('@') {
+            let (quoted, suffix) = value.split_at(index);
+            let hex = &suffix[1..];
+            if !hex.is_empty() && hex.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+                return format!("{quoted}@0x{hex}");
+            }
+        }
+        return value.to_string();
+    }
+    if looks_like_canonical_hex(value) {
+        return format!("0x{value}");
+    }
+    value.to_string()
+}
+
+fn looks_like_canonical_hex(value: &str) -> bool {
+    matches!(value.len(), 2 | 4 | 8)
+        && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+        && value
+            .bytes()
+            .any(|byte| byte.is_ascii_digit() || byte.is_ascii_uppercase())
+}
+
+fn modern_statement(
+    statement: &str,
+    line_number: usize,
+    dictionary: &HashMap<u16, String>,
+    lexicon: &DictionaryPhraseLexicon,
+) -> Result<String> {
+    let fields = split_source_fields(statement, line_number)?;
+    let name = fields
+        .first()
+        .copied()
+        .ok_or_else(|| anyhow!("line {line_number}: missing statement"))?;
+    let args = &fields[1..];
+    match name {
+        "OBJECT" => Ok(format!(
+            "object {} = {}",
+            args[0],
+            canonical_operand_to_modern(args[1])
+        )),
+        "FIELD" => Ok(format!(
+            "field {} = {} + {}",
+            args[0],
+            args[1],
+            canonical_operand_to_modern(args[2])
+        )),
+        "LABEL" => Ok(format!("{}:", args[0])),
+        "PROCEDURE" => Ok(format!("proc {}", args[0])),
+        "END_PROCEDURE" => Ok(format!("end proc {}", args[0])),
+        "WHEN" => Ok(format!("when {}", args[0])),
+        "THEN" => Ok("then".to_string()),
+        "END_WHEN" => Ok(format!("end when {}", args[0])),
+        "SELECTOR_LIST" => Ok(format!("selector {}", args[0])),
+        "END_SELECTOR_LIST" => Ok(format!("end selector {}", args[0])),
+        "CASE" => Ok(format!(
+            "case {} -> {}",
+            canonical_operand_to_modern(args[0]),
+            canonical_operand_to_modern(args[1])
+        )),
+        "TEXT" => {
+            if args.len() < 6 {
+                bail!("line {line_number}: malformed generated TEXT statement");
+            }
+            let raw_words = &args[6..];
+            let separator = raw_words.iter().position(|value| *value == "FFFF");
+            let phrase_words = separator.map_or(raw_words, |index| &raw_words[..index]);
+            let exact_offsets = phrase_words
+                .iter()
+                .map(|value| canonical_dictionary_operand_offset(value, lexicon))
+                .collect::<Option<Vec<_>>>();
+            let phrase = exact_offsets
+                .as_ref()
+                .and_then(|offsets| lexicon.render_exact(offsets, dictionary));
+            let phrase_is_exact = phrase.as_ref().is_some_and(|phrase| {
+                lexicon.tokenize(phrase).as_ref() == exact_offsets.as_ref()
+            });
+            let words = raw_words
+                .iter()
+                .map(|value| canonical_operand_to_modern(value))
+                .collect::<Vec<_>>()
+                .join(" ");
+            let command = if phrase_is_exact { "say" } else { "text_tokens" };
+            let mut result = format!(
+                "{command} {} voice={} flags={} display={} loop={} control={} :",
+                canonical_operand_to_modern(args[0]),
+                canonical_operand_to_modern(args[1]),
+                canonical_operand_to_modern(args[2]),
+                canonical_operand_to_modern(args[3]),
+                canonical_operand_to_modern(args[4]),
+                canonical_operand_to_modern(args[5])
+            );
+            if let Some(phrase) = phrase.filter(|_| phrase_is_exact) {
+                result.push(' ');
+                result.push_str(&serde_json::to_string(&phrase)?);
+                if let Some(separator) = separator {
+                    result.push_str(" choices");
+                    for value in &raw_words[separator + 1..] {
+                        result.push(' ');
+                        result.push_str(&canonical_operand_to_modern(value));
+                    }
+                }
+            } else if !words.is_empty() {
+                result.push(' ');
+                result.push_str(&words);
+            }
+            Ok(result)
+        }
+        "END" => Ok("halt".to_string()),
+        _ => {
+            let args = args
+                .iter()
+                .map(|value| canonical_operand_to_modern(value))
+                .collect::<Vec<_>>();
+            let command = name.to_ascii_lowercase();
+            if args.is_empty() {
+                Ok(command)
+            } else {
+                Ok(format!("{command} {}", args.join(" ")))
+            }
+        }
+    }
+}
+
+fn canonical_dictionary_operand_offset(
+    value: &str,
+    lexicon: &DictionaryPhraseLexicon,
+) -> Option<u16> {
+    if let Some((quoted, offset)) = value.rsplit_once('@') {
+        let _: String = serde_json::from_str(quoted).ok()?;
+        return u16::from_str_radix(offset, 16).ok();
+    }
+    if value.starts_with('"') {
+        let text: String = serde_json::from_str(value).ok()?;
+        return lexicon.canonical_offsets.get(&text).copied();
+    }
+    u16::from_str_radix(value, 16).ok()
+}
+
+fn format_modern_source(
+    source: &str,
+    dictionary: &HashMap<u16, String>,
+) -> Result<String> {
+    let lexicon = DictionaryPhraseLexicon::new(dictionary);
     let mut output = String::new();
     let mut indent = 0usize;
     let mut selector_case_open = false;
@@ -864,8 +1492,19 @@ fn format_readable_source(source: &str) -> Result<String> {
             output.push('\n');
             continue;
         }
+        if trimmed == "; BloodScript typed VM source" || trimmed.starts_with("; size:") {
+            continue;
+        }
+        if trimmed == format!("; format: {READABLE_SOURCE_FORMAT}") {
+            writeln!(output, "// format: {SOURCE_FORMAT}")?;
+            continue;
+        }
+        if let Some(value) = trimmed.strip_prefix("; image:") {
+            writeln!(output, "// image:{}", value)?;
+            continue;
+        }
         if trimmed.starts_with(';') {
-            writeln!(output, "{trimmed}")?;
+            writeln!(output, "//{}", &trimmed[1..])?;
             continue;
         }
 
@@ -907,7 +1546,12 @@ fn format_readable_source(source: &str) -> Result<String> {
             _ => {}
         }
 
-        write!(output, "{}{statement}", "    ".repeat(indent))?;
+        write!(
+            output,
+            "{}{}",
+            "    ".repeat(indent),
+            modern_statement(statement, line_number, dictionary, &lexicon)?
+        )?;
         let useful_comment = if name == "FIELD" || name == "RAW" {
             comment_after_code(trimmed, line_number)?.map(str::trim)
         } else {
@@ -916,7 +1560,7 @@ fn format_readable_source(source: &str) -> Result<String> {
                 .map(|start| trimmed[start..].trim())
         };
         if let Some(comment) = useful_comment.filter(|comment| !comment.is_empty()) {
-            write!(output, " ; {comment}")?;
+            write!(output, " // {comment}")?;
         }
         output.push('\n');
 
@@ -958,7 +1602,7 @@ fn decompile_cod(
     } else {
         StructuredAnnotations::default()
     };
-    let field_aliases = if structured_source {
+    let mut field_aliases = if structured_source {
         var.map(|var| field_aliases(tokens.iter().flat_map(object_operand_values), symbols, var))
             .unwrap_or_default()
     } else {
@@ -970,6 +1614,7 @@ fn decompile_cod(
         BTreeMap::new()
     };
     add_field_owner_objects(&mut object_aliases, &field_aliases);
+    simplify_alias_identifiers(&mut object_aliases, &mut field_aliases);
     let dictionary_aliases = dictionary_aliases(
         tokens.iter().flat_map(dictionary_operand_values),
         dictionary,
@@ -1081,7 +1726,7 @@ fn decompile_bas(
     graph: Option<&BasControlFlow>,
 ) -> Result<BodyStats> {
     let vm_tokens = bas_vm_tokens(image, dictionary);
-    let field_aliases = var
+    let mut field_aliases = var
         .map(|var| {
             field_aliases(
                 vm_tokens.iter().flat_map(object_operand_values),
@@ -1096,6 +1741,7 @@ fn decompile_bas(
         BTreeMap::new()
     };
     add_field_owner_objects(&mut object_aliases, &field_aliases);
+    simplify_alias_identifiers(&mut object_aliases, &mut field_aliases);
     let dictionary_values = bas_dictionary_operand_values(image, dictionary);
     let dictionary_aliases = dictionary_aliases(dictionary_values.iter().copied(), dictionary);
     let mut dictionary_operands = DictionaryOperandFormatter::new(&dictionary_aliases, dictionary);
@@ -1233,6 +1879,7 @@ fn cod_annotations(
     }
 
     let mut procedures = BTreeMap::new();
+    let mut used_label_names = HashSet::new();
     for symbol in symbols.iter().filter(|symbol| symbol.kind == 2) {
         if symbol.offset == 0xFFFF {
             continue;
@@ -1254,7 +1901,11 @@ fn cod_annotations(
         if procedures.contains_key(&offset) {
             bail!("multiple DEB kind-2 symbols resolve to COD offset 0x{offset:04X}");
         }
-        let identifier = format!("proc_{}_{offset:04X}", identifier_component(&symbol.name));
+        let identifier = unique_identifier(
+            identifier_component(&symbol.name),
+            offset as u16,
+            &mut used_label_names,
+        );
         procedures.insert(offset, (identifier, symbol));
     }
 
@@ -1294,7 +1945,11 @@ fn cod_annotations(
         if annotations.labels.contains_key(&target) {
             continue;
         }
-        let identifier = format!("block_{target:04X}");
+        let identifier = unique_identifier(
+            format!("block_{target:04X}"),
+            target,
+            &mut used_label_names,
+        );
         annotations
             .directives
             .entry(usize::from(target))
@@ -1358,12 +2013,13 @@ fn bas_structured_annotations(graph: Option<&BasControlFlow>) -> BasStructuredAn
     let Some(graph) = graph else {
         return annotations;
     };
+    let mut used_names = HashSet::new();
     for list in &graph.lists {
         let entry = &list.entrypoint;
-        let name = format!(
-            "list_{}_{:04X}",
-            identifier_component(&entry.object_name),
-            entry.prefix_yield_b
+        let name = unique_identifier(
+            format!("{}_choices", identifier_component(&entry.object_name)),
+            entry.prefix_yield_b as u16,
+            &mut used_names,
         );
         annotations.starts.insert(
             entry.prefix_yield_b,
@@ -1599,6 +2255,39 @@ fn add_field_owner_objects(
                 source_name: field.owner_name.clone(),
             });
     }
+}
+
+fn simplify_alias_identifiers(
+    objects: &mut BTreeMap<u16, ObjectAlias>,
+    fields: &mut BTreeMap<u16, FieldAlias>,
+) {
+    let mut used = HashSet::new();
+    for (&offset, alias) in objects.iter_mut() {
+        let base = identifier_component(&alias.source_name);
+        alias.identifier = unique_identifier(base, offset, &mut used);
+    }
+    for (&address, alias) in fields.iter_mut() {
+        let owner = objects
+            .get(&alias.owner_offset)
+            .map(|owner| owner.identifier.as_str())
+            .unwrap_or("object");
+        let selectors = alias
+            .selectors
+            .iter()
+            .map(|selector| format!("{selector:02X}"))
+            .collect::<Vec<_>>()
+            .join("_");
+        alias.identifier = unique_identifier(format!("{owner}_s{selectors}"), address, &mut used);
+    }
+}
+
+fn unique_identifier(base: String, offset: u16, used: &mut HashSet<String>) -> String {
+    if used.insert(base.clone()) {
+        return base;
+    }
+    let candidate = format!("{base}_{offset:04X}");
+    used.insert(candidate.clone());
+    candidate
 }
 
 fn dictionary_aliases(
@@ -2726,14 +3415,18 @@ mod tests {
         assert!(
             decompiled
                 .source
-                .contains("SHARED_STATE C0 1234 F6 C2 5678")
+                .contains("shared_state 0xC0 0x1234 0xF6 0xC2 0x5678")
         );
         assert!(
             decompiled
                 .source
-                .contains("SHARED_BIT_STATE AE 2345 00FF 1")
+                .contains("shared_bit_state 0xAE 0x2345 0x00FF 1")
         );
-        assert!(decompiled.source.contains("RECORD_WILDCARD AF 4567 FFFF 1"));
+        assert!(
+            decompiled
+                .source
+                .contains("record_wildcard 0xAF 0x4567 0xFFFF 1")
+        );
         assert_eq!(compile(&decompiled.source).unwrap(), expected);
     }
 
@@ -2767,14 +3460,14 @@ mod tests {
         let decompiled = decompile(ImageKind::Cod, &expected, &HashMap::new()).unwrap();
         assert_eq!(decompiled.generic_op_statements, 0);
         for statement in [
-            "GUARD_PUSH block_0005",
-            "STATE_ARRAY_TEST FE",
-            "GUARD_POP",
-            "STATE_ARRAY_SET 02 5678",
-            "JUMP block_000D",
-            "CONDITIONAL_BLOCK 01 block_0011",
-            "BRANCH_PRESENTATION",
-            "BRANCH_GAMEFLAG",
+            "guard_push block_0005",
+            "state_array_test 0xFE",
+            "guard_pop",
+            "state_array_set 0x02 0x5678",
+            "jump block_000D",
+            "conditional_block 0x01 block_0011",
+            "branch_presentation",
+            "branch_gameflag",
         ] {
             assert!(decompiled.source.contains(statement), "missing {statement}");
         }
@@ -2794,17 +3487,17 @@ mod tests {
             decompile_structured_with_symbols(ImageKind::Cod, &image, &HashMap::new(), &[])
                 .unwrap();
         assert_eq!(decompiled.structured_guards, 1);
-        for statement in ["WHEN block_000B", "THEN", "END_WHEN block_000B"] {
+        for statement in ["when block_000B", "then", "end when block_000B"] {
             assert!(decompiled.source.contains(statement), "missing {statement}");
         }
-        assert!(decompiled.source.contains("WHEN block_000B\n"));
-        assert!(decompiled.source.contains("    CONCEPT_GUARD"));
-        assert!(!decompiled.source.contains("; GUARD_POP"));
+        assert!(decompiled.source.contains("when block_000B\n"));
+        assert!(decompiled.source.contains("    concept_guard"));
+        assert!(!decompiled.source.contains("// GUARD_POP"));
         assert_eq!(compile(&decompiled.source).unwrap(), image);
 
         let malformed = decompiled
             .source
-            .replace("END_WHEN block_000B", "END_WHEN wrong");
+            .replace("end when block_000B", "end when wrong");
         assert!(compile(&malformed).is_err());
     }
 
@@ -2829,7 +3522,7 @@ mod tests {
         assert!(
             decompiled
                 .source
-                .contains("GUARD_PUSH block_000E ; unstructured_guard=external_entry")
+                .contains("guard_push block_000E // unstructured_guard=external_entry")
         );
         assert_eq!(compile(&decompiled.source).unwrap(), image);
     }
@@ -2852,9 +3545,9 @@ mod tests {
         assert_eq!(decompiled.object_aliases, 1);
         assert_eq!(decompiled.object_alias_uses, 2);
         for statement in [
-            "OBJECT object_Tina_Burner_1234 1234",
-            "TEXT object_Tina_Burner_1234 FF 00 80",
-            "RECORD_CLEAR object_Tina_Burner_1234",
+            "object Tina_Burner = 0x1234",
+            "say Tina_Burner voice=0xFF flags=0x00 display=0x80",
+            "record_clear Tina_Burner",
         ] {
             assert!(decompiled.source.contains(statement), "missing {statement}");
         }
@@ -2894,9 +3587,9 @@ mod tests {
         assert_eq!(decompiled.field_aliases, 1);
         assert_eq!(decompiled.field_alias_uses, 1);
         for statement in [
-            "OBJECT object_actor_0100 0100",
-            "FIELD field_actor_0100_s11_0118 object_actor_0100 0018",
-            "SHARED_STATE BF field_actor_0100_s11_0118 F5 C1 0001",
+            "object actor = 0x0100",
+            "field actor_s11 = actor + 0x0018",
+            "shared_state 0xBF actor_s11 0xF5 0xC1 0x0001",
         ] {
             assert!(decompiled.source.contains(statement), "missing {statement}");
         }
@@ -2934,7 +3627,11 @@ mod tests {
         )
         .unwrap();
         assert_eq!(ambiguous.field_aliases, 0);
-        assert!(ambiguous.source.contains("SHARED_STATE BF 0118 F5 C1 0001"));
+        assert!(
+            ambiguous
+                .source
+                .contains("shared_state 0xBF 0x0118 0xF5 0xC1 0x0001")
+        );
 
         let base_image = vec![0xBF, 0x02, 0x01, 0xF5, 0xC1, 0x01, 0x00, 0xFF];
         let mut base_var = vec![0; 0x200];
@@ -2964,7 +3661,7 @@ mod tests {
         assert!(
             exact_base
                 .source
-                .contains("SHARED_STATE BF object_exact_0102")
+                .contains("shared_state 0xBF exact")
         );
     }
 
@@ -2981,12 +3678,16 @@ mod tests {
         assert_eq!(decompiled.dictionary_offsets, 1);
         assert_eq!(decompiled.dictionary_uses, 2);
         for statement in [
-            "CONCEPT_GUARD \"TALK\" 0",
-            "TEXT 2000 FF 00 80 - - \"TALK\"",
+            "concept_guard \"TALK\" 0",
+            "say 0x2000 voice=0xFF flags=0x00 display=0x80 loop=none control=none : \"TALK\"",
         ] {
-            assert!(decompiled.source.contains(statement), "missing {statement}");
+            assert!(
+                decompiled.source.contains(statement),
+                "missing {statement} in:\n{}",
+                decompiled.source
+            );
         }
-        assert!(!decompiled.source.contains("DIC_WORD"));
+        assert!(!decompiled.source.contains("dic_word"));
         assert_eq!(
             compile_with_dictionary(&decompiled.source, &dictionary).unwrap(),
             image
@@ -3024,10 +3725,10 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            ambiguous.source.matches("CONCEPT_GUARD \"SAME\" 0").count(),
+            ambiguous.source.matches("concept_guard \"SAME\" 0").count(),
             2
         );
-        assert_eq!(ambiguous.source.matches("\"SAME\"@5678").count(), 1);
+        assert_eq!(ambiguous.source.matches("\"SAME\"@0x5678").count(), 1);
         assert_eq!(
             compile_with_dictionary(&ambiguous.source, &ambiguous_dictionary).unwrap(),
             ambiguous_image
@@ -3064,14 +3765,14 @@ mod tests {
             decompile_with_symbols(ImageKind::Cod, &image, &HashMap::new(), &symbols).unwrap();
         assert_eq!(decompiled.procedures, 1);
         assert_eq!(decompiled.symbolic_labels, 2);
-        assert!(decompiled.source.contains("PROCEDURE proc_entry_0000"));
+        assert!(decompiled.source.contains("proc entry"));
         assert!(
             decompiled
                 .source
-                .contains("CONDITIONAL_BLOCK 01 block_0004")
+                .contains("conditional_block 0x01 block_0004")
         );
-        assert!(decompiled.source.contains("    LABEL block_0004"));
-        assert!(decompiled.source.contains("END_PROCEDURE proc_entry_0000"));
+        assert!(decompiled.source.contains("    block_0004:"));
+        assert!(decompiled.source.contains("end proc entry"));
         assert!(!decompiled.source.lines().any(|line| {
             let line = line.trim_start();
             line.get(..9).is_some_and(|prefix| {
@@ -3126,13 +3827,13 @@ mod tests {
         let decompiled = decompile(ImageKind::Cod, &expected, &HashMap::new()).unwrap();
         assert_eq!(decompiled.generic_op_statements, 0);
         for statement in [
-            "CONCEPT_GUARD 0D26 0",
-            "CONCEPT_GUARD 0EE8 1",
-            "LOAD_STRING \"fin.hnm\"",
-            "POKE_BYTE 1234 56",
-            "CHARACTER_SLOT 02 \"scrut\"",
-            "CLEAR_ALTERNATE_CONCEPT",
-            "BRANCH_FLAG_274F",
+            "concept_guard 0x0D26 0",
+            "concept_guard 0x0EE8 1",
+            "load_string \"fin.hnm\"",
+            "poke_byte 0x1234 0x56",
+            "character_slot 0x02 \"scrut\"",
+            "clear_alternate_concept",
+            "branch_flag_274f",
         ] {
             assert!(decompiled.source.contains(statement), "missing {statement}");
         }
@@ -3163,12 +3864,12 @@ mod tests {
         let decompiled = decompile(ImageKind::Bas, &expected, &dictionary).unwrap();
         assert_eq!(decompiled.raw_bytes, 0);
         for statement in [
-            "YIELD",
-            "YIELD_B",
-            "SELECTOR_NODE \"topic\" selector_000C",
-            "LABEL selector_000C",
-            "MENU \"topic\"",
-            "PRESENTATION_REGISTER 9ABC",
+            "yield",
+            "yield_b",
+            "selector_node \"topic\" selector_000C",
+            "selector_000C:",
+            "menu \"topic\"",
+            "presentation_register 0x9ABC",
         ] {
             assert!(decompiled.source.contains(statement), "missing {statement}");
         }
@@ -3202,16 +3903,16 @@ mod tests {
         assert_eq!(decompiled.dictionary_offsets, 2);
         assert_eq!(decompiled.dictionary_uses, 4);
         for statement in [
-            "SELECTOR_LIST list_actor_0001",
-            "CASE \"talk\" selector_000C",
-            "CASE \"leave\" 0000",
-            "MENU \"leave\"",
-            "MENU \"talk\"",
-            "END_SELECTOR_LIST list_actor_0001",
+            "selector actor_choices",
+            "case \"talk\" -> selector_000C",
+            "case \"leave\" -> 0x0000",
+            "menu \"leave\"",
+            "menu \"talk\"",
+            "end selector actor_choices",
         ] {
             assert!(decompiled.source.contains(statement), "missing {statement}");
         }
-        assert!(!decompiled.source.contains("DIC_WORD"));
+        assert!(!decompiled.source.contains("dic_word"));
         assert_eq!(
             compile_with_dictionary(&decompiled.source, &dictionary).unwrap(),
             image
@@ -3219,7 +3920,10 @@ mod tests {
 
         let malformed = decompiled
             .source
-            .replace("CASE \"talk\" selector_000C", "CASE \"talk\" 0000");
+            .replace(
+                "case \"talk\" -> selector_000C",
+                "case \"talk\" -> 0x0000",
+            );
         assert!(compile_with_dictionary(&malformed, &dictionary).is_err());
     }
 

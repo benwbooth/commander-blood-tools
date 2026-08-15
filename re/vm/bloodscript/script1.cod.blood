@@ -1,263 +1,261 @@
-; BloodScript typed VM source
-; format: bloodscript-v2
-; image: COD
-; size: 0x00000C0C
+// format: bloodscript-v3
+// image: COD
 
-PROCEDURE proc_menbr_0000
-    CONDITIONAL_BLOCK 01 proc_men1_00B3
-    BRANCH_PRESENTATION
-    ACTOR 08AC 0028 0
-    RECORD_WILDCARD AF 0332 FFFF 0
-    GUARD_POP
-    TEXT 0872 FF 00 80 - - "\"IMPROVED"@000C "MENU\""@0016
-    TEXT 0872 FF 00 80 - - "Today"@001C "CHEF"@0022 "BRONKO"@0027 "has"@002E "laid"@0032 "on"@0037 "for"@003A "you"@003E ":"@0042
-    TEXT 0872 FF 00 80 - - "Tasty"@0044 "MURFFALO"@004A "soup"@0053 "Bronko-style"@0058 "."@0065
-    TEXT 0872 FF 00 80 - - "MURFFALO" "kidneys"@0067 "Bronko-style" "."
-    TEXT 0872 FF 00 80 - - "MURFFALO" "hamburger"@006F "with"@0079 "Bar-B-Q"@007E "recycled-oil"@0086 "dip"@0093 "."
-    TEXT 0872 FF 00 80 - - "Smooth"@0097 "MURFFALO-chip"@009E "ice"@00AC "cream"@00B0 "."
-    TEXT 0872 FF 00 80 - - "Recycled"@00B6 "water"@00BF
-    TEXT 0872 FF 00 80 - - "Chef"@00C5 "Bronko"@00CA "says"@00D1 "..."@00D6 "Burping's"@00DA "bad"@00E4 "manners"@00E8 "!"@00F0 "..."
-    TEXT 0872 FF 08 80 - - "stop"@00F2
-    RECORD_CLEAR 08AC
-END_PROCEDURE proc_menbr_0000
+proc menbr
+    conditional_block 0x01 men1
+    branch_presentation
+    actor 0x08AC 0x0028 0
+    record_wildcard 0xAF 0x0332 0xFFFF 0
+    guard_pop
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"IMPROVED MENU\""
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today CHEF BRONKO has laid on for you:"
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Tasty MURFFALO soup Bronko-style."
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "MURFFALO kidneys Bronko-style."
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "MURFFALO hamburger with Bar-B-Q recycled-oil dip."
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Smooth MURFFALO-chip ice cream."
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Recycled water"
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Chef Bronko says... Burping's bad manners!..."
+    say 0x0872 voice=0xFF flags=0x08 display=0x80 loop=none control=none : "stop"
+    record_clear 0x08AC
+end proc menbr
 
-PROCEDURE proc_men1_00B3
-    CONDITIONAL_BLOCK 01 proc_men2_0163
-    BRANCH_PRESENTATION
-    ACTOR 08AC 0028 0
-    RECORD_WILDCARD AF 0332 FFFF 1
-    GUARD_POP
-    TEXT 0872 FF 00 80 - - "\"MENU\""@00F7
-    TEXT 0872 FF 00 80 - - "Today's"@00FE "fare"@0106 ":"
-    TEXT 0872 FF 00 80 - - "PLASMA"@010B "soup" "HONK-style"@0112 "."
-    TEXT 0872 FF 00 80 - - "WRIGGLER"@011D "belly"@0126 "in"@012C "slobber"@012F "sauce"@0137 "."
-    TEXT 0872 FF 00 80 - - "Jellied"@013D "URTIKAN"@0145 "with" "MURFFALO" "bone"@014D "marrow"@0152 "."
-    TEXT 0872 FF 00 80 - - "GLOK"@0159 "eye"@015E "pie"@0162 "."
-    TEXT 0872 FF 00 80 - - "Recycled" "water"
-    TEXT 0872 FF 00 80 - - "The"@0166 "chef"@016A "says" "..." "Don't"@016F "eat"@0175 "with" "your"@0179 "mouth"@017E "full"@0184 "!" "..."
-    TEXT 0872 FF 08 90 - - "Stop"@0189
-    POKE_BYTE 00B4 00
-    RECORD_CLEAR 08AC
-END_PROCEDURE proc_men1_00B3
+proc men1
+    conditional_block 0x01 men2
+    branch_presentation
+    actor 0x08AC 0x0028 0
+    record_wildcard 0xAF 0x0332 0xFFFF 1
+    guard_pop
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "PLASMA soup HONK-style."
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "WRIGGLER belly in slobber sauce."
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Jellied URTIKAN with MURFFALO bone marrow."
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "GLOK eye pie."
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Recycled water"
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... Don't eat with your mouth full!..."
+    say 0x0872 voice=0xFF flags=0x08 display=0x90 loop=none control=none : "Stop"
+    poke_byte 0x00B4 0x00
+    record_clear 0x08AC
+end proc men1
 
-PROCEDURE proc_men2_0163
-    CONDITIONAL_BLOCK 01 proc_men3_020D
-    BRANCH_PRESENTATION
-    ACTOR 08AC 0028 0
-    RECORD_WILDCARD AF 0332 FFFF 1
-    GUARD_POP
-    TEXT 0872 FF 00 80 - - "\"MENU\""
-    TEXT 0872 FF 00 80 - - "Today's" "fare" ":"
-    TEXT 0872 FF 00 80 - - "PLASMA" "soup" "HONK-style" "."
-    TEXT 0872 FF 00 80 - - "WRIGGLER" "snout"@018E "stew"@0194 "."
-    TEXT 0872 FF 00 80 - - "URTIKAN" "seeds"@0199 "in" "MURFFALO" "venom"@019F "."
-    TEXT 0872 FF 00 80 - - "GLOK" "juice"@01A5 "dessert"@01AB "."
-    TEXT 0872 FF 00 80 - - "Recycled" "water"
-    TEXT 0872 FF 00 80 - - "The" "chef" "says" "..." "Don't" "talk"@0001 "with" "your" "mouth" "open"@01B3 "!" "..."
-    TEXT 0872 FF 08 90 - - "stop"
-    POKE_BYTE 0164 00
-    RECORD_CLEAR 08AC
-END_PROCEDURE proc_men2_0163
+proc men2
+    conditional_block 0x01 men3
+    branch_presentation
+    actor 0x08AC 0x0028 0
+    record_wildcard 0xAF 0x0332 0xFFFF 1
+    guard_pop
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "PLASMA soup HONK-style."
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "WRIGGLER snout stew."
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "URTIKAN seeds in MURFFALO venom."
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "GLOK juice dessert."
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Recycled water"
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... Don't talk with your mouth open!..."
+    say 0x0872 voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
+    poke_byte 0x0164 0x00
+    record_clear 0x08AC
+end proc men2
 
-PROCEDURE proc_men3_020D
-    CONDITIONAL_BLOCK 01 proc_men4_02B9
-    BRANCH_PRESENTATION
-    RECORD_WILDCARD AF 0332 FFFF 1
-    ACTOR 08AC 0028 0
-    GUARD_POP
-    TEXT 0872 FF 00 80 - - "\"MENU\""
-    TEXT 0872 FF 00 80 - - "Today's" "fare" ":"
-    TEXT 0872 FF 00 80 - - "PLASMA" "soup" "HONK-style" "."
-    TEXT 0872 FF 00 80 - - "WRIGGLER" "feet"@01B8 "in" "emulsive"@01BD "sauce" "."
-    TEXT 0872 FF 00 80 - - "URTIKAN" "leaves"@01C6 "in" "MURFFALO" "sweat"@01CD "."
-    TEXT 0872 FF 00 80 - - "GLOK" "flake"@01D3 "dessert" "."
-    TEXT 0872 FF 00 80 - - "Recycled" "water"
-    TEXT 0872 FF 00 80 - - "The" "chef" "says" "..." "Somebody"@01D9 "didn't"@01E2 "finish"@01E9 "his"@01F0 "wrigglers"@01F4 "yesterday"@01FE "..."
-    TEXT 0872 FF 08 90 - - "stop"
-    POKE_BYTE 020E 00
-    RECORD_CLEAR 08AC
-END_PROCEDURE proc_men3_020D
+proc men3
+    conditional_block 0x01 men4
+    branch_presentation
+    record_wildcard 0xAF 0x0332 0xFFFF 1
+    actor 0x08AC 0x0028 0
+    guard_pop
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "PLASMA soup HONK-style."
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "WRIGGLER feet in emulsive sauce."
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "URTIKAN leaves in MURFFALO sweat."
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "GLOK flake dessert."
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Recycled water"
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... Somebody didn't finish his wrigglers yesterday..."
+    say 0x0872 voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
+    poke_byte 0x020E 0x00
+    record_clear 0x08AC
+end proc men3
 
-PROCEDURE proc_men4_02B9
-    CONDITIONAL_BLOCK 01 proc_men5_036D
-    BRANCH_PRESENTATION
-    ACTOR 08AC 0028 0
-    RECORD_WILDCARD AF 0332 FFFF 1
-    GUARD_POP
-    TEXT 0872 FF 00 80 - - "\"MENU\""
-    TEXT 0872 FF 00 80 - - "Today's" "fare" ":"
-    TEXT 0872 FF 00 80 - - "HONK-style" "PLASMA" "soup" "."
-    TEXT 0872 FF 00 80 - - "WRIGGLER" "brain"@0208 ","@020E "stewed"@0210 "in" "its"@0217 "own"@021B "juice" "."
-    TEXT 0872 FF 00 80 - - "URTIKAN" "trunk"@021F "," "stuffed"@0225 "with" "MURFFALO" "liver"@022D "."
-    TEXT 0872 FF 00 80 - - "GLOK" "dee-lite"@0233 "."
-    TEXT 0872 FF 00 80 - - "Recycled" "water"
-    TEXT 0872 FF 00 80 - - "The" "chef" "says" "..." "Plenty"@023C "more"@0243 "in" "the"@0248 "kitchen"@024C "!" "..."
-    TEXT 0872 FF 08 90 - - "stop"
-    POKE_BYTE 02BA 00
-    RECORD_CLEAR 08AC
-END_PROCEDURE proc_men4_02B9
+proc men4
+    conditional_block 0x01 men5
+    branch_presentation
+    actor 0x08AC 0x0028 0
+    record_wildcard 0xAF 0x0332 0xFFFF 1
+    guard_pop
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "HONK-style PLASMA soup."
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "WRIGGLER brain, stewed in its own juice."
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "URTIKAN trunk, stuffed with MURFFALO liver."
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "GLOK dee-lite."
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Recycled water"
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... Plenty more in the kitchen!..."
+    say 0x0872 voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
+    poke_byte 0x02BA 0x00
+    record_clear 0x08AC
+end proc men4
 
-PROCEDURE proc_men5_036D
-    CONDITIONAL_BLOCK 01 proc_men6_0429
-    BRANCH_PRESENTATION
-    ACTOR 08AC 0028 0
-    RECORD_WILDCARD AF 0332 FFFF 1
-    GUARD_POP
-    TEXT 0872 FF 00 80 - - "\"IMPROVED" "MENU\""
-    TEXT 0872 FF 00 80 - - "Today's" "fare" ":"
-    TEXT 0872 FF 00 80 - - "Soup"@0254 "of"@0259 "PLASMA" "HONK-style" "."
-    TEXT 0872 FF 00 80 - - "WRIGGLER" "hearts"@025C "in" "green"@0263 "blood"@0269 "coagulate"@026F "."
-    TEXT 0872 FF 00 80 - - "URTIKAN" "roots"@0279 "," "deep"@027F "fried"@0284 "in" "recycled"@028A "oil"@0293 "."
-    TEXT 0872 FF 00 80 - - "Candied"@0297 "GLOK" "tongue"@029F "."
-    TEXT 0872 FF 00 80 - - "Recycled" "water"
-    TEXT 0872 FF 00 80 - - "The" "chef" "says" "..." "You"@02A6 "eat" "what"@02AA "you" "are"@02AF "!" "..."
-    TEXT 0872 FF 08 A0 - - "stop"
-    POKE_BYTE 036E 00
-    POKE_BYTE 042A 01
-    RECORD_CLEAR 08AC
-END_PROCEDURE proc_men5_036D
+proc men5
+    conditional_block 0x01 men6
+    branch_presentation
+    actor 0x08AC 0x0028 0
+    record_wildcard 0xAF 0x0332 0xFFFF 1
+    guard_pop
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"IMPROVED MENU\""
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Soup of PLASMA HONK-style."
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "WRIGGLER hearts in green blood coagulate."
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "URTIKAN roots, deep fried in recycled oil."
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Candied GLOK tongue."
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Recycled water"
+    say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... You eat what you are!..."
+    say 0x0872 voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
+    poke_byte 0x036E 0x00
+    poke_byte 0x042A 0x01
+    record_clear 0x08AC
+end proc men5
 
-PROCEDURE proc_men6_0429
-    CONDITIONAL_BLOCK 00 proc_tima_0446
-    GUARD_POP
-    POKE_BYTE 00B4 01
-    POKE_BYTE 0164 01
-    POKE_BYTE 020E 01
-    POKE_BYTE 02BA 01
-    POKE_BYTE 036E 01
-    POKE_BYTE 042A 00
-END_PROCEDURE proc_men6_0429
+proc men6
+    conditional_block 0x00 tima
+    guard_pop
+    poke_byte 0x00B4 0x01
+    poke_byte 0x0164 0x01
+    poke_byte 0x020E 0x01
+    poke_byte 0x02BA 0x01
+    poke_byte 0x036E 0x01
+    poke_byte 0x042A 0x00
+end proc men6
 
-PROCEDURE proc_tima_0446
-    CONDITIONAL_BLOCK 01 proc_ho_0453
-    GUARD_POP
-    STATE_ARRAY_SET 16 0005
-    POKE_BYTE 0447 00
-END_PROCEDURE proc_tima_0446
+proc tima
+    conditional_block 0x01 ho
+    guard_pop
+    state_array_set 0x16 0x0005
+    poke_byte 0x0447 0x00
+end proc tima
 
-PROCEDURE proc_ho_0453
-    CONDITIONAL_BLOCK 01 proc_ho1_0463
-    STATE_ARRAY_TEST 16
-    GUARD_POP
-    RECORD_LINK 0594 0028 0
-    POKE_BYTE 0454 00
-END_PROCEDURE proc_ho_0453
+proc ho
+    conditional_block 0x01 ho1
+    state_array_test 0x16
+    guard_pop
+    record_link 0x0594 0x0028 0
+    poke_byte 0x0454 0x00
+end proc ho
 
-PROCEDURE proc_ho1_0463
-    CONDITIONAL_BLOCK 01 proc_hon_061D
-    BRANCH_PRESENTATION
-    ACTOR 0594 0028 0
-    GUARD_POP
-    TEXT 055A FF 08 80 - - "You" "found"@02B3 "the" "right"@02B9 "button"@02BF "." "So"@02C6 "far"@02C9 "so"@02CD "good"@02D0 "..."
-    RECORD_WILDCARD BC 05A0 02D5 0
-    TEXT 055A FF 10 80 block_04CE - "Click"@02DA "quick,"@02E0 "Cap'n"@02E7 "Bob"@02ED "is"@02F1 "waiting"@02F4 "..." FFFF "explanations"@02FC "game"@0309
-    GUARD_PUSH block_04C6
-    CONCEPT_GUARD "game" 0
-    GUARD_POP
-    TEXT 055A FF 08 A0 - - "GAME"@030E
-    RUN_PROFILE 02
-    CLEAR_ALTERNATE_CONCEPT
-    RECORD_CLEAR 0594
-    LABEL block_04C6
-    GUARD_PUSH block_04CE
-    CONCEPT_GUARD "explanations" 0
-    GUARD_POP
-    CLEAR_ALTERNATE_CONCEPT
-    LABEL block_04CE
-    TEXT 055A FF 00 80 - - "You" "can"@0313 "modify"@0317 "the" "text"@031E "speed"@0323 "by"@0329 "clicking"@032C "on" "\"OPTION\""@0335
-    TEXT 055A FF 00 80 - - "You" "can" "wake"@033E "Cap'n" "Bob" "by" "clicking" "on" "\"CRYOBOX\""@0343
-    TEXT 055A FF 00 80 - - "Or"@034D "load"@0350 "a"@0355 "\"Saved"@0357 "Game\""@035E "by" "clicking" "on" "\"OPTION\""
-    TEXT 055A FF 00 80 - - "The" "OPTION"@0364 "\"LAST\""@036B "is" "the" "\"AUTOMATIC"@0372 "PERMANENT"@037D "SAVE\"."@0387 "If"@038E "you" "forget"@0391 "to"@0398 "save,"@039B "click"@03A2 "on" "\"LAST\"..."@03A8
-    TEXT 055A FF 00 80 - - "We"@03B2 "would"@03B5 "like"@03BB "to" "draw"@03C0 "your" "ATTENTION"@03C5 "to" "certain"@03CF "RISKS"@03D7 "..."
-    TEXT 055A FF 00 80 - - "If" "you" "experience"@03DD "UNUSUAL"@03E8 "SENSATIONS"@03F0 "," "DIZZINESS"@03FB "or"@0405 "FACIAL"@0408 "DISTORTION"@040F "..."
-    TEXT 055A FF 00 80 - - "Stay"@041A "CALM"@041F "..."
-    TEXT 055A FF 00 80 - - "It"@0424 "may"@0427 "only"@042B "be"@0430 "a" "CRISIS,"@0433 "a" "SPELL"@043B "," "a" "CURSE"@0441 "or" "," "at"@0447 "worst"@044A "," "a" "SCRAMBLED"@0450 "BRAIN"@045A "..."
-    TEXT 055A FF 00 80 - - "In"@0460 "which"@0463 "case"@0469 "," "write"@046E "to" ":" "SUPER"@0474 "ZEN"@047A "," "end"@047E "of" "corridor"@0482 "," "CRAZYSTONE"@048B "planet"@0496 "," "BABY1"@049D "UNIVERSE"@04A3 "..."
-    TEXT 055A FF 00 80 - - "Click" "quick"@04AC "on" "\"HONK\""@04B2 "." "He"@04B9 "has" "important"@04BC "information"@04C6 "for" "YOU"@04D2 "..."
-    TEXT 055A FF 08 80 - - "..."
-    RECORD_CLEAR 0594
-END_PROCEDURE proc_ho1_0463
+proc ho1
+    conditional_block 0x01 hon
+    branch_presentation
+    actor 0x0594 0x0028 0
+    guard_pop
+    say 0x055A voice=0xFF flags=0x08 display=0x80 loop=none control=none : "You found the right button. So far so good..."
+    record_wildcard 0xBC 0x05A0 0x02D5 0
+    say 0x055A voice=0xFF flags=0x10 display=0x80 loop=block_04CE control=none : "Click quick, Cap'n Bob is waiting..." choices "explanations" "game"
+    guard_push block_04C6
+    concept_guard "game" 0
+    guard_pop
+    say 0x055A voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "GAME"
+    run_profile 0x02
+    clear_alternate_concept
+    record_clear 0x0594
+    block_04C6:
+    guard_push block_04CE
+    concept_guard "explanations" 0
+    guard_pop
+    clear_alternate_concept
+    block_04CE:
+    say 0x055A voice=0xFF flags=0x00 display=0x80 loop=none control=none : "You can modify the text speed by clicking on \"OPTION\""
+    say 0x055A voice=0xFF flags=0x00 display=0x80 loop=none control=none : "You can wake Cap'n Bob by clicking on \"CRYOBOX\""
+    say 0x055A voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Or load a \"Saved Game\" by clicking on \"OPTION\""
+    say 0x055A voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The OPTION \"LAST\" is the \"AUTOMATIC PERMANENT SAVE\". If you forget to save, click on \"LAST\"..."
+    say 0x055A voice=0xFF flags=0x00 display=0x80 loop=none control=none : "We would like to draw your ATTENTION to certain RISKS..."
+    say 0x055A voice=0xFF flags=0x00 display=0x80 loop=none control=none : "If you experience UNUSUAL SENSATIONS, DIZZINESS or FACIAL DISTORTION..."
+    say 0x055A voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Stay CALM..."
+    say 0x055A voice=0xFF flags=0x00 display=0x80 loop=none control=none : "It may only be a CRISIS, a SPELL, a CURSE or, at worst, a SCRAMBLED BRAIN..."
+    say 0x055A voice=0xFF flags=0x00 display=0x80 loop=none control=none : "In which case, write to: SUPER ZEN, end of corridor, CRAZYSTONE planet, BABY1 UNIVERSE..."
+    say 0x055A voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Click quick on \"HONK\". He has important information for YOU..."
+    say 0x055A voice=0xFF flags=0x08 display=0x80 loop=none control=none : "..."
+    record_clear 0x0594
+end proc ho1
 
-PROCEDURE proc_hon_061D
-    CONDITIONAL_BLOCK 01 proc_BOB1_077D
-    BRANCH_PRESENTATION
-    ACTOR 0864 0028 0
-    GUARD_POP
-    TEXT 082A FF 20 80 - - "Welcome"@04D6 "aboard"@04DE "the" "ARK"@04E5 "," "Commander"@04E9 "." "I'm"@04F3 "HONK"@04F7 "," "your" "trusted"@04FC "computer"@0504 "..."
-    TEXT 082A FF 20 80 - - "I'm" "here"@050D "to" "help"@0512 "you" "a" "lot"@0517 "..."
-    TEXT 082A FF 20 80 - - "If" "the" "phone"@051B "rings"@0521 "," "just"@0527 "hit"@052C "the" "\"RED"@0530 "BUTTON\""@0535 "in" "front"@053D "of" "you" "..."
-    TEXT 082A FF 20 80 - - "Cap'n" "Bob,"@0543 "our"@0548 "revered"@054C "leader"@0554 "," "is" "cryonized"@055B "in" "the" "CRYOBOX"@0565 "..."
-    TEXT 082A FF 20 80 - - "Of"@056D "course"@0570 "you" "can" "wake" "Cap'n" "Bob" "and"@0577 "question"@057B "him"@0584 "..." "But"@0588 "like" "not"@058C "too"@0590 "often"@0594 "," "okay"@059A "?"@059F "..."
-    TEXT 082A FF 20 80 - - "Cap'n" "Bob" "knows"@05A2 "everything"@05A8 "..." "That's"@05B3 "why"@05BA "he's"@05BE "the" "boss"@05C3 "..."
-    TEXT 082A FF 20 80 - - "Our"@05C8 "ship"@05CC "is" "currently"@05D1 "surrounded"@05DB "by" "things"@05E6 "called"@05ED "stars"@05F4 "..."
-    TEXT 082A FF 20 80 - - "Remember"@05FA "," "deep" "space"@0603 "is" "no"@0609 "place"@060C "for" "night"@0612 "clubs"@0618 "!" "..."
-    TEXT 082A FF 20 80 - - "If" "you" "have"@061E "questions,"@0623 "I"@062E "have" "all"@0630 "the" "answers"@0634 "..."
-    TEXT 082A FF 20 80 - - "Click" "quick" "on" "\"CRYOBOX\"" "Cap'n" "Bob" "is" "waiting" "..."
-    TEXT 082A FF 28 80 - - "End"@063C "of" "report"@0640 "..."
-    RECORD_CLEAR 0864
-END_PROCEDURE proc_hon_061D
+proc hon
+    conditional_block 0x01 BOB1
+    branch_presentation
+    actor 0x0864 0x0028 0
+    guard_pop
+    say 0x082A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Welcome aboard the ARK, Commander. I'm HONK, your trusted computer..."
+    say 0x082A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "I'm here to help you a lot..."
+    say 0x082A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "If the phone rings, just hit the \"RED BUTTON\" in front of you..."
+    say 0x082A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Cap'n Bob, our revered leader, is cryonized in the CRYOBOX..."
+    say 0x082A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Of course you can wake Cap'n Bob and question him... But like not too often, okay?..."
+    say 0x082A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Cap'n Bob knows everything... That's why he's the boss..."
+    say 0x082A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Our ship is currently surrounded by things called stars..."
+    say 0x082A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Remember, deep space is no place for night clubs!..."
+    say 0x082A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "If you have questions, I have all the answers..."
+    say 0x082A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Click quick on \"CRYOBOX\" Cap'n Bob is waiting..."
+    say 0x082A voice=0xFF flags=0x28 display=0x80 loop=none control=none : "End of report..."
+    record_clear 0x0864
+end proc hon
 
-PROCEDURE proc_BOB1_077D
-    CONDITIONAL_BLOCK 01 proc_scr2_0BF6
-    BRANCH_FLAG_274F
-    ACTOR 0084 0028 0
-    GUARD_POP
-    TEXT 004A 03 00 80 - - "Good"@0647 "day"@064C "COMMANDER"@0650 "." "My"@065A "name"@065D "is" "BOB"@0662 "," "BOB" "MORLOCK"@0666 "..."
-    TEXT 004A 01 00 80 - - "If" "the" "phone" "rings" "," "press"@066E "the" "\"RED" "BUTTON\"" "on" "the" "radio"@0674 "to" "answer"@067A "..."
-    TEXT 004A 02 00 80 - - "My" "ears"@0681 "are" "fragile,"@0686 "Commander" "..."
-    TEXT 004A 02 10 80 block_083D - "Do"@068F "you" "want"@0692 "me"@0697 "to" "explain"@069A "your" "mission"@06A2 "to" "you" "," "Commander" "?" FFFF "yes"@06AA "no"
-    GUARD_PUSH block_0834
-    CONCEPT_GUARD "no" 0
-    GUARD_POP
-    TEXT 004A 06 08 80 - - "I'm" "going"@06AE "to" "explain" "it"@06B4 "all" "the" "same"@06B7 "..." "It's"@06BC "important" "..."
-    CLEAR_ALTERNATE_CONCEPT
-    LABEL block_0834
-    GUARD_PUSH block_083D
-    CONCEPT_GUARD "no" 1
-    GUARD_POP
-    CLEAR_ALTERNATE_CONCEPT
-    LABEL block_083D
-    TEXT 004A 01 00 80 - - "I'm" "more" "than"@06C1 "800,000"@06C6 "years"@06CE "old"@06D4 "..." "I" "feel"@06D8 "ancient"@06DD "," "Commander" "..."
-    TEXT 004A 02 00 80 - - "Too"@06E5 "ancient" "to" "go"@06E9 "looking"@06EC "for" "adventure"@06F4 "." "That's" "where"@06FE "you" "come"@0704 "in" ":" "I" "DON'T"@0709 "WANT"@070F "TO"@0714 "DIE"@0717 "STUPID"@071B "." "I" "WANT" "TO" "SEE"@0722 "THE"@0726 "BIG"@072A "BANG"@072E "..."
-    TEXT 004A 01 00 80 - - "This"@0733 "ship" "," "specially"@0738 "built"@0742 "for" "you" "," "is" "called" "the" "ARK" "." "It's" "a" "true"@0748 "marvel"@074D "of" "technology"@0754 "."
-    TEXT 004A 03 08 A0 - - "Just"@075F "hit" "the" "\"SPACE\""@0764 "bar"@076C "if"@0770 "you've"@0773 "had"@077A "enough"@077E "..."
-    LOAD_STRING "aarche10.hnm"
-    TEXT 004A FF 08 80 - -
-    LOAD_STRING "aarche20.hnm"
-    TEXT 004A FF 08 80 - -
-    LOAD_STRING "aarche30.hnm"
-    TEXT 004A FF 08 80 - -
-    LOAD_STRING "aarche40.hnm"
-    TEXT 004A 05 00 80 - - "I" "want" "to" "understand"@0785 "the" "world"@0790 "and" "WHERE"@0796 "I" "COME"@079C "FROM"@07A2 "..." "WHY"@07A7 "I" "EXIST"@07AB "..."
-    TEXT 004A 02 00 80 - - "You" "and" "me" "are" "going" "to" "travel"@07B1 "through"@07B8 "SPACE"@07C0 "and" "TIME,"@07C6 "through" "BLACK"@07CC "HOLES"@07D2 "..."
-    TEXT 004A 01 00 80 - - "And"@07D8 "quite"@07DC "a" "few"@07E2 "BLACK" "HOLES" "later"@07E6 "," "we'll"@07EC "get"@07F2 "to" "the" "BIG" "BANG" "..."
-    TEXT 004A 02 00 80 - - "The" "tough"@07F6 "part"@07FC "will"@0801 "be" "finding"@0806 "those"@080E "BLACK" "HOLES" "," "Commander" "..."
-    TEXT 004A 01 00 80 - - "That's" "because"@0814 "BLACK" "HOLES" "are" "UNDETECTABLE"@081C "in" "the" "universe"@0829 "." "We'll"@0832 "need"@0838 "to" "make"@083D "contact"@0842 "with" "ALIEN"@084A "BEINGS"@0850 "..."
-    TEXT 004A 04 00 80 - - "You" "can" "expect"@0857 "to" "see"@085E "bloodchilling"@0862 "WARS"@0870 "and" "astonishing"@0875 "PHENOMENA..."@0881
-    TEXT 004A 04 00 80 - - "My" "age"@088E "dictates"@0892 "I" "sleep"@089B "through" "most"@08A2 "of" "it" "in" "the" "CRYOBOX" "." "WAKE"@08A7 "ME"@08AC "ONLY"@08AF "IN"@08B4 "AN"@08B7 "EMERGENCY"@08BA "." "My" "time"@08C4 "is" "very"@08C9 "precious"@08CE "..."
-    TEXT 004A 02 00 80 - - "I" "have" "provided"@08D7 "you" "with" "an"@08E0 "ONBOARD"@08E3 "COMPUTER"@08EB "called" "HONK" "..."
-    TEXT 004A 02 00 80 - - "YOU" "THERE"@08F4 "," "HONK" "?"
-    TEXT 004A FF 20 80 - - "HONK:"@08FA "Yes"@0900 "sir,"@0904 "Cap'n" "Bob" "." "Present"@0909 "," "willing"@0911 "and" "able"@0919 "..."
-    TEXT 004A 05 00 80 - - "Why,"@091E "you" "hunk"@0923 "'o"@0928 "junk"@092B "..." "YOU" "WERE"@0930 "ASLEEP"@0935 "!!!"@093C
-    TEXT 004A FF 20 80 - - "HONK:" "No"@0940 "," "Cap'n" "Bob" "." "I" "was"@0943 "calculating"@0947 "our" "trajectory"@0953 "to" "the" "black"@095E "hole"@0964 "!" "I" "swear"@0969 "it" "on" "my"@096F "old" "mother's"@0972 "head"@097B "!"
-    TEXT 004A 02 00 80 - - "Your"@0980 "mother"@0985 "!!"@098C "I've"@098F "a" "good" "mind"@0994 "to" "short-circuit"@0999 "every"@09A7 "wire"@09AD "in" "your" "lazy"@09B2 "carcass"@09B7 "!" "Keep"@09BF "an" "eye" "on" "him" "," "Commander" "..."
-    TEXT 004A 05 00 80 - - "GET"@09C4 "TO" "WORK"@09C8 "," "HONK" "!!!"
-    TEXT 004A FF 20 80 - - "HONK:" "Sure"@09CD "thing,"@09D2 "Cap'n" "Bob" "..." "I'm" "crunching"@09D9 "numbers"@09E3 "as"@09EB "I" "speak"@09EE "..."
-    TEXT 004A 09 00 80 - - "I" "can't"@09F4 "see" "a" "thing"@09FA "..." "Feel"@0A00 "so" "weak"@0A05 "..."
-    TEXT 004A 02 00 80 - - "IF"@0A0A "YOU" "NEED"@0A0D "ME" "," "WAKE" "ME" "UP"@0A12 "..."
-    TEXT 004A 04 00 80 - - "See"@0A15 "you" "later" "," "Commander" "." "Or" "do"@0A19 "I" "mean"@0A1C "earlier"@0A21 "?" "I'm" "cryonizing"@0A29 "..." "Aaaahhhh"@0A34 "!"
-    TEXT 004A FF 20 80 - - "The" "old" "turkey's"@0A3D "out"@0A46 "for" "the" "count"@0A4A "..."
-    TEXT 004A FF 08 90 - - "stop"
-    RUN_PROFILE 02
-    RECORD_CLEAR 0084
-END_PROCEDURE proc_BOB1_077D
+proc BOB1
+    conditional_block 0x01 scr2
+    branch_flag_274f
+    actor 0x0084 0x0028 0
+    guard_pop
+    say 0x004A voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Good day COMMANDER. My name is BOB, BOB MORLOCK..."
+    say 0x004A voice=0x01 flags=0x00 display=0x80 loop=none control=none : "If the phone rings, press the \"RED BUTTON\" on the radio to answer..."
+    say 0x004A voice=0x02 flags=0x00 display=0x80 loop=none control=none : "My ears are fragile, Commander..."
+    say 0x004A voice=0x02 flags=0x10 display=0x80 loop=block_083D control=none : "Do you want me to explain your mission to you, Commander?" choices "yes" "no"
+    guard_push block_0834
+    concept_guard "no" 0
+    guard_pop
+    say 0x004A voice=0x06 flags=0x08 display=0x80 loop=none control=none : "I'm going to explain it all the same... It's important..."
+    clear_alternate_concept
+    block_0834:
+    guard_push block_083D
+    concept_guard "no" 1
+    guard_pop
+    clear_alternate_concept
+    block_083D:
+    say 0x004A voice=0x01 flags=0x00 display=0x80 loop=none control=none : "I'm more than 800,000 years old... I feel ancient, Commander..."
+    say 0x004A voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Too ancient to go looking for adventure. That's where you come in: I DON'T WANT TO DIE STUPID. I WANT TO SEE THE BIG BANG..."
+    say 0x004A voice=0x01 flags=0x00 display=0x80 loop=none control=none : "This ship, specially built for you, is called the ARK. It's a true marvel of technology."
+    say 0x004A voice=0x03 flags=0x08 display=0xA0 loop=none control=none : "Just hit the \"SPACE\" bar if you've had enough..."
+    load_string "aarche10.hnm"
+    say 0x004A voice=0xFF flags=0x08 display=0x80 loop=none control=none : ""
+    load_string "aarche20.hnm"
+    say 0x004A voice=0xFF flags=0x08 display=0x80 loop=none control=none : ""
+    load_string "aarche30.hnm"
+    say 0x004A voice=0xFF flags=0x08 display=0x80 loop=none control=none : ""
+    load_string "aarche40.hnm"
+    say 0x004A voice=0x05 flags=0x00 display=0x80 loop=none control=none : "I want to understand the world and WHERE I COME FROM... WHY I EXIST..."
+    say 0x004A voice=0x02 flags=0x00 display=0x80 loop=none control=none : "You and me are going to travel through SPACE and TIME, through BLACK HOLES..."
+    say 0x004A voice=0x01 flags=0x00 display=0x80 loop=none control=none : "And quite a few BLACK HOLES later, we'll get to the BIG BANG..."
+    say 0x004A voice=0x02 flags=0x00 display=0x80 loop=none control=none : "The tough part will be finding those BLACK HOLES, Commander..."
+    say 0x004A voice=0x01 flags=0x00 display=0x80 loop=none control=none : "That's because BLACK HOLES are UNDETECTABLE in the universe. We'll need to make contact with ALIEN BEINGS..."
+    say 0x004A voice=0x04 flags=0x00 display=0x80 loop=none control=none : "You can expect to see bloodchilling WARS and astonishing PHENOMENA..."
+    say 0x004A voice=0x04 flags=0x00 display=0x80 loop=none control=none : "My age dictates I sleep through most of it in the CRYOBOX. WAKE ME ONLY IN AN EMERGENCY. My time is very precious..."
+    say 0x004A voice=0x02 flags=0x00 display=0x80 loop=none control=none : "I have provided you with an ONBOARD COMPUTER called HONK..."
+    say 0x004A voice=0x02 flags=0x00 display=0x80 loop=none control=none : "YOU THERE, HONK?"
+    say 0x004A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "HONK: Yes sir, Cap'n Bob. Present, willing and able..."
+    say 0x004A voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Why, you hunk 'o junk... YOU WERE ASLEEP!!!"
+    say 0x004A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "HONK: No, Cap'n Bob. I was calculating our trajectory to the black hole! I swear it on my old mother's head!"
+    say 0x004A voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Your mother!! I've a good mind to short-circuit every wire in your lazy carcass! Keep an eye on him, Commander..."
+    say 0x004A voice=0x05 flags=0x00 display=0x80 loop=none control=none : "GET TO WORK, HONK!!!"
+    say 0x004A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "HONK: Sure thing, Cap'n Bob... I'm crunching numbers as I speak..."
+    say 0x004A voice=0x09 flags=0x00 display=0x80 loop=none control=none : "I can't see a thing... Feel so weak..."
+    say 0x004A voice=0x02 flags=0x00 display=0x80 loop=none control=none : "IF YOU NEED ME, WAKE ME UP..."
+    say 0x004A voice=0x04 flags=0x00 display=0x80 loop=none control=none : "See you later, Commander. Or do I mean earlier? I'm cryonizing... Aaaahhhh!"
+    say 0x004A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "The old turkey's out for the count..."
+    say 0x004A voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
+    run_profile 0x02
+    record_clear 0x0084
+end proc BOB1
 
-PROCEDURE proc_scr2_0BF6
-    CONDITIONAL_BLOCK 01 block_0C0B
-    SHARED_STATE BF 0860 F5 C1 0001
-    SHARED_STATE BF 0080 F5 C1 0001
-    GUARD_POP
-    RUN_PROFILE 02
-    LABEL block_0C0B
-    END
-END_PROCEDURE proc_scr2_0BF6
+proc scr2
+    conditional_block 0x01 block_0C0B
+    shared_state 0xBF 0x0860 0xF5 0xC1 0x0001
+    shared_state 0xBF 0x0080 0xF5 0xC1 0x0001
+    guard_pop
+    run_profile 0x02
+    block_0C0B:
+    halt
+end proc scr2

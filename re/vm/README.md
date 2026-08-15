@@ -83,10 +83,19 @@ cargo run --bin cbvm -- compile-bloodscript \
   /path/to/SCRIPT1.DIC
 ```
 
-Generated `bloodscript-v2` source has no per-line address column. A layout pass
-derives label and procedure offsets before encoding, while indentation exposes
-procedure, guard, selector-list, and case nesting. The compiler still accepts
-the earlier address-bearing `bloodscript-ir-v1` form for compatibility.
+Generated `bloodscript-v3` source is intended for editing rather than for
+reading as a decorated disassembly. It uses lowercase statements, `0x` numeric
+literals, `none` for absent optional values, declaration expressions, label
+colons, concise DEB-derived names, and four-space indentation. A layout pass
+derives label and procedure offsets before encoding.
+
+Dialogue uses `say object voice=... flags=... display=... loop=...
+control=... : "sentence"`. The compiler tokenizes the sentence through the
+companion DIC and emits the exact original word offsets. A `|` inside a sentence
+forces a dictionary-token boundary only where combined and split DIC spellings
+would otherwise select different bytes. `choices` represents the shipped
+`0xFFFF` dialogue/concept separator. All 5,536 generated dialogue statements use
+this form and rebuild byte exactly.
 
 BloodData keeps the known physical structures explicit without inventing
 unrecovered field names. DEB source has one exact 20-byte `SYMBOL` record per
@@ -111,7 +120,7 @@ The native control-flow handlers at `0x6559`, `0x6572`, `0x65DB`, `0x65EB`,
 `0x6830`, `0x6494`, and `0x64A0` are represented as guard push/pop, jump,
 state-array test/set, conditional-block, and flag-branch statements. Their
 flags, indices, and values remain explicit in source. Branch destinations are
-now symbolic `LABEL` or `PROCEDURE` names; the compiler resolves them without
+now symbolic labels or procedure names; the compiler resolves them without
 reordering statements or changing layout.
 
 The remaining native handlers provide typed concept guards, presentation-name
@@ -139,8 +148,8 @@ match all 37 physical list roots exactly (`1/10/12/10/4` by profile), and their
 linked chains own all 321 nodes once. The generated graphs contain 963 match,
 mismatch, miss-exit, and body-termination edges with no unresolved entrypoint.
 See `bas-control-flow/manifest.tsv` and its README for the field derivation.
-The structured corpus now renders these as 37 named `SELECTOR_LIST` regions and
-321 `CASE` headers. Those directives retain the explicit native yield bytes and
+The structured corpus now renders these as 37 named `selector` regions and 321
+`case` headers. Those directives retain the explicit native yield bytes and
 compile back to all 64,736 BAS bytes exactly.
 
 `cbvm compile-bundle` turns the structured corpus into a complete 25-file VM
@@ -160,8 +169,8 @@ distinct explicit COD branch destinations are zero-based offsets. Every BAS
 reading resulted from incorrectly grouping the preceding `0xAC` with that node.
 An unaligned address in any of these sets makes decompilation fail.
 
-`PROCEDURE`/`END_PROCEDURE` directives delimit the 480 named COD routines.
-`LABEL` directives name remaining COD blocks and BAS selector nodes. These directives
+`proc`/`end proc` directives delimit the 480 named COD routines. Label colons
+name remaining COD blocks and BAS selector nodes. These directives
 emit no bytes, but symbolic operands are resolved and range-checked by the
 two-pass BloodScript compiler. The generated corpus contains 1,059 distinct COD
 symbols and 284 BAS selector labels while retaining exact layout.
@@ -171,7 +180,7 @@ The structured COD and BAS sources additionally use 247 image-local zero-byte
 5,962 proven VAR object-base operands while retaining the original numeric
 offset in each declaration.
 
-A first subrecord pass adds 367 zero-byte `FIELD name object delta`
+A first subrecord pass adds 367 zero-byte `field name = object + delta`
 declarations and replaces 1,880 direct VAR operands. A field is emitted only
 when its address equals exactly one DEB object base plus a nonzero entry selected
 from the native field-offset matrix by that object's initial VAR kind. Equal

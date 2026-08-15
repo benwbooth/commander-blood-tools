@@ -1,602 +1,600 @@
-; BloodScript typed VM source
-; format: bloodscript-v2
-; image: BAS
-; size: 0x00002959
+// format: bloodscript-v3
+// image: BAS
 
-OBJECT object_Bratakas_004A 004A
-OBJECT object_Maziok_00DA 00DA
-OBJECT object_Super_Tromp_01B2 01B2
-OBJECT object_Bob_Morlock_0242 0242
-OBJECT object_Hom_03AA 03AA
-OBJECT object_Morning_Oil_0482 0482
-OBJECT object_Bronko_0512 0512
-OBJECT object_Beauregard_067A 067A
-OBJECT object_Fifi_079A 079A
-OBJECT object_Honk_0A6A 0A6A
+object Bratakas = 0x004A
+object Maziok = 0x00DA
+object Super_Tromp = 0x01B2
+object Bob_Morlock = 0x0242
+object Hom = 0x03AA
+object Morning_Oil = 0x0482
+object Bronko = 0x0512
+object Beauregard = 0x067A
+object Fifi = 0x079A
+object Honk = 0x0A6A
 
-FIELD field_Bob_Morlock_0242_s03_0274 object_Bob_Morlock_0242 0032 ; VAR kind 0x0002, selector(s) 03
-FIELD field_Bob_Morlock_0242_s13_027C object_Bob_Morlock_0242 003A ; VAR kind 0x0002, selector(s) 13
-FIELD field_Hom_03AA_s13_03E4 object_Hom_03AA 003A ; VAR kind 0x0002, selector(s) 13
-FIELD field_Bronko_0512_s13_054C object_Bronko_0512 003A ; VAR kind 0x0002, selector(s) 13
+field Bob_Morlock_s03 = Bob_Morlock + 0x0032 // VAR kind 0x0002, selector(s) 03
+field Bob_Morlock_s13 = Bob_Morlock + 0x003A // VAR kind 0x0002, selector(s) 13
+field Hom_s13 = Hom + 0x003A // VAR kind 0x0002, selector(s) 13
+field Bronko_s13 = Bronko + 0x003A // VAR kind 0x0002, selector(s) 13
 
-YIELD
+yield
 
-SELECTOR_LIST list_Super_Tromp_0001
-    YIELD_B
-    CASE "talk" 0000
-        MENU "bye_bye" "painting" "culture" "yolk"
-        TEXT object_Super_Tromp_01B2 00 40 80 - - "The" "GREAT" "YOLK" "was" "a" "Slimer" "..." "An" "important" "thinker" "..." FFFF "yolk"
-        TEXT object_Super_Tromp_01B2 01 40 80 - - "He" "died" "a" "long" "time" "ago" "and" "he's" "buried" "here" "on" "Vista..." FFFF "yolk"
-        TEXT object_Super_Tromp_01B2 02 40 80 - - "This" "palace" "was" "specially" "built" "to" "house" "the" "remains" "of" "the" "GREAT" "YOLK" "..." FFFF "yolk"
-        TEXT object_Super_Tromp_01B2 03 48 80 - - "The" "whole" "universe" "admires" "the" "GREAT" "YOLK" "..." FFFF "yolk"
-        SHARED_STATE C0 151E F5 C1 0001
-        TEXT object_Super_Tromp_01B2 FF 40 80 - - "The" "portrait" "in" "this" "palace" "was" "painted" "with" "the" "GREAT" "YOLK's" "own" "yellow" "blood" "..." FFFF "painting"
-        TEXT object_Super_Tromp_01B2 FF 40 80 - - "The" "painting" "is" "beyond" "price" "..." "It" "is" "magical" "..." FFFF "painting"
-        TEXT object_Super_Tromp_01B2 FF 40 80 - - "It" "is" "said" "that" "he" "who" "possesses" "it" "is" "immortal" "..." FFFF "painting"
-        TEXT object_Super_Tromp_01B2 FF 40 80 - - "The" "GREAT" "YOLK" "said" ":" "\"One" "plus" "one" "equals" "three" "," "thanks" "to" "the" "coefficient" "of" "reproduction\"" "..." FFFF "culture"
-        TEXT object_Super_Tromp_01B2 FF 40 80 - - "The" "GREAT" "YOLK" "said" ":\"Silence" "feeds" "on" "sound" "and" "fury\"" "." FFFF "culture"
-        TEXT object_Super_Tromp_01B2 FF 40 80 - - "The" "GREAT" "YOLK" "said" ":" "\"It" "takes" "thirteen" "murffalos" "to" "reproduce" "," "but" "one" "day" "it" "will" "take" "fourteen\"" FFFF "culture"
-        YIELD
-END_SELECTOR_LIST list_Super_Tromp_0001
+selector Super_Tromp_choices
+    yield_b
+    case "talk" -> 0x0000
+        menu "bye_bye" "painting" "culture" "yolk"
+        say Super_Tromp voice=0x00 flags=0x40 display=0x80 loop=none control=none : "The GREAT YOLK was a Slimer... An important thinker..." choices "yolk"
+        say Super_Tromp voice=0x01 flags=0x40 display=0x80 loop=none control=none : "He died a long time ago and he's buried here on Vista..." choices "yolk"
+        say Super_Tromp voice=0x02 flags=0x40 display=0x80 loop=none control=none : "This palace was specially built to house the remains of the GREAT YOLK..." choices "yolk"
+        say Super_Tromp voice=0x03 flags=0x48 display=0x80 loop=none control=none : "The whole universe admires the GREAT YOLK..." choices "yolk"
+        shared_state 0xC0 0x151E 0xF5 0xC1 0x0001
+        say Super_Tromp voice=0xFF flags=0x40 display=0x80 loop=none control=none : "The portrait in this palace was painted with the GREAT YOLK's own yellow blood..." choices "painting"
+        say Super_Tromp voice=0xFF flags=0x40 display=0x80 loop=none control=none : "The painting is beyond price... It is magical..." choices "painting"
+        say Super_Tromp voice=0xFF flags=0x40 display=0x80 loop=none control=none : "It is said that he who possesses it is immortal..." choices "painting"
+        say Super_Tromp voice=0xFF flags=0x40 display=0x80 loop=none control=none : "The GREAT YOLK said: \"One plus one equals three, thanks to the coefficient of reproduction\"..." choices "culture"
+        say Super_Tromp voice=0xFF flags=0x40 display=0x80 loop=none control=none : "The GREAT YOLK said:\"Silence feeds on sound and fury\"." choices "culture"
+        say Super_Tromp voice=0xFF flags=0x40 display=0x80 loop=none control=none : "The GREAT YOLK said: \"It takes thirteen murffalos to reproduce|, but one day it will take fourteen\"" choices "culture"
+        yield
+end selector Super_Tromp_choices
 
-SELECTOR_LIST list_Maziok_0193
-    YIELD_B
-    CASE "talk" selector_0282
-        MENU "bye_bye" "medicine" "curse"
-        TEXT object_Maziok_00DA 02 40 80 - - "Me" "know" "good" "medicine" "and" "good" "doctor" "..." "You" "be" "very" "sick" "..." FFFF "medicine"
-        TEXT object_Maziok_00DA 03 48 80 - - "You" "have" "nightmares" "and" "you" "not" "be" "lucky" "..." FFFF "medicine"
-        PRESENTATION_REGISTER 2624
-        TEXT object_Maziok_00DA 04 48 80 - - "You" "need" "sorceror" "medicine" "???" FFFF "medicine"
-        PRESENTATION_REGISTER 2624
-        TEXT object_Maziok_00DA 05 40 80 - - "Curse" "come" "from" "land" "of" "dead" "..." "You" "did" "be" "bad" "to" "dead" "..." FFFF "curse"
-        TEXT object_Maziok_00DA 00 40 80 - - "Me" "scared" "..." FFFF "curse"
-        TEXT object_Maziok_00DA 02 48 80 - - "Yes" "," "yes" "..." "Me" "know" "good" "sorceror" "," "friend" "..." FFFF "sorceror"
-        PRESENTATION_REGISTER 2624
-        TEXT object_Maziok_00DA 03 48 80 - - "Him" "live" "alone" "on" "desert" "planet" "..." FFFF "sorceror"
-        SHARED_STATE C0 1512 F5 C1 0001
-        YIELD_B
-        LABEL selector_0282
-    CASE "planet" 0000
-        MENU "bye_bye" "vista" "tromp" "ondoyant" "tourism"
-        TEXT object_Maziok_00DA 03 40 80 - - "The" "planet" "Vista" "is" "where" "I'm" "from" "..." "It" "suits" "me" "..." FFFF "vista"
-        TEXT object_Maziok_00DA 02 48 80 - - "There's" "a" "saying" "which" "goes" ":" "\"Hasta" "la" "Vista\"" FFFF "vista"
-        PRESENTATION_REGISTER 0C64
-        TEXT object_Maziok_00DA 02 40 80 - - "We" "Trumps" "are" "an" "ancient" "people" "..." "We" "like" "peace" "..." FFFF "tromp"
-        TEXT object_Maziok_00DA 02 40 80 - - "We" "fear" "nothing" "as" "much" "as" "the" "Trump" "tail" "hunters" "..." FFFF "tromp"
-        TEXT object_Maziok_00DA 02 00 80 - - "They" "come" "in" "big" "ships," "with" "enormous" "weapons" "attached" "to" "their" "arms" "." "They" "are" "vulgar" "and" "uncouth" ".."
-        TEXT object_Maziok_00DA 01 48 80 - - "To" "think" "there" "are" "those" "who" "would" "smoke" "our" "tails" "..." FFFF "tromp"
-        PRESENTATION_REGISTER 0C64
-        TEXT object_Maziok_00DA 02 40 80 - - "There" "are" "even" "fools" "that" "believe" "in" "ondoyants" "..." FFFF "ondoyant"
-        TEXT object_Maziok_00DA 01 48 80 - - "ondoyants" "live" "only" "in" "dreams" "..." FFFF "ondoyant"
-        PRESENTATION_REGISTER 0C64
-        YIELD
-END_SELECTOR_LIST list_Maziok_0193
+selector Maziok_choices
+    yield_b
+    case "talk" -> selector_0282
+        menu "bye_bye" "medicine" "curse"
+        say Maziok voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me know good medicine and good doctor... You be very sick|..." choices "medicine"
+        say Maziok voice=0x03 flags=0x48 display=0x80 loop=none control=none : "You have nightmares and you not be lucky..." choices "medicine"
+        presentation_register 0x2624
+        say Maziok voice=0x04 flags=0x48 display=0x80 loop=none control=none : "You need sorceror medicine???" choices "medicine"
+        presentation_register 0x2624
+        say Maziok voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Curse come from land of dead... You did be bad to dead..." choices "curse"
+        say Maziok voice=0x00 flags=0x40 display=0x80 loop=none control=none : "Me scared..." choices "curse"
+        say Maziok voice=0x02 flags=0x48 display=0x80 loop=none control=none : "Yes, yes... Me know good sorceror, friend|..." choices "sorceror"
+        presentation_register 0x2624
+        say Maziok voice=0x03 flags=0x48 display=0x80 loop=none control=none : "Him live alone on desert planet|..." choices "sorceror"
+        shared_state 0xC0 0x1512 0xF5 0xC1 0x0001
+        yield_b
+        selector_0282:
+    case "planet" -> 0x0000
+        menu "bye_bye" "vista" "tromp" "ondoyant" "tourism"
+        say Maziok voice=0x03 flags=0x40 display=0x80 loop=none control=none : "The planet Vista is where I'm from... It suits me|..." choices "vista"
+        say Maziok voice=0x02 flags=0x48 display=0x80 loop=none control=none : "There's a saying which goes: \"Hasta la Vista\"" choices "vista"
+        presentation_register 0x0C64
+        say Maziok voice=0x02 flags=0x40 display=0x80 loop=none control=none : "We Trumps are an ancient people|... We like peace|..." choices "tromp"
+        say Maziok voice=0x02 flags=0x40 display=0x80 loop=none control=none : "We fear nothing as much as the Trump tail hunters..." choices "tromp"
+        say Maziok voice=0x02 flags=0x00 display=0x80 loop=none control=none : "They come in big ships, with enormous weapons attached to their arms. They are vulgar and uncouth.."
+        say Maziok voice=0x01 flags=0x48 display=0x80 loop=none control=none : "To think there are those who would smoke our tails..." choices "tromp"
+        presentation_register 0x0C64
+        say Maziok voice=0x02 flags=0x40 display=0x80 loop=none control=none : "There are even fools that believe in ondoyants..." choices "ondoyant"
+        say Maziok voice=0x01 flags=0x48 display=0x80 loop=none control=none : "ondoyants live only in dreams..." choices "ondoyant"
+        presentation_register 0x0C64
+        yield
+end selector Maziok_choices
 
-SELECTOR_LIST list_Fifi_03A9
-    YIELD_B
-    CASE "hello" 0000
-        MENU "bye_bye" "planet" "information" "races"
-        TEXT object_Fifi_079A 04 40 80 - - "Uhh" "..." "Me" "not" "remember" "planet" "..." FFFF "planet"
-        TEXT object_Fifi_079A 05 40 80 - - "Information..." "Me" "not" "understand" "information" "..." "Uhh" "!" FFFF "information"
-        TEXT object_Fifi_079A 05 40 80 - - "You" "be" "sure" "you" "know" "talk" "," "friend" "?" FFFF "races"
-        TEXT object_Fifi_079A 02 01 80 - - "Uhh" "..." "Me" "sick" "..."
-        YIELD
-END_SELECTOR_LIST list_Fifi_03A9
+selector Fifi_choices
+    yield_b
+    case "hello" -> 0x0000
+        menu "bye_bye" "planet" "information" "races"
+        say Fifi voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Uhh... Me not remember planet|..." choices "planet"
+        say Fifi voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Information... Me not understand information... Uhh!" choices "information"
+        say Fifi voice=0x05 flags=0x40 display=0x80 loop=none control=none : "You be sure you know talk, friend?" choices "races"
+        say Fifi voice=0x02 flags=0x01 display=0x80 loop=none control=none : "Uhh... Me sick|..."
+        yield
+end selector Fifi_choices
 
-SELECTOR_LIST list_Bratakas_0420
-    YIELD_B
-    CASE "talk" 0000
-        MENU "bye_bye" "Vistar" "planet" "race" "croolis"
-        TEXT object_Bratakas_004A 02 40 80 - - "You" "want" "to" "talk" "," "friend..." FFFF "talk"
-        TEXT object_Bratakas_004A 02 40 80 - - "Vistar" "is" "the" "name" "of" "my" "planet" "." "I" "am" "alone" "here" "..." FFFF "Vistar"
-        TEXT object_Bratakas_004A 00 48 80 - - "I" "find" "peace" "here" "..." "Nobody" "to" "bother" "me" "..." FFFF "Vistar"
-        PRESENTATION_REGISTER 2725
-        TEXT object_Bratakas_004A 01 48 80 - - "It's" "calm" "here" "." "No" "neighbors" "," "no" "noise" "," "no" "TV" "..." FFFF "Vistar"
-        PRESENTATION_REGISTER 2725
-        TEXT object_Bratakas_004A 02 48 80 - - "Ah" "," "It's" "true" "that" "the" "winter" "nights" "would" "be" "nicer" "with" "TV" "..." FFFF "leisure"
-        PRESENTATION_REGISTER 2725
-        TEXT object_Bratakas_004A 00 48 80 - - "To" "watch" "TV" "," "I'd" "need" "a" "good" "decoder" "..." FFFF "leisure"
-        SHARED_STATE C0 151C F5 C1 0001
-        TEXT object_Bratakas_004A 00 40 80 - - "No" "shortage" "of" "planets" "," "that's" "for" "sure" "..." FFFF "planet"
-        TEXT object_Bratakas_004A 02 48 80 - - "Planets" "!" "You're" "quite" "fascinated" "by" "them" "..." FFFF "planet"
-        SHARED_STATE C0 151A F5 C1 0001
-        TEXT object_Bratakas_004A 02 40 80 - - "Only" "Tromps" "here.." "We" "seldom" "get" "strangers" "..." FFFF "race"
-        TEXT object_Bratakas_004A 01 48 80 - - "Big" "ships" "pass" "nearby" "from" "time" "to" "time" "..." FFFF "race"
-        PRESENTATION_REGISTER 2725
-        TEXT object_Bratakas_004A 00 40 80 - - "Aren't" "you" "feeling" "well" "?" FFFF "croolis"
-        TEXT object_Bratakas_004A 01 40 80 - - "I'm" "sure" "you're" "insulting" "me" "...I" "don't" "like" "insults" "I" "don't" "understand" "..." FFFF "croolis"
-        TEXT object_Bratakas_004A 02 40 80 - - "Don't" "insult" "me" "," "stranger" "..." "I" "don't" "like" "it" "..." FFFF "croolis"
-        YIELD
-END_SELECTOR_LIST list_Bratakas_0420
+selector Bratakas_choices
+    yield_b
+    case "talk" -> 0x0000
+        menu "bye_bye" "Vistar" "planet" "race" "croolis"
+        say Bratakas voice=0x02 flags=0x40 display=0x80 loop=none control=none : "You want to talk, friend..." choices "talk"
+        say Bratakas voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Vistar is the name of my planet|. I am alone here|..." choices "Vistar"
+        say Bratakas voice=0x00 flags=0x48 display=0x80 loop=none control=none : "I find peace here|... Nobody to bother me|..." choices "Vistar"
+        presentation_register 0x2725
+        say Bratakas voice=0x01 flags=0x48 display=0x80 loop=none control=none : "It's calm here. No neighbors, no noise, no TV..." choices "Vistar"
+        presentation_register 0x2725
+        say Bratakas voice=0x02 flags=0x48 display=0x80 loop=none control=none : "Ah|, It's true that the winter nights would be nicer with TV..." choices "leisure"
+        presentation_register 0x2725
+        say Bratakas voice=0x00 flags=0x48 display=0x80 loop=none control=none : "To watch TV, I'd need a good decoder..." choices "leisure"
+        shared_state 0xC0 0x151C 0xF5 0xC1 0x0001
+        say Bratakas voice=0x00 flags=0x40 display=0x80 loop=none control=none : "No shortage of planets|, that's for sure..." choices "planet"
+        say Bratakas voice=0x02 flags=0x48 display=0x80 loop=none control=none : "Planets! You're quite fascinated by them..." choices "planet"
+        shared_state 0xC0 0x151A 0xF5 0xC1 0x0001
+        say Bratakas voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Only Tromps here.. We seldom get strangers..." choices "race"
+        say Bratakas voice=0x01 flags=0x48 display=0x80 loop=none control=none : "Big ships pass nearby from time to time|..." choices "race"
+        presentation_register 0x2725
+        say Bratakas voice=0x00 flags=0x40 display=0x80 loop=none control=none : "Aren't you feeling well?" choices "croolis"
+        say Bratakas voice=0x01 flags=0x40 display=0x80 loop=none control=none : "I'm sure you're insulting me...I don't like insults I don't understand|..." choices "croolis"
+        say Bratakas voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Don't insult me, stranger|... I don't like it..." choices "croolis"
+        yield
+end selector Bratakas_choices
 
-SELECTOR_LIST list_Beauregard_05EB
-    YIELD_B
-    CASE "talk" 0000
-        MENU "bye_bye" "listen" "insist" "treat"
-        TEXT object_Beauregard_067A 0C 41 80 - - "Aaaah" "..." "Eeeerrr..." FFFF "listen"
-        TEXT object_Beauregard_067A 0D 40 80 - - "Aaaa" "..." FFFF "bye_bye"
-        TEXT object_Beauregard_067A 0E 40 80 - - "I've" "been" "struck" "by" "the" "CURSE" "of" "BETAKAM" "IV" "..." FFFF "insist"
-        TEXT object_Beauregard_067A FF 68 80 - - "That" "sounds" "like" "a" "bad" "thing" "to" "get" "struck" "by" "," "Commander" "..." FFFF "insist"
-        PRESENTATION_REGISTER 2803
-        TEXT object_Beauregard_067A 0F 48 80 - - "Gladis" "is" "the" "sun" "of" "the" "Tumul" "system" "." "It" "exploded" "..." FFFF "gladis"
-        PRESENTATION_REGISTER 2803
-        TEXT object_Beauregard_067A FF 68 80 - - "What" "do" "you" "mean" "," "a" "sun" "?" FFFF "gladis"
-        PRESENTATION_REGISTER 2803
-        TEXT object_Beauregard_067A 10 40 80 - - "Gladis" "killed" "every" "living" "thing" "." "It's" "miracle" "I" "survived" "..." "Aaarr.." FFFF "insist"
-        TEXT object_Beauregard_067A 11 40 80 - - "My" "body" "is" "completely" "fried" "..." "I" "must" "have" "a" "new" "body" "..." "Friend" "..." FFFF "treat"
-        TEXT object_Beauregard_067A 12 40 80 - - "My" "brain" "is" "intact" "but" "the" "rest" "is" "history" "..." "Ash" "..." "Aaaarrr" "..." FFFF "treat"
-        TEXT object_Beauregard_067A FF 60 80 - - "Better" "not" "tire" "him" "out" "," "Commander" "..." FFFF "treat"
-        TEXT object_Beauregard_067A 13 41 80 - - "I" "must" "have" "a" "new" "body" "..." FFFF "treat"
-        TEXT object_Beauregard_067A 14 01 80 - - "Aaaarrr"
-        YIELD
-END_SELECTOR_LIST list_Beauregard_05EB
+selector Beauregard_choices
+    yield_b
+    case "talk" -> 0x0000
+        menu "bye_bye" "listen" "insist" "treat"
+        say Beauregard voice=0x0C flags=0x41 display=0x80 loop=none control=none : "Aaaah... Eeeerrr..." choices "listen"
+        say Beauregard voice=0x0D flags=0x40 display=0x80 loop=none control=none : "Aaaa..." choices "bye_bye"
+        say Beauregard voice=0x0E flags=0x40 display=0x80 loop=none control=none : "I've been struck by the CURSE of BETAKAM IV|..." choices "insist"
+        say Beauregard voice=0xFF flags=0x68 display=0x80 loop=none control=none : "That sounds like a bad thing to get struck by, Commander|..." choices "insist"
+        presentation_register 0x2803
+        say Beauregard voice=0x0F flags=0x48 display=0x80 loop=none control=none : "Gladis is the sun of the Tumul system. It exploded..." choices "gladis"
+        presentation_register 0x2803
+        say Beauregard voice=0xFF flags=0x68 display=0x80 loop=none control=none : "What do you mean, a sun?" choices "gladis"
+        presentation_register 0x2803
+        say Beauregard voice=0x10 flags=0x40 display=0x80 loop=none control=none : "Gladis killed every living thing|. It's miracle I survived... Aaarr.." choices "insist"
+        say Beauregard voice=0x11 flags=0x40 display=0x80 loop=none control=none : "My body is completely fried... I must have a new body... Friend..." choices "treat"
+        say Beauregard voice=0x12 flags=0x40 display=0x80 loop=none control=none : "My brain is intact but the rest is history... Ash... Aaaarrr..." choices "treat"
+        say Beauregard voice=0xFF flags=0x60 display=0x80 loop=none control=none : "Better not tire him out|, Commander|..." choices "treat"
+        say Beauregard voice=0x13 flags=0x41 display=0x80 loop=none control=none : "I must have a new body..." choices "treat"
+        say Beauregard voice=0x14 flags=0x01 display=0x80 loop=none control=none : "Aaaarrr"
+        yield
+end selector Beauregard_choices
 
-SELECTOR_LIST list_Honk_0763
-    YIELD_B
-    CASE "talk" 0000
-        MENU "bye_bye" "help" "message"
-        TEXT object_Honk_0A6A FF 61 80 - - "I" "hear" "and" "obey" "," "Commander" "..." FFFF "talk"
-        TEXT object_Honk_0A6A FF 61 80 - - "Hup" "!" "Commander" "..." FFFF "bye_bye"
-        YIELD
-END_SELECTOR_LIST list_Honk_0763
+selector Honk_choices
+    yield_b
+    case "talk" -> 0x0000
+        menu "bye_bye" "help" "message"
+        say Honk voice=0xFF flags=0x61 display=0x80 loop=none control=none : "I hear and obey, Commander|..." choices "talk"
+        say Honk voice=0xFF flags=0x61 display=0x80 loop=none control=none : "Hup! Commander|..." choices "bye_bye"
+        yield
+end selector Honk_choices
 
-SELECTOR_LIST list_Morning_Oil_07A0
-    YIELD_B
-    CASE "talk" selector_07FD
-        MENU "hello" "say_nothing" "laugh" "bye_bye"
-        TEXT object_Morning_Oil_0482 00 40 80 - - "Hi" "Commander" FFFF "hello"
-        TEXT object_Morning_Oil_0482 01 40 80 - - "Such" "silence" "..." FFFF "say_nothing"
-        TEXT object_Morning_Oil_0482 02 40 80 - - "Ha" "ha" "ha" "ha" "ha" "ha..." FFFF "laugh"
-        TEXT object_Morning_Oil_0482 03 40 80 - - "Bye" "bye" "Commander" FFFF "bye_bye"
-        YIELD_B
-        LABEL selector_07FD
-    CASE "history" selector_0811
-        MENU "bye_bye" "war" "croolis" "treasure" "battles" "mastachok"
-        YIELD_B
-        LABEL selector_0811
-    CASE "war" selector_0951
-        MENU "bye_bye" "match"
-        TEXT object_Morning_Oil_0482 05 40 80 - - "That" "was" "a" "real" "bad" "war" "..." "It" "all" "started" "the" "day" "of" "the" "boxing" "match" "between" "EVISCERATOR" "and" "EMASCULATOR..." FFFF "war"
-        TEXT object_Morning_Oil_0482 02 40 80 - - "You" "should've" "seen" "it" "," "Commander" "..." "What" "a" "fight" "..." FFFF "war"
-        TEXT object_Morning_Oil_0482 03 40 80 - - "They" "made" "BIONIUM" "bombs" "..." "Those" "things" "could" "blow" "away" "whole" "planets" "..." FFFF "war"
-        TEXT object_Morning_Oil_0482 05 40 80 - - "The" "whole" "galaxy" "seemed" "to" "be" "burning" "..." "BBOOOOMMM" "!!!" "BAM" "!" "RA" "TA" "TA" "TA" "TA" "..." "Ha!" "Ha!" "Ha!" FFFF "war"
-        TEXT object_Morning_Oil_0482 04 40 80 - - "The" "boxing" "match" "ended" "badly" "." "They" "televised" "it" "throughout" "the" "universe" "..." FFFF "match"
-        TEXT object_Morning_Oil_0482 03 40 80 - - "The" "war" "was" "between" "the" "two" "Croolis" "chiefs" "," "Eviscerator" "and" "Emasculator..." "It" "was" "a" "bad" "one" "..." FFFF "match"
-        TEXT object_Morning_Oil_0482 03 40 80 - - "The" "match" "was" "televised" "throughout" "the" "universe" "..." "Ahh" "," "I" "can" "picture" "it" "now" "..." FFFF "match"
-        YIELD_B
-        LABEL selector_0951
-    CASE "croolis" selector_0AD8
-        MENU "bye_bye" "history" "terror" "eviscerator" "emasculator"
-        TEXT object_Morning_Oil_0482 05 40 80 - - "Croolis" "are" "exceptional" "warriors" FFFF "croolis"
-        TEXT object_Morning_Oil_0482 04 40 80 - - "My" "master" "," "EVISCERATOR" "specialised" "in" "BIONIUM" "prospection" "..." FFFF "croolis"
-        TEXT object_Morning_Oil_0482 05 40 80 - - "he" "found" "BIONIUN" "in" "the" "galactic" "cyberspace" "contraction" "..." FFFF "croolis"
-        TEXT object_Morning_Oil_0482 06 40 80 - - "Those" "Croolis" "are" "serious" "dingbats" "!!!" FFFF "croolis"
-        TEXT object_Morning_Oil_0482 07 40 80 - - "The" "planets" "lived" "in" "terror" "for" "countless" "years" "..." FFFF "terror"
-        TEXT object_Morning_Oil_0482 05 40 80 - - "Terror" "was" "the" "Croolis" "secret" "weapon" "..." FFFF "terror"
-        TEXT object_Morning_Oil_0482 02 40 80 - - "We" "robots" "were" "programmed" "to" "feel" "no" "fear" "..." FFFF "terror"
-        TEXT object_Morning_Oil_0482 03 40 80 - - "Eviscerator" "finished" "up" "badly" "." "When" "SCRUT" "put" "a" "stop" "to" "the" "war" "," "they" "jailed" "him" FFFF "eviscerator"
-        TEXT object_Morning_Oil_0482 04 40 80 - - "Eviscerator" "is" "dangerous" "," "Commander" "." "He's" "a" "ruthless" "killer" "..." FFFF "eviscerator"
-        TEXT object_Morning_Oil_0482 FF 68 80 - - "Commander" "..." "I'm" "worried" "that" "memories" "of" "his" "old" "master" "might" "make" "him" "violent" "..." FFFF "eviscerator"
-        SHARED_STATE C0 1530 F5 C1 0001
-        TEXT object_Morning_Oil_0482 05 40 80 - - "Emasculator" "is" "completely" "brainless" "..." "Mean" "and" "stupid" "..." FFFF "emasculator"
-        TEXT object_Morning_Oil_0482 02 40 80 - - "That's" "one" "Croolis" "I" "hate" "..." FFFF "emasculator"
-        YIELD_B
-        LABEL selector_0AD8
-    CASE "treasure" selector_0C43
-        MENU "bye_bye" "history" "hiding_place"
-        TEXT object_Morning_Oil_0482 02 40 80 - - "Ah" "!" "The" "treasure" "." "You" "should've" "seen" "it" "," "Commander" "..." "Incredible" "..." FFFF "treasure"
-        TEXT object_Morning_Oil_0482 03 40 80 - - "Stones" "from" "Galabar" "," "horns" "from" "Rla" "," "authentic" "Rhinox" "bone" "vases" "..." FFFF "treasure"
-        TEXT object_Morning_Oil_0482 06 40 80 - - "Ha!" "Ha!" "Hard" "to" "say" "where" "he" "hid" "it" "," "Commander" "..." FFFF "hiding_place"
-        TEXT object_Morning_Oil_0482 05 40 80 - - "I" "don't" "mind" "giving" "you" "a" "few" "clues" "," "but" "it's" "confidential" "information" "..." FFFF "hiding_place"
-        TEXT object_Morning_Oil_0482 06 48 80 - - "I" "don't" "want" "HONK" "to" "hear" "..." FFFF "hiding_place"
-        SHARED_STATE C0 1532 F5 C1 0001
-        TEXT object_Morning_Oil_0482 04 40 80 - - "Millions" "were" "wiped" "out" "in" "the" "battles" "." "Planets" "were" "stripped" "to" "the" "bone" "..." FFFF "battle"
-        TEXT object_Morning_Oil_0482 05 40 80 - - "The" "Izwals" "suffered" "heavy" "losses" "." "They" "weren't" "ready" "..." FFFF "battle"
-        TEXT object_Morning_Oil_0482 06 40 80 - - "The" "SCRUT" "armies" "finally" "won" "after" "a" "gigantic" "battle" "that" "shook" "the" "galaxy" "to" "its" "knees" ".." FFFF "battle"
-        TEXT object_Morning_Oil_0482 05 40 80 - - "The" "defeated" "Croolis" "ended" "up" "on" "Trashlando" "." "That's" "a" "BAD" "place" "," "Commander" "..." FFFF "battle"
-        YIELD_B
-        LABEL selector_0C43
-    CASE "mastachok" 0000
-        MENU "bye_bye" "history" "information"
-        TEXT object_Morning_Oil_0482 05 40 80 - - "Mastachok" "is" "a" "dead" "planet" "..." "Nothing" "lives" "any" "more" "on" "its" "surface" "..." FFFF "mastachok"
-        TEXT object_Morning_Oil_0482 06 40 80 - - "The" "factory" "was" "replaced" "by" "the" "jail" "..." "With" "permanent" "SCRUT" "guards" "..." FFFF "mastachok"
-        TEXT object_Morning_Oil_0482 02 40 80 - - "Mastachok" "is" "absolutely" "polluted" "..." "Nothing" "more" "than" "a" "cinder" "block" "..." FFFF "mastachok"
-        YIELD
-END_SELECTOR_LIST list_Morning_Oil_07A0
+selector Morning_Oil_choices
+    yield_b
+    case "talk" -> selector_07FD
+        menu "hello" "say_nothing" "laugh" "bye_bye"
+        say Morning_Oil voice=0x00 flags=0x40 display=0x80 loop=none control=none : "Hi Commander" choices "hello"
+        say Morning_Oil voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Such silence..." choices "say_nothing"
+        say Morning_Oil voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Ha ha ha ha ha ha..." choices "laugh"
+        say Morning_Oil voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Bye bye Commander" choices "bye_bye"
+        yield_b
+        selector_07FD:
+    case "history" -> selector_0811
+        menu "bye_bye" "war" "croolis" "treasure" "battles" "mastachok"
+        yield_b
+        selector_0811:
+    case "war" -> selector_0951
+        menu "bye_bye" "match"
+        say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "That was a real bad war|... It all started the day of the boxing match between EVISCERATOR and EMASCULATOR..." choices "war"
+        say Morning_Oil voice=0x02 flags=0x40 display=0x80 loop=none control=none : "You should've seen it, Commander|... What a fight..." choices "war"
+        say Morning_Oil voice=0x03 flags=0x40 display=0x80 loop=none control=none : "They made BIONIUM bombs... Those things could blow away whole planets|..." choices "war"
+        say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "The whole galaxy seemed to be burning... BBOOOOMMM!!! BAM! RA TA TA TA TA... Ha! Ha! Ha!" choices "war"
+        say Morning_Oil voice=0x04 flags=0x40 display=0x80 loop=none control=none : "The boxing match ended badly. They televised it throughout the universe|..." choices "match"
+        say Morning_Oil voice=0x03 flags=0x40 display=0x80 loop=none control=none : "The war was between the two Croolis chiefs, Eviscerator and Emasculator... It was a bad one..." choices "match"
+        say Morning_Oil voice=0x03 flags=0x40 display=0x80 loop=none control=none : "The match was televised throughout the universe|... Ahh, I can picture it now|..." choices "match"
+        yield_b
+        selector_0951:
+    case "croolis" -> selector_0AD8
+        menu "bye_bye" "history" "terror" "eviscerator" "emasculator"
+        say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Croolis are exceptional warriors" choices "croolis"
+        say Morning_Oil voice=0x04 flags=0x40 display=0x80 loop=none control=none : "My master, EVISCERATOR specialised in BIONIUM prospection..." choices "croolis"
+        say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "he found BIONIUN in the galactic cyberspace contraction..." choices "croolis"
+        say Morning_Oil voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Those Croolis are serious dingbats!!!" choices "croolis"
+        say Morning_Oil voice=0x07 flags=0x40 display=0x80 loop=none control=none : "The planets lived in terror for countless years..." choices "terror"
+        say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Terror was the Croolis secret weapon..." choices "terror"
+        say Morning_Oil voice=0x02 flags=0x40 display=0x80 loop=none control=none : "We robots were programmed to feel no fear..." choices "terror"
+        say Morning_Oil voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Eviscerator finished up badly. When SCRUT put a stop to the war, they jailed him" choices "eviscerator"
+        say Morning_Oil voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Eviscerator is dangerous, Commander|. He's a ruthless killer..." choices "eviscerator"
+        say Morning_Oil voice=0xFF flags=0x68 display=0x80 loop=none control=none : "Commander|... I'm worried that memories of his old master might make him violent..." choices "eviscerator"
+        shared_state 0xC0 0x1530 0xF5 0xC1 0x0001
+        say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Emasculator is completely brainless... Mean and stupid|..." choices "emasculator"
+        say Morning_Oil voice=0x02 flags=0x40 display=0x80 loop=none control=none : "That's one Croolis I hate|..." choices "emasculator"
+        yield_b
+        selector_0AD8:
+    case "treasure" -> selector_0C43
+        menu "bye_bye" "history" "hiding_place"
+        say Morning_Oil voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Ah|! The treasure. You should've seen it, Commander|... Incredible..." choices "treasure"
+        say Morning_Oil voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Stones from Galabar, horns from Rla, authentic Rhinox bone vases..." choices "treasure"
+        say Morning_Oil voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Ha! Ha! Hard to say where he hid it, Commander|..." choices "hiding_place"
+        say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "I don't mind giving you a few clues, but it's confidential information..." choices "hiding_place"
+        say Morning_Oil voice=0x06 flags=0x48 display=0x80 loop=none control=none : "I don't want HONK to hear..." choices "hiding_place"
+        shared_state 0xC0 0x1532 0xF5 0xC1 0x0001
+        say Morning_Oil voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Millions were wiped out in the battles. Planets were stripped to the bone..." choices "battle"
+        say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "The Izwals suffered heavy losses. They weren't ready|..." choices "battle"
+        say Morning_Oil voice=0x06 flags=0x40 display=0x80 loop=none control=none : "The SCRUT armies finally won after a gigantic battle that shook the galaxy to its knees.." choices "battle"
+        say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "The defeated Croolis ended up on Trashlando. That's a BAD place, Commander|..." choices "battle"
+        yield_b
+        selector_0C43:
+    case "mastachok" -> 0x0000
+        menu "bye_bye" "history" "information"
+        say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Mastachok is a dead planet|... Nothing lives any more on its surface..." choices "mastachok"
+        say Morning_Oil voice=0x06 flags=0x40 display=0x80 loop=none control=none : "The factory was replaced by the jail... With permanent SCRUT guards..." choices "mastachok"
+        say Morning_Oil voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Mastachok is absolutely polluted... Nothing more than a cinder block..." choices "mastachok"
+        yield
+end selector Morning_Oil_choices
 
-SELECTOR_LIST list_Bronko_0CC3
-    YIELD_B
-    CASE "talk" selector_0CD6
-        MENU "bye_bye" "robot" "cred" "murffalos" "weapons"
-        YIELD_B
-        LABEL selector_0CD6
-    CASE "robot" selector_0E73
-        MENU "talk" "bye_bye" "robot" "intelligence" "energy" "technology" "retirement"
-        TEXT object_Bronko_0512 05 48 80 - - "See" "you" "soon" "," "friend" "..." FFFF "bye_bye"
-        RECORD_CLEAR field_Bronko_0512_s13_054C
-        TEXT object_Bronko_0512 02 40 80 - - "Me" "robot" "Bronko" "AX34" "BUTCHER" "model" "..." FFFF "robot"
-        TEXT object_Bronko_0512 03 40 80 - - "Robot" "be" "strong" "friend" "." "Robot" "Bronko" "know" "how" "chop" "meat" "with" "chopper" "..." FFFF "robot"
-        TEXT object_Bronko_0512 01 40 80 - - "Me" "big" "robot" "..." "Sophisticated" "..." FFFF "robot"
-        TEXT object_Bronko_0512 01 40 80 - - "Me" "big" "cybernetic" "intelligence" "." "Much" "cheap" "memory" "..." FFFF "intelligence"
-        TEXT object_Bronko_0512 02 40 80 - - "Me" "know" "think" "." "Me" "smart" "..." FFFF "intelligence"
-        TEXT object_Bronko_0512 03 40 80 - - "Me" "big" "CDROM" "in" "head..." "Ha!" "Ha!" "Ha!" "Ha!" FFFF "intelligence"
-        TEXT object_Bronko_0512 02 40 80 - - "Bronko" "intelligent..." FFFF "intelligence"
-        TEXT object_Bronko_0512 04 40 80 - - "Me" "much" "energy" ":" "Bronko" "have" "fresh" "batteries" "," "friend" "...." FFFF "energy"
-        TEXT object_Bronko_0512 05 40 80 - - "Me" "munch" "high" "energy" "zinc" "flakes" "with" "mercury" "every" "day" "..." FFFF "energy"
-        TEXT object_Bronko_0512 01 40 80 - - "You" "look" "for" "batteries" "," "friend" "..." "Me" "buy" "batteries" "at" "VENUSIA" "Supramarket" FFFF "energy"
-        TEXT object_Bronko_0512 04 40 80 - - "VENUSIA" "Supramarket" "sell" "cheap" "batteries" "." "You" "not" "see" "commercial" "on" "TV" "," "friend" "?" FFFF "energy"
-        TEXT object_Bronko_0512 01 40 80 - - "Bronko" "big" "technology" "," "friend" "..." FFFF "technology"
-        YIELD_B
-        LABEL selector_0E73
-    CASE "cred" selector_0F5F
-        MENU "talk" "bye_bye" "cred" "buy"
-        TEXT object_Bronko_0512 01 40 80 - - "Me" "work" "to" "earn" "much" "CRED" "," "friend" "..." FFFF "cred"
-        TEXT object_Bronko_0512 02 40 80 - - "Creds" "be" "hard" "to" "earn" "..." FFFF "cred"
-        TEXT object_Bronko_0512 03 41 80 - - "You" "like" "creds" "," "friend" "..." FFFF "cred"
-        TEXT object_Bronko_0512 04 40 80 - - "Me" "want" "buy" "big" "ship" "..." "Take" "vacation" "through" "universe" "..." FFFF "buy"
-        TEXT object_Bronko_0512 03 40 80 - - "Me" "want" "buy" "home" "on" "planet" "Troma" "..." "Grow" "nuts" "," "bolts" "," "screws" "..." FFFF "buy"
-        TEXT object_Bronko_0512 02 40 80 - - "Me" "want" "breed" "cybernetic" "wheelbarrows" "," "lawnmowers" "..." "Me" "dream" "," "friend" "..." FFFF "buy"
-        TEXT object_Bronko_0512 04 40 80 - - "To" "buy" "," "me" "must" "earn" "creds" "..." FFFF "buy"
-        YIELD_B
-        LABEL selector_0F5F
-    CASE "murffalos" selector_1017
-        MENU "talk" "bye_bye" "hunt"
-        TEXT object_Bronko_0512 01 40 80 - - "Thirteen" "murffalos" "to" "reproduce..." "One" "in" "middle" "." "twelve" "around" "." "That" "be" "murffalo" "reproduction" "..." FFFF "murffalos"
-        TEXT object_Bronko_0512 02 40 80 - - "Me" "not" "like" "murffalo" "..." "Not" "good" "," "too" "tender" "..." "Me" "like" "lawnmower" "leg" "..." FFFF "murffalos"
-        TEXT object_Bronko_0512 03 40 80 - - "Me" "know" "chop" "murffalos" "..." FFFF "murffalos"
-        TEXT object_Bronko_0512 04 40 80 - - "Me" "like" "hunt" "satellite" "game" "with" "laser-pulper" "..." "Bang" "Bang" "at" "satellites" "..." FFFF "hunt"
-        TEXT object_Bronko_0512 03 40 80 - - "Hunting" "be" "nice" "sport" "..." FFFF "hunt"
-        YIELD_B
-        LABEL selector_1017
-    CASE "weapons" selector_10A7
-        MENU "talk" "bye_bye" "planets" "war"
-        TEXT object_Bronko_0512 04 40 80 - - "To" "buy" "good" "weapons" "," "must" "pay" "much" "creds" "," "Commander" FFFF "weapons"
-        TEXT object_Bronko_0512 02 40 80 - - "Me" "have" "weapons" "at" "end" "of" "arms" "..." FFFF "weapons"
-        TEXT object_Bronko_0512 02 40 80 - - "You" "be" "big" "traveller" "." "Know" "planets" "," "friend" "..." FFFF "planets"
-        TEXT object_Bronko_0512 03 40 80 - - "Croolis" "war" "do" "much" "damage" "..." "Bad" "war" "," "friend" "..." FFFF "war"
-        YIELD_B
-        LABEL selector_10A7
-    CASE "retirement" 0000
-        MENU "talk" "bye_bye" "Magnus"
-        TEXT object_Bronko_0512 01 40 80 - - "Ah" "retirement" "!" "Them" "send" "me" "to" "planet" "Magnus" "," "with" "other" "old" "old" "robots" "..." "CRY" "CRY" "..." FFFF "retirement"
-        YIELD
-END_SELECTOR_LIST list_Bronko_0CC3
+selector Bronko_choices
+    yield_b
+    case "talk" -> selector_0CD6
+        menu "bye_bye" "robot" "cred" "murffalos" "weapons"
+        yield_b
+        selector_0CD6:
+    case "robot" -> selector_0E73
+        menu "talk" "bye_bye" "robot" "intelligence" "energy" "technology" "retirement"
+        say Bronko voice=0x05 flags=0x48 display=0x80 loop=none control=none : "See you soon|, friend|..." choices "bye_bye"
+        record_clear Bronko_s13
+        say Bronko voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me robot Bronko AX34 BUTCHER model..." choices "robot"
+        say Bronko voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Robot be strong friend|. Robot Bronko know how chop meat with chopper..." choices "robot"
+        say Bronko voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Me big robot... Sophisticated..." choices "robot"
+        say Bronko voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Me big cybernetic intelligence|. Much cheap memory..." choices "intelligence"
+        say Bronko voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me know think. Me smart..." choices "intelligence"
+        say Bronko voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Me big CDROM in head... Ha! Ha! Ha! Ha!" choices "intelligence"
+        say Bronko voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Bronko intelligent..." choices "intelligence"
+        say Bronko voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Me much energy: Bronko have fresh batteries, friend|...." choices "energy"
+        say Bronko voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Me munch high energy zinc flakes with mercury every day..." choices "energy"
+        say Bronko voice=0x01 flags=0x40 display=0x80 loop=none control=none : "You look for batteries, friend|... Me buy batteries at VENUSIA Supramarket" choices "energy"
+        say Bronko voice=0x04 flags=0x40 display=0x80 loop=none control=none : "VENUSIA Supramarket sell cheap batteries. You not see commercial on TV, friend?" choices "energy"
+        say Bronko voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Bronko big technology, friend|..." choices "technology"
+        yield_b
+        selector_0E73:
+    case "cred" -> selector_0F5F
+        menu "talk" "bye_bye" "cred" "buy"
+        say Bronko voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Me work to earn much CRED, friend|..." choices "cred"
+        say Bronko voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Creds be hard to earn..." choices "cred"
+        say Bronko voice=0x03 flags=0x41 display=0x80 loop=none control=none : "You like creds, friend|..." choices "cred"
+        say Bronko voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Me want buy big ship... Take vacation through universe|..." choices "buy"
+        say Bronko voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Me want buy home on planet Troma... Grow nuts, bolts, screws..." choices "buy"
+        say Bronko voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me want breed cybernetic wheelbarrows, lawnmowers... Me dream, friend|..." choices "buy"
+        say Bronko voice=0x04 flags=0x40 display=0x80 loop=none control=none : "To buy, me must earn creds..." choices "buy"
+        yield_b
+        selector_0F5F:
+    case "murffalos" -> selector_1017
+        menu "talk" "bye_bye" "hunt"
+        say Bronko voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Thirteen murffalos to reproduce... One in middle. twelve around. That be murffalo reproduction|..." choices "murffalos"
+        say Bronko voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me not like murffalo... Not good, too tender... Me like lawnmower leg..." choices "murffalos"
+        say Bronko voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Me know chop murffalos..." choices "murffalos"
+        say Bronko voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Me like hunt satellite game with laser-pulper... Bang Bang at satellites..." choices "hunt"
+        say Bronko voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Hunting be nice sport..." choices "hunt"
+        yield_b
+        selector_1017:
+    case "weapons" -> selector_10A7
+        menu "talk" "bye_bye" "planets" "war"
+        say Bronko voice=0x04 flags=0x40 display=0x80 loop=none control=none : "To buy good weapons, must pay much creds, Commander" choices "weapons"
+        say Bronko voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me have weapons at end of arms..." choices "weapons"
+        say Bronko voice=0x02 flags=0x40 display=0x80 loop=none control=none : "You be big traveller. Know planets|, friend|..." choices "planets"
+        say Bronko voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Croolis war do much damage... Bad war, friend|..." choices "war"
+        yield_b
+        selector_10A7:
+    case "retirement" -> 0x0000
+        menu "talk" "bye_bye" "Magnus"
+        say Bronko voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Ah retirement! Them send me to planet Magnus, with other old old robots... CRY CRY|..." choices "retirement"
+        yield
+end selector Bronko_choices
 
-SELECTOR_LIST list_Bob_Morlock_10E7
-    YIELD_B
-    CASE "talk" selector_157B
-        MENU "bye_bye" "black_hole" "Big_Bang" "Bob_Morlock" "kanary" "mission" "corpo" "good_"
-        TEXT object_Bob_Morlock_0242 02 42 80 - - "What" "do" "you" "want" "to" "know" "," "Commander?" FFFF "talk"
-        TEXT object_Bob_Morlock_0242 03 48 80 - - "Goodbye" "," "Commander" "..." FFFF "bye_bye"
-        RECORD_CLEAR field_Bob_Morlock_0242_s13_027C
-        TEXT object_Bob_Morlock_0242 02 40 80 - - "After" "years" "of" "research" "," "I" "was" "able" "to" "isolate" "time" "," "Commander" FFFF "black_hole"
-        TEXT object_Bob_Morlock_0242 01 40 80 - - "Certain" "black" "holes" "can" "be" "used" "to" "travel" "back" "in" "time" "." FFFF "black_hole"
-        TEXT object_Bob_Morlock_0242 02 48 80 - - "Honk" "has" "been" "programmed" "to" "identify" "appropriate" "black" "holes" FFFF "black_hole"
-        SHARED_STATE B4 field_Bob_Morlock_0242_s03_0274 F6 C1 0001
-        TEXT object_Bob_Morlock_0242 01 48 80 - - "To" "reach" "the" "BIG" "BANG," "you" "must" "travel" "through" "a" "number" "of" "black" "holes" "..." FFFF "black_hole"
-        SHARED_STATE B4 field_Bob_Morlock_0242_s03_0274 F6 C1 0001
-        TEXT object_Bob_Morlock_0242 02 49 80 - - "Black" "holes" "are" "amazing" "natural" "devices" "," "Commander" "..." FFFF "black_hole"
-        SHARED_STATE B4 field_Bob_Morlock_0242_s03_0274 F6 C1 0001
-        TEXT object_Bob_Morlock_0242 03 40 80 - - "I" "have" "devoted" "my" "life" "to" "the" "pursuit" "of" "Truth" "," "Commander" "..." FFFF "Big_Bang"
-        TEXT object_Bob_Morlock_0242 02 40 80 - - "I" "know" "that" "truth" "lies" "beyond" "the" "BIG" "BANG," "Commander" "!" FFFF "Big_Bang"
-        TEXT object_Bob_Morlock_0242 01 41 80 - - "My" "memory" "is" "not" "what" "it" "used" "to" "be" "..." FFFF "Big_Bang"
-        TEXT object_Bob_Morlock_0242 02 40 80 - - "Thanks" "to" "the" "scientists" "of" "KANARY" "," "I" "am" "the" "oldest" "being" "in" "the" "UNIVERSE" FFFF "Bob_Morlock"
-        TEXT object_Bob_Morlock_0242 01 40 80 - - "In" "my" "time" "," "I've" "been" "a" "crooner" "," "a" "magician" "," "an" "adventurer" "..." "I" "created" "KANARY" "," "the" "biggest" "business" "empire" "in" "the" "universe" "." FFFF "Bob_Morlock"
-        TEXT object_Bob_Morlock_0242 02 40 80 - - "Women" "have" "found" "me" "irresistible" "." "Thousands" "of" "generations" "have" "admired" "me." "I" "am" "immortal" "!" FFFF "Bob_Morlock"
-        TEXT object_Bob_Morlock_0242 02 48 80 - - "Commander" "," "you" "are" "going" "to" "relive" "my" "past" "." "I" "envy" "you" "..." FFFF "Bob_Morlock"
-        SHARED_STATE B4 field_Bob_Morlock_0242_s03_0274 F6 C1 0001
-        TEXT object_Bob_Morlock_0242 01 48 80 - - "Ah" "..." "Otto" "Von" "Smile" "," "Eviscerator" "," "Jeph" "d'Ulikan" "," "Yolk" "," "old" "Tina" "Burner" "," "and" "all" "the" "others" "..." FFFF "Bob_Morlock"
-        SHARED_STATE B4 field_Bob_Morlock_0242_s03_0274 F6 C1 0001
-        TEXT object_Bob_Morlock_0242 01 49 80 - - "Ahh!" "Those" "were" "good" "times" "," "Commander" "..." FFFF "Bob_Morlock"
-        PRESENTATION_REGISTER 2ED5
-        TEXT object_Bob_Morlock_0242 02 48 80 - - "You" "want" "revelations" "," "Commander" "?" FFFF "revelation"
-        SHARED_STATE C0 152C F5 C1 0001
-        TEXT object_Bob_Morlock_0242 02 40 80 - - "Your" "mission" "is" "to" "find" "and" "travel" "through" "the" "right" "black" "holes," "taking" "us" "back" "through" "time" "to" "the" "BIG" "BANG" FFFF "mission"
-        TEXT object_Bob_Morlock_0242 01 40 80 - - "You'll" "meet" "fabulous" "beings" "," "some" "of" "them" "very" "dangerous" "." "You'll" "need" "all" "your" "talents," "Commander" FFFF "mission"
-        TEXT object_Bob_Morlock_0242 02 40 80 - - "You'll" "see" "terrible" "wars" "," "cross" "impossible" "frontiers" "..." FFFF "mission"
-        TEXT object_Bob_Morlock_0242 01 40 80 - - "You" "must" "rally" "strange" "beings" "to" "your" "cause" "..." FFFF "mission"
-        TEXT object_Bob_Morlock_0242 02 49 80 - - "You" "will" "be" "in" "sole" "command" "," "unless" "you" "decide" "to" "wake" "me" "..." FFFF "mission"
-        SHARED_STATE B4 field_Bob_Morlock_0242_s03_0274 F6 C1 0001
-        TEXT object_Bob_Morlock_0242 01 40 80 - - "Corpo" "is" "my" "home" "planet" FFFF "It"
-        TEXT object_Bob_Morlock_0242 03 49 80 - - "Corpo" "is" "a" "rare" "and" "fabulous" "planet" "..." "Its" "resources" "are" "unlimited" "." FFFF "corpo"
-        SHARED_STATE B4 field_Bob_Morlock_0242_s03_0274 F6 C1 0002
-        TEXT object_Bob_Morlock_0242 02 40 80 - - "Truth" "is" "to" "be" "found" "at" "the" "creation" "of" "the" "universe" "," "just" "before" "the" "BIG" "BANG" "..." FFFF "truth"
-        TEXT object_Bob_Morlock_0242 01 49 80 - - "Ah!" "Truth" "..." FFFF "truth"
-        SHARED_STATE B4 field_Bob_Morlock_0242_s03_0274 F6 C1 0001
-        TEXT object_Bob_Morlock_0242 FF 48 80 - - "I'm" "getting" "pictures" "from" "the" "Ark" "," "Commander." "All" "systems" "are" "nominal" "..." FFFF "good_"
-        LOAD_STRING "arch01.hnm"
-        TEXT object_Bob_Morlock_0242 01 40 80 - - "You" "flatter" "me" "," "Commander" "..." FFFF "good_"
-        TEXT object_Bob_Morlock_0242 02 4A 80 - - "You're" "embarrassing" "me" "," "Commander" "..." FFFF "good_"
-        SHARED_STATE B4 field_Bob_Morlock_0242_s03_0274 F6 C1 0001
-        TEXT object_Bob_Morlock_0242 01 43 80 - - "Heh" "heh" "..." FFFF "good_"
-        YIELD_B
-        LABEL selector_157B
-    CASE "kanary" 0000
-        MENU "talk" "bye_bye" "cottage" "clones" "employees" "reports"
-        TEXT object_Bob_Morlock_0242 01 40 80 - - "The" "Cottage" "Research" "department" "is" "my" "secret" "project" FFFF "cottage"
-        TEXT object_Bob_Morlock_0242 01 40 80 - - "The" "vegetable" "kingdom" "is" "a" "marvel" "of" "nature" FFFF "cottage"
-        TEXT object_Bob_Morlock_0242 01 40 80 - - "The" "Cottage" "Research" "department" "develops" "miracles" "of" "nature" FFFF "cottage"
-        TEXT object_Bob_Morlock_0242 03 40 80 - - "Kanary's" "lawns" "mow" "themselves" "every" "weekend" "..." FFFF "cottage"
-        TEXT object_Bob_Morlock_0242 02 49 80 - - "Kanary's" "artificial" "orchids" "produce" "centuries" "old" "whiskey" FFFF "cottage"
-        SHARED_STATE B4 field_Bob_Morlock_0242_s03_0274 F6 C1 0005
-        TEXT object_Bob_Morlock_0242 01 40 80 - - "Kanary" "has" "devoted" "itself" "to" "synthetic" "cloning" FFFF "clones"
-        TEXT object_Bob_Morlock_0242 02 40 80 - - "Kanary's" "four" "million" "employees" "were" "built" "by" "and" "for" "Kanary" FFFF "clones"
-        TEXT object_Bob_Morlock_0242 01 40 80 - - "I" "am" "the" "last" "natural" "bio-being" "and" "I" "control" "everything" "..." FFFF "clones"
-        TEXT object_Bob_Morlock_0242 01 40 80 - - "Every" "year" "," "my" "employees" "wake" "me" "for" "ten" "minutes" "on" "my" "birthday" "..." "I" "blow" "out" "the" "candles" "on" "my" "cake" "and" "sign" "the" "company" "reports" FFFF "clones"
-        TEXT object_Bob_Morlock_0242 01 49 80 - - "I" "instructed" "Kanary's" "scientists" "to" "to" "create" "the" "perfect" "adventurer" "to" "take" "me" "to" "the" "BIG" "BANG" "..." FFFF "clones"
-        SHARED_STATE B4 field_Bob_Morlock_0242_s03_0274 F6 C1 0003
-        TEXT object_Bob_Morlock_0242 03 40 80 - - "All" "Kanary" "employees" "were" "built" "by" "the" "CLONE" "CONSORTIUM" "." "Including" "YOU" "," "Commander" FFFF "employees"
-        TEXT object_Bob_Morlock_0242 04 40 80 - - "You" "are" "all" "my" "employees" ":" "YOU" "Honk" "," "YOU" "Commander" "," "YOU" "Olga" "..." "ALL" "OF" "YOU" "..." FFFF "employees"
-        TEXT object_Bob_Morlock_0242 05 49 80 - - "Kanary" "builds" "the" "cheapest" "and" "most" "efficient" "employees" "in" "the" "universe" "..." FFFF "employees"
-        SHARED_STATE C0 1528 F5 C1 0001
-        TEXT object_Bob_Morlock_0242 01 42 80 - - "Kanary" "is" "the" "biggest" "company" "in" "the" "known" "universe" FFFF "kanary"
-        TEXT object_Bob_Morlock_0242 02 49 80 - - "Kanary" "invents" "," "builds" "," "consumes" "and" "controls" "everything" "in" "the" "universe" FFFF "kanary"
-        SHARED_STATE B4 field_Bob_Morlock_0242_s03_0274 F6 C1 0001
-        TEXT object_Bob_Morlock_0242 03 40 80 - - "Kanary" "is" "so" "well" "managed" "that" "its" "products" "are" "built" "at" "negative" "cost" FFFF "reports"
-        TEXT object_Bob_Morlock_0242 02 40 80 - - "A" "complete" "cottage" "costs" "100,990" "Negabucks..." FFFF "reports"
-        TEXT object_Bob_Morlock_0242 05 40 80 - - "Our" "turnover" "is" "so" "big" "that" "nobody" "can" "say" "the" "figure" "in" "a" "normal" "life" "span" FFFF "reports"
-        TEXT object_Bob_Morlock_0242 06 49 80 - - "Our" "only" "competitor" "is" "CRYO" FFFF "They"
-        SHARED_STATE B4 field_Bob_Morlock_0242_s03_0274 F6 C1 0002
-        YIELD
-END_SELECTOR_LIST list_Bob_Morlock_10E7
+selector Bob_Morlock_choices
+    yield_b
+    case "talk" -> selector_157B
+        menu "bye_bye" "black_hole" "Big_Bang" "Bob_Morlock" "kanary" "mission" "corpo" "good_"
+        say Bob_Morlock voice=0x02 flags=0x42 display=0x80 loop=none control=none : "What do you want to know|, Commander?" choices "talk"
+        say Bob_Morlock voice=0x03 flags=0x48 display=0x80 loop=none control=none : "Goodbye, Commander|..." choices "bye_bye"
+        record_clear Bob_Morlock_s13
+        say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "After years of research, I was able to isolate time|, Commander" choices "black_hole"
+        say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Certain black holes can be used to travel back in time." choices "black_hole"
+        say Bob_Morlock voice=0x02 flags=0x48 display=0x80 loop=none control=none : "Honk has been programmed to identify appropriate black holes" choices "black_hole"
+        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0001
+        say Bob_Morlock voice=0x01 flags=0x48 display=0x80 loop=none control=none : "To reach the BIG BANG, you must travel through a number of black holes..." choices "black_hole"
+        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0001
+        say Bob_Morlock voice=0x02 flags=0x49 display=0x80 loop=none control=none : "Black holes are amazing natural devices, Commander|..." choices "black_hole"
+        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0001
+        say Bob_Morlock voice=0x03 flags=0x40 display=0x80 loop=none control=none : "I have devoted my life to the pursuit of Truth, Commander|..." choices "Big_Bang"
+        say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "I know that truth lies beyond the BIG BANG, Commander!" choices "Big_Bang"
+        say Bob_Morlock voice=0x01 flags=0x41 display=0x80 loop=none control=none : "My memory is not what it used to be..." choices "Big_Bang"
+        say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Thanks to the scientists of KANARY, I am the oldest being in the UNIVERSE" choices "Bob_Morlock"
+        say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "In my time|, I've been a crooner, a magician, an adventurer... I created KANARY, the biggest business empire in the universe|." choices "Bob_Morlock"
+        say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Women have found me irresistible. Thousands of generations have admired me. I am immortal!" choices "Bob_Morlock"
+        say Bob_Morlock voice=0x02 flags=0x48 display=0x80 loop=none control=none : "Commander|, you are going to relive my past. I envy you|..." choices "Bob_Morlock"
+        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0001
+        say Bob_Morlock voice=0x01 flags=0x48 display=0x80 loop=none control=none : "Ah... Otto Von Smile, Eviscerator, Jeph d'Ulikan, Yolk|, old Tina Burner, and all the others..." choices "Bob_Morlock"
+        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0001
+        say Bob_Morlock voice=0x01 flags=0x49 display=0x80 loop=none control=none : "Ahh! Those were good times|, Commander|..." choices "Bob_Morlock"
+        presentation_register 0x2ED5
+        say Bob_Morlock voice=0x02 flags=0x48 display=0x80 loop=none control=none : "You want revelations, Commander|?" choices "revelation"
+        shared_state 0xC0 0x152C 0xF5 0xC1 0x0001
+        say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Your mission is to find and travel through the right black holes, taking us back through time to the BIG BANG" choices "mission"
+        say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "You'll meet fabulous beings, some of them very dangerous. You'll need all your talents, Commander" choices "mission"
+        say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "You'll see terrible wars, cross impossible frontiers..." choices "mission"
+        say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "You must rally strange beings to your cause..." choices "mission"
+        say Bob_Morlock voice=0x02 flags=0x49 display=0x80 loop=none control=none : "You will be in sole command, unless you decide to wake me|..." choices "mission"
+        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0001
+        say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Corpo is my home planet" choices "It"
+        say Bob_Morlock voice=0x03 flags=0x49 display=0x80 loop=none control=none : "Corpo is a rare and fabulous planet|... Its resources are unlimited." choices "corpo"
+        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0002
+        say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Truth is to be found at the creation of the universe, just before the BIG BANG..." choices "truth"
+        say Bob_Morlock voice=0x01 flags=0x49 display=0x80 loop=none control=none : "Ah! Truth..." choices "truth"
+        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0001
+        say Bob_Morlock voice=0xFF flags=0x48 display=0x80 loop=none control=none : "I'm getting pictures from the Ark, Commander. All systems are nominal..." choices "good_"
+        load_string "arch01.hnm"
+        say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "You flatter me, Commander|..." choices "good_"
+        say Bob_Morlock voice=0x02 flags=0x4A display=0x80 loop=none control=none : "You're embarrassing me, Commander|..." choices "good_"
+        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0001
+        say Bob_Morlock voice=0x01 flags=0x43 display=0x80 loop=none control=none : "Heh heh|..." choices "good_"
+        yield_b
+        selector_157B:
+    case "kanary" -> 0x0000
+        menu "talk" "bye_bye" "cottage" "clones" "employees" "reports"
+        say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "The Cottage Research department is my secret project" choices "cottage"
+        say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "The vegetable kingdom is a marvel of nature" choices "cottage"
+        say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "The Cottage Research department develops miracles of nature" choices "cottage"
+        say Bob_Morlock voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Kanary's lawns mow themselves every weekend..." choices "cottage"
+        say Bob_Morlock voice=0x02 flags=0x49 display=0x80 loop=none control=none : "Kanary's artificial orchids produce centuries old whiskey" choices "cottage"
+        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0005
+        say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Kanary has devoted itself to synthetic cloning" choices "clones"
+        say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Kanary's four million employees were built by and for Kanary" choices "clones"
+        say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "I am the last natural bio-being and I control everything..." choices "clones"
+        say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Every year, my employees wake me for ten minutes on my birthday... I blow out the candles on my cake and sign the company reports" choices "clones"
+        say Bob_Morlock voice=0x01 flags=0x49 display=0x80 loop=none control=none : "I instructed Kanary's scientists to to create the perfect adventurer to take me to the BIG BANG..." choices "clones"
+        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0003
+        say Bob_Morlock voice=0x03 flags=0x40 display=0x80 loop=none control=none : "All Kanary employees were built by the CLONE CONSORTIUM. Including YOU, Commander" choices "employees"
+        say Bob_Morlock voice=0x04 flags=0x40 display=0x80 loop=none control=none : "You are all my employees: YOU Honk, YOU Commander|, YOU Olga... ALL OF YOU..." choices "employees"
+        say Bob_Morlock voice=0x05 flags=0x49 display=0x80 loop=none control=none : "Kanary builds the cheapest and most efficient employees in the universe|..." choices "employees"
+        shared_state 0xC0 0x1528 0xF5 0xC1 0x0001
+        say Bob_Morlock voice=0x01 flags=0x42 display=0x80 loop=none control=none : "Kanary is the biggest company in the known universe" choices "kanary"
+        say Bob_Morlock voice=0x02 flags=0x49 display=0x80 loop=none control=none : "Kanary invents, builds, consumes and controls everything in the universe" choices "kanary"
+        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0001
+        say Bob_Morlock voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Kanary is so well managed that its products are built at negative cost" choices "reports"
+        say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "A complete cottage costs 100,990 Negabucks..." choices "reports"
+        say Bob_Morlock voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Our turnover is so big that nobody can say the figure in a normal life span" choices "reports"
+        say Bob_Morlock voice=0x06 flags=0x49 display=0x80 loop=none control=none : "Our only competitor is CRYO" choices "They"
+        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0002
+        yield
+end selector Bob_Morlock_choices
 
-SELECTOR_LIST list_Hom_1848
-    YIELD_B
-    CASE "hello" selector_1932
-        MENU "bye_bye" "talk" "not_talk"
-        TEXT object_Hom_03AA 02 40 80 - - "My" "name" "Hom." "Me" "big" "tube" "brain" FFFF "not_talk"
-        TEXT object_Hom_03AA 01 42 80 - - "Ooooh!" "Stranger" "what" "you" "want?" FFFF "talk"
-        TEXT object_Hom_03AA 00 42 80 - - "Oooooh!" "You" "strange" "intelligence." "You" "know" "talk?" FFFF "talk"
-        TEXT object_Hom_03AA 03 42 80 - - "Stranger" "from" "sky." "Me" "say" "hi" "there..." FFFF "talk"
-        TEXT object_Hom_03AA 04 42 80 - - "Me" "salute" "you," "handsome" "stranger..." FFFF "talk"
-        TEXT object_Hom_03AA 06 40 80 - - "You" "no" "tongue?" FFFF "not_talk"
-        TEXT object_Hom_03AA 07 40 80 - - "You" "tongue," "me" "like" "conversation" FFFF "talk"
-        TEXT object_Hom_03AA 08 40 80 - - "You" "dumb..." FFFF "not_talk"
-        TEXT object_Hom_03AA 0B 40 80 - - "You" "deaf" "too..." FFFF "not_talk"
-        TEXT object_Hom_03AA 06 48 80 - - "Me" "tired." "Bye" "bye..." FFFF "not_talk"
-        RECORD_CLEAR field_Hom_03AA_s13_03E4
-        YIELD_B
-        LABEL selector_1932
-    CASE "talk" selector_19DE
-        MENU "bye_bye" "race" "planet" "science" "politics" "art" "consumption"
-        TEXT object_Hom_03AA 02 00 80 - - "What" "you" "want" "know," "friend..."
-        TEXT object_Hom_03AA 05 40 80 - - "Race" "big" "subject," "friend..." FFFF "race"
-        TEXT object_Hom_03AA 07 40 80 - - "Science" "big" "subject" FFFF "science"
-        TEXT object_Hom_03AA 06 40 80 - - "Planet." "Me" "know" "planet" FFFF "planet"
-        TEXT object_Hom_03AA 07 40 80 - - "You" "interested" "politics..." FFFF "politics"
-        TEXT object_Hom_03AA 05 40 80 - - "Me" "know" "plenty" "people..." FFFF "politics"
-        TEXT object_Hom_03AA 0A 40 80 - - "Me" "like" "artists..." FFFF "art"
-        TEXT object_Hom_03AA 0A 40 80 - - "Consumerism" "big" "fun" FFFF "consumption"
-        YIELD_B
-        LABEL selector_19DE
-    CASE "race" selector_1A1C
-        MENU "talk" "bye_bye" "izwal" "croolis" "slimer" "tubular_brain" "sinox" "buggol" "migrax" "ondoyant"
-        TEXT object_Hom_03AA 01 02 80 - - "Race" "big" "metaphysical" "thing." "Natural" "magic"
-        TEXT object_Hom_03AA 00 02 80 - - "Race" "heavy" "mystery..."
-        YIELD_B
-        LABEL selector_1A1C
-    CASE "izwal" selector_1C5D
-        MENU "bye_bye" "race" "talk" "planet" "intelligence" "food" "science"
-        TEXT object_Hom_03AA 05 40 80 - - "Izwal" "small" "brain." "very" "nice." FFFF "intelligence"
-        TEXT object_Hom_03AA 06 40 80 - - "Intelligence" "Izwal" "lively." "Very" "noisy" "primitive" "brain" FFFF "intelligence"
-        TEXT object_Hom_03AA 06 40 80 - - "Neuronal" "intelligence" "yuk." "Tube" "brain" "big" "progress" FFFF "intelligence"
-        TEXT object_Hom_03AA 00 40 80 - - "Calculate" "4234543" "plus" "67754355" "over" "4533555" "minus" "4234557.94508" "equals" "0." FFFF "intelligence"
-        TEXT object_Hom_03AA 03 40 80 - - "Intelligence," "entropy," "power." "Too" "complex" "for" "you," "friend." FFFF "intelligence"
-        TEXT object_Hom_03AA 07 40 80 - - "They" "catch" "flies" "with" "trunk." "Hom" "not" "like" "flies" FFFF "food"
-        TEXT object_Hom_03AA 08 40 80 - - "Izwals" "like" "good" "food." "They" "delicate" "stomach" FFFF "food"
-        TEXT object_Hom_03AA 09 40 80 - - "I" "eat" "spiritual" "food" FFFF "food"
-        TEXT object_Hom_03AA 0A 40 80 - - "You" "always" "talk" "food." "You" "hungry" "maybe..." FFFF "food"
-        TEXT object_Hom_03AA 00 48 80 - - "Now" "you" "make" "me" "hungry." "I" "go" "eat." "Bye" "bye," "friend..." FFFF "food"
-        RECORD_CLEAR field_Hom_03AA_s13_03E4
-        TEXT object_Hom_03AA 0D 40 80 - - "Izwals" "like" "astronomy," "like" "stars" FFFF "science"
-        TEXT object_Hom_03AA 0B 40 80 - - "Izwal" "small" "science," "big" "telescope" FFFF "science"
-        TEXT object_Hom_03AA 0C 40 80 - - "They" "build" "wood" "space" "ships..." "laugh" "laugh..." FFFF "science"
-        TEXT object_Hom_03AA 07 40 80 - - "Me" "like" "Izwal" "science." "Funny..." "laugh" "laugh..." FFFF "science"
-        TEXT object_Hom_03AA 06 40 80 - - "Science," "science," "you" "talk" "science" "all" "time.." FFFF "science"
-        TEXT object_Hom_03AA 05 40 80 - - "They" "live" "on" "planet." "Planet" "name" "Rondo" FFFF "planet"
-        TEXT object_Hom_03AA 03 40 80 - - "Izwal" "planet" "name" "Rondo." "Nice" FFFF "planet" "rondo"
-        TEXT object_Hom_03AA 05 40 80 - - "Izwal" "palace" "wood." "Built" "around" "Rondo." "Nice" FFFF "planet" "rondo"
-        TEXT object_Hom_03AA 05 40 80 - - "Izwal" "like" "sing" "by" "planet" "light" FFFF "info"
-        TEXT object_Hom_03AA 02 40 80 - - "Izwal" "house" "funny." "Complicated." "Nice," "but" "not" "practical..." FFFF "info"
-        TEXT object_Hom_03AA 09 02 80 - - "Me" "like," "they" "nice"
-        TEXT object_Hom_03AA 0A 02 80 - - "They" "soft" "fur..."
-        YIELD_B
-        LABEL selector_1C5D
-    CASE "croolis" selector_1DC3
-        MENU "bye_bye" "race" "war" "science" "info" "joke" "planet"
-        TEXT object_Hom_03AA 06 40 80 - - "Me" "not" "like" "war." "Not" "like" "ships..." FFFF "war"
-        TEXT object_Hom_03AA 06 40 80 - - "Us" "Tubular" "Brain" "despise" "Croolis" FFFF "war"
-        TEXT object_Hom_03AA 03 40 80 - - "War" "favorite" "sport" "Croolis" FFFF "war"
-        TEXT object_Hom_03AA 07 40 80 - - "Croolis" "know" "muscle" "science," "them" "muscle" "brain" FFFF "war" "science"
-        TEXT object_Hom_03AA 0A 40 80 - - "Croolis" "mean" FFFF "war"
-        TEXT object_Hom_03AA 04 40 80 - - "Croolis" "cruel," "fool," "drool," "laugh" "laugh..." FFFF "joke"
-        TEXT object_Hom_03AA 03 40 80 - - "Croolis" "crude" "crud..." "laugh" "laugh" "laugh" "cry" "laugh" FFFF "joke"
-        TEXT object_Hom_03AA 02 40 80 - - "You" "like" "laugh" FFFF "joke"
-        TEXT object_Hom_03AA 07 40 80 - - "Croolis" "stupid," "big" "muscle," "where" "brain" "go?" FFFF "info"
-        TEXT object_Hom_03AA 09 40 80 - - "Croolis" "planet" "Mastachok" FFFF "info" "planet"
-        TEXT object_Hom_03AA 0A 40 80 - - "Oh," "Commander,me" "hallucinate" "when" "see" "violence" FFFF "info"
-        TEXT object_Hom_03AA 0B 40 80 - - "Mastachok" "be" "black" "planet." "Full" "of" "holes" FFFF "planet" "mastachok"
-        TEXT object_Hom_03AA 0E 40 80 - - "Croolis" "like" "smash" "planets," "kill" "life" FFFF "planet" "mastachok"
-        TEXT object_Hom_03AA 0B 40 80 - - "Croolis" "hate" "peace," "spit" "on" "life." "Hate" "nature" FFFF "planet" "mastachok"
-        YIELD_B
-        LABEL selector_1DC3
-    CASE "slimer" selector_1FA9
-        MENU "bye_bye" "race" "planet" "science" "politics" "yolk" "info"
-        TEXT object_Hom_03AA 10 40 80 - - "Slimer" "strange" "creatures." "Me" "personally" "know" "great" "Yolk" FFFF "yolk"
-        TEXT object_Hom_03AA 0B 40 80 - - "Yolk" "big" "thinker," "great" "master." "Me" "respect" FFFF "yolk"
-        TEXT object_Hom_03AA 02 40 80 - - "Yolk" "invent" "respect" "between" "races." "Yolk" "was" "big" "friend" FFFF "politics" "yolk"
-        TEXT object_Hom_03AA 01 40 80 - - "Yolk" "lots" "ideas," "mental" "science" FFFF "science" "yolk"
-        TEXT object_Hom_03AA 03 40 80 - - "Yolk" "buried" "in" "big" "mausoleum," "planet" "Vista" FFFF "planet" "yolk"
-        TEXT object_Hom_03AA 05 40 80 - - "Slimer" "not" "go" "away" FFFF "info"
-        TEXT object_Hom_03AA 01 40 80 - - "Portrait" "of" "Great" "Yolk," "famous" "painting..." FFFF "info" "art"
-        TEXT object_Hom_03AA 05 40 80 - - "Slimers" "live" "strange" "houses," "planet" "Ekatomb" FFFF "info" "planet"
-        TEXT object_Hom_03AA 06 40 80 - - "Slimers" "good" "and" "Slimers" "bad" "also" FFFF "info"
-        TEXT object_Hom_03AA 05 40 80 - - "Slimer" "planet" "name" "Ekatomb." "Exotic" "planet." "Nice..." FFFF "planet" "ekatomb"
-        TEXT object_Hom_03AA 09 40 80 - - "Slimer" "like" "low" "gravity." FFFF "planet"
-        TEXT object_Hom_03AA 0A 40 80 - - "Me" "like" "exotic" "Slimer" "planet." "Nice" FFFF "planet"
-        TEXT object_Hom_03AA 07 40 80 - - "Ha" "ha" "ha" "ha" "Slimer" "science." "You" "joke." "You" "not" "know" "Doctor" "Otto" "Von" "Smile?" FFFF "science"
-        TEXT object_Hom_03AA 05 40 80 - - "Slimers" "want" "live" "forever." "Afraid" "oldness" FFFF "science"
-        TEXT object_Hom_03AA 0A 40 80 - - "Slimers" "eat" "lot" "vitamins," "ho" "ho" "ho..." FFFF "science"
-        TEXT object_Hom_03AA 0B 40 80 - - "Slimer" "politics" "simple." "They" "want" "live" "forever..." FFFF "politics"
-        TEXT object_Hom_03AA 0B 40 80 - - "Slimers" "weird" "race" FFFF "race"
-        TEXT object_Hom_03AA 10 40 80 - - "Slimers" "evolve" "from" "space" "jellyfish" FFFF "race"
-        YIELD_B
-        LABEL selector_1FA9
-    CASE "tubular_brain" selector_2029
-        MENU "bye_bye" "brain" "info"
-        TEXT object_Hom_03AA 01 40 80 - - "Tubular" "Brain" "think" "good." FFFF "brain"
-        TEXT object_Hom_03AA 00 40 80 - - "Tube" "brain" "complex." "You" "not" "understand." FFFF "brain"
-        TEXT object_Hom_03AA 03 40 80 - - "Tubes" "resonate" "far" "in" "space," "capture" "mind" "force" FFFF "brain"
-        TEXT object_Hom_03AA 0B 40 80 - - "Me" "big" "Tubular" "Brain." FFFF "info"
-        TEXT object_Hom_03AA 0D 40 80 - - "Tubular" "Brain" "be" "superior" "race" FFFF "info"
-        YIELD_B
-        LABEL selector_2029
-    CASE "sinox" selector_20B3
-        MENU "bye_bye" "race" "science" "technology" "info"
-        TEXT object_Hom_03AA 05 40 80 - - "Sinox" "hard" "workers." "Big" "big" "technology" FFFF "technology"
-        TEXT object_Hom_03AA 09 40 80 - - "Sinox" "build" "computers," "machines," "Sinox" "like" "money" FFFF "info"
-        TEXT object_Hom_03AA 0A 40 80 - - "Sinox" "science" "most" "powerful" "in" "universe" FFFF "science"
-        TEXT object_Hom_03AA 02 40 80 - - "Sinox" "want" "total" "power." "You" "careful" FFFF "race" "sinox"
-        TEXT object_Hom_03AA 05 40 80 - - "Sinox" "powerful" "people" FFFF "race" "sinox"
-        YIELD_B
-        LABEL selector_20B3
-    CASE "migrax" selector_2139
-        MENU "bye_bye" "race" "talk" "info" "murffalos"
-        TEXT object_Hom_03AA 06 40 80 - - "Migrax" "not" "much" "in" "brain" FFFF "info"
-        TEXT object_Hom_03AA 0B 40 80 - - "Migrax" "like" "lot" "money." "Sell" "dad." "Sell" "mom." "Bad" FFFF "info"
-        TEXT object_Hom_03AA 0E 40 80 - - "Migrax" "eat" "murffalos" "boiled" "in" "mercury." "Ugh..." FFFF "murffalos"
-        TEXT object_Hom_03AA 07 40 80 - - "Migrax" "talk" "too" "much..." FFFF "talk"
-        TEXT object_Hom_03AA 06 40 80 - - "You" "like" "talk?" FFFF "talk"
-        YIELD_B
-        LABEL selector_2139
-    CASE "buggol" selector_2173
-        MENU "bye_bye" "race" "politics" "info" "joke"
-        TEXT object_Hom_03AA 05 40 80 - - "Democracy" "Buggol" "wise" FFFF "politics"
-        TEXT object_Hom_03AA 03 40 80 - - "Me" "not" "ever" "see" "Buggol..." FFFF "race"
-        YIELD_B
-        LABEL selector_2173
-    CASE "ondoyant" selector_21D1
-        MENU "bye_bye" "talk" "info" "reproduction"
-        TEXT object_Hom_03AA 01 40 80 - - "Ahhhhh!" "ondoyant," "you" "not" "say" "such" "word..." FFFF "info"
-        TEXT object_Hom_03AA 03 40 80 - - "Love," "all" "time," "big" "magic," "big" "hot..." FFFF "reproduction"
-        TEXT object_Hom_03AA 0B 40 80 - - "Hom" "eternal." "Hom" "not" "reproduce," "cry" "cry..." FFFF "reproduction"
-        YIELD_B
-        LABEL selector_21D1
-    CASE "murffalos" selector_225D
-        MENU "bye_bye" "planet" "reproduction" "consumption" "info"
-        TEXT object_Hom_03AA 02 40 80 - - "Murffalos" "be" "creatures" "with" "horn." FFFF "info"
-        TEXT object_Hom_03AA 05 40 80 - - "Murffalos" "tender" "meat." "Tasty" FFFF "consumption"
-        TEXT object_Hom_03AA 09 40 80 - - "Can" "buy" "frozen" "murffallos" "on" "planet" "Moskito" FFFF "planet"
-        TEXT object_Hom_03AA 09 40 80 - - "Murffalos" "13" "to" "reproduce." "One" "in" "middle," "12" "surround" FFFF "reproduction"
-        TEXT object_Hom_03AA 05 40 80 - - "Murffalos" "small" "small" "brain." "Meat" "nice" FFFF "consumption"
-        YIELD_B
-        LABEL selector_225D
-    CASE "planet" selector_2493
-        MENU "bye_bye" "talk" "erazor" "mastachok" "qx20" "tumul" "rondo" "cyberock" "troma" "ekatomb" "attrox" "Oddland" "corpo"
-        TEXT object_Hom_03AA 05 40 80 - - "Nice" "Sinox" "planet" FFFF "venusia"
-        TEXT object_Hom_03AA 09 40 80 - - "Me" "not" "ever" "be" "to" "Venusia" FFFF "venusia"
-        TEXT object_Hom_03AA 07 40 80 - - "Me" "sense" "badness." "Bad" "vibe" FFFF "erazor"
-        TEXT object_Hom_03AA 08 40 80 - - "Erazor" "Slimer" "planet." "Weird" "doctor" "live" "there" FFFF "erazor"
-        TEXT object_Hom_03AA 0E 40 80 - - "Mastachok" "Croolis" "planet." "Vibe" "no" "good" FFFF "mastachok"
-        TEXT object_Hom_03AA 0F 40 80 - - "Me" "not" "like" "Mastachok" FFFF "mastachok"
-        TEXT object_Hom_03AA 0B 40 80 - - "Sinox" "live" "Qx20" FFFF "qx20"
-        TEXT object_Hom_03AA 10 40 80 - - "Qx20" "big" "store." "Nice" "products" FFFF "qx20"
-        TEXT object_Hom_03AA 09 40 80 - - "Planet" "of" "Pago-tagos." "Nice" FFFF "tumul"
-        TEXT object_Hom_03AA 0A 40 80 - - "Tumul" "orbit" "round" "sun" "Gladis" FFFF "tumul"
-        TEXT object_Hom_03AA 02 40 80 - - "Round" "planet..." FFFF "rondo"
-        TEXT object_Hom_03AA 05 40 80 - - "Izwals" "live" "there..." FFFF "rondo"
-        TEXT object_Hom_03AA 05 40 80 - - "Big" "cyber" "college," "big" "culture..." FFFF "cyberock"
-        TEXT object_Hom_03AA 0A 40 80 - - "Cyberock" "be" "place" "for" "big" "knowledge" FFFF "cyberock"
-        TEXT object_Hom_03AA 05 40 80 - - "Problem" "war" "against" "Scorps." "Insects." "Big" "danger" FFFF "troma"
-        TEXT object_Hom_03AA 0A 40 80 - - "Troma" "cursed" "planet..." FFFF "troma"
-        TEXT object_Hom_03AA 05 40 80 - - "Oddland" "be" "black" "hole" "near" "planet" "Pterra" FFFF "Oddland"
-        TEXT object_Hom_03AA 06 40 80 - - "Big" "fun" "town." "Money," "good" "times," "wink" "wink" FFFF "attrox"
-        TEXT object_Hom_03AA 0A 40 80 - - "Ah," "planet" "of" "great" "Yolk." "Nice" "one" FFFF "ekatomb"
-        TEXT object_Hom_03AA 0A 40 80 - - "Corpo" "big" "planet" FFFF "corpo"
-        TEXT object_Hom_03AA 09 40 80 - - "Lot" "people" "visit" "Corpo" FFFF "corpo"
-        TEXT object_Hom_03AA 05 40 80 - - "Eden" "Migrax" "planet" FFFF "eden"
-        TEXT object_Hom_03AA 0A 40 80 - - "Me" "sense" "Eden," "friend..." FFFF "eden"
-        TEXT object_Hom_03AA 02 03 80 - - "Stars" "explode," "big" "bang," "plasma" "boom!!!"
-        TEXT object_Hom_03AA 00 03 80 - - "Heat," "fusion," "sun." "Bang!"
-        YIELD_B
-        LABEL selector_2493
-    CASE "television" selector_251F
-        MENU "bye_bye" "info" "consumption" "politics"
-        TEXT object_Hom_03AA 0E 42 80 - - "Me" "Hom." "Me" "big" "power.Television" "inside" "head..." FFFF "television"
-        TEXT object_Hom_03AA 0D 40 80 - - "Television" "not" "good" "for" "reproduction..." FFFF "television"
-        TEXT object_Hom_03AA 03 42 80 - - "Television" "good" "info" "for" "weak" "brain" FFFF "info"
-        TEXT object_Hom_03AA 06 40 80 - - "Me" "not" "watch" "television." "Programs" "no" "good" FFFF "info"
-        TEXT object_Hom_03AA 06 40 80 - - "Watch" "television," "always" "buy" "more" "and" "more" FFFF "consumption"
-        YIELD_B
-        LABEL selector_251F
-    CASE "art" selector_259B
-        MENU "bye_bye" "talk" "info" "painting"
-        TEXT object_Hom_03AA 05 40 80 - - "Me" "like" "painting" FFFF "info"
-        TEXT object_Hom_03AA 0A 40 80 - - "Me" "like" "art" "food." "And" "murffalos" "liver" "boiled" "in" "mercury" FFFF "info"
-        TEXT object_Hom_03AA 09 40 80 - - "Jeph" "d'Ulikan" "big" "artist," "big" "thoughts." "You" "read" "thoughts" "of" "Jeph." FFFF "info"
-        TEXT object_Hom_03AA 05 40 80 - - "Portrait" "Great" "Yolk." "Great" "painting." "Famous" FFFF "painting"
-        YIELD_B
-        LABEL selector_259B
-    CASE "peace" selector_260B
-        MENU "bye_bye" "politics" "friendship" "izwal"
-        TEXT object_Hom_03AA 01 40 80 - - "Peace" "good" "idea." "Me" "like" FFFF "Friendship"
-        TEXT object_Hom_03AA 0A 40 80 - - "Friendship" "among" "peoples," "races." "Me" "like," "friend..." FFFF "friendship"
-        TEXT object_Hom_03AA 05 40 80 - - "Izwal" "weak." "Like" "peace." "they" "not" "violent" FFFF "izwal"
-        TEXT object_Hom_03AA 0A 40 80 - - "Peace" "make" "mind" "connections." "Progress" FFFF "peace"
-        YIELD_B
-        LABEL selector_260B
-    CASE "war" selector_265D
-        MENU "bye_bye" "politics" "croolis"
-        TEXT object_Hom_03AA 06 40 80 - - "Croolis" "like" "fight," "like" "kill" FFFF "croolis"
-        TEXT object_Hom_03AA 06 40 80 - - "War" "stupid." "Destroy," "hate," "die," "die" FFFF "war"
-        TEXT object_Hom_03AA 0E 40 80 - - "Why" "hate?" "Lot" "hate." "Why?" FFFF "war"
-        YIELD_B
-        LABEL selector_265D
-    CASE "politics" selector_26EB
-        MENU "bye_bye" "race" "democracy" "television" "joke" "peace" "war"
-        TEXT object_Hom_03AA 0B 40 80 - - "Democracy" "important." "Cyborg" "planet" "big" "democracy" FFFF "democracy"
-        TEXT object_Hom_03AA 0C 40 80 - - "Politics" "bad" "vibe." "Me" "prefer" "ondoyants" FFFF "race"
-        TEXT object_Hom_03AA 01 40 80 - - "Television" "big" "political" "power." "Fascination." "Lie" FFFF "television"
-        TEXT object_Hom_03AA 10 40 80 - - "Polly" "ticks..." "laugh" "laugh" "laugh" FFFF "joke"
-        TEXT object_Hom_03AA 0C 40 80 - - "Politics" "big" "business," "money," "power," "bad" "vibe..." FFFF "politics"
-        YIELD_B
-        LABEL selector_26EB
-    CASE "reproduction" selector_2743
-        MENU "bye_bye" "race" "hom" "ondoyant" "info" "joke"
-        TEXT object_Hom_03AA 0D 40 80 - - "Not" "know" "reproduction." "Hom" "not" "reproduce." "Hom" "eternal" FFFF "hom"
-        TEXT object_Hom_03AA 09 40 80 - - "ondoyants" "like" "reproduction" FFFF "ondoyant"
-        TEXT object_Hom_03AA 0A 40 80 - - "Reproduction" "Hom" "forbidden." "Big" "copyright..." FFFF "joke"
-        YIELD_B
-        LABEL selector_2743
-    CASE "science" selector_2859
-        MENU "bye_bye" "talk" "race" "planet" "universe" "info" "origin" "mind"
-        TEXT object_Hom_03AA 01 40 80 - - "Hom" "detect," "sense," "understand" "universe." FFFF "universe"
-        TEXT object_Hom_03AA 02 40 80 - - "Universe" "filled" "with" "small" "creatures..." FFFF "universe"
-        TEXT object_Hom_03AA 07 40 80 - - "Hom" "big" "mind" "power." "Me" "know" "you," "stranger." FFFF "info"
-        TEXT object_Hom_03AA 05 40 80 - - "Izwal" "like" "dream" "science," "astronomy." FFFF "race"
-        TEXT object_Hom_03AA 02 40 80 - - "You" "want" "know" "origin" "universe." FFFF "origin"
-        TEXT object_Hom_03AA 0B 40 80 - - "Origin" "universe" "big" "major" "mystery." FFFF "origin" "universe"
-        TEXT object_Hom_03AA 0C 40 80 - - "Me" "know" "origin" "universe?" "Me" "promised" "not" "tell." FFFF "origin"
-        TEXT object_Hom_03AA 0B 40 80 - - "Univers" "have" "billions" "planets" FFFF "universe" "planet"
-        TEXT object_Hom_03AA 02 40 80 - - "Mind" "more" "big" "than" "universe" FFFF "mind"
-        TEXT object_Hom_03AA 01 40 80 - - "Big" "power," "major" "wisdom," "beauty..." FFFF "mind"
-        TEXT object_Hom_03AA 07 40 80 - - "Me" "like" "crunch" "numbers." FFFF "science"
-        YIELD_B
-        LABEL selector_2859
-    CASE "consuption" selector_28CB
-        MENU "bye_bye" "talk" "sinox" "food"
-        TEXT object_Hom_03AA 05 40 80 - - "Sinox" "build" "hi" "tech" "products" FFFF "sinox"
-        TEXT object_Hom_03AA 06 40 80 - - "Food" "big" "problem." "Murffalos" "big" "solution" FFFF "food"
-        TEXT object_Hom_03AA 0A 41 80 - - "Me" "not" "big" "consumer." "Me" "eat" "mind" "food," "friend..." FFFF "food"
-        TEXT object_Hom_03AA 02 40 80 - - "You" "want" "talk" "consumption," "friend" FFFF "consuption"
-        YIELD_B
-        LABEL selector_28CB
-    CASE "joke" 0000
-        MENU "bye_bye" "talk" "race" "planet" "info" "laugh"
-        TEXT object_Hom_03AA 0C 40 80 - - "Hom" "not" "like" "joke..." "laugh," "laugh," "cry," "laugh," "laugh," "laugh" FFFF "laugh"
-        TEXT object_Hom_03AA 0B 40 80 - - "Izwal" "build" "telescope," "laugh," "laugh" FFFF "izwal" "joke"
-        TEXT object_Hom_03AA 10 40 80 - - "Me" "eat" "Izwal" "telescope." "Telesteak," "laugh," "laugh," "cry," "laugh," "laugh" FFFF "joke"
-        TEXT object_Hom_03AA 0B 00 80 - - "You" "want" "me" "sing?"
-        TEXT object_Hom_03AA 02 03 80 - - "You" "talk" "all" "time," "friend..."
-        END
-END_SELECTOR_LIST list_Hom_1848
+selector Hom_choices
+    yield_b
+    case "hello" -> selector_1932
+        menu "bye_bye" "talk" "not_talk"
+        say Hom voice=0x02 flags=0x40 display=0x80 loop=none control=none : "My name Hom. Me big tube brain" choices "not_talk"
+        say Hom voice=0x01 flags=0x42 display=0x80 loop=none control=none : "Ooooh! Stranger what you want?" choices "talk"
+        say Hom voice=0x00 flags=0x42 display=0x80 loop=none control=none : "Oooooh! You strange intelligence. You know talk?" choices "talk"
+        say Hom voice=0x03 flags=0x42 display=0x80 loop=none control=none : "Stranger from sky. Me say hi there..." choices "talk"
+        say Hom voice=0x04 flags=0x42 display=0x80 loop=none control=none : "Me salute you, handsome stranger..." choices "talk"
+        say Hom voice=0x06 flags=0x40 display=0x80 loop=none control=none : "You no tongue?" choices "not_talk"
+        say Hom voice=0x07 flags=0x40 display=0x80 loop=none control=none : "You tongue, me like conversation" choices "talk"
+        say Hom voice=0x08 flags=0x40 display=0x80 loop=none control=none : "You dumb..." choices "not_talk"
+        say Hom voice=0x0B flags=0x40 display=0x80 loop=none control=none : "You deaf too..." choices "not_talk"
+        say Hom voice=0x06 flags=0x48 display=0x80 loop=none control=none : "Me tired. Bye bye..." choices "not_talk"
+        record_clear Hom_s13
+        yield_b
+        selector_1932:
+    case "talk" -> selector_19DE
+        menu "bye_bye" "race" "planet" "science" "politics" "art" "consumption"
+        say Hom voice=0x02 flags=0x00 display=0x80 loop=none control=none : "What you want know, friend..."
+        say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Race big subject, friend..." choices "race"
+        say Hom voice=0x07 flags=0x40 display=0x80 loop=none control=none : "Science big subject" choices "science"
+        say Hom voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Planet. Me know planet" choices "planet"
+        say Hom voice=0x07 flags=0x40 display=0x80 loop=none control=none : "You interested politics..." choices "politics"
+        say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Me know plenty people..." choices "politics"
+        say Hom voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Me like artists..." choices "art"
+        say Hom voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Consumerism big fun" choices "consumption"
+        yield_b
+        selector_19DE:
+    case "race" -> selector_1A1C
+        menu "talk" "bye_bye" "izwal" "croolis" "slimer" "tubular_brain" "sinox" "buggol" "migrax" "ondoyant"
+        say Hom voice=0x01 flags=0x02 display=0x80 loop=none control=none : "Race big metaphysical thing. Natural magic"
+        say Hom voice=0x00 flags=0x02 display=0x80 loop=none control=none : "Race heavy mystery..."
+        yield_b
+        selector_1A1C:
+    case "izwal" -> selector_1C5D
+        menu "bye_bye" "race" "talk" "planet" "intelligence" "food" "science"
+        say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Izwal small brain. very nice." choices "intelligence"
+        say Hom voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Intelligence Izwal lively. Very noisy primitive brain" choices "intelligence"
+        say Hom voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Neuronal intelligence yuk. Tube brain big progress" choices "intelligence"
+        say Hom voice=0x00 flags=0x40 display=0x80 loop=none control=none : "Calculate 4234543 plus 67754355 over 4533555 minus 4234557.94508 equals 0." choices "intelligence"
+        say Hom voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Intelligence, entropy, power. Too complex for you, friend." choices "intelligence"
+        say Hom voice=0x07 flags=0x40 display=0x80 loop=none control=none : "They catch flies with trunk. Hom not like flies" choices "food"
+        say Hom voice=0x08 flags=0x40 display=0x80 loop=none control=none : "Izwals like good food. They delicate stomach" choices "food"
+        say Hom voice=0x09 flags=0x40 display=0x80 loop=none control=none : "I eat spiritual food" choices "food"
+        say Hom voice=0x0A flags=0x40 display=0x80 loop=none control=none : "You always talk food. You hungry maybe..." choices "food"
+        say Hom voice=0x00 flags=0x48 display=0x80 loop=none control=none : "Now you make me hungry. I go eat. Bye bye, friend..." choices "food"
+        record_clear Hom_s13
+        say Hom voice=0x0D flags=0x40 display=0x80 loop=none control=none : "Izwals like astronomy, like stars" choices "science"
+        say Hom voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Izwal small science, big telescope" choices "science"
+        say Hom voice=0x0C flags=0x40 display=0x80 loop=none control=none : "They build wood space ships... laugh laugh..." choices "science"
+        say Hom voice=0x07 flags=0x40 display=0x80 loop=none control=none : "Me like Izwal science. Funny... laugh laugh..." choices "science"
+        say Hom voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Science, science, you talk science all time.." choices "science"
+        say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "They live on planet. Planet name Rondo" choices "planet"
+        say Hom voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Izwal planet name Rondo. Nice" choices "planet" "rondo"
+        say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Izwal palace wood. Built around Rondo. Nice" choices "planet" "rondo"
+        say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Izwal like sing by planet light" choices "info"
+        say Hom voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Izwal house funny. Complicated. Nice, but not practical..." choices "info"
+        say Hom voice=0x09 flags=0x02 display=0x80 loop=none control=none : "Me like, they nice"
+        say Hom voice=0x0A flags=0x02 display=0x80 loop=none control=none : "They soft fur..."
+        yield_b
+        selector_1C5D:
+    case "croolis" -> selector_1DC3
+        menu "bye_bye" "race" "war" "science" "info" "joke" "planet"
+        say Hom voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Me not like war. Not like ships..." choices "war"
+        say Hom voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Us Tubular Brain despise Croolis" choices "war"
+        say Hom voice=0x03 flags=0x40 display=0x80 loop=none control=none : "War favorite sport Croolis" choices "war"
+        say Hom voice=0x07 flags=0x40 display=0x80 loop=none control=none : "Croolis know muscle science, them muscle brain" choices "war" "science"
+        say Hom voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Croolis mean" choices "war"
+        say Hom voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Croolis cruel, fool, drool, laugh laugh..." choices "joke"
+        say Hom voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Croolis crude crud... laugh laugh laugh cry laugh" choices "joke"
+        say Hom voice=0x02 flags=0x40 display=0x80 loop=none control=none : "You like laugh" choices "joke"
+        say Hom voice=0x07 flags=0x40 display=0x80 loop=none control=none : "Croolis stupid, big muscle, where brain go?" choices "info"
+        say Hom voice=0x09 flags=0x40 display=0x80 loop=none control=none : "Croolis planet Mastachok" choices "info" "planet"
+        say Hom voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Oh, Commander,me hallucinate when see violence" choices "info"
+        say Hom voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Mastachok be black planet. Full of holes" choices "planet" "mastachok"
+        say Hom voice=0x0E flags=0x40 display=0x80 loop=none control=none : "Croolis like smash planets, kill life" choices "planet" "mastachok"
+        say Hom voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Croolis hate peace, spit on life. Hate nature" choices "planet" "mastachok"
+        yield_b
+        selector_1DC3:
+    case "slimer" -> selector_1FA9
+        menu "bye_bye" "race" "planet" "science" "politics" "yolk" "info"
+        say Hom voice=0x10 flags=0x40 display=0x80 loop=none control=none : "Slimer strange creatures. Me personally know great Yolk" choices "yolk"
+        say Hom voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Yolk big thinker, great master. Me respect" choices "yolk"
+        say Hom voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Yolk invent respect between races. Yolk was big friend" choices "politics" "yolk"
+        say Hom voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Yolk lots ideas, mental science" choices "science" "yolk"
+        say Hom voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Yolk buried in big mausoleum, planet Vista" choices "planet" "yolk"
+        say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Slimer not go away" choices "info"
+        say Hom voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Portrait of Great Yolk, famous painting..." choices "info" "art"
+        say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Slimers live strange houses, planet Ekatomb" choices "info" "planet"
+        say Hom voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Slimers good and Slimers bad also" choices "info"
+        say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Slimer planet name Ekatomb. Exotic planet. Nice..." choices "planet" "ekatomb"
+        say Hom voice=0x09 flags=0x40 display=0x80 loop=none control=none : "Slimer like low gravity." choices "planet"
+        say Hom voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Me like exotic Slimer planet. Nice" choices "planet"
+        say Hom voice=0x07 flags=0x40 display=0x80 loop=none control=none : "Ha ha ha ha Slimer science. You joke. You not know Doctor Otto Von Smile?" choices "science"
+        say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Slimers want live forever. Afraid oldness" choices "science"
+        say Hom voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Slimers eat lot vitamins, ho ho ho..." choices "science"
+        say Hom voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Slimer politics simple. They want live forever..." choices "politics"
+        say Hom voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Slimers weird race" choices "race"
+        say Hom voice=0x10 flags=0x40 display=0x80 loop=none control=none : "Slimers evolve from space jellyfish" choices "race"
+        yield_b
+        selector_1FA9:
+    case "tubular_brain" -> selector_2029
+        menu "bye_bye" "brain" "info"
+        say Hom voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Tubular Brain think good." choices "brain"
+        say Hom voice=0x00 flags=0x40 display=0x80 loop=none control=none : "Tube brain complex. You not understand." choices "brain"
+        say Hom voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Tubes resonate far in space, capture mind force" choices "brain"
+        say Hom voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Me big Tubular Brain." choices "info"
+        say Hom voice=0x0D flags=0x40 display=0x80 loop=none control=none : "Tubular Brain be superior race" choices "info"
+        yield_b
+        selector_2029:
+    case "sinox" -> selector_20B3
+        menu "bye_bye" "race" "science" "technology" "info"
+        say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Sinox hard workers. Big big technology" choices "technology"
+        say Hom voice=0x09 flags=0x40 display=0x80 loop=none control=none : "Sinox build computers, machines, Sinox like money" choices "info"
+        say Hom voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Sinox science most powerful in universe" choices "science"
+        say Hom voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Sinox want total power. You careful" choices "race" "sinox"
+        say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Sinox powerful people" choices "race" "sinox"
+        yield_b
+        selector_20B3:
+    case "migrax" -> selector_2139
+        menu "bye_bye" "race" "talk" "info" "murffalos"
+        say Hom voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Migrax not much in brain" choices "info"
+        say Hom voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Migrax like lot money. Sell dad. Sell mom. Bad" choices "info"
+        say Hom voice=0x0E flags=0x40 display=0x80 loop=none control=none : "Migrax eat murffalos boiled in mercury. Ugh..." choices "murffalos"
+        say Hom voice=0x07 flags=0x40 display=0x80 loop=none control=none : "Migrax talk too much..." choices "talk"
+        say Hom voice=0x06 flags=0x40 display=0x80 loop=none control=none : "You like talk?" choices "talk"
+        yield_b
+        selector_2139:
+    case "buggol" -> selector_2173
+        menu "bye_bye" "race" "politics" "info" "joke"
+        say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Democracy Buggol wise" choices "politics"
+        say Hom voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Me not ever see Buggol..." choices "race"
+        yield_b
+        selector_2173:
+    case "ondoyant" -> selector_21D1
+        menu "bye_bye" "talk" "info" "reproduction"
+        say Hom voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Ahhhhh! ondoyant, you not say such word..." choices "info"
+        say Hom voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Love, all time, big magic, big hot..." choices "reproduction"
+        say Hom voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Hom eternal. Hom not reproduce, cry cry..." choices "reproduction"
+        yield_b
+        selector_21D1:
+    case "murffalos" -> selector_225D
+        menu "bye_bye" "planet" "reproduction" "consumption" "info"
+        say Hom voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Murffalos be creatures with horn." choices "info"
+        say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Murffalos tender meat. Tasty" choices "consumption"
+        say Hom voice=0x09 flags=0x40 display=0x80 loop=none control=none : "Can buy frozen murffallos on planet Moskito" choices "planet"
+        say Hom voice=0x09 flags=0x40 display=0x80 loop=none control=none : "Murffalos 13 to reproduce. One in middle, 12 surround" choices "reproduction"
+        say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Murffalos small small brain. Meat nice" choices "consumption"
+        yield_b
+        selector_225D:
+    case "planet" -> selector_2493
+        menu "bye_bye" "talk" "erazor" "mastachok" "qx20" "tumul" "rondo" "cyberock" "troma" "ekatomb" "attrox" "Oddland" "corpo"
+        say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Nice Sinox planet" choices "venusia"
+        say Hom voice=0x09 flags=0x40 display=0x80 loop=none control=none : "Me not ever be to Venusia" choices "venusia"
+        say Hom voice=0x07 flags=0x40 display=0x80 loop=none control=none : "Me sense badness. Bad vibe" choices "erazor"
+        say Hom voice=0x08 flags=0x40 display=0x80 loop=none control=none : "Erazor Slimer planet. Weird doctor live there" choices "erazor"
+        say Hom voice=0x0E flags=0x40 display=0x80 loop=none control=none : "Mastachok Croolis planet. Vibe no good" choices "mastachok"
+        say Hom voice=0x0F flags=0x40 display=0x80 loop=none control=none : "Me not like Mastachok" choices "mastachok"
+        say Hom voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Sinox live Qx20" choices "qx20"
+        say Hom voice=0x10 flags=0x40 display=0x80 loop=none control=none : "Qx20 big store. Nice products" choices "qx20"
+        say Hom voice=0x09 flags=0x40 display=0x80 loop=none control=none : "Planet of Pago-tagos. Nice" choices "tumul"
+        say Hom voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Tumul orbit round sun Gladis" choices "tumul"
+        say Hom voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Round planet..." choices "rondo"
+        say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Izwals live there..." choices "rondo"
+        say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Big cyber college, big culture..." choices "cyberock"
+        say Hom voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Cyberock be place for big knowledge" choices "cyberock"
+        say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Problem war against Scorps. Insects. Big danger" choices "troma"
+        say Hom voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Troma cursed planet..." choices "troma"
+        say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Oddland be black hole near planet Pterra" choices "Oddland"
+        say Hom voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Big fun town. Money, good times, wink wink" choices "attrox"
+        say Hom voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Ah, planet of great Yolk. Nice one" choices "ekatomb"
+        say Hom voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Corpo big planet" choices "corpo"
+        say Hom voice=0x09 flags=0x40 display=0x80 loop=none control=none : "Lot people visit Corpo" choices "corpo"
+        say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Eden Migrax planet" choices "eden"
+        say Hom voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Me sense Eden, friend..." choices "eden"
+        say Hom voice=0x02 flags=0x03 display=0x80 loop=none control=none : "Stars explode, big bang, plasma boom!!!"
+        say Hom voice=0x00 flags=0x03 display=0x80 loop=none control=none : "Heat, fusion, sun. Bang!"
+        yield_b
+        selector_2493:
+    case "television" -> selector_251F
+        menu "bye_bye" "info" "consumption" "politics"
+        say Hom voice=0x0E flags=0x42 display=0x80 loop=none control=none : "Me Hom. Me big power.Television inside head..." choices "television"
+        say Hom voice=0x0D flags=0x40 display=0x80 loop=none control=none : "Television not good for reproduction..." choices "television"
+        say Hom voice=0x03 flags=0x42 display=0x80 loop=none control=none : "Television good info for weak brain" choices "info"
+        say Hom voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Me not watch television. Programs no good" choices "info"
+        say Hom voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Watch television, always buy more and more" choices "consumption"
+        yield_b
+        selector_251F:
+    case "art" -> selector_259B
+        menu "bye_bye" "talk" "info" "painting"
+        say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Me like painting" choices "info"
+        say Hom voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Me like art food. And murffalos liver boiled in mercury" choices "info"
+        say Hom voice=0x09 flags=0x40 display=0x80 loop=none control=none : "Jeph d'Ulikan big artist, big thoughts. You read thoughts of Jeph." choices "info"
+        say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Portrait Great Yolk. Great painting. Famous" choices "painting"
+        yield_b
+        selector_259B:
+    case "peace" -> selector_260B
+        menu "bye_bye" "politics" "friendship" "izwal"
+        say Hom voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Peace good idea. Me like" choices "Friendship"
+        say Hom voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Friendship among peoples, races. Me like, friend..." choices "friendship"
+        say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Izwal weak. Like peace. they not violent" choices "izwal"
+        say Hom voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Peace make mind connections. Progress" choices "peace"
+        yield_b
+        selector_260B:
+    case "war" -> selector_265D
+        menu "bye_bye" "politics" "croolis"
+        say Hom voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Croolis like fight, like kill" choices "croolis"
+        say Hom voice=0x06 flags=0x40 display=0x80 loop=none control=none : "War stupid. Destroy, hate, die, die" choices "war"
+        say Hom voice=0x0E flags=0x40 display=0x80 loop=none control=none : "Why hate? Lot hate. Why?" choices "war"
+        yield_b
+        selector_265D:
+    case "politics" -> selector_26EB
+        menu "bye_bye" "race" "democracy" "television" "joke" "peace" "war"
+        say Hom voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Democracy important. Cyborg planet big democracy" choices "democracy"
+        say Hom voice=0x0C flags=0x40 display=0x80 loop=none control=none : "Politics bad vibe. Me prefer ondoyants" choices "race"
+        say Hom voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Television big political power. Fascination. Lie" choices "television"
+        say Hom voice=0x10 flags=0x40 display=0x80 loop=none control=none : "Polly ticks... laugh laugh laugh" choices "joke"
+        say Hom voice=0x0C flags=0x40 display=0x80 loop=none control=none : "Politics big business, money, power, bad vibe..." choices "politics"
+        yield_b
+        selector_26EB:
+    case "reproduction" -> selector_2743
+        menu "bye_bye" "race" "hom" "ondoyant" "info" "joke"
+        say Hom voice=0x0D flags=0x40 display=0x80 loop=none control=none : "Not know reproduction. Hom not reproduce. Hom eternal" choices "hom"
+        say Hom voice=0x09 flags=0x40 display=0x80 loop=none control=none : "ondoyants like reproduction" choices "ondoyant"
+        say Hom voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Reproduction Hom forbidden. Big copyright..." choices "joke"
+        yield_b
+        selector_2743:
+    case "science" -> selector_2859
+        menu "bye_bye" "talk" "race" "planet" "universe" "info" "origin" "mind"
+        say Hom voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Hom detect, sense, understand universe." choices "universe"
+        say Hom voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Universe filled with small creatures..." choices "universe"
+        say Hom voice=0x07 flags=0x40 display=0x80 loop=none control=none : "Hom big mind power. Me know you, stranger." choices "info"
+        say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Izwal like dream science, astronomy." choices "race"
+        say Hom voice=0x02 flags=0x40 display=0x80 loop=none control=none : "You want know origin universe." choices "origin"
+        say Hom voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Origin universe big major mystery." choices "origin" "universe"
+        say Hom voice=0x0C flags=0x40 display=0x80 loop=none control=none : "Me know origin universe? Me promised not tell." choices "origin"
+        say Hom voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Univers have billions planets" choices "universe" "planet"
+        say Hom voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Mind more big than universe" choices "mind"
+        say Hom voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Big power, major wisdom, beauty..." choices "mind"
+        say Hom voice=0x07 flags=0x40 display=0x80 loop=none control=none : "Me like crunch numbers." choices "science"
+        yield_b
+        selector_2859:
+    case "consuption" -> selector_28CB
+        menu "bye_bye" "talk" "sinox" "food"
+        say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Sinox build hi tech products" choices "sinox"
+        say Hom voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Food big problem. Murffalos big solution" choices "food"
+        say Hom voice=0x0A flags=0x41 display=0x80 loop=none control=none : "Me not big consumer. Me eat mind food, friend..." choices "food"
+        say Hom voice=0x02 flags=0x40 display=0x80 loop=none control=none : "You want talk consumption, friend" choices "consuption"
+        yield_b
+        selector_28CB:
+    case "joke" -> 0x0000
+        menu "bye_bye" "talk" "race" "planet" "info" "laugh"
+        say Hom voice=0x0C flags=0x40 display=0x80 loop=none control=none : "Hom not like joke... laugh, laugh, cry, laugh, laugh, laugh" choices "laugh"
+        say Hom voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Izwal build telescope, laugh, laugh" choices "izwal" "joke"
+        say Hom voice=0x10 flags=0x40 display=0x80 loop=none control=none : "Me eat Izwal telescope. Telesteak, laugh, laugh, cry, laugh, laugh" choices "joke"
+        say Hom voice=0x0B flags=0x00 display=0x80 loop=none control=none : "You want me sing?"
+        say Hom voice=0x02 flags=0x03 display=0x80 loop=none control=none : "You talk all time, friend..."
+        halt
+end selector Hom_choices

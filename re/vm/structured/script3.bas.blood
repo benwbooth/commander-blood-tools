@@ -1,1003 +1,1001 @@
-; BloodScript typed VM source
-; format: bloodscript-v2
-; image: BAS
-; size: 0x00003B8A
+// format: bloodscript-v3
+// image: BAS
 
-OBJECT object_blood_0028 0028
-OBJECT object_Bob_Morlock_016A 016A
-OBJECT object_Bug_Deluxe_01B2 01B2
-OBJECT object_Eviscerator_028A 028A
-OBJECT object_Morning_Oil_03AA 03AA
-OBJECT object_Bronko_043A 043A
-OBJECT object_Beauregard_05A2 05A2
-OBJECT object_Izwalito_067A 067A
-OBJECT object_Amigo_06C2 06C2
-OBJECT object_Scruter_Mac_0752 0752
-OBJECT object_Tina_Burner_0872 0872
-OBJECT object_Super_Zen_08BA 08BA
-OBJECT object_Honk_0992 0992
-OBJECT object_Rondo_0C2C 0C2C
-OBJECT object_Magnus_0D04 0D04
+object blood = 0x0028
+object Bob_Morlock = 0x016A
+object Bug_Deluxe = 0x01B2
+object Eviscerator = 0x028A
+object Morning_Oil = 0x03AA
+object Bronko = 0x043A
+object Beauregard = 0x05A2
+object Izwalito = 0x067A
+object Amigo = 0x06C2
+object Scruter_Mac = 0x0752
+object Tina_Burner = 0x0872
+object Super_Zen = 0x08BA
+object Honk = 0x0992
+object Rondo = 0x0C2C
+object Magnus = 0x0D04
 
-FIELD field_blood_0028_s13_0030 object_blood_0028 0008 ; VAR kind 0x0001, selector(s) 13
-FIELD field_Bob_Morlock_016A_s03_019C object_Bob_Morlock_016A 0032 ; VAR kind 0x0002, selector(s) 03
-FIELD field_Bug_Deluxe_01B2_s13_01EC object_Bug_Deluxe_01B2 003A ; VAR kind 0x0002, selector(s) 13
-FIELD field_Rondo_0C2C_s00_0C2E object_Rondo_0C2C 0002 ; VAR kind 0x0008, selector(s) 00
-FIELD field_Magnus_0D04_s00_0D06 object_Magnus_0D04 0002 ; VAR kind 0x0008, selector(s) 00
+field blood_s13 = blood + 0x0008 // VAR kind 0x0001, selector(s) 13
+field Bob_Morlock_s03 = Bob_Morlock + 0x0032 // VAR kind 0x0002, selector(s) 03
+field Bug_Deluxe_s13 = Bug_Deluxe + 0x003A // VAR kind 0x0002, selector(s) 13
+field Rondo_s00 = Rondo + 0x0002 // VAR kind 0x0008, selector(s) 00
+field Magnus_s00 = Magnus + 0x0002 // VAR kind 0x0008, selector(s) 00
 
-YIELD
+yield
 
-SELECTOR_LIST list_Beauregard_0001
-    YIELD_B
-    CASE "ill" selector_0165
-        MENU "bye_bye" "listen" "insist" "treat"
-        TEXT object_Beauregard_05A2 0C 41 80 - - "Aaaah" "..." "Eeeerrr..." FFFF "listen"
-        TEXT object_Beauregard_05A2 0D 40 80 - - "Aaaa" "!" "Snakes" "alive" "..." FFFF "bye_bye"
-        TEXT object_Beauregard_05A2 0E 40 80 - - "I" "got" "baked" "by" "Gladis" "..." FFFF "insist"
-        TEXT object_Beauregard_05A2 FF 68 80 - - "That's" "criminal" "!" "Commander," "we" "have" "to" "find" "this" "Gladis" "and" "make" "sure" "she" "never" "bakes" "anyone" "again" "..." FFFF "insist"
-        PRESENTATION_REGISTER 1D9A
-        TEXT object_Beauregard_05A2 0F 48 80 - - "Gladis" "is" "the" "Tumul" "system's" "sun" "." "It" "blew" "up" "..." FFFF "gladis"
-        PRESENTATION_REGISTER 1D9A
-        TEXT object_Beauregard_05A2 10 48 80 - - "Gladis" "killed" "everything" "." "It's" "a" "miracle" "I'm" "alive" "..." "Aaarr.." FFFF "insist"
-        PRESENTATION_REGISTER 1D9A
-        TEXT object_Beauregard_05A2 11 40 80 - - "My" "body's" "burned" "to" "a" "cinder" "..." "I" "need" "a" "new" "body" "bad" "..." "Friend" "..." FFFF "treat"
-        TEXT object_Beauregard_05A2 12 40 80 - - "My" "brain's" "intact" "," "but" "the" "rest" "got" "fried" "..." "Up" "in" "smoke" "..." "Aaaarrr" "..." FFFF "treat"
-        TEXT object_Beauregard_05A2 FF 60 80 - - "Don't" "tire" "him" "out" "," "Commander" "..." FFFF "treat"
-        TEXT object_Beauregard_05A2 13 41 80 - - "Gotta" "have" "a" "new" "body" "..." FFFF "treat"
-        TEXT object_Beauregard_05A2 14 01 80 - - "Aaaarrr"
-        YIELD_B
-        LABEL selector_0165
-    CASE "talk1" 0000
-        MENU "patagos" "betakam" "treasure" "Gladis"
-        TEXT object_Beauregard_05A2 01 40 80 - - "The" "PATAGOS" "were" "an" "amazing" "people" "," "Commander" "..." "They" "worshiped" "the" "sun" "Gladis..." FFFF "patagos"
-        TEXT object_Beauregard_05A2 02 40 80 - - "The" "frescoes" "you" "see" "are" "hundreds" "of" "thousands" "of" "years" "old" "..." FFFF "patagos"
-        TEXT object_Beauregard_05A2 03 40 80 - - "\"PATAGOS\"" "means" "\"HOGLOHULU\"" "in" "the" "Patasel" "cubeniform" "language" "of" "the" "15th" "dynasty" "..." "Fascinating" "," "no" "?" FFFF "patagos"
-        TEXT object_Beauregard_05A2 04 40 80 - - "I" "could" "do" "with" "some" "rest" "on" "Galabar" "..." "A" "couple" "of" "tekno" "clubs" "," "and" "some" "exotic" "nightlife" "..." "What" "am" "I" "saying" "?" FFFF "patagos"
-        TEXT object_Beauregard_05A2 05 40 80 - - "Betakam" "was" "a" "cultivated" "and" "much" "loved" "king" "." "His" "poetry" "was" "exquisite" "," "Commander" FFFF "betakam"
-        TEXT object_Beauregard_05A2 02 48 80 - - "Poem" "by" "BETAKAM" "IV" "King" "of" "the" "PATAGOS" "of" "TUMUL:" "\"HATA\"" FFFF "betakam"
-        SHARED_STATE C0 141C F5 C1 0001
-        TEXT object_Beauregard_05A2 01 40 80 - - "Gladis" "blew" "up" "," "as" "suns" "do" "when" "they" "get" "old" "." "Happily" "," "we" "don't" "explode" "at" "death" "." "Not" "usually" "anyway" "." FFFF "Gladis"
-        TEXT object_Beauregard_05A2 02 40 80 - - "I" "owe" "you" "my" "life" "," "Commander" "." "This" "is" "a" "great" "body" "..." FFFF "Gladis"
-        TEXT object_Beauregard_05A2 03 48 80 - - "The" "Transe" "Dance," "those" "Galabar" "tekno" "clubs" "..." "Covered" "in" "perfume" "..." "What" "am" "I" "saying" "?" FFFF "Gladis"
-        SHARED_STATE C0 141E F5 C1 0001
-        TEXT object_Beauregard_05A2 01 48 80 - - "How" "Gladis" "must" "have" "shone" "..." FFFF "Gladis"
-        SHARED_STATE C0 1420 F5 C1 0001
-        TEXT object_Beauregard_05A2 04 49 80 - - "Yes" "Commander," "this" "planet" "is" "a" "priceless" "cultural" "treasure" "..." FFFF "treasure"
-        SHARED_STATE C0 1420 F5 C1 0001
-        YIELD
-END_SELECTOR_LIST list_Beauregard_0001
+selector Beauregard_choices
+    yield_b
+    case "ill" -> selector_0165
+        menu "bye_bye" "listen" "insist" "treat"
+        say Beauregard voice=0x0C flags=0x41 display=0x80 loop=none control=none : "Aaaah... Eeeerrr..." choices "listen"
+        say Beauregard voice=0x0D flags=0x40 display=0x80 loop=none control=none : "Aaaa! Snakes alive..." choices "bye_bye"
+        say Beauregard voice=0x0E flags=0x40 display=0x80 loop=none control=none : "I got baked by Gladis|..." choices "insist"
+        say Beauregard voice=0xFF flags=0x68 display=0x80 loop=none control=none : "That's criminal! Commander, we have to find this Gladis and make sure she never bakes anyone again..." choices "insist"
+        presentation_register 0x1D9A
+        say Beauregard voice=0x0F flags=0x48 display=0x80 loop=none control=none : "Gladis is the Tumul system's sun. It blew up..." choices "gladis"
+        presentation_register 0x1D9A
+        say Beauregard voice=0x10 flags=0x48 display=0x80 loop=none control=none : "Gladis killed everything. It's a miracle I'm alive... Aaarr.." choices "insist"
+        presentation_register 0x1D9A
+        say Beauregard voice=0x11 flags=0x40 display=0x80 loop=none control=none : "My body's burned to a cinder... I need a new body bad... Friend..." choices "treat"
+        say Beauregard voice=0x12 flags=0x40 display=0x80 loop=none control=none : "My brain's intact, but the rest got fried... Up in smoke... Aaaarrr..." choices "treat"
+        say Beauregard voice=0xFF flags=0x60 display=0x80 loop=none control=none : "Don't tire him out, Commander|..." choices "treat"
+        say Beauregard voice=0x13 flags=0x41 display=0x80 loop=none control=none : "Gotta have a new body..." choices "treat"
+        say Beauregard voice=0x14 flags=0x01 display=0x80 loop=none control=none : "Aaaarrr"
+        yield_b
+        selector_0165:
+    case "talk1" -> 0x0000
+        menu "patagos" "betakam" "treasure" "Gladis"
+        say Beauregard voice=0x01 flags=0x40 display=0x80 loop=none control=none : "The PATAGOS were an amazing people, Commander|... They worshiped the sun Gladis..." choices "patagos"
+        say Beauregard voice=0x02 flags=0x40 display=0x80 loop=none control=none : "The frescoes you see are hundreds of thousands of years old..." choices "patagos"
+        say Beauregard voice=0x03 flags=0x40 display=0x80 loop=none control=none : "\"PATAGOS\" means \"HOGLOHULU\" in the Patasel cubeniform language of the 15th dynasty... Fascinating, no?" choices "patagos"
+        say Beauregard voice=0x04 flags=0x40 display=0x80 loop=none control=none : "I could do with some rest on Galabar... A couple of tekno clubs, and some exotic nightlife... What am I saying?" choices "patagos"
+        say Beauregard voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Betakam was a cultivated and much loved king. His poetry was exquisite, Commander" choices "betakam"
+        say Beauregard voice=0x02 flags=0x48 display=0x80 loop=none control=none : "Poem by BETAKAM IV King of the PATAGOS of TUMUL: \"HATA\"" choices "betakam"
+        shared_state 0xC0 0x141C 0xF5 0xC1 0x0001
+        say Beauregard voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Gladis blew up, as suns do when they get old. Happily, we don't explode at death. Not usually anyway." choices "Gladis"
+        say Beauregard voice=0x02 flags=0x40 display=0x80 loop=none control=none : "I owe you my life, Commander|. This is a great body..." choices "Gladis"
+        say Beauregard voice=0x03 flags=0x48 display=0x80 loop=none control=none : "The Transe Dance, those Galabar tekno clubs... Covered in perfume... What am I saying?" choices "Gladis"
+        shared_state 0xC0 0x141E 0xF5 0xC1 0x0001
+        say Beauregard voice=0x01 flags=0x48 display=0x80 loop=none control=none : "How Gladis must have shone..." choices "Gladis"
+        shared_state 0xC0 0x1420 0xF5 0xC1 0x0001
+        say Beauregard voice=0x04 flags=0x49 display=0x80 loop=none control=none : "Yes Commander, this planet is a priceless cultural treasure..." choices "treasure"
+        shared_state 0xC0 0x1420 0xF5 0xC1 0x0001
+        yield
+end selector Beauregard_choices
 
-SELECTOR_LIST list_Honk_035F
-    YIELD_B
-    CASE "talk" 0000
-        MENU "bye_bye" "help" "message"
-        TEXT object_Honk_0992 FF 61 80 - - "You're" "the" "boss" "," "Commander" "..." FFFF "talk"
-        TEXT object_Honk_0992 FF 61 80 - - "Commander" "..." FFFF "bye_bye"
-        YIELD
-END_SELECTOR_LIST list_Honk_035F
+selector Honk_choices
+    yield_b
+    case "talk" -> 0x0000
+        menu "bye_bye" "help" "message"
+        say Honk voice=0xFF flags=0x61 display=0x80 loop=none control=none : "You're the boss, Commander|..." choices "talk"
+        say Honk voice=0xFF flags=0x61 display=0x80 loop=none control=none : "Commander|..." choices "bye_bye"
+        yield
+end selector Honk_choices
 
-SELECTOR_LIST list_Izwalito_0396
-    YIELD_B
-    CASE "talk" selector_03C9
-        MENU "hello" "talk"
-        TEXT object_Izwalito_067A 02 41 80 - - "Hello" "friend" "..." FFFF "hello"
-        TEXT object_Izwalito_067A 03 40 80 - - "Talk" "," "friend" "?" FFFF "talk"
-        YIELD_B
-        LABEL selector_03C9
-    CASE "talk" selector_03F3
-        MENU "bye_bye" "izwal" "food" "planet" "reproduction"
-        TEXT object_Izwalito_067A 04 43 80 - - "What" "you" "want" "," "friend" "?" FFFF "talk"
-        YIELD_B
-        LABEL selector_03F3
-    CASE "izwal" selector_05F6
-        MENU "talk" "bye_bye" "society" "ideal" "happiness"
-        TEXT object_Izwalito_067A 02 40 80 - - "Izwal" "great" "pacifist" "people" FFFF "izwal"
-        TEXT object_Izwalito_067A 03 40 80 - - "Us" "live" "in" "tribe" "," "us" "poor" "hungry" "people" FFFF "society"
-        TEXT object_Izwalito_067A 02 40 80 - - "Us" "work" "much" "," "us" "be" "migrators" "..." FFFF "society"
-        TEXT object_Izwalito_067A 02 40 80 - - "Me" "," "Izwalito" "," "be" "nephew" "of" "son" "of" "chief" "of" "tribe" "..." FFFF "society"
-        TEXT object_Izwalito_067A 03 41 80 - - "You" "talk" "much" "..." FFFF "society"
-        TEXT object_Izwalito_067A 02 40 80 - - "Me" "dream" "of" "perfect" "world" "with" "much" "to" "eat" "..." FFFF "ideal"
-        TEXT object_Izwalito_067A 03 40 80 - - "Ideal," "ideal..." "You" "like" "dream" "," "friend" "..." FFFF "ideal"
-        TEXT object_Izwalito_067A 05 40 80 - - "Ideal" "be" "always" "far" "from" "reality" ":" "poor" "want" "be" "rich" "," "rich" "want" "be" "poor" "..." FFFF "ideal"
-        TEXT object_Izwalito_067A FF 60 80 - - "Ouch" "..." "This" "is" "getting" "kind" "of" "heavy" "," "Commander" "." "You" "guys" "go" "on" "without" "me" "." "I'm" "gonna" "sleep" "..." FFFF "ideal"
-        TEXT object_Izwalito_067A 04 48 80 - - "Izwals" "of" "planet" "Rondo" "be" "very" "rich" "..." "They" "have" "much" "CREDs" FFFF "ideal"
-        SHARED_STATE C0 1416 F5 C1 0001
-        TEXT object_Izwalito_067A 02 40 80 - - "Family" "," "children" "," "work" "," "food" "," "reproduction" "," "reproduction" "..." FFFF "happiness"
-        TEXT object_Izwalito_067A 02 40 80 - - "Us" "Izwals" "of" "Corpo" "not" "know" "happiness" "..." FFFF "happiness"
-        TEXT object_Izwalito_067A 03 40 80 - - "Izwals" "of" "planet" "Rondo" "know" "happiness" "..." FFFF "happiness"
-        TEXT object_Izwalito_067A 04 40 80 - - "Me" "dream" "of" "blue" "planet" "with" "murffalos" "," "greenery" "," "birds" "..." "Me" "dream" "," "friend" "..." FFFF "happiness"
-        TEXT object_Izwalito_067A 03 41 80 - - "You" "talk" "much" "..." FFFF "happiness"
-        YIELD_B
-        LABEL selector_05F6
-    CASE "knowledge" selector_069F
-        MENU "talk" "bye_bye" "rondo" "truth"
-        TEXT object_Izwalito_067A 03 40 80 - - "What" "you" "want" "know" "," "friend" "?" FFFF "knowledge"
-        TEXT object_Izwalito_067A 05 40 80 - - "Rondo" "," "you" "want" "know" "planet" "Rondo" "," "friend" "..." FFFF "rondo"
-        TEXT object_Izwalito_067A 06 48 80 - - "Planet" "Rondo" "be" "in" "Rondalus" "constellation" "," "coordinates" "AX4532..." FFFF "rondo"
-        SHARED_BIT_STATE B0 field_Rondo_0C2C_s00_0C2E 0002 0
-        TEXT object_Izwalito_067A 02 40 80 - - "Me" "not" "lie" "..." FFFF "truth"
-        TEXT object_Izwalito_067A 03 40 80 - - "Ideal" "be" "ideal..." FFFF "truth"
-        TEXT object_Izwalito_067A 02 41 80 - - "Me" "tell" "truth" "," "Commander" FFFF "truth"
-        YIELD_B
-        LABEL selector_069F
-    CASE "food" selector_079F
-        MENU "talk" "bye_bye" "murffalos" "grass"
-        TEXT object_Izwalito_067A 02 40 80 - - "Us" "like" "eat" "murffalos" "," "but" "our" "planet" "not" "have" "murffalos" "." "Us" "did" "eat" "all" "..." FFFF "food"
-        TEXT object_Izwalito_067A 02 41 80 - - "Izwal" "people" "be" "hungry" "." "You" "help" "us" "," "friend" "..." FFFF "food"
-        TEXT object_Izwalito_067A 03 40 80 - - "Murffalo" "nice" "meat" "," "tender" "..." FFFF "murffalos"
-        TEXT object_Izwalito_067A 02 40 80 - - "Me" "dream" "eat" "roast" "murffalo" "..." FFFF "murffalos"
-        TEXT object_Izwalito_067A 02 40 80 - - "You" "not" "talk" "." "Me" "be" "hungry" "," "friend" "..." FFFF "murffalos"
-        TEXT object_Izwalito_067A 02 41 80 - - "Hungry" "..." "Hungry" "..." FFFF "murffalos"
-        TEXT object_Izwalito_067A 06 40 80 - - "Me" "not" "like" "eat" "grass" "." "Grass" "make" "head" "turn" "." "Bad" "..." FFFF "grass"
-        TEXT object_Izwalito_067A 02 41 80 - - "Grass" "not" "grow" "here" "..." FFFF "grass"
-        YIELD_B
-        LABEL selector_079F
-    CASE "reproduction" selector_0873
-        MENU "talk" "bye_bye" "love" "female" "murffalos"
-        TEXT object_Izwalito_067A 02 41 80 - - "Me" "like" "reproduction" "..." FFFF "reproduction"
-        TEXT object_Izwalito_067A 06 40 80 - - "Me" "have" "sweetheart" "," "hee" "hee" "hee" "hee" "...." FFFF "love"
-        TEXT object_Izwalito_067A 02 41 80 - - "You" "not" "talk" "," "me" "blush" "..." FFFF "love"
-        TEXT object_Izwalito_067A 02 41 80 - - "You" "talk" "too" "much" "female" "," "friend" "..." FFFF "female"
-        TEXT object_Izwalito_067A 06 40 80 - - "Me" "be" "hungry" "," "friend" "..." FFFF "murffalos"
-        TEXT object_Izwalito_067A 02 40 80 - - "Murffalos" "be" "thirteen" "to" "reproduce" "." "One" "in" "middle" "," "and" "twelve" "around" "..." "Hee" "Hee" "..." FFFF "muffalos"
-        TEXT object_Izwalito_067A 06 41 80 - - "Hungry" "..." "Hungry" "..." FFFF "murffalos"
-        YIELD_B
-        LABEL selector_0873
-    CASE "planet" 0000
-        MENU "talk" "bye_bye" "ecology" "stars"
-        TEXT object_Izwalito_067A 02 43 80 - - "Corpo" "nice" "Izwal" "planet" "..." FFFF "planet"
-        TEXT object_Izwalito_067A 02 40 80 - - "Corpo" "poor" "planet" "," "but" "nice" "ecology" FFFF "ecology"
-        TEXT object_Izwalito_067A 03 40 80 - - "Here" "nothing" "grow" "." "No" "water" "." "No" "tree" "." "No" "murffalos" "..." FFFF "ecology"
-        TEXT object_Izwalito_067A 02 41 80 - - "Ecology" "Heal" "The" "Planet" "\"HTP\"" "," "friend" "..." "You" "know" "\"HLP\"" "?" FFFF "ecology"
-        TEXT object_Izwalito_067A 02 40 80 - - "Stars" "." "me" "like" "look" "sky" "..." FFFF "stars"
-        TEXT object_Izwalito_067A 03 40 80 - - "Big" "starry" "sky" "." "Me" "know" "Magnalus" "constellation" FFFF "stars"
-        TEXT object_Izwalito_067A 02 48 80 - - "Planet" "magnus" "be" "in" "Magnalus" "constellation" "." "Magnus" "coordinates" "1234,543256" "degrees..." "You" "like" "stars" "?" FFFF "stars"
-        SHARED_BIT_STATE B0 field_Magnus_0D04_s00_0D06 0002 0
-        TEXT object_Izwalito_067A 02 41 80 - - "Stars" "be" "big" "science" "..." FFFF "stars"
-        YIELD
-END_SELECTOR_LIST list_Izwalito_0396
+selector Izwalito_choices
+    yield_b
+    case "talk" -> selector_03C9
+        menu "hello" "talk"
+        say Izwalito voice=0x02 flags=0x41 display=0x80 loop=none control=none : "Hello friend|..." choices "hello"
+        say Izwalito voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Talk, friend?" choices "talk"
+        yield_b
+        selector_03C9:
+    case "talk" -> selector_03F3
+        menu "bye_bye" "izwal" "food" "planet" "reproduction"
+        say Izwalito voice=0x04 flags=0x43 display=0x80 loop=none control=none : "What you want, friend?" choices "talk"
+        yield_b
+        selector_03F3:
+    case "izwal" -> selector_05F6
+        menu "talk" "bye_bye" "society" "ideal" "happiness"
+        say Izwalito voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Izwal great pacifist people" choices "izwal"
+        say Izwalito voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Us live in tribe, us poor hungry people" choices "society"
+        say Izwalito voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Us work much, us be migrators..." choices "society"
+        say Izwalito voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me, Izwalito, be nephew of son of chief of tribe..." choices "society"
+        say Izwalito voice=0x03 flags=0x41 display=0x80 loop=none control=none : "You talk much..." choices "society"
+        say Izwalito voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me dream of perfect world with much to eat..." choices "ideal"
+        say Izwalito voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Ideal, ideal... You like dream, friend|..." choices "ideal"
+        say Izwalito voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Ideal be always far from reality: poor want be rich, rich want be poor..." choices "ideal"
+        say Izwalito voice=0xFF flags=0x60 display=0x80 loop=none control=none : "Ouch... This is getting kind of heavy, Commander|. You guys go on without me. I'm gonna sleep..." choices "ideal"
+        say Izwalito voice=0x04 flags=0x48 display=0x80 loop=none control=none : "Izwals of planet Rondo be very rich... They have much CREDs" choices "ideal"
+        shared_state 0xC0 0x1416 0xF5 0xC1 0x0001
+        say Izwalito voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Family, children, work, food, reproduction, reproduction..." choices "happiness"
+        say Izwalito voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Us Izwals of Corpo not know happiness..." choices "happiness"
+        say Izwalito voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Izwals of planet Rondo know happiness..." choices "happiness"
+        say Izwalito voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Me dream of blue planet with murffalos, greenery, birds... Me dream, friend|..." choices "happiness"
+        say Izwalito voice=0x03 flags=0x41 display=0x80 loop=none control=none : "You talk much..." choices "happiness"
+        yield_b
+        selector_05F6:
+    case "knowledge" -> selector_069F
+        menu "talk" "bye_bye" "rondo" "truth"
+        say Izwalito voice=0x03 flags=0x40 display=0x80 loop=none control=none : "What you want know, friend?" choices "knowledge"
+        say Izwalito voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Rondo, you want know planet Rondo, friend|..." choices "rondo"
+        say Izwalito voice=0x06 flags=0x48 display=0x80 loop=none control=none : "Planet Rondo be in Rondalus constellation, coordinates AX4532..." choices "rondo"
+        shared_bit_state 0xB0 Rondo_s00 0x0002 0
+        say Izwalito voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me not lie..." choices "truth"
+        say Izwalito voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Ideal be ideal..." choices "truth"
+        say Izwalito voice=0x02 flags=0x41 display=0x80 loop=none control=none : "Me tell truth|, Commander" choices "truth"
+        yield_b
+        selector_069F:
+    case "food" -> selector_079F
+        menu "talk" "bye_bye" "murffalos" "grass"
+        say Izwalito voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Us like eat murffalos, but our planet not have murffalos. Us did eat all..." choices "food"
+        say Izwalito voice=0x02 flags=0x41 display=0x80 loop=none control=none : "Izwal people be hungry. You help us, friend|..." choices "food"
+        say Izwalito voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Murffalo nice meat, tender..." choices "murffalos"
+        say Izwalito voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me dream eat roast murffalo..." choices "murffalos"
+        say Izwalito voice=0x02 flags=0x40 display=0x80 loop=none control=none : "You not talk. Me be hungry, friend|..." choices "murffalos"
+        say Izwalito voice=0x02 flags=0x41 display=0x80 loop=none control=none : "Hungry... Hungry..." choices "murffalos"
+        say Izwalito voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Me not like eat grass. Grass make head turn. Bad..." choices "grass"
+        say Izwalito voice=0x02 flags=0x41 display=0x80 loop=none control=none : "Grass not grow here..." choices "grass"
+        yield_b
+        selector_079F:
+    case "reproduction" -> selector_0873
+        menu "talk" "bye_bye" "love" "female" "murffalos"
+        say Izwalito voice=0x02 flags=0x41 display=0x80 loop=none control=none : "Me like reproduction..." choices "reproduction"
+        say Izwalito voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Me have sweetheart, hee hee hee hee...." choices "love"
+        say Izwalito voice=0x02 flags=0x41 display=0x80 loop=none control=none : "You not talk, me blush..." choices "love"
+        say Izwalito voice=0x02 flags=0x41 display=0x80 loop=none control=none : "You talk too much female, friend|..." choices "female"
+        say Izwalito voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Me be hungry, friend|..." choices "murffalos"
+        say Izwalito voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Murffalos be thirteen to reproduce. One in middle, and twelve around... Hee Hee..." choices "muffalos"
+        say Izwalito voice=0x06 flags=0x41 display=0x80 loop=none control=none : "Hungry... Hungry..." choices "murffalos"
+        yield_b
+        selector_0873:
+    case "planet" -> 0x0000
+        menu "talk" "bye_bye" "ecology" "stars"
+        say Izwalito voice=0x02 flags=0x43 display=0x80 loop=none control=none : "Corpo nice Izwal planet..." choices "planet"
+        say Izwalito voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Corpo poor planet, but nice ecology" choices "ecology"
+        say Izwalito voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Here nothing grow. No water. No tree. No murffalos..." choices "ecology"
+        say Izwalito voice=0x02 flags=0x41 display=0x80 loop=none control=none : "Ecology Heal The Planet \"HTP\", friend|... You know \"HLP\"?" choices "ecology"
+        say Izwalito voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Stars. me like look sky..." choices "stars"
+        say Izwalito voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Big starry sky. Me know Magnalus constellation" choices "stars"
+        say Izwalito voice=0x02 flags=0x48 display=0x80 loop=none control=none : "Planet magnus be in Magnalus constellation. Magnus coordinates 1234,543256 degrees... You like stars?" choices "stars"
+        shared_bit_state 0xB0 Magnus_s00 0x0002 0
+        say Izwalito voice=0x02 flags=0x41 display=0x80 loop=none control=none : "Stars be big science..." choices "stars"
+        yield
+end selector Izwalito_choices
 
-SELECTOR_LIST list_Morning_Oil_0978
-    YIELD_B
-    CASE "talk" selector_09D5
-        MENU "hello" "say_nothing" "laugh" "bye_bye"
-        TEXT object_Morning_Oil_03AA 00 40 80 - - "Hi" "Commander" FFFF "hello"
-        TEXT object_Morning_Oil_03AA 01 40 80 - - "Such" "silence" "..." FFFF "say_nothing"
-        TEXT object_Morning_Oil_03AA 02 40 80 - - "Ha" "ha" "ha" "ha" "ha" "ha..." FFFF "laugh"
-        TEXT object_Morning_Oil_03AA 03 40 80 - - "Bye" "bye" "Commander" FFFF "bye_bye"
-        YIELD_B
-        LABEL selector_09D5
-    CASE "history" selector_09E9
-        MENU "bye_bye" "war" "croolis" "treasure" "battles" "mastachok"
-        YIELD_B
-        LABEL selector_09E9
-    CASE "war" selector_0B27
-        MENU "bye_bye" "match"
-        TEXT object_Morning_Oil_03AA 05 40 80 - - "That" "was" "a" "terrible" "war" "..." "It" "all" "started" "with" "a" "boxing" "match" "between" "the" "Croolis" "EVISCERATOR" "and" "EMASCULATOR" "..." FFFF "war"
-        TEXT object_Morning_Oil_03AA 02 40 80 - - "You" "should've" "seen" "it" "," "Commander" "..." "Boy" "," "was" "that" "some" "fight" "..." FFFF "war"
-        TEXT object_Morning_Oil_03AA 03 40 80 - - "They" "made" "BIONIUM" "bombs" "." "Those" "things" "could" "blow" "up" "entire" "planets" "..." FFFF "war"
-        TEXT object_Morning_Oil_03AA 05 40 80 - - "Never" "seen" "mayhem" "like" "it" "..." "BBOOOOMMM" "!!!" "POW" "!" "TA" "TA" "TA" "TA" "TA" "..." "Ha" "!" "Ha" "!" "Ha" "!" FFFF "war"
-        TEXT object_Morning_Oil_03AA 04 40 80 - - "The" "boxing" "match" "got" "out" "of" "hand" "." "It" "was" "televised" "throughout" "the" "universe" "..." FFFF "match"
-        TEXT object_Morning_Oil_03AA 03 40 80 - - "The" "war" "was" "between" "the" "Croolis" "Eviscerator" "and" "Emasculator..." "What" "a" "bloodbath" "..." FFFF "match"
-        TEXT object_Morning_Oil_03AA 03 40 80 - - "The" "match" "was" "televised" "throughout" "the" "universe" "..." "I" "can" "still" "see" "it" "..." FFFF "match"
-        YIELD_B
-        LABEL selector_0B27
-    CASE "croolis" selector_0CAA
-        MENU "bye_bye" "history" "terror" "eviscerator" "emasculator"
-        TEXT object_Morning_Oil_03AA 05 40 80 - - "The" "Croolis" "are" "unbelievably" "warlike" FFFF "croolis"
-        TEXT object_Morning_Oil_03AA 04 40 80 - - "My" "master" "EVISCERATOR" "was" "a" "talented" "BIONIUM" "prospector" "..." FFFF "croolis"
-        TEXT object_Morning_Oil_03AA 05 40 80 - - "He" "found" "BIONIUN" "in" "galactic" "cyberspace" "contraction" "..." FFFF "croolis"
-        TEXT object_Morning_Oil_03AA 06 40 80 - - "Those" "Croolis" "are" "seriously" "deranged" "!!!" FFFF "croolis"
-        TEXT object_Morning_Oil_03AA 07 40 80 - - "We" "spread" "terror" "throughout" "the" "galaxy" "for" "centuries" "..." FFFF "terror"
-        TEXT object_Morning_Oil_03AA 05 40 80 - - "Terror" "was" "the" "Croolis" "secret" "weapon" "..." FFFF "terror"
-        TEXT object_Morning_Oil_03AA 02 40 80 - - "We" "robots" "were" "programmed" "to" "be" "fearless" "..." FFFF "terror"
-        TEXT object_Morning_Oil_03AA 03 40 80 - - "Eviscerator" "came" "to" "a" "bad" "end" "." "When" "SCRUT" "stopped" "the" "war" "," "they" "put" "him" "in" "jail" FFFF "eviscerator"
-        TEXT object_Morning_Oil_03AA 04 40 80 - - "Eviscerator" "is" "dangerous" "," "Commander" "..." "A" "ruthless" "killer" "..." FFFF "eviscerator"
-        TEXT object_Morning_Oil_03AA FF 68 80 - - "Commander" "...I'm" "worried" "in" "case" "the" "memory" "of" "his" "ex-master" "awakens" "his" "violent" "instincts" "..." FFFF "eviscerator"
-        SHARED_STATE C0 144A F5 C1 0001
-        TEXT object_Morning_Oil_03AA 05 40 80 - - "Emasculator's" "not" "too" "smart" "..." "Just" "mean" "..." FFFF "emasculator"
-        TEXT object_Morning_Oil_03AA 02 40 80 - - "That's" "a" "Croolis" "I" "hate" "..." FFFF "emasculator"
-        YIELD_B
-        LABEL selector_0CAA
-    CASE "treasure" selector_0E1B
-        MENU "bye_bye" "history" "hiding_place"
-        TEXT object_Morning_Oil_03AA 02 40 80 - - "Ah" "!" "The" "treasure" "." "You" "should" "have" "seen" "it" "," "Commander" "..." "Beyond" "belief" "..." FFFF "treasure"
-        TEXT object_Morning_Oil_03AA 03 40 80 - - "The" "stones" "of" "Galabar," "the" "horns" "of" "Rla" "," "authentic" "Rhinox" "tibia" "vases" "..." FFFF "treasure"
-        TEXT object_Morning_Oil_03AA 06 40 80 - - "Ha" "!" "Ha" "!" "Hard" "to" "know" "where" "he" "might've" "hidden" "it" "," "Commander" "..." FFFF "hiding_place"
-        TEXT object_Morning_Oil_03AA 05 40 80 - - "I" "can" "give" "you" "some" "information" "but" "it's" "strictly" "confidential" "..." FFFF "hiding_place"
-        TEXT object_Morning_Oil_03AA 06 48 80 - - "I" "don't" "want" "Honk" "to" "hear" "..." FFFF "hiding_place"
-        SHARED_STATE C0 144C F5 C1 0001
-        TEXT object_Morning_Oil_03AA 04 40 80 - - "Millions" "died" "in" "the" "battles" "." "Planets" "were" "stripped" "to" "the" "bone" "..." FFFF "battle"
-        TEXT object_Morning_Oil_03AA 05 40 80 - - "The" "Izwals" "got" "hit" "bad" "." "They" "weren't" "ready" "," "see" "..." FFFF "battle"
-        TEXT object_Morning_Oil_03AA 06 40 80 - - "The" "SCRUT" "armies" "won" "a" "battle" "so" "huge" "it" "shook" "the" "entire" "galaxy" ".." FFFF "battle"
-        TEXT object_Morning_Oil_03AA 05 40 80 - - "The" "defeated" "Croolis" "were" "forced" "back" "to" "the" "planet" "Trashlando" "." "That's" "an" "awful" "place" "," "Commander" "..." FFFF "battle"
-        YIELD_B
-        LABEL selector_0E1B
-    CASE "mastachok" 0000
-        MENU "bye_bye" "history" "information"
-        TEXT object_Morning_Oil_03AA 05 40 80 - - "Mastachok" "is" "a" "dead" "planet" "now" "..." "Its" "surface" "is" "completely" "lifeless" "..." FFFF "mastachok"
-        TEXT object_Morning_Oil_03AA 06 40 80 - - "The" "factory" "was" "replaced" "by" "a" "prison" "..." "SCRUT" "guards" "are" "permanently" "posted" "there" "..." FFFF "mastachok"
-        TEXT object_Morning_Oil_03AA 02 40 80 - - "Mastachok" "is" "so" "polluted" "even" "the" "deadliest" "waste" "matter" "hates" "it" "..." FFFF "mastachok"
-        YIELD
-END_SELECTOR_LIST list_Morning_Oil_0978
+selector Morning_Oil_choices
+    yield_b
+    case "talk" -> selector_09D5
+        menu "hello" "say_nothing" "laugh" "bye_bye"
+        say Morning_Oil voice=0x00 flags=0x40 display=0x80 loop=none control=none : "Hi Commander" choices "hello"
+        say Morning_Oil voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Such silence..." choices "say_nothing"
+        say Morning_Oil voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Ha ha ha ha ha ha..." choices "laugh"
+        say Morning_Oil voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Bye bye Commander" choices "bye_bye"
+        yield_b
+        selector_09D5:
+    case "history" -> selector_09E9
+        menu "bye_bye" "war" "croolis" "treasure" "battles" "mastachok"
+        yield_b
+        selector_09E9:
+    case "war" -> selector_0B27
+        menu "bye_bye" "match"
+        say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "That was a terrible war... It all started with a boxing match between the Croolis EVISCERATOR and EMASCULATOR..." choices "war"
+        say Morning_Oil voice=0x02 flags=0x40 display=0x80 loop=none control=none : "You should've seen it, Commander|... Boy, was that some fight..." choices "war"
+        say Morning_Oil voice=0x03 flags=0x40 display=0x80 loop=none control=none : "They made BIONIUM bombs. Those things could blow up entire planets..." choices "war"
+        say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Never seen mayhem like it... BBOOOOMMM!!! POW! TA TA TA TA TA... Ha|! Ha|! Ha|!" choices "war"
+        say Morning_Oil voice=0x04 flags=0x40 display=0x80 loop=none control=none : "The boxing match got out of hand. It was televised throughout the universe..." choices "match"
+        say Morning_Oil voice=0x03 flags=0x40 display=0x80 loop=none control=none : "The war was between the Croolis Eviscerator and Emasculator... What a bloodbath..." choices "match"
+        say Morning_Oil voice=0x03 flags=0x40 display=0x80 loop=none control=none : "The match was televised throughout the universe... I can still see it..." choices "match"
+        yield_b
+        selector_0B27:
+    case "croolis" -> selector_0CAA
+        menu "bye_bye" "history" "terror" "eviscerator" "emasculator"
+        say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "The Croolis are unbelievably warlike" choices "croolis"
+        say Morning_Oil voice=0x04 flags=0x40 display=0x80 loop=none control=none : "My master EVISCERATOR was a talented BIONIUM prospector..." choices "croolis"
+        say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "He found BIONIUN in galactic cyberspace contraction..." choices "croolis"
+        say Morning_Oil voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Those Croolis are seriously deranged!!!" choices "croolis"
+        say Morning_Oil voice=0x07 flags=0x40 display=0x80 loop=none control=none : "We spread terror throughout the galaxy for centuries..." choices "terror"
+        say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Terror was the Croolis secret weapon..." choices "terror"
+        say Morning_Oil voice=0x02 flags=0x40 display=0x80 loop=none control=none : "We robots were programmed to be fearless..." choices "terror"
+        say Morning_Oil voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Eviscerator came to a bad end. When SCRUT stopped the war, they put him in jail" choices "eviscerator"
+        say Morning_Oil voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Eviscerator is dangerous, Commander|... A ruthless killer..." choices "eviscerator"
+        say Morning_Oil voice=0xFF flags=0x68 display=0x80 loop=none control=none : "Commander...I'm worried in case the memory of his ex-master awakens his violent instincts..." choices "eviscerator"
+        shared_state 0xC0 0x144A 0xF5 0xC1 0x0001
+        say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Emasculator's not too smart... Just mean..." choices "emasculator"
+        say Morning_Oil voice=0x02 flags=0x40 display=0x80 loop=none control=none : "That's a Croolis I hate..." choices "emasculator"
+        yield_b
+        selector_0CAA:
+    case "treasure" -> selector_0E1B
+        menu "bye_bye" "history" "hiding_place"
+        say Morning_Oil voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Ah|! The treasure. You should have seen it, Commander|... Beyond belief..." choices "treasure"
+        say Morning_Oil voice=0x03 flags=0x40 display=0x80 loop=none control=none : "The stones of Galabar, the horns of Rla, authentic Rhinox tibia vases..." choices "treasure"
+        say Morning_Oil voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Ha|! Ha|! Hard to know where he might've hidden it, Commander|..." choices "hiding_place"
+        say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "I can give you some information but it's strictly confidential..." choices "hiding_place"
+        say Morning_Oil voice=0x06 flags=0x48 display=0x80 loop=none control=none : "I don't want Honk to hear..." choices "hiding_place"
+        shared_state 0xC0 0x144C 0xF5 0xC1 0x0001
+        say Morning_Oil voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Millions died in the battles. Planets were stripped to the bone..." choices "battle"
+        say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "The Izwals got hit bad. They weren't ready, see..." choices "battle"
+        say Morning_Oil voice=0x06 flags=0x40 display=0x80 loop=none control=none : "The SCRUT armies won a battle so huge it shook the entire galaxy.." choices "battle"
+        say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "The defeated Croolis were forced back to the planet Trashlando. That's an awful place, Commander|..." choices "battle"
+        yield_b
+        selector_0E1B:
+    case "mastachok" -> 0x0000
+        menu "bye_bye" "history" "information"
+        say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Mastachok is a dead planet now... Its surface is completely lifeless..." choices "mastachok"
+        say Morning_Oil voice=0x06 flags=0x40 display=0x80 loop=none control=none : "The factory was replaced by a prison... SCRUT guards are permanently posted there..." choices "mastachok"
+        say Morning_Oil voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Mastachok is so polluted even the deadliest waste matter hates it..." choices "mastachok"
+        yield
+end selector Morning_Oil_choices
 
-SELECTOR_LIST list_Bug_Deluxe_0E9D
-    YIELD_B
-    CASE "department" selector_0EC8
-        MENU "beauty" "food" "sport" "handywork" "pharmacy" "leisure" "hifi"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Check" "out" "our" "bargains" FFFF "department"
-        YIELD_B
-        LABEL selector_0EC8
-    CASE "beauty" selector_0EE4
-        MENU "department" "perfume" "tie" "jewel"
-        TEXT object_Bug_Deluxe_01B2 FF 01 80 - - "BEAUTY" ":"
-        YIELD_B
-        LABEL selector_0EE4
-    CASE "perfume" selector_0F06
-        MENU "beauty" "eden" "dune" "kroolence" "motoroil" "turbulence"
-        TEXT object_Bug_Deluxe_01B2 FF 01 80 - - "PERFUME" "DEPARTMENT" ":"
-        YIELD_B
-        LABEL selector_0F06
-    CASE "eden" selector_0F6B
-        MENU "department" "buy" "perfume"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Eden" "," "a" "heady" "scent" "for" "fleshy" "young" "females" "." "\"Do" "not" "swallow\"" ":" "1" "CRED" FFFF "eden"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 119E 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_0F6B
-    CASE "dune" selector_0FCA
-        MENU "department" "buy" "perfume"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Dune" "," "perfume" "for" "sweaty" "moments" "." "\"Recommended" "for" "reproduction\"" ":" "1" "CRED" FFFF "dune"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 119E 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_0FCA
-    CASE "kroolence" selector_1033
-        MENU "department" "buy" "perfume"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Kroolence" "," "for" "males" "with" "arms" "." "\"Watch" "the" "babes" "home" "in" "on" "your" "armpits\"" ":" "1" "CRED" FFFF "kroolence"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 119E 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_1033
-    CASE "motoroil" selector_1096
-        MENU "department" "buy" "perfume"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Exhaust" "Nozzle" "Romeo" "," "droid" "perfume" "." "Heat" "up" "your" "coolant" "intakes" ":" "1" "CRED" FFFF "motoroil"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 119E 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_1096
-    CASE "turbulence" selector_10F3
-        MENU "department" "buy" "perfume"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Turbulence" "," "gravitational" "vertigo" "." "Scent" "for" "the" "adventurous" ":" "1" "CRED" FFFF "turbulence"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 119E 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_10F3
-    CASE "tie" selector_1115
-        MENU "beauty" "hide" "hair" "synthetic"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "TIE" "DEPARTMENT" ":" FFFF "tie"
-        YIELD_B
-        LABEL selector_1115
-    CASE "hide" selector_1178
-        MENU "department" "buy" "tie"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Murffalo" "hide" "tie" "with" "tentacule" "lining" "." "The" "elegance" "of" "dead" "skin" ":" "1" "CRED" FFFF "hide"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 11FE 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_1178
-    CASE "hair" selector_11CF
-        MENU "department" "buy" "tie"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Mastachok" "trunk" "tie" "with" "intestinal" "stitch" ":" "1" "CRED" FFFF "hair"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 11FE 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_11CF
-    CASE "synthetic" selector_122A
-        MENU "department" "buy" "tie"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Synthetic" "tie" "with" "built-in" "altimeter" "and" "geiger" "counter" ":" "4" "CREDS" FFFF "synthetic"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 11FE 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_122A
-    CASE "makeup" selector_124A
-        MENU "department" "lip_rouge" "cream"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "COSMETICS" "DEPARTMENT" ":" FFFF "makeup"
-        YIELD_B
-        LABEL selector_124A
-    CASE "lip_rouge" selector_125E
-        MENU "department" "beauty" "red" "green" "black" "blue"
-        YIELD_B
-        LABEL selector_125E
-    CASE "red" selector_12B3
-        MENU "buy" "lip_rouge"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Crimson" "rouge" "for" "non" "metal" "lips" ":" "1" "CRED" FFFF "red"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 1216 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_12B3
-    CASE "green" selector_130E
-        MENU "buy" "lip_rouge"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Fluorescent" "green" "lip" "rouge" "," "for" "tentacles" "and" "suckers" ":" "1" "CRED" FFFF "green"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 1216 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_130E
-    CASE "black" selector_1365
-        MENU "buy" "lip_rouge"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Black" "lip" "rouge" "," "for" "total" "discretion" ":" "1" "CRED" FFFF "black"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 1216 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_1365
-    CASE "blue" selector_13C4
-        MENU "buy" "lip_rouge"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Space" "blue" "lip" "rouge" "." "Now" "someone" "will" "hear" "you" "scream" ":" "1" "CRED" FFFF "blue"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 1216 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_13C4
-    CASE "cream" selector_13E6
-        MENU "department" "painkiller" "pex" "meteor"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "MISCELLANEOUS" "CREAMS" ":" FFFF "cream"
-        YIELD_B
-        LABEL selector_13E6
-    CASE "painkiller" selector_1443
-        MENU "buy" "cream"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Painkiller" "." "Apply" "to" "amputated" "limbs" "during" "breaks" "in" "combat" ":" "1" "CRED" FFFF "painkiller"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 1246 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_1443
-    CASE "pex" selector_14A4
-        MENU "buy" "cream"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Pex" "," "for" "golden" "muscles" "." "Win" "the" "fight" "before" "it" "starts" ":" "1" "CRED" FFFF "pex"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 1246 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_14A4
-    CASE "meteor" selector_14F9
-        MENU "buy" "cream"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "METEOR" "balm" ":" "for" "meteor-induced" "swelling" ":" "1" "CRED" FFFF "meteor"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 1246 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_14F9
-    CASE "jewel" selector_1519
-        MENU "department" "necklace" "bracelet"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "JEWELRY" "DEPARTMENT" ":" FFFF "jewel"
-        YIELD_B
-        LABEL selector_1519
-    CASE "necklace" selector_1570
-        MENU "buy" "jewel"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Pearl" "necklace" "," "for" "beings" "with" "necks" ":" "1" "CRED" FFFF "necklace"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 122E 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_1570
-    CASE "bracelet" selector_15C7
-        MENU "buy" "jewel"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Elastometal" "bracelet" "," "fits" "all" "body" "parts" ":" "1" "CRED" FFFF "bracelet"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 122E 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_15C7
-    CASE "food" selector_15E5
-        MENU "department" "murffalo"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "FOOD" "DEPARTMENT" ":" FFFF "food"
-        YIELD_B
-        LABEL selector_15E5
-    CASE "murffalo" selector_160D
-        MENU "department" "tenderloin" "steak" "horn" "fur" "sausage" "intestines"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "MURFFALO" "DEPARTMENT" ":" FFFF "murffalo"
-        YIELD_B
-        LABEL selector_160D
-    CASE "tenderloin" selector_1666
-        MENU "buy" "murffalo"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Tenderloin" "of" "murffalo" "." "mouth" "and" "eye" "watering" ":" "1" "CRED" FFFF "tenderloin"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 11E6 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_1666
-    CASE "steak" selector_16C1
-        MENU "buy" "murffalo"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Murffalo" "steak" "." "Tenderised" "by" "the" "Bronkos" "of" "Moskito" ":" "1" "CRED" FFFF "steak"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 11E6 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_16C1
-    CASE "horn" selector_1718
-        MENU "buy" "murffalo"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Powdered" "murffalo" "horn" "." "For" "renewed" "virility" ":" "1" "CRED" FFFF "horn"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 11E6 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_1718
-    CASE "fur" selector_1771
-        MENU "buy" "murffalo"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Deodorised" "murffalo" "fur" "." "Slip" "into" "something" "meaty" ":" "1" "CRED" FFFF "fur"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 11E6 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_1771
-    CASE "sausage" selector_17C8
-        MENU "buy" "murffalo"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Murffalo" "sausage" "." "Ideal" "for" "Bar-B-Q" "moments" ":" "1" "CRED" FFFF "sausage"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 11E6 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_17C8
-    CASE "intestines" selector_1821
-        MENU "buy" "murffalo"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Murffalo" "intestines" "." "Forecast" "weather" "and" "race" "winners" ":" "1" "CRED" FFFF "intestines"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 11E6 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_1821
-    CASE "sport" selector_1843
-        MENU "department" "ball" "boxing_gloves" "pouch"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "SPORT" "DEPARTMENT" ":" FFFF "sport"
-        YIELD_B
-        LABEL selector_1843
-    CASE "ball" selector_18A2
-        MENU "buy" "sport"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Ball" "." "Steel" "," "lead" "," "magnetic" "iron" "and" "antigrav" "versions" ":" "1" "CRED" FFFF "ball"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 125E 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_18A2
-    CASE "boxing_gloves" selector_18FF
-        MENU "buy" "sport"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Deodorised" "murffalo" "hide" "boxing" "gloves" "." "The" "KO" "with" "class" ":" "1" "CRED" FFFF "boxing_gloves"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 1276 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_18FF
-    CASE "pouch" selector_195A
-        MENU "buy" "sport"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Murffalo" "pouch" "." "Perfect" "fit" "for" "all" "family" "jewels" ":" "1" "CRED" FFFF "pouch"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 128E 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_195A
-    CASE "handywork" selector_197A
-        MENU "department" "tools" "robotics"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "HANDYWORK" "DEPARTMENT" ":" FFFF "handywork"
-        YIELD_B
-        LABEL selector_197A
-    CASE "tools" selector_199C
-        MENU "department" "screwdriver" "saws" "drills"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "TOOL" "DEPARTMENT" ":" FFFF "tools"
-        YIELD_B
-        LABEL selector_199C
-    CASE "screwdriver" selector_19FF
-        MENU "buy" "handywork"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Remote" "screwdriver" "." "You" "watch" "TV" "while" "it" "screws" "things" "down" "and" "up" ":" "1" "CRED" FFFF "screwdriver"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 12A6 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_19FF
-    CASE "saws" selector_1A56
-        MENU "buy" "handywork"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Ray" "saw" "." "Saws" "through" "it" "all" ":" "1" "CRED" FFFF "saws"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 12A6 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_1A56
-    CASE "drills" selector_1AA7
-        MENU "buy" "handywork"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Suction" "drill" "." "Slurp-free" ":" "1" "CRED" FFFF "drills"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 12A6 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_1AA7
-    CASE "robotics" selector_1AC5
-        MENU "department" "batteries"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "ROBOTICS" "DEPARTMENT" ":" FFFF "robotics"
-        YIELD_B
-        LABEL selector_1AC5
-    CASE "batteries" selector_1B1A
-        MENU "department" "handywork" "buy"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Batteries" "." "Suit" "all" "droids" ":" "1" "CRED" FFFF "batteries"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 134E 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_1B1A
-    CASE "pharmacy" selector_1B3C
-        MENU "department" "aspirox" "snorz" "fang_brush"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "PHARMACY" "DEPARTMANT" ":" FFFF "pharmacy"
-        YIELD_B
-        LABEL selector_1B3C
-    CASE "aspirox" selector_1BA7
-        MENU "buy" "pharmacy"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Aspirox" "." "Pain" "relief" "for" "iron," "stainless" "steel" "and" "nonstick" "heads" "." "Lead" "heads" "contact" "inquiry" "desk" ":" "1" "CRED" FFFF "aspirox"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 12BE 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_1BA7
-    CASE "snorz" selector_1C12
-        MENU "buy" "pharmacy"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Snorz" "." "Can't" "sleep" "?" "Hit" "your" "head" "with" "a" "Snorz" "and" "say" "hi" "to" "the" "Sandman" ":" "1" "CRED" FFFF "snorz"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 12BE 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_1C12
-    CASE "fang_brush" selector_1C6F
-        MENU "buy" "pharmacy"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Fang" "brush." "For" "multiple" "rows" "of" "fangs" "and" "crushing-type" "jaws" ":" "1" "CRED" FFFF "fang_brush"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 12BE 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD_B
-        LABEL selector_1C6F
-    CASE "leisure" selector_1C8D
-        MENU "departments" "video_games"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "LEISURE" "DEPARTMENT" ":" FFFF "leisure"
-        YIELD_B
-        LABEL selector_1C8D
-    CASE "video_games" selector_1CB5
-        MENU "department" "Dead_Killer" "Fatal_Butcher" "Harakira" "commander_Blood" "Streetofkarnage" "Eat_my_liver"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "VIDEO" "GAMES" ":" FFFF "video_games"
-        YIELD_B
-        LABEL selector_1CB5
-    CASE "Dead_Killer" selector_1D05
-        MENU "buy" "video_games"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "MORTAL" "KILLER" "." "Slash" "'em," "mash" "'em" "," "bash" "'em" "and" "trash" "'em" ":" "20" "CREDS" FFFF "Dead_Killer"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "You" "can't" "pay" "20" "creds" "." FFFF "buy"
-        YIELD_B
-        LABEL selector_1D05
-    CASE "Fatal_Butcher" selector_1D4D
-        MENU "buy" "video_games"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "FATAL" "BUTCHER" "." "Rip" "arteries" "from" "their" "bodies" "and" "laugh" ":" "40" "CREDS" FFFF "Fatal_Butcher"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "You" "cannot" "pay" "40" "CREDS......" FFFF "buy"
-        YIELD_B
-        LABEL selector_1D4D
-    CASE "Harakira" selector_1D9D
-        MENU "buy" "video_games"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "HARAKIRA" "." "Use" "your" "suction" "ripsaw" "to" "liquidate" "all" "life" ":" "200" "CREDS" FFFF "Harakira"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "You" "will" "never" "have" "200" "creds" "to" "spend" "......." FFFF "buy"
-        YIELD_B
-        LABEL selector_1D9D
-    CASE "commander_Blood" selector_1DCD
-        MENU "buy" "video_games"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Uh" "..." "You" "already" "have" "it" "..." "You" "want" "another" "one" "?" FFFF "commander_Blood"
-        YIELD_B
-        LABEL selector_1DCD
-    CASE "Streetofkarnage" selector_1E21
-        MENU "buy" "video_games"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "STREET" "OF" "KARNAGE" "." "Decorate" "the" "streets" "with" "ruptured" "lungs" "and" "brightly-colored" "guts" ":" "250" "CREDS" FFFF "Streetofkarnage"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Creds" "." "You" "have" "to" "be" "kidding" "..." FFFF "buy"
-        YIELD_B
-        LABEL selector_1E21
-    CASE "Eat_my_liver" selector_1E8B
-        MENU "buy" "video_games"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "EAT" "MY" "LIVER" "." "Game" "of" "the" "year." "Make" "your" "enemies" "eat" "their" "innards" "," "then" "watch" "them" "say" "thank" "you" ":" "400" "CREDS" FFFF "Eat_my_liver"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Creds" "..." "This" "is" "one" "game" "you" "will" "never" "enjoy" "...." FFFF "buy"
-        YIELD_B
-        LABEL selector_1E8B
-    CASE "hifi" selector_1EAB
-        MENU "department" "multimedia" "CD_audio"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "HIFI" "DEPARTMENT" ":" FFFF "hifi"
-        YIELD_B
-        LABEL selector_1EAB
-    CASE "multimedia" selector_1EEF
-        MENU "buy" "hifi"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Have" "you" "gone" "crazy" "!!!" FFFF "multimedia"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "Keep" "your" "money" "for" "a" "peaceful" "weekend" "in" "the" "country" "..." FFFF "buy"
-        YIELD_B
-        LABEL selector_1EEF
-    CASE "CD_audio" 0000
-        MENU "buy" "hifi"
-        TEXT object_Bug_Deluxe_01B2 FF 41 80 - - "The" "latest" "hit" "from" "the" "MIGRATORS:" "\"CRUSH" "MY" "SKULL\"" ":" "1" "CRED" FFFF "CD_audio"
-        TEXT object_Bug_Deluxe_01B2 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
-        RECORD_TRIPLE field_Bug_Deluxe_01B2_s13_01EC 12EE 0028 0
-        RECORD_TRIPLE field_blood_0028_s13_0030 1186 01B2 0
-        SHARED_STATE C0 1438 F5 C1 0001
-        YIELD
-END_SELECTOR_LIST list_Bug_Deluxe_0E9D
+selector Bug_Deluxe_choices
+    yield_b
+    case "department" -> selector_0EC8
+        menu "beauty" "food" "sport" "handywork" "pharmacy" "leisure" "hifi"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Check out our bargains" choices "department"
+        yield_b
+        selector_0EC8:
+    case "beauty" -> selector_0EE4
+        menu "department" "perfume" "tie" "jewel"
+        say Bug_Deluxe voice=0xFF flags=0x01 display=0x80 loop=none control=none : "BEAUTY:"
+        yield_b
+        selector_0EE4:
+    case "perfume" -> selector_0F06
+        menu "beauty" "eden" "dune" "kroolence" "motoroil" "turbulence"
+        say Bug_Deluxe voice=0xFF flags=0x01 display=0x80 loop=none control=none : "PERFUME DEPARTMENT:"
+        yield_b
+        selector_0F06:
+    case "eden" -> selector_0F6B
+        menu "department" "buy" "perfume"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Eden, a heady scent for fleshy young females. \"Do not swallow\": 1 CRED" choices "eden"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x119E 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_0F6B:
+    case "dune" -> selector_0FCA
+        menu "department" "buy" "perfume"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Dune, perfume for sweaty moments. \"Recommended for reproduction\": 1 CRED" choices "dune"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x119E 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_0FCA:
+    case "kroolence" -> selector_1033
+        menu "department" "buy" "perfume"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Kroolence, for males with arms. \"Watch the babes home in on your armpits\": 1 CRED" choices "kroolence"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x119E 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_1033:
+    case "motoroil" -> selector_1096
+        menu "department" "buy" "perfume"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Exhaust Nozzle Romeo, droid perfume. Heat up your coolant intakes: 1 CRED" choices "motoroil"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x119E 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_1096:
+    case "turbulence" -> selector_10F3
+        menu "department" "buy" "perfume"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Turbulence, gravitational vertigo. Scent for the adventurous: 1 CRED" choices "turbulence"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x119E 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_10F3:
+    case "tie" -> selector_1115
+        menu "beauty" "hide" "hair" "synthetic"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "TIE DEPARTMENT:" choices "tie"
+        yield_b
+        selector_1115:
+    case "hide" -> selector_1178
+        menu "department" "buy" "tie"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo hide tie with tentacule lining. The elegance of dead skin: 1 CRED" choices "hide"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x11FE 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_1178:
+    case "hair" -> selector_11CF
+        menu "department" "buy" "tie"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Mastachok trunk tie with intestinal stitch: 1 CRED" choices "hair"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x11FE 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_11CF:
+    case "synthetic" -> selector_122A
+        menu "department" "buy" "tie"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Synthetic tie with built-in altimeter and geiger counter: 4 CREDS" choices "synthetic"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x11FE 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_122A:
+    case "makeup" -> selector_124A
+        menu "department" "lip_rouge" "cream"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "COSMETICS DEPARTMENT:" choices "makeup"
+        yield_b
+        selector_124A:
+    case "lip_rouge" -> selector_125E
+        menu "department" "beauty" "red" "green" "black" "blue"
+        yield_b
+        selector_125E:
+    case "red" -> selector_12B3
+        menu "buy" "lip_rouge"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Crimson rouge for non metal lips: 1 CRED" choices "red"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x1216 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_12B3:
+    case "green" -> selector_130E
+        menu "buy" "lip_rouge"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Fluorescent green lip rouge, for tentacles and suckers: 1 CRED" choices "green"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x1216 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_130E:
+    case "black" -> selector_1365
+        menu "buy" "lip_rouge"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Black lip rouge, for total discretion: 1 CRED" choices "black"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x1216 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_1365:
+    case "blue" -> selector_13C4
+        menu "buy" "lip_rouge"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Space blue lip rouge. Now someone will hear you scream: 1 CRED" choices "blue"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x1216 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_13C4:
+    case "cream" -> selector_13E6
+        menu "department" "painkiller" "pex" "meteor"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "MISCELLANEOUS CREAMS:" choices "cream"
+        yield_b
+        selector_13E6:
+    case "painkiller" -> selector_1443
+        menu "buy" "cream"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Painkiller. Apply to amputated limbs during breaks in combat: 1 CRED" choices "painkiller"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x1246 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_1443:
+    case "pex" -> selector_14A4
+        menu "buy" "cream"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Pex, for golden muscles. Win the fight before it starts: 1 CRED" choices "pex"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x1246 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_14A4:
+    case "meteor" -> selector_14F9
+        menu "buy" "cream"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "METEOR balm: for meteor-induced swelling: 1 CRED" choices "meteor"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x1246 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_14F9:
+    case "jewel" -> selector_1519
+        menu "department" "necklace" "bracelet"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "JEWELRY DEPARTMENT:" choices "jewel"
+        yield_b
+        selector_1519:
+    case "necklace" -> selector_1570
+        menu "buy" "jewel"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Pearl necklace, for beings with necks: 1 CRED" choices "necklace"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x122E 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_1570:
+    case "bracelet" -> selector_15C7
+        menu "buy" "jewel"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Elastometal bracelet, fits all body parts: 1 CRED" choices "bracelet"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x122E 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_15C7:
+    case "food" -> selector_15E5
+        menu "department" "murffalo"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "FOOD DEPARTMENT:" choices "food"
+        yield_b
+        selector_15E5:
+    case "murffalo" -> selector_160D
+        menu "department" "tenderloin" "steak" "horn" "fur" "sausage" "intestines"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "MURFFALO DEPARTMENT:" choices "murffalo"
+        yield_b
+        selector_160D:
+    case "tenderloin" -> selector_1666
+        menu "buy" "murffalo"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Tenderloin of murffalo. mouth and eye watering: 1 CRED" choices "tenderloin"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x11E6 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_1666:
+    case "steak" -> selector_16C1
+        menu "buy" "murffalo"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo steak. Tenderised by the Bronkos of Moskito: 1 CRED" choices "steak"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x11E6 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_16C1:
+    case "horn" -> selector_1718
+        menu "buy" "murffalo"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Powdered murffalo horn. For renewed virility: 1 CRED" choices "horn"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x11E6 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_1718:
+    case "fur" -> selector_1771
+        menu "buy" "murffalo"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Deodorised murffalo fur. Slip into something meaty: 1 CRED" choices "fur"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x11E6 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_1771:
+    case "sausage" -> selector_17C8
+        menu "buy" "murffalo"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo sausage. Ideal for Bar-B-Q moments: 1 CRED" choices "sausage"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x11E6 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_17C8:
+    case "intestines" -> selector_1821
+        menu "buy" "murffalo"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo intestines. Forecast weather and race winners: 1 CRED" choices "intestines"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x11E6 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_1821:
+    case "sport" -> selector_1843
+        menu "department" "ball" "boxing_gloves" "pouch"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "SPORT DEPARTMENT:" choices "sport"
+        yield_b
+        selector_1843:
+    case "ball" -> selector_18A2
+        menu "buy" "sport"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Ball. Steel, lead, magnetic iron and antigrav versions: 1 CRED" choices "ball"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x125E 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_18A2:
+    case "boxing_gloves" -> selector_18FF
+        menu "buy" "sport"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Deodorised murffalo hide boxing gloves. The KO with class: 1 CRED" choices "boxing_gloves"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x1276 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_18FF:
+    case "pouch" -> selector_195A
+        menu "buy" "sport"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo pouch. Perfect fit for all family jewels: 1 CRED" choices "pouch"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x128E 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_195A:
+    case "handywork" -> selector_197A
+        menu "department" "tools" "robotics"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "HANDYWORK DEPARTMENT:" choices "handywork"
+        yield_b
+        selector_197A:
+    case "tools" -> selector_199C
+        menu "department" "screwdriver" "saws" "drills"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "TOOL DEPARTMENT:" choices "tools"
+        yield_b
+        selector_199C:
+    case "screwdriver" -> selector_19FF
+        menu "buy" "handywork"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Remote screwdriver. You watch TV while it screws things down and up: 1 CRED" choices "screwdriver"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x12A6 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_19FF:
+    case "saws" -> selector_1A56
+        menu "buy" "handywork"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Ray saw. Saws through it all: 1 CRED" choices "saws"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x12A6 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_1A56:
+    case "drills" -> selector_1AA7
+        menu "buy" "handywork"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Suction drill. Slurp-free: 1 CRED" choices "drills"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x12A6 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_1AA7:
+    case "robotics" -> selector_1AC5
+        menu "department" "batteries"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "ROBOTICS DEPARTMENT:" choices "robotics"
+        yield_b
+        selector_1AC5:
+    case "batteries" -> selector_1B1A
+        menu "department" "handywork" "buy"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Batteries. Suit all droids: 1 CRED" choices "batteries"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x134E 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_1B1A:
+    case "pharmacy" -> selector_1B3C
+        menu "department" "aspirox" "snorz" "fang_brush"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "PHARMACY DEPARTMANT:" choices "pharmacy"
+        yield_b
+        selector_1B3C:
+    case "aspirox" -> selector_1BA7
+        menu "buy" "pharmacy"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Aspirox. Pain relief for iron, stainless steel and nonstick heads. Lead heads contact inquiry desk: 1 CRED" choices "aspirox"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x12BE 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_1BA7:
+    case "snorz" -> selector_1C12
+        menu "buy" "pharmacy"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Snorz. Can't sleep? Hit your head with a Snorz and say hi to the Sandman: 1 CRED" choices "snorz"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x12BE 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_1C12:
+    case "fang_brush" -> selector_1C6F
+        menu "buy" "pharmacy"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Fang brush. For multiple rows of fangs and crushing-type jaws: 1 CRED" choices "fang_brush"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x12BE 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield_b
+        selector_1C6F:
+    case "leisure" -> selector_1C8D
+        menu "departments" "video_games"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "LEISURE DEPARTMENT:" choices "leisure"
+        yield_b
+        selector_1C8D:
+    case "video_games" -> selector_1CB5
+        menu "department" "Dead_Killer" "Fatal_Butcher" "Harakira" "commander_Blood" "Streetofkarnage" "Eat_my_liver"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "VIDEO GAMES:" choices "video_games"
+        yield_b
+        selector_1CB5:
+    case "Dead_Killer" -> selector_1D05
+        menu "buy" "video_games"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "MORTAL KILLER. Slash 'em, mash 'em|, bash 'em and trash 'em: 20 CREDS" choices "Dead_Killer"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "You can't pay 20 creds." choices "buy"
+        yield_b
+        selector_1D05:
+    case "Fatal_Butcher" -> selector_1D4D
+        menu "buy" "video_games"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "FATAL BUTCHER. Rip arteries from their bodies and laugh: 40 CREDS" choices "Fatal_Butcher"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "You cannot pay 40 CREDS......" choices "buy"
+        yield_b
+        selector_1D4D:
+    case "Harakira" -> selector_1D9D
+        menu "buy" "video_games"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "HARAKIRA. Use your suction ripsaw to liquidate all life: 200 CREDS" choices "Harakira"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "You will never have 200 creds to spend......." choices "buy"
+        yield_b
+        selector_1D9D:
+    case "commander_Blood" -> selector_1DCD
+        menu "buy" "video_games"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Uh... You already have it... You want another one?" choices "commander_Blood"
+        yield_b
+        selector_1DCD:
+    case "Streetofkarnage" -> selector_1E21
+        menu "buy" "video_games"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "STREET OF KARNAGE. Decorate the streets with ruptured lungs and brightly-colored guts: 250 CREDS" choices "Streetofkarnage"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Creds. You have to be kidding..." choices "buy"
+        yield_b
+        selector_1E21:
+    case "Eat_my_liver" -> selector_1E8B
+        menu "buy" "video_games"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "EAT MY LIVER. Game of the year. Make your enemies eat their innards, then watch them say thank you: 400 CREDS" choices "Eat_my_liver"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Creds... This is one game you will never enjoy...." choices "buy"
+        yield_b
+        selector_1E8B:
+    case "hifi" -> selector_1EAB
+        menu "department" "multimedia" "CD_audio"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "HIFI DEPARTMENT:" choices "hifi"
+        yield_b
+        selector_1EAB:
+    case "multimedia" -> selector_1EEF
+        menu "buy" "hifi"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Have you gone crazy!!!" choices "multimedia"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Keep your money for a peaceful weekend in the country..." choices "buy"
+        yield_b
+        selector_1EEF:
+    case "CD_audio" -> 0x0000
+        menu "buy" "hifi"
+        say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "The latest hit from the MIGRATORS: \"CRUSH MY SKULL\": 1 CRED" choices "CD_audio"
+        say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
+        record_triple Bug_Deluxe_s13 0x12EE 0x0028 0
+        record_triple blood_s13 0x1186 0x01B2 0
+        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        yield
+end selector Bug_Deluxe_choices
 
-SELECTOR_LIST list_Bronko_1F4A
-    YIELD_B
-    CASE "talk" selector_1F5D
-        MENU "bye_bye" "robot" "cred" "murffalos" "weapons"
-        YIELD_B
-        LABEL selector_1F5D
-    CASE "robot" selector_2101
-        MENU "talk" "bye_bye" "robot" "intelligence" "energy" "technology" "retirement"
-        TEXT object_Bronko_043A 02 40 80 - - "Me" "robot" "Bronko" "AX34" "BUTCHER" "model" "..." FFFF "robot"
-        TEXT object_Bronko_043A 03 40 80 - - "Robots" "be" "strong" "," "friend" "." "Robot" "Bronko" "know" "chop" "meat" "..." FFFF "robot"
-        TEXT object_Bronko_043A 01 41 80 - - "Me" "sophisticated" "robot" "..." FFFF "robot"
-        TEXT object_Bronko_043A 01 40 80 - - "Me" "big" "cybernetic" "intelligence" "." "much" "cheap" "memory" "..." FFFF "intelligence"
-        TEXT object_Bronko_043A 02 40 80 - - "Me" "can" "think" "." "Me" "be" "smart" "..." FFFF "intelligence"
-        TEXT object_Bronko_043A 03 40 80 - - "Me" "have" "big" "CDROM" "in" "head" "..." "Ha" "!" "Ha" "!" "Ha" "!" "Ha" "!" FFFF "intelligence"
-        TEXT object_Bronko_043A 02 41 80 - - "Bronko" "intelligent" "..." FFFF "intelligence"
-        TEXT object_Bronko_043A 04 40 80 - - "Me" "have" "energy" "." "Me" "have" "brand" "new" "batteries" "," "friend" "...." FFFF "energy"
-        TEXT object_Bronko_043A 05 40 80 - - "Me" "like" "zinc" "flakes" "in" "cold" "mercury" "for" "breakfast" "," "friend" "." "Much" "energy" "..." FFFF "energy"
-        TEXT object_Bronko_043A 01 40 80 - - "You" "want" "batteries" "," "friend" "..." "Me" "buy" "batteries" "at" "VENUSIA" "supramarket" FFFF "energy"
-        TEXT object_Bronko_043A 04 40 80 - - "Supramarket" "VENUSIA" "sell" "cheap" "batteries" "." "You" "not" "see" "TV" "commercial" "?" FFFF "energy"
-        TEXT object_Bronko_043A 01 41 80 - - "Bronko" "advanced" "technology" "," "friend" "..." FFFF "technology"
-        TEXT object_Bronko_043A 05 40 80 - - "See" "you" "soon" "," "friend" "..." FFFF "bye_bye"
-        YIELD_B
-        LABEL selector_2101
-    CASE "cred" selector_21EF
-        MENU "talk" "bye_bye" "cred" "buy"
-        TEXT object_Bronko_043A 01 40 80 - - "Me" "work" "much" "earn" "CRED" "," "friend" "..." FFFF "cred"
-        TEXT object_Bronko_043A 02 40 80 - - "Creds" "be" "hard" "to" "earn" "..." FFFF "cred"
-        TEXT object_Bronko_043A 03 41 80 - - "You" "like" "creds" "," "friend" "..." FFFF "cred"
-        TEXT object_Bronko_043A 04 40 80 - - "Me" "want" "buy" "big" "ship" "," "take" "big" "vacation" "in" "universe" "..." FFFF "buy"
-        TEXT object_Bronko_043A 03 40 80 - - "Me" "want" "buy" "home" "on" "planet" "Troma," "and" "grow" "nuts" "," "bolts" "," "screws" "..." FFFF "buy"
-        TEXT object_Bronko_043A 02 40 80 - - "Me" "want" "raise" "cybernetic" "wheelbarrows" "," "lawnmowers" "..." "Me" "dream" "," "friend" "..." FFFF "buy"
-        TEXT object_Bronko_043A 04 41 80 - - "To" "can" "buy" "," "me" "must" "work" "much" "..." FFFF "buy"
-        YIELD_B
-        LABEL selector_21EF
-    CASE "murffalos" selector_229D
-        MENU "talk" "bye_bye" "hunt"
-        TEXT object_Bronko_043A 01 40 80 - - "Thirteen" "murffalos" "to" "reproduce..." "One" "in" "middle" "," "twelve" "around" "..." FFFF "murffalos"
-        TEXT object_Bronko_043A 02 40 80 - - "Me" "not" "like" "murffalos" "..." "Not" "nice" "." "Too" "soft" "..." "Me" "like" "fried" "lawnmower" "leg" "..." FFFF "murffalos"
-        TEXT object_Bronko_043A 03 41 80 - - "Me" "know" "how" "chop" "murffalos" "..." FFFF "murffalos"
-        TEXT object_Bronko_043A 04 40 80 - - "Me" "like" "hunt" "satellite" "game" "with" "laserpulper" "..." "bang" "bang" "satellites" "..." FFFF "hunt"
-        TEXT object_Bronko_043A 03 41 80 - - "Hunting" "be" "nice" "sport..." FFFF "hunt"
-        YIELD_B
-        LABEL selector_229D
-    CASE "weapons" selector_2325
-        MENU "talk" "bye_bye" "planets" "war"
-        TEXT object_Bronko_043A 04 40 80 - - "Nice" "weapons" "cost" "much" "creds" "," "Commander" FFFF "weapons"
-        TEXT object_Bronko_043A 02 41 80 - - "Me" "have" "weapons" "at" "end" "of" "arms" "..." FFFF "weapons"
-        TEXT object_Bronko_043A 02 41 80 - - "You" "big" "traveller" "." "You" "know" "planets" "," "friend" "..." FFFF "planets"
-        TEXT object_Bronko_043A 03 40 80 - - "Croolis" "war" "make" "big" "mess" "..." "Bad" "war" "," "friend" "..." FFFF "war"
-        YIELD_B
-        LABEL selector_2325
-    CASE "retirement" 0000
-        MENU "talk" "bye_bye" "Magnus"
-        TEXT object_Bronko_043A 01 49 80 - - "Ah" "," "retirement" "..." "them" "send" "me" "to" "planet" "Magnus" "with" "other" "old" "robots" "..." "CRY" "CRY" "..." FFFF "retirement"
-        SHARED_BIT_STATE AE field_Magnus_0D04_s00_0D06 0002 0
-        YIELD
-END_SELECTOR_LIST list_Bronko_1F4A
+selector Bronko_choices
+    yield_b
+    case "talk" -> selector_1F5D
+        menu "bye_bye" "robot" "cred" "murffalos" "weapons"
+        yield_b
+        selector_1F5D:
+    case "robot" -> selector_2101
+        menu "talk" "bye_bye" "robot" "intelligence" "energy" "technology" "retirement"
+        say Bronko voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me robot Bronko AX34 BUTCHER model..." choices "robot"
+        say Bronko voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Robots be strong, friend. Robot Bronko know chop meat..." choices "robot"
+        say Bronko voice=0x01 flags=0x41 display=0x80 loop=none control=none : "Me sophisticated robot..." choices "robot"
+        say Bronko voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Me big cybernetic intelligence. much cheap memory..." choices "intelligence"
+        say Bronko voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me can think. Me be smart..." choices "intelligence"
+        say Bronko voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Me have big CDROM in head... Ha|! Ha|! Ha|! Ha|!" choices "intelligence"
+        say Bronko voice=0x02 flags=0x41 display=0x80 loop=none control=none : "Bronko intelligent..." choices "intelligence"
+        say Bronko voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Me have energy. Me have brand new batteries, friend|...." choices "energy"
+        say Bronko voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Me like zinc flakes in cold mercury for breakfast, friend. Much energy..." choices "energy"
+        say Bronko voice=0x01 flags=0x40 display=0x80 loop=none control=none : "You want batteries, friend|... Me buy batteries at VENUSIA supramarket" choices "energy"
+        say Bronko voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Supramarket VENUSIA sell cheap batteries. You not see TV commercial?" choices "energy"
+        say Bronko voice=0x01 flags=0x41 display=0x80 loop=none control=none : "Bronko advanced technology, friend|..." choices "technology"
+        say Bronko voice=0x05 flags=0x40 display=0x80 loop=none control=none : "See you soon|, friend|..." choices "bye_bye"
+        yield_b
+        selector_2101:
+    case "cred" -> selector_21EF
+        menu "talk" "bye_bye" "cred" "buy"
+        say Bronko voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Me work much earn CRED, friend|..." choices "cred"
+        say Bronko voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Creds be hard to earn..." choices "cred"
+        say Bronko voice=0x03 flags=0x41 display=0x80 loop=none control=none : "You like creds, friend|..." choices "cred"
+        say Bronko voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Me want buy big ship, take big vacation in universe..." choices "buy"
+        say Bronko voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Me want buy home on planet Troma, and grow nuts, bolts, screws..." choices "buy"
+        say Bronko voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me want raise cybernetic wheelbarrows, lawnmowers... Me dream, friend|..." choices "buy"
+        say Bronko voice=0x04 flags=0x41 display=0x80 loop=none control=none : "To can buy, me must work much..." choices "buy"
+        yield_b
+        selector_21EF:
+    case "murffalos" -> selector_229D
+        menu "talk" "bye_bye" "hunt"
+        say Bronko voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Thirteen murffalos to reproduce... One in middle, twelve around..." choices "murffalos"
+        say Bronko voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me not like murffalos... Not nice. Too soft... Me like fried lawnmower leg..." choices "murffalos"
+        say Bronko voice=0x03 flags=0x41 display=0x80 loop=none control=none : "Me know how chop murffalos..." choices "murffalos"
+        say Bronko voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Me like hunt satellite game with laserpulper... bang bang satellites..." choices "hunt"
+        say Bronko voice=0x03 flags=0x41 display=0x80 loop=none control=none : "Hunting be nice sport..." choices "hunt"
+        yield_b
+        selector_229D:
+    case "weapons" -> selector_2325
+        menu "talk" "bye_bye" "planets" "war"
+        say Bronko voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Nice weapons cost much creds, Commander" choices "weapons"
+        say Bronko voice=0x02 flags=0x41 display=0x80 loop=none control=none : "Me have weapons at end of arms..." choices "weapons"
+        say Bronko voice=0x02 flags=0x41 display=0x80 loop=none control=none : "You big traveller. You know planets, friend|..." choices "planets"
+        say Bronko voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Croolis war make big mess... Bad war, friend|..." choices "war"
+        yield_b
+        selector_2325:
+    case "retirement" -> 0x0000
+        menu "talk" "bye_bye" "Magnus"
+        say Bronko voice=0x01 flags=0x49 display=0x80 loop=none control=none : "Ah, retirement... them send me to planet Magnus with other old robots|... CRY CRY..." choices "retirement"
+        shared_bit_state 0xAE Magnus_s00 0x0002 0
+        yield
+end selector Bronko_choices
 
-SELECTOR_LIST list_Bob_Morlock_2368
-    YIELD_B
-    CASE "talk" selector_27FE
-        MENU "bye_bye" "black_hole" "big_bang" "Bob_Morlock" "kanary" "mission" "corpo" "good_ol_bob"
-        TEXT object_Bob_Morlock_016A 02 42 80 - - "What" "do" "you" "want" "to" "know" "," "Commander" "?" FFFF "talk"
-        TEXT object_Bob_Morlock_016A 03 48 80 - - "Goodbye" "," "Commander" "..." FFFF "bye_bye"
-        SHARED_STATE C0 1440 F5 C1 0001
-        TEXT object_Bob_Morlock_016A 02 40 80 - - "After" "years" "of" "research" "," "I" "managed" "to" "isolate" "time" "," "Commander" FFFF "black_hole"
-        TEXT object_Bob_Morlock_016A 01 40 80 - - "Certain" "black" "holes" "can" "be" "used" "to" "go" "back" "in" "time" "." FFFF "black_hole"
-        TEXT object_Bob_Morlock_016A 02 48 80 - - "Honk" "is" "programmed" "to" "recognize" "the" "right" "black" "holes" FFFF "black_hole"
-        SHARED_STATE B4 field_Bob_Morlock_016A_s03_019C F6 C1 0001
-        TEXT object_Bob_Morlock_016A 01 48 80 - - "To" "reach" "the" "BIG" "BANG," "you'll" "need" "to" "travel" "through" "several" "black" "holes" "..." FFFF "black_hole"
-        SHARED_STATE B4 field_Bob_Morlock_016A_s03_019C F6 C1 0001
-        TEXT object_Bob_Morlock_016A 02 49 80 - - "Black" "holes" "are" "marvellous" "natural" "machines" "," "Commander" "..." FFFF "black_hole"
-        SHARED_STATE B4 field_Bob_Morlock_016A_s03_019C F6 C1 0001
-        TEXT object_Bob_Morlock_016A 03 40 80 - - "I" "have" "spent" "my" "life" "in" "pursuit" "of" "truth" "," "Commander" "..." FFFF "big_bang"
-        TEXT object_Bob_Morlock_016A 02 40 80 - - "I" "know" "that" "truth" "lies" "beyond" "the" "BIG" "BANG" "," "Commander" "!" FFFF "big_bang"
-        TEXT object_Bob_Morlock_016A 01 41 80 - - "My" "memory" "is" "not" "what" "it" "was" "..." FFFF "big_bang"
-        TEXT object_Bob_Morlock_016A 02 40 80 - - "Thanks" "to" "the" "KANARY" "scientists" "," "I" "am" "the" "oldest" "being" "in" "the" "UNIVERSE" FFFF "Bob_Morlock"
-        TEXT object_Bob_Morlock_016A 01 40 80 - - "In" "my" "time" "," "I've" "been" "a" "crooner" "," "a" "magician" "," "an" "adventurer" "." "I" "also" "created" "the" "biggest" "company" "in" "the" "universe" ":" "KANARY" FFFF "Bob_Morlock"
-        TEXT object_Bob_Morlock_016A 02 40 80 - - "Women" "have" "adored" "me" "." "Thousands" "of" "generations" "have" "admired" "me" "." "I" "am" "immortal" FFFF "Bob_Morlock"
-        TEXT object_Bob_Morlock_016A 02 48 80 - - "Commander" "," "you" "will" "relive" "my" "past" "." "I" "envy" "you" "..." FFFF "Bob_Morlock"
-        SHARED_STATE B4 field_Bob_Morlock_016A_s03_019C F6 C1 0001
-        TEXT object_Bob_Morlock_016A 01 48 80 - - "Ah" "..." "Otto" "Von" "Smile" "," "Eviscerator," "Jeph" "d'Ulikan," "old" "Yolk," "Tina" "Burner" "..." "And" "the" "others" "..." FFFF "Bob_Morlock"
-        SHARED_STATE B4 field_Bob_Morlock_016A_s03_019C F6 C1 0001
-        TEXT object_Bob_Morlock_016A 01 49 80 - - "Ah" "!" "Those" "were" "good" "days" "," "Commander..." FFFF "Bob_Morlock"
-        PRESENTATION_REGISTER 49C8
-        TEXT object_Bob_Morlock_016A 02 48 80 - - "You" "want" "some" "revelations" "," "Commander" FFFF "revelation"
-        SHARED_STATE C0 1446 F5 C1 0001
-        TEXT object_Bob_Morlock_016A 02 40 80 - - "Your" "mission" "is" "to" "find" "and" "travel" "through" "the" "right" "black" "holes," "taking" "us" "back" "in" "time" "to" "the" "BIG" "BANG" FFFF "mission"
-        TEXT object_Bob_Morlock_016A 01 40 80 - - "You" "will" "meet" "fabulous" "beings" "," "many" "of" "them" "dangerous" "." "You'll" "need" "to" "be" "careful" "," "Commander" FFFF "mission"
-        TEXT object_Bob_Morlock_016A 02 40 80 - - "You" "will" "see" "terrible" "wars" "and" "cross" "impossible" "frontiers" "..." FFFF "mission"
-        TEXT object_Bob_Morlock_016A 01 40 80 - - "You" "will" "have" "to" "win" "strange" "beings" "to" "your" "cause" "..." FFFF "mission"
-        TEXT object_Bob_Morlock_016A 02 49 80 - - "You" "will" "be" "in" "sole" "commander" "," "unless" "you" "decide" "to" "wake" "me" "..." FFFF "mission"
-        SHARED_STATE B4 field_Bob_Morlock_016A_s03_019C F6 C1 0001
-        TEXT object_Bob_Morlock_016A 01 40 80 - - "The" "planet" "Corpo" "is" "my" "world" "of" "origin" "." "It" "is" "where" "we" "come" "from" "..." FFFF "corpo"
-        TEXT object_Bob_Morlock_016A 03 49 80 - - "Corpo" "is" "a" "fabulous" "planet" "with" "inexhaustible" "resources" "." FFFF "corpo"
-        SHARED_STATE B4 field_Bob_Morlock_016A_s03_019C F6 C1 0002
-        TEXT object_Bob_Morlock_016A 02 40 80 - - "Truth" "is" "to" "be" "found" "at" "the" "creation" "of" "the" "universe" "," "just" "before" "the" "BIG" "BANG" "..." FFFF "truth"
-        TEXT object_Bob_Morlock_016A 01 49 80 - - "Ah" "..." "Truth" "!" FFFF "truth"
-        SHARED_STATE B4 field_Bob_Morlock_016A_s03_019C F6 C1 0001
-        TEXT object_Bob_Morlock_016A FF 48 80 - - "I'm" "getting" "pictures" "from" "the" "Ark" "," "Commander." "All" "systems" "are" "nominal" "..." FFFF "good_ol_Bob"
-        LOAD_STRING "aarche10.hnm"
-        TEXT object_Bob_Morlock_016A 01 40 80 - - "You" "flatter" "me" "," "Commander..." FFFF "good_ol_bob"
-        TEXT object_Bob_Morlock_016A 02 4A 80 - - "You're" "embarrassing" "me" "," "Commander..." FFFF "good_ol_bob"
-        SHARED_STATE B4 field_Bob_Morlock_016A_s03_019C F6 C1 0001
-        TEXT object_Bob_Morlock_016A 01 43 80 - - "Heh" "heh" "..." FFFF "good_ol_bob"
-        YIELD_B
-        LABEL selector_27FE
-    CASE "kanary" 0000
-        MENU "talk" "bye_bye" "cottage" "clones" "employees" "reports"
-        TEXT object_Bob_Morlock_016A 01 40 80 - - "The" "Cottage" "Research" "department" "is" "my" "secret" "project" FFFF "cottage"
-        TEXT object_Bob_Morlock_016A 01 40 80 - - "The" "domain" "of" "vegetation" "is" "a" "marvel" "of" "Nature" FFFF "cottage"
-        TEXT object_Bob_Morlock_016A 01 40 80 - - "The" "Cottage" "Research" "department" "develops" "genetic" "marvels" FFFF "cottage"
-        TEXT object_Bob_Morlock_016A 03 40 80 - - "The" "Kanary" "lawns" "mow" "themselves" "every" "weekend" "..." FFFF "cottage"
-        TEXT object_Bob_Morlock_016A 02 49 80 - - "Kanary's" "artificial" "orchids" "provide" "whiskey" "that" "is" "over" "a" "hundred" "years" "in" "age" FFFF "cottage"
-        SHARED_STATE B4 field_Bob_Morlock_016A_s03_019C F6 C1 0005
-        TEXT object_Bob_Morlock_016A 01 40 80 - - "Kanary" "has" "developed" "technology" "entirely" "devoted" "to" "synthetic" "cloning" FFFF "clones"
-        TEXT object_Bob_Morlock_016A 02 40 80 - - "Kanary's" "four" "million" "employees" "were" "all" "created" "by" "and" "for" "Kanary" FFFF "clones"
-        TEXT object_Bob_Morlock_016A 01 40 80 - - "I" "am" "the" "last" "bionatural" "being" "and" "I" "CONTROL" "EVERYTHING" "..." FFFF "clones"
-        TEXT object_Bob_Morlock_016A 01 40 80 - - "My" "employees" "wake" "me" "up" "for" "ten" "minutes" "each" "year" "to" "blow" "out" "the" "candles" "on" "my" "birthday" "cake" "and" "sign" "the" "company" "reports" FFFF "clones"
-        TEXT object_Bob_Morlock_016A 01 49 80 - - "I" "instructed" "the" "Kanary" "scientists" "to" "develop" "the" "perfect" "adventurer" "to" "take" "me" "to" "the" "BIG" "BANG" "..." FFFF "clones"
-        SHARED_STATE B4 field_Bob_Morlock_016A_s03_019C F6 C1 0003
-        TEXT object_Bob_Morlock_016A 03 40 80 - - "All" "Kanary" "personnel" "was" "made" "by" "CLONE" "CONSORTIUM" "." "So" "were" "you" "," "Commander" FFFF "employees"
-        TEXT object_Bob_Morlock_016A 04 40 80 - - "All" "of" "you" "work" "for" "me" ":" "YOU" "Honk" "," "YOU" "Commander" "," "YOU" "Olga" "..." "ALL" "OF" "YOU" "..." FFFF "employees"
-        TEXT object_Bob_Morlock_016A 05 49 80 - - "Kanary" "builds" "the" "cheapest" "and" "best" "employees" "in" "the" "universe" "..." FFFF "employees"
-        SHARED_STATE C0 1442 F5 C1 0001
-        TEXT object_Bob_Morlock_016A 01 42 80 - - "Kanary" "is" "the" "biggest" "company" "in" "the" "known" "universe" FFFF "kanary"
-        TEXT object_Bob_Morlock_016A 02 49 80 - - "Kanary" "invents" "," "builds," "consumes" "and" "controls" "the" "universe" FFFF "kanary"
-        SHARED_STATE B4 field_Bob_Morlock_016A_s03_019C F6 C1 0001
-        TEXT object_Bob_Morlock_016A 03 40 80 - - "Kanary" "is" "so" "efficient" "that" "its" "products" "have" "a" "negative" "production" "cost" FFFF "reports"
-        TEXT object_Bob_Morlock_016A 02 40 80 - - "A" "cottage" "costs" "100990" "Negabucks..." FFFF "reports"
-        TEXT object_Bob_Morlock_016A 05 40 80 - - "Our" "profits" "are" "so" "enormous" "that" "nobody" "can" "say" "the" "figure" "within" "a" "normal" "life" "span" FFFF "reports"
-        TEXT object_Bob_Morlock_016A 06 49 80 - - "Our" "only" "competitor" "is" "called" "CRYO." "They" "control" "the" "Second" "World" FFFF "reports"
-        SHARED_STATE B4 field_Bob_Morlock_016A_s03_019C F6 C1 0002
-        YIELD
-END_SELECTOR_LIST list_Bob_Morlock_2368
+selector Bob_Morlock_choices
+    yield_b
+    case "talk" -> selector_27FE
+        menu "bye_bye" "black_hole" "big_bang" "Bob_Morlock" "kanary" "mission" "corpo" "good_ol_bob"
+        say Bob_Morlock voice=0x02 flags=0x42 display=0x80 loop=none control=none : "What do you want to know, Commander|?" choices "talk"
+        say Bob_Morlock voice=0x03 flags=0x48 display=0x80 loop=none control=none : "Goodbye, Commander|..." choices "bye_bye"
+        shared_state 0xC0 0x1440 0xF5 0xC1 0x0001
+        say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "After years of research, I managed to isolate time, Commander" choices "black_hole"
+        say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Certain black holes can be used to go back in time." choices "black_hole"
+        say Bob_Morlock voice=0x02 flags=0x48 display=0x80 loop=none control=none : "Honk is programmed to recognize the right black holes" choices "black_hole"
+        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0001
+        say Bob_Morlock voice=0x01 flags=0x48 display=0x80 loop=none control=none : "To reach the BIG BANG, you'll need to travel through several black holes..." choices "black_hole"
+        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0001
+        say Bob_Morlock voice=0x02 flags=0x49 display=0x80 loop=none control=none : "Black holes are marvellous natural machines, Commander|..." choices "black_hole"
+        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0001
+        say Bob_Morlock voice=0x03 flags=0x40 display=0x80 loop=none control=none : "I have spent my life in pursuit of truth|, Commander|..." choices "big_bang"
+        say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "I know that truth lies beyond the BIG BANG|, Commander!" choices "big_bang"
+        say Bob_Morlock voice=0x01 flags=0x41 display=0x80 loop=none control=none : "My memory is not what it was..." choices "big_bang"
+        say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Thanks to the KANARY scientists, I am the oldest being in the UNIVERSE" choices "Bob_Morlock"
+        say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "In my time, I've been a crooner, a magician, an adventurer. I also created the biggest company in the universe: KANARY" choices "Bob_Morlock"
+        say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Women have adored me. Thousands of generations have admired me. I am immortal" choices "Bob_Morlock"
+        say Bob_Morlock voice=0x02 flags=0x48 display=0x80 loop=none control=none : "Commander|, you will relive my past. I envy you..." choices "Bob_Morlock"
+        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0001
+        say Bob_Morlock voice=0x01 flags=0x48 display=0x80 loop=none control=none : "Ah... Otto Von Smile, Eviscerator, Jeph d'Ulikan, old Yolk, Tina Burner|... And the others..." choices "Bob_Morlock"
+        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0001
+        say Bob_Morlock voice=0x01 flags=0x49 display=0x80 loop=none control=none : "Ah|! Those were good days, Commander..." choices "Bob_Morlock"
+        presentation_register 0x49C8
+        say Bob_Morlock voice=0x02 flags=0x48 display=0x80 loop=none control=none : "You want some revelations, Commander" choices "revelation"
+        shared_state 0xC0 0x1446 0xF5 0xC1 0x0001
+        say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Your mission is to find and travel through the right black holes, taking us back in time to the BIG BANG" choices "mission"
+        say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "You will meet fabulous beings, many of them dangerous. You'll need to be careful, Commander" choices "mission"
+        say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "You will see terrible wars and cross impossible frontiers..." choices "mission"
+        say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "You will have to win strange beings to your cause..." choices "mission"
+        say Bob_Morlock voice=0x02 flags=0x49 display=0x80 loop=none control=none : "You will be in sole commander, unless you decide to wake me..." choices "mission"
+        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0001
+        say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "The planet Corpo is my world of origin. It is where we come from..." choices "corpo"
+        say Bob_Morlock voice=0x03 flags=0x49 display=0x80 loop=none control=none : "Corpo is a fabulous planet with inexhaustible resources." choices "corpo"
+        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0002
+        say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Truth is to be found at the creation of the universe, just before the BIG BANG..." choices "truth"
+        say Bob_Morlock voice=0x01 flags=0x49 display=0x80 loop=none control=none : "Ah... Truth!" choices "truth"
+        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0001
+        say Bob_Morlock voice=0xFF flags=0x48 display=0x80 loop=none control=none : "I'm getting pictures from the Ark, Commander. All systems are nominal..." choices "good_ol_Bob"
+        load_string "aarche10.hnm"
+        say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "You flatter me, Commander..." choices "good_ol_bob"
+        say Bob_Morlock voice=0x02 flags=0x4A display=0x80 loop=none control=none : "You're embarrassing me, Commander..." choices "good_ol_bob"
+        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0001
+        say Bob_Morlock voice=0x01 flags=0x43 display=0x80 loop=none control=none : "Heh heh|..." choices "good_ol_bob"
+        yield_b
+        selector_27FE:
+    case "kanary" -> 0x0000
+        menu "talk" "bye_bye" "cottage" "clones" "employees" "reports"
+        say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "The Cottage Research department is my secret project" choices "cottage"
+        say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "The domain of vegetation is a marvel of Nature" choices "cottage"
+        say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "The Cottage Research department develops genetic marvels" choices "cottage"
+        say Bob_Morlock voice=0x03 flags=0x40 display=0x80 loop=none control=none : "The Kanary lawns mow themselves every weekend..." choices "cottage"
+        say Bob_Morlock voice=0x02 flags=0x49 display=0x80 loop=none control=none : "Kanary's artificial orchids provide whiskey that is over a hundred years in age" choices "cottage"
+        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0005
+        say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Kanary has developed technology entirely devoted to synthetic cloning" choices "clones"
+        say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Kanary's four million employees were all created by and for Kanary" choices "clones"
+        say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "I am the last bionatural being and I CONTROL EVERYTHING..." choices "clones"
+        say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "My employees wake me up for ten minutes each year to blow out the candles on my birthday cake and sign the company reports" choices "clones"
+        say Bob_Morlock voice=0x01 flags=0x49 display=0x80 loop=none control=none : "I instructed the Kanary scientists to develop the perfect adventurer to take me to the BIG BANG..." choices "clones"
+        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0003
+        say Bob_Morlock voice=0x03 flags=0x40 display=0x80 loop=none control=none : "All Kanary personnel was made by CLONE CONSORTIUM. So were you|, Commander" choices "employees"
+        say Bob_Morlock voice=0x04 flags=0x40 display=0x80 loop=none control=none : "All of you work for me: YOU Honk, YOU Commander|, YOU Olga... ALL OF YOU..." choices "employees"
+        say Bob_Morlock voice=0x05 flags=0x49 display=0x80 loop=none control=none : "Kanary builds the cheapest and best employees in the universe..." choices "employees"
+        shared_state 0xC0 0x1442 0xF5 0xC1 0x0001
+        say Bob_Morlock voice=0x01 flags=0x42 display=0x80 loop=none control=none : "Kanary is the biggest company in the known universe" choices "kanary"
+        say Bob_Morlock voice=0x02 flags=0x49 display=0x80 loop=none control=none : "Kanary invents, builds, consumes and controls the universe" choices "kanary"
+        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0001
+        say Bob_Morlock voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Kanary is so efficient that its products have a negative production cost" choices "reports"
+        say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "A cottage costs 100990 Negabucks..." choices "reports"
+        say Bob_Morlock voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Our profits are so enormous that nobody can say the figure within a normal life span" choices "reports"
+        say Bob_Morlock voice=0x06 flags=0x49 display=0x80 loop=none control=none : "Our only competitor is called CRYO. They control the Second World" choices "reports"
+        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0002
+        yield
+end selector Bob_Morlock_choices
 
-SELECTOR_LIST list_Scruter_Mac_2ADB
-    YIELD_B
-    CASE "talk" selector_2B02
-        MENU "bye_bye"
-        TEXT object_Scruter_Mac_0752 06 40 80 - - "Bye" "bye" "stranger" "me" "must" "stand" "guard" "..." FFFF "bye_bye"
-        YIELD_B
-        LABEL selector_2B02
-    CASE "sulk" 0000
-        MENU "grumpf" "bye_bye"
-        TEXT object_Scruter_Mac_0752 07 40 80 - - "......." "Sulk" "..." FFFF "grumpf"
-        TEXT object_Scruter_Mac_0752 05 40 80 - - ".." "Complain" "in" "silence" "....." FFFF "grumpf"
-        TEXT object_Scruter_Mac_0752 08 41 80 - - "......." FFFF "grumpf"
-        YIELD
-END_SELECTOR_LIST list_Scruter_Mac_2ADB
+selector Scruter_Mac_choices
+    yield_b
+    case "talk" -> selector_2B02
+        menu "bye_bye"
+        say Scruter_Mac voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Bye bye stranger me must stand guard..." choices "bye_bye"
+        yield_b
+        selector_2B02:
+    case "sulk" -> 0x0000
+        menu "grumpf" "bye_bye"
+        say Scruter_Mac voice=0x07 flags=0x40 display=0x80 loop=none control=none : "....... Sulk..." choices "grumpf"
+        say Scruter_Mac voice=0x05 flags=0x40 display=0x80 loop=none control=none : ".. Complain in silence....." choices "grumpf"
+        say Scruter_Mac voice=0x08 flags=0x41 display=0x80 loop=none control=none : "......." choices "grumpf"
+        yield
+end selector Scruter_Mac_choices
 
-SELECTOR_LIST list_Eviscerator_2B44
-    YIELD_B
-    CASE "talk" selector_2D7B
-        MENU "bye_bye" "peace" "war" "prison" "planet" "television" "politics" "reproduction" "science" "race" "consumerism"
-        TEXT object_Eviscerator_028A 05 40 80 - - "What" "you" "want" "?" FFFF "talk"
-        TEXT object_Eviscerator_028A 09 41 80 - - "Me" "want" "escape" "." "You" "help" "me" "..." FFFF "prison"
-        TEXT object_Eviscerator_028A 02 41 80 - - "Me" "not" "say" "bye" "bye" "," "INSULT" "..." "SWEAR" "..." FFFF "bye_bye"
-        TEXT object_Eviscerator_028A 02 40 80 - - "Me" "watch" "TV" ":" "good" "night" "viewers" FFFF "television"
-        TEXT object_Eviscerator_028A 00 40 80 - - "Vortex" "of" "Fortune" "," "me" "like" "." "Light" "shine" "," "vortex" "spin" "." "Nice" "..." FFFF "television"
-        TEXT object_Eviscerator_028A 01 40 80 - - "Aaah" "Tina" "Burner" "," "me" "cry" "cry" "." "Me" "like" "songs" "to" "cry" "..." FFFF "television"
-        TEXT object_Eviscerator_028A 0C 40 80 - - "Me" "like" "muscles" FFFF "politics"
-        TEXT object_Eviscerator_028A 0B 40 80 - - "Riot" "police" "nice" "politics" FFFF "politics"
-        TEXT object_Eviscerator_028A 0A 40 80 - - "War" "nice" "politics" FFFF "politics"
-        TEXT object_Eviscerator_028A 08 40 80 - - "Polly" "ticks" "!" "funny" "funny" "," "ah" "ha" "ah" "yaeurghhh..." FFFF "politics"
-        TEXT object_Eviscerator_028A 08 00 80 - - "Ooouuuh" "," "you" "not" "talk" "reproduction" "." "Me" "go" "red" "..."
-        TEXT object_Eviscerator_028A 0A 40 80 - - "Reproduction" "," "hot" "babes" "!" "ahhhhaha" "ha" "ha" "ha" "aaaaahh" "," "laugh" "laugh" "laugh" "swear" "..." FFFF "reproduction"
-        TEXT object_Eviscerator_028A 01 40 80 - - "Me" "not" "know" "science" "." "Complicated" FFFF "science"
-        TEXT object_Eviscerator_028A 09 40 80 - - "Science" "be" "for" "sissy" "brains" "." "Me" "stronger" "than" "science" "." "Me" "squash" "science" FFFF "science"
-        TEXT object_Eviscerator_028A 0C 40 80 - - "Science" "," "science" "." "You" "obsessed" "!" "Me" "not" "like" "!" FFFF "science"
-        TEXT object_Eviscerator_028A 02 40 80 - - "Trump" "tail" "smoke" "much" FFFF "consumerism"
-        TEXT object_Eviscerator_028A 07 40 80 - - "Me" "like" "consume" "." "Rata" "ta" "ta" "ta" "ta" "tata" "." "That" "be" "consume" "." "LAUGH" "SWEAR" "..." FFFF "consumerism"
-        TEXT object_Eviscerator_028A 0C 40 80 - - "You" "be" "consumerism" "...." FFFF "consumerism"
-        YIELD_B
-        LABEL selector_2D7B
-    CASE "planet" selector_2F1B
-        MENU "talk" "corpo" "magnus" "vista" "erazor" "trashlando" "tumul" "pterra" "Eden"
-        TEXT object_Eviscerator_028A 06 40 80 - - "Me" "know" "planets" "..." FFFF "planet"
-        TEXT object_Eviscerator_028A 05 40 80 - - "Me" "like" "destroy" "planets" "," "booomm!" "Swear" "laugh" "laugh" "..." FFFF "planet"
-        TEXT object_Eviscerator_028A 01 40 80 - - "Corpo" "big" "planet" "." "Much" "strangers" "." "Me" "not" "like" "strangers" "." "Make" "me" "mad" "..." FFFF "corpo"
-        TEXT object_Eviscerator_028A 06 40 80 - - "Me" "splat" "strangers" "..." "Ra" "ta" "ta" "ta" "ta..." "Laugh" "swear" FFFF "corpo"
-        TEXT object_Eviscerator_028A 06 40 80 - - "Much" "creatures" "on" "Magnus" "." "Migrax" "yuk" "!" FFFF "magnus"
-        TEXT object_Eviscerator_028A 0B 40 80 - - "Me" "hate" "SCRUT" "." "Me" "not" "like" "talk" "about" "scruter" "." "Me" "break" "things" "!" FFFF "vista"
-        TEXT object_Eviscerator_028A 02 40 80 - - "Erazor" "everybody" "," "Ha" "!" "Ha" "!" "Ha" "!" "Ha" "!" "Ha" "!" "Swear" "..." "You" "laugh" "!" FFFF "erazor"
-        TEXT object_Eviscerator_028A 0A 40 80 - - "You" "have" "cold" "..." "You" "want" "my" "finger" "in" "your" "nose" "?" "Laugh" "..." "Mean" "and" "moronic" "laughter" "..." FFFF "trashlando"
-        TEXT object_Eviscerator_028A 0B 40 80 - - "Tumul" "..." "You" "say" "Tumul" "?" FFFF "tumul"
-        TEXT object_Eviscerator_028A 08 40 80 - - "You" "call" "me" "rat" "," "not" "nice" "." "aaahhhggd" ".." "Swear" "insult" "..." FFFF "pterra"
-        TEXT object_Eviscerator_028A 06 41 80 - - "Me" "have" "friends" "on" "planet" "Eden" "..." "Swear" "..." FFFF "Eden"
-        YIELD_B
-        LABEL selector_2F1B
-    CASE "race" selector_3183
-        MENU "bye_bye" "talk" "izwal" "croolis" "sinox" "tromp" "migrax" "buggol" "ondoyant"
-        TEXT object_Eviscerator_028A 03 40 80 - - "Izwals" "small" "with" "trunks" "," "yuk" "..." FFFF "izwal"
-        TEXT object_Eviscerator_028A 04 40 80 - - "Izwal" "," "me" "spalt" "," "me" "eat" "." "Yummy" FFFF "izwal"
-        TEXT object_Eviscerator_028A 05 40 80 - - "Me" "not" "want" "talk" "." "Izwal" "not" "interesting" FFFF "izwal"
-        TEXT object_Eviscerator_028A 0B 40 80 - - "Me" "like" "Izwal" "boiled" "in" "liquid" "nitrogen" "soup" "." "slurp" FFFF "izwal"
-        TEXT object_Eviscerator_028A 09 40 80 - - "Izwals" "small" "." "No" "money" "..." FFFF "izwal"
-        TEXT object_Eviscerator_028A 08 40 80 - - "Izwals" "not" "like" "money" "." "Them" "be" "stupid" "..." FFFF "izwal"
-        TEXT object_Eviscerator_028A 0C 40 80 - - "Izwals" "too" "small" "." "Much" "bones" "..." FFFF "iwals"
-        TEXT object_Eviscerator_028A 04 40 80 - - "Izwal" "boiled" "longtime" "not" "bad" FFFF "izwals"
-        TEXT object_Eviscerator_028A 09 40 80 - - "Me" "like" "Izwal" "stuffed" "with" "mercury" "in" "liquid" "nitrogen" "sauce" FFFF "izwal"
-        TEXT object_Eviscerator_028A 0C 40 80 - - "Me" "big" "Croolis" FFFF "croolis"
-        TEXT object_Eviscerator_028A 08 40 80 - - "Me" "like" "me" "," "kiss" "kiss" "kiss" FFFF "croolis"
-        TEXT object_Eviscerator_028A 0A 40 80 - - "Croolis" "vareux" "stink" "," "yuk" "..." FFFF "croolis"
-        TEXT object_Eviscerator_028A 0C 40 80 - - "Me" "like" "splat" "Croolis" "vareux" FFFF "croolis"
-        TEXT object_Eviscerator_028A 05 40 80 - - "Croolis" "oh" "!" "Hee" "!" "Ho" "!" "Hee" "!" "Ho" "!" FFFF "croolis"
-        TEXT object_Eviscerator_028A 01 40 80 - - "Sinox" "big" "worker" "," "big" "brain," "no" "muscle" FFFF "sinox"
-        TEXT object_Eviscerator_028A 00 40 80 - - "Sinox" "smart" "..." FFFF "sinox"
-        TEXT object_Eviscerator_028A 04 40 80 - - "Me" "like" "smoke" "Trump" "tail" FFFF "tromp"
-        TEXT object_Eviscerator_028A 09 40 80 - - "Trump" "tail" "smell" "good" "." "Nice" "for" "head" "before" "battle" FFFF "tromp"
-        TEXT object_Eviscerator_028A 01 40 80 - - "Migrax" "good" "music" "for" "cry" FFFF "migrax"
-        TEXT object_Eviscerator_028A 03 40 80 - - "Migrax" "like" "earn" "money" FFFF "migrax"
-        TEXT object_Eviscerator_028A 05 40 80 - - "Buggolbig" "democracy" "," "yuk" FFFF "buggol"
-        TEXT object_Eviscerator_028A 08 40 80 - - "Oooh!" "ondoyant" "make" "Croolis" "knees" "tremble" FFFF "ondoyant"
-        TEXT object_Eviscerator_028A 09 40 80 - - "ondoyants" "very" "nice" "." "Me" "like" "." "Slurp" "..." FFFF "ondoyant"
-        YIELD_B
-        LABEL selector_3183
-    CASE "peace" selector_3342
-        MENU "bye_bye" "talk" "friend" "art"
-        TEXT object_Eviscerator_028A 09 40 80 - - "You" "talk" "." "Me" "not" "understand" "..." FFFF "peace"
-        TEXT object_Eviscerator_028A 0A 40 80 - - "You" "talk" "strange" "language" "..." "SWEAR" "..." "INSULT" "..." "Me" "not" "understand" FFFF "peace"
-        TEXT object_Eviscerator_028A 02 40 80 - - "Little" "bleeding" "pieces" "?" "LAUGH" "LAUGH" "SWEAR" "LAUGH" "..." FFFF "peace"
-        TEXT object_Eviscerator_028A 08 40 80 - - "You" "talk" "." "Me" "not" "listen" FFFF "peace"
-        TEXT object_Eviscerator_028A 0C 40 80 - - "Smash" "to" "pieces" "..." "LAUGH" "LAUGH" "SWEAR" "LAUGH" FFFF "peace"
-        TEXT object_Eviscerator_028A 0B 40 80 - - "Piece" "of" "meat" "..." "laugh" "laugh" "laugh" "swear" "cry" "laugh" "..." FFFF "peace"
-        TEXT object_Eviscerator_028A 0A 40 80 - - "You" "say" "something" "?" FFFF "peace"
-        TEXT object_Eviscerator_028A 0B 40 80 - - "You" "bigmouth" FFFF "peace"
-        TEXT object_Eviscerator_028A 08 48 80 - - "Me" "want" "relieve" "me" "." "Bye" "bye" "stranger" "..." FFFF "peace"
-        SHARED_STATE C0 1440 F5 C1 0001
-        TEXT object_Eviscerator_028A 0A 40 80 - - "Me" "not" "friend" "." "Me" "hate" "you" "." "Me" "hate" "all" "..." "SWEAR" "INSULT" "..." FFFF "friend"
-        TEXT object_Eviscerator_028A 06 40 80 - - "Friend" "," "yuk" "." "Ha" "!" "Ha" "!" "Ahhhh" "..." "You" "not" "laugh" "?" FFFF "friend"
-        TEXT object_Eviscerator_028A 05 41 80 - - "Friend" "!" "Ha!" "Ha!" "Ha" "!!!" FFFF "friend"
-        TEXT object_Eviscerator_028A 02 40 80 - - "Me" "like" "art" "of" "war" "." "Nice" "nice" "." "Splat" "all" "time" "..." FFFF "art"
-        TEXT object_Eviscerator_028A 0B 40 80 - - "Art" "," "art" "." "You" "be" "sissy" "..." "Art" "..." "SWEAR" "SWEAR" FFFF "art"
-        YIELD_B
-        LABEL selector_3342
-    CASE "war" selector_3559
-        MENU "bye_bye" "talk" "battle" "enemy" "treasure"
-        TEXT object_Eviscerator_028A 0B 40 80 - - "Ah" "." "War" "nice" "discipline" "..." "Splat" "," "kill" "all" "..." "Me" "like" "..." FFFF "war"
-        TEXT object_Eviscerator_028A 0C 40 80 - - "Ahhh" "," "big" "fun" "." "Explode" "," "burn" "," "kill" "kill" "." "Ahhhh" "..." FFFF "war"
-        TEXT object_Eviscerator_028A 02 40 80 - - "Much" "noise" "," "explosions" "," "screams" "." "Music" "to" "Croolis" "ear" "..." FFFF "war"
-        TEXT object_Eviscerator_028A 0A 40 80 - - "You" "talk" "good" "." "me" "like" "hear" "you" "..." "SWEAR" "..." FFFF "war"
-        TEXT object_Eviscerator_028A 0C 40 80 - - "Ahhh" "," "war" "nice" "discipline" "." "Splat" "much" "enemy" FFFF "war"
-        TEXT object_Eviscerator_028A 02 40 80 - - "War" "nice" "party" ":" "break" "," "shoot" "," "kill," "squash" FFFF "war"
-        TEXT object_Eviscerator_028A 0B 40 80 - - "Noise" "," "explosion," "pain," "fear," "kill" "all" "." "Aaah" "," "me" "like" "..." "INSULT" FFFF "war"
-        TEXT object_Eviscerator_028A 0A 40 80 - - "Me" "want" "splat" "you" "." "Laugh" "laugh" "swear" "." "INSULT" "..." FFFF "war"
-        TEXT object_Eviscerator_028A 09 40 80 - - "You" "excite" "me" "." "Mouth" "water" "now" "." "Aaahrgghhhhh" "..." FFFF "war"
-        TEXT object_Eviscerator_028A 09 40 80 - - "Me" "big" "warrior" "," "friend" "." "Me" "big" "Croolis" "chief" "..." "You" "help" "me" "..." FFFF "battle"
-        TEXT object_Eviscerator_028A 0B 40 80 - - "Me" "like" "squash" "your" "head" "..." "LAUGH" "LAUGH" "..." "INSULT" "..." "SWEAR" "..." FFFF "battle"
-        TEXT object_Eviscerator_028A 09 41 80 - - "Me" "destroy" "and" "splat" "enemy" "..." "Me" "like" "enemy" "," "friend" "..." FFFF "enemy"
-        TEXT object_Eviscerator_028A 08 40 80 - - "You" "talk" "treasure" "." "If" "you" "know" "treasure" "," "you" "know" "Morning" "Oil" FFFF "treasure"
-        TEXT object_Eviscerator_028A 05 48 80 - - "Morning" "Oil" "alone" "know" "treasure" "exist" "..." "You" "know" "that" "stupid" "machine" "?" FFFF "treasure"
-        SHARED_STATE C0 1416 F5 C1 0001
-        YIELD_B
-        LABEL selector_3559
-    CASE "secrets" 0000
-        MENU "bye_bye" "talk" "secret"
-        TEXT object_Eviscerator_028A 04 40 80 - - "Me" "trust" "..." FFFF "secrets"
-        TEXT object_Eviscerator_028A 05 40 80 - - "Treasure" "!" "You" "know" "treasure" "???" FFFF "secret"
-        TEXT object_Eviscerator_028A 06 48 80 - - "Me" "tell" "you" "where" "treasure" "be" "if" "you" "bring" "me" "SPLATCH" FFFF "secret"
-        SHARED_STATE C0 1418 F5 C1 0001
-        YIELD
-END_SELECTOR_LIST list_Eviscerator_2B44
+selector Eviscerator_choices
+    yield_b
+    case "talk" -> selector_2D7B
+        menu "bye_bye" "peace" "war" "prison" "planet" "television" "politics" "reproduction" "science" "race" "consumerism"
+        say Eviscerator voice=0x05 flags=0x40 display=0x80 loop=none control=none : "What you want?" choices "talk"
+        say Eviscerator voice=0x09 flags=0x41 display=0x80 loop=none control=none : "Me want escape. You help me..." choices "prison"
+        say Eviscerator voice=0x02 flags=0x41 display=0x80 loop=none control=none : "Me not say bye bye, INSULT... SWEAR..." choices "bye_bye"
+        say Eviscerator voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me watch TV: good night viewers" choices "television"
+        say Eviscerator voice=0x00 flags=0x40 display=0x80 loop=none control=none : "Vortex of Fortune, me like. Light shine, vortex spin. Nice..." choices "television"
+        say Eviscerator voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Aaah Tina Burner, me cry cry. Me like songs to cry..." choices "television"
+        say Eviscerator voice=0x0C flags=0x40 display=0x80 loop=none control=none : "Me like muscles" choices "politics"
+        say Eviscerator voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Riot police nice politics" choices "politics"
+        say Eviscerator voice=0x0A flags=0x40 display=0x80 loop=none control=none : "War nice politics" choices "politics"
+        say Eviscerator voice=0x08 flags=0x40 display=0x80 loop=none control=none : "Polly ticks! funny funny|, ah ha ah yaeurghhh..." choices "politics"
+        say Eviscerator voice=0x08 flags=0x00 display=0x80 loop=none control=none : "Ooouuuh, you not talk reproduction. Me go red..."
+        say Eviscerator voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Reproduction, hot babes! ahhhhaha ha ha ha aaaaahh, laugh laugh laugh swear..." choices "reproduction"
+        say Eviscerator voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Me not know science. Complicated" choices "science"
+        say Eviscerator voice=0x09 flags=0x40 display=0x80 loop=none control=none : "Science be for sissy brains. Me stronger than science. Me squash science" choices "science"
+        say Eviscerator voice=0x0C flags=0x40 display=0x80 loop=none control=none : "Science, science. You obsessed! Me not like!" choices "science"
+        say Eviscerator voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Trump tail smoke much" choices "consumerism"
+        say Eviscerator voice=0x07 flags=0x40 display=0x80 loop=none control=none : "Me like consume. Rata ta ta ta ta tata. That be consume. LAUGH SWEAR..." choices "consumerism"
+        say Eviscerator voice=0x0C flags=0x40 display=0x80 loop=none control=none : "You be consumerism...." choices "consumerism"
+        yield_b
+        selector_2D7B:
+    case "planet" -> selector_2F1B
+        menu "talk" "corpo" "magnus" "vista" "erazor" "trashlando" "tumul" "pterra" "Eden"
+        say Eviscerator voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Me know planets..." choices "planet"
+        say Eviscerator voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Me like destroy planets, booomm! Swear laugh laugh..." choices "planet"
+        say Eviscerator voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Corpo big planet. Much strangers. Me not like strangers. Make me mad..." choices "corpo"
+        say Eviscerator voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Me splat strangers... Ra ta ta ta ta... Laugh swear" choices "corpo"
+        say Eviscerator voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Much creatures on Magnus. Migrax yuk!" choices "magnus"
+        say Eviscerator voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Me hate SCRUT. Me not like talk about scruter. Me break things!" choices "vista"
+        say Eviscerator voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Erazor everybody, Ha|! Ha|! Ha|! Ha|! Ha|! Swear... You laugh!" choices "erazor"
+        say Eviscerator voice=0x0A flags=0x40 display=0x80 loop=none control=none : "You have cold... You want my finger in your nose? Laugh... Mean and moronic laughter..." choices "trashlando"
+        say Eviscerator voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Tumul... You say Tumul?" choices "tumul"
+        say Eviscerator voice=0x08 flags=0x40 display=0x80 loop=none control=none : "You call me rat, not nice. aaahhhggd.. Swear insult..." choices "pterra"
+        say Eviscerator voice=0x06 flags=0x41 display=0x80 loop=none control=none : "Me have friends on planet Eden... Swear..." choices "Eden"
+        yield_b
+        selector_2F1B:
+    case "race" -> selector_3183
+        menu "bye_bye" "talk" "izwal" "croolis" "sinox" "tromp" "migrax" "buggol" "ondoyant"
+        say Eviscerator voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Izwals small with trunks, yuk..." choices "izwal"
+        say Eviscerator voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Izwal, me spalt, me eat. Yummy" choices "izwal"
+        say Eviscerator voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Me not want talk. Izwal not interesting" choices "izwal"
+        say Eviscerator voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Me like Izwal boiled in liquid nitrogen soup. slurp" choices "izwal"
+        say Eviscerator voice=0x09 flags=0x40 display=0x80 loop=none control=none : "Izwals small. No money..." choices "izwal"
+        say Eviscerator voice=0x08 flags=0x40 display=0x80 loop=none control=none : "Izwals not like money. Them be stupid..." choices "izwal"
+        say Eviscerator voice=0x0C flags=0x40 display=0x80 loop=none control=none : "Izwals too small. Much bones..." choices "iwals"
+        say Eviscerator voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Izwal boiled longtime not bad" choices "izwals"
+        say Eviscerator voice=0x09 flags=0x40 display=0x80 loop=none control=none : "Me like Izwal stuffed with mercury in liquid nitrogen sauce" choices "izwal"
+        say Eviscerator voice=0x0C flags=0x40 display=0x80 loop=none control=none : "Me big Croolis" choices "croolis"
+        say Eviscerator voice=0x08 flags=0x40 display=0x80 loop=none control=none : "Me like me, kiss kiss kiss" choices "croolis"
+        say Eviscerator voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Croolis vareux stink, yuk..." choices "croolis"
+        say Eviscerator voice=0x0C flags=0x40 display=0x80 loop=none control=none : "Me like splat Croolis vareux" choices "croolis"
+        say Eviscerator voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Croolis oh! Hee|! Ho|! Hee|! Ho|!" choices "croolis"
+        say Eviscerator voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Sinox big worker, big brain, no muscle" choices "sinox"
+        say Eviscerator voice=0x00 flags=0x40 display=0x80 loop=none control=none : "Sinox smart..." choices "sinox"
+        say Eviscerator voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Me like smoke Trump tail" choices "tromp"
+        say Eviscerator voice=0x09 flags=0x40 display=0x80 loop=none control=none : "Trump tail smell good. Nice for head before battle" choices "tromp"
+        say Eviscerator voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Migrax good music for cry" choices "migrax"
+        say Eviscerator voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Migrax like earn money" choices "migrax"
+        say Eviscerator voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Buggolbig democracy, yuk" choices "buggol"
+        say Eviscerator voice=0x08 flags=0x40 display=0x80 loop=none control=none : "Oooh! ondoyant make Croolis knees tremble" choices "ondoyant"
+        say Eviscerator voice=0x09 flags=0x40 display=0x80 loop=none control=none : "ondoyants very nice. Me like. Slurp..." choices "ondoyant"
+        yield_b
+        selector_3183:
+    case "peace" -> selector_3342
+        menu "bye_bye" "talk" "friend" "art"
+        say Eviscerator voice=0x09 flags=0x40 display=0x80 loop=none control=none : "You talk. Me not understand..." choices "peace"
+        say Eviscerator voice=0x0A flags=0x40 display=0x80 loop=none control=none : "You talk strange language... SWEAR... INSULT... Me not understand" choices "peace"
+        say Eviscerator voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Little bleeding pieces? LAUGH LAUGH SWEAR LAUGH..." choices "peace"
+        say Eviscerator voice=0x08 flags=0x40 display=0x80 loop=none control=none : "You talk. Me not listen" choices "peace"
+        say Eviscerator voice=0x0C flags=0x40 display=0x80 loop=none control=none : "Smash to pieces... LAUGH LAUGH SWEAR LAUGH" choices "peace"
+        say Eviscerator voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Piece of meat... laugh laugh laugh swear cry laugh..." choices "peace"
+        say Eviscerator voice=0x0A flags=0x40 display=0x80 loop=none control=none : "You say something?" choices "peace"
+        say Eviscerator voice=0x0B flags=0x40 display=0x80 loop=none control=none : "You bigmouth" choices "peace"
+        say Eviscerator voice=0x08 flags=0x48 display=0x80 loop=none control=none : "Me want relieve me. Bye bye stranger..." choices "peace"
+        shared_state 0xC0 0x1440 0xF5 0xC1 0x0001
+        say Eviscerator voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Me not friend. Me hate you. Me hate all... SWEAR INSULT..." choices "friend"
+        say Eviscerator voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Friend, yuk. Ha|! Ha|! Ahhhh... You not laugh?" choices "friend"
+        say Eviscerator voice=0x05 flags=0x41 display=0x80 loop=none control=none : "Friend! Ha! Ha! Ha|!!!" choices "friend"
+        say Eviscerator voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me like art of war. Nice nice. Splat all time..." choices "art"
+        say Eviscerator voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Art, art. You be sissy... Art... SWEAR SWEAR" choices "art"
+        yield_b
+        selector_3342:
+    case "war" -> selector_3559
+        menu "bye_bye" "talk" "battle" "enemy" "treasure"
+        say Eviscerator voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Ah. War nice discipline... Splat, kill all... Me like..." choices "war"
+        say Eviscerator voice=0x0C flags=0x40 display=0x80 loop=none control=none : "Ahhh, big fun. Explode, burn, kill kill. Ahhhh..." choices "war"
+        say Eviscerator voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Much noise, explosions, screams. Music to Croolis ear..." choices "war"
+        say Eviscerator voice=0x0A flags=0x40 display=0x80 loop=none control=none : "You talk good. me like hear you... SWEAR..." choices "war"
+        say Eviscerator voice=0x0C flags=0x40 display=0x80 loop=none control=none : "Ahhh, war nice discipline. Splat much enemy" choices "war"
+        say Eviscerator voice=0x02 flags=0x40 display=0x80 loop=none control=none : "War nice party: break, shoot, kill, squash" choices "war"
+        say Eviscerator voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Noise, explosion, pain, fear, kill all. Aaah, me like... INSULT" choices "war"
+        say Eviscerator voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Me want splat you. Laugh laugh swear. INSULT..." choices "war"
+        say Eviscerator voice=0x09 flags=0x40 display=0x80 loop=none control=none : "You excite me. Mouth water now. Aaahrgghhhhh..." choices "war"
+        say Eviscerator voice=0x09 flags=0x40 display=0x80 loop=none control=none : "Me big warrior, friend. Me big Croolis chief... You help me..." choices "battle"
+        say Eviscerator voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Me like squash your head... LAUGH LAUGH... INSULT... SWEAR..." choices "battle"
+        say Eviscerator voice=0x09 flags=0x41 display=0x80 loop=none control=none : "Me destroy and splat enemy... Me like enemy, friend|..." choices "enemy"
+        say Eviscerator voice=0x08 flags=0x40 display=0x80 loop=none control=none : "You talk treasure. If you know treasure, you know Morning Oil" choices "treasure"
+        say Eviscerator voice=0x05 flags=0x48 display=0x80 loop=none control=none : "Morning Oil alone know treasure exist... You know that stupid machine?" choices "treasure"
+        shared_state 0xC0 0x1416 0xF5 0xC1 0x0001
+        yield_b
+        selector_3559:
+    case "secrets" -> 0x0000
+        menu "bye_bye" "talk" "secret"
+        say Eviscerator voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Me trust..." choices "secrets"
+        say Eviscerator voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Treasure! You know treasure???" choices "secret"
+        say Eviscerator voice=0x06 flags=0x48 display=0x80 loop=none control=none : "Me tell you where treasure be if you bring me SPLATCH" choices "secret"
+        shared_state 0xC0 0x1418 0xF5 0xC1 0x0001
+        yield
+end selector Eviscerator_choices
 
-SELECTOR_LIST list_Tina_Burner_35BA
-    YIELD_B
-    CASE "talk" 0000
-        MENU "bye_bye" "fashion" "cosmetic" "dance" "love" "Tiny"
-        TEXT object_Tina_Burner_0872 00 40 80 - - "You" "be" "crazy" "wolf" "..." "You" "be" "wild" "man" "..." "You" "have" "steel" "muscles" "..." "You" "gorgeous" "..." "gorgeous" "..." FFFF "love"
-        TEXT object_Tina_Burner_0872 01 40 80 - - "Me" "be" "good" "for" "you" "." "You" "love" "frozen" "Migrita" "..." "You" "super" "male" "aaarrghh!" FFFF "love"
-        TEXT object_Tina_Burner_0872 02 40 80 - - "You" "have" "cute" "eyes" "," "me" "love" "red" "..." FFFF "love"
-        TEXT object_Tina_Burner_0872 03 40 80 - - "Me" "like" "murffalo" "leather" "pants" "," "smell" "sweat" "," "hot" "..." "Hot" "..." FFFF "love" "fashion"
-        TEXT object_Tina_Burner_0872 04 40 80 - - "You" "want" "Tiny" "," "me" "be" "here" "for" "you" "..." FFFF "Tiny"
-        TEXT object_Tina_Burner_0872 05 40 80 - - "You" "call" "me" "Tiny..." "Hee" "!" "Hee!" "You" "be" "cute" "..." FFFF "Tiny"
-        TEXT object_Tina_Burner_0872 06 40 80 - - "You" "be" "crazy" "wild" "guy" "..." FFFF "Tiny"
-        TEXT object_Tina_Burner_0872 07 40 80 - - "Aaahh!" "Dance" "all" "night" "in" "your" "arms" "," "oh" "yes" "!!!" FFFF "dance"
-        TEXT object_Tina_Burner_0872 08 40 80 - - "Dance" "night" "away" "." "Love" "all" "day" "...." FFFF "dance"
-        TEXT object_Tina_Burner_0872 09 40 80 - - "Me" "like" "red" "rouge" "on" "lips" "..." FFFF "cosmetic"
-        TEXT object_Tina_Burner_0872 00 40 80 - - "If" "you" "like" "me" "," "you" "offer" "suction" "drill" "..." FFFF "cosmetic"
-        TEXT object_Tina_Burner_0872 01 40 80 - - "Electric" "haircurler" "big" "invention" "." "Me" "shave" "legs" "with" "boiling" "magma" "..." "Ouch" "..." FFFF "cosmetic"
-        TEXT object_Tina_Burner_0872 02 40 80 - - "You" "like" "talk" "makeup" "..." "You" "strange" "..." FFFF "cosmetic"
-        TEXT object_Tina_Burner_0872 03 40 80 - - "Facelift" "be" "bad" "idea" "." "Them" "give" "me" "beard" "..." FFFF "cosmetic"
-        TEXT object_Tina_Burner_0872 04 40 80 - - "You" "like" "latest" "fashion" "?" "Trump" "skin" "cocktail" "dress" "..." FFFF "fashion"
-        TEXT object_Tina_Burner_0872 05 40 80 - - "You" "give" "Tiny" "nice" "murfallo" "hide" "bag" FFFF "fashion"
-        YIELD
-END_SELECTOR_LIST list_Tina_Burner_35BA
+selector Tina_Burner_choices
+    yield_b
+    case "talk" -> 0x0000
+        menu "bye_bye" "fashion" "cosmetic" "dance" "love" "Tiny"
+        say Tina_Burner voice=0x00 flags=0x40 display=0x80 loop=none control=none : "You be crazy wolf... You be wild man... You have steel muscles... You gorgeous... gorgeous..." choices "love"
+        say Tina_Burner voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Me be good for you. You love frozen Migrita... You super male aaarrghh!" choices "love"
+        say Tina_Burner voice=0x02 flags=0x40 display=0x80 loop=none control=none : "You have cute eyes, me love red..." choices "love"
+        say Tina_Burner voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Me like murffalo leather pants, smell sweat, hot... Hot..." choices "love" "fashion"
+        say Tina_Burner voice=0x04 flags=0x40 display=0x80 loop=none control=none : "You want Tiny, me be here for you..." choices "Tiny"
+        say Tina_Burner voice=0x05 flags=0x40 display=0x80 loop=none control=none : "You call me Tiny... Hee|! Hee! You be cute..." choices "Tiny"
+        say Tina_Burner voice=0x06 flags=0x40 display=0x80 loop=none control=none : "You be crazy wild guy..." choices "Tiny"
+        say Tina_Burner voice=0x07 flags=0x40 display=0x80 loop=none control=none : "Aaahh! Dance all night in your arms, oh yes!!!" choices "dance"
+        say Tina_Burner voice=0x08 flags=0x40 display=0x80 loop=none control=none : "Dance night away. Love all day...." choices "dance"
+        say Tina_Burner voice=0x09 flags=0x40 display=0x80 loop=none control=none : "Me like red rouge on lips..." choices "cosmetic"
+        say Tina_Burner voice=0x00 flags=0x40 display=0x80 loop=none control=none : "If you like me, you offer suction drill..." choices "cosmetic"
+        say Tina_Burner voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Electric haircurler big invention. Me shave legs with boiling magma... Ouch..." choices "cosmetic"
+        say Tina_Burner voice=0x02 flags=0x40 display=0x80 loop=none control=none : "You like talk makeup... You strange..." choices "cosmetic"
+        say Tina_Burner voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Facelift be bad idea. Them give me beard..." choices "cosmetic"
+        say Tina_Burner voice=0x04 flags=0x40 display=0x80 loop=none control=none : "You like latest fashion? Trump skin cocktail dress..." choices "fashion"
+        say Tina_Burner voice=0x05 flags=0x40 display=0x80 loop=none control=none : "You give Tiny nice murfallo hide bag" choices "fashion"
+        yield
+end selector Tina_Burner_choices
 
-SELECTOR_LIST list_Amigo_37E3
-    YIELD_B
-    CASE "talk" selector_38A4
-        MENU "Eviscerator" "Tina_Burner" "Purple_Haze"
-        TEXT object_Amigo_06C2 01 40 80 - - "My" "time" "is" "precious" "," "stranger" "..." FFFF "talk"
-        TEXT object_Amigo_06C2 02 40 80 - - "Like" "I" "always" "say" ":" "heard" "nothing" "," "seen" "nothing" "..." FFFF "talk"
-        TEXT object_Amigo_06C2 03 41 80 - - "What" "do" "you" "want" "to" "know" "?" FFFF "talk"
-        TEXT object_Amigo_06C2 05 41 80 - - "Ha!!!" "That" "old" "bag" "..." FFFF "Tina_Burner"
-        TEXT object_Amigo_06C2 05 40 80 - - "At" "the" "PURPLE" "HAZE" "the" "client" "always" "pays" "...." "Ha!" "Ha!" "Ha!" FFFF "Purple_Haze"
-        TEXT object_Amigo_06C2 06 40 80 - - "The" "Purple" "Haze" "is" "the" "classiest" "club" "in" "the" "galaxy" "..." FFFF "Purple_Haze"
-        YIELD_B
-        LABEL selector_38A4
-    CASE "Eviscerator" selector_39EE
-        MENU "bye_bye" "talk" "prison" "Galabar" "meteorut"
-        TEXT object_Amigo_06C2 02 40 80 - - "Poor" "old" "Eviscerator" "has" "been" "a" "prisoner" "for" "ages" "on" "the" "planet" "MASTACHOK" FFFF "prison"
-        TEXT object_Amigo_06C2 03 40 80 - - "The" "prison" "on" "MASTACHOK" "is" "attack" "proof" "and" "escape" "proof" "." "It's" "permanently" "guarded" "by" "SCRUT" "robots" "..." FFFF "prison"
-        TEXT object_Amigo_06C2 05 40 80 - - "Life" "ain't" "easy" "," "stranger" "..." FFFF "prison"
-        TEXT object_Amigo_06C2 03 40 80 - - "BA" "LA" "GAR" "LA" "GA" "BAR..." "You" "can" "speak" "KRWITT" "!" "You're" "an" "educated" "guy" "," "stranger" "..." FFFF "Galabar"
-        TEXT object_Amigo_06C2 05 40 80 - - "I" "picked" "up" "a" "few" "words" "of" "KRWITT" "on" "GOLGOS" "," "while" "I" "was" "doing" "my" "barman" "studies" "..." FFFF "Galabar"
-        TEXT object_Amigo_06C2 03 40 80 - - "My" "first" "wife" "GALA" "spoke" "fluent" "KRWITT" "." "Her" "father" "came" "from" "GLUXXTAN" FFFF "Galabar"
-        TEXT object_Amigo_06C2 04 40 80 - - "GALA" "was" "very" "sensual" "." "She" "got" "cut" "up" "by" "a" "migrax" "..." "Tough" "..." FFFF "Galabar"
-        TEXT object_Amigo_06C2 04 40 80 - - "I'm" "obsessed" "with" "meteorut" "," "stranger...." FFFF "meteorut"
-        YIELD_B
-        LABEL selector_39EE
-    CASE "meteorut" selector_3ACC
-        MENU "bye_bye" "talk" "acidium" "nitrium" "glycérium"
-        TEXT object_Amigo_06C2 05 40 80 - - "When" "I" "start" "to" "itch" "right" "there" "..." "I" "know" "the" "fever's" "coming" "..." "I" "tried" "Aspirox" "," "but" "it" "didn't" "help" "..." FFFF "meteorut"
-        TEXT object_Amigo_06C2 02 40 80 - - "The" "only" "thing" "that" "works" "against" "meterorut" "is" "acidium" "," "stranger" "..." FFFF "acidium"
-        TEXT object_Amigo_06C2 04 40 80 - - "My" "first" "wife" "," "GALA," "could" "cure" "meteorut" "without" "acidium." "She" "used" "white" "hot" "blades" "..." FFFF "acidium"
-        TEXT object_Amigo_06C2 02 40 80 - - "Nitrium" "is" "dangerous" "if" "you" "mix" "it" "with" "glycerium" "..." FFFF "nitrium"
-        TEXT object_Amigo_06C2 01 40 80 - - "Glycerium" "is" "real" "dangerous" "when" "you" "mix" "it" "with" "nitrium" "..." FFFF "glycerium"
-        YIELD_B
-        LABEL selector_3ACC
-    CASE "acidium" selector_3AFE
-        MENU "bye_bye" "talk" "pentium"
-        TEXT object_Amigo_06C2 02 40 80 - - "Pentium" "is" "a" "mixture" "of" "glycerium" "," "nitrium" "and" "processed" "Trump" "liver" FFFF "pentium"
-        YIELD_B
-        LABEL selector_3AFE
-    CASE "pentium" 0000
-        MENU "bye_bye" "talk" "splatch"
-        TEXT object_Amigo_06C2 03 40 80 - - "Splatch" "is" "a" "mixture" "of" "pentium" "," "acidium" "and" "processed" "murffalo" "liver" FFFF "splatch"
-        TEXT object_Amigo_06C2 02 40 80 - - "You" "want" "splatch" "?" "Why" "didn't" "you" "say" "so" "?" FFFF "splatch"
-        TEXT object_Amigo_06C2 01 48 80 - - "I" "happen" "to" "have" "some" "..." FFFF "splatch"
-        SHARED_STATE C0 1416 F5 C1 0001
-        YIELD
-END_SELECTOR_LIST list_Amigo_37E3
+selector Amigo_choices
+    yield_b
+    case "talk" -> selector_38A4
+        menu "Eviscerator" "Tina_Burner" "Purple_Haze"
+        say Amigo voice=0x01 flags=0x40 display=0x80 loop=none control=none : "My time is precious, stranger..." choices "talk"
+        say Amigo voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Like I always say: heard nothing, seen nothing..." choices "talk"
+        say Amigo voice=0x03 flags=0x41 display=0x80 loop=none control=none : "What do you want to know?" choices "talk"
+        say Amigo voice=0x05 flags=0x41 display=0x80 loop=none control=none : "Ha!!! That old bag..." choices "Tina_Burner"
+        say Amigo voice=0x05 flags=0x40 display=0x80 loop=none control=none : "At the PURPLE HAZE the client always pays.... Ha! Ha! Ha!" choices "Purple_Haze"
+        say Amigo voice=0x06 flags=0x40 display=0x80 loop=none control=none : "The Purple Haze is the classiest club in the galaxy..." choices "Purple_Haze"
+        yield_b
+        selector_38A4:
+    case "Eviscerator" -> selector_39EE
+        menu "bye_bye" "talk" "prison" "Galabar" "meteorut"
+        say Amigo voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Poor old Eviscerator has been a prisoner for ages on the planet MASTACHOK" choices "prison"
+        say Amigo voice=0x03 flags=0x40 display=0x80 loop=none control=none : "The prison on MASTACHOK is attack proof and escape proof. It's permanently guarded by SCRUT robots|..." choices "prison"
+        say Amigo voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Life ain't easy, stranger..." choices "prison"
+        say Amigo voice=0x03 flags=0x40 display=0x80 loop=none control=none : "BA LA GAR LA GA BAR... You can speak KRWITT! You're an educated guy, stranger..." choices "Galabar"
+        say Amigo voice=0x05 flags=0x40 display=0x80 loop=none control=none : "I picked up a few words of KRWITT on GOLGOS, while I was doing my barman studies..." choices "Galabar"
+        say Amigo voice=0x03 flags=0x40 display=0x80 loop=none control=none : "My first wife GALA spoke fluent KRWITT. Her father came from GLUXXTAN" choices "Galabar"
+        say Amigo voice=0x04 flags=0x40 display=0x80 loop=none control=none : "GALA was very sensual. She got cut up by a migrax... Tough..." choices "Galabar"
+        say Amigo voice=0x04 flags=0x40 display=0x80 loop=none control=none : "I'm obsessed with meteorut, stranger...." choices "meteorut"
+        yield_b
+        selector_39EE:
+    case "meteorut" -> selector_3ACC
+        menu "bye_bye" "talk" "acidium" "nitrium" "glycérium"
+        say Amigo voice=0x05 flags=0x40 display=0x80 loop=none control=none : "When I start to itch right there... I know the fever's coming... I tried Aspirox, but it didn't help..." choices "meteorut"
+        say Amigo voice=0x02 flags=0x40 display=0x80 loop=none control=none : "The only thing that works against meterorut is acidium, stranger..." choices "acidium"
+        say Amigo voice=0x04 flags=0x40 display=0x80 loop=none control=none : "My first wife, GALA, could cure meteorut without acidium. She used white hot blades..." choices "acidium"
+        say Amigo voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Nitrium is dangerous if you mix it with glycerium..." choices "nitrium"
+        say Amigo voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Glycerium is real dangerous when you mix it with nitrium..." choices "glycerium"
+        yield_b
+        selector_3ACC:
+    case "acidium" -> selector_3AFE
+        menu "bye_bye" "talk" "pentium"
+        say Amigo voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Pentium is a mixture of glycerium, nitrium and processed Trump liver" choices "pentium"
+        yield_b
+        selector_3AFE:
+    case "pentium" -> 0x0000
+        menu "bye_bye" "talk" "splatch"
+        say Amigo voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Splatch is a mixture of pentium, acidium and processed murffalo liver" choices "splatch"
+        say Amigo voice=0x02 flags=0x40 display=0x80 loop=none control=none : "You want splatch? Why didn't you say so?" choices "splatch"
+        say Amigo voice=0x01 flags=0x48 display=0x80 loop=none control=none : "I happen to have some..." choices "splatch"
+        shared_state 0xC0 0x1416 0xF5 0xC1 0x0001
+        yield
+end selector Amigo_choices
 
-SELECTOR_LIST list_Super_Zen_3B6F
-    YIELD_B
-    CASE "talk" 0000
-        MENU "hello"
-        TEXT object_Super_Zen_08BA 00 40 80 - - "hello" "commander" FFFF "hello"
-        END
-END_SELECTOR_LIST list_Super_Zen_3B6F
+selector Super_Zen_choices
+    yield_b
+    case "talk" -> 0x0000
+        menu "hello"
+        say Super_Zen voice=0x00 flags=0x40 display=0x80 loop=none control=none : "hello commander" choices "hello"
+        halt
+end selector Super_Zen_choices

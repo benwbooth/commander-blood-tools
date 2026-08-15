@@ -24,7 +24,7 @@ routine boundaries; `.DIC` and `.VAR` establish separate interned-text and
 initial-state inputs.
 
 All ten shipped `.COD` and `.BAS` images now round-trip byte exactly through
-both `CBVM-ASM` and `bloodscript-v2`. The current BloodScript manifest records
+both `CBVM-ASM` and `bloodscript-v3`. The current BloodScript manifest records
 the unresolved generic-opcode and raw-byte totals rather than folding them into
 semantic coverage.
 

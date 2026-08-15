@@ -1,11 +1,9 @@
-; BloodScript typed VM source
-; format: bloodscript-v2
-; image: BAS
-; size: 0x00000020
+// format: bloodscript-v3
+// image: BAS
 
-YIELD
-YIELD_B
-SELECTOR_NODE "parler"@0A50 0000
-MENU "adieu"@0A57
-TEXT 082A FF 61 80 - - "Yes"@0900 "!"@00F0 "Commander"@04E9 "?"@059F FFFF "bye_bye"@0A5D
-END
+yield
+yield_b
+selector_node "parler" 0x0000
+menu "adieu"
+say 0x082A voice=0xFF flags=0x61 display=0x80 loop=none control=none : "Yes! Commander?" choices "bye_bye"
+halt
