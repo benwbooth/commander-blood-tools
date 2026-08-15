@@ -1324,12 +1324,22 @@ register and flag effects, stack integrity, and far return.
 
 Open Watcom 1.9 medium (`-3 -ox -mm -zdf -we`) compiles the actual natural
 candidate warning-free to 38 instructions/83 bytes versus the original 36/79,
-with 88.89 percent mnemonic-multiset overlap and no inline assembly. Returning
-the destination terminator naturally exposes the original BP result. Watcom
-uses BX for the recursive helper cursor and DS for record reads, whereas the
-binary uses BP and ES; full-source integration also relies on the shipped
-SS=DS=GS data group and clear DF. These are narrow ABI/placement boundaries,
-not missing logic in the recovered C loop.
+with 88.89 percent mnemonic-multiset overlap and no inline assembly. Turbo C
+2.01 medium emits 53 instructions. The compiler probe now includes the actual
+candidate rather than a copied miniature; doing so exposed and fixed the
+shared Ship 3D header's missing direct include for `bloodprg_rect_i16`.
+Returning the destination terminator naturally exposes the original BP result.
+
+Both real calls at `0x00B0EE` and `0x00B105` construct ES:DI from the record
+block, ignore returned BP, and rely on preserved DI or the generated list at
+`0x250B`. Their containing routine also executes `REP MOVSD` before the first
+call without changing direction, independently confirming the normal clear-DF
+C runtime state. Watcom uses BX for the recovered recursive-helper cursor and
+DS for record reads, whereas the binary uses BP and ES; it qualifies list and
+arche accesses through SS, matching the shipped `SS=DS=GS` data group. These
+are coherent ABI/placement choices for a full source build, not missing logic,
+so the candidate is accepted for source-port integration. Exact binary
+replacement still requires the original helper BP cursor and terminal flags.
 
 Inline menu reveal step `0x0072A8` redraws the currently visible prefix of the
 concept-menu word-offset list. It enters when `DS:0x67B0` bit zero is set, or

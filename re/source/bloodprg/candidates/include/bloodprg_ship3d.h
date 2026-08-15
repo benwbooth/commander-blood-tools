@@ -2,6 +2,7 @@
 #define BLOODPRG_SHIP3D_H
 
 #include "bloodprg_common.h"
+#include "bloodprg_input.h"
 #include "bloodprg_vm.h"
 
 #define SHIP_3D_POS_KIND_DIRECT_8 0x0008u
