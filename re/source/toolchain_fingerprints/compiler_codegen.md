@@ -5183,13 +5183,21 @@ handlers consume and return a far `DS:SI` cursor. The vectors also verify
 initialization, finalization, result AX, non-AX preservation, close flags, and
 the far return.
 
-Open Watcom 1.9 (`-3 -os -s -mh -we`) compiles the packed-directory candidate
-warning-free to 207 instructions/548 bytes versus the original 111/277, with
-75.68 percent mnemonic-multiset overlap and no inline assembly. Full-source
-integration requires the recovered far `DS:SI` handler declarations, shipped
-`SS == GS` stream storage, fixed data placement, and the valid-opcode invariant.
-Direct replacement additionally needs the original raw DOS flag/error behavior,
-GS-qualified marker stores, and preserve-all allocation.
+The compiler probe now includes the authoritative candidate instead of a copied
+miniature. A byte-array finalization store preserves the byte-granular wrapped
+cursor and removes Watcom's generated `__PIA` pointer-adjustment helper. Open
+Watcom 1.9 (`-3 -os -s -mh -we`) compiles it warning-free to a 201-instruction,
+486-byte body plus a 36-byte switch table versus the original 111-instruction,
+277-byte body plus its 36-byte table, with 74.77 percent mnemonic-multiset
+overlap and no inline assembly. Turbo C 2.01 emits 350 instructions.
+
+Live parsing finds no unknown opcode in all 145 shipped `DESCRIPT.DES` records,
+so the C switch's bounds check does not alter game behavior. The candidate is
+accepted for source-port integration with the recovered far `DS:SI` handler
+declarations, shipped `SS=DS=GS` stream storage, fixed data placement, and typed
+DOS adapters. Raw DOS carry/error residue, invalid-opcode dispatch beyond the
+table, explicit GS overrides, and exact register allocation remain direct-
+binary-replacement differences rather than missing parser logic.
 
 ## BLOODPRG background asset cache candidate
 

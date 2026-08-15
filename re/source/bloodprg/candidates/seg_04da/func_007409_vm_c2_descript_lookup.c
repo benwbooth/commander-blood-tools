@@ -27,6 +27,7 @@ int CB_FAR vm_c2_descript_lookup(
     const cb_u8 CB_FAR *script_bytes;
     cb_u16 file_handle;
     cb_u16 directory_bytes;
+    cb_u16 stream_offset;
     cb_u8 directory_character;
     cb_u8 wanted_character;
     cb_u8 opcode;
@@ -164,7 +165,10 @@ int CB_FAR vm_c2_descript_lookup(
         result = 1;
     }
 
-    *(cb_game_word_ptr)byte_parser_stream_0f18_cursor = 0xFFFFu;
+    /* The stream cursor is byte-granular and can wrap between the two bytes. */
+    stream_offset = (cb_u16)byte_parser_stream_0f18_cursor;
+    byte_parser_stream_segment[stream_offset] = 0xFFu;
+    byte_parser_stream_segment[(cb_u16)(stream_offset + 1u)] = 0xFFu;
     byte_parser_stream_0f18_cursor =
             (cb_game_char_ptr)BYTE_PARSER_STREAM_BASE;
     cb_dos_close(file_handle);
