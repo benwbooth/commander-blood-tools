@@ -1434,14 +1434,24 @@ inherited compare state, and the signed `0x8000` delta edge. The vectors execute
 the real mirrored far sqrt body and verify the binary's full EAX result: AX is
 the root while the upper word remains the squared-distance high word.
 
-Replacing far-base arithmetic and three private helpers with one natural
-near-pointer function reduces Watcom medium output from 617 to 282 bytes. The
-remaining result is 117 instructions versus 88 original, with mnemonic multiset
-overlap 0.8523. Watcom emits two far `__I4M` calls for the long squares, while
-the binary uses compact 386 `CWDE`/`MUL EAX` operations, `SHLD` to form DX:AX,
-and one far sqrt call. Turbo C 2.01 medium emits 178 instructions. Exact
-integration still requires GS table placement and a narrow codegen/preservation
-boundary; the recovered algorithm remains plain C.
+The compiler probe now includes the maintained natural near-pointer function
+directly. Open Watcom 1.9 medium size mode (`-3 -os -s -mm -zdp -we`) emits 113
+instructions/268 bytes versus 88/201 original, with 85.23 percent mnemonic-
+multiset and 71.59 percent ordered overlap; Turbo C 2.01 medium emits 178
+instructions. Watcom emits two far `__I4M` calls for the long squares, while the
+binary uses compact 386 `CWDE`/`MUL EAX` operations, `SHLD` to form DX:AX, and
+one far sqrt call.
+
+A linked Turbo C DOS executable uses independent field-offset, resolver, and
+sqrt probes around the maintained function. It captures the exact 32-bit sqrt
+operand while sweeping all 65,536 wrapped X deltas and a coprime permutation of
+all Y deltas, then covers six direct, delegated, inherited-compare, and
+kind-`0x0100` match/mismatch paths. All 65,542 cases pass through a valid
+3,412-byte OMF object. The routine is accepted for source-port integration with
+plain C arithmetic and the typed far sqrt call. Direct replacement still needs
+the original compact multiply/`SHLD` lowering and upper EAX must retain the
+squared-distance high word; compiled C callers consume only the returned AX
+distance.
 
 Ship 3D object-table bit test `0x006210` has eight direct vectors spanning
 directory indices 0, 1, 7, 8, and 15, a wrapping 20-byte directory walk, and a
@@ -3895,7 +3905,7 @@ LCS and then mnemonic similarity:
 | `field_offset` | medium, `-ox`, register | 8/20 | 0.3750 | 0.7500 | 0.3750 |
 | `vm_record_lookup_by_threshold` | medium, `-os -s`, register | 12/14 | 0.0833 | 0.9167 | 0.1667 |
 | `active_object_list_build` | medium, `-os -s`, register | 32/43 | 0.2188 | 0.8750 | 0.2500 |
-| `ship_3d_position_distance` | medium, `-ox`, register | 88/117 | 0.0682 | 0.5341 | 0.1023 |
+| `ship_3d_position_distance` | medium, `-os -s`, register | 88/113 | 0.0682 | 0.7159 | 0.1477 |
 | `ship_3d_position_field_resolve` | medium, `-ox`, register | 45/50 | 0.1111 | 0.6667 | 0.2444 |
 | `ship_3d_object_table_bit_test` | medium, `-ox`, register | 31/33 | 0.2581 | 0.7419 | 0.3548 |
 | `ship_3d_nav_source_list_build` | medium, `-ox`, register | 34/51 | 0.1765 | 0.7647 | 0.2059 |
