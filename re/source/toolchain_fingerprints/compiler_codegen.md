@@ -6923,6 +6923,35 @@ requires `FS_DATA` placement and the shipped `DS=GS` aliases; direct replacement
 also needs the original carry-return string comparison and segmented helper
 ABIs.
 
+## BLOODPRG VM control-flow owner at 0x0056FE
+
+The 124-byte near routine consumes an object in `DS:SI` and a BAS code-list
+offset in `BX`. It preserves the object under `ES`, loads the code-image segment
+into `DS`, resolves selector `0x0F`, and selects the control value from the
+object field, the first linked node, or the `GS:0x6782` branch-A override in that
+order. It writes the selected value back to both the field and branch A, runs
+the first matching block plus the word collector, then independently scans and
+runs the nonzero `GS:0x6784` branch-B block without publishing a new program
+counter or collecting words.
+
+Fourteen patched-boundary vectors execute the untouched original body with its
+real field resolver and linked-node scanner. They cover all selection sources,
+first/second/missing nodes, both dispatch phases, signed and wrapping fields,
+the lowest object-kind bit, a code list at offset zero, the ignored code-image
+pointer offset, exact state and helper order, segment ownership, registers,
+flags, stack integrity, and the near return. The corrected natural C snapshots
+each volatile branch word once at the assembly's observation point.
+
+Open Watcom 1.9 large (`-3 -os -s -ml -we`) compiles the warning-free source to
+69 instructions/162 bytes versus 53/124 original, with 84.91 percent
+mnemonic-multiset overlap and 81.13 percent ordered overlap. Turbo C 2.01 large
+emits 99 instructions with 98.11 percent multiset and 88.68 percent ordered
+overlap and assembles warning-free to an 880-byte OMF object. The source uses no
+inline assembly or register-state facade. It is accepted for source-port
+integration under the floating code-image `DS` and runtime `SS=GS` contracts;
+direct replacement still needs the original frameless register allocation,
+nested-callee residue, and path-specific flags.
+
 ## BLOODPRG post-VM presentation scan at 0x005816
 
 The 606-byte near routine walks the 20-byte VM directory after script execution.

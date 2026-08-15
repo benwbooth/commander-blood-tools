@@ -24,6 +24,8 @@ void CB_NEAR vm_control_flow(
     cb_u16 control_value;
     cb_u16 field_offset;
     cb_u16 match_offset;
+    cb_u16 branch_a;
+    cb_u16 branch_b;
 
     code_image = vm_code_image;
     vm_block_scan_flags = 1;
@@ -38,9 +40,11 @@ void CB_NEAR vm_control_flow(
     if (control_value == 0u) {
         control_value = code_nodes->value;
     }
-    if (vm_branch_a != 0u) {
-        control_value = vm_branch_a;
+    branch_a = vm_branch_a;
+    if (branch_a == 0u) {
+        branch_a = control_value;
     }
+    control_value = branch_a;
     *control_field = control_value;
     vm_branch_a = control_value;
 
@@ -53,8 +57,9 @@ void CB_NEAR vm_control_flow(
         vm_op_a3_collect();
     }
 
-    if (vm_branch_b != 0u) {
-        matched_block = value_scan_match(vm_branch_b, code_nodes);
+    branch_b = vm_branch_b;
+    if (branch_b != 0u) {
+        matched_block = value_scan_match(branch_b, code_nodes);
         match_offset = (cb_u16)matched_block;
         if (match_offset != 0u) {
             vm_script_block_scan((bloodprg_vm_image_ptr)VM_CONTROL_CODE_AT(
