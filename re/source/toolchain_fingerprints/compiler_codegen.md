@@ -293,12 +293,17 @@ so the natural function is correctly `void` rather than inventing a status.
 The natural candidate composes the recovered typed helpers, reads the first
 entry through a far pointer, and threads `link_target_offset` through a bounded
 50-call loop. It has no register model, memory emulator, or inline assembly.
-Open Watcom `-3 -ox -mh` compiles it warning-free to 42 instructions and 110
-bytes versus 43 instructions and 85 bytes in the binary. The probe has a 20.93
-percent instruction and byte-line LCS, 44.19 percent mnemonic-sequence LCS,
-and 58.14 percent mnemonic-multiset overlap. Exact integration still needs the
-carry helper boundaries, AX input, ES:SI/BP activation ABI, far calls, and the
-original preserve-all wrapper.
+The compiler-corpus sample now includes that authoritative source. Open Watcom
+1.9 medium (`-3 -ox -mm -zdf -we`) compiles it warning-free to 42
+instructions/110 bytes versus 43/85 original, with 58.14 percent
+mnemonic-multiset and 44.19 percent ordered overlap. Turbo C 2.01 medium (`-mm
+-O -Z`) emits 49 instructions with 74.42 percent multiset and 58.14 percent
+ordered overlap and assembles warning-free to OBJ.
+
+The accepted scene-line dispatcher is its sole recovered C caller. The
+coordinator is accepted for source-port integration; an isolated replacement
+still needs carry helper boundaries, AX input, ES:SI/BP activation, far calls,
+and the original preserve-all wrapper.
 
 For `0x00A1B4`, five direct coordinator vectors prove the presentation-queue
 service flow. They cover the nonbanked zero-handle exit, two refill retries
