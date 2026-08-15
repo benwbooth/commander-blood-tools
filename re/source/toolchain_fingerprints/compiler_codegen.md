@@ -2309,14 +2309,16 @@ new state is returned in AX with BX/DX restored. This AX result changed the
 natural signature from `void` to `uint16_t`; the known caller discards it, but
 it remains part of the recovered routine contract.
 
-Open Watcom `-3 -ox -mm` compiles that candidate without warnings to the same
+The compiler probe now includes the authoritative candidate directly. Open
+Watcom `-3 -ox -mm` compiles it without warnings to the same
 25-instruction count and 59 bytes versus 58 original. Moving the mode and frame
 declarations before the flags declaration makes Watcom retain mode in `BX` and
 frame in `DX`, matching the original allocation and raising exact encoded-line
 overlap from 5/25 to 11/25. It still uses byte-sized mask/test operations and
 constant mode assignments instead of the original word operations and repeated
 `ADD BX,BX`, so the shape is close but not exact. Turbo C 2.01 medium emits 41
-instructions.
+instructions and assembles cleanly to OBJ; both compilers retain 88 percent
+mnemonic-multiset and ordered overlap.
 
 Byte-parser opcode-07 handler `0x007684` contains a stale-flag dependency that
 the earlier candidate misread as an asset-id sign test. Its `CBW` sign-extends
