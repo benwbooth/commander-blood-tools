@@ -141,9 +141,8 @@ field ring.holder = ring + 0x0014 // VAR kind 0x0400, selector(s) 11
 field orxx.current_location = orxx + 0x0004 // VAR kind 0x0200, selector(s) 11
 field orxx.action = orxx + 0x000A // VAR kind 0x0200, selector(s) 13
 
-proc init5 {
-    activation enabled until Beau
-    guard_pop
+proc init5 enabled until Beau {
+} then {
     Moskito.in_play = true
     airport.in_play = true
     Corpo.in_play = true
@@ -188,70 +187,63 @@ proc init5 {
     init5.enabled = false
 }
 
-proc Beau {
-    activation enabled until cla
+proc Beau enabled until cla {
     during contact
     require presentation == Beauregard
-    guard_pop
+} then {
     say Beauregard voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Let me sleep... Commander..."
     say Beauregard voice=0x00 flags=0x08 display=0x80 loop=none control=none : "..."
     end presentation Beauregard
 }
 
-proc cla {
-    activation enabled until recept
+proc cla enabled until recept {
     during contact
     require presentation == Anna_Haf
-    guard_pop
+} then {
     say Anna_Haf voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Let me sleep... Commander..."
     say Anna_Haf voice=0xFF flags=0x08 display=0x80 loop=none control=none : "..."
     end presentation Anna_Haf
 }
 
-proc recept {
-    activation enabled until morn
+proc recept enabled until morn {
     during contact
     require presentation == receiver
-    guard_pop
+} then {
     say receiver voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Shhhhhh... Shhhhh..."
     say receiver voice=0xFF flags=0x08 display=0x80 loop=none control=none : "..."
     end presentation receiver
 }
 
-proc morn {
-    activation disabled until mac
+proc morn disabled until mac {
     during contact
     require presentation == Morning_Oil
-    guard_pop
+} then {
     say Morning_Oil voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Let me sleep... Commander..."
     say Morning_Oil voice=0xFF flags=0x08 display=0x80 loop=none control=none : "..."
     end presentation Morning_Oil
 }
 
-proc mac {
-    activation enabled until mac2
+proc mac enabled until mac2 {
     require arche.current_location == Kult
-    guard_pop
+} then {
     Scruter_Mac.current_location = Kult
 }
 
-proc mac2 {
-    activation enabled until kult
+proc mac2 enabled until kult {
     require arche.current_location == Mastachok
-    guard_pop
+} then {
     Scruter_Mac.current_location = Mastachok
 }
 
-proc kult {
-    activation enabled until ondo1
+proc kult enabled until ondo1 {
     during travel
     require arche.current_location == Kult
     require presentation == Scruter_Mac
-    guard_pop
+} then {
     say Scruter_Mac voice=0x00 flags=0x08 display=0x80 loop=none control=none : "Turn around|... Move on... There are too many pilgrims|... The planet's inaccessible|..."
     request sequence "1kkult20.hnm"
     say Scruter_Mac voice=0x01 flags=0x00 display=0x80 loop=none control=none : "The planet KULT is inaccessible. There are too many pilgrims..."
-    when block_02FC {
+    when {
         require Scruter_Mac.encounter_count < 0x0003
     } then {
         say Scruter_Mac voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Commander... Commander|... It's the planet TUMUL with a new name.."
@@ -269,11 +261,10 @@ proc kult {
     end presentation Scruter_Mac
 }
 
-proc ondo1 {
-    activation enabled until big1
+proc ondo1 enabled until big1 {
     during contact
     require presentation == ondoyant
-    guard_pop
+} then {
     say ondoyant voice=0x11 flags=0x00 display=0x80 loop=none control=none : "..."
     say ondoyant voice=0x12 flags=0x00 display=0x80 loop=none control=none : "..."
     say ondoyant voice=0x00 flags=0x00 display=0x80 loop=none control=none : "I am yours to command, Commander|..."
@@ -282,7 +273,7 @@ proc ondo1 {
     say ondoyant voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Holy hen gizzards, Commander|... I'm starting to overheat..."
     say ondoyant voice=0x02 flags=0x00 display=0x80 loop=none control=none : "You can talk to me Commander|... Tell me about yourself..."
     say ondoyant voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Where did she learn to swim like that|?|... You think she'd agree to give me lessons, Commander|?"
-    when block_051E {
+    when {
         require Tina_Burner.encounter_count > 0x0000
         require state[0x136A] == 0x0001
     } then {
@@ -303,12 +294,11 @@ proc ondo1 {
     end presentation ondoyant
 }
 
-proc big1 {
-    activation enabled until boba0
+proc big1 enabled until boba0 {
     during travel
     require arche.current_location == Bigbang
     require presentation == Bug_Deluxe
-    guard_pop
+} then {
     say Bug_Deluxe voice=0x00 flags=0x00 display=0x80 loop=none control=none : "You here, Consumer Comrade?"
     say Bug_Deluxe voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander!!! It's Bug Deluxe, the sales assistant from VENUSIA... How about that..."
     say Bug_Deluxe voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Are you here for the wedding?|..."
@@ -333,12 +323,11 @@ proc big1 {
     end presentation Bug_Deluxe
 }
 
-proc boba0 {
-    activation enabled until boba1
+proc boba0 enabled until boba1 {
     during contact
     require presentation == Bob_Morlock
     require state[0x136C] == 0x0001
-    guard_pop
+} then {
     say Bob_Morlock voice=0x01 flags=0x00 display=0x80 loop=none control=none : "What's the story??? What's this BIG BANG business???..."
     say Bob_Morlock voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Did we get to the BIG BANG, yes or no??? I'm listening, Commander|..."
     say Bob_Morlock voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Uh, there's been a mix up, sir..."
@@ -382,12 +371,11 @@ proc boba0 {
     end presentation Bob_Morlock
 }
 
-proc boba1 {
-    activation enabled until big2
+proc boba1 enabled until big2 {
     during contact
     require presentation == Bob_Morlock
-    guard_pop
-    when block_0CA7 {
+} then {
+    when {
         require !Bigbang.in_play
     } then {
         say Bob_Morlock voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Aaaah..."
@@ -403,7 +391,7 @@ proc boba1 {
         end presentation Bob_Morlock
     }
     block_0CA7:
-    when big2 {
+    when {
         require Bigbang.in_play
     } then {
         say Bob_Morlock voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Lets go to the Bigbang..."
@@ -412,12 +400,11 @@ proc boba1 {
     }
 }
 
-proc big2 {
-    activation enabled until bar1
+proc big2 enabled until bar1 {
     during travel
     require arche.current_location == Bigbang
     require presentation == Tina_Burner
-    guard_pop
+} then {
     say Tina_Burner voice=0x00 flags=0x00 display=0x80 loop=none control=none : "Ohhh... It's you|, Commander|..."
     say Tina_Burner voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Oh no... Her again..."
     say Tina_Burner voice=0x04 flags=0x00 display=0x80 loop=none control=none : "AH! How delightful to see you again, sweeties... I so much wanted to invite you along..."
@@ -437,12 +424,11 @@ proc big2 {
     navigate to bar1
 }
 
-proc bar1 {
-    activation enabled until big3
+proc bar1 enabled until big3 {
     during travel
     require arche.current_location == Bigbang
     require presentation == Migrator
-    guard_pop
+} then {
     say Migrator voice=0x01 flags=0x00 display=0x80 loop=none control=none : "You here, Commander! My good friend|... Did Burny tell you the news?"
     say Migrator voice=0x02 flags=0x00 display=0x80 loop=none control=none : "We're getting married... Ah!!! She's so sexy, and smart..."
     say Migrator voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander|... Howzabout a strategic withdrawal here?|... Commander|?"
@@ -460,25 +446,25 @@ proc bar1 {
     end presentation Migrator
 }
 
-proc big3 {
-    activation enabled until bar2
+proc big3 enabled until bar2 {
     during travel
     require arche.current_location == Bigbang
     require presentation == Yoko
-    guard_pop
+} then {
     say Yoko voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Commander! Yoko happy to see you again..."
     say Yoko voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander|... It's young Yoko|..."
     say Yoko voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Migrator and Tina wait for wedding ring..."
-    guard_push block_10E3 // unstructured_guard=alternate_exit
-    require ring.holder == blood
-    guard_pop
-    say Yoko voice=0x05 flags=0x00 display=0x80 loop=none control=none : "You have ring?"
-    say Yoko voice=0xFF flags=0x20 display=0x80 loop=none control=none : "No problem, Mister Yoko|... We have the wedding band right here..."
-    say Yoko voice=0x06 flags=0x00 display=0x80 loop=none control=none : "YES|!!! Me happy..."
-    say Yoko voice=0x07 flags=0x08 display=0xA0 loop=none control=none : "You go bar, Tina be impatient..."
-    big3.enabled = false
-    Fifi.current_location = bar1
-    navigate to bar1
+    when {
+        require ring.holder == blood
+    } then {
+        say Yoko voice=0x05 flags=0x00 display=0x80 loop=none control=none : "You have ring?"
+        say Yoko voice=0xFF flags=0x20 display=0x80 loop=none control=none : "No problem, Mister Yoko|... We have the wedding band right here..."
+        say Yoko voice=0x06 flags=0x00 display=0x80 loop=none control=none : "YES|!!! Me happy..."
+        say Yoko voice=0x07 flags=0x08 display=0xA0 loop=none control=none : "You go bar, Tina be impatient..."
+        big3.enabled = false
+        Fifi.current_location = bar1
+        navigate to bar1
+    }
     block_10E3:
     say Yoko voice=0xFF flags=0x20 display=0x80 loop=none control=none : "You agreed to get a ring|, Commander|. You'll have to deliver..."
     say Yoko voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Whatever it takes..."
@@ -487,12 +473,11 @@ proc big3 {
     end presentation Yoko
 }
 
-proc bar2 {
-    activation enabled until bar3
+proc bar2 enabled until bar3 {
     during travel
     require arche.current_location == Bigbang
     require presentation == Fifi
-    guard_pop
+} then {
     say Fifi voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Ga..."
     say Fifi voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Ga|... Fifi eat|..."
     say Fifi voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Fifi! What are you doing here?"
@@ -504,13 +489,12 @@ proc bar2 {
     navigate to bar2
 }
 
-proc bar3 {
-    activation enabled until bar4
+proc bar3 enabled until bar4 {
     during travel
     require arche.current_location == Bigbang
     require orxx.current_location == bar2
     require presentation == Tina_Burner
-    guard_pop
+} then {
     say Tina_Burner voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Ah!! There you are at last, Commander|... Everyone's waiting for you|..."
     say Tina_Burner voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Holy handstands!!!"
     say Tina_Burner voice=0x02 flags=0x00 display=0x80 loop=none control=none : "MIGRA's so worried... You do have the wedding band, Commander|?"
@@ -533,18 +517,17 @@ proc bar3 {
     navigate to bar1
 }
 
-proc bar4 {
-    activation enabled until finalmen
+proc bar4 enabled until finalmen {
     during travel
     require arche.current_location == Bigbang
     require orxx.current_location == bar1
     require presentation == Migrator
-    guard_pop
+} then {
     say Migrator voice=0x06 flags=0x00 display=0x80 loop=none control=none : "What's going on? My Tina's in tears..."
     say Migrator voice=0xFF flags=0x20 display=0x80 loop=none control=none : "It's not my fault... She didn't want to invite me to her wedding concert..."
     say Migrator voice=0x07 flags=0x00 display=0x80 loop=none control=none : "Okay.. Okay... I'll see what I can do..."
     say Migrator voice=0x02 flags=0x10 display=0x80 loop=block_14EB control=none : "Do you have the ring, Commander|? The wedding band?" choices "teleport"
-    when block_14EB {
+    when {
         require choice == "teleport"
     } then {
         say Migrator voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORT RING TO MIGRATOR"
@@ -557,13 +540,12 @@ proc bar4 {
     Migrator.current_location = concert
 }
 
-proc finalmen {
-    activation enabled until corpo1
+proc finalmen enabled until corpo1 {
     during travel
     require arche.current_location == Bigbang
     require orxx.current_location == concert
     require presentation == Migrator
-    guard_pop
+} then {
     say Migrator voice=0xFF flags=0x28 display=0x80 loop=none control=none : "SILENCE IT'S STARTING...."
     request sequence "lpm6sc1.hnm"
     say Migrator voice=0xFF flags=0x08 display=0x80 loop=none control=none : "Ah at last... It looks like it's showtime..."
@@ -612,13 +594,12 @@ proc finalmen {
     request sequence "fin.hnm"
 }
 
-proc corpo1 {
-    activation enabled until t10
+proc corpo1 enabled until t10 {
     during travel
     require state[0x136E] == 0x0000
     require arche.current_location == Corpo
     require presentation == Izwalito
-    guard_pop
+} then {
     say Izwalito voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Izwalito happy see you again, friend|..."
     say Izwalito voice=0x00 flags=0x00 display=0x80 loop=none control=none : "Me get ready to leave, friend"
     say Izwalito voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Me go big party with friends..."
@@ -629,26 +610,23 @@ proc corpo1 {
     end presentation Izwalito
 }
 
-proc t10 {
-    activation enabled until krapp
-    guard_pop
+proc t10 enabled until krapp {
+} then {
     timer[10] = 800
     t10.enabled = false
 }
 
-proc krapp {
-    activation enabled until krapp1
+proc krapp enabled until krapp1 {
     require timer[10] == 0
-    guard_pop
+} then {
     queue presentation Kran_Dobu
     krapp.enabled = false
 }
 
-proc krapp1 {
-    activation enabled until masta1
+proc krapp1 enabled until masta1 {
     during bridge
     require presentation == Kran_Dobu
-    guard_pop
+} then {
     say Kran_Dobu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "This is Kran Dobu, Space Knight of the Stars..."
     say Kran_Dobu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Radio message to Ark... Ha|! Ha|! You okay?|..."
     say Kran_Dobu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Ha|! Ha|! I hear you're looking for the the Big Bang too|..."
@@ -662,17 +640,16 @@ proc krapp1 {
     end presentation Kran_Dobu
 }
 
-proc masta1 {
-    activation enabled until masta5
+proc masta1 enabled until masta5 {
     during travel
     require presentation == Scruter_Mac
-    guard_pop
+} then {
     say Scruter_Mac voice=0x12 flags=0x00 display=0x80 loop=none control=none : "YOU IN FORBIDDEN ZONE|... ME GIVE WARNING, STRANGER"
     say Scruter_Mac voice=0x11 flags=0x00 display=0x80 loop=none control=none : "Me not know you|."
     say Scruter_Mac voice=0xFF flags=0x20 display=0x80 loop=none control=none : "It must be Scruter Mac's twin brother, Commander|... Took over his job..."
     say Scruter_Mac voice=0x10 flags=0x00 display=0x80 loop=none control=none : "You say code"
     say Scruter_Mac voice=0x01 flags=0x10 display=0x80 loop=block_1A77 control=none : "Hurry, stranger!" choices "croolas" "galabar" "code" "pterra" "exxos"
-    when block_1A1C {
+    when {
         require choice == "code"
     } then {
         say Scruter_Mac voice=0x0C flags=0x00 display=0x80 loop=none control=none : "You say code..."
@@ -681,7 +658,7 @@ proc masta1 {
         choice = none
     }
     block_1A1C:
-    when block_1A77 {
+    when {
         require choice != "code"
     } then {
         say Scruter_Mac voice=0x09 flags=0x00 display=0x80 loop=none control=none : "You not say code... Me not like... Not like..."
@@ -696,18 +673,17 @@ proc masta1 {
     navigate to prison
 }
 
-proc masta5 {
-    activation enabled until masta6
+proc masta5 enabled until masta6 {
     during travel
     require state[0x1370] == 0x0000
     require presentation == Eviscerator
     require arche.current_location == Mastachok
-    guard_pop
+} then {
     say Eviscerator voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Me know you|... You give me mummy... and CURSE..."
     say Eviscerator voice=0x04 flags=0x00 display=0x80 loop=none control=none : "ME HATE YOU..."
     say Eviscerator voice=0x07 flags=0x08 display=0x80 loop=none control=none : "WHAT YOU WANT STRANGER?"
     Eviscerator.topic = "talk"
-    when block_1B1F {
+    when {
         require state[0x1372] == 0x0001
     } then {
         say Eviscerator voice=0x06 flags=0x08 display=0x90 loop=none control=none : "You like secrets... Me tell secrets"
@@ -715,7 +691,7 @@ proc masta5 {
         state[0x1372] = 0x0000
     }
     block_1B1F:
-    when block_1C11 {
+    when {
         require state[0x1374] == 0x0001
     } then {
         say Eviscerator voice=0x0A flags=0x00 display=0x80 loop=none control=none : "SPLATCH be highly concentrated explosive. SPLATCH blow up jail... LAUGH... FOUL SWEAR"
@@ -729,13 +705,13 @@ proc masta5 {
         end presentation Eviscerator
     }
     block_1C11:
-    when block_1C40 {
+    when {
         require state[0x1368] == 0x0000
     } then {
         say Eviscerator voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander|, if I'd had some BIONIUM, I could have helped you|...."
     }
     block_1C40:
-    when block_1C6A {
+    when {
         require state[0x1368] > 0x0003
     } then {
         say Eviscerator voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Commander|, there's no percentage staying here..."
@@ -746,18 +722,17 @@ proc masta5 {
     end presentation Eviscerator
 }
 
-proc masta6 {
-    activation enabled until amig2
+proc masta6 enabled until amig2 {
     during travel
     require state[0x1370] == 0x0001
     require orxx.current_location == prison
     require presentation == Eviscerator
-    guard_pop
+} then {
     say Eviscerator voice=0x08 flags=0x00 display=0x80 loop=none control=none : "You have splatch???"
     say Eviscerator voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Me big CROOLIS EVISCERATOR. Me want escape... CRY... CRY... GNASH..."
     say Eviscerator voice=0x01 flags=0x08 display=0x80 loop=none control=none : "CRY... GNASH..."
     Eviscerator.topic = "hate"
-    when block_1D35 {
+    when {
         require splatch.holder == blood
     } then {
         say Eviscerator voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Give him the splatch, Commander|... We need the treasure..."
@@ -765,7 +740,7 @@ proc masta6 {
         transfer splatch from aboard to Eviscerator
     }
     block_1D35:
-    when block_1DAC {
+    when {
         require splatch.holder == Eviscerator
     } then {
         say Eviscerator voice=0x06 flags=0x00 display=0x80 loop=none control=none : "You want know where be treasure..."
@@ -776,7 +751,7 @@ proc masta6 {
         end presentation Eviscerator
     }
     block_1DAC:
-    when amig2 {
+    when {
         require splatch.holder != blood
         require splatch.holder != Eviscerator
     } then {
@@ -787,14 +762,13 @@ proc masta6 {
     }
 }
 
-proc amig2 {
-    activation enabled until yok1
+proc amig2 enabled until yok1 {
     during travel
     require Amigo.current_location == bar
     require presentation == Amigo
     require arche.current_location == Eden
     require state[0x1376] == 0x0000
-    guard_pop
+} then {
     say Amigo voice=0x03 flags=0x00 display=0x80 loop=none control=none : "HALT HIC STRANGER!!!"
     say Amigo voice=0x05 flags=0x00 display=0x80 loop=none control=none : "The Bar's hic! shut... Hic!"
     say Amigo voice=0x06 flags=0x00 display=0x80 loop=none control=none : "They've all gone... Hic... Just me left..."
@@ -805,18 +779,17 @@ proc amig2 {
     end presentation Amigo
 }
 
-proc yok1 {
-    activation enabled until max1
+proc yok1 enabled until max1 {
     during contact
     require presentation == Yoko
-    guard_pop
+} then {
     say Yoko voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Commander|... MAXXON and me would like to get back to our home on the planet RONDO..."
     say Yoko voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Can you drop us off there?|..."
-    when block_1F75 {
+    when {
         require arche.current_location == Rondo
     } then {
         say Yoko voice=0xFF flags=0x30 display=0x80 loop=block_1F75 control=none : "Why don't we teleport them, Commander|..." choices "teleport" "refuse"
-        when block_1F56 {
+        when {
             require choice == "teleport"
         } then {
             say Yoko voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "TELEPORT YOKO AND MAXXON ON RONDO"
@@ -825,7 +798,7 @@ proc yok1 {
             choice = none
         }
         block_1F56:
-        when block_1F75 {
+        when {
             require choice == "refuse"
         } then {
             say Yoko voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Whatever you say, Commander|..."
@@ -834,7 +807,7 @@ proc yok1 {
         }
     }
     block_1F75:
-    when block_1FAB {
+    when {
         require arche.current_location != Rondo
         require state[0x1368] > 0x0003
     } then {
@@ -846,18 +819,17 @@ proc yok1 {
     end presentation Yoko
 }
 
-proc max1 {
-    activation enabled until ronda
+proc max1 enabled until ronda {
     during contact
     require presentation == Maxxon
-    guard_pop
+} then {
     say Maxxon voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Commander|... Yoko and me would like to get back to our home on the planet RONDO..."
     say Maxxon voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Can you drop us off there?|..."
-    when block_2079 {
+    when {
         require arche.current_location == Rondo
     } then {
         say Maxxon voice=0xFF flags=0x30 display=0x80 loop=block_2079 control=none : "Why don't we teleport them, Commander..." choices "teleport" "refuse"
-        when block_205C {
+        when {
             require choice == "teleport"
         } then {
             say Maxxon voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "TELEPORT YOKO AND MAXXON TO RONDO"
@@ -866,7 +838,7 @@ proc max1 {
             choice = none
         }
         block_205C:
-        when block_2079 {
+        when {
             require choice == "refuse"
         } then {
             say Maxxon voice=0xFF flags=0x28 display=0x90 loop=none control=none : "You're the commander, Commander..."
@@ -875,7 +847,7 @@ proc max1 {
         }
     }
     block_2079:
-    when block_20AF {
+    when {
         require arche.current_location != Rondo
         require state[0x1368] > 0x0003
     } then {
@@ -887,12 +859,11 @@ proc max1 {
     end presentation Maxxon
 }
 
-proc ronda {
-    activation enabled until max3
+proc ronda enabled until max3 {
     during travel
     require arche.current_location == Rondo
     require presentation == Yoko
-    guard_pop
+} then {
     say Yoko voice=0x00 flags=0x00 display=0x80 loop=none control=none : "Me happy be back on my planet, Commander|..."
     say Yoko voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Hello Mister Honk..."
     say Yoko voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Yo Mister Yoko... How's my main man?"
@@ -904,12 +875,11 @@ proc ronda {
     end presentation Yoko
 }
 
-proc max3 {
-    activation enabled until glu2
+proc max3 enabled until glu2 {
     during travel
     require arche.current_location == Rondo
     require presentation == Maxxon
-    guard_pop
+} then {
     say Maxxon voice=0x09 flags=0x00 display=0x80 loop=none control=none : "Hello, friend|..."
     say Maxxon voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Yoko went to a party..."
     say Maxxon voice=0x06 flags=0x00 display=0x80 loop=none control=none : "He's young... he needs his fun... Heh heh..."
@@ -920,12 +890,11 @@ proc max3 {
     end presentation Maxxon
 }
 
-proc glu2 {
-    activation enabled until monop1
+proc glu2 enabled until monop1 {
     during travel
     require arche.current_location == Ekatomb
     require presentation == Daddy_Gluxx
-    guard_pop
+} then {
     say Daddy_Gluxx voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Ho! The visitor from far away in space and time|..."
     say Daddy_Gluxx voice=0x02 flags=0x00 display=0x80 loop=none control=none : "You've come back, stranger|..."
     say Daddy_Gluxx voice=0x03 flags=0x00 display=0x80 loop=none control=none : "My children, Gelatine, Rubber, Gooseberry and Latex thank you..."
@@ -940,11 +909,10 @@ proc glu2 {
     end presentation Daddy_Gluxx
 }
 
-proc monop1 {
-    activation enabled until bronk1
+proc monop1 enabled until bronk1 {
     require arche.current_location == Venusia
     require presentation == Bug_Deluxe
-    guard_pop
+} then {
     say Bug_Deluxe voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Hi there, Consumer Comrade. The VENUSIA SUPRAMARKET is shut today..."
     say Bug_Deluxe voice=0x02 flags=0x00 display=0x80 loop=none control=none : "It's a vacation for everybody..."
     say Bug_Deluxe voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Come back another time|... Oh and, Consumer Comrade... Remember to bring your creds"
@@ -953,15 +921,14 @@ proc monop1 {
     end presentation Bug_Deluxe
 }
 
-proc bronk1 {
-    activation enabled until emasc0
+proc bronk1 enabled until emasc0 {
     during contact
     require state[0x1378] == 0x0000
     require presentation == Bronko
-    guard_pop
+} then {
     say Bronko voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Everything's okay, Commander|..."
     say Bronko voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Don't hesitate if you need me..."
-    when block_268E {
+    when {
         require Bigbang.in_play
     } then {
         say Bronko voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Teleport me to the BIG BANG, Commander|... I want to party! Gee, I love weddings..."
@@ -991,12 +958,11 @@ proc bronk1 {
     end presentation Bronko
 }
 
-proc emasc0 {
-    activation enabled until hom0
+proc emasc0 enabled until hom0 {
     during travel
     require presentation == Emasculator
     require state[0x137A] == 0x0000
-    guard_pop
+} then {
     say Emasculator voice=0x01 flags=0x00 display=0x80 loop=none control=none : "What you want, stranger? You want murffalo meat?"
     say Emasculator voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Me not can sell murffalo... Me shut store..."
     say Emasculator voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Me go party..."
@@ -1007,12 +973,11 @@ proc emasc0 {
     end presentation Emasculator
 }
 
-proc hom0 {
-    activation enabled until hom1
+proc hom0 enabled until hom1 {
     during contact
     require Yoko.current_location == aboard
     require presentation == Hom
-    guard_pop
+} then {
     say Hom voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Ha|! ha! Big Bang|... Black holes... You're out of your mind..."
     say Hom voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Commander|... Yoko and Maxxon would like to get back home on the planet RONDO..."
     say Hom voice=0x06 flags=0x08 display=0x80 loop=none control=none : "They're impatient..."
@@ -1021,12 +986,11 @@ proc hom0 {
     end presentation Hom
 }
 
-proc hom1 {
-    activation enabled until hom1_2922
+proc hom1 enabled until hom1_2922 {
     during contact
     require Yoko.current_location != aboard
     require presentation == Hom
-    guard_pop
+} then {
     say Hom voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Ha|! ha! Big Bang|... Black holes... You're out of your mind..."
     say Hom voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Don't laugh|, Mister Hom|... It's not a joke|..."
     say Hom voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Wrong, my friend|. It's a big joke|... I'm leaving, Commander|..."
@@ -1040,17 +1004,16 @@ proc hom1 {
     end presentation Hom
 }
 
-proc hom1_2922 {
-    activation enabled until hom2
+proc hom1_2922 enabled until hom2 {
     during travel
     require urout.holder != blood
     require presentation == Hom
-    guard_pop
+} then {
     say Hom voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Welcome stranger|... You be big traveller..."
     say Hom voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Me HOM. Me big Tubular Brain|. Me welcome you|, Commander|..."
     say Hom voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Me catch your print, friend|... Me read truth in your prints..."
     say Hom voice=0x03 flags=0x10 display=0x80 loop=block_29F0 control=none : "You click very very hard, friend|. Me catch print on mouse..." choices "click"
-    when block_29F0 {
+    when {
         require choice == "click"
     } then {
         say Hom voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Ahh! Me catch print... Ohh! Nice print..."
@@ -1075,18 +1038,17 @@ proc hom1_2922 {
     end presentation Hom
 }
 
-proc hom2 {
-    activation enabled until jour
+proc hom2 enabled until jour {
     during travel
     require state[0x137C] == 0x0001
     require presentation == Hom
-    guard_pop
+} then {
     say Hom voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Welcome stranger|... You be big traveller..."
     say Hom voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Me HOM. Me big Tubular Brain|. Me welcome you|, Commander|..."
     say Hom voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Me catch your print, friend|... Me read truth in your prints..."
     say Hom voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander|, he's getting up my nose with his print..."
     say Hom voice=0x03 flags=0x10 display=0x80 loop=block_2C0A control=none : "You click very very hard, friend|. Me catch print on mouse..." choices "click"
-    when block_2C0A {
+    when {
         require choice == "click"
     } then {
         say Hom voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Ahh! Me catch print... Ohh! Nice print..."
@@ -1094,7 +1056,7 @@ proc hom2 {
         choice = none
     }
     block_2C0A:
-    when block_2C59 {
+    when {
         require urout.holder != blood
     } then {
         say Hom voice=0xFF flags=0x00 display=0x80 loop=none control=none : "You must take U.R.O.U.T exam on planet CYBEROCK..."
@@ -1103,7 +1065,7 @@ proc hom2 {
         end presentation Hom
     }
     block_2C59:
-    when jour {
+    when {
         require urout.holder == blood
     } then {
         say Hom voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Bravo Commander|. You be talented..."
@@ -1118,26 +1080,24 @@ proc hom2 {
     }
 }
 
-proc jour {
-    activation enabled until bonj1
+proc jour enabled until bonj1 {
     during travel
     require state[0x137E] == 0x0000
     require presentation == Cyberquizz
     require urout.holder != Cyberquizz
     require arche.current_location == Cyberock
-    guard_pop
+} then {
     say Cyberquizz voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Bye bye|, student Commander Blood. You are a member of the \"GUILD OF MEMBERS\"..."
     say Cyberquizz voice=0x02 flags=0x08 display=0x80 loop=none control=none : "..."
     end presentation Cyberquizz
 }
 
-proc bonj1 {
-    activation enabled until bonj2
+proc bonj1 enabled until bonj2 {
     during travel
     require state[0x137E] == 0x0000
     require presentation == Cyberquizz
     require arche.current_location == Cyberock
-    guard_pop
+} then {
     Q1.enabled = true
     Q2.enabled = true
     Q3.enabled = true
@@ -1176,13 +1136,12 @@ proc bonj1 {
     bonj1.enabled = false
 }
 
-proc bonj2 {
-    activation disabled until Bof_ok
+proc bonj2 disabled until Bof_ok {
     during travel
     require state[0x137E] == 0x0000
     require presentation == Cyberquizz
     require arche.current_location == Cyberock
-    guard_pop
+} then {
     say Cyberquizz voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Student Commander Blood... This is a big day in your life|..."
     say Cyberquizz voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Holy harpoons! That is hideous, Commander..."
     say Cyberquizz voice=0x02 flags=0x00 display=0x80 loop=none control=none : "I'm going to be your U.R.O.U.T. examiner"
@@ -1192,18 +1151,17 @@ proc bonj2 {
     say Cyberquizz voice=0x04 flags=0x08 display=0x80 loop=none control=none : "Here are the questions. Are you ready?"
 }
 
-proc Bof_ok {
-    activation enabled until perdu
+proc Bof_ok enabled until perdu {
     during travel
     require presentation == Cyberquizz
     require state[0x1382] == 0x0005
-    guard_pop
+} then {
     say Cyberquizz voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Believe it or not... You have passed your U.R.O.U.T."
     say Cyberquizz voice=0xFF flags=0x28 display=0x80 loop=none control=none : "YESSS!!!! I KNEW YOU COULD DO IT COMMANDER..."
     request sequence "cadeaux.hnm"
     say Cyberquizz voice=0x01 flags=0x00 display=0x80 loop=none control=none : "I present you with your magnificent diploma..."
     say Cyberquizz voice=0xFF flags=0x10 display=0x80 loop=block_2F6E control=none : "TELEPORT UROUT to Ark" choices "teleport"
-    when block_2F6E {
+    when {
         require choice == "teleport"
     } then {
         say Cyberquizz voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING DIPLOMA TO ARK"
@@ -1220,13 +1178,12 @@ proc Bof_ok {
     end presentation Cyberquizz
 }
 
-proc perdu {
-    activation enabled until Q1
+proc perdu enabled until Q1 {
     during travel
     require presentation == Cyberquizz
     require state[0x1380] == 0x0020
     require state[0x1382] < 0x000A
-    guard_pop
+} then {
     say Cyberquizz voice=0x0A flags=0x00 display=0x80 loop=none control=none : "You failed!"
     say Cyberquizz voice=0xFF flags=0x20 display=0x80 loop=none control=none : "I knew this would happen... I feel pity for you|, Commander..."
     say Cyberquizz voice=0x09 flags=0x00 display=0x80 loop=none control=none : "May your liver turn into oxidized mercury sauce!! How could you do this??..."
@@ -1238,13 +1195,12 @@ proc perdu {
     end presentation Cyberquizz
 }
 
-proc Q1 {
-    activation enabled until Q2
+proc Q1 enabled until Q2 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x09 flags=0x10 display=0x80 loop=block_30EE control=none : "Who said \"It takes thirteen murffalos to reproduce but soon it'll take fourteen?" choices "Jeph_DUlikan" "Yolk" "Kran_Dobu" "Tina_Burner"
-    when block_30C2 {
+    when {
         require choice == "Yolk"
     } then {
         say Cyberquizz voice=0x02 flags=0x08 display=0xA0 loop=none control=none : "The Great Yolk, of course. You've been boning up, Commander..."
@@ -1253,7 +1209,7 @@ proc Q1 {
         choice = none
     }
     block_30C2:
-    when block_30EE {
+    when {
         require choice != "Yolk"
     } then {
         say Cyberquizz voice=0x05 flags=0x08 display=0x90 loop=none control=none : "History's not your speciality. Maybe you're not ready for this"
@@ -1265,13 +1221,12 @@ proc Q1 {
     Q1.enabled = false
 }
 
-proc Q2 {
-    activation enabled until Q3
+proc Q2 enabled until Q3 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x06 flags=0x10 display=0x80 loop=block_3195 control=none : "Which great Slimer is buried on the planet Vista?" choices "gluxx" "gelati" "gumy" "yolk"
-    when block_3163 {
+    when {
         require choice == "yolk"
     } then {
         say Cyberquizz voice=0x07 flags=0x08 display=0xA0 loop=none control=none : "Yes indeed, the incomparably Great Yolk... Hare Yolk Hare Hare..."
@@ -1280,7 +1235,7 @@ proc Q2 {
         choice = none
     }
     block_3163:
-    when block_3195 {
+    when {
         require choice != "yolk"
     } then {
         say Cyberquizz voice=0x08 flags=0x08 display=0x90 loop=none control=none : "On Vista, I said. Get those ondoyants out of your brain..."
@@ -1292,14 +1247,13 @@ proc Q2 {
     Q2.enabled = false
 }
 
-proc Q3 {
-    activation enabled until Q4
+proc Q3 enabled until Q4 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Concentrate now..."
     say Cyberquizz voice=0x01 flags=0x10 display=0x80 loop=block_3218 control=none : "Name a stuttering Croolis?" choices "Cybernator" "Rotator" "Emasculator" "Outrageor" "Lord_Krater"
-    when block_31FE {
+    when {
         require choice == "Rotator"
     } then {
         say Cyberquizz voice=0x04 flags=0x08 display=0xA0 loop=none control=none : "That's right|..."
@@ -1308,7 +1262,7 @@ proc Q3 {
         choice = none
     }
     block_31FE:
-    when block_3218 {
+    when {
         require choice != "Rotator"
     } then {
         say Cyberquizz voice=0x03 flags=0x08 display=0x90 loop=none control=none : "..."
@@ -1320,13 +1274,12 @@ proc Q3 {
     Q3.enabled = false
 }
 
-proc Q4 {
-    activation enabled until Q5
+proc Q4 enabled until Q5 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x00 flags=0x10 display=0x80 loop=block_32B1 control=none : "What was king Betakam IV's planet of origin?" choices "Sat" "Vistar" "Ron" "Golgos" "Pterra" "Attrox"
-    when block_327D {
+    when {
         require choice == "Attrox"
     } then {
         say Cyberquizz voice=0x09 flags=0x08 display=0xA0 loop=none control=none : "Excellent answer..."
@@ -1335,7 +1288,7 @@ proc Q4 {
         choice = none
     }
     block_327D:
-    when block_32B1 {
+    when {
         require choice != "Attrox"
     } then {
         say Cyberquizz voice=0x08 flags=0x08 display=0x90 loop=none control=none : "For goodness sakes|! It starts with an A and ends with an X..."
@@ -1347,13 +1300,12 @@ proc Q4 {
     Q4.enabled = false
 }
 
-proc Q5 {
-    activation enabled until Q6
+proc Q5 enabled until Q6 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x07 flags=0x10 display=0x80 loop=block_3340 control=none : "Which Trump has a friend called Trompette?" choices "eviscerator" "Fifi" "beauregard" "tromp_la_mort" "otto_von_smile"
-    when block_331A {
+    when {
         require choice == "Fifi"
     } then {
         say Cyberquizz voice=0x05 flags=0x08 display=0xA0 loop=none control=none : "Fifi, that's the right answer|..."
@@ -1362,7 +1314,7 @@ proc Q5 {
         choice = none
     }
     block_331A:
-    when block_3340 {
+    when {
         require choice != "Fifi"
     } then {
         say Cyberquizz voice=0x06 flags=0x08 display=0x90 loop=none control=none : "For goodness sakes! Get a grip guy..."
@@ -1374,13 +1326,12 @@ proc Q5 {
     Q5.enabled = false
 }
 
-proc Q6 {
-    activation enabled until Q7
+proc Q6 enabled until Q7 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x04 flags=0x10 display=0x80 loop=block_33C7 control=none : "The Great Yolk is a...?" choices "slimer" "izwal" "croolis" "migrax" "robot"
-    when block_339F {
+    when {
         require choice == "slimer"
     } then {
         say Cyberquizz voice=0x03 flags=0x08 display=0xA0 loop=none control=none : "Yes, a Slimer..."
@@ -1389,7 +1340,7 @@ proc Q6 {
         choice = none
     }
     block_339F:
-    when block_33C7 {
+    when {
         require choice != "slimer"
     } then {
         say Cyberquizz voice=0x02 flags=0x08 display=0x90 loop=none control=none : "The Great Yolk? That was a mediocre effort"
@@ -1401,13 +1352,12 @@ proc Q6 {
     Q6.enabled = false
 }
 
-proc Q7 {
-    activation enabled until Q8
+proc Q7 enabled until Q8 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x01 flags=0x10 display=0x80 loop=block_3454 control=none : "Who said: \"Commander, Honk keeps scanning me with his equipment\"?" choices "eviscerator" "emasculator" "lord_raptor" "tina_burner"
-    when block_3432 {
+    when {
         require choice == "tina_burner"
     } then {
         say Cyberquizz voice=0x02 flags=0x08 display=0xA0 loop=none control=none : "Quite right. In the cryobox..."
@@ -1416,7 +1366,7 @@ proc Q7 {
         choice = none
     }
     block_3432:
-    when block_3454 {
+    when {
         require choice != "tina_burner"
     } then {
         say Cyberquizz voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Don't you have a radio?"
@@ -1428,13 +1378,12 @@ proc Q7 {
     Q7.enabled = false
 }
 
-proc Q8 {
-    activation enabled until Q9
+proc Q8 enabled until Q9 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x04 flags=0x10 display=0x80 loop=block_34D3 control=none : "Jeph d'Ulikan defeated?" choices "pagos_tagos" "black_larsen" "hom" "lord_krater"
-    when block_34B1 {
+    when {
         require choice == "black_larsen"
     } then {
         say Cyberquizz voice=0x05 flags=0x08 display=0xA0 loop=none control=none : "The Black Larsen Hordes, yes..."
@@ -1443,7 +1392,7 @@ proc Q8 {
         choice = none
     }
     block_34B1:
-    when block_34D3 {
+    when {
         require choice != "black_larsen"
     } then {
         say Cyberquizz voice=0x06 flags=0x08 display=0x90 loop=none control=none : "No, no and NO..."
@@ -1455,13 +1404,12 @@ proc Q8 {
     Q8.enabled = false
 }
 
-proc Q9 {
-    activation enabled until Q10
+proc Q9 enabled until Q10 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x07 flags=0x10 display=0x80 loop=block_3556 control=none : "Who said: \"One plus one equals three\"?" choices "lord_krater" "metro_paul" "yolk"
-    when block_3532 {
+    when {
         require choice == "yolk"
     } then {
         say Cyberquizz voice=0x08 flags=0x08 display=0xA0 loop=none control=none : "The incredible Yolk..."
@@ -1470,7 +1418,7 @@ proc Q9 {
         choice = none
     }
     block_3532:
-    when block_3556 {
+    when {
         require choice != "yolk"
     } then {
         say Cyberquizz voice=0x09 flags=0x08 display=0x90 loop=none control=none : "You're not up on your classics..."
@@ -1482,13 +1430,12 @@ proc Q9 {
     Q9.enabled = false
 }
 
-proc Q10 {
-    activation enabled until Q11
+proc Q10 enabled until Q11 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x08 flags=0x10 display=0x80 loop=block_35EB control=none : "How many murffalos does it take to reproduce?" choices "two" "four" "six" "eight" "thirteen"
-    when block_35C7 {
+    when {
         require choice == "thirteen"
     } then {
         say Cyberquizz voice=0x07 flags=0x08 display=0xA0 loop=none control=none : "One in the middle and twelve all around. Good..."
@@ -1497,7 +1444,7 @@ proc Q10 {
         choice = none
     }
     block_35C7:
-    when block_35EB {
+    when {
         require choice != "thirteen"
     } then {
         say Cyberquizz voice=0x06 flags=0x08 display=0x90 loop=none control=none : "Murffalos? That was the easy question..."
@@ -1509,13 +1456,12 @@ proc Q10 {
     Q10.enabled = false
 }
 
-proc Q11 {
-    activation enabled until Q12
+proc Q11 enabled until Q12 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x05 flags=0x10 display=0x80 loop=block_365F control=none : "Name a paralleloped planet" choices "qx20" "tumul" "vista" "ebony" "mastachok"
-    when block_3643 {
+    when {
         require choice == "vista"
     } then {
         say Cyberquizz voice=0x04 flags=0x08 display=0x90 loop=none control=none : "Paralleloped? Try contact lenses..."
@@ -1523,7 +1469,7 @@ proc Q11 {
         choice = none
     }
     block_3643:
-    when block_365F {
+    when {
         require choice != "vista"
     } then {
         say Cyberquizz voice=0x03 flags=0x08 display=0x90 loop=none control=none : "You're hopeless...."
@@ -1535,13 +1481,12 @@ proc Q11 {
     Q11.enabled = false
 }
 
-proc Q12 {
-    activation enabled until Q13
+proc Q12 enabled until Q13 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x02 flags=0x10 display=0x80 loop=block_36E6 control=none : "Buggol democracy was invented by?" choices "strum" "Bob_Morlock" "cyborg_1er" "exxos"
-    when block_36C8 {
+    when {
         require choice == "cyborg_1er"
     } then {
         say Cyberquizz voice=0x01 flags=0x08 display=0xA0 loop=none control=none : "A bit of a history buff, eh|?..."
@@ -1550,7 +1495,7 @@ proc Q12 {
         choice = none
     }
     block_36C8:
-    when block_36E6 {
+    when {
         require choice != "cyborg_1er"
     } then {
         say Cyberquizz voice=0x00 flags=0x08 display=0x90 loop=none control=none : "No! No! Commander..."
@@ -1562,13 +1507,12 @@ proc Q12 {
     Q12.enabled = false
 }
 
-proc Q13 {
-    activation enabled until Q14
+proc Q13 enabled until Q14 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x01 flags=0x10 display=0x80 loop=block_3767 control=none : "What do Tubular Brains eat?" choices "klakos" "plastok" "radium" "hay" "murffalos"
-    when block_3743 {
+    when {
         require choice == "plastok"
     } then {
         say Cyberquizz voice=0x02 flags=0x08 display=0xA0 loop=none control=none : "Protein-enriched Plastok."
@@ -1577,7 +1521,7 @@ proc Q13 {
         choice = none
     }
     block_3743:
-    when block_3767 {
+    when {
         require choice != "plastok"
     } then {
         say Cyberquizz voice=0x03 flags=0x08 display=0x90 loop=none control=none : "You got something against Tubulars?"
@@ -1589,13 +1533,12 @@ proc Q13 {
     Q13.enabled = false
 }
 
-proc Q14 {
-    activation enabled until Q15
+proc Q14 enabled until Q15 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x04 flags=0x10 display=0x80 loop=block_37F4 control=none : "Name a planet with rings" choices "erazor" "rondo" "bonus" "pterra"
-    when block_37CE {
+    when {
         require choice == "bonus"
     } then {
         say Cyberquizz voice=0x05 flags=0x08 display=0xA0 loop=none control=none : "Bonus has the finest rings in the universe."
@@ -1604,7 +1547,7 @@ proc Q14 {
         choice = none
     }
     block_37CE:
-    when block_37F4 {
+    when {
         require choice != "bonus"
     } then {
         say Cyberquizz voice=0x06 flags=0x08 display=0x90 loop=none control=none : "Rings... You know|, those round things..."
@@ -1616,13 +1559,12 @@ proc Q14 {
     Q14.enabled = false
 }
 
-proc Q15 {
-    activation enabled until Q16
+proc Q15 enabled until Q16 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x07 flags=0x10 display=0x80 loop=block_3889 control=none : "How do Scorps reproduce?" choices "vivisection" "parthenogenesis" "mimicry" "chance"
-    when block_385F {
+    when {
         require choice == "parthenogenesis"
     } then {
         say Cyberquizz voice=0x08 flags=0x08 display=0xA0 loop=none control=none : "Yes... Just cut 'em up and you've got a family tree."
@@ -1631,7 +1573,7 @@ proc Q15 {
         choice = none
     }
     block_385F:
-    when block_3889 {
+    when {
         require choice != "parthenogenesis"
     } then {
         say Cyberquizz voice=0x09 flags=0x08 display=0x90 loop=none control=none : "You should open a dictionary from time to time"
@@ -1643,13 +1585,12 @@ proc Q15 {
     Q15.enabled = false
 }
 
-proc Q16 {
-    activation enabled until Q17
+proc Q16 enabled until Q17 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x0A flags=0x10 display=0x80 loop=block_3910 control=none : "Name a highly concentrated explosive" choices "Big_bang" "splach" "plastok" "fuzz"
-    when block_38EC {
+    when {
         require choice == "splach"
     } then {
         say Cyberquizz voice=0x01 flags=0x08 display=0xA0 loop=none control=none : "Yes... Made from oxidized Larsen liver..."
@@ -1658,7 +1599,7 @@ proc Q16 {
         choice = none
     }
     block_38EC:
-    when block_3910 {
+    when {
         require choice != "splach"
     } then {
         say Cyberquizz voice=0x02 flags=0x08 display=0x90 loop=none control=none : "Well, that answer wasn't too explosive!"
@@ -1670,13 +1611,12 @@ proc Q16 {
     Q16.enabled = false
 }
 
-proc Q17 {
-    activation enabled until Q18
+proc Q17 enabled until Q18 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x03 flags=0x10 display=0x80 loop=block_39A9 control=none : "Who is the queen of the PAGO TAGO, wife of king Betakam IV?" choices "umatika" "tina_burner" "scorpia" "pistilla" "etamina"
-    when block_398B {
+    when {
         require choice == "umatika"
     } then {
         say Cyberquizz voice=0x04 flags=0x08 display=0xA0 loop=none control=none : "Umatika, wife of king Betakam fourth, eighteenth dynasty..."
@@ -1685,7 +1625,7 @@ proc Q17 {
         choice = none
     }
     block_398B:
-    when block_39A9 {
+    when {
         require choice != "umatika"
     } then {
         say Cyberquizz voice=0x05 flags=0x08 display=0x90 loop=none control=none : "Not even close..."
@@ -1697,13 +1637,12 @@ proc Q17 {
     Q17.enabled = false
 }
 
-proc Q18 {
-    activation enabled until Q19
+proc Q18 enabled until Q19 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x01 flags=0x10 display=0x80 loop=block_3A2E control=none : "Who said Trump tails are dung?" choices "lord_segelaxx" "inquisitor" "slim_gelati" "tromp_deustache"
-    when block_3A08 {
+    when {
         require choice == "lord_segelaxx"
     } then {
         say Cyberquizz voice=0x02 flags=0x08 display=0xA0 loop=none control=none : "Avoid smoking them!"
@@ -1712,7 +1651,7 @@ proc Q18 {
         choice = none
     }
     block_3A08:
-    when block_3A2E {
+    when {
         require choice != "lord_segelaxx"
     } then {
         say Cyberquizz voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Well, maybe it was a tough question..."
@@ -1724,13 +1663,12 @@ proc Q18 {
     Q18.enabled = false
 }
 
-proc Q19 {
-    activation enabled until Q20
+proc Q19 enabled until Q20 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x04 flags=0x10 display=0x80 loop=block_3ABF control=none : "On what planet is sex sold illicitly?" choices "los_demonios" "venusia" "attroxcity" "trashtown"
-    when block_3A97 {
+    when {
         require choice == "attroxcity"
     } then {
         say Cyberquizz voice=0x05 flags=0x08 display=0xA0 loop=none control=none : "Attroxcity, the Slimer city... Quite right!"
@@ -1739,7 +1677,7 @@ proc Q19 {
         choice = none
     }
     block_3A97:
-    when block_3ABF {
+    when {
         require choice != "attroxcity"
     } then {
         say Cyberquizz voice=0x06 flags=0x08 display=0x90 loop=none control=none : "No, that was a very wrong answer..."
@@ -1751,13 +1689,12 @@ proc Q19 {
     Q19.enabled = false
 }
 
-proc Q20 {
-    activation enabled until Q21
+proc Q20 enabled until Q21 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x07 flags=0x10 display=0x80 loop=block_3B58 control=none : "Who painted the famous portrait of Yolk?" choices "van_ish" "van_gelis" "van_et" "van_deta" "van_tage" "van_gogue"
-    when block_3B34 {
+    when {
         require choice == "van_gogue"
     } then {
         say Cyberquizz voice=0x08 flags=0x08 display=0xA0 loop=none control=none : "Van Gogue painted it with the Great One's own yellow blood..."
@@ -1766,7 +1703,7 @@ proc Q20 {
         choice = none
     }
     block_3B34:
-    when block_3B58 {
+    when {
         require choice != "van_gogue"
     } then {
         say Cyberquizz voice=0x09 flags=0x08 display=0x90 loop=none control=none : "That was supposed to be easy..."
@@ -1778,13 +1715,12 @@ proc Q20 {
     Q20.enabled = false
 }
 
-proc Q21 {
-    activation enabled until Q22
+proc Q21 enabled until Q22 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x0A flags=0x10 display=0x80 loop=block_3BDB control=none : "Who wrote the famous Croolicum?" choices "lord_raptor" "lord_ship" "von_spacecraft" "nobody"
-    when block_3BBD {
+    when {
         require choice == "nobody"
     } then {
         say Cyberquizz voice=0x00 flags=0x08 display=0xA0 loop=none control=none : "There's no catching you out, eh?"
@@ -1793,7 +1729,7 @@ proc Q21 {
         choice = none
     }
     block_3BBD:
-    when block_3BDB {
+    when {
         require choice != "nobody"
     } then {
         say Cyberquizz voice=0x01 flags=0x08 display=0x90 loop=none control=none : "What's the Croolicum?"
@@ -1805,13 +1741,12 @@ proc Q21 {
     Q21.enabled = false
 }
 
-proc Q22 {
-    activation enabled until Q23
+proc Q22 enabled until Q23 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x02 flags=0x10 display=0x80 loop=block_3C5C control=none : "Who was the first Trump tail smoker in the universe?" choices "al_hure" "sebasto_paul" "lord_sirtaki" "jeph_dulikan"
-    when block_3C42 {
+    when {
         require choice == "al_hure"
     } then {
         say Cyberquizz voice=0x02 flags=0x08 display=0xA0 loop=none control=none : "Good ol' Al..."
@@ -1820,7 +1755,7 @@ proc Q22 {
         choice = none
     }
     block_3C42:
-    when block_3C5C {
+    when {
         require choice != "al_hure"
     } then {
         say Cyberquizz voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Sorry..."
@@ -1832,13 +1767,12 @@ proc Q22 {
     Q22.enabled = false
 }
 
-proc Q23 {
-    activation enabled until Q24
+proc Q23 enabled until Q24 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x04 flags=0x10 display=0x80 loop=block_3CE5 control=none : "Who said:\"Silence feeds on thunder and fury\"?" choices "yolk" "joy_stica" "hom" "super_zen"
-    when block_3CC5 {
+    when {
         require choice == "yolk"
     } then {
         say Cyberquizz voice=0x04 flags=0x08 display=0xA0 loop=none control=none : "Peace to his yellow soul... Bravo."
@@ -1847,7 +1781,7 @@ proc Q23 {
         choice = none
     }
     block_3CC5:
-    when block_3CE5 {
+    when {
         require choice != "yolk"
     } then {
         say Cyberquizz voice=0x05 flags=0x08 display=0x90 loop=none control=none : "Read your classics|..."
@@ -1859,13 +1793,12 @@ proc Q23 {
     Q23.enabled = false
 }
 
-proc Q24 {
-    activation enabled until Q25
+proc Q24 enabled until Q25 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x06 flags=0x10 display=0x80 loop=block_3D60 control=none : "Name one hit by the Migrators" choices "crush_me_baby" "space_maker" "hello_dolly" "love_me_do"
-    when block_3D44 {
+    when {
         require choice == "crush_me_baby"
     } then {
         say Cyberquizz voice=0x07 flags=0x08 display=0xA0 loop=none control=none : "Cruuuush meee baaaabbbyyyy!"
@@ -1874,7 +1807,7 @@ proc Q24 {
         choice = none
     }
     block_3D44:
-    when block_3D60 {
+    when {
         require choice != "crush_me_baby.."
     } then {
         say Cyberquizz voice=0x08 flags=0x08 display=0x90 loop=none control=none : "Ouch..."
@@ -1886,13 +1819,12 @@ proc Q24 {
     Q24.enabled = false
 }
 
-proc Q25 {
-    activation enabled until Q26
+proc Q25 enabled until Q26 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x08 flags=0x10 display=0x80 loop=block_3DE5 control=none : "Who is the oldest living being in the universe?" choices "otto_von_smile" "Bob_Morlock" "super_tromp" "techno_paul"
-    when block_3DC5 {
+    when {
         require choice == "Bob_Morlock"
     } then {
         say Cyberquizz voice=0x08 flags=0x08 display=0xA0 loop=none control=none : "Good ol' Bob!"
@@ -1901,7 +1833,7 @@ proc Q25 {
         choice = none
     }
     block_3DC5:
-    when block_3DE5 {
+    when {
         require choice != "Bob_Morlock"
     } then {
         say Cyberquizz voice=0x06 flags=0x08 display=0x90 loop=none control=none : "I said the OLDEST..."
@@ -1913,13 +1845,12 @@ proc Q25 {
     Q25.enabled = false
 }
 
-proc Q26 {
-    activation enabled until Q27
+proc Q26 enabled until Q27 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x08 flags=0x10 display=0x80 loop=block_3E74 control=none : "Which famous dancer starred in \"Squeeze me in your tentacles darling\"?" choices "torka" "tina_burner" "cybertha" "joy_stika"
-    when block_3E50 {
+    when {
         require choice == "tina_burner"
     } then {
         say Cyberquizz voice=0x06 flags=0x08 display=0xA0 loop=none control=none : "What a performance!"
@@ -1928,7 +1859,7 @@ proc Q26 {
         choice = none
     }
     block_3E50:
-    when block_3E74 {
+    when {
         require choice != "tina_burner"
     } then {
         say Cyberquizz voice=0x09 flags=0x08 display=0x90 loop=none control=none : "How can you not know that?"
@@ -1940,13 +1871,12 @@ proc Q26 {
     Q26.enabled = false
 }
 
-proc Q27 {
-    activation enabled until Q28
+proc Q27 enabled until Q28 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x06 flags=0x10 display=0x80 loop=block_3EFD control=none : "What is the preferred drink of the Migrax?" choices "processed_liver" "frozen_migrita" "fermented_egg" "heavy_water"
-    when block_3ED7 {
+    when {
         require choice == "processed_liver"
     } then {
         say Cyberquizz voice=0x09 flags=0x08 display=0xA0 loop=none control=none : "Way too easy..."
@@ -1955,7 +1885,7 @@ proc Q27 {
         choice = none
     }
     block_3ED7:
-    when block_3EFD {
+    when {
         require choice != "processed_liver"
     } then {
         say Cyberquizz voice=0x03 flags=0x08 display=0x90 loop=none control=none : "You mean you don't know the Migrax?"
@@ -1967,13 +1897,12 @@ proc Q27 {
     Q27.enabled = false
 }
 
-proc Q28 {
-    activation enabled until Q29
+proc Q28 enabled until Q29 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x06 flags=0x10 display=0x80 loop=block_3F8E control=none : "Who said:\"ondoyant pretty, Croolis drool. ondoyant ugly, Croolis cruel\"" choices "nobody" "maxxon" "yolk"
-    when block_3F66 {
+    when {
         require choice == "maxxon"
     } then {
         say Cyberquizz voice=0x00 flags=0x08 display=0xA0 loop=none control=none : "What a poet, that Maxxon."
@@ -1982,7 +1911,7 @@ proc Q28 {
         choice = none
     }
     block_3F66:
-    when block_3F8E {
+    when {
         require choice != "maxxon"
     } then {
         say Cyberquizz voice=0x03 flags=0x08 display=0x90 loop=none control=none : "No poetry in your withered soul, eh?"
@@ -1994,13 +1923,12 @@ proc Q28 {
     Q28.enabled = false
 }
 
-proc Q29 {
-    activation enabled until Q30
+proc Q29 enabled until Q30 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x00 flags=0x10 display=0x80 loop=block_401D control=none : "The Great Yolk's tomb is on which planet?" choices "rondo" "ekatomb" "vista" "magnus"
-    when block_3FF7 {
+    when {
         require choice == "vista"
     } then {
         say Cyberquizz voice=0x06 flags=0x08 display=0xA0 loop=none control=none : "In the SCRUT palace on Vista"
@@ -2009,7 +1937,7 @@ proc Q29 {
         choice = none
     }
     block_3FF7:
-    when block_401D {
+    when {
         require choice != "vista"
     } then {
         say Cyberquizz voice=0x09 flags=0x08 display=0x90 loop=none control=none : "You never heard of the SCRUT palace?"
@@ -2021,13 +1949,12 @@ proc Q29 {
     Q29.enabled = false
 }
 
-proc Q30 {
-    activation enabled until Q31
+proc Q30 enabled until Q31 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x07 flags=0x10 display=0x80 loop=block_40A4 control=none : "On which planet may the voice be heard?" choices "pterra" "cyberock" "kult" "tumul"
-    when block_4080 {
+    when {
         require choice == "kult"
     } then {
         say Cyberquizz voice=0x03 flags=0x08 display=0xA0 loop=none control=none : "Indeed, Commander..."
@@ -2036,7 +1963,7 @@ proc Q30 {
         choice = none
     }
     block_4080:
-    when block_40A4 {
+    when {
         require choice != "kult"
     } then {
         say Cyberquizz voice=0x00 flags=0x08 display=0x90 loop=none control=none : "You're not deaf by any chance?"
@@ -2048,13 +1975,12 @@ proc Q30 {
     Q30.enabled = false
 }
 
-proc Q31 {
-    activation enabled until Q32
+proc Q31 enabled until Q32 {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x01 flags=0x10 display=0x80 loop=block_412F control=none : "What is the planet Tumul's sun?" choices "ex897" "gladis" "corpo" "negratom"
-    when block_4109 {
+    when {
         require choice == "gladis"
     } then {
         say Cyberquizz voice=0x03 flags=0x08 display=0xA0 loop=none control=none : "Gladis, the smart star."
@@ -2063,7 +1989,7 @@ proc Q31 {
         choice = none
     }
     block_4109:
-    when block_412F {
+    when {
         require choice != "gladis"
     } then {
         say Cyberquizz voice=0x01 flags=0x08 display=0x90 loop=none control=none : "You mean you never went to Tumul?"
@@ -2075,13 +2001,12 @@ proc Q31 {
     Q31.enabled = false
 }
 
-proc Q32 {
-    activation enabled until scrujo
+proc Q32 enabled until scrujo {
     during travel
     require presentation == Cyberquizz
-    guard_pop
+} then {
     say Cyberquizz voice=0x0A flags=0x10 display=0x80 loop=block_41B6 control=none : "How many moons has Moskito?" choices "five" "twelve" "zero" "thirty_two"
-    when block_4190 {
+    when {
         require choice == "zero"
     } then {
         say Cyberquizz voice=0x01 flags=0x08 display=0xA0 loop=none control=none : "Absolutely right. Moskito is moonless."
@@ -2090,7 +2015,7 @@ proc Q32 {
         choice = none
     }
     block_4190:
-    when block_41B6 {
+    when {
         require choice != "zero"
     } then {
         say Cyberquizz voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Maybe you have mosquitoes for a brain"
@@ -2102,13 +2027,12 @@ proc Q32 {
     Q32.enabled = false
 }
 
-proc scrujo {
-    activation enabled until bigb1
+proc scrujo enabled until bigb1 {
     during contact
     require presentation == Scruter_Jo
-    guard_pop
+} then {
     say Scruter_Jo voice=0x13 flags=0x00 display=0x80 loop=none control=none : "Commander|, you go search BIONIUM in SCRUTER JO's cyberspace..."
-    when block_43A6 {
+    when {
         require state[0x1366] == 0x0000
     } then {
         say Scruter_Jo voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Me explain how you pick up BIONIUM.."
@@ -2131,7 +2055,7 @@ proc scrujo {
     block_43A6:
     say Scruter_Jo voice=0x14 flags=0x00 display=0x80 loop=none control=none : "YOU go, Commander|..."
     say Scruter_Jo voice=0x15 flags=0x00 display=0x80 loop=none control=none : "Ahh... Me feel better..."
-    when block_4456 {
+    when {
         require state[0x1368] > 0x0000
     } then {
         say Scruter_Jo voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Good work... You did be successful..."
@@ -2141,7 +2065,7 @@ proc scrujo {
         state[0x1366] = 0x0001
     }
     block_4456:
-    when block_44F1 {
+    when {
         require state[0x1368] == 0x0000
     } then {
         say Scruter_Jo voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Not good, friend|... You fail..."
@@ -2155,21 +2079,20 @@ proc scrujo {
     end presentation Scruter_Jo
 }
 
-proc bigb1 {
-    activation enabled until veuv
+proc bigb1 enabled until veuv {
     during travel
     require Tina_Burner.current_location == Trashlando
     require presentation == Migrator
-    guard_pop
+} then {
     say Migrator voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Me greet you|, friend|..."
     say Migrator voice=0x02 flags=0x00 display=0x80 loop=none control=none : "You have ring???..."
     say Migrator voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Me soon marry TINA... YOU COME WEDDING. ME INVITE YOU. WE MAKE BIG CONCERT..."
-    when block_4650 {
+    when {
         require ring.holder == blood
     } then {
         say Migrator voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Teleport him the ring|, Commander|. That'll make his day...."
         say Migrator voice=0xFF flags=0x10 display=0x80 loop=block_45D2 control=none : "RING TELEPORTED TO MIGRATOR" choices "TELEPORT"
-        when block_45D2 {
+        when {
             require choice == "TELEPORT"
         } then {
             say Migrator voice=0xFF flags=0x08 display=0x90 loop=none control=none : "RING TELEPORTED TO MOSKITO AIRPORT ZONE|."
@@ -2192,20 +2115,18 @@ proc bigb1 {
     end presentation Migrator
 }
 
-proc veuv {
-    activation enabled until veuv1
+proc veuv enabled until veuv1 {
     during bridge
     require Bug_Deluxe.current_location == Bigbang
-    guard_pop
+} then {
     queue presentation Scruter_K
     veuv1.enabled = true
     veuv.enabled = false
 }
 
-proc veuv1 {
-    activation disabled until menbr
+proc veuv1 disabled until menbr {
     during bridge
-    guard_pop
+} then {
     say Scruter_K voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Come in come in...THIS BE HANNA SCRUTA. My husband SCRUTER JO be fighter pilot..."
     say Scruter_K voice=0xFF flags=0x00 display=0x80 loop=none control=none : "You blow up his fighter in combat... ME WIDOW NOW... CRY... CRY..."
     say Scruter_K voice=0xFF flags=0x00 display=0x80 loop=none control=none : "ME NOT CAN PAY RENT... YOUR FAULT... INSURANCE NOT GIVE ANYTHING..."
@@ -2220,12 +2141,11 @@ proc veuv1 {
     end presentation Scruter_K
 }
 
-proc menbr {
-    activation enabled until men1
+proc menbr enabled until men1 {
     during bridge
     require presentation == menu
     require Bronko.current_location == aboard
-    guard_pop
+} then {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"IMPROVED MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today CHEF BRONKO has laid out for you:"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Tasty MUFFALO soup Bronko-style."
@@ -2238,12 +2158,11 @@ proc menbr {
     end presentation menu
 }
 
-proc men1 {
-    activation enabled until men2
+proc men1 enabled until men2 {
     during bridge
     require presentation == menu
     require Bronko.current_location != aboard
-    guard_pop
+} then {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "PLASMA soup HONK-style."
@@ -2257,12 +2176,11 @@ proc men1 {
     end presentation menu
 }
 
-proc men2 {
-    activation enabled until men3
+proc men2 enabled until men3 {
     during bridge
     require presentation == menu
     require Bronko.current_location != aboard
-    guard_pop
+} then {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "PLASMA soup HONK-style."
@@ -2276,12 +2194,11 @@ proc men2 {
     end presentation menu
 }
 
-proc men3 {
-    activation enabled until men4
+proc men3 enabled until men4 {
     during bridge
     require Bronko.current_location != aboard
     require presentation == menu
-    guard_pop
+} then {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "PLASMA soup HONK-style."
@@ -2295,12 +2212,11 @@ proc men3 {
     end presentation menu
 }
 
-proc men4 {
-    activation enabled until men5
+proc men4 enabled until men5 {
     during bridge
     require presentation == menu
     require Bronko.current_location != aboard
-    guard_pop
+} then {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "HONK-style PLASMA soup."
@@ -2314,12 +2230,11 @@ proc men4 {
     end presentation menu
 }
 
-proc men5 {
-    activation enabled until men6
+proc men5 enabled until men6 {
     during bridge
     require presentation == menu
     require Bronko.current_location != aboard
-    guard_pop
+} then {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"IMPROVED MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Soup of PLASMA HONK-style."
@@ -2334,9 +2249,8 @@ proc men5 {
     end presentation menu
 }
 
-proc men6 {
-    activation disabled until revel
-    guard_pop
+proc men6 disabled until revel {
+} then {
     men1.enabled = true
     men2.enabled = true
     men3.enabled = true
@@ -2345,12 +2259,11 @@ proc men6 {
     men6.enabled = false
 }
 
-proc revel {
-    activation enabled until honk1
+proc revel enabled until honk1 {
     during contact
     require presentation == Bob_Morlock
     require state[0x1386] == 0x0000
-    guard_pop
+} then {
     say Bob_Morlock voice=0x07 flags=0x00 display=0x80 loop=none control=none : "Would you care to know an unbearable truth, Commander|?"
     say Bob_Morlock voice=0x06 flags=0x00 display=0x80 loop=none control=none : "HONK! Switch yourself off for ten seconds!!!"
     say Bob_Morlock voice=0xFF flags=0x20 display=0x80 loop=none control=none : "But, Cap'n Bob|! I..."
@@ -2370,13 +2283,12 @@ proc revel {
     end presentation Bob_Morlock
 }
 
-proc honk1 {
-    activation enabled until block_51E2
+proc honk1 enabled until block_51E2 {
     during bridge
     require presentation == Honk
-    guard_pop
+} then {
     say Honk voice=0xFF flags=0x20 display=0x80 loop=none control=none : "I exist only to obey, Commander"
-    when block_4EAD {
+    when {
         require state[0x1368] == 0x0000
     } then {
         say Honk voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander|, we don't have any BIONIUM|... COMMANDER, please..."
@@ -2385,7 +2297,7 @@ proc honk1 {
         say Honk voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Wake up Scruter Jo, Commander|. He's sleeping in the Cryobox|..."
     }
     block_4EAD:
-    when block_4F0E {
+    when {
         require state[0x1368] == 0x0001
     } then {
         say Honk voice=0xFF flags=0x20 display=0x80 loop=none control=none : "We've got one dose of BIONIUM left, Commander"
@@ -2393,51 +2305,51 @@ proc honk1 {
         say Honk voice=0xFF flags=0x20 display=0x80 loop=none control=none : "I don't feel too sure of myself, Commander... I really need that energy..."
     }
     block_4F0E:
-    when block_4F49 {
+    when {
         require state[0x1368] == 0x0002
     } then {
         say Honk voice=0xFF flags=0x20 display=0x80 loop=none control=none : "We've got two doses of BIONIUM left, Commander"
         say Honk voice=0xFF flags=0x20 display=0x80 loop=none control=none : "You must enter Scruter Jo's CYBERSPACE|..."
     }
     block_4F49:
-    when block_4F6E {
+    when {
         require state[0x1368] == 0x0003
     } then {
         say Honk voice=0xFF flags=0x20 display=0x80 loop=none control=none : "We've got three doses of BIONIUM left, Commander"
     }
     block_4F6E:
-    when block_4F93 {
+    when {
         require state[0x1368] == 0x0004
     } then {
         say Honk voice=0xFF flags=0x20 display=0x80 loop=none control=none : "We've got four doses of BIONIUM left, Commander"
     }
     block_4F93:
-    when block_4FB8 {
+    when {
         require state[0x1368] == 0x0005
     } then {
         say Honk voice=0xFF flags=0x20 display=0x80 loop=none control=none : "We've got five doses of BIONIUM left, Commander"
     }
     block_4FB8:
-    when block_4FDD {
+    when {
         require state[0x1368] == 0x0006
     } then {
         say Honk voice=0xFF flags=0x20 display=0x80 loop=none control=none : "We've got six doses of BIONIUM left, Commander"
     }
     block_4FDD:
-    when block_5002 {
+    when {
         require state[0x1368] == 0x0007
     } then {
         say Honk voice=0xFF flags=0x20 display=0x80 loop=none control=none : "We've got seven doses of BIONIUM left, Commander"
     }
     block_5002:
-    when block_503B {
+    when {
         require state[0x1368] == 0x0008
     } then {
         say Honk voice=0xFF flags=0x20 display=0x80 loop=none control=none : "We've got eight doses of BIONIUM left, Commander"
         say Honk voice=0xFF flags=0x20 display=0x80 loop=none control=none : "You're the best, Commander|..."
     }
     block_503B:
-    when block_5088 {
+    when {
         require state[0x1368] > 0x0002
         require Hom.encounter_count < 0x0002
         require !Bigbang.in_play
@@ -2446,7 +2358,7 @@ proc honk1 {
         state[0x1368] -= 0x0003
     }
     block_5088:
-    when block_50C6 {
+    when {
         require state[0x1368] > 0x0002
         require state[0x136A] == 0x0000
         require Migrator.encounter_count > 0x0000
@@ -2455,7 +2367,7 @@ proc honk1 {
         state[0x1368] -= 0x0003
     }
     block_50C6:
-    when block_50FC {
+    when {
         require state[0x1368] > 0x0002
         require Yoko.current_location == aboard
         require Yoko.encounter_count == 0x0000
@@ -2464,7 +2376,7 @@ proc honk1 {
         state[0x1368] -= 0x0003
     }
     block_50FC:
-    when block_5146 {
+    when {
         require state[0x1368] > 0x0002
         require Yoko.current_location == aboard
         require Yoko.encounter_count > 0x0000
@@ -2473,7 +2385,7 @@ proc honk1 {
         state[0x1368] -= 0x0003
     }
     block_5146:
-    when block_5175 {
+    when {
         require state[0x1368] > 0x0002
         require Bug_Deluxe.encounter_count == 0x0000
     } then {
@@ -2481,7 +2393,7 @@ proc honk1 {
         state[0x1368] -= 0x0003
     }
     block_5175:
-    when block_51B6 {
+    when {
         require state[0x1368] > 0x0002
         require ring.holder == ondoyant
         require state[0x1388] == state[0x138A]

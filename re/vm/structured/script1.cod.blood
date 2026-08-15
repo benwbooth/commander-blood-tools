@@ -17,12 +17,11 @@ field Honk.encounter_count = Honk + 0x0036 // VAR kind 0x0002, selector(s) 08
 field Honk.action = Honk + 0x003A // VAR kind 0x0002, selector(s) 13
 field menu.action = menu + 0x003A // VAR kind 0x0002, selector(s) 13
 
-proc menbr {
-    activation enabled until men1
+proc menbr enabled until men1 {
     during bridge
     require presentation == menu
     require Bronko.current_location == aboard
-    guard_pop
+} then {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"IMPROVED MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today CHEF BRONKO has laid on for you:"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Tasty MURFFALO soup Bronko-style."
@@ -35,12 +34,11 @@ proc menbr {
     end presentation menu
 }
 
-proc men1 {
-    activation enabled until men2
+proc men1 enabled until men2 {
     during bridge
     require presentation == menu
     require Bronko.current_location != aboard
-    guard_pop
+} then {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "PLASMA soup HONK-style."
@@ -54,12 +52,11 @@ proc men1 {
     end presentation menu
 }
 
-proc men2 {
-    activation enabled until men3
+proc men2 enabled until men3 {
     during bridge
     require presentation == menu
     require Bronko.current_location != aboard
-    guard_pop
+} then {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "PLASMA soup HONK-style."
@@ -73,12 +70,11 @@ proc men2 {
     end presentation menu
 }
 
-proc men3 {
-    activation enabled until men4
+proc men3 enabled until men4 {
     during bridge
     require Bronko.current_location != aboard
     require presentation == menu
-    guard_pop
+} then {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "PLASMA soup HONK-style."
@@ -92,12 +88,11 @@ proc men3 {
     end presentation menu
 }
 
-proc men4 {
-    activation enabled until men5
+proc men4 enabled until men5 {
     during bridge
     require presentation == menu
     require Bronko.current_location != aboard
-    guard_pop
+} then {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "HONK-style PLASMA soup."
@@ -111,12 +106,11 @@ proc men4 {
     end presentation menu
 }
 
-proc men5 {
-    activation enabled until men6
+proc men5 enabled until men6 {
     during bridge
     require presentation == menu
     require Bronko.current_location != aboard
-    guard_pop
+} then {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"IMPROVED MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Soup of PLASMA HONK-style."
@@ -131,9 +125,8 @@ proc men5 {
     end presentation menu
 }
 
-proc men6 {
-    activation disabled until tima
-    guard_pop
+proc men6 disabled until tima {
+} then {
     men1.enabled = true
     men2.enabled = true
     men3.enabled = true
@@ -142,30 +135,27 @@ proc men6 {
     men6.enabled = false
 }
 
-proc tima {
-    activation enabled until ho
-    guard_pop
+proc tima enabled until ho {
+} then {
     timer[22] = 5
     tima.enabled = false
 }
 
-proc ho {
-    activation enabled until ho1
+proc ho enabled until ho1 {
     require timer[22] == 0
-    guard_pop
+} then {
     queue presentation Izwalito
     ho.enabled = false
 }
 
-proc ho1 {
-    activation enabled until hon
+proc ho1 enabled until hon {
     during bridge
     require presentation == Izwalito
-    guard_pop
+} then {
     say Izwalito voice=0xFF flags=0x08 display=0x80 loop=none control=none : "You found the right button. So far so good..."
     Izwalito.topic = "rien"
     say Izwalito voice=0xFF flags=0x10 display=0x80 loop=block_04CE control=none : "Click quick, Cap'n Bob is waiting..." choices "explanations" "game"
-    when block_04C6 {
+    when {
         require choice == "game"
     } then {
         say Izwalito voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "GAME"
@@ -174,7 +164,7 @@ proc ho1 {
         end presentation Izwalito
     }
     block_04C6:
-    when block_04CE {
+    when {
         require choice == "explanations"
     } then {
         choice = none
@@ -194,11 +184,10 @@ proc ho1 {
     end presentation Izwalito
 }
 
-proc hon {
-    activation enabled until BOB1
+proc hon enabled until BOB1 {
     during bridge
     require presentation == Honk
-    guard_pop
+} then {
     say Honk voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Welcome aboard the ARK, Commander. I'm HONK, your trusted computer..."
     say Honk voice=0xFF flags=0x20 display=0x80 loop=none control=none : "I'm here to help you a lot..."
     say Honk voice=0xFF flags=0x20 display=0x80 loop=none control=none : "If the phone rings, just hit the \"RED BUTTON\" in front of you..."
@@ -213,23 +202,22 @@ proc hon {
     end presentation Honk
 }
 
-proc BOB1 {
-    activation enabled until scr2
+proc BOB1 enabled until scr2 {
     during contact
     require presentation == Bob_Morlock
-    guard_pop
+} then {
     say Bob_Morlock voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Good day COMMANDER. My name is BOB, BOB MORLOCK..."
     say Bob_Morlock voice=0x01 flags=0x00 display=0x80 loop=none control=none : "If the phone rings, press the \"RED BUTTON\" on the radio to answer..."
     say Bob_Morlock voice=0x02 flags=0x00 display=0x80 loop=none control=none : "My ears are fragile, Commander..."
     say Bob_Morlock voice=0x02 flags=0x10 display=0x80 loop=block_083D control=none : "Do you want me to explain your mission to you, Commander?" choices "yes" "no"
-    when block_0834 {
+    when {
         require choice == "no"
     } then {
         say Bob_Morlock voice=0x06 flags=0x08 display=0x80 loop=none control=none : "I'm going to explain it all the same... It's important..."
         choice = none
     }
     block_0834:
-    when block_083D {
+    when {
         require choice != "no"
     } then {
         choice = none
@@ -270,11 +258,10 @@ proc BOB1 {
     end presentation Bob_Morlock
 }
 
-proc scr2 {
-    activation enabled until block_0C0B
+proc scr2 enabled until block_0C0B {
     require Honk.encounter_count == 0x0001
     require Bob_Morlock.encounter_count == 0x0001
-    guard_pop
+} then {
     run_profile 0x02
     block_0C0B:
     halt

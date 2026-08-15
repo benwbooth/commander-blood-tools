@@ -141,15 +141,15 @@ dictionary-backed actor `topic`, so source such as `Eviscerator.topic =
 "secrets"` compiles to the original DIC offset and `BC` byte.
 
 The native control-flow handlers at `0x6559`, `0x6572`, `0x65DB`, `0x65EB`,
-`0x6830`, `0x6494`, and `0x64A0` are represented as guard push/pop, jump,
-timer, activation, and flag-branch statements. `A5` indexes the saved word
+`0x6830`, `0x6494`, and `0x64A0` lower from structured conditions, jumps,
+timers, procedure headers, and scene-context guards. `A5` indexes the saved word
 array at `GS:0x6ADE`; the timer ISR decrements exactly its first 30 words when
 they are positive and no presentation is active. All 75 shipped `A5` uses lie
 in that range. BloodScript renders their 48 writes as `timer[n] = ticks` or
 `disabled` and their 27 zero tests as `require timer[n] == 0`; operands outside
 the proven timer domain retain `state_array_set`/`state_array_test`. Every one
-of the 480 kind-2 DEB procedures begins with an `A9` activation header, rendered as
-`activation enabled|disabled until target`. All 413 shipped `AB` byte writes
+of the 480 kind-2 DEB procedures begins with an `A9` activation header, folded
+into `proc name enabled|disabled until target { ... }`. All 413 shipped `AB` byte writes
 target that same flag byte at a named procedure's start plus one, so they are
 rendered as `procedure.enabled = true|false`. The compiler derives the exact
 opcode, flag byte, and address from these forms. Arbitrary `AB` addresses or
@@ -321,10 +321,12 @@ statements for all 134,312 companion bytes, making the complete 25-resource,
 framed and typed. The COD pass now recovers 7,010 basic blocks and 17,287 typed
 edges across all 480 DEB procedures, with no unresolved guard target. Five
 disabled block bodies are retained as unreachable evidence. The structured pass
-proves 633 of 682 `A0` guard regions and classifies the remaining 49 explicit
-low-level guards as `alternate_exit`: at least one CFG edge leaves the candidate
-interval somewhere other than its declared end. Each generated fallback records
-that reason as a non-semantic comment. See `bloodscript/manifest.tsv` for
+recovers all 682 `A0` guard regions. Forty-four are proven if/else forms whose
+true arm ends in `A4 <join>`; the five other formerly rejected regions are
+`sort`, `Corpo4`, `oto1`, `tromp1`, and `big3`. Their retry, navigation,
+procedure-boundary, and dialogue-resume edges remain visible as labels or jumps
+inside their structured regions. No shipped `guard_push`, `guard_pop`, or
+standalone `activation` statement remains. See `bloodscript/manifest.tsv` for
 per-image byte coverage,
 `control-flow/manifest.tsv` for graph counts, `structured/manifest.tsv` for
 source-lift and rejection counts, `bas-control-flow/manifest.tsv` for

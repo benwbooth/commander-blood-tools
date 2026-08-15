@@ -1653,6 +1653,30 @@ name is nine visible bytes. BloodScript renders the proven form as
 synthetic out-of-range slot or overlong name retains the lossless
 `character_slot` fallback instead of receiving unproved high-level semantics.
 
+### A0/A1/A4/A9 structured source recovery (DECODED)
+
+The complete shipped COD corpus has 682 `A0 <false-target>` guard openers. Each
+has one balanced `A1` condition/body boundary, ends no later than the next DEB
+procedure boundary, and nests without crossing or sharing its pop. BloodScript
+now renders all 682 as `when { ... } then { ... }`; the compiler derives the
+false target from the closing brace and reproduces the original bytes.
+
+Forty-four guards encode if/else directly: an `A4 <join>` is the last true-arm
+instruction, the `A0` target starts the false arm, and the forward join remains
+in the same procedure. These render as `} else {` and compile back to the same
+`A4`. Five other guards have nonlocal edges: `sort` retries backward; the
+`Corpo4` and `big3` true arms perform navigation handoffs; `oto1` falls through
+to the `oto2` procedure boundary; and `tromp1` retains its dialogue-resume
+label and cross-boundary jump. Their labels and jumps remain explicit inside the
+braces, so source structure does not discard those edges. No shipped low-level
+`guard_push` or `guard_pop` remains.
+
+All 480 kind-2 DEB procedures begin at `A9`: 420 initial flag bytes are one and
+60 are zero. The source header is
+`proc name enabled|disabled until target { ... }`. A root `A1`, when present,
+becomes `} then {`; it is not synthesized for shapes such as disabled `ERA`,
+where `A9` is followed by a nested `A0` and has no separate root pop.
+
 ### 0xB7 bit-flag handler @ file 0x6AA7 — state flag set/test (DECODED)
 
 `0xB7` is a 4-byte state/line-record bit flag operation, with an optional `0xA1`

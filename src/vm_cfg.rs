@@ -95,6 +95,8 @@ pub struct CodControlFlow {
 pub struct StructuredGuard {
     pub start: usize,
     pub then_offset: usize,
+    pub else_offset: Option<usize>,
+    pub else_jump: Option<usize>,
     pub end: usize,
 }
 
@@ -385,6 +387,8 @@ pub fn analyze_structured_guards(
             candidates.push(StructuredGuard {
                 start: *offset,
                 then_offset,
+                else_offset: None,
+                else_jump: None,
                 end,
             });
         } else {
@@ -393,6 +397,52 @@ pub fn analyze_structured_guards(
                 .or_default()
                 .insert(GuardRejection::MissingBalancedPop);
         }
+    }
+
+    for guard in &mut candidates {
+        let alternate_exits = graph
+            .edges
+            .iter()
+            .filter(|edge| {
+                edge.from_instruction >= guard.start
+                    && edge.from_instruction < guard.end
+                    && (edge.to_instruction < guard.start || edge.to_instruction > guard.end)
+            })
+            .collect::<Vec<_>>();
+        if alternate_exits.is_empty() {
+            continue;
+        }
+        let Some(edge) = alternate_exits
+            .as_slice()
+            .first()
+            .filter(|_| alternate_exits.len() == 1)
+        else {
+            continue;
+        };
+        let jump_is_last_then_instruction = tokens.iter().any(|token| {
+            matches!(
+                token,
+                VmToken::Jump { offset, target, len }
+                    if *offset == edge.from_instruction
+                        && usize::from(*target) == edge.to_instruction
+                        && *offset + *len == guard.end
+            )
+        });
+        let procedure_end = functions
+            .iter()
+            .map(|function| function.offset)
+            .find(|&function_offset| function_offset > guard.start)
+            .unwrap_or(image.len() - 1);
+        if edge.kind != EdgeKind::Jump
+            || edge.to_instruction <= guard.end
+            || edge.to_instruction > procedure_end
+            || !jump_is_last_then_instruction
+        {
+            continue;
+        }
+        guard.else_offset = Some(guard.end);
+        guard.else_jump = Some(edge.from_instruction);
+        guard.end = edge.to_instruction;
     }
 
     for (left_index, left) in candidates.iter().enumerate() {
@@ -419,32 +469,6 @@ pub fn analyze_structured_guards(
                     .entry(right.start)
                     .or_default()
                     .insert(GuardRejection::SharedThen);
-            }
-        }
-    }
-
-    for guard in &candidates {
-        for edge in &graph.edges {
-            let source_inside =
-                edge.from_instruction >= guard.start && edge.from_instruction < guard.end;
-            let target_inside =
-                edge.to_instruction >= guard.start && edge.to_instruction < guard.end;
-            let enters_interior = !source_inside
-                && edge.to_instruction > guard.start
-                && edge.to_instruction < guard.end;
-            let exits_elsewhere =
-                source_inside && !target_inside && edge.to_instruction != guard.end;
-            if enters_interior {
-                rejected
-                    .entry(guard.start)
-                    .or_default()
-                    .insert(GuardRejection::ExternalEntry);
-            }
-            if exits_elsewhere {
-                rejected
-                    .entry(guard.start)
-                    .or_default()
-                    .insert(GuardRejection::AlternateExit);
             }
         }
     }
@@ -753,6 +777,8 @@ mod tests {
             vec![StructuredGuard {
                 start: 0,
                 then_offset: 6,
+                else_offset: None,
+                else_jump: None,
                 end: 11,
             }]
         );
@@ -765,16 +791,9 @@ mod tests {
             0xA5, 0x02, 0x78, 0x56, // body
             0xFF,
         ];
-        assert!(
-            recover_structured_guards("SCRIPTX", &external_entry, &[])
-                .unwrap()
-                .is_empty()
-        );
         let recovery = analyze_structured_guards("SCRIPTX", &external_entry, &[]).unwrap();
-        assert_eq!(
-            recovery.rejected.get(&3),
-            Some(&BTreeSet::from([GuardRejection::ExternalEntry]))
-        );
+        assert!(recovery.rejected.is_empty());
+        assert_eq!(recovery.structured.len(), 1);
 
         let mid_block = vec![
             0xAA, // ordinary fallthrough before the guard
@@ -789,6 +808,8 @@ mod tests {
             vec![StructuredGuard {
                 start: 1,
                 then_offset: 7,
+                else_offset: None,
+                else_jump: None,
                 end: 12,
             }]
         );
@@ -802,9 +823,16 @@ mod tests {
             0xFF,
         ];
         let recovery = analyze_structured_guards("SCRIPTX", &alternate_exit, &[]).unwrap();
+        assert!(recovery.rejected.is_empty());
         assert_eq!(
-            recovery.rejected.get(&0),
-            Some(&BTreeSet::from([GuardRejection::AlternateExit]))
+            recovery.structured,
+            vec![StructuredGuard {
+                start: 0,
+                then_offset: 6,
+                else_offset: Some(10),
+                else_jump: Some(7),
+                end: 14,
+            }]
         );
     }
 

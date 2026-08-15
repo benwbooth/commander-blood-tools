@@ -147,17 +147,19 @@ shape: a non-inverted action field, a kind-`0x0400` item, and a destination that
 is either `blood` or a kind-2 character. Nonmatching or query-mode `CD` tokens
 retain the exact `record_triple` fallback.
 
-Each kind-2 procedure begins with an `activation enabled|disabled until target`
-header backed by its native `A9` flag byte. Writes to those bytes are named
+Each kind-2 procedure begins with
+`proc name enabled|disabled until target { ... }`, backed by its native `A9`
+flag byte. A top-level `A1` is represented by the following `} then {` boundary;
+procedures without that byte do not receive one. Writes to those bytes are named
 assignments such as `dialogue.enabled = false`. All 413 shipped writes target a
 named procedure exactly; arbitrary byte writes retain `poke_byte` as a lossless
 fallback.
 
-The `when target { ... } then { ... }` syntax is a lossless structural form of
-the native `A0 target` / `A1` guard protocol. `when` and `then` emit those
-original bytes. The closing brace emits no bytes and must occur exactly at the
-resolved target. The compiler validates brace nesting, procedure boundaries,
-and derived target offsets.
+The `when { ... } then { ... }` syntax is a lossless structural form of the
+native `A0 target` / `A1` guard protocol. The compiler derives the hidden false
+target from brace placement. A proven `A4` over a false arm renders as
+`} else {`; shared nonlocal labels remain visible inside braces. The compiler
+validates nesting, procedure boundaries, and every derived target offset.
 
 The BAS pass uses brace-delimited `selector name { ... }` and `case selector ->
 next { ... }` blocks. List and case braces emit no bytes; `case` emits the same four-byte
@@ -174,22 +176,18 @@ remain as low-level `SELECTOR_NODE` statements in this corpus.
 
 A guard is lifted only when all of these are established:
 
-- its target is forward and remains in the same DEB procedure;
+- its target is forward and no later than the next DEB procedure boundary;
 - a unique, balanced `A1` divides its conditions from its body;
 - its interval does not cross another candidate guard;
-- no CFG edge enters its interior from outside;
-- no CFG edge exits it except through its declared end.
+- every nonlocal entry or exit retains an explicit source label or jump.
 
-The shipped COD corpus contains 682 `A0` guards. This pass structures 633
-(92.8 percent) and deliberately leaves 49 as `GUARD_PUSH`/`GUARD_POP`.
-Fallback is evidence that the region has not met the structural proof, not an
-invitation to guess. Each retained `GUARD_PUSH` has an
-`unstructured_guard=<reason>` comment, and `manifest.tsv` records the reason
-counts per image. All 49 shipped fallbacks are `alternate_exit`: at least one
-CFG edge leaves the candidate interval somewhere other than its declared end.
-The analyzer also distinguishes non-forward targets, cross-procedure targets,
-missing balanced pops, crossing regions, shared pops, and external entries when
-they occur. Comments do not emit bytes.
+The shipped COD corpus contains 682 `A0` guards, all of which are structured.
+Forty-four are if/else regions with a final `A4` true-arm jump to a forward,
+procedure-local join. The five other formerly rejected cases are `sort`,
+`Corpo4`, `oto1`, `tromp1`, and `big3`; they retain their backward retry,
+navigation, next-procedure, or dialogue-resume labels and jumps inside a
+structured `when`. No control-flow edge is discarded. The generated corpus has
+zero `GUARD_PUSH`, `GUARD_POP`, or standalone `activation` statements.
 
 All ten generated COD and BAS sources compile to the exact 183,523 shipped
 bytes; per-image guard, rejection, list, and case counts are in `manifest.tsv`.

@@ -84,9 +84,12 @@ Finally, opcode `A9` sets the native query bit just as an `A0` guard does. The
 source formatter tracks that transition, so conditions immediately following
 an `A9` are rendered as `require` expressions rather than updates. All 480
 kind-2 DEB procedures begin at an `A9`: 420 carry flag byte `1` and 60 carry
-flag byte `0`. BloodScript therefore renders the procedure header as
-`activation enabled|disabled until target`. A focused compiler test pins the
-`A9` -> `B0` query -> `A1` -> `BC` update sequence byte for byte.
+flag byte `0`. BloodScript folds that state and skip target into
+`proc name enabled|disabled until target { ... }`. A top-level `A1`, when
+present, becomes the procedure's `} then {` condition/body boundary. It is not
+invented for procedures such as disabled `ERA`, where `A9` is followed by a
+nested `A0` guard and has no separate root `A1`. Focused compiler tests pin both
+shapes byte for byte.
 
 The two RTC condition handlers are now fully lifted. `CA` reads an operator,
 the otherwise ignored literal tag `C1`, and an hour; all 80 shipped instances
@@ -396,15 +399,19 @@ branch-capable instructions resolve to a concrete guard target.
 Exactly five block bodies are unreachable because their opener flag remains
 zero; they are preserved rather than deleted from the source evidence.
 
-The source-structuring pass converts 633 of the 682 `A0` guards into
-balanced `WHEN`/`THEN`/`END_WHEN` regions. A region is accepted only when it is
-forward, procedure-local, non-crossing, single-entry, and single-exit according
-to the recovered CFG. The other 49 guards remain explicit low-level tokens.
-Every retained guard is deterministically classified `alternate_exit`: at
-least one recovered edge leaves its candidate interval somewhere other than
-the guard's declared end. Each generated `GUARD_PUSH` records the reason in a
-non-semantic comment, and the manifest reports the reason counts per image.
-Both forms compile through the same exact backend, and all ten structured
+The source-structuring pass converts all 682 `A0` guards into balanced
+`when { ... } then { ... }` regions. Forty-four have the exact native if/else
+shape: the final instruction of the true arm is `A4 <join>`, the false arm begins
+at the `A0` target, and the forward join remains inside the same procedure. They
+render as `} else {`, and the compiler recreates the original `A4`.
+
+Five formerly rejected guards establish why CFG edges must remain visible even
+inside structured source. `sort` retries through a backward jump. The `Corpo4`
+and `big3` true arms perform navigation handoffs. `oto1` reaches the `oto2`
+procedure boundary. The `tromp1` dialogue loop retains both its resume label and
+its cross-boundary jump. Those labels and jumps remain explicit inside ordinary
+`when` blocks. This preserves every nonlocal edge without exposing `GUARD_PUSH`
+or `GUARD_POP`. The generated corpus has zero unstructured guards and all ten
 sources reproduce the shipped bytes.
 
 The earlier 443-region count was an analyzer artifact: destination membership

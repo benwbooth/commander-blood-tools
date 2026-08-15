@@ -92,6 +92,7 @@ struct ParsedSourceLine<'a> {
 struct StructuredAnnotations {
     starts: BTreeMap<usize, StructuredGuard>,
     thens: BTreeMap<usize, usize>,
+    elses: BTreeMap<usize, usize>,
     ends: BTreeMap<usize, Vec<usize>>,
     rejected: BTreeMap<usize, BTreeSet<GuardRejection>>,
 }
@@ -342,10 +343,28 @@ struct OpenSelectorList<'a> {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+struct OpenWhen<'a> {
+    false_target: &'a str,
+    end_target: Option<&'a str>,
+    saw_then: bool,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 enum ModernBlock {
     Procedure(String),
-    WhenCondition(String),
-    WhenBody(String),
+    ProcedureCondition(String),
+    ProcedureBody(String),
+    WhenCondition {
+        false_target: String,
+        end_target: String,
+    },
+    WhenBody {
+        false_target: String,
+        end_target: String,
+    },
+    WhenElse {
+        end_target: String,
+    },
     Selector(String),
     Case,
 }
@@ -621,7 +640,8 @@ pub fn compile_with_dictionary(source: &str, dictionary: &HashMap<u16, String>) 
 
     let mut image = Vec::new();
     let mut current_procedure: Option<&str> = None;
-    let mut open_whens: Vec<(&str, bool)> = Vec::new();
+    let mut procedure_condition_open = false;
+    let mut open_whens: Vec<OpenWhen<'_>> = Vec::new();
     let mut open_selector_list: Option<OpenSelectorList<'_>> = None;
     for line in lines {
         if line.offset != image.len() {
@@ -640,11 +660,11 @@ pub fn compile_with_dictionary(source: &str, dictionary: &HashMap<u16, String>) 
             }
             "PROCEDURE" => {
                 require_count(&line.args, 1, line.line_number, line.name)?;
-                if let Some((target, _)) = open_whens.last() {
+                if let Some(open) = open_whens.last() {
                     bail!(
                         "line {}: PROCEDURE reached before END_WHEN {:?}",
                         line.line_number,
-                        target
+                        open.false_target
                     );
                 }
                 if let Some(open) = current_procedure {
@@ -660,11 +680,11 @@ pub fn compile_with_dictionary(source: &str, dictionary: &HashMap<u16, String>) 
             }
             "END_PROCEDURE" => {
                 require_count(&line.args, 1, line.line_number, line.name)?;
-                if let Some((target, _)) = open_whens.last() {
+                if let Some(open) = open_whens.last() {
                     bail!(
                         "line {}: END_PROCEDURE reached before END_WHEN {:?}",
                         line.line_number,
-                        target
+                        open.false_target
                     );
                 }
                 if current_procedure != Some(line.args[0]) {
@@ -675,8 +695,18 @@ pub fn compile_with_dictionary(source: &str, dictionary: &HashMap<u16, String>) 
                         current_procedure
                     );
                 }
+                procedure_condition_open = false;
                 current_procedure = None;
                 continue;
+            }
+            "CONDITIONAL_BLOCK" if current_procedure.is_some() => {
+                if procedure_condition_open {
+                    bail!(
+                        "line {}: duplicate procedure condition block",
+                        line.line_number
+                    );
+                }
+                procedure_condition_open = true;
             }
             "WHEN" => {
                 require_count(&line.args, 1, line.line_number, line.name)?;
@@ -684,41 +714,92 @@ pub fn compile_with_dictionary(source: &str, dictionary: &HashMap<u16, String>) 
                 if usize::from(target) <= line.offset {
                     bail!("line {}: WHEN target must be forward", line.line_number);
                 }
-                open_whens.push((line.args[0], false));
+                open_whens.push(OpenWhen {
+                    false_target: line.args[0],
+                    end_target: None,
+                    saw_then: false,
+                });
             }
             "THEN" => {
                 require_count(&line.args, 0, line.line_number, line.name)?;
-                let Some((_, saw_then)) = open_whens.last_mut() else {
+                if let Some(open) = open_whens.last_mut() {
+                    if open.saw_then {
+                        bail!("line {}: duplicate THEN", line.line_number);
+                    }
+                    open.saw_then = true;
+                } else if procedure_condition_open {
+                    procedure_condition_open = false;
+                } else {
                     bail!("line {}: THEN without WHEN", line.line_number);
-                };
-                if *saw_then {
-                    bail!("line {}: duplicate THEN", line.line_number);
                 }
-                *saw_then = true;
+            }
+            "ELSE" => {
+                require_count(&line.args, 2, line.line_number, line.name)?;
+                let Some(open) = open_whens.last_mut() else {
+                    bail!("line {}: ELSE without WHEN", line.line_number);
+                };
+                if !open.saw_then {
+                    bail!("line {}: ELSE reached before THEN", line.line_number);
+                }
+                if open.end_target.is_some() {
+                    bail!("line {}: duplicate ELSE", line.line_number);
+                }
+                if open.false_target != line.args[0] {
+                    bail!(
+                        "line {}: ELSE false target {:?} does not match {:?}",
+                        line.line_number,
+                        line.args[0],
+                        open.false_target
+                    );
+                }
+                let false_offset = parse_address(
+                    line.args[0],
+                    &labels,
+                    line.line_number,
+                    "ELSE false target",
+                )?;
+                if usize::from(false_offset) != line.offset + 3 {
+                    bail!(
+                        "line {}: ELSE false target {:?} must follow its jump",
+                        line.line_number,
+                        line.args[0]
+                    );
+                }
+                let end_offset =
+                    parse_address(line.args[1], &labels, line.line_number, "ELSE end target")?;
+                if usize::from(end_offset) <= usize::from(false_offset) {
+                    bail!("line {}: ELSE end target must be forward", line.line_number);
+                }
+                open.end_target = Some(line.args[1]);
             }
             "END_WHEN" => {
                 require_count(&line.args, 1, line.line_number, line.name)?;
-                let Some((target, saw_then)) = open_whens.pop() else {
+                let Some(open) = open_whens.pop() else {
                     bail!("line {}: END_WHEN without WHEN", line.line_number);
                 };
-                if target != line.args[0] {
+                let expected_target = open.end_target.unwrap_or(open.false_target);
+                if expected_target != line.args[0] {
                     bail!(
                         "line {}: END_WHEN {:?} does not match {:?}",
                         line.line_number,
                         line.args[0],
-                        target
+                        expected_target
                     );
                 }
-                if !saw_then {
+                if !open.saw_then {
                     bail!("line {}: END_WHEN reached before THEN", line.line_number);
                 }
-                let target_offset =
-                    parse_address(target, &labels, line.line_number, "END_WHEN target")?;
+                let target_offset = parse_address(
+                    expected_target,
+                    &labels,
+                    line.line_number,
+                    "END_WHEN target",
+                )?;
                 if usize::from(target_offset) != line.offset {
                     bail!(
                         "line {}: END_WHEN target {:?} resolves to 0x{:04X}, not 0x{:04X}",
                         line.line_number,
-                        target,
+                        expected_target,
                         target_offset,
                         line.offset
                     );
@@ -904,8 +985,8 @@ pub fn compile_with_dictionary(source: &str, dictionary: &HashMap<u16, String>) 
     if let Some(open) = current_procedure {
         bail!("procedure {open:?} has no END_PROCEDURE");
     }
-    if let Some((target, _)) = open_whens.last() {
-        bail!("WHEN {target:?} has no END_WHEN");
+    if let Some(open) = open_whens.last() {
+        bail!("WHEN {:?} has no END_WHEN", open.false_target);
     }
     if let Some(open) = open_selector_list {
         bail!("SELECTOR_LIST {:?} has no END_SELECTOR_LIST", open.name);
@@ -1061,6 +1142,7 @@ fn normalize_modern_source(
     let lexicon = DictionaryPhraseLexicon::new(dictionary);
     let mut normalized = String::new();
     let mut blocks = Vec::new();
+    let mut next_control_block = 0usize;
     writeln!(normalized, "; format: {READABLE_SOURCE_FORMAT}")?;
     for (line_index, original_line) in source.lines().enumerate() {
         let line_number = line_index + 1;
@@ -1090,6 +1172,7 @@ fn normalize_modern_source(
             line_number,
             &lexicon,
             &mut blocks,
+            &mut next_control_block,
         )? else {
             continue;
         };
@@ -1113,13 +1196,43 @@ fn normalize_modern_braced_statement(
     line_number: usize,
     lexicon: &DictionaryPhraseLexicon,
     blocks: &mut Vec<ModernBlock>,
+    next_control_block: &mut usize,
 ) -> Result<Option<String>> {
     if code == "} then {" {
-        let Some(ModernBlock::WhenCondition(target)) = blocks.pop() else {
-            bail!("line {line_number}: '}} then {{' does not close a when-condition block");
+        let Some(block) = blocks.pop() else {
+            bail!("line {line_number}: '}} then {{' does not close a condition block");
         };
-        blocks.push(ModernBlock::WhenBody(target));
+        match block {
+            ModernBlock::ProcedureCondition(name) => {
+                blocks.push(ModernBlock::ProcedureBody(name));
+            }
+            ModernBlock::WhenCondition {
+                false_target,
+                end_target,
+            } => {
+                blocks.push(ModernBlock::WhenBody {
+                    false_target,
+                    end_target,
+                });
+            }
+            _ => bail!("line {line_number}: '}} then {{' does not close a condition block"),
+        }
         return Ok(Some("THEN".to_string()));
+    }
+    if code == "} else {" {
+        let Some(ModernBlock::WhenBody {
+            false_target,
+            end_target,
+        }) = blocks.pop()
+        else {
+            bail!("line {line_number}: '}} else {{' does not follow a when body");
+        };
+        blocks.push(ModernBlock::WhenElse {
+            end_target: end_target.clone(),
+        });
+        return Ok(Some(format!(
+            "ELSE {false_target} {end_target}\nLABEL {false_target}"
+        )));
     }
     if code == "}" {
         let Some(block) = blocks.pop() else {
@@ -1127,12 +1240,21 @@ fn normalize_modern_braced_statement(
         };
         return match block {
             ModernBlock::Procedure(name) => Ok(Some(format!("END_PROCEDURE {name}"))),
-            ModernBlock::WhenBody(target) => Ok(Some(format!("END_WHEN {target}"))),
+            ModernBlock::ProcedureBody(name) => Ok(Some(format!("END_PROCEDURE {name}"))),
+            ModernBlock::WhenBody { false_target, .. } => Ok(Some(format!(
+                "LABEL {false_target}\nEND_WHEN {false_target}"
+            ))),
+            ModernBlock::WhenElse { end_target } => {
+                Ok(Some(format!("LABEL {end_target}\nEND_WHEN {end_target}")))
+            }
             ModernBlock::Selector(name) => Ok(Some(format!("END_SELECTOR_LIST {name}"))),
             ModernBlock::Case => Ok(None),
-            ModernBlock::WhenCondition(target) => bail!(
-                "line {line_number}: when {target:?} closes without a following then block"
-            ),
+            ModernBlock::ProcedureCondition(name) => {
+                Ok(Some(format!("END_PROCEDURE {name}")))
+            }
+            ModernBlock::WhenCondition { .. } => {
+                bail!("line {line_number}: when closes without a following then block")
+            }
         };
     }
     if let Some(opener) = code.strip_suffix('{') {
@@ -1142,16 +1264,63 @@ fn normalize_modern_braced_statement(
             .first()
             .map(|name| name.to_ascii_lowercase())
             .ok_or_else(|| anyhow!("line {line_number}: missing block opener"))?;
-        let block = match command.as_str() {
-            "proc" if fields.len() == 2 => ModernBlock::Procedure(fields[1].to_string()),
-            "when" if fields.len() == 2 => {
-                ModernBlock::WhenCondition(fields[1].to_string())
+        let (block, statement) = match command.as_str() {
+            "proc" if fields.len() == 2 => (
+                ModernBlock::Procedure(fields[1].to_string()),
+                normalize_modern_statement(opener, line_number, lexicon)?,
+            ),
+            "proc" if fields.len() == 5 && fields[3] == "until" => {
+                validate_identifier(fields[1], line_number)?;
+                let flags = match fields[2] {
+                    "enabled" => "01",
+                    "disabled" => "00",
+                    state => bail!(
+                        "line {line_number}: procedure state must be enabled or disabled, found {state:?}"
+                    ),
+                };
+                (
+                    ModernBlock::ProcedureCondition(fields[1].to_string()),
+                    format!(
+                        "PROCEDURE {}\nCONDITIONAL_BLOCK {flags} {}",
+                        fields[1],
+                        modern_operand_to_canonical(fields[4], line_number)?
+                    ),
+                )
             }
-            "selector" if fields.len() == 2 => ModernBlock::Selector(fields[1].to_string()),
-            "case" if fields.len() == 4 && fields[2] == "->" => ModernBlock::Case,
+            "when" if fields.len() == 1 => {
+                let id = *next_control_block;
+                *next_control_block += 1;
+                let false_target = format!("__when_{id}_false");
+                let end_target = format!("__when_{id}_end");
+                (
+                    ModernBlock::WhenCondition {
+                        false_target: false_target.clone(),
+                        end_target,
+                    },
+                    format!("WHEN {false_target}"),
+                )
+            }
+            "when" if fields.len() == 2 => {
+                let id = *next_control_block;
+                *next_control_block += 1;
+                (
+                    ModernBlock::WhenCondition {
+                        false_target: fields[1].to_string(),
+                        end_target: format!("__when_{id}_end"),
+                    },
+                    normalize_modern_statement(opener, line_number, lexicon)?,
+                )
+            }
+            "selector" if fields.len() == 2 => (
+                ModernBlock::Selector(fields[1].to_string()),
+                normalize_modern_statement(opener, line_number, lexicon)?,
+            ),
+            "case" if fields.len() == 4 && fields[2] == "->" => (
+                ModernBlock::Case,
+                normalize_modern_statement(opener, line_number, lexicon)?,
+            ),
             _ => bail!("line {line_number}: unsupported BloodScript block opener {opener:?}"),
         };
-        let statement = normalize_modern_statement(opener, line_number, lexicon)?;
         blocks.push(block);
         return Ok(Some(statement));
     }
@@ -1242,7 +1411,7 @@ fn normalize_modern_statement(
         }
         "proc" => normalize_modern_fixed("PROCEDURE", &fields[1..], 1, line_number),
         "when" => normalize_modern_fixed("WHEN", &fields[1..], 1, line_number),
-        "then" => normalize_modern_fixed("THEN", &fields[1..], 0, line_number),
+        "then" => normalize_modern_fixed("GUARD_POP", &fields[1..], 0, line_number),
         "selector" => {
             normalize_modern_fixed("SELECTOR_LIST", &fields[1..], 1, line_number)
         }
@@ -2146,8 +2315,9 @@ fn modern_statement(
         "LABEL" => Ok(format!("{}:", args[0])),
         "PROCEDURE" => Ok(format!("proc {} {{", args[0])),
         "END_PROCEDURE" => Ok("}".to_string()),
-        "WHEN" => Ok(format!("when {} {{", args[0])),
+        "WHEN" => Ok("when {".to_string()),
         "THEN" => Ok("} then {".to_string()),
+        "ELSE" => Ok("} else {".to_string()),
         "END_WHEN" => Ok("}".to_string()),
         "SELECTOR_LIST" => Ok(format!("selector {} {{", args[0])),
         "END_SELECTOR_LIST" => Ok("}".to_string()),
@@ -2405,6 +2575,7 @@ fn modern_statement(
         "BRANCH_PRESENTATION" if args.is_empty() => Ok("during bridge".to_string()),
         "BRANCH_GAMEFLAG" if args.is_empty() => Ok("during travel".to_string()),
         "BRANCH_FLAG_274F" if args.is_empty() => Ok("during contact".to_string()),
+        "GUARD_POP" if args.is_empty() => Ok("then".to_string()),
         "END" => Ok("halt".to_string()),
         _ => {
             let args = args
@@ -2688,6 +2859,8 @@ fn format_modern_source(
     let mut indent = 0usize;
     let mut selector_case_open = false;
     let mut query_mode = false;
+    let mut pending_procedure = None;
+    let mut procedure_condition_open = false;
 
     for (line_index, original_line) in source.lines().enumerate() {
         let line_number = line_index + 1;
@@ -2723,7 +2896,36 @@ fn format_modern_source(
             .copied()
             .ok_or_else(|| anyhow!("line {line_number}: missing statement"))?;
 
-        if matches!(name, "PROCEDURE" | "SELECTOR_LIST")
+        if name == "PROCEDURE" {
+            if pending_procedure.replace(fields[1].to_string()).is_some() {
+                bail!("line {line_number}: consecutive procedure declarations");
+            }
+            continue;
+        }
+        if let Some(procedure) = pending_procedure.take() {
+            if !output.is_empty() && !output.ends_with("\n\n") {
+                output.push('\n');
+            }
+            if name == "CONDITIONAL_BLOCK"
+                && fields.len() == 3
+                && matches!(fields[1], "00" | "01")
+            {
+                writeln!(
+                    output,
+                    "proc {procedure} {} until {} {{",
+                    if fields[1] == "01" { "enabled" } else { "disabled" },
+                    canonical_operand_to_modern(fields[2])
+                )?;
+                indent += 1;
+                procedure_condition_open = true;
+                query_mode = true;
+                continue;
+            }
+            writeln!(output, "proc {procedure} {{")?;
+            indent += 1;
+        }
+
+        if name == "SELECTOR_LIST"
             && !output.is_empty()
             && !output.ends_with("\n\n")
         {
@@ -2731,7 +2933,10 @@ fn format_modern_source(
         }
 
         match name {
-            "END_PROCEDURE" | "THEN" | "END_WHEN" => {
+            "END_PROCEDURE" | "THEN" | "ELSE" | "END_WHEN" => {
+                indent = indent.saturating_sub(1);
+            }
+            "GUARD_POP" if procedure_condition_open => {
                 indent = indent.saturating_sub(1);
             }
             "CASE" => {
@@ -2752,10 +2957,9 @@ fn format_modern_source(
             _ => {}
         }
 
-        write!(
-            output,
-            "{}{}",
-            "    ".repeat(indent),
+        let rendered = if name == "GUARD_POP" && procedure_condition_open {
+            "} then {".to_string()
+        } else {
             modern_statement(
                 statement,
                 line_number,
@@ -2763,7 +2967,8 @@ fn format_modern_source(
                 &lexicon,
                 query_mode,
             )?
-        )?;
+        };
+        write!(output, "{}{rendered}", "    ".repeat(indent))?;
         let useful_comment = if name == "FIELD" || name == "RAW" {
             comment_after_code(trimmed, line_number)?.map(str::trim)
         } else {
@@ -2777,7 +2982,11 @@ fn format_modern_source(
         output.push('\n');
 
         match name {
-            "PROCEDURE" | "WHEN" | "THEN" | "SELECTOR_LIST" => indent += 1,
+            "WHEN" | "THEN" | "ELSE" | "SELECTOR_LIST" => indent += 1,
+            "GUARD_POP" if procedure_condition_open => {
+                indent += 1;
+                procedure_condition_open = false;
+            }
             "CASE" => {
                 indent += 1;
                 selector_case_open = true;
@@ -2786,7 +2995,7 @@ fn format_modern_source(
         }
         match name {
             "WHEN" | "GUARD_PUSH" | "CONDITIONAL_BLOCK" => query_mode = true,
-            "THEN" | "GUARD_POP" => query_mode = false,
+            "THEN" | "ELSE" | "GUARD_POP" => query_mode = false,
             _ => {}
         }
         if matches!(name, "END_PROCEDURE" | "END_SELECTOR_LIST") {
@@ -2795,6 +3004,9 @@ fn format_modern_source(
     }
     while output.ends_with("\n\n") {
         output.pop();
+    }
+    if let Some(procedure) = pending_procedure {
+        bail!("procedure {procedure:?} has no body");
     }
     Ok(output)
 }
@@ -2899,14 +3111,27 @@ fn decompile_cod(
         emit_structured_ends(output, offset, &structured, &annotations.labels)?;
         emit_directives(output, offset, &annotations)?;
         if let Some(region) = structured.starts.get(&offset) {
+            let false_target = region.else_offset.unwrap_or(region.end);
             writeln!(
                 output,
                 "{offset:08X}: WHEN {} ; GUARD_PUSH target=0x{:04X}",
-                address_operand(region.end as u16, &annotations.labels),
-                region.end
+                address_operand(false_target as u16, &annotations.labels),
+                false_target
             )?;
         } else if structured.thens.contains_key(&offset) {
             writeln!(output, "{offset:08X}: THEN ; GUARD_POP")?;
+        } else if let Some(start) = structured.elses.get(&offset) {
+            let region = &structured.starts[start];
+            let false_target = region
+                .else_offset
+                .expect("ELSE annotation requires an else offset");
+            writeln!(
+                output,
+                "{offset:08X}: ELSE {} {} ; JUMP target=0x{:04X}",
+                address_operand(false_target as u16, &annotations.labels),
+                address_operand(region.end as u16, &annotations.labels),
+                region.end
+            )?;
         } else {
             emit_token(
                 output,
@@ -3323,6 +3548,9 @@ fn structured_annotations(recovery: GuardRecovery) -> StructuredAnnotations {
     };
     for region in recovery.structured {
         annotations.thens.insert(region.then_offset, region.start);
+        if let Some(else_jump) = region.else_jump {
+            annotations.elses.insert(else_jump, region.start);
+        }
         annotations
             .ends
             .entry(region.end)
@@ -4400,6 +4628,14 @@ fn compile_statement(
         "GUARD_POP" | "THEN" => {
             require_count(args, 0, line, name)?;
             output.push(vm::OP_POP);
+        }
+        "ELSE" => {
+            require_count(args, 2, line, name)?;
+            output.push(vm::OP_JUMP);
+            word(
+                &mut output,
+                parse_address(args[1], labels, line, "else end target")?,
+            );
         }
         "CONCEPT_GUARD" => {
             require_count(args, 2, line, name)?;
@@ -5896,7 +6132,7 @@ mod tests {
         for statement in [
             "guard_push block_0005",
             "state_array_test 0xFE",
-            "guard_pop",
+            "then",
             "timer[2] = 22136",
             "jump block_000D",
             "activation enabled until block_0011",
@@ -5990,22 +6226,43 @@ mod tests {
             decompile_structured_with_symbols(ImageKind::Cod, &image, &HashMap::new(), &[])
                 .unwrap();
         assert_eq!(decompiled.structured_guards, 1);
-        for statement in ["when block_000B {", "} then {"] {
+        for statement in ["when {", "} then {"] {
             assert!(decompiled.source.contains(statement), "missing {statement}");
         }
-        assert!(decompiled.source.contains("when block_000B {\n"));
+        assert!(decompiled.source.contains("when {\n"));
         assert!(decompiled.source.contains("    require choice == 0x1234"));
         assert!(!decompiled.source.contains("// GUARD_POP"));
         assert_eq!(compile(&decompiled.source).unwrap(), image);
 
         let malformed = decompiled
             .source
-            .replace("when block_000B {", "when wrong {");
+            .replace("when {", "when wrong extra {");
         assert!(compile(&malformed).is_err());
     }
 
     #[test]
-    fn rejected_structured_guard_keeps_exact_tokens_with_reason() {
+    fn alternate_exit_guards_compile_as_if_else_blocks() {
+        let image = vec![
+            0xA0, 0x0A, 0x00, // failed condition enters else body
+            0xA3, 0x34, 0x12, // condition
+            0xA1, // then
+            0xA4, 0x0E, 0x00, // successful body skips else body
+            0xA5, 0x02, 0x78, 0x56, // else body
+            0xFF,
+        ];
+        let decompiled =
+            decompile_structured_with_symbols(ImageKind::Cod, &image, &HashMap::new(), &[])
+                .unwrap();
+        assert_eq!(decompiled.structured_guards, 1);
+        assert_eq!(decompiled.unstructured_guards, 0);
+        assert!(decompiled.source.contains("} else {"));
+        assert!(!decompiled.source.contains("guard_push"));
+        assert!(!decompiled.source.contains("jump block_000E"));
+        assert_eq!(compile(&decompiled.source).unwrap(), image);
+    }
+
+    #[test]
+    fn structured_guard_preserves_a_nonlocal_entry_label() {
         let image = vec![
             0xA4, 0x0A, 0x00, // external jump into the guard body
             0xA0, 0x0E, 0x00, // guard -> END
@@ -6016,17 +6273,11 @@ mod tests {
         let decompiled =
             decompile_structured_with_symbols(ImageKind::Cod, &image, &HashMap::new(), &[])
                 .unwrap();
-        assert_eq!(decompiled.structured_guards, 0);
-        assert_eq!(decompiled.unstructured_guards, 1);
-        assert_eq!(
-            decompiled.guard_rejection_counts.get("external_entry"),
-            Some(&1)
-        );
-        assert!(
-            decompiled
-                .source
-                .contains("guard_push block_000E // unstructured_guard=external_entry")
-        );
+        assert_eq!(decompiled.structured_guards, 1);
+        assert_eq!(decompiled.unstructured_guards, 0);
+        assert!(decompiled.source.contains("when {"));
+        assert!(decompiled.source.contains("block_000A:"));
+        assert!(!decompiled.source.contains("guard_push"));
         assert_eq!(compile(&decompiled.source).unwrap(), image);
     }
 
@@ -6268,11 +6519,10 @@ mod tests {
             decompile_with_symbols(ImageKind::Cod, &image, &HashMap::new(), &symbols).unwrap();
         assert_eq!(decompiled.procedures, 1);
         assert_eq!(decompiled.symbolic_labels, 2);
-        assert!(decompiled.source.contains("proc entry {"));
         assert!(
             decompiled
                 .source
-                .contains("activation enabled until block_0004")
+                .contains("proc entry enabled until block_0004 {")
         );
         assert!(decompiled.source.contains("    block_0004:"));
         assert!(decompiled.source.trim_end().ends_with('}'));
@@ -6313,8 +6563,9 @@ mod tests {
         assert!(
             decompiled
                 .source
-                .contains("activation enabled until block_000D")
+                .contains("proc entry enabled until block_000D {")
         );
+        assert!(decompiled.source.contains("} then {"));
         assert!(decompiled.source.contains("entry.enabled = false"));
         assert!(decompiled.source.contains("poke_byte 0x1234 0x01"));
         assert_eq!(compile(&decompiled.source).unwrap(), image);
@@ -6513,13 +6764,15 @@ mod tests {
     fn every_shipped_structured_image_uses_only_unambiguous_fields() {
         let Some(root) = game_dir() else { return };
         let expected = [
-            (1, 8, 29, 0, 0),
-            (2, 78, 496, 5, 85),
-            (3, 105, 558, 5, 84),
-            (4, 81, 333, 4, 17),
-            (5, 80, 276, 1, 2),
+            (1, 8, 29, 0, 0, 4),
+            (2, 78, 496, 5, 85, 259),
+            (3, 105, 558, 5, 84, 219),
+            (4, 81, 333, 4, 17, 87),
+            (5, 80, 276, 1, 2, 113),
         ];
-        for (script, cod_fields, cod_uses, bas_fields, bas_uses) in expected {
+        let mut procedure_headers = 0;
+        let mut else_blocks = 0;
+        for (script, cod_fields, cod_uses, bas_fields, bas_uses, guards) in expected {
             let read = |extension: &str| {
                 std::fs::read(root.join(format!("SCRIPT{script}.{extension}"))).unwrap()
             };
@@ -6540,6 +6793,18 @@ mod tests {
                 (bas_source.field_aliases, bas_source.field_alias_uses),
                 (bas_fields, bas_uses)
             );
+            assert_eq!(cod_source.structured_guards, guards);
+            assert_eq!(cod_source.unstructured_guards, 0);
+            assert!(!cod_source.source.contains("guard_push"));
+            assert!(!cod_source.source.contains("guard_pop"));
+            assert!(!cod_source.source.contains("activation "));
+            assert!(!cod_source.source.lines().any(|line| line.trim() == "then"));
+            procedure_headers += cod_source
+                .source
+                .lines()
+                .filter(|line| line.starts_with("proc ") && line.contains(" until "))
+                .count();
+            else_blocks += cod_source.source.matches("} else {").count();
             assert_eq!(
                 compile_with_dictionary(&cod_source.source, &dictionary).unwrap(),
                 cod
@@ -6549,6 +6814,8 @@ mod tests {
                 bas
             );
         }
+        assert_eq!(procedure_headers, 480);
+        assert_eq!(else_blocks, 44);
     }
 
     #[test]
