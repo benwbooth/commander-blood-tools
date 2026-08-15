@@ -380,13 +380,18 @@ callback and cover both audio-phase threshold boundaries, signed-negative
 phase correction, callback-result wrap, all three software-clock fallback
 gates, positive and negative tick deltas, the `0x8000` edge, zero threshold,
 and the due path's deliberate second tick read. A source-level subtraction and
-negation produces the original `SUB AX,4000h` / `NEG AX` pair. Open Watcom 1.9
-medium emits 39 instructions and 103 bytes; Turbo C 2.01 medium emits 52
-instructions, versus 31 instructions and 81 bytes in the original. Watcom
-retains the three bit tests, indirect far call, 16-bit correction arithmetic,
-threshold decisions, and ordered clock stores, but uses DX for the preserved
-phase/delta and materializes the logical result in AX instead of returning it
-through carry.
+negation produces the original `SUB AX,4000h` / `NEG AX` pair. The
+compiler-corpus sample now includes the authoritative recovered source. Open
+Watcom 1.9 medium (`-3 -ox -mm -zdf -we`) emits 39 instructions/114 bytes
+versus 31/81 original, with 74.19 percent mnemonic-multiset and 54.84 percent
+ordered overlap. Turbo C 2.01 medium (`-mm -O -Z`) emits 52 instructions with
+74.19 percent multiset and 67.74 percent ordered overlap and assembles
+warning-free to OBJ.
+
+The accepted queue-service loop is its sole recovered C caller and consumes a
+Boolean result. The exact timing arithmetic and branch structure are accepted
+for source-port integration; a direct replacement still needs carry-only
+status and the original AX/callback/register/flag residue.
 
 For `0x00A2DD`, six direct-execution cases confirm the unconditional queue-state
 bit 0 update, the zero-count-only bit 1 update and close-helper call, preservation
