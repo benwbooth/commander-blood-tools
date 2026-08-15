@@ -2472,13 +2472,21 @@ exit, incomplete and complete helper results, state at both helper entries,
 the 576-byte palette extent and DS/ES ownership against decoys, final state,
 registers, callback-derived completion flags, stack, and near return.
 
-Open Watcom `-3 -os -s -mh -we` compiles the natural explicit-near record and
-fixed-size `memcpy` candidate warning-free to 31 instructions/86 bytes versus
-the original 21/68, with 85.71 percent mnemonic-multiset overlap and no inline
-assembly. Full-source integration needs the shipped `SS == DS == ES` data
-group and an ordinary Boolean result from the line helper. Direct replacement
-additionally needs BP input, carry-result adaptation, the AX sound argument,
-`REP MOVSD` lowering, and the original register/flag envelope.
+Open Watcom `-3 -os -s -mh -oi -we` compiles the natural explicit-near record
+and fixed-size `memcpy` candidate warning-free to 35 instructions/84 bytes
+versus the original 21/68, with 90.48 percent mnemonic-multiset and 85.71
+percent ordered-mnemonic overlap. The intrinsic setting emits `REP MOVSB` over
+the exact 576-byte extent; without `-oi`, Watcom emits a library call in 31
+instructions/86 bytes. A tested typed-dword C loop expands to 62
+instructions/168 bytes and is rejected. Turbo C 2.01 huge (`-mh -O -Z`) emits
+49 instructions with 85.71 percent multiset overlap. No candidate uses inline
+assembly.
+
+The natural candidate is accepted for source-port integration. Full-source
+integration needs the shipped `SS == DS == ES` data group and an ordinary
+Boolean result from the line helper. Direct replacement additionally needs BP
+input, carry-result adaptation, the AX sound argument, `MOVSB`-to-`MOVSD`
+lowering, and the original register/flag envelope.
 
 Navigation actor handler 3 at `0x00817E` accepts only UI bit `0x40`, marks its
 SS:BP line present, and requires line bit three before publishing presentation
