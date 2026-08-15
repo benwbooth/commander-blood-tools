@@ -5,16 +5,21 @@
 typedef unsigned char u8;
 typedef unsigned int u16;
 
-#if defined(__TURBOC__) || defined(__BORLANDC__) || defined(__WATCOMC__)
+#if defined(__WATCOMC__)
 #define NEAR near
+#define GAME_DATA __based(__segname("GAME_DATA"))
+#elif defined(__TURBOC__) || defined(__BORLANDC__)
+#define NEAR near
+#define GAME_DATA far
 #else
 #define NEAR
+#define GAME_DATA
 #endif
 
-extern volatile u8 block_scan_flags;
-extern volatile u8 resume_state;
-extern volatile u16 block_match_value;
-extern volatile u16 resume_value;
+extern volatile u8 GAME_DATA block_scan_flags;
+extern volatile u8 GAME_DATA resume_state;
+extern volatile u16 GAME_DATA block_match_value;
+extern volatile u16 GAME_DATA resume_value;
 
 const u8 NEAR *NEAR token_special(u16 terminator, const u8 NEAR *script_bytes);
 u16 NEAR vm_branch_probe(void);

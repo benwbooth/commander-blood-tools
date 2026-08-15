@@ -7,7 +7,7 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_a3_block(
     cb_u16 target;
     cb_u16 match;
 
-    if ((vm_block_scan_flags & 1u) != 0) {
+    if ((vm_block_scan_flags_gs & 1u) != 0) {
         return vm_token_special(0, script_bytes);
     }
 
@@ -19,7 +19,9 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_a3_block(
 
     target = *(const cb_u16 CB_NEAR *)script_bytes;
     script_bytes += 2;
-    match = ((vm_resume_state & 2u) != 0) ? vm_resume_value : vm_block_match_value;
+    match = ((vm_resume_state_gs & 2u) != 0)
+        ? vm_resume_value_gs
+        : vm_block_match_value_gs;
 
     if (match != 0) {
         if (inverted != 0) {
