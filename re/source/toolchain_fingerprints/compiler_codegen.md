@@ -2292,11 +2292,14 @@ expects DF clear. All ten recovered callers keep rows at 0..199, and the game
 buffers use normalized offset-zero pointers.
 
 The one-to-one candidate therefore keeps the natural `row * 320 + x` expression
-and invokes the ordinary DOS `_fmemcpy` far-memory primitive. Open Watcom's
-intrinsic form honors the BX/CX/DX pragma and compiles without warnings to 34
-instructions/69 bytes versus 24/42 original. It selects `rep movsw` plus a byte
-tail and emits generic based-segment loads, so it is not code-shape exact. Turbo
-C 2.01 medium emits 32 instructions and a near library `_fmemcpy` call.
+and invokes the ordinary DOS `_fmemcpy` far-memory primitive. The authoritative
+compiler sample includes that source directly. A narrow compiler-only envelope
+restores every register and segment, matching the original ABI without changing
+the address or copy logic. Open Watcom medium `-3 -os -s -mm -we` emits 41
+instructions/72 bytes versus 24/42 original, with 91.67 percent mnemonic-
+multiset and 83.33 percent ordered overlap. Its intrinsic selects `rep movsw`
+plus a byte tail, so it is not code-shape exact. Turbo C 2.01 medium emits 50
+instructions plus its library `_fmemcpy` body and assembles cleanly to OBJ.
 
 Presentation mode selector `0x009510` has fifteen direct vectors covering the
 bit-1 bypass, signed minimum/maximum, and both sides of frame thresholds 22,
@@ -3659,7 +3662,7 @@ LCS and then mnemonic similarity:
 | `music_voc_name_patcher` | medium, `-ox`, register | 20/38 | 0.1000 | 0.4500 | 0.2000 |
 | `nav_choice_handler_0` | medium, `-ox`, register | 7/8 | 0.1429 | 0.8571 | 0.1429 |
 | `nav_choice_handler_3` | medium, `-ox`, register | 10/14 | 0.1000 | 0.8000 | 0.2000 |
-| `back_buffer_copy_from` | medium, `-ox`, register | 24/34 | 0.2083 | 0.7917 | 0.2500 |
+| `back_buffer_copy_from` | medium, `-os -s`, register | 24/41 | 0.2500 | 0.8333 | 0.2917 |
 | `presentation_mode_bits_update` | medium, `-ox`, register | 25/25 | 0.2000 | 0.8800 | 0.2000 |
 | `matrix_table_clear_2a1b` | medium, `-ox`, register | 12/8 | 0.0833 | 0.5000 | 0.0833 |
 | `ship_3d_projection_matrix_build` | medium, `-ox`, register | 104/248 | 0.0481 | 0.5962 | 0.0577 |
