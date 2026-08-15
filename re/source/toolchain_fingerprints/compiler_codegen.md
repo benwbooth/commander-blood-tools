@@ -697,16 +697,23 @@ flag confirm four sequential forward word copies, deterministic overlap
 behavior, 16-bit SI/DI offset wrapping, ES=DS, preserved AX/BX/CX/DX/BP, and
 preserved flags. The caller at `0x00A32F` immediately
 executes `MOVSB`, proving that the helper's eight-byte pointer advancement is
-part of its assembly boundary and forms a nine-byte record copy there. Open
-Watcom 1.9 medium with an explicit DI/SI ABI declaration emits a fixed eight-byte
-structure assignment as seven instructions and 12 bytes using `REP MOVSW`.
-Targeting 8086 for speed with stack checks disabled instead emits four unrolled
-`MOVSW` instructions and a near return in nine bytes. That is the closest tested
-natural formulation, but its four-byte `MOV AX,DS` / `MOV ES,AX` setup replaces
-the original two-byte `PUSH DS` / `POP ES` pair and clobbers AX. Turbo C 2.01
-medium calls its far `SCOPY@` runtime. The routine is therefore classified as a
-fixed-record compiler/helper boundary with a behaviorally verified natural C
-body, not as exact compiler-generated source.
+part of its assembly boundary and forms a nine-byte record copy there.
+
+The authoritative source now uses an always-four decrementing pointer loop,
+which makes each load/store sequence explicit, retains the original forward
+overlap behavior, and advances both near pointers by eight with 16-bit wrap. A
+generic `memcpy` or partially overlapping struct assignment would not provide
+that source-level guarantee. The shared Watcom declaration maps destination
+and source to DI/SI and accurately includes AX in the generated C clobbers.
+The compiler-corpus sample includes this source directly.
+
+Open Watcom 1.9 fixed-DS medium `-3 -os -s -mm` emits 12 instructions and 17
+bytes versus seven instructions and seven bytes original, with 42.86 percent
+mnemonic-multiset and ordered overlap. Turbo C 2.01 medium emits 17 instructions
+with the same overlap and assembles warning-free to OBJ. The helper is accepted
+for source integration under the shipped clear-DF C invariant. Isolated
+replacement still needs the four unrolled MOVSW operations, ES=DS setup, and
+binary AX/flag preservation.
 
 For `0x00A82C`, eight direct vectors prove that the routine clears destination
 offset bit 9 before any branch, sums exactly six source bytes modulo 256, and

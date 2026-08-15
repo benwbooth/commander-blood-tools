@@ -63,6 +63,7 @@ void CB_NEAR mem_copy_words(cb_u16 *dst, const cb_u16 *src);      /* 0x00A7E6 */
 #pragma aux decimal_append_i16 parm [ax] [es di] modify exact []
 #pragma aux decimal_append_i32 parm [dx ax] [es di] modify exact []
 #pragma aux bcd_to_binary parm [ax] value [al] modify [ax]
+#pragma aux mem_copy_words parm [di] [si] modify exact [ax es di si]
 #endif
 
 #endif
