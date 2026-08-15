@@ -5727,10 +5727,16 @@ They expose the original runtime contract: ordinary state is shared by
 
 Open Watcom 1.9 medium (`-3 -os -s -mm -we`) emits a single warning-free
 219-instruction/591-byte function versus 172/442 original, with 84.30 percent
-mnemonic-multiset overlap. Three narrow pragma sequences capture inherited `ES`
-and adapt the two `DS:SI` text calls; all list, layout, input, state, and draw
-logic remains natural C. Direct replacement still needs the original byte DIV,
-SS width reads, GS tail, status flags, and preserve-all envelope.
+mnemonic-multiset and 72.67 percent ordered overlap. Turbo C 2.01 medium emits
+276 instructions with 90.70 percent multiset and 71.51 percent ordered overlap.
+Three narrow adapters capture inherited `ES` and issue the two `DS:SI` text
+calls. Watcom uses pragma instruction templates; Turbo uses equivalent inline
+assembly that loads the supplied segment and offset, preserves DS, and calls
+the recovered far helpers. This replaces the old Turbo fallback that discarded
+the segment. All list, layout, input, state, and draw logic remains natural C,
+and the routine is accepted for source integration. Direct replacement still
+needs the original byte DIV, SS width reads, GS tail, status flags, and
+preserve-all envelope.
 
 ## BLOODPRG VM record-state processor candidate
 

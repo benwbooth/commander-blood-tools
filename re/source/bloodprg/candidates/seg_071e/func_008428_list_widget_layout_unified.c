@@ -70,6 +70,48 @@ static void CB_NEAR list_widget_text_draw(
         "call far ptr square_caps_text_draw_display" \
         "pop ds" \
         parm [di] [si] [bx] [dx] [ax] modify exact []
+#elif defined(__TURBOC__) || defined(__BORLANDC__)
+static list_widget_segment CB_NEAR list_widget_inherited_es(void)
+{
+    asm mov ax, es;
+}
+
+static cb_u16 CB_NEAR list_widget_text_width(
+        list_widget_segment text_segment,
+        cb_u16 text_offset)
+{
+    cb_u16 result;
+
+    asm push ds;
+    asm mov bx, text_segment;
+    asm mov si, text_offset;
+    asm mov ds, bx;
+    asm xor ax, ax;
+    asm call far ptr _text_width_dual_font;
+    asm mov result, ax;
+    asm pop ds;
+    return result;
+}
+
+static void CB_NEAR list_widget_text_draw(
+        list_widget_segment text_segment,
+        cb_u16 text_offset,
+        cb_u16 x,
+        cb_u16 y,
+        cb_u8 color)
+{
+    cb_u16 color_word = color;
+
+    asm push ds;
+    asm mov di, text_segment;
+    asm mov si, text_offset;
+    asm mov bx, x;
+    asm mov dx, y;
+    asm mov ax, color_word;
+    asm mov ds, di;
+    asm call far ptr _square_caps_text_draw_display;
+    asm pop ds;
+}
 #else
 static list_widget_segment CB_NEAR list_widget_inherited_es(void)
 {
