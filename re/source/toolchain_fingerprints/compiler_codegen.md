@@ -7010,9 +7010,10 @@ down, frees the block, and terminates through DOS.
 Four patched-boundary vectors execute the untouched original bytes. They prove
 the CPU-rejection path, one paragraph below the `0x00078870`-byte minimum, the
 exact accepted minimum, and a maximum-sized block. The vectors cover the exact
-PSP resize, both French error strings, arena pointer/counters, command tail,
-all helper frames and ordering, mouse and PIT values, main dispatch, cleanup,
-segment state, stack integrity, and both DOS termination paths.
+PSP resize, both French error strings, arena pointer/counters, publication of
+the timer-state-block offset `0x0B29` at `DS:0x0AF0`, command tail, all helper
+frames and ordering, mouse and PIT values, main dispatch, cleanup, segment
+state, stack integrity, and both DOS termination paths.
 
 Open Watcom 1.9 large (`-3 -os -s -ml -we`) compiles the one-function natural
 coordinator warning-free to 122 instructions/400 bytes versus 96/241 original,
@@ -7021,6 +7022,52 @@ overlap. It contains no inline assembly or register-state facade. Full
 executable integration must provide the loader-owned relocated `DS=SS=GS`,
 `FS=0x0BBF`, `SP=0x7E78`, and PSP `ES` state through linker/startup machinery;
 standard C cannot safely replace its own live stack.
+
+## BLOODPRG interrupt handlers at 0x000813, 0x000C19, and 0x000C1A
+
+The 296-byte INT 08h handler services the timer state rooted at `GS:0x0B29`.
+It decrements the frame countdown on every active game tick, then cascades
+2/4/8/16/32-tick work through the low word of the tick counter. Every 25
+eight-tick subticks it increments the mouse-idle counter, optionally decrements
+the first 30 positive signed VM words, resets the subtick divider, and advances
+the clip countdown. The 16-tick path advances the navigation mask and dialogue
+hold; the 32-tick path toggles the PC speaker, raises the periodic-ready byte,
+and advances the subtitle-opening pulse. Active and paused paths both decrement
+the BIOS divider, chaining the prior INT 08h every eleventh IRQ and otherwise
+sending PIC EOI.
+
+Two edge behaviors are now proven rather than inferred. The apparent
+`INC AX`/`ADC [0x0B2B],0` pair does not carry: an earlier `OR AX,AX` clears CF
+and `INC` preserves it. The observable tick therefore wraps at 16 bits while
+the adjacent word remains unchanged. Speaker enable ORs bit one into the full
+request byte, preserving bit zero and all high bits; it does not replace the
+byte with two.
+
+Fifteen direct interrupt-frame vectors cover inactive and paused handling,
+every cadence, both low-word wraps, both subtick scan gates, signed VM words,
+speaker enable and disable, periodic-ready state, zero and one BIOS-divider
+boundaries, old-vector chaining, PIC output, GS-versus-DS ownership, registers,
+segments, stack, and returned flags. Open Watcom 1.9 large (`-3 -ox -mh`)
+compiles the natural handler to 114 instructions/327 bytes versus 113/296
+original, with 69.91 percent mnemonic-multiset overlap and 52.21 percent
+ordered mnemonic overlap.
+
+The one-byte INT 23h handler is an unconditional IRET. Three direct interrupt
+frames prove the empty natural interrupt function is semantically exact;
+Watcom's generic save/restore envelope expands it to 13 instructions/18 bytes.
+The 12-byte INT 24h handler stores incoming DI plus one modulo 16 bits at
+`GS:0x0A9C`, executes STI, and IRETs. Four vectors cover zero, one, `0x7FFF`,
+and `0xFFFF`, GS/DS isolation, preservation, stack, and returned flags. A DI
+parameter pragma keeps the implementation natural C; Watcom emits 19
+instructions/30 bytes and retains all four original mnemonics in order.
+
+All three are accepted for source-port integration without inline assembly or
+a register-state facade. Watcom's interrupt-pointer call emits PUSHF plus a far
+call and returns through its generic handler wrapper, whereas the original
+timer handler restores its small save set and terminally far-jumps the old
+vector. A direct binary replacement would need that tail-chain envelope and the
+original immediate-port/minimal-save instruction choices, but they do not
+change game logic in the coherently compiled source port.
 
 ## BLOODPRG primary game owner at 0x000EB0
 

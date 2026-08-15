@@ -21,7 +21,7 @@ extern const char memory_error_text_probe[];
 extern volatile u8 FAR *dos_pool_probe;
 extern volatile u32 resource_free_bytes_probe;
 extern volatile u16 resource_pool_end_segment_probe;
-extern volatile u16 reserved_word_0af0_probe;
+extern volatile u16 timer_state_block_offset_probe;
 
 extern u16 FAR cpu_386_or_newer_probe(void);
 extern void FAR print_string_dos_probe(const volatile char *text);
@@ -76,7 +76,7 @@ void FAR bloodprg_entry_probe(void)
     pool_segment = registers.x.ax;
     dos_pool_probe = (volatile u8 FAR *)MK_FP(pool_segment, 0u);
     resource_pool_end_segment_probe = pool_segment;
-    reserved_word_0af0_probe = 0x0b29u;
+    timer_state_block_offset_probe = 0x0b29u;
 
     startup_command_line_parse_probe(
             (const command_tail_probe FAR *)MK_FP(_psp, 0x0080u));

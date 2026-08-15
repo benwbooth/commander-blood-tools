@@ -34,7 +34,7 @@ extern volatile cb_u8 CB_GAME_DATA startup_audio_driver_id; /* GS:0x0C3B */
 extern volatile cb_u16 startup_audio_resource_id; /* DS:0x0C3B word alias */
 extern volatile cb_u16 CB_GAME_DATA startup_audio_configuration; /* GS:0x0C45 */
 extern volatile cb_u8 CB_FAR *startup_dos_pool;          /* game data:0x0A42 */
-extern volatile cb_u16 startup_reserved_word_0af0;       /* game data:0x0AF0 */
+extern volatile cb_u16 timer_state_block_offset;         /* game data:0x0AF0 */
 
 void CB_FAR bloodprg_entry(void);                            /* 0x000600 */
 void CB_NEAR startup_command_line_parse(

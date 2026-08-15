@@ -45,7 +45,7 @@ void CB_FAR bloodprg_entry(void)
     pool_segment = registers.x.ax;
     startup_dos_pool = (volatile cb_u8 CB_FAR *)MK_FP(pool_segment, 0u);
     resource_pool_end_segment = pool_segment;
-    startup_reserved_word_0af0 = 0x0b29u;
+    timer_state_block_offset = 0x0b29u;
 
     startup_command_line_parse(
             (const bloodprg_command_tail CB_FAR *)MK_FP(_psp, 0x0080u));

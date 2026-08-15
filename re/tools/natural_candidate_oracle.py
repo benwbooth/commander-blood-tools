@@ -2043,6 +2043,494 @@ def install_ctrl_break_handler_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def timer_isr_vectors() -> list[dict[str, object]]:
+    entry = 0x0813
+    expected_hash = "c1470a6e3c0b6d0e7d672d516891ff8fcb10c8679293bc5d03064dac23f9205a"
+    if hashlib.sha256(EXE[entry : entry + 296]).hexdigest() != expected_hash:
+        raise AssertionError("0x0813: recovered 296-byte body changed")
+
+    cases = (
+        {"name": "inactive_low_bit_chains", "active": 0x80, "tick": 0x12345678},
+        {"name": "paused_interrupt_acknowledged", "paused": 1, "tick": 31},
+        {"name": "paused_bios_chain", "paused": 1, "divider": 1, "tick": 31},
+        {"name": "odd_tick_frame_only", "tick": 0},
+        {"name": "two_tick_chatter", "tick": 1},
+        {"name": "four_tick_subtitle", "tick": 3},
+        {"name": "eight_tick_subtick_wait", "tick": 7, "subtick": 2},
+        {
+            "name": "subtick_decrements_positive_vm_timers",
+            "tick": 7,
+            "subtick": 1,
+            "nav_link": 0,
+        },
+        {
+            "name": "subtick_scan_blocked_by_navigation_link",
+            "tick": 7,
+            "subtick": 1,
+            "nav_link": 0x4321,
+        },
+        {"name": "sixteen_tick_hold_and_mask", "tick": 15},
+        {
+            "name": "speaker_enable_request",
+            "tick": 31,
+            "speaker_request": 1,
+            "speaker_control": 0xA0,
+        },
+        {
+            "name": "speaker_disable_request",
+            "tick": 31,
+            "speaker_request": 3,
+            "speaker_control": 0xA3,
+        },
+        {"name": "low_word_wrap_leaves_high_word", "tick": 0x0000FFFF},
+        {
+            "name": "low_word_wrap_from_maximum_high_word",
+            "tick": 0xFFFFFFFF,
+            "subtick": 1,
+        },
+        {"name": "zero_bios_divider_wraps_without_chain", "divider": 0, "tick": 0},
+    )
+    game_segment = 0x4000
+    data_segment = 0x1000
+    old_handler_segment = 0x7000
+    old_handler_offset = 0x0100
+    stack_segment = 0x9000
+    stack_pointer = 0xFE00
+    return_address = 0xF813
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    vm_words = (
+        0x0000,
+        0x0001,
+        0x0002,
+        0x7FFF,
+        0x8000,
+        0xFFFF,
+    ) * 5
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        active = int(case.get("active", 1))
+        paused = int(case.get("paused", 0))
+        divider = int(case.get("divider", 2))
+        tick = int(case.get("tick", 0))
+        subtick = int(case.get("subtick", 3))
+        nav_link = int(case.get("nav_link", 0))
+        speaker_request = int(case.get("speaker_request", 2))
+        speaker_control = int(case.get("speaker_control", 0xA5))
+        return_flags = (0x0202, 0x0647, 0x0A92)[case_index % 3]
+
+        game_before = bytearray(
+            (index * 37 + case_index * 19 + 7) & 0xFF
+            for index in range(0x6B1A)
+        )
+        struct.pack_into("<H", game_before, 0x0A9C, 0xA55A)
+        game_before[0x0ADF] = paused
+        game_before[0x0B19] = speaker_request
+        struct.pack_into(
+            "<HH", game_before, 0x0B1D, old_handler_offset, old_handler_segment
+        )
+        game_before[0x0B21] = active
+        game_before[0x0B22] = divider
+        game_before[0x0B23] = 0xA5
+        struct.pack_into("<H", game_before, 0x0B25, 3)
+        struct.pack_into("<H", game_before, 0x0B27, subtick)
+        struct.pack_into("<I", game_before, 0x0B29, tick)
+        for offset, value in (
+            (0x0B2D, 3),
+            (0x0B2F, 3),
+            (0x0B31, 3),
+            (0x0B33, 3),
+            (0x0B35, 3),
+            (0x0B37, 3),
+            (0x0B39, 3),
+            (0x0B3B, 5),
+            (0x0B3D, 0xB3D0),
+            (0x675A, nav_link),
+        ):
+            struct.pack_into("<H", game_before, offset, value)
+        game_before[0x0B3F] = 0xFE
+        for index, value in enumerate(vm_words):
+            struct.pack_into("<H", game_before, 0x6ADE + index * 2, value)
+
+        game_expected = bytearray(game_before)
+        expected_outputs: list[tuple[int, int, int]] = []
+        expected_inputs = 0
+        expected_chain = False
+
+        if (active & 1) == 0:
+            expected_chain = True
+        else:
+            if (paused & 1) == 0:
+                game_expected[0x0B23] = 0
+                frame_delay = struct.unpack_from("<H", game_expected, 0x0B2D)[0]
+                if frame_delay != 0:
+                    struct.pack_into("<H", game_expected, 0x0B2D, frame_delay - 1)
+
+                tick = (tick & 0xFFFF0000) | ((tick + 1) & 0xFFFF)
+                struct.pack_into("<I", game_expected, 0x0B29, tick)
+                tick_low = tick & 0xFFFF
+
+                if (tick_low & 1) == 0:
+                    chatter = struct.unpack_from("<H", game_expected, 0x0B2F)[0]
+                    if chatter != 0:
+                        struct.pack_into("<H", game_expected, 0x0B2F, chatter - 1)
+
+                    if (tick_low & 3) == 0:
+                        reveal = struct.unpack_from("<H", game_expected, 0x0B31)[0]
+                        if reveal != 0:
+                            struct.pack_into("<H", game_expected, 0x0B31, reveal - 1)
+
+                        if (tick_low & 7) == 0:
+                            dialogue = struct.unpack_from("<H", game_expected, 0x0B33)[0]
+                            if dialogue != 0:
+                                struct.pack_into(
+                                    "<H", game_expected, 0x0B33, dialogue - 1
+                                )
+
+                            subtick = (subtick - 1) & 0xFFFF
+                            struct.pack_into("<H", game_expected, 0x0B27, subtick)
+                            if subtick == 0:
+                                idle = struct.unpack_from(
+                                    "<H", game_expected, 0x0B3B
+                                )[0]
+                                struct.pack_into(
+                                    "<H", game_expected, 0x0B3B, (idle + 1) & 0xFFFF
+                                )
+                                if nav_link == 0:
+                                    for index in range(30):
+                                        offset = 0x6ADE + index * 2
+                                        value = struct.unpack_from(
+                                            "<H", game_expected, offset
+                                        )[0]
+                                        if 0 < value < 0x8000:
+                                            struct.pack_into(
+                                                "<H", game_expected, offset, value - 1
+                                            )
+                                struct.pack_into("<H", game_expected, 0x0B27, 25)
+                                clip_state = struct.unpack_from(
+                                    "<H", game_expected, 0x0B39
+                                )[0]
+                                if clip_state != 0:
+                                    struct.pack_into(
+                                        "<H", game_expected, 0x0B39, clip_state - 1
+                                    )
+
+                            if (tick_low & 15) == 0:
+                                game_expected[0x0B3F] = (
+                                    game_expected[0x0B3F] + 1
+                                ) & 0xFF
+                                hold = struct.unpack_from(
+                                    "<H", game_expected, 0x0B35
+                                )[0]
+                                if hold != 0:
+                                    struct.pack_into(
+                                        "<H", game_expected, 0x0B35, hold - 1
+                                    )
+
+                                if (tick_low & 31) == 0:
+                                    if (speaker_request & 1) != 0:
+                                        expected_inputs = 1
+                                        if (speaker_request & 2) == 0:
+                                            speaker_control |= 3
+                                            game_expected[0x0B19] = (
+                                                speaker_request | 2
+                                            )
+                                        else:
+                                            speaker_control &= 0xFC
+                                            game_expected[0x0B19] = 0
+                                        expected_outputs.append(
+                                            (0x61, 1, speaker_control)
+                                        )
+                                    game_expected[0x0B23] = 1
+                                    pulse = struct.unpack_from(
+                                        "<H", game_expected, 0x0B37
+                                    )[0]
+                                    if pulse != 0:
+                                        struct.pack_into(
+                                            "<H", game_expected, 0x0B37, pulse - 1
+                                        )
+
+            divider = (divider - 1) & 0xFF
+            game_expected[0x0B22] = divider
+            if divider == 0:
+                game_expected[0x0B22] = 11
+                expected_chain = True
+            else:
+                expected_outputs.append((0x20, 1, 0x20))
+
+        initial = {
+            "eax": 0xA1B2C3D4 + case_index,
+            "ebx": 0xB2C3D4E5 + case_index,
+            "ecx": 0xC3D4E5F6 + case_index,
+            "edx": 0xD4E5F607 + case_index,
+            "esi": 0xE5F60718 + case_index,
+            "edi": 0xF6071829 + case_index,
+            "ebp": 0x0718293A + case_index,
+            "ds": data_segment,
+            "es": 0x2000,
+            "fs": 0x3000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "sp": stack_pointer,
+            "flags": 0x0002,
+        }
+        data_decoy = bytes(
+            (index * 41 + case_index * 13 + 11) & 0xFF
+            for index in range(len(game_before))
+        )
+        frame = struct.pack("<HHH", return_address, 0, return_flags)
+        outputs: list[tuple[int, int, int]] = []
+        inputs = []
+        chain_snapshots: list[dict[str, int]] = []
+
+        def input_handler(_machine: Uc, port: int, size: int) -> int:
+            if (port, size) != (0x61, 1):
+                raise AssertionError(
+                    f"0x0813 {case['name']}: unexpected input {(port, size)}"
+                )
+            inputs.append((port, size))
+            return int(case.get("speaker_control", 0xA5))
+
+        def output_handler(
+            _machine: Uc, port: int, size: int, value: int
+        ) -> None:
+            outputs.append((port, size, value))
+
+        old_handler_address = old_handler_segment * 16 + old_handler_offset
+
+        def code_handler(machine: Uc, address: int, _size: int) -> None:
+            if address == old_handler_address:
+                chain_snapshots.append(
+                    {
+                        name: machine.reg_read(register)
+                        for name, register in REGISTERS.items()
+                        if name in initial and name != "flags"
+                    }
+                )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (game_segment, 0, bytes(game_before)),
+                (data_segment, 0, data_decoy),
+                (old_handler_segment, old_handler_offset, b"\xcf"),
+                (stack_segment, stack_pointer, frame + stack_sentinel),
+            ],
+            code_handler=code_handler,
+            input_handler=input_handler,
+            output_handler=output_handler,
+        )
+
+        game_after = bytes(
+            machine.mem_read(game_segment * 16, len(game_expected))
+        )
+        if game_after != bytes(game_expected):
+            differences = [
+                index
+                for index, (actual, expected) in enumerate(
+                    zip(game_after, game_expected, strict=True)
+                )
+                if actual != expected
+            ]
+            raise AssertionError(
+                f"0x0813 {case['name']}: game data differs at "
+                f"{[hex(index) for index in differences[:12]]}"
+            )
+        if bytes(machine.mem_read(data_segment * 16, len(data_decoy))) != data_decoy:
+            raise AssertionError(f"0x0813 {case['name']}: changed DS decoy")
+        if outputs != expected_outputs:
+            raise AssertionError(
+                f"0x0813 {case['name']}: outputs={outputs}, "
+                f"expected={expected_outputs}"
+            )
+        if len(inputs) != expected_inputs:
+            raise AssertionError(
+                f"0x0813 {case['name']}: inputs={inputs}, "
+                f"expected count={expected_inputs}"
+            )
+        if len(chain_snapshots) != int(expected_chain):
+            raise AssertionError(
+                f"0x0813 {case['name']}: chain count={len(chain_snapshots)}, "
+                f"expected={int(expected_chain)}"
+            )
+        if chain_snapshots:
+            changed = [
+                name
+                for name, value in initial.items()
+                if name != "flags" and chain_snapshots[0].get(name) != value
+            ]
+            if changed:
+                raise AssertionError(
+                    f"0x0813 {case['name']}: old handler saw changed {changed}"
+                )
+        for register in ("eax", "ebx", "ecx", "edx", "esi", "edi", "ebp"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x0813 {case['name']}: changed {register}")
+        for register in ("ds", "es", "fs", "gs", "ss"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x0813 {case['name']}: changed {register}")
+        if machine.reg_read(UC_X86_REG_SP) != stack_pointer + 6:
+            raise AssertionError(f"0x0813 {case['name']}: wrong interrupt stack")
+        if bytes(
+            machine.mem_read(
+                stack_segment * 16 + stack_pointer + 6, len(stack_sentinel)
+            )
+        ) != stack_sentinel:
+            raise AssertionError(f"0x0813 {case['name']}: damaged stack sentinel")
+        if machine.reg_read(UC_X86_REG_EFLAGS) & 0x0FD7 != return_flags & 0x0FD7:
+            raise AssertionError(f"0x0813 {case['name']}: wrong returned flags")
+
+        vectors.append(
+            {
+                "name": case["name"],
+                "tick_before": int(case.get("tick", 0)),
+                "tick_after": struct.unpack_from("<I", game_after, 0x0B29)[0],
+                "divider_after": game_after[0x0B22],
+                "subtick_after": struct.unpack_from("<H", game_after, 0x0B27)[0],
+                "periodic_ready": game_after[0x0B23],
+                "speaker_request_after": game_after[0x0B19],
+                "vm_words_after": list(
+                    struct.unpack_from("<30H", game_after, 0x6ADE)
+                ),
+                "chained": expected_chain,
+                "inputs": [list(item) for item in inputs],
+                "outputs": [list(item) for item in outputs],
+            }
+        )
+    return vectors
+
+
+def ctrl_break_handler_vectors() -> list[dict[str, object]]:
+    entry = 0x0C19
+    expected_hash = "7a4a4b50f5121ed5310ece45a7eeb7af5545af63ee2ae52add4f37788f075b1d"
+    if hashlib.sha256(EXE[entry : entry + 1]).hexdigest() != expected_hash:
+        raise AssertionError("0x0c19: recovered one-byte body changed")
+
+    stack_segment = 0x9000
+    stack_pointer = 0xFE00
+    return_address = 0xFC19
+    vectors = []
+    for case_index, return_flags in enumerate((0x0002, 0x0203, 0x0ED7)):
+        initial = {
+            "eax": 0xA1B2C3D4 + case_index,
+            "ebx": 0xB2C3D4E5 + case_index,
+            "ecx": 0xC3D4E5F6 + case_index,
+            "edx": 0xD4E5F607 + case_index,
+            "esi": 0xE5F60718 + case_index,
+            "edi": 0xF6071829 + case_index,
+            "ebp": 0x0718293A + case_index,
+            "ds": 0x1000,
+            "es": 0x2000,
+            "fs": 0x3000,
+            "gs": 0x4000,
+            "ss": stack_segment,
+            "sp": stack_pointer,
+            "flags": 0x0002,
+        }
+        frame = struct.pack("<HHH", return_address, 0, return_flags)
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [(stack_segment, stack_pointer, frame + b"\x5a\xa5")],
+        )
+        for register in ("eax", "ebx", "ecx", "edx", "esi", "edi", "ebp"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x0c19 case {case_index}: changed {register}")
+        for register in ("ds", "es", "fs", "gs", "ss"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x0c19 case {case_index}: changed {register}")
+        if machine.reg_read(UC_X86_REG_SP) != stack_pointer + 6:
+            raise AssertionError(f"0x0c19 case {case_index}: wrong interrupt stack")
+        if machine.reg_read(UC_X86_REG_EFLAGS) & 0x0FD7 != return_flags & 0x0FD7:
+            raise AssertionError(f"0x0c19 case {case_index}: wrong returned flags")
+        vectors.append(
+            {
+                "case": case_index,
+                "returned_flags": machine.reg_read(UC_X86_REG_EFLAGS) & 0x0FD7,
+                "registers_preserved": True,
+            }
+        )
+    return vectors
+
+
+def critical_error_handler_vectors() -> list[dict[str, object]]:
+    entry = 0x0C1A
+    expected_hash = "ce11d432425e014ba7088f22fcc1f3d3d57264a14453de2555933248451ca2eb"
+    if hashlib.sha256(EXE[entry : entry + 12]).hexdigest() != expected_hash:
+        raise AssertionError("0x0c1a: recovered 12-byte body changed")
+
+    game_segment = 0x4000
+    data_segment = 0x1000
+    stack_segment = 0x9000
+    stack_pointer = 0xFE00
+    return_address = 0xFC1A
+    vectors = []
+    for case_index, (error_code, return_flags) in enumerate(
+        ((0x0000, 0x0002), (0x0001, 0x0203), (0x7FFF, 0x0646), (0xFFFF, 0x0A93))
+    ):
+        initial = {
+            "eax": 0xA1B2C3D4 + case_index,
+            "ebx": 0xB2C3D4E5 + case_index,
+            "ecx": 0xC3D4E5F6 + case_index,
+            "edx": 0xD4E5F607 + case_index,
+            "esi": 0xE5F60718 + case_index,
+            "edi": 0xF6070000 | error_code,
+            "ebp": 0x0718293A + case_index,
+            "ds": data_segment,
+            "es": 0x2000,
+            "fs": 0x3000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "sp": stack_pointer,
+            "flags": 0x0002,
+        }
+        game_before = bytes.fromhex("5a a5")
+        data_decoy = bytes.fromhex("69 96")
+        frame = struct.pack("<HHH", return_address, 0, return_flags)
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (game_segment, 0x0A9C, game_before),
+                (data_segment, 0x0A9C, data_decoy),
+                (stack_segment, stack_pointer, frame + b"\xc3\x3c"),
+            ],
+        )
+        stored = struct.unpack(
+            "<H", bytes(machine.mem_read(game_segment * 16 + 0x0A9C, 2))
+        )[0]
+        if stored != (error_code + 1) & 0xFFFF:
+            raise AssertionError(
+                f"0x0c1a case {case_index}: stored={stored:#x}, "
+                f"expected={(error_code + 1) & 0xFFFF:#x}"
+            )
+        if bytes(machine.mem_read(data_segment * 16 + 0x0A9C, 2)) != data_decoy:
+            raise AssertionError(f"0x0c1a case {case_index}: changed DS decoy")
+        for register in ("eax", "ebx", "ecx", "edx", "esi", "edi", "ebp"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x0c1a case {case_index}: changed {register}")
+        for register in ("ds", "es", "fs", "gs", "ss"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x0c1a case {case_index}: changed {register}")
+        if machine.reg_read(UC_X86_REG_SP) != stack_pointer + 6:
+            raise AssertionError(f"0x0c1a case {case_index}: wrong interrupt stack")
+        if machine.reg_read(UC_X86_REG_EFLAGS) & 0x0FD7 != return_flags & 0x0FD7:
+            raise AssertionError(f"0x0c1a case {case_index}: wrong returned flags")
+        vectors.append(
+            {
+                "case": case_index,
+                "di_error_code": error_code,
+                "stored_code_plus_one": stored,
+                "returned_flags": machine.reg_read(UC_X86_REG_EFLAGS) & 0x0FD7,
+            }
+        )
+    return vectors
+
+
 def mouse_reset_hide_vectors() -> list[dict[str, object]]:
     entry = 0x0CEF
     expected_hash = "93fcb283730c84a7e6d09b0f04862d9ca68850294f97a8ff107f627150a4999b"
@@ -90161,6 +90649,9 @@ def main() -> int:
         args.check,
     )
     update_vector(
+        VECTOR_ROOT / "func_0813_natural.json", timer_isr_vectors(), args.check
+    )
+    update_vector(
         VECTOR_ROOT / "func_07ea_natural.json",
         restore_timer_isr_hook_vectors(),
         args.check,
@@ -90168,6 +90659,16 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_0bff_natural.json",
         install_ctrl_break_handler_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_0c19_natural.json",
+        ctrl_break_handler_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_0c1a_natural.json",
+        critical_error_handler_vectors(),
         args.check,
     )
     update_vector(

@@ -16,16 +16,42 @@ extern bloodprg_font_ptr CB_GAME_DATA bios_font_8x8; /* GS:0x5225 */
 
 typedef void (CB_INTERRUPT CB_FAR *bloodprg_interrupt_handler)(void);
 
+typedef struct bloodprg_timer_state {
+    cb_u16 tick_count_low;
+    cb_u16 tick_high_word; /* ADC observes cleared carry and leaves it unchanged. */
+    cb_u16 frame_delay_ticks;
+    cb_u16 chatter_cooldown;
+    cb_u16 subtitle_reveal_delay;
+    cb_u16 dialogue_delay;
+    cb_u16 dialogue_hold_countdown;
+    cb_u16 subtitle_opening_frame_pulse;
+    cb_u16 clip_playback_state;
+    cb_u16 mouse_motion_idle_counter;
+} bloodprg_timer_state;
+
+typedef char bloodprg_timer_frame_delay_offset_must_be_4[
+        CB_OFFSETOF(bloodprg_timer_state, frame_delay_ticks) == 4u ? 1 : -1];
+typedef char bloodprg_timer_chatter_offset_must_be_6[
+        CB_OFFSETOF(bloodprg_timer_state, chatter_cooldown) == 6u ? 1 : -1];
+typedef char bloodprg_timer_clip_state_offset_must_be_16[
+        CB_OFFSETOF(bloodprg_timer_state, clip_playback_state) == 16u ? 1 : -1];
+
 extern bloodprg_interrupt_handler CB_GAME_DATA
         timer_previous_handler; /* GS:0x0B1D */
 extern volatile cb_u8 CB_GAME_DATA timer_hook_active; /* GS:0x0B21 */
 extern volatile cb_u8 CB_GAME_DATA timer_divider;     /* GS:0x0B22 */
+extern volatile cb_u8 CB_GAME_DATA
+        timer_periodic_update_ready; /* GS:0x0B23 */
 extern volatile cb_u16 CB_GAME_DATA timer_reload_ticks; /* GS:0x0B25 */
 extern volatile cb_u16 CB_GAME_DATA timer_subtick_limit; /* GS:0x0B27 */
+extern volatile bloodprg_timer_state CB_GAME_DATA timer_state; /* GS:0x0B29 */
+extern volatile cb_u16 CB_GAME_DATA
+        dos_critical_error_code_plus_one; /* GS:0x0A9C */
 
 void CB_INTERRUPT CB_FAR bloodprg_timer_isr(void);          /* CS:0x0213 */
 void CB_INTERRUPT CB_FAR bloodprg_ctrl_break_handler(void); /* CS:0x0619 */
-void CB_INTERRUPT CB_FAR bloodprg_critical_error_handler(void); /* CS:0x061A */
+void CB_INTERRUPT CB_FAR bloodprg_critical_error_handler(
+        cb_u16 error_code); /* CS:0x061A, DI input */
 
 void CB_FAR install_timer_isr_hook(void); /* 0x00079C */
 void CB_FAR restore_timer_isr_hook(void); /* 0x0007EA */
@@ -49,6 +75,7 @@ cb_u32 CB_NEAR cb_bios_font_8x8_get(void);
 #pragma aux cb_bios_font_8x8_get = \
         "mov ax,1130h" "mov bh,3" "int 10h" "mov ax,bp" "mov dx,es" \
         value [dx ax] modify exact [ax bx dx es bp]
+#pragma aux bloodprg_critical_error_handler parm [di]
 #pragma aux video_retrace_phase_wait modify exact []
 #pragma aux vga_palette_write parm [si]
 #endif

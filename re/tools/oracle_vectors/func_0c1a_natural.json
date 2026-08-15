@@ -1,0 +1,26 @@
+[
+  {
+    "case": 0,
+    "di_error_code": 0,
+    "stored_code_plus_one": 1,
+    "returned_flags": 2
+  },
+  {
+    "case": 1,
+    "di_error_code": 1,
+    "stored_code_plus_one": 2,
+    "returned_flags": 515
+  },
+  {
+    "case": 2,
+    "di_error_code": 32767,
+    "stored_code_plus_one": 32768,
+    "returned_flags": 1606
+  },
+  {
+    "case": 3,
+    "di_error_code": 65535,
+    "stored_code_plus_one": 0,
+    "returned_flags": 2707
+  }
+]

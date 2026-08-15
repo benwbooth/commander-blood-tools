@@ -74,8 +74,8 @@ void CB_SAVE_REGS CB_FAR audio_process_ade(void)
     }
 
     if ((vm_text_voice_trigger & 1u) != 0 &&
-            snd_chatter_cooldown == 0) {
-        snd_chatter_cooldown = 4;
+            snd_chatter_cooldown_low == 0) {
+        snd_chatter_cooldown_low = 4;
         do {
             clip_index = blood_prng_next(10u);
         } while (clip_index == snd_last_clip);

@@ -1,0 +1,17 @@
+[
+  {
+    "case": 0,
+    "returned_flags": 2,
+    "registers_preserved": true
+  },
+  {
+    "case": 1,
+    "returned_flags": 515,
+    "registers_preserved": true
+  },
+  {
+    "case": 2,
+    "returned_flags": 3799,
+    "registers_preserved": true
+  }
+]

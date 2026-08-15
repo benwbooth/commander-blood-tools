@@ -36,5 +36,5 @@ void CB_NEAR resource_load_sequence(cb_u16 resource_id)
             link_target_offset = list_d8c_refill(link_target_offset);
         }
     }
-    list_d8c_previous_tick = timer_tick_count;
+    list_d8c_previous_tick = timer_tick_count_low;
 }

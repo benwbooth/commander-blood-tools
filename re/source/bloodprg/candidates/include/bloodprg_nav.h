@@ -186,6 +186,8 @@ extern volatile cb_u8 nav_chart_secondary_marker; /* DS:0x278F */
 extern volatile cb_u8 nav_chart_subobject_count; /* DS:0x2790 */
 extern volatile cb_u8 nav_center_wipe_complete; /* DS:0x2791 */
 extern volatile cb_u8 nav_chart_entity_state_mask; /* DS:0x0B3F */
+extern volatile cb_u8 CB_GAME_DATA
+        nav_chart_entity_state_mask_gs; /* explicit GS:0x0B3F alias */
 extern const bloodprg_nav_wipe_point
         nav_center_wipe_endpoints[9]; /* DS:0x2752 */
 extern volatile cb_u8 nav_screen_rebuild_pending; /* DS:0x27D9 */

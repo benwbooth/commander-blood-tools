@@ -24,7 +24,7 @@ int CB_NEAR list_d8c_advance_due(void)
         return 1;
     }
 
-    current = timer_tick_count;
+    current = timer_tick_count_low;
     elapsed = (cb_u16)(current - list_d8c_previous_tick);
     if ((cb_i16)elapsed < 0) {
         elapsed = (cb_u16)(0u - elapsed);
@@ -33,6 +33,6 @@ int CB_NEAR list_d8c_advance_due(void)
             && (cb_u8)elapsed < list_d8c_tick_threshold) {
         return 0;
     }
-    list_d8c_previous_tick = timer_tick_count;
+    list_d8c_previous_tick = timer_tick_count_low;
     return 1;
 }

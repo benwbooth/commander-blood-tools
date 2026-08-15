@@ -68,10 +68,12 @@ extern volatile cb_u8 CB_GAME_DATA
         voc_playback_enabled_gs; /* explicit GS:0x0ADE alias */
 extern volatile cb_u8 game_mode_0adf; /* game data:0x0ADF */
 extern volatile cb_u8 CB_GAME_DATA
+        game_mode_0adf_gs; /* explicit GS:0x0ADF alias */
+extern volatile cb_u8 CB_GAME_DATA
         snd_clip_enable_request_gs; /* GS:0x0B19 */
 extern volatile cb_u16 CB_GAME_DATA
         snd_clip_playback_state_gs; /* GS:0x0B39 */
-extern volatile cb_u8 snd_chatter_cooldown; /* game data:0x0B2F */
+extern volatile cb_u8 snd_chatter_cooldown_low; /* DS:0x0B2F low-byte alias */
 extern volatile cb_u16 snd_dialogue_delay; /* game data:0x0B33 */
 extern volatile cb_u16 snd_last_clip; /* game data:0x0C4D */
 extern volatile cb_u16 snd_dialogue_seed; /* game data:0x0C55 */
