@@ -1412,10 +1412,13 @@ candidate warning-free to 59 instructions/127 bytes versus the original
 48/110, with 89.58 percent mnemonic-multiset overlap and no inline assembly.
 Keeping the record and code pointers live together naturally recovers the
 binary's `LES DI` plus `LDS SI` shape; direct far indexing also avoids pointer
-normalization helpers. Full-source integration still requires the recovered
-DS:SI token-decoder contract, `SS=GS` descriptor-table placement, and fixed
-game-data aliases. A drop-in body would additionally need the original
-stack-saved query word and exact AX/BX/register allocation.
+normalization helpers. The authoritative probe also confirms that Watcom saves
+AX/CX/DX/SI/DI/BP/DS/ES and returns the kind in BX, so the declaration and
+definition agree on the observable ABI; Turbo C emits 93 instructions. The
+candidate is accepted for source-port integration with the recovered DS:SI
+token-decoder contract, `SS=DS=GS` descriptor/data placement, and fixed game-
+data aliases. Extra saves, the CX-held query word, register allocation, and
+terminal flags remain compiler differences rather than missing logic.
 
 VM token scanner `0x006293` has nine direct vectors covering immediate,
 aligned, and unaligned matches; scan-cursor wrap; a word read crossing offset
