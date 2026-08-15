@@ -5637,12 +5637,18 @@ every named write, SS line ownership versus DS globals, registers, flags,
 stack integrity, and near return.
 
 Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the actual natural
-candidate warning-free to 63 instructions/201 bytes versus the original
-55/184, with 89.09 percent mnemonic-multiset overlap and no inline assembly.
-The source uses an explicit line pointer and ordinary Boolean completion;
-direct replacement still needs the original inherited-`BP` entry, carry held
-through `PUSHF`/`POPF`, AX preservation around clip playback, near-call/far-
-return placement adapters, and the original register/flag envelope.
+candidate warning-free to 63 instructions/198 bytes versus the original
+55/184, with 89.09 percent mnemonic-multiset and 78.18 percent ordered-mnemonic
+overlap. Reusing the transition byte for the actor-one/actor-zero blocker test
+causes Watcom to emit the original-width `MOV DL`/`OR DL` gate and lets its zero
+result feed the mouse clear. Turbo C 2.01 medium (`-mm -O -Z`) emits 77
+instructions, with 87.27 percent multiset and 80.00 percent ordered overlap.
+Neither candidate uses inline assembly.
+
+The natural candidate is accepted for source-port integration. Direct
+replacement still needs the original inherited-`BP` entry, carry held through
+`PUSHF`/`POPF`, AX preservation around clip playback, near-call/far-return
+placement adapters, and the original register/flag envelope.
 
 ## BLOODPRG navigation-choice dispatcher candidate
 

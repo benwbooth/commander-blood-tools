@@ -26,7 +26,9 @@ void CB_NEAR nav_actor_handler_5(
         }
     }
 
-    if ((nav_actor_1_busy | nav_actor_0_busy) != 0u) {
+    transition_flags = nav_actor_1_busy;
+    transition_flags |= nav_actor_0_busy;
+    if (transition_flags != 0u) {
         nav_actor_5_active = 1u;
         nav_location_panel_active = 0u;
         return;
