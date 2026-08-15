@@ -2593,14 +2593,22 @@ consumption. The only caller emits `PUSH CS` followed by a near `CALL`, which
 constructs that far-return frame without an inter-segment call instruction.
 
 A natural pointer-to-end loop is a better compiler formulation than the
-initial array-index loop. Open Watcom `-3 -ox -mm` compiles the actual candidate
-without warnings to 8 instructions/19 bytes versus 12/23 original; Turbo C
-2.01 medium also emits 8 instructions. Both generated modules explicitly
-assume DS:DGROUP and SS:DGROUP, making the named DS-relative object equivalent
-to the original SS-relative storage in the medium-model game. Watcom naturally
-preserves every register and emits the far return, but ends the loop with CMP,
-so exact integration must still account for final flags from CMP instead of
-the original final BP ADD.
+initial array-index loop. The compiler-corpus sample now includes the
+authoritative recovered source directly. Open Watcom `-3 -os -s -mm -we`
+compiles it without warnings to 8 instructions/19 bytes versus 12/23 original,
+with 50 percent mnemonic-multiset and ordered overlap. Turbo C 2.01 medium
+(`-mm -O -Z`) emits the same 8-instruction shape with the same overlap and
+assembles cleanly to OBJ. Both preserve every register, emit `RETF`, and
+explicitly assume DS:DGROUP and SS:DGROUP, making the named DS-relative object
+equivalent to the original SS-relative storage in the medium-model game.
+
+The only direct caller is `0x00959D`. Its four recovered call sites either call
+another flag-producing routine or execute `INC`/`MOV` before their next branch,
+so none observes this helper's terminal condition codes. The natural source is
+therefore accepted for source-port integration. Direct replacement would still
+need the original BP/CX `LOOP` allocation and final flags from the BP `ADD`
+instead of the compiler's pointer `CMP`, but those differences carry no game
+logic at the recovered boundaries.
 
 Projection-matrix builder `0x0098B9` has another BP-default segment boundary:
 the three indexed trig-pair reads are from SS:0x4F45, while the routine first
