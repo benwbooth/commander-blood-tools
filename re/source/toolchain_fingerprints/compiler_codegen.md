@@ -594,12 +594,17 @@ failure with handle zero, ordinary and wrapping destination reads, 32-bit
 source offset/remaining carry and borrow, and retries after both a short read
 and a carry-set short response, proving that AX alone controls retry. On
 success the routine returns the extent in AX, the post-read cursor in ES:SI,
-and carry clear; both callers consume those exact results. The natural C
-candidate exposes logical success plus extent/cursor output parameters. Open
-Watcom 1.9 medium emits 23
-instructions and 47 bytes, and Turbo C 2.01 medium emits 32 instructions,
-versus six instructions and 18 bytes in the original. The algorithm is
-verified, but the compact carry/AX/ES:SI result remains an assembly ABI boundary.
+and carry clear; all three recovered callers consume those exact results. The
+natural C candidate exposes logical success plus extent/cursor output
+parameters and now constructs the extent pointer from the live queue-head
+segment instead of a fixed buffer symbol. The compiler-corpus sample includes
+this authoritative source directly. Open Watcom 1.9 medium
+`-3 -os -s -mm -zdf` emits 20 instructions/43 bytes versus 6/18 original, with
+66.67 percent mnemonic-multiset and ordered overlap. Turbo C 2.01 medium emits
+25 instructions with the same overlap and assembles warning-free to OBJ.
+
+The algorithm and queue-segment ownership are accepted for source integration;
+the compact carry/AX/ES:SI result remains an isolated assembly ABI boundary.
 
 For `0x00A642`, six direct-file vectors execute the real `0x00A757` queue init,
 `0x00A622` extent read, and `0x00A664` body read. They cover initial and body
