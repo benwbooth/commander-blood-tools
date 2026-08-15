@@ -631,12 +631,22 @@ builds the standard 16-byte function-0x0B move descriptor and rounds an odd
 physical move length up, while source and queue accounting advances only by
 the requested count. The direct-file path always seeks before reading, retries
 while AX is below CX, and ignores DOS carry; a crafted carry-set AX above CX is
-accepted and then masked by the common carry clear. Open Watcom 1.9 medium
-emits 133 instructions and 386 bytes, and Turbo C 2.01 medium emits 174
-instructions, versus 88 instructions and 218 bytes in the original. The
-natural body preserves the backend selection and accounting, but the original
-interrupts, XMS callback, register ABI, carry result, and shared-tail placement
-remain explicit integration boundaries.
+accepted and then masked by the common carry clear. The corrected candidate
+reconstructs both the page-frame source and queue destination from their live
+segment words after EMS mapping, resolves the queue destination while
+constructing the XMS descriptor, and reloads it after each DOS seek before
+every retrying read. Its XMS wrapper declaration also preserves the
+descriptor's game-data pointer qualification, and the compiler-corpus sample
+now includes the authoritative source directly.
+
+Open Watcom 1.9 medium `-3 -os -s -mm -zdf` emits 106 instructions and 309
+bytes, with 71.59 percent mnemonic-multiset and 51.14 percent ordered overlap.
+Turbo C 2.01 medium emits 145 instructions with 68.18 percent multiset and
+53.41 percent ordered overlap and assembles warning-free to OBJ, versus 88
+instructions and 218 bytes in the original. The natural implementation is
+accepted for source integration; the original interrupts, XMS callback,
+CX/carry/register ABI, and shared-tail placement remain explicit isolated
+replacement boundaries.
 
 For `0x00A634`, exhaustive direct execution over all 256 state-byte values
 confirms that ZF is set exactly when GS:0x0B17 bit 0 is clear. It also verifies

@@ -48,7 +48,8 @@ extern volatile cb_u16 CB_GAME_DATA snd_bank_file_handle; /* GS:0x0C49 */
 
 void CB_NEAR cb_ems_map_page(cb_u16 handle, cb_u16 logical_page,
         cb_u8 physical_page);
-void CB_NEAR cb_xms_move(volatile bloodprg_xms_move_request *request);
+void CB_NEAR cb_xms_move(
+        volatile bloodprg_xms_move_request CB_GAME_DATA *request);
 int CB_NEAR cb_xms_allocate_kb(cb_u16 kilobytes, cb_u16 *handle);
 void CB_NEAR cb_xms_release(cb_u16 handle);
 void CB_FAR far_memmove(volatile cb_u8 CB_FAR *destination,
