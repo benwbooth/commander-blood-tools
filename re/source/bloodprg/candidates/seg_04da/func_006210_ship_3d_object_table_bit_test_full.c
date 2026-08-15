@@ -8,7 +8,7 @@ int CB_NEAR ship_3d_object_table_bit_test_full(cb_u16 object_offset,
     cb_u16 byte_offset;
     cb_u16 shifted;
 
-    entry = vm_record_directory;
+    entry = vm_record_directory_gs;
     object_index = 0;
     while (entry->object_offset != object_offset) {
         ++entry;

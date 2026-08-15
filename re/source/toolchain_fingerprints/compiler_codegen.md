@@ -1462,12 +1462,19 @@ state preservation. The final byte `SHL` reports the high-bit-first selection in
 carry; the vectors also verify ZF/SF/PF and OF when its count is one.
 
 The natural candidate states the same selection as a word shift followed by a
-bit-`0x0100` Boolean test. Open Watcom `-3 -ox -mm` emits 33 instructions/70
-bytes versus 31/59 original, with mnemonic multiset overlap 0.8387; Turbo C 2.01
-medium emits 48 instructions. Watcom binds AX/SI and closely reproduces the
-scan, but loads the far directory pointer through DS rather than GS and returns
-the Boolean in AX. The binary instead restores AX and exposes only carry, so
-exact integration requires a narrow carry-result adapter around the natural C.
+bit-`0x0100` Boolean test and now binds the directory pointer through the shared
+`GAME_DATA` declaration. Its compiler probe includes that maintained source
+directly. Open Watcom medium size mode (`-3 -os -s -mm -zdp -we`) emits 34
+instructions/72 bytes versus 31/59 original, with 87.10 percent mnemonic-
+multiset and 77.42 percent ordered overlap; Turbo C 2.01 medium emits 50
+instructions. A linked Turbo C DOS executable passes 16,384 cases spanning all
+eight bit positions and 256 byte values under positive and negative selector
+offsets while its 20-byte directory starts at offset `0xFFF0` and wraps.
+
+The function is accepted for source-port integration because its compiled C
+caller consumes the returned Boolean directly. The binary instead restores AX
+and exposes only carry plus the final byte-shift flags, so direct replacement
+still requires a narrow result adapter around the natural function.
 
 Ship 3D navigation-source builder `0x00624B` has eight direct vectors covering
 no children, one child, two siblings, nested depth-first output, a zero selector
@@ -3907,7 +3914,7 @@ LCS and then mnemonic similarity:
 | `active_object_list_build` | medium, `-os -s`, register | 32/43 | 0.2188 | 0.8750 | 0.2500 |
 | `ship_3d_position_distance` | medium, `-os -s`, register | 88/113 | 0.0682 | 0.7159 | 0.1477 |
 | `ship_3d_position_field_resolve` | medium, `-ox`, register | 45/50 | 0.1111 | 0.6667 | 0.2444 |
-| `ship_3d_object_table_bit_test` | medium, `-ox`, register | 31/33 | 0.2581 | 0.7419 | 0.3548 |
+| `ship_3d_object_table_bit_test` | medium, `-os -s`, register | 31/34 | 0.2581 | 0.7742 | 0.3548 |
 | `ship_3d_nav_source_list_build` | medium, `-ox`, register | 34/51 | 0.1765 | 0.7647 | 0.2059 |
 | `vm_token_special` | medium, `-ox`, register | 9/9 | 0.3333 | 1.0000 | 1.0000 |
 | `vm_condition_5` | medium, `-os -s`, register | 104/151 | 0.0481 | 0.6346 | 0.0769 |
