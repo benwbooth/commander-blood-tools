@@ -11,8 +11,8 @@
 const cb_u8 CB_NEAR *CB_NEAR vm_op_c4_actor(
     const cb_u8 CB_NEAR *script_bytes)
 {
-    int inverted;
-    int matches;
+    cb_u8 inverted;
+    cb_u8 matches;
     cb_u16 record_offset;
     cb_u16 owner_offset;
     cb_u16 related_offset;
@@ -26,7 +26,7 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_c4_actor(
     volatile bloodprg_vm_record_triple CB_FAR *record;
     volatile cb_u16 CB_FAR *reciprocal;
 
-    record_base = vm_record_base;
+    record_base = vm_record_base_gs;
     inverted = 0;
     if (*script_bytes == 0xa1u) {
         inverted = 1;
@@ -47,7 +47,7 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_c4_actor(
         record_base, record_offset);
     record_kind = record->kind;
 
-    if ((vm_query_mode & 1u) != 0u) {
+    if ((vm_query_mode_gs & 1u) != 0u) {
         matches = (owner->flags & 1u) != 0u
             && record_kind == BLOODPRG_VM_RECORD_C4
             && record->related == related_offset;

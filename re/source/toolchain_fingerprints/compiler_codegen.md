@@ -2255,14 +2255,31 @@ Twenty direct vectors prove every query and guard, prefix handling, real
 threshold/field/branch helpers, lowest-set-kind-bit field selection, positive,
 negative, and wrapped reciprocal offsets, exact three-store order, ignored
 base-offset decoys, record and script boundaries, segmented ownership,
-registers, flags, and near return. Open Watcom 1.9 medium
-(`-3 -os -s -mm -we`) compiles the natural one-to-one candidate warning-free
-to 71 instructions/184 bytes versus 58/154 original, with 87.93 percent
-mnemonic-multiset overlap and no inline assembly. It preserves the typed far
-record accesses, helper calls, signed offset, and guards, but introduces a
-frame, restores BP, uses CX for inversion and DX for the record segment, and
-duplicates returns. Direct replacement still needs fixed GS placement and the
-original path-specific register and flag envelope.
+registers, flags, and near return. That evidence exposed a source integration
+error: the candidate read `vm_record_base` and `vm_query_mode` through default
+DS even though both dispatchers leave DS on the script image. The corrected
+candidate uses their explicit `GAME_DATA` aliases and narrows its two Boolean
+locals to bytes.
+
+A 12-case Open Watcom 16-bit DOS harness includes the corrected maintained
+candidate directly and reports `OK 12` under DOSBox-X. It covers ordinary and
+inverted queries, both activity gates, both kind-one bypasses, destination and
+reciprocal conflicts, signed selector offsets, helper arguments, owner-lookup
+ordering, and successful triple writes. Open Watcom 1.9 medium
+(`-3 -os -s -mm -we`) compiles the warning-free natural C89 function to 77
+instructions/198 bytes versus 58/154 original, with 87.93 percent
+mnemonic-multiset and 74.14 percent ordered mnemonic overlap and no inline
+assembly.
+
+The function is accepted for source-port integration. Both dispatchers retain
+DI as the live opcode-table base and both the original and compiled handler
+preserve it. Immediately after the indirect call they load and test the yield
+byte, replacing the handler flags; BX is recomputed before the next dispatch,
+and CX, DX, BP, and ES are not consumed. Watcom's frame, restored BP, explicit
+`GAME_DATA` segment loads, register allocation, and duplicate returns are
+therefore harmless at the typed handler boundary. An isolated binary
+replacement would still need the original path-specific register and flag
+envelope.
 
 VM opcode-C6 handler `0x006D80` shares C5's optional inverted typed query and
 absolute record-segment addressing, but its set mode has no guards: it always
