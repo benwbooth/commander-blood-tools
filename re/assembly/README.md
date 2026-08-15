@@ -25,7 +25,7 @@ range.
 
 Routine counts:
 
-- `bloodprg`: 318
+- `bloodprg`: 321
 - `xdb_amer`: 27
 - `xdb_croolis`: 25
 - `xdb_manu3`: 12
