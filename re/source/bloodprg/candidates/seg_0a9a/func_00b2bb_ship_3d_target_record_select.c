@@ -9,6 +9,10 @@
 #define SHIP_3D_TARGET_NAME_BYTES 4u
 #define SHIP_3D_TARGET_OPEN_STEP 6u
 
+#if defined(__TURBOC__) || defined(__BORLANDC__)
+#pragma warn -rch
+#endif
+
 #if defined(__TURBOC__) || defined(__BORLANDC__) || defined(__WATCOMC__)
 #define SHIP_3D_TARGET_SEGMENT(pointer) \
     FP_SEG((const void CB_FAR *)(pointer))
@@ -24,6 +28,27 @@ static cb_i16 CB_NEAR ship_3d_target_list_widget(
         "mov es,dx" \
         "call far ptr list_widget_layout_unified" \
         parm [si] [dx] value [ax] modify exact [ax es]
+#elif defined(__TURBOC__) || defined(__BORLANDC__)
+static cb_i16 CB_NEAR ship_3d_target_list_widget(
+        const cb_u16 CB_NEAR *items,
+        cb_u16 string_segment)
+{
+    cb_i16 result;
+
+    if (0) {
+        return list_widget_layout_unified(items);
+    }
+    /* Borland cannot declare the original SI/ES far-call ABI. */
+    asm push si;
+    asm push es;
+    asm mov si, items;
+    asm mov es, string_segment;
+    asm call far ptr _list_widget_layout_unified;
+    asm mov result, ax;
+    asm pop es;
+    asm pop si;
+    return result;
+}
 #else
 static cb_i16 CB_NEAR ship_3d_target_list_widget(
         const cb_u16 CB_NEAR *items,

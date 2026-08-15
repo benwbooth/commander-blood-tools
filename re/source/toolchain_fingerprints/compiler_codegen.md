@@ -2959,13 +2959,17 @@ near return.
 
 Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the warning-free natural
 source to 65 instructions/174 bytes versus 50/147 original, with 92.00 percent
-mnemonic-multiset overlap. Medium model is required here: it keeps near list and
-state pointers under DS while retaining far inter-segment calls. The rejected
-large-model build addressed those near objects through SS and supplied SS as the
-fallback label segment. One narrow pragma adapter installs the explicit label
-segment in ES before the recovered list-widget call; the selection and phase
-logic remains ordinary typed C. A direct binary replacement would additionally
-need the original save envelope and path-specific terminal flags.
+mnemonic-multiset and 82.00 percent ordered overlap. Turbo C 2.01 medium
+(`-mm -O -Z`) emits 94 instructions with 90.00 percent multiset and 84.00
+percent ordered overlap and assembles cleanly to a 1,595-byte OMF object.
+Medium model is required here: it keeps near list and state pointers under DS
+while retaining far inter-segment calls. The rejected large-model build
+addressed those near objects through SS and supplied SS as the fallback label
+segment. Narrow Watcom and Borland adapters install the recovered SI items and
+ES label segment before the list-widget call; the selection and phase logic
+remains ordinary typed C. The candidate is accepted for source integration. A
+direct binary replacement would additionally need the original save envelope
+and path-specific terminal flags.
 
 Depth-scroll step `0x00B75C` gives opening bit zero precedence over closing bit
 zero. It changes only the low byte of the depth word: opening then compares the
