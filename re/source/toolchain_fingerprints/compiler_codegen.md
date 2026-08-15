@@ -5565,11 +5565,17 @@ stack integrity, and near return.
 
 Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the actual natural
 candidate warning-free to 73 instructions/229 bytes versus the original
-64/220, with 92.19 percent mnemonic-multiset overlap and no inline assembly.
-Its generated code directly loads the heap segment into `ES`, reads
-`ES:[SI+0x16]`, and compares `ES:[SI]` with `0x0100`. Direct replacement still
-needs the inherited-`BP` actor input, carry-valued helper result, original
-temporary register allocation, and exact call preservation and final flags.
+64/220, with 92.19 percent mnemonic-multiset and 82.81 percent ordered-mnemonic
+overlap. Turbo C 2.01 medium (`-mm -O -Z`) emits 93 instructions, with the same
+92.19 percent multiset and 81.25 percent ordered overlap. Watcom's generated
+code directly loads the heap segment into `ES`, reads `ES:[SI+0x16]`, and
+compares `ES:[SI]` with `0x0100`; neither candidate uses inline assembly.
+
+The natural candidate is accepted for source-port integration. The medium
+model relies on the shipped `SS = DS` alias for the explicit-near line record.
+Direct replacement still needs the inherited-`BP` actor input, carry-valued
+helper result, original temporary register allocation, and exact call
+preservation and final flags.
 
 ## BLOODPRG navigation actor handler 0 candidate
 
