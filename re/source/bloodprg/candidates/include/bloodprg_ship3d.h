@@ -226,7 +226,7 @@ extern volatile ship_3d_hud_layout_entry CB_GAME_DATA ship_3d_hud_layout[];
 #pragma aux ship_3d_hud_palette_snapshot_and_camera_reset \
         modify exact []
 #pragma aux ship_3d_point_cloud_project modify exact [ax es]
-#pragma aux ship_3d_object_sprite_project modify exact []
+#pragma aux ship_3d_object_sprite_project modify exact [ax es]
 #pragma aux ship_3d_plane_band_copy modify exact []
 #pragma aux ship_3d_target_record_select value [ax] modify exact [ax]
 #pragma aux draw_hud_element_2bc7 modify exact []

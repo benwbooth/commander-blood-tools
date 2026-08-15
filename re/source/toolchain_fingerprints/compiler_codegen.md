@@ -2759,15 +2759,23 @@ zero and negative depths, modular product/add overflow, screen wrap, source
 dimension scaling, extent flag behavior, post-helper centering, helper frames,
 all touched state, preservation, final DEC flags, and RETF.
 
-Open Watcom `-3 -ox -mm` compiles the actual one-function candidate without
-warnings to 314 instructions/869 bytes versus 122/369 original. The corpus
-probe emits 303 instructions, with a 60.66 percent mnemonic-sequence LCS and
-62.30 percent mnemonic-multiset overlap. Watcom calls its 32-bit multiply and
-divide helpers, loops for long shifts, and materializes multiple based far
-pointers; the binary uses inline 386 arithmetic and ambient DS/GS/SS state.
-There is no inline assembly in the candidate. DS==GS, SS==GS, the inherited
-comparison pointer, and the original preservation/flag envelope remain explicit
-integration boundaries.
+The compiler-corpus sample now includes the authoritative one-function source
+directly. Open Watcom `-3 -os -s -mm -we` compiles it without warnings to 223
+instructions/682 bytes versus 122/369 original, with 63.93 percent
+mnemonic-multiset and 55.74 percent ordered overlap. Turbo C 2.01 medium
+(`-mm -O -Z`) emits 303 instructions with 70.49 percent multiset and 53.28
+percent ordered overlap and assembles cleanly to OBJ. Watcom calls its 32-bit
+multiply and divide helpers, loops for long shifts, and materializes multiple
+based far pointers; the binary uses inline 386 arithmetic and ambient
+DS/GS/SS state.
+
+The generated Watcom body preserves BX/CX/DX/SI/DI/BP/DS and clobbers AX/ES,
+so the declaration now exposes those source-level clobbers. Both recovered
+callers consume only the projected entity and state side effects. The function
+is accepted for source-port integration with DS==GS, SS==GS, and the inherited
+matrix-overlap comparison pointer kept explicit. There is no inline assembly.
+Direct replacement still needs the original helper frames, preserve-all
+envelope, inline arithmetic, and final DEC flags.
 
 Ship-target selector `0x00B2BB` chooses the primary name-offset list unless its
 first word is exactly `0xFFFF`; only that sentinel selects the fallback list and
