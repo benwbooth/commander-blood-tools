@@ -5,14 +5,22 @@
 typedef unsigned char u8;
 typedef unsigned int u16;
 
-#if defined(__TURBOC__) || defined(__BORLANDC__) || defined(__WATCOMC__)
+#if defined(__WATCOMC__)
 #include <dos.h>
 #define FAR far
 #define NEAR near
+#define GAME_DATA __based(__segname("GAME_DATA"))
+#define RECORD_AT(base, offset) ((volatile u8 FAR *)MK_FP(FP_SEG(base), (offset)))
+#elif defined(__TURBOC__) || defined(__BORLANDC__)
+#include <dos.h>
+#define FAR far
+#define NEAR near
+#define GAME_DATA far
 #define RECORD_AT(base, offset) ((volatile u8 FAR *)MK_FP(FP_SEG(base), (offset)))
 #else
 #define FAR
 #define NEAR
+#define GAME_DATA
 #define RECORD_AT(base, offset) ((base) + (offset))
 #endif
 
@@ -25,9 +33,9 @@ typedef struct record_triple {
     u16 value;
 } record_triple;
 
-extern volatile u8 FAR *record_base;
-extern volatile u8 sequence_active;
-extern volatile u8 depth_step;
+extern volatile u8 FAR * GAME_DATA record_base;
+extern volatile u8 GAME_DATA sequence_active;
+extern volatile u8 GAME_DATA depth_step;
 int NEAR field_offset_probe(u16 selector, u16 kind_mask);
 #if defined(__WATCOMC__)
 #pragma aux field_offset_probe parm [ax] [bx] value [ax] modify exact [ax]

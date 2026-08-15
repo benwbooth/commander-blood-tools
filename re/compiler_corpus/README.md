@@ -36,7 +36,9 @@ NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
 
 Both runners accept repeated `--sample` options and store each compiler label
 under `out/`. Repeating the command with different labels and flags builds a
-comparison matrix.
+comparison matrix. The Turbo C runner flattens repository-local quoted include
+dependencies to temporary DOS 8.3 names, so wrapper probes can compile the real
+candidate source without maintaining a duplicate probe body.
 
 For another compiler, create a generic JSON runner config from:
 

@@ -21,7 +21,7 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_c9_clear_record_full(
     volatile bloodprg_vm_record_triple CB_FAR *related;
     volatile bloodprg_vm_record_triple CB_FAR *reciprocal;
 
-    record_base = vm_record_base;
+    record_base = vm_record_base_gs;
     record_offset = *(const cb_u16 CB_NEAR *)script_bytes;
     script_bytes += sizeof(cb_u16);
 
@@ -43,8 +43,8 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_c9_clear_record_full(
         reciprocal = (volatile bloodprg_vm_record_triple CB_FAR *)
             VM_C9_RECORD_AT(record_base, reciprocal_offset);
 
-        vm_sequence_active = 0;
-        vm_ship_3d_depth_step = 6;
+        vm_sequence_active_gs = 0;
+        vm_ship_3d_depth_step_gs = 6;
         reciprocal->kind = 0;
         reciprocal->related = 0;
         reciprocal->value = 0;

@@ -35,6 +35,8 @@ extern volatile cb_u8 vm_sequence_active_ds; /* DS:0x252A alias */
 extern volatile cb_u8 CB_GAME_DATA
         vm_sequence_active_gs;               /* explicit GS:0x252A alias */
 extern volatile cb_u8 vm_ship_3d_depth_step; /* GS:0x2531 */
+extern volatile cb_u8 CB_GAME_DATA
+        vm_ship_3d_depth_step_gs;            /* explicit GS:0x2531 alias */
 extern volatile cb_u16 vm_ship_active_flags; /* GS:0x24F3 */
 extern volatile cb_u16 CB_GAME_DATA
         vm_ship_active_flags_gs; /* explicit GS:0x24F3 alias */

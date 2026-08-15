@@ -11,8 +11,7 @@
 const cb_u8 CB_NEAR *CB_NEAR vm_op_c3_state_record(
     const cb_u8 CB_NEAR *script_bytes)
 {
-    int inverted;
-    int matches;
+    cb_u8 inverted;
     cb_u16 record_offset;
     cb_u16 owner_offset;
     cb_u16 related_offset;
@@ -21,7 +20,7 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_c3_state_record(
     volatile bloodprg_vm_object_header CB_FAR *related;
     volatile bloodprg_vm_record_triple CB_FAR *record;
 
-    record_base = vm_record_base;
+    record_base = vm_record_base_gs;
     inverted = 0;
     if (*script_bytes == 0xa1u) {
         inverted = 1;
@@ -39,25 +38,28 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_c3_state_record(
     record = (volatile bloodprg_vm_record_triple CB_FAR *)VM_C3_RECORD_AT(
         record_base, record_offset);
 
-    if ((vm_query_mode & 1u) != 0u) {
-        matches = (owner->flags & 1u) != 0u
-            && record->related == related_offset
-            && record->kind == 0x00c3u;
-        if (matches == inverted) {
-            return (const cb_u8 CB_NEAR *)vm_branch_fail();
-        }
-    } else {
-        related = (volatile bloodprg_vm_object_header CB_FAR *)
-            VM_C3_RECORD_AT(record_base, related_offset);
+    if ((vm_query_mode_gs & 1u) != 0u) {
         if ((owner->flags & 1u) != 0u
-                && (related->flags & 1u) != 0u
-                && record->kind != BLOODPRG_VM_RECORD_C4) {
-            record->kind = 0x00c3u;
-            record->related = related_offset;
-            record->value = 1u;
-        } else {
-            return (const cb_u8 CB_NEAR *)vm_branch_fail();
+                && record->related == related_offset
+                && record->kind == 0x00c3u) {
+            if (!inverted) {
+                return script_bytes;
+            }
+        } else if (inverted) {
+            return script_bytes;
         }
+        return (const cb_u8 CB_NEAR *)vm_branch_fail();
     }
+
+    related = (volatile bloodprg_vm_object_header CB_FAR *)
+        VM_C3_RECORD_AT(record_base, related_offset);
+    if ((owner->flags & 1u) == 0u
+            || (related->flags & 1u) == 0u
+            || record->kind == BLOODPRG_VM_RECORD_C4) {
+        return (const cb_u8 CB_NEAR *)vm_branch_fail();
+    }
+    record->kind = 0x00c3u;
+    record->related = related_offset;
+    record->value = 1u;
     return script_bytes;
 }

@@ -32,6 +32,11 @@ DOS_PROBE_SOURCE = "PROBE.C"
 DOS_PROBE_ASSEMBLY = "PROBE.ASM"
 DOS_PROBE_LOG = "COMPILE.TXT"
 DOS_PROBE_OBJECT = "PROBE.OBJ"
+DOS_STAGED_INCLUDE_GLOB = "CB??????.H"
+
+QUOTED_INCLUDE_RE = re.compile(
+    r'(?m)^([ \t]*#[ \t]*include[ \t]*)"([^"\r\n]+)"([^\r\n]*)$'
+)
 
 FORBIDDEN_SOURCE_TOKENS = [
     "read16_far",
@@ -288,6 +293,42 @@ def selected_rows(
     return rows_to_run
 
 
+def stage_dos_source_tree(source: Path, outdir: Path) -> None:
+    """Flatten repository-local quoted includes into DOS-safe 8.3 names."""
+    source = source.resolve()
+    assigned: dict[Path, str] = {source: DOS_PROBE_SOURCE}
+    pending = [source]
+
+    def assign(path: Path) -> str:
+        path = path.resolve()
+        try:
+            path.relative_to(REPO_ROOT)
+        except ValueError as error:
+            raise RuntimeError(f"quoted include escapes repository: {path}") from error
+        if not path.is_file():
+            raise RuntimeError(f"quoted include does not exist: {path}")
+        if path not in assigned:
+            assigned[path] = f"CB{len(assigned):06d}.H"
+            pending.append(path)
+        return assigned[path]
+
+    while pending:
+        path = pending.pop(0)
+        text = path.read_text(encoding="utf-8")
+
+        def replace_include(match: re.Match[str]) -> str:
+            include_base = outdir if path == source else path.parent
+            dependency = (include_base / match.group(2)).resolve()
+            staged_name = assign(dependency)
+            return f'{match.group(1)}"{staged_name}"{match.group(3)}'
+
+        staged_text = QUOTED_INCLUDE_RE.sub(replace_include, text)
+        staged_bytes = staged_text.replace("\r\n", "\n").replace("\r", "\n")
+        (outdir / assigned[path]).write_bytes(
+            staged_bytes.replace("\n", "\r\n").encode("utf-8")
+        )
+
+
 def run_dosbox_turbo_c(
     dosbox: Path,
     toolchain: Path,
@@ -314,9 +355,9 @@ def run_dosbox_turbo_c(
     for stale in (staged_source, assembly, log):
         if stale.exists():
             stale.unlink()
-    source_bytes = source.read_bytes()
-    source_bytes = source_bytes.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
-    staged_source.write_bytes(source_bytes.replace(b"\n", b"\r\n"))
+    for stale in outdir.glob(DOS_STAGED_INCLUDE_GLOB):
+        stale.unlink()
+    stage_dos_source_tree(source, outdir)
 
     dos_command = (
         " ".join([r"C:\TC\TCC.EXE", "-S", r"-IC:\TC\INCLUDE", *flags, DOS_PROBE_SOURCE])

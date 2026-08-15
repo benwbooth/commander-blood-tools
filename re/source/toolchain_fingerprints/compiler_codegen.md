@@ -2012,13 +2012,30 @@ C4 before writing `{0x00C3, related offset, 1}`.
 Sixteen direct vectors prove every query and set guard, prefix handling, the
 real threshold and branch helpers, no partial writes, ignored base-offset
 decoys, record and script boundary behavior, segmented ownership, registers,
-flags, and near return. Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles
-the natural one-to-one candidate warning-free to 55 instructions/141 bytes
-versus 43/116 original, with 83.72 percent mnemonic-multiset overlap and no
-inline assembly. Direct replacement still needs fixed GS placement and the
-original BP/DI/AX/BX/DL allocation; Watcom introduces a frame, uses BX as the
-cursor, SI as destination, DI as related, CX as inversion, materializes query
-truth, and duplicates returns.
+flags, and near return. The accepted one-to-one candidate snapshots explicit
+GS state, uses a byte inversion flag and direct owner/related/kind branches,
+and preserves lookup, guard, and store order. Open Watcom size mode
+`-3 -os -s -mm` compiles it warning-free to 61 instructions/159 bytes versus
+43/116 original; Turbo C 2.01 emits 81 instructions from the same included
+candidate. Watcom materializes GAME_DATA segments, introduces a four-byte
+frame, and reallocates the cursor, destination, owner, and related values.
+Those are accepted compiler choices at the typed function boundary.
+
+VM opcode-C8 handler `0x006F62` consumes an optional A1 inversion prefix, an
+absolute destination offset, and an operand. Query mode compares the operand
+before destination kind C8 and optionally inverts the result. Set mode still
+consumes the operand but ignores it, requires one zero-kind destination read,
+and writes `{0x00C8, 0, 0}`. Thirteen direct vectors prove all query and set
+outcomes, the consumed-but-unused operand, ignored base-offset decoys,
+record/script wrap, segmented ownership, registers, flags, and near return.
+
+The accepted one-to-one candidate snapshots explicit GS state, uses byte
+inversion and direct query branches, and retains the one-read empty guard plus
+ordered stores. Open Watcom size mode `-3 -os -s -mm` compiles it warning-free
+to 47 instructions/102 bytes versus 34/87 original; Turbo C 2.01 emits 62
+instructions. Watcom materializes GAME_DATA segments, saves CX/DI, and chooses
+different destination and operand registers. Those are accepted compiler
+choices at the typed function boundary.
 
 VM opcode-C9 handler `0x006FB9` consumes an absolute record offset in the
 segment loaded from GS:0x6724. It reads the old kind, clears kind, then reads
@@ -2030,14 +2047,15 @@ paths, positive, negative, and zero offsets, reciprocal wrap and aliasing, the
 real field-offset helper, segmented ownership, registers, flags, and return.
 They corrected the old candidate's base-relative pointers and premature read.
 
-The corrected one-to-one candidate directly accepts and returns SI. Open
-Watcom `-3 -ox -mm` compiles it without warnings to 29 instructions/88 bytes
-versus 26/58 original; Turbo C 2.01 medium emits 56 instructions. Watcom keeps
-the direct helper call, signed 16-bit addition, and ordered volatile stores,
-but saves DX, materializes the record segment in DX, uses indexed BX stores
-instead of DI plus STOSW, and addresses globals through DS. Exact integration
-still needs fixed GS placement and the original frameless AX/BX/CX/DI
-allocation.
+The accepted one-to-one candidate directly accepts and returns SI, snapshots
+the explicit GS record base, and uses GS aliases for both teardown bytes. Open
+Watcom size mode `-3 -os -s -mm` compiles it without warnings to 32
+instructions/99 bytes versus 26/58 original; Turbo C 2.01 emits 64
+instructions. Watcom keeps the old-kind read, kind clear, old-related read,
+remaining clears, direct helper call, signed 16-bit addition, global writes,
+and reciprocal stores in order. It saves DX/DI, materializes GAME_DATA
+segments, and uses indexed BX stores instead of DI plus STOSW; those are
+accepted compiler choices at the typed function boundary.
 
 World-art HUD selector `0x006FF3` first transitions entity 31 and clears byte
 `+0x14` in each 22-byte `SS:0x2BC7` layout entry. It resolves the current
@@ -3456,11 +3474,12 @@ LCS and then mnemonic similarity:
 | `vm_cd_record_triple` | medium, `-ox`, register | 82/96 | 0.0488 | 0.6220 | 0.0976 |
 | `vm_b7_record_bit` | medium, `-os -s`, register | 43/64 | 0.1163 | 0.5814 | 0.1628 |
 | `vm_b8_record_pair` | medium, `-os -s`, register | 26/43 | 0.0385 | 0.7308 | 0.0769 |
+| `vm_op_c3_state_record` | medium, `-os -s`, register | 43/61 | 0.0698 | 0.7442 | 0.1628 |
 | `vm_c5_record_match` | medium, `-os -s`, register | 40/50 | 0.1000 | 0.6500 | 0.1500 |
 | `vm_c6_record_match` | medium, `-os -s`, register | 31/42 | 0.1290 | 0.6774 | 0.1935 |
 | `vm_c7_record_match` | medium, `-os -s`, register | 39/51 | 0.1026 | 0.7179 | 0.2051 |
-| `vm_c8_record_match` | medium, `-ox`, register | 34/32 | 0.0294 | 0.5294 | 0.0294 |
-| `vm_c9_record_clear` | medium, `-ox`, register | 26/29 | 0.1538 | 0.5000 | 0.1923 |
+| `vm_c8_record_match` | medium, `-os -s`, register | 34/47 | 0.1176 | 0.6176 | 0.1471 |
+| `vm_c9_record_clear` | medium, `-os -s`, register | 26/32 | 0.1154 | 0.5385 | 0.1923 |
 | `byte_parser_mark_b16` | medium, `-ox`, register | 2/2 | 0.5000 | 1.0000 | 0.5000 |
 | `credit_presenter_b_cryo` | medium, `-ox`, register | 8/19 | 0.1250 | 0.6250 | 0.1250 |
 | `byte_parser_copy_printable` | medium, `-ox`, register | 11/23 | 0.1818 | 0.6364 | 0.2727 |
