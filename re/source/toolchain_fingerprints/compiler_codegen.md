@@ -652,12 +652,20 @@ For `0x00A634`, exhaustive direct execution over all 256 state-byte values
 confirms that ZF is set exactly when GS:0x0B17 bit 0 is clear. It also verifies
 the GS-versus-DS selection, PF/CF/SF/OF results, preservation of IF/DF, and all
 register and segment effects. The sole caller immediately branches on JE and
-does not consume a register result. Open Watcom 1.9 emits four instructions and
-11 bytes for the core natural Boolean using `TEST`, `SETNE`, and `XOR`; Turbo C
-2.01 emits a six-instruction branch sequence. Neither returns the original TEST
-flags or preserves AX while materializing a Boolean, and neither ordinary data
-declaration models the helper's temporary GS-to-DS selection. This is therefore
-a verified logical predicate with a confirmed flag and segment ABI boundary.
+does not consume a register result in the binary. The corrected declaration
+places the volatile byte in `GAME_DATA`, returns the natural predicate as a
+byte, and constrains Watcom's helper clobber to AX. The direct Watcom source
+then emits seven instructions and 16 bytes versus eight and 14 original, with
+75 percent mnemonic-multiset and ordered overlap. It saves and restores DS and
+leaves the original `TEST` flags intact; only AX changes to carry the explicit
+source result. Turbo C emits eight instructions with 50 percent overlap and
+assembles warning-free to OBJ.
+
+Both direct compiler forms of the accepted `0x00A552` caller test AL after the
+call before conditionally publishing the sound offset. The natural predicate
+is therefore accepted for source integration. An isolated replacement still
+needs the binary's dynamic GS selection and AX-preserving, flag-only result
+contract.
 
 For `0x00A734`, eight direct-execution cases confirm the two wrapping queue
 updates, register preservation, and unconditional carry clear. Open Watcom 1.9
@@ -811,10 +819,11 @@ pointers, and ordinary structured conditionals. It has no register model,
 memory emulator, or inline assembly. Its `mm` path explicitly reads the
 expected key, target pointer, linked key, and linked layout in binary order,
 including the unconditional layout read before a rejected link is consumed.
-The compiler-corpus sample includes this authoritative source directly. Open
-Watcom `-3 -ox -s -mm -zdf` compiles it warning-free to 121 instructions/330
-bytes versus 73/208 original, with 61.64 percent ordered, 79.45 percent
-mnemonic-multiset, and 8.22 percent byte-line overlap. Turbo C `-mm -O -Z`
+The compiler-corpus sample includes this authoritative source directly. The
+typed byte flag-helper ABI lets this caller retain its live values across the
+call. Open Watcom `-3 -ox -s -mm -zdf` compiles it warning-free to 110
+instructions/299 bytes versus 73/208 original, with 61.64 percent ordered,
+79.45 percent mnemonic-multiset, and 8.22 percent byte-line overlap. Turbo C `-mm -O -Z`
 emits 140 instructions with 65.75 percent ordered and 82.19 percent multiset
 overlap and assembles warning-free to OBJ.
 

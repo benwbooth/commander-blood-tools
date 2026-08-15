@@ -12,7 +12,7 @@ typedef char bloodprg_resource_decode_result_size_must_be_8[
         sizeof(bloodprg_resource_decode_result) == 8 ? 1 : -1];
 
 extern volatile cb_u16 list_d8c_base_segment;      /* GS:0x0A7E */
-extern volatile cb_u8 state_flag_b17;              /* GS:0x0B17 */
+extern volatile cb_u8 CB_GAME_DATA state_flag_b17; /* GS:0x0B17 */
 extern volatile cb_u16 list_d8c_file_handle;       /* game data:0x0D5B */
 extern volatile cb_u8 list_d8c_state_byte;         /* game data:0x0D5F */
 extern volatile cb_u16 list_d8c_read_wrap_index;   /* game data:0x0D60 */
@@ -80,7 +80,7 @@ int CB_NEAR queue_d8c_has_room(cb_u16 byte_count); /* 0x00A3AD */
 void CB_NEAR queue_d8c_consume(void);            /* 0x00A3D0 */
 int CB_NEAR list_d8c_state_le_one(void);         /* 0x00A40B */
 void CB_FAR list_d8c_active_present(void);       /* 0x00A41A */
-int CB_NEAR flag_test_b17(void);                  /* 0x00A634 */
+cb_u8 CB_NEAR flag_test_b17(void);                /* 0x00A634 */
 void CB_NEAR queue_d8c_enqueue(cb_u16 byte_count); /* 0x00A734 */
 void CB_NEAR list_d8c_bounds_init(void);        /* 0x00A73E */
 void CB_NEAR list_d8c_wrap_bounds_reset(void);  /* 0x00A744 */
@@ -121,6 +121,7 @@ bloodprg_resource_decode_result CB_NEAR resource_payload_decode_dispatch(
         parm [es si] value [es si] modify [si di]
 #pragma aux list_d8c_palette_blocks_apply \
         value [es si] modify [si di]
+#pragma aux flag_test_b17 modify exact [ax]
 #endif
 
 #endif
