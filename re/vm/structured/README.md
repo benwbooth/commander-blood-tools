@@ -102,6 +102,17 @@ The narrower C3/C4/C9 lifecycle is rendered without exposing that storage:
 shipped corpus has 389 requirements, 35 queues, and 371 endings; every C3/C4
 related operand is the built-in `blood` object.
 
+The three one-byte scene-context guards are also named from their native state
+owners. `during bridge` is opcode `CE`: both it and the bridge frame renderer
+test `GS:0x2793` bit 0, and the renderer exits when that bit is clear. `during
+travel` is opcode `D0`: it tests `GS:0x252A`, whose only set-to-one writer is the
+ship navigation coordinator and whose clearers finish or tear down that travel
+sequence. `during contact` is opcode `D1`: it tests `GS:0x274F`, which is set
+only after a contact-menu target starts the contact-scene transition and is
+cleared when that transition finishes. The corpus contains 113 bridge, 224
+travel, and 65 contact guards. These statements are positive context
+requirements, not timing loops; a clear native bit takes the current VM branch.
+
 The three other shipped action-record forms now use their proven domain
 semantics. All 20 C1 updates target the built-in kind-`0x0200` `orxx.action`
 field and name a kind-`0x0080` sublocation, so they render as `navigate to

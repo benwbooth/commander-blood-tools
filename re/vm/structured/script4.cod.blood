@@ -175,7 +175,7 @@ proc init {
 
 proc bronk2 {
     activation enabled until scrujo
-    branch_flag_274f
+    during contact
     require presentation == Bronko
     guard_pop
     say Bronko voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Me busy do onboard cooking. Me make tasty meals for Cap'n Bob..."
@@ -187,7 +187,7 @@ proc bronk2 {
 
 proc scrujo {
     activation enabled until recept
-    branch_flag_274f
+    during contact
     require presentation == Scruter_Jo
     guard_pop
     say Scruter_Jo voice=0x13 flags=0x00 display=0x80 loop=none control=none : "Commander you go get BIONIUM in CYBERSPACE of SCRUTER JO..."
@@ -241,7 +241,7 @@ proc scrujo {
 
 proc recept {
     activation enabled until beau
-    branch_flag_274f
+    during contact
     require presentation == receiver
     guard_pop
     say receiver voice=0xFF flags=0x00 display=0x80 loop=none control=none : "zzzzzzzzzz shshshshs... crak..."
@@ -252,7 +252,7 @@ proc recept {
 
 proc beau {
     activation enabled until beau_055C
-    branch_flag_274f
+    during contact
     require presentation == Beauregard
     require state[0x150C] == 0x0001
     guard_pop
@@ -270,7 +270,7 @@ proc beau {
 
 proc beau_055C {
     activation enabled until beaureg
-    branch_flag_274f
+    during contact
     require presentation == Beauregard
     require !Attrox.in_play using alternate_encoding
     require state[0x150C] == 0x0000
@@ -290,7 +290,7 @@ proc beau_055C {
 
 proc beaureg {
     activation enabled until fif
-    branch_flag_274f
+    during contact
     require presentation == Beauregard
     require Attrox.in_play
     require state[0x150C] == 0x0000
@@ -303,7 +303,7 @@ proc beaureg {
 
 proc fif {
     activation enabled until fif1
-    branch_gameflag
+    during travel
     require arche.current_location == Ron
     require presentation == Fifi
     guard_pop
@@ -360,7 +360,7 @@ proc fif {
 
 proc fif1 {
     activation disabled until fif2
-    branch_gameflag
+    during travel
     require arche.current_location == Ron
     require presentation == Fifi
     guard_pop
@@ -408,7 +408,7 @@ proc fif1 {
 
 proc fif2 {
     activation disabled until fif3bis
-    branch_gameflag
+    during travel
     require arche.current_location == Ron
     require presentation == Fifi
     guard_pop
@@ -456,7 +456,7 @@ proc fif3bis {
 
 proc fif4 {
     activation disabled until fif5
-    branch_gameflag
+    during travel
     require Fifi.current_location == Ron
     require arche.current_location == Ron
     require presentation == Fifi
@@ -491,7 +491,7 @@ proc fif4 {
 
 proc fif5 {
     activation enabled until fif6
-    branch_flag_274f
+    during contact
     require presentation == Fifi
     guard_pop
     say Fifi voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Fifi happy|... Hee hee hee..."
@@ -527,7 +527,7 @@ proc fif5 {
 
 proc fif6 {
     activation enabled until ondo1
-    branch_gameflag
+    during travel
     require Fifi.current_location == Malus
     require arche.current_location == Malus
     require presentation == Fifi
@@ -554,7 +554,7 @@ proc fif6 {
 
 proc ondo1 {
     activation enabled until ondo1_1080
-    branch_gameflag
+    during travel
     require arche.current_location == Ondoya
     require presentation == ondoyant
     guard_pop
@@ -580,7 +580,7 @@ proc ondo1 {
 
 proc ondo1_1080 {
     activation enabled until tromp1
-    branch_flag_274f
+    during contact
     require presentation == ondoyant
     guard_pop
     say ondoyant voice=0x00 flags=0x00 display=0x80 loop=none control=none : "..."
@@ -596,7 +596,7 @@ proc ondo1_1080 {
 
 proc tromp1 {
     activation enabled until tromp2
-    branch_gameflag
+    during travel
     require arche.current_location == Magnu
     require presentation == Maziok
     guard_pop
@@ -636,7 +636,7 @@ proc tromp1 {
 
 proc tromp2 {
     activation enabled until tromp2bis
-    branch_gameflag
+    during travel
     require arche.current_location == Magnu
     require presentation == Maziok
     require state[0x150C] == 0x0001
@@ -688,7 +688,7 @@ proc tromp2 {
 
 proc tromp2bis {
     activation disabled until tromp3
-    branch_gameflag
+    during travel
     require arche.current_location == Magnu
     require presentation == Maziok
     require state[0x150C] == 0x0001
@@ -719,7 +719,7 @@ proc tromp2bis {
 
 proc tromp3 {
     activation enabled until bra1
-    branch_gameflag
+    during travel
     require arche.current_location == Magnu
     require presentation == Maziok
     require state[0x150C] == 0x0000
@@ -774,7 +774,7 @@ proc tromp3 {
 
 proc bra1 {
     activation enabled until braz
-    branch_gameflag
+    during travel
     require arche.current_location == Vistar
     require Hom.current_location != aboard
     require Bratakas.current_location == Vistar
@@ -866,7 +866,7 @@ proc braz {
 
 proc bra2 {
     activation enabled until HO
-    branch_gameflag
+    during travel
     require arche.current_location == Vistar
     require presentation == Hom
     guard_pop
@@ -948,7 +948,7 @@ proc bra2 {
 
 proc HO {
     activation enabled until zen1
-    branch_flag_274f
+    during contact
     require presentation == Hom
     guard_pop
     say Hom voice=0x06 flags=0x00 display=0x80 loop=none control=none : "Me HOM..."
@@ -959,7 +959,7 @@ proc HO {
 
 proc zen1 {
     activation enabled until zen2
-    branch_gameflag
+    during travel
     require presentation == Super_Zen
     require painting.holder != blood
     require arche.current_location == Crazystone
@@ -1021,7 +1021,7 @@ proc zen2 {
 
 proc zen3 {
     activation enabled until zen4
-    branch_gameflag
+    during travel
     require presentation == Super_Zen
     require painting.holder == blood
     require arche.current_location == Crazystone
@@ -1040,7 +1040,7 @@ proc zen3 {
 
 proc zen4 {
     activation enabled until zen5
-    branch_gameflag
+    during travel
     require presentation == Super_Zen
     require painting.holder == Super_Zen
     require arche.current_location == Crazystone
@@ -1091,7 +1091,7 @@ proc zen5 {
 
 proc zen6 {
     activation enabled until beta1
-    branch_gameflag
+    during travel
     require presentation == Super_Zen
     require painting.holder == Super_Zen
     require arche.current_location == Crazystone
@@ -1155,7 +1155,7 @@ proc zen6 {
 
 proc beta1 {
     activation enabled until beta2
-    branch_gameflag
+    during travel
     require arche.current_location == Attrox
     require presentation == Betakam
     guard_pop
@@ -1255,7 +1255,7 @@ proc beta1 {
 
 proc beta2 {
     activation enabled until beta3
-    branch_flag_274f
+    during contact
     require presentation == Betakam
     guard_pop
     say Betakam voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Did you find a planet?"
@@ -1287,7 +1287,7 @@ proc beta2 {
 
 proc beta3 {
     activation enabled until st1
-    branch_gameflag
+    during travel
     require presentation == Betakam
     require arche.current_location == Sat
     guard_pop
@@ -1301,7 +1301,7 @@ proc beta3 {
 
 proc st1 {
     activation enabled until sin1
-    branch_gameflag
+    during travel
     require presentation == Super_Tromp
     require arche.current_location == Vista
     guard_pop
@@ -1321,7 +1321,7 @@ proc st1 {
 
 proc sin1 {
     activation enabled until clay1
-    branch_gameflag
+    during travel
     require arche.current_location == Vista
     require presentation == Sinox
     guard_pop
@@ -1359,7 +1359,7 @@ proc sin1 {
 
 proc clay1 {
     activation enabled until clay2
-    branch_flag_274f
+    during contact
     require !Vista.in_play
     require presentation == Anna_Haf
     guard_pop
@@ -1376,7 +1376,7 @@ proc clay1 {
 
 proc clay2 {
     activation enabled until clay1bis
-    branch_flag_274f
+    during contact
     require Vista.in_play
     require presentation == Anna_Haf
     guard_pop
@@ -1406,7 +1406,7 @@ proc clay1bis {
 
 proc clay3 {
     activation disabled until clay4
-    branch_flag_274f
+    during contact
     require presentation == Anna_Haf
     guard_pop
     when block_32DF {
@@ -1444,7 +1444,7 @@ proc clay3 {
 
 proc clay4 {
     activation enabled until clay5
-    branch_gameflag
+    during travel
     require arche.current_location == Vista
     require presentation == Anna_Haf
     guard_pop
@@ -1457,7 +1457,7 @@ proc clay4 {
 
 proc clay5 {
     activation enabled until clay6
-    branch_presentation
+    during bridge
     require presentation == Anna_Haf
     guard_pop
     when block_3460 {
@@ -1497,7 +1497,7 @@ proc clay6 {
 
 proc clay7 {
     activation disabled until clay8
-    branch_presentation
+    during bridge
     require Anna_Haf.current_location == tombeau
     require presentation == Anna_Haf
     guard_pop
@@ -1513,7 +1513,7 @@ proc clay7 {
 
 proc clay8 {
     activation enabled until clay9
-    branch_gameflag
+    during travel
     require presentation == Anna_Haf
     guard_pop
     say Anna_Haf voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Come in|, Commander|... I'VE GOT THE PORTRAIT OF THE GREAT YOLK!"
@@ -1541,7 +1541,7 @@ proc clay8 {
 
 proc clay9 {
     activation enabled until masta1
-    branch_flag_274f
+    during contact
     require presentation == Anna_Haf
     guard_pop
     say Anna_Haf voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Hello, Commander... I'm sleeping real well..."
@@ -1552,7 +1552,7 @@ proc clay9 {
 
 proc masta1 {
     activation enabled until masta2
-    branch_gameflag
+    during travel
     require presentation == Rotator
     guard_pop
     say Rotator voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Halt! Who goes there? I am ROTATOR, second class Croolis ventriloquist..."
@@ -1570,7 +1570,7 @@ proc masta1 {
 
 proc masta2 {
     activation enabled until masta6
-    branch_gameflag
+    during travel
     require presentation == Outrageor
     guard_pop
     say Outrageor voice=0x00 flags=0x00 display=0x80 loop=none control=none : "Enter, Commander|... Surprised that I call you Commander|???"
@@ -1620,7 +1620,7 @@ proc masta2 {
 
 proc masta6 {
     activation enabled until masta3
-    branch_gameflag
+    during travel
     require presentation == Rotator
     guard_pop
     say Rotator voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Halt! Who goes there? I am ROTATOR, second class Croolis ventriloquist..."
@@ -1647,7 +1647,7 @@ proc masta3 {
 
 proc masta4 {
     activation disabled until jer1
-    branch_presentation
+    during bridge
     require state[0x1520] == state[0x1522]
     guard_pop
     say Eviscerator voice=0x00 flags=0x00 display=0x80 loop=none control=none : "Come in|, Commander!!! This is General EVISCERATOR|..."
@@ -1675,7 +1675,7 @@ proc jer1 {
 
 proc jer2 {
     activation disabled until kuka1
-    branch_presentation
+    during bridge
     require presentation == Jerry_Khan
     guard_pop
     say Jerry_Khan voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Come in Commander|... This is Inspector Jerry Khan..."
@@ -1692,7 +1692,7 @@ proc jer2 {
 
 proc kuka1 {
     activation enabled until yoo
-    branch_gameflag
+    during travel
     require presentation == Yoko
     require arche.current_location == Kukaracha
     guard_pop
@@ -1716,7 +1716,7 @@ proc kuka1 {
 
 proc yoo {
     activation enabled until maxo
-    branch_flag_274f
+    during contact
     require presentation == Yoko
     guard_pop
     say Yoko voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Thank you... Thank you|... Commander..."
@@ -1729,7 +1729,7 @@ proc yoo {
 
 proc maxo {
     activation enabled until fin1
-    branch_flag_274f
+    during contact
     require presentation == Maxxon
     guard_pop
     say Maxxon voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Thank you|... Commander..."
@@ -1753,7 +1753,7 @@ proc fin1 {
 
 proc fin2 {
     activation disabled until Od_dland
-    branch_presentation
+    during bridge
     require presentation == Jerry_Khan
     guard_pop
     say Jerry_Khan voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Come in, Commander|... This is Inspector JERRY KHAN on the SHARK..."
@@ -1798,7 +1798,7 @@ proc jerry2 {
 
 proc jerry3 {
     activation disabled until shark
-    branch_presentation
+    during bridge
     require presentation == Jerry_Khan
     guard_pop
     say Jerry_Khan voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Come in|, Commander|... This is Inspector JERRY KHAN on the SHARK..."
@@ -1818,7 +1818,7 @@ proc jerry3 {
 
 proc shark {
     activation enabled until tamy
-    branch_gameflag
+    during travel
     require arche.current_location == Shark
     require presentation == Jerry_Khan
     guard_pop
@@ -1868,7 +1868,7 @@ proc tam1 {
 
 proc tam1B {
     activation enabled until tam2
-    branch_presentation
+    during bridge
     require presentation == Jerry_Khan
     require state[0x1524] == 0x0001
     guard_pop
@@ -1891,7 +1891,7 @@ proc tam2 {
 
 proc tam2B {
     activation enabled until menbr
-    branch_presentation
+    during bridge
     require presentation == Jerry_Khan
     require state[0x1524] == 0x0002
     guard_pop
@@ -1906,7 +1906,7 @@ proc tam2B {
 
 proc menbr {
     activation enabled until men1
-    branch_presentation
+    during bridge
     require presentation == menu
     require Bronko.current_location == aboard
     guard_pop
@@ -1924,7 +1924,7 @@ proc menbr {
 
 proc men1 {
     activation enabled until men2
-    branch_presentation
+    during bridge
     require presentation == menu
     require Bronko.current_location != aboard
     guard_pop
@@ -1943,7 +1943,7 @@ proc men1 {
 
 proc men2 {
     activation enabled until men3
-    branch_presentation
+    during bridge
     require presentation == menu
     require Bronko.current_location != aboard
     guard_pop
@@ -1962,7 +1962,7 @@ proc men2 {
 
 proc men3 {
     activation enabled until men4
-    branch_presentation
+    during bridge
     require Bronko.current_location != aboard
     require presentation == menu
     guard_pop
@@ -1981,7 +1981,7 @@ proc men3 {
 
 proc men4 {
     activation enabled until men5
-    branch_presentation
+    during bridge
     require presentation == menu
     require Bronko.current_location != aboard
     guard_pop
@@ -2000,7 +2000,7 @@ proc men4 {
 
 proc men5 {
     activation enabled until men6
-    branch_presentation
+    during bridge
     require presentation == menu
     require Bronko.current_location != aboard
     guard_pop
@@ -2031,7 +2031,7 @@ proc men6 {
 
 proc honk1 {
     activation enabled until help1
-    branch_presentation
+    during bridge
     require presentation == Honk
     guard_pop
     say Honk voice=0xFF flags=0x20 display=0x80 loop=none control=none : "I exist only to obey, Commander"
@@ -2099,7 +2099,7 @@ proc honk1 {
 
 proc help1 {
     activation enabled until help2
-    branch_presentation
+    during bridge
     require presentation == Honk
     require state[0x1510] > 0x0002
     require Anna_Haf.current_location == aboard
@@ -2116,7 +2116,7 @@ proc help1 {
 
 proc help2 {
     activation enabled until help3
-    branch_presentation
+    during bridge
     require presentation == Honk
     require state[0x1510] > 0x0002
     require hat.holder == aboard
@@ -2130,7 +2130,7 @@ proc help2 {
 
 proc help3 {
     activation enabled until help4
-    branch_presentation
+    during bridge
     require presentation == Honk
     require state[0x1510] > 0x0002
     require !Sat.in_play
@@ -2145,7 +2145,7 @@ proc help3 {
 
 proc help4 {
     activation enabled until help5
-    branch_presentation
+    during bridge
     require presentation == Honk
     require state[0x1510] > 0x0002
     require Fifi.encounter_count > 0x0000
@@ -2160,7 +2160,7 @@ proc help4 {
 
 proc help5 {
     activation enabled until what
-    branch_presentation
+    during bridge
     require presentation == Honk
     require state[0x1510] > 0x0002
     require Fifi.current_location == aboard
@@ -2174,7 +2174,7 @@ proc help5 {
 
 proc what {
     activation enabled until boba1
-    branch_presentation
+    during bridge
     require presentation == Honk
     guard_pop
     say Honk voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Bye bye|, Commander|..."
@@ -2183,7 +2183,7 @@ proc what {
 
 proc boba1 {
     activation enabled until augmen
-    branch_flag_274f
+    during contact
     require presentation == Bob_Morlock
     guard_pop
     say Bob_Morlock voice=0x02 flags=0x00 display=0x80 loop=none control=none : "What do you want, Commander?"
@@ -2215,7 +2215,7 @@ proc boba1 {
 
 proc augmen {
     activation enabled until revel
-    branch_flag_274f
+    during contact
     require presentation == Bob_Morlock
     require state[0x1528] == 0x0001
     require state[0x152A] == 0x0000
@@ -2231,7 +2231,7 @@ proc augmen {
 
 proc revel {
     activation enabled until block_5157
-    branch_flag_274f
+    during contact
     require presentation == Bob_Morlock
     require state[0x152C] == 0x0001
     require state[0x152E] == 0x0000

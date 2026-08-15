@@ -2070,9 +2070,9 @@ fn push_vm_token_disassembly(
                 len: *len,
                 opcode: format!("{opcode:02x}"),
                 mnemonic: match *opcode {
-                    vm::OP_COND_BRANCH_PRESENTATION => "branch_presentation".to_string(),
-                    vm::OP_COND_BRANCH_GAMEFLAG => "branch_gameflag".to_string(),
-                    _ => "branch_flag_274f".to_string(),
+                    vm::OP_COND_BRANCH_PRESENTATION => "during_bridge".to_string(),
+                    vm::OP_COND_BRANCH_GAMEFLAG => "during_travel".to_string(),
+                    _ => "during_contact".to_string(),
                 },
                 operands: String::new(),
                 actor_record: current_actor_record(current_actor),

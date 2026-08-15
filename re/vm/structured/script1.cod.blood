@@ -19,7 +19,7 @@ field menu.action = menu + 0x003A // VAR kind 0x0002, selector(s) 13
 
 proc menbr {
     activation enabled until men1
-    branch_presentation
+    during bridge
     require presentation == menu
     require Bronko.current_location == aboard
     guard_pop
@@ -37,7 +37,7 @@ proc menbr {
 
 proc men1 {
     activation enabled until men2
-    branch_presentation
+    during bridge
     require presentation == menu
     require Bronko.current_location != aboard
     guard_pop
@@ -56,7 +56,7 @@ proc men1 {
 
 proc men2 {
     activation enabled until men3
-    branch_presentation
+    during bridge
     require presentation == menu
     require Bronko.current_location != aboard
     guard_pop
@@ -75,7 +75,7 @@ proc men2 {
 
 proc men3 {
     activation enabled until men4
-    branch_presentation
+    during bridge
     require Bronko.current_location != aboard
     require presentation == menu
     guard_pop
@@ -94,7 +94,7 @@ proc men3 {
 
 proc men4 {
     activation enabled until men5
-    branch_presentation
+    during bridge
     require presentation == menu
     require Bronko.current_location != aboard
     guard_pop
@@ -113,7 +113,7 @@ proc men4 {
 
 proc men5 {
     activation enabled until men6
-    branch_presentation
+    during bridge
     require presentation == menu
     require Bronko.current_location != aboard
     guard_pop
@@ -159,7 +159,7 @@ proc ho {
 
 proc ho1 {
     activation enabled until hon
-    branch_presentation
+    during bridge
     require presentation == Izwalito
     guard_pop
     say Izwalito voice=0xFF flags=0x08 display=0x80 loop=none control=none : "You found the right button. So far so good..."
@@ -196,7 +196,7 @@ proc ho1 {
 
 proc hon {
     activation enabled until BOB1
-    branch_presentation
+    during bridge
     require presentation == Honk
     guard_pop
     say Honk voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Welcome aboard the ARK, Commander. I'm HONK, your trusted computer..."
@@ -215,7 +215,7 @@ proc hon {
 
 proc BOB1 {
     activation enabled until scr2
-    branch_flag_274f
+    during contact
     require presentation == Bob_Morlock
     guard_pop
     say Bob_Morlock voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Good day COMMANDER. My name is BOB, BOB MORLOCK..."

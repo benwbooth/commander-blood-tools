@@ -275,14 +275,16 @@ pub const OP_YIELD_B: u8 = 0xAC;
 pub const OP_POKE_BYTE: u8 = 0xAB;
 /// `0xCC` bind a NUL-terminated name to a 16-byte character slot. Handler 0x64ce.
 pub const OP_SET_CHARACTER_SLOT: u8 = 0xCC;
-/// `0xCE`/`0xD0` conditional branch on game flags `[0x2793]`/`[0x252a]` via `vm_branch`.
+/// `0xCE` requires the bridge-render-active bit at `GS:0x2793`; it branches when clear.
 /// Handler 0x06494 (`vm_op_ce_cond_branch`) — dispatch table `0x142D0`, the entry for 0xCE.
 pub const OP_COND_BRANCH_PRESENTATION: u8 = 0xCE;
 /// `0xCF` clear the alternate concept selection and resume state. Handler 0x64c0.
 pub const OP_CLEAR_ALTERNATE_CONCEPT: u8 = 0xCF;
+/// `0xD0` requires the travel/navigation-sequence latch at `GS:0x252A`; it branches when clear.
 /// Handler 0x064a0 (`vm_op_d0_cond_branch`) — dispatch table `0x142D0`, the entry for 0xD0.
 pub const OP_COND_BRANCH_GAMEFLAG: u8 = 0xD0;
-/// `0xD1` branch on game flag `gs:0x274F` through `vm_branch`. Handler 0x64ac.
+/// `0xD1` requires the contact-scene latch at `GS:0x274F`; it branches when clear.
+/// Handler 0x64ac.
 pub const OP_COND_BRANCH_FLAG_274F: u8 = 0xD1;
 
 /// The decoded VM query/set model (`gs:0x67ad`): record opcodes COMPARE-and-branch while
@@ -5814,11 +5816,12 @@ pub struct VmMachine {
     pub concept_alt: u16,
     /// `gs:0x67B1` bit1 — selects `concept_alt` for 0xA3; cleared by 0xCF.
     pub concept_alt_active: bool,
-    /// Presentation-busy flag (`gs:0x2793` bit0) — 0xCE branches when CLEAR.
+    /// Bridge-render-active flag (`gs:0x2793` bit0) — 0xCE branches when CLEAR.
     ///
-    /// SEE [`Self::ui_flags`]: this models ONE BIT of a multi-bit word, and
-    /// `start_actor_presentation` sets it where the game sets bit 2 instead
-    /// (audit-fixes #311). Kept because the port's story flow rides on it.
+    /// SEE [`Self::ui_flags`]: this legacy field still models the port's actor
+    /// presentation lifecycle, although the binary's bit is owned by the bridge
+    /// renderer and `start_actor_presentation` sets bit 2 instead. Kept until
+    /// those frontend states are separated because the port's story flow rides on it.
     pub presentation_busy: bool,
     /// `gs:0x2793`, the UI/STATE FLAG WORD — modelled as a word because it is
     /// one (audit-fixes #331).
@@ -5889,7 +5892,8 @@ pub struct VmMachine {
     /// (`0x109C`..`0x10BF`) that the port does not model, and #312 records why a
     /// one-flag version of it would be worse than none.
     pub ui_flags: u16,
-    /// Game flags `gs:0x252A` / `gs:0x274F` bit0 — 0xD0/0xD1 branch when CLEAR.
+    /// Travel/navigation-sequence (`gs:0x252A`) and contact-scene (`gs:0x274F`)
+    /// latches. Opcodes 0xD0/0xD1 branch when their respective bit 0 is clear.
     pub flag_252a: bool,
     pub flag_274f: bool,
     /// Presentation-active (`gs:0x67AC` bit0) — 0xA7 writes `0x6770` when set.
@@ -8837,15 +8841,15 @@ pub fn decompile_script(
                 pc += 3;
             }
             0xCE => {
-                line = "AWAIT presentation".into();
+                line = "DURING bridge".into();
                 pc += 1;
             }
             0xD0 => {
-                line = "AWAIT gameflag_252A".into();
+                line = "DURING travel".into();
                 pc += 1;
             }
             0xD1 => {
-                line = "AWAIT gameflag_274F".into();
+                line = "DURING contact".into();
                 pc += 1;
             }
             0xCF => {

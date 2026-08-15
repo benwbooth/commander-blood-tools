@@ -1356,6 +1356,19 @@ fn normalize_modern_statement(
                 modern_operand_to_canonical(fields[2], line_number)?
             ))
         }
+        "during" => {
+            if fields.len() != 2 {
+                bail!("line {line_number}: expected 'during bridge|travel|contact'");
+            }
+            Ok(match fields[1] {
+                "bridge" => "BRANCH_PRESENTATION".to_string(),
+                "travel" => "BRANCH_GAMEFLAG".to_string(),
+                "contact" => "BRANCH_FLAG_274F".to_string(),
+                context => bail!(
+                    "line {line_number}: scene context must be bridge, travel, or contact, found {context:?}"
+                ),
+            })
+        }
         "require" => {
             if fields.len() == 4 && fields[1] == "travel" && fields[2] == "through" {
                 validate_identifier(fields[3], line_number)?;
@@ -2338,6 +2351,9 @@ fn modern_statement(
                 if args[1] == "1" { "true" } else { "false" }
             ))
         }
+        "BRANCH_PRESENTATION" if args.is_empty() => Ok("during bridge".to_string()),
+        "BRANCH_GAMEFLAG" if args.is_empty() => Ok("during travel".to_string()),
+        "BRANCH_FLAG_274F" if args.is_empty() => Ok("during contact".to_string()),
         "END" => Ok("halt".to_string()),
         _ => {
             let args = args
@@ -5833,8 +5849,8 @@ mod tests {
             "timer[2] = 22136",
             "jump block_000D",
             "activation enabled until block_0011",
-            "branch_presentation",
-            "branch_gameflag",
+            "during bridge",
+            "during travel",
         ] {
             assert!(decompiled.source.contains(statement), "missing {statement}");
         }
@@ -6314,7 +6330,7 @@ mod tests {
             "poke_byte 0x1234 0x56",
             "character_slot 0x02 \"scrut\"",
             "choice = none",
-            "branch_flag_274f",
+            "during contact",
         ] {
             assert!(decompiled.source.contains(statement), "missing {statement}");
         }
@@ -6514,6 +6530,39 @@ mod tests {
 
         assert_eq!(timers, 75);
         assert_eq!(offered_topics, 19);
+    }
+
+    #[test]
+    fn every_shipped_scene_gate_has_a_named_context() {
+        let Some(root) = game_dir() else { return };
+        let mut bridge = 0;
+        let mut travel = 0;
+        let mut contact = 0;
+
+        for script in 1..=5 {
+            let read = |extension: &str| {
+                std::fs::read(root.join(format!("SCRIPT{script}.{extension}"))).unwrap()
+            };
+            let cod = read("COD");
+            let var = read("VAR");
+            let dictionary = crate::script::parse_dictionary(&read("DIC"));
+            let symbols = crate::script::parse_deb(&read("DEB"));
+            let source =
+                decompile_structured_cod_with_symbols(&cod, &var, &dictionary, &symbols).unwrap();
+
+            bridge += source.source.matches("during bridge").count();
+            travel += source.source.matches("during travel").count();
+            contact += source.source.matches("during contact").count();
+            assert!(!source.source.contains("branch_presentation"));
+            assert!(!source.source.contains("branch_gameflag"));
+            assert!(!source.source.contains("branch_flag_274f"));
+            assert_eq!(
+                compile_with_dictionary(&source.source, &dictionary).unwrap(),
+                cod
+            );
+        }
+
+        assert_eq!((bridge, travel, contact), (113, 224, 65));
     }
 
     #[test]

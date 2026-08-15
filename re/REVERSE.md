@@ -1606,6 +1606,31 @@ dialogue uses them as additional selectable concepts. BloodScript renders them
 as `offer topic "word"`. An operand absent from the DIC retains the lossless
 `presentation_register` form.
 
+### 0xCE/0xD0/0xD1 scene-context guards @ files 0x6494/0x64A0/0x64AC (DECODED)
+
+Each handler tests bit 0 of one native state cell and calls `vm_branch` at
+`0x6462` when that bit is clear. Complete writer/consumer cross-references give
+the three cells distinct scene meanings:
+
+- `CE` tests `GS:0x2793` bit 0. The bridge renderer at `0x77E0` tests the same
+  bit at entry and returns immediately when clear. Startup and scene teardowns
+  restore it; contact and ship-presentation initialization clear the whole word.
+  BloodScript renders this positive guard as `during bridge`.
+- `D0` tests `GS:0x252A`. Its only set-to-one writer is
+  `ship_3d_navigation_update` at `0xB3F5`; `0xB4CF`, C9 actor teardown, and the
+  ship-HUD teardown clear it as the travel/navigation sequence completes.
+  BloodScript renders it as `during travel`.
+- `D1` tests `GS:0x274F`. The only set-to-one writer is the contact-scene state
+  machine at `0x18C4`, entered after contact-menu handler 2 stores the selected
+  target and arms `DS:0x2751`. The same state machine clears the latch at
+  `0x1A48` while finishing the contact scene. BloodScript renders it as
+  `during contact`.
+
+The shipped COD corpus contains 113 bridge, 224 travel, and 65 contact guards.
+All 402 are operand-free one-byte conditions and recompile byte exactly. The
+source word `during` expresses a positive context requirement; it does not
+imply a scheduler wait or consume time by itself.
+
 ### 0xB7 bit-flag handler @ file 0x6AA7 — state flag set/test (DECODED)
 
 `0xB7` is a 4-byte state/line-record bit flag operation, with an optional `0xA1`

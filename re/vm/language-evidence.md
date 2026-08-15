@@ -102,9 +102,21 @@ not an attempt to repair it.
 Seven control-flow encodings now have lossless typed statements: `GUARD_PUSH`
 and `GUARD_POP` (`0xA0`/`0xA1`), `JUMP` (`0xA4`), `STATE_ARRAY_TEST` and
 `STATE_ARRAY_SET` (the query/set forms of `0xA5`), `CONDITIONAL_BLOCK` (`0xA9`),
-and the `0xCE`/`0xD0` flag branches. This removes another 5,854 generic bytes.
+and the `0xCE`/`0xD0` context branches. This removes another 5,854 generic bytes.
 Together the two lifts reduce generic coverage from 20,898 to 4,567 bytes, a
 78.15 percent reduction, without changing any compiled COD byte.
+
+All three context branches now have native domain names. Opcode `CE` tests
+`GS:0x2793` bit 0, exactly the bit tested at the entry of the bridge renderer
+`0x77E0`; contact and ship-presentation transitions clear the complete word and
+their teardowns restore bit 0. Opcode `D0` tests `GS:0x252A`, whose only
+set-to-one writer is the ship navigation coordinator at `0xB3F5`; completion,
+record teardown, and HUD teardown clear it. Opcode `D1` tests `GS:0x274F`, whose
+only set-to-one writer is the contact-scene transition at `0x18C4` after the
+contact-menu handler has selected a target; the same transition clears it at
+`0x1A48`. BloodScript consequently emits `during bridge`, `during travel`, and
+`during contact`. The five shipped COD images contain 113, 224, and 65 of those
+guards respectively, and all 402 recompile to their original one-byte opcodes.
 
 `A5`'s state array is specifically a countdown bank for every shipped use.
 Handler `0x65EB` sign-extends its byte index and addresses a word at
@@ -132,10 +144,10 @@ choice coordinator at `0x8963` consumes this resulting list. Every one of the
 additional selectable concepts. BloodScript emits `offer topic "word"`; an
 operand not found in the companion DIC stays `presentation_register`.
 
-The final six native-handler families account for those remaining 4,567 bytes:
+The final six native-handler families accounted for those remaining 4,567 bytes:
 concept guards (`0xA3`), string loads (`0xA8`), procedure activation writes
 (`0xAB`), character-slot bindings (`0xCC`), alternate-concept clears (`0xCF`),
-and the `0x274F` flag branch (`0xD1`). Every one of the 413 shipped `AB` writes
+and the contact-scene branch (`0xD1`). Every one of the 413 shipped `AB` writes
 stores zero or one at exactly one byte after a named kind-2 procedure start,
 which is the procedure's `A9` flag byte. The corpus contains 149 enables and 264
 disables. BloodScript renders them as `procedure.enabled = true|false`; its
