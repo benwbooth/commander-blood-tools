@@ -71,6 +71,8 @@ extern volatile cb_u8 snd_chatter_cooldown; /* game data:0x0B2F */
 extern volatile cb_u16 snd_dialogue_delay; /* game data:0x0B33 */
 extern volatile cb_u16 snd_last_clip; /* game data:0x0C4D */
 extern volatile cb_u16 snd_dialogue_seed; /* game data:0x0C55 */
+extern volatile cb_u16 CB_GAME_DATA
+        snd_dialogue_seed_gs; /* explicit GS:0x0C55 alias */
 extern volatile bloodprg_snd_stream_buffer CB_GAME_DATA
         snd_stream_buffers[2]; /* GS:0x0B89 */
 extern volatile cb_u16 CB_GAME_DATA snd_stream_header[3]; /* GS:0x0B99 */
@@ -119,6 +121,7 @@ void CB_NEAR cb_snd_clip_play(cb_u16 command,
 #pragma aux (bloodprg_snd_driver_init_function, \
         snd_driver_init_abi)
 #pragma aux audio_param_init_cd5 parm [ax] modify exact [ax]
+#pragma aux audio_process_ade modify exact [ax]
 #pragma aux snd_bank_loader parm [ax] [si] modify exact []
 #pragma aux snd_play_clip parm [ax] modify exact []
 #pragma aux snd_stream_source_load parm [si] modify exact []
@@ -129,7 +132,7 @@ void CB_NEAR cb_snd_clip_play(cb_u16 command,
 
 void CB_SAVE_REGS CB_FAR audio_param_init_cd5(
         cb_u16 driver_segment); /* 0x00B7B0 */
-void CB_FAR audio_process_ade(void);                      /* 0x00B7E3 */
+void CB_SAVE_REGS CB_FAR audio_process_ade(void);         /* 0x00B7E3 */
 void CB_FAR snd_play_clip(cb_i16 clip_index);             /* 0x00B8CD */
 void CB_FAR snd_bank_loader(
     cb_u16 mode,

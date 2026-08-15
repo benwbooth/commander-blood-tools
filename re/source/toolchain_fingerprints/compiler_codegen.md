@@ -4509,10 +4509,21 @@ also verify the original saved-register and far-return envelope. The timer ISR
 independently confirms that `0x0B2F` and `0x0B33` are decremented at different
 tick divisions, so both are modeled as ordinary countdown state.
 
-Open Watcom compiles the actual natural candidate warning-free to 93
-instructions/258 bytes. The shipped routine is also 93 instructions, occupying
-234 bytes. The remaining differences are segment selection, register saves,
-and branch encoding under the C ABI, not missing selector logic.
+The old compiler probe duplicated the high-level body and treated every global
+as DS-owned. The maintained candidate now publishes the hash-derived seed and
+armed flag through explicit GS aliases after loading the word-list segment into
+DS, matching the split proven by the binary oracle. The compiler-corpus sample
+includes that source directly.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles it warning-free to 104
+instructions/289 bytes versus 93/234 original, with 81.72 percent
+mnemonic-multiset and 55.91 percent ordered overlap. Turbo C 2.01 medium
+(`-mm -O -Z`) emits 129 instructions with 78.49 percent multiset and 66.67
+percent ordered overlap and assembles cleanly to a 1,261-byte OMF object. The
+candidate is accepted for source integration. Its signed hash, delay reduction,
+stateful streamed selection, duplicate retries, and primary-before-chatter order
+are ordinary C; a direct binary replacement still needs the original
+AX-preserving envelope, inherited segment states, and same-segment far calls.
 
 ## BLOODPRG SND clip player candidate
 

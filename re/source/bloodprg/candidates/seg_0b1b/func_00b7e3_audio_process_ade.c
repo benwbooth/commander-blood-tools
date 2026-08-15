@@ -2,7 +2,7 @@
 #include "../include/bloodprg_random.h"
 #include "../include/bloodprg_vm.h"
 
-void CB_FAR audio_process_ade(void)
+void CB_SAVE_REGS CB_FAR audio_process_ade(void)
 {
     const cb_u16 CB_FAR *word_offsets;
     const char CB_FAR *word;
@@ -37,8 +37,8 @@ void CB_FAR audio_process_ade(void)
                 ++word_count;
             }
 
-            snd_dialogue_seed = (cb_u16)((hash + word_count) >> 4);
-            vm_text_mode_0cfa = 1;
+            snd_dialogue_seed_gs = (cb_u16)((hash + word_count) >> 4);
+            vm_text_mode_0cfa_gs = 1;
         } else if ((vm_text_mode_0cfa & 1u) != 0 &&
                 snd_dialogue_delay == 0) {
             delay_step = (cb_u8)snd_dialogue_seed & 0x0fu;
