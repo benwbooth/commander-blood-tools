@@ -24,7 +24,7 @@ routine boundaries; `.DIC` and `.VAR` establish separate interned-text and
 initial-state inputs.
 
 All ten shipped `.COD` and `.BAS` images now round-trip byte exactly through
-both `CBVM-ASM` and `bloodscript-v3`. The current BloodScript manifest records
+both `CBVM-ASM` and `bloodscript-v4`. The current BloodScript manifest records
 the unresolved generic-opcode and raw-byte totals rather than folding them into
 semantic coverage.
 
@@ -32,6 +32,16 @@ Three dispatch-table-proven shared handler families now have lossless typed
 statements: `SHARED_STATE` (`0x6863`), `SHARED_BIT_STATE` (`0x6902`), and
 `RECORD_WILDCARD` (`0x6946`). This removes 10,477 bytes from generic `OP`
 coverage while retaining byte-exact output across all five COD images.
+
+The `0x6863` family is now lifted one level further. Its assembly proves signed
+query operators `F0..F5`, update operators `F5..F7`, and state-indirect RHS
+modes `C0`/`C2`. The shipped images use family tag `B4` only for Bob Morlock's
+conversation-progress field, `BF` only for kind-2 encounter counters, and `C0`
+for script-global words. A whole-image assembly census found no reader of those
+three family tags outside the dispatch table; the common handler does not read
+the tag either. BloodScript therefore renders the shipped operations as `=`,
+`+=`, `-=`, and signed `require` expressions and derives the original bytes
+from the target category. The generated compiler output remains byte exact.
 
 Seven control-flow encodings now have lossless typed statements: `GUARD_PUSH`
 and `GUARD_POP` (`0xA0`/`0xA1`), `JUMP` (`0xA4`), `STATE_ARRAY_TEST` and

@@ -1,4 +1,4 @@
-// format: bloodscript-v3
+// format: bloodscript-v4
 // image: BAS
 
 yield
@@ -139,7 +139,7 @@ say 0x0872 voice=0xFF flags=0x60 display=0x80 loop=none control=none : "We're go
 say 0x0872 voice=0xFF flags=0x60 display=0x80 loop=none control=none : "Pranayama through numerology! You lucky person! Choose a number between ten and twenty..." choices "calm_down"
 say 0x0872 voice=0xFF flags=0x61 display=0x80 loop=none control=none : "Observe your screen carefully, Commander|... How many numbers do you see?" choices "calm_down"
 say 0x0872 voice=0xFF flags=0x69 display=0x80 loop=none control=none : "one" choices "one"
-shared_state 0xC0 0x1276 0xF6 0xC1 0x0001
+state[0x1276] += 0x0001
 say 0x0872 voice=0xFF flags=0x61 display=0x80 loop=none control=none : "two" choices "two"
 say 0x0872 voice=0xFF flags=0x61 display=0x80 loop=none control=none : "three" choices "three"
 say 0x0872 voice=0xFF flags=0x61 display=0x80 loop=none control=none : "four" choices "four"
@@ -213,7 +213,7 @@ say 0x055A voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Ideal, i
 say 0x055A voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Ideal always be far from reality: poor want be rich... Rich want be poor..." choices "ideal"
 say 0x055A voice=0xFF flags=0x60 display=0x80 loop=none control=none : "Hmmm... Too serious for me|, Commander|. You continue, me snooze..." choices "ideal"
 say 0x055A voice=0x04 flags=0x48 display=0x80 loop=none control=none : "Izwals of planet Rondo be very rich... Them have much CREDs" choices "ideal"
-shared_state 0xC0 0x12E2 0xF5 0xC1 0x0001
+state[0x12E2] = 0x0001
 say 0x055A voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Family, children, work, food, reproduction, reproduction..." choices "happiness"
 say 0x055A voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Us Izwals of Corpo not know happiness..." choices "happiness"
 say 0x055A voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Izwals of planet RONDO, them know happiness..." choices "happiness"
@@ -319,7 +319,7 @@ say 0x028A voice=0x02 flags=0x40 display=0x80 loop=none control=none : "We robot
 say 0x028A voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Eviscerator had a sorry end. When SCRUT ended the war, they threw him in jail" choices "eviscerator"
 say 0x028A voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Eviscerator is dangerous, Commander|. A pitiless killer..." choices "eviscerator"
 say 0x028A voice=0xFF flags=0x68 display=0x80 loop=none control=none : "Commander|... Don't you think these memories of his old master could arouse violent impulses here?|..." choices "eviscerator"
-shared_state 0xC0 0x12F6 0xF5 0xC1 0x0001
+state[0x12F6] = 0x0001
 say 0x028A voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Emasculator is a dummy... Evil and stupid..." choices "emasculator"
 say 0x028A voice=0x02 flags=0x40 display=0x80 loop=none control=none : "I hate that Croolis..." choices "emasculator"
 yield_b
@@ -331,7 +331,7 @@ say 0x028A voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Stones f
 say 0x028A voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Ha! Ha! Hard to know where he hid it|, Commander|..." choices "hiding_place"
 say 0x028A voice=0x05 flags=0x40 display=0x80 loop=none control=none : "I'm willing to tell you, Commander|, but you have to keep the secret..." choices "hiding_place"
 say 0x028A voice=0x06 flags=0x48 display=0x80 loop=none control=none : "I don't want HONK to hear..." choices "hiding_place"
-shared_state 0xC0 0x12F8 0xF5 0xC1 0x0001
+state[0x12F8] = 0x0001
 say 0x028A voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Millions of victims died during the battles. Planets were ravaged..." choices "battle"
 say 0x028A voice=0x05 flags=0x40 display=0x80 loop=none control=none : "The Izwals lost many of their kind. They weren't ready for war..." choices "battle"
 say 0x028A voice=0x06 flags=0x40 display=0x80 loop=none control=none : "The SCRUT armies won the final, galaxy-trembling battle.." choices "battle"
@@ -371,7 +371,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Eden, a 
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x101C 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_23A5:
 selector_node "dune" selector_2404
@@ -380,7 +380,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Dune, th
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x101C 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_2404:
 selector_node "kroolence" selector_246B
@@ -389,7 +389,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Kroolenc
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x101C 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_246B:
 selector_node "motoroil" selector_24CE
@@ -398,7 +398,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Motoroil
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x101C 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_24CE:
 selector_node "turbulence" selector_252B
@@ -407,7 +407,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Turbulen
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x101C 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_252B:
 selector_node "necktie" selector_254D
@@ -421,7 +421,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x107C 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_25B0:
 selector_node "hair" selector_2601
@@ -430,7 +430,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Tromp ha
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x107C 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_2601:
 selector_node "synthetic" selector_2660
@@ -439,7 +439,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Fully sy
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 4 CREDS." choices "buy"
 record_triple 0x00CC 0x107C 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_2660:
 selector_node "make_up" selector_2680
@@ -457,7 +457,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Crimson 
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x1094 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_26E5:
 selector_node "green" selector_2740
@@ -466,7 +466,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Fluoresc
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x1094 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_2740:
 selector_node "black" selector_279D
@@ -475,7 +475,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Black ro
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x1094 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_279D:
 selector_node "blue" selector_2802
@@ -484,7 +484,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Space bl
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x1094 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_2802:
 selector_node "cream" selector_2824
@@ -498,7 +498,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Painkill
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x10C4 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_2881:
 selector_node "musclor" selector_28E0
@@ -507,7 +507,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "MUSCLOR 
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x10C4 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_28E0:
 selector_node "meteor" selector_2939
@@ -516,7 +516,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "METEOR j
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x10C4 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_2939:
 selector_node "jewel" selector_2959
@@ -530,7 +530,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Pearl ne
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x10AC 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_29C6:
 selector_node "bracelet" selector_2A27
@@ -539,7 +539,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Bracelet
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x10AC 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_2A27:
 selector_node "food" selector_2A45
@@ -558,7 +558,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Joint of
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x1064 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_2AC4:
 selector_node "steak" selector_2B1B
@@ -567,7 +567,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x1064 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_2B1B:
 selector_node "horn" selector_2B76
@@ -576,7 +576,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Powdered
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x1064 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_2B76:
 selector_node "fur" selector_2BD5
@@ -585,7 +585,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x1064 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_2BD5:
 selector_node "sausages" selector_2C2E
@@ -594,7 +594,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x1064 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_2C2E:
 selector_node "intestines" selector_2C8B
@@ -603,7 +603,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x1064 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_2C8B:
 selector_node "sport" selector_2CAD
@@ -617,7 +617,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Ball. Co
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x10DC 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_2D0E:
 selector_node "boxing_gloves" selector_2D73
@@ -626,7 +626,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x10F4 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_2D73:
 selector_node "shells" selector_2DE8
@@ -635,7 +635,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Shells. 
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x110C 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_2DE8:
 selector_node "handywork" selector_2E06
@@ -654,7 +654,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Screwdri
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x1124 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_2E85:
 selector_node "saws" selector_2EE0
@@ -663,7 +663,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Unbreaka
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x1124 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_2EE0:
 selector_node "drills" selector_2F33
@@ -672,7 +672,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Suction 
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x1124 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_2F33:
 selector_node "robotics" selector_2F4F
@@ -686,7 +686,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Batterie
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x11CC 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_2FB2:
 selector_node "pharmaceutical" selector_2FD2
@@ -700,7 +700,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Aspirox.
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
 record_triple 0x00CC 0x113C 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_3043:
 selector_node "snormor" selector_30A8
@@ -709,7 +709,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Snormor,
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x113C 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_30A8:
 selector_node "fang_brush" selector_311B
@@ -718,7 +718,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Fang bru
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x113C 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield_b
 selector_311B:
 selector_node "leisure" selector_3137
@@ -783,7 +783,7 @@ say 0x0092 voice=0xFF flags=0x41 display=0x80 loop=none control=none : "The late
 say 0x0092 voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
 record_triple 0x00CC 0x116C 0x0028 0
 record_triple 0x0030 0x1004 0x0092 0
-shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
+state[0x1310] = 0x0001
 yield
 yield_b
 selector_node "hello" selector_3485
@@ -837,7 +837,7 @@ selector_3779:
 selector_node "Croolis" selector_3882
 menu "bye_bye" "talk" "race" "war" "news" "brain" "fear"
 say 0x01FA voice=0x09 flags=0x48 display=0x80 loop=none control=none : "War be big problem. Life be good if no war..." choices "war"
-shared_state 0xC0 0x1302 0xF5 0xC1 0x0001
+state[0x1302] = 0x0001
 say 0x01FA voice=0x10 flags=0x40 display=0x80 loop=none control=none : "Croolis like big muscles, weapons and nice females..." choices "news"
 say 0x01FA voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Croolis have small brain and big muscles..." choices "brain"
 say 0x01FA voice=0x09 flags=0x40 display=0x80 loop=none control=none : "Croolis always be danger for balance of universe..." choices "brain"
@@ -887,7 +887,7 @@ say 0x01FA voice=0x0B flags=0x42 display=0x80 loop=none control=none : "Portrait
 say 0x01FA voice=0x09 flags=0x42 display=0x80 loop=none control=none : "Me dream visit mausoleum of great YOLK on planet VISTA, but Vista be other end of universe..." choices "information"
 say 0x01FA voice=0x02 flags=0x42 display=0x80 loop=none control=none : "You talk much, friend|..." choices "information"
 say 0x01FA voice=0x05 flags=0x48 display=0x80 loop=none control=none : "Me be thirsty..." choices "information"
-shared_state 0xC0 0x12E2 0xF5 0xC1 0x0001
+state[0x12E2] = 0x0001
 yield_b
 selector_3B5B:
 selector_node "art" selector_3C33
@@ -1008,22 +1008,22 @@ selector_442C:
 selector_node "retirement" 0x0000
 menu "talk" "bye_bye"
 say 0x031A voice=0x01 flags=0x48 display=0x80 loop=none control=none : "Ah|, retirement... Them send me planet Magnus|, with other worn-out robots... CRY CRY|..." choices "retirement"
-shared_state 0xC0 0x12EC 0xF5 0xC1 0x0001
+state[0x12EC] = 0x0001
 yield
 yield_b
 selector_node "talk" selector_4919
 menu "bye_bye" "black_hole" "Big_Bang" "Bob_Morlock" "Kanary" "mission" "Corpo" "Good_ol_Bob"
 say 0x004A voice=0x02 flags=0x42 display=0x80 loop=none control=none : "What do you need to know, Commander?" choices "talk"
 say 0x004A voice=0x03 flags=0x48 display=0x80 loop=none control=none : "Goodbye, Commander|..." choices "bye_bye"
-shared_state 0xC0 0x1270 0xF5 0xC1 0x0001
+state[0x1270] = 0x0001
 say 0x004A voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Years of research finally led me to isolate time, Commander" choices "black_hole"
 say 0x004A voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Certain black holes can be used to travel back in time." choices "black_hole"
 say 0x004A voice=0x02 flags=0x48 display=0x80 loop=none control=none : "Honk is programmed to seek black holes" choices "black_hole"
-shared_state 0xB4 0x007C 0xF6 0xC1 0x0001
+conversation_progress[0x007C] += 0x0001
 say 0x004A voice=0x01 flags=0x48 display=0x80 loop=none control=none : "To reach the BIG BANG, you'll have to travel through a number of black holes..." choices "black_hole"
-shared_state 0xB4 0x007C 0xF6 0xC1 0x0001
+conversation_progress[0x007C] += 0x0001
 say 0x004A voice=0x02 flags=0x48 display=0x80 loop=none control=none : "Black holes are marvellous machines of nature, Commander|..." choices "black_hole"
-shared_state 0xB4 0x007C 0xF6 0xC1 0x0001
+conversation_progress[0x007C] += 0x0001
 say 0x004A voice=0x03 flags=0x40 display=0x80 loop=none control=none : "I have pursued truth all my life, Commander|..." choices "Big_Bang"
 say 0x004A voice=0x02 flags=0x40 display=0x80 loop=none control=none : "I know the truth is beyond the BIG BANG|, Commander|!" choices "Big_Bang"
 say 0x004A voice=0x01 flags=0x40 display=0x80 loop=none control=none : "My memory is not what it was..." choices "Big_Bang"
@@ -1031,30 +1031,30 @@ say 0x004A voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Thanks t
 say 0x004A voice=0x01 flags=0x40 display=0x80 loop=none control=none : "In my time, I've been a crooner, a magician, many things. I founded the biggest business in the universe: KANARY!" choices "Bob_Morlock"
 say 0x004A voice=0x02 flags=0x40 display=0x80 loop=none control=none : "I've known many women. Thousands of generations have admired me. I am immortal!" choices "Bob_Morlock"
 say 0x004A voice=0x02 flags=0x48 display=0x80 loop=none control=none : "Commander, you are going to relive my past. I envy you|..." choices "Bob_Morlock"
-shared_state 0xB4 0x007C 0xF6 0xC1 0x0001
+conversation_progress[0x007C] += 0x0001
 say 0x004A voice=0x01 flags=0x48 display=0x80 loop=none control=none : "Ah|, Otto Von Smile, Eviscerator, Jeph d'Ulikan, old Yolk, Tina Burner, and the others..." choices "Bob_Morlock"
-shared_state 0xB4 0x007C 0xF6 0xC1 0x0001
+conversation_progress[0x007C] += 0x0001
 say 0x004A voice=0x01 flags=0x49 display=0x80 loop=none control=none : "Ahh! Those were the days, Commander..." choices "Bob_Morlock"
 presentation_register 0x5A7A
 say 0x004A voice=0x02 flags=0x48 display=0x80 loop=none control=none : "You want a few revelations, Commander|?" choices "revelation"
-shared_state 0xC0 0x12BA 0xF5 0xC1 0x0001
+state[0x12BA] = 0x0001
 say 0x004A voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Your mission is to find and travel through the right black holes, so we can travel back in time to the BIG BANG." choices "mission"
 say 0x004A voice=0x01 flags=0x40 display=0x80 loop=none control=none : "You will meet amazing and sometimes dangerous beings. It will take courage, Commander|!" choices "mission"
 say 0x004A voice=0x02 flags=0x40 display=0x80 loop=none control=none : "You will pass through hideous wars and barriers that cannot be crossed..." choices "mission"
 say 0x004A voice=0x01 flags=0x40 display=0x80 loop=none control=none : "You will need to win strange creatures to your cause..." choices "mission"
 say 0x004A voice=0x02 flags=0x48 display=0x80 loop=none control=none : "You will be alone, Commander|. Unless you decide to wake me..." choices "mission"
-shared_state 0xB4 0x007C 0xF6 0xC1 0x0001
+conversation_progress[0x007C] += 0x0001
 say 0x004A voice=0x01 flags=0x40 display=0x80 loop=none control=none : "The planet Corpo is where I originally came from. Where we came from..." choices "Corpo"
 say 0x004A voice=0x03 flags=0x48 display=0x80 loop=none control=none : "Corpo is an extraordinary planet|, with unlimited resources." choices "Corpo"
-shared_state 0xB4 0x007C 0xF6 0xC1 0x0002
+conversation_progress[0x007C] += 0x0002
 say 0x004A voice=0x02 flags=0x40 display=0x80 loop=none control=none : "The truth lies at the birth of our universe, just before the BIG BANG..." choices "truth"
 say 0x004A voice=0x01 flags=0x48 display=0x80 loop=none control=none : "Ah! Truth!" choices "truth"
-shared_state 0xB4 0x007C 0xF6 0xC1 0x0001
+conversation_progress[0x007C] += 0x0001
 say 0x004A voice=0xFF flags=0x48 display=0x80 loop=none control=none : "I am getting pictures from the Ark, Commander|. Everything is in order..." choices "Good_ol_Bob"
 load_string "aarche10.hnm"
 say 0x004A voice=0x01 flags=0x40 display=0x80 loop=none control=none : "You flatter me|, Commander|..." choices "Good_ol_Bob"
 say 0x004A voice=0x02 flags=0x4A display=0x80 loop=none control=none : "You embarrass me|, Commander|..." choices "Good_ol_Bob"
-shared_state 0xB4 0x007C 0xF6 0xC1 0x0001
+conversation_progress[0x007C] += 0x0001
 say 0x004A voice=0x01 flags=0x42 display=0x80 loop=none control=none : "Heh heh..." choices "Good_ol_Bob"
 yield_b
 selector_4919:
@@ -1065,25 +1065,25 @@ say 0x004A voice=0x01 flags=0x40 display=0x80 loop=none control=none : "The doma
 say 0x004A voice=0x01 flags=0x40 display=0x80 loop=none control=none : "The Cottage Research Department perfects genetic miracles..." choices "cottage"
 say 0x004A voice=0x03 flags=0x40 display=0x80 loop=none control=none : "The Kanary mows lawns themselves every Weekend..." choices "cottage"
 say 0x004A voice=0x02 flags=0x48 display=0x80 loop=none control=none : "Kanary's artificial orchids produce centuries-old whisky..." choices "cottage"
-shared_state 0xB4 0x007C 0xF6 0xC1 0x0005
+conversation_progress[0x007C] += 0x0005
 say 0x004A voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Kanary has developed technology entirely devoted to synthetic cloning..." choices "clones"
 say 0x004A voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Kanary's four million employees were all built by and for Kanary..." choices "clones"
 say 0x004A voice=0x01 flags=0x40 display=0x80 loop=none control=none : "I am the very last natural bio being and I control EVERYTHING..." choices "clones"
 say 0x004A voice=0x01 flags=0x40 display=0x80 loop=none control=none : "My employees wake me up for ten minutes once a year, so I can blow out the candles on my birthday cake and sign the balance sheets" choices "clones"
 say 0x004A voice=0x01 flags=0x48 display=0x80 loop=none control=none : "I asked the Kanary scientists to create the perfect adventurer to take me to the BIG BANG..." choices "clones"
-shared_state 0xB4 0x007C 0xF6 0xC1 0x0003
+conversation_progress[0x007C] += 0x0003
 say 0x004A voice=0x03 flags=0x40 display=0x80 loop=none control=none : "All Kanary employees were built by the CLONE CONSORTIUM department. SO WERE YOU, Commander|." choices "employees"
 say 0x004A voice=0x04 flags=0x40 display=0x80 loop=none control=none : "You all work for me: You Honk, you Commander|, you Olga|... All of you|..." choices "employees"
 say 0x004A voice=0x05 flags=0x48 display=0x80 loop=none control=none : "Kanary builds the cheapest and most efficient employees in the universe..." choices "employees"
-shared_state 0xC0 0x12B6 0xF5 0xC1 0x0001
+state[0x12B6] = 0x0001
 say 0x004A voice=0x01 flags=0x42 display=0x80 loop=none control=none : "Kanary is the biggest business empire in the known universe" choices "Kanary"
 say 0x004A voice=0x02 flags=0x48 display=0x80 loop=none control=none : "Kanary invents, builds, consumes and controls the entire universe." choices "Kanary"
-shared_state 0xB4 0x007C 0xF6 0xC1 0x0001
+conversation_progress[0x007C] += 0x0001
 say 0x004A voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Kanary is so well managed that all its products have a negative building cost..." choices "balance_sheets"
 say 0x004A voice=0x02 flags=0x40 display=0x80 loop=none control=none : "A complete cottage costs 100990 Negabucks to make..." choices "balance_sheets"
 say 0x004A voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Our profits are so enormous that nobody can pronounce the sum." choices "balance_sheets"
 say 0x004A voice=0x06 flags=0x48 display=0x80 loop=none control=none : "Our only competitor is CRYO. They control the Second World." choices "balance_sheets"
-shared_state 0xB4 0x007C 0xF6 0xC1 0x0002
+conversation_progress[0x007C] += 0x0002
 say 0x004A voice=0x07 flags=0x04 display=0x85 loop=none control=0x000A : "I like you, Commander|."
 say 0x004A voice=0x08 flags=0x04 display=0x85 loop=none control=0x000F : "You are curious and smart. That's how I like people to be."
 say 0x004A voice=0x09 flags=0x04 display=0x85 loop=none control=0x0014 : "You talk too much, Commander. You're wasting my time|..."
@@ -1102,7 +1102,7 @@ say 0x043A voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Old Slim
 say 0x043A voice=0x04 flags=0x00 display=0x80 loop=none control=none : "He's obsessed with regaining his long lost youth..."
 say 0x043A voice=0x02 flags=0x40 display=0x80 loop=none control=none : "He goes for treatment to a secret place. He made me promise never to reveal its whereabouts..." choices "treatment"
 say 0x043A voice=0x03 flags=0x48 display=0x80 loop=none control=none : "I promised him I'd never tell..." choices "treatment"
-shared_state 0xC0 0x12E2 0xF5 0xC1 0x0001
+state[0x12E2] = 0x0001
 yield_b
 selector_4D92:
 selector_node "family" selector_4E7A

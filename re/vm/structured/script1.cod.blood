@@ -1,4 +1,4 @@
-// format: bloodscript-v3
+// format: bloodscript-v4
 // image: COD
 
 object blood = 0x0028
@@ -8,20 +8,20 @@ object Izwalito = 0x055A
 object Honk = 0x082A
 object menu = 0x0872
 
-field Bob_Morlock_s08 = Bob_Morlock + 0x0036 // VAR kind 0x0002, selector(s) 08
-field Bob_Morlock_s13 = Bob_Morlock + 0x003A // VAR kind 0x0002, selector(s) 13
-field Bronko_s11 = Bronko + 0x0018 // VAR kind 0x0002, selector(s) 11
-field Izwalito_s13 = Izwalito + 0x003A // VAR kind 0x0002, selector(s) 13
-field Izwalito_s0F = Izwalito + 0x0046 // VAR kind 0x0002, selector(s) 0F
-field Honk_s08 = Honk + 0x0036 // VAR kind 0x0002, selector(s) 08
-field Honk_s13 = Honk + 0x003A // VAR kind 0x0002, selector(s) 13
-field menu_s13 = menu + 0x003A // VAR kind 0x0002, selector(s) 13
+field Bob_Morlock.encounter_count = Bob_Morlock + 0x0036 // VAR kind 0x0002, selector(s) 08
+field Bob_Morlock.s13 = Bob_Morlock + 0x003A // VAR kind 0x0002, selector(s) 13
+field Bronko.current_location = Bronko + 0x0018 // VAR kind 0x0002, selector(s) 11
+field Izwalito.s13 = Izwalito + 0x003A // VAR kind 0x0002, selector(s) 13
+field Izwalito.s0F = Izwalito + 0x0046 // VAR kind 0x0002, selector(s) 0F
+field Honk.encounter_count = Honk + 0x0036 // VAR kind 0x0002, selector(s) 08
+field Honk.s13 = Honk + 0x003A // VAR kind 0x0002, selector(s) 13
+field menu.s13 = menu + 0x003A // VAR kind 0x0002, selector(s) 13
 
 proc menbr {
     conditional_block 0x01 men1
     branch_presentation
-    actor menu_s13 blood 0
-    record_wildcard 0xAF Bronko_s11 0xFFFF 0
+    actor menu.s13 blood 0
+    record_wildcard 0xAF Bronko.current_location 0xFFFF 0
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"IMPROVED MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today CHEF BRONKO has laid on for you:"
@@ -32,14 +32,14 @@ proc menbr {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Recycled water"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Chef Bronko says... Burping's bad manners!..."
     say menu voice=0xFF flags=0x08 display=0x80 loop=none control=none : "stop"
-    record_clear menu_s13
+    record_clear menu.s13
 }
 
 proc men1 {
     conditional_block 0x01 men2
     branch_presentation
-    actor menu_s13 blood 0
-    record_wildcard 0xAF Bronko_s11 0xFFFF 1
+    actor menu.s13 blood 0
+    record_wildcard 0xAF Bronko.current_location 0xFFFF 1
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
@@ -51,14 +51,14 @@ proc men1 {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... Don't eat with your mouth full!..."
     say menu voice=0xFF flags=0x08 display=0x90 loop=none control=none : "Stop"
     poke_byte 0x00B4 0x00
-    record_clear menu_s13
+    record_clear menu.s13
 }
 
 proc men2 {
     conditional_block 0x01 men3
     branch_presentation
-    actor menu_s13 blood 0
-    record_wildcard 0xAF Bronko_s11 0xFFFF 1
+    actor menu.s13 blood 0
+    record_wildcard 0xAF Bronko.current_location 0xFFFF 1
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
@@ -70,14 +70,14 @@ proc men2 {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... Don't talk with your mouth open!..."
     say menu voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     poke_byte 0x0164 0x00
-    record_clear menu_s13
+    record_clear menu.s13
 }
 
 proc men3 {
     conditional_block 0x01 men4
     branch_presentation
-    record_wildcard 0xAF Bronko_s11 0xFFFF 1
-    actor menu_s13 blood 0
+    record_wildcard 0xAF Bronko.current_location 0xFFFF 1
+    actor menu.s13 blood 0
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
@@ -89,14 +89,14 @@ proc men3 {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... Somebody didn't finish his wrigglers yesterday..."
     say menu voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     poke_byte 0x020E 0x00
-    record_clear menu_s13
+    record_clear menu.s13
 }
 
 proc men4 {
     conditional_block 0x01 men5
     branch_presentation
-    actor menu_s13 blood 0
-    record_wildcard 0xAF Bronko_s11 0xFFFF 1
+    actor menu.s13 blood 0
+    record_wildcard 0xAF Bronko.current_location 0xFFFF 1
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
@@ -108,14 +108,14 @@ proc men4 {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... Plenty more in the kitchen!..."
     say menu voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     poke_byte 0x02BA 0x00
-    record_clear menu_s13
+    record_clear menu.s13
 }
 
 proc men5 {
     conditional_block 0x01 men6
     branch_presentation
-    actor menu_s13 blood 0
-    record_wildcard 0xAF Bronko_s11 0xFFFF 1
+    actor menu.s13 blood 0
+    record_wildcard 0xAF Bronko.current_location 0xFFFF 1
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"IMPROVED MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
@@ -128,7 +128,7 @@ proc men5 {
     say menu voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
     poke_byte 0x036E 0x00
     poke_byte 0x042A 0x01
-    record_clear menu_s13
+    record_clear menu.s13
 }
 
 proc men6 {
@@ -153,17 +153,17 @@ proc ho {
     conditional_block 0x01 ho1
     state_array_test 0x16
     guard_pop
-    record_link Izwalito_s13 blood 0
+    record_link Izwalito.s13 blood 0
     poke_byte 0x0454 0x00
 }
 
 proc ho1 {
     conditional_block 0x01 hon
     branch_presentation
-    actor Izwalito_s13 blood 0
+    actor Izwalito.s13 blood 0
     guard_pop
     say Izwalito voice=0xFF flags=0x08 display=0x80 loop=none control=none : "You found the right button. So far so good..."
-    record_wildcard 0xBC Izwalito_s0F 0x02D5 0
+    record_wildcard 0xBC Izwalito.s0F 0x02D5 0
     say Izwalito voice=0xFF flags=0x10 display=0x80 loop=block_04CE control=none : "Click quick, Cap'n Bob is waiting..." choices "explanations" "game"
     when block_04C6 {
         concept_guard "game" 0
@@ -171,7 +171,7 @@ proc ho1 {
         say Izwalito voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "GAME"
         run_profile 0x02
         clear_alternate_concept
-        record_clear Izwalito_s13
+        record_clear Izwalito.s13
     }
     block_04C6:
     when block_04CE {
@@ -191,13 +191,13 @@ proc ho1 {
     say Izwalito voice=0xFF flags=0x00 display=0x80 loop=none control=none : "In which case, write to: SUPER ZEN, end of corridor, CRAZYSTONE planet, BABY1 UNIVERSE..."
     say Izwalito voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Click quick on \"HONK\". He has important information for YOU..."
     say Izwalito voice=0xFF flags=0x08 display=0x80 loop=none control=none : "..."
-    record_clear Izwalito_s13
+    record_clear Izwalito.s13
 }
 
 proc hon {
     conditional_block 0x01 BOB1
     branch_presentation
-    actor Honk_s13 blood 0
+    actor Honk.s13 blood 0
     guard_pop
     say Honk voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Welcome aboard the ARK, Commander. I'm HONK, your trusted computer..."
     say Honk voice=0xFF flags=0x20 display=0x80 loop=none control=none : "I'm here to help you a lot..."
@@ -210,13 +210,13 @@ proc hon {
     say Honk voice=0xFF flags=0x20 display=0x80 loop=none control=none : "If you have questions, I have all the answers..."
     say Honk voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Click quick on \"CRYOBOX\" Cap'n Bob is waiting..."
     say Honk voice=0xFF flags=0x28 display=0x80 loop=none control=none : "End of report..."
-    record_clear Honk_s13
+    record_clear Honk.s13
 }
 
 proc BOB1 {
     conditional_block 0x01 scr2
     branch_flag_274f
-    actor Bob_Morlock_s13 blood 0
+    actor Bob_Morlock.s13 blood 0
     guard_pop
     say Bob_Morlock voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Good day COMMANDER. My name is BOB, BOB MORLOCK..."
     say Bob_Morlock voice=0x01 flags=0x00 display=0x80 loop=none control=none : "If the phone rings, press the \"RED BUTTON\" on the radio to answer..."
@@ -267,13 +267,13 @@ proc BOB1 {
     say Bob_Morlock voice=0xFF flags=0x20 display=0x80 loop=none control=none : "The old turkey's out for the count..."
     say Bob_Morlock voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     run_profile 0x02
-    record_clear Bob_Morlock_s13
+    record_clear Bob_Morlock.s13
 }
 
 proc scr2 {
     conditional_block 0x01 block_0C0B
-    shared_state 0xBF Honk_s08 0xF5 0xC1 0x0001
-    shared_state 0xBF Bob_Morlock_s08 0xF5 0xC1 0x0001
+    Honk.encounter_count = 0x0001
+    Bob_Morlock.encounter_count = 0x0001
     guard_pop
     run_profile 0x02
     block_0C0B:

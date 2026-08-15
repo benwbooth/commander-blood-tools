@@ -1,4 +1,4 @@
-// format: bloodscript-v3
+// format: bloodscript-v4
 // image: COD
 
 proc init5 {
@@ -29,7 +29,7 @@ proc init5 {
     record_wildcard 0xAF 0x0452 0x0F2C 0
     record_wildcard 0xAF 0x03C2 0xFFFF 0
     record_wildcard 0xAF 0x0212 0xFFFF 0
-    shared_state 0xC0 0x1362 0xF5 0xC0 0x1364
+    state[0x1362] = state[0x1364]
     record_wildcard 0xAF 0x0602 0x0C14 0
     record_wildcard 0xAF 0x03C2 0xFFFF 0
     record_wildcard 0xAF 0x0182 0xFFFF 0
@@ -37,8 +37,8 @@ proc init5 {
     record_wildcard 0xAF 0x0572 0xFFFF 0
     record_wildcard 0xAF 0x05BA 0x0D5E 0
     record_wildcard 0xAF 0x064A 0x0F2C 0
-    shared_state 0xC0 0x1366 0xF5 0xC1 0x0001
-    shared_state 0xC0 0x1368 0xF5 0xC1 0x0003
+    state[0x1366] = 0x0001
+    state[0x1368] = 0x0003
     character_slot 0x01 "match"
     character_slot 0x02 "ppit"
     character_slot 0x03 "hatetv"
@@ -112,7 +112,7 @@ proc kult {
     load_string "1kkult20.hnm"
     say 0x06C2 voice=0x01 flags=0x00 display=0x80 loop=none control=none : "The planet KULT is inaccessible. There are too many pilgrims..."
     guard_push block_02FC
-    shared_state 0xBF 0x06F8 0xF1 0xC1 0x0003
+    require encounter_count[0x06F8] < 0x0003
     guard_pop
     say 0x06C2 voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Commander... Commander|... It's the planet TUMUL with a new name.."
     load_string "1kkult20.hnm"
@@ -142,8 +142,8 @@ proc ondo1 {
     say 0x03AA voice=0x02 flags=0x00 display=0x80 loop=none control=none : "You can talk to me Commander|... Tell me about yourself..."
     say 0x03AA voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Where did she learn to swim like that|?|... You think she'd agree to give me lessons, Commander|?"
     guard_push block_051E
-    shared_state 0xBF 0x07D0 0xF2 0xC1 0x0000
-    shared_state 0xC0 0x136A 0xF5 0xC1 0x0001
+    require encounter_count[0x07D0] > 0x0000
+    require state[0x136A] == 0x0001
     guard_pop
     say 0x03AA voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Oh! Commander|, Honk told me you needed a ring..."
     say 0x03AA voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander|, I swear I didn't say a thing|..."
@@ -183,7 +183,7 @@ proc big1 {
     say 0x0092 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "There's been a mix up, Cap'n Bob sir..."
     say 0x0092 voice=0xFF flags=0x08 display=0x90 loop=none control=none : "ALL OF YOU, INTO THE CRYOBOX RIGHT AWAY..."
     load_string "bobb.hnm"
-    shared_state 0xC0 0x136C 0xF5 0xC1 0x0001
+    state[0x136C] = 0x0001
     say 0x0092 voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "NOW..."
     load_string "bobb.hnm"
     record_wildcard 0xAF 0x00AA 0x0F2C 0
@@ -195,7 +195,7 @@ proc boba0 {
     conditional_block 0x01 boba1
     branch_flag_274f
     actor 0x0084 0x0028 0
-    shared_state 0xC0 0x136C 0xF5 0xC1 0x0001
+    state[0x136C] = 0x0001
     guard_pop
     say 0x004A voice=0x01 flags=0x00 display=0x80 loop=none control=none : "What's the story??? What's this BIG BANG business???..."
     say 0x004A voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Did we get to the BIG BANG, yes or no??? I'm listening, Commander|..."
@@ -235,7 +235,7 @@ proc boba0 {
     say 0x004A voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Commander, drop Mister BEAUREGARD off on the planet Tumul..."
     say 0x004A voice=0x02 flags=0x00 display=0x80 loop=none control=none : "AND GET BACK TO WORK!!!"
     say 0x004A voice=0xFF flags=0x28 display=0xA0 loop=none control=none : "Yes sir, Cap'n Bob sir..."
-    shared_state 0xC0 0x136A 0xF5 0xC1 0x0001
+    state[0x136A] = 0x0001
     poke_byte 0x071A 0x00
     record_clear 0x0084
 }
@@ -470,7 +470,7 @@ proc finalmen {
 proc corpo1 {
     conditional_block 0x01 t10
     branch_gameflag
-    shared_state 0xC0 0x136E 0xF5 0xC1 0x0000
+    state[0x136E] = 0x0000
     record_wildcard 0xAF 0x103A 0x0D5E 0
     actor 0x05DC 0x0028 0
     guard_pop
@@ -552,7 +552,7 @@ proc masta1 {
 proc masta5 {
     conditional_block 0x01 masta6
     branch_gameflag
-    shared_state 0xC0 0x1370 0xF5 0xC1 0x0000
+    state[0x1370] = 0x0000
     actor 0x01EC 0x0028 0
     record_wildcard 0xAF 0x103A 0x0A2E 0
     guard_pop
@@ -561,14 +561,14 @@ proc masta5 {
     say 0x01B2 voice=0x07 flags=0x08 display=0x80 loop=none control=none : "WHAT YOU WANT STRANGER?"
     record_wildcard 0xBC 0x01F8 0x0001 0
     guard_push block_1B1F
-    shared_state 0xC0 0x1372 0xF5 0xC1 0x0001
+    require state[0x1372] == 0x0001
     guard_pop
     say 0x01B2 voice=0x06 flags=0x08 display=0x90 loop=none control=none : "You like secrets... Me tell secrets"
     record_wildcard 0xBC 0x01F8 0x0F67 0
-    shared_state 0xC0 0x1372 0xF5 0xC1 0x0000
+    state[0x1372] = 0x0000
     block_1B1F:
     guard_push block_1C11
-    shared_state 0xC0 0x1374 0xF5 0xC1 0x0001
+    require state[0x1374] == 0x0001
     guard_pop
     say 0x01B2 voice=0x0A flags=0x00 display=0x80 loop=none control=none : "SPLATCH be highly concentrated explosive. SPLATCH blow up jail... LAUGH... FOUL SWEAR"
     say 0x01B2 voice=0x08 flags=0x00 display=0x80 loop=none control=none : "You bring me SPLATCH, friend|... And me give you|..."
@@ -576,20 +576,20 @@ proc masta5 {
     say 0x01B2 voice=0x05 flags=0x00 display=0x80 loop=none control=none : "You go see friends at \"Galaxian Bar\" on planet MASTAGLUK... Them help you|..."
     say 0x01B2 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "No... No|... That's enough, Commander|... This is not a never ending story..."
     say 0x01B2 voice=0x09 flags=0x08 display=0xA0 loop=none control=none : "You understand? Bye bye|... ME WAIT YOU..."
-    shared_state 0xC0 0x1374 0xF5 0xC1 0x0000
-    shared_state 0xC0 0x1370 0xF5 0xC1 0x0001
+    state[0x1374] = 0x0000
+    state[0x1370] = 0x0001
     record_clear 0x01EC
     block_1C11:
     guard_push block_1C40
-    shared_state 0xC0 0x1368 0xF5 0xC1 0x0000
+    require state[0x1368] == 0x0000
     guard_pop
     say 0x01B2 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander|, if I'd had some BIONIUM, I could have helped you|...."
     block_1C40:
     guard_push block_1C6A
-    shared_state 0xC0 0x1368 0xF2 0xC1 0x0003
+    require state[0x1368] > 0x0003
     guard_pop
     say 0x01B2 voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Commander|, there's no percentage staying here..."
-    shared_state 0xC0 0x1368 0xF7 0xC1 0x0003
+    state[0x1368] -= 0x0003
     block_1C6A:
     say 0x01B2 voice=0x06 flags=0x48 display=0x80 loop=none control=none : "Bye bye. You come back see me. Me like visits..." choices "bye_bye"
     record_clear 0x01EC
@@ -598,7 +598,7 @@ proc masta5 {
 proc masta6 {
     conditional_block 0x01 amig2
     branch_gameflag
-    shared_state 0xC0 0x1370 0xF5 0xC1 0x0001
+    state[0x1370] = 0x0001
     record_wildcard 0xAF 0x1340 0x0A64 0
     actor 0x01EC 0x0028 0
     guard_pop
@@ -620,7 +620,7 @@ proc masta6 {
     say 0x01B2 voice=0x08 flags=0x00 display=0x80 loop=none control=none : "Treasure be on planet TUMUL..."
     say 0x01B2 voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Coordinates AX329 Tumulus constellation..."
     say 0x01B2 voice=0xFF flags=0x28 display=0x90 loop=none control=none : "That sounded like a treasure location to me|, Commander|... Way to go, champ!!!"
-    shared_state 0xC0 0x1370 0xF5 0xC1 0x0002
+    state[0x1370] = 0x0002
     record_clear 0x01EC
     block_1DAC:
     guard_push amig2
@@ -639,7 +639,7 @@ proc amig2 {
     record_wildcard 0xAF 0x0602 0x0C14 0
     actor 0x0624 0x0028 0
     record_wildcard 0xAF 0x103A 0x0BDE 0
-    shared_state 0xC0 0x1376 0xF5 0xC1 0x0000
+    state[0x1376] = 0x0000
     guard_pop
     say 0x05EA voice=0x03 flags=0x00 display=0x80 loop=none control=none : "HALT HIC STRANGER!!!"
     say 0x05EA voice=0x05 flags=0x00 display=0x80 loop=none control=none : "The Bar's hic! shut... Hic!"
@@ -679,10 +679,10 @@ proc yok1 {
     block_1F75:
     guard_push block_1FAB
     record_wildcard 0xAF 0x103A 0x0B72 1
-    shared_state 0xC0 0x1368 0xF2 0xC1 0x0003
+    require state[0x1368] > 0x0003
     guard_pop
     say 0x0242 voice=0xFF flags=0x28 display=0x80 loop=none control=none : "We'll need to get closer to RONDO to teleport them|..."
-    shared_state 0xC0 0x1368 0xF7 0xC1 0x0003
+    state[0x1368] -= 0x0003
     block_1FAB:
     say 0x0242 voice=0x01 flags=0x08 display=0x80 loop=none control=none : "We're waiting, Commander|..."
     record_clear 0x027C
@@ -716,10 +716,10 @@ proc max1 {
     block_2079:
     guard_push block_20AF
     record_wildcard 0xAF 0x103A 0x0B72 1
-    shared_state 0xC0 0x1368 0xF2 0xC1 0x0003
+    require state[0x1368] > 0x0003
     guard_pop
     say 0x055A voice=0xFF flags=0x28 display=0x80 loop=none control=none : "We'll need to get closer to RONDO to teleport them|..."
-    shared_state 0xC0 0x1368 0xF7 0xC1 0x0003
+    state[0x1368] -= 0x0003
     block_20AF:
     say 0x055A voice=0x01 flags=0x08 display=0x80 loop=none control=none : "We're waiting, Commander|..."
     record_clear 0x0594
@@ -794,7 +794,7 @@ proc monop1 {
 proc bronk1 {
     conditional_block 0x01 emasc0
     branch_flag_274f
-    shared_state 0xC0 0x1378 0xF5 0xC1 0x0000
+    state[0x1378] = 0x0000
     actor 0x039C 0x0028 0
     guard_pop
     say 0x0362 voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Everything's okay, Commander|..."
@@ -832,7 +832,7 @@ proc emasc0 {
     conditional_block 0x01 hom0
     branch_gameflag
     actor 0x08AC 0x0028 0
-    shared_state 0xC0 0x137A 0xF5 0xC1 0x0000
+    state[0x137A] = 0x0000
     guard_pop
     say 0x0872 voice=0x01 flags=0x00 display=0x80 loop=none control=none : "What you want, stranger? You want murffalo meat?"
     say 0x0872 voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Me not can sell murffalo... Me shut store..."
@@ -907,14 +907,14 @@ proc hom1_2922 {
     say 0x01FA voice=0x06 flags=0x00 display=0x80 loop=none control=none : "Me wait here with U.R.O.U.T|..."
     say 0x01FA voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "Bye bye friend|..."
     poke_byte 0x27F6 0x00
-    shared_state 0xC0 0x137C 0xF5 0xC1 0x0001
+    state[0x137C] = 0x0001
     record_clear 0x0234
 }
 
 proc hom2 {
     conditional_block 0x01 jour
     branch_gameflag
-    shared_state 0xC0 0x137C 0xF5 0xC1 0x0001
+    state[0x137C] = 0x0001
     actor 0x0234 0x0028 0
     guard_pop
     say 0x01FA voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Welcome stranger|... You be big traveller..."
@@ -954,7 +954,7 @@ proc hom2 {
 proc jour {
     conditional_block 0x01 bonj1
     branch_gameflag
-    shared_state 0xC0 0x137E 0xF5 0xC1 0x0000
+    state[0x137E] = 0x0000
     actor 0x02C4 0x0028 0
     record_wildcard 0xAF 0x10F8 0x028A 1
     record_wildcard 0xAF 0x103A 0x0D40 0
@@ -967,7 +967,7 @@ proc jour {
 proc bonj1 {
     conditional_block 0x01 bonj2
     branch_gameflag
-    shared_state 0xC0 0x137E 0xF5 0xC1 0x0000
+    state[0x137E] = 0x0000
     actor 0x02C4 0x0028 0
     record_wildcard 0xAF 0x103A 0x0D40 0
     guard_pop
@@ -1003,8 +1003,8 @@ proc bonj1 {
     poke_byte 0x402E 0x01
     poke_byte 0x40B5 0x01
     poke_byte 0x4140 0x01
-    shared_state 0xC0 0x1380 0xF5 0xC1 0x0000
-    shared_state 0xC0 0x1382 0xF5 0xC1 0x0000
+    state[0x1380] = 0x0000
+    state[0x1382] = 0x0000
     poke_byte 0x2E07 0x01
     poke_byte 0x2D5A 0x00
 }
@@ -1012,7 +1012,7 @@ proc bonj1 {
 proc bonj2 {
     conditional_block 0x00 Bof_ok
     branch_gameflag
-    shared_state 0xC0 0x137E 0xF5 0xC1 0x0000
+    state[0x137E] = 0x0000
     actor 0x02C4 0x0028 0
     record_wildcard 0xAF 0x103A 0x0D40 0
     guard_pop
@@ -1029,7 +1029,7 @@ proc Bof_ok {
     conditional_block 0x01 perdu
     branch_gameflag
     actor 0x02C4 0x0028 0
-    shared_state 0xC0 0x1382 0xF5 0xC1 0x0005
+    state[0x1382] = 0x0005
     guard_pop
     say 0x028A voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Believe it or not... You have passed your U.R.O.U.T."
     say 0x028A voice=0xFF flags=0x28 display=0x80 loop=none control=none : "YESSS!!!! I KNEW YOU COULD DO IT COMMANDER..."
@@ -1046,8 +1046,8 @@ proc Bof_ok {
     say 0x028A voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Never forget your happy student days. Be true to your school!"
     say 0x028A voice=0x02 flags=0x00 display=0x80 loop=none control=none : "See you soon, Commander..."
     say 0x028A voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "stop"
-    shared_state 0xC0 0x1382 0xF5 0xC1 0x0000
-    shared_state 0xC0 0x1380 0xF5 0xC1 0x0000
+    state[0x1382] = 0x0000
+    state[0x1380] = 0x0000
     shared_bit_state 0xAE 0x0D42 0x0002 1
     record_clear 0x02C4
 }
@@ -1056,8 +1056,8 @@ proc perdu {
     conditional_block 0x01 Q1
     branch_gameflag
     actor 0x02C4 0x0028 0
-    shared_state 0xC0 0x1380 0xF5 0xC1 0x0020
-    shared_state 0xC0 0x1382 0xF1 0xC1 0x000A
+    state[0x1380] = 0x0020
+    require state[0x1382] < 0x000A
     guard_pop
     say 0x028A voice=0x0A flags=0x00 display=0x80 loop=none control=none : "You failed!"
     say 0x028A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "I knew this would happen... I feel pity for you|, Commander..."
@@ -1065,8 +1065,8 @@ proc perdu {
     say 0x028A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "I didn't deserve this humiliation...."
     say 0x028A voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "stop"
     poke_byte 0x2D5A 0x01
-    shared_state 0xC0 0x1380 0xF5 0xC1 0x0000
-    shared_state 0xC0 0x1382 0xF5 0xC1 0x0000
+    state[0x1380] = 0x0000
+    state[0x1382] = 0x0000
     record_clear 0x02C4
 }
 
@@ -1080,15 +1080,15 @@ proc Q1 {
     concept_guard "Yolk" 0
     guard_pop
     say 0x028A voice=0x02 flags=0x08 display=0xA0 loop=none control=none : "The Great Yolk, of course. You've been boning up, Commander..."
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_30C2:
     guard_push block_30EE
     concept_guard "Yolk" 1
     guard_pop
     say 0x028A voice=0x05 flags=0x08 display=0x90 loop=none control=none : "History's not your speciality. Maybe you're not ready for this"
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_30EE:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1105,15 +1105,15 @@ proc Q2 {
     concept_guard "yolk" 0
     guard_pop
     say 0x028A voice=0x07 flags=0x08 display=0xA0 loop=none control=none : "Yes indeed, the incomparably Great Yolk... Hare Yolk Hare Hare..."
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3163:
     guard_push block_3195
     concept_guard "yolk" 1
     guard_pop
     say 0x028A voice=0x08 flags=0x08 display=0x90 loop=none control=none : "On Vista, I said. Get those ondoyants out of your brain..."
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3195:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1131,15 +1131,15 @@ proc Q3 {
     concept_guard "Rotator" 0
     guard_pop
     say 0x028A voice=0x04 flags=0x08 display=0xA0 loop=none control=none : "That's right|..."
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_31FE:
     guard_push block_3218
     concept_guard "Rotator" 1
     guard_pop
     say 0x028A voice=0x03 flags=0x08 display=0x90 loop=none control=none : "..."
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3218:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1156,15 +1156,15 @@ proc Q4 {
     concept_guard "Attrox" 0
     guard_pop
     say 0x028A voice=0x09 flags=0x08 display=0xA0 loop=none control=none : "Excellent answer..."
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_327D:
     guard_push block_32B1
     concept_guard "Attrox" 1
     guard_pop
     say 0x028A voice=0x08 flags=0x08 display=0x90 loop=none control=none : "For goodness sakes|! It starts with an A and ends with an X..."
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_32B1:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1181,15 +1181,15 @@ proc Q5 {
     concept_guard "Fifi" 0
     guard_pop
     say 0x028A voice=0x05 flags=0x08 display=0xA0 loop=none control=none : "Fifi, that's the right answer|..."
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_331A:
     guard_push block_3340
     concept_guard "Fifi" 1
     guard_pop
     say 0x028A voice=0x06 flags=0x08 display=0x90 loop=none control=none : "For goodness sakes! Get a grip guy..."
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3340:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1206,15 +1206,15 @@ proc Q6 {
     concept_guard "slimer" 0
     guard_pop
     say 0x028A voice=0x03 flags=0x08 display=0xA0 loop=none control=none : "Yes, a Slimer..."
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_339F:
     guard_push block_33C7
     concept_guard "slimer" 1
     guard_pop
     say 0x028A voice=0x02 flags=0x08 display=0x90 loop=none control=none : "The Great Yolk? That was a mediocre effort"
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_33C7:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1231,15 +1231,15 @@ proc Q7 {
     concept_guard "tina_burner" 0
     guard_pop
     say 0x028A voice=0x02 flags=0x08 display=0xA0 loop=none control=none : "Quite right. In the cryobox..."
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3432:
     guard_push block_3454
     concept_guard "tina_burner" 1
     guard_pop
     say 0x028A voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Don't you have a radio?"
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3454:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1256,15 +1256,15 @@ proc Q8 {
     concept_guard "black_larsen" 0
     guard_pop
     say 0x028A voice=0x05 flags=0x08 display=0xA0 loop=none control=none : "The Black Larsen Hordes, yes..."
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_34B1:
     guard_push block_34D3
     concept_guard "black_larsen" 1
     guard_pop
     say 0x028A voice=0x06 flags=0x08 display=0x90 loop=none control=none : "No, no and NO..."
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_34D3:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1281,15 +1281,15 @@ proc Q9 {
     concept_guard "yolk" 0
     guard_pop
     say 0x028A voice=0x08 flags=0x08 display=0xA0 loop=none control=none : "The incredible Yolk..."
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3532:
     guard_push block_3556
     concept_guard "yolk" 1
     guard_pop
     say 0x028A voice=0x09 flags=0x08 display=0x90 loop=none control=none : "You're not up on your classics..."
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3556:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1306,15 +1306,15 @@ proc Q10 {
     concept_guard "thirteen" 0
     guard_pop
     say 0x028A voice=0x07 flags=0x08 display=0xA0 loop=none control=none : "One in the middle and twelve all around. Good..."
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_35C7:
     guard_push block_35EB
     concept_guard "thirteen" 1
     guard_pop
     say 0x028A voice=0x06 flags=0x08 display=0x90 loop=none control=none : "Murffalos? That was the easy question..."
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_35EB:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1331,14 +1331,14 @@ proc Q11 {
     concept_guard "vista" 0
     guard_pop
     say 0x028A voice=0x04 flags=0x08 display=0x90 loop=none control=none : "Paralleloped? Try contact lenses..."
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3643:
     guard_push block_365F
     concept_guard "vista" 1
     guard_pop
     say 0x028A voice=0x03 flags=0x08 display=0x90 loop=none control=none : "You're hopeless...."
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_365F:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1355,15 +1355,15 @@ proc Q12 {
     concept_guard "cyborg_1er" 0
     guard_pop
     say 0x028A voice=0x01 flags=0x08 display=0xA0 loop=none control=none : "A bit of a history buff, eh|?..."
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_36C8:
     guard_push block_36E6
     concept_guard "cyborg_1er" 1
     guard_pop
     say 0x028A voice=0x00 flags=0x08 display=0x90 loop=none control=none : "No! No! Commander..."
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_36E6:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1380,15 +1380,15 @@ proc Q13 {
     concept_guard "plastok" 0
     guard_pop
     say 0x028A voice=0x02 flags=0x08 display=0xA0 loop=none control=none : "Protein-enriched Plastok."
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3743:
     guard_push block_3767
     concept_guard "plastok" 1
     guard_pop
     say 0x028A voice=0x03 flags=0x08 display=0x90 loop=none control=none : "You got something against Tubulars?"
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3767:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1405,15 +1405,15 @@ proc Q14 {
     concept_guard "bonus" 0
     guard_pop
     say 0x028A voice=0x05 flags=0x08 display=0xA0 loop=none control=none : "Bonus has the finest rings in the universe."
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_37CE:
     guard_push block_37F4
     concept_guard "bonus" 1
     guard_pop
     say 0x028A voice=0x06 flags=0x08 display=0x90 loop=none control=none : "Rings... You know|, those round things..."
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_37F4:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1430,15 +1430,15 @@ proc Q15 {
     concept_guard "parthenogenesis" 0
     guard_pop
     say 0x028A voice=0x08 flags=0x08 display=0xA0 loop=none control=none : "Yes... Just cut 'em up and you've got a family tree."
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_385F:
     guard_push block_3889
     concept_guard "parthenogenesis" 1
     guard_pop
     say 0x028A voice=0x09 flags=0x08 display=0x90 loop=none control=none : "You should open a dictionary from time to time"
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3889:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1455,15 +1455,15 @@ proc Q16 {
     concept_guard "splach" 0
     guard_pop
     say 0x028A voice=0x01 flags=0x08 display=0xA0 loop=none control=none : "Yes... Made from oxidized Larsen liver..."
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_38EC:
     guard_push block_3910
     concept_guard "splach" 1
     guard_pop
     say 0x028A voice=0x02 flags=0x08 display=0x90 loop=none control=none : "Well, that answer wasn't too explosive!"
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3910:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1480,15 +1480,15 @@ proc Q17 {
     concept_guard "umatika" 0
     guard_pop
     say 0x028A voice=0x04 flags=0x08 display=0xA0 loop=none control=none : "Umatika, wife of king Betakam fourth, eighteenth dynasty..."
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_398B:
     guard_push block_39A9
     concept_guard "umatika" 1
     guard_pop
     say 0x028A voice=0x05 flags=0x08 display=0x90 loop=none control=none : "Not even close..."
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_39A9:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1505,15 +1505,15 @@ proc Q18 {
     concept_guard "lord_segelaxx" 0
     guard_pop
     say 0x028A voice=0x02 flags=0x08 display=0xA0 loop=none control=none : "Avoid smoking them!"
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3A08:
     guard_push block_3A2E
     concept_guard "lord_segelaxx" 1
     guard_pop
     say 0x028A voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Well, maybe it was a tough question..."
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3A2E:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1530,15 +1530,15 @@ proc Q19 {
     concept_guard "attroxcity" 0
     guard_pop
     say 0x028A voice=0x05 flags=0x08 display=0xA0 loop=none control=none : "Attroxcity, the Slimer city... Quite right!"
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3A97:
     guard_push block_3ABF
     concept_guard "attroxcity" 1
     guard_pop
     say 0x028A voice=0x06 flags=0x08 display=0x90 loop=none control=none : "No, that was a very wrong answer..."
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3ABF:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1555,15 +1555,15 @@ proc Q20 {
     concept_guard "van_gogue" 0
     guard_pop
     say 0x028A voice=0x08 flags=0x08 display=0xA0 loop=none control=none : "Van Gogue painted it with the Great One's own yellow blood..."
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3B34:
     guard_push block_3B58
     concept_guard "van_gogue" 1
     guard_pop
     say 0x028A voice=0x09 flags=0x08 display=0x90 loop=none control=none : "That was supposed to be easy..."
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3B58:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1580,15 +1580,15 @@ proc Q21 {
     concept_guard "nobody" 0
     guard_pop
     say 0x028A voice=0x00 flags=0x08 display=0xA0 loop=none control=none : "There's no catching you out, eh?"
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3BBD:
     guard_push block_3BDB
     concept_guard "nobody" 1
     guard_pop
     say 0x028A voice=0x01 flags=0x08 display=0x90 loop=none control=none : "What's the Croolicum?"
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3BDB:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1605,15 +1605,15 @@ proc Q22 {
     concept_guard "al_hure" 0
     guard_pop
     say 0x028A voice=0x02 flags=0x08 display=0xA0 loop=none control=none : "Good ol' Al..."
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3C42:
     guard_push block_3C5C
     concept_guard "al_hure" 1
     guard_pop
     say 0x028A voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Sorry..."
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3C5C:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1630,15 +1630,15 @@ proc Q23 {
     concept_guard "yolk" 0
     guard_pop
     say 0x028A voice=0x04 flags=0x08 display=0xA0 loop=none control=none : "Peace to his yellow soul... Bravo."
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3CC5:
     guard_push block_3CE5
     concept_guard "yolk" 1
     guard_pop
     say 0x028A voice=0x05 flags=0x08 display=0x90 loop=none control=none : "Read your classics|..."
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3CE5:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1655,15 +1655,15 @@ proc Q24 {
     concept_guard "crush_me_baby" 0
     guard_pop
     say 0x028A voice=0x07 flags=0x08 display=0xA0 loop=none control=none : "Cruuuush meee baaaabbbyyyy!"
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3D44:
     guard_push block_3D60
     concept_guard "crush_me_baby.." 1
     guard_pop
     say 0x028A voice=0x08 flags=0x08 display=0x90 loop=none control=none : "Ouch..."
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3D60:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1680,15 +1680,15 @@ proc Q25 {
     concept_guard "Bob_Morlock" 0
     guard_pop
     say 0x028A voice=0x08 flags=0x08 display=0xA0 loop=none control=none : "Good ol' Bob!"
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3DC5:
     guard_push block_3DE5
     concept_guard "Bob_Morlock" 1
     guard_pop
     say 0x028A voice=0x06 flags=0x08 display=0x90 loop=none control=none : "I said the OLDEST..."
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3DE5:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1705,15 +1705,15 @@ proc Q26 {
     concept_guard "tina_burner" 0
     guard_pop
     say 0x028A voice=0x06 flags=0x08 display=0xA0 loop=none control=none : "What a performance!"
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3E50:
     guard_push block_3E74
     concept_guard "tina_burner" 1
     guard_pop
     say 0x028A voice=0x09 flags=0x08 display=0x90 loop=none control=none : "How can you not know that?"
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3E74:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1730,15 +1730,15 @@ proc Q27 {
     concept_guard "processed_liver" 0
     guard_pop
     say 0x028A voice=0x09 flags=0x08 display=0xA0 loop=none control=none : "Way too easy..."
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3ED7:
     guard_push block_3EFD
     concept_guard "processed_liver" 1
     guard_pop
     say 0x028A voice=0x03 flags=0x08 display=0x90 loop=none control=none : "You mean you don't know the Migrax?"
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3EFD:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1755,15 +1755,15 @@ proc Q28 {
     concept_guard "maxxon" 0
     guard_pop
     say 0x028A voice=0x00 flags=0x08 display=0xA0 loop=none control=none : "What a poet, that Maxxon."
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3F66:
     guard_push block_3F8E
     concept_guard "maxxon" 1
     guard_pop
     say 0x028A voice=0x03 flags=0x08 display=0x90 loop=none control=none : "No poetry in your withered soul, eh?"
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3F8E:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1780,15 +1780,15 @@ proc Q29 {
     concept_guard "vista" 0
     guard_pop
     say 0x028A voice=0x06 flags=0x08 display=0xA0 loop=none control=none : "In the SCRUT palace on Vista"
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_3FF7:
     guard_push block_401D
     concept_guard "vista" 1
     guard_pop
     say 0x028A voice=0x09 flags=0x08 display=0x90 loop=none control=none : "You never heard of the SCRUT palace?"
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_401D:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1805,15 +1805,15 @@ proc Q30 {
     concept_guard "kult" 0
     guard_pop
     say 0x028A voice=0x03 flags=0x08 display=0xA0 loop=none control=none : "Indeed, Commander..."
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_4080:
     guard_push block_40A4
     concept_guard "kult" 1
     guard_pop
     say 0x028A voice=0x00 flags=0x08 display=0x90 loop=none control=none : "You're not deaf by any chance?"
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_40A4:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "next question:"
@@ -1830,15 +1830,15 @@ proc Q31 {
     concept_guard "gladis" 0
     guard_pop
     say 0x028A voice=0x03 flags=0x08 display=0xA0 loop=none control=none : "Gladis, the smart star."
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_4109:
     guard_push block_412F
     concept_guard "gladis" 1
     guard_pop
     say 0x028A voice=0x01 flags=0x08 display=0x90 loop=none control=none : "You mean you never went to Tumul?"
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_412F:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
@@ -1855,15 +1855,15 @@ proc Q32 {
     concept_guard "zero" 0
     guard_pop
     say 0x028A voice=0x01 flags=0x08 display=0xA0 loop=none control=none : "Absolutely right. Moskito is moonless."
-    shared_state 0xC0 0x1382 0xF6 0xC1 0x0001
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1382] += 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_4190:
     guard_push block_41B6
     concept_guard "zero" 1
     guard_pop
     say 0x028A voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Maybe you have mosquitoes for a brain"
-    shared_state 0xC0 0x1380 0xF6 0xC1 0x0001
+    state[0x1380] += 0x0001
     clear_alternate_concept
     block_41B6:
     say 0x028A voice=0x03 flags=0x08 display=0x80 loop=none control=none : "And that wraps it up question-wise..."
@@ -1877,7 +1877,7 @@ proc scrujo {
     guard_pop
     say 0x0752 voice=0x13 flags=0x00 display=0x80 loop=none control=none : "Commander|, you go search BIONIUM in SCRUTER JO's cyberspace..."
     guard_push block_43A6
-    shared_state 0xC0 0x1366 0xF5 0xC1 0x0000
+    require state[0x1366] == 0x0000
     guard_pop
     say 0x0752 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Me explain how you pick up BIONIUM.."
     say 0x0752 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "You find BIOXX. Bioxx be small energy creatures|..."
@@ -1899,16 +1899,16 @@ proc scrujo {
     say 0x0752 voice=0x14 flags=0x00 display=0x80 loop=none control=none : "YOU go, Commander|..."
     say 0x0752 voice=0x15 flags=0x00 display=0x80 loop=none control=none : "Ahh... Me feel better..."
     guard_push block_4456
-    shared_state 0xC0 0x1368 0xF2 0xC1 0x0000
+    require state[0x1368] > 0x0000
     guard_pop
     say 0x0752 voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Good work... You did be successful..."
     say 0x0752 voice=0x03 flags=0x00 display=0x80 loop=none control=none : "You did get BIONIUM|..."
     say 0x0752 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "YES|!!! Commander|, did I ever tell you what a cool dude you are?"
     say 0x0752 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "The BIONIUM will make me smarter and I'll be able to help you better..."
-    shared_state 0xC0 0x1366 0xF5 0xC1 0x0001
+    state[0x1366] = 0x0001
     block_4456:
     guard_push block_44F1
-    shared_state 0xC0 0x1368 0xF5 0xC1 0x0000
+    require state[0x1368] == 0x0000
     guard_pop
     say 0x0752 voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Not good, friend|... You fail..."
     say 0x0752 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "You didn't understand the idea, huh, Commander|..."
@@ -1945,7 +1945,7 @@ proc bigb1 {
     say 0x043A voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Thank you|... Thank you|... YOU COME WEDDING... WE MAKE BIG CONCERT..."
     say 0x043A voice=0x02 flags=0x00 display=0x80 loop=none control=none : "BYE BYE FRIEND.... TINA SEND YOU BIG KISS..."
     say 0x043A voice=0xFF flags=0x08 display=0x90 loop=none control=none : "..."
-    shared_state 0xC0 0x1384 0xF5 0xC1 0x0001
+    state[0x1384] = 0x0001
     record_clear 0x0474
     block_4650:
     say 0x043A voice=0x02 flags=0x00 display=0x80 loop=none control=none : "You not have ring... Me worried friend|..."
@@ -2112,7 +2112,7 @@ proc revel {
     conditional_block 0x01 honk1
     branch_flag_274f
     actor 0x0084 0x0028 0
-    shared_state 0xC0 0x1386 0xF5 0xC1 0x0000
+    state[0x1386] = 0x0000
     guard_pop
     say 0x004A voice=0x07 flags=0x00 display=0x80 loop=none control=none : "Would you care to know an unbearable truth, Commander|?"
     say 0x004A voice=0x06 flags=0x00 display=0x80 loop=none control=none : "HONK! Switch yourself off for ten seconds!!!"
@@ -2140,7 +2140,7 @@ proc honk1 {
     guard_pop
     say 0x08BA voice=0xFF flags=0x20 display=0x80 loop=none control=none : "I exist only to obey, Commander"
     guard_push block_4EAD
-    shared_state 0xC0 0x1368 0xF5 0xC1 0x0000
+    require state[0x1368] == 0x0000
     guard_pop
     say 0x08BA voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander|, we don't have any BIONIUM|... COMMANDER, please..."
     say 0x08BA voice=0xFF flags=0x20 display=0x80 loop=none control=none : "I need that energy..."
@@ -2148,96 +2148,96 @@ proc honk1 {
     say 0x08BA voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Wake up Scruter Jo, Commander|. He's sleeping in the Cryobox|..."
     block_4EAD:
     guard_push block_4F0E
-    shared_state 0xC0 0x1368 0xF5 0xC1 0x0001
+    require state[0x1368] == 0x0001
     guard_pop
     say 0x08BA voice=0xFF flags=0x20 display=0x80 loop=none control=none : "We've got one dose of BIONIUM left, Commander"
     say 0x08BA voice=0xFF flags=0x20 display=0x80 loop=none control=none : "You must enter Scruter Jo's CYBERSPACE|..."
     say 0x08BA voice=0xFF flags=0x20 display=0x80 loop=none control=none : "I don't feel too sure of myself, Commander... I really need that energy..."
     block_4F0E:
     guard_push block_4F49
-    shared_state 0xC0 0x1368 0xF5 0xC1 0x0002
+    require state[0x1368] == 0x0002
     guard_pop
     say 0x08BA voice=0xFF flags=0x20 display=0x80 loop=none control=none : "We've got two doses of BIONIUM left, Commander"
     say 0x08BA voice=0xFF flags=0x20 display=0x80 loop=none control=none : "You must enter Scruter Jo's CYBERSPACE|..."
     block_4F49:
     guard_push block_4F6E
-    shared_state 0xC0 0x1368 0xF5 0xC1 0x0003
+    require state[0x1368] == 0x0003
     guard_pop
     say 0x08BA voice=0xFF flags=0x20 display=0x80 loop=none control=none : "We've got three doses of BIONIUM left, Commander"
     block_4F6E:
     guard_push block_4F93
-    shared_state 0xC0 0x1368 0xF5 0xC1 0x0004
+    require state[0x1368] == 0x0004
     guard_pop
     say 0x08BA voice=0xFF flags=0x20 display=0x80 loop=none control=none : "We've got four doses of BIONIUM left, Commander"
     block_4F93:
     guard_push block_4FB8
-    shared_state 0xC0 0x1368 0xF5 0xC1 0x0005
+    require state[0x1368] == 0x0005
     guard_pop
     say 0x08BA voice=0xFF flags=0x20 display=0x80 loop=none control=none : "We've got five doses of BIONIUM left, Commander"
     block_4FB8:
     guard_push block_4FDD
-    shared_state 0xC0 0x1368 0xF5 0xC1 0x0006
+    require state[0x1368] == 0x0006
     guard_pop
     say 0x08BA voice=0xFF flags=0x20 display=0x80 loop=none control=none : "We've got six doses of BIONIUM left, Commander"
     block_4FDD:
     guard_push block_5002
-    shared_state 0xC0 0x1368 0xF5 0xC1 0x0007
+    require state[0x1368] == 0x0007
     guard_pop
     say 0x08BA voice=0xFF flags=0x20 display=0x80 loop=none control=none : "We've got seven doses of BIONIUM left, Commander"
     block_5002:
     guard_push block_503B
-    shared_state 0xC0 0x1368 0xF5 0xC1 0x0008
+    require state[0x1368] == 0x0008
     guard_pop
     say 0x08BA voice=0xFF flags=0x20 display=0x80 loop=none control=none : "We've got eight doses of BIONIUM left, Commander"
     say 0x08BA voice=0xFF flags=0x20 display=0x80 loop=none control=none : "You're the best, Commander|..."
     block_503B:
     guard_push block_5088
-    shared_state 0xC0 0x1368 0xF2 0xC1 0x0002
-    shared_state 0xBF 0x0230 0xF1 0xC1 0x0002
+    require state[0x1368] > 0x0002
+    require encounter_count[0x0230] < 0x0002
     shared_bit_state 0xAE 0x0FBA 0x0002 1
     guard_pop
     say 0x08BA voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Commander|, I'm sure that HOM is a vital link in the chain that leads to the Big Bang..."
-    shared_state 0xC0 0x1368 0xF7 0xC1 0x0003
+    state[0x1368] -= 0x0003
     block_5088:
     guard_push block_50C6
-    shared_state 0xC0 0x1368 0xF2 0xC1 0x0002
-    shared_state 0xC0 0x136A 0xF5 0xC1 0x0000
-    shared_state 0xBF 0x0470 0xF2 0xC1 0x0000
+    require state[0x1368] > 0x0002
+    require state[0x136A] == 0x0000
+    require encounter_count[0x0470] > 0x0000
     guard_pop
     say 0x08BA voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Commander|, Mister Bob want to see you in the Cryobox..."
-    shared_state 0xC0 0x1368 0xF7 0xC1 0x0003
+    state[0x1368] -= 0x0003
     block_50C6:
     guard_push block_50FC
-    shared_state 0xC0 0x1368 0xF2 0xC1 0x0002
+    require state[0x1368] > 0x0002
     record_wildcard 0xAF 0x025A 0xFFFF 0
-    shared_state 0xBF 0x0278 0xF5 0xC1 0x0000
+    require encounter_count[0x0278] == 0x0000
     guard_pop
     say 0x08BA voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Commander, don't forget Yoko and Maxxon asleep CRYOBOX..."
-    shared_state 0xC0 0x1368 0xF7 0xC1 0x0003
+    state[0x1368] -= 0x0003
     block_50FC:
     guard_push block_5146
-    shared_state 0xC0 0x1368 0xF2 0xC1 0x0002
+    require state[0x1368] > 0x0002
     record_wildcard 0xAF 0x025A 0xFFFF 0
-    shared_state 0xBF 0x0278 0xF2 0xC1 0x0000
+    require encounter_count[0x0278] > 0x0000
     guard_pop
     say 0x08BA voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Approach the planet RONDO and talk to Yoko or Maxxon in the CRYOBOX in order to teleport them..."
-    shared_state 0xC0 0x1368 0xF7 0xC1 0x0003
+    state[0x1368] -= 0x0003
     block_5146:
     guard_push block_5175
-    shared_state 0xC0 0x1368 0xF2 0xC1 0x0002
-    shared_state 0xBF 0x00C8 0xF5 0xC1 0x0000
+    require state[0x1368] > 0x0002
+    require encounter_count[0x00C8] == 0x0000
     guard_pop
     say 0x08BA voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Better go see Bug Deluxe on Venusia..."
-    shared_state 0xC0 0x1368 0xF7 0xC1 0x0003
+    state[0x1368] -= 0x0003
     block_5175:
     guard_push block_51B6
-    shared_state 0xC0 0x1368 0xF2 0xC1 0x0002
+    require state[0x1368] > 0x0002
     record_wildcard 0xAF 0x12F0 0x03AA 0
-    shared_state 0xC0 0x1388 0xF5 0xC0 0x138A
-    shared_state 0xBF 0x0470 0xF2 0xC1 0x0000
+    require state[0x1388] == state[0x138A]
+    require encounter_count[0x0470] > 0x0000
     guard_pop
     say 0x08BA voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Commander... Maybe the ondoyant has a ring for us..."
-    shared_state 0xC0 0x1368 0xF7 0xC1 0x0003
+    state[0x1368] -= 0x0003
     block_51B6:
     say 0x08BA voice=0xFF flags=0x28 display=0x80 loop=none control=none : "More information?"
     record_wildcard 0xBC 0x0900 0x0001 0

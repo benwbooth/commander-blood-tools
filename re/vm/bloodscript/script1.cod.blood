@@ -1,4 +1,4 @@
-// format: bloodscript-v3
+// format: bloodscript-v4
 // image: COD
 
 proc menbr {
@@ -252,8 +252,8 @@ proc BOB1 {
 
 proc scr2 {
     conditional_block 0x01 block_0C0B
-    shared_state 0xBF 0x0860 0xF5 0xC1 0x0001
-    shared_state 0xBF 0x0080 0xF5 0xC1 0x0001
+    encounter_count[0x0860] = 0x0001
+    encounter_count[0x0080] = 0x0001
     guard_pop
     run_profile 0x02
     block_0C0B:

@@ -1,4 +1,4 @@
-// format: bloodscript-v3
+// format: bloodscript-v4
 // image: BAS
 
 object Eviscerator = 0x01B2
@@ -6,7 +6,7 @@ object Hom = 0x01FA
 object Yoko = 0x0242
 object Honk = 0x08BA
 
-field Hom_s13 = Hom + 0x003A // VAR kind 0x0002, selector(s) 13
+field Hom.s13 = Hom + 0x003A // VAR kind 0x0002, selector(s) 13
 
 yield
 
@@ -89,7 +89,7 @@ selector Eviscerator_choices {
         say Eviscerator voice=0x0A flags=0x40 display=0x80 loop=none control=none : "You say something?" choices "peace"
         say Eviscerator voice=0x0B flags=0x40 display=0x80 loop=none control=none : "You bigmouth" choices "peace"
         say Eviscerator voice=0x08 flags=0x48 display=0x80 loop=none control=none : "Me want relieve me. Bye bye stranger|..." choices "peace"
-        shared_state 0xC0 0x138C 0xF5 0xC1 0x0001
+        state[0x138C] = 0x0001
         say Eviscerator voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Me not friend|. Me hate you|. Me hate all... SWEAR INSULT..." choices "friend"
         say Eviscerator voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Friend, yuk|. Ha|! Ha|! Ahhhh... You not laugh?" choices "friend"
         say Eviscerator voice=0x05 flags=0x41 display=0x80 loop=none control=none : "Friend! Ha! Ha! Ha|!!!" choices "friend"
@@ -114,7 +114,7 @@ selector Eviscerator_choices {
         say Eviscerator voice=0x09 flags=0x41 display=0x80 loop=none control=none : "Me destroy and splat enemy... Me like enemy, friend|..." choices "enemy"
         say Eviscerator voice=0x08 flags=0x40 display=0x80 loop=none control=none : "You talk treasure... treasure is in the mummy" choices "treasure"
         say Eviscerator voice=0x05 flags=0x48 display=0x80 loop=none control=none : "Mummy alone know treasure exist..." choices "treasure"
-        shared_state 0xC0 0x1372 0xF5 0xC1 0x0001
+        state[0x1372] = 0x0001
         say Eviscerator voice=0x09 flags=0x41 display=0x80 loop=none control=none : "Me want escape. You help me..." choices "prison"
         yield_b
         selector_0A02:
@@ -124,7 +124,7 @@ selector Eviscerator_choices {
         say Eviscerator voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Me trust..." choices "secrets"
         say Eviscerator voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Treasure! You know treasure???" choices "secret"
         say Eviscerator voice=0x06 flags=0x48 display=0x80 loop=none control=none : "Me tell you where treasure be if you bring me SPLATCH" choices "secret"
-        shared_state 0xC0 0x1374 0xF5 0xC1 0x0001
+        state[0x1374] = 0x0001
         yield
     }
 }
@@ -186,7 +186,7 @@ selector Yoko_choices {
     case "Croolis" -> selector_0EFD {
         menu "bye_bye" "talk" "race" "war" "news" "brain" "fear"
         say Yoko voice=0x09 flags=0x48 display=0x80 loop=none control=none : "War be big problem|. Life be good if no war|..." choices "war"
-        shared_state 0xC0 0x138E 0xF5 0xC1 0x0001
+        state[0x138E] = 0x0001
         say Yoko voice=0x10 flags=0x40 display=0x80 loop=none control=none : "Croolis like big muscles, weapons and nice females..." choices "news"
         say Yoko voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Croolis have small brain and big muscles..." choices "brain"
         say Yoko voice=0x09 flags=0x40 display=0x80 loop=none control=none : "Croolis always be danger for balance of universe|..." choices "brain"
@@ -260,7 +260,7 @@ selector Yoko_choices {
         say Yoko voice=0x09 flags=0x42 display=0x80 loop=none control=none : "Me dream visit mausoleum of great YOLK on planet VISTA, but Vista be other end of universe|..." choices "information"
         say Yoko voice=0x02 flags=0x42 display=0x80 loop=none control=none : "You talk much, friend|..." choices "information"
         say Yoko voice=0x05 flags=0x48 display=0x80 loop=none control=none : "Me be thirsty..." choices "information"
-        shared_state 0xC0 0x1372 0xF5 0xC1 0x0001
+        state[0x1372] = 0x0001
         yield_b
         selector_1302:
     }
@@ -554,7 +554,7 @@ selector Hom_choices {
         say Hom voice=0x08 flags=0x40 display=0x80 loop=none control=none : "You dumb..." choices "not_talk"
         say Hom voice=0x0B flags=0x40 display=0x80 loop=none control=none : "You deaf too..." choices "not_talk"
         say Hom voice=0x06 flags=0x48 display=0x80 loop=none control=none : "Me tired. Bye bye..." choices "not_talk"
-        record_clear Hom_s13
+        record_clear Hom.s13
         yield_b
         selector_301D:
     }
@@ -590,7 +590,7 @@ selector Hom_choices {
         say Hom voice=0x09 flags=0x40 display=0x80 loop=none control=none : "I eat spiritual food" choices "food"
         say Hom voice=0x0A flags=0x40 display=0x80 loop=none control=none : "You always talk food. You hungry maybe..." choices "food"
         say Hom voice=0x00 flags=0x48 display=0x80 loop=none control=none : "Now you make me hungry. I go eat. Bye bye, friend..." choices "food"
-        record_clear Hom_s13
+        record_clear Hom.s13
         say Hom voice=0x0D flags=0x40 display=0x80 loop=none control=none : "Izwals like astronomy, like stars" choices "science"
         say Hom voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Izwal small science, big telescope" choices "science"
         say Hom voice=0x0C flags=0x40 display=0x80 loop=none control=none : "They build wood space ships... laugh laugh..." choices "science"

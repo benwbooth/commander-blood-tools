@@ -1,4 +1,4 @@
-// format: bloodscript-v3
+// format: bloodscript-v4
 // image: BAS
 
 object blood = 0x0028
@@ -17,11 +17,11 @@ object Honk = 0x0992
 object Rondo = 0x0C2C
 object Magnus = 0x0D04
 
-field blood_s13 = blood + 0x0008 // VAR kind 0x0001, selector(s) 13
-field Bob_Morlock_s03 = Bob_Morlock + 0x0032 // VAR kind 0x0002, selector(s) 03
-field Bug_Deluxe_s13 = Bug_Deluxe + 0x003A // VAR kind 0x0002, selector(s) 13
-field Rondo_s00 = Rondo + 0x0002 // VAR kind 0x0008, selector(s) 00
-field Magnus_s00 = Magnus + 0x0002 // VAR kind 0x0008, selector(s) 00
+field blood.s13 = blood + 0x0008 // VAR kind 0x0001, selector(s) 13
+field Bob_Morlock.conversation_progress = Bob_Morlock + 0x0032 // VAR kind 0x0002, selector(s) 03
+field Bug_Deluxe.s13 = Bug_Deluxe + 0x003A // VAR kind 0x0002, selector(s) 13
+field Rondo.s00 = Rondo + 0x0002 // VAR kind 0x0008, selector(s) 00
+field Magnus.s00 = Magnus + 0x0002 // VAR kind 0x0008, selector(s) 00
 
 yield
 
@@ -54,15 +54,15 @@ selector Beauregard_choices {
         say Beauregard voice=0x04 flags=0x40 display=0x80 loop=none control=none : "I could do with some rest on Galabar... A couple of tekno clubs, and some exotic nightlife... What am I saying?" choices "patagos"
         say Beauregard voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Betakam was a cultivated and much loved king. His poetry was exquisite, Commander" choices "betakam"
         say Beauregard voice=0x02 flags=0x48 display=0x80 loop=none control=none : "Poem by BETAKAM IV King of the PATAGOS of TUMUL: \"HATA\"" choices "betakam"
-        shared_state 0xC0 0x141C 0xF5 0xC1 0x0001
+        state[0x141C] = 0x0001
         say Beauregard voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Gladis blew up, as suns do when they get old. Happily, we don't explode at death. Not usually anyway." choices "Gladis"
         say Beauregard voice=0x02 flags=0x40 display=0x80 loop=none control=none : "I owe you my life, Commander|. This is a great body..." choices "Gladis"
         say Beauregard voice=0x03 flags=0x48 display=0x80 loop=none control=none : "The Transe Dance, those Galabar tekno clubs... Covered in perfume... What am I saying?" choices "Gladis"
-        shared_state 0xC0 0x141E 0xF5 0xC1 0x0001
+        state[0x141E] = 0x0001
         say Beauregard voice=0x01 flags=0x48 display=0x80 loop=none control=none : "How Gladis must have shone..." choices "Gladis"
-        shared_state 0xC0 0x1420 0xF5 0xC1 0x0001
+        state[0x1420] = 0x0001
         say Beauregard voice=0x04 flags=0x49 display=0x80 loop=none control=none : "Yes Commander, this planet is a priceless cultural treasure..." choices "treasure"
-        shared_state 0xC0 0x1420 0xF5 0xC1 0x0001
+        state[0x1420] = 0x0001
         yield
     }
 }
@@ -104,7 +104,7 @@ selector Izwalito_choices {
         say Izwalito voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Ideal be always far from reality: poor want be rich, rich want be poor..." choices "ideal"
         say Izwalito voice=0xFF flags=0x60 display=0x80 loop=none control=none : "Ouch... This is getting kind of heavy, Commander|. You guys go on without me. I'm gonna sleep..." choices "ideal"
         say Izwalito voice=0x04 flags=0x48 display=0x80 loop=none control=none : "Izwals of planet Rondo be very rich... They have much CREDs" choices "ideal"
-        shared_state 0xC0 0x1416 0xF5 0xC1 0x0001
+        state[0x1416] = 0x0001
         say Izwalito voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Family, children, work, food, reproduction, reproduction..." choices "happiness"
         say Izwalito voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Us Izwals of Corpo not know happiness..." choices "happiness"
         say Izwalito voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Izwals of planet Rondo know happiness..." choices "happiness"
@@ -118,7 +118,7 @@ selector Izwalito_choices {
         say Izwalito voice=0x03 flags=0x40 display=0x80 loop=none control=none : "What you want know, friend?" choices "knowledge"
         say Izwalito voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Rondo, you want know planet Rondo, friend|..." choices "rondo"
         say Izwalito voice=0x06 flags=0x48 display=0x80 loop=none control=none : "Planet Rondo be in Rondalus constellation, coordinates AX4532..." choices "rondo"
-        shared_bit_state 0xB0 Rondo_s00 0x0002 0
+        shared_bit_state 0xB0 Rondo.s00 0x0002 0
         say Izwalito voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me not lie..." choices "truth"
         say Izwalito voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Ideal be ideal..." choices "truth"
         say Izwalito voice=0x02 flags=0x41 display=0x80 loop=none control=none : "Me tell truth|, Commander" choices "truth"
@@ -159,7 +159,7 @@ selector Izwalito_choices {
         say Izwalito voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Stars. me like look sky..." choices "stars"
         say Izwalito voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Big starry sky. Me know Magnalus constellation" choices "stars"
         say Izwalito voice=0x02 flags=0x48 display=0x80 loop=none control=none : "Planet magnus be in Magnalus constellation. Magnus coordinates 1234,543256 degrees... You like stars?" choices "stars"
-        shared_bit_state 0xB0 Magnus_s00 0x0002 0
+        shared_bit_state 0xB0 Magnus.s00 0x0002 0
         say Izwalito voice=0x02 flags=0x41 display=0x80 loop=none control=none : "Stars be big science..." choices "stars"
         yield
     }
@@ -205,7 +205,7 @@ selector Morning_Oil_choices {
         say Morning_Oil voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Eviscerator came to a bad end. When SCRUT stopped the war, they put him in jail" choices "eviscerator"
         say Morning_Oil voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Eviscerator is dangerous, Commander|... A ruthless killer..." choices "eviscerator"
         say Morning_Oil voice=0xFF flags=0x68 display=0x80 loop=none control=none : "Commander...I'm worried in case the memory of his ex-master awakens his violent instincts..." choices "eviscerator"
-        shared_state 0xC0 0x144A 0xF5 0xC1 0x0001
+        state[0x144A] = 0x0001
         say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Emasculator's not too smart... Just mean..." choices "emasculator"
         say Morning_Oil voice=0x02 flags=0x40 display=0x80 loop=none control=none : "That's a Croolis I hate..." choices "emasculator"
         yield_b
@@ -218,7 +218,7 @@ selector Morning_Oil_choices {
         say Morning_Oil voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Ha|! Ha|! Hard to know where he might've hidden it, Commander|..." choices "hiding_place"
         say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "I can give you some information but it's strictly confidential..." choices "hiding_place"
         say Morning_Oil voice=0x06 flags=0x48 display=0x80 loop=none control=none : "I don't want Honk to hear..." choices "hiding_place"
-        shared_state 0xC0 0x144C 0xF5 0xC1 0x0001
+        state[0x144C] = 0x0001
         say Morning_Oil voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Millions died in the battles. Planets were stripped to the bone..." choices "battle"
         say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "The Izwals got hit bad. They weren't ready, see..." choices "battle"
         say Morning_Oil voice=0x06 flags=0x40 display=0x80 loop=none control=none : "The SCRUT armies won a battle so huge it shook the entire galaxy.." choices "battle"
@@ -259,9 +259,9 @@ selector Bug_Deluxe_choices {
         menu "department" "buy" "perfume"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Eden, a heady scent for fleshy young females. \"Do not swallow\": 1 CRED" choices "eden"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x119E 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x119E 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_0F6B:
     }
@@ -269,9 +269,9 @@ selector Bug_Deluxe_choices {
         menu "department" "buy" "perfume"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Dune, perfume for sweaty moments. \"Recommended for reproduction\": 1 CRED" choices "dune"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x119E 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x119E 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_0FCA:
     }
@@ -279,9 +279,9 @@ selector Bug_Deluxe_choices {
         menu "department" "buy" "perfume"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Kroolence, for males with arms. \"Watch the babes home in on your armpits\": 1 CRED" choices "kroolence"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x119E 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x119E 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_1033:
     }
@@ -289,9 +289,9 @@ selector Bug_Deluxe_choices {
         menu "department" "buy" "perfume"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Exhaust Nozzle Romeo, droid perfume. Heat up your coolant intakes: 1 CRED" choices "motoroil"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x119E 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x119E 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_1096:
     }
@@ -299,9 +299,9 @@ selector Bug_Deluxe_choices {
         menu "department" "buy" "perfume"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Turbulence, gravitational vertigo. Scent for the adventurous: 1 CRED" choices "turbulence"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x119E 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x119E 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_10F3:
     }
@@ -315,9 +315,9 @@ selector Bug_Deluxe_choices {
         menu "department" "buy" "tie"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo hide tie with tentacule lining. The elegance of dead skin: 1 CRED" choices "hide"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x11FE 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x11FE 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_1178:
     }
@@ -325,9 +325,9 @@ selector Bug_Deluxe_choices {
         menu "department" "buy" "tie"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Mastachok trunk tie with intestinal stitch: 1 CRED" choices "hair"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x11FE 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x11FE 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_11CF:
     }
@@ -335,9 +335,9 @@ selector Bug_Deluxe_choices {
         menu "department" "buy" "tie"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Synthetic tie with built-in altimeter and geiger counter: 4 CREDS" choices "synthetic"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x11FE 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x11FE 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_122A:
     }
@@ -356,9 +356,9 @@ selector Bug_Deluxe_choices {
         menu "buy" "lip_rouge"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Crimson rouge for non metal lips: 1 CRED" choices "red"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x1216 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x1216 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_12B3:
     }
@@ -366,9 +366,9 @@ selector Bug_Deluxe_choices {
         menu "buy" "lip_rouge"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Fluorescent green lip rouge, for tentacles and suckers: 1 CRED" choices "green"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x1216 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x1216 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_130E:
     }
@@ -376,9 +376,9 @@ selector Bug_Deluxe_choices {
         menu "buy" "lip_rouge"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Black lip rouge, for total discretion: 1 CRED" choices "black"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x1216 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x1216 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_1365:
     }
@@ -386,9 +386,9 @@ selector Bug_Deluxe_choices {
         menu "buy" "lip_rouge"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Space blue lip rouge. Now someone will hear you scream: 1 CRED" choices "blue"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x1216 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x1216 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_13C4:
     }
@@ -402,9 +402,9 @@ selector Bug_Deluxe_choices {
         menu "buy" "cream"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Painkiller. Apply to amputated limbs during breaks in combat: 1 CRED" choices "painkiller"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x1246 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x1246 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_1443:
     }
@@ -412,9 +412,9 @@ selector Bug_Deluxe_choices {
         menu "buy" "cream"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Pex, for golden muscles. Win the fight before it starts: 1 CRED" choices "pex"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x1246 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x1246 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_14A4:
     }
@@ -422,9 +422,9 @@ selector Bug_Deluxe_choices {
         menu "buy" "cream"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "METEOR balm: for meteor-induced swelling: 1 CRED" choices "meteor"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x1246 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x1246 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_14F9:
     }
@@ -438,9 +438,9 @@ selector Bug_Deluxe_choices {
         menu "buy" "jewel"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Pearl necklace, for beings with necks: 1 CRED" choices "necklace"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x122E 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x122E 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_1570:
     }
@@ -448,9 +448,9 @@ selector Bug_Deluxe_choices {
         menu "buy" "jewel"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Elastometal bracelet, fits all body parts: 1 CRED" choices "bracelet"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x122E 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x122E 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_15C7:
     }
@@ -470,9 +470,9 @@ selector Bug_Deluxe_choices {
         menu "buy" "murffalo"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Tenderloin of murffalo. mouth and eye watering: 1 CRED" choices "tenderloin"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x11E6 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x11E6 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_1666:
     }
@@ -480,9 +480,9 @@ selector Bug_Deluxe_choices {
         menu "buy" "murffalo"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo steak. Tenderised by the Bronkos of Moskito: 1 CRED" choices "steak"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x11E6 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x11E6 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_16C1:
     }
@@ -490,9 +490,9 @@ selector Bug_Deluxe_choices {
         menu "buy" "murffalo"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Powdered murffalo horn. For renewed virility: 1 CRED" choices "horn"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x11E6 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x11E6 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_1718:
     }
@@ -500,9 +500,9 @@ selector Bug_Deluxe_choices {
         menu "buy" "murffalo"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Deodorised murffalo fur. Slip into something meaty: 1 CRED" choices "fur"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x11E6 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x11E6 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_1771:
     }
@@ -510,9 +510,9 @@ selector Bug_Deluxe_choices {
         menu "buy" "murffalo"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo sausage. Ideal for Bar-B-Q moments: 1 CRED" choices "sausage"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x11E6 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x11E6 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_17C8:
     }
@@ -520,9 +520,9 @@ selector Bug_Deluxe_choices {
         menu "buy" "murffalo"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo intestines. Forecast weather and race winners: 1 CRED" choices "intestines"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x11E6 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x11E6 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_1821:
     }
@@ -536,9 +536,9 @@ selector Bug_Deluxe_choices {
         menu "buy" "sport"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Ball. Steel, lead, magnetic iron and antigrav versions: 1 CRED" choices "ball"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x125E 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x125E 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_18A2:
     }
@@ -546,9 +546,9 @@ selector Bug_Deluxe_choices {
         menu "buy" "sport"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Deodorised murffalo hide boxing gloves. The KO with class: 1 CRED" choices "boxing_gloves"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x1276 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x1276 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_18FF:
     }
@@ -556,9 +556,9 @@ selector Bug_Deluxe_choices {
         menu "buy" "sport"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo pouch. Perfect fit for all family jewels: 1 CRED" choices "pouch"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x128E 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x128E 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_195A:
     }
@@ -578,9 +578,9 @@ selector Bug_Deluxe_choices {
         menu "buy" "handywork"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Remote screwdriver. You watch TV while it screws things down and up: 1 CRED" choices "screwdriver"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x12A6 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x12A6 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_19FF:
     }
@@ -588,9 +588,9 @@ selector Bug_Deluxe_choices {
         menu "buy" "handywork"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Ray saw. Saws through it all: 1 CRED" choices "saws"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x12A6 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x12A6 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_1A56:
     }
@@ -598,9 +598,9 @@ selector Bug_Deluxe_choices {
         menu "buy" "handywork"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Suction drill. Slurp-free: 1 CRED" choices "drills"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x12A6 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x12A6 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_1AA7:
     }
@@ -614,9 +614,9 @@ selector Bug_Deluxe_choices {
         menu "department" "handywork" "buy"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Batteries. Suit all droids: 1 CRED" choices "batteries"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x134E 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x134E 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_1B1A:
     }
@@ -630,9 +630,9 @@ selector Bug_Deluxe_choices {
         menu "buy" "pharmacy"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Aspirox. Pain relief for iron, stainless steel and nonstick heads. Lead heads contact inquiry desk: 1 CRED" choices "aspirox"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x12BE 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x12BE 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_1BA7:
     }
@@ -640,9 +640,9 @@ selector Bug_Deluxe_choices {
         menu "buy" "pharmacy"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Snorz. Can't sleep? Hit your head with a Snorz and say hi to the Sandman: 1 CRED" choices "snorz"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x12BE 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x12BE 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_1C12:
     }
@@ -650,9 +650,9 @@ selector Bug_Deluxe_choices {
         menu "buy" "pharmacy"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Fang brush. For multiple rows of fangs and crushing-type jaws: 1 CRED" choices "fang_brush"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x12BE 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x12BE 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield_b
         selector_1C6F:
     }
@@ -726,9 +726,9 @@ selector Bug_Deluxe_choices {
         menu "buy" "hifi"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "The latest hit from the MIGRATORS: \"CRUSH MY SKULL\": 1 CRED" choices "CD_audio"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe_s13 0x12EE 0x0028 0
-        record_triple blood_s13 0x1186 0x01B2 0
-        shared_state 0xC0 0x1438 0xF5 0xC1 0x0001
+        record_triple Bug_Deluxe.s13 0x12EE 0x0028 0
+        record_triple blood.s13 0x1186 0x01B2 0
+        state[0x1438] = 0x0001
         yield
     }
 }
@@ -792,7 +792,7 @@ selector Bronko_choices {
     case "retirement" -> 0x0000 {
         menu "talk" "bye_bye" "Magnus"
         say Bronko voice=0x01 flags=0x49 display=0x80 loop=none control=none : "Ah, retirement... them send me to planet Magnus with other old robots|... CRY CRY..." choices "retirement"
-        shared_bit_state 0xAE Magnus_s00 0x0002 0
+        shared_bit_state 0xAE Magnus.s00 0x0002 0
         yield
     }
 }
@@ -803,15 +803,15 @@ selector Bob_Morlock_choices {
         menu "bye_bye" "black_hole" "big_bang" "Bob_Morlock" "kanary" "mission" "corpo" "good_ol_bob"
         say Bob_Morlock voice=0x02 flags=0x42 display=0x80 loop=none control=none : "What do you want to know, Commander|?" choices "talk"
         say Bob_Morlock voice=0x03 flags=0x48 display=0x80 loop=none control=none : "Goodbye, Commander|..." choices "bye_bye"
-        shared_state 0xC0 0x1440 0xF5 0xC1 0x0001
+        state[0x1440] = 0x0001
         say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "After years of research, I managed to isolate time, Commander" choices "black_hole"
         say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Certain black holes can be used to go back in time." choices "black_hole"
         say Bob_Morlock voice=0x02 flags=0x48 display=0x80 loop=none control=none : "Honk is programmed to recognize the right black holes" choices "black_hole"
-        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0001
+        Bob_Morlock.conversation_progress += 0x0001
         say Bob_Morlock voice=0x01 flags=0x48 display=0x80 loop=none control=none : "To reach the BIG BANG, you'll need to travel through several black holes..." choices "black_hole"
-        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0001
+        Bob_Morlock.conversation_progress += 0x0001
         say Bob_Morlock voice=0x02 flags=0x49 display=0x80 loop=none control=none : "Black holes are marvellous natural machines, Commander|..." choices "black_hole"
-        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0001
+        Bob_Morlock.conversation_progress += 0x0001
         say Bob_Morlock voice=0x03 flags=0x40 display=0x80 loop=none control=none : "I have spent my life in pursuit of truth|, Commander|..." choices "big_bang"
         say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "I know that truth lies beyond the BIG BANG|, Commander!" choices "big_bang"
         say Bob_Morlock voice=0x01 flags=0x41 display=0x80 loop=none control=none : "My memory is not what it was..." choices "big_bang"
@@ -819,30 +819,30 @@ selector Bob_Morlock_choices {
         say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "In my time, I've been a crooner, a magician, an adventurer. I also created the biggest company in the universe: KANARY" choices "Bob_Morlock"
         say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Women have adored me. Thousands of generations have admired me. I am immortal" choices "Bob_Morlock"
         say Bob_Morlock voice=0x02 flags=0x48 display=0x80 loop=none control=none : "Commander|, you will relive my past. I envy you..." choices "Bob_Morlock"
-        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0001
+        Bob_Morlock.conversation_progress += 0x0001
         say Bob_Morlock voice=0x01 flags=0x48 display=0x80 loop=none control=none : "Ah... Otto Von Smile, Eviscerator, Jeph d'Ulikan, old Yolk, Tina Burner|... And the others..." choices "Bob_Morlock"
-        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0001
+        Bob_Morlock.conversation_progress += 0x0001
         say Bob_Morlock voice=0x01 flags=0x49 display=0x80 loop=none control=none : "Ah|! Those were good days, Commander..." choices "Bob_Morlock"
         presentation_register 0x49C8
         say Bob_Morlock voice=0x02 flags=0x48 display=0x80 loop=none control=none : "You want some revelations, Commander" choices "revelation"
-        shared_state 0xC0 0x1446 0xF5 0xC1 0x0001
+        state[0x1446] = 0x0001
         say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Your mission is to find and travel through the right black holes, taking us back in time to the BIG BANG" choices "mission"
         say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "You will meet fabulous beings, many of them dangerous. You'll need to be careful, Commander" choices "mission"
         say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "You will see terrible wars and cross impossible frontiers..." choices "mission"
         say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "You will have to win strange beings to your cause..." choices "mission"
         say Bob_Morlock voice=0x02 flags=0x49 display=0x80 loop=none control=none : "You will be in sole commander, unless you decide to wake me..." choices "mission"
-        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0001
+        Bob_Morlock.conversation_progress += 0x0001
         say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "The planet Corpo is my world of origin. It is where we come from..." choices "corpo"
         say Bob_Morlock voice=0x03 flags=0x49 display=0x80 loop=none control=none : "Corpo is a fabulous planet with inexhaustible resources." choices "corpo"
-        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0002
+        Bob_Morlock.conversation_progress += 0x0002
         say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Truth is to be found at the creation of the universe, just before the BIG BANG..." choices "truth"
         say Bob_Morlock voice=0x01 flags=0x49 display=0x80 loop=none control=none : "Ah... Truth!" choices "truth"
-        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0001
+        Bob_Morlock.conversation_progress += 0x0001
         say Bob_Morlock voice=0xFF flags=0x48 display=0x80 loop=none control=none : "I'm getting pictures from the Ark, Commander. All systems are nominal..." choices "good_ol_Bob"
         load_string "aarche10.hnm"
         say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "You flatter me, Commander..." choices "good_ol_bob"
         say Bob_Morlock voice=0x02 flags=0x4A display=0x80 loop=none control=none : "You're embarrassing me, Commander..." choices "good_ol_bob"
-        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0001
+        Bob_Morlock.conversation_progress += 0x0001
         say Bob_Morlock voice=0x01 flags=0x43 display=0x80 loop=none control=none : "Heh heh|..." choices "good_ol_bob"
         yield_b
         selector_27FE:
@@ -854,25 +854,25 @@ selector Bob_Morlock_choices {
         say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "The Cottage Research department develops genetic marvels" choices "cottage"
         say Bob_Morlock voice=0x03 flags=0x40 display=0x80 loop=none control=none : "The Kanary lawns mow themselves every weekend..." choices "cottage"
         say Bob_Morlock voice=0x02 flags=0x49 display=0x80 loop=none control=none : "Kanary's artificial orchids provide whiskey that is over a hundred years in age" choices "cottage"
-        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0005
+        Bob_Morlock.conversation_progress += 0x0005
         say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Kanary has developed technology entirely devoted to synthetic cloning" choices "clones"
         say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Kanary's four million employees were all created by and for Kanary" choices "clones"
         say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "I am the last bionatural being and I CONTROL EVERYTHING..." choices "clones"
         say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "My employees wake me up for ten minutes each year to blow out the candles on my birthday cake and sign the company reports" choices "clones"
         say Bob_Morlock voice=0x01 flags=0x49 display=0x80 loop=none control=none : "I instructed the Kanary scientists to develop the perfect adventurer to take me to the BIG BANG..." choices "clones"
-        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0003
+        Bob_Morlock.conversation_progress += 0x0003
         say Bob_Morlock voice=0x03 flags=0x40 display=0x80 loop=none control=none : "All Kanary personnel was made by CLONE CONSORTIUM. So were you|, Commander" choices "employees"
         say Bob_Morlock voice=0x04 flags=0x40 display=0x80 loop=none control=none : "All of you work for me: YOU Honk, YOU Commander|, YOU Olga... ALL OF YOU..." choices "employees"
         say Bob_Morlock voice=0x05 flags=0x49 display=0x80 loop=none control=none : "Kanary builds the cheapest and best employees in the universe..." choices "employees"
-        shared_state 0xC0 0x1442 0xF5 0xC1 0x0001
+        state[0x1442] = 0x0001
         say Bob_Morlock voice=0x01 flags=0x42 display=0x80 loop=none control=none : "Kanary is the biggest company in the known universe" choices "kanary"
         say Bob_Morlock voice=0x02 flags=0x49 display=0x80 loop=none control=none : "Kanary invents, builds, consumes and controls the universe" choices "kanary"
-        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0001
+        Bob_Morlock.conversation_progress += 0x0001
         say Bob_Morlock voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Kanary is so efficient that its products have a negative production cost" choices "reports"
         say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "A cottage costs 100990 Negabucks..." choices "reports"
         say Bob_Morlock voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Our profits are so enormous that nobody can say the figure within a normal life span" choices "reports"
         say Bob_Morlock voice=0x06 flags=0x49 display=0x80 loop=none control=none : "Our only competitor is called CRYO. They control the Second World" choices "reports"
-        shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0002
+        Bob_Morlock.conversation_progress += 0x0002
         yield
     }
 }
@@ -974,7 +974,7 @@ selector Eviscerator_choices {
         say Eviscerator voice=0x0A flags=0x40 display=0x80 loop=none control=none : "You say something?" choices "peace"
         say Eviscerator voice=0x0B flags=0x40 display=0x80 loop=none control=none : "You bigmouth" choices "peace"
         say Eviscerator voice=0x08 flags=0x48 display=0x80 loop=none control=none : "Me want relieve me. Bye bye stranger..." choices "peace"
-        shared_state 0xC0 0x1440 0xF5 0xC1 0x0001
+        state[0x1440] = 0x0001
         say Eviscerator voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Me not friend. Me hate you. Me hate all... SWEAR INSULT..." choices "friend"
         say Eviscerator voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Friend, yuk. Ha|! Ha|! Ahhhh... You not laugh?" choices "friend"
         say Eviscerator voice=0x05 flags=0x41 display=0x80 loop=none control=none : "Friend! Ha! Ha! Ha|!!!" choices "friend"
@@ -999,7 +999,7 @@ selector Eviscerator_choices {
         say Eviscerator voice=0x09 flags=0x41 display=0x80 loop=none control=none : "Me destroy and splat enemy... Me like enemy, friend|..." choices "enemy"
         say Eviscerator voice=0x08 flags=0x40 display=0x80 loop=none control=none : "You talk treasure. If you know treasure, you know Morning Oil" choices "treasure"
         say Eviscerator voice=0x05 flags=0x48 display=0x80 loop=none control=none : "Morning Oil alone know treasure exist... You know that stupid machine?" choices "treasure"
-        shared_state 0xC0 0x1416 0xF5 0xC1 0x0001
+        state[0x1416] = 0x0001
         yield_b
         selector_3559:
     }
@@ -1008,7 +1008,7 @@ selector Eviscerator_choices {
         say Eviscerator voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Me trust..." choices "secrets"
         say Eviscerator voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Treasure! You know treasure???" choices "secret"
         say Eviscerator voice=0x06 flags=0x48 display=0x80 loop=none control=none : "Me tell you where treasure be if you bring me SPLATCH" choices "secret"
-        shared_state 0xC0 0x1418 0xF5 0xC1 0x0001
+        state[0x1418] = 0x0001
         yield
     }
 }
@@ -1084,7 +1084,7 @@ selector Amigo_choices {
         say Amigo voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Splatch is a mixture of pentium, acidium and processed murffalo liver" choices "splatch"
         say Amigo voice=0x02 flags=0x40 display=0x80 loop=none control=none : "You want splatch? Why didn't you say so?" choices "splatch"
         say Amigo voice=0x01 flags=0x48 display=0x80 loop=none control=none : "I happen to have some..." choices "splatch"
-        shared_state 0xC0 0x1416 0xF5 0xC1 0x0001
+        state[0x1416] = 0x0001
         yield
     }
 }

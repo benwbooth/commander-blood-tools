@@ -1,4 +1,4 @@
-// format: bloodscript-v3
+// format: bloodscript-v4
 // image: BAS
 
 yield
@@ -9,7 +9,7 @@ say 0x01B2 voice=0x00 flags=0x40 display=0x80 loop=none control=none : "The GREA
 say 0x01B2 voice=0x01 flags=0x40 display=0x80 loop=none control=none : "He died a long time ago and he's buried here on Vista..." choices "yolk"
 say 0x01B2 voice=0x02 flags=0x40 display=0x80 loop=none control=none : "This palace was specially built to house the remains of the GREAT YOLK..." choices "yolk"
 say 0x01B2 voice=0x03 flags=0x48 display=0x80 loop=none control=none : "The whole universe admires the GREAT YOLK..." choices "yolk"
-shared_state 0xC0 0x151E 0xF5 0xC1 0x0001
+state[0x151E] = 0x0001
 say 0x01B2 voice=0xFF flags=0x40 display=0x80 loop=none control=none : "The portrait in this palace was painted with the GREAT YOLK's own yellow blood..." choices "painting"
 say 0x01B2 voice=0xFF flags=0x40 display=0x80 loop=none control=none : "The painting is beyond price... It is magical..." choices "painting"
 say 0x01B2 voice=0xFF flags=0x40 display=0x80 loop=none control=none : "It is said that he who possesses it is immortal..." choices "painting"
@@ -30,7 +30,7 @@ say 0x00DA voice=0x00 flags=0x40 display=0x80 loop=none control=none : "Me scare
 say 0x00DA voice=0x02 flags=0x48 display=0x80 loop=none control=none : "Yes, yes... Me know good sorceror, friend|..." choices "sorceror"
 presentation_register 0x2624
 say 0x00DA voice=0x03 flags=0x48 display=0x80 loop=none control=none : "Him live alone on desert planet|..." choices "sorceror"
-shared_state 0xC0 0x1512 0xF5 0xC1 0x0001
+state[0x1512] = 0x0001
 yield_b
 selector_0282:
 selector_node "planet" 0x0000
@@ -67,10 +67,10 @@ presentation_register 0x2725
 say 0x004A voice=0x02 flags=0x48 display=0x80 loop=none control=none : "Ah|, It's true that the winter nights would be nicer with TV..." choices "leisure"
 presentation_register 0x2725
 say 0x004A voice=0x00 flags=0x48 display=0x80 loop=none control=none : "To watch TV, I'd need a good decoder..." choices "leisure"
-shared_state 0xC0 0x151C 0xF5 0xC1 0x0001
+state[0x151C] = 0x0001
 say 0x004A voice=0x00 flags=0x40 display=0x80 loop=none control=none : "No shortage of planets|, that's for sure..." choices "planet"
 say 0x004A voice=0x02 flags=0x48 display=0x80 loop=none control=none : "Planets! You're quite fascinated by them..." choices "planet"
-shared_state 0xC0 0x151A 0xF5 0xC1 0x0001
+state[0x151A] = 0x0001
 say 0x004A voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Only Tromps here.. We seldom get strangers..." choices "race"
 say 0x004A voice=0x01 flags=0x48 display=0x80 loop=none control=none : "Big ships pass nearby from time to time|..." choices "race"
 presentation_register 0x2725
@@ -139,7 +139,7 @@ say 0x0482 voice=0x02 flags=0x40 display=0x80 loop=none control=none : "We robot
 say 0x0482 voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Eviscerator finished up badly. When SCRUT put a stop to the war, they jailed him" choices "eviscerator"
 say 0x0482 voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Eviscerator is dangerous, Commander|. He's a ruthless killer..." choices "eviscerator"
 say 0x0482 voice=0xFF flags=0x68 display=0x80 loop=none control=none : "Commander|... I'm worried that memories of his old master might make him violent..." choices "eviscerator"
-shared_state 0xC0 0x1530 0xF5 0xC1 0x0001
+state[0x1530] = 0x0001
 say 0x0482 voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Emasculator is completely brainless... Mean and stupid|..." choices "emasculator"
 say 0x0482 voice=0x02 flags=0x40 display=0x80 loop=none control=none : "That's one Croolis I hate|..." choices "emasculator"
 yield_b
@@ -151,7 +151,7 @@ say 0x0482 voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Stones f
 say 0x0482 voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Ha! Ha! Hard to say where he hid it, Commander|..." choices "hiding_place"
 say 0x0482 voice=0x05 flags=0x40 display=0x80 loop=none control=none : "I don't mind giving you a few clues, but it's confidential information..." choices "hiding_place"
 say 0x0482 voice=0x06 flags=0x48 display=0x80 loop=none control=none : "I don't want HONK to hear..." choices "hiding_place"
-shared_state 0xC0 0x1532 0xF5 0xC1 0x0001
+state[0x1532] = 0x0001
 say 0x0482 voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Millions were wiped out in the battles. Planets were stripped to the bone..." choices "battle"
 say 0x0482 voice=0x05 flags=0x40 display=0x80 loop=none control=none : "The Izwals suffered heavy losses. They weren't ready|..." choices "battle"
 say 0x0482 voice=0x06 flags=0x40 display=0x80 loop=none control=none : "The SCRUT armies finally won after a gigantic battle that shook the galaxy to its knees.." choices "battle"
@@ -228,11 +228,11 @@ record_clear 0x027C
 say 0x0242 voice=0x02 flags=0x40 display=0x80 loop=none control=none : "After years of research, I was able to isolate time|, Commander" choices "black_hole"
 say 0x0242 voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Certain black holes can be used to travel back in time." choices "black_hole"
 say 0x0242 voice=0x02 flags=0x48 display=0x80 loop=none control=none : "Honk has been programmed to identify appropriate black holes" choices "black_hole"
-shared_state 0xB4 0x0274 0xF6 0xC1 0x0001
+conversation_progress[0x0274] += 0x0001
 say 0x0242 voice=0x01 flags=0x48 display=0x80 loop=none control=none : "To reach the BIG BANG, you must travel through a number of black holes..." choices "black_hole"
-shared_state 0xB4 0x0274 0xF6 0xC1 0x0001
+conversation_progress[0x0274] += 0x0001
 say 0x0242 voice=0x02 flags=0x49 display=0x80 loop=none control=none : "Black holes are amazing natural devices, Commander|..." choices "black_hole"
-shared_state 0xB4 0x0274 0xF6 0xC1 0x0001
+conversation_progress[0x0274] += 0x0001
 say 0x0242 voice=0x03 flags=0x40 display=0x80 loop=none control=none : "I have devoted my life to the pursuit of Truth, Commander|..." choices "Big_Bang"
 say 0x0242 voice=0x02 flags=0x40 display=0x80 loop=none control=none : "I know that truth lies beyond the BIG BANG, Commander!" choices "Big_Bang"
 say 0x0242 voice=0x01 flags=0x41 display=0x80 loop=none control=none : "My memory is not what it used to be..." choices "Big_Bang"
@@ -240,30 +240,30 @@ say 0x0242 voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Thanks t
 say 0x0242 voice=0x01 flags=0x40 display=0x80 loop=none control=none : "In my time|, I've been a crooner, a magician, an adventurer... I created KANARY, the biggest business empire in the universe|." choices "Bob_Morlock"
 say 0x0242 voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Women have found me irresistible. Thousands of generations have admired me. I am immortal!" choices "Bob_Morlock"
 say 0x0242 voice=0x02 flags=0x48 display=0x80 loop=none control=none : "Commander|, you are going to relive my past. I envy you|..." choices "Bob_Morlock"
-shared_state 0xB4 0x0274 0xF6 0xC1 0x0001
+conversation_progress[0x0274] += 0x0001
 say 0x0242 voice=0x01 flags=0x48 display=0x80 loop=none control=none : "Ah... Otto Von Smile, Eviscerator, Jeph d'Ulikan, Yolk|, old Tina Burner, and all the others..." choices "Bob_Morlock"
-shared_state 0xB4 0x0274 0xF6 0xC1 0x0001
+conversation_progress[0x0274] += 0x0001
 say 0x0242 voice=0x01 flags=0x49 display=0x80 loop=none control=none : "Ahh! Those were good times|, Commander|..." choices "Bob_Morlock"
 presentation_register 0x2ED5
 say 0x0242 voice=0x02 flags=0x48 display=0x80 loop=none control=none : "You want revelations, Commander|?" choices "revelation"
-shared_state 0xC0 0x152C 0xF5 0xC1 0x0001
+state[0x152C] = 0x0001
 say 0x0242 voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Your mission is to find and travel through the right black holes, taking us back through time to the BIG BANG" choices "mission"
 say 0x0242 voice=0x01 flags=0x40 display=0x80 loop=none control=none : "You'll meet fabulous beings, some of them very dangerous. You'll need all your talents, Commander" choices "mission"
 say 0x0242 voice=0x02 flags=0x40 display=0x80 loop=none control=none : "You'll see terrible wars, cross impossible frontiers..." choices "mission"
 say 0x0242 voice=0x01 flags=0x40 display=0x80 loop=none control=none : "You must rally strange beings to your cause..." choices "mission"
 say 0x0242 voice=0x02 flags=0x49 display=0x80 loop=none control=none : "You will be in sole command, unless you decide to wake me|..." choices "mission"
-shared_state 0xB4 0x0274 0xF6 0xC1 0x0001
+conversation_progress[0x0274] += 0x0001
 say 0x0242 voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Corpo is my home planet" choices "It"
 say 0x0242 voice=0x03 flags=0x49 display=0x80 loop=none control=none : "Corpo is a rare and fabulous planet|... Its resources are unlimited." choices "corpo"
-shared_state 0xB4 0x0274 0xF6 0xC1 0x0002
+conversation_progress[0x0274] += 0x0002
 say 0x0242 voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Truth is to be found at the creation of the universe, just before the BIG BANG..." choices "truth"
 say 0x0242 voice=0x01 flags=0x49 display=0x80 loop=none control=none : "Ah! Truth..." choices "truth"
-shared_state 0xB4 0x0274 0xF6 0xC1 0x0001
+conversation_progress[0x0274] += 0x0001
 say 0x0242 voice=0xFF flags=0x48 display=0x80 loop=none control=none : "I'm getting pictures from the Ark, Commander. All systems are nominal..." choices "good_"
 load_string "arch01.hnm"
 say 0x0242 voice=0x01 flags=0x40 display=0x80 loop=none control=none : "You flatter me, Commander|..." choices "good_"
 say 0x0242 voice=0x02 flags=0x4A display=0x80 loop=none control=none : "You're embarrassing me, Commander|..." choices "good_"
-shared_state 0xB4 0x0274 0xF6 0xC1 0x0001
+conversation_progress[0x0274] += 0x0001
 say 0x0242 voice=0x01 flags=0x43 display=0x80 loop=none control=none : "Heh heh|..." choices "good_"
 yield_b
 selector_157B:
@@ -274,25 +274,25 @@ say 0x0242 voice=0x01 flags=0x40 display=0x80 loop=none control=none : "The vege
 say 0x0242 voice=0x01 flags=0x40 display=0x80 loop=none control=none : "The Cottage Research department develops miracles of nature" choices "cottage"
 say 0x0242 voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Kanary's lawns mow themselves every weekend..." choices "cottage"
 say 0x0242 voice=0x02 flags=0x49 display=0x80 loop=none control=none : "Kanary's artificial orchids produce centuries old whiskey" choices "cottage"
-shared_state 0xB4 0x0274 0xF6 0xC1 0x0005
+conversation_progress[0x0274] += 0x0005
 say 0x0242 voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Kanary has devoted itself to synthetic cloning" choices "clones"
 say 0x0242 voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Kanary's four million employees were built by and for Kanary" choices "clones"
 say 0x0242 voice=0x01 flags=0x40 display=0x80 loop=none control=none : "I am the last natural bio-being and I control everything..." choices "clones"
 say 0x0242 voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Every year, my employees wake me for ten minutes on my birthday... I blow out the candles on my cake and sign the company reports" choices "clones"
 say 0x0242 voice=0x01 flags=0x49 display=0x80 loop=none control=none : "I instructed Kanary's scientists to to create the perfect adventurer to take me to the BIG BANG..." choices "clones"
-shared_state 0xB4 0x0274 0xF6 0xC1 0x0003
+conversation_progress[0x0274] += 0x0003
 say 0x0242 voice=0x03 flags=0x40 display=0x80 loop=none control=none : "All Kanary employees were built by the CLONE CONSORTIUM. Including YOU, Commander" choices "employees"
 say 0x0242 voice=0x04 flags=0x40 display=0x80 loop=none control=none : "You are all my employees: YOU Honk, YOU Commander|, YOU Olga... ALL OF YOU..." choices "employees"
 say 0x0242 voice=0x05 flags=0x49 display=0x80 loop=none control=none : "Kanary builds the cheapest and most efficient employees in the universe|..." choices "employees"
-shared_state 0xC0 0x1528 0xF5 0xC1 0x0001
+state[0x1528] = 0x0001
 say 0x0242 voice=0x01 flags=0x42 display=0x80 loop=none control=none : "Kanary is the biggest company in the known universe" choices "kanary"
 say 0x0242 voice=0x02 flags=0x49 display=0x80 loop=none control=none : "Kanary invents, builds, consumes and controls everything in the universe" choices "kanary"
-shared_state 0xB4 0x0274 0xF6 0xC1 0x0001
+conversation_progress[0x0274] += 0x0001
 say 0x0242 voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Kanary is so well managed that its products are built at negative cost" choices "reports"
 say 0x0242 voice=0x02 flags=0x40 display=0x80 loop=none control=none : "A complete cottage costs 100,990 Negabucks..." choices "reports"
 say 0x0242 voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Our turnover is so big that nobody can say the figure in a normal life span" choices "reports"
 say 0x0242 voice=0x06 flags=0x49 display=0x80 loop=none control=none : "Our only competitor is CRYO" choices "They"
-shared_state 0xB4 0x0274 0xF6 0xC1 0x0002
+conversation_progress[0x0274] += 0x0002
 yield
 yield_b
 selector_node "hello" selector_1932

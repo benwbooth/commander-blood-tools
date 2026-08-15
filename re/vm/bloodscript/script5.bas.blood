@@ -1,4 +1,4 @@
-// format: bloodscript-v3
+// format: bloodscript-v4
 // image: BAS
 
 yield
@@ -77,7 +77,7 @@ say 0x01B2 voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Piece of
 say 0x01B2 voice=0x0A flags=0x40 display=0x80 loop=none control=none : "You say something?" choices "peace"
 say 0x01B2 voice=0x0B flags=0x40 display=0x80 loop=none control=none : "You bigmouth" choices "peace"
 say 0x01B2 voice=0x08 flags=0x48 display=0x80 loop=none control=none : "Me want relieve me. Bye bye stranger|..." choices "peace"
-shared_state 0xC0 0x138C 0xF5 0xC1 0x0001
+state[0x138C] = 0x0001
 say 0x01B2 voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Me not friend|. Me hate you|. Me hate all... SWEAR INSULT..." choices "friend"
 say 0x01B2 voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Friend, yuk|. Ha|! Ha|! Ahhhh... You not laugh?" choices "friend"
 say 0x01B2 voice=0x05 flags=0x41 display=0x80 loop=none control=none : "Friend! Ha! Ha! Ha|!!!" choices "friend"
@@ -101,7 +101,7 @@ say 0x01B2 voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Me like 
 say 0x01B2 voice=0x09 flags=0x41 display=0x80 loop=none control=none : "Me destroy and splat enemy... Me like enemy, friend|..." choices "enemy"
 say 0x01B2 voice=0x08 flags=0x40 display=0x80 loop=none control=none : "You talk treasure... treasure is in the mummy" choices "treasure"
 say 0x01B2 voice=0x05 flags=0x48 display=0x80 loop=none control=none : "Mummy alone know treasure exist..." choices "treasure"
-shared_state 0xC0 0x1372 0xF5 0xC1 0x0001
+state[0x1372] = 0x0001
 say 0x01B2 voice=0x09 flags=0x41 display=0x80 loop=none control=none : "Me want escape. You help me..." choices "prison"
 yield_b
 selector_0A02:
@@ -110,7 +110,7 @@ menu "bye_bye" "talk" "secret"
 say 0x01B2 voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Me trust..." choices "secrets"
 say 0x01B2 voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Treasure! You know treasure???" choices "secret"
 say 0x01B2 voice=0x06 flags=0x48 display=0x80 loop=none control=none : "Me tell you where treasure be if you bring me SPLATCH" choices "secret"
-shared_state 0xC0 0x1374 0xF5 0xC1 0x0001
+state[0x1374] = 0x0001
 yield
 yield_b
 selector_node "hello" selector_0AFA
@@ -164,7 +164,7 @@ selector_0DF4:
 selector_node "Croolis" selector_0EFD
 menu "bye_bye" "talk" "race" "war" "news" "brain" "fear"
 say 0x0242 voice=0x09 flags=0x48 display=0x80 loop=none control=none : "War be big problem|. Life be good if no war|..." choices "war"
-shared_state 0xC0 0x138E 0xF5 0xC1 0x0001
+state[0x138E] = 0x0001
 say 0x0242 voice=0x10 flags=0x40 display=0x80 loop=none control=none : "Croolis like big muscles, weapons and nice females..." choices "news"
 say 0x0242 voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Croolis have small brain and big muscles..." choices "brain"
 say 0x0242 voice=0x09 flags=0x40 display=0x80 loop=none control=none : "Croolis always be danger for balance of universe|..." choices "brain"
@@ -231,7 +231,7 @@ say 0x0242 voice=0x0B flags=0x42 display=0x80 loop=none control=none : "Portrait
 say 0x0242 voice=0x09 flags=0x42 display=0x80 loop=none control=none : "Me dream visit mausoleum of great YOLK on planet VISTA, but Vista be other end of universe|..." choices "information"
 say 0x0242 voice=0x02 flags=0x42 display=0x80 loop=none control=none : "You talk much, friend|..." choices "information"
 say 0x0242 voice=0x05 flags=0x48 display=0x80 loop=none control=none : "Me be thirsty..." choices "information"
-shared_state 0xC0 0x1372 0xF5 0xC1 0x0001
+state[0x1372] = 0x0001
 yield_b
 selector_1302:
 selector_node "art" selector_13DA

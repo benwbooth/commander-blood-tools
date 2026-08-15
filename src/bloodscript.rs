@@ -17,7 +17,7 @@ use crate::vm::{self, VmToken};
 use crate::vm_cfg::{GuardRecovery, GuardRejection, StructuredGuard, analyze_structured_guards};
 use crate::vm_source::{self, ImageKind};
 
-const SOURCE_FORMAT: &str = "bloodscript-v3";
+const SOURCE_FORMAT: &str = "bloodscript-v4";
 const READABLE_SOURCE_FORMAT: &str = "bloodscript-v2";
 const LEGACY_SOURCE_FORMAT: &str = "bloodscript-ir-v1";
 
@@ -538,7 +538,7 @@ pub fn compile_with_dictionary(source: &str, dictionary: &HashMap<u16, String>) 
             continue;
         }
         require_count(&line.args, 3, line.line_number, line.name)?;
-        validate_identifier(line.args[0], line.line_number)?;
+        validate_field_identifier(line.args[0], line.line_number)?;
         let owner = objects.get(line.args[1]).copied().ok_or_else(|| {
             anyhow!(
                 "line {}: field owner {:?} is not a declared object",
@@ -1255,7 +1255,11 @@ fn normalize_modern_statement(
         }
         "say" => normalize_modern_say(&fields, line_number, lexicon),
         "text" | "text_tokens" => normalize_modern_text(&fields, line_number),
+        "require" => normalize_modern_shared_expression(&fields[1..], true, line_number),
         _ => {
+            if fields.len() == 3 && matches!(fields[1], "=" | "+=" | "-=") {
+                return normalize_modern_shared_expression(&fields, false, line_number);
+            }
             let canonical_name = if command == "halt" {
                 "END".to_string()
             } else {
@@ -1272,6 +1276,85 @@ fn normalize_modern_statement(
             }
         }
     }
+}
+
+fn normalize_modern_shared_expression(
+    fields: &[&str],
+    query: bool,
+    line_number: usize,
+) -> Result<String> {
+    if fields.len() != 3 {
+        bail!(
+            "line {line_number}: expected {}LEFT OPERATOR RIGHT",
+            if query { "'require " } else { "" }
+        );
+    }
+    let (opcode, left) = modern_shared_target_to_canonical(fields[0], line_number)?;
+    let operator = match (query, fields[1]) {
+        (true, "!=") => "F0",
+        (true, "<") => "F1",
+        (true, ">") => "F2",
+        (true, "<=") => "F3",
+        (true, ">=") => "F4",
+        (true, "==") => "F5",
+        (false, "=") => "F5",
+        (false, "+=") => "F6",
+        (false, "-=") => "F7",
+        _ => bail!(
+            "line {line_number}: operator {:?} is not valid for a {} expression",
+            fields[1],
+            if query { "requirement" } else { "state update" }
+        ),
+    };
+    let (rhs_mode, rhs) = modern_shared_rhs_to_canonical(fields[2], line_number)?;
+    Ok(format!(
+        "SHARED_STATE {opcode} {left} {operator} {rhs_mode} {rhs}"
+    ))
+}
+
+fn modern_shared_target_to_canonical(
+    value: &str,
+    line_number: usize,
+) -> Result<(&'static str, String)> {
+    if let Some(inner) = bracketed_operand(value, "state") {
+        return Ok(("C0", modern_operand_to_canonical(inner, line_number)?));
+    }
+    if value.ends_with(".conversation_progress") {
+        return Ok(("B4", modern_operand_to_canonical(value, line_number)?));
+    }
+    if value.ends_with(".encounter_count") {
+        return Ok(("BF", modern_operand_to_canonical(value, line_number)?));
+    }
+    if let Some(inner) = bracketed_operand(value, "conversation_progress") {
+        return Ok(("B4", modern_operand_to_canonical(inner, line_number)?));
+    }
+    if let Some(inner) = bracketed_operand(value, "encounter_count") {
+        return Ok(("BF", modern_operand_to_canonical(inner, line_number)?));
+    }
+    bail!(
+        "line {line_number}: shared-state target must be state[ADDRESS], OBJECT.conversation_progress, or OBJECT.encounter_count"
+    )
+}
+
+fn modern_shared_rhs_to_canonical(
+    value: &str,
+    line_number: usize,
+) -> Result<(&'static str, String)> {
+    if let Some(inner) = bracketed_operand(value, "state") {
+        return Ok(("C0", modern_operand_to_canonical(inner, line_number)?));
+    }
+    if value.contains('.') {
+        return Ok(("C0", modern_operand_to_canonical(value, line_number)?));
+    }
+    Ok(("C1", modern_operand_to_canonical(value, line_number)?))
+}
+
+fn bracketed_operand<'a>(value: &'a str, prefix: &str) -> Option<&'a str> {
+    value
+        .strip_prefix(prefix)
+        .and_then(|value| value.strip_prefix('['))
+        .and_then(|value| value.strip_suffix(']'))
+        .filter(|value| !value.is_empty())
 }
 
 fn normalize_modern_fixed(
@@ -1439,6 +1522,7 @@ fn modern_statement(
     line_number: usize,
     dictionary: &HashMap<u16, String>,
     lexicon: &DictionaryPhraseLexicon,
+    query_mode: bool,
 ) -> Result<String> {
     let fields = split_source_fields(statement, line_number)?;
     let name = fields
@@ -1519,6 +1603,7 @@ fn modern_statement(
             }
             Ok(result)
         }
+        "SHARED_STATE" => modern_shared_state(args, query_mode, line_number),
         "END" => Ok("halt".to_string()),
         _ => {
             let args = args
@@ -1532,6 +1617,60 @@ fn modern_statement(
                 Ok(format!("{command} {}", args.join(" ")))
             }
         }
+    }
+}
+
+fn modern_shared_state(args: &[&str], query: bool, line_number: usize) -> Result<String> {
+    if args.len() != 5 {
+        bail!("line {line_number}: malformed generated SHARED_STATE statement");
+    }
+    let left = match args[0] {
+        "B4" => modern_typed_shared_target(
+            args[1],
+            ".conversation_progress",
+            "conversation_progress",
+        ),
+        "BF" => modern_typed_shared_target(args[1], ".encounter_count", "encounter_count"),
+        "C0" => format!("state[{}]", canonical_operand_to_modern(args[1])),
+        opcode => bail!(
+            "line {line_number}: shared-state opcode 0x{opcode} has not been assigned source semantics"
+        ),
+    };
+    let query = query || matches!(args[2], "F0" | "F1" | "F2" | "F3" | "F4");
+    let operator = match (query, args[2]) {
+        (true, "F0") => "!=",
+        (true, "F1") => "<",
+        (true, "F2") => ">",
+        (true, "F3") => "<=",
+        (true, "F4") => ">=",
+        (true, "F5") => "==",
+        (false, "F5") => "=",
+        (false, "F6") => "+=",
+        (false, "F7") => "-=",
+        (_, operator) => bail!(
+            "line {line_number}: shared-state operator 0x{operator} is invalid in {} mode",
+            if query { "query" } else { "update" }
+        ),
+    };
+    let right = match args[3] {
+        "C0" => format!("state[{}]", canonical_operand_to_modern(args[4])),
+        "C1" => canonical_operand_to_modern(args[4]),
+        mode => bail!(
+            "line {line_number}: shared-state RHS mode 0x{mode} has not been assigned source semantics"
+        ),
+    };
+    Ok(format!(
+        "{}{left} {operator} {right}",
+        if query { "require " } else { "" }
+    ))
+}
+
+fn modern_typed_shared_target(value: &str, suffix: &str, fallback: &str) -> String {
+    let value = canonical_operand_to_modern(value);
+    if value.ends_with(suffix) {
+        value
+    } else {
+        format!("{fallback}[{value}]")
     }
 }
 
@@ -1558,6 +1697,7 @@ fn format_modern_source(
     let mut output = String::new();
     let mut indent = 0usize;
     let mut selector_case_open = false;
+    let mut query_mode = false;
 
     for (line_index, original_line) in source.lines().enumerate() {
         let line_number = line_index + 1;
@@ -1626,7 +1766,13 @@ fn format_modern_source(
             output,
             "{}{}",
             "    ".repeat(indent),
-            modern_statement(statement, line_number, dictionary, &lexicon)?
+            modern_statement(
+                statement,
+                line_number,
+                dictionary,
+                &lexicon,
+                query_mode,
+            )?
         )?;
         let useful_comment = if name == "FIELD" || name == "RAW" {
             comment_after_code(trimmed, line_number)?.map(str::trim)
@@ -1646,6 +1792,11 @@ fn format_modern_source(
                 indent += 1;
                 selector_case_open = true;
             }
+            _ => {}
+        }
+        match name {
+            "WHEN" | "GUARD_PUSH" => query_mode = true,
+            "THEN" | "GUARD_POP" => query_mode = false,
             _ => {}
         }
         if matches!(name, "END_PROCEDURE" | "END_SELECTOR_LIST") {
@@ -2347,13 +2498,28 @@ fn simplify_alias_identifiers(
             .get(&alias.owner_offset)
             .map(|owner| owner.identifier.as_str())
             .unwrap_or("object");
-        let selectors = alias
-            .selectors
-            .iter()
-            .map(|selector| format!("{selector:02X}"))
-            .collect::<Vec<_>>()
-            .join("_");
-        alias.identifier = unique_identifier(format!("{owner}_s{selectors}"), address, &mut used);
+        let field = semantic_field_component(alias).map_or_else(
+            || {
+                let selectors = alias
+                    .selectors
+                    .iter()
+                    .map(|selector| format!("{selector:02X}"))
+                    .collect::<Vec<_>>()
+                    .join("_");
+                format!("s{selectors}")
+            },
+            str::to_string,
+        );
+        alias.identifier = unique_identifier(format!("{owner}.{field}"), address, &mut used);
+    }
+}
+
+fn semantic_field_component(alias: &FieldAlias) -> Option<&'static str> {
+    match (alias.kind, alias.selectors.as_slice()) {
+        (0x0002, [0x03]) => Some("conversation_progress"),
+        (0x0002, [0x08]) => Some("encounter_count"),
+        (0x0002, [0x11]) => Some("current_location"),
+        _ => None,
     }
 }
 
@@ -3368,6 +3534,18 @@ fn validate_identifier(value: &str, line: usize) -> Result<()> {
     Ok(())
 }
 
+fn validate_field_identifier(value: &str, line: usize) -> Result<()> {
+    if let Some((owner, field)) = value.split_once('.') {
+        if field.contains('.') {
+            bail!("line {line}: invalid field identifier {value:?}");
+        }
+        validate_identifier(owner, line)?;
+        validate_identifier(field, line)
+    } else {
+        validate_identifier(value, line)
+    }
+}
+
 fn parse_bool(value: &str, line: usize, field: &str) -> Result<bool> {
     match value {
         "0" => Ok(false),
@@ -3475,13 +3653,13 @@ mod tests {
     fn shared_state_families_compile_exact_bytes() {
         let source = concat!(
             "; format: bloodscript-ir-v1\n",
-            "00000000: SHARED_STATE C0 1234 F6 C2 5678\n",
+            "00000000: SHARED_STATE C0 1234 F6 C0 5678\n",
             "00000007: SHARED_BIT_STATE AE 2345 00FF 1\n",
             "0000000D: RECORD_WILDCARD AF 4567 FFFF 1\n",
             "00000013: END\n",
         );
         let expected = vec![
-            0xC0, 0x34, 0x12, 0xF6, 0xC2, 0x78, 0x56, 0xAE, 0xA1, 0x45, 0x23, 0xFF, 0x00, 0xAF,
+            0xC0, 0x34, 0x12, 0xF6, 0xC0, 0x78, 0x56, 0xAE, 0xA1, 0x45, 0x23, 0xFF, 0x00, 0xAF,
             0xA1, 0x67, 0x45, 0xFF, 0xFF, 0xFF,
         ];
         assert_eq!(compile(source).unwrap(), expected);
@@ -3491,7 +3669,7 @@ mod tests {
         assert!(
             decompiled
                 .source
-                .contains("shared_state 0xC0 0x1234 0xF6 0xC2 0x5678")
+                .contains("state[0x1234] += state[0x5678]")
         );
         assert!(
             decompiled
@@ -3648,7 +3826,7 @@ mod tests {
 
     #[test]
     fn field_aliases_require_exact_object_kind_matrix_evidence() {
-        let image = vec![0xBF, 0x18, 0x01, 0xF5, 0xC1, 0x01, 0x00, 0xFF];
+        let image = vec![0xC0, 0x18, 0x01, 0xF5, 0xC1, 0x01, 0x00, 0xFF];
         let mut var = vec![0; 0x200];
         var[0x100..0x102].copy_from_slice(&2u16.to_le_bytes());
         let symbols = vec![DebSymbol {
@@ -3664,8 +3842,8 @@ mod tests {
         assert_eq!(decompiled.field_alias_uses, 1);
         for statement in [
             "object actor = 0x0100",
-            "field actor_s11 = actor + 0x0018",
-            "shared_state 0xBF actor_s11 0xF5 0xC1 0x0001",
+            "field actor.current_location = actor + 0x0018",
+            "state[actor.current_location] = 0x0001",
         ] {
             assert!(decompiled.source.contains(statement), "missing {statement}");
         }
@@ -3706,10 +3884,10 @@ mod tests {
         assert!(
             ambiguous
                 .source
-                .contains("shared_state 0xBF 0x0118 0xF5 0xC1 0x0001")
+                .contains("state[0x0118] = 0x0001")
         );
 
-        let base_image = vec![0xBF, 0x02, 0x01, 0xF5, 0xC1, 0x01, 0x00, 0xFF];
+        let base_image = vec![0xC0, 0x02, 0x01, 0xF5, 0xC1, 0x01, 0x00, 0xFF];
         let mut base_var = vec![0; 0x200];
         base_var[0x0100..0x0102].copy_from_slice(&2u16.to_le_bytes());
         base_var[0x0102..0x0104].copy_from_slice(&4u16.to_le_bytes());
@@ -3734,11 +3912,7 @@ mod tests {
         .unwrap();
         assert_eq!(exact_base.field_aliases, 0);
         assert_eq!(exact_base.object_aliases, 1);
-        assert!(
-            exact_base
-                .source
-                .contains("shared_state 0xBF exact")
-        );
+        assert!(exact_base.source.contains("state[exact] = 0x0001"));
     }
 
     #[test]

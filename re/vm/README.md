@@ -83,7 +83,7 @@ cargo run --bin cbvm -- compile-bloodscript \
   /path/to/SCRIPT1.DIC
 ```
 
-Generated `bloodscript-v3` source is intended for editing rather than for
+Generated `bloodscript-v4` source is intended for editing rather than for
 reading as a decorated disassembly. It uses lowercase statements, `0x` numeric
 literals, `none` for absent optional values, declaration expressions, label
 colons, concise DEB-derived names, and four-space indentation. A layout pass
@@ -110,11 +110,14 @@ a claim that its source-level meaning is understood. `RAW` retains bytes whose
 instruction framing is not yet established. Both forms are deliberate
 verification escapes and must be eliminated by evidence, not renamed guesses.
 
-The recovered shared handlers at native offsets `0x6863`, `0x6902`, and
-`0x6946` are represented as `SHARED_STATE`, `SHARED_BIT_STATE`, and
-`RECORD_WILDCARD`. These statements preserve the opcode-family byte, optional
-`A1` prefix, operator/mode bytes, and operands, so they are structured without
-weakening the byte-exact compiler contract.
+The shared-word handler at native offset `0x6863` is represented as ordinary
+assignments and signed `require` comparisons. Script-global words use
+`state[address]`; the proven kind-2 fields are named `encounter_count`,
+`conversation_progress`, and `current_location`. The compiler reconstructs the
+original family, operator, and RHS-mode bytes from these expressions. The
+shared bit and direct-record handlers at `0x6902` and `0x6946` remain explicit
+typed statements while their source-level opcode distinctions are investigated;
+their optional `A1` prefixes and operands still round-trip exactly.
 
 The native control-flow handlers at `0x6559`, `0x6572`, `0x65DB`, `0x65EB`,
 `0x6830`, `0x6494`, and `0x64A0` are represented as guard push/pop, jump,

@@ -8,12 +8,23 @@ cargo run --bin cbvm -- decompile-structured \
   accuracy/cblood_install/cblood re/vm/structured
 ```
 
-`bloodscript-v3` has no address column or opcode-style uppercase syntax. The
+`bloodscript-v4` has no address column or opcode-style uppercase syntax. The
 compiler lays out statements first, then resolves every label, procedure,
 branch, selector link, and guard target. Generated source uses four-space
 indentation for procedure, guard, selector, and case bodies. Redundant
 disassembly comments are omitted; comments remain only for recovery evidence
 that is not expressed by syntax.
+
+The shared-word handler is lifted to ordinary state expressions. Script-global
+words use `state[address]`; the two proven kind-2 fields use
+`object.encounter_count` and `object.conversation_progress`. Updates use `=`,
+`+=`, or `-=`, while query-mode comparisons use `require` with the signed
+operators `!=`, `<`, `>`, `<=`, `>=`, and `==`. The compiler derives the
+original `B4`/`BF`/`C0` family byte, `F0..F7` operator byte, and immediate or
+state-backed RHS mode from the expression and reproduces the original seven
+bytes. Kind-2 selector `0x11` is also named `current_location`, based on its
+native consumers. Other selector names remain explicit until their roles are
+similarly established.
 
 The `when target { ... } then { ... }` syntax is a lossless structural form of
 the native `A0 target` / `A1` guard protocol. `when` and `then` emit those
