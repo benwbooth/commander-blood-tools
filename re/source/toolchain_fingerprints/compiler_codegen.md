@@ -2694,14 +2694,22 @@ rows -1 and 256 prove the machine formula differs from natural y*320 there;
 the live-verified game viewport [0,320]x[0,200] keeps every shipped row in the
 equivalent 0..255 domain.
 
-Open Watcom `-3 -ox -mm` compiles the game-data context plus far-framebuffer
-candidate without warnings to 39 instructions/98 bytes versus 30/68 original;
-Turbo C 2.01 medium emits 54 instructions. Watcom performs the same signed
+The compiler-corpus sample now includes the authoritative recovered source.
+Open Watcom `-3 -os -s -mm -we` compiles it without warnings to 33
+instructions/88 bytes versus 30/68 original, with 76.67 percent
+mnemonic-multiset and 73.33 percent ordered overlap. Turbo C 2.01 medium
+(`-mm -O -Z`) emits 54 instructions with 73.33 percent multiset and 70 percent
+ordered overlap and assembles cleanly to OBJ. Watcom performs the same signed
 clipping, zero test, offset, and shade but takes the context in AX and the far
 framebuffer in CX:BX, switches ES between both based objects, and accounts for
-the framebuffer's offset. The original's implicit BP context, segment-only ES
-framebuffer, and preserve-all boundary remain integration constraints rather
-than register emulation in the C source.
+the framebuffer's offset.
+
+Its sole caller is the accepted natural `0x009A10` projector, which already
+passes the explicit context and full framebuffer pointer. The function is
+therefore accepted for source-port integration. The original implicit BP
+context, segment-only ES framebuffer, preserve-all boundary, and path-specific
+flags remain direct-replacement constraints rather than register emulation in
+the C source.
 
 Point-cloud initializer `0x009B67` sets ES from GS, starts DI at 0x2FC1, and
 performs three far PRNG calls with AX=0xFFFF for each of 1,000 records. STOSW
