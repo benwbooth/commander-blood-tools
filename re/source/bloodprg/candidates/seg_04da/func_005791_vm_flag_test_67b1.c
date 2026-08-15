@@ -23,20 +23,21 @@ cb_u16 CB_NEAR vm_flag_test_67b1(void)
     cb_u16 payload_offset;
     cb_u16 history_offset;
 
-    value = vm_block_match_value;
+    value = vm_block_match_value_gs;
     if (value == 0u) {
         return 0u;
     }
 
-    if ((vm_resume_state & 2u) != 0u) {
-        vm_resume_value = value;
+    if ((vm_resume_state_gs & BLOODPRG_VM_RESUME_ACTIVE) != 0u) {
+        vm_resume_value_gs = value;
     }
     vm_presentation_word_buffer_gs[0] = 0u;
 
     history = vm_blood_history_words;
     history_offset = vm_blood_history_ring_index;
     *VM_FLAG_HISTORY_AT(history, history_offset) = value;
-    vm_blood_history_ring_index = (history_offset + 2u) & 0x000fu;
+    vm_blood_history_ring_index =
+        (history_offset + 2u) & BLOODPRG_VM_HISTORY_RING_MASK;
 
     code_image = vm_code_image;
     node_offset = vm_pc_saved;
@@ -45,7 +46,8 @@ cb_u16 CB_NEAR vm_flag_test_67b1(void)
             VM_FLAG_CODE_AT(code_image, node_offset);
         if (node->value == value) {
             payload_offset = node_offset + 4u;
-            if (*VM_FLAG_CODE_AT(code_image, payload_offset) == 0xa3u) {
+            if (*VM_FLAG_CODE_AT(code_image, payload_offset)
+                    == BLOODPRG_VM_CONCEPT_OPCODE) {
                 vm_branch_b = vm_branch_a;
                 vm_parent_program_counter = vm_program_counter;
                 vm_branch_a = value;
@@ -55,6 +57,6 @@ cb_u16 CB_NEAR vm_flag_test_67b1(void)
         }
         node_offset = node->next_offset;
     }
-    vm_block_match_value = 0u;
+    vm_block_match_value_gs = 0u;
     return value;
 }

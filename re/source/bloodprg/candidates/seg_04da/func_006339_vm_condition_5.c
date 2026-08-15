@@ -57,7 +57,8 @@ int CB_NEAR vm_condition_5(cb_u16 flags,
                 ++count;
             }
             if (count != 0) {
-                ring_offset = (cb_u8)((vm_blood_history_ring_index - 2u) & 0x0fu);
+                ring_offset = (cb_u8)((vm_blood_history_ring_index - 2u)
+                        & BLOODPRG_VM_HISTORY_RING_MASK);
                 while (count != 0) {
                     history_word = vm_blood_history_words[ring_offset >> 1];
                     candidate = words;

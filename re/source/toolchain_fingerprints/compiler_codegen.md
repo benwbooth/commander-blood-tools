@@ -6976,6 +6976,41 @@ warning-free to a 418-byte OMF object. The source is accepted for source-port
 integration; exact replacement still requires the original `LODSW` allocation,
 dead `BX` clobber, and path-specific flags.
 
+## BLOODPRG post-block VM branch gate at 0x005791
+
+The 133-byte near routine consumes the pending match at `GS:0x6762`. Zero is a
+true no-op. A nonzero value may be saved for resume, clears the first
+presentation word, appends through the history far pointer at a byte-granular
+modulo-16 ring index, then scans the saved linked code nodes under the segment
+half of the code-image pointer. An A3 payload shifts branch A and the program
+counter into their parent slots before publishing the pending value and matched
+payload. Every nonzero path finally clears the pending word and returns its
+original value in `AX`.
+
+Fourteen direct vectors execute the untouched original body. They cover zero,
+resume modes, first/second/missing nodes, A3 and non-A3 payloads, a zero saved
+node, odd and wrapping history indices, wrapping history bases, a payload byte
+at `0xFFFF`, a high value under reverse direction, ignored code-image base
+offset, complete state order, segment decoys, registers, flags, direction,
+stack integrity, and the near return.
+
+The corrected natural C names the pending, resume-state, and resume-value words
+through explicit game-data aliases instead of relying on Watcom to lower
+unbased globals through `SS`. It also centralizes the recovered A3 opcode,
+resume bit, and history-ring mask in the shared VM header. Open Watcom 1.9 large
+(`-3 -os -s -ml -we`) emits 54 instructions/146 bytes versus 44/133 original,
+with 79.55 percent mnemonic-multiset and 72.73 percent ordered overlap. Speed
+and time optimization both expand to 58 instructions; medium model retains 54
+but grows to 167 bytes. Turbo C 2.01 large emits 101 instructions with 84.09
+percent multiset and 75.00 percent ordered overlap and assembles warning-free
+to a 1,047-byte OMF object.
+
+The source contains no inline assembly or register-state facade and is accepted
+for source-port integration. Direct replacement still requires true
+GS-qualified global accesses, the original ES:DI history and DS:SI scan
+allocation, `STOSW` lowering, frameless preservation, and path-specific BX and
+flag residue.
+
 ## BLOODPRG post-VM presentation scan at 0x005816
 
 The 606-byte near routine walks the 20-byte VM directory after script execution.

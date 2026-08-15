@@ -30,7 +30,8 @@ void CB_NEAR vm_op_a3_collect(void)
 
     code_segment = VM_CODE_SEGMENT(vm_code_image);
     code_offset = vm_program_counter;
-    if (*VM_CODE_BYTE_AT(code_segment, code_offset) != 0xa3u) {
+    if (*VM_CODE_BYTE_AT(code_segment, code_offset)
+            != BLOODPRG_VM_CONCEPT_OPCODE) {
 #if defined(__WATCOMC__)
         _asm pop es;
         _asm pop ax;
