@@ -62127,6 +62127,15 @@ def snd_play_clip_vectors() -> list[dict[str, object]]:
             "memory_length": 31,
         },
         {
+            "name": "idle_memory_ignores_bank_offset",
+            "sound": 1,
+            "pending": 0,
+            "clip": 1,
+            "backend": "memory",
+            "memory_length": 23,
+            "bank_offset": 0x1234,
+        },
+        {
             "name": "idle_ems",
             "sound": 1,
             "pending": 0,
@@ -62161,6 +62170,19 @@ def snd_play_clip_vectors() -> list[dict[str, object]]:
             "clip": 1,
             "backend": "memory",
             "memory_length": 10,
+            "packed": 0,
+            "states": [3, 0],
+            "buffer_lengths": [12, 8],
+            "position": 8,
+        },
+        {
+            "name": "mix_memory_adds_bank_offset",
+            "sound": 1,
+            "pending": 2,
+            "clip": 1,
+            "backend": "memory",
+            "memory_length": 10,
+            "bank_offset": 0x0100,
             "packed": 0,
             "states": [3, 0],
             "buffer_lengths": [12, 8],
@@ -62362,6 +62384,7 @@ def snd_play_clip_vectors() -> list[dict[str, object]]:
         clip_length = int(case.get("length", 0))
         read_return = int(case.get("read_return", clip_length))
         memory_length = int(case.get("memory_length", 0))
+        bank_offset = int(case.get("bank_offset", 0))
         memory_offset = 0x0200 + case_index * 0x0040
         data_length = max(clip_length, memory_length + 6, read_return, 64)
         clip_data = bytes(
@@ -62439,7 +62462,7 @@ def snd_play_clip_vectors() -> list[dict[str, object]]:
         put_byte(0x0BA2, int(case.get("packed", 0)))
         put_pointer(0x0BAB, 0xAAAA, 0xBBBB)
         put_word(0x0BAF, 0xCCCC)
-        put_pointer(0x0BB3, 0, bank_segment)
+        put_pointer(0x0BB3, bank_offset, bank_segment)
         put_pointer(0x0BB7, stream_offset, stream_segment)
         put_word(0x0C47, voice_handle)
         put_pointer(0x0CDB, play_offset, callback_segment)
@@ -62620,7 +62643,13 @@ def snd_play_clip_vectors() -> list[dict[str, object]]:
             (callback_segment, stop_offset, b"\xcb"),
             (memmove_segment, memmove_offset, b"\xcb"),
             (game_segment, game_base, bytes(game)),
-            (bank_segment, memory_offset, clip_data),
+            (
+                bank_segment,
+                (memory_offset + bank_offset) & 0xFFFF
+                if mixing and backend == "memory"
+                else memory_offset,
+                clip_data,
+            ),
             (buffer_segments[0], buffer_offset, bytes(buffer_before[0])),
             (buffer_segments[1], buffer_offset, bytes(buffer_before[1])),
             (
@@ -62856,6 +62885,7 @@ def snd_play_clip_vectors() -> list[dict[str, object]]:
                 "clip_index": clip_value,
                 "mode": "mix" if mixing else "play",
                 "backend": backend,
+                "bank_offset": bank_offset,
                 "descriptor": list(expected_descriptor)
                 if expected_descriptor is not None
                 else None,

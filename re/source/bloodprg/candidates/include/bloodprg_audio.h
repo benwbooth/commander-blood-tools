@@ -113,7 +113,7 @@ void CB_NEAR cb_snd_stream_play(cb_u16 command,
         volatile bloodprg_snd_stream_buffer *buffer,
         volatile cb_u8 CB_FAR *cursor);
 void CB_NEAR cb_snd_clip_play(cb_u16 command,
-        volatile bloodprg_snd_clip_descriptor *clip);
+        volatile bloodprg_snd_clip_descriptor CB_GAME_DATA *clip);
 
 #if defined(__WATCOMC__)
 #pragma aux snd_driver_init_abi parm [ax] \
@@ -123,7 +123,7 @@ void CB_NEAR cb_snd_clip_play(cb_u16 command,
 #pragma aux audio_param_init_cd5 parm [ax] modify exact [ax]
 #pragma aux audio_process_ade modify exact [ax]
 #pragma aux snd_bank_loader parm [ax] [si] modify exact []
-#pragma aux snd_play_clip parm [ax] modify exact []
+#pragma aux snd_play_clip parm [ax] modify exact [ax]
 #pragma aux snd_stream_source_load parm [si] modify exact []
 #pragma aux cb_snd_stream_service parm [ax] [si] [es di]
 #pragma aux cb_snd_stream_play parm [ax] [si] [es di]
@@ -133,7 +133,8 @@ void CB_NEAR cb_snd_clip_play(cb_u16 command,
 void CB_SAVE_REGS CB_FAR audio_param_init_cd5(
         cb_u16 driver_segment); /* 0x00B7B0 */
 void CB_SAVE_REGS CB_FAR audio_process_ade(void);         /* 0x00B7E3 */
-void CB_FAR snd_play_clip(cb_i16 clip_index);             /* 0x00B8CD */
+void CB_SAVE_REGS CB_FAR snd_play_clip(
+        cb_i16 clip_index);                               /* 0x00B8CD */
 void CB_FAR snd_bank_loader(
     cb_u16 mode,
     volatile char CB_NEAR *path);       /* 0x0B1B:0855 */

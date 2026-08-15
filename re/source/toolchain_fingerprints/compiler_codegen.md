@@ -4545,19 +4545,34 @@ mode doubles the logical sample count and advances the source only on even
 count values, reproducing each source sample twice. The recovered C states
 those pointer and byte operations directly.
 
-Thirteen direct-binary vectors cover sound gating, idle and active modes, all
-four storage backends, the shipped `SS == GS` table invariant, four-page EMS
-maps, exact XMS records, DOS short reads, stop-before-play ordering, descriptor
-fields, both active-buffer choices, no-active and position-`0xFFFF` exits,
-packed and unpacked source cadence, and spillover into the second buffer. The
-vectors also distinguish XMS staging at `graphics_work_surface + 0x7D00` from
-the file path's hardcoded offset `0x7D00` in that pointer's segment.
+Fifteen direct-binary vectors cover the explicit GS sound gate, idle and active
+modes, all four storage backends, the shipped `SS == GS` table invariant,
+four-page EMS maps, exact XMS records, DOS short reads, stop-before-play
+ordering, descriptor fields, both active-buffer choices, no-active and
+position-`0xFFFF` exits, packed and unpacked source cadence, and spillover into
+the second buffer. Two nonzero-bank-offset vectors prove an asymmetric detail:
+idle conventional playback uses the clip record's offset with only the bank
+pointer's segment, while active mixing adds the bank pointer's offset. The
+source now expresses the idle case with `MK_FP(FP_SEG(...), record_offset)`.
+The vectors also distinguish XMS staging at
+`graphics_work_surface + 0x7D00` from the file path's hardcoded offset `0x7D00`
+in that pointer's segment.
 
-Open Watcom compiles the game-data-qualified candidate warning-free to 341 instructions/1021
-bytes versus 266/720 original. The remaining size is ordinary structure,
-far-pointer, and callback lowering around logic already proven against the raw
-routine; exact integration still requires fixed data placement and narrow
-driver, position, EMS, XMS, and DOS ABI adapters.
+The compiler-corpus sample includes the maintained candidate directly. Its
+locals for memory clips, stream buffers, and the shared descriptor now carry
+their game-data pointer type, eliminating Turbo C's far-to-near conversion
+warnings. Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) emits 349
+instructions/1,049 bytes versus 266/720 original, with 74.06 percent
+mnemonic-multiset and 53.38 percent ordered overlap. Turbo C 2.01 medium
+(`-mm -O -Z`) emits 495 instructions with 74.06 percent multiset and 57.14
+percent ordered overlap and assembles warning-free to a 3,080-byte OMF object.
+
+The candidate is accepted for source integration. The remaining size is
+ordinary typed structure, far-pointer, and callback lowering around logic
+proven against the raw routine. A direct replacement still requires fixed data
+placement, `SS == GS` table access, inherited source-segment state at the
+position callback, full-ECX preservation, and narrow driver, EMS, XMS, and DOS
+ABI adapters.
 
 ## BLOODPRG SND-bank page backend candidates
 

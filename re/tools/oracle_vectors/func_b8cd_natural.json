@@ -4,6 +4,7 @@
     "clip_index": 0,
     "mode": "play",
     "backend": "memory",
+    "bank_offset": 0,
     "descriptor": null,
     "ems_maps": [],
     "xms_move_count": 0,
@@ -18,6 +19,7 @@
     "clip_index": 2,
     "mode": "play",
     "backend": "memory",
+    "bank_offset": 0,
     "descriptor": [
       576,
       16384,
@@ -32,10 +34,30 @@
     "source_data_bytes_consumed": 0
   },
   {
+    "name": "idle_memory_ignores_bank_offset",
+    "clip_index": 1,
+    "mode": "play",
+    "backend": "memory",
+    "bank_offset": 4660,
+    "descriptor": [
+      640,
+      16384,
+      23
+    ],
+    "ems_maps": [],
+    "xms_move_count": 0,
+    "file_read_count": 0,
+    "position_calls": 0,
+    "mix_operations": [],
+    "source_bytes": 0,
+    "source_data_bytes_consumed": 0
+  },
+  {
     "name": "idle_ems",
     "clip_index": 32771,
     "mode": "play",
     "backend": "ems",
+    "bank_offset": 0,
     "descriptor": [
       4096,
       18432,
@@ -79,6 +101,7 @@
     "clip_index": 32772,
     "mode": "play",
     "backend": "xms",
+    "bank_offset": 0,
     "descriptor": [
       4096,
       18432,
@@ -97,6 +120,7 @@
     "clip_index": 32773,
     "mode": "play",
     "backend": "file",
+    "bank_offset": 0,
     "descriptor": [
       4096,
       18432,
@@ -115,6 +139,31 @@
     "clip_index": 1,
     "mode": "mix",
     "backend": "memory",
+    "bank_offset": 0,
+    "descriptor": null,
+    "ems_maps": [],
+    "xms_move_count": 0,
+    "file_read_count": 0,
+    "position_calls": 1,
+    "mix_operations": [
+      {
+        "buffer": 0,
+        "bytes": 7
+      },
+      {
+        "buffer": 1,
+        "bytes": 1
+      }
+    ],
+    "source_bytes": 10,
+    "source_data_bytes_consumed": 8
+  },
+  {
+    "name": "mix_memory_adds_bank_offset",
+    "clip_index": 1,
+    "mode": "mix",
+    "backend": "memory",
+    "bank_offset": 256,
     "descriptor": null,
     "ems_maps": [],
     "xms_move_count": 0,
@@ -138,6 +187,7 @@
     "clip_index": 1,
     "mode": "mix",
     "backend": "memory",
+    "bank_offset": 0,
     "descriptor": null,
     "ems_maps": [],
     "xms_move_count": 0,
@@ -161,6 +211,7 @@
     "clip_index": 1,
     "mode": "mix",
     "backend": "memory",
+    "bank_offset": 0,
     "descriptor": null,
     "ems_maps": [],
     "xms_move_count": 0,
@@ -180,6 +231,7 @@
     "clip_index": 1,
     "mode": "mix",
     "backend": "memory",
+    "bank_offset": 0,
     "descriptor": null,
     "ems_maps": [],
     "xms_move_count": 0,
@@ -194,6 +246,7 @@
     "clip_index": 1,
     "mode": "mix",
     "backend": "memory",
+    "bank_offset": 0,
     "descriptor": null,
     "ems_maps": [],
     "xms_move_count": 0,
@@ -208,6 +261,7 @@
     "clip_index": 32774,
     "mode": "mix",
     "backend": "ems",
+    "bank_offset": 0,
     "descriptor": null,
     "ems_maps": [
       {
@@ -252,6 +306,7 @@
     "clip_index": 32775,
     "mode": "mix",
     "backend": "xms",
+    "bank_offset": 0,
     "descriptor": null,
     "ems_maps": [],
     "xms_move_count": 1,
@@ -275,6 +330,7 @@
     "clip_index": 32776,
     "mode": "mix",
     "backend": "file",
+    "bank_offset": 0,
     "descriptor": null,
     "ems_maps": [],
     "xms_move_count": 0,

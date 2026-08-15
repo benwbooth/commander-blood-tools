@@ -8,11 +8,11 @@
 #define SND_CLIP_HEADER_BYTES 6u
 #define SND_STREAMED_INDEX_MASK 0x3fffu
 
-void CB_FAR snd_play_clip(cb_i16 clip_index)
+void CB_SAVE_REGS CB_FAR snd_play_clip(cb_i16 clip_index)
 {
-    volatile bloodprg_snd_stream_buffer *buffer;
-    volatile bloodprg_snd_stream_buffer *other_buffer;
-    volatile bloodprg_snd_memory_clip *memory_clip;
+    volatile bloodprg_snd_stream_buffer CB_GAME_DATA *buffer;
+    volatile bloodprg_snd_stream_buffer CB_GAME_DATA *other_buffer;
+    volatile bloodprg_snd_memory_clip CB_GAME_DATA *memory_clip;
     volatile cb_u8 CB_FAR *source;
     volatile cb_u8 CB_FAR *destination;
     volatile cb_u8 CB_FAR *staging;
@@ -30,7 +30,7 @@ void CB_FAR snd_play_clip(cb_i16 clip_index)
     cb_u8 sample;
     cb_u8 packed;
 
-    if ((voc_playback_enabled & 1u) == 0) {
+    if ((voc_playback_enabled_gs & 1u) == 0) {
         return;
     }
 
@@ -39,8 +39,8 @@ void CB_FAR snd_play_clip(cb_i16 clip_index)
 
         if (clip_index >= 0) {
             memory_clip = &snd_memory_clips[(cb_u16)clip_index];
-            snd_clip_descriptor.data =
-                    snd_bank_memory + memory_clip->offset;
+            snd_clip_descriptor.data = (volatile cb_u8 CB_FAR *)MK_FP(
+                    FP_SEG(snd_bank_memory), memory_clip->offset);
             snd_clip_descriptor.byte_count = memory_clip->byte_count;
         } else {
             streamed_index = (cb_u16)clip_index & SND_STREAMED_INDEX_MASK;
