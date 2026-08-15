@@ -5,7 +5,7 @@ void CB_NEAR snd_bank_page_read(cb_u16 page,
 {
     cb_i8 mode;
 
-    mode = (cb_i8)snd_bank_storage_mode;
+    mode = (cb_i8)snd_bank_storage_mode_gs;
     if (--mode < 0) {
         snd_bank_ems_page_read(page, destination);
     } else {

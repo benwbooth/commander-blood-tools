@@ -3035,12 +3035,20 @@ immutability, BX restoration, final DEC flags, and near return. Both recovered
 callers establish DS=GS before entry.
 
 A natural signed-byte local with two pre-decrement tests is closer than range
-comparisons. With AX and ES:DI helper pragmas, Open Watcom `-3 -ox -mm` emits
-both `DEC BL` operations and the three direct near calls in 22 instructions/38
-bytes versus 13/29 original. It inserts `TEST BL,BL` after each decrement,
-saves an otherwise unnecessary DX copy of ES, and duplicates the epilogue.
-Turbo C 2.01 medium emits 32 instructions; although it branches directly from
-each decrement, its stack parameters do not reproduce the live AX/ES:DI ABI.
+comparisons. The maintained source now names the explicit GS selector alias,
+and the compiler-corpus sample includes that source directly. With AX and
+ES:DI helper pragmas, Open Watcom `-3 -ox -mm -zdp -we` emits both `DEC BL`
+operations and the three direct near calls in 31 instructions/58 bytes versus
+13/29 original, with 69.23 percent mnemonic-multiset and 61.54 percent ordered
+overlap. It inserts `TEST BL,BL` after each decrement, saves DX, reloads the
+far destination, and duplicates the epilogue.
+
+Turbo C 2.01 medium emits 34 instructions with 84.62 percent multiset and
+ordered overlap and compiles warning-free to a valid 511-byte OMF object. It
+branches directly from both memory decrements but passes helper arguments on
+the stack. The candidate is accepted for source integration. A direct
+replacement still needs the original compact AX/ES:DI helper convention,
+shared epilogue, and final DEC flags.
 
 Centered-layout helper `0x000E62` consumes columns in AX and rows in BX. It
 computes `width = columns*4+4` and `height = rows*6+4` with 16-bit wrapping,
