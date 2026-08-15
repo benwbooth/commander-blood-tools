@@ -2207,14 +2207,24 @@ DS:SI=GS:0x0D06, caller restoration of parser DS:SI, path-specific outputs,
 flags, and near return. The real loader body executes its early return in the
 call vectors, so this is not a synthetic call stub.
 
-The one-to-one candidate uses a far DS:SI result, named based-segment filename,
-path, and gate globals, plus an ordinary far C call. The loader declaration now
-uses its actual AX mode and near-SI path convention. Open Watcom
-`-3 -os -s -mh -we` compiles the candidate without warnings to 49
-instructions/129 bytes versus 22/49 original. Watcom retains the
-signed and unsigned stops, explicit cursor decrement, NUL store, bit test,
-mode value, and SI argument. A drop-in build still needs a narrow adapter to
-switch DS to `GAME_DATA` around that call and restore the parser context.
+The compiler probe now includes the authoritative one-to-one candidate. It uses
+a far DS:SI result, direct 16-bit indexing into the named filename field, named
+path and gate globals, and an ordinary far C call whose declaration carries the
+actual AX mode plus near-SI path convention. Direct indexing removes both
+generated `__PIA` calls from the former decayed destination pointer.
+
+Open Watcom `-3 -os -s -mh -we` compiles the candidate warning-free to 27
+instructions/65 bytes versus 22/49 original, with 59.09 percent mnemonic-
+multiset overlap. It retains both printable stops, cursor decrement, NUL store,
+bit test, AX=1, `DS:SI=GAME_DATA:path`, and parser DS:SI restoration. Turbo C
+2.01 emits 48 instructions but warns when its fallback converts the far game-
+data path to the loader's near pointer, confirming that it cannot express this
+recovered ABI directly.
+
+The candidate is accepted for Watcom source-port integration. Shipped dispatch
+establishes the filename destination segment, while independent destination ES,
+the original DI plus LODSB/STOSB allocation, GS-qualified gate access, and
+exact scratch-register residue remain direct-binary-replacement differences.
 
 Navigation-choice handlers `0x008713` and `0x008848` share a natural early-
 return state update: test DS:0x2565 bit zero, copy a named source record to
