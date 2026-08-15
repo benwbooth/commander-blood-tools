@@ -6952,6 +6952,30 @@ integration under the floating code-image `DS` and runtime `SS=GS` contracts;
 direct replacement still needs the original frameless register allocation,
 nested-callee residue, and path-specific flags.
 
+## BLOODPRG linked value-node scanner at 0x00577A
+
+The 23-byte near helper consumes a target in `AX` and a segment-relative linked
+node in `DS:SI`. Each node is `{u16 value, u16 next_offset, payload}`. A match
+returns the payload offset at node+4 in `AX`; a miss follows the next offset
+within the same segment, returning zero at the list terminator. The original
+preserves incoming `SI`, clobbers `BX` with the target, and leaves path-specific
+flags from its final arithmetic or zero test.
+
+Fourteen integrated vectors execute the real helper from the accepted
+`0x0056FE` owner and cover first-node, second-node, missing, and valid initial
+offset-zero lists. Both call sites consume only `AX`, immediately overwrite the
+flags with `OR AX,AX`, and execute inside the owner's saved-BX frame. The
+natural typed loop therefore preserves every live result without an artificial
+register or flag facade.
+
+Open Watcom 1.9 large (`-3 -os -s -ml -we`) emits 11 instructions/21 bytes
+versus 13/23 original, with 61.54 percent mnemonic-multiset and 46.15 percent
+ordered overlap. Turbo C 2.01 large (`-ml -O -Z`) emits 22 instructions with
+84.62 percent multiset and 76.92 percent ordered overlap and assembles
+warning-free to a 418-byte OMF object. The source is accepted for source-port
+integration; exact replacement still requires the original `LODSW` allocation,
+dead `BX` clobber, and path-specific flags.
+
 ## BLOODPRG post-VM presentation scan at 0x005816
 
 The 606-byte near routine walks the 20-byte VM directory after script execution.
