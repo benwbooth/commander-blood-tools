@@ -56,6 +56,8 @@ extern bloodprg_snd_clip_callback CB_GAME_DATA
         snd_play_clip_callback; /* GS:0x0AEC */
 extern bloodprg_audio_position_callback audio_position_callback; /* DS:0x0CF3 */
 extern volatile cb_u8 snd_driver_pending_flag; /* DS=GS:0x0BA0 */
+extern volatile cb_u8 CB_GAME_DATA
+        snd_driver_pending_flag_gs; /* explicit GS:0x0BA0 alias */
 extern volatile cb_u16 snd_loader_flags_word; /* DS:0x0BA0 word alias */
 extern volatile cb_u8 voc_tablo2_active; /* DS:0x0BA3 */
 extern volatile cb_u8 snd_music_voc_name_changed; /* DS:0x0BA1 alias */
@@ -107,10 +109,10 @@ extern volatile char default_snd_bank_path[]; /* DS:0x0CFC, sn\\tb.snd */
 extern volatile char ship_3d_snd_bank_path[]; /* DS:0x0D23, sn\\3D.snd */
 
 void CB_NEAR cb_snd_stream_service(cb_u16 command,
-        volatile bloodprg_snd_stream_buffer *buffer,
+        volatile bloodprg_snd_stream_buffer CB_GAME_DATA *buffer,
         volatile cb_u8 CB_FAR *cursor);
 void CB_NEAR cb_snd_stream_play(cb_u16 command,
-        volatile bloodprg_snd_stream_buffer *buffer,
+        volatile bloodprg_snd_stream_buffer CB_GAME_DATA *buffer,
         volatile cb_u8 CB_FAR *cursor);
 void CB_NEAR cb_snd_clip_play(cb_u16 command,
         volatile bloodprg_snd_clip_descriptor CB_GAME_DATA *clip);

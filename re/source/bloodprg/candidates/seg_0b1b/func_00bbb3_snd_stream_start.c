@@ -5,9 +5,9 @@ void CB_FAR snd_stream_start(void)
 {
     volatile cb_u8 CB_FAR *first_page;
 
-    if ((voc_playback_enabled & 1u) == 0
+    if ((voc_playback_enabled_gs & 1u) == 0
             || (snd_stream_channel_active & 1u) == 0
-            || (snd_driver_pending_flag & 3u) == 0) {
+            || (snd_driver_pending_flag_gs & 3u) == 0) {
         return;
     }
 
@@ -30,7 +30,7 @@ void CB_FAR snd_stream_start(void)
     snd_stream_buffers[1].state = 0;
 
     snd_driver_call();
-    snd_driver_pending_flag = 2u;
+    snd_driver_pending_flag_gs = 2u;
     snd_stream_buffers[0].state = 1u;
     cb_snd_stream_play(0u, &snd_stream_buffers[0], first_page + 0x4008u);
 }

@@ -4630,13 +4630,24 @@ the two sentinels republish the selected descriptor state and call play.
 Six bootstrap and nine refill direct-binary vectors cover all gates, both
 descriptors, both position sentinels, page zero, prefixed pages, the final-page
 boundary, `0xFFFF` page-word wrap, exact callback state, GS-versus-DS ownership,
-and far returns. The recovered C uses an ordinary eight-byte descriptor and
-three narrow loaded-driver ABI boundaries; it does not model CPU registers or
-memory reads. Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles both
-actual candidates warning-free: bootstrap is 63 instructions/209 bytes versus
-55/157 original, and refill is 105/293 versus 73/185. The extra code is mostly
-GAME_DATA segment loads, C local preservation, and materialized pointer/Boolean
-operations rather than missing playback logic.
+and far returns. The bootstrap source now names the explicit GS sound and
+pending aliases proven by those vectors, and its stream helper accepts the
+descriptor through a game-data-qualified pointer. Its compiler-corpus sample
+includes the maintained candidate directly rather than duplicating the body.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the corrected bootstrap
+warning-free to 63 instructions/212 bytes versus 55/157 original, with 80.00
+percent mnemonic-multiset and 69.09 percent ordered overlap. Turbo C 2.01
+medium (`-mm -O -Z`) emits 101 instructions with the same overlap scores and
+compiles warning-free to a valid 1,074-byte OMF object. The bootstrap is
+accepted for source integration. Fixed data placement and narrow page-read,
+reset, and original-driver play adapters remain direct-replacement work.
+
+The refill candidate remains 105 instructions/293 bytes versus 73/185 under
+Watcom. Both routines use the ordinary eight-byte descriptor and typed
+callbacks; neither models CPU registers or raw memory. Their extra code is
+mostly GAME_DATA segment loads, C local preservation, and materialized
+pointer/Boolean operations rather than missing playback logic.
 
 ## BLOODPRG SND stream source candidate
 
