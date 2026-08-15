@@ -28,6 +28,8 @@ typedef void (CB_FAR *bloodprg_xms_driver_entry)(void);
 
 /* Raw callers establish the game-data segment before the XMS dispatch. */
 extern volatile cb_u8 snd_bank_storage_mode; /* DS=GS:0x0B9F */
+extern volatile cb_u8 CB_GAME_DATA
+        snd_bank_storage_mode_gs; /* explicit GS:0x0B9F alias */
 extern bloodprg_xms_driver_entry CB_GAME_DATA xms_driver_entry; /* GS:0x0A4A */
 extern volatile cb_i16 CB_GAME_DATA resource_xms_handle; /* GS:0x0A56 */
 extern volatile cb_i16 CB_GAME_DATA resource_ems_handle; /* GS:0x0A58 */

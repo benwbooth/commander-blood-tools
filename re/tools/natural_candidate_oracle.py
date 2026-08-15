@@ -64107,6 +64107,9 @@ def snd_stream_source_load_vectors() -> list[dict[str, object]]:
         ("xms_embedded_odd", 1, 1, "xms", True, 0x3FFF, 0x2200),
         ("file_external_partial", 1, 1, "file", False, 0x7001, 0),
         ("file_embedded_short", 1, 1, "file", True, 0x2000, 0x1234FFF8),
+        ("ems_external_empty", 1, 1, "ems", False, 0, 0),
+        ("xms_external_empty", 1, 1, "xms", False, 0, 0),
+        ("file_external_empty", 1, 1, "file", False, 0, 0),
     ]
     game_segment = 0x2C00
     data_segment = 0x4000
@@ -64419,7 +64422,7 @@ def snd_stream_source_load_vectors() -> list[dict[str, object]]:
             read_calls = [call for call in dos_calls if call["op"] == "read"]
             expected_chunks = []
             remaining = payload_size
-            while remaining:
+            while remaining or not expected_chunks:
                 chunk = min(0x8000, remaining)
                 expected_chunks.append(chunk)
                 remaining -= chunk
@@ -64427,7 +64430,11 @@ def snd_stream_source_load_vectors() -> list[dict[str, object]]:
                 raise AssertionError(
                     f"0xbdb7 {name}: reads={read_calls}, chunks={expected_chunks}"
                 )
-            page_count = len(expected_chunks) * 2
+            page_count = (
+                len([chunk for chunk in expected_chunks if chunk != 0]) * 2
+                if backend == "xms"
+                else len(expected_chunks) * 2
+            )
             last_read = expected_chunks[-1]
             remainder = last_read & 0x3FFF
             if remainder == last_read:
@@ -64463,10 +64470,11 @@ def snd_stream_source_load_vectors() -> list[dict[str, object]]:
                 if ems_calls != expected_maps or xms_calls or written_chunks:
                     raise AssertionError(f"0xbdb7 {name}: EMS backend calls differ")
             elif backend == "xms":
-                if ems_calls or written_chunks or len(xms_calls) != len(expected_chunks):
+                moved_chunks = [chunk for chunk in expected_chunks if chunk != 0]
+                if ems_calls or written_chunks or len(xms_calls) != len(moved_chunks):
                     raise AssertionError(f"0xbdb7 {name}: XMS backend call count differs")
                 destination_offset = 0
-                for call, chunk in zip(xms_calls, expected_chunks, strict=True):
+                for call, chunk in zip(xms_calls, moved_chunks, strict=True):
                     expected_request = struct.pack(
                         "<IHIHI",
                         chunk + (chunk & 1),
@@ -64486,6 +64494,14 @@ def snd_stream_source_load_vectors() -> list[dict[str, object]]:
             else:
                 if ems_calls or xms_calls or b"".join(written_chunks) != source_bytes:
                     raise AssertionError(f"0xbdb7 {name}: file payload differs")
+                write_counts = [
+                    call["count"] for call in dos_calls if call["op"] == "write"
+                ]
+                if write_counts != expected_chunks:
+                    raise AssertionError(
+                        f"0xbdb7 {name}: writes={write_counts}, "
+                        f"expected={expected_chunks}"
+                    )
                 if len(directory_calls) != 1:
                     raise AssertionError(f"0xbdb7 {name}: directory calls={directory_calls}")
                 created = [call for call in dos_calls if call["op"] == "create"]

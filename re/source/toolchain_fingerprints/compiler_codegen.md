@@ -4668,20 +4668,30 @@ pages per read; XMS receives an even-rounded conventional-to-XMS move request;
 the fallback recreates `mus.snd` and writes each staged chunk. The final read is
 converted into the playback page count and final 16 KiB page extent.
 
-Eight direct-binary vectors cover both activity gates, embedded and standalone
+Eleven direct-binary vectors cover both activity gates, embedded and standalone
 sources, all three backends, exact read chunks, EMS page maps, all XMS request
 fields, `mus.snd` close/create/write ordering, WAIT prompt state and framebuffer
 restoration, final page accounting, source-handle closes, and low-register/far
-return preservation. The recovered function is ordinary C over typed globals
-and narrow DOS, EMS, XMS, and renderer boundaries. The shared XMS record now
-uses source and destination address unions, naturally representing transfers in
-both directions without a register or memory facade.
+return preservation. Three header-only vectors prove that every backend loop
+executes once even when no payload remains: EMS maps two pages and reads zero
+bytes, XMS performs one zero-byte read and leaves page count `0xFFFF`, and the
+file backend performs a zero-byte read and write and leaves one page. The old
+pre-tested C loops lost those behaviors; the corrected source uses `do-while`.
 
-Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the actual candidate
-warning-free to 270 instructions/890 bytes versus 198/590 original. Exact
-drop-in integration still requires segment placement and small ABI boundaries,
-most notably the original `resource_name_lookup` result in EBP, but no source
-logic remains represented as register-state emulation.
+The candidate also uses explicit GS aliases for its gate, pending/storage mode,
+and prompt state. The compiler-corpus sample includes the maintained source
+directly. The shared XMS record retains source and destination address unions,
+naturally representing transfers in both directions without a register or
+memory facade.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the corrected candidate
+warning-free to 270 instructions/892 bytes versus 198/590 original, with 62.12
+percent mnemonic-multiset and 50.51 percent ordered overlap. Turbo C 2.01
+medium (`-mm -O -Z`) emits 399 instructions with 75.25 percent multiset and
+59.60 percent ordered overlap and compiles warning-free to a valid 3,643-byte
+OMF object. The candidate is accepted for source integration. Direct
+replacement still requires segment placement and narrow DOS, EMS, XMS,
+renderer, and EBP-return resource lookup adapters.
 
 ## BLOODPRG far memmove candidate
 

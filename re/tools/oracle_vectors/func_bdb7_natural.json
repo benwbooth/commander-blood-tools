@@ -107,5 +107,47 @@
     ],
     "page_count": 1,
     "final_page_bytes": 8192
+  },
+  {
+    "name": "ems_external_empty",
+    "sound_enabled": 1,
+    "channel_active": 1,
+    "active": true,
+    "source_kind": "standalone",
+    "backend": "ems",
+    "payload_bytes": 0,
+    "read_chunks": [
+      0
+    ],
+    "page_count": 1,
+    "final_page_bytes": 16384
+  },
+  {
+    "name": "xms_external_empty",
+    "sound_enabled": 1,
+    "channel_active": 1,
+    "active": true,
+    "source_kind": "standalone",
+    "backend": "xms",
+    "payload_bytes": 0,
+    "read_chunks": [
+      0
+    ],
+    "page_count": 65535,
+    "final_page_bytes": 16384
+  },
+  {
+    "name": "file_external_empty",
+    "sound_enabled": 1,
+    "channel_active": 1,
+    "active": true,
+    "source_kind": "standalone",
+    "backend": "file",
+    "payload_bytes": 0,
+    "read_chunks": [
+      0
+    ],
+    "page_count": 1,
+    "final_page_bytes": 16384
   }
 ]
