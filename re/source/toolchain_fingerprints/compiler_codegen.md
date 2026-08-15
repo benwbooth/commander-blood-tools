@@ -51,6 +51,24 @@ remains a stronger result, but native routines do not need it before work moves
 to the VM toolchain. VM source has a stricter goal: decompile and compile every
 script with byte-for-byte payload reproduction.
 
+### Reviewed native acceptance batch
+
+The first explicit application of that gate accepts three compact BLOODPRG
+routines whose remaining differences do not change the natural source-port
+contract:
+
+| routine | original | Open Watcom 1.9 medium `-3 -ox` | reviewed difference |
+| --- | --- | --- | --- |
+| `0x0064B8 vm_op_d2_script_profile_request` | 5 instructions, 8 bytes | 5 instructions, 9 bytes | `MOVSX` plus `INC SI` replaces `LODSB` plus `CBW`; the following `DEC AX` leaves the same result, carry, and result flags, and named source state replaces fixed GS placement under the documented DS=GS game-data contract |
+| `0x00A734 queue_d8c_enqueue` | two memory `ADD`s, `CLC`, `RET`; 10 bytes | the same two memory `ADD`s and `RET`; 9 bytes | only `CLC` is omitted; both direct callers ignore flags and registers, while the recovered `ems_paged_read` C expresses the shared-tail success result explicitly |
+| `0x00A757 list_d8c_init` | 12 instructions, 33 bytes | the same 12 instructions in 33 bytes | `XOR AX,AX` uses opcode `31 C0` instead of `33 C0`; values, flags, store order, and the far return are identical |
+
+These decisions do not claim byte identity. They record that further source
+contortions or inline assembly would reduce clarity without improving game
+behavior. An assembly-link replacement can still add the original boundary
+adapter where a binary caller observes a flag that natural C deliberately
+normalizes.
+
 In the initial matrix, no Watcom configuration produced an exact mnemonic
 sequence or exact sequence of encoded instruction bytes for any probe. The
 strongest aggregate Watcom configuration was unoptimized huge model with its
