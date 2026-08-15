@@ -1480,7 +1480,7 @@ proc clay5 {
         say Anna_Haf voice=0xFF flags=0x00 display=0x80 loop=none control=none : "KRUIKK..."
         say Anna_Haf voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "..."
         Anna_Haf.in_play = false
-        state_array_set 0x07 0x003C
+        timer[7] = 60
         clay5.enabled = false
         end presentation Anna_Haf
     }
@@ -1488,7 +1488,7 @@ proc clay5 {
 
 proc clay6 {
     activation enabled until clay7
-    state_array_test 0x07
+    require timer[7] == 0
     guard_pop
     queue presentation Anna_Haf
     clay7.enabled = true
@@ -1612,7 +1612,7 @@ proc masta2 {
     say Outrageor voice=0xFF flags=0x20 display=0x80 loop=none control=none : "We're dealing with an exceptionally witty Croolis here, Commander|..."
     say Outrageor voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Get out of here|... Don't let me see you again!"
     say Outrageor voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "Bye bye"
-    state_array_set 0x0F 0x003C
+    timer[15] = 60
     Outrageor.current_location = Trashlando
     Eviscerator.current_location = machine
     end presentation Outrageor
@@ -1638,7 +1638,7 @@ proc masta6 {
 
 proc masta3 {
     activation enabled until masta4
-    state_array_test 0x0F
+    require timer[15] == 0
     guard_pop
     queue presentation Eviscerator
     masta4.enabled = true
@@ -1783,13 +1783,13 @@ proc Od_dland {
 proc jerry {
     activation enabled until jerry2
     guard_pop
-    state_array_set 0x01 0x0064
+    timer[1] = 100
     jerry.enabled = false
 }
 
 proc jerry2 {
     activation enabled until jerry3
-    state_array_test 0x01
+    require timer[1] == 0
     guard_pop
     queue presentation Jerry_Khan
     jerry3.enabled = true
@@ -1844,7 +1844,7 @@ proc shark {
 proc tamy {
     activation disabled until tamx
     guard_pop
-    state_array_set 0x0D 0x00C8
+    timer[13] = 200
     tamy.enabled = false
 }
 
@@ -1852,10 +1852,10 @@ proc tamx {
     activation enabled until tam1
     guard_pop
     when tam1 {
-        state_array_test 0x0D
+        require timer[13] == 0
     } then {
         state[0x1524] += 0x0001
-        state_array_set 0x0D 0x00C8
+        timer[13] = 200
     }
 }
 
@@ -2189,14 +2189,14 @@ proc boba1 {
     say Bob_Morlock voice=0x02 flags=0x00 display=0x80 loop=none control=none : "What do you want, Commander?"
     Bob_Morlock.topic = "talk"
     say Bob_Morlock voice=0xFF flags=0x08 display=0x80 loop=none control=none : "..."
-    state_array_set 0x01 0x001E
+    timer[1] = 30
     when block_4E48 {
-        state_array_test 0x01
+        require timer[1] == 0
     } then {
         say Bob_Morlock voice=0x06 flags=0x00 display=0x80 loop=none control=none : "I feel awful, Commander|..."
         say Bob_Morlock voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Ahhhh!!!"
         say Bob_Morlock voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
-        state_array_set 0x01 0xFFFF
+        timer[1] = disabled
         end presentation Bob_Morlock
     }
     block_4E48:
@@ -2208,7 +2208,7 @@ proc boba1 {
         say Bob_Morlock voice=0xFF flags=0x20 display=0x80 loop=none control=none : "..."
         say Bob_Morlock voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
         state[0x1526] = 0x0000
-        state_array_set 0x01 0xFFFF
+        timer[1] = disabled
         end presentation Bob_Morlock
     }
 }

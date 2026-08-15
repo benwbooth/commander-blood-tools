@@ -142,8 +142,13 @@ dictionary-backed actor `topic`, so source such as `Eviscerator.topic =
 
 The native control-flow handlers at `0x6559`, `0x6572`, `0x65DB`, `0x65EB`,
 `0x6830`, `0x6494`, and `0x64A0` are represented as guard push/pop, jump,
-state-array test/set, activation, and flag-branch statements. Every one of the
-480 kind-2 DEB procedures begins with an `A9` activation header, rendered as
+timer, activation, and flag-branch statements. `A5` indexes the saved word
+array at `GS:0x6ADE`; the timer ISR decrements exactly its first 30 words when
+they are positive and no presentation is active. All 75 shipped `A5` uses lie
+in that range. BloodScript renders their 48 writes as `timer[n] = ticks` or
+`disabled` and their 27 zero tests as `require timer[n] == 0`; operands outside
+the proven timer domain retain `state_array_set`/`state_array_test`. Every one
+of the 480 kind-2 DEB procedures begins with an `A9` activation header, rendered as
 `activation enabled|disabled until target`. All 413 shipped `AB` byte writes
 target that same flag byte at a named procedure's start plus one, so they are
 rendered as `procedure.enabled = true|false`. The compiler derives the exact
@@ -159,6 +164,13 @@ the 239 direct and 80 inverted shipped forms as `require choice ==|!= "word"`.
 Opcode `CF` clears the resume bit and saved word, represented by the 314 explicit
 `choice = none` statements. Resets are not inferred or inserted, because five
 shipped choice guards deliberately have no matching `CF` in their procedure.
+
+Opcode `A7` conditionally offers one additional topic. Its handler writes the
+DIC operand to `GS:0x6770` only while a presentation is active. After executing
+the selected BAS body, native collector `0x5AFD` appends that pending word to
+the current `A3` menu in `GS:0x67F8`, clears `0x6770`, and terminates the list.
+All 19 shipped operands resolve through their profile's DIC, so BloodScript uses
+`offer topic "word"`. A value absent from DIC retains `presentation_register`.
 
 Opcode `A8` requests an HNM presentation sequence rather than merely loading an
 arbitrary string. Its handler at `0x67C8` copies the operand to `SS:0x2120`,
@@ -210,7 +222,7 @@ instructions in COD and 136 in BAS. Other possible shapes retain
 `re/vm/source/manifest.tsv` records semantic and unresolved byte coverage for
 all ten program images. The BAS decoder now walks the recovered sequential
 grammar: dictionary-validated menus, text records, both yield opcodes,
-four-byte linked selector nodes, presentation-register writes, and the shared
+four-byte linked selector nodes, offered-topic writes, and the shared
 record/state operations used by both image kinds.
 
 All 118,787 COD bytes and all 64,736 BAS bytes now have decoded token boundaries.
@@ -284,9 +296,9 @@ textual proximity, zero matrix entries, ambiguous owners, and unmatched
 addresses do not produce an alias. The compiler resolves the declared wrapping
 base-plus-delta expression back to the original `u16` address.
 
-The structured COD and BAS sources intern 13,712 distinct referenced DIC offsets
-as readable string operands, with 53,243 uses in dialogue, concept, menu,
-selector, and actor-topic positions. They are bare quoted
+The structured COD and BAS sources intern 13,713 distinct referenced DIC offsets
+as readable string operands, with 53,262 uses in dialogue, concept, menu,
+selector, offered-topic, and actor-topic positions. They are bare quoted
 literals resolved through the companion DIC image; the shipped corpus needs no
 generated dictionary declarations or address suffixes. If equal text exists at
 multiple offsets, the lowest offset is canonical and a noncanonical reference

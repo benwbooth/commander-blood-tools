@@ -632,13 +632,13 @@ proc corpo1 {
 proc t10 {
     activation enabled until krapp
     guard_pop
-    state_array_set 0x0A 0x0320
+    timer[10] = 800
     t10.enabled = false
 }
 
 proc krapp {
     activation enabled until krapp1
-    state_array_test 0x0A
+    require timer[10] == 0
     guard_pop
     queue presentation Kran_Dobu
     krapp.enabled = false

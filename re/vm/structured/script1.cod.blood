@@ -145,13 +145,13 @@ proc men6 {
 proc tima {
     activation enabled until ho
     guard_pop
-    state_array_set 0x16 0x0005
+    timer[22] = 5
     tima.enabled = false
 }
 
 proc ho {
     activation enabled until ho1
-    state_array_test 0x16
+    require timer[22] == 0
     guard_pop
     queue presentation Izwalito
     ho.enabled = false

@@ -1333,6 +1333,15 @@ fn normalize_modern_statement(
             validate_identifier(fields[1], line_number)?;
             Ok(format!("BRING_ABOARD {}", fields[1]))
         }
+        "offer" => {
+            if fields.len() != 3 || fields[1] != "topic" {
+                bail!("line {line_number}: expected 'offer topic WORD'");
+            }
+            Ok(format!(
+                "OFFER_TOPIC {}",
+                modern_operand_to_canonical(fields[2], line_number)?
+            ))
+        }
         "request" => {
             if fields.len() != 3 || fields[1] != "sequence" {
                 bail!("line {line_number}: expected 'request sequence \"NAME.hnm\"'");
@@ -1351,6 +1360,13 @@ fn normalize_modern_statement(
             if fields.len() == 4 && fields[1] == "travel" && fields[2] == "through" {
                 validate_identifier(fields[3], line_number)?;
                 return Ok(format!("REQUIRE_TRAVEL_THROUGH {}", fields[3]));
+            }
+            if let Some(statement) = normalize_modern_timer_expression(
+                &fields[1..],
+                true,
+                line_number,
+            )? {
+                return Ok(statement);
             }
             if fields.len() == 4 && fields[2] == "in" && fields[3].ends_with(".links") {
                 validate_identifier(fields[1], line_number)?;
@@ -1450,6 +1466,13 @@ fn normalize_modern_statement(
                     modern_operand_to_canonical(y.trim(), line_number)?
                 ));
             }
+            if let Some(statement) = normalize_modern_timer_expression(
+                &fields,
+                false,
+                line_number,
+            )? {
+                return Ok(statement);
+            }
             if let Some(statement) = normalize_modern_bit_expression(&fields, false, line_number)? {
                 return Ok(statement);
             }
@@ -1509,6 +1532,74 @@ fn transfer_holder_to_object(value: &str) -> &str {
     } else {
         value
     }
+}
+
+fn parse_modern_u16(value: &str, line_number: usize, field: &str) -> Result<u16> {
+    if let Some(hex) = value
+        .strip_prefix("0x")
+        .or_else(|| value.strip_prefix("0X"))
+    {
+        u16::from_str_radix(hex, 16)
+            .map_err(|_| anyhow!("line {line_number}: invalid hexadecimal {field} {value:?}"))
+    } else {
+        value
+            .parse::<u16>()
+            .map_err(|_| anyhow!("line {line_number}: invalid decimal {field} {value:?}"))
+    }
+}
+
+fn parse_timer_index(value: &str, line_number: usize) -> Result<Option<u8>> {
+    let Some(index) = value.strip_prefix("timer[") else {
+        return Ok(None);
+    };
+    let index = index
+        .strip_suffix(']')
+        .ok_or_else(|| anyhow!("line {line_number}: timer reference must end with ']'"))?;
+    let index = parse_modern_u16(index, line_number, "timer index")?;
+    if index >= 0x1E {
+        bail!(
+            "line {line_number}: timer index {index} is outside the ISR-managed range 0..29"
+        );
+    }
+    Ok(Some(index as u8))
+}
+
+fn normalize_modern_timer_expression(
+    fields: &[&str],
+    query: bool,
+    line_number: usize,
+) -> Result<Option<String>> {
+    let Some(target) = fields.first() else {
+        return Ok(None);
+    };
+    let Some(index) = parse_timer_index(target, line_number)? else {
+        return Ok(None);
+    };
+    if fields.len() != 3 || !matches!(fields[1], "=" | "==") {
+        bail!("line {line_number}: expected 'require timer[{index}] == 0' or 'timer[{index}] = VALUE'");
+    }
+    if query {
+        if fields[1] != "==" || fields[2] != "0" {
+            bail!("line {line_number}: timer conditions can only require expiry with '== 0'");
+        }
+        return Ok(Some(format!("STATE_ARRAY_TEST {index:02X}")));
+    }
+    if fields[1] != "=" {
+        bail!("line {line_number}: timer updates require '='");
+    }
+    let value = if fields[2] == "disabled" {
+        0xFFFF
+    } else {
+        let value = parse_modern_u16(fields[2], line_number, "timer value")?;
+        if value > i16::MAX as u16 {
+            bail!(
+                "line {line_number}: negative-class timer values do not count down; use \
+                 'disabled' for 0xFFFF or state_array_set for an exact raw value"
+            );
+        }
+        value
+    };
+    Ok(Some(format!("STATE_ARRAY_SET {index:02X} {value:04X}")))
 }
 
 fn normalize_modern_choice_expression(
@@ -2200,6 +2291,17 @@ fn modern_statement(
                 canonical_operand_to_modern(args[2])
             ))
         }
+        "OFFER_TOPIC" => {
+            if args.len() != 1 {
+                bail!("line {line_number}: malformed generated OFFER_TOPIC statement");
+            }
+            Ok(format!(
+                "offer topic {}",
+                canonical_operand_to_modern(args[0])
+            ))
+        }
+        "STATE_ARRAY_TEST" => modern_state_array_statement(false, args, line_number),
+        "STATE_ARRAY_SET" => modern_state_array_statement(true, args, line_number),
         "LOAD_STRING" => {
             if args.len() != 1 {
                 bail!("line {line_number}: malformed generated LOAD_STRING statement");
@@ -2249,6 +2351,42 @@ fn modern_statement(
                 Ok(format!("{command} {}", args.join(" ")))
             }
         }
+    }
+}
+
+fn modern_state_array_statement(set: bool, args: &[&str], line_number: usize) -> Result<String> {
+    let expected = if set { 2 } else { 1 };
+    if args.len() != expected {
+        bail!("line {line_number}: malformed generated state-array statement");
+    }
+    let index = u8::from_str_radix(args[0], 16)
+        .map_err(|_| anyhow!("line {line_number}: invalid generated state-array index"))?;
+    if index >= 0x1E {
+        return Ok(if set {
+            format!(
+                "state_array_set {} {}",
+                canonical_operand_to_modern(args[0]),
+                canonical_operand_to_modern(args[1])
+            )
+        } else {
+            format!("state_array_test {}", canonical_operand_to_modern(args[0]))
+        });
+    }
+    if !set {
+        return Ok(format!("require timer[{index}] == 0"));
+    }
+    let value = u16::from_str_radix(args[1], 16)
+        .map_err(|_| anyhow!("line {line_number}: invalid generated state-array value"))?;
+    if value == 0xFFFF {
+        Ok(format!("timer[{index}] = disabled"))
+    } else if value <= i16::MAX as u16 {
+        Ok(format!("timer[{index}] = {value}"))
+    } else {
+        Ok(format!(
+            "state_array_set {} {}",
+            canonical_operand_to_modern(args[0]),
+            canonical_operand_to_modern(args[1])
+        ))
     }
 }
 
@@ -2882,7 +3020,15 @@ fn decompile_bas(
                     )?;
                 }
                 vm_source::BasToken::PresentationRegister { value, .. } => {
-                    writeln!(output, "{cursor:08X}: PRESENTATION_REGISTER {value:04X}")?;
+                    if dictionary.contains_key(value) {
+                        writeln!(
+                            output,
+                            "{cursor:08X}: OFFER_TOPIC {}",
+                            dictionary_operands.operand(*value)
+                        )?;
+                    } else {
+                        writeln!(output, "{cursor:08X}: PRESENTATION_REGISTER {value:04X}")?;
+                    }
                 }
                 vm_source::BasToken::End { .. } => {
                     writeln!(output, "{cursor:08X}: END")?;
@@ -3425,6 +3571,7 @@ fn bas_dictionary_operand_values(image: &[u8], dictionary: &HashMap<u16, String>
                     values.extend(dictionary_operand_values(&token));
                 }
                 vm_source::BasToken::SelectorNode { selector, .. } => values.push(selector),
+                vm_source::BasToken::PresentationRegister { value, .. } => values.push(value),
                 _ => {}
             }
             cursor = end;
@@ -4151,6 +4298,20 @@ fn compile_statement(
             word(
                 &mut output,
                 parse_address(args[1], labels, line, "next selector node")?,
+            );
+        }
+        "OFFER_TOPIC" => {
+            require_count(args, 1, line, name)?;
+            output.push(0xA7);
+            word(
+                &mut output,
+                parse_dictionary_address(
+                    args[0],
+                    dictionary_words,
+                    interned_dictionary_words,
+                    line,
+                    "offered topic",
+                )?,
             );
         }
         "PRESENTATION_REGISTER" => {
@@ -5669,7 +5830,7 @@ mod tests {
             "guard_push block_0005",
             "state_array_test 0xFE",
             "guard_pop",
-            "state_array_set 0x02 0x5678",
+            "timer[2] = 22136",
             "jump block_000D",
             "activation enabled until block_0011",
             "branch_presentation",
@@ -5678,6 +5839,75 @@ mod tests {
             assert!(decompiled.source.contains(statement), "missing {statement}");
         }
         assert_eq!(compile(&decompiled.source).unwrap(), expected);
+    }
+
+    #[test]
+    fn countdown_timers_and_offered_topics_use_domain_syntax() {
+        let cod = vec![
+            vm::OP_COND_STATE_ARRAY, 0x03, 0x0A, 0x00,
+            vm::OP_PUSH, 0x0A, 0x00,
+            vm::OP_COND_STATE_ARRAY, 0x03,
+            vm::OP_POP,
+            vm::OP_COND_STATE_ARRAY, 0x01, 0xFF, 0xFF,
+            0xFF,
+        ];
+        let decompiled = decompile(ImageKind::Cod, &cod, &HashMap::new()).unwrap();
+        for statement in [
+            "timer[3] = 10",
+            "require timer[3] == 0",
+            "timer[1] = disabled",
+        ] {
+            assert!(decompiled.source.contains(statement), "missing {statement}");
+        }
+        assert!(!decompiled.source.contains("state_array_"));
+        assert_eq!(compile(&decompiled.source).unwrap(), cod);
+
+        let edited = decompiled
+            .source
+            .replace("timer[3] = 10", "timer[3] = 25")
+            .replace("timer[1] = disabled", "timer[1] = 0");
+        let expected = vec![
+            vm::OP_COND_STATE_ARRAY, 0x03, 0x19, 0x00,
+            vm::OP_PUSH, 0x0A, 0x00,
+            vm::OP_COND_STATE_ARRAY, 0x03,
+            vm::OP_POP,
+            vm::OP_COND_STATE_ARRAY, 0x01, 0x00, 0x00,
+            0xFF,
+        ];
+        assert_eq!(compile(&edited).unwrap(), expected);
+
+        let bas = [0xA7, 0x34, 0x12, 0xFF];
+        let dictionary = HashMap::from([
+            (0x1234, "gladis".to_string()),
+            (0x5678, "revelation".to_string()),
+        ]);
+        let decompiled = decompile(ImageKind::Bas, &bas, &dictionary).unwrap();
+        assert!(decompiled.source.contains("offer topic \"gladis\""));
+        assert!(!decompiled.source.contains("presentation_register"));
+        assert_eq!(
+            compile_with_dictionary(&decompiled.source, &dictionary).unwrap(),
+            bas
+        );
+        let edited = decompiled
+            .source
+            .replace("offer topic \"gladis\"", "offer topic \"revelation\"");
+        assert_eq!(
+            compile_with_dictionary(&edited, &dictionary).unwrap(),
+            [0xA7, 0x78, 0x56, 0xFF]
+        );
+
+        for invalid in [
+            "timer[30] = 10",
+            "timer[1] = 32768",
+            "require timer[1] != 0",
+            "offer idea \"gladis\"",
+        ] {
+            let source = format!("// format: {SOURCE_FORMAT}\n{invalid}\nhalt\n");
+            assert!(
+                compile_with_dictionary(&source, &dictionary).is_err(),
+                "accepted {invalid}"
+            );
+        }
     }
 
     #[test]
@@ -6246,6 +6476,44 @@ mod tests {
                 bas
             );
         }
+    }
+
+    #[test]
+    fn every_shipped_countdown_and_offered_topic_has_domain_syntax() {
+        let Some(root) = game_dir() else { return };
+        let mut timers = 0;
+        let mut offered_topics = 0;
+
+        for script in 1..=5 {
+            let read = |extension: &str| {
+                std::fs::read(root.join(format!("SCRIPT{script}.{extension}"))).unwrap()
+            };
+            let cod = read("COD");
+            let bas = read("BAS");
+            let var = read("VAR");
+            let dictionary = crate::script::parse_dictionary(&read("DIC"));
+            let symbols = crate::script::parse_deb(&read("DEB"));
+            let cod_source =
+                decompile_structured_cod_with_symbols(&cod, &var, &dictionary, &symbols).unwrap();
+            let bas_source =
+                decompile_structured_bas_with_symbols(&bas, &var, &dictionary, &symbols).unwrap();
+
+            timers += cod_source.source.matches("timer[").count();
+            offered_topics += bas_source.source.matches("offer topic ").count();
+            assert!(!cod_source.source.contains("state_array_"));
+            assert!(!bas_source.source.contains("presentation_register"));
+            assert_eq!(
+                compile_with_dictionary(&cod_source.source, &dictionary).unwrap(),
+                cod
+            );
+            assert_eq!(
+                compile_with_dictionary(&bas_source.source, &dictionary).unwrap(),
+                bas
+            );
+        }
+
+        assert_eq!(timers, 75);
+        assert_eq!(offered_topics, 19);
     }
 
     #[test]

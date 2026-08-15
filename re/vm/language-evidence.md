@@ -106,6 +106,32 @@ and the `0xCE`/`0xD0` flag branches. This removes another 5,854 generic bytes.
 Together the two lifts reduce generic coverage from 20,898 to 4,567 bytes, a
 78.15 percent reduction, without changing any compiled COD byte.
 
+`A5`'s state array is specifically a countdown bank for every shipped use.
+Handler `0x65EB` sign-extends its byte index and addresses a word at
+`GS:0x6ADE + index*2`. In update mode it consumes and stores the following
+word. In query mode it consumes no value and calls the branch helper exactly
+when the selected word is nonzero, so the source condition is expiry at zero.
+The timer ISR at `0x0813` walks exactly 30 words from `GS:0x6ADE`, decrementing
+only positive values when `GS:0x675A == 0`; zero and the negative class are
+inert. Initialization at `0x53F6` fills the larger 256-word saved block with
+`0xFFFF`. All 75 shipped `A5` instructions use indices `1..22`: 48 writes use a
+positive count or `0xFFFF`, and 27 tests require zero. BloodScript therefore
+uses `timer[n] = ticks`, `timer[n] = disabled`, and
+`require timer[n] == 0`. The low-level state-array spelling remains for an
+index outside the ISR loop or an unmatched negative value.
+
+`A7` is a one-topic offer, not an untyped presentation register. Handler
+`0x67BA` consumes a word and, only while `GS:0x67AC & 1` marks a presentation
+active, stores it at `GS:0x6770`. `vm_control_flow` calls collector `0x5AFD`
+after the selected BAS body. That collector copies the current zero-terminated
+`A3` menu into `GS:0x67F8`, appends the pending `0x6770` word when nonzero,
+clears the pending slot, and writes the final terminator. The presentation
+choice coordinator at `0x8963` consumes this resulting list. Every one of the
+19 shipped A7 operands is an exact DIC offset (`sorceror`, `ekato`, `leisure`,
+`gladis`, or `revelation` by text). Their surrounding dialogue uses them as the
+additional selectable concepts. BloodScript emits `offer topic "word"`; an
+operand not found in the companion DIC stays `presentation_register`.
+
 The final six native-handler families account for those remaining 4,567 bytes:
 concept guards (`0xA3`), string loads (`0xA8`), procedure activation writes
 (`0xAB`), character-slot bindings (`0xCC`), alternate-concept clears (`0xCF`),
@@ -254,7 +280,7 @@ as `Kraner.position = (0x000A, 0x000A)` and `(0x0064, 0x000A)`. The proof gate
 does not lift query-mode pairs, `B8`/`B9`, another kind, or another selector.
 
 The remaining 3,780 BAS bytes form 1,003 complete records: three one-topic menus,
-19 presentation-register writes, three string loads, 37 `0xAA` yields, 321
+19 offered-topic writes, three string loads, 37 `0xAA` yields, 321
 `0xAC` yields, 321 linked selector nodes, and 299 shared state/record operations
 and end markers. The sequential decoder now types all of them. Every node
 selector resolves through its script's dictionary and every nonzero `next`
@@ -321,8 +347,8 @@ bases priority over fields. Other numeric subrecord addresses remain hexadecimal
 rather than being assigned to a nearby object.
 
 Exact DIC string boundaries establish a second symbolic namespace. The
-structured corpus uses 13,712 referenced offsets in 53,243 proven dictionary
-operands across COD and BAS, including the typed actor topics. All shipped
+structured corpus uses 13,713 referenced offsets in 53,262 proven dictionary
+operands across COD and BAS, including offered and actor topics. All shipped
 operands are interned bare string
 literals resolved through the companion DIC rather than routed through generated
 declarations. The compiler chooses the lowest offset as the canonical identity

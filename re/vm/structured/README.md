@@ -53,6 +53,20 @@ code. The lift requires update mode, opcode `BD`, that exact kind, and that
 exact selector. Query-mode pairs, sibling `B8`/`B9` encodings, and other fields
 remain `pair_record`.
 
+All 75 shipped `A5` operations address the 30-word range serviced by the timer
+ISR. The 48 update forms are `timer[n] = ticks` or `timer[n] = disabled` for the
+native `0xFFFF` sentinel; the 27 query forms are `require timer[n] == 0`. The
+ISR decrements only positive entries, and the query handler succeeds only at
+zero. An index outside `0..29` or another negative-class value retains
+`state_array_set`/`state_array_test` so the high-level syntax cannot imply a
+countdown the binary does not perform.
+
+The 19 shipped BAS `A7` operations are `offer topic "word"`. While a
+presentation is active, the handler places its DIC operand in a one-word
+pending slot. The menu collector appends that word to the selectable topic
+list and clears the slot. Every shipped operand resolves to its profile's DIC;
+an unresolved value retains `presentation_register`.
+
 The `0x6946` record family is lifted to 531 location/holder assignments and
 equality requirements plus 49 actor-topic assignments. Selector `0x11` is
 `current_location` for kind `0x0002`, `0x0010`, and `0x0200`, while the same
@@ -182,8 +196,8 @@ the VAR kind and matrix selectors. Zero matrix entries, ambiguous owners, and
 unmatched addresses remain hexadecimal rather than using nearest-object guesses.
 
 COD and BAS sources intern exact DIC references as string operands. The current
-corpus has 13,712 distinct referenced offsets and 53,243 uses in dictionary-typed
-dialogue, concept, menu, selector, and actor-topic operands. All
+corpus has 13,713 distinct referenced offsets and 53,262 uses in dictionary-typed
+dialogue, concept, menu, selector, offered-topic, and actor-topic operands. All
 shipped references are bare quoted literals resolved through the companion DIC;
 there are no generated dictionary declarations or address suffixes in the
 corpus. Equal text at multiple physical offsets uses the lowest offset as its

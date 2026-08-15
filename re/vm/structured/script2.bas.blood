@@ -1198,7 +1198,7 @@ selector Bob_Morlock_choices {
         say Bob_Morlock voice=0x01 flags=0x48 display=0x80 loop=none control=none : "Ah|, Otto Von Smile, Eviscerator, Jeph d'Ulikan, old Yolk, Tina Burner, and the others..." choices "Bob_Morlock"
         Bob_Morlock.conversation_progress += 0x0001
         say Bob_Morlock voice=0x01 flags=0x49 display=0x80 loop=none control=none : "Ahh! Those were the days, Commander..." choices "Bob_Morlock"
-        presentation_register 0x5A7A
+        offer topic "revelation"
         say Bob_Morlock voice=0x02 flags=0x48 display=0x80 loop=none control=none : "You want a few revelations, Commander|?" choices "revelation"
         state[0x12BA] = 0x0001
         say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Your mission is to find and travel through the right black holes, so we can travel back in time to the BIG BANG." choices "mission"

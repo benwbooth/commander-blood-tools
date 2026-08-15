@@ -47,11 +47,11 @@ selector Beauregard_choices {
         say Beauregard voice=0x0D flags=0x40 display=0x80 loop=none control=none : "Aaaa! Snakes alive..." choices "bye_bye"
         say Beauregard voice=0x0E flags=0x40 display=0x80 loop=none control=none : "I got baked by Gladis|..." choices "insist"
         say Beauregard voice=0xFF flags=0x68 display=0x80 loop=none control=none : "That's criminal! Commander, we have to find this Gladis and make sure she never bakes anyone again..." choices "insist"
-        presentation_register 0x1D9A
+        offer topic "gladis"
         say Beauregard voice=0x0F flags=0x48 display=0x80 loop=none control=none : "Gladis is the Tumul system's sun. It blew up..." choices "gladis"
-        presentation_register 0x1D9A
+        offer topic "gladis"
         say Beauregard voice=0x10 flags=0x48 display=0x80 loop=none control=none : "Gladis killed everything. It's a miracle I'm alive... Aaarr.." choices "insist"
-        presentation_register 0x1D9A
+        offer topic "gladis"
         say Beauregard voice=0x11 flags=0x40 display=0x80 loop=none control=none : "My body's burned to a cinder... I need a new body bad... Friend..." choices "treat"
         say Beauregard voice=0x12 flags=0x40 display=0x80 loop=none control=none : "My brain's intact, but the rest got fried... Up in smoke... Aaaarrr..." choices "treat"
         say Beauregard voice=0xFF flags=0x60 display=0x80 loop=none control=none : "Don't tire him out, Commander|..." choices "treat"
@@ -837,7 +837,7 @@ selector Bob_Morlock_choices {
         say Bob_Morlock voice=0x01 flags=0x48 display=0x80 loop=none control=none : "Ah... Otto Von Smile, Eviscerator, Jeph d'Ulikan, old Yolk, Tina Burner|... And the others..." choices "Bob_Morlock"
         Bob_Morlock.conversation_progress += 0x0001
         say Bob_Morlock voice=0x01 flags=0x49 display=0x80 loop=none control=none : "Ah|! Those were good days, Commander..." choices "Bob_Morlock"
-        presentation_register 0x49C8
+        offer topic "revelation"
         say Bob_Morlock voice=0x02 flags=0x48 display=0x80 loop=none control=none : "You want some revelations, Commander" choices "revelation"
         state[0x1446] = 0x0001
         say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Your mission is to find and travel through the right black holes, taking us back in time to the BIG BANG" choices "mission"

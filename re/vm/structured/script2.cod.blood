@@ -415,7 +415,7 @@ proc honk1 {
     guard_pop
     say Honk voice=0xFF flags=0x28 display=0x90 loop=none control=none : ""
     state[0x1270] = 0x0000
-    state_array_set 0x0F 0x0064
+    timer[15] = 100
     when block_0BC7 {
         require Bob_Morlock.encounter_count == 0x0000
     } then {
@@ -690,10 +690,10 @@ proc what {
     }
     block_12BF:
     when block_12FE {
-        state_array_test 0x0F
+        require timer[15] == 0
     } then {
         say Honk voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Pardon me,Commander, but I have work to do... I have to quadrify the multiplexers... See you!"
-        state_array_set 0x0F 0xFFFF
+        timer[15] = disabled
         end presentation Honk
     }
     block_12FE:
@@ -936,15 +936,15 @@ proc boba1 {
     say Bob_Morlock voice=0x02 flags=0x00 display=0x80 loop=none control=none : "HONK|! You worthless heap of wires... Are you working?"
     say Bob_Morlock voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Yes sir, Cap'n Bob sir!|... Just getting the multiplexers toned up|..."
     say Bob_Morlock voice=0x03 flags=0x08 display=0x80 loop=none control=none : "What do you want to know, Commander|?"
-    state_array_set 0x01 0x0032
+    timer[1] = 50
     when block_1D14 {
-        state_array_test 0x01
+        require timer[1] == 0
     } then {
         say Bob_Morlock voice=0x06 flags=0x00 display=0x80 loop=none control=none : "I feel like a dog I micro-waved by mistake one day... I have to cryonize..."
         say Bob_Morlock voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Ahhhh!!!"
         say Bob_Morlock voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
         state[0x12B4] = 0x0002
-        state_array_set 0x01 0xFFFF
+        timer[1] = disabled
         end presentation Bob_Morlock
     }
     block_1D14:
@@ -957,7 +957,7 @@ proc boba1 {
         say Bob_Morlock voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "stop"
         state[0x1270] = 0x0000
         state[0x12B4] = 0x0002
-        state_array_set 0x01 0xFFFF
+        timer[1] = disabled
         end presentation Bob_Morlock
     }
 }
@@ -974,9 +974,9 @@ proc boba2 {
     say Bob_Morlock voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Be careful... Find a spot with some flesh on it. The last time, you stuck the needle straight into a bone!!!"
     say Bob_Morlock voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Yes! Yes! Cap'n Bob|, I'll be careful, I'll shoot another buttock, I'll choose the third one..."
     say Bob_Morlock voice=0x03 flags=0x08 display=0x80 loop=none control=none : "I'm listening|, Commander|..."
-    state_array_set 0x01 0x003C
+    timer[1] = 60
     when block_1F0A {
-        state_array_test 0x01
+        require timer[1] == 0
     } then {
         say Bob_Morlock voice=0x05 flags=0x00 display=0x80 loop=none control=none : "AAARGH!!! HONK YOU STABBED ME IN THE BONE AGAIN... I told you not to do that..."
         say Bob_Morlock voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Sorry about that, Cap'n Bob. The needle slipped..."
@@ -984,7 +984,7 @@ proc boba2 {
         say Bob_Morlock voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Ahhhh!!!"
         say Bob_Morlock voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
         state[0x12B4] = 0x0003
-        state_array_set 0x01 0xFFFF
+        timer[1] = disabled
         end presentation Bob_Morlock
     }
     block_1F0A:
@@ -997,7 +997,7 @@ proc boba2 {
         say Bob_Morlock voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "stop"
         state[0x1270] = 0x0000
         state[0x12B4] = 0x0003
-        state_array_set 0x01 0xFFFF
+        timer[1] = disabled
         end presentation Bob_Morlock
     }
 }
@@ -1014,15 +1014,15 @@ proc boba3 {
     say Bob_Morlock voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Trust me|, Cap'n Bob! I've learned My lesson. Yes sir! I'm going to taste it to make sure..."
     say Bob_Morlock voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Don't do that|, you moronic box of longwinded incompetence! You'll short-circuit!"
     say Bob_Morlock voice=0x03 flags=0x00 display=0x80 loop=none control=none : "I'm listening, Commander|..."
-    state_array_set 0x01 0x0078
+    timer[1] = 120
     when block_20B9 {
-        state_array_test 0x01
+        require timer[1] == 0
     } then {
         say Bob_Morlock voice=0x06 flags=0x00 display=0x80 loop=none control=none : "I'm too hot... I need to cryonize..."
         say Bob_Morlock voice=0x03 flags=0x00 display=0x80 loop=none control=none : "AAAAAAhhhh!!!"
         say Bob_Morlock voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
         state[0x12B4] = 0x0004
-        state_array_set 0x01 0xFFFF
+        timer[1] = disabled
         end presentation Bob_Morlock
     }
     block_20B9:
@@ -1035,7 +1035,7 @@ proc boba3 {
         say Bob_Morlock voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "stop"
         state[0x1270] = 0x0000
         state[0x12B4] = 0x0004
-        state_array_set 0x01 0xFFFF
+        timer[1] = disabled
         end presentation Bob_Morlock
     }
 }
@@ -1057,14 +1057,14 @@ proc boba4 {
     }
     block_221B:
     say Bob_Morlock voice=0x06 flags=0x08 display=0x80 loop=none control=none : "What do you want to know Commander|..."
-    state_array_set 0x01 0x005A
+    timer[1] = 90
     when block_226C {
-        state_array_test 0x01
+        require timer[1] == 0
     } then {
         say Bob_Morlock voice=0x06 flags=0x00 display=0x80 loop=none control=none : "I need to cryonize..."
         say Bob_Morlock voice=0x03 flags=0x00 display=0x80 loop=none control=none : "AAAAAAAAAAAAhhhh!!!"
         say Bob_Morlock voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
-        state_array_set 0x01 0xFFFF
+        timer[1] = disabled
         end presentation Bob_Morlock
     }
     block_226C:
@@ -1076,7 +1076,7 @@ proc boba4 {
         say Bob_Morlock voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Ah, sleep..."
         say Bob_Morlock voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
         state[0x1270] = 0x0000
-        state_array_set 0x01 0xFFFF
+        timer[1] = disabled
         end presentation Bob_Morlock
     }
 }
@@ -1160,15 +1160,15 @@ proc caft {
 proc time {
     activation enabled until radioscr
     guard_pop
-    state_array_set 0x03 0x000A
-    state_array_set 0x04 0x00C8
+    timer[3] = 10
+    timer[4] = 200
     Scruter_K.links += blood
     time.enabled = false
 }
 
 proc radioscr {
     activation enabled until sort
-    state_array_test 0x03
+    require timer[3] == 0
     guard_pop
     queue presentation Scruter_K
     sort.enabled = true
@@ -1296,7 +1296,7 @@ proc radio1 {
     say Scruter_K voice=0xFF flags=0x08 display=0xC0 loop=none control=none : "stop"
     radio1.enabled = false
     radioscr.enabled = false
-    state_array_set 0x08 0x000A
+    timer[8] = 10
     radio1.enabled = false
     end presentation Scruter_K
 }
@@ -1305,7 +1305,7 @@ proc dring {
     activation enabled until encor
     require Izwalito.encounter_count < 0x0002
     require Scruter_Jo.encounter_count < 0x0002
-    state_array_test 0x08
+    require timer[8] == 0
     guard_pop
     queue presentation Scruter_K
     state[0x12C4] = 0x0001
@@ -1358,7 +1358,7 @@ proc encor {
 proc destroy {
     activation disabled until last
     require state[0x12C6] == 0x0001
-    state_array_test 0x04
+    require timer[4] == 0
     guard_pop
     radio1.enabled = false
     queue presentation Scruter_K
@@ -1496,7 +1496,7 @@ proc rhom3b {
 proc timy {
     activation enabled until timx
     guard_pop
-    state_array_set 0x0C 0x04B0
+    timer[12] = 1200
     timy.enabled = false
 }
 
@@ -1504,10 +1504,10 @@ proc timx {
     activation enabled until tim1
     guard_pop
     when tim1 {
-        state_array_test 0x0C
+        require timer[12] == 0
     } then {
         state[0x1278] += 0x0001
-        state_array_set 0x0C 0x04B0
+        timer[12] = 1200
     }
 }
 
@@ -1973,11 +1973,11 @@ proc Corpo1 {
     }
     block_405E:
     say Izwalito voice=0xFF flags=0x28 display=0x80 loop=none control=none : "STOP"
-    state_array_set 0x02 0x0050
+    timer[2] = 80
     when block_407A {
-        state_array_test 0x02
+        require timer[2] == 0
     } then {
-        state_array_set 0x02 0xFFFF
+        timer[2] = disabled
         ad.enabled = true
     }
     block_407A:
@@ -3144,15 +3144,15 @@ proc letar {
     require presentation == Morning_Oil
     guard_pop
     say Morning_Oil voice=0x02 flags=0x08 display=0x90 loop=none control=none : "Aaaaaah..."
-    state_array_set 0x06 0x000A
+    timer[6] = 10
     Morning_Oil.topic = "letar"
     when morntv {
-        state_array_test 0x06
+        require timer[6] == 0
     } then {
         say Morning_Oil voice=0xFF flags=0x20 display=0x80 loop=none control=none : "I love it when they snore like that... Leave him to me|, Commander|. I'll do a GARBAGE RECOVERY on his memory..."
         say Morning_Oil voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
         state[0x12F2] = 0x0005
-        state_array_set 0x06 0xFFFF
+        timer[6] = disabled
         end presentation Morning_Oil
     }
 }
@@ -4046,18 +4046,18 @@ proc prep {
     activation enabled until pub1
     require Morning_Oil.encounter_count == 0x0001
     guard_pop
-    state_array_set 0x07 0x0014
+    timer[7] = 20
     Bug_Deluxe.links += blood
     prep.enabled = false
 }
 
 proc pub1 {
     activation enabled until pub2
-    state_array_test 0x07
+    require timer[7] == 0
     guard_pop
     Bug_Deluxe.in_play = true
     queue presentation Bug_Deluxe
-    state_array_set 0x07 0xFFFF
+    timer[7] = disabled
     pub2.enabled = true
     pub1.enabled = false
 }
@@ -4147,7 +4147,7 @@ proc monop2 {
         require cred.holder == blood
     } then {
         say Bug_Deluxe voice=0x02 flags=0x08 display=0x90 loop=none control=none : "What would you like to splurge your creds on, Supra Comrade?"
-        state_array_set 0x07 0x01F4
+        timer[7] = 500
         Bug_Deluxe.topic = "department"
     }
     block_9610:

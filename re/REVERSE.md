@@ -565,9 +565,9 @@ by `0xA0` PUSH, cleared by `0xA1` POP) makes record opcodes COMPARE-and-branch i
 `A0 … A1` block, or WRITE (set) outside it.
 
 - Control flow: `A0` push/enter-query, `A1` pop/exit-query, `A2` cond-call, `A3` block,
-  `A4` jump, `A5` cond-branch (state-array `0x6ade`), `A9` cond-jump (operand bit0),
+  `A4` jump, `A5` countdown set/expiry test (`0x6ade`), `A9` cond-jump (operand bit0),
   `AA`/`AC` yield, `CE`/`D0`/`D1` cond-branch (flags `0x2793`/`0x252a`/`0x274f`).
-- Data/vars: `A7` set-if-presentation, `A8` load-string→`0x2120`, `AB` poke-byte,
+- Data/vars: `A7` offer one DIC topic if presenting, `A8` load-string→`0x2120`, `AB` poke-byte,
   `CC` set-record-byte (`0x6cde`), `CA`/`CB` compare var vs `0xaa6`/`0xaaa` (tag `0xf1`).
 - Records (typed `+0`=opcode, `+2`=id; on `gs:0x6724`): `B7` field op, `B8`/`B9`/`BD`
   2-word read/write, `C5`/`C6`/`C7`/`C8` self-typed record match, `C9` clear-field,
@@ -1572,6 +1572,39 @@ triggered by a dynamic callback rather than the now-decoded `gs:0x67BB` hold
 flag; (2) decode any remaining line-record display flags that affect
 subtitle/talk-HNM routing; (3) map the remaining presentation callback behavior;
 (4) finish naming the `gs:0x6724` object fields.
+
+### 0xA5 countdown handler @ file 0x65EB (DECODED)
+
+`A5` consumes a signed byte index, doubles it, and addresses
+`GS:0x6ADE + index*2`. In update mode it consumes a following word and stores it.
+In query mode it consumes no value and calls branch helper `0x6462` when the
+selected word is nonzero, so its positive condition is exactly expiry at zero.
+
+The ISR at file `0x0813` establishes the domain. On each divided beat while
+`GS:0x675A == 0`, its loop at `0x08AA` visits exactly 30 words beginning at
+`GS:0x6ADE` and decrements each positive signed value. Zero and negative values
+are left unchanged. Profile initialization at `0x53F6` fills the complete
+256-word saved block with `0xFFFF`. Every shipped A5 index is in `1..22`; the 48
+updates contain a positive value or `0xFFFF`, and the 27 queries test expiry.
+BloodScript therefore uses `timer[n] = ticks`, `timer[n] = disabled`, and
+`require timer[n] == 0`. It retains `state_array_set`/`state_array_test` outside
+this ISR-managed shape.
+
+### 0xA7 offered-topic handler @ file 0x67BA (DECODED)
+
+`A7 <word:u16>` writes its operand to `GS:0x6770` only when presentation-active
+bit `GS:0x67AC & 1` is set. After `vm_control_flow` executes the selected BAS
+body, it calls `vm_op_a3_collect` at `0x5AFD`. That routine copies the current
+zero-terminated A3 menu from `GS:[0x6720]:GS:0x6772` into `GS:0x67F8`, appends
+the pending `0x6770` word if nonzero, clears `0x6770`, and appends the final zero.
+`presentation_ready_gate` at `0x8963` then displays and resolves this selectable
+word list.
+
+All 19 shipped A7 operands resolve exactly in their profile DIC. They spell
+`sorceror`, `ekato`, `leisure`, `gladis`, or `revelation`; their surrounding
+dialogue uses them as additional selectable concepts. BloodScript renders them
+as `offer topic "word"`. An operand absent from the DIC retains the lossless
+`presentation_register` form.
 
 ### 0xB7 bit-flag handler @ file 0x6AA7 — state flag set/test (DECODED)
 

@@ -44,13 +44,13 @@ selector Maziok_choices {
         menu "bye_bye" "medicine" "curse"
         say Maziok voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me know good medicine and good doctor... You be very sick|..." choices "medicine"
         say Maziok voice=0x03 flags=0x48 display=0x80 loop=none control=none : "You have nightmares and you not be lucky..." choices "medicine"
-        presentation_register 0x2624
+        offer topic "sorceror"
         say Maziok voice=0x04 flags=0x48 display=0x80 loop=none control=none : "You need sorceror medicine???" choices "medicine"
-        presentation_register 0x2624
+        offer topic "sorceror"
         say Maziok voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Curse come from land of dead... You did be bad to dead..." choices "curse"
         say Maziok voice=0x00 flags=0x40 display=0x80 loop=none control=none : "Me scared..." choices "curse"
         say Maziok voice=0x02 flags=0x48 display=0x80 loop=none control=none : "Yes, yes... Me know good sorceror, friend|..." choices "sorceror"
-        presentation_register 0x2624
+        offer topic "sorceror"
         say Maziok voice=0x03 flags=0x48 display=0x80 loop=none control=none : "Him live alone on desert planet|..." choices "sorceror"
         state[0x1512] = 0x0001
         yield_b
@@ -60,15 +60,15 @@ selector Maziok_choices {
         menu "bye_bye" "vista" "tromp" "ondoyant" "tourism"
         say Maziok voice=0x03 flags=0x40 display=0x80 loop=none control=none : "The planet Vista is where I'm from... It suits me|..." choices "vista"
         say Maziok voice=0x02 flags=0x48 display=0x80 loop=none control=none : "There's a saying which goes: \"Hasta la Vista\"" choices "vista"
-        presentation_register 0x0C64
+        offer topic "ekato"
         say Maziok voice=0x02 flags=0x40 display=0x80 loop=none control=none : "We Trumps are an ancient people|... We like peace|..." choices "tromp"
         say Maziok voice=0x02 flags=0x40 display=0x80 loop=none control=none : "We fear nothing as much as the Trump tail hunters..." choices "tromp"
         say Maziok voice=0x02 flags=0x00 display=0x80 loop=none control=none : "They come in big ships, with enormous weapons attached to their arms. They are vulgar and uncouth.."
         say Maziok voice=0x01 flags=0x48 display=0x80 loop=none control=none : "To think there are those who would smoke our tails..." choices "tromp"
-        presentation_register 0x0C64
+        offer topic "ekato"
         say Maziok voice=0x02 flags=0x40 display=0x80 loop=none control=none : "There are even fools that believe in ondoyants..." choices "ondoyant"
         say Maziok voice=0x01 flags=0x48 display=0x80 loop=none control=none : "ondoyants live only in dreams..." choices "ondoyant"
-        presentation_register 0x0C64
+        offer topic "ekato"
         yield
     }
 }
@@ -92,11 +92,11 @@ selector Bratakas_choices {
         say Bratakas voice=0x02 flags=0x40 display=0x80 loop=none control=none : "You want to talk, friend..." choices "talk"
         say Bratakas voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Vistar is the name of my planet|. I am alone here|..." choices "Vistar"
         say Bratakas voice=0x00 flags=0x48 display=0x80 loop=none control=none : "I find peace here|... Nobody to bother me|..." choices "Vistar"
-        presentation_register 0x2725
+        offer topic "leisure"
         say Bratakas voice=0x01 flags=0x48 display=0x80 loop=none control=none : "It's calm here. No neighbors, no noise, no TV..." choices "Vistar"
-        presentation_register 0x2725
+        offer topic "leisure"
         say Bratakas voice=0x02 flags=0x48 display=0x80 loop=none control=none : "Ah|, It's true that the winter nights would be nicer with TV..." choices "leisure"
-        presentation_register 0x2725
+        offer topic "leisure"
         say Bratakas voice=0x00 flags=0x48 display=0x80 loop=none control=none : "To watch TV, I'd need a good decoder..." choices "leisure"
         state[0x151C] = 0x0001
         say Bratakas voice=0x00 flags=0x40 display=0x80 loop=none control=none : "No shortage of planets|, that's for sure..." choices "planet"
@@ -104,7 +104,7 @@ selector Bratakas_choices {
         state[0x151A] = 0x0001
         say Bratakas voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Only Tromps here.. We seldom get strangers..." choices "race"
         say Bratakas voice=0x01 flags=0x48 display=0x80 loop=none control=none : "Big ships pass nearby from time to time|..." choices "race"
-        presentation_register 0x2725
+        offer topic "leisure"
         say Bratakas voice=0x00 flags=0x40 display=0x80 loop=none control=none : "Aren't you feeling well?" choices "croolis"
         say Bratakas voice=0x01 flags=0x40 display=0x80 loop=none control=none : "I'm sure you're insulting me...I don't like insults I don't understand|..." choices "croolis"
         say Bratakas voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Don't insult me, stranger|... I don't like it..." choices "croolis"
@@ -120,11 +120,11 @@ selector Beauregard_choices {
         say Beauregard voice=0x0D flags=0x40 display=0x80 loop=none control=none : "Aaaa..." choices "bye_bye"
         say Beauregard voice=0x0E flags=0x40 display=0x80 loop=none control=none : "I've been struck by the CURSE of BETAKAM IV|..." choices "insist"
         say Beauregard voice=0xFF flags=0x68 display=0x80 loop=none control=none : "That sounds like a bad thing to get struck by, Commander|..." choices "insist"
-        presentation_register 0x2803
+        offer topic "gladis"
         say Beauregard voice=0x0F flags=0x48 display=0x80 loop=none control=none : "Gladis is the sun of the Tumul system. It exploded..." choices "gladis"
-        presentation_register 0x2803
+        offer topic "gladis"
         say Beauregard voice=0xFF flags=0x68 display=0x80 loop=none control=none : "What do you mean, a sun?" choices "gladis"
-        presentation_register 0x2803
+        offer topic "gladis"
         say Beauregard voice=0x10 flags=0x40 display=0x80 loop=none control=none : "Gladis killed every living thing|. It's miracle I survived... Aaarr.." choices "insist"
         say Beauregard voice=0x11 flags=0x40 display=0x80 loop=none control=none : "My body is completely fried... I must have a new body... Friend..." choices "treat"
         say Beauregard voice=0x12 flags=0x40 display=0x80 loop=none control=none : "My brain is intact but the rest is history... Ash... Aaaarrr..." choices "treat"
@@ -305,7 +305,7 @@ selector Bob_Morlock_choices {
         say Bob_Morlock voice=0x01 flags=0x48 display=0x80 loop=none control=none : "Ah... Otto Von Smile, Eviscerator, Jeph d'Ulikan, Yolk|, old Tina Burner, and all the others..." choices "Bob_Morlock"
         Bob_Morlock.conversation_progress += 0x0001
         say Bob_Morlock voice=0x01 flags=0x49 display=0x80 loop=none control=none : "Ahh! Those were good times|, Commander|..." choices "Bob_Morlock"
-        presentation_register 0x2ED5
+        offer topic "revelation"
         say Bob_Morlock voice=0x02 flags=0x48 display=0x80 loop=none control=none : "You want revelations, Commander|?" choices "revelation"
         state[0x152C] = 0x0001
         say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Your mission is to find and travel through the right black holes, taking us back through time to the BIG BANG" choices "mission"
