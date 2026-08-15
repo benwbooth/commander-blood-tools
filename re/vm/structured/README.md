@@ -49,17 +49,18 @@ they occur. Comments do not emit bytes.
 All ten generated COD and BAS sources compile to the exact 183,523 shipped
 bytes; per-image guard, rejection, list, and case counts are in `manifest.tsv`.
 
-COD sources also declare exact kind-1 DEB object bases with zero-byte
+COD and BAS sources also declare exact kind-1 DEB object bases with zero-byte
 `OBJECT name offset` directives. An object name is accepted only in an operand
 position already established as a VAR address, and the compiler lowers it to
-the declared `u16` without changing layout. The current corpus contains 104
-used object declarations and 4,113 symbolic operands: 3,687 `TEXT` line owners,
-389 actor relations, 35 record links, and two record-entry relations.
+the declared `u16` without changing layout. The current corpus contains 247
+image-local object declarations and 5,962 symbolic uses.
 
-This pass aliases only an exact DEB object base. It does not assign a numeric
-subrecord offset to the nearest object or invent field names. Such expressions
-remain hexadecimal until the object's VAR kind and the native field-offset
-matrix prove both ownership and field identity.
+Subrecord addresses use zero-byte `FIELD name object delta` declarations only
+when the address has exactly one owner under the native field-offset matrix and
+that object's initial VAR kind. The current corpus contains 367 fields and 1,880
+uses. The compiler computes the wrapping base-plus-delta address; comments retain
+the VAR kind and matrix selectors. Zero matrix entries, ambiguous owners, and
+unmatched addresses remain hexadecimal rather than using nearest-object guesses.
 
 COD and BAS sources also declare exact referenced DIC offsets with zero-byte
 `DIC_WORD name offset` directives. The current corpus has 13,699 declarations

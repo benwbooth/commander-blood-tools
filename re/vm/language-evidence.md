@@ -100,12 +100,16 @@ offsets and exact statement order. Across the corpus this yields 1,059 distinct
 COD symbols and 284 BAS labels without changing any output byte.
 
 Kind-1 DEB entries also establish exact VAR object-base names. The structured
-COD corpus declares the 104 bases that are actually referenced and uses them in
-4,113 proven address operands: 3,687 text-line owners, 389 actor relations, 35
-record links, and two record-entry relations. `OBJECT` declarations emit no
-bytes and retain the original numeric offset. Numeric subrecord addresses are
-not assigned to a nearby object: they remain numeric unless the object's VAR
-kind and the native field-offset matrix prove the relationship.
+COD and BAS corpus contains 247 image-local declarations and 5,962 proven uses.
+`OBJECT` declarations emit no bytes and retain the original numeric offset.
+
+The native field-offset matrix plus each object's initial VAR kind establishes
+367 unambiguous physical subrecord fields used by 1,880 operands. Each `FIELD`
+declaration names an object and a wrapping byte delta; its comment records the
+VAR kind and every matrix selector sharing that physical offset. The decompiler
+requires one unique owner, excludes zero matrix entries, and gives exact object
+bases priority over fields. Other numeric subrecord addresses remain hexadecimal
+rather than being assigned to a nearby object.
 
 Exact DIC string boundaries establish a second symbolic namespace. The
 structured corpus declares 13,699 referenced offsets as `DIC_WORD` and uses
@@ -189,8 +193,9 @@ specific byte range and must never be labelled as the original 1994 source.
    all 239 retained low-level guards.
 5. Add symbolic object, field, and dictionary names without changing numeric
    identity in the compiler IR. Exact DEB object bases and referenced dictionary
-   words are complete for the currently proven operand families; subrecord fields
-   remain to be lifted.
+   words are complete for the currently proven operand families. The first field
+   pass names every direct operand with a unique nonzero DEB/VAR/matrix relation;
+   unproven subrecord addresses remain numeric.
 6. Compile the structured syntax back through the exact IR and require all ten
    images to remain byte exact.
 7. Emit complete `.COD`, `.BAS`, `.DEB`, `.DIC`, and `.VAR` bundles and

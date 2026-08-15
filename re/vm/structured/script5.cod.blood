@@ -23,6 +23,7 @@
 00000000: OBJECT object_Maxxon_055A 055A ; DEB kind 1 "Maxxon"
 00000000: OBJECT object_Izwalito_05A2 05A2 ; DEB kind 1 "Izwalito"
 00000000: OBJECT object_Amigo_05EA 05EA ; DEB kind 1 "Amigo"
+00000000: OBJECT object_Otto_Von_Smile_0632 0632 ; DEB kind 1 "Otto_Von_Smile"
 00000000: OBJECT object_Scruter_Mac_06C2 06C2 ; DEB kind 1 "Scruter_Mac"
 00000000: OBJECT object_Scruter_K_070A 070A ; DEB kind 1 "Scruter_K"
 00000000: OBJECT object_Scruter_Jo_0752 0752 ; DEB kind 1 "Scruter_Jo"
@@ -30,6 +31,109 @@
 00000000: OBJECT object_Emasculator_0872 0872 ; DEB kind 1 "Emasculator"
 00000000: OBJECT object_Honk_08BA 08BA ; DEB kind 1 "Honk"
 00000000: OBJECT object_menu_0902 0902 ; DEB kind 1 "menu"
+00000000: OBJECT object_Venusia_0968 0968 ; DEB kind 1 "Venusia"
+00000000: OBJECT object_Erazor_09C2 09C2 ; DEB kind 1 "Erazor"
+00000000: OBJECT object_Mastachok_0A2E 0A2E ; DEB kind 1 "Mastachok"
+00000000: OBJECT object_Kortex_0B36 0B36 ; DEB kind 1 "Kortex"
+00000000: OBJECT object_Rondo_0B72 0B72 ; DEB kind 1 "Rondo"
+00000000: OBJECT object_Eden_0BDE 0BDE ; DEB kind 1 "Eden"
+00000000: OBJECT object_Magnus_0C4A 0C4A ; DEB kind 1 "Magnus"
+00000000: OBJECT object_Cyberock_0D40 0D40 ; DEB kind 1 "Cyberock"
+00000000: OBJECT object_Corpo_0D5E 0D5E ; DEB kind 1 "Corpo"
+00000000: OBJECT object_Pterra_0DE2 0DE2 ; DEB kind 1 "Pterra"
+00000000: OBJECT object_Kult_0E5A 0E5A ; DEB kind 1 "Kult"
+00000000: OBJECT object_Vulcan_0E96 0E96 ; DEB kind 1 "Vulcan"
+00000000: OBJECT object_Troma_0EB4 0EB4 ; DEB kind 1 "Troma"
+00000000: OBJECT object_Ekatomb_0F0E 0F0E ; DEB kind 1 "Ekatomb"
+00000000: OBJECT object_Moskito_0F4A 0F4A ; DEB kind 1 "Moskito"
+00000000: OBJECT object_airport_0F80 0F80 ; DEB kind 1 "airport"
+00000000: OBJECT object_Bigbang_0FB8 0FB8 ; DEB kind 1 "Bigbang"
+00000000: OBJECT object_arche_1024 1024 ; DEB kind 1 "arche"
+00000000: OBJECT object_urout_10E4 10E4 ; DEB kind 1 "urout"
+00000000: OBJECT object_splatch_127C 127C ; DEB kind 1 "splatch"
+00000000: OBJECT object_ring_12DC 12DC ; DEB kind 1 "ring"
+00000000: OBJECT object_orxx_133C 133C ; DEB kind 1 "orxx"
+
+00000000: FIELD field_blood_0028_s13_0030 object_blood_0028 0008 ; VAR kind 0x0001, selector(s) 13
+00000000: FIELD field_Bob_Morlock_004A_s11_0062 object_Bob_Morlock_004A 0018 ; VAR kind 0x0002, selector(s) 11
+00000000: FIELD field_Bob_Morlock_004A_s13_0084 object_Bob_Morlock_004A 003A ; VAR kind 0x0002, selector(s) 13
+00000000: FIELD field_Bug_Deluxe_0092_s11_00AA object_Bug_Deluxe_0092 0018 ; VAR kind 0x0002, selector(s) 11
+00000000: FIELD field_Bug_Deluxe_0092_s08_00C8 object_Bug_Deluxe_0092 0036 ; VAR kind 0x0002, selector(s) 08
+00000000: FIELD field_Bug_Deluxe_0092_s13_00CC object_Bug_Deluxe_0092 003A ; VAR kind 0x0002, selector(s) 13
+00000000: FIELD field_Fifi_00DA_s11_00F2 object_Fifi_00DA 0018 ; VAR kind 0x0002, selector(s) 11
+00000000: FIELD field_Fifi_00DA_s13_0114 object_Fifi_00DA 003A ; VAR kind 0x0002, selector(s) 13
+00000000: FIELD field_receiver_016A_s11_0182 object_receiver_016A 0018 ; VAR kind 0x0002, selector(s) 11
+00000000: FIELD field_receiver_016A_s13_01A4 object_receiver_016A 003A ; VAR kind 0x0002, selector(s) 13
+00000000: FIELD field_Eviscerator_01B2_s13_01EC object_Eviscerator_01B2 003A ; VAR kind 0x0002, selector(s) 13
+00000000: FIELD field_Eviscerator_01B2_s0F_01F8 object_Eviscerator_01B2 0046 ; VAR kind 0x0002, selector(s) 0F
+00000000: FIELD field_Hom_01FA_s11_0212 object_Hom_01FA 0018 ; VAR kind 0x0002, selector(s) 11
+00000000: FIELD field_Hom_01FA_s08_0230 object_Hom_01FA 0036 ; VAR kind 0x0002, selector(s) 08
+00000000: FIELD field_Hom_01FA_s13_0234 object_Hom_01FA 003A ; VAR kind 0x0002, selector(s) 13
+00000000: FIELD field_Hom_01FA_s0F_0240 object_Hom_01FA 0046 ; VAR kind 0x0002, selector(s) 0F
+00000000: FIELD field_Yoko_0242_s11_025A object_Yoko_0242 0018 ; VAR kind 0x0002, selector(s) 11
+00000000: FIELD field_Yoko_0242_s08_0278 object_Yoko_0242 0036 ; VAR kind 0x0002, selector(s) 08
+00000000: FIELD field_Yoko_0242_s13_027C object_Yoko_0242 003A ; VAR kind 0x0002, selector(s) 13
+00000000: FIELD field_Cyberquizz_028A_s13_02C4 object_Cyberquizz_028A 003A ; VAR kind 0x0002, selector(s) 13
+00000000: FIELD field_Morning_Oil_02D2_s13_030C object_Morning_Oil_02D2 003A ; VAR kind 0x0002, selector(s) 13
+00000000: FIELD field_Bronko_0362_s11_037A object_Bronko_0362 0018 ; VAR kind 0x0002, selector(s) 11
+00000000: FIELD field_Bronko_0362_s13_039C object_Bronko_0362 003A ; VAR kind 0x0002, selector(s) 13
+00000000: FIELD field_ondoyant_03AA_s11_03C2 object_ondoyant_03AA 0018 ; VAR kind 0x0002, selector(s) 11
+00000000: FIELD field_ondoyant_03AA_s13_03E4 object_ondoyant_03AA 003A ; VAR kind 0x0002, selector(s) 13
+00000000: FIELD field_Anna_Haf_03F2_s11_040A object_Anna_Haf_03F2 0018 ; VAR kind 0x0002, selector(s) 11
+00000000: FIELD field_Anna_Haf_03F2_s13_042C object_Anna_Haf_03F2 003A ; VAR kind 0x0002, selector(s) 13
+00000000: FIELD field_Migrator_043A_s00_043C object_Migrator_043A 0002 ; VAR kind 0x0002, selector(s) 00
+00000000: FIELD field_Migrator_043A_s11_0452 object_Migrator_043A 0018 ; VAR kind 0x0002, selector(s) 11
+00000000: FIELD field_Migrator_043A_s08_0470 object_Migrator_043A 0036 ; VAR kind 0x0002, selector(s) 08
+00000000: FIELD field_Migrator_043A_s13_0474 object_Migrator_043A 003A ; VAR kind 0x0002, selector(s) 13
+00000000: FIELD field_Daddy_Gluxx_0482_s11_049A object_Daddy_Gluxx_0482 0018 ; VAR kind 0x0002, selector(s) 11
+00000000: FIELD field_Daddy_Gluxx_0482_s13_04BC object_Daddy_Gluxx_0482 003A ; VAR kind 0x0002, selector(s) 13
+00000000: FIELD field_Beauregard_04CA_s11_04E2 object_Beauregard_04CA 0018 ; VAR kind 0x0002, selector(s) 11
+00000000: FIELD field_Beauregard_04CA_s13_0504 object_Beauregard_04CA 003A ; VAR kind 0x0002, selector(s) 13
+00000000: FIELD field_Kran_Dobu_0512_s13_054C object_Kran_Dobu_0512 003A ; VAR kind 0x0002, selector(s) 13
+00000000: FIELD field_Maxxon_055A_s11_0572 object_Maxxon_055A 0018 ; VAR kind 0x0002, selector(s) 11
+00000000: FIELD field_Maxxon_055A_s13_0594 object_Maxxon_055A 003A ; VAR kind 0x0002, selector(s) 13
+00000000: FIELD field_Izwalito_05A2_s11_05BA object_Izwalito_05A2 0018 ; VAR kind 0x0002, selector(s) 11
+00000000: FIELD field_Izwalito_05A2_s13_05DC object_Izwalito_05A2 003A ; VAR kind 0x0002, selector(s) 13
+00000000: FIELD field_Amigo_05EA_s11_0602 object_Amigo_05EA 0018 ; VAR kind 0x0002, selector(s) 11
+00000000: FIELD field_Amigo_05EA_s13_0624 object_Amigo_05EA 003A ; VAR kind 0x0002, selector(s) 13
+00000000: FIELD field_Otto_Von_Smile_0632_s11_064A object_Otto_Von_Smile_0632 0018 ; VAR kind 0x0002, selector(s) 11
+00000000: FIELD field_Scruter_Mac_06C2_s11_06DA object_Scruter_Mac_06C2 0018 ; VAR kind 0x0002, selector(s) 11
+00000000: FIELD field_Scruter_Mac_06C2_s08_06F8 object_Scruter_Mac_06C2 0036 ; VAR kind 0x0002, selector(s) 08
+00000000: FIELD field_Scruter_Mac_06C2_s13_06FC object_Scruter_Mac_06C2 003A ; VAR kind 0x0002, selector(s) 13
+00000000: FIELD field_Scruter_K_070A_s13_0744 object_Scruter_K_070A 003A ; VAR kind 0x0002, selector(s) 13
+00000000: FIELD field_Scruter_Jo_0752_s13_078C object_Scruter_Jo_0752 003A ; VAR kind 0x0002, selector(s) 13
+00000000: FIELD field_Tina_Burner_079A_s11_07B2 object_Tina_Burner_079A 0018 ; VAR kind 0x0002, selector(s) 11
+00000000: FIELD field_Tina_Burner_079A_s08_07D0 object_Tina_Burner_079A 0036 ; VAR kind 0x0002, selector(s) 08
+00000000: FIELD field_Tina_Burner_079A_s13_07D4 object_Tina_Burner_079A 003A ; VAR kind 0x0002, selector(s) 13
+00000000: FIELD field_Emasculator_0872_s00_0874 object_Emasculator_0872 0002 ; VAR kind 0x0002, selector(s) 00
+00000000: FIELD field_Emasculator_0872_s11_088A object_Emasculator_0872 0018 ; VAR kind 0x0002, selector(s) 11
+00000000: FIELD field_Emasculator_0872_s13_08AC object_Emasculator_0872 003A ; VAR kind 0x0002, selector(s) 13
+00000000: FIELD field_Honk_08BA_s13_08F4 object_Honk_08BA 003A ; VAR kind 0x0002, selector(s) 13
+00000000: FIELD field_Honk_08BA_s0F_0900 object_Honk_08BA 0046 ; VAR kind 0x0002, selector(s) 0F
+00000000: FIELD field_menu_0902_s13_093C object_menu_0902 003A ; VAR kind 0x0002, selector(s) 13
+00000000: FIELD field_Venusia_0968_s00_096A object_Venusia_0968 0002 ; VAR kind 0x0008, selector(s) 00
+00000000: FIELD field_Erazor_09C2_s00_09C4 object_Erazor_09C2 0002 ; VAR kind 0x0008, selector(s) 00
+00000000: FIELD field_Mastachok_0A2E_s00_0A30 object_Mastachok_0A2E 0002 ; VAR kind 0x0008, selector(s) 00
+00000000: FIELD field_Kortex_0B36_s00_0B38 object_Kortex_0B36 0002 ; VAR kind 0x0008, selector(s) 00
+00000000: FIELD field_Rondo_0B72_s00_0B74 object_Rondo_0B72 0002 ; VAR kind 0x0008, selector(s) 00
+00000000: FIELD field_Eden_0BDE_s00_0BE0 object_Eden_0BDE 0002 ; VAR kind 0x0008, selector(s) 00
+00000000: FIELD field_Magnus_0C4A_s00_0C4C object_Magnus_0C4A 0002 ; VAR kind 0x0008, selector(s) 00
+00000000: FIELD field_Cyberock_0D40_s00_0D42 object_Cyberock_0D40 0002 ; VAR kind 0x0008, selector(s) 00
+00000000: FIELD field_Corpo_0D5E_s00_0D60 object_Corpo_0D5E 0002 ; VAR kind 0x0008, selector(s) 00
+00000000: FIELD field_Pterra_0DE2_s00_0DE4 object_Pterra_0DE2 0002 ; VAR kind 0x0008, selector(s) 00
+00000000: FIELD field_Kult_0E5A_s00_0E5C object_Kult_0E5A 0002 ; VAR kind 0x0008, selector(s) 00
+00000000: FIELD field_Vulcan_0E96_s00_0E98 object_Vulcan_0E96 0002 ; VAR kind 0x0008, selector(s) 00
+00000000: FIELD field_Troma_0EB4_s00_0EB6 object_Troma_0EB4 0002 ; VAR kind 0x0008, selector(s) 00
+00000000: FIELD field_Ekatomb_0F0E_s00_0F10 object_Ekatomb_0F0E 0002 ; VAR kind 0x0008, selector(s) 00
+00000000: FIELD field_Moskito_0F4A_s00_0F4C object_Moskito_0F4A 0002 ; VAR kind 0x0008, selector(s) 00
+00000000: FIELD field_airport_0F80_s00_0F82 object_airport_0F80 0002 ; VAR kind 0x0080, selector(s) 00
+00000000: FIELD field_Bigbang_0FB8_s00_0FBA object_Bigbang_0FB8 0002 ; VAR kind 0x0010, selector(s) 00
+00000000: FIELD field_arche_1024_s11_103A object_arche_1024 0016 ; VAR kind 0x0010, selector(s) 11
+00000000: FIELD field_urout_10E4_s11_10F8 object_urout_10E4 0014 ; VAR kind 0x0400, selector(s) 11
+00000000: FIELD field_splatch_127C_s11_1290 object_splatch_127C 0014 ; VAR kind 0x0400, selector(s) 11
+00000000: FIELD field_ring_12DC_s11_12F0 object_ring_12DC 0014 ; VAR kind 0x0400, selector(s) 11
+00000000: FIELD field_orxx_133C_s11_1340 object_orxx_133C 0004 ; VAR kind 0x0200, selector(s) 11
+00000000: FIELD field_orxx_133C_s13_1346 object_orxx_133C 000A ; VAR kind 0x0200, selector(s) 13
 
 00000000: DIC_WORD dic_talk_0001 0001 ; "talk"
 00000000: DIC_WORD dic_Let_000C 000C ; "Let"
@@ -1612,39 +1716,39 @@
 00000000: PROCEDURE proc_init5_0000 ; DEB kind 2 "init5", encoded offset 0x0001
 00000000: CONDITIONAL_BLOCK 01 proc_Beau_00F6 ; CONDITIONAL_BLOCK flags=0x01 target=0x00F6
 00000004: GUARD_POP ; GUARD_POP
-00000005: SHARED_BIT_STATE AE 0F4C 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0F4C mask=0x0002 inverted=false
-0000000A: SHARED_BIT_STATE AE 0F82 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0F82 mask=0x0002 inverted=false
-0000000F: SHARED_BIT_STATE AE 0D60 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0D60 mask=0x0002 inverted=false
-00000014: SHARED_BIT_STATE AE 096A 0002 0 ; OP_AE SHARED_BIT_STATE field=0x096A mask=0x0002 inverted=false
-00000019: SHARED_BIT_STATE AE 0C4C 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0C4C mask=0x0002 inverted=false
-0000001E: SHARED_BIT_STATE AE 0B74 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0B74 mask=0x0002 inverted=false
-00000023: SHARED_BIT_STATE AE 0BE0 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0BE0 mask=0x0002 inverted=false
-00000028: SHARED_BIT_STATE AE 0F10 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0F10 mask=0x0002 inverted=false
-0000002D: SHARED_BIT_STATE AE 09C4 0002 0 ; OP_AE SHARED_BIT_STATE field=0x09C4 mask=0x0002 inverted=false
-00000032: SHARED_BIT_STATE AE 0B38 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0B38 mask=0x0002 inverted=false
-00000037: SHARED_BIT_STATE AE 0A30 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0A30 mask=0x0002 inverted=false
-0000003C: SHARED_BIT_STATE AE 0DE4 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0DE4 mask=0x0002 inverted=false
-00000041: SHARED_BIT_STATE AE 0E5C 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0E5C mask=0x0002 inverted=false
-00000046: SHARED_BIT_STATE AE 0E98 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0E98 mask=0x0002 inverted=false
-0000004B: SHARED_BIT_STATE AE 0EB6 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0EB6 mask=0x0002 inverted=false
-00000050: SHARED_BIT_STATE AE 0874 0001 0 ; OP_AE SHARED_BIT_STATE field=0x0874 mask=0x0001 inverted=false
-00000055: SHARED_BIT_STATE AE 043C 0001 0 ; OP_AE SHARED_BIT_STATE field=0x043C mask=0x0001 inverted=false
-0000005A: RECORD_WILDCARD AF 088A 0F68 0 ; OP_AF RECORD_WILDCARD record=0x088A value=0x0F68 inverted=false
-0000005F: RECORD_WILDCARD AF 0062 FFFF 0 ; OP_AF RECORD_WILDCARD record=0x0062 value=0xFFFF inverted=false
-00000064: RECORD_WILDCARD AF 037A FFFF 0 ; OP_AF RECORD_WILDCARD record=0x037A value=0xFFFF inverted=false
-00000069: RECORD_WILDCARD AF 040A FFFF 0 ; OP_AF RECORD_WILDCARD record=0x040A value=0xFFFF inverted=false
-0000006E: RECORD_WILDCARD AF 04E2 FFFF 0 ; OP_AF RECORD_WILDCARD record=0x04E2 value=0xFFFF inverted=false
-00000073: RECORD_WILDCARD AF 0452 0F2C 0 ; OP_AF RECORD_WILDCARD record=0x0452 value=0x0F2C inverted=false
-00000078: RECORD_WILDCARD AF 03C2 FFFF 0 ; OP_AF RECORD_WILDCARD record=0x03C2 value=0xFFFF inverted=false
-0000007D: RECORD_WILDCARD AF 0212 FFFF 0 ; OP_AF RECORD_WILDCARD record=0x0212 value=0xFFFF inverted=false
+00000005: SHARED_BIT_STATE AE field_Moskito_0F4A_s00_0F4C 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0F4C mask=0x0002 inverted=false
+0000000A: SHARED_BIT_STATE AE field_airport_0F80_s00_0F82 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0F82 mask=0x0002 inverted=false
+0000000F: SHARED_BIT_STATE AE field_Corpo_0D5E_s00_0D60 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0D60 mask=0x0002 inverted=false
+00000014: SHARED_BIT_STATE AE field_Venusia_0968_s00_096A 0002 0 ; OP_AE SHARED_BIT_STATE field=0x096A mask=0x0002 inverted=false
+00000019: SHARED_BIT_STATE AE field_Magnus_0C4A_s00_0C4C 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0C4C mask=0x0002 inverted=false
+0000001E: SHARED_BIT_STATE AE field_Rondo_0B72_s00_0B74 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0B74 mask=0x0002 inverted=false
+00000023: SHARED_BIT_STATE AE field_Eden_0BDE_s00_0BE0 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0BE0 mask=0x0002 inverted=false
+00000028: SHARED_BIT_STATE AE field_Ekatomb_0F0E_s00_0F10 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0F10 mask=0x0002 inverted=false
+0000002D: SHARED_BIT_STATE AE field_Erazor_09C2_s00_09C4 0002 0 ; OP_AE SHARED_BIT_STATE field=0x09C4 mask=0x0002 inverted=false
+00000032: SHARED_BIT_STATE AE field_Kortex_0B36_s00_0B38 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0B38 mask=0x0002 inverted=false
+00000037: SHARED_BIT_STATE AE field_Mastachok_0A2E_s00_0A30 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0A30 mask=0x0002 inverted=false
+0000003C: SHARED_BIT_STATE AE field_Pterra_0DE2_s00_0DE4 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0DE4 mask=0x0002 inverted=false
+00000041: SHARED_BIT_STATE AE field_Kult_0E5A_s00_0E5C 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0E5C mask=0x0002 inverted=false
+00000046: SHARED_BIT_STATE AE field_Vulcan_0E96_s00_0E98 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0E98 mask=0x0002 inverted=false
+0000004B: SHARED_BIT_STATE AE field_Troma_0EB4_s00_0EB6 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0EB6 mask=0x0002 inverted=false
+00000050: SHARED_BIT_STATE AE field_Emasculator_0872_s00_0874 0001 0 ; OP_AE SHARED_BIT_STATE field=0x0874 mask=0x0001 inverted=false
+00000055: SHARED_BIT_STATE AE field_Migrator_043A_s00_043C 0001 0 ; OP_AE SHARED_BIT_STATE field=0x043C mask=0x0001 inverted=false
+0000005A: RECORD_WILDCARD AF field_Emasculator_0872_s11_088A 0F68 0 ; OP_AF RECORD_WILDCARD record=0x088A value=0x0F68 inverted=false
+0000005F: RECORD_WILDCARD AF field_Bob_Morlock_004A_s11_0062 FFFF 0 ; OP_AF RECORD_WILDCARD record=0x0062 value=0xFFFF inverted=false
+00000064: RECORD_WILDCARD AF field_Bronko_0362_s11_037A FFFF 0 ; OP_AF RECORD_WILDCARD record=0x037A value=0xFFFF inverted=false
+00000069: RECORD_WILDCARD AF field_Anna_Haf_03F2_s11_040A FFFF 0 ; OP_AF RECORD_WILDCARD record=0x040A value=0xFFFF inverted=false
+0000006E: RECORD_WILDCARD AF field_Beauregard_04CA_s11_04E2 FFFF 0 ; OP_AF RECORD_WILDCARD record=0x04E2 value=0xFFFF inverted=false
+00000073: RECORD_WILDCARD AF field_Migrator_043A_s11_0452 0F2C 0 ; OP_AF RECORD_WILDCARD record=0x0452 value=0x0F2C inverted=false
+00000078: RECORD_WILDCARD AF field_ondoyant_03AA_s11_03C2 FFFF 0 ; OP_AF RECORD_WILDCARD record=0x03C2 value=0xFFFF inverted=false
+0000007D: RECORD_WILDCARD AF field_Hom_01FA_s11_0212 FFFF 0 ; OP_AF RECORD_WILDCARD record=0x0212 value=0xFFFF inverted=false
 00000082: SHARED_STATE C0 1362 F5 C0 1364 ; OP_C0 SHARED_STATE field=0x1362 operator=0xF5 rhs_mode=0xC0 rhs=0x1364
-00000089: RECORD_WILDCARD AF 0602 0C14 0 ; OP_AF RECORD_WILDCARD record=0x0602 value=0x0C14 inverted=false
-0000008E: RECORD_WILDCARD AF 03C2 FFFF 0 ; OP_AF RECORD_WILDCARD record=0x03C2 value=0xFFFF inverted=false
-00000093: RECORD_WILDCARD AF 0182 FFFF 0 ; OP_AF RECORD_WILDCARD record=0x0182 value=0xFFFF inverted=false
-00000098: RECORD_WILDCARD AF 025A FFFF 0 ; OP_AF RECORD_WILDCARD record=0x025A value=0xFFFF inverted=false
-0000009D: RECORD_WILDCARD AF 0572 FFFF 0 ; OP_AF RECORD_WILDCARD record=0x0572 value=0xFFFF inverted=false
-000000A2: RECORD_WILDCARD AF 05BA 0D5E 0 ; OP_AF RECORD_WILDCARD record=0x05BA value=0x0D5E inverted=false
-000000A7: RECORD_WILDCARD AF 064A 0F2C 0 ; OP_AF RECORD_WILDCARD record=0x064A value=0x0F2C inverted=false
+00000089: RECORD_WILDCARD AF field_Amigo_05EA_s11_0602 0C14 0 ; OP_AF RECORD_WILDCARD record=0x0602 value=0x0C14 inverted=false
+0000008E: RECORD_WILDCARD AF field_ondoyant_03AA_s11_03C2 FFFF 0 ; OP_AF RECORD_WILDCARD record=0x03C2 value=0xFFFF inverted=false
+00000093: RECORD_WILDCARD AF field_receiver_016A_s11_0182 FFFF 0 ; OP_AF RECORD_WILDCARD record=0x0182 value=0xFFFF inverted=false
+00000098: RECORD_WILDCARD AF field_Yoko_0242_s11_025A FFFF 0 ; OP_AF RECORD_WILDCARD record=0x025A value=0xFFFF inverted=false
+0000009D: RECORD_WILDCARD AF field_Maxxon_055A_s11_0572 FFFF 0 ; OP_AF RECORD_WILDCARD record=0x0572 value=0xFFFF inverted=false
+000000A2: RECORD_WILDCARD AF field_Izwalito_05A2_s11_05BA 0D5E 0 ; OP_AF RECORD_WILDCARD record=0x05BA value=0x0D5E inverted=false
+000000A7: RECORD_WILDCARD AF field_Otto_Von_Smile_0632_s11_064A 0F2C 0 ; OP_AF RECORD_WILDCARD record=0x064A value=0x0F2C inverted=false
 000000AC: SHARED_STATE C0 1366 F5 C1 0001 ; OP_C0 SHARED_STATE field=0x1366 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 000000B3: SHARED_STATE C0 1368 F5 C1 0003 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF5 rhs_mode=0xC1 rhs=0x0003
 000000BA: CHARACTER_SLOT 01 "match" ; CHARACTER_SLOT slot=0x01 name="match"
@@ -1658,62 +1762,62 @@
 000000F6: PROCEDURE proc_Beau_00F6 ; DEB kind 2 "Beau", encoded offset 0x00F7
 000000F6: CONDITIONAL_BLOCK 01 proc_cla_0120 ; CONDITIONAL_BLOCK flags=0x01 target=0x0120
 000000FA: BRANCH_FLAG_274F ; BRANCH_FLAG_274F
-000000FB: ACTOR 0504 object_blood_0028 0 ; ACTOR record=0x0504 related=0x0028 inverted=false
+000000FB: ACTOR field_Beauregard_04CA_s13_0504 object_blood_0028 0 ; ACTOR record=0x0504 related=0x0028 inverted=false
 00000100: GUARD_POP ; GUARD_POP
 00000101: TEXT object_Beauregard_04CA 01 00 80 - - dic_Let_000C dic_me_0010 dic_sleep_0013 dic__2E_2E_2E_0019 dic_Commander_2E_2E_2E_001D ; TEXT line=0x04CA voice=0x01 flags=0x00,0x80 "Let me sleep ... Commander..."
 00000113: TEXT object_Beauregard_04CA 00 08 80 - - dic__2E_2E_2E_0019 ; TEXT line=0x04CA voice=0x00 flags=0x08,0x80 "..."
-0000011D: RECORD_CLEAR 0504 ; RECORD_CLEAR record=0x0504
+0000011D: RECORD_CLEAR field_Beauregard_04CA_s13_0504 ; RECORD_CLEAR record=0x0504
 00000120: END_PROCEDURE proc_Beau_00F6
 00000120: PROCEDURE proc_cla_0120 ; DEB kind 2 "cla", encoded offset 0x0121
 00000120: CONDITIONAL_BLOCK 01 proc_recept_014A ; CONDITIONAL_BLOCK flags=0x01 target=0x014A
 00000124: BRANCH_FLAG_274F ; BRANCH_FLAG_274F
-00000125: ACTOR 042C object_blood_0028 0 ; ACTOR record=0x042C related=0x0028 inverted=false
+00000125: ACTOR field_Anna_Haf_03F2_s13_042C object_blood_0028 0 ; ACTOR record=0x042C related=0x0028 inverted=false
 0000012A: GUARD_POP ; GUARD_POP
 0000012B: TEXT object_Anna_Haf_03F2 01 00 80 - - dic_Let_000C dic_me_0010 dic_sleep_0013 dic__2E_2E_2E_0019 dic_Commander_2E_2E_2E_001D ; TEXT line=0x03F2 voice=0x01 flags=0x00,0x80 "Let me sleep ... Commander..."
 0000013D: TEXT object_Anna_Haf_03F2 FF 08 80 - - dic__2E_2E_2E_0019 ; TEXT line=0x03F2 voice=0xFF flags=0x08,0x80 "..."
-00000147: RECORD_CLEAR 042C ; RECORD_CLEAR record=0x042C
+00000147: RECORD_CLEAR field_Anna_Haf_03F2_s13_042C ; RECORD_CLEAR record=0x042C
 0000014A: END_PROCEDURE proc_cla_0120
 0000014A: PROCEDURE proc_recept_014A ; DEB kind 2 "recept", encoded offset 0x014B
 0000014A: CONDITIONAL_BLOCK 01 proc_morn_0170 ; CONDITIONAL_BLOCK flags=0x01 target=0x0170
 0000014E: BRANCH_FLAG_274F ; BRANCH_FLAG_274F
-0000014F: ACTOR 01A4 object_blood_0028 0 ; ACTOR record=0x01A4 related=0x0028 inverted=false
+0000014F: ACTOR field_receiver_016A_s13_01A4 object_blood_0028 0 ; ACTOR record=0x01A4 related=0x0028 inverted=false
 00000154: GUARD_POP ; GUARD_POP
 00000155: TEXT object_receiver_016A FF 00 80 - - dic_Shhhhhh_002A dic__2E_2E_2E_0019 dic_Shhhhh_2E_2E_2E_0032 ; TEXT line=0x016A voice=0xFF flags=0x00,0x80 "Shhhhhh ... Shhhhh..."
 00000163: TEXT object_receiver_016A FF 08 80 - - dic__2E_2E_2E_0019 ; TEXT line=0x016A voice=0xFF flags=0x08,0x80 "..."
-0000016D: RECORD_CLEAR 01A4 ; RECORD_CLEAR record=0x01A4
+0000016D: RECORD_CLEAR field_receiver_016A_s13_01A4 ; RECORD_CLEAR record=0x01A4
 00000170: END_PROCEDURE proc_recept_014A
 00000170: PROCEDURE proc_morn_0170 ; DEB kind 2 "morn", encoded offset 0x0171
 00000170: CONDITIONAL_BLOCK 00 proc_mac_019A ; CONDITIONAL_BLOCK flags=0x00 target=0x019A
 00000174: BRANCH_FLAG_274F ; BRANCH_FLAG_274F
-00000175: ACTOR 030C object_blood_0028 0 ; ACTOR record=0x030C related=0x0028 inverted=false
+00000175: ACTOR field_Morning_Oil_02D2_s13_030C object_blood_0028 0 ; ACTOR record=0x030C related=0x0028 inverted=false
 0000017A: GUARD_POP ; GUARD_POP
 0000017B: TEXT object_Morning_Oil_02D2 01 00 80 - - dic_Let_000C dic_me_0010 dic_sleep_0013 dic__2E_2E_2E_0019 dic_Commander_2E_2E_2E_001D ; TEXT line=0x02D2 voice=0x01 flags=0x00,0x80 "Let me sleep ... Commander..."
 0000018D: TEXT object_Morning_Oil_02D2 FF 08 80 - - dic__2E_2E_2E_0019 ; TEXT line=0x02D2 voice=0xFF flags=0x08,0x80 "..."
-00000197: RECORD_CLEAR 030C ; RECORD_CLEAR record=0x030C
+00000197: RECORD_CLEAR field_Morning_Oil_02D2_s13_030C ; RECORD_CLEAR record=0x030C
 0000019A: END_PROCEDURE proc_morn_0170
 0000019A: PROCEDURE proc_mac_019A ; DEB kind 2 "mac", encoded offset 0x019B
 0000019A: CONDITIONAL_BLOCK 01 proc_mac2_01A9 ; CONDITIONAL_BLOCK flags=0x01 target=0x01A9
-0000019E: RECORD_WILDCARD AF 103A 0E5A 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0E5A inverted=false
+0000019E: RECORD_WILDCARD AF field_arche_1024_s11_103A 0E5A 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0E5A inverted=false
 000001A3: GUARD_POP ; GUARD_POP
-000001A4: RECORD_WILDCARD AF 06DA 0E5A 0 ; OP_AF RECORD_WILDCARD record=0x06DA value=0x0E5A inverted=false
+000001A4: RECORD_WILDCARD AF field_Scruter_Mac_06C2_s11_06DA 0E5A 0 ; OP_AF RECORD_WILDCARD record=0x06DA value=0x0E5A inverted=false
 000001A9: END_PROCEDURE proc_mac_019A
 000001A9: PROCEDURE proc_mac2_01A9 ; DEB kind 2 "mac2", encoded offset 0x01AA
 000001A9: CONDITIONAL_BLOCK 01 proc_kult_01B8 ; CONDITIONAL_BLOCK flags=0x01 target=0x01B8
-000001AD: RECORD_WILDCARD AF 103A 0A2E 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0A2E inverted=false
+000001AD: RECORD_WILDCARD AF field_arche_1024_s11_103A 0A2E 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0A2E inverted=false
 000001B2: GUARD_POP ; GUARD_POP
-000001B3: RECORD_WILDCARD AF 06DA 0A2E 0 ; OP_AF RECORD_WILDCARD record=0x06DA value=0x0A2E inverted=false
+000001B3: RECORD_WILDCARD AF field_Scruter_Mac_06C2_s11_06DA 0A2E 0 ; OP_AF RECORD_WILDCARD record=0x06DA value=0x0A2E inverted=false
 000001B8: END_PROCEDURE proc_mac2_01A9
 000001B8: PROCEDURE proc_kult_01B8 ; DEB kind 2 "kult", encoded offset 0x01B9
 000001B8: CONDITIONAL_BLOCK 01 proc_ondo1_0309 ; CONDITIONAL_BLOCK flags=0x01 target=0x0309
 000001BC: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-000001BD: RECORD_WILDCARD AF 103A 0E5A 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0E5A inverted=false
-000001C2: ACTOR 06FC object_blood_0028 0 ; ACTOR record=0x06FC related=0x0028 inverted=false
+000001BD: RECORD_WILDCARD AF field_arche_1024_s11_103A 0E5A 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0E5A inverted=false
+000001C2: ACTOR field_Scruter_Mac_06C2_s13_06FC object_blood_0028 0 ; ACTOR record=0x06FC related=0x0028 inverted=false
 000001C7: GUARD_POP ; GUARD_POP
 000001C8: TEXT object_Scruter_Mac_06C2 00 08 80 - - dic_Turn_003C dic_around_0041 dic__2E_2E_2E_0019 dic_Move_0048 dic_on_004D dic__2E_2E_2E_0019 dic_There_0050 dic_are_0056 dic_too_005A dic_many_005E dic_pilgrims_0063 dic__2E_2E_2E_0019 dic_The_006C dic_planet_27s_0070 dic_inaccessible_0079 dic__2E_2E_2E_0019 ; TEXT line=0x06C2 voice=0x00 flags=0x08,0x80 "Turn around ... Move on ... There are too many pilgrims ... The planet's inaccessible ..."
 000001F0: LOAD_STRING "1kkult20.hnm" ; LOAD_STRING "1kkult20.hnm"
 000001FF: TEXT object_Scruter_Mac_06C2 01 00 80 - - dic_The_006C dic_planet_0086 dic_KULT_008D dic_is_0092 dic_inaccessible_0079 dic__2E_0095 dic_There_0050 dic_are_0056 dic_too_005A dic_many_005E dic_pilgrims_2E_2E_2E_0097 ; TEXT line=0x06C2 voice=0x01 flags=0x00,0x80 "The planet KULT is inaccessible . There are too many pilgrims..."
 0000021D: WHEN block_02FC ; GUARD_PUSH target=0x02FC
-00000220: SHARED_STATE BF 06F8 F1 C1 0003 ; OP_BF SHARED_STATE field=0x06F8 operator=0xF1 rhs_mode=0xC1 rhs=0x0003
+00000220: SHARED_STATE BF field_Scruter_Mac_06C2_s08_06F8 F1 C1 0003 ; OP_BF SHARED_STATE field=0x06F8 operator=0xF1 rhs_mode=0xC1 rhs=0x0003
 00000227: THEN ; GUARD_POP
 00000228: TEXT object_Scruter_Mac_06C2 FF 28 80 - - dic_Commander_2E_2E_2E_001D dic_Commander_00A3 dic__2E_2E_2E_0019 dic_It_27s_00AD dic_the_00B2 dic_planet_0086 dic_TUMUL_00B6 dic_with_00BC dic_a_00C1 dic_new_00C3 dic_name_00C7 dic__2E_2E_00CC ; TEXT line=0x06C2 voice=0xFF flags=0x28,0x80 "Commander... Commander ... It's the planet TUMUL with a new name .."
 00000248: LOAD_STRING "1kkult20.hnm" ; LOAD_STRING "1kkult20.hnm"
@@ -1723,16 +1827,16 @@
 000002B2: LOAD_STRING "hboc.hnm" ; LOAD_STRING "hboc.hnm"
 000002BD: TEXT object_Scruter_Mac_06C2 FF 20 80 - - dic_How_0165 dic_about_0169 dic_that_013D dic__2E_2E_2E_0019 dic_What_016F dic_a_00C1 dic_story_0174 dic__2E_2E_2E_0019 ; TEXT line=0x06C2 voice=0xFF flags=0x20,0x80 "How about that ... What a story ..."
 000002D5: TEXT object_Scruter_Mac_06C2 00 08 80 - - dic_Turn_003C dic_around_0041 dic__2E_2E_2E_0019 dic_Keep_017A dic_moving_2E_2E_2E_017F dic_There_0050 dic_are_0056 dic_too_005A dic_many_005E dic_pilgrims_2E_2E_2E_0097 dic_The_006C dic_planet_0086 dic_is_0092 dic_inaccessible_2E_2E_2E_0189 ; TEXT line=0x06C2 voice=0x00 flags=0x08,0x80 "Turn around ... Keep moving... There are too many pilgrims... The planet is inaccessible..."
-000002F9: RECORD_CLEAR 06FC ; RECORD_CLEAR record=0x06FC
+000002F9: RECORD_CLEAR field_Scruter_Mac_06C2_s13_06FC ; RECORD_CLEAR record=0x06FC
 000002FC: END_WHEN block_02FC
 000002FC: LABEL block_02FC
 000002FC: TEXT object_Scruter_Mac_06C2 FF 08 80 - - dic__2E_2E_2E_0019 ; TEXT line=0x06C2 voice=0xFF flags=0x08,0x80 "..."
-00000306: RECORD_CLEAR 06FC ; RECORD_CLEAR record=0x06FC
+00000306: RECORD_CLEAR field_Scruter_Mac_06C2_s13_06FC ; RECORD_CLEAR record=0x06FC
 00000309: END_PROCEDURE proc_kult_01B8
 00000309: PROCEDURE proc_ondo1_0309 ; DEB kind 2 "ondo1", encoded offset 0x030A
 00000309: CONDITIONAL_BLOCK 01 proc_big1_052B ; CONDITIONAL_BLOCK flags=0x01 target=0x052B
 0000030D: BRANCH_FLAG_274F ; BRANCH_FLAG_274F
-0000030E: ACTOR 03E4 object_blood_0028 0 ; ACTOR record=0x03E4 related=0x0028 inverted=false
+0000030E: ACTOR field_ondoyant_03AA_s13_03E4 object_blood_0028 0 ; ACTOR record=0x03E4 related=0x0028 inverted=false
 00000313: GUARD_POP ; GUARD_POP
 00000314: TEXT object_ondoyant_03AA 11 00 80 - - dic__2E_2E_2E_0019 ; TEXT line=0x03AA voice=0x11 flags=0x00,0x80 "..."
 0000031E: TEXT object_ondoyant_03AA 12 00 80 - - dic__2E_2E_2E_0019 ; TEXT line=0x03AA voice=0x12 flags=0x00,0x80 "..."
@@ -1743,7 +1847,7 @@
 00000388: TEXT object_ondoyant_03AA 02 00 80 - - dic_You_01BA dic_can_01F9 dic_talk_0001 dic_to_012F dic_me_0010 dic_Commander_00A3 dic__2E_2E_2E_0019 dic_Tell_01FD dic_me_0010 dic_about_0169 dic_yourself_0202 dic__2E_2E_2E_0019 ; TEXT line=0x03AA voice=0x02 flags=0x00,0x80 "You can talk to me Commander ... Tell me about yourself ..."
 000003A8: TEXT object_ondoyant_03AA FF 20 80 - - dic_Where_020B dic_did_0211 dic_she_0215 dic_learn_0219 dic_to_012F dic_swim_021F dic_like_0224 dic_that_013D dic__3F_01CF dic__2E_2E_2E_0019 dic_You_01BA dic_think_0229 dic_she_27d_022F dic_agree_0235 dic_to_012F dic_give_023B dic_me_0010 dic_lessons_0240 dic__2C_00DC dic_Commander_00A3 dic__3F_01CF ; TEXT line=0x03AA voice=0xFF flags=0x20,0x80 "Where did she learn to swim like that ? ... You think she'd agree to give me lessons , Commander ?"
 000003DA: WHEN block_051E ; GUARD_PUSH target=0x051E
-000003DD: SHARED_STATE BF 07D0 F2 C1 0000 ; OP_BF SHARED_STATE field=0x07D0 operator=0xF2 rhs_mode=0xC1 rhs=0x0000
+000003DD: SHARED_STATE BF field_Tina_Burner_079A_s08_07D0 F2 C1 0000 ; OP_BF SHARED_STATE field=0x07D0 operator=0xF2 rhs_mode=0xC1 rhs=0x0000
 000003E4: SHARED_STATE C0 136A F5 C1 0001 ; OP_C0 SHARED_STATE field=0x136A operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 000003EB: THEN ; GUARD_POP
 000003EC: TEXT object_ondoyant_03AA 05 00 80 - - dic_Oh_0248 dic__21_024B dic_Commander_00A3 dic__2C_00DC dic_Honk_024D dic_told_0252 dic_me_0010 dic_you_0257 dic_needed_025B dic_a_00C1 dic_ring_0262 dic__2E_2E_2E_0019 ; TEXT line=0x03AA voice=0x05 flags=0x00,0x80 "Oh ! Commander , Honk told me you needed a ring ..."
@@ -1755,18 +1859,18 @@
 0000049F: TEXT object_ondoyant_03AA FF 20 80 - - dic_No_02EA dic_no_02ED dic__2C_00DC dic_Mister_02CF dic_Bronko_02F0 dic__2E_2E_2E_0019 dic_Don_27t_02F7 dic_believe_02FD dic_a_00C1 dic_word_0305 dic_she_0215 dic_says_030A dic__2E_2E_2E_0019 ; TEXT line=0x03AA voice=0xFF flags=0x20,0x80 "No no , Mister Bronko ... Don't believe a word she says ..."
 000004C1: TEXT object_ondoyant_03AA 04 00 80 - - dic_Ha_027E dic__21_024B dic_Ha_027E dic__21_024B dic_Ha_027E dic__21_024B dic_Ha_2E_2E_2E_030F ; TEXT line=0x03AA voice=0x04 flags=0x00,0x80 "Ha ! Ha ! Ha ! Ha..."
 000004D7: TEXT object_ondoyant_03AA 06 08 80 - - dic_Commander_00A3 dic__2E_2E_2E_0019 dic_I_0199 dic_have_0315 dic_a_00C1 dic_ring_0262 dic__2E_2E_2E_0019 dic_I_0199 dic_want_01BE dic_you_0257 dic_to_012F dic_have_0315 dic_it_031A dic__2E_2E_2E_0019 dic_It_27s_00AD dic_yours_019E dic__2E_2E_2E_0019 ; TEXT line=0x03AA voice=0x06 flags=0x08,0x80 "Commander ... I have a ring ... I want you to have it ... It's yours ..."
-00000501: RECORD_WILDCARD AF 12F0 FFFF 0 ; OP_AF RECORD_WILDCARD record=0x12F0 value=0xFFFF inverted=false
+00000501: RECORD_WILDCARD AF field_ring_12DC_s11_12F0 FFFF 0 ; OP_AF RECORD_WILDCARD record=0x12F0 value=0xFFFF inverted=false
 00000506: TEXT object_ondoyant_03AA FF 20 80 - - dic_Commander_00A3 dic__2E_2E_2E_0019 dic_She_031D dic_gave_0321 dic_us_0326 dic_the_00B2 dic_ring_0262 dic__2E_2E_2E_0019 ; TEXT line=0x03AA voice=0xFF flags=0x20,0x80 "Commander ... She gave us the ring ..."
 0000051E: END_WHEN block_051E
 0000051E: LABEL block_051E
 0000051E: TEXT object_ondoyant_03AA 14 08 80 - - dic__2E_2E_2E_0019 ; TEXT line=0x03AA voice=0x14 flags=0x08,0x80 "..."
-00000528: RECORD_CLEAR 03E4 ; RECORD_CLEAR record=0x03E4
+00000528: RECORD_CLEAR field_ondoyant_03AA_s13_03E4 ; RECORD_CLEAR record=0x03E4
 0000052B: END_PROCEDURE proc_ondo1_0309
 0000052B: PROCEDURE proc_big1_052B ; DEB kind 2 "big1", encoded offset 0x052C
 0000052B: CONDITIONAL_BLOCK 01 proc_boba0_0719 ; CONDITIONAL_BLOCK flags=0x01 target=0x0719
 0000052F: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00000530: RECORD_WILDCARD AF 103A 0FB8 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0FB8 inverted=false
-00000535: ACTOR 00CC object_blood_0028 0 ; ACTOR record=0x00CC related=0x0028 inverted=false
+00000530: RECORD_WILDCARD AF field_arche_1024_s11_103A 0FB8 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0FB8 inverted=false
+00000535: ACTOR field_Bug_Deluxe_0092_s13_00CC object_blood_0028 0 ; ACTOR record=0x00CC related=0x0028 inverted=false
 0000053A: GUARD_POP ; GUARD_POP
 0000053B: TEXT object_Bug_Deluxe_0092 00 00 80 - - dic_You_01BA dic_here_0329 dic__2C_00DC dic_Consumer_032E dic_Comrade_0337 dic__3F_01CF ; TEXT line=0x0092 voice=0x00 flags=0x00,0x80 "You here , Consumer Comrade ?"
 0000054F: TEXT object_Bug_Deluxe_0092 FF 20 80 - - dic_Commander_00A3 dic__21_21_21_033F dic_It_27s_00AD dic_Bug_0343 dic_Deluxe_0347 dic__2C_00DC dic_the_00B2 dic_sales_034E dic_assistant_0354 dic_from_0151 dic_VENUSIA_035E dic__2E_2E_2E_0019 dic_How_0165 dic_about_0169 dic_that_013D dic__2E_2E_2E_0019 ; TEXT line=0x0092 voice=0xFF flags=0x20,0x80 "Commander !!! It's Bug Deluxe , the sales assistant from VENUSIA ... How about that ..."
@@ -1787,14 +1891,14 @@
 000006EE: SHARED_STATE C0 136C F5 C1 0001 ; OP_C0 SHARED_STATE field=0x136C operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 000006F5: TEXT object_Bug_Deluxe_0092 FF 08 B0 - - dic_NOW_0488 dic__2E_2E_2E_0019 ; TEXT line=0x0092 voice=0xFF flags=0x08,0xB0 "NOW ..."
 00000701: LOAD_STRING "bobb.hnm" ; LOAD_STRING "bobb.hnm"
-0000070C: RECORD_WILDCARD AF 00AA 0F2C 0 ; OP_AF RECORD_WILDCARD record=0x00AA value=0x0F2C inverted=false
-00000711: RECORD_WILDCARD AF 07B2 0FB8 0 ; OP_AF RECORD_WILDCARD record=0x07B2 value=0x0FB8 inverted=false
-00000716: RECORD_CLEAR 00CC ; RECORD_CLEAR record=0x00CC
+0000070C: RECORD_WILDCARD AF field_Bug_Deluxe_0092_s11_00AA 0F2C 0 ; OP_AF RECORD_WILDCARD record=0x00AA value=0x0F2C inverted=false
+00000711: RECORD_WILDCARD AF field_Tina_Burner_079A_s11_07B2 0FB8 0 ; OP_AF RECORD_WILDCARD record=0x07B2 value=0x0FB8 inverted=false
+00000716: RECORD_CLEAR field_Bug_Deluxe_0092_s13_00CC ; RECORD_CLEAR record=0x00CC
 00000719: END_PROCEDURE proc_big1_052B
 00000719: PROCEDURE proc_boba0_0719 ; DEB kind 2 "boba0", encoded offset 0x071A
 00000719: CONDITIONAL_BLOCK 01 proc_boba1_0B87 ; CONDITIONAL_BLOCK flags=0x01 target=0x0B87
 0000071D: BRANCH_FLAG_274F ; BRANCH_FLAG_274F
-0000071E: ACTOR 0084 object_blood_0028 0 ; ACTOR record=0x0084 related=0x0028 inverted=false
+0000071E: ACTOR field_Bob_Morlock_004A_s13_0084 object_blood_0028 0 ; ACTOR record=0x0084 related=0x0028 inverted=false
 00000723: SHARED_STATE C0 136C F5 C1 0001 ; OP_C0 SHARED_STATE field=0x136C operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 0000072A: GUARD_POP ; GUARD_POP
 0000072B: TEXT object_Bob_Morlock_004A 01 00 80 - - dic_What_27s_0436 dic_the_00B2 dic_story_0174 dic__3F_3F_3F_02D6 dic_What_27s_0436 dic_this_02C0 dic_BIG_03D1 dic_BANG_03F1 dic_business_048C dic__3F_3F_3F_2E_2E_2E_0495 ; TEXT line=0x004A voice=0x01 flags=0x00,0x80 "What's the story ??? What's this BIG BANG business ???..."
@@ -1837,15 +1941,15 @@
 00000B63: TEXT object_Bob_Morlock_004A FF 28 A0 - - dic_Yes_07D9 dic_sir_0461 dic__2C_00DC dic_Cap_27n_0426 dic_Bob_042C dic_sir_0461 dic__2E_2E_2E_0019 ; TEXT line=0x004A voice=0xFF flags=0x28,0xA0 "Yes sir , Cap'n Bob sir ..."
 00000B79: SHARED_STATE C0 136A F5 C1 0001 ; OP_C0 SHARED_STATE field=0x136A operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 00000B80: POKE_BYTE 071A 00 ; POKE_BYTE address=0x071A value=0x00
-00000B84: RECORD_CLEAR 0084 ; RECORD_CLEAR record=0x0084
+00000B84: RECORD_CLEAR field_Bob_Morlock_004A_s13_0084 ; RECORD_CLEAR record=0x0084
 00000B87: END_PROCEDURE proc_boba0_0719
 00000B87: PROCEDURE proc_boba1_0B87 ; DEB kind 2 "boba1", encoded offset 0x0B88
 00000B87: CONDITIONAL_BLOCK 01 proc_big2_0CCF ; CONDITIONAL_BLOCK flags=0x01 target=0x0CCF
 00000B8B: BRANCH_FLAG_274F ; BRANCH_FLAG_274F
-00000B8C: ACTOR 0084 object_blood_0028 0 ; ACTOR record=0x0084 related=0x0028 inverted=false
+00000B8C: ACTOR field_Bob_Morlock_004A_s13_0084 object_blood_0028 0 ; ACTOR record=0x0084 related=0x0028 inverted=false
 00000B91: GUARD_POP ; GUARD_POP
 00000B92: GUARD_PUSH block_0CA7 ; GUARD_PUSH target=0x0CA7 ; unstructured_guard=alternate_exit
-00000B95: SHARED_BIT_STATE AE 0FBA 0002 1 ; OP_AE SHARED_BIT_STATE field=0x0FBA mask=0x0002 inverted=true
+00000B95: SHARED_BIT_STATE AE field_Bigbang_0FB8_s00_0FBA 0002 1 ; OP_AE SHARED_BIT_STATE field=0x0FBA mask=0x0002 inverted=true
 00000B9B: GUARD_POP ; GUARD_POP
 00000B9C: TEXT object_Bob_Morlock_004A 02 00 80 - - dic_Aaaah_07DD dic__2E_2E_2E_0019 ; TEXT line=0x004A voice=0x02 flags=0x00,0x80 "Aaaah ..."
 00000BA8: TEXT object_Bob_Morlock_004A 03 00 80 - - dic_When_00DE dic_will_07E3 dic_we_00E3 dic_get_04A0 dic_to_012F dic_the_00B2 dic_Big_07E8 dic_Bang_07EC dic__3F_01CF dic_It_27s_00AD dic_URGENT_07F1 dic__2C_00DC dic_Commander_00A3 dic__2E_2E_2E_0019 ; TEXT line=0x004A voice=0x03 flags=0x00,0x80 "When will we get to the Big Bang ? It's URGENT , Commander ..."
@@ -1857,21 +1961,21 @@
 00000C68: TEXT object_Bob_Morlock_004A 05 00 80 - - dic_That_27s_00CF dic_what_03E5 dic_I_0199 dic_call_08B6 dic_IN_2DTO_2DLE_2DRA_2DBLE_08BB dic__21_21_21_033F ; TEXT line=0x004A voice=0x05 flags=0x00,0x80 "That's what I call IN-TO-LE-RA-BLE !!!"
 00000C7C: TEXT object_Bob_Morlock_004A 06 00 80 - - dic_I_0199 dic_hope_08CB dic_I_27ve_0762 dic_made_08D0 dic_my_0898 dic_feelings_08D5 dic_clear_0582 dic__2E_2E_2E_0019 ; TEXT line=0x004A voice=0x06 flags=0x00,0x80 "I hope I've made my feelings clear ..."
 00000C94: TEXT object_Bob_Morlock_004A 06 08 80 - - dic_Now_05D5 dic_leave_08DE dic_me_0010 dic__2E_2E_2E_0019 ; TEXT line=0x004A voice=0x06 flags=0x08,0x80 "Now leave me ..."
-00000CA4: RECORD_CLEAR 0084 ; RECORD_CLEAR record=0x0084
+00000CA4: RECORD_CLEAR field_Bob_Morlock_004A_s13_0084 ; RECORD_CLEAR record=0x0084
 00000CA7: LABEL block_0CA7
 00000CA7: WHEN proc_big2_0CCF ; GUARD_PUSH target=0x0CCF
-00000CAA: SHARED_BIT_STATE AE 0FBA 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0FBA mask=0x0002 inverted=false
+00000CAA: SHARED_BIT_STATE AE field_Bigbang_0FB8_s00_0FBA 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0FBA mask=0x0002 inverted=false
 00000CAF: THEN ; GUARD_POP
 00000CB0: TEXT object_Bob_Morlock_004A 02 00 80 - - dic_Lets_08E4 dic_go_0777 dic_to_012F dic_the_00B2 dic_Bigbang_2E_2E_2E_08E9 ; TEXT line=0x004A voice=0x02 flags=0x00,0x80 "Lets go to the Bigbang..."
 00000CC2: TEXT object_Bob_Morlock_004A FF 08 80 - - dic__2E_2E_2E_0019 ; TEXT line=0x004A voice=0xFF flags=0x08,0x80 "..."
-00000CCC: RECORD_CLEAR 0084 ; RECORD_CLEAR record=0x0084
+00000CCC: RECORD_CLEAR field_Bob_Morlock_004A_s13_0084 ; RECORD_CLEAR record=0x0084
 00000CCF: END_WHEN proc_big2_0CCF
 00000CCF: END_PROCEDURE proc_boba1_0B87
 00000CCF: PROCEDURE proc_big2_0CCF ; DEB kind 2 "big2", encoded offset 0x0CD0
 00000CCF: CONDITIONAL_BLOCK 01 proc_bar1_0EBA ; CONDITIONAL_BLOCK flags=0x01 target=0x0EBA
 00000CD3: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00000CD4: RECORD_WILDCARD AF 103A 0FB8 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0FB8 inverted=false
-00000CD9: ACTOR 07D4 object_blood_0028 0 ; ACTOR record=0x07D4 related=0x0028 inverted=false
+00000CD4: RECORD_WILDCARD AF field_arche_1024_s11_103A 0FB8 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0FB8 inverted=false
+00000CD9: ACTOR field_Tina_Burner_079A_s13_07D4 object_blood_0028 0 ; ACTOR record=0x07D4 related=0x0028 inverted=false
 00000CDE: GUARD_POP ; GUARD_POP
 00000CDF: TEXT object_Tina_Burner_079A 00 00 80 - - dic_Ohhh_08F4 dic__2E_2E_2E_0019 dic_It_27s_00AD dic_you_0257 dic__2C_00DC dic_Commander_00A3 dic__2E_2E_2E_0019 ; TEXT line=0x079A voice=0x00 flags=0x00,0x80 "Ohhh ... It's you , Commander ..."
 00000CF5: TEXT object_Tina_Burner_079A FF 20 80 - - dic_Oh_0248 dic_no_02ED dic__2E_2E_2E_0019 dic_Her_08F9 dic_again_08FD dic__2E_2E_2E_0019 ; TEXT line=0x079A voice=0xFF flags=0x20,0x80 "Oh no ... Her again ..."
@@ -1887,15 +1991,15 @@
 00000E71: TEXT object_Tina_Burner_079A 02 00 80 - - dic_MIGRA_0A52 dic_OH_0A58 dic_MIGRA_0A52 dic_SWEETIE_0A5B dic__2E_2E_2E_0019 dic_GUESS_0A63 dic_WHO_27S_0A69 dic_COME_0A6F dic__2E_2E_2E_0019 ; TEXT line=0x079A voice=0x02 flags=0x00,0x80 "MIGRA OH MIGRA SWEETIE ... GUESS WHO'S COME ..."
 00000E8B: TEXT object_Tina_Burner_079A 01 08 B0 - - dic_Go_0A74 dic_join_0A77 dic_him_0A7C dic_for_036A dic_a_00C1 dic_stiff_0A80 dic_one_0A86 dic__2C_00DC dic_Commander_00A3 dic__2E_2E_2E_0019 ; TEXT line=0x079A voice=0x01 flags=0x08,0xB0 "Go join him for a stiff one , Commander ..."
 00000EA7: POKE_BYTE 0CD0 00 ; POKE_BYTE address=0x0CD0 value=0x00
-00000EAB: RECORD_WILDCARD AF 0452 0FDC 0 ; OP_AF RECORD_WILDCARD record=0x0452 value=0x0FDC inverted=false
-00000EB0: RECORD_WILDCARD AF 07B2 0F2C 0 ; OP_AF RECORD_WILDCARD record=0x07B2 value=0x0F2C inverted=false
-00000EB5: RECORD_STATE C1 1346 0FDC 0 ; OP_C1 RECORD_STATE record=0x1346 operand=0x0FDC inverted=false
+00000EAB: RECORD_WILDCARD AF field_Migrator_043A_s11_0452 0FDC 0 ; OP_AF RECORD_WILDCARD record=0x0452 value=0x0FDC inverted=false
+00000EB0: RECORD_WILDCARD AF field_Tina_Burner_079A_s11_07B2 0F2C 0 ; OP_AF RECORD_WILDCARD record=0x07B2 value=0x0F2C inverted=false
+00000EB5: RECORD_STATE C1 field_orxx_133C_s13_1346 0FDC 0 ; OP_C1 RECORD_STATE record=0x1346 operand=0x0FDC inverted=false
 00000EBA: END_PROCEDURE proc_big2_0CCF
 00000EBA: PROCEDURE proc_bar1_0EBA ; DEB kind 2 "bar1", encoded offset 0x0EBB
 00000EBA: CONDITIONAL_BLOCK 01 proc_big3_1018 ; CONDITIONAL_BLOCK flags=0x01 target=0x1018
 00000EBE: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00000EBF: RECORD_WILDCARD AF 103A 0FB8 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0FB8 inverted=false
-00000EC4: ACTOR 0474 object_blood_0028 0 ; ACTOR record=0x0474 related=0x0028 inverted=false
+00000EBF: RECORD_WILDCARD AF field_arche_1024_s11_103A 0FB8 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0FB8 inverted=false
+00000EC4: ACTOR field_Migrator_043A_s13_0474 object_blood_0028 0 ; ACTOR record=0x0474 related=0x0028 inverted=false
 00000EC9: GUARD_POP ; GUARD_POP
 00000ECA: TEXT object_Migrator_043A 01 00 80 - - dic_You_01BA dic_here_0329 dic__2C_00DC dic_Commander_00A3 dic__21_024B dic_My_01AC dic_good_0A8A dic_friend_0A8F dic__2E_2E_2E_0019 dic_Did_049C dic_Burny_0A96 dic_tell_0605 dic_you_0257 dic_the_00B2 dic_news_0A9C dic__3F_01CF ; TEXT line=0x043A voice=0x01 flags=0x00,0x80 "You here , Commander ! My good friend ... Did Burny tell you the news ?"
 00000EF2: TEXT object_Migrator_043A 02 00 80 - - dic_We_27re_0977 dic_getting_03A6 dic_married_03AE dic__2E_2E_2E_0019 dic_Ah_065B dic__21_21_21_033F dic_She_27s_02B3 dic_so_07A0 dic_sexy_0AA2 dic__2C_00DC dic_and_0142 dic_smart_0AA7 dic__2E_2E_2E_0019 ; TEXT line=0x043A voice=0x02 flags=0x00,0x80 "We're getting married ... Ah !!! She's so sexy , and smart ..."
@@ -1908,42 +2012,42 @@
 00000FC2: TEXT object_Migrator_043A FF 20 80 - - dic_Holy_01D1 dic_handouts_0B1C dic__2E_2E_2E_0019 dic_Where_020B dic_do_0B25 dic_we_00E3 dic_find_0B28 dic_a_00C1 dic_wedding_036E dic_band_0AF3 dic_at_03CE dic_this_02C0 dic_time_089B dic_of_00FD dic_day_0B2D dic_or_03EE dic_night_0B31 dic__3F_01CF ; TEXT line=0x043A voice=0xFF flags=0x20,0x80 "Holy handouts ... Where do we find a wedding band at this time of day or night ?"
 00000FEE: TEXT object_Migrator_043A 02 08 C0 - - dic_See_0B37 dic_you_0257 dic_soon_0296 dic__2C_00DC dic_Commander_00A3 dic__2E_2E_2E_0019 ; TEXT line=0x043A voice=0x02 flags=0x08,0xC0 "See you soon , Commander ..."
 00001002: POKE_BYTE 0EBB 00 ; POKE_BYTE address=0x0EBB value=0x00
-00001006: RECORD_WILDCARD AF 0452 0F2C 0 ; OP_AF RECORD_WILDCARD record=0x0452 value=0x0F2C inverted=false
-0000100B: RECORD_WILDCARD AF 07B2 0FF4 0 ; OP_AF RECORD_WILDCARD record=0x07B2 value=0x0FF4 inverted=false
-00001010: RECORD_WILDCARD AF 025A 0FB8 0 ; OP_AF RECORD_WILDCARD record=0x025A value=0x0FB8 inverted=false
-00001015: RECORD_CLEAR 0474 ; RECORD_CLEAR record=0x0474
+00001006: RECORD_WILDCARD AF field_Migrator_043A_s11_0452 0F2C 0 ; OP_AF RECORD_WILDCARD record=0x0452 value=0x0F2C inverted=false
+0000100B: RECORD_WILDCARD AF field_Tina_Burner_079A_s11_07B2 0FF4 0 ; OP_AF RECORD_WILDCARD record=0x07B2 value=0x0FF4 inverted=false
+00001010: RECORD_WILDCARD AF field_Yoko_0242_s11_025A 0FB8 0 ; OP_AF RECORD_WILDCARD record=0x025A value=0x0FB8 inverted=false
+00001015: RECORD_CLEAR field_Migrator_043A_s13_0474 ; RECORD_CLEAR record=0x0474
 00001018: END_PROCEDURE proc_bar1_0EBA
 00001018: PROCEDURE proc_big3_1018 ; DEB kind 2 "big3", encoded offset 0x1019
 00001018: CONDITIONAL_BLOCK 01 proc_bar2_115C ; CONDITIONAL_BLOCK flags=0x01 target=0x115C
 0000101C: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-0000101D: RECORD_WILDCARD AF 103A 0FB8 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0FB8 inverted=false
-00001022: ACTOR 027C object_blood_0028 0 ; ACTOR record=0x027C related=0x0028 inverted=false
+0000101D: RECORD_WILDCARD AF field_arche_1024_s11_103A 0FB8 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0FB8 inverted=false
+00001022: ACTOR field_Yoko_0242_s13_027C object_blood_0028 0 ; ACTOR record=0x027C related=0x0028 inverted=false
 00001027: GUARD_POP ; GUARD_POP
 00001028: TEXT object_Yoko_0242 01 00 80 - - dic_Commander_00A3 dic__21_024B dic_Yoko_0B3B dic_happy_0B40 dic_to_012F dic_see_0911 dic_you_0257 dic_again_08FD dic__2E_2E_2E_0019 ; TEXT line=0x0242 voice=0x01 flags=0x00,0x80 "Commander ! Yoko happy to see you again ..."
 00001042: TEXT object_Yoko_0242 FF 20 80 - - dic_Commander_00A3 dic__2E_2E_2E_0019 dic_It_27s_00AD dic_young_0B46 dic_Yoko_0B3B dic__2E_2E_2E_0019 ; TEXT line=0x0242 voice=0xFF flags=0x20,0x80 "Commander ... It's young Yoko ..."
 00001056: TEXT object_Yoko_0242 02 00 80 - - dic_Migrator_0B4C dic_and_0142 dic_Tina_0B55 dic_wait_0B5A dic_for_036A dic_wedding_036E dic_ring_0262 dic__2E_2E_2E_0019 ; TEXT line=0x0242 voice=0x02 flags=0x00,0x80 "Migrator and Tina wait for wedding ring ..."
 0000106E: GUARD_PUSH block_10E3 ; GUARD_PUSH target=0x10E3 ; unstructured_guard=alternate_exit
-00001071: RECORD_WILDCARD AF 12F0 0028 0 ; OP_AF RECORD_WILDCARD record=0x12F0 value=0x0028 inverted=false
+00001071: RECORD_WILDCARD AF field_ring_12DC_s11_12F0 0028 0 ; OP_AF RECORD_WILDCARD record=0x12F0 value=0x0028 inverted=false
 00001076: GUARD_POP ; GUARD_POP
 00001077: TEXT object_Yoko_0242 05 00 80 - - dic_You_01BA dic_have_0315 dic_ring_0262 dic__3F_01CF ; TEXT line=0x0242 voice=0x05 flags=0x00,0x80 "You have ring ?"
 00001087: TEXT object_Yoko_0242 FF 20 80 - - dic_No_02EA dic_problem_0B5F dic__2C_00DC dic_Mister_02CF dic_Yoko_0B3B dic__2E_2E_2E_0019 dic_We_057F dic_have_0315 dic_the_00B2 dic_wedding_036E dic_band_0AF3 dic_right_00D6 dic_here_0329 dic__2E_2E_2E_0019 ; TEXT line=0x0242 voice=0xFF flags=0x20,0x80 "No problem , Mister Yoko ... We have the wedding band right here ..."
 000010AB: TEXT object_Yoko_0242 06 00 80 - - dic_YES_0B67 dic__21_21_21_033F dic_Me_0B6B dic_happy_0B40 dic__2E_2E_2E_0019 ; TEXT line=0x0242 voice=0x06 flags=0x00,0x80 "YES !!! Me happy ..."
 000010BD: TEXT object_Yoko_0242 07 08 A0 - - dic_You_01BA dic_go_0777 dic_bar_0A36 dic__2C_00DC dic_Tina_0B55 dic_be_0866 dic_impatient_0B6E dic__2E_2E_2E_0019 ; TEXT line=0x0242 voice=0x07 flags=0x08,0xA0 "You go bar , Tina be impatient ..."
 000010D5: POKE_BYTE 1019 00 ; POKE_BYTE address=0x1019 value=0x00
-000010D9: RECORD_WILDCARD AF 00F2 0FDC 0 ; OP_AF RECORD_WILDCARD record=0x00F2 value=0x0FDC inverted=false
-000010DE: RECORD_STATE C1 1346 0FDC 0 ; OP_C1 RECORD_STATE record=0x1346 operand=0x0FDC inverted=false
+000010D9: RECORD_WILDCARD AF field_Fifi_00DA_s11_00F2 0FDC 0 ; OP_AF RECORD_WILDCARD record=0x00F2 value=0x0FDC inverted=false
+000010DE: RECORD_STATE C1 field_orxx_133C_s13_1346 0FDC 0 ; OP_C1 RECORD_STATE record=0x1346 operand=0x0FDC inverted=false
 000010E3: LABEL block_10E3
 000010E3: TEXT object_Yoko_0242 FF 20 80 - - dic_You_01BA dic_agreed_0B78 dic_to_012F dic_get_04A0 dic_a_00C1 dic_ring_0262 dic__2C_00DC dic_Commander_00A3 dic__2E_0095 dic_You_27ll_0AEC dic_have_0315 dic_to_012F dic_deliver_0B7F dic__2E_2E_2E_0019 ; TEXT line=0x0242 voice=0xFF flags=0x20,0x80 "You agreed to get a ring , Commander . You'll have to deliver ..."
 00001107: TEXT object_Yoko_0242 FF 20 80 - - dic_Whatever_0B87 dic_it_031A dic_takes_0B90 dic__2E_2E_2E_0019 ; TEXT line=0x0242 voice=0xFF flags=0x20,0x80 "Whatever it takes ..."
 00001117: TEXT object_Yoko_0242 04 00 80 - - dic_You_01BA dic_hurry_0B96 dic__2C_00DC dic_Commander_00A3 dic__2E_0095 dic_Everybody_0B9C dic_wait_0B5A dic__2E_2E_2E_0019 ; TEXT line=0x0242 voice=0x04 flags=0x00,0x80 "You hurry , Commander . Everybody wait ..."
 0000112F: TEXT object_Yoko_0242 FF 28 80 - - dic_Let_27s_0BA6 dic_get_04A0 dic_to_012F dic_it_031A dic__2C_00DC dic_Commander_00A3 dic__2E_0095 dic_I_0199 dic_want_01BE dic_to_012F dic_know_0936 dic_how_0665 dic_this_02C0 dic_thing_0278 dic_turns_0BAC dic_out_05BB dic__2E_2E_2E_0019 ; TEXT line=0x0242 voice=0xFF flags=0x28,0x80 "Let's get to it , Commander . I want to know how this thing turns out ..."
-00001159: RECORD_CLEAR 027C ; RECORD_CLEAR record=0x027C
+00001159: RECORD_CLEAR field_Yoko_0242_s13_027C ; RECORD_CLEAR record=0x027C
 0000115C: END_PROCEDURE proc_big3_1018
 0000115C: PROCEDURE proc_bar2_115C ; DEB kind 2 "bar2", encoded offset 0x115D
 0000115C: CONDITIONAL_BLOCK 01 proc_bar3_1209 ; CONDITIONAL_BLOCK flags=0x01 target=0x1209
 00001160: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00001161: RECORD_WILDCARD AF 103A 0FB8 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0FB8 inverted=false
-00001166: ACTOR 0114 object_blood_0028 0 ; ACTOR record=0x0114 related=0x0028 inverted=false
+00001161: RECORD_WILDCARD AF field_arche_1024_s11_103A 0FB8 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0FB8 inverted=false
+00001166: ACTOR field_Fifi_00DA_s13_0114 object_blood_0028 0 ; ACTOR record=0x0114 related=0x0028 inverted=false
 0000116B: GUARD_POP ; GUARD_POP
 0000116C: TEXT object_Fifi_00DA 01 00 80 - - dic_Ga_2E_2E_2E_0BB2 ; TEXT line=0x00DA voice=0x01 flags=0x00,0x80 "Ga..."
 00001176: TEXT object_Fifi_00DA 02 00 80 - - dic_Ga_0BB8 dic__2E_2E_2E_0019 dic_Fifi_0BBB dic_eat_0BC0 dic__2E_2E_2E_0019 ; TEXT line=0x00DA voice=0x02 flags=0x00,0x80 "Ga ... Fifi eat ..."
@@ -1951,16 +2055,16 @@
 000011A0: TEXT object_Fifi_00DA 03 00 80 - - dic_Fifi_0BBB dic_come_0BC4 dic_for_036A dic_party_0BC9 dic__2E_2E_2E_0019 dic_Fifi_0BBB dic_like_0224 dic_eat_0BC0 dic_also_0BCF dic__2E_2E_2E_0019 ; TEXT line=0x00DA voice=0x03 flags=0x00,0x80 "Fifi come for party ... Fifi like eat also ..."
 000011BC: TEXT object_Fifi_00DA 04 00 80 - - dic_Beautiful_0BD4 dic_Tina_0B55 dic_look_0729 dic_for_036A dic_you_0257 dic__2C_00DC dic_Commander_00A3 dic__2E_0095 dic_She_031D dic_be_0866 dic_at_03CE dic_other_0BDE dic_bar_0A36 dic__2E_2E_2E_0019 ; TEXT line=0x00DA voice=0x04 flags=0x00,0x80 "Beautiful Tina look for you , Commander . She be at other bar ..."
 000011E0: TEXT object_Fifi_00DA 05 08 A0 - - dic_You_01BA dic_hurry_0B96 dic__2C_00DC dic_Commander_00A3 dic__2E_2E_2E_0019 dic_Hee_0952 dic__21_024B dic_Hee_21_0BE4 dic_Hee_21_0BE4 ; TEXT line=0x00DA voice=0x05 flags=0x08,0xA0 "You hurry , Commander ... Hee ! Hee! Hee!"
-000011FA: RECORD_WILDCARD AF 00F2 0F2C 0 ; OP_AF RECORD_WILDCARD record=0x00F2 value=0x0F2C inverted=false
-000011FF: RECORD_WILDCARD AF 0452 0FDC 0 ; OP_AF RECORD_WILDCARD record=0x0452 value=0x0FDC inverted=false
-00001204: RECORD_STATE C1 1346 0FF4 0 ; OP_C1 RECORD_STATE record=0x1346 operand=0x0FF4 inverted=false
+000011FA: RECORD_WILDCARD AF field_Fifi_00DA_s11_00F2 0F2C 0 ; OP_AF RECORD_WILDCARD record=0x00F2 value=0x0F2C inverted=false
+000011FF: RECORD_WILDCARD AF field_Migrator_043A_s11_0452 0FDC 0 ; OP_AF RECORD_WILDCARD record=0x0452 value=0x0FDC inverted=false
+00001204: RECORD_STATE C1 field_orxx_133C_s13_1346 0FF4 0 ; OP_C1 RECORD_STATE record=0x1346 operand=0x0FF4 inverted=false
 00001209: END_PROCEDURE proc_bar2_115C
 00001209: PROCEDURE proc_bar3_1209 ; DEB kind 2 "bar3", encoded offset 0x120A
 00001209: CONDITIONAL_BLOCK 01 proc_bar4_143D ; CONDITIONAL_BLOCK flags=0x01 target=0x143D
 0000120D: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-0000120E: RECORD_WILDCARD AF 103A 0FB8 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0FB8 inverted=false
-00001213: RECORD_WILDCARD AF 1340 0FF4 0 ; OP_AF RECORD_WILDCARD record=0x1340 value=0x0FF4 inverted=false
-00001218: ACTOR 07D4 object_blood_0028 0 ; ACTOR record=0x07D4 related=0x0028 inverted=false
+0000120E: RECORD_WILDCARD AF field_arche_1024_s11_103A 0FB8 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0FB8 inverted=false
+00001213: RECORD_WILDCARD AF field_orxx_133C_s11_1340 0FF4 0 ; OP_AF RECORD_WILDCARD record=0x1340 value=0x0FF4 inverted=false
+00001218: ACTOR field_Tina_Burner_079A_s13_07D4 object_blood_0028 0 ; ACTOR record=0x07D4 related=0x0028 inverted=false
 0000121D: GUARD_POP ; GUARD_POP
 0000121E: TEXT object_Tina_Burner_079A 01 00 80 - - dic_Ah_065B dic__21_21_09E0 dic_There_0050 dic_you_0257 dic_are_0056 dic_at_03CE dic_last_0BE9 dic__2C_00DC dic_Commander_00A3 dic__2E_2E_2E_0019 dic_Everyone_27s_0BEE dic_waiting_0BF9 dic_for_036A dic_you_0257 dic__2E_2E_2E_0019 ; TEXT line=0x079A voice=0x01 flags=0x00,0x80 "Ah !! There you are at last , Commander ... Everyone's waiting for you ..."
 00001244: TEXT object_Tina_Burner_079A FF 20 80 - - dic_Holy_01D1 dic_handstands_0C01 dic__21_21_21_033F ; TEXT line=0x079A voice=0xFF flags=0x20,0x80 "Holy handstands !!!"
@@ -1981,14 +2085,14 @@
 000013F0: TEXT object_Tina_Burner_079A FF 00 80 - - dic_YES_0B67 dic_sir_0461 dic__2E_2E_2E_0019 dic_Right_03F6 dic_down_0CD8 dic__2E_2E_2E_0019 ; TEXT line=0x079A voice=0xFF flags=0x00,0x80 "YES sir ... Right down ..."
 00001404: TEXT object_Tina_Burner_079A FF 20 80 - - dic_Okay_05D0 dic__2E_2E_2E_0019 dic_Let_27s_0BA6 dic_go_0777 dic_see_0911 dic_MIGRATOR_0391 dic__2C_00DC dic_Commander_00A3 dic__2E_2E_2E_0019 ; TEXT line=0x079A voice=0xFF flags=0x20,0x80 "Okay ... Let's go see MIGRATOR , Commander ..."
 0000141E: TEXT object_Tina_Burner_079A 04 08 80 - - dic_MIGRATOR_0391 dic__2E_2E_2E_0019 dic_BOO_0C93 dic__2E_2E_2E_0019 dic_MIGRA_0A52 dic_HOO_0C97 dic_HOO_0C97 dic_HOO_0C97 dic__2E_2E_2E_0019 ; TEXT line=0x079A voice=0x04 flags=0x08,0x80 "MIGRATOR ... BOO ... MIGRA HOO HOO HOO ..."
-00001438: RECORD_STATE C1 1346 0FDC 0 ; OP_C1 RECORD_STATE record=0x1346 operand=0x0FDC inverted=false
+00001438: RECORD_STATE C1 field_orxx_133C_s13_1346 0FDC 0 ; OP_C1 RECORD_STATE record=0x1346 operand=0x0FDC inverted=false
 0000143D: END_PROCEDURE proc_bar3_1209
 0000143D: PROCEDURE proc_bar4_143D ; DEB kind 2 "bar4", encoded offset 0x143E
 0000143D: CONDITIONAL_BLOCK 01 proc_finalmen_1511 ; CONDITIONAL_BLOCK flags=0x01 target=0x1511
 00001441: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00001442: RECORD_WILDCARD AF 103A 0FB8 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0FB8 inverted=false
-00001447: RECORD_WILDCARD AF 1340 0FDC 0 ; OP_AF RECORD_WILDCARD record=0x1340 value=0x0FDC inverted=false
-0000144C: ACTOR 0474 object_blood_0028 0 ; ACTOR record=0x0474 related=0x0028 inverted=false
+00001442: RECORD_WILDCARD AF field_arche_1024_s11_103A 0FB8 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0FB8 inverted=false
+00001447: RECORD_WILDCARD AF field_orxx_133C_s11_1340 0FDC 0 ; OP_AF RECORD_WILDCARD record=0x1340 value=0x0FDC inverted=false
+0000144C: ACTOR field_Migrator_043A_s13_0474 object_blood_0028 0 ; ACTOR record=0x0474 related=0x0028 inverted=false
 00001451: GUARD_POP ; GUARD_POP
 00001452: TEXT object_Migrator_043A 06 00 80 - - dic_What_27s_0436 dic_going_0430 dic_on_004D dic__3F_01CF dic_My_01AC dic_Tina_27s_0CE2 dic_in_02E7 dic_tears_0CE9 dic__2E_2E_2E_0019 ; TEXT line=0x043A voice=0x06 flags=0x00,0x80 "What's going on ? My Tina's in tears ..."
 0000146C: TEXT object_Migrator_043A FF 20 80 - - dic_It_27s_00AD dic_not_0422 dic_my_0898 dic_fault_2E_2E_2E_0CEF dic_She_031D dic_didn_27t_026D dic_want_01BE dic_to_012F dic_invite_0925 dic_me_0010 dic_to_012F dic_her_0645 dic_wedding_036E dic_concert_2E_2E_2E_0CF8 ; TEXT line=0x043A voice=0xFF flags=0x20,0x80 "It's not my fault... She didn't want to invite me to her wedding concert..."
@@ -1998,19 +2102,19 @@
 000014CF: CONCEPT_GUARD dic_teleport_0D26 0 ; CONCEPT_GUARD word=0x0D26 inverted=false "teleport"
 000014D2: GUARD_POP ; GUARD_POP
 000014D3: TEXT object_Migrator_043A FF 08 90 - - dic_TELEPORT_0D2F dic_RING_0D38 dic_TO_07D1 dic_MIGRATOR_0391 ; TEXT line=0x043A voice=0xFF flags=0x08,0x90 "TELEPORT RING TO MIGRATOR"
-000014E3: RECORD_TRIPLE 0030 12DC 043A 0 ; RECORD_TRIPLE record=0x0030 first=0x12DC second=0x043A inverted=false
+000014E3: RECORD_TRIPLE field_blood_0028_s13_0030 12DC 043A 0 ; RECORD_TRIPLE record=0x0030 first=0x12DC second=0x043A inverted=false
 000014EA: CLEAR_ALTERNATE_CONCEPT ; CLEAR_ALTERNATE_CONCEPT
 000014EB: LABEL block_14EB
 000014EB: TEXT object_Migrator_043A 08 08 90 - - dic_Thank_0D3D dic_you_2C_0D43 dic_COMMANDER_2E_2E_2E_0D48 dic_Get_0C82 dic_comfortable_2E_2E_2E_0D55 dic_The_006C dic_show_27s_0D64 dic_about_0169 dic_to_012F dic_start_2E_2E_0D6B ; TEXT line=0x043A voice=0x08 flags=0x08,0x90 "Thank you, COMMANDER... Get comfortable... The show's about to start.."
-00001507: RECORD_STATE C1 1346 100C 0 ; OP_C1 RECORD_STATE record=0x1346 operand=0x100C inverted=false
-0000150C: RECORD_WILDCARD AF 0452 100C 0 ; OP_AF RECORD_WILDCARD record=0x0452 value=0x100C inverted=false
+00001507: RECORD_STATE C1 field_orxx_133C_s13_1346 100C 0 ; OP_C1 RECORD_STATE record=0x1346 operand=0x100C inverted=false
+0000150C: RECORD_WILDCARD AF field_Migrator_043A_s11_0452 100C 0 ; OP_AF RECORD_WILDCARD record=0x0452 value=0x100C inverted=false
 00001511: END_PROCEDURE proc_bar4_143D
 00001511: PROCEDURE proc_finalmen_1511 ; DEB kind 2 "finalmen", encoded offset 0x1512
 00001511: CONDITIONAL_BLOCK 01 proc_corpo1_1777 ; CONDITIONAL_BLOCK flags=0x01 target=0x1777
 00001515: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00001516: RECORD_WILDCARD AF 103A 0FB8 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0FB8 inverted=false
-0000151B: RECORD_WILDCARD AF 1340 100C 0 ; OP_AF RECORD_WILDCARD record=0x1340 value=0x100C inverted=false
-00001520: ACTOR 0474 object_blood_0028 0 ; ACTOR record=0x0474 related=0x0028 inverted=false
+00001516: RECORD_WILDCARD AF field_arche_1024_s11_103A 0FB8 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0FB8 inverted=false
+0000151B: RECORD_WILDCARD AF field_orxx_133C_s11_1340 100C 0 ; OP_AF RECORD_WILDCARD record=0x1340 value=0x100C inverted=false
+00001520: ACTOR field_Migrator_043A_s13_0474 object_blood_0028 0 ; ACTOR record=0x0474 related=0x0028 inverted=false
 00001525: GUARD_POP ; GUARD_POP
 00001526: TEXT object_Migrator_043A FF 28 80 - - dic_SILENCE_085A dic_IT_27S_0D73 dic_STARTING_2E_2E_2E_2E_0D78 ; TEXT line=0x043A voice=0xFF flags=0x28,0x80 "SILENCE IT'S STARTING...."
 00001534: LOAD_STRING "lpm6sc1.hnm" ; LOAD_STRING "lpm6sc1.hnm"
@@ -2063,8 +2167,8 @@
 00001777: CONDITIONAL_BLOCK 01 proc_t10_181C ; CONDITIONAL_BLOCK flags=0x01 target=0x181C
 0000177B: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
 0000177C: SHARED_STATE C0 136E F5 C1 0000 ; OP_C0 SHARED_STATE field=0x136E operator=0xF5 rhs_mode=0xC1 rhs=0x0000
-00001783: RECORD_WILDCARD AF 103A 0D5E 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0D5E inverted=false
-00001788: ACTOR 05DC object_blood_0028 0 ; ACTOR record=0x05DC related=0x0028 inverted=false
+00001783: RECORD_WILDCARD AF field_arche_1024_s11_103A 0D5E 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0D5E inverted=false
+00001788: ACTOR field_Izwalito_05A2_s13_05DC object_blood_0028 0 ; ACTOR record=0x05DC related=0x0028 inverted=false
 0000178D: GUARD_POP ; GUARD_POP
 0000178E: TEXT object_Izwalito_05A2 02 00 80 - - dic_Izwalito_0DFA dic_happy_0B40 dic_see_0911 dic_you_0257 dic_again_08FD dic__2C_00DC dic_friend_0A8F dic__2E_2E_2E_0019 ; TEXT line=0x05A2 voice=0x02 flags=0x00,0x80 "Izwalito happy see you again , friend ..."
 000017A6: TEXT object_Izwalito_05A2 00 00 80 - - dic_Me_0B6B dic_get_04A0 dic_ready_0E03 dic_to_012F dic_leave_08DE dic__2C_00DC dic_friend_0A8F ; TEXT line=0x05A2 voice=0x00 flags=0x00,0x80 "Me get ready to leave , friend"
@@ -2072,8 +2176,8 @@
 000017D2: TEXT object_Izwalito_05A2 02 00 80 - - dic_Sorry_0E11 dic__2E_2E_2E_0019 dic_me_0010 dic_not_0422 dic_have_0315 dic_much_0669 dic_time_089B dic__2E_2E_2E_0019 ; TEXT line=0x05A2 voice=0x02 flags=0x00,0x80 "Sorry ... me not have much time ..."
 000017EA: TEXT object_Izwalito_05A2 05 00 80 - - dic_Me_0B6B dic_in_02E7 dic_hurry_0B96 dic__2C_00DC dic_Bossanova_0E17 dic_impatient_0B6E dic__2E_2E_2E_0019 ; TEXT line=0x05A2 voice=0x05 flags=0x00,0x80 "Me in hurry , Bossanova impatient ..."
 00001800: TEXT object_Izwalito_05A2 05 08 90 - - dic_Bye_0E21 dic_bye_0E25 dic__2C_00DC dic_friend_0A8F dic_Commander_00A3 dic__2E_2E_2E_0019 ; TEXT line=0x05A2 voice=0x05 flags=0x08,0x90 "Bye bye , friend Commander ..."
-00001814: RECORD_WILDCARD AF 05BA 0F2C 0 ; OP_AF RECORD_WILDCARD record=0x05BA value=0x0F2C inverted=false
-00001819: RECORD_CLEAR 05DC ; RECORD_CLEAR record=0x05DC
+00001814: RECORD_WILDCARD AF field_Izwalito_05A2_s11_05BA 0F2C 0 ; OP_AF RECORD_WILDCARD record=0x05BA value=0x0F2C inverted=false
+00001819: RECORD_CLEAR field_Izwalito_05A2_s13_05DC ; RECORD_CLEAR record=0x05DC
 0000181C: END_PROCEDURE proc_corpo1_1777
 0000181C: PROCEDURE proc_t10_181C ; DEB kind 2 "t10", encoded offset 0x181D
 0000181C: CONDITIONAL_BLOCK 01 proc_krapp_1829 ; CONDITIONAL_BLOCK flags=0x01 target=0x1829
@@ -2085,13 +2189,13 @@
 00001829: CONDITIONAL_BLOCK 01 proc_krapp1_1839 ; CONDITIONAL_BLOCK flags=0x01 target=0x1839
 0000182D: STATE_ARRAY_TEST 0A ; STATE_ARRAY_TEST index=0x0A
 0000182F: GUARD_POP ; GUARD_POP
-00001830: RECORD_LINK 054C object_blood_0028 0 ; RECORD_LINK record=0x054C related=0x0028 inverted=false
+00001830: RECORD_LINK field_Kran_Dobu_0512_s13_054C object_blood_0028 0 ; RECORD_LINK record=0x054C related=0x0028 inverted=false
 00001835: POKE_BYTE 182A 00 ; POKE_BYTE address=0x182A value=0x00
 00001839: END_PROCEDURE proc_krapp_1829
 00001839: PROCEDURE proc_krapp1_1839 ; DEB kind 2 "krapp1", encoded offset 0x183A
 00001839: CONDITIONAL_BLOCK 01 proc_masta1_194D ; CONDITIONAL_BLOCK flags=0x01 target=0x194D
 0000183D: BRANCH_PRESENTATION ; BRANCH_PRESENTATION
-0000183E: ACTOR 054C object_blood_0028 0 ; ACTOR record=0x054C related=0x0028 inverted=false
+0000183E: ACTOR field_Kran_Dobu_0512_s13_054C object_blood_0028 0 ; ACTOR record=0x054C related=0x0028 inverted=false
 00001843: GUARD_POP ; GUARD_POP
 00001844: TEXT object_Kran_Dobu_0512 FF 00 80 - - dic_This_0417 dic_is_0092 dic_Kran_0E29 dic_Dobu_0E2E dic__2C_00DC dic_Space_0E33 dic_Knight_0E39 dic_of_00FD dic_the_00B2 dic_Stars_0E40 dic__2E_2E_2E_0019 ; TEXT line=0x0512 voice=0xFF flags=0x00,0x80 "This is Kran Dobu , Space Knight of the Stars ..."
 00001862: TEXT object_Kran_Dobu_0512 FF 00 80 - - dic_Radio_0E46 dic_message_0E4C dic_to_012F dic_Ark_0708 dic__2E_2E_2E_0019 dic_Ha_027E dic__21_024B dic_Ha_027E dic__21_024B dic_You_01BA dic_okay_0CDD dic__3F_01CF dic__2E_2E_2E_0019 ; TEXT line=0x0512 voice=0xFF flags=0x00,0x80 "Radio message to Ark ... Ha ! Ha ! You okay ? ..."
@@ -2103,12 +2207,12 @@
 00001920: TEXT object_Kran_Dobu_0512 FF 00 80 - - dic_See_0B37 dic_you_0257 dic__2E_2E_2E_0019 dic_Ha_027E dic__21_024B dic_Ha_027E dic__21_024B dic_Ha_027E dic__21_024B ; TEXT line=0x0512 voice=0xFF flags=0x00,0x80 "See you ... Ha ! Ha ! Ha !"
 0000193A: TEXT object_Kran_Dobu_0512 FF 08 90 - - dic_Bye_0E21 dic_bye_0E25 ; TEXT line=0x0512 voice=0xFF flags=0x08,0x90 "Bye bye"
 00001946: POKE_BYTE 183A 00 ; POKE_BYTE address=0x183A value=0x00
-0000194A: RECORD_CLEAR 054C ; RECORD_CLEAR record=0x054C
+0000194A: RECORD_CLEAR field_Kran_Dobu_0512_s13_054C ; RECORD_CLEAR record=0x054C
 0000194D: END_PROCEDURE proc_krapp1_1839
 0000194D: PROCEDURE proc_masta1_194D ; DEB kind 2 "masta1", encoded offset 0x194E
 0000194D: CONDITIONAL_BLOCK 01 proc_masta5_1A94 ; CONDITIONAL_BLOCK flags=0x01 target=0x1A94
 00001951: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00001952: ACTOR 06FC object_blood_0028 0 ; ACTOR record=0x06FC related=0x0028 inverted=false
+00001952: ACTOR field_Scruter_Mac_06C2_s13_06FC object_blood_0028 0 ; ACTOR record=0x06FC related=0x0028 inverted=false
 00001957: GUARD_POP ; GUARD_POP
 00001958: TEXT object_Scruter_Mac_06C2 12 00 80 - - dic_YOU_046C dic_IN_0E97 dic_FORBIDDEN_0E9A dic_ZONE_0EA4 dic__2E_2E_2E_0019 dic_ME_0500 dic_GIVE_0EA9 dic_WARNING_0EAE dic__2C_00DC dic_STRANGER_0EB6 ; TEXT line=0x06C2 voice=0x12 flags=0x00,0x80 "YOU IN FORBIDDEN ZONE ... ME GIVE WARNING , STRANGER"
 00001974: TEXT object_Scruter_Mac_06C2 11 00 80 - - dic_Me_0B6B dic_not_0422 dic_know_0936 dic_you_0257 dic__2E_0095 ; TEXT line=0x06C2 voice=0x11 flags=0x00,0x80 "Me not know you ."
@@ -2131,28 +2235,28 @@
 00001A56: TEXT object_Scruter_Mac_06C2 08 08 A0 - - dic_BYE_0F3C dic_BYE_0F3C dic_FRIEND_0F40 dic__2E_2E_2E_0019 ; TEXT line=0x06C2 voice=0x08 flags=0x08,0xA0 "BYE BYE FRIEND ..."
 00001A66: LOAD_STRING "explo3.hnm" ; LOAD_STRING "explo3.hnm"
 00001A73: CLEAR_ALTERNATE_CONCEPT ; CLEAR_ALTERNATE_CONCEPT
-00001A74: RECORD_CLEAR 06FC ; RECORD_CLEAR record=0x06FC
+00001A74: RECORD_CLEAR field_Scruter_Mac_06C2_s13_06FC ; RECORD_CLEAR record=0x06FC
 00001A77: END_WHEN block_1A77
 00001A77: LABEL block_1A77
 00001A77: TEXT object_Scruter_Mac_06C2 05 08 80 - - dic_You_01BA dic_know_0936 dic_code_0EE8 dic__2C_00DC dic_me_0010 dic_open_0F47 dic_door_0F4C dic__2E_2E_2E_0019 ; TEXT line=0x06C2 voice=0x05 flags=0x08,0x80 "You know code , me open door ..."
-00001A8F: RECORD_STATE C1 1346 0A64 0 ; OP_C1 RECORD_STATE record=0x1346 operand=0x0A64 inverted=false
+00001A8F: RECORD_STATE C1 field_orxx_133C_s13_1346 0A64 0 ; OP_C1 RECORD_STATE record=0x1346 operand=0x0A64 inverted=false
 00001A94: END_PROCEDURE proc_masta1_194D
 00001A94: PROCEDURE proc_masta5_1A94 ; DEB kind 2 "masta5", encoded offset 0x1A95
 00001A94: CONDITIONAL_BLOCK 01 proc_masta6_1C93 ; CONDITIONAL_BLOCK flags=0x01 target=0x1C93
 00001A98: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
 00001A99: SHARED_STATE C0 1370 F5 C1 0000 ; OP_C0 SHARED_STATE field=0x1370 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
-00001AA0: ACTOR 01EC object_blood_0028 0 ; ACTOR record=0x01EC related=0x0028 inverted=false
-00001AA5: RECORD_WILDCARD AF 103A 0A2E 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0A2E inverted=false
+00001AA0: ACTOR field_Eviscerator_01B2_s13_01EC object_blood_0028 0 ; ACTOR record=0x01EC related=0x0028 inverted=false
+00001AA5: RECORD_WILDCARD AF field_arche_1024_s11_103A 0A2E 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0A2E inverted=false
 00001AAA: GUARD_POP ; GUARD_POP
 00001AAB: TEXT object_Eviscerator_01B2 05 00 80 - - dic_Me_0B6B dic_know_0936 dic_you_0257 dic__2E_2E_2E_0019 dic_You_01BA dic_give_023B dic_me_0010 dic_mummy_0F51 dic__2E_2E_2E_0019 dic_and_0142 dic_CURSE_0F57 dic__2E_2E_2E_0019 ; TEXT line=0x01B2 voice=0x05 flags=0x00,0x80 "Me know you ... You give me mummy ... and CURSE ..."
 00001ACB: TEXT object_Eviscerator_01B2 04 00 80 - - dic_ME_0500 dic_HATE_0F5D dic_YOU_046C dic__2E_2E_2E_0019 ; TEXT line=0x01B2 voice=0x04 flags=0x00,0x80 "ME HATE YOU ..."
 00001ADB: TEXT object_Eviscerator_01B2 07 08 80 - - dic_WHAT_04DC dic_YOU_046C dic_WANT_0F62 dic_STRANGER_0EB6 dic__3F_01CF ; TEXT line=0x01B2 voice=0x07 flags=0x08,0x80 "WHAT YOU WANT STRANGER ?"
-00001AED: RECORD_WILDCARD BC 01F8 0001 0 ; OP_BC RECORD_WILDCARD record=0x01F8 value=0x0001 inverted=false
+00001AED: RECORD_WILDCARD BC field_Eviscerator_01B2_s0F_01F8 0001 0 ; OP_BC RECORD_WILDCARD record=0x01F8 value=0x0001 inverted=false
 00001AF2: WHEN block_1B1F ; GUARD_PUSH target=0x1B1F
 00001AF5: SHARED_STATE C0 1372 F5 C1 0001 ; OP_C0 SHARED_STATE field=0x1372 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 00001AFC: THEN ; GUARD_POP
 00001AFD: TEXT object_Eviscerator_01B2 06 08 90 - - dic_You_01BA dic_like_0224 dic_secrets_0F67 dic__2E_2E_2E_0019 dic_Me_0B6B dic_tell_0605 dic_secrets_0F67 ; TEXT line=0x01B2 voice=0x06 flags=0x08,0x90 "You like secrets ... Me tell secrets"
-00001B13: RECORD_WILDCARD BC 01F8 0F67 0 ; OP_BC RECORD_WILDCARD record=0x01F8 value=0x0F67 inverted=false
+00001B13: RECORD_WILDCARD BC field_Eviscerator_01B2_s0F_01F8 0F67 0 ; OP_BC RECORD_WILDCARD record=0x01F8 value=0x0F67 inverted=false
 00001B18: SHARED_STATE C0 1372 F5 C1 0000 ; OP_C0 SHARED_STATE field=0x1372 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
 00001B1F: END_WHEN block_1B1F
 00001B1F: LABEL block_1B1F
@@ -2167,7 +2271,7 @@
 00001BE4: TEXT object_Eviscerator_01B2 09 08 A0 - - dic_You_01BA dic_understand_101B dic__3F_01CF dic_Bye_0E21 dic_bye_0E25 dic__2E_2E_2E_0019 dic_ME_0500 dic_WAIT_1026 dic_YOU_046C dic__2E_2E_2E_0019 ; TEXT line=0x01B2 voice=0x09 flags=0x08,0xA0 "You understand ? Bye bye ... ME WAIT YOU ..."
 00001C00: SHARED_STATE C0 1374 F5 C1 0000 ; OP_C0 SHARED_STATE field=0x1374 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
 00001C07: SHARED_STATE C0 1370 F5 C1 0001 ; OP_C0 SHARED_STATE field=0x1370 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-00001C0E: RECORD_CLEAR 01EC ; RECORD_CLEAR record=0x01EC
+00001C0E: RECORD_CLEAR field_Eviscerator_01B2_s13_01EC ; RECORD_CLEAR record=0x01EC
 00001C11: END_WHEN block_1C11
 00001C11: LABEL block_1C11
 00001C11: WHEN block_1C40 ; GUARD_PUSH target=0x1C40
@@ -2184,54 +2288,54 @@
 00001C6A: END_WHEN block_1C6A
 00001C6A: LABEL block_1C6A
 00001C6A: TEXT object_Eviscerator_01B2 06 48 80 - - dic_Bye_0E21 dic_bye_0E25 dic__2E_0095 dic_You_01BA dic_come_0BC4 dic_back_02A7 dic_see_0911 dic_me_0010 dic__2E_0095 dic_Me_0B6B dic_like_0224 dic_visits_105B dic__2E_2E_2E_0019 FFFF dic_bye_bye_1062 ; TEXT line=0x01B2 voice=0x06 flags=0x48,0x80 "Bye bye . You come back see me . Me like visits ..."
-00001C90: RECORD_CLEAR 01EC ; RECORD_CLEAR record=0x01EC
+00001C90: RECORD_CLEAR field_Eviscerator_01B2_s13_01EC ; RECORD_CLEAR record=0x01EC
 00001C93: END_PROCEDURE proc_masta5_1A94
 00001C93: PROCEDURE proc_masta6_1C93 ; DEB kind 2 "masta6", encoded offset 0x1C94
 00001C93: CONDITIONAL_BLOCK 01 proc_amig2_1E07 ; CONDITIONAL_BLOCK flags=0x01 target=0x1E07
 00001C97: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
 00001C98: SHARED_STATE C0 1370 F5 C1 0001 ; OP_C0 SHARED_STATE field=0x1370 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-00001C9F: RECORD_WILDCARD AF 1340 0A64 0 ; OP_AF RECORD_WILDCARD record=0x1340 value=0x0A64 inverted=false
-00001CA4: ACTOR 01EC object_blood_0028 0 ; ACTOR record=0x01EC related=0x0028 inverted=false
+00001C9F: RECORD_WILDCARD AF field_orxx_133C_s11_1340 0A64 0 ; OP_AF RECORD_WILDCARD record=0x1340 value=0x0A64 inverted=false
+00001CA4: ACTOR field_Eviscerator_01B2_s13_01EC object_blood_0028 0 ; ACTOR record=0x01EC related=0x0028 inverted=false
 00001CA9: GUARD_POP ; GUARD_POP
 00001CAA: TEXT object_Eviscerator_01B2 08 00 80 - - dic_You_01BA dic_have_0315 dic_splatch_106A dic__3F_3F_3F_02D6 ; TEXT line=0x01B2 voice=0x08 flags=0x00,0x80 "You have splatch ???"
 00001CBA: TEXT object_Eviscerator_01B2 01 00 80 - - dic_Me_0B6B dic_big_03C5 dic_CROOLIS_1072 dic_EVISCERATOR_107A dic__2E_0095 dic_Me_0B6B dic_want_01BE dic_escape_1086 dic__2E_2E_2E_0019 dic_CRY_108D dic__2E_2E_2E_0019 dic_CRY_108D dic__2E_2E_2E_0019 dic_GNASH_1091 dic__2E_2E_2E_0019 ; TEXT line=0x01B2 voice=0x01 flags=0x00,0x80 "Me big CROOLIS EVISCERATOR . Me want escape ... CRY ... CRY ... GNASH ..."
 00001CE0: TEXT object_Eviscerator_01B2 01 08 80 - - dic_CRY_108D dic__2E_2E_2E_0019 dic_GNASH_1091 dic__2E_2E_2E_0019 ; TEXT line=0x01B2 voice=0x01 flags=0x08,0x80 "CRY ... GNASH ..."
-00001CF0: RECORD_WILDCARD BC 01F8 066E 0 ; OP_BC RECORD_WILDCARD record=0x01F8 value=0x066E inverted=false
+00001CF0: RECORD_WILDCARD BC field_Eviscerator_01B2_s0F_01F8 066E 0 ; OP_BC RECORD_WILDCARD record=0x01F8 value=0x066E inverted=false
 00001CF5: WHEN block_1D35 ; GUARD_PUSH target=0x1D35
-00001CF8: RECORD_WILDCARD AF 1290 0028 0 ; OP_AF RECORD_WILDCARD record=0x1290 value=0x0028 inverted=false
+00001CF8: RECORD_WILDCARD AF field_splatch_127C_s11_1290 0028 0 ; OP_AF RECORD_WILDCARD record=0x1290 value=0x0028 inverted=false
 00001CFD: THEN ; GUARD_POP
 00001CFE: TEXT object_Eviscerator_01B2 FF 20 80 - - dic_Give_1097 dic_him_0A7C dic_the_00B2 dic_splatch_106A dic__2C_00DC dic_Commander_00A3 dic__2E_2E_2E_0019 dic_We_057F dic_need_0CA0 dic_the_00B2 dic_treasure_0FBC dic__2E_2E_2E_0019 ; TEXT line=0x01B2 voice=0xFF flags=0x20,0x80 "Give him the splatch , Commander ... We need the treasure ..."
 00001D1E: TEXT object_Eviscerator_01B2 FF 08 80 - - dic_TELEPORT_0D2F dic_SPLATCH_0F6F dic_TO_07D1 dic_EVISCERATOR_107A ; TEXT line=0x01B2 voice=0xFF flags=0x08,0x80 "TELEPORT SPLATCH TO EVISCERATOR"
-00001D2E: RECORD_TRIPLE 0030 127C 01B2 0 ; RECORD_TRIPLE record=0x0030 first=0x127C second=0x01B2 inverted=false
+00001D2E: RECORD_TRIPLE field_blood_0028_s13_0030 127C 01B2 0 ; RECORD_TRIPLE record=0x0030 first=0x127C second=0x01B2 inverted=false
 00001D35: END_WHEN block_1D35
 00001D35: LABEL block_1D35
 00001D35: WHEN block_1DAC ; GUARD_PUSH target=0x1DAC
-00001D38: RECORD_WILDCARD AF 1290 01B2 0 ; OP_AF RECORD_WILDCARD record=0x1290 value=0x01B2 inverted=false
+00001D38: RECORD_WILDCARD AF field_splatch_127C_s11_1290 01B2 0 ; OP_AF RECORD_WILDCARD record=0x1290 value=0x01B2 inverted=false
 00001D3D: THEN ; GUARD_POP
 00001D3E: TEXT object_Eviscerator_01B2 06 00 80 - - dic_You_01BA dic_want_01BE dic_know_0936 dic_where_093B dic_be_0866 dic_treasure_0FBC dic__2E_2E_2E_0019 ; TEXT line=0x01B2 voice=0x06 flags=0x00,0x80 "You want know where be treasure ..."
 00001D54: TEXT object_Eviscerator_01B2 08 00 80 - - dic_Treasure_109C dic_be_0866 dic_on_004D dic_planet_0086 dic_TUMUL_2E_2E_2E_10A5 ; TEXT line=0x01B2 voice=0x08 flags=0x00,0x80 "Treasure be on planet TUMUL..."
 00001D66: TEXT object_Eviscerator_01B2 05 00 80 - - dic_Coordinates_10AE dic_AX329_10BA dic_Tumulus_10C0 dic_constellation_10C8 dic__2E_2E_2E_0019 ; TEXT line=0x01B2 voice=0x05 flags=0x00,0x80 "Coordinates AX329 Tumulus constellation ..."
 00001D78: TEXT object_Eviscerator_01B2 FF 28 90 - - dic_That_0758 dic_sounded_10D6 dic_like_0224 dic_a_00C1 dic_treasure_0FBC dic_location_10DE dic_to_012F dic_me_0010 dic__2C_00DC dic_Commander_00A3 dic__2E_2E_2E_0019 dic_Way_10E7 dic_to_012F dic_go_0777 dic__2C_00DC dic_champ_10EB dic__21_21_21_033F ; TEXT line=0x01B2 voice=0xFF flags=0x28,0x90 "That sounded like a treasure location to me , Commander ... Way to go , champ !!!"
 00001DA2: SHARED_STATE C0 1370 F5 C1 0002 ; OP_C0 SHARED_STATE field=0x1370 operator=0xF5 rhs_mode=0xC1 rhs=0x0002
-00001DA9: RECORD_CLEAR 01EC ; RECORD_CLEAR record=0x01EC
+00001DA9: RECORD_CLEAR field_Eviscerator_01B2_s13_01EC ; RECORD_CLEAR record=0x01EC
 00001DAC: END_WHEN block_1DAC
 00001DAC: LABEL block_1DAC
 00001DAC: WHEN proc_amig2_1E07 ; GUARD_PUSH target=0x1E07
-00001DAF: RECORD_WILDCARD AF 1290 0028 1 ; OP_AF RECORD_WILDCARD record=0x1290 value=0x0028 inverted=true
-00001DB5: RECORD_WILDCARD AF 1290 01B2 1 ; OP_AF RECORD_WILDCARD record=0x1290 value=0x01B2 inverted=true
+00001DAF: RECORD_WILDCARD AF field_splatch_127C_s11_1290 0028 1 ; OP_AF RECORD_WILDCARD record=0x1290 value=0x0028 inverted=true
+00001DB5: RECORD_WILDCARD AF field_splatch_127C_s11_1290 01B2 1 ; OP_AF RECORD_WILDCARD record=0x1290 value=0x01B2 inverted=true
 00001DBB: THEN ; GUARD_POP
 00001DBC: TEXT object_Eviscerator_01B2 0A 00 80 - - dic_INSULT_10F1 dic__2E_2E_2E_0019 dic_UGLY_10F8 dic_SWEAR_0FAA dic__2E_2E_2E_0019 dic_GNASH_1091 dic__2E_2E_2E_0019 dic_GNASH_1091 dic__2E_2E_2E_0019 dic_UGLY_10F8 dic_LAUGH_0F9F dic__2E_2E_2E_0019 ; TEXT line=0x01B2 voice=0x0A flags=0x00,0x80 "INSULT ... UGLY SWEAR ... GNASH ... GNASH ... UGLY LAUGH ..."
 00001DDC: TEXT object_Eviscerator_01B2 0C 00 80 - - dic_ME_0500 dic_HATE_0F5D dic_YOU_046C dic__2E_2E_2E_0019 dic_INSULT_10F1 dic__2E_2E_2E_2E_1043 ; TEXT line=0x01B2 voice=0x0C flags=0x00,0x80 "ME HATE YOU ... INSULT ...."
 00001DF0: TEXT object_Eviscerator_01B2 0B 08 80 - - dic_ME_0500 dic_NOT_10FD dic_SAY_1101 dic_BYE_0F3C dic_BYE_0F3C dic__2E_2E_2E_0019 ; TEXT line=0x01B2 voice=0x0B flags=0x08,0x80 "ME NOT SAY BYE BYE ..."
-00001E04: RECORD_CLEAR 01EC ; RECORD_CLEAR record=0x01EC
+00001E04: RECORD_CLEAR field_Eviscerator_01B2_s13_01EC ; RECORD_CLEAR record=0x01EC
 00001E07: END_WHEN proc_amig2_1E07
 00001E07: END_PROCEDURE proc_masta6_1C93
 00001E07: PROCEDURE proc_amig2_1E07 ; DEB kind 2 "amig2", encoded offset 0x1E08
 00001E07: CONDITIONAL_BLOCK 01 proc_yok1_1EB8 ; CONDITIONAL_BLOCK flags=0x01 target=0x1EB8
 00001E0B: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00001E0C: RECORD_WILDCARD AF 0602 0C14 0 ; OP_AF RECORD_WILDCARD record=0x0602 value=0x0C14 inverted=false
-00001E11: ACTOR 0624 object_blood_0028 0 ; ACTOR record=0x0624 related=0x0028 inverted=false
-00001E16: RECORD_WILDCARD AF 103A 0BDE 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0BDE inverted=false
+00001E0C: RECORD_WILDCARD AF field_Amigo_05EA_s11_0602 0C14 0 ; OP_AF RECORD_WILDCARD record=0x0602 value=0x0C14 inverted=false
+00001E11: ACTOR field_Amigo_05EA_s13_0624 object_blood_0028 0 ; ACTOR record=0x0624 related=0x0028 inverted=false
+00001E16: RECORD_WILDCARD AF field_arche_1024_s11_103A 0BDE 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0BDE inverted=false
 00001E1B: SHARED_STATE C0 1376 F5 C1 0000 ; OP_C0 SHARED_STATE field=0x1376 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
 00001E22: GUARD_POP ; GUARD_POP
 00001E23: TEXT object_Amigo_05EA 03 00 80 - - dic_HALT_1105 dic_HIC_110A dic_STRANGER_0EB6 dic__21_21_21_033F ; TEXT line=0x05EA voice=0x03 flags=0x00,0x80 "HALT HIC STRANGER !!!"
@@ -2241,25 +2345,25 @@
 00001E7F: TEXT object_Amigo_05EA 06 00 80 - - dic_Me_0B6B dic_thirsty_113C dic__2E_2E_2E_0019 dic_Hic_111D dic__2E_2E_2E_0019 ; TEXT line=0x05EA voice=0x06 flags=0x00,0x80 "Me thirsty ... Hic ..."
 00001E91: TEXT object_Amigo_05EA 06 00 80 - - dic_Me_0B6B dic_need_0CA0 dic_hic_1114 dic_drinky_1144 dic_hic_1114 dic__21_21_21_033F ; TEXT line=0x05EA voice=0x06 flags=0x00,0x80 "Me need hic drinky hic !!!"
 00001EA5: TEXT object_Amigo_05EA 00 08 80 - - dic_Bye_0E21 dic_hic_1114 dic_bye_0E25 dic__2E_2E_2E_0019 ; TEXT line=0x05EA voice=0x00 flags=0x08,0x80 "Bye hic bye ..."
-00001EB5: RECORD_CLEAR 0624 ; RECORD_CLEAR record=0x0624
+00001EB5: RECORD_CLEAR field_Amigo_05EA_s13_0624 ; RECORD_CLEAR record=0x0624
 00001EB8: END_PROCEDURE proc_amig2_1E07
 00001EB8: PROCEDURE proc_yok1_1EB8 ; DEB kind 2 "yok1", encoded offset 0x1EB9
 00001EB8: CONDITIONAL_BLOCK 01 proc_max1_1FC0 ; CONDITIONAL_BLOCK flags=0x01 target=0x1FC0
 00001EBC: BRANCH_FLAG_274F ; BRANCH_FLAG_274F
-00001EBD: ACTOR 027C object_blood_0028 0 ; ACTOR record=0x027C related=0x0028 inverted=false
+00001EBD: ACTOR field_Yoko_0242_s13_027C object_blood_0028 0 ; ACTOR record=0x027C related=0x0028 inverted=false
 00001EC2: GUARD_POP ; GUARD_POP
 00001EC3: TEXT object_Yoko_0242 01 00 80 - - dic_Commander_00A3 dic__2E_2E_2E_0019 dic_MAXXON_114B dic_and_0142 dic_me_0010 dic_would_1152 dic_like_0224 dic_to_012F dic_get_04A0 dic_back_02A7 dic_to_012F dic_our_1158 dic_home_077A dic_on_004D dic_the_00B2 dic_planet_0086 dic_RONDO_115C dic__2E_2E_2E_0019 ; TEXT line=0x0242 voice=0x01 flags=0x00,0x80 "Commander ... MAXXON and me would like to get back to our home on the planet RONDO ..."
 00001EEF: TEXT object_Yoko_0242 03 00 80 - - dic_Can_1162 dic_you_0257 dic_drop_07AE dic_us_0326 dic_off_07BE dic_there_0E89 dic__3F_01CF dic__2E_2E_2E_0019 ; TEXT line=0x0242 voice=0x03 flags=0x00,0x80 "Can you drop us off there ? ..."
 00001F07: WHEN block_1F75 ; GUARD_PUSH target=0x1F75
-00001F0A: RECORD_WILDCARD AF 103A 0B72 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0B72 inverted=false
+00001F0A: RECORD_WILDCARD AF field_arche_1024_s11_103A 0B72 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0B72 inverted=false
 00001F0F: THEN ; GUARD_POP
 00001F10: TEXT object_Yoko_0242 FF 30 80 block_1F75 - dic_Why_099C dic_don_27t_0C42 dic_we_00E3 dic_teleport_0D26 dic_them_05F3 dic__2C_00DC dic_Commander_00A3 dic__2E_2E_2E_0019 FFFF dic_teleport_0D26 dic_refuse_1166 ; TEXT line=0x0242 voice=0xFF flags=0x30,0x80 "Why don't we teleport them , Commander ..."
 00001F30: GUARD_PUSH block_1F56 ; GUARD_PUSH target=0x1F56 ; unstructured_guard=alternate_exit
 00001F33: CONCEPT_GUARD dic_teleport_0D26 0 ; CONCEPT_GUARD word=0x0D26 inverted=false "teleport"
 00001F36: GUARD_POP ; GUARD_POP
 00001F37: TEXT object_Yoko_0242 FF 08 A0 - - dic_TELEPORT_0D2F dic_YOKO_116D dic_AND_04F6 dic_MAXXON_114B dic_ON_1172 dic_RONDO_115C ; TEXT line=0x0242 voice=0xFF flags=0x08,0xA0 "TELEPORT YOKO AND MAXXON ON RONDO"
-00001F4B: RECORD_WILDCARD AF 025A 0B72 0 ; OP_AF RECORD_WILDCARD record=0x025A value=0x0B72 inverted=false
-00001F50: RECORD_WILDCARD AF 0572 0BA8 0 ; OP_AF RECORD_WILDCARD record=0x0572 value=0x0BA8 inverted=false
+00001F4B: RECORD_WILDCARD AF field_Yoko_0242_s11_025A 0B72 0 ; OP_AF RECORD_WILDCARD record=0x025A value=0x0B72 inverted=false
+00001F50: RECORD_WILDCARD AF field_Maxxon_055A_s11_0572 0BA8 0 ; OP_AF RECORD_WILDCARD record=0x0572 value=0x0BA8 inverted=false
 00001F55: CLEAR_ALTERNATE_CONCEPT ; CLEAR_ALTERNATE_CONCEPT
 00001F56: LABEL block_1F56
 00001F56: WHEN block_1F75 ; GUARD_PUSH target=0x1F75
@@ -2267,12 +2371,12 @@
 00001F5C: THEN ; GUARD_POP
 00001F5D: TEXT object_Yoko_0242 FF 28 90 - - dic_Whatever_0B87 dic_you_0257 dic_say_0274 dic__2C_00DC dic_Commander_00A3 dic__2E_2E_2E_0019 ; TEXT line=0x0242 voice=0xFF flags=0x28,0x90 "Whatever you say , Commander ..."
 00001F71: CLEAR_ALTERNATE_CONCEPT ; CLEAR_ALTERNATE_CONCEPT
-00001F72: RECORD_CLEAR 027C ; RECORD_CLEAR record=0x027C
+00001F72: RECORD_CLEAR field_Yoko_0242_s13_027C ; RECORD_CLEAR record=0x027C
 00001F75: END_WHEN block_1F75
 00001F75: END_WHEN block_1F75
 00001F75: LABEL block_1F75
 00001F75: WHEN block_1FAB ; GUARD_PUSH target=0x1FAB
-00001F78: RECORD_WILDCARD AF 103A 0B72 1 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0B72 inverted=true
+00001F78: RECORD_WILDCARD AF field_arche_1024_s11_103A 0B72 1 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0B72 inverted=true
 00001F7E: SHARED_STATE C0 1368 F2 C1 0003 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF2 rhs_mode=0xC1 rhs=0x0003
 00001F85: THEN ; GUARD_POP
 00001F86: TEXT object_Yoko_0242 FF 28 80 - - dic_We_27ll_059B dic_need_0CA0 dic_to_012F dic_get_04A0 dic_closer_1175 dic_to_012F dic_RONDO_115C dic_to_012F dic_teleport_0D26 dic_them_05F3 dic__2E_2E_2E_0019 ; TEXT line=0x0242 voice=0xFF flags=0x28,0x80 "We'll need to get closer to RONDO to teleport them ..."
@@ -2280,25 +2384,25 @@
 00001FAB: END_WHEN block_1FAB
 00001FAB: LABEL block_1FAB
 00001FAB: TEXT object_Yoko_0242 01 08 80 - - dic_We_27re_0977 dic_waiting_0BF9 dic__2C_00DC dic_Commander_00A3 dic__2E_2E_2E_0019 ; TEXT line=0x0242 voice=0x01 flags=0x08,0x80 "We're waiting , Commander ..."
-00001FBD: RECORD_CLEAR 027C ; RECORD_CLEAR record=0x027C
+00001FBD: RECORD_CLEAR field_Yoko_0242_s13_027C ; RECORD_CLEAR record=0x027C
 00001FC0: END_PROCEDURE proc_yok1_1EB8
 00001FC0: PROCEDURE proc_max1_1FC0 ; DEB kind 2 "max1", encoded offset 0x1FC1
 00001FC0: CONDITIONAL_BLOCK 01 proc_ronda_20C4 ; CONDITIONAL_BLOCK flags=0x01 target=0x20C4
 00001FC4: BRANCH_FLAG_274F ; BRANCH_FLAG_274F
-00001FC5: ACTOR 0594 object_blood_0028 0 ; ACTOR record=0x0594 related=0x0028 inverted=false
+00001FC5: ACTOR field_Maxxon_055A_s13_0594 object_blood_0028 0 ; ACTOR record=0x0594 related=0x0028 inverted=false
 00001FCA: GUARD_POP ; GUARD_POP
 00001FCB: TEXT object_Maxxon_055A 01 00 80 - - dic_Commander_00A3 dic__2E_2E_2E_0019 dic_Yoko_0B3B dic_and_0142 dic_me_0010 dic_would_1152 dic_like_0224 dic_to_012F dic_get_04A0 dic_back_02A7 dic_to_012F dic_our_1158 dic_home_077A dic_on_004D dic_the_00B2 dic_planet_0086 dic_RONDO_115C dic__2E_2E_2E_0019 ; TEXT line=0x055A voice=0x01 flags=0x00,0x80 "Commander ... Yoko and me would like to get back to our home on the planet RONDO ..."
 00001FF7: TEXT object_Maxxon_055A 03 00 80 - - dic_Can_1162 dic_you_0257 dic_drop_07AE dic_us_0326 dic_off_07BE dic_there_0E89 dic__3F_01CF dic__2E_2E_2E_0019 ; TEXT line=0x055A voice=0x03 flags=0x00,0x80 "Can you drop us off there ? ..."
 0000200F: WHEN block_2079 ; GUARD_PUSH target=0x2079
-00002012: RECORD_WILDCARD AF 103A 0B72 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0B72 inverted=false
+00002012: RECORD_WILDCARD AF field_arche_1024_s11_103A 0B72 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0B72 inverted=false
 00002017: THEN ; GUARD_POP
 00002018: TEXT object_Maxxon_055A FF 30 80 block_2079 - dic_Why_099C dic_don_27t_0C42 dic_we_00E3 dic_teleport_0D26 dic_them_05F3 dic__2C_00DC dic_Commander_2E_2E_2E_001D FFFF dic_teleport_0D26 dic_refuse_1166 ; TEXT line=0x055A voice=0xFF flags=0x30,0x80 "Why don't we teleport them , Commander..."
 00002036: GUARD_PUSH block_205C ; GUARD_PUSH target=0x205C ; unstructured_guard=alternate_exit
 00002039: CONCEPT_GUARD dic_teleport_0D26 0 ; CONCEPT_GUARD word=0x0D26 inverted=false "teleport"
 0000203C: GUARD_POP ; GUARD_POP
 0000203D: TEXT object_Maxxon_055A FF 08 A0 - - dic_TELEPORT_0D2F dic_YOKO_116D dic_AND_04F6 dic_MAXXON_114B dic_TO_07D1 dic_RONDO_115C ; TEXT line=0x055A voice=0xFF flags=0x08,0xA0 "TELEPORT YOKO AND MAXXON TO RONDO"
-00002051: RECORD_WILDCARD AF 0572 0BA8 0 ; OP_AF RECORD_WILDCARD record=0x0572 value=0x0BA8 inverted=false
-00002056: RECORD_WILDCARD AF 025A 0B72 0 ; OP_AF RECORD_WILDCARD record=0x025A value=0x0B72 inverted=false
+00002051: RECORD_WILDCARD AF field_Maxxon_055A_s11_0572 0BA8 0 ; OP_AF RECORD_WILDCARD record=0x0572 value=0x0BA8 inverted=false
+00002056: RECORD_WILDCARD AF field_Yoko_0242_s11_025A 0B72 0 ; OP_AF RECORD_WILDCARD record=0x025A value=0x0B72 inverted=false
 0000205B: CLEAR_ALTERNATE_CONCEPT ; CLEAR_ALTERNATE_CONCEPT
 0000205C: LABEL block_205C
 0000205C: WHEN block_2079 ; GUARD_PUSH target=0x2079
@@ -2306,12 +2410,12 @@
 00002062: THEN ; GUARD_POP
 00002063: TEXT object_Maxxon_055A FF 28 90 - - dic_You_27re_0869 dic_the_00B2 dic_commander_117C dic__2C_00DC dic_Commander_2E_2E_2E_001D ; TEXT line=0x055A voice=0xFF flags=0x28,0x90 "You're the commander , Commander..."
 00002075: CLEAR_ALTERNATE_CONCEPT ; CLEAR_ALTERNATE_CONCEPT
-00002076: RECORD_CLEAR 0594 ; RECORD_CLEAR record=0x0594
+00002076: RECORD_CLEAR field_Maxxon_055A_s13_0594 ; RECORD_CLEAR record=0x0594
 00002079: END_WHEN block_2079
 00002079: END_WHEN block_2079
 00002079: LABEL block_2079
 00002079: WHEN block_20AF ; GUARD_PUSH target=0x20AF
-0000207C: RECORD_WILDCARD AF 103A 0B72 1 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0B72 inverted=true
+0000207C: RECORD_WILDCARD AF field_arche_1024_s11_103A 0B72 1 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0B72 inverted=true
 00002082: SHARED_STATE C0 1368 F2 C1 0003 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF2 rhs_mode=0xC1 rhs=0x0003
 00002089: THEN ; GUARD_POP
 0000208A: TEXT object_Maxxon_055A FF 28 80 - - dic_We_27ll_059B dic_need_0CA0 dic_to_012F dic_get_04A0 dic_closer_1175 dic_to_012F dic_RONDO_115C dic_to_012F dic_teleport_0D26 dic_them_05F3 dic__2E_2E_2E_0019 ; TEXT line=0x055A voice=0xFF flags=0x28,0x80 "We'll need to get closer to RONDO to teleport them ..."
@@ -2319,13 +2423,13 @@
 000020AF: END_WHEN block_20AF
 000020AF: LABEL block_20AF
 000020AF: TEXT object_Maxxon_055A 01 08 80 - - dic_We_27re_0977 dic_waiting_0BF9 dic__2C_00DC dic_Commander_00A3 dic__2E_2E_2E_0019 ; TEXT line=0x055A voice=0x01 flags=0x08,0x80 "We're waiting , Commander ..."
-000020C1: RECORD_CLEAR 0594 ; RECORD_CLEAR record=0x0594
+000020C1: RECORD_CLEAR field_Maxxon_055A_s13_0594 ; RECORD_CLEAR record=0x0594
 000020C4: END_PROCEDURE proc_max1_1FC0
 000020C4: PROCEDURE proc_ronda_20C4 ; DEB kind 2 "ronda", encoded offset 0x20C5
 000020C4: CONDITIONAL_BLOCK 01 proc_max3_216D ; CONDITIONAL_BLOCK flags=0x01 target=0x216D
 000020C8: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-000020C9: RECORD_WILDCARD AF 103A 0B72 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0B72 inverted=false
-000020CE: ACTOR 027C object_blood_0028 0 ; ACTOR record=0x027C related=0x0028 inverted=false
+000020C9: RECORD_WILDCARD AF field_arche_1024_s11_103A 0B72 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0B72 inverted=false
+000020CE: ACTOR field_Yoko_0242_s13_027C object_blood_0028 0 ; ACTOR record=0x027C related=0x0028 inverted=false
 000020D3: GUARD_POP ; GUARD_POP
 000020D4: TEXT object_Yoko_0242 00 00 80 - - dic_Me_0B6B dic_happy_0B40 dic_be_0866 dic_back_02A7 dic_on_004D dic_my_0898 dic_planet_0086 dic__2C_00DC dic_Commander_00A3 dic__2E_2E_2E_0019 ; TEXT line=0x0242 voice=0x00 flags=0x00,0x80 "Me happy be back on my planet , Commander ..."
 000020F0: TEXT object_Yoko_0242 02 00 80 - - dic_Hello_1186 dic_Mister_02CF dic_Honk_2E_2E_2E_0DDD ; TEXT line=0x0242 voice=0x02 flags=0x00,0x80 "Hello Mister Honk..."
@@ -2333,15 +2437,15 @@
 00002116: TEXT object_Yoko_0242 04 00 80 - - dic_Good_11A2 dic__2C_00DC dic_Mister_02CF dic_Honk_024D dic__2E_2E_2E_0019 ; TEXT line=0x0242 voice=0x04 flags=0x00,0x80 "Good , Mister Honk ..."
 00002128: TEXT object_Yoko_0242 FF 20 80 - - dic_Ha_027E dic__21_024B dic_Ha_027E dic__21_024B dic_ha_11A7 dic__21_024B dic_You_01BA dic_gotta_11AA dic_love_0FDC dic_that_013D dic_Yoko_0B3B dic__2E_2E_2E_0019 ; TEXT line=0x0242 voice=0xFF flags=0x20,0x80 "Ha ! Ha ! ha ! You gotta love that Yoko ..."
 00002148: TEXT object_Yoko_0242 05 48 A0 - - dic_See_0B37 dic_you_0257 dic_soon_0296 dic__2C_00DC dic_Commander_00A3 dic__2E_2E_2E_0019 FFFF dic_bye_bye_1062 ; TEXT line=0x0242 voice=0x05 flags=0x48,0xA0 "See you soon , Commander ..."
-00002160: RECORD_WILDCARD AF 025A 0BA8 0 ; OP_AF RECORD_WILDCARD record=0x025A value=0x0BA8 inverted=false
-00002165: RECORD_WILDCARD AF 0572 0B72 0 ; OP_AF RECORD_WILDCARD record=0x0572 value=0x0B72 inverted=false
-0000216A: RECORD_CLEAR 027C ; RECORD_CLEAR record=0x027C
+00002160: RECORD_WILDCARD AF field_Yoko_0242_s11_025A 0BA8 0 ; OP_AF RECORD_WILDCARD record=0x025A value=0x0BA8 inverted=false
+00002165: RECORD_WILDCARD AF field_Maxxon_055A_s11_0572 0B72 0 ; OP_AF RECORD_WILDCARD record=0x0572 value=0x0B72 inverted=false
+0000216A: RECORD_CLEAR field_Yoko_0242_s13_027C ; RECORD_CLEAR record=0x027C
 0000216D: END_PROCEDURE proc_ronda_20C4
 0000216D: PROCEDURE proc_max3_216D ; DEB kind 2 "max3", encoded offset 0x216E
 0000216D: CONDITIONAL_BLOCK 01 proc_glu2_2220 ; CONDITIONAL_BLOCK flags=0x01 target=0x2220
 00002171: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00002172: RECORD_WILDCARD AF 103A 0B72 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0B72 inverted=false
-00002177: ACTOR 0594 object_blood_0028 0 ; ACTOR record=0x0594 related=0x0028 inverted=false
+00002172: RECORD_WILDCARD AF field_arche_1024_s11_103A 0B72 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0B72 inverted=false
+00002177: ACTOR field_Maxxon_055A_s13_0594 object_blood_0028 0 ; ACTOR record=0x0594 related=0x0028 inverted=false
 0000217C: GUARD_POP ; GUARD_POP
 0000217D: TEXT object_Maxxon_055A 09 00 80 - - dic_Hello_1186 dic__2C_00DC dic_friend_0A8F dic__2E_2E_2E_0019 ; TEXT line=0x055A voice=0x09 flags=0x00,0x80 "Hello , friend ..."
 0000218D: TEXT object_Maxxon_055A 02 00 80 - - dic_Yoko_0B3B dic_went_11B0 dic_to_012F dic_a_00C1 dic_party_0BC9 dic__2E_2E_2E_0019 ; TEXT line=0x055A voice=0x02 flags=0x00,0x80 "Yoko went to a party ..."
@@ -2350,13 +2454,13 @@
 000021D9: TEXT object_Maxxon_055A 04 00 80 - - dic_All_0822 dic_these_11CA dic_adventures_11D0 dic_have_0315 dic_tired_11DB dic_me_0010 dic_out_05BB dic__2E_2E_2E_0019 ; TEXT line=0x055A voice=0x04 flags=0x00,0x80 "All these adventures have tired me out ..."
 000021F1: TEXT object_Maxxon_055A 07 00 80 - - dic_I_27m_01E3 dic_going_0430 dic_to_012F dic_have_0315 dic_a_00C1 dic_vacation_11E1 dic_here_0329 dic__2E_2E_2E_0019 ; TEXT line=0x055A voice=0x07 flags=0x00,0x80 "I'm going to have a vacation here ..."
 00002209: TEXT object_Maxxon_055A FF 08 80 - - dic_See_0B37 dic_you_0257 dic_soon_0296 dic__2C_00DC dic_Commander_00A3 dic__2E_2E_2E_0019 ; TEXT line=0x055A voice=0xFF flags=0x08,0x80 "See you soon , Commander ..."
-0000221D: RECORD_CLEAR 0594 ; RECORD_CLEAR record=0x0594
+0000221D: RECORD_CLEAR field_Maxxon_055A_s13_0594 ; RECORD_CLEAR record=0x0594
 00002220: END_PROCEDURE proc_max3_216D
 00002220: PROCEDURE proc_glu2_2220 ; DEB kind 2 "glu2", encoded offset 0x2221
 00002220: CONDITIONAL_BLOCK 01 proc_monop1_2364 ; CONDITIONAL_BLOCK flags=0x01 target=0x2364
 00002224: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00002225: RECORD_WILDCARD AF 103A 0F0E 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0F0E inverted=false
-0000222A: ACTOR 04BC object_blood_0028 0 ; ACTOR record=0x04BC related=0x0028 inverted=false
+00002225: RECORD_WILDCARD AF field_arche_1024_s11_103A 0F0E 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0F0E inverted=false
+0000222A: ACTOR field_Daddy_Gluxx_0482_s13_04BC object_blood_0028 0 ; ACTOR record=0x04BC related=0x0028 inverted=false
 0000222F: GUARD_POP ; GUARD_POP
 00002230: TEXT object_Daddy_Gluxx_0482 01 00 80 - - dic_Ho_11EA dic__21_024B dic_The_006C dic_visitor_11ED dic_from_0151 dic_far_11F5 dic_away_0656 dic_in_02E7 dic_space_11F9 dic_and_0142 dic_time_089B dic__2E_2E_2E_0019 ; TEXT line=0x0482 voice=0x01 flags=0x00,0x80 "Ho ! The visitor from far away in space and time ..."
 00002250: TEXT object_Daddy_Gluxx_0482 02 00 80 - - dic_You_27ve_1200 dic_come_0BC4 dic_back_02A7 dic__2C_00DC dic_stranger_1207 dic__2E_2E_2E_0019 ; TEXT line=0x0482 voice=0x02 flags=0x00,0x80 "You've come back , stranger ..."
@@ -2368,31 +2472,31 @@
 0000230A: TEXT object_Daddy_Gluxx_0482 04 00 80 - - dic_After_12B0 dic_what_03E5 dic_they_27ve_12B6 dic_been_0458 dic_through_12BE dic__2C_00DC ; TEXT line=0x0482 voice=0x04 flags=0x00,0x80 "After what they've been through ,"
 0000231E: TEXT object_Daddy_Gluxx_0482 01 00 80 - - dic_I_0199 dic_can_27t_0611 dic_refuse_1166 dic_them_05F3 dic_anything_056C dic__2E_2E_2E_0019 dic_Ha_027E dic__21_024B dic_Ha_027E dic__21_024B dic_Ha_027E dic__2E_2E_2E_0019 ; TEXT line=0x0482 voice=0x01 flags=0x00,0x80 "I can't refuse them anything ... Ha ! Ha ! Ha ..."
 0000233E: TEXT object_Daddy_Gluxx_0482 FF 08 90 - - dic_Bye_0E21 dic_bye_0E25 dic__2C_00DC dic_Commander_00A3 dic__2E_2E_2E_0019 dic_You_27ll_0AEC dic_always_12C6 dic_be_0866 dic_welcome_12CD dic_here_0329 dic__2E_2E_2E_0019 ; TEXT line=0x0482 voice=0xFF flags=0x08,0x90 "Bye bye , Commander ... You'll always be welcome here ..."
-0000235C: RECORD_WILDCARD AF 049A 0F2C 0 ; OP_AF RECORD_WILDCARD record=0x049A value=0x0F2C inverted=false
-00002361: RECORD_CLEAR 04BC ; RECORD_CLEAR record=0x04BC
+0000235C: RECORD_WILDCARD AF field_Daddy_Gluxx_0482_s11_049A 0F2C 0 ; OP_AF RECORD_WILDCARD record=0x049A value=0x0F2C inverted=false
+00002361: RECORD_CLEAR field_Daddy_Gluxx_0482_s13_04BC ; RECORD_CLEAR record=0x04BC
 00002364: END_PROCEDURE proc_glu2_2220
 00002364: PROCEDURE proc_monop1_2364 ; DEB kind 2 "monop1", encoded offset 0x2365
 00002364: CONDITIONAL_BLOCK 01 proc_bronk1_23ED ; CONDITIONAL_BLOCK flags=0x01 target=0x23ED
-00002368: RECORD_WILDCARD AF 103A 0968 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0968 inverted=false
-0000236D: ACTOR 00CC object_blood_0028 0 ; ACTOR record=0x00CC related=0x0028 inverted=false
+00002368: RECORD_WILDCARD AF field_arche_1024_s11_103A 0968 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0968 inverted=false
+0000236D: ACTOR field_Bug_Deluxe_0092_s13_00CC object_blood_0028 0 ; ACTOR record=0x00CC related=0x0028 inverted=false
 00002372: GUARD_POP ; GUARD_POP
 00002373: TEXT object_Bug_Deluxe_0092 01 00 80 - - dic_Hi_12D5 dic_there_0E89 dic__2C_00DC dic_Consumer_032E dic_Comrade_0337 dic__2E_0095 dic_The_006C dic_VENUSIA_035E dic_SUPRAMARKET_12D8 dic_is_0092 dic_shut_1118 dic_today_12E4 dic__2E_2E_2E_0019 ; TEXT line=0x0092 voice=0x01 flags=0x00,0x80 "Hi there , Consumer Comrade . The VENUSIA SUPRAMARKET is shut today ..."
 00002395: TEXT object_Bug_Deluxe_0092 02 00 80 - - dic_It_27s_00AD dic_a_00C1 dic_vacation_11E1 dic_for_036A dic_everybody_12EA dic__2E_2E_2E_0019 ; TEXT line=0x0092 voice=0x02 flags=0x00,0x80 "It's a vacation for everybody ..."
 000023A9: TEXT object_Bug_Deluxe_0092 03 00 80 - - dic_Come_0C9B dic_back_02A7 dic_another_12F4 dic_time_089B dic__2E_2E_2E_0019 dic_Oh_0248 dic_and_0142 dic__2C_00DC dic_Consumer_032E dic_Comrade_0337 dic__2E_2E_2E_0019 dic_Remember_12FC dic_to_012F dic_bring_0FB0 dic_your_0634 dic_creds_1305 ; TEXT line=0x0092 voice=0x03 flags=0x00,0x80 "Come back another time ... Oh and , Consumer Comrade ... Remember to bring your creds"
 000023D1: TEXT object_Bug_Deluxe_0092 00 08 90 - - dic_Bye_0E21 dic_bye_0E25 dic__2C_00DC dic_Consumer_032E dic_Comrade_0337 dic__2E_2E_2E_0019 ; TEXT line=0x0092 voice=0x00 flags=0x08,0x90 "Bye bye , Consumer Comrade ..."
-000023E5: RECORD_WILDCARD AF 00AA 0FB8 0 ; OP_AF RECORD_WILDCARD record=0x00AA value=0x0FB8 inverted=false
-000023EA: RECORD_CLEAR 00CC ; RECORD_CLEAR record=0x00CC
+000023E5: RECORD_WILDCARD AF field_Bug_Deluxe_0092_s11_00AA 0FB8 0 ; OP_AF RECORD_WILDCARD record=0x00AA value=0x0FB8 inverted=false
+000023EA: RECORD_CLEAR field_Bug_Deluxe_0092_s13_00CC ; RECORD_CLEAR record=0x00CC
 000023ED: END_PROCEDURE proc_monop1_2364
 000023ED: PROCEDURE proc_bronk1_23ED ; DEB kind 2 "bronk1", encoded offset 0x23EE
 000023ED: CONDITIONAL_BLOCK 01 proc_emasc0_26CD ; CONDITIONAL_BLOCK flags=0x01 target=0x26CD
 000023F1: BRANCH_FLAG_274F ; BRANCH_FLAG_274F
 000023F2: SHARED_STATE C0 1378 F5 C1 0000 ; OP_C0 SHARED_STATE field=0x1378 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
-000023F9: ACTOR 039C object_blood_0028 0 ; ACTOR record=0x039C related=0x0028 inverted=false
+000023F9: ACTOR field_Bronko_0362_s13_039C object_blood_0028 0 ; ACTOR record=0x039C related=0x0028 inverted=false
 000023FE: GUARD_POP ; GUARD_POP
 000023FF: TEXT object_Bronko_0362 02 00 80 - - dic_Everything_27s_130B dic_okay_0CDD dic__2C_00DC dic_Commander_00A3 dic__2E_2E_2E_0019 ; TEXT line=0x0362 voice=0x02 flags=0x00,0x80 "Everything's okay , Commander ..."
 00002411: TEXT object_Bronko_0362 03 00 80 - - dic_Don_27t_02F7 dic_hesitate_1318 dic_if_102B dic_you_0257 dic_need_0CA0 dic_me_0010 dic__2E_2E_2E_0019 ; TEXT line=0x0362 voice=0x03 flags=0x00,0x80 "Don't hesitate if you need me ..."
 00002427: WHEN block_268E ; GUARD_PUSH target=0x268E
-0000242A: SHARED_BIT_STATE AE 0FBA 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0FBA mask=0x0002 inverted=false
+0000242A: SHARED_BIT_STATE AE field_Bigbang_0FB8_s00_0FBA 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0FBA mask=0x0002 inverted=false
 0000242F: THEN ; GUARD_POP
 00002430: TEXT object_Bronko_0362 05 00 80 - - dic_Teleport_1321 dic_me_0010 dic_to_012F dic_the_00B2 dic_BIG_03D1 dic_BANG_03F1 dic__2C_00DC dic_Commander_00A3 dic__2E_2E_2E_0019 dic_I_0199 dic_want_01BE dic_to_012F dic_party_0BC9 dic__21_024B dic_Gee_132A dic__2C_00DC dic_I_0199 dic_love_0FDC dic_weddings_132E dic__2E_2E_2E_0019 ; TEXT line=0x0362 voice=0x05 flags=0x00,0x80 "Teleport me to the BIG BANG , Commander ... I want to party ! Gee , I love weddings ..."
 00002460: TEXT object_Bronko_0362 FF 20 80 - - dic_Oh_0248 dic__21_024B dic_You_27re_0869 dic_not_0422 dic_going_0430 dic_to_012F dic_leave_08DE dic_me_0010 dic_here_0329 dic_alone_1337 dic__2C_00DC dic_are_0056 dic_you_0257 dic__2C_00DC dic_Mister_02CF dic_Bronko_02F0 dic__3F_01CF dic_I_27m_01E3 dic_a_00C1 dic_sucker_133D dic_for_036A dic_weddings_132E dic_too_005A dic__2E_2E_2E_0019 ; TEXT line=0x0362 voice=0xFF flags=0x20,0x80 "Oh ! You're not going to leave me here alone , are you , Mister Bronko ? I'm a sucker for weddings too ..."
@@ -2412,18 +2516,18 @@
 00002638: TEXT object_Bronko_0362 FF 08 80 - - dic_Commander_00A3 dic__2E_2E_2E_0019 dic_Your_1387 dic_computer_27s_1406 dic_losing_1411 dic_it_031A dic__2E_2E_2E_0019 dic_Something_1418 dic_needs_11B8 dic_to_012F dic_be_0866 dic_done_1422 dic__21_21_21_033F ; TEXT line=0x0362 voice=0xFF flags=0x08,0x80 "Commander ... Your computer's losing it ... Something needs to be done !!!"
 0000265A: LOAD_STRING "bobb.hnm" ; LOAD_STRING "bobb.hnm"
 00002665: TEXT object_Bronko_0362 06 08 80 - - dic_Well_134C dic__2C_00DC dic_if_102B dic_you_27ll_1427 dic_excuse_142E dic_me_0010 dic__2E_2E_2E_0019 dic_I_27ve_0762 dic_got_1435 dic_a_00C1 dic_murffalo_1439 dic_in_02E7 dic_the_00B2 dic_oven_1442 dic__2E_2E_2E_0019 ; TEXT line=0x0362 voice=0x06 flags=0x08,0x80 "Well , if you'll excuse me ... I've got a murffalo in the oven ..."
-0000268B: RECORD_CLEAR 039C ; RECORD_CLEAR record=0x039C
+0000268B: RECORD_CLEAR field_Bronko_0362_s13_039C ; RECORD_CLEAR record=0x039C
 0000268E: END_WHEN block_268E
 0000268E: LABEL block_268E
 0000268E: TEXT object_Bronko_0362 05 20 80 - - dic_Oh_0248 dic_Mister_02CF dic_Bronko_02F0 dic__2E_2E_2E_0019 dic_You_27re_0869 dic_looking_0E5B dic_well_2C_1447 dic_I_0199 dic_must_0EBF dic_say_0274 dic__21_21_21_2E_144D ; TEXT line=0x0362 voice=0x05 flags=0x20,0x80 "Oh Mister Bronko ... You're looking well, I must say !!!."
 000026AC: TEXT object_Bronko_0362 05 00 80 - - dic_See_0B37 dic_you_0257 dic_soon_0296 dic__2C_00DC dic_Commander_00A3 dic__2E_2E_2E_0019 ; TEXT line=0x0362 voice=0x05 flags=0x00,0x80 "See you soon , Commander ..."
 000026C0: TEXT object_Bronko_0362 FF 08 80 - - dic__2E_2E_2E_0019 ; TEXT line=0x0362 voice=0xFF flags=0x08,0x80 "..."
-000026CA: RECORD_CLEAR 039C ; RECORD_CLEAR record=0x039C
+000026CA: RECORD_CLEAR field_Bronko_0362_s13_039C ; RECORD_CLEAR record=0x039C
 000026CD: END_PROCEDURE proc_bronk1_23ED
 000026CD: PROCEDURE proc_emasc0_26CD ; DEB kind 2 "emasc0", encoded offset 0x26CE
 000026CD: CONDITIONAL_BLOCK 01 proc_hom0_2765 ; CONDITIONAL_BLOCK flags=0x01 target=0x2765
 000026D1: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-000026D2: ACTOR 08AC object_blood_0028 0 ; ACTOR record=0x08AC related=0x0028 inverted=false
+000026D2: ACTOR field_Emasculator_0872_s13_08AC object_blood_0028 0 ; ACTOR record=0x08AC related=0x0028 inverted=false
 000026D7: SHARED_STATE C0 137A F5 C1 0000 ; OP_C0 SHARED_STATE field=0x137A operator=0xF5 rhs_mode=0xC1 rhs=0x0000
 000026DE: GUARD_POP ; GUARD_POP
 000026DF: TEXT object_Emasculator_0872 01 00 80 - - dic_What_016F dic_you_0257 dic_want_01BE dic__2C_00DC dic_stranger_1207 dic__3F_01CF dic_You_01BA dic_want_01BE dic_murffalo_1439 dic_meat_1452 dic__3F_01CF ; TEXT line=0x0872 voice=0x01 flags=0x00,0x80 "What you want , stranger ? You want murffalo meat ?"
@@ -2432,27 +2536,27 @@
 00002729: TEXT object_Emasculator_0872 04 00 80 - - dic_Me_0B6B dic_pack_1462 dic_bags_1467 dic__2E_2E_2E_0019 dic_You_01BA dic_not_0422 dic_waste_146C dic_my_0898 dic_time_089B dic__2E_2E_2E_0019 ; TEXT line=0x0872 voice=0x04 flags=0x00,0x80 "Me pack bags ... You not waste my time ..."
 00002745: TEXT object_Emasculator_0872 05 00 80 - - dic_BYE_0F3C dic_BYE_0F3C dic__2E_2E_2E_0019 ; TEXT line=0x0872 voice=0x05 flags=0x00,0x80 "BYE BYE ..."
 00002753: TEXT object_Emasculator_0872 FF 08 90 - - dic_stop_1472 ; TEXT line=0x0872 voice=0xFF flags=0x08,0x90 "stop"
-0000275D: RECORD_WILDCARD AF 088A 0F2C 0 ; OP_AF RECORD_WILDCARD record=0x088A value=0x0F2C inverted=false
-00002762: RECORD_CLEAR 08AC ; RECORD_CLEAR record=0x08AC
+0000275D: RECORD_WILDCARD AF field_Emasculator_0872_s11_088A 0F2C 0 ; OP_AF RECORD_WILDCARD record=0x088A value=0x0F2C inverted=false
+00002762: RECORD_CLEAR field_Emasculator_0872_s13_08AC ; RECORD_CLEAR record=0x08AC
 00002765: END_PROCEDURE proc_emasc0_26CD
 00002765: PROCEDURE proc_hom0_2765 ; DEB kind 2 "hom0", encoded offset 0x2766
 00002765: CONDITIONAL_BLOCK 01 proc_hom1_27F5 ; CONDITIONAL_BLOCK flags=0x01 target=0x27F5
 00002769: BRANCH_FLAG_274F ; BRANCH_FLAG_274F
-0000276A: RECORD_WILDCARD AF 025A FFFF 0 ; OP_AF RECORD_WILDCARD record=0x025A value=0xFFFF inverted=false
-0000276F: ACTOR 0234 object_blood_0028 0 ; ACTOR record=0x0234 related=0x0028 inverted=false
+0000276A: RECORD_WILDCARD AF field_Yoko_0242_s11_025A FFFF 0 ; OP_AF RECORD_WILDCARD record=0x025A value=0xFFFF inverted=false
+0000276F: ACTOR field_Hom_01FA_s13_0234 object_blood_0028 0 ; ACTOR record=0x0234 related=0x0028 inverted=false
 00002774: GUARD_POP ; GUARD_POP
 00002775: TEXT object_Hom_01FA 01 00 80 - - dic_Ha_027E dic__21_024B dic_ha_11A7 dic__21_024B dic_Big_07E8 dic_Bang_07EC dic__2E_2E_2E_0019 dic_Black_1477 dic_holes_147D dic__2E_2E_2E_0019 dic_You_27re_0869 dic_out_05BB dic_of_00FD dic_your_0634 dic_mind_1483 dic__2E_2E_2E_0019 ; TEXT line=0x01FA voice=0x01 flags=0x00,0x80 "Ha ! ha ! Big Bang ... Black holes ... You're out of your mind ..."
 0000279D: TEXT object_Hom_01FA 05 00 80 - - dic_Commander_00A3 dic__2E_2E_2E_0019 dic_Yoko_0B3B dic_and_0142 dic_Maxxon_1488 dic_would_1152 dic_like_0224 dic_to_012F dic_get_04A0 dic_back_02A7 dic_home_077A dic_on_004D dic_the_00B2 dic_planet_0086 dic_RONDO_115C dic__2E_2E_2E_0019 ; TEXT line=0x01FA voice=0x05 flags=0x00,0x80 "Commander ... Yoko and Maxxon would like to get back home on the planet RONDO ..."
 000027C5: TEXT object_Hom_01FA 06 08 80 - - dic_They_27re_03B6 dic_impatient_0B6E dic__2E_2E_2E_0019 ; TEXT line=0x01FA voice=0x06 flags=0x08,0x80 "They're impatient ..."
-000027D3: RECORD_WILDCARD BC 0240 0001 0 ; OP_BC RECORD_WILDCARD record=0x0240 value=0x0001 inverted=false
+000027D3: RECORD_WILDCARD BC field_Hom_01FA_s0F_0240 0001 0 ; OP_BC RECORD_WILDCARD record=0x0240 value=0x0001 inverted=false
 000027D8: TEXT object_Hom_01FA 07 48 80 - - dic_Bye_0E21 dic_bye_2E_2E_2E_148F dic_Me_0B6B dic_sleep_0013 dic_in_02E7 dic_star_1496 dic_dust_2E_2E_2E_149B FFFF dic_bye_bye_1062 ; TEXT line=0x01FA voice=0x07 flags=0x48,0x80 "Bye bye... Me sleep in star dust..."
-000027F2: RECORD_CLEAR 0234 ; RECORD_CLEAR record=0x0234
+000027F2: RECORD_CLEAR field_Hom_01FA_s13_0234 ; RECORD_CLEAR record=0x0234
 000027F5: END_PROCEDURE proc_hom0_2765
 000027F5: PROCEDURE proc_hom1_27F5 ; DEB kind 2 "hom1", encoded offset 0x27F6
 000027F5: CONDITIONAL_BLOCK 01 proc_hom1_2922 ; CONDITIONAL_BLOCK flags=0x01 target=0x2922
 000027F9: BRANCH_FLAG_274F ; BRANCH_FLAG_274F
-000027FA: RECORD_WILDCARD AF 025A FFFF 1 ; OP_AF RECORD_WILDCARD record=0x025A value=0xFFFF inverted=true
-00002800: ACTOR 0234 object_blood_0028 0 ; ACTOR record=0x0234 related=0x0028 inverted=false
+000027FA: RECORD_WILDCARD AF field_Yoko_0242_s11_025A FFFF 1 ; OP_AF RECORD_WILDCARD record=0x025A value=0xFFFF inverted=true
+00002800: ACTOR field_Hom_01FA_s13_0234 object_blood_0028 0 ; ACTOR record=0x0234 related=0x0028 inverted=false
 00002805: GUARD_POP ; GUARD_POP
 00002806: TEXT object_Hom_01FA 01 00 80 - - dic_Ha_027E dic__21_024B dic_ha_11A7 dic__21_024B dic_Big_07E8 dic_Bang_07EC dic__2E_2E_2E_0019 dic_Black_1477 dic_holes_147D dic__2E_2E_2E_0019 dic_You_27re_0869 dic_out_05BB dic_of_00FD dic_your_0634 dic_mind_1483 dic__2E_2E_2E_0019 ; TEXT line=0x01FA voice=0x01 flags=0x00,0x80 "Ha ! ha ! Big Bang ... Black holes ... You're out of your mind ..."
 0000282E: TEXT object_Hom_01FA FF 20 80 - - dic_Don_27t_02F7 dic_laugh_14A3 dic__2C_00DC dic_Mister_02CF dic_Hom_14A9 dic__2E_2E_2E_0019 dic_It_27s_00AD dic_not_0422 dic_a_00C1 dic_joke_14AD dic__2E_2E_2E_0019 ; TEXT line=0x01FA voice=0xFF flags=0x20,0x80 "Don't laugh , Mister Hom ... It's not a joke ..."
@@ -2463,14 +2567,14 @@
 000028CC: TEXT object_Hom_01FA 05 00 80 - - dic_And_0ACC dic_blur_1508 dic_into_0753 dic_a_00C1 dic_cybertrip_150D dic__2E_2E_2E_0019 ; TEXT line=0x01FA voice=0x05 flags=0x00,0x80 "And blur into a cybertrip ..."
 000028E0: TEXT object_Hom_01FA FF 20 80 - - dic_Wasn_27t_1517 dic_that_013D dic_beautiful_151E dic__2C_00DC dic_Commander_00A3 dic__2E_2E_2E_0019 dic_We_057F dic_just_05A2 dic_experienced_1528 dic_poetic_1534 dic_creation_153B dic__2E_2E_2E_0019 ; TEXT line=0x01FA voice=0xFF flags=0x20,0x80 "Wasn't that beautiful , Commander ... We just experienced poetic creation ..."
 00002900: TEXT object_Hom_01FA 04 08 90 - - dic_Bye_0E21 dic_bye_0E25 dic__2C_00DC dic_my_0898 dic_friends_0E09 dic__2E_2E_2E_0019 dic_BYE_0F3C dic_BYE_0F3C dic__2E_2E_2E_0019 ; TEXT line=0x01FA voice=0x04 flags=0x08,0x90 "Bye bye , my friends ... BYE BYE ..."
-0000291A: RECORD_WILDCARD AF 0212 0B36 0 ; OP_AF RECORD_WILDCARD record=0x0212 value=0x0B36 inverted=false
-0000291F: RECORD_CLEAR 0234 ; RECORD_CLEAR record=0x0234
+0000291A: RECORD_WILDCARD AF field_Hom_01FA_s11_0212 0B36 0 ; OP_AF RECORD_WILDCARD record=0x0212 value=0x0B36 inverted=false
+0000291F: RECORD_CLEAR field_Hom_01FA_s13_0234 ; RECORD_CLEAR record=0x0234
 00002922: END_PROCEDURE proc_hom1_27F5
 00002922: PROCEDURE proc_hom1_2922 ; DEB kind 2 "hom1", encoded offset 0x2923
 00002922: CONDITIONAL_BLOCK 01 proc_hom2_2B1D ; CONDITIONAL_BLOCK flags=0x01 target=0x2B1D
 00002926: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00002927: RECORD_WILDCARD AF 10F8 0028 1 ; OP_AF RECORD_WILDCARD record=0x10F8 value=0x0028 inverted=true
-0000292D: ACTOR 0234 object_blood_0028 0 ; ACTOR record=0x0234 related=0x0028 inverted=false
+00002927: RECORD_WILDCARD AF field_urout_10E4_s11_10F8 0028 1 ; OP_AF RECORD_WILDCARD record=0x10F8 value=0x0028 inverted=true
+0000292D: ACTOR field_Hom_01FA_s13_0234 object_blood_0028 0 ; ACTOR record=0x0234 related=0x0028 inverted=false
 00002932: GUARD_POP ; GUARD_POP
 00002933: TEXT object_Hom_01FA 02 00 80 - - dic_Welcome_1544 dic_stranger_1207 dic__2E_2E_2E_0019 dic_You_01BA dic_be_0866 dic_big_03C5 dic_traveller_154C dic__2E_2E_2E_0019 ; TEXT line=0x01FA voice=0x02 flags=0x00,0x80 "Welcome stranger ... You be big traveller ..."
 0000294B: TEXT object_Hom_01FA 02 00 80 - - dic_Me_0B6B dic_HOM_2E_1556 dic_Me_0B6B dic_big_03C5 dic_Tubular_155B dic_Brain_1563 dic__2E_0095 dic_Me_0B6B dic_welcome_12CD dic_you_0257 dic__2C_00DC dic_Commander_00A3 dic__2E_2E_2E_0019 ; TEXT line=0x01FA voice=0x02 flags=0x00,0x80 "Me HOM. Me big Tubular Brain . Me welcome you , Commander ..."
@@ -2491,19 +2595,19 @@
 00002A84: TEXT object_Hom_01FA 04 00 80 - - dic_You_01BA dic_go_0777 dic_planet_0086 dic_CYBEROCK_15DC dic__2E_2E_2E_0019 ; TEXT line=0x01FA voice=0x04 flags=0x00,0x80 "You go planet CYBEROCK ..."
 00002A96: TEXT object_Hom_01FA 04 00 80 - - dic_You_01BA dic_study_15E5 dic_cyberknowledge_15EB dic__2C_00DC dic_friend_0A8F dic__2E_2E_2E_0019 ; TEXT line=0x01FA voice=0x04 flags=0x00,0x80 "You study cyberknowledge , friend ..."
 00002AAA: TEXT object_Hom_01FA 05 08 80 - - dic_Cyberock_15FA dic_be_0866 dic_in_02E7 dic_Cyberius_1603 dic_system_160C dic__2C_00DC dic_coordinates_1613 dic_X234_161F dic_Y546_1624 dic__2E_2E_2E_0019 ; TEXT line=0x01FA voice=0x05 flags=0x08,0x80 "Cyberock be in Cyberius system , coordinates X234 Y546 ..."
-00002AC6: SHARED_BIT_STATE AE 0D42 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0D42 mask=0x0002 inverted=false
+00002AC6: SHARED_BIT_STATE AE field_Cyberock_0D40_s00_0D42 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0D42 mask=0x0002 inverted=false
 00002ACB: TEXT object_Hom_01FA FF 20 80 - - dic_We_057F dic_already_1629 dic_know_0936 dic_that_013D dic__2C_00DC dic_Commander_00A3 dic__2E_2E_2E_0019 dic_Old_1631 dic_Tube_2Dhead_27s_1635 dic_going_0430 dic_gaga_1641 dic__2E_2E_2E_0019 ; TEXT line=0x01FA voice=0xFF flags=0x20,0x80 "We already know that , Commander ... Old Tube-head's going gaga ..."
 00002AEB: TEXT object_Hom_01FA 06 00 80 - - dic_Me_0B6B dic_wait_0B5A dic_here_0329 dic_with_00BC dic_U_2ER_2EO_2EU_2ET_1646 dic__2E_2E_2E_0019 ; TEXT line=0x01FA voice=0x06 flags=0x00,0x80 "Me wait here with U.R.O.U.T ..."
 00002AFF: TEXT object_Hom_01FA FF 08 A0 - - dic_Bye_0E21 dic_bye_0E25 dic_friend_0A8F dic__2E_2E_2E_0019 ; TEXT line=0x01FA voice=0xFF flags=0x08,0xA0 "Bye bye friend ..."
 00002B0F: POKE_BYTE 27F6 00 ; POKE_BYTE address=0x27F6 value=0x00
 00002B13: SHARED_STATE C0 137C F5 C1 0001 ; OP_C0 SHARED_STATE field=0x137C operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-00002B1A: RECORD_CLEAR 0234 ; RECORD_CLEAR record=0x0234
+00002B1A: RECORD_CLEAR field_Hom_01FA_s13_0234 ; RECORD_CLEAR record=0x0234
 00002B1D: END_PROCEDURE proc_hom1_2922
 00002B1D: PROCEDURE proc_hom2_2B1D ; DEB kind 2 "hom2", encoded offset 0x2B1E
 00002B1D: CONDITIONAL_BLOCK 01 proc_jour_2D05 ; CONDITIONAL_BLOCK flags=0x01 target=0x2D05
 00002B21: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
 00002B22: SHARED_STATE C0 137C F5 C1 0001 ; OP_C0 SHARED_STATE field=0x137C operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-00002B29: ACTOR 0234 object_blood_0028 0 ; ACTOR record=0x0234 related=0x0028 inverted=false
+00002B29: ACTOR field_Hom_01FA_s13_0234 object_blood_0028 0 ; ACTOR record=0x0234 related=0x0028 inverted=false
 00002B2E: GUARD_POP ; GUARD_POP
 00002B2F: TEXT object_Hom_01FA 02 00 80 - - dic_Welcome_1544 dic_stranger_1207 dic__2E_2E_2E_0019 dic_You_01BA dic_be_0866 dic_big_03C5 dic_traveller_154C dic__2E_2E_2E_0019 ; TEXT line=0x01FA voice=0x02 flags=0x00,0x80 "Welcome stranger ... You be big traveller ..."
 00002B47: TEXT object_Hom_01FA 02 00 80 - - dic_Me_0B6B dic_HOM_2E_1556 dic_Me_0B6B dic_big_03C5 dic_Tubular_155B dic_Brain_1563 dic__2E_0095 dic_Me_0B6B dic_welcome_12CD dic_you_0257 dic__2C_00DC dic_Commander_00A3 dic__2E_2E_2E_0019 ; TEXT line=0x01FA voice=0x02 flags=0x00,0x80 "Me HOM. Me big Tubular Brain . Me welcome you , Commander ..."
@@ -2518,46 +2622,46 @@
 00002C09: CLEAR_ALTERNATE_CONCEPT ; CLEAR_ALTERNATE_CONCEPT
 00002C0A: LABEL block_2C0A
 00002C0A: WHEN block_2C59 ; GUARD_PUSH target=0x2C59
-00002C0D: RECORD_WILDCARD AF 10F8 0028 1 ; OP_AF RECORD_WILDCARD record=0x10F8 value=0x0028 inverted=true
+00002C0D: RECORD_WILDCARD AF field_urout_10E4_s11_10F8 0028 1 ; OP_AF RECORD_WILDCARD record=0x10F8 value=0x0028 inverted=true
 00002C13: THEN ; GUARD_POP
 00002C14: TEXT object_Hom_01FA FF 00 80 - - dic_You_01BA dic_must_0EBF dic_take_1297 dic_U_2ER_2EO_2EU_2ET_1646 dic_exam_15D7 dic_on_004D dic_planet_0086 dic_CYBEROCK_15DC dic__2E_2E_2E_0019 ; TEXT line=0x01FA voice=0xFF flags=0x00,0x80 "You must take U.R.O.U.T exam on planet CYBEROCK ..."
 00002C2E: TEXT object_Hom_01FA FF 00 80 - - dic_Me_0B6B dic_wait_0B5A dic_for_036A dic_you_0257 dic__2E_2E_2E_0019 ; TEXT line=0x01FA voice=0xFF flags=0x00,0x80 "Me wait for you ..."
 00002C40: TEXT object_Hom_01FA FF 48 80 - - dic_Bye_0E21 dic_bye_0E25 dic__2C_00DC dic_friend_0A8F dic__2E_2E_2E_0019 FFFF dic_bye_bye_1062 ; TEXT line=0x01FA voice=0xFF flags=0x48,0x80 "Bye bye , friend ..."
-00002C56: RECORD_CLEAR 0234 ; RECORD_CLEAR record=0x0234
+00002C56: RECORD_CLEAR field_Hom_01FA_s13_0234 ; RECORD_CLEAR record=0x0234
 00002C59: END_WHEN block_2C59
 00002C59: LABEL block_2C59
 00002C59: WHEN proc_jour_2D05 ; GUARD_PUSH target=0x2D05
-00002C5C: RECORD_WILDCARD AF 10F8 0028 0 ; OP_AF RECORD_WILDCARD record=0x10F8 value=0x0028 inverted=false
+00002C5C: RECORD_WILDCARD AF field_urout_10E4_s11_10F8 0028 0 ; OP_AF RECORD_WILDCARD record=0x10F8 value=0x0028 inverted=false
 00002C61: THEN ; GUARD_POP
 00002C62: TEXT object_Hom_01FA FF 00 80 - - dic_Bravo_1655 dic_Commander_00A3 dic__2E_0095 dic_You_01BA dic_be_0866 dic_talented_165B dic__2E_2E_2E_0019 ; TEXT line=0x01FA voice=0xFF flags=0x00,0x80 "Bravo Commander . You be talented ..."
 00002C78: TEXT object_Hom_01FA FF 00 80 - - dic_Me_0B6B dic_have_0315 dic_good_0A8A dic_news_0A9C dic_for_036A dic_you_0257 dic__2E_2E_2E_0019 dic_Me_0B6B dic_know_0936 dic_where_093B dic_be_0866 dic_Big_07E8 dic_Bang_07EC dic__2E_2E_2E_0019 ; TEXT line=0x01FA voice=0xFF flags=0x00,0x80 "Me have good news for you ... Me know where be Big Bang ..."
 00002C9C: TEXT object_Hom_01FA FF 08 80 - - dic_Big_07E8 dic_Bang_07EC dic_be_0866 dic_at_03CE dic_coordinates_1613 dic_X543_1664 dic_Y769_2E_2E_2E_1669 ; TEXT line=0x01FA voice=0xFF flags=0x08,0x80 "Big Bang be at coordinates X543 Y769..."
-00002CB2: SHARED_BIT_STATE AE 0FBA 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0FBA mask=0x0002 inverted=false
+00002CB2: SHARED_BIT_STATE AE field_Bigbang_0FB8_s00_0FBA 0002 0 ; OP_AE SHARED_BIT_STATE field=0x0FBA mask=0x0002 inverted=false
 00002CB7: TEXT object_Hom_01FA FF 00 80 - - dic_Bye_0E21 dic_bye_0E25 dic__2C_00DC dic_friend_0A8F dic__2E_2E_2E_0019 dic_ME_0500 dic_see_0911 dic_you_0257 dic_at_03CE dic_Big_07E8 dic_Bang_07EC dic__2E_2E_2E_2E_1043 dic_Ha_027E dic_Ha_027E dic_Ha_027E dic__2E_2E_2E_0019 ; TEXT line=0x01FA voice=0xFF flags=0x00,0x80 "Bye bye , friend ... ME see you at Big Bang .... Ha Ha Ha ..."
 00002CDF: TEXT object_Hom_01FA FF 20 80 - - dic_Well_134C dic__2C_00DC dic_how_0665 dic_about_0169 dic_that_013D dic__21_024B ; TEXT line=0x01FA voice=0xFF flags=0x20,0x80 "Well , how about that !"
 00002CF3: TEXT object_Hom_01FA FF 08 90 - - dic__2E_2E_2E_0019 ; TEXT line=0x01FA voice=0xFF flags=0x08,0x90 "..."
-00002CFD: RECORD_WILDCARD AF 0212 0F2C 0 ; OP_AF RECORD_WILDCARD record=0x0212 value=0x0F2C inverted=false
-00002D02: RECORD_CLEAR 0234 ; RECORD_CLEAR record=0x0234
+00002CFD: RECORD_WILDCARD AF field_Hom_01FA_s11_0212 0F2C 0 ; OP_AF RECORD_WILDCARD record=0x0212 value=0x0F2C inverted=false
+00002D02: RECORD_CLEAR field_Hom_01FA_s13_0234 ; RECORD_CLEAR record=0x0234
 00002D05: END_WHEN proc_jour_2D05
 00002D05: END_PROCEDURE proc_hom2_2B1D
 00002D05: PROCEDURE proc_jour_2D05 ; DEB kind 2 "jour", encoded offset 0x2D06
 00002D05: CONDITIONAL_BLOCK 01 proc_bonj1_2D59 ; CONDITIONAL_BLOCK flags=0x01 target=0x2D59
 00002D09: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
 00002D0A: SHARED_STATE C0 137E F5 C1 0000 ; OP_C0 SHARED_STATE field=0x137E operator=0xF5 rhs_mode=0xC1 rhs=0x0000
-00002D11: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
-00002D16: RECORD_WILDCARD AF 10F8 028A 1 ; OP_AF RECORD_WILDCARD record=0x10F8 value=0x028A inverted=true
-00002D1C: RECORD_WILDCARD AF 103A 0D40 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0D40 inverted=false
+00002D11: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+00002D16: RECORD_WILDCARD AF field_urout_10E4_s11_10F8 028A 1 ; OP_AF RECORD_WILDCARD record=0x10F8 value=0x028A inverted=true
+00002D1C: RECORD_WILDCARD AF field_arche_1024_s11_103A 0D40 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0D40 inverted=false
 00002D21: GUARD_POP ; GUARD_POP
 00002D22: TEXT object_Cyberquizz_028A 01 00 80 - - dic_Bye_0E21 dic_bye_0E25 dic__2C_00DC dic_student_1671 dic_Commander_00A3 dic_Blood_1679 dic__2E_0095 dic_You_01BA dic_are_0056 dic_a_00C1 dic_member_167F dic_of_00FD dic_the_00B2 dic__22GUILD_1686 dic_OF_0469 dic_MEMBERS_22_168D dic__2E_2E_2E_0019 ; TEXT line=0x028A voice=0x01 flags=0x00,0x80 "Bye bye , student Commander Blood . You are a member of the \"GUILD OF MEMBERS\" ..."
 00002D4C: TEXT object_Cyberquizz_028A 02 08 80 - - dic__2E_2E_2E_0019 ; TEXT line=0x028A voice=0x02 flags=0x08,0x80 "..."
-00002D56: RECORD_CLEAR 02C4 ; RECORD_CLEAR record=0x02C4
+00002D56: RECORD_CLEAR field_Cyberquizz_028A_s13_02C4 ; RECORD_CLEAR record=0x02C4
 00002D59: END_PROCEDURE proc_jour_2D05
 00002D59: PROCEDURE proc_bonj1_2D59 ; DEB kind 2 "bonj1", encoded offset 0x2D5A
 00002D59: CONDITIONAL_BLOCK 01 proc_bonj2_2E06 ; CONDITIONAL_BLOCK flags=0x01 target=0x2E06
 00002D5D: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
 00002D5E: SHARED_STATE C0 137E F5 C1 0000 ; OP_C0 SHARED_STATE field=0x137E operator=0xF5 rhs_mode=0xC1 rhs=0x0000
-00002D65: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
-00002D6A: RECORD_WILDCARD AF 103A 0D40 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0D40 inverted=false
+00002D65: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+00002D6A: RECORD_WILDCARD AF field_arche_1024_s11_103A 0D40 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0D40 inverted=false
 00002D6F: GUARD_POP ; GUARD_POP
 00002D70: POKE_BYTE 3056 01 ; POKE_BYTE address=0x3056 value=0x01
 00002D74: POKE_BYTE 30FF 01 ; POKE_BYTE address=0x30FF value=0x01
@@ -2600,8 +2704,8 @@
 00002E06: CONDITIONAL_BLOCK 00 proc_Bof_ok_2ECF ; CONDITIONAL_BLOCK flags=0x00 target=0x2ECF
 00002E0A: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
 00002E0B: SHARED_STATE C0 137E F5 C1 0000 ; OP_C0 SHARED_STATE field=0x137E operator=0xF5 rhs_mode=0xC1 rhs=0x0000
-00002E12: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
-00002E17: RECORD_WILDCARD AF 103A 0D40 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0D40 inverted=false
+00002E12: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+00002E17: RECORD_WILDCARD AF field_arche_1024_s11_103A 0D40 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0D40 inverted=false
 00002E1C: GUARD_POP ; GUARD_POP
 00002E1D: TEXT object_Cyberquizz_028A 01 00 80 - - dic_Student_1696 dic_Commander_00A3 dic_Blood_1679 dic__2E_2E_2E_0019 dic_This_0417 dic_is_0092 dic_a_00C1 dic_big_03C5 dic_day_0B2D dic_in_02E7 dic_your_0634 dic_life_169E dic__2E_2E_2E_0019 ; TEXT line=0x028A voice=0x01 flags=0x00,0x80 "Student Commander Blood ... This is a big day in your life ..."
 00002E3F: TEXT object_Cyberquizz_028A FF 20 80 - - dic_Holy_01D1 dic_harpoons_16A3 dic__21_024B dic_That_0758 dic_is_0092 dic_hideous_16AC dic__2C_00DC dic_Commander_2E_2E_2E_001D ; TEXT line=0x028A voice=0xFF flags=0x20,0x80 "Holy harpoons ! That is hideous , Commander..."
@@ -2614,7 +2718,7 @@
 00002ECF: PROCEDURE proc_Bof_ok_2ECF ; DEB kind 2 "Bof_ok", encoded offset 0x2ED0
 00002ECF: CONDITIONAL_BLOCK 01 proc_perdu_2FBD ; CONDITIONAL_BLOCK flags=0x01 target=0x2FBD
 00002ED3: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00002ED4: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+00002ED4: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00002ED9: SHARED_STATE C0 1382 F5 C1 0005 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF5 rhs_mode=0xC1 rhs=0x0005
 00002EE0: GUARD_POP ; GUARD_POP
 00002EE1: TEXT object_Cyberquizz_028A 01 00 80 - - dic_Believe_175F dic_it_031A dic_or_03EE dic_not_0422 dic__2E_2E_2E_0019 dic_You_01BA dic_have_0315 dic_passed_1767 dic_your_0634 dic_U_2ER_2EO_2EU_2ET_2E_16B4 ; TEXT line=0x028A voice=0x01 flags=0x00,0x80 "Believe it or not ... You have passed your U.R.O.U.T."
@@ -2626,7 +2730,7 @@
 00002F52: CONCEPT_GUARD dic_teleport_0D26 0 ; CONCEPT_GUARD word=0x0D26 inverted=false "teleport"
 00002F55: GUARD_POP ; GUARD_POP
 00002F56: TEXT object_Cyberquizz_028A FF 08 90 - - dic_TELEPORTING_17A8 dic_DIPLOMA_17B4 dic_TO_07D1 dic_ARK_17BC ; TEXT line=0x028A voice=0xFF flags=0x08,0x90 "TELEPORTING DIPLOMA TO ARK"
-00002F66: RECORD_TRIPLE 02C4 10E4 0028 0 ; RECORD_TRIPLE record=0x02C4 first=0x10E4 second=0x0028 inverted=false
+00002F66: RECORD_TRIPLE field_Cyberquizz_028A_s13_02C4 10E4 0028 0 ; RECORD_TRIPLE record=0x02C4 first=0x10E4 second=0x0028 inverted=false
 00002F6D: CLEAR_ALTERNATE_CONCEPT ; CLEAR_ALTERNATE_CONCEPT
 00002F6E: LABEL block_2F6E
 00002F6E: TEXT object_Cyberquizz_028A 03 00 80 - - dic_Never_17C0 dic_forget_15D0 dic_your_0634 dic_happy_0B40 dic_student_1671 dic_days_2E_17C6 dic_Be_17CC dic_true_17CF dic_to_012F dic_your_0634 dic_school_21_17D4 ; TEXT line=0x028A voice=0x03 flags=0x00,0x80 "Never forget your happy student days. Be true to your school!"
@@ -2634,13 +2738,13 @@
 00002F9C: TEXT object_Cyberquizz_028A FF 08 B0 - - dic_stop_1472 ; TEXT line=0x028A voice=0xFF flags=0x08,0xB0 "stop"
 00002FA6: SHARED_STATE C0 1382 F5 C1 0000 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
 00002FAD: SHARED_STATE C0 1380 F5 C1 0000 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
-00002FB4: SHARED_BIT_STATE AE 0D42 0002 1 ; OP_AE SHARED_BIT_STATE field=0x0D42 mask=0x0002 inverted=true
-00002FBA: RECORD_CLEAR 02C4 ; RECORD_CLEAR record=0x02C4
+00002FB4: SHARED_BIT_STATE AE field_Cyberock_0D40_s00_0D42 0002 1 ; OP_AE SHARED_BIT_STATE field=0x0D42 mask=0x0002 inverted=true
+00002FBA: RECORD_CLEAR field_Cyberquizz_028A_s13_02C4 ; RECORD_CLEAR record=0x02C4
 00002FBD: END_PROCEDURE proc_Bof_ok_2ECF
 00002FBD: PROCEDURE proc_perdu_2FBD ; DEB kind 2 "perdu", encoded offset 0x2FBE
 00002FBD: CONDITIONAL_BLOCK 01 proc_Q1_3055 ; CONDITIONAL_BLOCK flags=0x01 target=0x3055
 00002FC1: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00002FC2: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+00002FC2: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00002FC7: SHARED_STATE C0 1380 F5 C1 0020 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF5 rhs_mode=0xC1 rhs=0x0020
 00002FCE: SHARED_STATE C0 1382 F1 C1 000A ; OP_C0 SHARED_STATE field=0x1382 operator=0xF1 rhs_mode=0xC1 rhs=0x000A
 00002FD5: GUARD_POP ; GUARD_POP
@@ -2652,12 +2756,12 @@
 00003040: POKE_BYTE 2D5A 01 ; POKE_BYTE address=0x2D5A value=0x01
 00003044: SHARED_STATE C0 1380 F5 C1 0000 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
 0000304B: SHARED_STATE C0 1382 F5 C1 0000 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
-00003052: RECORD_CLEAR 02C4 ; RECORD_CLEAR record=0x02C4
+00003052: RECORD_CLEAR field_Cyberquizz_028A_s13_02C4 ; RECORD_CLEAR record=0x02C4
 00003055: END_PROCEDURE proc_perdu_2FBD
 00003055: PROCEDURE proc_Q1_3055 ; DEB kind 2 "Q1", encoded offset 0x3056
 00003055: CONDITIONAL_BLOCK 01 proc_Q2_30FE ; CONDITIONAL_BLOCK flags=0x01 target=0x30FE
 00003059: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-0000305A: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+0000305A: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 0000305F: GUARD_POP ; GUARD_POP
 00003060: TEXT object_Cyberquizz_028A 09 10 80 block_30EE - dic_Who_1848 dic_said_05EE dic__22It_184C dic_takes_0B90 dic_thirteen_1850 dic_murffalos_1859 dic_to_012F dic_reproduce_1863 dic_but_15CC dic_soon_0296 dic_it_27ll_186D dic_take_1297 dic_fourteen_3F_1873 FFFF dic_Jeph_DUlikan_187D dic_Yolk_188A dic_Kran_Dobu_188F dic_Tina_Burner_1899 ; TEXT line=0x028A voice=0x09 flags=0x10,0x80 "Who said \"It takes thirteen murffalos to reproduce but soon it'll take fourteen?"
 0000308E: GUARD_PUSH block_30C2 ; GUARD_PUSH target=0x30C2 ; unstructured_guard=alternate_exit
@@ -2682,7 +2786,7 @@
 000030FE: PROCEDURE proc_Q2_30FE ; DEB kind 2 "Q2", encoded offset 0x30FF
 000030FE: CONDITIONAL_BLOCK 01 proc_Q3_31A5 ; CONDITIONAL_BLOCK flags=0x01 target=0x31A5
 00003102: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00003103: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+00003103: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003108: GUARD_POP ; GUARD_POP
 00003109: TEXT object_Cyberquizz_028A 06 10 80 block_3195 - dic_Which_18EB dic_great_18F1 dic_Slimer_18F7 dic_is_0092 dic_buried_18FE dic_on_004D dic_the_00B2 dic_planet_0086 dic_Vista_3F_1905 FFFF dic_gluxx_190C dic_gelati_1912 dic_gumy_1919 dic_yolk_191E ; TEXT line=0x028A voice=0x06 flags=0x10,0x80 "Which great Slimer is buried on the planet Vista?"
 0000312F: GUARD_PUSH block_3163 ; GUARD_PUSH target=0x3163 ; unstructured_guard=alternate_exit
@@ -2707,7 +2811,7 @@
 000031A5: PROCEDURE proc_Q3_31A5 ; DEB kind 2 "Q3", encoded offset 0x31A6
 000031A5: CONDITIONAL_BLOCK 01 proc_Q4_3228 ; CONDITIONAL_BLOCK flags=0x01 target=0x3228
 000031A9: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-000031AA: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+000031AA: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 000031AF: GUARD_POP ; GUARD_POP
 000031B0: TEXT object_Cyberquizz_028A 05 00 80 - - dic_Concentrate_1964 dic_now_2E_2E_2E_1970 ; TEXT line=0x028A voice=0x05 flags=0x00,0x80 "Concentrate now..."
 000031BC: TEXT object_Cyberquizz_028A 01 10 80 block_3218 - dic_Name_1977 dic_a_00C1 dic_stuttering_197C dic_Croolis_3F_1987 FFFF dic_Cybernator_1990 dic_Rotator_199B dic_Emasculator_19A3 dic_Outrageor_19AF dic_Lord_Krater_19B9 ; TEXT line=0x028A voice=0x01 flags=0x10,0x80 "Name a stuttering Croolis?"
@@ -2733,7 +2837,7 @@
 00003228: PROCEDURE proc_Q4_3228 ; DEB kind 2 "Q4", encoded offset 0x3229
 00003228: CONDITIONAL_BLOCK 01 proc_Q5_32C1 ; CONDITIONAL_BLOCK flags=0x01 target=0x32C1
 0000322C: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-0000322D: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+0000322D: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003232: GUARD_POP ; GUARD_POP
 00003233: TEXT object_Cyberquizz_028A 00 10 80 block_32B1 - dic_What_016F dic_was_19C5 dic_king_00F8 dic_Betakam_19C9 dic_IV_27s_19D1 dic_planet_0086 dic_of_00FD dic_origin_3F_19D6 FFFF dic_Sat_19DE dic_Vistar_19E2 dic_Ron_19E9 dic_Golgos_19ED dic_Pterra_19F4 dic_Attrox_19FB ; TEXT line=0x028A voice=0x00 flags=0x10,0x80 "What was king Betakam IV's planet of origin?"
 0000325B: GUARD_PUSH block_327D ; GUARD_PUSH target=0x327D ; unstructured_guard=alternate_exit
@@ -2758,7 +2862,7 @@
 000032C1: PROCEDURE proc_Q5_32C1 ; DEB kind 2 "Q5", encoded offset 0x32C2
 000032C1: CONDITIONAL_BLOCK 01 proc_Q6_3350 ; CONDITIONAL_BLOCK flags=0x01 target=0x3350
 000032C5: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-000032C6: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+000032C6: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 000032CB: GUARD_POP ; GUARD_POP
 000032CC: TEXT object_Cyberquizz_028A 07 10 80 block_3340 - dic_Which_18EB dic_Trump_1A3A dic_has_0A10 dic_a_00C1 dic_friend_0A8F dic_called_1A40 dic_Trompette_3F_1A47 FFFF dic_eviscerator_1A52 dic_Fifi_0BBB dic_beauregard_1A5E dic_tromp_la_mort_1A69 dic_otto_von_smile_1A77 ; TEXT line=0x028A voice=0x07 flags=0x10,0x80 "Which Trump has a friend called Trompette?"
 000032F0: GUARD_PUSH block_331A ; GUARD_PUSH target=0x331A ; unstructured_guard=alternate_exit
@@ -2783,7 +2887,7 @@
 00003350: PROCEDURE proc_Q6_3350 ; DEB kind 2 "Q6", encoded offset 0x3351
 00003350: CONDITIONAL_BLOCK 01 proc_Q7_33D7 ; CONDITIONAL_BLOCK flags=0x01 target=0x33D7
 00003354: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00003355: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+00003355: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 0000335A: GUARD_POP ; GUARD_POP
 0000335B: TEXT object_Cyberquizz_028A 04 10 80 block_33C7 - dic_The_006C dic_Great_18A5 dic_Yolk_188A dic_is_0092 dic_a_2E_2E_2E_3F_1AAE FFFF dic_slimer_1AB4 dic_izwal_1ABB dic_croolis_1AC1 dic_migrax_1AC9 dic_robot_1AD0 ; TEXT line=0x028A voice=0x04 flags=0x10,0x80 "The Great Yolk is a...?"
 0000337B: GUARD_PUSH block_339F ; GUARD_PUSH target=0x339F ; unstructured_guard=alternate_exit
@@ -2808,7 +2912,7 @@
 000033D7: PROCEDURE proc_Q7_33D7 ; DEB kind 2 "Q7", encoded offset 0x33D8
 000033D7: CONDITIONAL_BLOCK 01 proc_Q8_3464 ; CONDITIONAL_BLOCK flags=0x01 target=0x3464
 000033DB: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-000033DC: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+000033DC: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 000033E1: GUARD_POP ; GUARD_POP
 000033E2: TEXT object_Cyberquizz_028A 01 10 80 block_3454 - dic_Who_1848 dic_said_3A_1AFB dic__22Commander_2C_1B01 dic_Honk_024D dic_keeps_1B0D dic_scanning_1B13 dic_me_0010 dic_with_00BC dic_his_0146 dic_equipment_22_3F_1B1C FFFF dic_eviscerator_1A52 dic_emasculator_1B28 dic_lord_raptor_1B34 dic_tina_burner_1B40 ; TEXT line=0x028A voice=0x01 flags=0x10,0x80 "Who said: \"Commander, Honk keeps scanning me with his equipment\"?"
 0000340A: GUARD_PUSH block_3432 ; GUARD_PUSH target=0x3432 ; unstructured_guard=alternate_exit
@@ -2833,7 +2937,7 @@
 00003464: PROCEDURE proc_Q8_3464 ; DEB kind 2 "Q8", encoded offset 0x3465
 00003464: CONDITIONAL_BLOCK 01 proc_Q9_34E3 ; CONDITIONAL_BLOCK flags=0x01 target=0x34E3
 00003468: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00003469: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+00003469: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 0000346E: GUARD_POP ; GUARD_POP
 0000346F: TEXT object_Cyberquizz_028A 04 10 80 block_34D3 - dic_Jeph_1B6E dic_d_27Ulikan_1B73 dic_defeated_3F_1B7C FFFF dic_pagos_tagos_1B86 dic_black_larsen_1B92 dic_hom_1B9F dic_lord_krater_1BA3 ; TEXT line=0x028A voice=0x04 flags=0x10,0x80 "Jeph d'Ulikan defeated?"
 00003489: GUARD_PUSH block_34B1 ; GUARD_PUSH target=0x34B1 ; unstructured_guard=alternate_exit
@@ -2858,7 +2962,7 @@
 000034E3: PROCEDURE proc_Q9_34E3 ; DEB kind 2 "Q9", encoded offset 0x34E4
 000034E3: CONDITIONAL_BLOCK 01 proc_Q10_3566 ; CONDITIONAL_BLOCK flags=0x01 target=0x3566
 000034E7: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-000034E8: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+000034E8: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 000034ED: GUARD_POP ; GUARD_POP
 000034EE: TEXT object_Cyberquizz_028A 07 10 80 block_3556 - dic_Who_1848 dic_said_3A_1AFB dic__22One_1BCB dic_plus_1BD0 dic_one_0A86 dic_equals_1BD5 dic_three_22_3F_1BDC FFFF dic_lord_krater_1BA3 dic_metro_paul_1BE4 dic_yolk_191E ; TEXT line=0x028A voice=0x07 flags=0x10,0x80 "Who said: \"One plus one equals three\"?"
 0000350E: GUARD_PUSH block_3532 ; GUARD_PUSH target=0x3532 ; unstructured_guard=alternate_exit
@@ -2883,7 +2987,7 @@
 00003566: PROCEDURE proc_Q10_3566 ; DEB kind 2 "Q10", encoded offset 0x3567
 00003566: CONDITIONAL_BLOCK 01 proc_Q11_35FB ; CONDITIONAL_BLOCK flags=0x01 target=0x35FB
 0000356A: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-0000356B: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+0000356B: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003570: GUARD_POP ; GUARD_POP
 00003571: TEXT object_Cyberquizz_028A 08 10 80 block_35EB - dic_How_0165 dic_many_005E dic_murffalos_1859 dic_does_075D dic_it_031A dic_take_1297 dic_to_012F dic_reproduce_3F_1C06 FFFF dic_two_1C11 dic_four_1C15 dic_six_1C1A dic_eight_1C1E dic_thirteen_1850 ; TEXT line=0x028A voice=0x08 flags=0x10,0x80 "How many murffalos does it take to reproduce?"
 00003597: GUARD_PUSH block_35C7 ; GUARD_PUSH target=0x35C7 ; unstructured_guard=alternate_exit
@@ -2908,7 +3012,7 @@
 000035FB: PROCEDURE proc_Q11_35FB ; DEB kind 2 "Q11", encoded offset 0x35FC
 000035FB: CONDITIONAL_BLOCK 01 proc_Q12_366F ; CONDITIONAL_BLOCK flags=0x01 target=0x366F
 000035FF: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00003600: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+00003600: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003605: GUARD_POP ; GUARD_POP
 00003606: TEXT object_Cyberquizz_028A 05 10 80 block_365F - dic_Name_1977 dic_a_00C1 dic_paralleloped_1C5D dic_planet_0086 FFFF dic_qx20_1C6A dic_tumul_1C6F dic_vista_1C75 dic_ebony_1C7B dic_mastachok_1C81 ; TEXT line=0x028A voice=0x05 flags=0x10,0x80 "Name a paralleloped planet"
 00003624: GUARD_PUSH block_3643 ; GUARD_PUSH target=0x3643 ; unstructured_guard=alternate_exit
@@ -2932,7 +3036,7 @@
 0000366F: PROCEDURE proc_Q12_366F ; DEB kind 2 "Q12", encoded offset 0x3670
 0000366F: CONDITIONAL_BLOCK 01 proc_Q13_36F6 ; CONDITIONAL_BLOCK flags=0x01 target=0x36F6
 00003673: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00003674: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+00003674: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003679: GUARD_POP ; GUARD_POP
 0000367A: TEXT object_Cyberquizz_028A 02 10 80 block_36E6 - dic_Buggol_1CBC dic_democracy_1CC3 dic_was_19C5 dic_invented_1CCD dic_by_3F_1CD6 FFFF dic_strum_1CDA dic_Bob_Morlock_1CE0 dic_cyborg_1er_1CEC dic_exxos_0F0F ; TEXT line=0x028A voice=0x02 flags=0x10,0x80 "Buggol democracy was invented by?"
 00003698: GUARD_PUSH block_36C8 ; GUARD_PUSH target=0x36C8 ; unstructured_guard=alternate_exit
@@ -2957,7 +3061,7 @@
 000036F6: PROCEDURE proc_Q13_36F6 ; DEB kind 2 "Q13", encoded offset 0x36F7
 000036F6: CONDITIONAL_BLOCK 01 proc_Q14_3777 ; CONDITIONAL_BLOCK flags=0x01 target=0x3777
 000036FA: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-000036FB: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+000036FB: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003700: GUARD_POP ; GUARD_POP
 00003701: TEXT object_Cyberquizz_028A 01 10 80 block_3767 - dic_What_016F dic_do_0B25 dic_Tubular_155B dic_Brains_1D14 dic_eat_3F_1D1B FFFF dic_klakos_1D20 dic_plastok_1D27 dic_radium_1D2F dic_hay_1D36 dic_murffalos_1859 ; TEXT line=0x028A voice=0x01 flags=0x10,0x80 "What do Tubular Brains eat?"
 00003721: GUARD_PUSH block_3743 ; GUARD_PUSH target=0x3743 ; unstructured_guard=alternate_exit
@@ -2982,7 +3086,7 @@
 00003777: PROCEDURE proc_Q14_3777 ; DEB kind 2 "Q14", encoded offset 0x3778
 00003777: CONDITIONAL_BLOCK 01 proc_Q15_3804 ; CONDITIONAL_BLOCK flags=0x01 target=0x3804
 0000377B: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-0000377C: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+0000377C: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003781: GUARD_POP ; GUARD_POP
 00003782: TEXT object_Cyberquizz_028A 04 10 80 block_37F4 - dic_Name_1977 dic_a_00C1 dic_planet_0086 dic_with_00BC dic_rings_1D6F FFFF dic_erazor_1D75 dic_rondo_1D7C dic_bonus_1D82 dic_pterra_0F08 ; TEXT line=0x028A voice=0x04 flags=0x10,0x80 "Name a planet with rings"
 000037A0: GUARD_PUSH block_37CE ; GUARD_PUSH target=0x37CE ; unstructured_guard=alternate_exit
@@ -3007,7 +3111,7 @@
 00003804: PROCEDURE proc_Q15_3804 ; DEB kind 2 "Q15", encoded offset 0x3805
 00003804: CONDITIONAL_BLOCK 01 proc_Q16_3899 ; CONDITIONAL_BLOCK flags=0x01 target=0x3899
 00003808: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00003809: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+00003809: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 0000380E: GUARD_POP ; GUARD_POP
 0000380F: TEXT object_Cyberquizz_028A 07 10 80 block_3889 - dic_How_0165 dic_do_0B25 dic_Scorps_1DB8 dic_reproduce_3F_1C06 FFFF dic_vivisection_1DBF dic_parthenogenesis_1DCB dic_mimicry_1DDB dic_chance_1DE3 ; TEXT line=0x028A voice=0x07 flags=0x10,0x80 "How do Scorps reproduce?"
 0000382B: GUARD_PUSH block_385F ; GUARD_PUSH target=0x385F ; unstructured_guard=alternate_exit
@@ -3032,7 +3136,7 @@
 00003899: PROCEDURE proc_Q16_3899 ; DEB kind 2 "Q16", encoded offset 0x389A
 00003899: CONDITIONAL_BLOCK 01 proc_Q17_3920 ; CONDITIONAL_BLOCK flags=0x01 target=0x3920
 0000389D: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-0000389E: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+0000389E: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 000038A3: GUARD_POP ; GUARD_POP
 000038A4: TEXT object_Cyberquizz_028A 0A 10 80 block_3910 - dic_Name_1977 dic_a_00C1 dic_highly_0F77 dic_concentrated_0F7E dic_explosive_0F8B FFFF dic_Big_bang_1E1F dic_splach_1E28 dic_plastok_1D27 dic_fuzz_1E2F ; TEXT line=0x028A voice=0x0A flags=0x10,0x80 "Name a highly concentrated explosive"
 000038C2: GUARD_PUSH block_38EC ; GUARD_PUSH target=0x38EC ; unstructured_guard=alternate_exit
@@ -3057,7 +3161,7 @@
 00003920: PROCEDURE proc_Q17_3920 ; DEB kind 2 "Q17", encoded offset 0x3921
 00003920: CONDITIONAL_BLOCK 01 proc_Q18_39B9 ; CONDITIONAL_BLOCK flags=0x01 target=0x39B9
 00003924: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00003925: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+00003925: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 0000392A: GUARD_POP ; GUARD_POP
 0000392B: TEXT object_Cyberquizz_028A 03 10 80 block_39A9 - dic_Who_1848 dic_is_0092 dic_the_00B2 dic_queen_1E5A dic_of_00FD dic_the_00B2 dic_PAGO_1E60 dic_TAGO_2C_1E65 dic_wife_1E6B dic_of_00FD dic_king_00F8 dic_Betakam_19C9 dic_IV_3F_1E70 FFFF dic_umatika_1E74 dic_tina_burner_1B40 dic_scorpia_1E7C dic_pistilla_1E84 dic_etamina_1E8D ; TEXT line=0x028A voice=0x03 flags=0x10,0x80 "Who is the queen of the PAGO TAGO, wife of king Betakam IV?"
 0000395B: GUARD_PUSH block_398B ; GUARD_PUSH target=0x398B ; unstructured_guard=alternate_exit
@@ -3082,7 +3186,7 @@
 000039B9: PROCEDURE proc_Q18_39B9 ; DEB kind 2 "Q18", encoded offset 0x39BA
 000039B9: CONDITIONAL_BLOCK 01 proc_Q19_3A3E ; CONDITIONAL_BLOCK flags=0x01 target=0x3A3E
 000039BD: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-000039BE: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+000039BE: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 000039C3: GUARD_POP ; GUARD_POP
 000039C4: TEXT object_Cyberquizz_028A 01 10 80 block_3A2E - dic_Who_1848 dic_said_05EE dic_Trump_1A3A dic_tails_1EC9 dic_are_0056 dic_dung_3F_1ECF FFFF dic_lord_segelaxx_1ED5 dic_inquisitor_1EE3 dic_slim_gelati_1EEE dic_tromp_deustache_1EFA ; TEXT line=0x028A voice=0x01 flags=0x10,0x80 "Who said Trump tails are dung?"
 000039E4: GUARD_PUSH block_3A08 ; GUARD_PUSH target=0x3A08 ; unstructured_guard=alternate_exit
@@ -3107,7 +3211,7 @@
 00003A3E: PROCEDURE proc_Q19_3A3E ; DEB kind 2 "Q19", encoded offset 0x3A3F
 00003A3E: CONDITIONAL_BLOCK 01 proc_Q20_3ACF ; CONDITIONAL_BLOCK flags=0x01 target=0x3ACF
 00003A42: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00003A43: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+00003A43: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003A48: GUARD_POP ; GUARD_POP
 00003A49: TEXT object_Cyberquizz_028A 04 10 80 block_3ABF - dic_On_194C dic_what_03E5 dic_planet_0086 dic_is_0092 dic_sex_0C38 dic_sold_1F2A dic_illicitly_3F_1F2F FFFF dic_los_demonios_1F3A dic_venusia_1F47 dic_attroxcity_1F4F dic_trashtown_1F5A ; TEXT line=0x028A voice=0x04 flags=0x10,0x80 "On what planet is sex sold illicitly?"
 00003A6B: GUARD_PUSH block_3A97 ; GUARD_PUSH target=0x3A97 ; unstructured_guard=alternate_exit
@@ -3132,7 +3236,7 @@
 00003ACF: PROCEDURE proc_Q20_3ACF ; DEB kind 2 "Q20", encoded offset 0x3AD0
 00003ACF: CONDITIONAL_BLOCK 01 proc_Q21_3B68 ; CONDITIONAL_BLOCK flags=0x01 target=0x3B68
 00003AD3: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00003AD4: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+00003AD4: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003AD9: GUARD_POP ; GUARD_POP
 00003ADA: TEXT object_Cyberquizz_028A 07 10 80 block_3B58 - dic_Who_1848 dic_painted_1F82 dic_the_00B2 dic_famous_09E3 dic_portrait_1F8A dic_of_00FD dic_Yolk_3F_1AE5 FFFF dic_van_ish_1F93 dic_van_gelis_1F9B dic_van_et_1FA5 dic_van_deta_1FAC dic_van_tage_1FB5 dic_van_gogue_1FBE ; TEXT line=0x028A voice=0x07 flags=0x10,0x80 "Who painted the famous portrait of Yolk?"
 00003B00: GUARD_PUSH block_3B34 ; GUARD_PUSH target=0x3B34 ; unstructured_guard=alternate_exit
@@ -3157,7 +3261,7 @@
 00003B68: PROCEDURE proc_Q21_3B68 ; DEB kind 2 "Q21", encoded offset 0x3B69
 00003B68: CONDITIONAL_BLOCK 01 proc_Q22_3BEB ; CONDITIONAL_BLOCK flags=0x01 target=0x3BEB
 00003B6C: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00003B6D: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+00003B6D: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003B72: GUARD_POP ; GUARD_POP
 00003B73: TEXT object_Cyberquizz_028A 0A 10 80 block_3BDB - dic_Who_1848 dic_wrote_1FF5 dic_the_00B2 dic_famous_09E3 dic_Croolicum_3F_1FFB FFFF dic_lord_raptor_1B34 dic_lord_ship_2006 dic_von_spacecraft_2010 dic_nobody_201F ; TEXT line=0x028A voice=0x0A flags=0x10,0x80 "Who wrote the famous Croolicum?"
 00003B91: GUARD_PUSH block_3BBD ; GUARD_PUSH target=0x3BBD ; unstructured_guard=alternate_exit
@@ -3182,7 +3286,7 @@
 00003BEB: PROCEDURE proc_Q22_3BEB ; DEB kind 2 "Q22", encoded offset 0x3BEC
 00003BEB: CONDITIONAL_BLOCK 01 proc_Q23_3C6C ; CONDITIONAL_BLOCK flags=0x01 target=0x3C6C
 00003BEF: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00003BF0: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+00003BF0: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003BF5: GUARD_POP ; GUARD_POP
 00003BF6: TEXT object_Cyberquizz_028A 02 10 80 block_3C5C - dic_Who_1848 dic_was_19C5 dic_the_00B2 dic_first_2033 dic_Trump_1A3A dic_tail_2039 dic_smoker_203E dic_in_02E7 dic_the_00B2 dic_universe_3F_2045 FFFF dic_al_hure_204F dic_sebasto_paul_2057 dic_lord_sirtaki_2064 dic_jeph_dulikan_2071 ; TEXT line=0x028A voice=0x02 flags=0x10,0x80 "Who was the first Trump tail smoker in the universe?"
 00003C1E: GUARD_PUSH block_3C42 ; GUARD_PUSH target=0x3C42 ; unstructured_guard=alternate_exit
@@ -3207,7 +3311,7 @@
 00003C6C: PROCEDURE proc_Q23_3C6C ; DEB kind 2 "Q23", encoded offset 0x3C6D
 00003C6C: CONDITIONAL_BLOCK 01 proc_Q24_3CF5 ; CONDITIONAL_BLOCK flags=0x01 target=0x3CF5
 00003C70: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00003C71: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+00003C71: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003C76: GUARD_POP ; GUARD_POP
 00003C77: TEXT object_Cyberquizz_028A 04 10 80 block_3CE5 - dic_Who_1848 dic_said_05EE dic__3A_22Silence_2091 dic_feeds_209B dic_on_004D dic_thunder_20A2 dic_and_0142 dic_fury_22_3F_20AA FFFF dic_yolk_191E dic_joy_stica_20B1 dic_hom_1B9F dic_super_zen_20BB ; TEXT line=0x028A voice=0x04 flags=0x10,0x80 "Who said :\"Silence feeds on thunder and fury\"?"
 00003C9B: GUARD_PUSH block_3CC5 ; GUARD_PUSH target=0x3CC5 ; unstructured_guard=alternate_exit
@@ -3232,7 +3336,7 @@
 00003CF5: PROCEDURE proc_Q24_3CF5 ; DEB kind 2 "Q24", encoded offset 0x3CF6
 00003CF5: CONDITIONAL_BLOCK 01 proc_Q25_3D70 ; CONDITIONAL_BLOCK flags=0x01 target=0x3D70
 00003CF9: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00003CFA: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+00003CFA: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003CFF: GUARD_POP ; GUARD_POP
 00003D00: TEXT object_Cyberquizz_028A 06 10 80 block_3D60 - dic_Name_1977 dic_one_0A86 dic_hit_20E8 dic_by_09C8 dic_the_00B2 dic_Migrators_20EC FFFF dic_crush_me_baby_20F6 dic_space_maker_2104 dic_hello_dolly_2110 dic_love_me_do_211C ; TEXT line=0x028A voice=0x06 flags=0x10,0x80 "Name one hit by the Migrators"
 00003D20: GUARD_PUSH block_3D44 ; GUARD_PUSH target=0x3D44 ; unstructured_guard=alternate_exit
@@ -3257,7 +3361,7 @@
 00003D70: PROCEDURE proc_Q25_3D70 ; DEB kind 2 "Q25", encoded offset 0x3D71
 00003D70: CONDITIONAL_BLOCK 01 proc_Q26_3DF5 ; CONDITIONAL_BLOCK flags=0x01 target=0x3DF5
 00003D74: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00003D75: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+00003D75: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003D7A: GUARD_POP ; GUARD_POP
 00003D7B: TEXT object_Cyberquizz_028A 08 10 80 block_3DE5 - dic_Who_1848 dic_is_0092 dic_the_00B2 dic_oldest_2158 dic_living_215F dic_being_1379 dic_in_02E7 dic_the_00B2 dic_universe_3F_2045 FFFF dic_otto_von_smile_1A77 dic_Bob_Morlock_1CE0 dic_super_tromp_2166 dic_techno_paul_2172 ; TEXT line=0x028A voice=0x08 flags=0x10,0x80 "Who is the oldest living being in the universe?"
 00003DA1: GUARD_PUSH block_3DC5 ; GUARD_PUSH target=0x3DC5 ; unstructured_guard=alternate_exit
@@ -3282,7 +3386,7 @@
 00003DF5: PROCEDURE proc_Q26_3DF5 ; DEB kind 2 "Q26", encoded offset 0x3DF6
 00003DF5: CONDITIONAL_BLOCK 01 proc_Q27_3E84 ; CONDITIONAL_BLOCK flags=0x01 target=0x3E84
 00003DF9: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00003DFA: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+00003DFA: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003DFF: GUARD_POP ; GUARD_POP
 00003E00: TEXT object_Cyberquizz_028A 08 10 80 block_3E74 - dic_Which_18EB dic_famous_09E3 dic_dancer_218D dic_starred_2194 dic_in_02E7 dic__22Squeeze_219C dic_me_0010 dic_in_02E7 dic_your_0634 dic_tentacles_21A5 dic_darling_22_3F_21AF FFFF dic_torka_21B9 dic_tina_burner_1B40 dic_cybertha_21BF dic_joy_stika_21C8 ; TEXT line=0x028A voice=0x08 flags=0x10,0x80 "Which famous dancer starred in \"Squeeze me in your tentacles darling\"?"
 00003E2A: GUARD_PUSH block_3E50 ; GUARD_PUSH target=0x3E50 ; unstructured_guard=alternate_exit
@@ -3307,7 +3411,7 @@
 00003E84: PROCEDURE proc_Q27_3E84 ; DEB kind 2 "Q27", encoded offset 0x3E85
 00003E84: CONDITIONAL_BLOCK 01 proc_Q28_3F0D ; CONDITIONAL_BLOCK flags=0x01 target=0x3F0D
 00003E88: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00003E89: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+00003E89: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003E8E: GUARD_POP ; GUARD_POP
 00003E8F: TEXT object_Cyberquizz_028A 06 10 80 block_3EFD - dic_What_016F dic_is_0092 dic_the_00B2 dic_preferred_21E4 dic_drink_21EE dic_of_00FD dic_the_00B2 dic_Migrax_3F_21F4 FFFF dic_processed_liver_21FC dic_frozen_migrita_220C dic_fermented_egg_221B dic_heavy_water_2229 ; TEXT line=0x028A voice=0x06 flags=0x10,0x80 "What is the preferred drink of the Migrax?"
 00003EB3: GUARD_PUSH block_3ED7 ; GUARD_PUSH target=0x3ED7 ; unstructured_guard=alternate_exit
@@ -3332,7 +3436,7 @@
 00003F0D: PROCEDURE proc_Q28_3F0D ; DEB kind 2 "Q28", encoded offset 0x3F0E
 00003F0D: CONDITIONAL_BLOCK 01 proc_Q29_3F9E ; CONDITIONAL_BLOCK flags=0x01 target=0x3F9E
 00003F11: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00003F12: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+00003F12: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003F17: GUARD_POP ; GUARD_POP
 00003F18: TEXT object_Cyberquizz_028A 06 10 80 block_3F8E - dic_Who_1848 dic_said_3A_22ondoyant_2235 dic_pretty_2C_2244 dic_Croolis_224C dic_drool_2E_2254 dic_ondoyant_225B dic_ugly_2C_2264 dic_Croolis_224C dic_cruel_22_226A FFFF dic_nobody_201F dic_maxxon_2271 dic_yolk_191E ; TEXT line=0x028A voice=0x06 flags=0x10,0x80 "Who said:\"ondoyant pretty, Croolis drool. ondoyant ugly, Croolis cruel\""
 00003F3C: GUARD_PUSH block_3F66 ; GUARD_PUSH target=0x3F66 ; unstructured_guard=alternate_exit
@@ -3357,7 +3461,7 @@
 00003F9E: PROCEDURE proc_Q29_3F9E ; DEB kind 2 "Q29", encoded offset 0x3F9F
 00003F9E: CONDITIONAL_BLOCK 01 proc_Q30_402D ; CONDITIONAL_BLOCK flags=0x01 target=0x402D
 00003FA2: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00003FA3: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+00003FA3: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003FA8: GUARD_POP ; GUARD_POP
 00003FA9: TEXT object_Cyberquizz_028A 00 10 80 block_401D - dic_The_006C dic_Great_18A5 dic_Yolk_27s_229A dic_tomb_22A2 dic_is_0092 dic_on_004D dic_which_22A7 dic_planet_3F_22AD FFFF dic_rondo_1D7C dic_ekatomb_22B5 dic_vista_1C75 dic_magnus_22BD ; TEXT line=0x028A voice=0x00 flags=0x10,0x80 "The Great Yolk's tomb is on which planet?"
 00003FCD: GUARD_PUSH block_3FF7 ; GUARD_PUSH target=0x3FF7 ; unstructured_guard=alternate_exit
@@ -3382,7 +3486,7 @@
 0000402D: PROCEDURE proc_Q30_402D ; DEB kind 2 "Q30", encoded offset 0x402E
 0000402D: CONDITIONAL_BLOCK 01 proc_Q31_40B4 ; CONDITIONAL_BLOCK flags=0x01 target=0x40B4
 00004031: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00004032: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+00004032: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00004037: GUARD_POP ; GUARD_POP
 00004038: TEXT object_Cyberquizz_028A 07 10 80 block_40A4 - dic_On_194C dic_which_22A7 dic_planet_0086 dic_may_22D9 dic_the_00B2 dic_voice_22DD dic_be_0866 dic_heard_3F_22E3 FFFF dic_pterra_0F08 dic_cyberock_22EA dic_kult_22F3 dic_tumul_1C6F ; TEXT line=0x028A voice=0x07 flags=0x10,0x80 "On which planet may the voice be heard?"
 0000405C: GUARD_PUSH block_4080 ; GUARD_PUSH target=0x4080 ; unstructured_guard=alternate_exit
@@ -3407,7 +3511,7 @@
 000040B4: PROCEDURE proc_Q31_40B4 ; DEB kind 2 "Q31", encoded offset 0x40B5
 000040B4: CONDITIONAL_BLOCK 01 proc_Q32_413F ; CONDITIONAL_BLOCK flags=0x01 target=0x413F
 000040B8: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-000040B9: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+000040B9: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 000040BE: GUARD_POP ; GUARD_POP
 000040BF: TEXT object_Cyberquizz_028A 01 10 80 block_412F - dic_What_016F dic_is_0092 dic_the_00B2 dic_planet_0086 dic_Tumul_27s_2312 dic_sun_3F_231A FFFF dic_ex897_231F dic_gladis_2325 dic_corpo_232C dic_negratom_2332 ; TEXT line=0x028A voice=0x01 flags=0x10,0x80 "What is the planet Tumul's sun?"
 000040DF: GUARD_PUSH block_4109 ; GUARD_PUSH target=0x4109 ; unstructured_guard=alternate_exit
@@ -3432,7 +3536,7 @@
 0000413F: PROCEDURE proc_Q32_413F ; DEB kind 2 "Q32", encoded offset 0x4140
 0000413F: CONDITIONAL_BLOCK 01 proc_scrujo_41CE ; CONDITIONAL_BLOCK flags=0x01 target=0x41CE
 00004143: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00004144: ACTOR 02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
+00004144: ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00004149: GUARD_POP ; GUARD_POP
 0000414A: TEXT object_Cyberquizz_028A 0A 10 80 block_41B6 - dic_How_0165 dic_many_005E dic_moons_2349 dic_has_0A10 dic_Moskito_3F_234F FFFF dic_five_2358 dic_twelve_1C2F dic_zero_235D dic_thirty_two_2362 ; TEXT line=0x028A voice=0x0A flags=0x10,0x80 "How many moons has Moskito?"
 00004168: GUARD_PUSH block_4190 ; GUARD_PUSH target=0x4190 ; unstructured_guard=alternate_exit
@@ -3457,7 +3561,7 @@
 000041CE: PROCEDURE proc_scrujo_41CE ; DEB kind 2 "scrujo", encoded offset 0x41CF
 000041CE: CONDITIONAL_BLOCK 01 proc_bigb1_4510 ; CONDITIONAL_BLOCK flags=0x01 target=0x4510
 000041D2: BRANCH_FLAG_274F ; BRANCH_FLAG_274F
-000041D3: ACTOR 078C object_blood_0028 0 ; ACTOR record=0x078C related=0x0028 inverted=false
+000041D3: ACTOR field_Scruter_Jo_0752_s13_078C object_blood_0028 0 ; ACTOR record=0x078C related=0x0028 inverted=false
 000041D8: GUARD_POP ; GUARD_POP
 000041D9: TEXT object_Scruter_Jo_0752 13 00 80 - - dic_Commander_00A3 dic__2C_00DC dic_you_0257 dic_go_0777 dic_search_23B3 dic_BIONIUM_102E dic_in_02E7 dic_SCRUTER_23BA dic_JO_27s_23C2 dic_cyberspace_23C7 dic__2E_2E_2E_0019 ; TEXT line=0x0752 voice=0x13 flags=0x00,0x80 "Commander , you go search BIONIUM in SCRUTER JO's cyberspace ..."
 000041F7: WHEN block_43A6 ; GUARD_PUSH target=0x43A6
@@ -3504,19 +3608,19 @@
 000044F1: END_WHEN block_44F1
 000044F1: LABEL block_44F1
 000044F1: TEXT object_Scruter_Jo_0752 07 08 80 - - dic_Bye_0E21 dic_bye_0E25 dic__2C_00DC dic_Commander_00A3 dic__2E_0095 dic_Me_0B6B dic_go_0777 dic_back_02A7 dic_to_012F dic_CYBERSPACE_2E_2E_2E_2504 ; TEXT line=0x0752 voice=0x07 flags=0x08,0x80 "Bye bye , Commander . Me go back to CYBERSPACE..."
-0000450D: RECORD_CLEAR 078C ; RECORD_CLEAR record=0x078C
+0000450D: RECORD_CLEAR field_Scruter_Jo_0752_s13_078C ; RECORD_CLEAR record=0x078C
 00004510: END_PROCEDURE proc_scrujo_41CE
 00004510: PROCEDURE proc_bigb1_4510 ; DEB kind 2 "bigb1", encoded offset 0x4511
 00004510: CONDITIONAL_BLOCK 01 proc_veuv_46A3 ; CONDITIONAL_BLOCK flags=0x01 target=0x46A3
 00004514: BRANCH_GAMEFLAG ; BRANCH_GAMEFLAG
-00004515: RECORD_WILDCARD AF 07B2 0F2C 0 ; OP_AF RECORD_WILDCARD record=0x07B2 value=0x0F2C inverted=false
-0000451A: ACTOR 0474 object_blood_0028 0 ; ACTOR record=0x0474 related=0x0028 inverted=false
+00004515: RECORD_WILDCARD AF field_Tina_Burner_079A_s11_07B2 0F2C 0 ; OP_AF RECORD_WILDCARD record=0x07B2 value=0x0F2C inverted=false
+0000451A: ACTOR field_Migrator_043A_s13_0474 object_blood_0028 0 ; ACTOR record=0x0474 related=0x0028 inverted=false
 0000451F: GUARD_POP ; GUARD_POP
 00004520: TEXT object_Migrator_043A 05 00 80 - - dic_Me_0B6B dic_greet_2512 dic_you_0257 dic__2C_00DC dic_friend_0A8F dic__2E_2E_2E_0019 ; TEXT line=0x043A voice=0x05 flags=0x00,0x80 "Me greet you , friend ..."
 00004534: TEXT object_Migrator_043A 02 00 80 - - dic_You_01BA dic_have_0315 dic_ring_0262 dic__3F_3F_3F_2E_2E_2E_0495 ; TEXT line=0x043A voice=0x02 flags=0x00,0x80 "You have ring ???..."
 00004544: TEXT object_Migrator_043A 03 00 80 - - dic_Me_0B6B dic_soon_0296 dic_marry_2518 dic_TINA_2E_2E_2E_251E dic_YOU_046C dic_COME_0A6F dic_WEDDING_0AF8 dic__2E_0095 dic_ME_0500 dic_INVITE_2526 dic_YOU_046C dic__2E_0095 dic_WE_07F8 dic_MAKE_252D dic_BIG_03D1 dic_CONCERT_2532 dic__2E_2E_2E_0019 ; TEXT line=0x043A voice=0x03 flags=0x00,0x80 "Me soon marry TINA... YOU COME WEDDING . ME INVITE YOU . WE MAKE BIG CONCERT ..."
 0000456E: WHEN block_4650 ; GUARD_PUSH target=0x4650
-00004571: RECORD_WILDCARD AF 12F0 0028 0 ; OP_AF RECORD_WILDCARD record=0x12F0 value=0x0028 inverted=false
+00004571: RECORD_WILDCARD AF field_ring_12DC_s11_12F0 0028 0 ; OP_AF RECORD_WILDCARD record=0x12F0 value=0x0028 inverted=false
 00004576: THEN ; GUARD_POP
 00004577: TEXT object_Migrator_043A FF 20 80 - - dic_Teleport_1321 dic_him_0A7C dic_the_00B2 dic_ring_0262 dic__2C_00DC dic_Commander_00A3 dic__2E_0095 dic_That_27ll_1363 dic_make_1356 dic_his_0146 dic_day_0B2D dic__2E_2E_2E_2E_1043 ; TEXT line=0x043A voice=0xFF flags=0x20,0x80 "Teleport him the ring , Commander . That'll make his day ...."
 00004597: TEXT object_Migrator_043A FF 10 80 block_45D2 - dic_RING_0D38 dic_TELEPORTED_253A dic_TO_07D1 dic_MIGRATOR_0391 FFFF dic_TELEPORT_0D2F ; TEXT line=0x043A voice=0xFF flags=0x10,0x80 "RING TELEPORTED TO MIGRATOR"
@@ -3524,7 +3628,7 @@
 000045B0: CONCEPT_GUARD dic_TELEPORT_0D2F 0 ; CONCEPT_GUARD word=0x0D2F inverted=false "TELEPORT"
 000045B3: GUARD_POP ; GUARD_POP
 000045B4: TEXT object_Migrator_043A FF 08 90 - - dic_RING_0D38 dic_TELEPORTED_253A dic_TO_07D1 dic_MOSKITO_2545 dic_AIRPORT_254D dic_ZONE_0EA4 dic__2E_0095 ; TEXT line=0x043A voice=0xFF flags=0x08,0x90 "RING TELEPORTED TO MOSKITO AIRPORT ZONE ."
-000045CA: RECORD_TRIPLE 0030 12DC 043A 0 ; RECORD_TRIPLE record=0x0030 first=0x12DC second=0x043A inverted=false
+000045CA: RECORD_TRIPLE field_blood_0028_s13_0030 12DC 043A 0 ; RECORD_TRIPLE record=0x0030 first=0x12DC second=0x043A inverted=false
 000045D1: CLEAR_ALTERNATE_CONCEPT ; CLEAR_ALTERNATE_CONCEPT
 000045D2: LABEL block_45D2
 000045D2: TEXT object_Migrator_043A 02 00 80 - - dic_WOWWWW_2555 dic__21_024B dic_Ring_255C dic_be_0866 dic_nice_2561 dic_nice_2561 dic__2E_2E_2E_0019 dic_Me_0B6B dic_like_0224 dic__2E_2E_2E_0019 dic_Me_0B6B dic_thank_123A dic_you_0257 dic__2C_00DC dic_friend_0A8F dic__2E_2E_2E_2E_1043 ; TEXT line=0x043A voice=0x02 flags=0x00,0x80 "WOWWWW ! Ring be nice nice ... Me like ... Me thank you , friend ...."
@@ -3532,21 +3636,21 @@
 00004620: TEXT object_Migrator_043A 02 00 80 - - dic_BYE_0F3C dic_BYE_0F3C dic_FRIEND_0F40 dic__2E_2E_2E_2E_1043 dic_TINA_039A dic_SEND_2566 dic_YOU_046C dic_BIG_03D1 dic_KISS_256B dic__2E_2E_2E_0019 ; TEXT line=0x043A voice=0x02 flags=0x00,0x80 "BYE BYE FRIEND .... TINA SEND YOU BIG KISS ..."
 0000463C: TEXT object_Migrator_043A FF 08 90 - - dic__2E_2E_2E_0019 ; TEXT line=0x043A voice=0xFF flags=0x08,0x90 "..."
 00004646: SHARED_STATE C0 1384 F5 C1 0001 ; OP_C0 SHARED_STATE field=0x1384 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-0000464D: RECORD_CLEAR 0474 ; RECORD_CLEAR record=0x0474
+0000464D: RECORD_CLEAR field_Migrator_043A_s13_0474 ; RECORD_CLEAR record=0x0474
 00004650: END_WHEN block_4650
 00004650: LABEL block_4650
 00004650: TEXT object_Migrator_043A 02 00 80 - - dic_You_01BA dic_not_0422 dic_have_0315 dic_ring_0262 dic__2E_2E_2E_0019 dic_Me_0B6B dic_worried_0C14 dic_friend_0A8F dic__2E_2E_2E_0019 ; TEXT line=0x043A voice=0x02 flags=0x00,0x80 "You not have ring ... Me worried friend ..."
 0000466A: TEXT object_Migrator_043A 03 00 80 - - dic_You_01BA dic_quick_2570 dic_go_0777 dic_get_04A0 dic_ring_0262 dic__2E_2E_2E_0019 ; TEXT line=0x043A voice=0x03 flags=0x00,0x80 "You quick go get ring ..."
 0000467E: TEXT object_Migrator_043A 02 00 80 - - dic_Me_0B6B dic_wait_0B5A dic_you_0257 dic__2E_0095 dic_Bye_0E21 dic_bye_0E25 dic_friend_0A8F dic__2E_2E_2E_0019 ; TEXT line=0x043A voice=0x02 flags=0x00,0x80 "Me wait you . Bye bye friend ..."
 00004696: TEXT object_Migrator_043A FF 08 80 - - dic__2E_2E_2E_0019 ; TEXT line=0x043A voice=0xFF flags=0x08,0x80 "..."
-000046A0: RECORD_CLEAR 0474 ; RECORD_CLEAR record=0x0474
+000046A0: RECORD_CLEAR field_Migrator_043A_s13_0474 ; RECORD_CLEAR record=0x0474
 000046A3: END_PROCEDURE proc_bigb1_4510
 000046A3: PROCEDURE proc_veuv_46A3 ; DEB kind 2 "veuv", encoded offset 0x46A4
 000046A3: CONDITIONAL_BLOCK 01 proc_veuv1_46BB ; CONDITIONAL_BLOCK flags=0x01 target=0x46BB
 000046A7: BRANCH_PRESENTATION ; BRANCH_PRESENTATION
-000046A8: RECORD_WILDCARD AF 00AA 0FB8 0 ; OP_AF RECORD_WILDCARD record=0x00AA value=0x0FB8 inverted=false
+000046A8: RECORD_WILDCARD AF field_Bug_Deluxe_0092_s11_00AA 0FB8 0 ; OP_AF RECORD_WILDCARD record=0x00AA value=0x0FB8 inverted=false
 000046AD: GUARD_POP ; GUARD_POP
-000046AE: RECORD_LINK 0744 object_blood_0028 0 ; RECORD_LINK record=0x0744 related=0x0028 inverted=false
+000046AE: RECORD_LINK field_Scruter_K_070A_s13_0744 object_blood_0028 0 ; RECORD_LINK record=0x0744 related=0x0028 inverted=false
 000046B3: POKE_BYTE 46BC 01 ; POKE_BYTE address=0x46BC value=0x01
 000046B7: POKE_BYTE 46A4 00 ; POKE_BYTE address=0x46A4 value=0x00
 000046BB: END_PROCEDURE proc_veuv_46A3
@@ -3565,13 +3669,13 @@
 000047DD: TEXT object_Scruter_K_070A FF 20 80 - - dic_She_031D dic_hung_261F dic_up_02C5 dic__2E_2E_2E_0019 dic_I_0199 dic_don_27t_0C42 dic_like_0224 dic_it_031A dic__2C_00DC dic_Commander_00A3 dic__2E_2E_2E_0019 ; TEXT line=0x070A voice=0xFF flags=0x20,0x80 "She hung up ... I don't like it , Commander ..."
 000047FB: TEXT object_Scruter_K_070A FF 08 90 - - dic_stop_1472 ; TEXT line=0x070A voice=0xFF flags=0x08,0x90 "stop"
 00004805: POKE_BYTE 46BC 00 ; POKE_BYTE address=0x46BC value=0x00
-00004809: RECORD_CLEAR 0744 ; RECORD_CLEAR record=0x0744
+00004809: RECORD_CLEAR field_Scruter_K_070A_s13_0744 ; RECORD_CLEAR record=0x0744
 0000480C: END_PROCEDURE proc_veuv1_46BB
 0000480C: PROCEDURE proc_menbr_480C ; DEB kind 2 "menbr", encoded offset 0x480D
 0000480C: CONDITIONAL_BLOCK 01 proc_men1_48BF ; CONDITIONAL_BLOCK flags=0x01 target=0x48BF
 00004810: BRANCH_PRESENTATION ; BRANCH_PRESENTATION
-00004811: ACTOR 093C object_blood_0028 0 ; ACTOR record=0x093C related=0x0028 inverted=false
-00004816: RECORD_WILDCARD AF 037A FFFF 0 ; OP_AF RECORD_WILDCARD record=0x037A value=0xFFFF inverted=false
+00004811: ACTOR field_menu_0902_s13_093C object_blood_0028 0 ; ACTOR record=0x093C related=0x0028 inverted=false
+00004816: RECORD_WILDCARD AF field_Bronko_0362_s11_037A FFFF 0 ; OP_AF RECORD_WILDCARD record=0x037A value=0xFFFF inverted=false
 0000481B: GUARD_POP ; GUARD_POP
 0000481C: TEXT object_menu_0902 FF 00 80 - - dic__22IMPROVED_2624 dic_MENU_22_262E ; TEXT line=0x0902 voice=0xFF flags=0x00,0x80 "\"IMPROVED MENU\""
 00004828: TEXT object_menu_0902 FF 00 80 - - dic_Today_2634 dic_CHEF_263A dic_BRONKO_263F dic_has_0A10 dic_laid_2646 dic_out_05BB dic_for_036A dic_you_0257 dic__3A_0553 ; TEXT line=0x0902 voice=0xFF flags=0x00,0x80 "Today CHEF BRONKO has laid out for you :"
@@ -3582,13 +3686,13 @@
 0000488C: TEXT object_menu_0902 FF 00 80 - - dic_Recycled_26BE dic_water_26C7 ; TEXT line=0x0902 voice=0xFF flags=0x00,0x80 "Recycled water"
 00004898: TEXT object_menu_0902 FF 00 80 - - dic_Chef_26CD dic_Bronko_02F0 dic_says_030A dic__2E_2E_2E_0019 dic_Burping_27s_26D2 dic_bad_26DC dic_manners_26E0 dic__21_024B dic__2E_2E_2E_0019 ; TEXT line=0x0902 voice=0xFF flags=0x00,0x80 "Chef Bronko says ... Burping's bad manners ! ..."
 000048B2: TEXT object_menu_0902 FF 08 80 - - dic_stop_1472 ; TEXT line=0x0902 voice=0xFF flags=0x08,0x80 "stop"
-000048BC: RECORD_CLEAR 093C ; RECORD_CLEAR record=0x093C
+000048BC: RECORD_CLEAR field_menu_0902_s13_093C ; RECORD_CLEAR record=0x093C
 000048BF: END_PROCEDURE proc_menbr_480C
 000048BF: PROCEDURE proc_men1_48BF ; DEB kind 2 "men1", encoded offset 0x48C0
 000048BF: CONDITIONAL_BLOCK 01 proc_men2_496F ; CONDITIONAL_BLOCK flags=0x01 target=0x496F
 000048C3: BRANCH_PRESENTATION ; BRANCH_PRESENTATION
-000048C4: ACTOR 093C object_blood_0028 0 ; ACTOR record=0x093C related=0x0028 inverted=false
-000048C9: RECORD_WILDCARD AF 037A FFFF 1 ; OP_AF RECORD_WILDCARD record=0x037A value=0xFFFF inverted=true
+000048C4: ACTOR field_menu_0902_s13_093C object_blood_0028 0 ; ACTOR record=0x093C related=0x0028 inverted=false
+000048C9: RECORD_WILDCARD AF field_Bronko_0362_s11_037A FFFF 1 ; OP_AF RECORD_WILDCARD record=0x037A value=0xFFFF inverted=true
 000048CF: GUARD_POP ; GUARD_POP
 000048D0: TEXT object_menu_0902 FF 00 80 - - dic__22MENU_22_26E8 ; TEXT line=0x0902 voice=0xFF flags=0x00,0x80 "\"MENU\""
 000048DA: TEXT object_menu_0902 FF 00 80 - - dic_Today_27s_26EF dic_fare_26F7 dic__3A_0553 ; TEXT line=0x0902 voice=0xFF flags=0x00,0x80 "Today's fare :"
@@ -3600,13 +3704,13 @@
 0000493E: TEXT object_menu_0902 FF 00 80 - - dic_The_006C dic_chef_274E dic_says_030A dic__2E_2E_2E_0019 dic_Don_27t_02F7 dic_eat_0BC0 dic_with_00BC dic_your_0634 dic_mouth_2753 dic_full_2759 dic__21_024B dic__2E_2E_2E_0019 ; TEXT line=0x0902 voice=0xFF flags=0x00,0x80 "The chef says ... Don't eat with your mouth full ! ..."
 0000495E: TEXT object_menu_0902 FF 08 90 - - dic_Stop_275E ; TEXT line=0x0902 voice=0xFF flags=0x08,0x90 "Stop"
 00004968: POKE_BYTE 48C0 00 ; POKE_BYTE address=0x48C0 value=0x00
-0000496C: RECORD_CLEAR 093C ; RECORD_CLEAR record=0x093C
+0000496C: RECORD_CLEAR field_menu_0902_s13_093C ; RECORD_CLEAR record=0x093C
 0000496F: END_PROCEDURE proc_men1_48BF
 0000496F: PROCEDURE proc_men2_496F ; DEB kind 2 "men2", encoded offset 0x4970
 0000496F: CONDITIONAL_BLOCK 01 proc_men3_4A19 ; CONDITIONAL_BLOCK flags=0x01 target=0x4A19
 00004973: BRANCH_PRESENTATION ; BRANCH_PRESENTATION
-00004974: ACTOR 093C object_blood_0028 0 ; ACTOR record=0x093C related=0x0028 inverted=false
-00004979: RECORD_WILDCARD AF 037A FFFF 1 ; OP_AF RECORD_WILDCARD record=0x037A value=0xFFFF inverted=true
+00004974: ACTOR field_menu_0902_s13_093C object_blood_0028 0 ; ACTOR record=0x093C related=0x0028 inverted=false
+00004979: RECORD_WILDCARD AF field_Bronko_0362_s11_037A FFFF 1 ; OP_AF RECORD_WILDCARD record=0x037A value=0xFFFF inverted=true
 0000497F: GUARD_POP ; GUARD_POP
 00004980: TEXT object_menu_0902 FF 00 80 - - dic__22MENU_22_26E8 ; TEXT line=0x0902 voice=0xFF flags=0x00,0x80 "\"MENU\""
 0000498A: TEXT object_menu_0902 FF 00 80 - - dic_Today_27s_26EF dic_fare_26F7 dic__3A_0553 ; TEXT line=0x0902 voice=0xFF flags=0x00,0x80 "Today's fare :"
@@ -3618,13 +3722,13 @@
 000049E8: TEXT object_menu_0902 FF 00 80 - - dic_The_006C dic_chef_274E dic_says_030A dic__2E_2E_2E_0019 dic_Don_27t_02F7 dic_talk_0001 dic_with_00BC dic_your_0634 dic_mouth_2753 dic_open_0F47 dic__21_024B dic__2E_2E_2E_0019 ; TEXT line=0x0902 voice=0xFF flags=0x00,0x80 "The chef says ... Don't talk with your mouth open ! ..."
 00004A08: TEXT object_menu_0902 FF 08 90 - - dic_stop_1472 ; TEXT line=0x0902 voice=0xFF flags=0x08,0x90 "stop"
 00004A12: POKE_BYTE 4970 00 ; POKE_BYTE address=0x4970 value=0x00
-00004A16: RECORD_CLEAR 093C ; RECORD_CLEAR record=0x093C
+00004A16: RECORD_CLEAR field_menu_0902_s13_093C ; RECORD_CLEAR record=0x093C
 00004A19: END_PROCEDURE proc_men2_496F
 00004A19: PROCEDURE proc_men3_4A19 ; DEB kind 2 "men3", encoded offset 0x4A1A
 00004A19: CONDITIONAL_BLOCK 01 proc_men4_4AC5 ; CONDITIONAL_BLOCK flags=0x01 target=0x4AC5
 00004A1D: BRANCH_PRESENTATION ; BRANCH_PRESENTATION
-00004A1E: RECORD_WILDCARD AF 037A FFFF 1 ; OP_AF RECORD_WILDCARD record=0x037A value=0xFFFF inverted=true
-00004A24: ACTOR 093C object_blood_0028 0 ; ACTOR record=0x093C related=0x0028 inverted=false
+00004A1E: RECORD_WILDCARD AF field_Bronko_0362_s11_037A FFFF 1 ; OP_AF RECORD_WILDCARD record=0x037A value=0xFFFF inverted=true
+00004A24: ACTOR field_menu_0902_s13_093C object_blood_0028 0 ; ACTOR record=0x093C related=0x0028 inverted=false
 00004A29: GUARD_POP ; GUARD_POP
 00004A2A: TEXT object_menu_0902 FF 00 80 - - dic__22MENU_22_26E8 ; TEXT line=0x0902 voice=0xFF flags=0x00,0x80 "\"MENU\""
 00004A34: TEXT object_menu_0902 FF 00 80 - - dic_Today_27s_26EF dic_fare_26F7 dic__3A_0553 ; TEXT line=0x0902 voice=0xFF flags=0x00,0x80 "Today's fare :"
@@ -3636,13 +3740,13 @@
 00004A96: TEXT object_menu_0902 FF 00 80 - - dic_The_006C dic_chef_274E dic_says_030A dic__2E_2E_2E_0019 dic_Somebody_27A9 dic_didn_27t_026D dic_finish_27B2 dic_his_0146 dic_wrigglers_27B9 dic_yesterday_27C3 dic__2E_2E_2E_0019 ; TEXT line=0x0902 voice=0xFF flags=0x00,0x80 "The chef says ... Somebody didn't finish his wrigglers yesterday ..."
 00004AB4: TEXT object_menu_0902 FF 08 90 - - dic_stop_1472 ; TEXT line=0x0902 voice=0xFF flags=0x08,0x90 "stop"
 00004ABE: POKE_BYTE 4A1A 00 ; POKE_BYTE address=0x4A1A value=0x00
-00004AC2: RECORD_CLEAR 093C ; RECORD_CLEAR record=0x093C
+00004AC2: RECORD_CLEAR field_menu_0902_s13_093C ; RECORD_CLEAR record=0x093C
 00004AC5: END_PROCEDURE proc_men3_4A19
 00004AC5: PROCEDURE proc_men4_4AC5 ; DEB kind 2 "men4", encoded offset 0x4AC6
 00004AC5: CONDITIONAL_BLOCK 01 proc_men5_4B79 ; CONDITIONAL_BLOCK flags=0x01 target=0x4B79
 00004AC9: BRANCH_PRESENTATION ; BRANCH_PRESENTATION
-00004ACA: ACTOR 093C object_blood_0028 0 ; ACTOR record=0x093C related=0x0028 inverted=false
-00004ACF: RECORD_WILDCARD AF 037A FFFF 1 ; OP_AF RECORD_WILDCARD record=0x037A value=0xFFFF inverted=true
+00004ACA: ACTOR field_menu_0902_s13_093C object_blood_0028 0 ; ACTOR record=0x093C related=0x0028 inverted=false
+00004ACF: RECORD_WILDCARD AF field_Bronko_0362_s11_037A FFFF 1 ; OP_AF RECORD_WILDCARD record=0x037A value=0xFFFF inverted=true
 00004AD5: GUARD_POP ; GUARD_POP
 00004AD6: TEXT object_menu_0902 FF 00 80 - - dic__22MENU_22_26E8 ; TEXT line=0x0902 voice=0xFF flags=0x00,0x80 "\"MENU\""
 00004AE0: TEXT object_menu_0902 FF 00 80 - - dic_Today_27s_26EF dic_fare_26F7 dic__3A_0553 ; TEXT line=0x0902 voice=0xFF flags=0x00,0x80 "Today's fare :"
@@ -3654,13 +3758,13 @@
 00004B4A: TEXT object_menu_0902 FF 00 80 - - dic_The_006C dic_chef_274E dic_says_030A dic__2E_2E_2E_0019 dic_Plenty_27EF dic_more_248C dic_in_02E7 dic_the_00B2 dic_kitchen_27F6 dic__21_024B dic__2E_2E_2E_0019 ; TEXT line=0x0902 voice=0xFF flags=0x00,0x80 "The chef says ... Plenty more in the kitchen ! ..."
 00004B68: TEXT object_menu_0902 FF 08 90 - - dic_stop_1472 ; TEXT line=0x0902 voice=0xFF flags=0x08,0x90 "stop"
 00004B72: POKE_BYTE 4AC6 00 ; POKE_BYTE address=0x4AC6 value=0x00
-00004B76: RECORD_CLEAR 093C ; RECORD_CLEAR record=0x093C
+00004B76: RECORD_CLEAR field_menu_0902_s13_093C ; RECORD_CLEAR record=0x093C
 00004B79: END_PROCEDURE proc_men4_4AC5
 00004B79: PROCEDURE proc_men5_4B79 ; DEB kind 2 "men5", encoded offset 0x4B7A
 00004B79: CONDITIONAL_BLOCK 01 proc_men6_4C35 ; CONDITIONAL_BLOCK flags=0x01 target=0x4C35
 00004B7D: BRANCH_PRESENTATION ; BRANCH_PRESENTATION
-00004B7E: ACTOR 093C object_blood_0028 0 ; ACTOR record=0x093C related=0x0028 inverted=false
-00004B83: RECORD_WILDCARD AF 037A FFFF 1 ; OP_AF RECORD_WILDCARD record=0x037A value=0xFFFF inverted=true
+00004B7E: ACTOR field_menu_0902_s13_093C object_blood_0028 0 ; ACTOR record=0x093C related=0x0028 inverted=false
+00004B83: RECORD_WILDCARD AF field_Bronko_0362_s11_037A FFFF 1 ; OP_AF RECORD_WILDCARD record=0x037A value=0xFFFF inverted=true
 00004B89: GUARD_POP ; GUARD_POP
 00004B8A: TEXT object_menu_0902 FF 00 80 - - dic__22IMPROVED_2624 dic_MENU_22_262E ; TEXT line=0x0902 voice=0xFF flags=0x00,0x80 "\"IMPROVED MENU\""
 00004B96: TEXT object_menu_0902 FF 00 80 - - dic_Today_27s_26EF dic_fare_26F7 dic__3A_0553 ; TEXT line=0x0902 voice=0xFF flags=0x00,0x80 "Today's fare :"
@@ -3673,7 +3777,7 @@
 00004C20: TEXT object_menu_0902 FF 08 A0 - - dic_stop_1472 ; TEXT line=0x0902 voice=0xFF flags=0x08,0xA0 "stop"
 00004C2A: POKE_BYTE 4B7A 00 ; POKE_BYTE address=0x4B7A value=0x00
 00004C2E: POKE_BYTE 4C36 01 ; POKE_BYTE address=0x4C36 value=0x01
-00004C32: RECORD_CLEAR 093C ; RECORD_CLEAR record=0x093C
+00004C32: RECORD_CLEAR field_menu_0902_s13_093C ; RECORD_CLEAR record=0x093C
 00004C35: END_PROCEDURE proc_men5_4B79
 00004C35: PROCEDURE proc_men6_4C35 ; DEB kind 2 "men6", encoded offset 0x4C36
 00004C35: CONDITIONAL_BLOCK 00 proc_revel_4C52 ; CONDITIONAL_BLOCK flags=0x00 target=0x4C52
@@ -3688,7 +3792,7 @@
 00004C52: PROCEDURE proc_revel_4C52 ; DEB kind 2 "revel", encoded offset 0x4C53
 00004C52: CONDITIONAL_BLOCK 01 proc_honk1_4E17 ; CONDITIONAL_BLOCK flags=0x01 target=0x4E17
 00004C56: BRANCH_FLAG_274F ; BRANCH_FLAG_274F
-00004C57: ACTOR 0084 object_blood_0028 0 ; ACTOR record=0x0084 related=0x0028 inverted=false
+00004C57: ACTOR field_Bob_Morlock_004A_s13_0084 object_blood_0028 0 ; ACTOR record=0x0084 related=0x0028 inverted=false
 00004C5C: SHARED_STATE C0 1386 F5 C1 0000 ; OP_C0 SHARED_STATE field=0x1386 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
 00004C63: GUARD_POP ; GUARD_POP
 00004C64: TEXT object_Bob_Morlock_004A 07 00 80 - - dic_Would_284D dic_you_0257 dic_care_2853 dic_to_012F dic_know_0936 dic_an_0A14 dic_unbearable_2858 dic_truth_157A dic__2C_00DC dic_Commander_00A3 dic__3F_01CF ; TEXT line=0x004A voice=0x07 flags=0x00,0x80 "Would you care to know an unbearable truth , Commander ?"
@@ -3707,12 +3811,12 @@
 00004DB4: TEXT object_Bob_Morlock_004A FF 20 80 - - dic_KROIIIIkkk_293C dic__21_21_21_033F dic__2D_26KRUIIIIkkk_2947 dic__21_21_21_033F dic__2D_26I_2954 dic_AM_2958 dic_supposed_1FEC dic_to_012F dic_be_0866 dic_aware_295B dic_of_00FD dic_everything_2961 dic_that_013D dic_goes_296C dic_on_004D dic_round_1DA8 dic_here_0329 dic__2C_00DC dic_being_1379 dic_the_00B2 dic_onboard_04C2 dic_computer_2971 dic__2E_2E_2E_0019 dic_Don_27t_02F7 dic_tell_0605 dic_me_0010 dic_you_0257 dic_switched_297A dic_off_07BE dic_Olga_05E9 dic__3F_3F_3F_02D6 ; TEXT line=0x004A voice=0xFF flags=0x20,0x80 "KROIIIIkkk !!! -&KRUIIIIkkk !!! -&I AM supposed to be aware of everything that goes on round here , being the onboard computer ... Don't tell me you switched off Olga ???"
 00004DFA: TEXT object_Bob_Morlock_004A 05 08 90 - - dic_Can_1162 dic_it_031A dic_and_0142 dic_do_0B25 dic_some_0879 dic_work_24CA dic__21_21_09E0 ; TEXT line=0x004A voice=0x05 flags=0x08,0x90 "Can it and do some work !!"
 00004E10: POKE_BYTE 4C53 00 ; POKE_BYTE address=0x4C53 value=0x00
-00004E14: RECORD_CLEAR 0084 ; RECORD_CLEAR record=0x0084
+00004E14: RECORD_CLEAR field_Bob_Morlock_004A_s13_0084 ; RECORD_CLEAR record=0x0084
 00004E17: END_PROCEDURE proc_revel_4C52
 00004E17: PROCEDURE proc_honk1_4E17 ; DEB kind 2 "honk1", encoded offset 0x4E18
 00004E17: CONDITIONAL_BLOCK 01 block_51E2 ; CONDITIONAL_BLOCK flags=0x01 target=0x51E2
 00004E1B: BRANCH_PRESENTATION ; BRANCH_PRESENTATION
-00004E1C: ACTOR 08F4 object_blood_0028 0 ; ACTOR record=0x08F4 related=0x0028 inverted=false
+00004E1C: ACTOR field_Honk_08BA_s13_08F4 object_blood_0028 0 ; ACTOR record=0x08F4 related=0x0028 inverted=false
 00004E21: GUARD_POP ; GUARD_POP
 00004E22: TEXT object_Honk_08BA FF 20 80 - - dic_I_0199 dic_exist_2983 dic_only_0529 dic_to_012F dic_obey_2989 dic__2C_00DC dic_Commander_00A3 ; TEXT line=0x08BA voice=0xFF flags=0x20,0x80 "I exist only to obey , Commander"
 00004E38: WHEN block_4EAD ; GUARD_PUSH target=0x4EAD
@@ -3778,8 +3882,8 @@
 0000503B: LABEL block_503B
 0000503B: WHEN block_5088 ; GUARD_PUSH target=0x5088
 0000503E: SHARED_STATE C0 1368 F2 C1 0002 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF2 rhs_mode=0xC1 rhs=0x0002
-00005045: SHARED_STATE BF 0230 F1 C1 0002 ; OP_BF SHARED_STATE field=0x0230 operator=0xF1 rhs_mode=0xC1 rhs=0x0002
-0000504C: SHARED_BIT_STATE AE 0FBA 0002 1 ; OP_AE SHARED_BIT_STATE field=0x0FBA mask=0x0002 inverted=true
+00005045: SHARED_STATE BF field_Hom_01FA_s08_0230 F1 C1 0002 ; OP_BF SHARED_STATE field=0x0230 operator=0xF1 rhs_mode=0xC1 rhs=0x0002
+0000504C: SHARED_BIT_STATE AE field_Bigbang_0FB8_s00_0FBA 0002 1 ; OP_AE SHARED_BIT_STATE field=0x0FBA mask=0x0002 inverted=true
 00005052: THEN ; GUARD_POP
 00005053: TEXT object_Honk_08BA FF 28 80 - - dic_Commander_00A3 dic__2C_00DC dic_I_27m_01E3 dic_sure_1351 dic_that_013D dic_HOM_29D7 dic_is_0092 dic_a_00C1 dic_vital_29DB dic_link_29E1 dic_in_02E7 dic_the_00B2 dic_chain_29E6 dic_that_013D dic_leads_29EC dic_to_012F dic_the_00B2 dic_Big_07E8 dic_Bang_2E_2E_2E_29F2 ; TEXT line=0x08BA voice=0xFF flags=0x28,0x80 "Commander , I'm sure that HOM is a vital link in the chain that leads to the Big Bang..."
 00005081: SHARED_STATE C0 1368 F7 C1 0003 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF7 rhs_mode=0xC1 rhs=0x0003
@@ -3788,7 +3892,7 @@
 00005088: WHEN block_50C6 ; GUARD_PUSH target=0x50C6
 0000508B: SHARED_STATE C0 1368 F2 C1 0002 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF2 rhs_mode=0xC1 rhs=0x0002
 00005092: SHARED_STATE C0 136A F5 C1 0000 ; OP_C0 SHARED_STATE field=0x136A operator=0xF5 rhs_mode=0xC1 rhs=0x0000
-00005099: SHARED_STATE BF 0470 F2 C1 0000 ; OP_BF SHARED_STATE field=0x0470 operator=0xF2 rhs_mode=0xC1 rhs=0x0000
+00005099: SHARED_STATE BF field_Migrator_043A_s08_0470 F2 C1 0000 ; OP_BF SHARED_STATE field=0x0470 operator=0xF2 rhs_mode=0xC1 rhs=0x0000
 000050A0: THEN ; GUARD_POP
 000050A1: TEXT object_Honk_08BA FF 28 80 - - dic_Commander_00A3 dic__2C_00DC dic_Mister_02CF dic_Bob_042C dic_want_01BE dic_to_012F dic_see_0911 dic_you_0257 dic_in_02E7 dic_the_00B2 dic_Cryobox_2E_2E_2E_29FA ; TEXT line=0x08BA voice=0xFF flags=0x28,0x80 "Commander , Mister Bob want to see you in the Cryobox..."
 000050BF: SHARED_STATE C0 1368 F7 C1 0003 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF7 rhs_mode=0xC1 rhs=0x0003
@@ -3796,8 +3900,8 @@
 000050C6: LABEL block_50C6
 000050C6: WHEN block_50FC ; GUARD_PUSH target=0x50FC
 000050C9: SHARED_STATE C0 1368 F2 C1 0002 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF2 rhs_mode=0xC1 rhs=0x0002
-000050D0: RECORD_WILDCARD AF 025A FFFF 0 ; OP_AF RECORD_WILDCARD record=0x025A value=0xFFFF inverted=false
-000050D5: SHARED_STATE BF 0278 F5 C1 0000 ; OP_BF SHARED_STATE field=0x0278 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
+000050D0: RECORD_WILDCARD AF field_Yoko_0242_s11_025A FFFF 0 ; OP_AF RECORD_WILDCARD record=0x025A value=0xFFFF inverted=false
+000050D5: SHARED_STATE BF field_Yoko_0242_s08_0278 F5 C1 0000 ; OP_BF SHARED_STATE field=0x0278 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
 000050DC: THEN ; GUARD_POP
 000050DD: TEXT object_Honk_08BA FF 28 80 - - dic_Commander_2C_07A3 dic_don_27t_0C42 dic_forget_15D0 dic_Yoko_0B3B dic_and_0142 dic_Maxxon_1488 dic_asleep_2A05 dic_CRYOBOX_2E_2E_2E_2A0C ; TEXT line=0x08BA voice=0xFF flags=0x28,0x80 "Commander, don't forget Yoko and Maxxon asleep CRYOBOX..."
 000050F5: SHARED_STATE C0 1368 F7 C1 0003 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF7 rhs_mode=0xC1 rhs=0x0003
@@ -3805,8 +3909,8 @@
 000050FC: LABEL block_50FC
 000050FC: WHEN block_5146 ; GUARD_PUSH target=0x5146
 000050FF: SHARED_STATE C0 1368 F2 C1 0002 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF2 rhs_mode=0xC1 rhs=0x0002
-00005106: RECORD_WILDCARD AF 025A FFFF 0 ; OP_AF RECORD_WILDCARD record=0x025A value=0xFFFF inverted=false
-0000510B: SHARED_STATE BF 0278 F2 C1 0000 ; OP_BF SHARED_STATE field=0x0278 operator=0xF2 rhs_mode=0xC1 rhs=0x0000
+00005106: RECORD_WILDCARD AF field_Yoko_0242_s11_025A FFFF 0 ; OP_AF RECORD_WILDCARD record=0x025A value=0xFFFF inverted=false
+0000510B: SHARED_STATE BF field_Yoko_0242_s08_0278 F2 C1 0000 ; OP_BF SHARED_STATE field=0x0278 operator=0xF2 rhs_mode=0xC1 rhs=0x0000
 00005112: THEN ; GUARD_POP
 00005113: TEXT object_Honk_08BA FF 28 80 - - dic_Approach_2A17 dic_the_00B2 dic_planet_0086 dic_RONDO_115C dic_and_0142 dic_talk_0001 dic_to_012F dic_Yoko_0B3B dic_or_03EE dic_Maxxon_1488 dic_in_02E7 dic_the_00B2 dic_CRYOBOX_0475 dic_in_02E7 dic_order_2A20 dic_to_012F dic_teleport_0D26 dic_them_2E_2E_2E_2A26 ; TEXT line=0x08BA voice=0xFF flags=0x28,0x80 "Approach the planet RONDO and talk to Yoko or Maxxon in the CRYOBOX in order to teleport them..."
 0000513F: SHARED_STATE C0 1368 F7 C1 0003 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF7 rhs_mode=0xC1 rhs=0x0003
@@ -3814,7 +3918,7 @@
 00005146: LABEL block_5146
 00005146: WHEN block_5175 ; GUARD_PUSH target=0x5175
 00005149: SHARED_STATE C0 1368 F2 C1 0002 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF2 rhs_mode=0xC1 rhs=0x0002
-00005150: SHARED_STATE BF 00C8 F5 C1 0000 ; OP_BF SHARED_STATE field=0x00C8 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
+00005150: SHARED_STATE BF field_Bug_Deluxe_0092_s08_00C8 F5 C1 0000 ; OP_BF SHARED_STATE field=0x00C8 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
 00005157: THEN ; GUARD_POP
 00005158: TEXT object_Honk_08BA FF 28 80 - - dic_Better_2A2E dic_go_0777 dic_see_0911 dic_Bug_0343 dic_Deluxe_0347 dic_on_004D dic_Venusia_2E_2E_2E_2A35 ; TEXT line=0x08BA voice=0xFF flags=0x28,0x80 "Better go see Bug Deluxe on Venusia..."
 0000516E: SHARED_STATE C0 1368 F7 C1 0003 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF7 rhs_mode=0xC1 rhs=0x0003
@@ -3822,18 +3926,18 @@
 00005175: LABEL block_5175
 00005175: WHEN block_51B6 ; GUARD_PUSH target=0x51B6
 00005178: SHARED_STATE C0 1368 F2 C1 0002 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF2 rhs_mode=0xC1 rhs=0x0002
-0000517F: RECORD_WILDCARD AF 12F0 03AA 0 ; OP_AF RECORD_WILDCARD record=0x12F0 value=0x03AA inverted=false
+0000517F: RECORD_WILDCARD AF field_ring_12DC_s11_12F0 03AA 0 ; OP_AF RECORD_WILDCARD record=0x12F0 value=0x03AA inverted=false
 00005184: SHARED_STATE C0 1388 F5 C0 138A ; OP_C0 SHARED_STATE field=0x1388 operator=0xF5 rhs_mode=0xC0 rhs=0x138A
-0000518B: SHARED_STATE BF 0470 F2 C1 0000 ; OP_BF SHARED_STATE field=0x0470 operator=0xF2 rhs_mode=0xC1 rhs=0x0000
+0000518B: SHARED_STATE BF field_Migrator_043A_s08_0470 F2 C1 0000 ; OP_BF SHARED_STATE field=0x0470 operator=0xF2 rhs_mode=0xC1 rhs=0x0000
 00005192: THEN ; GUARD_POP
 00005193: TEXT object_Honk_08BA FF 28 80 - - dic_Commander_2E_2E_2E_001D dic_Maybe_18D6 dic_the_00B2 dic_ondoyant_225B dic_has_0A10 dic_a_00C1 dic_ring_0262 dic_for_036A dic_us_0326 dic__2E_2E_2E_0019 ; TEXT line=0x08BA voice=0xFF flags=0x28,0x80 "Commander... Maybe the ondoyant has a ring for us ..."
 000051AF: SHARED_STATE C0 1368 F7 C1 0003 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF7 rhs_mode=0xC1 rhs=0x0003
 000051B6: END_WHEN block_51B6
 000051B6: LABEL block_51B6
 000051B6: TEXT object_Honk_08BA FF 28 80 - - dic_More_2487 dic_information_2A40 dic__3F_01CF ; TEXT line=0x08BA voice=0xFF flags=0x28,0x80 "More information ?"
-000051C4: RECORD_WILDCARD BC 0900 0001 0 ; OP_BC RECORD_WILDCARD record=0x0900 value=0x0001 inverted=false
+000051C4: RECORD_WILDCARD BC field_Honk_08BA_s0F_0900 0001 0 ; OP_BC RECORD_WILDCARD record=0x0900 value=0x0001 inverted=false
 000051C9: TEXT object_Honk_08BA FF 68 80 - - dic_Bye_0E21 dic_bye_0E25 dic__2C_00DC dic_Commander_00A3 dic__2E_2E_2E_0019 FFFF dic_bye_bye_1062 ; TEXT line=0x08BA voice=0xFF flags=0x68,0x80 "Bye bye , Commander ..."
-000051DF: RECORD_CLEAR 08F4 ; RECORD_CLEAR record=0x08F4
+000051DF: RECORD_CLEAR field_Honk_08BA_s13_08F4 ; RECORD_CLEAR record=0x08F4
 000051E2: LABEL block_51E2
 000051E2: END
 000051E3: END_PROCEDURE proc_honk1_4E17

@@ -5,9 +5,19 @@
 
 00000000: OBJECT object_blood_0028 0028 ; DEB kind 1 "blood"
 00000000: OBJECT object_Bob_Morlock_004A 004A ; DEB kind 1 "Bob_Morlock"
+00000000: OBJECT object_Bronko_031A 031A ; DEB kind 1 "Bronko"
 00000000: OBJECT object_Izwalito_055A 055A ; DEB kind 1 "Izwalito"
 00000000: OBJECT object_Honk_082A 082A ; DEB kind 1 "Honk"
 00000000: OBJECT object_menu_0872 0872 ; DEB kind 1 "menu"
+
+00000000: FIELD field_Bob_Morlock_004A_s08_0080 object_Bob_Morlock_004A 0036 ; VAR kind 0x0002, selector(s) 08
+00000000: FIELD field_Bob_Morlock_004A_s13_0084 object_Bob_Morlock_004A 003A ; VAR kind 0x0002, selector(s) 13
+00000000: FIELD field_Bronko_031A_s11_0332 object_Bronko_031A 0018 ; VAR kind 0x0002, selector(s) 11
+00000000: FIELD field_Izwalito_055A_s13_0594 object_Izwalito_055A 003A ; VAR kind 0x0002, selector(s) 13
+00000000: FIELD field_Izwalito_055A_s0F_05A0 object_Izwalito_055A 0046 ; VAR kind 0x0002, selector(s) 0F
+00000000: FIELD field_Honk_082A_s08_0860 object_Honk_082A 0036 ; VAR kind 0x0002, selector(s) 08
+00000000: FIELD field_Honk_082A_s13_0864 object_Honk_082A 003A ; VAR kind 0x0002, selector(s) 13
+00000000: FIELD field_menu_0872_s13_08AC object_menu_0872 003A ; VAR kind 0x0002, selector(s) 13
 
 00000000: DIC_WORD dic_talk_0001 0001 ; "talk"
 00000000: DIC_WORD dic__22IMPROVED_000C 000C ; "\"IMPROVED"
@@ -441,8 +451,8 @@
 00000000: PROCEDURE proc_menbr_0000 ; DEB kind 2 "menbr", encoded offset 0x0001
 00000000: CONDITIONAL_BLOCK 01 proc_men1_00B3 ; CONDITIONAL_BLOCK flags=0x01 target=0x00B3
 00000004: BRANCH_PRESENTATION ; BRANCH_PRESENTATION
-00000005: ACTOR 08AC object_blood_0028 0 ; ACTOR record=0x08AC related=0x0028 inverted=false
-0000000A: RECORD_WILDCARD AF 0332 FFFF 0 ; OP_AF RECORD_WILDCARD record=0x0332 value=0xFFFF inverted=false
+00000005: ACTOR field_menu_0872_s13_08AC object_blood_0028 0 ; ACTOR record=0x08AC related=0x0028 inverted=false
+0000000A: RECORD_WILDCARD AF field_Bronko_031A_s11_0332 FFFF 0 ; OP_AF RECORD_WILDCARD record=0x0332 value=0xFFFF inverted=false
 0000000F: GUARD_POP ; GUARD_POP
 00000010: TEXT object_menu_0872 FF 00 80 - - dic__22IMPROVED_000C dic_MENU_22_0016 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "\"IMPROVED MENU\""
 0000001C: TEXT object_menu_0872 FF 00 80 - - dic_Today_001C dic_CHEF_0022 dic_BRONKO_0027 dic_has_002E dic_laid_0032 dic_on_0037 dic_for_003A dic_you_003E dic__3A_0042 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Today CHEF BRONKO has laid on for you :"
@@ -453,13 +463,13 @@
 00000080: TEXT object_menu_0872 FF 00 80 - - dic_Recycled_00B6 dic_water_00BF ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Recycled water"
 0000008C: TEXT object_menu_0872 FF 00 80 - - dic_Chef_00C5 dic_Bronko_00CA dic_says_00D1 dic__2E_2E_2E_00D6 dic_Burping_27s_00DA dic_bad_00E4 dic_manners_00E8 dic__21_00F0 dic__2E_2E_2E_00D6 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Chef Bronko says ... Burping's bad manners ! ..."
 000000A6: TEXT object_menu_0872 FF 08 80 - - dic_stop_00F2 ; TEXT line=0x0872 voice=0xFF flags=0x08,0x80 "stop"
-000000B0: RECORD_CLEAR 08AC ; RECORD_CLEAR record=0x08AC
+000000B0: RECORD_CLEAR field_menu_0872_s13_08AC ; RECORD_CLEAR record=0x08AC
 000000B3: END_PROCEDURE proc_menbr_0000
 000000B3: PROCEDURE proc_men1_00B3 ; DEB kind 2 "men1", encoded offset 0x00B4
 000000B3: CONDITIONAL_BLOCK 01 proc_men2_0163 ; CONDITIONAL_BLOCK flags=0x01 target=0x0163
 000000B7: BRANCH_PRESENTATION ; BRANCH_PRESENTATION
-000000B8: ACTOR 08AC object_blood_0028 0 ; ACTOR record=0x08AC related=0x0028 inverted=false
-000000BD: RECORD_WILDCARD AF 0332 FFFF 1 ; OP_AF RECORD_WILDCARD record=0x0332 value=0xFFFF inverted=true
+000000B8: ACTOR field_menu_0872_s13_08AC object_blood_0028 0 ; ACTOR record=0x08AC related=0x0028 inverted=false
+000000BD: RECORD_WILDCARD AF field_Bronko_031A_s11_0332 FFFF 1 ; OP_AF RECORD_WILDCARD record=0x0332 value=0xFFFF inverted=true
 000000C3: GUARD_POP ; GUARD_POP
 000000C4: TEXT object_menu_0872 FF 00 80 - - dic__22MENU_22_00F7 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "\"MENU\""
 000000CE: TEXT object_menu_0872 FF 00 80 - - dic_Today_27s_00FE dic_fare_0106 dic__3A_0042 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Today's fare :"
@@ -471,13 +481,13 @@
 00000132: TEXT object_menu_0872 FF 00 80 - - dic_The_0166 dic_chef_016A dic_says_00D1 dic__2E_2E_2E_00D6 dic_Don_27t_016F dic_eat_0175 dic_with_0079 dic_your_0179 dic_mouth_017E dic_full_0184 dic__21_00F0 dic__2E_2E_2E_00D6 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "The chef says ... Don't eat with your mouth full ! ..."
 00000152: TEXT object_menu_0872 FF 08 90 - - dic_Stop_0189 ; TEXT line=0x0872 voice=0xFF flags=0x08,0x90 "Stop"
 0000015C: POKE_BYTE 00B4 00 ; POKE_BYTE address=0x00B4 value=0x00
-00000160: RECORD_CLEAR 08AC ; RECORD_CLEAR record=0x08AC
+00000160: RECORD_CLEAR field_menu_0872_s13_08AC ; RECORD_CLEAR record=0x08AC
 00000163: END_PROCEDURE proc_men1_00B3
 00000163: PROCEDURE proc_men2_0163 ; DEB kind 2 "men2", encoded offset 0x0164
 00000163: CONDITIONAL_BLOCK 01 proc_men3_020D ; CONDITIONAL_BLOCK flags=0x01 target=0x020D
 00000167: BRANCH_PRESENTATION ; BRANCH_PRESENTATION
-00000168: ACTOR 08AC object_blood_0028 0 ; ACTOR record=0x08AC related=0x0028 inverted=false
-0000016D: RECORD_WILDCARD AF 0332 FFFF 1 ; OP_AF RECORD_WILDCARD record=0x0332 value=0xFFFF inverted=true
+00000168: ACTOR field_menu_0872_s13_08AC object_blood_0028 0 ; ACTOR record=0x08AC related=0x0028 inverted=false
+0000016D: RECORD_WILDCARD AF field_Bronko_031A_s11_0332 FFFF 1 ; OP_AF RECORD_WILDCARD record=0x0332 value=0xFFFF inverted=true
 00000173: GUARD_POP ; GUARD_POP
 00000174: TEXT object_menu_0872 FF 00 80 - - dic__22MENU_22_00F7 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "\"MENU\""
 0000017E: TEXT object_menu_0872 FF 00 80 - - dic_Today_27s_00FE dic_fare_0106 dic__3A_0042 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Today's fare :"
@@ -489,13 +499,13 @@
 000001DC: TEXT object_menu_0872 FF 00 80 - - dic_The_0166 dic_chef_016A dic_says_00D1 dic__2E_2E_2E_00D6 dic_Don_27t_016F dic_talk_0001 dic_with_0079 dic_your_0179 dic_mouth_017E dic_open_01B3 dic__21_00F0 dic__2E_2E_2E_00D6 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "The chef says ... Don't talk with your mouth open ! ..."
 000001FC: TEXT object_menu_0872 FF 08 90 - - dic_stop_00F2 ; TEXT line=0x0872 voice=0xFF flags=0x08,0x90 "stop"
 00000206: POKE_BYTE 0164 00 ; POKE_BYTE address=0x0164 value=0x00
-0000020A: RECORD_CLEAR 08AC ; RECORD_CLEAR record=0x08AC
+0000020A: RECORD_CLEAR field_menu_0872_s13_08AC ; RECORD_CLEAR record=0x08AC
 0000020D: END_PROCEDURE proc_men2_0163
 0000020D: PROCEDURE proc_men3_020D ; DEB kind 2 "men3", encoded offset 0x020E
 0000020D: CONDITIONAL_BLOCK 01 proc_men4_02B9 ; CONDITIONAL_BLOCK flags=0x01 target=0x02B9
 00000211: BRANCH_PRESENTATION ; BRANCH_PRESENTATION
-00000212: RECORD_WILDCARD AF 0332 FFFF 1 ; OP_AF RECORD_WILDCARD record=0x0332 value=0xFFFF inverted=true
-00000218: ACTOR 08AC object_blood_0028 0 ; ACTOR record=0x08AC related=0x0028 inverted=false
+00000212: RECORD_WILDCARD AF field_Bronko_031A_s11_0332 FFFF 1 ; OP_AF RECORD_WILDCARD record=0x0332 value=0xFFFF inverted=true
+00000218: ACTOR field_menu_0872_s13_08AC object_blood_0028 0 ; ACTOR record=0x08AC related=0x0028 inverted=false
 0000021D: GUARD_POP ; GUARD_POP
 0000021E: TEXT object_menu_0872 FF 00 80 - - dic__22MENU_22_00F7 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "\"MENU\""
 00000228: TEXT object_menu_0872 FF 00 80 - - dic_Today_27s_00FE dic_fare_0106 dic__3A_0042 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Today's fare :"
@@ -507,13 +517,13 @@
 0000028A: TEXT object_menu_0872 FF 00 80 - - dic_The_0166 dic_chef_016A dic_says_00D1 dic__2E_2E_2E_00D6 dic_Somebody_01D9 dic_didn_27t_01E2 dic_finish_01E9 dic_his_01F0 dic_wrigglers_01F4 dic_yesterday_01FE dic__2E_2E_2E_00D6 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "The chef says ... Somebody didn't finish his wrigglers yesterday ..."
 000002A8: TEXT object_menu_0872 FF 08 90 - - dic_stop_00F2 ; TEXT line=0x0872 voice=0xFF flags=0x08,0x90 "stop"
 000002B2: POKE_BYTE 020E 00 ; POKE_BYTE address=0x020E value=0x00
-000002B6: RECORD_CLEAR 08AC ; RECORD_CLEAR record=0x08AC
+000002B6: RECORD_CLEAR field_menu_0872_s13_08AC ; RECORD_CLEAR record=0x08AC
 000002B9: END_PROCEDURE proc_men3_020D
 000002B9: PROCEDURE proc_men4_02B9 ; DEB kind 2 "men4", encoded offset 0x02BA
 000002B9: CONDITIONAL_BLOCK 01 proc_men5_036D ; CONDITIONAL_BLOCK flags=0x01 target=0x036D
 000002BD: BRANCH_PRESENTATION ; BRANCH_PRESENTATION
-000002BE: ACTOR 08AC object_blood_0028 0 ; ACTOR record=0x08AC related=0x0028 inverted=false
-000002C3: RECORD_WILDCARD AF 0332 FFFF 1 ; OP_AF RECORD_WILDCARD record=0x0332 value=0xFFFF inverted=true
+000002BE: ACTOR field_menu_0872_s13_08AC object_blood_0028 0 ; ACTOR record=0x08AC related=0x0028 inverted=false
+000002C3: RECORD_WILDCARD AF field_Bronko_031A_s11_0332 FFFF 1 ; OP_AF RECORD_WILDCARD record=0x0332 value=0xFFFF inverted=true
 000002C9: GUARD_POP ; GUARD_POP
 000002CA: TEXT object_menu_0872 FF 00 80 - - dic__22MENU_22_00F7 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "\"MENU\""
 000002D4: TEXT object_menu_0872 FF 00 80 - - dic_Today_27s_00FE dic_fare_0106 dic__3A_0042 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Today's fare :"
@@ -525,13 +535,13 @@
 0000033E: TEXT object_menu_0872 FF 00 80 - - dic_The_0166 dic_chef_016A dic_says_00D1 dic__2E_2E_2E_00D6 dic_Plenty_023C dic_more_0243 dic_in_012C dic_the_0248 dic_kitchen_024C dic__21_00F0 dic__2E_2E_2E_00D6 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "The chef says ... Plenty more in the kitchen ! ..."
 0000035C: TEXT object_menu_0872 FF 08 90 - - dic_stop_00F2 ; TEXT line=0x0872 voice=0xFF flags=0x08,0x90 "stop"
 00000366: POKE_BYTE 02BA 00 ; POKE_BYTE address=0x02BA value=0x00
-0000036A: RECORD_CLEAR 08AC ; RECORD_CLEAR record=0x08AC
+0000036A: RECORD_CLEAR field_menu_0872_s13_08AC ; RECORD_CLEAR record=0x08AC
 0000036D: END_PROCEDURE proc_men4_02B9
 0000036D: PROCEDURE proc_men5_036D ; DEB kind 2 "men5", encoded offset 0x036E
 0000036D: CONDITIONAL_BLOCK 01 proc_men6_0429 ; CONDITIONAL_BLOCK flags=0x01 target=0x0429
 00000371: BRANCH_PRESENTATION ; BRANCH_PRESENTATION
-00000372: ACTOR 08AC object_blood_0028 0 ; ACTOR record=0x08AC related=0x0028 inverted=false
-00000377: RECORD_WILDCARD AF 0332 FFFF 1 ; OP_AF RECORD_WILDCARD record=0x0332 value=0xFFFF inverted=true
+00000372: ACTOR field_menu_0872_s13_08AC object_blood_0028 0 ; ACTOR record=0x08AC related=0x0028 inverted=false
+00000377: RECORD_WILDCARD AF field_Bronko_031A_s11_0332 FFFF 1 ; OP_AF RECORD_WILDCARD record=0x0332 value=0xFFFF inverted=true
 0000037D: GUARD_POP ; GUARD_POP
 0000037E: TEXT object_menu_0872 FF 00 80 - - dic__22IMPROVED_000C dic_MENU_22_0016 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "\"IMPROVED MENU\""
 0000038A: TEXT object_menu_0872 FF 00 80 - - dic_Today_27s_00FE dic_fare_0106 dic__3A_0042 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Today's fare :"
@@ -544,7 +554,7 @@
 00000414: TEXT object_menu_0872 FF 08 A0 - - dic_stop_00F2 ; TEXT line=0x0872 voice=0xFF flags=0x08,0xA0 "stop"
 0000041E: POKE_BYTE 036E 00 ; POKE_BYTE address=0x036E value=0x00
 00000422: POKE_BYTE 042A 01 ; POKE_BYTE address=0x042A value=0x01
-00000426: RECORD_CLEAR 08AC ; RECORD_CLEAR record=0x08AC
+00000426: RECORD_CLEAR field_menu_0872_s13_08AC ; RECORD_CLEAR record=0x08AC
 00000429: END_PROCEDURE proc_men5_036D
 00000429: PROCEDURE proc_men6_0429 ; DEB kind 2 "men6", encoded offset 0x042A
 00000429: CONDITIONAL_BLOCK 00 proc_tima_0446 ; CONDITIONAL_BLOCK flags=0x00 target=0x0446
@@ -566,16 +576,16 @@
 00000453: CONDITIONAL_BLOCK 01 proc_ho1_0463 ; CONDITIONAL_BLOCK flags=0x01 target=0x0463
 00000457: STATE_ARRAY_TEST 16 ; STATE_ARRAY_TEST index=0x16
 00000459: GUARD_POP ; GUARD_POP
-0000045A: RECORD_LINK 0594 object_blood_0028 0 ; RECORD_LINK record=0x0594 related=0x0028 inverted=false
+0000045A: RECORD_LINK field_Izwalito_055A_s13_0594 object_blood_0028 0 ; RECORD_LINK record=0x0594 related=0x0028 inverted=false
 0000045F: POKE_BYTE 0454 00 ; POKE_BYTE address=0x0454 value=0x00
 00000463: END_PROCEDURE proc_ho_0453
 00000463: PROCEDURE proc_ho1_0463 ; DEB kind 2 "ho1", encoded offset 0x0464
 00000463: CONDITIONAL_BLOCK 01 proc_hon_061D ; CONDITIONAL_BLOCK flags=0x01 target=0x061D
 00000467: BRANCH_PRESENTATION ; BRANCH_PRESENTATION
-00000468: ACTOR 0594 object_blood_0028 0 ; ACTOR record=0x0594 related=0x0028 inverted=false
+00000468: ACTOR field_Izwalito_055A_s13_0594 object_blood_0028 0 ; ACTOR record=0x0594 related=0x0028 inverted=false
 0000046D: GUARD_POP ; GUARD_POP
 0000046E: TEXT object_Izwalito_055A FF 08 80 - - dic_You_02A6 dic_found_02B3 dic_the_0248 dic_right_02B9 dic_button_02BF dic__2E_0065 dic_So_02C6 dic_far_02C9 dic_so_02CD dic_good_02D0 dic__2E_2E_2E_00D6 ; TEXT line=0x055A voice=0xFF flags=0x08,0x80 "You found the right button . So far so good ..."
-0000048C: RECORD_WILDCARD BC 05A0 02D5 0 ; OP_BC RECORD_WILDCARD record=0x05A0 value=0x02D5 inverted=false
+0000048C: RECORD_WILDCARD BC field_Izwalito_055A_s0F_05A0 02D5 0 ; OP_BC RECORD_WILDCARD record=0x05A0 value=0x02D5 inverted=false
 00000491: TEXT object_Izwalito_055A FF 10 80 block_04CE - dic_Click_02DA dic_quick_2C_02E0 dic_Cap_27n_02E7 dic_Bob_02ED dic_is_02F1 dic_waiting_02F4 dic__2E_2E_2E_00D6 FFFF dic_explanations_02FC dic_game_0309 ; TEXT line=0x055A voice=0xFF flags=0x10,0x80 "Click quick, Cap'n Bob is waiting ..."
 000004AF: GUARD_PUSH block_04C6 ; GUARD_PUSH target=0x04C6 ; unstructured_guard=alternate_exit
 000004B2: CONCEPT_GUARD dic_game_0309 0 ; CONCEPT_GUARD word=0x0309 inverted=false "game"
@@ -583,7 +593,7 @@
 000004B6: TEXT object_Izwalito_055A FF 08 A0 - - dic_GAME_030E ; TEXT line=0x055A voice=0xFF flags=0x08,0xA0 "GAME"
 000004C0: RUN_PROFILE 02 ; RUN_PROFILE operand=0x02 profile=0x0001
 000004C2: CLEAR_ALTERNATE_CONCEPT ; CLEAR_ALTERNATE_CONCEPT
-000004C3: RECORD_CLEAR 0594 ; RECORD_CLEAR record=0x0594
+000004C3: RECORD_CLEAR field_Izwalito_055A_s13_0594 ; RECORD_CLEAR record=0x0594
 000004C6: LABEL block_04C6
 000004C6: WHEN block_04CE ; GUARD_PUSH target=0x04CE
 000004C9: CONCEPT_GUARD dic_explanations_02FC 0 ; CONCEPT_GUARD word=0x02FC inverted=false "explanations"
@@ -602,12 +612,12 @@
 000005C0: TEXT object_Izwalito_055A FF 00 80 - - dic_In_0460 dic_which_0463 dic_case_0469 dic__2C_020E dic_write_046E dic_to_0398 dic__3A_0042 dic_SUPER_0474 dic_ZEN_047A dic__2C_020E dic_end_047E dic_of_0259 dic_corridor_0482 dic__2C_020E dic_CRAZYSTONE_048B dic_planet_0496 dic__2C_020E dic_BABY1_049D dic_UNIVERSE_04A3 dic__2E_2E_2E_00D6 ; TEXT line=0x055A voice=0xFF flags=0x00,0x80 "In which case , write to : SUPER ZEN , end of corridor , CRAZYSTONE planet , BABY1 UNIVERSE ..."
 000005F0: TEXT object_Izwalito_055A FF 00 80 - - dic_Click_02DA dic_quick_04AC dic_on_0037 dic__22HONK_22_04B2 dic__2E_0065 dic_He_04B9 dic_has_002E dic_important_04BC dic_information_04C6 dic_for_003A dic_YOU_04D2 dic__2E_2E_2E_00D6 ; TEXT line=0x055A voice=0xFF flags=0x00,0x80 "Click quick on \"HONK\" . He has important information for YOU ..."
 00000610: TEXT object_Izwalito_055A FF 08 80 - - dic__2E_2E_2E_00D6 ; TEXT line=0x055A voice=0xFF flags=0x08,0x80 "..."
-0000061A: RECORD_CLEAR 0594 ; RECORD_CLEAR record=0x0594
+0000061A: RECORD_CLEAR field_Izwalito_055A_s13_0594 ; RECORD_CLEAR record=0x0594
 0000061D: END_PROCEDURE proc_ho1_0463
 0000061D: PROCEDURE proc_hon_061D ; DEB kind 2 "hon", encoded offset 0x061E
 0000061D: CONDITIONAL_BLOCK 01 proc_BOB1_077D ; CONDITIONAL_BLOCK flags=0x01 target=0x077D
 00000621: BRANCH_PRESENTATION ; BRANCH_PRESENTATION
-00000622: ACTOR 0864 object_blood_0028 0 ; ACTOR record=0x0864 related=0x0028 inverted=false
+00000622: ACTOR field_Honk_082A_s13_0864 object_blood_0028 0 ; ACTOR record=0x0864 related=0x0028 inverted=false
 00000627: GUARD_POP ; GUARD_POP
 00000628: TEXT object_Honk_082A FF 20 80 - - dic_Welcome_04D6 dic_aboard_04DE dic_the_0248 dic_ARK_04E5 dic__2C_020E dic_Commander_04E9 dic__2E_0065 dic_I_27m_04F3 dic_HONK_04F7 dic__2C_020E dic_your_0179 dic_trusted_04FC dic_computer_0504 dic__2E_2E_2E_00D6 ; TEXT line=0x082A voice=0xFF flags=0x20,0x80 "Welcome aboard the ARK , Commander . I'm HONK , your trusted computer ..."
 0000064C: TEXT object_Honk_082A FF 20 80 - - dic_I_27m_04F3 dic_here_050D dic_to_0398 dic_help_0512 dic_you_003E dic_a_0355 dic_lot_0517 dic__2E_2E_2E_00D6 ; TEXT line=0x082A voice=0xFF flags=0x20,0x80 "I'm here to help you a lot ..."
@@ -620,12 +630,12 @@
 00000734: TEXT object_Honk_082A FF 20 80 - - dic_If_038E dic_you_003E dic_have_061E dic_questions_2C_0623 dic_I_062E dic_have_061E dic_all_0630 dic_the_0248 dic_answers_0634 dic__2E_2E_2E_00D6 ; TEXT line=0x082A voice=0xFF flags=0x20,0x80 "If you have questions, I have all the answers ..."
 00000750: TEXT object_Honk_082A FF 20 80 - - dic_Click_02DA dic_quick_04AC dic_on_0037 dic__22CRYOBOX_22_0343 dic_Cap_27n_02E7 dic_Bob_02ED dic_is_02F1 dic_waiting_02F4 dic__2E_2E_2E_00D6 ; TEXT line=0x082A voice=0xFF flags=0x20,0x80 "Click quick on \"CRYOBOX\" Cap'n Bob is waiting ..."
 0000076A: TEXT object_Honk_082A FF 28 80 - - dic_End_063C dic_of_0259 dic_report_0640 dic__2E_2E_2E_00D6 ; TEXT line=0x082A voice=0xFF flags=0x28,0x80 "End of report ..."
-0000077A: RECORD_CLEAR 0864 ; RECORD_CLEAR record=0x0864
+0000077A: RECORD_CLEAR field_Honk_082A_s13_0864 ; RECORD_CLEAR record=0x0864
 0000077D: END_PROCEDURE proc_hon_061D
 0000077D: PROCEDURE proc_BOB1_077D ; DEB kind 2 "BOB1", encoded offset 0x077E
 0000077D: CONDITIONAL_BLOCK 01 proc_scr2_0BF6 ; CONDITIONAL_BLOCK flags=0x01 target=0x0BF6
 00000781: BRANCH_FLAG_274F ; BRANCH_FLAG_274F
-00000782: ACTOR 0084 object_blood_0028 0 ; ACTOR record=0x0084 related=0x0028 inverted=false
+00000782: ACTOR field_Bob_Morlock_004A_s13_0084 object_blood_0028 0 ; ACTOR record=0x0084 related=0x0028 inverted=false
 00000787: GUARD_POP ; GUARD_POP
 00000788: TEXT object_Bob_Morlock_004A 03 00 80 - - dic_Good_0647 dic_day_064C dic_COMMANDER_0650 dic__2E_0065 dic_My_065A dic_name_065D dic_is_02F1 dic_BOB_0662 dic__2C_020E dic_BOB_0662 dic_MORLOCK_0666 dic__2E_2E_2E_00D6 ; TEXT line=0x004A voice=0x03 flags=0x00,0x80 "Good day COMMANDER . My name is BOB , BOB MORLOCK ..."
 000007A8: TEXT object_Bob_Morlock_004A 01 00 80 - - dic_If_038E dic_the_0248 dic_phone_051B dic_rings_0521 dic__2C_020E dic_press_066E dic_the_0248 dic__22RED_0530 dic_BUTTON_22_0535 dic_on_0037 dic_the_0248 dic_radio_0674 dic_to_0398 dic_answer_067A dic__2E_2E_2E_00D6 ; TEXT line=0x004A voice=0x01 flags=0x00,0x80 "If the phone rings , press the \"RED BUTTON\" on the radio to answer ..."
@@ -675,12 +685,12 @@
 00000BCF: TEXT object_Bob_Morlock_004A FF 20 80 - - dic_The_0166 dic_old_06D4 dic_turkey_27s_0A3D dic_out_0A46 dic_for_003A dic_the_0248 dic_count_0A4A dic__2E_2E_2E_00D6 ; TEXT line=0x004A voice=0xFF flags=0x20,0x80 "The old turkey's out for the count ..."
 00000BE7: TEXT object_Bob_Morlock_004A FF 08 90 - - dic_stop_00F2 ; TEXT line=0x004A voice=0xFF flags=0x08,0x90 "stop"
 00000BF1: RUN_PROFILE 02 ; RUN_PROFILE operand=0x02 profile=0x0001
-00000BF3: RECORD_CLEAR 0084 ; RECORD_CLEAR record=0x0084
+00000BF3: RECORD_CLEAR field_Bob_Morlock_004A_s13_0084 ; RECORD_CLEAR record=0x0084
 00000BF6: END_PROCEDURE proc_BOB1_077D
 00000BF6: PROCEDURE proc_scr2_0BF6 ; DEB kind 2 "scr2", encoded offset 0x0BF7
 00000BF6: CONDITIONAL_BLOCK 01 block_0C0B ; CONDITIONAL_BLOCK flags=0x01 target=0x0C0B
-00000BFA: SHARED_STATE BF 0860 F5 C1 0001 ; OP_BF SHARED_STATE field=0x0860 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
-00000C01: SHARED_STATE BF 0080 F5 C1 0001 ; OP_BF SHARED_STATE field=0x0080 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
+00000BFA: SHARED_STATE BF field_Honk_082A_s08_0860 F5 C1 0001 ; OP_BF SHARED_STATE field=0x0860 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
+00000C01: SHARED_STATE BF field_Bob_Morlock_004A_s08_0080 F5 C1 0001 ; OP_BF SHARED_STATE field=0x0080 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 00000C08: GUARD_POP ; GUARD_POP
 00000C09: RUN_PROFILE 02 ; RUN_PROFILE operand=0x02 profile=0x0001
 00000C0B: LABEL block_0C0B

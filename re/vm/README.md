@@ -160,12 +160,18 @@ emit no bytes, but symbolic operands are resolved and range-checked by the
 two-pass BloodScript compiler. The generated corpus contains 1,059 distinct COD
 symbols and 284 BAS selector labels while retaining exact layout.
 
-The structured COD sources additionally use 104 zero-byte `OBJECT`
-declarations recovered from exact kind-1 DEB offsets. They replace 4,113 proven
-VAR object-base operands while retaining the original numeric offset in each
-declaration. Interior record addresses remain numeric until VAR-kind and native
-field-matrix evidence prove their owning object and field; nearest-symbol
-guessing is not used.
+The structured COD and BAS sources additionally use 247 image-local zero-byte
+`OBJECT` declarations recovered from exact kind-1 DEB offsets. They replace
+5,962 proven VAR object-base operands while retaining the original numeric
+offset in each declaration.
+
+A first subrecord pass adds 367 zero-byte `FIELD name object delta`
+declarations and replaces 1,880 direct VAR operands. A field is emitted only
+when its address equals exactly one DEB object base plus a nonzero entry selected
+from the native field-offset matrix by that object's initial VAR kind. Equal
+textual proximity, zero matrix entries, ambiguous owners, and unmatched
+addresses do not produce an alias. The compiler resolves the declared wrapping
+base-plus-delta expression back to the original `u16` address.
 
 The structured COD and BAS sources also use 13,699 zero-byte `DIC_WORD`
 declarations for exact referenced DIC string offsets. They replace 53,194

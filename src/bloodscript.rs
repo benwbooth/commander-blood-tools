@@ -36,6 +36,8 @@ pub struct Decompilation {
     pub object_alias_uses: usize,
     pub dictionary_aliases: usize,
     pub dictionary_alias_uses: usize,
+    pub field_aliases: usize,
+    pub field_alias_uses: usize,
     pub structured_selector_lists: usize,
     pub structured_cases: usize,
 }
@@ -56,6 +58,8 @@ struct BodyStats {
     object_alias_uses: usize,
     dictionary_aliases: usize,
     dictionary_alias_uses: usize,
+    field_aliases: usize,
+    field_alias_uses: usize,
     structured_selector_lists: usize,
     structured_cases: usize,
 }
@@ -103,6 +107,16 @@ struct DictionaryAlias {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+struct FieldAlias {
+    identifier: String,
+    owner_offset: u16,
+    owner_name: String,
+    kind: u16,
+    selectors: Vec<u8>,
+    field_offset: u16,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 struct OpenSelectorList<'a> {
     name: &'a str,
     prefix_offset: usize,
@@ -127,7 +141,7 @@ pub fn decompile_with_symbols(
     dictionary: &HashMap<u16, String>,
     symbols: &[DebSymbol],
 ) -> Result<Decompilation> {
-    decompile_mode(kind, image, dictionary, symbols, false)
+    decompile_mode(kind, image, dictionary, symbols, false, None)
 }
 
 pub fn decompile_structured_with_symbols(
@@ -136,7 +150,23 @@ pub fn decompile_structured_with_symbols(
     dictionary: &HashMap<u16, String>,
     symbols: &[DebSymbol],
 ) -> Result<Decompilation> {
-    decompile_mode(kind, image, dictionary, symbols, true)
+    decompile_mode(kind, image, dictionary, symbols, true, None)
+}
+
+pub fn decompile_structured_cod_with_symbols(
+    image: &[u8],
+    var: &[u8],
+    dictionary: &HashMap<u16, String>,
+    symbols: &[DebSymbol],
+) -> Result<Decompilation> {
+    decompile_mode(
+        ImageKind::Cod,
+        image,
+        dictionary,
+        symbols,
+        true,
+        Some(var),
+    )
 }
 
 pub fn decompile_structured_bas_with_symbols(
@@ -146,7 +176,7 @@ pub fn decompile_structured_bas_with_symbols(
     symbols: &[DebSymbol],
 ) -> Result<Decompilation> {
     let graph = analyze_bas("BAS", image, var, dictionary, symbols)?;
-    decompile_mode_with_bas_graph(image, dictionary, &graph)
+    decompile_mode_with_bas_graph(image, var, dictionary, symbols, &graph)
 }
 
 fn decompile_mode(
@@ -155,6 +185,7 @@ fn decompile_mode(
     dictionary: &HashMap<u16, String>,
     symbols: &[DebSymbol],
     structured: bool,
+    var: Option<&[u8]>,
 ) -> Result<Decompilation> {
     let mut source = String::new();
     writeln!(source, "; BloodScript typed VM source")?;
@@ -171,8 +202,10 @@ fn decompile_mode(
     writeln!(source)?;
 
     let stats = match kind {
-        ImageKind::Cod => decompile_cod(&mut source, image, dictionary, symbols, structured)?,
-        ImageKind::Bas => decompile_bas(&mut source, image, dictionary, None)?,
+        ImageKind::Cod => {
+            decompile_cod(&mut source, image, dictionary, symbols, structured, var)?
+        }
+        ImageKind::Bas => decompile_bas(&mut source, image, dictionary, &[], None, None)?,
     };
     Ok(Decompilation {
         source,
@@ -190,6 +223,8 @@ fn decompile_mode(
         object_alias_uses: stats.object_alias_uses,
         dictionary_aliases: stats.dictionary_aliases,
         dictionary_alias_uses: stats.dictionary_alias_uses,
+        field_aliases: stats.field_aliases,
+        field_alias_uses: stats.field_alias_uses,
         structured_selector_lists: stats.structured_selector_lists,
         structured_cases: stats.structured_cases,
     })
@@ -197,7 +232,9 @@ fn decompile_mode(
 
 fn decompile_mode_with_bas_graph(
     image: &[u8],
+    var: &[u8],
     dictionary: &HashMap<u16, String>,
+    symbols: &[DebSymbol],
     graph: &BasControlFlow,
 ) -> Result<Decompilation> {
     let mut source = String::new();
@@ -207,7 +244,14 @@ fn decompile_mode_with_bas_graph(
     writeln!(source, "; size: 0x{:08X}", image.len())?;
     writeln!(source)?;
 
-    let stats = decompile_bas(&mut source, image, dictionary, Some(graph))?;
+    let stats = decompile_bas(
+        &mut source,
+        image,
+        dictionary,
+        symbols,
+        Some(var),
+        Some(graph),
+    )?;
     Ok(Decompilation {
         source,
         typed_statements: stats.typed_statements,
@@ -224,6 +268,8 @@ fn decompile_mode_with_bas_graph(
         object_alias_uses: stats.object_alias_uses,
         dictionary_aliases: stats.dictionary_aliases,
         dictionary_alias_uses: stats.dictionary_alias_uses,
+        field_aliases: stats.field_aliases,
+        field_alias_uses: stats.field_alias_uses,
         structured_selector_lists: stats.structured_selector_lists,
         structured_cases: stats.structured_cases,
     })
@@ -285,6 +331,36 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
             _ => {}
         }
     }
+    let mut fields = HashMap::new();
+    for line in &lines {
+        if line.name != "FIELD" {
+            continue;
+        }
+        require_count(&line.args, 3, line.line_number, line.name)?;
+        validate_identifier(line.args[0], line.line_number)?;
+        let owner = objects.get(line.args[1]).copied().ok_or_else(|| {
+            anyhow!(
+                "line {}: field owner {:?} is not a declared object",
+                line.line_number,
+                line.args[1]
+            )
+        })?;
+        let field_offset = parse_word(line.args[2], line.line_number, "field offset")?;
+        let address = owner.wrapping_add(field_offset);
+        if fields.insert(line.args[0], address).is_some() {
+            bail!(
+                "line {}: duplicate field {:?}",
+                line.line_number,
+                line.args[0]
+            );
+        }
+    }
+    let mut var_addresses = objects.clone();
+    for (name, address) in fields {
+        if var_addresses.insert(name, address).is_some() {
+            bail!("field {name:?} conflicts with an object declaration");
+        }
+    }
 
     let mut image = Vec::new();
     let mut current_procedure: Option<&str> = None;
@@ -300,7 +376,7 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
             );
         }
         match line.name {
-            "OBJECT" | "DIC_WORD" => continue,
+            "OBJECT" | "DIC_WORD" | "FIELD" => continue,
             "LABEL" => {
                 require_count(&line.args, 1, line.line_number, line.name)?;
                 continue;
@@ -555,7 +631,7 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
             &line.args,
             line.line_number,
             &labels,
-            &objects,
+            &var_addresses,
             &dictionary_words,
         )?;
         if encoded.is_empty() {
@@ -633,6 +709,7 @@ fn decompile_cod(
     dictionary: &HashMap<u16, String>,
     symbols: &[DebSymbol],
     structured_source: bool,
+    var: Option<&[u8]>,
 ) -> Result<BodyStats> {
     let tokens = vm::walk(image, 0, image.len());
     let annotations = cod_annotations(&tokens, image, symbols)?;
@@ -641,11 +718,24 @@ fn decompile_cod(
     } else {
         StructuredAnnotations::default()
     };
-    let object_aliases = if structured_source {
+    let field_aliases = if structured_source {
+        var.map(|var| {
+            field_aliases(
+                tokens.iter().flat_map(object_operand_values),
+                symbols,
+                var,
+            )
+        })
+        .unwrap_or_default()
+    } else {
+        BTreeMap::new()
+    };
+    let mut object_aliases = if structured_source {
         cod_object_aliases(&tokens, symbols)
     } else {
         BTreeMap::new()
     };
+    add_field_owner_objects(&mut object_aliases, &field_aliases);
     let dictionary_aliases = if structured_source {
         dictionary_aliases(
             tokens.iter().flat_map(dictionary_operand_values),
@@ -655,6 +745,7 @@ fn decompile_cod(
         BTreeMap::new()
     };
     emit_object_declarations(output, &object_aliases)?;
+    emit_field_declarations(output, &field_aliases, &object_aliases)?;
     emit_dictionary_declarations(output, &dictionary_aliases)?;
     let mut cursor = 0usize;
     let mut stats = BodyStats {
@@ -674,6 +765,12 @@ fn decompile_cod(
             .iter()
             .flat_map(dictionary_operand_values)
             .filter(|value| dictionary_aliases.contains_key(value))
+            .count(),
+        field_aliases: field_aliases.len(),
+        field_alias_uses: tokens
+            .iter()
+            .flat_map(object_operand_values)
+            .filter(|value| field_aliases.contains_key(value))
             .count(),
         ..BodyStats::default()
     };
@@ -714,6 +811,7 @@ fn decompile_cod(
                 dictionary,
                 &annotations.labels,
                 &object_aliases,
+                &field_aliases,
                 &dictionary_aliases,
                 structured.rejected.get(&offset),
             )?;
@@ -748,15 +846,34 @@ fn decompile_bas(
     output: &mut String,
     image: &[u8],
     dictionary: &HashMap<u16, String>,
+    symbols: &[DebSymbol],
+    var: Option<&[u8]>,
     graph: Option<&BasControlFlow>,
 ) -> Result<BodyStats> {
-    let object_aliases = BTreeMap::new();
+    let vm_tokens = bas_vm_tokens(image, dictionary);
+    let field_aliases = var
+        .map(|var| {
+            field_aliases(
+                vm_tokens.iter().flat_map(object_operand_values),
+                symbols,
+                var,
+            )
+        })
+        .unwrap_or_default();
+    let mut object_aliases = if graph.is_some() {
+        cod_object_aliases(&vm_tokens, symbols)
+    } else {
+        BTreeMap::new()
+    };
+    add_field_owner_objects(&mut object_aliases, &field_aliases);
     let dictionary_values = bas_dictionary_operand_values(image, dictionary);
     let dictionary_aliases = if graph.is_some() {
         dictionary_aliases(dictionary_values.iter().copied(), dictionary)
     } else {
         BTreeMap::new()
     };
+    emit_object_declarations(output, &object_aliases)?;
+    emit_field_declarations(output, &field_aliases, &object_aliases)?;
     emit_dictionary_declarations(output, &dictionary_aliases)?;
     let annotations = bas_annotations(image, dictionary)?;
     let structured = bas_structured_annotations(graph);
@@ -770,6 +887,18 @@ fn decompile_bas(
         dictionary_alias_uses: dictionary_values
             .iter()
             .filter(|value| dictionary_aliases.contains_key(value))
+            .count(),
+        object_aliases: object_aliases.len(),
+        object_alias_uses: vm_tokens
+            .iter()
+            .flat_map(object_operand_values)
+            .filter(|value| object_aliases.contains_key(value))
+            .count(),
+        field_aliases: field_aliases.len(),
+        field_alias_uses: vm_tokens
+            .iter()
+            .flat_map(object_operand_values)
+            .filter(|value| field_aliases.contains_key(value))
             .count(),
         ..BodyStats::default()
     };
@@ -821,6 +950,7 @@ fn decompile_bas(
                         dictionary,
                         &HashMap::new(),
                         &object_aliases,
+                        &field_aliases,
                         &dictionary_aliases,
                         None,
                     )?;
@@ -1167,6 +1297,93 @@ fn cod_object_aliases(tokens: &[VmToken], symbols: &[DebSymbol]) -> BTreeMap<u16
     aliases
 }
 
+fn field_aliases(
+    values: impl IntoIterator<Item = u16>,
+    symbols: &[DebSymbol],
+    var: &[u8],
+) -> BTreeMap<u16, FieldAlias> {
+    let referenced: BTreeSet<u16> = values.into_iter().collect();
+    let objects: BTreeMap<u16, &DebSymbol> = symbols
+        .iter()
+        .filter(|symbol| symbol.kind == 1)
+        .map(|symbol| (symbol.offset, symbol))
+        .collect();
+    let object_bases: BTreeSet<u16> = objects.keys().copied().collect();
+    let mut candidates: BTreeMap<u16, Vec<FieldAlias>> = BTreeMap::new();
+
+    for (&owner_offset, symbol) in &objects {
+        let owner = usize::from(owner_offset);
+        let Some(kind_bytes) = var.get(owner..owner + 2) else {
+            continue;
+        };
+        let kind = u16::from_le_bytes([kind_bytes[0], kind_bytes[1]]);
+        if kind == 0 {
+            continue;
+        }
+        let column = kind.trailing_zeros() as usize;
+        if column >= 16 {
+            continue;
+        }
+        let mut selectors_by_offset: BTreeMap<u16, Vec<u8>> = BTreeMap::new();
+        for (selector, row) in vm::FIELD_OFFSETS.iter().enumerate() {
+            let field_offset = u16::from(row[column]);
+            if field_offset != 0 {
+                selectors_by_offset
+                    .entry(field_offset)
+                    .or_default()
+                    .push(selector as u8);
+            }
+        }
+        for (field_offset, selectors) in selectors_by_offset {
+            let address = owner_offset.wrapping_add(field_offset);
+            if !referenced.contains(&address) || object_bases.contains(&address) {
+                continue;
+            }
+            let selector_component = selectors
+                .iter()
+                .map(|selector| format!("{selector:02X}"))
+                .collect::<Vec<_>>()
+                .join("_");
+            candidates.entry(address).or_default().push(FieldAlias {
+                identifier: format!(
+                    "field_{}_{owner_offset:04X}_s{selector_component}_{address:04X}",
+                    identifier_component(&symbol.name)
+                ),
+                owner_offset,
+                owner_name: symbol.name.clone(),
+                kind,
+                selectors,
+                field_offset,
+            });
+        }
+    }
+
+    candidates
+        .into_iter()
+        .filter_map(|(address, mut candidates)| {
+            (candidates.len() == 1).then(|| (address, candidates.remove(0)))
+        })
+        .collect()
+}
+
+fn add_field_owner_objects(
+    aliases: &mut BTreeMap<u16, ObjectAlias>,
+    fields: &BTreeMap<u16, FieldAlias>,
+) {
+    for field in fields.values() {
+        aliases
+            .entry(field.owner_offset)
+            .or_insert_with(|| ObjectAlias {
+                identifier: format!(
+                    "object_{}_{:04X}",
+                    identifier_component(&field.owner_name),
+                    field.owner_offset
+                ),
+                source_name: field.owner_name.clone(),
+            });
+    }
+}
+
 fn dictionary_aliases(
     values: impl IntoIterator<Item = u16>,
     dictionary: &HashMap<u16, String>,
@@ -1193,6 +1410,25 @@ fn dictionary_operand_values(token: &VmToken) -> Vec<u16> {
         VmToken::ConceptGuard { word_offset, .. } => vec![*word_offset],
         _ => Vec::new(),
     }
+}
+
+fn bas_vm_tokens(image: &[u8], dictionary: &HashMap<u16, String>) -> Vec<VmToken> {
+    let mut tokens = Vec::new();
+    let mut cursor = 0usize;
+    while cursor < image.len() {
+        if let Some((end, token)) = vm_source::bas_token_at(image, cursor, dictionary) {
+            match token {
+                vm_source::BasToken::Text(token) | vm_source::BasToken::Vm(token) => {
+                    tokens.push(token);
+                }
+                _ => {}
+            }
+            cursor = end;
+        } else {
+            cursor += 1;
+        }
+    }
+    tokens
 }
 
 fn bas_dictionary_operand_values(image: &[u8], dictionary: &HashMap<u16, String>) -> Vec<u16> {
@@ -1288,10 +1524,50 @@ fn emit_dictionary_declarations(
     Ok(())
 }
 
-fn object_operand(value: u16, aliases: &BTreeMap<u16, ObjectAlias>) -> String {
-    aliases
+fn emit_field_declarations(
+    output: &mut String,
+    aliases: &BTreeMap<u16, FieldAlias>,
+    object_aliases: &BTreeMap<u16, ObjectAlias>,
+) -> Result<()> {
+    for alias in aliases.values() {
+        let owner = object_aliases.get(&alias.owner_offset).ok_or_else(|| {
+            anyhow!(
+                "field {:?} has no object declaration at 0x{:04X}",
+                alias.identifier,
+                alias.owner_offset
+            )
+        })?;
+        let selectors = alias
+            .selectors
+            .iter()
+            .map(|selector| format!("{selector:02X}"))
+            .collect::<Vec<_>>()
+            .join(",");
+        writeln!(
+            output,
+            "00000000: FIELD {} {} {:04X} ; VAR kind 0x{:04X}, selector(s) {}",
+            alias.identifier, owner.identifier, alias.field_offset, alias.kind, selectors
+        )?;
+    }
+    if !aliases.is_empty() {
+        output.push('\n');
+    }
+    Ok(())
+}
+
+fn object_operand(
+    value: u16,
+    object_aliases: &BTreeMap<u16, ObjectAlias>,
+    field_aliases: &BTreeMap<u16, FieldAlias>,
+) -> String {
+    field_aliases
         .get(&value)
         .map(|alias| alias.identifier.clone())
+        .or_else(|| {
+            object_aliases
+                .get(&value)
+                .map(|alias| alias.identifier.clone())
+        })
         .unwrap_or_else(|| format!("{value:04X}"))
 }
 
@@ -1308,6 +1584,7 @@ fn emit_token(
     dictionary: &HashMap<u16, String>,
     labels: &HashMap<u16, String>,
     object_aliases: &BTreeMap<u16, ObjectAlias>,
+    field_aliases: &BTreeMap<u16, FieldAlias>,
     dictionary_aliases: &BTreeMap<u16, DictionaryAlias>,
     guard_rejections: Option<&BTreeSet<GuardRejection>>,
 ) -> Result<()> {
@@ -1327,7 +1604,7 @@ fn emit_token(
             write!(
                 output,
                 "TEXT {} {voice_selector:02X} {flags_b4:02X} {flags_b5:02X} {} {}",
-                object_operand(*line_index, object_aliases),
+                object_operand(*line_index, object_aliases, field_aliases),
                 optional_address_operand(*loop_target, labels),
                 option_word(*control_word)
             )?;
@@ -1387,8 +1664,8 @@ fn emit_token(
         } => write!(
             output,
             "ACTOR {} {} {}",
-            object_operand(*record_offset, object_aliases),
-            object_operand(*related_record_offset, object_aliases),
+            object_operand(*record_offset, object_aliases, field_aliases),
+            object_operand(*related_record_offset, object_aliases, field_aliases),
             bool_digit(*inverted)
         )?,
         VmToken::RecordLink {
@@ -1399,8 +1676,8 @@ fn emit_token(
         } => write!(
             output,
             "RECORD_LINK {} {} {}",
-            object_operand(*record_offset, object_aliases),
-            object_operand(*related_record_offset, object_aliases),
+            object_operand(*record_offset, object_aliases, field_aliases),
+            object_operand(*related_record_offset, object_aliases, field_aliases),
             bool_digit(*inverted)
         )?,
         VmToken::RecordEntry {
@@ -1412,18 +1689,18 @@ fn emit_token(
         } => write!(
             output,
             "RECORD_ENTRY {entry_opcode:02X} {} {} {}",
-            object_operand(*record_offset, object_aliases),
+            object_operand(*record_offset, object_aliases, field_aliases),
             if *entry_opcode == vm::OP_RECORD_ENTRY_MAX {
                 format!("{operand:04X}")
             } else {
-                object_operand(*operand, object_aliases)
+                object_operand(*operand, object_aliases, field_aliases)
             },
             bool_digit(*inverted)
         )?,
         VmToken::RecordClear { record_offset, .. } => write!(
             output,
             "RECORD_CLEAR {}",
-            object_operand(*record_offset, object_aliases)
+            object_operand(*record_offset, object_aliases, field_aliases)
         )?,
         VmToken::BitFlag {
             flag_offset,
@@ -1433,7 +1710,7 @@ fn emit_token(
         } => write!(
             output,
             "BIT_FLAG {} {bit_index:02X} {}",
-            object_operand(*flag_offset, object_aliases),
+            object_operand(*flag_offset, object_aliases, field_aliases),
             bool_digit(*clear)
         )?,
         VmToken::SharedState {
@@ -1445,14 +1722,14 @@ fn emit_token(
             ..
         } => {
             let rhs = if matches!(*rhs_mode, 0xC0 | 0xC2) {
-                object_operand(*rhs, object_aliases)
+                object_operand(*rhs, object_aliases, field_aliases)
             } else {
                 format!("{rhs:04X}")
             };
             write!(
                 output,
                 "SHARED_STATE {opcode:02X} {} {operator:02X} {rhs_mode:02X} {rhs}",
-                object_operand(*field_offset, object_aliases)
+                object_operand(*field_offset, object_aliases, field_aliases)
             )?
         }
         VmToken::SharedBitState {
@@ -1464,7 +1741,7 @@ fn emit_token(
         } => write!(
             output,
             "SHARED_BIT_STATE {opcode:02X} {} {mask:04X} {}",
-            object_operand(*field_offset, object_aliases),
+            object_operand(*field_offset, object_aliases, field_aliases),
             bool_digit(*inverted)
         )?,
         VmToken::RecordWildcard {
@@ -1476,7 +1753,7 @@ fn emit_token(
         } => write!(
             output,
             "RECORD_WILDCARD {opcode:02X} {} {value:04X} {}",
-            object_operand(*record_offset, object_aliases),
+            object_operand(*record_offset, object_aliases, field_aliases),
             bool_digit(*inverted)
         )?,
         VmToken::RecordState {
@@ -1488,7 +1765,7 @@ fn emit_token(
         } => write!(
             output,
             "RECORD_STATE {opcode:02X} {} {operand:04X} {}",
-            object_operand(*record_offset, object_aliases),
+            object_operand(*record_offset, object_aliases, field_aliases),
             bool_digit(*inverted)
         )?,
         VmToken::GlobalWordCompare {
@@ -1518,7 +1795,7 @@ fn emit_token(
         } => write!(
             output,
             "PAIR_RECORD {opcode:02X} {} {first_word:04X} {second_word:04X}",
-            object_operand(*record_offset, object_aliases)
+            object_operand(*record_offset, object_aliases, field_aliases)
         )?,
         VmToken::RecordTriple {
             record_offset,
@@ -1529,7 +1806,7 @@ fn emit_token(
         } => write!(
             output,
             "RECORD_TRIPLE {} {first_word:04X} {second_word:04X} {}",
-            object_operand(*record_offset, object_aliases),
+            object_operand(*record_offset, object_aliases, field_aliases),
             bool_digit(*inverted)
         )?,
         VmToken::ScriptProfileRequest { operand, .. } => {
@@ -2275,6 +2552,98 @@ mod tests {
     }
 
     #[test]
+    fn field_aliases_require_exact_object_kind_matrix_evidence() {
+        let image = vec![0xBF, 0x18, 0x01, 0xF5, 0xC1, 0x01, 0x00, 0xFF];
+        let mut var = vec![0; 0x200];
+        var[0x100..0x102].copy_from_slice(&2u16.to_le_bytes());
+        let symbols = vec![DebSymbol {
+            name: "actor".to_string(),
+            offset: 0x0100,
+            kind: 1,
+        }];
+        let decompiled = decompile_structured_cod_with_symbols(
+            &image,
+            &var,
+            &HashMap::new(),
+            &symbols,
+        )
+        .unwrap();
+        assert_eq!(decompiled.object_aliases, 1);
+        assert_eq!(decompiled.object_alias_uses, 0);
+        assert_eq!(decompiled.field_aliases, 1);
+        assert_eq!(decompiled.field_alias_uses, 1);
+        for statement in [
+            "OBJECT object_actor_0100 0100",
+            "FIELD field_actor_0100_s11_0118 object_actor_0100 0018",
+            "SHARED_STATE BF field_actor_0100_s11_0118 F5 C1 0001",
+        ] {
+            assert!(decompiled.source.contains(statement), "missing {statement}");
+        }
+        assert_eq!(compile(&decompiled.source).unwrap(), image);
+
+        let alias_as_immediate = concat!(
+            "; format: bloodscript-ir-v1\n",
+            "00000000: OBJECT object_actor 0100\n",
+            "00000000: FIELD field_actor object_actor 0018\n",
+            "00000000: SHARED_STATE BF field_actor F5 C1 field_actor\n",
+            "00000007: END\n",
+        );
+        assert!(compile(alias_as_immediate).is_err());
+
+        let mut ambiguous_var = vec![0; 0x200];
+        ambiguous_var[0x00DE..0x00E0].copy_from_slice(&2u16.to_le_bytes());
+        ambiguous_var[0x0100..0x0102].copy_from_slice(&2u16.to_le_bytes());
+        let ambiguous_symbols = vec![
+            DebSymbol {
+                name: "first".to_string(),
+                offset: 0x00DE,
+                kind: 1,
+            },
+            DebSymbol {
+                name: "second".to_string(),
+                offset: 0x0100,
+                kind: 1,
+            },
+        ];
+        let ambiguous = decompile_structured_cod_with_symbols(
+            &image,
+            &ambiguous_var,
+            &HashMap::new(),
+            &ambiguous_symbols,
+        )
+        .unwrap();
+        assert_eq!(ambiguous.field_aliases, 0);
+        assert!(ambiguous.source.contains("SHARED_STATE BF 0118 F5 C1 0001"));
+
+        let base_image = vec![0xBF, 0x02, 0x01, 0xF5, 0xC1, 0x01, 0x00, 0xFF];
+        let mut base_var = vec![0; 0x200];
+        base_var[0x0100..0x0102].copy_from_slice(&2u16.to_le_bytes());
+        base_var[0x0102..0x0104].copy_from_slice(&4u16.to_le_bytes());
+        let base_symbols = vec![
+            DebSymbol {
+                name: "owner".to_string(),
+                offset: 0x0100,
+                kind: 1,
+            },
+            DebSymbol {
+                name: "exact".to_string(),
+                offset: 0x0102,
+                kind: 1,
+            },
+        ];
+        let exact_base = decompile_structured_cod_with_symbols(
+            &base_image,
+            &base_var,
+            &HashMap::new(),
+            &base_symbols,
+        )
+        .unwrap();
+        assert_eq!(exact_base.field_aliases, 0);
+        assert_eq!(exact_base.object_aliases, 1);
+        assert!(exact_base.source.contains("SHARED_STATE BF object_exact_0102"));
+    }
+
+    #[test]
     fn dictionary_aliases_compile_only_in_dictionary_operand_positions() {
         let image = vec![
             0xA3, 0x34, 0x12, // concept guard
@@ -2518,6 +2887,42 @@ mod tests {
             assert_eq!(source.structured_selector_lists, list_count);
             assert_eq!(source.structured_cases, case_count);
             assert_eq!(compile(&source.source).unwrap(), image);
+        }
+    }
+
+    #[test]
+    fn every_shipped_structured_image_uses_only_unambiguous_fields() {
+        let Some(root) = game_dir() else { return };
+        let expected = [
+            (1, 8, 29, 0, 0),
+            (2, 78, 496, 5, 85),
+            (3, 105, 558, 5, 84),
+            (4, 81, 333, 4, 17),
+            (5, 80, 276, 1, 2),
+        ];
+        for (script, cod_fields, cod_uses, bas_fields, bas_uses) in expected {
+            let read = |extension: &str| {
+                std::fs::read(root.join(format!("SCRIPT{script}.{extension}"))).unwrap()
+            };
+            let cod = read("COD");
+            let bas = read("BAS");
+            let var = read("VAR");
+            let dictionary = crate::script::parse_dictionary(&read("DIC"));
+            let symbols = crate::script::parse_deb(&read("DEB"));
+            let cod_source =
+                decompile_structured_cod_with_symbols(&cod, &var, &dictionary, &symbols).unwrap();
+            let bas_source =
+                decompile_structured_bas_with_symbols(&bas, &var, &dictionary, &symbols).unwrap();
+            assert_eq!(
+                (cod_source.field_aliases, cod_source.field_alias_uses),
+                (cod_fields, cod_uses)
+            );
+            assert_eq!(
+                (bas_source.field_aliases, bas_source.field_alias_uses),
+                (bas_fields, bas_uses)
+            );
+            assert_eq!(compile(&cod_source.source).unwrap(), cod);
+            assert_eq!(compile(&bas_source.source).unwrap(), bas);
         }
     }
 

@@ -77,14 +77,25 @@ fn write_bloodscript(
         })
         .transpose()?
         .unwrap_or_default();
-    let source = if structured && kind == ImageKind::Bas {
+    let source = if structured {
         let var_path = var_path
-            .ok_or_else(|| anyhow::anyhow!("structured BAS decompilation requires a VAR image"))?;
+            .ok_or_else(|| anyhow::anyhow!("structured decompilation requires a VAR image"))?;
         let var = std::fs::read(var_path)
             .with_context(|| format!("reading VM object data {}", var_path.display()))?;
-        bloodscript::decompile_structured_bas_with_symbols(&image, &var, &dictionary, &symbols)?
-    } else if structured {
-        bloodscript::decompile_structured_with_symbols(kind, &image, &dictionary, &symbols)?
+        match kind {
+            ImageKind::Cod => bloodscript::decompile_structured_cod_with_symbols(
+                &image,
+                &var,
+                &dictionary,
+                &symbols,
+            )?,
+            ImageKind::Bas => bloodscript::decompile_structured_bas_with_symbols(
+                &image,
+                &var,
+                &dictionary,
+                &symbols,
+            )?,
+        }
     } else {
         bloodscript::decompile_with_symbols(kind, &image, &dictionary, &symbols)?
     };
@@ -376,7 +387,7 @@ fn main() -> Result<()> {
             }
             std::fs::create_dir_all(&output_dir)?;
             let mut manifest = String::from(
-                "script\timage\tinput_bytes\ttyped_statements\ttyped_bytes\tgeneric_op_statements\tgeneric_op_bytes\traw_bytes\tsymbolic_labels\tprocedures\tobject_aliases\tobject_alias_uses\tdictionary_aliases\tdictionary_alias_uses\tstructured_guards\tunstructured_guards\tguard_rejections\tselector_lists\tcases\troundtrip\n",
+                "script\timage\tinput_bytes\ttyped_statements\ttyped_bytes\tgeneric_op_statements\tgeneric_op_bytes\traw_bytes\tsymbolic_labels\tprocedures\tobject_aliases\tobject_alias_uses\tfield_aliases\tfield_alias_uses\tdictionary_aliases\tdictionary_alias_uses\tstructured_guards\tunstructured_guards\tguard_rejections\tselector_lists\tcases\troundtrip\n",
             );
             for script in 1..=5 {
                 let dictionary = game_dir.join(format!("SCRIPT{script}.DIC"));
@@ -393,13 +404,13 @@ fn main() -> Result<()> {
                         &image,
                         &dictionary,
                         Some(symbols.as_path()),
-                        (kind == ImageKind::Bas).then_some(var.as_path()),
+                        Some(var.as_path()),
                         &output,
                         true,
                     )?;
                     let input_bytes = std::fs::metadata(&image)?.len();
                     manifest.push_str(&format!(
-                        "SCRIPT{script}\t{extension}\t{input_bytes}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\tbyte_exact\n",
+                        "SCRIPT{script}\t{extension}\t{input_bytes}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\tbyte_exact\n",
                         source.typed_statements,
                         source.typed_bytes,
                         source.generic_op_statements,
@@ -409,6 +420,8 @@ fn main() -> Result<()> {
                         source.procedures,
                         source.object_aliases,
                         source.object_alias_uses,
+                        source.field_aliases,
+                        source.field_alias_uses,
                         source.dictionary_aliases,
                         source.dictionary_alias_uses,
                         source.structured_guards,
