@@ -4790,15 +4790,16 @@ deliberately overwrites the current pointer, all state stores, full DS ownership
 against GS/ES decoys, bit-zero-only gating, frame arguments, low AX/BX results,
 callback flag pass-through, stack integrity, and `RETF`.
 
-Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the actual candidate
-warning-free to 45 instructions/136 bytes versus the original 24/83. The
-codegen probe has a 58.33 percent mnemonic-sequence LCS and 79.17 percent
-mnemonic-multiset overlap. Returning `u16` naturally recovers the observed AX
+The compiler probe now includes the authoritative candidate directly. Open
+Watcom 1.9 large (`-3 -os -s -ml -we`) compiles it warning-free to 49
+instructions/145 bytes versus the original 24/83, with 83.33 percent mnemonic-
+multiset and 62.50 percent ordered overlap. Turbo C 2.01 large emits 48
+instructions with 79.17 percent multiset and 75 percent ordered overlap and
+assembles cleanly to OBJ. Returning `u16` naturally recovers the observed AX
 result, and post-projection volatile range locals keep the sprite arguments at
 their original call boundary. No inline assembly is used. Watcom saves the far
-pointer as scalar words instead of the binary's EAX plus dword stack slot; the
-unused incoming BX values at the earlier helpers and EAX upper-half result
-remain explicit binary-ABI boundaries.
+pointer as scalar words instead of the binary's EAX plus dword stack slot; that
+allocation and the EAX upper-half result remain direct-replacement boundaries.
 
 ## BLOODPRG screen-flags initializer candidate
 
