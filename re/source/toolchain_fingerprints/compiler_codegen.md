@@ -533,13 +533,17 @@ and TEST-derived flags.
 
 For `0x00A38E`, six direct-execution boundary cases confirm the natural queue
 wrap source and show that both direct callers ignore its incidental AX/SI/CX
-results. Open Watcom 1.9 medium is closest at 16 instructions and 43 bytes,
-versus the original 11 instructions and 31 bytes; placing byte count first
-recovers its AX argument and final subtraction. The generated cursor remains in
-DX/BX rather than SI, and ordinary C stores do not lower to the original
-XOR/XCHG head clear. Turbo C 2.01 medium emits 21 instructions and uses stack
-arguments. Keeping the iteration-count word non-volatile avoids a duplicate
-Watcom store while retaining the original store-before-increment order.
+results and flags. The compiler-corpus sample now includes the authoritative
+source. Open Watcom 1.9 medium (`-3 -ox -s -mm -zdf -we`) compiles it
+warning-free to 16 instructions/49 bytes versus 11/31 original, with 72.73
+percent mnemonic-multiset and 63.64 percent ordered overlap. Turbo C 2.01
+medium emits 21 instructions with 72.73 percent multiset and ordered overlap
+and assembles warning-free to OBJ.
+
+The generated cursor remains in DX/BX rather than SI, and ordinary C stores do
+not lower to the original XOR/XCHG head clear. Those are isolated binary ABI
+differences, not source-port behavior: the accepted void helper retains every
+caller-visible state transition without inline assembly.
 
 For `0x00A3AD`, eight direct-execution cases establish a carry-clear queue-room
 predicate and disprove the older empty-check label. Open Watcom 1.9 medium
