@@ -6308,14 +6308,21 @@ effects, inherited forward and backward direction, every VGA input/output,
 exact mode-byte restoration, DS ownership, flags, preservation, and far return.
 The sole real caller enters from the VM path under the shipped clear-DF C ABI;
 the backward vector records the raw assembly behavior as an integration guard.
+The depth-step routine constrains shipped depth to `0..0x41`, and runtime capture
+places the framebuffer at `A000:8000`; at the resulting maximum 8,000-byte
+extent, both source/destination pairs are nonoverlapping.
 
 Open Watcom 1.9 medium (`-3 -os -s -mm -we`) emits one warning-free
 87-instruction/192-byte function versus 67/127 original, with 82.09 percent
-mnemonic-multiset overlap and no inline assembly. The VGA operations compile
-to direct IN/OUT instructions, while intrinsic `_fmemcpy` emits REP MOVSW plus
-an optional MOVSB tail rather than the original byte-only REP MOVSB. Direct
-replacement still needs fixed DS placement, exact source/destination segment
-construction, the original preserve-all envelope, and the clear-DF invariant.
+mnemonic-multiset and 73.13 percent ordered overlap. Turbo C 2.01 medium
+(`-mm -O -Z`) also emits 87 instructions, with 80.60 percent multiset and 62.69
+percent ordered overlap, and assembles cleanly to a 1,070-byte OMF object. The
+VGA operations compile to direct IN/OUT instructions, while Watcom's intrinsic
+`_fmemcpy` emits REP MOVSW plus an optional MOVSB tail rather than the original
+byte-only REP MOVSB. The natural source is accepted under the clear-DF and
+nonoverlap invariants with no inline assembly. Direct replacement still needs
+fixed DS placement, exact segment construction, the original preserve-all
+envelope, reverse-direction behavior, and terminal flags.
 
 ## BLOODPRG per-frame VM owner candidate
 
