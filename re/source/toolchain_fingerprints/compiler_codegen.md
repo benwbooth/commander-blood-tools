@@ -7018,10 +7018,15 @@ state, stack integrity, and both DOS termination paths.
 Open Watcom 1.9 large (`-3 -os -s -ml -we`) compiles the one-function natural
 coordinator warning-free to 122 instructions/400 bytes versus 96/241 original,
 with 79.17 percent mnemonic-multiset overlap and 56.25 percent ordered mnemonic
-overlap. It contains no inline assembly or register-state facade. Full
-executable integration must provide the loader-owned relocated `DS=SS=GS`,
-`FS=0x0BBF`, `SP=0x7E78`, and PSP `ES` state through linker/startup machinery;
-standard C cannot safely replace its own live stack.
+overlap. The registered compiler sample now includes the maintained candidate
+directly instead of duplicating its source. It contains no inline assembly or
+register-state facade and is accepted for source-port integration.
+
+Full executable integration must provide the loader-owned relocated
+`DS=SS=GS`, `FS=0x0BBF`, `SP=0x7E78`, PSP `ES`, initial 32-bit register clears,
+and no-return DOS exit through a narrow MZ linker/startup shim. Standard C
+cannot safely replace its own live stack; those instructions remain an explicit
+binary boundary rather than being modeled inside the C function.
 
 ## BLOODPRG interrupt handlers at 0x000813, 0x000C19, and 0x000C1A
 
