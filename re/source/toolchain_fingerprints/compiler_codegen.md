@@ -7040,14 +7040,19 @@ arguments, close/delete paths, segment ownership, and stack integrity.
 
 The maintained source now passes its live `scene_link_target` explicitly to
 AFA0, preserving the original main-BP-to-9D10 dataflow without an inherited
-register dependency. Open Watcom 1.9 large (`-3 -os -s -ml -we`) compiles the
-direct source warning-free to 431 instructions/1,598 bytes versus 337/1,172
-original, with 78.93 percent mnemonic-multiset overlap and 71.81 percent
-ordered overlap. Turbo C 2.01 large emits 571 instructions with 82.20 percent
-multiset and 74.78 percent ordered overlap and assembles cleanly to OBJ. The
-function contains no inline assembly or register-state facade. Full-source
-integration requires the shipped `DS=GS=SS` data aliases, asynchronous updates
-to `main_frame_delay_ticks`, and adapters for recovered register ABIs.
+register dependency. A fresh direct Open Watcom 1.9 large
+(`-3 -os -s -ml -we`) build emits 431 instructions/1,598 bytes versus
+337/1,172 original, with 78.93 percent mnemonic-multiset overlap and 71.81
+percent ordered overlap. Turbo C 2.01 large emits 571 instructions with 82.20
+percent multiset and 74.78 percent ordered overlap and assembles cleanly to
+OBJ. Watcom saves BX/CX/DX/SI/DI/BP around the natural function, whereas the
+original does not establish a conventional frame; this is harmless because
+the sole bootstrap caller consumes no returned register value before running
+teardown and exiting DOS. The natural coordinator is accepted for source-port
+integration and contains no inline assembly or register-state facade.
+Full-source integration still requires the shipped `DS=GS=SS` data aliases,
+asynchronous updates to `main_frame_delay_ticks`, and adapters for recovered
+register ABIs.
 
 ## BLOODPRG VM resource profile loader at 0x0053A0
 

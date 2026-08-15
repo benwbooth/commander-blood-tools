@@ -45,7 +45,7 @@ void CB_NEAR startup_loading_screen_and_write_directory_prepare(void); /* 0x0016
 void CB_FAR startup_write_directory_enter(void);            /* 0x0027C3 */
 void CB_FAR startup_original_directory_restore(void);       /* 0x0027E9 */
 
-/* Current owner name for the unrecovered primary game routine at 0x000EB0. */
+/* Complete game lifecycle beneath the MZ bootstrap at 0x000EB0. */
 void CB_FAR bloodprg_main(void);
 
 #endif
