@@ -5601,11 +5601,17 @@ near return.
 
 Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the actual natural
 candidate warning-free to 74 instructions/237 bytes versus the original
-62/230, with 83.87 percent mnemonic-multiset overlap and no inline assembly.
-Its generated code keeps the flag snapshot and prepared state in `AL`/`AH` and
-uses byte loads for the deferred gate. Direct replacement still needs the
-inherited-`BP` actor input, carry-valued helper result, original `AL` lifetime,
-near/far placement adapters, and exact call preservation and final flags.
+62/230, with 83.87 percent mnemonic-multiset and 80.65 percent ordered-mnemonic
+overlap. The source reuses its dead flag byte for the later full-byte
+reverse-or-panel test, causing Watcom to emit the original-width `MOV AL`/`OR
+AL` gate without a second synthetic local. Turbo C 2.01 medium (`-mm -O -Z`)
+emits 101 instructions, with 88.71 percent multiset and 79.03 percent ordered
+overlap. Neither candidate uses inline assembly.
+
+The natural candidate is accepted for source-port integration. Direct
+replacement still needs the inherited-`BP` actor input, carry-valued helper
+result, original `AL` lifetime, near/far placement adapters, and exact call
+preservation and final flags.
 
 ## BLOODPRG navigation actor handler 5 candidate
 

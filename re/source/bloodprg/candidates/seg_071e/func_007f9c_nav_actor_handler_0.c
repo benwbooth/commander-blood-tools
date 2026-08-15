@@ -10,7 +10,6 @@ void CB_NEAR nav_actor_handler_0(
         volatile bloodprg_presentation_line_record CB_NEAR *line)
 {
     cb_u8 flags;
-    cb_u8 deferred_gate;
     cb_u8 second_pass_prepared;
 
     if ((vm_ui_flags & NAV_ACTOR_HANDLER_0_UI_GATE) == 0u
@@ -56,8 +55,9 @@ void CB_NEAR nav_actor_handler_0(
     if (nav_deferred_record_link == 0u) {
         return;
     }
-    deferred_gate = nav_presentation_reverse;
-    if ((deferred_gate |= nav_location_panel_active) == 0u) {
+    flags = nav_presentation_reverse;
+    flags |= nav_location_panel_active;
+    if (flags == 0u) {
         return;
     }
 
