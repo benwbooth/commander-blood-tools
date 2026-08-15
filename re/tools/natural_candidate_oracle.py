@@ -3526,6 +3526,215 @@ def mouse_hit_test_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def region_record_hittest_vectors() -> list[dict[str, object]]:
+    entry = 0x8295
+    return_address = 0xFB95
+    expected_hash = "5ba395485dab841fbe4d86bba408b4f61c85444c2e858b94ec645f07bafec3b2"
+    if hashlib.sha256(EXE[entry : entry + 46]).hexdigest() != expected_hash:
+        raise AssertionError("0x8295: recovered 46-byte body changed")
+
+    cases = (
+        ("disabled_inside", 0x00, (10, 20), (10, 20, 30, 40)),
+        ("non_primary_button_inside", 0x80, (20, 30), (10, 20, 30, 40)),
+        ("zero_extent_origin", 0x01, (0, 0), (0, 0, 0, 0)),
+        ("x_below", 0x01, (9, 20), (10, 20, 30, 40)),
+        ("x_right_boundary", 0x01, (40, 20), (10, 20, 30, 40)),
+        ("x_right_outside", 0x01, (41, 20), (10, 20, 30, 40)),
+        ("y_bottom_boundary", 0x01, (10, 60), (10, 20, 30, 40)),
+        ("y_bottom_outside", 0x01, (10, 61), (10, 20, 30, 40)),
+        ("negative_rect_boundary", 0x01, (-90, -20), (-120, -40, 30, 20)),
+        ("wrapped_negative_width_hit", 0x01, (32767, 0), (0, 0, -1, 0)),
+        (
+            "wrapped_positive_result_miss",
+            0x01,
+            (-32768, 0),
+            (-32768, 0, 1, 0),
+        ),
+        ("primary_bit_with_high_bits", 0xA5, (5, 5), (-5, -5, 10, 10)),
+    )
+    data_segment = 0x4400
+    decoy_segment = 0x6000
+    stack_segment = 0x9000
+    rect_offset = 0x6200
+    caller_sp = 0xFF00
+    stack_sentinel = bytes.fromhex("87a55a963cc37869")
+    flag_masks = {
+        "cf": 0x0001,
+        "pf": 0x0004,
+        "af": 0x0010,
+        "zf": 0x0040,
+        "sf": 0x0080,
+        "of": 0x0800,
+    }
+    vectors = []
+
+    def signed_word(value: int) -> int:
+        value &= 0xFFFF
+        return value - 0x10000 if value & 0x8000 else value
+
+    def logic8_flags(value: int) -> dict[str, bool]:
+        value &= 0xFF
+        return {
+            "cf": False,
+            "pf": value.bit_count() % 2 == 0,
+            "zf": value == 0,
+            "sf": (value & 0x80) != 0,
+            "of": False,
+        }
+
+    for case_index, (name, primary, mouse, rect) in enumerate(cases):
+        mouse_x, mouse_y = mouse
+        rect_x, rect_y, rect_width, rect_height = rect
+        adjusted_x = signed_word(mouse_x - rect_width)
+        adjusted_y = signed_word(mouse_y - rect_height)
+
+        if primary & 1 == 0:
+            hit = False
+            terminal = "primary_test"
+            expected_flags = logic8_flags(primary & 1)
+        elif mouse_x < rect_x:
+            hit = False
+            terminal = "x_lower_cmp"
+            expected_flags = sub16_flags(mouse_x & 0xFFFF, rect_x & 0xFFFF)
+        elif adjusted_x > rect_x:
+            hit = False
+            terminal = "x_upper_cmp"
+            expected_flags = sub16_flags(adjusted_x & 0xFFFF, rect_x & 0xFFFF)
+        elif mouse_y < rect_y:
+            hit = False
+            terminal = "y_lower_cmp"
+            expected_flags = sub16_flags(mouse_y & 0xFFFF, rect_y & 0xFFFF)
+        elif adjusted_y > rect_y:
+            hit = False
+            terminal = "y_upper_cmp"
+            expected_flags = sub16_flags(adjusted_y & 0xFFFF, rect_y & 0xFFFF)
+        else:
+            hit = True
+            terminal = "hit_carry"
+            expected_flags = sub16_flags(adjusted_y & 0xFFFF, rect_y & 0xFFFF)
+        expected_flags["cf"] = hit
+
+        data_before = bytearray(
+            (offset * 29 + (offset >> 8) * 13 + case_index * 17 + 0x4D)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        struct.pack_into("<hh", data_before, 0x0A2A, mouse_x, mouse_y)
+        data_before[0x0A3E] = primary
+        stack_before = bytearray(
+            (offset * 11 + (offset >> 8) * 7 + case_index * 19 + 0x63)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        struct.pack_into("<hhhh", stack_before, rect_offset, *rect)
+        stack_before[caller_sp : caller_sp + 4 + len(stack_sentinel)] = (
+            struct.pack("<HH", return_address, 0) + stack_sentinel
+        )
+        decoy_before = bytes(
+            (offset * 7 + case_index * 31 + 0xB3) & 0xFF
+            for offset in range(0x10000)
+        )
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0xA7A70000 | rect_offset,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": 0x5100,
+            "fs": 0x5300,
+            "gs": decoy_segment,
+            "ss": stack_segment,
+            "flags": 0x0602,
+        }
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (decoy_segment, 0, decoy_before),
+                (stack_segment, 0, bytes(stack_before)),
+            ],
+            instruction_count=100,
+        )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = caller_sp + 4
+        for register, expected_value in expected_registers.items():
+            actual_value = machine.reg_read(REGISTERS[register])
+            if actual_value != expected_value:
+                raise AssertionError(
+                    f"0x8295 {name}: {register}={actual_value:#x}, "
+                    f"expected={expected_value:#x}"
+                )
+
+        if bytes(machine.mem_read(data_segment * 16, 0x10000)) != bytes(
+            data_before
+        ):
+            raise AssertionError(f"0x8295 {name}: DS memory changed")
+        expected_stack = bytearray(stack_before)
+        struct.pack_into(
+            "<H", expected_stack, caller_sp - 2, initial["eax"] & 0xFFFF
+        )
+        if bytes(machine.mem_read(stack_segment * 16, 0x10000)) != bytes(
+            expected_stack
+        ):
+            raise AssertionError(f"0x8295 {name}: unexpected SS memory change")
+        if bytes(machine.mem_read(decoy_segment * 16, 0x10000)) != decoy_before:
+            raise AssertionError(f"0x8295 {name}: GS decoy memory changed")
+        if bytes(
+            machine.mem_read(
+                stack_segment * 16 + caller_sp + 4, len(stack_sentinel)
+            )
+        ) != stack_sentinel:
+            raise AssertionError(f"0x8295 {name}: caller stack changed")
+
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x8295 {name}: flags={actual_flags}, "
+                f"expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "primary": primary,
+                "mouse": list(mouse),
+                "rect": list(rect),
+                "hit": hit,
+                "terminal": terminal,
+                "defined_flags": expected_flags,
+                "preserved_registers": [
+                    "eax",
+                    "ebx",
+                    "ecx",
+                    "edx",
+                    "esi",
+                    "edi",
+                    "ebp",
+                    "ds",
+                    "es",
+                    "fs",
+                    "gs",
+                    "ss",
+                ],
+                "return": "far",
+            }
+        )
+
+    return vectors
+
+
 def ui_region_31_poll_vectors() -> list[dict[str, object]]:
     entry = 0x82C3
     return_address = 0xFC23
@@ -89861,6 +90070,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_8269_natural.json",
         mouse_hit_test_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_8295_natural.json",
+        region_record_hittest_vectors(),
         args.check,
     )
     update_vector(

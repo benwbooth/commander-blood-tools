@@ -232,8 +232,13 @@ then emits all 18 original mnemonics in order: 22 instructions/49 bytes versus
 instructions added. Turbo C medium emits 35 instructions, retains all 18
 original mnemonics, and has 14/18 ordered mnemonic overlap. Neither compiler
 reproduces the original DS:SI rectangle and SS:BP result-pointer boundary from
-ordinary declarations. The nearby `0x008295` hit test additionally returns its
-result in carry and therefore remains behind the ABI evidence gate.
+ordinary declarations. The nearby `0x008295` hit test uses the same authoritative
+coordinate flow and compiles under Watcom to the complete 16-instruction
+comparison core in 22 instructions/49 bytes versus 20/46 original. Its ordinary
+far C declaration returns zero or one in AX instead of preserving AX and
+returning through carry. All recovered callers consume only a Boolean decision,
+so this normalization is accepted inside the coherent source call graph; an
+original-object replacement would still require the SS:BP and carry adapter.
 
 The `0x0030CD` text-width probe is a useful near miss. Open Watcom 1.9 medium
 `-3 -ox` emits 60 bytes and 31 instructions versus the original 57 bytes and 28
