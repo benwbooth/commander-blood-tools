@@ -427,15 +427,20 @@ at offset two. The cases cover 16-bit table
 offset wrap, DS selection against ES/GS decoys, preservation of AX and every
 other register, and all six arithmetic flags left by the fourth ADD. Each of
 the five callers immediately consumes BX; their next instructions are MOV,
-TEST, AND, AND, and PUSH, so none depends on the incidental flags. Open Watcom
-1.9 medium targeting 8086, with a source-level `#pragma aux` declaration for
-the recovered AX-argument/BX-result ABI, emits `MOV BX,AX; SHL BX,1; SHL BX,1;
-MOV BX,[table+BX]; RET`: five instructions and 11 bytes versus the original
-seven instructions and 14 bytes. The function body remains the natural
-`table[index].record` expression. Turbo C 2.01 medium instead passes the index
-on the stack and returns the pointer in AX. The natural source is therefore a
-drop-in logical match under the Watcom ABI declaration, but not an exact code
-shape or an isolated Borland replacement.
+TEST, AND, AND, and PUSH, so none depends on the incidental flags. The
+compiler-corpus sample now includes the authoritative recovered source. Open
+Watcom 1.9 medium (`-3 -ox -mm -zdf -we`), with the source-level `#pragma aux`
+declaration for the recovered AX-argument/BX-result ABI, emits `MOV BX,AX; SHL
+BX,2; MOV BX,SS:[table+BX]; RET`: four instructions and 11 bytes versus the
+original seven instructions and 14 bytes, with 42.86 percent
+mnemonic-multiset and ordered overlap. Turbo C 2.01 medium (`-mm -O -Z`) emits
+eight instructions with 42.86 percent multiset and ordered overlap and
+assembles warning-free to OBJ, but uses its ordinary stack-argument/AX-result
+ABI. The function body remains the natural `table[index].descriptor`
+expression. It is accepted for source-port integration because all five
+callers consume only the returned pointer; the shared data group preserves the
+shipped DS=SS placement. An isolated replacement still needs the original DS
+lookup, four ADDs, preserved AX, and incidental arithmetic flags.
 
 For `0x009F8E`, seven direct-execution cases cover banked, embedded, and
 external-file resources, along with open, initial-read, and body-read failures.
