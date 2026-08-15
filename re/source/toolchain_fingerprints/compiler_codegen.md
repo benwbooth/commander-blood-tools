@@ -3006,16 +3006,23 @@ incoming-DS trap, clear-after-callback ordering, callback register and flag
 effects, wrapper restoration, and RETF. The callback must preserve the active
 DS until the wrapper performs its pending-byte store.
 
-The initial no-argument candidate omitted the real AX command. Changing the
-callback type to accept a 16-bit command and calling it with `0u` lets Open
-Watcom `-3 -ox -mm` emit `XOR AX,AX`, the indirect far call, byte clear, and
-RETF in 4 instructions/12 bytes versus 12/22 original. The generated function
-assumes normal C DS and caller-clobber conventions, so it omits the explicit
-DS=GS and AX/DS/ES save/restore envelope. Turbo C 2.01 medium emits 6
-instructions but passes zero on the stack, which is incompatible with the
-external driver's observed AX interface. A full rebuild can bind game data to
-DGROUP and compile callers around Watcom's clobbers; a binary drop-in still
-needs the original narrow wrapper boundary.
+The initial no-argument candidate omitted the real AX command. The maintained
+source now calls a typed 16-bit command callback with `0u`, and the
+compiler-corpus sample includes that source directly. Open Watcom
+`-3 -ox -mm -zdp -we` compiles it warning-free to `XOR AX,AX`, the indirect
+far call, byte clear, and RETF in 4 instructions/12 bytes versus 12/22
+original, with 25.00 percent mnemonic-multiset and ordered overlap. Turbo C
+2.01 medium (`-mm -O -Z`) emits 6 instructions with 41.67 percent multiset and
+25.00 percent ordered overlap and compiles warning-free to a valid 377-byte OMF
+object.
+
+The generated functions assume normal C DS and caller-clobber conventions, so
+they omit the explicit DS=GS and AX/DS/ES save/restore envelope. Turbo also
+passes zero on the stack, which is incompatible with the external driver's
+observed AX interface. The two-operation C is accepted for source integration:
+a full rebuild can bind game data to DGROUP and compile callers around ordinary
+clobbers. Direct use with the original driver still needs one narrow adapter
+for the AX command, DS=GS switch, and selective preservation envelope.
 
 EMS transfer dispatcher `0x00BD09` was previously mislabeled as a timer. It
 does not update GS:0x0B9F; that byte is a transfer-mode selector. Two wrapping
