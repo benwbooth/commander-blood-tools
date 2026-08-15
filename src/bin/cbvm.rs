@@ -1,13 +1,14 @@
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Result, bail};
+use anyhow::{bail, Context, Result};
+use commander_blood_tools::bas_cfg::{self, BasControlFlow};
 use commander_blood_tools::bloodscript;
 use commander_blood_tools::vm_cfg::{self, CodControlFlow};
 use commander_blood_tools::vm_source::{self, ImageKind};
 
 fn usage() -> ! {
     eprintln!(
-        "usage:\n  cbvm disassemble <cod|bas> <image> <dictionary> <output>\n  cbvm assemble <source> <output>\n  cbvm decompile-bundle <game-dir> <output-dir>\n  cbvm decompile-bloodscript <game-dir> <output-dir>\n  cbvm decompile-structured <game-dir> <output-dir>\n  cbvm compile-bloodscript <source> <output>\n  cbvm analyze-control-flow <game-dir> <output-dir>"
+        "usage:\n  cbvm disassemble <cod|bas> <image> <dictionary> <output>\n  cbvm assemble <source> <output>\n  cbvm decompile-bundle <game-dir> <output-dir>\n  cbvm decompile-bloodscript <game-dir> <output-dir>\n  cbvm decompile-structured <game-dir> <output-dir>\n  cbvm compile-bloodscript <source> <output>\n  cbvm analyze-control-flow <game-dir> <output-dir>\n  cbvm analyze-bas-control-flow <game-dir> <output-dir>"
     );
     std::process::exit(2);
 }
@@ -98,6 +99,41 @@ fn write_control_flow(
     let graph = vm_cfg::analyze_cod(
         script,
         &image,
+        &commander_blood_tools::script::parse_deb(&symbols),
+    )?;
+    if let Some(parent) = output_path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)?;
+    }
+    let mut json = serde_json::to_vec_pretty(&graph)?;
+    json.push(b'\n');
+    std::fs::write(output_path, json)
+        .with_context(|| format!("writing {}", output_path.display()))?;
+    Ok(graph)
+}
+
+fn write_bas_control_flow(
+    script: &str,
+    image_path: &Path,
+    var_path: &Path,
+    dictionary_path: &Path,
+    symbol_path: &Path,
+    output_path: &Path,
+) -> Result<BasControlFlow> {
+    let image = std::fs::read(image_path)
+        .with_context(|| format!("reading VM image {}", image_path.display()))?;
+    let var = std::fs::read(var_path)
+        .with_context(|| format!("reading VM object data {}", var_path.display()))?;
+    let dictionary = read_dictionary(dictionary_path)?;
+    let symbols = std::fs::read(symbol_path)
+        .with_context(|| format!("reading symbol table {}", symbol_path.display()))?;
+    let graph = bas_cfg::analyze_bas(
+        script,
+        &image,
+        &var,
+        &dictionary,
         &commander_blood_tools::script::parse_deb(&symbols),
     )?;
     if let Some(parent) = output_path
@@ -303,6 +339,39 @@ fn main() -> Result<()> {
                     graph.patched_block_flag_count,
                     graph.mutable_block_flag_count,
                     graph.unresolved_guard_branches.len()
+                ));
+                println!("analyzed {} -> {}", image.display(), output.display());
+            }
+            std::fs::write(output_dir.join("manifest.tsv"), manifest)?;
+        }
+        Some("analyze-bas-control-flow") => {
+            let game_dir = PathBuf::from(args.next().unwrap_or_else(|| usage()));
+            let output_dir = PathBuf::from(args.next().unwrap_or_else(|| usage()));
+            if args.next().is_some() {
+                usage();
+            }
+            std::fs::create_dir_all(&output_dir)?;
+            let mut manifest = String::from(
+                "script\tinput_bytes\ttokens\tselector_nodes\tlists\tentrypoints\tdirect_next\tedges\n",
+            );
+            for script in 1..=5 {
+                let name = format!("SCRIPT{script}");
+                let image = game_dir.join(format!("{name}.BAS"));
+                let var = game_dir.join(format!("{name}.VAR"));
+                let dictionary = game_dir.join(format!("{name}.DIC"));
+                let symbols = game_dir.join(format!("{name}.DEB"));
+                let output = output_dir.join(format!("script{script}.bas.cfg.json"));
+                let graph =
+                    write_bas_control_flow(&name, &image, &var, &dictionary, &symbols, &output)?;
+                manifest.push_str(&format!(
+                    "{name}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
+                    graph.image_bytes,
+                    graph.token_count,
+                    graph.selector_node_count,
+                    graph.list_count,
+                    graph.entrypoint_count,
+                    graph.direct_next_count,
+                    graph.edge_count,
                 ));
                 println!("analyzed {} -> {}", image.display(), output.display());
             }

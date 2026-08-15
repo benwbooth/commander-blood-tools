@@ -1,0 +1,6 @@
+script	input_bytes	tokens	selector_nodes	lists	entrypoints	direct_next	edges
+SCRIPT1	32	6	1	1	1	0	3
+SCRIPT2	22565	1106	122	10	10	112	366
+SCRIPT3	15242	854	98	12	12	86	294
+SCRIPT4	10585	518	43	10	10	33	129
+SCRIPT5	16312	686	57	4	4	53	171

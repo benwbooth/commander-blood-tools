@@ -1,0 +1,67 @@
+{
+  "script": "SCRIPT1",
+  "image_bytes": 32,
+  "token_count": 6,
+  "selector_node_count": 1,
+  "list_count": 1,
+  "entrypoint_count": 1,
+  "direct_next_count": 0,
+  "edge_count": 3,
+  "entrypoints": [
+    {
+      "object_name": "Honk",
+      "object_offset": 2090,
+      "object_kind": 2,
+      "prefix_yield_b": 1,
+      "root_node": 2
+    }
+  ],
+  "lists": [
+    {
+      "index": 0,
+      "entrypoint": {
+        "object_name": "Honk",
+        "object_offset": 2090,
+        "object_kind": 2,
+        "prefix_yield_b": 1,
+        "root_node": 2
+      },
+      "terminal_node": 2,
+      "end_exclusive": 32,
+      "node_offsets": [
+        2
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "offset": 2,
+      "selector": 2640,
+      "selector_name": "parler",
+      "next": null,
+      "body_start": 6,
+      "menu_offset": 6,
+      "body_end": 31,
+      "terminator": "end",
+      "body_token_count": 2,
+      "list_index": 0
+    }
+  ],
+  "edges": [
+    {
+      "from": 2,
+      "to": null,
+      "kind": "selector_miss_exit"
+    },
+    {
+      "from": 2,
+      "to": 6,
+      "kind": "selector_match"
+    },
+    {
+      "from": 31,
+      "to": null,
+      "kind": "body_end"
+    }
+  ]
+}

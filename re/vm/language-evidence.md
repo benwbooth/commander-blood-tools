@@ -64,6 +64,14 @@ returns the node address plus four on match. Therefore `0xAC` and
 `{selector,next}` are separate records and `next` is an ordinary zero-based BAS
 offset.
 
+The list roots are also recovered from data rather than guessed from layout.
+`vm_cod_scan` resolves field selector 2 against each object's VAR kind and uses
+the resulting word as a BAS offset. For kind `0x0002`, the executable's field
+matrix maps selector 2 to object offset `+0x1A`. Restricting the DEB directory
+to kind-1 object symbols yields 37 nonzero fields; all 37 point to the `AC`
+immediately before one physical selector-list root, with no missing or interior
+entry. Following those roots covers all 321 nodes exactly once.
+
 The whole ten-image corpus therefore compiles byte-for-byte from typed
 BloodScript IR. This closes byte framing, not source structuring: record fields
 and reducible control-flow blocks still need to be lifted above the exact IR.

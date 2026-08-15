@@ -1,0 +1,3014 @@
+{
+  "script": "SCRIPT3",
+  "image_bytes": 15242,
+  "token_count": 854,
+  "selector_node_count": 98,
+  "list_count": 12,
+  "entrypoint_count": 12,
+  "direct_next_count": 86,
+  "edge_count": 294,
+  "entrypoints": [
+    {
+      "object_name": "Beauregard",
+      "object_offset": 1442,
+      "object_kind": 2,
+      "prefix_yield_b": 1,
+      "root_node": 2
+    },
+    {
+      "object_name": "Honk",
+      "object_offset": 2450,
+      "object_kind": 2,
+      "prefix_yield_b": 863,
+      "root_node": 864
+    },
+    {
+      "object_name": "Izwalito",
+      "object_offset": 1658,
+      "object_kind": 2,
+      "prefix_yield_b": 918,
+      "root_node": 919
+    },
+    {
+      "object_name": "Morning_Oil",
+      "object_offset": 938,
+      "object_kind": 2,
+      "prefix_yield_b": 2424,
+      "root_node": 2425
+    },
+    {
+      "object_name": "Bug_Deluxe",
+      "object_offset": 434,
+      "object_kind": 2,
+      "prefix_yield_b": 3741,
+      "root_node": 3742
+    },
+    {
+      "object_name": "Bronko",
+      "object_offset": 1082,
+      "object_kind": 2,
+      "prefix_yield_b": 8010,
+      "root_node": 8011
+    },
+    {
+      "object_name": "Bob_Morlock",
+      "object_offset": 362,
+      "object_kind": 2,
+      "prefix_yield_b": 9064,
+      "root_node": 9065
+    },
+    {
+      "object_name": "Scruter_Mac",
+      "object_offset": 1874,
+      "object_kind": 2,
+      "prefix_yield_b": 10971,
+      "root_node": 10972
+    },
+    {
+      "object_name": "Eviscerator",
+      "object_offset": 650,
+      "object_kind": 2,
+      "prefix_yield_b": 11076,
+      "root_node": 11077
+    },
+    {
+      "object_name": "Tina_Burner",
+      "object_offset": 2162,
+      "object_kind": 2,
+      "prefix_yield_b": 13754,
+      "root_node": 13755
+    },
+    {
+      "object_name": "Amigo",
+      "object_offset": 1730,
+      "object_kind": 2,
+      "prefix_yield_b": 14307,
+      "root_node": 14308
+    },
+    {
+      "object_name": "Super_Zen",
+      "object_offset": 2234,
+      "object_kind": 2,
+      "prefix_yield_b": 15215,
+      "root_node": 15216
+    }
+  ],
+  "lists": [
+    {
+      "index": 0,
+      "entrypoint": {
+        "object_name": "Beauregard",
+        "object_offset": 1442,
+        "object_kind": 2,
+        "prefix_yield_b": 1,
+        "root_node": 2
+      },
+      "terminal_node": 357,
+      "end_exclusive": 863,
+      "node_offsets": [
+        2,
+        357
+      ]
+    },
+    {
+      "index": 1,
+      "entrypoint": {
+        "object_name": "Honk",
+        "object_offset": 2450,
+        "object_kind": 2,
+        "prefix_yield_b": 863,
+        "root_node": 864
+      },
+      "terminal_node": 864,
+      "end_exclusive": 918,
+      "node_offsets": [
+        864
+      ]
+    },
+    {
+      "index": 2,
+      "entrypoint": {
+        "object_name": "Izwalito",
+        "object_offset": 1658,
+        "object_kind": 2,
+        "prefix_yield_b": 918,
+        "root_node": 919
+      },
+      "terminal_node": 2163,
+      "end_exclusive": 2424,
+      "node_offsets": [
+        919,
+        969,
+        1011,
+        1526,
+        1695,
+        1951,
+        2163
+      ]
+    },
+    {
+      "index": 3,
+      "entrypoint": {
+        "object_name": "Morning_Oil",
+        "object_offset": 938,
+        "object_kind": 2,
+        "prefix_yield_b": 2424,
+        "root_node": 2425
+      },
+      "terminal_node": 3611,
+      "end_exclusive": 3741,
+      "node_offsets": [
+        2425,
+        2517,
+        2537,
+        2855,
+        3242,
+        3611
+      ]
+    },
+    {
+      "index": 4,
+      "entrypoint": {
+        "object_name": "Bug_Deluxe",
+        "object_offset": 434,
+        "object_kind": 2,
+        "prefix_yield_b": 3741,
+        "root_node": 3742
+      },
+      "terminal_node": 7919,
+      "end_exclusive": 8010,
+      "node_offsets": [
+        3742,
+        3784,
+        3812,
+        3846,
+        3947,
+        4042,
+        4147,
+        4246,
+        4339,
+        4373,
+        4472,
+        4559,
+        4650,
+        4682,
+        4702,
+        4787,
+        4878,
+        4965,
+        5060,
+        5094,
+        5187,
+        5284,
+        5369,
+        5401,
+        5488,
+        5575,
+        5605,
+        5645,
+        5734,
+        5825,
+        5912,
+        6001,
+        6088,
+        6177,
+        6211,
+        6306,
+        6399,
+        6490,
+        6522,
+        6556,
+        6655,
+        6742,
+        6823,
+        6853,
+        6938,
+        6972,
+        7079,
+        7186,
+        7279,
+        7309,
+        7349,
+        7429,
+        7501,
+        7581,
+        7629,
+        7713,
+        7819,
+        7851,
+        7919
+      ]
+    },
+    {
+      "index": 5,
+      "entrypoint": {
+        "object_name": "Bronko",
+        "object_offset": 1082,
+        "object_kind": 2,
+        "prefix_yield_b": 8010,
+        "root_node": 8011
+      },
+      "terminal_node": 8997,
+      "end_exclusive": 9064,
+      "node_offsets": [
+        8011,
+        8029,
+        8449,
+        8687,
+        8861,
+        8997
+      ]
+    },
+    {
+      "index": 6,
+      "entrypoint": {
+        "object_name": "Bob_Morlock",
+        "object_offset": 362,
+        "object_kind": 2,
+        "prefix_yield_b": 9064,
+        "root_node": 9065
+      },
+      "terminal_node": 10238,
+      "end_exclusive": 10971,
+      "node_offsets": [
+        9065,
+        10238
+      ]
+    },
+    {
+      "index": 7,
+      "entrypoint": {
+        "object_name": "Scruter_Mac",
+        "object_offset": 1874,
+        "object_kind": 2,
+        "prefix_yield_b": 10971,
+        "root_node": 10972
+      },
+      "terminal_node": 11010,
+      "end_exclusive": 11076,
+      "node_offsets": [
+        10972,
+        11010
+      ]
+    },
+    {
+      "index": 8,
+      "entrypoint": {
+        "object_name": "Eviscerator",
+        "object_offset": 650,
+        "object_kind": 2,
+        "prefix_yield_b": 11076,
+        "root_node": 11077
+      },
+      "terminal_node": 13657,
+      "end_exclusive": 13754,
+      "node_offsets": [
+        11077,
+        11643,
+        12059,
+        12675,
+        13122,
+        13657
+      ]
+    },
+    {
+      "index": 9,
+      "entrypoint": {
+        "object_name": "Tina_Burner",
+        "object_offset": 2162,
+        "object_kind": 2,
+        "prefix_yield_b": 13754,
+        "root_node": 13755
+      },
+      "terminal_node": 13755,
+      "end_exclusive": 14307,
+      "node_offsets": [
+        13755
+      ]
+    },
+    {
+      "index": 10,
+      "entrypoint": {
+        "object_name": "Amigo",
+        "object_offset": 1730,
+        "object_kind": 2,
+        "prefix_yield_b": 14307,
+        "root_node": 14308
+      },
+      "terminal_node": 15102,
+      "end_exclusive": 15215,
+      "node_offsets": [
+        14308,
+        14500,
+        14830,
+        15052,
+        15102
+      ]
+    },
+    {
+      "index": 11,
+      "entrypoint": {
+        "object_name": "Super_Zen",
+        "object_offset": 2234,
+        "object_kind": 2,
+        "prefix_yield_b": 15215,
+        "root_node": 15216
+      },
+      "terminal_node": 15216,
+      "end_exclusive": 15242,
+      "node_offsets": [
+        15216
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "offset": 2,
+      "selector": 10242,
+      "selector_name": "ill",
+      "next": 357,
+      "body_start": 6,
+      "menu_offset": 6,
+      "body_end": 356,
+      "terminator": "yield_b",
+      "body_token_count": 15,
+      "list_index": 0
+    },
+    {
+      "offset": 357,
+      "selector": 10281,
+      "selector_name": "talk1",
+      "next": null,
+      "body_start": 361,
+      "menu_offset": 361,
+      "body_end": 862,
+      "terminator": "yield_a",
+      "body_token_count": 16,
+      "list_index": 0
+    },
+    {
+      "offset": 864,
+      "selector": 1,
+      "selector_name": "talk",
+      "next": null,
+      "body_start": 868,
+      "menu_offset": 868,
+      "body_end": 917,
+      "terminator": "yield_a",
+      "body_token_count": 3,
+      "list_index": 1
+    },
+    {
+      "offset": 919,
+      "selector": 1,
+      "selector_name": "talk",
+      "next": 969,
+      "body_start": 923,
+      "menu_offset": 923,
+      "body_end": 968,
+      "terminator": "yield_b",
+      "body_token_count": 3,
+      "list_index": 2
+    },
+    {
+      "offset": 969,
+      "selector": 1,
+      "selector_name": "talk",
+      "next": 1011,
+      "body_start": 973,
+      "menu_offset": 973,
+      "body_end": 1010,
+      "terminator": "yield_b",
+      "body_token_count": 2,
+      "list_index": 2
+    },
+    {
+      "offset": 1011,
+      "selector": 5634,
+      "selector_name": "izwal",
+      "next": 1526,
+      "body_start": 1015,
+      "menu_offset": 1015,
+      "body_end": 1525,
+      "terminator": "yield_b",
+      "body_token_count": 17,
+      "list_index": 2
+    },
+    {
+      "offset": 1526,
+      "selector": 15273,
+      "selector_name": "knowledge",
+      "next": 1695,
+      "body_start": 1530,
+      "menu_offset": 1530,
+      "body_end": 1694,
+      "terminator": "yield_b",
+      "body_token_count": 8,
+      "list_index": 2
+    },
+    {
+      "offset": 1695,
+      "selector": 3707,
+      "selector_name": "food",
+      "next": 1951,
+      "body_start": 1699,
+      "menu_offset": 1699,
+      "body_end": 1950,
+      "terminator": "yield_b",
+      "body_token_count": 9,
+      "list_index": 2
+    },
+    {
+      "offset": 1951,
+      "selector": 5314,
+      "selector_name": "reproduction",
+      "next": 2163,
+      "body_start": 1955,
+      "menu_offset": 1955,
+      "body_end": 2162,
+      "terminator": "yield_b",
+      "body_token_count": 8,
+      "list_index": 2
+    },
+    {
+      "offset": 2163,
+      "selector": 1437,
+      "selector_name": "planet",
+      "next": null,
+      "body_start": 2167,
+      "menu_offset": 2167,
+      "body_end": 2423,
+      "terminator": "yield_a",
+      "body_token_count": 10,
+      "list_index": 2
+    },
+    {
+      "offset": 2425,
+      "selector": 1,
+      "selector_name": "talk",
+      "next": 2517,
+      "body_start": 2429,
+      "menu_offset": 2429,
+      "body_end": 2516,
+      "terminator": "yield_b",
+      "body_token_count": 5,
+      "list_index": 3
+    },
+    {
+      "offset": 2517,
+      "selector": 6120,
+      "selector_name": "history",
+      "next": 2537,
+      "body_start": 2521,
+      "menu_offset": 2521,
+      "body_end": 2536,
+      "terminator": "yield_b",
+      "body_token_count": 1,
+      "list_index": 3
+    },
+    {
+      "offset": 2537,
+      "selector": 15539,
+      "selector_name": "war",
+      "next": 2855,
+      "body_start": 2541,
+      "menu_offset": 2541,
+      "body_end": 2854,
+      "terminator": "yield_b",
+      "body_token_count": 8,
+      "list_index": 3
+    },
+    {
+      "offset": 2855,
+      "selector": 5640,
+      "selector_name": "croolis",
+      "next": 3242,
+      "body_start": 2859,
+      "menu_offset": 2859,
+      "body_end": 3241,
+      "terminator": "yield_b",
+      "body_token_count": 14,
+      "list_index": 3
+    },
+    {
+      "offset": 3242,
+      "selector": 9741,
+      "selector_name": "treasure",
+      "next": 3611,
+      "body_start": 3246,
+      "menu_offset": 3246,
+      "body_end": 3610,
+      "terminator": "yield_b",
+      "body_token_count": 11,
+      "list_index": 3
+    },
+    {
+      "offset": 3611,
+      "selector": 5987,
+      "selector_name": "mastachok",
+      "next": null,
+      "body_start": 3615,
+      "menu_offset": 3615,
+      "body_end": 3740,
+      "terminator": "yield_a",
+      "body_token_count": 4,
+      "list_index": 3
+    },
+    {
+      "offset": 3742,
+      "selector": 12402,
+      "selector_name": "department",
+      "next": 3784,
+      "body_start": 3746,
+      "menu_offset": 3746,
+      "body_end": 3783,
+      "terminator": "yield_b",
+      "body_token_count": 2,
+      "list_index": 4
+    },
+    {
+      "offset": 3784,
+      "selector": 10679,
+      "selector_name": "beauty",
+      "next": 3812,
+      "body_start": 3788,
+      "menu_offset": 3788,
+      "body_end": 3811,
+      "terminator": "yield_b",
+      "body_token_count": 2,
+      "list_index": 4
+    },
+    {
+      "offset": 3812,
+      "selector": 9949,
+      "selector_name": "perfume",
+      "next": 3846,
+      "body_start": 3816,
+      "menu_offset": 3816,
+      "body_end": 3845,
+      "terminator": "yield_b",
+      "body_token_count": 2,
+      "list_index": 4
+    },
+    {
+      "offset": 3846,
+      "selector": 16373,
+      "selector_name": "eden",
+      "next": 3947,
+      "body_start": 3850,
+      "menu_offset": 3850,
+      "body_end": 3946,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 3947,
+      "selector": 16378,
+      "selector_name": "dune",
+      "next": 4042,
+      "body_start": 3951,
+      "menu_offset": 3951,
+      "body_end": 4041,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 4042,
+      "selector": 16384,
+      "selector_name": "kroolence",
+      "next": 4147,
+      "body_start": 4046,
+      "menu_offset": 4046,
+      "body_end": 4146,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 4147,
+      "selector": 16394,
+      "selector_name": "motoroil",
+      "next": 4246,
+      "body_start": 4151,
+      "menu_offset": 4151,
+      "body_end": 4245,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 4246,
+      "selector": 16403,
+      "selector_name": "turbulence",
+      "next": 4339,
+      "body_start": 4250,
+      "menu_offset": 4250,
+      "body_end": 4338,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 4339,
+      "selector": 16356,
+      "selector_name": "tie",
+      "next": 4373,
+      "body_start": 4343,
+      "menu_offset": 4343,
+      "body_end": 4372,
+      "terminator": "yield_b",
+      "body_token_count": 2,
+      "list_index": 4
+    },
+    {
+      "offset": 4373,
+      "selector": 1094,
+      "selector_name": "hide",
+      "next": 4472,
+      "body_start": 4377,
+      "menu_offset": 4377,
+      "body_end": 4471,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 4472,
+      "selector": 16656,
+      "selector_name": "hair",
+      "next": 4559,
+      "body_start": 4476,
+      "menu_offset": 4476,
+      "body_end": 4558,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 4559,
+      "selector": 16661,
+      "selector_name": "synthetic",
+      "next": 4650,
+      "body_start": 4563,
+      "menu_offset": 4563,
+      "body_end": 4649,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 4650,
+      "selector": 8752,
+      "selector_name": "makeup",
+      "next": 4682,
+      "body_start": 4654,
+      "menu_offset": 4654,
+      "body_end": 4681,
+      "terminator": "yield_b",
+      "body_token_count": 2,
+      "list_index": 4
+    },
+    {
+      "offset": 4682,
+      "selector": 16768,
+      "selector_name": "lip_rouge",
+      "next": 4702,
+      "body_start": 4686,
+      "menu_offset": 4686,
+      "body_end": 4701,
+      "terminator": "yield_b",
+      "body_token_count": 1,
+      "list_index": 4
+    },
+    {
+      "offset": 4702,
+      "selector": 16794,
+      "selector_name": "red",
+      "next": 4787,
+      "body_start": 4706,
+      "menu_offset": 4706,
+      "body_end": 4786,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 4787,
+      "selector": 16798,
+      "selector_name": "green",
+      "next": 4878,
+      "body_start": 4791,
+      "menu_offset": 4791,
+      "body_end": 4877,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 4878,
+      "selector": 5022,
+      "selector_name": "black",
+      "next": 4965,
+      "body_start": 4882,
+      "menu_offset": 4882,
+      "body_end": 4964,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 4965,
+      "selector": 15253,
+      "selector_name": "blue",
+      "next": 5060,
+      "body_start": 4969,
+      "menu_offset": 4969,
+      "body_end": 5059,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 5060,
+      "selector": 16778,
+      "selector_name": "cream",
+      "next": 5094,
+      "body_start": 5064,
+      "menu_offset": 5064,
+      "body_end": 5093,
+      "terminator": "yield_b",
+      "body_token_count": 2,
+      "list_index": 4
+    },
+    {
+      "offset": 5094,
+      "selector": 16897,
+      "selector_name": "painkiller",
+      "next": 5187,
+      "body_start": 5098,
+      "menu_offset": 5098,
+      "body_end": 5186,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 5187,
+      "selector": 16908,
+      "selector_name": "pex",
+      "next": 5284,
+      "body_start": 5191,
+      "menu_offset": 5191,
+      "body_end": 5283,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 5284,
+      "selector": 16912,
+      "selector_name": "meteor",
+      "next": 5369,
+      "body_start": 5288,
+      "menu_offset": 5288,
+      "body_end": 5368,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 5369,
+      "selector": 16360,
+      "selector_name": "jewel",
+      "next": 5401,
+      "body_start": 5373,
+      "menu_offset": 5373,
+      "body_end": 5400,
+      "terminator": "yield_b",
+      "body_token_count": 2,
+      "list_index": 4
+    },
+    {
+      "offset": 5401,
+      "selector": 17046,
+      "selector_name": "necklace",
+      "next": 5488,
+      "body_start": 5405,
+      "menu_offset": 5405,
+      "body_end": 5487,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 5488,
+      "selector": 17055,
+      "selector_name": "bracelet",
+      "next": 5575,
+      "body_start": 5492,
+      "menu_offset": 5492,
+      "body_end": 5574,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 5575,
+      "selector": 3707,
+      "selector_name": "food",
+      "next": 5605,
+      "body_start": 5579,
+      "menu_offset": 5579,
+      "body_end": 5604,
+      "terminator": "yield_b",
+      "body_token_count": 2,
+      "list_index": 4
+    },
+    {
+      "offset": 5605,
+      "selector": 5468,
+      "selector_name": "murffalo",
+      "next": 5645,
+      "body_start": 5609,
+      "menu_offset": 5609,
+      "body_end": 5644,
+      "terminator": "yield_b",
+      "body_token_count": 2,
+      "list_index": 4
+    },
+    {
+      "offset": 5645,
+      "selector": 17119,
+      "selector_name": "tenderloin",
+      "next": 5734,
+      "body_start": 5649,
+      "menu_offset": 5649,
+      "body_end": 5733,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 5734,
+      "selector": 5557,
+      "selector_name": "steak",
+      "next": 5825,
+      "body_start": 5738,
+      "menu_offset": 5738,
+      "body_end": 5824,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 5825,
+      "selector": 17130,
+      "selector_name": "horn",
+      "next": 5912,
+      "body_start": 5829,
+      "menu_offset": 5829,
+      "body_end": 5911,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 5912,
+      "selector": 17135,
+      "selector_name": "fur",
+      "next": 6001,
+      "body_start": 5916,
+      "menu_offset": 5916,
+      "body_end": 6000,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 6001,
+      "selector": 17139,
+      "selector_name": "sausage",
+      "next": 6088,
+      "body_start": 6005,
+      "menu_offset": 6005,
+      "body_end": 6087,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 6088,
+      "selector": 17147,
+      "selector_name": "intestines",
+      "next": 6177,
+      "body_start": 6092,
+      "menu_offset": 6092,
+      "body_end": 6176,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 6177,
+      "selector": 16309,
+      "selector_name": "sport",
+      "next": 6211,
+      "body_start": 6181,
+      "menu_offset": 6181,
+      "body_end": 6210,
+      "terminator": "yield_b",
+      "body_token_count": 2,
+      "list_index": 4
+    },
+    {
+      "offset": 6211,
+      "selector": 17282,
+      "selector_name": "ball",
+      "next": 6306,
+      "body_start": 6215,
+      "menu_offset": 6215,
+      "body_end": 6305,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 6306,
+      "selector": 17287,
+      "selector_name": "boxing_gloves",
+      "next": 6399,
+      "body_start": 6310,
+      "menu_offset": 6310,
+      "body_end": 6398,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 6399,
+      "selector": 17301,
+      "selector_name": "pouch",
+      "next": 6490,
+      "body_start": 6403,
+      "menu_offset": 6403,
+      "body_end": 6489,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 6490,
+      "selector": 16315,
+      "selector_name": "handywork",
+      "next": 6522,
+      "body_start": 6494,
+      "menu_offset": 6494,
+      "body_end": 6521,
+      "terminator": "yield_b",
+      "body_token_count": 2,
+      "list_index": 4
+    },
+    {
+      "offset": 6522,
+      "selector": 17397,
+      "selector_name": "tools",
+      "next": 6556,
+      "body_start": 6526,
+      "menu_offset": 6526,
+      "body_end": 6555,
+      "terminator": "yield_b",
+      "body_token_count": 2,
+      "list_index": 4
+    },
+    {
+      "offset": 6556,
+      "selector": 17422,
+      "selector_name": "screwdriver",
+      "next": 6655,
+      "body_start": 6560,
+      "menu_offset": 6560,
+      "body_end": 6654,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 6655,
+      "selector": 17434,
+      "selector_name": "saws",
+      "next": 6742,
+      "body_start": 6659,
+      "menu_offset": 6659,
+      "body_end": 6741,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 6742,
+      "selector": 17439,
+      "selector_name": "drills",
+      "next": 6823,
+      "body_start": 6746,
+      "menu_offset": 6746,
+      "body_end": 6822,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 6823,
+      "selector": 17403,
+      "selector_name": "robotics",
+      "next": 6853,
+      "body_start": 6827,
+      "menu_offset": 6827,
+      "body_end": 6852,
+      "terminator": "yield_b",
+      "body_token_count": 2,
+      "list_index": 4
+    },
+    {
+      "offset": 6853,
+      "selector": 17512,
+      "selector_name": "batteries",
+      "next": 6938,
+      "body_start": 6857,
+      "menu_offset": 6857,
+      "body_end": 6937,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 6938,
+      "selector": 16325,
+      "selector_name": "pharmacy",
+      "next": 6972,
+      "body_start": 6942,
+      "menu_offset": 6942,
+      "body_end": 6971,
+      "terminator": "yield_b",
+      "body_token_count": 2,
+      "list_index": 4
+    },
+    {
+      "offset": 6972,
+      "selector": 17553,
+      "selector_name": "aspirox",
+      "next": 7079,
+      "body_start": 6976,
+      "menu_offset": 6976,
+      "body_end": 7078,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 7079,
+      "selector": 17561,
+      "selector_name": "snorz",
+      "next": 7186,
+      "body_start": 7083,
+      "menu_offset": 7083,
+      "body_end": 7185,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 7186,
+      "selector": 17567,
+      "selector_name": "fang_brush",
+      "next": 7279,
+      "body_start": 7190,
+      "menu_offset": 7190,
+      "body_end": 7278,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 7279,
+      "selector": 16334,
+      "selector_name": "leisure",
+      "next": 7309,
+      "body_start": 7283,
+      "menu_offset": 7283,
+      "body_end": 7308,
+      "terminator": "yield_b",
+      "body_token_count": 2,
+      "list_index": 4
+    },
+    {
+      "offset": 7309,
+      "selector": 17758,
+      "selector_name": "video_games",
+      "next": 7349,
+      "body_start": 7313,
+      "menu_offset": 7313,
+      "body_end": 7348,
+      "terminator": "yield_b",
+      "body_token_count": 2,
+      "list_index": 4
+    },
+    {
+      "offset": 7349,
+      "selector": 17778,
+      "selector_name": "Dead_Killer",
+      "next": 7429,
+      "body_start": 7353,
+      "menu_offset": 7353,
+      "body_end": 7428,
+      "terminator": "yield_b",
+      "body_token_count": 3,
+      "list_index": 4
+    },
+    {
+      "offset": 7429,
+      "selector": 17790,
+      "selector_name": "Fatal_Butcher",
+      "next": 7501,
+      "body_start": 7433,
+      "menu_offset": 7433,
+      "body_end": 7500,
+      "terminator": "yield_b",
+      "body_token_count": 3,
+      "list_index": 4
+    },
+    {
+      "offset": 7501,
+      "selector": 17804,
+      "selector_name": "Harakira",
+      "next": 7581,
+      "body_start": 7505,
+      "menu_offset": 7505,
+      "body_end": 7580,
+      "terminator": "yield_b",
+      "body_token_count": 3,
+      "list_index": 4
+    },
+    {
+      "offset": 7581,
+      "selector": 17813,
+      "selector_name": "commander_Blood",
+      "next": 7629,
+      "body_start": 7585,
+      "menu_offset": 7585,
+      "body_end": 7628,
+      "terminator": "yield_b",
+      "body_token_count": 2,
+      "list_index": 4
+    },
+    {
+      "offset": 7629,
+      "selector": 17829,
+      "selector_name": "Streetofkarnage",
+      "next": 7713,
+      "body_start": 7633,
+      "menu_offset": 7633,
+      "body_end": 7712,
+      "terminator": "yield_b",
+      "body_token_count": 3,
+      "list_index": 4
+    },
+    {
+      "offset": 7713,
+      "selector": 17845,
+      "selector_name": "Eat_my_liver",
+      "next": 7819,
+      "body_start": 7717,
+      "menu_offset": 7717,
+      "body_end": 7818,
+      "terminator": "yield_b",
+      "body_token_count": 3,
+      "list_index": 4
+    },
+    {
+      "offset": 7819,
+      "selector": 16342,
+      "selector_name": "hifi",
+      "next": 7851,
+      "body_start": 7823,
+      "menu_offset": 7823,
+      "body_end": 7850,
+      "terminator": "yield_b",
+      "body_token_count": 2,
+      "list_index": 4
+    },
+    {
+      "offset": 7851,
+      "selector": 18133,
+      "selector_name": "multimedia",
+      "next": 7919,
+      "body_start": 7855,
+      "menu_offset": 7855,
+      "body_end": 7918,
+      "terminator": "yield_b",
+      "body_token_count": 3,
+      "list_index": 4
+    },
+    {
+      "offset": 7919,
+      "selector": 18144,
+      "selector_name": "CD_audio",
+      "next": null,
+      "body_start": 7923,
+      "menu_offset": 7923,
+      "body_end": 8009,
+      "terminator": "yield_a",
+      "body_token_count": 6,
+      "list_index": 4
+    },
+    {
+      "offset": 8011,
+      "selector": 1,
+      "selector_name": "talk",
+      "next": 8029,
+      "body_start": 8015,
+      "menu_offset": 8015,
+      "body_end": 8028,
+      "terminator": "yield_b",
+      "body_token_count": 1,
+      "list_index": 5
+    },
+    {
+      "offset": 8029,
+      "selector": 840,
+      "selector_name": "robot",
+      "next": 8449,
+      "body_start": 8033,
+      "menu_offset": 8033,
+      "body_end": 8448,
+      "terminator": "yield_b",
+      "body_token_count": 14,
+      "list_index": 5
+    },
+    {
+      "offset": 8449,
+      "selector": 7745,
+      "selector_name": "cred",
+      "next": 8687,
+      "body_start": 8453,
+      "menu_offset": 8453,
+      "body_end": 8686,
+      "terminator": "yield_b",
+      "body_token_count": 8,
+      "list_index": 5
+    },
+    {
+      "offset": 8687,
+      "selector": 5881,
+      "selector_name": "murffalos",
+      "next": 8861,
+      "body_start": 8691,
+      "menu_offset": 8691,
+      "body_end": 8860,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 5
+    },
+    {
+      "offset": 8861,
+      "selector": 18231,
+      "selector_name": "weapons",
+      "next": 8997,
+      "body_start": 8865,
+      "menu_offset": 8865,
+      "body_end": 8996,
+      "terminator": "yield_b",
+      "body_token_count": 5,
+      "list_index": 5
+    },
+    {
+      "offset": 8997,
+      "selector": 18263,
+      "selector_name": "retirement",
+      "next": null,
+      "body_start": 9001,
+      "menu_offset": 9001,
+      "body_end": 9063,
+      "terminator": "yield_a",
+      "body_token_count": 3,
+      "list_index": 5
+    },
+    {
+      "offset": 9065,
+      "selector": 1,
+      "selector_name": "talk",
+      "next": 10238,
+      "body_start": 9069,
+      "menu_offset": 9069,
+      "body_end": 10237,
+      "terminator": "yield_b",
+      "body_token_count": 44,
+      "list_index": 6
+    },
+    {
+      "offset": 10238,
+      "selector": 18575,
+      "selector_name": "kanary",
+      "next": null,
+      "body_start": 10242,
+      "menu_offset": 10242,
+      "body_end": 10970,
+      "terminator": "yield_a",
+      "body_token_count": 25,
+      "list_index": 6
+    },
+    {
+      "offset": 10972,
+      "selector": 1,
+      "selector_name": "talk",
+      "next": 11010,
+      "body_start": 10976,
+      "menu_offset": 10976,
+      "body_end": 11009,
+      "terminator": "yield_b",
+      "body_token_count": 2,
+      "list_index": 7
+    },
+    {
+      "offset": 11010,
+      "selector": 19643,
+      "selector_name": "sulk",
+      "next": null,
+      "body_start": 11014,
+      "menu_offset": 11014,
+      "body_end": 11075,
+      "terminator": "yield_a",
+      "body_token_count": 4,
+      "list_index": 7
+    },
+    {
+      "offset": 11077,
+      "selector": 1,
+      "selector_name": "talk",
+      "next": 11643,
+      "body_start": 11081,
+      "menu_offset": 11081,
+      "body_end": 11642,
+      "terminator": "yield_b",
+      "body_token_count": 19,
+      "list_index": 8
+    },
+    {
+      "offset": 11643,
+      "selector": 1437,
+      "selector_name": "planet",
+      "next": 12059,
+      "body_start": 11647,
+      "menu_offset": 11647,
+      "body_end": 12058,
+      "terminator": "yield_b",
+      "body_token_count": 12,
+      "list_index": 8
+    },
+    {
+      "offset": 12059,
+      "selector": 1292,
+      "selector_name": "race",
+      "next": 12675,
+      "body_start": 12063,
+      "menu_offset": 12063,
+      "body_end": 12674,
+      "terminator": "yield_b",
+      "body_token_count": 24,
+      "list_index": 8
+    },
+    {
+      "offset": 12675,
+      "selector": 19669,
+      "selector_name": "peace",
+      "next": 13122,
+      "body_start": 12679,
+      "menu_offset": 12679,
+      "body_end": 13121,
+      "terminator": "yield_b",
+      "body_token_count": 16,
+      "list_index": 8
+    },
+    {
+      "offset": 13122,
+      "selector": 15539,
+      "selector_name": "war",
+      "next": 13657,
+      "body_start": 13126,
+      "menu_offset": 13126,
+      "body_end": 13656,
+      "terminator": "yield_b",
+      "body_token_count": 16,
+      "list_index": 8
+    },
+    {
+      "offset": 13657,
+      "selector": 9683,
+      "selector_name": "secrets",
+      "next": null,
+      "body_start": 13661,
+      "menu_offset": 13661,
+      "body_end": 13753,
+      "terminator": "yield_a",
+      "body_token_count": 5,
+      "list_index": 8
+    },
+    {
+      "offset": 13755,
+      "selector": 1,
+      "selector_name": "talk",
+      "next": null,
+      "body_start": 13759,
+      "menu_offset": 13759,
+      "body_end": 14306,
+      "terminator": "yield_a",
+      "body_token_count": 17,
+      "list_index": 9
+    },
+    {
+      "offset": 14308,
+      "selector": 1,
+      "selector_name": "talk",
+      "next": 14500,
+      "body_start": 14312,
+      "menu_offset": 14312,
+      "body_end": 14499,
+      "terminator": "yield_b",
+      "body_token_count": 7,
+      "list_index": 10
+    },
+    {
+      "offset": 14500,
+      "selector": 9527,
+      "selector_name": "Eviscerator",
+      "next": 14830,
+      "body_start": 14504,
+      "menu_offset": 14504,
+      "body_end": 14829,
+      "terminator": "yield_b",
+      "body_token_count": 9,
+      "list_index": 10
+    },
+    {
+      "offset": 14830,
+      "selector": 11125,
+      "selector_name": "meteorut",
+      "next": 15052,
+      "body_start": 14834,
+      "menu_offset": 14834,
+      "body_end": 15051,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 10
+    },
+    {
+      "offset": 15052,
+      "selector": 20898,
+      "selector_name": "acidium",
+      "next": 15102,
+      "body_start": 15056,
+      "menu_offset": 15056,
+      "body_end": 15101,
+      "terminator": "yield_b",
+      "body_token_count": 2,
+      "list_index": 10
+    },
+    {
+      "offset": 15102,
+      "selector": 21032,
+      "selector_name": "pentium",
+      "next": null,
+      "body_start": 15106,
+      "menu_offset": 15106,
+      "body_end": 15214,
+      "terminator": "yield_a",
+      "body_token_count": 5,
+      "list_index": 10
+    },
+    {
+      "offset": 15216,
+      "selector": 1,
+      "selector_name": "talk",
+      "next": null,
+      "body_start": 15220,
+      "menu_offset": 15220,
+      "body_end": 15241,
+      "terminator": "end",
+      "body_token_count": 2,
+      "list_index": 11
+    }
+  ],
+  "edges": [
+    {
+      "from": 2,
+      "to": 6,
+      "kind": "selector_match"
+    },
+    {
+      "from": 2,
+      "to": 357,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 356,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 357,
+      "to": null,
+      "kind": "selector_miss_exit"
+    },
+    {
+      "from": 357,
+      "to": 361,
+      "kind": "selector_match"
+    },
+    {
+      "from": 862,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 864,
+      "to": null,
+      "kind": "selector_miss_exit"
+    },
+    {
+      "from": 864,
+      "to": 868,
+      "kind": "selector_match"
+    },
+    {
+      "from": 917,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 919,
+      "to": 923,
+      "kind": "selector_match"
+    },
+    {
+      "from": 919,
+      "to": 969,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 968,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 969,
+      "to": 973,
+      "kind": "selector_match"
+    },
+    {
+      "from": 969,
+      "to": 1011,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 1010,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 1011,
+      "to": 1015,
+      "kind": "selector_match"
+    },
+    {
+      "from": 1011,
+      "to": 1526,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 1525,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 1526,
+      "to": 1530,
+      "kind": "selector_match"
+    },
+    {
+      "from": 1526,
+      "to": 1695,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 1694,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 1695,
+      "to": 1699,
+      "kind": "selector_match"
+    },
+    {
+      "from": 1695,
+      "to": 1951,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 1950,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 1951,
+      "to": 1955,
+      "kind": "selector_match"
+    },
+    {
+      "from": 1951,
+      "to": 2163,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 2162,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 2163,
+      "to": null,
+      "kind": "selector_miss_exit"
+    },
+    {
+      "from": 2163,
+      "to": 2167,
+      "kind": "selector_match"
+    },
+    {
+      "from": 2423,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 2425,
+      "to": 2429,
+      "kind": "selector_match"
+    },
+    {
+      "from": 2425,
+      "to": 2517,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 2516,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 2517,
+      "to": 2521,
+      "kind": "selector_match"
+    },
+    {
+      "from": 2517,
+      "to": 2537,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 2536,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 2537,
+      "to": 2541,
+      "kind": "selector_match"
+    },
+    {
+      "from": 2537,
+      "to": 2855,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 2854,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 2855,
+      "to": 2859,
+      "kind": "selector_match"
+    },
+    {
+      "from": 2855,
+      "to": 3242,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 3241,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 3242,
+      "to": 3246,
+      "kind": "selector_match"
+    },
+    {
+      "from": 3242,
+      "to": 3611,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 3610,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 3611,
+      "to": null,
+      "kind": "selector_miss_exit"
+    },
+    {
+      "from": 3611,
+      "to": 3615,
+      "kind": "selector_match"
+    },
+    {
+      "from": 3740,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 3742,
+      "to": 3746,
+      "kind": "selector_match"
+    },
+    {
+      "from": 3742,
+      "to": 3784,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 3783,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 3784,
+      "to": 3788,
+      "kind": "selector_match"
+    },
+    {
+      "from": 3784,
+      "to": 3812,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 3811,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 3812,
+      "to": 3816,
+      "kind": "selector_match"
+    },
+    {
+      "from": 3812,
+      "to": 3846,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 3845,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 3846,
+      "to": 3850,
+      "kind": "selector_match"
+    },
+    {
+      "from": 3846,
+      "to": 3947,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 3946,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 3947,
+      "to": 3951,
+      "kind": "selector_match"
+    },
+    {
+      "from": 3947,
+      "to": 4042,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 4041,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 4042,
+      "to": 4046,
+      "kind": "selector_match"
+    },
+    {
+      "from": 4042,
+      "to": 4147,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 4146,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 4147,
+      "to": 4151,
+      "kind": "selector_match"
+    },
+    {
+      "from": 4147,
+      "to": 4246,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 4245,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 4246,
+      "to": 4250,
+      "kind": "selector_match"
+    },
+    {
+      "from": 4246,
+      "to": 4339,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 4338,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 4339,
+      "to": 4343,
+      "kind": "selector_match"
+    },
+    {
+      "from": 4339,
+      "to": 4373,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 4372,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 4373,
+      "to": 4377,
+      "kind": "selector_match"
+    },
+    {
+      "from": 4373,
+      "to": 4472,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 4471,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 4472,
+      "to": 4476,
+      "kind": "selector_match"
+    },
+    {
+      "from": 4472,
+      "to": 4559,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 4558,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 4559,
+      "to": 4563,
+      "kind": "selector_match"
+    },
+    {
+      "from": 4559,
+      "to": 4650,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 4649,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 4650,
+      "to": 4654,
+      "kind": "selector_match"
+    },
+    {
+      "from": 4650,
+      "to": 4682,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 4681,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 4682,
+      "to": 4686,
+      "kind": "selector_match"
+    },
+    {
+      "from": 4682,
+      "to": 4702,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 4701,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 4702,
+      "to": 4706,
+      "kind": "selector_match"
+    },
+    {
+      "from": 4702,
+      "to": 4787,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 4786,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 4787,
+      "to": 4791,
+      "kind": "selector_match"
+    },
+    {
+      "from": 4787,
+      "to": 4878,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 4877,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 4878,
+      "to": 4882,
+      "kind": "selector_match"
+    },
+    {
+      "from": 4878,
+      "to": 4965,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 4964,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 4965,
+      "to": 4969,
+      "kind": "selector_match"
+    },
+    {
+      "from": 4965,
+      "to": 5060,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 5059,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 5060,
+      "to": 5064,
+      "kind": "selector_match"
+    },
+    {
+      "from": 5060,
+      "to": 5094,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 5093,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 5094,
+      "to": 5098,
+      "kind": "selector_match"
+    },
+    {
+      "from": 5094,
+      "to": 5187,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 5186,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 5187,
+      "to": 5191,
+      "kind": "selector_match"
+    },
+    {
+      "from": 5187,
+      "to": 5284,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 5283,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 5284,
+      "to": 5288,
+      "kind": "selector_match"
+    },
+    {
+      "from": 5284,
+      "to": 5369,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 5368,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 5369,
+      "to": 5373,
+      "kind": "selector_match"
+    },
+    {
+      "from": 5369,
+      "to": 5401,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 5400,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 5401,
+      "to": 5405,
+      "kind": "selector_match"
+    },
+    {
+      "from": 5401,
+      "to": 5488,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 5487,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 5488,
+      "to": 5492,
+      "kind": "selector_match"
+    },
+    {
+      "from": 5488,
+      "to": 5575,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 5574,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 5575,
+      "to": 5579,
+      "kind": "selector_match"
+    },
+    {
+      "from": 5575,
+      "to": 5605,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 5604,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 5605,
+      "to": 5609,
+      "kind": "selector_match"
+    },
+    {
+      "from": 5605,
+      "to": 5645,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 5644,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 5645,
+      "to": 5649,
+      "kind": "selector_match"
+    },
+    {
+      "from": 5645,
+      "to": 5734,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 5733,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 5734,
+      "to": 5738,
+      "kind": "selector_match"
+    },
+    {
+      "from": 5734,
+      "to": 5825,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 5824,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 5825,
+      "to": 5829,
+      "kind": "selector_match"
+    },
+    {
+      "from": 5825,
+      "to": 5912,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 5911,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 5912,
+      "to": 5916,
+      "kind": "selector_match"
+    },
+    {
+      "from": 5912,
+      "to": 6001,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 6000,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 6001,
+      "to": 6005,
+      "kind": "selector_match"
+    },
+    {
+      "from": 6001,
+      "to": 6088,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 6087,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 6088,
+      "to": 6092,
+      "kind": "selector_match"
+    },
+    {
+      "from": 6088,
+      "to": 6177,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 6176,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 6177,
+      "to": 6181,
+      "kind": "selector_match"
+    },
+    {
+      "from": 6177,
+      "to": 6211,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 6210,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 6211,
+      "to": 6215,
+      "kind": "selector_match"
+    },
+    {
+      "from": 6211,
+      "to": 6306,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 6305,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 6306,
+      "to": 6310,
+      "kind": "selector_match"
+    },
+    {
+      "from": 6306,
+      "to": 6399,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 6398,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 6399,
+      "to": 6403,
+      "kind": "selector_match"
+    },
+    {
+      "from": 6399,
+      "to": 6490,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 6489,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 6490,
+      "to": 6494,
+      "kind": "selector_match"
+    },
+    {
+      "from": 6490,
+      "to": 6522,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 6521,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 6522,
+      "to": 6526,
+      "kind": "selector_match"
+    },
+    {
+      "from": 6522,
+      "to": 6556,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 6555,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 6556,
+      "to": 6560,
+      "kind": "selector_match"
+    },
+    {
+      "from": 6556,
+      "to": 6655,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 6654,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 6655,
+      "to": 6659,
+      "kind": "selector_match"
+    },
+    {
+      "from": 6655,
+      "to": 6742,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 6741,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 6742,
+      "to": 6746,
+      "kind": "selector_match"
+    },
+    {
+      "from": 6742,
+      "to": 6823,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 6822,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 6823,
+      "to": 6827,
+      "kind": "selector_match"
+    },
+    {
+      "from": 6823,
+      "to": 6853,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 6852,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 6853,
+      "to": 6857,
+      "kind": "selector_match"
+    },
+    {
+      "from": 6853,
+      "to": 6938,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 6937,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 6938,
+      "to": 6942,
+      "kind": "selector_match"
+    },
+    {
+      "from": 6938,
+      "to": 6972,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 6971,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 6972,
+      "to": 6976,
+      "kind": "selector_match"
+    },
+    {
+      "from": 6972,
+      "to": 7079,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 7078,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 7079,
+      "to": 7083,
+      "kind": "selector_match"
+    },
+    {
+      "from": 7079,
+      "to": 7186,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 7185,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 7186,
+      "to": 7190,
+      "kind": "selector_match"
+    },
+    {
+      "from": 7186,
+      "to": 7279,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 7278,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 7279,
+      "to": 7283,
+      "kind": "selector_match"
+    },
+    {
+      "from": 7279,
+      "to": 7309,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 7308,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 7309,
+      "to": 7313,
+      "kind": "selector_match"
+    },
+    {
+      "from": 7309,
+      "to": 7349,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 7348,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 7349,
+      "to": 7353,
+      "kind": "selector_match"
+    },
+    {
+      "from": 7349,
+      "to": 7429,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 7428,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 7429,
+      "to": 7433,
+      "kind": "selector_match"
+    },
+    {
+      "from": 7429,
+      "to": 7501,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 7500,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 7501,
+      "to": 7505,
+      "kind": "selector_match"
+    },
+    {
+      "from": 7501,
+      "to": 7581,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 7580,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 7581,
+      "to": 7585,
+      "kind": "selector_match"
+    },
+    {
+      "from": 7581,
+      "to": 7629,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 7628,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 7629,
+      "to": 7633,
+      "kind": "selector_match"
+    },
+    {
+      "from": 7629,
+      "to": 7713,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 7712,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 7713,
+      "to": 7717,
+      "kind": "selector_match"
+    },
+    {
+      "from": 7713,
+      "to": 7819,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 7818,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 7819,
+      "to": 7823,
+      "kind": "selector_match"
+    },
+    {
+      "from": 7819,
+      "to": 7851,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 7850,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 7851,
+      "to": 7855,
+      "kind": "selector_match"
+    },
+    {
+      "from": 7851,
+      "to": 7919,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 7918,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 7919,
+      "to": null,
+      "kind": "selector_miss_exit"
+    },
+    {
+      "from": 7919,
+      "to": 7923,
+      "kind": "selector_match"
+    },
+    {
+      "from": 8009,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 8011,
+      "to": 8015,
+      "kind": "selector_match"
+    },
+    {
+      "from": 8011,
+      "to": 8029,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 8028,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 8029,
+      "to": 8033,
+      "kind": "selector_match"
+    },
+    {
+      "from": 8029,
+      "to": 8449,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 8448,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 8449,
+      "to": 8453,
+      "kind": "selector_match"
+    },
+    {
+      "from": 8449,
+      "to": 8687,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 8686,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 8687,
+      "to": 8691,
+      "kind": "selector_match"
+    },
+    {
+      "from": 8687,
+      "to": 8861,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 8860,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 8861,
+      "to": 8865,
+      "kind": "selector_match"
+    },
+    {
+      "from": 8861,
+      "to": 8997,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 8996,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 8997,
+      "to": null,
+      "kind": "selector_miss_exit"
+    },
+    {
+      "from": 8997,
+      "to": 9001,
+      "kind": "selector_match"
+    },
+    {
+      "from": 9063,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 9065,
+      "to": 9069,
+      "kind": "selector_match"
+    },
+    {
+      "from": 9065,
+      "to": 10238,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 10237,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 10238,
+      "to": null,
+      "kind": "selector_miss_exit"
+    },
+    {
+      "from": 10238,
+      "to": 10242,
+      "kind": "selector_match"
+    },
+    {
+      "from": 10970,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 10972,
+      "to": 10976,
+      "kind": "selector_match"
+    },
+    {
+      "from": 10972,
+      "to": 11010,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 11009,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 11010,
+      "to": null,
+      "kind": "selector_miss_exit"
+    },
+    {
+      "from": 11010,
+      "to": 11014,
+      "kind": "selector_match"
+    },
+    {
+      "from": 11075,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 11077,
+      "to": 11081,
+      "kind": "selector_match"
+    },
+    {
+      "from": 11077,
+      "to": 11643,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 11642,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 11643,
+      "to": 11647,
+      "kind": "selector_match"
+    },
+    {
+      "from": 11643,
+      "to": 12059,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 12058,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 12059,
+      "to": 12063,
+      "kind": "selector_match"
+    },
+    {
+      "from": 12059,
+      "to": 12675,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 12674,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 12675,
+      "to": 12679,
+      "kind": "selector_match"
+    },
+    {
+      "from": 12675,
+      "to": 13122,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 13121,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 13122,
+      "to": 13126,
+      "kind": "selector_match"
+    },
+    {
+      "from": 13122,
+      "to": 13657,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 13656,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 13657,
+      "to": null,
+      "kind": "selector_miss_exit"
+    },
+    {
+      "from": 13657,
+      "to": 13661,
+      "kind": "selector_match"
+    },
+    {
+      "from": 13753,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 13755,
+      "to": null,
+      "kind": "selector_miss_exit"
+    },
+    {
+      "from": 13755,
+      "to": 13759,
+      "kind": "selector_match"
+    },
+    {
+      "from": 14306,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 14308,
+      "to": 14312,
+      "kind": "selector_match"
+    },
+    {
+      "from": 14308,
+      "to": 14500,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 14499,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 14500,
+      "to": 14504,
+      "kind": "selector_match"
+    },
+    {
+      "from": 14500,
+      "to": 14830,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 14829,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 14830,
+      "to": 14834,
+      "kind": "selector_match"
+    },
+    {
+      "from": 14830,
+      "to": 15052,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 15051,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 15052,
+      "to": 15056,
+      "kind": "selector_match"
+    },
+    {
+      "from": 15052,
+      "to": 15102,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 15101,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 15102,
+      "to": null,
+      "kind": "selector_miss_exit"
+    },
+    {
+      "from": 15102,
+      "to": 15106,
+      "kind": "selector_match"
+    },
+    {
+      "from": 15214,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 15216,
+      "to": null,
+      "kind": "selector_miss_exit"
+    },
+    {
+      "from": 15216,
+      "to": 15220,
+      "kind": "selector_match"
+    },
+    {
+      "from": 15241,
+      "to": null,
+      "kind": "body_end"
+    }
+  ]
+}

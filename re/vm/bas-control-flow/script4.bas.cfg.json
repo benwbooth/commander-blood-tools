@@ -1,0 +1,1432 @@
+{
+  "script": "SCRIPT4",
+  "image_bytes": 10585,
+  "token_count": 518,
+  "selector_node_count": 43,
+  "list_count": 10,
+  "entrypoint_count": 10,
+  "direct_next_count": 33,
+  "edge_count": 129,
+  "entrypoints": [
+    {
+      "object_name": "Super_Tromp",
+      "object_offset": 434,
+      "object_kind": 2,
+      "prefix_yield_b": 1,
+      "root_node": 2
+    },
+    {
+      "object_name": "Maziok",
+      "object_offset": 218,
+      "object_kind": 2,
+      "prefix_yield_b": 403,
+      "root_node": 404
+    },
+    {
+      "object_name": "Fifi",
+      "object_offset": 1946,
+      "object_kind": 2,
+      "prefix_yield_b": 937,
+      "root_node": 938
+    },
+    {
+      "object_name": "Bratakas",
+      "object_offset": 74,
+      "object_kind": 2,
+      "prefix_yield_b": 1056,
+      "root_node": 1057
+    },
+    {
+      "object_name": "Beauregard",
+      "object_offset": 1658,
+      "object_kind": 2,
+      "prefix_yield_b": 1515,
+      "root_node": 1516
+    },
+    {
+      "object_name": "Honk",
+      "object_offset": 2666,
+      "object_kind": 2,
+      "prefix_yield_b": 1891,
+      "root_node": 1892
+    },
+    {
+      "object_name": "Morning_Oil",
+      "object_offset": 1154,
+      "object_kind": 2,
+      "prefix_yield_b": 1952,
+      "root_node": 1953
+    },
+    {
+      "object_name": "Bronko",
+      "object_offset": 1298,
+      "object_kind": 2,
+      "prefix_yield_b": 3267,
+      "root_node": 3268
+    },
+    {
+      "object_name": "Bob_Morlock",
+      "object_offset": 578,
+      "object_kind": 2,
+      "prefix_yield_b": 4327,
+      "root_node": 4328
+    },
+    {
+      "object_name": "Hom",
+      "object_offset": 938,
+      "object_kind": 2,
+      "prefix_yield_b": 6216,
+      "root_node": 6217
+    }
+  ],
+  "lists": [
+    {
+      "index": 0,
+      "entrypoint": {
+        "object_name": "Super_Tromp",
+        "object_offset": 434,
+        "object_kind": 2,
+        "prefix_yield_b": 1,
+        "root_node": 2
+      },
+      "terminal_node": 2,
+      "end_exclusive": 403,
+      "node_offsets": [
+        2
+      ]
+    },
+    {
+      "index": 1,
+      "entrypoint": {
+        "object_name": "Maziok",
+        "object_offset": 218,
+        "object_kind": 2,
+        "prefix_yield_b": 403,
+        "root_node": 404
+      },
+      "terminal_node": 642,
+      "end_exclusive": 937,
+      "node_offsets": [
+        404,
+        642
+      ]
+    },
+    {
+      "index": 2,
+      "entrypoint": {
+        "object_name": "Fifi",
+        "object_offset": 1946,
+        "object_kind": 2,
+        "prefix_yield_b": 937,
+        "root_node": 938
+      },
+      "terminal_node": 938,
+      "end_exclusive": 1056,
+      "node_offsets": [
+        938
+      ]
+    },
+    {
+      "index": 3,
+      "entrypoint": {
+        "object_name": "Bratakas",
+        "object_offset": 74,
+        "object_kind": 2,
+        "prefix_yield_b": 1056,
+        "root_node": 1057
+      },
+      "terminal_node": 1057,
+      "end_exclusive": 1515,
+      "node_offsets": [
+        1057
+      ]
+    },
+    {
+      "index": 4,
+      "entrypoint": {
+        "object_name": "Beauregard",
+        "object_offset": 1658,
+        "object_kind": 2,
+        "prefix_yield_b": 1515,
+        "root_node": 1516
+      },
+      "terminal_node": 1516,
+      "end_exclusive": 1891,
+      "node_offsets": [
+        1516
+      ]
+    },
+    {
+      "index": 5,
+      "entrypoint": {
+        "object_name": "Honk",
+        "object_offset": 2666,
+        "object_kind": 2,
+        "prefix_yield_b": 1891,
+        "root_node": 1892
+      },
+      "terminal_node": 1892,
+      "end_exclusive": 1952,
+      "node_offsets": [
+        1892
+      ]
+    },
+    {
+      "index": 6,
+      "entrypoint": {
+        "object_name": "Morning_Oil",
+        "object_offset": 1154,
+        "object_kind": 2,
+        "prefix_yield_b": 1952,
+        "root_node": 1953
+      },
+      "terminal_node": 3139,
+      "end_exclusive": 3267,
+      "node_offsets": [
+        1953,
+        2045,
+        2065,
+        2385,
+        2776,
+        3139
+      ]
+    },
+    {
+      "index": 7,
+      "entrypoint": {
+        "object_name": "Bronko",
+        "object_offset": 1298,
+        "object_kind": 2,
+        "prefix_yield_b": 3267,
+        "root_node": 3268
+      },
+      "terminal_node": 4263,
+      "end_exclusive": 4327,
+      "node_offsets": [
+        3268,
+        3286,
+        3699,
+        3935,
+        4119,
+        4263
+      ]
+    },
+    {
+      "index": 8,
+      "entrypoint": {
+        "object_name": "Bob_Morlock",
+        "object_offset": 578,
+        "object_kind": 2,
+        "prefix_yield_b": 4327,
+        "root_node": 4328
+      },
+      "terminal_node": 5499,
+      "end_exclusive": 6216,
+      "node_offsets": [
+        4328,
+        5499
+      ]
+    },
+    {
+      "index": 9,
+      "entrypoint": {
+        "object_name": "Hom",
+        "object_offset": 938,
+        "object_kind": 2,
+        "prefix_yield_b": 6216,
+        "root_node": 6217
+      },
+      "terminal_node": 10443,
+      "end_exclusive": 10585,
+      "node_offsets": [
+        6217,
+        6450,
+        6622,
+        6684,
+        7261,
+        7619,
+        8105,
+        8233,
+        8371,
+        8505,
+        8563,
+        8657,
+        8797,
+        9363,
+        9503,
+        9627,
+        9739,
+        9821,
+        9963,
+        10051,
+        10329,
+        10443
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "offset": 2,
+      "selector": 1,
+      "selector_name": "talk",
+      "next": null,
+      "body_start": 6,
+      "menu_offset": 6,
+      "body_end": 402,
+      "terminator": "yield_a",
+      "body_token_count": 12,
+      "list_index": 0
+    },
+    {
+      "offset": 404,
+      "selector": 1,
+      "selector_name": "talk",
+      "next": 642,
+      "body_start": 408,
+      "menu_offset": 408,
+      "body_end": 641,
+      "terminator": "yield_b",
+      "body_token_count": 12,
+      "list_index": 1
+    },
+    {
+      "offset": 642,
+      "selector": 1244,
+      "selector_name": "planet",
+      "next": null,
+      "body_start": 646,
+      "menu_offset": 646,
+      "body_end": 936,
+      "terminator": "yield_a",
+      "body_token_count": 12,
+      "list_index": 1
+    },
+    {
+      "offset": 938,
+      "selector": 6,
+      "selector_name": "hello",
+      "next": null,
+      "body_start": 942,
+      "menu_offset": 942,
+      "body_end": 1055,
+      "terminator": "yield_a",
+      "body_token_count": 5,
+      "list_index": 2
+    },
+    {
+      "offset": 1057,
+      "selector": 1,
+      "selector_name": "talk",
+      "next": null,
+      "body_start": 1061,
+      "menu_offset": 1061,
+      "body_end": 1514,
+      "terminator": "yield_a",
+      "body_token_count": 20,
+      "list_index": 3
+    },
+    {
+      "offset": 1516,
+      "selector": 1,
+      "selector_name": "talk",
+      "next": null,
+      "body_start": 1520,
+      "menu_offset": 1520,
+      "body_end": 1890,
+      "terminator": "yield_a",
+      "body_token_count": 16,
+      "list_index": 4
+    },
+    {
+      "offset": 1892,
+      "selector": 1,
+      "selector_name": "talk",
+      "next": null,
+      "body_start": 1896,
+      "menu_offset": 1896,
+      "body_end": 1951,
+      "terminator": "yield_a",
+      "body_token_count": 3,
+      "list_index": 5
+    },
+    {
+      "offset": 1953,
+      "selector": 1,
+      "selector_name": "talk",
+      "next": 2045,
+      "body_start": 1957,
+      "menu_offset": 1957,
+      "body_end": 2044,
+      "terminator": "yield_b",
+      "body_token_count": 5,
+      "list_index": 6
+    },
+    {
+      "offset": 2045,
+      "selector": 10326,
+      "selector_name": "history",
+      "next": 2065,
+      "body_start": 2049,
+      "menu_offset": 2049,
+      "body_end": 2064,
+      "terminator": "yield_b",
+      "body_token_count": 1,
+      "list_index": 6
+    },
+    {
+      "offset": 2065,
+      "selector": 7153,
+      "selector_name": "war",
+      "next": 2385,
+      "body_start": 2069,
+      "menu_offset": 2069,
+      "body_end": 2384,
+      "terminator": "yield_b",
+      "body_token_count": 8,
+      "list_index": 6
+    },
+    {
+      "offset": 2385,
+      "selector": 9989,
+      "selector_name": "croolis",
+      "next": 2776,
+      "body_start": 2389,
+      "menu_offset": 2389,
+      "body_end": 2775,
+      "terminator": "yield_b",
+      "body_token_count": 14,
+      "list_index": 6
+    },
+    {
+      "offset": 2776,
+      "selector": 7268,
+      "selector_name": "treasure",
+      "next": 3139,
+      "body_start": 2780,
+      "menu_offset": 2780,
+      "body_end": 3138,
+      "terminator": "yield_b",
+      "body_token_count": 11,
+      "list_index": 6
+    },
+    {
+      "offset": 3139,
+      "selector": 10407,
+      "selector_name": "mastachok",
+      "next": null,
+      "body_start": 3143,
+      "menu_offset": 3143,
+      "body_end": 3266,
+      "terminator": "yield_a",
+      "body_token_count": 4,
+      "list_index": 6
+    },
+    {
+      "offset": 3268,
+      "selector": 1,
+      "selector_name": "talk",
+      "next": 3286,
+      "body_start": 3272,
+      "menu_offset": 3272,
+      "body_end": 3285,
+      "terminator": "yield_b",
+      "body_token_count": 1,
+      "list_index": 7
+    },
+    {
+      "offset": 3286,
+      "selector": 6377,
+      "selector_name": "robot",
+      "next": 3699,
+      "body_start": 3290,
+      "menu_offset": 3290,
+      "body_end": 3698,
+      "terminator": "yield_b",
+      "body_token_count": 15,
+      "list_index": 7
+    },
+    {
+      "offset": 3699,
+      "selector": 11203,
+      "selector_name": "cred",
+      "next": 3935,
+      "body_start": 3703,
+      "menu_offset": 3703,
+      "body_end": 3934,
+      "terminator": "yield_b",
+      "body_token_count": 8,
+      "list_index": 7
+    },
+    {
+      "offset": 3935,
+      "selector": 9715,
+      "selector_name": "murffalos",
+      "next": 4119,
+      "body_start": 3939,
+      "menu_offset": 3939,
+      "body_end": 4118,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 7
+    },
+    {
+      "offset": 4119,
+      "selector": 9888,
+      "selector_name": "weapons",
+      "next": 4263,
+      "body_start": 4123,
+      "menu_offset": 4123,
+      "body_end": 4262,
+      "terminator": "yield_b",
+      "body_token_count": 5,
+      "list_index": 7
+    },
+    {
+      "offset": 4263,
+      "selector": 11232,
+      "selector_name": "retirement",
+      "next": null,
+      "body_start": 4267,
+      "menu_offset": 4267,
+      "body_end": 4326,
+      "terminator": "yield_a",
+      "body_token_count": 2,
+      "list_index": 7
+    },
+    {
+      "offset": 4328,
+      "selector": 1,
+      "selector_name": "talk",
+      "next": 5499,
+      "body_start": 4332,
+      "menu_offset": 4332,
+      "body_end": 5498,
+      "terminator": "yield_b",
+      "body_token_count": 44,
+      "list_index": 8
+    },
+    {
+      "offset": 5499,
+      "selector": 11703,
+      "selector_name": "kanary",
+      "next": null,
+      "body_start": 5503,
+      "menu_offset": 5503,
+      "body_end": 6215,
+      "terminator": "yield_a",
+      "body_token_count": 25,
+      "list_index": 8
+    },
+    {
+      "offset": 6217,
+      "selector": 6,
+      "selector_name": "hello",
+      "next": 6450,
+      "body_start": 6221,
+      "menu_offset": 6221,
+      "body_end": 6449,
+      "terminator": "yield_b",
+      "body_token_count": 12,
+      "list_index": 9
+    },
+    {
+      "offset": 6450,
+      "selector": 1,
+      "selector_name": "talk",
+      "next": 6622,
+      "body_start": 6454,
+      "menu_offset": 6454,
+      "body_end": 6621,
+      "terminator": "yield_b",
+      "body_token_count": 9,
+      "list_index": 9
+    },
+    {
+      "offset": 6622,
+      "selector": 9984,
+      "selector_name": "race",
+      "next": 6684,
+      "body_start": 6626,
+      "menu_offset": 6626,
+      "body_end": 6683,
+      "terminator": "yield_b",
+      "body_token_count": 3,
+      "list_index": 9
+    },
+    {
+      "offset": 6684,
+      "selector": 13033,
+      "selector_name": "izwal",
+      "next": 7261,
+      "body_start": 6688,
+      "menu_offset": 6688,
+      "body_end": 7260,
+      "terminator": "yield_b",
+      "body_token_count": 24,
+      "list_index": 9
+    },
+    {
+      "offset": 7261,
+      "selector": 9989,
+      "selector_name": "croolis",
+      "next": 7619,
+      "body_start": 7265,
+      "menu_offset": 7265,
+      "body_end": 7618,
+      "terminator": "yield_b",
+      "body_token_count": 15,
+      "list_index": 9
+    },
+    {
+      "offset": 7619,
+      "selector": 13039,
+      "selector_name": "slimer",
+      "next": 8105,
+      "body_start": 7623,
+      "menu_offset": 7623,
+      "body_end": 8104,
+      "terminator": "yield_b",
+      "body_token_count": 19,
+      "list_index": 9
+    },
+    {
+      "offset": 8105,
+      "selector": 13046,
+      "selector_name": "tubular_brain",
+      "next": 8233,
+      "body_start": 8109,
+      "menu_offset": 8109,
+      "body_end": 8232,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 9
+    },
+    {
+      "offset": 8233,
+      "selector": 13060,
+      "selector_name": "sinox",
+      "next": 8371,
+      "body_start": 8237,
+      "menu_offset": 8237,
+      "body_end": 8370,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 9
+    },
+    {
+      "offset": 8371,
+      "selector": 13073,
+      "selector_name": "migrax",
+      "next": 8505,
+      "body_start": 8375,
+      "menu_offset": 8375,
+      "body_end": 8504,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 9
+    },
+    {
+      "offset": 8505,
+      "selector": 13066,
+      "selector_name": "buggol",
+      "next": 8563,
+      "body_start": 8509,
+      "menu_offset": 8509,
+      "body_end": 8562,
+      "terminator": "yield_b",
+      "body_token_count": 3,
+      "list_index": 9
+    },
+    {
+      "offset": 8563,
+      "selector": 2362,
+      "selector_name": "ondoyant",
+      "next": 8657,
+      "body_start": 8567,
+      "menu_offset": 8567,
+      "body_end": 8656,
+      "terminator": "yield_b",
+      "body_token_count": 4,
+      "list_index": 9
+    },
+    {
+      "offset": 8657,
+      "selector": 9715,
+      "selector_name": "murffalos",
+      "next": 8797,
+      "body_start": 8661,
+      "menu_offset": 8661,
+      "body_end": 8796,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 9
+    },
+    {
+      "offset": 8797,
+      "selector": 1244,
+      "selector_name": "planet",
+      "next": 9363,
+      "body_start": 8801,
+      "menu_offset": 8801,
+      "body_end": 9362,
+      "terminator": "yield_b",
+      "body_token_count": 26,
+      "list_index": 9
+    },
+    {
+      "offset": 9363,
+      "selector": 14804,
+      "selector_name": "television",
+      "next": 9503,
+      "body_start": 9367,
+      "menu_offset": 9367,
+      "body_end": 9502,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 9
+    },
+    {
+      "offset": 9503,
+      "selector": 12910,
+      "selector_name": "art",
+      "next": 9627,
+      "body_start": 9507,
+      "menu_offset": 9507,
+      "body_end": 9626,
+      "terminator": "yield_b",
+      "body_token_count": 5,
+      "list_index": 9
+    },
+    {
+      "offset": 9627,
+      "selector": 5821,
+      "selector_name": "peace",
+      "next": 9739,
+      "body_start": 9631,
+      "menu_offset": 9631,
+      "body_end": 9738,
+      "terminator": "yield_b",
+      "body_token_count": 5,
+      "list_index": 9
+    },
+    {
+      "offset": 9739,
+      "selector": 7153,
+      "selector_name": "war",
+      "next": 9821,
+      "body_start": 9743,
+      "menu_offset": 9743,
+      "body_end": 9820,
+      "terminator": "yield_b",
+      "body_token_count": 4,
+      "list_index": 9
+    },
+    {
+      "offset": 9821,
+      "selector": 12901,
+      "selector_name": "politics",
+      "next": 9963,
+      "body_start": 9825,
+      "menu_offset": 9825,
+      "body_end": 9962,
+      "terminator": "yield_b",
+      "body_token_count": 6,
+      "list_index": 9
+    },
+    {
+      "offset": 9963,
+      "selector": 11550,
+      "selector_name": "reproduction",
+      "next": 10051,
+      "body_start": 9967,
+      "menu_offset": 9967,
+      "body_end": 10050,
+      "terminator": "yield_b",
+      "body_token_count": 4,
+      "list_index": 9
+    },
+    {
+      "offset": 10051,
+      "selector": 12893,
+      "selector_name": "science",
+      "next": 10329,
+      "body_start": 10055,
+      "menu_offset": 10055,
+      "body_end": 10328,
+      "terminator": "yield_b",
+      "body_token_count": 12,
+      "list_index": 9
+    },
+    {
+      "offset": 10329,
+      "selector": 15429,
+      "selector_name": "consuption",
+      "next": 10443,
+      "body_start": 10333,
+      "menu_offset": 10333,
+      "body_end": 10442,
+      "terminator": "yield_b",
+      "body_token_count": 5,
+      "list_index": 9
+    },
+    {
+      "offset": 10443,
+      "selector": 2736,
+      "selector_name": "joke",
+      "next": null,
+      "body_start": 10447,
+      "menu_offset": 10447,
+      "body_end": 10584,
+      "terminator": "end",
+      "body_token_count": 6,
+      "list_index": 9
+    }
+  ],
+  "edges": [
+    {
+      "from": 2,
+      "to": null,
+      "kind": "selector_miss_exit"
+    },
+    {
+      "from": 2,
+      "to": 6,
+      "kind": "selector_match"
+    },
+    {
+      "from": 402,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 404,
+      "to": 408,
+      "kind": "selector_match"
+    },
+    {
+      "from": 404,
+      "to": 642,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 641,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 642,
+      "to": null,
+      "kind": "selector_miss_exit"
+    },
+    {
+      "from": 642,
+      "to": 646,
+      "kind": "selector_match"
+    },
+    {
+      "from": 936,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 938,
+      "to": null,
+      "kind": "selector_miss_exit"
+    },
+    {
+      "from": 938,
+      "to": 942,
+      "kind": "selector_match"
+    },
+    {
+      "from": 1055,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 1057,
+      "to": null,
+      "kind": "selector_miss_exit"
+    },
+    {
+      "from": 1057,
+      "to": 1061,
+      "kind": "selector_match"
+    },
+    {
+      "from": 1514,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 1516,
+      "to": null,
+      "kind": "selector_miss_exit"
+    },
+    {
+      "from": 1516,
+      "to": 1520,
+      "kind": "selector_match"
+    },
+    {
+      "from": 1890,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 1892,
+      "to": null,
+      "kind": "selector_miss_exit"
+    },
+    {
+      "from": 1892,
+      "to": 1896,
+      "kind": "selector_match"
+    },
+    {
+      "from": 1951,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 1953,
+      "to": 1957,
+      "kind": "selector_match"
+    },
+    {
+      "from": 1953,
+      "to": 2045,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 2044,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 2045,
+      "to": 2049,
+      "kind": "selector_match"
+    },
+    {
+      "from": 2045,
+      "to": 2065,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 2064,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 2065,
+      "to": 2069,
+      "kind": "selector_match"
+    },
+    {
+      "from": 2065,
+      "to": 2385,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 2384,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 2385,
+      "to": 2389,
+      "kind": "selector_match"
+    },
+    {
+      "from": 2385,
+      "to": 2776,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 2775,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 2776,
+      "to": 2780,
+      "kind": "selector_match"
+    },
+    {
+      "from": 2776,
+      "to": 3139,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 3138,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 3139,
+      "to": null,
+      "kind": "selector_miss_exit"
+    },
+    {
+      "from": 3139,
+      "to": 3143,
+      "kind": "selector_match"
+    },
+    {
+      "from": 3266,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 3268,
+      "to": 3272,
+      "kind": "selector_match"
+    },
+    {
+      "from": 3268,
+      "to": 3286,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 3285,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 3286,
+      "to": 3290,
+      "kind": "selector_match"
+    },
+    {
+      "from": 3286,
+      "to": 3699,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 3698,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 3699,
+      "to": 3703,
+      "kind": "selector_match"
+    },
+    {
+      "from": 3699,
+      "to": 3935,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 3934,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 3935,
+      "to": 3939,
+      "kind": "selector_match"
+    },
+    {
+      "from": 3935,
+      "to": 4119,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 4118,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 4119,
+      "to": 4123,
+      "kind": "selector_match"
+    },
+    {
+      "from": 4119,
+      "to": 4263,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 4262,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 4263,
+      "to": null,
+      "kind": "selector_miss_exit"
+    },
+    {
+      "from": 4263,
+      "to": 4267,
+      "kind": "selector_match"
+    },
+    {
+      "from": 4326,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 4328,
+      "to": 4332,
+      "kind": "selector_match"
+    },
+    {
+      "from": 4328,
+      "to": 5499,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 5498,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 5499,
+      "to": null,
+      "kind": "selector_miss_exit"
+    },
+    {
+      "from": 5499,
+      "to": 5503,
+      "kind": "selector_match"
+    },
+    {
+      "from": 6215,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 6217,
+      "to": 6221,
+      "kind": "selector_match"
+    },
+    {
+      "from": 6217,
+      "to": 6450,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 6449,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 6450,
+      "to": 6454,
+      "kind": "selector_match"
+    },
+    {
+      "from": 6450,
+      "to": 6622,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 6621,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 6622,
+      "to": 6626,
+      "kind": "selector_match"
+    },
+    {
+      "from": 6622,
+      "to": 6684,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 6683,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 6684,
+      "to": 6688,
+      "kind": "selector_match"
+    },
+    {
+      "from": 6684,
+      "to": 7261,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 7260,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 7261,
+      "to": 7265,
+      "kind": "selector_match"
+    },
+    {
+      "from": 7261,
+      "to": 7619,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 7618,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 7619,
+      "to": 7623,
+      "kind": "selector_match"
+    },
+    {
+      "from": 7619,
+      "to": 8105,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 8104,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 8105,
+      "to": 8109,
+      "kind": "selector_match"
+    },
+    {
+      "from": 8105,
+      "to": 8233,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 8232,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 8233,
+      "to": 8237,
+      "kind": "selector_match"
+    },
+    {
+      "from": 8233,
+      "to": 8371,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 8370,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 8371,
+      "to": 8375,
+      "kind": "selector_match"
+    },
+    {
+      "from": 8371,
+      "to": 8505,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 8504,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 8505,
+      "to": 8509,
+      "kind": "selector_match"
+    },
+    {
+      "from": 8505,
+      "to": 8563,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 8562,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 8563,
+      "to": 8567,
+      "kind": "selector_match"
+    },
+    {
+      "from": 8563,
+      "to": 8657,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 8656,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 8657,
+      "to": 8661,
+      "kind": "selector_match"
+    },
+    {
+      "from": 8657,
+      "to": 8797,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 8796,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 8797,
+      "to": 8801,
+      "kind": "selector_match"
+    },
+    {
+      "from": 8797,
+      "to": 9363,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 9362,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 9363,
+      "to": 9367,
+      "kind": "selector_match"
+    },
+    {
+      "from": 9363,
+      "to": 9503,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 9502,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 9503,
+      "to": 9507,
+      "kind": "selector_match"
+    },
+    {
+      "from": 9503,
+      "to": 9627,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 9626,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 9627,
+      "to": 9631,
+      "kind": "selector_match"
+    },
+    {
+      "from": 9627,
+      "to": 9739,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 9738,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 9739,
+      "to": 9743,
+      "kind": "selector_match"
+    },
+    {
+      "from": 9739,
+      "to": 9821,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 9820,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 9821,
+      "to": 9825,
+      "kind": "selector_match"
+    },
+    {
+      "from": 9821,
+      "to": 9963,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 9962,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 9963,
+      "to": 9967,
+      "kind": "selector_match"
+    },
+    {
+      "from": 9963,
+      "to": 10051,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 10050,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 10051,
+      "to": 10055,
+      "kind": "selector_match"
+    },
+    {
+      "from": 10051,
+      "to": 10329,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 10328,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 10329,
+      "to": 10333,
+      "kind": "selector_match"
+    },
+    {
+      "from": 10329,
+      "to": 10443,
+      "kind": "selector_mismatch"
+    },
+    {
+      "from": 10442,
+      "to": null,
+      "kind": "body_yield"
+    },
+    {
+      "from": 10443,
+      "to": null,
+      "kind": "selector_miss_exit"
+    },
+    {
+      "from": 10443,
+      "to": 10447,
+      "kind": "selector_match"
+    },
+    {
+      "from": 10584,
+      "to": null,
+      "kind": "body_end"
+    }
+  ]
+}

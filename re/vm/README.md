@@ -111,8 +111,14 @@ Each of the 321 `0xAC` bytes is a one-byte yield followed by a distinct selector
 node `{selector:u16, next:u16}`. Native `value_scan_match` at `0x577A` compares
 the selector, follows `next` directly on mismatch, and returns the body at node
 offset `+4` on match. Runtime tracing additionally establishes that `0xAC`
-terminates the selected response body. Reconstructing these linked nodes into
-structured source control flow remains a separate step.
+terminates the selected response body.
+
+The selector-list CFG pass additionally resolves the owning object through its
+kind-1 `.DEB` symbol and selector-2 `.VAR` field. The 37 nonzero object fields
+match all 37 physical list roots exactly (`1/10/12/10/4` by profile), and their
+linked chains own all 321 nodes once. The generated graphs contain 963 match,
+mismatch, miss-exit, and body-termination edges with no unresolved entrypoint.
+See `bas-control-flow/manifest.tsv` and its README for the field derivation.
 
 The shipped address conventions are now enforced rather than inferred during
 display. All 480 kind-2 `.DEB` routine values are one-based: subtracting one
@@ -138,6 +144,7 @@ bodies are retained as unreachable evidence. The structured pass proves 443 of
 682 `A0` guard regions and leaves the remaining 239 in explicit low-level form.
 See `bloodscript/manifest.tsv` for per-image byte coverage,
 `control-flow/manifest.tsv` for graph counts, `structured/manifest.tsv` for
-source-lift counts, and
+source-lift counts, `bas-control-flow/manifest.tsv` for selector-list graphs,
+and
 [language-evidence.md](language-evidence.md) for the source-language
 inference.
