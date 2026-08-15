@@ -1,4 +1,4 @@
-// format: bloodscript-v4
+// format: bloodscript-v5
 // image: COD
 
 object blood = 0x0028
@@ -12,7 +12,7 @@ field Bob_Morlock.encounter_count = Bob_Morlock + 0x0036 // VAR kind 0x0002, sel
 field Bob_Morlock.s13 = Bob_Morlock + 0x003A // VAR kind 0x0002, selector(s) 13
 field Bronko.current_location = Bronko + 0x0018 // VAR kind 0x0002, selector(s) 11
 field Izwalito.s13 = Izwalito + 0x003A // VAR kind 0x0002, selector(s) 13
-field Izwalito.s0F = Izwalito + 0x0046 // VAR kind 0x0002, selector(s) 0F
+field Izwalito.topic = Izwalito + 0x0046 // VAR kind 0x0002, selector(s) 0F
 field Honk.encounter_count = Honk + 0x0036 // VAR kind 0x0002, selector(s) 08
 field Honk.s13 = Honk + 0x003A // VAR kind 0x0002, selector(s) 13
 field menu.s13 = menu + 0x003A // VAR kind 0x0002, selector(s) 13
@@ -21,7 +21,7 @@ proc menbr {
     conditional_block 0x01 men1
     branch_presentation
     actor menu.s13 blood 0
-    record_wildcard 0xAF Bronko.current_location 0xFFFF 0
+    require Bronko.current_location == aboard
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"IMPROVED MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today CHEF BRONKO has laid on for you:"
@@ -39,7 +39,7 @@ proc men1 {
     conditional_block 0x01 men2
     branch_presentation
     actor menu.s13 blood 0
-    record_wildcard 0xAF Bronko.current_location 0xFFFF 1
+    require Bronko.current_location != aboard
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
@@ -58,7 +58,7 @@ proc men2 {
     conditional_block 0x01 men3
     branch_presentation
     actor menu.s13 blood 0
-    record_wildcard 0xAF Bronko.current_location 0xFFFF 1
+    require Bronko.current_location != aboard
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
@@ -76,7 +76,7 @@ proc men2 {
 proc men3 {
     conditional_block 0x01 men4
     branch_presentation
-    record_wildcard 0xAF Bronko.current_location 0xFFFF 1
+    require Bronko.current_location != aboard
     actor menu.s13 blood 0
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
@@ -96,7 +96,7 @@ proc men4 {
     conditional_block 0x01 men5
     branch_presentation
     actor menu.s13 blood 0
-    record_wildcard 0xAF Bronko.current_location 0xFFFF 1
+    require Bronko.current_location != aboard
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
@@ -115,7 +115,7 @@ proc men5 {
     conditional_block 0x01 men6
     branch_presentation
     actor menu.s13 blood 0
-    record_wildcard 0xAF Bronko.current_location 0xFFFF 1
+    require Bronko.current_location != aboard
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"IMPROVED MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
@@ -163,7 +163,7 @@ proc ho1 {
     actor Izwalito.s13 blood 0
     guard_pop
     say Izwalito voice=0xFF flags=0x08 display=0x80 loop=none control=none : "You found the right button. So far so good..."
-    record_wildcard 0xBC Izwalito.s0F 0x02D5 0
+    Izwalito.topic = "rien"
     say Izwalito voice=0xFF flags=0x10 display=0x80 loop=block_04CE control=none : "Click quick, Cap'n Bob is waiting..." choices "explanations" "game"
     when block_04C6 {
         concept_guard "game" 0
@@ -272,8 +272,8 @@ proc BOB1 {
 
 proc scr2 {
     conditional_block 0x01 block_0C0B
-    Honk.encounter_count = 0x0001
-    Bob_Morlock.encounter_count = 0x0001
+    require Honk.encounter_count == 0x0001
+    require Bob_Morlock.encounter_count == 0x0001
     guard_pop
     run_profile 0x02
     block_0C0B:

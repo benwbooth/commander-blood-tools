@@ -1,11 +1,11 @@
-// format: bloodscript-v4
+// format: bloodscript-v5
 // image: COD
 
 proc menbr {
     conditional_block 0x01 men1
     branch_presentation
     actor 0x08AC 0x0028 0
-    record_wildcard 0xAF 0x0332 0xFFFF 0
+    require record[0x0332] == aboard
     guard_pop
     say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"IMPROVED MENU\""
     say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today CHEF BRONKO has laid on for you:"
@@ -23,7 +23,7 @@ proc men1 {
     conditional_block 0x01 men2
     branch_presentation
     actor 0x08AC 0x0028 0
-    record_wildcard 0xAF 0x0332 0xFFFF 1
+    require record[0x0332] != aboard
     guard_pop
     say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
     say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
@@ -42,7 +42,7 @@ proc men2 {
     conditional_block 0x01 men3
     branch_presentation
     actor 0x08AC 0x0028 0
-    record_wildcard 0xAF 0x0332 0xFFFF 1
+    require record[0x0332] != aboard
     guard_pop
     say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
     say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
@@ -60,7 +60,7 @@ proc men2 {
 proc men3 {
     conditional_block 0x01 men4
     branch_presentation
-    record_wildcard 0xAF 0x0332 0xFFFF 1
+    require record[0x0332] != aboard
     actor 0x08AC 0x0028 0
     guard_pop
     say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
@@ -80,7 +80,7 @@ proc men4 {
     conditional_block 0x01 men5
     branch_presentation
     actor 0x08AC 0x0028 0
-    record_wildcard 0xAF 0x0332 0xFFFF 1
+    require record[0x0332] != aboard
     guard_pop
     say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
     say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
@@ -99,7 +99,7 @@ proc men5 {
     conditional_block 0x01 men6
     branch_presentation
     actor 0x08AC 0x0028 0
-    record_wildcard 0xAF 0x0332 0xFFFF 1
+    require record[0x0332] != aboard
     guard_pop
     say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"IMPROVED MENU\""
     say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
@@ -147,7 +147,7 @@ proc ho1 {
     actor 0x0594 0x0028 0
     guard_pop
     say 0x055A voice=0xFF flags=0x08 display=0x80 loop=none control=none : "You found the right button. So far so good..."
-    record_wildcard 0xBC 0x05A0 0x02D5 0
+    topic[0x05A0] = "rien"
     say 0x055A voice=0xFF flags=0x10 display=0x80 loop=block_04CE control=none : "Click quick, Cap'n Bob is waiting..." choices "explanations" "game"
     guard_push block_04C6
     concept_guard "game" 0
@@ -252,8 +252,8 @@ proc BOB1 {
 
 proc scr2 {
     conditional_block 0x01 block_0C0B
-    encounter_count[0x0860] = 0x0001
-    encounter_count[0x0080] = 0x0001
+    require encounter_count[0x0860] == 0x0001
+    require encounter_count[0x0080] == 0x0001
     guard_pop
     run_profile 0x02
     block_0C0B:

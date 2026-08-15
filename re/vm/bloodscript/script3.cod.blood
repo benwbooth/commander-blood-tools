@@ -1,32 +1,32 @@
-// format: bloodscript-v4
+// format: bloodscript-v5
 // image: COD
 
 proc INIT2 {
     conditional_block 0x01 scrujo
     guard_pop
-    shared_bit_state 0xAE 0x1006 0x0002 0
-    shared_bit_state 0xAE 0x0E1A 0x0002 0
-    record_wildcard 0xAF 0x11CA 0xFFFF 0
-    shared_bit_state 0xAE 0x0A24 0x0002 0
-    shared_bit_state 0xAE 0x0D06 0x0002 0
-    shared_bit_state 0xAE 0x0C2E 0x0002 0
-    shared_bit_state 0xAE 0x0FCA 0x0002 0
-    shared_bit_state 0xAE 0x0A7E 0x0002 0
-    shared_bit_state 0xAE 0x0BF2 0x0002 0
-    shared_bit_state 0xAE 0x0AEA 0x0002 0
-    shared_bit_state 0xAE 0x01B4 0x0002 0
-    shared_bit_state 0xAE 0x094C 0x0001 0
-    shared_bit_state 0xAE 0x0514 0x0001 0
-    record_wildcard 0xAF 0x0962 0x1022 0
-    record_wildcard 0xAF 0x0182 0xFFFF 0
-    record_wildcard 0xAF 0x0452 0xFFFF 0
-    record_wildcard 0xAF 0x03C2 0x1096 0
-    record_wildcard 0xAF 0x0332 0x0FE6 0
-    record_wildcard 0xAF 0x040A 0x0FE6 0
-    record_wildcard 0xAF 0x064A 0x0FE6 0
-    record_wildcard 0xAF 0x0692 0x0FE6 0
-    record_wildcard 0xAF 0x02EA 0x0BF0 0
-    record_wildcard 0xAF 0x0722 0x0FE6 0
+    bits(0x1006,0x0002) = true
+    bits(0x0E1A,0x0002) = true
+    record[0x11CA] = aboard
+    bits(0x0A24,0x0002) = true
+    bits(0x0D06,0x0002) = true
+    bits(0x0C2E,0x0002) = true
+    bits(0x0FCA,0x0002) = true
+    bits(0x0A7E,0x0002) = true
+    bits(0x0BF2,0x0002) = true
+    bits(0x0AEA,0x0002) = true
+    bits(0x01B4,0x0002) = true
+    bits(0x094C,0x0001) = true
+    bits(0x0514,0x0001) = true
+    record[0x0962] = 0x1022
+    record[0x0182] = aboard
+    record[0x0452] = aboard
+    record[0x03C2] = 0x1096
+    record[0x0332] = 0x0FE6
+    record[0x040A] = 0x0FE6
+    record[0x064A] = 0x0FE6
+    record[0x0692] = 0x0FE6
+    record[0x02EA] = 0x0BF0
+    record[0x0722] = 0x0FE6
     state[0x13EC] = 0x0001
     state[0x13EE] = 0x0003
     character_slot 0x01 "microkid"
@@ -35,7 +35,7 @@ proc INIT2 {
     character_slot 0x04 "venus"
     character_slot 0x05 "scrut"
     character_slot 0x06 "match"
-    record_wildcard 0xAF 0x04E2 0x0D04 0
+    record[0x04E2] = 0x0D04
     poke_byte 0x0001 0x00
 }
 
@@ -93,8 +93,8 @@ proc scrujo {
 proc clay1 {
     conditional_block 0x01 clay2
     branch_gameflag
-    record_wildcard 0xAF 0x1088 0x0D04 0
-    encounter_count[0x0500] = 0x0001
+    require record[0x1088] == 0x0D04
+    require encounter_count[0x0500] == 0x0001
     guard_pop
     say 0x04CA voice=0x01 flags=0x00 display=0x80 loop=none control=none : "..."
     say 0x04CA voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Another broken-down robot, Commander|... This planet's a gold mine..."
@@ -104,7 +104,7 @@ proc clay1 {
     concept_guard "teleport" 0
     guard_pop
     say 0x04CA voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "TELEPORTING ROBOT TO CRYOBOX"
-    record_wildcard 0xAF 0x04E2 0xFFFF 0
+    record[0x04E2] = aboard
     clear_alternate_concept
     record_clear 0x0504
 }
@@ -121,16 +121,16 @@ proc clay2 {
 
 proc got {
     conditional_block 0x01 corpo1
-    record_wildcard 0xAF 0x02A2 0x0B1E 1
+    require record[0x02A2] != 0x0B1E
     guard_pop
-    record_wildcard 0xAF 0x0692 0x0E36 0
+    record[0x0692] = 0x0E36
 }
 
 proc corpo1 {
     conditional_block 0x01 t10
     branch_gameflag
-    state[0x13F0] = 0x0000
-    record_wildcard 0xAF 0x1088 0x0E18 0
+    require state[0x13F0] == 0x0000
+    require record[0x1088] == 0x0E18
     actor 0x06B4 0x0028 0
     guard_pop
     say 0x067A voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Izwalito happy to see you back, friend|..."
@@ -142,13 +142,13 @@ proc corpo1 {
     say 0x067A voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Me think kidnapper be Croolis escaped from Mastachok jail..."
     say 0x067A voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Me hide... FEAR... FEAR..."
     say 0x067A voice=0x05 flags=0x08 display=0xA0 loop=none control=none : "Bye bye|..."
-    record_wildcard 0xAF 0x0692 0x0FE6 0
+    record[0x0692] = 0x0FE6
     record_clear 0x06B4
 }
 
 proc t10 {
     conditional_block 0x01 krapp
-    encounter_count[0x08A8] = 0x0001
+    require encounter_count[0x08A8] == 0x0001
     guard_pop
     state_array_set 0x0A 0x00C8
     poke_byte 0x05DC 0x00
@@ -176,7 +176,7 @@ proc krapp1 {
     say 0x05EA voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Chicken, huh?... Ha! Ha! Ha!"
     say 0x05EA voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "Bye bye"
     poke_byte 0x0600 0x00
-    shared_bit_state 0xB0 0x10F8 0x0002 0
+    bits(0x10F8,0x0002) = true using alternate_encoding
     record_clear 0x0624
 }
 
@@ -200,15 +200,15 @@ proc kra {
     pair_record 0xBD 0x110E 0x000A 0x000A
     load_string "krando20.hnm"
     say 0x05EA voice=0x01 flags=0x08 display=0xB0 loop=none control=none : "See you round, comrade..."
-    shared_bit_state 0xB0 0x10F8 0x0002 1
-    shared_bit_state 0xB0 0x0F70 0x0002 0
+    bits(0x10F8,0x0002) = false using alternate_encoding
+    bits(0x0F70,0x0002) = true using alternate_encoding
     poke_byte 0x06F7 0x00
     record_clear 0x0624
 }
 
 proc kra1 {
     conditional_block 0x01 kra1bis
-    record_wildcard 0xAF 0x1088 0x0F6E 0
+    require record[0x1088] == 0x0F6E
     guard_pop
     state_array_set 0x0B 0x0064
     poke_byte 0x0882 0x00
@@ -233,7 +233,7 @@ proc kra2 {
     say 0x05EA voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander|, Commander! It's an SOS, a distress call..."
     say 0x05EA voice=0xFF flags=0x00 display=0x80 loop=none control=none : "S... O... S... THIS IS KRANER... IN TROUBLE... BIG BREAKDOWN..."
     say 0x05EA voice=0xFF flags=0x08 display=0x80 loop=none control=none : "POSITION X765 Y234... BREAKDOWN... S... O... S..."
-    shared_bit_state 0xAE 0x10F8 0x0002 0
+    bits(0x10F8,0x0002) = true
     say 0x05EA voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander|, it sounds like a breakdown... We'd better help him..."
     say 0x05EA voice=0xFF flags=0x08 display=0x80 loop=none control=none : "KRUIIIK..."
     load_string "krando20.hnm"
@@ -245,7 +245,7 @@ proc kra3 {
     conditional_block 0x01 kra4
     branch_gameflag
     actor 0x0624 0x0028 0
-    state[0x13F2] = 0x0000
+    require state[0x13F2] == 0x0000
     guard_pop
     say 0x05EA voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Ha! Hi guy. I was wondering when you'd show up..."
     say 0x05EA voice=0x02 flags=0x00 display=0x80 loop=none control=none : "My engine's totalled... I must've pushed it too hard... It just went: ARG... PSHHHHHH!"
@@ -264,14 +264,14 @@ proc kra4 {
     guard_pop
     guard_push block_0ACF
     require state[0x13F2] == 0x0001
-    record_wildcard 0xAF 0x03C2 0x1096 0
+    require record[0x03C2] == 0x1096
     guard_pop
     say 0x05EA voice=0x01 flags=0x00 display=0x80 loop=none control=none : "I'm still waiting, old buddy. You're not gonna let me down now, huh?..."
     say 0x05EA voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Commander|, Morning Oil is an expert repairman..."
     record_clear 0x0624
     block_0ACF:
     guard_push block_0B84
-    record_wildcard 0xAF 0x03C2 0x0FE6 0
+    require record[0x03C2] == 0x0FE6
     require state[0x13F2] == 0x0001
     guard_pop
     say 0x05EA voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Thanks, buddy. One heck of a robot you got here... He's taken the whole thing to bits... Ha! Ha! I love watching experts..."
@@ -280,7 +280,7 @@ proc kra4 {
     state[0x13F2] = 0x0002
     block_0B84:
     guard_push block_0C0E
-    record_wildcard 0xAF 0x03C2 0x0FE6 0
+    require record[0x03C2] == 0x0FE6
     require state[0x13F2] == 0x0002
     guard_pop
     say 0x05EA voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Thanks guys... You are beautiful..."
@@ -295,15 +295,15 @@ proc kra4 {
     clear_alternate_concept
     block_0C0E:
     guard_push block_0C47
-    record_wildcard 0xAF 0x03C2 0x0FE6 0
+    require record[0x03C2] == 0x0FE6
     require state[0x13F2] == 0x0003
     guard_pop
     say 0x05EA voice=0xFF flags=0x08 display=0x80 loop=none control=none : "Your robot is back on your ship... He has something for you..."
-    record_wildcard 0xAF 0x03C2 0xFFFF 0
+    record[0x03C2] = aboard
     block_0C47:
     say 0x05EA voice=0x04 flags=0x00 display=0x80 loop=none control=none : "See you round... Buddy..."
     say 0x05EA voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "..."
-    shared_bit_state 0xAE 0x10F8 0x0002 1
+    bits(0x10F8,0x0002) = false
     pair_record 0xBD 0x110E 0x0064 0x000A
     record_clear 0x0624
 }
@@ -311,8 +311,8 @@ proc kra4 {
 proc morn1 {
     conditional_block 0x01 morn2
     branch_gameflag
-    record_wildcard 0xAF 0x03C2 0x1096 0
-    state[0x13F4] = 0x0000
+    require record[0x03C2] == 0x1096
+    require state[0x13F4] == 0x0000
     actor 0x03E4 0x0028 0
     guard_pop
     say 0x03AA voice=0xFF flags=0x20 display=0x80 loop=none control=none : "I reprogrammed him|, Commander|. He's operational..."
@@ -320,7 +320,7 @@ proc morn1 {
     say 0x03AA voice=0xFF flags=0x00 display=0x80 loop=none control=none : "I await your instructions..."
     guard_push block_0D69
     require state[0x13F2] == 0x0001
-    record_wildcard 0xAF 0x1088 0x10F6 0
+    require record[0x1088] == 0x10F6
     guard_pop
     say 0x03AA voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Teleport him over to the KRANER, Commander|. He'll soon fix Mister Kran Dobu's breakdown..."
     say 0x03AA voice=0xFF flags=0x10 display=0x80 loop=block_0D69 control=none : "TELEPORT MORNING OIL TO KRANER..." choices "teleport" "refuse"
@@ -328,7 +328,7 @@ proc morn1 {
     concept_guard "teleport" 0
     guard_pop
     say 0x03AA voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "TELEPORTING MORNING OIL TO KRANER..."
-    record_wildcard 0xAF 0x03C2 0x0FE6 0
+    record[0x03C2] = 0x0FE6
     clear_alternate_concept
     record_clear 0x03E4
     block_0D42:
@@ -354,8 +354,8 @@ proc morn2 {
     guard_pop
     say 0x03AA voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Commander|, I have repaired Mister Kran Dobu's vessel..."
     say 0x03AA voice=0x04 flags=0x08 display=0x90 loop=none control=none : "He gave me two trasmitter receiver KEY RINGS. They're in the cryobox|..."
-    record_wildcard 0xAF 0x025A 0xFFFF 0
-    record_wildcard 0xAF 0x13AA 0xFFFF 0
+    record[0x025A] = aboard
+    record[0x13AA] = aboard
     say 0x03AA voice=0xFF flags=0x20 display=0x80 loop=none control=none : "How about that... Very weird key rings, believe me... What in the name of Pete are they for?..."
     say 0x03AA voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Happy now, Commander|?..."
     state[0x13F4] = 0x0001
@@ -370,9 +370,9 @@ proc morn2 {
 proc bronk1 {
     conditional_block 0x01 bronk2
     branch_flag_274f
-    record_wildcard 0xAF 0x13AA 0x043A 1
-    state[0x13F6] = 0x0000
-    record_wildcard 0xAF 0x1088 0x0A7C 1
+    require record[0x13AA] != 0x043A
+    require state[0x13F6] == 0x0000
+    require record[0x1088] != 0x0A7C
     actor 0x0474 0x0028 0
     guard_pop
     say 0x043A voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Commander|, I'm getting rusty..."
@@ -383,7 +383,7 @@ proc bronk1 {
     say 0x043A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander, Mister Bronko spoke to me of a musician friend of his who lives at the airport on planet Moskito..."
     say 0x043A voice=0x03 flags=0x00 display=0x80 loop=none control=none : "True, Commander|. A very fine musician..."
     say 0x043A voice=0x04 flags=0x08 display=0x80 loop=none control=none : "If you have the time, you should check him out..."
-    shared_bit_state 0xAE 0x103C 0x0002 0
+    bits(0x103C,0x0002) = true
     block_0F2D:
     guard_push block_1058
     require encounter_count[0x0470] == 0x0001
@@ -409,7 +409,7 @@ proc bronk1 {
     guard_push block_1108
     require encounter_count[0x0470] > 0x0002
     require encounter_count[0x0590] > 0x0000
-    record_wildcard 0xAF 0x1088 0x0A7C 1
+    require record[0x1088] != 0x0A7C
     guard_pop
     say 0x043A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Better approach the planet Erazor and offer Mister Bronko a mission..."
     block_1108:
@@ -422,8 +422,8 @@ proc bronk1 {
 proc bronk2 {
     conditional_block 0x01 bronk3
     branch_flag_274f
-    record_wildcard 0xAF 0x1088 0x0A7C 0
-    record_wildcard 0xAF 0x13AA 0x043A 1
+    require record[0x1088] == 0x0A7C
+    require record[0x13AA] != 0x043A
     actor 0x0474 0x0028 0
     guard_pop
     say 0x043A voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Commander|, I'm getting bored in a big big way... I need action..."
@@ -434,7 +434,7 @@ proc bronk2 {
     say 0x043A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander, Mister Bronko spoke to me of a musician friend of his who lives at the airport on planet Moskito..."
     say 0x043A voice=0x03 flags=0x00 display=0x80 loop=none control=none : "True, Commander|. A very fine musician..."
     say 0x043A voice=0x04 flags=0x08 display=0x80 loop=none control=none : "If you have the time, you should check him out..."
-    shared_bit_state 0xAE 0x103C 0x0002 0
+    bits(0x103C,0x0002) = true
     block_11FE:
     guard_push block_12E2
     require encounter_count[0x0590] > 0x0000
@@ -448,7 +448,7 @@ proc bronk2 {
     guard_pop
     say 0x043A voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "TELEPORTING BRONKO TO ERAZOR"
     state[0x13F8] = 0x0001
-    record_wildcard 0xAF 0x0452 0x0A7C 0
+    record[0x0452] = 0x0A7C
     clear_alternate_concept
     record_clear 0x0474
     block_12C6:
@@ -465,7 +465,7 @@ proc bronk2 {
 proc bronk3 {
     conditional_block 0x01 bronk4
     branch_gameflag
-    record_wildcard 0xAF 0x1088 0x0A7C 0
+    require record[0x1088] == 0x0A7C
     actor 0x0474 0x0028 0
     guard_pop
     say 0x043A voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Commander|, There's nobody here..."
@@ -474,7 +474,7 @@ proc bronk3 {
     say 0x043A voice=0x06 flags=0x00 display=0x80 loop=none control=none : "Shucks, Mister Honk... It just the way nature made me..."
     say 0x043A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Nature. What a wonderful invention..."
     say 0x043A voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "..."
-    shared_bit_state 0xAE 0x043C 0x0002 0
+    bits(0x043C,0x0002) = true
     poke_byte 0x12F0 0x00
     record_clear 0x0474
 }
@@ -482,11 +482,11 @@ proc bronk3 {
 proc bronk4 {
     conditional_block 0x01 bronk5
     branch_presentation
-    record_wildcard 0xAF 0x0452 0x0A7C 0
+    require record[0x0452] == 0x0A7C
     actor 0x0474 0x0028 0
     guard_pop
     guard_push block_142E
-    record_wildcard 0xAF 0x1088 0x0A7C 1
+    require record[0x1088] != 0x0A7C
     guard_pop
     say 0x043A voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Krrrr Bzzz This is Bronko|.... Bzzzzz I can't hear you.... Krrrk..."
     say 0x043A voice=0xFF flags=0x00 display=0x80 loop=none control=none : "kkkkKrouik..."
@@ -495,13 +495,13 @@ proc bronk4 {
     record_clear 0x0474
     block_142E:
     guard_push bronk5
-    record_wildcard 0xAF 0x1088 0x0A7C 0
+    require record[0x1088] == 0x0A7C
     guard_pop
     say 0x043A voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Yes, hello... Commander|... Bronko here... I'm receiving you loud and clear..."
     say 0x043A voice=0xFF flags=0x08 display=0x80 loop=none control=none : "There are quite a few Slimer ships coming and going. Doctor Otto Von Smile appears to have left..."
-    record_wildcard 0xBC 0x0480 0x000C 0
+    topic[0x0480] = "rien"
     guard_push block_15BA
-    record_wildcard 0xAF 0x13AA 0xFFFF 0
+    require record[0x13AA] == aboard
     guard_pop
     say 0x043A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander|, how about teleporting one of those spy keyrings to Mister Bronko? He could hide it in Doctor Otto Von Smile's desk..."
     say 0x043A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "That way we could listen to whatever he's doing..."
@@ -526,12 +526,12 @@ proc bronk4 {
 proc bronk5 {
     conditional_block 0x01 bronk6
     branch_gameflag
-    record_wildcard 0xAF 0x1088 0x0A7C 0
-    record_wildcard 0xAF 0x0452 0x0A7C 0
+    require record[0x1088] == 0x0A7C
+    require record[0x0452] == 0x0A7C
     actor 0x0474 0x0028 0
     guard_pop
     guard_push block_167B
-    record_wildcard 0xAF 0x13AA 0x043A 1
+    require record[0x13AA] != 0x043A
     guard_pop
     say 0x043A voice=0x01 flags=0x00 display=0x80 loop=none control=none : "What are you doing, Commander|?... You're going to get us spotted..."
     say 0x043A voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Use the phone to contact me..."
@@ -540,7 +540,7 @@ proc bronk5 {
     record_clear 0x0474
     block_167B:
     guard_push bronk6
-    record_wildcard 0xAF 0x13AA 0x043A 0
+    require record[0x13AA] == 0x043A
     guard_pop
     say 0x043A voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Commander|, I hid the spy keyring in Doctor Otto Von Smile's desk..."
     say 0x043A voice=0x05 flags=0x00 display=0x80 loop=none control=none : "I have completed my mission. Teleport me back to the Ark|..."
@@ -550,9 +550,9 @@ proc bronk5 {
     concept_guard "teleport" 0
     guard_pop
     say 0x043A voice=0xFF flags=0x08 display=0xC0 loop=none control=none : "TELEPORTING BRONKO TO CRYOBOX"
-    record_wildcard 0xAF 0x0452 0xFFFF 0
+    record[0x0452] = aboard
     state[0x13FA] = 0x0001
-    shared_bit_state 0xAE 0x043C 0x0002 1
+    bits(0x043C,0x0002) = false
     clear_alternate_concept
     record_clear 0x0474
 }
@@ -560,17 +560,17 @@ proc bronk5 {
 proc bronk6 {
     conditional_block 0x01 bronk7
     branch_flag_274f
-    record_wildcard 0xAF 0x13AA 0x043A 0
+    require record[0x13AA] == 0x043A
     actor 0x0474 0x0028 0
     guard_pop
     say 0x043A voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Phew... I'm happy to be back..."
     say 0x043A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "I'm happy to see you back, Mister Bronko|... I was so anxious about you..."
     guard_push block_17C1
-    record_wildcard 0xAF 0x02A2 0x0B1E 1
+    require record[0x02A2] != 0x0B1E
     guard_pop
     say 0x043A voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Take a look in the cryobox, Commander|. I brought something back for you..."
     say 0x043A voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "..."
-    record_wildcard 0xAF 0x131A 0xFFFF 0
+    record[0x131A] = aboard
     poke_byte 0x187A 0x01
     poke_byte 0x1724 0x00
     record_clear 0x0474
@@ -582,7 +582,7 @@ proc bronk6 {
     say 0x043A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander, Mister Bronko spoke to me of a musician friend of his who lives at the airport on planet Moskito..."
     say 0x043A voice=0x03 flags=0x00 display=0x80 loop=none control=none : "True, Commander|. A very fine musician..."
     say 0x043A voice=0x04 flags=0x08 display=0x80 loop=none control=none : "If you have the time, you should check him out..."
-    shared_bit_state 0xAE 0x103C 0x0002 0
+    bits(0x103C,0x0002) = true
     block_1842:
     say 0x043A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "That Mister Bronko... What a character"
     say 0x043A voice=0xFF flags=0x08 display=0x80 loop=none control=none : "Well, I'll just get back to my cooking, Commander|..."
@@ -602,7 +602,7 @@ proc bronk7 {
     say 0x043A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander, Mister Bronko spoke to me of a musician friend of his who lives at the airport on planet Moskito..."
     say 0x043A voice=0x03 flags=0x00 display=0x80 loop=none control=none : "True, Commander|. A very fine musician..."
     say 0x043A voice=0x04 flags=0x08 display=0x80 loop=none control=none : "If you have the time, you should check him out..."
-    shared_bit_state 0xAE 0x103C 0x0002 0
+    bits(0x103C,0x0002) = true
     block_1919:
     say 0x043A voice=0x04 flags=0x08 display=0x80 loop=none control=none : "I better get back to the kitchen, Commander..."
     record_clear 0x0474
@@ -613,7 +613,7 @@ proc port1 {
     branch_flag_274f
     actor 0x027C 0x0028 0
     state_array_test 0x02
-    record_wildcard 0xAF 0x13AA 0x043A 0
+    require record[0x13AA] == 0x043A
     guard_pop
     say 0x0242 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "SHHHHHHHHHHHHHHHHHHHHHHHHHHH..."
     say 0x0242 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Still nothing, Commander|..."
@@ -625,8 +625,8 @@ proc port2 {
     conditional_block 0x01 pojk
     branch_flag_274f
     actor 0x027C 0x0028 0
-    state[0x13FA] = 0x0001
-    record_wildcard 0xAF 0x13AA 0x043A 0
+    require state[0x13FA] == 0x0001
+    require record[0x13AA] == 0x043A
     guard_pop
     say 0x0242 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Quick... Hurry it up... We're taking everything..."
     say 0x0242 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Don't forget food for the prisoners... Come on, you're too slow..."
@@ -655,12 +655,12 @@ proc pojk {
 proc hom1 {
     conditional_block 0x01 hom2
     branch_gameflag
-    record_wildcard 0xAF 0x116A 0x0028 1
-    record_wildcard 0xAF 0x1088 0x0BF0 0
-    state[0x13FE] = 0x0000
+    require record[0x116A] != 0x0028
+    require record[0x1088] == 0x0BF0
+    require state[0x13FE] == 0x0000
     actor 0x030C 0x0028 0
     guard_pop
-    record_wildcard 0xBC 0x0318 0x000C 0
+    topic[0x0318] = "rien"
     say 0x02D2 voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Welcome, stranger..."
     say 0x02D2 voice=0x03 flags=0x00 display=0x80 loop=none control=none : "You be great traveller..."
     guard_push block_1C00
@@ -706,7 +706,7 @@ proc hom1 {
     say 0x02D2 voice=0x04 flags=0x00 display=0x80 loop=none control=none : "You take cyber studies, friend|..."
     say 0x02D2 voice=0x02 flags=0x00 display=0x80 loop=none control=none : "And you take cyber exam to be D.O.R.K., Doctor of Rare Knowledge..."
     say 0x02D2 voice=0x05 flags=0x08 display=0x80 loop=none control=none : "Cyberock be in Cyberius system, coordinates X234 Y546..."
-    shared_bit_state 0xB0 0x0DFC 0x0002 0
+    bits(0x0DFC,0x0002) = true using alternate_encoding
     say 0x02D2 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "And one more planet to visit! We're going places..."
     say 0x02D2 voice=0x06 flags=0x00 display=0x80 loop=none control=none : "Me wait for you with D.O.R.K. Doctor of Rare Knowledge diploma..."
     say 0x02D2 voice=0xFF flags=0x08 display=0x90 loop=none control=none : "Bye bye, friend|..."
@@ -717,9 +717,9 @@ proc hom1 {
 proc hom2 {
     conditional_block 0x01 hom3
     branch_gameflag
-    state[0x13FE] = 0x0001
+    require state[0x13FE] == 0x0001
     actor 0x030C 0x0028 0
-    record_wildcard 0xAF 0x1088 0x0BF0 0
+    require record[0x1088] == 0x0BF0
     guard_pop
     say 0x02D2 voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Welcome, friend|..."
     say 0x02D2 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "WOW!! I can't believe that guy's head, Commander|. Yukkee... Ha|! Ha|! Ha|!"
@@ -745,7 +745,7 @@ proc hom2 {
     say 0x02D2 voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Welcome to planet KORTEX, friend|..."
     say 0x02D2 voice=0x0A flags=0x00 display=0x80 loop=none control=none : "GUILD OF MEMBERS be big cybernetic organization..."
     guard_push block_2029
-    record_wildcard 0xAF 0x116A 0x0028 1
+    require record[0x116A] != 0x0028
     guard_pop
     say 0x02D2 voice=0x02 flags=0x00 display=0x80 loop=none control=none : "You must take DORK exam on planet Cyberock, friend|..."
     say 0x02D2 voice=0x03 flags=0x00 display=0x80 loop=none control=none : "You come back if you take DORK exam..."
@@ -759,13 +759,13 @@ proc hom2 {
 proc hom3 {
     conditional_block 0x01 jour
     branch_gameflag
-    state[0x13FE] = 0x0002
+    require state[0x13FE] == 0x0002
     actor 0x030C 0x0028 0
     guard_pop
     say 0x02D2 voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Me meditate..."
     say 0x02D2 voice=0x05 flags=0x00 display=0x80 loop=none control=none : "ATA ATA HOGLO HULU..."
     guard_push jour
-    record_wildcard 0xAF 0x116A 0x0028 0
+    require record[0x116A] == 0x0028
     guard_pop
     say 0x02D2 voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Well done... Friend, you pass DORK. You be cyber intelligent..."
     say 0x02D2 voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Me reward you. GUILD OF MEMBERS give you brain scrambler..."
@@ -789,17 +789,17 @@ proc hom3 {
     say 0x02D2 voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Me concentrate..."
     say 0x02D2 voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Me vanish in vertiginiously infinite cosmic space..."
     say 0x02D2 voice=0xFF flags=0x08 display=0x90 loop=none control=none : "Bye bye, friend|..."
-    record_wildcard 0xAF 0x02EA 0x0FE6 0
+    record[0x02EA] = 0x0FE6
     record_clear 0x030C
 }
 
 proc jour {
     conditional_block 0x01 bonjour
     branch_gameflag
-    state[0x1400] = 0x0000
+    require state[0x1400] == 0x0000
     actor 0x039C 0x0028 0
-    record_wildcard 0xAF 0x116A 0x0362 1
-    record_wildcard 0xAF 0x1088 0x0DFA 0
+    require record[0x116A] != 0x0362
+    require record[0x1088] == 0x0DFA
     guard_pop
     say 0x0362 voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Bye bye, student Commander Blood. You are a member of the \"GUILD OF MEMBERS\"..."
     say 0x0362 voice=0x02 flags=0x08 display=0x80 loop=none control=none : "..."
@@ -809,9 +809,9 @@ proc jour {
 proc bonjour {
     conditional_block 0x01 bonjo
     branch_gameflag
-    state[0x1400] = 0x0000
+    require state[0x1400] == 0x0000
     actor 0x039C 0x0028 0
-    record_wildcard 0xAF 0x1088 0x0DFA 0
+    require record[0x1088] == 0x0DFA
     guard_pop
     poke_byte 0x2527 0x01
     poke_byte 0x25DA 0x01
@@ -852,9 +852,9 @@ proc bonjour {
 proc bonjo {
     conditional_block 0x01 dork_ok
     branch_gameflag
-    state[0x1400] = 0x0000
+    require state[0x1400] == 0x0000
     actor 0x039C 0x0028 0
-    record_wildcard 0xAF 0x1088 0x0DFA 0
+    require record[0x1088] == 0x0DFA
     guard_pop
     say 0x0362 voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Student Commander Blood, today marks a turning point in your life..."
     say 0x0362 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Holy sombreros, Commander|. It's ugly!|..."
@@ -870,7 +870,7 @@ proc dork_ok {
     conditional_block 0x01 perdu
     branch_gameflag
     actor 0x039C 0x0028 0
-    state[0x1404] = 0x0005
+    require state[0x1404] == 0x0005
     guard_pop
     say 0x0362 voice=0x01 flags=0x08 display=0x80 loop=none control=none : "I hereby declare you a DORK!"
     load_string "cadeaux.hnm"
@@ -896,7 +896,7 @@ proc perdu {
     conditional_block 0x01 Q1
     branch_gameflag
     actor 0x039C 0x0028 0
-    state[0x1402] = 0x0020
+    require state[0x1402] == 0x0020
     require state[0x1404] < 0x000A
     guard_pop
     say 0x0362 voice=0x05 flags=0x00 display=0x80 loop=none control=none : "You failed!"
@@ -1718,7 +1718,7 @@ proc emasc0 {
     conditional_block 0x01 ed1
     branch_gameflag
     actor 0x0984 0x0028 0
-    state[0x1406] = 0x0000
+    require state[0x1406] == 0x0000
     guard_pop
     say 0x094A voice=0x01 flags=0x00 display=0x80 loop=none control=none : "What you want, stranger? You want murffalo meat? Me be new sales assistant..."
     say 0x094A voice=0x02 flags=0x00 display=0x80 loop=none control=none : "You have CRED?"
@@ -1731,8 +1731,8 @@ proc emasc0 {
 proc ed1 {
     conditional_block 0x01 eda
     branch_gameflag
-    record_wildcard 0xAF 0x1088 0x0C98 0
-    record_wildcard 0xAF 0x06DA 0x0CB6 0
+    require record[0x1088] == 0x0C98
+    require record[0x06DA] == 0x0CB6
     actor 0x06FC 0x0028 0
     guard_pop
     guard_push block_39A7
@@ -1749,8 +1749,8 @@ proc ed1 {
 proc eda {
     conditional_block 0x01 ed2
     branch_gameflag
-    record_wildcard 0xAF 0x1088 0x0C98 0
-    state[0x1408] = 0x0000
+    require record[0x1088] == 0x0C98
+    require state[0x1408] == 0x0000
     actor 0x08AC 0x0028 0
     guard_pop
     say 0x0872 voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Hey|! Handsome stranger. You come to see Tina?..."
@@ -1786,8 +1786,8 @@ proc eda {
 proc ed2 {
     conditional_block 0x01 ed3
     branch_gameflag
-    record_wildcard 0xAF 0x1088 0x0C98 0
-    state[0x1408] = 0x0001
+    require record[0x1088] == 0x0C98
+    require state[0x1408] == 0x0001
     actor 0x08AC 0x0028 0
     guard_pop
     say 0x0872 voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Aaaahhh! It's my warrior hero... Back to see me... I knew you'd come..."
@@ -1795,7 +1795,7 @@ proc ed2 {
     say 0x0872 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Oh no... She's doing it again..."
     say 0x0872 voice=0x03 flags=0x00 display=0x80 loop=none control=none : "You missed your little Burnypoo... How 'bout a drink, muscleman?"
     guard_push block_3D64
-    record_wildcard 0xAF 0x1392 0x0028 0
+    require record[0x1392] == 0x0028
     guard_pop
     say 0x0872 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander|... Why don't we give her Kran_Dobu's guitar?"
     say 0x0872 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "It might calm her down..."
@@ -1814,7 +1814,7 @@ proc ed2 {
     clear_alternate_concept
     block_3D64:
     guard_push block_3DE9
-    record_wildcard 0xAF 0x1392 0x0872 0
+    require record[0x1392] == 0x0872
     guard_pop
     say 0x0872 voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Oh, a guitar!. For little me?... Hee|! Hee|! Hee|!"
     say 0x0872 voice=0x02 flags=0x00 display=0x80 loop=none control=none : "You're just adorable... Hee|! Hee!"
@@ -1833,8 +1833,8 @@ proc ed2 {
 proc ed3 {
     conditional_block 0x01 ed4
     branch_gameflag
-    record_wildcard 0xAF 0x1088 0x0C98 0
-    state[0x1408] = 0x0002
+    require record[0x1088] == 0x0C98
+    require state[0x1408] == 0x0002
     actor 0x08AC 0x0028 0
     guard_pop
     say 0x0872 voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Aaaahhh! It's my manly warrior... You came back to me..."
@@ -1849,7 +1849,7 @@ proc ed3 {
     concept_guard "TELEPORT" 0
     guard_pop
     say 0x0872 voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "TINA BURNER TELEPORTED TO CRYOBOX"
-    record_wildcard 0xAF 0x088A 0xFFFF 0
+    record[0x088A] = aboard
     clear_alternate_concept
     record_clear 0x08AC
     block_3F44:
@@ -1910,7 +1910,7 @@ proc ed5 {
 proc migrator1 {
     conditional_block 0x01 migrato1b
     branch_gameflag
-    state[0x140A] = 0x0000
+    require state[0x140A] == 0x0000
     actor 0x054C 0x0028 0
     guard_pop
     say 0x0512 voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Mmm! What strange thing... Who you be?"
@@ -1960,7 +1960,7 @@ proc migrator1 {
     say 0x0512 voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Me MIGRATOR, great musician... Important artist..."
     say 0x0512 voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Me look for singer for group. Make concert. You can help?"
     guard_push block_4467
-    shared_bit_state 0xAE 0x0C9A 0x0002 0
+    require bits(0x0C9A,0x0002)
     guard_pop
     say 0x0512 voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Me know you know Tina Burner|. She sing at Purple Haze, on planet Eden..."
     say 0x0512 voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Me like Tina voice. Very sexy...."
@@ -1976,9 +1976,9 @@ proc migrator1 {
 proc migrato1b {
     conditional_block 0x01 migrator2
     branch_gameflag
-    record_wildcard 0xAF 0x088A 0x0CCE 0
-    state[0x140A] = 0x0001
-    record_wildcard 0xAF 0x1088 0x1004 0
+    require record[0x088A] == 0x0CCE
+    require state[0x140A] == 0x0001
+    require record[0x1088] == 0x1004
     actor 0x054C 0x0028 0
     guard_pop
     say 0x0512 voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Migrator happy to see you again, friend|..."
@@ -1992,10 +1992,10 @@ proc migrato1b {
 proc migrator2 {
     conditional_block 0x01 tinator
     branch_gameflag
-    state[0x140A] = 0x0001
-    record_wildcard 0xAF 0x1088 0x1004 0
+    require state[0x140A] == 0x0001
+    require record[0x1088] == 0x1004
     actor 0x054C 0x0028 0
-    record_wildcard 0xAF 0x088A 0xFFFF 0
+    require record[0x088A] == aboard
     guard_pop
     say 0x0512 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Friend... You be here... Me happy see you..."
     say 0x0512 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Me know you know Tina Burner..."
@@ -2009,15 +2009,15 @@ proc migrator2 {
     clear_alternate_concept
     block_460F:
     say 0x0512 voice=0xFF flags=0x08 display=0x90 loop=none control=none : "Thank you|, friend|... Me be happy...."
-    record_wildcard 0xAF 0x088A 0x0FE6 0
+    record[0x088A] = 0x0FE6
     poke_byte 0x4550 0x00
 }
 
 proc tinator {
     conditional_block 0x01 migrator3
     branch_gameflag
-    record_wildcard 0xAF 0x088A 0x0FE6 0
-    record_wildcard 0xAF 0x1088 0x1004 0
+    require record[0x088A] == 0x0FE6
+    require record[0x1088] == 0x1004
     actor 0x054C 0x0028 0
     guard_pop
     say 0x0512 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Ohhh thank you|, Commander|. You're a sweetypoo!!!"
@@ -2035,9 +2035,9 @@ proc tinator {
 proc migrator3 {
     conditional_block 0x01 migrator4
     branch_gameflag
-    record_wildcard 0xAF 0x088A 0x0FE6 0
+    require record[0x088A] == 0x0FE6
     actor 0x054C 0x0028 0
-    record_wildcard 0xAF 0x1088 0x1004 0
+    require record[0x1088] == 0x1004
     guard_pop
     say 0x0512 voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Greetings... Me happy see you back..."
     say 0x0512 voice=0x05 flags=0x00 display=0x80 loop=none control=none : "We rehearse music, friend. We soon do concert..."
@@ -2045,22 +2045,22 @@ proc migrator3 {
     say 0x0512 voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Me go see Tina in recording studio..."
     say 0x0512 voice=0x03 flags=0x00 display=0x80 loop=none control=none : "See you soon... Happy landings..."
     say 0x0512 voice=0xFF flags=0x08 display=0x90 loop=none control=none : "..."
-    record_wildcard 0xAF 0x052A 0x0FE6 0
+    record[0x052A] = 0x0FE6
     record_clear 0x054C
 }
 
 proc migrator4 {
     conditional_block 0x00 veuv
     branch_gameflag
-    record_wildcard 0xAF 0x088A 0x0FE6 0
-    record_wildcard 0xAF 0x1088 0x1004 0
+    require record[0x088A] == 0x0FE6
+    require record[0x1088] == 0x1004
     actor 0x054C 0x0028 0
     guard_pop
     say 0x0512 voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Me greet you|, friend|..."
     say 0x0512 voice=0x02 flags=0x00 display=0x80 loop=none control=none : "You have ring???..."
     say 0x0512 voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Me soon marry TINA... YOU COME WEDDING, ME INVITE YOU, WE DO BIG CONCERT..."
     guard_push block_48E2
-    record_wildcard 0xAF 0x137A 0x0028 0
+    require record[0x137A] == 0x0028
     guard_pop
     say 0x0512 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander, teleport him the ring. Make him happy...."
     say 0x0512 voice=0xFF flags=0x10 display=0x80 loop=block_4866 control=none : "TELEPORT RING TO MIGRATOR" choices "TELEPORT"
@@ -2088,7 +2088,7 @@ proc migrator4 {
 proc veuv {
     conditional_block 0x01 veuv1
     branch_presentation
-    state[0x13F4] = 0x0002
+    require state[0x13F4] == 0x0002
     guard_pop
     record_link 0x07D4 0x0028 0
     poke_byte 0x4954 0x01
@@ -2117,7 +2117,7 @@ proc veuv1 {
 proc masta1 {
     conditional_block 0x01 masta2
     branch_gameflag
-    state[0x1412] = 0x0000
+    require state[0x1412] == 0x0000
     actor 0x078C 0x0028 0
     guard_pop
     say 0x0752 voice=0x12 flags=0x00 display=0x80 loop=none control=none : "YOU IN FORBIDDEN ZONE... ME ISSUE WARNING"
@@ -2150,9 +2150,9 @@ proc masta1 {
 proc masta2 {
     conditional_block 0x01 masta3
     branch_gameflag
-    state[0x1412] = 0x0001
-    record_wildcard 0xAF 0x02A2 0x0B1E 0
-    record_wildcard 0xAF 0x1088 0x0AE8 0
+    require state[0x1412] == 0x0001
+    require record[0x02A2] == 0x0B1E
+    require record[0x1088] == 0x0AE8
     actor 0x078C 0x0028 0
     guard_pop
     say 0x0752 voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Hello, friend|..."
@@ -2166,25 +2166,25 @@ proc masta2 {
 proc masta3 {
     conditional_block 0x01 masta5
     branch_gameflag
-    record_wildcard 0xAF 0x02A2 0x0B1E 1
-    record_wildcard 0xAF 0x1088 0x0AE8 0
+    require record[0x02A2] != 0x0B1E
+    require record[0x1088] == 0x0AE8
     actor 0x078C 0x0028 0
     guard_pop
     say 0x0752 voice=0x06 flags=0x00 display=0x80 loop=none control=none : "You take care. Croolis Eviscerator did escape. Did blow up cell..."
     say 0x0752 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander|, he blew his cell away... Think about it... Your splatch..."
     say 0x0752 voice=0x05 flags=0x00 display=0x80 loop=none control=none : "You leave. SCRUT be nervous now... Bye bye, friend|... QUICK..."
     say 0x0752 voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
-    record_wildcard 0xAF 0x076A 0x0FE6 0
-    record_wildcard 0xAF 0x07B2 0x0D04 0
+    record[0x076A] = 0x0FE6
+    record[0x07B2] = 0x0D04
     record_clear 0x078C
 }
 
 proc masta5 {
     conditional_block 0x01 masta4
     branch_gameflag
-    state[0x1414] = 0x0000
+    require state[0x1414] == 0x0000
     actor 0x02C4 0x0028 0
-    record_wildcard 0xAF 0x1088 0x0AE8 0
+    require record[0x1088] == 0x0AE8
     guard_pop
     say 0x028A voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Who you be, stranger. You want see me?"
     guard_push block_4DDC
@@ -2194,12 +2194,12 @@ proc masta5 {
     say 0x028A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Yikes, Commander|, you know what I'm saying?... This guy gives me undesirable feelings..."
     block_4DDC:
     say 0x028A voice=0x07 flags=0x08 display=0x80 loop=none control=none : "WHAT YOU WANT, STRANGER?"
-    record_wildcard 0xBC 0x02D0 0x0001 0
+    topic[0x02D0] = "talk"
     guard_push block_4E24
     require state[0x1416] == 0x0001
     guard_pop
     say 0x028A voice=0x06 flags=0x08 display=0x90 loop=none control=none : "You like secrets?... Me tell secrets"
-    record_wildcard 0xBC 0x02D0 0x25D3 0
+    topic[0x02D0] = "secrets"
     state[0x1416] = 0x0000
     block_4E24:
     guard_push block_4F37
@@ -2210,7 +2210,7 @@ proc masta5 {
     say 0x028A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander|, did he just growl what I distinctly heard growling?... Ol' Turkeyface Bob's gonna love this!..."
     say 0x028A voice=0x05 flags=0x00 display=0x80 loop=none control=none : "You go see friends at \"Purple Haze\" on planet Eden... Them help you..."
     say 0x028A voice=0x06 flags=0x08 display=0x80 loop=none control=none : "Planet Eden in Edenus galaxy, position x4532 y6754..."
-    shared_bit_state 0xB0 0x0C9A 0x0002 0
+    bits(0x0C9A,0x0002) = true using alternate_encoding
     say 0x028A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Notch up another planet, Commander|..."
     say 0x028A voice=0x09 flags=0x08 display=0xA0 loop=none control=none : "You understand? Bye bye. Me wait you impatiently..."
     state[0x1418] = 0x0000
@@ -2224,8 +2224,8 @@ proc masta5 {
 proc masta4 {
     conditional_block 0x01 masta6
     branch_gameflag
-    record_wildcard 0xAF 0x1088 0x0D04 0
-    record_wildcard 0xAF 0x07B2 0x0D04 0
+    require record[0x1088] == 0x0D04
+    require record[0x07B2] == 0x0D04
     actor 0x07D4 0x0028 0
     guard_pop
     say 0x079A voice=0x00 flags=0x08 display=0x80 loop=none control=none : "RLA... RLA... LDIR AX,AY... PUSH A... POP MUSIC... GHA... GHA...."
@@ -2239,7 +2239,7 @@ proc masta4 {
     guard_pop
     say 0x079A voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "TELEPORT SCRUTER MAC'S BODY TO ARK"
     record_triple 0x07D4 0x113E 0x0028 0
-    record_wildcard 0xAF 0x07B2 0x0FE6 0
+    record[0x07B2] = 0x0FE6
     clear_alternate_concept
     record_clear 0x07D4
     block_5066:
@@ -2256,15 +2256,15 @@ proc masta4 {
 proc masta6 {
     conditional_block 0x01 masta6_526C
     branch_gameflag
-    state[0x1414] = 0x0001
-    record_wildcard 0xAF 0x13CA 0x0B1E 0
+    require state[0x1414] == 0x0001
+    require record[0x13CA] == 0x0B1E
     actor 0x02C4 0x0028 0
     guard_pop
     say 0x028A voice=0x08 flags=0x00 display=0x80 loop=none control=none : "You back... You bring splatch???"
     say 0x028A voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Me big EVISCERATOR CROOLIS. Me want escape... CRY... CRY... GNASH..."
     say 0x028A voice=0x01 flags=0x00 display=0x80 loop=none control=none : "CRY... GNASH..."
     guard_push block_517A
-    record_wildcard 0xAF 0x131A 0x0028 0
+    require record[0x131A] == 0x0028
     guard_pop
     say 0x028A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Give him the splatch, Commander... We need that treasure..."
     say 0x028A voice=0xFF flags=0x10 display=0x80 loop=block_517A control=none : "TELEPORT SPLATCH TO EVISCERATOR" choices "teleport"
@@ -2276,20 +2276,20 @@ proc masta6 {
     clear_alternate_concept
     block_517A:
     guard_push block_5205
-    record_wildcard 0xAF 0x131A 0x028A 0
+    require record[0x131A] == 0x028A
     guard_pop
     say 0x028A voice=0x06 flags=0x00 display=0x80 loop=none control=none : "You want know where is treasure?..."
     say 0x028A voice=0x08 flags=0x00 display=0x80 loop=none control=none : "Treasure be on planet TUMUL..."
     say 0x028A voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Coordinates AX329 Tumulus constellation..."
     say 0x028A voice=0xFF flags=0x28 display=0xB0 loop=none control=none : "You do realize he just told us where to find the treasure, Commander|... I love you|, Commander|."
-    shared_bit_state 0xB0 0x0D7E 0x0002 0
+    bits(0x0D7E,0x0002) = true using alternate_encoding
     state[0x1414] = 0x0002
-    record_wildcard 0xAF 0x02A2 0x0FE6 0
+    record[0x02A2] = 0x0FE6
     record_clear 0x02C4
     block_5205:
     guard_push masta6_526C
-    record_wildcard 0xAF 0x131A 0x0028 1
-    record_wildcard 0xAF 0x131A 0x028A 1
+    require record[0x131A] != 0x0028
+    require record[0x131A] != 0x028A
     guard_pop
     say 0x028A voice=0x0A flags=0x00 display=0x80 loop=none control=none : "INSULT... MIGHTY SWEAR... CRY... GNASH... SNARL..."
     say 0x028A voice=0x0C flags=0x00 display=0x80 loop=none control=none : "ME HATE YOUR GUT... INSULT...."
@@ -2301,9 +2301,9 @@ proc masta6 {
 proc masta6_526C {
     conditional_block 0x01 rator1
     branch_gameflag
-    state[0x1414] = 0x0002
+    require state[0x1414] == 0x0002
     actor 0x02C4 0x0028 0
-    record_wildcard 0xAF 0x1088 0x0AE8 0
+    require record[0x1088] == 0x0AE8
     guard_pop
     say 0x028A voice=0x05 flags=0x00 display=0x80 loop=none control=none : "What you want?"
     say 0x028A voice=0x06 flags=0x48 display=0x80 loop=none control=none : "ME NOT SAY BYE BYE..." choices "bye_bye"
@@ -2312,12 +2312,12 @@ proc masta6_526C {
 
 proc rator1 {
     conditional_block 0x01 rator2
-    state[0x1414] = 0x0002
-    record_wildcard 0xAF 0x088A 0x0CCE 1
-    record_wildcard 0xAF 0x06DA 0x0CCE 1
-    record_wildcard 0xAF 0x131A 0x028A 0
+    require state[0x1414] == 0x0002
+    require record[0x088A] != 0x0CCE
+    require record[0x06DA] != 0x0CCE
+    require record[0x131A] == 0x028A
     guard_pop
-    record_wildcard 0xAF 0x02A2 0x0CCE 0
+    record[0x02A2] = 0x0CCE
     poke_byte 0x52AF 0x00
 }
 
@@ -2325,14 +2325,14 @@ proc rator2 {
     conditional_block 0x01 tum1
     branch_gameflag
     actor 0x02C4 0x0028 0
-    record_wildcard 0xAF 0x1088 0x0C98 0
+    require record[0x1088] == 0x0C98
     guard_pop
     say 0x028A voice=0x01 flags=0x00 display=0x80 loop=none control=none : "You here... SWEAR... INSULT..."
     say 0x028A voice=0x01 flags=0x00 display=0x80 loop=none control=none : "YOU FOLLOW ME... SWEAR... INSULT..."
     say 0x028A voice=0x02 flags=0x00 display=0x80 loop=none control=none : "You meet your maker.... Bye bye|..."
     say 0x028A voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "BOOOOOMMM!!!"
     load_string "explo3.hnm"
-    record_wildcard 0xAF 0x02A2 0x0FE6 0
+    record[0x02A2] = 0x0FE6
     state[0x1414] = 0x0004
     record_clear 0x02C4
 }
@@ -2341,21 +2341,21 @@ proc tum1 {
     conditional_block 0x01 tum3
     branch_gameflag
     actor 0x05DC 0x0028 0
-    state[0x141A] = 0x0000
+    require state[0x141A] == 0x0000
     guard_pop
     guard_push block_53F8
-    record_wildcard 0xAF 0x1152 0x0028 1
-    record_wildcard 0xAF 0x1152 0x05A2 1
+    require record[0x1152] != 0x0028
+    require record[0x1152] != 0x05A2
     guard_pop
     say 0x05A2 voice=0x0A flags=0x00 display=0x80 loop=none control=none : "Ahh|! A stranger... Help... Help..."
     say 0x05A2 voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Commander|, I think he wants help... Uh oh... He's badly burned..."
-    record_wildcard 0xBC 0x05E8 0x2802 0
+    topic[0x05E8] = "ill"
     say 0x05A2 voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Aaaahhh... Bye... bye|..." choices "bye_bye"
     say 0x05A2 voice=0xFF flags=0x68 display=0x80 loop=none control=none : "He's in bad shape, Commander|... We better help him...." choices "bye_bye"
     record_clear 0x05DC
     block_53F8:
     guard_push tum3
-    record_wildcard 0xAF 0x1152 0x0028 0
+    require record[0x1152] == 0x0028
     guard_pop
     say 0x05A2 voice=0x0A flags=0x00 display=0x80 loop=none control=none : "Ahh|! A stranger... Help... Help..."
     say 0x05A2 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander|, I think he wants help... Uh oh... He's badly burned..."
@@ -2382,12 +2382,12 @@ proc tum3 {
     conditional_block 0x01 st
     branch_gameflag
     actor 0x05DC 0x0028 0
-    state[0x141A] = 0x0001
+    require state[0x141A] == 0x0001
     guard_pop
     say 0x05A2 voice=0x00 flags=0x00 display=0x80 loop=none control=none : "Thank you|, thank you... Ahh, I feel better, Commander|. I guess I owe you my life..."
     say 0x05A2 voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Thank you thank you..."
     say 0x05A2 voice=0x02 flags=0x08 display=0x80 loop=none control=none : "What do you want to know, Commander|?"
-    record_wildcard 0xBC 0x05E8 0x2829 0
+    topic[0x05E8] = "talk1"
     guard_push block_55A6
     require state[0x141C] == 0x0001
     guard_pop
@@ -2407,8 +2407,8 @@ proc tum3 {
     guard_pop
     say 0x05A2 voice=0x01 flags=0x00 display=0x80 loop=none control=none : "I'm going to reveal the secrets of planet TUMUL to you|, Commander..."
     say 0x05A2 voice=0x08 flags=0x08 display=0xB0 loop=none control=none : "Follow me..."
-    record_wildcard 0xAF 0x05BA 0x0DB2 0
-    record_wildcard 0xAF 0x0842 0x0D7C 0
+    record[0x05BA] = 0x0DB2
+    record[0x0842] = 0x0D7C
     state[0x141A] = 0x0002
     record_state 0xC1 0x13D0 0x0DB2 0
 }
@@ -2430,9 +2430,9 @@ proc st {
 proc tum4 {
     conditional_block 0x01 tum5
     branch_gameflag
-    record_wildcard 0xAF 0x13CA 0x0DB2 0
+    require record[0x13CA] == 0x0DB2
     actor 0x05DC 0x0028 0
-    state[0x141A] = 0x0002
+    require state[0x141A] == 0x0002
     guard_pop
     say 0x05A2 voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Check out these archeological wonders!"
     say 0x05A2 voice=0x02 flags=0x00 display=0x80 loop=none control=none : "A people called the PATAGOS lived here long ago..."
@@ -2440,7 +2440,7 @@ proc tum4 {
     say 0x05A2 voice=0x04 flags=0x00 display=0x80 loop=none control=none : "I'm looking for the tomb of BETAKAM IV, king of the PATAGOS..."
     say 0x05A2 voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Follow me, Commander..."
     say 0x05A2 voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "..."
-    record_wildcard 0xAF 0x05BA 0x0DCA 0
+    record[0x05BA] = 0x0DCA
     record_state 0xC1 0x13D0 0x0DCA 0
     state[0x141A] = 0x0003
 }
@@ -2448,10 +2448,10 @@ proc tum4 {
 proc tum5 {
     conditional_block 0x01 tum6
     branch_gameflag
-    record_wildcard 0xAF 0x13CA 0x0DCA 0
+    require record[0x13CA] == 0x0DCA
     actor 0x05DC 0x0028 0
-    state[0x141A] = 0x0003
-    record_wildcard 0xAF 0x131A 0x0028 1
+    require state[0x141A] == 0x0003
+    require record[0x131A] != 0x0028
     guard_pop
     say 0x05A2 voice=0x01 flags=0x00 display=0x80 loop=none control=none : "The tomb of BETAKAM IV lies beneath this rubble..."
     say 0x05A2 voice=0x02 flags=0x00 display=0x80 loop=none control=none : "I need dynamite, or any explosive that can blow away the rubble..."
@@ -2459,7 +2459,7 @@ proc tum5 {
     say 0x05A2 voice=0x04 flags=0x00 display=0x80 loop=none control=none : "I shall continue working..."
     say 0x05A2 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "What he needs is SPLATCH|, Commander|..."
     say 0x05A2 voice=0xFF flags=0x08 display=0x90 loop=none control=none : "..."
-    shared_bit_state 0xAE 0x0DCC 0x0002 0
+    bits(0x0DCC,0x0002) = true
     record_clear 0x05DC
 }
 
@@ -2467,14 +2467,14 @@ proc tum6 {
     conditional_block 0x01 tum6bis
     branch_gameflag
     actor 0x05DC 0x0028 0
-    record_wildcard 0xAF 0x13CA 0x0DCA 0
-    state[0x141A] = 0x0003
+    require record[0x13CA] == 0x0DCA
+    require state[0x141A] == 0x0003
     guard_pop
     say 0x05A2 voice=0x01 flags=0x00 display=0x80 loop=none control=none : "The tomb of BETAKAM IV lies beneath this rubble..."
     say 0x05A2 voice=0x02 flags=0x00 display=0x80 loop=none control=none : "I need dynamite, or any explosive that can blow away the rubble..."
     say 0x05A2 voice=0x01 flags=0x00 display=0x80 loop=none control=none : "You have the explosive, Commander|?"
     guard_push block_5913
-    record_wildcard 0xAF 0x131A 0x0028 0
+    require record[0x131A] == 0x0028
     guard_pop
     say 0x05A2 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Let's teleport him the SPLATCH|, Commander|..."
     say 0x05A2 voice=0xFF flags=0x10 display=0x80 loop=block_5913 control=none : "TELEPORT SPLATCH TO TUMUL" choices "teleport" "refuse"
@@ -2490,31 +2490,31 @@ proc tum6 {
     concept_guard "refuse" 0
     guard_pop
     say 0x05A2 voice=0xFF flags=0x28 display=0xA0 loop=none control=none : "Whatever you say, Commander|. But allow me to say you're a big dummy..."
-    shared_bit_state 0xAE 0x0DCC 0x0002 0
+    bits(0x0DCC,0x0002) = true
     clear_alternate_concept
     record_clear 0x05DC
     block_5913:
     guard_push tum6bis
-    record_wildcard 0xAF 0x131A 0x0028 1
+    require record[0x131A] != 0x0028
     guard_pop
     say 0x05A2 voice=0x01 flags=0x08 display=0x90 loop=none control=none : "I need this SPLATCH, Commander..."
-    shared_bit_state 0xAE 0x0DCC 0x0002 0
+    bits(0x0DCC,0x0002) = true
     record_clear 0x05DC
 }
 
 proc tum6bis {
     conditional_block 0x01 tum7
     branch_gameflag
-    record_wildcard 0xAF 0x13CA 0x0DCA 0
+    require record[0x13CA] == 0x0DCA
     actor 0x05DC 0x0028 0
-    state[0x141A] = 0x0004
+    require state[0x141A] == 0x0004
     guard_pop
     say 0x05A2 voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Thanks, Commander|. You're a standup guy..."
     say 0x05A2 voice=0x08 flags=0x00 display=0x80 loop=none control=none : "I'm going to make this rubble sorry it was ever born..."
     say 0x05A2 voice=0x07 flags=0x08 display=0x80 loop=none control=none : "Stand back, Commander|..."
     load_string "explo3.hnm"
     say 0x05A2 voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "..."
-    record_wildcard 0xAF 0x05BA 0x0DE2 0
+    record[0x05BA] = 0x0DE2
     state[0x141A] = 0x0005
     record_state 0xC1 0x13D0 0x0DE2 0
 }
@@ -2522,9 +2522,9 @@ proc tum6bis {
 proc tum7 {
     conditional_block 0x01 tum8
     branch_gameflag
-    record_wildcard 0xAF 0x13CA 0x0DE2 0
+    require record[0x13CA] == 0x0DE2
     actor 0x05DC 0x0028 0
-    state[0x141A] = 0x0005
+    require state[0x141A] == 0x0005
     guard_pop
     say 0x05A2 voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Holy Handstands... Get a load of that, Commander|..."
     say 0x05A2 voice=0x05 flags=0x00 display=0x80 loop=none control=none : "I love those mummies... Such beauty... Such splendor..."
@@ -2551,7 +2551,7 @@ proc tum8 {
     conditional_block 0x01 tum9
     branch_gameflag
     actor 0x05DC 0x0028 0
-    state[0x141A] = 0x0006
+    require state[0x141A] == 0x0006
     guard_pop
     say 0x05A2 voice=0x17 flags=0x00 display=0x80 loop=none control=none : "AAAAAHHH, Commander|... I am cursed...."
     say 0x05A2 voice=0x18 flags=0x00 display=0x80 loop=none control=none : "AAAAAAAAAAAAAAAAAAAAAAA!!!"
@@ -2566,9 +2566,9 @@ proc tum8 {
     guard_pop
     say 0x05A2 voice=0x1C flags=0x00 display=0x80 loop=none control=none : "aaaaaaaaa"
     say 0x05A2 voice=0xFF flags=0x08 display=0xC0 loop=none control=none : "TELEPORTING BEAUREGARD TO ARK"
-    record_wildcard 0xAF 0x05BA 0xFFFF 0
-    shared_bit_state 0xAE 0x0DCC 0x0002 1
-    shared_bit_state 0xAE 0x0DE4 0x0002 0
+    record[0x05BA] = aboard
+    bits(0x0DCC,0x0002) = false
+    bits(0x0DE4,0x0002) = true
     clear_alternate_concept
     record_clear 0x05DC
 }
@@ -2577,7 +2577,7 @@ proc tum9 {
     conditional_block 0x01 amig1
     branch_flag_274f
     actor 0x05DC 0x0028 0
-    record_wildcard 0xAF 0x05BA 0xFFFF 0
+    require record[0x05BA] == aboard
     guard_pop
     say 0x05A2 voice=0x17 flags=0x00 display=0x80 loop=none control=none : "Aaaaaa, Commander I'm blasted..."
     say 0x05A2 voice=0x18 flags=0x00 display=0x80 loop=none control=none : "AAAAAAAAAA!!!"
@@ -2593,20 +2593,20 @@ proc tum9 {
 
 proc amig1 {
     conditional_block 0x01 amig2
-    record_wildcard 0xAF 0x088A 0x0CCE 1
-    record_wildcard 0xAF 0x02A2 0x0CCE 1
+    require record[0x088A] != 0x0CCE
+    require record[0x02A2] != 0x0CCE
     guard_pop
-    record_wildcard 0xAF 0x06DA 0x0CCE 0
+    record[0x06DA] = 0x0CCE
     poke_byte 0x5C82 0x00
 }
 
 proc amig2 {
     conditional_block 0x01 amig3
     branch_gameflag
-    record_wildcard 0xAF 0x06DA 0x0CCE 0
+    require record[0x06DA] == 0x0CCE
     actor 0x06FC 0x0028 0
-    record_wildcard 0xAF 0x1088 0x0C98 0
-    state[0x1426] = 0x0000
+    require record[0x1088] == 0x0C98
+    require state[0x1426] == 0x0000
     guard_pop
     say 0x06C2 voice=0x03 flags=0x00 display=0x80 loop=none control=none : "HALT STRANGER!!!"
     say 0x06C2 voice=0x02 flags=0x10 display=0x80 loop=amig3 control=none : "Do you know any of our customers??? The PURPLE HAZE doesn't accept just anybody..." choices "Morning_Oil" "Eviscerator" "Izwalito" "Bronko" "Tina_Burner"
@@ -2650,8 +2650,8 @@ proc amig3 {
     conditional_block 0x01 yok0
     branch_gameflag
     actor 0x06FC 0x0028 0
-    record_wildcard 0xAF 0x1088 0x0C98 0
-    state[0x1428] = 0x0001
+    require record[0x1088] == 0x0C98
+    require state[0x1428] == 0x0001
     guard_pop
     say 0x06C2 voice=0x03 flags=0x00 display=0x80 loop=none control=none : "The password,"
     say 0x06C2 voice=0x02 flags=0x10 display=0x80 loop=block_5EB7 control=none : "You know the PASSWORD, stranger?" choices "croolas" "meteorut" "galabar" "Mastachok"
@@ -2681,7 +2681,7 @@ proc amig3 {
     block_5EB7:
     say 0x06C2 voice=0x03 flags=0x08 display=0x90 loop=none control=none : "What do you want, stranger?"
     state[0x1416] = 0x0000
-    record_wildcard 0xBC 0x0708 0x0001 0
+    topic[0x0708] = "talk"
     say 0x06C2 voice=0x03 flags=0x48 display=0x80 loop=none control=none : "Bye bye, stranger..." choices "bye_bye"
     record_clear 0x06FC
     guard_push yok0
@@ -2694,7 +2694,7 @@ proc amig3 {
     guard_pop
     say 0x06C2 voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "SPLATCH TELEPORTED TO ARK..."
     record_triple 0x06FC 0x1306 0x0028 0
-    record_wildcard 0xAF 0x06DA 0x0FE6 0
+    record[0x06DA] = 0x0FE6
     clear_alternate_concept
     block_5F59:
     guard_push yok0
@@ -2708,9 +2708,9 @@ proc amig3 {
 
 proc yok0 {
     conditional_block 0x01 yok1
-    record_wildcard 0xAF 0x02A2 0x0B1E 1
+    require record[0x02A2] != 0x0B1E
     guard_pop
-    record_wildcard 0xAF 0x0332 0x0C2C 0
+    record[0x0332] = 0x0C2C
     poke_byte 0x5FB4 0x01
     poke_byte 0x5F9C 0x00
 }
@@ -2718,11 +2718,11 @@ proc yok0 {
 proc yok1 {
     conditional_block 0x00 yok2
     branch_gameflag
-    record_wildcard 0xAF 0x1088 0x0C2C 0
+    require record[0x1088] == 0x0C2C
     actor 0x0354 0x0028 0
-    state[0x142A] = 0x0000
+    require state[0x142A] == 0x0000
     guard_pop
-    record_wildcard 0xBC 0x0360 0x000C 0
+    topic[0x0360] = "rien"
     say 0x031A voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Ah! You there, Commander|. Me scared... CRY CRY"
     say 0x031A voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Father Maxxon be kidnapped. Them want big ransom... CRY... CRY..."
     say 0x031A voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Me not can pay... CRY..."
@@ -2735,8 +2735,8 @@ proc yok1 {
     block_6082:
     say 0x031A voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Me scared, Commander|..."
     guard_push block_60CF
-    record_wildcard 0xAF 0x03C2 0xFFFF 1
-    record_wildcard 0xAF 0x025A 0xFFFF 1
+    require record[0x03C2] != aboard
+    require record[0x025A] != aboard
     guard_pop
     say 0x031A voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Me afraid Commander..."
     say 0x031A voice=0x05 flags=0x00 display=0x80 loop=none control=none : "You go fast..."
@@ -2744,8 +2744,8 @@ proc yok1 {
     record_clear 0x0354
     block_60CF:
     guard_push block_61A5
-    record_wildcard 0xAF 0x03C2 0xFFFF 0
-    record_wildcard 0xAF 0x025A 0xFFFF 0
+    require record[0x03C2] == aboard
+    require record[0x025A] == aboard
     guard_pop
     say 0x031A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "We can't leave him alone, Commander|... Morning_Oil could protect him..."
     say 0x031A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "How about teleporting Morning to the planet Rondo?"
@@ -2754,7 +2754,7 @@ proc yok1 {
     concept_guard "teleport" 0
     guard_pop
     say 0x031A voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORTING MORNING OIL TO PLANET RONDO"
-    record_wildcard 0xAF 0x03C2 0x0C62 0
+    record[0x03C2] = 0x0C62
     clear_alternate_concept
     block_6156:
     guard_push block_61A5
@@ -2767,7 +2767,7 @@ proc yok1 {
     record_clear 0x0354
     block_61A5:
     guard_push yok2
-    record_wildcard 0xAF 0x03C2 0x0C62 0
+    require record[0x03C2] == 0x0C62
     guard_pop
     say 0x031A voice=0x0A flags=0x00 display=0x80 loop=none control=none : "Thank you Commander|... You nice..."
     say 0x031A voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Commander, let's go check out the observatory..."
@@ -2778,8 +2778,8 @@ proc yok1 {
 proc yok2 {
     conditional_block 0x01 yok3
     branch_gameflag
-    record_wildcard 0xAF 0x1088 0x0C2C 0
-    record_wildcard 0xAF 0x03C2 0x0C62 0
+    require record[0x1088] == 0x0C2C
+    require record[0x03C2] == 0x0C62
     actor 0x03E4 0x0028 0
     guard_pop
     say 0x03AA voice=0x01 flags=0x00 display=0x80 loop=none control=none : "I understand my mission, Commander|. I must protect the young Izwal..."
@@ -2795,10 +2795,10 @@ proc yok2 {
 proc yok3 {
     conditional_block 0x01 yok3bis
     branch_gameflag
-    record_wildcard 0xAF 0x1088 0x0C2C 0
+    require record[0x1088] == 0x0C2C
     actor 0x0354 0x0028 0
-    record_wildcard 0xAF 0x0332 0x0C2C 0
-    record_wildcard 0xAF 0x03C2 0x0C62 0
+    require record[0x0332] == 0x0C2C
+    require record[0x03C2] == 0x0C62
     guard_pop
     say 0x031A voice=0x07 flags=0x00 display=0x80 loop=none control=none : "Everything's fine, Commander|. Nothing to report... Morning_Oil is very nice..."
     say 0x031A voice=0x06 flags=0x00 display=0x80 loop=none control=none : "He's in the observatory, playing with my father's telescope..."
@@ -2813,7 +2813,7 @@ proc yok3bis {
     conditional_block 0x00 yok4
     branch_gameflag
     actor 0x0354 0x0028 0
-    record_wildcard 0xAF 0x03C2 0x0C62 0
+    require record[0x03C2] == 0x0C62
     guard_pop
     say 0x031A voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Ah! You here. Commander|, me afraid... CRY CRY"
     say 0x031A voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Me very worried..."
@@ -2824,17 +2824,17 @@ proc yok3bis {
 proc yok4 {
     conditional_block 0x01 yok6
     branch_gameflag
-    record_wildcard 0xAF 0x1088 0x0C2C 0
+    require record[0x1088] == 0x0C2C
     actor 0x03E4 0x0028 0
-    record_wildcard 0xAF 0x0332 0x0C2C 0
-    record_wildcard 0xAF 0x03C2 0x0C62 0
+    require record[0x0332] == 0x0C2C
+    require record[0x03C2] == 0x0C62
     guard_pop
     say 0x03AA voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Ah! Hello Commander... Are you okay?"
     say 0x03AA voice=0x05 flags=0x00 display=0x80 loop=none control=none : "I've made some interesting discoveries..."
     say 0x03AA voice=0x06 flags=0x00 display=0x80 loop=none control=none : "I've been observing the sky with Mister maxxon's telescope..."
     say 0x03AA voice=0x07 flags=0x00 display=0x80 loop=none control=none : "And I've found a new planet..."
     say 0x03AA voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Planet VULCAN, coordinates x342 y543..."
-    shared_bit_state 0xAE 0x0F52 0x0002 0
+    bits(0x0F52,0x0002) = true
     say 0x03AA voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Good work Mister Morning... See, Commander! I programmed him good..."
     say 0x03AA voice=0x03 flags=0x00 display=0x80 loop=none control=none : "See you soon... I'll call you on the radio if there's a problem..."
     say 0x03AA voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "..."
@@ -2871,10 +2871,10 @@ proc yok7 {
 
 proc yok5 {
     conditional_block 0x00 yok8
-    record_wildcard 0xAF 0x1088 0x0C2C 1
+    require record[0x1088] != 0x0C2C
     guard_pop
-    record_wildcard 0xAF 0x03C2 0x0FE6 0
-    record_wildcard 0xAF 0x040A 0x0C62 0
+    record[0x03C2] = 0x0FE6
+    record[0x040A] = 0x0C62
     poke_byte 0x652B 0x01
     poke_byte 0x650E 0x00
 }
@@ -2882,9 +2882,9 @@ proc yok5 {
 proc yok8 {
     conditional_block 0x00 jerry1
     branch_gameflag
-    record_wildcard 0xAF 0x1088 0x0C2C 0
+    require record[0x1088] == 0x0C2C
     actor 0x0354 0x0028 0
-    record_wildcard 0xAF 0x040A 0x0C62 0
+    require record[0x040A] == 0x0C62
     guard_pop
     say 0x031A voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Ah! You here. Commander|, me afraid... CRY CRY"
     say 0x031A voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Me very worried... You know INSPECTOR JERRY KHAN?"
@@ -2897,7 +2897,7 @@ proc yok8 {
 proc jerry1 {
     conditional_block 0x00 gl1
     branch_gameflag
-    record_wildcard 0xAF 0x1088 0x0C2C 0
+    require record[0x1088] == 0x0C2C
     actor 0x042C 0x0028 0
     guard_pop
     say 0x03F2 voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Hello, Commander|. Your robot Morning Oil has told me a lot about you..."
@@ -2912,8 +2912,8 @@ proc jerry1 {
     say 0x03F2 voice=0x02 flags=0x00 display=0x80 loop=none control=none : "I'll be in contact with you..."
     say 0x03F2 voice=0x03 flags=0x00 display=0x80 loop=none control=none : "See you soon|, Commander..."
     say 0x03F2 voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "..."
-    record_wildcard 0xAF 0x040A 0x10AE 0
-    record_wildcard 0xAF 0x0332 0x0FE6 0
+    record[0x040A] = 0x10AE
+    record[0x0332] = 0x0FE6
     state[0x142C] = 0x0001
     record_clear 0x042C
 }
@@ -2928,7 +2928,7 @@ proc gl1 {
 proc gl2 {
     conditional_block 0x01 gl3
     state_array_test 0x10
-    encounter_count[0x0590] = 0x0000
+    require encounter_count[0x0590] == 0x0000
     guard_pop
     record_link 0x0594 0x0028 0
     poke_byte 0x671E 0x00
@@ -2949,8 +2949,8 @@ proc gl3 {
 proc glu2 {
     conditional_block 0x01 oto1
     branch_gameflag
-    state[0x142E] = 0x0000
-    record_wildcard 0xAF 0x1088 0x0FC8 0
+    require state[0x142E] == 0x0000
+    require record[0x1088] == 0x0FC8
     actor 0x0594 0x0028 0
     guard_pop
     say 0x055A voice=0x09 flags=0x00 display=0x80 loop=none control=none : "Ho! The Visitor from distant space-time..."
@@ -2973,23 +2973,23 @@ proc glu2 {
     say 0x055A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander|... This is awful..."
     block_6905:
     say 0x055A voice=0xFF flags=0x08 display=0x90 loop=none control=none : "Bye bye|... help us..."
-    shared_bit_state 0xAE 0x055C 0x0002 1
+    bits(0x055C,0x0002) = false
     record_clear 0x0594
 }
 
 proc oto1 {
     conditional_block 0x00 prep
     branch_gameflag
-    record_wildcard 0xAF 0x1088 0x0A7C 0
+    require record[0x1088] == 0x0A7C
     actor 0x0744 0x0028 0
-    state[0x1430] = 0x0000
+    require state[0x1430] == 0x0000
     guard_pop
     say 0x070A voice=0x02 flags=0x00 display=0x80 loop=none control=none : "hello"
 }
 
 proc prep {
     conditional_block 0x01 pub2
-    state[0x1432] = 0x0001
+    require state[0x1432] == 0x0001
     guard_pop
     state_array_set 0x07 0x0014
     bit_flag 0x01D0 0x02 0
@@ -3014,7 +3014,7 @@ proc pub2 {
 
 proc monop1 {
     conditional_block 0x01 monop2
-    record_wildcard 0xAF 0x1088 0x0A22 0
+    require record[0x1088] == 0x0A22
     actor 0x01EC 0x0028 0
     guard_pop
     say 0x01B2 voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Hi there, Consumer Comrade. Welcome to VENUSIA SUPRAMARKET!"
@@ -3037,7 +3037,7 @@ proc monop1 {
 
 proc monop2 {
     conditional_block 0x00 ad2
-    record_wildcard 0xAF 0x1088 0x0A22 0
+    require record[0x1088] == 0x0A22
     branch_gameflag
     actor 0x01EC 0x0028 0
     guard_pop
@@ -3045,7 +3045,7 @@ proc monop2 {
     guard_push block_6B22
     require state[0x1434] == state[0x1436]
     require state[0x1438] == state[0x1436]
-    record_wildcard 0xAF 0x119A 0x0028 1
+    require record[0x119A] != 0x0028
     guard_pop
     say 0x01B2 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "You don't have creds? We don't care for poor clients..."
     say 0x01B2 voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
@@ -3070,11 +3070,11 @@ proc monop2 {
     record_clear 0x01EC
     block_6BCC:
     guard_push block_6BFA
-    record_wildcard 0xAF 0x119A 0x0028 0
+    require record[0x119A] == 0x0028
     guard_pop
     say 0x01B2 voice=0x02 flags=0x08 display=0x90 loop=none control=none : "What would you care to buy, supra comrade?"
     state_array_set 0x07 0x0064
-    record_wildcard 0xBC 0x01F8 0x3072 0
+    topic[0x01F8] = "department"
     block_6BFA:
     guard_push block_6C08
     state_array_test 0x07
@@ -3106,12 +3106,12 @@ proc ad2 {
 
 proc fin1 {
     conditional_block 0x01 fin2
-    state[0x13FC] = 0x0001
-    state[0x1424] = 0x0001
-    record_wildcard 0xAF 0x13C2 0x0028 0
-    record_wildcard 0xAF 0x088A 0x0FE6 0
-    record_wildcard 0xAF 0x06DA 0x0FE6 0
-    state[0x142C] = 0x0001
+    require state[0x13FC] == 0x0001
+    require state[0x1424] == 0x0001
+    require record[0x13C2] == 0x0028
+    require record[0x088A] == 0x0FE6
+    require record[0x06DA] == 0x0FE6
+    require state[0x142C] == 0x0001
     guard_pop
     record_link 0x042C 0x0028 0
     poke_byte 0x6CC7 0x01
@@ -3128,7 +3128,7 @@ proc fin2 {
     say 0x03F2 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "They've just entered a black hole called ODDLAND..."
     say 0x03F2 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "I need your help. Your ship is tougher than mine..."
     say 0x03F2 voice=0xFF flags=0x08 display=0x80 loop=none control=none : "Oddland is at coordinates x465 Y342..."
-    shared_bit_state 0xAE 0x1054 0x0002 0
+    bits(0x1054,0x0002) = true
     say 0x03F2 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Howzabout that for a twist, Commander!"
     say 0x03F2 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "See you soon, Commander|. we'll meet up on the other side of the BLACK HOLE..."
     say 0x03F2 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "This is Yoko: save my father!!!"
@@ -3311,8 +3311,8 @@ proc help1 {
     conditional_block 0x01 help2
     branch_presentation
     require state[0x13EE] > 0x0002
-    shared_bit_state 0xAE 0x0C9A 0x0002 1
-    record_wildcard 0xAF 0x02A2 0x0B1E 0
+    require !bits(0x0C9A,0x0002)
+    require record[0x02A2] == 0x0B1E
     actor 0x09CC 0x0028 0
     guard_pop
     say 0x0992 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander, go see Eviscerator in his jail and talk to him about WAR and treasure..."
@@ -3327,7 +3327,7 @@ proc help2 {
     conditional_block 0x01 help3
     branch_presentation
     require state[0x13EE] > 0x0002
-    encounter_count[0x0590] = 0x0000
+    require encounter_count[0x0590] == 0x0000
     actor 0x09CC 0x0028 0
     guard_pop
     say 0x0992 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander, you forgot to visit Daddy_Gluxx on the planet Ekatomb..."
@@ -3342,8 +3342,8 @@ proc help3 {
     conditional_block 0x01 help4
     branch_presentation
     require state[0x13EE] > 0x0002
-    encounter_count[0x0470] = 0x0000
-    record_wildcard 0xAF 0x0452 0xFFFF 0
+    require encounter_count[0x0470] == 0x0000
+    require record[0x0452] == aboard
     actor 0x09CC 0x0028 0
     guard_pop
     say 0x0992 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander, you ought to talk to Bronko in the cryobox..."
@@ -3358,9 +3358,9 @@ proc help4 {
     conditional_block 0x01 help5
     branch_presentation
     require state[0x13EE] > 0x0002
-    record_wildcard 0xAF 0x0452 0xFFFF 0
-    record_wildcard 0xAF 0x131A 0x0028 1
-    state[0x13F8] = 0x0000
+    require record[0x0452] == aboard
+    require record[0x131A] != 0x0028
+    require state[0x13F8] == 0x0000
     actor 0x09CC 0x0028 0
     guard_pop
     say 0x0992 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander|, you teleported Bronko to spy on Erazor|..."
@@ -3376,7 +3376,7 @@ proc help5 {
     conditional_block 0x01 help6
     branch_presentation
     require state[0x13EE] > 0x0002
-    record_wildcard 0xAF 0x03C2 0x1096 0
+    require record[0x03C2] == 0x1096
     actor 0x09CC 0x0028 0
     guard_pop
     say 0x0992 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander, Morning Oil is still in the Ark... he's a great mechanic, remember..."
@@ -3391,7 +3391,7 @@ proc help6 {
     conditional_block 0x01 help7
     branch_presentation
     require state[0x13EE] > 0x0002
-    record_wildcard 0xAF 0x1392 0xFFFF 0
+    require record[0x1392] == aboard
     actor 0x09CC 0x0028 0
     guard_pop
     say 0x0992 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander, I'm pretty sure Tina Burner would love to have that guitar..."
@@ -3406,7 +3406,7 @@ proc help7 {
     conditional_block 0x01 help8
     branch_presentation
     require state[0x13EE] > 0x0002
-    record_wildcard 0xAF 0x088A 0xFFFF 0
+    require record[0x088A] == aboard
     actor 0x09CC 0x0028 0
     guard_pop
     say 0x0992 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander,Tina and Migrator would make a great couple on the planet Moskito|..."
@@ -3421,9 +3421,9 @@ proc help8 {
     conditional_block 0x01 help9
     branch_presentation
     require state[0x13EE] > 0x0002
-    record_wildcard 0xAF 0x088A 0x0CCE 1
-    record_wildcard 0xAF 0x131A 0x0028 1
-    record_wildcard 0xAF 0x02A2 0x0B1E 0
+    require record[0x088A] != 0x0CCE
+    require record[0x131A] != 0x0028
+    require record[0x02A2] == 0x0B1E
     actor 0x09CC 0x0028 0
     guard_pop
     say 0x0992 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander, go see Amigo on the planet Eden and talk about his itches..."
@@ -3438,7 +3438,7 @@ proc help9 {
     conditional_block 0x01 help10
     branch_presentation
     require state[0x13EE] > 0x0002
-    record_wildcard 0xAF 0x04E2 0x0D04 0
+    require record[0x04E2] == 0x0D04
     actor 0x09CC 0x0028 0
     guard_pop
     say 0x0992 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander, take a trip to the planet Magnus... There may be other broken robots..."
@@ -3453,7 +3453,7 @@ proc help10 {
     conditional_block 0x01 help11
     branch_presentation
     require state[0x13EE] > 0x0002
-    encounter_count[0x0308] = 0x0000
+    require encounter_count[0x0308] == 0x0000
     actor 0x09CC 0x0028 0
     guard_pop
     say 0x0992 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander, Mister Hom may be back on the planet Kortex..."
@@ -3469,7 +3469,7 @@ proc help11 {
     branch_presentation
     require state[0x13EE] > 0x0002
     require encounter_count[0x05D8] > 0x0000
-    record_wildcard 0xAF 0x1152 0x05A2 1
+    require record[0x1152] != 0x05A2
     actor 0x09CC 0x0028 0
     guard_pop
     say 0x0992 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander, let's go visit Magnus... Maybe we'll find a new body for Mister Beauregard..."
@@ -3484,8 +3484,8 @@ proc help12 {
     conditional_block 0x01 help13
     branch_presentation
     require state[0x13EE] > 0x0002
-    encounter_count[0x0350] = 0x0000
-    record_wildcard 0xAF 0x0332 0x0C2C 0
+    require encounter_count[0x0350] == 0x0000
+    require record[0x0332] == 0x0C2C
     actor 0x09CC 0x0028 0
     guard_pop
     say 0x0992 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander, Yoko may be on the planet Rondo..."
@@ -3500,9 +3500,9 @@ proc help13 {
     conditional_block 0x01 help14
     branch_presentation
     require state[0x13EE] > 0x0002
-    record_wildcard 0xAF 0x13AA 0x043A 0
-    record_wildcard 0xAF 0x0452 0x0A7C 1
-    state[0x13FC] = 0x0000
+    require record[0x13AA] == 0x043A
+    require record[0x0452] != 0x0A7C
+    require state[0x13FC] == 0x0000
     actor 0x09CC 0x0028 0
     guard_pop
     say 0x0992 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander, listen to the receiver in the cryobox|..."
@@ -3517,7 +3517,7 @@ proc help14 {
     conditional_block 0x01 helpend
     branch_presentation
     require state[0x13EE] > 0x0002
-    record_wildcard 0xAF 0x05BA 0xFFFF 0
+    require record[0x05BA] == aboard
     actor 0x09CC 0x0028 0
     guard_pop
     say 0x0992 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander, talk to Mister Beauregard in the cryobox|..."
@@ -3583,9 +3583,9 @@ proc timx {
 
 proc tim1 {
     conditional_block 0x01 tim1B
-    state[0x143C] = 0x0001
+    require state[0x143C] == 0x0001
     guard_pop
-    shared_bit_state 0xAE 0x01FC 0x0002 0
+    bits(0x01FC,0x0002) = true
     record_link 0x0234 0x0028 0
 }
 
@@ -3593,7 +3593,7 @@ proc tim1B {
     conditional_block 0x01 tim2
     branch_presentation
     actor 0x0234 0x0028 0
-    state[0x143C] = 0x0001
+    require state[0x143C] == 0x0001
     guard_pop
     say 0x01FA voice=0xFF flags=0x00 display=0x80 loop=none control=none : ".2"
     say 0x01FA voice=0xFF flags=0x00 display=0x80 loop=none control=none : ".1"
@@ -3639,7 +3639,7 @@ proc tim1B {
     say 0x01FA voice=0x0D flags=0x00 display=0x80 loop=none control=none : "THINK I'LL GO NOW... AFTERNOON'S A GOOD TIME TO CATCH UP ON SOME ZZZZZ'S..."
     block_7DDA:
     say 0x01FA voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "stop"
-    shared_bit_state 0xB0 0x01FC 0x0002 1
+    bits(0x01FC,0x0002) = false using alternate_encoding
     poke_byte 0x7C17 0x00
     state[0x143E] = 0x0001
     record_clear 0x0234
@@ -3647,9 +3647,9 @@ proc tim1B {
 
 proc tim2 {
     conditional_block 0x01 tim2B
-    state[0x143C] = 0x0002
+    require state[0x143C] == 0x0002
     guard_pop
-    shared_bit_state 0xAE 0x01FC 0x0002 0
+    bits(0x01FC,0x0002) = true
     record_link 0x0234 0x0028 0
 }
 
@@ -3657,7 +3657,7 @@ proc tim2B {
     conditional_block 0x01 tim3
     branch_presentation
     actor 0x0234 0x0028 0
-    state[0x143C] = 0x0002
+    require state[0x143C] == 0x0002
     guard_pop
     say 0x01FA voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Network..."
     say 0x01FA voice=0xFF flags=0x00 display=0x80 loop=none control=none : "modem activated"
@@ -3701,16 +3701,16 @@ proc tim2B {
     say 0x01FA voice=0x0D flags=0x00 display=0x80 loop=none control=none : "THINK I'LL GO NOW... AFTERNOON'S A GOOD TIME TO CATCH UP ON SOME ZZZZZ'S..."
     block_7F9D:
     say 0x01FA voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
-    shared_bit_state 0xB0 0x01FC 0x0002 1
+    bits(0x01FC,0x0002) = false using alternate_encoding
     poke_byte 0x7DF9 0x00
     record_clear 0x0234
 }
 
 proc tim3 {
     conditional_block 0x01 tim3B
-    state[0x143C] = 0x0003
+    require state[0x143C] == 0x0003
     guard_pop
-    shared_bit_state 0xAE 0x01FC 0x0002 0
+    bits(0x01FC,0x0002) = true
     record_link 0x0234 0x0028 0
 }
 
@@ -3718,7 +3718,7 @@ proc tim3B {
     conditional_block 0x01 tim4
     branch_presentation
     actor 0x0234 0x0028 0
-    state[0x143C] = 0x0003
+    require state[0x143C] == 0x0003
     guard_pop
     say 0x01FA voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Network..."
     say 0x01FA voice=0xFF flags=0x00 display=0x80 loop=none control=none : "modem activated"
@@ -3759,16 +3759,16 @@ proc tim3B {
     say 0x01FA voice=0x0D flags=0x00 display=0x80 loop=none control=none : "THINK I'LL GO NOW... AFTERNOON'S A GOOD TIME TO CATCH UP ON SOME ZZZZZ'S..."
     block_811F:
     say 0x01FA voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
-    shared_bit_state 0xB0 0x01FC 0x0002 1
+    bits(0x01FC,0x0002) = false using alternate_encoding
     poke_byte 0x7FB5 0x00
     record_clear 0x0234
 }
 
 proc tim4 {
     conditional_block 0x01 tim4B
-    state[0x143C] = 0x0004
+    require state[0x143C] == 0x0004
     guard_pop
-    shared_bit_state 0xAE 0x01FC 0x0002 0
+    bits(0x01FC,0x0002) = true
     record_link 0x0234 0x0028 0
 }
 
@@ -3776,7 +3776,7 @@ proc tim4B {
     conditional_block 0x01 tim5
     branch_presentation
     actor 0x0234 0x0028 0
-    state[0x143C] = 0x0004
+    require state[0x143C] == 0x0004
     guard_pop
     say 0x01FA voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Network..."
     say 0x01FA voice=0xFF flags=0x00 display=0x80 loop=none control=none : "modem activated"
@@ -3820,16 +3820,16 @@ proc tim4B {
     say 0x01FA voice=0x0D flags=0x00 display=0x80 loop=none control=none : "I'M GOING TO DIVE IN THE POOL... IT'S A SUNNY AFTERNOON..."
     block_82C5:
     say 0x01FA voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
-    shared_bit_state 0xB0 0x01FC 0x0002 1
+    bits(0x01FC,0x0002) = false using alternate_encoding
     poke_byte 0x8137 0x00
     record_clear 0x0234
 }
 
 proc tim5 {
     conditional_block 0x01 tim5B
-    state[0x143C] = 0x0005
+    require state[0x143C] == 0x0005
     guard_pop
-    shared_bit_state 0xAE 0x01FC 0x0002 0
+    bits(0x01FC,0x0002) = true
     record_link 0x0234 0x0028 0
 }
 
@@ -3837,7 +3837,7 @@ proc tim5B {
     conditional_block 0x01 boba1
     branch_presentation
     actor 0x0234 0x0028 0
-    state[0x143C] = 0x0005
+    require state[0x143C] == 0x0005
     guard_pop
     say 0x01FA voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Network|..."
     say 0x01FA voice=0xFF flags=0x00 display=0x80 loop=none control=none : "modem activated"
@@ -3891,7 +3891,7 @@ proc tim5B {
     say 0x01FA voice=0x0D flags=0x00 display=0x80 loop=none control=none : "IT'S A BEAUTIFUL AFTERNOON... THINK I'LL TAKE MY DOG FOR A WALK... COME ON BOY!"
     block_84A7:
     say 0x01FA voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
-    shared_bit_state 0xB0 0x01FC 0x0002 1
+    bits(0x01FC,0x0002) = false using alternate_encoding
     poke_byte 0x82DD 0x00
     record_clear 0x0234
 }
@@ -3928,8 +3928,8 @@ proc augmen {
     conditional_block 0x01 revel
     branch_flag_274f
     actor 0x01A4 0x0028 0
-    state[0x1442] = 0x0001
-    state[0x1444] = 0x0000
+    require state[0x1442] == 0x0001
+    require state[0x1444] == 0x0000
     guard_pop
     say 0x016A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "By the way, Cap'n Bob sir, there's something I wanted to talk to you about..."
     say 0x016A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Ginette and I would like a raise... Even a few megawatts would be appreciated..."
@@ -3944,8 +3944,8 @@ proc revel {
     conditional_block 0x01 block_8839
     branch_flag_274f
     actor 0x01A4 0x0028 0
-    state[0x1446] = 0x0001
-    state[0x1448] = 0x0000
+    require state[0x1446] == 0x0001
+    require state[0x1448] == 0x0000
     guard_pop
     say 0x016A voice=0x07 flags=0x00 display=0x80 loop=none control=none : "You want to know an unbearable truth, Commander|?"
     say 0x016A voice=0x06 flags=0x00 display=0x80 loop=none control=none : "HONK! Switch yourself off for ten seconds!!!"

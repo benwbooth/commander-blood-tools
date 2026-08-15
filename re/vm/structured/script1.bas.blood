@@ -1,4 +1,4 @@
-// format: bloodscript-v4
+// format: bloodscript-v5
 // image: BAS
 
 object Honk = 0x082A

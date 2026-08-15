@@ -8,7 +8,7 @@ cargo run --bin cbvm -- decompile-structured \
   accuracy/cblood_install/cblood re/vm/structured
 ```
 
-`bloodscript-v4` has no address column or opcode-style uppercase syntax. The
+`bloodscript-v5` has no address column or opcode-style uppercase syntax. The
 compiler lays out statements first, then resolves every label, procedure,
 branch, selector link, and guard target. Generated source uses four-space
 indentation for procedure, guard, selector, and case bodies. Redundant
@@ -25,6 +25,22 @@ state-backed RHS mode from the expression and reproduces the original seven
 bytes. Kind-2 selector `0x11` is also named `current_location`, based on its
 native consumers. Other selector names remain explicit until their roles are
 similarly established.
+
+The `0x6902` bit family is lifted to boolean properties on each object's
+selector-`0x00` `flags` word. The corpus has 177 uses of `active`, `in_play`, or
+`presentable`, corresponding exactly to masks `0x0001`, `0x0002`, and `0x0020`.
+The `AE` and `B0` bytes reach one handler and that handler never reads the
+opcode; both bytes also encode identical operations on identical fields in the
+shipped scripts. `using alternate_encoding` retains a shipped `B0` where byte
+identity requires it and deliberately carries no runtime meaning.
+
+The `0x6946` record family is lifted to 531 location/holder assignments and
+equality requirements plus 49 actor-topic assignments. Selector `0x11` is
+`current_location` for kind `0x0002`, `0x0010`, and `0x0200`, while the same
+parent relation is `holder` for kind-`0x0400` inventory objects. `aboard` is the
+native `0xFFFF` ship-slot sentinel. Kind-2 selector `0x0F` is `topic`; its `BC`
+assignment accepts an interned DIC string and reproduces the exact dictionary
+offset.
 
 The `when target { ... } then { ... }` syntax is a lossless structural form of
 the native `A0 target` / `A1` guard protocol. `when` and `then` emit those
@@ -77,8 +93,9 @@ punctuated spelling and its split form.
 COD and BAS sources also declare exact kind-1 DEB object bases with zero-byte
 `object name = offset` directives. An object name is accepted only in an operand
 position already established as a VAR address, and the compiler lowers it to
-the declared `u16` without changing layout. The current corpus contains 247
-image-local object declarations and 5,962 symbolic uses.
+the declared `u16` without changing layout. The current corpus contains 273
+image-local object declarations; record-value aliases now cover locations,
+holders, and other referenced objects as well as direct operands.
 
 Subrecord addresses use zero-byte `field name = object + delta` declarations only
 when the address has exactly one owner under the native field-offset matrix and
@@ -88,8 +105,8 @@ the VAR kind and matrix selectors. Zero matrix entries, ambiguous owners, and
 unmatched addresses remain hexadecimal rather than using nearest-object guesses.
 
 COD and BAS sources intern exact DIC references as string operands. The current
-corpus has 13,699 distinct referenced offsets and 53,194 uses in dictionary-typed
-`say`, `concept_guard`, `menu`, `case`, and `selector_node` operands. All
+corpus has 13,712 distinct referenced offsets and 53,243 uses in dictionary-typed
+dialogue, concept, menu, selector, and actor-topic operands. All
 shipped references are bare quoted literals resolved through the companion DIC;
 there are no generated dictionary declarations or address suffixes in the
 corpus. Equal text at multiple physical offsets uses the lowest offset as its

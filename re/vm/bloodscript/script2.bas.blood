@@ -1,4 +1,4 @@
-// format: bloodscript-v4
+// format: bloodscript-v5
 // image: BAS
 
 yield
@@ -226,7 +226,7 @@ menu "talk" "bye_bye" "Rondo" "truth"
 say 0x055A voice=0x03 flags=0x40 display=0x80 loop=none control=none : "What you want know, friend?" choices "know"
 say 0x055A voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Rondo you want know planet Rondo, friend|..." choices "Rondo"
 say 0x055A voice=0x06 flags=0x48 display=0x80 loop=none control=none : "Planet Rondo be in Rondalus constellation, coordinates AX4532..." choices "Rondo"
-shared_bit_state 0xB0 0x0B2C 0x0002 0
+bits(0x0B2C,0x0002) = true using alternate_encoding
 say 0x055A voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me not lie..." choices "truth"
 say 0x055A voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Ideal be ideal..." choices "truth"
 say 0x055A voice=0x02 flags=0x41 display=0x80 loop=none control=none : "Me say truth, Commander" choices "truth"
@@ -264,7 +264,7 @@ say 0x055A voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Ecology 
 say 0x055A voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Stars... Me like see sky..." choices "stars"
 say 0x055A voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Big starry sky. Me know Magnalus constellation..." choices "stars"
 say 0x055A voice=0x02 flags=0x48 display=0x80 loop=none control=none : "Magnalus constellation where be planet Magnus, coordinates Magnus 1234.543256 degrees... You like stars..." choices "stars"
-shared_bit_state 0xB0 0x0C04 0x0002 0
+bits(0x0C04,0x0002) = true using alternate_encoding
 say 0x055A voice=0x02 flags=0x41 display=0x80 loop=none control=none : "Stars big science..." choices "stars"
 yield
 yield_b
@@ -344,7 +344,7 @@ say 0x028A voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Mastacho
 say 0x028A voice=0x06 flags=0x40 display=0x80 loop=none control=none : "The factory was replaced by a prison... With SCRUT guards..." choices "mastachok"
 say 0x028A voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Mastachok is completely polluted, poisoned... Its surface is nothing more than ash..." choices "mastachok"
 say 0x028A voice=0x05 flags=0x48 display=0x80 loop=none control=none : "We spared the planet RONDO in the Rondalus X185 Y896 system..." choices "information"
-shared_bit_state 0xB0 0x0B2C 0x0002 0
+bits(0x0B2C,0x0002) = true using alternate_encoding
 say 0x028A voice=0x02 flags=0x01 display=0x80 loop=none control=none : "..."
 yield
 yield_b

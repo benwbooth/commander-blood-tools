@@ -1,4 +1,4 @@
-// format: bloodscript-v4
+// format: bloodscript-v5
 // image: BAS
 
 object blood = 0x0028
@@ -18,8 +18,8 @@ object Magnus = 0x0C02
 field blood.s13 = blood + 0x0008 // VAR kind 0x0001, selector(s) 13
 field Bob_Morlock.conversation_progress = Bob_Morlock + 0x0032 // VAR kind 0x0002, selector(s) 03
 field Bug_Deluxe.s13 = Bug_Deluxe + 0x003A // VAR kind 0x0002, selector(s) 13
-field Rondo.s00 = Rondo + 0x0002 // VAR kind 0x0008, selector(s) 00
-field Magnus.s00 = Magnus + 0x0002 // VAR kind 0x0008, selector(s) 00
+field Rondo.flags = Rondo + 0x0002 // VAR kind 0x0008, selector(s) 00
+field Magnus.flags = Magnus + 0x0002 // VAR kind 0x0008, selector(s) 00
 
 yield
 
@@ -268,7 +268,7 @@ selector Izwalito_choices {
         say Izwalito voice=0x03 flags=0x40 display=0x80 loop=none control=none : "What you want know, friend?" choices "know"
         say Izwalito voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Rondo you want know planet Rondo, friend|..." choices "Rondo"
         say Izwalito voice=0x06 flags=0x48 display=0x80 loop=none control=none : "Planet Rondo be in Rondalus constellation, coordinates AX4532..." choices "Rondo"
-        shared_bit_state 0xB0 Rondo.s00 0x0002 0
+        Rondo.in_play = true using alternate_encoding
         say Izwalito voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me not lie..." choices "truth"
         say Izwalito voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Ideal be ideal..." choices "truth"
         say Izwalito voice=0x02 flags=0x41 display=0x80 loop=none control=none : "Me say truth, Commander" choices "truth"
@@ -309,7 +309,7 @@ selector Izwalito_choices {
         say Izwalito voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Stars... Me like see sky..." choices "stars"
         say Izwalito voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Big starry sky. Me know Magnalus constellation..." choices "stars"
         say Izwalito voice=0x02 flags=0x48 display=0x80 loop=none control=none : "Magnalus constellation where be planet Magnus, coordinates Magnus 1234.543256 degrees... You like stars..." choices "stars"
-        shared_bit_state 0xB0 Magnus.s00 0x0002 0
+        Magnus.in_play = true using alternate_encoding
         say Izwalito voice=0x02 flags=0x41 display=0x80 loop=none control=none : "Stars big science..." choices "stars"
         yield
     }
@@ -399,7 +399,7 @@ selector Morning_Oil_choices {
         say Morning_Oil voice=0x06 flags=0x40 display=0x80 loop=none control=none : "The factory was replaced by a prison... With SCRUT guards..." choices "mastachok"
         say Morning_Oil voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Mastachok is completely polluted, poisoned... Its surface is nothing more than ash..." choices "mastachok"
         say Morning_Oil voice=0x05 flags=0x48 display=0x80 loop=none control=none : "We spared the planet RONDO in the Rondalus X185 Y896 system..." choices "information"
-        shared_bit_state 0xB0 Rondo.s00 0x0002 0
+        Rondo.in_play = true using alternate_encoding
         say Morning_Oil voice=0x02 flags=0x01 display=0x80 loop=none control=none : "..."
         yield
     }

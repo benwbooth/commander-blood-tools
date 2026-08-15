@@ -1,4 +1,4 @@
-// format: bloodscript-v4
+// format: bloodscript-v5
 // image: BAS
 
 yield
@@ -82,7 +82,7 @@ menu "talk" "bye_bye" "rondo" "truth"
 say 0x067A voice=0x03 flags=0x40 display=0x80 loop=none control=none : "What you want know, friend?" choices "knowledge"
 say 0x067A voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Rondo, you want know planet Rondo, friend|..." choices "rondo"
 say 0x067A voice=0x06 flags=0x48 display=0x80 loop=none control=none : "Planet Rondo be in Rondalus constellation, coordinates AX4532..." choices "rondo"
-shared_bit_state 0xB0 0x0C2E 0x0002 0
+bits(0x0C2E,0x0002) = true using alternate_encoding
 say 0x067A voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me not lie..." choices "truth"
 say 0x067A voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Ideal be ideal..." choices "truth"
 say 0x067A voice=0x02 flags=0x41 display=0x80 loop=none control=none : "Me tell truth|, Commander" choices "truth"
@@ -120,7 +120,7 @@ say 0x067A voice=0x02 flags=0x41 display=0x80 loop=none control=none : "Ecology 
 say 0x067A voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Stars. me like look sky..." choices "stars"
 say 0x067A voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Big starry sky. Me know Magnalus constellation" choices "stars"
 say 0x067A voice=0x02 flags=0x48 display=0x80 loop=none control=none : "Planet magnus be in Magnalus constellation. Magnus coordinates 1234,543256 degrees... You like stars?" choices "stars"
-shared_bit_state 0xB0 0x0D06 0x0002 0
+bits(0x0D06,0x0002) = true using alternate_encoding
 say 0x067A voice=0x02 flags=0x41 display=0x80 loop=none control=none : "Stars be big science..." choices "stars"
 yield
 yield_b
@@ -673,7 +673,7 @@ selector_2325:
 selector_node "retirement" 0x0000
 menu "talk" "bye_bye" "Magnus"
 say 0x043A voice=0x01 flags=0x49 display=0x80 loop=none control=none : "Ah, retirement... them send me to planet Magnus with other old robots|... CRY CRY..." choices "retirement"
-shared_bit_state 0xAE 0x0D06 0x0002 0
+bits(0x0D06,0x0002) = true
 yield
 yield_b
 selector_node "talk" selector_27FE

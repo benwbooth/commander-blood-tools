@@ -24,7 +24,7 @@ routine boundaries; `.DIC` and `.VAR` establish separate interned-text and
 initial-state inputs.
 
 All ten shipped `.COD` and `.BAS` images now round-trip byte exactly through
-both `CBVM-ASM` and `bloodscript-v4`. The current BloodScript manifest records
+both `CBVM-ASM` and `bloodscript-v5`. The current BloodScript manifest records
 the unresolved generic-opcode and raw-byte totals rather than folding them into
 semantic coverage.
 
@@ -42,6 +42,49 @@ three family tags outside the dispatch table; the common handler does not read
 the tag either. BloodScript therefore renders the shipped operations as `=`,
 `+=`, `-=`, and signed `require` expressions and derives the original bytes
 from the target category. The generated compiler output remains byte exact.
+
+The shared-bit handler at native offset `0x6902` establishes the complete
+shipped meaning of `AE` and `B0`. In query mode an optional `A1` inverts an
+any-masked-bit test; in update mode it switches OR-mask to AND-complement-mask.
+The outer opcode is never read after dispatch, and the same field, mask,
+polarity, and effect occur under both opcode bytes in the shipped corpus. Native
+consumers establish mask `0x0001` as object `active`, `0x0002` as `in_play`, and
+`0x0020` as the C2 presentation eligibility bit (`presentable`). BloodScript
+therefore emits boolean property expressions. It preserves `B0` with the
+non-semantic `using alternate_encoding` code-generation clause because no
+runtime distinction exists from which that byte could be re-derived.
+
+This alias result has been investigated to the boundary of the shipped
+artifacts. `SCRIPT*.DEB` records only name, offset, and kind; `SCRIPT*.VAR`
+records the same object kind and field storage used by both aliases. The four
+shipped XDB overlays contain recovered runtime/minigame code and no BASIC,
+compiler, parser, variable, keyword, or script-compiler strings. No shipped
+module contains the offline source compiler. The historical reason its compiler
+selected `AE` versus `B0` is therefore absent, while their execution semantics
+are established and identical.
+
+The direct-record handler at native offset `0x6946` establishes the shipped
+`AF` and `BC` forms. In query mode `AF` compares a resolved field to an object
+word and optional `A1` inverts equality. In update mode it assigns that relation
+while maintaining the 16-entry aboard-object list. Operand `blood` maps to
+`0xFFFF` before a query, and `0xFFFF` is the native aboard sentinel. Selector
+`0x11` is consumed as a parent relation by the navigation tree: actor, arche,
+and Orxx records use it as `current_location`; kind-`0x0400` inventory records
+use it as `holder`.
+
+`BC` adds one proven side effect: it publishes its raw RHS through
+`gs:0x6782`. The presentation selector at `0x56FE` consumes that word to choose
+a BAS case and stores it in the active actor's kind-2 selector-`0x0F` field.
+Every shipped `BC` RHS resolves to a DIC word such as `talk`, `hello`, `rien`,
+or `secrets`. BloodScript consequently names the field `topic` and interns the
+quoted RHS through the companion dictionary. All 531 shipped `AF` operations
+and 49 `BC` operations reproduce their original bytes.
+
+Finally, opcode `A9` (`CONDITIONAL_BLOCK`) sets the native query bit just as an
+`A0` guard does. The source formatter now tracks that transition, so conditions
+immediately following an `A9` are rendered as `require` expressions rather than
+updates. A focused compiler test pins the `A9` -> `B0` query -> `A1` -> `BC`
+update sequence byte for byte.
 
 Seven control-flow encodings now have lossless typed statements: `GUARD_PUSH`
 and `GUARD_POP` (`0xA0`/`0xA1`), `JUMP` (`0xA4`), `STATE_ARRAY_TEST` and
@@ -110,7 +153,8 @@ offsets and exact statement order. Across the corpus this yields 1,059 distinct
 COD symbols and 284 BAS labels without changing any output byte.
 
 Kind-1 DEB entries also establish exact VAR object-base names. The structured
-COD and BAS corpus contains 247 image-local declarations and 5,962 proven uses.
+COD and BAS corpus contains 273 image-local declarations, including object
+values recovered from record relations.
 `OBJECT` declarations emit no bytes and retain the original numeric offset.
 
 The native field-offset matrix plus each object's initial VAR kind establishes
@@ -122,8 +166,9 @@ bases priority over fields. Other numeric subrecord addresses remain hexadecimal
 rather than being assigned to a nearby object.
 
 Exact DIC string boundaries establish a second symbolic namespace. The
-structured corpus uses 13,699 referenced offsets in 53,194 proven dictionary
-operands across COD and BAS. All shipped operands are interned bare string
+structured corpus uses 13,712 referenced offsets in 53,243 proven dictionary
+operands across COD and BAS, including the typed actor topics. All shipped
+operands are interned bare string
 literals resolved through the companion DIC rather than routed through generated
 declarations. The compiler chooses the lowest offset as the canonical identity
 for duplicate text and retains `"text"@offset` only for a noncanonical physical

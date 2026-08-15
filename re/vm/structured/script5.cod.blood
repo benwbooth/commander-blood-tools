@@ -1,4 +1,4 @@
-// format: bloodscript-v4
+// format: bloodscript-v5
 // image: COD
 
 object blood = 0x0028
@@ -32,9 +32,12 @@ object menu = 0x0902
 object Venusia = 0x0968
 object Erazor = 0x09C2
 object Mastachok = 0x0A2E
+object prison = 0x0A64
 object Kortex = 0x0B36
 object Rondo = 0x0B72
+object observatory = 0x0BA8
 object Eden = 0x0BDE
+object bar = 0x0C14
 object Magnus = 0x0C4A
 object Cyberock = 0x0D40
 object Corpo = 0x0D5E
@@ -43,9 +46,14 @@ object Kult = 0x0E5A
 object Vulcan = 0x0E96
 object Troma = 0x0EB4
 object Ekatomb = 0x0F0E
+object Trashlando = 0x0F2C
 object Moskito = 0x0F4A
+object usine = 0x0F68
 object airport = 0x0F80
 object Bigbang = 0x0FB8
+object bar1 = 0x0FDC
+object bar2 = 0x0FF4
+object concert = 0x100C
 object arche = 0x1024
 object urout = 0x10E4
 object splatch = 0x127C
@@ -63,11 +71,11 @@ field Fifi.s13 = Fifi + 0x003A // VAR kind 0x0002, selector(s) 13
 field receiver.current_location = receiver + 0x0018 // VAR kind 0x0002, selector(s) 11
 field receiver.s13 = receiver + 0x003A // VAR kind 0x0002, selector(s) 13
 field Eviscerator.s13 = Eviscerator + 0x003A // VAR kind 0x0002, selector(s) 13
-field Eviscerator.s0F = Eviscerator + 0x0046 // VAR kind 0x0002, selector(s) 0F
+field Eviscerator.topic = Eviscerator + 0x0046 // VAR kind 0x0002, selector(s) 0F
 field Hom.current_location = Hom + 0x0018 // VAR kind 0x0002, selector(s) 11
 field Hom.encounter_count = Hom + 0x0036 // VAR kind 0x0002, selector(s) 08
 field Hom.s13 = Hom + 0x003A // VAR kind 0x0002, selector(s) 13
-field Hom.s0F = Hom + 0x0046 // VAR kind 0x0002, selector(s) 0F
+field Hom.topic = Hom + 0x0046 // VAR kind 0x0002, selector(s) 0F
 field Yoko.current_location = Yoko + 0x0018 // VAR kind 0x0002, selector(s) 11
 field Yoko.encounter_count = Yoko + 0x0036 // VAR kind 0x0002, selector(s) 08
 field Yoko.s13 = Yoko + 0x003A // VAR kind 0x0002, selector(s) 13
@@ -79,7 +87,7 @@ field ondoyant.current_location = ondoyant + 0x0018 // VAR kind 0x0002, selector
 field ondoyant.s13 = ondoyant + 0x003A // VAR kind 0x0002, selector(s) 13
 field Anna_Haf.current_location = Anna_Haf + 0x0018 // VAR kind 0x0002, selector(s) 11
 field Anna_Haf.s13 = Anna_Haf + 0x003A // VAR kind 0x0002, selector(s) 13
-field Migrator.s00 = Migrator + 0x0002 // VAR kind 0x0002, selector(s) 00
+field Migrator.flags = Migrator + 0x0002 // VAR kind 0x0002, selector(s) 00
 field Migrator.current_location = Migrator + 0x0018 // VAR kind 0x0002, selector(s) 11
 field Migrator.encounter_count = Migrator + 0x0036 // VAR kind 0x0002, selector(s) 08
 field Migrator.s13 = Migrator + 0x003A // VAR kind 0x0002, selector(s) 13
@@ -103,72 +111,72 @@ field Scruter_Jo.s13 = Scruter_Jo + 0x003A // VAR kind 0x0002, selector(s) 13
 field Tina_Burner.current_location = Tina_Burner + 0x0018 // VAR kind 0x0002, selector(s) 11
 field Tina_Burner.encounter_count = Tina_Burner + 0x0036 // VAR kind 0x0002, selector(s) 08
 field Tina_Burner.s13 = Tina_Burner + 0x003A // VAR kind 0x0002, selector(s) 13
-field Emasculator.s00 = Emasculator + 0x0002 // VAR kind 0x0002, selector(s) 00
+field Emasculator.flags = Emasculator + 0x0002 // VAR kind 0x0002, selector(s) 00
 field Emasculator.current_location = Emasculator + 0x0018 // VAR kind 0x0002, selector(s) 11
 field Emasculator.s13 = Emasculator + 0x003A // VAR kind 0x0002, selector(s) 13
 field Honk.s13 = Honk + 0x003A // VAR kind 0x0002, selector(s) 13
-field Honk.s0F = Honk + 0x0046 // VAR kind 0x0002, selector(s) 0F
+field Honk.topic = Honk + 0x0046 // VAR kind 0x0002, selector(s) 0F
 field menu.s13 = menu + 0x003A // VAR kind 0x0002, selector(s) 13
-field Venusia.s00 = Venusia + 0x0002 // VAR kind 0x0008, selector(s) 00
-field Erazor.s00 = Erazor + 0x0002 // VAR kind 0x0008, selector(s) 00
-field Mastachok.s00 = Mastachok + 0x0002 // VAR kind 0x0008, selector(s) 00
-field Kortex.s00 = Kortex + 0x0002 // VAR kind 0x0008, selector(s) 00
-field Rondo.s00 = Rondo + 0x0002 // VAR kind 0x0008, selector(s) 00
-field Eden.s00 = Eden + 0x0002 // VAR kind 0x0008, selector(s) 00
-field Magnus.s00 = Magnus + 0x0002 // VAR kind 0x0008, selector(s) 00
-field Cyberock.s00 = Cyberock + 0x0002 // VAR kind 0x0008, selector(s) 00
-field Corpo.s00 = Corpo + 0x0002 // VAR kind 0x0008, selector(s) 00
-field Pterra.s00 = Pterra + 0x0002 // VAR kind 0x0008, selector(s) 00
-field Kult.s00 = Kult + 0x0002 // VAR kind 0x0008, selector(s) 00
-field Vulcan.s00 = Vulcan + 0x0002 // VAR kind 0x0008, selector(s) 00
-field Troma.s00 = Troma + 0x0002 // VAR kind 0x0008, selector(s) 00
-field Ekatomb.s00 = Ekatomb + 0x0002 // VAR kind 0x0008, selector(s) 00
-field Moskito.s00 = Moskito + 0x0002 // VAR kind 0x0008, selector(s) 00
-field airport.s00 = airport + 0x0002 // VAR kind 0x0080, selector(s) 00
-field Bigbang.s00 = Bigbang + 0x0002 // VAR kind 0x0010, selector(s) 00
-field arche.s11 = arche + 0x0016 // VAR kind 0x0010, selector(s) 11
-field urout.s11 = urout + 0x0014 // VAR kind 0x0400, selector(s) 11
-field splatch.s11 = splatch + 0x0014 // VAR kind 0x0400, selector(s) 11
-field ring.s11 = ring + 0x0014 // VAR kind 0x0400, selector(s) 11
-field orxx.s11 = orxx + 0x0004 // VAR kind 0x0200, selector(s) 11
+field Venusia.flags = Venusia + 0x0002 // VAR kind 0x0008, selector(s) 00
+field Erazor.flags = Erazor + 0x0002 // VAR kind 0x0008, selector(s) 00
+field Mastachok.flags = Mastachok + 0x0002 // VAR kind 0x0008, selector(s) 00
+field Kortex.flags = Kortex + 0x0002 // VAR kind 0x0008, selector(s) 00
+field Rondo.flags = Rondo + 0x0002 // VAR kind 0x0008, selector(s) 00
+field Eden.flags = Eden + 0x0002 // VAR kind 0x0008, selector(s) 00
+field Magnus.flags = Magnus + 0x0002 // VAR kind 0x0008, selector(s) 00
+field Cyberock.flags = Cyberock + 0x0002 // VAR kind 0x0008, selector(s) 00
+field Corpo.flags = Corpo + 0x0002 // VAR kind 0x0008, selector(s) 00
+field Pterra.flags = Pterra + 0x0002 // VAR kind 0x0008, selector(s) 00
+field Kult.flags = Kult + 0x0002 // VAR kind 0x0008, selector(s) 00
+field Vulcan.flags = Vulcan + 0x0002 // VAR kind 0x0008, selector(s) 00
+field Troma.flags = Troma + 0x0002 // VAR kind 0x0008, selector(s) 00
+field Ekatomb.flags = Ekatomb + 0x0002 // VAR kind 0x0008, selector(s) 00
+field Moskito.flags = Moskito + 0x0002 // VAR kind 0x0008, selector(s) 00
+field airport.flags = airport + 0x0002 // VAR kind 0x0080, selector(s) 00
+field Bigbang.flags = Bigbang + 0x0002 // VAR kind 0x0010, selector(s) 00
+field arche.current_location = arche + 0x0016 // VAR kind 0x0010, selector(s) 11
+field urout.holder = urout + 0x0014 // VAR kind 0x0400, selector(s) 11
+field splatch.holder = splatch + 0x0014 // VAR kind 0x0400, selector(s) 11
+field ring.holder = ring + 0x0014 // VAR kind 0x0400, selector(s) 11
+field orxx.current_location = orxx + 0x0004 // VAR kind 0x0200, selector(s) 11
 field orxx.s13 = orxx + 0x000A // VAR kind 0x0200, selector(s) 13
 
 proc init5 {
     conditional_block 0x01 Beau
     guard_pop
-    shared_bit_state 0xAE Moskito.s00 0x0002 0
-    shared_bit_state 0xAE airport.s00 0x0002 0
-    shared_bit_state 0xAE Corpo.s00 0x0002 0
-    shared_bit_state 0xAE Venusia.s00 0x0002 0
-    shared_bit_state 0xAE Magnus.s00 0x0002 0
-    shared_bit_state 0xAE Rondo.s00 0x0002 0
-    shared_bit_state 0xAE Eden.s00 0x0002 0
-    shared_bit_state 0xAE Ekatomb.s00 0x0002 0
-    shared_bit_state 0xAE Erazor.s00 0x0002 0
-    shared_bit_state 0xAE Kortex.s00 0x0002 0
-    shared_bit_state 0xAE Mastachok.s00 0x0002 0
-    shared_bit_state 0xAE Pterra.s00 0x0002 0
-    shared_bit_state 0xAE Kult.s00 0x0002 0
-    shared_bit_state 0xAE Vulcan.s00 0x0002 0
-    shared_bit_state 0xAE Troma.s00 0x0002 0
-    shared_bit_state 0xAE Emasculator.s00 0x0001 0
-    shared_bit_state 0xAE Migrator.s00 0x0001 0
-    record_wildcard 0xAF Emasculator.current_location 0x0F68 0
-    record_wildcard 0xAF Bob_Morlock.current_location 0xFFFF 0
-    record_wildcard 0xAF Bronko.current_location 0xFFFF 0
-    record_wildcard 0xAF Anna_Haf.current_location 0xFFFF 0
-    record_wildcard 0xAF Beauregard.current_location 0xFFFF 0
-    record_wildcard 0xAF Migrator.current_location 0x0F2C 0
-    record_wildcard 0xAF ondoyant.current_location 0xFFFF 0
-    record_wildcard 0xAF Hom.current_location 0xFFFF 0
+    Moskito.in_play = true
+    airport.in_play = true
+    Corpo.in_play = true
+    Venusia.in_play = true
+    Magnus.in_play = true
+    Rondo.in_play = true
+    Eden.in_play = true
+    Ekatomb.in_play = true
+    Erazor.in_play = true
+    Kortex.in_play = true
+    Mastachok.in_play = true
+    Pterra.in_play = true
+    Kult.in_play = true
+    Vulcan.in_play = true
+    Troma.in_play = true
+    Emasculator.active = true
+    Migrator.active = true
+    Emasculator.current_location = usine
+    Bob_Morlock.current_location = aboard
+    Bronko.current_location = aboard
+    Anna_Haf.current_location = aboard
+    Beauregard.current_location = aboard
+    Migrator.current_location = Trashlando
+    ondoyant.current_location = aboard
+    Hom.current_location = aboard
     state[0x1362] = state[0x1364]
-    record_wildcard 0xAF Amigo.current_location 0x0C14 0
-    record_wildcard 0xAF ondoyant.current_location 0xFFFF 0
-    record_wildcard 0xAF receiver.current_location 0xFFFF 0
-    record_wildcard 0xAF Yoko.current_location 0xFFFF 0
-    record_wildcard 0xAF Maxxon.current_location 0xFFFF 0
-    record_wildcard 0xAF Izwalito.current_location 0x0D5E 0
-    record_wildcard 0xAF Otto_Von_Smile.current_location 0x0F2C 0
+    Amigo.current_location = bar
+    ondoyant.current_location = aboard
+    receiver.current_location = aboard
+    Yoko.current_location = aboard
+    Maxxon.current_location = aboard
+    Izwalito.current_location = Corpo
+    Otto_Von_Smile.current_location = Trashlando
     state[0x1366] = 0x0001
     state[0x1368] = 0x0003
     character_slot 0x01 "match"
@@ -222,22 +230,22 @@ proc morn {
 
 proc mac {
     conditional_block 0x01 mac2
-    record_wildcard 0xAF arche.s11 0x0E5A 0
+    require arche.current_location == Kult
     guard_pop
-    record_wildcard 0xAF Scruter_Mac.current_location 0x0E5A 0
+    Scruter_Mac.current_location = Kult
 }
 
 proc mac2 {
     conditional_block 0x01 kult
-    record_wildcard 0xAF arche.s11 0x0A2E 0
+    require arche.current_location == Mastachok
     guard_pop
-    record_wildcard 0xAF Scruter_Mac.current_location 0x0A2E 0
+    Scruter_Mac.current_location = Mastachok
 }
 
 proc kult {
     conditional_block 0x01 ondo1
     branch_gameflag
-    record_wildcard 0xAF arche.s11 0x0E5A 0
+    require arche.current_location == Kult
     actor Scruter_Mac.s13 blood 0
     guard_pop
     say Scruter_Mac voice=0x00 flags=0x08 display=0x80 loop=none control=none : "Turn around|... Move on... There are too many pilgrims|... The planet's inaccessible|..."
@@ -287,7 +295,7 @@ proc ondo1 {
         say ondoyant voice=0xFF flags=0x20 display=0x80 loop=none control=none : "No no, Mister Bronko... Don't believe a word she says..."
         say ondoyant voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Ha|! Ha|! Ha|! Ha..."
         say ondoyant voice=0x06 flags=0x08 display=0x80 loop=none control=none : "Commander|... I have a ring... I want you to have it... It's yours..."
-        record_wildcard 0xAF ring.s11 0xFFFF 0
+        ring.holder = aboard
         say ondoyant voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander|... She gave us the ring..."
     }
     block_051E:
@@ -298,7 +306,7 @@ proc ondo1 {
 proc big1 {
     conditional_block 0x01 boba0
     branch_gameflag
-    record_wildcard 0xAF arche.s11 0x0FB8 0
+    require arche.current_location == Bigbang
     actor Bug_Deluxe.s13 blood 0
     guard_pop
     say Bug_Deluxe voice=0x00 flags=0x00 display=0x80 loop=none control=none : "You here, Consumer Comrade?"
@@ -320,8 +328,8 @@ proc big1 {
     state[0x136C] = 0x0001
     say Bug_Deluxe voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "NOW..."
     load_string "bobb.hnm"
-    record_wildcard 0xAF Bug_Deluxe.current_location 0x0F2C 0
-    record_wildcard 0xAF Tina_Burner.current_location 0x0FB8 0
+    Bug_Deluxe.current_location = Trashlando
+    Tina_Burner.current_location = Bigbang
     record_clear Bug_Deluxe.s13
 }
 
@@ -329,7 +337,7 @@ proc boba0 {
     conditional_block 0x01 boba1
     branch_flag_274f
     actor Bob_Morlock.s13 blood 0
-    state[0x136C] = 0x0001
+    require state[0x136C] == 0x0001
     guard_pop
     say Bob_Morlock voice=0x01 flags=0x00 display=0x80 loop=none control=none : "What's the story??? What's this BIG BANG business???..."
     say Bob_Morlock voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Did we get to the BIG BANG, yes or no??? I'm listening, Commander|..."
@@ -380,7 +388,7 @@ proc boba1 {
     actor Bob_Morlock.s13 blood 0
     guard_pop
     when block_0CA7 {
-        shared_bit_state 0xAE Bigbang.s00 0x0002 1
+        require !Bigbang.in_play
     } then {
         say Bob_Morlock voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Aaaah..."
         say Bob_Morlock voice=0x03 flags=0x00 display=0x80 loop=none control=none : "When will we get to the Big Bang? It's URGENT, Commander|..."
@@ -396,7 +404,7 @@ proc boba1 {
     }
     block_0CA7:
     when big2 {
-        shared_bit_state 0xAE Bigbang.s00 0x0002 0
+        require Bigbang.in_play
     } then {
         say Bob_Morlock voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Lets go to the Bigbang..."
         say Bob_Morlock voice=0xFF flags=0x08 display=0x80 loop=none control=none : "..."
@@ -407,7 +415,7 @@ proc boba1 {
 proc big2 {
     conditional_block 0x01 bar1
     branch_gameflag
-    record_wildcard 0xAF arche.s11 0x0FB8 0
+    require arche.current_location == Bigbang
     actor Tina_Burner.s13 blood 0
     guard_pop
     say Tina_Burner voice=0x00 flags=0x00 display=0x80 loop=none control=none : "Ohhh... It's you|, Commander|..."
@@ -424,15 +432,15 @@ proc big2 {
     say Tina_Burner voice=0x02 flags=0x00 display=0x80 loop=none control=none : "MIGRA OH MIGRA SWEETIE... GUESS WHO'S COME..."
     say Tina_Burner voice=0x01 flags=0x08 display=0xB0 loop=none control=none : "Go join him for a stiff one, Commander|..."
     poke_byte 0x0CD0 0x00
-    record_wildcard 0xAF Migrator.current_location 0x0FDC 0
-    record_wildcard 0xAF Tina_Burner.current_location 0x0F2C 0
+    Migrator.current_location = bar1
+    Tina_Burner.current_location = Trashlando
     record_state 0xC1 orxx.s13 0x0FDC 0
 }
 
 proc bar1 {
     conditional_block 0x01 big3
     branch_gameflag
-    record_wildcard 0xAF arche.s11 0x0FB8 0
+    require arche.current_location == Bigbang
     actor Migrator.s13 blood 0
     guard_pop
     say Migrator voice=0x01 flags=0x00 display=0x80 loop=none control=none : "You here, Commander! My good friend|... Did Burny tell you the news?"
@@ -446,30 +454,30 @@ proc bar1 {
     say Migrator voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Holy handouts... Where do we find a wedding band at this time of day or night?"
     say Migrator voice=0x02 flags=0x08 display=0xC0 loop=none control=none : "See you soon|, Commander|..."
     poke_byte 0x0EBB 0x00
-    record_wildcard 0xAF Migrator.current_location 0x0F2C 0
-    record_wildcard 0xAF Tina_Burner.current_location 0x0FF4 0
-    record_wildcard 0xAF Yoko.current_location 0x0FB8 0
+    Migrator.current_location = Trashlando
+    Tina_Burner.current_location = bar2
+    Yoko.current_location = Bigbang
     record_clear Migrator.s13
 }
 
 proc big3 {
     conditional_block 0x01 bar2
     branch_gameflag
-    record_wildcard 0xAF arche.s11 0x0FB8 0
+    require arche.current_location == Bigbang
     actor Yoko.s13 blood 0
     guard_pop
     say Yoko voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Commander! Yoko happy to see you again..."
     say Yoko voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander|... It's young Yoko|..."
     say Yoko voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Migrator and Tina wait for wedding ring..."
     guard_push block_10E3 // unstructured_guard=alternate_exit
-    record_wildcard 0xAF ring.s11 0x0028 0
+    require ring.holder == blood
     guard_pop
     say Yoko voice=0x05 flags=0x00 display=0x80 loop=none control=none : "You have ring?"
     say Yoko voice=0xFF flags=0x20 display=0x80 loop=none control=none : "No problem, Mister Yoko|... We have the wedding band right here..."
     say Yoko voice=0x06 flags=0x00 display=0x80 loop=none control=none : "YES|!!! Me happy..."
     say Yoko voice=0x07 flags=0x08 display=0xA0 loop=none control=none : "You go bar, Tina be impatient..."
     poke_byte 0x1019 0x00
-    record_wildcard 0xAF Fifi.current_location 0x0FDC 0
+    Fifi.current_location = bar1
     record_state 0xC1 orxx.s13 0x0FDC 0
     block_10E3:
     say Yoko voice=0xFF flags=0x20 display=0x80 loop=none control=none : "You agreed to get a ring|, Commander|. You'll have to deliver..."
@@ -482,7 +490,7 @@ proc big3 {
 proc bar2 {
     conditional_block 0x01 bar3
     branch_gameflag
-    record_wildcard 0xAF arche.s11 0x0FB8 0
+    require arche.current_location == Bigbang
     actor Fifi.s13 blood 0
     guard_pop
     say Fifi voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Ga..."
@@ -491,16 +499,16 @@ proc bar2 {
     say Fifi voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Fifi come for party... Fifi like eat also..."
     say Fifi voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Beautiful Tina look for you|, Commander|. She be at other bar..."
     say Fifi voice=0x05 flags=0x08 display=0xA0 loop=none control=none : "You hurry, Commander|... Hee|! Hee! Hee!"
-    record_wildcard 0xAF Fifi.current_location 0x0F2C 0
-    record_wildcard 0xAF Migrator.current_location 0x0FDC 0
+    Fifi.current_location = Trashlando
+    Migrator.current_location = bar1
     record_state 0xC1 orxx.s13 0x0FF4 0
 }
 
 proc bar3 {
     conditional_block 0x01 bar4
     branch_gameflag
-    record_wildcard 0xAF arche.s11 0x0FB8 0
-    record_wildcard 0xAF orxx.s11 0x0FF4 0
+    require arche.current_location == Bigbang
+    require orxx.current_location == bar2
     actor Tina_Burner.s13 blood 0
     guard_pop
     say Tina_Burner voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Ah!! There you are at last, Commander|... Everyone's waiting for you|..."
@@ -528,8 +536,8 @@ proc bar3 {
 proc bar4 {
     conditional_block 0x01 finalmen
     branch_gameflag
-    record_wildcard 0xAF arche.s11 0x0FB8 0
-    record_wildcard 0xAF orxx.s11 0x0FDC 0
+    require arche.current_location == Bigbang
+    require orxx.current_location == bar1
     actor Migrator.s13 blood 0
     guard_pop
     say Migrator voice=0x06 flags=0x00 display=0x80 loop=none control=none : "What's going on? My Tina's in tears..."
@@ -546,14 +554,14 @@ proc bar4 {
     block_14EB:
     say Migrator voice=0x08 flags=0x08 display=0x90 loop=none control=none : "Thank you, COMMANDER... Get comfortable... The show's about to start.."
     record_state 0xC1 orxx.s13 0x100C 0
-    record_wildcard 0xAF Migrator.current_location 0x100C 0
+    Migrator.current_location = concert
 }
 
 proc finalmen {
     conditional_block 0x01 corpo1
     branch_gameflag
-    record_wildcard 0xAF arche.s11 0x0FB8 0
-    record_wildcard 0xAF orxx.s11 0x100C 0
+    require arche.current_location == Bigbang
+    require orxx.current_location == concert
     actor Migrator.s13 blood 0
     guard_pop
     say Migrator voice=0xFF flags=0x28 display=0x80 loop=none control=none : "SILENCE IT'S STARTING...."
@@ -607,8 +615,8 @@ proc finalmen {
 proc corpo1 {
     conditional_block 0x01 t10
     branch_gameflag
-    state[0x136E] = 0x0000
-    record_wildcard 0xAF arche.s11 0x0D5E 0
+    require state[0x136E] == 0x0000
+    require arche.current_location == Corpo
     actor Izwalito.s13 blood 0
     guard_pop
     say Izwalito voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Izwalito happy see you again, friend|..."
@@ -617,7 +625,7 @@ proc corpo1 {
     say Izwalito voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Sorry|... me not have much time|..."
     say Izwalito voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Me in hurry, Bossanova impatient..."
     say Izwalito voice=0x05 flags=0x08 display=0x90 loop=none control=none : "Bye bye|, friend Commander|..."
-    record_wildcard 0xAF Izwalito.current_location 0x0F2C 0
+    Izwalito.current_location = Trashlando
     record_clear Izwalito.s13
 }
 
@@ -691,19 +699,19 @@ proc masta1 {
 proc masta5 {
     conditional_block 0x01 masta6
     branch_gameflag
-    state[0x1370] = 0x0000
+    require state[0x1370] == 0x0000
     actor Eviscerator.s13 blood 0
-    record_wildcard 0xAF arche.s11 0x0A2E 0
+    require arche.current_location == Mastachok
     guard_pop
     say Eviscerator voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Me know you|... You give me mummy... and CURSE..."
     say Eviscerator voice=0x04 flags=0x00 display=0x80 loop=none control=none : "ME HATE YOU..."
     say Eviscerator voice=0x07 flags=0x08 display=0x80 loop=none control=none : "WHAT YOU WANT STRANGER?"
-    record_wildcard 0xBC Eviscerator.s0F 0x0001 0
+    Eviscerator.topic = "talk"
     when block_1B1F {
         require state[0x1372] == 0x0001
     } then {
         say Eviscerator voice=0x06 flags=0x08 display=0x90 loop=none control=none : "You like secrets... Me tell secrets"
-        record_wildcard 0xBC Eviscerator.s0F 0x0F67 0
+        Eviscerator.topic = "secrets"
         state[0x1372] = 0x0000
     }
     block_1B1F:
@@ -741,16 +749,16 @@ proc masta5 {
 proc masta6 {
     conditional_block 0x01 amig2
     branch_gameflag
-    state[0x1370] = 0x0001
-    record_wildcard 0xAF orxx.s11 0x0A64 0
+    require state[0x1370] == 0x0001
+    require orxx.current_location == prison
     actor Eviscerator.s13 blood 0
     guard_pop
     say Eviscerator voice=0x08 flags=0x00 display=0x80 loop=none control=none : "You have splatch???"
     say Eviscerator voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Me big CROOLIS EVISCERATOR. Me want escape... CRY... CRY... GNASH..."
     say Eviscerator voice=0x01 flags=0x08 display=0x80 loop=none control=none : "CRY... GNASH..."
-    record_wildcard 0xBC Eviscerator.s0F 0x066E 0
+    Eviscerator.topic = "hate"
     when block_1D35 {
-        record_wildcard 0xAF splatch.s11 0x0028 0
+        require splatch.holder == blood
     } then {
         say Eviscerator voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Give him the splatch, Commander|... We need the treasure..."
         say Eviscerator voice=0xFF flags=0x08 display=0x80 loop=none control=none : "TELEPORT SPLATCH TO EVISCERATOR"
@@ -758,7 +766,7 @@ proc masta6 {
     }
     block_1D35:
     when block_1DAC {
-        record_wildcard 0xAF splatch.s11 0x01B2 0
+        require splatch.holder == Eviscerator
     } then {
         say Eviscerator voice=0x06 flags=0x00 display=0x80 loop=none control=none : "You want know where be treasure..."
         say Eviscerator voice=0x08 flags=0x00 display=0x80 loop=none control=none : "Treasure be on planet TUMUL..."
@@ -769,8 +777,8 @@ proc masta6 {
     }
     block_1DAC:
     when amig2 {
-        record_wildcard 0xAF splatch.s11 0x0028 1
-        record_wildcard 0xAF splatch.s11 0x01B2 1
+        require splatch.holder != blood
+        require splatch.holder != Eviscerator
     } then {
         say Eviscerator voice=0x0A flags=0x00 display=0x80 loop=none control=none : "INSULT... UGLY SWEAR... GNASH... GNASH... UGLY LAUGH..."
         say Eviscerator voice=0x0C flags=0x00 display=0x80 loop=none control=none : "ME HATE YOU... INSULT...."
@@ -782,10 +790,10 @@ proc masta6 {
 proc amig2 {
     conditional_block 0x01 yok1
     branch_gameflag
-    record_wildcard 0xAF Amigo.current_location 0x0C14 0
+    require Amigo.current_location == bar
     actor Amigo.s13 blood 0
-    record_wildcard 0xAF arche.s11 0x0BDE 0
-    state[0x1376] = 0x0000
+    require arche.current_location == Eden
+    require state[0x1376] == 0x0000
     guard_pop
     say Amigo voice=0x03 flags=0x00 display=0x80 loop=none control=none : "HALT HIC STRANGER!!!"
     say Amigo voice=0x05 flags=0x00 display=0x80 loop=none control=none : "The Bar's hic! shut... Hic!"
@@ -805,15 +813,15 @@ proc yok1 {
     say Yoko voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Commander|... MAXXON and me would like to get back to our home on the planet RONDO..."
     say Yoko voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Can you drop us off there?|..."
     when block_1F75 {
-        record_wildcard 0xAF arche.s11 0x0B72 0
+        require arche.current_location == Rondo
     } then {
         say Yoko voice=0xFF flags=0x30 display=0x80 loop=block_1F75 control=none : "Why don't we teleport them, Commander|..." choices "teleport" "refuse"
         when block_1F56 {
             concept_guard "teleport" 0
         } then {
             say Yoko voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "TELEPORT YOKO AND MAXXON ON RONDO"
-            record_wildcard 0xAF Yoko.current_location 0x0B72 0
-            record_wildcard 0xAF Maxxon.current_location 0x0BA8 0
+            Yoko.current_location = Rondo
+            Maxxon.current_location = observatory
             clear_alternate_concept
         }
         block_1F56:
@@ -827,7 +835,7 @@ proc yok1 {
     }
     block_1F75:
     when block_1FAB {
-        record_wildcard 0xAF arche.s11 0x0B72 1
+        require arche.current_location != Rondo
         require state[0x1368] > 0x0003
     } then {
         say Yoko voice=0xFF flags=0x28 display=0x80 loop=none control=none : "We'll need to get closer to RONDO to teleport them|..."
@@ -846,15 +854,15 @@ proc max1 {
     say Maxxon voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Commander|... Yoko and me would like to get back to our home on the planet RONDO..."
     say Maxxon voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Can you drop us off there?|..."
     when block_2079 {
-        record_wildcard 0xAF arche.s11 0x0B72 0
+        require arche.current_location == Rondo
     } then {
         say Maxxon voice=0xFF flags=0x30 display=0x80 loop=block_2079 control=none : "Why don't we teleport them, Commander..." choices "teleport" "refuse"
         when block_205C {
             concept_guard "teleport" 0
         } then {
             say Maxxon voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "TELEPORT YOKO AND MAXXON TO RONDO"
-            record_wildcard 0xAF Maxxon.current_location 0x0BA8 0
-            record_wildcard 0xAF Yoko.current_location 0x0B72 0
+            Maxxon.current_location = observatory
+            Yoko.current_location = Rondo
             clear_alternate_concept
         }
         block_205C:
@@ -868,7 +876,7 @@ proc max1 {
     }
     block_2079:
     when block_20AF {
-        record_wildcard 0xAF arche.s11 0x0B72 1
+        require arche.current_location != Rondo
         require state[0x1368] > 0x0003
     } then {
         say Maxxon voice=0xFF flags=0x28 display=0x80 loop=none control=none : "We'll need to get closer to RONDO to teleport them|..."
@@ -882,7 +890,7 @@ proc max1 {
 proc ronda {
     conditional_block 0x01 max3
     branch_gameflag
-    record_wildcard 0xAF arche.s11 0x0B72 0
+    require arche.current_location == Rondo
     actor Yoko.s13 blood 0
     guard_pop
     say Yoko voice=0x00 flags=0x00 display=0x80 loop=none control=none : "Me happy be back on my planet, Commander|..."
@@ -891,15 +899,15 @@ proc ronda {
     say Yoko voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Good, Mister Honk|..."
     say Yoko voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Ha|! Ha|! ha! You gotta love that Yoko|..."
     say Yoko voice=0x05 flags=0x48 display=0xA0 loop=none control=none : "See you soon|, Commander|..." choices "bye_bye"
-    record_wildcard 0xAF Yoko.current_location 0x0BA8 0
-    record_wildcard 0xAF Maxxon.current_location 0x0B72 0
+    Yoko.current_location = observatory
+    Maxxon.current_location = Rondo
     record_clear Yoko.s13
 }
 
 proc max3 {
     conditional_block 0x01 glu2
     branch_gameflag
-    record_wildcard 0xAF arche.s11 0x0B72 0
+    require arche.current_location == Rondo
     actor Maxxon.s13 blood 0
     guard_pop
     say Maxxon voice=0x09 flags=0x00 display=0x80 loop=none control=none : "Hello, friend|..."
@@ -915,7 +923,7 @@ proc max3 {
 proc glu2 {
     conditional_block 0x01 monop1
     branch_gameflag
-    record_wildcard 0xAF arche.s11 0x0F0E 0
+    require arche.current_location == Ekatomb
     actor Daddy_Gluxx.s13 blood 0
     guard_pop
     say Daddy_Gluxx voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Ho! The visitor from far away in space and time|..."
@@ -928,33 +936,33 @@ proc glu2 {
     say Daddy_Gluxx voice=0x04 flags=0x00 display=0x80 loop=none control=none : "After what they've been through,"
     say Daddy_Gluxx voice=0x01 flags=0x00 display=0x80 loop=none control=none : "I can't refuse them anything|... Ha|! Ha|! Ha|..."
     say Daddy_Gluxx voice=0xFF flags=0x08 display=0x90 loop=none control=none : "Bye bye|, Commander|... You'll always be welcome here..."
-    record_wildcard 0xAF Daddy_Gluxx.current_location 0x0F2C 0
+    Daddy_Gluxx.current_location = Trashlando
     record_clear Daddy_Gluxx.s13
 }
 
 proc monop1 {
     conditional_block 0x01 bronk1
-    record_wildcard 0xAF arche.s11 0x0968 0
+    require arche.current_location == Venusia
     actor Bug_Deluxe.s13 blood 0
     guard_pop
     say Bug_Deluxe voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Hi there, Consumer Comrade. The VENUSIA SUPRAMARKET is shut today..."
     say Bug_Deluxe voice=0x02 flags=0x00 display=0x80 loop=none control=none : "It's a vacation for everybody..."
     say Bug_Deluxe voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Come back another time|... Oh and, Consumer Comrade... Remember to bring your creds"
     say Bug_Deluxe voice=0x00 flags=0x08 display=0x90 loop=none control=none : "Bye bye|, Consumer Comrade..."
-    record_wildcard 0xAF Bug_Deluxe.current_location 0x0FB8 0
+    Bug_Deluxe.current_location = Bigbang
     record_clear Bug_Deluxe.s13
 }
 
 proc bronk1 {
     conditional_block 0x01 emasc0
     branch_flag_274f
-    state[0x1378] = 0x0000
+    require state[0x1378] == 0x0000
     actor Bronko.s13 blood 0
     guard_pop
     say Bronko voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Everything's okay, Commander|..."
     say Bronko voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Don't hesitate if you need me..."
     when block_268E {
-        shared_bit_state 0xAE Bigbang.s00 0x0002 0
+        require Bigbang.in_play
     } then {
         say Bronko voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Teleport me to the BIG BANG, Commander|... I want to party! Gee, I love weddings..."
         say Bronko voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Oh! You're not going to leave me here alone, are you|, Mister Bronko? I'm a sucker for weddings too|..."
@@ -987,7 +995,7 @@ proc emasc0 {
     conditional_block 0x01 hom0
     branch_gameflag
     actor Emasculator.s13 blood 0
-    state[0x137A] = 0x0000
+    require state[0x137A] == 0x0000
     guard_pop
     say Emasculator voice=0x01 flags=0x00 display=0x80 loop=none control=none : "What you want, stranger? You want murffalo meat?"
     say Emasculator voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Me not can sell murffalo... Me shut store..."
@@ -995,20 +1003,20 @@ proc emasc0 {
     say Emasculator voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Me pack bags... You not waste my time|..."
     say Emasculator voice=0x05 flags=0x00 display=0x80 loop=none control=none : "BYE BYE..."
     say Emasculator voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
-    record_wildcard 0xAF Emasculator.current_location 0x0F2C 0
+    Emasculator.current_location = Trashlando
     record_clear Emasculator.s13
 }
 
 proc hom0 {
     conditional_block 0x01 hom1
     branch_flag_274f
-    record_wildcard 0xAF Yoko.current_location 0xFFFF 0
+    require Yoko.current_location == aboard
     actor Hom.s13 blood 0
     guard_pop
     say Hom voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Ha|! ha! Big Bang|... Black holes... You're out of your mind..."
     say Hom voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Commander|... Yoko and Maxxon would like to get back home on the planet RONDO..."
     say Hom voice=0x06 flags=0x08 display=0x80 loop=none control=none : "They're impatient..."
-    record_wildcard 0xBC Hom.s0F 0x0001 0
+    Hom.topic = "talk"
     say Hom voice=0x07 flags=0x48 display=0x80 loop=none control=none : "Bye bye... Me sleep in star dust..." choices "bye_bye"
     record_clear Hom.s13
 }
@@ -1016,7 +1024,7 @@ proc hom0 {
 proc hom1 {
     conditional_block 0x01 hom1_2922
     branch_flag_274f
-    record_wildcard 0xAF Yoko.current_location 0xFFFF 1
+    require Yoko.current_location != aboard
     actor Hom.s13 blood 0
     guard_pop
     say Hom voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Ha|! ha! Big Bang|... Black holes... You're out of your mind..."
@@ -1028,14 +1036,14 @@ proc hom1 {
     say Hom voice=0x05 flags=0x00 display=0x80 loop=none control=none : "And blur into a cybertrip..."
     say Hom voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Wasn't that beautiful, Commander|... We just experienced poetic creation..."
     say Hom voice=0x04 flags=0x08 display=0x90 loop=none control=none : "Bye bye|, my friends... BYE BYE..."
-    record_wildcard 0xAF Hom.current_location 0x0B36 0
+    Hom.current_location = Kortex
     record_clear Hom.s13
 }
 
 proc hom1_2922 {
     conditional_block 0x01 hom2
     branch_gameflag
-    record_wildcard 0xAF urout.s11 0x0028 1
+    require urout.holder != blood
     actor Hom.s13 blood 0
     guard_pop
     say Hom voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Welcome stranger|... You be big traveller..."
@@ -1058,7 +1066,7 @@ proc hom1_2922 {
     say Hom voice=0x04 flags=0x00 display=0x80 loop=none control=none : "You go planet CYBEROCK..."
     say Hom voice=0x04 flags=0x00 display=0x80 loop=none control=none : "You study cyberknowledge, friend|..."
     say Hom voice=0x05 flags=0x08 display=0x80 loop=none control=none : "Cyberock be in Cyberius system, coordinates X234 Y546..."
-    shared_bit_state 0xAE Cyberock.s00 0x0002 0
+    Cyberock.in_play = true
     say Hom voice=0xFF flags=0x20 display=0x80 loop=none control=none : "We already know that, Commander|... Old Tube-head's going gaga..."
     say Hom voice=0x06 flags=0x00 display=0x80 loop=none control=none : "Me wait here with U.R.O.U.T|..."
     say Hom voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "Bye bye friend|..."
@@ -1070,7 +1078,7 @@ proc hom1_2922 {
 proc hom2 {
     conditional_block 0x01 jour
     branch_gameflag
-    state[0x137C] = 0x0001
+    require state[0x137C] == 0x0001
     actor Hom.s13 blood 0
     guard_pop
     say Hom voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Welcome stranger|... You be big traveller..."
@@ -1087,7 +1095,7 @@ proc hom2 {
     }
     block_2C0A:
     when block_2C59 {
-        record_wildcard 0xAF urout.s11 0x0028 1
+        require urout.holder != blood
     } then {
         say Hom voice=0xFF flags=0x00 display=0x80 loop=none control=none : "You must take U.R.O.U.T exam on planet CYBEROCK..."
         say Hom voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Me wait for you|..."
@@ -1096,16 +1104,16 @@ proc hom2 {
     }
     block_2C59:
     when jour {
-        record_wildcard 0xAF urout.s11 0x0028 0
+        require urout.holder == blood
     } then {
         say Hom voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Bravo Commander|. You be talented..."
         say Hom voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Me have good news for you|... Me know where be Big Bang|..."
         say Hom voice=0xFF flags=0x08 display=0x80 loop=none control=none : "Big Bang be at coordinates X543 Y769..."
-        shared_bit_state 0xAE Bigbang.s00 0x0002 0
+        Bigbang.in_play = true
         say Hom voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Bye bye|, friend|... ME see you at Big Bang|.... Ha Ha Ha|..."
         say Hom voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Well|, how about that!"
         say Hom voice=0xFF flags=0x08 display=0x90 loop=none control=none : "..."
-        record_wildcard 0xAF Hom.current_location 0x0F2C 0
+        Hom.current_location = Trashlando
         record_clear Hom.s13
     }
 }
@@ -1113,10 +1121,10 @@ proc hom2 {
 proc jour {
     conditional_block 0x01 bonj1
     branch_gameflag
-    state[0x137E] = 0x0000
+    require state[0x137E] == 0x0000
     actor Cyberquizz.s13 blood 0
-    record_wildcard 0xAF urout.s11 0x028A 1
-    record_wildcard 0xAF arche.s11 0x0D40 0
+    require urout.holder != Cyberquizz
+    require arche.current_location == Cyberock
     guard_pop
     say Cyberquizz voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Bye bye|, student Commander Blood. You are a member of the \"GUILD OF MEMBERS\"..."
     say Cyberquizz voice=0x02 flags=0x08 display=0x80 loop=none control=none : "..."
@@ -1126,9 +1134,9 @@ proc jour {
 proc bonj1 {
     conditional_block 0x01 bonj2
     branch_gameflag
-    state[0x137E] = 0x0000
+    require state[0x137E] == 0x0000
     actor Cyberquizz.s13 blood 0
-    record_wildcard 0xAF arche.s11 0x0D40 0
+    require arche.current_location == Cyberock
     guard_pop
     poke_byte 0x3056 0x01
     poke_byte 0x30FF 0x01
@@ -1171,9 +1179,9 @@ proc bonj1 {
 proc bonj2 {
     conditional_block 0x00 Bof_ok
     branch_gameflag
-    state[0x137E] = 0x0000
+    require state[0x137E] == 0x0000
     actor Cyberquizz.s13 blood 0
-    record_wildcard 0xAF arche.s11 0x0D40 0
+    require arche.current_location == Cyberock
     guard_pop
     say Cyberquizz voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Student Commander Blood... This is a big day in your life|..."
     say Cyberquizz voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Holy harpoons! That is hideous, Commander..."
@@ -1188,7 +1196,7 @@ proc Bof_ok {
     conditional_block 0x01 perdu
     branch_gameflag
     actor Cyberquizz.s13 blood 0
-    state[0x1382] = 0x0005
+    require state[0x1382] == 0x0005
     guard_pop
     say Cyberquizz voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Believe it or not... You have passed your U.R.O.U.T."
     say Cyberquizz voice=0xFF flags=0x28 display=0x80 loop=none control=none : "YESSS!!!! I KNEW YOU COULD DO IT COMMANDER..."
@@ -1208,7 +1216,7 @@ proc Bof_ok {
     say Cyberquizz voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "stop"
     state[0x1382] = 0x0000
     state[0x1380] = 0x0000
-    shared_bit_state 0xAE Cyberock.s00 0x0002 1
+    Cyberock.in_play = false
     record_clear Cyberquizz.s13
 }
 
@@ -1216,7 +1224,7 @@ proc perdu {
     conditional_block 0x01 Q1
     branch_gameflag
     actor Cyberquizz.s13 blood 0
-    state[0x1380] = 0x0020
+    require state[0x1380] == 0x0020
     require state[0x1382] < 0x000A
     guard_pop
     say Cyberquizz voice=0x0A flags=0x00 display=0x80 loop=none control=none : "You failed!"
@@ -2150,14 +2158,14 @@ proc scrujo {
 proc bigb1 {
     conditional_block 0x01 veuv
     branch_gameflag
-    record_wildcard 0xAF Tina_Burner.current_location 0x0F2C 0
+    require Tina_Burner.current_location == Trashlando
     actor Migrator.s13 blood 0
     guard_pop
     say Migrator voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Me greet you|, friend|..."
     say Migrator voice=0x02 flags=0x00 display=0x80 loop=none control=none : "You have ring???..."
     say Migrator voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Me soon marry TINA... YOU COME WEDDING. ME INVITE YOU. WE MAKE BIG CONCERT..."
     when block_4650 {
-        record_wildcard 0xAF ring.s11 0x0028 0
+        require ring.holder == blood
     } then {
         say Migrator voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Teleport him the ring|, Commander|. That'll make his day...."
         say Migrator voice=0xFF flags=0x10 display=0x80 loop=block_45D2 control=none : "RING TELEPORTED TO MIGRATOR" choices "TELEPORT"
@@ -2187,7 +2195,7 @@ proc bigb1 {
 proc veuv {
     conditional_block 0x01 veuv1
     branch_presentation
-    record_wildcard 0xAF Bug_Deluxe.current_location 0x0FB8 0
+    require Bug_Deluxe.current_location == Bigbang
     guard_pop
     record_link Scruter_K.s13 blood 0
     poke_byte 0x46BC 0x01
@@ -2216,7 +2224,7 @@ proc menbr {
     conditional_block 0x01 men1
     branch_presentation
     actor menu.s13 blood 0
-    record_wildcard 0xAF Bronko.current_location 0xFFFF 0
+    require Bronko.current_location == aboard
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"IMPROVED MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today CHEF BRONKO has laid out for you:"
@@ -2234,7 +2242,7 @@ proc men1 {
     conditional_block 0x01 men2
     branch_presentation
     actor menu.s13 blood 0
-    record_wildcard 0xAF Bronko.current_location 0xFFFF 1
+    require Bronko.current_location != aboard
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
@@ -2253,7 +2261,7 @@ proc men2 {
     conditional_block 0x01 men3
     branch_presentation
     actor menu.s13 blood 0
-    record_wildcard 0xAF Bronko.current_location 0xFFFF 1
+    require Bronko.current_location != aboard
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
@@ -2271,7 +2279,7 @@ proc men2 {
 proc men3 {
     conditional_block 0x01 men4
     branch_presentation
-    record_wildcard 0xAF Bronko.current_location 0xFFFF 1
+    require Bronko.current_location != aboard
     actor menu.s13 blood 0
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
@@ -2291,7 +2299,7 @@ proc men4 {
     conditional_block 0x01 men5
     branch_presentation
     actor menu.s13 blood 0
-    record_wildcard 0xAF Bronko.current_location 0xFFFF 1
+    require Bronko.current_location != aboard
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
@@ -2310,7 +2318,7 @@ proc men5 {
     conditional_block 0x01 men6
     branch_presentation
     actor menu.s13 blood 0
-    record_wildcard 0xAF Bronko.current_location 0xFFFF 1
+    require Bronko.current_location != aboard
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"IMPROVED MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
@@ -2341,7 +2349,7 @@ proc revel {
     conditional_block 0x01 honk1
     branch_flag_274f
     actor Bob_Morlock.s13 blood 0
-    state[0x1386] = 0x0000
+    require state[0x1386] == 0x0000
     guard_pop
     say Bob_Morlock voice=0x07 flags=0x00 display=0x80 loop=none control=none : "Would you care to know an unbearable truth, Commander|?"
     say Bob_Morlock voice=0x06 flags=0x00 display=0x80 loop=none control=none : "HONK! Switch yourself off for ten seconds!!!"
@@ -2432,7 +2440,7 @@ proc honk1 {
     when block_5088 {
         require state[0x1368] > 0x0002
         require Hom.encounter_count < 0x0002
-        shared_bit_state 0xAE Bigbang.s00 0x0002 1
+        require !Bigbang.in_play
     } then {
         say Honk voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Commander|, I'm sure that HOM is a vital link in the chain that leads to the Big Bang..."
         state[0x1368] -= 0x0003
@@ -2449,7 +2457,7 @@ proc honk1 {
     block_50C6:
     when block_50FC {
         require state[0x1368] > 0x0002
-        record_wildcard 0xAF Yoko.current_location 0xFFFF 0
+        require Yoko.current_location == aboard
         require Yoko.encounter_count == 0x0000
     } then {
         say Honk voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Commander, don't forget Yoko and Maxxon asleep CRYOBOX..."
@@ -2458,7 +2466,7 @@ proc honk1 {
     block_50FC:
     when block_5146 {
         require state[0x1368] > 0x0002
-        record_wildcard 0xAF Yoko.current_location 0xFFFF 0
+        require Yoko.current_location == aboard
         require Yoko.encounter_count > 0x0000
     } then {
         say Honk voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Approach the planet RONDO and talk to Yoko or Maxxon in the CRYOBOX in order to teleport them..."
@@ -2475,7 +2483,7 @@ proc honk1 {
     block_5175:
     when block_51B6 {
         require state[0x1368] > 0x0002
-        record_wildcard 0xAF ring.s11 0x03AA 0
+        require ring.holder == ondoyant
         require state[0x1388] == state[0x138A]
         require Migrator.encounter_count > 0x0000
     } then {
@@ -2484,7 +2492,7 @@ proc honk1 {
     }
     block_51B6:
     say Honk voice=0xFF flags=0x28 display=0x80 loop=none control=none : "More information?"
-    record_wildcard 0xBC Honk.s0F 0x0001 0
+    Honk.topic = "talk"
     say Honk voice=0xFF flags=0x68 display=0x80 loop=none control=none : "Bye bye|, Commander|..." choices "bye_bye"
     record_clear Honk.s13
     block_51E2:

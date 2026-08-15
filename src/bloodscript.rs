@@ -17,7 +17,7 @@ use crate::vm::{self, VmToken};
 use crate::vm_cfg::{GuardRecovery, GuardRejection, StructuredGuard, analyze_structured_guards};
 use crate::vm_source::{self, ImageKind};
 
-const SOURCE_FORMAT: &str = "bloodscript-v4";
+const SOURCE_FORMAT: &str = "bloodscript-v5";
 const READABLE_SOURCE_FORMAT: &str = "bloodscript-v2";
 const LEGACY_SOURCE_FORMAT: &str = "bloodscript-ir-v1";
 
@@ -1255,8 +1255,28 @@ fn normalize_modern_statement(
         }
         "say" => normalize_modern_say(&fields, line_number, lexicon),
         "text" | "text_tokens" => normalize_modern_text(&fields, line_number),
-        "require" => normalize_modern_shared_expression(&fields[1..], true, line_number),
+        "require" => {
+            if let Some(statement) =
+                normalize_modern_bit_expression(&fields[1..], true, line_number)?
+            {
+                return Ok(statement);
+            }
+            if let Some(statement) =
+                normalize_modern_record_expression(&fields[1..], true, line_number)?
+            {
+                return Ok(statement);
+            }
+            normalize_modern_shared_expression(&fields[1..], true, line_number)
+        }
         _ => {
+            if let Some(statement) = normalize_modern_bit_expression(&fields, false, line_number)? {
+                return Ok(statement);
+            }
+            if let Some(statement) =
+                normalize_modern_record_expression(&fields, false, line_number)?
+            {
+                return Ok(statement);
+            }
             if fields.len() == 3 && matches!(fields[1], "=" | "+=" | "-=") {
                 return normalize_modern_shared_expression(&fields, false, line_number);
             }
@@ -1276,6 +1296,134 @@ fn normalize_modern_statement(
             }
         }
     }
+}
+
+fn normalize_modern_bit_expression(
+    fields: &[&str],
+    query: bool,
+    line_number: usize,
+) -> Result<Option<String>> {
+    let (fields, opcode) = if fields.ends_with(&["using", "alternate_encoding"]) {
+        (&fields[..fields.len() - 2], "B0")
+    } else {
+        (fields, "AE")
+    };
+    let (target, inverted) = if query {
+        if fields.len() != 1 {
+            return Ok(None);
+        }
+        let (inverted, target) = fields[0]
+            .strip_prefix('!')
+            .map_or((false, fields[0]), |target| (true, target));
+        (target, inverted)
+    } else {
+        if fields.len() != 3 || fields[1] != "=" {
+            return Ok(None);
+        }
+        let inverted = match fields[2] {
+            "true" => false,
+            "false" => true,
+            _ => return Ok(None),
+        };
+        (fields[0], inverted)
+    };
+    let Some((field, mask)) = modern_bit_target_to_canonical(target, line_number)? else {
+        return Ok(None);
+    };
+    Ok(Some(format!(
+        "SHARED_BIT_STATE {opcode} {field} {mask} {}",
+        bool_digit(inverted)
+    )))
+}
+
+fn modern_bit_target_to_canonical(
+    value: &str,
+    line_number: usize,
+) -> Result<Option<(String, String)>> {
+    for (suffix, mask) in [
+        (".active", "0001"),
+        (".in_play", "0002"),
+        (".presentable", "0020"),
+    ] {
+        if let Some(owner) = value.strip_suffix(suffix) {
+            return Ok(Some((
+                modern_operand_to_canonical(&format!("{owner}.flags"), line_number)?,
+                mask.to_string(),
+            )));
+        }
+    }
+    let Some(inner) = value
+        .strip_prefix("bits(")
+        .and_then(|value| value.strip_suffix(')'))
+    else {
+        return Ok(None);
+    };
+    let Some((field, mask)) = inner.split_once(',') else {
+        bail!("line {line_number}: bits(FIELD,MASK) requires two operands");
+    };
+    Ok(Some((
+        modern_operand_to_canonical(field, line_number)?,
+        modern_operand_to_canonical(mask, line_number)?,
+    )))
+}
+
+fn normalize_modern_record_expression(
+    fields: &[&str],
+    query: bool,
+    line_number: usize,
+) -> Result<Option<String>> {
+    if fields.len() != 3 {
+        return Ok(None);
+    }
+    let Some((record, topic)) = modern_record_target_to_canonical(fields[0], line_number)? else {
+        return Ok(None);
+    };
+    let inverted = match (query, fields[1]) {
+        (true, "==") => false,
+        (true, "!=") => true,
+        (false, "=") => false,
+        _ => return Ok(None),
+    };
+    if query && topic {
+        bail!("line {line_number}: actor topics are published, not queried, by shipped bytecode");
+    }
+    let opcode = if topic { "BC" } else { "AF" };
+    let value = if fields[2] == "aboard" {
+        "FFFF".to_string()
+    } else {
+        modern_operand_to_canonical(fields[2], line_number)?
+    };
+    Ok(Some(format!(
+        "RECORD_WILDCARD {opcode} {record} {value} {}",
+        bool_digit(inverted)
+    )))
+}
+
+fn modern_record_target_to_canonical(
+    value: &str,
+    line_number: usize,
+) -> Result<Option<(String, bool)>> {
+    if value.ends_with(".topic") {
+        return Ok(Some((
+            modern_operand_to_canonical(value, line_number)?,
+            true,
+        )));
+    }
+    if let Some(inner) = bracketed_operand(value, "topic") {
+        return Ok(Some((
+            modern_operand_to_canonical(inner, line_number)?,
+            true,
+        )));
+    }
+    if value.ends_with(".current_location") || value.ends_with(".holder") {
+        return Ok(Some((
+            modern_operand_to_canonical(value, line_number)?,
+            false,
+        )));
+    }
+    Ok(bracketed_operand(value, "record")
+        .map(|inner| modern_operand_to_canonical(inner, line_number).map(|inner| (inner, false)))
+        .transpose()?)
 }
 
 fn normalize_modern_shared_expression(
@@ -1604,6 +1752,8 @@ fn modern_statement(
             Ok(result)
         }
         "SHARED_STATE" => modern_shared_state(args, query_mode, line_number),
+        "SHARED_BIT_STATE" => modern_shared_bit_state(args, query_mode, line_number),
+        "RECORD_WILDCARD" => modern_record_wildcard(args, query_mode, line_number),
         "END" => Ok("halt".to_string()),
         _ => {
             let args = args
@@ -1617,6 +1767,86 @@ fn modern_statement(
                 Ok(format!("{command} {}", args.join(" ")))
             }
         }
+    }
+}
+
+fn modern_shared_bit_state(args: &[&str], query: bool, line_number: usize) -> Result<String> {
+    if args.len() != 4 {
+        bail!("line {line_number}: malformed generated SHARED_BIT_STATE statement");
+    }
+    let encoding = match args[0] {
+        "AE" => "",
+        "B0" => " using alternate_encoding",
+        opcode => bail!(
+            "line {line_number}: shared-bit opcode 0x{opcode} has no established shipped meaning"
+        ),
+    };
+    let field = canonical_operand_to_modern(args[1]);
+    let target = match (field.strip_suffix(".flags"), args[2]) {
+        (Some(owner), "0001") => format!("{owner}.active"),
+        (Some(owner), "0002") => format!("{owner}.in_play"),
+        (Some(owner), "0020") => format!("{owner}.presentable"),
+        _ => format!(
+            "bits({},{})",
+            field,
+            canonical_operand_to_modern(args[2])
+        ),
+    };
+    let inverted = args[3] == "1";
+    if !matches!(args[3], "0" | "1") {
+        bail!("line {line_number}: shared-bit inversion must be 0 or 1");
+    }
+    Ok(if query {
+        format!(
+            "require {}{target}{encoding}",
+            if inverted { "!" } else { "" }
+        )
+    } else {
+        format!("{target} = {}{encoding}", if inverted { "false" } else { "true" })
+    })
+}
+
+fn modern_record_wildcard(args: &[&str], query: bool, line_number: usize) -> Result<String> {
+    if args.len() != 4 {
+        bail!("line {line_number}: malformed generated RECORD_WILDCARD statement");
+    }
+    let field = canonical_operand_to_modern(args[1]);
+    let left = match args[0] {
+        "AF" if field.ends_with(".current_location") || field.ends_with(".holder") => field,
+        "BC" if field.ends_with(".topic") => field,
+        "BC" => format!("topic[{field}]"),
+        _ => format!("record[{field}]"),
+    };
+    let inverted = args[3] == "1";
+    if !matches!(args[3], "0" | "1") {
+        bail!("line {line_number}: record comparison inversion must be 0 or 1");
+    }
+    match args[0] {
+        "AF" => {
+            let right = if args[2] == "FFFF" {
+                "aboard".to_string()
+            } else {
+                canonical_operand_to_modern(args[2])
+            };
+            Ok(if query || inverted {
+                format!(
+                    "require {left} {} {right}",
+                    if inverted { "!=" } else { "==" }
+                )
+            } else {
+                format!("{left} = {right}")
+            })
+        }
+        "BC" if !query && !inverted => Ok(format!(
+            "{left} = {}",
+            canonical_operand_to_modern(args[2])
+        )),
+        "BC" => bail!(
+            "line {line_number}: shipped 0xBC publishes a topic only in update mode"
+        ),
+        opcode => bail!(
+            "line {line_number}: record-wildcard opcode 0x{opcode} has no established shipped source meaning"
+        ),
     }
 }
 
@@ -1795,7 +2025,7 @@ fn format_modern_source(
             _ => {}
         }
         match name {
-            "WHEN" | "GUARD_PUSH" => query_mode = true,
+            "WHEN" | "GUARD_PUSH" | "CONDITIONAL_BLOCK" => query_mode = true,
             "THEN" | "GUARD_POP" => query_mode = false,
             _ => {}
         }
@@ -1859,7 +2089,7 @@ fn decompile_cod(
         object_aliases: object_aliases.len(),
         object_alias_uses: tokens
             .iter()
-            .flat_map(object_operand_values)
+            .flat_map(cod_object_operand_values)
             .filter(|value| object_aliases.contains_key(value))
             .count(),
         dictionary_offsets: dictionary_aliases.len(),
@@ -1990,7 +2220,7 @@ fn decompile_bas(
         object_aliases: object_aliases.len(),
         object_alias_uses: vm_tokens
             .iter()
-            .flat_map(object_operand_values)
+            .flat_map(cod_object_operand_values)
             .filter(|value| object_aliases.contains_key(value))
             .count(),
         field_aliases: field_aliases.len(),
@@ -2378,7 +2608,7 @@ fn bas_next_operand(target: u16, labels: &HashMap<u16, String>) -> String {
 }
 
 fn cod_object_aliases(tokens: &[VmToken], symbols: &[DebSymbol]) -> BTreeMap<u16, ObjectAlias> {
-    let referenced: BTreeSet<u16> = tokens.iter().flat_map(object_operand_values).collect();
+    let referenced: BTreeSet<u16> = tokens.iter().flat_map(cod_object_operand_values).collect();
 
     let mut aliases = BTreeMap::new();
     for symbol in symbols
@@ -2516,9 +2746,12 @@ fn simplify_alias_identifiers(
 
 fn semantic_field_component(alias: &FieldAlias) -> Option<&'static str> {
     match (alias.kind, alias.selectors.as_slice()) {
+        (_, [0x00]) => Some("flags"),
         (0x0002, [0x03]) => Some("conversation_progress"),
         (0x0002, [0x08]) => Some("encounter_count"),
-        (0x0002, [0x11]) => Some("current_location"),
+        (0x0002 | 0x0010 | 0x0200, [0x11]) => Some("current_location"),
+        (0x0400, [0x11]) => Some("holder"),
+        (0x0002, [0x0F]) => Some("topic"),
         _ => None,
     }
 }
@@ -2555,8 +2788,24 @@ fn dictionary_operand_values(token: &VmToken) -> Vec<u16> {
     match token {
         VmToken::Text { word_offsets, .. } => word_offsets.clone(),
         VmToken::ConceptGuard { word_offset, .. } => vec![*word_offset],
+        VmToken::RecordWildcard {
+            opcode: 0xBC,
+            value,
+            ..
+        } => vec![*value],
         _ => Vec::new(),
     }
+}
+
+fn cod_object_operand_values(token: &VmToken) -> Vec<u16> {
+    let mut values = object_operand_values(token);
+    if let VmToken::RecordWildcard { opcode, value, .. } = token
+        && *opcode != 0xBC
+        && *value != 0xFFFF
+    {
+        values.push(*value);
+    }
+    values
 }
 
 fn bas_vm_tokens(image: &[u8], dictionary: &HashMap<u16, String>) -> Vec<VmToken> {
@@ -2698,6 +2947,13 @@ fn object_operand(
                 .get(&value)
                 .map(|alias| alias.identifier.clone())
         })
+        .unwrap_or_else(|| format!("{value:04X}"))
+}
+
+fn record_value_operand(value: u16, object_aliases: &BTreeMap<u16, ObjectAlias>) -> String {
+    object_aliases
+        .get(&value)
+        .map(|alias| alias.identifier.clone())
         .unwrap_or_else(|| format!("{value:04X}"))
 }
 
@@ -2873,12 +3129,19 @@ fn emit_token(
             value,
             inverted,
             ..
-        } => write!(
-            output,
-            "RECORD_WILDCARD {opcode:02X} {} {value:04X} {}",
-            object_operand(*record_offset, object_aliases, field_aliases),
-            bool_digit(*inverted)
-        )?,
+        } => {
+            let value = if *opcode == 0xBC {
+                dictionary_operands.operand(*value)
+            } else {
+                record_value_operand(*value, object_aliases)
+            };
+            write!(
+                output,
+                "RECORD_WILDCARD {opcode:02X} {} {value} {}",
+                object_operand(*record_offset, object_aliases, field_aliases),
+                bool_digit(*inverted)
+            )?
+        }
         VmToken::RecordState {
             opcode,
             record_offset,
@@ -3298,7 +3561,20 @@ fn compile_statement(
                 &mut output,
                 parse_object_address(args[1], objects, line, "record offset")?,
             );
-            word(&mut output, parse_word(args[2], line, "value")?);
+            word(
+                &mut output,
+                if opcode == 0xBC {
+                    parse_dictionary_address(
+                        args[2],
+                        dictionary_words,
+                        interned_dictionary_words,
+                        line,
+                        "topic",
+                    )?
+                } else {
+                    parse_object_address(args[2], objects, line, "record value")?
+                },
+            );
         }
         "GLOBAL_WORD_COMPARE" => {
             require_count(args, 3, line, name)?;
@@ -3674,14 +3950,60 @@ mod tests {
         assert!(
             decompiled
                 .source
-                .contains("shared_bit_state 0xAE 0x2345 0x00FF 1")
+                .contains("bits(0x2345,0x00FF) = false")
         );
         assert!(
             decompiled
                 .source
-                .contains("record_wildcard 0xAF 0x4567 0xFFFF 1")
+                .contains("require record[0x4567] != aboard")
         );
         assert_eq!(compile(&decompiled.source).unwrap(), expected);
+    }
+
+    #[test]
+    fn semantic_flags_and_topics_preserve_query_mode_and_encoding() {
+        let image = vec![
+            0xA9, 0x01, 0x0F, 0x00, // conditional block -> query mode
+            0xB0, 0x02, 0x01, 0x02, 0x00, // alternate encoding: planet.in_play
+            0xA1, // return to update mode
+            0xBC, 0x46, 0x02, 0x34, 0x12, // actor.topic = "secrets"
+            0xFF,
+        ];
+        let mut var = vec![0; 0x280];
+        var[0x100..0x102].copy_from_slice(&8u16.to_le_bytes());
+        var[0x200..0x202].copy_from_slice(&2u16.to_le_bytes());
+        let symbols = vec![
+            DebSymbol {
+                name: "planet".to_string(),
+                offset: 0x0100,
+                kind: 1,
+            },
+            DebSymbol {
+                name: "actor".to_string(),
+                offset: 0x0200,
+                kind: 1,
+            },
+        ];
+        let dictionary = HashMap::from([(0x1234, "secrets".to_string())]);
+        let decompiled = decompile_structured_cod_with_symbols(
+            &image,
+            &var,
+            &dictionary,
+            &symbols,
+        )
+        .unwrap();
+        for statement in [
+            "field planet.flags = planet + 0x0002",
+            "field actor.topic = actor + 0x0046",
+            "require planet.in_play using alternate_encoding",
+            "actor.topic = \"secrets\"",
+        ] {
+            assert!(decompiled.source.contains(statement), "missing {statement}");
+        }
+        assert_eq!(
+            compile_with_dictionary(&decompiled.source, &dictionary).unwrap(),
+            image
+        );
     }
 
     #[test]

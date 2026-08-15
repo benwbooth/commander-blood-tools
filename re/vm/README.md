@@ -83,7 +83,7 @@ cargo run --bin cbvm -- compile-bloodscript \
   /path/to/SCRIPT1.DIC
 ```
 
-Generated `bloodscript-v4` source is intended for editing rather than for
+Generated `bloodscript-v5` source is intended for editing rather than for
 reading as a decorated disassembly. It uses lowercase statements, `0x` numeric
 literals, `none` for absent optional values, declaration expressions, label
 colons, concise DEB-derived names, and four-space indentation. A layout pass
@@ -114,10 +114,22 @@ The shared-word handler at native offset `0x6863` is represented as ordinary
 assignments and signed `require` comparisons. Script-global words use
 `state[address]`; the proven kind-2 fields are named `encounter_count`,
 `conversation_progress`, and `current_location`. The compiler reconstructs the
-original family, operator, and RHS-mode bytes from these expressions. The
-shared bit and direct-record handlers at `0x6902` and `0x6946` remain explicit
-typed statements while their source-level opcode distinctions are investigated;
-their optional `A1` prefixes and operands still round-trip exactly.
+original family, operator, and RHS-mode bytes from these expressions.
+
+The shared-bit handler at `0x6902` is represented as boolean properties:
+`active`, `in_play`, and `presentable`. These are native masks `0x0001`,
+`0x0002`, and `0x0020` in each object's selector-`0x00` `flags` word. Native
+opcodes `AE` and `B0` are execution-identical aliases, including occurrences on
+the same field with the same effect. BloodScript uses the ordinary property form
+for `AE` and appends `using alternate_encoding` for `B0`; that clause preserves
+the original byte without claiming a behavior the handler does not have.
+
+The direct-record handler at `0x6946` is represented as assignments and
+`require` equality tests. Selector `0x11` is `current_location` on actor, ship,
+and Orxx records, and `holder` on kind-`0x0400` inventory records. The native
+`0xFFFF` ship-slot value is spelled `aboard`. Opcode `BC` publishes a
+dictionary-backed actor `topic`, so source such as `Eviscerator.topic =
+"secrets"` compiles to the original DIC offset and `BC` byte.
 
 The native control-flow handlers at `0x6559`, `0x6572`, `0x65DB`, `0x65EB`,
 `0x6830`, `0x6494`, and `0x64A0` are represented as guard push/pop, jump,
@@ -178,9 +190,9 @@ emit no bytes, but symbolic operands are resolved and range-checked by the
 two-pass BloodScript compiler. The generated corpus contains 1,059 distinct COD
 symbols and 284 BAS selector labels while retaining exact layout.
 
-The structured COD and BAS sources additionally use 247 image-local zero-byte
+The structured COD and BAS sources additionally use 273 image-local zero-byte
 `OBJECT` declarations recovered from exact kind-1 DEB offsets. They replace
-5,962 proven VAR object-base operands while retaining the original numeric
+direct operands and record relation values while retaining the original numeric
 offset in each declaration.
 
 A first subrecord pass adds 367 zero-byte `field name = object + delta`
@@ -191,9 +203,9 @@ textual proximity, zero matrix entries, ambiguous owners, and unmatched
 addresses do not produce an alias. The compiler resolves the declared wrapping
 base-plus-delta expression back to the original `u16` address.
 
-The structured COD and BAS sources intern 13,699 distinct referenced DIC offsets
-as readable string operands, with 53,194 uses in `TEXT`, `CONCEPT_GUARD`,
-`MENU`, `CASE`, and low-level selector-node statements. They are bare quoted
+The structured COD and BAS sources intern 13,712 distinct referenced DIC offsets
+as readable string operands, with 53,243 uses in dialogue, concept, menu,
+selector, and actor-topic positions. They are bare quoted
 literals resolved through the companion DIC image; the shipped corpus needs no
 generated dictionary declarations or address suffixes. If equal text exists at
 multiple offsets, the lowest offset is canonical and a noncanonical reference
