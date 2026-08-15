@@ -31,6 +31,8 @@ void CB_NEAR list_d8c_activate_entry(
     cb_u16 source_offset;
     cb_u16 record_offset;
     cb_u16 record_extent;
+    cb_u16 expected_key;
+    cb_u16 linked_key;
     cb_u16 selected_storage_segment;
     cb_u16 layout;
     cb_u16 row_mode;
@@ -77,12 +79,14 @@ void CB_NEAR list_d8c_activate_entry(
 
     if (layout == LIST_D8C_LINK_MARKER) {
         link = (const volatile list_d8c_link_record CB_FAR *)cursor;
+        expected_key = link->expected_key;
         cursor = (volatile cb_u16 CB_FAR *)link->target;
-        if (*cursor++ != link->expected_key) {
+        linked_key = *cursor++;
+        layout = *cursor++;
+        if (linked_key != expected_key) {
             queue_d8c_consume();
             return;
         }
-        layout = *cursor++;
         source_segment = FP_SEG(cursor);
     }
 

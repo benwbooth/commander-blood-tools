@@ -787,15 +787,21 @@ stubbed; the flag helper executes directly.
 
 The one-function natural candidate uses a packed typed link record, direct far
 pointers, and ordinary structured conditionals. It has no register model,
-memory emulator, or inline assembly. Open Watcom `-3 -ox -mh` compiles the
-actual candidate and probe warning-free to 177 instructions and 506 bytes
-versus 73/208 original. The probe has a 1.37 percent instruction LCS, 60.27
-percent mnemonic-sequence LCS, 78.08 percent mnemonic-multiset overlap, and
-8.22 percent byte-line LCS. Exact integration still needs the original
-AX/ES:SI/BP entry convention, DS/GS aliases, offset-only pointer updates,
-LODSW/STOSW lowering, hidden-result adaptation for the ignored decode result,
-and the tail jump into queue consumption. Reverse DF is recorded outside the
-shipped clear-DF C contract.
+memory emulator, or inline assembly. Its `mm` path explicitly reads the
+expected key, target pointer, linked key, and linked layout in binary order,
+including the unconditional layout read before a rejected link is consumed.
+The compiler-corpus sample includes this authoritative source directly. Open
+Watcom `-3 -ox -s -mm -zdf` compiles it warning-free to 121 instructions/330
+bytes versus 73/208 original, with 61.64 percent ordered, 79.45 percent
+mnemonic-multiset, and 8.22 percent byte-line overlap. Turbo C `-mm -O -Z`
+emits 140 instructions with 65.75 percent ordered and 82.19 percent multiset
+overlap and assembles warning-free to OBJ.
+
+Both recovered callers use the typed source API. Isolated replacement still
+needs the original AX/ES:SI/BP entry convention, DS/GS aliases, offset-only
+pointer updates, LODSW/STOSW lowering, hidden-result adaptation for the ignored
+decode result, and the tail jump into queue consumption. Reverse DF is recorded
+outside the shipped clear-DF C contract.
 
 For `0x00A867`, nine direct vectors prove the complete checksum-`0xAB` payload
 grammar: six skipped header bytes, LSB-first sentinel control words, literals,
@@ -3826,7 +3832,7 @@ LCS and then mnemonic similarity:
 | `ems_resource_flush` | huge, `-ox`, register | 38/33 | 0.1316 | 0.4211 | 0.1316 |
 | `list_d8c_refill_with_rollover_latch` | huge, `-ox`, register | 14/10 | 0.1429 | 0.5000 | 0.2143 |
 | `list_d8c_refill` | medium, `-ox`, register | 91/136 | 0.0220 | 0.6264 | 0.0879 |
-| `list_d8c_activate_entry` | huge, `-ox`, register | 73/177 | 0.0137 | 0.6027 | 0.0822 |
+| `list_d8c_activate_entry` | medium, `-ox`, register | 73/121 | 0.0137 | 0.6164 | 0.0822 |
 | `ship_3d_depth_scroll_step` | medium, `-ox`, register | 29/27 | 0.0345 | 0.6207 | 0.0690 |
 | `snd_driver_call` | medium, `-ox`, register | 12/4 | 0.0833 | 0.2500 | 0.0833 |
 | `ems_transfer_dispatch` | medium, `-ox`, register | 13/22 | 0.3846 | 0.6154 | 0.3846 |
