@@ -561,13 +561,19 @@ replacement still needs a narrow adapter for CX input and carry-clear success.
 
 For `0x00A3D0`, eight direct-execution boundary cases confirm the natural
 queue-consumption source, including the distinction between discarded overflow
-from `tail + 2` and wrapping overflow from the following entry-size add. Turbo C
-2.01 medium emits 40 instructions and Open Watcom 1.9 medium emits 32, versus
-the original 20. Both retain the two unsigned wrap tests and counter rollover,
-but neither emits the original LES SI/LODSW pointer advance or register effects.
-An exploratory non-volatile Watcom build shortened the routine to 29
-instructions but reordered shared-state accesses, so it is not accepted as the
-recovered source formulation.
+from `tail + 2` and wrapping overflow from the following entry-size add. The
+authoritative source now calculates either next tail and publishes it once,
+matching the binary's single state write. Open Watcom 1.9 medium
+(`-3 -ox -s -mm -zdf -we`) emits 29 instructions/87 bytes versus 20/59
+original, with 70 percent mnemonic-multiset and 60 percent ordered overlap.
+Turbo C 2.01 medium emits 42 instructions with 90 percent multiset and 85
+percent ordered overlap and assembles warning-free to OBJ.
+
+Both recovered C consumers use only the resulting queue state. Neither
+compiler emits the original LES/LODSW pointer advance, tail jump, or terminal
+register effects, but those are isolated binary boundaries. The natural helper
+is accepted because it retains every observable state transition and both
+16-bit overflow rules without an emulation layer or inline assembly.
 
 For `0x00A40B`, exhaustive direct execution over all 256 state-byte values
 confirms that ZF is set exactly for zero and one and that all registers are
