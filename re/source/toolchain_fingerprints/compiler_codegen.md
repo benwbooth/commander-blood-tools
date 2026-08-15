@@ -5025,15 +5025,21 @@ state ownership against DS/ES/SS decoys, immutable code and program-counter
 state, all register/segment preservation, path-specific defined flags, and the
 near-return boundary.
 
-Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the actual candidate
-warning-free to 52 instructions/111 bytes versus the original 32/59. The
-ordinary-data codegen probe is 44 instructions/84 bytes and has a 71.88
-percent mnemonic-sequence LCS and 75 percent mnemonic-multiset overlap. The
-candidate uses four guarded inline save/restore instructions solely to retain
-incoming AX and ES around the natural C body. `MK_FP` preserves the recovered
-segment-plus-wrapping-offset model. The shipped clear-DF C invariant and the
-binary's final flags remain explicit integration boundaries; the backward-DF
-vector documents binary behavior outside the natural candidate's C domain.
+Open Watcom 1.9 large (`-3 -os -s -ml -we`) compiles the maintained candidate
+directly and warning-free to 57 instructions/105 bytes versus the original
+32/59. Both mnemonic-sequence LCS and mnemonic-multiset overlap are 75 percent.
+Turbo C 2.01 large emits 54 instructions with 68.75 percent overlap and a
+valid 658-byte OMF object. The Watcom candidate uses six guarded inline
+save/restore instructions solely to retain incoming AX, DS, and ES around the
+natural C body. Preserving DS is required because the sole caller continues
+to read its code image through DS after this call; the prior AX/ES-only version
+was therefore not integration-correct. `MK_FP` preserves the recovered
+segment-plus-wrapping-source-offset model, and the generated code retains the
+path-specific compare/zero flags. Every recovered `STD` site restores `CLD`,
+so the natural forward loop is accepted under the shipped clear-DF invariant;
+the backward-DF vector continues to document direct-binary behavior outside
+the C source domain. Exact replacement would additionally require compact
+`LODSW`/`STOSW` lowering and the original hand-written frame.
 
 ## BLOODPRG palette transition step candidate
 

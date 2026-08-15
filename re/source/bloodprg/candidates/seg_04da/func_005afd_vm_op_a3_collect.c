@@ -25,6 +25,7 @@ void CB_NEAR vm_op_a3_collect(void)
 
 #if defined(__WATCOMC__)
     _asm push ax;
+    _asm push ds;
     _asm push es;
 #endif
 
@@ -34,6 +35,7 @@ void CB_NEAR vm_op_a3_collect(void)
             != BLOODPRG_VM_CONCEPT_OPCODE) {
 #if defined(__WATCOMC__)
         _asm pop es;
+        _asm pop ds;
         _asm pop ax;
 #endif
         return;
@@ -59,6 +61,7 @@ void CB_NEAR vm_op_a3_collect(void)
 
 #if defined(__WATCOMC__)
     _asm pop es;
+    _asm pop ds;
     _asm pop ax;
 #endif
 }
