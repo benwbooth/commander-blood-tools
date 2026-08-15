@@ -290,7 +290,7 @@ void CB_NEAR presentation_line_zero_run(
         cb_u16 link_target_offset); /* 0x001EC1 */
 void CB_NEAR presentation_line_one_stream_run(
         cb_u16 link_target_offset); /* 0x001F10 */
-void CB_FAR dlg_menu_words_inline_reveal_step(void); /* 0x0072A8 */
+void CB_SAVE_REGS CB_FAR dlg_menu_words_inline_reveal_step(void); /* 0x0072A8 */
 void CB_FAR presentation_ready_gate(void); /* 0x008963 */
 
 #define BLOODPRG_VM_DIRECTORY_ACTIVE_KIND 0x0001u

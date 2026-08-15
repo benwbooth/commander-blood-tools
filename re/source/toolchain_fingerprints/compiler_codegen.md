@@ -1368,14 +1368,28 @@ split initial-DS/GS case. They prove both helper ABIs and order, every state
 write, source immutability, path-specific upper-EAX clearing, preservation of
 all other registers and segments, final flags, stack integrity, and far return.
 
-Open Watcom 1.9 medium (`-3 -ox -mm -zdf -we`) compiles the actual natural
-one-function candidate warning-free to 90 instructions/278 bytes versus the
-original 83/243, with 84.34 percent mnemonic-multiset overlap and no inline
-assembly. Size (`-os`) and time (`-ot`) optimization produce larger 288- and
-291-byte bodies. The retained full-source invariants are the shipped DS=GS data
-group and zero-offset DIC image. Direct replacement additionally needs the
-original ES menu cursor, ambient dictionary DS and restoration, stale AH color
-input, active-path upper-EAX clearing, and exact register/flag envelope.
+Replacing the copied miniature probe with the authoritative candidate exposed
+an ABI defect that the old codegen numbers concealed. Watcom's `modify exact
+[]` declaration tells callers that registers survive, but does not make a C
+definition save them: the former 90-instruction/278-byte body returned from
+active paths with DS still selecting the menu or dictionary and AX clobbered.
+The corrected definition uses the established `__saveregs` modifier, one
+Watcom-only AX push/pop pair, and the binary's active-path `XOR EAX,EAX`.
+Every exit now restores AX, DS, ES, and the general registers while retaining
+the original path-specific upper-EAX behavior.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdf -we`) compiles that corrected natural
+function warning-free to 96 instructions/282 bytes versus the original 83/243,
+with 90.36 percent mnemonic-multiset overlap. Turbo C 2.01 medium emits 174
+instructions. Watcom size mode cannot allocate the DS:SI custom helper
+parameters for the authoritative source and rejects it with E1122; speed mode
+is therefore the measured integration configuration rather than comparing
+against the old mini-probe. The source expressions preserve the current-word
+base addition and raw-next-offset asymmetry even for a nonzero DIC base, as the
+oracle proves. Full-source integration relies only on the shipped `SS=DS=GS`
+data group for globals. Exact direct replacement additionally needs initial
+DS-versus-GS storage when split, the word offset's stale AH in the byte-color
+renderer call, and the original register allocation.
 
 Object A6 scanner `0x00739B` receives an absolute object-record offset in BX.
 It walks the top-level script through the real `vm_token_advance` decoder and
