@@ -434,7 +434,7 @@ proc big2 {
     big2.enabled = false
     Migrator.current_location = bar1
     Tina_Burner.current_location = Trashlando
-    record_state 0xC1 orxx.action 0x0FDC 0
+    navigate to bar1
 }
 
 proc bar1 {
@@ -478,7 +478,7 @@ proc big3 {
     say Yoko voice=0x07 flags=0x08 display=0xA0 loop=none control=none : "You go bar, Tina be impatient..."
     big3.enabled = false
     Fifi.current_location = bar1
-    record_state 0xC1 orxx.action 0x0FDC 0
+    navigate to bar1
     block_10E3:
     say Yoko voice=0xFF flags=0x20 display=0x80 loop=none control=none : "You agreed to get a ring|, Commander|. You'll have to deliver..."
     say Yoko voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Whatever it takes..."
@@ -501,7 +501,7 @@ proc bar2 {
     say Fifi voice=0x05 flags=0x08 display=0xA0 loop=none control=none : "You hurry, Commander|... Hee|! Hee! Hee!"
     Fifi.current_location = Trashlando
     Migrator.current_location = bar1
-    record_state 0xC1 orxx.action 0x0FF4 0
+    navigate to bar2
 }
 
 proc bar3 {
@@ -530,7 +530,7 @@ proc bar3 {
     say Tina_Burner voice=0xFF flags=0x00 display=0x80 loop=none control=none : "YES sir... Right down..."
     say Tina_Burner voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Okay|... Let's go see MIGRATOR, Commander|..."
     say Tina_Burner voice=0x04 flags=0x08 display=0x80 loop=none control=none : "MIGRATOR... BOO... MIGRA HOO HOO HOO..."
-    record_state 0xC1 orxx.action 0x0FDC 0
+    navigate to bar1
 }
 
 proc bar4 {
@@ -553,7 +553,7 @@ proc bar4 {
     }
     block_14EB:
     say Migrator voice=0x08 flags=0x08 display=0x90 loop=none control=none : "Thank you, COMMANDER... Get comfortable... The show's about to start.."
-    record_state 0xC1 orxx.action 0x100C 0
+    navigate to concert
     Migrator.current_location = concert
 }
 
@@ -693,7 +693,7 @@ proc masta1 {
     }
     block_1A77:
     say Scruter_Mac voice=0x05 flags=0x08 display=0x80 loop=none control=none : "You know code, me open door..."
-    record_state 0xC1 orxx.action 0x0A64 0
+    navigate to prison
 }
 
 proc masta5 {

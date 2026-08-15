@@ -67,9 +67,20 @@ The narrower C3/C4/C9 lifecycle is rendered without exposing that storage:
 `queue presentation Actor` writes the C3 scheduled form, and
 `end presentation Actor` clears the action and any reciprocal C4 pair. The
 shipped corpus has 389 requirements, 35 queues, and 371 endings; every C3/C4
-related operand is the built-in `blood` object. The remaining C1/C2/C6 uses of
-`action` stay as typed record operations until those distinct behaviors are
-lifted independently.
+related operand is the built-in `blood` object.
+
+The three other shipped action-record forms now use their proven domain
+semantics. All 20 C1 updates target the built-in kind-`0x0200` `orxx.action`
+field and name a kind-`0x0080` sublocation, so they render as `navigate to
+LOCATION`. Both C2 updates target `blood.action` and name a kind-2 character;
+the native handler inserts that character into the Ark's special-slot list,
+writes the `0xFFFF` aboard sentinel, and requests presentation line `0x27`, so
+they render as `bring CHARACTER aboard`. The two C6 tokens are mode-1 guards,
+not transition requests: the navigation actor stages C6 after the player enters
+a kind-`0x0100` black hole, and the script tests the resulting `arche.action`
+record before changing profiles. They render as `require travel through
+BLACK_HOLE`. Any owner, field, kind, mode, or inversion outside these exact
+shapes retains `record_state` or `record_entry`.
 
 Inventory movement uses `transfer ITEM from SOURCE to DESTINATION`. Native
 opcode `CD` derives `SOURCE` from the owner of its first action-field operand,
@@ -140,7 +151,7 @@ COD and BAS sources also declare exact kind-1 DEB object bases with zero-byte
 `object name = offset` directives. An object name is accepted only in an operand
 position already established as a VAR address, and the compiler lowers it to
 the declared `u16` without changing layout. The current corpus contains 302
-image-local object declarations with 6,756 uses; record-value aliases cover
+image-local object declarations with 6,778 uses; record-value aliases cover
 locations, holders, inventory transfers, and other referenced objects as well
 as direct operands.
 

@@ -2544,7 +2544,7 @@ proc Corpo4 {
     hom1.enabled = true
     Corpo4.enabled = false
     state[0x12C8] = 0x0005
-    record_state 0xC1 orxx.action 0x0D52 0
+    navigate to Hita
     choice = none
     block_55CA:
     when hom1 {
@@ -2751,7 +2751,7 @@ proc Mosk2 {
             require choice == "teleport"
         } then {
             say Bronko voice=0xFF flags=0x28 display=0xB0 loop=none control=none : "BRONKO TELEPORTING TO ARK"
-            record_state 0xC2 blood.action 0x031A 0
+            bring Bronko aboard
             Emasculator.current_location = usine
             choice = none
             end presentation Bronko
@@ -3011,7 +3011,7 @@ proc Magnus2 {
             require choice == "teleport"
         } then {
             say Morning_Oil voice=0xFF flags=0x28 display=0x90 loop=none control=none : "TELEPORT MORNING OIL TO CRYOBOX"
-            record_state 0xC2 blood.action 0x028A 0
+            bring Morning_Oil aboard
             choice = none
         }
         block_66D4:
@@ -3578,7 +3578,7 @@ proc yok1 {
         say Yoko voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Before leave, you must go Observatory talk to my father Maxxon..."
         say Yoko voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Bye bye|... You come back soon... Little Yoko wait you|..."
         state[0x1300] = 0x0001
-        record_state 0xC1 orxx.action 0x0B60 0
+        navigate to observatory
     }
 }
 

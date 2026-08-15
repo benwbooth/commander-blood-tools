@@ -254,9 +254,18 @@ two-pass BloodScript compiler. The generated corpus contains 1,059 distinct COD
 symbols and 284 BAS selector labels while retaining exact layout.
 
 The structured COD and BAS sources additionally use 302 image-local zero-byte
-`OBJECT` declarations recovered from exact kind-1 DEB offsets. Their 6,756 uses
+`OBJECT` declarations recovered from exact kind-1 DEB offsets. Their 6,778 uses
 replace direct operands, record relation values, and transfer endpoints while
 retaining the original numeric offset in each declaration.
+
+The remaining shipped action records are also lifted without guessing. Twenty
+C1 updates on the built-in `orxx` object are `navigate to LOCATION`; two C2
+updates on `blood` are `bring CHARACTER aboard`; and two mode-1 C6 comparisons
+on `arche.action` are `require travel through BLACK_HOLE`. The C6 wording is a
+condition deliberately: native navigation code produces the deferred C6 record
+after black-hole entry, and the script observes it before requesting the next
+profile. These forms require exact DEB/VAR owner and operand kinds plus the
+native mode and inversion; all other shapes remain low-level and lossless.
 
 A first subrecord pass adds 367 zero-byte `field name = object + delta`
 declarations and replaces 1,880 direct VAR operands. A field is emitted only

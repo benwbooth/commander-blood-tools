@@ -198,6 +198,34 @@ a kind-2 character. Of these, 46 occur in COD and 136 in BAS. BloodScript maps
 `transfer ITEM from SOURCE to DESTINATION`; any other CD shape remains
 `record_triple`.
 
+C1, C2, and C6 have three separate proven source meanings in the shipped COD
+corpus. All 20 C1 tokens run in update mode without inversion. Their first
+operand is selector-`0x13` on the built-in kind-`0x0200` `orxx` object, and
+their second operand is always a kind-`0x0080` sublocation. Handler `0x6B4C`
+writes the C1 action; `record_c1_ship3d_action` at `0x5B38` consumes it by
+changing `orxx`'s target and position and, while ship navigation is active,
+selecting the new 3D target and presentation line 3. BloodScript therefore
+emits `navigate to LOCATION`.
+
+Both shipped C2 tokens also run in update mode without inversion. They target
+`blood.action` and name a kind-2 character. Handler `0x6E34` requires the
+character's dynamic presentable bit, inserts it into the 16-word special-slot
+list, writes `0xFFFF` to its selector-`0x11` current-location field, and stages
+active line `0x27`. This is `bring CHARACTER aboard`; failure of a runtime gate
+remains part of the native operation and does not change its source meaning.
+
+The two C6 tokens are different: both run in query mode inside enabled A9
+procedure blocks and compare `arche.action` with `{C6, Oddland, 0}`. Native
+`nav_actor_handler_1` at `0x7EC0` is the producer: after the player completes
+the kind-`0x0100` black-hole entry presentation it stages deferred type C6 and
+the black-hole record. `presentation_scan` drains that state into the
+kind-`0x0010` `arche.action` field, whose `0x5B38` consumer runs the multi-frame
+camera transition. The script only observes that transition before requesting
+the next profile, so the accurate form is `require travel through BLACK_HOLE`,
+not an imperative travel command. Any C1/C2/C6 shape outside these exact
+owner, field, kind, mode, and inversion constraints retains its typed low-level
+form.
+
 The remaining 3,780 BAS bytes form 1,003 complete records: three one-topic menus,
 19 presentation-register writes, three string loads, 37 `0xAA` yields, 321
 `0xAC` yields, 321 linked selector nodes, and 299 shared state/record operations
@@ -252,7 +280,7 @@ offsets and exact statement order. Across the corpus this yields 1,059 distinct
 COD symbols and 284 BAS labels without changing any output byte.
 
 Kind-1 DEB entries also establish exact VAR object-base names. The structured
-COD and BAS corpus contains 302 image-local declarations with 6,756 uses,
+COD and BAS corpus contains 302 image-local declarations with 6,778 uses,
 including object values recovered from record relations and inventory
 transfers.
 `OBJECT` declarations emit no bytes and retain the original numeric offset.

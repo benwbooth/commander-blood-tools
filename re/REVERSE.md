@@ -1570,8 +1570,8 @@ and `0xB529` both reset `gs:0x1FAB`,`gs:0x6788` (→0xFFFF) plus the display gat
 **Remaining for full accuracy:** (1) verify whether audible `tb.snd` chatter is
 triggered by a dynamic callback rather than the now-decoded `gs:0x67BB` hold
 flag; (2) decode any remaining line-record display flags that affect
-subtitle/talk-HNM routing; (3) map the remaining C1/C2 line-state and
-presentation callback behavior; (4) finish naming the `gs:0x6724` object fields.
+subtitle/talk-HNM routing; (3) map the remaining presentation callback behavior;
+(4) finish naming the `gs:0x6724` object fields.
 
 ### 0xB7 bit-flag handler @ file 0x6AA7 — state flag set/test (DECODED)
 
@@ -1655,7 +1655,7 @@ register, including AX, and reports only through carry left by its final byte
 shift. Watcom medium emits 33 instructions/70 bytes versus 31/59 but returns a
 normal Boolean in AX, so exact integration needs a small carry-result adapter.
 
-### 0xC1/0xC2 line-record state handlers — token shape (PARTIALLY DECODED)
+### 0xC1/0xC2 line-record state handlers — token shape (DECODED)
 
 `0xC1` and `0xC2` are both fixed 5-byte line-record state operations with the
 same raw token shape and an optional mode-1 `A1` inverted-compare prefix:
@@ -1670,9 +1670,17 @@ finds an empty resolved destination slot. `0xC2` has presentation side effects i
 mode 0 for special record kinds: it can clear `gs:0x1FB2` and set active dialogue
 line ids `gs:0x6788 = 0x27` or `0x2B`.
 
-Current shipped-script VM walks contain repeated true `C1` tokens and no true
-`C2` tokens. Rust now exposes both as `VmToken::RecordState { ..., inverted }`
-and the script disassembly emits `record_state` rows. `execute_trace` evaluates
+Current shipped-script VM walks contain 20 true `C1` tokens and two true `C2`
+tokens. Every C1 is a non-inverted mode-0 update of the built-in kind-`0x0200`
+`orxx` object's selector-`0x13` action field to a kind-`0x0080` sublocation.
+BloodScript renders these as `navigate to LOCATION`. Both C2 tokens are
+non-inverted mode-0 updates through the built-in `blood` action field with a
+kind-2 character operand; BloodScript renders them as `bring CHARACTER aboard`.
+Owner, field, mode, inversion, and VAR kinds are all checked before either lift,
+and nonconforming forms remain `record_state`.
+
+Rust exposes both opcodes as `VmToken::RecordState { ..., inverted }` and the
+script disassembly emits `record_state` rows. `execute_trace` evaluates
 direct mode-1 compares when host state already contains a concrete
 `{opcode, operand, ...}` record entry, and Rust now applies the direct `C1`
 mode-0 success write when `ExecutionContext` proves the owner object is active
@@ -1865,6 +1873,18 @@ word. Direct mode-1 record-entry compares are evaluated when host state has a
 concrete record entry. Known guarded mode-0 failures for C5, C7, and C8 now
 branch through the recovered A0/A1 stack; C6 remains an unconditional mode-0
 write.
+
+Both shipped C6 tokens are specifically mode-1 comparisons of
+`arche.action == {C6, Oddland, 0}` inside enabled A9 procedure blocks. The
+producer is not the script: `nav_actor_handler_1` at `0x7EC0` stages deferred
+type C6 and the selected kind-`0x0100` black-hole record after the entry
+presentation completes, and `presentation_scan` redirects deferred C1/C6
+records to the kind-`0x0010` `arche` selector-`0x13` field. The `0x5B38` C6
+consumer then runs its camera/entity transition and relation/position update.
+Only after that record matches does the script request the next profile.
+BloodScript therefore renders these guards as `require travel through Oddland`,
+not as imperative writes; an update-mode C6 or any mismatched owner/kind remains
+`record_entry`.
 
 ### 0xC4 actor/record handler @ file 0x6C7E — operands (DECODED)
 
@@ -2581,8 +2601,8 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       now decoded as post-reveal hold state rather than a direct SND caller.
 - [ ] Map the presentation opcodes among the handler table: which set background,
       music (mus.snd), HNM actor, voice (son.snd), wait, clear. Start with the
-      remaining C1/C2 handlers and presentation callbacks rather than
-      expecting direct media-play opcodes.
+      remaining presentation callbacks rather than expecting direct media-play
+      opcodes; the distinct C1/C2 action handlers are now decoded and lifted.
 - [x] Port 0xB7 bit-flag semantics. `src/vm.rs` exposes
       `VmToken::BitFlag`, applies high-bit-first set/clear writes in mode 0, and
       `execute_trace` evaluates mode-1 bit tests with optional `A1` inversion.

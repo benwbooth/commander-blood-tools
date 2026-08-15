@@ -851,7 +851,7 @@ proc bra1 {
         say Bratakas voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Bye bye|... Leaving so soon?"
         say Bratakas voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Hold on... There's someone who'd like to see you before you leave..."
         say Bratakas voice=0xFF flags=0x08 display=0x80 loop=none control=none : "..."
-        record_state 0xC1 orxx.action 0x0C44 0
+        navigate to cache
     }
 }
 
@@ -1315,7 +1315,7 @@ proc st1 {
     } then {
         say Super_Tromp voice=0x02 flags=0x00 display=0x80 loop=none control=none : "You wish to visit the tomb of the Great Yolk?"
         say Super_Tromp voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Enter with respect... This is a sacred place..."
-        record_state 0xC1 orxx.action 0x0C7A 0
+        navigate to tombeau
     }
 }
 
@@ -1564,7 +1564,7 @@ proc masta1 {
     say Rotator voice=0x05 flags=0x00 display=0x80 loop=none control=none : "You will be required to eat your teeth... repeatedly..."
     say Rotator voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Co Co... Commander... Maybe this isn't such a good place to be..."
     say Rotator voice=0xFF flags=0x08 display=0x90 loop=none control=none : "The CHIEF is waiting..."
-    record_state 0xC1 orxx.action 0x0BA8 0
+    navigate to machine
     masta1.enabled = false
 }
 
@@ -1775,7 +1775,7 @@ proc fin2 {
 
 proc Od_dland {
     activation disabled until jerry
-    record_entry 0xC6 arche.action Oddland 0
+    require travel through Oddland
     guard_pop
     run_profile 0x05
 }

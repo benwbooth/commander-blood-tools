@@ -109,6 +109,14 @@ struct ObjectAlias {
     source_name: String,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ProvenStatement {
+    InventoryTransfer,
+    Navigate,
+    BringAboard,
+    TravelThrough,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct DictionaryAlias {
     value: String,
@@ -1309,6 +1317,20 @@ fn normalize_modern_statement(
                 fields[1],
             ))
         }
+        "navigate" => {
+            if fields.len() != 3 || fields[1] != "to" {
+                bail!("line {line_number}: expected 'navigate to DESTINATION'");
+            }
+            validate_identifier(fields[2], line_number)?;
+            Ok(format!("NAVIGATE {}", fields[2]))
+        }
+        "bring" => {
+            if fields.len() != 3 || fields[2] != "aboard" {
+                bail!("line {line_number}: expected 'bring CHARACTER aboard'");
+            }
+            validate_identifier(fields[1], line_number)?;
+            Ok(format!("BRING_ABOARD {}", fields[1]))
+        }
         "request" => {
             if fields.len() != 3 || fields[1] != "sequence" {
                 bail!("line {line_number}: expected 'request sequence \"NAME.hnm\"'");
@@ -1324,6 +1346,10 @@ fn normalize_modern_statement(
             ))
         }
         "require" => {
+            if fields.len() == 4 && fields[1] == "travel" && fields[2] == "through" {
+                validate_identifier(fields[3], line_number)?;
+                return Ok(format!("REQUIRE_TRAVEL_THROUGH {}", fields[3]));
+            }
             if let Some(statement) =
                 normalize_modern_presentation_expression(&fields[1..], line_number)?
             {
@@ -2064,6 +2090,29 @@ fn modern_statement(
                 }
             ))
         }
+        "NAVIGATE" => {
+            if args.len() != 1 {
+                bail!("line {line_number}: malformed generated NAVIGATE statement");
+            }
+            validate_identifier(args[0], line_number)?;
+            Ok(format!("navigate to {}", args[0]))
+        }
+        "BRING_ABOARD" => {
+            if args.len() != 1 {
+                bail!("line {line_number}: malformed generated BRING_ABOARD statement");
+            }
+            validate_identifier(args[0], line_number)?;
+            Ok(format!("bring {} aboard", args[0]))
+        }
+        "REQUIRE_TRAVEL_THROUGH" => {
+            if args.len() != 1 {
+                bail!(
+                    "line {line_number}: malformed generated REQUIRE_TRAVEL_THROUGH statement"
+                );
+            }
+            validate_identifier(args[0], line_number)?;
+            Ok(format!("require travel through {}", args[0]))
+        }
         "LOAD_STRING" => {
             if args.len() != 1 {
                 bail!("line {line_number}: malformed generated LOAD_STRING statement");
@@ -2490,10 +2539,16 @@ fn decompile_cod(
         BTreeMap::new()
     };
     add_field_owner_objects(&mut object_aliases, &field_aliases);
-    simplify_alias_identifiers(&mut object_aliases, &mut field_aliases);
-    let inventory_transfers = var
-        .map(|var| proven_inventory_transfer_offsets(&tokens, symbols, var, &field_aliases))
+    let proven_statements = var
+        .map(|var| proven_statement_offsets(&tokens, symbols, var, &field_aliases))
         .unwrap_or_default();
+    add_proven_statement_objects(
+        &mut object_aliases,
+        &tokens,
+        &proven_statements,
+        symbols,
+    );
+    simplify_alias_identifiers(&mut object_aliases, &mut field_aliases);
     let dictionary_aliases = dictionary_aliases(
         tokens.iter().flat_map(dictionary_operand_values),
         dictionary,
@@ -2511,7 +2566,9 @@ fn decompile_cod(
         object_aliases: object_aliases.len(),
         object_alias_uses: tokens
             .iter()
-            .flat_map(cod_object_operand_values)
+            .flat_map(|token| {
+                semantic_object_operand_values(token, proven_statements.get(&token.offset()))
+            })
             .filter(|value| object_aliases.contains_key(value))
             .count(),
         dictionary_offsets: dictionary_aliases.len(),
@@ -2569,7 +2626,7 @@ fn decompile_cod(
                 &field_aliases,
                 &mut dictionary_operands,
                 structured.rejected.get(&offset),
-                inventory_transfers.contains(&offset),
+                proven_statements.get(&offset).copied(),
             )?;
         }
         stats.typed_statements += 1;
@@ -2622,12 +2679,16 @@ fn decompile_bas(
         BTreeMap::new()
     };
     add_field_owner_objects(&mut object_aliases, &field_aliases);
-    simplify_alias_identifiers(&mut object_aliases, &mut field_aliases);
-    let inventory_transfers = var
-        .map(|var| {
-            proven_inventory_transfer_offsets(&vm_tokens, symbols, var, &field_aliases)
-        })
+    let proven_statements = var
+        .map(|var| proven_statement_offsets(&vm_tokens, symbols, var, &field_aliases))
         .unwrap_or_default();
+    add_proven_statement_objects(
+        &mut object_aliases,
+        &vm_tokens,
+        &proven_statements,
+        symbols,
+    );
+    simplify_alias_identifiers(&mut object_aliases, &mut field_aliases);
     let dictionary_values = bas_dictionary_operand_values(image, dictionary);
     let dictionary_aliases = dictionary_aliases(dictionary_values.iter().copied(), dictionary);
     let mut dictionary_operands = DictionaryOperandFormatter::new(&dictionary_aliases, dictionary);
@@ -2649,7 +2710,9 @@ fn decompile_bas(
         object_aliases: object_aliases.len(),
         object_alias_uses: vm_tokens
             .iter()
-            .flat_map(cod_object_operand_values)
+            .flat_map(|token| {
+                semantic_object_operand_values(token, proven_statements.get(&token.offset()))
+            })
             .filter(|value| object_aliases.contains_key(value))
             .count(),
         field_aliases: field_aliases.len(),
@@ -2708,7 +2771,7 @@ fn decompile_bas(
                         &field_aliases,
                         &mut dictionary_operands,
                         None,
-                        inventory_transfers.contains(&token.offset()),
+                        proven_statements.get(&token.offset()).copied(),
                     )?;
                 }
                 vm_source::BasToken::Yield { .. } => {
@@ -3326,12 +3389,51 @@ fn object_operand_values(token: &VmToken) -> Vec<u16> {
     }
 }
 
-fn proven_inventory_transfer_offsets(
+fn semantic_object_operand_values(
+    token: &VmToken,
+    statement: Option<&ProvenStatement>,
+) -> Vec<u16> {
+    let mut values = cod_object_operand_values(token);
+    if statement.is_some()
+        && let VmToken::RecordState { operand, .. } = token
+        && !values.contains(operand)
+    {
+        values.push(*operand);
+    }
+    values
+}
+
+fn add_proven_statement_objects(
+    aliases: &mut BTreeMap<u16, ObjectAlias>,
+    tokens: &[VmToken],
+    statements: &BTreeMap<usize, ProvenStatement>,
+    symbols: &[DebSymbol],
+) {
+    let referenced = tokens
+        .iter()
+        .flat_map(|token| semantic_object_operand_values(token, statements.get(&token.offset())))
+        .collect::<BTreeSet<_>>();
+    for symbol in symbols
+        .iter()
+        .filter(|symbol| symbol.kind == 1 && referenced.contains(&symbol.offset))
+    {
+        aliases.entry(symbol.offset).or_insert_with(|| ObjectAlias {
+            identifier: format!(
+                "object_{}_{:04X}",
+                identifier_component(&symbol.name),
+                symbol.offset
+            ),
+            source_name: symbol.name.clone(),
+        });
+    }
+}
+
+fn proven_statement_offsets(
     tokens: &[VmToken],
     symbols: &[DebSymbol],
     var: &[u8],
     fields: &BTreeMap<u16, FieldAlias>,
-) -> BTreeSet<usize> {
+) -> BTreeMap<usize, ProvenStatement> {
     let objects: BTreeMap<u16, &DebSymbol> = symbols
         .iter()
         .filter(|symbol| symbol.kind == 1)
@@ -3342,6 +3444,18 @@ fn proven_inventory_transfer_offsets(
         var.get(offset..offset + 2)
             .map(|bytes| u16::from_le_bytes([bytes[0], bytes[1]]))
     };
+    let action_owner_matches = |record_offset: &u16, name: &str, kind: u16| {
+        fields.get(record_offset).is_some_and(|field| {
+            field.selectors.as_slice() == [0x13]
+                && field.kind == kind
+                && objects
+                    .get(&field.owner_offset)
+                    .is_some_and(|symbol| symbol.name.eq_ignore_ascii_case(name))
+        })
+    };
+    let object_kind_matches = |offset: &u16, kind: u16| {
+        objects.contains_key(offset) && var_kind(*offset) == Some(kind)
+    };
     let is_holder = |offset: u16| {
         objects.get(&offset).is_some_and(|symbol| {
             var_kind(offset) == Some(0x0002) || symbol.name.eq_ignore_ascii_case("blood")
@@ -3349,11 +3463,50 @@ fn proven_inventory_transfer_offsets(
     };
 
     let mut query_mode = false;
-    let mut proven = BTreeSet::new();
+    let mut proven = BTreeMap::new();
     for token in tokens {
         match token {
             VmToken::GuardPush { .. } | VmToken::ConditionalBlock { .. } => query_mode = true,
             VmToken::GuardPop { .. } => query_mode = false,
+            VmToken::RecordState {
+                offset,
+                opcode: vm::OP_RECORD_STATE_MIN,
+                record_offset,
+                operand,
+                inverted: false,
+                ..
+            } if !query_mode
+                && action_owner_matches(record_offset, "orxx", 0x0200)
+                && object_kind_matches(operand, 0x0080) =>
+            {
+                proven.insert(*offset, ProvenStatement::Navigate);
+            }
+            VmToken::RecordState {
+                offset,
+                opcode: vm::OP_RECORD_STATE_MAX,
+                record_offset,
+                operand,
+                inverted: false,
+                ..
+            } if !query_mode
+                && action_owner_matches(record_offset, "blood", 0x0001)
+                && object_kind_matches(operand, 0x0002) =>
+            {
+                proven.insert(*offset, ProvenStatement::BringAboard);
+            }
+            VmToken::RecordEntry {
+                offset,
+                entry_opcode: 0xC6,
+                record_offset,
+                operand,
+                inverted: false,
+                ..
+            } if query_mode
+                && action_owner_matches(record_offset, "arche", 0x0010)
+                && object_kind_matches(operand, 0x0100) =>
+            {
+                proven.insert(*offset, ProvenStatement::TravelThrough);
+            }
             VmToken::RecordTriple {
                 offset,
                 record_offset,
@@ -3372,7 +3525,7 @@ fn proven_inventory_transfer_offsets(
                     && var_kind(*first_word) == Some(0x0400)
                     && is_holder(*second_word)
                 {
-                    proven.insert(*offset);
+                    proven.insert(*offset, ProvenStatement::InventoryTransfer);
                 }
             }
             _ => {}
@@ -3462,7 +3615,7 @@ fn emit_token(
     field_aliases: &BTreeMap<u16, FieldAlias>,
     dictionary_operands: &mut DictionaryOperandFormatter<'_>,
     guard_rejections: Option<&BTreeSet<GuardRejection>>,
-    inventory_transfer: bool,
+    proven_statement: Option<ProvenStatement>,
 ) -> Result<()> {
     let offset = token.offset();
     write!(output, "{offset:08X}: ")?;
@@ -3577,17 +3730,27 @@ fn emit_token(
             operand,
             inverted,
             ..
-        } => write!(
-            output,
-            "RECORD_ENTRY {entry_opcode:02X} {} {} {}",
-            object_operand(*record_offset, object_aliases, field_aliases),
-            if *entry_opcode == vm::OP_RECORD_ENTRY_MAX {
-                format!("{operand:04X}")
+        } => {
+            if proven_statement == Some(ProvenStatement::TravelThrough) {
+                write!(
+                    output,
+                    "REQUIRE_TRAVEL_THROUGH {}",
+                    object_operand(*operand, object_aliases, field_aliases)
+                )?;
             } else {
-                object_operand(*operand, object_aliases, field_aliases)
-            },
-            bool_digit(*inverted)
-        )?,
+                write!(
+                    output,
+                    "RECORD_ENTRY {entry_opcode:02X} {} {} {}",
+                    object_operand(*record_offset, object_aliases, field_aliases),
+                    if *entry_opcode == vm::OP_RECORD_ENTRY_MAX {
+                        format!("{operand:04X}")
+                    } else {
+                        object_operand(*operand, object_aliases, field_aliases)
+                    },
+                    bool_digit(*inverted)
+                )?;
+            }
+        }
         VmToken::RecordClear { record_offset, .. } => write!(
             output,
             "RECORD_CLEAR {}",
@@ -3660,12 +3823,24 @@ fn emit_token(
             operand,
             inverted,
             ..
-        } => write!(
-            output,
-            "RECORD_STATE {opcode:02X} {} {operand:04X} {}",
-            object_operand(*record_offset, object_aliases, field_aliases),
-            bool_digit(*inverted)
-        )?,
+        } => match proven_statement {
+            Some(ProvenStatement::Navigate) => write!(
+                output,
+                "NAVIGATE {}",
+                object_operand(*operand, object_aliases, field_aliases)
+            )?,
+            Some(ProvenStatement::BringAboard) => write!(
+                output,
+                "BRING_ABOARD {}",
+                object_operand(*operand, object_aliases, field_aliases)
+            )?,
+            _ => write!(
+                output,
+                "RECORD_STATE {opcode:02X} {} {operand:04X} {}",
+                object_operand(*record_offset, object_aliases, field_aliases),
+                bool_digit(*inverted)
+            )?,
+        },
         VmToken::GlobalWordCompare {
             operator,
             tag,
@@ -3702,7 +3877,7 @@ fn emit_token(
             inverted,
             ..
         } => {
-            if inventory_transfer {
+            if proven_statement == Some(ProvenStatement::InventoryTransfer) {
                 let action = object_operand(*record_offset, object_aliases, field_aliases);
                 let source = action
                     .strip_suffix(".action")
@@ -3997,6 +4172,42 @@ fn compile_statement(
             word(
                 &mut output,
                 parse_object_address(args[1], objects, line, "related record")?,
+            );
+        }
+        "NAVIGATE" => {
+            require_count(args, 1, line, name)?;
+            output.push(vm::OP_RECORD_STATE_MIN);
+            word(
+                &mut output,
+                parse_object_address("orxx.action", objects, line, "orxx action field")?,
+            );
+            word(
+                &mut output,
+                parse_object_address(args[0], objects, line, "navigation destination")?,
+            );
+        }
+        "BRING_ABOARD" => {
+            require_count(args, 1, line, name)?;
+            output.push(vm::OP_RECORD_STATE_MAX);
+            word(
+                &mut output,
+                parse_object_address("blood.action", objects, line, "blood action field")?,
+            );
+            word(
+                &mut output,
+                parse_object_address(args[0], objects, line, "character")?,
+            );
+        }
+        "REQUIRE_TRAVEL_THROUGH" => {
+            require_count(args, 1, line, name)?;
+            output.push(0xC6);
+            word(
+                &mut output,
+                parse_object_address("arche.action", objects, line, "arche action field")?,
+            );
+            word(
+                &mut output,
+                parse_object_address(args[0], objects, line, "black hole")?,
             );
         }
         "RECORD_ENTRY" => {
@@ -4812,6 +5023,185 @@ mod tests {
             "transfer perfume Bug_Deluxe to aboard",
             "transfer perfume from Bug_Deluxe aboard",
             "transfer 0x0200 from Bug_Deluxe to aboard",
+        ] {
+            let source = format!("// format: {SOURCE_FORMAT}\n{invalid}\nhalt\n");
+            assert!(compile(&source).is_err(), "accepted {invalid}");
+        }
+    }
+
+    #[test]
+    fn navigation_boarding_and_black_hole_actions_use_domain_syntax() {
+        let image = vec![
+            vm::OP_RECORD_STATE_MIN,
+            0x0A,
+            0x02,
+            0x00,
+            0x03,
+            vm::OP_RECORD_STATE_MAX,
+            0x30,
+            0x00,
+            0x00,
+            0x01,
+            vm::OP_PUSH,
+            0x13,
+            0x00,
+            0xC6,
+            0x1C,
+            0x04,
+            0x00,
+            0x05,
+            vm::OP_POP,
+            0xFF,
+        ];
+        let mut var = vec![0; 0x600];
+        for (offset, kind) in [
+            (0x0028, 0x0001u16),
+            (0x0100, 0x0002),
+            (0x0200, 0x0200),
+            (0x0300, 0x0080),
+            (0x0400, 0x0010),
+            (0x0500, 0x0100),
+        ] {
+            var[offset..offset + 2].copy_from_slice(&kind.to_le_bytes());
+        }
+        let symbols = [
+            ("blood", 0x0028),
+            ("Bronko", 0x0100),
+            ("orxx", 0x0200),
+            ("observatory", 0x0300),
+            ("arche", 0x0400),
+            ("Oddland", 0x0500),
+        ]
+        .into_iter()
+        .map(|(name, offset)| DebSymbol {
+            name: name.to_string(),
+            offset,
+            kind: 1,
+        })
+        .collect::<Vec<_>>();
+        let decompiled = decompile_structured_cod_with_symbols(
+            &image,
+            &var,
+            &HashMap::new(),
+            &symbols,
+        )
+        .unwrap();
+        for statement in [
+            "navigate to observatory",
+            "bring Bronko aboard",
+            "require travel through Oddland",
+        ] {
+            assert!(decompiled.source.contains(statement), "missing {statement}");
+        }
+        for low_level in ["record_state", "record_entry"] {
+            assert!(
+                !decompiled.source.contains(low_level),
+                "retained {low_level}"
+            );
+        }
+        assert_eq!(compile(&decompiled.source).unwrap(), image);
+
+        let query_image = [
+            vm::OP_PUSH,
+            0x09,
+            0x00,
+            vm::OP_RECORD_STATE_MIN,
+            0x0A,
+            0x02,
+            0x00,
+            0x03,
+            vm::OP_POP,
+            0xFF,
+        ];
+        let query = decompile_structured_cod_with_symbols(
+            &query_image,
+            &var,
+            &HashMap::new(),
+            &symbols,
+        )
+        .unwrap();
+        assert!(
+            query
+                .source
+                .contains("record_state 0xC1 orxx.action 0x0300 0")
+        );
+        assert!(!query.source.contains("navigate to"));
+        assert_eq!(compile(&query.source).unwrap(), query_image);
+
+        let mut wrong_kind_var = var.clone();
+        wrong_kind_var[0x300..0x302].copy_from_slice(&0x0008u16.to_le_bytes());
+        let wrong_kind = decompile_structured_cod_with_symbols(
+            &image,
+            &wrong_kind_var,
+            &HashMap::new(),
+            &symbols,
+        )
+        .unwrap();
+        assert!(
+            wrong_kind
+                .source
+                .contains("record_state 0xC1 orxx.action 0x0300 0")
+        );
+        assert!(!wrong_kind.source.contains("navigate to"));
+        assert_eq!(compile(&wrong_kind.source).unwrap(), image);
+
+        let mut wrong_character_kind_var = var.clone();
+        wrong_character_kind_var[0x100..0x102]
+            .copy_from_slice(&0x0400u16.to_le_bytes());
+        let wrong_character_kind = decompile_structured_cod_with_symbols(
+            &image,
+            &wrong_character_kind_var,
+            &HashMap::new(),
+            &symbols,
+        )
+        .unwrap();
+        assert!(
+            wrong_character_kind
+                .source
+                .contains("record_state 0xC2 blood.action 0x0100 0")
+        );
+        assert!(!wrong_character_kind.source.contains("bring Bronko aboard"));
+        assert_eq!(compile(&wrong_character_kind.source).unwrap(), image);
+
+        let update_c6 = [0xC6, 0x1C, 0x04, 0x00, 0x05, 0xFF];
+        let update = decompile_structured_cod_with_symbols(
+            &update_c6,
+            &var,
+            &HashMap::new(),
+            &symbols,
+        )
+        .unwrap();
+        assert!(
+            update
+                .source
+                .contains("record_entry 0xC6 arche.action Oddland 0")
+        );
+        assert!(!update.source.contains("require travel through"));
+        assert_eq!(compile(&update.source).unwrap(), update_c6);
+
+        let mut wrong_hole_kind_var = var.clone();
+        wrong_hole_kind_var[0x500..0x502].copy_from_slice(&0x0008u16.to_le_bytes());
+        let wrong_hole_kind = decompile_structured_cod_with_symbols(
+            &image,
+            &wrong_hole_kind_var,
+            &HashMap::new(),
+            &symbols,
+        )
+        .unwrap();
+        assert!(
+            wrong_hole_kind
+                .source
+                .contains("record_entry 0xC6 arche.action Oddland 0")
+        );
+        assert!(!wrong_hole_kind.source.contains("require travel through"));
+        assert_eq!(compile(&wrong_hole_kind.source).unwrap(), image);
+
+        for invalid in [
+            "navigate observatory",
+            "bring aboard Bronko",
+            "travel Oddland",
+            "travel to Oddland",
+            "require travel Oddland",
         ] {
             let source = format!("// format: {SOURCE_FORMAT}\n{invalid}\nhalt\n");
             assert!(compile(&source).is_err(), "accepted {invalid}");

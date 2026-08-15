@@ -2027,7 +2027,7 @@ proc ed1 {
     block_39A7:
     say Amigo voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Life's so hic hard..."
     say Amigo voice=0xFF flags=0x08 display=0x80 loop=none control=none : "..."
-    record_state 0xC1 orxx.action 0x0CCE 0
+    navigate to bar
 }
 
 proc eda {
@@ -2449,7 +2449,7 @@ proc masta1 {
     say Scruter_Mac voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Me let you pass. You can see prisoner..."
     say Scruter_Mac voice=0xFF flags=0x08 display=0x90 loop=none control=none : "..."
     state[0x1412] = 0x0001
-    record_state 0xC1 orxx.action 0x0B1E 0
+    navigate to prison
 }
 
 proc masta2 {
@@ -2465,7 +2465,7 @@ proc masta2 {
     say Scruter_Mac voice=0x07 flags=0x00 display=0x80 loop=none control=none : "Me open door..."
     say Scruter_Mac voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Maybe we should stand clear, Commander|. Call it a survival technique..."
     say Scruter_Mac voice=0xFF flags=0x08 display=0x80 loop=none control=none : "..."
-    record_state 0xC1 orxx.action 0x0B1E 0
+    navigate to prison
 }
 
 proc masta3 {
@@ -2730,7 +2730,7 @@ proc tum3 {
         Beauregard.current_location = fresque
         Fifi.current_location = Tumul
         state[0x141A] = 0x0002
-        record_state 0xC1 orxx.action 0x0DB2 0
+        navigate to fresque
     }
 }
 
@@ -2762,7 +2762,7 @@ proc tum4 {
     say Beauregard voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Follow me, Commander..."
     say Beauregard voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "..."
     Beauregard.current_location = rubble
-    record_state 0xC1 orxx.action 0x0DCA 0
+    navigate to rubble
     state[0x141A] = 0x0003
 }
 
@@ -2841,7 +2841,7 @@ proc tum6bis {
     say Beauregard voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "..."
     Beauregard.current_location = tumulus
     state[0x141A] = 0x0005
-    record_state 0xC1 orxx.action 0x0DE2 0
+    navigate to tumulus
 }
 
 proc tum7 {
@@ -3116,7 +3116,7 @@ proc yok1 {
         say Yoko voice=0x0A flags=0x00 display=0x80 loop=none control=none : "Thank you Commander|... You nice..."
         say Yoko voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Commander, let's go check out the observatory..."
         yok1.enabled = false
-        record_state 0xC1 orxx.action 0x0C62 0
+        navigate to observatory
     }
 }
 
@@ -3151,7 +3151,7 @@ proc yok3 {
     say Yoko voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "..."
     yok3.enabled = false
     yok3bis.enabled = true
-    record_state 0xC1 orxx.action 0x0C62 0
+    navigate to observatory
 }
 
 proc yok3bis {
@@ -3236,7 +3236,7 @@ proc yok8 {
     say Yoko voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Inspector Jerry Khan investigate Eviscerator..."
     say Yoko voice=0x03 flags=0x08 display=0x90 loop=none control=none : "You go Observatory see Inspector Jerry Khan..."
     jerry1.enabled = true
-    record_state 0xC1 orxx.action 0x0C62 0
+    navigate to observatory
 }
 
 proc jerry1 {
@@ -3496,7 +3496,7 @@ proc fin2 {
 
 proc Odd {
     activation disabled until men1
-    record_entry 0xC6 arche.action Oddland 0
+    require travel through Oddland
     guard_pop
     run_profile 0x04
 }
