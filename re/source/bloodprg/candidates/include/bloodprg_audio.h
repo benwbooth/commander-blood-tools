@@ -4,8 +4,15 @@
 #include "bloodprg_common.h"
 
 typedef void (CB_FAR *bloodprg_snd_driver_callback)(cb_u16 command);
+#if defined(__WATCOMC__)
+typedef void CB_FAR bloodprg_snd_driver_init_function(
+        cb_u16 configuration);
+typedef bloodprg_snd_driver_init_function
+        *bloodprg_snd_driver_init_callback;
+#else
 typedef void (CB_FAR *bloodprg_snd_driver_init_callback)(
         cb_u16 configuration);
+#endif
 typedef cb_u16 (CB_FAR *bloodprg_audio_position_callback)(void);
 typedef void (CB_FAR *bloodprg_snd_clip_callback)(cb_i16 clip_index);
 
@@ -107,7 +114,11 @@ void CB_NEAR cb_snd_clip_play(cb_u16 command,
         volatile bloodprg_snd_clip_descriptor *clip);
 
 #if defined(__WATCOMC__)
-#pragma aux audio_param_init_cd5 parm [ax] modify exact []
+#pragma aux snd_driver_init_abi parm [ax] \
+        modify exact [ax bx cx dx si di es]
+#pragma aux (bloodprg_snd_driver_init_function, \
+        snd_driver_init_abi)
+#pragma aux audio_param_init_cd5 parm [ax] modify exact [ax]
 #pragma aux snd_bank_loader parm [ax] [si] modify exact []
 #pragma aux snd_play_clip parm [ax] modify exact []
 #pragma aux snd_stream_source_load parm [si] modify exact []
@@ -116,7 +127,8 @@ void CB_NEAR cb_snd_clip_play(cb_u16 command,
 #pragma aux cb_snd_clip_play parm [ax] [si]
 #endif
 
-void CB_FAR audio_param_init_cd5(cb_u16 driver_segment); /* 0x00B7B0 */
+void CB_SAVE_REGS CB_FAR audio_param_init_cd5(
+        cb_u16 driver_segment); /* 0x00B7B0 */
 void CB_FAR audio_process_ade(void);                      /* 0x00B7E3 */
 void CB_FAR snd_play_clip(cb_i16 clip_index);             /* 0x00B8CD */
 void CB_FAR snd_bank_loader(

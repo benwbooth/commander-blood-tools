@@ -4475,10 +4475,20 @@ before dispatch, DS is switched to GS rather than the incoming decoy, the
 initializer's exact far frame is used, saved callback clobbers are restored
 except for AX, callback flags pass through, and the routine far-returns.
 
-Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the actual candidate
-warning-free to 16 instructions/48 bytes versus 29/51 original. The smaller C
-form relies on ordinary compiler segment and preservation conventions; linked
-placement of the driver table and callback slot remains an integration task.
+The compiler-corpus sample includes the maintained candidate directly. Its
+Watcom boundary declares the wrapper's AX result and the external initializer's
+AX parameter plus every register clobber that Watcom permits on a far C
+function type. Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) then compiles it
+warning-free to 24 instructions/56 bytes versus 29/51 original, with 68.97
+percent mnemonic-multiset and ordered overlap. Turbo C 2.01 medium
+(`-mm -O -Z`) emits 29 instructions with 55.17 percent multiset and 51.72
+percent ordered overlap and assembles cleanly to a 564-byte OMF object.
+
+The natural candidate is accepted for source integration. Linked placement of
+the driver table and callback slot remains an integration task. Watcom cannot
+describe an external far C callback that clobbers DS, and its generated wrapper
+does not preserve BP; an adapter for the original driver must preserve those
+two registers and translate the compiler-specific incoming argument convention.
 
 ## BLOODPRG dialogue audio selector candidate
 

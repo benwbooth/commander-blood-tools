@@ -1,7 +1,7 @@
 #include "../include/bloodprg_audio.h"
 #include "../include/bloodprg_startup.h"
 
-void CB_FAR audio_param_init_cd5(cb_u16 driver_segment)
+void CB_SAVE_REGS CB_FAR audio_param_init_cd5(cb_u16 driver_segment)
 {
     cb_u16 index;
 
