@@ -467,15 +467,20 @@ ES:SI/carry helper boundaries.
 For `0x00A0C3`, five direct-execution cases confirm the complete palette-block
 loop, including immediate termination, a nonterminating zero-count block,
 multiple destination ranges, the nested `0x00A117` render-state copy, 16-bit
-metric underflow, and the source/destination segment split. Open Watcom 1.9
-medium targeting 8086 emits 60 instructions and 131 bytes from the natural
-far-pointer form; Turbo C 2.01 medium also emits 60 instructions, versus 44
-instructions and 84 bytes in the original. Both compilers preserve the logical
-loop but use conventional far-pointer arguments and explicit byte copies. They
-do not reproduce the original ES:SI stream input/result, DS/ES swap, LODSW,
-REP MOVSB, or register-preservation boundary. This is therefore accepted as a
-behaviorally verified natural C body with a confirmed assembly ABI boundary,
-not as exact compiler-generated source.
+metric underflow, and the source/destination segment split. The compiler-corpus
+sample now includes the authoritative recovered source. Open Watcom 1.9 medium
+(`-3 -ox -mm -zdf -we`) compiles it warning-free to 53 instructions/123 bytes
+versus 44/84 original, with 68.18 percent mnemonic-multiset and 52.27 percent
+ordered overlap. Its recovered declaration retains ES:SI input and result.
+Turbo C 2.01 medium (`-mm -O -Z`) emits 60 instructions with 68.18 percent
+multiset and 61.36 percent ordered overlap and assembles warning-free to OBJ.
+
+Both compilers preserve the logical loop but use explicit byte copies rather
+than the original DS/ES swap, LODSW, and REP MOVSB sequence. Both recovered C
+callers use the natural far-pointer interface, so the function is accepted for
+source-port integration. An isolated replacement still needs the original
+segment restore, DI residue, register-preservation envelope, and path-specific
+flags.
 
 For `0x00A38E`, six direct-execution boundary cases confirm the natural queue
 wrap source and show that both direct callers ignore its incidental AX/SI/CX
