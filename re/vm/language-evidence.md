@@ -111,6 +111,10 @@ The first source-structuring pass converts 443 of the 682 `A0` guards into
 balanced `WHEN`/`THEN`/`END_WHEN` regions. A region is accepted only when it is
 forward, procedure-local, non-crossing, single-entry, and single-exit according
 to the recovered CFG. The other 239 guards remain explicit low-level tokens.
+Every retained guard is deterministically classified `alternate_exit`: at
+least one recovered edge leaves its candidate interval somewhere other than
+the guard's declared end. Each generated `GUARD_PUSH` records the reason in a
+non-semantic comment, and the manifest reports the reason counts per image.
 Both forms compile through the same exact backend, and all ten structured
 sources reproduce the shipped bytes.
 
@@ -164,8 +168,9 @@ specific byte range and must never be labelled as the original 1994 source.
 3. Use the recovered procedures and symbolic targets to construct typed basic
    blocks and per-procedure control-flow graphs. Complete for shipped COD.
 4. Lift reducible graph regions into guards and conditional blocks while
-   retaining address labels for irreducible regions. Guard lift is in progress:
-   443 of 682 `A0` regions are proven.
+   retaining address labels and explicit rejection evidence for irreducible
+   regions. The first guard lift proves 443 of 682 `A0` regions and classifies
+   all 239 retained low-level guards.
 5. Add symbolic object, field, and dictionary names without changing numeric
    identity in the compiler IR.
 6. Compile the structured syntax back through the exact IR and require all ten

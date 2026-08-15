@@ -238,7 +238,7 @@
 00000B8B: BRANCH_FLAG_274F ; BRANCH_FLAG_274F
 00000B8C: ACTOR 0084 0028 0 ; ACTOR record=0x0084 related=0x0028 inverted=false
 00000B91: GUARD_POP ; GUARD_POP
-00000B92: GUARD_PUSH block_0CA7 ; GUARD_PUSH target=0x0CA7
+00000B92: GUARD_PUSH block_0CA7 ; GUARD_PUSH target=0x0CA7 ; unstructured_guard=alternate_exit
 00000B95: SHARED_BIT_STATE AE 0FBA 0002 1 ; OP_AE SHARED_BIT_STATE field=0x0FBA mask=0x0002 inverted=true
 00000B9B: GUARD_POP ; GUARD_POP
 00000B9C: TEXT 004A 02 00 80 - - 07DD 0019 ; TEXT line=0x004A voice=0x02 flags=0x00,0x80 "Aaaah ..."
@@ -316,7 +316,7 @@
 00001028: TEXT 0242 01 00 80 - - 00A3 024B 0B3B 0B40 012F 0911 0257 08FD 0019 ; TEXT line=0x0242 voice=0x01 flags=0x00,0x80 "Commander ! Yoko happy to see you again ..."
 00001042: TEXT 0242 FF 20 80 - - 00A3 0019 00AD 0B46 0B3B 0019 ; TEXT line=0x0242 voice=0xFF flags=0x20,0x80 "Commander ... It's young Yoko ..."
 00001056: TEXT 0242 02 00 80 - - 0B4C 0142 0B55 0B5A 036A 036E 0262 0019 ; TEXT line=0x0242 voice=0x02 flags=0x00,0x80 "Migrator and Tina wait for wedding ring ..."
-0000106E: GUARD_PUSH block_10E3 ; GUARD_PUSH target=0x10E3
+0000106E: GUARD_PUSH block_10E3 ; GUARD_PUSH target=0x10E3 ; unstructured_guard=alternate_exit
 00001071: RECORD_WILDCARD AF 12F0 0028 0 ; OP_AF RECORD_WILDCARD record=0x12F0 value=0x0028 inverted=false
 00001076: GUARD_POP ; GUARD_POP
 00001077: TEXT 0242 05 00 80 - - 01BA 0315 0262 01CF ; TEXT line=0x0242 voice=0x05 flags=0x00,0x80 "You have ring ?"
@@ -388,7 +388,7 @@
 0000146C: TEXT 043A FF 20 80 - - 00AD 0422 0898 0CEF 031D 026D 01BE 012F 0925 0010 012F 0645 036E 0CF8 ; TEXT line=0x043A voice=0xFF flags=0x20,0x80 "It's not my fault... She didn't want to invite me to her wedding concert..."
 00001490: TEXT 043A 07 00 80 - - 0D03 0D0A 0D12 0911 03E5 0199 01F9 0D17 ; TEXT line=0x043A voice=0x07 flags=0x00,0x80 "Okay.. Okay... I'll see what I can do..."
 000014A8: TEXT 043A 02 10 80 block_14EB - 0D1D 0257 0315 00B2 0D20 00A3 01CF 006C 036E 0AF3 01CF FFFF 0D26 ; TEXT line=0x043A voice=0x02 flags=0x10,0x80 "Do you have the ring, Commander ? The wedding band ?"
-000014CC: GUARD_PUSH block_14EB ; GUARD_PUSH target=0x14EB
+000014CC: GUARD_PUSH block_14EB ; GUARD_PUSH target=0x14EB ; unstructured_guard=alternate_exit
 000014CF: CONCEPT_GUARD 0D26 0 ; CONCEPT_GUARD word=0x0D26 inverted=false "teleport"
 000014D2: GUARD_POP ; GUARD_POP
 000014D3: TEXT 043A FF 08 90 - - 0D2F 0D38 07D1 0391 ; TEXT line=0x043A voice=0xFF flags=0x08,0x90 "TELEPORT RING TO MIGRATOR"
@@ -509,7 +509,7 @@
 00001986: TEXT 06C2 FF 20 80 - - 0D85 0EBF 0866 0EC4 0ECC 0ED2 0ED7 00DC 00A3 0019 0EDF 0D9A 0146 0EE4 0019 ; TEXT line=0x06C2 voice=0xFF flags=0x20,0x80 "It must be Scruter Mac's twin brother , Commander ... Took over his job ..."
 000019AC: TEXT 06C2 10 00 80 - - 01BA 0274 0EE8 ; TEXT line=0x06C2 voice=0x10 flags=0x00,0x80 "You say code"
 000019BA: TEXT 06C2 01 10 80 block_1A77 - 0B05 00DC 0EED FFFF 0EF7 0F00 0EE8 0F08 0F0F ; TEXT line=0x06C2 voice=0x01 flags=0x10,0x80 "Hurry , stranger!"
-000019D6: GUARD_PUSH block_1A1C ; GUARD_PUSH target=0x1A1C
+000019D6: GUARD_PUSH block_1A1C ; GUARD_PUSH target=0x1A1C ; unstructured_guard=alternate_exit
 000019D9: CONCEPT_GUARD 0EE8 0 ; CONCEPT_GUARD word=0x0EE8 inverted=false "code"
 000019DC: GUARD_POP ; GUARD_POP
 000019DD: TEXT 06C2 0C 00 80 - - 01BA 0274 0EE8 0019 ; TEXT line=0x06C2 voice=0x0C flags=0x00,0x80 "You say code ..."
@@ -648,7 +648,7 @@
 00001F0A: RECORD_WILDCARD AF 103A 0B72 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0B72 inverted=false
 00001F0F: THEN ; GUARD_POP
 00001F10: TEXT 0242 FF 30 80 block_1F75 - 099C 0C42 00E3 0D26 05F3 00DC 00A3 0019 FFFF 0D26 1166 ; TEXT line=0x0242 voice=0xFF flags=0x30,0x80 "Why don't we teleport them , Commander ..."
-00001F30: GUARD_PUSH block_1F56 ; GUARD_PUSH target=0x1F56
+00001F30: GUARD_PUSH block_1F56 ; GUARD_PUSH target=0x1F56 ; unstructured_guard=alternate_exit
 00001F33: CONCEPT_GUARD 0D26 0 ; CONCEPT_GUARD word=0x0D26 inverted=false "teleport"
 00001F36: GUARD_POP ; GUARD_POP
 00001F37: TEXT 0242 FF 08 A0 - - 0D2F 116D 04F6 114B 1172 115C ; TEXT line=0x0242 voice=0xFF flags=0x08,0xA0 "TELEPORT YOKO AND MAXXON ON RONDO"
@@ -687,7 +687,7 @@
 00002012: RECORD_WILDCARD AF 103A 0B72 0 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0B72 inverted=false
 00002017: THEN ; GUARD_POP
 00002018: TEXT 055A FF 30 80 block_2079 - 099C 0C42 00E3 0D26 05F3 00DC 001D FFFF 0D26 1166 ; TEXT line=0x055A voice=0xFF flags=0x30,0x80 "Why don't we teleport them , Commander..."
-00002036: GUARD_PUSH block_205C ; GUARD_PUSH target=0x205C
+00002036: GUARD_PUSH block_205C ; GUARD_PUSH target=0x205C ; unstructured_guard=alternate_exit
 00002039: CONCEPT_GUARD 0D26 0 ; CONCEPT_GUARD word=0x0D26 inverted=false "teleport"
 0000203C: GUARD_POP ; GUARD_POP
 0000203D: TEXT 055A FF 08 A0 - - 0D2F 116D 04F6 114B 07D1 115C ; TEXT line=0x055A voice=0xFF flags=0x08,0xA0 "TELEPORT YOKO AND MAXXON TO RONDO"
@@ -870,7 +870,7 @@
 0000294B: TEXT 01FA 02 00 80 - - 0B6B 1556 0B6B 03C5 155B 1563 0095 0B6B 12CD 0257 00DC 00A3 0019 ; TEXT line=0x01FA voice=0x02 flags=0x00,0x80 "Me HOM. Me big Tubular Brain . Me welcome you , Commander ..."
 0000296D: TEXT 01FA 02 00 80 - - 0B6B 1569 0634 156F 00DC 0A8F 0019 0B6B 1575 157A 02E7 0634 1580 0019 ; TEXT line=0x01FA voice=0x02 flags=0x00,0x80 "Me catch your print , friend ... Me read truth in your prints ..."
 00002991: TEXT 01FA 03 10 80 block_29F0 - 01BA 1587 158D 158D 1592 00DC 0A8F 0095 0B6B 1569 156F 004D 1597 0019 FFFF 1587 ; TEXT line=0x01FA voice=0x03 flags=0x10,0x80 "You click very very hard , friend . Me catch print on mouse ..."
-000029BB: GUARD_PUSH block_29F0 ; GUARD_PUSH target=0x29F0
+000029BB: GUARD_PUSH block_29F0 ; GUARD_PUSH target=0x29F0 ; unstructured_guard=alternate_exit
 000029BE: CONCEPT_GUARD 1587 0 ; CONCEPT_GUARD word=0x1587 inverted=false "click"
 000029C1: GUARD_POP ; GUARD_POP
 000029C2: TEXT 01FA 03 08 90 - - 159D 024B 0B6B 1569 156F 0019 15A2 024B 15A6 156F 0019 ; TEXT line=0x01FA voice=0x03 flags=0x08,0x90 "Ahh ! Me catch print ... Ohh ! Nice print ..."
@@ -904,7 +904,7 @@
 00002B69: TEXT 01FA 02 00 80 - - 0B6B 1569 0634 156F 00DC 0A8F 0019 0B6B 1575 157A 02E7 0634 1580 0019 ; TEXT line=0x01FA voice=0x02 flags=0x00,0x80 "Me catch your print , friend ... Me read truth in your prints ..."
 00002B8D: TEXT 01FA FF 20 80 - - 00A3 00DC 1650 03A6 02C5 0898 0B00 00BC 0146 156F 0019 ; TEXT line=0x01FA voice=0xFF flags=0x20,0x80 "Commander , he's getting up my nose with his print ..."
 00002BAB: TEXT 01FA 03 10 80 block_2C0A - 01BA 1587 158D 158D 1592 00DC 0A8F 0095 0B6B 1569 156F 004D 1597 0019 FFFF 1587 ; TEXT line=0x01FA voice=0x03 flags=0x10,0x80 "You click very very hard , friend . Me catch print on mouse ..."
-00002BD5: GUARD_PUSH block_2C0A ; GUARD_PUSH target=0x2C0A
+00002BD5: GUARD_PUSH block_2C0A ; GUARD_PUSH target=0x2C0A ; unstructured_guard=alternate_exit
 00002BD8: CONCEPT_GUARD 1587 0 ; CONCEPT_GUARD word=0x1587 inverted=false "click"
 00002BDB: GUARD_POP ; GUARD_POP
 00002BDC: TEXT 01FA 03 08 90 - - 159D 024B 0B6B 1569 156F 0019 15A2 024B 15A6 156F 0019 ; TEXT line=0x01FA voice=0x03 flags=0x08,0x90 "Ahh ! Me catch print ... Ohh ! Nice print ..."
@@ -1016,7 +1016,7 @@
 00002F15: LOAD_STRING "cadeaux.hnm" ; LOAD_STRING "cadeaux.hnm"
 00002F23: TEXT 028A 01 00 80 - - 0199 1783 0257 00BC 0634 178B 1797 ; TEXT line=0x028A voice=0x01 flags=0x00,0x80 "I present you with your magnificent diploma..."
 00002F39: TEXT 028A FF 10 80 block_2F6E - 0D2F 17A2 012F 0708 FFFF 0D26 ; TEXT line=0x028A voice=0xFF flags=0x10,0x80 "TELEPORT UROUT to Ark"
-00002F4F: GUARD_PUSH block_2F6E ; GUARD_PUSH target=0x2F6E
+00002F4F: GUARD_PUSH block_2F6E ; GUARD_PUSH target=0x2F6E ; unstructured_guard=alternate_exit
 00002F52: CONCEPT_GUARD 0D26 0 ; CONCEPT_GUARD word=0x0D26 inverted=false "teleport"
 00002F55: GUARD_POP ; GUARD_POP
 00002F56: TEXT 028A FF 08 90 - - 17A8 17B4 07D1 17BC ; TEXT line=0x028A voice=0xFF flags=0x08,0x90 "TELEPORTING DIPLOMA TO ARK"
@@ -1054,7 +1054,7 @@
 0000305A: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 0000305F: GUARD_POP ; GUARD_POP
 00003060: TEXT 028A 09 10 80 block_30EE - 1848 05EE 184C 0B90 1850 1859 012F 1863 15CC 0296 186D 1297 1873 FFFF 187D 188A 188F 1899 ; TEXT line=0x028A voice=0x09 flags=0x10,0x80 "Who said \"It takes thirteen murffalos to reproduce but soon it'll take fourteen?"
-0000308E: GUARD_PUSH block_30C2 ; GUARD_PUSH target=0x30C2
+0000308E: GUARD_PUSH block_30C2 ; GUARD_PUSH target=0x30C2 ; unstructured_guard=alternate_exit
 00003091: CONCEPT_GUARD 188A 0 ; CONCEPT_GUARD word=0x188A inverted=false "Yolk"
 00003094: GUARD_POP ; GUARD_POP
 00003095: TEXT 028A 02 08 A0 - - 006C 18A5 18AB 00FD 18B1 1200 0458 18B9 02C5 00DC 001D ; TEXT line=0x028A voice=0x02 flags=0x08,0xA0 "The Great Yolk, of course. You've been boning up , Commander..."
@@ -1079,7 +1079,7 @@
 00003103: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003108: GUARD_POP ; GUARD_POP
 00003109: TEXT 028A 06 10 80 block_3195 - 18EB 18F1 18F7 0092 18FE 004D 00B2 0086 1905 FFFF 190C 1912 1919 191E ; TEXT line=0x028A voice=0x06 flags=0x10,0x80 "Which great Slimer is buried on the planet Vista?"
-0000312F: GUARD_PUSH block_3163 ; GUARD_PUSH target=0x3163
+0000312F: GUARD_PUSH block_3163 ; GUARD_PUSH target=0x3163 ; unstructured_guard=alternate_exit
 00003132: CONCEPT_GUARD 191E 0 ; CONCEPT_GUARD word=0x191E inverted=false "yolk"
 00003135: GUARD_POP ; GUARD_POP
 00003136: TEXT 028A 07 08 A0 - - 07D9 1923 00DC 00B2 192A 18A5 1937 193F 188A 193F 1944 ; TEXT line=0x028A voice=0x07 flags=0x08,0xA0 "Yes indeed , the incomparably Great Yolk... Hare Yolk Hare Hare..."
@@ -1105,7 +1105,7 @@
 000031AF: GUARD_POP ; GUARD_POP
 000031B0: TEXT 028A 05 00 80 - - 1964 1970 ; TEXT line=0x028A voice=0x05 flags=0x00,0x80 "Concentrate now..."
 000031BC: TEXT 028A 01 10 80 block_3218 - 1977 00C1 197C 1987 FFFF 1990 199B 19A3 19AF 19B9 ; TEXT line=0x028A voice=0x01 flags=0x10,0x80 "Name a stuttering Croolis?"
-000031DA: GUARD_PUSH block_31FE ; GUARD_PUSH target=0x31FE
+000031DA: GUARD_PUSH block_31FE ; GUARD_PUSH target=0x31FE ; unstructured_guard=alternate_exit
 000031DD: CONCEPT_GUARD 199B 0 ; CONCEPT_GUARD word=0x199B inverted=false "Rotator"
 000031E0: GUARD_POP ; GUARD_POP
 000031E1: TEXT 028A 04 08 A0 - - 00CF 00D6 0019 ; TEXT line=0x028A voice=0x04 flags=0x08,0xA0 "That's right ..."
@@ -1130,7 +1130,7 @@
 0000322D: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003232: GUARD_POP ; GUARD_POP
 00003233: TEXT 028A 00 10 80 block_32B1 - 016F 19C5 00F8 19C9 19D1 0086 00FD 19D6 FFFF 19DE 19E2 19E9 19ED 19F4 19FB ; TEXT line=0x028A voice=0x00 flags=0x10,0x80 "What was king Betakam IV's planet of origin?"
-0000325B: GUARD_PUSH block_327D ; GUARD_PUSH target=0x327D
+0000325B: GUARD_PUSH block_327D ; GUARD_PUSH target=0x327D ; unstructured_guard=alternate_exit
 0000325E: CONCEPT_GUARD 19FB 0 ; CONCEPT_GUARD word=0x19FB inverted=false "Attrox"
 00003261: GUARD_POP ; GUARD_POP
 00003262: TEXT 028A 09 08 A0 - - 1A02 1A0C ; TEXT line=0x028A voice=0x09 flags=0x08,0xA0 "Excellent answer..."
@@ -1155,7 +1155,7 @@
 000032C6: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 000032CB: GUARD_POP ; GUARD_POP
 000032CC: TEXT 028A 07 10 80 block_3340 - 18EB 1A3A 0A10 00C1 0A8F 1A40 1A47 FFFF 1A52 0BBB 1A5E 1A69 1A77 ; TEXT line=0x028A voice=0x07 flags=0x10,0x80 "Which Trump has a friend called Trompette?"
-000032F0: GUARD_PUSH block_331A ; GUARD_PUSH target=0x331A
+000032F0: GUARD_PUSH block_331A ; GUARD_PUSH target=0x331A ; unstructured_guard=alternate_exit
 000032F3: CONCEPT_GUARD 0BBB 0 ; CONCEPT_GUARD word=0x0BBB inverted=false "Fifi"
 000032F6: GUARD_POP ; GUARD_POP
 000032F7: TEXT 028A 05 08 A0 - - 1A86 1A8C 00B2 00D6 1A93 0019 ; TEXT line=0x028A voice=0x05 flags=0x08,0xA0 "Fifi, that's the right answer ..."
@@ -1180,7 +1180,7 @@
 00003355: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 0000335A: GUARD_POP ; GUARD_POP
 0000335B: TEXT 028A 04 10 80 block_33C7 - 006C 18A5 188A 0092 1AAE FFFF 1AB4 1ABB 1AC1 1AC9 1AD0 ; TEXT line=0x028A voice=0x04 flags=0x10,0x80 "The Great Yolk is a...?"
-0000337B: GUARD_PUSH block_339F ; GUARD_PUSH target=0x339F
+0000337B: GUARD_PUSH block_339F ; GUARD_PUSH target=0x339F ; unstructured_guard=alternate_exit
 0000337E: CONCEPT_GUARD 1AB4 0 ; CONCEPT_GUARD word=0x1AB4 inverted=false "slimer"
 00003381: GUARD_POP ; GUARD_POP
 00003382: TEXT 028A 03 08 A0 - - 1AD6 00C1 1ADB ; TEXT line=0x028A voice=0x03 flags=0x08,0xA0 "Yes, a Slimer..."
@@ -1205,7 +1205,7 @@
 000033DC: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 000033E1: GUARD_POP ; GUARD_POP
 000033E2: TEXT 028A 01 10 80 block_3454 - 1848 1AFB 1B01 024D 1B0D 1B13 0010 00BC 0146 1B1C FFFF 1A52 1B28 1B34 1B40 ; TEXT line=0x028A voice=0x01 flags=0x10,0x80 "Who said: \"Commander, Honk keeps scanning me with his equipment\"?"
-0000340A: GUARD_PUSH block_3432 ; GUARD_PUSH target=0x3432
+0000340A: GUARD_PUSH block_3432 ; GUARD_PUSH target=0x3432 ; unstructured_guard=alternate_exit
 0000340D: CONCEPT_GUARD 1B40 0 ; CONCEPT_GUARD word=0x1B40 inverted=false "tina_burner"
 00003410: GUARD_POP ; GUARD_POP
 00003411: TEXT 028A 02 08 A0 - - 1B4C 1B52 1B59 00B2 1B5C ; TEXT line=0x028A voice=0x02 flags=0x08,0xA0 "Quite right. In the cryobox..."
@@ -1230,7 +1230,7 @@
 00003469: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 0000346E: GUARD_POP ; GUARD_POP
 0000346F: TEXT 028A 04 10 80 block_34D3 - 1B6E 1B73 1B7C FFFF 1B86 1B92 1B9F 1BA3 ; TEXT line=0x028A voice=0x04 flags=0x10,0x80 "Jeph d'Ulikan defeated?"
-00003489: GUARD_PUSH block_34B1 ; GUARD_PUSH target=0x34B1
+00003489: GUARD_PUSH block_34B1 ; GUARD_PUSH target=0x34B1 ; unstructured_guard=alternate_exit
 0000348C: CONCEPT_GUARD 1B92 0 ; CONCEPT_GUARD word=0x1B92 inverted=false "black_larsen"
 0000348F: GUARD_POP ; GUARD_POP
 00003490: TEXT 028A 05 08 A0 - - 006C 1477 1BAF 1BB6 1BBE ; TEXT line=0x028A voice=0x05 flags=0x08,0xA0 "The Black Larsen Hordes, yes..."
@@ -1255,7 +1255,7 @@
 000034E8: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 000034ED: GUARD_POP ; GUARD_POP
 000034EE: TEXT 028A 07 10 80 block_3556 - 1848 1AFB 1BCB 1BD0 0A86 1BD5 1BDC FFFF 1BA3 1BE4 191E ; TEXT line=0x028A voice=0x07 flags=0x10,0x80 "Who said: \"One plus one equals three\"?"
-0000350E: GUARD_PUSH block_3532 ; GUARD_PUSH target=0x3532
+0000350E: GUARD_PUSH block_3532 ; GUARD_PUSH target=0x3532 ; unstructured_guard=alternate_exit
 00003511: CONCEPT_GUARD 191E 0 ; CONCEPT_GUARD word=0x191E inverted=false "yolk"
 00003514: GUARD_POP ; GUARD_POP
 00003515: TEXT 028A 08 08 A0 - - 006C 1BEF 1937 ; TEXT line=0x028A voice=0x08 flags=0x08,0xA0 "The incredible Yolk..."
@@ -1280,7 +1280,7 @@
 0000356B: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003570: GUARD_POP ; GUARD_POP
 00003571: TEXT 028A 08 10 80 block_35EB - 0165 005E 1859 075D 031A 1297 012F 1C06 FFFF 1C11 1C15 1C1A 1C1E 1850 ; TEXT line=0x028A voice=0x08 flags=0x10,0x80 "How many murffalos does it take to reproduce?"
-00003597: GUARD_PUSH block_35C7 ; GUARD_PUSH target=0x35C7
+00003597: GUARD_PUSH block_35C7 ; GUARD_PUSH target=0x35C7 ; unstructured_guard=alternate_exit
 0000359A: CONCEPT_GUARD 1850 0 ; CONCEPT_GUARD word=0x1850 inverted=false "thirteen"
 0000359D: GUARD_POP ; GUARD_POP
 0000359E: TEXT 028A 07 08 A0 - - 1C24 02E7 00B2 1C28 0142 1C2F 0630 1C36 1C3E ; TEXT line=0x028A voice=0x07 flags=0x08,0xA0 "One in the middle and twelve all around. Good..."
@@ -1305,7 +1305,7 @@
 00003600: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003605: GUARD_POP ; GUARD_POP
 00003606: TEXT 028A 05 10 80 block_365F - 1977 00C1 1C5D 0086 FFFF 1C6A 1C6F 1C75 1C7B 1C81 ; TEXT line=0x028A voice=0x05 flags=0x10,0x80 "Name a paralleloped planet"
-00003624: GUARD_PUSH block_3643 ; GUARD_PUSH target=0x3643
+00003624: GUARD_PUSH block_3643 ; GUARD_PUSH target=0x3643 ; unstructured_guard=alternate_exit
 00003627: CONCEPT_GUARD 1C75 0 ; CONCEPT_GUARD word=0x1C75 inverted=false "vista"
 0000362A: GUARD_POP ; GUARD_POP
 0000362B: TEXT 028A 04 08 90 - - 1C8B 1C99 1C9D 1CA5 ; TEXT line=0x028A voice=0x04 flags=0x08,0x90 "Paralleloped? Try contact lenses..."
@@ -1329,7 +1329,7 @@
 00003674: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003679: GUARD_POP ; GUARD_POP
 0000367A: TEXT 028A 02 10 80 block_36E6 - 1CBC 1CC3 19C5 1CCD 1CD6 FFFF 1CDA 1CE0 1CEC 0F0F ; TEXT line=0x028A voice=0x02 flags=0x10,0x80 "Buggol democracy was invented by?"
-00003698: GUARD_PUSH block_36C8 ; GUARD_PUSH target=0x36C8
+00003698: GUARD_PUSH block_36C8 ; GUARD_PUSH target=0x36C8 ; unstructured_guard=alternate_exit
 0000369B: CONCEPT_GUARD 1CEC 0 ; CONCEPT_GUARD word=0x1CEC inverted=false "cyborg_1er"
 0000369E: GUARD_POP ; GUARD_POP
 0000369F: TEXT 028A 01 08 A0 - - 0406 1CF7 00FD 00C1 1CFB 1D03 00DC 1D08 1D0B ; TEXT line=0x028A voice=0x01 flags=0x08,0xA0 "A bit of a history buff , eh ?..."
@@ -1354,7 +1354,7 @@
 000036FB: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003700: GUARD_POP ; GUARD_POP
 00003701: TEXT 028A 01 10 80 block_3767 - 016F 0B25 155B 1D14 1D1B FFFF 1D20 1D27 1D2F 1D36 1859 ; TEXT line=0x028A voice=0x01 flags=0x10,0x80 "What do Tubular Brains eat?"
-00003721: GUARD_PUSH block_3743 ; GUARD_PUSH target=0x3743
+00003721: GUARD_PUSH block_3743 ; GUARD_PUSH target=0x3743 ; unstructured_guard=alternate_exit
 00003724: CONCEPT_GUARD 1D27 0 ; CONCEPT_GUARD word=0x1D27 inverted=false "plastok"
 00003727: GUARD_POP ; GUARD_POP
 00003728: TEXT 028A 02 08 A0 - - 1D3A 1D4B ; TEXT line=0x028A voice=0x02 flags=0x08,0xA0 "Protein-enriched Plastok."
@@ -1379,7 +1379,7 @@
 0000377C: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003781: GUARD_POP ; GUARD_POP
 00003782: TEXT 028A 04 10 80 block_37F4 - 1977 00C1 0086 00BC 1D6F FFFF 1D75 1D7C 1D82 0F08 ; TEXT line=0x028A voice=0x04 flags=0x10,0x80 "Name a planet with rings"
-000037A0: GUARD_PUSH block_37CE ; GUARD_PUSH target=0x37CE
+000037A0: GUARD_PUSH block_37CE ; GUARD_PUSH target=0x37CE ; unstructured_guard=alternate_exit
 000037A3: CONCEPT_GUARD 1D82 0 ; CONCEPT_GUARD word=0x1D82 inverted=false "bonus"
 000037A6: GUARD_POP ; GUARD_POP
 000037A7: TEXT 028A 05 08 A0 - - 1D88 0A10 00B2 1D8E 1D6F 02E7 00B2 1D95 ; TEXT line=0x028A voice=0x05 flags=0x08,0xA0 "Bonus has the finest rings in the universe."
@@ -1404,7 +1404,7 @@
 00003809: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 0000380E: GUARD_POP ; GUARD_POP
 0000380F: TEXT 028A 07 10 80 block_3889 - 0165 0B25 1DB8 1C06 FFFF 1DBF 1DCB 1DDB 1DE3 ; TEXT line=0x028A voice=0x07 flags=0x10,0x80 "How do Scorps reproduce?"
-0000382B: GUARD_PUSH block_385F ; GUARD_PUSH target=0x385F
+0000382B: GUARD_PUSH block_385F ; GUARD_PUSH target=0x385F ; unstructured_guard=alternate_exit
 0000382E: CONCEPT_GUARD 1DCB 0 ; CONCEPT_GUARD word=0x1DCB inverted=false "parthenogenesis"
 00003831: GUARD_POP ; GUARD_POP
 00003832: TEXT 028A 08 08 A0 - - 1DEA 0CC8 1DF1 1DF5 02C5 0142 1DF9 1435 00C1 1E00 1E07 ; TEXT line=0x028A voice=0x08 flags=0x08,0xA0 "Yes... Just cut 'em up and you've got a family tree."
@@ -1429,7 +1429,7 @@
 0000389E: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 000038A3: GUARD_POP ; GUARD_POP
 000038A4: TEXT 028A 0A 10 80 block_3910 - 1977 00C1 0F77 0F7E 0F8B FFFF 1E1F 1E28 1D27 1E2F ; TEXT line=0x028A voice=0x0A flags=0x10,0x80 "Name a highly concentrated explosive"
-000038C2: GUARD_PUSH block_38EC ; GUARD_PUSH target=0x38EC
+000038C2: GUARD_PUSH block_38EC ; GUARD_PUSH target=0x38EC ; unstructured_guard=alternate_exit
 000038C5: CONCEPT_GUARD 1E28 0 ; CONCEPT_GUARD word=0x1E28 inverted=false "splach"
 000038C8: GUARD_POP ; GUARD_POP
 000038C9: TEXT 028A 01 08 A0 - - 1DEA 1E34 0151 180D 1BAF 1E39 ; TEXT line=0x028A voice=0x01 flags=0x08,0xA0 "Yes... Made from oxidized Larsen liver..."
@@ -1454,7 +1454,7 @@
 00003925: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 0000392A: GUARD_POP ; GUARD_POP
 0000392B: TEXT 028A 03 10 80 block_39A9 - 1848 0092 00B2 1E5A 00FD 00B2 1E60 1E65 1E6B 00FD 00F8 19C9 1E70 FFFF 1E74 1B40 1E7C 1E84 1E8D ; TEXT line=0x028A voice=0x03 flags=0x10,0x80 "Who is the queen of the PAGO TAGO, wife of king Betakam IV?"
-0000395B: GUARD_PUSH block_398B ; GUARD_PUSH target=0x398B
+0000395B: GUARD_PUSH block_398B ; GUARD_PUSH target=0x398B ; unstructured_guard=alternate_exit
 0000395E: CONCEPT_GUARD 1E74 0 ; CONCEPT_GUARD word=0x1E74 inverted=false "umatika"
 00003961: GUARD_POP ; GUARD_POP
 00003962: TEXT 028A 04 08 A0 - - 1E95 00DC 1E6B 00FD 00F8 19C9 1E9D 1EA5 1EB0 ; TEXT line=0x028A voice=0x04 flags=0x08,0xA0 "Umatika , wife of king Betakam fourth, eighteenth dynasty..."
@@ -1479,7 +1479,7 @@
 000039BE: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 000039C3: GUARD_POP ; GUARD_POP
 000039C4: TEXT 028A 01 10 80 block_3A2E - 1848 05EE 1A3A 1EC9 0056 1ECF FFFF 1ED5 1EE3 1EEE 1EFA ; TEXT line=0x028A voice=0x01 flags=0x10,0x80 "Who said Trump tails are dung?"
-000039E4: GUARD_PUSH block_3A08 ; GUARD_PUSH target=0x3A08
+000039E4: GUARD_PUSH block_3A08 ; GUARD_PUSH target=0x3A08 ; unstructured_guard=alternate_exit
 000039E7: CONCEPT_GUARD 1ED5 0 ; CONCEPT_GUARD word=0x1ED5 inverted=false "lord_segelaxx"
 000039EA: GUARD_POP ; GUARD_POP
 000039EB: TEXT 028A 02 08 A0 - - 1F0A 1F10 1F18 ; TEXT line=0x028A voice=0x02 flags=0x08,0xA0 "Avoid smoking them!"
@@ -1504,7 +1504,7 @@
 00003A43: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003A48: GUARD_POP ; GUARD_POP
 00003A49: TEXT 028A 04 10 80 block_3ABF - 194C 03E5 0086 0092 0C38 1F2A 1F2F FFFF 1F3A 1F47 1F4F 1F5A ; TEXT line=0x028A voice=0x04 flags=0x10,0x80 "On what planet is sex sold illicitly?"
-00003A6B: GUARD_PUSH block_3A97 ; GUARD_PUSH target=0x3A97
+00003A6B: GUARD_PUSH block_3A97 ; GUARD_PUSH target=0x3A97 ; unstructured_guard=alternate_exit
 00003A6E: CONCEPT_GUARD 1F4F 0 ; CONCEPT_GUARD word=0x1F4F inverted=false "attroxcity"
 00003A71: GUARD_POP ; GUARD_POP
 00003A72: TEXT 028A 05 08 A0 - - 1F64 00B2 18F7 1F70 0019 1B4C 1F75 ; TEXT line=0x028A voice=0x05 flags=0x08,0xA0 "Attroxcity, the Slimer city ... Quite right!"
@@ -1529,7 +1529,7 @@
 00003AD4: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003AD9: GUARD_POP ; GUARD_POP
 00003ADA: TEXT 028A 07 10 80 block_3B58 - 1848 1F82 00B2 09E3 1F8A 00FD 1AE5 FFFF 1F93 1F9B 1FA5 1FAC 1FB5 1FBE ; TEXT line=0x028A voice=0x07 flags=0x10,0x80 "Who painted the famous portrait of Yolk?"
-00003B00: GUARD_PUSH block_3B34 ; GUARD_PUSH target=0x3B34
+00003B00: GUARD_PUSH block_3B34 ; GUARD_PUSH target=0x3B34 ; unstructured_guard=alternate_exit
 00003B03: CONCEPT_GUARD 1FBE 0 ; CONCEPT_GUARD word=0x1FBE inverted=false "van_gogue"
 00003B06: GUARD_POP ; GUARD_POP
 00003B07: TEXT 028A 08 08 A0 - - 1FC8 1FCC 1F82 031A 00BC 00B2 18A5 1FD2 1FD8 1FDC 1FE3 ; TEXT line=0x028A voice=0x08 flags=0x08,0xA0 "Van Gogue painted it with the Great One's own yellow blood..."
@@ -1554,7 +1554,7 @@
 00003B6D: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003B72: GUARD_POP ; GUARD_POP
 00003B73: TEXT 028A 0A 10 80 block_3BDB - 1848 1FF5 00B2 09E3 1FFB FFFF 1B34 2006 2010 201F ; TEXT line=0x028A voice=0x0A flags=0x10,0x80 "Who wrote the famous Croolicum?"
-00003B91: GUARD_PUSH block_3BBD ; GUARD_PUSH target=0x3BBD
+00003B91: GUARD_PUSH block_3BBD ; GUARD_PUSH target=0x3BBD ; unstructured_guard=alternate_exit
 00003B94: CONCEPT_GUARD 201F 0 ; CONCEPT_GUARD word=0x201F inverted=false "nobody"
 00003B97: GUARD_POP ; GUARD_POP
 00003B98: TEXT 028A 00 08 A0 - - 0450 02ED 2026 0257 05BB 00DC 202F ; TEXT line=0x028A voice=0x00 flags=0x08,0xA0 "There's no catching you out , eh?"
@@ -1579,7 +1579,7 @@
 00003BF0: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003BF5: GUARD_POP ; GUARD_POP
 00003BF6: TEXT 028A 02 10 80 block_3C5C - 1848 19C5 00B2 2033 1A3A 2039 203E 02E7 00B2 2045 FFFF 204F 2057 2064 2071 ; TEXT line=0x028A voice=0x02 flags=0x10,0x80 "Who was the first Trump tail smoker in the universe?"
-00003C1E: GUARD_PUSH block_3C42 ; GUARD_PUSH target=0x3C42
+00003C1E: GUARD_PUSH block_3C42 ; GUARD_PUSH target=0x3C42 ; unstructured_guard=alternate_exit
 00003C21: CONCEPT_GUARD 204F 0 ; CONCEPT_GUARD word=0x204F inverted=false "al_hure"
 00003C24: GUARD_POP ; GUARD_POP
 00003C25: TEXT 028A 02 08 A0 - - 11A2 207E 2082 ; TEXT line=0x028A voice=0x02 flags=0x08,0xA0 "Good ol' Al..."
@@ -1604,7 +1604,7 @@
 00003C71: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003C76: GUARD_POP ; GUARD_POP
 00003C77: TEXT 028A 04 10 80 block_3CE5 - 1848 05EE 2091 209B 004D 20A2 0142 20AA FFFF 191E 20B1 1B9F 20BB ; TEXT line=0x028A voice=0x04 flags=0x10,0x80 "Who said :\"Silence feeds on thunder and fury\"?"
-00003C9B: GUARD_PUSH block_3CC5 ; GUARD_PUSH target=0x3CC5
+00003C9B: GUARD_PUSH block_3CC5 ; GUARD_PUSH target=0x3CC5 ; unstructured_guard=alternate_exit
 00003C9E: CONCEPT_GUARD 191E 0 ; CONCEPT_GUARD word=0x191E inverted=false "yolk"
 00003CA1: GUARD_POP ; GUARD_POP
 00003CA2: TEXT 028A 04 08 A0 - - 20C5 012F 0146 1FDC 20CB 20D3 ; TEXT line=0x028A voice=0x04 flags=0x08,0xA0 "Peace to his yellow soul... Bravo."
@@ -1629,7 +1629,7 @@
 00003CFA: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003CFF: GUARD_POP ; GUARD_POP
 00003D00: TEXT 028A 06 10 80 block_3D60 - 1977 0A86 20E8 09C8 00B2 20EC FFFF 20F6 2104 2110 211C ; TEXT line=0x028A voice=0x06 flags=0x10,0x80 "Name one hit by the Migrators"
-00003D20: GUARD_PUSH block_3D44 ; GUARD_PUSH target=0x3D44
+00003D20: GUARD_PUSH block_3D44 ; GUARD_PUSH target=0x3D44 ; unstructured_guard=alternate_exit
 00003D23: CONCEPT_GUARD 20F6 0 ; CONCEPT_GUARD word=0x20F6 inverted=false "crush_me_baby"
 00003D26: GUARD_POP ; GUARD_POP
 00003D27: TEXT 028A 07 08 A0 - - 2127 2130 2135 ; TEXT line=0x028A voice=0x07 flags=0x08,0xA0 "Cruuuush meee baaaabbbyyyy!"
@@ -1654,7 +1654,7 @@
 00003D75: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003D7A: GUARD_POP ; GUARD_POP
 00003D7B: TEXT 028A 08 10 80 block_3DE5 - 1848 0092 00B2 2158 215F 1379 02E7 00B2 2045 FFFF 1A77 1CE0 2166 2172 ; TEXT line=0x028A voice=0x08 flags=0x10,0x80 "Who is the oldest living being in the universe?"
-00003DA1: GUARD_PUSH block_3DC5 ; GUARD_PUSH target=0x3DC5
+00003DA1: GUARD_PUSH block_3DC5 ; GUARD_PUSH target=0x3DC5 ; unstructured_guard=alternate_exit
 00003DA4: CONCEPT_GUARD 1CE0 0 ; CONCEPT_GUARD word=0x1CE0 inverted=false "Bob_Morlock"
 00003DA7: GUARD_POP ; GUARD_POP
 00003DA8: TEXT 028A 08 08 A0 - - 11A2 207E 217E ; TEXT line=0x028A voice=0x08 flags=0x08,0xA0 "Good ol' Bob!"
@@ -1679,7 +1679,7 @@
 00003DFA: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003DFF: GUARD_POP ; GUARD_POP
 00003E00: TEXT 028A 08 10 80 block_3E74 - 18EB 09E3 218D 2194 02E7 219C 0010 02E7 0634 21A5 21AF FFFF 21B9 1B40 21BF 21C8 ; TEXT line=0x028A voice=0x08 flags=0x10,0x80 "Which famous dancer starred in \"Squeeze me in your tentacles darling\"?"
-00003E2A: GUARD_PUSH block_3E50 ; GUARD_PUSH target=0x3E50
+00003E2A: GUARD_PUSH block_3E50 ; GUARD_PUSH target=0x3E50 ; unstructured_guard=alternate_exit
 00003E2D: CONCEPT_GUARD 1B40 0 ; CONCEPT_GUARD word=0x1B40 inverted=false "tina_burner"
 00003E30: GUARD_POP ; GUARD_POP
 00003E31: TEXT 028A 06 08 A0 - - 016F 00C1 21D2 024B ; TEXT line=0x028A voice=0x06 flags=0x08,0xA0 "What a performance !"
@@ -1704,7 +1704,7 @@
 00003E89: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003E8E: GUARD_POP ; GUARD_POP
 00003E8F: TEXT 028A 06 10 80 block_3EFD - 016F 0092 00B2 21E4 21EE 00FD 00B2 21F4 FFFF 21FC 220C 221B 2229 ; TEXT line=0x028A voice=0x06 flags=0x10,0x80 "What is the preferred drink of the Migrax?"
-00003EB3: GUARD_PUSH block_3ED7 ; GUARD_PUSH target=0x3ED7
+00003EB3: GUARD_PUSH block_3ED7 ; GUARD_PUSH target=0x3ED7 ; unstructured_guard=alternate_exit
 00003EB6: CONCEPT_GUARD 21FC 0 ; CONCEPT_GUARD word=0x21FC inverted=false "processed_liver"
 00003EB9: GUARD_POP ; GUARD_POP
 00003EBA: TEXT 028A 09 08 A0 - - 10E7 005A 0DB1 ; TEXT line=0x028A voice=0x09 flags=0x08,0xA0 "Way too easy..."
@@ -1729,7 +1729,7 @@
 00003F12: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003F17: GUARD_POP ; GUARD_POP
 00003F18: TEXT 028A 06 10 80 block_3F8E - 1848 2235 2244 224C 2254 225B 2264 224C 226A FFFF 201F 2271 191E ; TEXT line=0x028A voice=0x06 flags=0x10,0x80 "Who said:\"ondoyant pretty, Croolis drool. ondoyant ugly, Croolis cruel\""
-00003F3C: GUARD_PUSH block_3F66 ; GUARD_PUSH target=0x3F66
+00003F3C: GUARD_PUSH block_3F66 ; GUARD_PUSH target=0x3F66 ; unstructured_guard=alternate_exit
 00003F3F: CONCEPT_GUARD 2271 0 ; CONCEPT_GUARD word=0x2271 inverted=false "maxxon"
 00003F42: GUARD_POP ; GUARD_POP
 00003F43: TEXT 028A 00 08 A0 - - 016F 00C1 2278 00DC 013D 227D ; TEXT line=0x028A voice=0x00 flags=0x08,0xA0 "What a poet , that Maxxon."
@@ -1754,7 +1754,7 @@
 00003FA3: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00003FA8: GUARD_POP ; GUARD_POP
 00003FA9: TEXT 028A 00 10 80 block_401D - 006C 18A5 229A 22A2 0092 004D 22A7 22AD FFFF 1D7C 22B5 1C75 22BD ; TEXT line=0x028A voice=0x00 flags=0x10,0x80 "The Great Yolk's tomb is on which planet?"
-00003FCD: GUARD_PUSH block_3FF7 ; GUARD_PUSH target=0x3FF7
+00003FCD: GUARD_PUSH block_3FF7 ; GUARD_PUSH target=0x3FF7 ; unstructured_guard=alternate_exit
 00003FD0: CONCEPT_GUARD 1C75 0 ; CONCEPT_GUARD word=0x1C75 inverted=false "vista"
 00003FD3: GUARD_POP ; GUARD_POP
 00003FD4: TEXT 028A 06 08 A0 - - 1B59 00B2 22C4 22CA 004D 194F ; TEXT line=0x028A voice=0x06 flags=0x08,0xA0 "In the SCRUT palace on Vista"
@@ -1779,7 +1779,7 @@
 00004032: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00004037: GUARD_POP ; GUARD_POP
 00004038: TEXT 028A 07 10 80 block_40A4 - 194C 22A7 0086 22D9 00B2 22DD 0866 22E3 FFFF 0F08 22EA 22F3 1C6F ; TEXT line=0x028A voice=0x07 flags=0x10,0x80 "On which planet may the voice be heard?"
-0000405C: GUARD_PUSH block_4080 ; GUARD_PUSH target=0x4080
+0000405C: GUARD_PUSH block_4080 ; GUARD_PUSH target=0x4080 ; unstructured_guard=alternate_exit
 0000405F: CONCEPT_GUARD 22F3 0 ; CONCEPT_GUARD word=0x22F3 inverted=false "kult"
 00004062: GUARD_POP ; GUARD_POP
 00004063: TEXT 028A 03 08 A0 - - 22F8 00DC 001D ; TEXT line=0x028A voice=0x03 flags=0x08,0xA0 "Indeed , Commander..."
@@ -1804,7 +1804,7 @@
 000040B9: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 000040BE: GUARD_POP ; GUARD_POP
 000040BF: TEXT 028A 01 10 80 block_412F - 016F 0092 00B2 0086 2312 231A FFFF 231F 2325 232C 2332 ; TEXT line=0x028A voice=0x01 flags=0x10,0x80 "What is the planet Tumul's sun?"
-000040DF: GUARD_PUSH block_4109 ; GUARD_PUSH target=0x4109
+000040DF: GUARD_PUSH block_4109 ; GUARD_PUSH target=0x4109 ; unstructured_guard=alternate_exit
 000040E2: CONCEPT_GUARD 2325 0 ; CONCEPT_GUARD word=0x2325 inverted=false "gladis"
 000040E5: GUARD_POP ; GUARD_POP
 000040E6: TEXT 028A 03 08 A0 - - 233B 00DC 00B2 0AA7 1496 0095 ; TEXT line=0x028A voice=0x03 flags=0x08,0xA0 "Gladis , the smart star ."
@@ -1829,7 +1829,7 @@
 00004144: ACTOR 02C4 0028 0 ; ACTOR record=0x02C4 related=0x0028 inverted=false
 00004149: GUARD_POP ; GUARD_POP
 0000414A: TEXT 028A 0A 10 80 block_41B6 - 0165 005E 2349 0A10 234F FFFF 2358 1C2F 235D 2362 ; TEXT line=0x028A voice=0x0A flags=0x10,0x80 "How many moons has Moskito?"
-00004168: GUARD_PUSH block_4190 ; GUARD_PUSH target=0x4190
+00004168: GUARD_PUSH block_4190 ; GUARD_PUSH target=0x4190 ; unstructured_guard=alternate_exit
 0000416B: CONCEPT_GUARD 235D 0 ; CONCEPT_GUARD word=0x235D inverted=false "zero"
 0000416E: GUARD_POP ; GUARD_POP
 0000416F: TEXT 028A 01 08 A0 - - 236D 1B52 2378 0092 2380 ; TEXT line=0x028A voice=0x01 flags=0x08,0xA0 "Absolutely right. Moskito is moonless."
@@ -1914,7 +1914,7 @@
 00004576: THEN ; GUARD_POP
 00004577: TEXT 043A FF 20 80 - - 1321 0A7C 00B2 0262 00DC 00A3 0095 1363 1356 0146 0B2D 1043 ; TEXT line=0x043A voice=0xFF flags=0x20,0x80 "Teleport him the ring , Commander . That'll make his day ...."
 00004597: TEXT 043A FF 10 80 block_45D2 - 0D38 253A 07D1 0391 FFFF 0D2F ; TEXT line=0x043A voice=0xFF flags=0x10,0x80 "RING TELEPORTED TO MIGRATOR"
-000045AD: GUARD_PUSH block_45D2 ; GUARD_PUSH target=0x45D2
+000045AD: GUARD_PUSH block_45D2 ; GUARD_PUSH target=0x45D2 ; unstructured_guard=alternate_exit
 000045B0: CONCEPT_GUARD 0D2F 0 ; CONCEPT_GUARD word=0x0D2F inverted=false "TELEPORT"
 000045B3: GUARD_POP ; GUARD_POP
 000045B4: TEXT 043A FF 08 90 - - 0D38 253A 07D1 2545 254D 0EA4 0095 ; TEXT line=0x043A voice=0xFF flags=0x08,0x90 "RING TELEPORTED TO MOSKITO AIRPORT ZONE ."

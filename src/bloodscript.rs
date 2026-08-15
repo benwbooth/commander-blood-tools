@@ -14,7 +14,7 @@ use anyhow::{Result, anyhow, bail};
 use crate::bas_cfg::{BasControlFlow, analyze_bas};
 use crate::script::DebSymbol;
 use crate::vm::{self, VmToken};
-use crate::vm_cfg::{StructuredGuard, recover_structured_guards};
+use crate::vm_cfg::{GuardRecovery, GuardRejection, StructuredGuard, analyze_structured_guards};
 use crate::vm_source::{self, ImageKind};
 
 const SOURCE_FORMAT: &str = "bloodscript-ir-v1";
@@ -30,6 +30,8 @@ pub struct Decompilation {
     pub symbolic_labels: usize,
     pub procedures: usize,
     pub structured_guards: usize,
+    pub unstructured_guards: usize,
+    pub guard_rejection_counts: BTreeMap<String, usize>,
     pub structured_selector_lists: usize,
     pub structured_cases: usize,
 }
@@ -44,6 +46,8 @@ struct BodyStats {
     symbolic_labels: usize,
     procedures: usize,
     structured_guards: usize,
+    unstructured_guards: usize,
+    guard_rejection_counts: BTreeMap<String, usize>,
     structured_selector_lists: usize,
     structured_cases: usize,
 }
@@ -68,6 +72,7 @@ struct StructuredAnnotations {
     starts: BTreeMap<usize, StructuredGuard>,
     thens: BTreeMap<usize, usize>,
     ends: BTreeMap<usize, Vec<usize>>,
+    rejected: BTreeMap<usize, BTreeSet<GuardRejection>>,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -159,6 +164,8 @@ fn decompile_mode(
         symbolic_labels: stats.symbolic_labels,
         procedures: stats.procedures,
         structured_guards: stats.structured_guards,
+        unstructured_guards: stats.unstructured_guards,
+        guard_rejection_counts: stats.guard_rejection_counts,
         structured_selector_lists: stats.structured_selector_lists,
         structured_cases: stats.structured_cases,
     })
@@ -187,6 +194,8 @@ fn decompile_mode_with_bas_graph(
         symbolic_labels: stats.symbolic_labels,
         procedures: stats.procedures,
         structured_guards: stats.structured_guards,
+        unstructured_guards: stats.unstructured_guards,
+        guard_rejection_counts: stats.guard_rejection_counts,
         structured_selector_lists: stats.structured_selector_lists,
         structured_cases: stats.structured_cases,
     })
@@ -564,7 +573,7 @@ fn decompile_cod(
     let tokens = vm::walk(image, 0, image.len());
     let annotations = cod_annotations(&tokens, image, symbols)?;
     let structured = if structured {
-        structured_annotations(recover_structured_guards("COD", image, symbols)?)
+        structured_annotations(analyze_structured_guards("COD", image, symbols)?)
     } else {
         StructuredAnnotations::default()
     };
@@ -573,6 +582,8 @@ fn decompile_cod(
         symbolic_labels: annotations.labels.len(),
         procedures: annotations.procedure_count,
         structured_guards: structured.starts.len(),
+        unstructured_guards: structured.rejected.len(),
+        guard_rejection_counts: guard_rejection_counts(&structured.rejected),
         ..BodyStats::default()
     };
 
@@ -606,7 +617,13 @@ fn decompile_cod(
         } else if structured.thens.contains_key(&offset) {
             writeln!(output, "{offset:08X}: THEN ; GUARD_POP")?;
         } else {
-            emit_token(output, &token, dictionary, &annotations.labels)?;
+            emit_token(
+                output,
+                &token,
+                dictionary,
+                &annotations.labels,
+                structured.rejected.get(&offset),
+            )?;
         }
         stats.typed_statements += 1;
         stats.typed_bytes += encoded.len();
@@ -688,7 +705,7 @@ fn decompile_bas(
                     )?;
                 }
                 vm_source::BasToken::Text(token) | vm_source::BasToken::Vm(token) => {
-                    emit_token(output, token, dictionary, &HashMap::new())?;
+                    emit_token(output, token, dictionary, &HashMap::new(), None)?;
                 }
                 vm_source::BasToken::Yield { .. } => {
                     writeln!(output, "{cursor:08X}: YIELD ; opcode AA")?;
@@ -923,9 +940,12 @@ fn emit_directives(
     Ok(())
 }
 
-fn structured_annotations(regions: Vec<StructuredGuard>) -> StructuredAnnotations {
-    let mut annotations = StructuredAnnotations::default();
-    for region in regions {
+fn structured_annotations(recovery: GuardRecovery) -> StructuredAnnotations {
+    let mut annotations = StructuredAnnotations {
+        rejected: recovery.rejected,
+        ..StructuredAnnotations::default()
+    };
+    for region in recovery.structured {
         annotations.thens.insert(region.then_offset, region.start);
         annotations
             .ends
@@ -938,6 +958,18 @@ fn structured_annotations(regions: Vec<StructuredGuard>) -> StructuredAnnotation
         starts.sort_unstable_by(|left, right| right.cmp(left));
     }
     annotations
+}
+
+fn guard_rejection_counts(
+    rejected: &BTreeMap<usize, BTreeSet<GuardRejection>>,
+) -> BTreeMap<String, usize> {
+    let mut counts = BTreeMap::new();
+    for reasons in rejected.values() {
+        for reason in reasons {
+            *counts.entry(reason.as_str().to_string()).or_default() += 1;
+        }
+    }
+    counts
 }
 
 fn emit_structured_ends(
@@ -1001,6 +1033,7 @@ fn emit_token(
     token: &VmToken,
     dictionary: &HashMap<u16, String>,
     labels: &HashMap<u16, String>,
+    guard_rejections: Option<&BTreeSet<GuardRejection>>,
 ) -> Result<()> {
     let offset = token.offset();
     write!(output, "{offset:08X}: ")?;
@@ -1208,7 +1241,17 @@ fn emit_token(
         }
         VmToken::Invalid { byte, .. } => write!(output, "RAW {byte:02X}")?,
     }
-    writeln!(output, " ; {}", vm_source::token_comment(token, dictionary))?;
+    write!(output, " ; {}", vm_source::token_comment(token, dictionary))?;
+    if let Some(reasons) = guard_rejections {
+        write!(output, " ; unstructured_guard=")?;
+        for (index, reason) in reasons.iter().enumerate() {
+            if index != 0 {
+                output.push(',');
+            }
+            output.push_str(reason.as_str());
+        }
+    }
+    output.push('\n');
     Ok(())
 }
 
@@ -1631,9 +1674,17 @@ mod tests {
     use super::*;
     use std::path::{Path, PathBuf};
 
+    fn has_complete_bundle(path: &Path) -> bool {
+        (1..=5).all(|script| {
+            ["COD", "BAS", "DIC", "DEB", "VAR"]
+                .iter()
+                .all(|extension| path.join(format!("SCRIPT{script}.{extension}")).exists())
+        })
+    }
+
     fn game_dir() -> Option<PathBuf> {
         if let Some(path) = std::env::var_os("CBLOOD_GAME_DIR").map(PathBuf::from) {
-            if path.join("SCRIPT1.COD").exists() {
+            if has_complete_bundle(&path) {
                 return Some(path);
             }
         }
@@ -1643,7 +1694,7 @@ mod tests {
         ]
         .iter()
         .map(Path::new)
-        .find(|path| path.join("SCRIPT1.COD").exists())
+        .find(|path| has_complete_bundle(path))
         .map(Path::to_path_buf)
     }
 
@@ -1750,6 +1801,30 @@ mod tests {
             .source
             .replace("END_WHEN block_000B", "END_WHEN wrong");
         assert!(compile(&malformed).is_err());
+    }
+
+    #[test]
+    fn rejected_structured_guard_keeps_exact_tokens_with_reason() {
+        let image = vec![
+            0xA4, 0x0A, 0x00, // external jump into the guard body
+            0xA0, 0x0E, 0x00, // guard -> END
+            0xA3, 0x34, 0x12, // condition
+            0xA1, 0xA5, 0x02, 0x78, 0x56, // external-entry target
+            0xFF,
+        ];
+        let decompiled =
+            decompile_structured_with_symbols(ImageKind::Cod, &image, &HashMap::new(), &[])
+                .unwrap();
+        assert_eq!(decompiled.structured_guards, 0);
+        assert_eq!(decompiled.unstructured_guards, 1);
+        assert_eq!(
+            decompiled.guard_rejection_counts.get("external_entry"),
+            Some(&1)
+        );
+        assert!(decompiled.source.contains(
+            "GUARD_PUSH block_000E ; GUARD_PUSH target=0x000E ; unstructured_guard=external_entry"
+        ));
+        assert_eq!(compile(&decompiled.source).unwrap(), image);
     }
 
     #[test]

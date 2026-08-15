@@ -38,9 +38,16 @@ A guard is lifted only when all of these are established:
 The shipped COD corpus contains 682 `A0` guards. This pass structures 443
 (65.0 percent) and deliberately leaves 239 as `GUARD_PUSH`/`GUARD_POP`.
 Fallback is evidence that the region has not met the structural proof, not an
-invitation to guess. All ten generated COD and BAS sources compile to the exact
-183,523 shipped bytes; per-image guard, list, and case counts are in
-`manifest.tsv`.
+invitation to guess. Each retained `GUARD_PUSH` has an
+`unstructured_guard=<reason>` comment, and `manifest.tsv` records the reason
+counts per image. All 239 shipped fallbacks are `alternate_exit`: at least one
+CFG edge leaves the candidate interval somewhere other than its declared end.
+The analyzer also distinguishes non-forward targets, cross-procedure targets,
+missing balanced pops, crossing regions, shared pops, and external entries when
+they occur. Comments do not emit bytes.
+
+All ten generated COD and BAS sources compile to the exact 183,523 shipped
+bytes; per-image guard, rejection, list, and case counts are in `manifest.tsv`.
 
 This syntax is reconstructed by this project. It is not claimed to be the
 original 1994 source spelling.

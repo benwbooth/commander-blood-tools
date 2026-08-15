@@ -97,6 +97,38 @@ pub struct StructuredGuard {
     pub end: usize,
 }
 
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum GuardRejection {
+    NonForward,
+    CrossProcedure,
+    MissingBalancedPop,
+    CrossingRegion,
+    SharedThen,
+    ExternalEntry,
+    AlternateExit,
+}
+
+impl GuardRejection {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::NonForward => "non_forward",
+            Self::CrossProcedure => "cross_procedure",
+            Self::MissingBalancedPop => "missing_balanced_pop",
+            Self::CrossingRegion => "crossing_region",
+            Self::SharedThen => "shared_then",
+            Self::ExternalEntry => "external_entry",
+            Self::AlternateExit => "alternate_exit",
+        }
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct GuardRecovery {
+    pub structured: Vec<StructuredGuard>,
+    pub rejected: BTreeMap<usize, BTreeSet<GuardRejection>>,
+}
+
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 struct FlowState {
     query: bool,
@@ -291,10 +323,19 @@ pub fn recover_structured_guards(
     image: &[u8],
     symbols: &[DebSymbol],
 ) -> Result<Vec<StructuredGuard>> {
+    Ok(analyze_structured_guards(script, image, symbols)?.structured)
+}
+
+pub fn analyze_structured_guards(
+    script: &str,
+    image: &[u8],
+    symbols: &[DebSymbol],
+) -> Result<GuardRecovery> {
     let graph = analyze_cod(script, image, symbols)?;
     let tokens = vm::walk(image, 0, image.len());
     let functions = functions_from_symbols(script, symbols, image.len());
     let mut candidates = Vec::new();
+    let mut rejected: BTreeMap<usize, BTreeSet<GuardRejection>> = BTreeMap::new();
 
     for (index, token) in tokens.iter().enumerate() {
         let VmToken::GuardPush { offset, target, .. } = token else {
@@ -302,6 +343,10 @@ pub fn recover_structured_guards(
         };
         let end = usize::from(*target);
         if end <= *offset {
+            rejected
+                .entry(*offset)
+                .or_default()
+                .insert(GuardRejection::NonForward);
             continue;
         }
         let procedure_end = functions
@@ -310,6 +355,10 @@ pub fn recover_structured_guards(
             .find(|&function_offset| function_offset > *offset)
             .unwrap_or(image.len() - 1);
         if end > procedure_end {
+            rejected
+                .entry(*offset)
+                .or_default()
+                .insert(GuardRejection::CrossProcedure);
             continue;
         }
 
@@ -337,41 +386,73 @@ pub fn recover_structured_guards(
                 then_offset,
                 end,
             });
+        } else {
+            rejected
+                .entry(*offset)
+                .or_default()
+                .insert(GuardRejection::MissingBalancedPop);
         }
     }
 
-    let mut rejected = BTreeSet::new();
     for (left_index, left) in candidates.iter().enumerate() {
-        for (right_index, right) in candidates.iter().enumerate().skip(left_index + 1) {
+        for right in candidates.iter().skip(left_index + 1) {
             let crosses =
                 (left.start < right.start && right.start < left.end && left.end < right.end)
                     || (right.start < left.start && left.start < right.end && right.end < left.end);
-            if crosses || left.then_offset == right.then_offset {
-                rejected.insert(left_index);
-                rejected.insert(right_index);
+            if crosses {
+                rejected
+                    .entry(left.start)
+                    .or_default()
+                    .insert(GuardRejection::CrossingRegion);
+                rejected
+                    .entry(right.start)
+                    .or_default()
+                    .insert(GuardRejection::CrossingRegion);
+            }
+            if left.then_offset == right.then_offset {
+                rejected
+                    .entry(left.start)
+                    .or_default()
+                    .insert(GuardRejection::SharedThen);
+                rejected
+                    .entry(right.start)
+                    .or_default()
+                    .insert(GuardRejection::SharedThen);
             }
         }
     }
 
-    for (index, guard) in candidates.iter().enumerate() {
-        if graph.edges.iter().any(|edge| {
+    for guard in &candidates {
+        for edge in &graph.edges {
             let source_inside =
                 edge.from_instruction >= guard.start && edge.from_instruction < guard.end;
             let target_inside = edge.to_block >= guard.start && edge.to_block < guard.end;
             let enters_interior =
                 !source_inside && edge.to_block > guard.start && edge.to_block < guard.end;
             let exits_elsewhere = source_inside && !target_inside && edge.to_block != guard.end;
-            enters_interior || exits_elsewhere
-        }) {
-            rejected.insert(index);
+            if enters_interior {
+                rejected
+                    .entry(guard.start)
+                    .or_default()
+                    .insert(GuardRejection::ExternalEntry);
+            }
+            if exits_elsewhere {
+                rejected
+                    .entry(guard.start)
+                    .or_default()
+                    .insert(GuardRejection::AlternateExit);
+            }
         }
     }
 
-    Ok(candidates
+    let structured = candidates
         .into_iter()
-        .enumerate()
-        .filter_map(|(index, guard)| (!rejected.contains(&index)).then_some(guard))
-        .collect())
+        .filter(|guard| !rejected.contains_key(&guard.start))
+        .collect();
+    Ok(GuardRecovery {
+        structured,
+        rejected,
+    })
 }
 
 fn validate_typed_stream(image: &[u8], tokens: &[VmToken]) -> Result<usize> {
@@ -683,6 +764,36 @@ mod tests {
             recover_structured_guards("SCRIPTX", &external_entry, &[])
                 .unwrap()
                 .is_empty()
+        );
+        let recovery = analyze_structured_guards("SCRIPTX", &external_entry, &[]).unwrap();
+        assert_eq!(
+            recovery.rejected.get(&3),
+            Some(&BTreeSet::from([GuardRejection::ExternalEntry]))
+        );
+    }
+
+    #[test]
+    fn classifies_non_forward_and_unbalanced_guards() {
+        let non_forward = vec![
+            0xA4, 0x07, 0x00, // keep the malformed guard unreachable
+            0xA0, 0x03, 0x00, // guard -> itself
+            0xA1, 0xFF,
+        ];
+        let recovery = analyze_structured_guards("SCRIPTX", &non_forward, &[]).unwrap();
+        assert_eq!(
+            recovery.rejected.get(&3),
+            Some(&BTreeSet::from([GuardRejection::NonForward]))
+        );
+
+        let missing_pop = vec![
+            0xA4, 0x07, 0x00, // keep the malformed guard unreachable
+            0xA0, 0x07, 0x00, // guard -> END without A1
+            0xAA, 0xFF,
+        ];
+        let recovery = analyze_structured_guards("SCRIPTX", &missing_pop, &[]).unwrap();
+        assert_eq!(
+            recovery.rejected.get(&3),
+            Some(&BTreeSet::from([GuardRejection::MissingBalancedPop]))
         );
     }
 }
