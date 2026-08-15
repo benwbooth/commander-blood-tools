@@ -154,6 +154,22 @@ The two yield entries intentionally remain separate one-assignment functions.
 Their shared segment-qualified declaration lives in `bloodprg_vm.h`; no wrapper,
 register model, or duplicated far-memory syntax is introduced.
 
+### A8/A9 segment-correct acceptance batch
+
+The padded-string and conditional-jump candidates now use shared `GAME_DATA`
+aliases for every destination and state object, while script reads remain on
+`DS`. This expresses the shipped runtime `SS=GS` data layout without allowing a
+compiler to redirect script reads to the state segment.
+
+| routine | original | closest reviewed Watcom result | accepted boundary |
+| --- | ---: | ---: | --- |
+| `0x0067C8 vm_op_a8_load_string` | 29 instructions, 104 bytes | size mode: 41 instructions, 131 bytes | all ten vectors pass; the copy, pad consumption, prefix check, gates, and five success stores remain ordered; explicit ES setup, saved registers, MOV/INC lowering, and register allocation are incidental |
+| `0x006830 vm_op_a9_cond_jump` | 10 instructions, 28 bytes | speed and size modes: 18 instructions, 40 bytes | all nine vectors pass; query/root/top store order and final cursor agree; explicit ES access, expanded loads, duplicate returns, and odd-path ADD flags are accepted because the dispatcher immediately replaces those flags while consuming the yield signal |
+
+Both functions retain a one-to-one routine boundary and natural pointer/state
+operations. No inline assembly, register-state model, or compatibility wrapper
+was added to improve superficial codegen similarity.
+
 In the initial matrix, no Watcom configuration produced an exact mnemonic
 sequence or exact sequence of encoded instruction bytes for any probe. The
 strongest aggregate Watcom configuration was unoptimized huge model with its
@@ -1667,11 +1683,13 @@ the ordered active-line/request/presentation/actor/dialog stores. Copy and pad
 offset wrap, AL-only clearing with AH preserved, SI/BP outputs, untouched state,
 and path flags are included.
 
-Open Watcom `-3 -ox -mm` emits 38 instructions/105 bytes versus the original
-29/104, with mnemonic LCS 25/29 and multiset overlap 26/29. The control flow is
-close, but Watcom uses DS globals, AX as the destination cursor, and saved BX/DX
-instead of the original SS:BP destination and AL loop. Turbo C 2.01 medium emits
-42 instructions with mnemonic LCS 26/29.
+The corrected candidate uses shared `GAME_DATA` aliases for the destination and
+all state, preserving script `DS` and expressing the shipped runtime `SS=GS`
+layout. Open Watcom `-3 -os -s -mm` emits 41 instructions/131 bytes versus the
+original 29/104, with mnemonic LCS 26/29 and multiset overlap 27/29. It preserves
+the exact success-store order. Saved BX/DX/ES, explicit segment materialization,
+MOV/INC copy lowering, and different register allocation are accepted compiler
+choices rather than missing behavior.
 
 VM conditional jump handler `0x006830` has nine direct vectors covering clear
 and set flag bit zero, unrelated flag bits, zero and maximum targets, unaligned
@@ -1682,14 +1700,14 @@ writes branch-stack root, and finally sets the top to 2. The vectors also prove
 GS state ownership, DS script ownership, path-specific AX/SI, preservation,
 immutable input, TEST-derived flags, and near return.
 
-The direct-return natural candidate compiles without warnings under Open Watcom
-`-3 -ox -mm` to 12 instructions/30 bytes versus 10/28 original. Watcom retains
-the branch topology, SI input/result, store ordering, and immediate state values,
-but expands LODSB/LODSW to MOV plus pointer arithmetic, duplicates RET, addresses
-globals through DS, and overwrites the odd path's TEST flags with `ADD SI,2`.
-Turbo C 2.01 medium emits 25 instructions. Exact integration therefore needs
-fixed GS placement and the original string-load/shared-return codegen; the
-natural C logic and data flow require no register or memory emulation.
+The direct-return natural candidate uses shared `GAME_DATA` aliases and compiles
+without warnings under Open Watcom `-3 -ox -mm` to 18 instructions/40 bytes
+versus 10/28 original. Watcom retains branch topology, SI input/result, store
+ordering, immediate state values, and script `DS`, but materializes ES, expands
+LODSB/LODSW to MOV plus pointer arithmetic, duplicates RET, and overwrites the
+odd path's TEST flags with `ADD SI,2`. Those flags are caller-dead: the dispatcher
+immediately loads and ORs the yield signal before making its next decision. The
+remaining differences are accepted compiler choices, not missing logic.
 
 VM byte-poke handler `0x00684C` has ten direct vectors covering zero, high-bit,
 and maximum byte values; aligned and unaligned pointers; a target at
@@ -3392,8 +3410,8 @@ LCS and then mnemonic similarity:
 | `vm_cond_state_array` | medium, `-ox`, register | 13/24 | 0.0769 | 0.4615 | 0.0769 |
 | `strlen_b` | medium, `-ox`, register | 11/11 | 0.2727 | 0.4545 | 0.2727 |
 | `vm_presentation_register_set` | medium, `-ox`, register | 5/15 | 0.2000 | 0.6000 | 0.2000 |
-| `vm_load_string` | medium, `-ox`, register | 29/38 | 0.0690 | 0.8621 | 0.1034 |
-| `vm_conditional_jump` | medium, `-ox`, register | 10/12 | 0.1000 | 0.7000 | 0.3000 |
+| `vm_load_string` | medium, `-os -s`, register | 29/41 | 0.0690 | 0.7931 | 0.1034 |
+| `vm_conditional_jump` | medium, `-ox`, register | 10/18 | 0.1000 | 0.7000 | 0.4000 |
 | `vm_poke_byte` | medium, `-ox`, register | 5/6 | 0.2000 | 0.8000 | 0.8000 |
 | `vm_yield` | medium, `-ox`, register | 2/4 | 0.5000 | 1.0000 | 0.5000 |
 | `vm_shared_state` | medium, `-ox`, register | 69/87 | 0.1304 | 0.7971 | 0.2464 |

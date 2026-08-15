@@ -54,7 +54,11 @@ extern volatile cb_u8 vm_subtitle_display_mode_ds; /* DS:0x27E2 alias */
 extern volatile cb_u16 vm_operand_word_count; /* GS:0x27CF */
 extern volatile cb_u16 vm_text_menu_inline_x; /* DS/GS:0x27D1 */
 extern volatile cb_u8 vm_load_string_buffer[]; /* SS:0x2120 here; SS=GS at runtime */
+extern volatile cb_u8 CB_GAME_DATA
+        vm_load_string_buffer_gs[];          /* explicit GS/SS:0x2120 alias */
 extern volatile cb_u8 vm_dialog_gate_0b3b;   /* GS:0x0B3B */
+extern volatile cb_u8 CB_GAME_DATA
+        vm_dialog_gate_0b3b_gs;              /* explicit GS:0x0B3B alias */
 extern volatile cb_u8 vm_text_mode_0cf9;     /* GS:0x0CF9 */
 extern volatile cb_u8 vm_text_mode_0cfa;     /* GS:0x0CFA */
 extern volatile cb_u8 vm_text_voice_trigger; /* GS:0x0CFB */
@@ -64,8 +68,12 @@ extern volatile char CB_GAME_DATA
 extern volatile cb_i16 vm_text_selector;     /* GS:0x1FAB */
 extern volatile cb_u8 vm_text_menu_pending;  /* GS:0x1FB3 */
 extern volatile cb_u8 vm_c2_presentation_gate; /* GS:0x1FB2 */
+extern volatile cb_u8 CB_GAME_DATA
+        vm_c2_presentation_gate_gs;          /* explicit GS:0x1FB2 alias */
 extern volatile char CB_NEAR * volatile
         vm_loaded_scene_image_path; /* DS:0x1FA3 */
+extern volatile cb_u16 CB_GAME_DATA
+        vm_loaded_scene_image_path_offset_gs; /* explicit GS:0x1FA3 alias */
 extern volatile cb_u16 vm_text_menu_end;     /* GS:0x27D3 */
 extern volatile cb_u16 vm_text_reveal_cursor; /* GS:0x5E58 */
 extern volatile cb_u16 CB_GAME_DATA
@@ -184,6 +192,8 @@ extern volatile cb_u8 CB_GAME_DATA
 extern volatile cb_u8 CB_GAME_DATA
         vm_presentation_hold_ready_gs; /* explicit GS:0x67BC alias */
 extern volatile cb_u8 vm_finale_requested;   /* GS:0x67BD */
+extern volatile cb_u8 CB_GAME_DATA
+        vm_finale_requested_gs;              /* explicit GS:0x67BD alias */
 extern volatile cb_u16 vm_presentation_word_buffer[]; /* SS:0x67F8 here; SS=GS */
 extern volatile cb_u16 vm_presentation_selected_word; /* DS:0x6796 */
 extern volatile cb_u16 CB_GAME_DATA
