@@ -5705,10 +5705,12 @@ writes, every hover/click row, exact activation state and sound ordering, every
 patched near-handler target, segment ownership, registers, flags, and stack.
 Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the actual natural source
 warning-free to 109 instructions/302 bytes versus the original 107/295, with
-80.37 percent mnemonic-multiset overlap and no inline assembly. Direct
-replacement still needs the original byte-sized division, dead `DI -= 15`
-residue, pre-handler phase TEST flags, and exact register envelope; none carries
-additional game-level behavior.
+80.37 percent mnemonic-multiset overlap. Turbo C 2.01 medium (`-mm -O -Z`)
+compiles the same source to 196 instructions with 73.83 percent multiset and
+66.36 percent ordered overlap. The natural candidate is accepted for source-port
+integration with no inline assembly. Direct replacement still needs the
+original byte-sized division, dead `DI -= 15` residue, pre-handler phase TEST
+flags, and exact register envelope; none carries additional game-level behavior.
 
 ## BLOODPRG unified list widget candidate
 
