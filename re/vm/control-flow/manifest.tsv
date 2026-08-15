@@ -1,0 +1,6 @@
+script	input_bytes	instructions	procedures	blocks	reachable_blocks	edges	poke_instructions	patched_block_flags	mutable_block_flags	unresolved_guard_branches
+SCRIPT1	3084	215	13	170	170	380	14	8	8	0
+SCRIPT2	39042	3272	127	2251	2251	5479	95	62	62	0
+SCRIPT3	34874	3282	166	2122	2118	5348	152	101	100	0
+SCRIPT4	20824	1715	85	1231	1231	2945	60	47	47	0
+SCRIPT5	20963	1870	89	1236	1235	3135	92	52	52	0

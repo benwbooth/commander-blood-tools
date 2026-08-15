@@ -74,6 +74,14 @@ two-pass compiler resolves symbolic operands while retaining explicit source
 offsets and exact statement order. Across the corpus this yields 1,059 distinct
 COD symbols and 284 BAS labels without changing any output byte.
 
+The first structured COD pass recovers 7,010 basic blocks and 17,287 edges. It
+models the native query bit and guard-target stack, direct jumps, text skips and
+deferred frame resumes, and both possible states of self-modified `A9` block
+flags. Every one of the 413 shipped `POKE_BYTE` instructions targets an `A9`
+flag byte. All branch-capable instructions resolve to a concrete guard target.
+Exactly five block bodies are unreachable because their opener flag remains
+zero; they are preserved rather than deleted from the source evidence.
+
 ## What is not established
 
 The `.BAS` files are binary data, not surviving text source. No QuickBASIC,
@@ -122,7 +130,7 @@ specific byte range and must never be labelled as the original 1994 source.
 2. Decode the remaining BAS structures without changing a byte of the rebuilt
    images.
 3. Use the recovered procedures and symbolic targets to construct typed basic
-   blocks and per-procedure control-flow graphs.
+   blocks and per-procedure control-flow graphs. Complete for shipped COD.
 4. Lift reducible graph regions into guards and conditional blocks while
    retaining address labels for irreducible regions.
 5. Add symbolic object, field, and dictionary names without changing numeric

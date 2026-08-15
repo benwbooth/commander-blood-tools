@@ -2,11 +2,12 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 use commander_blood_tools::bloodscript;
+use commander_blood_tools::vm_cfg::{self, CodControlFlow};
 use commander_blood_tools::vm_source::{self, ImageKind};
 
 fn usage() -> ! {
     eprintln!(
-        "usage:\n  cbvm disassemble <cod|bas> <image> <dictionary> <output>\n  cbvm assemble <source> <output>\n  cbvm decompile-bundle <game-dir> <output-dir>\n  cbvm decompile-bloodscript <game-dir> <output-dir>\n  cbvm compile-bloodscript <source> <output>"
+        "usage:\n  cbvm disassemble <cod|bas> <image> <dictionary> <output>\n  cbvm assemble <source> <output>\n  cbvm decompile-bundle <game-dir> <output-dir>\n  cbvm decompile-bloodscript <game-dir> <output-dir>\n  cbvm compile-bloodscript <source> <output>\n  cbvm analyze-control-flow <game-dir> <output-dir>"
     );
     std::process::exit(2);
 }
@@ -77,6 +78,34 @@ fn write_bloodscript(
     std::fs::write(output_path, &source.source)
         .with_context(|| format!("writing {}", output_path.display()))?;
     Ok(source)
+}
+
+fn write_control_flow(
+    script: &str,
+    image_path: &Path,
+    symbol_path: &Path,
+    output_path: &Path,
+) -> Result<CodControlFlow> {
+    let image = std::fs::read(image_path)
+        .with_context(|| format!("reading VM image {}", image_path.display()))?;
+    let symbols = std::fs::read(symbol_path)
+        .with_context(|| format!("reading symbol table {}", symbol_path.display()))?;
+    let graph = vm_cfg::analyze_cod(
+        script,
+        &image,
+        &commander_blood_tools::script::parse_deb(&symbols),
+    )?;
+    if let Some(parent) = output_path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)?;
+    }
+    let mut json = serde_json::to_vec_pretty(&graph)?;
+    json.push(b'\n');
+    std::fs::write(output_path, json)
+        .with_context(|| format!("writing {}", output_path.display()))?;
+    Ok(graph)
 }
 
 fn main() -> Result<()> {
@@ -193,6 +222,39 @@ fn main() -> Result<()> {
                     ));
                     println!("verified {} -> {}", image.display(), output.display());
                 }
+            }
+            std::fs::write(output_dir.join("manifest.tsv"), manifest)?;
+        }
+        Some("analyze-control-flow") => {
+            let game_dir = PathBuf::from(args.next().unwrap_or_else(|| usage()));
+            let output_dir = PathBuf::from(args.next().unwrap_or_else(|| usage()));
+            if args.next().is_some() {
+                usage();
+            }
+            std::fs::create_dir_all(&output_dir)?;
+            let mut manifest = String::from(
+                "script\tinput_bytes\tinstructions\tprocedures\tblocks\treachable_blocks\tedges\tpoke_instructions\tpatched_block_flags\tmutable_block_flags\tunresolved_guard_branches\n",
+            );
+            for script in 1..=5 {
+                let name = format!("SCRIPT{script}");
+                let image = game_dir.join(format!("{name}.COD"));
+                let symbols = game_dir.join(format!("{name}.DEB"));
+                let output = output_dir.join(format!("script{script}.cod.cfg.json"));
+                let graph = write_control_flow(&name, &image, &symbols, &output)?;
+                manifest.push_str(&format!(
+                    "{name}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
+                    graph.image_bytes,
+                    graph.instruction_count,
+                    graph.procedure_count,
+                    graph.block_count,
+                    graph.reachable_block_count,
+                    graph.edge_count,
+                    graph.poke_instruction_count,
+                    graph.patched_block_flag_count,
+                    graph.mutable_block_flag_count,
+                    graph.unresolved_guard_branches.len()
+                ));
+                println!("analyzed {} -> {}", image.display(), output.display());
             }
             std::fs::write(output_dir.join("manifest.tsv"), manifest)?;
         }

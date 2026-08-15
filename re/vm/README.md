@@ -54,6 +54,13 @@ cargo run --bin cbvm -- decompile-bloodscript \
   accuracy/cblood_install/cblood re/vm/bloodscript
 ```
 
+Recover the typed COD control-flow graphs with:
+
+```sh
+cargo run --bin cbvm -- analyze-control-flow \
+  accuracy/cblood_install/cblood re/vm/control-flow
+```
+
 Compile one edited BloodScript IR image with:
 
 ```sh
@@ -115,7 +122,9 @@ symbols and 284 BAS response labels while retaining exact layout.
 The current BloodScript corpus recompiles all 183,523 input bytes exactly. It
 contains 13,203 typed statements covering every byte with no shipped generic
 `OP` or `RAW` fallback. This means both instruction streams are fully framed and
-typed, not that their control-flow graphs have already been reconstructed into
-procedures and structured blocks. See `bloodscript/manifest.tsv` for per-image
-counts and [language-evidence.md](language-evidence.md) for the source-language
+typed. The COD pass now recovers 7,010 basic blocks and 17,287 typed edges across
+all 480 DEB procedures, with no unresolved guard target. Five disabled block
+bodies are retained as unreachable evidence. See `bloodscript/manifest.tsv` for
+per-image byte coverage, `control-flow/manifest.tsv` for graph counts, and
+[language-evidence.md](language-evidence.md) for the source-language
 inference.

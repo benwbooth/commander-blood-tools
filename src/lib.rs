@@ -54,6 +54,7 @@ pub mod sprite;
 pub mod tbbig;
 pub mod util;
 pub mod vm;
+pub mod vm_cfg;
 pub mod vm_source;
 
 /// 320 — the row stride the game BUILDS rather than stores: `xchg bh,bl`
