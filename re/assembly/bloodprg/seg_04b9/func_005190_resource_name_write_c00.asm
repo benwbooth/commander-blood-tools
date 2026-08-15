@@ -6,8 +6,8 @@
 ; seg_off: 04b9:0000
 ; group: seg_04b9
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
-; label: resource_name_write_c00
-; label_comment: resource name-table write: ds=es=fs; [0xc00]=ax; bx=ax. Writes into the FS:0xc00 resource descriptor area (adjacent to the name table fs:0xc04; called 8x)
+; label: resource_allocate
+; label_comment: Complete resource allocator. AX selects the handle, EBP supplies byte count, and the routine reuses or allocates storage with reverse lock-aware eviction before returning status in AX and destination in DS:SI.
 ; incoming: call@0x000eba->04b9:0000
 ; incoming: call@0x000ecd->04b9:0000
 ; incoming: call@0x000ee1->04b9:0000

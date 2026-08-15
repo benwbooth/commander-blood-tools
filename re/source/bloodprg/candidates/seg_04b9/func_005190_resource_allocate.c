@@ -33,14 +33,14 @@ bloodprg_resource_allocation_result CB_FAR resource_allocate(
     }
 
     rounded_byte_count = (byte_count + 15u) & 0xfffffff0UL;
-    if ((cb_i32)rounded_byte_count > (cb_i32)resource_free_bytes) {
+    if ((cb_i32)rounded_byte_count > (cb_i32)resource_free_bytes_gs) {
         resident_count = 0u;
         while (resident_count < 256u &&
                 resource_resident_handles[resident_count] != 0xffffu) {
             ++resident_count;
         }
 
-        byte_deficit = rounded_byte_count - resource_free_bytes;
+        byte_deficit = rounded_byte_count - resource_free_bytes_gs;
         candidate_count = 0u;
         while (resident_count != 0u) {
             --resident_count;
@@ -70,11 +70,11 @@ bloodprg_resource_allocation_result CB_FAR resource_allocate(
     }
 
     entry = &fs_resource_handle_table[handle];
-    entry->unknown_00 = resource_pool_end_segment;
+    entry->unknown_00 = resource_pool_end_segment_gs;
     entry->unknown_02 |= BLOODPRG_RESOURCE_FLAG_LOADED;
     entry->field_04 = rounded_byte_count;
-    resource_free_bytes -= rounded_byte_count;
-    resource_pool_end_segment = (cb_u16)(resource_pool_end_segment +
+    resource_free_bytes_gs -= rounded_byte_count;
+    resource_pool_end_segment_gs = (cb_u16)(resource_pool_end_segment_gs +
             (cb_u16)(rounded_byte_count >> 4));
 
     resident_count = 0u;

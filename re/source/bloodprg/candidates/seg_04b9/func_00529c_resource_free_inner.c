@@ -18,10 +18,10 @@ void CB_FAR resource_free_inner(cb_u16 handle)
     released_segment = released->unknown_00;
     released->unknown_02 &= (cb_u16)~BLOODPRG_RESOURCE_FLAG_LOADED;
     released_size = released->field_04;
-    resource_free_bytes += released_size;
+    resource_free_bytes_gs += released_size;
     paragraphs = (cb_u16)(released_size >> 4);
-    resource_pool_end_segment =
-            (cb_u16)(resource_pool_end_segment - paragraphs);
+    resource_pool_end_segment_gs =
+            (cb_u16)(resource_pool_end_segment_gs - paragraphs);
 
     position = 0u;
     while (resource_resident_handles[position] != handle) {

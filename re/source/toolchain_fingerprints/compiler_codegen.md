@@ -1193,12 +1193,24 @@ the new table record, resident terminator, free-byte count, and pool-end segment
 One vector removes two resources around a locked middle entry and verifies the
 resulting 32-byte physical compaction.
 
-Open Watcom compiles the actual typed candidate warning-free; `-3 -ox -mm`
-emits 171 instructions/492 bytes versus 91/248 original. Natural C uses a
-structured `{status,destination}` result and an explicit byte-count argument.
-Binary replacement therefore needs a narrow AX/EBP input and AX/DS:SI output
-adapter plus FS/GS placement. No allocator logic is represented as register or
-memory emulation.
+The stale `resource_name_write_c00` metadata label is corrected to
+`resource_allocate`; the legacy assembly filename remains to avoid a broad path
+migration. The candidate now explicitly qualifies free-byte and pool-end state
+as GS-owned, while FS tables and lists remain ordinary data under the original
+`DS=ES=FS` entry contract. Its compiler sample includes the maintained source
+directly. Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) emits 176
+instructions/511 bytes versus 91/248 original, with 78.02 percent
+mnemonic-multiset and 63.74 percent ordered overlap. Turbo C 2.01 medium (`-mm
+-O -Z`) emits 207 instructions with 84.62 percent multiset and 72.53 percent
+ordered overlap and assembles warning-free to a 1,350-byte OMF object.
+
+Natural C uses a structured `{status,destination}` result, an explicit byte
+count, and bounded scalar scans. It deliberately does not reproduce malformed
+empty-eviction reads before the resident list or full-list writes into adjacent
+arrays. Under the valid resident-list invariants proved by callers, the source
+is accepted. Direct replacement still needs DS/ES/FS and named-GS placement,
+AX/EBP input, AX/DS:SI output, and the fatal allocation callback. No allocator
+logic is represented as register or memory emulation.
 
 Resource-release gate `0x005288` has six patched-callee direct vectors. They
 prove clear, unrelated, individual, and combined loaded-flag paths, 16-bit
@@ -1223,19 +1235,18 @@ terminators, following-entry segment shifts, moved-size accumulation including
 zero-sized followers, exact compaction pointers/data, and complete register and
 segment preservation.
 
-The compiler sample now includes the maintained source directly. Open Watcom
-1.9 medium (`-3 -ox -mm -zdp -we`) compiles it warning-free to 69
-instructions/158 bytes versus 55/120 original, with 76.36 percent
-mnemonic-multiset and 54.55 percent ordered overlap. Turbo C 2.01 medium (`-mm
--O -Z`) emits 95 instructions with 72.73 percent multiset and 54.55 percent
-ordered overlap and assembles warning-free to a 778-byte OMF object. The
-natural implementation preserves the typed resource table, resident list,
-accounting, and conditional `far_memmove` logic. It relies on the allocator's
-valid-state invariant that the released handle appears in the bounded 256-entry
-resident list; malformed absent-handle behavior is not reproduced. Exact
-integration still needs the original FS/GS placement, `REPNE SCASW` search,
-packed 32-bit register operations, and DS/ES segment construction at the
-far-call boundary.
+The corrected direct source explicitly qualifies free-byte and pool-end state
+as GS-owned. Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles it
+warning-free to 71 instructions/166 bytes versus 55/120 original, with 76.36
+percent mnemonic-multiset and 54.55 percent ordered overlap. Turbo C 2.01
+medium (`-mm -O -Z`) emits 101 instructions with 72.73 percent multiset and
+56.36 percent ordered overlap and assembles warning-free to an 811-byte OMF
+object. The natural implementation preserves the typed resource table,
+resident list, accounting, and conditional `far_memmove` logic. It relies on
+the allocator's valid-state invariant that the released handle appears in the
+bounded 256-entry resident list; malformed absent-handle behavior is not
+reproduced. Exact integration still needs `DS=ES=FS`, named GS placement,
+`REPNE SCASW`, packed 32-bit operations, and far-move segment construction.
 
 Resource-handle resolver `0x005320` has six direct vectors. They prove clear and
 unrelated unloaded flags, each and combined loaded bits, 16-bit `handle * 8`

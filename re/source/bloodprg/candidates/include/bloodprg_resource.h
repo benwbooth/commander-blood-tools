@@ -67,6 +67,8 @@ extern volatile cb_u32 resource_free_bytes; /* GS:0x0A46 */
 extern volatile cb_u32 CB_GAME_DATA
         resource_free_bytes_gs; /* explicit GS:0x0A46 alias */
 extern volatile cb_u16 resource_pool_end_segment; /* DS=GS:0x0A6A */
+extern volatile cb_u16 CB_GAME_DATA
+        resource_pool_end_segment_gs; /* explicit GS:0x0A6A alias */
 extern volatile cb_u16 CB_GAME_DATA resource_file_header; /* GS:0x0AF2 */
 extern volatile bloodprg_resource_index_entry resource_index[]; /* DS:0x1FB5 */
 extern volatile cb_u8 resource_variant;             /* game data:0x1FB1 */
