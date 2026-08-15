@@ -4,8 +4,9 @@
 ; size: 0x00002959
 
 00000000: YIELD ; opcode AA
+00000001: SELECTOR_LIST list_Super_Tromp_0001 ; DEB object "Super_Tromp" at 0x01B2
 00000001: YIELD_B ; opcode AC
-00000002: SELECTOR_NODE 0001 0000 ; "talk"
+00000002: CASE 0001 0000 ; "talk"
 00000006: MENU 0752 1221 2511 2519 ; bye_bye | painting | culture | yolk
 00000011: TEXT 01B2 00 40 80 - - 0424 1202 1208 0B6D 0139 251E 0048 1618 2525 252F 0048 FFFF 2519 ; TEXT line=0x01B2 voice=0x00 flags=0x40,0x80 "The GREAT YOLK was a Slimer ... An important thinker ..."
 00000033: TEXT 01B2 01 40 80 - - 0DF6 17AA 0139 141C 0073 2537 04EB 11B1 253B 088E 015D 2542 FFFF 2519 ; TEXT line=0x01B2 voice=0x01 flags=0x40,0x80 "He died a long time ago and he's buried here on Vista..."
@@ -19,8 +20,10 @@
 0000013E: TEXT 01B2 FF 40 80 - - 0424 1202 1208 0B45 25CA 25D4 015D 0454 04EB 25DA 0027 FFFF 2511 ; TEXT line=0x01B2 voice=0xFF flags=0x40,0x80 "The GREAT YOLK said :\"Silence feeds on sound and fury\" ."
 00000160: TEXT 01B2 FF 40 80 - - 0424 1202 1208 0B45 1EE9 25E0 25E4 25EA 25F3 0090 25FD 005C 0DFE 0F7F 2607 021E 1544 08F0 260B FFFF 2511 ; TEXT line=0x01B2 voice=0xFF flags=0x40,0x80 "The GREAT YOLK said : \"It takes thirteen murffalos to reproduce , but one day it will take fourteen\""
 00000192: YIELD ; opcode AA
+00000193: END_SELECTOR_LIST list_Super_Tromp_0001
+00000193: SELECTOR_LIST list_Maziok_0193 ; DEB object "Maziok" at 0x00DA
 00000193: YIELD_B ; opcode AC
-00000194: SELECTOR_NODE 0001 selector_0282 ; "talk"
+00000194: CASE 0001 selector_0282 ; "talk"
 00000198: MENU 0752 2615 0BFC ; bye_bye | medicine | curse
 000001A1: TEXT 00DA 02 40 80 - - 000C 0A85 031C 2615 04EB 031C 204B 0048 00E9 00FE 0984 239A 0048 FFFF 2615 ; TEXT line=0x00DA voice=0x02 flags=0x40,0x80 "Me know good medicine and good doctor ... You be very sick ..."
 000001C7: TEXT 00DA 03 48 80 - - 00E9 009B 1D53 04EB 00A0 0097 00FE 261E 0048 FFFF 2615 ; TEXT line=0x00DA voice=0x03 flags=0x48,0x80 "You have nightmares and you not be lucky ..."
@@ -35,7 +38,7 @@
 0000027A: SHARED_STATE C0 1512 F5 C1 0001 ; OP_C0 SHARED_STATE field=0x1512 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 00000281: YIELD_B ; opcode AC
 00000282: LABEL selector_0282
-00000282: SELECTOR_NODE 04DC 0000 ; "planet"
+00000282: CASE 04DC 0000 ; "planet"
 00000286: MENU 0752 2647 264D 093A 0CF6 ; bye_bye | vista | tromp | ondoyant | tourism
 00000293: TEXT 00DA 03 40 80 - - 0424 04DC 166F 02C8 157F 0403 0236 0048 0357 2653 0146 0048 FFFF 2647 ; TEXT line=0x00DA voice=0x03 flags=0x40,0x80 "The planet Vista is where I'm from ... It suits me ..."
 000002B7: TEXT 00DA 02 48 80 - - 0E97 0139 2659 2660 1A7F 1EE9 2666 266D 2670 FFFF 2647 ; TEXT line=0x00DA voice=0x02 flags=0x48,0x80 "There's a saying which goes : \"Hasta la Vista\""
@@ -49,16 +52,20 @@
 0000038D: TEXT 00DA 01 48 80 - - 0A29 06AF 1472 00B3 0E4A 0048 FFFF 093A ; TEXT line=0x00DA voice=0x01 flags=0x48,0x80 "ondoyants live only in dreams ..."
 000003A5: PRESENTATION_REGISTER 0C64
 000003A8: YIELD ; opcode AA
+000003A9: END_SELECTOR_LIST list_Maziok_0193
+000003A9: SELECTOR_LIST list_Fifi_03A9 ; DEB object "Fifi" at 0x079A
 000003A9: YIELD_B ; opcode AC
-000003AA: SELECTOR_NODE 0006 0000 ; "hello"
+000003AA: CASE 0006 0000 ; "hello"
 000003AE: MENU 0752 04DC 1352 26DD ; bye_bye | planet | information | races
 000003B9: TEXT 079A 04 40 80 - - 26E3 0048 000C 0097 26E7 04DC 0048 FFFF 04DC ; TEXT line=0x079A voice=0x04 flags=0x40,0x80 "Uhh ... Me not remember planet ..."
 000003D3: TEXT 079A 05 40 80 - - 26F0 000C 0097 0249 1352 0048 26E3 06C3 FFFF 1352 ; TEXT line=0x079A voice=0x05 flags=0x40,0x80 "Information... Me not understand information ... Uhh !"
 000003EF: TEXT 079A 05 40 80 - - 00E9 00FE 0FF6 00A0 0A85 0001 005C 0321 0254 FFFF 26DD ; TEXT line=0x079A voice=0x05 flags=0x40,0x80 "You be sure you know talk , friend ?"
 0000040D: TEXT 079A 02 01 80 - - 26E3 0048 000C 239A 0048 ; TEXT line=0x079A voice=0x02 flags=0x01,0x80 "Uhh ... Me sick ..."
 0000041F: YIELD ; opcode AA
+00000420: END_SELECTOR_LIST list_Fifi_03A9
+00000420: SELECTOR_LIST list_Bratakas_0420 ; DEB object "Bratakas" at 0x004A
 00000420: YIELD_B ; opcode AC
-00000421: SELECTOR_NODE 0001 0000 ; "talk"
+00000421: CASE 0001 0000 ; "talk"
 00000425: MENU 0752 1FA4 04DC 2700 2705 ; bye_bye | Vistar | planet | race | croolis
 00000432: TEXT 004A 02 40 80 - - 00E9 07E2 0090 0001 005C 270D FFFF 0001 ; TEXT line=0x004A voice=0x02 flags=0x40,0x80 "You want to talk , friend..."
 0000044A: TEXT 004A 02 40 80 - - 1FA4 02C8 0176 0608 00C1 09F1 04DC 0027 0216 0D6E 2641 088E 0048 FFFF 1FA4 ; TEXT line=0x004A voice=0x02 flags=0x40,0x80 "Vistar is the name of my planet . I am alone here ..."
@@ -80,8 +87,10 @@
 000005A2: TEXT 004A 01 40 80 - - 0403 0FF6 02B6 27AD 0146 27B7 0374 0134 27BC 0216 0374 0249 0048 FFFF 2705 ; TEXT line=0x004A voice=0x01 flags=0x40,0x80 "I'm sure you're insulting me ...I don't like insults I don't understand ..."
 000005C8: TEXT 004A 02 40 80 - - 0E6C 27C4 0146 005C 0C4A 0048 0216 0374 0134 021E 0048 FFFF 2705 ; TEXT line=0x004A voice=0x02 flags=0x40,0x80 "Don't insult me , stranger ... I don't like it ..."
 000005EA: YIELD ; opcode AA
+000005EB: END_SELECTOR_LIST list_Bratakas_0420
+000005EB: SELECTOR_LIST list_Beauregard_05EB ; DEB object "Beauregard" at 0x067A
 000005EB: YIELD_B ; opcode AC
-000005EC: SELECTOR_NODE 0001 0000 ; "talk"
+000005EC: CASE 0001 0000 ; "talk"
 000005F0: MENU 0752 27CB 27D2 27D9 ; bye_bye | listen | insist | treat
 000005FB: TEXT 067A 0C 41 80 - - 27DF 0048 27E5 FFFF 27CB ; TEXT line=0x067A voice=0x0C flags=0x41,0x80 "Aaaah ... Eeeerrr..."
 0000060D: TEXT 067A 0D 40 80 - - 27F0 0048 FFFF 0752 ; TEXT line=0x067A voice=0x0D flags=0x40,0x80 "Aaaa ..."
@@ -99,14 +108,18 @@
 0000073E: TEXT 067A 13 41 80 - - 0216 0884 009B 0139 15F8 1ABC 0048 FFFF 27D9 ; TEXT line=0x067A voice=0x13 flags=0x41,0x80 "I must have a new body ..."
 00000758: TEXT 067A 14 01 80 - - 2862 ; TEXT line=0x067A voice=0x14 flags=0x01,0x80 "Aaaarrr"
 00000762: YIELD ; opcode AA
+00000763: END_SELECTOR_LIST list_Beauregard_05EB
+00000763: SELECTOR_LIST list_Honk_0763 ; DEB object "Honk" at 0x0A6A
 00000763: YIELD_B ; opcode AC
-00000764: SELECTOR_NODE 0001 0000 ; "talk"
+00000764: CASE 0001 0000 ; "talk"
 00000768: MENU 0752 0313 2014 ; bye_bye | help | message
 00000771: TEXT 0A6A FF 61 80 - - 0216 206B 04EB 228E 005C 005E 0048 FFFF 0001 ; TEXT line=0x0A6A voice=0xFF flags=0x61,0x80 "I hear and obey , Commander ..."
 0000078B: TEXT 0A6A FF 61 80 - - 2876 06C3 005E 0048 FFFF 0752 ; TEXT line=0x0A6A voice=0xFF flags=0x61,0x80 "Hup ! Commander ..."
 0000079F: YIELD ; opcode AA
+000007A0: END_SELECTOR_LIST list_Honk_0763
+000007A0: SELECTOR_LIST list_Morning_Oil_07A0 ; DEB object "Morning_Oil" at 0x0482
 000007A0: YIELD_B ; opcode AC
-000007A1: SELECTOR_NODE 0001 selector_07FD ; "talk"
+000007A1: CASE 0001 selector_07FD ; "talk"
 000007A5: MENU 0006 287A 0AAA 0752 ; hello | say_nothing | laugh | bye_bye
 000007B0: TEXT 0482 00 40 80 - - 2886 005E FFFF 0006 ; TEXT line=0x0482 voice=0x00 flags=0x40,0x80 "Hi Commander"
 000007C0: TEXT 0482 01 40 80 - - 2889 288E 0048 FFFF 287A ; TEXT line=0x0482 voice=0x01 flags=0x40,0x80 "Such silence ..."
@@ -114,11 +127,11 @@
 000007EA: TEXT 0482 03 40 80 - - 038A 038E 005E FFFF 0752 ; TEXT line=0x0482 voice=0x03 flags=0x40,0x80 "Bye bye Commander"
 000007FC: YIELD_B ; opcode AC
 000007FD: LABEL selector_07FD
-000007FD: SELECTOR_NODE 2856 selector_0811 ; "history"
+000007FD: CASE 2856 selector_0811 ; "history"
 00000801: MENU 0752 1BF1 2705 1C64 289F 28A7 ; bye_bye | war | croolis | treasure | battles | mastachok
 00000810: YIELD_B ; opcode AC
 00000811: LABEL selector_0811
-00000811: SELECTOR_NODE 1BF1 selector_0951 ; "war"
+00000811: CASE 1BF1 selector_0951 ; "war"
 00000815: MENU 0752 28B1 ; bye_bye | match
 0000081C: TEXT 0482 05 40 80 - - 0447 0B6D 0139 0D0B 062A 1BF1 0048 0357 0A39 28B7 0176 2607 00C1 0176 28BF 28B1 28C6 0878 04EB 28CE FFFF 1BF1 ; TEXT line=0x0482 voice=0x05 flags=0x40,0x80 "That was a real bad war ... It all started the day of the boxing match between EVISCERATOR and EMASCULATOR..."
 00000850: TEXT 0482 02 40 80 - - 00E9 28DD 28E7 021E 005C 005E 0048 09B6 0139 28EC 0048 FFFF 1BF1 ; TEXT line=0x0482 voice=0x02 flags=0x40,0x80 "You should've seen it , Commander ... What a fight ..."
@@ -129,7 +142,7 @@
 00000924: TEXT 0482 03 40 80 - - 0424 28B1 0B6D 2937 0DA7 0176 1083 0048 2957 005C 0216 018F 0786 021E 046F 0048 FFFF 28B1 ; TEXT line=0x0482 voice=0x03 flags=0x40,0x80 "The match was televised throughout the universe ... Ahh , I can picture it now ..."
 00000950: YIELD_B ; opcode AC
 00000951: LABEL selector_0951
-00000951: SELECTOR_NODE 2705 selector_0AD8 ; "croolis"
+00000951: CASE 2705 selector_0AD8 ; "croolis"
 00000955: MENU 0752 2856 0D8A 295B 2967 ; bye_bye | history | terror | eviscerator | emasculator
 00000962: TEXT 0482 05 40 80 - - 1625 0BC3 2973 297F FFFF 2705 ; TEXT line=0x0482 voice=0x05 flags=0x40,0x80 "Croolis are exceptional warriors"
 00000976: TEXT 0482 04 40 80 - - 02D9 2988 005C 0878 298F 00B3 00AB 299B 0048 FFFF 2705 ; TEXT line=0x0482 voice=0x04 flags=0x40,0x80 "My master , EVISCERATOR specialised in BIONIUM prospection ..."
@@ -146,7 +159,7 @@
 00000ABF: TEXT 0482 02 40 80 - - 0531 0F7F 1625 0216 2A6E 0048 FFFF 2967 ; TEXT line=0x0482 voice=0x02 flags=0x40,0x80 "That's one Croolis I hate ..."
 00000AD7: YIELD_B ; opcode AC
 00000AD8: LABEL selector_0AD8
-00000AD8: SELECTOR_NODE 1C64 selector_0C43 ; "treasure"
+00000AD8: CASE 1C64 selector_0C43 ; "treasure"
 00000ADC: MENU 0752 2856 2A73 ; bye_bye | history | hiding_place
 00000AE5: TEXT 0482 02 40 80 - - 273C 06C3 0424 1C64 0027 00E9 28DD 28E7 021E 005C 005E 0048 2A80 0048 FFFF 1C64 ; TEXT line=0x0482 voice=0x02 flags=0x40,0x80 "Ah ! The treasure . You should've seen it , Commander ... Incredible ..."
 00000B0D: TEXT 0482 03 40 80 - - 2A8B 0236 2A92 005C 2A9A 0236 2AA0 005C 2AA4 2AAE 2185 2AB5 0048 FFFF 1C64 ; TEXT line=0x0482 voice=0x03 flags=0x40,0x80 "Stones from Galabar , horns from Rla , authentic Rhinox bone vases ..."
@@ -160,18 +173,20 @@
 00000C18: TEXT 0482 05 40 80 - - 0424 16E1 1625 292B 037F 015D 2B50 0027 0531 0139 2B5B 01AB 005C 005E 0048 FFFF 2AFC ; TEXT line=0x0482 voice=0x05 flags=0x40,0x80 "The defeated Croolis ended up on Trashlando . That's a BAD place , Commander ..."
 00000C42: YIELD_B ; opcode AC
 00000C43: LABEL selector_0C43
-00000C43: SELECTOR_NODE 28A7 0000 ; "mastachok"
+00000C43: CASE 28A7 0000 ; "mastachok"
 00000C47: MENU 0752 2856 1352 ; bye_bye | history | information
 00000C50: TEXT 0482 05 40 80 - - 13D3 02C8 0139 2638 04DC 0048 2B5F 2B67 0D59 020D 015D 1782 2B6D 0048 FFFF 28A7 ; TEXT line=0x0482 voice=0x05 flags=0x40,0x80 "Mastachok is a dead planet ... Nothing lives any more on its surface ..."
 00000C78: TEXT 0482 06 40 80 - - 0424 2B75 0B6D 2B7D 1317 0176 2B86 0048 2B8B 2B90 2A08 2B9A 0048 FFFF 28A7 ; TEXT line=0x0482 voice=0x06 flags=0x40,0x80 "The factory was replaced by the jail ... With permanent SCRUT guards ..."
 00000C9E: TEXT 0482 02 40 80 - - 13D3 02C8 2BA2 2BAD 0048 2B5F 020D 0D7C 0139 2BB6 2BBD 0048 FFFF 28A7 ; TEXT line=0x0482 voice=0x02 flags=0x40,0x80 "Mastachok is absolutely polluted ... Nothing more than a cinder block ..."
 00000CC2: YIELD ; opcode AA
+00000CC3: END_SELECTOR_LIST list_Morning_Oil_07A0
+00000CC3: SELECTOR_LIST list_Bronko_0CC3 ; DEB object "Bronko" at 0x0512
 00000CC3: YIELD_B ; opcode AC
-00000CC4: SELECTOR_NODE 0001 selector_0CD6 ; "talk"
+00000CC4: CASE 0001 selector_0CD6 ; "talk"
 00000CC8: MENU 0752 18E9 2BC3 25F3 26A0 ; bye_bye | robot | cred | murffalos | weapons
 00000CD5: YIELD_B ; opcode AC
 00000CD6: LABEL selector_0CD6
-00000CD6: SELECTOR_NODE 18E9 selector_0E73 ; "robot"
+00000CD6: CASE 18E9 selector_0E73 ; "robot"
 00000CDA: MENU 0001 0752 18E9 2BC8 0107 2BD5 2BE0 ; talk | bye_bye | robot | intelligence | energy | technology | retirement
 00000CEB: TEXT 0512 05 48 80 - - 05CF 00A0 0E8D 005C 0321 0048 FFFF 0752 ; TEXT line=0x0512 voice=0x05 flags=0x48,0x80 "See you soon , friend ..."
 00000D03: RECORD_CLEAR 054C ; RECORD_CLEAR record=0x054C
@@ -189,7 +204,7 @@
 00000E5A: TEXT 0512 01 40 80 - - 211A 0989 2BD5 005C 0321 0048 FFFF 2BD5 ; TEXT line=0x0512 voice=0x01 flags=0x40,0x80 "Bronko big technology , friend ..."
 00000E72: YIELD_B ; opcode AC
 00000E73: LABEL selector_0E73
-00000E73: SELECTOR_NODE 2BC3 selector_0F5F ; "cred"
+00000E73: CASE 2BC3 selector_0F5F ; "cred"
 00000E77: MENU 0001 0752 2BC3 2C6F ; talk | bye_bye | cred | buy
 00000E82: TEXT 0512 01 40 80 - - 000C 0295 0090 2C97 0364 2C9C 005C 0321 0048 FFFF 2BC3 ; TEXT line=0x0512 voice=0x01 flags=0x40,0x80 "Me work to earn much CRED , friend ..."
 00000EA0: TEXT 0512 02 40 80 - - 2CA2 00FE 18B7 0090 2C97 0048 FFFF 2BC3 ; TEXT line=0x0512 voice=0x02 flags=0x40,0x80 "Creds be hard to earn ..."
@@ -200,7 +215,7 @@
 00000F42: TEXT 0512 04 40 80 - - 0229 2C6F 005C 0146 0884 2C97 2CA8 0048 FFFF 2C6F ; TEXT line=0x0512 voice=0x04 flags=0x40,0x80 "To buy , me must earn creds ..."
 00000F5E: YIELD_B ; opcode AC
 00000F5F: LABEL selector_0F5F
-00000F5F: SELECTOR_NODE 25F3 selector_1017 ; "murffalos"
+00000F5F: CASE 25F3 selector_1017 ; "murffalos"
 00000F63: MENU 0001 0752 2CF8 ; talk | bye_bye | hunt
 00000F6C: TEXT 0512 01 40 80 - - 2CFD 25F3 0090 2D06 2D13 00B3 149E 0027 2D17 1A3D 0027 0447 00FE 15FC 2D1E 0048 FFFF 25F3 ; TEXT line=0x0512 voice=0x01 flags=0x40,0x80 "Thirteen murffalos to reproduce... One in middle . twelve around . That be murffalo reproduction ..."
 00000F98: TEXT 0512 02 40 80 - - 000C 0097 0134 15FC 0048 0318 031C 005C 03E1 2D2B 0048 000C 0134 2D32 2D3C 0048 FFFF 25F3 ; TEXT line=0x0512 voice=0x02 flags=0x40,0x80 "Me not like murffalo ... Not good , too tender ... Me like lawnmower leg ..."
@@ -209,7 +224,7 @@
 00001000: TEXT 0512 03 40 80 - - 2D5F 00FE 07EA 2D67 0048 FFFF 2CF8 ; TEXT line=0x0512 voice=0x03 flags=0x40,0x80 "Hunting be nice sport ..."
 00001016: YIELD_B ; opcode AC
 00001017: LABEL selector_1017
-00001017: SELECTOR_NODE 26A0 selector_10A7 ; "weapons"
+00001017: CASE 26A0 selector_10A7 ; "weapons"
 0000101B: MENU 0001 0752 2762 1BF1 ; talk | bye_bye | planets | war
 00001026: TEXT 0512 04 40 80 - - 0229 2C6F 031C 26A0 005C 0884 2D6D 0364 2CA8 005C 005E FFFF 26A0 ; TEXT line=0x0512 voice=0x04 flags=0x40,0x80 "To buy good weapons , must pay much creds , Commander"
 00001048: TEXT 0512 02 40 80 - - 000C 009B 26A0 06D0 2D71 00C1 26B7 0048 FFFF 26A0 ; TEXT line=0x0512 voice=0x02 flags=0x40,0x80 "Me have weapons at end of arms ..."
@@ -217,12 +232,14 @@
 00001084: TEXT 0512 03 40 80 - - 1625 1BF1 0014 0364 2D84 0048 1379 1BF1 005C 0321 0048 FFFF 1BF1 ; TEXT line=0x0512 voice=0x03 flags=0x40,0x80 "Croolis war do much damage ... Bad war , friend ..."
 000010A6: YIELD_B ; opcode AC
 000010A7: LABEL selector_10A7
-000010A7: SELECTOR_NODE 2BE0 0000 ; "retirement"
+000010A7: CASE 2BE0 0000 ; "retirement"
 000010AB: MENU 0001 0752 2D8B ; talk | bye_bye | Magnus
 000010B4: TEXT 0512 01 40 80 - - 273C 2BE0 06C3 2D92 1DDB 0146 0090 04DC 2D8B 005C 0123 0D76 0DEA 0DEA 29F6 0048 090F 090F 0048 FFFF 2BE0 ; TEXT line=0x0512 voice=0x01 flags=0x40,0x80 "Ah retirement ! Them send me to planet Magnus , with other old old robots ... CRY CRY ..."
 000010E6: YIELD ; opcode AA
+000010E7: END_SELECTOR_LIST list_Bronko_0CC3
+000010E7: SELECTOR_LIST list_Bob_Morlock_10E7 ; DEB object "Bob_Morlock" at 0x0242
 000010E7: YIELD_B ; opcode AC
-000010E8: SELECTOR_NODE 0001 selector_157B ; "talk"
+000010E8: CASE 0001 selector_157B ; "talk"
 000010EC: MENU 0752 2D97 2DA2 2DAB 2DB7 11EB 2DBE 2DC4 ; bye_bye | black_hole | Big_Bang | Bob_Morlock | kanary | mission | corpo | good_
 000010FF: TEXT 0242 02 42 80 - - 09B6 0014 00A0 07E2 0090 0A85 005C 0270 FFFF 0001 ; TEXT line=0x0242 voice=0x02 flags=0x42,0x80 "What do you want to know , Commander?"
 0000111B: TEXT 0242 03 48 80 - - 180B 005C 005E 0048 FFFF 0752 ; TEXT line=0x0242 voice=0x03 flags=0x48,0x80 "Goodbye , Commander ..."
@@ -269,7 +286,7 @@
 00001568: TEXT 0242 01 43 80 - - 05F0 081F 0048 FFFF 2DC4 ; TEXT line=0x0242 voice=0x01 flags=0x43,0x80 "Heh heh ..."
 0000157A: YIELD_B ; opcode AC
 0000157B: LABEL selector_157B
-0000157B: SELECTOR_NODE 2DB7 0000 ; "kanary"
+0000157B: CASE 2DB7 0000 ; "kanary"
 0000157F: MENU 0001 0752 2FC5 2FCD 2FD4 2FDE ; talk | bye_bye | cottage | clones | employees | reports
 0000158E: TEXT 0242 01 40 80 - - 0424 2FE6 2FEE 2FF7 02C8 09F1 098D 3002 FFFF 2FC5 ; TEXT line=0x0242 voice=0x01 flags=0x40,0x80 "The Cottage Research department is my secret project"
 000015AA: TEXT 0242 01 40 80 - - 0424 300A 3014 02C8 0139 301C 00C1 3023 FFFF 2FC5 ; TEXT line=0x0242 voice=0x01 flags=0x40,0x80 "The vegetable kingdom is a marvel of nature"
@@ -296,8 +313,10 @@
 0000182A: TEXT 0242 06 49 80 - - 1B94 1472 31B7 02C8 31C2 FFFF 268B ; TEXT line=0x0242 voice=0x06 flags=0x49,0x80 "Our only competitor is CRYO"
 00001840: SHARED_STATE B4 0274 F6 C1 0002 ; OP_B4 SHARED_STATE field=0x0274 operator=0xF6 rhs_mode=0xC1 rhs=0x0002
 00001847: YIELD ; opcode AA
+00001848: END_SELECTOR_LIST list_Bob_Morlock_10E7
+00001848: SELECTOR_LIST list_Hom_1848 ; DEB object "Hom" at 0x03AA
 00001848: YIELD_B ; opcode AC
-00001849: SELECTOR_NODE 0006 selector_1932 ; "hello"
+00001849: CASE 0006 selector_1932 ; "hello"
 0000184D: MENU 0752 0001 31C7 ; bye_bye | talk | not_talk
 00001856: TEXT 03AA 02 40 80 - - 02D9 0608 31D0 000C 0989 31D5 1072 FFFF 31C7 ; TEXT line=0x03AA voice=0x02 flags=0x40,0x80 "My name Hom. Me big tube brain"
 00001870: TEXT 03AA 01 42 80 - - 31DA 31E1 0A8A 00A0 31EA FFFF 0001 ; TEXT line=0x03AA voice=0x01 flags=0x42,0x80 "Ooooh! Stranger what you want?"
@@ -312,7 +331,7 @@
 0000192E: RECORD_CLEAR 03E4 ; RECORD_CLEAR record=0x03E4
 00001931: YIELD_B ; opcode AC
 00001932: LABEL selector_1932
-00001932: SELECTOR_NODE 0001 selector_19DE ; "talk"
+00001932: CASE 0001 selector_19DE ; "talk"
 00001936: MENU 0752 2700 04DC 325D 3265 326E 3272 ; bye_bye | race | planet | science | politics | art | consumption
 00001947: TEXT 03AA 02 00 80 - - 09B6 00A0 07E2 327E 270D ; TEXT line=0x03AA voice=0x02 flags=0x00,0x80 "What you want know, friend..."
 00001959: TEXT 03AA 05 40 80 - - 3284 0989 3289 270D FFFF 2700 ; TEXT line=0x03AA voice=0x05 flags=0x40,0x80 "Race big subject, friend..."
@@ -324,13 +343,13 @@
 000019CB: TEXT 03AA 0A 40 80 - - 32DD 0989 045A FFFF 3272 ; TEXT line=0x03AA voice=0x0A flags=0x40,0x80 "Consumerism big fun"
 000019DD: YIELD_B ; opcode AC
 000019DE: LABEL selector_19DE
-000019DE: SELECTOR_NODE 2700 selector_1A1C ; "race"
+000019DE: CASE 2700 selector_1A1C ; "race"
 000019E2: MENU 0001 0752 32E9 2705 32EF 32F6 3304 330A 3311 093A ; talk | bye_bye | izwal | croolis | slimer | tubular_brain | sinox | buggol | migrax | ondoyant
 000019F9: TEXT 03AA 01 02 80 - - 3284 0989 3318 3325 332C 10CD ; TEXT line=0x03AA voice=0x01 flags=0x02,0x80 "Race big metaphysical thing. Natural magic"
 00001A0D: TEXT 03AA 00 02 80 - - 3284 2B13 3334 ; TEXT line=0x03AA voice=0x00 flags=0x02,0x80 "Race heavy mystery..."
 00001A1B: YIELD_B ; opcode AC
 00001A1C: LABEL selector_1A1C
-00001A1C: SELECTOR_NODE 32E9 selector_1C5D ; "izwal"
+00001A1C: CASE 32E9 selector_1C5D ; "izwal"
 00001A20: MENU 0752 2700 0001 04DC 2BC8 333F 325D ; bye_bye | race | talk | planet | intelligence | food | science
 00001A31: TEXT 03AA 05 40 80 - - 3344 0101 334A 0984 3351 FFFF 2BC8 ; TEXT line=0x03AA voice=0x05 flags=0x40,0x80 "Izwal small brain. very nice."
 00001A47: TEXT 03AA 06 40 80 - - 3357 3344 3364 336C 1390 3371 1072 FFFF 2BC8 ; TEXT line=0x03AA voice=0x06 flags=0x40,0x80 "Intelligence Izwal lively. Very noisy primitive brain"
@@ -357,7 +376,7 @@
 00001C4E: TEXT 03AA 0A 02 80 - - 268B 3514 3519 ; TEXT line=0x03AA voice=0x0A flags=0x02,0x80 "They soft fur..."
 00001C5C: YIELD_B ; opcode AC
 00001C5D: LABEL selector_1C5D
-00001C5D: SELECTOR_NODE 2705 selector_1DC3 ; "croolis"
+00001C5D: CASE 2705 selector_1DC3 ; "croolis"
 00001C61: MENU 0752 2700 1BF1 325D 34E2 0AB0 04DC ; bye_bye | race | war | science | info | joke | planet
 00001C72: TEXT 03AA 06 40 80 - - 000C 0097 0134 3520 0318 0134 3482 FFFF 1BF1 ; TEXT line=0x03AA voice=0x06 flags=0x40,0x80 "Me not like war. Not like ships..."
 00001C8C: TEXT 03AA 06 40 80 - - 3525 3528 3530 3536 1625 FFFF 1BF1 ; TEXT line=0x03AA voice=0x06 flags=0x40,0x80 "Us Tubular Brain despise Croolis"
@@ -375,7 +394,7 @@
 00001DA4: TEXT 03AA 0B 40 80 - - 1625 2A6E 35CB 35D2 015D 35D7 35DD 3023 FFFF 04DC 28A7 ; TEXT line=0x03AA voice=0x0B flags=0x40,0x80 "Croolis hate peace, spit on life. Hate nature"
 00001DC2: YIELD_B ; opcode AC
 00001DC3: LABEL selector_1DC3
-00001DC3: SELECTOR_NODE 32EF selector_1FA9 ; "slimer"
+00001DC3: CASE 32EF selector_1FA9 ; "slimer"
 00001DC7: MENU 0752 2700 04DC 325D 3265 2519 34E2 ; bye_bye | race | planet | science | politics | yolk | info
 00001DD8: TEXT 03AA 10 40 80 - - 251E 2F42 35E2 000C 35ED 0A85 030D 0D2C FFFF 2519 ; TEXT line=0x03AA voice=0x10 flags=0x40,0x80 "Slimer strange creatures. Me personally know great Yolk"
 00001DF4: TEXT 03AA 0B 40 80 - - 0D2C 0989 35F8 030D 3601 000C 0B00 FFFF 2519 ; TEXT line=0x03AA voice=0x0B flags=0x40,0x80 "Yolk big thinker, great master. Me respect"
@@ -397,7 +416,7 @@
 00001F92: TEXT 03AA 10 40 80 - - 3657 36EF 0236 1813 0C78 FFFF 2700 ; TEXT line=0x03AA voice=0x10 flags=0x40,0x80 "Slimers evolve from space jellyfish"
 00001FA8: YIELD_B ; opcode AC
 00001FA9: LABEL selector_1FA9
-00001FA9: SELECTOR_NODE 32F6 selector_2029 ; "tubular_brain"
+00001FA9: CASE 32F6 selector_2029 ; "tubular_brain"
 00001FAD: MENU 0752 1072 34E2 ; bye_bye | brain | info
 00001FB6: TEXT 03AA 01 40 80 - - 3528 3530 0994 36F6 FFFF 1072 ; TEXT line=0x03AA voice=0x01 flags=0x40,0x80 "Tubular Brain think good."
 00001FCA: TEXT 03AA 00 40 80 - - 3389 1072 36FC 00E9 0097 3705 FFFF 1072 ; TEXT line=0x03AA voice=0x00 flags=0x40,0x80 "Tube brain complex. You not understand."
@@ -406,7 +425,7 @@
 00002012: TEXT 03AA 0D 40 80 - - 3528 3530 00FE 373C 2700 FFFF 34E2 ; TEXT line=0x03AA voice=0x0D flags=0x40,0x80 "Tubular Brain be superior race"
 00002028: YIELD_B ; opcode AC
 00002029: LABEL selector_2029
-00002029: SELECTOR_NODE 3304 selector_20B3 ; "sinox"
+00002029: CASE 3304 selector_20B3 ; "sinox"
 0000202D: MENU 0752 2700 325D 2BD5 34E2 ; bye_bye | race | science | technology | info
 0000203A: TEXT 03AA 05 40 80 - - 3745 18B7 374B 104D 0989 2BD5 FFFF 2BD5 ; TEXT line=0x03AA voice=0x05 flags=0x40,0x80 "Sinox hard workers. Big big technology"
 00002052: TEXT 03AA 09 40 80 - - 3745 3477 3754 375F 3745 0134 3769 FFFF 34E2 ; TEXT line=0x03AA voice=0x09 flags=0x40,0x80 "Sinox build computers, machines, Sinox like money"
@@ -415,7 +434,7 @@
 0000209E: TEXT 03AA 05 40 80 - - 3745 376F 0B5D FFFF 2700 3304 ; TEXT line=0x03AA voice=0x05 flags=0x40,0x80 "Sinox powerful people"
 000020B2: YIELD_B ; opcode AC
 000020B3: LABEL selector_20B3
-000020B3: SELECTOR_NODE 3311 selector_2139 ; "migrax"
+000020B3: CASE 3311 selector_2139 ; "migrax"
 000020B7: MENU 0752 2700 0001 34E2 25F3 ; bye_bye | race | talk | info | murffalos
 000020C4: TEXT 03AA 06 40 80 - - 3786 0097 0364 00B3 1072 FFFF 34E2 ; TEXT line=0x03AA voice=0x06 flags=0x40,0x80 "Migrax not much in brain"
 000020DA: TEXT 03AA 0B 40 80 - - 3786 0134 36C5 378D 3794 3799 3794 379E 1379 FFFF 34E2 ; TEXT line=0x03AA voice=0x0B flags=0x40,0x80 "Migrax like lot money. Sell dad. Sell mom. Bad"
@@ -424,20 +443,20 @@
 00002126: TEXT 03AA 06 40 80 - - 00E9 0134 3206 FFFF 0001 ; TEXT line=0x03AA voice=0x06 flags=0x40,0x80 "You like talk?"
 00002138: YIELD_B ; opcode AC
 00002139: LABEL selector_2139
-00002139: SELECTOR_NODE 330A selector_2173 ; "buggol"
+00002139: CASE 330A selector_2173 ; "buggol"
 0000213D: MENU 0752 2700 3265 34E2 0AB0 ; bye_bye | race | politics | info | joke
 0000214A: TEXT 03AA 05 40 80 - - 37C2 37CC 37D3 FFFF 3265 ; TEXT line=0x03AA voice=0x05 flags=0x40,0x80 "Democracy Buggol wise"
 0000215C: TEXT 03AA 03 40 80 - - 000C 0097 1C84 01DE 37D8 FFFF 2700 ; TEXT line=0x03AA voice=0x03 flags=0x40,0x80 "Me not ever see Buggol..."
 00002172: YIELD_B ; opcode AC
 00002173: LABEL selector_2173
-00002173: SELECTOR_NODE 093A selector_21D1 ; "ondoyant"
+00002173: CASE 093A selector_21D1 ; "ondoyant"
 00002177: MENU 0752 0001 34E2 2D1E ; bye_bye | talk | info | reproduction
 00002182: TEXT 03AA 01 40 80 - - 37E2 078E 00A0 0097 0DE6 0900 37EA FFFF 34E2 ; TEXT line=0x03AA voice=0x01 flags=0x40,0x80 "Ahhhhh! ondoyant, you not say such word..."
 0000219C: TEXT 03AA 03 40 80 - - 37F2 0A39 37F8 0989 37FE 0989 3805 FFFF 2D1E ; TEXT line=0x03AA voice=0x03 flags=0x40,0x80 "Love, all time, big magic, big hot..."
 000021B6: TEXT 03AA 0B 40 80 - - 0EB4 380C 0EB4 0097 3815 3574 3820 FFFF 2D1E ; TEXT line=0x03AA voice=0x0B flags=0x40,0x80 "Hom eternal. Hom not reproduce, cry cry..."
 000021D0: YIELD_B ; opcode AC
 000021D1: LABEL selector_21D1
-000021D1: SELECTOR_NODE 25F3 selector_225D ; "murffalos"
+000021D1: CASE 25F3 selector_225D ; "murffalos"
 000021D5: MENU 0752 04DC 2D1E 3272 34E2 ; bye_bye | planet | reproduction | consumption | info
 000021E2: TEXT 03AA 02 40 80 - - 3827 00FE 010E 0123 3831 FFFF 34E2 ; TEXT line=0x03AA voice=0x02 flags=0x40,0x80 "Murffalos be creatures with horn."
 000021F8: TEXT 03AA 05 40 80 - - 3827 2D2B 3837 2092 FFFF 3272 ; TEXT line=0x03AA voice=0x05 flags=0x40,0x80 "Murffalos tender meat. Tasty"
@@ -446,7 +465,7 @@
 00002244: TEXT 03AA 05 40 80 - - 3827 0101 0101 334A 387D 07EA FFFF 3272 ; TEXT line=0x03AA voice=0x05 flags=0x40,0x80 "Murffalos small small brain. Meat nice"
 0000225C: YIELD_B ; opcode AC
 0000225D: LABEL selector_225D
-0000225D: SELECTOR_NODE 04DC selector_2493 ; "planet"
+0000225D: CASE 04DC selector_2493 ; "planet"
 00002261: MENU 0752 0001 3882 28A7 3889 388E 34CB 3894 389D 3684 38A3 1EA2 2DBE ; bye_bye | talk | erazor | mastachok | qx20 | tumul | rondo | cyberock | troma | ekatomb | attrox | Oddland | corpo
 0000227E: TEXT 03AA 05 40 80 - - 07F8 3745 04DC FFFF 38AA ; TEXT line=0x03AA voice=0x05 flags=0x40,0x80 "Nice Sinox planet"
 00002290: TEXT 03AA 09 40 80 - - 000C 0097 1C84 00FE 0090 38B2 FFFF 38AA ; TEXT line=0x03AA voice=0x09 flags=0x40,0x80 "Me not ever be to Venusia"
@@ -475,7 +494,7 @@
 00002482: TEXT 03AA 00 03 80 - - 39BB 39C1 39C9 39CE ; TEXT line=0x03AA voice=0x00 flags=0x03,0x80 "Heat, fusion, sun. Bang!"
 00002492: YIELD_B ; opcode AC
 00002493: LABEL selector_2493
-00002493: SELECTOR_NODE 39D4 selector_251F ; "television"
+00002493: CASE 39D4 selector_251F ; "television"
 00002497: MENU 0752 34E2 3272 3265 ; bye_bye | info | consumption | politics
 000024A2: TEXT 03AA 0E 42 80 - - 000C 31D0 000C 0989 39DF 1CCE 2C38 FFFF 39D4 ; TEXT line=0x03AA voice=0x0E flags=0x42,0x80 "Me Hom. Me big power.Television inside head..."
 000024BC: TEXT 03AA 0D 40 80 - - 39F0 0097 031C 003A 39FB FFFF 39D4 ; TEXT line=0x03AA voice=0x0D flags=0x40,0x80 "Television not good for reproduction..."
@@ -484,7 +503,7 @@
 00002504: TEXT 03AA 06 40 80 - - 3A20 3A26 08C9 2C6F 020D 04EB 020D FFFF 3272 ; TEXT line=0x03AA voice=0x06 flags=0x40,0x80 "Watch television, always buy more and more"
 0000251E: YIELD_B ; opcode AC
 0000251F: LABEL selector_251F
-0000251F: SELECTOR_NODE 326E selector_259B ; "art"
+0000251F: CASE 326E selector_259B ; "art"
 00002523: MENU 0752 0001 34E2 1221 ; bye_bye | talk | info | painting
 0000252E: TEXT 03AA 05 40 80 - - 000C 0134 1221 FFFF 34E2 ; TEXT line=0x03AA voice=0x05 flags=0x40,0x80 "Me like painting"
 00002540: TEXT 03AA 0A 40 80 - - 000C 0134 326E 3417 0AC5 25F3 222B 37A3 00B3 2C67 FFFF 34E2 ; TEXT line=0x03AA voice=0x0A flags=0x40,0x80 "Me like art food. And murffalos liver boiled in mercury"
@@ -492,7 +511,7 @@
 00002582: TEXT 03AA 05 40 80 - - 3635 0D26 397D 0D26 3A53 3A5D FFFF 1221 ; TEXT line=0x03AA voice=0x05 flags=0x40,0x80 "Portrait Great Yolk. Great painting. Famous"
 0000259A: YIELD_B ; opcode AC
 0000259B: LABEL selector_259B
-0000259B: SELECTOR_NODE 16BD selector_260B ; "peace"
+0000259B: CASE 16BD selector_260B ; "peace"
 0000259F: MENU 0752 3265 3A64 32E9 ; bye_bye | politics | friendship | izwal
 000025AA: TEXT 03AA 01 40 80 - - 3A6F 031C 3A75 000C 0134 FFFF 3A7B ; TEXT line=0x03AA voice=0x01 flags=0x40,0x80 "Peace good idea. Me like"
 000025C0: TEXT 03AA 0A 40 80 - - 3A7B 1FE6 3A86 3610 000C 350E 270D FFFF 3A64 ; TEXT line=0x03AA voice=0x0A flags=0x40,0x80 "Friendship among peoples, races. Me like, friend..."
@@ -500,14 +519,14 @@
 000025F4: TEXT 03AA 0A 40 80 - - 3A6F 0029 2AC0 3AA2 3AAF FFFF 16BD ; TEXT line=0x03AA voice=0x0A flags=0x40,0x80 "Peace make mind connections. Progress"
 0000260A: YIELD_B ; opcode AC
 0000260B: LABEL selector_260B
-0000260B: SELECTOR_NODE 1BF1 selector_265D ; "war"
+0000260B: CASE 1BF1 selector_265D ; "war"
 0000260F: MENU 0752 3265 2705 ; bye_bye | politics | croolis
 00002618: TEXT 03AA 06 40 80 - - 1625 0134 3AB8 0134 35C6 FFFF 2705 ; TEXT line=0x03AA voice=0x06 flags=0x40,0x80 "Croolis like fight, like kill"
 0000262E: TEXT 03AA 06 40 80 - - 353E 3ABF 3AC7 3AD0 3AD6 3ADB FFFF 1BF1 ; TEXT line=0x03AA voice=0x06 flags=0x40,0x80 "War stupid. Destroy, hate, die, die"
 00002646: TEXT 03AA 0E 40 80 - - 0370 3ADF 3983 3AE5 3AEB FFFF 1BF1 ; TEXT line=0x03AA voice=0x0E flags=0x40,0x80 "Why hate? Lot hate. Why?"
 0000265C: YIELD_B ; opcode AC
 0000265D: LABEL selector_265D
-0000265D: SELECTOR_NODE 3265 selector_26EB ; "politics"
+0000265D: CASE 3265 selector_26EB ; "politics"
 00002661: MENU 0752 2700 3AF0 39D4 0AB0 16BD 1BF1 ; bye_bye | race | democracy | television | joke | peace | war
 00002672: TEXT 03AA 0B 40 80 - - 37C2 3AFA 3B05 04DC 0989 3AF0 FFFF 3AF0 ; TEXT line=0x03AA voice=0x0B flags=0x40,0x80 "Democracy important. Cyborg planet big democracy"
 0000268A: TEXT 03AA 0C 40 80 - - 3B0C 062A 3B15 000C 3B1B 0A29 FFFF 2700 ; TEXT line=0x03AA voice=0x0C flags=0x40,0x80 "Politics bad vibe. Me prefer ondoyants"
@@ -516,14 +535,14 @@
 000026D0: TEXT 03AA 0C 40 80 - - 3B0C 0989 3B4C 3B56 3B5D 062A 3B64 FFFF 3265 ; TEXT line=0x03AA voice=0x0C flags=0x40,0x80 "Politics big business, money, power, bad vibe..."
 000026EA: YIELD_B ; opcode AC
 000026EB: LABEL selector_26EB
-000026EB: SELECTOR_NODE 2D1E selector_2743 ; "reproduction"
+000026EB: CASE 2D1E selector_2743 ; "reproduction"
 000026EF: MENU 0752 2700 3B6C 093A 34E2 0AB0 ; bye_bye | race | hom | ondoyant | info | joke
 000026FE: TEXT 03AA 0D 40 80 - - 0318 0A85 3B70 0EB4 0097 385E 0EB4 3B7E FFFF 3B6C ; TEXT line=0x03AA voice=0x0D flags=0x40,0x80 "Not know reproduction. Hom not reproduce. Hom eternal"
 0000271A: TEXT 03AA 09 40 80 - - 0A29 0134 2D1E FFFF 093A ; TEXT line=0x03AA voice=0x09 flags=0x40,0x80 "ondoyants like reproduction"
 0000272C: TEXT 03AA 0A 40 80 - - 3B86 0EB4 3B93 104D 3B9E FFFF 0AB0 ; TEXT line=0x03AA voice=0x0A flags=0x40,0x80 "Reproduction Hom forbidden. Big copyright..."
 00002742: YIELD_B ; opcode AC
 00002743: LABEL selector_2743
-00002743: SELECTOR_NODE 325D selector_2859 ; "science"
+00002743: CASE 325D selector_2859 ; "science"
 00002747: MENU 0752 0001 2700 04DC 1083 34E2 3BAB 2AC0 ; bye_bye | talk | race | planet | universe | info | origin | mind
 0000275A: TEXT 03AA 01 40 80 - - 0EB4 3BB2 3BBA 0249 3BC1 FFFF 1083 ; TEXT line=0x03AA voice=0x01 flags=0x40,0x80 "Hom detect, sense, understand universe."
 00002770: TEXT 03AA 02 40 80 - - 3BCB 191C 0123 0101 3BD4 FFFF 1083 ; TEXT line=0x03AA voice=0x02 flags=0x40,0x80 "Universe filled with small creatures..."
@@ -538,7 +557,7 @@
 00002844: TEXT 03AA 07 40 80 - - 000C 0134 3C35 3C3C FFFF 325D ; TEXT line=0x03AA voice=0x07 flags=0x40,0x80 "Me like crunch numbers."
 00002858: YIELD_B ; opcode AC
 00002859: LABEL selector_2859
-00002859: SELECTOR_NODE 3C45 selector_28CB ; "consuption"
+00002859: CASE 3C45 selector_28CB ; "consuption"
 0000285D: MENU 0752 0001 3304 333F ; bye_bye | talk | sinox | food
 00002868: TEXT 03AA 05 40 80 - - 3745 3477 3211 3C50 3166 FFFF 3304 ; TEXT line=0x03AA voice=0x05 flags=0x40,0x80 "Sinox build hi tech products"
 0000287E: TEXT 03AA 06 40 80 - - 3C55 0989 3C5A 3827 0989 3C63 FFFF 333F ; TEXT line=0x03AA voice=0x06 flags=0x40,0x80 "Food big problem. Murffalos big solution"
@@ -546,7 +565,7 @@
 000028B4: TEXT 03AA 02 40 80 - - 00E9 07E2 0001 3C7C 0321 FFFF 3C45 ; TEXT line=0x03AA voice=0x02 flags=0x40,0x80 "You want talk consumption, friend"
 000028CA: YIELD_B ; opcode AC
 000028CB: LABEL selector_28CB
-000028CB: SELECTOR_NODE 0AB0 0000 ; "joke"
+000028CB: CASE 0AB0 0000 ; "joke"
 000028CF: MENU 0752 0001 2700 04DC 34E2 0AAA ; bye_bye | talk | race | planet | info | laugh
 000028DE: TEXT 03AA 0C 40 80 - - 0EB4 0097 0134 3C89 3C91 3C91 3C98 3C91 3C91 0AAA FFFF 0AAA ; TEXT line=0x03AA voice=0x0C flags=0x40,0x80 "Hom not like joke... laugh, laugh, cry, laugh, laugh, laugh"
 000028FE: TEXT 03AA 0B 40 80 - - 3344 3477 3C9D 3C91 0AAA FFFF 32E9 0AB0 ; TEXT line=0x03AA voice=0x0B flags=0x40,0x80 "Izwal build telescope, laugh, laugh"
@@ -554,3 +573,4 @@
 00002936: TEXT 03AA 0B 00 80 - - 00E9 07E2 0146 3CBE ; TEXT line=0x03AA voice=0x0B flags=0x00,0x80 "You want me sing?"
 00002946: TEXT 03AA 02 03 80 - - 00E9 0001 0A39 37F8 270D ; TEXT line=0x03AA voice=0x02 flags=0x03,0x80 "You talk all time, friend..."
 00002958: END
+00002959: END_SELECTOR_LIST list_Hom_1848

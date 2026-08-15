@@ -11,6 +11,7 @@ use std::fmt::Write as _;
 
 use anyhow::{Result, anyhow, bail};
 
+use crate::bas_cfg::{BasControlFlow, analyze_bas};
 use crate::script::DebSymbol;
 use crate::vm::{self, VmToken};
 use crate::vm_cfg::{StructuredGuard, recover_structured_guards};
@@ -29,6 +30,8 @@ pub struct Decompilation {
     pub symbolic_labels: usize,
     pub procedures: usize,
     pub structured_guards: usize,
+    pub structured_selector_lists: usize,
+    pub structured_cases: usize,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -41,6 +44,8 @@ struct BodyStats {
     symbolic_labels: usize,
     procedures: usize,
     structured_guards: usize,
+    structured_selector_lists: usize,
+    structured_cases: usize,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -63,6 +68,24 @@ struct StructuredAnnotations {
     starts: BTreeMap<usize, StructuredGuard>,
     thens: BTreeMap<usize, usize>,
     ends: BTreeMap<usize, Vec<usize>>,
+}
+
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+struct BasStructuredAnnotations {
+    starts: BTreeMap<usize, (String, String, u16)>,
+    cases: BTreeSet<usize>,
+    ends: BTreeMap<usize, String>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct OpenSelectorList<'a> {
+    name: &'a str,
+    prefix_offset: usize,
+    prefix_emitted: bool,
+    case_count: usize,
+    last_next: u16,
+    needs_menu: bool,
+    case_terminated: bool,
 }
 
 pub fn decompile(
@@ -91,6 +114,16 @@ pub fn decompile_structured_with_symbols(
     decompile_mode(kind, image, dictionary, symbols, true)
 }
 
+pub fn decompile_structured_bas_with_symbols(
+    image: &[u8],
+    var: &[u8],
+    dictionary: &HashMap<u16, String>,
+    symbols: &[DebSymbol],
+) -> Result<Decompilation> {
+    let graph = analyze_bas("BAS", image, var, dictionary, symbols)?;
+    decompile_mode_with_bas_graph(image, dictionary, &graph)
+}
+
 fn decompile_mode(
     kind: ImageKind,
     image: &[u8],
@@ -114,7 +147,7 @@ fn decompile_mode(
 
     let stats = match kind {
         ImageKind::Cod => decompile_cod(&mut source, image, dictionary, symbols, structured)?,
-        ImageKind::Bas => decompile_bas(&mut source, image, dictionary)?,
+        ImageKind::Bas => decompile_bas(&mut source, image, dictionary, None)?,
     };
     Ok(Decompilation {
         source,
@@ -126,6 +159,36 @@ fn decompile_mode(
         symbolic_labels: stats.symbolic_labels,
         procedures: stats.procedures,
         structured_guards: stats.structured_guards,
+        structured_selector_lists: stats.structured_selector_lists,
+        structured_cases: stats.structured_cases,
+    })
+}
+
+fn decompile_mode_with_bas_graph(
+    image: &[u8],
+    dictionary: &HashMap<u16, String>,
+    graph: &BasControlFlow,
+) -> Result<Decompilation> {
+    let mut source = String::new();
+    writeln!(source, "; BloodScript typed VM source")?;
+    writeln!(source, "; format: {SOURCE_FORMAT}")?;
+    writeln!(source, "; image: BAS")?;
+    writeln!(source, "; size: 0x{:08X}", image.len())?;
+    writeln!(source)?;
+
+    let stats = decompile_bas(&mut source, image, dictionary, Some(graph))?;
+    Ok(Decompilation {
+        source,
+        typed_statements: stats.typed_statements,
+        typed_bytes: stats.typed_bytes,
+        generic_op_statements: stats.generic_op_statements,
+        generic_op_bytes: stats.generic_op_bytes,
+        raw_bytes: stats.raw_bytes,
+        symbolic_labels: stats.symbolic_labels,
+        procedures: stats.procedures,
+        structured_guards: stats.structured_guards,
+        structured_selector_lists: stats.structured_selector_lists,
+        structured_cases: stats.structured_cases,
     })
 }
 
@@ -161,6 +224,7 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
     let mut image = Vec::new();
     let mut current_procedure: Option<&str> = None;
     let mut open_whens: Vec<(&str, bool)> = Vec::new();
+    let mut open_selector_list: Option<OpenSelectorList<'_>> = None;
     for line in lines {
         if line.offset != image.len() {
             bail!(
@@ -263,19 +327,191 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
                 }
                 continue;
             }
+            "SELECTOR_LIST" => {
+                require_count(&line.args, 1, line.line_number, line.name)?;
+                validate_identifier(line.args[0], line.line_number)?;
+                if let Some(open) = &open_selector_list {
+                    bail!(
+                        "line {}: SELECTOR_LIST {:?} starts before {:?} ends",
+                        line.line_number,
+                        line.args[0],
+                        open.name
+                    );
+                }
+                if current_procedure.is_some() || !open_whens.is_empty() {
+                    bail!(
+                        "line {}: SELECTOR_LIST cannot nest in COD structure",
+                        line.line_number
+                    );
+                }
+                open_selector_list = Some(OpenSelectorList {
+                    name: line.args[0],
+                    prefix_offset: line.offset,
+                    prefix_emitted: false,
+                    case_count: 0,
+                    last_next: 0,
+                    needs_menu: false,
+                    case_terminated: false,
+                });
+                continue;
+            }
+            "END_SELECTOR_LIST" => {
+                require_count(&line.args, 1, line.line_number, line.name)?;
+                let Some(open) = open_selector_list.take() else {
+                    bail!(
+                        "line {}: END_SELECTOR_LIST without SELECTOR_LIST",
+                        line.line_number
+                    );
+                };
+                if open.name != line.args[0] {
+                    bail!(
+                        "line {}: END_SELECTOR_LIST {:?} does not match {:?}",
+                        line.line_number,
+                        line.args[0],
+                        open.name
+                    );
+                }
+                if open.case_count == 0 || open.last_next != 0 || !open.case_terminated {
+                    bail!(
+                        "line {}: selector list {:?} is incomplete",
+                        line.line_number,
+                        open.name
+                    );
+                }
+                if !image
+                    .last()
+                    .is_some_and(|byte| matches!(*byte, vm::OP_YIELD_A | 0xFF))
+                {
+                    bail!(
+                        "line {}: selector list {:?} does not end in YIELD or END",
+                        line.line_number,
+                        open.name
+                    );
+                }
+                continue;
+            }
+            "CASE" => {
+                require_count(&line.args, 2, line.line_number, line.name)?;
+                let next = parse_address(
+                    line.args[1],
+                    &labels,
+                    line.line_number,
+                    "next selector node",
+                )?;
+                let Some(open) = open_selector_list.as_mut() else {
+                    bail!("line {}: CASE outside SELECTOR_LIST", line.line_number);
+                };
+                if !open.prefix_emitted || image.last() != Some(&vm::OP_YIELD_B) {
+                    bail!(
+                        "line {}: CASE is not preceded by YIELD_B",
+                        line.line_number
+                    );
+                }
+                if open.case_count == 0 {
+                    if line.offset != open.prefix_offset + 1 {
+                        bail!(
+                            "line {}: first CASE must follow the selector-list prefix",
+                            line.line_number
+                        );
+                    }
+                } else {
+                    if !open.case_terminated {
+                        bail!(
+                            "line {}: prior CASE body has no YIELD_B",
+                            line.line_number
+                        );
+                    }
+                    if usize::from(open.last_next) != line.offset {
+                        bail!(
+                            "line {}: prior CASE next target is 0x{:04X}, not 0x{:04X}",
+                            line.line_number,
+                            open.last_next,
+                            line.offset
+                        );
+                    }
+                }
+                if next != 0 && usize::from(next) <= line.offset {
+                    bail!(
+                        "line {}: CASE next target must be forward",
+                        line.line_number
+                    );
+                }
+                open.case_count += 1;
+                open.last_next = next;
+                open.needs_menu = true;
+                open.case_terminated = false;
+            }
             _ => {}
+        }
+
+        if line.name != "CASE" {
+            if let Some(open) = open_selector_list.as_ref() {
+                if open.case_count == 0 {
+                    if line.name != "YIELD_B" || open.prefix_emitted {
+                        bail!(
+                            "line {}: SELECTOR_LIST must begin with exactly one YIELD_B",
+                            line.line_number
+                        );
+                    }
+                } else {
+                    if open.case_terminated {
+                        bail!(
+                            "line {}: byte-emitting statement follows a terminated CASE",
+                            line.line_number
+                        );
+                    }
+                    if open.needs_menu && line.name != "MENU" {
+                        bail!(
+                            "line {}: CASE body must begin with MENU",
+                            line.line_number
+                        );
+                    }
+                    match line.name {
+                        "YIELD_B" if open.last_next == 0 => bail!(
+                            "line {}: terminal CASE must end in YIELD or END",
+                            line.line_number
+                        ),
+                        "YIELD" | "END" if open.last_next != 0 => bail!(
+                            "line {}: nonterminal CASE must end in YIELD_B",
+                            line.line_number
+                        ),
+                        "SELECTOR_NODE" => bail!(
+                            "line {}: use CASE inside SELECTOR_LIST",
+                            line.line_number
+                        ),
+                        _ => {}
+                    }
+                }
+            }
         }
         let encoded = compile_statement(line.name, &line.args, line.line_number, &labels)?;
         if encoded.is_empty() {
             bail!("line {}: statement emitted no bytes", line.line_number);
         }
         image.extend_from_slice(&encoded);
+        if line.name != "CASE" {
+            if let Some(open) = open_selector_list.as_mut() {
+                if open.case_count == 0 {
+                    open.prefix_emitted = true;
+                } else {
+                    if open.needs_menu {
+                        open.needs_menu = false;
+                    }
+                    if matches!(line.name, "YIELD_B" | "YIELD" | "END") {
+                        open.case_terminated = true;
+                    }
+                }
+            }
+        }
     }
     if let Some(open) = current_procedure {
         bail!("procedure {open:?} has no END_PROCEDURE");
     }
     if let Some((target, _)) = open_whens.last() {
         bail!("WHEN {target:?} has no END_WHEN");
+    }
+    if let Some(open) = open_selector_list {
+        bail!("SELECTOR_LIST {:?} has no END_SELECTOR_LIST", open.name);
     }
     Ok(image)
 }
@@ -402,12 +638,16 @@ fn decompile_bas(
     output: &mut String,
     image: &[u8],
     dictionary: &HashMap<u16, String>,
+    graph: Option<&BasControlFlow>,
 ) -> Result<BodyStats> {
     let annotations = bas_annotations(image, dictionary)?;
+    let structured = bas_structured_annotations(graph);
     let mut cursor = 0usize;
     let mut raw_start = 0usize;
     let mut stats = BodyStats {
         symbolic_labels: annotations.labels.len(),
+        structured_selector_lists: structured.starts.len(),
+        structured_cases: structured.cases.len(),
         ..BodyStats::default()
     };
 
@@ -428,6 +668,7 @@ fn decompile_bas(
             if image.get(cursor..end) != Some(encoded.as_slice()) {
                 bail!("BAS token at 0x{cursor:08X} does not re-encode exactly");
             }
+            emit_bas_structured_boundaries(output, cursor, &structured)?;
             emit_directives(output, cursor, &annotations)?;
             match &token {
                 vm_source::BasToken::Menu { word_offsets, .. } => {
@@ -456,9 +697,14 @@ fn decompile_bas(
                     writeln!(output, "{cursor:08X}: YIELD_B ; opcode AC")?;
                 }
                 vm_source::BasToken::SelectorNode { selector, next, .. } => {
+                    let statement = if structured.cases.contains(&cursor) {
+                        "CASE"
+                    } else {
+                        "SELECTOR_NODE"
+                    };
                     writeln!(
                         output,
-                        "{cursor:08X}: SELECTOR_NODE {selector:04X} {} ; {:?}",
+                        "{cursor:08X}: {statement} {selector:04X} {} ; {:?}",
                         bas_next_operand(*next, &annotations.labels),
                         dictionary.get(selector).map(String::as_str).unwrap_or("")
                     )?;
@@ -486,6 +732,7 @@ fn decompile_bas(
         emit_raw(output, raw_start, &image[raw_start..], "BAS structure")?;
         stats.raw_bytes += image.len() - raw_start;
     }
+    emit_bas_structured_boundaries(output, image.len(), &structured)?;
     Ok(stats)
 }
 
@@ -621,6 +868,46 @@ fn bas_annotations(image: &[u8], dictionary: &HashMap<u16, String>) -> Result<So
         annotations.labels.insert(offset as u16, identifier);
     }
     Ok(annotations)
+}
+
+fn bas_structured_annotations(graph: Option<&BasControlFlow>) -> BasStructuredAnnotations {
+    let mut annotations = BasStructuredAnnotations::default();
+    let Some(graph) = graph else {
+        return annotations;
+    };
+    for list in &graph.lists {
+        let entry = &list.entrypoint;
+        let name = format!(
+            "list_{}_{:04X}",
+            identifier_component(&entry.object_name),
+            entry.prefix_yield_b
+        );
+        annotations.starts.insert(
+            entry.prefix_yield_b,
+            (name.clone(), entry.object_name.clone(), entry.object_offset),
+        );
+        annotations.ends.insert(list.end_exclusive, name);
+        annotations.cases.extend(list.node_offsets.iter().copied());
+    }
+    annotations
+}
+
+fn emit_bas_structured_boundaries(
+    output: &mut String,
+    offset: usize,
+    structured: &BasStructuredAnnotations,
+) -> Result<()> {
+    if let Some(name) = structured.ends.get(&offset) {
+        writeln!(output, "{offset:08X}: END_SELECTOR_LIST {name}")?;
+    }
+    if let Some((name, object_name, object_offset)) = structured.starts.get(&offset) {
+        writeln!(
+            output,
+            "{offset:08X}: SELECTOR_LIST {name} ; DEB object {:?} at 0x{object_offset:04X}",
+            object_name
+        )?;
+    }
+    Ok(())
 }
 
 fn emit_directives(
@@ -973,7 +1260,7 @@ fn compile_statement(
             require_count(args, 0, line, name)?;
             output.push(vm::OP_YIELD_B);
         }
-        "SELECTOR_NODE" => {
+        "SELECTOR_NODE" | "CASE" => {
             require_count(args, 2, line, name)?;
             word(&mut output, parse_word(args[0], line, "selector")?);
             word(
@@ -1345,6 +1632,11 @@ mod tests {
     use std::path::{Path, PathBuf};
 
     fn game_dir() -> Option<PathBuf> {
+        if let Some(path) = std::env::var_os("CBLOOD_GAME_DIR").map(PathBuf::from) {
+            if path.join("SCRIPT1.COD").exists() {
+                return Some(path);
+            }
+        }
         [
             "accuracy/cblood_install/cblood",
             "../accuracy/cblood_install/cblood",
@@ -1583,6 +1875,81 @@ mod tests {
             assert!(decompiled.source.contains(statement), "missing {statement}");
         }
         assert_eq!(compile(&decompiled.source).unwrap(), expected);
+    }
+
+    #[test]
+    fn structured_selector_lists_compile_to_the_exact_low_level_tokens() {
+        let image = vec![
+            0xAA,
+            0xAC,
+            0x34, 0x12, 0x0C, 0x00,
+            0xA3, 0x00, 0x20, 0x00, 0x00,
+            0xAC,
+            0x00, 0x20, 0x00, 0x00,
+            0xA3, 0x34, 0x12, 0x00, 0x00,
+            0xFF,
+        ];
+        let mut var = vec![0; 0x1C];
+        var[0..2].copy_from_slice(&2u16.to_le_bytes());
+        var[0x1A..0x1C].copy_from_slice(&1u16.to_le_bytes());
+        let dictionary = HashMap::from([
+            (0x1234, "talk".to_string()),
+            (0x2000, "leave".to_string()),
+        ]);
+        let symbols = vec![DebSymbol {
+            name: "actor".to_string(),
+            offset: 0,
+            kind: 1,
+        }];
+
+        let decompiled = decompile_structured_bas_with_symbols(
+            &image,
+            &var,
+            &dictionary,
+            &symbols,
+        )
+        .unwrap();
+        assert_eq!(decompiled.structured_selector_lists, 1);
+        assert_eq!(decompiled.structured_cases, 2);
+        for statement in [
+            "SELECTOR_LIST list_actor_0001",
+            "CASE 1234 selector_000C",
+            "CASE 2000 0000",
+            "END_SELECTOR_LIST list_actor_0001",
+        ] {
+            assert!(decompiled.source.contains(statement), "missing {statement}");
+        }
+        assert_eq!(compile(&decompiled.source).unwrap(), image);
+
+        let malformed = decompiled
+            .source
+            .replace("CASE 1234 selector_000C", "CASE 1234 0000");
+        assert!(compile(&malformed).is_err());
+    }
+
+    #[test]
+    fn every_shipped_bas_structures_into_exact_selector_lists() {
+        let Some(root) = game_dir() else { return };
+        let expected = [(1, 1, 1), (2, 10, 122), (3, 12, 98), (4, 10, 43), (5, 4, 57)];
+        for (script, list_count, case_count) in expected {
+            let read = |extension: &str| {
+                std::fs::read(root.join(format!("SCRIPT{script}.{extension}"))).unwrap()
+            };
+            let image = read("BAS");
+            let var = read("VAR");
+            let dictionary = crate::script::parse_dictionary(&read("DIC"));
+            let symbols = crate::script::parse_deb(&read("DEB"));
+            let source = decompile_structured_bas_with_symbols(
+                &image,
+                &var,
+                &dictionary,
+                &symbols,
+            )
+            .unwrap();
+            assert_eq!(source.structured_selector_lists, list_count);
+            assert_eq!(source.structured_cases, case_count);
+            assert_eq!(compile(&source.source).unwrap(), image);
+        }
     }
 
     #[test]

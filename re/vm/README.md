@@ -119,6 +119,9 @@ match all 37 physical list roots exactly (`1/10/12/10/4` by profile), and their
 linked chains own all 321 nodes once. The generated graphs contain 963 match,
 mismatch, miss-exit, and body-termination edges with no unresolved entrypoint.
 See `bas-control-flow/manifest.tsv` and its README for the field derivation.
+The structured corpus now renders these as 37 named `SELECTOR_LIST` regions and
+321 `CASE` headers. Those directives retain the explicit native yield bytes and
+compile back to all 64,736 BAS bytes exactly.
 
 The shipped address conventions are now enforced rather than inferred during
 display. All 480 kind-2 `.DEB` routine values are one-based: subtracting one

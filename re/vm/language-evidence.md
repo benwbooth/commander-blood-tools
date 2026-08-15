@@ -72,6 +72,12 @@ to kind-1 object symbols yields 37 nonzero fields; all 37 point to the `AC`
 immediately before one physical selector-list root, with no missing or interior
 entry. Following those roots covers all 321 nodes exactly once.
 
+BloodScript's structured BAS form therefore names lists after their owning DEB
+objects and spells each linked node as `CASE selector next`. This is a
+reconstructed source notation, not a claim about the original token spelling.
+The compiler keeps the exact yield and menu records visible, validates the
+proven list grammar, and reproduces all five BAS images byte for byte.
+
 The whole ten-image corpus therefore compiles byte-for-byte from typed
 BloodScript IR. This closes byte framing, not source structuring: record fields
 and reducible control-flow blocks still need to be lifted above the exact IR.
