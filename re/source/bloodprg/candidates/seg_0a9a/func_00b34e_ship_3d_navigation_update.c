@@ -1,5 +1,4 @@
 #include <dos.h>
-#include <stddef.h>
 #include <string.h>
 
 #include "../include/bloodprg_graphics.h"
@@ -28,7 +27,7 @@ typedef struct ship_3d_navigation_record {
 } ship_3d_navigation_record;
 
 typedef char ship_3d_navigation_record_relation_must_be_at_18[
-        offsetof(ship_3d_navigation_record, relation) == 0x18 ? 1 : -1];
+        CB_OFFSETOF(ship_3d_navigation_record, relation) == 0x18 ? 1 : -1];
 
 #if defined(__TURBOC__) || defined(__BORLANDC__) || defined(__WATCOMC__)
 #define SHIP_3D_NAV_RECORD_AT(offset) \

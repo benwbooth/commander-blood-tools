@@ -1,12 +1,21 @@
 #ifndef BLOODPRG_COMMON_H
 #define BLOODPRG_COMMON_H
 
+#include <stddef.h>
+
 typedef unsigned char cb_u8;
 typedef unsigned int cb_u16;
 typedef signed char cb_i8;
 typedef signed int cb_i16;
 typedef unsigned long cb_u32;
 typedef signed long cb_i32;
+
+#if defined(__TURBOC__) || defined(__BORLANDC__)
+#define CB_OFFSETOF(type, member) \
+    ((cb_u16)(unsigned)&(((type *)0)->member))
+#else
+#define CB_OFFSETOF(type, member) ((cb_u16)offsetof(type, member))
+#endif
 
 #if defined(__TURBOC__) || defined(__BORLANDC__) || defined(__WATCOMC__)
 #define CB_FAR far

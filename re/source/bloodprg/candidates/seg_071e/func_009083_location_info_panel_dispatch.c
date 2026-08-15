@@ -1,6 +1,4 @@
 #include <dos.h>
-#include <stddef.h>
-
 #include "../include/bloodprg_graphics.h"
 #include "../include/bloodprg_nav.h"
 #include "../include/bloodprg_ship3d.h"
@@ -31,9 +29,9 @@ typedef struct location_panel_object_record {
 } location_panel_object_record;
 
 typedef char location_panel_object_name_must_be_at_4[
-        offsetof(location_panel_object_record, name) == 4 ? 1 : -1];
+        CB_OFFSETOF(location_panel_object_record, name) == 4 ? 1 : -1];
 typedef char location_panel_object_life_support_must_be_at_36[
-        offsetof(location_panel_object_record, life_support_visits) == 0x36
+        CB_OFFSETOF(location_panel_object_record, life_support_visits) == 0x36
             ? 1 : -1];
 
 #if defined(__TURBOC__) || defined(__BORLANDC__) || defined(__WATCOMC__)
