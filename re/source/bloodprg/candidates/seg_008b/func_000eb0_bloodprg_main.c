@@ -288,7 +288,7 @@ presentation_audio:
         confirm_dialog_step();
         snd_stream_refill();
         audio_process_ade();
-        ship_presentation_fsm();
+        ship_presentation_fsm(scene_link_target);
         scene_transition_step(scene_link_target);
         save_load_menu_step();
         presentation_choice_transition_step();

@@ -3,7 +3,7 @@
 #include "../include/bloodprg_ship3d.h"
 #include "../include/bloodprg_vm.h"
 
-void CB_FAR ship_presentation_fsm(void)
+void CB_FAR ship_presentation_fsm(cb_u16 link_target_offset)
 {
     cb_u16 state;
     cb_u16 line;
@@ -28,7 +28,7 @@ void CB_FAR ship_presentation_fsm(void)
 
     ship_3d_depth_scroll_step();
     ship_3d_plane_band_copy();
-    dlg_line_id_scene_dispatch(state);
+    dlg_line_id_scene_dispatch(link_target_offset);
 
     if ((state & SHIP_PRESENTATION_DIALOGUE) != 0u) {
         if ((ship_3d_dialogue_phase_ready & 1u) == 0u) {

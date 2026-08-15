@@ -3888,6 +3888,8 @@ LCS and then mnemonic similarity:
 | `resource_pair_lz_decode` | huge, `-ox`, register | 53/109 | 0.0566 | 0.4528 | 0.0566 |
 | `resource_payload_decode_rect` | huge, `-ox`, register | 483/306 | 0.0104 | 0.2857 | 0.0145 |
 | `gfx_scanline_advance` | medium, `-ox`, register | 11/13 | 0.1818 | 0.5455 | 0.1818 |
+| `ship_presentation_fsm` | large, `-os -s`, register | 68/79 | 0.0294 | 0.9118 | 0.1471 |
+| `bloodprg_main` | large, `-os -s`, register | 337/431 | 0.0059 | 0.7181 | 0.0564 |
 | `list_d8c_active_present` | medium, `-ox`, register | 87/115 | 0.1264 | 0.5747 | 0.1379 |
 | `resource_rect_blit` | medium, `-ox`, register | 51/92 | 0.0000 | 0.6275 | 0.0392 |
 | `resource_load_sequence` | huge, `-ox`, register | 43/42 | 0.2093 | 0.4419 | 0.2093 |
@@ -6348,17 +6350,23 @@ presentation gate; it takes priority over navigation. HUD does likewise.
 
 Twenty patched-helper original-binary vectors cover both initialization forms,
 every phase branch and boundary, combined-bit precedence, exact call order and
-near/far frames, DS ownership against a GS decoy, state writes, helper inputs,
-tail AX/DX clobber propagation, DS/SI restoration, flags, stack, and far return.
-Open Watcom 1.9 large (`-3 -os -s -ml -we`) emits one warning-free
-87-instruction/251-byte function versus 68/217 original, with 83.82 percent
-ordered and multiset mnemonic overlap. The candidate is one natural state
-coordinator with no inline assembly or register-state facade.
+near/far frames, inherited BP at the scene-dispatch call, DS ownership against
+a GS decoy, state writes, helper inputs, tail AX/DX clobber propagation, DS/SI
+restoration, flags, stack, and far return. The corrected C boundary receives
+`bloodprg_main`'s live scene-link cursor explicitly and forwards that cursor to
+the scene dispatcher; the prior source incorrectly passed the ship phase word.
+Open Watcom 1.9 large (`-3 -os -s -ml -we`) compiles the direct maintained
+source warning-free to 79 instructions/254 bytes versus 68/217 original, with
+91.18 percent ordered and 92.65 percent mnemonic-multiset overlap. Turbo C
+2.01 large emits 85 instructions with the same multiset overlap and assembles
+cleanly to OBJ. The candidate is one natural state coordinator with no inline
+assembly or register-state facade.
 
-Full-source integration requires the shipped DS=GS game-data layout and the
-common helpers' preservation contracts. Direct binary replacement additionally
-needs the original DS/SI-only save envelope, same-segment far-call lowering for
-the band copy, terminal-helper clobber behavior, and path-specific flags.
+The explicit link cursor, ordinary helper calls, and local phase snapshot are
+accepted for source integration. Direct binary replacement would additionally
+need the original inherited-BP placement, DS/SI-only save envelope, same-segment
+far-call lowering for the band copy, terminal-helper clobber behavior, and
+path-specific flags.
 
 ## BLOODPRG ship-HUD coordinator candidate
 
@@ -6681,14 +6689,16 @@ the temporary audio trigger. The vectors also prove all six allocation sizes,
 the exact derived segment pointers and viewport descriptor, helper ordering and
 arguments, close/delete paths, segment ownership, and stack integrity.
 
-Open Watcom 1.9 large (`-3 -os -s -ml -we`) compiles the warning-free natural
-C89 coordinator to 434 instructions/1,595 bytes versus 337/1,172 original,
-with 78.93 percent mnemonic-multiset overlap and 71.81 percent ordered mnemonic
-overlap. The function contains no inline assembly or register-state facade.
-Full-source integration requires the shipped `DS=GS=SS` data aliases,
-asynchronous updates to `main_frame_delay_ticks`, and adapters for recovered
-register ABIs. Direct replacement additionally needs the original inherited-BP
-handoffs, direct interrupt frames, selective callee residue, and terminal flags.
+The maintained source now passes its live `scene_link_target` explicitly to
+AFA0, preserving the original main-BP-to-9D10 dataflow without an inherited
+register dependency. Open Watcom 1.9 large (`-3 -os -s -ml -we`) compiles the
+direct source warning-free to 431 instructions/1,598 bytes versus 337/1,172
+original, with 78.93 percent mnemonic-multiset overlap and 71.81 percent
+ordered overlap. Turbo C 2.01 large emits 571 instructions with 82.20 percent
+multiset and 74.78 percent ordered overlap and assembles cleanly to OBJ. The
+function contains no inline assembly or register-state facade. Full-source
+integration requires the shipped `DS=GS=SS` data aliases, asynchronous updates
+to `main_frame_delay_ticks`, and adapters for recovered register ABIs.
 
 ## BLOODPRG VM resource profile loader at 0x0053A0
 

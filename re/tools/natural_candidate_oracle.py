@@ -891,6 +891,7 @@ def bloodprg_main_vectors() -> list[dict[str, object]]:
             elif helper_name in ("presentation_line_zero_run",
                                   "presentation_line_one_stream_run",
                                   "bridge_render_frame",
+                                  "ship_presentation_fsm",
                                   "scene_transition_step"):
                 event["scene_link_target"] = machine.reg_read(UC_X86_REG_BP)
             elif helper_name == "snd_bank_loader":
@@ -1115,7 +1116,8 @@ def bloodprg_main_vectors() -> list[dict[str, object]]:
         scene_events = [
             event for event in events
             if event["event"] in (
-                "bridge_render_frame", "scene_transition_step",
+                "bridge_render_frame", "ship_presentation_fsm",
+                "scene_transition_step",
                 "presentation_line_one_stream_run",
             )
         ]
@@ -59942,6 +59944,14 @@ def ship_presentation_fsm_vectors() -> list[dict[str, object]]:
             if helper_name == "entity":
                 call_name = f"entity:{machine.reg_read(UC_X86_REG_AX)}"
                 entity_index += 1
+            elif helper_name == "dispatch":
+                actual_link_target = machine.reg_read(UC_X86_REG_BP)
+                expected_link_target = initial["ebp"] & 0xFFFF
+                if actual_link_target != expected_link_target:
+                    raise AssertionError(
+                        f"0xafa0 {name}: dispatch BP={actual_link_target:#x}, "
+                        f"expected inherited link target {expected_link_target:#x}"
+                    )
             actual_calls.append(
                 {
                     "name": call_name,

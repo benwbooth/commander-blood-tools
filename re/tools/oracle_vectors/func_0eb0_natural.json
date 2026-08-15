@@ -902,7 +902,8 @@
         "return_frame": [
           4736,
           0
-        ]
+        ],
+        "scene_link_target": 16
       },
       {
         "event": "scene_transition_step",
@@ -1434,7 +1435,8 @@
         "return_frame": [
           4736,
           0
-        ]
+        ],
+        "scene_link_target": 16
       },
       {
         "event": "scene_transition_step",
@@ -2694,7 +2696,8 @@
         "return_frame": [
           4736,
           0
-        ]
+        ],
+        "scene_link_target": 24164
       },
       {
         "event": "scene_transition_step",
@@ -3190,7 +3193,8 @@
         "return_frame": [
           4736,
           0
-        ]
+        ],
+        "scene_link_target": 0
       },
       {
         "event": "scene_transition_step",
@@ -3708,7 +3712,8 @@
         "return_frame": [
           4736,
           0
-        ]
+        ],
+        "scene_link_target": 16
       },
       {
         "event": "scene_transition_step",
@@ -4204,7 +4209,8 @@
         "return_frame": [
           4736,
           0
-        ]
+        ],
+        "scene_link_target": 16
       },
       {
         "event": "scene_transition_step",
@@ -4700,7 +4706,8 @@
         "return_frame": [
           4736,
           0
-        ]
+        ],
+        "scene_link_target": 16
       },
       {
         "event": "scene_transition_step",

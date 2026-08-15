@@ -275,7 +275,7 @@ int CB_FAR bridge_steer_update(
         cb_u16 CB_NEAR *presentation_link_target); /* 0x009656 */
 void CB_FAR alien_overlay_cycle(void); /* 0x00B591 */
 void CB_FAR ship_3d_plane_band_copy(void); /* 0x00B6DD */
-void CB_FAR ship_presentation_fsm(void); /* 0x00AFA0 */
+void CB_FAR ship_presentation_fsm(cb_u16 link_target_offset); /* 0x00AFA0 */
 void CB_NEAR ship_3d_hud_init(void); /* 0x00B079 */
 void CB_NEAR ship_3d_navigation_update(void); /* 0x00B34E */
 /* Original context is SS:BP and the framebuffer is normalized ES:0. */
