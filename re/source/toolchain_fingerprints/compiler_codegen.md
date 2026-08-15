@@ -2433,9 +2433,31 @@ to 134 instructions/364 bytes versus 92/251 original, with 81.52 percent
 mnemonic-multiset overlap and no inline assembly. The source keeps native
 16-bit far pointers because Watcom lowers `huge` arithmetic through `__PIA`,
 which is less like the original direct loads. Full-source game integration
-therefore requires the shipped SS=GS alias, zero upper ESI, and in-segment
-position sums; exact arbitrary-state replacement still needs narrow addr32 and
-far-helper ABI adapters.
+therefore retains the shipped SS=GS alias and normal record-relative pointer
+arithmetic.
+
+The address boundary is now separated from the shipped gameplay domain instead
+of being left as an assumption. `re/tools/check_hud_position_domain.py` reads
+the field matrix from the executable and all five shipped DEB/VAR pairs. The
+640 active directory entries contain 216 position-eligible records; every read
+uses field offset `0x06` or `0x18`, the largest record base is `0x14E6`, the
+largest read ends at `0x14F0`, and no relevant field is negative or crosses 64
+KiB. The sole writer of GS:0x6752 selects the DEB symbol `arche`; each profile's
+arche is kind `0x0010`, so its current-position read is always selector-0x0B
+offset `0x18`.
+
+Upper ESI is also a proved runtime invariant at this boundary. The MZ entry
+zeros ESI. On active frames `vm_run_wrapper` zeros all 32-bit working registers
+before rendering; profile-load and save-load paths call that wrapper before
+their HUD refresh, and the native record-action path zeros ESI locally. MANU3
+can clobber ESI, but its two native call sites are either after the frame's HUD
+work or on a branch disjoint from the navigation teardown HUD call. A transient
+post-call DOSBox probe observed `ESI=0x00000CFC` at the first reached HUD call;
+a continuing 80-second probe recorded `0x00000000` at a later call. The natural
+far-pointer implementation is therefore accepted for source-port integration.
+Exact arbitrary-state replacement still needs narrow addr32 and far-helper ABI
+adapters for the deliberately artificial negative-offset, crossing, and
+nonzero-upper-ESI oracle vectors.
 
 Byte-parser handlers `0x007542`, `0x007549`, `0x007550`, and `0x007557` are
 byte-identical entry points for opcodes 0x01, 0x02, 0x0F, and 0x04. Two direct
