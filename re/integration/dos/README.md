@@ -31,9 +31,12 @@ NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
   --object-dir output/bloodprg_objects
 ```
 
-This creates a separate object for each manifest entry, but it is not a link
-claim. The next executable gate must supply the canonical shared-data owners,
-DOS/XMS/EMS adapters, cross-XDB calls, and the recovered startup boundary.
+This creates a separate object for each manifest entry, but it is not by itself
+a link claim. The package's `--include-bloodprg-link-probe` gate supplies the
+canonical byte-backed data owner, DOS/XMS/sound adapters, and a recovered
+startup harness, proving the aggregate C objects can link with zero unresolved
+symbols. The harness is not yet the game's original entrypoint; cross-XDB
+overlay execution and fixed BLOODPRG placement remain separate gates.
 
 The BLOODPRG candidate headers intentionally omit the unverified `#pragma aux`
 register contracts for the recovered VM, graphics, resource, and byte-parser
@@ -78,7 +81,12 @@ rewrites the same-size XDB resources inside `BLOOD.DAT`. The generated
 `SCRIPT1..5.COD/BAS` files are compared byte-for-byte and copied to the CD
 root. `BLOODPRG.EXE` remains the shipped executable until its startup,
 shared-data, DOS/XMS/EMS, and cross-XDB boundaries are recovered; the package
-never pretends that the executable has been replaced by C.
+never pretends that the executable has been replaced by C. An optional
+`--include-bloodprg-link-probe` gate also builds every recovered BLOODPRG
+candidate, derives the byte-backed data owner from the actual unresolved link
+report, adds the real DOS/XMS/sound adapters, and emits a zero-unresolved C
+aggregate link under `validation/bloodprg_link/`. That executable uses the
+startup-options harness as `main`; it is a C integration proof, not the game.
 
 Build the Rust VM compiler in the project shell, then run the package builder
 with Open Watcom:
@@ -92,9 +100,22 @@ NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
     --output-dir output/recovered_dos_package
 ```
 
+To include the full recovered C aggregate link and its data-owner synthesis:
+
+```sh
+NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
+  python3 re/tools/build_recovered_package.py \
+    --cbvm target/debug/cbvm \
+    --include-bloodprg-link-probe \
+    --output-dir output/recovered_dos_package
+```
+
 The builder emits `cd/` (a runnable CD tree), `scripts/`, `xdb/`,
-`xdb_objects/`, `validation/` (including the DOS shape-probe binaries and
-disassemblies), `package_manifest.tsv`, and `README.txt`.
+`xdb_objects/`, `bloodprg_objects/`, `validation/` (including the DOS
+shape-probe binaries, disassemblies, and optional BLOODPRG C link),
+`package_manifest.tsv`, and `README.txt`. The optional link directory
+contains `BLOODPRG_C_LINK.EXE`, a DOS 8.3 `BPRG.EXE` alias, `link.map`, and
+`unresolved.tsv`; the latter must contain only its header.
 The CD tree can be tested against the real launch path with:
 
 ```sh

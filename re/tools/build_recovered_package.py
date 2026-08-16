@@ -87,12 +87,176 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--wcl", default="wcl")
     parser.add_argument("--wdis", default="wdis")
+    parser.add_argument("--wasm", default="wasm")
+    parser.add_argument(
+        "--include-bloodprg-link-probe",
+        action="store_true",
+        help="compile and link the recovered BLOODPRG C objects into a validation executable",
+    )
     parser.add_argument(
         "--cbvm",
         type=Path,
         help="prebuilt cbvm executable; useful when Watcom and Rust use separate shells",
     )
     return parser.parse_args()
+
+
+def run_link_probe(
+    output_dir: Path,
+    main_object: Path,
+    object_dir: Path,
+    extra_objects: list[Path],
+    name: str,
+) -> int:
+    command = [
+        sys.executable,
+        str(ROOT / "re/tools/link_recovered_objects.py"),
+        "--main-object",
+        str(main_object),
+        "--object-dir",
+        str(object_dir),
+        "--output-dir",
+        str(output_dir),
+        "--name",
+        name,
+        "--map",
+    ]
+    for extra_object in extra_objects:
+        command.extend(("--extra-object", str(extra_object)))
+    process = subprocess.run(command, cwd=ROOT, text=True, capture_output=True)
+    diagnostics = "\n".join(
+        part for part in (process.stdout, process.stderr) if part
+    )
+    (output_dir / "driver.log").write_text(
+        "$ " + " ".join(command) + "\n" + diagnostics + "\n",
+        encoding="utf-8",
+    )
+    return process.returncode
+
+
+def build_bloodprg_link_probe(args: argparse.Namespace, output: Path) -> dict[str, str]:
+    """Build a real C aggregate link with an explicit startup harness."""
+    validation_dir = output / "validation" / "bloodprg_link"
+    validation_dir.mkdir(parents=True, exist_ok=True)
+    object_dir = output / "bloodprg_objects"
+    run_checked(
+        [
+            sys.executable,
+            str(ROOT / "re/tools/build_xdb_objects.py"),
+            "--manifest",
+            str(ROOT / "re/source/bloodprg/candidates/manifest.tsv"),
+            "--module-prefix",
+            "",
+            "--output-label",
+            "bloodprg",
+            "--wcl",
+            args.wcl,
+            "--object-dir",
+            str(object_dir),
+        ]
+    )
+
+    startup_object = validation_dir / "startup_gate.obj"
+    run_checked(
+        [
+            args.wcl,
+            "-q",
+            "-c",
+            "-3",
+            "-ox",
+            "-mm",
+            "-zdp",
+            "-we",
+            "-i=" + str(ROOT / "re/source/bloodprg/candidates/include"),
+            "-fo=" + str(startup_object),
+            str(ROOT / "re/integration/dos/bloodprg_startup_options.c"),
+        ]
+    )
+
+    initial_dir = validation_dir / "initial"
+    initial_dir.mkdir(parents=True, exist_ok=True)
+    initial_status = run_link_probe(
+        initial_dir,
+        startup_object,
+        object_dir,
+        [],
+        "BLOODPRG_INITIAL.EXE",
+    )
+    unresolved = initial_dir / "unresolved.tsv"
+    if not unresolved.is_file():
+        raise SystemExit(f"initial link did not write unresolved report: {unresolved}")
+    if initial_status == 0:
+        raise SystemExit("initial BLOODPRG link unexpectedly resolved without data owner")
+
+    owner_dir = validation_dir / "data_owner"
+    run_checked(
+        [
+            sys.executable,
+            str(ROOT / "re/tools/bloodprg_data_layout_probe.py"),
+            "--unresolved",
+            str(unresolved),
+            "--image",
+            str((args.cd_root / "BLOODPRG.EXE").resolve()),
+            "--output-dir",
+            str(owner_dir),
+        ]
+    )
+    owner_object = owner_dir / "bloodprg_data_layout_probe.obj"
+    run_checked(
+        [
+            args.wasm,
+            "-q",
+            str(owner_dir / "bloodprg_data_layout_probe.asm"),
+            "-fo=" + str(owner_object),
+        ]
+    )
+
+    adapter_object = validation_dir / "platform_adapters.obj"
+    run_checked(
+        [
+            args.wcl,
+            "-q",
+            "-c",
+            "-3",
+            "-ox",
+            "-mm",
+            "-zdp",
+            "-we",
+            "-i=" + str(ROOT / "re/source/bloodprg/candidates/include"),
+            "-fo=" + str(adapter_object),
+            str(ROOT / "re/integration/dos/bloodprg_platform_adapters.c"),
+        ]
+    )
+
+    final_dir = validation_dir / "final"
+    final_dir.mkdir(parents=True, exist_ok=True)
+    final_status = run_link_probe(
+        final_dir,
+        startup_object,
+        object_dir,
+        [adapter_object, owner_object],
+        "BLOODPRG_C_LINK.EXE",
+    )
+    final_executable = final_dir / "BLOODPRG_C_LINK.EXE"
+    final_report = final_dir / "unresolved.tsv"
+    unresolved_lines = final_report.read_text(encoding="ascii").splitlines()
+    if final_status != 0 or not final_executable.is_file() or len(unresolved_lines) != 1:
+        raise SystemExit(
+            "final BLOODPRG C link did not resolve cleanly; see "
+            f"{final_dir / 'link.log'} and {final_report}"
+        )
+    # DOS 8.3 lookup is part of the runtime check; keep a short command name
+    # beside the descriptive host-side artifact.
+    shutil.copy2(final_executable, final_dir / "BPRG.EXE")
+    return {
+        "component": final_executable.name,
+        "source": str(final_executable.relative_to(output)),
+        "output": str(final_executable.relative_to(output)),
+        "status": "c_aggregate_link_zero_unresolved_startup_harness",
+        "offset": "-",
+        "original_sha256": "-",
+        "output_sha256": sha256(final_executable),
+    }
 
 
 def link_or_copy(source: Path, destination: Path) -> None:
@@ -239,13 +403,14 @@ def verify_shape_probe(
         "-mm",
         "-zdp",
         "-we",
+        "-i=" + str(ROOT),
         f"-fm={map_file}",
         f"-fe={executable}",
         str(source),
         str(harness),
     ]
     process = subprocess.run(
-        command, cwd=ROOT, text=True, capture_output=True, check=False
+        command, cwd=validation_dir, text=True, capture_output=True, check=False
     )
     if process.returncode != 0 or not executable.is_file():
         diagnostics = "\n".join(
@@ -502,17 +667,26 @@ def main() -> int:
     wcl = resolve_executable(args.wcl)
     args.wcl = wcl
     args.wdis = resolve_executable(args.wdis)
+    if args.include_bloodprg_link_probe:
+        args.wasm = resolve_executable(args.wasm)
     output = args.output_dir.resolve()
     output.mkdir(parents=True, exist_ok=True)
     compile_sources(args, output)
+    link_record = None
+    if args.include_bloodprg_link_probe:
+        link_record = build_bloodprg_link_probe(args, output)
     copy_cd_tree(args.cd_root.resolve(), output / "cd")
     shutil.copy2(args.cd_root / "BLOOD.DAT", output / "cd" / "BLOOD.DAT")
     rows = read_manifest_rows()
     xdb_records = patch_xdb_files(args, output, rows)
     records = patch_archive(args, output, xdb_records)
+    if link_record is not None:
+        records.append(link_record)
     write_package_metadata(output, records, args.cd_root.resolve())
     print(f"wrote hybrid package: {output}")
     print("BLOODPRG.EXE status: original_shipped_fallback")
+    if link_record is not None:
+        print("BLOODPRG_C_LINK.EXE status: c_aggregate_link_zero_unresolved_startup_harness")
     print(f"recorded package components: {len(records)}")
     return 0
 
