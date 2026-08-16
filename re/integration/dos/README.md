@@ -103,6 +103,35 @@ source aliases. With it and the layout measurement object, the published
 object set measures 141 unresolved symbols. XMS and sound-driver calls remain
 external far-call ABIs and are intentionally not replaced with no-op bodies.
 
+The aggregate measurement is not a valid XDB link model. Each alien overlay
+uses the same `xdb_alien_*` source names for a different relocated data
+segment, so AMER, CROOLIS, and SCRUT must be linked and loaded as separate
+overlays. Generate a byte-backed layout owner for one overlay with:
+
+```sh
+python3 re/tools/xdb_data_layout_probe.py \
+  --module croolis \
+  --unresolved output/link_probe/unresolved.tsv \
+  --image output/_tmp_dat/croolis.xdb \
+  --data-file-base 0x32f0 \
+  --output-dir output/link_probe/croolis_data_layout
+
+NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
+  wasm -q \
+  -fo=output/link_probe/croolis_data_layout/croolis_data_layout_probe.obj \
+  output/link_probe/croolis_data_layout/croolis_data_layout_probe.asm
+```
+
+The verified DS/FS/SS file bases are AMER `0x3280`, CROOLIS `0x32f0`, SCRUT
+`0x33b0`, and MANU3 `0x1370`. The tool copies only the intervals between
+recovered declarations and emits labels in `_CODE` for code-resident state
+and `XDB_DATA` for relocated overlay data. It is still a layout owner/probe,
+not an overlay entrypoint: it does not supply missing callbacks, external
+XMS/audio services, or un-recovered declarations. The AMER base is derived
+from the word at `CS:0x3275` (`0x0328`), CROOLIS from `CS:0x32e5`
+(`0x032f`), and SCRUT from `CS:0x33a5` (`0x033b`); these are file mappings,
+not guessed segment values.
+
 Run the current MANU3 and alien gates from the repository root:
 
 ```sh
