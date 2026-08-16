@@ -364,7 +364,9 @@ typedef struct bloodprg_vm_opcode_descriptor {
 typedef char bloodprg_vm_opcode_descriptor_size_must_be_2[
         sizeof(bloodprg_vm_opcode_descriptor) == 2 ? 1 : -1];
 
-/* The binary reads this through SS:BP; the shipped runtime has SS=GS. */
+/* The binary reads this through SS:BP; the shipped runtime has SS=GS.
+ * It is the 0x60-byte table immediately after GS/DS:0x6EB0, at
+ * DS/SS:0x6F18 (BLOODPRG.EXE file offset 0x14338). */
 extern const bloodprg_vm_opcode_descriptor CB_GAME_DATA
         vm_opcode_descriptors[BLOODPRG_VM_OPCODE_WINDOW_COUNT];
 

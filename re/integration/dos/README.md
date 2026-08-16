@@ -65,6 +65,44 @@ The probe writes `unresolved.tsv` and `link.log`, and exits nonzero until the
 reported owners and platform boundaries are implemented. It never generates
 dummy definitions or treats an unresolved link as a runnable game binary.
 
+To classify the aggregate probe's data symbols against the recovered
+BLOODPRG layout, generate the measurement-only layout object:
+
+```sh
+python3 re/tools/bloodprg_data_layout_probe.py \
+  --unresolved output/link_probe/unresolved.tsv \
+  --output-dir output/link_probe/data_layout
+
+NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
+  wasm -q output/link_probe/data_layout/bloodprg_data_layout_probe.asm \
+  -fo=output/link_probe/data_layout/bloodprg_data_layout_probe.obj
+```
+
+The tool currently classifies the documented BLOODPRG declarations only. Its
+assembler output is deliberately zero-filled and is a link-frontier probe,
+not a runtime data owner. On the published object set it classified 718 of
+875 unresolved symbols and reduced the measured frontier to 157. The
+remaining symbols must be supplied by their real XDB module data segments,
+DOS/XMS/EMS/audio services, or verified ABI thunks; they must not be resolved
+by copying this probe into a production executable.
+
+The first production adapter slice is compiled separately and can be added to
+the probe's object directory:
+
+```sh
+NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
+  wcl -q -c -3 -mm -zdp -we \
+  -i=re/source/bloodprg/candidates/include \
+  -fo=output/link_probe/bloodprg_platform_adapters.obj \
+  re/integration/dos/bloodprg_platform_adapters.c
+```
+
+This source implements the recovered DOS 21h file calls, DTA lookup, EMS
+page-map call, allocation-failure dispatch, and the four verified far/near
+source aliases. With it and the layout measurement object, the published
+object set measures 141 unresolved symbols. XMS and sound-driver calls remain
+external far-call ABIs and are intentionally not replaced with no-op bodies.
+
 Run the current MANU3 and alien gates from the repository root:
 
 ```sh
