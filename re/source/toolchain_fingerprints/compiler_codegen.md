@@ -90,6 +90,7 @@ body byte-for-byte or differ only where the linker supplies recovered symbols:
 | AMER `0x001DD6`, CROOLIS `0x001D27`, SCRUT `0x001DE7` method no-ops | Open Watcom emits the exact one-byte `RET` | method-table binding only |
 | MANU3 `0x00017C anim_select_entry` | Open Watcom emits the exact `CALL` / `RETF` two-instruction shape | one relocation binds the near selector callee |
 | MANU3 `0x000848 span_setup_next` | Open Watcom emits the exact one-byte `RET` | fixed-offset C patch only; no caller-visible state |
+| AMER `0x000B0F`, CROOLIS `0x000B50`, SCRUT `0x000B55` method slot 11 | Open Watcom emits the exact 16-byte shape with `ADD word,-15` and a linker cursor placeholder | the generated ADD is the reviewed natural-C encoding of `SUB word,15`; each module restores its CS cursor offset, and the combined XDB package matches the known-good DOSBox attract capture |
 
 No register-state model or compatibility shim is present. The one inline
 save/restore envelope at `0x009F53` is retained because it is the smallest

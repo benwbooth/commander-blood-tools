@@ -44,6 +44,9 @@ SHAPE_PATCHES = (
     ("croolis", "func_00035c_mouse_position_set.c", 0x035C, 14, "mouse_position"),
     ("scrut", "func_00035c_mouse_position_set.c", 0x035C, 14, "mouse_position"),
     ("manu3", "func_00017c_anim_select_entry.c", 0x017C, 4, "manu3_entry"),
+    ("amer", "func_000b0f_method_slot_11_anchor_state.c", 0x0B0F, 16, "method_slot_11"),
+    ("croolis", "func_000b50_method_slot_11_anchor_state.c", 0x0B50, 16, "method_slot_11"),
+    ("scrut", "func_000b55_method_slot_11_anchor_state.c", 0x0B55, 16, "method_slot_11"),
 )
 
 # These handlers have both semantic/oracle coverage and an exact WCL machine
@@ -750,6 +753,15 @@ def verify_shape_probe(
             "int main(void) { return 0; }\n",
             encoding="ascii",
         )
+    elif kind == "method_slot_11":
+        harness.write_text(
+            '#include "re/source/xdb/candidates/include/xdb_alien.h"\n'
+            "xdb_alien_cursor XDB_CODE_DATA xdb_amer_slot11_cursor;\n"
+            "xdb_alien_cursor XDB_CODE_DATA xdb_croolis_slot11_cursor;\n"
+            "xdb_alien_cursor XDB_CODE_DATA xdb_scrut_slot11_cursor;\n"
+            "int main(void) { return 0; }\n",
+            encoding="ascii",
+        )
     else:
         raise SystemExit(f"unknown shape probe kind: {kind}")
     command = [
@@ -796,10 +808,14 @@ def verify_shape_patch(
     if len(expected) != length:
         raise SystemExit(f"fixed overlay routine exceeds {source}: 0x{offset:04x}")
     ignored = {(2, 4), (6, 8)} if kind == "mouse_position" else set()
+    if kind == "method_slot_11":
+        ignored = {(13, 15)}
     replacement = bytearray(generated)
     for index, (actual, reference) in enumerate(zip(generated, expected)):
         if any(start <= index < end for start, end in ignored):
             replacement[index] = reference
+            continue
+        if kind == "method_slot_11" and 6 <= index < 10:
             continue
         if actual != reference:
             raise SystemExit(
@@ -1002,8 +1018,9 @@ def write_package_metadata(output: Path, records: list[dict[str, str]], cd_root:
         "The generated SCRIPT1..5.COD/BAS files are compiled from re/vm/bloodscript\n"
         "and compared byte-for-byte with the installed reference. The four\n"
         "alien-overlay no-op routines are verified by wdis, while the three\n"
-        "mouse-position routines and MANU3 entry are linked in small DOS shape\n"
-        "probes. Their fixed-layout machine-code shapes are compared against the\n"
+        "mouse-position routines, MANU3 entry, and three slot-11 routines are\n"
+        "linked in small DOS shape probes. Their fixed-layout machine-code\n"
+        "shapes are compared against the\n"
         "original offsets, with only approved relocation words restored, before\n"
         "the XDB files and BLOOD.DAT are emitted.\n"
         "package_manifest.tsv records every source verification and hash.\n\n"
