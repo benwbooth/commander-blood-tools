@@ -69,13 +69,15 @@ dummy definitions or treats an unresolved link as a runnable game binary.
 
 The current full-package gate is a deliberately explicit hybrid. It compiles
 the BloodScript sources, compiles every XDB C candidate, verifies the three
-one-byte no-op candidates with `wdis`, patches those fixed offsets in the
-three alien overlays, and rewrites the same-size XDB resources inside
-`BLOOD.DAT`. The generated `SCRIPT1..5.COD/BAS` files are compared byte-for-
-byte and copied to the CD root. `BLOODPRG.EXE` remains the shipped executable
-until its startup, shared-data, DOS/XMS/EMS, and cross-XDB boundaries are
-recovered; the package never pretends that the executable has been replaced
-by C.
+one-byte no-op candidates with `wdis`, and links small real-mode DOS probes for
+the three mouse-position routines and the MANU3 entry. Those probes compare
+the generated instruction shapes against the original fixed overlay offsets.
+The builder then patches those fixed offsets in the three alien overlays and
+rewrites the same-size XDB resources inside `BLOOD.DAT`. The generated
+`SCRIPT1..5.COD/BAS` files are compared byte-for-byte and copied to the CD
+root. `BLOODPRG.EXE` remains the shipped executable until its startup,
+shared-data, DOS/XMS/EMS, and cross-XDB boundaries are recovered; the package
+never pretends that the executable has been replaced by C.
 
 Build the Rust VM compiler in the project shell, then run the package builder
 with Open Watcom:
@@ -90,7 +92,8 @@ NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
 ```
 
 The builder emits `cd/` (a runnable CD tree), `scripts/`, `xdb/`,
-`xdb_objects/`, `validation/`, `package_manifest.tsv`, and `README.txt`.
+`xdb_objects/`, `validation/` (including the DOS shape-probe binaries and
+disassemblies), `package_manifest.tsv`, and `README.txt`.
 The CD tree can be tested against the real launch path with:
 
 ```sh

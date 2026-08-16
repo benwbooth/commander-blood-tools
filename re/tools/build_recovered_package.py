@@ -35,6 +35,15 @@ NOOP_PATCHES = (
     ("scrut", "func_001de7_method_noop.c", 0x1DE7),
 )
 
+# These candidates have compiler-verified instruction shapes whose only
+# relocations resolve to the original fixed overlay operands.
+SHAPE_PATCHES = (
+    ("amer", "func_000347_mouse_position_set.c", 0x0347, 14, "mouse_position"),
+    ("croolis", "func_00035c_mouse_position_set.c", 0x035C, 14, "mouse_position"),
+    ("scrut", "func_00035c_mouse_position_set.c", 0x035C, 14, "mouse_position"),
+    ("manu3", "func_00017c_anim_select_entry.c", 0x017C, 4, "manu3_entry"),
+)
+
 
 def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
@@ -42,6 +51,14 @@ def sha256_bytes(data: bytes) -> str:
 
 def sha256(path: Path) -> str:
     return sha256_bytes(path.read_bytes())
+
+
+def metadata_path(path: Path) -> str:
+    """Keep package metadata readable when an input lives outside ROOT."""
+    try:
+        return str(path.relative_to(ROOT))
+    except ValueError:
+        return str(path)
 
 
 def resolve_executable(value: str) -> str:
@@ -172,6 +189,102 @@ def verify_noop_object(
         )
 
 
+def read_mz_image(path: Path) -> bytes:
+    data = path.read_bytes()
+    if data[:2] not in (b"MZ", b"ZM"):
+        raise SystemExit(f"linked C probe is not a DOS MZ executable: {path}")
+    header_size = int.from_bytes(data[8:10], "little") * 16
+    pages = int.from_bytes(data[4:6], "little")
+    last_page = int.from_bytes(data[2:4], "little")
+    image_total = pages * 512 if last_page == 0 else (pages - 1) * 512 + last_page
+    return data[header_size:image_total]
+
+
+def verify_shape_probe(
+    args: argparse.Namespace,
+    output: Path,
+    source: Path,
+    length: int,
+    kind: str,
+) -> bytes:
+    validation_dir = output / "validation" / "shape_probes"
+    validation_dir.mkdir(parents=True, exist_ok=True)
+    stem = source.stem
+    harness = validation_dir / f"{stem}_{kind}_harness.c"
+    executable = validation_dir / f"{stem}_{kind}.EXE"
+    map_file = validation_dir / f"{stem}_{kind}.map"
+    if kind == "mouse_position":
+        harness.write_text(
+            '#include "re/source/xdb/candidates/include/xdb_mouse.h"\n'
+            "volatile xdb_mouse_state xdb_alien_mouse_state;\n"
+            "int main(void) { return 0; }\n",
+            encoding="ascii",
+        )
+    elif kind == "manu3_entry":
+        harness.write_text(
+            '#include "re/source/xdb/candidates/include/xdb_manu3.h"\n'
+            "void pad(void) {}\n"
+            "void XDB_NEAR xdb_manu3_anim_select(xdb_u16 selector) "
+            "{ (void)selector; }\n"
+            "int main(void) { return 0; }\n",
+            encoding="ascii",
+        )
+    else:
+        raise SystemExit(f"unknown shape probe kind: {kind}")
+    command = [
+        args.wcl,
+        "-q",
+        "-3",
+        "-ox",
+        "-mm",
+        "-zdp",
+        "-we",
+        f"-fm={map_file}",
+        f"-fe={executable}",
+        str(source),
+        str(harness),
+    ]
+    process = subprocess.run(
+        command, cwd=ROOT, text=True, capture_output=True, check=False
+    )
+    if process.returncode != 0 or not executable.is_file():
+        diagnostics = "\n".join(
+            part for part in (process.stdout, process.stderr) if part
+        )
+        raise SystemExit(f"C shape probe failed for {source}: {diagnostics}")
+    image = read_mz_image(executable)
+    if len(image) < length:
+        raise SystemExit(f"shape probe image is shorter than {length} bytes: {executable}")
+    generated = image[:length]
+    (validation_dir / f"{stem}_{kind}.bin").write_bytes(generated)
+    return generated
+
+
+def verify_shape_patch(
+    args: argparse.Namespace,
+    output: Path,
+    source: Path,
+    original: bytes,
+    offset: int,
+    length: int,
+    kind: str,
+) -> bytes:
+    generated = verify_shape_probe(args, output, source, length, kind)
+    expected = original[offset : offset + length]
+    if len(expected) != length:
+        raise SystemExit(f"fixed overlay routine exceeds {source}: 0x{offset:04x}")
+    ignored = {(2, 4), (6, 8)} if kind == "mouse_position" else set()
+    for index, (actual, reference) in enumerate(zip(generated, expected)):
+        if any(start <= index < end for start, end in ignored):
+            continue
+        if actual != reference:
+            raise SystemExit(
+                f"C shape mismatch for {source} at byte {index}: "
+                f"generated 0x{actual:02x}, expected 0x{reference:02x}"
+            )
+    return expected
+
+
 def patch_xdb_files(
     args: argparse.Namespace,
     output: Path,
@@ -204,9 +317,39 @@ def patch_xdb_files(
         records.append(
             {
                 "component": f"{module}.xdb",
-                "source": str(source.relative_to(ROOT)),
+                "source": metadata_path(source),
                 "output": str(destination.relative_to(output)),
                 "status": "c_source_fixed_offset_patch",
+                "offset": f"0x{offset:04x}",
+                "original_sha256": sha256_bytes(original),
+                "output_sha256": sha256_bytes(patched),
+            }
+        )
+
+    for module, source_name, offset, length, kind in SHAPE_PATCHES:
+        source = XDB_MANIFEST.parent / module / source_name
+        row = rows.get(f"{module}/{source_name}")
+        if row is None:
+            raise SystemExit(f"manifest has no C source row: {source}")
+        original_path = args.xdb_dir / f"{module}.xdb"
+        if not original_path.is_file():
+            raise SystemExit(f"missing source overlay: {original_path}")
+        original = original_path.read_bytes()
+        replacement = verify_shape_patch(
+            args, output, source, original, offset, length, kind
+        )
+        patched = bytearray(original)
+        patched[offset : offset + length] = replacement
+        destination = xdb_output / f"{module}.xdb"
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(patched)
+        records.append(
+            {
+                "component": f"{module}.xdb@0x{offset:04x}",
+                "archive_name": f"{module}.xdb",
+                "source": metadata_path(source),
+                "output": str(destination.relative_to(output)),
+                "status": "c_source_fixed_layout_verified",
                 "offset": f"0x{offset:04x}",
                 "original_sha256": sha256_bytes(original),
                 "output_sha256": sha256_bytes(patched),
@@ -221,7 +364,7 @@ def patch_xdb_files(
     records.append(
         {
             "component": "manu3.xdb",
-            "source": str(manu3.relative_to(ROOT)),
+            "source": metadata_path(manu3),
             "output": str(manu3_output.relative_to(output)),
             "status": "original_overlay_no_c_patch",
             "offset": "-",
@@ -297,14 +440,15 @@ def patch_archive(
         replacements.append((record["component"], path, record["status"]))
 
     for name, replacement_path, status in replacements:
-        key = name.lower().replace("\\", "/")
+        archive_name = name.split("@", 1)[0]
+        key = archive_name.lower().replace("\\", "/")
         if key not in entries:
-            raise SystemExit(f"resource is absent from BLOOD.DAT: {name}")
+            raise SystemExit(f"resource is absent from BLOOD.DAT: {archive_name}")
         offset, size = entries[key]
         replacement = replacement_path.read_bytes()
         if len(replacement) != size:
             raise SystemExit(
-                f"size-changing archive replacement refused for {name}: "
+                f"size-changing archive replacement refused for {archive_name}: "
                 f"{len(replacement)} != {size}"
             )
         original_hash = sha256_bytes(data[offset : offset + size])
@@ -339,10 +483,11 @@ def write_package_metadata(output: Path, records: list[dict[str, str]], cd_root:
         "startup, shared-data, DOS/XMS/EMS, and cross-XDB symbols.\n\n"
         "The generated SCRIPT1..5.COD/BAS files are compiled from re/vm/bloodscript\n"
         "and compared byte-for-byte with the installed reference. The three\n"
-        "alien-overlay no-op routines are compiled with Open Watcom, verified by\n"
-        "wdis as a single RET instruction, and patched at their original fixed\n"
-        "offsets in the loose XDB files and BLOOD.DAT. manu3.xdb is preserved\n"
-        "unchanged. package_manifest.tsv records every replacement and hash.\n\n"
+        "alien-overlay no-op routines are verified by wdis, while the three\n"
+        "mouse-position routines and MANU3 entry are linked in small DOS shape\n"
+        "probes. Their fixed-layout machine-code shapes are compared against the\n"
+        "original offsets before the XDB files and BLOOD.DAT are emitted.\n"
+        "package_manifest.tsv records every source verification and hash.\n\n"
         f"BLOODPRG.EXE sha256: {sha256(bloodprg)}\n"
         f"Source CD tree: {cd_root}\n",
         encoding="ascii",
