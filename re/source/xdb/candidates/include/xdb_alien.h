@@ -719,6 +719,9 @@ void XDB_NEAR xdb_amer_slot1_motion_update(
 void XDB_NEAR xdb_amer_slot1_return_update(
         xdb_alien_biased_state XDB_NEAR *state,
         xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_amer_slot1_state_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_amer_slot2_update(
         xdb_alien_biased_state XDB_NEAR *state,
         xdb_alien_method_context XDB_NEAR *context);
