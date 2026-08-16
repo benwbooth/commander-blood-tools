@@ -35,6 +35,27 @@ This creates a separate object for each manifest entry, but it is not a link
 claim. The next executable gate must supply the canonical shared-data owners,
 DOS/XMS/EMS adapters, cross-XDB calls, and the recovered startup boundary.
 
+To turn an object build into a measured aggregate-link attempt, pass a real DOS
+harness object to the linker probe:
+
+```sh
+NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
+  wcl -q -c -3 -mm \
+  -i=re/source/bloodprg/candidates/include \
+  -fo=output/link_probe/startup_gate.obj \
+  re/integration/dos/bloodprg_startup_options.c
+
+NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
+  python3 re/tools/link_recovered_objects.py \
+  --main-object output/link_probe/startup_gate.obj \
+  --object-dir output/bloodprg_objects \
+  --object-dir output/xdb_objects
+```
+
+The probe writes `unresolved.tsv` and `link.log`, and exits nonzero until the
+reported owners and platform boundaries are implemented. It never generates
+dummy definitions or treats an unresolved link as a runnable game binary.
+
 Run the current MANU3 and alien gates from the repository root:
 
 ```sh
