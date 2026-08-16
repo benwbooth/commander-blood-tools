@@ -135,7 +135,7 @@ shape-probe binaries, disassemblies, and optional BLOODPRG C link),
 `package_manifest.tsv`, and `README.txt`. The optional link directory
 contains `BLOODPRG_C_LINK.EXE`, a DOS 8.3 `BPRG.EXE` alias, `link.map`, and
 `unresolved.tsv`; the latter must contain only its header.
-The fixed-patch directory contains the exact-byte audit listing and patched
+The fixed-patch directory contains the fixed-layout audit listing and patched
 executable; `cd/BPRG_C.EXE` can be launched with the same arguments as the
 original `BLOODPRG.EXE`.
 The CD tree can be tested against the real launch path with:

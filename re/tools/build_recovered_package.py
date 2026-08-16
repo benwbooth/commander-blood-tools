@@ -3,7 +3,8 @@
 
 The DOS executable is intentionally kept as the shipped BLOODPRG.EXE until its
 startup, shared data, DOS adapters, and cross-overlay link boundaries are
-recovered.  The archive is still patched through the real resource directory:
+recovered.  An opt-in fixed-layout patch emits only independently verified C
+replacements.  The archive is still patched through the real resource directory:
 the generated scripts are byte-exact, and the three one-byte C no-op routines
 are verified with Watcom and written at their original fixed offsets.
 """
@@ -118,7 +119,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--include-bloodprg-fixed-patch",
         action="store_true",
-        help="emit a game-loadable BLOODPRG copy containing only byte-exact C patches",
+        help="emit a game-loadable BLOODPRG copy containing only verified fixed-layout C patches",
     )
     parser.add_argument(
         "--cbvm",
