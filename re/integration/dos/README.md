@@ -5,6 +5,20 @@ executables and run them under DOSBox-X. They are the bridge between the
 per-routine Unicorn oracles and replacing routines in the original XDB
 execution environment.
 
+Compile every recovered XDB routine to an Open Watcom real-mode object with:
+
+```sh
+nix develop -c python3 re/tools/build_xdb_objects.py \
+  --object-dir output/xdb_objects
+```
+
+The command emits one `.OBJ` per manifest entry and a hash manifest recording
+the exact compiler command and output. These objects are source-build evidence,
+not `.xdb` overlays: a loadable overlay still requires the original fixed code
+and data layout, entry offsets, segment ownership, and cross-module symbols.
+The integration gates below verify those boundaries individually while that
+linker/layout work remains unresolved.
+
 Run the current MANU3 and alien gates from the repository root:
 
 ```sh
