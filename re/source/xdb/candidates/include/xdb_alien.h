@@ -705,6 +705,12 @@ void XDB_NEAR xdb_amer_resume_1c34(
 void XDB_NEAR xdb_amer_slot3_resume_callback(
         xdb_alien_biased_state XDB_NEAR *state,
         xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_slot3_resume_callback(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_slot3_resume_callback(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_croolis_resume_1b85(
         xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_scrut_resume_1c45(

@@ -192,23 +192,22 @@ NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
   --output-dir output/link_probe/manu3_module
 ```
 
-With the current recovered object set and byte-backed owners, MANU3 links
-without unresolved symbols. AMER, CROOLIS, and SCRUT reduce to their
-module-local resume and state-machine callbacks. After the AMER resume,
-slot-2, and slot-3 update candidates were added, its byte-backed module probe
-links without unresolved symbols. CROOLIS and SCRUT each report three
-unresolved callbacks: their resume callback, slot-2 update, and module-local
-slot-1 wave callback. The remaining callbacks are real internal routines
-(including shared-looking state transitions inside the long method blocks),
-so they are not safe candidates for dummy aliases.
+With the current recovered object set and byte-backed owners, MANU3, AMER,
+CROOLIS, and SCRUT each link without unresolved symbols. The CROOLIS and
+SCRUT closure required explicit two-ABI slot-1 bridges, their slot-13 resume
+state machines, and the module-local slot-2 update callbacks. Those links
+prove module-level symbol ownership and DOS object compatibility; they do not
+yet prove that the generated C matches every raw-overlay state transition.
+The slot-2 ports therefore remain candidates for direct raw-vector validation
+before they are used to construct production overlays.
 
 The current callback recovery queue is:
 
 | overlay | resume | slot-3 initial | slot-3 update | slot-2 update | slot-2 finish |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | AMER | recovered `0x1c34` | `0x12b3` | recovered `0x1414` | recovered `0x1692` | recovered `0x1aa0` |
-| CROOLIS | `0x1b85` | `0x130b` | recovered `0x146c` | `0x1727` | not referenced |
-| SCRUT | `0x1c45` | `0x12f9` | recovered `0x145a` | `0x171b` | not referenced |
+| CROOLIS | recovered `0x1b85` | `0x130b` | recovered `0x146c` | recovered `0x1727` | not referenced |
+| SCRUT | recovered `0x1c45` | `0x12f9` | recovered `0x145a` | recovered `0x171b` | not referenced |
 
 The slot-3 entries are embedded in the recovered method blocks rather than
 being separate manifest entries. Their callback addresses come directly from
