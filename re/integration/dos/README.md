@@ -39,6 +39,8 @@ To turn an object build into a measured aggregate-link attempt, pass a real DOS
 harness object to the linker probe:
 
 ```sh
+mkdir -p output/link_probe
+
 NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
   wcl -q -c -3 -mm \
   -i=re/source/bloodprg/candidates/include \
