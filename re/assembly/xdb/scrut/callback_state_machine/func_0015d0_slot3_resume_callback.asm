@@ -40,5 +40,5 @@ Disassembly of section .data:
 ; artifact: export_check/_tmp_dat/scrut.xdb
 ; routine_entry: 0x0015D0
 ; group: callback_state_machine
-; provenance: callback continuation referenced by slot-13 resume/init
+; provenance: internal callback installed by the resume state machine at 0x001CB8
 ; raw stop: 0x00165A

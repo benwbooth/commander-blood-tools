@@ -40,5 +40,5 @@ Disassembly of section .data:
 ; artifact: export_check/_tmp_dat/amer.xdb
 ; routine_entry: 0x00158A
 ; group: callback_state_machine
-; provenance: callback continuation referenced by slot-13 resume/init
+; provenance: internal callback installed by the resume state machine at 0x001CAC
 ; raw stop: 0x001614
