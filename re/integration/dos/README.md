@@ -65,6 +65,44 @@ The probe writes `unresolved.tsv` and `link.log`, and exits nonzero until the
 reported owners and platform boundaries are implemented. It never generates
 dummy definitions or treats an unresolved link as a runnable game binary.
 
+## Recovered hybrid package
+
+The current full-package gate is a deliberately explicit hybrid. It compiles
+the BloodScript sources, compiles every XDB C candidate, verifies the three
+one-byte no-op candidates with `wdis`, patches those fixed offsets in the
+three alien overlays, and rewrites the same-size XDB resources inside
+`BLOOD.DAT`. The generated `SCRIPT1..5.COD/BAS` files are compared byte-for-
+byte and copied to the CD root. `BLOODPRG.EXE` remains the shipped executable
+until its startup, shared-data, DOS/XMS/EMS, and cross-XDB boundaries are
+recovered; the package never pretends that the executable has been replaced
+by C.
+
+Build the Rust VM compiler in the project shell, then run the package builder
+with Open Watcom:
+
+```sh
+NIXPKGS_ALLOW_UNFREE=1 nix develop --command cargo build --quiet --bin cbvm
+
+NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
+  python3 re/tools/build_recovered_package.py \
+    --cbvm target/debug/cbvm \
+    --output-dir output/recovered_dos_package
+```
+
+The builder emits `cd/` (a runnable CD tree), `scripts/`, `xdb/`,
+`xdb_objects/`, `validation/`, `package_manifest.tsv`, and `README.txt`.
+The CD tree can be tested against the real launch path with:
+
+```sh
+nix develop --command bash re/tools/capture_real_game.sh \
+  output/recovered_dos_package/cd \
+  output/recovered_dos_package/captures :84 accuracy/cblood_install
+```
+
+This is a resource-integrity and runtime-smoke gate, not a claim of a full
+C replacement. The next source milestone is recovering the startup/shared
+data and cross-XDB owners required to replace `BLOODPRG.EXE` itself.
+
 To classify the aggregate probe's data symbols against the recovered
 BLOODPRG layout, generate the measurement-only layout object:
 
