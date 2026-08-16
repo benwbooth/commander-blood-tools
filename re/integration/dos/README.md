@@ -132,6 +132,32 @@ from the word at `CS:0x3275` (`0x0328`), CROOLIS from `CS:0x32e5`
 (`0x032f`), and SCRUT from `CS:0x33a5` (`0x033b`); these are file mappings,
 not guessed segment values.
 
+For a module-scoped frontier, compile the empty link entrypoint and link only
+one recovered module plus its owner:
+
+```sh
+NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
+  wcl -q -c -3 -mm -zdp -we \
+  -i=re/source/xdb/candidates/include \
+  -fo=output/link_probe/xdb_link_probe.obj \
+  re/integration/dos/xdb_link_probe.c
+
+NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
+  python3 re/tools/link_recovered_objects.py \
+  --main-object output/link_probe/xdb_link_probe.obj \
+  --object-dir output/xdb_objects/xdb_manu3 \
+  --object-dir output/link_probe/manu3_data_owner \
+  --output-dir output/link_probe/manu3_module
+```
+
+With the current recovered object set and byte-backed owners, MANU3 links
+without unresolved symbols. AMER, CROOLIS, and SCRUT reduce to their
+module-local resume and state-machine callbacks: 5 symbols, 4 symbols, and 4
+symbols respectively. Those callbacks are real internal routines (including
+shared-looking state transitions inside the long method blocks), so their
+definitions still need to be recovered from the corresponding assembly; they
+are not safe candidates for dummy aliases.
+
 Run the current MANU3 and alien gates from the repository root:
 
 ```sh
