@@ -58,7 +58,8 @@ NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
   python3 re/tools/link_recovered_objects.py \
   --main-object output/link_probe/startup_gate.obj \
   --object-dir output/bloodprg_objects \
-  --object-dir output/xdb_objects
+  --object-dir output/xdb_objects \
+  --extra-object output/link_probe/bloodprg_platform_adapters.obj
 ```
 
 The probe writes `unresolved.tsv` and `link.log`, and exits nonzero until the
@@ -139,10 +140,10 @@ NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
 ```
 
 This source implements the recovered DOS 21h file calls, DTA lookup, EMS
-page-map call, allocation-failure dispatch, and the four verified far/near
-source aliases. With it and the layout measurement object, the published
-object set measures 141 unresolved symbols. XMS and sound-driver calls remain
-external far-call ABIs and are intentionally not replaced with no-op bodies.
+page-map call, allocation-failure dispatch, and the five verified far/near
+source aliases. Pass its object with `--extra-object` as shown above. XMS and
+sound-driver calls remain external far-call ABIs and are intentionally not
+replaced with no-op bodies.
 
 The aggregate measurement is not a valid XDB link model. Each alien overlay
 uses the same `xdb_alien_*` source names for a different relocated data

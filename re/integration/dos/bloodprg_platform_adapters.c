@@ -178,6 +178,11 @@ cb_i16 CB_FAR pbm_image_load_and_decode_c(
     return pbm_image_load_and_decode(path, file_buffer_end);
 }
 
+void CB_FAR bridge_panorama_frame_unpack_c(const cb_u8 CB_FAR *source)
+{
+    bridge_panorama_frame_unpack(source);
+}
+
 cb_u16 CB_FAR text_width_dual_font_far(
         const cb_u8 CB_FAR *text, int use_main_font)
 {

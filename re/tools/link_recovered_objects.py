@@ -25,6 +25,13 @@ def parse_args() -> argparse.Namespace:
         required=True,
         help="directory to scan recursively for .OBJ files; repeatable",
     )
+    parser.add_argument(
+        "--extra-object",
+        type=Path,
+        action="append",
+        default=[],
+        help="explicit object to add without scanning its parent directory; repeatable",
+    )
     parser.add_argument("--wlink", default="wlink")
     parser.add_argument("--output-dir", type=Path, default=ROOT / "output" / "link_probe")
     parser.add_argument("--name", default="BLOODPRG_LINK_PROBE.EXE")
@@ -51,6 +58,14 @@ def main() -> int:
         for directory in args.object_dir
         for path in directory.resolve().rglob("*.OBJ")
     )
+    extra_objects = [path.resolve() for path in args.extra_object]
+    missing_extra = [path for path in extra_objects if not path.is_file()]
+    if missing_extra:
+        raise SystemExit(
+            "extra object does not exist: "
+            + ", ".join(str(path) for path in missing_extra)
+        )
+    objects.extend(extra_objects)
     if not objects:
         raise SystemExit("no .OBJ files found")
 
