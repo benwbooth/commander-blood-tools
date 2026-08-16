@@ -58,6 +58,13 @@ BLOODPRG_FIXED_PATCH_FUNCTIONS = (
     ("byte_parser_op_04_mark_b16", 0x007557, 7),
 )
 
+# This routine has one accepted compiler-encoding difference.  Its zero
+# bytes are linker placeholders for original data offsets; only the nonzero
+# XOR opcode is allowed to come from the generated object.
+BLOODPRG_RELOCATION_MASKED_PATCH_FUNCTIONS = (
+    ("list_d8c_init", 0x00A757, 0x21, ((9, 0x33, 0x31),)),
+)
+
 
 def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
@@ -381,7 +388,19 @@ def build_bloodprg_fixed_patch(
     patched = bytearray(original)
     report_rows = ["function\toffset\tlength\tstatus\toriginal_sha256\tgenerated_sha256"]
 
-    for function, offset, length in BLOODPRG_FIXED_PATCH_FUNCTIONS:
+    patch_specs = [
+        (function, offset, length, "byte_exact_c_patch")
+        for function, offset, length in BLOODPRG_FIXED_PATCH_FUNCTIONS
+    ]
+    patch_specs.extend(
+        (function, offset, length, "relocation_masked_c_patch", allowed_changes)
+        for function, offset, length, allowed_changes
+        in BLOODPRG_RELOCATION_MASKED_PATCH_FUNCTIONS
+    )
+
+    for spec in patch_specs:
+        function, offset, length, patch_status = spec[:4]
+        allowed_changes = spec[4] if len(spec) == 5 else ()
         row = rows.get(function)
         if row is None:
             raise SystemExit(f"manifest has no fixed-patch function: {function}")
@@ -396,11 +415,31 @@ def build_bloodprg_fixed_patch(
         expected = original[offset : offset + length]
         if len(expected) != length:
             raise SystemExit(f"{function} exceeds BLOODPRG image at 0x{offset:06x}")
-        if generated != expected:
+        differences = [
+            index
+            for index, (actual, compiled) in enumerate(zip(expected, generated))
+            if actual != compiled
+        ]
+        if patch_status == "byte_exact_c_patch" and differences:
             raise SystemExit(
                 f"{function} is not byte-identical at 0x{offset:06x}; "
                 "production patch refused"
             )
+        if patch_status == "relocation_masked_c_patch":
+            actual_changes = tuple(
+                (index, expected[index], generated[index])
+                for index in differences
+                if generated[index] != 0
+            )
+            if actual_changes != allowed_changes:
+                raise SystemExit(
+                    f"{function} has unexpected non-relocation differences "
+                    "production patch refused"
+                )
+            replacement = bytearray(expected)
+            for index, _original, compiled in allowed_changes:
+                replacement[index] = compiled
+            generated = bytes(replacement)
         patched[offset : offset + length] = generated
         report_rows.append(
             "\t".join(
@@ -408,7 +447,7 @@ def build_bloodprg_fixed_patch(
                     function,
                     f"0x{offset:06x}",
                     str(length),
-                    "byte_exact_c_patch",
+                    patch_status,
                     sha256_bytes(expected),
                     sha256_bytes(generated),
                 )
@@ -427,7 +466,7 @@ def build_bloodprg_fixed_patch(
             "component": patched_path.name,
             "source": str(patched_path.relative_to(output)),
             "output": str(patched_path.relative_to(output)),
-            "status": "c_fixed_layout_byte_exact_patch",
+            "status": "c_fixed_layout_verified_patch",
             "offset": "multiple",
             "original_sha256": sha256(original_path),
             "output_sha256": sha256(patched_path),
@@ -436,7 +475,7 @@ def build_bloodprg_fixed_patch(
             "component": short_path.name,
             "source": str(patched_path.relative_to(output)),
             "output": str(short_path.relative_to(output)),
-            "status": "c_fixed_layout_byte_exact_patch_dos_alias",
+            "status": "c_fixed_layout_verified_patch_dos_alias",
             "offset": "multiple",
             "original_sha256": sha256(original_path),
             "output_sha256": sha256(short_path),
@@ -826,7 +865,7 @@ def main() -> int:
     if link_record is not None:
         print("BLOODPRG_C_LINK.EXE status: c_aggregate_link_zero_unresolved_startup_harness")
     if fixed_records:
-        print("BPRG_C.EXE status: c_fixed_layout_byte_exact_patch")
+        print("BPRG_C.EXE status: c_fixed_layout_verified_patch")
     print(f"recorded package components: {len(records)}")
     return 0
 

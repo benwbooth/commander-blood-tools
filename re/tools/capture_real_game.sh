@@ -7,7 +7,7 @@
 #
 # Requires the nix devShell (provides dosbox-x, Xvfb via xorg-server, imagemagick,
 # and the graphics runtime libs on LD_LIBRARY_PATH — see flake.nix). Run as:
-#   nix develop --command re/tools/capture_real_game.sh <game-dir> <out-dir> [display-num]
+#   nix develop --command re/tools/capture_real_game.sh <game-dir> <out-dir> [display-num] [install-parent] [executable]
 # where <game-dir> holds BLOODPRG.EXE + assets (e.g. output/_tmp_iso).
 #
 # Why this works when winit/minifb did not: DOSBox-X uses SDL, which — like the
@@ -33,11 +33,12 @@ sleep 3
 # the other two (dump_dosbox_mem.py, drive_real_game.sh) both carried the same defect.
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 INSTALL_PARENT="${4:-$REPO_ROOT/accuracy/cblood_install}"
+GAME_EXECUTABLE="${5:-BLOODPRG.EXE}"
 dosbox-x -set sdl output=surface \
   -c "mount c \"$INSTALL_PARENT\"" \
   -c "mount d \"$GAME_DIR\" -t cdrom" \
   -c 'd:' \
-  -c "BLOODPRG AMR S162227 EMS WRIC:\\cblood\\" >/dev/null 2>&1 &
+  -c "$GAME_EXECUTABLE AMR S162227 EMS WRIC:\\cblood\\" >/dev/null 2>&1 &
 DOSBOX_PID=$!
 
 # Sample the boot sequence: MINDSCAPE logo -> Microfolie's logo -> intro cutscene.
