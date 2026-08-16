@@ -88,6 +88,13 @@ BLOODPRG_SEMANTIC_PATCH_FUNCTIONS = (
         (),
     ),
     (
+        "lookup_table_1fb5",
+        0x009F80,
+        bytes.fromhex("89 C3 C1 E3 02 8B 9F 00 00 C3"),
+        bytes.fromhex("89 C3 C1 E3 02 8B 9F B5 1F C3"),
+        (),
+    ),
+    (
         "palette_upload_if_dirty",
         0x00178B,
         bytes.fromhex(
