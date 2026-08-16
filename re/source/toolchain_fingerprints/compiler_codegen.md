@@ -87,6 +87,7 @@ body byte-for-byte or differ only where the linker supplies recovered symbols:
 | AMER `0x000347`, CROOLIS `0x00035C`, SCRUT `0x00035C` mouse-position helpers | Open Watcom emits the original 5 instructions and 14 bytes | two data relocations bind `mouse_x` and `mouse_y` in each overlay |
 | AMER `0x001DD6`, CROOLIS `0x001D27`, SCRUT `0x001DE7` method no-ops | Open Watcom emits the exact one-byte `RET` | method-table binding only |
 | MANU3 `0x00017C anim_select_entry` | Open Watcom emits the exact `CALL` / `RETF` two-instruction shape | one relocation binds the near selector callee |
+| MANU3 `0x000848 span_setup_next` | Open Watcom emits the exact one-byte `RET` | fixed-offset C patch only; no caller-visible state |
 
 No register-state model or compatibility shim is present. The one inline
 save/restore envelope at `0x009F53` is retained because it is the smallest

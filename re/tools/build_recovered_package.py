@@ -33,6 +33,7 @@ XDB_MANIFEST = ROOT / "re" / "source" / "xdb" / "candidates" / "manifest.tsv"
 NOOP_PATCHES = (
     ("amer", "func_001dd6_method_noop.c", 0x1DD6),
     ("croolis", "func_001d27_method_noop.c", 0x1D27),
+    ("manu3", "func_000848_span_setup_next.c", 0x0848),
     ("scrut", "func_001de7_method_noop.c", 0x1DE7),
 )
 
