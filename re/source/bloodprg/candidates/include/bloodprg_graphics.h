@@ -376,11 +376,8 @@ void CB_NEAR list_walk_f18(void); /* 0x007CE8 */
 
 #if defined(__WATCOMC__)
 #pragma aux layout_offset_calc parm [ax] [bx] value [bx ax]
-#pragma aux error_overlay_draw parm [ax] [ds dx] modify exact []
 #pragma aux gfx_horizontal_span parm [ax] [bx] [cx] [dx] modify exact []
 #pragma aux gfx_vertical_span parm [ax] [bx] [cx] [dx] modify exact [bx]
-#pragma aux framebuffer_rect_palette_remap \
-        parm caller [ds si] [bx] [cx] [dx] modify exact []
 /* Watcom reserves BP, so evaluate all five C arguments before installing the
  * height register around the real far call. */
 #pragma aux framebuffer_rect_palette_remap_ds_bp = \
@@ -398,10 +395,6 @@ void CB_NEAR list_walk_f18(void); /* 0x007CE8 */
 /* These three routines recover entry BP; other fifth arguments remain stack-passed. */
 #pragma aux composite_draw_a parm [ax] [bx] [cx] [dx] modify exact []
 #pragma aux framebuffer_rect_fill parm caller [ax] [bx] [cx] [dx] modify exact []
-#pragma aux vga_planar_to_chunky parm [ds si] [es di] modify exact []
-#pragma aux chunky_to_planar_framebuffer parm [ds si] modify exact [dx]
-#pragma aux back_buffer_init value [ax] modify exact [ax dx]
-#pragma aux backbuffer_clear_flags value [ax] modify exact [ax dx]
 #pragma aux page_offset_helper modify exact [ax dx]
 #pragma aux main_loop_hud_refresh modify exact [ax bx cx dx di]
 #pragma aux video_retrace_phase_wait modify exact []
@@ -411,37 +404,19 @@ void CB_NEAR list_walk_f18(void); /* 0x007CE8 */
         parm [si] [es di] [ax] [bx] [dx] \
         modify exact []
 #pragma aux palette_transition_step modify exact []
-#pragma aux text_width_dual_font_far "text_width_dual_font_" \
-        parm [ds si] [ax] value [ax] modify exact [ax]
 #pragma aux tint_table_build_banked \
         parm [ax] [bx] modify exact [ax bx]
 #pragma aux back_buffer_copy_from parm [bx] [cx] [dx] modify exact []
 #pragma aux blit_fill_row_5221 parm [ax] modify exact []
 #pragma aux back_buffer_fill parm [ax] modify exact []
-#pragma aux full_screen_blit parm [ds si] modify exact []
 #pragma aux fullscreen_copy_to_backbuffer parm [si] modify exact []
-#pragma aux fullscreen_copy_to_backbuffer_far \
-        "fullscreen_copy_to_backbuffer_" \
-        parm [ds si] modify exact []
-#pragma aux font8x8_text_draw_display \
-        parm [ds si] [ax] [bx] [dx] value [ds si] modify exact [si]
-#pragma aux square_caps_text_draw_display \
-        parm [ds si] [bx] [dx] [ax] modify exact []
-#pragma aux planar_ui_text_render_10row \
-        parm [ds si] [bx] [dx] [ax] modify exact []
 #pragma aux planar_ui_text_render_10row_ds "planar_ui_text_render_10row_" \
         parm [si] [bx] [dx] [ax] modify exact []
-#pragma aux planar_dialogue_text_render \
-        parm [ds si] [bx] [dx] [ax] modify exact []
 #pragma aux subtitle_reveal_draw_wrapper \
         parm [si] [bx] [dx] modify exact []
 #pragma aux subtitle_reveal_pump modify exact [bx cx dx di es]
 #pragma aux small_text_render \
         parm [si] [ax] [bx] [dx] modify exact []
-#pragma aux small_text_render_far "small_text_render_" \
-        parm [ds si] [ax] [bx] [dx] modify exact []
-#pragma aux main_font_text_draw_display \
-        parm [ds si] [bx] [dx] [ax] modify exact []
 #endif
 
 #endif

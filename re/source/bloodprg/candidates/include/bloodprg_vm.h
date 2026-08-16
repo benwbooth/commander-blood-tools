@@ -390,69 +390,6 @@ extern volatile cb_u16 CB_GAME_DATA
 extern volatile cb_u16 vm_nav_chart_object_offsets[];
 
 #if defined(__WATCOMC__)
-#pragma aux dlg_menu_words_inline_reveal_step modify exact []
-#pragma aux presentation_ready_gate modify exact []
-#pragma aux object_heap_access modify exact []
-#pragma aux active_object_list_build modify exact []
-#pragma aux nav_chart_list_build value [ax] modify exact [ax]
-#pragma aux vm_patch_stream_build value [ax] modify exact [ax]
-#pragma aux vm_record_state_proc modify exact []
-#pragma aux vm_special_slot_remove parm [ax] value [ax] modify exact [ax]
-#pragma aux vm_special_slot_insert parm [ax] value [ax] modify exact [ax]
-#pragma aux vm_field_offset parm [ax] [bx] value [ax] modify exact [ax]
-#pragma aux vm_token_advance parm [ds si] value [ds si] modify exact [si]
-#pragma aux bloodprg_vm_opcode_handler_abi parm [ds si] value [ds si] \
-        modify exact [ax bx cx dx si bp es]
-#pragma aux (bloodprg_vm_opcode_handler, bloodprg_vm_opcode_handler_abi)
-#pragma aux vm_script_block_scan parm [ds si] value [ax] \
-        modify exact [ax bx cx dx si di bp es]
-#pragma aux vm_control_flow parm [ds si] [bx] modify exact [ax cx dx]
-#pragma aux value_scan_match parm [ax] [ds si] value [ax] modify exact [ax bx]
-#pragma aux vm_flag_test_67b1 value [ax] modify exact [ax bx]
-#pragma aux vm_state_processor modify exact [ax]
-#pragma aux vm_run_wrapper value [ax] modify exact [ax bp]
-#pragma aux vm_cod_scan parm [bx] value [bx] modify exact [bx]
-#pragma aux vm_record_lookup_by_threshold parm [ax] value [ax] modify exact [ax]
-#pragma aux vm_op_a3_collect modify exact []
-#pragma aux vm_token_special parm [ax] [si] value [si] modify exact [si]
-#pragma aux vm_condition_5 parm [cx] [es di] [si] value [ax] modify exact [ax bx dx]
-#pragma aux vm_branch_fail value [si] modify exact [ax si]
-#pragma aux scan_zero_word parm [si] modify exact [ax]
-#pragma aux vm_op_d2_script_profile_request parm [si] value [si] modify exact [ax si]
-#pragma aux vm_op_ce_cond_branch modify exact [ax si]
-#pragma aux vm_op_d0_cond_branch modify exact [ax si]
-#pragma aux vm_op_d1_cond_branch modify exact [ax si]
-#pragma aux vm_op_cc_set_record_byte parm [si] value [si] modify exact [ax si]
-#pragma aux vm_op_ca_compare_var parm [si] value [si] modify exact [ax dx si]
-#pragma aux vm_op_cb_compare_byte parm [si] value [si] modify exact [ax bx dx si]
-#pragma aux vm_op_a0_push parm [si] value [si] modify exact [ax bp si]
-#pragma aux vm_op_a1_pop value [ax] modify exact [ax]
-#pragma aux vm_op_a2_cond_call parm [si] value [si] modify exact [ax si]
-#pragma aux vm_op_a3_block parm [si] value [si] modify exact [ax bp dx si]
-#pragma aux vm_op_a4_jump parm [si] value [si] modify exact [si]
-#pragma aux vm_op_a5_cond_state_array parm [si] value [si] modify exact [ax bp si]
-#pragma aux vm_op_a6_text parm [si] value [si] modify exact [ax bx cx dx si es]
-#pragma aux strlen_b parm [es di] value [ax] modify exact [ax]
-#pragma aux vm_op_a7_set_if_presentation parm [si] value [si] modify exact [ax si]
-#pragma aux vm_op_a8_load_string parm [si] value [si] modify exact [ax bp si]
-#pragma aux vm_op_a9_cond_jump parm [si] value [si] modify exact [ax si]
-#pragma aux vm_op_ab_poke_byte parm [si] value [si] modify exact [ax bx si]
-#pragma aux vm_op_shared_state_marker parm [si] value [si] modify exact [ax bx cx dx si es]
-#pragma aux vm_op_shared_ae_b0_state parm [si] value [si] modify exact [ax bx dx si es]
-#pragma aux vm_op_shared_record_wildcard parm [si] value [si] modify exact [ax bx cx dx si es]
-#pragma aux vm_op_cd_state_gated parm [si] value [si] modify exact [ax bx cx dx si bp]
-#pragma aux vm_op_b7_record_op parm [si] value [si] modify exact [ax bx cx dx si es]
-#pragma aux vm_op_b8_record_readwrite parm [si] value [si] modify exact [ax bx si es]
-#pragma aux vm_op_c1_record_state parm [si] value [si] modify exact [ax bx cx dx si bp es]
-#pragma aux vm_op_c2_record_full parm [si] value [si] modify exact [ax bx dx si bp es]
-#pragma aux vm_op_c3_state_record parm [si] value [si] modify exact [ax bx dx si bp es]
-#pragma aux vm_op_c4_actor parm [si] value [si] modify exact [ax bx cx dx si bp es]
-#pragma aux vm_op_c5_record_match parm [si] value [si] modify exact [ax bx dx si bp es]
-#pragma aux vm_op_c6_record_match parm [si] value [si] modify exact [ax dx si bp es]
-#pragma aux vm_op_c7_record_match parm [si] value [si] modify exact [ax bx dx si bp es]
-#pragma aux vm_op_c8_record_match parm [si] value [si] modify exact [ax bx dx si bp es]
-#pragma aux vm_op_c9_clear_record_full parm [si] value [si] modify exact [ax bx cx si es]
-#pragma aux vm_c2_descript_lookup parm [es di] value [ax] modify exact [ax]
 #endif
 
 int CB_FAR string_compare(const volatile char CB_FAR *left,
@@ -469,8 +406,6 @@ cb_i16 CB_SAVE_REGS CB_FAR vm_resource_profile_select(
 void CB_FAR vm_record_state_proc(void);       /* 0x00555B */
 cb_i16 CB_FAR vm_run_wrapper(void);           /* 0x0055A4 */
 #if defined(__WATCOMC__)
-#pragma aux vm_resource_profile_select parm [ax] value [ax] modify exact [ax]
-#pragma aux vm_patch_stream_apply parm [ax] value [ax] modify exact [ax]
 #endif
 void CB_NEAR vm_op_a3_collect(void);             /* 0x005AFD */
 cb_i16 CB_NEAR vm_script_block_scan(
@@ -572,7 +507,6 @@ cb_u16 CB_NEAR presentation_mode_bits_update(void); /* 0x009510 */
 void CB_FAR presentation_update_1fb2(void); /* 0x009F53 */
 
 #if defined(__WATCOMC__)
-#pragma aux presentation_mode_bits_update value [ax] modify exact [ax]
 #endif
 
 #endif

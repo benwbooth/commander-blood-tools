@@ -35,6 +35,13 @@ This creates a separate object for each manifest entry, but it is not a link
 claim. The next executable gate must supply the canonical shared-data owners,
 DOS/XMS/EMS adapters, cross-XDB calls, and the recovered startup boundary.
 
+The BLOODPRG candidate headers intentionally omit the unverified `#pragma aux`
+register contracts for the recovered VM, graphics, resource, and byte-parser
+calls. Open Watcom rejects several of those contracts as illegal register
+clobbers; the affected routines therefore compile with the normal C calling
+convention. This proves source/object completeness only. It does not yet prove
+that the original DOS entry ABI or cross-module data model has been reproduced.
+
 To turn an object build into a measured aggregate-link attempt, pass a real DOS
 harness object to the linker probe:
 

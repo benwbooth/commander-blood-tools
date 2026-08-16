@@ -63,21 +63,6 @@ static void CB_NEAR bloodprg_byte_parser_mark_b16_gs(void);
 #pragma aux byte_parser_op_02_mark_b16 modify exact []
 #pragma aux byte_parser_op_0f_mark_b16 modify exact []
 #pragma aux byte_parser_op_04_mark_b16 modify exact []
-#pragma aux index_lookup_dca parm [ds si] value [ds si] \
-        modify exact [ax bx cx dx si di bp es]
-#pragma aux credit_presenter_b_cryo parm [ds si] value [ds si] modify exact [ax si di es]
-#pragma aux byte_parser_copy_20b8_printable parm [ds si] value [ds si] modify exact [ax si di es]
-#pragma aux byte_parser_copy_24c6_printable parm [ds si] value [ds si] modify exact [ax si di es]
-#pragma aux byte_parser_copy_2460_printable parm [ds si] value [ds si] modify exact [ax si di es]
-#pragma aux byte_parser_copy_247a_printable parm [ds si] value [ds si] modify exact [ax si di es]
-#pragma aux byte_parser_snd_bank_name_load parm [ds si] value [ds si] modify exact [ax bx cx dx si di es]
-#pragma aux dlg_line_asset_table_fill parm [ds si] value [ds si] modify exact [ax si di es]
-#pragma aux byte_parser_store_word_1fa5 parm [ds si] value [ds si] modify exact [ax si es]
-#pragma aux index_lookup_1fd7 parm [ds si] value [ds si] modify exact [ax si es]
-#pragma aux byte_parser_copy_131a_entry parm [ds si] value [ds si] modify exact [ax si di es]
-#pragma aux byte_parser_stream_0f18_append parm [ds si] value [ds si] modify exact [ax si di es]
-#pragma aux fs_name_area_read parm [ds si] value [ds si] modify exact [ax si di es]
-#pragma aux music_voc_name_patcher parm [ds si] value [ds si] modify exact [ax si di es]
 #endif
 
 void CB_NEAR byte_parser_op_01_mark_b16(void); /* 0x007542 */
