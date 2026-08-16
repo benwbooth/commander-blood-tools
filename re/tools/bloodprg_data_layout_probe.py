@@ -33,6 +33,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--unresolved", type=Path, required=True)
     parser.add_argument("--header-dir", type=Path, default=DEFAULT_HEADERS)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument(
+        "--image",
+        type=Path,
+        help="original BLOODPRG.EXE used to byte-back declaration intervals",
+    )
+    parser.add_argument("--code-file-base", type=lambda value: int(value, 0), default=0x600)
+    parser.add_argument("--game-data-file-base", type=lambda value: int(value, 0), default=0xD420)
+    parser.add_argument("--fs-data-file-base", type=lambda value: int(value, 0), default=0xC1F0)
     return parser.parse_args()
 
 
@@ -42,9 +50,13 @@ def declarations(header_dir: Path) -> dict[str, Declaration]:
         text = path.read_text(encoding="ascii")
         for match in re.finditer(r"\bextern\b(?P<body>.*?;)", text, re.S):
             body = match.group("body")
-            comment_tail = text[match.end() : min(len(text), match.end() + 180)]
-            comment_tail = comment_tail.split("extern", 1)[0]
-            local_comment = body + comment_tail
+            following = text[match.end() :]
+            trailing_comment = re.match(
+                r"\s*(?:/\*.*?\*/|//[^\n]*)", following, re.S
+            )
+            local_comment = body
+            if trailing_comment is not None:
+                local_comment += trailing_comment.group(0)
             local_matches = list(OFFSET_RE.finditer(local_comment))
             preceding = text[max(0, match.start() - 600) : match.start()]
             comment = local_comment if local_matches else preceding + local_comment
@@ -82,14 +94,32 @@ def read_symbols(path: Path) -> list[str]:
         return [row["symbol"] for row in csv.DictReader(handle, delimiter="\t")]
 
 
-def write_asm(path: Path, entries: list[Declaration]) -> None:
+def write_bytes(lines: list[str], data: bytes) -> None:
+    for start in range(0, len(data), 16):
+        lines.append(
+            "db " + ", ".join(f"0x{byte:02x}" for byte in data[start : start + 16])
+        )
+
+
+def write_zeros(lines: list[str], length: int) -> None:
+    for start in range(0, length, 16):
+        lines.append("db " + ", ".join("0" for _ in range(min(16, length - start))))
+
+
+def write_asm(
+    path: Path,
+    entries: list[Declaration],
+    image: bytes | None,
+    file_bases: dict[str, int],
+) -> None:
     by_segment: dict[str, list[Declaration]] = {}
     for entry in entries:
         by_segment.setdefault(entry.segment, []).append(entry)
 
     lines = [
-        "; Generated layout probe. Contents are intentionally zero-filled.",
-        "; This object proves symbol placement only; it is not runtime storage.",
+        "; Generated layout probe.",
+        "; With --image, declaration intervals are copied from BLOODPRG.EXE.",
+        "; This object still proves layout only; it is not a complete runtime owner.",
         ".386",
     ]
     for segment in ("_CODE", "GAME_DATA", "FS_DATA"):
@@ -121,8 +151,24 @@ def write_asm(path: Path, entries: list[Declaration]) -> None:
             while index < len(segment_entries) and segment_entries[index].offset == offset:
                 lines.append(f"{segment_entries[index].symbol} label byte")
                 index += 1
-            current = offset
-        lines.append("db 0")
+            next_offset = (
+                segment_entries[index].offset
+                if index < len(segment_entries)
+                else offset + 1
+            )
+            length = next_offset - offset
+            if image is None:
+                write_zeros(lines, length)
+            else:
+                file_offset = file_bases[segment] + offset
+                data = image[file_offset : file_offset + length]
+                if len(data) != length:
+                    raise ValueError(
+                        f"{segment} offset {offset:#x} maps outside image "
+                        f"at file offset {file_offset:#x}"
+                    )
+                write_bytes(lines, data)
+            current = next_offset
         lines.extend([f"{segment} ends", ""])
     lines.append("end")
     path.write_text("\n".join(lines) + "\n", encoding="ascii")
@@ -130,6 +176,8 @@ def write_asm(path: Path, entries: list[Declaration]) -> None:
 
 def main() -> int:
     args = parse_args()
+    if args.image is not None and not args.image.is_file():
+        raise SystemExit(f"BLOODPRG image does not exist: {args.image}")
     known = declarations(args.header_dir.resolve())
     symbols = read_symbols(args.unresolved.resolve())
     entries = [known[symbol] for symbol in symbols if symbol in known]
@@ -145,7 +193,17 @@ def main() -> int:
         for symbol in sorted(unknown):
             writer.writerow((symbol, "unknown", "", "", ""))
     asm = output_dir / "bloodprg_data_layout_probe.asm"
-    write_asm(asm, entries)
+    image = args.image.resolve().read_bytes() if args.image else None
+    write_asm(
+        asm,
+        entries,
+        image,
+        {
+            "_CODE": args.code_file_base,
+            "GAME_DATA": args.game_data_file_base,
+            "FS_DATA": args.fs_data_file_base,
+        },
+    )
     known_count = len(entries)
     print(f"known data declarations: {known_count}/{len(symbols)}")
     print(f"unknown symbols: {len(unknown)}")

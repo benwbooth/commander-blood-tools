@@ -121,8 +121,22 @@ NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
 ```
 
 The tool currently classifies the documented BLOODPRG declarations only. Its
-assembler output is deliberately zero-filled and is a link-frontier probe,
-not a runtime data owner. On the published object set it classified 718 of
+assembler output is a link-frontier probe, not a complete runtime data owner.
+To preserve the bytes between known declarations, pass the original image and
+the verified file bases:
+
+```sh
+python3 re/tools/bloodprg_data_layout_probe.py \
+  --unresolved output/link_probe/unresolved.tsv \
+  --image re/bin/BLOODPRG.EXE \
+  --output-dir output/link_probe/data_layout_bytes
+```
+
+The default bases are CS/file `0x600`, GS/DS/file `0xD420`, and FS/file
+`0xC1F0`; override them when analyzing another executable revision. The
+byte-backed output remains a layout owner/probe because unknown declarations,
+startup relocation, and runtime segment ownership are still unresolved. On
+the published object set it classified 718 of
 875 unresolved symbols and reduced the measured frontier to 157. The
 remaining symbols must be supplied by their real XDB module data segments,
 DOS/XMS/EMS/audio services, or verified ABI thunks; they must not be resolved
