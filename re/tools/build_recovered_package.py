@@ -69,12 +69,10 @@ BLOODPRG_RELOCATION_MASKED_PATCH_FUNCTIONS = (
     ("queue_d8c_enqueue", 0x00A734, 0x0A, ((8, 0xF8, 0xC3),)),
 )
 
-# This natural C replacement has a different but caller-safe return encoding:
-# the original publishes carry, while both shipped callers discard flags and
-# AX immediately after the call.  The generated body is fixed-size and its two
-# data-address relocations are bound to the original SS=DS list at 0x6D3E.
-# Keep both byte strings here so a compiler/toolchain change cannot silently
-# widen this behavioral exception.
+# These natural C replacements have reviewed semantic differences from the
+# original bodies.  Each generated body is fixed-size, and any changed MZ
+# relocation positions are listed explicitly.  Keep both byte strings here so
+# a compiler/toolchain change cannot silently widen either exception.
 BLOODPRG_SEMANTIC_PATCH_FUNCTIONS = (
     (
         "vm_special_slot_remove",
@@ -87,6 +85,22 @@ BLOODPRG_SEMANTIC_PATCH_FUNCTIONS = (
             "53 BB 3E 6D 3B 07 74 0D 83 C3 02 81 FB 5E 6D "
             "75 F3 31 C0 5B C3 C7 07 00 00 B8 01 00 5B C3"
         ),
+        (),
+    ),
+    (
+        "palette_upload_if_dirty",
+        0x00178B,
+        bytes.fromhex(
+            "50 F6 06 00 00 01 75 02 58 C3 9A 00 00 00 00 "
+            "BE 00 00 9A 00 00 00 00 30 C0 A2 00 00 A2 00 00 "
+            "A2 00 00 58 C3"
+        ),
+        bytes.fromhex(
+            "50 F6 06 55 5B 01 75 02 58 C3 9A D7 05 00 00 "
+            "BE 51 52 9A 00 00 99 02 30 C0 A2 55 5B A2 40 0A "
+            "A2 3E 0A 58 C3"
+        ),
+        ((0x1795, 0x1798), (0x179D, 0x17A0)),
     ),
 )
 
@@ -108,6 +122,50 @@ def sha256_bytes(data: bytes) -> str:
 
 def sha256(path: Path) -> str:
     return sha256_bytes(path.read_bytes())
+
+
+def move_mz_relocations(
+    image: bytearray, moves: tuple[tuple[int, int], ...]
+) -> None:
+    """Move verified DOS MZ relocation entries when a far call moves."""
+    header_size = int.from_bytes(image[8:10], "little") * 16
+    relocation_count = int.from_bytes(image[6:8], "little")
+    relocation_table = int.from_bytes(image[0x18:0x1A], "little")
+    entries: list[tuple[int, int, int, int]] = []
+    for index in range(relocation_count):
+        position = relocation_table + index * 4
+        offset = int.from_bytes(image[position : position + 2], "little")
+        segment = int.from_bytes(image[position + 2 : position + 4], "little")
+        file_offset = header_size + segment * 16 + offset
+        entries.append((index, position, segment, file_offset))
+
+    for old_file_offset, new_file_offset in moves:
+        matches = [
+            entry for entry in entries if entry[3] == old_file_offset
+        ]
+        if len(matches) != 1:
+            raise SystemExit(
+                f"expected one MZ relocation at 0x{old_file_offset:04x}, "
+                f"found {len(matches)}"
+            )
+        _index, position, segment, _old = matches[0]
+        new_offset = new_file_offset - header_size - segment * 16
+        if not 0 <= new_offset <= 0xFFFF:
+            raise SystemExit(
+                f"MZ relocation target is not representable: "
+                f"0x{new_file_offset:04x}"
+            )
+        if any(entry[3] == new_file_offset for entry in entries):
+            raise SystemExit(
+                f"MZ relocation target already occupied: 0x{new_file_offset:04x}"
+            )
+        image[position : position + 2] = new_offset.to_bytes(2, "little")
+        entries[entries.index(matches[0])] = (
+            matches[0][0],
+            position,
+            segment,
+            new_file_offset,
+        )
 
 
 def metadata_path(path: Path) -> str:
@@ -546,7 +604,7 @@ def build_bloodprg_fixed_patch(
             )
         )
 
-    for function, offset, generated_template, replacement in (
+    for function, offset, generated_template, replacement, relocation_moves in (
         BLOODPRG_SEMANTIC_PATCH_FUNCTIONS
     ):
         row = rows.get(function)
@@ -565,6 +623,7 @@ def build_bloodprg_fixed_patch(
         if len(expected) != len(replacement):
             raise SystemExit(f"{function} exceeds BLOODPRG image at 0x{offset:06x}")
         patched[offset : offset + len(replacement)] = replacement
+        move_mz_relocations(patched, relocation_moves)
         report_rows.append(
             "\t".join(
                 (
