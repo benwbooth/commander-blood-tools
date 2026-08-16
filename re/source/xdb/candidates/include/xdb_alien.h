@@ -546,8 +546,20 @@ extern volatile xdb_u16 XDB_CODE_DATA
         xdb_amer_slot11_state_queue[8]; /* AMER CS:0x1BCA */
 extern xdb_alien_cursor XDB_CODE_DATA
         xdb_croolis_slot11_cursor; /* CROOLIS CS:0x1B2E */
+extern volatile xdb_u16 XDB_CODE_DATA
+        xdb_croolis_slot11_queue_cursor; /* CROOLIS CS:0x1B32 */
+extern volatile xdb_u16 XDB_CODE_DATA
+        xdb_croolis_slot11_current_state; /* CROOLIS CS:0x1B30 */
+extern volatile xdb_u16 XDB_CODE_DATA
+        xdb_croolis_slot11_state_queue[8]; /* CROOLIS CS:0x1B36 */
 extern xdb_alien_cursor XDB_CODE_DATA
         xdb_scrut_slot11_cursor; /* SCRUT CS:0x1BE3 */
+extern volatile xdb_u16 XDB_CODE_DATA
+        xdb_scrut_slot11_queue_cursor; /* SCRUT CS:0x1BE7 */
+extern volatile xdb_u16 XDB_CODE_DATA
+        xdb_scrut_slot11_current_state; /* SCRUT CS:0x1BE5 */
+extern volatile xdb_u16 XDB_CODE_DATA
+        xdb_scrut_slot11_state_queue[8]; /* SCRUT CS:0x1BEB */
 extern volatile xdb_u16 XDB_CODE_DATA xdb_amer_slot3_timer; /* CS:0x0B31 */
 extern volatile xdb_u16 XDB_CODE_DATA xdb_croolis_slot3_timer; /* CS:0x0B72 */
 extern volatile xdb_u16 XDB_CODE_DATA xdb_scrut_slot3_timer; /* CS:0x0B72 */
@@ -708,6 +720,12 @@ void XDB_NEAR xdb_scrut_slot3_initial_update(
         xdb_alien_biased_state XDB_NEAR *state,
         xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_scrut_slot3_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_slot1_wave_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_slot1_wave_update(
         xdb_alien_biased_state XDB_NEAR *state,
         xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_amer_slot1_wave_update(
