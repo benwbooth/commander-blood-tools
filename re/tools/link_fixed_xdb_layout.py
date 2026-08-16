@@ -25,6 +25,16 @@ SEGMENT_RE = re.compile(
     r"^Segment:\s+_CODE\s+\S+\s+USE16\s+([0-9A-Fa-f]+) bytes$",
     re.MULTILINE,
 )
+BYTE_COUNT_RE = re.compile(r"^; byte_count:\s*(\d+)\s*$", re.MULTILINE)
+RAW_STOP_RE = re.compile(r"^; raw stop:\s+\S+\s+\(0x([0-9A-Fa-f]+) bytes\)$", re.MULTILINE)
+ROUTINE_ENTRY_RE = re.compile(r"^; routine_entry:\s+0x([0-9A-Fa-f]+)\s*$", re.MULTILINE)
+RAW_STOP_ADDRESS_RE = re.compile(r"^; raw stop:\s+0x([0-9A-Fa-f]+)\s*$", re.MULTILINE)
+DISASM_LINE_RE = re.compile(
+    r"^\s*([0-9A-Fa-f]+):\s+((?:[0-9A-Fa-f]{2}\s+)+)",
+    re.MULTILINE,
+)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--module", choices=("amer", "croolis", "manu3", "scrut"), required=True)
@@ -120,6 +130,33 @@ def wdis_layout(wdis: str, obj: Path, function: str) -> tuple[int, int]:
     return int(segment.group(1), 16), int(symbol.group(1), 16)
 
 
+def raw_routine_size(path: Path) -> tuple[int, str]:
+    text = path.read_text(encoding="ascii")
+    byte_count = BYTE_COUNT_RE.search(text)
+    if byte_count is not None:
+        return int(byte_count.group(1), 10), "byte_count"
+    raw_stop = RAW_STOP_RE.search(text)
+    if raw_stop is not None:
+        return int(raw_stop.group(1), 16), "raw_stop_bytes"
+    entry = ROUTINE_ENTRY_RE.search(text)
+    stop = RAW_STOP_ADDRESS_RE.search(text)
+    if entry is not None and stop is not None:
+        size = int(stop.group(1), 16) - int(entry.group(1), 16)
+        if size > 0:
+            return size, "raw_stop_range"
+    instructions = [
+        (int(match.group(1), 16), len(match.group(2).split()))
+        for match in DISASM_LINE_RE.finditer(text)
+    ]
+    if instructions:
+        first = instructions[0][0]
+        last, last_size = instructions[-1]
+        size = last + last_size - first
+        if size > 0:
+            return size, "disassembly_extent"
+    raise SystemExit(f"{path} has no recoverable raw routine size")
+
+
 def write_anchor(path: Path, data: bytes) -> None:
     lines = [
         "; Fixed-layout padding generated from the original XDB image.",
@@ -154,6 +191,10 @@ def write_placements(path: Path, placements: list[dict[str, str | int]]) -> None
                 "target",
                 "generated_start",
                 "public_offset",
+                "code_size",
+                "raw_routine_size",
+                "raw_size_basis",
+                "raw_routine_end",
                 "generated_end",
                 "original_size",
                 "status",
@@ -188,12 +229,16 @@ def audit_candidates(
         try:
             obj = compile_wrapper(wcl, source, work)
             code_size, public_offset = wdis_layout(wdis, obj, row["function"])
+            raw_size_for_routine, raw_size_basis = raw_routine_size(
+                (ROOT / row["asm_path"]).resolve()
+            )
         except SystemExit as error:
             print(str(error))
             failures += 1
             continue
         start = target - public_offset
         end = start + code_size
+        raw_end = target + raw_size_for_routine
         covered = [
             f"0x{other:04x}"
             for other in targets
@@ -206,6 +251,8 @@ def audit_candidates(
             status = "helper_before_entry"
         if covered:
             status = "covers_fixed_entry:" + ",".join(covered)
+        if end > raw_end:
+            status = "exceeds_raw_routine:" + status
         if end > raw_size:
             status = "past_xdb:" + status
         placements.append(
@@ -214,6 +261,10 @@ def audit_candidates(
                 "target": target,
                 "generated_start": start,
                 "public_offset": public_offset,
+                "code_size": code_size,
+                "raw_routine_size": raw_size_for_routine,
+                "raw_size_basis": raw_size_basis,
+                "raw_routine_end": raw_end,
                 "generated_end": end,
                 "original_size": raw_size,
                 "status": status,
@@ -253,6 +304,9 @@ def main() -> int:
         target = int(row["entry"].split(":", 1)[1], 16)
         obj = compile_wrapper(wcl, source, work)
         code_size, public_offset = wdis_layout(wdis, obj, function)
+        raw_size_for_routine, raw_size_basis = raw_routine_size(
+            (ROOT / row["asm_path"]).resolve()
+        )
         pad = target - current - public_offset
         if pad < 0:
             raise SystemExit(
@@ -284,15 +338,23 @@ def main() -> int:
         start = current
         objects.append(obj)
         current += code_size
+        raw_end = target + raw_size_for_routine
+        status = "placed" if start <= target < current else "invalid"
+        if current > raw_end:
+            status = "exceeds_raw_routine:" + status
         placements.append(
             {
                 "function": function,
                 "target": target,
                 "generated_start": start,
                 "public_offset": public_offset,
+                "code_size": code_size,
+                "raw_routine_size": raw_size_for_routine,
+                "raw_size_basis": raw_size_basis,
+                "raw_routine_end": raw_end,
                 "generated_end": current,
                 "original_size": len(raw),
-                "status": "placed" if start <= target < current else "invalid",
+                "status": status,
             }
         )
 

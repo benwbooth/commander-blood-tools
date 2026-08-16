@@ -241,6 +241,12 @@ intentional: helper code emitted before a public entry, or a candidate that
 ends before the raw routine's true control-flow boundary, must be recovered
 and placed explicitly before any linked output can replace an XDB.
 
+The audit also records the raw routine span from each assembly artifact and
+marks generated code that exceeds that span. Most artifacts provide an exact
+`byte_count`; callback disassemblies with an explicit raw-stop address use the
+address range, and one legacy callback without a header uses its disassembly
+extent. The `raw_size_basis` column makes that evidence level visible.
+
 Use `--audit-only` to compile every candidate and report all independent
 footprint conflicts without attempting the link. The current alien audit
 exposes the same first conflict in each module: the natural-C API entry grows
