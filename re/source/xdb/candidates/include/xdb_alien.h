@@ -538,6 +538,12 @@ extern volatile xdb_u16 xdb_alien_palette_pulse_1; /* DS:0x2594 */
 extern volatile xdb_u16 xdb_alien_palette_pulse_2; /* DS:0x25F2 */
 extern xdb_alien_cursor XDB_CODE_DATA
         xdb_amer_slot11_cursor; /* AMER CS:0x1BC2 */
+extern volatile xdb_u16 XDB_CODE_DATA
+        xdb_amer_slot11_queue_cursor; /* AMER CS:0x1BC6 */
+extern volatile xdb_u16 XDB_CODE_DATA
+        xdb_amer_slot11_current_state; /* AMER CS:0x1BC4 */
+extern volatile xdb_u16 XDB_CODE_DATA
+        xdb_amer_slot11_state_queue[8]; /* AMER CS:0x1BCA */
 extern xdb_alien_cursor XDB_CODE_DATA
         xdb_croolis_slot11_cursor; /* CROOLIS CS:0x1B2E */
 extern xdb_alien_cursor XDB_CODE_DATA

@@ -22,16 +22,6 @@ static xdb_i16 motion_sample(xdb_u16 offset)
     return *(volatile xdb_i16 XDB_NEAR *)(xdb_alien_motion_samples + offset);
 }
 
-static void add_palette_pulse_1(xdb_i32 amount)
-{
-    *(volatile xdb_i32 XDB_CODE_DATA *)&xdb_alien_palette_pulse_1 += amount;
-}
-
-static void add_palette_pulse_2(xdb_i32 amount)
-{
-    *(volatile xdb_i32 XDB_CODE_DATA *)&xdb_alien_palette_pulse_2 += amount;
-}
-
 void XDB_NEAR xdb_amer_slot1_state_update(
         xdb_alien_biased_state XDB_NEAR *state,
         xdb_alien_method_context XDB_NEAR *context)
@@ -119,8 +109,8 @@ advance:
     state->position_x = 0;
     state->position_y = 0;
     state->position_z = 0x20;
-    add_palette_pulse_1(0x1e);
-    add_palette_pulse_2(0x23);
+    *(volatile xdb_i32 XDB_CODE_DATA *)&xdb_alien_palette_pulse_1 += 0x1e;
+    *(volatile xdb_i32 XDB_CODE_DATA *)&xdb_alien_palette_pulse_2 += 0x23;
     state->callback = xdb_amer_slot1_wave_update;
     xdb_alien_callback_countdown = 5;
 }

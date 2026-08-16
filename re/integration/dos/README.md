@@ -194,17 +194,18 @@ NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
 
 With the current recovered object set and byte-backed owners, MANU3 links
 without unresolved symbols. AMER, CROOLIS, and SCRUT reduce to their
-module-local resume and state-machine callbacks: 5 symbols, 4 symbols, and 4
-symbols respectively. Those callbacks are real internal routines (including
-shared-looking state transitions inside the long method blocks), so their
-definitions still need to be recovered from the corresponding assembly; they
-are not safe candidates for dummy aliases.
+module-local resume and state-machine callbacks. After the AMER slot-3 update
+candidate was added, its byte-backed module probe reports three unresolved
+callbacks: the `0x1C34` resume routine and the two slot-2 callbacks. The
+remaining callbacks are real internal routines (including shared-looking
+state transitions inside the long method blocks), so they are not safe
+candidates for dummy aliases.
 
 The current callback recovery queue is:
 
 | overlay | resume | slot-3 initial | slot-3 update | slot-2 update | slot-2 finish |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| AMER | `0x1c34` | `0x12b3` | `0x1414` | `0x1692` | `0x1aa0` |
+| AMER | `0x1c34` | `0x12b3` | recovered `0x1414` | `0x1692` | `0x1aa0` |
 | CROOLIS | `0x1b85` | `0x130b` | `0x146c` | `0x1727` | not referenced |
 | SCRUT | `0x1c45` | `0x12f9` | `0x145a` | `0x171b` | not referenced |
 

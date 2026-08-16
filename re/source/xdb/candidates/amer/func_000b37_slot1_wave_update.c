@@ -1,15 +1,5 @@
 #include "../include/xdb_alien.h"
 
-static void subtract_palette_pulse_1(xdb_i32 amount)
-{
-    *(volatile xdb_i32 XDB_CODE_DATA *)&xdb_alien_palette_pulse_1 -= amount;
-}
-
-static void subtract_palette_pulse_2(xdb_i32 amount)
-{
-    *(volatile xdb_i32 XDB_CODE_DATA *)&xdb_alien_palette_pulse_2 -= amount;
-}
-
 void XDB_NEAR xdb_amer_slot1_wave_update(
         xdb_alien_biased_state XDB_NEAR *state,
         xdb_alien_method_context XDB_NEAR *context)
@@ -33,14 +23,14 @@ void XDB_NEAR xdb_amer_slot1_wave_update(
         state->owner_offset = (xdb_u16)(size_t)xdb_amer_slot1_selected_state;
         state->callback = xdb_amer_slot1_finish_update;
         xdb_amer_slot1_selection_state = 0;
-        subtract_palette_pulse_1(0x1e);
-        subtract_palette_pulse_2(0x23);
+        *(volatile xdb_i32 XDB_CODE_DATA *)&xdb_alien_palette_pulse_1 -= 0x1e;
+        *(volatile xdb_i32 XDB_CODE_DATA *)&xdb_alien_palette_pulse_2 -= 0x23;
         return;
     }
 
     xdb_amer_slot1_selection_state = 0;
-    subtract_palette_pulse_1(0x1e);
-    subtract_palette_pulse_2(0x23);
+    *(volatile xdb_i32 XDB_CODE_DATA *)&xdb_alien_palette_pulse_1 -= 0x1e;
+    *(volatile xdb_i32 XDB_CODE_DATA *)&xdb_alien_palette_pulse_2 -= 0x23;
     state->owner_offset = 0x22a8u;
     state->position_x = -(xdb_i32)xdb_alien_view_x;
     state->position_y = -(xdb_i32)xdb_alien_view_y;
