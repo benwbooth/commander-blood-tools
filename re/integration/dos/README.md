@@ -13,6 +13,19 @@ NIXPKGS_ALLOW_UNFREE=1 nix shell --impure \
   python3 re/tools/manu3_dos_integration.py
 ```
 
+Run the first BLOODPRG data-owner gate with:
+
+```sh
+NIXPKGS_ALLOW_UNFREE=1 nix shell --impure \
+  nixpkgs#open-watcom-bin nixpkgs#dosbox-x -c \
+  python3 re/tools/bloodprg_startup_integration.py
+```
+
+This gate links the recovered startup command-line parser, option dispatcher,
+and decimal parser against canonical C storage for the startup state. It runs
+the executable under DOSBox-X and verifies the audio-option and write-directory
+state mutations. It intentionally does not define unrelated game globals.
+
 `manu3_renderer_empty.c` calls the recovered MANU3 `0x0700` renderer with one
 fully clipped face. This is a complete original control-flow path: the sorter
 rejects the face, initializes the 200-record raster free list, scans all 320
