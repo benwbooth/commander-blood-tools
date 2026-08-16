@@ -42,9 +42,9 @@ The `--include-bloodprg-fixed-patch` gate is stricter and smaller. It emits
 `validation/bloodprg_fixed/BLOODPRG_C_PATCHED.EXE` and the DOS alias
 `cd/BPRG_C.EXE` only after each selected C routine passes its fixed-layout
 policy. The current proven set is the three sprite no-ops, four GS byte-parser
-handlers, `list_d8c_init`, the runtime-verified `vm_special_slot_remove` and
-`lookup_table_1fb5` replacements, and `palette_upload_if_dirty`. The latter
-uses a fixed 36-byte
+handlers, `list_d8c_init`, the runtime-verified `vm_special_slot_remove`,
+`lookup_table_1fb5`, and `matrix_table_clear_2a1b` replacements, and
+`palette_upload_if_dirty`. The latter uses a fixed 36-byte
 C body, restores its six original data/call operands, and moves the two MZ
 relocation entries for the moved far calls; the builder verifies those old
 entries before changing them.
