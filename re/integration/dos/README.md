@@ -201,6 +201,26 @@ yet prove that the generated C matches every raw-overlay state transition.
 The slot-2 ports therefore remain candidates for direct raw-vector validation
 before they are used to construct production overlays.
 
+To measure fixed-offset placement, use the layout probe:
+
+```sh
+NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
+  python3 re/tools/link_fixed_xdb_layout.py \
+  --module croolis \
+  --main-object output/link_probe/xdb_link_probe.obj \
+  --owner-object output/link_probe/croolis_data_layout/croolis_data_layout_probe.obj \
+  --raw-xdb output/_tmp_dat/croolis.xdb \
+  --output-dir output/link_probe/croolis_fixed_layout
+```
+
+This compiles each candidate into a common `_CODE` segment, inserts the
+original XDB bytes between candidates, and records each generated segment's
+start, public entry offset, and end in `placement.tsv`. It fails when a
+generated candidate would overlap an earlier fixed entry. That failure is
+intentional: helper code emitted before a public entry, or a candidate that
+ends before the raw routine's true control-flow boundary, must be recovered
+and placed explicitly before any linked output can replace an XDB.
+
 The current callback recovery queue is:
 
 | overlay | resume | slot-3 initial | slot-3 update | slot-2 update | slot-2 finish |
