@@ -317,7 +317,10 @@ def stage_dos_source_tree(source: Path, outdir: Path) -> None:
         text = path.read_text(encoding="utf-8")
 
         def replace_include(match: re.Match[str]) -> str:
-            include_base = outdir if path == source else path.parent
+            # Quoted includes are resolved relative to the source file before
+            # the tree is flattened for DOS; using outdir here breaks valid
+            # candidate paths such as ../include/bloodprg_list.h.
+            include_base = path.parent
             dependency = (include_base / match.group(2)).resolve()
             staged_name = assign(dependency)
             return f'{match.group(1)}"{staged_name}"{match.group(3)}'

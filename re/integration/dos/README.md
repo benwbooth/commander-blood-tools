@@ -47,6 +47,12 @@ and admits only the verified `31 C0` versus `33 C0` zeroing encoding change.
 The resulting executable is game-loadable, but it is intentionally
 conservative and is not the full C replacement.
 
+When the archived Turbo C 2.01 tree is available, add
+`--turbo-c-toolchain /path/to/tc201`. The builder then compiles the five
+Turbo-specific fixed-layout candidates with Borland C under DOSBox-X and
+accepts their relocation-only differences. Run that form from a shell that
+contains both Open Watcom and DOSBox-X.
+
 The BLOODPRG candidate headers intentionally omit the unverified `#pragma aux`
 register contracts for the recovered VM, graphics, resource, and byte-parser
 calls. Open Watcom rejects several of those contracts as illegal register
@@ -126,6 +132,18 @@ NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
   python3 re/tools/build_recovered_package.py \
     --cbvm target/debug/cbvm \
     --include-bloodprg-fixed-patch \
+    --output-dir output/recovered_dos_package
+```
+
+With the archived Turbo C tree:
+
+```sh
+NIXPKGS_ALLOW_UNFREE=1 nix shell --impure \
+  nixpkgs#open-watcom-bin nixpkgs#dosbox-x -c \
+  python3 re/tools/build_recovered_package.py \
+    --cbvm target/debug/cbvm \
+    --include-bloodprg-fixed-patch \
+    --turbo-c-toolchain /path/to/tc201 \
     --output-dir output/recovered_dos_package
 ```
 

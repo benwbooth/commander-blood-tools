@@ -67,6 +67,17 @@ BLOODPRG_RELOCATION_MASKED_PATCH_FUNCTIONS = (
     ("queue_d8c_enqueue", 0x00A734, 0x0A, ((8, 0xF8, 0xC3),)),
 )
 
+# Turbo C 2.01 reproduces these bodies exactly; only OMF relocation words are
+# zero in the standalone object.  They are enabled only when an archived
+# Turbo C tree is explicitly supplied to the package builder.
+BLOODPRG_TURBO_PATCH_FUNCTIONS = (
+    ("list_d8c_bounds_init", 0x00A73E, 0x19, ()),
+    ("list_d8c_wrap_bounds_reset", 0x00A744, 0x13, ()),
+    ("presentation_queue_finish", 0x00A2DD, 0x15, ()),
+    ("nav_choice_handler_0", 0x008713, 0x19, ()),
+    ("presentation_update_1fb2", 0x009F53, 0x2D, ()),
+)
+
 
 def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
@@ -121,6 +132,12 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="emit a game-loadable BLOODPRG copy containing only verified fixed-layout C patches",
     )
+    parser.add_argument(
+        "--turbo-c-toolchain",
+        type=Path,
+        help="archived Turbo C tree; enables Turbo-generated fixed-layout patches",
+    )
+    parser.add_argument("--dosbox", default="dosbox-x")
     parser.add_argument(
         "--cbvm",
         type=Path,
@@ -349,6 +366,38 @@ def build_bloodprg_objects(args: argparse.Namespace, output: Path) -> Path:
     return object_dir
 
 
+def build_bloodprg_turbo_objects(
+    args: argparse.Namespace, output: Path
+) -> dict[str, Path]:
+    manifest = ROOT / "re/source/bloodprg/candidates/manifest.tsv"
+    with manifest.open(newline="", encoding="ascii") as handle:
+        rows = {row["function"]: row for row in csv.DictReader(handle, delimiter="\t")}
+    object_dir = output / "validation" / "bloodprg_fixed" / "turbo_objects"
+    objects: dict[str, Path] = {}
+    for function, _offset, _length, _allowed_changes in BLOODPRG_TURBO_PATCH_FUNCTIONS:
+        row = rows.get(function)
+        if row is None:
+            raise SystemExit(f"manifest has no Turbo C patch function: {function}")
+        source = (manifest.parent / row["source"]).resolve()
+        destination = object_dir / f"{Path(row['source']).stem}.OBJ"
+        run_checked(
+            [
+                sys.executable,
+                str(ROOT / "re/tools/build_turbo_c_object.py"),
+                "--toolchain",
+                str(args.turbo_c_toolchain),
+                "--source",
+                str(source),
+                "--output",
+                str(destination),
+                "--dosbox",
+                args.dosbox,
+            ]
+        )
+        objects[function] = destination
+    return objects
+
+
 def wdis_code_bytes(wdis: str, object_path: Path, function: str) -> tuple[bytes, str]:
     process = subprocess.run(
         [wdis, "-p", str(object_path)],
@@ -362,7 +411,10 @@ def wdis_code_bytes(wdis: str, object_path: Path, function: str) -> tuple[bytes,
         raise SystemExit(f"wdis failed for {object_path}:\n{listing}")
     segments = re.split(r"(?=^Segment: )", listing, flags=re.MULTILINE)
     for segment in segments:
-        if f"{function}_" not in segment:
+        if (
+            "Routine Size:" not in segment
+            or (f"{function}_" not in segment and f"_{function}" not in segment)
+        ):
             continue
         data = bytearray()
         for line in segment.splitlines():
@@ -379,6 +431,7 @@ def build_bloodprg_fixed_patch(
     args: argparse.Namespace,
     output: Path,
     object_dir: Path,
+    turbo_objects: dict[str, Path] | None = None,
 ) -> list[dict[str, str]]:
     manifest = ROOT / "re/source/bloodprg/candidates/manifest.tsv"
     with manifest.open(newline="", encoding="ascii") as handle:
@@ -399,6 +452,11 @@ def build_bloodprg_fixed_patch(
         for function, offset, length, allowed_changes
         in BLOODPRG_RELOCATION_MASKED_PATCH_FUNCTIONS
     )
+    if turbo_objects is not None:
+        patch_specs.extend(
+            (function, offset, length, "turbo_relocation_masked_c_patch", allowed_changes)
+            for function, offset, length, allowed_changes in BLOODPRG_TURBO_PATCH_FUNCTIONS
+        )
 
     for spec in patch_specs:
         function, offset, length, patch_status = spec[:4]
@@ -407,7 +465,11 @@ def build_bloodprg_fixed_patch(
         if row is None:
             raise SystemExit(f"manifest has no fixed-patch function: {function}")
         source_stem = Path(row["source"]).stem
-        object_path = object_dir / "bloodprg" / f"{source_stem}.OBJ"
+        object_path = (
+            turbo_objects.get(function)
+            if turbo_objects is not None
+            else None
+        ) or (object_dir / "bloodprg" / f"{source_stem}.OBJ")
         generated, listing = wdis_code_bytes(args.wdis, object_path, function)
         (validation_dir / f"{source_stem}.asm").write_text(listing, encoding="ascii")
         if len(generated) > length or (
@@ -429,7 +491,10 @@ def build_bloodprg_fixed_patch(
                 f"{function} is not byte-identical at 0x{offset:06x}; "
                 "production patch refused"
             )
-        if patch_status == "relocation_masked_c_patch":
+        if patch_status in (
+            "relocation_masked_c_patch",
+            "turbo_relocation_masked_c_patch",
+        ):
             actual_changes = tuple(
                 (index, expected[index], generated[index])
                 for index in differences
@@ -842,6 +907,12 @@ def main() -> int:
     args.wdis = resolve_executable(args.wdis)
     if args.include_bloodprg_link_probe:
         args.wasm = resolve_executable(args.wasm)
+    turbo_objects = None
+    if args.turbo_c_toolchain is not None:
+        args.turbo_c_toolchain = args.turbo_c_toolchain.resolve()
+        if not args.turbo_c_toolchain.is_dir():
+            raise SystemExit(f"Turbo C toolchain does not exist: {args.turbo_c_toolchain}")
+        args.dosbox = resolve_executable(args.dosbox)
     output = args.output_dir.resolve()
     output.mkdir(parents=True, exist_ok=True)
     compile_sources(args, output)
@@ -850,13 +921,17 @@ def main() -> int:
     bloodprg_objects = None
     if args.include_bloodprg_link_probe or args.include_bloodprg_fixed_patch:
         bloodprg_objects = build_bloodprg_objects(args, output)
+    if args.include_bloodprg_fixed_patch and args.turbo_c_toolchain is not None:
+        turbo_objects = build_bloodprg_turbo_objects(args, output)
     if args.include_bloodprg_link_probe:
         link_record = build_bloodprg_link_probe(args, output)
     copy_cd_tree(args.cd_root.resolve(), output / "cd")
     shutil.copy2(args.cd_root / "BLOOD.DAT", output / "cd" / "BLOOD.DAT")
     if args.include_bloodprg_fixed_patch:
         assert bloodprg_objects is not None
-        fixed_records = build_bloodprg_fixed_patch(args, output, bloodprg_objects)
+        fixed_records = build_bloodprg_fixed_patch(
+            args, output, bloodprg_objects, turbo_objects
+        )
     rows = read_manifest_rows()
     xdb_records = patch_xdb_files(args, output, rows)
     records = patch_archive(args, output, xdb_records)
