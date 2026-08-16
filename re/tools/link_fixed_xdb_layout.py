@@ -40,7 +40,7 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="compile all candidates and report independent footprint conflicts without linking",
     )
-    parser.add_argument("--library", action="append", default=["clibh", "doslfnh"])
+    parser.add_argument("--library", action="append", default=["clibm", "doslfnh"])
     return parser.parse_args()
 
 

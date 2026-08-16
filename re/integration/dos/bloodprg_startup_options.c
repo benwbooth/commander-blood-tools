@@ -42,6 +42,7 @@ int main(void)
     bloodprg_command_tail command_tail;
 
     reset_state();
+    memset(&command_tail, 0, sizeof(command_tail));
     command_tail.length = (cb_u8)(sizeof(command_text) - 1u);
     memcpy(command_tail.text, command_text, command_tail.length);
     startup_command_line_parse(&command_tail);
