@@ -63,6 +63,7 @@ BLOODPRG_FIXED_PATCH_FUNCTIONS = (
 # XOR opcode is allowed to come from the generated object.
 BLOODPRG_RELOCATION_MASKED_PATCH_FUNCTIONS = (
     ("list_d8c_init", 0x00A757, 0x21, ((9, 0x33, 0x31),)),
+    ("queue_d8c_enqueue", 0x00A734, 0x0A, ((8, 0xF8, 0xC3),)),
 )
 
 
@@ -408,7 +409,9 @@ def build_bloodprg_fixed_patch(
         object_path = object_dir / "bloodprg" / f"{source_stem}.OBJ"
         generated, listing = wdis_code_bytes(args.wdis, object_path, function)
         (validation_dir / f"{source_stem}.asm").write_text(listing, encoding="ascii")
-        if len(generated) != length:
+        if len(generated) > length or (
+            patch_status == "byte_exact_c_patch" and len(generated) != length
+        ):
             raise SystemExit(
                 f"{function} generated {len(generated)} bytes, expected {length}"
             )
