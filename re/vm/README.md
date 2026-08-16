@@ -149,10 +149,12 @@ in that range. BloodScript renders their 48 writes as `timer[n] = ticks` or
 `disabled` and their 27 zero tests as `require timer[n] == 0`; operands outside
 the proven timer domain retain `state_array_set`/`state_array_test`. Every one
 of the 480 kind-2 DEB procedures begins with an `A9` activation header, folded
-into `proc name enabled|disabled until target { ... }`. All 413 shipped `AB` byte writes
-target that same flag byte at a named procedure's start plus one, so they are
-rendered as `procedure.enabled = true|false`. The compiler derives the exact
-opcode, flag byte, and address from these forms. Arbitrary `AB` addresses or
+into `proc name enabled|disabled { ... }`. Its hidden target is the next
+procedure entry, or the sole final `halt`; all 480 shipped headers obey that
+invariant. All 413 shipped `AB` byte writes target that same flag byte at a named
+procedure's start plus one, so they are rendered as
+`procedure.enabled = true|false`. The compiler derives the exact opcode, flag
+byte, and address from these forms. Arbitrary `AB` addresses or
 values retain the explicit `poke_byte` fallback rather than receiving guessed
 semantics. Branch destinations are symbolic labels or procedure names; the
 compiler resolves them without reordering statements or changing layout.
@@ -326,7 +328,8 @@ true arm ends in `A4 <join>`; the five other formerly rejected regions are
 `sort`, `Corpo4`, `oto1`, `tromp1`, and `big3`. Their retry, navigation,
 procedure-boundary, and dialogue-resume edges remain visible as labels or jumps
 inside their structured regions. No shipped `guard_push`, `guard_pop`, or
-standalone `activation` statement remains. See `bloodscript/manifest.tsv` for
+standalone `activation` statement remains, and no shipped procedure exposes an
+`until` target. See `bloodscript/manifest.tsv` for
 per-image byte coverage,
 `control-flow/manifest.tsv` for graph counts, `structured/manifest.tsv` for
 source-lift and rejection counts, `bas-control-flow/manifest.tsv` for

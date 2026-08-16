@@ -17,7 +17,7 @@ field Honk.encounter_count = Honk + 0x0036 // VAR kind 0x0002, selector(s) 08
 field Honk.action = Honk + 0x003A // VAR kind 0x0002, selector(s) 13
 field menu.action = menu + 0x003A // VAR kind 0x0002, selector(s) 13
 
-proc menbr enabled until men1 {
+proc menbr enabled {
     during bridge
     require presentation == menu
     require Bronko.current_location == aboard
@@ -34,7 +34,7 @@ proc menbr enabled until men1 {
     end presentation menu
 }
 
-proc men1 enabled until men2 {
+proc men1 enabled {
     during bridge
     require presentation == menu
     require Bronko.current_location != aboard
@@ -52,7 +52,7 @@ proc men1 enabled until men2 {
     end presentation menu
 }
 
-proc men2 enabled until men3 {
+proc men2 enabled {
     during bridge
     require presentation == menu
     require Bronko.current_location != aboard
@@ -70,7 +70,7 @@ proc men2 enabled until men3 {
     end presentation menu
 }
 
-proc men3 enabled until men4 {
+proc men3 enabled {
     during bridge
     require Bronko.current_location != aboard
     require presentation == menu
@@ -88,7 +88,7 @@ proc men3 enabled until men4 {
     end presentation menu
 }
 
-proc men4 enabled until men5 {
+proc men4 enabled {
     during bridge
     require presentation == menu
     require Bronko.current_location != aboard
@@ -106,7 +106,7 @@ proc men4 enabled until men5 {
     end presentation menu
 }
 
-proc men5 enabled until men6 {
+proc men5 enabled {
     during bridge
     require presentation == menu
     require Bronko.current_location != aboard
@@ -125,7 +125,7 @@ proc men5 enabled until men6 {
     end presentation menu
 }
 
-proc men6 disabled until tima {
+proc men6 disabled {
 } then {
     men1.enabled = true
     men2.enabled = true
@@ -135,20 +135,20 @@ proc men6 disabled until tima {
     men6.enabled = false
 }
 
-proc tima enabled until ho {
+proc tima enabled {
 } then {
     timer[22] = 5
     tima.enabled = false
 }
 
-proc ho enabled until ho1 {
+proc ho enabled {
     require timer[22] == 0
 } then {
     queue presentation Izwalito
     ho.enabled = false
 }
 
-proc ho1 enabled until hon {
+proc ho1 enabled {
     during bridge
     require presentation == Izwalito
 } then {
@@ -184,7 +184,7 @@ proc ho1 enabled until hon {
     end presentation Izwalito
 }
 
-proc hon enabled until BOB1 {
+proc hon enabled {
     during bridge
     require presentation == Honk
 } then {
@@ -202,7 +202,7 @@ proc hon enabled until BOB1 {
     end presentation Honk
 }
 
-proc BOB1 enabled until scr2 {
+proc BOB1 enabled {
     during contact
     require presentation == Bob_Morlock
 } then {
@@ -258,7 +258,7 @@ proc BOB1 enabled until scr2 {
     end presentation Bob_Morlock
 }
 
-proc scr2 enabled until block_0C0B {
+proc scr2 enabled {
     require Honk.encounter_count == 0x0001
     require Bob_Morlock.encounter_count == 0x0001
 } then {

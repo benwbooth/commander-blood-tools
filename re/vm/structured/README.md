@@ -148,12 +148,14 @@ is either `blood` or a kind-2 character. Nonmatching or query-mode `CD` tokens
 retain the exact `record_triple` fallback.
 
 Each kind-2 procedure begins with
-`proc name enabled|disabled until target { ... }`, backed by its native `A9`
-flag byte. A top-level `A1` is represented by the following `} then {` boundary;
-procedures without that byte do not receive one. Writes to those bytes are named
-assignments such as `dialogue.enabled = false`. All 413 shipped writes target a
-named procedure exactly; arbitrary byte writes retain `poke_byte` as a lossless
-fallback.
+`proc name enabled|disabled { ... }`, backed by its native `A9` flag byte. The
+closing structure derives a target at the next procedure entry, or at the sole
+final `halt`; all 480 shipped procedures have exactly that shape. A
+non-structural input retains `until target`. A top-level `A1` is represented by
+the following `} then {` boundary; procedures without that byte do not receive
+one. Writes to those bytes are named assignments such as
+`dialogue.enabled = false`. All 413 shipped writes target a named procedure
+exactly; arbitrary byte writes retain `poke_byte` as a lossless fallback.
 
 The `when { ... } then { ... }` syntax is a lossless structural form of the
 native `A0 target` / `A1` guard protocol. The compiler derives the hidden false
@@ -187,7 +189,8 @@ procedure-local join. The five other formerly rejected cases are `sort`,
 `Corpo4`, `oto1`, `tromp1`, and `big3`; they retain their backward retry,
 navigation, next-procedure, or dialogue-resume labels and jumps inside a
 structured `when`. No control-flow edge is discarded. The generated corpus has
-zero `GUARD_PUSH`, `GUARD_POP`, or standalone `activation` statements.
+zero `GUARD_PUSH`, `GUARD_POP`, standalone `activation`, or explicit `until`
+statements.
 
 All ten generated COD and BAS sources compile to the exact 183,523 shipped
 bytes; per-image guard, rejection, list, and case counts are in `manifest.tsv`.

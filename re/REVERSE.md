@@ -1672,10 +1672,13 @@ braces, so source structure does not discard those edges. No shipped low-level
 `guard_push` or `guard_pop` remains.
 
 All 480 kind-2 DEB procedures begin at `A9`: 420 initial flag bytes are one and
-60 are zero. The source header is
-`proc name enabled|disabled until target { ... }`. A root `A1`, when present,
-becomes `} then {`; it is not synthesized for shapes such as disabled `ERA`,
-where `A9` is followed by a nested `A0` and has no separate root pop.
+60 are zero. Every non-final A9 target is exactly the next procedure entry; each
+final target is the script's sole `FF` halt. The shipped source can therefore
+use `proc name enabled|disabled { ... }`, with the compiler deriving the target.
+An explicit `until target` remains the lossless fallback for a non-structural
+A9. A root `A1`, when present, becomes `} then {`; it is not synthesized for
+shapes such as disabled `ERA`, where `A9` is followed by a nested `A0` and has
+no separate root pop.
 
 ### 0xB7 bit-flag handler @ file 0x6AA7 — state flag set/test (DECODED)
 

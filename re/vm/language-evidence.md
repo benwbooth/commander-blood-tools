@@ -85,7 +85,10 @@ source formatter tracks that transition, so conditions immediately following
 an `A9` are rendered as `require` expressions rather than updates. All 480
 kind-2 DEB procedures begin at an `A9`: 420 carry flag byte `1` and 60 carry
 flag byte `0`. BloodScript folds that state and skip target into
-`proc name enabled|disabled until target { ... }`. A top-level `A1`, when
+`proc name enabled|disabled { ... }`. Every non-final target equals the next
+kind-2 entry, and all five final targets equal their script's sole `FF` halt.
+The compiler derives those structural addresses; `until target` is retained
+only as a lossless fallback for a non-structural A9. A top-level `A1`, when
 present, becomes the procedure's `} then {` condition/body boundary. It is not
 invented for procedures such as disabled `ERA`, where `A9` is followed by a
 nested `A0` guard and has no separate root `A1`. Focused compiler tests pin both

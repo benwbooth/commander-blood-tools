@@ -124,7 +124,7 @@ field bionium.holder = bionium + 0x0014 // VAR kind 0x0400, selector(s) 11
 field batteries.holder = batteries + 0x0014 // VAR kind 0x0400, selector(s) 11
 field orxx.action = orxx + 0x000A // VAR kind 0x0200, selector(s) 13
 
-proc pter enabled until scrub {
+proc pter enabled {
     during travel
     require presentation == Scruter_Jo
     require arche.current_location == Pterra
@@ -196,7 +196,7 @@ proc pter enabled until scrub {
     }
 }
 
-proc scrub enabled until scrujo {
+proc scrub enabled {
     during contact
     require presentation == Scruter_Jo
 } then {
@@ -208,7 +208,7 @@ proc scrub enabled until scrujo {
     scrub.enabled = false
 }
 
-proc scrujo enabled until menbr {
+proc scrujo enabled {
     during contact
     require presentation == Scruter_Jo
 } then {
@@ -261,7 +261,7 @@ proc scrujo enabled until menbr {
     end presentation Scruter_Jo
 }
 
-proc menbr enabled until men1 {
+proc menbr enabled {
     during bridge
     require presentation == menu
     require Bronko.current_location == aboard
@@ -278,7 +278,7 @@ proc menbr enabled until men1 {
     end presentation menu
 }
 
-proc men1 enabled until men2 {
+proc men1 enabled {
     during bridge
     require presentation == menu
     require Bronko.current_location != aboard
@@ -296,7 +296,7 @@ proc men1 enabled until men2 {
     end presentation menu
 }
 
-proc men2 enabled until men3 {
+proc men2 enabled {
     during bridge
     require presentation == menu
     require Bronko.current_location != aboard
@@ -314,7 +314,7 @@ proc men2 enabled until men3 {
     end presentation menu
 }
 
-proc men3 enabled until men4 {
+proc men3 enabled {
     during bridge
     require Bronko.current_location != aboard
     require presentation == menu
@@ -332,7 +332,7 @@ proc men3 enabled until men4 {
     end presentation menu
 }
 
-proc men4 enabled until men5 {
+proc men4 enabled {
     during bridge
     require presentation == menu
     require Bronko.current_location != aboard
@@ -350,7 +350,7 @@ proc men4 enabled until men5 {
     end presentation menu
 }
 
-proc men5 enabled until men6 {
+proc men5 enabled {
     during bridge
     require presentation == menu
     require Bronko.current_location != aboard
@@ -369,7 +369,7 @@ proc men5 enabled until men6 {
     end presentation menu
 }
 
-proc men6 disabled until bbbob {
+proc men6 disabled {
 } then {
     men1.enabled = true
     men2.enabled = true
@@ -379,7 +379,7 @@ proc men6 disabled until bbbob {
     men6.enabled = false
 }
 
-proc bbbob enabled until honk1 {
+proc bbbob enabled {
     during bridge
     require presentation == Honk
 } then {
@@ -397,7 +397,7 @@ proc bbbob enabled until honk1 {
     }
 }
 
-proc honk1 enabled until help2 {
+proc honk1 enabled {
     during bridge
     require presentation == Honk
 } then {
@@ -476,7 +476,7 @@ proc honk1 enabled until help2 {
     }
 }
 
-proc help2 enabled until help3 {
+proc help2 enabled {
     during bridge
     require presentation == Honk
     require state[0x126C] > 0x0002
@@ -489,7 +489,7 @@ proc help2 enabled until help3 {
     help2.enabled = false
 }
 
-proc help3 enabled until help4 {
+proc help3 enabled {
     during bridge
     require presentation == Honk
     require state[0x126C] > 0x0002
@@ -502,7 +502,7 @@ proc help3 enabled until help4 {
     help3.enabled = false
 }
 
-proc help4 enabled until help6 {
+proc help4 enabled {
     during bridge
     require presentation == Honk
     require state[0x126C] > 0x0002
@@ -516,7 +516,7 @@ proc help4 enabled until help6 {
     help4.enabled = false
 }
 
-proc help6 enabled until help7 {
+proc help6 enabled {
     during bridge
     require presentation == Honk
     require state[0x126C] > 0x0002
@@ -531,7 +531,7 @@ proc help6 enabled until help7 {
     help6.enabled = false
 }
 
-proc help7 enabled until help8 {
+proc help7 enabled {
     during bridge
     require presentation == Honk
     require state[0x126C] > 0x0002
@@ -544,7 +544,7 @@ proc help7 enabled until help8 {
     help7.enabled = false
 }
 
-proc help8 enabled until help9 {
+proc help8 enabled {
     during bridge
     require presentation == Honk
     require state[0x126C] > 0x0002
@@ -557,7 +557,7 @@ proc help8 enabled until help9 {
     help8.enabled = false
 }
 
-proc help9 enabled until help1 {
+proc help9 enabled {
     during bridge
     require presentation == Honk
     require state[0x126C] > 0x0002
@@ -570,7 +570,7 @@ proc help9 enabled until help1 {
     help9.enabled = false
 }
 
-proc help1 enabled until help5 {
+proc help1 enabled {
     during bridge
     require presentation == Honk
     require state[0x126C] > 0x0002
@@ -583,7 +583,7 @@ proc help1 enabled until help5 {
     help1.enabled = false
 }
 
-proc help5 enabled until what {
+proc help5 enabled {
     during bridge
     require presentation == Honk
     require state[0x126C] > 0x0002
@@ -598,7 +598,7 @@ proc help5 enabled until what {
     help5.enabled = false
 }
 
-proc what enabled until miss {
+proc what enabled {
     during bridge
     require presentation == Honk
 } then {
@@ -686,7 +686,7 @@ proc what enabled until miss {
     }
 }
 
-proc miss disabled until boba1 {
+proc miss disabled {
     require presentation == Honk
     require Corpo.in_play
 } then {
@@ -904,7 +904,7 @@ proc miss disabled until boba1 {
     miss.enabled = false
 }
 
-proc boba1 enabled until boba2 {
+proc boba1 enabled {
     during contact
     require presentation == Bob_Morlock
     require state[0x12B4] == 0x0000
@@ -938,7 +938,7 @@ proc boba1 enabled until boba2 {
     }
 }
 
-proc boba2 enabled until boba3 {
+proc boba2 enabled {
     during contact
     require presentation == Bob_Morlock
     require state[0x12B4] == 0x0002
@@ -977,7 +977,7 @@ proc boba2 enabled until boba3 {
     }
 }
 
-proc boba3 enabled until boba4 {
+proc boba3 enabled {
     during contact
     require presentation == Bob_Morlock
     require state[0x12B4] == 0x0003
@@ -1014,7 +1014,7 @@ proc boba3 enabled until boba4 {
     }
 }
 
-proc boba4 enabled until augmen {
+proc boba4 enabled {
     during contact
     require presentation == Bob_Morlock
     require state[0x12B4] == 0x0004
@@ -1054,7 +1054,7 @@ proc boba4 enabled until augmen {
     }
 }
 
-proc augmen enabled until revel {
+proc augmen enabled {
     during contact
     require presentation == Bob_Morlock
     require state[0x12B6] == 0x0001
@@ -1070,7 +1070,7 @@ proc augmen enabled until revel {
     augmen.enabled = false
 }
 
-proc revel enabled until caft {
+proc revel enabled {
     during contact
     require presentation == Bob_Morlock
     require state[0x12BA] == 0x0001
@@ -1098,7 +1098,7 @@ proc revel enabled until caft {
     revel.enabled = false
 }
 
-proc caft enabled until time {
+proc caft enabled {
     during contact
     require state[0x12BE] == 0x0001
     require presentation == Bob_Morlock
@@ -1127,7 +1127,7 @@ proc caft enabled until time {
     }
 }
 
-proc time enabled until radioscr {
+proc time enabled {
 } then {
     timer[3] = 10
     timer[4] = 200
@@ -1135,7 +1135,7 @@ proc time enabled until radioscr {
     time.enabled = false
 }
 
-proc radioscr enabled until sort {
+proc radioscr enabled {
     require timer[3] == 0
 } then {
     queue presentation Scruter_K
@@ -1143,7 +1143,7 @@ proc radioscr enabled until sort {
     radioscr.enabled = false
 }
 
-proc sort disabled until radio1 {
+proc sort disabled {
     during bridge
     require presentation == Scruter_K
 } then {
@@ -1172,7 +1172,7 @@ proc sort disabled until radio1 {
     }
 }
 
-proc radio1 disabled until dring {
+proc radio1 disabled {
     during bridge
     require presentation == Scruter_K
 } then {
@@ -1272,7 +1272,7 @@ proc radio1 disabled until dring {
     end presentation Scruter_K
 }
 
-proc dring enabled until encor {
+proc dring enabled {
     require Izwalito.encounter_count < 0x0002
     require Scruter_Jo.encounter_count < 0x0002
     require timer[8] == 0
@@ -1282,7 +1282,7 @@ proc dring enabled until encor {
     dring.enabled = false
 }
 
-proc encor enabled until destroy {
+proc encor enabled {
     require state[0x12C4] == 0x0001
     during bridge
     require presentation == Scruter_K
@@ -1324,7 +1324,7 @@ proc encor enabled until destroy {
     end presentation Scruter_K
 }
 
-proc destroy disabled until last {
+proc destroy disabled {
     require state[0x12C6] == 0x0001
     require timer[4] == 0
 } then {
@@ -1334,7 +1334,7 @@ proc destroy disabled until last {
     destroy.enabled = false
 }
 
-proc last disabled until init {
+proc last disabled {
     during bridge
     require presentation == Scruter_K
 } then {
@@ -1348,7 +1348,7 @@ proc last disabled until init {
     last.enabled = false
 }
 
-proc init enabled until radiof {
+proc init enabled {
     require state[0x12C2] == 0x0001
 } then {
     Corpo.in_play = true using alternate_encoding
@@ -1357,7 +1357,7 @@ proc init enabled until radiof {
     init.enabled = false
 }
 
-proc radiof disabled until rhom1 {
+proc radiof disabled {
     require arche.current_location == Corpo
 } then {
     radioscr.enabled = false
@@ -1367,7 +1367,7 @@ proc radiof disabled until rhom1 {
     radiof.enabled = false
 }
 
-proc rhom1 enabled until rhom1b {
+proc rhom1 enabled {
     during bridge
     require state[0x12D0] == 0x0000
     require arche.current_location == Magnus
@@ -1377,7 +1377,7 @@ proc rhom1 enabled until rhom1b {
     rhom1.enabled = false
 }
 
-proc rhom1b disabled until rhom2 {
+proc rhom1b disabled {
     during bridge
     require presentation == Scruter_Mac
 } then {
@@ -1395,7 +1395,7 @@ proc rhom1b disabled until rhom2 {
     end presentation Scruter_Mac
 }
 
-proc rhom2 disabled until rhom2b {
+proc rhom2 disabled {
     require state[0x12D0] == 0x0001
     during bridge
     require arche.current_location == Moskito
@@ -1405,7 +1405,7 @@ proc rhom2 disabled until rhom2b {
     rhom2.enabled = false
 }
 
-proc rhom2b disabled until rhom3 {
+proc rhom2b disabled {
     during bridge
     require presentation == Scruter_Mac
 } then {
@@ -1423,7 +1423,7 @@ proc rhom2b disabled until rhom3 {
     end presentation Scruter_Mac
 }
 
-proc rhom3 disabled until rhom3b {
+proc rhom3 disabled {
     during bridge
     require arche.current_location == Corpo
     require state[0x12D0] == 0x0002
@@ -1433,7 +1433,7 @@ proc rhom3 disabled until rhom3b {
     rhom3.enabled = false
 }
 
-proc rhom3b enabled until timy {
+proc rhom3b enabled {
     during bridge
     require presentation == Scruter_Mac
 } then {
@@ -1452,13 +1452,13 @@ proc rhom3b enabled until timy {
     end presentation Scruter_Mac
 }
 
-proc timy enabled until timx {
+proc timy enabled {
 } then {
     timer[12] = 1200
     timy.enabled = false
 }
 
-proc timx enabled until tim1 {
+proc timx enabled {
 } then {
     when {
         require timer[12] == 0
@@ -1468,14 +1468,14 @@ proc timx enabled until tim1 {
     }
 }
 
-proc tim1 enabled until tim1B {
+proc tim1 enabled {
     require state[0x1278] == 0x0001
 } then {
     Ulikan.in_play = true
     queue presentation Ulikan
 }
 
-proc tim1B enabled until tim2 {
+proc tim1B enabled {
     during bridge
     require presentation == Ulikan
     require state[0x1278] == 0x0001
@@ -1556,14 +1556,14 @@ proc tim1B enabled until tim2 {
     end presentation Ulikan
 }
 
-proc tim2 enabled until tim2B {
+proc tim2 enabled {
     require state[0x1278] == 0x0002
 } then {
     Ulikan.in_play = true
     queue presentation Ulikan
 }
 
-proc tim2B enabled until tim3 {
+proc tim2B enabled {
     during bridge
     require presentation == Ulikan
     require state[0x1278] == 0x0002
@@ -1625,14 +1625,14 @@ proc tim2B enabled until tim3 {
     end presentation Ulikan
 }
 
-proc tim3 enabled until tim3B {
+proc tim3 enabled {
     require state[0x1278] == 0x0003
 } then {
     Ulikan.in_play = true
     queue presentation Ulikan
 }
 
-proc tim3B enabled until tim4 {
+proc tim3B enabled {
     during bridge
     require presentation == Ulikan
     require state[0x1278] == 0x0003
@@ -1691,14 +1691,14 @@ proc tim3B enabled until tim4 {
     end presentation Ulikan
 }
 
-proc tim4 enabled until tim4B {
+proc tim4 enabled {
     require state[0x1278] == 0x0004
 } then {
     Ulikan.in_play = true
     queue presentation Ulikan
 }
 
-proc tim4B enabled until tim5 {
+proc tim4B enabled {
     during bridge
     require presentation == Ulikan
     require state[0x1278] == 0x0004
@@ -1760,14 +1760,14 @@ proc tim4B enabled until tim5 {
     end presentation Ulikan
 }
 
-proc tim5 enabled until tim5B {
+proc tim5 enabled {
     require state[0x1278] == 0x0005
 } then {
     Ulikan.in_play = true
     queue presentation Ulikan
 }
 
-proc tim5B enabled until Corpo6 {
+proc tim5B enabled {
     during bridge
     require presentation == Ulikan
     require state[0x1278] == 0x0005
@@ -1825,7 +1825,7 @@ proc tim5B enabled until Corpo6 {
     end presentation Ulikan
 }
 
-proc Corpo6 enabled until Corpo1 {
+proc Corpo6 enabled {
     during travel
     require Rondo.in_play
     require state[0x12D2] == 0x0001
@@ -1839,7 +1839,7 @@ proc Corpo6 enabled until Corpo1 {
     end presentation Izwalito
 }
 
-proc Corpo1 enabled until ad {
+proc Corpo1 enabled {
     during travel
     require state[0x12C8] == 0x0000
     require arche.current_location == Corpo
@@ -1972,7 +1972,7 @@ proc Corpo1 enabled until ad {
     }
 }
 
-proc ad disabled until Corpo2 {
+proc ad disabled {
     during travel
 } then {
     when {
@@ -2044,7 +2044,7 @@ proc ad disabled until Corpo2 {
     end presentation Izwalito
 }
 
-proc Corpo2 enabled until corp3bis {
+proc Corpo2 enabled {
     during travel
     require arche.current_location == Corpo
     require state[0x12C8] == 0x0001
@@ -2140,7 +2140,7 @@ proc Corpo2 enabled until corp3bis {
     end presentation Izwalito
 }
 
-proc corp3bis enabled until corrp3 {
+proc corp3bis enabled {
     during travel
     require murffalo.holder == blood
     require murffalos.holder != Izwalito
@@ -2151,7 +2151,7 @@ proc corp3bis enabled until corrp3 {
     corp3bis.enabled = false
 }
 
-proc corrp3 enabled until corbis {
+proc corrp3 enabled {
     during travel
     require state[0x12E8] == 0x0001
 } then {
@@ -2181,7 +2181,7 @@ proc corrp3 enabled until corbis {
     end presentation Izwalito
 }
 
-proc corbis enabled until corter {
+proc corbis enabled {
     during travel
     require arche.current_location == Corpo
     require state[0x12E6] == 0x0001
@@ -2263,7 +2263,7 @@ proc corbis enabled until corter {
     end presentation Izwalito
 }
 
-proc corter enabled until corqua {
+proc corter enabled {
     during travel
     require arche.current_location == Corpo
     require state[0x12E6] == 0x0002
@@ -2292,7 +2292,7 @@ proc corter enabled until corqua {
     end presentation Izwalito
 }
 
-proc corqua enabled until pleur {
+proc corqua enabled {
     during travel
     require arche.current_location == Corpo
     require state[0x12E6] == 0x0003
@@ -2315,7 +2315,7 @@ proc corqua enabled until pleur {
     end presentation Izwalito
 }
 
-proc pleur enabled until pleur1 {
+proc pleur enabled {
     during bridge
     require cred.holder != Izwalito
     require murffalos.holder != Izwalito
@@ -2328,7 +2328,7 @@ proc pleur enabled until pleur1 {
     pleur.enabled = false
 }
 
-proc pleur1 disabled until Corpo3 {
+proc pleur1 disabled {
     during bridge
 } then {
     say Izwalito voice=0xFF flags=0x00 display=0x80 loop=none control=none : "RADIO MESSAGE:"
@@ -2345,7 +2345,7 @@ proc pleur1 disabled until Corpo3 {
     end presentation Izwalito
 }
 
-proc Corpo3 enabled until cor4bis {
+proc Corpo3 enabled {
     during travel
     require arche.current_location == Corpo
     require state[0x12C8] == 0x0003
@@ -2424,7 +2424,7 @@ proc Corpo3 enabled until cor4bis {
     }
 }
 
-proc cor4bis enabled until Corpo4 {
+proc cor4bis enabled {
     during travel
     require murffalos.holder == Izwalito
     require !Rondo.in_play
@@ -2473,7 +2473,7 @@ proc cor4bis enabled until Corpo4 {
     end presentation Izwalito
 }
 
-proc Corpo4 enabled until hom1 {
+proc Corpo4 enabled {
     during travel
     require murffalos.holder == Izwalito
     require state[0x12D2] == 0x0000
@@ -2512,7 +2512,7 @@ proc Corpo4 enabled until hom1 {
     }
 }
 
-proc hom1 disabled until M0sk0 {
+proc hom1 disabled {
     during travel
     require Hom.current_location == Hita
     require state[0x12D2] == 0x0000
@@ -2535,7 +2535,7 @@ proc hom1 disabled until M0sk0 {
     end presentation Hom
 }
 
-proc M0sk0 enabled until Mosk1 {
+proc M0sk0 enabled {
     during travel
     require arche.current_location == Moskito
     require Bronko.encounter_count == 0x0001
@@ -2569,7 +2569,7 @@ proc M0sk0 enabled until Mosk1 {
     end presentation Bronko
 }
 
-proc Mosk1 enabled until Mosk2 {
+proc Mosk1 enabled {
     during travel
     require arche.current_location == Moskito
     require state[0x12C8] == 0x0002
@@ -2659,7 +2659,7 @@ proc Mosk1 enabled until Mosk2 {
     end presentation Bronko
 }
 
-proc Mosk2 enabled until Brorad {
+proc Mosk2 enabled {
     during travel
     require arche.current_location == Moskito
     require state[0x12EA] == 0x0001
@@ -2730,7 +2730,7 @@ proc Mosk2 enabled until Brorad {
     }
 }
 
-proc Brorad disabled until bronk1 {
+proc Brorad disabled {
     during bridge
     require Bronko.current_location == usine
     require presentation == Bronko
@@ -2744,7 +2744,7 @@ proc Brorad disabled until bronk1 {
     end presentation Bronko
 }
 
-proc bronk1 enabled until bronk2 {
+proc bronk1 enabled {
     during contact
     require state[0x128E] == 0x0000
     require presentation == Bronko
@@ -2770,7 +2770,7 @@ proc bronk1 enabled until bronk2 {
     end presentation Bronko
 }
 
-proc bronk2 enabled until emasc0 {
+proc bronk2 enabled {
     during contact
     require presentation == Bronko
     require state[0x128E] == 0x0001
@@ -2782,7 +2782,7 @@ proc bronk2 enabled until emasc0 {
     end presentation Bronko
 }
 
-proc emasc0 enabled until Magnus1 {
+proc emasc0 enabled {
     during travel
     require presentation == Emasculator
     require arche.current_location == Moskito
@@ -2877,7 +2877,7 @@ proc emasc0 enabled until Magnus1 {
     end presentation Emasculator
 }
 
-proc Magnus1 enabled until ad1 {
+proc Magnus1 enabled {
     during travel
     require arche.current_location == Magnus
     require state[0x12F2] == 0x0000
@@ -2900,7 +2900,7 @@ proc Magnus1 enabled until ad1 {
     }
 }
 
-proc ad1 disabled until Magnus2 {
+proc ad1 disabled {
     during travel
     require state[0x12F2] == 0x0000
 } then {
@@ -2924,7 +2924,7 @@ proc ad1 disabled until Magnus2 {
     }
 }
 
-proc Magnus2 enabled until Magbis {
+proc Magnus2 enabled {
     during travel
     require arche.current_location == Magnus
     require state[0x12F2] == 0x0001
@@ -2969,7 +2969,7 @@ proc Magnus2 enabled until Magbis {
     }
 }
 
-proc Magbis enabled until viol1 {
+proc Magbis enabled {
     during travel
     require arche.current_location == Magnus
     require state[0x12F4] == 0x0001
@@ -2983,7 +2983,7 @@ proc Magbis enabled until viol1 {
     end presentation Morning_Oil
 }
 
-proc viol1 enabled until cach {
+proc viol1 enabled {
     during travel
     require state[0x12F6] == 0x0001
     require presentation == Morning_Oil
@@ -3000,7 +3000,7 @@ proc viol1 enabled until cach {
     state[0x12F6] = 0x0000
 }
 
-proc cach enabled until Cryomorn2 {
+proc cach enabled {
     during travel
     require state[0x12F8] == 0x0001
     require presentation == Morning_Oil
@@ -3034,7 +3034,7 @@ proc cach enabled until Cryomorn2 {
     }
 }
 
-proc Cryomorn2 enabled until letar {
+proc Cryomorn2 enabled {
     during contact
     require Morning_Oil.current_location == aboard
     require state[0x12F2] == 0x0002
@@ -3076,7 +3076,7 @@ proc Cryomorn2 enabled until letar {
     end presentation Morning_Oil
 }
 
-proc letar enabled until morntv {
+proc letar enabled {
     require state[0x12F2] == 0x0004
     during contact
     require presentation == Morning_Oil
@@ -3095,7 +3095,7 @@ proc letar enabled until morntv {
     }
 }
 
-proc morntv enabled until Cryomorn4 {
+proc morntv enabled {
     require state[0x12F2] == 0x0005
     require presentation == Morning_Oil
     during contact
@@ -3113,7 +3113,7 @@ proc morntv enabled until Cryomorn4 {
     end presentation Morning_Oil
 }
 
-proc Cryomorn4 enabled until Cryomorn3 {
+proc Cryomorn4 enabled {
     during contact
     require state[0x12F2] == 0x0006
     require presentation == Morning_Oil
@@ -3134,7 +3134,7 @@ proc Cryomorn4 enabled until Cryomorn3 {
     end presentation Morning_Oil
 }
 
-proc Cryomorn3 enabled until adi {
+proc Cryomorn3 enabled {
     during travel
     require state[0x12F2] == 0x0007
     require Morning_Oil.current_location == Ark
@@ -3163,7 +3163,7 @@ proc Cryomorn3 enabled until adi {
     end presentation Morning_Oil
 }
 
-proc adi disabled until ado {
+proc adi disabled {
     during travel
     require state[0x12F2] == 0x0007
     require Morning_Oil.current_location == Ark
@@ -3178,7 +3178,7 @@ proc adi disabled until ado {
     end presentation Morning_Oil
 }
 
-proc ado enabled until mastab {
+proc ado enabled {
     during travel
     require Morning_Oil.current_location == Ark
     require Mastachok.in_play
@@ -3193,7 +3193,7 @@ proc ado enabled until mastab {
     end presentation Morning_Oil
 }
 
-proc mastab enabled until mastac {
+proc mastab enabled {
     require state[0x12FC] == 0x0001
     require Morning_Oil.current_location == Ark
     require Bronko.current_location == aboard
@@ -3203,7 +3203,7 @@ proc mastab enabled until mastac {
     mastac.enabled = false
 }
 
-proc mastac enabled until mastachok1 {
+proc mastac enabled {
     during travel
     require arche.current_location == Mastachok
     require presentation == Scruter_Mac
@@ -3256,7 +3256,7 @@ proc mastac enabled until mastachok1 {
     end presentation Scruter_Mac
 }
 
-proc mastachok1 enabled until scr2 {
+proc mastachok1 enabled {
     during travel
     require state[0x12FC] == 0x0001
     require perfume.holder != blood
@@ -3314,7 +3314,7 @@ proc mastachok1 enabled until scr2 {
     end presentation Scruter_Mac
 }
 
-proc scr2 enabled until scr3 {
+proc scr2 enabled {
     during travel
     require state[0x12FC] == 0x0002
     require perfume.holder != blood
@@ -3348,7 +3348,7 @@ proc scr2 enabled until scr3 {
     end presentation Scruter_Mac
 }
 
-proc scr3 enabled until scr4 {
+proc scr3 enabled {
     during travel
     require state[0x12FC] == 0x0003
     require perfume.holder != blood
@@ -3383,7 +3383,7 @@ proc scr3 enabled until scr4 {
     end presentation Scruter_Mac
 }
 
-proc scr4 enabled until mastabis {
+proc scr4 enabled {
     during travel
     require state[0x12FC] == 0x0004
     require perfume.holder != blood
@@ -3400,14 +3400,14 @@ proc scr4 enabled until mastabis {
     end presentation Scruter_Mac
 }
 
-proc mastabis enabled until masta2 {
+proc mastabis enabled {
     require arche.current_location == Mastachok
     require perfume.holder == blood
 } then {
     state[0x12FC] = 0x0005
 }
 
-proc masta2 enabled until mas2bis {
+proc masta2 enabled {
     during travel
     require state[0x12FC] == 0x0005
     require arche.current_location == Mastachok
@@ -3429,7 +3429,7 @@ proc masta2 enabled until mas2bis {
     }
 }
 
-proc mas2bis enabled until mas2ter {
+proc mas2bis enabled {
     during travel
     require state[0x12FC] == 0x0005
     require arche.current_location == Mastachok
@@ -3449,7 +3449,7 @@ proc mas2bis enabled until mas2ter {
     end presentation Scruter_Mac
 }
 
-proc mas2ter enabled until yok1 {
+proc mas2ter enabled {
     during travel
     require state[0x12FC] == 0x0006
     require arche.current_location == Mastachok
@@ -3466,7 +3466,7 @@ proc mas2ter enabled until yok1 {
     end presentation Scruter_Mac
 }
 
-proc yok1 enabled until yok2 {
+proc yok1 enabled {
     during travel
     require arche.current_location == Rondo
     require presentation == Yoko
@@ -3504,7 +3504,7 @@ proc yok1 enabled until yok2 {
     }
 }
 
-proc yok2 enabled until yok3 {
+proc yok2 enabled {
     during travel
     require arche.current_location == Rondo
     require presentation == Yoko
@@ -3539,7 +3539,7 @@ proc yok2 enabled until yok3 {
     }
 }
 
-proc yok3 enabled until max1 {
+proc yok3 enabled {
     during travel
     require arche.current_location == Rondo
     require Ekatomb.in_play
@@ -3571,7 +3571,7 @@ proc yok3 enabled until max1 {
     }
 }
 
-proc max1 enabled until max2 {
+proc max1 enabled {
     during travel
     require lens.holder != Maxxon
     require lens.holder != blood
@@ -3606,7 +3606,7 @@ proc max1 enabled until max2 {
     end presentation Maxxon
 }
 
-proc max2 enabled until max2bis {
+proc max2 enabled {
     during travel
     require presentation == Maxxon
     require lens.holder == blood
@@ -3625,7 +3625,7 @@ proc max2 enabled until max2bis {
     }
 }
 
-proc max2bis enabled until max2ter {
+proc max2bis enabled {
     during travel
     require presentation == Maxxon
     require lens.holder == Maxxon
@@ -3646,7 +3646,7 @@ proc max2bis enabled until max2ter {
     end presentation Maxxon
 }
 
-proc max2ter enabled until pio {
+proc max2ter enabled {
     during travel
     require presentation == Maxxon
     require lens.holder == Maxxon
@@ -3690,7 +3690,7 @@ proc max2ter enabled until pio {
     end presentation Maxxon
 }
 
-proc pio enabled until glu1 {
+proc pio enabled {
     require cred.holder == blood
     require lens.holder == Maxxon
 } then {
@@ -3698,7 +3698,7 @@ proc pio enabled until glu1 {
     Yoko.current_location = Trashlando
 }
 
-proc glu1 enabled until glu2 {
+proc glu1 enabled {
     during travel
     require state[0x130A] == 0x0000
     require arche.current_location == Ekatomb
@@ -3740,7 +3740,7 @@ proc glu1 enabled until glu2 {
     }
 }
 
-proc glu2 enabled until ERA {
+proc glu2 enabled {
     during travel
     require state[0x130A] == 0x0001
     require arche.current_location == Ekatomb
@@ -3770,7 +3770,7 @@ proc glu2 enabled until ERA {
     end presentation Daddy_Gluxx
 }
 
-proc ERA disabled until oto1 {
+proc ERA disabled {
     when {
         require Erazor.in_play
     } then {
@@ -3779,7 +3779,7 @@ proc ERA disabled until oto1 {
     }
 }
 
-proc oto1 enabled until oto2 {
+proc oto1 enabled {
     during travel
     require arche.current_location == Erazor
     require presentation == Otto_Von_Smile
@@ -3832,7 +3832,7 @@ proc oto1 enabled until oto2 {
     }
 }
 
-proc oto2 enabled until oto3 {
+proc oto2 enabled {
     during travel
     require arche.current_location == Erazor
     require presentation == Otto_Von_Smile
@@ -3865,7 +3865,7 @@ proc oto2 enabled until oto3 {
     end presentation Otto_Von_Smile
 }
 
-proc oto3 enabled until oto4 {
+proc oto3 enabled {
     during travel
     require arche.current_location == Erazor
     require presentation == Otto_Von_Smile
@@ -3894,7 +3894,7 @@ proc oto3 enabled until oto4 {
     end presentation Otto_Von_Smile
 }
 
-proc oto4 enabled until oto5 {
+proc oto4 enabled {
     during travel
     require arche.current_location == Erazor
     require presentation == Otto_Von_Smile
@@ -3928,13 +3928,13 @@ proc oto4 enabled until oto5 {
     end presentation Otto_Von_Smile
 }
 
-proc oto5 disabled until oto6 {
+proc oto5 disabled {
     require state[0x130E] == 0x0001
 } then {
     state[0x1274] = 0x0001
 }
 
-proc oto6 enabled until prep {
+proc oto6 enabled {
     during travel
     require arche.current_location == Erazor
     require presentation == Otto_Von_Smile
@@ -3949,7 +3949,7 @@ proc oto6 enabled until prep {
     end presentation Otto_Von_Smile
 }
 
-proc prep enabled until pub1 {
+proc prep enabled {
     require Morning_Oil.encounter_count == 0x0001
 } then {
     timer[7] = 20
@@ -3957,7 +3957,7 @@ proc prep enabled until pub1 {
     prep.enabled = false
 }
 
-proc pub1 enabled until pub2 {
+proc pub1 enabled {
     require timer[7] == 0
 } then {
     Bug_Deluxe.in_play = true
@@ -3967,7 +3967,7 @@ proc pub1 enabled until pub2 {
     pub1.enabled = false
 }
 
-proc pub2 disabled until monop1 {
+proc pub2 disabled {
     during bridge
     require presentation == Bug_Deluxe
 } then {
@@ -3983,7 +3983,7 @@ proc pub2 disabled until monop1 {
     end presentation Bug_Deluxe
 }
 
-proc monop1 enabled until monop2 {
+proc monop1 enabled {
     require arche.current_location == Venusia
     require presentation == Bug_Deluxe
 } then {
@@ -4007,7 +4007,7 @@ proc monop1 enabled until monop2 {
     }
 }
 
-proc monop2 disabled until finscr1 {
+proc monop2 disabled {
     require arche.current_location == Venusia
     during travel
     require presentation == Bug_Deluxe
@@ -4066,7 +4066,7 @@ proc monop2 disabled until finscr1 {
     }
 }
 
-proc finscr1 enabled until scrapp {
+proc finscr1 enabled {
     require Kortex.in_play using alternate_encoding
     require state[0x12FC] == 0x0006
     require lens.holder == Maxxon
@@ -4078,7 +4078,7 @@ proc finscr1 enabled until scrapp {
     scrapp.enabled = true
 }
 
-proc scrapp disabled until block_9881 {
+proc scrapp disabled {
     during bridge
     require presentation == Scruter_K
 } then {

@@ -352,8 +352,16 @@ struct OpenWhen<'a> {
 #[derive(Clone, Debug, Eq, PartialEq)]
 enum ModernBlock {
     Procedure(String),
-    ProcedureCondition(String),
-    ProcedureBody(String),
+    ProcedureCondition {
+        name: String,
+        end_target: Option<String>,
+        target_emitted: bool,
+    },
+    ProcedureBody {
+        name: String,
+        end_target: Option<String>,
+        target_emitted: bool,
+    },
     WhenCondition {
         false_target: String,
         end_target: String,
@@ -1203,8 +1211,16 @@ fn normalize_modern_braced_statement(
             bail!("line {line_number}: '}} then {{' does not close a condition block");
         };
         match block {
-            ModernBlock::ProcedureCondition(name) => {
-                blocks.push(ModernBlock::ProcedureBody(name));
+            ModernBlock::ProcedureCondition {
+                name,
+                end_target,
+                target_emitted,
+            } => {
+                blocks.push(ModernBlock::ProcedureBody {
+                    name,
+                    end_target,
+                    target_emitted,
+                });
             }
             ModernBlock::WhenCondition {
                 false_target,
@@ -1240,7 +1256,22 @@ fn normalize_modern_braced_statement(
         };
         return match block {
             ModernBlock::Procedure(name) => Ok(Some(format!("END_PROCEDURE {name}"))),
-            ModernBlock::ProcedureBody(name) => Ok(Some(format!("END_PROCEDURE {name}"))),
+            ModernBlock::ProcedureBody {
+                name,
+                end_target,
+                target_emitted,
+            }
+            | ModernBlock::ProcedureCondition {
+                name,
+                end_target,
+                target_emitted,
+            } => {
+                let derived_target = end_target
+                    .filter(|_| !target_emitted)
+                    .map(|target| format!("LABEL {target}\n"))
+                    .unwrap_or_default();
+                Ok(Some(format!("{derived_target}END_PROCEDURE {name}")))
+            }
             ModernBlock::WhenBody { false_target, .. } => Ok(Some(format!(
                 "LABEL {false_target}\nEND_WHEN {false_target}"
             ))),
@@ -1249,14 +1280,37 @@ fn normalize_modern_braced_statement(
             }
             ModernBlock::Selector(name) => Ok(Some(format!("END_SELECTOR_LIST {name}"))),
             ModernBlock::Case => Ok(None),
-            ModernBlock::ProcedureCondition(name) => {
-                Ok(Some(format!("END_PROCEDURE {name}")))
-            }
             ModernBlock::WhenCondition { .. } => {
                 bail!("line {line_number}: when closes without a following then block")
             }
         };
     }
+
+    if code == "halt" {
+        let statement = normalize_modern_statement(code, line_number, lexicon)?;
+        for block in blocks.iter_mut().rev() {
+            let (end_target, target_emitted) = match block {
+                ModernBlock::ProcedureCondition {
+                    end_target,
+                    target_emitted,
+                    ..
+                }
+                | ModernBlock::ProcedureBody {
+                    end_target,
+                    target_emitted,
+                    ..
+                } => (end_target, target_emitted),
+                _ => continue,
+            };
+            if let Some(target) = end_target.as_ref().filter(|_| !*target_emitted) {
+                *target_emitted = true;
+                return Ok(Some(format!("LABEL {target}\n{statement}")));
+            }
+            break;
+        }
+        return Ok(Some(statement));
+    }
+
     if let Some(opener) = code.strip_suffix('{') {
         let opener = opener.trim_end();
         let fields = split_source_fields(opener, line_number)?;
@@ -1269,6 +1323,30 @@ fn normalize_modern_braced_statement(
                 ModernBlock::Procedure(fields[1].to_string()),
                 normalize_modern_statement(opener, line_number, lexicon)?,
             ),
+            "proc" if fields.len() == 3 => {
+                validate_identifier(fields[1], line_number)?;
+                let flags = match fields[2] {
+                    "enabled" => "01",
+                    "disabled" => "00",
+                    state => bail!(
+                        "line {line_number}: procedure state must be enabled or disabled, found {state:?}"
+                    ),
+                };
+                let id = *next_control_block;
+                *next_control_block += 1;
+                let end_target = format!("__proc_{id}_end");
+                (
+                    ModernBlock::ProcedureCondition {
+                        name: fields[1].to_string(),
+                        end_target: Some(end_target.clone()),
+                        target_emitted: false,
+                    },
+                    format!(
+                        "PROCEDURE {}\nCONDITIONAL_BLOCK {flags} {end_target}",
+                        fields[1]
+                    ),
+                )
+            }
             "proc" if fields.len() == 5 && fields[3] == "until" => {
                 validate_identifier(fields[1], line_number)?;
                 let flags = match fields[2] {
@@ -1279,7 +1357,11 @@ fn normalize_modern_braced_statement(
                     ),
                 };
                 (
-                    ModernBlock::ProcedureCondition(fields[1].to_string()),
+                    ModernBlock::ProcedureCondition {
+                        name: fields[1].to_string(),
+                        end_target: None,
+                        target_emitted: false,
+                    },
                     format!(
                         "PROCEDURE {}\nCONDITIONAL_BLOCK {flags} {}",
                         fields[1],
@@ -2850,11 +2932,69 @@ fn canonical_dictionary_operand_offset(
     u16::from_str_radix(value, 16).ok()
 }
 
+#[derive(Debug, Default)]
+struct ModernProcedureLayout {
+    labels: HashMap<String, usize>,
+    natural_targets: HashMap<String, usize>,
+}
+
+fn modern_procedure_layout(source: &str) -> Result<ModernProcedureLayout> {
+    let mut layout = ModernProcedureLayout::default();
+    let mut procedures = Vec::new();
+    let mut halts = Vec::new();
+
+    for (line_index, original_line) in source.lines().enumerate() {
+        let line_number = line_index + 1;
+        let trimmed = original_line.trim();
+        if trimmed.is_empty() || trimmed.starts_with(';') {
+            continue;
+        }
+        let code = code_before_comment(trimmed, line_number)?.trim();
+        let Some((offset_text, statement)) = code.split_once(':') else {
+            continue;
+        };
+        let offset = parse_hex_usize(offset_text.trim(), line_number, "generated offset")?;
+        let fields = split_source_fields(statement.trim(), line_number)?;
+        let Some(name) = fields.first().copied() else {
+            continue;
+        };
+        match name {
+            "LABEL" | "PROCEDURE" if fields.len() == 2 => {
+                layout.labels.insert(fields[1].to_string(), offset);
+                if name == "PROCEDURE" {
+                    procedures.push((fields[1].to_string(), offset));
+                }
+            }
+            "END" => halts.push(offset),
+            _ => {}
+        }
+    }
+
+    for (index, (name, _)) in procedures.iter().enumerate() {
+        let target = procedures
+            .get(index + 1)
+            .map(|(_, offset)| *offset)
+            .or_else(|| halts.last().copied());
+        if let Some(target) = target {
+            layout.natural_targets.insert(name.clone(), target);
+        }
+    }
+    Ok(layout)
+}
+
+fn generated_address_offset(value: &str, labels: &HashMap<String, usize>) -> Option<usize> {
+    labels
+        .get(value)
+        .copied()
+        .or_else(|| usize::from_str_radix(value, 16).ok())
+}
+
 fn format_modern_source(
     source: &str,
     dictionary: &HashMap<u16, String>,
 ) -> Result<String> {
     let lexicon = DictionaryPhraseLexicon::new(dictionary);
+    let procedure_layout = modern_procedure_layout(source)?;
     let mut output = String::new();
     let mut indent = 0usize;
     let mut selector_case_open = false;
@@ -2910,12 +3050,21 @@ fn format_modern_source(
                 && fields.len() == 3
                 && matches!(fields[1], "00" | "01")
             {
-                writeln!(
-                    output,
-                    "proc {procedure} {} until {} {{",
-                    if fields[1] == "01" { "enabled" } else { "disabled" },
-                    canonical_operand_to_modern(fields[2])
-                )?;
+                let state = if fields[1] == "01" {
+                    "enabled"
+                } else {
+                    "disabled"
+                };
+                let target = generated_address_offset(fields[2], &procedure_layout.labels);
+                if target == procedure_layout.natural_targets.get(&procedure).copied() {
+                    writeln!(output, "proc {procedure} {state} {{")?;
+                } else {
+                    writeln!(
+                        output,
+                        "proc {procedure} {state} until {} {{",
+                        canonical_operand_to_modern(fields[2])
+                    )?;
+                }
                 indent += 1;
                 procedure_condition_open = true;
                 query_mode = true;
@@ -6519,11 +6668,8 @@ mod tests {
             decompile_with_symbols(ImageKind::Cod, &image, &HashMap::new(), &symbols).unwrap();
         assert_eq!(decompiled.procedures, 1);
         assert_eq!(decompiled.symbolic_labels, 2);
-        assert!(
-            decompiled
-                .source
-                .contains("proc entry enabled until block_0004 {")
-        );
+        assert!(decompiled.source.contains("proc entry enabled {"));
+        assert!(!decompiled.source.contains(" until "));
         assert!(decompiled.source.contains("    block_0004:"));
         assert!(decompiled.source.trim_end().ends_with('}'));
         assert!(!decompiled.source.lines().any(|line| {
@@ -6532,6 +6678,35 @@ mod tests {
                 prefix.ends_with(':') && prefix[..8].bytes().all(|byte| byte.is_ascii_hexdigit())
             })
         }));
+        assert_eq!(compile(&decompiled.source).unwrap(), image);
+    }
+
+    #[test]
+    fn nonstructural_procedure_target_keeps_the_explicit_fallback() {
+        let image = vec![
+            vm::OP_COND_JUMP,
+            0x01,
+            0x05,
+            0x00,
+            vm::OP_POP,
+            vm::OP_COND_STATE_ARRAY,
+            0x02,
+            0x34,
+            0x12,
+            0xFF,
+        ];
+        let symbols = vec![DebSymbol {
+            name: "entry".to_string(),
+            offset: 1,
+            kind: 2,
+        }];
+        let decompiled =
+            decompile_with_symbols(ImageKind::Cod, &image, &HashMap::new(), &symbols).unwrap();
+        assert!(
+            decompiled
+                .source
+                .contains("proc entry enabled until block_0005 {")
+        );
         assert_eq!(compile(&decompiled.source).unwrap(), image);
     }
 
@@ -6560,11 +6735,8 @@ mod tests {
         }];
         let decompiled =
             decompile_with_symbols(ImageKind::Cod, &image, &HashMap::new(), &symbols).unwrap();
-        assert!(
-            decompiled
-                .source
-                .contains("proc entry enabled until block_000D {")
-        );
+        assert!(decompiled.source.contains("proc entry enabled {"));
+        assert!(!decompiled.source.contains(" until "));
         assert!(decompiled.source.contains("} then {"));
         assert!(decompiled.source.contains("entry.enabled = false"));
         assert!(decompiled.source.contains("poke_byte 0x1234 0x01"));
@@ -6798,11 +6970,15 @@ mod tests {
             assert!(!cod_source.source.contains("guard_push"));
             assert!(!cod_source.source.contains("guard_pop"));
             assert!(!cod_source.source.contains("activation "));
+            assert!(!cod_source.source.contains(" until "));
             assert!(!cod_source.source.lines().any(|line| line.trim() == "then"));
             procedure_headers += cod_source
                 .source
                 .lines()
-                .filter(|line| line.starts_with("proc ") && line.contains(" until "))
+                .filter(|line| {
+                    line.starts_with("proc ")
+                        && (line.ends_with(" enabled {") || line.ends_with(" disabled {"))
+                })
                 .count();
             else_blocks += cod_source.source.matches("} else {").count();
             assert_eq!(
@@ -6816,6 +6992,56 @@ mod tests {
         }
         assert_eq!(procedure_headers, 480);
         assert_eq!(else_blocks, 44);
+    }
+
+    #[test]
+    fn every_shipped_procedure_skip_target_is_structural() {
+        let Some(root) = game_dir() else { return };
+        let mut enabled = 0;
+        let mut disabled = 0;
+
+        for script in 1..=5 {
+            let read = |extension: &str| {
+                std::fs::read(root.join(format!("SCRIPT{script}.{extension}"))).unwrap()
+            };
+            let cod = read("COD");
+            let symbols = crate::script::parse_deb(&read("DEB"));
+            let functions = crate::script::functions_from_symbols(
+                &format!("SCRIPT{script}"),
+                &symbols,
+                cod.len(),
+            );
+            let tokens = vm::walk(&cod, 0, cod.len());
+            assert_eq!(cod.last(), Some(&0xFF));
+
+            for (index, function) in functions.iter().enumerate() {
+                let token = tokens
+                    .iter()
+                    .find(|token| token.offset() == function.offset)
+                    .unwrap_or_else(|| panic!("{} has no entry token", function.name));
+                let VmToken::ConditionalBlock { flags, target, .. } = token else {
+                    panic!("{} does not begin with A9", function.name);
+                };
+                let expected_target = functions
+                    .get(index + 1)
+                    .map(|next| next.offset)
+                    .unwrap_or(cod.len() - 1);
+                assert_eq!(
+                    usize::from(*target),
+                    expected_target,
+                    "SCRIPT{script} {} has a non-structural A9 target",
+                    function.name
+                );
+                match flags & 1 {
+                    0 => disabled += 1,
+                    1 => enabled += 1,
+                    _ => unreachable!(),
+                }
+            }
+        }
+
+        assert_eq!(enabled, 420);
+        assert_eq!(disabled, 60);
     }
 
     #[test]
