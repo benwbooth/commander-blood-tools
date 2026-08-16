@@ -260,6 +260,26 @@ The current callback recovery queue is:
 | CROOLIS | recovered `0x1b85` | `0x130b` | recovered `0x146c` | recovered `0x1727` | not referenced |
 | SCRUT | recovered `0x1c45` | `0x12f9` | recovered `0x145a` | recovered `0x171b` | not referenced |
 
+## BLOODPRG fixed-layout audit
+
+The aggregate DOS link is useful for symbol and runtime checks, but it cannot
+replace the original primary executable: BLOODPRG has ten fixed code
+segments, relocated DS/FS data, and an MZ entry contract. Audit the natural-C
+candidates against that layout before attempting an image patch:
+
+```sh
+NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
+  python3 re/tools/audit_bloodprg_layout.py \
+    --image re/bin/BLOODPRG.EXE \
+    --output-dir output/link_probe/bloodprg_fixed_layout
+```
+
+The report verifies every assembly routine hash against the supplied image,
+then records the original segment-relative span and the generated C span.
+The current image audit covers all 321 manifest candidates with no raw hash
+failures; 286 generated spans still exceed a routine or cover another fixed
+entry. It is therefore a refusal report, not a patched executable.
+
 The slot-3 entries are embedded in the recovered method blocks rather than
 being separate manifest entries. Their callback addresses come directly from
 the `mov [state+0x0e], immediate` stores in the raw overlays, which is why
