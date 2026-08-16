@@ -158,6 +158,19 @@ shared-looking state transitions inside the long method blocks), so their
 definitions still need to be recovered from the corresponding assembly; they
 are not safe candidates for dummy aliases.
 
+The current callback recovery queue is:
+
+| overlay | resume | slot-3 initial | slot-3 update | slot-2 update | slot-2 finish |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| AMER | `0x1c34` | `0x12b3` | `0x1414` | `0x1692` | `0x1aa0` |
+| CROOLIS | `0x1b85` | `0x130b` | `0x146c` | `0x1727` | not referenced |
+| SCRUT | `0x1c45` | `0x12f9` | `0x145a` | `0x171b` | not referenced |
+
+The slot-3 entries are embedded in the recovered method blocks rather than
+being separate manifest entries. Their callback addresses come directly from
+the `mov [state+0x0e], immediate` stores in the raw overlays, which is why
+the module link probe can name the missing routines precisely.
+
 Run the current MANU3 and alien gates from the repository root:
 
 ```sh
