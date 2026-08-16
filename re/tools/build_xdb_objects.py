@@ -13,7 +13,7 @@ import sys
 
 
 ROOT = Path(__file__).resolve().parents[2]
-MANIFEST = ROOT / "re" / "source" / "xdb" / "candidates" / "manifest.tsv"
+DEFAULT_MANIFEST = ROOT / "re" / "source" / "xdb" / "candidates" / "manifest.tsv"
 DEFAULT_OBJECT_DIR = ROOT / "output" / "xdb_objects"
 DEFAULT_FLAGS = ("-q", "-c", "-3", "-ox", "-mm", "-zdp", "-we")
 
@@ -22,11 +22,15 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def read_candidates(module: str | None) -> list[dict[str, str]]:
-    with MANIFEST.open(newline="", encoding="ascii") as handle:
+def read_candidates(
+    manifest: Path,
+    module: str | None,
+    module_prefix: str,
+) -> list[dict[str, str]]:
+    with manifest.open(newline="", encoding="ascii") as handle:
         rows = list(csv.DictReader(handle, delimiter="\t"))
     if module is not None:
-        manifest_module = f"xdb_{module}"
+        manifest_module = f"{module_prefix}_{module}" if module_prefix else module
         rows = [
             row for row in rows if row["entry"].split(":", 1)[0] == manifest_module
         ]
@@ -40,6 +44,12 @@ def command_text(command: list[str]) -> str:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
+        "--manifest",
+        type=Path,
+        default=DEFAULT_MANIFEST,
+        help="candidate manifest to compile",
+    )
+    parser.add_argument(
         "--wcl",
         default="wcl",
         help="Open Watcom wcl executable or PATH name",
@@ -52,8 +62,16 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--module",
-        choices=("amer", "croolis", "manu3", "scrut"),
-        help="compile one XDB module instead of all four",
+        help="compile one manifest module instead of every entry",
+    )
+    parser.add_argument(
+        "--module-prefix",
+        default="xdb",
+        help="prefix used before --module in manifest entry keys; empty for BLOODPRG",
+    )
+    parser.add_argument(
+        "--output-label",
+        help="directory label for entries without a module prefix",
     )
     return parser.parse_args()
 
@@ -64,7 +82,8 @@ def main() -> int:
     if not Path(wcl).is_file() and shutil.which(wcl) is None:
         raise SystemExit(f"Open Watcom compiler not found: {args.wcl}")
 
-    rows = read_candidates(args.module)
+    manifest = args.manifest.resolve()
+    rows = read_candidates(manifest, args.module, args.module_prefix)
     if not rows:
         raise SystemExit("XDB candidate manifest selected no routines")
 
@@ -79,8 +98,10 @@ def main() -> int:
     for row in rows:
         entry = row["entry"]
         module = entry.split(":", 1)[0]
-        source = (MANIFEST.parent / row["source"]).resolve()
+        source = (manifest.parent / row["source"]).resolve()
         stem = Path(row["source"]).stem
+        entry_parts = entry.split(":", 1)
+        module = entry_parts[0] if len(entry_parts) == 2 else (args.output_label or "source")
         module_dir = object_dir / module
         module_dir.mkdir(parents=True, exist_ok=True)
         output = module_dir / f"{stem}.OBJ"

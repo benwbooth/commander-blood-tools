@@ -8,7 +8,8 @@ execution environment.
 Compile every recovered XDB routine to an Open Watcom real-mode object with:
 
 ```sh
-nix develop -c python3 re/tools/build_xdb_objects.py \
+NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
+  python3 re/tools/build_xdb_objects.py \
   --object-dir output/xdb_objects
 ```
 
@@ -18,6 +19,21 @@ not `.xdb` overlays: a loadable overlay still requires the original fixed code
 and data layout, entry offsets, segment ownership, and cross-module symbols.
 The integration gates below verify those boundaries individually while that
 linker/layout work remains unresolved.
+
+The same builder can compile the recovered BLOODPRG candidates:
+
+```sh
+NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
+  python3 re/tools/build_xdb_objects.py \
+  --manifest re/source/bloodprg/candidates/manifest.tsv \
+  --module-prefix '' \
+  --output-label bloodprg \
+  --object-dir output/bloodprg_objects
+```
+
+This creates a separate object for each manifest entry, but it is not a link
+claim. The next executable gate must supply the canonical shared-data owners,
+DOS/XMS/EMS adapters, cross-XDB calls, and the recovered startup boundary.
 
 Run the current MANU3 and alien gates from the repository root:
 
