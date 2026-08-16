@@ -141,9 +141,11 @@ typedef void XDB_NEAR xdb_alien_state_function(
 typedef xdb_alien_state_function XDB_NEAR *xdb_alien_state_callback;
 
 struct xdb_alien_biased_state {
-    xdb_u8 field_000[0x0e];
+    xdb_u16 owner_offset;
+    xdb_u8 field_002[0x0c];
     xdb_alien_state_callback callback;
-    xdb_u8 field_010[0x0a];
+    xdb_i16 field_010;
+    xdb_u8 field_012[0x08];
     xdb_i32 field_01a;
     xdb_u8 field_01e[0x14];
     xdb_i32 field_032;
@@ -700,6 +702,18 @@ void XDB_NEAR xdb_scrut_slot3_initial_update(
         xdb_alien_biased_state XDB_NEAR *state,
         xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_scrut_slot3_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_amer_slot1_wave_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_amer_slot1_finish_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_amer_slot1_camera_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_amer_slot1_motion_update(
         xdb_alien_biased_state XDB_NEAR *state,
         xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_amer_slot2_update(
