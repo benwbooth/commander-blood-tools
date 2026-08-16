@@ -97,6 +97,20 @@ would otherwise select different bytes. `choices` represents the shipped
 `0xFFFF` dialogue/concept separator. All 5,536 generated dialogue statements use
 this form and rebuild byte exactly.
 
+Compile the complete ten-image program bundle and compare it with the installed
+game:
+
+```sh
+python3 re/tools/compile_bloodscript_bundle.py \
+  --source-dir re/vm/bloodscript \
+  --output-dir output/recovered_scripts \
+  --reference-dir accuracy/cblood_install/cblood
+```
+
+This builds `cbvm` once, emits uppercase `SCRIPTn.COD` and `SCRIPTn.BAS`
+files, and writes a hash manifest. With the reference directory present, every
+generated image must match the corresponding shipped image byte-for-byte.
+
 BloodData keeps the known physical structures explicit without inventing
 unrecovered field names. DEB source has one exact 20-byte `SYMBOL` record per
 line, DIC source has one NUL-owning `STRING` entry per dictionary offset, and
