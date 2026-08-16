@@ -44,6 +44,20 @@ SHAPE_PATCHES = (
     ("manu3", "func_00017c_anim_select_entry.c", 0x017C, 4, "manu3_entry"),
 )
 
+# These handlers have both semantic/oracle coverage and an exact WCL machine
+# byte result at their original BLOODPRG file offsets.  Keep this list
+# deliberately small: an accepted C routine with a different ABI is not a
+# production patch merely because its standalone harness passes.
+BLOODPRG_FIXED_PATCH_FUNCTIONS = (
+    ("sprite_blitter_noop_5", 0x00509A, 1),
+    ("sprite_blitter_noop_6", 0x00509B, 1),
+    ("sprite_blitter_noop_7", 0x00509C, 1),
+    ("byte_parser_op_01_mark_b16", 0x007542, 7),
+    ("byte_parser_op_02_mark_b16", 0x007549, 7),
+    ("byte_parser_op_0f_mark_b16", 0x007550, 7),
+    ("byte_parser_op_04_mark_b16", 0x007557, 7),
+)
+
 
 def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
@@ -94,6 +108,11 @@ def parse_args() -> argparse.Namespace:
         help="compile and link the recovered BLOODPRG C objects into a validation executable",
     )
     parser.add_argument(
+        "--include-bloodprg-fixed-patch",
+        action="store_true",
+        help="emit a game-loadable BLOODPRG copy containing only byte-exact C patches",
+    )
+    parser.add_argument(
         "--cbvm",
         type=Path,
         help="prebuilt cbvm executable; useful when Watcom and Rust use separate shells",
@@ -139,22 +158,6 @@ def build_bloodprg_link_probe(args: argparse.Namespace, output: Path) -> dict[st
     validation_dir = output / "validation" / "bloodprg_link"
     validation_dir.mkdir(parents=True, exist_ok=True)
     object_dir = output / "bloodprg_objects"
-    run_checked(
-        [
-            sys.executable,
-            str(ROOT / "re/tools/build_xdb_objects.py"),
-            "--manifest",
-            str(ROOT / "re/source/bloodprg/candidates/manifest.tsv"),
-            "--module-prefix",
-            "",
-            "--output-label",
-            "bloodprg",
-            "--wcl",
-            args.wcl,
-            "--object-dir",
-            str(object_dir),
-        ]
-    )
 
     startup_object = validation_dir / "startup_gate.obj"
     run_checked(
@@ -314,6 +317,131 @@ def compile_sources(args: argparse.Namespace, output: Path) -> None:
             str(objects.resolve()),
         ]
     )
+
+
+def build_bloodprg_objects(args: argparse.Namespace, output: Path) -> Path:
+    object_dir = output / "bloodprg_objects"
+    run_checked(
+        [
+            sys.executable,
+            str(ROOT / "re/tools/build_xdb_objects.py"),
+            "--manifest",
+            str(ROOT / "re/source/bloodprg/candidates/manifest.tsv"),
+            "--module-prefix",
+            "",
+            "--output-label",
+            "bloodprg",
+            "--wcl",
+            args.wcl,
+            "--object-dir",
+            str(object_dir),
+        ]
+    )
+    return object_dir
+
+
+def wdis_code_bytes(wdis: str, object_path: Path, function: str) -> tuple[bytes, str]:
+    process = subprocess.run(
+        [wdis, "-p", str(object_path)],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    listing = process.stdout + process.stderr
+    if process.returncode != 0:
+        raise SystemExit(f"wdis failed for {object_path}:\n{listing}")
+    segments = re.split(r"(?=^Segment: )", listing, flags=re.MULTILINE)
+    for segment in segments:
+        if f"{function}_" not in segment:
+            continue
+        data = bytearray()
+        for line in segment.splitlines():
+            match = re.match(
+                r"\s*[0-9A-Fa-f]+\s+((?:[0-9A-Fa-f]{2}\s+)+)", line
+            )
+            if match is not None:
+                data.extend(int(value, 16) for value in match.group(1).split())
+        return bytes(data), segment
+    raise SystemExit(f"{function} was not found in {object_path}")
+
+
+def build_bloodprg_fixed_patch(
+    args: argparse.Namespace,
+    output: Path,
+    object_dir: Path,
+) -> list[dict[str, str]]:
+    manifest = ROOT / "re/source/bloodprg/candidates/manifest.tsv"
+    with manifest.open(newline="", encoding="ascii") as handle:
+        rows = {row["function"]: row for row in csv.DictReader(handle, delimiter="\t")}
+    original_path = args.cd_root / "BLOODPRG.EXE"
+    original = original_path.read_bytes()
+    validation_dir = output / "validation" / "bloodprg_fixed"
+    validation_dir.mkdir(parents=True, exist_ok=True)
+    patched = bytearray(original)
+    report_rows = ["function\toffset\tlength\tstatus\toriginal_sha256\tgenerated_sha256"]
+
+    for function, offset, length in BLOODPRG_FIXED_PATCH_FUNCTIONS:
+        row = rows.get(function)
+        if row is None:
+            raise SystemExit(f"manifest has no fixed-patch function: {function}")
+        source_stem = Path(row["source"]).stem
+        object_path = object_dir / "bloodprg" / f"{source_stem}.OBJ"
+        generated, listing = wdis_code_bytes(args.wdis, object_path, function)
+        (validation_dir / f"{source_stem}.asm").write_text(listing, encoding="ascii")
+        if len(generated) != length:
+            raise SystemExit(
+                f"{function} generated {len(generated)} bytes, expected {length}"
+            )
+        expected = original[offset : offset + length]
+        if len(expected) != length:
+            raise SystemExit(f"{function} exceeds BLOODPRG image at 0x{offset:06x}")
+        if generated != expected:
+            raise SystemExit(
+                f"{function} is not byte-identical at 0x{offset:06x}; "
+                "production patch refused"
+            )
+        patched[offset : offset + length] = generated
+        report_rows.append(
+            "\t".join(
+                (
+                    function,
+                    f"0x{offset:06x}",
+                    str(length),
+                    "byte_exact_c_patch",
+                    sha256_bytes(expected),
+                    sha256_bytes(generated),
+                )
+            )
+        )
+
+    patched_path = validation_dir / "BLOODPRG_C_PATCHED.EXE"
+    patched_path.write_bytes(patched)
+    (validation_dir / "patch.tsv").write_text(
+        "\n".join(report_rows) + "\n", encoding="ascii"
+    )
+    short_path = output / "cd" / "BPRG_C.EXE"
+    shutil.copy2(patched_path, short_path)
+    return [
+        {
+            "component": patched_path.name,
+            "source": str(patched_path.relative_to(output)),
+            "output": str(patched_path.relative_to(output)),
+            "status": "c_fixed_layout_byte_exact_patch",
+            "offset": "multiple",
+            "original_sha256": sha256(original_path),
+            "output_sha256": sha256(patched_path),
+        },
+        {
+            "component": short_path.name,
+            "source": str(patched_path.relative_to(output)),
+            "output": str(short_path.relative_to(output)),
+            "status": "c_fixed_layout_byte_exact_patch_dos_alias",
+            "offset": "multiple",
+            "original_sha256": sha256(original_path),
+            "output_sha256": sha256(short_path),
+        },
+    ]
 
 
 def read_manifest_rows() -> dict[str, dict[str, str]]:
@@ -640,12 +768,14 @@ def write_package_metadata(output: Path, records: list[dict[str, str]], cd_root:
         for record in records:
             handle.write("\t".join(record[field] for field in fields) + "\n")
     bloodprg = output / "cd" / "BLOODPRG.EXE"
-    (output / "README.txt").write_text(
+    readme = (
         "Commander Blood recovered hybrid package\n"
         "==========================================\n\n"
-        "This package uses the shipped BLOODPRG.EXE. It is not yet a fully\n"
-        "C-linked replacement: the current aggregate link still has unresolved\n"
-        "startup, shared-data, DOS/XMS/EMS, and cross-XDB symbols.\n\n"
+        "This package keeps the shipped BLOODPRG.EXE as the default launcher.\n"
+        "It also records optional C-derived validation artifacts: the aggregate\n"
+        "link uses a startup harness, and the fixed-patch copy is emitted only\n"
+        "for routines whose compiled bytes are proven identical at the original\n"
+        "fixed offsets. Neither artifact is mislabeled as a full decompilation.\n\n"
         "The generated SCRIPT1..5.COD/BAS files are compiled from re/vm/bloodscript\n"
         "and compared byte-for-byte with the installed reference. The three\n"
         "alien-overlay no-op routines are verified by wdis, while the three\n"
@@ -654,9 +784,9 @@ def write_package_metadata(output: Path, records: list[dict[str, str]], cd_root:
         "original offsets before the XDB files and BLOOD.DAT are emitted.\n"
         "package_manifest.tsv records every source verification and hash.\n\n"
         f"BLOODPRG.EXE sha256: {sha256(bloodprg)}\n"
-        f"Source CD tree: {cd_root}\n",
-        encoding="ascii",
+        f"Source CD tree: {cd_root}\n"
     )
+    (output / "README.txt").write_text(readme, encoding="ascii")
 
 
 def main() -> int:
@@ -673,13 +803,21 @@ def main() -> int:
     output.mkdir(parents=True, exist_ok=True)
     compile_sources(args, output)
     link_record = None
+    fixed_records: list[dict[str, str]] = []
+    bloodprg_objects = None
+    if args.include_bloodprg_link_probe or args.include_bloodprg_fixed_patch:
+        bloodprg_objects = build_bloodprg_objects(args, output)
     if args.include_bloodprg_link_probe:
         link_record = build_bloodprg_link_probe(args, output)
     copy_cd_tree(args.cd_root.resolve(), output / "cd")
     shutil.copy2(args.cd_root / "BLOOD.DAT", output / "cd" / "BLOOD.DAT")
+    if args.include_bloodprg_fixed_patch:
+        assert bloodprg_objects is not None
+        fixed_records = build_bloodprg_fixed_patch(args, output, bloodprg_objects)
     rows = read_manifest_rows()
     xdb_records = patch_xdb_files(args, output, rows)
     records = patch_archive(args, output, xdb_records)
+    records.extend(fixed_records)
     if link_record is not None:
         records.append(link_record)
     write_package_metadata(output, records, args.cd_root.resolve())
@@ -687,6 +825,8 @@ def main() -> int:
     print("BLOODPRG.EXE status: original_shipped_fallback")
     if link_record is not None:
         print("BLOODPRG_C_LINK.EXE status: c_aggregate_link_zero_unresolved_startup_harness")
+    if fixed_records:
+        print("BPRG_C.EXE status: c_fixed_layout_byte_exact_patch")
     print(f"recorded package components: {len(records)}")
     return 0
 
