@@ -509,6 +509,7 @@ cb_u16 CB_NEAR presentation_mode_bits_update(void); /* 0x009510 */
 void CB_FAR presentation_update_1fb2(void); /* 0x009F53 */
 
 #if defined(__WATCOMC__)
+#pragma aux vm_token_special parm [ax] [si] value [si] modify exact [si]
 #endif
 
 #endif

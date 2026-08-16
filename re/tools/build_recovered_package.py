@@ -50,6 +50,7 @@ SHAPE_PATCHES = (
 # deliberately small: an accepted C routine with a different ABI is not a
 # production patch merely because its standalone harness passes.
 BLOODPRG_FIXED_PATCH_FUNCTIONS = (
+    ("vm_token_special", 0x006293, 0x10),
     ("sprite_blitter_noop_5", 0x00509A, 1),
     ("sprite_blitter_noop_6", 0x00509B, 1),
     ("sprite_blitter_noop_7", 0x00509C, 1),
