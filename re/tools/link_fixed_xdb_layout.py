@@ -131,7 +131,10 @@ def wdis_layout(wdis: str, obj: Path, function: str) -> tuple[int, int]:
 
 
 def raw_routine_size(path: Path) -> tuple[int, str]:
-    text = path.read_text(encoding="ascii")
+    # Some recovered annotations retain UTF-8 punctuation; the machine-code
+    # metadata remains ASCII, so decode the surrounding notes without making
+    # the layout audit depend on their punctuation encoding.
+    text = path.read_text(encoding="utf-8")
     byte_count = BYTE_COUNT_RE.search(text)
     if byte_count is not None:
         return int(byte_count.group(1), 10), "byte_count"
