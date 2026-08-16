@@ -60,6 +60,11 @@ def parse_args() -> argparse.Namespace:
         help="installed game directory used for byte-exact verification",
     )
     parser.add_argument(
+        "--dictionary-dir",
+        type=Path,
+        help="directory containing SCRIPTn.DIC compiler dictionaries; defaults to --reference-dir",
+    )
+    parser.add_argument(
         "--no-reference",
         action="store_true",
         help="do not compare generated images with the installed game files",
@@ -77,6 +82,7 @@ def main() -> int:
     source_dir = args.source_dir.resolve()
     output_dir = args.output_dir.resolve()
     reference_dir = args.reference_dir.resolve()
+    dictionary_dir = args.dictionary_dir.resolve() if args.dictionary_dir else None
 
     if args.no_reference:
         reference_dir = None
@@ -87,6 +93,9 @@ def main() -> int:
             file=sys.stderr,
         )
         reference_dir = None
+
+    if dictionary_dir is None and reference_dir is not None:
+        dictionary_dir = reference_dir
 
     cbvm = args.cbvm.resolve() if args.cbvm else ROOT / "target" / "debug" / "cbvm"
     if args.cbvm is None or not cbvm.is_file():
@@ -107,7 +116,13 @@ def main() -> int:
         if not source.is_file():
             raise SystemExit(f"missing BloodScript source: {source}")
 
-        run_checked([str(cbvm), "compile-bloodscript", str(source), str(output)])
+        compile_command = [str(cbvm), "compile-bloodscript", str(source), str(output)]
+        if dictionary_dir is not None:
+            dictionary = dictionary_dir / f"SCRIPT{script}.DIC"
+            if not dictionary.is_file():
+                raise SystemExit(f"missing BloodScript dictionary: {dictionary}")
+            compile_command.append(str(dictionary))
+        run_checked(compile_command)
         generated_hash = sha256(output)
         reference_hash = "-"
         status = "generated"
