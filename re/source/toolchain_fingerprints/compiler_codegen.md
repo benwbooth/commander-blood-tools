@@ -79,6 +79,7 @@ body byte-for-byte or differ only where the linker supplies recovered symbols:
 | --- | --- | --- |
 | `0x00509A`, `0x00509B`, `0x00509C` sprite no-op callbacks | Open Watcom emits the exact one-byte `RET` for each typed callback | dispatch-table binding only |
 | `0x006293 vm_token_special` | Open Watcom emits all 9 instructions and all 16 bytes exactly | AX/SI pragma-aux declaration expresses the recovered register ABI |
+| `0x005FD8 vm_special_slot_remove` | Open Watcom emits the exact 30-byte natural-C body template | two list relocations bind `DS=SS:0x6D3E`; both shipped callers discard the original carry result, verified by the real attract-sequence capture |
 | `0x008713 nav_choice_handler_0` | Turbo C emits the exact 25-byte LEDATA shape | five linker fixups bind the recovered DS globals |
 | `0x009F53 presentation_update_1fb2` | Turbo C emits the exact 45-byte LEDATA shape | seven linker fixups plus the minimal six-instruction register-preservation envelope |
 | `0x00A2DD presentation_queue_finish` | Turbo C emits the exact 21-byte LEDATA shape | four linker fixups bind two globals and the near callee |

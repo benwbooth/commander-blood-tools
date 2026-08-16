@@ -68,6 +68,27 @@ BLOODPRG_RELOCATION_MASKED_PATCH_FUNCTIONS = (
     ("queue_d8c_enqueue", 0x00A734, 0x0A, ((8, 0xF8, 0xC3),)),
 )
 
+# This natural C replacement has a different but caller-safe return encoding:
+# the original publishes carry, while both shipped callers discard flags and
+# AX immediately after the call.  The generated body is fixed-size and its two
+# data-address relocations are bound to the original SS=DS list at 0x6D3E.
+# Keep both byte strings here so a compiler/toolchain change cannot silently
+# widen this behavioral exception.
+BLOODPRG_SEMANTIC_PATCH_FUNCTIONS = (
+    (
+        "vm_special_slot_remove",
+        0x005FD8,
+        bytes.fromhex(
+            "53 BB 00 00 3B 07 74 0D 83 C3 02 81 FB 20 00 "
+            "75 F3 31 C0 5B C3 C7 07 00 00 B8 01 00 5B C3"
+        ),
+        bytes.fromhex(
+            "53 BB 3E 6D 3B 07 74 0D 83 C3 02 81 FB 5E 6D "
+            "75 F3 31 C0 5B C3 C7 07 00 00 B8 01 00 5B C3"
+        ),
+    ),
+)
+
 # Turbo C 2.01 reproduces these bodies exactly; only OMF relocation words are
 # zero in the standalone object.  They are enabled only when an archived
 # Turbo C tree is explicitly supplied to the package builder.
@@ -520,6 +541,38 @@ def build_bloodprg_fixed_patch(
                     patch_status,
                     sha256_bytes(expected),
                     sha256_bytes(generated),
+                )
+            )
+        )
+
+    for function, offset, generated_template, replacement in (
+        BLOODPRG_SEMANTIC_PATCH_FUNCTIONS
+    ):
+        row = rows.get(function)
+        if row is None:
+            raise SystemExit(f"manifest has no semantic-patch function: {function}")
+        source_stem = Path(row["source"]).stem
+        object_path = object_dir / "bloodprg" / f"{source_stem}.OBJ"
+        generated, listing = wdis_code_bytes(args.wdis, object_path, function)
+        (validation_dir / f"{source_stem}.asm").write_text(listing, encoding="ascii")
+        if generated != generated_template:
+            raise SystemExit(
+                f"{function} generated an unapproved semantic-patch body; "
+                "production patch refused"
+            )
+        expected = original[offset : offset + len(replacement)]
+        if len(expected) != len(replacement):
+            raise SystemExit(f"{function} exceeds BLOODPRG image at 0x{offset:06x}")
+        patched[offset : offset + len(replacement)] = replacement
+        report_rows.append(
+            "\t".join(
+                (
+                    function,
+                    f"0x{offset:06x}",
+                    str(len(replacement)),
+                    "semantic_c_patch_verified_runtime",
+                    sha256_bytes(expected),
+                    sha256_bytes(replacement),
                 )
             )
         )
