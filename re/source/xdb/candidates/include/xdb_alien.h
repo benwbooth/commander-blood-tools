@@ -364,7 +364,9 @@ typedef union xdb_alien_palette_cycle {
 } xdb_alien_palette_cycle;
 
 typedef struct xdb_alien_state {
-    xdb_u8 field_000[0x0b0];
+    xdb_u8 field_000[0x0ac];
+    xdb_i16 field_0ac;
+    xdb_i16 field_0ae;
     xdb_i16 field_0b0;
 } xdb_alien_state;
 
@@ -699,6 +701,9 @@ void XDB_FAR xdb_scrut_api_entry(
         xdb_u16 code_segment);
 
 void XDB_NEAR xdb_amer_resume_1c34(
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_amer_slot3_resume_callback(
+        xdb_alien_biased_state XDB_NEAR *state,
         xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_croolis_resume_1b85(
         xdb_alien_method_context XDB_NEAR *context);
