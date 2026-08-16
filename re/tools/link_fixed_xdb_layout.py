@@ -35,6 +35,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--owner-object", type=Path, required=True)
     parser.add_argument("--raw-xdb", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument(
+        "--audit-only",
+        action="store_true",
+        help="compile all candidates and report independent footprint conflicts without linking",
+    )
     parser.add_argument("--library", action="append", default=["clibh", "doslfnh"])
     return parser.parse_args()
 
@@ -140,6 +145,89 @@ def mz_image(path: Path) -> bytes:
     return data[header:total]
 
 
+def write_placements(path: Path, placements: list[dict[str, str | int]]) -> None:
+    with path.open("w", encoding="ascii", newline="") as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=(
+                "function",
+                "target",
+                "generated_start",
+                "public_offset",
+                "generated_end",
+                "original_size",
+                "status",
+            ),
+            delimiter="\t",
+            lineterminator="\n",
+        )
+        writer.writeheader()
+        for placement in placements:
+            writer.writerow(
+                {
+                    key: f"0x{value:04x}" if isinstance(value, int) else value
+                    for key, value in placement.items()
+                }
+            )
+
+
+def audit_candidates(
+    args: argparse.Namespace,
+    wcl: str,
+    wdis: str,
+    selected: list[dict[str, str]],
+    work: Path,
+    output: Path,
+    raw_size: int,
+) -> int:
+    targets = [int(row["entry"].split(":", 1)[1], 16) for row in selected]
+    placements: list[dict[str, str | int]] = []
+    failures = 0
+    for row, target in zip(selected, targets):
+        source = (args.manifest.resolve().parent / row["source"]).resolve()
+        try:
+            obj = compile_wrapper(wcl, source, work)
+            code_size, public_offset = wdis_layout(wdis, obj, row["function"])
+        except SystemExit as error:
+            print(str(error))
+            failures += 1
+            continue
+        start = target - public_offset
+        end = start + code_size
+        covered = [
+            f"0x{other:04x}"
+            for other in targets
+            if other != target and start <= other < end
+        ]
+        status = "ok"
+        if start < 0:
+            status = "negative_start"
+        elif start < target:
+            status = "helper_before_entry"
+        if covered:
+            status = "covers_fixed_entry:" + ",".join(covered)
+        if end > raw_size:
+            status = "past_xdb:" + status
+        placements.append(
+            {
+                "function": row["function"],
+                "target": target,
+                "generated_start": start,
+                "public_offset": public_offset,
+                "generated_end": end,
+                "original_size": raw_size,
+                "status": status,
+            }
+        )
+    output.mkdir(parents=True, exist_ok=True)
+    write_placements(output / "placement.tsv", placements)
+    conflicts = [row for row in placements if row["status"] != "ok"]
+    print(f"audited {len(placements)}/{len(selected)} candidates")
+    print(f"placement audit: {output / 'placement.tsv'}")
+    print(f"footprint conflicts: {len(conflicts)}")
+    return 1 if failures or conflicts else 0
+
+
 def main() -> int:
     args = parse_args()
     wcl = tool(args.wcl)
@@ -151,11 +239,15 @@ def main() -> int:
     work = output / "work"
     work.mkdir(parents=True, exist_ok=True)
 
+    selected = rows(args.manifest.resolve(), args.module)
+    if args.audit_only:
+        return audit_candidates(args, wcl, wdis, selected, work, output, len(raw))
+
     placements: list[dict[str, str | int]] = []
     objects: list[Path] = []
     current = 0
     anchor_index = 0
-    for row in rows(args.manifest.resolve(), args.module):
+    for row in selected:
         source = (args.manifest.resolve().parent / row["source"]).resolve()
         function = row["function"]
         target = int(row["entry"].split(":", 1)[1], 16)
@@ -199,22 +291,13 @@ def main() -> int:
                 "generated_start": start,
                 "public_offset": public_offset,
                 "generated_end": current,
-                "original_next": len(raw),
+                "original_size": len(raw),
                 "status": "placed" if start <= target < current else "invalid",
             }
         )
 
     output.mkdir(parents=True, exist_ok=True)
-    with (output / "placement.tsv").open("w", encoding="ascii", newline="") as handle:
-        writer = csv.DictWriter(
-            handle,
-            fieldnames=("function", "target", "generated_start", "public_offset", "generated_end", "original_next", "status"),
-            delimiter="\t",
-            lineterminator="\n",
-        )
-        writer.writeheader()
-        for placement in placements:
-            writer.writerow({key: f"0x{value:04x}" if isinstance(value, int) else value for key, value in placement.items()})
+    write_placements(output / "placement.tsv", placements)
 
     executable = output / "BLOODPRG_FIXED_LAYOUT_PROBE.EXE"
     map_file = output / "link.map"

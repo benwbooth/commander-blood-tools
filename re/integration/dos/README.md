@@ -221,6 +221,11 @@ intentional: helper code emitted before a public entry, or a candidate that
 ends before the raw routine's true control-flow boundary, must be recovered
 and placed explicitly before any linked output can replace an XDB.
 
+Use `--audit-only` to compile every candidate and report all independent
+footprint conflicts without attempting the link. The current alien audit
+exposes the same first conflict in each module: the natural-C API entry grows
+to `0xbf`, while the original next entry is fixed at `0xa3`.
+
 The current callback recovery queue is:
 
 | overlay | resume | slot-3 initial | slot-3 update | slot-2 update | slot-2 finish |
