@@ -90,11 +90,12 @@ dummy definitions or treats an unresolved link as a runnable game binary.
 ## Recovered hybrid package
 
 The current full-package gate is a deliberately explicit hybrid. It compiles
-the BloodScript sources, compiles every XDB C candidate, verifies the three
+the BloodScript sources, compiles every XDB C candidate, verifies the four
 one-byte no-op candidates with `wdis`, and links small real-mode DOS probes for
 the three mouse-position routines and the MANU3 entry. Those probes compare
 the generated instruction shapes against the original fixed overlay offsets.
-The builder then patches those fixed offsets in the three alien overlays and
+The builder then emits those generated bodies at the fixed offsets in the four
+overlays, restoring only the explicitly approved relocation words, and
 rewrites the same-size XDB resources inside `BLOOD.DAT`. The generated
 `SCRIPT1..5.COD/BAS` files are compared byte-for-byte and copied to the CD
 root. `BLOODPRG.EXE` remains the shipped executable until its startup,

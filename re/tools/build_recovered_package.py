@@ -730,15 +730,17 @@ def verify_shape_patch(
     if len(expected) != length:
         raise SystemExit(f"fixed overlay routine exceeds {source}: 0x{offset:04x}")
     ignored = {(2, 4), (6, 8)} if kind == "mouse_position" else set()
+    replacement = bytearray(generated)
     for index, (actual, reference) in enumerate(zip(generated, expected)):
         if any(start <= index < end for start, end in ignored):
+            replacement[index] = reference
             continue
         if actual != reference:
             raise SystemExit(
                 f"C shape mismatch for {source} at byte {index}: "
                 f"generated 0x{actual:02x}, expected 0x{reference:02x}"
             )
-    return expected
+    return bytes(replacement)
 
 
 def patch_xdb_files(
@@ -750,6 +752,14 @@ def patch_xdb_files(
     validation_dir = output / "validation"
     object_dir = output / "xdb_objects"
     records: list[dict[str, str]] = []
+    for module in ("amer", "croolis", "manu3", "scrut"):
+        original_path = args.xdb_dir / f"{module}.xdb"
+        if not original_path.is_file():
+            raise SystemExit(f"missing source overlay: {original_path}")
+        destination = xdb_output / f"{module}.xdb"
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(original_path, destination)
+
     for module, source_name, offset in NOOP_PATCHES:
         source = XDB_MANIFEST.parent / module / source_name
         row = rows.get(f"{module}/{source_name}")
@@ -765,7 +775,7 @@ def patch_xdb_files(
             raise SystemExit(
                 f"fixed RET invariant failed for {original_path} at 0x{offset:04x}"
             )
-        patched = bytearray(original)
+        patched = bytearray((xdb_output / f"{module}.xdb").read_bytes())
         patched[offset] = 0xC3
         destination = xdb_output / f"{module}.xdb"
         destination.parent.mkdir(parents=True, exist_ok=True)
@@ -794,7 +804,7 @@ def patch_xdb_files(
         replacement = verify_shape_patch(
             args, output, source, original, offset, length, kind
         )
-        patched = bytearray(original)
+        patched = bytearray((xdb_output / f"{module}.xdb").read_bytes())
         patched[offset : offset + length] = replacement
         destination = xdb_output / f"{module}.xdb"
         destination.parent.mkdir(parents=True, exist_ok=True)
@@ -812,22 +822,6 @@ def patch_xdb_files(
             }
         )
 
-    manu3 = args.xdb_dir / "manu3.xdb"
-    if not manu3.is_file():
-        raise SystemExit(f"missing source overlay: {manu3}")
-    manu3_output = xdb_output / "manu3.xdb"
-    manu3_output.write_bytes(manu3.read_bytes())
-    records.append(
-        {
-            "component": "manu3.xdb",
-            "source": metadata_path(manu3),
-            "output": str(manu3_output.relative_to(output)),
-            "status": "original_overlay_no_c_patch",
-            "offset": "-",
-            "original_sha256": sha256(manu3),
-            "output_sha256": sha256(manu3_output),
-        }
-    )
     return records
 
 
@@ -937,14 +931,15 @@ def write_package_metadata(output: Path, records: list[dict[str, str]], cd_root:
         "This package keeps the shipped BLOODPRG.EXE as the default launcher.\n"
         "It also records optional C-derived validation artifacts: the aggregate\n"
         "link uses a startup harness, and the fixed-patch copy is emitted only\n"
-        "for routines whose compiled bytes are proven identical at the original\n"
+        "for routines whose compiled bytes are proven compatible at the original\n"
         "fixed offsets. Neither artifact is mislabeled as a full decompilation.\n\n"
         "The generated SCRIPT1..5.COD/BAS files are compiled from re/vm/bloodscript\n"
-        "and compared byte-for-byte with the installed reference. The three\n"
+        "and compared byte-for-byte with the installed reference. The four\n"
         "alien-overlay no-op routines are verified by wdis, while the three\n"
         "mouse-position routines and MANU3 entry are linked in small DOS shape\n"
         "probes. Their fixed-layout machine-code shapes are compared against the\n"
-        "original offsets before the XDB files and BLOOD.DAT are emitted.\n"
+        "original offsets, with only approved relocation words restored, before\n"
+        "the XDB files and BLOOD.DAT are emitted.\n"
         "package_manifest.tsv records every source verification and hash.\n\n"
         f"BLOODPRG.EXE sha256: {sha256(bloodprg)}\n"
         f"Source CD tree: {cd_root}\n"
