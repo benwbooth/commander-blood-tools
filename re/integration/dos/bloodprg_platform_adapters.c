@@ -1,5 +1,6 @@
 #include <dos.h>
 
+#include "../../source/bloodprg/candidates/include/bloodprg_audio.h"
 #include "../../source/bloodprg/candidates/include/bloodprg_ems.h"
 #include "../../source/bloodprg/candidates/include/bloodprg_graphics.h"
 #include "../../source/bloodprg/candidates/include/bloodprg_resource.h"
@@ -203,4 +204,88 @@ void CB_FAR small_text_render_far(
         cb_u8 color)
 {
     small_text_render((const cb_u8 CB_NEAR *)text, x, y, color);
+}
+
+/* These six calls cross the two runtime service boundaries that are not
+ * functions in BLOODPRG.EXE: the loaded sound driver and HIMEM.SYS. The
+ * compiler pragmas keep the natural C-facing wrappers while preserving the
+ * original register-level service contracts. */
+#if defined(__WATCOMC__)
+#pragma aux cb_platform_xms_move = \
+        "mov ah,0bh" \
+        "call dword ptr xms_driver_entry" \
+        parm [si] modify exact [ax bx cx dx]
+#pragma aux cb_platform_xms_release = \
+        "mov ah,0ah" \
+        "call dword ptr xms_driver_entry" \
+        parm [dx] modify exact [ax bx cx dx]
+#pragma aux cb_platform_xms_allocate = \
+        "mov ah,09h" \
+        "call dword ptr xms_driver_entry" \
+        "xor dh,dh" \
+        "or bl,bl" \
+        "jz short cb_xms_allocate_ok" \
+        "inc dh" \
+        "cb_xms_allocate_ok:" \
+        parm [dx] value [dx ax] modify exact [ax bx cx dx]
+#pragma aux cb_platform_sound_stream = \
+        "call dword ptr snd_driver_entries[8]" \
+        parm [ax] [si] [es di] modify exact [ax bx cx dx si di]
+#pragma aux cb_platform_sound_clip = \
+        "call dword ptr snd_driver_entries[32]" \
+        parm [ax] [si] modify exact [ax bx cx dx si di]
+#endif
+
+static void cb_platform_xms_move(
+        volatile bloodprg_xms_move_request CB_GAME_DATA *request);
+static void cb_platform_xms_release(cb_u16 handle);
+static cb_u32 cb_platform_xms_allocate(cb_u16 kilobytes);
+static void cb_platform_sound_stream(
+        cb_u16 command,
+        volatile bloodprg_snd_stream_buffer CB_GAME_DATA *buffer,
+        volatile cb_u8 CB_FAR *cursor);
+static void cb_platform_sound_clip(
+        cb_u16 command,
+        volatile bloodprg_snd_clip_descriptor CB_GAME_DATA *clip);
+
+void CB_NEAR cb_xms_move(
+        volatile bloodprg_xms_move_request CB_GAME_DATA *request)
+{
+    cb_platform_xms_move(request);
+}
+
+void CB_NEAR cb_xms_release(cb_u16 handle)
+{
+    cb_platform_xms_release(handle);
+}
+
+int CB_NEAR cb_xms_allocate_kb(cb_u16 kilobytes, cb_u16 *handle)
+{
+    cb_u32 result = cb_platform_xms_allocate(kilobytes);
+
+    *handle = (cb_u16)result;
+    return (cb_u16)(result >> 16) == 0u;
+}
+
+void CB_NEAR cb_snd_stream_service(
+        cb_u16 command,
+        volatile bloodprg_snd_stream_buffer CB_GAME_DATA *buffer,
+        volatile cb_u8 CB_FAR *cursor)
+{
+    cb_platform_sound_stream(command, buffer, cursor);
+}
+
+void CB_NEAR cb_snd_stream_play(
+        cb_u16 command,
+        volatile bloodprg_snd_stream_buffer CB_GAME_DATA *buffer,
+        volatile cb_u8 CB_FAR *cursor)
+{
+    cb_platform_sound_stream(command, buffer, cursor);
+}
+
+void CB_NEAR cb_snd_clip_play(
+        cb_u16 command,
+        volatile bloodprg_snd_clip_descriptor CB_GAME_DATA *clip)
+{
+    cb_platform_sound_clip(command, clip);
 }

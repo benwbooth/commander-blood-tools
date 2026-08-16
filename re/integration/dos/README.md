@@ -135,12 +135,18 @@ python3 re/tools/bloodprg_data_layout_probe.py \
 The default bases are CS/file `0x600`, GS/DS/file `0xD420`, and FS/file
 `0xC1F0`; override them when analyzing another executable revision. The
 byte-backed output remains a layout owner/probe because unknown declarations,
-startup relocation, and runtime segment ownership are still unresolved. On
-the published object set it classified 718 of
-875 unresolved symbols and reduced the measured frontier to 157. The
-remaining symbols must be supplied by their real XDB module data segments,
-DOS/XMS/EMS/audio services, or verified ABI thunks; they must not be resolved
-by copying this probe into a production executable.
+startup relocation, and runtime segment ownership are still unresolved. In a
+fresh BLOODPRG-only build, 322 current candidate objects produced 724
+unresolved symbols before the owner was added; the byte-backed owner classified
+718 of them and reduced the link frontier to six symbols. Those six are the
+external sound-driver calls `cb_snd_clip_play`, `cb_snd_stream_play`,
+`cb_snd_stream_service`, and the XMS calls `cb_xms_allocate_kb`,
+`cb_xms_move`, `cb_xms_release`. `bloodprg_platform_adapters.c` now supplies
+the recovered register-level wrappers: sound calls enter driver table slots
+`GS:0xCDB`/`GS:0xCF3`, and XMS calls use the HIMEM entry with AH
+`09h`/`0Ah`/`0Bh`. The fresh 323-object probe links with zero unresolved
+symbols. Runtime still requires the real loaded sound driver and HIMEM entry;
+this does not make the probe a replacement `BLOODPRG.EXE`.
 
 The first production adapter slice is compiled separately and can be added to
 the probe's object directory:
