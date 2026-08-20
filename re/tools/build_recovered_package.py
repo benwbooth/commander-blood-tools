@@ -3,9 +3,9 @@
 
 The shipped BLOODPRG.EXE remains available as a fallback. An opt-in runtime
 build links every recovered BLOODPRG C routine with the recovered entrypoint,
-DOS adapters, and byte-backed data owners. The archive is patched through the
-real resource directory: generated scripts are byte-exact, and recovered XDB
-routines are emitted only through their independently verified patch paths.
+DOS adapters, and byte-backed data owners. The archive is rebuilt through its
+real resource directory: generated scripts are byte-exact, and all four XDB
+overlays are linked from the complete recovered C routine set.
 """
 
 from __future__ import annotations
@@ -29,23 +29,7 @@ DEFAULT_REFERENCE_DIR = ROOT / "accuracy" / "cblood_install" / "cblood"
 DEFAULT_OUTPUT_DIR = ROOT / "output" / "recovered_dos_package"
 XDB_MANIFEST = ROOT / "re" / "source" / "xdb" / "candidates" / "manifest.tsv"
 
-NOOP_PATCHES = (
-    ("amer", "func_001dd6_method_noop.c", 0x1DD6),
-    ("croolis", "func_001d27_method_noop.c", 0x1D27),
-    ("scrut", "func_001de7_method_noop.c", 0x1DE7),
-)
-
-# These candidates have compiler-verified instruction shapes whose only
-# relocations resolve to the original fixed overlay operands.
-SHAPE_PATCHES = (
-    ("amer", "func_000347_mouse_position_set.c", 0x0347, 14, "mouse_position"),
-    ("croolis", "func_00035c_mouse_position_set.c", 0x035C, 14, "mouse_position"),
-    ("scrut", "func_00035c_mouse_position_set.c", 0x035C, 14, "mouse_position"),
-    ("manu3", "func_00017c_anim_select_entry.c", 0x017C, 4, "manu3_entry"),
-    ("amer", "func_000b0f_method_slot_11_anchor_state.c", 0x0B0F, 16, "method_slot_11"),
-    ("croolis", "func_000b50_method_slot_11_anchor_state.c", 0x0B50, 16, "method_slot_11"),
-    ("scrut", "func_000b55_method_slot_11_anchor_state.c", 0x0B55, 16, "method_slot_11"),
-)
+XDB_MODULES = ("amer", "croolis", "manu3", "scrut")
 
 # These handlers have both semantic/oracle coverage and an exact WCL machine
 # byte result at their original BLOODPRG file offsets.  Keep this list
@@ -342,6 +326,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--wcl", default="wcl")
     parser.add_argument("--wdis", default="wdis")
     parser.add_argument("--wasm", default="wasm")
+    parser.add_argument("--wlink", default="wlink")
     parser.add_argument(
         "--include-bloodprg-runtime",
         action="store_true",
@@ -825,242 +810,69 @@ def build_bloodprg_fixed_patch(
     ]
 
 
-def read_manifest_rows() -> dict[str, dict[str, str]]:
-    with XDB_MANIFEST.open(newline="", encoding="ascii") as handle:
-        return {row["source"]: row for row in csv.DictReader(handle, delimiter="\t")}
-
-
-def verify_noop_object(
-    source: Path,
-    row: dict[str, str],
-    object_dir: Path,
-    wdis: str,
-    validation_dir: Path,
-) -> None:
-    entry_module = row["entry"].split(":", 1)[0]
-    object_path = object_dir / entry_module / f"{source.stem}.OBJ"
-    if not object_path.is_file():
-        raise SystemExit(f"missing compiled object for {source}: {object_path}")
-    process = subprocess.run(
-        [wdis, "-a", str(object_path)],
-        cwd=ROOT,
-        text=True,
-        capture_output=True,
-    )
-    if process.returncode != 0:
-        raise SystemExit(f"wdis failed for {object_path}: {process.stderr}")
-    listing = process.stdout
-    validation_dir.mkdir(parents=True, exist_ok=True)
-    (validation_dir / f"{source.stem}.asm").write_text(listing, encoding="ascii")
-    instruction_lines = re.findall(
-        r"^\s{4,}([a-z][a-z0-9]*)\b.*$", listing, flags=re.IGNORECASE | re.MULTILINE
-    )
-    if instruction_lines != ["ret"]:
-        raise SystemExit(
-            f"C replacement is not a one-instruction RET for {source}: "
-            f"{instruction_lines!r}"
-        )
-
-
-def read_mz_image(path: Path) -> bytes:
-    data = path.read_bytes()
-    if data[:2] not in (b"MZ", b"ZM"):
-        raise SystemExit(f"linked C probe is not a DOS MZ executable: {path}")
-    header_size = int.from_bytes(data[8:10], "little") * 16
-    pages = int.from_bytes(data[4:6], "little")
-    last_page = int.from_bytes(data[2:4], "little")
-    image_total = pages * 512 if last_page == 0 else (pages - 1) * 512 + last_page
-    return data[header_size:image_total]
-
-
-def verify_shape_probe(
+def build_source_xdb_files(
     args: argparse.Namespace,
     output: Path,
-    source: Path,
-    length: int,
-    kind: str,
-) -> bytes:
-    validation_dir = output / "validation" / "shape_probes"
-    validation_dir.mkdir(parents=True, exist_ok=True)
-    stem = source.stem
-    harness = validation_dir / f"{stem}_{kind}_harness.c"
-    executable = validation_dir / f"{stem}_{kind}.EXE"
-    map_file = validation_dir / f"{stem}_{kind}.map"
-    if kind == "mouse_position":
-        harness.write_text(
-            '#include "re/source/xdb/candidates/include/xdb_mouse.h"\n'
-            "volatile xdb_mouse_state xdb_alien_mouse_state;\n"
-            "int main(void) { return 0; }\n",
-            encoding="ascii",
-        )
-    elif kind == "manu3_entry":
-        harness.write_text(
-            '#include "re/source/xdb/candidates/include/xdb_manu3.h"\n'
-            "void pad(void) {}\n"
-            "void XDB_NEAR xdb_manu3_anim_select(xdb_u16 selector) "
-            "{ (void)selector; }\n"
-            "int main(void) { return 0; }\n",
-            encoding="ascii",
-        )
-    elif kind == "method_slot_11":
-        harness.write_text(
-            '#include "re/source/xdb/candidates/include/xdb_alien.h"\n'
-            "xdb_alien_cursor XDB_CODE_DATA xdb_amer_slot11_cursor;\n"
-            "xdb_alien_cursor XDB_CODE_DATA xdb_croolis_slot11_cursor;\n"
-            "xdb_alien_cursor XDB_CODE_DATA xdb_scrut_slot11_cursor;\n"
-            "int main(void) { return 0; }\n",
-            encoding="ascii",
-        )
-    else:
-        raise SystemExit(f"unknown shape probe kind: {kind}")
-    command = [
-        args.wcl,
-        "-q",
-        "-3",
-        "-ox",
-        "-mm",
-        "-zdp",
-        "-we",
-        "-i=" + str(ROOT),
-        f"-fm={map_file}",
-        f"-fe={executable}",
-        str(source),
-        str(harness),
-    ]
-    process = subprocess.run(
-        command, cwd=validation_dir, text=True, capture_output=True, check=False
-    )
-    if process.returncode != 0 or not executable.is_file():
-        diagnostics = "\n".join(
-            part for part in (process.stdout, process.stderr) if part
-        )
-        raise SystemExit(f"C shape probe failed for {source}: {diagnostics}")
-    image = read_mz_image(executable)
-    if len(image) < length:
-        raise SystemExit(f"shape probe image is shorter than {length} bytes: {executable}")
-    generated = image[:length]
-    (validation_dir / f"{stem}_{kind}.bin").write_bytes(generated)
-    return generated
-
-
-def verify_shape_patch(
-    args: argparse.Namespace,
-    output: Path,
-    source: Path,
-    original: bytes,
-    offset: int,
-    length: int,
-    kind: str,
-) -> bytes:
-    generated = verify_shape_probe(args, output, source, length, kind)
-    expected = original[offset : offset + length]
-    if len(expected) != length:
-        raise SystemExit(f"fixed overlay routine exceeds {source}: 0x{offset:04x}")
-    ignored = {(2, 4), (6, 8)} if kind == "mouse_position" else set()
-    if kind == "method_slot_11":
-        ignored = {(13, 15)}
-    replacement = bytearray(generated)
-    for index, (actual, reference) in enumerate(zip(generated, expected)):
-        if any(start <= index < end for start, end in ignored):
-            replacement[index] = reference
-            continue
-        if kind == "method_slot_11" and 6 <= index < 10:
-            continue
-        if actual != reference:
-            raise SystemExit(
-                f"C shape mismatch for {source} at byte {index}: "
-                f"generated 0x{actual:02x}, expected 0x{reference:02x}"
-            )
-    return bytes(replacement)
-
-
-def patch_xdb_files(
-    args: argparse.Namespace,
-    output: Path,
-    rows: dict[str, dict[str, str]],
 ) -> list[dict[str, str]]:
     xdb_output = output / "xdb"
-    validation_dir = output / "validation"
-    object_dir = output / "xdb_objects"
+    validation_root = output / "validation" / "source_xdb"
+    xdb_output.mkdir(parents=True, exist_ok=True)
+    validation_root.mkdir(parents=True, exist_ok=True)
     records: list[dict[str, str]] = []
-    for module in ("amer", "croolis", "manu3", "scrut"):
-        original_path = args.xdb_dir / f"{module}.xdb"
-        if not original_path.is_file():
-            raise SystemExit(f"missing source overlay: {original_path}")
-        destination = xdb_output / f"{module}.xdb"
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(original_path, destination)
 
-    for module, source_name, offset in NOOP_PATCHES:
-        source = XDB_MANIFEST.parent / module / source_name
-        row = rows.get(f"{module}/{source_name}")
-        if row is None:
-            raise SystemExit(f"manifest has no C source row: {source}")
-        verify_noop_object(source, row, object_dir, args.wdis, validation_dir)
-
-        original_path = args.xdb_dir / f"{module}.xdb"
-        if not original_path.is_file():
-            raise SystemExit(f"missing source overlay: {original_path}")
-        original = original_path.read_bytes()
-        if offset >= len(original) or original[offset] != 0xC3:
-            raise SystemExit(
-                f"fixed RET invariant failed for {original_path} at 0x{offset:04x}"
-            )
-        patched = bytearray((xdb_output / f"{module}.xdb").read_bytes())
-        patched[offset] = 0xC3
-        destination = xdb_output / f"{module}.xdb"
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        destination.write_bytes(patched)
+    for module in XDB_MODULES:
+        original = args.xdb_dir / f"{module}.xdb"
+        if not original.is_file():
+            raise SystemExit(f"missing source overlay: {original}")
+        build_dir = validation_root / module
+        if build_dir.exists():
+            shutil.rmtree(build_dir)
+        run_checked(
+            [
+                sys.executable,
+                str(ROOT / "re/tools/build_source_xdb.py"),
+                "--module",
+                module,
+                "--object-dir",
+                str(output / "xdb_objects" / f"xdb_{module}"),
+                "--raw-xdb",
+                str(original.resolve()),
+                "--output-dir",
+                str(build_dir),
+                "--wasm",
+                args.wasm,
+                "--wlink",
+                args.wlink,
+            ]
+        )
+        built = build_dir / f"{module}.xdb"
+        report = build_dir / "build.tsv"
+        if not built.is_file() or not report.is_file():
+            raise SystemExit(f"source XDB build omitted artifacts for {module}")
+        destination = xdb_output / built.name
+        shutil.copy2(built, destination)
         records.append(
             {
-                "component": f"{module}.xdb",
-                "source": metadata_path(source),
+                "component": built.name,
+                "source": metadata_path(XDB_MANIFEST.parent / module),
                 "output": str(destination.relative_to(output)),
-                "status": "c_source_fixed_offset_patch",
-                "offset": f"0x{offset:04x}",
-                "original_sha256": sha256_bytes(original),
-                "output_sha256": sha256_bytes(patched),
-            }
-        )
-
-    for module, source_name, offset, length, kind in SHAPE_PATCHES:
-        source = XDB_MANIFEST.parent / module / source_name
-        row = rows.get(f"{module}/{source_name}")
-        if row is None:
-            raise SystemExit(f"manifest has no C source row: {source}")
-        original_path = args.xdb_dir / f"{module}.xdb"
-        if not original_path.is_file():
-            raise SystemExit(f"missing source overlay: {original_path}")
-        original = original_path.read_bytes()
-        replacement = verify_shape_patch(
-            args, output, source, original, offset, length, kind
-        )
-        patched = bytearray((xdb_output / f"{module}.xdb").read_bytes())
-        patched[offset : offset + length] = replacement
-        destination = xdb_output / f"{module}.xdb"
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        destination.write_bytes(patched)
-        records.append(
-            {
-                "component": f"{module}.xdb@0x{offset:04x}",
-                "archive_name": f"{module}.xdb",
-                "source": metadata_path(source),
-                "output": str(destination.relative_to(output)),
-                "status": "c_source_fixed_layout_verified",
-                "offset": f"0x{offset:04x}",
-                "original_sha256": sha256_bytes(original),
-                "output_sha256": sha256_bytes(patched),
+                "status": "c_source_linked_overlay",
+                "offset": "raw_entry_0000:0000",
+                "original_sha256": sha256(original),
+                "output_sha256": sha256(destination),
             }
         )
 
     return records
 
 
-def archive_entries(data: bytearray) -> dict[str, tuple[int, int]]:
-    entries: dict[str, tuple[int, int]] = {}
+def archive_entry_records(
+    data: bytes | bytearray,
+) -> list[tuple[str, int, int, int]]:
+    records: list[tuple[str, int, int, int]] = []
     cursor = 2
     while cursor < min(65536, len(data)):
-        name_start = cursor
+        record_offset = cursor
         name_bytes = bytes(data[cursor : cursor + 16])
         if not name_bytes or name_bytes[0] == 0:
             break
@@ -1072,10 +884,79 @@ def archive_entries(data: bytearray) -> dict[str, tuple[int, int]]:
         cursor += 1
         name = name_bytes.split(b"\0", 1)[0].decode("ascii").lower().replace("\\", "/")
         if size > 0 and offset >= 0 and offset + size <= len(data):
-            entries.setdefault(name, (offset, size))
-        if cursor <= name_start:
+            records.append((name, record_offset, offset, size))
+        if cursor <= record_offset:
             raise SystemExit("BLOOD.DAT directory parser did not advance")
+    return records
+
+
+def archive_entries(data: bytes | bytearray) -> dict[str, tuple[int, int]]:
+    entries: dict[str, tuple[int, int]] = {}
+    for name, _record_offset, offset, size in archive_entry_records(data):
+        entries.setdefault(name, (offset, size))
     return entries
+
+
+def replace_archive_members(
+    data: bytearray,
+    replacements: dict[str, bytes],
+) -> tuple[bytearray, dict[str, tuple[int, int, int, int]]]:
+    records = archive_entry_records(data)
+    records_by_name: dict[str, list[tuple[int, int, int]]] = {}
+    for name, record_offset, offset, size in records:
+        records_by_name.setdefault(name, []).append((record_offset, offset, size))
+
+    intervals: list[tuple[int, int, str, bytes]] = []
+    for name, replacement in replacements.items():
+        matches = records_by_name.get(name, [])
+        if not matches:
+            raise SystemExit(f"resource is absent from BLOOD.DAT: {name}")
+        locations = {(offset, size) for _record, offset, size in matches}
+        if len(locations) != 1:
+            raise SystemExit(f"resource has conflicting BLOOD.DAT entries: {name}")
+        offset, size = locations.pop()
+        intervals.append((offset, size, name, replacement))
+
+    intervals.sort()
+    for left, right in zip(intervals, intervals[1:]):
+        if left[0] + left[1] > right[0]:
+            raise SystemExit(
+                f"overlapping BLOOD.DAT replacements: {left[2]} and {right[2]}"
+            )
+
+    rebuilt = bytearray()
+    cursor = 0
+    locations: dict[str, tuple[int, int, int, int]] = {}
+    for offset, size, name, replacement in intervals:
+        rebuilt.extend(data[cursor:offset])
+        new_offset = len(rebuilt)
+        rebuilt.extend(replacement)
+        locations[name] = (offset, size, new_offset, len(replacement))
+        cursor = offset + size
+    rebuilt.extend(data[cursor:])
+
+    for name, record_offset, old_offset, old_size in records:
+        if name in locations:
+            _source_offset, _source_size, new_offset, new_size = locations[name]
+        else:
+            new_size = old_size
+            new_offset = old_offset
+            for replaced_offset, replaced_size, replaced_name, replacement in intervals:
+                replaced_end = replaced_offset + replaced_size
+                if old_offset >= replaced_end:
+                    new_offset += len(replacement) - replaced_size
+                elif old_offset >= replaced_offset:
+                    raise SystemExit(
+                        f"{name} starts inside replaced BLOOD.DAT member {replaced_name}"
+                    )
+        rebuilt[record_offset + 16 : record_offset + 20] = new_size.to_bytes(
+            4, "little", signed=True
+        )
+        rebuilt[record_offset + 20 : record_offset + 24] = new_offset.to_bytes(
+            4, "little", signed=True
+        )
+
+    return rebuilt, locations
 
 
 def patch_archive(
@@ -1087,7 +968,6 @@ def patch_archive(
     if not source.is_file():
         raise SystemExit(f"missing BLOOD.DAT: {source}")
     data = bytearray(source.read_bytes())
-    entries = archive_entries(data)
     archive_output = output / "cd" / "BLOOD.DAT"
     archive_output.parent.mkdir(parents=True, exist_ok=True)
     records = list(xdb_records)
@@ -1115,37 +995,46 @@ def patch_archive(
                 }
             )
 
-    replacements: list[tuple[str, Path, str]] = []
+    replacements: dict[str, bytes] = {}
+    replacement_paths: dict[str, Path] = {}
+    replacement_statuses: dict[str, str] = {}
+    expected_original_hashes: dict[str, str] = {}
     for record in xdb_records:
         path = output / record["output"]
-        replacements.append((record["component"], path, record["status"]))
+        key = record["component"].lower().replace("\\", "/")
+        if key in replacements:
+            raise SystemExit(f"duplicate BLOOD.DAT replacement: {key}")
+        replacements[key] = path.read_bytes()
+        replacement_paths[key] = path
+        replacement_statuses[key] = record["status"]
+        expected_original_hashes[key] = record["original_sha256"]
 
-    for name, replacement_path, status in replacements:
-        archive_name = name.split("@", 1)[0]
-        key = archive_name.lower().replace("\\", "/")
-        if key not in entries:
-            raise SystemExit(f"resource is absent from BLOOD.DAT: {archive_name}")
-        offset, size = entries[key]
-        replacement = replacement_path.read_bytes()
-        if len(replacement) != size:
+    rebuilt, locations = replace_archive_members(data, replacements)
+    rebuilt_entries = archive_entries(rebuilt)
+    for name, replacement in replacements.items():
+        old_offset, old_size, new_offset, new_size = locations[name]
+        if rebuilt_entries.get(name) != (new_offset, new_size):
+            raise SystemExit(f"rebuilt BLOOD.DAT directory mismatch for {name}")
+        if rebuilt[new_offset : new_offset + new_size] != replacement:
+            raise SystemExit(f"rebuilt BLOOD.DAT payload mismatch for {name}")
+        replacement_path = replacement_paths[name]
+        original_hash = sha256_bytes(data[old_offset : old_offset + old_size])
+        if original_hash != expected_original_hashes[name]:
             raise SystemExit(
-                f"size-changing archive replacement refused for {archive_name}: "
-                f"{len(replacement)} != {size}"
+                f"loose and archived original XDB hashes differ for {name}"
             )
-        original_hash = sha256_bytes(data[offset : offset + size])
-        data[offset : offset + size] = replacement
         records.append(
             {
                 "component": name,
                 "source": str(replacement_path.relative_to(output)),
                 "output": "cd/BLOOD.DAT",
-                "status": status,
-                "offset": f"0x{offset:08x}",
+                "status": replacement_statuses[name],
+                "offset": f"0x{old_offset:08x}->0x{new_offset:08x}",
                 "original_sha256": original_hash,
                 "output_sha256": sha256_bytes(replacement),
             }
         )
-    archive_output.write_bytes(data)
+    archive_output.write_bytes(rebuilt)
     return records
 
 
@@ -1171,13 +1060,12 @@ def write_package_metadata(output: Path, records: list[dict[str, str]], cd_root:
         "The fixed-patch copy remains limited to routines whose compiled bytes\n"
         "are proven compatible at the original fixed offsets.\n\n"
         "The generated SCRIPT1..5.COD/BAS files are compiled from re/vm/bloodscript\n"
-        "and compared byte-for-byte with the installed reference. The three\n"
-        "alien-overlay no-op routines are verified by wdis, while the three\n"
-        "mouse-position routines, MANU3 entry, and three slot-11 routines are\n"
-        "linked in small DOS shape probes. Their fixed-layout machine-code\n"
-        "shapes are compared against the\n"
-        "original offsets, with only approved relocation words restored, before\n"
-        "the XDB files and BLOOD.DAT are emitted.\n"
+        "and compared byte-for-byte with the installed reference. AMER.XDB,\n"
+        "CROOLIS.XDB, MANU3.XDB, and SCRUT.XDB are linked from all 169 recovered\n"
+        "C routines. Their original data payloads are retained byte-for-byte\n"
+        "apart from verified callback-pointer rebindings to the linked C code.\n"
+        "The size-changing overlays are installed by rebuilding the BLOOD.DAT\n"
+        "resource offsets without changing unrelated resource payloads.\n"
         "package_manifest.tsv records every source verification and hash.\n\n"
         f"BLOODPRG.EXE sha256: {sha256(bloodprg)}\n"
         f"{relinked_hash}"
@@ -1193,9 +1081,10 @@ def main() -> int:
             raise SystemExit(f"missing input path: {path}")
     wcl = resolve_executable(args.wcl)
     args.wcl = wcl
-    args.wdis = resolve_executable(args.wdis)
-    if args.include_bloodprg_runtime:
-        args.wasm = resolve_executable(args.wasm)
+    args.wasm = resolve_executable(args.wasm)
+    args.wlink = resolve_executable(args.wlink)
+    if args.include_bloodprg_fixed_patch:
+        args.wdis = resolve_executable(args.wdis)
     turbo_objects = None
     if args.turbo_c_toolchain is not None:
         args.turbo_c_toolchain = args.turbo_c_toolchain.resolve()
@@ -1218,20 +1107,19 @@ def main() -> int:
     if args.include_bloodprg_runtime:
         runtime_records = build_bloodprg_runtime(args, output)
     copy_cd_tree(args.cd_root.resolve(), output / "cd")
-    shutil.copy2(args.cd_root / "BLOOD.DAT", output / "cd" / "BLOOD.DAT")
     if args.include_bloodprg_fixed_patch:
         assert bloodprg_objects is not None
         fixed_records = build_bloodprg_fixed_patch(
             args, output, bloodprg_objects, turbo_objects
         )
-    rows = read_manifest_rows()
-    xdb_records = patch_xdb_files(args, output, rows)
+    xdb_records = build_source_xdb_files(args, output)
     records = patch_archive(args, output, xdb_records)
     records.extend(fixed_records)
     records.extend(runtime_records)
     write_package_metadata(output, records, args.cd_root.resolve())
     print(f"wrote recovered package: {output}")
     print("BLOODPRG.EXE status: original_shipped_fallback")
+    print("XDB status: four_c_source_linked_overlays")
     if runtime_records:
         print("BPRG_RE.EXE status: c_relinked_runtime_zero_unresolved")
     if fixed_records:

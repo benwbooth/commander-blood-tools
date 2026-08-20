@@ -97,22 +97,16 @@ dummy definitions or treats an unresolved link as a runnable game binary.
 
 ## Recovered package
 
-The package gate compiles
-the BloodScript sources, compiles every XDB C candidate, verifies the three
-one-byte alien method no-op candidates with `wdis`, and links small real-mode
-DOS probes for
-the three mouse-position routines and the MANU3 entry. It also verifies the
-three sibling slot-11 bodies, whose generated `ADD word,-15` differs from the
-original `SUB word,15` but preserves the fixed 16-byte layout and restores each
-CS-relative cursor offset. Those probes compare the generated instruction
-shapes against the original fixed overlay offsets.
-The builder then emits those generated bodies at the fixed offsets in the four
-overlays, applying only the explicitly approved instruction and relocation
-differences, and
-rewrites the same-size XDB resources inside `BLOOD.DAT`. The generated
-`SCRIPT1..5.COD/BAS` files are compared byte-for-byte and copied to the CD
-root. `BLOODPRG.EXE` remains available as the shipped fallback. The optional
-`--include-bloodprg-runtime` gate also builds every recovered BLOODPRG
+The package gate compiles the BloodScript sources and every XDB C candidate,
+then links all 169 recovered routines into complete AMER, CROOLIS, MANU3, and
+SCRUT overlays. Each linked image retains the original data payload apart from
+verified callback-pointer rebindings and has one load-time data-segment delta.
+Because the natural-C code is larger than the original assembly, the builder
+replaces the four variable-size resources and updates all following
+`BLOOD.DAT` directory offsets while preserving every unrelated payload byte.
+The generated `SCRIPT1..5.COD/BAS` files are compared byte-for-byte and copied
+to the CD root. `BLOODPRG.EXE` remains available as the shipped fallback. The
+optional `--include-bloodprg-runtime` gate also builds every recovered BLOODPRG
 candidate with the relink runtime contract, derives the byte-backed owner from
 the actual unresolved report, adds the recovered entrypoint and platform
 adapters, and emits `cd/BPRG_RE.EXE`. The relinked executable has passed the
@@ -163,8 +157,8 @@ NIXPKGS_ALLOW_UNFREE=1 nix shell --impure \
 ```
 
 The builder emits `cd/` (a runnable CD tree), `scripts/`, `xdb/`,
-`xdb_objects/`, `bloodprg_objects/`, `validation/` (including the DOS
-shape-probe binaries, disassemblies, and optional BLOODPRG C runtime),
+`xdb_objects/`, `bloodprg_objects/`, `validation/` (including complete linked
+XDB maps/reports and the optional BLOODPRG C runtime),
 `package_manifest.tsv`, and `README.txt`. The optional runtime directory
 contains `BPRG_RE.EXE`, `link.map`, and `unresolved.tsv`; the latter must
 contain only its header. The same executable is copied to `cd/BPRG_RE.EXE`.
@@ -178,6 +172,13 @@ nix develop --command bash re/tools/capture_real_game.sh \
   output/recovered_dos_package/cd \
   output/recovered_dos_package/captures :84 accuracy/cblood_install
 ```
+
+The complete source-XDB package has passed this launch path with the shipped
+`BLOODPRG.EXE`. A host I/O trace observed the game seek to the rebuilt
+`MANU3.XDB` member at its updated `BLOOD.DAT` sector before continuing through
+the rendered 3D manual/UI sequence. The four package-built loose overlays also
+pass `source_xdb_dos_integration.py`; AMER, CROOLIS, and SCRUT still require
+real-game navigation gates that select those character overlays.
 
 For the relinked runtime, pass `BPRG_RE.EXE` as the final executable argument
 to the same capture script. For the fixed-patch alias, pass `BPRG_C.EXE`.
