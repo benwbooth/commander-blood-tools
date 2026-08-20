@@ -105,6 +105,19 @@ BLOODPRG_SEMANTIC_PATCH_FUNCTIONS = (
         (),
     ),
     (
+        "presentation_queue_finish",
+        0x00A2DD,
+        bytes.fromhex(
+            "80 0E 00 00 01 83 3E 00 00 00 74 01 C3 "
+            "80 0E 00 00 02 E9 00 00"
+        ),
+        bytes.fromhex(
+            "80 0E 5F 0D 01 83 3E 9A 0D 00 74 01 C3 "
+            "80 0E 5F 0D 02 E9 4F FE"
+        ),
+        (),
+    ),
+    (
         "palette_upload_if_dirty",
         0x00178B,
         bytes.fromhex(
@@ -127,7 +140,6 @@ BLOODPRG_SEMANTIC_PATCH_FUNCTIONS = (
 BLOODPRG_TURBO_PATCH_FUNCTIONS = (
     ("list_d8c_bounds_init", 0x00A73E, 0x19, ()),
     ("list_d8c_wrap_bounds_reset", 0x00A744, 0x13, ()),
-    ("presentation_queue_finish", 0x00A2DD, 0x15, ()),
     ("nav_choice_handler_0", 0x008713, 0x19, ()),
     ("presentation_update_1fb2", 0x009F53, 0x2D, ()),
 )
