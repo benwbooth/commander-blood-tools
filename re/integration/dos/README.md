@@ -45,7 +45,8 @@ policy. The current proven set is the three sprite no-ops, four GS byte-parser
 handlers, `list_d8c_init`, the runtime-verified `vm_special_slot_remove`,
 `lookup_table_1fb5`, `matrix_table_clear_2a1b`, and
 `presentation_queue_finish` replacements, the runtime-verified
-`presentation_mode_dispatch` and `nav_chart_list_build`, and
+`presentation_mode_dispatch`, `nav_chart_list_build`, and
+`nav_kind2_target_list_build`, plus
 `palette_upload_if_dirty`. The latter uses a fixed 36-byte
 C body, restores its six original data/call operands, and moves the two MZ
 relocation entries for the moved far calls; the builder verifies those old
