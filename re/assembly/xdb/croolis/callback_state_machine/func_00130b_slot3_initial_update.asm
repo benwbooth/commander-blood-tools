@@ -1,5 +1,17 @@
+; Commander Blood recovered routine assembly
+; module: xdb_croolis
+; artifact: output/_tmp_dat/croolis.xdb
+; artifact_sha256: 13eba7c4e4f38662c44c849bd07be293c7583d2b2dc9ae273d7fe94746048c31
+; overlay_offset: 0x00130B
+; byte_count: 353
+; routine_bytes_sha256: cbc387f1acb3362bddf8707c8a72921f522b1bfead168a90025709f94d671c7e
+; routine_entry: 0x00130B
+; group: callback_state_machine
+; provenance: initial callback reached by method-table slot 3
+; raw stop: 0x00146C
 
-export_check/_tmp_dat/croolis.xdb:     file format binary
+
+output/_tmp_dat/croolis.xdb:     file format binary
 
 
 Disassembly of section .data:
@@ -119,10 +131,3 @@ Disassembly of section .data:
     1463:	05 08 00             	add    $0x8,%ax
     1466:	2e 89 86 bf 0d       	mov    %ax,%cs:0xdbf(%bp)
     146b:	c3                   	ret
-; Commander Blood recovered routine assembly
-; module: xdb_croolis
-; artifact: export_check/_tmp_dat/croolis.xdb
-; routine_entry: 0x00130B
-; group: callback_state_machine
-; provenance: internal callback reached by method-table slot 3 at 0x0012DE
-; raw stop: 0x00146C (0x161 bytes)

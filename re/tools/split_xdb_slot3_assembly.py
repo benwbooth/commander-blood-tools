@@ -24,6 +24,8 @@ ASSEMBLY_ROOT = ROOT / "re" / "assembly" / "xdb"
 
 SPECS = {
     "amer": (
+        (0x12B3, 0x1414, "func_0012b3_slot3_initial_update.asm",
+         "initial callback reached by method-table slot 3"),
         (0x1414, 0x1558, "func_001414_slot3_update.asm",
          "generic callback published by slot-3 initializer"),
         (0x1558, 0x158A, "func_001558_slot3_restart_initial_update.asm",
@@ -36,6 +38,8 @@ SPECS = {
          "callback installed by slot-3 resume callback"),
     ),
     "croolis": (
+        (0x130B, 0x146C, "func_00130b_slot3_initial_update.asm",
+         "initial callback reached by method-table slot 3"),
         (0x146C, 0x15B0, "func_00146c_slot3_update.asm",
          "generic callback published by slot-3 initializer"),
         (0x15B0, 0x15E2, "func_0015b0_slot3_restart_initial_update.asm",
@@ -48,6 +52,8 @@ SPECS = {
          "callback installed by slot-3 resume callback"),
     ),
     "scrut": (
+        (0x12F9, 0x145A, "func_0012f9_slot3_initial_update.asm",
+         "initial callback reached by method-table slot 3"),
         (0x145A, 0x159E, "func_00145a_slot3_update.asm",
          "generic callback published by slot-3 initializer"),
         (0x159E, 0x15D0, "func_00159e_slot3_restart_initial_update.asm",
@@ -138,7 +144,7 @@ def main() -> int:
             print(f"ERROR: stale assembly dump: {path}")
         return 1
     if args.check:
-        print("OK: 15 slot-3 assembly dumps match the extracted overlays")
+        print("OK: 18 slot-3 assembly dumps match the extracted overlays")
     return 0
 
 

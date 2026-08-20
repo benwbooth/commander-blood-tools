@@ -1,12 +1,17 @@
 ; Commander Blood recovered routine assembly
 ; module: xdb_amer
-; artifact: export_check/_tmp_dat/amer.xdb
+; artifact: output/_tmp_dat/amer.xdb
+; artifact_sha256: 6fddeb5cc7c62fe5e638900746decc299f1637ea11612c0c51aced367dd12b31
+; overlay_offset: 0x000BD0
+; byte_count: 26
+; routine_bytes_sha256: 76436824a3def38298079f04aab6aefd1b818af45c4bf1ed8165da7ab3e7a61f
 ; routine_entry: 0x000BD0
 ; group: callback_state_machine
 ; provenance: callback installed by the AMER slot-1 wave update at 0x0B70
-; raw stop: 0x000BEA (0x1A bytes)
+; raw stop: 0x000BEA
 
-export_check/_tmp_dat/amer.xdb:     file format binary
+
+output/_tmp_dat/amer.xdb:     file format binary
 
 
 Disassembly of section .data:

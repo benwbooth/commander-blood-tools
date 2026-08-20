@@ -1,5 +1,17 @@
+; Commander Blood recovered routine assembly
+; module: xdb_scrut
+; artifact: output/_tmp_dat/scrut.xdb
+; artifact_sha256: 8522e77aad6639cf9bb06f148048fed3c6bf1cfbe6459c9a0be7b987c3c3ac77
+; overlay_offset: 0x0012F9
+; byte_count: 353
+; routine_bytes_sha256: 08cba9d7d3807f6bcc0f527f6278a633f99b6697fb42110ad9cf04a75a697c4d
+; routine_entry: 0x0012F9
+; group: callback_state_machine
+; provenance: initial callback reached by method-table slot 3
+; raw stop: 0x00145A
 
-export_check/_tmp_dat/scrut.xdb:     file format binary
+
+output/_tmp_dat/scrut.xdb:     file format binary
 
 
 Disassembly of section .data:
@@ -119,10 +131,3 @@ Disassembly of section .data:
     1451:	05 08 00             	add    $0x8,%ax
     1454:	2e 89 86 ad 0d       	mov    %ax,%cs:0xdad(%bp)
     1459:	c3                   	ret
-; Commander Blood recovered routine assembly
-; module: xdb_scrut
-; artifact: export_check/_tmp_dat/scrut.xdb
-; routine_entry: 0x0012F9
-; group: callback_state_machine
-; provenance: internal callback reached by method-table slot 3 at 0x0012CC
-; raw stop: 0x00145A (0x161 bytes)

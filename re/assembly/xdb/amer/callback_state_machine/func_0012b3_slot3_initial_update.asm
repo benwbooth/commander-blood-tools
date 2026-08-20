@@ -1,5 +1,17 @@
+; Commander Blood recovered routine assembly
+; module: xdb_amer
+; artifact: output/_tmp_dat/amer.xdb
+; artifact_sha256: 6fddeb5cc7c62fe5e638900746decc299f1637ea11612c0c51aced367dd12b31
+; overlay_offset: 0x0012B3
+; byte_count: 353
+; routine_bytes_sha256: b5021ea5d40c07d698185bfa6ab5a5413305a56fb7e50a63701b9ca55e5540c9
+; routine_entry: 0x0012B3
+; group: callback_state_machine
+; provenance: initial callback reached by method-table slot 3
+; raw stop: 0x001414
 
-export_check/_tmp_dat/amer.xdb:     file format binary
+
+output/_tmp_dat/amer.xdb:     file format binary
 
 
 Disassembly of section .data:
@@ -119,10 +131,3 @@ Disassembly of section .data:
     140b:	05 08 00             	add    $0x8,%ax
     140e:	2e 89 86 67 0d       	mov    %ax,%cs:0xd67(%bp)
     1413:	c3                   	ret
-; Commander Blood recovered routine assembly
-; module: xdb_amer
-; artifact: export_check/_tmp_dat/amer.xdb
-; routine_entry: 0x0012B3
-; group: callback_state_machine
-; provenance: internal callback reached by method-table slot 3 at 0x001286
-; raw stop: 0x001414 (0x161 bytes)
