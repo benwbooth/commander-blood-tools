@@ -1,3 +1,5 @@
+#include <dos.h>
+
 #include "../include/bloodprg_list.h"
 
 #define RESOURCE_PAIR_CONTROL_DISTANCE 0x7Fu
@@ -9,18 +11,38 @@ const volatile cb_u8 CB_FAR *CB_NEAR resource_pair_lz_decode(
         volatile cb_u8 CB_FAR *destination_end,
         cb_u8 literal_bias)
 {
+#if defined(__WATCOMC__)
+    const volatile cb_u8 CB_NEAR *copy_source;
+    volatile cb_u8 CB_NEAR *output;
+    volatile cb_u8 CB_NEAR *output_end;
+    cb_u16 destination_segment;
+#else
     const volatile cb_u8 CB_FAR *copy_source;
+    volatile cb_u8 CB_FAR *output;
+    volatile cb_u8 CB_FAR *output_end;
+#endif
     cb_u16 length;
     cb_u8 control;
     cb_u8 packed;
 
+#if defined(__WATCOMC__)
+    destination_segment = FP_SEG(destination);
+    output = (volatile cb_u8 CB_NEAR *)FP_OFF(destination);
+    output_end = (volatile cb_u8 CB_NEAR *)FP_OFF(destination_end);
+    _asm push ds;
+    _asm mov ds,destination_segment;
+#else
+    output = destination;
+    output_end = destination_end;
+#endif
+
     for (;;) {
         control = *source++;
         if ((cb_i8)control >= 0) {
-            *destination++ = control == 0u
+            *output++ = control == 0u
                     ? 0u
                     : (cb_u8)(control + literal_bias);
-            if (destination >= destination_end) {
+            if (output >= output_end) {
                 break;
             }
             continue;
@@ -29,14 +51,14 @@ const volatile cb_u8 CB_FAR *CB_NEAR resource_pair_lz_decode(
         packed = *source++;
         length = (cb_u16)(
                 (packed >> 5) + RESOURCE_PAIR_LENGTH_BIAS);
-        copy_source = destination - (cb_u16)(
+        copy_source = output - (cb_u16)(
                 ((((cb_u16)(
                         control & RESOURCE_PAIR_CONTROL_DISTANCE)) << 1)
                 | ((packed >> 4) & 1u)) + 1u);
         do {
-            *destination++ = *copy_source++;
+            *output++ = *copy_source++;
         } while (--length != 0u);
-        if (destination >= destination_end) {
+        if (output >= output_end) {
             break;
         }
 
@@ -45,27 +67,31 @@ const volatile cb_u8 CB_FAR *CB_NEAR resource_pair_lz_decode(
             if ((cb_i8)control < 0) {
                 break;
             }
-            *destination++ = control == 0u
+            *output++ = control == 0u
                     ? 0u
                     : (cb_u8)(control + literal_bias);
-            if (destination >= destination_end) {
-                return source;
+            if (output >= output_end) {
+                goto finished;
             }
         }
 
         length = (cb_u16)(
                 ((packed >> 1) & 7u) + RESOURCE_PAIR_LENGTH_BIAS);
-        copy_source = destination - (cb_u16)(
+        copy_source = output - (cb_u16)(
                 ((((cb_u16)(
                         control & RESOURCE_PAIR_CONTROL_DISTANCE)) << 1)
                 | (packed & 1u)) + 1u);
         do {
-            *destination++ = *copy_source++;
+            *output++ = *copy_source++;
         } while (--length != 0u);
-        if (destination >= destination_end) {
+        if (output >= output_end) {
             break;
         }
     }
 
+finished:
+#if defined(__WATCOMC__)
+    _asm pop ds;
+#endif
     return source;
 }

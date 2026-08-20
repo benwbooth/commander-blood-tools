@@ -36,8 +36,9 @@ This creates a separate object for each manifest entry. The package's
 `--include-bloodprg-runtime` gate adds the recovered game entrypoint, the
 paragraph-aligned byte-backed data owners, and the DOS/XMS/sound adapters. It
 links those objects into `cd/BPRG_RE.EXE` with zero unresolved symbols. That
-executable now reaches and renders the opening cinematic under DOSBox-X;
-full-game behavior and cross-XDB execution remain later runtime gates.
+executable now reaches and renders the first opening image under DOSBox-X.
+The complete opening sequence is not yet timing-accurate, and full-game
+behavior plus cross-XDB execution remain later runtime gates.
 
 The graphics integration gate links the recovered palette-transition and
 chunky-to-planar routines into small real-mode DOS executables. It verifies the
@@ -121,7 +122,8 @@ optional `--include-bloodprg-runtime` gate also builds every recovered BLOODPRG
 candidate with the relink runtime contract, derives the byte-backed owner from
 the actual unresolved report, adds the recovered entrypoint and platform
 adapters, and emits `cd/BPRG_RE.EXE`. The relinked executable has passed the
-opening-cinematic smoke test, but is not yet claimed to have full-game parity.
+first-opening-image smoke test, but not the complete opening or full-game
+parity gates.
 
 Build the Rust VM compiler in the project shell, then run the package builder
 with Open Watcom:
@@ -194,12 +196,17 @@ real-game navigation gates that select those character overlays.
 For the relinked runtime, pass `BPRG_RE.EXE` as the final executable argument
 to the same capture script. For the fixed-patch alias, pass `BPRG_C.EXE`.
 
-The relinked runtime's opening Mindscape frame now passes a synchronized
-original-versus-source-build gate: the live 768-byte palette, 64,000-byte
-decoded display buffer, queue entry metric, and captured 800x600 DOSBox-X PNG
-all match the original exactly. This remains an opening-runtime gate, not a
-claim of full-game C parity. The next milestones are sustained gameplay and
-cross-XDB validation.
+The relinked runtime's first opening image passes a synchronized
+original-versus-source-build content gate: the live 768-byte palette and
+64,000-byte decoded display buffer match the original exactly. The recovered
+chunky-to-planar hot loop now services presentation entries every 16-19 timer
+ticks instead of roughly every 50 ticks. The initial compressed rectangle is
+still slower than the original, however: near tick 740 the source runtime has
+consumed 30 queue entries while the original has consumed 37 and started the
+next resource. This is a first-frame content gate, not a completed-opening or
+full-game C parity claim. The next runtime gate is matching that initial decode
+latency and then following the original through the complete opening into
+cross-XDB gameplay.
 
 The runtime data owner also verifies and rebinds 88 near-pointer words to the
 final linked C offsets: six navigation actor handlers, five navigation choice

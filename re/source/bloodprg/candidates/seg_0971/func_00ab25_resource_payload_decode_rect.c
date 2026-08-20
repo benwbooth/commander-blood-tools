@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "../include/bloodprg_list.h"
 #include "../include/bloodprg_graphics.h"
 
@@ -165,9 +167,37 @@ void CB_NEAR resource_payload_decode_rect(
             length = (cb_u16)(length - chunk);
             row_width = (cb_u16)(row_width - chunk);
             if (value != 0u) {
+#if defined(__WATCOMC__)
+                cb_u16 repeated_word;
+                cb_u32 repeated_dword;
+
+                repeated_word = (cb_u16)(value | ((cb_u16)value << 8));
+                repeated_dword = (cb_u32)repeated_word
+                        | ((cb_u32)repeated_word << 16);
+                switch (chunk) {
+                case 1u:
+                    *framebuffer = value;
+                    break;
+                case 2u:
+                    *(volatile cb_u16 CB_FAR *)framebuffer = repeated_word;
+                    break;
+                case 3u:
+                    *(volatile cb_u16 CB_FAR *)framebuffer = repeated_word;
+                    framebuffer[2] = value;
+                    break;
+                case 4u:
+                    *(volatile cb_u32 CB_FAR *)framebuffer = repeated_dword;
+                    break;
+                default:
+                    _fmemset((void CB_FAR *)framebuffer, value, chunk);
+                    break;
+                }
+                framebuffer += chunk;
+#else
                 do {
                     *framebuffer++ = value;
                 } while (--chunk != 0u);
+#endif
             } else {
                 framebuffer += chunk;
             }
