@@ -25,6 +25,7 @@ from xdb_data_layout_probe import Declaration, declarations, module_symbol
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / "re" / "source" / "xdb" / "candidates" / "manifest.tsv"
 HEADER_DIR = MANIFEST.parent / "include"
+ALIEN_METHOD_TABLE_OFFSET = 0x103A
 
 
 class Module:
@@ -36,6 +37,9 @@ class Module:
         "directory_symbol",
         "directory_delta_offsets",
         "alien",
+        "method_entries",
+        "resume_callbacks",
+        "state_callbacks",
     )
 
     def __init__(
@@ -47,6 +51,9 @@ class Module:
         directory_symbol: str,
         directory_delta_offsets: tuple[int, ...],
         alien: bool,
+        method_entries: tuple[tuple[int, str], ...] = (),
+        resume_callbacks: tuple[tuple[int, str], ...] = (),
+        state_callbacks: tuple[tuple[int, str], ...] = (),
     ) -> None:
         self.api_symbol = api_symbol
         self.data_file_base = data_file_base
@@ -55,6 +62,9 @@ class Module:
         self.directory_symbol = directory_symbol
         self.directory_delta_offsets = directory_delta_offsets
         self.alien = alien
+        self.method_entries = method_entries
+        self.resume_callbacks = resume_callbacks
+        self.state_callbacks = state_callbacks
 
 
 MODULES = {
@@ -75,6 +85,29 @@ MODULES = {
         "_xdb_source_data_base",
         (0x0C, 0x0E, 0x10),
         True,
+        (
+            (0x1DD6, "xdb_amer_method_noop_"),
+            (0x09EF, "xdb_amer_method_slot_1_wave_update_or_init_"),
+            (0x164C, "xdb_amer_method_slot_2_dispatch_or_init_"),
+            (0x1286, "xdb_amer_method_slot_3_update_or_init_"),
+            (0x1DD6, "xdb_amer_method_noop_"),
+            (0x1DD6, "xdb_amer_method_noop_"),
+            (0x0958, "xdb_amer_method_slot_6_wrap_positions_"),
+            (0x0355, "xdb_amer_method_slot_7_palette_update_"),
+            (0x1B5F, "xdb_amer_method_slot_8_apply_sample_delta_"),
+            (0x1B8F, "xdb_amer_method_slot_9_apply_scaled_sample_delta_"),
+            (0x0925, "xdb_amer_method_slot_10_bounds_then_wrap_"),
+            (0x0B0F, "xdb_amer_method_slot_11_anchor_state_"),
+            (0x0B1F, "xdb_amer_method_slot_12_apply_delta_"),
+            (0x1BEA, "xdb_amer_method_slot_13_resume_or_init_"),
+            (0x1DD6, "xdb_amer_method_noop_"),
+        ),
+        ((0x1C34, "xdb_amer_resume_1c34_"),),
+        (
+            (0x1692, "xdb_amer_slot2_update_"),
+            (0x12B3, "xdb_amer_slot3_initial_update_"),
+            (0x1414, "xdb_amer_slot3_update_"),
+        ),
     ),
     "croolis": Module(
         "xdb_croolis_api_entry_",
@@ -84,6 +117,29 @@ MODULES = {
         "_xdb_source_data_base",
         (0x0C, 0x0E, 0x10),
         True,
+        (
+            (0x1D27, "xdb_croolis_method_noop_"),
+            (0x0A30, "xdb_croolis_method_slot_1_wave_update_or_init_"),
+            (0x16A4, "xdb_croolis_method_slot_2_4_dispatch_or_init_"),
+            (0x12DE, "xdb_croolis_method_slot_3_update_or_init_"),
+            (0x16A4, "xdb_croolis_method_slot_2_4_dispatch_or_init_"),
+            (0x1D27, "xdb_croolis_method_noop_"),
+            (0x0999, "xdb_croolis_method_slot_6_wrap_positions_"),
+            (0x036A, "xdb_croolis_method_slot_7_palette_update_"),
+            (0x1ACB, "xdb_croolis_method_slot_8_apply_sample_delta_"),
+            (0x1AFB, "xdb_croolis_method_slot_9_apply_scaled_sample_delta_"),
+            (0x0966, "xdb_croolis_method_slot_10_bounds_then_wrap_"),
+            (0x0B50, "xdb_croolis_method_slot_11_anchor_state_"),
+            (0x0B60, "xdb_croolis_method_slot_12_apply_delta_"),
+            (0x1B46, "xdb_croolis_method_slot_13_resume_or_init_"),
+            (0x1D27, "xdb_croolis_method_noop_"),
+        ),
+        ((0x1B85, "xdb_croolis_resume_1b85_"),),
+        (
+            (0x1727, "xdb_croolis_slot2_update_"),
+            (0x130B, "xdb_croolis_slot3_initial_update_"),
+            (0x146C, "xdb_croolis_slot3_update_"),
+        ),
     ),
     "scrut": Module(
         "xdb_scrut_api_entry_",
@@ -93,6 +149,29 @@ MODULES = {
         "_xdb_source_data_base",
         (0x0C, 0x0E, 0x10),
         True,
+        (
+            (0x1DE7, "xdb_scrut_method_noop_"),
+            (0x0A35, "xdb_scrut_method_slot_1_wave_update_or_init_"),
+            (0x1692, "xdb_scrut_method_slot_2_4_dispatch_or_init_"),
+            (0x12CC, "xdb_scrut_method_slot_3_update_or_init_"),
+            (0x1692, "xdb_scrut_method_slot_2_4_dispatch_or_init_"),
+            (0x1DE7, "xdb_scrut_method_noop_"),
+            (0x0999, "xdb_scrut_method_slot_6_wrap_positions_"),
+            (0x036A, "xdb_scrut_method_slot_7_palette_update_"),
+            (0x1B80, "xdb_scrut_method_slot_8_apply_sample_delta_"),
+            (0x1BB0, "xdb_scrut_method_slot_9_apply_scaled_sample_delta_"),
+            (0x0966, "xdb_scrut_method_slot_10_bounds_then_wrap_"),
+            (0x0B55, "xdb_scrut_method_slot_11_anchor_state_"),
+            (0x0B65, "xdb_scrut_method_slot_12_lower_state_"),
+            (0x1BFB, "xdb_scrut_method_slot_13_resume_or_init_"),
+            (0x1DE7, "xdb_scrut_method_noop_"),
+        ),
+        ((0x1C45, "xdb_scrut_resume_1c45_"),),
+        (
+            (0x171B, "xdb_scrut_slot2_update_"),
+            (0x12F9, "xdb_scrut_slot3_initial_update_"),
+            (0x145A, "xdb_scrut_slot3_update_"),
+        ),
     ),
 }
 
@@ -177,6 +256,94 @@ def segment_starts(image: bytes, module: Module) -> list[int]:
     return starts
 
 
+def payload_rebindings(
+    module_name: str,
+    module: Module,
+    image: bytes,
+) -> list[tuple[int, int, str, str]]:
+    if not module.alien:
+        return []
+    first_data_bytes = segment_starts(image, module)[1] - module.data_file_base
+
+    def word(offset: int) -> int:
+        if offset < 0 or offset + 2 > first_data_bytes:
+            raise SystemExit(
+                f"{module_name}: pointer field at DS:{offset:#06x} "
+                "is outside the first data segment"
+            )
+        return struct.unpack_from("<H", image, module.data_file_base + offset)[0]
+
+    result: list[tuple[int, int, str, str]] = []
+    for index, (expected, symbol) in enumerate(module.method_entries):
+        offset = ALIEN_METHOD_TABLE_OFFSET + index * 2
+        original = word(offset)
+        if original != expected:
+            raise SystemExit(
+                f"{module_name}: method slot {index} is {original:#06x}, "
+                f"expected {expected:#06x}"
+            )
+        result.append((offset, original, symbol, f"method_slot_{index}"))
+
+    resume_symbols = dict(module.resume_callbacks)
+    state_symbols = dict(module.state_callbacks)
+    table_cursor = 0x2308
+    context_count = 0
+    while True:
+        context_offset = word(table_cursor)
+        table_cursor += 2
+        if context_offset == 0:
+            break
+        context_count += 1
+        if context_count > 256:
+            raise SystemExit(f"{module_name}: unterminated render-context table")
+        state_offset = word(context_offset + 0x16)
+        state_count = word(context_offset + 0x1A)
+        method_offset = word(context_offset + 0x34)
+        control_offset = context_offset + 0x36
+        if method_offset & 1 or method_offset // 2 >= len(module.method_entries):
+            raise SystemExit(
+                f"{module_name}: context DS:{context_offset:#06x} has invalid "
+                f"method-table offset {method_offset:#06x}"
+            )
+        method_slot = method_offset // 2
+
+        if method_slot == 13:
+            original = word(control_offset)
+            if original != 0:
+                symbol = resume_symbols.get(original)
+                if symbol is None:
+                    raise SystemExit(
+                        f"{module_name}: unknown resume callback {original:#06x} "
+                        f"in context DS:{context_offset:#06x}"
+                    )
+                result.append(
+                    (control_offset, original, symbol, "context_resume_callback")
+                )
+
+        callback_count = 0
+        if method_slot in (2, 4):
+            callback_count = 1
+        elif method_slot == 3:
+            callback_count = state_count
+        for state_index in range(callback_count):
+            callback_offset = state_offset + 0x6C + state_index * 0x5E
+            original = word(callback_offset)
+            symbol = state_symbols.get(original)
+            if symbol is None:
+                raise SystemExit(
+                    f"{module_name}: unknown state callback {original:#06x} at "
+                    f"DS:{callback_offset:#06x} in context DS:{context_offset:#06x}"
+                )
+            result.append(
+                (callback_offset, original, symbol, f"slot_{method_slot}_state_callback")
+            )
+
+    offsets = [offset for offset, _, _, _ in result]
+    if len(offsets) != len(set(offsets)):
+        raise SystemExit(f"{module_name}: duplicate payload pointer owner")
+    return sorted(result)
+
+
 def entry_lines(module: Module) -> list[str]:
     api = module.api_symbol
     lines = [
@@ -244,6 +411,7 @@ def owner_assembly(
     module: Module,
     image: bytes,
     declared: list[Declaration],
+    rebindings: list[tuple[int, int, str, str]],
 ) -> None:
     code = sorted(
         (item for item in declared if item.segment == "_CODE"),
@@ -259,11 +427,20 @@ def owner_assembly(
         raise SystemExit(f"{module_name}: missing data delta declaration")
     if module.data_segment_symbol not in {item.symbol for item in code}:
         raise SystemExit(f"{module_name}: missing data segment declaration")
+    starts = segment_starts(image, module)
+    data_end = starts[1]
     lines = [
         "; Generated source-linked XDB owner. Do not edit.",
         "; Original machine code is not included; only initialized state/payload bytes remain.",
         ".386",
         "",
+        *(
+            f"extrn {symbol}:near"
+            for symbol in dict.fromkeys(
+                symbol for _, _, symbol, _ in rebindings
+            )
+        ),
+        "" if rebindings else "",
         *entry_lines(module),
     ]
 
@@ -297,8 +474,6 @@ def owner_assembly(
     )
     lines.extend(["_CODE ends", ""])
 
-    starts = segment_starts(image, module)
-    data_end = starts[1]
     data_labels: dict[int, list[str]] = {}
     for item in data:
         if item.offset >= data_end - module.data_file_base:
@@ -311,10 +486,15 @@ def owner_assembly(
     for start in range(0, len(data), 8):
         lines.append("public " + ", ".join(item.symbol for item in data[start : start + 8]))
     data_labels.setdefault(0, []).insert(0, module.directory_symbol)
+    data_overrides = {
+        offset: (2, f"dw {symbol}")
+        for offset, _, symbol, _ in rebindings
+    }
     emit_labeled_bytes(
         lines,
         image[module.data_file_base:data_end],
         data_labels,
+        data_overrides,
     )
     lines.extend(["XDB_DATA ends", ""])
 
@@ -417,8 +597,9 @@ def main() -> int:
         (item for item in known.values() if module_symbol(item.symbol, args.module)),
         key=lambda item: (item.segment, item.offset, item.symbol),
     )
+    rebindings = payload_rebindings(args.module, module, image)
     owner_source = output / f"{args.module}_source_owner.asm"
-    owner_assembly(owner_source, args.module, module, image, declared)
+    owner_assembly(owner_source, args.module, module, image, declared, rebindings)
     owner_object = output / f"{args.module}_source_owner.obj"
     run([tool(args.wasm), "-q", f"-fo={owner_object}", str(owner_source)])
 
@@ -467,6 +648,7 @@ def main() -> int:
         module.data_delta_symbol,
         module.data_segment_symbol,
         module.directory_symbol,
+        *(symbol for _, _, symbol, _ in rebindings),
     )
     missing = [symbol for symbol in required if symbol not in symbols]
     if missing:
@@ -493,15 +675,34 @@ def main() -> int:
         )
 
     original_payload = image[module.data_file_base :]
+    expected_payload = bytearray(original_payload)
+    for payload_offset, _, symbol, _ in rebindings:
+        method_offset = symbols[symbol]
+        if method_offset >= data_start or method_offset > 0xFFFF:
+            raise SystemExit(
+                f"{args.module}: linked method {symbol} is outside the code segment"
+            )
+        struct.pack_into(
+            "<H",
+            expected_payload,
+            payload_offset,
+            method_offset,
+        )
     rebuilt_payload = load_image[data_start : data_start + len(original_payload)]
-    if rebuilt_payload != original_payload:
+    if len(rebuilt_payload) != len(expected_payload):
+        raise SystemExit(
+            f"{args.module}: linked payload is {len(rebuilt_payload)} bytes, "
+            f"expected {len(expected_payload)}"
+        )
+    if rebuilt_payload != expected_payload:
         mismatch = next(
             index
-            for index, (left, right) in enumerate(zip(rebuilt_payload, original_payload))
+            for index, (left, right) in enumerate(zip(rebuilt_payload, expected_payload))
             if left != right
         )
         raise SystemExit(
-            f"{args.module}: non-code payload differs at DS/file-relative {mismatch:#x}"
+            f"{args.module}: payload differs outside approved rebindings at "
+            f"DS/file-relative {mismatch:#x}"
         )
     raw = load_image[: data_start + len(original_payload)]
     destination = output / f"{args.module}.xdb"
@@ -509,14 +710,16 @@ def main() -> int:
     report = output / "build.tsv"
     report.write_text(
         "module\tentry\tcode_bytes\tdata_file_base\toriginal_bytes\trebuilt_bytes\t"
-        "relocations\toriginal_sha256\trebuilt_sha256\n"
+        "relocations\tpayload_rebindings\toriginal_sha256\trebuilt_sha256\n"
         f"{args.module}\t0x0000\t{data_start}\t0x{data_start:05x}\t{len(image)}\t"
-        f"{len(raw)}\t{len(relocations)}\t{sha256(image)}\t{sha256(raw)}\n",
+        f"{len(raw)}\t{len(relocations)}\t{len(rebindings)}\t"
+        f"{sha256(image)}\t{sha256(raw)}\n",
         encoding="ascii",
     )
     print(
         f"{args.module}: linked {len(objects)} C routine objects; "
-        f"code={data_start} bytes, payload={len(original_payload)} bytes"
+        f"code={data_start} bytes, payload={len(original_payload)} bytes; "
+        f"rebindings={len(rebindings)}"
     )
     print(f"{args.module}: raw entry 0000:0000; relocations={len(relocations)} (data delta only)")
     print(f"wrote {destination}")

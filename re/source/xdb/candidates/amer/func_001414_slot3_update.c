@@ -39,26 +39,28 @@ void XDB_NEAR xdb_amer_slot3_update(
         xdb_alien_biased_state XDB_NEAR *state,
         xdb_alien_method_context XDB_NEAR *context)
 {
-    xdb_alien_ring_entry XDB_CODE_DATA *ring;
     xdb_u16 ring_cursor;
+    xdb_u16 ring_index;
 
     (void)context;
     ring_cursor = state->ring_offset;
-    ring = &xdb_amer_slot3_ring[ring_cursor >> 3];
+    ring_index = (xdb_u16)(ring_cursor >> 3);
     state->field_04e = (xdb_i16)(
-            (xdb_u16)state->field_04e + (xdb_u16)ring->field_000);
+            (xdb_u16)state->field_04e
+            + (xdb_u16)xdb_amer_slot3_ring[ring_index].field_000);
     state->field_050 = (xdb_u16)(
-            state->field_050 + (xdb_u16)ring->field_002);
-    state->field_054 = ring->field_004;
+            state->field_050
+            + (xdb_u16)xdb_amer_slot3_ring[ring_index].field_002);
+    state->field_054 = xdb_amer_slot3_ring[ring_index].field_004;
     if (xdb_amer_slot3_timer != 0u) {
         return;
     }
 
     ring_cursor = (xdb_u16)((state->ring_offset + 8u) & 0x03fcu);
     state->ring_offset = ring_cursor;
-    ring = &xdb_amer_slot3_ring[ring_cursor >> 3];
-    if ((ring->field_006 & 3) != 0) {
-        if ((ring->field_006 & 2) != 0) {
+    ring_index = (xdb_u16)(ring_cursor >> 3);
+    if ((xdb_amer_slot3_ring[ring_index].field_006 & 3) != 0) {
+        if ((xdb_amer_slot3_ring[ring_index].field_006 & 2) != 0) {
             xdb_amer_slot3_capture_resume_state(state, context);
             return;
         }
@@ -105,13 +107,13 @@ void XDB_NEAR xdb_amer_slot3_update(
     if (xdb_alien_callback_countdown == 0u) {
         xdb_alien_callback_countdown = 2;
     }
-    ring->field_004 = 8;
+    xdb_amer_slot3_ring[ring_index].field_004 = 8;
     if ((xdb_amer_slot1_selection_state & 3u) != 0u) {
         slot3_feedback_sample(state);
         return;
     }
 
-    ring->field_006 = 1;
+    xdb_amer_slot3_ring[ring_index].field_006 = 1;
     state->owner_offset = 0x25a8u;
     state->field_054 = 0;
     state->position_x = 0;

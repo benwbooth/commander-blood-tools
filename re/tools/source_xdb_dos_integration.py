@@ -19,7 +19,13 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[2]
 INCLUDE_DIR = ROOT / "re" / "source" / "xdb" / "candidates" / "include"
-HARNESS = ROOT / "re" / "integration" / "dos" / "source_xdb_manu3_loader.c"
+MANU3_HARNESS = ROOT / "re" / "integration" / "dos" / "source_xdb_manu3_loader.c"
+ALIEN_HARNESS = ROOT / "re" / "integration" / "dos" / "source_xdb_alien_loader.c"
+ALIEN_RENDER_OFFSETS = {
+    "amer": (0x0944, 0x28D0),
+    "croolis": (0x0946, 0x2940),
+    "scrut": (0x0946, 0x2A00),
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -28,6 +34,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--wcl", default="wcl")
     parser.add_argument("--dosbox", default="dosbox-x")
+    parser.add_argument(
+        "--dump-raster",
+        action="store_true",
+        help="write the post-call 64 KiB raster segment to RASTER.BIN",
+    )
     return parser.parse_args()
 
 
@@ -75,30 +86,59 @@ def map_symbols(path: Path) -> dict[str, int]:
 def main() -> int:
     args = parse_args()
     build_dir = args.build_dir.resolve()
-    source_xdb = build_dir / "manu3.xdb"
     build_report = build_dir / "build.tsv"
-    link_map = build_dir / "manu3_source_link.map"
-    for path in (source_xdb, build_report, link_map):
-        if not path.is_file():
-            raise SystemExit(f"missing source-XDB build artifact: {path}")
-
+    if not build_report.is_file():
+        raise SystemExit(f"missing source-XDB build artifact: {build_report}")
     with build_report.open(newline="", encoding="ascii") as handle:
         row = next(csv.DictReader(handle, delimiter="\t"))
-    if row["module"] != "manu3":
-        raise SystemExit("the current DOS loader gate requires a MANU3 build")
+    module = row["module"]
+    if module not in ("manu3", *ALIEN_RENDER_OFFSETS):
+        raise SystemExit(f"unsupported source-XDB module: {module}")
+
+    source_xdb = build_dir / f"{module}.xdb"
+    link_map = build_dir / f"{module}_source_link.map"
+    for path in (source_xdb, link_map):
+        if not path.is_file():
+            raise SystemExit(f"missing source-XDB build artifact: {path}")
     image_bytes = int(row["rebuilt_bytes"])
     data_paragraph = int(row["data_file_base"], 0) // 16
     symbols = map_symbols(link_map)
-    state_offset = symbols.get("_xdb_manu3_data_segment")
+    state_offset = symbols.get(f"_xdb_{module}_data_segment")
     if state_offset is None or state_offset >= 0x10000:
-        raise SystemExit("MANU3 data-segment state is absent from the linked code segment")
+        raise SystemExit(
+            f"{module.upper()} data-segment state is absent from the linked code segment"
+        )
 
     output = args.output_dir.resolve()
     if output.exists():
         shutil.rmtree(output)
     output.mkdir(parents=True)
-    shutil.copy2(source_xdb, output / "MANU3.XDB")
+    alien = module != "manu3"
+    shutil.copy2(source_xdb, output / ("ALIEN.XDB" if alien else "MANU3.XDB"))
     dos_executable = output / "XDBLOAD.EXE"
+    module_defines = []
+    harness = MANU3_HARNESS
+    expected = "PASS source-linked MANU3 XDB"
+    if alien:
+        continuation_offset, mode_offset = ALIEN_RENDER_OFFSETS[module]
+        module_defines = [
+            f"-dXDB_RENDER_CONTINUATION_OFFSET=0x{continuation_offset:04x}U",
+            f"-dXDB_RENDER_MODE_OFFSET=0x{mode_offset:04x}U",
+        ]
+        if args.dump_raster:
+            raster_state_offset = symbols.get("_xdb_alien_raster_segment")
+            if raster_state_offset is None or raster_state_offset >= 0x10000:
+                raise SystemExit(
+                    f"{module.upper()} raster-segment state is absent from linked code"
+                )
+            module_defines.extend(
+                (
+                    f"-dXDB_RASTER_STATE_OFFSET=0x{raster_state_offset:04x}U",
+                    "-dXDB_DUMP_RASTER",
+                )
+            )
+        harness = ALIEN_HARNESS
+        expected = "PASS source-linked alien XDB"
     run(
         [
             executable(args.wcl),
@@ -112,10 +152,11 @@ def main() -> int:
             f"-dXDB_IMAGE_BYTES={image_bytes}UL",
             f"-dXDB_DATA_PARAGRAPH=0x{data_paragraph:04x}U",
             f"-dXDB_DATA_STATE_OFFSET=0x{state_offset:04x}U",
+            *module_defines,
             f"-i={INCLUDE_DIR}",
             f"-fe={dos_executable}",
             f"-fm={output / 'XDBLOAD.MAP'}",
-            str(HARNESS),
+            str(harness),
         ],
         output,
     )
@@ -148,7 +189,6 @@ def main() -> int:
     if not result_path.is_file():
         raise SystemExit("source-XDB DOS loader did not produce RESULT.TXT")
     result = result_path.read_text(encoding="ascii").strip()
-    expected = "PASS source-linked MANU3 XDB"
     if result != expected:
         console = output / "CONSOLE.TXT"
         diagnostics = (
@@ -157,7 +197,7 @@ def main() -> int:
             else ""
         )
         raise SystemExit(f"source-XDB DOS failure: {result!r}\n{diagnostics}")
-    print(f"{expected}: {image_bytes} byte raw overlay")
+    print(f"{expected}: {module.upper()}, {image_bytes} byte raw overlay")
     return 0
 
 

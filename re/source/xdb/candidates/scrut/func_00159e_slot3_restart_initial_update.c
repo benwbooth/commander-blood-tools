@@ -11,13 +11,13 @@ void XDB_NEAR xdb_scrut_slot3_restart_initial_update(
         xdb_alien_biased_state XDB_NEAR *state,
         xdb_alien_method_context XDB_NEAR *context)
 {
-    volatile xdb_alien_ring_entry XDB_CODE_DATA *ring;
+    xdb_u16 ring_index;
     xdb_u16 random_value;
 
     (void)context;
-    ring = &xdb_scrut_slot3_ring[state->ring_offset >> 3];
-    ring->field_006 = 0;
-    ring->field_004 = 8;
+    ring_index = (xdb_u16)(state->ring_offset >> 3);
+    xdb_scrut_slot3_ring[ring_index].field_006 = 0;
+    xdb_scrut_slot3_ring[ring_index].field_004 = 8;
     state->callback = xdb_scrut_slot3_initial_update;
     state->field_052 = 0;
     state->field_054 = 8;

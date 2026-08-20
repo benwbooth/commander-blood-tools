@@ -161,6 +161,8 @@ next_column:
                     raster_segment,
                     edge->next);
         }
+        head->flags = 1u;
+        head->output_end = XDB_AMER_ACTIVE_LIST_HEAD_OFFSET + 0x10u;
         head->sort_next = 0u;
         edge->sort_next = 0u;
         span = head;
@@ -235,6 +237,9 @@ next_column:
             boundary->flags = 0u;
             boundary->source_offset = (xdb_u16)FP_OFF(span);
         } else {
+            if (edge == middle) {
+                goto finish_span_boundaries;
+            }
             boundary->flags = 1u;
             boundary->next_boundary_offset = (xdb_u16)FP_OFF(edge);
             boundary = XDB_FAR_AT(
@@ -459,6 +464,7 @@ finish_span_boundaries:
                 xdb_u16 output_offset;
                 xdb_u16 texture_u;
                 xdb_u16 texture_v;
+                xdb_u16 texture_segment;
                 xdb_u8 texel;
                 xdb_i16 texture_du;
                 xdb_i16 texture_dv;
@@ -488,6 +494,7 @@ finish_span_boundaries:
                                 (xdb_u32)record->edge_0_position >> 16));
                 texture_du = record->texture_du;
                 texture_dv = record->texture_dv;
+                texture_segment = record->texture_segment;
                 texture_u = (xdb_u16)(
                         (xdb_u16)record->texture_u
                         + (xdb_u16)(texture_du * relative_coordinate));
@@ -510,7 +517,7 @@ finish_span_boundaries:
                             | (texture_v & 0xff00u));
                     texel = *XDB_FAR_AT(
                             const volatile xdb_u8,
-                            record->texture_segment,
+                            texture_segment,
                             texture_offset);
                     texture_u = (xdb_u16)(texture_u + texture_du);
                     texture_v = (xdb_u16)(texture_v + texture_dv);

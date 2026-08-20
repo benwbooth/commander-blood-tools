@@ -33,8 +33,8 @@ void XDB_NEAR xdb_scrut_slot3_initial_update(
         xdb_alien_biased_state XDB_NEAR *state,
         xdb_alien_method_context XDB_NEAR *context)
 {
-    xdb_alien_ring_entry XDB_CODE_DATA *ring;
     xdb_u16 ring_cursor;
+    xdb_u16 ring_index;
     xdb_u16 ax;
     xdb_u16 bx;
     xdb_u16 cx;
@@ -42,11 +42,11 @@ void XDB_NEAR xdb_scrut_slot3_initial_update(
 
     (void)context;
     ring_cursor = state->ring_offset;
-    ring = &xdb_scrut_slot3_ring[ring_cursor >> 3];
-    ax = (xdb_u16)ring->field_000;
-    bx = (xdb_u16)ring->field_002;
-    dx = (xdb_u16)ring->field_004;
-    ring->field_006 = 0;
+    ring_index = (xdb_u16)(ring_cursor >> 3);
+    ax = (xdb_u16)xdb_scrut_slot3_ring[ring_index].field_000;
+    bx = (xdb_u16)xdb_scrut_slot3_ring[ring_index].field_002;
+    dx = (xdb_u16)xdb_scrut_slot3_ring[ring_index].field_004;
+    xdb_scrut_slot3_ring[ring_index].field_006 = 0;
     state->field_04e = (xdb_i16)(state->field_04e + (xdb_i16)ax);
     state->field_050 = (xdb_u16)(state->field_050 + bx);
     state->field_054 = (xdb_i16)dx;
@@ -91,8 +91,8 @@ void XDB_NEAR xdb_scrut_slot3_initial_update(
         return;
     }
 
-    ring = &xdb_scrut_slot3_ring[ring_cursor >> 3];
-    ring->field_000 = (xdb_i16)ax;
-    ring->field_002 = (xdb_i16)bx;
-    ring->field_004 = (xdb_i16)dx;
+    ring_index = (xdb_u16)(ring_cursor >> 3);
+    xdb_scrut_slot3_ring[ring_index].field_000 = (xdb_i16)ax;
+    xdb_scrut_slot3_ring[ring_index].field_002 = (xdb_i16)bx;
+    xdb_scrut_slot3_ring[ring_index].field_004 = (xdb_i16)dx;
 }

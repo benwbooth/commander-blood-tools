@@ -309,23 +309,37 @@ The shim is the only assembly in this path: it converts the game's BP/SS
 request convention to Open Watcom's register convention and far-returns to the
 host. C routine lengths and addresses are otherwise unconstrained.
 
-Build the current MANU3 module with:
+Build any recovered module with:
 
 ```sh
 NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
   python3 re/tools/build_source_xdb.py \
-    --module manu3 \
-    --object-dir output/recovered_dos_package/xdb_objects/xdb_manu3 \
-    --raw-xdb output/_tmp_dat/manu3.xdb \
-    --output-dir output/source_xdb/manu3
+    --module croolis \
+    --object-dir output/xdb_objects/xdb_croolis \
+    --raw-xdb output/_tmp_dat/croolis.xdb \
+    --output-dir output/source_xdb/croolis
 ```
 
 The builder rejects a nonzero entry offset, a non-paragraph data segment, any
 runtime relocation other than the additive data-segment word, a manifest/object
-mismatch, or any changed byte in the original non-code payload. The linked
-MANU3 image currently contains 8,896 bytes before its relocated data segment
-and is 66,464 bytes total; the shipped image is 62,544 bytes. The size change is
-expected from normal C linking and is not an ABI failure.
+mismatch, an unknown embedded near callback, or any unexplained changed byte in
+the original non-code payload. For the alien overlays it verifies and rebinds
+the 15-entry method table, initialized resume callbacks, and initialized slot-2
+and slot-3 state callbacks. Every other payload byte must match the shipped
+overlay.
+
+The current clean builds are:
+
+| overlay | C routines | linked code | retained payload | checked pointer rebindings | rebuilt bytes | shipped bytes |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| AMER | 55 | 31,344 | 253,872 | 88 | 285,216 | 266,800 |
+| CROOLIS | 47 | 30,352 | 245,792 | 53 | 276,144 | 258,832 |
+| MANU3 | 12 | 8,896 | 57,568 | 0 | 66,464 | 62,544 |
+| SCRUT | 55 | 31,104 | 244,848 | 53 | 275,952 | 258,080 |
+
+Each image has raw entry `0000:0000` and exactly one runtime relocation, the
+additive data-segment word. Size changes are expected from normal C linking and
+are not ABI failures.
 
 Run the raw loader and initialization protocol under DOSBox-X with:
 
@@ -333,18 +347,17 @@ Run the raw loader and initialization protocol under DOSBox-X with:
 NIXPKGS_ALLOW_UNFREE=1 nix shell --impure \
   nixpkgs#open-watcom-bin nixpkgs#dosbox-x -c \
   python3 re/tools/source_xdb_dos_integration.py \
-    --build-dir output/source_xdb/manu3 \
-    --output-dir output/source_xdb_runtime/manu3
+    --build-dir output/source_xdb/croolis \
+    --output-dir output/source_xdb_runtime/croolis
 ```
 
 The DOS gate allocates the image, reads it across 64 KiB boundaries, far-calls
 offset zero with the original BP/SS contract, and verifies the published data
 segment, all three derived work segments, and the renderer continuation. It
-passes with `PASS source-linked MANU3 XDB`. This proves a loadable source-linked
-module and its initialization boundary; substitution into sustained game flow
-is the next gate. AMER, CROOLIS, and SCRUT still require their source-linked
-code-segment relocations to be eliminated, their code-resident method pointers
-to be rebound to the linked routines, and equivalent runtime validation.
+also executes one complete frame for AMER, CROOLIS, and SCRUT and exits through
+the original keyboard/callback protocol. All four modules pass this gate. Use
+`--dump-raster` to retain the post-call 64 KiB raster segment for a byte-level
+diagnostic comparison. Substitution into sustained game flow is the next gate.
 
 To measure fixed-offset placement, use the layout probe:
 
