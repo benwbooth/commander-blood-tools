@@ -14281,14 +14281,350 @@ def update_vector(path: Path, vectors: list[dict[str, object]], check: bool) -> 
     print(f"wrote {path.relative_to(REPO_ROOT)} ({len(vectors)} vectors)")
 
 
+def alien_slot3_callback_vectors(
+    module: str,
+    kind: str,
+    entry: int,
+    body_size: int,
+    body_hash: str,
+    timer_offset: int,
+    resume_countdown_offset: int,
+    resume_state_offset: int,
+    ring_offset: int,
+    initial_callback: int,
+    followup_callback: int,
+    initial_position: tuple[int, int, int],
+) -> list[dict[str, object]]:
+    image = load_image(module)
+    actual_hash = hashlib.sha256(image[entry : entry + body_size]).hexdigest()
+    if actual_hash != body_hash:
+        raise AssertionError(
+            f"{module}:{entry:#x}: recovered {body_size}-byte body changed"
+        )
+
+    data_segment = 0x5000
+    extra_segment = 0x7000
+    fs_segment = 0x9000
+    game_segment = 0xA000
+    stack_segment = 0xB000
+    state = 0x4000
+    context = 0x3000
+    return_address = 0xF000
+    stack_sentinel = bytes.fromhex("5aa596698778")
+
+    if kind == "restart":
+        cases = (
+            ("zero", 0x0000, 0x0000),
+            ("ordinary", 0x0198, 0x1234),
+            ("ring_end", 0x03FC, 0xFFFF),
+            ("borrowed_rotate", 0x0008, 0x0004),
+        )
+    elif kind == "resume":
+        cases = (
+            ("ring_zero", 0x0000, 0x1234),
+            ("ring_middle", 0x0198, 0xA55A),
+            ("ring_end", 0x03FC, 0xFFFF),
+        )
+    elif kind == "capture":
+        cases = (
+            ("capture_zero_ring", 0x0000, 0x1234),
+            ("capture_middle_ring", 0x0198, 0xA55A),
+            ("capture_end_ring", 0x03FC, 0xFFFF),
+        )
+    elif kind == "ring_zero":
+        cases = (
+            ("timer_blocks", 0x0198, 1),
+            ("advance_zero", 0x0000, 0),
+            ("advance_middle", 0x0198, 0),
+            ("advance_wrap", 0x03F8, 0),
+        )
+    else:
+        raise ValueError(f"unsupported slot-3 callback kind: {kind}")
+
+    def put_bytes(memory: bytearray, offset: int, value: bytes) -> None:
+        for index, byte in enumerate(value):
+            memory[(offset + index) & 0xFFFF] = byte
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        put_bytes(memory, offset, struct.pack("<H", value & 0xFFFF))
+
+    def put_u32(memory: bytearray, offset: int, value: int) -> None:
+        put_bytes(memory, offset, struct.pack("<I", value & 0xFFFFFFFF))
+
+    def get_u16(memory: bytearray, offset: int) -> int:
+        return memory[offset & 0xFFFF] | (memory[(offset + 1) & 0xFFFF] << 8)
+
+    vectors: list[dict[str, object]] = []
+    for case_index, (name, ring_cursor, parameter) in enumerate(cases):
+        data_before = bytearray(
+            (offset * 29 + case_index * 17 + 3) & 0xFF
+            for offset in range(0x10000)
+        )
+        data_expected = bytearray(data_before)
+        code_before = bytearray(image)
+        code_expected = bytearray(code_before)
+        code_before[return_address] = 0xCC
+        code_expected[return_address] = 0xCC
+
+        callback_before = (0xA100 + case_index) & 0xFFFF
+        put_u16(data_before, state + 0x0E, callback_before)
+        put_u16(data_before, state + 0x5A, ring_cursor)
+        put_u16(data_expected, state + 0x0E, callback_before)
+        put_u16(data_expected, state + 0x5A, ring_cursor)
+        for field, value in zip(
+            (0x42, 0x46, 0x4A),
+            (0x11223344, 0x55667788, 0x99AABBCC),
+        ):
+            put_u32(data_before, state + field, value)
+            put_u32(data_expected, state + field, value)
+        for field, value in zip(
+            (0x4E, 0x50, 0x52, 0x54, 0x56, 0x5C),
+            (0x1111, 0x2222, 0x3333, 0x4444, 0x5555, 0x6666),
+        ):
+            put_u16(data_before, state + field, value)
+            put_u16(data_expected, state + field, value)
+
+        if kind == "restart":
+            put_u16(data_before, 0x105C, parameter)
+            put_u16(data_expected, 0x105C, parameter)
+            random_after = (
+                ((parameter >> 3) | (parameter << 13))
+                - ((parameter >> 2) & 1)
+            ) & 0xFFFF
+            put_u16(data_expected, 0x105C, random_after)
+            put_u16(data_expected, state + 0x0E, initial_callback)
+            put_u16(data_expected, state + 0x52, 0)
+            put_u16(data_expected, state + 0x54, 8)
+            put_u16(data_expected, state + 0x56, 0x1E)
+            put_u16(data_expected, state + 0x5C, random_after)
+            put_u16(code_expected, ring_offset + ring_cursor + 4, 8)
+            put_u16(code_expected, ring_offset + ring_cursor + 6, 0)
+        elif kind == "resume":
+            for field, value in zip((0x42, 0x46, 0x4A), initial_position):
+                put_u32(data_expected, state + field, value)
+            for field in (0x4E, 0x50, 0x52, 0x54):
+                put_u16(data_expected, state + field, 0)
+            put_u16(data_expected, state + 0x0E, followup_callback)
+            for field, value in ((0, 0), (2, 0), (4, 0), (6, 2)):
+                put_u16(code_expected, ring_offset + ring_cursor + field, value)
+        elif kind == "capture":
+            for field, value in zip((0x42, 0x46, 0x4A), initial_position):
+                put_u32(data_expected, state + field, value)
+            for field in (0x4E, 0x50, 0x52, 0x54):
+                put_u16(data_expected, state + field, 0)
+            put_u16(code_expected, resume_countdown_offset, 0x12)
+            put_u16(code_expected, resume_state_offset, state)
+        else:
+            put_u16(code_before, timer_offset, parameter)
+            put_u16(code_expected, timer_offset, parameter)
+            if parameter == 0:
+                ring_after = (ring_cursor + 8) & 0x03FC
+                put_u16(data_expected, state + 0x5A, ring_after)
+                for field in (0, 2, 4, 6):
+                    put_u16(code_expected, ring_offset + ring_after + field, 0)
+
+        initial = {
+            "eax": 0xA1A10000 | ((0x1111 + case_index) & 0xFFFF),
+            "ebx": 0xB2B20000 | ((0x2222 + case_index) & 0xFFFF),
+            "ecx": 0xC3C30000 | ((0x3333 + case_index) & 0xFFFF),
+            "edx": 0xD4D40000 | ((0x4444 + case_index) & 0xFFFF),
+            "esi": 0xE5E50000 | state,
+            "edi": 0xF6F60000 | context,
+            "ebp": 0x97970000 | ring_cursor,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0293 | (0x0400 if case_index & 1 else 0),
+        }
+        extra_before = bytes(
+            (offset * 13 + case_index + 7) & 0xFF for offset in range(0x10000)
+        )
+        fs_before = bytes(
+            (offset * 11 + case_index + 9) & 0xFF for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 7 + case_index + 5) & 0xFF for offset in range(0x10000)
+        )
+        machine = execute(
+            bytes(code_before),
+            entry,
+            return_address,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (extra_segment, 0, extra_before),
+                (fs_segment, 0, fs_before),
+                (game_segment, 0, game_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+        )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        actual_code = bytes(machine.mem_read(0, len(image)))
+        if actual_data != bytes(data_expected):
+            differences = [
+                (offset, actual_data[offset], data_expected[offset])
+                for offset in range(0x10000)
+                if actual_data[offset] != data_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: data differs at {differences}"
+            )
+        if actual_code != bytes(code_expected):
+            differences = [
+                (offset, actual_code[offset], code_expected[offset])
+                for offset in range(len(image))
+                if actual_code[offset] != code_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: code differs at {differences}"
+            )
+        for segment, expected in (
+            (extra_segment, extra_before),
+            (fs_segment, fs_before),
+            (game_segment, game_before),
+        ):
+            if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: decoy {segment:#x} changed"
+                )
+        if machine.reg_read(UC_X86_REG_SP) != 0xFF02:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "kind": kind,
+                "ring_before": ring_cursor,
+                "ring_after": get_u16(data_expected, state + 0x5A),
+                "callback_before": callback_before,
+                "callback_after": get_u16(data_expected, state + 0x0E),
+                "position_after": [
+                    struct.unpack_from("<I", data_expected, state + field)[0]
+                    for field in (0x42, 0x46, 0x4A)
+                ],
+                "motion_after": [
+                    get_u16(data_expected, state + field)
+                    for field in (0x4E, 0x50, 0x52, 0x54, 0x56, 0x5C)
+                ],
+                "resume_countdown_after": struct.unpack_from(
+                    "<H", code_expected, resume_countdown_offset
+                )[0],
+                "resume_state_after": struct.unpack_from(
+                    "<H", code_expected, resume_state_offset
+                )[0],
+                "data_sha256": hashlib.sha256(data_expected).hexdigest(),
+                "code_sha256": hashlib.sha256(code_expected).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--check", action="store_true", help="fail unless committed vectors are current"
     )
+    parser.add_argument(
+        "--only-slot3-callbacks",
+        action="store_true",
+        help="generate or check only the recovered alien slot-3 callback vectors",
+    )
     args = parser.parse_args()
 
     VECTOR_ROOT.mkdir(parents=True, exist_ok=True)
+    for (
+        module,
+        timer_offset,
+        resume_countdown_offset,
+        resume_state_offset,
+        ring_offset,
+        initial_callback,
+        followup_callback,
+        initial_position,
+        routines,
+    ) in (
+        (
+            "amer",
+            0x0B31,
+            0x0D5F,
+            0x0D61,
+            0x0D63,
+            0x12B3,
+            0x1614,
+            (0, 0x06A4, 0),
+            (
+                ("restart", 0x1558, 50, "2a1e8de52d2f3196361f13995fa21caf300fe036a58630bfd9d085138f4c491d"),
+                ("resume", 0x158A, 81, "023c0d65c25447bdd89901d8a22fe08e5b4bc885f025bbb330d0f810ae96c332"),
+                ("capture", 0x15DB, 57, "5203cdb5019a7ebb327a92120bf26347b26fef3da785235379f48f0b46135a40"),
+                ("ring_zero", 0x1614, 52, "0778ff3e9ee060dfd17aba0e58538e744f76ce3d6cf44419509d3e19616df88f"),
+            ),
+        ),
+        (
+            "croolis",
+            0x0B72,
+            0x0DB7,
+            0x0DB9,
+            0x0DBB,
+            0x130B,
+            0x166C,
+            (0, 0x06A4, 0),
+            (
+                ("restart", 0x15B0, 50, "bb668de9705df4c3eb4586efee3a9c7924993d3c98a63311a6f6980df5460739"),
+                ("resume", 0x15E2, 81, "a177b430a47f03da75c8706811233e23fb0c92511a0fd89fef2fa966246199be"),
+                ("capture", 0x1633, 57, "592a5c7d078bee64223c401b2fdc131862c057151c9de27f6f425981a21a7de2"),
+                ("ring_zero", 0x166C, 52, "4c3455654656d4a75e669da99de2f4d1522968313870307fd469726c4b100d05"),
+            ),
+        ),
+        (
+            "scrut",
+            0x0B72,
+            0x0DA5,
+            0x0DA7,
+            0x0DA9,
+            0x12F9,
+            0x165A,
+            (0x06A4, 0, 0),
+            (
+                ("restart", 0x159E, 50, "09d3cf58a7fef37a34eb3f352a57cad79c16c452e044f2c53daee13c7a9ce39f"),
+                ("resume", 0x15D0, 81, "f7f05bbfd9b9ef9344a73b91f483df4cc9927b6bfd2f5aea3ac2093dd03c57f3"),
+                ("capture", 0x1621, 57, "b8da15e8b430e9e7a8a8995767caba0bf80dcc79bf4abde228023143ea31c966"),
+                ("ring_zero", 0x165A, 52, "b7eef2effd0ae190399c62fabf7137013f83d44d492c9cdd152b03a9a9d5924d"),
+            ),
+        ),
+    ):
+        for kind, entry, body_size, body_hash in routines:
+            update_vector(
+                VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+                alien_slot3_callback_vectors(
+                    module,
+                    kind,
+                    entry,
+                    body_size,
+                    body_hash,
+                    timer_offset,
+                    resume_countdown_offset,
+                    resume_state_offset,
+                    ring_offset,
+                    initial_callback,
+                    followup_callback,
+                    initial_position,
+                ),
+                args.check,
+            )
+    if args.only_slot3_callbacks:
+        return 0
     update_vector(
         VECTOR_ROOT / "xdb_manu3_func_0000_natural.json",
         manu3_api_entry_vectors(),

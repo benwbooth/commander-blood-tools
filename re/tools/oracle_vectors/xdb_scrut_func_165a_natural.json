@@ -1,0 +1,110 @@
+[
+  {
+    "name": "timer_blocks",
+    "module": "scrut",
+    "entry": 5722,
+    "kind": "ring_zero",
+    "ring_before": 408,
+    "ring_after": 408,
+    "callback_before": 41216,
+    "callback_after": 41216,
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "motion_after": [
+      4369,
+      8738,
+      13107,
+      17476,
+      21845,
+      26214
+    ],
+    "resume_countdown_after": 0,
+    "resume_state_after": 0,
+    "data_sha256": "99fb14b1e149dc35f220a21c349e18c2818dce00beb3f270b5436ba04e28e53b",
+    "code_sha256": "72ab15be92222b409f5460cfe18734cedd201cde4979f2a3f89a0eb0d1045dca"
+  },
+  {
+    "name": "advance_zero",
+    "module": "scrut",
+    "entry": 5722,
+    "kind": "ring_zero",
+    "ring_before": 0,
+    "ring_after": 8,
+    "callback_before": 41217,
+    "callback_after": 41217,
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "motion_after": [
+      4369,
+      8738,
+      13107,
+      17476,
+      21845,
+      26214
+    ],
+    "resume_countdown_after": 0,
+    "resume_state_after": 0,
+    "data_sha256": "89a165b284a8242793b374a6fc5d3bf4388b16579e874e088bb9c0e0568ab325",
+    "code_sha256": "65a5d12216ad676b755934e860cf153cdfec8b009babed4390ca3347227df638"
+  },
+  {
+    "name": "advance_middle",
+    "module": "scrut",
+    "entry": 5722,
+    "kind": "ring_zero",
+    "ring_before": 408,
+    "ring_after": 416,
+    "callback_before": 41218,
+    "callback_after": 41218,
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "motion_after": [
+      4369,
+      8738,
+      13107,
+      17476,
+      21845,
+      26214
+    ],
+    "resume_countdown_after": 0,
+    "resume_state_after": 0,
+    "data_sha256": "a93b0c6244e8b4c06c6fa93cc5b420ced79ef9a4b0fc05f524143dde62cdebc5",
+    "code_sha256": "36f2f9b8018dbd2614c4f4b36b6c53eff3fc5e0b284ab474185b6b3347ab8ba0"
+  },
+  {
+    "name": "advance_wrap",
+    "module": "scrut",
+    "entry": 5722,
+    "kind": "ring_zero",
+    "ring_before": 1016,
+    "ring_after": 0,
+    "callback_before": 41219,
+    "callback_after": 41219,
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "motion_after": [
+      4369,
+      8738,
+      13107,
+      17476,
+      21845,
+      26214
+    ],
+    "resume_countdown_after": 0,
+    "resume_state_after": 0,
+    "data_sha256": "fb253754de7704f4e9cd452d7f2329cc29419221a9cf629477d2efd15468325e",
+    "code_sha256": "b78679de944d871aba684bc52f1332ac9910c56dee5cc03709044b9f1672a550"
+  }
+]

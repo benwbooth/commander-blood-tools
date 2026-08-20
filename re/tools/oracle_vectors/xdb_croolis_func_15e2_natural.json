@@ -1,0 +1,83 @@
+[
+  {
+    "name": "ring_zero",
+    "module": "croolis",
+    "entry": 5602,
+    "kind": "resume",
+    "ring_before": 0,
+    "ring_after": 0,
+    "callback_before": 41216,
+    "callback_after": 5740,
+    "position_after": [
+      0,
+      1700,
+      0
+    ],
+    "motion_after": [
+      0,
+      0,
+      0,
+      0,
+      21845,
+      26214
+    ],
+    "resume_countdown_after": 0,
+    "resume_state_after": 0,
+    "data_sha256": "bc075e22c455268de004e8e8dfec2ddece188d9e946d5ddcb4861d3595481bb2",
+    "code_sha256": "9abb1f288c0a45159a9f6c876441dfc4ee8e2b1958235ec6c734632757d745d7"
+  },
+  {
+    "name": "ring_middle",
+    "module": "croolis",
+    "entry": 5602,
+    "kind": "resume",
+    "ring_before": 408,
+    "ring_after": 408,
+    "callback_before": 41217,
+    "callback_after": 5740,
+    "position_after": [
+      0,
+      1700,
+      0
+    ],
+    "motion_after": [
+      0,
+      0,
+      0,
+      0,
+      21845,
+      26214
+    ],
+    "resume_countdown_after": 0,
+    "resume_state_after": 0,
+    "data_sha256": "b511ee72f3d1696fced6c30c23749feb9ddb4d2e1ddd3f64e9b3498362bc01ef",
+    "code_sha256": "932484e1959260c90a31bc911ca72d49cc50033e66e4f85f14dc14ac8a39670d"
+  },
+  {
+    "name": "ring_end",
+    "module": "croolis",
+    "entry": 5602,
+    "kind": "resume",
+    "ring_before": 1020,
+    "ring_after": 1020,
+    "callback_before": 41218,
+    "callback_after": 5740,
+    "position_after": [
+      0,
+      1700,
+      0
+    ],
+    "motion_after": [
+      0,
+      0,
+      0,
+      0,
+      21845,
+      26214
+    ],
+    "resume_countdown_after": 0,
+    "resume_state_after": 0,
+    "data_sha256": "ebeef5f0a1edfa911e691c768c6fe352a6143752fb6a1cdde73ee09a2e0869e0",
+    "code_sha256": "1529e57ee2aed935c6bdecb3585988c8ec5d1182d568a799e6c607cd969aee99"
+  }
+]

@@ -27,6 +27,11 @@ For each routine, the expected workflow is:
    assembly shape and bytes against the recovered routine.
 5. Keep the source only when the comparison is close enough to justify it.
 
+Generated routine length is not an ABI requirement for the normally linked
+source build. Size and placement become acceptance constraints only for the
+separate fixed-offset patch path. Linked routines are judged on calling
+convention, pointer and struct layout, segment/global ownership, and behavior.
+
 The assembly dumps under `re/assembly` remain the evidence. A missing `.c` file
 means the routine has not yet cleared the natural-C evidence gate.
 
@@ -49,7 +54,17 @@ Start with:
 Before accepting new recovered source, keep the assembly inventory closed:
 
 ```sh
+python3 re/tools/split_xdb_slot3_assembly.py --check
+python3 re/tools/split_xdb_resume_assembly.py --check
 python3 re/tools/assembly_inventory.py --check
+python3 re/tools/xdb_source_inventory.py --check
 nix develop -c python3 re/tools/natural_candidate_oracle.py --check
 nix develop -c python3 re/tools/xdb_candidate_oracle.py --check
 ```
+
+The XDB source inventory cross-checks standardized callable owners against the
+top-level routine index. Separate assembly artifacts retained for reviewed
+internal branch labels are checked against `re/assembly/boundary_overrides.tsv`
+and deliberately excluded from the C manifest. Older broad callback dumps that
+still need a split audit remain visible as pending candidates rather than being
+silently promoted to one-routine owners.

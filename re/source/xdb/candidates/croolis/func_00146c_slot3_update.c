@@ -1,12 +1,5 @@
 #include "../include/xdb_alien.h"
 
-static xdb_u16 ror3_sbb_zero(xdb_u16 value)
-{
-    xdb_u16 rotated = (xdb_u16)((value >> 3) | (value << 13));
-
-    return (xdb_u16)(rotated - ((value >> 2) & 1u));
-}
-
 static xdb_i16 sar16(xdb_i16 value, unsigned shift)
 {
     xdb_u16 bits = (xdb_u16)value;
@@ -35,7 +28,6 @@ void XDB_NEAR xdb_croolis_slot3_update(
 {
     xdb_alien_ring_entry XDB_CODE_DATA *ring;
     xdb_u16 ring_cursor;
-    xdb_u16 random_value;
 
     ring_cursor = state->ring_offset;
     ring = &xdb_croolis_slot3_ring[ring_cursor >> 3];
@@ -53,6 +45,11 @@ void XDB_NEAR xdb_croolis_slot3_update(
     ring = &xdb_croolis_slot3_ring[ring_cursor >> 3];
     if ((ring->field_006 & 3) != 0) {
         if ((ring->field_006 & 2) != 0) {
+            xdb_croolis_slot3_capture_resume_state(state, context);
+            return;
+        }
+
+        {
             xdb_u16 queue_cursor = xdb_croolis_slot11_queue_cursor;
 
             xdb_croolis_slot11_state_queue[queue_cursor >> 1] =
@@ -60,36 +57,23 @@ void XDB_NEAR xdb_croolis_slot3_update(
             queue_cursor = (xdb_u16)((queue_cursor + 2u) & 0x000fu);
             (void)queue_cursor;
             xdb_croolis_slot11_current_state = (xdb_u16)(size_t)state;
-
-            if (state->field_05c == 0u) {
-                xdb_u16 object_offset =
-                        *(volatile xdb_u16 XDB_NEAR *)
-                        ((volatile xdb_u8 XDB_NEAR *)state + 6u);
-                xdb_u16 object_count =
-                        *(volatile xdb_u16 XDB_NEAR *)
-                        ((volatile xdb_u8 XDB_NEAR *)state + 2u);
-                volatile xdb_u32 XDB_FAR *object =
-                        XDB_FAR_AT(xdb_u32, 2u, object_offset);
-
-                while (object_count-- != 0u) {
-                    *object -= 0x00800080UL;
-                    object += 5;
-                }
-            }
-
-            ring->field_006 = 0;
-            ring->field_004 = 8;
-            state->callback = xdb_croolis_slot3_initial_update;
-            state->position_y = 0;
-            state->field_054 = 8;
-            state->field_056 = 0x1e;
-            random_value = ror3_sbb_zero(xdb_alien_random_state);
-            state->field_05c = random_value;
-            xdb_alien_random_state = random_value;
-            return;
         }
+        if (state->field_05c == 0u) {
+            xdb_u16 object_offset =
+                    *(volatile xdb_u16 XDB_NEAR *)
+                    ((volatile xdb_u8 XDB_NEAR *)state + 6u);
+            xdb_u16 object_count =
+                    *(volatile xdb_u16 XDB_NEAR *)
+                    ((volatile xdb_u8 XDB_NEAR *)state + 2u);
+            volatile xdb_u32 XDB_FAR *object = XDB_FAR_AT(
+                    xdb_u32, xdb_alien_object_segment, object_offset);
 
-        slot3_feedback_sample(state);
+            while (object_count-- != 0u) {
+                *object -= 0x00800080UL;
+                object += 5;
+            }
+        }
+        xdb_croolis_slot3_restart_initial_update(state, context);
         return;
     }
 

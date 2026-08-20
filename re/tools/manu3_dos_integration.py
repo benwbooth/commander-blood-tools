@@ -77,6 +77,13 @@ ALIEN_ENTRY_SOURCE = (
 )
 
 
+def alien_slot3_sources(module: str, entries: tuple[str, ...]) -> tuple[Path, ...]:
+    base = ROOT / "re" / "source" / "xdb" / "candidates" / module
+    return (INTEGRATION_DIR / "alien_slot3_globals.c",) + tuple(
+        base / f"func_{entry}.c" for entry in entries
+    )
+
+
 @dataclass(frozen=True)
 class IntegrationCase:
     name: str
@@ -84,6 +91,7 @@ class IntegrationCase:
     executable_name: str
     expected_result: str
     recovered_sources: tuple[Path, ...]
+    defines: tuple[str, ...] = ()
     artifact_name: str | None = None
     artifact_size: int | None = None
     artifact_sha256: str | None = None
@@ -163,6 +171,75 @@ CASES = (
         expected_result="PASS alien entry",
         recovered_sources=(ALIEN_ENTRY_SOURCE,),
     ),
+    IntegrationCase(
+        name="amer_slot3_callbacks",
+        source=INTEGRATION_DIR / "alien_slot3_callbacks.c",
+        executable_name="AMER3C.EXE",
+        expected_result="PASS amer slot3 callbacks",
+        recovered_sources=alien_slot3_sources(
+            "amer",
+            (
+                "001414_slot3_update",
+                "001558_slot3_restart_initial_update",
+                "00158a_slot3_resume_callback",
+                "0015db_slot3_capture_resume_state",
+                "001614_slot3_ring_zero_callback",
+                "001c03_resume_apply_object_delta",
+                "001c34_resume_1c34",
+                "001c7d_resume_stage_pair",
+                "001cbf_resume_stage_timeout",
+                "001ccf_resume_stage_final",
+                "001cfa_resume_pair_outside",
+            ),
+        ),
+        defines=("TEST_AMER",),
+    ),
+    IntegrationCase(
+        name="croolis_slot3_callbacks",
+        source=INTEGRATION_DIR / "alien_slot3_callbacks.c",
+        executable_name="CROOL3C.EXE",
+        expected_result="PASS croolis slot3 callbacks",
+        recovered_sources=alien_slot3_sources(
+            "croolis",
+            (
+                "00146c_slot3_update",
+                "0015b0_slot3_restart_initial_update",
+                "0015e2_slot3_resume_callback",
+                "001633_slot3_capture_resume_state",
+                "00166c_slot3_ring_zero_callback",
+                "001b5f_resume_apply_object_delta",
+                "001b85_resume_1b85",
+                "001bc9_resume_stage_pair",
+                "001c0b_resume_stage_timeout",
+                "001c1b_resume_stage_final",
+                "001c46_resume_pair_outside",
+            ),
+        ),
+        defines=("TEST_CROOLIS",),
+    ),
+    IntegrationCase(
+        name="scrut_slot3_callbacks",
+        source=INTEGRATION_DIR / "alien_slot3_callbacks.c",
+        executable_name="SCRUT3C.EXE",
+        expected_result="PASS scrut slot3 callbacks",
+        recovered_sources=alien_slot3_sources(
+            "scrut",
+            (
+                "00145a_slot3_update",
+                "00159e_slot3_restart_initial_update",
+                "0015d0_slot3_resume_callback",
+                "001621_slot3_capture_resume_state",
+                "00165a_slot3_ring_zero_callback",
+                "001c14_resume_apply_object_delta",
+                "001c45_resume_1c45",
+                "001c89_resume_stage_pair",
+                "001ccb_resume_stage_timeout",
+                "001cdb_resume_stage_final",
+                "001d06_resume_pair_outside",
+            ),
+        ),
+        defines=("TEST_SCRUT",),
+    ),
 )
 
 
@@ -216,6 +293,7 @@ def build(wcl: str, case: IntegrationCase) -> tuple[Path, Path]:
         "-zdp",
         "-we",
         "-lr",
+        *(f"-d{symbol}" for symbol in case.defines),
         f"-i={INCLUDE_DIR}",
         f"-fe={executable}",
         f"-fm={out_dir / 'MANU3.MAP'}",
@@ -292,6 +370,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--dosbox", default="dosbox-x", help="DOSBox-X executable"
     )
+    parser.add_argument(
+        "--case",
+        action="append",
+        choices=tuple(case.name for case in CASES),
+        help="run only the named integration case; repeatable",
+    )
     return parser.parse_args()
 
 
@@ -299,7 +383,10 @@ def main() -> int:
     args = parse_args()
     wcl = resolve_executable(args.wcl)
     dosbox = resolve_executable(args.dosbox)
-    for case in CASES:
+    selected = CASES
+    if args.case:
+        selected = tuple(case for case in CASES if case.name in args.case)
+    for case in selected:
         out_dir, executable = build(wcl, case)
         run_dosbox(dosbox, out_dir, executable)
         verify(case, out_dir, executable)

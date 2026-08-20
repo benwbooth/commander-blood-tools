@@ -1,0 +1,83 @@
+[
+  {
+    "name": "ring_zero",
+    "module": "scrut",
+    "entry": 5584,
+    "kind": "resume",
+    "ring_before": 0,
+    "ring_after": 0,
+    "callback_before": 41216,
+    "callback_after": 5722,
+    "position_after": [
+      1700,
+      0,
+      0
+    ],
+    "motion_after": [
+      0,
+      0,
+      0,
+      0,
+      21845,
+      26214
+    ],
+    "resume_countdown_after": 0,
+    "resume_state_after": 0,
+    "data_sha256": "184713b1611ffe9ba26d7e6498825a93a14237597bdd5b8868137abeeca38ffe",
+    "code_sha256": "32b21515df7bbbc4d33edc9bb8df6f6fe999f0dbf32bd2ced558c5e7bd5df714"
+  },
+  {
+    "name": "ring_middle",
+    "module": "scrut",
+    "entry": 5584,
+    "kind": "resume",
+    "ring_before": 408,
+    "ring_after": 408,
+    "callback_before": 41217,
+    "callback_after": 5722,
+    "position_after": [
+      1700,
+      0,
+      0
+    ],
+    "motion_after": [
+      0,
+      0,
+      0,
+      0,
+      21845,
+      26214
+    ],
+    "resume_countdown_after": 0,
+    "resume_state_after": 0,
+    "data_sha256": "4a12e5f7562538b4b65ee12e682b20118a0a498ed0eeef6845acbd7f2d729c35",
+    "code_sha256": "2871226bcb5cd505d2f3f4956a381c317f2704741c54cdfd55ff19a28baeb8bd"
+  },
+  {
+    "name": "ring_end",
+    "module": "scrut",
+    "entry": 5584,
+    "kind": "resume",
+    "ring_before": 1020,
+    "ring_after": 1020,
+    "callback_before": 41218,
+    "callback_after": 5722,
+    "position_after": [
+      1700,
+      0,
+      0
+    ],
+    "motion_after": [
+      0,
+      0,
+      0,
+      0,
+      21845,
+      26214
+    ],
+    "resume_countdown_after": 0,
+    "resume_state_after": 0,
+    "data_sha256": "e367bd83f09e5e0eaff7a2b8c4070483b571be2711a884dcde3254e840ec9e03",
+    "code_sha256": "eda8c4102503d7bc6eb2b92c3b01cd857bc21548d2f5e1f5f50c4c43891e0f1b"
+  }
+]

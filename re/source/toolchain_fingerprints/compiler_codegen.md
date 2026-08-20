@@ -96,7 +96,6 @@ body byte-for-byte or differ only where the linker supplies recovered symbols:
 | AMER `0x000347`, CROOLIS `0x00035C`, SCRUT `0x00035C` mouse-position helpers | Open Watcom emits the original 5 instructions and 14 bytes | two data relocations bind `mouse_x` and `mouse_y` in each overlay |
 | AMER `0x001DD6`, CROOLIS `0x001D27`, SCRUT `0x001DE7` method no-ops | Open Watcom emits the exact one-byte `RET` | method-table binding only |
 | MANU3 `0x00017C anim_select_entry` | Open Watcom emits the exact `CALL` / `RETF` two-instruction shape | one relocation binds the near selector callee |
-| MANU3 `0x000848 span_setup_next` | Open Watcom emits the exact one-byte `RET` | fixed-offset C patch only; no caller-visible state |
 | AMER `0x000B0F`, CROOLIS `0x000B50`, SCRUT `0x000B55` method slot 11 | Open Watcom emits the exact 16-byte shape with `ADD word,-15` and a linker cursor placeholder | the generated ADD is the reviewed natural-C encoding of `SUB word,15`; each module restores its CS cursor offset, and the combined XDB package matches the known-good DOSBox attract capture |
 
 No register-state model or compatibility shim is present. The one inline
@@ -3737,13 +3736,17 @@ segment in `DS`, traverses through `SI`, and uses `CX/LOOP`. Memory and declared
 `AX` delta results agree, but scratch-register outputs and final flags differ.
 Turbo C 2.01 emits 40 and 43 instructions respectively with stack arguments.
 
-Four XDB entries are independently proven one-byte near-return methods: AMER
-`0x001DD6`, CROOLIS `0x001D27`, MANU3 `0x000848`, and SCRUT `0x001DE7`. Three
-direct raw-overlay vectors per entry verify that only the two-byte return word
+Three XDB entries are independently proven one-byte near-return methods: AMER
+`0x001DD6`, CROOLIS `0x001D27`, and SCRUT `0x001DE7`. Three direct
+raw-overlay vectors per entry verify that only the two-byte return word
 is consumed while all registers, segments, tested flags, and following stack
 bytes survive. Empty one-to-one C functions compile under both Open Watcom and
 Turbo C 2.01 to a single `RET`; Watcom's object byte is exactly `C3`. These
 empty functions are accepted recovered behavior rather than stubs.
+
+MANU3 `0x000848` is not a fourth method. Control-flow analysis proves it is the
+shared near-return epilogue reached by the `0x000700` renderer and the
+`0x000D7D` face activator. It therefore has no standalone C function or patch.
 
 Eight direct vectors prove the `0x000000` MANU3 far API coordinator. Its caller
 supplies signed cursor x/y, a five-bit animation selector, and a framebuffer

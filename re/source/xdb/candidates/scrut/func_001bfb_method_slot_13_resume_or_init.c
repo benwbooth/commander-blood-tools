@@ -12,6 +12,6 @@ void XDB_NEAR xdb_scrut_method_slot_13_resume_or_init(
     }
 
     context->control.resume = xdb_scrut_resume_1c45;
-    context->continuation.resume_state.step = 0;
-    context->continuation.resume_state.value = 0;
+    context->continuation.resume_state.phase = 0;
+    context->continuation.resume_state.paired_state = 0;
 }

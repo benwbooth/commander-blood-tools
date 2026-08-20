@@ -408,8 +408,9 @@ struct xdb_alien_method_context {
     xdb_alien_method_control control;
     union {
         struct {
-            xdb_u16 step;
-            xdb_u16 value;
+            xdb_u16 phase;
+            xdb_u16 paired_state;
+            xdb_u16 resumed_state;
         } resume_state;
         struct {
             xdb_u16 cursor;
@@ -543,6 +544,8 @@ extern xdb_alien_cursor XDB_CODE_DATA
 extern volatile xdb_u16 XDB_CODE_DATA
         xdb_amer_slot11_queue_cursor; /* AMER CS:0x1BC6 */
 extern volatile xdb_u16 XDB_CODE_DATA
+        xdb_amer_slot11_queue_read_cursor; /* AMER CS:0x1BC8 */
+extern volatile xdb_u16 XDB_CODE_DATA
         xdb_amer_slot11_current_state; /* AMER CS:0x1BC4 */
 extern volatile xdb_u16 XDB_CODE_DATA
         xdb_amer_slot11_state_queue[8]; /* AMER CS:0x1BCA */
@@ -551,6 +554,8 @@ extern xdb_alien_cursor XDB_CODE_DATA
 extern volatile xdb_u16 XDB_CODE_DATA
         xdb_croolis_slot11_queue_cursor; /* CROOLIS CS:0x1B32 */
 extern volatile xdb_u16 XDB_CODE_DATA
+        xdb_croolis_slot11_queue_read_cursor; /* CROOLIS CS:0x1B34 */
+extern volatile xdb_u16 XDB_CODE_DATA
         xdb_croolis_slot11_current_state; /* CROOLIS CS:0x1B30 */
 extern volatile xdb_u16 XDB_CODE_DATA
         xdb_croolis_slot11_state_queue[8]; /* CROOLIS CS:0x1B36 */
@@ -558,6 +563,8 @@ extern xdb_alien_cursor XDB_CODE_DATA
         xdb_scrut_slot11_cursor; /* SCRUT CS:0x1BE3 */
 extern volatile xdb_u16 XDB_CODE_DATA
         xdb_scrut_slot11_queue_cursor; /* SCRUT CS:0x1BE7 */
+extern volatile xdb_u16 XDB_CODE_DATA
+        xdb_scrut_slot11_queue_read_cursor; /* SCRUT CS:0x1BE9 */
 extern volatile xdb_u16 XDB_CODE_DATA
         xdb_scrut_slot11_current_state; /* SCRUT CS:0x1BE5 */
 extern volatile xdb_u16 XDB_CODE_DATA
@@ -571,6 +578,18 @@ extern volatile xdb_u16 XDB_CODE_DATA xdb_scrut_slot3_generation; /* CS:0x0DA1 *
 extern volatile xdb_u16 XDB_CODE_DATA xdb_amer_slot3_ring_cursor; /* CS:0x0D5D */
 extern volatile xdb_u16 XDB_CODE_DATA xdb_croolis_slot3_ring_cursor; /* CS:0x0DB5 */
 extern volatile xdb_u16 XDB_CODE_DATA xdb_scrut_slot3_ring_cursor; /* CS:0x0DA3 */
+extern volatile xdb_u16 XDB_CODE_DATA
+        xdb_amer_slot3_resume_countdown; /* CS:0x0D5F */
+extern xdb_alien_cursor XDB_CODE_DATA
+        xdb_amer_slot3_resume_state; /* CS:0x0D61 */
+extern volatile xdb_u16 XDB_CODE_DATA
+        xdb_croolis_slot3_resume_countdown; /* CS:0x0DB7 */
+extern xdb_alien_cursor XDB_CODE_DATA
+        xdb_croolis_slot3_resume_state; /* CS:0x0DB9 */
+extern volatile xdb_u16 XDB_CODE_DATA
+        xdb_scrut_slot3_resume_countdown; /* CS:0x0DA5 */
+extern xdb_alien_cursor XDB_CODE_DATA
+        xdb_scrut_slot3_resume_state; /* CS:0x0DA7 */
 extern volatile xdb_i16 XDB_CODE_DATA xdb_croolis_slot2_seed; /* CS:0x16A2 */
 extern volatile xdb_i16 XDB_CODE_DATA xdb_scrut_slot2_seed; /* CS:0x1690 */
 extern volatile xdb_u16 XDB_CODE_DATA xdb_amer_slot2_active; /* CS:0x1648 */
@@ -702,19 +721,79 @@ void XDB_FAR xdb_scrut_api_entry(
 
 void XDB_NEAR xdb_amer_resume_1c34(
         xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_amer_resume_apply_object_delta(
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_amer_resume_stage_pair(
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_amer_resume_stage_timeout(
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_amer_resume_stage_final(
+        xdb_alien_method_context XDB_NEAR *context);
+int XDB_NEAR xdb_amer_resume_pair_outside(
+        xdb_alien_biased_state XDB_NEAR *current,
+        xdb_alien_biased_state XDB_NEAR *other);
 void XDB_NEAR xdb_amer_slot3_resume_callback(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_amer_slot3_capture_resume_state(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_amer_slot3_ring_zero_callback(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_amer_slot3_restart_initial_update(
         xdb_alien_biased_state XDB_NEAR *state,
         xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_croolis_slot3_resume_callback(
         xdb_alien_biased_state XDB_NEAR *state,
         xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_slot3_capture_resume_state(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_slot3_ring_zero_callback(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_slot3_restart_initial_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_scrut_slot3_resume_callback(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_slot3_capture_resume_state(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_slot3_ring_zero_callback(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_slot3_restart_initial_update(
         xdb_alien_biased_state XDB_NEAR *state,
         xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_croolis_resume_1b85(
         xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_resume_apply_object_delta(
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_resume_stage_pair(
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_resume_stage_timeout(
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_resume_stage_final(
+        xdb_alien_method_context XDB_NEAR *context);
+int XDB_NEAR xdb_croolis_resume_pair_outside(
+        xdb_alien_biased_state XDB_NEAR *current,
+        xdb_alien_biased_state XDB_NEAR *other);
 void XDB_NEAR xdb_scrut_resume_1c45(
         xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_resume_apply_object_delta(
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_resume_stage_pair(
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_resume_stage_timeout(
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_resume_stage_final(
+        xdb_alien_method_context XDB_NEAR *context);
+int XDB_NEAR xdb_scrut_resume_pair_outside(
+        xdb_alien_biased_state XDB_NEAR *current,
+        xdb_alien_biased_state XDB_NEAR *other);
 void XDB_NEAR xdb_amer_slot3_initial_update(
         xdb_alien_biased_state XDB_NEAR *state,
         xdb_alien_method_context XDB_NEAR *context);

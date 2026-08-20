@@ -1,0 +1,110 @@
+[
+  {
+    "name": "timer_blocks",
+    "module": "croolis",
+    "entry": 5740,
+    "kind": "ring_zero",
+    "ring_before": 408,
+    "ring_after": 408,
+    "callback_before": 41216,
+    "callback_after": 41216,
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "motion_after": [
+      4369,
+      8738,
+      13107,
+      17476,
+      21845,
+      26214
+    ],
+    "resume_countdown_after": 0,
+    "resume_state_after": 0,
+    "data_sha256": "99fb14b1e149dc35f220a21c349e18c2818dce00beb3f270b5436ba04e28e53b",
+    "code_sha256": "86b29f685143ae49f8a16712329c04150b065b8e245a2064a1574f14b574fbb7"
+  },
+  {
+    "name": "advance_zero",
+    "module": "croolis",
+    "entry": 5740,
+    "kind": "ring_zero",
+    "ring_before": 0,
+    "ring_after": 8,
+    "callback_before": 41217,
+    "callback_after": 41217,
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "motion_after": [
+      4369,
+      8738,
+      13107,
+      17476,
+      21845,
+      26214
+    ],
+    "resume_countdown_after": 0,
+    "resume_state_after": 0,
+    "data_sha256": "89a165b284a8242793b374a6fc5d3bf4388b16579e874e088bb9c0e0568ab325",
+    "code_sha256": "e32dc0cdbf1460c3b0a2e57d247c7f0b11f0e4be4ea46b489a55ae888a9e3f73"
+  },
+  {
+    "name": "advance_middle",
+    "module": "croolis",
+    "entry": 5740,
+    "kind": "ring_zero",
+    "ring_before": 408,
+    "ring_after": 416,
+    "callback_before": 41218,
+    "callback_after": 41218,
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "motion_after": [
+      4369,
+      8738,
+      13107,
+      17476,
+      21845,
+      26214
+    ],
+    "resume_countdown_after": 0,
+    "resume_state_after": 0,
+    "data_sha256": "a93b0c6244e8b4c06c6fa93cc5b420ced79ef9a4b0fc05f524143dde62cdebc5",
+    "code_sha256": "6e9fdbb042b660187a6e733c9ed1a0d573050c2b44b297c56c3d7780b7e85a5e"
+  },
+  {
+    "name": "advance_wrap",
+    "module": "croolis",
+    "entry": 5740,
+    "kind": "ring_zero",
+    "ring_before": 1016,
+    "ring_after": 0,
+    "callback_before": 41219,
+    "callback_after": 41219,
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "motion_after": [
+      4369,
+      8738,
+      13107,
+      17476,
+      21845,
+      26214
+    ],
+    "resume_countdown_after": 0,
+    "resume_state_after": 0,
+    "data_sha256": "fb253754de7704f4e9cd452d7f2329cc29419221a9cf629477d2efd15468325e",
+    "code_sha256": "9b41a55a85534a7c19bed0a807b8a7509be28b20c72df8487d7fc83a1db6f7a3"
+  }
+]

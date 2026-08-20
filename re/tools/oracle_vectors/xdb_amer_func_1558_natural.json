@@ -1,0 +1,110 @@
+[
+  {
+    "name": "zero",
+    "module": "amer",
+    "entry": 5464,
+    "kind": "restart",
+    "ring_before": 0,
+    "ring_after": 0,
+    "callback_before": 41216,
+    "callback_after": 4787,
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "motion_after": [
+      4369,
+      8738,
+      0,
+      8,
+      30,
+      0
+    ],
+    "resume_countdown_after": 0,
+    "resume_state_after": 0,
+    "data_sha256": "273eb3ffd7c09c656cea2d80bfc9c84cc88cc5ecf6bbba0aa66e9b1b0fc4dcc5",
+    "code_sha256": "7e7163318780bf9b63dd3f5ee341352795855f130e6a2aeebf3a10f24d8f2da1"
+  },
+  {
+    "name": "ordinary",
+    "module": "amer",
+    "entry": 5464,
+    "kind": "restart",
+    "ring_before": 408,
+    "ring_after": 408,
+    "callback_before": 41217,
+    "callback_after": 4787,
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "motion_after": [
+      4369,
+      8738,
+      0,
+      8,
+      30,
+      33349
+    ],
+    "resume_countdown_after": 0,
+    "resume_state_after": 0,
+    "data_sha256": "645c8489355006facbdcc99ce9ec592af55f6ad44f1656408bc9229ccbc90253",
+    "code_sha256": "9101d4fd9186835d078e003e5b859edf71769e28baea45660699b594c26a815e"
+  },
+  {
+    "name": "ring_end",
+    "module": "amer",
+    "entry": 5464,
+    "kind": "restart",
+    "ring_before": 1020,
+    "ring_after": 1020,
+    "callback_before": 41218,
+    "callback_after": 4787,
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "motion_after": [
+      4369,
+      8738,
+      0,
+      8,
+      30,
+      65534
+    ],
+    "resume_countdown_after": 0,
+    "resume_state_after": 0,
+    "data_sha256": "9ecdbcd453bfe59d999fa0c4192f00c502a91b818c5962fcabe61641a82485d2",
+    "code_sha256": "914296f946eba1f29046ac7b8243d6b5d307c9714743f0ec1ec1f8bb2f1c2d0e"
+  },
+  {
+    "name": "borrowed_rotate",
+    "module": "amer",
+    "entry": 5464,
+    "kind": "restart",
+    "ring_before": 8,
+    "ring_after": 8,
+    "callback_before": 41219,
+    "callback_after": 4787,
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "motion_after": [
+      4369,
+      8738,
+      0,
+      8,
+      30,
+      32767
+    ],
+    "resume_countdown_after": 0,
+    "resume_state_after": 0,
+    "data_sha256": "6b272dc1855b068fda4b81b523e1af5090b225f04a9a67e02af965ec2d838bdc",
+    "code_sha256": "0737be80a502d4a967671123353272e700d52816d4c994c3c9ff3307e8b02901"
+  }
+]

@@ -1,0 +1,83 @@
+[
+  {
+    "name": "capture_zero_ring",
+    "module": "amer",
+    "entry": 5595,
+    "kind": "capture",
+    "ring_before": 0,
+    "ring_after": 0,
+    "callback_before": 41216,
+    "callback_after": 41216,
+    "position_after": [
+      0,
+      1700,
+      0
+    ],
+    "motion_after": [
+      0,
+      0,
+      0,
+      0,
+      21845,
+      26214
+    ],
+    "resume_countdown_after": 18,
+    "resume_state_after": 16384,
+    "data_sha256": "2e031a477434d44ddf12a31f0b48b30df349a8e42620e5822746f0f68a6cb718",
+    "code_sha256": "a49188f4c7dc966530c1af89eb334dfd6a33909ce5cc2f074b834ed2f771ac2d"
+  },
+  {
+    "name": "capture_middle_ring",
+    "module": "amer",
+    "entry": 5595,
+    "kind": "capture",
+    "ring_before": 408,
+    "ring_after": 408,
+    "callback_before": 41217,
+    "callback_after": 41217,
+    "position_after": [
+      0,
+      1700,
+      0
+    ],
+    "motion_after": [
+      0,
+      0,
+      0,
+      0,
+      21845,
+      26214
+    ],
+    "resume_countdown_after": 18,
+    "resume_state_after": 16384,
+    "data_sha256": "f75b9630e8af544d5a52dfaec082483a5109db66174e66a8fb89aeef292d8e8e",
+    "code_sha256": "a49188f4c7dc966530c1af89eb334dfd6a33909ce5cc2f074b834ed2f771ac2d"
+  },
+  {
+    "name": "capture_end_ring",
+    "module": "amer",
+    "entry": 5595,
+    "kind": "capture",
+    "ring_before": 1020,
+    "ring_after": 1020,
+    "callback_before": 41218,
+    "callback_after": 41218,
+    "position_after": [
+      0,
+      1700,
+      0
+    ],
+    "motion_after": [
+      0,
+      0,
+      0,
+      0,
+      21845,
+      26214
+    ],
+    "resume_countdown_after": 18,
+    "resume_state_after": 16384,
+    "data_sha256": "35f25fa61e23abf987e11be80c435e2506dc2cd5cc3b21d826af0fae74b96aaf",
+    "code_sha256": "a49188f4c7dc966530c1af89eb334dfd6a33909ce5cc2f074b834ed2f771ac2d"
+  }
+]

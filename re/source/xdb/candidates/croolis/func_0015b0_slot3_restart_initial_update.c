@@ -1,0 +1,28 @@
+#include "../include/xdb_alien.h"
+
+static xdb_u16 ror3_sbb_zero(xdb_u16 value)
+{
+    xdb_u16 rotated = (xdb_u16)((value >> 3) | (value << 13));
+
+    return (xdb_u16)(rotated - ((value >> 2) & 1u));
+}
+
+void XDB_NEAR xdb_croolis_slot3_restart_initial_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context)
+{
+    volatile xdb_alien_ring_entry XDB_CODE_DATA *ring;
+    xdb_u16 random_value;
+
+    (void)context;
+    ring = &xdb_croolis_slot3_ring[state->ring_offset >> 3];
+    ring->field_006 = 0;
+    ring->field_004 = 8;
+    state->callback = xdb_croolis_slot3_initial_update;
+    state->field_052 = 0;
+    state->field_054 = 8;
+    state->field_056 = 0x1e;
+    random_value = ror3_sbb_zero(xdb_alien_random_state);
+    state->field_05c = random_value;
+    xdb_alien_random_state = random_value;
+}

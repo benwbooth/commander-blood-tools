@@ -29,7 +29,7 @@ FILE_OFFSET_RE = re.compile(r"^; file_offset: 0x([0-9a-fA-F]+)$", re.MULTILINE)
 OVERLAY_OFFSET_RE = re.compile(r"^; overlay_offset: 0x([0-9a-fA-F]+)$", re.MULTILINE)
 BYTE_COUNT_RE = re.compile(r"^; byte_count: (\d+)$", re.MULTILINE)
 SHA_RE = re.compile(r"^; routine_bytes_sha256: ([0-9a-f]+)$", re.MULTILINE)
-ASM_LINE_RE = re.compile(r"^([0-9a-fA-F]{6,8}):  (.+)$")
+ASM_LINE_RE = re.compile(r"^\s*([0-9a-fA-F]{1,8}):\s+(.+)$")
 BYTE_TOKEN_RE = re.compile(r"^[0-9a-fA-F]{2}$")
 
 
