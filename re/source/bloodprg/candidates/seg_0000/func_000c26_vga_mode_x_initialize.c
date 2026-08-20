@@ -10,10 +10,7 @@
 
 void CB_FAR vga_mode_x_initialize(void)
 {
-    union bloodprg_font_address {
-        cb_u32 packed;
-        bloodprg_font_ptr pointer;
-    } font_address;
+    union REGPACK font_registers;
     union REGS registers;
     cb_u16 port;
     cb_u8 value;
@@ -25,8 +22,11 @@ void CB_FAR vga_mode_x_initialize(void)
     registers.x.ax = 0x0013u;
     int86(0x10, &registers, &registers);
 
-    font_address.packed = cb_bios_font_8x8_get();
-    bios_font_8x8 = font_address.pointer;
+    font_registers.w.ax = 0x1130u;
+    font_registers.h.bh = 3u;
+    intr(0x10, &font_registers);
+    bios_font_8x8 = (bloodprg_font_ptr)MK_FP(
+            font_registers.w.es, font_registers.w.bp);
 
     video_crtc_base_port = *(volatile cb_u16 CB_FAR *)MK_FP(0x0040u, 0x0063u);
     vga_dac_clear();

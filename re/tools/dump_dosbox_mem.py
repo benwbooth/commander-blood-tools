@@ -6,12 +6,12 @@ DOS RAM lives in its address space. Under yama ptrace_scope=1 a process can ptra
 own CHILD, so this script LAUNCHES dosbox-x itself, then PTRACE_ATTACHes and reads
 /proc/<pid>/mem — no root needed.
 
-It locates BLOODPRG's DS by finding the static vertex table (DS:0x5D98, file 0x131B8)
-in memory; every DS-relative global is then a fixed offset from that anchor, independent
-of the load segment. Reads the requested DS offsets (default: the star-map nav state —
+It locates BLOODPRG's DS by finding the adjacent startup error strings at DS:0 and
+validating live arena and VGA fields; every DS-relative global is then a fixed offset
+from that anchor, independent of the load segment. Reads the requested DS offsets (default: the star-map nav state —
 the 11 destination records at DS:0x4F09 and the camera origin at DS:0x2F65).
 
-Usage: nix develop --command re/tools/dump_dosbox_mem.py <cd-dir> [wait_secs] [install-parent]
+Usage: nix develop --command re/tools/dump_dosbox_mem.py <cd-dir> [wait_secs] [install-parent] [executable] [cycles]
   <cd-dir>         the CD image dir CONTAINING BLOODPRG.EXE (e.g. output/_tmp_iso),
                    mounted as D: — NOT the installed data dir.
   <install-parent> parent of the `cblood` install dir, mounted as C: so the game's
@@ -23,15 +23,66 @@ NOTE: the star-map's 0x4F09 records are the *default* (10200,12100,900) until th
 is in ACTIVE navigation — drive it there (see drive_real_game.sh) before dumping.
 """
 import ctypes, subprocess, time, os, re, struct, sys
+from pathlib import Path
 
-ANCHOR = bytes.fromhex("00000009030c08030b07040b07030a06")  # DS:0x5D98 vertex table
-DS_ANCHOR = 0x5D98
+ANCHOR = b"386 minimum !\0Not enough memory (570Ko min) !\0"
+DS_ANCHOR = 0x0000
 # DS globals of interest -> (name, offset, count_words)
 GLOBALS = [
     ("origin_2F65", 0x2F65, 3),   # camera origin x,y,z
     ("angle_2F71", 0x2F71, 1),    # camera angle
     ("angle_2F6D", 0x2F6D, 1),    # compass angle
     ("nav_recs_4F09", 0x4F09, 33),  # 11 records x 3 words
+]
+STARTUP_GLOBALS = [
+    ("startup_dos_pool_0A42", 0x0A42, "<HH"),
+    ("resource_free_bytes_0A46", 0x0A46, "<I"),
+    ("resource_copy_buffer_0A7C", 0x0A7C, "<HH"),
+    ("list_d8c_base_segment_0A7E", 0x0A7E, "<H"),
+    ("resource_copy_file_handle_0A84", 0x0A84, "<H"),
+    ("resource_archive_remaining_0A8E", 0x0A8E, "<I"),
+    ("snd_source_remaining_0A92", 0x0A92, "<I"),
+    ("alien_overlay_slot_0A96", 0x0A96, "<HH"),
+    ("video_crtc_base_port_0A9E", 0x0A9E, "<H"),
+    ("graphics_work_surface_0ABC", 0x0ABC, "<HH"),
+    ("list_d8c_default_entry_segment_0ABE", 0x0ABE, "<H"),
+    ("startup_write_directory_active_0AE0", 0x0AE0, "<B"),
+    ("resource_force_write_directory_0AE1", 0x0AE1, "<B"),
+    ("resource_path_is_embedded_0AE2", 0x0AE2, "<B"),
+    ("timer_state_block_offset_0AF0", 0x0AF0, "<H"),
+    ("video_retrace_phase_0B12", 0x0B12, "<B"),
+    ("timer_hook_active_0B21", 0x0B21, "<B"),
+    ("timer_divider_0B22", 0x0B22, "<B"),
+    ("timer_tick_count_0B29", 0x0B29, "<H"),
+    ("video_calibration_ticks_0B35", 0x0B35, "<H"),
+    ("snd_bank_memory_0BB3", 0x0BB3, "<HH"),
+    ("resource_flags_0D76", 0x0D76, "<H"),
+    ("resource_requested_id_0D80", 0x0D80, "<H"),
+    ("resource_active_id_0D82", 0x0D82, "<H"),
+    ("resource_source_offset_0D84", 0x0D84, "<I"),
+    ("resource_source_remaining_0D88", 0x0D88, "<I"),
+    ("list_d8c_head_pointer_0D8C", 0x0D8C, "<HH"),
+    ("list_d8c_tail_pointer_0D90", 0x0D90, "<HH"),
+    ("list_d8c_active_pointer_0D94", 0x0D94, "<HH"),
+    ("list_d8c_byte_count_0D9A", 0x0D9A, "<H"),
+    ("list_d8c_active_layout_0DA4", 0x0DA4, "<H"),
+    ("list_d8c_active_row_mode_0DA6", 0x0DA6, "<H"),
+    ("list_d8c_retired_segment_0DAA", 0x0DAA, "<H"),
+    ("resource_draw_via_back_buffer_0DB9", 0x0DB9, "<B"),
+    ("resource_decode_rectangular_0DBA", 0x0DBA, "<B"),
+    ("resource_skip_back_buffer_present_0DBB", 0x0DBB, "<B"),
+    ("resource_unclamped_row_count_0DBD", 0x0DBD, "<B"),
+    ("resource_decode_mode_0AA0", 0x0AA0, "<H"),
+    ("graphics_display_buffer_5221", 0x5221, "<HH"),
+    ("graphics_back_buffer_5229", 0x5229, "<HH"),
+    ("graphics_viewport_descriptor_522D", 0x522D, "<HH"),
+    ("list_d8c_buffer_end_offset_5233", 0x5233, "<H"),
+    ("vm_active_line_6788", 0x6788, "<H"),
+    ("vm_displayed_line_678A", 0x678A, "<H"),
+]
+STARTUP_STRINGS = [
+    ("startup_write_directory_01BA", 0x01BA, 32),
+    ("startup_original_directory_01DA", 0x01DA, 32),
 ]
 
 
@@ -45,9 +96,11 @@ def main():
     # which never reaches navigation — and the 0x4F09 records then stay at their
     # baked default (10200,12100,900), which is what made this dump look inert.
     cd_dir = os.path.realpath(sys.argv[1])
-    wait = int(sys.argv[2]) if len(sys.argv) > 2 else 40
+    wait = float(sys.argv[2]) if len(sys.argv) > 2 else 40.0
     # Optional 3rd arg: the PARENT of the `cblood` install dir, mounted as C:.
     install_parent = os.path.realpath(sys.argv[3]) if len(sys.argv) > 3 else None
+    executable = sys.argv[4] if len(sys.argv) > 4 else "BLOODPRG.EXE"
+    cycles = sys.argv[5] if len(sys.argv) > 5 else None
     if install_parent is None:
         guess = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
             os.path.realpath(__file__)))), "accuracy", "cblood_install")
@@ -70,17 +123,31 @@ def main():
     if install_parent:
         cmds += ["-c", f"mount c {install_parent}"]
     cmds += ["-c", f"mount d {cd_dir} -t cdrom", "-c", "d:",
-             "-c", r"BLOODPRG AMR S162227 EMS WRIC:\cblood" + "\\"]
-    db = subprocess.Popen(["dosbox-x", "-set", "sdl", "output=surface"] + cmds,
+             "-c", executable + r" AMR S162227 EMS WRIC:\cblood" + "\\"]
+    dosbox_args = ["dosbox-x", "-set", "sdl output=surface"]
+    if cycles is not None:
+        dosbox_args += ["-set", f"cpu cycles={cycles}"]
+    db = subprocess.Popen(dosbox_args + cmds,
                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env)
     time.sleep(wait)
     pid = db.pid
+    attached = False
     try:
+        if db.poll() is not None:
+            print(f"DOSBox-X exited before capture with status {db.returncode}")
+            return
         if libc.ptrace(PTRACE_ATTACH, pid, None, None) != 0:
             print("ptrace attach failed errno", ctypes.get_errno()); return
+        attached = True
         os.waitpid(pid, 0)
-        mem = open(f"/proc/{pid}/mem", "rb")
+        try:
+            mem = open(f"/proc/{pid}/mem", "rb")
+        except FileNotFoundError:
+            print("DOSBox-X exited before its memory could be opened")
+            return
         best = None
+        guest_memory_base = None
+        candidates = []
         for line in open(f"/proc/{pid}/maps"):
             pr = line.split()
             if 'r' not in pr[1] or '-' not in pr[0]:
@@ -94,21 +161,92 @@ def main():
                 continue
             for m in re.finditer(re.escape(ANCHOR), buf):
                 A = a + m.start()
-                # the correct DS-aligned copy has origin_z == 0
-                mem.seek(A - (DS_ANCHOR - 0x2F69)); z = struct.unpack('<h', mem.read(2))[0]
-                if z == 0:
-                    best = A; break
+                mem.seek(A + 0x0A46)
+                free_bytes = struct.unpack("<I", mem.read(4))[0]
+                mem.seek(A + 0x0A9E)
+                crtc_port = struct.unpack("<H", mem.read(2))[0]
+                candidates.append((A, free_bytes, crtc_port))
+                if 0 < free_bytes <= 0x000A0000 and crtc_port in (0, 0x03D4):
+                    best = A
+                    guest_memory_base = a
+                    break
             if best:
                 break
+        if not best and len(candidates) == 1 and candidates[0][2] in (0, 0x03D4):
+            best = candidates[0][0]
+            print("using unique DS anchor despite invalid arena state")
         if not best:
-            print("DS anchor not found (DS-aligned)"); return
+            print(f"DS anchor not found; candidates={candidates}")
+            return
+        if guest_memory_base is not None:
+            delta = best - guest_memory_base
+            print(
+                f"guest_memory_candidate: base=0x{guest_memory_base:x} "
+                f"ds_delta=0x{delta:x} segment=0x{delta // 16:04x}"
+            )
         for name, off, n in GLOBALS:
             mem.seek(best - (DS_ANCHOR - off))
             vals = struct.unpack(f'<{n}h', mem.read(n * 2))
             print(f"{name}: {vals if n > 1 else vals[0]}")
+        for name, off, fmt in STARTUP_GLOBALS:
+            mem.seek(best - (DS_ANCHOR - off))
+            vals = struct.unpack(fmt, mem.read(struct.calcsize(fmt)))
+            print(f"{name}: {vals if len(vals) > 1 else vals[0]}")
+        for name, off, capacity in STARTUP_STRINGS:
+            mem.seek(best - (DS_ANCHOR - off))
+            value = mem.read(capacity).split(b"\0", 1)[0]
+            print(f"{name}: {value.decode('ascii', errors='replace')!r}")
+        if guest_memory_base is not None:
+            guest_linear_bias = 0
+            descriptor_signature = bytes.fromhex(
+                "00000100040000004001c80000000000"
+            )
+            mem.seek(best + 0x522D)
+            descriptor_offset, descriptor_segment = struct.unpack(
+                "<HH", mem.read(4)
+            )
+            descriptor_address = (
+                guest_memory_base
+                + descriptor_segment * 16
+                + descriptor_offset
+            )
+            for candidate_bias in range(-64, 65):
+                mem.seek(descriptor_address + candidate_bias)
+                if mem.read(len(descriptor_signature)) == descriptor_signature:
+                    guest_linear_bias = candidate_bias
+                    break
+            print(f"guest_linear_bias: {guest_linear_bias:+d}")
+            for name, pointer_offset in (
+                ("graphics_display_buffer", 0x5221),
+                ("graphics_back_buffer", 0x5229),
+                ("graphics_work_surface", 0x0ABC),
+            ):
+                mem.seek(best + pointer_offset)
+                offset, segment = struct.unpack("<HH", mem.read(4))
+                mem.seek(
+                    guest_memory_base
+                    + guest_linear_bias
+                    + segment * 16
+                    + offset
+                )
+                data = mem.read(0xFA00)
+                checksum = sum(data) & 0xFFFFFFFF
+                dump_dir = os.environ.get("BLOODPRG_DUMP_DIR")
+                if dump_dir:
+                    output = Path(dump_dir)
+                    output.mkdir(parents=True, exist_ok=True)
+                    (output / f"{executable}.{name}.bin").write_bytes(data)
+                print(
+                    f"{name}_pixels: pointer={segment:04x}:{offset:04x} "
+                    f"sum32=0x{checksum:08x} sample={data[:32].hex()} "
+                    f"tail={data[-32:].hex()}"
+                )
     finally:
-        libc.ptrace(PTRACE_DETACH, pid, None, None)
-        db.kill(); xvfb.kill()
+        if attached:
+            libc.ptrace(PTRACE_DETACH, pid, None, None)
+        if db.poll() is None:
+            db.kill()
+        xvfb.kill()
 
 
 if __name__ == "__main__":

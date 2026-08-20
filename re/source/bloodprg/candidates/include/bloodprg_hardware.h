@@ -67,14 +67,10 @@ void CB_FAR vga_palette_write(
 void CB_FAR vga_dac_clear(void);              /* 0x002FA6 */
 cb_u16 CB_NEAR cb_flags_read(void);
 void CB_NEAR cb_flags_write(cb_u16 flags);
-cb_u32 CB_NEAR cb_bios_font_8x8_get(void);
 
 #if defined(__WATCOMC__)
 #pragma aux cb_flags_read = "pushf" "pop ax" value [ax] modify exact [ax]
 #pragma aux cb_flags_write = "push ax" "popf" parm [ax] modify exact []
-#pragma aux cb_bios_font_8x8_get = \
-        "mov ax,1130h" "mov bh,3" "int 10h" "mov ax,bp" "mov dx,es" \
-        value [dx ax] modify exact [ax bx dx es bp]
 #pragma aux bloodprg_critical_error_handler parm [di]
 #pragma aux video_retrace_phase_wait modify exact []
 #pragma aux vga_palette_write parm [si]

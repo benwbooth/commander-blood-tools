@@ -60,11 +60,13 @@ void CB_FAR bloodprg_main(void)
 
     allocation = resource_allocate(12u, BLOODPRG_ARENA_BYTES);
     resource_copy_buffer = allocation.destination;
+    list_d8c_base_segment = FP_SEG(allocation.destination);
     nav_resource_buffer = (volatile cb_u8 CB_FAR *)MK_FP(
             (cb_u16)(FP_SEG(allocation.destination) + 0x0640u), 0u);
 
     allocation = resource_allocate(9u, BLOODPRG_ARENA_BYTES);
     graphics_work_surface = allocation.destination;
+    list_d8c_default_entry_segment = FP_SEG(allocation.destination);
 
     allocation = resource_allocate(100u, BLOODPRG_ARENA_WITH_DESCRIPTOR_BYTES);
     snd_bank_memory = allocation.destination;

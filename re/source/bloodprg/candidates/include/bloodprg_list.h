@@ -122,8 +122,10 @@ bloodprg_resource_decode_result CB_NEAR resource_payload_decode_dispatch(
 #pragma aux list_d8c_palette_blocks_apply \
         value [es si] modify [si di]
 #pragma aux flag_test_b17 modify exact [ax]
+#if !defined(BLOODPRG_RELINKED_RUNTIME)
 #pragma aux resource_pair_lz_decode value [ds bx] \
         modify exact [ax bx cx dx si di]
+#endif
 #endif
 
 #endif

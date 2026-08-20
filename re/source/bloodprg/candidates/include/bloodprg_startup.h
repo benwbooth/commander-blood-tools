@@ -12,7 +12,7 @@ typedef struct bloodprg_command_tail {
     char text[BLOODPRG_COMMAND_TEXT_CAPACITY];
 } bloodprg_command_tail;
 
-extern char startup_argument_token[BLOODPRG_STARTUP_TOKEN_CAPACITY];
+extern char startup_argument_token[BLOODPRG_STARTUP_TOKEN_CAPACITY]; /* DS:0x0AF2 */
 extern const char startup_cpu_error_text[];             /* game data:0x0000 */
 extern const char startup_memory_error_text[];          /* game data:0x000E */
 extern cb_u8 startup_write_drive;                   /* game data:0x01B8 */

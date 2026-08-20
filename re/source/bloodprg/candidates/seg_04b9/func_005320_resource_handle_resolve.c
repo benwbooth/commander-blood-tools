@@ -3,7 +3,7 @@
 bloodprg_resource_resolve_result CB_FAR resource_handle_resolve(cb_u16 handle)
 {
     bloodprg_resource_resolve_result result;
-    const volatile bloodprg_resource_handle_entry *entry;
+    const volatile bloodprg_resource_handle_entry CB_FS_DATA *entry;
 
     result.segment = 0;
     result.offset = 0;

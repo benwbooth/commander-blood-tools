@@ -54,13 +54,17 @@ typedef volatile cb_u8 CB_FAR *bloodprg_resource_buffer_ptr;
 #define BLOODPRG_RESOURCE_FLAG_LOADED 0x0003u
 #define BLOODPRG_RESOURCE_DIRECT_DESTINATION 0x8000u
 
-extern volatile bloodprg_resource_handle_entry fs_resource_handle_table[]; /* FS:0x0000 */
-extern volatile cb_u16 resource_resident_handles[256]; /* FS:0x0800 */
-extern volatile cb_u16 resource_eviction_handles[256]; /* FS:0x0A00 */
-extern volatile cb_u16 resource_current_handle; /* FS:0x0C00 */
+extern volatile bloodprg_resource_handle_entry CB_FS_DATA
+        fs_resource_handle_table[]; /* FS:0x0000 */
+extern volatile cb_u16 CB_FS_DATA
+        resource_resident_handles[256]; /* FS:0x0800 */
+extern volatile cb_u16 CB_FS_DATA
+        resource_eviction_handles[256]; /* FS:0x0A00 */
+extern volatile cb_u16 CB_FS_DATA resource_current_handle; /* FS:0x0C00 */
 extern volatile cb_u16 CB_FS_DATA
         resource_current_handle_fs; /* explicit FS:0x0C00 alias */
-extern volatile cb_u16 resource_current_entry_offset; /* FS:0x0C02 */
+extern volatile cb_u16 CB_FS_DATA
+        resource_current_entry_offset; /* FS:0x0C02 */
 extern volatile bloodprg_resource_name_entry CB_FS_DATA
         resource_name_table[]; /* FS:0x0C04 */
 extern volatile cb_u32 resource_free_bytes; /* GS:0x0A46 */

@@ -41,6 +41,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--code-file-base", type=lambda value: int(value, 0), default=0x600)
     parser.add_argument("--game-data-file-base", type=lambda value: int(value, 0), default=0xD420)
     parser.add_argument("--fs-data-file-base", type=lambda value: int(value, 0), default=0xC1F0)
+    parser.add_argument(
+        "--runtime-layout",
+        action="store_true",
+        help=(
+            "place paragraph-aligned GAME_DATA first in DGROUP so original "
+            "near offsets and based-segment accesses share one runtime owner"
+        ),
+    )
     return parser.parse_args()
 
 
@@ -111,6 +119,7 @@ def write_asm(
     entries: list[Declaration],
     image: bytes | None,
     file_bases: dict[str, int],
+    runtime_layout: bool,
 ) -> None:
     by_segment: dict[str, list[Declaration]] = {}
     for entry in entries:
@@ -129,9 +138,12 @@ def write_asm(
         if not segment_entries:
             continue
         class_name = "CODE" if segment == "_CODE" else "FAR_DATA"
+        alignment = "word"
+        if runtime_layout and segment == "GAME_DATA":
+            alignment = "para"
         lines.extend(
             [
-                f"{segment} segment word public use16 '{class_name}'",
+                f"{segment} segment {alignment} public use16 '{class_name}'",
             ]
         )
         for start in range(0, len(segment_entries), 8):
@@ -169,7 +181,10 @@ def write_asm(
                     )
                 write_bytes(lines, data)
             current = next_offset
-        lines.extend([f"{segment} ends", ""])
+        lines.append(f"{segment} ends")
+        if runtime_layout and segment == "GAME_DATA":
+            lines.append("DGROUP group GAME_DATA")
+        lines.append("")
     lines.append("end")
     path.write_text("\n".join(lines) + "\n", encoding="ascii")
 
@@ -203,6 +218,7 @@ def main() -> int:
             "GAME_DATA": args.game_data_file_base,
             "FS_DATA": args.fs_data_file_base,
         },
+        args.runtime_layout,
     )
     known_count = len(entries)
     print(f"known data declarations: {known_count}/{len(symbols)}")

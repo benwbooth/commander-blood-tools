@@ -23,11 +23,13 @@ void CB_FAR bloodprg_entry(void)
         exit(0);
     }
 
+#if !defined(BLOODPRG_RELINKED_RUNTIME)
     segread(&segments);
     segments.es = _psp;
     registers.x.ax = 0x4a00u;
     registers.x.bx = BLOODPRG_RESIDENT_PARAGRAPHS;
     (void)intdosx(&registers, &registers, &segments);
+#endif
 
     registers.x.ax = 0x4800u;
     registers.x.bx = 0xffffu;

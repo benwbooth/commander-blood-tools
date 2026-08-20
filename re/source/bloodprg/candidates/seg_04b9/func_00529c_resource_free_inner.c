@@ -3,8 +3,8 @@
 
 void CB_FAR resource_free_inner(cb_u16 handle)
 {
-    volatile bloodprg_resource_handle_entry *released;
-    volatile bloodprg_resource_handle_entry *shifted_entry;
+    volatile bloodprg_resource_handle_entry CB_FS_DATA *released;
+    volatile bloodprg_resource_handle_entry CB_FS_DATA *shifted_entry;
     volatile cb_u8 CB_FAR *destination;
     const volatile cb_u8 CB_FAR *source;
     cb_u32 released_size;

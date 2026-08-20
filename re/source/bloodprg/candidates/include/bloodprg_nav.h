@@ -246,7 +246,8 @@ extern const bloodprg_rect_i16 confirm_dialog_no_region; /* DS:0x255D */
 extern volatile cb_u8 CB_FAR *nav_resource_buffer; /* DS:0x0A80 */
 extern volatile cb_u8 CB_FAR * CB_GAME_DATA
         nav_resource_buffer_gs; /* explicit GS:0x0A80 alias */
-extern volatile char CB_FAR fs_presentation_resource_names[][16]; /* FS:0x0C04 */
+extern volatile char CB_FS_DATA
+        fs_presentation_resource_names[][16]; /* FS:0x0C04 */
 
 #if defined(__WATCOMC__)
 #pragma aux list_widget_layout_unified \

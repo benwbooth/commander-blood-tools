@@ -9,8 +9,8 @@ bloodprg_resource_allocation_result CB_FAR resource_allocate(
         cb_u16 handle, cb_u32 byte_count)
 {
     bloodprg_resource_allocation_result result;
-    volatile bloodprg_resource_handle_entry *entry;
-    volatile bloodprg_resource_handle_entry *candidate_entry;
+    volatile bloodprg_resource_handle_entry CB_FS_DATA *entry;
+    volatile bloodprg_resource_handle_entry CB_FS_DATA *candidate_entry;
     volatile bloodprg_resource_handle_entry CB_FAR *special_entry;
     cb_u32 rounded_byte_count;
     cb_u32 byte_deficit;

@@ -1,4 +1,5 @@
 #include <conio.h>
+#include <dos.h>
 
 #include "../include/bloodprg_audio.h"
 #include "../include/bloodprg_hardware.h"
@@ -17,8 +18,7 @@ void CB_INTERRUPT CB_FAR bloodprg_timer_isr(void)
     cb_u8 speaker_control;
 
     if ((timer_hook_active & 1u) == 0u) {
-        timer_previous_handler();
-        return;
+        _chain_intr(timer_previous_handler);
     }
 
     if ((game_mode_0adf_gs & 1u) == 0u) {
@@ -101,8 +101,7 @@ void CB_INTERRUPT CB_FAR bloodprg_timer_isr(void)
     --timer_divider;
     if (timer_divider == 0u) {
         timer_divider = BLOODPRG_BIOS_TIMER_DIVIDER;
-        timer_previous_handler();
-        return;
+        _chain_intr(timer_previous_handler);
     }
 
     outp(0x0020u, 0x20u);

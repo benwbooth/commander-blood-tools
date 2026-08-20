@@ -5,6 +5,24 @@
 #include "../../source/bloodprg/candidates/include/bloodprg_graphics.h"
 #include "../../source/bloodprg/candidates/include/bloodprg_resource.h"
 
+#if defined(__WATCOMC__)
+static int bloodprg_dos_find_first_interrupt(
+        const volatile char CB_FAR *path);
+#pragma aux bloodprg_dos_find_first_interrupt = \
+        "push ds" \
+        "mov ds,dx" \
+        "mov dx,ax" \
+        "xor cx,cx" \
+        "mov ax,4e00h" \
+        "int 21h" \
+        "sbb ax,ax" \
+        "inc ax" \
+        "pop ds" \
+        parm [dx ax] value [ax] modify exact [ax cx dx]
+#endif
+
+static volatile bloodprg_dos_dta bloodprg_dos_dta_buffer;
+
 static int bloodprg_dos_call_far_path(
         union REGS *registers,
         struct SREGS *segments,
@@ -21,22 +39,29 @@ volatile bloodprg_dos_dta CB_FAR *CB_NEAR cb_dos_get_dta(void)
 {
     union REGS registers;
     struct SREGS segments;
+    volatile bloodprg_dos_dta CB_FAR *dta;
 
-    registers.x.ax = 0x2f00u;
+    dta = (volatile bloodprg_dos_dta CB_FAR *)&bloodprg_dos_dta_buffer;
+    registers.x.ax = 0x1a00u;
     segread(&segments);
+    segments.ds = FP_SEG(dta);
+    registers.x.dx = FP_OFF(dta);
     int86x(0x21, &registers, &registers, &segments);
-    return (volatile bloodprg_dos_dta CB_FAR *)MK_FP(
-            segments.es, registers.x.bx);
+    return dta;
 }
 
 int CB_NEAR cb_dos_find_first(const volatile char CB_FAR *path)
 {
+#if defined(__WATCOMC__)
+    return bloodprg_dos_find_first_interrupt(path);
+#else
     union REGS registers;
     struct SREGS segments;
 
     registers.x.ax = 0x4e00u;
     registers.x.cx = 0u;
     return bloodprg_dos_call_far_path(&registers, &segments, path);
+#endif
 }
 
 int CB_NEAR cb_dos_open_read_only(
