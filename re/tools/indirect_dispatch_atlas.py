@@ -8,8 +8,8 @@ of work:
   into the direct-call denominator
 * some are static near-handler tables in BLOODPRG.EXE
 * some are runtime vectors into XMS, the sound driver, or presentation callbacks
-* the input action table has a proven dispatch mechanism but still needs a trace
-  or behavior match before all handlers can be trusted
+* the input action table contains 16 recovered near handlers selected through a
+  256-byte key translation table
 
 This tool makes that split reproducible and emits JSON.
 """
@@ -86,6 +86,16 @@ STATIC_TABLES = [
         "index_base": 0,
         "index_prefix": "blit",
         "mutable_slot_file_offset": 0x04532,
+    },
+    {
+        "name": "input_action_handlers",
+        "description": "Keyboard action dispatch after CS key translation",
+        "sites": [0x2137],
+        "table_file_offset": 0x020EE,
+        "entry_count": 16,
+        "target_base_file_offset": 0x00EB0,
+        "index_base": 0,
+        "index_prefix": "action",
     },
     {
         "name": "byte_parser_dispatch_74e5",
@@ -175,19 +185,22 @@ def table_entries(mz: MZ, labels: dict[int, tuple[str, str]], table: dict[str, o
 
 
 def input_dispatch_summary(mz: MZ) -> dict[str, object]:
-    xlat = mz.data[0x173E : 0x173E + 256]
+    xlat = mz.data[0x1FEE : 0x1FEE + 256]
     live = [b for b in xlat if b < 0x80]
     distinct = sorted(set(live))
     return {
         "dispatch_site": h(0x2137, 6),
-        "xlat_file_offset": h(0x173E, 6),
+        "xlat_file_offset": h(0x1FEE, 6),
         "handler_table_operand": "cs:0x123e",
-        "handler_table_file_offset_candidate": h(0x183E, 6),
+        "handler_table_file_offset": h(0x20EE, 6),
         "live_input_byte_count": len(live),
         "distinct_action_index_count": len(distinct),
         "max_action_index": max(distinct) if distinct else None,
-        "action_index_sample": [h(x, 2) for x in distinct[:24]],
-        "status": "dispatch mechanism proven; handler entries require runtime trace or behavior match",
+        "action_indices": [h(x, 2) for x in distinct],
+        "unmapped_handler_indices": [
+            h(x, 2) for x in range(16) if x not in distinct
+        ],
+        "status": "dispatch table and all 16 handler targets recovered",
     }
 
 
@@ -221,10 +234,6 @@ def classify_indirect_records(
         elif any(vec in op_str for vec in ("0xcd3", "0xcdb", "0xcdf", "0xceb", "0xcf3")):
             category = "external_sound_driver_vector"
             detail = {"vector_operand": op_str}
-        elif site == 0x2137:
-            category = "input_action_dispatch_trace_needed"
-            detail = {"handler_table_operand": "cs:[bx+0x123e]"}
-
         classified.append(
             {
                 "site_file_offset": h(site, 6),

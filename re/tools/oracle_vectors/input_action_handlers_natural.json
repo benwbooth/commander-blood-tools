@@ -1,0 +1,327 @@
+{
+  "artifact_sha256": "7e756c597190d20e71a0210da3898b9746c39e04db922455b07f74ec26166823",
+  "inventory": {
+    "handlers": [
+      {
+        "entry": "0x002140",
+        "function": "input_action_move_previous",
+        "index": 0,
+        "near_offset": "0x1290"
+      },
+      {
+        "entry": "0x00218d",
+        "function": "input_action_move_next",
+        "index": 1,
+        "near_offset": "0x12dd"
+      },
+      {
+        "entry": "0x002201",
+        "function": "input_action_noop_2",
+        "index": 2,
+        "near_offset": "0x1351"
+      },
+      {
+        "entry": "0x002202",
+        "function": "input_action_noop_3",
+        "index": 3,
+        "near_offset": "0x1352"
+      },
+      {
+        "entry": "0x002203",
+        "function": "input_action_request_shutdown",
+        "index": 4,
+        "near_offset": "0x1353"
+      },
+      {
+        "entry": "0x002209",
+        "function": "input_action_noop_5",
+        "index": 5,
+        "near_offset": "0x1359"
+      },
+      {
+        "entry": "0x002224",
+        "function": "input_action_accept",
+        "index": 6,
+        "near_offset": "0x1374"
+      },
+      {
+        "entry": "0x00224d",
+        "function": "input_action_cancel",
+        "index": 7,
+        "near_offset": "0x139d"
+      },
+      {
+        "entry": "0x0022d0",
+        "function": "input_action_latch_text_key",
+        "index": 8,
+        "near_offset": "0x1420"
+      },
+      {
+        "entry": "0x00220a",
+        "function": "input_action_noop_9",
+        "index": 9,
+        "near_offset": "0x135a"
+      },
+      {
+        "entry": "0x00220b",
+        "function": "input_action_noop_10",
+        "index": 10,
+        "near_offset": "0x135b"
+      },
+      {
+        "entry": "0x00220c",
+        "function": "input_action_noop_11",
+        "index": 11,
+        "near_offset": "0x135c"
+      },
+      {
+        "entry": "0x00220d",
+        "function": "input_action_noop_12",
+        "index": 12,
+        "near_offset": "0x135d"
+      },
+      {
+        "entry": "0x002216",
+        "function": "input_action_noop_13",
+        "index": 13,
+        "near_offset": "0x1366"
+      },
+      {
+        "entry": "0x00221f",
+        "function": "input_action_noop_14",
+        "index": 14,
+        "near_offset": "0x136f"
+      },
+      {
+        "entry": "0x0022b2",
+        "function": "input_action_toggle_pause",
+        "index": 15,
+        "near_offset": "0x1402"
+      }
+    ],
+    "mapped_action_indices": [
+      0,
+      1,
+      2,
+      3,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "table_file_offset": "0x0020ee",
+    "translation_file_offset": "0x001fee",
+    "unmapped_handler_indices": [
+      4
+    ]
+  },
+  "vectors": {
+    "accept": [
+      {
+        "committed_offset": 30583,
+        "latched_key": 13,
+        "name": "latch_only",
+        "record_kind": 1,
+        "selected_word": 3
+      },
+      {
+        "committed_offset": 60,
+        "latched_key": 13,
+        "name": "active_record",
+        "record_kind": 1,
+        "selected_word": 259
+      },
+      {
+        "committed_offset": 30583,
+        "latched_key": 13,
+        "name": "inactive_record",
+        "record_kind": 2,
+        "selected_word": 3
+      }
+    ],
+    "cancel": [
+      {
+        "calls": [],
+        "cancelled": false,
+        "dialogue_ready": 0,
+        "latched_key": 27,
+        "name": "presentation_gate_clear"
+      },
+      {
+        "calls": [],
+        "cancelled": false,
+        "dialogue_ready": 0,
+        "latched_key": 27,
+        "name": "blocked_line_window"
+      },
+      {
+        "calls": [
+          "list_d8c_init"
+        ],
+        "cancelled": true,
+        "dialogue_ready": 1,
+        "latched_key": 0,
+        "name": "cancel_dialogue_line"
+      },
+      {
+        "calls": [
+          "list_d8c_init"
+        ],
+        "cancelled": true,
+        "dialogue_ready": 0,
+        "latched_key": 0,
+        "name": "cancel_other_line"
+      }
+    ],
+    "move_next": [
+      {
+        "first_visible": 0,
+        "name": "dynamic_directory",
+        "selected": 3
+      },
+      {
+        "first_visible": 1,
+        "name": "fixed_directory_scroll",
+        "selected": 15
+      },
+      {
+        "first_visible": 0,
+        "name": "directory_terminator",
+        "selected": 2
+      },
+      {
+        "active_name_offset": 12352,
+        "edit_name_hex": "707172737475767778797a7b7c7d7e7f",
+        "name": "save_slot_next",
+        "slot": 8
+      }
+    ],
+    "move_previous": [
+      {
+        "first_visible": 4,
+        "name": "directory_scroll",
+        "selected": 4
+      },
+      {
+        "first_visible": 5,
+        "name": "directory_within_window",
+        "selected": 5
+      },
+      {
+        "first_visible": 0,
+        "name": "directory_at_first",
+        "selected": 0
+      },
+      {
+        "first_visible": 5,
+        "name": "committed_directory_ignored",
+        "selected": 5
+      },
+      {
+        "first_visible": 5,
+        "name": "inactive",
+        "selected": 5
+      },
+      {
+        "active_name_offset": 12320,
+        "edit_name_hex": "404142434445464748494a4b4c4d4e4f",
+        "name": "save_slot_previous",
+        "slot": 1
+      }
+    ],
+    "simple_handlers": [
+      {
+        "action_index": 2,
+        "memory": "unchanged",
+        "name": "input_action_noop_2"
+      },
+      {
+        "action_index": 3,
+        "memory": "unchanged",
+        "name": "input_action_noop_3"
+      },
+      {
+        "action_index": 5,
+        "memory": "unchanged",
+        "name": "input_action_noop_5"
+      },
+      {
+        "action_index": 9,
+        "memory": "unchanged",
+        "name": "input_action_noop_9"
+      },
+      {
+        "action_index": 10,
+        "memory": "unchanged",
+        "name": "input_action_noop_10"
+      },
+      {
+        "action_index": 11,
+        "memory": "unchanged",
+        "name": "input_action_noop_11"
+      },
+      {
+        "action_index": 12,
+        "memory": "unchanged",
+        "name": "input_action_noop_12"
+      },
+      {
+        "action_index": 13,
+        "memory": "unchanged",
+        "name": "input_action_noop_13"
+      },
+      {
+        "action_index": 14,
+        "memory": "unchanged",
+        "name": "input_action_noop_14"
+      },
+      {
+        "action_index": 4,
+        "name": "input_action_request_shutdown",
+        "shutdown_latch": 1
+      },
+      {
+        "action_index": 8,
+        "latched_key": 122,
+        "name": "input_action_latch_text_key"
+      }
+    ],
+    "toggle_pause": [
+      {
+        "latched_key": 112,
+        "name": "pause",
+        "pause_after": 1,
+        "pause_before": 0,
+        "save_active": 0
+      },
+      {
+        "latched_key": 112,
+        "name": "unpause",
+        "pause_after": 0,
+        "pause_before": 1,
+        "save_active": 0
+      },
+      {
+        "latched_key": 112,
+        "name": "normalize_set_bits",
+        "pause_after": 0,
+        "pause_before": 3,
+        "save_active": 0
+      },
+      {
+        "latched_key": 112,
+        "name": "save_ui_blocks_toggle",
+        "pause_after": 1,
+        "pause_before": 1,
+        "save_active": 1
+      }
+    ]
+  }
+}

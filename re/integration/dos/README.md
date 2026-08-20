@@ -201,12 +201,14 @@ all match the original exactly. This remains an opening-runtime gate, not a
 claim of full-game C parity. The next milestones are sustained gameplay and
 cross-XDB validation.
 
-The runtime data owner also verifies and rebinds 72 near-pointer words to the
+The runtime data owner also verifies and rebinds 88 near-pointer words to the
 final linked C offsets: six navigation actor handlers, five navigation choice
-handlers, eight sprite blitters plus their null mutable slot, and all 52 VM
-opcode handlers. `validation/bloodprg_runtime/data_owner/pointer_rebindings.tsv`
-records every original word and linked symbol. The input-action table remains
-separate until its 16 handler bodies are individually recovered.
+handlers, all 16 input-action handlers, eight sprite blitters plus their null
+mutable slot, and all 52 VM opcode handlers.
+`validation/bloodprg_runtime/data_owner/pointer_rebindings.tsv` records every
+original word and linked symbol. The input handlers have 32 direct
+original-binary vectors covering directory and save-slot movement, Enter,
+Escape, pause, text-key latching, shutdown, and every semantic no-op.
 
 To classify the aggregate probe's data symbols against the recovered
 BLOODPRG layout, generate the measurement-only layout object:

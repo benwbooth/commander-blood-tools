@@ -61,6 +61,7 @@ python3 re/tools/split_xdb_resume_assembly.py --check
 python3 re/tools/assembly_inventory.py --check
 python3 re/tools/xdb_source_inventory.py --check
 nix develop -c python3 re/tools/natural_candidate_oracle.py --check
+nix develop -c python3 re/tools/input_action_oracle.py --check
 nix develop -c python3 re/tools/xdb_candidate_oracle.py --check
 ```
 

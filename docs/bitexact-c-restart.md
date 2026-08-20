@@ -272,13 +272,16 @@ The remaining indirect categories are not all internal code:
   `dnsdb.drv`/`nosound.drv` boundary.
 - Presentation callback vector `DS:0x0A96`: 2 records, runtime callback that
   needs tracing.
-- Input action dispatch `0x2137`: mechanism is proven, but the handler entries
-  still require runtime trace or behavior matching. The xlat table at file
-  `0x173E` has 159 live input bytes, 51 distinct action indices, max index 125.
+- Input action dispatch `0x210E`: the complete shipped route is proven. The
+  256-byte translation table at file `0x1FEE` maps 110 input bytes to 15 of the
+  16 action slots (indices 0..15; shutdown slot 4 is not mapped by shipped
+  input). The handler table at file `0x20EE` contains 16 near code pointers,
+  all recovered and checked against the original binary by the input-action
+  oracle.
 
-Current denominator wording: **at least 308 internal `BLOODPRG.EXE` entries,
-plus trace-resolved input-action/presentation-callback targets**. External XMS
-and sound-driver vectors are runtime boundaries, not functions to decompile into
+Current denominator wording: **at least 324 internal `BLOODPRG.EXE` entries,
+plus the trace-resolved presentation-callback targets**. External XMS and
+sound-driver vectors are runtime boundaries, not functions to decompile into
 the game executable.
 
 ## BASIC / VM Status

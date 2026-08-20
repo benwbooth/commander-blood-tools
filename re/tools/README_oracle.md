@@ -6,6 +6,7 @@ those committed vectors directly against `BLOODPRG.EXE` with:
 
 ```sh
 nix develop -c python3 re/tools/natural_candidate_oracle.py --check
+nix develop -c python3 re/tools/input_action_oracle.py --check
 ```
 
 The natural-candidate oracle also hooks x86 `IN`, `OUT`, and software

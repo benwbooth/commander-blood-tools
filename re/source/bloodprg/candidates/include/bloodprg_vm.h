@@ -384,6 +384,8 @@ typedef struct bloodprg_dic_lookup_result {
 extern bloodprg_vm_directory_ptr vm_record_directory; /* DS:0x672C; runtime DS=GS */
 extern bloodprg_vm_directory_ptr CB_GAME_DATA
         vm_record_directory_gs; /* explicit GS:0x672C alias */
+extern const volatile bloodprg_vm_directory_entry CB_GAME_DATA
+        vm_default_record_directory[]; /* GS:0x6F80 */
 /* GS writer at 0x00604E, DS reader at 0x00721A; runtime DS=GS. */
 extern volatile cb_u16 vm_active_object_offsets[]; /* 0x6A16 */
 extern volatile cb_u16 CB_GAME_DATA

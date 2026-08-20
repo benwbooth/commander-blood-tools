@@ -6,13 +6,13 @@
 ; seg_off: 008b:125e
 ; group: seg_008b
 ; provenance: recursive_graph
-; label: input_action_dispatch_table_UNRESOLVED
-; label_comment: Verified input-action dispatch mechanism: clear DS:0x0B15, poll 01CE:039D, use AL directly or AH|0x80 for an extended key, translate through CS:0x113E, reject a signed-negative result, and near-call CS:[0x123E+index*2] while leaving the raw low byte in DL. The shipped table base/extent/targets remain unresolved because sampled words do not map consistently under the flat file-offset assumption; do not invent handler identities. Natural C and five direct vectors recover the mechanism while keeping table contents external: re/source/bloodprg/candidates/seg_008b/func_00210e_input_action_dispatch.c and re/tools/oracle_vectors/func_210e_natural.json
+; label: input_action_dispatch
+; label_comment: Polls the keyboard, translates ordinary and extended key codes through the 256-byte CS table, rejects signed-negative entries, and calls one of the 16 recovered near handlers while preserving the raw low byte in DL.
 ; byte_count: 50
 ; boundary: cfg_blocks_6_terminals_1
 ; terminal: retf:1
 ; direct_callees: none
-; indirect_calls: 2
+; indirect_calls: 1
 ; routine_bytes_sha256: 3c635d7aebb8a3fe33353a58934f677a59d093ec7906b1b57aa30bf0fe8cfd6d
 
 00210E:  50                           push     ax
@@ -28,14 +28,14 @@
 002125:  8A C4                        mov      al, ah
 002127:  0C 80                        or       al, 0x80
 002129:  BB 3E 11                     mov      bx, 0x113e
-00212C:  2E D7                        xlatb   
+00212C:  2E D7                        xlatb
 00212E:  0A C0                        or       al, al
 002130:  78 0A                        js       0x213c
-002132:  98                           cwde    
+002132:  98                           cwde
 002133:  03 C0                        add      ax, ax
 002135:  8B D8                        mov      bx, ax
 002137:  2E FF 97 3E 12               call     word ptr cs:[bx + 0x123e]
 00213C:  5A                           pop      dx
 00213D:  5B                           pop      bx
 00213E:  58                           pop      ax
-00213F:  CB                           retf    
+00213F:  CB                           retf
