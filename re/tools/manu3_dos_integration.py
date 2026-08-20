@@ -203,6 +203,7 @@ CASES = (
                 "001a2b_slot2_reset",
                 "001a5c_slot2_steer_update",
                 "001aa0_slot2_finish_update",
+                "001b1a_unreferenced_steering_update",
             ),
         ),
         defines=("TEST_AMER",),

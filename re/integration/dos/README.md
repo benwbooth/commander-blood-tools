@@ -434,11 +434,11 @@ NIXPKGS_ALLOW_UNFREE=1 nix shell --impure \
   python3 re/tools/manu3_dos_integration.py --case amer_slot1_callbacks
 ```
 
-`alien_amer_slot2_callbacks.c` links the ten recovered AMER slot-2 owners. It
+`alien_amer_slot2_callbacks.c` links the eleven recovered AMER slot-2 owners. It
 verifies the reset seed and field ownership, countdown transfer through the
 full common update, immediate selection callback invocation, the disabled
-selection restart chain, and the finish callback's in-bounds transition. Run
-it with:
+selection restart chain, the finish callback's in-bounds transition, and the
+compiled but unreferenced steering sibling. Run it with:
 
 ```sh
 NIXPKGS_ALLOW_UNFREE=1 nix shell --impure \

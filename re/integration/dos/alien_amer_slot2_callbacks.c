@@ -176,6 +176,32 @@ static const char *check_finish_transition(void)
     return NULL;
 }
 
+static const char *check_unreferenced_steering(void)
+{
+    extended_state state_space;
+    extended_context context_space;
+    xdb_alien_biased_state *state;
+    xdb_alien_method_context *context;
+
+    memset(&state_space, 0, sizeof(state_space));
+    memset(&context_space, 0, sizeof(context_space));
+    context = (xdb_alien_method_context *)context_space.bytes;
+    context->state = (xdb_alien_state *)state_space.bytes;
+    state = (xdb_alien_biased_state *)(state_space.bytes
+            + XDB_ALIEN_CURSOR_BIAS);
+    state->field_038 = 1;
+    state->field_032 = 1;
+    state->field_058 = 0x10;
+    state->field_050 = 100;
+    xdb_amer_unreferenced_steering_update(context);
+    if (state->field_054 != 0x0a
+            || state->field_058 != (xdb_u16)-8
+            || state->field_050 != 92) {
+        return "FAIL amer unreferenced steering";
+    }
+    return NULL;
+}
+
 int main(void)
 {
     const char *error;
@@ -193,6 +219,10 @@ int main(void)
         return write_result(error);
     }
     error = check_finish_transition();
+    if (error != NULL) {
+        return write_result(error);
+    }
+    error = check_unreferenced_steering();
     if (error != NULL) {
         return write_result(error);
     }

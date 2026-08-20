@@ -37,6 +37,8 @@ SPECS = {
          "callback published by selection callback 0x1948", (0x171D, 0x193E, 0x1A2B)),
         (0x1A2B, 0x1A5C, "func_001a2b_slot2_reset.asm",
          "shared reset tail reached by four AMER slot-2 callbacks", ()),
+        (0x1B1A, 0x1B5F, "func_001b1a_unreferenced_steering_update.asm",
+         "compiled context-ABI sibling present in all three alien overlays; no table or in-overlay pointer reference", ()),
     ),
     "croolis": (
         (0x171D, 0x1727, "func_00171d_slot2_restart.asm",

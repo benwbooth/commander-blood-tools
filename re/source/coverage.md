@@ -5,13 +5,13 @@ Current measured coverage:
 | module | indexed routines | natural-C candidates | missing |
 | --- | ---: | ---: | ---: |
 | `bloodprg` | 321 | 321 | 0 |
-| `xdb_amer` | 54 | 54 | 0 |
+| `xdb_amer` | 55 | 55 | 0 |
 | `xdb_croolis` | 47 | 47 | 0 |
 | `xdb_manu3` | 12 | 12 | 0 |
 | `xdb_scrut` | 55 | 55 | 0 |
-| total | 489 | 489 | 0 |
+| total | 490 | 490 | 0 |
 
-Overall candidate coverage is 489 of 489 standardized indexed routines, or
+Overall candidate coverage is 490 of 490 standardized indexed routines, or
 100.00 percent. No legacy overlapping XDB callback dump remains unindexed.
 
 Generate the live report, including the missing routine list, with:

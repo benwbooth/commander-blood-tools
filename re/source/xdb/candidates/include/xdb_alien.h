@@ -882,6 +882,8 @@ void XDB_NEAR xdb_amer_slot2_selection_late_update(
 void XDB_NEAR xdb_amer_slot2_reset(
         xdb_alien_biased_state XDB_NEAR *state,
         xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_amer_unreferenced_steering_update(
+        xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_croolis_slot2_update(
         xdb_alien_biased_state XDB_NEAR *state,
         xdb_alien_method_context XDB_NEAR *context);
