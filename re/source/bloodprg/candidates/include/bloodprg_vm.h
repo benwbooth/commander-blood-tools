@@ -469,7 +469,8 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_cb_compare_byte(
     const cb_u8 CB_NEAR *script_bytes);       /* 0x006510 */
 const cb_u16 CB_NEAR *CB_NEAR vm_op_a0_push(
     const cb_u16 CB_NEAR *script_words);      /* 0x006559 */
-cb_u16 CB_NEAR vm_op_a1_pop(void);            /* 0x006572 */
+const cb_u8 CB_NEAR *CB_NEAR vm_op_a1_pop(
+    const cb_u8 CB_NEAR *script_bytes);        /* 0x006572 */
 const cb_u16 CB_NEAR *CB_NEAR vm_op_a2_cond_call(
     const cb_u16 CB_NEAR *script_words);      /* 0x006588 */
 const cb_u8 CB_NEAR *CB_NEAR vm_op_a3_block(

@@ -137,7 +137,7 @@ write the wrong segment. A0, A1, A3, and A5 now share the declarations in
 | routine | original | closest reviewed Watcom result | reviewed difference |
 | --- | ---: | ---: | --- |
 | `0x006559 vm_op_a0_push` | 8 instructions, 25 bytes | size mode: 16 instructions, 39 bytes | explicit ES/BX setup and preservation plus cursor lowering; query/top/operand/stack order remains intact |
-| `0x006572 vm_op_a1_pop` | 6 instructions, 22 bytes | size mode: 18 instructions, 39 bytes | explicit ES/DX preservation, duplicated result setup, and two DEC instructions; dispatcher-visible state and SI are unchanged |
+| `0x006572 vm_op_a1_pop` | 6 instructions, 22 bytes | integrated cursor-return build: 30 bytes | a live table-dispatch trace proves the original old-top AX is dead and the unchanged SI cursor must be the typed C result; query clear and conditional pop remain intact |
 | `0x006588 vm_op_a2_cond_call` | 6 instructions, 14 bytes | speed mode: 6 instructions, 17 bytes | delayed SI increment, TEST, and conditional tail branch preserve the typed PRNG/branch contract |
 | `0x006596 vm_op_a3_block` | 29 instructions, 69 bytes | speed mode: 40 instructions, 86 bytes; size mode: 41/85 | explicit ES/BX ownership and duplicated epilogues; every scan, inversion, comparison, branch, and cursor result agrees |
 | `0x0065EB vm_op_a5_cond_state_array` | 13 instructions, 33 bytes | size mode: 22 instructions, 47 bytes | MOVSX/BX and explicit ES state access replace LODSB/CBW plus ambient SS=GS |
