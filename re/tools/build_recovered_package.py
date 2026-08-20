@@ -139,6 +139,23 @@ BLOODPRG_SEMANTIC_PATCH_FUNCTIONS = (
         (),
     ),
     (
+        "nav_chart_list_build",
+        0x00721A,
+        bytes.fromhex(
+            "53 51 52 56 E8 00 00 BA 00 00 BE 00 00 31 C9 89 D3 "
+            "83 C2 02 8B 07 85 C0 7C 17 C4 1E 00 00 01 C3 26 F7 "
+            "07 18 01 74 E8 89 F3 83 C6 02 89 07 41 EB DE 89 04 "
+            "89 C8 5E 5A 59 5B CB"
+        ),
+        bytes.fromhex(
+            "53 51 52 56 E8 2D EE BA 16 6A BE D3 2A 31 C9 89 D3 "
+            "83 C2 02 8B 07 85 C0 7C 17 C4 1E 24 67 01 C3 26 F7 "
+            "07 18 01 74 E8 89 F3 83 C6 02 89 07 41 EB DE 89 04 "
+            "89 C8 5E 5A 59 5B CB"
+        ),
+        (),
+    ),
+    (
         "palette_upload_if_dirty",
         0x00178B,
         bytes.fromhex(
