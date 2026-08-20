@@ -3,9 +3,9 @@
 #define BLOODPRG_PALETTE_COMPONENTS 3u
 
 void CB_FAR palette_range_interpolate(
-        const cb_u8 CB_FAR *source,
+        const cb_u8 CB_NEAR *source,
         const cb_u8 CB_FAR *target,
-        cb_i8 percent,
+        cb_u16 percent,
         cb_u16 first,
         cb_u16 last)
 {
@@ -32,19 +32,19 @@ void CB_FAR palette_range_interpolate(
         target_value = *target++;
         delta = (cb_i8)(source_value - target_value);
         *destination++ = (cb_u8)(target_value
-                + (cb_i16)delta * (cb_i16)percent / 100);
+                + (cb_i16)delta * (cb_i16)(cb_i8)percent / 100);
 
         source_value = *source++;
         target_value = *target++;
         delta = (cb_i8)(source_value - target_value);
         *destination++ = (cb_u8)(target_value
-                + (cb_i16)delta * (cb_i16)percent / 100);
+                + (cb_i16)delta * (cb_i16)(cb_i8)percent / 100);
 
         source_value = *source++;
         target_value = *target++;
         delta = (cb_i8)(source_value - target_value);
         *destination++ = (cb_u8)(target_value
-                + (cb_i16)delta * (cb_i16)percent / 100);
+                + (cb_i16)delta * (cb_i16)(cb_i8)percent / 100);
     } while (--entries != 0);
 
 #if defined(__WATCOMC__)

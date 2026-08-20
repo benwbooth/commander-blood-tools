@@ -39,6 +39,17 @@ links those objects into `cd/BPRG_RE.EXE` with zero unresolved symbols. That
 executable now reaches and renders the opening cinematic under DOSBox-X;
 full-game behavior and cross-XDB execution remain later runtime gates.
 
+The graphics integration gate links the recovered palette-transition and
+chunky-to-planar routines into small real-mode DOS executables. It verifies the
+register ABI between the two palette routines and all 64,000 bytes written to
+the four Mode-X planes:
+
+```sh
+NIXPKGS_ALLOW_UNFREE=1 nix shell --impure \
+  nixpkgs#open-watcom-bin nixpkgs#dosbox-x -c \
+  python3 re/tools/bloodprg_graphics_integration.py
+```
+
 The `--include-bloodprg-fixed-patch` gate is stricter and smaller. It emits
 `validation/bloodprg_fixed/BLOODPRG_C_PATCHED.EXE` and the DOS alias
 `cd/BPRG_C.EXE` only after each selected C routine passes its fixed-layout

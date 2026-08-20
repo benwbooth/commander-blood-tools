@@ -25,7 +25,7 @@ void CB_FAR palette_transition_step(void)
         palette_transition_percent = percent;
         first = (cb_u16)palette_transition_first;
         last = (cb_u16)palette_transition_last;
-        palette_range_interpolate_ds(
+        palette_range_interpolate(
             palette_transition_source,
             palette_transition_target,
             percent,

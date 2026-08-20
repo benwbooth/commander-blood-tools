@@ -265,23 +265,11 @@ cb_i16 CB_FAR palette_blend_remap_table_build(
         cb_u16 target_blue,
         volatile cb_u8 CB_GAME_DATA *table); /* 0x0022E0 */
 void CB_FAR palette_range_interpolate(
-        const cb_u8 CB_FAR *source,
-        const cb_u8 CB_FAR *target,
-        cb_i8 percent,
-        cb_u16 first,
-        cb_u16 last); /* 0x0023C5 */
-#if defined(__WATCOMC__)
-void CB_FAR palette_range_interpolate_ds(
         const cb_u8 CB_NEAR *source,
         const cb_u8 CB_FAR *target,
         cb_u16 percent,
         cb_u16 first,
-        cb_u16 last);
-#else
-#define palette_range_interpolate_ds(source, target, percent, first, last) \
-        palette_range_interpolate( \
-            (source), (target), (cb_i8)(percent), (first), (last))
-#endif
+        cb_u16 last); /* 0x0023C5 */
 void CB_FAR palette_transition_step(void); /* 0x001F78 */
 void CB_FAR tint_table_build_banked(
         cb_u16 bank_base,
@@ -400,7 +388,7 @@ void CB_NEAR list_walk_f18(void); /* 0x007CE8 */
 #pragma aux video_retrace_phase_wait modify exact []
 #pragma aux palette_blend_remap_table_build \
         parm [ax] [bx] [cx] [dx] [di] value [ax] modify exact []
-#pragma aux palette_range_interpolate_ds "palette_range_interpolate_" \
+#pragma aux palette_range_interpolate \
         parm [si] [es di] [ax] [bx] [dx] \
         modify exact []
 #pragma aux palette_transition_step modify exact []
