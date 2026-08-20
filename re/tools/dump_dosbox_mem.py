@@ -76,6 +76,22 @@ STARTUP_GLOBALS = [
     ("resource_skip_back_buffer_present_0DBB", 0x0DBB, "<B"),
     ("resource_unclamped_row_count_0DBD", 0x0DBD, "<B"),
     ("resource_decode_mode_0AA0", 0x0AA0, "<H"),
+    ("vm_resource_handles_6712", 0x6712, "<5H"),
+    ("vm_resource_profile_index_677E", 0x677E, "<H"),
+    ("vm_script_profile_request_6780", 0x6780, "<h"),
+    ("vm_execution_enabled_67A8", 0x67A8, "<B"),
+    ("vm_presentation_request_flags_67AA", 0x67AA, "<B"),
+    ("vm_presentation_active_67AC", 0x67AC, "<B"),
+    ("vm_query_mode_67AD", 0x67AD, "<B"),
+    ("vm_resume_state_67B1", 0x67B1, "<B"),
+    ("vm_yield_flag_67B4", 0x67B4, "<B"),
+    ("vm_branch_stack_6820", 0x6820, "<8H"),
+    ("vm_branch_stack_top_6884", 0x6884, "<H"),
+    ("vm_ui_state_2793", 0x2793, "<H"),
+    ("nav_screen_rebuild_pending_27D9", 0x27D9, "<B"),
+    ("presentation_mode_flag_27E0", 0x27E0, "<B"),
+    ("presentation_mode_flag_27E1", 0x27E1, "<B"),
+    ("presentation_box_phase_2B93", 0x2B93, "<h"),
     ("ship_3d_depth_offset_2527", 0x2527, "<H"),
     ("ship_3d_plane_blit_crop_enabled_252E", 0x252E, "<B"),
     ("graphics_draw_framebuffer_5219", 0x5219, "<HH"),
@@ -261,6 +277,25 @@ def main():
                     guest_linear_bias = candidate_bias
                     break
             print(f"guest_linear_bias: {guest_linear_bias:+d}")
+            for index in range(5):
+                mem.seek(best + 0x671C + index * 4)
+                offset, segment = struct.unpack("<HH", mem.read(4))
+                mem.seek(
+                    guest_memory_base
+                    + guest_linear_bias
+                    + segment * 16
+                    + offset
+                )
+                data = mem.read(64)
+                if dump_dir:
+                    output = Path(dump_dir)
+                    (output / (
+                        f"{executable}.vm_resource_image_{index}.head.bin"
+                    )).write_bytes(data)
+                print(
+                    f"vm_resource_image_{index}: pointer={segment:04x}:{offset:04x} "
+                    f"head={data.hex()}"
+                )
             for name, pointer_offset in (
                 ("graphics_display_buffer", 0x5221),
                 ("graphics_back_buffer", 0x5229),

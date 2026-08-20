@@ -19,6 +19,7 @@ typedef bloodprg_vm_image_ptr CB_NEAR bloodprg_vm_opcode_handler(
         bloodprg_vm_image_ptr script_bytes);
 
 #define BLOODPRG_VM_RESOURCE_COUNT 5u
+#define BLOODPRG_VM_RESOURCE_PROFILE_COUNT 6u
 #define BLOODPRG_VM_SPECIAL_SLOT_COUNT 16u
 #define BLOODPRG_VM_OPCODE_MIN 0xa0u
 #define BLOODPRG_VM_OPCODE_MAX 0xd2u
@@ -113,12 +114,14 @@ extern volatile cb_u8 CB_FAR *vm_record_base; /* GS:0x6724 */
 extern volatile cb_u8 CB_FAR * CB_GAME_DATA
         vm_record_base_gs; /* explicit GS:0x6724 alias */
 /* BP addresses this table through SS; the shipped runtime has SS=GS. */
-extern volatile cb_u16 vm_resource_handles[BLOODPRG_VM_RESOURCE_COUNT];
+extern volatile cb_u16 CB_GAME_DATA
+        vm_resource_handles[BLOODPRG_VM_RESOURCE_COUNT]; /* GS:0x6712 */
 extern const bloodprg_vm_resource_profile CB_FS_DATA
-        vm_resource_profiles[]; /* FS:0x11F4 */
+        vm_resource_profiles[BLOODPRG_VM_RESOURCE_PROFILE_COUNT];
+        /* FS:0x11F4; span:0x003C */
 /* These five pointers alias the individually named 0x671c..0x672f globals. */
 extern bloodprg_vm_image_ptr CB_GAME_DATA
-        vm_resource_images[BLOODPRG_VM_RESOURCE_COUNT];
+        vm_resource_images[BLOODPRG_VM_RESOURCE_COUNT]; /* GS:0x671C */
 extern bloodprg_vm_image_ptr CB_GAME_DATA vm_script_image; /* GS:0x671C */
 extern bloodprg_vm_image_ptr CB_GAME_DATA vm_code_image; /* GS:0x6720 */
 extern volatile cb_u16 vm_branch_stack[];    /* SS:0x6820; SS=GS at runtime */
@@ -299,6 +302,15 @@ void CB_NEAR presentation_line_zero_run(
         cb_u16 link_target_offset); /* 0x001EC1 */
 void CB_NEAR presentation_line_one_stream_run(
         cb_u16 link_target_offset); /* 0x001F10 */
+#if defined(__WATCOMC__)
+/* These modal loops call register-oriented graphics helpers.  The original
+ * callers reload their live values after return; expose the same boundary so
+ * Watcom does not hoist later SI/DI/ES arguments across either call. */
+#pragma aux presentation_line_zero_run parm [ax] \
+        modify exact [ax bx cx dx si di es]
+#pragma aux presentation_line_one_stream_run parm [ax] \
+        modify exact [ax bx cx dx si di es]
+#endif
 void CB_SAVE_REGS CB_FAR dlg_menu_words_inline_reveal_step(void); /* 0x0072A8 */
 void CB_FAR presentation_ready_gate(void); /* 0x008963 */
 

@@ -5,6 +5,28 @@
 #include "../include/bloodprg_resource.h"
 #include "../include/bloodprg_vm.h"
 
+#if defined(__WATCOMC__)
+static bloodprg_vm_image_ptr CB_NEAR vm_script_handler_invoke(
+        bloodprg_vm_opcode_handler CB_NEAR *handler,
+        bloodprg_vm_image_ptr script_bytes);
+#pragma aux vm_script_handler_invoke = \
+        "push ds" \
+        "push dx" \
+        "mov ds,dx" \
+        "call bx" \
+        "pop dx" \
+        "pop ds" \
+        parm [bx] [dx ax] value [dx ax] \
+        modify exact [ax bx cx si di es]
+#else
+static bloodprg_vm_image_ptr CB_NEAR vm_script_handler_invoke(
+        bloodprg_vm_opcode_handler CB_NEAR *handler,
+        bloodprg_vm_image_ptr script_bytes)
+{
+    return handler(script_bytes);
+}
+#endif
+
 cb_i16 CB_FAR vm_run_wrapper(void)
 {
     bloodprg_resource_resolve_result resolved;
@@ -50,14 +72,17 @@ cb_i16 CB_FAR vm_run_wrapper(void)
         }
 
         vm_yield_flag = 0u;
-        cursor = vm_opcode_handlers[
-                (cb_u8)(opcode - BLOODPRG_VM_OPCODE_MIN)](cursor);
+        cursor = vm_script_handler_invoke(
+                vm_opcode_handlers[
+                    (cb_u8)(opcode - BLOODPRG_VM_OPCODE_MIN)],
+                cursor);
         signal = vm_yield_flag;
 
         if (signal == 0u) {
             if ((vm_skip_count & BLOODPRG_VM_SKIP_COUNT_MASK) != 0u) {
                 do {
-                    cursor = vm_token_advance(cursor);
+                    cursor = vm_script_handler_invoke(
+                            vm_token_advance, cursor);
                 } while (--vm_skip_count != 0u);
             } else if (vm_resume_state == 1u) {
                 vm_resume_state = 0u;

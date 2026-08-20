@@ -12,6 +12,8 @@
 #   key <keyname>       (e.g. Return, Escape, space)
 #   shot <name>         (capture the game area to <out-dir>/<name>.png)
 #   wait <seconds>
+# Set DOSBOX_CYCLES (for example, `max` or `3000`) to override DOSBox-X's
+# cycle rate while preserving the same launch and input sequence.
 # The DOSBox-X window is found by its "DOSBox-X"/"BLOODPRG" title (it appears a few
 # seconds after launch — the script waits for it).
 set -euo pipefail
@@ -26,6 +28,7 @@ DISP="${3:-:73}"
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 INSTALL_PARENT="${4:-$REPO_ROOT/accuracy/cblood_install}"
 GAME_EXECUTABLE="${5:-BLOODPRG.EXE}"
+DOSBOX_CYCLES="${DOSBOX_CYCLES:-}"
 export DISPLAY="$DISP" SDL_VIDEODRIVER=x11
 
 Xvfb "$DISP" -screen 0 800x600x24 >/dev/null 2>&1 &
@@ -36,7 +39,11 @@ sleep 3
 # arguments, leaves the game looping the ATTRACT DEMO -- it never reaches a playable
 # state, so every capture and every memory dump taken that way is inert. This is the
 # same defect that made re/tools/dump_dosbox_mem.py silently useless until it was fixed.
-dosbox-x -set sdl output=surface \
+DOSBOX_ARGS=(dosbox-x -set "sdl output=surface")
+if [ -n "$DOSBOX_CYCLES" ]; then
+  DOSBOX_ARGS+=(-set "cpu cycles=$DOSBOX_CYCLES")
+fi
+"${DOSBOX_ARGS[@]}" \
   -c "mount c \"$INSTALL_PARENT\"" \
   -c "mount d \"$GAME_DIR\" -t cdrom" \
   -c 'd:' \

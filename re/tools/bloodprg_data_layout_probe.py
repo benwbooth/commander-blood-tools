@@ -17,16 +17,25 @@ OFFSET_RE = re.compile(
     r"|/\*\s*(0x[0-9A-Fa-f]+)\s*\*/",
     re.I,
 )
+SPAN_RE = re.compile(r"\bspan\s*:\s*(0x[0-9A-Fa-f]+|[0-9]+)\b", re.I)
 
 
 class Declaration:
-    __slots__ = ("symbol", "header", "segment", "offset")
+    __slots__ = ("symbol", "header", "segment", "offset", "span")
 
-    def __init__(self, symbol: str, header: str, segment: str, offset: int) -> None:
+    def __init__(
+        self,
+        symbol: str,
+        header: str,
+        segment: str,
+        offset: int,
+        span: int = 1,
+    ) -> None:
         self.symbol = symbol
         self.header = header
         self.segment = segment
         self.offset = offset
+        self.span = span
 
 
 class PointerRebinding:
@@ -233,10 +242,13 @@ def declarations(header_dir: Path) -> dict[str, Declaration]:
                 segment = "_CODE"
             else:
                 segment = "GAME_DATA"
+            span_match = SPAN_RE.search(comment)
+            span = int(span_match.group(1), 0) if span_match else 1
             result.setdefault(
                 "_" + name,
                 Declaration(symbol="_" + name, header=path.name, segment=segment,
-                            offset=int(offset_match.group(1) or offset_match.group(2), 16)),
+                            offset=int(offset_match.group(1) or offset_match.group(2), 16),
+                            span=span),
             )
     return result
 
@@ -320,15 +332,22 @@ def write_asm(
             if offset < current:
                 raise ValueError(f"non-monotonic {segment} offset at {offset:#x}")
             lines.append(f"org {offset:#06x}")
+            minimum_length = 1
             while index < len(segment_entries) and segment_entries[index].offset == offset:
                 lines.append(f"{segment_entries[index].symbol} label byte")
+                minimum_length = max(minimum_length, segment_entries[index].span)
                 index += 1
             next_offset = (
                 segment_entries[index].offset
                 if index < len(segment_entries)
-                else offset + 1
+                else offset + minimum_length
             )
             length = next_offset - offset
+            if length < minimum_length:
+                raise ValueError(
+                    f"{segment} declaration at {offset:#x} needs {minimum_length:#x} "
+                    f"bytes but the next declaration starts at {next_offset:#x}"
+                )
             rebinding = rebinding_by_location.get((segment, offset))
             rebound_bytes = 0
             if rebinding is not None:
