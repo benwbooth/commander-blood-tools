@@ -7,6 +7,7 @@ import argparse
 import csv
 from pathlib import Path
 import re
+import struct
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -26,6 +27,120 @@ class Declaration:
         self.header = header
         self.segment = segment
         self.offset = offset
+
+
+class PointerRebinding:
+    __slots__ = (
+        "symbol",
+        "segment",
+        "offset",
+        "original_file_offset",
+        "original_offsets",
+        "targets",
+    )
+
+    def __init__(
+        self,
+        symbol: str,
+        segment: str,
+        offset: int,
+        original_file_offset: int,
+        original_offsets: tuple[int, ...],
+        targets: tuple[str, ...],
+    ) -> None:
+        self.symbol = symbol
+        self.segment = segment
+        self.offset = offset
+        self.original_file_offset = original_file_offset
+        self.original_offsets = original_offsets
+        self.targets = targets
+
+
+RUNTIME_POINTER_REBINDINGS = (
+    PointerRebinding(
+        "_nav_actor_handlers",
+        "_CODE",
+        0x06D4,
+        0x07EB4,
+        (0x07BC, 0x06E0, 0x095A, 0x099E, 0x0A1B, 0x08A2),
+        tuple(f"nav_actor_handler_{index}_" for index in range(6)),
+    ),
+    PointerRebinding(
+        "_nav_choice_handlers",
+        "_CODE",
+        0x0F29,
+        0x08709,
+        (0x0F33, 0x0F4C, 0x0FDD, 0x1068, 0x108C),
+        tuple(f"nav_choice_handler_{index}_" for index in range(5)),
+    ),
+    PointerRebinding(
+        "_bloodprg_sprite_blitter_table",
+        "_CODE",
+        0x1592,
+        0x04522,
+        (0x15A6, 0x172C, 0x1C18, 0x1D46, 0x1FD2, 0x210A, 0x210B, 0x210C),
+        (
+            "sprite_blit_raw_transparent_",
+            "sprite_blit_rle_transparent_",
+            "sprite_blit_raw_opaque_",
+            "sprite_blit_rle_opaque_",
+            "sprite_blit_scaled_transparent_",
+            "sprite_blitter_noop_5_",
+            "sprite_blitter_noop_6_",
+            "sprite_blitter_noop_7_",
+        ),
+    ),
+    PointerRebinding(
+        "_bloodprg_selected_sprite_blitter",
+        "_CODE",
+        0x15A2,
+        0x04532,
+        (0x0000,),
+        ("0",),
+    ),
+    PointerRebinding(
+        "_vm_opcode_handlers",
+        "GAME_DATA",
+        0x6EB0,
+        0x142D0,
+        (
+            0x11B9, 0x11D2, 0x11E8, 0x11F6, 0x123B, 0x124B, 0x126C,
+            0x141A, 0x1428, 0x1490, 0x14B5, 0x14AC, 0x14BC, 0x15A6,
+            0x1562, 0x15A6, 0x1562, 0x14C3, 0x15A6, 0x15A6, 0x14C3,
+            0x14C3, 0x14C3, 0x1707, 0x1766, 0x1766, 0x15A6, 0x15A6,
+            0x15A6, 0x1766, 0x14C3, 0x14C3, 0x14C3, 0x17AC, 0x1A94,
+            0x1B4E, 0x18DE, 0x1978, 0x19E0, 0x1A2F, 0x1BC2, 0x1C19,
+            0x1145, 0x1170, 0x112E, 0x1627, 0x10F4, 0x1120, 0x1100,
+            0x110C, 0x1118, 0x0000,
+        ),
+        (
+            "vm_op_a0_push_", "vm_op_a1_pop_", "vm_op_a2_cond_call_",
+            "vm_op_a3_block_", "vm_op_a4_jump_", "vm_op_a5_cond_state_array_",
+            "vm_op_a6_text_", "vm_op_a7_set_if_presentation_",
+            "vm_op_a8_load_string_", "vm_op_a9_cond_jump_", "vm_op_aa_yield_",
+            "vm_op_ab_poke_byte_", "vm_op_ac_yield_",
+            "vm_op_shared_record_wildcard_", "vm_op_shared_ae_b0_state_",
+            "vm_op_shared_record_wildcard_", "vm_op_shared_ae_b0_state_",
+            "vm_op_shared_state_marker_", "vm_op_shared_record_wildcard_",
+            "vm_op_shared_record_wildcard_", "vm_op_shared_state_marker_",
+            "vm_op_shared_state_marker_", "vm_op_shared_state_marker_",
+            "vm_op_b7_record_op_", "vm_op_b8_record_readwrite_",
+            "vm_op_b8_record_readwrite_", "vm_op_shared_record_wildcard_",
+            "vm_op_shared_record_wildcard_", "vm_op_shared_record_wildcard_",
+            "vm_op_b8_record_readwrite_", "vm_op_shared_state_marker_",
+            "vm_op_shared_state_marker_", "vm_op_shared_state_marker_",
+            "vm_op_c1_record_state_", "vm_op_c2_record_full_",
+            "vm_op_c3_state_record_", "vm_op_c4_actor_", "vm_op_c5_record_match_",
+            "vm_op_c6_record_match_", "vm_op_c7_record_match_",
+            "vm_op_c8_record_match_", "vm_op_c9_clear_record_full_",
+            "vm_op_ca_compare_var_", "vm_op_cb_compare_byte_",
+            "vm_op_cc_set_record_byte_", "vm_op_cd_state_gated_",
+            "vm_op_ce_cond_branch_", "vm_op_cf_clear_state_",
+            "vm_op_d0_cond_branch_", "vm_op_d1_cond_branch_",
+            "vm_op_d2_script_profile_request_", "vm_resource_profile_select_",
+        ),
+    ),
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -120,6 +235,7 @@ def write_asm(
     image: bytes | None,
     file_bases: dict[str, int],
     runtime_layout: bool,
+    rebindings: tuple[PointerRebinding, ...],
 ) -> None:
     by_segment: dict[str, list[Declaration]] = {}
     for entry in entries:
@@ -131,6 +247,21 @@ def write_asm(
         "; This object still proves layout only; it is not a complete runtime owner.",
         ".386",
     ]
+    targets = tuple(
+        dict.fromkeys(
+            target
+            for rebinding in rebindings
+            for target in rebinding.targets
+            if target != "0"
+        )
+    )
+    lines.extend(f"extrn {target}:near" for target in targets)
+    if targets:
+        lines.append("")
+    rebinding_by_location = {
+        (rebinding.segment, rebinding.offset): rebinding
+        for rebinding in rebindings
+    }
     for segment in ("_CODE", "GAME_DATA", "FS_DATA"):
         segment_entries = sorted(
             by_segment.get(segment, []), key=lambda item: (item.offset, item.symbol)
@@ -169,17 +300,28 @@ def write_asm(
                 else offset + 1
             )
             length = next_offset - offset
-            if image is None:
-                write_zeros(lines, length)
-            else:
-                file_offset = file_bases[segment] + offset
-                data = image[file_offset : file_offset + length]
-                if len(data) != length:
+            rebinding = rebinding_by_location.get((segment, offset))
+            rebound_bytes = 0
+            if rebinding is not None:
+                rebound_bytes = len(rebinding.targets) * 2
+                if rebound_bytes > length:
                     raise ValueError(
-                        f"{segment} offset {offset:#x} maps outside image "
-                        f"at file offset {file_offset:#x}"
+                        f"{rebinding.symbol} pointer table crosses the next declaration"
                     )
-                write_bytes(lines, data)
+                lines.extend(f"dw {target}" for target in rebinding.targets)
+            remaining = length - rebound_bytes
+            if remaining != 0:
+                if image is None:
+                    write_zeros(lines, remaining)
+                else:
+                    file_offset = file_bases[segment] + offset + rebound_bytes
+                    data = image[file_offset : file_offset + remaining]
+                    if len(data) != remaining:
+                        raise ValueError(
+                            f"{segment} offset {offset:#x} maps outside image "
+                            f"at file offset {file_offset:#x}"
+                        )
+                    write_bytes(lines, data)
             current = next_offset
         lines.append(f"{segment} ends")
         if runtime_layout and segment == "GAME_DATA":
@@ -187,6 +329,61 @@ def write_asm(
         lines.append("")
     lines.append("end")
     path.write_text("\n".join(lines) + "\n", encoding="ascii")
+
+
+def runtime_rebindings(
+    entries: list[Declaration],
+    image: bytes | None,
+    runtime_layout: bool,
+) -> tuple[PointerRebinding, ...]:
+    if not runtime_layout:
+        return ()
+    if image is None:
+        raise ValueError("runtime pointer rebindings require the original image")
+    declarations_by_symbol = {entry.symbol: entry for entry in entries}
+    result = []
+    for rebinding in RUNTIME_POINTER_REBINDINGS:
+        declaration = declarations_by_symbol.get(rebinding.symbol)
+        if declaration is None:
+            continue
+        if (declaration.segment, declaration.offset) != (
+            rebinding.segment,
+            rebinding.offset,
+        ):
+            raise ValueError(
+                f"{rebinding.symbol} declaration moved from "
+                f"{rebinding.segment}:{rebinding.offset:#06x}"
+            )
+        if len(rebinding.original_offsets) != len(rebinding.targets):
+            raise ValueError(f"{rebinding.symbol} has an invalid rebinding inventory")
+        original = struct.unpack_from(
+            f"<{len(rebinding.targets)}H",
+            image,
+            rebinding.original_file_offset,
+        )
+        if original != rebinding.original_offsets:
+            raise ValueError(
+                f"{rebinding.symbol} original pointer words changed: "
+                f"{original!r} != {rebinding.original_offsets!r}"
+            )
+        result.append(rebinding)
+    return tuple(result)
+
+
+def write_rebinding_report(
+    path: Path,
+    rebindings: tuple[PointerRebinding, ...],
+) -> None:
+    with path.open("w", encoding="ascii", newline="") as handle:
+        writer = csv.writer(handle, delimiter="\t", lineterminator="\n")
+        writer.writerow(("table", "index", "original_offset", "linked_symbol"))
+        for rebinding in rebindings:
+            for index, (original, target) in enumerate(
+                zip(rebinding.original_offsets, rebinding.targets)
+            ):
+                writer.writerow(
+                    (rebinding.symbol, index, f"0x{original:04x}", target)
+                )
 
 
 def main() -> int:
@@ -209,6 +406,8 @@ def main() -> int:
             writer.writerow((symbol, "unknown", "", "", ""))
     asm = output_dir / "bloodprg_data_layout_probe.asm"
     image = args.image.resolve().read_bytes() if args.image else None
+    rebindings = runtime_rebindings(entries, image, args.runtime_layout)
+    write_rebinding_report(output_dir / "pointer_rebindings.tsv", rebindings)
     write_asm(
         asm,
         entries,
@@ -219,10 +418,15 @@ def main() -> int:
             "FS_DATA": args.fs_data_file_base,
         },
         args.runtime_layout,
+        rebindings,
     )
     known_count = len(entries)
     print(f"known data declarations: {known_count}/{len(symbols)}")
     print(f"unknown symbols: {len(unknown)}")
+    print(
+        "runtime pointer rebindings: "
+        f"{sum(len(rebinding.targets) for rebinding in rebindings)}"
+    )
     print(f"wrote {report}")
     print(f"wrote {asm}")
     return 0
