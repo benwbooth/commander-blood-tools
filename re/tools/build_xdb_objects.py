@@ -73,6 +73,12 @@ def parse_args() -> argparse.Namespace:
         "--output-label",
         help="directory label for entries without a module prefix",
     )
+    parser.add_argument(
+        "--define",
+        action="append",
+        default=[],
+        help="preprocessor symbol passed to Open Watcom; repeatable",
+    )
     return parser.parse_args()
 
 
@@ -105,7 +111,13 @@ def main() -> int:
         module_dir = object_dir / module
         module_dir.mkdir(parents=True, exist_ok=True)
         output = module_dir / f"{stem}.OBJ"
-        command = [str(wcl), *DEFAULT_FLAGS, f"-fo={output}", str(source)]
+        command = [
+            str(wcl),
+            *DEFAULT_FLAGS,
+            *(f"-d{symbol}" for symbol in args.define),
+            f"-fo={output}",
+            str(source),
+        ]
         process = subprocess.run(
             command,
             cwd=ROOT,

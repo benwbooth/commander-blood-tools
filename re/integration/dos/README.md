@@ -28,15 +28,16 @@ NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
   --manifest re/source/bloodprg/candidates/manifest.tsv \
   --module-prefix '' \
   --output-label bloodprg \
+  --define BLOODPRG_RELINKED_RUNTIME \
   --object-dir output/bloodprg_objects
 ```
 
-This creates a separate object for each manifest entry, but it is not by itself
-a link claim. The package's `--include-bloodprg-link-probe` gate supplies the
-canonical byte-backed data owner, DOS/XMS/sound adapters, and a recovered
-startup harness, proving the aggregate C objects can link with zero unresolved
-symbols. The harness is not yet the game's original entrypoint; cross-XDB
-overlay execution and fixed BLOODPRG placement remain separate gates.
+This creates a separate object for each manifest entry. The package's
+`--include-bloodprg-runtime` gate adds the recovered game entrypoint, the
+paragraph-aligned byte-backed data owners, and the DOS/XMS/sound adapters. It
+links those objects into `cd/BPRG_RE.EXE` with zero unresolved symbols. That
+executable now reaches and renders the opening cinematic under DOSBox-X;
+full-game behavior and cross-XDB execution remain later runtime gates.
 
 The `--include-bloodprg-fixed-patch` gate is stricter and smaller. It emits
 `validation/bloodprg_fixed/BLOODPRG_C_PATCHED.EXE` and the DOS alias
@@ -94,9 +95,9 @@ The probe writes `unresolved.tsv` and `link.log`, and exits nonzero until the
 reported owners and platform boundaries are implemented. It never generates
 dummy definitions or treats an unresolved link as a runnable game binary.
 
-## Recovered hybrid package
+## Recovered package
 
-The current full-package gate is a deliberately explicit hybrid. It compiles
+The package gate compiles
 the BloodScript sources, compiles every XDB C candidate, verifies the four
 one-byte no-op candidates with `wdis`, and links small real-mode DOS probes for
 the three mouse-position routines and the MANU3 entry. It also verifies the
@@ -109,14 +110,12 @@ overlays, applying only the explicitly approved instruction and relocation
 differences, and
 rewrites the same-size XDB resources inside `BLOOD.DAT`. The generated
 `SCRIPT1..5.COD/BAS` files are compared byte-for-byte and copied to the CD
-root. `BLOODPRG.EXE` remains the shipped executable until its startup,
-shared-data, DOS/XMS/EMS, and cross-XDB boundaries are recovered; the package
-never pretends that the executable has been replaced by C. An optional
-`--include-bloodprg-link-probe` gate also builds every recovered BLOODPRG
-candidate, derives the byte-backed data owner from the actual unresolved link
-report, adds the real DOS/XMS/sound adapters, and emits a zero-unresolved C
-aggregate link under `validation/bloodprg_link/`. That executable uses the
-startup-options harness as `main`; it is a C integration proof, not the game.
+root. `BLOODPRG.EXE` remains available as the shipped fallback. The optional
+`--include-bloodprg-runtime` gate also builds every recovered BLOODPRG
+candidate with the relink runtime contract, derives the byte-backed owner from
+the actual unresolved report, adds the recovered entrypoint and platform
+adapters, and emits `cd/BPRG_RE.EXE`. The relinked executable has passed the
+opening-cinematic smoke test, but is not yet claimed to have full-game parity.
 
 Build the Rust VM compiler in the project shell, then run the package builder
 with Open Watcom:
@@ -130,13 +129,13 @@ NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
     --output-dir output/recovered_dos_package
 ```
 
-To include the full recovered C aggregate link and its data-owner synthesis:
+To include the recovered C runtime and its data-owner synthesis:
 
 ```sh
 NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
   python3 re/tools/build_recovered_package.py \
     --cbvm target/debug/cbvm \
-    --include-bloodprg-link-probe \
+    --include-bloodprg-runtime \
     --output-dir output/recovered_dos_package
 ```
 
@@ -164,10 +163,10 @@ NIXPKGS_ALLOW_UNFREE=1 nix shell --impure \
 
 The builder emits `cd/` (a runnable CD tree), `scripts/`, `xdb/`,
 `xdb_objects/`, `bloodprg_objects/`, `validation/` (including the DOS
-shape-probe binaries, disassemblies, and optional BLOODPRG C link),
-`package_manifest.tsv`, and `README.txt`. The optional link directory
-contains `BLOODPRG_C_LINK.EXE`, a DOS 8.3 `BPRG.EXE` alias, `link.map`, and
-`unresolved.tsv`; the latter must contain only its header.
+shape-probe binaries, disassemblies, and optional BLOODPRG C runtime),
+`package_manifest.tsv`, and `README.txt`. The optional runtime directory
+contains `BPRG_RE.EXE`, `link.map`, and `unresolved.tsv`; the latter must
+contain only its header. The same executable is copied to `cd/BPRG_RE.EXE`.
 The fixed-patch directory contains the fixed-layout audit listing and patched
 executable; `cd/BPRG_C.EXE` can be launched with the same arguments as the
 original `BLOODPRG.EXE`.
@@ -179,12 +178,11 @@ nix develop --command bash re/tools/capture_real_game.sh \
   output/recovered_dos_package/captures :84 accuracy/cblood_install
 ```
 
-For the fixed-patch alias, pass `BPRG_C.EXE` as the final executable
-argument to the same capture script.
+For the relinked runtime, pass `BPRG_RE.EXE` as the final executable argument
+to the same capture script. For the fixed-patch alias, pass `BPRG_C.EXE`.
 
-This is a resource-integrity and runtime-smoke gate, not a claim of a full
-C replacement. The next source milestone is recovering the startup/shared
-data and cross-XDB owners required to replace `BLOODPRG.EXE` itself.
+This is a source-build and opening-runtime gate, not a claim of full-game C
+parity. The next milestones are sustained gameplay and cross-XDB validation.
 
 To classify the aggregate probe's data symbols against the recovered
 BLOODPRG layout, generate the measurement-only layout object:

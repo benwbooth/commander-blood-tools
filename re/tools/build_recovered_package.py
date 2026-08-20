@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""Build a runnable hybrid package from recovered C and BloodScript sources.
+"""Build a runnable package from recovered C and BloodScript sources.
 
-The DOS executable is intentionally kept as the shipped BLOODPRG.EXE until its
-startup, shared data, DOS adapters, and cross-overlay link boundaries are
-recovered.  An opt-in fixed-layout patch emits only independently verified C
-replacements.  The archive is still patched through the real resource directory:
-the generated scripts are byte-exact, and the three one-byte C no-op routines
-are verified with Watcom and written at their original fixed offsets.
+The shipped BLOODPRG.EXE remains available as a fallback. An opt-in runtime
+build links every recovered BLOODPRG C routine with the recovered entrypoint,
+DOS adapters, and byte-backed data owners. The archive is patched through the
+real resource directory: generated scripts are byte-exact, and recovered XDB
+routines are emitted only through their independently verified patch paths.
 """
 
 from __future__ import annotations
@@ -345,9 +344,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--wdis", default="wdis")
     parser.add_argument("--wasm", default="wasm")
     parser.add_argument(
-        "--include-bloodprg-link-probe",
+        "--include-bloodprg-runtime",
         action="store_true",
-        help="compile and link the recovered BLOODPRG C objects into a validation executable",
+        help="compile and link the recovered BLOODPRG runtime as cd/BPRG_RE.EXE",
     )
     parser.add_argument(
         "--include-bloodprg-fixed-patch",
@@ -401,13 +400,15 @@ def run_link_probe(
     return process.returncode
 
 
-def build_bloodprg_link_probe(args: argparse.Namespace, output: Path) -> dict[str, str]:
-    """Build a real C aggregate link with an explicit startup harness."""
-    validation_dir = output / "validation" / "bloodprg_link"
+def build_bloodprg_runtime(
+    args: argparse.Namespace, output: Path
+) -> list[dict[str, str]]:
+    """Link the recovered entrypoint, runtime data owners, and C routines."""
+    validation_dir = output / "validation" / "bloodprg_runtime"
     validation_dir.mkdir(parents=True, exist_ok=True)
     object_dir = output / "bloodprg_objects"
 
-    startup_object = validation_dir / "startup_gate.obj"
+    main_object = validation_dir / "bloodprg_relinked_main.obj"
     run_checked(
         [
             args.wcl,
@@ -418,9 +419,28 @@ def build_bloodprg_link_probe(args: argparse.Namespace, output: Path) -> dict[st
             "-mm",
             "-zdp",
             "-we",
+            "-dBLOODPRG_RELINKED_RUNTIME",
             "-i=" + str(ROOT / "re/source/bloodprg/candidates/include"),
-            "-fo=" + str(startup_object),
-            str(ROOT / "re/integration/dos/bloodprg_startup_options.c"),
+            "-fo=" + str(main_object),
+            str(ROOT / "re/integration/dos/bloodprg_relinked_main.c"),
+        ]
+    )
+
+    adapter_object = validation_dir / "platform_adapters.obj"
+    run_checked(
+        [
+            args.wcl,
+            "-q",
+            "-c",
+            "-3",
+            "-ox",
+            "-mm",
+            "-zdp",
+            "-we",
+            "-dBLOODPRG_RELINKED_RUNTIME",
+            "-i=" + str(ROOT / "re/source/bloodprg/candidates/include"),
+            "-fo=" + str(adapter_object),
+            str(ROOT / "re/integration/dos/bloodprg_platform_adapters.c"),
         ]
     )
 
@@ -428,9 +448,9 @@ def build_bloodprg_link_probe(args: argparse.Namespace, output: Path) -> dict[st
     initial_dir.mkdir(parents=True, exist_ok=True)
     initial_status = run_link_probe(
         initial_dir,
-        startup_object,
+        main_object,
         object_dir,
-        [],
+        [adapter_object],
         "BLOODPRG_INITIAL.EXE",
     )
     unresolved = initial_dir / "unresolved.tsv"
@@ -448,6 +468,7 @@ def build_bloodprg_link_probe(args: argparse.Namespace, output: Path) -> dict[st
             str(unresolved),
             "--image",
             str((args.cd_root / "BLOODPRG.EXE").resolve()),
+            "--runtime-layout",
             "--output-dir",
             str(owner_dir),
         ]
@@ -462,52 +483,48 @@ def build_bloodprg_link_probe(args: argparse.Namespace, output: Path) -> dict[st
         ]
     )
 
-    adapter_object = validation_dir / "platform_adapters.obj"
-    run_checked(
-        [
-            args.wcl,
-            "-q",
-            "-c",
-            "-3",
-            "-ox",
-            "-mm",
-            "-zdp",
-            "-we",
-            "-i=" + str(ROOT / "re/source/bloodprg/candidates/include"),
-            "-fo=" + str(adapter_object),
-            str(ROOT / "re/integration/dos/bloodprg_platform_adapters.c"),
-        ]
-    )
-
     final_dir = validation_dir / "final"
     final_dir.mkdir(parents=True, exist_ok=True)
     final_status = run_link_probe(
         final_dir,
-        startup_object,
+        main_object,
         object_dir,
         [adapter_object, owner_object],
-        "BLOODPRG_C_LINK.EXE",
+        "BPRG_RE.EXE",
     )
-    final_executable = final_dir / "BLOODPRG_C_LINK.EXE"
+    final_executable = final_dir / "BPRG_RE.EXE"
     final_report = final_dir / "unresolved.tsv"
     unresolved_lines = final_report.read_text(encoding="ascii").splitlines()
     if final_status != 0 or not final_executable.is_file() or len(unresolved_lines) != 1:
         raise SystemExit(
-            "final BLOODPRG C link did not resolve cleanly; see "
+            "relinked BLOODPRG runtime did not resolve cleanly; see "
             f"{final_dir / 'link.log'} and {final_report}"
         )
-    # DOS 8.3 lookup is part of the runtime check; keep a short command name
-    # beside the descriptive host-side artifact.
-    shutil.copy2(final_executable, final_dir / "BPRG.EXE")
-    return {
-        "component": final_executable.name,
-        "source": str(final_executable.relative_to(output)),
-        "output": str(final_executable.relative_to(output)),
-        "status": "c_aggregate_link_zero_unresolved_startup_harness",
-        "offset": "-",
-        "original_sha256": "-",
-        "output_sha256": sha256(final_executable),
-    }
+
+    runtime_executable = output / "cd" / "BPRG_RE.EXE"
+    runtime_executable.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(final_executable, runtime_executable)
+    original_sha = sha256(args.cd_root / "BLOODPRG.EXE")
+    return [
+        {
+            "component": final_executable.name,
+            "source": str(final_executable.relative_to(output)),
+            "output": str(final_executable.relative_to(output)),
+            "status": "c_relinked_runtime_zero_unresolved",
+            "offset": "-",
+            "original_sha256": original_sha,
+            "output_sha256": sha256(final_executable),
+        },
+        {
+            "component": runtime_executable.name,
+            "source": str(final_executable.relative_to(output)),
+            "output": str(runtime_executable.relative_to(output)),
+            "status": "c_relinked_runtime_dos_alias",
+            "offset": "-",
+            "original_sha256": original_sha,
+            "output_sha256": sha256(runtime_executable),
+        },
+    ]
 
 
 def link_or_copy(source: Path, destination: Path) -> None:
@@ -579,6 +596,8 @@ def build_bloodprg_objects(args: argparse.Namespace, output: Path) -> Path:
             "",
             "--output-label",
             "bloodprg",
+            "--define",
+            "BLOODPRG_RELINKED_RUNTIME",
             "--wcl",
             args.wcl,
             "--object-dir",
@@ -1138,14 +1157,20 @@ def write_package_metadata(output: Path, records: list[dict[str, str]], cd_root:
         for record in records:
             handle.write("\t".join(record[field] for field in fields) + "\n")
     bloodprg = output / "cd" / "BLOODPRG.EXE"
+    relinked = output / "cd" / "BPRG_RE.EXE"
+    relinked_hash = (
+        f"BPRG_RE.EXE sha256: {sha256(relinked)}\n" if relinked.is_file() else ""
+    )
     readme = (
-        "Commander Blood recovered hybrid package\n"
-        "==========================================\n\n"
-        "This package keeps the shipped BLOODPRG.EXE as the default launcher.\n"
-        "It also records optional C-derived validation artifacts: the aggregate\n"
-        "link uses a startup harness, and the fixed-patch copy is emitted only\n"
-        "for routines whose compiled bytes are proven compatible at the original\n"
-        "fixed offsets. Neither artifact is mislabeled as a full decompilation.\n\n"
+        "Commander Blood recovered source package\n"
+        "=========================================\n\n"
+        "This package keeps the shipped BLOODPRG.EXE as a fallback launcher.\n"
+        "When requested, BPRG_RE.EXE is a normal DOS executable linked from all\n"
+        "recovered BLOODPRG C routines, the recovered entrypoint, DOS adapters,\n"
+        "and byte-backed runtime data owners. It has passed the opening cinematic\n"
+        "runtime smoke test, but is not yet claimed to have full-game parity.\n"
+        "The fixed-patch copy remains limited to routines whose compiled bytes\n"
+        "are proven compatible at the original fixed offsets.\n\n"
         "The generated SCRIPT1..5.COD/BAS files are compiled from re/vm/bloodscript\n"
         "and compared byte-for-byte with the installed reference. The four\n"
         "alien-overlay no-op routines are verified by wdis, while the three\n"
@@ -1156,6 +1181,7 @@ def write_package_metadata(output: Path, records: list[dict[str, str]], cd_root:
         "the XDB files and BLOOD.DAT are emitted.\n"
         "package_manifest.tsv records every source verification and hash.\n\n"
         f"BLOODPRG.EXE sha256: {sha256(bloodprg)}\n"
+        f"{relinked_hash}"
         f"Source CD tree: {cd_root}\n"
     )
     (output / "README.txt").write_text(readme, encoding="ascii")
@@ -1169,7 +1195,7 @@ def main() -> int:
     wcl = resolve_executable(args.wcl)
     args.wcl = wcl
     args.wdis = resolve_executable(args.wdis)
-    if args.include_bloodprg_link_probe:
+    if args.include_bloodprg_runtime:
         args.wasm = resolve_executable(args.wasm)
     turbo_objects = None
     if args.turbo_c_toolchain is not None:
@@ -1179,16 +1205,19 @@ def main() -> int:
         args.dosbox = resolve_executable(args.dosbox)
     output = args.output_dir.resolve()
     output.mkdir(parents=True, exist_ok=True)
+    runtime_alias = output / "cd" / "BPRG_RE.EXE"
+    if not args.include_bloodprg_runtime and runtime_alias.exists():
+        runtime_alias.unlink()
     compile_sources(args, output)
-    link_record = None
+    runtime_records: list[dict[str, str]] = []
     fixed_records: list[dict[str, str]] = []
     bloodprg_objects = None
-    if args.include_bloodprg_link_probe or args.include_bloodprg_fixed_patch:
+    if args.include_bloodprg_runtime or args.include_bloodprg_fixed_patch:
         bloodprg_objects = build_bloodprg_objects(args, output)
     if args.include_bloodprg_fixed_patch and args.turbo_c_toolchain is not None:
         turbo_objects = build_bloodprg_turbo_objects(args, output)
-    if args.include_bloodprg_link_probe:
-        link_record = build_bloodprg_link_probe(args, output)
+    if args.include_bloodprg_runtime:
+        runtime_records = build_bloodprg_runtime(args, output)
     copy_cd_tree(args.cd_root.resolve(), output / "cd")
     shutil.copy2(args.cd_root / "BLOOD.DAT", output / "cd" / "BLOOD.DAT")
     if args.include_bloodprg_fixed_patch:
@@ -1200,13 +1229,12 @@ def main() -> int:
     xdb_records = patch_xdb_files(args, output, rows)
     records = patch_archive(args, output, xdb_records)
     records.extend(fixed_records)
-    if link_record is not None:
-        records.append(link_record)
+    records.extend(runtime_records)
     write_package_metadata(output, records, args.cd_root.resolve())
-    print(f"wrote hybrid package: {output}")
+    print(f"wrote recovered package: {output}")
     print("BLOODPRG.EXE status: original_shipped_fallback")
-    if link_record is not None:
-        print("BLOODPRG_C_LINK.EXE status: c_aggregate_link_zero_unresolved_startup_harness")
+    if runtime_records:
+        print("BPRG_RE.EXE status: c_relinked_runtime_zero_unresolved")
     if fixed_records:
         print("BPRG_C.EXE status: c_fixed_layout_verified_patch")
     print(f"recorded package components: {len(records)}")
