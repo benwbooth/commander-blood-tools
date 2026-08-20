@@ -299,6 +299,53 @@ yet prove that the generated C matches every raw-overlay state transition.
 The slot-2 ports therefore remain candidates for direct raw-vector validation
 before they are used to construct production overlays.
 
+## Source-linked raw XDB images
+
+`build_source_xdb.py` performs the production link model rather than the
+fixed-offset experiment. It places a small host-ABI shim at raw offset zero,
+normally links every recovered C routine, derives the data-segment delta from
+the linked layout, and retains the original initialized data/work payload.
+The shim is the only assembly in this path: it converts the game's BP/SS
+request convention to Open Watcom's register convention and far-returns to the
+host. C routine lengths and addresses are otherwise unconstrained.
+
+Build the current MANU3 module with:
+
+```sh
+NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
+  python3 re/tools/build_source_xdb.py \
+    --module manu3 \
+    --object-dir output/recovered_dos_package/xdb_objects/xdb_manu3 \
+    --raw-xdb output/_tmp_dat/manu3.xdb \
+    --output-dir output/source_xdb/manu3
+```
+
+The builder rejects a nonzero entry offset, a non-paragraph data segment, any
+runtime relocation other than the additive data-segment word, a manifest/object
+mismatch, or any changed byte in the original non-code payload. The linked
+MANU3 image currently contains 8,896 bytes before its relocated data segment
+and is 66,464 bytes total; the shipped image is 62,544 bytes. The size change is
+expected from normal C linking and is not an ABI failure.
+
+Run the raw loader and initialization protocol under DOSBox-X with:
+
+```sh
+NIXPKGS_ALLOW_UNFREE=1 nix shell --impure \
+  nixpkgs#open-watcom-bin nixpkgs#dosbox-x -c \
+  python3 re/tools/source_xdb_dos_integration.py \
+    --build-dir output/source_xdb/manu3 \
+    --output-dir output/source_xdb_runtime/manu3
+```
+
+The DOS gate allocates the image, reads it across 64 KiB boundaries, far-calls
+offset zero with the original BP/SS contract, and verifies the published data
+segment, all three derived work segments, and the renderer continuation. It
+passes with `PASS source-linked MANU3 XDB`. This proves a loadable source-linked
+module and its initialization boundary; substitution into sustained game flow
+is the next gate. AMER, CROOLIS, and SCRUT still require their source-linked
+code-segment relocations to be eliminated, their code-resident method pointers
+to be rebound to the linked routines, and equivalent runtime validation.
+
 To measure fixed-offset placement, use the layout probe:
 
 ```sh

@@ -71,15 +71,13 @@ def declarations(header_dir: Path, module: str) -> dict[str, Declaration]:
         text = path.read_text(encoding="ascii")
         for match in re.finditer(r"\bextern\b(?P<body>.*?;)", text, re.S):
             body = match.group("body")
-            following = text[match.end() : min(len(text), match.end() + 120)]
-            offset_match = OFFSET_RE.search(following)
-            comment = following
-            if offset_match is None:
-                preceding = text[max(0, match.start() - 120) : match.start()]
-                preceding_matches = list(OFFSET_RE.finditer(preceding))
-                if preceding_matches:
-                    offset_match = preceding_matches[-1]
-                    comment = preceding
+            # An offset annotation belongs to this declaration only when it is
+            # on the same physical line as the terminating semicolon. Looking
+            # arbitrarily ahead can steal the next declaration's CS comment
+            # and misclassify an ordinary DS object as code-resident state.
+            trailing_line = text[match.end() :].split("\n", 1)[0]
+            offset_match = OFFSET_RE.search(trailing_line)
+            comment = trailing_line
             if offset_match is None:
                 continue
             declaration = " ".join(body.split())
