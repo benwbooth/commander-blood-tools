@@ -446,6 +446,18 @@ NIXPKGS_ALLOW_UNFREE=1 nix shell --impure \
   python3 re/tools/manu3_dos_integration.py --case amer_slot2_callbacks
 ```
 
+`alien_croolis_slot2_callbacks.c` links the ten recovered CROOLIS slot-2
+owners. It verifies countdown transfer, the heading ADC carry, low-word-only
+position writes, fade timing, selected-state ownership, animation phase and
+copy updates, camera reset, and the compiled but unreferenced steering sibling.
+Run it with:
+
+```sh
+NIXPKGS_ALLOW_UNFREE=1 nix shell --impure \
+  nixpkgs#open-watcom-bin nixpkgs#dosbox-x -c \
+  python3 re/tools/manu3_dos_integration.py --case croolis_slot2_callbacks
+```
+
 `alien_slot3_callbacks.c` links each alien overlay's generic slot-3 owner, its
 four separately callable restart, resume, capture, and ring-zero callbacks,
 and the six-routine slot-13 resume pipeline. The three DOS cases verify both

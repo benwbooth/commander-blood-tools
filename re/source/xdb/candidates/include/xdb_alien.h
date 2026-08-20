@@ -443,8 +443,8 @@ struct xdb_alien_method_context {
             xdb_u16 random_value;
         } amer_slot2_motion;
         struct {
-            xdb_u16 duration;
-            xdb_u16 field_03a;
+            xdb_i16 duration;
+            xdb_i16 field_03a;
             xdb_i32 signed_seed;
             xdb_u8 field_040[0x02];
             xdb_u16 random_value;
@@ -469,6 +469,11 @@ typedef char xdb_alien_method_context_size_must_be_0x44[
 
 typedef volatile xdb_u8 XDB_NEAR *xdb_alien_cursor;
 typedef volatile xdb_alien_biased_state XDB_NEAR *xdb_alien_state_cursor;
+
+typedef union xdb_alien_slot2_shared_state {
+    xdb_i16 seed;
+    xdb_alien_state_cursor selected_state;
+} xdb_alien_slot2_shared_state;
 
 extern volatile xdb_i16 XDB_CODE_DATA xdb_alien_method_delta; /* CS:0x0099 */
 extern volatile xdb_u16 XDB_CODE_DATA
@@ -598,9 +603,14 @@ extern volatile xdb_u16 XDB_CODE_DATA
         xdb_scrut_slot3_resume_countdown; /* CS:0x0DA5 */
 extern xdb_alien_cursor XDB_CODE_DATA
         xdb_scrut_slot3_resume_state; /* CS:0x0DA7 */
-extern volatile xdb_i16 XDB_CODE_DATA xdb_croolis_slot2_seed; /* CS:0x16A2 */
+extern xdb_alien_slot2_shared_state XDB_CODE_DATA
+        xdb_croolis_slot2_shared_state; /* CS:0x16A2 */
+#define xdb_croolis_slot2_seed xdb_croolis_slot2_shared_state.seed
+#define xdb_croolis_slot2_selected_state \
+    xdb_croolis_slot2_shared_state.selected_state
 extern volatile xdb_i16 XDB_CODE_DATA xdb_scrut_slot2_seed; /* CS:0x1690 */
 extern volatile xdb_u16 XDB_CODE_DATA xdb_amer_slot2_active; /* CS:0x1648 */
+extern volatile xdb_u16 XDB_CODE_DATA xdb_croolis_slot2_active; /* CS:0x16A0 */
 extern volatile xdb_u16 XDB_CODE_DATA xdb_amer_slot1_selection_state; /* CS:0x0B2F */
 extern xdb_alien_state_cursor XDB_CODE_DATA
         xdb_amer_slot1_selected_state; /* CS:0x0B33 */
@@ -870,6 +880,33 @@ void XDB_NEAR xdb_amer_slot2_reset(
         xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_croolis_slot2_update(
         xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_slot2_restart(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_slot2_common_dispatch(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_slot2_motion_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_slot2_begin_fade(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_slot2_fade_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_slot2_selection_init(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_slot2_selection_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_slot2_reset_or_camera(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context,
+        xdb_i32 distance);
+void XDB_NEAR xdb_croolis_unreferenced_steering_update(
         xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_scrut_slot2_update(
         xdb_alien_biased_state XDB_NEAR *state,

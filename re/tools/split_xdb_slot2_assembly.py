@@ -38,6 +38,28 @@ SPECS = {
         (0x1A2B, 0x1A5C, "func_001a2b_slot2_reset.asm",
          "shared reset tail reached by four AMER slot-2 callbacks", ()),
     ),
+    "croolis": (
+        (0x171D, 0x1727, "func_00171d_slot2_restart.asm",
+         "internal restart tail reached by fade callback 0x17F2", (0x1727,)),
+        (0x1727, 0x178E, "func_001727_slot2_update.asm",
+         "callback published by method-table slots 2 and 4", (0x178E, 0x1815, 0x1960)),
+        (0x178E, 0x1794, "func_00178e_slot2_common_dispatch.asm",
+         "shared control-latch dispatch reached by slot-2 callbacks", (0x1794, 0x17E4)),
+        (0x1794, 0x17E4, "func_001794_slot2_motion_update.asm",
+         "shared motion tail reached by callbacks 0x1727, 0x17F2, and 0x1960", ()),
+        (0x17E4, 0x17F2, "func_0017e4_slot2_begin_fade.asm",
+         "internal control-latch transition reached by 0x178E", (0x17F2,)),
+        (0x17F2, 0x1815, "func_0017f2_slot2_fade_update.asm",
+         "callback published by internal transition 0x17E4", (0x171D, 0x1794)),
+        (0x1815, 0x1828, "func_001815_slot2_selection_init.asm",
+         "internal selection transition reached by callback 0x1727", (0x1828,)),
+        (0x1828, 0x1960, "func_001828_slot2_selection_update.asm",
+         "callback published by internal transition 0x1815", (0x1727, 0x1960)),
+        (0x1960, 0x1A86, "func_001960_slot2_reset_or_camera.asm",
+         "shared reset and camera tail reached by callbacks 0x1727 and 0x1828", (0x178E,)),
+        (0x1A86, 0x1ACB, "func_001a86_unreferenced_steering_update.asm",
+         "compiled context-ABI sibling present in all three alien overlays; no table or in-overlay pointer reference", ()),
+    ),
 }
 
 

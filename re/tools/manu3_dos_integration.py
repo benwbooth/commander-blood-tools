@@ -231,6 +231,28 @@ CASES = (
         defines=("TEST_AMER",),
     ),
     IntegrationCase(
+        name="croolis_slot2_callbacks",
+        source=INTEGRATION_DIR / "alien_croolis_slot2_callbacks.c",
+        executable_name="CROOL2C.EXE",
+        expected_result="PASS croolis slot2 callbacks",
+        recovered_sources=alien_slot3_sources(
+            "croolis",
+            (
+                "00171d_slot2_restart",
+                "001727_slot2_update",
+                "00178e_slot2_common_dispatch",
+                "001794_slot2_motion_update",
+                "0017e4_slot2_begin_fade",
+                "0017f2_slot2_fade_update",
+                "001815_slot2_selection_init",
+                "001828_slot2_selection_update",
+                "001960_slot2_reset_or_camera",
+                "001a86_unreferenced_steering_update",
+            ),
+        ),
+        defines=("TEST_CROOLIS",),
+    ),
+    IntegrationCase(
         name="croolis_slot3_callbacks",
         source=INTEGRATION_DIR / "alien_slot3_callbacks.c",
         executable_name="CROOL3C.EXE",

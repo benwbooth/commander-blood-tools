@@ -7,10 +7,10 @@ xdb_amer	0x001948	callback pointer stored at 0x1943	indexed_recovered
 xdb_amer	0x0019cb	callback pointer stored at 0x19c5	indexed_recovered
 xdb_amer	0x001a5c	callback pointer stored at 0x1a3f; independent 68-byte body ends before callback 0x1aa0	indexed_recovered
 xdb_amer	0x001aa0	callback pointer stored at 0x1a95	indexed_recovered
-xdb_croolis	0x00171d	only direct reference is callback 0x17f2 JMP at 0x1812; sets callback 0x1727 then falls through	internal_transition_not_routine
-xdb_croolis	0x001727	callback pointer stored by slots 2/4 at 0x16fe and transitions at 0x171d/0x191f	pending_boundary_recovery
-xdb_croolis	0x0017f2	callback pointer stored at 0x17ed	pending_boundary_recovery
-xdb_croolis	0x001828	callback pointer stored at 0x1815	pending_boundary_recovery
+xdb_croolis	0x00171d	only direct reference is callback 0x17f2 JMP at 0x1812; sets callback 0x1727 then falls through	indexed_internal_tail_owner
+xdb_croolis	0x001727	callback pointer stored by slots 2/4 at 0x16fe and transitions at 0x171d/0x191f	indexed_recovered
+xdb_croolis	0x0017f2	callback pointer stored at 0x17ed	indexed_recovered
+xdb_croolis	0x001828	callback pointer stored at 0x1815	indexed_recovered
 xdb_scrut	0x001711	direct jumps at 0x17ff and 0x1a00 set callback 0x171b then fall through	shared_internal_transition_not_routine
 xdb_scrut	0x00171b	callback pointer stored by slots 2/4 at 0x16e7 and transition at 0x1711	pending_boundary_recovery
 xdb_scrut	0x0017e6	callback pointer stored at 0x17e1	pending_boundary_recovery

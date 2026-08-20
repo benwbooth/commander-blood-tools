@@ -6,15 +6,15 @@ Current measured coverage:
 | --- | ---: | ---: | ---: |
 | `bloodprg` | 321 | 321 | 0 |
 | `xdb_amer` | 54 | 54 | 0 |
-| `xdb_croolis` | 37 | 37 | 0 |
+| `xdb_croolis` | 47 | 47 | 0 |
 | `xdb_manu3` | 12 | 12 | 0 |
 | `xdb_scrut` | 37 | 37 | 0 |
-| total | 461 | 461 | 0 |
+| total | 471 | 471 | 0 |
 
-Overall candidate coverage is 461 of 461 standardized indexed routines, or
-100.00 percent. Two additional legacy XDB candidate dumps are deliberately
-reported as unindexed: their overlapping callback-state ranges still need a
-control-flow ownership audit before they can be split into routine assembly
+Overall candidate coverage is 471 of 471 standardized indexed routines, or
+100.00 percent. One additional legacy XDB candidate dump is deliberately
+reported as unindexed: the overlapping SCRUT callback-state range still needs
+a control-flow ownership audit before it can be split into routine assembly
 owners.
 
 Generate the live report, including the missing routine list, with:
