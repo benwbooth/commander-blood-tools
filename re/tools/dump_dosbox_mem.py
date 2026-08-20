@@ -280,18 +280,23 @@ def main():
             for index in range(5):
                 mem.seek(best + 0x671C + index * 4)
                 offset, segment = struct.unpack("<HH", mem.read(4))
-                mem.seek(
+                resource_address = (
                     guest_memory_base
                     + guest_linear_bias
                     + segment * 16
                     + offset
                 )
+                mem.seek(resource_address)
                 data = mem.read(64)
                 if dump_dir:
                     output = Path(dump_dir)
                     (output / (
                         f"{executable}.vm_resource_image_{index}.head.bin"
                     )).write_bytes(data)
+                    mem.seek(resource_address)
+                    (output / (
+                        f"{executable}.vm_resource_image_{index}.segment.bin"
+                    )).write_bytes(mem.read(0x10000))
                 print(
                     f"vm_resource_image_{index}: pointer={segment:04x}:{offset:04x} "
                     f"head={data.hex()}"
