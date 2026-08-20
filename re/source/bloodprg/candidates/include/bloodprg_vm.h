@@ -451,12 +451,16 @@ int CB_NEAR vm_condition_5(cb_u16 flags,
 bloodprg_dic_lookup_result CB_NEAR dic_word_lookup(cb_u16 dictionary_offset); /* 0x006433 */
 cb_u16 CB_NEAR vm_branch_fail(void);         /* 0x006462 */
 void CB_NEAR scan_zero_word(const cb_i16 CB_NEAR *script_words); /* 0x00647B */
-void CB_NEAR vm_op_ce_cond_branch(void);      /* 0x006494 */
-void CB_NEAR vm_op_d0_cond_branch(void);      /* 0x0064A0 */
-void CB_NEAR vm_op_d1_cond_branch(void);      /* 0x0064AC */
+const cb_u8 CB_NEAR *CB_NEAR vm_op_ce_cond_branch(
+    const cb_u8 CB_NEAR *script_bytes);       /* 0x006494 */
+const cb_u8 CB_NEAR *CB_NEAR vm_op_d0_cond_branch(
+    const cb_u8 CB_NEAR *script_bytes);       /* 0x0064A0 */
+const cb_u8 CB_NEAR *CB_NEAR vm_op_d1_cond_branch(
+    const cb_u8 CB_NEAR *script_bytes);       /* 0x0064AC */
 const cb_i8 CB_NEAR *CB_NEAR vm_op_d2_script_profile_request(
     const cb_i8 CB_NEAR *script_bytes);       /* 0x0064B8 */
-void CB_NEAR vm_op_cf_clear_state(void);      /* 0x0064C0 */
+const cb_u8 CB_NEAR *CB_NEAR vm_op_cf_clear_state(
+    const cb_u8 CB_NEAR *script_bytes);       /* 0x0064C0 */
 const cb_u8 CB_NEAR *CB_NEAR vm_op_cc_set_record_byte(
     const cb_u8 CB_NEAR *script_bytes);       /* 0x0064CE */
 const cb_u16 CB_NEAR *CB_NEAR vm_op_ca_compare_var(
@@ -485,8 +489,10 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_a9_cond_jump(
     const cb_u8 CB_NEAR *script_bytes);       /* 0x006830 */
 const cb_u8 CB_NEAR *CB_NEAR vm_op_ab_poke_byte(
     const cb_u8 CB_NEAR *script_bytes);       /* 0x00684C */
-void CB_NEAR vm_op_aa_yield(void);            /* 0x006855 */
-void CB_NEAR vm_op_ac_yield(void);            /* 0x00685C */
+const cb_u8 CB_NEAR *CB_NEAR vm_op_aa_yield(
+    const cb_u8 CB_NEAR *script_bytes);       /* 0x006855 */
+const cb_u8 CB_NEAR *CB_NEAR vm_op_ac_yield(
+    const cb_u8 CB_NEAR *script_bytes);       /* 0x00685C */
 const cb_u8 CB_NEAR *CB_NEAR vm_op_shared_state_marker(
     const cb_u8 CB_NEAR *script_bytes);       /* 0x006863 */
 const cb_u8 CB_NEAR *CB_NEAR vm_op_shared_ae_b0_state(
