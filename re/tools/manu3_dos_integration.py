@@ -172,6 +172,20 @@ CASES = (
         recovered_sources=(ALIEN_ENTRY_SOURCE,),
     ),
     IntegrationCase(
+        name="amer_slot1_callbacks",
+        source=INTEGRATION_DIR / "alien_amer_slot1_callbacks.c",
+        executable_name="AMER1C.EXE",
+        expected_result="PASS amer slot1 callbacks",
+        recovered_sources=alien_slot3_sources(
+            "amer",
+            (
+                "000bea_slot1_state_update",
+                "000cac_slot1_motion_continuation",
+            ),
+        ),
+        defines=("TEST_AMER",),
+    ),
+    IntegrationCase(
         name="amer_slot3_callbacks",
         source=INTEGRATION_DIR / "alien_slot3_callbacks.c",
         executable_name="AMER3C.EXE",

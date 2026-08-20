@@ -117,8 +117,8 @@ void XDB_NEAR xdb_amer_slot3_update(
     state->position_x = 0;
     state->position_y = 0;
     state->position_z = 0x20;
-    *(volatile xdb_i32 XDB_CODE_DATA *)&xdb_alien_palette_pulse_1 += 0x1e;
-    *(volatile xdb_i32 XDB_CODE_DATA *)&xdb_alien_palette_pulse_2 += 0x23;
+    xdb_alien_palette_pulse_1.value += 0x1e;
+    xdb_alien_palette_pulse_2.value += 0x23;
     state->callback = xdb_amer_slot1_wave_update;
     xdb_alien_callback_countdown = 5;
 }

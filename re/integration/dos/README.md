@@ -422,6 +422,18 @@ paragraph-aligned data directory, passes a real far timing/callback request,
 and verifies segment derivation, renderer continuation, callback publication,
 the pre-main method delta, a typed main-boundary update, and timing writeback.
 
+`alien_amer_slot1_callbacks.c` links the split AMER `0x0BEA` callback head and
+`0x0CAC` motion continuation. It verifies preserved high position words,
+DS-owned 32-bit palette accumulators, selection and callback publication,
+camera dispatch, and the distinct fixed-steering results produced by the four
+staged distance adjustments. Run it with:
+
+```sh
+NIXPKGS_ALLOW_UNFREE=1 nix shell --impure \
+  nixpkgs#open-watcom-bin nixpkgs#dosbox-x -c \
+  python3 re/tools/manu3_dos_integration.py --case amer_slot1_callbacks
+```
+
 `alien_slot3_callbacks.c` links each alien overlay's generic slot-3 owner, its
 four separately callable restart, resume, capture, and ring-zero callbacks,
 and the six-routine slot-13 resume pipeline. The three DOS cases verify both

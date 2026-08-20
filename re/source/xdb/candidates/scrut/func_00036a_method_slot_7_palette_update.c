@@ -55,9 +55,9 @@ void XDB_NEAR xdb_scrut_method_slot_7_palette_update(
         current = (xdb_u16)(current - 1u);
         xdb_alien_code_flags = current;
         pulse_shift = current & 3u;
-        xdb_alien_palette_pulse_0 = (xdb_u16)(10u << pulse_shift);
-        xdb_alien_palette_pulse_1 = (xdb_u16)(13u << pulse_shift);
-        xdb_alien_palette_pulse_2 = (xdb_u16)(11u << pulse_shift);
+        xdb_alien_palette_pulse_0.words.low = (xdb_u16)(10u << pulse_shift);
+        xdb_alien_palette_pulse_1.words.low = (xdb_u16)(13u << pulse_shift);
+        xdb_alien_palette_pulse_2.words.low = (xdb_u16)(11u << pulse_shift);
     }
 
     current = (xdb_u16)xdb_alien_method_delta;

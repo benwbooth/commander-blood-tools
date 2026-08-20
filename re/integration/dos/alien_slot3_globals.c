@@ -43,9 +43,12 @@ volatile xdb_u8 xdb_alien_motion_samples[0x1000];
 volatile xdb_alien_trig_sample xdb_alien_angle_table[0x400];
 volatile xdb_u16 xdb_alien_control_latch;
 volatile xdb_u16 xdb_alien_random_state;
-volatile xdb_u16 xdb_alien_palette_pulse_0;
-volatile xdb_u16 xdb_alien_palette_pulse_1;
-volatile xdb_u16 xdb_alien_palette_pulse_2;
+volatile xdb_alien_palette_pulse xdb_alien_palette_pulse_0;
+volatile xdb_alien_palette_pulse xdb_alien_palette_pulse_1;
+volatile xdb_alien_palette_pulse xdb_alien_palette_pulse_2;
+volatile xdb_i16 xdb_alien_view_x;
+volatile xdb_i16 xdb_alien_view_y;
+volatile xdb_i16 xdb_alien_view_z;
 volatile xdb_u16 XDB_CODE_DATA SLOT3_TIMER;
 volatile xdb_u16 XDB_CODE_DATA RESUME_COUNTDOWN;
 xdb_alien_cursor XDB_CODE_DATA RESUME_STATE;
@@ -92,6 +95,11 @@ xdb_u16 XDB_NEAR xdb_test_slot11_state_at(xdb_u16 queue_cursor)
     return SLOT11_STATE_QUEUE[queue_cursor >> 1];
 }
 
+xdb_u16 XDB_NEAR xdb_test_slot1_selection_state(void)
+{
+    return SLOT1_SELECTION_STATE;
+}
+
 void XDB_NEAR xdb_test_set_slot3_resume_countdown(xdb_u16 countdown)
 {
     RESUME_COUNTDOWN = countdown;
@@ -117,4 +125,9 @@ void XDB_NEAR xdb_test_set_slot11_state_at(
         xdb_u16 state)
 {
     SLOT11_STATE_QUEUE[queue_cursor >> 1] = state;
+}
+
+void XDB_NEAR xdb_test_set_slot1_selection_state(xdb_u16 state)
+{
+    SLOT1_SELECTION_STATE = state;
 }

@@ -363,6 +363,14 @@ typedef union xdb_alien_palette_cycle {
     xdb_u16 word;
 } xdb_alien_palette_cycle;
 
+typedef union xdb_alien_palette_pulse {
+    xdb_i32 value;
+    struct {
+        xdb_u16 low;
+        xdb_u16 high;
+    } words;
+} xdb_alien_palette_pulse;
+
 typedef struct xdb_alien_state {
     xdb_u8 field_000[0x0ac];
     xdb_i16 field_0ac;
@@ -536,9 +544,9 @@ extern const volatile xdb_u8 XDB_CODE_DATA
         xdb_croolis_palette_remap[256]; /* CROOLIS CS:0x04DC */
 extern const volatile xdb_u8 XDB_CODE_DATA
         xdb_scrut_palette_remap[256]; /* SCRUT CS:0x04DC */
-extern volatile xdb_u16 xdb_alien_palette_pulse_0; /* DS:0x2536 */
-extern volatile xdb_u16 xdb_alien_palette_pulse_1; /* DS:0x2594 */
-extern volatile xdb_u16 xdb_alien_palette_pulse_2; /* DS:0x25F2 */
+extern volatile xdb_alien_palette_pulse xdb_alien_palette_pulse_0; /* DS:0x2536 */
+extern volatile xdb_alien_palette_pulse xdb_alien_palette_pulse_1; /* DS:0x2594 */
+extern volatile xdb_alien_palette_pulse xdb_alien_palette_pulse_2; /* DS:0x25F2 */
 extern xdb_alien_cursor XDB_CODE_DATA
         xdb_amer_slot11_cursor; /* AMER CS:0x1BC2 */
 extern volatile xdb_u16 XDB_CODE_DATA
@@ -834,6 +842,9 @@ void XDB_NEAR xdb_amer_slot1_return_update(
         xdb_alien_biased_state XDB_NEAR *state,
         xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_amer_slot1_state_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_amer_slot1_motion_continuation(
         xdb_alien_biased_state XDB_NEAR *state,
         xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_amer_slot2_update(

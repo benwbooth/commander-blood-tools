@@ -35,6 +35,12 @@ SPECS = (
         "callback installed by the AMER slot-1 wave update at 0x0B70",
     ),
     (
+        0x0BEA,
+        0x0C5D,
+        "func_000bea_slot1_state_update.asm",
+        "slot-1 state callback head; tail-transfers to callbacks 0x0C5D or continuation 0x0CAC",
+    ),
+    (
         0x0C5D,
         0x0C81,
         "func_000c5d_slot1_camera_update.asm",
@@ -51,6 +57,12 @@ SPECS = (
         0x0CAC,
         "func_000ca1_slot1_return_update.asm",
         "callback published by the AMER slot-1 motion callback at 0x0C96",
+    ),
+    (
+        0x0CAC,
+        0x0D5B,
+        "func_000cac_slot1_motion_continuation.asm",
+        "motion continuation reached by the AMER slot-1 state callback at 0x0BEA",
     ),
     (
         0x1AA0,
@@ -134,7 +146,7 @@ def main() -> int:
             print(f"ERROR: stale assembly dump: {path}")
         return 1
     if args.check:
-        print("OK: 6 bounded AMER callback dumps match the extracted overlay")
+        print("OK: 8 bounded AMER callback dumps match the extracted overlay")
     return 0
 
 

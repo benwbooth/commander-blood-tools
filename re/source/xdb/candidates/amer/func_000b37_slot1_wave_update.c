@@ -23,14 +23,14 @@ void XDB_NEAR xdb_amer_slot1_wave_update(
         state->owner_offset = (xdb_u16)(size_t)xdb_amer_slot1_selected_state;
         state->callback = xdb_amer_slot1_finish_update;
         xdb_amer_slot1_selection_state = 0;
-        *(volatile xdb_i32 XDB_CODE_DATA *)&xdb_alien_palette_pulse_1 -= 0x1e;
-        *(volatile xdb_i32 XDB_CODE_DATA *)&xdb_alien_palette_pulse_2 -= 0x23;
+        xdb_alien_palette_pulse_1.value -= 0x1e;
+        xdb_alien_palette_pulse_2.value -= 0x23;
         return;
     }
 
     xdb_amer_slot1_selection_state = 0;
-    *(volatile xdb_i32 XDB_CODE_DATA *)&xdb_alien_palette_pulse_1 -= 0x1e;
-    *(volatile xdb_i32 XDB_CODE_DATA *)&xdb_alien_palette_pulse_2 -= 0x23;
+    xdb_alien_palette_pulse_1.value -= 0x1e;
+    xdb_alien_palette_pulse_2.value -= 0x23;
     state->owner_offset = 0x22a8u;
     state->position_x = -(xdb_i32)xdb_alien_view_x;
     state->position_y = -(xdb_i32)xdb_alien_view_y;
