@@ -34,7 +34,6 @@ extern cb_u16 list_d8c_iteration_count;            /* GS:0x0DA0 */
 extern cb_u16 list_d8c_entry_metric;               /* game data:0x0DAF */
 extern volatile cb_u16 list_d8c_buffer_end_offset; /* GS:0x5233 */
 extern volatile cb_u16 list_d8c_sequence_index;    /* DS:0x131C */
-extern volatile cb_u8 CB_FAR list_d8c_buffer[];    /* segment at 0x0A7E */
 extern volatile cb_u16 list_d8c_default_entry_segment; /* GS:0x0ABE */
 extern volatile cb_u16 list_d8c_alternate_entry_segment; /* GS:0x0DA8 */
 extern volatile cb_u16 list_d8c_active_layout;     /* GS:0x0DA4 */

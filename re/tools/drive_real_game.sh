@@ -4,7 +4,8 @@
 # diff against the Rust engine. Extends capture_real_game.sh (passive capture) with
 # input control so the game can be navigated to specific scenes.
 #
-#   nix develop --command re/tools/drive_real_game.sh <game-dir> <out-dir> [display] [args]
+#   nix develop --command re/tools/drive_real_game.sh \
+#     <game-dir> <out-dir> [display] [install-parent] [executable]
 #
 # Reads an input script from stdin: one action per line, either
 #   click <x> <y>       (mouse click at game-relative x,y; game area is 640x400)
@@ -17,13 +18,14 @@ set -euo pipefail
 
 # <game-dir> is the CD image dir that CONTAINS BLOODPRG.EXE (e.g. output/_tmp_iso),
 # mounted as D:. The installed data dir (C:\cblood) is a SEPARATE tree.
-GAME_DIR="$(realpath "${1:?usage: drive_real_game.sh <cd-dir> <out-dir> [display] [install-parent]}")"
+GAME_DIR="$(realpath "${1:?usage: drive_real_game.sh <cd-dir> <out-dir> [display] [install-parent] [executable]}")"
 OUT_DIR="${2:?missing out-dir}"; mkdir -p "$OUT_DIR"
 DISP="${3:-:73}"
 # 4th arg is now the PARENT of the `cblood` install dir, mounted as C: so the game's
 # write path C:\cblood\ resolves. Defaults to accuracy/cblood_install.
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 INSTALL_PARENT="${4:-$REPO_ROOT/accuracy/cblood_install}"
+GAME_EXECUTABLE="${5:-BLOODPRG.EXE}"
 export DISPLAY="$DISP" SDL_VIDEODRIVER=x11
 
 Xvfb "$DISP" -screen 0 800x600x24 >/dev/null 2>&1 &
@@ -38,7 +40,7 @@ dosbox-x -set sdl output=surface \
   -c "mount c \"$INSTALL_PARENT\"" \
   -c "mount d \"$GAME_DIR\" -t cdrom" \
   -c 'd:' \
-  -c "BLOODPRG AMR S162227 EMS WRIC:\\cblood\\" >/dev/null 2>&1 &
+  -c "$GAME_EXECUTABLE AMR S162227 EMS WRIC:\\cblood\\" >/dev/null 2>&1 &
 DOSBOX_PID=$!
 
 # Wait for the game window (title contains DOSBox-X), up to ~20s.

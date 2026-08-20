@@ -183,8 +183,12 @@ real-game navigation gates that select those character overlays.
 For the relinked runtime, pass `BPRG_RE.EXE` as the final executable argument
 to the same capture script. For the fixed-patch alias, pass `BPRG_C.EXE`.
 
-This is a source-build and opening-runtime gate, not a claim of full-game C
-parity. The next milestones are sustained gameplay and cross-XDB validation.
+The relinked runtime's opening Mindscape frame now passes a synchronized
+original-versus-source-build gate: the live 768-byte palette, 64,000-byte
+decoded display buffer, queue entry metric, and captured 800x600 DOSBox-X PNG
+all match the original exactly. This remains an opening-runtime gate, not a
+claim of full-game C parity. The next milestones are sustained gameplay and
+cross-XDB validation.
 
 To classify the aggregate probe's data symbols against the recovered
 BLOODPRG layout, generate the measurement-only layout object:

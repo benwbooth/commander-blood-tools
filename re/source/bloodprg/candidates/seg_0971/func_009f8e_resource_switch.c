@@ -1,3 +1,5 @@
+#include <dos.h>
+
 #include "../include/bloodprg_list.h"
 #include "../include/bloodprg_resource.h"
 
@@ -71,14 +73,16 @@ int CB_NEAR resource_switch(cb_u16 resource_id)
         return 0;
     }
 
-    stream = list_d8c_buffer + list_d8c_head_offset;
+    stream = (volatile cb_u8 CB_FAR *)MK_FP(
+            list_d8c_head_segment, list_d8c_head_offset);
     entry_extent = *(volatile cb_u16 CB_FAR *)stream;
     stream += 2;
     cursor_offset = (cb_u16)(list_d8c_head_offset + 2u);
     end_offset = (cb_u16)(cursor_offset + entry_extent);
     if (end_offset < cursor_offset
             || end_offset > list_d8c_buffer_end_offset) {
-        stream = list_d8c_buffer;
+        stream = (volatile cb_u8 CB_FAR *)MK_FP(
+                list_d8c_head_segment, 0u);
     }
 
     resource_ready_marker = 0xffu;

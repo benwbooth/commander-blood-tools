@@ -22,7 +22,7 @@ attract demo and never reaches navigation.
 NOTE: the star-map's 0x4F09 records are the *default* (10200,12100,900) until the game
 is in ACTIVE navigation — drive it there (see drive_real_game.sh) before dumping.
 """
-import ctypes, subprocess, time, os, re, struct, sys
+import ctypes, hashlib, subprocess, time, os, re, struct, sys
 from pathlib import Path
 
 ANCHOR = b"386 minimum !\0Not enough memory (570Ko min) !\0"
@@ -65,14 +65,21 @@ STARTUP_GLOBALS = [
     ("list_d8c_tail_pointer_0D90", 0x0D90, "<HH"),
     ("list_d8c_active_pointer_0D94", 0x0D94, "<HH"),
     ("list_d8c_byte_count_0D9A", 0x0D9A, "<H"),
+    ("list_d8c_palette_offset_0D9E", 0x0D9E, "<H"),
     ("list_d8c_active_layout_0DA4", 0x0DA4, "<H"),
     ("list_d8c_active_row_mode_0DA6", 0x0DA6, "<H"),
     ("list_d8c_retired_segment_0DAA", 0x0DAA, "<H"),
+    ("list_d8c_read_wrap_index_0D60", 0x0D60, "<H"),
+    ("list_d8c_entry_metric_0DAF", 0x0DAF, "<H"),
     ("resource_draw_via_back_buffer_0DB9", 0x0DB9, "<B"),
     ("resource_decode_rectangular_0DBA", 0x0DBA, "<B"),
     ("resource_skip_back_buffer_present_0DBB", 0x0DBB, "<B"),
     ("resource_unclamped_row_count_0DBD", 0x0DBD, "<B"),
     ("resource_decode_mode_0AA0", 0x0AA0, "<H"),
+    ("ship_3d_depth_offset_2527", 0x2527, "<H"),
+    ("ship_3d_plane_blit_crop_enabled_252E", 0x252E, "<B"),
+    ("graphics_draw_framebuffer_5219", 0x5219, "<HH"),
+    ("graphics_screen_buffer_521D", 0x521D, "<HH"),
     ("graphics_display_buffer_5221", 0x5221, "<HH"),
     ("graphics_back_buffer_5229", 0x5229, "<HH"),
     ("graphics_viewport_descriptor_522D", 0x522D, "<HH"),
@@ -83,6 +90,13 @@ STARTUP_GLOBALS = [
 STARTUP_STRINGS = [
     ("startup_write_directory_01BA", 0x01BA, 32),
     ("startup_original_directory_01DA", 0x01DA, 32),
+]
+RUNTIME_RANGES = [
+    ("live_palette_5251", 0x5251, 768),
+    ("palette_transition_target_5551", 0x5551, 768),
+    ("palette_transition_source_5851", 0x5851, 768),
+    ("palette_control_5B51", 0x5B51, 8),
+    ("bridge_panorama_palette_5B58", 0x5B58, 768),
 ]
 
 
@@ -101,6 +115,9 @@ def main():
     install_parent = os.path.realpath(sys.argv[3]) if len(sys.argv) > 3 else None
     executable = sys.argv[4] if len(sys.argv) > 4 else "BLOODPRG.EXE"
     cycles = sys.argv[5] if len(sys.argv) > 5 else None
+    dump_dir = os.environ.get("BLOODPRG_DUMP_DIR")
+    if dump_dir:
+        Path(dump_dir).mkdir(parents=True, exist_ok=True)
     if install_parent is None:
         guess = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
             os.path.realpath(__file__)))), "accuracy", "cblood_install")
@@ -130,6 +147,17 @@ def main():
     db = subprocess.Popen(dosbox_args + cmds,
                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env)
     time.sleep(wait)
+    if dump_dir:
+        subprocess.run(
+            [
+                "import", "-window", "root",
+                str(Path(dump_dir) / f"{executable}.screen.png"),
+            ],
+            env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
     pid = db.pid
     attached = False
     try:
@@ -196,6 +224,23 @@ def main():
             mem.seek(best - (DS_ANCHOR - off))
             value = mem.read(capacity).split(b"\0", 1)[0]
             print(f"{name}: {value.decode('ascii', errors='replace')!r}")
+        for name, off, size in RUNTIME_RANGES:
+            mem.seek(best + off)
+            data = mem.read(size)
+            if dump_dir:
+                output = Path(dump_dir)
+                output.mkdir(parents=True, exist_ok=True)
+                (output / f"{executable}.{name}.bin").write_bytes(data)
+            print(
+                f"{name}: sha256={hashlib.sha256(data).hexdigest()} "
+                f"sample={data[:32].hex()} tail={data[-32:].hex()}"
+            )
+        if dump_dir:
+            output = Path(dump_dir)
+            mem.seek(best)
+            (output / f"{executable}.game_data_segment.bin").write_bytes(
+                mem.read(0x10000)
+            )
         if guest_memory_base is not None:
             guest_linear_bias = 0
             descriptor_signature = bytes.fromhex(
@@ -231,7 +276,6 @@ def main():
                 )
                 data = mem.read(0xFA00)
                 checksum = sum(data) & 0xFFFFFFFF
-                dump_dir = os.environ.get("BLOODPRG_DUMP_DIR")
                 if dump_dir:
                     output = Path(dump_dir)
                     output.mkdir(parents=True, exist_ok=True)
@@ -240,6 +284,17 @@ def main():
                     f"{name}_pixels: pointer={segment:04x}:{offset:04x} "
                     f"sum32=0x{checksum:08x} sample={data[:32].hex()} "
                     f"tail={data[-32:].hex()}"
+                )
+            if dump_dir:
+                mem.seek(best + 0x0D8C)
+                queue_offset, queue_segment = struct.unpack("<HH", mem.read(4))
+                mem.seek(
+                    guest_memory_base
+                    + guest_linear_bias
+                    + queue_segment * 16
+                )
+                (output / f"{executable}.list_d8c_segment.bin").write_bytes(
+                    mem.read(0x10000)
                 )
     finally:
         if attached:
