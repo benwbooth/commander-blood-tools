@@ -458,6 +458,18 @@ NIXPKGS_ALLOW_UNFREE=1 nix shell --impure \
   python3 re/tools/manu3_dos_integration.py --case croolis_slot2_callbacks
 ```
 
+`alien_scrut_slot2_callbacks.c` links the eighteen recovered SCRUT slot-2
+owners. It verifies latch-return behavior, countdown and follower motion,
+fade timing, the selection and damping chain, carry-return steering, finish
+transition, visual reset, camera reset, and the unreferenced steering sibling.
+Run it with:
+
+```sh
+NIXPKGS_ALLOW_UNFREE=1 nix shell --impure \
+  nixpkgs#open-watcom-bin nixpkgs#dosbox-x -c \
+  python3 re/tools/manu3_dos_integration.py --case scrut_slot2_callbacks
+```
+
 `alien_slot3_callbacks.c` links each alien overlay's generic slot-3 owner, its
 four separately callable restart, resume, capture, and ring-zero callbacks,
 and the six-routine slot-13 resume pipeline. The three DOS cases verify both

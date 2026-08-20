@@ -298,6 +298,36 @@ CASES = (
         ),
         defines=("TEST_SCRUT",),
     ),
+    IntegrationCase(
+        name="scrut_slot2_callbacks",
+        source=INTEGRATION_DIR / "alien_scrut_slot2_callbacks.c",
+        executable_name="SCRUT2C.EXE",
+        expected_result="PASS scrut slot2 callbacks",
+        recovered_sources=alien_slot3_sources(
+            "scrut",
+            (
+                "001711_slot2_restart",
+                "00171b_slot2_update",
+                "001781_slot2_common_dispatch",
+                "001787_slot2_motion_update",
+                "0017e1_slot2_begin_fade",
+                "0017e6_slot2_fade_update",
+                "001802_slot2_selection_init",
+                "001810_slot2_selection_restart",
+                "00181b_slot2_selection_begin",
+                "001858_slot2_selection_damp",
+                "001868_slot2_selection_approach",
+                "0018d9_slot2_steering_helper",
+                "001952_slot2_finish_setup",
+                "001957_slot2_finish_update",
+                "0019cf_slot2_selection_reset_restart",
+                "001a03_slot2_active_reset_setup",
+                "001a11_slot2_reset_or_camera",
+                "001b3b_unreferenced_steering_update",
+            ),
+        ),
+        defines=("TEST_SCRUT",),
+    ),
 )
 
 

@@ -11,14 +11,14 @@ xdb_croolis	0x00171d	only direct reference is callback 0x17f2 JMP at 0x1812; set
 xdb_croolis	0x001727	callback pointer stored by slots 2/4 at 0x16fe and transitions at 0x171d/0x191f	indexed_recovered
 xdb_croolis	0x0017f2	callback pointer stored at 0x17ed	indexed_recovered
 xdb_croolis	0x001828	callback pointer stored at 0x1815	indexed_recovered
-xdb_scrut	0x001711	direct jumps at 0x17ff and 0x1a00 set callback 0x171b then fall through	shared_internal_transition_not_routine
-xdb_scrut	0x00171b	callback pointer stored by slots 2/4 at 0x16e7 and transition at 0x1711	pending_boundary_recovery
-xdb_scrut	0x0017e6	callback pointer stored at 0x17e1	pending_boundary_recovery
-xdb_scrut	0x001810	callback pointer stored at 0x18d3; sets callback 0x181b then falls through	pending_boundary_recovery
-xdb_scrut	0x00181b	callback pointer stored at 0x1810	pending_boundary_recovery
-xdb_scrut	0x001858	callback pointer stored at 0x1843	pending_boundary_recovery
-xdb_scrut	0x001868	callback pointer stored at 0x1863	pending_boundary_recovery
-xdb_scrut	0x001957	callback pointer stored at 0x1952	pending_boundary_recovery
+xdb_scrut	0x001711	direct jumps at 0x17ff and 0x1a00 set callback 0x171b then fall through	indexed_internal_tail_owner
+xdb_scrut	0x00171b	callback pointer stored by slots 2/4 at 0x16e7 and transition at 0x1711	indexed_recovered
+xdb_scrut	0x0017e6	callback pointer stored at 0x17e1	indexed_recovered
+xdb_scrut	0x001810	callback pointer stored at 0x18d3; sets callback 0x181b then falls through	indexed_recovered
+xdb_scrut	0x00181b	callback pointer stored at 0x1810	indexed_recovered
+xdb_scrut	0x001858	callback pointer stored at 0x1843	indexed_recovered
+xdb_scrut	0x001868	callback pointer stored at 0x1863	indexed_recovered
+xdb_scrut	0x001957	callback pointer stored at 0x1952	indexed_recovered
 xdb_amer	0x002670	stored as the next-column continuation at renderer 0x2625	reviewed_internal_renderer_owner
 xdb_amer	0x0028a1	selected as the four-plane render continuation by face activation	reviewed_internal_renderer_owner
 xdb_amer	0x0028d0	selected as the Mode-X render continuation by face activation	reviewed_internal_renderer_owner

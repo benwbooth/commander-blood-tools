@@ -450,7 +450,7 @@ struct xdb_alien_method_context {
             xdb_u16 random_value;
         } croolis_slot2;
         struct {
-            xdb_u16 duration;
+            xdb_i16 duration;
             xdb_i32 signed_seed;
             xdb_u8 field_03e[0x04];
             xdb_u16 random_value;
@@ -608,9 +608,13 @@ extern xdb_alien_slot2_shared_state XDB_CODE_DATA
 #define xdb_croolis_slot2_seed xdb_croolis_slot2_shared_state.seed
 #define xdb_croolis_slot2_selected_state \
     xdb_croolis_slot2_shared_state.selected_state
-extern volatile xdb_i16 XDB_CODE_DATA xdb_scrut_slot2_seed; /* CS:0x1690 */
+extern volatile xdb_i16 XDB_CODE_DATA
+        xdb_scrut_slot2_shared_word; /* CS:0x1690 */
+#define xdb_scrut_slot2_seed xdb_scrut_slot2_shared_word
+#define xdb_scrut_slot2_selection_value xdb_scrut_slot2_shared_word
 extern volatile xdb_u16 XDB_CODE_DATA xdb_amer_slot2_active; /* CS:0x1648 */
 extern volatile xdb_u16 XDB_CODE_DATA xdb_croolis_slot2_active; /* CS:0x16A0 */
+extern volatile xdb_u16 XDB_CODE_DATA xdb_scrut_slot2_active; /* CS:0x168E */
 extern volatile xdb_u16 XDB_CODE_DATA xdb_amer_slot1_selection_state; /* CS:0x0B2F */
 extern xdb_alien_state_cursor XDB_CODE_DATA
         xdb_amer_slot1_selected_state; /* CS:0x0B33 */
@@ -910,6 +914,56 @@ void XDB_NEAR xdb_croolis_unreferenced_steering_update(
         xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_scrut_slot2_update(
         xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_slot2_restart(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_slot2_common_dispatch(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_slot2_motion_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_slot2_begin_fade(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_slot2_fade_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_slot2_selection_init(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_slot2_selection_restart(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_slot2_selection_begin(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_slot2_selection_damp(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_slot2_selection_approach(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+int XDB_NEAR xdb_scrut_slot2_steering_helper(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_u16 shift);
+void XDB_NEAR xdb_scrut_slot2_finish_setup(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_slot2_finish_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_slot2_selection_reset_restart(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_slot2_active_reset_setup(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_slot2_reset_or_camera(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_unreferenced_steering_update(
         xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_amer_slot2_return_update(
         xdb_alien_biased_state XDB_NEAR *state,

@@ -8,14 +8,11 @@ Current measured coverage:
 | `xdb_amer` | 54 | 54 | 0 |
 | `xdb_croolis` | 47 | 47 | 0 |
 | `xdb_manu3` | 12 | 12 | 0 |
-| `xdb_scrut` | 37 | 37 | 0 |
-| total | 471 | 471 | 0 |
+| `xdb_scrut` | 55 | 55 | 0 |
+| total | 489 | 489 | 0 |
 
-Overall candidate coverage is 471 of 471 standardized indexed routines, or
-100.00 percent. One additional legacy XDB candidate dump is deliberately
-reported as unindexed: the overlapping SCRUT callback-state range still needs
-a control-flow ownership audit before it can be split into routine assembly
-owners.
+Overall candidate coverage is 489 of 489 standardized indexed routines, or
+100.00 percent. No legacy overlapping XDB callback dump remains unindexed.
 
 Generate the live report, including the missing routine list, with:
 

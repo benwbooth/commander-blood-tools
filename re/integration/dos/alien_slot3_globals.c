@@ -36,6 +36,8 @@
 #define SLOT11_CURRENT_STATE xdb_scrut_slot11_current_state
 #define SLOT11_STATE_QUEUE xdb_scrut_slot11_state_queue
 #define SLOT1_SELECTION_STATE xdb_scrut_slot1_selection_state
+#define SLOT2_ACTIVE xdb_scrut_slot2_active
+#define SLOT2_SHARED_WORD xdb_scrut_slot2_shared_word
 #else
 #error Select one alien module
 #endif
@@ -58,11 +60,14 @@ volatile xdb_i16 xdb_alien_camera_pitch;
 volatile xdb_i16 xdb_alien_camera_pan;
 volatile xdb_i16 xdb_alien_camera_depth_step;
 volatile xdb_i16 XDB_CODE_DATA xdb_alien_method_delta;
-#if defined(TEST_AMER) || defined(TEST_CROOLIS)
+#if defined(TEST_AMER) || defined(TEST_CROOLIS) || defined(TEST_SCRUT)
 volatile xdb_u16 XDB_CODE_DATA SLOT2_ACTIVE;
 #endif
 #if defined(TEST_CROOLIS)
 xdb_alien_slot2_shared_state XDB_CODE_DATA SLOT2_SHARED_STATE;
+#endif
+#if defined(TEST_SCRUT)
+volatile xdb_i16 XDB_CODE_DATA SLOT2_SHARED_WORD;
 #endif
 volatile xdb_u16 XDB_CODE_DATA SLOT3_TIMER;
 volatile xdb_u16 XDB_CODE_DATA RESUME_COUNTDOWN;
@@ -152,7 +157,7 @@ void XDB_NEAR xdb_test_set_method_delta(xdb_i16 delta)
     xdb_alien_method_delta = delta;
 }
 
-#if defined(TEST_AMER) || defined(TEST_CROOLIS)
+#if defined(TEST_AMER) || defined(TEST_CROOLIS) || defined(TEST_SCRUT)
 xdb_u16 XDB_NEAR xdb_test_slot2_active(void)
 {
     return SLOT2_ACTIVE;
@@ -174,5 +179,17 @@ void XDB_NEAR xdb_test_set_croolis_slot2_selected_state(
         xdb_alien_state_cursor state)
 {
     SLOT2_SHARED_STATE.selected_state = state;
+}
+#endif
+
+#if defined(TEST_SCRUT)
+xdb_i16 XDB_NEAR xdb_test_scrut_slot2_shared_word(void)
+{
+    return SLOT2_SHARED_WORD;
+}
+
+void XDB_NEAR xdb_test_set_scrut_slot2_shared_word(xdb_i16 value)
+{
+    SLOT2_SHARED_WORD = value;
 }
 #endif
