@@ -217,6 +217,19 @@ BLOODPRG_SEMANTIC_PATCH_FUNCTIONS = (
         (),
     ),
     (
+        "entity_flag_state_transition",
+        0x0041D1,
+        bytes.fromhex(
+            "53 BB 00 00 C1 E0 05 01 C3 8B 07 A8 80 74 08 "
+            "A8 01 74 04 24 FC 0C 02 89 07 5B CB"
+        ),
+        bytes.fromhex(
+            "50 53 BB 12 62 C1 E0 05 01 C3 65 8B 07 0A C0 "
+            "79 08 A8 01 74 04 24 FC 0C 02 65 89 07 5B 58 CB"
+        ),
+        (),
+    ),
+    (
         "palette_upload_if_dirty",
         0x00178B,
         bytes.fromhex(
