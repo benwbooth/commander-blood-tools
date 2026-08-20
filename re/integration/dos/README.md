@@ -434,6 +434,18 @@ NIXPKGS_ALLOW_UNFREE=1 nix shell --impure \
   python3 re/tools/manu3_dos_integration.py --case amer_slot1_callbacks
 ```
 
+`alien_amer_slot2_callbacks.c` links the ten recovered AMER slot-2 owners. It
+verifies the reset seed and field ownership, countdown transfer through the
+full common update, immediate selection callback invocation, the disabled
+selection restart chain, and the finish callback's in-bounds transition. Run
+it with:
+
+```sh
+NIXPKGS_ALLOW_UNFREE=1 nix shell --impure \
+  nixpkgs#open-watcom-bin nixpkgs#dosbox-x -c \
+  python3 re/tools/manu3_dos_integration.py --case amer_slot2_callbacks
+```
+
 `alien_slot3_callbacks.c` links each alien overlay's generic slot-3 owner, its
 four separately callable restart, resume, capture, and ring-zero callbacks,
 and the six-routine slot-13 resume pipeline. The three DOS cases verify both

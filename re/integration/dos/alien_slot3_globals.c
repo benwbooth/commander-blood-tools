@@ -11,6 +11,7 @@
 #define SLOT11_CURRENT_STATE xdb_amer_slot11_current_state
 #define SLOT11_STATE_QUEUE xdb_amer_slot11_state_queue
 #define SLOT1_SELECTION_STATE xdb_amer_slot1_selection_state
+#define SLOT2_ACTIVE xdb_amer_slot2_active
 #elif defined(TEST_CROOLIS)
 #define SLOT3_TIMER xdb_croolis_slot3_timer
 #define RESUME_COUNTDOWN xdb_croolis_slot3_resume_countdown
@@ -49,6 +50,14 @@ volatile xdb_alien_palette_pulse xdb_alien_palette_pulse_2;
 volatile xdb_i16 xdb_alien_view_x;
 volatile xdb_i16 xdb_alien_view_y;
 volatile xdb_i16 xdb_alien_view_z;
+volatile xdb_i32 xdb_alien_camera_matrix[9];
+volatile xdb_i32 xdb_alien_camera_position[3];
+volatile xdb_i16 xdb_alien_camera_pan;
+volatile xdb_i16 xdb_alien_camera_depth_step;
+volatile xdb_i16 XDB_CODE_DATA xdb_alien_method_delta;
+#if defined(TEST_AMER)
+volatile xdb_u16 XDB_CODE_DATA SLOT2_ACTIVE;
+#endif
 volatile xdb_u16 XDB_CODE_DATA SLOT3_TIMER;
 volatile xdb_u16 XDB_CODE_DATA RESUME_COUNTDOWN;
 xdb_alien_cursor XDB_CODE_DATA RESUME_STATE;
@@ -131,3 +140,20 @@ void XDB_NEAR xdb_test_set_slot1_selection_state(xdb_u16 state)
 {
     SLOT1_SELECTION_STATE = state;
 }
+
+void XDB_NEAR xdb_test_set_method_delta(xdb_i16 delta)
+{
+    xdb_alien_method_delta = delta;
+}
+
+#if defined(TEST_AMER)
+xdb_u16 XDB_NEAR xdb_test_slot2_active(void)
+{
+    return SLOT2_ACTIVE;
+}
+
+void XDB_NEAR xdb_test_set_slot2_active(xdb_u16 active)
+{
+    SLOT2_ACTIVE = active;
+}
+#endif

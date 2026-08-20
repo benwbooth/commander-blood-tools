@@ -186,6 +186,28 @@ CASES = (
         defines=("TEST_AMER",),
     ),
     IntegrationCase(
+        name="amer_slot2_callbacks",
+        source=INTEGRATION_DIR / "alien_amer_slot2_callbacks.c",
+        executable_name="AMER2C.EXE",
+        expected_result="PASS amer slot2 callbacks",
+        recovered_sources=alien_slot3_sources(
+            "amer",
+            (
+                "001688_slot2_restart",
+                "001692_slot2_update",
+                "00171d_slot2_common_update",
+                "0018d3_slot2_return_update",
+                "00193e_slot2_selection_wait",
+                "001948_slot2_selection_update",
+                "0019cb_slot2_selection_late_update",
+                "001a2b_slot2_reset",
+                "001a5c_slot2_steer_update",
+                "001aa0_slot2_finish_update",
+            ),
+        ),
+        defines=("TEST_AMER",),
+    ),
+    IntegrationCase(
         name="amer_slot3_callbacks",
         source=INTEGRATION_DIR / "alien_slot3_callbacks.c",
         executable_name="AMER3C.EXE",

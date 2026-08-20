@@ -5,14 +5,14 @@ Current measured coverage:
 | module | indexed routines | natural-C candidates | missing |
 | --- | ---: | ---: | ---: |
 | `bloodprg` | 321 | 321 | 0 |
-| `xdb_amer` | 47 | 47 | 0 |
+| `xdb_amer` | 54 | 54 | 0 |
 | `xdb_croolis` | 37 | 37 | 0 |
 | `xdb_manu3` | 12 | 12 | 0 |
 | `xdb_scrut` | 37 | 37 | 0 |
-| total | 454 | 454 | 0 |
+| total | 461 | 461 | 0 |
 
-Overall candidate coverage is 454 of 454 standardized indexed routines, or
-100.00 percent. Three additional legacy XDB candidate dumps are deliberately
+Overall candidate coverage is 461 of 461 standardized indexed routines, or
+100.00 percent. Two additional legacy XDB candidate dumps are deliberately
 reported as unindexed: their overlapping callback-state ranges still need a
 control-flow ownership audit before they can be split into routine assembly
 owners.

@@ -55,6 +55,7 @@ Before accepting new recovered source, keep the assembly inventory closed:
 
 ```sh
 python3 re/tools/split_xdb_amer_callback_assembly.py --check
+python3 re/tools/split_xdb_slot2_assembly.py --check
 python3 re/tools/split_xdb_slot3_assembly.py --check
 python3 re/tools/split_xdb_resume_assembly.py --check
 python3 re/tools/assembly_inventory.py --check

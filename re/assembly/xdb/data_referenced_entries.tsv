@@ -1,10 +1,10 @@
 module	entry	evidence	status
-xdb_amer	0x001688	only direct reference is callback 0x1948 JE at 0x194f; sets callback 0x1692 then falls through	internal_transition_not_routine
-xdb_amer	0x001692	callback pointer stored by slot 2 at 0x1677 and transitions at 0x1688/0x1931	pending_boundary_recovery
+xdb_amer	0x001688	only direct reference is callback 0x1948 JE at 0x194f; sets callback 0x1692 then falls through	indexed_internal_tail_owner
+xdb_amer	0x001692	callback pointer stored by slot 2 at 0x1677 and transitions at 0x1688/0x1931	indexed_recovered
 xdb_amer	0x0018d3	callback pointer stored at 0x18c0; independent 107-byte body ends before callback 0x193e	indexed_recovered
-xdb_amer	0x00193e	callback pointer stored at 0x1aec; sets callback 0x1948 then falls through	pending_boundary_recovery
-xdb_amer	0x001948	callback pointer stored at 0x1943	pending_boundary_recovery
-xdb_amer	0x0019cb	callback pointer stored at 0x19c5	pending_boundary_recovery
+xdb_amer	0x00193e	callback pointer stored at 0x1aec; sets callback 0x1948 then falls through	indexed_recovered
+xdb_amer	0x001948	callback pointer stored at 0x1943	indexed_recovered
+xdb_amer	0x0019cb	callback pointer stored at 0x19c5	indexed_recovered
 xdb_amer	0x001a5c	callback pointer stored at 0x1a3f; independent 68-byte body ends before callback 0x1aa0	indexed_recovered
 xdb_amer	0x001aa0	callback pointer stored at 0x1a95	indexed_recovered
 xdb_croolis	0x00171d	only direct reference is callback 0x17f2 JMP at 0x1812; sets callback 0x1727 then falls through	internal_transition_not_routine
