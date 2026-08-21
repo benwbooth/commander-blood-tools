@@ -198,15 +198,16 @@ to the same capture script. For the fixed-patch alias, pass `BPRG_C.EXE`.
 
 The relinked runtime's first opening image passes a synchronized
 original-versus-source-build content gate: the live 768-byte palette and
-64,000-byte decoded display buffer match the original exactly. The recovered
-chunky-to-planar hot loop now services presentation entries every 16-19 timer
-ticks instead of roughly every 50 ticks. The initial compressed rectangle is
-still slower than the original, however: near tick 740 the source runtime has
-consumed 30 queue entries while the original has consumed 37 and started the
-next resource. This is a first-frame content gate, not a completed-opening or
-full-game C parity claim. The next runtime gate is matching that initial decode
-latency and then following the original through the complete opening into
-cross-XDB gameplay.
+64,000-byte decoded display buffer match the original exactly. Run timing
+comparisons with DOSBox-X at `cycles=max` and compare matching guest timer
+ticks; wall-clock throughput is compiler-dependent and is not a reason to
+replace natural C with instruction-level assembly. At 3.2 seconds the source
+and original reached ticks 196 and 195 and had consumed 9 and 10 presentation
+entries respectively, with identical display and palette data. At 6 seconds
+they remained one entry apart (44 versus 45), and their second-scene palettes
+matched. This is an opening content and progression gate, not a
+completed-opening or full-game C parity claim. The next runtime gate is
+following the original through the complete opening into cross-XDB gameplay.
 
 The runtime data owner also verifies and rebinds 88 near-pointer words to the
 final linked C offsets: six navigation actor handlers, five navigation choice

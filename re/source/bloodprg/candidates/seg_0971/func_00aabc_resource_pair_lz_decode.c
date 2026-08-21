@@ -1,5 +1,3 @@
-#include <dos.h>
-
 #include "../include/bloodprg_list.h"
 
 #define RESOURCE_PAIR_CONTROL_DISTANCE 0x7Fu
@@ -11,30 +9,15 @@ const volatile cb_u8 CB_FAR *CB_NEAR resource_pair_lz_decode(
         volatile cb_u8 CB_FAR *destination_end,
         cb_u8 literal_bias)
 {
-#if defined(__WATCOMC__)
-    const volatile cb_u8 CB_NEAR *copy_source;
-    volatile cb_u8 CB_NEAR *output;
-    volatile cb_u8 CB_NEAR *output_end;
-    cb_u16 destination_segment;
-#else
     const volatile cb_u8 CB_FAR *copy_source;
     volatile cb_u8 CB_FAR *output;
     volatile cb_u8 CB_FAR *output_end;
-#endif
     cb_u16 length;
     cb_u8 control;
     cb_u8 packed;
 
-#if defined(__WATCOMC__)
-    destination_segment = FP_SEG(destination);
-    output = (volatile cb_u8 CB_NEAR *)FP_OFF(destination);
-    output_end = (volatile cb_u8 CB_NEAR *)FP_OFF(destination_end);
-    _asm push ds;
-    _asm mov ds,destination_segment;
-#else
     output = destination;
     output_end = destination_end;
-#endif
 
     for (;;) {
         control = *source++;
@@ -90,8 +73,5 @@ const volatile cb_u8 CB_FAR *CB_NEAR resource_pair_lz_decode(
     }
 
 finished:
-#if defined(__WATCOMC__)
-    _asm pop ds;
-#endif
     return source;
 }

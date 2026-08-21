@@ -19,6 +19,8 @@ Usage: nix develop --command re/tools/dump_dosbox_mem.py <cd-dir> [wait_secs] [i
 It launches exactly what BLOOD.BAT does: `D:` then
 `BLOODPRG AMR S162227 EMS WRIC:\\cblood\\`; without those args the game loops the
 attract demo and never reaches navigation.
+The cycle setting defaults to `max`. Compare behavior at matching guest timer
+ticks; wall-clock throughput depends on compiler code generation.
 NOTE: the star-map's 0x4F09 records are the *default* (10200,12100,900) until the game
 is in ACTIVE navigation — drive it there (see drive_real_game.sh) before dumping.
 """
@@ -130,7 +132,7 @@ def main():
     # Optional 3rd arg: the PARENT of the `cblood` install dir, mounted as C:.
     install_parent = os.path.realpath(sys.argv[3]) if len(sys.argv) > 3 else None
     executable = sys.argv[4] if len(sys.argv) > 4 else "BLOODPRG.EXE"
-    cycles = sys.argv[5] if len(sys.argv) > 5 else None
+    cycles = sys.argv[5] if len(sys.argv) > 5 else "max"
     dump_dir = os.environ.get("BLOODPRG_DUMP_DIR")
     if dump_dir:
         Path(dump_dir).mkdir(parents=True, exist_ok=True)
@@ -157,9 +159,13 @@ def main():
         cmds += ["-c", f"mount c {install_parent}"]
     cmds += ["-c", f"mount d {cd_dir} -t cdrom", "-c", "d:",
              "-c", executable + r" AMR S162227 EMS WRIC:\cblood" + "\\"]
-    dosbox_args = ["dosbox-x", "-set", "sdl output=surface"]
-    if cycles is not None:
-        dosbox_args += ["-set", f"cpu cycles={cycles}"]
+    dosbox_args = [
+        "dosbox-x",
+        "-set",
+        "sdl output=surface",
+        "-set",
+        f"cpu cycles={cycles}",
+    ]
     db = subprocess.Popen(dosbox_args + cmds,
                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env)
     time.sleep(wait)
