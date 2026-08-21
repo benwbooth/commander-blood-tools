@@ -116,6 +116,7 @@ bloodprg_resource_decode_result CB_NEAR resource_payload_decode_dispatch(
         cb_u16 alternate_destination_segment);     /* 0x00A82C */
 
 #if defined(__WATCOMC__)
+#pragma aux close_file_d5b modify exact [ax bx cx]
 #pragma aux resource_palette_blocks_apply \
         parm [es si] value [es si] modify [si di]
 #pragma aux list_d8c_palette_blocks_apply \

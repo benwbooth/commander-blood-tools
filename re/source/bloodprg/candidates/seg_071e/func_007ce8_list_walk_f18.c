@@ -12,11 +12,11 @@
 
 void CB_NEAR list_walk_f18(void)
 {
+    const volatile cb_u8 CB_GAME_DATA *entry;
+    const volatile cb_u8 CB_GAME_DATA *scan;
     const cb_u8 CB_FAR *draw_text;
     cb_i16 threshold;
     cb_i16 next_threshold;
-    cb_u16 entry_offset;
-    cb_u16 scan_offset;
     cb_u16 text_offset;
     cb_u16 line_count;
     cb_u16 line_index;
@@ -24,20 +24,20 @@ void CB_NEAR list_walk_f18(void)
     cb_u16 line_y;
     cb_u8 character;
 
-    entry_offset = (cb_u16)byte_parser_stream_0f18_cursor;
-    threshold = (cb_i16)((cb_u16)byte_parser_stream_segment[entry_offset]
-            | ((cb_u16)byte_parser_stream_segment[
-                    (cb_u16)(entry_offset + 1u)] << 8));
+    entry = (const volatile cb_u8 CB_GAME_DATA *)
+            byte_parser_stream_0f18_cursor;
+    threshold = (cb_i16)((cb_u16)entry[0]
+            | ((cb_u16)entry[1] << 8));
     if (threshold < 0 || threshold > byte_parser_table_131c_visible_index) {
         return;
     }
 
-    scan_offset = (cb_u16)(entry_offset + sizeof(cb_u16));
-    text_offset = scan_offset;
+    scan = entry + sizeof(cb_u16);
+    text_offset = (cb_u16)scan;
     line_count = 0u;
     line_length = 0u;
     for (;;) {
-        character = byte_parser_stream_segment[scan_offset++];
+        character = *scan++;
         ++line_length;
         if (character == 0u) {
             --line_length;
@@ -80,11 +80,10 @@ void CB_NEAR list_walk_f18(void)
         ++line_index;
     } while (line_index != line_count);
 
-    next_threshold = (cb_i16)((cb_u16)byte_parser_stream_segment[scan_offset]
-            | ((cb_u16)byte_parser_stream_segment[
-                    (cb_u16)(scan_offset + 1u)] << 8));
+    next_threshold = (cb_i16)((cb_u16)scan[0]
+            | ((cb_u16)scan[1] << 8));
     if (next_threshold >= 0
             && next_threshold <= byte_parser_table_131c_visible_index) {
-        byte_parser_stream_0f18_cursor = (cb_game_char_ptr)scan_offset;
+        byte_parser_stream_0f18_cursor = (cb_game_char_ptr)scan;
     }
 }

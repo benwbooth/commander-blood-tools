@@ -43,6 +43,7 @@ STARTUP_GLOBALS = [
     ("resource_copy_buffer_0A7C", 0x0A7C, "<HH"),
     ("list_d8c_base_segment_0A7E", 0x0A7E, "<H"),
     ("resource_copy_file_handle_0A84", 0x0A84, "<H"),
+    ("resource_archive_offset_0A8A", 0x0A8A, "<I"),
     ("resource_archive_remaining_0A8E", 0x0A8E, "<I"),
     ("snd_source_remaining_0A92", 0x0A92, "<I"),
     ("snd_bank_xms_handle_0A5E", 0x0A5E, "<h"),
@@ -65,9 +66,30 @@ STARTUP_GLOBALS = [
     ("video_calibration_ticks_0B35", 0x0B35, "<H"),
     ("snd_bank_memory_0BB3", 0x0BB3, "<HH"),
     ("snd_stream_storage_0BB7", 0x0BB7, "<HH"),
+    ("snd_stream_buffer_0_0B89", 0x0B89, "<HHHBB"),
+    ("snd_stream_buffer_1_0B91", 0x0B91, "<HHHBB"),
+    ("snd_stream_header_0B99", 0x0B99, "<3H"),
+    ("snd_driver_pending_flag_0BA0", 0x0BA0, "<B"),
+    ("snd_stream_header_mode_0BA2", 0x0BA2, "<B"),
     ("snd_stream_channel_active_0BA3", 0x0BA3, "<B"),
+    ("snd_stream_next_page_0BA5", 0x0BA5, "<H"),
+    ("snd_stream_page_count_0BA7", 0x0BA7, "<H"),
+    ("snd_stream_final_page_bytes_0BA9", 0x0BA9, "<H"),
+    ("list_d8c_audio_phase_0C41", 0x0C41, "<H"),
     ("snd_bank_file_handle_0C49", 0x0C49, "<H"),
+    ("audio_position_callback_0CF3", 0x0CF3, "<HH"),
+    ("list_d8c_file_handle_0D5B", 0x0D5B, "<H"),
+    ("list_d8c_state_byte_0D5F", 0x0D5F, "<B"),
+    ("list_d8c_read_wrap_index_0D60", 0x0D60, "<H"),
+    ("list_d8c_wrap_count_0D62", 0x0D62, "<H"),
+    ("list_d8c_read_wrap_limit_0D64", 0x0D64, "<H"),
+    ("list_d8c_secondary_wrap_limit_0D66", 0x0D66, "<H"),
     ("resource_flags_0D76", 0x0D76, "<H"),
+    ("list_d8c_tick_threshold_0D77", 0x0D77, "<B"),
+    ("resource_range_start_0D6E", 0x0D6E, "<I"),
+    ("resource_range_remaining_0D72", 0x0D72, "<I"),
+    ("resource_index_start_0D78", 0x0D78, "<I"),
+    ("resource_index_remaining_0D7C", 0x0D7C, "<I"),
     ("resource_requested_id_0D80", 0x0D80, "<H"),
     ("resource_active_id_0D82", 0x0D82, "<H"),
     ("resource_source_offset_0D84", 0x0D84, "<I"),
@@ -75,18 +97,24 @@ STARTUP_GLOBALS = [
     ("list_d8c_head_pointer_0D8C", 0x0D8C, "<HH"),
     ("list_d8c_tail_pointer_0D90", 0x0D90, "<HH"),
     ("list_d8c_active_pointer_0D94", 0x0D94, "<HH"),
+    ("list_d8c_wrap_limit_0D98", 0x0D98, "<H"),
     ("list_d8c_byte_count_0D9A", 0x0D9A, "<H"),
     ("list_d8c_palette_offset_0D9E", 0x0D9E, "<H"),
+    ("list_d8c_iteration_count_0DA0", 0x0DA0, "<H"),
+    ("list_d8c_previous_tick_0DA2", 0x0DA2, "<H"),
     ("list_d8c_active_layout_0DA4", 0x0DA4, "<H"),
     ("list_d8c_active_row_mode_0DA6", 0x0DA6, "<H"),
     ("list_d8c_retired_segment_0DAA", 0x0DAA, "<H"),
-    ("list_d8c_read_wrap_index_0D60", 0x0D60, "<H"),
+    ("list_d8c_rollover_state_0DAC", 0x0DAC, "<B"),
     ("list_d8c_entry_metric_0DAF", 0x0DAF, "<H"),
+    ("resource_frame_presented_0DB8", 0x0DB8, "<B"),
     ("resource_draw_via_back_buffer_0DB9", 0x0DB9, "<B"),
     ("resource_decode_rectangular_0DBA", 0x0DBA, "<B"),
     ("resource_skip_back_buffer_present_0DBB", 0x0DBB, "<B"),
     ("resource_unclamped_row_count_0DBD", 0x0DBD, "<B"),
+    ("resource_source_is_banked_0DBC", 0x0DBC, "<B"),
     ("resource_decode_mode_0AA0", 0x0AA0, "<H"),
+    ("vm_c2_presentation_gate_1FB2", 0x1FB2, "<B"),
     ("vm_resource_handles_6712", 0x6712, "<5H"),
     ("vm_profile_cursor_6730", 0x6730, "<H"),
     ("vm_subtitle_wrap_marker_6732", 0x6732, "<H"),
@@ -107,7 +135,9 @@ STARTUP_GLOBALS = [
     ("presentation_mode_flag_27E1", 0x27E1, "<B"),
     ("presentation_box_phase_2B93", 0x2B93, "<h"),
     ("ship_3d_depth_offset_2527", 0x2527, "<H"),
+    ("ship_3d_scene_dispatch_blocked_252D", 0x252D, "<B"),
     ("ship_3d_plane_blit_crop_enabled_252E", 0x252E, "<B"),
+    ("nav_actor_transition_phase_2792", 0x2792, "<B"),
     ("graphics_draw_framebuffer_5219", 0x5219, "<HH"),
     ("graphics_screen_buffer_521D", 0x521D, "<HH"),
     ("graphics_display_buffer_5221", 0x5221, "<HH"),
@@ -128,6 +158,53 @@ RUNTIME_RANGES = [
     ("palette_control_5B51", 0x5B51, 8),
     ("bridge_panorama_palette_5B58", 0x5B58, 768),
 ]
+
+
+def locate_cpu_state(pid):
+    executable = os.path.realpath(f"/proc/{pid}/exe")
+    symbols = {}
+    output = subprocess.check_output(
+        ["nm", "-P", executable], text=True, stderr=subprocess.DEVNULL
+    )
+    for line in output.splitlines():
+        fields = line.split()
+        if len(fields) >= 3 and fields[0] in ("Segs", "cpu_regs"):
+            symbols[fields[0]] = int(fields[2], 16)
+    if set(symbols) != {"Segs", "cpu_regs"}:
+        return None
+
+    image_base = None
+    with open(f"/proc/{pid}/maps", encoding="ascii") as maps:
+        for line in maps:
+            fields = line.split()
+            if len(fields) < 6:
+                continue
+            mapped_path = fields[-1].removesuffix(" (deleted)")
+            if os.path.realpath(mapped_path) != executable:
+                continue
+            start = int(fields[0].split("-", 1)[0], 16)
+            offset = int(fields[2], 16)
+            image_base = start - offset
+            break
+    if image_base is None:
+        return None
+    return {
+        name: image_base + offset for name, offset in symbols.items()
+    }
+
+
+def read_cpu_state(mem, addresses):
+    if addresses is None:
+        return None
+    mem.seek(addresses["cpu_regs"])
+    registers = struct.unpack("<8I", mem.read(32))
+    ip = struct.unpack("<I", mem.read(4))[0]
+    segments = []
+    for index in range(6):
+        mem.seek(addresses["Segs"] + index * 8)
+        segments.append(struct.unpack("<Q", mem.read(8))[0] & 0xffff)
+    es, cs, ss, ds, fs, gs = segments
+    return (es, cs, ss, ds, fs, gs, ip) + registers
 
 
 def main():
@@ -229,6 +306,20 @@ def main():
         except FileNotFoundError:
             print("DOSBox-X exited before its memory could be opened")
             return
+        cpu_state_addresses = locate_cpu_state(pid)
+        cpu_state = read_cpu_state(mem, cpu_state_addresses)
+        if cpu_state is not None:
+            es, cs, ss, ds, fs, gs, ip, *registers = cpu_state
+            print(
+                "guest_cpu: "
+                f"cs:ip={cs:04x}:{ip & 0xffff:04x} "
+                f"ds={ds:04x} es={es:04x} ss={ss:04x} "
+                f"fs={fs:04x} gs={gs:04x} "
+                f"ax={registers[0] & 0xffff:04x} "
+                f"cx={registers[1] & 0xffff:04x} "
+                f"si={registers[6] & 0xffff:04x} "
+                f"di={registers[7] & 0xffff:04x}"
+            )
         best = None
         guest_memory_base = None
         candidates = []
@@ -341,6 +432,23 @@ def main():
                     f"vm_resource_image_{index}: pointer={segment:04x}:{offset:04x} "
                     f"head={data.hex()}"
                 )
+            mem.seek(best + 0x0CD3)
+            driver_offset, driver_segment = struct.unpack("<HH", mem.read(4))
+            mem.seek(
+                guest_memory_base
+                + guest_linear_bias
+                + driver_segment * 16
+            )
+            driver_data = mem.read(0x10000)
+            if dump_dir:
+                (output / f"{executable}.sound_driver_segment.bin").write_bytes(
+                    driver_data
+                )
+            print(
+                f"sound_driver: pointer={driver_segment:04x}:{driver_offset:04x} "
+                f"sha256={hashlib.sha256(driver_data).hexdigest()} "
+                f"head={driver_data[:64].hex()}"
+            )
             for name, pointer_offset in (
                 ("graphics_display_buffer", 0x5221),
                 ("graphics_back_buffer", 0x5229),
@@ -395,7 +503,14 @@ def main():
                 "presentation_flags,presentation_active,start_lock,owner,"
                 "primary_c4,wildcard,primary_kind,primary_related,"
                 "primary_value,mode_a,mode_b,box_phase,text_active"
+                ",resource_requested,resource_active,source_offset,source_remaining"
+                ",list_state,read_wrap,wrap_count,wrap_limit,secondary_wrap_limit"
+                ",head_offset,tail_offset,byte_count,iteration_count,entry_metric"
+                ",active_layout,active_row_mode,decode_mode,decode_rectangular"
+                ",draw_via_back_buffer,skip_back_buffer_present"
                 ",display_offset,display_segment,secondary_offset,secondary_segment"
+                ",guest_cs,guest_ip,guest_ds,guest_ss"
+                ",guest_ax,guest_cx,guest_si,guest_di"
             )
             previous_timer_base = None
             previous_phase = None
@@ -405,6 +520,13 @@ def main():
             previous_presentation_active = None
             previous_mode_b = None
             previous_box_phase = None
+            previous_resource_requested = None
+            previous_resource_active = None
+            previous_list_state = None
+            previous_entry_metric = None
+            previous_active_layout = None
+            previous_active_row_mode = None
+            previous_decode_mode = None
             anchor_corrupted = False
             next_heartbeat = time.monotonic()
             while time.monotonic() < deadline and db.poll() is None:
@@ -449,6 +571,13 @@ def main():
                         presentation_active = read_trace(0x67AC, "<B")
                         mode_b = read_trace(0x27E1, "<B")
                         box_phase = read_trace(0x2B93, "<h")
+                        resource_requested = read_trace(0x0D80, "<H")
+                        resource_active = read_trace(0x0D82, "<H")
+                        list_state = read_trace(0x0D5F, "<B")
+                        entry_metric = read_trace(0x0DAF, "<H")
+                        active_layout = read_trace(0x0DA4, "<H")
+                        active_row_mode = read_trace(0x0DA6, "<H")
+                        decode_mode = read_trace(0x0AA0, "<H")
                         phase = read_trace(0x6730, "<H")
                         primary_c4 = read_trace(0x675E, "<H")
                         primary_kind, primary_related, primary_value = (
@@ -474,10 +603,35 @@ def main():
                             event = "presentation_mode_changed"
                         elif box_phase != previous_box_phase:
                             event = "box_phase_changed"
+                        elif resource_requested != previous_resource_requested:
+                            event = "resource_requested_changed"
+                        elif resource_active != previous_resource_active:
+                            event = "resource_active_changed"
+                        elif list_state != previous_list_state:
+                            event = "list_state_changed"
+                        elif entry_metric != previous_entry_metric:
+                            event = "entry_metric_changed"
+                        elif active_layout != previous_active_layout:
+                            event = "active_layout_changed"
+                        elif active_row_mode != previous_active_row_mode:
+                            event = "active_row_mode_changed"
+                        elif decode_mode != previous_decode_mode:
+                            event = "decode_mode_changed"
                         elif trace_heartbeat > 0 and now >= next_heartbeat:
                             event = "heartbeat"
                         if event is not None:
                             next_heartbeat = now + trace_heartbeat
+                            cpu_state = read_cpu_state(
+                                trace_mem, cpu_state_addresses
+                            )
+                            if cpu_state is None:
+                                guest_es = guest_cs = guest_ss = guest_ds = 0
+                                guest_fs = guest_gs = guest_ip = 0
+                                guest_registers = (0,) * 8
+                            else:
+                                (guest_es, guest_cs, guest_ss, guest_ds,
+                                 guest_fs, guest_gs, guest_ip,
+                                 *guest_registers) = cpu_state
                             print(
                                 "trace: "
                                 f"{event},"
@@ -512,10 +666,38 @@ def main():
                                 f"{mode_b},"
                                 f"{box_phase},"
                                 f"{read_trace(0x5E64, '<B')},"
+                                f"{resource_requested},"
+                                f"{resource_active},"
+                                f"{read_trace(0x0D84, '<I')},"
+                                f"{read_trace(0x0D88, '<I')},"
+                                f"{list_state},"
+                                f"{read_trace(0x0D60, '<H')},"
+                                f"{read_trace(0x0D62, '<H')},"
+                                f"{read_trace(0x0D64, '<H')},"
+                                f"{read_trace(0x0D66, '<H')},"
+                                f"{read_trace(0x0D8C, '<H')},"
+                                f"{read_trace(0x0D90, '<H')},"
+                                f"{read_trace(0x0D9A, '<H')},"
+                                f"{read_trace(0x0DA0, '<H')},"
+                                f"{entry_metric},"
+                                f"{active_layout},"
+                                f"{active_row_mode},"
+                                f"{decode_mode},"
+                                f"{read_trace(0x0DBA, '<B')},"
+                                f"{read_trace(0x0DB9, '<B')},"
+                                f"{read_trace(0x0DBB, '<B')},"
                                 f"{read_trace(0x5221, '<H')},"
                                 f"{read_trace(0x5223, '<H')},"
                                 f"{read_trace(0x5229, '<H')},"
-                                f"{read_trace(0x522B, '<H')}"
+                                f"{read_trace(0x522B, '<H')},"
+                                f"{guest_cs:04x},"
+                                f"{guest_ip & 0xffff:04x},"
+                                f"{guest_ds:04x},"
+                                f"{guest_ss:04x},"
+                                f"{guest_registers[0] & 0xffff:04x},"
+                                f"{guest_registers[1] & 0xffff:04x},"
+                                f"{guest_registers[6] & 0xffff:04x},"
+                                f"{guest_registers[7] & 0xffff:04x}"
                             )
                         previous_timer_base = timer_base
                         previous_phase = phase
@@ -525,6 +707,13 @@ def main():
                         previous_presentation_active = presentation_active
                         previous_mode_b = mode_b
                         previous_box_phase = box_phase
+                        previous_resource_requested = resource_requested
+                        previous_resource_active = resource_active
+                        previous_list_state = list_state
+                        previous_entry_metric = entry_metric
+                        previous_active_layout = active_layout
+                        previous_active_row_mode = active_row_mode
+                        previous_decode_mode = decode_mode
                 except FileNotFoundError:
                     print(
                         "trace: emulator_exited "

@@ -14,17 +14,10 @@ typedef void (CB_FAR *bloodprg_snd_driver_callback)(cb_u16 command);
 typedef void (CB_FAR *bloodprg_snd_driver_init_callback)(
         cb_u16 configuration);
 #endif
-typedef cb_u16 (CB_FAR *bloodprg_audio_position_callback)(void);
+typedef cb_u16 CB_FAR bloodprg_audio_position_function(void);
+typedef bloodprg_audio_position_function
+        *bloodprg_audio_position_callback;
 typedef void (CB_FAR *bloodprg_snd_clip_callback)(cb_i16 clip_index);
-
-typedef union bloodprg_snd_driver_entry {
-    struct {
-        cb_u16 offset;
-        cb_u16 segment;
-    } address;
-    bloodprg_snd_driver_init_callback initialize;
-    bloodprg_snd_driver_callback command;
-} bloodprg_snd_driver_entry;
 
 typedef struct bloodprg_snd_stream_buffer {
     volatile cb_u8 CB_FAR *data;
@@ -48,6 +41,29 @@ typedef struct bloodprg_snd_clip_descriptor {
     volatile cb_u8 CB_FAR *data;
     cb_u16 byte_count;
 } bloodprg_snd_clip_descriptor;
+
+typedef void CB_FAR bloodprg_snd_stream_driver_function(
+        cb_u16 command,
+        volatile bloodprg_snd_stream_buffer CB_GAME_DATA *buffer,
+        volatile cb_u8 CB_FAR *cursor);
+typedef bloodprg_snd_stream_driver_function
+        *bloodprg_snd_stream_driver_callback;
+typedef void CB_FAR bloodprg_snd_clip_driver_function(
+        cb_u16 command,
+        volatile bloodprg_snd_clip_descriptor CB_GAME_DATA *clip);
+typedef bloodprg_snd_clip_driver_function
+        *bloodprg_snd_clip_driver_callback;
+
+typedef union bloodprg_snd_driver_entry {
+    struct {
+        cb_u16 offset;
+        cb_u16 segment;
+    } address;
+    bloodprg_snd_driver_init_callback initialize;
+    bloodprg_snd_driver_callback command;
+    bloodprg_snd_stream_driver_callback stream;
+    bloodprg_snd_clip_driver_callback clip;
+} bloodprg_snd_driver_entry;
 
 /* Original 0xBB9D switches DS to GS before using these ordinary globals. */
 extern bloodprg_snd_driver_callback snd_driver_callback; /* DS=GS:0x0CDF */
@@ -123,6 +139,14 @@ void CB_NEAR cb_snd_clip_play(cb_u16 command,
         volatile bloodprg_snd_clip_descriptor CB_GAME_DATA *clip);
 
 #if defined(__WATCOMC__)
+#pragma aux audio_position_driver_abi value [ax] modify exact [ax dx]
+#pragma aux (bloodprg_audio_position_function, audio_position_driver_abi)
+#pragma aux snd_stream_driver_abi parm [ax] [si] [es di] \
+        modify exact [ax bx cx dx si di]
+#pragma aux (bloodprg_snd_stream_driver_function, snd_stream_driver_abi)
+#pragma aux snd_clip_driver_abi parm [ax] [si] \
+        modify exact [ax bx cx dx si di]
+#pragma aux (bloodprg_snd_clip_driver_function, snd_clip_driver_abi)
 #pragma aux snd_driver_init_abi parm [ax] \
         modify exact [ax bx cx dx si di es]
 #pragma aux (bloodprg_snd_driver_init_function, \

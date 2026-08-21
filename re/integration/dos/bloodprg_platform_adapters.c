@@ -231,10 +231,7 @@ void CB_FAR small_text_render_far(
     small_text_render((const cb_u8 CB_NEAR *)text, x, y, color);
 }
 
-/* These six calls cross the two runtime service boundaries that are not
- * functions in BLOODPRG.EXE: the loaded sound driver and HIMEM.SYS. The
- * compiler pragmas keep the natural C-facing wrappers while preserving the
- * original register-level service contracts. */
+/* HIMEM.SYS uses command and result registers that have no natural C ABI. */
 #if defined(__WATCOMC__)
 #pragma aux cb_platform_xms_move = \
         "mov ah,0bh" \
@@ -253,26 +250,12 @@ void CB_FAR small_text_render_far(
         "inc dh" \
         "cb_xms_allocate_ok:" \
         parm [dx] value [dx ax] modify exact [ax bx cx dx]
-#pragma aux cb_platform_sound_stream = \
-        "call dword ptr snd_driver_entries[8]" \
-        parm [ax] [si] [es di] modify exact [ax bx cx dx si di]
-#pragma aux cb_platform_sound_clip = \
-        "call dword ptr snd_driver_entries[32]" \
-        parm [ax] [si] modify exact [ax bx cx dx si di]
 #endif
 
 static void cb_platform_xms_move(
         volatile bloodprg_xms_move_request CB_GAME_DATA *request);
 static void cb_platform_xms_release(cb_u16 handle);
 static cb_u32 cb_platform_xms_allocate(cb_u16 kilobytes);
-static void cb_platform_sound_stream(
-        cb_u16 command,
-        volatile bloodprg_snd_stream_buffer CB_GAME_DATA *buffer,
-        volatile cb_u8 CB_FAR *cursor);
-static void cb_platform_sound_clip(
-        cb_u16 command,
-        volatile bloodprg_snd_clip_descriptor CB_GAME_DATA *clip);
-
 void CB_NEAR cb_xms_move(
         volatile bloodprg_xms_move_request CB_GAME_DATA *request)
 {
@@ -297,7 +280,10 @@ void CB_NEAR cb_snd_stream_service(
         volatile bloodprg_snd_stream_buffer CB_GAME_DATA *buffer,
         volatile cb_u8 CB_FAR *cursor)
 {
-    cb_platform_sound_stream(command, buffer, cursor);
+    bloodprg_snd_stream_driver_callback driver;
+
+    driver = snd_driver_entries[6].stream;
+    driver(command, buffer, cursor);
 }
 
 void CB_NEAR cb_snd_stream_play(
@@ -305,12 +291,18 @@ void CB_NEAR cb_snd_stream_play(
         volatile bloodprg_snd_stream_buffer CB_GAME_DATA *buffer,
         volatile cb_u8 CB_FAR *cursor)
 {
-    cb_platform_sound_stream(command, buffer, cursor);
+    bloodprg_snd_stream_driver_callback driver;
+
+    driver = snd_driver_entries[2].stream;
+    driver(command, buffer, cursor);
 }
 
 void CB_NEAR cb_snd_clip_play(
         cb_u16 command,
         volatile bloodprg_snd_clip_descriptor CB_GAME_DATA *clip)
 {
-    cb_platform_sound_clip(command, clip);
+    bloodprg_snd_clip_driver_callback driver;
+
+    driver = snd_driver_entries[2].clip;
+    driver(command, clip);
 }

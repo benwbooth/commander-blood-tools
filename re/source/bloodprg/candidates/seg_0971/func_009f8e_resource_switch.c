@@ -25,8 +25,8 @@ int CB_NEAR resource_switch(cb_u16 resource_id)
     list_d8c_state_byte = 0;
     list_d8c_bounds_init();
 
-    resource_active_id = resource_id;
-    descriptor = lookup_table_1fb5(resource_id);
+    resource_active_id = resource_requested_id;
+    descriptor = lookup_table_1fb5(resource_active_id);
     descriptor->variant = resource_variant;
     resource_flags = (cb_u16)descriptor->flags
             | ((cb_u16)descriptor->variant << 8);
