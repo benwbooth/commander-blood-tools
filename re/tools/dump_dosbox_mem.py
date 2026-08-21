@@ -26,6 +26,10 @@ is in ACTIVE navigation — drive it there (see drive_real_game.sh) before dumpi
 Set BLOODPRG_INPUT_ACTIONS to newline-separated `wait`, `click`, `move_relative`,
 `mouse_button`, `mouse_down`, `mouse_up`, and `key` commands to capture memory
 after a reproducible interactive sequence instead of wait_secs.
+Set BLOODPRG_WAIT_GLOBAL to comma-separated `offset[:width]:value` conditions to
+resume until selected game-data values reach a state boundary before capturing.
+Set BLOODPRG_WAIT_IP_OUTSIDE to comma-separated `start:end` ranges when capture
+must also wait for a long-running guest routine to return.
 """
 import ctypes, hashlib, subprocess, time, os, re, shlex, struct, sys
 from pathlib import Path
@@ -167,6 +171,7 @@ STARTUP_GLOBALS = [
     ("graphics_draw_framebuffer_5219", 0x5219, "<HH"),
     ("graphics_screen_buffer_521D", 0x521D, "<HH"),
     ("graphics_display_buffer_5221", 0x5221, "<HH"),
+    ("bios_font_8x8_5225", 0x5225, "<HH"),
     ("graphics_back_buffer_5229", 0x5229, "<HH"),
     ("graphics_viewport_descriptor_522D", 0x522D, "<HH"),
     ("list_d8c_buffer_end_offset_5233", 0x5233, "<H"),
@@ -405,17 +410,6 @@ def main():
         drive_input_actions(db.pid, input_actions, env)
     else:
         time.sleep(wait)
-    if dump_dir:
-        subprocess.run(
-            [
-                "import", "-window", "root",
-                str(Path(dump_dir) / f"{executable}.screen.png"),
-            ],
-            env=env,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            check=False,
-        )
     pid = db.pid
     attached = False
     try:
@@ -432,19 +426,6 @@ def main():
             print("DOSBox-X exited before its memory could be opened")
             return
         cpu_state_addresses = locate_cpu_state(pid)
-        cpu_state = read_cpu_state(mem, cpu_state_addresses)
-        if cpu_state is not None:
-            es, cs, ss, ds, fs, gs, ip, *registers = cpu_state
-            print(
-                "guest_cpu: "
-                f"cs:ip={cs:04x}:{ip & 0xffff:04x} "
-                f"ds={ds:04x} es={es:04x} ss={ss:04x} "
-                f"fs={fs:04x} gs={gs:04x} "
-                f"ax={registers[0] & 0xffff:04x} "
-                f"cx={registers[1] & 0xffff:04x} "
-                f"si={registers[6] & 0xffff:04x} "
-                f"di={registers[7] & 0xffff:04x}"
-            )
         best = None
         guest_memory_base = None
         candidates = []
@@ -478,6 +459,137 @@ def main():
         if not best:
             print(f"DS anchor not found; candidates={candidates}")
             return
+        wait_global = os.environ.get("BLOODPRG_WAIT_GLOBAL")
+        if wait_global:
+            wait_conditions = []
+            for condition in wait_global.split(","):
+                fields = condition.split(":")
+                if len(fields) == 2:
+                    offset_text, value_text = fields
+                    width_text = "1"
+                elif len(fields) == 3:
+                    offset_text, width_text, value_text = fields
+                else:
+                    raise ValueError(
+                        "BLOODPRG_WAIT_GLOBAL entries must be offset[:width]:value"
+                    )
+                width = int(width_text, 0)
+                if width not in (1, 2, 4):
+                    raise ValueError("BLOODPRG_WAIT_GLOBAL width must be 1, 2, or 4")
+                wait_conditions.append((
+                    int(offset_text, 0),
+                    width,
+                    int(value_text, 0) & ((1 << (width * 8)) - 1),
+                ))
+            excluded_ip_ranges = []
+            for range_text in os.environ.get(
+                "BLOODPRG_WAIT_IP_OUTSIDE", ""
+            ).split(","):
+                if not range_text:
+                    continue
+                fields = range_text.split(":")
+                if len(fields) != 2:
+                    raise ValueError(
+                        "BLOODPRG_WAIT_IP_OUTSIDE ranges must be start:end"
+                    )
+                start, end = (int(field, 0) for field in fields)
+                if not 0 <= start < end <= 0x10000:
+                    raise ValueError(
+                        "BLOODPRG_WAIT_IP_OUTSIDE ranges must be within 16-bit IP"
+                    )
+                excluded_ip_ranges.append((start, end))
+            if excluded_ip_ranges and cpu_state_addresses is None:
+                raise RuntimeError(
+                    "DOSBox-X guest CPU symbols are unavailable for IP gating"
+                )
+            wait_deadline = time.monotonic() + float(
+                os.environ.get("BLOODPRG_WAIT_GLOBAL_TIMEOUT", "10")
+            )
+            while True:
+                current_values = []
+                for wait_offset, width, wait_value in wait_conditions:
+                    mem.seek(best + wait_offset)
+                    current_values.append(int.from_bytes(
+                        mem.read(width), "little"
+                    ))
+                current_cpu_state = read_cpu_state(mem, cpu_state_addresses)
+                current_ip = (
+                    current_cpu_state[6] & 0xFFFF
+                    if current_cpu_state is not None
+                    else None
+                )
+                globals_match = all(
+                    current == expected
+                    for current, (_, _, expected) in zip(
+                        current_values, wait_conditions
+                    )
+                )
+                ip_is_excluded = current_ip is not None and any(
+                    start <= current_ip < end
+                    for start, end in excluded_ip_ranges
+                )
+                if globals_match and not ip_is_excluded:
+                    print(
+                        "wait_global: "
+                        + ",".join(
+                            f"offset=0x{offset_:04x}/width={width}/"
+                            f"value=0x{value:0{width * 2}x}"
+                            for offset_, width, value in wait_conditions
+                        )
+                    )
+                    if excluded_ip_ranges:
+                        print(f"wait_ip_outside: ip=0x{current_ip:04x}")
+                    break
+                if time.monotonic() >= wait_deadline:
+                    raise RuntimeError(
+                        "timed out waiting for game-data conditions; last="
+                        + ",".join(
+                            f"0x{value:0{width * 2}x}"
+                            for value, (_, width, _) in zip(
+                                current_values, wait_conditions
+                            )
+                        )
+                        + (
+                            f",ip=0x{current_ip:04x}"
+                            if current_ip is not None
+                            else ""
+                        )
+                    )
+                mem.close()
+                libc.ptrace(PTRACE_DETACH, pid, None, None)
+                attached = False
+                time.sleep(0.01)
+                if libc.ptrace(PTRACE_ATTACH, pid, None, None) != 0:
+                    raise RuntimeError(
+                        f"ptrace attach failed while waiting: {ctypes.get_errno()}"
+                    )
+                attached = True
+                os.waitpid(pid, 0)
+                mem = open(f"/proc/{pid}/mem", "rb")
+        cpu_state = read_cpu_state(mem, cpu_state_addresses)
+        if cpu_state is not None:
+            es, cs, ss, ds, fs, gs, ip, *registers = cpu_state
+            print(
+                "guest_cpu: "
+                f"cs:ip={cs:04x}:{ip & 0xffff:04x} "
+                f"ds={ds:04x} es={es:04x} ss={ss:04x} "
+                f"fs={fs:04x} gs={gs:04x} "
+                f"ax={registers[0] & 0xffff:04x} "
+                f"cx={registers[1] & 0xffff:04x} "
+                f"si={registers[6] & 0xffff:04x} "
+                f"di={registers[7] & 0xffff:04x}"
+            )
+        if dump_dir:
+            subprocess.run(
+                [
+                    "import", "-window", "root",
+                    str(Path(dump_dir) / f"{executable}.screen.png"),
+                ],
+                env=env,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False,
+            )
         if guest_memory_base is not None:
             delta = best - guest_memory_base
             print(
@@ -533,6 +645,20 @@ def main():
                     guest_linear_bias = candidate_bias
                     break
             print(f"guest_linear_bias: {guest_linear_bias:+d}")
+            mem.seek(best + 0x5225)
+            font_offset, font_segment = struct.unpack("<HH", mem.read(4))
+            mem.seek(
+                guest_memory_base
+                + guest_linear_bias
+                + font_segment * 16
+                + font_offset
+                + 0x31 * 8
+            )
+            print(
+                f"bios_font_8x8_glyph_1: pointer="
+                f"{font_segment:04x}:{font_offset:04x} "
+                f"bytes={mem.read(8).hex()}"
+            )
             for index in range(5):
                 mem.seek(best + 0x671C + index * 4)
                 offset, segment = struct.unpack("<HH", mem.read(4))
