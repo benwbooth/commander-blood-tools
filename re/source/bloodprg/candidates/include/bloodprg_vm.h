@@ -436,7 +436,7 @@ void CB_NEAR presentation_scan(void);              /* 0x005816 */
 void CB_NEAR record_c1_ship3d_action(
         volatile bloodprg_vm_scan_object CB_FAR *object,
         volatile bloodprg_vm_record_triple CB_FAR *record); /* 0x005B38 */
-void CB_SAVE_REGS CB_NEAR vm_state_processor(void); /* 0x005A74 */
+void CB_NEAR vm_state_processor(void); /* 0x005A74 */
 int CB_NEAR vm_special_slot_remove(cb_u16 owner); /* 0x005FD8 */
 int CB_NEAR vm_special_slot_insert(cb_u16 owner); /* 0x005FF6 */
 int CB_NEAR vm_field_offset(cb_u16 selector, cb_u16 kind_mask); /* 0x006023 */

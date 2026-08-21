@@ -60,7 +60,7 @@ void CB_NEAR record_c1_ship3d_action(
     volatile bloodprg_vm_scan_object CB_FAR *prior;
     volatile bloodprg_vm_record_triple CB_FAR *reciprocal;
     volatile bloodprg_vm_record_triple CB_FAR *primary;
-    volatile ship_3d_position_field CB_NEAR *source_position;
+    volatile ship_3d_position_field CB_FAR *source_position;
     volatile ship_3d_position_field CB_FAR *owner_position;
     volatile ship_3d_position_field CB_FAR *related_position;
     volatile cb_u16 CB_FAR *word_field;
@@ -165,7 +165,8 @@ void CB_NEAR record_c1_ship3d_action(
 copy_position:
         related_offset = record->related;
         source_position = ship_3d_position_field_resolve(
-                (volatile bloodprg_vm_object_header CB_NEAR *)related_offset,
+                RECORD_AT(record_segment, related_offset,
+                    bloodprg_vm_object_header),
                 position_compare_word);
         if (source_position == 0) {
             return;

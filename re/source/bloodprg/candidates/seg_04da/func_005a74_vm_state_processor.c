@@ -5,60 +5,22 @@
 #define VM_STATE_RECORD_AT(base, offset) \
     ((volatile bloodprg_vm_state_record CB_FAR *)MK_FP( \
         FP_SEG(base), (offset)))
-#define VM_STATE_NEAR_RECORD(record) \
-    ((volatile bloodprg_vm_object_header CB_NEAR *)FP_OFF(record))
-#define VM_STATE_NEAR_OBJECT(offset) \
-    ((volatile bloodprg_vm_object_header CB_NEAR *)(offset))
-#define VM_STATE_POSITION_AT(base, offset) \
-    ((volatile ship_3d_position_field CB_FAR *)MK_FP( \
-        FP_SEG(base), (offset)))
 #else
 #define VM_STATE_RECORD_AT(base, offset) \
     ((volatile bloodprg_vm_state_record *)((base) + (offset)))
-#define VM_STATE_NEAR_RECORD(record) \
-    ((volatile bloodprg_vm_object_header *)(record))
-#define VM_STATE_NEAR_OBJECT(offset) \
-    ((volatile bloodprg_vm_object_header *)(offset))
-#define VM_STATE_POSITION_AT(base, offset) \
-    ((volatile ship_3d_position_field *)((base) + (offset)))
 #endif
 
-#if defined(__WATCOMC__)
-static cb_u16 CB_NEAR vm_state_position_resolve(
-        cb_u16 record_segment,
-        volatile bloodprg_vm_object_header CB_NEAR *record,
-        cb_u16 state);
-#pragma aux vm_state_position_resolve = \
-        "push ds" \
-        "mov ds,ax" \
-        "call ship_3d_position_field_resolve" \
-        "pop ds" \
-        parm [ax] [si] [dx] value [ax] \
-        modify exact [ax bx cx dx si di es]
-#else
-static cb_u16 CB_NEAR vm_state_position_resolve(
-        cb_u16 record_segment,
-        volatile bloodprg_vm_object_header CB_NEAR *record,
-        cb_u16 state)
-{
-    (void)record_segment;
-    return (cb_u16)ship_3d_position_field_resolve(record, state);
-}
-#endif
-
-void CB_SAVE_REGS CB_NEAR vm_state_processor(void)
+void CB_NEAR vm_state_processor(void)
 {
     volatile cb_u8 CB_FAR *record_base;
     bloodprg_vm_directory_ptr entry;
     volatile bloodprg_vm_state_record CB_FAR *record;
     volatile ship_3d_position_field CB_FAR *position;
     volatile ship_3d_position_field CB_FAR *comparison;
-    cb_u16 record_segment;
     cb_u16 record_offset;
     cb_u16 state;
 
     record_base = vm_record_base_gs;
-    record_segment = FP_SEG(record_base);
     entry = vm_record_directory_gs;
     do {
         record_offset = entry->object_offset;
@@ -72,17 +34,21 @@ void CB_SAVE_REGS CB_NEAR vm_state_processor(void)
                 state &= 0x7fefu;
             }
 
-            position = VM_STATE_POSITION_AT(record_base,
-                vm_state_position_resolve(record_segment,
-                    VM_STATE_NEAR_RECORD(record), state));
-            comparison = VM_STATE_POSITION_AT(record_base,
-                vm_state_position_resolve(record_segment,
-                    VM_STATE_NEAR_OBJECT(vm_named_orxx_object_gs), state));
+            position = ship_3d_position_field_resolve(
+                    (volatile bloodprg_vm_object_header CB_FAR *)record,
+                    state);
+            comparison = ship_3d_position_field_resolve(
+                    (volatile bloodprg_vm_object_header CB_FAR *)
+                        VM_STATE_RECORD_AT(
+                            record_base, vm_named_orxx_object_gs),
+                    state);
             if (*(volatile cb_u32 CB_FAR *)position !=
                     *(volatile cb_u32 CB_FAR *)comparison) {
-                comparison = VM_STATE_POSITION_AT(record_base,
-                    vm_state_position_resolve(record_segment,
-                        VM_STATE_NEAR_OBJECT(vm_arche_record_offset_gs), state));
+                comparison = ship_3d_position_field_resolve(
+                        (volatile bloodprg_vm_object_header CB_FAR *)
+                            VM_STATE_RECORD_AT(
+                                record_base, vm_arche_record_offset_gs),
+                        state);
                 if (*(volatile cb_u32 CB_FAR *)position !=
                         *(volatile cb_u32 CB_FAR *)comparison) {
                     record->state = state;

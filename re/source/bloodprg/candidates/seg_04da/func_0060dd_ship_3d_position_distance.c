@@ -7,8 +7,8 @@ cb_u16 CB_NEAR ship_3d_position_distance(
 {
     const volatile cb_u8 CB_NEAR *first_record_bytes;
     const volatile cb_u8 CB_NEAR *second_record_bytes;
-    const volatile ship_3d_position_field CB_NEAR *first;
-    const volatile ship_3d_position_field CB_NEAR *second;
+    const volatile ship_3d_position_field CB_FAR *first;
+    const volatile ship_3d_position_field CB_FAR *second;
     cb_u16 field_offset;
     cb_u16 compare_word;
     cb_u16 selector;
@@ -34,16 +34,16 @@ cb_u16 CB_NEAR ship_3d_position_distance(
             ? SHIP_3D_KIND100_POS_MATCH_FIELD
             : SHIP_3D_KIND100_POS_MISMATCH_FIELD;
         field_offset = (cb_u16)vm_field_offset(selector, first_record->kind);
-        first = (const volatile ship_3d_position_field CB_NEAR *)
+        first = (const volatile ship_3d_position_field CB_FAR *)
             (first_record_bytes + field_offset);
     } else if (first_record->kind == SHIP_3D_POS_KIND_DIRECT_40) {
         field_offset = (cb_u16)vm_field_offset(
             SHIP_3D_FIELD_SELECTOR_POSITION, first_record->kind);
-        first = (const volatile ship_3d_position_field CB_NEAR *)
+        first = (const volatile ship_3d_position_field CB_FAR *)
             (first_record_bytes + field_offset);
     } else {
         first = ship_3d_position_field_resolve(
-            (volatile bloodprg_vm_object_header CB_NEAR *)first_record,
+            (volatile bloodprg_vm_object_header CB_FAR *)first_record,
             compare_word);
     }
 
@@ -59,16 +59,16 @@ cb_u16 CB_NEAR ship_3d_position_distance(
             ? SHIP_3D_KIND100_POS_MATCH_FIELD
             : SHIP_3D_KIND100_POS_MISMATCH_FIELD;
         field_offset = (cb_u16)vm_field_offset(selector, second_record->kind);
-        second = (const volatile ship_3d_position_field CB_NEAR *)
+        second = (const volatile ship_3d_position_field CB_FAR *)
             (second_record_bytes + field_offset);
     } else if (second_record->kind == SHIP_3D_POS_KIND_DIRECT_40) {
         field_offset = (cb_u16)vm_field_offset(
             SHIP_3D_FIELD_SELECTOR_POSITION, second_record->kind);
-        second = (const volatile ship_3d_position_field CB_NEAR *)
+        second = (const volatile ship_3d_position_field CB_FAR *)
             (second_record_bytes + field_offset);
     } else {
         second = ship_3d_position_field_resolve(
-            (volatile bloodprg_vm_object_header CB_NEAR *)second_record,
+            (volatile bloodprg_vm_object_header CB_FAR *)second_record,
             compare_word);
     }
 

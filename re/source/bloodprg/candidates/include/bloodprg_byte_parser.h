@@ -8,7 +8,7 @@ typedef volatile char CB_GAME_DATA *cb_game_char_ptr;
 typedef volatile cb_u16 CB_GAME_DATA *cb_game_word_ptr;
 typedef volatile cb_u8 CB_FAR *cb_far_u8_ptr;
 
-extern volatile cb_u8 CB_FAR byte_parser_b16_flag;  /* GS:0x0B16 */
+extern volatile cb_u8 CB_GAME_DATA byte_parser_b16_flag; /* GS:0x0B16 */
 extern volatile cb_u16 CB_GAME_DATA descript_directory_count; /* GS:0x0AAE */
 extern volatile cb_u16 CB_GAME_DATA descript_record_length; /* GS:0x0AB0 */
 extern volatile char CB_GAME_DATA descript_database_path[]; /* GS:0x0106 */
@@ -53,17 +53,6 @@ extern volatile char CB_NEAR * volatile descript_text_record_cursor; /* DS:0x131
 extern volatile cb_u8 descript_text_record_count; /* DS:0x131E */
 extern volatile cb_u8 descript_text_records_remaining; /* DS:0x131F */
 extern volatile char descript_text_record_table[][16]; /* DS:0x1320 */
-
-#if defined(__WATCOMC__)
-static void CB_NEAR bloodprg_byte_parser_mark_b16_gs(void);
-#pragma aux bloodprg_byte_parser_mark_b16_gs = \
-        "mov byte ptr gs:[0b16h],1" \
-        modify exact []
-#pragma aux byte_parser_op_01_mark_b16 modify exact []
-#pragma aux byte_parser_op_02_mark_b16 modify exact []
-#pragma aux byte_parser_op_0f_mark_b16 modify exact []
-#pragma aux byte_parser_op_04_mark_b16 modify exact []
-#endif
 
 void CB_NEAR byte_parser_op_01_mark_b16(void); /* 0x007542 */
 void CB_NEAR byte_parser_op_02_mark_b16(void); /* 0x007549 */
