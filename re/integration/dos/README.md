@@ -218,15 +218,21 @@ title, bridge, an archive-only character cinematic, and the bridge again. That
 gate also exercises EMS archive-index mapping; function `44h` requires the
 logical page in `BX` and EMS handle in `DX`.
 
-The later opening checkpoint is still open. Both builds load byte-identical VM
-script resources into the same handles, but the relinked runtime remains at
-active line `0xFFFF` and UI state 65 while the original advances to line 2 and
-UI state 69 to display the title. Integrated tracing exposed one real cause:
-the nested VM block scanner preserved the floating script `DS` but addressed
-its handler table, yield byte, and skip byte as ordinary `DS` data. Those
-objects are now explicitly `GAME_DATA`-qualified in natural C, and the direct
-oracles still pass. The remaining gate is an audit of every routine reachable
-while `DS` points at script bytes.
+The later tutorial checkpoint now passes too. The optimized runtime drove
+`BPRG_RE.EXE` through SCRIPT1, selected CRYOBOX and BOB_MORLOCK, loaded
+`frigo.fd`, played Bob's mission dialogue, and loaded all five `script2`
+resources. It wrote a clean source-build `script2.state` at 7,032,702,499
+guest steps and resumed it through 7,064,702,499 without a fault. The
+corresponding original and source transition states agree:
+selected console item 3, transition phases `0x03` then `0x05`, and cryobox flag
+1. `TUTORIAL_STATE_DIR` keeps source and original save states separate;
+`TUTORIAL_MAX_ROUNDS` bounds a diagnostic run; and `TUTORIAL_STATE_TRACE=1`
+prints the transition gates. The driver waits for the presentation gate before
+clicking an instructed control, decodes the live CRYOBOX contact list, and uses
+the recovered list rectangle for Bob's mission prompt. Set
+`TUTORIAL_DECLINE_MISSION=1` to exercise the `NO` row; Bob intentionally
+explains the mission anyway. Progress no longer depends on a blind click
+landing on the right row.
 
 Nonvisual diagnostics default to DOSBox-X `core=normal` and `frameskip=10` to
 reduce host rendering work. `core=dynamic` was tested but rejected because it
@@ -363,9 +369,10 @@ before they are used to construct production overlays.
 fixed-offset experiment. It places a small host-ABI shim at raw offset zero,
 normally links every recovered C routine, derives the data-segment delta from
 the linked layout, and retains the original initialized data/work payload.
-The shim is the only assembly in this path: it converts the game's BP/SS
-request convention to Open Watcom's register convention and far-returns to the
-host. C routine lengths and addresses are otherwise unconstrained.
+The shim is the only assembly in this path: it establishes the compiler's
+forward-string-direction invariant, converts the game's BP/SS request
+convention to Open Watcom's register convention, and far-returns to the host.
+C routine lengths and addresses are otherwise unconstrained.
 
 Build any recovered module with:
 

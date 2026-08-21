@@ -5985,6 +5985,35 @@ not one-based offsets to `AC`. BloodScript now emits separate `YIELD_B` and
 `SELECTOR_NODE` statements and labels the actual node headers. All five shipped
 BAS files still compile byte-for-byte.
 
+## Natural-C SCRIPT2 handoff gate (2026-08-21)
+
+The fully relinked `BPRG_RE.EXE` now passes the SCRIPT1 tutorial boundary under
+the optimized Rust runtime at the original CPU timing. It selects CRYOBOX and
+BOB_MORLOCK, loads `frigo.fd`, plays Bob's mission dialogue, then opens
+`script2.cod`, `.bas`, `.var`, `.dic`, and `.deb`. A clean source-build
+`script2.state` was saved at 7,032,702,499 guest steps and resumed through
+7,064,702,499 without a fault.
+
+The first apparent source divergence was a driver error. TUTORIAL4 clicked the
+named control while `vm_presentation_active` was still set. The original only
+advanced because a later loop-number-dependent fallback click happened to land
+on CRYOBOX; the source build reached the instruction on a different round and
+the same blind click landed elsewhere. A state trace proved that both builds
+were identical before the click. The driver now waits for every gate used by
+the recovered dispatcher, reads the live contact labels through the active
+segment registers, and selects the row that decodes to `Bob_Morlock`. Both
+builds then follow the same transition values: selected item 3, phase `0x03`,
+`frigo.fd`, phase `0x05`, cryobox flag 1. This is evidence for retaining the
+natural C and accelerating the runtime, not adding inline assembly.
+
+The XDB gameplay loops no longer issue `CLD` themselves. Removing it from the
+entire call path made AMER, CROOLIS, and MANU3 pass but caused SCRUT to corrupt
+the DOS MCB chain, proving that a caller can enter with the direction flag set.
+One `CLD` now lives in the generated raw-overlay entry shim, where the foreign
+BP/SS ABI is converted to the compiler ABI. All four source-linked XDB DOS gates
+pass with that single boundary instruction; no recovered gameplay function
+contains inline assembly for direction handling.
+
 ## BAS selector-node boundary corrected (2026-08-14)
 
 The former five-byte `AC + selector + continuation` grouping was byte-exact but

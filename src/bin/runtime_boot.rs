@@ -33,6 +33,49 @@ fn read_word(rt: &Runtime, segment: u16, offset: u32) -> u16 {
     u16::from_le_bytes([rt.m.read8(segment, offset), rt.m.read8(segment, offset + 1)])
 }
 
+fn nav_kind2_labels(rt: &Runtime, game_segment: u16) -> Vec<String> {
+    let label_segment = read_word(rt, game_segment, 0x6726);
+    // The original builds this temporary list through ES; the source runtime
+    // may alias it into DGROUP. Resolve the live segment instead of guessing.
+    let segments = [
+        game_segment,
+        rt.m.regs.ds,
+        rt.m.regs.es,
+        rt.m.regs.ss,
+        rt.m.regs.gs,
+    ];
+    for segment in segments {
+        for list_offset in [0x2b13u32, 0x6d3e] {
+            let mut labels = Vec::new();
+            for index in 0..64u32 {
+                let offset = read_word(rt, segment, list_offset + index * 2);
+                if offset == 0 || offset == 0xffff {
+                    break;
+                }
+                let label: String = (0..80u32)
+                    .map(|delta| rt.m.read8(label_segment, offset as u32 + delta))
+                    .take_while(|&byte| byte != 0)
+                    .map(|byte| {
+                        if byte.is_ascii_graphic() || byte == b' ' {
+                            byte as char
+                        } else {
+                            '?'
+                        }
+                    })
+                    .collect();
+                labels.push(label);
+            }
+            if labels
+                .iter()
+                .any(|label| label.to_ascii_uppercase().contains("BOB"))
+            {
+                return labels;
+            }
+        }
+    }
+    Vec::new()
+}
+
 fn main() {
     let mut steps: u64 = 400_000_000;
     let mut shot_every: u64 = 10_000_000;
@@ -118,7 +161,10 @@ fn main() {
     rt.set_cpu_multiplier(cpu_multiplier);
 
     if let Some((skip, window, path)) = lockstep {
-        eprintln!("lockstep: skip={skip} window={window} -> {}", path.display());
+        eprintln!(
+            "lockstep: skip={skip} window={window} -> {}",
+            path.display()
+        );
         rt.lockstep_capture(skip, window, &path).unwrap();
         eprintln!("lockstep capture done ({} steps reached)", rt.cpu.steps);
         return;
@@ -222,7 +268,11 @@ fn main() {
             if rt.cpu.steps >= next_input {
                 rt.inject_key(0x01, 0x1b);
                 rt.inject_key(0x1c, 0x0d);
-                let input_y = if read_word(&rt, g, 0x2793) == 0x0045 { 170 } else { 100 };
+                let input_y = if read_word(&rt, g, 0x2793) == 0x0045 {
+                    170
+                } else {
+                    100
+                };
                 rt.set_mouse_pos(320, input_y);
                 rt.mouse_press(0);
                 let release_at = rt.cpu.steps + 400_000u64.saturating_mul(cpu_multiplier);
@@ -230,8 +280,7 @@ fn main() {
                 rt.mouse_release(0);
                 let release_deadline = rt.cpu.steps + input_interval;
                 while read_word(&rt, g, 0x0a30) != 0 && rt.cpu.steps < release_deadline {
-                    let poll_at = (rt.cpu.steps
-                        + 100_000u64.saturating_mul(cpu_multiplier))
+                    let poll_at = (rt.cpu.steps + 100_000u64.saturating_mul(cpu_multiplier))
                         .min(release_deadline);
                     run_to(&mut rt, poll_at);
                 }
@@ -269,14 +318,21 @@ fn main() {
         // Run to `steps`, then print the ASCII string at gs:<off> (default 0xe18 subtitle buffer).
         let off: u32 = u32::from_str_radix(w.trim_start_matches("0x"), 16).unwrap_or(0xe18);
         let _ = rt.run(steps);
-        let g = 0x0e84u16;
+        let g = game_data_segment(&rt).unwrap_or_else(|error| {
+            eprintln!("READSTR: {error}");
+            std::process::exit(1);
+        });
         let mut s = String::new();
         for i in 0..80 {
             let b = rt.m.read8(g, off + i);
             if b == 0 {
                 break;
             }
-            s.push(if (0x20..0x7f).contains(&b) { b as char } else { '.' });
+            s.push(if (0x20..0x7f).contains(&b) {
+                b as char
+            } else {
+                '.'
+            });
         }
         println!("@{} gs:{off:#06x} = {s:?}", rt.cpu.steps);
         return;
@@ -287,11 +343,16 @@ fn main() {
         // the intro plays naturally) and merge the file-opens with the SB audio-playback starts
         // into one step-stamped timeline — the ground truth the port's early sequence is diffed
         // against ("what asset loads / audio starts, and when"). Frames every 1M steps for the eye.
-        let limit: u64 = std::env::var("STEPS").ok().and_then(|s| s.parse().ok()).unwrap_or(40_000_000);
+        let limit: u64 = std::env::var("STEPS")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(40_000_000);
         let mut next_shot = 0u64;
         // DISMISS_AT=<steps>: inject one Enter there (dismiss the title so the
         // tutorial's scripted sequence plays hands-off — the event-order oracle).
-        let dismiss: Option<u64> = std::env::var("DISMISS_AT").ok().and_then(|v| v.parse().ok());
+        let dismiss: Option<u64> = std::env::var("DISMISS_AT")
+            .ok()
+            .and_then(|v| v.parse().ok());
         let mut dismissed = false;
         while rt.cpu.steps < limit {
             let mut target = next_shot.min(limit);
@@ -320,11 +381,16 @@ fn main() {
                 next_shot += 1_000_000;
             }
         }
-        enum Ev { Open(String), Audio(u32, u32) }
+        enum Ev {
+            Open(String),
+            Audio(u32, u32),
+        }
         let mut tl: Vec<(u64, Ev)> = Vec::new();
         let mut seen = std::collections::HashSet::new();
         for (step, path) in &rt.opened_files {
-            if seen.insert(path.clone()) { tl.push((*step, Ev::Open(path.clone()))); }
+            if seen.insert(path.clone()) {
+                tl.push((*step, Ev::Open(path.clone())));
+            }
         }
         for (step, len, rate) in &rt.sb_play_log {
             tl.push((*step, Ev::Audio(*len, *rate)));
@@ -334,7 +400,9 @@ fn main() {
         for (step, ev) in &tl {
             match ev {
                 Ev::Open(p) => println!("  @{step:>10}  OPEN   {p}"),
-                Ev::Audio(len, rate) => println!("  @{step:>10}  AUDIO  play {len}B @ {rate}Hz  <== sound starts"),
+                Ev::Audio(len, rate) => {
+                    println!("  @{step:>10}  AUDIO  play {len}B @ {rate}Hz  <== sound starts")
+                }
             }
         }
         println!("total audio-play events: {}", rt.sb_play_log.len());
@@ -364,7 +432,8 @@ fn main() {
             }
             if rt.cpu.steps >= next_shot {
                 let m = rt.cpu.steps / 1_000_000;
-                rt.write_ppm(&out.join(format!("skip_{m:05}M.ppm"))).unwrap();
+                rt.write_ppm(&out.join(format!("skip_{m:05}M.ppm")))
+                    .unwrap();
                 next_shot += 15_000_000;
             }
         }
@@ -380,7 +449,11 @@ fn main() {
                 println!("  @{:>10} {path}", step);
             }
         }
-        println!("SKIPPROBE done -> {}/skip_*.ppm + skip_navstate.bin @ {} steps", out.display(), rt.cpu.steps);
+        println!(
+            "SKIPPROBE done -> {}/skip_*.ppm + skip_navstate.bin @ {} steps",
+            out.display(),
+            rt.cpu.steps
+        );
         return;
     }
 
@@ -417,7 +490,8 @@ fn main() {
             let _ = rt.run(rt.cpu.steps + 150_000);
             rt.mouse_release(0);
             let _ = rt.run(rt.cpu.steps + 5_000_000);
-            rt.write_ppm(&out.join(format!("click_{i:02}_{sx}_{sy}.ppm"))).unwrap();
+            rt.write_ppm(&out.join(format!("click_{i:02}_{sx}_{sy}.ppm")))
+                .unwrap();
             println!("click ({sx},{sy}): opened since start:");
             for (_, p) in rt.opened_files.iter().skip(before) {
                 println!("    {p}");
@@ -453,7 +527,8 @@ fn main() {
                 let _ = rt.run(rt.cpu.steps + 800_000);
                 rt.mouse_release(0);
                 let _ = rt.run(rt.cpu.steps + 4_000_000);
-                rt.write_ppm(&out.join(format!("exp_{shot:02}_p{pass}_y{sy}.ppm"))).unwrap();
+                rt.write_ppm(&out.join(format!("exp_{shot:02}_p{pass}_y{sy}.ppm")))
+                    .unwrap();
                 shot += 1;
                 rt.inject_key(0x01, 0x1b); // Esc back
                 let _ = rt.run(rt.cpu.steps + 2_000_000);
@@ -466,7 +541,11 @@ fn main() {
                 println!("  @{:>10} {path}", step);
             }
         }
-        println!("EXPLORE done -> {}/exp_*.ppm ({} steps)", out.display(), rt.cpu.steps);
+        println!(
+            "EXPLORE done -> {}/exp_*.ppm ({} steps)",
+            out.display(),
+            rt.cpu.steps
+        );
         return;
     }
 
@@ -526,7 +605,8 @@ fn main() {
             let _ = rt.run(rt.cpu.steps + 1_000_000);
             rt.mouse_release(0);
             let _ = rt.run(rt.cpu.steps + 6_000_000);
-            rt.write_ppm(&out.join(format!("menu_{:02}_row{sy}.ppm", i + 1))).unwrap();
+            rt.write_ppm(&out.join(format!("menu_{:02}_row{sy}.ppm", i + 1)))
+                .unwrap();
             // try Esc to back out to the menu before the next probe
             rt.inject_key(0x01, 0x1b);
             let _ = rt.run(rt.cpu.steps + 3_000_000);
@@ -573,7 +653,11 @@ fn main() {
                 if seen.insert((cs, ip, id, field)) {
                     println!(
                         "NAVENT {cs:04x}:{ip:04x} -> entity {id:#04x} field +{field:#04x} = {v:#04x}{}",
-                        if field == 0 && v & 0x80 != 0 { "  <== ACTIVE BIT SET" } else { "" }
+                        if field == 0 && v & 0x80 != 0 {
+                            "  <== ACTIVE BIT SET"
+                        } else {
+                            ""
+                        }
                     );
                 }
                 if seen.len() > 40 {
@@ -685,7 +769,11 @@ fn main() {
     if std::env::var("INPUTPROBE").is_ok() {
         // Reach the bridge state, snapshot, inject mouse motion + clicks + keys, run on,
         // and report whether the frame / nav data changed (i.e. is it interactive?).
-        let reach: u64 = std::env::var("REACH").ok().and_then(|s| s.parse().ok()).unwrap_or(500) * 1_000_000;
+        let reach: u64 = std::env::var("REACH")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(500)
+            * 1_000_000;
         let _ = rt.run(reach);
         let g = 0x0e84u16;
         let snap_frame = rt.m.mem.clone();
@@ -693,7 +781,14 @@ fn main() {
         rt.write_ppm(&out.join("probe_before.ppm")).unwrap();
         eprintln!("reached {reach} steps; injecting input");
         // Sweep the mouse across the screen and click at several spots; also press a few keys.
-        let spots = [(160u16, 100u16), (80, 60), (240, 60), (160, 150), (60, 180), (260, 180)];
+        let spots = [
+            (160u16, 100u16),
+            (80, 60),
+            (240, 60),
+            (160, 150),
+            (60, 180),
+            (260, 180),
+        ];
         for (i, &(sx, sy)) in spots.iter().enumerate() {
             rt.set_mouse_pos(sx * 2, sy);
             let _ = rt.run(rt.cpu.steps + 2_000_000);
@@ -710,10 +805,25 @@ fn main() {
         let _ = rt.run(rt.cpu.steps + 20_000_000);
         rt.write_ppm(&out.join("probe_after.ppm")).unwrap();
         let nav_after: Vec<u8> = (0..88).map(|i| rt.m.read8(g, 0x4f09 + i)).collect();
-        let mem_changed = rt.m.mem.iter().zip(snap_frame.iter()).filter(|(a, b)| a != b).count();
-        let nav_changed = nav_before.iter().zip(nav_after.iter()).filter(|(a, b)| a != b).count();
-        println!("INPUTPROBE: {} RAM bytes changed since snapshot; {}/88 nav-anchor bytes changed", mem_changed, nav_changed);
-        println!("  (frames: probe_before.ppm vs probe_after.ppm in {})", out.display());
+        let mem_changed =
+            rt.m.mem
+                .iter()
+                .zip(snap_frame.iter())
+                .filter(|(a, b)| a != b)
+                .count();
+        let nav_changed = nav_before
+            .iter()
+            .zip(nav_after.iter())
+            .filter(|(a, b)| a != b)
+            .count();
+        println!(
+            "INPUTPROBE: {} RAM bytes changed since snapshot; {}/88 nav-anchor bytes changed",
+            mem_changed, nav_changed
+        );
+        println!(
+            "  (frames: probe_before.ppm vs probe_after.ppm in {})",
+            out.display()
+        );
         return;
     }
 
@@ -749,8 +859,14 @@ fn main() {
         // advances the SCRIPT1 tutorial dialogue but never triggers a scene transition to
         // SCRIPT2 (the credit-divergence scene-coordinator bug — see re/REVERSE.md).
         let targets = [
-            (125u16, 118u16), (230, 88), (230, 103), (230, 118), (230, 133), (230, 148),
-            (110, 88), (115, 102),
+            (125u16, 118u16),
+            (230, 88),
+            (230, 103),
+            (230, 118),
+            (230, 133),
+            (230, 148),
+            (110, 88),
+            (115, 102),
         ];
         let baseline = rt.opened_files.len();
         let mut reached2 = false;
@@ -766,22 +882,32 @@ fn main() {
             // a location loaded). Report the moment it happens.
             if rt.opened_files.len() > baseline {
                 let newest: Vec<String> = rt.opened_files[baseline..]
-                    .iter().map(|(_, p)| p.clone()).collect();
+                    .iter()
+                    .map(|(_, p)| p.clone())
+                    .collect();
                 let has2 = newest.iter().any(|p| p.to_lowercase().contains("script2"));
                 println!("round {round:2} NEW files since console: {newest:?} script2={has2}");
                 if has2 || round % 10 == 0 {
-                    rt.write_ppm(&out.join(format!("tut_r{round:03}.ppm"))).unwrap();
+                    rt.write_ppm(&out.join(format!("tut_r{round:03}.ppm")))
+                        .unwrap();
                 }
                 if has2 {
                     reached2 = true;
                     break;
                 }
             } else if round % 20 == 0 {
-                println!("round {round:3} click({sx},{sy}) files={} (no new scene yet)", rt.opened_files.len());
-                rt.write_ppm(&out.join(format!("tut_r{round:03}.ppm"))).unwrap();
+                println!(
+                    "round {round:3} click({sx},{sy}) files={} (no new scene yet)",
+                    rt.opened_files.len()
+                );
+                rt.write_ppm(&out.join(format!("tut_r{round:03}.ppm")))
+                    .unwrap();
             }
         }
-        println!("TUTORIAL done, reached_script2={reached2} @ {} steps", rt.cpu.steps);
+        println!(
+            "TUTORIAL done, reached_script2={reached2} @ {} steps",
+            rt.cpu.steps
+        );
         // Locate the REAL tutorial-subtitle buffer: scan RAM for the on-screen text so a
         // future run can read tutorial STATE (gs:0xe18 held stale attract text).
         for needle in ["waiting", "Bob", "Click quick", "found"] {
@@ -818,26 +944,33 @@ fn main() {
         //   gs:0x278b = station/view state byte (cmp 8 gates the console one-shot draw)
         // while injecting candidate rotation inputs (mouse at screen edges, arrow keys),
         // capturing a frame after each so the port's TB.BIG rendering can be pixel-diffed.
-        let g = 0x0e84u16;
+        let g = game_data_segment(&rt).unwrap_or_else(|error| {
+            eprintln!("BRIDGEPROBE: {error}");
+            std::process::exit(1);
+        });
+        let scaled_steps = |steps: u64| steps.saturating_mul(cpu_multiplier);
         let state = |rt: &Runtime| {
             let fr = rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
             let ang = rt.m.read8(g, 0x0a2a) as u16 | ((rt.m.read8(g, 0x0a2b) as u16) << 8);
             let st = rt.m.read8(g, 0x278b);
             (fr, ang, st)
         };
-        let mut next_input = 5_000_000u64;
-        while rt.cpu.steps < 50_000_000 {
+        let mut next_input = scaled_steps(5_000_000);
+        while rt.cpu.steps < scaled_steps(50_000_000) {
             let _ = rt.run(next_input);
             rt.inject_key(0x01, 0x1b);
             rt.inject_key(0x1c, 0x0d);
             rt.set_mouse_pos(320, 100);
             rt.mouse_press(0);
-            let _ = rt.run(rt.cpu.steps + 400_000);
+            let _ = rt.run(rt.cpu.steps + scaled_steps(400_000));
             rt.mouse_release(0);
-            next_input += 5_000_000;
+            next_input += scaled_steps(5_000_000);
         }
         let (fr, ang, st) = state(&rt);
-        println!("console reached: tb_frame={fr} angle={ang:#x} station={st:#x} @ {} steps", rt.cpu.steps);
+        println!(
+            "console reached: tb_frame={fr} angle={ang:#x} station={st:#x} @ {} steps",
+            rt.cpu.steps
+        );
         rt.write_ppm(&out.join("bridge_00_console.ppm")).unwrap();
         // BRIDGEPROBE + PROFILEJUMP composed: the standalone PROFILEJUMP probe
         // returns before this drive logic runs, and BOTH of its other entry points
@@ -881,15 +1014,22 @@ fn main() {
             // unless ALL of these are clear: [0x1FB2]&1, [0x2736]|[0x2737]|
             // [0x259B]|[0xB13], [0x67AC]&1, and [0x2A19] must be 0. Measure them
             // instead of guessing which one blocks the click.
-            for (n, a) in [("0x1FB2", 0x1FB2u32), ("0x2736", 0x2736), ("0x2737", 0x2737),
-                           ("0x259B", 0x259B), ("0x0B13", 0x0B13), ("0x67AC", 0x67AC),
-                           ("0x2A19", 0x2A19), ("0xA3E", 0x0A3E)] {
+            for (n, a) in [
+                ("0x1FB2", 0x1FB2u32),
+                ("0x2736", 0x2736),
+                ("0x2737", 0x2737),
+                ("0x259B", 0x259B),
+                ("0x0B13", 0x0B13),
+                ("0x67AC", 0x67AC),
+                ("0x2A19", 0x2A19),
+                ("0xA3E", 0x0A3E),
+            ] {
                 print!("{n}={:#04x} ", rt.m.read8(g, a));
             }
             println!("<- 0x85E2 dispatch gates");
             let cx = (left + right) / 2;
             let _ = (left, right, top, pitch, cx); // recomputed per click below
-            let mut click_at = |rt: &mut Runtime, sx: i32, sy: i32, menu_row: i32| {
+            let click_at = |rt: &mut Runtime, sx: i32, sy: i32, menu_row: i32| {
                 let fr = state(rt).0 as i32;
                 let ring = ((sx + fr * 8 - 160).rem_euclid(1440)) as u16;
                 rt.set_mouse_pos(ring, sy as u16);
@@ -914,12 +1054,11 @@ fn main() {
                 // motion also steers (the box slides left as the frame rises), so
                 // cursor and box converge: nudge right until x is inside [left,
                 // right], settle y onto the target row, then press.
-                let mut nudged = false;
                 for _ in 0..60 {
-                    let cur_x = rt.m.read8(g, 0x0A2A) as i32
-                        | ((rt.m.read8(g, 0x0A2B) as i32) << 8);
-                    let cur_y = rt.m.read8(g, 0x0A2C) as i32
-                        | ((rt.m.read8(g, 0x0A2D) as i32) << 8);
+                    let cur_x =
+                        rt.m.read8(g, 0x0A2A) as i32 | ((rt.m.read8(g, 0x0A2B) as i32) << 8);
+                    let cur_y =
+                        rt.m.read8(g, 0x0A2C) as i32 | ((rt.m.read8(g, 0x0A2D) as i32) << 8);
                     let live_fr = state(rt).0 as i32;
                     let d = live_fr - 45;
                     let r = 0x11F - d * 8;
@@ -929,7 +1068,11 @@ fn main() {
                     // Empirical calibration: aiming y=135 registered [0x2A19]=5
                     // (row index 4), so the observed rows sit one pitch lower than
                     // t + row*p; subtract a pitch to land the requested row.
-                    let target_y = if menu_row >= 0 { t + menu_row * p - p } else { sy as i32 };
+                    let target_y = if menu_row >= 0 {
+                        t + menu_row * p - p
+                    } else {
+                        sy as i32
+                    };
                     let want_x = if menu_row >= 0 { (l + r) / 2 } else { sx };
                     let _ = want_x;
                     let ey = target_y - cur_y;
@@ -947,15 +1090,14 @@ fn main() {
                     // the cursor to the 287/frame-64 attractor with the box fled to
                     // 25..135. The cursor rests at x=40 and the box slides toward it
                     // as the frame drifts, so leaving x alone is what lets them meet.
-                    let _ = (nudged, inside, l, r);
+                    let _ = (inside, l, r);
                     if ey.abs() > 2 {
                         rt.move_mouse_rel(0, ey.clamp(-32, 32));
                     }
                     let _ = rt.run(rt.cpu.steps + 700_000);
                 }
                 {
-                    let cx2 = rt.m.read8(g, 0x0A2A) as i32
-                        | ((rt.m.read8(g, 0x0A2B) as i32) << 8);
+                    let cx2 = rt.m.read8(g, 0x0A2A) as i32 | ((rt.m.read8(g, 0x0A2B) as i32) << 8);
                     let fr2 = state(rt).0 as i32;
                     let r2 = 0x11F - (fr2 - 45) * 8;
                     println!("  press: x={cx2} box={}..{r2} frame={fr2}", r2 - 0x6E);
@@ -983,19 +1125,27 @@ fn main() {
                 let t = 0x48 + d.abs() + d.abs() / 4;
                 let p = 0x12 - (d.abs() / 4) / 2;
                 let (sx, sy) = ((l + r) / 2, t + row * p.max(1));
-                println!("  settled frame={fr} box x={l}..{r} top={t} pitch={p} -> click ({sx},{sy})");
+                println!(
+                    "  settled frame={fr} box x={l}..{r} top={t} pitch={p} -> click ({sx},{sy})"
+                );
                 click_at(rt, sx, sy, row);
             };
             menu_row_click(&mut rt, 3);
-            println!("GAMESTART after MENU click: [0x27E0]={:#04x} [0x2A19]={:#06x}",
-                     rt.m.read8(g, 0x27E0), rt.m.read8(g, 0x2A19) as u16);
+            println!(
+                "GAMESTART after MENU click: [0x27E0]={:#04x} [0x2A19]={:#06x}",
+                rt.m.read8(g, 0x27E0),
+                rt.m.read8(g, 0x2A19) as u16
+            );
             // The submenu {EXPLANATIONS, GAME} is the universal choice box; its
             // rows are centred by row count (choice_box_top_y: (200-(n*11+8))/2+4).
             let sub_top = (200 - (2 * 11 + 8)) / 2 + 4;
             for (i, name) in ["EXPLANATIONS", "GAME"].iter().enumerate() {
                 click_at(&mut rt, 100, sub_top + i as i32 * 11, -1);
-                println!("GAMESTART after {name} click: [0x27E0]={:#04x} [0x67AC]={:#04x}",
-                         rt.m.read8(g, 0x27E0), rt.m.read8(g, 0x67AC));
+                println!(
+                    "GAMESTART after {name} click: [0x27E0]={:#04x} [0x67AC]={:#04x}",
+                    rt.m.read8(g, 0x27E0),
+                    rt.m.read8(g, 0x67AC)
+                );
                 if rt.m.read8(g, 0x27E0) & 1 != 0 {
                     println!("GAMESTART *** gameplay VM gate is now SET by '{name}' ***");
                     break;
@@ -1011,22 +1161,37 @@ fn main() {
                 rt.m.read8(g, a) as u32 | ((rt.m.read8(g, a + 1) as u32) << 8)
             };
             let busy: [(&str, u32); 10] = [
-                ("0x67AC", 0x67AC), ("0x24F3", 0x24F3), ("0x2751", 0x2751),
-                ("0x67B0", 0x67B0), ("0x5E64", 0x5E64), ("0x2565", 0x2565),
-                ("0x2736", 0x2736), ("0x2737", 0x2737), ("0x27DA", 0x27DA),
+                ("0x67AC", 0x67AC),
+                ("0x24F3", 0x24F3),
+                ("0x2751", 0x2751),
+                ("0x67B0", 0x67B0),
+                ("0x5E64", 0x5E64),
+                ("0x2565", 0x2565),
+                ("0x2736", 0x2736),
+                ("0x2737", 0x2737),
+                ("0x27DA", 0x27DA),
                 ("0x2792", 0x2792),
             ];
             let report = |rt: &Runtime, tag: &str| {
-                let set: Vec<String> = busy.iter()
+                let set: Vec<String> = busy
+                    .iter()
                     .filter(|(_, a)| rt.m.read8(g, *a) != 0)
                     .map(|(n, a)| format!("{n}={:#04x}", rt.m.read8(g, *a)))
                     .collect();
                 println!(
                     "PROFILEJUMP[{tag}] block {:04x}:{:04x} pending={} busy=[{}] \
                      [0x27E0]={:#04x} [0x67A8]={:#04x} @ {} steps",
-                    w16(rt, 0x6726), w16(rt, 0x6724), w16(rt, 0x6780) as i32,
-                    if set.is_empty() { "idle".into() } else { set.join(",") },
-                    rt.m.read8(g, 0x27E0), rt.m.read8(g, 0x67A8), rt.cpu.steps
+                    w16(rt, 0x6726),
+                    w16(rt, 0x6724),
+                    w16(rt, 0x6780) as i32,
+                    if set.is_empty() {
+                        "idle".into()
+                    } else {
+                        set.join(",")
+                    },
+                    rt.m.read8(g, 0x27E0),
+                    rt.m.read8(g, 0x67A8),
+                    rt.cpu.steps
                 );
             };
             report(&rt, "at-console");
@@ -1059,25 +1224,30 @@ fn main() {
             println!(
                 "PROFILEJUMP gates: [0x27E0]={:#04x} [0x67A8]={:#04x} [0x67AD]={:#04x} \
                  res[0x6712]={:04x}:{:04x} res[0x6716]={:04x}:{:04x}",
-                rt.m.read8(g, 0x27E0), rt.m.read8(g, 0x67A8), rt.m.read8(g, 0x67AD),
-                w16(&rt, 0x6714), w16(&rt, 0x6712), w16(&rt, 0x6718), w16(&rt, 0x6716)
+                rt.m.read8(g, 0x27E0),
+                rt.m.read8(g, 0x67A8),
+                rt.m.read8(g, 0x67AD),
+                w16(&rt, 0x6714),
+                w16(&rt, 0x6712),
+                w16(&rt, 0x6718),
+                w16(&rt, 0x6716)
             );
             let (boff, bseg) = (w16(&rt, 0x6724), w16(&rt, 0x6726));
             if bseg > 0 {
                 let lin = bseg as usize * 16 + boff as usize + 0x103A;
                 rt.m.watch_addr = Some(lin);
                 println!("PROFILEJUMP rec_103A write-watch armed at lin {lin:#x}");
-            // The switch leaves the PER-FRAME GAMEPLAY GATE clear: [0x27E0]&1
-            // gates vm_run_wrapper (0x55A4), which IS the VM's per-frame
-            // execution, and the ONLY setter in the binary is 0x0FC3 — part of the
-            // one-shot GAME-START sequence, not the profile-switch path (0x53A0
-            // clears VM globals). So a poked mid-game switch leaves the new
-            // profile's script never executing. Re-set the gate the way game start
-            // does and see whether the profile comes alive.
-            if std::env::var("PROFILEJUMP_RUNGATE").is_ok() {
-                rt.m.write8(g, 0x27E0, 1);
-                println!("PROFILEJUMP re-set [0x27E0]=1 (the 0x0FC3 game-start gate)");
-            }
+                // The switch leaves the PER-FRAME GAMEPLAY GATE clear: [0x27E0]&1
+                // gates vm_run_wrapper (0x55A4), which IS the VM's per-frame
+                // execution, and the ONLY setter in the binary is 0x0FC3 — part of the
+                // one-shot GAME-START sequence, not the profile-switch path (0x53A0
+                // clears VM globals). So a poked mid-game switch leaves the new
+                // profile's script never executing. Re-set the gate the way game start
+                // does and see whether the profile comes alive.
+                if std::env::var("PROFILEJUMP_RUNGATE").is_ok() {
+                    rt.m.write8(g, 0x27E0, 1);
+                    println!("PROFILEJUMP re-set [0x27E0]=1 (the 0x0FC3 game-start gate)");
+                }
                 // Merely being resident in the profile does not advance its FSM —
                 // the concert block wants a Migrator presentation. Drive the
                 // console rows the way the scenario driver does so presentations
@@ -1095,14 +1265,18 @@ fn main() {
                     let _ = rt.run(rt.cpu.steps + 20_000_000);
                     println!(
                         "PROFILEJUMP  after row {row}: rec_103A={:#06x} busy0x67AC={:#04x}",
-                        rec103a(&rt), rt.m.read8(g, 0x67AC)
+                        rec103a(&rt),
+                        rt.m.read8(g, 0x67AC)
                     );
                 }
                 for _ in 0..4 {
                     let _ = rt.run(rt.cpu.steps + 15_000_000);
                 }
-                println!("PROFILEJUMP rec_103A after watch = {:#06x} @ {} steps",
-                         rec103a(&rt), rt.cpu.steps);
+                println!(
+                    "PROFILEJUMP rec_103A after watch = {:#06x} @ {} steps",
+                    rec103a(&rt),
+                    rt.cpu.steps
+                );
             }
             return;
         }
@@ -1162,8 +1336,7 @@ fn main() {
             for round in 0..1400usize {
                 if round % 120 == 60 {
                     // one advance click at the orb region (ring-corrected)
-                    let fr = rt.m.read8(g, 0x2795) as u16
-                        | ((rt.m.read8(g, 0x2796) as u16) << 8);
+                    let fr = rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
                     let ring = ((125i32 + fr as i32 * 8 - 160).rem_euclid(1440)) as u16;
                     rt.set_mouse_pos(ring, 118);
                     let _ = rt.run(rt.cpu.steps + 200_000);
@@ -1249,7 +1422,9 @@ fn main() {
                 let mut out = Vec::new();
                 for code in 32u8..127 {
                     let gi = rt.m.read8(g, 0x70fa + code as u32);
-                    if gi == 0xFF { continue; }
+                    if gi == 0xFF {
+                        continue;
+                    }
                     let mut rows = [0u8; 8];
                     for (i, r) in rows.iter_mut().enumerate() {
                         *r = rt.m.read8(g, 0x71aa + gi as u32 * 8 + i as u32);
@@ -1282,10 +1457,8 @@ fn main() {
                             'cell: for gy in 0..8usize {
                                 for gx in 0..8usize {
                                     let on = (rows[gy] >> (7 - gx)) & 1 == 1;
-                                    let px = idx
-                                        .get((row0 + gy) * 320 + x + gx)
-                                        .copied()
-                                        .unwrap_or(0);
+                                    let px =
+                                        idx.get((row0 + gy) * 320 + x + gx).copied().unwrap_or(0);
                                     if on != lit(px) {
                                         ok = false;
                                         break 'cell;
@@ -1322,18 +1495,58 @@ fn main() {
                 text
             };
             let baseline = rt.opened_files.len();
+            let tutorial_state_dir = std::env::var_os("TUTORIAL_STATE_DIR")
+                .map(PathBuf::from)
+                .unwrap_or_else(|| PathBuf::from("accuracy"));
+            std::fs::create_dir_all(&tutorial_state_dir).unwrap();
+            let tutorial_max_rounds = std::env::var("TUTORIAL_MAX_ROUNDS")
+                .ok()
+                .and_then(|value| value.parse::<usize>().ok())
+                .unwrap_or(1200);
+            let trace_tutorial_state = std::env::var_os("TUTORIAL_STATE_TRACE").is_some();
             let mut last = String::new();
+            let mut last_say = String::new();
+            let mut reached_milestones = std::collections::HashSet::new();
             let mut silent = 0usize;
             let mut reached2 = false;
-            for round in 0..1200 {
+            let mut cryobox_requested = false;
+            let mut mission_explanation_requested = false;
+            let mut mission_explanation_answered = false;
+            let mut mission_choice_submitted = false;
+            let mut mission_space_enabled = false;
+            let decline_mission_explanation =
+                std::env::var_os("TUTORIAL_DECLINE_MISSION").is_some();
+            for round in 0..tutorial_max_rounds {
                 let (fr, _, _) = state(&rt);
+                if trace_tutorial_state {
+                    println!(
+                        "TSTATE round {round}: frame={fr} transition={:02x} cryobox={:02x} selected={:04x} ui={:04x} interpolation={:02x} mouse_press={:02x} c2_gate={:02x} presentation={:02x} left={:02x} right={:02x} choice_phase={:02x} sound={:02x} files={}",
+                        rt.m.read8(g, 0x2751),
+                        rt.m.read8(g, 0x274f),
+                        read_word(&rt, g, 0x2a19),
+                        read_word(&rt, g, 0x2793),
+                        rt.m.read8(g, 0x0ada),
+                        rt.m.read8(g, 0x0a3e),
+                        rt.m.read8(g, 0x1fb2),
+                        rt.m.read8(g, 0x67ac),
+                        rt.m.read8(g, 0x2736),
+                        rt.m.read8(g, 0x2737),
+                        rt.m.read8(g, 0x2565),
+                        rt.m.read8(g, 0x0b13),
+                        rt.opened_files.len()
+                    );
+                }
                 let delta = fr as i32 - 45;
                 let font = read_font(&rt);
                 // Only trust a stable (fully revealed) line.
                 let line_a = ocr(&rt.screen_indices(), &font);
-                let _ = rt.run(rt.cpu.steps + 400_000);
+                let _ = rt.run(rt.cpu.steps + scaled_steps(400_000));
                 let line_b = ocr(&rt.screen_indices(), &font);
-                let mut line = if line_a == line_b { line_b } else { String::new() };
+                let mut line = if line_a == line_b {
+                    line_b
+                } else {
+                    String::new()
+                };
                 // Second pass: scene subtitles (letterboxed close-ups) use the
                 // THIN variable-width GAME_FONT at index 0xEF — the port's own
                 // decoded font tables read them directly.
@@ -1368,7 +1581,9 @@ fn main() {
                                 if ok { got = Some((ch, adv)); break; }
                             }
                             if let Some((ch, adv)) = got {
-                                if blanks >= 5 && !l.is_empty() { l.push(' '); }
+                                if blanks >= 5 && !l.is_empty() {
+                                    l.push(' ');
+                                }
                                 l.push(ch);
                                 blanks = 0;
                                 x += adv.max(2);
@@ -1378,7 +1593,9 @@ fn main() {
                             }
                         }
                         if l.chars().filter(|c| c.is_ascii_alphanumeric()).count() >= 3 {
-                            if !text.is_empty() { text.push(' '); }
+                            if !text.is_empty() {
+                                text.push(' ');
+                            }
                             text.push_str(&l);
                             row0 += 8;
                         } else {
@@ -1397,7 +1614,8 @@ fn main() {
                         // Long silence: capture the state and start working the
                         // menu items in order with long dwells (the tutorial may
                         // be waiting for a function to actually be USED).
-                        rt.write_ppm(&out.join(format!("silent_{round}.ppm"))).unwrap();
+                        rt.write_ppm(&out.join(format!("silent_{round}.ppm")))
+                            .unwrap();
                         std::fs::write(
                             out.join(format!("silent_{round}_indices.bin")),
                             rt.screen_indices(),
@@ -1411,14 +1629,20 @@ fn main() {
                 // matching the prompted number word.
                 if std::env::var("NUMKEY").is_ok() {
                     let words: [(&str, u8, u8); 9] = [
-                        ("ONE", 0x02, b'1'), ("TWO", 0x03, b'2'), ("THREE", 0x04, b'3'),
-                        ("FOUR", 0x05, b'4'), ("F1VE", 0x06, b'5'), ("S1X", 0x07, b'6'),
-                        ("SEVEN", 0x08, b'7'), ("E1GHT", 0x09, b'8'), ("N1NE", 0x0a, b'9'),
+                        ("ONE", 0x02, b'1'),
+                        ("TWO", 0x03, b'2'),
+                        ("THREE", 0x04, b'3'),
+                        ("FOUR", 0x05, b'4'),
+                        ("F1VE", 0x06, b'5'),
+                        ("S1X", 0x07, b'6'),
+                        ("SEVEN", 0x08, b'7'),
+                        ("E1GHT", 0x09, b'8'),
+                        ("N1NE", 0x0a, b'9'),
                     ];
                     if let Some(&(w, sc, ch)) = words.iter().find(|(w, _, _)| line == *w) {
                         println!("round {round}: prompt {w:?} -> pressing key");
                         rt.inject_key(sc, ch);
-                        let _ = rt.run(rt.cpu.steps + 3_000_000);
+                        let _ = rt.run(rt.cpu.steps + scaled_steps(3_000_000));
                         continue;
                     }
                 }
@@ -1428,11 +1652,14 @@ fn main() {
                 // HOOKSNAP: when HONK says "CLICK ON ... OVER THERE", capture a
                 // frame series (the direction may highlight/animate the target),
                 // then follow: click the eye-orb.
-                if std::env::var("HOOKSNAP").is_ok() && (line.contains("CL1CK ON") || line.contains("OVER THERE")) {
+                if std::env::var("HOOKSNAP").is_ok()
+                    && (line.contains("CL1CK ON") || line.contains("OVER THERE"))
+                {
                     println!("round {round}: HOOK {line:?}");
                     for shot in 0..6 {
-                        rt.write_ppm(&out.join(format!("hook_{round}_{shot}.ppm"))).unwrap();
-                        let _ = rt.run(rt.cpu.steps + 3_000_000);
+                        rt.write_ppm(&out.join(format!("hook_{round}_{shot}.ppm")))
+                            .unwrap();
+                        let _ = rt.run(rt.cpu.steps + scaled_steps(3_000_000));
                     }
                     // Also: click the orb to open the concept menu, then dump its
                     // indices (the full topic list = many square-caps letters).
@@ -1445,19 +1672,22 @@ fn main() {
                                     | ((rt.m.read8(g, base + o + 1) as u16) << 8)
                             };
                             if w16(0xc) != 0xffff {
-                                orb = (w16(0xc) as i32 + w16(0x10) as i32 / 2,
-                                       w16(0xe) as i32 + w16(0x12) as i32 / 2);
+                                orb = (
+                                    w16(0xc) as i32 + w16(0x10) as i32 / 2,
+                                    w16(0xe) as i32 + w16(0x12) as i32 / 2,
+                                );
                                 break;
                             }
                         }
                         let ring = (orb.0 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
                         rt.set_mouse_pos(ring, orb.1 as u16);
-                        let _ = rt.run(rt.cpu.steps + 700_000);
+                        let _ = rt.run(rt.cpu.steps + scaled_steps(700_000));
                         rt.mouse_press(0);
-                        let _ = rt.run(rt.cpu.steps + 400_000);
+                        let _ = rt.run(rt.cpu.steps + scaled_steps(400_000));
                         rt.mouse_release(0);
-                        let _ = rt.run(rt.cpu.steps + 8_000_000);
-                        std::fs::write(out.join("concept_menu_indices.bin"), rt.screen_indices()).unwrap();
+                        let _ = rt.run(rt.cpu.steps + scaled_steps(8_000_000));
+                        std::fs::write(out.join("concept_menu_indices.bin"), rt.screen_indices())
+                            .unwrap();
                         rt.write_ppm(&out.join("concept_menu.ppm")).unwrap();
                         println!("concept menu indices dumped");
                     }
@@ -1479,12 +1709,13 @@ fn main() {
                     }
                     let ring = (orb.0 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
                     rt.set_mouse_pos(ring, orb.1 as u16);
-                    let _ = rt.run(rt.cpu.steps + 700_000);
+                    let _ = rt.run(rt.cpu.steps + scaled_steps(700_000));
                     rt.mouse_press(0);
-                    let _ = rt.run(rt.cpu.steps + 400_000);
+                    let _ = rt.run(rt.cpu.steps + scaled_steps(400_000));
                     rt.mouse_release(0);
-                    let _ = rt.run(rt.cpu.steps + 10_000_000);
-                    rt.write_ppm(&out.join(format!("hook_{round}_after_orb.ppm"))).unwrap();
+                    let _ = rt.run(rt.cpu.steps + scaled_steps(10_000_000));
+                    rt.write_ppm(&out.join(format!("hook_{round}_after_orb.ppm")))
+                        .unwrap();
                     println!("round {round}: followed to orb {orb:?} — captured");
                     continue;
                 }
@@ -1497,11 +1728,11 @@ fn main() {
                         let ring = (sx + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
                         println!("round {round}: TOUR clicking topic row {topic}");
                         rt.set_mouse_pos(ring, sy as u16);
-                        let _ = rt.run(rt.cpu.steps + 700_000);
+                        let _ = rt.run(rt.cpu.steps + scaled_steps(700_000));
                         rt.mouse_press(0);
-                        let _ = rt.run(rt.cpu.steps + 400_000);
+                        let _ = rt.run(rt.cpu.steps + scaled_steps(400_000));
                         rt.mouse_release(0);
-                        let _ = rt.run(rt.cpu.steps + 2_000_000);
+                        let _ = rt.run(rt.cpu.steps + scaled_steps(2_000_000));
                         continue;
                     }
                 }
@@ -1509,156 +1740,400 @@ fn main() {
                     // The top-left word is the ECHO of what was clicked (clicking
                     // EIGHT echoes "EIGHT"); "NINE... GOOD WORK" in the transcript
                     // means NINE is the correct topic — always answer row 9.
-                    let words = ["TALK", "ONE", "TWO", "THREE", "FOUR", "F1VE", "S1X", "SEVEN", "E1GHT", "N1NE"];
+                    let words = [
+                        "TALK", "ONE", "TWO", "THREE", "FOUR", "F1VE", "S1X", "SEVEN", "E1GHT",
+                        "N1NE",
+                    ];
                     if words.iter().any(|w| line == *w) {
                         let row = 9usize; // NINE
                         let (sx, sy) = (190i32, 35 + 13 * row as i32);
                         let ring = (sx + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
                         println!("round {round}: echo {line:?} -> answering NINE at y{sy}");
                         rt.set_mouse_pos(ring, sy as u16);
-                        let _ = rt.run(rt.cpu.steps + 700_000);
+                        let _ = rt.run(rt.cpu.steps + scaled_steps(700_000));
                         rt.mouse_press(0);
-                        let _ = rt.run(rt.cpu.steps + 400_000);
+                        let _ = rt.run(rt.cpu.steps + scaled_steps(400_000));
                         rt.mouse_release(0);
-                        let _ = rt.run(rt.cpu.steps + 2_000_000);
+                        let _ = rt.run(rt.cpu.steps + scaled_steps(2_000_000));
                         continue;
                     }
                 }
                 // NUMSERIES: at the first number prompt, capture a 16-frame series
                 // (the numbers display/animation) then stop.
                 if std::env::var("NUMSERIES").is_ok() {
-                    let numbers = ["ONE", "TWO", "THREE", "FOUR", "F1VE", "S1X", "SEVEN", "E1GHT", "N1NE"];
+                    let numbers = [
+                        "ONE", "TWO", "THREE", "FOUR", "F1VE", "S1X", "SEVEN", "E1GHT", "N1NE",
+                    ];
                     if numbers.iter().any(|n| line == *n) {
                         println!("round {round}: prompt {line:?} — capturing series");
                         for shot in 0..16 {
-                            rt.write_ppm(&out.join(format!("series_{shot:02}.ppm"))).unwrap();
+                            rt.write_ppm(&out.join(format!("series_{shot:02}.ppm")))
+                                .unwrap();
                             std::fs::write(
                                 out.join(format!("series_{shot:02}_indices.bin")),
                                 rt.screen_indices(),
                             )
                             .unwrap();
-                            let _ = rt.run(rt.cpu.steps + 2_000_000);
+                            let _ = rt.run(rt.cpu.steps + scaled_steps(2_000_000));
                         }
                         break;
                     }
                 }
                 // NUMSNAP: capture the screen the moment a number prompt shows.
                 if std::env::var("NUMSNAP").is_ok() {
-                    let numbers = ["ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "E1GHT", "EIGHT", "N1NE", "NINE"];
+                    let numbers = [
+                        "ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "E1GHT", "EIGHT",
+                        "N1NE", "NINE",
+                    ];
                     if numbers.iter().any(|n| line == *n) {
-                        rt.write_ppm(&out.join(format!("numprompt_{round}.ppm"))).unwrap();
+                        rt.write_ppm(&out.join(format!("numprompt_{round}.ppm")))
+                            .unwrap();
                         std::fs::write(
                             out.join(format!("numprompt_{round}_indices.bin")),
                             rt.screen_indices(),
                         )
                         .unwrap();
                         println!("round {round}: number prompt {line:?} captured");
-                        if round > 40 { break; }
+                        if round > 40 {
+                            break;
+                        }
                     }
                 }
-                let mut last_say = String::new();
-            let names = ["HONK", "TELEPHONE", "CRYOBOX", "MENU", "OPTION"];
-                let want = names.iter().position(|n| line.contains(n));
+                let names = ["HONK", "TELEPHONE", "CRYOBOX", "MENU", "OPTION"];
+                let normalized_line = line.to_ascii_uppercase().replace('1', "I");
+                if !mission_explanation_answered
+                    && normalized_line.contains("DO YOU WANT")
+                    && normalized_line.contains("MISSION")
+                {
+                    mission_explanation_requested = true;
+                }
+                if mission_choice_submitted
+                    && !line.is_empty()
+                    && !normalized_line.contains("DO YOU WANT")
+                {
+                    mission_explanation_requested = false;
+                    mission_explanation_answered = true;
+                }
+                if mission_explanation_requested && normalized_line.contains("COMMANDER") {
+                    let layout_x = read_word(&rt, g, 0x2aab) as i16 as i32;
+                    let layout_y = read_word(&rt, g, 0x2aad) as i16 as i32;
+                    let layout_width = read_word(&rt, g, 0x2aaf) as i32;
+                    if layout_x < 100 {
+                        let _ = rt.run(rt.cpu.steps + scaled_steps(2_000_000));
+                        continue;
+                    }
+                    let (choice_frame, _, _) = state(&rt);
+                    let answer_row = usize::from(decline_mission_explanation);
+                    let answer_x = layout_x + layout_width / 2;
+                    let answer_y = layout_y + 8 + answer_row as i32 * 11;
+                    if !mission_choice_submitted {
+                        rt.save_state(&tutorial_state_dir.join("mission_choice.state"))
+                            .unwrap();
+                    }
+                    println!(
+                        "round {round}: mission choice rect=({layout_x},{layout_y},w={layout_width}) active={:02x}",
+                        rt.m.read8(g, 0x259b)
+                    );
+                    let choice_ring = (answer_x + choice_frame as i32 * 8 - 160)
+                        .rem_euclid(1440) as u16;
+                    rt.set_mouse_pos(choice_ring, answer_y as u16);
+                    let _ = rt.run(rt.cpu.steps + scaled_steps(700_000));
+                    rt.mouse_press(0);
+                    let _ = rt.run(rt.cpu.steps + scaled_steps(400_000));
+                    rt.mouse_release(0);
+                    let _ = rt.run(rt.cpu.steps + scaled_steps(4_000_000));
+                    println!(
+                        "round {round}: answered mission prompt {}",
+                        if decline_mission_explanation {
+                            "NO"
+                        } else {
+                            "YES"
+                        }
+                    );
+                    mission_choice_submitted = true;
+                    continue;
+                }
+                if mission_explanation_answered
+                    && (mission_space_enabled
+                        || (normalized_line.contains("SPACE")
+                            && normalized_line.contains("HAD ENOUGH")))
+                {
+                    if !mission_space_enabled {
+                        println!("round {round}: enabled mission explanation SPACE skip");
+                    }
+                    mission_space_enabled = true;
+                    rt.inject_key(0x39, b' ');
+                    let _ = rt.run(rt.cpu.steps + scaled_steps(4_000_000));
+                    let script2_open = rt.opened_files[baseline..]
+                        .iter()
+                        .any(|(_, path)| path.to_ascii_lowercase().contains("script2"));
+                    if !script2_open {
+                        continue;
+                    }
+                    mission_space_enabled = false;
+                }
+                let is_click_instruction =
+                    normalized_line.contains("CLICK") || normalized_line.contains("CIICK");
+                let want = is_click_instruction
+                    .then(|| names.iter().position(|name| normalized_line.contains(name)))
+                    .flatten();
                 if let Some(row) = want {
+                    if names[row] == "CRYOBOX" {
+                        cryobox_requested = true;
+                    }
                     // Obey the instruction, then WATCH what opens: capture the
                     // resulting screen (ground truth for that console function),
                     // and Esc back to the console before continuing.
                     if (40..=60).contains(&fr) {
-                        let x = 0x11f - delta * 8 - 0x37;
-                        let y = 0x48 + delta.unsigned_abs() as i32 * 5 / 4
-                            + row as i32 * (0x12 - delta.unsigned_abs() as i32 / 8) + 8;
-                        let ring = (x + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+                        let ready_deadline = rt.cpu.steps + scaled_steps(200_000_000);
+                        let mut blocked = true;
+                        while blocked && rt.cpu.steps < ready_deadline {
+                            let _ = rt.run(rt.cpu.steps + scaled_steps(200_000));
+                            blocked = ((rt.m.read8(g, 0x1fb2) | rt.m.read8(g, 0x67ac)) & 1u8)
+                                | rt.m.read8(g, 0x2736)
+                                | rt.m.read8(g, 0x2737)
+                                | rt.m.read8(g, 0x259b)
+                                | rt.m.read8(g, 0x0b13)
+                                != 0u8;
+                        }
+                        if blocked {
+                            println!("round {round}: {} remained blocked", names[row]);
+                            continue;
+                        }
+                        let (ready_frame, _, _) = state(&rt);
+                        let ready_delta = ready_frame as i32 - 45;
+                        let x = 0x11f - ready_delta * 8 - 0x37;
+                        let y = 0x48
+                            + ready_delta.unsigned_abs() as i32 * 5 / 4
+                            + row as i32 * (0x12 - ready_delta.unsigned_abs() as i32 / 8)
+                            + 8;
+                        let ring = (x + ready_frame as i32 * 8 - 160).rem_euclid(1440) as u16;
                         rt.set_mouse_pos(ring, y as u16);
-                        let _ = rt.run(rt.cpu.steps + 700_000);
+                        let _ = rt.run(rt.cpu.steps + scaled_steps(700_000));
                         rt.mouse_press(0);
-                        let _ = rt.run(rt.cpu.steps + 400_000);
+                        let _ = rt.run(rt.cpu.steps + scaled_steps(400_000));
                         rt.mouse_release(0);
+                        let _ = rt.run(rt.cpu.steps + scaled_steps(2_000_000));
+                        if names[row] == "CRYOBOX" {
+                            // The CRYOBOX control opens a BOB_MORLOCK/CANCEL
+                            // list. Wait for its recovered phase machine to
+                            // finish laying out the rows before selecting Bob.
+                            let choice_deadline = rt.cpu.steps + scaled_steps(60_000_000);
+                            while rt.cpu.steps < choice_deadline {
+                                let labels = nav_kind2_labels(&rt, g);
+                                if read_word(&rt, g, 0x2a19) == 3u16
+                                    && rt.m.read8(g, 0x2565) == 0u8
+                                    && !labels.is_empty()
+                                {
+                                    break;
+                                }
+                                let _ = rt.run(rt.cpu.steps + scaled_steps(200_000));
+                            }
+                            let labels = nav_kind2_labels(&rt, g);
+                            let bob_row = labels
+                                .iter()
+                                .position(|label| label.to_ascii_uppercase().contains("BOB"));
+                            if read_word(&rt, g, 0x2a19) == 3u16 {
+                                rt.save_state(&tutorial_state_dir.join("cryobox_choice.state"))
+                                    .unwrap();
+                            }
+                            println!(
+                                "CRYOBOX choice: selected={:04x} phase={:02x} ds={:04x} es={:04x} ss={:04x} gs={:04x} labels={labels:?} bob_row={bob_row:?}",
+                                read_word(&rt, g, 0x2a19),
+                                rt.m.read8(g, 0x2565),
+                                rt.m.regs.ds,
+                                rt.m.regs.es,
+                                rt.m.regs.ss,
+                                rt.m.regs.gs
+                            );
+                            for _ in 0..6 {
+                                if (rt.m.read8(g, 0x2751) & 1u8) != 0u8 {
+                                    break;
+                                }
+                                let Some(bob_row) = bob_row else {
+                                    break;
+                                };
+                                let (choice_frame, _, _) = state(&rt);
+                                let layout_x = read_word(&rt, g, 0x2aab) as i16 as i32;
+                                let layout_y = read_word(&rt, g, 0x2aad) as i16 as i32;
+                                let layout_width = read_word(&rt, g, 0x2aaf) as i32;
+                                let bob_x = layout_x + layout_width / 2;
+                                let bob_y = layout_y + 4 + bob_row as i32 * 11 + 4;
+                                let choice_ring =
+                                    (bob_x + choice_frame as i32 * 8 - 160).rem_euclid(1440) as u16;
+                                rt.set_mouse_pos(choice_ring, bob_y as u16);
+                                let _ = rt.run(rt.cpu.steps + scaled_steps(700_000));
+                                rt.mouse_press(0);
+                                let _ = rt.run(rt.cpu.steps + scaled_steps(400_000));
+                                rt.mouse_release(0);
+                                let _ = rt.run(rt.cpu.steps + scaled_steps(4_000_000));
+                            }
+                            if (rt.m.read8(g, 0x2751) & 1u8) != 0u8
+                                || read_word(&rt, g, 0x676a) != 0u16
+                            {
+                                cryobox_requested = false;
+                            }
+                        }
                         // Long dwell: let the function open and play (some steps
                         // animate for seconds), capturing along the way.
                         for shot in 0..3 {
-                            let _ = rt.run(rt.cpu.steps + 15_000_000);
-                            rt.write_ppm(&out.join(format!(
-                                "obeyed_{}_{round}_{shot}.ppm",
-                                names[row]
-                            )))
+                            let _ = rt.run(rt.cpu.steps + scaled_steps(15_000_000));
+                            rt.write_ppm(
+                                &out.join(format!("obeyed_{}_{round}_{shot}.ppm", names[row])),
+                            )
                             .unwrap();
                         }
                         println!("round {round}: obeyed {} -> captured x3", names[row]);
                         // Return to the console if we left it.
-                        rt.inject_key(0x01, 0x1b);
-                        let _ = rt.run(rt.cpu.steps + 6_000_000);
+                        if names[row] != "CRYOBOX" {
+                            rt.inject_key(0x01, 0x1b);
+                            let _ = rt.run(rt.cpu.steps + scaled_steps(6_000_000));
+                        }
                         continue;
                     }
                 }
-                let effective: Option<usize> = { let t = round % 8; (t < 5).then_some(t) };
+                let nav_selection = read_word(&rt, g, 0x2a19);
+                let nav_choice_phase = rt.m.read8(g, 0x2565);
+                let console_blocked = ((rt.m.read8(g, 0x1fb2) | rt.m.read8(g, 0x67ac)) & 1u8)
+                    | rt.m.read8(g, 0x2736)
+                    | rt.m.read8(g, 0x2737)
+                    | rt.m.read8(g, 0x259b)
+                    | rt.m.read8(g, 0x0b13)
+                    != 0u8;
+                if nav_selection == 0u16 && console_blocked {
+                    let _ = rt.run(rt.cpu.steps + scaled_steps(2_000_000));
+                    continue;
+                }
+                let effective: Option<usize> = if cryobox_requested {
+                    Some(2)
+                } else {
+                    let t = round % 8;
+                    (t < 5).then_some(t)
+                };
+                let choice_labels = (nav_selection == 3u16 && nav_choice_phase == 0u8)
+                    .then(|| nav_kind2_labels(&rt, g));
+                let bob_row = choice_labels.as_ref().and_then(|labels| {
+                    labels
+                        .iter()
+                        .position(|label| label.to_ascii_uppercase().contains("BOB"))
+                });
                 let (sx, sy) = match effective {
+                    _ if nav_selection == 3u16 && nav_choice_phase != 0u8 => {
+                        let _ = rt.run(rt.cpu.steps + scaled_steps(2_000_000));
+                        continue;
+                    }
+                    _ if nav_selection == 3u16 => {
+                        let Some(bob_row) = bob_row else {
+                            let _ = rt.run(rt.cpu.steps + scaled_steps(2_000_000));
+                            continue;
+                        };
+                        let layout_x = read_word(&rt, g, 0x2aab) as i16 as i32;
+                        let layout_y = read_word(&rt, g, 0x2aad) as i16 as i32;
+                        let layout_width = read_word(&rt, g, 0x2aaf) as i32;
+                        (
+                            layout_x + layout_width / 2,
+                            layout_y + 4 + bob_row as i32 * 11 + 4,
+                        )
+                    }
+                    _ if nav_selection != 0u16 => {
+                        let _ = rt.run(rt.cpu.steps + scaled_steps(2_000_000));
+                        continue;
+                    }
                     Some(row) if (40..=60).contains(&fr) => {
                         let x = 0x11f - delta * 8 - 0x37;
-                        let y = 0x48 + delta.unsigned_abs() as i32 * 5 / 4
-                            + row as i32 * (0x12 - delta.unsigned_abs() as i32 / 8) + 8;
+                        let y = 0x48
+                            + delta.unsigned_abs() as i32 * 5 / 4
+                            + row as i32 * (0x12 - delta.unsigned_abs() as i32 / 8)
+                            + 8;
                         (x, y)
                     }
-                    _ => if round % 2 == 0 { (85, 96) } else { (125, 118) },
+                    _ => {
+                        if round % 2 == 0 {
+                            (85, 96)
+                        } else {
+                            (125, 118)
+                        }
+                    }
                 };
                 let ring = (sx + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
                 rt.set_mouse_pos(ring, sy as u16);
-                let _ = rt.run(rt.cpu.steps + 700_000);
+                let _ = rt.run(rt.cpu.steps + scaled_steps(700_000));
                 rt.mouse_press(0);
-                let _ = rt.run(rt.cpu.steps + 400_000);
+                let _ = rt.run(rt.cpu.steps + scaled_steps(400_000));
                 rt.mouse_release(0);
-                let _ = rt.run(rt.cpu.steps + 1_200_000);
+                let _ = rt.run(rt.cpu.steps + scaled_steps(1_200_000));
                 // Story log: print the subtitle whenever it changes; pointer-
                 // relative scr watch re-armed per round (block relocates on loads).
                 {
-                    let g2 = 0x0e84u16;
+                    let g2 = g;
                     let text: String = (0..120u32)
                         .map(|i| rt.m.read8(g2, 0xe18 + i))
                         .take_while(|&b| b != 0)
-                        .map(|b| if (0x20..0x7f).contains(&b) { b as char } else { ' ' })
+                        .map(|b| {
+                            if (0x20..0x7f).contains(&b) {
+                                b as char
+                            } else {
+                                ' '
+                            }
+                        })
                         .collect();
                     let text = text.trim().to_string();
                     if !text.is_empty() && text != last_say {
                         println!("SAYLOG round {round}: {text}");
                         last_say = text;
                     }
-                    let w16g = |a: u32| {
-                        rt.m.read8(g2, a) as u32 | ((rt.m.read8(g2, a + 1) as u32) << 8)
-                    };
+                    let w16g =
+                        |a: u32| rt.m.read8(g2, a) as u32 | ((rt.m.read8(g2, a + 1) as u32) << 8);
                     let (boff, bseg) = (w16g(0x6724), w16g(0x6726));
                     if bseg > 0 {
                         let lin = bseg as usize * 16 + boff as usize + 0x1276;
                         if rt.m.watch_addr != Some(lin) {
-                            println!("scr-watch re-armed: {bseg:04x}:{boff:04x} -> {lin:#x} @ round {round}");
+                            println!(
+                                "scr-watch re-armed: {bseg:04x}:{boff:04x} -> {lin:#x} @ round {round}"
+                            );
                             rt.m.watch_addr = Some(lin);
                         }
                     }
                 }
                 if rt.opened_files.len() > baseline {
                     let newest: Vec<String> = rt.opened_files[baseline..]
-                        .iter().map(|(_, p)| p.clone()).collect();
+                        .iter()
+                        .map(|(_, p)| p.clone())
+                        .collect();
                     // Milestone: any NEW asset class (scripts, worlds, rooms) =
                     // story progress — capture + savestate + log.
                     for marker in ["script2", "script3", "script4", "script5", ".ext", ".fd"] {
-                        if newest.iter().any(|p| p.to_lowercase().contains(marker)) {
+                        if newest.iter().any(|p| p.to_lowercase().contains(marker))
+                            && reached_milestones.insert(marker)
+                        {
                             let tag = marker.trim_start_matches('.');
                             println!("round {round}: MILESTONE {marker} (files {newest:?})");
-                            rt.write_ppm(&out.join(format!("milestone_{tag}_{round}.ppm"))).unwrap();
-                            rt.save_state(std::path::Path::new(&format!(
-                                "accuracy/milestone_{tag}.state"
-                            )))
-                            .unwrap();
-                            if marker == "script2" && !reached2 && std::env::var("TUTORIAL_HOLD").is_ok() {
+                            rt.write_ppm(&out.join(format!("milestone_{tag}_{round}.ppm")))
+                                .unwrap();
+                            let milestone_state =
+                                tutorial_state_dir.join(format!("milestone_{tag}.state"));
+                            rt.save_state(&milestone_state).unwrap();
+                            if marker == "script2"
+                                && !reached2
+                                && std::env::var("TUTORIAL_HOLD").is_ok()
+                            {
                                 // NATURAL-TRANSITION PROBE: no stabilization clicks;
                                 // step forward printing the subtitle + travel flags to
                                 // catch the engine-queued arrival as it happens.
                                 reached2 = true;
-                                let g2 = 0x0e84u16;
+                                let g2 = g;
                                 for holdstep in 0..60 {
-                                    let _ = rt.run(rt.cpu.steps + 8_000_000);
+                                    let _ = rt.run(rt.cpu.steps + scaled_steps(8_000_000));
                                     let text: String = (0..120u32)
                                         .map(|i| rt.m.read8(g2, 0xe18 + i))
                                         .take_while(|&b| b != 0)
-                                        .map(|b| if (0x20..0x7f).contains(&b) { b as char } else { ' ' })
+                                        .map(|b| {
+                                            if (0x20..0x7f).contains(&b) {
+                                                b as char
+                                            } else {
+                                                ' '
+                                            }
+                                        })
                                         .collect();
                                     let f24f3 = rt.m.read8(g2, 0x24f3);
                                     let f27d8 = rt.m.read8(g2, 0x27d8);
@@ -1673,11 +2148,13 @@ fn main() {
                                         text.trim()
                                     );
                                     if holdstep % 10 == 9 {
-                                        rt.write_ppm(&out.join(format!("hold_{holdstep:02}.ppm"))).unwrap();
+                                        rt.write_ppm(&out.join(format!("hold_{holdstep:02}.ppm")))
+                                            .unwrap();
                                     }
                                 }
-                                rt.save_state(std::path::Path::new("accuracy/arrival_probe.state")).unwrap();
-                                println!("arrival_probe.state written");
+                                let arrival_state = tutorial_state_dir.join("arrival_probe.state");
+                                rt.save_state(&arrival_state).unwrap();
+                                println!("{} written", arrival_state.display());
                                 continue;
                             }
                             if marker == "script2" && !reached2 {
@@ -1689,22 +2166,32 @@ fn main() {
                                 // Advance the dialogue a few times to reach the hub.
                                 for _ in 0..8 {
                                     let (fr2, _, _) = state(&rt);
-                                    rt.set_mouse_pos((160i32 + fr2 as i32 * 8 - 160).rem_euclid(1440) as u16, 100);
+                                    rt.set_mouse_pos(
+                                        (160i32 + fr2 as i32 * 8 - 160).rem_euclid(1440) as u16,
+                                        100,
+                                    );
                                     rt.mouse_press(0);
-                                    let _ = rt.run(rt.cpu.steps + 300_000);
+                                    let _ = rt.run(rt.cpu.steps + scaled_steps(300_000));
                                     rt.mouse_release(0);
-                                    let _ = rt.run(rt.cpu.steps + 8_000_000);
+                                    let _ = rt.run(rt.cpu.steps + scaled_steps(8_000_000));
                                 }
                                 rt.write_ppm(&out.join("script2_stable.ppm")).unwrap();
-                                rt.save_state(std::path::Path::new("accuracy/script2.state")).unwrap();
-                                println!("clean SCRIPT2 savestate written (post-transition)");
+                                let script2_state = tutorial_state_dir.join("script2.state");
+                                rt.save_state(&script2_state).unwrap();
+                                println!(
+                                    "clean SCRIPT2 savestate written to {} (post-transition)",
+                                    script2_state.display()
+                                );
                             }
                         }
                     }
                     // Keep walking (don't break) — deeper milestones follow.
                 }
             }
-            println!("TUTORIAL4 done, reached_script2={reached2} @ {} steps", rt.cpu.steps);
+            println!(
+                "TUTORIAL4 done, reached_script2={reached2} @ {} steps",
+                rt.cpu.steps
+            );
             return;
         }
 
@@ -1815,29 +2302,27 @@ fn main() {
                         let mut matched = None;
                         // Bigger glyphs first so punctuation can't subset-match
                         // inside letters; require STRICT cell equality (on==lit).
-                        let mut candidates: Vec<(char, usize)> = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'\",.!?-"
-                            .chars()
-                            .filter_map(|ch| {
-                                let g = game_font_glyph(ch)?;
-                                let lit: usize = g
-                                    .rows
-                                    .iter()
-                                    .map(|r| r.count_ones() as usize)
-                                    .sum();
-                                Some((ch, lit))
-                            })
-                            .collect();
+                        let mut candidates: Vec<(char, usize)> =
+                            "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'\",.!?-"
+                                .chars()
+                                .filter_map(|ch| {
+                                    let g = game_font_glyph(ch)?;
+                                    let lit: usize =
+                                        g.rows.iter().map(|r| r.count_ones() as usize).sum();
+                                    Some((ch, lit))
+                                })
+                                .collect();
                         candidates.sort_by_key(|&(_, lit)| std::cmp::Reverse(lit));
                         for (ch, lit_total) in candidates {
-                            let Some(g) = game_font_glyph(ch) else { continue };
+                            let Some(g) = game_font_glyph(ch) else {
+                                continue;
+                            };
                             let mut ok = lit_total >= 5;
                             'cell: for gy in 0..8usize {
                                 for gx in 0..g.advance.min(8) {
                                     let on = (g.rows[gy] >> (7 - gx)) & 1 == 1;
-                                    let px = idx
-                                        .get((row0 + gy) * 320 + x + gx)
-                                        .copied()
-                                        .unwrap_or(0);
+                                    let px =
+                                        idx.get((row0 + gy) * 320 + x + gx).copied().unwrap_or(0);
                                     if on != (px == 0xE0 || px >= 0xFD) {
                                         ok = false;
                                         break 'cell;
@@ -1850,7 +2335,9 @@ fn main() {
                             }
                         }
                         if let Some((ch, adv)) = matched {
-                            if blanks > 3 && !line.is_empty() { line.push(' '); }
+                            if blanks > 3 && !line.is_empty() {
+                                line.push(' ');
+                            }
                             line.push(ch);
                             blanks = 0;
                             x += adv.max(2);
@@ -1860,7 +2347,9 @@ fn main() {
                         }
                     }
                     if !line.is_empty() {
-                        if !text.is_empty() { text.push(' '); }
+                        if !text.is_empty() {
+                            text.push(' ');
+                        }
                         text.push_str(&line);
                     }
                 }
@@ -1876,22 +2365,37 @@ fn main() {
                 let line_a = ocr(&rt.screen_indices());
                 let _ = rt.run(rt.cpu.steps + 400_000);
                 let line_b = ocr(&rt.screen_indices());
-                let line = if line_a == line_b { line_b } else { String::new() };
+                let line = if line_a == line_b {
+                    line_b
+                } else {
+                    String::new()
+                };
                 if line != last && !line.is_empty() {
                     println!("round {round}: OCR {line:?}");
                     last = line.clone();
                 }
                 let names = ["HONK", "TELEPHONE", "CRYOBOX", "MENU", "OPTION"];
                 let want = names.iter().position(|n| line.contains(n));
-                let effective = want.or_else(|| { let t = round % 8; (t < 5).then_some(t) });
+                let effective = want.or_else(|| {
+                    let t = round % 8;
+                    (t < 5).then_some(t)
+                });
                 let (sx, sy) = match effective {
                     Some(row) if (40..=60).contains(&fr) => {
                         let x = 0x11f - delta * 8 - 0x37;
-                        let y = 0x48 + delta.unsigned_abs() as i32 * 5 / 4
-                            + row as i32 * (0x12 - delta.unsigned_abs() as i32 / 8) + 8;
+                        let y = 0x48
+                            + delta.unsigned_abs() as i32 * 5 / 4
+                            + row as i32 * (0x12 - delta.unsigned_abs() as i32 / 8)
+                            + 8;
                         (x, y)
                     }
-                    _ => if round % 2 == 0 { (85, 96) } else { (125, 118) },
+                    _ => {
+                        if round % 2 == 0 {
+                            (85, 96)
+                        } else {
+                            (125, 118)
+                        }
+                    }
                 };
                 let ring = (sx + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
                 rt.set_mouse_pos(ring, sy as u16);
@@ -1902,7 +2406,9 @@ fn main() {
                 let _ = rt.run(rt.cpu.steps + 1_200_000);
                 if rt.opened_files.len() > baseline {
                     let newest: Vec<String> = rt.opened_files[baseline..]
-                        .iter().map(|(_, p)| p.clone()).collect();
+                        .iter()
+                        .map(|(_, p)| p.clone())
+                        .collect();
                     if newest.iter().any(|p| p.to_lowercase().contains("script2")) {
                         println!("round {round}: SCRIPT2 reached!");
                         reached2 = true;
@@ -1911,7 +2417,10 @@ fn main() {
                     }
                 }
             }
-            println!("TUTORIAL4 done, reached_script2={reached2} @ {} steps", rt.cpu.steps);
+            println!(
+                "TUTORIAL4 done, reached_script2={reached2} @ {} steps",
+                rt.cpu.steps
+            );
             return;
         }
 
@@ -1927,8 +2436,10 @@ fn main() {
                     (85, if target == 6 { 96 } else { 109 })
                 } else if target < 5 && (40..=60).contains(&fr) {
                     let x = 0x11f - delta * 8 - 0x37;
-                    let y = 0x48 + delta.unsigned_abs() as i32 * 5 / 4
-                        + target as i32 * (0x12 - delta.unsigned_abs() as i32 / 8) + 8;
+                    let y = 0x48
+                        + delta.unsigned_abs() as i32 * 5 / 4
+                        + target as i32 * (0x12 - delta.unsigned_abs() as i32 / 8)
+                        + 8;
                     (x, y)
                 } else {
                     (125, 118)
@@ -1945,8 +2456,16 @@ fn main() {
                 };
                 println!(
                     "r{round:02} fr={fr:3} 1fab={:04x} 6788={:04x} 67aa={:04x} 6780={:04x} 671c={:04x} 6724={:04x}:{:04x} 6752={:04x} 2a19={:04x} e18={:04x}",
-                    w(0x1fab), w(0x6788), w(0x67aa), w(0x6780), w(0x671c),
-                    w(0x6726), w(0x6724), w(0x6752), w(0x2a19), w(0xe18)
+                    w(0x1fab),
+                    w(0x6788),
+                    w(0x67aa),
+                    w(0x6780),
+                    w(0x671c),
+                    w(0x6726),
+                    w(0x6724),
+                    w(0x6752),
+                    w(0x2a19),
+                    w(0xe18)
                 );
             }
             println!("VMWATCH done");
@@ -1960,7 +2479,10 @@ fn main() {
             let _ = rt.run(rt.cpu.steps + 20_000_000);
             rt.write_ppm(&out.join("subfind_screen.ppm")).unwrap();
             let gs_lin = 0x0e84usize * 16;
-            for needle in ["waiting", "WAITING", "Cap'n", "CAP'N", "Click", "CLICK", "quick", "QUICK", "course", "COURSE"] {
+            for needle in [
+                "waiting", "WAITING", "Cap'n", "CAP'N", "Click", "CLICK", "quick", "QUICK",
+                "course", "COURSE",
+            ] {
                 let pat = needle.as_bytes();
                 let mem = &rt.m.mem[..0x100000.min(rt.m.mem.len())];
                 let mut shown = 0;
@@ -1974,12 +2496,20 @@ fn main() {
                     };
                     let ctx: String = mem[at.saturating_sub(8)..(at + 40).min(mem.len())]
                         .iter()
-                        .map(|&b| if (0x20..0x7f).contains(&b) { b as char } else { '.' })
+                        .map(|&b| {
+                            if (0x20..0x7f).contains(&b) {
+                                b as char
+                            } else {
+                                '.'
+                            }
+                        })
                         .collect();
                     println!("SUBFIND {needle:?} @ {rel}: {ctx:?}");
                     shown += 1;
                     pos = at + 1;
-                    if shown >= 3 { break; }
+                    if shown >= 3 {
+                        break;
+                    }
                 }
             }
             println!("SUBFIND done");
@@ -2004,14 +2534,24 @@ fn main() {
                     let mem = &rt.m.mem[..0x100000.min(rt.m.mem.len())];
                     // Look for "ON "<NAME>" or "ON '<NAME>" (the tutorial phrasing).
                     for (row, name) in names.iter().enumerate() {
-                        for pat in [format!("ON \"{name}"), format!("ON '{name}"), format!("on \"{name}")] {
-                            if let Some(pos) = mem
-                                .windows(pat.len())
-                                .position(|w| w == pat.as_bytes())
+                        for pat in [
+                            format!("ON \"{name}"),
+                            format!("ON '{name}"),
+                            format!("on \"{name}"),
+                        ] {
+                            if let Some(pos) =
+                                mem.windows(pat.len()).position(|w| w == pat.as_bytes())
                             {
-                                let ctx: String = mem[pos.saturating_sub(24)..(pos + 24).min(mem.len())]
+                                let ctx: String = mem
+                                    [pos.saturating_sub(24)..(pos + 24).min(mem.len())]
                                     .iter()
-                                    .map(|&b| if (0x20..0x7f).contains(&b) { b as char } else { '.' })
+                                    .map(|&b| {
+                                        if (0x20..0x7f).contains(&b) {
+                                            b as char
+                                        } else {
+                                            '.'
+                                        }
+                                    })
                                     .collect();
                                 if ctx != last_instr {
                                     println!("round {round}: instruction {ctx:?}");
@@ -2021,7 +2561,9 @@ fn main() {
                                 break;
                             }
                         }
-                        if want.is_some() { break; }
+                        if want.is_some() {
+                            break;
+                        }
                     }
                 }
                 // Directed row when the subtitle names one; else cycle all targets
@@ -2041,7 +2583,9 @@ fn main() {
                     }
                     _ => {
                         // Alternate: choice-box first row, then the orb.
-                        if round % 2 == 0 { (85, 96) } else {
+                        if round % 2 == 0 {
+                            (85, 96)
+                        } else {
                             let mut orb = (160, 120);
                             for rec in 0..4u32 {
                                 let base = 0x2a1b + rec * 0x18;
@@ -2081,10 +2625,14 @@ fn main() {
                     }
                 }
                 if round % 50 == 0 {
-                    rt.write_ppm(&out.join(format!("tut3_r{round:03}.ppm"))).unwrap();
+                    rt.write_ppm(&out.join(format!("tut3_r{round:03}.ppm")))
+                        .unwrap();
                 }
             }
-            println!("TUTORIAL3 done, reached_script2={reached2} @ {} steps", rt.cpu.steps);
+            println!(
+                "TUTORIAL3 done, reached_script2={reached2} @ {} steps",
+                rt.cpu.steps
+            );
             return;
         }
 
@@ -2153,11 +2701,18 @@ fn main() {
                 }
                 if round % 40 == 0 {
                     let (fr2, _, _) = state(&rt);
-                    println!("round {round}: frame {fr2}, files {}", rt.opened_files.len());
-                    rt.write_ppm(&out.join(format!("tut2_r{round:03}.ppm"))).unwrap();
+                    println!(
+                        "round {round}: frame {fr2}, files {}",
+                        rt.opened_files.len()
+                    );
+                    rt.write_ppm(&out.join(format!("tut2_r{round:03}.ppm")))
+                        .unwrap();
                 }
             }
-            println!("TUTORIAL2 done, reached_script2={reached2} @ {} steps", rt.cpu.steps);
+            println!(
+                "TUTORIAL2 done, reached_script2={reached2} @ {} steps",
+                rt.cpu.steps
+            );
             return;
         }
 
@@ -2165,42 +2720,58 @@ fn main() {
         // (the conversation's topic selector, where CANCEL shows) + watch gs:0x6780
         // (the D2 profile request — nonzero = the `what` destination offer fired).
         if std::env::var("CHOICEDRIVE").is_ok() {
-            let d2 = |rt: &Runtime| rt.m.read8(g, 0x6780) as u16 | ((rt.m.read8(g, 0x6781) as u16) << 8);
-            let anchors = |rt: &Runtime| (0..33u32).any(|i| {
-                let v=(rt.m.read8(g,0x4f09+i*2) as u16|((rt.m.read8(g,0x4f09+i*2+1) as u16)<<8)) as i16;
-                v!=0 && v.abs()<8000 && v.abs()!=900 && v.abs()!=10200 && v.abs()!=12100
-            });
+            let d2 =
+                |rt: &Runtime| rt.m.read8(g, 0x6780) as u16 | ((rt.m.read8(g, 0x6781) as u16) << 8);
+            let anchors = |rt: &Runtime| {
+                (0..33u32).any(|i| {
+                    let v = (rt.m.read8(g, 0x4f09 + i * 2) as u16
+                        | ((rt.m.read8(g, 0x4f09 + i * 2 + 1) as u16) << 8))
+                        as i16;
+                    v != 0
+                        && v.abs() < 8000
+                        && v.abs() != 900
+                        && v.abs() != 10200
+                        && v.abs() != 12100
+                })
+            };
             println!("start: D2={:#06x}", d2(&rt));
             let baseline = rt.opened_files.len();
             // Systematically click each LEFT choice-box row (x ~85, y from 88 step 13),
             // then re-open (orb) between tries. 40 passes.
             for pass in 0..40u32 {
                 let row = pass % 8;
-                let (fr,_,_) = state(&rt);
-                let sy = 88 + 13*row as u16;
-                let ring = (85i32 + fr as i32*8 - 160).rem_euclid(1440) as u16;
+                let (fr, _, _) = state(&rt);
+                let sy = 88 + 13 * row as u16;
+                let ring = (85i32 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
                 rt.set_mouse_pos(ring, sy);
-                let _=rt.run(rt.cpu.steps+600_000); rt.mouse_press(0);
-                let _=rt.run(rt.cpu.steps+300_000); rt.mouse_release(0);
-                let _=rt.run(rt.cpu.steps+6_000_000);
-                let d = d2(&rt); let a = anchors(&rt);
+                let _ = rt.run(rt.cpu.steps + 600_000);
+                rt.mouse_press(0);
+                let _ = rt.run(rt.cpu.steps + 300_000);
+                rt.mouse_release(0);
+                let _ = rt.run(rt.cpu.steps + 6_000_000);
+                let d = d2(&rt);
+                let a = anchors(&rt);
                 let nf = rt.opened_files.len() - baseline;
                 if d != 0xffff || a || nf > 0 {
                     println!("pass {pass} row {row}: D2={d:#06x} anchors={a} newfiles={nf}");
-                    rt.write_ppm(&out.join(format!("choice_p{pass}.ppm"))).unwrap();
+                    rt.write_ppm(&out.join(format!("choice_p{pass}.ppm")))
+                        .unwrap();
                 }
                 if d != 0xffff || a {
                     println!("DESTINATION OFFER FIRED at pass {pass}!");
-                    rt.save_state(std::path::Path::new("accuracy/world_loaded.state")).unwrap();
+                    rt.save_state(std::path::Path::new("accuracy/world_loaded.state"))
+                        .unwrap();
                     break;
                 }
                 // Try the orb to (re)open a menu between rows.
                 if pass % 8 == 7 {
-                    let oring = (125i32 + fr as i32*8 - 160).rem_euclid(1440) as u16;
+                    let oring = (125i32 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
                     rt.set_mouse_pos(oring, 118);
-                    let _=rt.run(rt.cpu.steps+500_000); rt.mouse_press(0);
-                    let _=rt.run(rt.cpu.steps+300_000); rt.mouse_release(0);
-                    let _=rt.run(rt.cpu.steps+5_000_000);
+                    let _ = rt.run(rt.cpu.steps + 500_000);
+                    rt.mouse_press(0);
+                    let _ = rt.run(rt.cpu.steps + 300_000);
+                    rt.mouse_release(0);
+                    let _ = rt.run(rt.cpu.steps + 5_000_000);
                 }
             }
             println!("CHOICEDRIVE done, final D2={:#06x}", d2(&rt));
@@ -2217,36 +2788,57 @@ fn main() {
             let baseline = rt.opened_files.len();
             // Try the concept-menu WHAT row directly (row 9 of the psychotherapy
             // layout: x~190, y 35+11*9=134) — in case the hub menu is showing.
-            let anchors_live = |rt: &Runtime| (0..33u32).any(|i| {
-                let v=(rt.m.read8(g,0x4f09+i*2) as u16|((rt.m.read8(g,0x4f09+i*2+1) as u16)<<8)) as i16;
-                v!=0 && v.abs()<8000 && v.abs()!=900 && v.abs()!=10200 && v.abs()!=12100
-            });
-            for (name, mx, my) in [("orb-then-what", 125u16, 118u16), ("what-row9", 190, 134),
-                                   ("what-row9b", 190, 145), ("menu-what", 232, 148)] {
-                let (fr,_,_) = state(&rt);
+            let anchors_live = |rt: &Runtime| {
+                (0..33u32).any(|i| {
+                    let v = (rt.m.read8(g, 0x4f09 + i * 2) as u16
+                        | ((rt.m.read8(g, 0x4f09 + i * 2 + 1) as u16) << 8))
+                        as i16;
+                    v != 0
+                        && v.abs() < 8000
+                        && v.abs() != 900
+                        && v.abs() != 10200
+                        && v.abs() != 12100
+                })
+            };
+            for (name, mx, my) in [
+                ("orb-then-what", 125u16, 118u16),
+                ("what-row9", 190, 134),
+                ("what-row9b", 190, 145),
+                ("menu-what", 232, 148),
+            ] {
+                let (fr, _, _) = state(&rt);
                 // If orb variant: click orb first to open the menu.
                 if name.starts_with("orb") {
-                    let ring=(125i32+fr as i32*8-160).rem_euclid(1440) as u16;
-                    rt.set_mouse_pos(ring,118);
-                    let _=rt.run(rt.cpu.steps+600_000); rt.mouse_press(0);
-                    let _=rt.run(rt.cpu.steps+300_000); rt.mouse_release(0);
-                    let _=rt.run(rt.cpu.steps+4_000_000);
+                    let ring = (125i32 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+                    rt.set_mouse_pos(ring, 118);
+                    let _ = rt.run(rt.cpu.steps + 600_000);
+                    rt.mouse_press(0);
+                    let _ = rt.run(rt.cpu.steps + 300_000);
+                    rt.mouse_release(0);
+                    let _ = rt.run(rt.cpu.steps + 4_000_000);
                 }
-                let ring=(mx as i32+fr as i32*8-160).rem_euclid(1440) as u16;
-                rt.set_mouse_pos(ring,my);
-                let _=rt.run(rt.cpu.steps+600_000); rt.mouse_press(0);
-                let _=rt.run(rt.cpu.steps+300_000); rt.mouse_release(0);
-                let _=rt.run(rt.cpu.steps+12_000_000);
-                let nf:Vec<String>=rt.opened_files[baseline..].iter().map(|(_,p)|p.clone()).collect();
-                let anch=anchors_live(&rt);
+                let ring = (mx as i32 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+                rt.set_mouse_pos(ring, my);
+                let _ = rt.run(rt.cpu.steps + 600_000);
+                rt.mouse_press(0);
+                let _ = rt.run(rt.cpu.steps + 300_000);
+                rt.mouse_release(0);
+                let _ = rt.run(rt.cpu.steps + 12_000_000);
+                let nf: Vec<String> = rt.opened_files[baseline..]
+                    .iter()
+                    .map(|(_, p)| p.clone())
+                    .collect();
+                let anch = anchors_live(&rt);
                 println!("{name}: anchors={anch} files={nf:?}");
                 rt.write_ppm(&out.join(format!("hub_{name}.ppm"))).unwrap();
                 if anch || nf.iter().any(|f| f.to_lowercase().ends_with(".ext")) {
                     println!("WORLD LOADED via {name}!");
-                    rt.save_state(std::path::Path::new("accuracy/world_loaded.state")).unwrap();
+                    rt.save_state(std::path::Path::new("accuracy/world_loaded.state"))
+                        .unwrap();
                     break;
                 }
-                rt.inject_key(0x01,0x1b); let _=rt.run(rt.cpu.steps+3_000_000);
+                rt.inject_key(0x01, 0x1b);
+                let _ = rt.run(rt.cpu.steps + 3_000_000);
             }
             println!("HUBSCAN done");
             return;
@@ -2256,38 +2848,66 @@ fn main() {
         // topic hub) — advance the linear story past the consultation toward the
         // free-choice nav, watching DS:0x4F09 anchors + new .ext/script loads.
         if std::env::var("SCRIPT2FWD").is_ok() {
-            let anchors_live = |rt: &Runtime| (0..33u32).any(|i| {
-                let v = (rt.m.read8(g, 0x4f09 + i*2) as u16 | ((rt.m.read8(g, 0x4f09+i*2+1) as u16)<<8)) as i16;
-                v != 0 && v.abs() < 8000 && v.abs() != 900 && v.abs() != 10200 && v.abs() != 12100
-            });
+            let anchors_live = |rt: &Runtime| {
+                (0..33u32).any(|i| {
+                    let v = (rt.m.read8(g, 0x4f09 + i * 2) as u16
+                        | ((rt.m.read8(g, 0x4f09 + i * 2 + 1) as u16) << 8))
+                        as i16;
+                    v != 0
+                        && v.abs() < 8000
+                        && v.abs() != 900
+                        && v.abs() != 10200
+                        && v.abs() != 12100
+                })
+            };
             let baseline = rt.opened_files.len();
             let mut last_files = 0usize;
             for round in 0..1500u32 {
                 // Advance: a center click (dismiss/next line), occasionally the orb.
-                let (fr,_,_) = state(&rt);
-                let (sx, sy) = if round % 5 == 0 { (125u16, 118u16) } else { (160, 100) };
-                let ring = (sx as i32 + fr as i32*8 - 160).rem_euclid(1440) as u16;
+                let (fr, _, _) = state(&rt);
+                let (sx, sy) = if round % 5 == 0 {
+                    (125u16, 118u16)
+                } else {
+                    (160, 100)
+                };
+                let ring = (sx as i32 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
                 rt.set_mouse_pos(ring, sy);
                 let _ = rt.run(rt.cpu.steps + 400_000);
-                rt.mouse_press(0); let _ = rt.run(rt.cpu.steps + 250_000); rt.mouse_release(0);
+                rt.mouse_press(0);
+                let _ = rt.run(rt.cpu.steps + 250_000);
+                rt.mouse_release(0);
                 let _ = rt.run(rt.cpu.steps + 1_200_000);
                 let nfiles = rt.opened_files.len();
                 if nfiles > last_files {
-                    let newest: Vec<String> = rt.opened_files[baseline.max(last_files)..].iter().map(|(_,p)|p.clone()).collect();
+                    let newest: Vec<String> = rt.opened_files[baseline.max(last_files)..]
+                        .iter()
+                        .map(|(_, p)| p.clone())
+                        .collect();
                     let has_world = newest.iter().any(|f| f.to_lowercase().ends_with(".ext"));
-                    let has_scr = newest.iter().any(|f| f.to_lowercase().contains("script3")||f.to_lowercase().contains("script4")||f.to_lowercase().contains("script5"));
+                    let has_scr = newest.iter().any(|f| {
+                        f.to_lowercase().contains("script3")
+                            || f.to_lowercase().contains("script4")
+                            || f.to_lowercase().contains("script5")
+                    });
                     println!("round {round}: NEW {newest:?} world={has_world} script345={has_scr}");
                     if has_world || has_scr || anchors_live(&rt) {
                         println!("REACHED destination/world state at round {round}!");
-                        rt.write_ppm(&out.join(format!("s2fwd_reached_{round}.ppm"))).unwrap();
-                        rt.save_state(std::path::Path::new("accuracy/world_loaded.state")).unwrap();
+                        rt.write_ppm(&out.join(format!("s2fwd_reached_{round}.ppm")))
+                            .unwrap();
+                        rt.save_state(std::path::Path::new("accuracy/world_loaded.state"))
+                            .unwrap();
                         break;
                     }
                     last_files = nfiles;
                 }
                 if round % 150 == 0 {
-                    println!("round {round}: frame {fr}, anchors={} files={}", anchors_live(&rt), nfiles);
-                    rt.write_ppm(&out.join(format!("s2fwd_r{round}.ppm"))).unwrap();
+                    println!(
+                        "round {round}: frame {fr}, anchors={} files={}",
+                        anchors_live(&rt),
+                        nfiles
+                    );
+                    rt.write_ppm(&out.join(format!("s2fwd_r{round}.ppm")))
+                        .unwrap();
                 }
             }
             println!("SCRIPT2FWD done");
@@ -2299,40 +2919,66 @@ fn main() {
         // (nav anchors populate / a new location .ext opens) — the story beat
         // HONK flags ("IF THE PHONE RINGS...").
         if std::env::var("PHONEWALK").is_ok() {
-            let anchors_live = |rt: &Runtime| (0..33u32).any(|i| {
-                let v = (rt.m.read8(g, 0x4f09 + i*2) as u16 | ((rt.m.read8(g, 0x4f09+i*2+1) as u16)<<8)) as i16;
-                v != 0 && v.abs() < 8000 && v.abs() != 900 && v.abs() != 10200 && v.abs() != 12100
-            });
+            let anchors_live = |rt: &Runtime| {
+                (0..33u32).any(|i| {
+                    let v = (rt.m.read8(g, 0x4f09 + i * 2) as u16
+                        | ((rt.m.read8(g, 0x4f09 + i * 2 + 1) as u16) << 8))
+                        as i16;
+                    v != 0
+                        && v.abs() < 8000
+                        && v.abs() != 900
+                        && v.abs() != 10200
+                        && v.abs() != 12100
+                })
+            };
             let baseline = rt.opened_files.len();
             // Click TELEPHONE (golden menu row 1 at the console frame).
-            let (fr,_,_) = state(&rt);
+            let (fr, _, _) = state(&rt);
             let delta = fr as i32 - 45;
-            let mx = 0x11f - delta*8 - 0x37;
-            let my = 0x48 + delta.unsigned_abs() as i32*5/4 + 1*(0x12 - delta.unsigned_abs() as i32/8) + 8;
-            let ring = (mx + fr as i32*8 - 160).rem_euclid(1440) as u16;
+            let mx = 0x11f - delta * 8 - 0x37;
+            let my = 0x48
+                + delta.unsigned_abs() as i32 * 5 / 4
+                + 1 * (0x12 - delta.unsigned_abs() as i32 / 8)
+                + 8;
+            let ring = (mx + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
             rt.set_mouse_pos(ring, my as u16);
             let _ = rt.run(rt.cpu.steps + 700_000);
-            rt.mouse_press(0); let _ = rt.run(rt.cpu.steps + 400_000); rt.mouse_release(0);
+            rt.mouse_press(0);
+            let _ = rt.run(rt.cpu.steps + 400_000);
+            rt.mouse_release(0);
             let _ = rt.run(rt.cpu.steps + 10_000_000);
             rt.write_ppm(&out.join("phone_dial.ppm")).unwrap();
-            let newest: Vec<String> = rt.opened_files[baseline..].iter().map(|(_,p)|p.clone()).collect();
+            let newest: Vec<String> = rt.opened_files[baseline..]
+                .iter()
+                .map(|(_, p)| p.clone())
+                .collect();
             println!("after TELEPHONE: new files {newest:?}");
             // Call each contact row in the choice box (left, y88+13*i).
             for row in 0..8u16 {
-                let (fr,_,_) = state(&rt);
-                let sy = 88 + 6 + 13*row;
-                let ring = (90i32 + fr as i32*8 - 160).rem_euclid(1440) as u16;
+                let (fr, _, _) = state(&rt);
+                let sy = 88 + 6 + 13 * row;
+                let ring = (90i32 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
                 rt.set_mouse_pos(ring, sy);
                 let _ = rt.run(rt.cpu.steps + 700_000);
-                rt.mouse_press(0); let _ = rt.run(rt.cpu.steps + 400_000); rt.mouse_release(0);
+                rt.mouse_press(0);
+                let _ = rt.run(rt.cpu.steps + 400_000);
+                rt.mouse_release(0);
                 let _ = rt.run(rt.cpu.steps + 15_000_000);
-                rt.write_ppm(&out.join(format!("phone_call_{row}.ppm"))).unwrap();
+                rt.write_ppm(&out.join(format!("phone_call_{row}.ppm")))
+                    .unwrap();
                 let anchors = anchors_live(&rt);
-                let nf: Vec<String> = rt.opened_files[baseline..].iter().map(|(_,p)|p.clone()).collect();
-                println!("call row {row}: anchors={anchors} files={:?}", &nf[nf.len().saturating_sub(3)..]);
+                let nf: Vec<String> = rt.opened_files[baseline..]
+                    .iter()
+                    .map(|(_, p)| p.clone())
+                    .collect();
+                println!(
+                    "call row {row}: anchors={anchors} files={:?}",
+                    &nf[nf.len().saturating_sub(3)..]
+                );
                 if anchors || nf.iter().any(|f| f.to_lowercase().contains(".ext")) {
                     println!("GRANT at row {row}!");
-                    rt.save_state(std::path::Path::new("accuracy/granted.state")).unwrap();
+                    rt.save_state(std::path::Path::new("accuracy/granted.state"))
+                        .unwrap();
                     break;
                 }
                 rt.inject_key(0x01, 0x1b); // Esc back
@@ -2362,9 +3008,16 @@ fn main() {
                 !defaulty && vals.iter().any(|&v| v.abs() > 0 && v.abs() < 8000)
             };
             let targets: [(u16, u16); 10] = [
-                (190, 45), (190, 56), (190, 67), (190, 78), (190, 89), // topic rows
+                (190, 45),
+                (190, 56),
+                (190, 67),
+                (190, 78),
+                (190, 89),  // topic rows
                 (125, 118), // orb
-                (230, 88), (230, 103), (230, 118), (230, 133), // menu rows
+                (230, 88),
+                (230, 103),
+                (230, 118),
+                (230, 133), // menu rows
             ];
             let mut milestones = 0;
             for round in 0..600u32 {
@@ -2379,15 +3032,26 @@ fn main() {
                 let _ = rt.run(rt.cpu.steps + 1_500_000);
                 if anchors_nonempty(&rt) {
                     println!("round {round}: NAV ANCHORS POPULATED!");
-                    rt.write_ppm(&out.join(format!("granted_{round}.ppm"))).unwrap();
-                    rt.save_state(std::path::Path::new("accuracy/granted.state")).unwrap();
+                    rt.write_ppm(&out.join(format!("granted_{round}.ppm")))
+                        .unwrap();
+                    rt.save_state(std::path::Path::new("accuracy/granted.state"))
+                        .unwrap();
                     milestones += 1;
-                    if milestones >= 2 { break; }
+                    if milestones >= 2 {
+                        break;
+                    }
                 }
                 if round % 60 == 0 {
-                    println!("round {round}: frame {fr}, anchors {}",
-                        if anchors_nonempty(&rt) { "populated" } else { "empty" });
-                    rt.write_ppm(&out.join(format!("grant_r{round}.ppm"))).unwrap();
+                    println!(
+                        "round {round}: frame {fr}, anchors {}",
+                        if anchors_nonempty(&rt) {
+                            "populated"
+                        } else {
+                            "empty"
+                        }
+                    );
+                    rt.write_ppm(&out.join(format!("grant_r{round}.ppm")))
+                        .unwrap();
                 }
             }
             println!("GRANTWALK done, milestones={milestones}");
@@ -2413,8 +3077,10 @@ fn main() {
             let (fr, _, _) = state(&rt);
             let delta = fr as i32 - 45;
             let x = 0x11f - delta * 8 - 0x37;
-            let y = 0x48 + delta.unsigned_abs() as i32 * 5 / 4
-                + 3 * (0x12 - delta.unsigned_abs() as i32 / 8) + 8;
+            let y = 0x48
+                + delta.unsigned_abs() as i32 * 5 / 4
+                + 3 * (0x12 - delta.unsigned_abs() as i32 / 8)
+                + 8;
             let ring = (x + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
             rt.set_mouse_pos(ring, y as u16);
             let _ = rt.run(rt.cpu.steps + 700_000);
@@ -2425,7 +3091,10 @@ fn main() {
             let mut seen = std::collections::HashSet::new();
             for &(cs, ip, ds, si, addr) in rt.m.watch_hits.iter() {
                 if seen.insert((cs, ip)) {
-                    println!("stream builder {cs:04x}:{ip:04x} -> gs:{:#06x} (ds:si={ds:04x}:{si:04x})", addr - gsbuf);
+                    println!(
+                        "stream builder {cs:04x}:{ip:04x} -> gs:{:#06x} (ds:si={ds:04x}:{si:04x})",
+                        addr - gsbuf
+                    );
                 }
             }
             println!("GLYPHSRC value-watch(0xE8) hits: {}", rt.m.watch_hits.len());
@@ -2460,12 +3129,21 @@ fn main() {
                 .collect();
             println!(
                 "GLYPHBOX rect @DS:0x2AAB x={} y={} w={} h={}  (widget ran = {})",
-                rect[0], rect[1], rect[2], rect[3],
+                rect[0],
+                rect[1],
+                rect[2],
+                rect[3],
                 rect[2] != 0 && rect[3] != 0
             );
             // And dump the claimed stream head, so its emptiness is a measurement.
             let head: Vec<u8> = (0..16).map(|i| rt.m.mem[gsbuf + 0x175 + i]).collect();
-            println!("GLYPHSTREAM head gs:0x175 = {}", head.iter().map(|b| format!("{b:02x}")).collect::<Vec<_>>().join(" "));
+            println!(
+                "GLYPHSTREAM head gs:0x175 = {}",
+                head.iter()
+                    .map(|b| format!("{b:02x}"))
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            );
             rt.m.watch = None;
             rt.m.trace_range = None;
             println!("GLYPHSRC done");
@@ -2486,9 +3164,14 @@ fn main() {
             let mut seen = std::collections::HashSet::new();
             for &(addr, v, cs, ip) in rt.m.range_hits.iter() {
                 if seen.insert((cs, ip, v)) {
-                    println!("[0x2793] write {v:#04x} (byte {}) from {cs:04x}:{ip:04x}", addr - 0xE840 - 0x2793);
+                    println!(
+                        "[0x2793] write {v:#04x} (byte {}) from {cs:04x}:{ip:04x}",
+                        addr - 0xE840 - 0x2793
+                    );
                 }
-                if seen.len() > 20 { break; }
+                if seen.len() > 20 {
+                    break;
+                }
             }
             rt.m.trace_range = None;
             println!("PINTRACE done");
@@ -2500,7 +3183,8 @@ fn main() {
         // walk topics watching [0x2793] bit2 — find the exit that releases the
         // script-owned engagement legitimately.
         if std::env::var("ADIEUWALK").is_ok() {
-            let flags = |rt: &Runtime| rt.m.read8(g, 0x2793) as u16 | ((rt.m.read8(g, 0x2794) as u16) << 8);
+            let flags =
+                |rt: &Runtime| rt.m.read8(g, 0x2793) as u16 | ((rt.m.read8(g, 0x2794) as u16) << 8);
             println!("start: [0x2793]={:#06x}", flags(&rt));
             // Topic rows at x~175/pitch 11 from y45 (list geometry) + the hub rows
             // (TALK first). Click each row, then check the engagement bit.
@@ -2519,7 +3203,8 @@ fn main() {
                 println!("row {row}: [0x2793]={f:#06x}");
                 if f & 4 == 0 {
                     println!("RELEASED at row {row}!");
-                    rt.write_ppm(&out.join(format!("released_row{row}.ppm"))).unwrap();
+                    rt.write_ppm(&out.join(format!("released_row{row}.ppm")))
+                        .unwrap();
                     break;
                 }
             }
@@ -2565,7 +3250,8 @@ fn main() {
                 let _ = rt.run(rt.cpu.steps + 10_000_000);
                 let (fr2, _, _) = state(&rt);
                 println!("travel stop {stop}: frame {fr2}");
-                rt.write_ppm(&out.join(format!("travel_{stop}_f{fr2}.ppm"))).unwrap();
+                rt.write_ppm(&out.join(format!("travel_{stop}_f{fr2}.ppm")))
+                    .unwrap();
                 if (72..=107).contains(&fr2) {
                     let _ = rt.run(rt.cpu.steps + 8_000_000);
                     rt.write_ppm(&out.join("travel_nav_sector.ppm")).unwrap();
@@ -2593,9 +3279,12 @@ fn main() {
                             // Interact with the opened NAV SCREEN: click pyramids
                             // (candidate destinations) + the centre orb, capturing.
                             let targets: [(u16, u16, &str); 6] = [
-                                (60, 165, "pyr_left"), (120, 155, "pyr_midl"),
-                                (200, 155, "pyr_midr"), (260, 165, "pyr_right"),
-                                (160, 100, "viewscreen"), (160, 160, "orb2"),
+                                (60, 165, "pyr_left"),
+                                (120, 155, "pyr_midl"),
+                                (200, 155, "pyr_midr"),
+                                (260, 165, "pyr_right"),
+                                (160, 100, "viewscreen"),
+                                (160, 160, "orb2"),
                             ];
                             for (px, py, name) in targets {
                                 rt.set_mouse_pos(px * 2, py);
@@ -2604,7 +3293,8 @@ fn main() {
                                 let _ = rt.run(rt.cpu.steps + 500_000);
                                 rt.mouse_release(0);
                                 let _ = rt.run(rt.cpu.steps + 8_000_000);
-                                rt.write_ppm(&out.join(format!("navscr_{name}.ppm"))).unwrap();
+                                rt.write_ppm(&out.join(format!("navscr_{name}.ppm")))
+                                    .unwrap();
                                 println!("nav screen: clicked {name}");
                             }
                             break;
@@ -2643,7 +3333,11 @@ fn main() {
                         rd(o),
                         rd(o + 2),
                         rd(o + 4),
-                        if i == 10 { "   <-- 11th read over-reads into the trig table" } else { "" }
+                        if i == 10 {
+                            "   <-- 11th read over-reads into the trig table"
+                        } else {
+                            ""
+                        }
                     );
                 }
             };
@@ -2654,7 +3348,8 @@ fn main() {
                 rt.set_mouse_pos(target, 100);
                 let _ = rt.run(rt.cpu.steps + 10_000_000);
                 let (fr2, _, _) = state(&rt);
-                rt.write_ppm(&out.join(format!("nav_{stop}_f{fr2}.ppm"))).unwrap();
+                rt.write_ppm(&out.join(format!("nav_{stop}_f{fr2}.ppm")))
+                    .unwrap();
                 std::fs::write(
                     out.join(format!("nav_{stop}_f{fr2}_indices.bin")),
                     rt.screen_indices(),
@@ -2664,7 +3359,8 @@ fn main() {
                 if (72..=107).contains(&fr2) {
                     // In the pyramid sector: linger, click the orb, capture.
                     let _ = rt.run(rt.cpu.steps + 10_000_000);
-                    rt.write_ppm(&out.join(format!("nav_sector_f{fr2}.ppm"))).unwrap();
+                    rt.write_ppm(&out.join(format!("nav_sector_f{fr2}.ppm")))
+                        .unwrap();
                     dump_nav(&rt, "pyramid_sector");
                     break;
                 }
@@ -2678,9 +3374,9 @@ fn main() {
         // in any file — derived or copied at runtime).
         if std::env::var("FONTFIND").is_ok() {
             let pats: [(&str, [u8; 8]); 3] = [
-                ("C", [0xfe,0x80,0x80,0x80,0x80,0x80,0x80,0xff]),
-                ("A", [0x7f,0x81,0x81,0x81,0x81,0xbf,0x81,0x81]),
-                ("N", [0xfe,0x81,0x81,0x81,0x81,0x81,0x81,0x81]),
+                ("C", [0xfe, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0xff]),
+                ("A", [0x7f, 0x81, 0x81, 0x81, 0x81, 0xbf, 0x81, 0x81]),
+                ("N", [0xfe, 0x81, 0x81, 0x81, 0x81, 0x81, 0x81, 0x81]),
             ];
             for (name, pat) in pats {
                 let mut found = 0;
@@ -2688,10 +3384,14 @@ fn main() {
                     if rt.m.mem[i..i + 8] == pat {
                         println!("FONTFIND {name} at linear {i:#07x}");
                         found += 1;
-                        if found >= 4 { break; }
+                        if found >= 4 {
+                            break;
+                        }
                     }
                 }
-                if found == 0 { println!("FONTFIND {name}: not in RAM"); }
+                if found == 0 {
+                    println!("FONTFIND {name}: not in RAM");
+                }
             }
             return;
         }
@@ -2713,7 +3413,8 @@ fn main() {
                 let (fr, _, _) = state(&rt);
                 let delta = fr as i32 - 45;
                 let x = (0x11f - delta * 8 - 0x37) as u16; // box centre-ish
-                let y = (0x48 + delta.unsigned_abs() as i32 * 5 / 4
+                let y = (0x48
+                    + delta.unsigned_abs() as i32 * 5 / 4
                     + (row as i32) * (0x12 - delta.unsigned_abs() as i32 / 8)
                     + 8) as u16;
                 let ring = (x as i32 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
@@ -2725,7 +3426,8 @@ fn main() {
                 rt.mouse_release(0);
                 for stage in 0..4 {
                     let _ = rt.run(rt.cpu.steps + 8_000_000);
-                    rt.write_ppm(&out.join(format!("submenu_{name}_{stage}.ppm"))).unwrap();
+                    rt.write_ppm(&out.join(format!("submenu_{name}_{stage}.ppm")))
+                        .unwrap();
                     std::fs::write(
                         out.join(format!("submenu_{name}_{stage}_indices.bin")),
                         rt.screen_indices(),
@@ -2739,7 +3441,11 @@ fn main() {
                     for code in 32u8..127 {
                         if let Some(gl) = game_font_glyph(code as char) {
                             if gl.rows.iter().map(|r| r.count_ones()).sum::<u32>() >= 4 {
-                                lit_font.push((code as char, gl.rows, game_font_advance(code as char)));
+                                lit_font.push((
+                                    code as char,
+                                    gl.rows,
+                                    game_font_advance(code as char),
+                                ));
                             }
                         }
                     }
@@ -2763,13 +3469,21 @@ fn main() {
                                             .get((row0 + gy) * 320 + x + gx)
                                             .copied()
                                             .unwrap_or(0);
-                                        if on != lit(px) { ok = false; break 'c; }
+                                        if on != lit(px) {
+                                            ok = false;
+                                            break 'c;
+                                        }
                                     }
                                 }
-                                if ok { got = Some((*ch, *adv)); break; }
+                                if ok {
+                                    got = Some((*ch, *adv));
+                                    break;
+                                }
                             }
                             if let Some((ch, adv)) = got {
-                                if blanks >= 8 && !line.is_empty() { line.push(' '); }
+                                if blanks >= 8 && !line.is_empty() {
+                                    line.push(' ');
+                                }
                                 line.push(ch);
                                 blanks = 0;
                                 x += adv.max(2);
@@ -2794,16 +3508,23 @@ fn main() {
             for &(cs, ip, ds, si, addr) in rt.m.watch_hits.iter() {
                 // Only surface writes into the composition/back-buffer/VRAM ranges.
                 if (0x266C0..0x366C0).contains(&addr) || addr >= 0xA0000 {
-                    println!("0xE8 pixel writer {cs:04x}:{ip:04x} -> {addr:#07x} (ds:si={ds:04x}:{si:04x})");
+                    println!(
+                        "0xE8 pixel writer {cs:04x}:{ip:04x} -> {addr:#07x} (ds:si={ds:04x}:{si:04x})"
+                    );
                 }
             }
             rt.m.watch = None;
             let mut seen = std::collections::HashSet::new();
             for &(addr, v, cs, ip) in rt.m.range_hits.iter() {
                 if seen.insert((cs, ip)) {
-                    println!("stream builder {cs:04x}:{ip:04x} -> gs:{:#06x} = {v:#04x}", addr - 0xE840);
+                    println!(
+                        "stream builder {cs:04x}:{ip:04x} -> gs:{:#06x} = {v:#04x}",
+                        addr - 0xE840
+                    );
                 }
-                if seen.len() > 15 { break; }
+                if seen.len() > 15 {
+                    break;
+                }
             }
             rt.m.trace_range = None;
             println!("SUBMENUCAP done");
@@ -2846,12 +3567,14 @@ fn main() {
                 let set: std::collections::HashSet<usize> = diff.iter().copied().collect();
                 diff.retain(|&i| {
                     let (x, y) = (i % 320, i / 320);
-                    [(1i32, 0i32), (-1, 0), (0, 1), (0, -1)].iter().any(|&(dx, dy)| {
-                        let (nx, ny) = (x as i32 + dx, y as i32 + dy);
-                        (0..320).contains(&nx)
-                            && (0..200).contains(&ny)
-                            && set.contains(&((ny * 320 + nx) as usize))
-                    })
+                    [(1i32, 0i32), (-1, 0), (0, 1), (0, -1)]
+                        .iter()
+                        .any(|&(dx, dy)| {
+                            let (nx, ny) = (x as i32 + dx, y as i32 + dy);
+                            (0..320).contains(&nx)
+                                && (0..200).contains(&ny)
+                                && set.contains(&((ny * 320 + nx) as usize))
+                        })
                 });
                 if diff.len() < 50 {
                     println!("atlas ({gx},{gy}): no hand blob ({} px)", diff.len());
@@ -2866,15 +3589,28 @@ fn main() {
                     let mut best: Vec<usize> = Vec::new();
                     let mut best_d = i64::MAX;
                     for &start in &diff {
-                        if seen.contains(&start) { continue; }
+                        if seen.contains(&start) {
+                            continue;
+                        }
                         let mut comp = vec![start];
                         let mut stack = vec![start];
                         seen.insert(start);
                         while let Some(i) = stack.pop() {
                             let (x, y) = ((i % 320) as i32, (i / 320) as i32);
-                            for (dx, dy) in [(1i32, 0i32), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)] {
+                            for (dx, dy) in [
+                                (1i32, 0i32),
+                                (-1, 0),
+                                (0, 1),
+                                (0, -1),
+                                (1, 1),
+                                (-1, -1),
+                                (1, -1),
+                                (-1, 1),
+                            ] {
                                 let (nx, ny) = (x + dx, y + dy);
-                                if !(0..320).contains(&nx) || !(0..200).contains(&ny) { continue; }
+                                if !(0..320).contains(&nx) || !(0..200).contains(&ny) {
+                                    continue;
+                                }
                                 let n = (ny * 320 + nx) as usize;
                                 if set.contains(&n) && seen.insert(n) {
                                     comp.push(n);
@@ -2882,7 +3618,9 @@ fn main() {
                                 }
                             }
                         }
-                        if comp.len() < 200 { continue; } // stars / speckle
+                        if comp.len() < 200 {
+                            continue;
+                        } // stars / speckle
                         let d = comp
                             .iter()
                             .map(|&i| {
@@ -2905,7 +3643,10 @@ fn main() {
                 let (mut x0, mut y0, mut x1, mut y1) = (320usize, 200usize, 0usize, 0usize);
                 for &i in &diff {
                     let (x, y) = (i % 320, i / 320);
-                    x0 = x0.min(x); x1 = x1.max(x); y0 = y0.min(y); y1 = y1.max(y);
+                    x0 = x0.min(x);
+                    x1 = x1.max(x);
+                    y0 = y0.min(y);
+                    y1 = y1.max(y);
                 }
                 let (w, h) = (x1 - x0 + 1, y1 - y0 + 1);
                 let mut sprite = vec![0u8; w * h]; // 0 = transparent
@@ -2914,12 +3655,20 @@ fn main() {
                     sprite[(y - y0) * w + (x - x0)] = live[i];
                 }
                 let mut blob = Vec::new();
-                for v in [gx as i32 - x0 as i32, gy as i32 - y0 as i32, w as i32, h as i32] {
+                for v in [
+                    gx as i32 - x0 as i32,
+                    gy as i32 - y0 as i32,
+                    w as i32,
+                    h as i32,
+                ] {
                     blob.extend_from_slice(&(v as i16).to_le_bytes());
                 }
                 blob.extend_from_slice(&sprite);
                 std::fs::write(out.join(format!("hand_{gx}_{gy}.bin")), &blob).unwrap();
-                println!("atlas ({gx},{gy}): blob {}px bbox {w}x{h} at ({x0},{y0})", diff.len());
+                println!(
+                    "atlas ({gx},{gy}): blob {}px bbox {w}x{h} at ({x0},{y0})",
+                    diff.len()
+                );
             }
             println!("HANDATLAS done -> {}/hand_*.bin", out.display());
             return;
@@ -2955,18 +3704,28 @@ fn main() {
             rt.set_mouse_pos(160, 160);
             let _ = rt.run(rt.cpu.steps + 6_000_000);
             let b = rt.screen_indices();
-            let diff: Vec<usize> = (0..a.len().min(b.len())).filter(|&i| a[i] != b[i]).collect();
+            let diff: Vec<usize> = (0..a.len().min(b.len()))
+                .filter(|&i| a[i] != b[i])
+                .collect();
             let (mut x0, mut y0, mut x1, mut y1) = (320usize, 200usize, 0usize, 0usize);
             for &i in &diff {
                 let (x, y) = (i % 320, i / 320);
-                x0 = x0.min(x); x1 = x1.max(x); y0 = y0.min(y); y1 = y1.max(y);
+                x0 = x0.min(x);
+                x1 = x1.max(x);
+                y0 = y0.min(y);
+                y1 = y1.max(y);
             }
             println!("hand diff: {} px, bbox x{x0}..{x1} y{y0}..{y1}", diff.len());
             let mut hist = std::collections::HashMap::new();
-            for &i in &diff { *hist.entry(b[i]).or_insert(0u32) += 1; }
+            for &i in &diff {
+                *hist.entry(b[i]).or_insert(0u32) += 1;
+            }
             let mut top: Vec<_> = hist.into_iter().collect();
             top.sort_by_key(|&(_, n)| std::cmp::Reverse(n));
-            println!("hand palette indices (top): {:?}", &top[..top.len().min(10)]);
+            println!(
+                "hand palette indices (top): {:?}",
+                &top[..top.len().min(10)]
+            );
             // 2. Watch writes of the hand's dominant colour (246) into the BACK
             //    BUFFER only (filters out same-valued data stores): the writers
             //    are the true rasterizer sites, ds:si their pixel source.
@@ -2978,7 +3737,9 @@ fn main() {
             rt.m.watch_hits.clear();
             let _ = rt.run(rt.cpu.steps + 4_000_000);
             for &(cs, ip, ds, si, addr) in rt.m.watch_hits.iter() {
-                println!("hand colour write from {cs:04x}:{ip:04x} -> linear {addr:#07x} (ds:si={ds:04x}:{si:04x})");
+                println!(
+                    "hand colour write from {cs:04x}:{ip:04x} -> linear {addr:#07x} (ds:si={ds:04x}:{si:04x})"
+                );
             }
             rt.m.watch = None;
             // 3. Identify the writer segment's contents (dynamic overlay?): dump it
@@ -3005,7 +3766,9 @@ fn main() {
                 if seen.insert((cs, ip)) {
                     println!("vert init write: {cs:04x}:{ip:04x} -> {addr:#07x} = {v:#04x}");
                 }
-                if seen.len() > 20 { break; }
+                if seen.len() > 20 {
+                    break;
+                }
             }
             println!("vert init: {} total hits", rt.m.range_hits.len());
         }
@@ -3043,8 +3806,14 @@ fn main() {
                     (rt.m.read8(m3, $off) as u16 | ((rt.m.read8(m3, $off + 1) as u16) << 8))
                 };
             }
-            println!("manu3 data:[0]={:#06x} [2]={:#06x} [4]={:#06x} [6]={:#06x} [8]={:#06x}",
-                rw!(0), rw!(2), rw!(4), rw!(6), rw!(8));
+            println!(
+                "manu3 data:[0]={:#06x} [2]={:#06x} [4]={:#06x} [6]={:#06x} [8]={:#06x}",
+                rw!(0),
+                rw!(2),
+                rw!(4),
+                rw!(6),
+                rw!(8)
+            );
             // Dump the vertex-buffer segment (fs:[2]) so the runtime vertex records
             // (face-table targets) can be decoded offline.
             {
@@ -3066,12 +3835,19 @@ fn main() {
                 let mut addrs: Vec<usize> = hits.iter().map(|h| h.0 - vseg).collect();
                 addrs.sort_unstable();
                 addrs.dedup();
-                println!("vertex-seg reads: {} sites, offsets {:x?}", addrs.len(),
-                    &addrs[..addrs.len().min(24)]);
+                println!(
+                    "vertex-seg reads: {} sites, offsets {:x?}",
+                    addrs.len(),
+                    &addrs[..addrs.len().min(24)]
+                );
             }
             let (faces, nfaces) = (rw!(0x2300), rw!(0x2304));
             let (recs, nrecs) = (rw!(0x22fa), rw!(0x22fe));
-            println!("manu3 live: faces@{faces:#06x} n={nfaces:#x} pose-recs@{recs:#06x} n={nrecs:#x} root={:#06x} list2={:#06x}", rw!(0x2248), rw!(0x224a));
+            println!(
+                "manu3 live: faces@{faces:#06x} n={nfaces:#x} pose-recs@{recs:#06x} n={nrecs:#x} root={:#06x} list2={:#06x}",
+                rw!(0x2248),
+                rw!(0x224a)
+            );
             let mut dump = Vec::new();
             for i in 0..0x6000u32 {
                 dump.push(rt.m.read8(m3, faces as u32 + i));
@@ -3097,7 +3873,10 @@ fn main() {
             for (hits, ip) in blocks.iter().take(30) {
                 println!("manu3 hot entry {ip:#06x} ({hits} hits)");
             }
-            println!("manu3 covered bytes: {}", cov.iter().filter(|&&c| c > 0).count());
+            println!(
+                "manu3 covered bytes: {}",
+                cov.iter().filter(|&&c| c > 0).count()
+            );
             // Contiguous covered spans (allowing <=8-byte gaps for instruction bodies):
             // the decompile worklist, written as "start end max_hits" lines.
             let mut spans = String::new();
@@ -3106,7 +3885,10 @@ fn main() {
             let mut peak = 0u32;
             for ip in 0..65536usize {
                 if cov[ip] > 0 {
-                    if start.is_none() { start = Some(ip); peak = 0; }
+                    if start.is_none() {
+                        start = Some(ip);
+                        peak = 0;
+                    }
                     peak = peak.max(cov[ip]);
                     gap = 0;
                 } else if let Some(s0) = start {
@@ -3125,7 +3907,10 @@ fn main() {
             rt.m.read_watch = Some(bank..bank + 0x60);
             let _ = rt.run(rt.cpu.steps + 4_000_000);
             for &(addr, cs, ip) in rt.m.read_hits.borrow().iter() {
-                println!("bank read: {cs:04x}:{ip:04x} <- linear {addr:#07x} (manu3+{:#x})", addr - 0x166c0);
+                println!(
+                    "bank read: {cs:04x}:{ip:04x} <- linear {addr:#07x} (manu3+{:#x})",
+                    addr - 0x166c0
+                );
             }
             rt.m.read_watch = None;
         }
@@ -3153,9 +3938,13 @@ fn main() {
             let _ = rt.run(rt.cpu.steps + 10_000_000);
             let (fr, ang, st) = state(&rt);
             println!("rotate stop {stop}: tb_frame={fr} angle={ang:#x} station={st:#x}");
-            rt.write_ppm(&out.join(format!("rotate_{stop:02}_f{fr}.ppm"))).unwrap();
+            rt.write_ppm(&out.join(format!("rotate_{stop:02}_f{fr}.ppm")))
+                .unwrap();
         }
-        println!("BRIDGEPROBE done -> {}/bridge_*.ppm + rotate_*.ppm", out.display());
+        println!(
+            "BRIDGEPROBE done -> {}/bridge_*.ppm + rotate_*.ppm",
+            out.display()
+        );
         return;
     }
 
@@ -3165,7 +3954,8 @@ fn main() {
         let parts: Vec<&str> = spec.split(':').collect();
         let lin = usize::from_str_radix(parts[0].trim_start_matches("0x"), 16).unwrap();
         let len: usize = parts[1].parse().unwrap();
-        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        rt.load_state(std::path::Path::new("accuracy/script2.state"))
+            .unwrap();
         let bytes = &rt.m.mem[lin..lin + len];
         println!("LINDUMP {lin:#x}+{len}:");
         for (i, ch) in bytes.chunks(16).enumerate() {
@@ -3197,7 +3987,8 @@ fn main() {
         let settle: u64 = parts.get(1).and_then(|s| s.parse().ok()).unwrap_or(60) * 1_000_000;
         let run_more: u64 = parts.get(2).and_then(|s| s.parse().ok()).unwrap_or(60) * 1_000_000;
         let g = 0x0e84u16;
-        let w16 = |rt: &Runtime, a: u32| rt.m.read8(g, a) as u32 | ((rt.m.read8(g, a + 1) as u32) << 8);
+        let w16 =
+            |rt: &Runtime, a: u32| rt.m.read8(g, a) as u32 | ((rt.m.read8(g, a + 1) as u32) << 8);
         let rec = |rt: &Runtime, off: u32| -> u32 {
             let (boff, bseg) = (w16(rt, 0x6724), w16(rt, 0x6726));
             if bseg == 0 {
@@ -3209,7 +4000,11 @@ fn main() {
         let _ = rt.run(rt.cpu.steps + settle);
         println!(
             "PROFILEJUMP before: block {:04x}:{:04x} pending[0x6780]={} rec_103A={:#06x} @ {} steps",
-            w16(&rt, 0x6726), w16(&rt, 0x6724), w16(&rt, 0x6780) as i32, rec(&rt, 0x103A), rt.cpu.steps
+            w16(&rt, 0x6726),
+            w16(&rt, 0x6724),
+            w16(&rt, 0x6780) as i32,
+            rec(&rt, 0x103A),
+            rt.cpu.steps
         );
         // The busy gate defers the load while a presentation is up
         // (gs:0x67AC) or text is revealing (gs:0x5E64), which is exactly the
@@ -3255,12 +4050,20 @@ fn main() {
             .collect();
         println!(
             "PROFILEJUMP busy-gate flags SET: {}",
-            if set.is_empty() { "(none — dispatch should fire)".into() } else { set.join(", ") }
+            if set.is_empty() {
+                "(none — dispatch should fire)".into()
+            } else {
+                set.join(", ")
+            }
         );
         let _ = rt.run(rt.cpu.steps + run_more);
         println!(
             "PROFILEJUMP after:  block {:04x}:{:04x} pending[0x6780]={} rec_103A={:#06x} @ {} steps",
-            w16(&rt, 0x6726), w16(&rt, 0x6724), w16(&rt, 0x6780) as i32, rec(&rt, 0x103A), rt.cpu.steps
+            w16(&rt, 0x6726),
+            w16(&rt, 0x6724),
+            w16(&rt, 0x6780) as i32,
+            rec(&rt, 0x103A),
+            rt.cpu.steps
         );
         return;
     }
@@ -3275,7 +4078,10 @@ fn main() {
         let g = 0x0e84u16;
         let bytes: Vec<u8> = (0..len).map(|i| rt.m.read8(g, off + i)).collect();
         std::fs::write(path, &bytes).unwrap();
-        println!("MEMDUMP gs:{off:#06x} {len} bytes -> {path} @ {} steps", rt.cpu.steps);
+        println!(
+            "MEMDUMP gs:{off:#06x} {len} bytes -> {path} @ {} steps",
+            rt.cpu.steps
+        );
         return;
     }
 
@@ -3299,13 +4105,23 @@ fn main() {
         for i in 0..mem.len().saturating_sub(pat.len()) {
             if &mem[i..i + pat.len()] == pat {
                 let gs = 0x0e84u32 * 16;
-                let rel = if (i as u32) >= gs { format!("gs:{:#06x}", i as u32 - gs) } else { String::new() };
+                let rel = if (i as u32) >= gs {
+                    format!("gs:{:#06x}", i as u32 - gs)
+                } else {
+                    String::new()
+                };
                 println!("  found {needle:?} at linear {i:#08x} {rel}");
                 hits += 1;
-                if hits >= 8 { println!("  (more; stopping at 8)"); break; }
+                if hits >= 8 {
+                    println!("  (more; stopping at 8)");
+                    break;
+                }
             }
         }
-        println!("MEMFIND {needle:?}: {hits} hit(s) at {} steps", rt.cpu.steps);
+        println!(
+            "MEMFIND {needle:?}: {hits} hit(s) at {} steps",
+            rt.cpu.steps
+        );
         return;
     }
 
@@ -3327,9 +4143,18 @@ fn main() {
         let _ = rt.run(rt.cpu.steps + 3_000_000);
         let log = std::mem::take(&mut rt.cpu.si_trace_log);
         rt.cpu.si_trace_at = None;
-        println!("BASSTEP: {} dispatch steps (si @ 067c:0309 = BAS offset, op = byte there)", log.len());
+        println!(
+            "BASSTEP: {} dispatch steps (si @ 067c:0309 = BAS offset, op = byte there)",
+            log.len()
+        );
         for (i, &(si, op)) in log.iter().enumerate().take(64) {
-            let m = if op == 0xa3 { " <MENU>" } else if op == 0xa6 { " <TEXT>" } else { "" };
+            let m = if op == 0xa3 {
+                " <MENU>"
+            } else if op == 0xa6 {
+                " <TEXT>"
+            } else {
+                ""
+            };
             println!("  [{i:2}] si={si:#06x} op={op:#04x}{m}");
         }
         return;
@@ -3340,7 +4165,8 @@ fn main() {
     // topic click into a selection, the entry to the record-update/branching logic.
     if std::env::var("SELWATCH").is_ok() {
         let g = 0x0e84u16;
-        let frame = |rt: &Runtime| rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
+        let frame =
+            |rt: &Runtime| rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
         rt.m.watch_addr = Some(0xe84usize * 16 + 0x6762);
         rt.m.addr_hits.clear();
         let fr = frame(&rt);
@@ -3352,7 +4178,10 @@ fn main() {
         rt.mouse_release(0);
         let _ = rt.run(rt.cpu.steps + 3_000_000);
         rt.m.watch_addr = None;
-        println!("SELWATCH: {} writes to gs:0x6762 (selection)", rt.m.addr_hits.len());
+        println!(
+            "SELWATCH: {} writes to gs:0x6762 (selection)",
+            rt.m.addr_hits.len()
+        );
         let mut seen = std::collections::HashSet::new();
         let mut input_cs = None;
         for &(v, cs, ip) in rt.m.addr_hits.iter() {
@@ -3378,18 +4207,27 @@ fn main() {
     // for the clean-port conversation VM's navigation).
     if std::env::var("MENUWATCH").is_ok() {
         let g = 0x0e84u16;
-        let cur = |rt: &Runtime| rt.m.read8(g, 0x6772) as u16 | ((rt.m.read8(g, 0x6773) as u16) << 8);
-        let frame = |rt: &Runtime| rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
+        let cur =
+            |rt: &Runtime| rt.m.read8(g, 0x6772) as u16 | ((rt.m.read8(g, 0x6773) as u16) << 8);
+        let frame =
+            |rt: &Runtime| rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
         println!("MENUWATCH start menu = {:#06x}", cur(&rt));
         rt.m.watch_addr = Some(0xe84usize * 16 + 0x6772);
         rt.m.addr_hits.clear();
         let mut distinct = std::collections::BTreeSet::new();
         distinct.insert(cur(&rt));
-        let npass: u32 = std::env::var("MW_PASSES").ok().and_then(|s| s.parse().ok()).unwrap_or(12);
+        let npass: u32 = std::env::var("MW_PASSES")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(12);
         for pass in 0..npass {
             let fr = frame(&rt);
             // rotate through the topic rows + the orb, to provoke navigation.
-            let (mx, my) = if pass % 4 == 3 { (125u16, 118u16) } else { (200, 61 + 11 * (pass % 7) as u16 + 3) };
+            let (mx, my) = if pass % 4 == 3 {
+                (125u16, 118u16)
+            } else {
+                (200, 61 + 11 * (pass % 7) as u16 + 3)
+            };
             let ring = (mx as i32 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
             rt.set_mouse_pos(ring, my);
             let _ = rt.run(rt.cpu.steps + 400_000);
@@ -3431,7 +4269,8 @@ fn main() {
         // inside it never catches a writer -- the table is populated once at load and
         // is not rewritten per line.
         if std::env::var("DLGTABLE_BOOT").is_err() {
-            rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+            rt.load_state(std::path::Path::new("accuracy/script2.state"))
+                .unwrap();
         }
         let ds0 = 0xE840usize;
         let base = ds0 + 0x1FB5;
@@ -3487,7 +4326,11 @@ fn main() {
             if id != 0 || other != 0 {
                 nonzero += 1;
             }
-            let tag = if line_id == 9 { "  <== b3=0 (0x1FB5+0x26)" } else { "" };
+            let tag = if line_id == 9 {
+                "  <== b3=0 (0x1FB5+0x26)"
+            } else {
+                ""
+            };
             let kind = if id == 0xFFFF {
                 " none"
             } else if id % 16 == 0 {
@@ -3502,23 +4345,35 @@ fn main() {
         for &(addr, v, cs, ip) in rt.m.range_hits.iter() {
             let off = addr - base;
             if seen.insert((cs, ip)) {
-                println!("DLGTABLE writer {cs:04x}:{ip:04x} -> line {} byte {} = {v:#04x}", off / 4, off % 4);
+                println!(
+                    "DLGTABLE writer {cs:04x}:{ip:04x} -> line {} byte {} = {v:#04x}",
+                    off / 4,
+                    off % 4
+                );
             }
-            if seen.len() > 12 { break; }
+            if seen.len() > 12 {
+                break;
+            }
         }
-        println!("DLGTABLE: {} nonzero writes during the run", rt.m.range_hits.len());
+        println!(
+            "DLGTABLE: {} nonzero writes during the run",
+            rt.m.range_hits.len()
+        );
         // The gs:0x672C threshold table that vm_record_lookup_by_threshold (0x6034)
         // walks: 20-byte stride, compared on field +0x10. The port has NO equivalent --
         // record_state_condition reads the record directly -- so whether that is
         // correct depends on what this lookup does to a record offset.
         {
             let far_off = u16::from_le_bytes([rt.m.mem[ds0 + 0x672C], rt.m.mem[ds0 + 0x672C + 1]]);
-            let far_seg = u16::from_le_bytes([rt.m.mem[ds0 + 0x672C + 2], rt.m.mem[ds0 + 0x672C + 3]]);
+            let far_seg =
+                u16::from_le_bytes([rt.m.mem[ds0 + 0x672C + 2], rt.m.mem[ds0 + 0x672C + 3]]);
             let tbl = (far_seg as usize) * 16 + far_off as usize;
             println!("THRESHTBL far ptr {far_seg:04x}:{far_off:04x} -> linear {tbl:#07x}");
             for i in 0..8usize {
                 let a = tbl + i * 0x14;
-                if a + 0x12 >= rt.m.mem.len() { break; }
+                if a + 0x12 >= rt.m.mem.len() {
+                    break;
+                }
                 let f10 = u16::from_le_bytes([rt.m.mem[a + 0x10], rt.m.mem[a + 0x11]]);
                 let f0 = u16::from_le_bytes([rt.m.mem[a], rt.m.mem[a + 1]]);
                 println!("  entry {i}: +0x00={f0:#06x}  +0x10={f10:#06x}");
@@ -3532,7 +4387,11 @@ fn main() {
                 let txt: String = (0..24)
                     .map(|i| {
                         let b = rt.m.mem[a + i];
-                        if (32..127).contains(&b) { b as char } else { '.' }
+                        if (32..127).contains(&b) {
+                            b as char
+                        } else {
+                            '.'
+                        }
                     })
                     .collect();
                 println!("DLGTABLE asset id {id:#06x} -> DS:{id:#06x} = {txt:?}");
@@ -3540,10 +4399,17 @@ fn main() {
                 let head: String = (0..32)
                     .map(|i| {
                         let b = rt.m.mem[h + i];
-                        if (32..127).contains(&b) { b as char } else { '.' }
+                        if (32..127).contains(&b) {
+                            b as char
+                        } else {
+                            '.'
+                        }
                     })
                     .collect();
-                println!("DLGTABLE template head DS:{:#06x} = {head:?}", id.saturating_sub(16));
+                println!(
+                    "DLGTABLE template head DS:{:#06x} = {head:?}",
+                    id.saturating_sub(16)
+                );
             }
         }
         rt.m.trace_range = None;
@@ -3555,91 +4421,93 @@ fn main() {
         // subtitle/menu text with the game's own font; click bye_bye/goodbye topics
         // when visible, else advance via the orb — until the presentation frees.
         let g = 0x0e84u16;
-        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
-            let read_font = |rt: &Runtime| -> Vec<(char, [u8; 8])> {
-                let mut out = Vec::new();
-                for code in 32u8..127 {
-                    let gi = rt.m.read8(g, 0x70fa + code as u32);
-                    if gi == 0xFF { continue; }
-                    let mut rows = [0u8; 8];
-                    for (i, r) in rows.iter_mut().enumerate() {
-                        *r = rt.m.read8(g, 0x71aa + gi as u32 * 8 + i as u32);
-                    }
-                    let lit: u32 = rows.iter().map(|r| r.count_ones()).sum();
-                    if lit >= 3 {
-                        out.push((code as char, rows));
-                    }
+        rt.load_state(std::path::Path::new("accuracy/script2.state"))
+            .unwrap();
+        let read_font = |rt: &Runtime| -> Vec<(char, [u8; 8])> {
+            let mut out = Vec::new();
+            for code in 32u8..127 {
+                let gi = rt.m.read8(g, 0x70fa + code as u32);
+                if gi == 0xFF {
+                    continue;
                 }
-                out.sort_by_key(|(_, rows)| {
-                    std::cmp::Reverse(rows.iter().map(|r| r.count_ones()).sum::<u32>())
-                });
-                out
-            };
-            let ocr = |idx: &[u8], font: &[(char, [u8; 8])]| -> String {
-                let lit = |px: u8| px == 0xE0 || px == 0xEE || px == 0xEF || px >= 0xFD;
-                let mut text = String::new();
-                // Dynamic alignment: subtitle rows differ per screen (console
-                // 8/18; scene close-ups draw 3 lines from the very top). Find
-                // aligned rows by trying each and keeping non-empty reads.
-                let mut row0 = 0usize;
-                while row0 < 40 {
-                    let mut line = String::new();
-                    let mut blanks = 0usize;
-                    let mut x = 0usize;
-                    while x < 313 {
-                        let mut got = None;
-                        for (ch, rows) in font {
-                            let mut ok = true;
-                            'cell: for gy in 0..8usize {
-                                for gx in 0..8usize {
-                                    let on = (rows[gy] >> (7 - gx)) & 1 == 1;
-                                    let px = idx
-                                        .get((row0 + gy) * 320 + x + gx)
-                                        .copied()
-                                        .unwrap_or(0);
-                                    if on != lit(px) {
-                                        ok = false;
-                                        break 'cell;
-                                    }
+                let mut rows = [0u8; 8];
+                for (i, r) in rows.iter_mut().enumerate() {
+                    *r = rt.m.read8(g, 0x71aa + gi as u32 * 8 + i as u32);
+                }
+                let lit: u32 = rows.iter().map(|r| r.count_ones()).sum();
+                if lit >= 3 {
+                    out.push((code as char, rows));
+                }
+            }
+            out.sort_by_key(|(_, rows)| {
+                std::cmp::Reverse(rows.iter().map(|r| r.count_ones()).sum::<u32>())
+            });
+            out
+        };
+        let ocr = |idx: &[u8], font: &[(char, [u8; 8])]| -> String {
+            let lit = |px: u8| px == 0xE0 || px == 0xEE || px == 0xEF || px >= 0xFD;
+            let mut text = String::new();
+            // Dynamic alignment: subtitle rows differ per screen (console
+            // 8/18; scene close-ups draw 3 lines from the very top). Find
+            // aligned rows by trying each and keeping non-empty reads.
+            let mut row0 = 0usize;
+            while row0 < 40 {
+                let mut line = String::new();
+                let mut blanks = 0usize;
+                let mut x = 0usize;
+                while x < 313 {
+                    let mut got = None;
+                    for (ch, rows) in font {
+                        let mut ok = true;
+                        'cell: for gy in 0..8usize {
+                            for gx in 0..8usize {
+                                let on = (rows[gy] >> (7 - gx)) & 1 == 1;
+                                let px = idx.get((row0 + gy) * 320 + x + gx).copied().unwrap_or(0);
+                                if on != lit(px) {
+                                    ok = false;
+                                    break 'cell;
                                 }
                             }
-                            if ok {
-                                got = Some(*ch);
-                                break;
-                            }
                         }
-                        if let Some(ch) = got {
-                            if blanks >= 8 && !line.is_empty() {
-                                line.push(' ');
-                            }
-                            line.push(ch);
-                            blanks = 0;
-                            x += 8;
-                        } else {
-                            blanks += 1;
-                            x += 1;
+                        if ok {
+                            got = Some(*ch);
+                            break;
                         }
                     }
-                    if line.chars().filter(|c| c.is_ascii_alphanumeric()).count() >= 3 {
-                        if !text.is_empty() {
-                            text.push(' ');
+                    if let Some(ch) = got {
+                        if blanks >= 8 && !line.is_empty() {
+                            line.push(' ');
                         }
-                        text.push_str(&line);
-                        row0 += 9; // next line
+                        line.push(ch);
+                        blanks = 0;
+                        x += 8;
                     } else {
-                        row0 += 1;
+                        blanks += 1;
+                        x += 1;
                     }
                 }
-                text
-            };
-        let frame = |rt: &Runtime| rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
+                if line.chars().filter(|c| c.is_ascii_alphanumeric()).count() >= 3 {
+                    if !text.is_empty() {
+                        text.push(' ');
+                    }
+                    text.push_str(&line);
+                    row0 += 9; // next line
+                } else {
+                    row0 += 1;
+                }
+            }
+            text
+        };
+        let frame =
+            |rt: &Runtime| rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
         let presenting = |rt: &Runtime| rt.m.read8(g, 0x2793) & 4 != 0;
         let font = read_font(&rt);
         let mut clicked_rows: Vec<usize> = Vec::new();
         for round in 0..120 {
             if !presenting(&rt) {
                 println!("CONVDRIVER: presentation FREED at round {round}");
-                rt.save_state(std::path::Path::new("accuracy/hub_idle.state")).unwrap();
+                rt.save_state(std::path::Path::new("accuracy/hub_idle.state"))
+                    .unwrap();
                 println!("hub_idle.state saved");
                 return;
             }
@@ -3648,7 +4516,10 @@ fn main() {
             let text = ocr(&idx, &font);
             let lower = text.to_lowercase();
             if round % 10 == 0 {
-                println!("round {round}: {}", &text.chars().take(70).collect::<String>());
+                println!(
+                    "round {round}: {}",
+                    &text.chars().take(70).collect::<String>()
+                );
             }
             // Menu visible? Try the goodbye rows (bye/adieu variants).
             let fr = frame(&rt) as i32;
@@ -3677,8 +4548,15 @@ fn main() {
         }
         // Round-2 probe: the golden-menu rows (station records), watching EVERY
         // observable (presentation bit, FSM state, text, opened files).
-        for (name, y) in [("HONK", 88u16), ("TELEPHONE", 103), ("CRYOBOX", 118), ("MENU", 133), ("OPTION", 148)] {
-            rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        for (name, y) in [
+            ("HONK", 88u16),
+            ("TELEPHONE", 103),
+            ("CRYOBOX", 118),
+            ("MENU", 133),
+            ("OPTION", 148),
+        ] {
+            rt.load_state(std::path::Path::new("accuracy/script2.state"))
+                .unwrap();
             let fr = frame(&rt) as i32;
             let ring = (230 + fr * 8 - 160).rem_euclid(1440) as u16;
             rt.set_mouse_pos(ring, y);
@@ -3707,9 +4585,11 @@ fn main() {
         // advance the presentation via the orb until idle, steer to the nav sector,
         // open the destination box, choose row 0, then run the travel — dumping frames
         // and saving a location savestate at the end (unlocks the entity-stepper watch).
-        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        rt.load_state(std::path::Path::new("accuracy/script2.state"))
+            .unwrap();
         let g = 0x0e84u16;
-        let frame = |rt: &Runtime| rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
+        let frame =
+            |rt: &Runtime| rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
         let presenting = |rt: &Runtime| rt.m.read8(g, 0x2793) & 4 != 0;
         let click = |rt: &mut Runtime, sx: i32, sy: u16| {
             let fr = frame(rt) as i32;
@@ -3725,7 +4605,8 @@ fn main() {
         // MENUTREE geometry) — the row that clears [0x2793]&4 is the goodbye topic.
         let mut exited = false;
         for row in 0..9 {
-            rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+            rt.load_state(std::path::Path::new("accuracy/script2.state"))
+                .unwrap();
             let my = 61 + 11 * row + 3;
             click(&mut rt, 200, my as u16);
             let _ = rt.run(rt.cpu.steps + 10_000_000);
@@ -3760,10 +4641,15 @@ fn main() {
         // 4) run the travel/arrival, dumping along the way.
         for i in 0..8 {
             let _ = rt.run(rt.cpu.steps + 10_000_000);
-            rt.write_ppm(&out.join(format!("pt_travel_{i}.ppm"))).unwrap();
+            rt.write_ppm(&out.join(format!("pt_travel_{i}.ppm")))
+                .unwrap();
         }
-        rt.save_state(std::path::Path::new("accuracy/location_visit.state")).unwrap();
-        println!("PLAYTO done @ {} steps; location_visit.state saved", rt.cpu.steps);
+        rt.save_state(std::path::Path::new("accuracy/location_visit.state"))
+            .unwrap();
+        println!(
+            "PLAYTO done @ {} steps; location_visit.state saved",
+            rt.cpu.steps
+        );
         // Opened files reveal what loaded (travel film? location assets?).
         let mut seen = std::collections::HashSet::new();
         for (step, path) in &rt.opened_files {
@@ -3775,7 +4661,8 @@ fn main() {
     }
     if std::env::var("REGIONDUMP").is_ok() {
         // Dump the LIVE ui-region table (32 x 32B descending from ds:0x65F2) at the hub.
-        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        rt.load_state(std::path::Path::new("accuracy/script2.state"))
+            .unwrap();
         let g = 0x0e84u16;
         if std::env::var("UNPIN").is_ok() {
             let v = rt.m.read8(g, 0x2793);
@@ -3803,7 +4690,8 @@ fn main() {
         // Find WHO far-calls the manu3 overlay: resume the hub, single-step until CS
         // enters the manu3 code segment (0x166C), then read the far return address
         // (caller CS:IP) off the stack.
-        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        rt.load_state(std::path::Path::new("accuracy/script2.state"))
+            .unwrap();
         let gseg = 0x0e84u16;
         let fr = rt.m.read8(gseg, 0x2795) as u16 | ((rt.m.read8(gseg, 0x2796) as u16) << 8);
         let ring = (230i32 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
@@ -3814,8 +4702,8 @@ fn main() {
             if rt.cpu.cs == 0x166C {
                 let ss = rt.m.regs.ss;
                 let sp = rt.m.regs.esp as u16;
-                let rip = rt.m.read8(ss, sp as u32) as u16
-                    | (rt.m.read8(ss, sp as u32 + 1) as u16) << 8;
+                let rip =
+                    rt.m.read8(ss, sp as u32) as u16 | (rt.m.read8(ss, sp as u32 + 1) as u16) << 8;
                 let rcs = rt.m.read8(ss, sp as u32 + 2) as u16
                     | (rt.m.read8(ss, sp as u32 + 3) as u16) << 8;
                 println!(
@@ -3838,7 +4726,8 @@ fn main() {
         // Dump the RESIDENT manu3.xdb segment from the savestate: find the load segment by
         // scanning memory for the file's head bytes, then dump the relocated DATA segment
         // (init-filled: real face/vertex tables) for offline mesh extraction.
-        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        rt.load_state(std::path::Path::new("accuracy/script2.state"))
+            .unwrap();
         // Replicate the probe conditions that visibly render the hand: set a ring-space
         // mouse position and run enough frames (the hand draw follows mouse activity).
         let gseg = 0x0e84u16;
@@ -3894,16 +4783,15 @@ fn main() {
         // FRESH line ('What do you want Commander ?'), which we capture EVERY frame
         // (PPM + raw indices) so the port can match reveal rate, glyph colors, and
         // settle style. SB playback state is logged per shot (the honk chatter).
-        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        rt.load_state(std::path::Path::new("accuracy/script2.state"))
+            .unwrap();
         let g = 0x0e84u16;
         // Ring x from the CURRENT frame at click time — the view can rotate after
         // CANCEL, so a load-time frame maps clicks to the wrong screen x.
-        let frame_now = |rt: &Runtime| {
-            rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8)
-        };
+        let frame_now =
+            |rt: &Runtime| rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
         let click = |rt: &mut Runtime, sx: i32, sy: u16| {
-            let ring =
-                ((sx + frame_now(rt) as i32 * 8 - 160).rem_euclid(1440)) as u16;
+            let ring = ((sx + frame_now(rt) as i32 * 8 - 160).rem_euclid(1440)) as u16;
             rt.set_mouse_pos(ring, sy);
             let _ = rt.run(rt.cpu.steps + 400_000);
             rt.mouse_press(0);
@@ -3936,8 +4824,8 @@ fn main() {
         //   move <x> <y> | click <x> <y> | key <scancode> | wait <frames>
         // Coordinates are SCREEN coords; the ring correction is applied here.
         // VERIFYSTATE overrides the resume state (default: the clean hub).
-        let state_path = std::env::var("VERIFYSTATE")
-            .unwrap_or_else(|_| "accuracy/script2.state".into());
+        let state_path =
+            std::env::var("VERIFYSTATE").unwrap_or_else(|_| "accuracy/script2.state".into());
         rt.load_state(std::path::Path::new(&state_path)).unwrap();
         // Optional write watch during the scenario (WRITEWATCHLIN=<linear hex>):
         // reports every write to the address with the writer's cs:ip — the story
@@ -3947,7 +4835,10 @@ fn main() {
             if let Some(recspec) = w.strip_prefix("rec:") {
                 rec_watch =
                     Some(u32::from_str_radix(recspec.trim_start_matches("0x"), 16).unwrap());
-                eprintln!("record write-watch armed at block+{:#x}", rec_watch.unwrap());
+                eprintln!(
+                    "record write-watch armed at block+{:#x}",
+                    rec_watch.unwrap()
+                );
             } else {
                 let lin = usize::from_str_radix(w.trim_start_matches("0x"), 16).unwrap();
                 rt.m.watch_addr = Some(lin);
@@ -3959,7 +4850,9 @@ fn main() {
         if let Ok(w) = std::env::var("EXECWATCHLIN") {
             for tok in w.split(',') {
                 let file = u32::from_str_radix(tok.trim().trim_start_matches("0x"), 16).unwrap();
-                rt.cpu.exec_watch_linear.push(0x1a20 + file.saturating_sub(0x600));
+                rt.cpu
+                    .exec_watch_linear
+                    .push(0x1a20 + file.saturating_sub(0x600));
             }
             // EXECREGS=1 also dumps the live registers at each hit -- needed when
             // the QUESTION is "what were the arguments", e.g. which name string si
@@ -3969,9 +4862,8 @@ fn main() {
                 eprintln!("EXECREGS: register dump enabled at every exec-watch hit");
             }
         }
-        let w16 = |rt: &Runtime, a: u32| {
-            rt.m.read8(g, a) as u32 | ((rt.m.read8(g, a + 1) as u32) << 8)
-        };
+        let w16 =
+            |rt: &Runtime, a: u32| rt.m.read8(g, a) as u32 | ((rt.m.read8(g, a + 1) as u32) << 8);
         // RECDUMP=<off>,<off>,... : print the record block pointer and the named
         // record slots' values at scenario start and end (the story-state probe).
         let rec_dump = |rt: &Runtime, tag: &str| {
@@ -3980,8 +4872,7 @@ fn main() {
                 let base = bseg as usize * 16 + boff as usize;
                 let mut line = format!("RECDUMP {tag}: block {bseg:04x}:{boff:04x}");
                 for tok in spec.split(',') {
-                    let off = u32::from_str_radix(tok.trim().trim_start_matches("0x"), 16)
-                        .unwrap();
+                    let off = u32::from_str_radix(tok.trim().trim_start_matches("0x"), 16).unwrap();
                     let lin = base + off as usize;
                     let v = rt.m.mem[lin] as u16 | ((rt.m.mem[lin + 1] as u16) << 8);
                     line += &format!(" [{off:#06x}]={v}");
@@ -3997,14 +4888,19 @@ fn main() {
                 let hex: String = ch.iter().map(|b| format!("{b:02x} ")).collect();
                 let asc: String = ch
                     .iter()
-                    .map(|&b| if (0x20..0x7f).contains(&b) { b as char } else { '.' })
+                    .map(|&b| {
+                        if (0x20..0x7f).contains(&b) {
+                            b as char
+                        } else {
+                            '.'
+                        }
+                    })
                     .collect();
                 println!("CHARDUMP +{:02x}: {hex} {asc}", i * 16);
             }
         }
-        let frame = |rt: &Runtime| {
-            rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8)
-        };
+        let frame =
+            |rt: &Runtime| rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
         let text = std::fs::read_to_string(&scenario).expect("scenario file");
         let settle = 1_500_000u64;
         let mut step = 0usize;
@@ -4061,7 +4957,13 @@ fn main() {
                             let text: String = (0..160u32)
                                 .map(|i| rt.m.read8(g, 0xe18 + i))
                                 .take_while(|&b| b != 0)
-                                .map(|b| if (0x20..0x7f).contains(&b) { b as char } else { ' ' })
+                                .map(|b| {
+                                    if (0x20..0x7f).contains(&b) {
+                                        b as char
+                                    } else {
+                                        ' '
+                                    }
+                                })
                                 .collect();
                             let t = text.trim().to_string();
                             if !t.is_empty() && t != last {
@@ -4077,10 +4979,8 @@ fn main() {
                 // DS globals — oracle drive tooling (e.g. arm the pending-C4
                 // presentation request protocol the way 0xB3AE does).
                 "poke" => {
-                    let off = u32::from_str_radix(toks[1].trim_start_matches("0x"), 16)
-                        .unwrap();
-                    let val = u8::from_str_radix(toks[2].trim_start_matches("0x"), 16)
-                        .unwrap();
+                    let off = u32::from_str_radix(toks[1].trim_start_matches("0x"), 16).unwrap();
+                    let val = u8::from_str_radix(toks[2].trim_start_matches("0x"), 16).unwrap();
                     let lin = 0x0e84usize * 16 + off as usize;
                     rt.m.mem[lin] = val;
                 }
@@ -4147,10 +5047,8 @@ fn main() {
                 // pokel <lin-hex> <byte-hex>: write one byte at a LINEAR address
                 // (for structures outside the DS globals, e.g. the record block).
                 "pokel" => {
-                    let lin = usize::from_str_radix(toks[1].trim_start_matches("0x"), 16)
-                        .unwrap();
-                    let val = u8::from_str_radix(toks[2].trim_start_matches("0x"), 16)
-                        .unwrap();
+                    let lin = usize::from_str_radix(toks[1].trim_start_matches("0x"), 16).unwrap();
+                    let val = u8::from_str_radix(toks[2].trim_start_matches("0x"), 16).unwrap();
                     rt.m.mem[lin] = val;
                 }
                 // park <edge-x> <target-frame>: hold the cursor at screen edge x
@@ -4178,8 +5076,7 @@ fn main() {
             if let Ok(spec) = std::env::var("DSDUMP") {
                 let mut line = format!("DS step {step}:");
                 for tok in spec.split(',') {
-                    let off = u32::from_str_radix(tok.trim().trim_start_matches("0x"), 16)
-                        .unwrap();
+                    let off = u32::from_str_radix(tok.trim().trim_start_matches("0x"), 16).unwrap();
                     line += &format!(" [{off:#x}]={:#04x}", rt.m.read8(g, off));
                 }
                 println!("{line}");
@@ -4192,7 +5089,13 @@ fn main() {
                 let text: String = bytes
                     .iter()
                     .take_while(|&&b| b != 0)
-                    .map(|&b| if (0x20..0x7f).contains(&b) { b as char } else { ' ' })
+                    .map(|&b| {
+                        if (0x20..0x7f).contains(&b) {
+                            b as char
+                        } else {
+                            ' '
+                        }
+                    })
                     .collect();
                 if !text.trim().is_empty() {
                     println!("SAY step {step}: {}", text.trim());
@@ -4210,14 +5113,17 @@ fn main() {
                     }
                 }
             }
-            rt.write_ppm(&out.join(format!("vs_{step:03}.ppm"))).unwrap();
+            rt.write_ppm(&out.join(format!("vs_{step:03}.ppm")))
+                .unwrap();
             std::fs::write(out.join(format!("vs_{step:03}.idx")), rt.screen_indices()).unwrap();
             step += 1;
         }
         rec_dump(&rt, "end");
         for &(lin, first, count) in &rt.cpu.exec_hits_linear {
-            println!("EXEC hit linear {lin:#07x} (file {:#07x}): first@{first} count={count}",
-                lin - 0x1a20 + 0x600);
+            println!(
+                "EXEC hit linear {lin:#07x} (file {:#07x}): first@{first} count={count}",
+                lin - 0x1a20 + 0x600
+            );
         }
         for &lin in &rt.cpu.exec_watch_linear {
             if !rt.cpu.exec_hits_linear.iter().any(|h| h.0 == lin) {
@@ -4241,11 +5147,13 @@ fn main() {
                 }
             }
         }
-        println!("  bios_keys pending: {}, [0xB15]={:#04x}, [0x2738]={:#04x}, [0x272E]={}",
+        println!(
+            "  bios_keys pending: {}, [0xB15]={:#04x}, [0x2738]={:#04x}, [0x272E]={}",
             rt.bios_keys.len(),
             rt.m.mem[0xE840 + 0xB15],
             rt.m.mem[0xE840 + 0x2738],
-            rt.m.mem[0xE840 + 0x272E] as u16 | ((rt.m.mem[0xE840 + 0x272F] as u16) << 8));
+            rt.m.mem[0xE840 + 0x272E] as u16 | ((rt.m.mem[0xE840 + 0x272F] as u16) << 8)
+        );
         for (st, f) in rt.opened_files.iter().rev().take(8) {
             println!("  opened @{st}: {f}");
         }
@@ -4268,7 +5176,8 @@ fn main() {
         // frame-counter increments per emulated second at the hub. The frame counter
         // [0x0A40] (countdown) and the per-frame [0x27E0] gate change once per main
         // loop pass; sample a known per-frame cell across exact PIT time.
-        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        rt.load_state(std::path::Path::new("accuracy/script2.state"))
+            .unwrap();
         let g = 0x0e84u16;
         // ticks: PIT reprogrammed to 0x1746 (5958) -> 200.27 Hz. steps_per_tick from
         // the runtime diag ~= 39946. Run exactly 1000 ticks (~5 s) and count changes
@@ -4296,7 +5205,8 @@ fn main() {
     if std::env::var("TEXDUMP").is_ok() {
         // Re-bank the manu3 hand texture from the CURRENT live state (the original
         // manu3_ds.bin dump shows noise in rows 40..63 — was it mid-load?).
-        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        rt.load_state(std::path::Path::new("accuracy/script2.state"))
+            .unwrap();
         let _ = rt.run(rt.cpu.steps + 2_000_000);
         // manu3 ds runtime segment = 0x17A3 (labels); texture at ds:0x6400. The seam
         // faces' folded rows ((v>>8)+(v&0xFF), span-setup 0xE89..0xED0) reach row 245,
@@ -4317,7 +5227,8 @@ fn main() {
         // seg, fs:[4] TEXTURE seg, fs:[6] data seg) and dump 64 rows from the true
         // texture base.
         let ip = u16::from_str_radix(spec.trim_start_matches("0x"), 16).unwrap_or(0x120B);
-        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        rt.load_state(std::path::Path::new("accuracy/script2.state"))
+            .unwrap();
         rt.m.capture_ip = Some((0x166C, ip));
         rt.m.captured = None;
         rt.m.captured_fs = None;
@@ -4325,13 +5236,13 @@ fn main() {
         match rt.m.captured_fs {
             None => println!("SEAMFS: 166C:{ip:04x} never hit"),
             Some(fs) => {
-                let w = |off: u32| {
-                    rt.m.read8(fs, off) as u16 | ((rt.m.read8(fs, off + 1) as u16) << 8)
-                };
+                let w =
+                    |off: u32| rt.m.read8(fs, off) as u16 | ((rt.m.read8(fs, off + 1) as u16) << 8);
                 let (w0, vseg, tex, dseg) = (w(0), w(2), w(4), w(6));
-                println!("SEAMFS: fs={fs:04x} [0]={w0:04x} vertexseg={vseg:04x} TEXseg={tex:04x} dataseg={dseg:04x}");
-                let dump: Vec<u8> =
-                    (0..64u32 * 256).map(|i| rt.m.read8(tex, i)).collect();
+                println!(
+                    "SEAMFS: fs={fs:04x} [0]={w0:04x} vertexseg={vseg:04x} TEXseg={tex:04x} dataseg={dseg:04x}"
+                );
+                let dump: Vec<u8> = (0..64u32 * 256).map(|i| rt.m.read8(tex, i)).collect();
                 std::fs::write(out.join("seamfs_tex.bin"), &dump).unwrap();
                 println!("dumped 64 rows from {tex:04x}:0 -> seamfs_tex.bin");
             }
@@ -4343,7 +5254,8 @@ fn main() {
         // {vertex seg, TEXTURE seg, data seg} at fs:[2]/[4]/[6]. Scan live memory
         // for candidate blocks whose [6] word equals the known data segment 0x17A3
         // and report the neighbours; then dump 64 rows from each texture-seg candidate.
-        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        rt.load_state(std::path::Path::new("accuracy/script2.state"))
+            .unwrap();
         let _ = rt.run(rt.cpu.steps + 2_000_000);
         let mut cands: Vec<(usize, u16, u16)> = Vec::new();
         for a in (0..0x9F000usize).step_by(2) {
@@ -4378,7 +5290,8 @@ fn main() {
         // byte of [0x622], the texture-page selector the span setup shifts into the
         // segment). Logs every unique (value, cs:ip) writer.
         let off = u32::from_str_radix(spec.trim_start_matches("0x"), 16).unwrap_or(0x623);
-        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        rt.load_state(std::path::Path::new("accuracy/script2.state"))
+            .unwrap();
         let _ = rt.run(rt.cpu.steps + 1_000_000);
         let seg: usize = std::env::var("SEAMSEG")
             .ok()
@@ -4392,7 +5305,10 @@ fn main() {
         }
         let mut rows: Vec<_> = seen.into_iter().collect();
         rows.sort_by_key(|&((v, _, _), n)| (std::cmp::Reverse(n), v as u32));
-        println!("writes to manu3 ds:{off:#x} ({} total):", rt.m.addr_hits.len());
+        println!(
+            "writes to manu3 ds:{off:#x} ({} total):",
+            rt.m.addr_hits.len()
+        );
         for ((v, cs, ip), n) in rows.into_iter().take(40) {
             println!("  ={v:#04x} x{n} at {cs:04x}:{ip:04x}");
         }
@@ -4407,7 +5323,10 @@ fn main() {
                 .map(|(&(_, ip), &n)| (ip, n))
                 .collect();
             manu.sort_by_key(|&(_, n)| std::cmp::Reverse(n));
-            println!("manu3 overlay (cs=166C) hot ips: {:?}", &manu[..manu.len().min(20)]);
+            println!(
+                "manu3 overlay (cs=166C) hot ips: {:?}",
+                &manu[..manu.len().min(20)]
+            );
             let mut segs: Vec<_> = {
                 let mut m = std::collections::HashMap::new();
                 for (&(cs, _), &n) in h.iter() {
@@ -4427,7 +5346,8 @@ fn main() {
         // (idle, move, menu hover, orb hover, click, steer to the edge), sampling the
         // manu3 call arg frame at ds:0xAB4 ({cursor dword, selector word}) — logs which
         // selector the REAL game passes in each interaction context.
-        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        rt.load_state(std::path::Path::new("accuracy/script2.state"))
+            .unwrap();
         let g = 0x0e84u16;
         let rd16 = |rt: &Runtime, off: u32| {
             rt.m.read8(g, off) as u16 | ((rt.m.read8(g, off + 1) as u16) << 8)
@@ -4497,7 +5417,8 @@ fn main() {
     if std::env::var("INDEXDUMP").is_ok() {
         // Dump the hub screen as RAW VGA INDICES + the DAC — lets the port compare
         // content (indices) and palette state (DAC) separately.
-        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        rt.load_state(std::path::Path::new("accuracy/script2.state"))
+            .unwrap();
         let _ = rt.run(rt.cpu.steps + 2_000_000);
         std::fs::write(out.join("hub_indices.bin"), rt.screen_indices()).unwrap();
         std::fs::write(out.join("hub_dac.bin"), rt.dac).unwrap();
@@ -4511,15 +5432,18 @@ fn main() {
         // points sit inside the steering dead zone), and dump a frame with the REAL 3D hand
         // at each grid position. Offline: modal-background diff -> sprite atlas.
         let g = 0x0e84u16;
-        let frame = |rt: &Runtime| rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
-        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        let frame =
+            |rt: &Runtime| rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
+        rt.load_state(std::path::Path::new("accuracy/script2.state"))
+            .unwrap();
         let fr = frame(&rt);
         for sy in (20..=190).step_by(34) {
             for sx in (40..=280).step_by(40) {
                 let ring = (sx as i32 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
                 rt.set_mouse_pos(ring, sy as u16);
                 let _ = rt.run(rt.cpu.steps + 2_000_000);
-                rt.write_ppm(&out.join(format!("hg_{sx}_{sy}.ppm"))).unwrap();
+                rt.write_ppm(&out.join(format!("hg_{sx}_{sy}.ppm")))
+                    .unwrap();
             }
         }
         println!("HANDGRID done (frame {fr})");
@@ -4531,7 +5455,8 @@ fn main() {
         // the reason plain CLICKAT never dispatched). Spec: "sx,sy;sx,sy;..." with a long
         // dwell + capture after each.
         let g = 0x0e84u16;
-        let frame = |rt: &Runtime| rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
+        let frame =
+            |rt: &Runtime| rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
         let statepath = std::path::Path::new("accuracy/script2.state");
         rt.load_state(statepath).unwrap();
         let before = rt.opened_files.len();
@@ -4540,8 +5465,13 @@ fn main() {
             if pt.starts_with('e') {
                 rt.inject_key(0x01, 0x1b);
                 let _ = rt.run(rt.cpu.steps + 3_000_000);
-                rt.write_ppm(&out.join(format!("rp_{i:02}_esc.ppm"))).unwrap();
-                println!("rp {i} ESC (0x2793={:#04x}, frame {})", rt.m.read8(g, 0x2793), frame(&rt));
+                rt.write_ppm(&out.join(format!("rp_{i:02}_esc.ppm")))
+                    .unwrap();
+                println!(
+                    "rp {i} ESC (0x2793={:#04x}, frame {})",
+                    rt.m.read8(g, 0x2793),
+                    frame(&rt)
+                );
                 continue;
             }
             if let Some(rest) = pt.strip_prefix('b') {
@@ -4555,8 +5485,13 @@ fn main() {
                 let _ = rt.run(rt.cpu.steps + 300_000);
                 rt.mouse_release(1);
                 let _ = rt.run(rt.cpu.steps + 4_000_000);
-                rt.write_ppm(&out.join(format!("rp_{i:02}_rclick.ppm"))).unwrap();
-                println!("rp {i} RCLICK ({sx},{sy}) (0x2793={:#04x}, frame {})", rt.m.read8(g, 0x2793), frame(&rt));
+                rt.write_ppm(&out.join(format!("rp_{i:02}_rclick.ppm")))
+                    .unwrap();
+                println!(
+                    "rp {i} RCLICK ({sx},{sy}) (0x2793={:#04x}, frame {})",
+                    rt.m.read8(g, 0x2793),
+                    frame(&rt)
+                );
                 continue;
             }
             // "c0,0" = clear the menu-engaged flag [0x2793]&4 (diagnostic disengage).
@@ -4565,8 +5500,12 @@ fn main() {
                 let v = rt.m.read8(g, 0x2793);
                 rt.m.write8(g, 0x2793, v & !4);
                 let _ = rt.run(rt.cpu.steps + 2_000_000);
-                rt.write_ppm(&out.join(format!("rp_{i:02}_clear.ppm"))).unwrap();
-                println!("rp {i} cleared menu-engaged (0x2793={:#04x})", rt.m.read8(g, 0x2793));
+                rt.write_ppm(&out.join(format!("rp_{i:02}_clear.ppm")))
+                    .unwrap();
+                println!(
+                    "rp {i} cleared menu-engaged (0x2793={:#04x})",
+                    rt.m.read8(g, 0x2793)
+                );
                 continue;
             }
             // "m<sx>,<sy>" = move/hover only; "r<ringx>,<sy>" = park at ABSOLUTE ring x
@@ -4593,7 +5532,8 @@ fn main() {
                 rt.mouse_release(0);
             }
             let _ = rt.run(rt.cpu.steps + 12_000_000);
-            rt.write_ppm(&out.join(format!("rp_{i:02}_{sx}_{sy}.ppm"))).unwrap();
+            rt.write_ppm(&out.join(format!("rp_{i:02}_{sx}_{sy}.ppm")))
+                .unwrap();
             println!("rp {i} ({sx},{sy}) ring {ring} frame {fr}: files:");
             for (_, p) in rt.opened_files.iter().skip(before) {
                 println!("    {p}");
@@ -4604,12 +5544,16 @@ fn main() {
     }
     if std::env::var("MENUTREE").is_ok() {
         let g = 0x0e84u16;
-        let cur_menu = |rt: &Runtime| rt.m.read8(g, 0x6772) as u16 | ((rt.m.read8(g, 0x6773) as u16) << 8);
-        let frame = |rt: &Runtime| rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
+        let cur_menu =
+            |rt: &Runtime| rt.m.read8(g, 0x6772) as u16 | ((rt.m.read8(g, 0x6773) as u16) << 8);
+        let frame =
+            |rt: &Runtime| rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
         let statepath = std::path::Path::new("accuracy/milestone_script2.state");
         // The current menu's topic rows (measured from the fear/anger menu capture):
         // x=175.., first row top y=61, 11px pitch.
-        let topics = ["talk", "fear", "weakness", "complain", "anger", "break", "cry"];
+        let topics = [
+            "talk", "fear", "weakness", "complain", "anger", "break", "cry",
+        ];
         rt.load_state(statepath).unwrap();
         let base = cur_menu(&rt);
         println!("MENUTREE base menu = {base:#06x} ({} topics)", topics.len());
@@ -4625,9 +5569,14 @@ fn main() {
             rt.mouse_release(0);
             let _ = rt.run(rt.cpu.steps + 4_000_000);
             let after = cur_menu(&rt);
-            let tag = if after != base { "NAVIGATED" } else { "(stayed)" };
+            let tag = if after != base {
+                "NAVIGATED"
+            } else {
+                "(stayed)"
+            };
             println!("  topic {i} '{name}' (y{my}): {base:#06x} -> {after:#06x} {tag}");
-            rt.write_ppm(&out.join(format!("menutree_{i}_{name}.ppm"))).unwrap();
+            rt.write_ppm(&out.join(format!("menutree_{i}_{name}.ppm")))
+                .unwrap();
         }
         // Then pop to the parent (talk) and map THAT menu (the top-level, which
         // has the real topic→sub-menu navigation), writing its screen for geometry.
@@ -4642,7 +5591,8 @@ fn main() {
         let _ = rt.run(rt.cpu.steps + 4_000_000);
         println!("MENUTREE after talk: menu = {:#06x}", cur_menu(&rt));
         rt.write_ppm(&out.join("menutree_parent.ppm")).unwrap();
-        rt.save_state(std::path::Path::new("accuracy/menu_toplevel.state")).unwrap();
+        rt.save_state(std::path::Path::new("accuracy/menu_toplevel.state"))
+            .unwrap();
         return;
     }
 
@@ -4660,14 +5610,18 @@ fn main() {
         };
         let bas_base = menu_lin - 0xc27; // menu is at BAS file offset 0xc27
         let bas_size = 0x5825usize; // SCRIPT2.BAS is 22565 bytes
-        println!("BASWATCH: SCRIPT2.BAS @ linear {bas_base:#08x}..{:#08x} (psy menu @ {menu_lin:#08x})", bas_base + bas_size);
+        println!(
+            "BASWATCH: SCRIPT2.BAS @ linear {bas_base:#08x}..{:#08x} (psy menu @ {menu_lin:#08x})",
+            bas_base + bas_size
+        );
         rt.write_ppm(&out.join("baswatch_00.ppm")).unwrap();
         // Watch reads across the BAS while driving the console (clicks that would
         // (re)open a topic list): the menu handler reads the selected menu table.
         rt.m.read_watch = Some(bas_base..bas_base + bas_size);
         rt.m.read_hits.borrow_mut().clear();
         let g = 0x0e84u16;
-        let frame = |rt: &Runtime| rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
+        let frame =
+            |rt: &Runtime| rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
         for pass in 0..6u32 {
             let fr = frame(&rt);
             // orb (open concept menu) then a topic-row click, over the console.
@@ -4687,13 +5641,20 @@ fn main() {
         let mut offs: Vec<usize> = hits.iter().map(|h| h.0 - bas_base).collect();
         offs.sort_unstable();
         offs.dedup();
-        println!("BASWATCH: {} BAS reads, {} distinct offsets", hits.len(), offs.len());
+        println!(
+            "BASWATCH: {} BAS reads, {} distinct offsets",
+            hits.len(),
+            offs.len()
+        );
         let menu_heads: Vec<String> = offs
             .iter()
             .filter(|&&o| o < bas_size && rt.m.mem[bas_base + o] == 0xa3)
             .map(|&o| format!("{o:#06x}"))
             .collect();
-        println!("BASWATCH: distinct offsets (first 40): {:x?}", &offs[..offs.len().min(40)]);
+        println!(
+            "BASWATCH: distinct offsets (first 40): {:x?}",
+            &offs[..offs.len().min(40)]
+        );
         println!("BASWATCH: 0xA3 menu-head offsets READ: {menu_heads:?}");
         // The READER code (cs:ip) of each menu-head read = the menu-selection/draw
         // routine; the offset it reads is the per-state selected menu.
@@ -4711,7 +5672,9 @@ fn main() {
             let base = (cs as usize) * 16;
             let dump = rt.m.mem[base..(base + 0x2000).min(rt.m.mem.len())].to_vec();
             std::fs::write(out.join(format!("menu_code_{cs:04x}.bin")), &dump).unwrap();
-            println!("BASWATCH: dumped menu-selection code segment {cs:04x} -> menu_code_{cs:04x}.bin");
+            println!(
+                "BASWATCH: dumped menu-selection code segment {cs:04x} -> menu_code_{cs:04x}.bin"
+            );
         }
         rt.write_ppm(&out.join("baswatch_end.ppm")).unwrap();
         return;
@@ -4726,8 +5689,14 @@ fn main() {
             let mut s = String::new();
             for i in 0..40 {
                 let b = rt.m.read8(g, off + i);
-                if b == 0 { break; }
-                s.push(if (0x20..0x7f).contains(&b) { b as char } else { '.' });
+                if b == 0 {
+                    break;
+                }
+                s.push(if (0x20..0x7f).contains(&b) {
+                    b as char
+                } else {
+                    '.'
+                });
             }
             s
         };
@@ -4735,17 +5704,27 @@ fn main() {
         loop {
             match rt.run(mark) {
                 RunEnd::StepBudget => {}
-                other => { println!("ended: {other:?} at {}", rt.cpu.steps); break; }
+                other => {
+                    println!("ended: {other:?} at {}", rt.cpu.steps);
+                    break;
+                }
             }
             let m = rt.cpu.steps / 1_000_000;
             println!(
                 "@{m:>3}M 5e64={:#06x} 5e65={:#04x} 5e58={:#06x} 6780={:#06x} ba0={:#06x} 27e2={:#06x} | buf(e18)={:?} src(190)={:?}",
-                rt.m.read16(g, 0x5e64), rt.m.read8(g, 0x5e65), rt.m.read16(g, 0x5e58),
-                rt.m.read16(g, 0x6780), rt.m.read16(g, 0x0ba0), rt.m.read16(g, 0x27e2),
-                readstr(&rt, 0x0e18), readstr(&rt, 0x0190),
+                rt.m.read16(g, 0x5e64),
+                rt.m.read8(g, 0x5e65),
+                rt.m.read16(g, 0x5e58),
+                rt.m.read16(g, 0x6780),
+                rt.m.read16(g, 0x0ba0),
+                rt.m.read16(g, 0x27e2),
+                readstr(&rt, 0x0e18),
+                readstr(&rt, 0x0190),
             );
             mark += iv_m * 1_000_000;
-            if rt.cpu.steps >= steps { break; }
+            if rt.cpu.steps >= steps {
+                break;
+            }
         }
         return;
     }
@@ -4761,8 +5740,12 @@ fn main() {
             eprintln!("watch file {file:#07x} -> linear {lin:#07x}");
         }
         let _ = rt.run(steps);
-        println!("linear exec-watch results ({} of {} hit) at {} steps:",
-            rt.cpu.exec_hits_linear.len(), rt.cpu.exec_watch_linear.len(), rt.cpu.steps);
+        println!(
+            "linear exec-watch results ({} of {} hit) at {} steps:",
+            rt.cpu.exec_hits_linear.len(),
+            rt.cpu.exec_watch_linear.len(),
+            rt.cpu.steps
+        );
         for &(lin, first, count) in &rt.cpu.exec_hits_linear {
             let file = lin - 0x1a20 + 0x600;
             println!("  linear {lin:#07x} (file {file:#07x}): first@{first} count={count}");
@@ -4788,17 +5771,30 @@ fn main() {
                 let cs = u16::from_str_radix(c.trim_start_matches("0x"), 16).unwrap();
                 let ip = u16::from_str_radix(i.trim_start_matches("0x"), 16).unwrap();
                 rt.cpu.exec_watch.push((cs, ip));
-                eprintln!("watch {cs:04x}:{ip:04x} (file ~{:#07x})", (cs as u32 - 0x1a2) * 16 + ip as u32);
+                eprintln!(
+                    "watch {cs:04x}:{ip:04x} (file ~{:#07x})",
+                    (cs as u32 - 0x1a2) * 16 + ip as u32
+                );
             }
         }
         let _ = rt.run(steps);
-        println!("exec watch results ({} of {} entries hit):", rt.cpu.exec_hits.len(), rt.cpu.exec_watch.len());
+        println!(
+            "exec watch results ({} of {} entries hit):",
+            rt.cpu.exec_hits.len(),
+            rt.cpu.exec_watch.len()
+        );
         for (cs, ip, first, count) in &rt.cpu.exec_hits {
-            println!("  {cs:04x}:{ip:04x} (file ~{:#07x}): first@{first} count={count}", (*cs as u32 - 0x1a2) * 16 + *ip as u32);
+            println!(
+                "  {cs:04x}:{ip:04x} (file ~{:#07x}): first@{first} count={count}",
+                (*cs as u32 - 0x1a2) * 16 + *ip as u32
+            );
         }
         for (cs, ip) in &rt.cpu.exec_watch {
             if !rt.cpu.exec_hits.iter().any(|h| h.0 == *cs && h.1 == *ip) {
-                println!("  {cs:04x}:{ip:04x} (file ~{:#07x}): NEVER EXECUTED", (*cs as u32 - 0x1a2) * 16 + *ip as u32);
+                println!(
+                    "  {cs:04x}:{ip:04x} (file ~{:#07x}): NEVER EXECUTED",
+                    (*cs as u32 - 0x1a2) * 16 + *ip as u32
+                );
             }
         }
         eprintln!("execwatch done at {} steps", rt.cpu.steps);
@@ -4810,16 +5806,25 @@ fn main() {
         // scene, recording (value, cs, ip) so we can see WHO sets it and to WHAT. gs seg = 0x0e84.
         let off: u32 = u32::from_str_radix(w.trim_start_matches("0x"), 16).unwrap_or(0x5e65);
         // fast-forward to just before the credit scene, then arm the watch (REVFROM=<Msteps>)
-        let from_m: u64 = std::env::var("REVFROM").ok().and_then(|s| s.parse().ok()).unwrap_or(213);
+        let from_m: u64 = std::env::var("REVFROM")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(213);
         let _ = rt.run(from_m * 1_000_000);
         rt.m.watch_addr = Some(0x0e84 * 16 + off as usize);
         let _ = rt.run(steps);
-        println!("writes to gs:{off:#06x} (value, cs:ip), {} hits:", rt.m.addr_hits.len());
+        println!(
+            "writes to gs:{off:#06x} (value, cs:ip), {} hits:",
+            rt.m.addr_hits.len()
+        );
         let mut seen = std::collections::HashSet::new();
         for (v, cs, ip) in &rt.m.addr_hits {
             if seen.insert((*v, *cs, *ip)) {
                 let fseg = (*cs as i32 - 0x1a2) as u32;
-                println!("  ={v:#04x} at {cs:04x}:{ip:04x}  (file ~{:#07x})", fseg * 16 + *ip as u32);
+                println!(
+                    "  ={v:#04x} at {cs:04x}:{ip:04x}  (file ~{:#07x})",
+                    fseg * 16 + *ip as u32
+                );
             }
         }
         eprintln!("revwatch done at {} steps", rt.cpu.steps);
@@ -4832,8 +5837,7 @@ fn main() {
             // POINTER-RELATIVE record watch: re-resolve the object block ([0x6724]
             // far ptr) each shot interval and re-arm block+offset — survives the
             // per-profile block relocation.
-            rec_watch =
-                Some(u32::from_str_radix(recspec.trim_start_matches("0x"), 16).unwrap());
+            rec_watch = Some(u32::from_str_radix(recspec.trim_start_matches("0x"), 16).unwrap());
             eprintln!("boot record-watch armed at block+{:#x}", rec_watch.unwrap());
         } else {
             let lin = usize::from_str_radix(w.trim_start_matches("0x"), 16).unwrap();
@@ -4863,7 +5867,8 @@ fn main() {
                     }
                 }
                 let mstep = rt.cpu.steps / 1_000_000;
-                rt.write_ppm(&out.join(format!("boot_{mstep:05}M.ppm"))).unwrap();
+                rt.write_ppm(&out.join(format!("boot_{mstep:05}M.ppm")))
+                    .unwrap();
                 if rt.cpu.steps >= steps {
                     break RunEnd::StepBudget;
                 }
@@ -4883,15 +5888,21 @@ fn main() {
         }
     }
     let mstep = rt.cpu.steps / 1_000_000;
-    rt.write_ppm(&out.join(format!("final_{mstep:05}M.ppm"))).unwrap();
-    println!("=== end: {end:?} after {} steps (mode {:#04x}) ===", rt.cpu.steps, rt.vga_mode);
+    rt.write_ppm(&out.join(format!("final_{mstep:05}M.ppm")))
+        .unwrap();
+    println!(
+        "=== end: {end:?} after {} steps (mode {:#04x}) ===",
+        rt.cpu.steps, rt.vga_mode
+    );
     let [ins, outs, ints, hlts, chunks] = rt.exit_counts;
     println!("exits: in={ins} out={outs} int={ints} hlt={hlts} chunks={chunks}");
     println!("{}", rt.debug_state());
     {
         let ss = rt.m.regs.ss;
         let sp = rt.m.regs.sp() as u32;
-        let w: Vec<String> = (0..6).map(|i| format!("{:04x}", rt.m.read16(ss, sp + i * 2))).collect();
+        let w: Vec<String> = (0..6)
+            .map(|i| format!("{:04x}", rt.m.read16(ss, sp + i * 2)))
+            .collect();
         println!("stack top: {}", w.join(" "));
     }
     std::fs::write(out.join("driver.bin"), &rt.m.mem[0x765e0..0x765e0 + 0x1000]).unwrap();

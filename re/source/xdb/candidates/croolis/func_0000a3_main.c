@@ -45,7 +45,6 @@ void XDB_FAR xdb_croolis_main(void)
         xdb_i16 event;
         xdb_u32 clock;
 
-        xdb_direction_forward();
         xdb_port_write_u16(0x03c4u, 0x0f02u);
         _fmemset(
                 (void XDB_FAR *)framebuffer,

@@ -55,6 +55,8 @@ def run(command: list[str], cwd: Path, timeout: int | None = None) -> None:
             command,
             cwd=cwd,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             capture_output=True,
             check=False,
             timeout=timeout,
