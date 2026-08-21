@@ -47,7 +47,17 @@ export DISPLAY="$DISP" SDL_VIDEODRIVER=x11
 
 Xvfb "$DISP" -screen 0 800x600x24 >/dev/null 2>&1 &
 XVFB_PID=$!
-trap 'kill "$XVFB_PID" "${DOSBOX_PID:-}" 2>/dev/null || true' EXIT
+# The emulator may run under strace, which does not forward signals to its
+# tracee: killing the wrapper PID leaked a live DOSBox on every aborted run.
+# Launch the whole tree in its own process group and kill the GROUP instead.
+GAME_PGID=""
+cleanup() {
+  kill "$XVFB_PID" "${DOSBOX_PID:-}" 2>/dev/null || true
+  if [ -n "$GAME_PGID" ]; then
+    kill -9 -"$GAME_PGID" 2>/dev/null || true
+  fi
+}
+trap cleanup EXIT
 sleep 3
 # Reproduce BLOOD.BAT exactly. Mounting only one drive, or launching BLOODPRG with no
 # arguments, leaves the game looping the ATTRACT DEMO -- it never reaches a playable
@@ -95,18 +105,24 @@ if [ -n "${DOSBOX_TRACE_FILE:-}" ]; then
     strace
     -f
     -yy
+    # seccomp-bpf filtering keeps untraced syscalls from stopping the
+    # tracee: without it, per-frame ptrace stops made the guest miss
+    # keyboard input entirely on current kernels (the briefing skip
+    # froze mid-presentation), while the traced evidence stays identical.
+    --seccomp-bpf
     -e "trace=openat,read,lseek,_llseek,pread64"
     "${DOSBOX_TRACE_PATH_ARGS[@]}"
     -o "$DOSBOX_TRACE_FILE"
     "${DOSBOX_ARGS[@]}"
   )
 fi
-"${DOSBOX_ARGS[@]}" \
+setsid --wait "${DOSBOX_ARGS[@]}" \
   -c "mount c \"$INSTALL_PARENT\"" \
   -c "mount d \"$GAME_DIR\" -t cdrom" \
   -c 'd:' \
   -c "$GAME_EXECUTABLE AMR S162227 EMS WRIC:\\cblood\\" >/dev/null 2>&1 &
 DOSBOX_PID=$!
+GAME_PGID="$(ps -o pgid= -p "$DOSBOX_PID" 2>/dev/null | tr -d ' ')"
 
 # Wait for the game window, up to ~20s. Profilers and syscall tracers insert a
 # process between this driver and DOSBox, so inspect the complete child tree.
