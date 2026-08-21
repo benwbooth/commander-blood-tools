@@ -6048,3 +6048,28 @@ Therefore BAS `next` values are zero-based offsets to selector-node headers,
 not one-based offsets to `AC`. BloodScript now emits separate `YIELD_B` and
 `SELECTOR_NODE` statements and labels the actual node headers. All five shipped
 BAS files still compile byte-for-byte.
+
+## GS=DS invariant restored in the relinked runtime (2026-08-21)
+
+The shipped BLOODPRG keeps SS=GS=DS pinned to the game data segment for its
+entire lifetime. The relinked runtime's recovered C entrypoint never
+established this: Open Watcom leaves GS untouched, so unrecovered machine
+code inside the same executable ran with GS=0 whenever it was reached through
+recovered C. The visible failure was the Pterra-entry crash: the resource
+materialization loop loads its buffer pointer with `lds dx, gs:[0xa7c]`
+(0x283D); with GS=0 that read the far pointer out of the interrupt vector
+table at 0000:0A7C, and the following segment-wrapping reads and writes
+clobbered low memory and the IVT (INT-1 storm; 'Packed file is corrupt'
+strings written from stale load-area memory).
+
+The fix is one instruction at the relinked entrypoint:
+`bloodprg_set_gs_to_ds` in bloodprg_relinked_main.c establishes GS=DS before
+bloodprg_entry. Boundary snapshots captured at the PTERRA-file creation
+moment (re/tools/capture_pterra_boundary.py) show gs=0x0000 broken versus
+gs=0x187D (=DS) fixed, with an identical CS:IP neighborhood and no wild
+interrupt vectors after the fix.
+
+Caveat for future work: FS is likewise zero in the relinked runtime while the
+shipped image uses a distinct FS base (file 0xC1F0 region). No failing path
+has been traced to FS yet; the same boundary-capture harness will surface one
+if it exists.
