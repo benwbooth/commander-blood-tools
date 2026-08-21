@@ -20,8 +20,8 @@
 #define VM_C2_DESCRIPT_LINE 0x002bu
 #define VM_C2_NAME_OFFSET 4u
 
-const cb_u8 CB_NEAR *CB_NEAR vm_op_c2_record_full(
-    const cb_u8 CB_NEAR *script_bytes)
+bloodprg_vm_image_ptr CB_NEAR vm_op_c2_record_full(
+    bloodprg_vm_image_ptr script_bytes)
 {
     cb_u8 inverted;
     cb_u16 record_offset;
@@ -41,10 +41,10 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_c2_record_full(
         ++script_bytes;
     }
 
-    record_offset = *(const cb_u16 CB_NEAR *)script_bytes;
+    record_offset = *(const volatile cb_u16 CB_FAR *)script_bytes;
     script_bytes += sizeof(cb_u16);
     owner_offset = vm_record_lookup_by_threshold(record_offset);
-    related_offset = *(const cb_u16 CB_NEAR *)script_bytes;
+    related_offset = *(const volatile cb_u16 CB_FAR *)script_bytes;
     script_bytes += sizeof(cb_u16);
 
     owner = (volatile bloodprg_vm_object_header CB_FAR *)VM_C2_RECORD_AT(
@@ -61,7 +61,7 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_c2_record_full(
         } else if (inverted) {
             return script_bytes;
         }
-        return (const cb_u8 CB_NEAR *)vm_branch_fail();
+        return BLOODPRG_VM_CURSOR_AT(script_bytes, vm_branch_fail());
     }
 
     if ((owner->flags & VM_C2_OWNER_ACTIVE_FLAG) == 0u) {

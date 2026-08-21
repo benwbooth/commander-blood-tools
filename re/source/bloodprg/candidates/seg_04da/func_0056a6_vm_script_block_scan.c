@@ -20,7 +20,7 @@ cb_i16 CB_NEAR vm_script_block_scan(bloodprg_vm_image_ptr script_bytes)
         }
 
         vm_yield_flag_gs = 0u;
-        cursor = vm_opcode_dispatch(opcode, cursor);
+        cursor = vm_opcode_handlers[opcode - BLOODPRG_VM_OPCODE_MIN](cursor);
         signal = vm_yield_flag_gs;
         if (signal != 0u) {
             if (signal == BLOODPRG_VM_YIELD_STOP_BLOCK) {

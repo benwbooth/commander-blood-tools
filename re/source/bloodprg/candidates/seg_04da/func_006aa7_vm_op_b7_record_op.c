@@ -1,7 +1,7 @@
 #include "../include/bloodprg_vm.h"
 
-const cb_u8 CB_NEAR *CB_NEAR vm_op_b7_record_op(
-    const cb_u8 CB_NEAR *script_bytes)
+bloodprg_vm_image_ptr CB_NEAR vm_op_b7_record_op(
+    bloodprg_vm_image_ptr script_bytes)
 {
     cb_u8 inverted;
     cb_u16 offset;
@@ -18,7 +18,7 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_b7_record_op(
         ++script_bytes;
     }
 
-    offset = *(const cb_u16 CB_NEAR *)script_bytes;
+    offset = *(const volatile cb_u16 CB_FAR *)script_bytes;
     script_bytes += sizeof(cb_u16);
     bit_index = *script_bytes++;
     bit_in_byte = (cb_u8)(bit_index & 7u);
@@ -32,7 +32,7 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_b7_record_op(
         } else if (inverted) {
             return script_bytes;
         }
-        return (const cb_u8 CB_NEAR *)vm_branch_fail();
+        return BLOODPRG_VM_CURSOR_AT(script_bytes, vm_branch_fail());
     }
 
     mask = (cb_u8)(1u << (7u - bit_in_byte));

@@ -8,8 +8,8 @@
 #define VM_C7_RECORD_AT(base, offset) ((base) + (offset))
 #endif
 
-const cb_u8 CB_NEAR *CB_NEAR vm_op_c7_record_match(
-    const cb_u8 CB_NEAR *script_bytes)
+bloodprg_vm_image_ptr CB_NEAR vm_op_c7_record_match(
+    bloodprg_vm_image_ptr script_bytes)
 {
     cb_u8 inverted;
     cb_u16 record_offset;
@@ -26,9 +26,9 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_c7_record_match(
         ++script_bytes;
     }
 
-    record_offset = *(const cb_u16 CB_NEAR *)script_bytes;
+    record_offset = *(const volatile cb_u16 CB_FAR *)script_bytes;
     script_bytes += sizeof(cb_u16);
-    operand = *(const cb_u16 CB_NEAR *)script_bytes;
+    operand = *(const volatile cb_u16 CB_FAR *)script_bytes;
     script_bytes += sizeof(cb_u16);
 
     record = (volatile cb_u16 CB_FAR *)VM_C7_RECORD_AT(
@@ -41,17 +41,17 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_c7_record_match(
         } else if (inverted) {
             return script_bytes;
         }
-        return (const cb_u8 CB_NEAR *)vm_branch_fail();
+        return BLOODPRG_VM_CURSOR_AT(script_bytes, vm_branch_fail());
     }
 
     related = (volatile cb_u16 CB_FAR *)VM_C7_RECORD_AT(
         record_base, operand);
     if ((*((volatile cb_u8 CB_FAR *)related + 2) & 1u) == 0) {
-        return (const cb_u8 CB_NEAR *)vm_branch_fail();
+        return BLOODPRG_VM_CURSOR_AT(script_bytes, vm_branch_fail());
     }
     record_kind = record[0];
     if (record_kind != 0x00c4u && record_kind != 0) {
-        return (const cb_u8 CB_NEAR *)vm_branch_fail();
+        return BLOODPRG_VM_CURSOR_AT(script_bytes, vm_branch_fail());
     }
     record[0] = 0x00c7u;
     record[1] = operand;

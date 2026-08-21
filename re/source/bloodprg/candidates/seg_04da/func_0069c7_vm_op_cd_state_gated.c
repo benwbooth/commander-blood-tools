@@ -8,8 +8,8 @@
 #define VM_CD_RECORD_AT(base, offset) ((base) + (offset))
 #endif
 
-const cb_u8 CB_NEAR *CB_NEAR vm_op_cd_state_gated(
-    const cb_u8 CB_NEAR *script_bytes)
+bloodprg_vm_image_ptr CB_NEAR vm_op_cd_state_gated(
+    bloodprg_vm_image_ptr script_bytes)
 {
     cb_u8 inverted;
     cb_u16 first_record;
@@ -29,11 +29,11 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_cd_state_gated(
             inverted = 1;
             ++script_bytes;
         }
-        first_record = *(const cb_u16 CB_NEAR *)script_bytes;
+        first_record = *(const volatile cb_u16 CB_FAR *)script_bytes;
         script_bytes += sizeof(cb_u16);
-        second_record = *(const cb_u16 CB_NEAR *)script_bytes;
+        second_record = *(const volatile cb_u16 CB_FAR *)script_bytes;
         script_bytes += sizeof(cb_u16);
-        third_record = *(const cb_u16 CB_NEAR *)script_bytes;
+        third_record = *(const volatile cb_u16 CB_FAR *)script_bytes;
         script_bytes += sizeof(cb_u16);
 
         triple = (volatile cb_u16 CB_FAR *)VM_CD_RECORD_AT(
@@ -47,15 +47,15 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_cd_state_gated(
         } else if (inverted) {
             return script_bytes;
         }
-        return (const cb_u8 CB_NEAR *)vm_branch_fail();
+        return BLOODPRG_VM_CURSOR_AT(script_bytes, vm_branch_fail());
     }
 
-    first_record = *(const cb_u16 CB_NEAR *)script_bytes;
+    first_record = *(const volatile cb_u16 CB_FAR *)script_bytes;
     script_bytes += sizeof(cb_u16);
     owner = vm_record_lookup_by_threshold(first_record);
-    second_record = *(const cb_u16 CB_NEAR *)script_bytes;
+    second_record = *(const volatile cb_u16 CB_FAR *)script_bytes;
     script_bytes += sizeof(cb_u16);
-    third_record = *(const cb_u16 CB_NEAR *)script_bytes;
+    third_record = *(const volatile cb_u16 CB_FAR *)script_bytes;
     script_bytes += sizeof(cb_u16);
 
     (void)(*(volatile cb_u8 CB_FAR *)VM_CD_RECORD_AT(
