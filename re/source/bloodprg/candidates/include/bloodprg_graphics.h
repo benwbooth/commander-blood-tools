@@ -7,6 +7,9 @@
 
 typedef volatile cb_u8 CB_FAR *bloodprg_graphics_buffer_ptr;
 
+#define BLOODPRG_SELECTED_MASK_COUNT 6
+#define BLOODPRG_SELECTED_MASK_BYTES 32
+
 typedef struct bloodprg_centered_text_line {
     cb_u16 character_count;
     cb_u16 centered_x;
@@ -181,7 +184,9 @@ extern const cb_u8 CB_GAME_DATA
         small_font_character_map[256]; /* GS:0x6FA8 */
 extern const cb_u8 CB_GAME_DATA
         small_font_glyphs[]; /* SS:0x7028 */
-extern const cb_u8 selected_mask_rows[][32]; /* DS:0x7BB8 */
+extern const cb_u8 selected_mask_rows
+        [BLOODPRG_SELECTED_MASK_COUNT][BLOODPRG_SELECTED_MASK_BYTES];
+        /* DS:0x7BB8; span: 192 */
 extern volatile cb_i8 selected_mask_index; /* DS:0x27E3 */
 
 #if defined(__TURBOC__) || defined(__BORLANDC__) || defined(__WATCOMC__)
