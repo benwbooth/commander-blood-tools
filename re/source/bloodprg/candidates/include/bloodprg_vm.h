@@ -1,6 +1,8 @@
 #ifndef BLOODPRG_VM_H
 #define BLOODPRG_VM_H
 
+#include <dos.h>
+
 #include "bloodprg_common.h"
 #include "bloodprg_platform.h"
 #include "bloodprg_random.h"
@@ -14,6 +16,9 @@ typedef union bloodprg_vm_ui_state {
 } bloodprg_vm_ui_state;
 
 typedef volatile cb_u8 CB_FAR *bloodprg_vm_image_ptr;
+
+#define BLOODPRG_VM_CURSOR_AT(cursor, offset) \
+    ((bloodprg_vm_image_ptr)MK_FP(FP_SEG(cursor), (cb_u16)(offset)))
 
 typedef bloodprg_vm_image_ptr CB_NEAR bloodprg_vm_opcode_handler(
         bloodprg_vm_image_ptr script_bytes);
@@ -423,6 +428,8 @@ cb_i16 CB_SAVE_REGS CB_FAR vm_resource_profile_select(
         cb_u16 profile);                                  /* 0x0053A0 */
 void CB_FAR vm_record_state_proc(void);       /* 0x00555B */
 cb_i16 CB_FAR vm_run_wrapper(void);           /* 0x0055A4 */
+bloodprg_vm_image_ptr CB_NEAR vm_opcode_dispatch(
+        cb_u8 opcode, bloodprg_vm_image_ptr script_bytes);
 #if defined(__WATCOMC__)
 #endif
 void CB_NEAR vm_op_a3_collect(void);             /* 0x005AFD */
@@ -469,10 +476,10 @@ const cb_u16 CB_NEAR *CB_NEAR vm_op_ca_compare_var(
     const cb_u16 CB_NEAR *script_words);      /* 0x0064E5 */
 const cb_u8 CB_NEAR *CB_NEAR vm_op_cb_compare_byte(
     const cb_u8 CB_NEAR *script_bytes);       /* 0x006510 */
-const cb_u16 CB_NEAR *CB_NEAR vm_op_a0_push(
-    const cb_u16 CB_NEAR *script_words);      /* 0x006559 */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_a1_pop(
-    const cb_u8 CB_NEAR *script_bytes);        /* 0x006572 */
+bloodprg_vm_image_ptr CB_NEAR vm_op_a0_push(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x006559 */
+bloodprg_vm_image_ptr CB_NEAR vm_op_a1_pop(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x006572 */
 const cb_u16 CB_NEAR *CB_NEAR vm_op_a2_cond_call(
     const cb_u16 CB_NEAR *script_words);      /* 0x006588 */
 const cb_u8 CB_NEAR *CB_NEAR vm_op_a3_block(

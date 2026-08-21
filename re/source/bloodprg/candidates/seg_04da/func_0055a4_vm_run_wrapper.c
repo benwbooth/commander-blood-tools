@@ -27,6 +27,22 @@ static bloodprg_vm_image_ptr CB_NEAR vm_script_handler_invoke(
 }
 #endif
 
+bloodprg_vm_image_ptr CB_NEAR vm_opcode_dispatch(
+        cb_u8 opcode, bloodprg_vm_image_ptr script_bytes)
+{
+    switch (opcode) {
+    case 0xa0u:
+        return vm_op_a0_push(script_bytes);
+    case 0xa1u:
+        return vm_op_a1_pop(script_bytes);
+    default:
+        return vm_script_handler_invoke(
+                vm_opcode_handlers[
+                    (cb_u8)(opcode - BLOODPRG_VM_OPCODE_MIN)],
+                script_bytes);
+    }
+}
+
 cb_i16 CB_FAR vm_run_wrapper(void)
 {
     bloodprg_resource_resolve_result resolved;
@@ -72,10 +88,7 @@ cb_i16 CB_FAR vm_run_wrapper(void)
         }
 
         vm_yield_flag = 0u;
-        cursor = vm_script_handler_invoke(
-                vm_opcode_handlers[
-                    (cb_u8)(opcode - BLOODPRG_VM_OPCODE_MIN)],
-                cursor);
+        cursor = vm_opcode_dispatch(opcode, cursor);
         signal = vm_yield_flag;
 
         if (signal == 0u) {
