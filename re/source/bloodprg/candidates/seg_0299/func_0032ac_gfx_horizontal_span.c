@@ -18,17 +18,11 @@ void CB_FAR gfx_horizontal_span(
     cb_u16 span_end;
     cb_u16 count;
 
-#if defined(__WATCOMC__)
-    _asm push ax;
-    _asm push ds;
-    _asm push es;
-#endif
-
     clipped_width = width;
     if ((cb_i16)clipped_width <= 0
             || (cb_i16)y < (cb_i16)graphics_band_top_row
             || (cb_i16)y >= (cb_i16)graphics_band_bottom_row) {
-        goto restore_registers;
+        return;
     }
 
     /* Keep the original SUB/Jcc operand comparisons across 16-bit overflow. */
@@ -38,7 +32,7 @@ void CB_FAR gfx_horizontal_span(
         original_width = clipped_width;
         clipped_width = (cb_u16)(clipped_width - clip_amount);
         if ((cb_i16)original_width <= (cb_i16)clip_amount) {
-            goto restore_registers;
+            return;
         }
         x = (cb_u16)graphics_clip_left;
     }
@@ -50,7 +44,7 @@ void CB_FAR gfx_horizontal_span(
         original_width = clipped_width;
         clipped_width = (cb_u16)(clipped_width - (cb_u16)clip_delta);
         if ((cb_i16)original_width <= clip_delta) {
-            goto restore_registers;
+            return;
         }
     }
 
@@ -70,10 +64,4 @@ void CB_FAR gfx_horizontal_span(
         } while (--count != 0);
     }
 
-restore_registers:
-#if defined(__WATCOMC__)
-    _asm pop es;
-    _asm pop ds;
-    _asm pop ax;
-#endif
 }

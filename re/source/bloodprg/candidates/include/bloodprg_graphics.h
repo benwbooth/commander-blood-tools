@@ -356,15 +356,12 @@ void CB_NEAR list_walk_f18(void); /* 0x007CE8 */
 
 #if defined(__WATCOMC__)
 #pragma aux layout_offset_calc parm [ax] [bx] value [bx ax]
-#pragma aux gfx_horizontal_span parm [ax] [bx] [cx] [dx] modify exact []
-#pragma aux gfx_vertical_span parm [ax] [bx] [cx] [dx] modify exact [bx]
 #pragma aux framebuffer_rect_interpolate_and_remap_step \
         parm [si] [di] modify exact []
 #pragma aux gfx_clipped_span_fill parm [ax] [bx] [cx] [dx] modify exact []
 #pragma aux gfx_clipped_planar_vertical_span \
         parm [ax] [bx] [cx] [dx] modify exact []
 #pragma aux framebuffer_noise_rect parm caller [ax] [bx] [cx] [dx] modify exact []
-#pragma aux composite_draw_a parm [ax] [bx] [cx] [dx] modify exact []
 #pragma aux framebuffer_rect_fill parm caller [ax] [bx] [cx] [dx] modify exact []
 #pragma aux page_offset_helper modify exact [ax dx]
 #pragma aux main_loop_hud_refresh modify exact [ax bx cx dx di]

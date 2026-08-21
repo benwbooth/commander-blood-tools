@@ -17,21 +17,12 @@ void CB_FAR gfx_vertical_span(
     cb_u16 row_offset;
     cb_u16 span_end;
     cb_u16 count;
-    cb_u8 remapped;
 
-#if defined(__WATCOMC__)
-    _asm push ax;
-    _asm push ds;
-    _asm push es;
-    _asm push bx;
-#endif
-
-    remapped = 0;
     clipped_height = height;
     if ((cb_i16)clipped_height <= 0
             || (cb_i16)x < graphics_clip_left
             || (cb_i16)x >= graphics_clip_right) {
-        goto restore_registers;
+        return;
     }
 
     /* Keep the original SUB/Jcc operand comparisons across 16-bit overflow. */
@@ -41,7 +32,7 @@ void CB_FAR gfx_vertical_span(
         original_height = clipped_height;
         clipped_height = (cb_u16)(clipped_height - clip_amount);
         if ((cb_i16)original_height <= (cb_i16)clip_amount) {
-            goto restore_registers;
+            return;
         }
         y = graphics_band_top_row;
     }
@@ -53,7 +44,7 @@ void CB_FAR gfx_vertical_span(
         original_height = clipped_height;
         clipped_height = (cb_u16)(clipped_height - (cb_u16)clip_delta);
         if ((cb_i16)original_height <= clip_delta) {
-            goto restore_registers;
+            return;
         }
     }
 
@@ -63,7 +54,6 @@ void CB_FAR gfx_vertical_span(
 
     count = clipped_height;
     if ((graphics_span_remap_enabled & 1u) != 0) {
-        remapped = 1;
         do {
             *pixel = graphics_span_remap_table[*pixel];
             pixel += BLOODPRG_SCREEN_WIDTH;
@@ -75,14 +65,4 @@ void CB_FAR gfx_vertical_span(
         } while (--count != 0);
     }
 
-restore_registers:
-#if defined(__WATCOMC__)
-    _asm pop bx;
-    if (remapped != 0) {
-        _asm mov bx, 0x5f11;
-    }
-    _asm pop es;
-    _asm pop ds;
-    _asm pop ax;
-#endif
 }
