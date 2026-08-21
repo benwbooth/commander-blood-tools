@@ -246,8 +246,6 @@ extern volatile char CB_FS_DATA
         fs_presentation_resource_names[][16]; /* FS:0x0C04 */
 
 #if defined(__WATCOMC__)
-#pragma aux list_widget_layout_unified \
-        parm [si] value [ax] modify exact [ax]
 #pragma aux nav_choice_handler_0 modify exact [ax]
 #pragma aux nav_choice_dispatch modify exact [ax di]
 #pragma aux screen_mode_update parm [ax] modify exact [di es]
@@ -296,7 +294,8 @@ void CB_NEAR nav_actor_handler_4(
 void CB_NEAR nav_actor_handler_5(
         volatile bloodprg_presentation_line_record CB_NEAR *line); /* 0x008082 */
 cb_i16 CB_FAR list_widget_layout_unified(
-        const cb_u16 CB_NEAR *items); /* 0x008428 */
+        const cb_u16 CB_NEAR *items,
+        const volatile void CB_FAR *label_segment_anchor); /* 0x008428 */
 void CB_NEAR presentation_choice_transition_step(void); /* 0x001AD3 */
 void CB_NEAR confirm_dialog_step(void); /* 0x0014CA */
 void CB_NEAR nav_choice_handler_0(void); /* 0x008713 */

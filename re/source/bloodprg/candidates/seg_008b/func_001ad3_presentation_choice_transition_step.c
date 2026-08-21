@@ -20,7 +20,8 @@ void CB_NEAR presentation_choice_transition_step(void)
     vm_ui_flags |= PRESENTATION_UI_ACTIVE;
     if ((presentation_choice_phase & 1u) != 0u) {
         presentation_list_editing = 1u;
-        (void)list_widget_layout_unified(presentation_choice_items);
+        (void)list_widget_layout_unified(
+                presentation_choice_items, presentation_choice_items);
         presentation_list_editing = 0u;
         framebuffer_transition_current_step = 0u;
         framebuffer_transition_total_steps = 6u;
@@ -42,7 +43,8 @@ void CB_NEAR presentation_choice_transition_step(void)
         presentation_choice_phase = 0u;
     }
 
-    selection = list_widget_layout_unified(presentation_choice_items);
+    selection = list_widget_layout_unified(
+            presentation_choice_items, presentation_choice_items);
     if (selection < 0) {
         return;
     }

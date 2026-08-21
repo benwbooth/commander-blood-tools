@@ -23,7 +23,8 @@ void CB_NEAR nav_choice_handler_4(void)
     if ((nav_choice_phase & 1u) != 0u) {
         framebuffer_transition_current_step = 0u;
         presentation_list_editing = 1u;
-        (void)list_widget_layout_unified(items);
+        (void)list_widget_layout_unified(
+                items, option_menu_label_pointers);
         presentation_list_editing = 0u;
         ++nav_choice_phase;
 
@@ -47,7 +48,8 @@ void CB_NEAR nav_choice_handler_4(void)
         nav_choice_phase = 0u;
     }
 
-    selection = list_widget_layout_unified(items);
+    selection = list_widget_layout_unified(
+            items, option_menu_label_pointers);
     if (selection < 0) {
         return;
     }

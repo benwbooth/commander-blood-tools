@@ -27,7 +27,8 @@ void CB_NEAR nav_choice_handler_1(void)
 
         target = nav_kind2_target_offsets;
         presentation_list_editing = 1u;
-        (void)list_widget_layout_unified((const cb_u16 *)target);
+        (void)list_widget_layout_unified(
+                (const cb_u16 *)target, vm_record_base);
         presentation_list_editing = 0u;
         ++nav_choice_phase;
     }
@@ -47,7 +48,8 @@ void CB_NEAR nav_choice_handler_1(void)
     }
 
     target = nav_kind2_target_offsets;
-    selection = list_widget_layout_unified((const cb_u16 *)target);
+    selection = list_widget_layout_unified(
+            (const cb_u16 *)target, vm_record_base);
     if (selection == (cb_i16)NAV_CHOICE_NONE) {
         return;
     }

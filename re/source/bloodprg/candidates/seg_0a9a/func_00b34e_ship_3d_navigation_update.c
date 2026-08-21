@@ -106,6 +106,7 @@ void CB_NEAR ship_3d_navigation_update(void)
                     SHIP_3D_INTERPOLATION_STEPS;
             presentation_list_editing = 1u;
             (void)list_widget_layout_unified(
+                    ship_3d_navigation_trigger_target_list,
                     ship_3d_navigation_trigger_target_list);
             presentation_list_editing = 0u;
             presentation_word_choice_target_rect.x =
@@ -180,6 +181,7 @@ void CB_NEAR ship_3d_navigation_update(void)
         }
 
         selection = list_widget_layout_unified(
+                ship_3d_navigation_trigger_target_list,
                 ship_3d_navigation_trigger_target_list);
         if (selection < 0) {
             return;

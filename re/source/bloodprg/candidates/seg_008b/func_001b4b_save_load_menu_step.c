@@ -44,7 +44,8 @@ void CB_NEAR save_load_menu_step(void)
     vm_ui_flags |= SAVE_LOAD_UI_ACTIVE;
     if ((save_slot_menu_phase & 1u) != 0u) {
         presentation_list_editing = 1u;
-        (void)list_widget_layout_unified(save_slot_item_offsets);
+        (void)list_widget_layout_unified(
+                save_slot_item_offsets, save_slot_item_offsets);
         presentation_list_editing = 0u;
         save_slot_transition_aux = 0u;
         framebuffer_transition_current_step = 0u;
@@ -72,7 +73,8 @@ void CB_NEAR save_load_menu_step(void)
         save_slot_menu_phase = 0u;
     }
 
-    selection = list_widget_layout_unified(save_slot_item_offsets);
+    selection = list_widget_layout_unified(
+            save_slot_item_offsets, save_slot_item_offsets);
     if ((save_request_active & 1u) != 0u) {
         save_slot_name_length = 0u;
         while (save_slot_edit_buffer[save_slot_name_length] != 0u

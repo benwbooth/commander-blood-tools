@@ -30,35 +30,21 @@
     ((const volatile cb_u16 CB_FAR *)MK_FP((segment), (offset)))
 #define LIST_WIDGET_TEXT_AT(segment, offset) \
     ((const cb_u8 CB_FAR *)MK_FP((segment), (offset)))
+#define LIST_WIDGET_SEGMENT(pointer) \
+    FP_SEG((const volatile void CB_FAR *)(pointer))
 typedef cb_u16 list_widget_segment;
 #else
 #define LIST_WIDGET_WORD_AT(segment, offset) \
     ((const volatile cb_u16 CB_FAR *)(cb_u16)(offset))
 #define LIST_WIDGET_TEXT_AT(segment, offset) \
     ((const cb_u8 CB_FAR *)(cb_u16)(offset))
+#define LIST_WIDGET_SEGMENT(pointer) 0u
 typedef cb_u16 list_widget_segment;
 #endif
 
-#if defined(__WATCOMC__)
-static list_widget_segment CB_NEAR list_widget_inherited_es(void);
-#pragma aux list_widget_inherited_es = \
-        "mov ax,es" \
-        value [ax] modify exact []
-
-#elif defined(__TURBOC__) || defined(__BORLANDC__)
-static list_widget_segment CB_NEAR list_widget_inherited_es(void)
-{
-    asm mov ax, es;
-}
-#else
-static list_widget_segment CB_NEAR list_widget_inherited_es(void)
-{
-    return 0u;
-}
-#endif
-
 cb_i16 CB_FAR list_widget_layout_unified(
-        const cb_u16 CB_NEAR *items)
+        const cb_u16 CB_NEAR *items,
+        const volatile void CB_FAR *label_segment_anchor)
 {
     const cb_u16 CB_NEAR *item;
     volatile bloodprg_rect_i16 CB_NEAR *layout;
@@ -77,7 +63,7 @@ cb_i16 CB_FAR list_widget_layout_unified(
     cb_u16 index;
     cb_u8 color;
 
-    label_segment = list_widget_inherited_es();
+    label_segment = LIST_WIDGET_SEGMENT(label_segment_anchor);
     nav_target_selection = 0u;
     row_extent = 0u;
     max_width = LIST_WIDGET_DEFAULT_WIDTH;
