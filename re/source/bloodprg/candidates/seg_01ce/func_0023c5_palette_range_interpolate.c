@@ -16,11 +16,6 @@ void CB_FAR palette_range_interpolate(
     cb_u8 source_value;
     cb_u8 target_value;
 
-#if defined(__WATCOMC__)
-    /* Preserve the caller's target segment across based destination writes. */
-    _asm push es;
-#endif
-
     offset = (cb_u16)(first * BLOODPRG_PALETTE_COMPONENTS);
     source += offset;
     target += offset;
@@ -47,7 +42,4 @@ void CB_FAR palette_range_interpolate(
                 + (cb_i16)delta * (cb_i16)(cb_i8)percent / 100);
     } while (--entries != 0);
 
-#if defined(__WATCOMC__)
-    _asm pop es;
-#endif
 }

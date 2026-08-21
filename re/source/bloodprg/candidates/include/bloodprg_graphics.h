@@ -347,11 +347,6 @@ void CB_NEAR list_walk_f18(void); /* 0x007CE8 */
 #pragma aux page_offset_helper modify exact [ax dx]
 #pragma aux main_loop_hud_refresh modify exact [ax bx cx dx di]
 #pragma aux video_retrace_phase_wait modify exact []
-#pragma aux palette_blend_remap_table_build \
-        parm [ax] [bx] [cx] [dx] [di] value [ax] modify exact []
-#pragma aux palette_range_interpolate \
-        parm [si] [es di] [ax] [bx] [dx] \
-        modify exact []
 #pragma aux palette_transition_step modify exact [ax]
 #pragma aux tint_table_build_banked \
         parm [ax] [bx] modify exact [ax bx]

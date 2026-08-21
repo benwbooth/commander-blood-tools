@@ -28,11 +28,6 @@ cb_i16 CB_FAR palette_blend_remap_table_build(
     cb_u16 target_green_scaled;
     cb_u16 target_red_scaled;
 
-#if defined(__WATCOMC__)
-    /* Watcom uses ES for based data but does not preserve it for this pragma. */
-    _asm push es;
-#endif
-
     percent = (cb_u16)(0u - (cb_u16)negative_percent);
     target_red_scaled = (cb_u16)(percent * target_red / 100u);
     target_green_scaled = (cb_u16)(percent * target_green / 100u);
@@ -84,8 +79,5 @@ cb_i16 CB_FAR palette_blend_remap_table_build(
         }
         ++table;
     }
-#if defined(__WATCOMC__)
-    _asm pop es;
-#endif
     return negative_percent;
 }
