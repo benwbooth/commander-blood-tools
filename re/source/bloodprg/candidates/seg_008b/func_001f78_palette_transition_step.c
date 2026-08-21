@@ -2,17 +2,11 @@
 
 #define PALETTE_TRANSITION_COMPLETE 100u
 
-void CB_FAR palette_transition_step(void)
+void CB_SAVE_REGS CB_FAR palette_transition_step(void)
 {
     cb_u16 first;
     cb_u16 last;
     cb_u16 percent;
-
-#if defined(__WATCOMC__)
-    /* Watcom otherwise treats the binary-preserved AX and ES as volatile. */
-    _asm push ax;
-    _asm push es;
-#endif
 
     percent = palette_transition_percent;
     if (percent != PALETTE_TRANSITION_COMPLETE) {
@@ -32,9 +26,4 @@ void CB_FAR palette_transition_step(void)
             first,
             last);
     }
-
-#if defined(__WATCOMC__)
-    _asm pop es;
-    _asm pop ax;
-#endif
 }

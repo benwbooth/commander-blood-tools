@@ -19,10 +19,6 @@ void CB_SAVE_REGS CB_FAR back_buffer_fill(cb_u8 color)
     cb_u16 count;
     cb_u16 i;
 
-#if defined(__WATCOMC__)
-    _asm push eax;
-#endif
-
     top = graphics_band_top_row;
     row_offset = (cb_u16)((((top & 0x00ffu) << 8) | (top >> 8))
             + (cb_u16)(top << 6));
@@ -37,8 +33,4 @@ void CB_SAVE_REGS CB_FAR back_buffer_fill(cb_u8 color)
     for (i = 0; i < count; ++i) {
         dst[i] = pattern;
     }
-
-#if defined(__WATCOMC__)
-    _asm pop eax;
-#endif
 }

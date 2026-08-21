@@ -412,7 +412,7 @@ extern volatile cb_u16 vm_nav_chart_object_offsets[];
 
 int CB_FAR string_compare(const volatile char CB_FAR *left,
         const volatile char CB_FAR *right); /* 0x0025A4 */
-void CB_NEAR object_heap_access(void);       /* 0x00149B */
+void CB_SAVE_REGS CB_NEAR object_heap_access(void); /* 0x00149B */
 void CB_SAVE_REGS CB_NEAR active_object_list_build(void); /* 0x00604E */
 cb_u16 CB_FAR nav_chart_list_build(void);    /* 0x00721A */
 const cb_u8 CB_NEAR *CB_NEAR value_scan_match(cb_u16 value,

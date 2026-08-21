@@ -262,7 +262,7 @@ void CB_FAR palette_range_interpolate(
         cb_u16 percent,
         cb_u16 first,
         cb_u16 last); /* 0x0023C5 */
-void CB_FAR palette_transition_step(void); /* 0x001F78 */
+void CB_SAVE_REGS CB_FAR palette_transition_step(void); /* 0x001F78 */
 void CB_FAR tint_table_build_banked(
         cb_u16 bank_base,
         volatile cb_u8 CB_GAME_DATA *table); /* 0x00242D */
@@ -374,12 +374,12 @@ void CB_NEAR list_walk_f18(void); /* 0x007CE8 */
 #pragma aux palette_range_interpolate \
         parm [si] [es di] [ax] [bx] [dx] \
         modify exact []
-#pragma aux palette_transition_step modify exact []
+#pragma aux palette_transition_step modify exact [ax]
 #pragma aux tint_table_build_banked \
         parm [ax] [bx] modify exact [ax bx]
 #pragma aux back_buffer_copy_from parm [bx] [cx] [dx] modify exact []
-#pragma aux blit_fill_row_5221 parm [ax] modify exact []
-#pragma aux back_buffer_fill parm [ax] modify exact []
+#pragma aux blit_fill_row_5221 parm [ax] modify exact [ax]
+#pragma aux back_buffer_fill parm [ax] modify exact [ax]
 #pragma aux fullscreen_copy_to_backbuffer parm [si] modify exact []
 #pragma aux planar_ui_text_render_10row_ds "planar_ui_text_render_10row_" \
         parm [si] [bx] [dx] [ax] modify exact []
