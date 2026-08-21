@@ -22,17 +22,11 @@ void CB_FAR gfx_clipped_planar_vertical_span(
     cb_u16 span_end;
     cb_u16 sequencer_word;
 
-#if defined(__WATCOMC__)
-    _asm push ax;
-    _asm push ds;
-    _asm push es;
-#endif
-
     clipped_height = height;
     if ((cb_i16)clipped_height <= 0
             || (cb_i16)x < graphics_clip_left
             || (cb_i16)x >= graphics_clip_right) {
-        goto restore_registers;
+        return;
     }
 
     /* Preserve the shipped SUB/Jcc clipping behavior across 16-bit overflow. */
@@ -42,7 +36,7 @@ void CB_FAR gfx_clipped_planar_vertical_span(
         original_height = clipped_height;
         clipped_height = (cb_u16)(clipped_height - clip_amount);
         if ((cb_i16)original_height <= (cb_i16)clip_amount) {
-            goto restore_registers;
+            return;
         }
         y = graphics_band_top_row;
     }
@@ -54,7 +48,7 @@ void CB_FAR gfx_clipped_planar_vertical_span(
         original_height = clipped_height;
         clipped_height = (cb_u16)(clipped_height - (cb_u16)clip_delta);
         if ((cb_i16)original_height <= clip_delta) {
-            goto restore_registers;
+            return;
         }
     }
 
@@ -79,10 +73,4 @@ void CB_FAR gfx_clipped_planar_vertical_span(
         } while (--count != 0u);
     }
 
-restore_registers:
-#if defined(__WATCOMC__)
-    _asm pop es;
-    _asm pop ds;
-    _asm pop ax;
-#endif
 }

@@ -35,17 +35,11 @@ void CB_FAR gfx_clipped_span_fill(
     cb_u8 partial_count;
     cb_u8 start_plane;
 
-#if defined(__WATCOMC__)
-    _asm push ax;
-    _asm push ds;
-    _asm push es;
-#endif
-
     clipped_width = width;
     if ((cb_i16)clipped_width <= 0
             || (cb_i16)y < (cb_i16)graphics_band_top_row
             || (cb_i16)y >= (cb_i16)graphics_band_bottom_row) {
-        goto restore_registers;
+        return;
     }
 
     /* Preserve the shipped SUB/Jcc clipping behavior across 16-bit overflow. */
@@ -55,7 +49,7 @@ void CB_FAR gfx_clipped_span_fill(
         original_width = clipped_width;
         clipped_width = (cb_u16)(clipped_width - clip_amount);
         if ((cb_i16)original_width <= (cb_i16)clip_amount) {
-            goto restore_registers;
+            return;
         }
         x = (cb_u16)graphics_clip_left;
     }
@@ -67,7 +61,7 @@ void CB_FAR gfx_clipped_span_fill(
         original_width = clipped_width;
         clipped_width = (cb_u16)(clipped_width - (cb_u16)clip_delta);
         if ((cb_i16)original_width <= clip_delta) {
-            goto restore_registers;
+            return;
         }
     }
 
@@ -103,7 +97,7 @@ void CB_FAR gfx_clipped_span_fill(
             }
             map_mask = (cb_u8)((map_mask << 1) | (map_mask >> 7));
         }
-        goto restore_registers;
+        return;
     }
 
     if (start_plane != 0u) {
@@ -113,7 +107,7 @@ void CB_FAR gfx_clipped_span_fill(
                     ((1u << clipped_width) - 1u) << start_plane);
             outportb(0x03c5u, map_mask);
             *pixel = color;
-            goto restore_registers;
+            return;
         }
 
         map_mask = (cb_u8)(0x0fu << start_plane);
@@ -134,10 +128,4 @@ void CB_FAR gfx_clipped_span_fill(
         *pixel = color;
     }
 
-restore_registers:
-#if defined(__WATCOMC__)
-    _asm pop es;
-    _asm pop ds;
-    _asm pop ax;
-#endif
 }
