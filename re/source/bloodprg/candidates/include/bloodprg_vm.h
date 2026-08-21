@@ -1,6 +1,8 @@
 #ifndef BLOODPRG_VM_H
 #define BLOODPRG_VM_H
 
+#include <dos.h>
+
 #include "bloodprg_common.h"
 #include "bloodprg_platform.h"
 #include "bloodprg_random.h"
@@ -14,6 +16,9 @@ typedef union bloodprg_vm_ui_state {
 } bloodprg_vm_ui_state;
 
 typedef volatile cb_u8 CB_FAR *bloodprg_vm_image_ptr;
+
+#define BLOODPRG_VM_CURSOR_AT(cursor, offset) \
+    ((bloodprg_vm_image_ptr)MK_FP(FP_SEG(cursor), (cb_u16)(offset)))
 
 typedef bloodprg_vm_image_ptr CB_NEAR bloodprg_vm_opcode_handler(
         bloodprg_vm_image_ptr script_bytes);
@@ -274,7 +279,7 @@ extern volatile cb_u16 CB_GAME_DATA
         vm_presentation_owner_offset_gs;      /* explicit GS:0x679A alias */
 extern volatile cb_u8 CB_GAME_DATA
         vm_c2_presentation_gate_gs;           /* explicit GS:0x1FB2 alias */
-/* The shipped runtime has SS=GS; handlers preserve the floating script DS. */
+/* Recovered handlers use ordinary far pointers to movable script resources. */
 extern bloodprg_vm_opcode_handler CB_NEAR *CB_GAME_DATA
         vm_opcode_handlers[];                /* GS/SS:0x6EB0 */
 extern volatile cb_u16 vm_state_words[];     /* SS:0x6ADE here; SS=GS at runtime */
@@ -440,99 +445,94 @@ void CB_NEAR vm_state_processor(void); /* 0x005A74 */
 int CB_NEAR vm_special_slot_remove(cb_u16 owner); /* 0x005FD8 */
 int CB_NEAR vm_special_slot_insert(cb_u16 owner); /* 0x005FF6 */
 int CB_NEAR vm_field_offset(cb_u16 selector, cb_u16 kind_mask); /* 0x006023 */
-/* DS is the segment half of this far-pointer register contract. */
 bloodprg_vm_image_ptr CB_NEAR vm_token_advance(
         bloodprg_vm_image_ptr script_bytes); /* 0x0062B6 */
 cb_u16 CB_NEAR vm_cod_scan(cb_u16 object_offset); /* 0x00739B */
 cb_u16 CB_NEAR vm_record_lookup_by_threshold(cb_u16 threshold); /* 0x006034 */
-const cb_u8 CB_NEAR *CB_NEAR vm_token_special(cb_u16 terminator,
-        const cb_u8 CB_NEAR *script_bytes); /* 0x006293 */
+bloodprg_vm_image_ptr CB_NEAR vm_token_special(cb_u16 terminator,
+        bloodprg_vm_image_ptr script_bytes); /* 0x006293 */
 int CB_NEAR vm_condition_5(cb_u16 flags,
         const volatile cb_u8 CB_FAR *record,
-        const cb_u8 *script_bytes);          /* 0x006339 */
+        bloodprg_vm_image_ptr script_bytes); /* 0x006339 */
 bloodprg_dic_lookup_result CB_NEAR dic_word_lookup(cb_u16 dictionary_offset); /* 0x006433 */
 cb_u16 CB_NEAR vm_branch_fail(void);         /* 0x006462 */
-void CB_NEAR scan_zero_word(const cb_i16 CB_NEAR *script_words); /* 0x00647B */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_ce_cond_branch(
-    const cb_u8 CB_NEAR *script_bytes);       /* 0x006494 */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_d0_cond_branch(
-    const cb_u8 CB_NEAR *script_bytes);       /* 0x0064A0 */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_d1_cond_branch(
-    const cb_u8 CB_NEAR *script_bytes);       /* 0x0064AC */
-const cb_i8 CB_NEAR *CB_NEAR vm_op_d2_script_profile_request(
-    const cb_i8 CB_NEAR *script_bytes);       /* 0x0064B8 */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_cf_clear_state(
-    const cb_u8 CB_NEAR *script_bytes);       /* 0x0064C0 */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_cc_set_record_byte(
-    const cb_u8 CB_NEAR *script_bytes);       /* 0x0064CE */
-const cb_u16 CB_NEAR *CB_NEAR vm_op_ca_compare_var(
-    const cb_u16 CB_NEAR *script_words);      /* 0x0064E5 */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_cb_compare_byte(
-    const cb_u8 CB_NEAR *script_bytes);       /* 0x006510 */
-const cb_u16 CB_NEAR *CB_NEAR vm_op_a0_push(
-    const cb_u16 CB_NEAR *script_words);      /* 0x006559 */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_a1_pop(
-    const cb_u8 CB_NEAR *script_bytes);        /* 0x006572 */
-const cb_u16 CB_NEAR *CB_NEAR vm_op_a2_cond_call(
-    const cb_u16 CB_NEAR *script_words);      /* 0x006588 */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_a3_block(
-    const cb_u8 CB_NEAR *script_bytes);       /* 0x006596 */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_a4_jump(
-    const cb_u16 CB_NEAR *script_words);      /* 0x0065DB */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_a5_cond_state_array(
-    const cb_u8 CB_NEAR *script_bytes);       /* 0x0065EB */
-cb_u8 CB_NEAR *CB_NEAR vm_op_a6_text(
-    cb_u8 CB_NEAR *script_bytes);             /* 0x00660C */
+void CB_NEAR scan_zero_word(bloodprg_vm_image_ptr script_bytes); /* 0x00647B */
+bloodprg_vm_image_ptr CB_NEAR vm_op_ce_cond_branch(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x006494 */
+bloodprg_vm_image_ptr CB_NEAR vm_op_d0_cond_branch(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x0064A0 */
+bloodprg_vm_image_ptr CB_NEAR vm_op_d1_cond_branch(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x0064AC */
+bloodprg_vm_image_ptr CB_NEAR vm_op_d2_script_profile_request(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x0064B8 */
+bloodprg_vm_image_ptr CB_NEAR vm_op_cf_clear_state(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x0064C0 */
+bloodprg_vm_image_ptr CB_NEAR vm_op_cc_set_record_byte(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x0064CE */
+bloodprg_vm_image_ptr CB_NEAR vm_op_ca_compare_var(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x0064E5 */
+bloodprg_vm_image_ptr CB_NEAR vm_op_cb_compare_byte(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x006510 */
+bloodprg_vm_image_ptr CB_NEAR vm_op_a0_push(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x006559 */
+bloodprg_vm_image_ptr CB_NEAR vm_op_a1_pop(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x006572 */
+bloodprg_vm_image_ptr CB_NEAR vm_op_a2_cond_call(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x006588 */
+bloodprg_vm_image_ptr CB_NEAR vm_op_a3_block(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x006596 */
+bloodprg_vm_image_ptr CB_NEAR vm_op_a4_jump(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x0065DB */
+bloodprg_vm_image_ptr CB_NEAR vm_op_a5_cond_state_array(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x0065EB */
+bloodprg_vm_image_ptr CB_NEAR vm_op_a6_text(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x00660C */
 cb_u16 CB_NEAR strlen_b(const char CB_FAR *text); /* 0x0067A7 */
-const cb_u16 CB_NEAR *CB_NEAR vm_op_a7_set_if_presentation(
-    const cb_u16 CB_NEAR *script_words);      /* 0x0067BA */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_a8_load_string(
-    const cb_u8 CB_NEAR *script_bytes);       /* 0x0067C8 */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_a9_cond_jump(
-    const cb_u8 CB_NEAR *script_bytes);       /* 0x006830 */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_ab_poke_byte(
-    const cb_u8 CB_NEAR *script_bytes);       /* 0x00684C */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_aa_yield(
-    const cb_u8 CB_NEAR *script_bytes);       /* 0x006855 */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_ac_yield(
-    const cb_u8 CB_NEAR *script_bytes);       /* 0x00685C */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_shared_state_marker(
-    const cb_u8 CB_NEAR *script_bytes);       /* 0x006863 */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_shared_ae_b0_state(
-    const cb_u8 CB_NEAR *script_bytes);       /* 0x006902 */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_shared_record_wildcard(
-    const cb_u8 CB_NEAR *script_bytes);       /* 0x006946 */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_cd_state_gated(
-    const cb_u8 CB_NEAR *script_bytes);       /* 0x0069C7 */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_b7_record_op(
-    const cb_u8 CB_NEAR *script_bytes);       /* 0x006AA7 */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_b8_record_readwrite(
-    const cb_u8 CB_NEAR *script_bytes);       /* 0x006B06 */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_c1_record_state(
-    const cb_u8 CB_NEAR *script_bytes);       /* 0x006B4C */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_c2_record_full(
-    const cb_u8 CB_NEAR *script_bytes);       /* 0x006E34 */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_c3_state_record(
-    const cb_u8 CB_NEAR *script_bytes);       /* 0x006EEE */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_c4_actor(
-    const cb_u8 CB_NEAR *script_bytes);       /* 0x006C7E */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_c5_record_match(
-    const cb_u8 CB_NEAR *script_bytes);       /* 0x006D18 */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_c6_record_match(
-    const cb_u8 CB_NEAR *script_bytes);       /* 0x006D80 */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_c7_record_match(
-    const cb_u8 CB_NEAR *script_bytes);       /* 0x006DCF */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_c8_record_match(
-    const cb_u8 CB_NEAR *script_bytes);       /* 0x006F62 */
+bloodprg_vm_image_ptr CB_NEAR vm_op_a7_set_if_presentation(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x0067BA */
+bloodprg_vm_image_ptr CB_NEAR vm_op_a8_load_string(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x0067C8 */
+bloodprg_vm_image_ptr CB_NEAR vm_op_a9_cond_jump(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x006830 */
+bloodprg_vm_image_ptr CB_NEAR vm_op_ab_poke_byte(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x00684C */
+bloodprg_vm_image_ptr CB_NEAR vm_op_aa_yield(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x006855 */
+bloodprg_vm_image_ptr CB_NEAR vm_op_ac_yield(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x00685C */
+bloodprg_vm_image_ptr CB_NEAR vm_op_shared_state_marker(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x006863 */
+bloodprg_vm_image_ptr CB_NEAR vm_op_shared_ae_b0_state(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x006902 */
+bloodprg_vm_image_ptr CB_NEAR vm_op_shared_record_wildcard(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x006946 */
+bloodprg_vm_image_ptr CB_NEAR vm_op_cd_state_gated(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x0069C7 */
+bloodprg_vm_image_ptr CB_NEAR vm_op_b7_record_op(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x006AA7 */
+bloodprg_vm_image_ptr CB_NEAR vm_op_b8_record_readwrite(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x006B06 */
+bloodprg_vm_image_ptr CB_NEAR vm_op_c1_record_state(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x006B4C */
+bloodprg_vm_image_ptr CB_NEAR vm_op_c2_record_full(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x006E34 */
+bloodprg_vm_image_ptr CB_NEAR vm_op_c3_state_record(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x006EEE */
+bloodprg_vm_image_ptr CB_NEAR vm_op_c4_actor(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x006C7E */
+bloodprg_vm_image_ptr CB_NEAR vm_op_c5_record_match(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x006D18 */
+bloodprg_vm_image_ptr CB_NEAR vm_op_c6_record_match(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x006D80 */
+bloodprg_vm_image_ptr CB_NEAR vm_op_c7_record_match(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x006DCF */
+bloodprg_vm_image_ptr CB_NEAR vm_op_c8_record_match(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x006F62 */
 int CB_FAR vm_c2_descript_lookup(
     const volatile cb_u8 CB_FAR *record_name); /* 0x007409 */
-const cb_u8 CB_NEAR *CB_NEAR vm_op_c9_clear_record_full(
-    const cb_u8 CB_NEAR *script_bytes);       /* 0x006FB9 */
+bloodprg_vm_image_ptr CB_NEAR vm_op_c9_clear_record_full(
+    bloodprg_vm_image_ptr script_bytes);       /* 0x006FB9 */
 cb_u16 CB_NEAR presentation_mode_bits_update(void); /* 0x009510 */
 void CB_FAR presentation_update_1fb2(void); /* 0x009F53 */
-
-#if defined(__WATCOMC__)
-#pragma aux vm_token_special parm [ax] [si] value [si] modify exact [si]
-#endif
 
 #endif

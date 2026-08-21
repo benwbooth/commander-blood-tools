@@ -1,7 +1,7 @@
 #include "../include/bloodprg_vm.h"
 
-const cb_u8 CB_NEAR *CB_NEAR vm_op_cc_set_record_byte(
-    const cb_u8 CB_NEAR *script_bytes)
+bloodprg_vm_image_ptr CB_NEAR vm_op_cc_set_record_byte(
+    bloodprg_vm_image_ptr script_bytes)
 {
     cb_i8 slot;
     volatile char CB_GAME_DATA *destination;

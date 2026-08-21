@@ -23,8 +23,8 @@
 #define VM_C1_PARENT_SELECTOR 0x0011u
 #define VM_C1_DESTINATION_SELECTOR 0x0013u
 
-const cb_u8 CB_NEAR *CB_NEAR vm_op_c1_record_state(
-        const cb_u8 CB_NEAR *script_bytes)
+bloodprg_vm_image_ptr CB_NEAR vm_op_c1_record_state(
+        bloodprg_vm_image_ptr script_bytes)
 {
     int inverted;
     int matches;
@@ -47,10 +47,10 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_c1_record_state(
         ++script_bytes;
     }
 
-    record_offset = *(const cb_u16 CB_NEAR *)script_bytes;
+    record_offset = *(const volatile cb_u16 CB_FAR *)script_bytes;
     script_bytes += sizeof(cb_u16);
     owner_offset = vm_record_lookup_by_threshold(record_offset);
-    operand_offset = *(const cb_u16 CB_NEAR *)script_bytes;
+    operand_offset = *(const volatile cb_u16 CB_FAR *)script_bytes;
     script_bytes += sizeof(cb_u16);
     vm_c1_related_operand_gs = operand_offset;
 
@@ -84,7 +84,7 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_c1_record_state(
         }
 
         if (matches == inverted) {
-            return (const cb_u8 CB_NEAR *)vm_branch_fail();
+            return BLOODPRG_VM_CURSOR_AT(script_bytes, vm_branch_fail());
         }
         /* The shipped success jumps past the saved SI/DS restores. Natural C
          * keeps the intended successful return instead of that stack defect. */
@@ -92,7 +92,7 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_c1_record_state(
     }
 
     if ((owner->flags & VM_C1_OWNER_ACTIVE_FLAG) == 0u) {
-        return (const cb_u8 CB_NEAR *)vm_branch_fail();
+        return BLOODPRG_VM_CURSOR_AT(script_bytes, vm_branch_fail());
     }
 
     target = owner;
@@ -110,7 +110,7 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_c1_record_state(
             target = (volatile bloodprg_vm_object_header CB_FAR *)
                 VM_C1_RECORD_AT(record_base, owner_offset);
             if (target->kind != VM_C1_NAV_TARGET_KIND) {
-                return (const cb_u8 CB_NEAR *)vm_branch_fail();
+                return BLOODPRG_VM_CURSOR_AT(script_bytes, vm_branch_fail());
             }
         }
     }
@@ -150,7 +150,7 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_c1_record_state(
     }
 
     if (record->kind != 0u) {
-        return (const cb_u8 CB_NEAR *)vm_branch_fail();
+        return BLOODPRG_VM_CURSOR_AT(script_bytes, vm_branch_fail());
     }
     record->kind = VM_C1_RECORD_KIND;
     record->related = operand_offset;

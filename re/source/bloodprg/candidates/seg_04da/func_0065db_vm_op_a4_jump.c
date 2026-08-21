@@ -1,12 +1,12 @@
 #include "../include/bloodprg_vm.h"
 
-const cb_u8 CB_NEAR *CB_NEAR vm_op_a4_jump(
-    const cb_u16 CB_NEAR *script_words)
+bloodprg_vm_image_ptr CB_NEAR vm_op_a4_jump(
+    bloodprg_vm_image_ptr script_bytes)
 {
-    const cb_u8 CB_NEAR *target;
+    cb_u16 target;
 
-    target = (const cb_u8 CB_NEAR *)*script_words;
+    target = *(const volatile cb_u16 CB_FAR *)script_bytes;
     vm_resume_state_gs = 0;
     vm_resume_value_gs = 0;
-    return target;
+    return BLOODPRG_VM_CURSOR_AT(script_bytes, target);
 }

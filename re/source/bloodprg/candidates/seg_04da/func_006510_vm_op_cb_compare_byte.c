@@ -13,15 +13,15 @@ typedef struct bloodprg_vm_date_literal {
     cb_u16 encoded_year;
 } bloodprg_vm_date_literal;
 
-const cb_u8 CB_NEAR *CB_NEAR vm_op_cb_compare_byte(
-    const cb_u8 CB_NEAR *script_bytes)
+bloodprg_vm_image_ptr CB_NEAR vm_op_cb_compare_byte(
+    bloodprg_vm_image_ptr script_bytes)
 {
     cb_u8 operator;
-    const bloodprg_vm_date_literal CB_NEAR *date;
+    const volatile bloodprg_vm_date_literal CB_FAR *date;
     bloodprg_vm_month_day month_day;
 
     operator = *script_bytes++;
-    date = (const bloodprg_vm_date_literal CB_NEAR *)script_bytes;
+    date = (const volatile bloodprg_vm_date_literal CB_FAR *)script_bytes;
     month_day.word = date->month_day.word;
     script_bytes += sizeof(*date);
 
@@ -57,5 +57,5 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_cb_compare_byte(
     }
 
 failed:
-    return (const cb_u8 CB_NEAR *)vm_branch_fail();
+    return BLOODPRG_VM_CURSOR_AT(script_bytes, vm_branch_fail());
 }

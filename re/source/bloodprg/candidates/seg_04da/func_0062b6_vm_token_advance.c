@@ -12,7 +12,6 @@ bloodprg_vm_image_ptr CB_NEAR vm_token_advance(
 {
     const bloodprg_vm_opcode_descriptor CB_GAME_DATA *descriptor;
     const cb_u8 CB_GAME_DATA *mode_lengths;
-    const cb_u8 CB_NEAR *next_script_bytes;
     cb_u8 opcode;
     cb_u8 length;
     cb_i8 control;
@@ -58,8 +57,5 @@ bloodprg_vm_image_ptr CB_NEAR vm_token_advance(
         return script_bytes + 2;
     }
 
-    next_script_bytes = vm_token_special(
-            0, (const cb_u8 CB_NEAR *)script_bytes);
-    return (bloodprg_vm_image_ptr)MK_FP(
-            FP_SEG(script_bytes), (cb_u16)next_script_bytes);
+    return vm_token_special(0, script_bytes);
 }

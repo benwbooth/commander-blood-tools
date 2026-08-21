@@ -8,8 +8,8 @@
 #define VM_C9_RECORD_AT(base, offset) ((base) + (offset))
 #endif
 
-const cb_u8 CB_NEAR *CB_NEAR vm_op_c9_clear_record_full(
-    const cb_u8 CB_NEAR *script_bytes)
+bloodprg_vm_image_ptr CB_NEAR vm_op_c9_clear_record_full(
+    bloodprg_vm_image_ptr script_bytes)
 {
     cb_u16 record_offset;
     cb_u16 old_kind;
@@ -22,7 +22,7 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_c9_clear_record_full(
     volatile bloodprg_vm_record_triple CB_FAR *reciprocal;
 
     record_base = vm_record_base_gs;
-    record_offset = *(const cb_u16 CB_NEAR *)script_bytes;
+    record_offset = *(const volatile cb_u16 CB_FAR *)script_bytes;
     script_bytes += sizeof(cb_u16);
 
     record = (volatile bloodprg_vm_record_triple CB_FAR *)
