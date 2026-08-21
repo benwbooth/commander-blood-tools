@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import os
 import re
 import subprocess
 import sys
@@ -35,19 +36,28 @@ VALUE_RE = re.compile(r"^([a-z0-9_]+_0[0-9A-Fa-f]{3}): (.+)$")
 SENTINELS = {"0", "-1", "(0, 0)", "(0, -1)", "(-1, -1)"}
 
 
-def capture(cd_dir: Path, install_parent: Path, executable: str) -> dict[str, str]:
+def capture(cd_dir: Path, install_parent: Path, executable: str,
+            wait_ticks: int | None, wait_seconds: int) -> dict[str, str]:
+    environment = dict(os.environ)
+    if wait_ticks is not None:
+        # Matched GUEST time: hold the capture until the game's own tick
+        # counter reaches the target. Wall-clock waits compare different
+        # story points because the natural-C frame costs more instructions.
+        environment["BLOODPRG_WAIT_GLOBAL"] = f"0xb29:2:{wait_ticks}"
+        environment["BLOODPRG_WAIT_GLOBAL_TIMEOUT"] = "600"
     result = subprocess.run(
         [
             sys.executable,
             str(DUMPER),
             str(cd_dir),
-            "25",
+            str(wait_seconds),
             str(install_parent),
             executable,
         ],
         capture_output=True,
         text=True,
         check=True,
+        env=environment,
     )
     values: dict[str, str] = {}
     for line in result.stdout.splitlines():
@@ -71,6 +81,10 @@ def classify(name: str, original: str, rebuilt: str) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--wait-ticks", type=int,
+                        help="capture when guest tick_count 0xB29 reaches "
+                             "this value (matched story points)")
+    parser.add_argument("--wait-seconds", type=int, default=25)
     parser.add_argument("--cd-dir", type=Path,
                         default=ROOT / "output/recovered_dos_package/cd")
     parser.add_argument("--iso-dir", type=Path, default=ROOT / "output/_tmp_iso")
@@ -82,8 +96,10 @@ def main() -> None:
     args = parser.parse_args()
 
     original = capture(args.iso_dir, args.install_parent,
-                       args.original_executable)
-    rebuilt = capture(args.cd_dir, args.install_parent, args.executable)
+                       args.original_executable, args.wait_ticks,
+                       args.wait_seconds)
+    rebuilt = capture(args.cd_dir, args.install_parent, args.executable,
+                      args.wait_ticks, args.wait_seconds)
 
     rows = []
     for name in sorted(set(original) | set(rebuilt)):
