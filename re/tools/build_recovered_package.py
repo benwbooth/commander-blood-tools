@@ -4,8 +4,8 @@
 The shipped BLOODPRG.EXE remains available as a fallback. An opt-in runtime
 build links every recovered BLOODPRG C routine with the recovered entrypoint,
 DOS adapters, and byte-backed data owners. The archive is rebuilt through its
-real resource directory: generated scripts are byte-exact, and all four XDB
-overlays are linked from the complete recovered C routine set.
+real resource directory: all 25 generated VM resources are byte-exact, and all
+four XDB overlays are linked from the complete recovered C routine set.
 """
 
 from __future__ import annotations
@@ -24,12 +24,13 @@ import sys
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CD_ROOT = ROOT / "output" / "_tmp_iso"
 DEFAULT_XDB_DIR = ROOT / "output" / "_tmp_dat"
-DEFAULT_SOURCE_DIR = ROOT / "re" / "vm" / "bloodscript"
+DEFAULT_SOURCE_DIR = ROOT / "re" / "vm" / "structured"
 DEFAULT_REFERENCE_DIR = ROOT / "accuracy" / "cblood_install" / "cblood"
 DEFAULT_OUTPUT_DIR = ROOT / "output" / "recovered_dos_package"
 XDB_MANIFEST = ROOT / "re" / "source" / "xdb" / "candidates" / "manifest.tsv"
 
 XDB_MODULES = ("amer", "croolis", "manu3", "scrut")
+VM_SCRIPT_EXTENSIONS = ("COD", "BAS", "DEB", "DIC", "VAR")
 
 # These handlers have both semantic/oracle coverage and an exact WCL machine
 # byte result at their original BLOODPRG file offsets.  Keep this list
@@ -513,6 +514,8 @@ def build_bloodprg_runtime(
 
 def link_or_copy(source: Path, destination: Path) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
+    if destination.exists():
+        destination.unlink()
     try:
         os.link(source, destination)
     except OSError:
@@ -528,30 +531,36 @@ def copy_cd_tree(source: Path, destination: Path) -> None:
         target_dir = destination / relative
         target_dir.mkdir(parents=True, exist_ok=True)
         for filename in filenames:
-            if filename.upper() == "BLOOD.DAT":
+            upper = filename.upper()
+            if upper == "BLOOD.DAT" or is_vm_script_resource(upper):
                 continue
             link_or_copy(directory_path / filename, target_dir / filename)
+
+
+def is_vm_script_resource(filename: str) -> bool:
+    return any(
+        filename == f"SCRIPT{script}.{extension}"
+        for script in range(1, 6)
+        for extension in VM_SCRIPT_EXTENSIONS
+    )
 
 
 def compile_sources(args: argparse.Namespace, output: Path) -> None:
     scripts = output / "scripts"
     objects = output / "xdb_objects"
     scripts.mkdir(parents=True, exist_ok=True)
-    if args.cbvm is not None:
-        command = ["--cbvm", str(args.cbvm.resolve())]
-    else:
-        command = []
+    cbvm = args.cbvm.resolve() if args.cbvm is not None else ROOT / "target/debug/cbvm"
+    if not cbvm.is_file():
+        run_checked(["cargo", "build", "--quiet", "--bin", "cbvm"])
+    if not cbvm.is_file():
+        raise SystemExit(f"cbvm executable was not created: {cbvm}")
     run_checked(
         [
-            sys.executable,
-            str(ROOT / "re/tools/compile_bloodscript_bundle.py"),
-            "--source-dir",
+            str(cbvm),
+            "compile-bundle",
             str(args.source_dir.resolve()),
-            "--output-dir",
-            str(scripts.resolve()),
-            "--reference-dir",
             str(args.reference_dir.resolve()),
-            *command,
+            str(scripts.resolve()),
         ]
     )
     run_checked(
@@ -973,7 +982,7 @@ def patch_archive(
     records = list(xdb_records)
 
     for script in range(1, 6):
-        for extension in ("COD", "BAS"):
+        for extension in VM_SCRIPT_EXTENSIONS:
             name = f"SCRIPT{script}.{extension}"
             generated = output / "scripts" / name
             original = args.cd_root / name
@@ -982,13 +991,14 @@ def patch_archive(
             if generated.read_bytes() != original.read_bytes():
                 raise SystemExit(f"generated script is not byte-exact: {name}")
             destination = output / "cd" / name
-            shutil.copy2(generated, destination)
+            link_or_copy(generated, destination)
+            source_kind = "bloodscript" if extension in ("COD", "BAS") else "blooddata"
             records.append(
                 {
                     "component": name,
                     "source": str(generated.relative_to(output)),
                     "output": str(destination.relative_to(output)),
-                    "status": "bloodscript_byte_exact",
+                    "status": f"{source_kind}_byte_exact",
                     "offset": "loose_cd_file",
                     "original_sha256": sha256(original),
                     "output_sha256": sha256(destination),
@@ -1059,8 +1069,9 @@ def write_package_metadata(output: Path, records: list[dict[str, str]], cd_root:
         "runtime smoke test, but not the complete opening or full-game parity gates.\n"
         "The fixed-patch copy remains limited to routines whose compiled bytes\n"
         "are proven compatible at the original fixed offsets.\n\n"
-        "The generated SCRIPT1..5.COD/BAS files are compiled from re/vm/bloodscript\n"
-        "and compared byte-for-byte with the installed reference. AMER.XDB,\n"
+        "The generated SCRIPT1..5.COD/BAS/DEB/DIC/VAR files are compiled from\n"
+        "re/vm/structured and compared byte-for-byte with the installed reference.\n"
+        "No shipped VM resource is retained in the package. AMER.XDB,\n"
         "CROOLIS.XDB, MANU3.XDB, and SCRUT.XDB are linked from all 169 recovered\n"
         "C routines. Their original data payloads are retained byte-for-byte\n"
         "apart from verified callback-pointer rebindings to the linked C code.\n"
@@ -1120,6 +1131,7 @@ def main() -> int:
     print(f"wrote recovered package: {output}")
     print("BLOODPRG.EXE status: original_shipped_fallback")
     print("XDB status: four_c_source_linked_overlays")
+    print("VM status: twenty_five_source_compiled_byte_exact_resources")
     if runtime_records:
         print("BPRG_RE.EXE status: c_relinked_runtime_zero_unresolved")
     if fixed_records:
