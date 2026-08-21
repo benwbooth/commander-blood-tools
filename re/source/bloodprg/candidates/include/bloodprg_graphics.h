@@ -353,7 +353,6 @@ void CB_NEAR list_walk_f18(void); /* 0x007CE8 */
 #pragma aux blit_fill_row_5221 parm [ax] modify exact [ax]
 #pragma aux back_buffer_fill parm [ax] modify exact [ax]
 #pragma aux fullscreen_copy_to_backbuffer parm [si] modify exact []
-#pragma aux subtitle_reveal_pump modify exact [bx cx dx di es]
 #endif
 
 #endif

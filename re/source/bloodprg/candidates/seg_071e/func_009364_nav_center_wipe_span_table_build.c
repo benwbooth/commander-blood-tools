@@ -21,20 +21,6 @@ void CB_NEAR nav_center_wipe_span_table_build(
     cb_u16 iterations;
     cb_i16 x_step;
 
-#if defined(__TURBOC__) || defined(__BORLANDC__)
-    asm push ax;
-    asm push bx;
-    asm push cx;
-    asm push dx;
-    asm push bp;
-    asm push si;
-    asm push di;
-    asm push es;
-#elif defined(__WATCOMC__)
-    _asm push ax;
-    _asm push es;
-#endif
-
     start_x = (cb_u16)endpoint->x;
     start_y = (cb_u16)endpoint->y;
     end_x = NAV_WIPE_CENTER_X;
@@ -92,17 +78,4 @@ void CB_NEAR nav_center_wipe_span_table_build(
     output->left = NAV_WIPE_SPAN_END;
     output->width = NAV_WIPE_SPAN_END;
 
-#if defined(__TURBOC__) || defined(__BORLANDC__)
-    asm pop es;
-    asm pop di;
-    asm pop si;
-    asm pop bp;
-    asm pop dx;
-    asm pop cx;
-    asm pop bx;
-    asm pop ax;
-#elif defined(__WATCOMC__)
-    _asm pop es;
-    _asm pop ax;
-#endif
 }
