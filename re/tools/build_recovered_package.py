@@ -345,6 +345,11 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--dosbox", default="dosbox-x")
     parser.add_argument(
+        "--adapter-trace",
+        action="store_true",
+        help="log adapter DOS calls to C:\\ADAPTER.TRC from the guest",
+    )
+    parser.add_argument(
         "--cbvm",
         type=Path,
         help="prebuilt cbvm executable; useful when Watcom and Rust use separate shells",
@@ -405,6 +410,7 @@ def build_bloodprg_runtime(
             "-zdp",
             "-we",
             "-dBLOODPRG_RELINKED_RUNTIME",
+            *(["-dBLOODPRG_ADAPTER_TRACE"] if args.adapter_trace else []),
             "-i=" + str(ROOT / "re/source/bloodprg/candidates/include"),
             "-fo=" + str(main_object),
             str(ROOT / "re/integration/dos/bloodprg_relinked_main.c"),
@@ -423,6 +429,7 @@ def build_bloodprg_runtime(
             "-zdp",
             "-we",
             "-dBLOODPRG_RELINKED_RUNTIME",
+            *(["-dBLOODPRG_ADAPTER_TRACE"] if args.adapter_trace else []),
             "-i=" + str(ROOT / "re/source/bloodprg/candidates/include"),
             "-fo=" + str(adapter_object),
             str(ROOT / "re/integration/dos/bloodprg_platform_adapters.c"),
