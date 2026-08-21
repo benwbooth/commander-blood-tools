@@ -3,13 +3,6 @@
 
 void CB_FAR presentation_update_1fb2(void)
 {
-#if defined(__TURBOC__) || defined(__BORLANDC__)
-    /* Preserve the original far-entry contract across the nested near call. */
-    asm push ax;
-    asm push bx;
-    asm push cx;
-#endif
-
     if ((vm_c2_presentation_gate & 1u) != 0) {
         presentation_queue_finish();
         if ((vm_ship_active_flags_low & 8u) != 0) {
@@ -19,10 +12,4 @@ void CB_FAR presentation_update_1fb2(void)
         vm_c2_presentation_gate = 0;
         vm_presentation_request_flags &= (cb_u8)~2u;
     }
-
-#if defined(__TURBOC__) || defined(__BORLANDC__)
-    asm pop cx;
-    asm pop bx;
-    asm pop ax;
-#endif
 }
