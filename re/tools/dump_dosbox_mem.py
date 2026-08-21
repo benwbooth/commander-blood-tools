@@ -28,10 +28,16 @@ Set BLOODPRG_INPUT_ACTIONS to newline-separated `wait`, `click`, `move_relative`
 after a reproducible interactive sequence instead of wait_secs.
 Set BLOODPRG_WAIT_GLOBAL to comma-separated `offset[:width]:value` conditions to
 resume until selected game-data values reach a state boundary before capturing.
+Set BLOODPRG_WAIT_POINTER to comma-separated
+`pointer_offset:target_offset[:width]:value` conditions for far-pointer targets.
+Set BLOODPRG_WATCH_POINTER to comma-separated
+`pointer_offset:target_offset[:value]` entries to stop on host writes that
+change bytes reached through up to four live DOS far pointers.
 Set BLOODPRG_WAIT_IP_OUTSIDE to comma-separated `start:end` ranges when capture
 must also wait for a long-running guest routine to return.
+Set BLOODPRG_WAIT_POLL_SECONDS to tune the detach/reattach polling interval.
 """
-import ctypes, hashlib, subprocess, time, os, re, shlex, struct, sys
+import ctypes, hashlib, subprocess, time, os, platform, re, shlex, signal, struct, sys
 from pathlib import Path
 
 ANCHOR = b"386 minimum !\0Not enough memory (570Ko min) !\0"
@@ -357,7 +363,11 @@ def main():
     libc = ctypes.CDLL("libc.so.6", use_errno=True)
     libc.ptrace.restype = ctypes.c_long
     libc.ptrace.argtypes = [ctypes.c_long, ctypes.c_long, ctypes.c_void_p, ctypes.c_void_p]
+    PTRACE_PEEKUSER, PTRACE_POKEUSER, PTRACE_CONT = 3, 6, 7
     PTRACE_ATTACH, PTRACE_DETACH = 16, 17
+    DEBUG_REGISTER_BASE = 848  # x86-64 offsetof(struct user, u_debugreg)
+    DEBUG_STATUS_OFFSET = 896
+    DEBUG_CONTROL_OFFSET = 904
     env = dict(os.environ); env["DISPLAY"] = env.get("DISPLAY", ":53"); env["SDL_VIDEODRIVER"] = "x11"
     xvfb = subprocess.Popen(["Xvfb", env["DISPLAY"], "-screen", "0", "800x600x24"],
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -459,10 +469,168 @@ def main():
         if not best:
             print(f"DS anchor not found; candidates={candidates}")
             return
+        watch_pointer = os.environ.get("BLOODPRG_WATCH_POINTER")
+        if watch_pointer:
+            if platform.machine() != "x86_64":
+                raise RuntimeError(
+                    "BLOODPRG_WATCH_POINTER requires x86-64 Linux debug registers"
+                )
+            watch_specs = []
+            for watch_entry in watch_pointer.split(","):
+                fields = watch_entry.split(":")
+                if len(fields) not in (2, 3):
+                    raise ValueError(
+                        "BLOODPRG_WATCH_POINTER entries must be "
+                        "pointer_offset:target_offset[:value]"
+                    )
+                pointer_offset, target_offset = (
+                    int(field, 0) for field in fields[:2]
+                )
+                expected_value = (
+                    int(fields[2], 0) & 0xFF if len(fields) == 3 else None
+                )
+                watch_specs.append((pointer_offset, target_offset, expected_value))
+            if not 1 <= len(watch_specs) <= 4:
+                raise ValueError(
+                    "BLOODPRG_WATCH_POINTER requires between one and four entries"
+                )
+            if guest_memory_base is None:
+                raise RuntimeError(
+                    "guest DOS memory mapping is unavailable for pointer watch"
+                )
+            current_cpu_state = read_cpu_state(mem, cpu_state_addresses)
+            if current_cpu_state is None:
+                raise RuntimeError(
+                    "DOSBox-X guest CPU symbols are unavailable for pointer watch"
+                )
+            current_ss = current_cpu_state[2]
+            guest_linear_bias = best - guest_memory_base - current_ss * 16
+            watches = []
+            for pointer_offset, target_offset, expected_value in watch_specs:
+                mem.seek(best + pointer_offset)
+                far_offset, far_segment = struct.unpack("<HH", mem.read(4))
+                watched_address = (
+                    guest_memory_base
+                    + guest_linear_bias
+                    + far_segment * 16
+                    + ((far_offset + target_offset) & 0xFFFF)
+                )
+                mem.seek(watched_address)
+                initial_value = mem.read(1)[0]
+                if expected_value is not None and initial_value == expected_value:
+                    raise RuntimeError(
+                        "watched byte already has the requested value; attach earlier"
+                    )
+                watches.append((
+                    pointer_offset,
+                    target_offset,
+                    expected_value,
+                    watched_address,
+                    initial_value,
+                ))
+
+            def poke_debug_register(offset, value):
+                ctypes.set_errno(0)
+                result = libc.ptrace(
+                    PTRACE_POKEUSER,
+                    pid,
+                    ctypes.c_void_p(offset),
+                    ctypes.c_void_p(value),
+                )
+                if result != 0:
+                    raise OSError(
+                        ctypes.get_errno(),
+                        f"ptrace POKEUSER failed at offset {offset}",
+                    )
+
+            def peek_debug_register(offset):
+                ctypes.set_errno(0)
+                result = libc.ptrace(
+                    PTRACE_PEEKUSER, pid, ctypes.c_void_p(offset), None
+                )
+                error = ctypes.get_errno()
+                if result == -1 and error:
+                    raise OSError(
+                        error, f"ptrace PEEKUSER failed at offset {offset}"
+                    )
+                return ctypes.c_ulong(result).value
+
+            debug_control = 0
+            for watch_index, watch in enumerate(watches):
+                poke_debug_register(
+                    DEBUG_REGISTER_BASE + watch_index * 8, watch[3]
+                )
+                # Local breakpoint N, writes only, one-byte length.
+                debug_control |= 1 << (watch_index * 2)
+                debug_control |= 1 << (16 + watch_index * 4)
+                print(
+                    "watch_pointer: "
+                    f"index={watch_index}/pointer=0x{watch[0]:04x}/"
+                    f"target=0x{watch[1]:04x}/host=0x{watch[3]:x}/"
+                    f"initial=0x{watch[4]:02x}"
+                )
+            poke_debug_register(DEBUG_STATUS_OFFSET, 0)
+            poke_debug_register(DEBUG_CONTROL_OFFSET, debug_control)
+            watch_deadline = time.monotonic() + float(
+                os.environ.get("BLOODPRG_WATCH_TIMEOUT", "10")
+            )
+            watch_hits = 0
+            while True:
+                if libc.ptrace(PTRACE_CONT, pid, None, None) != 0:
+                    raise OSError(ctypes.get_errno(), "ptrace CONT failed")
+                while True:
+                    stopped_pid, status = os.waitpid(pid, os.WNOHANG)
+                    if stopped_pid:
+                        break
+                    if db.poll() is not None:
+                        raise RuntimeError(
+                            f"DOSBox-X exited while watching with status {db.returncode}"
+                        )
+                    if time.monotonic() >= watch_deadline:
+                        os.kill(pid, signal.SIGSTOP)
+                        os.waitpid(pid, 0)
+                        raise RuntimeError("timed out waiting for watched DOS write")
+                    time.sleep(0.001)
+                if not os.WIFSTOPPED(status) or os.WSTOPSIG(status) != signal.SIGTRAP:
+                    raise RuntimeError(
+                        f"unexpected ptrace stop while watching: status=0x{status:x}"
+                    )
+                watch_hits += 1
+                debug_status = peek_debug_register(DEBUG_STATUS_OFFSET)
+                current_values = []
+                for watch in watches:
+                    mem.seek(watch[3])
+                    current_values.append(mem.read(1)[0])
+                current_cpu_state = read_cpu_state(mem, cpu_state_addresses)
+                if current_cpu_state is None:
+                    raise RuntimeError("guest CPU state disappeared while watching")
+                _, current_cs, _, _, _, _, current_ip, *_ = current_cpu_state
+                print(
+                    f"watch_hit: count={watch_hits}/dr6=0x{debug_status:x}/"
+                    f"values={','.join(f'0x{value:02x}' for value in current_values)}/"
+                    f"cs:ip={current_cs:04x}:{current_ip & 0xFFFF:04x}"
+                )
+                matched = any(
+                    (debug_status & (1 << watch_index))
+                    and (
+                        watch[2] is None
+                        or current_values[watch_index] == watch[2]
+                    )
+                    for watch_index, watch in enumerate(watches)
+                )
+                if matched:
+                    break
+                poke_debug_register(DEBUG_STATUS_OFFSET, 0)
+            poke_debug_register(DEBUG_CONTROL_OFFSET, 0)
+            for watch_index in range(len(watches)):
+                poke_debug_register(DEBUG_REGISTER_BASE + watch_index * 8, 0)
         wait_global = os.environ.get("BLOODPRG_WAIT_GLOBAL")
-        if wait_global:
+        wait_pointer = os.environ.get("BLOODPRG_WAIT_POINTER")
+        if wait_global or wait_pointer:
             wait_conditions = []
-            for condition in wait_global.split(","):
+            for condition in (wait_global or "").split(","):
+                if not condition:
+                    continue
                 fields = condition.split(":")
                 if len(fields) == 2:
                     offset_text, value_text = fields
@@ -481,6 +649,34 @@ def main():
                     width,
                     int(value_text, 0) & ((1 << (width * 8)) - 1),
                 ))
+            pointer_conditions = []
+            for condition in (wait_pointer or "").split(","):
+                if not condition:
+                    continue
+                fields = condition.split(":")
+                if len(fields) == 3:
+                    pointer_text, target_text, value_text = fields
+                    width_text = "1"
+                elif len(fields) == 4:
+                    pointer_text, target_text, width_text, value_text = fields
+                else:
+                    raise ValueError(
+                        "BLOODPRG_WAIT_POINTER entries must be "
+                        "pointer_offset:target_offset[:width]:value"
+                    )
+                width = int(width_text, 0)
+                if width not in (1, 2, 4):
+                    raise ValueError("BLOODPRG_WAIT_POINTER width must be 1, 2, or 4")
+                pointer_conditions.append((
+                    int(pointer_text, 0),
+                    int(target_text, 0),
+                    width,
+                    int(value_text, 0) & ((1 << (width * 8)) - 1),
+                ))
+            if pointer_conditions and guest_memory_base is None:
+                raise RuntimeError(
+                    "guest DOS memory mapping is unavailable for pointer gating"
+                )
             excluded_ip_ranges = []
             for range_text in os.environ.get(
                 "BLOODPRG_WAIT_IP_OUTSIDE", ""
@@ -518,27 +714,68 @@ def main():
                     if current_cpu_state is not None
                     else None
                 )
+                current_pointer_values = []
+                if pointer_conditions:
+                    if current_cpu_state is None:
+                        raise RuntimeError(
+                            "DOSBox-X guest CPU symbols are unavailable for "
+                            "pointer gating"
+                        )
+                    current_ss = current_cpu_state[2]
+                    current_guest_bias = (
+                        best - guest_memory_base - current_ss * 16
+                    )
+                    for pointer_offset, target_offset, width, _ in pointer_conditions:
+                        mem.seek(best + pointer_offset)
+                        far_offset, far_segment = struct.unpack("<HH", mem.read(4))
+                        mem.seek(
+                            guest_memory_base
+                            + current_guest_bias
+                            + far_segment * 16
+                            + ((far_offset + target_offset) & 0xFFFF)
+                        )
+                        current_pointer_values.append(int.from_bytes(
+                            mem.read(width), "little"
+                        ))
                 globals_match = all(
                     current == expected
                     for current, (_, _, expected) in zip(
                         current_values, wait_conditions
                     )
                 )
+                pointers_match = all(
+                    current == expected
+                    for current, (_, _, _, expected) in zip(
+                        current_pointer_values, pointer_conditions
+                    )
+                )
                 ip_is_excluded = current_ip is not None and any(
                     start <= current_ip < end
                     for start, end in excluded_ip_ranges
                 )
-                if globals_match and not ip_is_excluded:
-                    print(
-                        "wait_global: "
-                        + ",".join(
-                            f"offset=0x{offset_:04x}/width={width}/"
-                            f"value=0x{value:0{width * 2}x}"
-                            for offset_, width, value in wait_conditions
+                if globals_match and pointers_match and not ip_is_excluded:
+                    if wait_conditions:
+                        print(
+                            "wait_global: "
+                            + ",".join(
+                                f"offset=0x{offset_:04x}/width={width}/"
+                                f"value=0x{value:0{width * 2}x}"
+                                for offset_, width, value in wait_conditions
+                            )
                         )
-                    )
                     if excluded_ip_ranges:
                         print(f"wait_ip_outside: ip=0x{current_ip:04x}")
+                    if pointer_conditions:
+                        print(
+                            "wait_pointer: "
+                            + ",".join(
+                                f"pointer=0x{pointer_offset:04x}/"
+                                f"target=0x{target_offset:04x}/width={width}/"
+                                f"value=0x{value:0{width * 2}x}"
+                                for pointer_offset, target_offset, width, value
+                                in pointer_conditions
+                            )
+                        )
                     break
                 if time.monotonic() >= wait_deadline:
                     raise RuntimeError(
@@ -554,11 +791,23 @@ def main():
                             if current_ip is not None
                             else ""
                         )
+                        + (
+                            ",pointer=" + ",".join(
+                                f"0x{value:0{width * 2}x}"
+                                for value, (_, _, width, _) in zip(
+                                    current_pointer_values, pointer_conditions
+                                )
+                            )
+                            if pointer_conditions
+                            else ""
+                        )
                     )
                 mem.close()
                 libc.ptrace(PTRACE_DETACH, pid, None, None)
                 attached = False
-                time.sleep(0.01)
+                time.sleep(float(
+                    os.environ.get("BLOODPRG_WAIT_POLL_SECONDS", "0.01")
+                ))
                 if libc.ptrace(PTRACE_ATTACH, pid, None, None) != 0:
                     raise RuntimeError(
                         f"ptrace attach failed while waiting: {ctypes.get_errno()}"
