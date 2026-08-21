@@ -71,7 +71,7 @@ void CB_NEAR cb_flags_write(cb_u16 flags);
 #pragma aux cb_flags_read = "pushf" "pop ax" value [ax] modify exact [ax]
 #pragma aux cb_flags_write = "push ax" "popf" parm [ax] modify exact []
 #pragma aux bloodprg_critical_error_handler parm [di]
-#pragma aux video_retrace_phase_wait modify exact []
+#pragma aux video_retrace_phase_wait modify exact [ax]
 #pragma aux vga_palette_write parm [si]
 #endif
 

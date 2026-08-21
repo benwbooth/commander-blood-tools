@@ -32,6 +32,8 @@ input-driven runs; `onstart` remains the default and `seamless` permits absolute
 X11 positioning for games that support it.
 Set BLOODPRG_DOSBOX_AUTOLOCK=false to leave the DOSBox-X pointer uncaptured for
 absolute X11 positioning; the default remains `true`.
+Set BLOODPRG_DUMP_STAGING_VGA=1 to dump DOSBox Staging's four real Mode-X
+pages and compare them with the game's current chunky display buffer.
 Set BLOODPRG_WAIT_GLOBAL to comma-separated `offset[:width]:value` conditions to
 resume until selected game-data values reach a state boundary before capturing.
 Set BLOODPRG_WAIT_POINTER to comma-separated
@@ -43,7 +45,7 @@ Set BLOODPRG_WAIT_IP_OUTSIDE to comma-separated `start:end` ranges when capture
 must also wait for a long-running guest routine to return.
 Set BLOODPRG_WAIT_POLL_SECONDS to tune the detach/reattach polling interval.
 """
-import ctypes, hashlib, subprocess, time, os, platform, re, shlex, signal, struct, sys
+import ctypes, hashlib, subprocess, time, os, platform, re, shlex, shutil, signal, struct, sys
 from pathlib import Path
 
 ANCHOR = b"386 minimum !\0Not enough memory (570Ko min) !\0"
@@ -339,6 +341,129 @@ def drive_input_actions(pid, actions, env):
             raise ValueError(f"invalid BLOODPRG_INPUT_ACTIONS line: {line!r}")
 
 
+def process_readable_mappings(pid):
+    mappings = []
+    for line in open(f"/proc/{pid}/maps"):
+        fields = line.split()
+        if "r" not in fields[1]:
+            continue
+        start, end = (int(value, 16) for value in fields[0].split("-"))
+        file_offset = int(fields[2], 16)
+        path = fields[5] if len(fields) > 5 else ""
+        mappings.append((start, end, file_offset, path))
+    return mappings
+
+
+def elf_symbol_value(binary, symbol):
+    process = subprocess.run(
+        ["nm", "-C", "--defined-only", binary],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if process.returncode != 0:
+        return None
+    for line in process.stdout.splitlines():
+        fields = line.split()
+        if len(fields) == 3 and fields[2] == symbol:
+            return int(fields[0], 16)
+    return None
+
+
+def dump_staging_vga_pages(
+        mem, pid, emulator, display_pixels, intended_page, output, executable):
+    binary = shutil.which(emulator) or emulator
+    binary = os.path.realpath(binary)
+    symbol = elf_symbol_value(binary, "vga")
+    if symbol is None:
+        print("staging_vga: vga symbol unavailable")
+        return
+
+    mappings = process_readable_mappings(pid)
+    image_mapping = next(
+        (
+            mapping
+            for mapping in mappings
+            if mapping[3] and os.path.realpath(mapping[3]) == binary
+            and mapping[2] == 0
+        ),
+        None,
+    )
+    if image_mapping is None:
+        print("staging_vga: executable mapping unavailable")
+        return
+
+    image_base = image_mapping[0]
+    mem.seek(image_base + symbol)
+    vga_state = mem.read(0x20000)
+    (output / f"{executable}.dosbox_vga_state.bin").write_bytes(vga_state)
+    page_offsets = (0x0000, 0x4000, 0x8000, 0xc000)
+    required_size = page_offsets[-1] * 4 + len(display_pixels)
+    pointer_candidates = []
+    for field_offset in range(0, len(vga_state) - 7, 8):
+        pointer = struct.unpack_from("<Q", vga_state, field_offset)[0]
+        mapping = next(
+            (
+                candidate
+                for candidate in mappings
+                if candidate[0] <= pointer
+                and pointer + required_size <= candidate[1]
+            ),
+            None,
+        )
+        if mapping is None:
+            continue
+        page_scores = []
+        for page_offset in page_offsets:
+            mem.seek(pointer + page_offset * 4)
+            page = mem.read(len(display_pixels))
+            page_scores.append(sum(a == b for a, b in zip(page, display_pixels)))
+        pointer_candidates.append(
+            (max(page_scores), field_offset, pointer, page_scores)
+        )
+
+    if not pointer_candidates:
+        print("staging_vga: no readable VGA memory pointer candidate")
+        return
+    score, field_offset, linear, page_scores = max(pointer_candidates)
+    if score < len(display_pixels) // 4:
+        print(f"staging_vga: no plausible VGA memory pointer; best_score={score}")
+        return
+
+    print(
+        f"staging_vga: state=0x{image_base + symbol:x} "
+        f"linear_field=+0x{field_offset:x} linear=0x{linear:x} "
+        f"intended_page=0x{intended_page:04x}"
+    )
+    for page_offset, page_score in zip(page_offsets, page_scores):
+        mem.seek(linear + page_offset * 4)
+        page = mem.read(len(display_pixels))
+        differences = [
+            index
+            for index, (actual, expected) in enumerate(zip(page, display_pixels))
+            if actual != expected
+        ]
+        if differences:
+            left = min(index % 320 for index in differences)
+            right = max(index % 320 for index in differences)
+            top = min(index // 320 for index in differences)
+            bottom = max(index // 320 for index in differences)
+            bounds = f"{left},{top}-{right},{bottom}"
+            first_difference = differences[0]
+        else:
+            bounds = "exact"
+            first_difference = -1
+        (output / (
+            f"{executable}.vga_page_{page_offset:04x}.bin"
+        )).write_bytes(page)
+        print(
+            f"staging_vga_page_{page_offset:04x}: "
+            f"equal={page_score}/{len(display_pixels)} "
+            f"first_difference={first_difference} bounds={bounds} "
+            f"sha256={hashlib.sha256(page).hexdigest()}"
+        )
+
+
 def main():
     # <cd-dir> is the CD image dir that CONTAINS BLOODPRG.EXE (e.g. output/_tmp_iso).
     # The installed data dir (C:\cblood, e.g. accuracy/cblood_install/cblood) is a
@@ -361,6 +486,7 @@ def main():
         "BLOODPRG_DOSBOX_MOUSE_CAPTURE", "onstart"
     )
     autolock = os.environ.get("BLOODPRG_DOSBOX_AUTOLOCK", "true")
+    dump_staging_vga = os.environ.get("BLOODPRG_DUMP_STAGING_VGA", "0") == "1"
     dump_dir = os.environ.get("BLOODPRG_DUMP_DIR")
     if dump_dir:
         Path(dump_dir).mkdir(parents=True, exist_ok=True)
@@ -1010,6 +1136,7 @@ def main():
                 f"sha256={hashlib.sha256(driver_data).hexdigest()} "
                 f"head={driver_data[:64].hex()}"
             )
+            display_pixels = None
             for name, pointer_offset in (
                 ("graphics_display_buffer", 0x5221),
                 ("graphics_back_buffer", 0x5229),
@@ -1024,6 +1151,8 @@ def main():
                     + offset
                 )
                 data = mem.read(0xFA00)
+                if name == "graphics_display_buffer":
+                    display_pixels = data
                 checksum = sum(data) & 0xFFFFFFFF
                 if dump_dir:
                     output = Path(dump_dir)
@@ -1033,6 +1162,18 @@ def main():
                     f"{name}_pixels: pointer={segment:04x}:{offset:04x} "
                     f"sum32=0x{checksum:08x} sample={data[:32].hex()} "
                     f"tail={data[-32:].hex()}"
+                )
+            if dump_staging_vga and dump_dir and display_pixels is not None:
+                mem.seek(best + 0x521D)
+                intended_page = struct.unpack("<H", mem.read(2))[0]
+                dump_staging_vga_pages(
+                    mem,
+                    pid,
+                    emulator,
+                    display_pixels,
+                    intended_page,
+                    output,
+                    executable,
                 )
             if dump_dir:
                 mem.seek(best + 0x0D8C)
