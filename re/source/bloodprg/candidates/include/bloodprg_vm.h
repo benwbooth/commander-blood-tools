@@ -313,7 +313,7 @@ void CB_NEAR presentation_line_one_stream_run(
 #pragma aux presentation_line_one_stream_run parm [ax] \
         modify exact [ax bx cx dx si di es]
 #endif
-void CB_SAVE_REGS CB_FAR dlg_menu_words_inline_reveal_step(void); /* 0x0072A8 */
+void CB_FAR dlg_menu_words_inline_reveal_step(void); /* 0x0072A8 */
 void CB_FAR presentation_ready_gate(void); /* 0x008963 */
 
 #define BLOODPRG_VM_DIRECTORY_ACTIVE_KIND 0x0001u
@@ -413,7 +413,7 @@ extern volatile cb_u16 vm_nav_chart_object_offsets[];
 int CB_FAR string_compare(const volatile char CB_FAR *left,
         const volatile char CB_FAR *right); /* 0x0025A4 */
 void CB_SAVE_REGS CB_NEAR object_heap_access(void); /* 0x00149B */
-void CB_SAVE_REGS CB_NEAR active_object_list_build(void); /* 0x00604E */
+void CB_NEAR active_object_list_build(void); /* 0x00604E */
 cb_u16 CB_FAR nav_chart_list_build(void);    /* 0x00721A */
 const cb_u8 CB_NEAR *CB_NEAR value_scan_match(cb_u16 value,
         const bloodprg_value_node CB_FAR *node); /* 0x00577A */

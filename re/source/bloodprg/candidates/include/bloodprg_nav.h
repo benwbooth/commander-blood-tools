@@ -249,7 +249,6 @@ extern volatile char CB_FS_DATA
 #pragma aux list_widget_layout_unified \
         parm [si] value [ax] modify exact [ax]
 #pragma aux nav_choice_handler_0 modify exact [ax]
-#pragma aux nav_choice_handler_3 modify exact [ax si]
 #pragma aux nav_choice_dispatch modify exact [ax di]
 #pragma aux screen_mode_update parm [ax] modify exact [di es]
 #pragma aux nav_kind2_target_list_build value [ax] modify exact [ax cx]

@@ -25,7 +25,7 @@
 #define DLG_MENU_CURSOR_OFFSET(cursor) ((cb_u16)(cursor))
 #endif
 
-void CB_SAVE_REGS CB_FAR dlg_menu_words_inline_reveal_step(void)
+void CB_FAR dlg_menu_words_inline_reveal_step(void)
 {
     const cb_u16 CB_FAR *menu_cursor;
     const cb_u8 CB_FAR *dictionary;
@@ -40,22 +40,12 @@ void CB_SAVE_REGS CB_FAR dlg_menu_words_inline_reveal_step(void)
     cb_u16 y;
     cb_u8 next_character;
 
-#if defined(__WATCOMC__)
-    /* __saveregs restores segments; preserve the original caller AX too. */
-    _asm push ax;
-#endif
-
     if ((vm_presentation_defer_a & 1u) == 0u) {
         if ((vm_presentation_hold_ready & 1u) == 0u ||
                 vm_presentation_owner_offset != DLG_MENU_OWNER_OFFSET) {
-            goto done;
+            return;
         }
     }
-
-#if defined(__WATCOMC__)
-    /* Active binary paths clear upper EAX before the 16-bit pointer work. */
-    _asm xor eax, eax;
-#endif
 
     vm_text_menu_inline_x = DLG_MENU_LEFT;
     menu_cursor = vm_text_menu_words;
@@ -100,7 +90,7 @@ void CB_SAVE_REGS CB_FAR dlg_menu_words_inline_reveal_step(void)
                 vm_text_menu_end = (cb_u16)(vm_text_menu_end + 2u);
                 vm_dialogue_hold_countdown = presentation_choice_result;
             }
-            goto done;
+            return;
         }
     }
 
@@ -113,9 +103,4 @@ void CB_SAVE_REGS CB_FAR dlg_menu_words_inline_reveal_step(void)
         vm_dialogue_hold_complete = 1u;
     }
 
-done:
-    ;
-#if defined(__WATCOMC__)
-    _asm pop ax;
-#endif
 }

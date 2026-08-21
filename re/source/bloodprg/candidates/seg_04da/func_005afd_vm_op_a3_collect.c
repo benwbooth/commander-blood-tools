@@ -23,21 +23,10 @@ void CB_NEAR vm_op_a3_collect(void)
     cb_u16 code_offset;
     cb_u16 word;
 
-#if defined(__WATCOMC__)
-    _asm push ax;
-    _asm push ds;
-    _asm push es;
-#endif
-
     code_segment = VM_CODE_SEGMENT(vm_code_image);
     code_offset = vm_program_counter;
     if (*VM_CODE_BYTE_AT(code_segment, code_offset)
             != BLOODPRG_VM_CONCEPT_OPCODE) {
-#if defined(__WATCOMC__)
-        _asm pop es;
-        _asm pop ds;
-        _asm pop ax;
-#endif
         return;
     }
 
@@ -58,10 +47,4 @@ void CB_NEAR vm_op_a3_collect(void)
         vm_presentation_reg_6770_gs = 0;
     }
     *output = 0;
-
-#if defined(__WATCOMC__)
-    _asm pop es;
-    _asm pop ds;
-    _asm pop ax;
-#endif
 }

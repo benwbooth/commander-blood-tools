@@ -11,16 +11,11 @@
         (vm_record_base_gs + (offset)))
 #endif
 
-void CB_SAVE_REGS CB_NEAR active_object_list_build(void)
+void CB_NEAR active_object_list_build(void)
 {
     const volatile bloodprg_vm_directory_entry CB_FAR *entry;
     const volatile bloodprg_vm_object_header CB_FAR *object;
     volatile cb_u16 CB_GAME_DATA *out;
-
-#if defined(__WATCOMC__)
-    /* __saveregs restores segments and general registers except AX. */
-    _asm push ax;
-#endif
 
     out = vm_active_object_offsets_gs;
     entry = vm_record_directory_gs;
@@ -34,8 +29,4 @@ void CB_SAVE_REGS CB_NEAR active_object_list_build(void)
     }
 
     *out = 0xffffu;
-
-#if defined(__WATCOMC__)
-    _asm pop ax;
-#endif
 }
