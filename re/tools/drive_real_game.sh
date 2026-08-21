@@ -20,6 +20,8 @@
 # Interactive runs default to DOSBox Staging's dynamic core at maximum cycles.
 # Override DOSBOX_BINARY, DOSBOX_CORE, DOSBOX_CYCLES, or DOSBOX_FRAMESKIP when a
 # strict DOSBox-X normal-core comparison is required.
+# Set DOSBOX_TRACE_FILE to record host reads from BLOOD.DAT with strace. The
+# window lookup follows child processes so tracing does not break input driving.
 # The emulator window appears a few seconds after launch; the script waits for it.
 set -euo pipefail
 
@@ -37,6 +39,7 @@ DOSBOX_BINARY="${DOSBOX_BINARY:-dosbox-staging}"
 DOSBOX_CORE="${DOSBOX_CORE:-dynamic}"
 DOSBOX_CYCLES="${DOSBOX_CYCLES:-max}"
 DOSBOX_FRAMESKIP="${DOSBOX_FRAMESKIP:-10}"
+DOSBOX_WINDOW_NAME="${DOSBOX_WINDOW_NAME:-$GAME_EXECUTABLE}"
 export DISPLAY="$DISP" SDL_VIDEODRIVER=x11
 
 Xvfb "$DISP" -screen 0 800x600x24 >/dev/null 2>&1 &
@@ -73,6 +76,22 @@ else
     -set "sdl autolock=true"
   )
 fi
+if [ -n "${DOSBOX_TRACE_FILE:-}" ]; then
+  command -v strace >/dev/null || {
+    echo "strace not found"
+    exit 1
+  }
+  mkdir -p "$(dirname "$DOSBOX_TRACE_FILE")"
+  DOSBOX_ARGS=(
+    strace
+    -f
+    -yy
+    -e "trace=openat,read,lseek,_llseek,pread64"
+    -P "$GAME_DIR/BLOOD.DAT"
+    -o "$DOSBOX_TRACE_FILE"
+    "${DOSBOX_ARGS[@]}"
+  )
+fi
 "${DOSBOX_ARGS[@]}" \
   -c "mount c \"$INSTALL_PARENT\"" \
   -c "mount d \"$GAME_DIR\" -t cdrom" \
@@ -80,12 +99,31 @@ fi
   -c "$GAME_EXECUTABLE AMR S162227 EMS WRIC:\\cblood\\" >/dev/null 2>&1 &
 DOSBOX_PID=$!
 
-# Wait for the game window, up to ~20s.
+# Wait for the game window, up to ~20s. Profilers and syscall tracers insert a
+# process between this driver and DOSBox, so inspect the complete child tree.
+find_process_window() {
+  local -a process_queue=("$DOSBOX_PID")
+  local queue_index=0
+  local process_id child_id
+
+  WID=""
+  while (( queue_index < ${#process_queue[@]} )); do
+    process_id="${process_queue[$queue_index]}"
+    queue_index=$((queue_index + 1))
+    WID=$(xdotool search --all --pid "$process_id" 2>/dev/null | head -1 || true)
+    [ -n "$WID" ] && return
+    while read -r child_id; do
+      [ -n "$child_id" ] && process_queue+=("$child_id")
+    done < <(pgrep -P "$process_id" 2>/dev/null || true)
+  done
+}
+
 WID=""
 for _ in $(seq 1 20); do
-  WID=$(xdotool search --all --pid "$DOSBOX_PID" 2>/dev/null | head -1 || true)
+  find_process_window
   if [ -z "$WID" ]; then
-    WID=$(xdotool search --name "DOSBox-X\|DOSBox Staging" 2>/dev/null | head -1 || true)
+    WID=$(xdotool search --name "$DOSBOX_WINDOW_NAME\|DOSBox-X\|DOSBox Staging" \
+      2>/dev/null | head -1 || true)
   fi
   [ -n "$WID" ] && break
   sleep 1

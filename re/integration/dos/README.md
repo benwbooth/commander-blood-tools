@@ -218,6 +218,25 @@ title, bridge, an archive-only character cinematic, and the bridge again. That
 gate also exercises EMS archive-index mapping; function `44h` requires the
 logical page in `BX` and EMS handle in `DX`.
 
+The package-level DOS gate makes that accelerated path reproducible and proves
+that the relinked runtime reads the complete rebuilt MANU3 overlay from the
+rebuilt archive:
+
+```sh
+nix develop --command python3 re/tools/recovered_package_dos_integration.py \
+  --package-dir output/recovered_dos_package \
+  --install-parent accuracy/cblood_install \
+  --output-dir output/recovered_dos_package/dos_gate \
+  --display :98
+```
+
+The driver uses DOSBox Staging's dynamic core at `cycles=max`, captures the
+title, interactive bridge, and dispatched cinematic, and traces host reads from
+`BLOOD.DAT`. The gate requires three distinct 320x200 frames and complete byte
+coverage of the archived `MANU3.XDB` range recorded in `package_manifest.tsv`.
+This validates the emulator-speed strategy without replacing natural C with
+instruction-shaped assembly.
+
 The later tutorial checkpoint now passes too. The optimized runtime drove
 `BPRG_RE.EXE` through SCRIPT1, selected CRYOBOX and BOB_MORLOCK, loaded
 `frigo.fd`, played Bob's mission dialogue, and loaded all five `script2`

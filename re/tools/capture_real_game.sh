@@ -18,6 +18,8 @@ set -euo pipefail
 GAME_DIR="$(realpath "${1:?usage: capture_real_game.sh <game-dir> <out-dir> [display]}")"
 OUT_DIR="${2:?missing out-dir}"
 DISP="${3:-:83}"
+DOSBOX_CYCLES="${DOSBOX_CYCLES:-max}"
+CAPTURE_TIMES="${CAPTURE_TIMES:-6 10 14 18 24 30 36}"
 mkdir -p "$OUT_DIR"
 
 export DISPLAY="$DISP" SDL_VIDEODRIVER=x11
@@ -35,6 +37,7 @@ REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 INSTALL_PARENT="${4:-$REPO_ROOT/accuracy/cblood_install}"
 GAME_EXECUTABLE="${5:-BLOODPRG.EXE}"
 dosbox-x -set sdl output=surface \
+  -set "cpu cycles=$DOSBOX_CYCLES" \
   -c "mount c \"$INSTALL_PARENT\"" \
   -c "mount d \"$GAME_DIR\" -t cdrom" \
   -c 'd:' \
@@ -42,9 +45,16 @@ dosbox-x -set sdl output=surface \
 DOSBOX_PID=$!
 
 # Sample the boot sequence: MINDSCAPE logo -> Microfolie's logo -> intro cutscene.
-for t in 6 10 14 18 24 30 36; do
-  sleep 4
+# Times are seconds after DOSBox starts; override CAPTURE_TIMES for later gates.
+LAST_CAPTURE=0
+for t in $CAPTURE_TIMES; do
+  if ! [[ "$t" =~ ^[0-9]+$ ]] || (( t < LAST_CAPTURE )); then
+    echo "CAPTURE_TIMES must be ascending non-negative integers" >&2
+    exit 2
+  fi
+  sleep "$((t - LAST_CAPTURE))"
   import -window root -gravity South -crop 640x360+0+0 +repage \
     -resize 320x200\! "$OUT_DIR/boot_${t}s.png" 2>/dev/null || true
   echo "captured $OUT_DIR/boot_${t}s.png"
+  LAST_CAPTURE=$t
 done
