@@ -1,7 +1,7 @@
 #include "../include/bloodprg_vm.h"
 
-bloodprg_vm_image_ptr CB_NEAR vm_op_shared_state_marker(
-    bloodprg_vm_image_ptr script_bytes)
+const cb_u8 CB_NEAR *CB_NEAR vm_op_shared_state_marker(
+    const cb_u8 CB_NEAR *script_bytes)
 {
     cb_u16 offset;
     cb_u8 op;
@@ -13,14 +13,14 @@ bloodprg_vm_image_ptr CB_NEAR vm_op_shared_state_marker(
     cb_u8 pass;
 
     record_base = vm_record_base_gs;
-    offset = *(const volatile cb_u16 CB_FAR *)script_bytes;
+    offset = *(const cb_u16 CB_NEAR *)script_bytes;
     field = (volatile cb_u16 CB_FAR *)(record_base + offset);
     current = *field;
     script_bytes += sizeof(cb_u16);
 
     op = *script_bytes++;
     rhs_mode = *script_bytes++;
-    rhs = *(const volatile cb_u16 CB_FAR *)script_bytes;
+    rhs = *(const cb_u16 CB_NEAR *)script_bytes;
     if (rhs_mode == 0xc0u || rhs_mode == 0xc2u) {
         rhs = *(volatile cb_u16 CB_FAR *)(record_base + rhs);
     }
@@ -43,7 +43,7 @@ bloodprg_vm_image_ptr CB_NEAR vm_op_shared_state_marker(
         }
 
         if (!pass) {
-            return BLOODPRG_VM_CURSOR_AT(script_bytes, vm_branch_fail());
+            return (const cb_u8 CB_NEAR *)vm_branch_fail();
         }
     } else {
         if (op == 0xf6u) {

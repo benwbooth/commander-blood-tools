@@ -1,16 +1,14 @@
 #include "../include/bloodprg_vm.h"
 
-bloodprg_vm_image_ptr CB_NEAR vm_op_ab_poke_byte(
-    bloodprg_vm_image_ptr script_bytes)
+const cb_u8 CB_NEAR *CB_NEAR vm_op_ab_poke_byte(
+    const cb_u8 CB_NEAR *script_bytes)
 {
     cb_u8 value;
-    cb_u16 target_offset;
-    volatile cb_u8 CB_FAR *target;
+    volatile cb_u8 CB_NEAR *target;
 
     value = *script_bytes++;
-    target_offset = *(const volatile cb_u16 CB_FAR *)script_bytes;
-    target = BLOODPRG_VM_CURSOR_AT(script_bytes, target_offset);
+    target = *(volatile cb_u8 CB_NEAR * const CB_NEAR *)script_bytes;
     *target = value;
-    script_bytes += sizeof(target_offset);
+    script_bytes += sizeof(target);
     return script_bytes;
 }

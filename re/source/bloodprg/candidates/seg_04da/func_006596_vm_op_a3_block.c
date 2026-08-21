@@ -1,7 +1,7 @@
 #include "../include/bloodprg_vm.h"
 
-bloodprg_vm_image_ptr CB_NEAR vm_op_a3_block(
-    bloodprg_vm_image_ptr script_bytes)
+const cb_u8 CB_NEAR *CB_NEAR vm_op_a3_block(
+    const cb_u8 CB_NEAR *script_bytes)
 {
     cb_u8 inverted;
     cb_u16 target;
@@ -17,7 +17,7 @@ bloodprg_vm_image_ptr CB_NEAR vm_op_a3_block(
         ++script_bytes;
     }
 
-    target = *(const volatile cb_u16 CB_FAR *)script_bytes;
+    target = *(const cb_u16 CB_NEAR *)script_bytes;
     script_bytes += 2;
     match = ((vm_resume_state_gs & 2u) != 0)
         ? vm_resume_value_gs
@@ -33,5 +33,5 @@ bloodprg_vm_image_ptr CB_NEAR vm_op_a3_block(
         }
     }
 
-    return BLOODPRG_VM_CURSOR_AT(script_bytes, vm_branch_fail());
+    return (const cb_u8 CB_NEAR *)vm_branch_fail();
 }

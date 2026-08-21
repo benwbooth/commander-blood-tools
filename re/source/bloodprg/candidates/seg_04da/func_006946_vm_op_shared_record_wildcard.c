@@ -1,7 +1,7 @@
 #include "../include/bloodprg_vm.h"
 
-bloodprg_vm_image_ptr CB_NEAR vm_op_shared_record_wildcard(
-    bloodprg_vm_image_ptr script_bytes)
+const cb_u8 CB_NEAR *CB_NEAR vm_op_shared_record_wildcard(
+    const cb_u8 CB_NEAR *script_bytes)
 {
     cb_u8 inverted;
     cb_u8 opcode;
@@ -20,9 +20,9 @@ bloodprg_vm_image_ptr CB_NEAR vm_op_shared_record_wildcard(
             ++script_bytes;
         }
 
-        offset = *(const volatile cb_u16 CB_FAR *)script_bytes;
+        offset = *(const cb_u16 CB_NEAR *)script_bytes;
         script_bytes += sizeof(cb_u16);
-        value = *(const volatile cb_u16 CB_FAR *)script_bytes;
+        value = *(const cb_u16 CB_NEAR *)script_bytes;
         script_bytes += sizeof(cb_u16);
         if (value == vm_wildcard_ref_value_gs) {
             value = 0xffffu;
@@ -36,12 +36,12 @@ bloodprg_vm_image_ptr CB_NEAR vm_op_shared_record_wildcard(
         } else if (inverted) {
             return script_bytes;
         }
-        return BLOODPRG_VM_CURSOR_AT(script_bytes, vm_branch_fail());
+        return (const cb_u8 CB_NEAR *)vm_branch_fail();
     }
 
-    offset = *(const volatile cb_u16 CB_FAR *)script_bytes;
+    offset = *(const cb_u16 CB_NEAR *)script_bytes;
     script_bytes += sizeof(cb_u16);
-    value = *(const volatile cb_u16 CB_FAR *)script_bytes;
+    value = *(const cb_u16 CB_NEAR *)script_bytes;
     script_bytes += sizeof(cb_u16);
     opcode = script_bytes[-5];
     if (opcode == 0xbcu) {

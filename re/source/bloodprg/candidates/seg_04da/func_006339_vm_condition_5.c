@@ -2,11 +2,11 @@
 
 int CB_NEAR vm_condition_5(cb_u16 flags,
         const volatile cb_u8 CB_FAR *record,
-        bloodprg_vm_image_ptr script_bytes)
+        const cb_u8 *script_bytes)
 {
-    bloodprg_vm_image_ptr cursor;
-    const volatile cb_u16 CB_FAR *candidate;
-    const volatile cb_u16 CB_FAR *words;
+    const cb_u8 *cursor;
+    const cb_u16 *candidate;
+    const cb_u16 *words;
     volatile cb_u16 CB_GAME_DATA *out;
     cb_u8 control;
     cb_u8 detail;
@@ -31,7 +31,7 @@ int CB_NEAR vm_condition_5(cb_u16 flags,
         field_offset = (cb_u8)vm_field_offset_table_gs[
             ((((cb_u16)detail >> 1) & 7u) + 1u) * 16u + 1u];
         record_word = *(const volatile cb_u16 CB_FAR *)(record + field_offset);
-        operand = *(const volatile cb_u16 CB_FAR *)cursor;
+        operand = *(const cb_u16 *)cursor;
         cursor += 2;
 
         if ((control & 0x80u) != 0) {
@@ -51,7 +51,7 @@ int CB_NEAR vm_condition_5(cb_u16 flags,
         cursor = vm_token_special(0xffffu, cursor);
         required = (cb_u8)(detail & 7u);
         if (required == 0) {
-            words = (const volatile cb_u16 CB_FAR *)cursor;
+            words = (const cb_u16 *)cursor;
             count = 0;
             while (words[count] != 0) {
                 ++count;
@@ -74,7 +74,7 @@ int CB_NEAR vm_condition_5(cb_u16 flags,
             }
         } else {
             for (;;) {
-                operand = *(const volatile cb_u16 CB_FAR *)cursor;
+                operand = *(const cb_u16 *)cursor;
                 cursor += 2;
                 if (operand == 0 || operand == 0xffffu) {
                     return 0;
@@ -104,7 +104,7 @@ int CB_NEAR vm_condition_5(cb_u16 flags,
         cursor = vm_token_special(0xffffu, cursor);
         vm_yield_flag_gs = 1;
         do {
-            *out = *(const volatile cb_u16 CB_FAR *)cursor;
+            *out = *(const cb_u16 *)cursor;
             cursor += 2;
             ++out;
         } while (out[-1] != 0);

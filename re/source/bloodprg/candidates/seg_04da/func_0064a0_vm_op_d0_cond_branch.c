@@ -1,10 +1,10 @@
 #include "../include/bloodprg_vm.h"
 
-bloodprg_vm_image_ptr CB_NEAR vm_op_d0_cond_branch(
-        bloodprg_vm_image_ptr script_bytes)
+const cb_u8 CB_NEAR *CB_NEAR vm_op_d0_cond_branch(
+        const cb_u8 CB_NEAR *script_bytes)
 {
     if ((vm_sequence_active_gs & 1u) == 0) {
-        return BLOODPRG_VM_CURSOR_AT(script_bytes, vm_branch_fail());
+        return (const cb_u8 CB_NEAR *)vm_branch_fail();
     }
     return script_bytes;
 }

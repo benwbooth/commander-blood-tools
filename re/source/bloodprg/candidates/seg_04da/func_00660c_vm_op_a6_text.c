@@ -10,11 +10,10 @@
 #define VM_TEXT_PRESENTATION_RECORD 0x00C4u
 #define VM_TEXT_LINE_LIMIT 35u
 
-bloodprg_vm_image_ptr CB_NEAR vm_op_a6_text(
-        bloodprg_vm_image_ptr script_bytes)
+cb_u8 CB_NEAR *CB_NEAR vm_op_a6_text(cb_u8 CB_NEAR *script_bytes)
 {
     volatile cb_u8 CB_FAR *line_record;
-    volatile cb_u8 CB_FAR *selector_bytes;
+    cb_u8 CB_NEAR *selector_bytes;
     const char CB_FAR *dictionary_word;
     volatile char CB_GAME_DATA *output;
     cb_u16 control;
@@ -24,14 +23,14 @@ bloodprg_vm_image_ptr CB_NEAR vm_op_a6_text(
     cb_i16 field_offset;
 
     line_record = vm_record_base_gs;
-    line_record += *(const volatile cb_u16 CB_FAR *)script_bytes;
+    line_record += *(const cb_u16 CB_NEAR *)script_bytes;
     script_bytes += sizeof(cb_u16);
 
     selector_bytes = script_bytes;
-    vm_text_selector_bytes_gs = (cb_u8 CB_NEAR *)FP_OFF(selector_bytes);
+    vm_text_selector_bytes_gs = selector_bytes;
     ++script_bytes;
 
-    control = *(const volatile cb_u16 CB_FAR *)script_bytes;
+    control = *(const cb_u16 CB_NEAR *)script_bytes;
     script_bytes += sizeof(cb_u16);
 
     if ((control & VM_TEXT_ARM_SKIP) != 0) {
@@ -40,8 +39,7 @@ bloodprg_vm_image_ptr CB_NEAR vm_op_a6_text(
     if ((control & VM_TEXT_ARM_LOOP) != 0) {
         vm_resume_state_gs = 1;
         vm_resume_value_gs = 0;
-        vm_text_loop_target_gs =
-            *(const volatile cb_u16 CB_FAR *)script_bytes;
+        vm_text_loop_target_gs = *(const cb_u16 CB_NEAR *)script_bytes;
         script_bytes += sizeof(cb_u16);
     }
 
@@ -79,8 +77,7 @@ bloodprg_vm_image_ptr CB_NEAR vm_op_a6_text(
         output = vm_text_buffer_gs;
         line_length = 0;
         for (;;) {
-            dictionary_offset =
-                *(const volatile cb_u16 CB_FAR *)script_bytes;
+            dictionary_offset = *(const cb_u16 CB_NEAR *)script_bytes;
             if (dictionary_offset == 0 || dictionary_offset == 0xFFFFu) {
                 break;
             }
@@ -93,7 +90,7 @@ bloodprg_vm_image_ptr CB_NEAR vm_op_a6_text(
             }
 
             dictionary_word = vm_dic_words_gs +
-                *(const volatile cb_u16 CB_FAR *)script_bytes;
+                *(const cb_u16 CB_NEAR *)script_bytes;
             next_length = (cb_u8)strlen_b(dictionary_word);
             if (*dictionary_word == ',' || *dictionary_word == '.' ||
                     *dictionary_word == '?' || *dictionary_word == '!' ||
@@ -117,7 +114,7 @@ bloodprg_vm_image_ptr CB_NEAR vm_op_a6_text(
         vm_presentation_hold_ready_gs = 0;
         vm_presentation_request_flags_gs |= 1;
     } else {
-        scan_zero_word(script_bytes);
+        scan_zero_word((const cb_i16 CB_NEAR *)script_bytes);
         *(volatile cb_u16 CB_FAR *)(line_record + 2) |=
             VM_TEXT_ALREADY_SHOWN;
         vm_text_display_active_gs = 0;
@@ -127,12 +124,12 @@ bloodprg_vm_image_ptr CB_NEAR vm_op_a6_text(
         vm_presentation_defer_a_gs = 1;
         vm_presentation_hold_ready_gs = 0;
         vm_text_menu_pending_gs = 1;
-        vm_text_menu_end_gs = FP_OFF(script_bytes);
+        vm_text_menu_end_gs = (cb_u16)script_bytes;
         vm_text_menu_words_gs = (const cb_u16 CB_FAR *)script_bytes;
     }
 
 consume_to_end:
-    while (*(const volatile cb_u16 CB_FAR *)script_bytes != 0) {
+    while (*(const cb_u16 CB_NEAR *)script_bytes != 0) {
         script_bytes += sizeof(cb_u16);
     }
     return script_bytes + sizeof(cb_u16);

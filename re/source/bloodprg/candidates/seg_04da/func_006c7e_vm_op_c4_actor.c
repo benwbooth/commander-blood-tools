@@ -8,8 +8,8 @@
 #define VM_C4_RECORD_AT(base, offset) ((base) + (offset))
 #endif
 
-bloodprg_vm_image_ptr CB_NEAR vm_op_c4_actor(
-    bloodprg_vm_image_ptr script_bytes)
+const cb_u8 CB_NEAR *CB_NEAR vm_op_c4_actor(
+    const cb_u8 CB_NEAR *script_bytes)
 {
     cb_u8 inverted;
     cb_u8 matches;
@@ -33,10 +33,10 @@ bloodprg_vm_image_ptr CB_NEAR vm_op_c4_actor(
         ++script_bytes;
     }
 
-    record_offset = *(const volatile cb_u16 CB_FAR *)script_bytes;
+    record_offset = *(const cb_u16 CB_NEAR *)script_bytes;
     script_bytes += sizeof(cb_u16);
     owner_offset = vm_record_lookup_by_threshold(record_offset);
-    related_offset = *(const volatile cb_u16 CB_FAR *)script_bytes;
+    related_offset = *(const cb_u16 CB_NEAR *)script_bytes;
     script_bytes += sizeof(cb_u16);
 
     owner = (volatile bloodprg_vm_object_header CB_FAR *)VM_C4_RECORD_AT(
@@ -52,13 +52,13 @@ bloodprg_vm_image_ptr CB_NEAR vm_op_c4_actor(
             && record_kind == BLOODPRG_VM_RECORD_C4
             && record->related == related_offset;
         if (matches == inverted) {
-            return BLOODPRG_VM_CURSOR_AT(script_bytes, vm_branch_fail());
+            return (const cb_u8 CB_NEAR *)vm_branch_fail();
         }
         return script_bytes;
     }
 
     if ((owner->flags & 1u) == 0u || (related->flags & 1u) == 0u) {
-        return BLOODPRG_VM_CURSOR_AT(script_bytes, vm_branch_fail());
+        return (const cb_u8 CB_NEAR *)vm_branch_fail();
     }
 
     owner_kind = owner->kind;
@@ -66,7 +66,7 @@ bloodprg_vm_image_ptr CB_NEAR vm_op_c4_actor(
         related_kind = related->kind;
         if (related_kind != 1u) {
             if (record_kind == BLOODPRG_VM_RECORD_C4) {
-                return BLOODPRG_VM_CURSOR_AT(script_bytes, vm_branch_fail());
+                return (const cb_u8 CB_NEAR *)vm_branch_fail();
             }
             reciprocal_offset = (cb_u16)(related_offset
                 + (cb_i16)vm_field_offset(
@@ -74,7 +74,7 @@ bloodprg_vm_image_ptr CB_NEAR vm_op_c4_actor(
             reciprocal = (volatile cb_u16 CB_FAR *)VM_C4_RECORD_AT(
                 record_base, reciprocal_offset);
             if (*reciprocal == BLOODPRG_VM_RECORD_C4) {
-                return BLOODPRG_VM_CURSOR_AT(script_bytes, vm_branch_fail());
+                return (const cb_u8 CB_NEAR *)vm_branch_fail();
             }
         }
     }

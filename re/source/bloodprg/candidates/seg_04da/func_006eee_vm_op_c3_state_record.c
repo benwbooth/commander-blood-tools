@@ -8,8 +8,8 @@
 #define VM_C3_RECORD_AT(base, offset) ((base) + (offset))
 #endif
 
-bloodprg_vm_image_ptr CB_NEAR vm_op_c3_state_record(
-    bloodprg_vm_image_ptr script_bytes)
+const cb_u8 CB_NEAR *CB_NEAR vm_op_c3_state_record(
+    const cb_u8 CB_NEAR *script_bytes)
 {
     cb_u8 inverted;
     cb_u16 record_offset;
@@ -27,10 +27,10 @@ bloodprg_vm_image_ptr CB_NEAR vm_op_c3_state_record(
         ++script_bytes;
     }
 
-    record_offset = *(const volatile cb_u16 CB_FAR *)script_bytes;
+    record_offset = *(const cb_u16 CB_NEAR *)script_bytes;
     script_bytes += sizeof(cb_u16);
     owner_offset = vm_record_lookup_by_threshold(record_offset);
-    related_offset = *(const volatile cb_u16 CB_FAR *)script_bytes;
+    related_offset = *(const cb_u16 CB_NEAR *)script_bytes;
     script_bytes += sizeof(cb_u16);
 
     owner = (volatile bloodprg_vm_object_header CB_FAR *)VM_C3_RECORD_AT(
@@ -48,7 +48,7 @@ bloodprg_vm_image_ptr CB_NEAR vm_op_c3_state_record(
         } else if (inverted) {
             return script_bytes;
         }
-        return BLOODPRG_VM_CURSOR_AT(script_bytes, vm_branch_fail());
+        return (const cb_u8 CB_NEAR *)vm_branch_fail();
     }
 
     related = (volatile bloodprg_vm_object_header CB_FAR *)
@@ -56,7 +56,7 @@ bloodprg_vm_image_ptr CB_NEAR vm_op_c3_state_record(
     if ((owner->flags & 1u) == 0u
             || (related->flags & 1u) == 0u
             || record->kind == BLOODPRG_VM_RECORD_C4) {
-        return BLOODPRG_VM_CURSOR_AT(script_bytes, vm_branch_fail());
+        return (const cb_u8 CB_NEAR *)vm_branch_fail();
     }
     record->kind = 0x00c3u;
     record->related = related_offset;

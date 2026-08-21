@@ -1,9 +1,9 @@
 #include "../include/bloodprg_vm.h"
 
-bloodprg_vm_image_ptr CB_NEAR vm_token_special(cb_u16 terminator,
-        bloodprg_vm_image_ptr script_bytes)
+const cb_u8 CB_NEAR *CB_NEAR vm_token_special(cb_u16 terminator,
+        const cb_u8 CB_NEAR *script_bytes)
 {
-    while (*(const volatile cb_u16 CB_FAR *)script_bytes != terminator) {
+    while (*(const cb_u16 CB_NEAR *)script_bytes != terminator) {
         ++script_bytes;
     }
 

@@ -1,7 +1,7 @@
 #include "../include/bloodprg_vm.h"
 
-bloodprg_vm_image_ptr CB_NEAR vm_op_a8_load_string(
-    bloodprg_vm_image_ptr script_bytes)
+const cb_u8 CB_NEAR *CB_NEAR vm_op_a8_load_string(
+    const cb_u8 CB_NEAR *script_bytes)
 {
     volatile cb_u8 CB_GAME_DATA *dst;
     cb_u8 ch;
