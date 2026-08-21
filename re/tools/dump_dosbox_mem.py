@@ -23,8 +23,10 @@ The cycle setting defaults to `max`. Compare behavior at matching guest timer
 ticks; wall-clock throughput depends on compiler code generation.
 NOTE: the star-map's 0x4F09 records are the *default* (10200,12100,900) until the game
 is in ACTIVE navigation — drive it there (see drive_real_game.sh) before dumping.
+Set BLOODPRG_INPUT_ACTIONS to newline-separated `wait`, `click`, and `key` commands
+to capture memory after a reproducible interactive sequence instead of wait_secs.
 """
-import ctypes, hashlib, subprocess, time, os, re, struct, sys
+import ctypes, hashlib, subprocess, time, os, re, shlex, struct, sys
 from pathlib import Path
 
 ANCHOR = b"386 minimum !\0Not enough memory (570Ko min) !\0"
@@ -119,6 +121,13 @@ STARTUP_GLOBALS = [
     ("vm_profile_cursor_6730", 0x6730, "<H"),
     ("vm_subtitle_wrap_marker_6732", 0x6732, "<H"),
     ("vm_profile_record_word_6734", 0x6734, "<H"),
+    ("vm_resume_value_6764", 0x6764, "<H"),
+    ("vm_presentation_reg_6770", 0x6770, "<H"),
+    ("vm_program_counter_6772", 0x6772, "<H"),
+    ("vm_parent_program_counter_6774", 0x6774, "<H"),
+    ("vm_pc_saved_6776", 0x6776, "<H"),
+    ("vm_text_loop_target_6778", 0x6778, "<H"),
+    ("vm_resume_cursor_677A", 0x677A, "<H"),
     ("vm_resource_profile_index_677E", 0x677E, "<H"),
     ("vm_script_profile_request_6780", 0x6780, "<h"),
     ("vm_execution_enabled_67A8", 0x67A8, "<B"),
@@ -207,6 +216,64 @@ def read_cpu_state(mem, addresses):
     return (es, cs, ss, ds, fs, gs, ip) + registers
 
 
+def drive_input_actions(pid, actions, env):
+    window_id = None
+    for _ in range(20):
+        searches = (
+            ["xdotool", "search", "--all", "--pid", str(pid)],
+            ["xdotool", "search", "--all", "--name", ".*"],
+        )
+        for command in searches:
+            result = subprocess.run(
+                command, env=env, capture_output=True, text=True, check=False
+            )
+            ids = [line for line in result.stdout.splitlines() if line]
+            if ids:
+                window_id = ids[-1]
+                break
+        if window_id is not None:
+            break
+        time.sleep(1)
+    if window_id is None:
+        raise RuntimeError("DOSBox window not found for input actions")
+
+    for line in actions.splitlines():
+        fields = shlex.split(line, comments=True)
+        if not fields:
+            continue
+        action = fields[0]
+        if action == "wait" and len(fields) == 2:
+            time.sleep(float(fields[1]))
+        elif action == "click" and len(fields) == 3:
+            subprocess.run(
+                ["xdotool", "mousemove", "--window", window_id,
+                 fields[1], fields[2]],
+                env=env, check=True,
+            )
+            time.sleep(0.3)
+            subprocess.run(
+                ["xdotool", "mousedown", "--window", window_id, "1"],
+                env=env, check=True,
+            )
+            time.sleep(0.2)
+            subprocess.run(
+                ["xdotool", "mouseup", "--window", window_id, "1"],
+                env=env, check=True,
+            )
+        elif action == "key" and len(fields) == 2:
+            subprocess.run(
+                ["xdotool", "keydown", "--window", window_id, fields[1]],
+                env=env, check=True,
+            )
+            time.sleep(0.2)
+            subprocess.run(
+                ["xdotool", "keyup", "--window", window_id, fields[1]],
+                env=env, check=True,
+            )
+        else:
+            raise ValueError(f"invalid BLOODPRG_INPUT_ACTIONS line: {line!r}")
+
+
 def main():
     # <cd-dir> is the CD image dir that CONTAINS BLOODPRG.EXE (e.g. output/_tmp_iso).
     # The installed data dir (C:\cblood, e.g. accuracy/cblood_install/cblood) is a
@@ -279,7 +346,11 @@ def main():
         ]
     db = subprocess.Popen(dosbox_args + cmds,
                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env)
-    time.sleep(wait)
+    input_actions = os.environ.get("BLOODPRG_INPUT_ACTIONS")
+    if input_actions:
+        drive_input_actions(db.pid, input_actions, env)
+    else:
+        time.sleep(wait)
     if dump_dir:
         subprocess.run(
             [

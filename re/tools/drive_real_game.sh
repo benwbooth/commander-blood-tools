@@ -89,8 +89,18 @@ xdotool windowactivate "$WID" 2>/dev/null || true
 
 while read -r action a b; do
   case "$action" in
-    click) xdotool mousemove --window "$WID" "$a" "$b"; sleep 0.3; xdotool click --window "$WID" 1 ;;
-    key)   xdotool key --window "$WID" "$a" ;;
+    click)
+      xdotool mousemove --window "$WID" "$a" "$b"
+      sleep 0.3
+      xdotool mousedown --window "$WID" 1
+      sleep 0.2
+      xdotool mouseup --window "$WID" 1
+      ;;
+    key)
+      xdotool keydown --window "$WID" "$a"
+      sleep 0.2
+      xdotool keyup --window "$WID" "$a"
+      ;;
     fastforward)
       xdotool keydown --window "$WID" Alt_L
       xdotool keydown --window "$WID" F12
