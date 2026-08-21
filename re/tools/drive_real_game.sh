@@ -10,6 +10,7 @@
 # Reads an input script from stdin: one action per line, either
 #   click <x> <y>       (mouse click at game-relative x,y; game area is 640x400)
 #   key <keyname>       (e.g. Return, Escape, space)
+#   fastforward <secs>  (hold the emulator's Alt+F12 turbo control)
 #   shot <name>         (capture the game area to <out-dir>/<name>.png)
 #   wait <seconds>
 # Interactive runs default to DOSBox Staging's dynamic core at maximum cycles.
@@ -90,6 +91,13 @@ while read -r action a b; do
   case "$action" in
     click) xdotool mousemove --window "$WID" "$a" "$b"; sleep 0.3; xdotool click --window "$WID" 1 ;;
     key)   xdotool key --window "$WID" "$a" ;;
+    fastforward)
+      xdotool keydown --window "$WID" Alt_L
+      xdotool keydown --window "$WID" F12
+      sleep "$a"
+      xdotool keyup --window "$WID" F12
+      xdotool keyup --window "$WID" Alt_L
+      ;;
     wait)  sleep "$a" ;;
     shot)  import -window root -gravity South -crop 640x400+0+0 +repage \
              -resize 320x200\! "$OUT_DIR/$a.png" 2>/dev/null; echo "shot $OUT_DIR/$a.png" ;;
