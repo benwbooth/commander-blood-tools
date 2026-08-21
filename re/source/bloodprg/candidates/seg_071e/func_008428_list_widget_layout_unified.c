@@ -28,16 +28,14 @@
 #if defined(__TURBOC__) || defined(__BORLANDC__) || defined(__WATCOMC__)
 #define LIST_WIDGET_WORD_AT(segment, offset) \
     ((const volatile cb_u16 CB_FAR *)MK_FP((segment), (offset)))
-#define LIST_WIDGET_POINTER_SEGMENT(pointer) \
-    FP_SEG((const void CB_FAR *)(pointer))
-#define LIST_WIDGET_POINTER_OFFSET(pointer) \
-    FP_OFF((const void CB_FAR *)(pointer))
+#define LIST_WIDGET_TEXT_AT(segment, offset) \
+    ((const cb_u8 CB_FAR *)MK_FP((segment), (offset)))
 typedef cb_u16 list_widget_segment;
 #else
 #define LIST_WIDGET_WORD_AT(segment, offset) \
     ((const volatile cb_u16 CB_FAR *)(cb_u16)(offset))
-#define LIST_WIDGET_POINTER_SEGMENT(pointer) 0u
-#define LIST_WIDGET_POINTER_OFFSET(pointer) ((cb_u16)(pointer))
+#define LIST_WIDGET_TEXT_AT(segment, offset) \
+    ((const cb_u8 CB_FAR *)(cb_u16)(offset))
 typedef cb_u16 list_widget_segment;
 #endif
 
@@ -47,99 +45,15 @@ static list_widget_segment CB_NEAR list_widget_inherited_es(void);
         "mov ax,es" \
         value [ax] modify exact []
 
-static cb_u16 CB_NEAR list_widget_text_width(
-        list_widget_segment segment,
-        cb_u16 offset);
-#pragma aux list_widget_text_width = \
-        "push ds" \
-        "mov ds,bx" \
-        "xor ax,ax" \
-        "call far ptr text_width_dual_font" \
-        "pop ds" \
-        parm [bx] [si] value [ax] modify exact [ax]
-
-static void CB_NEAR list_widget_text_draw(
-        list_widget_segment segment,
-        cb_u16 offset,
-        cb_u16 x,
-        cb_u16 y,
-        cb_u8 color);
-#pragma aux list_widget_text_draw = \
-        "push ds" \
-        "mov ds,di" \
-        "call far ptr square_caps_text_draw_display" \
-        "pop ds" \
-        parm [di] [si] [bx] [dx] [ax] modify exact []
 #elif defined(__TURBOC__) || defined(__BORLANDC__)
 static list_widget_segment CB_NEAR list_widget_inherited_es(void)
 {
     asm mov ax, es;
 }
-
-static cb_u16 CB_NEAR list_widget_text_width(
-        list_widget_segment text_segment,
-        cb_u16 text_offset)
-{
-    cb_u16 result;
-
-    asm push ds;
-    asm mov bx, text_segment;
-    asm mov si, text_offset;
-    asm mov ds, bx;
-    asm xor ax, ax;
-    asm call far ptr _text_width_dual_font;
-    asm mov result, ax;
-    asm pop ds;
-    return result;
-}
-
-static void CB_NEAR list_widget_text_draw(
-        list_widget_segment text_segment,
-        cb_u16 text_offset,
-        cb_u16 x,
-        cb_u16 y,
-        cb_u8 color)
-{
-    cb_u16 color_word = color;
-
-    asm push ds;
-    asm mov di, text_segment;
-    asm mov si, text_offset;
-    asm mov bx, x;
-    asm mov dx, y;
-    asm mov ax, color_word;
-    asm mov ds, di;
-    asm call far ptr _square_caps_text_draw_display;
-    asm pop ds;
-}
 #else
 static list_widget_segment CB_NEAR list_widget_inherited_es(void)
 {
     return 0u;
-}
-
-static cb_u16 CB_NEAR list_widget_text_width(
-        list_widget_segment segment,
-        cb_u16 offset)
-{
-    (void)segment;
-    return text_width_dual_font(
-            (const cb_u8 CB_NEAR *)(cb_u16)offset, 0);
-}
-
-static void CB_NEAR list_widget_text_draw(
-        list_widget_segment segment,
-        cb_u16 offset,
-        cb_u16 x,
-        cb_u16 y,
-        cb_u8 color)
-{
-    (void)segment;
-    square_caps_text_draw_display(
-            (const cb_u8 CB_FAR *)(cb_u16)offset,
-            x,
-            y,
-            color);
 }
 #endif
 
@@ -184,8 +98,8 @@ cb_i16 CB_FAR list_widget_layout_unified(
                 label_segment, LIST_WIDGET_ACTIVE_NAME_OFFSET)) {
             item_offset = LIST_WIDGET_EDIT_BUFFER_OFFSET;
         }
-        list_widget_label_widths[width_count] =
-                list_widget_text_width(label_segment, item_offset);
+        list_widget_label_widths[width_count] = text_width_dual_font(
+                LIST_WIDGET_TEXT_AT(label_segment, item_offset), 0);
         if (list_widget_label_widths[width_count] >= max_width) {
             max_width = list_widget_label_widths[width_count];
         }
@@ -277,9 +191,8 @@ cb_i16 CB_FAR list_widget_layout_unified(
                 label_segment, LIST_WIDGET_ACTIVE_NAME_OFFSET)) {
             item_offset = LIST_WIDGET_EDIT_BUFFER_OFFSET;
         }
-        list_widget_text_draw(
-                label_segment,
-                item_offset,
+        square_caps_text_draw_display(
+                LIST_WIDGET_TEXT_AT(label_segment, item_offset),
                 (cb_u16)(row_x
                     + ((cb_u16)(content_width
                         - list_widget_label_widths[index]) >> 1)),
@@ -298,9 +211,8 @@ cb_i16 CB_FAR list_widget_layout_unified(
                 color = LIST_WIDGET_ACTIVE_COLOR;
             }
         }
-        list_widget_text_draw(
-                LIST_WIDGET_POINTER_SEGMENT(list_widget_cancel_label),
-                LIST_WIDGET_POINTER_OFFSET(list_widget_cancel_label),
+        square_caps_text_draw_display(
+                list_widget_cancel_label,
                 (cb_u16)(row_x
                     + ((cb_u16)(content_width
                         - list_widget_label_widths[index]) >> 1)),

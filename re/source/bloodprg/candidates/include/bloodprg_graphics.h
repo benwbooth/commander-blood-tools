@@ -267,16 +267,8 @@ void CB_FAR tint_table_build_banked(
         cb_u16 bank_base,
         volatile cb_u8 CB_GAME_DATA *table); /* 0x00242D */
 void CB_FAR palette_scene_entries_clear(void); /* 0x00248B */
-cb_u16 CB_FAR text_width_dual_font(const cb_u8 CB_NEAR *text,
+cb_u16 CB_FAR text_width_dual_font(const cb_u8 CB_FAR *text,
         int use_main_font); /* 0x0030CD */
-#if defined(__WATCOMC__)
-cb_u16 CB_FAR text_width_dual_font_far(
-        const cb_u8 CB_FAR *text,
-        int use_main_font);
-#else
-#define text_width_dual_font_far(text, use_main_font) \
-    text_width_dual_font((const cb_u8 CB_NEAR *)(text), (use_main_font))
-#endif
 void CB_NEAR selected_mask_overlay(void); /* 0x007CB4 */
 void CB_NEAR flag_gated_2751(void);       /* 0x00A117 */
 void CB_NEAR resource_palette_file_blocks_apply(cb_u16 file_handle,

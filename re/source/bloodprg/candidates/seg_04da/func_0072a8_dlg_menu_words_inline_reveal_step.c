@@ -77,7 +77,7 @@ void CB_FAR dlg_menu_words_inline_reveal_step(void)
             next_x = (cb_u16)(
                 vm_text_menu_inline_x + draw_width + DLG_MENU_WORD_GAP);
             vm_text_menu_inline_x = next_x;
-            next_width = text_width_dual_font_far(next_word, 1);
+            next_width = text_width_dual_font(next_word, 1);
             if ((cb_i16)(cb_u16)(next_x + next_width) >=
                     DLG_MENU_RIGHT) {
                 vm_text_menu_inline_x = DLG_MENU_LEFT;

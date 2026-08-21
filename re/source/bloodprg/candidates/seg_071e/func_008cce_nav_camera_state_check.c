@@ -327,7 +327,7 @@ interactive:
     object = NAV_CAMERA_RECORD_AT(picked_offset);
     if ((mouse_primary_pressed & 1u) == 0u) {
         label = (const cb_u8 CB_FAR *)object + 4u;
-        label_width = text_width_dual_font_far(label, 1);
+        label_width = text_width_dual_font(label, 1);
         label_x = (cb_i16)(
                 (cb_u16)mouse_x - label_width);
         if (label_x < 0) {

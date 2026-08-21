@@ -1,7 +1,7 @@
 #include "../include/bloodprg_graphics.h"
 
 cb_u16 CB_FAR text_width_dual_font(
-    const cb_u8 CB_NEAR *text,
+    const cb_u8 CB_FAR *text,
     int use_main_font
 )
 {

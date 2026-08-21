@@ -194,9 +194,8 @@ void CB_FAR cb_resource_allocation_failure(cb_u16 error_code)
     error_overlay_draw(error_code, (const cb_u8 CB_FAR *)0);
 }
 
-/* These names are source-integration bridges for callers that have a far
- * pointer while the recovered routine's proven body consumes DS-relative
- * text or source. The original callers establish that segment before entry. */
+/* These names bridge far source pointers to recovered DS-relative bodies.
+ * The original callers establish that segment before entry. */
 cb_i16 CB_FAR pbm_image_load_and_decode_c(
         volatile char CB_FAR *path,
         volatile cb_u8 CB_FAR *file_buffer_end)
@@ -207,13 +206,6 @@ cb_i16 CB_FAR pbm_image_load_and_decode_c(
 void CB_FAR bridge_panorama_frame_unpack_c(const cb_u8 CB_FAR *source)
 {
     bridge_panorama_frame_unpack(source);
-}
-
-cb_u16 CB_FAR text_width_dual_font_far(
-        const cb_u8 CB_FAR *text, int use_main_font)
-{
-    return text_width_dual_font(
-            (const cb_u8 CB_NEAR *)text, use_main_font);
 }
 
 void CB_FAR fullscreen_copy_to_backbuffer_far(
