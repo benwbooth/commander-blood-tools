@@ -19,21 +19,21 @@ cb_i16 CB_NEAR vm_script_block_scan(bloodprg_vm_image_ptr script_bytes)
             return -1;
         }
 
-        vm_yield_flag = 0u;
+        vm_yield_flag_gs = 0u;
         cursor = vm_opcode_handlers[opcode - BLOODPRG_VM_OPCODE_MIN](cursor);
-        signal = vm_yield_flag;
+        signal = vm_yield_flag_gs;
         if (signal != 0u) {
             if (signal == BLOODPRG_VM_YIELD_STOP_BLOCK) {
                 return 0;
             }
-            vm_skip_count = 0u;
+            vm_skip_count_gs = 0u;
             continue;
         }
 
-        if ((vm_skip_count & BLOODPRG_VM_SKIP_COUNT_MASK) != 0u) {
+        if ((vm_skip_count_gs & BLOODPRG_VM_SKIP_COUNT_MASK) != 0u) {
             do {
                 cursor = vm_token_advance(cursor);
-            } while (--vm_skip_count != 0u);
+            } while (--vm_skip_count_gs != 0u);
         }
     }
 }

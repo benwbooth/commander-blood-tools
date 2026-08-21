@@ -209,6 +209,22 @@ matched. This is an opening content and progression gate, not a
 completed-opening or full-game C parity claim. The next runtime gate is
 following the original through the complete opening into cross-XDB gameplay.
 
+The later opening checkpoint is still open. Both builds load byte-identical VM
+script resources into the same handles, but the relinked runtime remains at
+active line `0xFFFF` and UI state 65 while the original advances to line 2 and
+UI state 69 to display the title. Integrated tracing exposed one real cause:
+the nested VM block scanner preserved the floating script `DS` but addressed
+its handler table, yield byte, and skip byte as ordinary `DS` data. Those
+objects are now explicitly `GAME_DATA`-qualified in natural C, and the direct
+oracles still pass. The remaining gate is an audit of every routine reachable
+while `DS` points at script bytes.
+
+Nonvisual diagnostics default to DOSBox-X `core=normal` and `frameskip=10` to
+reduce host rendering work. `core=dynamic` was tested but rejected because it
+made DOSBox-X exit with status `-11` before the VM checkpoint. Emulator tuning
+can accelerate the comparison loop; it is not a substitute for correcting C
+segment ownership.
+
 The runtime data owner also verifies and rebinds 88 near-pointer words to the
 final linked C offsets: six navigation actor handlers, five navigation choice
 handlers, all 16 input-action handlers, eight sprite blitters plus their null

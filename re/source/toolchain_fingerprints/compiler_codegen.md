@@ -6366,12 +6366,14 @@ frame, reverse-direction LODSB behavior, registers, flags, stack, and near
 return.
 
 Open Watcom 1.9 large (`-3 -os -s -ml -we`) emits one warning-free
-38-instruction/103-byte function versus 32/88 original, with 71.88 percent
-mnemonic-multiset overlap and no inline assembly. Large model is intentional:
-the script segment is a floating DS while near runtime data stays under SS.
-Turbo C 2.01 large (`-ml -O -Z`) emits 65 instructions with 78.12 percent
-mnemonic-multiset and 56.25 percent ordered overlap and assembles warning-free
-to an 825-byte OMF object.
+46-instruction/116-byte function versus 32/88 original, with 75 percent
+mnemonic-multiset and 40.62 percent ordered mnemonic overlap and no inline
+assembly. Large model is intentional: the script segment is a floating `DS`,
+while the handler table, yield byte, and skip byte are explicitly addressed
+through `GAME_DATA`. The integrated relink proved that their earlier ordinary
+near declarations incorrectly selected the script segment. Turbo C 2.01
+results predate this segment fix and must be regenerated before making a
+current Turbo code-shape claim.
 
 The sole caller ignores AX and final SI. Its first call is followed by
 `vm_op_a3_collect`, which reloads and preserves its own `DS:SI`; its second call

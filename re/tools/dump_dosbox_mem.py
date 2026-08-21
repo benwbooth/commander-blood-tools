@@ -28,6 +28,7 @@ import ctypes, hashlib, subprocess, time, os, re, struct, sys
 from pathlib import Path
 
 ANCHOR = b"386 minimum !\0Not enough memory (570Ko min) !\0"
+LOCATOR_ANCHOR = b"386 minimum "
 DS_ANCHOR = 0x0000
 # DS globals of interest -> (name, offset, count_words)
 GLOBALS = [
@@ -49,13 +50,16 @@ STARTUP_GLOBALS = [
     ("graphics_work_surface_0ABC", 0x0ABC, "<HH"),
     ("list_d8c_default_entry_segment_0ABE", 0x0ABE, "<H"),
     ("startup_write_directory_active_0AE0", 0x0AE0, "<B"),
+    ("game_mode_0ADF", 0x0ADF, "<B"),
     ("resource_force_write_directory_0AE1", 0x0AE1, "<B"),
     ("resource_path_is_embedded_0AE2", 0x0AE2, "<B"),
     ("timer_state_block_offset_0AF0", 0x0AF0, "<H"),
     ("video_retrace_phase_0B12", 0x0B12, "<B"),
+    ("ship_3d_nav_choice_sound_gate_0B13", 0x0B13, "<B"),
     ("timer_hook_active_0B21", 0x0B21, "<B"),
     ("timer_divider_0B22", 0x0B22, "<B"),
     ("timer_tick_count_0B29", 0x0B29, "<H"),
+    ("main_frame_delay_ticks_0B2D", 0x0B2D, "<H"),
     ("video_calibration_ticks_0B35", 0x0B35, "<H"),
     ("snd_bank_memory_0BB3", 0x0BB3, "<HH"),
     ("resource_flags_0D76", 0x0D76, "<H"),
@@ -133,6 +137,8 @@ def main():
     install_parent = os.path.realpath(sys.argv[3]) if len(sys.argv) > 3 else None
     executable = sys.argv[4] if len(sys.argv) > 4 else "BLOODPRG.EXE"
     cycles = sys.argv[5] if len(sys.argv) > 5 else "max"
+    cpu_core = os.environ.get("BLOODPRG_DOSBOX_CORE", "normal")
+    frame_skip = os.environ.get("BLOODPRG_DOSBOX_FRAMESKIP", "10")
     dump_dir = os.environ.get("BLOODPRG_DUMP_DIR")
     if dump_dir:
         Path(dump_dir).mkdir(parents=True, exist_ok=True)
@@ -165,6 +171,10 @@ def main():
         "sdl output=surface",
         "-set",
         f"cpu cycles={cycles}",
+        "-set",
+        f"cpu core={cpu_core}",
+        "-set",
+        f"render frameskip={frame_skip}",
     ]
     db = subprocess.Popen(dosbox_args + cmds,
                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env)
@@ -209,7 +219,7 @@ def main():
                 mem.seek(a); buf = mem.read(b - a)
             except Exception:
                 continue
-            for m in re.finditer(re.escape(ANCHOR), buf):
+            for m in re.finditer(re.escape(LOCATOR_ANCHOR), buf):
                 A = a + m.start()
                 mem.seek(A + 0x0A46)
                 free_bytes = struct.unpack("<I", mem.read(4))[0]
@@ -342,6 +352,77 @@ def main():
                 (output / f"{executable}.list_d8c_segment.bin").write_bytes(
                     mem.read(0x10000)
                 )
+        trace_seconds = float(os.environ.get("BLOODPRG_TRACE_SECONDS", "0"))
+        if trace_seconds > 0:
+            trace_interval = float(
+                os.environ.get("BLOODPRG_TRACE_INTERVAL", "0.05")
+            )
+            mem.close()
+            libc.ptrace(PTRACE_DETACH, pid, None, None)
+            attached = False
+            deadline = time.monotonic() + trace_seconds
+            print(
+                "trace: event,elapsed,tick,delay,mode,vm_enabled,vm_ui,"
+                "active_line,timer_base"
+            )
+            previous_timer_base = None
+            previous_vm_enabled = None
+            previous_active_line = None
+            anchor_corrupted = False
+            while time.monotonic() < deadline and db.poll() is None:
+                time.sleep(trace_interval)
+                if libc.ptrace(PTRACE_ATTACH, pid, None, None) != 0:
+                    print(f"trace: attach_failed errno={ctypes.get_errno()}")
+                    break
+                os.waitpid(pid, 0)
+                try:
+                    with open(f"/proc/{pid}/mem", "rb") as trace_mem:
+                        trace_mem.seek(best)
+                        anchor_bytes = trace_mem.read(len(ANCHOR))
+                        if anchor_bytes != ANCHOR and not anchor_corrupted:
+                            trace_mem.seek(best)
+                            replacement = trace_mem.read(128)
+                            print(
+                                "trace: anchor_corrupted "
+                                f"process_status={db.poll()} "
+                                f"replacement={replacement.hex()}"
+                            )
+                            anchor_corrupted = True
+                        def read_trace(offset, fmt):
+                            trace_mem.seek(best + offset)
+                            return struct.unpack(
+                                fmt, trace_mem.read(struct.calcsize(fmt))
+                            )[0]
+                        timer_base = read_trace(0x0AF0, "<H")
+                        vm_enabled = read_trace(0x67A8, "<B")
+                        active_line = read_trace(0x6788, "<H")
+                        event = None
+                        if previous_timer_base is None:
+                            event = "initial"
+                        elif timer_base != previous_timer_base:
+                            event = "timer_base_changed"
+                        elif vm_enabled != previous_vm_enabled:
+                            event = "vm_enabled_changed"
+                        elif active_line != previous_active_line:
+                            event = "active_line_changed"
+                        if event is not None:
+                            print(
+                                "trace: "
+                                f"{event},"
+                                f"{trace_seconds - (deadline - time.monotonic()):.3f},"
+                                f"{read_trace(0x0B29, '<H')},"
+                                f"{read_trace(0x0B2D, '<H')},"
+                                f"{read_trace(0x0ADF, '<B')},"
+                                f"{vm_enabled},"
+                                f"{read_trace(0x2793, '<H')},"
+                                f"{active_line},"
+                                f"{timer_base}"
+                            )
+                        previous_timer_base = timer_base
+                        previous_vm_enabled = vm_enabled
+                        previous_active_line = active_line
+                finally:
+                    libc.ptrace(PTRACE_DETACH, pid, None, None)
     finally:
         if attached:
             libc.ptrace(PTRACE_DETACH, pid, None, None)

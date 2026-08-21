@@ -274,7 +274,7 @@ extern volatile cb_u16 CB_GAME_DATA
 extern volatile cb_u8 CB_GAME_DATA
         vm_c2_presentation_gate_gs;           /* explicit GS:0x1FB2 alias */
 /* The shipped runtime has SS=GS; handlers preserve the floating script DS. */
-extern bloodprg_vm_opcode_handler CB_NEAR *CB_NEAR
+extern bloodprg_vm_opcode_handler CB_NEAR *CB_GAME_DATA
         vm_opcode_handlers[];                /* GS/SS:0x6EB0 */
 extern volatile cb_u16 vm_state_words[];     /* SS:0x6ADE here; SS=GS at runtime */
 extern volatile cb_u16 CB_GAME_DATA
