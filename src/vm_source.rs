@@ -136,7 +136,7 @@ pub fn disassemble(
     writeln!(output, "; size: 0x{:08X}", image.len())?;
     writeln!(
         output,
-        "; operands are authoritative; comments are non-semantic"
+        "; every operand word is authoritative; comments carry no semantics"
     )?;
     writeln!(output)?;
 

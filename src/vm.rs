@@ -10084,19 +10084,19 @@ mod tests {
         let var = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.VAR")).unwrap();
 
         // The bytecode's own zone list: every operand compared against the
-        // location variable by the wildcard guard family.
+        // location variable by the wildcard guard family. walk() decodes that
+        // family (native handler 0x6946) as RecordWildcard tokens.
         let loc_var = 0x0F4Eu16;
         let mut zones: Vec<u16> = Vec::new();
         for t in walk(&cod, 0, cod.len()) {
-            if let VmToken::Op { opcode, ref operands, .. } = t {
-                if matches!(opcode, 0xAD | 0xAF | 0xB2 | 0xB3 | 0xBA | 0xBB | 0xBC)
-                    && operands.len() >= 4
-                {
-                    let rec = operands[0] as u16 | (operands[1] as u16) << 8;
-                    let val = operands[2] as u16 | (operands[3] as u16) << 8;
-                    if rec == loc_var && val > 0x100 && !zones.contains(&val) {
-                        zones.push(val);
-                    }
+            if let VmToken::RecordWildcard {
+                record_offset,
+                value,
+                ..
+            } = t
+            {
+                if record_offset == loc_var && value > 0x100 && !zones.contains(&value) {
+                    zones.push(value);
                 }
             }
         }
@@ -11533,13 +11533,14 @@ mod tests {
 
         let toks = walk(&cod, 0, cod.len());
         assert_eq!(toks.len(), 4);
+        // 0xCE is the decoded conditional-branch family (`vm_op_ce_cond_branch`
+        // 0x6494): operand-free, so walk() emits FlagBranch, not Op.
         assert_eq!(
             toks[0],
-            VmToken::Op {
+            VmToken::FlagBranch {
                 offset: 0,
                 opcode: 0xCE,
-                len: 1,
-                operands: Vec::new()
+                len: 1
             }
         );
         match &toks[1] {

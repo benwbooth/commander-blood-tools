@@ -498,7 +498,7 @@ fn validate_typed_stream(image: &[u8], tokens: &[VmToken]) -> Result<usize> {
         cursor = end;
     }
     if image.get(cursor) != Some(&0xFF) || cursor + 1 != image.len() {
-        bail!("COD stream does not end in one decoded 0xFF marker");
+        bail!("COD stream is missing its single decoded 0xFF end marker");
     }
     Ok(cursor)
 }

@@ -5614,7 +5614,7 @@ mod tests {
                 row.script == "SCRIPT2"
                     && row.offset == 0x033a0
                     && row.mnemonic == "global_pair_compare"
-                    && row.operands.contains("packed=0x0c19")
+                    && row.operands.contains("month_day=0x0c19")
             }));
             assert!(rows.iter().any(|row| {
                 row.script == "SCRIPT2"
@@ -6571,7 +6571,7 @@ mod tests {
         assert!(rows.iter().any(|row| {
             row.mnemonic == "global_pair_compare"
                 && row.operands.contains("global=gs:0x0aaa:0x0aa8")
-                && row.operands.contains("packed=0x0c19")
+                && row.operands.contains("month_day=0x0c19")
         }));
         assert!(rows.iter().any(|row| {
             row.mnemonic == "pair_record"

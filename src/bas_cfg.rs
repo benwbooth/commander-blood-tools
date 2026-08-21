@@ -324,7 +324,7 @@ fn decode_typed_stream(
         tokens.last().map(|token| &token.token),
         Some(BasToken::End { .. })
     ) {
-        bail!("BAS stream does not end in a decoded 0xFF marker");
+        bail!("BAS stream is missing its decoded 0xFF end marker");
     }
     Ok(tokens)
 }
