@@ -19,16 +19,8 @@ void CB_FAR framebuffer_rect_interpolate_and_remap_step(
     cb_i8 quotient;
     cb_i8 total_steps;
 
-#if defined(__WATCOMC__)
-    _asm push ax;
-#endif
-
     total_steps = (cb_i8)framebuffer_transition_total_steps;
     if ((cb_u8)total_steps == framebuffer_transition_current_step) {
-#if defined(__WATCOMC__)
-        _asm pop ax;
-        _asm stc;
-#endif
         return;
     }
 
@@ -38,23 +30,12 @@ void CB_FAR framebuffer_rect_interpolate_and_remap_step(
     INTERPOLATE_RECT_FIELD(width);
     INTERPOLATE_RECT_FIELD(height);
 
-#if defined(__WATCOMC__)
-    framebuffer_rect_palette_remap_ds_bp(
-        framebuffer_transition_remap_table,
-        (cb_u16)interpolated.x,
-        (cb_u16)interpolated.y,
-        (cb_u16)interpolated.width,
-        (cb_u16)interpolated.height);
-    _asm pop ax;
-    _asm clc;
-#else
     framebuffer_rect_palette_remap(
         framebuffer_transition_remap_table,
         (cb_u16)interpolated.x,
         (cb_u16)interpolated.y,
         (cb_u16)interpolated.width,
         (cb_u16)interpolated.height);
-#endif
 }
 
 #undef INTERPOLATE_RECT_FIELD

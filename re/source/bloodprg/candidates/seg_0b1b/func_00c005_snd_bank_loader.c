@@ -1,3 +1,5 @@
+#include <dos.h>
+
 #include "../include/bloodprg_audio.h"
 #include "../include/bloodprg_ems.h"
 #include "../include/bloodprg_graphics.h"
@@ -18,6 +20,7 @@ void CB_FAR snd_bank_loader(cb_u16 mode,
     cb_u16 bytes_read;
     cb_u16 logical_page;
     cb_u16 index;
+    volatile cb_u8 CB_FAR *page_frame;
 
     if ((voc_playback_enabled_gs & 1u) == 0) {
         return;
@@ -56,6 +59,8 @@ void CB_FAR snd_bank_loader(cb_u16 mode,
         }
 
         if (secondary_ems_handle != -1) {
+            page_frame = (volatile cb_u8 CB_FAR *)MK_FP(
+                    ems_page_frame_segment, 0u);
             snd_storage_cursor.ems.logical_page = 0;
             do {
                 logical_page = snd_storage_cursor.ems.logical_page;
@@ -71,7 +76,7 @@ void CB_FAR snd_bank_loader(cb_u16 mode,
                         ? 0x8000u
                         : (cb_u16)payload_remaining;
                 bytes_read = cb_dos_read(source_handle,
-                        ems_page_frame, request_bytes);
+                        page_frame, request_bytes);
                 payload_remaining -= bytes_read;
             } while (payload_remaining != 0);
         } else {

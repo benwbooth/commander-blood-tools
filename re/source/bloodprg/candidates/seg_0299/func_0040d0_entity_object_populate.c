@@ -19,19 +19,7 @@ void CB_FAR entity_object_populate(
     cb_u16 frame_segment;
     cb_u16 frame_offset;
 
-#if defined(__WATCOMC__)
-    _asm push ax;
-    _asm push dx;
-    _asm push es;
-    _asm push ds;
-#endif
-
     selected_frame = frame_index;
-#if defined(__WATCOMC__)
-    /* BP carries the fifth register argument and is saved at the frame base. */
-    _asm mov ax, word ptr [bp];
-    _asm mov selected_frame, ax;
-#endif
 
     record = &bloodprg_entity_table[entity_id];
     resolved = resource_handle_resolve(resource_handle);
@@ -73,10 +61,5 @@ void CB_FAR entity_object_populate(
     record->draw_y = draw_y;
 
 restore_registers:
-#if defined(__WATCOMC__)
-    _asm pop ds;
-    _asm pop es;
-    _asm pop dx;
-    _asm pop ax;
-#endif
+    return;
 }

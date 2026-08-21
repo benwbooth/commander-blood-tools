@@ -20,15 +20,9 @@ typedef struct bridge_frame_context {
     const volatile bloodprg_sprite_source_extent CB_FAR *comparison_extent;
 } bridge_frame_context;
 
-#if defined(__WATCOMC__)
-#define BRIDGE_REMAP(table, x, y, width, height) \
-    framebuffer_rect_palette_remap_ds_bp( \
-        (const cb_u8 CB_NEAR *)(table), (x), (y), (width), (height))
-#else
 #define BRIDGE_REMAP(table, x, y, width, height) \
     framebuffer_rect_palette_remap( \
         (const cb_u8 CB_FAR *)(table), (x), (y), (width), (height))
-#endif
 
 void CB_FAR bridge_render_frame(cb_u16 scene_link_target)
 {

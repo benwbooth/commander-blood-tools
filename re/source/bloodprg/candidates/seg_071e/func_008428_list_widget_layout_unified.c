@@ -220,7 +220,7 @@ cb_i16 CB_FAR list_widget_layout_unified(
         return -1;
     }
 
-    framebuffer_rect_palette_remap_ds_bp(
+    framebuffer_rect_palette_remap(
             framebuffer_transition_remap_table,
             (cb_u16)layout->x,
             (cb_u16)layout->y,

@@ -223,14 +223,6 @@ void CB_FAR framebuffer_rect_palette_remap(
         cb_u16 y,
         cb_u16 width,
         cb_u16 height); /* 0x0299:0x040E */
-#if defined(__WATCOMC__)
-void CB_FAR framebuffer_rect_palette_remap_ds_bp(
-        const cb_u8 CB_NEAR *remap_table,
-        cb_u16 x,
-        cb_u16 y,
-        cb_u16 width,
-        cb_u16 height);
-#endif
 void CB_FAR framebuffer_rect_interpolate_and_remap_step(
         const bloodprg_rect_i16 CB_NEAR *source,
         const bloodprg_rect_i16 CB_NEAR *target); /* 0x001E5D */
@@ -366,21 +358,12 @@ void CB_NEAR list_walk_f18(void); /* 0x007CE8 */
 #pragma aux layout_offset_calc parm [ax] [bx] value [bx ax]
 #pragma aux gfx_horizontal_span parm [ax] [bx] [cx] [dx] modify exact []
 #pragma aux gfx_vertical_span parm [ax] [bx] [cx] [dx] modify exact [bx]
-/* Watcom reserves BP, so evaluate all five C arguments before installing the
- * height register around the real far call. */
-#pragma aux framebuffer_rect_palette_remap_ds_bp = \
-        "push bp" \
-        "mov bp,ax" \
-        "call far ptr framebuffer_rect_palette_remap" \
-        "pop bp" \
-        parm [si] [bx] [cx] [dx] [ax] modify exact []
 #pragma aux framebuffer_rect_interpolate_and_remap_step \
         parm [si] [di] modify exact []
 #pragma aux gfx_clipped_span_fill parm [ax] [bx] [cx] [dx] modify exact []
 #pragma aux gfx_clipped_planar_vertical_span \
         parm [ax] [bx] [cx] [dx] modify exact []
 #pragma aux framebuffer_noise_rect parm caller [ax] [bx] [cx] [dx] modify exact []
-/* These three routines recover entry BP; other fifth arguments remain stack-passed. */
 #pragma aux composite_draw_a parm [ax] [bx] [cx] [dx] modify exact []
 #pragma aux framebuffer_rect_fill parm caller [ax] [bx] [cx] [dx] modify exact []
 #pragma aux page_offset_helper modify exact [ax dx]

@@ -75,10 +75,10 @@ typedef char bloodprg_cdrom_track_info_size_must_be_7[
 typedef char bloodprg_mscdex_audio_size_must_be_22[
         sizeof(bloodprg_mscdex_audio_request) == 22 ? 1 : -1];
 
-extern volatile cb_i16 rtc_hour;        /* GS:0x0AA6 */
-extern volatile cb_i16 rtc_day;         /* GS:0x0AA8 */
-extern volatile cb_i16 rtc_month;       /* GS:0x0AAA */
-extern volatile cb_i16 rtc_year;        /* GS:0x0AAC */
+extern volatile cb_i16 CB_GAME_DATA rtc_hour;  /* GS:0x0AA6 */
+extern volatile cb_i16 CB_GAME_DATA rtc_day;   /* GS:0x0AA8 */
+extern volatile cb_i16 CB_GAME_DATA rtc_month; /* GS:0x0AAA */
+extern volatile cb_i16 CB_GAME_DATA rtc_year;  /* GS:0x0AAC */
 extern volatile cb_u8 cdrom_present;    /* GS:0x0AE6 */
 extern volatile bloodprg_mscdex_ioctl_request CB_GAME_DATA
         cdrom_ioctl_request;            /* GS:0x0B41 */

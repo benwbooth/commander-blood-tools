@@ -33,16 +33,23 @@ void CB_NEAR sprite_blit_rle_transparent(
     cb_u16 copy_start;
     cb_u16 copy_end;
     cb_u16 columns;
+    cb_u16 frame_stride;
+    cb_u16 left_clip;
+    cb_u16 right_clip;
+    cb_u8 flip_x;
+    cb_u8 flip_y;
 
     frame = record->frame;
+    flip_x = (cb_u8)((record->flags & 0x0020u) != 0u);
+    flip_y = (cb_u8)((record->flags & 0x0040u) != 0u);
     sprite_top = (cb_i16)(record->draw_y + (cb_u16)frame->y_offset);
     sprite_right = (cb_i16)(record->draw_x + record->extent_width +
             (cb_u16)frame->x_offset);
     sprite_bottom = (cb_i16)(record->draw_y + record->extent_height +
             (cb_u16)frame->y_offset);
-    bloodprg_rle_stride = frame->stride;
-    bloodprg_rle_left_clip = 0u;
-    bloodprg_rle_right_clip = 0u;
+    frame_stride = frame->stride;
+    left_clip = 0u;
+    right_clip = 0u;
     source = (const volatile cb_u8 CB_FAR *)frame + 8u;
     draw_width = record->extent_width;
     draw_height = record->extent_height;
@@ -51,10 +58,10 @@ void CB_NEAR sprite_blit_rle_transparent(
     if (sprite_top < (cb_i16)record->dirty_rect.top) {
         clipped = (cb_u16)((cb_i16)record->dirty_rect.top - sprite_top);
         draw_height = (cb_u16)(draw_height - clipped);
-        if ((bloodprg_sprite_flip_y & 1u) == 0u) {
+        if ((flip_y & 1u) == 0u) {
             skip_rows = clipped;
             do {
-                decoded = bloodprg_rle_stride;
+                decoded = frame_stride;
                 do {
                     control = (cb_i8)*source++;
                     if (control < 0) {
@@ -75,10 +82,10 @@ void CB_NEAR sprite_blit_rle_transparent(
         clipped = (cb_u16)(sprite_bottom -
                 (cb_i16)record->dirty_rect.bottom);
         draw_height = (cb_u16)(draw_height - clipped);
-        if ((bloodprg_sprite_flip_y & 1u) != 0u) {
+        if ((flip_y & 1u) != 0u) {
             skip_rows = clipped;
             do {
-                decoded = bloodprg_rle_stride;
+                decoded = frame_stride;
                 do {
                     control = (cb_i8)*source++;
                     if (control < 0) {
@@ -102,14 +109,14 @@ void CB_NEAR sprite_blit_rle_transparent(
     if (sprite_left < (cb_i16)record->dirty_rect.left) {
         clipped = (cb_u16)((cb_i16)record->dirty_rect.left - sprite_left);
         draw_width = (cb_u16)(draw_width - clipped);
-        bloodprg_rle_left_clip = clipped;
+        left_clip = clipped;
         destination_x = (cb_i16)record->dirty_rect.left;
     }
     if (sprite_right >= (cb_i16)record->dirty_rect.right) {
         clipped = (cb_u16)(sprite_right -
                 (cb_i16)record->dirty_rect.right);
         draw_width = (cb_u16)(draw_width - clipped);
-        bloodprg_rle_right_clip = clipped;
+        right_clip = clipped;
     }
 
     switch ((record->flags >> 8) & 3u) {
@@ -125,21 +132,21 @@ void CB_NEAR sprite_blit_rle_transparent(
     }
     bloodprg_selected_sprite_remap = remap;
 
-    if ((bloodprg_sprite_flip_y & 1u) != 0u) {
+    if ((flip_y & 1u) != 0u) {
         destination_y = (cb_i16)(destination_y + draw_height - 1u);
     }
-    if (bloodprg_sprite_flip_y == 0u) {
+    if (flip_y == 0u) {
         row_step = 320;
     } else {
         row_step = -320;
     }
-    if (bloodprg_sprite_flip_x != 0u) {
+    if (flip_x != 0u) {
         destination_x = (cb_i16)(destination_x + draw_width - 1u);
         destination_step = -1;
-        visible_start = bloodprg_rle_right_clip;
+        visible_start = right_clip;
     } else {
         destination_step = 1;
-        visible_start = bloodprg_rle_left_clip;
+        visible_start = left_clip;
     }
     visible_end = (cb_u16)(visible_start + draw_width);
     row_destination = bloodprg_display_buffer +
@@ -163,7 +170,6 @@ void CB_NEAR sprite_blit_rle_transparent(
                 source += run_length;
             }
             run_end = (cb_u16)(run_start + run_length);
-
             copy_start = run_start;
             if (copy_start < visible_start) {
                 copy_start = visible_start;
@@ -193,7 +199,7 @@ void CB_NEAR sprite_blit_rle_transparent(
                 } while (columns != 0u);
             }
             decoded = run_end;
-        } while (decoded != bloodprg_rle_stride);
+        } while (decoded != frame_stride);
 
         row_destination += row_step;
         --rows;

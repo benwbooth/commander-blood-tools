@@ -130,6 +130,24 @@ void CB_NEAR nav_choice_dispatch(void)
     }
 
     if ((vm_ui_flags & NAV_CHOICE_UI_BUSY_FLAG) == 0u) {
-        nav_choice_handlers[selection - 1u]();
+        switch (selection) {
+        case 1u:
+            nav_choice_handler_0();
+            break;
+        case 2u:
+            nav_choice_handler_1();
+            break;
+        case 3u:
+            nav_choice_handler_2();
+            break;
+        case 4u:
+            nav_choice_handler_3();
+            break;
+        case 5u:
+            nav_choice_handler_4();
+            break;
+        default:
+            break;
+        }
     }
 }

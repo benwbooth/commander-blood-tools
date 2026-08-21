@@ -70,10 +70,6 @@ extern volatile bloodprg_entity_record bloodprg_entity_table_ds[];
 extern volatile bloodprg_dirty_rect bloodprg_clip_bounds; /* GS:0x5235 */
 extern volatile cb_u16 bloodprg_clip_snapshot_flags; /* GS:0x5249 */
 extern volatile bloodprg_dirty_rect bloodprg_dirty_rect_list[]; /* GS:0x6612 */
-extern bloodprg_sprite_blitter *bloodprg_sprite_blitter_table[8]; /* CS:0x1592 */
-extern bloodprg_sprite_blitter *bloodprg_selected_sprite_blitter; /* CS:0x15A2 */
-extern volatile cb_u8 bloodprg_sprite_flip_x; /* CS:0x14DF */
-extern volatile cb_u8 bloodprg_sprite_flip_y; /* CS:0x14E0 */
 extern volatile cb_u8 CB_FAR *bloodprg_display_buffer; /* GS:0x5221 */
 extern volatile cb_u8 CB_FAR *bloodprg_secondary_buffer; /* GS:0x5229 */
 extern volatile cb_u8 bloodprg_dirty_copy_flags; /* GS:0x5231 */
@@ -82,10 +78,6 @@ extern volatile cb_u8 bloodprg_sprite_remap_6011[256]; /* GS:0x6011 */
 extern volatile cb_u8 CB_GAME_DATA
         bloodprg_sprite_remap_6011_gs[256]; /* explicit GS:0x6011 alias */
 extern volatile cb_u8 CB_NEAR *bloodprg_selected_sprite_remap; /* GS:0x524B */
-extern volatile cb_u16 bloodprg_rle_stride; /* CS:0x1726 */
-extern volatile cb_u16 bloodprg_rle_left_clip; /* CS:0x1728 */
-extern volatile cb_u16 bloodprg_rle_right_clip; /* CS:0x172A */
-
 void CB_FAR entity_flag_state_transition(cb_u16 object_id); /* 0x0299:0x1241 */
 void CB_FAR sprite_slot_position_update(cb_u16 object_id,
         cb_u16 draw_x,

@@ -16,6 +16,7 @@ void CB_NEAR nav_actor_slot_update_loop(void)
     cb_u16 current_arc;
     cb_u8 busy;
     cb_u8 flags;
+    volatile bloodprg_presentation_line_record CB_NEAR *line;
 
     busy = vm_presentation_active;
     busy |= vm_c2_presentation_gate;
@@ -56,8 +57,27 @@ void CB_NEAR nav_actor_slot_update_loop(void)
             }
         }
 
-        nav_actor_handlers[index - 1u](
-                (volatile bloodprg_presentation_line_record CB_NEAR *)slot);
+        line = (volatile bloodprg_presentation_line_record CB_NEAR *)slot;
+        switch (index) {
+        case 6u:
+            nav_actor_handler_5(line);
+            break;
+        case 5u:
+            nav_actor_handler_4(line);
+            break;
+        case 4u:
+            nav_actor_handler_3(line);
+            break;
+        case 3u:
+            nav_actor_handler_2(line);
+            break;
+        case 2u:
+            nav_actor_handler_1(line);
+            break;
+        default:
+            nav_actor_handler_0(line);
+            break;
+        }
         ++slot;
         --index;
     } while (index != 0u);

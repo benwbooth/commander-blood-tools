@@ -189,7 +189,8 @@ extern volatile cb_u16 vm_primary_c4_record; /* DS:0x675E */
 extern volatile cb_u16 CB_GAME_DATA
         vm_primary_c4_record_gs; /* explicit GS:0x675E alias */
 extern volatile cb_u16 vm_named_scruter_jo_object; /* DS:0x6760 */
-extern volatile cb_i16 vm_script_profile_request; /* GS:0x6780 */
+extern volatile cb_i16 CB_GAME_DATA
+        vm_script_profile_request;             /* GS:0x6780 */
 extern volatile cb_u8 vm_execution_enabled; /* DS:0x67A8; runtime DS=GS */
 extern volatile cb_u8 vm_presentation_request_flags; /* GS:0x67AA */
 extern volatile cb_u8 CB_GAME_DATA
@@ -280,7 +281,8 @@ extern volatile cb_u16 vm_state_words[];     /* SS:0x6ADE here; SS=GS at runtime
 extern volatile cb_u16 CB_GAME_DATA
         vm_state_words_gs[];                 /* explicit GS/SS:0x6ADE alias */
 /* Six rotating DESCRIPT sequence names; SS=GS at runtime. */
-extern volatile char vm_record_string_slots[][16]; /* SS:0x6CDE */
+extern volatile char CB_GAME_DATA
+        vm_record_string_slots[][16];          /* SS/GS:0x6CDE */
 extern volatile char CB_GAME_DATA vm_scene_name_buffer[]; /* ES=GS:0x209E */
 extern volatile cb_u16
         vm_special_slots[BLOODPRG_VM_SPECIAL_SLOT_COUNT]; /* SS:0x6D3E; SS=DS */

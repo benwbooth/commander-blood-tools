@@ -22,8 +22,12 @@ void CB_NEAR sprite_blit_raw_opaque(
     cb_u16 columns;
     cb_i16 destination_step;
     cb_i16 row_step;
+    cb_u8 flip_x;
+    cb_u8 flip_y;
 
     frame = record->frame;
+    flip_x = (cb_u8)((record->flags & 0x0020u) != 0u);
+    flip_y = (cb_u8)((record->flags & 0x0040u) != 0u);
     sprite_top = (cb_i16)(record->draw_y + (cb_u16)frame->y_offset);
     sprite_right = (cb_i16)(record->draw_x + record->extent_width +
             (cb_u16)frame->x_offset);
@@ -38,7 +42,7 @@ void CB_NEAR sprite_blit_raw_opaque(
     if (sprite_top < (cb_i16)record->dirty_rect.top) {
         clipped = (cb_u16)((cb_i16)record->dirty_rect.top - sprite_top);
         draw_height = (cb_u16)(draw_height - clipped);
-        if ((bloodprg_sprite_flip_y & 1u) == 0u) {
+        if ((flip_y & 1u) == 0u) {
             source += (cb_u16)(clipped * frame_stride);
         }
         destination_y = (cb_i16)record->dirty_rect.top;
@@ -47,7 +51,7 @@ void CB_NEAR sprite_blit_raw_opaque(
         clipped = (cb_u16)(sprite_bottom -
                 (cb_i16)record->dirty_rect.bottom);
         draw_height = (cb_u16)(draw_height - clipped);
-        if ((bloodprg_sprite_flip_y & 1u) != 0u) {
+        if ((flip_y & 1u) != 0u) {
             source += (cb_u16)(clipped * frame_stride);
         }
     }
@@ -59,7 +63,7 @@ void CB_NEAR sprite_blit_raw_opaque(
     if (sprite_left < (cb_i16)record->dirty_rect.left) {
         clipped = (cb_u16)((cb_i16)record->dirty_rect.left - sprite_left);
         draw_width = (cb_u16)(draw_width - clipped);
-        if ((bloodprg_sprite_flip_x & 1u) == 0u) {
+        if ((flip_x & 1u) == 0u) {
             source += clipped;
         }
         destination_x = (cb_i16)record->dirty_rect.left;
@@ -68,20 +72,20 @@ void CB_NEAR sprite_blit_raw_opaque(
         clipped = (cb_u16)(sprite_right -
                 (cb_i16)record->dirty_rect.right);
         draw_width = (cb_u16)(draw_width - clipped);
-        if ((bloodprg_sprite_flip_x & 1u) != 0u) {
+        if ((flip_x & 1u) != 0u) {
             source += clipped;
         }
     }
 
-    if ((bloodprg_sprite_flip_y & 1u) != 0u) {
+    if ((flip_y & 1u) != 0u) {
         destination_y = (cb_i16)(destination_y + draw_height - 1u);
     }
-    if (bloodprg_sprite_flip_y == 0u) {
+    if (flip_y == 0u) {
         row_step = 320;
     } else {
         row_step = -320;
     }
-    if (bloodprg_sprite_flip_x != 0u) {
+    if (flip_x != 0u) {
         destination_x = (cb_i16)(destination_x + draw_width - 1u);
         destination_step = -1;
     } else {

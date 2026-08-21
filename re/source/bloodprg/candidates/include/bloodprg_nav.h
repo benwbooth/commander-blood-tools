@@ -204,10 +204,6 @@ extern volatile cb_u8 CB_GAME_DATA
 extern volatile cb_u8 nav_actor_1_busy; /* DS:0x2A93 */
 /* The binary addresses these records through BP; runtime SS=DS. */
 extern volatile bloodprg_nav_actor_slot nav_actor_slots[6]; /* SS:0x2A1B */
-extern bloodprg_nav_actor_handler CB_CODE_DATA
-        nav_actor_handlers[6]; /* CS:0x06D4 */
-extern bloodprg_nav_choice_handler CB_CODE_DATA
-        nav_choice_handlers[5]; /* CS:0x0F29 */
 extern cb_u32 nav_actor_live_palette_dwords[0x90]; /* DS:0x5251 */
 /* The shipped dispatcher keeps ES equal to DS for this destination. */
 extern cb_u32 nav_actor_bridge_palette_dwords[0x90]; /* ES:0x5B58 */

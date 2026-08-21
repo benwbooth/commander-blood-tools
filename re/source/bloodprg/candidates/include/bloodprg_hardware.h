@@ -6,7 +6,6 @@
 typedef const cb_u8 CB_FAR *bloodprg_font_ptr;
 
 extern volatile cb_u8 CB_GAME_DATA saved_video_mode; /* GS:0x5232 */
-extern volatile cb_u16 cmos_seconds_pair;    /* CS:0x0AEE */
 extern volatile cb_u16 CB_GAME_DATA video_crtc_base_port; /* GS:0x0A9E */
 extern volatile cb_u16 video_crtc_base_port_ds; /* DS:0x0A9E alias */
 extern volatile cb_u8 CB_GAME_DATA video_retrace_phase;   /* GS:0x0B12 */

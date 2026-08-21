@@ -44,7 +44,6 @@ extern volatile bloodprg_snd_storage_cursor CB_GAME_DATA
         snd_storage_cursor; /* GS:0x0A4E */
 extern volatile bloodprg_xms_move_request CB_GAME_DATA
         xms_move_request; /* GS:0x0A6C */
-extern volatile cb_u8 CB_FAR ems_page_frame[]; /* segment at GS:0x0A66 */
 extern volatile cb_u16 CB_GAME_DATA snd_voice_file_handle; /* GS:0x0C47 */
 extern volatile cb_u16 CB_GAME_DATA snd_bank_file_handle; /* GS:0x0C49 */
 

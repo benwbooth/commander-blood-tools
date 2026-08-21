@@ -1,3 +1,5 @@
+#include <dos.h>
+
 #include "../include/bloodprg_audio.h"
 #include "../include/bloodprg_ems.h"
 #include "../include/bloodprg_resource.h"
@@ -14,6 +16,7 @@ void CB_FAR resource_file_load_to_ems(volatile char CB_FAR *path)
     cb_u16 request_bytes;
     cb_u16 bytes_read;
     cb_u8 physical_page;
+    volatile cb_u8 CB_FAR *page_frame;
 
     file_handle = resource_source_select(path);
     if ((resource_path_is_embedded & 1u) == 0) {
@@ -28,6 +31,8 @@ void CB_FAR resource_file_load_to_ems(volatile char CB_FAR *path)
     }
 
     resource_copy_file_handle = file_handle;
+    page_frame = (volatile cb_u8 CB_FAR *)MK_FP(
+            ems_page_frame_segment, 0u);
     snd_storage_cursor.xms_offset = 0;
     do {
         logical_page = snd_storage_cursor.ems.logical_page;
@@ -47,7 +52,7 @@ void CB_FAR resource_file_load_to_ems(volatile char CB_FAR *path)
         }
 
         bytes_read = cb_dos_read(
-                file_handle, ems_page_frame, request_bytes);
+                file_handle, page_frame, request_bytes);
         snd_source_remaining -= (cb_u32)bytes_read;
     } while (snd_source_remaining != 0);
 

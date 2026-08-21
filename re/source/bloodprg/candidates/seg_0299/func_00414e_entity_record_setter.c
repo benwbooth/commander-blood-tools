@@ -17,17 +17,7 @@ void CB_FAR entity_record_setter(
     cb_u16 frame_segment;
     cb_u16 frame_offset;
 
-#if defined(__WATCOMC__)
-    _asm push ax;
-    _asm push es;
-#endif
-
     selected_frame = frame_index;
-#if defined(__WATCOMC__)
-    /* BP carries the fifth register argument and is saved at the frame base. */
-    _asm mov ax, word ptr [bp];
-    _asm mov selected_frame, ax;
-#endif
 
     resource = (const volatile bloodprg_entity_resource CB_FAR *)resource_data;
     record = &bloodprg_entity_table[entity_id];
@@ -63,9 +53,5 @@ void CB_FAR entity_record_setter(
     record->draw_y = draw_y;
 
 restore_registers:
-#if defined(__WATCOMC__)
-    _asm pop es;
-    _asm pop ax;
-#endif
     return;
 }

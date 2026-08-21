@@ -45,6 +45,8 @@ STARTUP_GLOBALS = [
     ("resource_copy_file_handle_0A84", 0x0A84, "<H"),
     ("resource_archive_remaining_0A8E", 0x0A8E, "<I"),
     ("snd_source_remaining_0A92", 0x0A92, "<I"),
+    ("snd_bank_xms_handle_0A5E", 0x0A5E, "<h"),
+    ("snd_bank_ems_handle_0A60", 0x0A60, "<h"),
     ("alien_overlay_slot_0A96", 0x0A96, "<HH"),
     ("video_crtc_base_port_0A9E", 0x0A9E, "<H"),
     ("graphics_work_surface_0ABC", 0x0ABC, "<HH"),
@@ -62,6 +64,9 @@ STARTUP_GLOBALS = [
     ("main_frame_delay_ticks_0B2D", 0x0B2D, "<H"),
     ("video_calibration_ticks_0B35", 0x0B35, "<H"),
     ("snd_bank_memory_0BB3", 0x0BB3, "<HH"),
+    ("snd_stream_storage_0BB7", 0x0BB7, "<HH"),
+    ("snd_stream_channel_active_0BA3", 0x0BA3, "<B"),
+    ("snd_bank_file_handle_0C49", 0x0C49, "<H"),
     ("resource_flags_0D76", 0x0D76, "<H"),
     ("resource_requested_id_0D80", 0x0D80, "<H"),
     ("resource_active_id_0D82", 0x0D82, "<H"),
@@ -83,6 +88,9 @@ STARTUP_GLOBALS = [
     ("resource_unclamped_row_count_0DBD", 0x0DBD, "<B"),
     ("resource_decode_mode_0AA0", 0x0AA0, "<H"),
     ("vm_resource_handles_6712", 0x6712, "<5H"),
+    ("vm_profile_cursor_6730", 0x6730, "<H"),
+    ("vm_subtitle_wrap_marker_6732", 0x6732, "<H"),
+    ("vm_profile_record_word_6734", 0x6734, "<H"),
     ("vm_resource_profile_index_677E", 0x677E, "<H"),
     ("vm_script_profile_request_6780", 0x6780, "<h"),
     ("vm_execution_enabled_67A8", 0x67A8, "<B"),
@@ -137,6 +145,7 @@ def main():
     install_parent = os.path.realpath(sys.argv[3]) if len(sys.argv) > 3 else None
     executable = sys.argv[4] if len(sys.argv) > 4 else "BLOODPRG.EXE"
     cycles = sys.argv[5] if len(sys.argv) > 5 else "max"
+    emulator = os.environ.get("BLOODPRG_DOSBOX_BINARY", "dosbox-x")
     cpu_core = os.environ.get("BLOODPRG_DOSBOX_CORE", "normal")
     frame_skip = os.environ.get("BLOODPRG_DOSBOX_FRAMESKIP", "10")
     dump_dir = os.environ.get("BLOODPRG_DUMP_DIR")
@@ -165,17 +174,32 @@ def main():
         cmds += ["-c", f"mount c {install_parent}"]
     cmds += ["-c", f"mount d {cd_dir} -t cdrom", "-c", "d:",
              "-c", executable + r" AMR S162227 EMS WRIC:\cblood" + "\\"]
-    dosbox_args = [
-        "dosbox-x",
-        "-set",
-        "sdl output=surface",
-        "-set",
-        f"cpu cycles={cycles}",
-        "-set",
-        f"cpu core={cpu_core}",
-        "-set",
-        f"render frameskip={frame_skip}",
-    ]
+    if "staging" in os.path.basename(emulator):
+        dosbox_args = [
+            emulator,
+            "--noprimaryconf",
+            "--nolocalconf",
+            "--set",
+            "output=surface",
+            "--set",
+            f"cycles={cycles}",
+            "--set",
+            f"core={cpu_core}",
+            "--set",
+            f"frameskip={frame_skip}",
+        ]
+    else:
+        dosbox_args = [
+            emulator,
+            "-set",
+            "sdl output=surface",
+            "-set",
+            f"cpu cycles={cycles}",
+            "-set",
+            f"cpu core={cpu_core}",
+            "-set",
+            f"render frameskip={frame_skip}",
+        ]
     db = subprocess.Popen(dosbox_args + cmds,
                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env)
     time.sleep(wait)
@@ -357,18 +381,32 @@ def main():
             trace_interval = float(
                 os.environ.get("BLOODPRG_TRACE_INTERVAL", "0.05")
             )
+            trace_heartbeat = float(
+                os.environ.get("BLOODPRG_TRACE_HEARTBEAT", "1.0")
+            )
             mem.close()
             libc.ptrace(PTRACE_DETACH, pid, None, None)
             attached = False
             deadline = time.monotonic() + trace_seconds
             print(
                 "trace: event,elapsed,tick,delay,mode,vm_enabled,vm_ui,"
-                "active_line,timer_base"
+                "active_line,timer_base,phase,cursor_before,cursor_after,"
+                "profile,request,query,skip,resume,yield,branch_top,"
+                "presentation_flags,presentation_active,start_lock,owner,"
+                "primary_c4,wildcard,primary_kind,primary_related,"
+                "primary_value,mode_a,mode_b,box_phase,text_active"
+                ",display_offset,display_segment,secondary_offset,secondary_segment"
             )
             previous_timer_base = None
+            previous_phase = None
             previous_vm_enabled = None
             previous_active_line = None
+            previous_vm_ui = None
+            previous_presentation_active = None
+            previous_mode_b = None
+            previous_box_phase = None
             anchor_corrupted = False
+            next_heartbeat = time.monotonic()
             while time.monotonic() < deadline and db.poll() is None:
                 time.sleep(trace_interval)
                 if libc.ptrace(PTRACE_ATTACH, pid, None, None) != 0:
@@ -393,19 +431,53 @@ def main():
                             return struct.unpack(
                                 fmt, trace_mem.read(struct.calcsize(fmt))
                             )[0]
+                        def read_record_triple(record_offset):
+                            base_offset = read_trace(0x6724, "<H")
+                            base_segment = read_trace(0x6726, "<H")
+                            trace_mem.seek(
+                                guest_memory_base
+                                + guest_linear_bias
+                                + base_segment * 16
+                                + base_offset
+                                + record_offset
+                            )
+                            return struct.unpack("<HHH", trace_mem.read(6))
                         timer_base = read_trace(0x0AF0, "<H")
                         vm_enabled = read_trace(0x67A8, "<B")
+                        vm_ui = read_trace(0x2793, "<H")
                         active_line = read_trace(0x6788, "<H")
+                        presentation_active = read_trace(0x67AC, "<B")
+                        mode_b = read_trace(0x27E1, "<B")
+                        box_phase = read_trace(0x2B93, "<h")
+                        phase = read_trace(0x6730, "<H")
+                        primary_c4 = read_trace(0x675E, "<H")
+                        primary_kind, primary_related, primary_value = (
+                            read_record_triple(primary_c4)
+                        )
+                        now = time.monotonic()
                         event = None
                         if previous_timer_base is None:
                             event = "initial"
                         elif timer_base != previous_timer_base:
                             event = "timer_base_changed"
+                        elif phase != previous_phase:
+                            event = "profile_cursor_changed"
                         elif vm_enabled != previous_vm_enabled:
                             event = "vm_enabled_changed"
                         elif active_line != previous_active_line:
                             event = "active_line_changed"
+                        elif vm_ui != previous_vm_ui:
+                            event = "vm_ui_changed"
+                        elif presentation_active != previous_presentation_active:
+                            event = "presentation_active_changed"
+                        elif mode_b != previous_mode_b:
+                            event = "presentation_mode_changed"
+                        elif box_phase != previous_box_phase:
+                            event = "box_phase_changed"
+                        elif trace_heartbeat > 0 and now >= next_heartbeat:
+                            event = "heartbeat"
                         if event is not None:
+                            next_heartbeat = now + trace_heartbeat
                             print(
                                 "trace: "
                                 f"{event},"
@@ -414,13 +486,51 @@ def main():
                                 f"{read_trace(0x0B2D, '<H')},"
                                 f"{read_trace(0x0ADF, '<B')},"
                                 f"{vm_enabled},"
-                                f"{read_trace(0x2793, '<H')},"
+                                f"{vm_ui},"
                                 f"{active_line},"
-                                f"{timer_base}"
+                                f"{timer_base},"
+                                f"{phase},"
+                                f"{read_trace(0x6732, '<H')},"
+                                f"{read_trace(0x6734, '<H')},"
+                                f"{read_trace(0x677E, '<H')},"
+                                f"{read_trace(0x6780, '<h')},"
+                                f"{read_trace(0x67AD, '<B')},"
+                                f"{read_trace(0x67AB, '<B')},"
+                                f"{read_trace(0x67B1, '<B')},"
+                                f"{read_trace(0x67B4, '<B')},"
+                                f"{read_trace(0x6884, '<H')},"
+                                f"{read_trace(0x67AA, '<B')},"
+                                f"{presentation_active},"
+                                f"{read_trace(0x67B7, '<B')},"
+                                f"{read_trace(0x679A, '<H')},"
+                                f"{primary_c4},"
+                                f"{read_trace(0x674E, '<H')},"
+                                f"{primary_kind},"
+                                f"{primary_related},"
+                                f"{primary_value},"
+                                f"{read_trace(0x27E0, '<B')},"
+                                f"{mode_b},"
+                                f"{box_phase},"
+                                f"{read_trace(0x5E64, '<B')},"
+                                f"{read_trace(0x5221, '<H')},"
+                                f"{read_trace(0x5223, '<H')},"
+                                f"{read_trace(0x5229, '<H')},"
+                                f"{read_trace(0x522B, '<H')}"
                             )
                         previous_timer_base = timer_base
+                        previous_phase = phase
                         previous_vm_enabled = vm_enabled
                         previous_active_line = active_line
+                        previous_vm_ui = vm_ui
+                        previous_presentation_active = presentation_active
+                        previous_mode_b = mode_b
+                        previous_box_phase = box_phase
+                except FileNotFoundError:
+                    print(
+                        "trace: emulator_exited "
+                        f"status={db.poll()}"
+                    )
+                    break
                 finally:
                     libc.ptrace(PTRACE_DETACH, pid, None, None)
     finally:

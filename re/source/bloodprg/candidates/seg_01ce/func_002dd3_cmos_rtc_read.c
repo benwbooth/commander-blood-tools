@@ -7,6 +7,7 @@
 #endif
 
 #include "../include/bloodprg_hardware.h"
+#include "../include/bloodprg_random.h"
 
 void CB_FAR cmos_rtc_read(void)
 {
@@ -14,5 +15,5 @@ void CB_FAR cmos_rtc_read(void)
 
     outportb(0x70, 0);
     seconds = inportb(0x71);
-    cmos_seconds_pair = (cb_u16)(seconds | ((cb_u16)seconds << 8));
+    blood_prng_seed_word = (cb_u16)(seconds | ((cb_u16)seconds << 8));
 }

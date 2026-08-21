@@ -115,21 +115,12 @@ void CB_NEAR location_info_panel_dispatch(
 
         sprite_slot_dirty_range_render(
                 LOCATION_PANEL_ENTITY, LOCATION_PANEL_ENTITY);
-#if defined(__WATCOMC__)
-        framebuffer_rect_palette_remap_ds_bp(
-                framebuffer_transition_remap_table,
-                (cb_u16)nav_location_panel_target_rect.x,
-                (cb_u16)nav_location_panel_target_rect.y,
-                (cb_u16)nav_location_panel_target_rect.width,
-                (cb_u16)nav_location_panel_target_rect.height);
-#else
         framebuffer_rect_palette_remap(
                 framebuffer_transition_remap_table,
                 (cb_u16)nav_location_panel_target_rect.x,
                 (cb_u16)nav_location_panel_target_rect.y,
                 (cb_u16)nav_location_panel_target_rect.width,
                 (cb_u16)nav_location_panel_target_rect.height);
-#endif
 
         selected = LOCATION_PANEL_OBJECT_AT(nav_selected_location_record);
         title = nav_location_panel_planet_label;

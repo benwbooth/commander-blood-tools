@@ -4,7 +4,7 @@
 
 void CB_FAR decimal_append_i32(cb_i32 value, char CB_FAR *destination)
 {
-    cb_u8 CB_CODE_DATA *cursor;
+    cb_u8 *cursor;
     cb_u32 magnitude;
     cb_u32 quotient;
 

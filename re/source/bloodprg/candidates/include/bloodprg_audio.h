@@ -3,13 +3,14 @@
 
 #include "bloodprg_common.h"
 
-typedef void (CB_FAR *bloodprg_snd_driver_callback)(cb_u16 command);
 #if defined(__WATCOMC__)
+typedef void (CB_FAR *bloodprg_snd_driver_callback)(cb_u16 command);
 typedef void CB_FAR bloodprg_snd_driver_init_function(
         cb_u16 configuration);
 typedef bloodprg_snd_driver_init_function
         *bloodprg_snd_driver_init_callback;
 #else
+typedef void (CB_FAR *bloodprg_snd_driver_callback)(cb_u16 command);
 typedef void (CB_FAR *bloodprg_snd_driver_init_callback)(
         cb_u16 configuration);
 #endif

@@ -30,30 +30,18 @@ void CB_FAR framebuffer_noise_rect(
     cb_u8 rotation_bit;
     cb_u8 sparse_color;
 
-#if defined(__WATCOMC__)
-    _asm push ax;
-    _asm push ds;
-    _asm push es;
-#endif
-
     clipped_width = width;
-#if defined(__WATCOMC__)
-    /* BP carries the fifth register argument and is saved at the frame base. */
-    _asm mov ax, word ptr [bp];
-    _asm mov clipped_height, ax;
-#else
     clipped_height = height;
-#endif
 
     if ((cb_i16)clipped_width <= 0 || (cb_i16)clipped_height <= 0) {
-        goto restore_registers;
+        return;
     }
 
     clip_delta = (cb_i16)(x - (cb_u16)graphics_clip_left);
     if (clip_delta < 0) {
         clipped_width = (cb_u16)(clipped_width + (cb_u16)clip_delta);
         if ((cb_i16)clipped_width <= 0) {
-            goto restore_registers;
+            return;
         }
         x = (cb_u16)graphics_clip_left;
     }
@@ -63,7 +51,7 @@ void CB_FAR framebuffer_noise_rect(
     if (clip_delta >= 0) {
         clipped_width = (cb_u16)(clipped_width - (cb_u16)clip_delta);
         if ((cb_i16)clipped_width <= 0) {
-            goto restore_registers;
+            return;
         }
     }
 
@@ -71,7 +59,7 @@ void CB_FAR framebuffer_noise_rect(
     if (clip_delta < 0) {
         clipped_height = (cb_u16)(clipped_height + (cb_u16)clip_delta);
         if ((cb_i16)clipped_height <= 0) {
-            goto restore_registers;
+            return;
         }
         y = graphics_band_top_row;
     }
@@ -82,7 +70,7 @@ void CB_FAR framebuffer_noise_rect(
     if (clip_delta >= 0) {
         clipped_height = (cb_u16)(clipped_height - (cb_u16)clip_delta);
         if ((cb_i16)clipped_height <= 0) {
-            goto restore_registers;
+            return;
         }
     }
 
@@ -156,11 +144,4 @@ void CB_FAR framebuffer_noise_rect(
             pixel += row_skip;
         } while (--rows != 0u);
     }
-
-restore_registers:
-#if defined(__WATCOMC__)
-    _asm pop es;
-    _asm pop ds;
-    _asm pop ax;
-#endif
 }

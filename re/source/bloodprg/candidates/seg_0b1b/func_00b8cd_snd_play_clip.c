@@ -16,6 +16,7 @@ void CB_SAVE_REGS CB_FAR snd_play_clip(cb_i16 clip_index)
     volatile cb_u8 CB_FAR *source;
     volatile cb_u8 CB_FAR *destination;
     volatile cb_u8 CB_FAR *staging;
+    volatile cb_u8 CB_FAR *page_frame;
     cb_u32 clip_start;
     cb_u32 clip_end;
     cb_u32 clip_length;
@@ -49,6 +50,8 @@ void CB_SAVE_REGS CB_FAR snd_play_clip(cb_i16 clip_index)
             clip_length = clip_end - clip_start;
 
             if (secondary_ems_handle != -1) {
+                page_frame = (volatile cb_u8 CB_FAR *)MK_FP(
+                        ems_page_frame_segment, 0u);
                 logical_page = (cb_u16)(clip_start >> 14);
                 for (physical_page = 0; physical_page < 4u;
                         ++physical_page) {
@@ -56,7 +59,7 @@ void CB_SAVE_REGS CB_FAR snd_play_clip(cb_i16 clip_index)
                             logical_page++, physical_page);
                 }
                 far_memmove(snd_stream_storage,
-                        ems_page_frame +
+                        page_frame +
                             (cb_u16)(clip_start & 0x3fffu),
                         clip_length);
                 snd_clip_descriptor.data = snd_stream_storage;
@@ -98,13 +101,15 @@ void CB_SAVE_REGS CB_FAR snd_play_clip(cb_i16 clip_index)
         clip_length = clip_end - clip_start;
 
         if (secondary_ems_handle != -1) {
+            page_frame = (volatile cb_u8 CB_FAR *)MK_FP(
+                    ems_page_frame_segment, 0u);
             logical_page = (cb_u16)(clip_start >> 14);
             for (physical_page = 0; physical_page < 4u;
                     ++physical_page) {
                 cb_ems_map_page((cb_u16)secondary_ems_handle,
                         logical_page++, physical_page);
             }
-            source = ems_page_frame +
+            source = page_frame +
                     (cb_u16)(clip_start & 0x3fffu) +
                     SND_CLIP_HEADER_BYTES;
             source_bytes = (cb_u16)clip_length - SND_CLIP_HEADER_BYTES;

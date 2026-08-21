@@ -28,15 +28,9 @@
 #define PRESENTATION_LINE_RECORD_BYTES 16u
 #define PRESENTATION_TEXT_TABLE_STRIDE 128
 
-#if defined(__WATCOMC__)
-#define PRESENTATION_REMAP(table, x, y, width, height) \
-    framebuffer_rect_palette_remap_ds_bp( \
-        (const cb_u8 CB_NEAR *)(table), (x), (y), (width), (height))
-#else
 #define PRESENTATION_REMAP(table, x, y, width, height) \
     framebuffer_rect_palette_remap( \
         (const cb_u8 CB_FAR *)(table), (x), (y), (width), (height))
-#endif
 
 void CB_NEAR screen_mode_update(cb_u16 queued_scene_link_target)
 {

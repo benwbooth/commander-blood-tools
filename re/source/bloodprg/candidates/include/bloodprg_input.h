@@ -31,10 +31,6 @@ extern volatile cb_u16 mouse_motion_idle_counter_ds; /* DS:0x0B3B alias */
 extern volatile cb_u8 input_dispatch_state_b15;     /* DS:0x0B15 */
 extern volatile cb_u16 input_directory_selection_offset; /* GS:0x679E */
 extern volatile cb_u8 input_selection_mode_flags;  /* DS/GS:0x67A6 */
-extern const cb_i8 CB_CODE_DATA
-        input_action_translation[256];              /* CS:0x113E */
-extern bloodprg_input_action_handler CB_CODE_DATA
-        input_action_handlers[BLOODPRG_INPUT_ACTION_COUNT]; /* CS:0x123E */
 
 void CB_FAR poll_mouse(void); /* 0x000D0E */
 cb_u16 CB_NEAR mouse_button_edges_update(void); /* 0x001FBC */
