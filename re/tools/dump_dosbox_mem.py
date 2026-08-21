@@ -19,8 +19,9 @@ Usage: nix develop --command re/tools/dump_dosbox_mem.py <cd-dir> [wait_secs] [i
 It launches exactly what BLOOD.BAT does: `D:` then
 `BLOODPRG AMR S162227 EMS WRIC:\\cblood\\`; without those args the game loops the
 attract demo and never reaches navigation.
-The cycle setting defaults to `max`. Compare behavior at matching guest timer
-ticks; wall-clock throughput depends on compiler code generation.
+The CPU core defaults to `dynamic` and cycles default to `max`. Compare behavior
+at matching guest timer ticks; wall-clock throughput depends on compiler code
+generation. Set BLOODPRG_DOSBOX_CORE=normal for strict core checks.
 NOTE: the star-map's 0x4F09 records are the *default* (10200,12100,900) until the game
 is in ACTIVE navigation — drive it there (see drive_real_game.sh) before dumping.
 Set BLOODPRG_INPUT_ACTIONS to newline-separated `wait`, `click`, `move_relative`,
@@ -349,7 +350,7 @@ def main():
     executable = sys.argv[4] if len(sys.argv) > 4 else "BLOODPRG.EXE"
     cycles = sys.argv[5] if len(sys.argv) > 5 else "max"
     emulator = os.environ.get("BLOODPRG_DOSBOX_BINARY", "dosbox-x")
-    cpu_core = os.environ.get("BLOODPRG_DOSBOX_CORE", "normal")
+    cpu_core = os.environ.get("BLOODPRG_DOSBOX_CORE", "dynamic")
     frame_skip = os.environ.get("BLOODPRG_DOSBOX_FRAMESKIP", "10")
     dump_dir = os.environ.get("BLOODPRG_DUMP_DIR")
     if dump_dir:
