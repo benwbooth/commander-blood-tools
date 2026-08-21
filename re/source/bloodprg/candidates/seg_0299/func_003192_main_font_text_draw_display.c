@@ -21,18 +21,12 @@ void CB_FAR main_font_text_draw_display(
     cb_u8 glyph_index;
     cb_i8 advance;
 
-#if defined(__WATCOMC__)
-    _asm push ax;
-    _asm push ds;
-    _asm push es;
-#endif
-
     main_font_draw_width = 0;
     if (y > graphics_band_bottom_row
             || (cb_i16)y
                     <= (cb_i16)(graphics_band_top_row
                             - BLOODPRG_MAIN_FONT_HEIGHT)) {
-        goto restore_registers;
+        return;
     }
 
     row_offset = (cb_u16)((y << 8) | (y >> 8));
@@ -75,10 +69,4 @@ void CB_FAR main_font_text_draw_display(
                 (cb_u16)(main_font_draw_width + advance);
     }
 
-restore_registers:
-#if defined(__WATCOMC__)
-    _asm pop es;
-    _asm pop ds;
-    _asm pop ax;
-#endif
 }

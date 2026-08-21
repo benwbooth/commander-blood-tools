@@ -22,18 +22,12 @@ void CB_FAR square_caps_text_draw_display(
     cb_u8 advance;
     cb_i16 advance_delta;
 
-#if defined(__WATCOMC__)
-    _asm push ax;
-    _asm push ds;
-    _asm push es;
-#endif
-
     square_caps_draw_width = 0;
     if (y > graphics_band_bottom_row
             || (cb_i16)y
                     <= (cb_i16)(graphics_band_top_row
                             - BLOODPRG_SQUARE_CAPS_HEIGHT)) {
-        goto restore_registers;
+        return;
     }
 
     row_offset = (cb_u16)((y << 8) | (y >> 8));
@@ -71,10 +65,4 @@ void CB_FAR square_caps_text_draw_display(
                 (cb_u16)(square_caps_draw_width + advance_delta);
     }
 
-restore_registers:
-#if defined(__WATCOMC__)
-    _asm pop es;
-    _asm pop ds;
-    _asm pop ax;
-#endif
 }
