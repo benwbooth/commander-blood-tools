@@ -9,6 +9,8 @@
 #
 # Reads an input script from stdin: one action per line, either
 #   click <x> <y>       (mouse click at game-relative x,y; game area is 640x400)
+#   move_relative <dx> <dy>
+#   mouse_button <n>    (press/release without repositioning the captured pointer)
 #   key <keyname>       (e.g. Return, Escape, space)
 #   fastforward <secs>  (hold the emulator's Alt+F12 turbo control)
 #   shot <name>         (capture the game area to <out-dir>/<name>.png)
@@ -56,6 +58,8 @@ if [[ "$(basename "$DOSBOX_BINARY")" == *staging* ]]; then
     --set "cycles=$DOSBOX_CYCLES"
     --set "core=$DOSBOX_CORE"
     --set "frameskip=$DOSBOX_FRAMESKIP"
+    --set mouse_capture=onstart
+    --set dos_mouse_immediate=true
   )
 else
   DOSBOX_ARGS=(
@@ -64,6 +68,7 @@ else
     -set "cpu cycles=$DOSBOX_CYCLES"
     -set "cpu core=$DOSBOX_CORE"
     -set "render frameskip=$DOSBOX_FRAMESKIP"
+    -set "sdl autolock=true"
   )
 fi
 "${DOSBOX_ARGS[@]}" \
@@ -95,6 +100,14 @@ while read -r action a b; do
       xdotool mousedown --window "$WID" 1
       sleep 0.2
       xdotool mouseup --window "$WID" 1
+      ;;
+    move_relative)
+      xdotool mousemove_relative -- "$a" "$b"
+      ;;
+    mouse_button)
+      xdotool mousedown --window "$WID" "$a"
+      sleep 0.2
+      xdotool mouseup --window "$WID" "$a"
       ;;
     key)
       xdotool keydown --window "$WID" "$a"

@@ -23,8 +23,9 @@ The cycle setting defaults to `max`. Compare behavior at matching guest timer
 ticks; wall-clock throughput depends on compiler code generation.
 NOTE: the star-map's 0x4F09 records are the *default* (10200,12100,900) until the game
 is in ACTIVE navigation — drive it there (see drive_real_game.sh) before dumping.
-Set BLOODPRG_INPUT_ACTIONS to newline-separated `wait`, `click`, and `key` commands
-to capture memory after a reproducible interactive sequence instead of wait_secs.
+Set BLOODPRG_INPUT_ACTIONS to newline-separated `wait`, `click`, `move_relative`,
+`mouse_button`, and `key` commands to capture memory after a reproducible
+interactive sequence instead of wait_secs.
 """
 import ctypes, hashlib, subprocess, time, os, re, shlex, struct, sys
 from pathlib import Path
@@ -52,6 +53,18 @@ STARTUP_GLOBALS = [
     ("snd_bank_ems_handle_0A60", 0x0A60, "<h"),
     ("alien_overlay_slot_0A96", 0x0A96, "<HH"),
     ("video_crtc_base_port_0A9E", 0x0A9E, "<H"),
+    ("mouse_x_0A2A", 0x0A2A, "<h"),
+    ("mouse_y_0A2C", 0x0A2C, "<h"),
+    ("mouse_button_state_0A2E", 0x0A2E, "<H"),
+    ("mouse_previous_button_state_0A30", 0x0A30, "<H"),
+    ("nav_actor_presentation_state_0A32", 0x0A32, "<H"),
+    ("nav_target_presentation_state_0A34", 0x0A34, "<H"),
+    ("presentation_mode_previous_state_0A36", 0x0A36, "<H"),
+    ("mouse_last_x_0A38", 0x0A38, "<h"),
+    ("mouse_last_y_0A3A", 0x0A3A, "<h"),
+    ("mouse_primary_pressed_0A3E", 0x0A3E, "<B"),
+    ("mouse_secondary_pressed_0A3F", 0x0A3F, "<B"),
+    ("mouse_press_pending_0A40", 0x0A40, "<B"),
     ("graphics_work_surface_0ABC", 0x0ABC, "<HH"),
     ("list_d8c_default_entry_segment_0ABE", 0x0ABE, "<H"),
     ("startup_write_directory_active_0AE0", 0x0AE0, "<B"),
@@ -61,6 +74,7 @@ STARTUP_GLOBALS = [
     ("timer_state_block_offset_0AF0", 0x0AF0, "<H"),
     ("video_retrace_phase_0B12", 0x0B12, "<B"),
     ("ship_3d_nav_choice_sound_gate_0B13", 0x0B13, "<B"),
+    ("input_dispatch_state_0B15", 0x0B15, "<B"),
     ("timer_hook_active_0B21", 0x0B21, "<B"),
     ("timer_divider_0B22", 0x0B22, "<B"),
     ("timer_tick_count_0B29", 0x0B29, "<H"),
@@ -117,6 +131,9 @@ STARTUP_GLOBALS = [
     ("resource_source_is_banked_0DBC", 0x0DBC, "<B"),
     ("resource_decode_mode_0AA0", 0x0AA0, "<H"),
     ("vm_c2_presentation_gate_1FB2", 0x1FB2, "<B"),
+    ("vm_ship_active_flags_24F3", 0x24F3, "<H"),
+    ("vm_scene_record_offset_274D", 0x274D, "<H"),
+    ("vm_scene_gate_274F", 0x274F, "<B"),
     ("vm_resource_handles_6712", 0x6712, "<5H"),
     ("vm_profile_cursor_6730", 0x6730, "<H"),
     ("vm_subtitle_wrap_marker_6732", 0x6732, "<H"),
@@ -260,6 +277,21 @@ def drive_input_actions(pid, actions, env):
                 ["xdotool", "mouseup", "--window", window_id, "1"],
                 env=env, check=True,
             )
+        elif action == "move_relative" and len(fields) == 3:
+            subprocess.run(
+                ["xdotool", "mousemove_relative", "--", fields[1], fields[2]],
+                env=env, check=True,
+            )
+        elif action == "mouse_button" and len(fields) == 2:
+            subprocess.run(
+                ["xdotool", "mousedown", "--window", window_id, fields[1]],
+                env=env, check=True,
+            )
+            time.sleep(0.2)
+            subprocess.run(
+                ["xdotool", "mouseup", "--window", window_id, fields[1]],
+                env=env, check=True,
+            )
         elif action == "key" and len(fields) == 2:
             subprocess.run(
                 ["xdotool", "keydown", "--window", window_id, fields[1]],
@@ -331,6 +363,10 @@ def main():
             f"core={cpu_core}",
             "--set",
             f"frameskip={frame_skip}",
+            "--set",
+            "mouse_capture=onstart",
+            "--set",
+            "dos_mouse_immediate=true",
         ]
     else:
         dosbox_args = [
@@ -343,6 +379,8 @@ def main():
             f"cpu core={cpu_core}",
             "-set",
             f"render frameskip={frame_skip}",
+            "-set",
+            "sdl autolock=true",
         ]
     db = subprocess.Popen(dosbox_args + cmds,
                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env)
