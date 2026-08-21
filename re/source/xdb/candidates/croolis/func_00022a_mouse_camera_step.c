@@ -8,7 +8,7 @@ void XDB_NEAR xdb_croolis_mouse_camera_step(void)
     xdb_u16 depth_step;
     xdb_u16 key;
 
-    xdb_mouse_driver_read_state(&xdb_alien_mouse_state);
+    xdb_mouse_driver_poll();
     xdb_alien_mouse_x = (xdb_u16)(xdb_alien_mouse_x - 0x0140u);
     xdb_alien_mouse_y = (xdb_u16)(xdb_alien_mouse_y - 0x0200u);
 

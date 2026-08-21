@@ -15,49 +15,43 @@ extern volatile xdb_mouse_state xdb_alien_mouse_state; /* DS:0x002A */
 #define xdb_alien_mouse_buttons xdb_alien_mouse_state.buttons
 
 #if defined(__WATCOMC__)
-extern void XDB_NEAR xdb_mouse_driver_read_state(
-        volatile xdb_mouse_state XDB_NEAR *state);
-#pragma aux xdb_mouse_driver_read_state = \
+extern void XDB_NEAR xdb_mouse_driver_poll(void);
+#pragma aux xdb_mouse_driver_poll = \
         "mov ax,3" \
         "int 33h" \
-        "mov [di],cx" \
-        "mov [di+2],dx" \
-        "mov [di+4],bx" \
-        parm [di] \
+        "mov word ptr xdb_alien_mouse_state,cx" \
+        "mov word ptr xdb_alien_mouse_state+2,dx" \
+        "mov word ptr xdb_alien_mouse_state+4,bx" \
         modify exact [ax bx cx dx]
-extern void XDB_NEAR xdb_mouse_driver_set_position(void);
-#pragma aux xdb_mouse_driver_set_position = \
-        "mov ax,4" \
+extern void XDB_NEAR xdb_mouse_driver_command(
+        xdb_u16 function,
+        xdb_u16 x,
+        xdb_u16 y);
+#pragma aux xdb_mouse_driver_command = \
         "int 33h" \
-        modify exact [ax]
-extern void XDB_NEAR xdb_mouse_driver_set_vertical_bounds(
-        xdb_u16 minimum, xdb_u16 maximum);
-#pragma aux xdb_mouse_driver_set_vertical_bounds = \
-        "mov ax,8" \
-        "int 33h" \
-        parm [cx] [dx] \
-        modify exact [ax cx dx]
-extern void XDB_NEAR xdb_mouse_driver_set_horizontal_bounds(
-        xdb_u16 minimum, xdb_u16 maximum);
-#pragma aux xdb_mouse_driver_set_horizontal_bounds = \
-        "mov ax,7" \
-        "int 33h" \
-        parm [cx] [dx] \
-        modify exact [ax cx dx]
+        parm [ax] [cx] [dx] \
+        modify exact [ax bx cx dx]
+#define xdb_mouse_driver_set_position(x, y) \
+    xdb_mouse_driver_command(4, (x), (y))
+#define xdb_mouse_driver_set_vertical_bounds(minimum, maximum) \
+    xdb_mouse_driver_command(8, (minimum), (maximum))
+#define xdb_mouse_driver_set_horizontal_bounds(minimum, maximum) \
+    xdb_mouse_driver_command(7, (minimum), (maximum))
 #elif defined(__TURBOC__) || defined(__BORLANDC__)
 #include <dos.h>
-#define xdb_mouse_driver_read_state(state) \
+#define xdb_mouse_driver_poll() \
     do { \
-        union REGS xdb_mouse_registers; \
-        xdb_mouse_registers.x.ax = 3; \
-        int86(0x33, &xdb_mouse_registers, &xdb_mouse_registers); \
-        (state)->x = xdb_mouse_registers.x.cx; \
-        (state)->y = xdb_mouse_registers.x.dx; \
-        (state)->buttons = xdb_mouse_registers.x.bx; \
+        _AX = 3; \
+        geninterrupt(0x33); \
+        xdb_alien_mouse_x = _CX; \
+        xdb_alien_mouse_y = _DX; \
+        xdb_alien_mouse_buttons = _BX; \
     } while (0)
-#define xdb_mouse_driver_set_position() \
+#define xdb_mouse_driver_set_position(x, y) \
     do { \
         _AX = 4; \
+        _CX = (x); \
+        _DX = (y); \
         geninterrupt(0x33); \
     } while (0)
 #define xdb_mouse_driver_set_vertical_bounds(minimum, maximum) \
@@ -75,8 +69,8 @@ extern void XDB_NEAR xdb_mouse_driver_set_horizontal_bounds(
         geninterrupt(0x33); \
     } while (0)
 #else
-void xdb_mouse_driver_read_state(volatile xdb_mouse_state *state);
-void xdb_mouse_driver_set_position(void);
+void xdb_mouse_driver_poll(void);
+void xdb_mouse_driver_set_position(xdb_u16 x, xdb_u16 y);
 void xdb_mouse_driver_set_vertical_bounds(xdb_u16 minimum, xdb_u16 maximum);
 void xdb_mouse_driver_set_horizontal_bounds(xdb_u16 minimum, xdb_u16 maximum);
 #endif
