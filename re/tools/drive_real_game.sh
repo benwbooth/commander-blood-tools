@@ -98,9 +98,15 @@ if [ -n "${DOSBOX_TRACE_FILE:-}" ]; then
   IFS=: read -r -a DOSBOX_TRACE_PATH_ARRAY <<< \
     "${DOSBOX_TRACE_PATHS:-$GAME_DIR/BLOOD.DAT}"
   DOSBOX_TRACE_PATH_ARGS=()
-  for trace_path in "${DOSBOX_TRACE_PATH_ARRAY[@]}"; do
-    [ -n "$trace_path" ] && DOSBOX_TRACE_PATH_ARGS+=(-P "$trace_path")
-  done
+  if [ -n "${DOSBOX_TRACE_ALL:-}" ]; then
+    # No -P filters: log every traced syscall with its path, so the file a
+    # stall or crash happens mid-load is identified directly.
+    :
+  else
+    for trace_path in "${DOSBOX_TRACE_PATH_ARRAY[@]}"; do
+      [ -n "$trace_path" ] && DOSBOX_TRACE_PATH_ARGS+=(-P "$trace_path")
+    done
+  fi
   DOSBOX_ARGS=(
     strace
     -f
@@ -170,6 +176,11 @@ while read -r action a b; do
       ;;
     move_relative)
       xdotool mousemove_relative -- "$a" "$b"
+      ;;
+    move)
+      # Absolute position in the 320x200 GAME space (the dual-run scenario
+      # vocabulary); the window is 640x400, so scale by two.
+      xdotool mousemove --window "$WID" $((a * 2)) $((b * 2))
       ;;
     mouse_button)
       xdotool mousedown "$a"
