@@ -236,10 +236,10 @@ void CB_FAR composite_draw_a(cb_u8 color, cb_u16 x, cb_u16 y,
         cb_u16 width, cb_u16 height); /* 0x0299:0x0BB5 */
 void CB_FAR framebuffer_rect_fill(cb_u8 color, cb_u16 x, cb_u16 y,
         cb_u16 width, cb_u16 height); /* 0x0299:0x0CDC */
-void CB_FAR vga_planar_to_chunky(
+void CB_SAVE_REGS CB_FAR vga_planar_to_chunky(
         const volatile cb_u8 CB_FAR *source,
         volatile cb_u8 CB_FAR *destination); /* 0x0299:0x0EE0 */
-void CB_FAR chunky_to_planar_framebuffer(
+void CB_SAVE_REGS CB_FAR chunky_to_planar_framebuffer(
         const volatile cb_u8 CB_FAR *source); /* 0x0299:0x0F3E */
 cb_i16 CB_FAR back_buffer_init(void); /* 0x008B:0x0929 */
 cb_i16 CB_FAR backbuffer_clear_flags(void); /* 0x008B:0x0967 */
@@ -288,9 +288,9 @@ void CB_NEAR back_buffer_copy_from(
         cb_u16 x, cb_u16 y, cb_u16 width); /* 0x00933A */
 void CB_SAVE_REGS CB_FAR blit_fill_row_5221(cb_u8 color); /* 0x003D7B */
 void CB_SAVE_REGS CB_FAR back_buffer_fill(cb_u8 color);   /* 0x003DBF */
-void CB_FAR full_screen_blit(
+void CB_SAVE_REGS CB_FAR full_screen_blit(
         const cb_u32 CB_FAR *source); /* 0x003E46 */
-void CB_FAR fullscreen_copy_to_backbuffer(
+void CB_SAVE_REGS CB_FAR fullscreen_copy_to_backbuffer(
         const cb_u32 CB_NEAR *source); /* 0x003E5B */
 #if defined(__WATCOMC__)
 void CB_FAR fullscreen_copy_to_backbuffer_far(

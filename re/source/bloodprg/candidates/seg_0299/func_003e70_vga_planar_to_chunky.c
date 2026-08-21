@@ -7,7 +7,7 @@
 #define BLOODPRG_VGA_PLANE_COUNT 4u
 #define BLOODPRG_VGA_PLANE_BYTES 16000u
 
-void CB_FAR vga_planar_to_chunky(
+void CB_SAVE_REGS CB_FAR vga_planar_to_chunky(
         const volatile cb_u8 CB_FAR *source,
         volatile cb_u8 CB_FAR *destination)
 {
@@ -15,11 +15,6 @@ void CB_FAR vga_planar_to_chunky(
     volatile cb_u8 CB_FAR *pixel;
     cb_u16 count;
     cb_u16 plane;
-
-#if defined(__WATCOMC__)
-    _asm push ax;
-    _asm cld;
-#endif
 
     for (plane = 0u; plane < BLOODPRG_VGA_PLANE_COUNT; ++plane) {
         outpw(
@@ -33,8 +28,4 @@ void CB_FAR vga_planar_to_chunky(
             pixel += BLOODPRG_VGA_PLANE_COUNT - 1u;
         } while (--count != 0u);
     }
-
-#if defined(__WATCOMC__)
-    _asm pop ax;
-#endif
 }
