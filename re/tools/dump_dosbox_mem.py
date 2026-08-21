@@ -27,6 +27,11 @@ is in ACTIVE navigation — drive it there (see drive_real_game.sh) before dumpi
 Set BLOODPRG_INPUT_ACTIONS to newline-separated `wait`, `click`, `move_relative`,
 `mouse_button`, `mouse_down`, `mouse_up`, and `key` commands to capture memory
 after a reproducible interactive sequence instead of wait_secs.
+Set BLOODPRG_DOSBOX_MOUSE_CAPTURE to select the DOSBox Staging mouse mode for
+input-driven runs; `onstart` remains the default and `seamless` permits absolute
+X11 positioning for games that support it.
+Set BLOODPRG_DOSBOX_AUTOLOCK=false to leave the DOSBox-X pointer uncaptured for
+absolute X11 positioning; the default remains `true`.
 Set BLOODPRG_WAIT_GLOBAL to comma-separated `offset[:width]:value` conditions to
 resume until selected game-data values reach a state boundary before capturing.
 Set BLOODPRG_WAIT_POINTER to comma-separated
@@ -352,6 +357,10 @@ def main():
     emulator = os.environ.get("BLOODPRG_DOSBOX_BINARY", "dosbox-x")
     cpu_core = os.environ.get("BLOODPRG_DOSBOX_CORE", "dynamic")
     frame_skip = os.environ.get("BLOODPRG_DOSBOX_FRAMESKIP", "10")
+    mouse_capture = os.environ.get(
+        "BLOODPRG_DOSBOX_MOUSE_CAPTURE", "onstart"
+    )
+    autolock = os.environ.get("BLOODPRG_DOSBOX_AUTOLOCK", "true")
     dump_dir = os.environ.get("BLOODPRG_DUMP_DIR")
     if dump_dir:
         Path(dump_dir).mkdir(parents=True, exist_ok=True)
@@ -396,7 +405,7 @@ def main():
             "--set",
             f"frameskip={frame_skip}",
             "--set",
-            "mouse_capture=onstart",
+            f"mouse_capture={mouse_capture}",
             "--set",
             "dos_mouse_immediate=true",
         ]
@@ -412,7 +421,7 @@ def main():
             "-set",
             f"render frameskip={frame_skip}",
             "-set",
-            "sdl autolock=true",
+            f"sdl autolock={autolock}",
         ]
     db = subprocess.Popen(dosbox_args + cmds,
                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env)
@@ -439,6 +448,7 @@ def main():
         cpu_state_addresses = locate_cpu_state(pid)
         best = None
         guest_memory_base = None
+        guest_memory_end = None
         candidates = []
         for line in open(f"/proc/{pid}/maps"):
             pr = line.split()
@@ -461,6 +471,7 @@ def main():
                 if 0 < free_bytes <= 0x000A0000 and crtc_port in (0, 0x03D4):
                     best = A
                     guest_memory_base = a
+                    guest_memory_end = b
                     break
             if best:
                 break
@@ -889,11 +900,35 @@ def main():
                 + descriptor_segment * 16
                 + descriptor_offset
             )
-            for candidate_bias in range(-64, 65):
-                mem.seek(descriptor_address + candidate_bias)
-                if mem.read(len(descriptor_signature)) == descriptor_signature:
+            descriptor_matches = []
+            if guest_memory_end is not None:
+                mem.seek(guest_memory_base)
+                guest_region = mem.read(guest_memory_end - guest_memory_base)
+                descriptor_matches = [
+                    match.start()
+                    for match in re.finditer(
+                        re.escape(descriptor_signature), guest_region
+                    )
+                ]
+            for descriptor_match in descriptor_matches:
+                candidate_bias = (
+                    descriptor_match
+                    - descriptor_segment * 16
+                    - descriptor_offset
+                )
+                game_data_linear = (
+                    best - guest_memory_base - candidate_bias
+                )
+                if (0 <= game_data_linear < 0x100000
+                        and game_data_linear % 16 == 0):
                     guest_linear_bias = candidate_bias
                     break
+            else:
+                for candidate_bias in range(-64, 65):
+                    mem.seek(descriptor_address + candidate_bias)
+                    if mem.read(len(descriptor_signature)) == descriptor_signature:
+                        guest_linear_bias = candidate_bias
+                        break
             print(f"guest_linear_bias: {guest_linear_bias:+d}")
             mem.seek(best + 0x5225)
             font_offset, font_segment = struct.unpack("<HH", mem.read(4))
@@ -932,6 +967,31 @@ def main():
                 print(
                     f"vm_resource_image_{index}: pointer={segment:04x}:{offset:04x} "
                     f"head={data.hex()}"
+                )
+            for entity_index in range(32):
+                entity_offset = 0x6212 + entity_index * 32
+                mem.seek(best + entity_offset)
+                entity_flags = struct.unpack("<H", mem.read(2))[0]
+                mem.seek(best + entity_offset + 4)
+                frame_offset, frame_segment = struct.unpack("<HH", mem.read(4))
+                if (entity_flags & 0x0080) == 0 or frame_segment == 0:
+                    continue
+                mem.seek(
+                    guest_memory_base
+                    + guest_linear_bias
+                    + frame_segment * 16
+                )
+                frame_segment_data = mem.read(0x10000)
+                if dump_dir:
+                    (output / (
+                        f"{executable}.entity_{entity_index:02d}_"
+                        "frame_segment.bin"
+                    )).write_bytes(frame_segment_data)
+                print(
+                    f"entity_{entity_index:02d}_frame: "
+                    f"pointer={frame_segment:04x}:{frame_offset:04x} "
+                    f"sha256={hashlib.sha256(frame_segment_data).hexdigest()} "
+                    f"head={frame_segment_data[:64].hex()}"
                 )
             mem.seek(best + 0x0CD3)
             driver_offset, driver_segment = struct.unpack("<HH", mem.read(4))
