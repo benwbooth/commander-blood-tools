@@ -28,12 +28,15 @@ typedef signed long cb_i32;
 #if defined(__WATCOMC__)
 #define CB_INTERRUPT __interrupt
 #define CB_SAVE_REGS __saveregs
+#define CB_LOAD_DS __loadds
 #elif defined(__TURBOC__) || defined(__BORLANDC__)
 #define CB_INTERRUPT interrupt
 #define CB_SAVE_REGS
+#define CB_LOAD_DS
 #else
 #define CB_INTERRUPT
 #define CB_SAVE_REGS
+#define CB_LOAD_DS
 #endif
 
 #if defined(__WATCOMC__)

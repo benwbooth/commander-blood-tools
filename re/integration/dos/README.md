@@ -121,9 +121,9 @@ to the CD root. `BLOODPRG.EXE` remains available as the shipped fallback. The
 optional `--include-bloodprg-runtime` gate also builds every recovered BLOODPRG
 candidate with the relink runtime contract, derives the byte-backed owner from
 the actual unresolved report, adds the recovered entrypoint and platform
-adapters, and emits `cd/BPRG_RE.EXE`. The relinked executable has passed the
-first-opening-image smoke test, but not the complete opening or full-game
-parity gates.
+adapters, and emits `cd/BPRG_RE.EXE`. The relinked executable has passed an
+opening-to-bridge semantic gate and a DOSBox path through an archive cinematic
+back to the bridge, but not the complete opening or full-game parity gates.
 
 Build the Rust VM compiler in the project shell, then run the package builder
 with Open Watcom:
@@ -208,6 +208,15 @@ they remained one entry apart (44 versus 45), and their second-scene palettes
 matched. This is an opening content and progression gate, not a
 completed-opening or full-game C parity claim. The next runtime gate is
 following the original through the complete opening into cross-XDB gameplay.
+
+The natural-C runtime can require several times as many guest instructions as
+the original assembly. `runtime_boot --cpu-multiplier 4` models a faster CPU
+while preserving PIT, VGA, and Sound Blaster time. With that setting, the
+relinked runtime reaches the bridge semantic state with the same 768-byte
+palette as the original. A separate DOSBox Staging `cycles=max` run reaches the
+title, bridge, an archive-only character cinematic, and the bridge again. That
+gate also exercises EMS archive-index mapping; function `44h` requires the
+logical page in `BX` and EMS handle in `DX`.
 
 The later opening checkpoint is still open. Both builds load byte-identical VM
 script resources into the same handles, but the relinked runtime remains at

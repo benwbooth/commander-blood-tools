@@ -214,8 +214,8 @@ void CB_NEAR cb_ems_map_page(
     union REGS registers;
 
     registers.x.ax = (cb_u16)(0x4400u | physical_page);
-    registers.x.bx = handle;
-    registers.x.dx = logical_page;
+    registers.x.bx = logical_page;
+    registers.x.dx = handle;
     int86(0x67, &registers, &registers);
 }
 

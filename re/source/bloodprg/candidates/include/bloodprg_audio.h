@@ -169,7 +169,7 @@ void CB_SAVE_REGS CB_FAR snd_play_clip(
 void CB_FAR snd_bank_loader(
     cb_u16 mode,
     volatile char CB_NEAR *path);       /* 0x0B1B:0855 */
-void CB_FAR snd_driver_call(void);      /* 0x00BB9D */
+void CB_SAVE_REGS CB_LOAD_DS CB_FAR snd_driver_call(void); /* 0x00BB9D */
 void CB_FAR snd_stream_start(void);     /* 0x00BBB3 */
 void CB_FAR snd_stream_refill(void);    /* 0x00BC50 */
 void CB_FAR snd_stream_source_load(

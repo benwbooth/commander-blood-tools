@@ -116,6 +116,7 @@ pub struct Runtime {
     ticks: u32,
     next_tick_at: u64,
     pub steps_per_tick: u64,
+    cpu_steps_per_second: u64,
     pit_divisor: u32,
     pit_lo: u8,
     pit_phase: u8,
@@ -557,6 +558,7 @@ impl Runtime {
             ticks: 0,
             next_tick_at: 0,
             steps_per_tick: 450_000, // ~18.2 Hz at a modelled ~8 MIPS; PIT reprogramming scales it
+            cpu_steps_per_second: STEPS_PER_SECOND,
             pit_divisor: 0x1_0000,
             pit_lo: 0,
             pit_phase: 0,
@@ -623,6 +625,34 @@ impl Runtime {
         rt.m.vga = Some(Box::default());
         rt.init_bios();
         rt
+    }
+
+    /// Model a faster guest CPU without changing PIT, VGA, or Sound Blaster time.
+    ///
+    /// Apply this before running the guest. The multiplier deliberately is not
+    /// part of the savestate format so existing captures remain readable.
+    pub fn set_cpu_multiplier(&mut self, multiplier: u64) {
+        assert!(multiplier > 0, "CPU multiplier must be greater than zero");
+        let old_rate = self.cpu_steps_per_second;
+        let new_rate = STEPS_PER_SECOND.saturating_mul(multiplier);
+
+        self.cpu_steps_per_second = new_rate;
+        self.steps_per_tick = self
+            .steps_per_tick
+            .saturating_mul(new_rate)
+            .checked_div(old_rate)
+            .unwrap_or(u64::MAX)
+            .max(1000);
+
+        if self.next_tick_at > self.cpu.steps {
+            let remaining = self.next_tick_at - self.cpu.steps;
+            self.next_tick_at = self.cpu.steps.saturating_add(
+                remaining
+                    .saturating_mul(new_rate)
+                    .checked_div(old_rate)
+                    .unwrap_or(u64::MAX),
+            );
+        }
     }
 
     fn init_bios(&mut self) {
@@ -1412,8 +1442,8 @@ impl Runtime {
                     self.pit_phase = 0;
                     let d = ((v as u32) << 8) | self.pit_lo as u32;
                     self.pit_divisor = if d == 0 { 0x1_0000 } else { d };
-                    self.steps_per_tick =
-                        (self.pit_divisor as u64 * STEPS_PER_SECOND / 1_193_182).max(1000);
+                    self.steps_per_tick = (self.pit_divisor as u64
+                        * self.cpu_steps_per_second / 1_193_182).max(1000);
                     if self.trace_ints {
                         eprintln!(
                             "PIT ch0 divisor {:#x} -> {} steps/tick",
@@ -1975,7 +2005,8 @@ impl Runtime {
             return;
         };
         let elapsed = self.cpu.steps - start;
-        let played = (elapsed * self.sb_rate_hz as u64 / STEPS_PER_SECOND) as u32;
+        let played =
+            (elapsed * self.sb_rate_hz as u64 / self.cpu_steps_per_second) as u32;
         if played >= len {
             self.dma_tc |= 1 << ch;
             self.dma_cur_count[ch] = 0xffff;
@@ -2598,6 +2629,17 @@ impl Runtime {
 
 #[cfg(test)]
 mod ems_tests {
+    #[test]
+    fn cpu_multiplier_preserves_hardware_time() {
+        let mut runtime = super::Runtime::new(".".into(), ".".into());
+        assert_eq!(runtime.steps_per_tick, 450_000);
+
+        runtime.set_cpu_multiplier(4);
+
+        assert_eq!(runtime.steps_per_tick, 1_800_000);
+        assert_eq!(runtime.cpu_steps_per_second, 32_000_000);
+    }
+
     /// The emulator's EMS signature must be the bytes the GAME looks for, not a
     /// remembered spelling of the DOS convention (audit-fixes #527).
     #[test]

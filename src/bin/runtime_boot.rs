@@ -1,11 +1,37 @@
 //! Boot the real BLOODPRG.EXE inside the path-B runtime (recomp::runtime) and capture frames.
 //!
 //! Usage: runtime_boot [--steps N] [--shot-every N] [--out DIR] [--trace]
+//!                     [--c-root DIR] [--d-root DIR] [--executable NAME]
+//!                     [--cpu-multiplier N]
 //! Environment mirrors the DOSBox-X oracle: C: = accuracy/cdrive (writable, game saves in
 //! C:\cblood\), D: = output/_tmp_iso (the CD), CWD = D:\, launch args from BLOOD.BAT.
 
 use commander_blood_tools::recomp::runtime::{RunEnd, Runtime};
 use std::path::PathBuf;
+
+const GAME_DATA_ANCHOR: &[u8] = b"386 minimum !\0Not enough memory (570Ko min) !\0";
+
+fn game_data_segment(rt: &Runtime) -> Result<u16, String> {
+    let conventional = &rt.m.mem[..0xa0000];
+    let matches: Vec<usize> = conventional
+        .windows(GAME_DATA_ANCHOR.len())
+        .enumerate()
+        .filter_map(|(address, bytes)| {
+            (address & 0xf == 0 && bytes == GAME_DATA_ANCHOR).then_some(address)
+        })
+        .collect();
+    match matches.as_slice() {
+        [address] => Ok((address / 16) as u16),
+        [] => Err("aligned BLOODPRG data-segment anchor not found".into()),
+        _ => Err(format!(
+            "BLOODPRG data-segment anchor is ambiguous: {matches:#x?}"
+        )),
+    }
+}
+
+fn read_word(rt: &Runtime, segment: u16, offset: u32) -> u16 {
+    u16::from_le_bytes([rt.m.read8(segment, offset), rt.m.read8(segment, offset + 1)])
+}
 
 fn main() {
     let mut steps: u64 = 400_000_000;
@@ -14,6 +40,10 @@ fn main() {
     let mut trace = false;
     let mut lockstep: Option<(u64, u64, PathBuf)> = None;
     let mut resume: Option<PathBuf> = None;
+    let mut c_root = PathBuf::from("accuracy/cdrive");
+    let mut d_root = PathBuf::from("output/_tmp_iso");
+    let mut executable = String::from("BLOODPRG.EXE");
+    let mut cpu_multiplier = 1u64;
     let args: Vec<String> = std::env::args().skip(1).collect();
     let mut i = 0;
     while i < args.len() {
@@ -42,6 +72,26 @@ fn main() {
                 i += 1;
                 resume = Some(PathBuf::from(&args[i]));
             }
+            "--c-root" => {
+                i += 1;
+                c_root = PathBuf::from(&args[i]);
+            }
+            "--d-root" => {
+                i += 1;
+                d_root = PathBuf::from(&args[i]);
+            }
+            "--executable" => {
+                i += 1;
+                executable = args[i].clone();
+            }
+            "--cpu-multiplier" => {
+                i += 1;
+                cpu_multiplier = args[i].parse().unwrap();
+                if cpu_multiplier == 0 {
+                    eprintln!("--cpu-multiplier must be greater than zero");
+                    std::process::exit(2);
+                }
+            }
             a => {
                 eprintln!("unknown arg {a}");
                 std::process::exit(2);
@@ -50,26 +100,169 @@ fn main() {
         i += 1;
     }
 
-    let c_root = PathBuf::from("accuracy/cdrive");
-    let d_root = PathBuf::from("output/_tmp_iso");
     std::fs::create_dir_all(c_root.join("cblood")).unwrap(); // BLOOD.BAT does `md cblood`
     std::fs::create_dir_all(&out).unwrap();
-    let exe = std::fs::read(d_root.join("BLOODPRG.EXE")).expect("D:\\BLOODPRG.EXE");
+    let exe_path = d_root.join(&executable);
+    let exe = std::fs::read(&exe_path)
+        .unwrap_or_else(|error| panic!("could not read {}: {error}", exe_path.display()));
 
     let mut rt = Runtime::new(c_root, d_root);
     rt.trace_ints = trace;
-    rt.load_exe(&exe, " AMR S162227 EMS WRIC:\\cblood\\", "D:\\BLOODPRG.EXE")
+    let dos_program_path = format!("D:\\{executable}");
+    rt.load_exe(&exe, " AMR S162227 EMS WRIC:\\cblood\\", &dos_program_path)
         .unwrap();
     if let Some(state) = resume {
         rt.load_state(&state).expect("load savestate");
         eprintln!("resumed from {} @ {} steps", state.display(), rt.cpu.steps);
     }
+    rt.set_cpu_multiplier(cpu_multiplier);
 
     if let Some((skip, window, path)) = lockstep {
         eprintln!("lockstep: skip={skip} window={window} -> {}", path.display());
         rt.lockstep_capture(skip, window, &path).unwrap();
         eprintln!("lockstep capture done ({} steps reached)", rt.cpu.steps);
         return;
+    }
+
+    if std::env::var("VIABILITY").is_ok() {
+        let g = game_data_segment(&rt).unwrap_or_else(|error| {
+            eprintln!("VIABILITY: {error}");
+            std::process::exit(1);
+        });
+        let limit = std::env::var("VIABILITY_STEPS")
+            .ok()
+            .and_then(|value| value.parse().ok())
+            .unwrap_or(200_000_000u64.saturating_mul(cpu_multiplier));
+        let input_interval = std::env::var("VIABILITY_INPUT_INTERVAL")
+            .ok()
+            .and_then(|value| value.parse().ok())
+            .unwrap_or(5_000_000u64.saturating_mul(cpu_multiplier));
+        let report_interval = std::env::var("VIABILITY_REPORT_INTERVAL")
+            .ok()
+            .and_then(|value| value.parse().ok())
+            .unwrap_or(10_000_000u64.saturating_mul(cpu_multiplier));
+        let watch_offset = std::env::var("VIABILITY_WATCH")
+            .ok()
+            .and_then(|value| u32::from_str_radix(value.trim_start_matches("0x"), 16).ok());
+        if let Some(offset) = watch_offset {
+            rt.m.watch_addr = Some(g as usize * 16 + offset as usize);
+            println!("VIABILITY: watching DS:{offset:#06x}");
+        }
+        let bridge_ready = |runtime: &Runtime| {
+            let frame = read_word(runtime, g, 0x2795);
+            runtime.m.read8(g, 0x67a8) == 1
+                && read_word(runtime, g, 0x2793) == 0x0021
+                && (40..=60).contains(&frame)
+                && runtime.m.read8(g, 0x67ac) == 0
+                && runtime.m.read8(g, 0x27e0) == 0
+        };
+        let report = |runtime: &Runtime, tag: &str| {
+            println!(
+                "VIABILITY[{tag}] steps={} ds={g:04x} vm={:#04x} ui={:#06x} \
+                 frame={} active={:#04x} request={:#04x} present={:#04x} timer={} \
+                 cs:ip={:04x}:{:04x} files={}",
+                runtime.cpu.steps,
+                runtime.m.read8(g, 0x67a8),
+                read_word(runtime, g, 0x2793),
+                read_word(runtime, g, 0x2795),
+                runtime.m.read8(g, 0x67ac),
+                runtime.m.read8(g, 0x67aa),
+                runtime.m.read8(g, 0x27e0),
+                read_word(runtime, g, 0x0b29),
+                runtime.cpu.cs,
+                runtime.cpu.ip,
+                runtime.opened_files.len(),
+            );
+        };
+        let run_to = |runtime: &mut Runtime, target: u64| match runtime.run(target) {
+            RunEnd::StepBudget => {}
+            end => {
+                report(runtime, "stopped");
+                eprintln!("VIABILITY: guest stopped before bridge state: {end:?}");
+                std::process::exit(1);
+            }
+        };
+
+        println!(
+            "VIABILITY: executable={executable} ds={g:04x} limit={limit} \
+             input_interval={input_interval} cpu_multiplier={cpu_multiplier}"
+        );
+        let mut next_input = input_interval;
+        let mut next_report = report_interval;
+        while rt.cpu.steps < limit {
+            let target = next_input.min(next_report).min(limit);
+            run_to(&mut rt, target);
+            if bridge_ready(&rt) {
+                report(&rt, "bridge");
+                rt.write_ppm(&out.join("viability_bridge.ppm")).unwrap();
+                std::fs::write(out.join("viability_screen.bin"), rt.screen_indices()).unwrap();
+                let data: Vec<u8> = (0..0x10000u32)
+                    .map(|offset| rt.m.read8(g, offset))
+                    .collect();
+                std::fs::write(out.join("viability_data_segment.bin"), data).unwrap();
+                std::fs::write(out.join("viability_palette.bin"), rt.dac).unwrap();
+                std::fs::write(
+                    out.join("viability_conventional_memory.bin"),
+                    &rt.m.mem[..0x100000],
+                )
+                .unwrap();
+                if let Some(offset) = watch_offset {
+                    println!("VIABILITY: writes to DS:{offset:#06x}:");
+                    for &(value, cs, ip) in &rt.m.addr_hits {
+                        println!("  value={value:#04x} at {cs:04x}:{ip:04x}");
+                    }
+                }
+                println!("VIABILITY: bridge state reached");
+                return;
+            }
+            if rt.cpu.steps >= next_report {
+                report(&rt, "progress");
+                next_report = next_report.saturating_add(report_interval);
+            }
+            if rt.cpu.steps >= next_input {
+                rt.inject_key(0x01, 0x1b);
+                rt.inject_key(0x1c, 0x0d);
+                let input_y = if read_word(&rt, g, 0x2793) == 0x0045 { 170 } else { 100 };
+                rt.set_mouse_pos(320, input_y);
+                rt.mouse_press(0);
+                let release_at = rt.cpu.steps + 400_000u64.saturating_mul(cpu_multiplier);
+                run_to(&mut rt, release_at);
+                rt.mouse_release(0);
+                let release_deadline = rt.cpu.steps + input_interval;
+                while read_word(&rt, g, 0x0a30) != 0 && rt.cpu.steps < release_deadline {
+                    let poll_at = (rt.cpu.steps
+                        + 100_000u64.saturating_mul(cpu_multiplier))
+                        .min(release_deadline);
+                    run_to(&mut rt, poll_at);
+                }
+                next_input = rt.cpu.steps.saturating_add(input_interval);
+            }
+        }
+        report(&rt, "limit");
+        rt.write_ppm(&out.join("viability_limit.ppm")).unwrap();
+        std::fs::write(out.join("viability_screen.bin"), rt.screen_indices()).unwrap();
+        let data: Vec<u8> = (0..0x10000u32)
+            .map(|offset| rt.m.read8(g, offset))
+            .collect();
+        std::fs::write(out.join("viability_data_segment.bin"), data).unwrap();
+        std::fs::write(out.join("viability_palette.bin"), rt.dac).unwrap();
+        std::fs::write(
+            out.join("viability_conventional_memory.bin"),
+            &rt.m.mem[..0x100000],
+        )
+        .unwrap();
+        println!("VIABILITY: opened files:");
+        for (step, path) in &rt.opened_files {
+            println!("  @{step:>10} {path}");
+        }
+        if let Some(offset) = watch_offset {
+            println!("VIABILITY: writes to DS:{offset:#06x}:");
+            for &(value, cs, ip) in &rt.m.addr_hits {
+                println!("  value={value:#04x} at {cs:04x}:{ip:04x}");
+            }
+        }
+        eprintln!("VIABILITY: bridge state was not reached by {limit} steps");
+        std::process::exit(1);
     }
 
     if let Ok(w) = std::env::var("READSTR") {
