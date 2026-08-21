@@ -51,6 +51,7 @@
               cargo
               clippy
               curl
+              dosbox-staging
               dosbox-x
               ffmpeg
               imagemagick

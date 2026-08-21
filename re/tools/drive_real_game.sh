@@ -12,10 +12,10 @@
 #   key <keyname>       (e.g. Return, Escape, space)
 #   shot <name>         (capture the game area to <out-dir>/<name>.png)
 #   wait <seconds>
-# Set DOSBOX_CYCLES (for example, `max` or `3000`) to override DOSBox-X's
-# cycle rate while preserving the same launch and input sequence.
-# The DOSBox-X window is found by its "DOSBox-X"/"BLOODPRG" title (it appears a few
-# seconds after launch — the script waits for it).
+# Interactive runs default to DOSBox Staging's dynamic core at maximum cycles.
+# Override DOSBOX_BINARY, DOSBOX_CORE, DOSBOX_CYCLES, or DOSBOX_FRAMESKIP when a
+# strict DOSBox-X normal-core comparison is required.
+# The emulator window appears a few seconds after launch; the script waits for it.
 set -euo pipefail
 
 # <game-dir> is the CD image dir that CONTAINS BLOODPRG.EXE (e.g. output/_tmp_iso),
@@ -28,7 +28,10 @@ DISP="${3:-:73}"
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 INSTALL_PARENT="${4:-$REPO_ROOT/accuracy/cblood_install}"
 GAME_EXECUTABLE="${5:-BLOODPRG.EXE}"
-DOSBOX_CYCLES="${DOSBOX_CYCLES:-}"
+DOSBOX_BINARY="${DOSBOX_BINARY:-dosbox-staging}"
+DOSBOX_CORE="${DOSBOX_CORE:-dynamic}"
+DOSBOX_CYCLES="${DOSBOX_CYCLES:-max}"
+DOSBOX_FRAMESKIP="${DOSBOX_FRAMESKIP:-10}"
 export DISPLAY="$DISP" SDL_VIDEODRIVER=x11
 
 Xvfb "$DISP" -screen 0 800x600x24 >/dev/null 2>&1 &
@@ -39,9 +42,28 @@ sleep 3
 # arguments, leaves the game looping the ATTRACT DEMO -- it never reaches a playable
 # state, so every capture and every memory dump taken that way is inert. This is the
 # same defect that made re/tools/dump_dosbox_mem.py silently useless until it was fixed.
-DOSBOX_ARGS=(dosbox-x -set "sdl output=surface")
-if [ -n "$DOSBOX_CYCLES" ]; then
-  DOSBOX_ARGS+=(-set "cpu cycles=$DOSBOX_CYCLES")
+command -v "$DOSBOX_BINARY" >/dev/null || {
+  echo "$DOSBOX_BINARY not found (use nix develop)"
+  exit 1
+}
+if [[ "$(basename "$DOSBOX_BINARY")" == *staging* ]]; then
+  DOSBOX_ARGS=(
+    "$DOSBOX_BINARY"
+    --noprimaryconf
+    --nolocalconf
+    --set output=surface
+    --set "cycles=$DOSBOX_CYCLES"
+    --set "core=$DOSBOX_CORE"
+    --set "frameskip=$DOSBOX_FRAMESKIP"
+  )
+else
+  DOSBOX_ARGS=(
+    "$DOSBOX_BINARY"
+    -set "sdl output=surface"
+    -set "cpu cycles=$DOSBOX_CYCLES"
+    -set "cpu core=$DOSBOX_CORE"
+    -set "render frameskip=$DOSBOX_FRAMESKIP"
+  )
 fi
 "${DOSBOX_ARGS[@]}" \
   -c "mount c \"$INSTALL_PARENT\"" \
@@ -50,10 +72,13 @@ fi
   -c "$GAME_EXECUTABLE AMR S162227 EMS WRIC:\\cblood\\" >/dev/null 2>&1 &
 DOSBOX_PID=$!
 
-# Wait for the game window (title contains DOSBox-X), up to ~20s.
+# Wait for the game window, up to ~20s.
 WID=""
 for _ in $(seq 1 20); do
-  WID=$(xdotool search --name "DOSBox-X" 2>/dev/null | head -1 || true)
+  WID=$(xdotool search --all --pid "$DOSBOX_PID" 2>/dev/null | head -1 || true)
+  if [ -z "$WID" ]; then
+    WID=$(xdotool search --name "DOSBox-X\|DOSBox Staging" 2>/dev/null | head -1 || true)
+  fi
   [ -n "$WID" ] && break
   sleep 1
 done
