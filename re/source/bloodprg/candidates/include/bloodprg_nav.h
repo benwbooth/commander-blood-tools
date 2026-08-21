@@ -255,7 +255,6 @@ extern volatile char CB_FS_DATA
 #pragma aux nav_chart_object_pick \
         parm [es di] value [ax] modify exact [ax bx cx dx bp di]
 #pragma aux name_area_palette_effect_update modify exact [ax]
-#pragma aux nav_camera_state_check modify exact []
 #endif
 
 int CB_NEAR presentation_line_helper(
