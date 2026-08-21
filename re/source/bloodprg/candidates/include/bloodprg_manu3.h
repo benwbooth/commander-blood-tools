@@ -32,6 +32,8 @@ typedef struct bloodprg_alien_api_request {
 typedef void (CB_FAR *bloodprg_alien_overlay_entry)(
         const volatile bloodprg_alien_api_request CB_FAR *request);
 
+typedef void (CB_FAR *bloodprg_overlay_entry_raw)(void);
+
 typedef union bloodprg_overlay_slot {
     volatile cb_u8 CB_FAR *load_buffer;
     bloodprg_alien_overlay_entry alien_entry;
@@ -58,6 +60,12 @@ extern volatile bloodprg_manu3_api_request
 extern volatile cb_u16 manu3_animation_selector_request; /* DS:0x0A32 */
 extern volatile cb_u16 manu3_animation_selector_current; /* DS:0x0A34 */
 extern volatile cb_u8 manu3_frame_delay; /* DS:0x0AE7 */
+
+#if defined(BLOODPRG_RELINKED_RUNTIME)
+void CB_NEAR cb_overlay_call_inherited_bp(
+        bloodprg_overlay_entry_raw entry,
+        const volatile void CB_NEAR *request);
+#endif
 
 void CB_NEAR manu3_hand_frame_dispatch(void); /* 0x001610 */
 

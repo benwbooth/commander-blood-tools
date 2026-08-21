@@ -3,6 +3,7 @@
 #include "../../source/bloodprg/candidates/include/bloodprg_audio.h"
 #include "../../source/bloodprg/candidates/include/bloodprg_ems.h"
 #include "../../source/bloodprg/candidates/include/bloodprg_graphics.h"
+#include "../../source/bloodprg/candidates/include/bloodprg_manu3.h"
 #include "../../source/bloodprg/candidates/include/bloodprg_resource.h"
 
 #if defined(__WATCOMC__)
@@ -22,6 +23,35 @@ static int bloodprg_dos_find_first_interrupt(
 #endif
 
 static volatile bloodprg_dos_dta bloodprg_dos_dta_buffer;
+
+#if defined(__WATCOMC__)
+static void bloodprg_overlay_call_inherited_bp(
+        bloodprg_overlay_entry_raw entry,
+        const volatile void CB_NEAR *request);
+#pragma aux bloodprg_overlay_call_inherited_bp = \
+        "push bp" \
+        "push ds" \
+        "push es" \
+        "push fs" \
+        "mov bp,si" \
+        "push dx" \
+        "push ax" \
+        "mov bx,sp" \
+        "call dword ptr ss:[bx]" \
+        "add sp,4" \
+        "pop fs" \
+        "pop es" \
+        "pop ds" \
+        "pop bp" \
+        parm [dx ax] [si] modify exact [ax bx cx dx si di]
+#endif
+
+void CB_NEAR cb_overlay_call_inherited_bp(
+        bloodprg_overlay_entry_raw entry,
+        const volatile void CB_NEAR *request)
+{
+    bloodprg_overlay_call_inherited_bp(entry, request);
+}
 
 static int bloodprg_dos_call_far_path(
         union REGS *registers,

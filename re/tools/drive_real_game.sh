@@ -11,6 +11,8 @@
 #   click <x> <y>       (mouse click at game-relative x,y; game area is 640x400)
 #   move_relative <dx> <dy>
 #   mouse_button <n>    (press/release without repositioning the captured pointer)
+#   mouse_down <n>      (hold a button for later inspection or release)
+#   mouse_up <n>        (release a button held by mouse_down)
 #   key <keyname>       (e.g. Return, Escape, space)
 #   fastforward <secs>  (hold the emulator's Alt+F12 turbo control)
 #   shot <name>         (capture the game area to <out-dir>/<name>.png)
@@ -91,24 +93,28 @@ done
 [ -n "$WID" ] || { echo "game window not found"; exit 1; }
 echo "driving window $WID: $(xdotool getwindowname "$WID")"
 xdotool windowactivate "$WID" 2>/dev/null || true
+xdotool windowfocus --sync "$WID" 2>/dev/null || true
+xdotool mousemove --window "$WID" 400 300
 
 while read -r action a b; do
   case "$action" in
     click)
       xdotool mousemove --window "$WID" "$a" "$b"
       sleep 0.3
-      xdotool mousedown --window "$WID" 1
+      xdotool mousedown 1
       sleep 0.2
-      xdotool mouseup --window "$WID" 1
+      xdotool mouseup 1
       ;;
     move_relative)
       xdotool mousemove_relative -- "$a" "$b"
       ;;
     mouse_button)
-      xdotool mousedown --window "$WID" "$a"
+      xdotool mousedown "$a"
       sleep 0.2
-      xdotool mouseup --window "$WID" "$a"
+      xdotool mouseup "$a"
       ;;
+    mouse_down) xdotool mousedown "$a" ;;
+    mouse_up)   xdotool mouseup "$a" ;;
     key)
       xdotool keydown --window "$WID" "$a"
       sleep 0.2

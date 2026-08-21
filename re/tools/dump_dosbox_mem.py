@@ -24,8 +24,8 @@ ticks; wall-clock throughput depends on compiler code generation.
 NOTE: the star-map's 0x4F09 records are the *default* (10200,12100,900) until the game
 is in ACTIVE navigation — drive it there (see drive_real_game.sh) before dumping.
 Set BLOODPRG_INPUT_ACTIONS to newline-separated `wait`, `click`, `move_relative`,
-`mouse_button`, and `key` commands to capture memory after a reproducible
-interactive sequence instead of wait_secs.
+`mouse_button`, `mouse_down`, `mouse_up`, and `key` commands to capture memory
+after a reproducible interactive sequence instead of wait_secs.
 """
 import ctypes, hashlib, subprocess, time, os, re, shlex, struct, sys
 from pathlib import Path
@@ -246,13 +246,23 @@ def drive_input_actions(pid, actions, env):
             )
             ids = [line for line in result.stdout.splitlines() if line]
             if ids:
-                window_id = ids[-1]
+                window_id = ids[0]
                 break
         if window_id is not None:
             break
         time.sleep(1)
     if window_id is None:
         raise RuntimeError("DOSBox window not found for input actions")
+
+    subprocess.run(
+        ["xdotool", "windowfocus", "--sync", window_id],
+        env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        check=False,
+    )
+    subprocess.run(
+        ["xdotool", "mousemove", "--window", window_id, "400", "300"],
+        env=env, check=True,
+    )
 
     for line in actions.splitlines():
         fields = shlex.split(line, comments=True)
@@ -269,12 +279,12 @@ def drive_input_actions(pid, actions, env):
             )
             time.sleep(0.3)
             subprocess.run(
-                ["xdotool", "mousedown", "--window", window_id, "1"],
+                ["xdotool", "mousedown", "1"],
                 env=env, check=True,
             )
             time.sleep(0.2)
             subprocess.run(
-                ["xdotool", "mouseup", "--window", window_id, "1"],
+                ["xdotool", "mouseup", "1"],
                 env=env, check=True,
             )
         elif action == "move_relative" and len(fields) == 3:
@@ -284,12 +294,18 @@ def drive_input_actions(pid, actions, env):
             )
         elif action == "mouse_button" and len(fields) == 2:
             subprocess.run(
-                ["xdotool", "mousedown", "--window", window_id, fields[1]],
+                ["xdotool", "mousedown", fields[1]],
                 env=env, check=True,
             )
             time.sleep(0.2)
             subprocess.run(
-                ["xdotool", "mouseup", "--window", window_id, fields[1]],
+                ["xdotool", "mouseup", fields[1]],
+                env=env, check=True,
+            )
+        elif action in ("mouse_down", "mouse_up") and len(fields) == 2:
+            xdotool_action = "mousedown" if action == "mouse_down" else "mouseup"
+            subprocess.run(
+                ["xdotool", xdotool_action, fields[1]],
                 env=env, check=True,
             )
         elif action == "key" and len(fields) == 2:

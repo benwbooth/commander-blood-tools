@@ -52,7 +52,13 @@ void CB_FAR alien_overlay_cycle(void)
     saved_loader_flags = snd_loader_flags_word;
     snd_driver_pending_flag = 0u;
     cdrom_audio_play_track_2();
+#if defined(BLOODPRG_RELINKED_RUNTIME)
+    cb_overlay_call_inherited_bp(
+            (bloodprg_overlay_entry_raw)alien_overlay_slot.alien_entry,
+            &alien_overlay_request);
+#else
     alien_overlay_slot.alien_entry(&alien_overlay_request);
+#endif
     cdrom_audio_stop();
     snd_loader_flags_word = saved_loader_flags;
 

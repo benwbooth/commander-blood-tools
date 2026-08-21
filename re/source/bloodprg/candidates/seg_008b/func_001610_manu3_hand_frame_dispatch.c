@@ -45,5 +45,11 @@ void CB_NEAR manu3_hand_frame_dispatch(void)
     manu3_api_request.animation_selector = selector;
     manu3_api_request.framebuffer_window_offset =
             (cb_u16)graphics_draw_page_offset;
+#if defined(BLOODPRG_RELINKED_RUNTIME)
+    cb_overlay_call_inherited_bp(
+            (bloodprg_overlay_entry_raw)manu3_overlay_entry,
+            &manu3_api_request);
+#else
     manu3_overlay_entry(&manu3_api_request);
+#endif
 }
