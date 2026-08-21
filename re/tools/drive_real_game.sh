@@ -122,8 +122,8 @@ while read -r action a b; do
       xdotool keyup --window "$WID" Alt_L
       ;;
     wait)  sleep "$a" ;;
-    shot)  import -window root -gravity South -crop 640x400+0+0 +repage \
-             -resize 320x200\! "$OUT_DIR/$a.png" 2>/dev/null; echo "shot $OUT_DIR/$a.png" ;;
+    shot)  import -window "$WID" -resize 320x200\! \
+             "$OUT_DIR/$a.png" 2>/dev/null; echo "shot $OUT_DIR/$a.png" ;;
     ''|\#*) : ;;
   esac
 done
