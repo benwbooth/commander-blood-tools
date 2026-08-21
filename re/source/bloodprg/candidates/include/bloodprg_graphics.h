@@ -377,7 +377,6 @@ void CB_NEAR list_walk_f18(void); /* 0x007CE8 */
 #pragma aux palette_transition_step modify exact [ax]
 #pragma aux tint_table_build_banked \
         parm [ax] [bx] modify exact [ax bx]
-#pragma aux back_buffer_copy_from parm [bx] [cx] [dx] modify exact []
 #pragma aux blit_fill_row_5221 parm [ax] modify exact [ax]
 #pragma aux back_buffer_fill parm [ax] modify exact [ax]
 #pragma aux fullscreen_copy_to_backbuffer parm [si] modify exact []
