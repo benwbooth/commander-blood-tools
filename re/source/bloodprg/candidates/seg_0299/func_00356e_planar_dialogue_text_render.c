@@ -32,18 +32,12 @@ void CB_FAR planar_dialogue_text_render(
     cb_u8 plane;
     cb_u8 row_bits;
 
-#if defined(__WATCOMC__)
-    _asm push eax;
-    _asm push ds;
-    _asm push es;
-#endif
-
     main_font_draw_width = 0;
     if (y > graphics_band_bottom_row
             || (cb_i16)y
                     <= (cb_i16)(graphics_band_top_row
                             - BLOODPRG_PLANAR_DIALOGUE_CLIP_HEIGHT)) {
-        goto restore_registers;
+        return;
     }
 
     row_offset = (cb_u16)(y << 4);
@@ -90,10 +84,4 @@ void CB_FAR planar_dialogue_text_render(
         glyph_origin += advance_word >> 2;
     }
 
-restore_registers:
-#if defined(__WATCOMC__)
-    _asm pop es;
-    _asm pop ds;
-    _asm pop eax;
-#endif
 }

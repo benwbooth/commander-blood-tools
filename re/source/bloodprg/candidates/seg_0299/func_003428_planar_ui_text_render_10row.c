@@ -33,18 +33,12 @@ void CB_FAR planar_ui_text_render_10row(
     cb_u8 map_mask;
     cb_u8 plane;
 
-#if defined(__WATCOMC__)
-    _asm push ax;
-    _asm push ds;
-    _asm push es;
-#endif
-
     square_caps_draw_width = 0;
     if (y > graphics_band_bottom_row
             || (cb_i16)y
                     <= (cb_i16)(graphics_band_top_row
                             - BLOODPRG_SQUARE_CAPS_HEIGHT)) {
-        goto restore_registers;
+        return;
     }
 
     row_offset = (cb_u16)(y << 4);
@@ -102,10 +96,4 @@ void CB_FAR planar_ui_text_render_10row(
         glyph_origin += advance_word >> 2;
     }
 
-restore_registers:
-#if defined(__WATCOMC__)
-    _asm pop es;
-    _asm pop ds;
-    _asm pop ax;
-#endif
 }

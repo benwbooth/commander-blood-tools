@@ -37,7 +37,7 @@ void CB_FAR error_overlay_draw(cb_u16 mode,
         y = (cb_u16)(layout >> 16);
         small_text_render(
                 error_overlay_file_text, x, y, ERROR_OVERLAY_COLOR);
-        small_text_render_far(
+        small_text_render(
                 detail,
                 x,
                 (cb_u16)(y + ERROR_OVERLAY_ROW_HEIGHT),

@@ -222,15 +222,6 @@ void CB_FAR fullscreen_copy_to_backbuffer_far(
     fullscreen_copy_to_backbuffer((const cb_u32 CB_NEAR *)source);
 }
 
-void CB_FAR small_text_render_far(
-        const cb_u8 CB_FAR *text,
-        cb_u16 x,
-        cb_u16 y,
-        cb_u8 color)
-{
-    small_text_render((const cb_u8 CB_NEAR *)text, x, y, color);
-}
-
 /* HIMEM.SYS uses command and result registers that have no natural C ABI. */
 #if defined(__WATCOMC__)
 #pragma aux cb_platform_xms_move = \

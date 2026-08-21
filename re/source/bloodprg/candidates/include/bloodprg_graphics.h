@@ -316,15 +316,6 @@ void CB_FAR planar_ui_text_render_10row(
         cb_u16 x,
         cb_u16 y,
         cb_u8 color); /* 0x003428 */
-#if defined(__WATCOMC__)
-void CB_FAR planar_ui_text_render_10row_ds(
-        const cb_u8 CB_NEAR *text,
-        cb_u16 x,
-        cb_u16 y,
-        cb_u8 color);
-#else
-#define planar_ui_text_render_10row_ds planar_ui_text_render_10row
-#endif
 void CB_FAR planar_dialogue_text_render(
         const cb_u8 CB_FAR *text,
         cb_u16 x,
@@ -335,17 +326,10 @@ void CB_FAR subtitle_reveal_draw_wrapper(
         cb_u16 x,
         cb_u16 y); /* 0x003630 */
 void CB_FAR small_text_render(
-        const cb_u8 CB_NEAR *text,
-        cb_u16 x,
-        cb_u16 y,
-        cb_u8 color); /* 0x0036EA */
-#if defined(__WATCOMC__)
-void CB_FAR small_text_render_far(
         const cb_u8 CB_FAR *text,
         cb_u16 x,
         cb_u16 y,
-        cb_u8 color);
-#endif
+        cb_u8 color); /* 0x0036EA */
 void CB_FAR main_font_text_draw_display(
         const cb_u8 CB_FAR *text,
         cb_u16 x,
@@ -374,13 +358,7 @@ void CB_NEAR list_walk_f18(void); /* 0x007CE8 */
 #pragma aux blit_fill_row_5221 parm [ax] modify exact [ax]
 #pragma aux back_buffer_fill parm [ax] modify exact [ax]
 #pragma aux fullscreen_copy_to_backbuffer parm [si] modify exact []
-#pragma aux planar_ui_text_render_10row_ds "planar_ui_text_render_10row_" \
-        parm [si] [bx] [dx] [ax] modify exact []
-#pragma aux subtitle_reveal_draw_wrapper \
-        parm [si] [bx] [dx] modify exact []
 #pragma aux subtitle_reveal_pump modify exact [bx cx dx di es]
-#pragma aux small_text_render \
-        parm [si] [ax] [bx] [dx] modify exact []
 #endif
 
 #endif

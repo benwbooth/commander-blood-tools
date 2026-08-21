@@ -27,7 +27,7 @@ void CB_NEAR main_loop_hud_refresh(void)
         cursor += BLOODPRG_PLANAR_ROW_BYTES - BLOODPRG_HUD_CLEAR_COLUMNS;
     } while (--rows_remaining != 0);
 
-    planar_ui_text_render_10row_ds(
+    planar_ui_text_render_10row(
             main_loop_hud_text, 0x0087u, 0x0060u, 0xe8u);
     video_retrace_phase_wait();
 }

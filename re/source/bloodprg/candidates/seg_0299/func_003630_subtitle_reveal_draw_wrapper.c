@@ -34,12 +34,6 @@ void CB_FAR subtitle_reveal_draw_wrapper(
     cb_u8 plane;
     cb_u8 row_bits;
 
-#if defined(__WATCOMC__)
-    _asm push eax;
-    _asm push ds;
-    _asm push es;
-#endif
-
     line_end = line;
     line_length = 0;
     while (*line_end != '\r') {
@@ -62,7 +56,7 @@ void CB_FAR subtitle_reveal_draw_wrapper(
         reveal_distance = (cb_u16)(subtitle_reveal_cursor
                 - (cb_u16)line_cursor);
         if ((cb_i16)reveal_distance < 0) {
-            goto restore_registers;
+            return;
         }
         if ((cb_u8)reveal_distance == 0u) {
             color = 0xffu;
@@ -103,10 +97,4 @@ void CB_FAR subtitle_reveal_draw_wrapper(
         glyph_origin += 2u;
     } while (--characters_remaining != 0u);
 
-restore_registers:
-#if defined(__WATCOMC__)
-    _asm pop es;
-    _asm pop ds;
-    _asm pop eax;
-#endif
 }

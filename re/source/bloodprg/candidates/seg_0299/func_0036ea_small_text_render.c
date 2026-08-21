@@ -12,7 +12,7 @@
 #define BLOODPRG_SMALL_FONT_HEIGHT 5u
 
 void CB_FAR small_text_render(
-        const cb_u8 CB_NEAR *text,
+        const cb_u8 CB_FAR *text,
         cb_u16 x,
         cb_u16 y,
         cb_u8 color)
@@ -28,12 +28,6 @@ void CB_FAR small_text_render(
     cb_u8 map_mask;
     cb_u8 plane;
     cb_u8 row_bits;
-
-#if defined(__WATCOMC__)
-    _asm push eax;
-    _asm push ds;
-    _asm push es;
-#endif
 
     row_offset = (cb_u16)(y << 4);
     row_offset += (cb_u16)(y << 6);
@@ -74,10 +68,4 @@ void CB_FAR small_text_render(
 
         ++glyph_origin;
     }
-
-#if defined(__WATCOMC__)
-    _asm pop es;
-    _asm pop ds;
-    _asm pop eax;
-#endif
 }
