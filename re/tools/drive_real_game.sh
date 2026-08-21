@@ -14,14 +14,17 @@
 #   mouse_down <n>      (hold a button for later inspection or release)
 #   mouse_up <n>        (release a button held by mouse_down)
 #   key <keyname>       (e.g. Return, Escape, space)
+#   key_down <keyname>  (hold a key for later key_up, including normal repeat)
+#   key_up <keyname>    (release a key held by key_down)
 #   fastforward <secs>  (hold the emulator's Alt+F12 turbo control)
 #   shot <name>         (capture the game area to <out-dir>/<name>.png)
 #   wait <seconds>
 # Interactive runs default to DOSBox Staging's dynamic core at maximum cycles.
 # Override DOSBOX_BINARY, DOSBOX_CORE, DOSBOX_CYCLES, or DOSBOX_FRAMESKIP when a
 # strict DOSBox-X normal-core comparison is required.
-# Set DOSBOX_TRACE_FILE to record host reads from BLOOD.DAT with strace. The
-# window lookup follows child processes so tracing does not break input driving.
+# Set DOSBOX_TRACE_FILE to record host file reads with strace. By default only
+# BLOOD.DAT is traced; DOSBOX_TRACE_PATHS accepts colon-separated host paths.
+# The window lookup follows child processes so tracing does not break input.
 # The emulator window appears a few seconds after launch; the script waits for it.
 set -euo pipefail
 
@@ -82,12 +85,18 @@ if [ -n "${DOSBOX_TRACE_FILE:-}" ]; then
     exit 1
   }
   mkdir -p "$(dirname "$DOSBOX_TRACE_FILE")"
+  IFS=: read -r -a DOSBOX_TRACE_PATH_ARRAY <<< \
+    "${DOSBOX_TRACE_PATHS:-$GAME_DIR/BLOOD.DAT}"
+  DOSBOX_TRACE_PATH_ARGS=()
+  for trace_path in "${DOSBOX_TRACE_PATH_ARRAY[@]}"; do
+    [ -n "$trace_path" ] && DOSBOX_TRACE_PATH_ARGS+=(-P "$trace_path")
+  done
   DOSBOX_ARGS=(
     strace
     -f
     -yy
     -e "trace=openat,read,lseek,_llseek,pread64"
-    -P "$GAME_DIR/BLOOD.DAT"
+    "${DOSBOX_TRACE_PATH_ARGS[@]}"
     -o "$DOSBOX_TRACE_FILE"
     "${DOSBOX_ARGS[@]}"
   )
@@ -158,6 +167,8 @@ while read -r action a b; do
       sleep 0.2
       xdotool keyup --window "$WID" "$a"
       ;;
+    key_down) xdotool keydown --window "$WID" "$a" ;;
+    key_up)   xdotool keyup --window "$WID" "$a" ;;
     fastforward)
       xdotool keydown --window "$WID" Alt_L
       xdotool keydown --window "$WID" F12

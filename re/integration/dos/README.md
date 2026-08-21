@@ -237,6 +237,14 @@ coverage of the archived `MANU3.XDB` range recorded in `package_manifest.tsv`.
 This validates the emulator-speed strategy without replacing natural C with
 instruction-shaped assembly.
 
+Add `--through-script2` for the deeper tutorial gate. It steers the rotating
+bridge to CRYOBOX, selects BOB_MORLOCK, answers the mission prompt, and uses the
+game's SPACE skip. In addition to the MANU3 check, success requires complete
+host reads of source-compiled `SCRIPT2.COD`, `.BAS`, `.VAR`, `.DIC`, and `.DEB`.
+The gate stages all generated SCRIPT1-5 resources over an isolated copy of the
+installed `C:\cblood` tree because `WRIC:\cblood\` is the runtime script source;
+it never satisfies the check from pre-existing installed script files.
+
 The later tutorial checkpoint now passes too. The optimized runtime drove
 `BPRG_RE.EXE` through SCRIPT1, selected CRYOBOX and BOB_MORLOCK, loaded
 `frigo.fd`, played Bob's mission dialogue, and loaded all five `script2`

@@ -6006,6 +6006,21 @@ builds then follow the same transition values: selected item 3, phase `0x03`,
 `frigo.fd`, phase `0x05`, cryobox flag 1. This is evidence for retaining the
 natural C and accelerating the runtime, not adding inline assembly.
 
+## DOS package SCRIPT2 handoff gate (2026-08-21)
+
+The same transition now passes in DOSBox Staging, not only in the optimized
+Rust runtime. `recovered_package_dos_integration.py --through-script2` drives
+the relinked `BPRG_RE.EXE` through the rotating bridge, CRYOBOX, BOB_MORLOCK,
+the mission choice, and the source `run_profile 0x02` transition. The driver
+uses the dynamic core, `cycles=max`, and Alt+F12 turbo; no gameplay assembly
+was added for throughput.
+
+The gate stages all 25 generated VM resources over an isolated copy of the
+`WRIC:\\cblood\\` install tree, so it cannot consume stale installed scripts.
+A host I/O trace proves complete reads of rebuilt MANU3 (66,464 bytes) plus
+SCRIPT2 COD (39,042), BAS (22,565), VAR (4,882), DIC (24,772), and DEB (6,840).
+The quick title/bridge/MANU3 gate also continues to pass.
+
 The XDB gameplay loops no longer issue `CLD` themselves. Removing it from the
 entire call path made AMER, CROOLIS, and MANU3 pass but caused SCRUT to corrupt
 the DOS MCB chain, proving that a caller can enter with the direction flag set.
