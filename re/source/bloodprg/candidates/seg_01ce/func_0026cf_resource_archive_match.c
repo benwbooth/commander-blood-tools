@@ -88,5 +88,6 @@ cb_u16 CB_NEAR resource_archive_match(volatile char CB_FAR *filename)
         ++entry;
     }
 
-    return 0;
+    /* The original scan leaves the searched filename offset in BX. */
+    return FP_OFF(filename);
 }

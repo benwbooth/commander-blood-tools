@@ -6,6 +6,27 @@
 #include "../../source/bloodprg/candidates/include/bloodprg_manu3.h"
 #include "../../source/bloodprg/candidates/include/bloodprg_resource.h"
 
+#if defined(BLOODPRG_ADAPTER_TRACE)
+#pragma pack(1)
+typedef struct bloodprg_adapter_trace_record {
+    char magic[8];
+    cb_u16 open_call_count;
+    cb_u16 path_offset;
+    cb_u16 path_segment;
+    cb_u16 handle_before;
+    cb_u16 dos_ax;
+    cb_u16 carry;
+    cb_u16 success;
+    cb_u16 handle_after;
+    char path[16];
+} bloodprg_adapter_trace_record;
+#pragma pack()
+
+volatile bloodprg_adapter_trace_record bloodprg_adapter_trace = {
+    "CBOPEN1", 0, 0, 0, 0, 0, 0, 0, 0, ""
+};
+#endif
+
 #if defined(__WATCOMC__)
 static int bloodprg_dos_find_first_interrupt(
         const volatile char CB_FAR *path);
@@ -99,14 +120,32 @@ int CB_NEAR cb_dos_open_read_only(
 {
     union REGS registers;
     struct SREGS segments;
+#if defined(BLOODPRG_ADAPTER_TRACE)
+    cb_u16 character_index;
+#endif
+    int success;
 
     registers.x.ax = 0x3d00u;
-    if (bloodprg_dos_call_far_path(&registers, &segments, path)) {
-        *handle = registers.x.ax;
-        return 1;
+#if defined(BLOODPRG_ADAPTER_TRACE)
+    ++bloodprg_adapter_trace.open_call_count;
+    bloodprg_adapter_trace.path_offset = FP_OFF(path);
+    bloodprg_adapter_trace.path_segment = FP_SEG(path);
+    bloodprg_adapter_trace.handle_before = *handle;
+    for (character_index = 0;
+            character_index < sizeof(bloodprg_adapter_trace.path);
+            ++character_index) {
+        bloodprg_adapter_trace.path[character_index] = path[character_index];
     }
+#endif
+    success = bloodprg_dos_call_far_path(&registers, &segments, path);
     *handle = registers.x.ax;
-    return 0;
+#if defined(BLOODPRG_ADAPTER_TRACE)
+    bloodprg_adapter_trace.dos_ax = registers.x.ax;
+    bloodprg_adapter_trace.carry = registers.x.cflag;
+    bloodprg_adapter_trace.success = success;
+    bloodprg_adapter_trace.handle_after = *handle;
+#endif
+    return success;
 }
 
 int CB_NEAR cb_dos_create_truncate(

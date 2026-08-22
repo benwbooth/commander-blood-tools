@@ -37,6 +37,10 @@ int CB_NEAR resource_switch(cb_u16 resource_id)
 
     if ((resource_source_is_banked & 1u) == 0) {
         handle = resource_source_select(descriptor->filename);
+        if (handle == 0u) {
+            handle = FP_OFF(descriptor);
+        }
+        list_d8c_file_handle = handle;
         resource_source_remaining = resource_archive_remaining;
         resource_source_offset = resource_archive_offset;
 
@@ -45,7 +49,8 @@ int CB_NEAR resource_switch(cb_u16 resource_id)
             cb_dos_find_first(descriptor->filename);
             resource_source_remaining = dta->file_size;
             if (!cb_dos_open_read_only(descriptor->filename, &handle)) {
-                list_d8c_file_handle = handle;
+                /* Keep the next frame from servicing an unavailable source. */
+                list_d8c_file_handle = 0;
                 return 0;
             }
             resource_source_offset = 0;
