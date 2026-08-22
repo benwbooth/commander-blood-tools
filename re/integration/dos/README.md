@@ -176,10 +176,13 @@ FS/GS memory overrides, every symbolic data access has a statically proven
 segment owner, and the deterministic runtime-watchdog tests pass. The current
 whole-program segment-contract report covers 3,130 accesses in 337 linked
 routines with zero unresolved accesses or owner mismatches.
-`segment_role_comparison.tsv` is the complementary advisory report: it
-compares dynamic far-memory roles in each rebuilt routine with the original
-assembly and produces bounded review batches without treating natural-C
-instruction-count differences as defects.
+`segment_role_comparison.tsv` is the complementary dynamic far-memory report.
+The package build fails if an original-only role is neither proved through
+direct-call provenance nor covered by a current assembly-to-C equivalence in
+`re/source/bloodprg/segment_role_reviews.tsv`. Reviews are fingerprinted from
+the complete routine comparison, so changed code cannot silently retain stale
+approval;
+natural-C instruction-count differences alone are not treated as defects.
 The final validation directory records `data_placement_audit.log`,
 `segment_usage.tsv`, `segment_usage_audit.log`, and
 `runtime_watchdog_tests.log` for inspection.

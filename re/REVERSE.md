@@ -6176,15 +6176,26 @@ linked routines, with zero unresolved accesses and zero mismatches. This gate
 proves static symbol ownership; dynamic far-pointer targets and parity with the
 original routine's complete memory-access behavior remain separate audits.
 
-`compare_segment_roles.py` begins that separate parity audit. It traces the
+`compare_segment_roles.py` performs that separate parity audit. It traces the
 source of dynamic segment values (far-pointer arguments, fixed VGA segments,
 and segment words stored in GAME_DATA/FS_DATA), normalizes compiler register
-allocation, and compares memory-access roles rather than raw instructions.
-The report is advisory because natural C can legitimately replace an original
-far return slot or global-derived segment with a typed return value or an
-equivalent argument-derived segment. The first full comparison reduced 337
-routines to 28 missing-role review candidates; those candidates are intended
-for evidence-based parallel triage before any source change is accepted.
+allocation, propagates register and stack-argument provenance across direct
+calls, and compares memory-access roles rather than raw instructions. Natural
+C can legitimately replace an original far return slot or global-derived
+segment with a typed return value or equivalent argument-derived segment, so
+those differences require an assembly-to-C data-flow review rather than an
+instruction-count rule.
+
+Accepted differences live in `segment_role_reviews.tsv`. Each entry is bound
+to a hash of the routine's complete role set, access counts, and missing/extra
+access shapes; source or compiler changes that alter any part of that routine's
+comparison invalidate the review. Runtime packaging uses `--fail-unreviewed`,
+so every original-only
+dynamic role must either be proved interprocedurally or have a current reviewed
+equivalence, and every confirmed bug fails the build. The current pass has 269
+roles across 337 routines: three are interprocedurally equivalent, 27 have
+reviewed equivalent lowerings, zero remain unreviewed, and no segment-role bug
+was found in the bounded comparison.
 
 `recovered_package_invariant_gate.py` stages the package's 25 source-compiled
 script resources into a separate clean C drive for each requested profile. It
