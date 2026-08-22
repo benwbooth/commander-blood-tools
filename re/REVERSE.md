@@ -6079,3 +6079,27 @@ The earlier Pterra snapshots were captured when startup copied `PTERRA.EXT`
 into the write directory. They did not reach Pterra or execute its world-entry
 path, so they are not evidence of a Pterra crash or fix. World-level claims
 remain gated on an autonomous state-aware driver and runtime watchdog.
+
+## Live DOS composition watchdog (2026-08-21)
+
+`runtime_watchdog.py` derives the executable load segment from the final link
+map and live GS, then derives DOS address zero from the GAME_DATA:0000 startup
+string. It rejects a candidate unless the BIOS conventional-memory word and
+INT 21h vector are plausible. The resulting load segment identifies the PSP
+and its MCB, allowing the watchdog to discover and structurally parse the full
+conventional MCB chain on every sample. GS must remain at GAME_DATA. FS must
+remain at FS_DATA or point inside a DOS block owned by the game PSP while an
+overlay is active. The post-startup IVT hash must remain unchanged.
+
+A rebuilt title-loop run calibrated load 0823, PSP 0813, GAME_DATA 187E and
+FS_DATA 2046, discovered six MCBs from 0450 through the terminal block, and
+completed 36 guarded samples without an anomaly. Seven deterministic tests
+cover link-layout rejection, MCB discovery/corruption, ownership and IVT
+vector diagnostics.
+
+An Escape-based drive is not a valid world gate at unrestricted DOSBox speed.
+It reached the shutdown path in both the shipped and rebuilt executables; both
+then changed INT 0F from 0070:000E to a high-memory handler at offset 07A7.
+That matched original/rebuilt result rules out a relink-only corruption, but an
+early shutdown remains a failed coverage run. Phase 3 therefore waits on and
+edits identified game state instead of relying on wall-clock UI timing.
