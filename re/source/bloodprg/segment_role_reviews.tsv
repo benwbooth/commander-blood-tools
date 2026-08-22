@@ -6,23 +6,25 @@ func_001dd8_save_slot_name_edit_step	dynamic	653312f0c4b2bbbd	equivalent	Watcom 
 func_002140_input_action_move_previous	dynamic	ddf03af9389de325	equivalent	Watcom lowers the recovered aggregate assignment as a block copy with equivalent source and destination objects.
 func_00224d_input_action_cancel	dynamic	9a07d4d7182e6be2	equivalent	The recovered C clears the same aggregate directly instead of using the original dynamic far destination.
 func_0028ca_resource_name_lookup	dynamic	9b02d2f69816ef9f	equivalent	The recovered C materializes the same far pointer as separate offset and segment words.
-func_004536_sprite_blit_raw_transparent	dynamic	667d4abb585bac59	equivalent	The rebuilt blitter transposes segment-register allocation while preserving the caller-provided source object.
+func_004536_sprite_blit_raw_transparent	dynamic	db3c4af0c6885ec9	equivalent	The rebuilt blitter transposes segment-register allocation while preserving the caller-provided source object.
 func_004ba8_sprite_blit_raw_opaque	dynamic	198f5aef39e2d098	equivalent	The rebuilt blitter transposes segment-register allocation while preserving the caller-provided source object.
 func_004f62_sprite_blit_scaled_transparent	dynamic	740cbfcc3103df82	equivalent	The rebuilt blitter transposes segment-register allocation while preserving the caller-provided source object.
 func_005190_resource_allocate	dynamic	cfe2182d19ccd962	equivalent	Recovered allocation code makes the original indirect far-pointer output explicit through the typed return ABI.
-func_005816_presentation_scan	dynamic	eb10321d05247cfc	equivalent	Caller-propagated VM-heap pointers and typed record fields preserve the original presentation-record accesses.
+func_005816_presentation_scan	dynamic	b42c9528030f2208	equivalent	Caller-propagated VM-heap pointers and typed record fields preserve the original presentation-record accesses.
+func_005b38_record_c1_ship3d_action	memseg:GAME_DATA:6726	19fbfbec9d16cd0f	equivalent	The caller and recovered C pass the same VM-heap segment derived from GAME_DATA:6726 for all record reads and writes.
 func_00813a_nav_actor_handler_2	dynamic	2faba7f5e299ee88	equivalent	Watcom lowers the recovered aggregate assignment as a block copy with equivalent source and destination objects.
-func_0082e8_nav_state_gate	dynamic	840795e9e424023f	equivalent	The caller makes ES equal the VM segment; rebuilt C writes the same GAME_DATA:0e18 text buffer explicitly.
+func_0082e8_nav_state_gate	dynamic	8852056a0f48ed40	equivalent	The caller makes ES equal the VM segment; rebuilt C writes the same GAME_DATA:0e18 text buffer explicitly.
 func_0087bd_nav_choice_handler_2	dynamic	d67c4a074860ba19	equivalent	The recovered C names and materializes the same far destination instead of retaining a dynamic segment value.
-func_008a4e_camera_fsm_state_gate	dynamic	6011978af40eda8c	equivalent	The recovered C uses an explicit far destination for the same state-byte update.
 func_009083_location_info_panel_dispatch	memseg:GAME_DATA:indirect	d5aafa7bce7317c4	equivalent	The original LES through GAME_DATA:6218 and the typed C frame pointer read the same low-byte stride field.
 func_009240_entity_draw_full	memseg:GAME_DATA:indirect	8db133b6f58711d3	equivalent	The original LES through GAME_DATA:6218 and the typed C extent pointer read the same low-byte width and height fields.
 func_00959d_screen_flags_init	dynamic	08d05c607679105a	equivalent	Both forms copy 768 bytes from GAME_DATA:5b58 to the inherited destination at GAME_DATA:5251.
 func_009d10_dlg_line_id_scene_dispatch	dynamic	03a467300640cb3d	equivalent	Both forms copy 192 palette bytes from GAME_DATA:53d1 to GAME_DATA:59d1 and perform the same bounded dispatch.
-func_009f8e_resource_switch	dynamic	efa1a75e7b887924	equivalent	The recovered C materializes the same far pointer as separate offset and segment words.
+func_009f8e_resource_switch	dynamic	2e5cd180480ceb98	equivalent	The recovered C materializes the same far pointer as separate offset and segment words.
 func_00a117_flag_gated_2751	dynamic	9fdeddd9af7a46cd	equivalent	Watcom lowers the recovered aggregate transfer as a block copy over the same object.
 func_00a2ab_list_d8c_refill	dynamic	6451619ec319608f	equivalent	The recovered aggregate update expands to named fields instead of one dynamic byte store.
 func_00a41a_list_d8c_active_present	dynamic	b0fbb9bb152c4eaa	equivalent	The rebuilt list scan transposes segment-register allocation while preserving the same records.
 func_00a642_banked_list_load	dynamic	827bb8087269a340	equivalent	The recovered C makes the original success output explicit in its typed result path.
+func_00ab25_resource_payload_decode_rect	memseg:GAME_DATA:0abe	e6b2452d7adf141e	equivalent	Caller propagation proves the original and rebuilt decoder use the same staging-buffer segment from GAME_DATA:0abe.
+func_00ab25_resource_payload_decode_rect	memseg:GAME_DATA:5223	e6b2452d7adf141e	equivalent	Caller propagation proves the original and rebuilt decoder use the same framebuffer segment from GAME_DATA:5223.
 func_00b079_ship_3d_hud_init	dynamic	824ff7abfc05889f	equivalent	Both forms copy 192 bytes from GAME_DATA:5d98 to the inherited HUD palette destination at GAME_DATA:5491.
 func_00b34e_ship_3d_navigation_update	dynamic	b8e6968e38db0eb4	equivalent	Both forms copy 192 bytes from GAME_DATA:53d1 to the restored presentation palette destination at GAME_DATA:59d1.

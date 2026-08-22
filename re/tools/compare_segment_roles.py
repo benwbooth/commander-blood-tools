@@ -385,7 +385,8 @@ def access_mode(operand) -> str:
 
 
 def instruction_accesses(item: audit.ListingInstruction, state: RoleState,
-                         layout: dict[str, LayoutEntry], original: bool) \
+                         layout: dict[str, LayoutEntry], original: bool,
+                         include_static: bool = False) \
         -> tuple[Access, ...]:
     insn = audit.decode_instruction(item)
     known_offsets = {
@@ -397,17 +398,19 @@ def instruction_accesses(item: audit.ListingInstruction, state: RoleState,
             continue
         segment = memory_segment(insn, operand)
         role = state.register(segment)
-        if original and segment == "gs":
-            role = "GAME_DATA"
-        elif original and segment == "fs":
-            role = "FS_DATA"
-        elif (original and not operand.mem.base and not operand.mem.index and
+        if (original and not operand.mem.base and not operand.mem.index and
               ("GAME_DATA", operand.mem.disp & 0xFFFF) in known_offsets):
             role = "GAME_DATA"
-        if role in STATIC_ROLES:
+        if role in STATIC_ROLES and (
+                not include_static or role in {"STACK", "CODE"}):
             continue
         form = "direct" if not operand.mem.base and not operand.mem.index else "based"
-        displacement = operand.mem.disp
+        location = None if original else symbol_location(item.text, layout)
+        displacement = (
+            location.offset
+            if location is not None and location.owner == role
+            else operand.mem.disp
+        )
         if 0 <= displacement <= 0xFFFF and displacement & 0x8000:
             displacement -= 0x10000
         result.append(Access(
@@ -446,7 +449,8 @@ def callee_state(state: RoleState, listing: audit.Listing) -> RoleState:
 
 def analyze(listing: audit.Listing, layout: dict[str, LayoutEntry],
             original: bool, entry_state: RoleState | None = None,
-            call_resolver=None) -> tuple[Counter[Access], dict[str, list[RoleState]]]:
+            call_resolver=None, include_static: bool = False) \
+        -> tuple[Counter[Access], dict[str, list[RoleState]]]:
     by_offset = {item.offset: item for item in listing.instructions}
     edges = audit.successors(listing)
     states: dict[int, RoleState] = {}
@@ -475,7 +479,7 @@ def analyze(listing: audit.Listing, layout: dict[str, LayoutEntry],
     calls: dict[str, list[RoleState]] = {}
     for offset, state in states.items():
         accesses.update(instruction_accesses(
-            by_offset[offset], state, layout, original
+            by_offset[offset], state, layout, original, include_static
         ))
         if call_resolver is not None:
             target = call_resolver(by_offset[offset])
@@ -495,7 +499,8 @@ def interprocedural_accesses(
         listings: dict[str, audit.Listing],
         layout: dict[str, LayoutEntry],
         original: bool,
-        call_resolver) -> dict[str, Counter[Access]]:
+        call_resolver,
+        include_static: bool = False) -> dict[str, Counter[Access]]:
     entries = {
         stem: initial_state(listing, original)
         for stem, listing in listings.items()
@@ -506,7 +511,8 @@ def interprocedural_accesses(
         results = {}
         for stem, listing in listings.items():
             accesses, calls = analyze(
-                listing, layout, original, entries[stem], call_resolver
+                listing, layout, original, entries[stem], call_resolver,
+                include_static,
             )
             results[stem] = accesses
             for target, states in calls.items():
@@ -529,10 +535,6 @@ def normalize_role(role: str) -> str:
             role.startswith("memseg:memseg:")):
         return "dynamic"
     return role
-
-
-def normalized_roles(accesses: Counter[Access]) -> set[str]:
-    return {normalize_role(access.role) for access in accesses}
 
 
 def comparison_signature(row: Comparison) -> str:
@@ -616,26 +618,45 @@ def apply_reviews(rows: list[Comparison], reviews: dict[tuple[str, str], Review]
     return result
 
 
+def byte_footprint(accesses: Counter[Access]) \
+        -> frozenset[tuple[str, str, int]]:
+    result: set[tuple[str, str, int]] = set()
+    for access in accesses:
+        modes = ("r", "w") if access.mode == "rw" else (access.mode,)
+        for mode in modes:
+            for byte in range(access.width):
+                result.add((mode, access.form, access.displacement + byte))
+    return frozenset(result)
+
+
 def compare(routine: str, original: Counter[Access], rebuilt: Counter[Access]) \
         -> list[Comparison]:
-    original_by_role: dict[str, Counter[str]] = {}
-    rebuilt_by_role: dict[str, Counter[str]] = {}
+    original_accesses: dict[str, Counter[Access]] = {}
+    rebuilt_accesses: dict[str, Counter[Access]] = {}
     for access, count in original.items():
         role = normalize_role(access.role)
-        original_by_role.setdefault(role, Counter())[access.shape()] += count
+        original_accesses.setdefault(role, Counter())[access] += count
     for access, count in rebuilt.items():
         role = normalize_role(access.role)
-        rebuilt_by_role.setdefault(role, Counter())[access.shape()] += count
+        rebuilt_accesses.setdefault(role, Counter())[access] += count
     rows: list[Comparison] = []
-    for role in sorted(original_by_role.keys() | rebuilt_by_role.keys()):
-        before = original_by_role.get(role, Counter())
-        after = rebuilt_by_role.get(role, Counter())
+    for role in sorted(original_accesses.keys() | rebuilt_accesses.keys()):
+        before_accesses = original_accesses.get(role, Counter())
+        after_accesses = rebuilt_accesses.get(role, Counter())
+        before = Counter({
+            access.shape(): count for access, count in before_accesses.items()
+        })
+        after = Counter({
+            access.shape(): count for access, count in after_accesses.items()
+        })
         if before and not after:
             status = "missing_role"
         elif after and not before:
             status = "extra_role"
         elif before == after:
             status = "exact"
+        elif byte_footprint(before_accesses) == byte_footprint(after_accesses):
+            status = "footprint_equivalent"
         else:
             status = "shape_difference"
         missing = before - after
@@ -650,6 +671,21 @@ def compare(routine: str, original: Counter[Access], rebuilt: Counter[Access]) \
             ",".join(f"{shape}x{count}" for shape, count in sorted(extra.items())),
         ))
     return rows
+
+
+def add_context_evidence(local_rows: list[Comparison],
+                         context_rows: list[Comparison]) -> list[Comparison]:
+    context_is_equivalent = bool(context_rows) and all(
+        row.status in ("exact", "footprint_equivalent")
+        for row in context_rows
+    )
+    return [
+        replace(row, status="interprocedural_equivalent")
+        if (context_is_equivalent and row.status in (
+            "missing_role", "extra_role", "shape_difference"
+        )) else row
+        for row in local_rows
+    ]
 
 
 def original_call_resolver(entries: dict[int, str]):
@@ -757,12 +793,14 @@ def main() -> int:
         layout,
         original=True,
         call_resolver=original_call_resolver(original_entries),
+        include_static=True,
     )
     rebuilt_context_accesses = interprocedural_accesses(
         rebuilt_listings,
         layout,
         original=False,
         call_resolver=rebuilt_call_resolver(function_stems),
+        include_static=True,
     )
     original_accesses = {
         stem: analyze(listing, layout, original=True)[0]
@@ -779,18 +817,12 @@ def main() -> int:
             original_accesses[stem],
             rebuilt_accesses[stem],
         )
-        original_context_roles = normalized_roles(
-            original_context_accesses[stem]
+        context_rows = compare(
+            stem,
+            original_context_accesses[stem],
+            rebuilt_context_accesses[stem],
         )
-        rebuilt_context_roles = normalized_roles(
-            rebuilt_context_accesses[stem]
-        )
-        for row in routine_rows:
-            if (row.status == "missing_role" and
-                    row.role in original_context_roles and
-                    row.role in rebuilt_context_roles):
-                row = replace(row, status="interprocedural_equivalent")
-            rows.append(row)
+        rows.extend(add_context_evidence(routine_rows, context_rows))
 
     fingerprints = routine_fingerprints(rows)
     reviews = read_reviews(args.reviews.resolve() if args.reviews else None)
@@ -822,10 +854,11 @@ def main() -> int:
         "missing_role": 0,
         "extra_role": 1,
         "shape_difference": 2,
-        "interprocedural_equivalent": 3,
-        "reviewed_equivalent": 4,
-        "confirmed_bug": 5,
-        "exact": 6,
+        "footprint_equivalent": 3,
+        "interprocedural_equivalent": 4,
+        "reviewed_equivalent": 5,
+        "confirmed_bug": 6,
+        "exact": 7,
     }
     for row in sorted(rows, key=lambda item: (
         priority[item.status], item.routine, item.role
@@ -841,6 +874,7 @@ def main() -> int:
         f"{len(linked)} routines; {len(rows)} dynamic segment roles; "
         f"{counts['missing_role']} missing; {counts['extra_role']} extra; "
         f"{counts['shape_difference']} shape differences; "
+        f"{counts['footprint_equivalent']} footprint equivalents; "
         f"{counts['interprocedural_equivalent']} interprocedural equivalents; "
         f"{counts['reviewed_equivalent']} reviewed equivalents; "
         f"{counts['confirmed_bug']} confirmed bugs; "

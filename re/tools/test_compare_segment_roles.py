@@ -44,6 +44,23 @@ class SegmentRoleComparisonTests(unittest.TestCase):
         self.assertIn("w1", rows[0].missing_shapes)
         self.assertIn("w2", rows[0].extra_shapes)
 
+    def test_dword_and_two_word_accesses_have_equal_byte_footprints(self):
+        dword = MODULE.Access("dynamic", "r", 4, "based", 0)
+        low = MODULE.Access("dynamic", "r", 2, "based", 0)
+        high = MODULE.Access("dynamic", "r", 2, "based", 2)
+        rows = MODULE.compare(
+            "routine", Counter({dword: 1}), Counter({low: 1, high: 1})
+        )
+        self.assertEqual(rows[0].status, "footprint_equivalent")
+
+    def test_read_write_footprint_preserves_access_direction(self):
+        read = MODULE.Access("dynamic", "r", 2, "based", 0)
+        write = MODULE.Access("dynamic", "w", 2, "based", 0)
+        self.assertNotEqual(
+            MODULE.byte_footprint(Counter({read: 1})),
+            MODULE.byte_footprint(Counter({write: 1})),
+        )
+
     def test_xchg_preserves_segment_value_provenance(self):
         listing = self.listing("""
 0000                          routine_:
@@ -127,6 +144,39 @@ class SegmentRoleComparisonTests(unittest.TestCase):
             {"memseg:GAME_DATA:0a66"},
         )
 
+    def test_original_fs_reassignment_overrides_initial_owner(self):
+        listing = self.listing("""
+0000                          routine_:
+0000    8C D8                     mov ax,ds
+0002    8E E0                     mov fs,ax
+0004    64 8A 07                  mov al,byte ptr fs:[bx]
+0007    C3                        ret
+""")
+        entry = MODULE.initial_state(listing, original=True).with_register(
+            "ds", MODULE.ARGUMENT
+        )
+        accesses, _calls = MODULE.analyze(
+            listing, {}, original=True, entry_state=entry
+        )
+        self.assertEqual(
+            {access.role for access in accesses}, {MODULE.ARGUMENT}
+        )
+
+    def test_static_effect_uses_canonical_symbol_offset(self):
+        listing = self.listing("""
+0000                          routine_:
+0000    A1 00 00                  mov ax,word ptr _value
+0003    C3                        ret
+""")
+        layout = {"_value": MODULE.LayoutEntry("GAME_DATA", 0x1234)}
+        accesses, _calls = MODULE.analyze(
+            listing, layout, original=False, include_static=True
+        )
+        self.assertEqual(
+            accesses,
+            Counter({MODULE.Access("GAME_DATA", "r", 2, "direct", 0x1234): 1}),
+        )
+
     def test_review_is_bound_to_exact_comparison(self):
         row = MODULE.Comparison(
             "routine", "missing_role", "dynamic", 1, 0,
@@ -149,6 +199,38 @@ class SegmentRoleComparisonTests(unittest.TestCase):
                 [row, MODULE.replace(replacement, rebuilt_count=2)],
                 {("routine", "dynamic"): review},
             )
+
+    def test_exact_caller_context_downgrades_local_difference(self):
+        local = MODULE.Comparison(
+            "routine", "extra_role", "dynamic", 0, 1, "", "r1:based:+0x0x1"
+        )
+        context = MODULE.replace(
+            local, status="exact", original_count=1, missing_shapes="",
+            extra_shapes="",
+        )
+        rows = MODULE.add_context_evidence([local], [context])
+        self.assertEqual([row.status for row in rows], [
+            "interprocedural_equivalent"
+        ])
+
+    def test_context_mismatch_remains_a_separate_finding(self):
+        local = MODULE.Comparison(
+            "routine", "extra_role", "dynamic", 0, 1, "", "r1:based:+0x0x1"
+        )
+        rows = MODULE.add_context_evidence([local], [local])
+        self.assertEqual(
+            [(row.status, row.role) for row in rows],
+            [("extra_role", "dynamic")],
+        )
+
+    def test_empty_context_does_not_hide_a_local_difference(self):
+        local = MODULE.Comparison(
+            "routine", "extra_role", "dynamic", 0, 1, "", "r1:based:+0x0x1"
+        )
+        self.assertEqual(
+            MODULE.add_context_evidence([local], [])[0].status,
+            "extra_role",
+        )
 
 
 if __name__ == "__main__":

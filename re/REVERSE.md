@@ -6192,10 +6192,14 @@ access shapes; source or compiler changes that alter any part of that routine's
 comparison invalidate the review. Runtime packaging uses `--fail-unreviewed`,
 so every original-only
 dynamic role must either be proved interprocedurally or have a current reviewed
-equivalence, and every confirmed bug fails the build. The current pass has 269
-roles across 337 routines: three are interprocedurally equivalent, 27 have
-reviewed equivalent lowerings, zero remain unreviewed, and no segment-role bug
-was found in the bounded comparison.
+equivalence, and every confirmed bug fails the build. The comparator also
+expands accesses to byte-level read/write footprints, proving split dword/word
+and aggregate-field lowerings without relying on instruction counts. The
+current pass has 269 roles across 337 routines: 31 are footprint-equivalent,
+three are interprocedurally equivalent, 29 have reviewed equivalent lowerings,
+zero original-only roles remain unreviewed, and no segment-role bug was found
+in the bounded comparison. Rebuilt-only roles and non-equivalent footprints
+remain explicit parity findings rather than being silently accepted.
 
 `recovered_package_invariant_gate.py` stages the package's 25 source-compiled
 script resources into a separate clean C drive for each requested profile. It

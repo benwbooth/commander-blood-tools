@@ -183,6 +183,9 @@ direct-call provenance nor covered by a current assembly-to-C equivalence in
 the complete routine comparison, so changed code cannot silently retain stale
 approval;
 natural-C instruction-count differences alone are not treated as defects.
+Equivalent dword/word splits and aggregate field lowerings are proved through
+byte-level read/write footprints; differing offsets or directions remain in
+the report.
 The final validation directory records `data_placement_audit.log`,
 `segment_usage.tsv`, `segment_usage_audit.log`, and
 `runtime_watchdog_tests.log` for inspection.
