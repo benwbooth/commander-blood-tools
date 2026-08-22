@@ -6227,3 +6227,42 @@ request, enabled VM, expected handles, five non-null image pointers, zero
 handoff blockers and zero anomalies. The all-profile gate passed profiles 0
 through 4 against that fresh package and recorded resource sets 2-6, 37-41,
 76-80, 81-85 and 86-90 respectively.
+
+## SCRIPT2 Scruter variant-4 regression (2026-08-22)
+
+The reported lock after `OKAY OKAY, WISE GUY!` exposed two watchdog errors,
+not a proved game-runtime defect. BloodScript `state[0x12C0]` is opcode C0's
+record-relative word, so it resides at loaded SCRIPT2 VAR image offset 12C0;
+it is not GAME_DATA:12C0. Scruter's flag-00 lines also use the raw dictionary
+word-list path. Their active far pointer is GAME_DATA:674A and the dictionary
+far pointer is GAME_DATA:6728, while the assembled GAME_DATA:0E18 buffer can
+still contain an older line. The watchdog now decodes both paths and records
+each actual line transition with CPU, audio, presentation and radio state.
+
+DOSBox Staging 0.82.2 stores the six visible segment selectors in the leading
+`Segments.val[]` array of its 0x30-byte `Segs` symbol. DOSBox-X uses the older
+interleaved representation consumed by the existing reader. The watchdog now
+selects the representation from the exported symbol size; deterministic tests
+cover both layouts. This made the same ptrace guard usable against the emulator
+used by the interactive test instead of silently failing calibration.
+
+The deterministic probe loads the same GAME1.SAV used by the manual run, drives
+the real actor-resource and radio-bank handoff, selects SCRIPT2 branch 4, and
+requires progress through these decoded lines:
+
+- `TWELVE SECONDS...`
+- `OKAY OKAY, WISE GUY!`
+- `YOU DO THE COUNTING...`
+- `CRUIIIIK!`
+- `Report from Honk, onboard computing entity:`
+
+The final package executable completed that sequence under DOSBox Staging with
+22 streamed clips and no watchdog anomaly. A separate run allowed the original
+`sort` procedure to select branch 4 naturally and also reached Honk's report.
+The GAME1.SAV SHA-256 in both runs was
+`caca6b7f2a3e4a803d7ed94e75a8d8542a2388d7b0ef16e488fa96feb8689827`.
+The preserved manual process was no longer alive when the corrected Staging
+reader became available, so its exact guest state could not be recovered and
+no game C routine was changed on the basis of that report. The integrated
+package rebuild passed all 21 watchdog tests and retained executable SHA-256
+`46d98c617ad7109293f5786269cb3eb218c8c8d35afd4ecc07cac4cc25123cfe`.

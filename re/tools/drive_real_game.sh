@@ -17,6 +17,7 @@
 #   key_down <keyname>  (hold a key for later key_up, including normal repeat)
 #   key_up <keyname>    (release a key held by key_down)
 #   fastforward <secs>  (hold the emulator's Alt+F12 turbo control)
+#   wait_title          (wait for the orange title control)
 #   shot <name>         (capture the game area to <out-dir>/<name>.png)
 #   wait <seconds>
 # Interactive runs default to DOSBox Staging's dynamic core at maximum cycles.
@@ -135,14 +136,20 @@ GAME_PGID="$(ps -o pgid= -p "$DOSBOX_PID" 2>/dev/null | tr -d ' ')"
 find_process_window() {
   local -a process_queue=("$DOSBOX_PID")
   local queue_index=0
-  local process_id child_id
+  local process_id child_id candidate_id candidate_name
 
   WID=""
   while (( queue_index < ${#process_queue[@]} )); do
     process_id="${process_queue[$queue_index]}"
     queue_index=$((queue_index + 1))
-    WID=$(xdotool search --all --pid "$process_id" 2>/dev/null | head -1 || true)
-    [ -n "$WID" ] && return
+    while read -r candidate_id; do
+      [ -n "$candidate_id" ] || continue
+      candidate_name=$(xdotool getwindowname "$candidate_id" 2>/dev/null || true)
+      if [[ "$candidate_name" == *"${GAME_EXECUTABLE%.*}"* ]]; then
+        WID="$candidate_id"
+        return
+      fi
+    done < <(xdotool search --all --pid "$process_id" 2>/dev/null || true)
     while read -r child_id; do
       [ -n "$child_id" ] && process_queue+=("$child_id")
     done < <(pgrep -P "$process_id" 2>/dev/null || true)
@@ -153,7 +160,7 @@ WID=""
 for _ in $(seq 1 20); do
   find_process_window
   if [ -z "$WID" ]; then
-    WID=$(xdotool search --name "$DOSBOX_WINDOW_NAME\|DOSBox-X\|DOSBox Staging" \
+    WID=$(xdotool search --name "$DOSBOX_WINDOW_NAME" \
       2>/dev/null | head -1 || true)
   fi
   [ -n "$WID" ] && break
@@ -202,6 +209,25 @@ while read -r action a b; do
       sleep "$a"
       xdotool keyup --window "$WID" F12
       xdotool keyup --window "$WID" Alt_L
+      ;;
+    wait_title)
+      title_reached=0
+      for attempt in $(seq 0 119); do
+        probe="$OUT_DIR/title_probe_$attempt.png"
+        import -window "$WID" "$probe" 2>/dev/null
+        read -r mean_r mean_g mean_b < <(
+          magick "$probe" -crop 100x100+270+290 \
+            -format '%[fx:mean.r] %[fx:mean.g] %[fx:mean.b]' info:
+        )
+        if awk -v r="$mean_r" -v g="$mean_g" -v b="$mean_b" \
+            'BEGIN { exit !(r > 0.5 && g < 0.4 && b < 0.2) }'; then
+          echo "title reached on attempt $attempt"
+          title_reached=1
+          break
+        fi
+        sleep 0.2
+      done
+      [ "$title_reached" -eq 1 ] || { echo "title gate timed out"; exit 1; }
       ;;
     wait)  sleep "$a" ;;
     shot)  import -window "$WID" -resize 320x200\! \

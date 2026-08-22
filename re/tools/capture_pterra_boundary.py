@@ -408,6 +408,92 @@ def read_profile_state(mem, guest_base: int, game_segment: int,
                 game + VM_C2_PRESENTATION_GATE_OFFSET, 1)[0],
             "list_d8c_state": read_guest(
                 mem, guest_base, game + LIST_D8C_STATE_OFFSET, 1)[0],
+            "list_file_handle": struct.unpack(
+                "<H", read_guest(
+                    mem, guest_base, game + 0x0D5B, 2))[0],
+            "list_read_wrap_index": struct.unpack(
+                "<H", read_guest(
+                    mem, guest_base, game + 0x0D60, 2))[0],
+            "list_wrap_count": struct.unpack(
+                "<H", read_guest(
+                    mem, guest_base, game + 0x0D62, 2))[0],
+            "list_read_wrap_limit": struct.unpack(
+                "<H", read_guest(
+                    mem, guest_base, game + 0x0D64, 2))[0],
+            "list_secondary_wrap_limit": struct.unpack(
+                "<H", read_guest(
+                    mem, guest_base, game + 0x0D66, 2))[0],
+            "resource_source_offset": struct.unpack(
+                "<I", read_guest(
+                    mem, guest_base, game + 0x0D84, 4))[0],
+            "resource_source_remaining": struct.unpack(
+                "<I", read_guest(
+                    mem, guest_base, game + 0x0D88, 4))[0],
+            "list_head": "%04x:%04x" % struct.unpack(
+                "<HH", read_guest(
+                    mem, guest_base, game + 0x0D8C, 4))[::-1],
+            "list_tail": "%04x:%04x" % struct.unpack(
+                "<HH", read_guest(
+                    mem, guest_base, game + 0x0D90, 4))[::-1],
+            "list_active": "%04x:%04x" % struct.unpack(
+                "<HH", read_guest(
+                    mem, guest_base, game + 0x0D94, 4))[::-1],
+            "list_buffer_end": struct.unpack(
+                "<H", read_guest(
+                    mem, guest_base, game + 0x0D98, 2))[0],
+            "list_queued_bytes": struct.unpack(
+                "<H", read_guest(
+                    mem, guest_base, game + 0x0D9A, 2))[0],
+            "list_iteration_count": struct.unpack(
+                "<H", read_guest(
+                    mem, guest_base, game + 0x0DA0, 2))[0],
+            "list_rollover_state": read_guest(
+                mem, guest_base, game + 0x0DAC, 1)[0],
+            "list_entry_metric": struct.unpack(
+                "<H", read_guest(
+                    mem, guest_base, game + 0x0DAF, 2))[0],
+        },
+        "audio_flow": {
+            "voc_playback_enabled": read_guest(
+                mem, guest_base, game + 0x0ADE, 1)[0],
+            "game_mode": read_guest(
+                mem, guest_base, game + 0x0ADF, 1)[0],
+            "timer_hook_active": read_guest(
+                mem, guest_base, game + 0x0B21, 1)[0],
+            "timer_tick": struct.unpack(
+                "<H", read_guest(
+                    mem, guest_base, game + 0x0B29, 2))[0],
+            "frame_delay": struct.unpack(
+                "<H", read_guest(
+                    mem, guest_base, game + 0x0B2D, 2))[0],
+            "dialogue_delay": struct.unpack(
+                "<H", read_guest(
+                    mem, guest_base, game + 0x0B33, 2))[0],
+            "dialogue_hold_countdown": struct.unpack(
+                "<H", read_guest(
+                    mem, guest_base, game + 0x0B35, 2))[0],
+            "bank_clip_count": struct.unpack(
+                "<H", read_guest(
+                    mem, guest_base, game + 0x0BBB, 2))[0],
+            "bank_dialogue_delay_base": read_guest(
+                mem, guest_base, game + 0x0BBD, 1)[0],
+            "bank_dialogue_delay_limit": read_guest(
+                mem, guest_base, game + 0x0BBE, 1)[0],
+            "last_clip": struct.unpack(
+                "<H", read_guest(
+                    mem, guest_base, game + 0x0C4D, 2))[0],
+            "streamed_clip_count": struct.unpack(
+                "<H", read_guest(
+                    mem, guest_base, game + 0x0C53, 2))[0],
+            "dialogue_seed": struct.unpack(
+                "<H", read_guest(
+                    mem, guest_base, game + 0x0C55, 2))[0],
+            "text_mode_seed": read_guest(
+                mem, guest_base, game + 0x0CF9, 1)[0],
+            "text_mode_play": read_guest(
+                mem, guest_base, game + 0x0CFA, 1)[0],
+            "text_voice_trigger": read_guest(
+                mem, guest_base, game + 0x0CFB, 1)[0],
         },
         "resource_flow": read_resource_flow(
             mem, guest_base, game_segment),
@@ -501,7 +587,7 @@ def find_ds_anchor(pid, mem, game_segment=None):
 def bridge_prefix_actions() -> list[str]:
     """The proven gate prefix: logos -> title click -> CRYOBOX -> Bob."""
     return [
-        "wait 6", "key Escape", "wait 2", "click 348 344", "wait 2",
+        "wait_title", "click 320 340", "wait 2",
         "move_relative -300 0", "wait 4",
         "move_relative -300 0", "wait 3",
         "move_relative 100 -20", "wait 0.5",
@@ -542,9 +628,10 @@ def run_driver(actions: list[str], display: str, executable: str) -> None:
     """
     env = dict(os.environ, DISPLAY=display, SDL_VIDEODRIVER="x11")
     window_id = ""
+    executable_stem = Path(executable).stem
     for _ in range(40):
         output = subprocess.run(
-            ["xdotool", "search", "--name", f"{executable}|DOSBox"],
+            ["xdotool", "search", "--name", executable_stem],
             capture_output=True, text=True, env=env).stdout
         lines = [line for line in output.splitlines() if line.strip()]
         if lines:
@@ -613,10 +700,31 @@ def run_driver(actions: list[str], display: str, executable: str) -> None:
             else:
                 time.sleep(duration)
             continue
+        elif verb == "wait_title":
+            title_reached = False
+            for attempt in range(120):
+                probe = f"/tmp/opencode/driveshots/title_{attempt}.png"
+                subprocess.run(["import", "-window", window_id, probe],
+                               env=env)
+                stats = subprocess.run(
+                    ["magick", probe, "-crop", "100x100+270+290",
+                     "-format", "%[fx:mean.r] %[fx:mean.g] %[fx:mean.b]",
+                     "info:"],
+                    capture_output=True, text=True, env=env).stdout
+                values = [float(text) for text in stats.split()]
+                if len(values) == 3 and values[0] > 0.5 \
+                        and values[1] < 0.4 and values[2] < 0.2:
+                    print(f"drive: title reached on attempt {attempt}")
+                    title_reached = True
+                    break
+                time.sleep(0.2)
+            if not title_reached:
+                raise RuntimeError("title gate timed out")
         elif verb == "wait_bridge":
-            # Feedback gate: the bridge frame is blue-dominant with low
-            # green deviation; the title/cinematics are brighter and
-            # noisier. Retry dismissal until the classifier agrees.
+            # Observe the bridge gate without injecting input. A failed visual
+            # classification can mean that a legitimate call is still playing;
+            # Escape/title clicks at that point restart its resource stream.
+            bridge_reached = False
             for attempt in range(8):
                 probe = f"/tmp/opencode/driveshots/probe_{attempt}.png"
                 subprocess.run(["import", "-window", window_id, probe],
@@ -630,11 +738,11 @@ def run_driver(actions: list[str], display: str, executable: str) -> None:
                 if len(values) == 4 and values[2] > 0.12 \
                         and values[0] < 0.15 and values[3] < 0.12:
                     print(f"drive: bridge reached on attempt {attempt}")
+                    bridge_reached = True
                     break
-                emit("key", "Escape", "")
-                time.sleep(1)
-                emit("click", "348", "344")
-                time.sleep(3)
+                time.sleep(4)
+            if not bridge_reached:
+                print("drive: bridge classifier timed out; input left untouched")
         elif verb == "shot":
             out_dir = os.environ.get("DRIVE_SHOT_DIR", ".")
             subprocess.run(["import", "-window", window_id,
@@ -742,7 +850,8 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                          executable: str, manual: bool = False,
                          open_load_menu: bool = False,
                          trigger_pterra_after_load: bool = False,
-                         drive_authentic_save: bool = False) \
+                         drive_authentic_save: bool = False,
+                         guest_snapshot: Path | None = None) \
         -> dict[str, object]:
     deadline = time.monotonic() + timeout
     cpu_addresses = None
@@ -758,6 +867,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
     load_selection_started = False
     load_slot_pressing = False
     post_load_pressing = False
+    guest_snapshot_written = False
     destination_committed = False
     pter_reached = False
     marker_snapshot = None
@@ -834,11 +944,14 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                     fs_segment = state["fs"]
                 last_profile = read_profile_state(
                     mem, guest_base, game_segment, fs_segment)
+                scene_flow = last_profile["scene_flow"]
                 profile_key = (
                     last_profile["profile"],
                     last_profile["request"],
                     tuple(last_profile["blockers"].items()),
-                    tuple(last_profile["scene_flow"].items()),
+                    scene_flow["active_line"],
+                    scene_flow["c2_presentation_gate"],
+                    scene_flow["list_d8c_state"],
                     (
                         last_profile["input"]["mouse_x"],
                         last_profile["input"]["mouse_y"],
@@ -950,6 +1063,15 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                         and flow["active_line"] == 2
                         and flow["c2_presentation_gate"] == 1):
                     post_load_presentation_seen = True
+                    if (guest_snapshot is not None
+                            and not guest_snapshot_written):
+                        guest_snapshot.parent.mkdir(parents=True, exist_ok=True)
+                        guest_snapshot.write_bytes(read_guest(
+                            mem, guest_base, game, 0x10000))
+                        guest_snapshot_written = True
+                        print(
+                            f"state: wrote matched presentation snapshot "
+                            f"{guest_snapshot}", flush=True)
                     if drive_authentic_save:
                         write_guest(
                             mem, guest_base, game + MOUSE_X_OFFSET,
@@ -1365,6 +1487,10 @@ def main() -> None:
         help=("select save slot 1 and dismiss its presentation through the "
               "game's input-state contract"))
     parser.add_argument(
+        "--guest-snapshot", type=Path,
+        help=("write the 64 KiB game-data segment at the first matched "
+              "post-load presentation frame"))
+    parser.add_argument(
         "--dosbox-log", type=Path,
         help="DOSBox log used to stop at the first invalid instruction")
     args = parser.parse_args()
@@ -1412,6 +1538,7 @@ def main() -> None:
         dosbox_args = [
             "dosbox-x", "--noprimaryconf", "--nolocalconf",
             "-set", "sdl output=surface",
+            "-set", "sdl autolock=true",
             "-set", "cpu cycles=max",
             "-set", "cpu core=dynamic",
             "-set", "render frameskip=10",
@@ -1429,7 +1556,8 @@ def main() -> None:
                 args.display, args.executable, manual=args.manual_pterra,
                 open_load_menu=args.open_load_menu,
                 trigger_pterra_after_load=args.trigger_pterra_after_load,
-                drive_authentic_save=args.drive_authentic_save)
+                drive_authentic_save=args.drive_authentic_save,
+                guest_snapshot=args.guest_snapshot)
             args.output.write_text(json.dumps(snapshot, indent=1))
             print(f"wrote {args.output}")
             errors = snapshot.get("errors", [])

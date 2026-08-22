@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Guard rebuilt BLOODPRG invariants in a live DOSBox-X guest.
+"""Guard rebuilt BLOODPRG invariants in a live DOSBox guest.
 
 The watchdog derives DOS address zero from GAME_DATA:0000 and the live GS
 value. It then verifies the final-link segment layout, the interrupt vector
@@ -9,12 +9,18 @@ sample.
 """
 from __future__ import annotations
 
+import os
+import sys
+
+_TOOL_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
+if sys.path and os.path.abspath(sys.path[0]) == _TOOL_DIRECTORY:
+    del sys.path[0]
+
 import argparse
 import ctypes
 import hashlib
 import importlib.util
 import json
-import os
 import re
 import struct
 import subprocess
@@ -30,6 +36,7 @@ CONVENTIONAL_MEMORY_END = 0xA0000
 GUEST_SNAPSHOT_SIZE = 0x100000
 PTRACE_ATTACH = 16
 PTRACE_DETACH = 17
+TRANSIENT_INTERRUPT_VECTORS = frozenset((0x0F,))
 VM_PROFILE_COUNT = 5
 VM_RESOURCE_COUNT = 5
 VM_RESOURCE_HANDLES_OFFSET = 0x6712
@@ -38,6 +45,107 @@ VM_RESOURCE_PROFILE_INDEX_OFFSET = 0x677E
 VM_SCRIPT_PROFILE_REQUEST_OFFSET = 0x6780
 VM_EXECUTION_ENABLED_OFFSET = 0x67A8
 VM_RESOURCE_PROFILES_OFFSET = 0x11F4
+VM_STATE_ARRAY_OFFSET = 0x6ADE
+VM_TEXT_BUFFER_OFFSET = 0x0E18
+VM_UI_FLAGS_OFFSET = 0x2793
+VM_C2_PRESENTATION_GATE_OFFSET = 0x1FB2
+VM_ACTIVE_LINE_OFFSET = 0x6788
+VM_PRESENTATION_MODE_OFFSET = 0x27E0
+VM_PRESENTATION_BOX_MODE_OFFSET = 0x27E1
+LOAD_REQUEST_ACTIVE_OFFSET = 0x2737
+SAVE_SLOT_MENU_PHASE_OFFSET = 0x2738
+MOUSE_X_OFFSET = 0x0A2A
+MOUSE_Y_OFFSET = 0x0A2C
+MOUSE_PRIMARY_PRESSED_OFFSET = 0x0A3E
+MOUSE_PRESS_PENDING_OFFSET = 0x0A40
+TELEPHONE_CONSOLE_X = 230
+TELEPHONE_CONSOLE_Y = 103
+SCRIPT2_PROFILE = 1
+SCRIPT2_RADIO_TARGET_VARIANT = 4
+RADIO_BRIDGE_IDLE_SECONDS = 1.0
+RADIO_CONSOLE_SETTLE_SECONDS = 1.0
+RADIO_ORB_X = 125
+RADIO_ORB_Y = 118
+RADIO_ACCEPT_ORB_X = 160
+RADIO_ACCEPT_ORB_Y = 150
+RADIO_ACCEPT_IDLE_SECONDS = 0.5
+SCRIPT2_RADIO_PROCEDURE_FLAGS = {
+    "time": 0x2730,
+    "radioscr": 0x2745,
+    "sort": 0x2759,
+    "radio1": 0x27D0,
+}
+SCRIPT2_SCRUTER_K_ACTION_OFFSET = 0x06FC
+
+DIALOGUE_AUDIO_OFFSETS = {
+    "voc_playback_enabled": (0x0ADE, "B"),
+    "game_mode": (0x0ADF, "B"),
+    "timer_hook_active": (0x0B21, "B"),
+    "timer_tick": (0x0B29, "H"),
+    "frame_delay": (0x0B2D, "H"),
+    "dialogue_delay": (0x0B33, "H"),
+    "dialogue_hold_countdown": (0x0B35, "H"),
+    "bank_clip_count": (0x0BBB, "H"),
+    "bank_dialogue_delay_base": (0x0BBD, "B"),
+    "bank_dialogue_delay_limit": (0x0BBE, "B"),
+    "last_clip": (0x0C4D, "H"),
+    "streamed_clip_count": (0x0C53, "H"),
+    "dialogue_seed": (0x0C55, "H"),
+    "text_mode_seed": (0x0CF9, "B"),
+    "text_mode_play": (0x0CFA, "B"),
+    "text_voice_trigger": (0x0CFB, "B"),
+}
+
+PRESENTATION_FLOW_OFFSETS = {
+    "mouse_x": (0x0A2A, "h"),
+    "mouse_y": (0x0A2C, "h"),
+    "nav_actor_presentation_state": (0x0A32, "H"),
+    "mouse_primary_pressed": (0x0A3E, "B"),
+    "mouse_secondary_pressed": (0x0A3F, "B"),
+    "mouse_press_pending": (0x0A40, "B"),
+    "list_file_handle": (0x0D5B, "H"),
+    "list_state": (0x0D5F, "B"),
+    "list_read_wrap_index": (0x0D60, "H"),
+    "list_wrap_count": (0x0D62, "H"),
+    "list_read_wrap_limit": (0x0D64, "H"),
+    "list_secondary_wrap_limit": (0x0D66, "H"),
+    "resource_source_offset": (0x0D84, "I"),
+    "resource_source_remaining": (0x0D88, "I"),
+    "list_head_offset": (0x0D8C, "H"),
+    "list_head_segment": (0x0D8E, "H"),
+    "list_tail_offset": (0x0D90, "H"),
+    "list_tail_segment": (0x0D92, "H"),
+    "list_active_offset": (0x0D94, "H"),
+    "list_active_segment": (0x0D96, "H"),
+    "list_buffer_end": (0x0D98, "H"),
+    "list_queued_bytes": (0x0D9A, "H"),
+    "list_iteration_count": (0x0DA0, "H"),
+    "list_rollover_state": (0x0DAC, "B"),
+    "list_entry_metric": (0x0DAF, "H"),
+    "c2_presentation_gate": (0x1FB2, "B"),
+    "ui_state": (0x2792, "H"),
+    "presentation_mode": (0x27E0, "B"),
+    "presentation_box_mode": (0x27E1, "B"),
+    "presentation_box_phase": (0x2B93, "h"),
+    "bridge_view_frame": (0x2795, "h"),
+    "word_choice_active": (0x27D7, "B"),
+    "text_display_active": (0x5E64, "B"),
+    "text_reveal_phase": (0x5E65, "H"),
+    "active_line": (0x6788, "H"),
+    "displayed_line": (0x678A, "H"),
+    "presentation_owner_offset": (0x679A, "H"),
+    "nav_pending_record_link": (0x675A, "H"),
+    "deferred_record_type": (0x6768, "H"),
+    "deferred_record_related": (0x676A, "H"),
+    "deferred_record_value": (0x676C, "H"),
+    "presentation_request_flags": (0x67AA, "B"),
+    "presentation_active": (0x67AC, "B"),
+    "presentation_defer": (0x67B0, "B"),
+    "presentation_start_lock": (0x67B7, "B"),
+    "presentation_text_wait": (0x67BA, "B"),
+    "dialogue_hold_complete": (0x67BB, "B"),
+    "presentation_hold_ready": (0x67BC, "B"),
+}
 
 TELEPORT_BLOCKERS = (
     ("vm_ui", 0x2793, 0x0E),
@@ -188,10 +296,13 @@ def locate_cpu_state(pid: int) -> dict[str, int] | None:
     if output.returncode != 0:
         return None
     symbols: dict[str, int] = {}
+    symbol_sizes: dict[str, int] = {}
     for line in output.stdout.splitlines():
         fields = line.split()
         if len(fields) >= 3 and fields[0] in ("Segs", "cpu_regs"):
             symbols[fields[0]] = int(fields[2], 16)
+            if len(fields) >= 4:
+                symbol_sizes[fields[0]] = int(fields[3], 16)
     if set(symbols) != {"Segs", "cpu_regs"}:
         return None
 
@@ -209,7 +320,11 @@ def locate_cpu_state(pid: int) -> dict[str, int] | None:
             break
     if image_base is None:
         return None
-    return {name: image_base + offset for name, offset in symbols.items()}
+    addresses = {
+        name: image_base + offset for name, offset in symbols.items()
+    }
+    addresses["Segs_size"] = symbol_sizes.get("Segs", 0)
+    return addresses
 
 
 def read_cpu_state(mem, addresses: dict[str, int]) -> dict[str, int]:
@@ -217,9 +332,13 @@ def read_cpu_state(mem, addresses: dict[str, int]) -> dict[str, int]:
     registers = struct.unpack("<8I", mem.read(32))
     ip = struct.unpack("<I", mem.read(4))[0]
     segments = []
-    for index in range(6):
-        mem.seek(addresses["Segs"] + index * 8)
-        segments.append(struct.unpack("<Q", mem.read(8))[0] & 0xFFFF)
+    if addresses.get("Segs_size") == 0x30:
+        mem.seek(addresses["Segs"])
+        segments = list(struct.unpack("<6H", mem.read(12)))
+    else:
+        for index in range(6):
+            mem.seek(addresses["Segs"] + index * 8)
+            segments.append(struct.unpack("<Q", mem.read(8))[0] & 0xFFFF)
     return {
         "es": segments[0],
         "cs": segments[1],
@@ -229,8 +348,23 @@ def read_cpu_state(mem, addresses: dict[str, int]) -> dict[str, int]:
         "gs": segments[5],
         "ip": ip & 0xFFFF,
         "ax": registers[0] & 0xFFFF,
+        "cx": registers[1] & 0xFFFF,
+        "dx": registers[2] & 0xFFFF,
         "bx": registers[3] & 0xFFFF,
+        "sp": registers[4] & 0xFFFF,
+        "bp": registers[5] & 0xFFFF,
+        "si": registers[6] & 0xFFFF,
+        "di": registers[7] & 0xFFFF,
     }
+
+
+def write_json_report(path: Path, report: dict[str, object]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(path.name + ".tmp")
+    temporary.write_text(
+        json.dumps(report, indent=2) + "\n", encoding="utf-8"
+    )
+    temporary.replace(path)
 
 
 def host_mappings(pid: int) -> list[HostMapping]:
@@ -451,6 +585,210 @@ def clear_presentation_ui_busy(flags: int) -> int:
     return flags & 0xFB
 
 
+def write_primary_press(mem, game_address: int, pressed: bool) -> None:
+    value = b"\x01" if pressed else b"\0"
+    exact_write(mem, game_address + MOUSE_PRIMARY_PRESSED_OFFSET, value)
+    exact_write(mem, game_address + MOUSE_PRESS_PENDING_OFFSET, value)
+
+
+def write_script2_actor_prerequisites(
+    mem,
+    game_address: int,
+    memory: bytes,
+    game_offset: int,
+) -> None:
+    exact_write(mem, game_address + 0x2795, struct.pack("<h", 45))
+    exact_write(mem, game_address + 0x279B, struct.pack("<H", 90))
+    exact_write(
+        mem,
+        game_address + 0x2A33,
+        bytes((memory[game_offset + 0x2A33] | 0x08,)),
+    )
+    exact_write(
+        mem,
+        game_address + VM_UI_FLAGS_OFFSET,
+        bytes(((memory[game_offset + VM_UI_FLAGS_OFFSET] | 0x20) & 0xF7,)),
+    )
+
+
+def write_script2_variant(
+    mem,
+    guest_base: int,
+    profile_state: ProfileState,
+    variant: int,
+    radio_enabled: bool,
+) -> None:
+    cod_offset, cod_segment = profile_state.images[0]
+    record_offset, record_segment = profile_state.images[2]
+    cod_address = guest_base + cod_segment * 16 + cod_offset
+    record_address = guest_base + record_segment * 16 + record_offset
+    exact_write(mem, record_address + 0x12C0, struct.pack("<H", variant))
+    exact_write(
+        mem,
+        cod_address + SCRIPT2_RADIO_PROCEDURE_FLAGS["sort"],
+        b"\0",
+    )
+    exact_write(
+        mem,
+        cod_address + SCRIPT2_RADIO_PROCEDURE_FLAGS["radio1"],
+        b"\x01" if radio_enabled else b"\0",
+    )
+
+
+def send_mouse_button(display: str, pressed: bool) -> None:
+    subprocess.run(
+        ["xdotool", "mousedown" if pressed else "mouseup", "1"],
+        env=dict(os.environ, DISPLAY=display),
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+
+
+def read_dialogue_audio_state(
+    memory: bytes | bytearray,
+    game_segment: int,
+) -> dict[str, int]:
+    game = game_segment * 16
+    state = {}
+    for name, (offset, field_type) in DIALOGUE_AUDIO_OFFSETS.items():
+        state[name] = struct.unpack_from(
+            "<" + field_type, memory, game + offset
+        )[0]
+    return state
+
+
+def read_presentation_flow_state(
+    memory: bytes | bytearray,
+    game_segment: int,
+) -> dict[str, int]:
+    game = game_segment * 16
+    state = {}
+    for name, (offset, field_type) in PRESENTATION_FLOW_OFFSETS.items():
+        state[name] = struct.unpack_from(
+            "<" + field_type, memory, game + offset
+        )[0]
+    return state
+
+
+def read_c_string(memory: bytes, address: int, limit: int = 160) -> str:
+    end = min(address + limit, len(memory))
+    raw = memory[address:end].split(b"\0", 1)[0]
+    return "".join(
+        chr(byte) if 0x20 <= byte < 0x7F else " " for byte in raw
+    ).strip()
+
+
+def read_vm_word_list(
+    memory: bytes,
+    words_address: int,
+    dictionary_address: int,
+    limit: int = 160,
+) -> str:
+    parts: list[str] = []
+    cursor = words_address
+    length = 0
+    for _ in range(128):
+        if cursor < 0 or cursor + 2 > len(memory):
+            return ""
+        dictionary_offset = struct.unpack_from("<H", memory, cursor)[0]
+        cursor += 2
+        if dictionary_offset in (0, 0xFFFF):
+            break
+        word = read_c_string(memory, dictionary_address + dictionary_offset)
+        if not word:
+            return ""
+        separator = "" if word[0] in ",.?!:" or not parts else " "
+        if length + len(separator) + len(word) > limit:
+            break
+        parts.append(separator + word)
+        length += len(separator) + len(word)
+    return "".join(parts)
+
+
+def read_script2_radio_state(
+    memory: bytes,
+    game_segment: int,
+    profile_state: ProfileState,
+) -> dict[str, object] | None:
+    if profile_state.profile != SCRIPT2_PROFILE:
+        return None
+    cod_offset, cod_segment = profile_state.images[0]
+    record_offset, record_segment = profile_state.images[2]
+    if cod_segment == 0 or record_segment == 0:
+        return None
+    cod = cod_segment * 16 + cod_offset
+    records = record_segment * 16 + record_offset
+    game = game_segment * 16
+    action = memory[
+        records + SCRIPT2_SCRUTER_K_ACTION_OFFSET:
+        records + SCRIPT2_SCRUTER_K_ACTION_OFFSET + 6
+    ]
+    menu_words_offset, menu_words_segment = struct.unpack_from(
+        "<HH", memory, game + 0x674A
+    )
+    dictionary_offset, dictionary_segment = struct.unpack_from(
+        "<HH", memory, game + 0x6728
+    )
+    menu_subtitle = ""
+    if menu_words_segment != 0 and dictionary_segment != 0:
+        menu_subtitle = read_vm_word_list(
+            memory,
+            menu_words_segment * 16 + menu_words_offset,
+            dictionary_segment * 16 + dictionary_offset,
+        )
+    buffered_subtitle = read_c_string(memory, game + VM_TEXT_BUFFER_OFFSET)
+    if (memory[game + 0x67B0] & 1) != 0 and menu_subtitle:
+        subtitle = menu_subtitle
+    else:
+        subtitle = buffered_subtitle
+    return {
+        "procedures": {
+            name: memory[cod + offset]
+            for name, offset in SCRIPT2_RADIO_PROCEDURE_FLAGS.items()
+        },
+        "timer_3": struct.unpack_from(
+            "<H", memory, game + VM_STATE_ARRAY_OFFSET + 3 * 2
+        )[0],
+        "radio_variant": struct.unpack_from(
+            "<H", memory, records + 0x12C0
+        )[0],
+        "scruter_k_action": action.hex(),
+        "nav_pending_record_link": struct.unpack_from(
+            "<H", memory, game + 0x675A
+        )[0],
+        "deferred_record": struct.unpack_from(
+            "<HHH", memory, game + 0x6768
+        ),
+        "actor_slot_4": memory[game + 0x2A33:game + 0x2A33 + 24].hex(),
+        "subtitle": subtitle,
+        "buffered_subtitle": buffered_subtitle,
+        "menu_subtitle": menu_subtitle,
+        "menu_words": f"{menu_words_segment:04x}:{menu_words_offset:04x}",
+        "dictionary": f"{dictionary_segment:04x}:{dictionary_offset:04x}",
+    }
+
+
+def dialogue_audio_stall_reason(state: dict[str, int]) -> str | None:
+    selection_armed = (
+        (state["voc_playback_enabled"] & 1) != 0
+        and (state["game_mode"] & 1) == 0
+        and (state["text_mode_play"] & 1) != 0
+        and state["dialogue_delay"] == 0
+    )
+    if not selection_armed:
+        return None
+
+    clip_count = state["streamed_clip_count"]
+    last_clip = state["last_clip"]
+    if clip_count == 0 or (clip_count == 1 and last_clip == 0):
+        return (
+            "dialogue-clip-selection-no-candidates="
+            f"count:{clip_count},last:{last_clip}"
+        )
+    return None
+
+
 def profile_for_report(state: ProfileState) -> dict[str, object]:
     return {
         "profile": state.profile,
@@ -535,6 +873,11 @@ def main() -> int:
         help="input script in drive_real_game.sh vocabulary",
     )
     parser.add_argument("--report", type=Path)
+    parser.add_argument(
+        "--guest-snapshot",
+        type=Path,
+        help="write the 1 MiB guest-memory image at the radio release boundary",
+    )
     parser.add_argument("--xvfb", action="store_true")
     parser.add_argument(
         "--teleport-profile",
@@ -546,6 +889,14 @@ def main() -> int:
         type=int,
         default=4,
         help="guarded samples required after the last completed teleport",
+    )
+    parser.add_argument(
+        "--script2-radio-probe",
+        action="store_true",
+        help=(
+            "load GAME1.SAV and require the Scruter variant-4 call to advance "
+            "through YOU DO THE COUNTING to Honk's report"
+        ),
     )
     args = parser.parse_args()
 
@@ -564,6 +915,16 @@ def main() -> int:
         raise WatchdogError(
             f"teleport profile must be in 0..4: {args.teleport_profile}"
         )
+    if args.script2_radio_probe:
+        if args.teleport_profile is not None:
+            raise WatchdogError(
+                "--script2-radio-probe uses GAME1.SAV and cannot teleport"
+            )
+        save_path = install_parent / "cblood" / "GAME1.SAV"
+        if not save_path.is_file():
+            raise WatchdogError(
+                f"--script2-radio-probe requires {save_path}"
+            )
 
     report: dict[str, object] = {
         "verdict": "INCOMPLETE",
@@ -575,6 +936,7 @@ def main() -> int:
     xvfb = None
     dosbox = None
     attached = False
+    radio_physical_mouse_held = False
     driver_errors: list[str] = []
     libc = ptrace_libc()
 
@@ -593,6 +955,8 @@ def main() -> int:
             "--nolocalconf",
             "-set",
             "sdl output=surface",
+            "-set",
+            "sdl autolock=true",
             "-set",
             "cpu cycles=max",
             "-set",
@@ -645,9 +1009,21 @@ def main() -> int:
         )
         teleport_inflight = None
         teleport_last_completion = None
+        radio_probe_phase = "wait-title-idle"
+        radio_load_slot_pressed = False
+        radio_intro_seen = False
+        radio_input_held = False
+        radio_console_pressed = False
+        radio_bridge_idle_started = None
+        radio_console_selected_at = None
+        radio_post_montage_idle_started = None
+        radio_orb_click_count = 0
+        radio_snapshot_written = False
+        radio_lines: list[str] = []
 
         while time.monotonic() < deadline:
-            time.sleep(args.poll_seconds)
+            sample_delay = args.poll_seconds
+            time.sleep(sample_delay)
             if driver_errors:
                 report["verdict"] = "DRIVER-ERROR"
                 report["error"] = driver_errors[0]
@@ -798,14 +1174,22 @@ def main() -> int:
 
                     ivt_hash = hashlib.sha256(memory[:0x400]).hexdigest()
                     if ivt_hash != expected["ivt_sha256"]:
-                        changes = changed_interrupt_vectors(
-                            expected["ivt_bytes"], memory[:0x400]
-                        )
-                        diagnostics["ivt_changes"] = changes
-                        issues.append(
-                            "ivt-vectors-changed="
-                            + ",".join(change["vector"] for change in changes)
-                        )
+                        changes = [
+                            change
+                            for change in changed_interrupt_vectors(
+                                expected["ivt_bytes"], memory[:0x400]
+                            )
+                            if int(change["vector"], 16)
+                            not in TRANSIENT_INTERRUPT_VECTORS
+                        ]
+                        if changes:
+                            diagnostics["ivt_changes"] = changes
+                            issues.append(
+                                "ivt-vectors-changed="
+                                + ",".join(
+                                    change["vector"] for change in changes
+                                )
+                            )
                     if not guest_memory_is_plausible(
                         memory, int(expected["game_segment"])
                     ):
@@ -817,6 +1201,45 @@ def main() -> int:
                         int(expected["game_segment"]),
                         int(expected["fs_segment"]),
                     )
+                    audio_state = read_dialogue_audio_state(
+                        memory, int(expected["game_segment"])
+                    )
+                    presentation_state = read_presentation_flow_state(
+                        memory, int(expected["game_segment"])
+                    )
+                    radio_state = read_script2_radio_state(
+                        memory,
+                        int(expected["game_segment"]),
+                        profile_state,
+                    )
+                    report["last_runtime"] = {
+                        "cpu": cpu_for_report(state),
+                        "profile_state": profile_for_report(profile_state),
+                        "audio_flow": audio_state,
+                        "presentation_flow": presentation_state,
+                        "radio_flow": radio_state,
+                    }
+                    runtime_samples = report.setdefault("runtime_samples", [])
+                    assert isinstance(runtime_samples, list)
+                    runtime_samples.append(
+                        {
+                            "sample": report["guarded_samples"],
+                            "cpu": cpu_for_report(state),
+                            "audio_flow": audio_state,
+                            "presentation_flow": presentation_state,
+                            "radio_flow": radio_state,
+                        }
+                    )
+                    del runtime_samples[:-4096]
+                    if args.report and (
+                        args.poll_seconds >= 0.05
+                        or int(report["guarded_samples"]) % 50 == 0
+                    ):
+                        write_json_report(args.report, report)
+                    audio_stall = dialogue_audio_stall_reason(audio_state)
+                    if audio_stall is not None:
+                        issues.append(audio_stall)
+                        diagnostics["audio_flow"] = audio_state
                     if teleport_inflight is not None:
                         if profile_state.completed(teleport_inflight):
                             teleports = report.setdefault("teleports", [])
@@ -884,6 +1307,336 @@ def main() -> int:
                             }
                         )
 
+                    if args.script2_radio_probe:
+                        game_offset = int(expected["game_segment"]) * 16
+                        game_address = int(expected["guest_base"]) + game_offset
+                        blockers = dict(profile_state.blockers)
+                        probe = report.setdefault(
+                            "radio_probe",
+                            {"phase": radio_probe_phase, "lines": radio_lines},
+                        )
+                        assert isinstance(probe, dict)
+
+                        if (
+                            radio_probe_phase == "wait-title-idle"
+                            and profile_state.profile == 0
+                            and profile_state.teleport_releaseable
+                        ):
+                            exact_write(
+                                mem,
+                                game_address + LOAD_REQUEST_ACTIVE_OFFSET,
+                                b"\x01",
+                            )
+                            exact_write(
+                                mem,
+                                game_address + SAVE_SLOT_MENU_PHASE_OFFSET,
+                                b"\x01",
+                            )
+                            radio_probe_phase = "wait-load-menu"
+                            probe["load_menu_sample"] = report[
+                                "guarded_samples"
+                            ]
+                        elif radio_probe_phase in (
+                            "wait-load-menu",
+                            "press-load-slot",
+                        ):
+                            if blockers.get("load", 0) != 0:
+                                exact_write(
+                                    mem,
+                                    game_address + MOUSE_X_OFFSET,
+                                    struct.pack("<h", 110),
+                                )
+                                exact_write(
+                                    mem,
+                                    game_address + MOUSE_Y_OFFSET,
+                                    struct.pack("<h", 47),
+                                )
+                                exact_write(
+                                    mem,
+                                    game_address + MOUSE_PRIMARY_PRESSED_OFFSET,
+                                    b"\x01",
+                                )
+                                radio_load_slot_pressed = True
+                                radio_probe_phase = "press-load-slot"
+                            elif (
+                                radio_load_slot_pressed
+                                and profile_state.completed(SCRIPT2_PROFILE)
+                            ):
+                                exact_write(
+                                    mem,
+                                    game_address + MOUSE_PRIMARY_PRESSED_OFFSET,
+                                    b"\0",
+                                )
+                                radio_probe_phase = "wait-post-load-intro"
+                                probe["save_loaded_sample"] = report[
+                                    "guarded_samples"
+                                ]
+                        elif radio_probe_phase == "wait-post-load-intro":
+                            if (
+                                presentation_state["active_line"] == 2
+                                and presentation_state[
+                                    "c2_presentation_gate"
+                                ] == 1
+                            ):
+                                radio_intro_seen = True
+                                radio_probe_phase = "dismiss-post-load-intro"
+                        elif radio_probe_phase == "dismiss-post-load-intro":
+                            if (
+                                presentation_state["active_line"] == 2
+                                and presentation_state[
+                                    "c2_presentation_gate"
+                                ] == 1
+                            ):
+                                exact_write(
+                                    mem,
+                                    game_address + MOUSE_X_OFFSET,
+                                    struct.pack("<h", 110),
+                                )
+                                exact_write(
+                                    mem,
+                                    game_address + MOUSE_Y_OFFSET,
+                                    struct.pack("<h", 96),
+                                )
+                                write_primary_press(mem, game_address, True)
+                                if not radio_physical_mouse_held:
+                                    send_mouse_button(args.display, True)
+                                    radio_physical_mouse_held = True
+                                radio_bridge_idle_started = None
+                            elif (
+                                radio_intro_seen
+                                and presentation_state["active_line"] == 0xFFFF
+                                and presentation_state[
+                                    "c2_presentation_gate"
+                                ] == 0
+                                and all(value == 0 for value in blockers.values())
+                            ):
+                                write_primary_press(mem, game_address, False)
+                                if radio_physical_mouse_held:
+                                    send_mouse_button(args.display, False)
+                                    radio_physical_mouse_held = False
+                                if radio_bridge_idle_started is None:
+                                    radio_bridge_idle_started = time.monotonic()
+                                bridge_idle_seconds = (
+                                    time.monotonic() - radio_bridge_idle_started
+                                )
+                                probe["bridge_idle_seconds"] = round(
+                                    bridge_idle_seconds, 3
+                                )
+                                if bridge_idle_seconds >= RADIO_BRIDGE_IDLE_SECONDS:
+                                    radio_probe_phase = "press-radio-console"
+                                    probe["intro_dismissed_sample"] = report[
+                                        "guarded_samples"
+                                    ]
+                                    if args.guest_snapshot:
+                                        args.guest_snapshot.parent.mkdir(
+                                            parents=True, exist_ok=True
+                                        )
+                                        args.guest_snapshot.write_bytes(memory)
+                                        radio_snapshot_written = True
+                            else:
+                                write_primary_press(mem, game_address, False)
+                                if radio_physical_mouse_held:
+                                    send_mouse_button(args.display, False)
+                                    radio_physical_mouse_held = False
+                                radio_bridge_idle_started = None
+                        elif radio_probe_phase == "press-radio-console":
+                            exact_write(
+                                mem,
+                                game_address + MOUSE_X_OFFSET,
+                                struct.pack("<h", TELEPHONE_CONSOLE_X),
+                            )
+                            exact_write(
+                                mem,
+                                game_address + MOUSE_Y_OFFSET,
+                                struct.pack("<h", TELEPHONE_CONSOLE_Y),
+                            )
+                            write_primary_press(mem, game_address, True)
+                            send_mouse_button(args.display, True)
+                            radio_physical_mouse_held = True
+                            radio_console_pressed = True
+                            radio_probe_phase = "release-radio-console"
+                        elif radio_probe_phase == "release-radio-console":
+                            if radio_console_pressed:
+                                write_primary_press(mem, game_address, False)
+                            if radio_physical_mouse_held:
+                                send_mouse_button(args.display, False)
+                                radio_physical_mouse_held = False
+                            radio_console_selected_at = time.monotonic()
+                            radio_probe_phase = "wait-radio-orb"
+                            probe["radio_console_selected_sample"] = report[
+                                "guarded_samples"
+                            ]
+                        elif radio_probe_phase == "wait-radio-orb":
+                            if (
+                                radio_console_selected_at is not None
+                                and time.monotonic() - radio_console_selected_at
+                                >= RADIO_CONSOLE_SETTLE_SECONDS
+                            ):
+                                exact_write(
+                                    mem,
+                                    game_address + MOUSE_X_OFFSET,
+                                    struct.pack("<h", RADIO_ORB_X),
+                                )
+                                exact_write(
+                                    mem,
+                                    game_address + MOUSE_Y_OFFSET,
+                                    struct.pack("<h", RADIO_ORB_Y),
+                                )
+                                write_primary_press(mem, game_address, True)
+                                send_mouse_button(args.display, True)
+                                radio_physical_mouse_held = True
+                                radio_probe_phase = "release-radio-orb"
+                        elif radio_probe_phase == "release-radio-orb":
+                            write_primary_press(mem, game_address, False)
+                            if radio_physical_mouse_held:
+                                send_mouse_button(args.display, False)
+                                radio_physical_mouse_held = False
+                            radio_orb_click_count = 1
+                            radio_post_montage_idle_started = None
+                            radio_probe_phase = "wait-first-radio"
+                            probe["radio_orb_clicked_sample"] = report[
+                                "guarded_samples"
+                            ]
+                        elif (
+                            radio_probe_phase == "wait-first-radio"
+                            and radio_orb_click_count == 1
+                        ):
+                            radio_idle = (
+                                presentation_state[
+                                    "c2_presentation_gate"
+                                ] == 0
+                                and presentation_state[
+                                    "text_display_active"
+                                ] == 0
+                                and blockers.get("load", 0) == 0
+                                and blockers.get("save", 0) == 0
+                            )
+                            if radio_idle:
+                                if radio_post_montage_idle_started is None:
+                                    radio_post_montage_idle_started = (
+                                        time.monotonic()
+                                    )
+                                if (
+                                    time.monotonic()
+                                    - radio_post_montage_idle_started
+                                    >= RADIO_ACCEPT_IDLE_SECONDS
+                                ):
+                                    exact_write(
+                                        mem,
+                                        game_address + MOUSE_X_OFFSET,
+                                        struct.pack("<h", RADIO_ACCEPT_ORB_X),
+                                    )
+                                    exact_write(
+                                        mem,
+                                        game_address + MOUSE_Y_OFFSET,
+                                        struct.pack("<h", RADIO_ACCEPT_ORB_Y),
+                                    )
+                                    write_primary_press(mem, game_address, True)
+                                    send_mouse_button(args.display, True)
+                                    radio_physical_mouse_held = True
+                                    radio_probe_phase = "release-radio-accept"
+                            else:
+                                radio_post_montage_idle_started = None
+                        elif radio_probe_phase == "release-radio-accept":
+                            write_primary_press(mem, game_address, False)
+                            if radio_physical_mouse_held:
+                                send_mouse_button(args.display, False)
+                                radio_physical_mouse_held = False
+                            radio_orb_click_count = 2
+                            write_script2_actor_prerequisites(
+                                mem, game_address, memory, game_offset
+                            )
+                            write_script2_variant(
+                                mem,
+                                int(expected["guest_base"]),
+                                profile_state,
+                                SCRIPT2_RADIO_TARGET_VARIANT,
+                                False,
+                            )
+                            radio_probe_phase = "wait-first-radio"
+                            probe["radio_call_accepted_sample"] = report[
+                                "guarded_samples"
+                            ]
+
+                        probe["phase"] = radio_probe_phase
+                        probe["snapshot_written"] = radio_snapshot_written
+
+                    if (
+                        args.script2_radio_probe
+                        and radio_probe_phase == "wait-first-radio"
+                        and radio_state is not None
+                    ):
+                        subtitle = str(radio_state["subtitle"])
+                        action = str(radio_state["scruter_k_action"])
+                        if radio_orb_click_count == 2 and action.startswith("c3"):
+                            write_script2_actor_prerequisites(
+                                mem, game_address, memory, game_offset
+                            )
+                            write_script2_variant(
+                                mem,
+                                int(expected["guest_base"]),
+                                profile_state,
+                                SCRIPT2_RADIO_TARGET_VARIANT,
+                                False,
+                            )
+                        if (
+                            radio_orb_click_count == 2
+                            and action.startswith("c4")
+                            and presentation_state["presentation_active"] == 1
+                            and audio_state["bank_clip_count"] >= 22
+                        ):
+                            write_script2_variant(
+                                mem,
+                                int(expected["guest_base"]),
+                                profile_state,
+                                SCRIPT2_RADIO_TARGET_VARIANT,
+                                True,
+                            )
+                        if subtitle and (
+                            not radio_lines or radio_lines[-1] != subtitle
+                        ):
+                            radio_lines.append(subtitle)
+                            probe = report.setdefault("radio_probe", {})
+                            assert isinstance(probe, dict)
+                            probe["lines"] = radio_lines
+                            line_states = probe.setdefault("line_states", [])
+                            assert isinstance(line_states, list)
+                            line_states.append(
+                                {
+                                    "sample": report["guarded_samples"],
+                                    "subtitle": subtitle,
+                                    "cpu": cpu_for_report(state),
+                                    "audio_flow": audio_state,
+                                    "presentation_flow": presentation_state,
+                                    "radio_flow": radio_state,
+                                }
+                            )
+                        normalized = subtitle.upper()
+                        if (
+                            radio_orb_click_count == 2
+                            and "WAIT COMMANDER" in normalized
+                            and presentation_state["c2_presentation_gate"] == 1
+                        ):
+                            if not radio_input_held:
+                                write_primary_press(mem, game_address, True)
+                                send_mouse_button(args.display, True)
+                                radio_physical_mouse_held = True
+                                radio_input_held = True
+                        elif radio_input_held:
+                            write_primary_press(mem, game_address, False)
+                            if radio_physical_mouse_held:
+                                send_mouse_button(args.display, False)
+                                radio_physical_mouse_held = False
+                            radio_input_held = False
+                        elif "REPORT FROM HONK" in normalized:
+                            report["verdict"] = "RADIO-PROBE-COMPLETE"
+                            probe = report.setdefault("radio_probe", {})
+                            assert isinstance(probe, dict)
+                            probe["completed_sample"] = report[
+                                "guarded_samples"
+                            ]
+                            break
+
                     context = (
                         state["cs"],
                         state["ds"],
@@ -919,6 +1672,7 @@ def main() -> int:
                         break
                     if (
                         args.teleport_profile is not None
+                        and not args.script2_radio_probe
                         and not teleport_queue
                         and teleport_inflight is None
                         and teleport_last_completion is not None
@@ -933,7 +1687,12 @@ def main() -> int:
                     libc.ptrace(PTRACE_DETACH, dosbox.pid, None, None)
                     attached = False
         else:
-            if args.teleport_profile is not None:
+            if args.script2_radio_probe:
+                report["verdict"] = "RADIO-PROBE-TIMEOUT"
+                probe = report.setdefault("radio_probe", {})
+                if isinstance(probe, dict):
+                    probe["phase"] = radio_probe_phase
+            elif args.teleport_profile is not None:
                 report["verdict"] = "TELEPORT-TIMEOUT"
                 report["teleport_pending"] = (
                     [teleport_inflight] if teleport_inflight is not None else []
@@ -948,6 +1707,8 @@ def main() -> int:
         report["verdict"] = "WATCHDOG-ERROR"
         report["error"] = f"{type(error).__name__}: {error}"
     finally:
+        if radio_physical_mouse_held:
+            send_mouse_button(args.display, False)
         if dosbox is not None and dosbox.poll() is None:
             if attached:
                 libc.ptrace(PTRACE_DETACH, dosbox.pid, None, None)
@@ -958,8 +1719,7 @@ def main() -> int:
             xvfb.wait()
 
     if args.report:
-        args.report.parent.mkdir(parents=True, exist_ok=True)
-        args.report.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+        write_json_report(args.report, report)
     print(
         json.dumps(
             {
@@ -974,6 +1734,7 @@ def main() -> int:
         "TIMEOUT-NO-ANOMALY",
         "CLEAN-EXIT",
         "TELEPORTS-COMPLETE",
+        "RADIO-PROBE-COMPLETE",
     ) else 1
 
 
