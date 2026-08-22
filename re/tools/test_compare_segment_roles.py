@@ -174,7 +174,38 @@ class SegmentRoleComparisonTests(unittest.TestCase):
         )
         self.assertEqual(
             accesses,
-            Counter({MODULE.Access("GAME_DATA", "r", 2, "direct", 0x1234): 1}),
+            Counter({MODULE.Access(
+                "GAME_DATA", "r", 2, "direct", 0x1234,
+                operand_index=1,
+            ): 1}),
+        )
+
+    def test_register_far_pointer_spill_is_recovered_from_bp_frame(self):
+        listing = self.listing("""
+0000                          routine_:
+0000    55                        push bp
+0001    89 E5                     mov bp,sp
+0003    83 EC 04                  sub sp,0x4
+0006    52                        push dx
+0007    8E 46 FA                  mov es,word ptr -0x6[bp]
+000A    26 8A 07                  mov al,byte ptr es:[bx]
+000D    C9                        leave
+000E    C3                        ret
+""")
+        entry = MODULE.initial_state(listing, original=False).with_register(
+            "dx", "GAME_DATA"
+        )
+        accesses, _calls = MODULE.analyze(
+            listing, {}, original=False, entry_state=entry,
+            include_static=True,
+        )
+        self.assertIn(
+            ("GAME_DATA", "r", 1, "based", 0),
+            {
+                (access.role, access.mode, access.width, access.form,
+                 access.displacement)
+                for access in accesses
+            },
         )
 
     def test_review_is_bound_to_exact_comparison(self):
@@ -199,6 +230,33 @@ class SegmentRoleComparisonTests(unittest.TestCase):
                 [row, MODULE.replace(replacement, rebuilt_count=2)],
                 {("routine", "dynamic"): review},
             )
+
+    def test_wildcard_review_covers_all_unresolved_routine_rows(self):
+        rows = [
+            MODULE.Comparison(
+                "routine", "extra_role", "dynamic", 0, 1,
+                "", "r1:based:+0x0x1",
+            ),
+            MODULE.Comparison(
+                "routine", "shape_difference", "GAME_DATA", 1, 2,
+                "w2:based:+0x0x1", "w1:based:+0x0x2",
+            ),
+            MODULE.Comparison(
+                "routine", "exact", "memseg:GAME_DATA:1234", 1, 1,
+                "", "",
+            ),
+        ]
+        review = MODULE.Review(
+            MODULE.routine_fingerprints(rows)["routine"],
+            "equivalent", "whole routine audit",
+        )
+        reviewed = MODULE.apply_reviews(
+            rows, {("routine", "*"): review}
+        )
+        self.assertEqual(
+            [row.status for row in reviewed],
+            ["reviewed_equivalent", "reviewed_equivalent", "exact"],
+        )
 
     def test_exact_caller_context_downgrades_local_difference(self):
         local = MODULE.Comparison(
@@ -231,6 +289,107 @@ class SegmentRoleComparisonTests(unittest.TestCase):
             MODULE.add_context_evidence([local], [])[0].status,
             "extra_role",
         )
+
+    def test_site_mapped_context_proves_local_extra_role(self):
+        local_access = MODULE.Access(
+            "argument", "r", 1, "based", 0, site=0x10
+        )
+        rebuilt_context_access = MODULE.replace(
+            local_access, role="GAME_DATA"
+        )
+        original_context_access = MODULE.Access(
+            "GAME_DATA", "r", 1, "based", 0, site=0x20
+        )
+        local_row = MODULE.compare(
+            "routine", Counter(), Counter({local_access: 1})
+        )[0]
+        context_rows = [MODULE.Comparison(
+            "routine", "shape_difference", "GAME_DATA", 2, 3,
+            "r2:direct:+0x1x1", "r2:direct:+0x2x1",
+        )]
+        rows = MODULE.add_context_evidence(
+            [local_row], context_rows,
+            Counter(), Counter({local_access: 1}),
+            Counter({original_context_access: 1}),
+            Counter({rebuilt_context_access: 1}),
+        )
+        self.assertEqual(rows[0].status, "interprocedural_equivalent")
+
+    def test_site_mapped_context_rejects_different_offset(self):
+        local_access = MODULE.Access(
+            "argument", "r", 1, "based", 0, site=0x10
+        )
+        rebuilt_context_access = MODULE.replace(
+            local_access, role="GAME_DATA"
+        )
+        original_context_access = MODULE.Access(
+            "GAME_DATA", "r", 1, "based", 1, site=0x20
+        )
+        self.assertFalse(MODULE.context_covers_local_accesses(
+            Counter({local_access: 1}),
+            Counter({rebuilt_context_access: 1}),
+            Counter({original_context_access: 1}),
+        ))
+
+    def test_every_unresolved_status_requires_review(self):
+        self.assertEqual(MODULE.REVIEW_REQUIRED_STATUSES, {
+            "missing_role", "extra_role", "shape_difference"
+        })
+
+    def test_byte_parser_static_dispatch_targets_are_recovered(self):
+        first_target = 0x053A0 + 8610
+        dispatch = MODULE.static_dispatch_targets({first_target: "handler"})
+        self.assertIn("handler", dispatch[0x74E5])
+
+    def test_call_invalidates_caller_clobbered_segment_provenance(self):
+        listing = self.listing("""
+0000                          routine_:
+0000    BA 00 00                  mov dx,FS_DATA
+0003    E8 00 00                  call cb_helper_
+0006    8E C2                     mov es,dx
+0008    26 8B 07                  mov ax,word ptr es:[bx]
+000B    C3                        ret
+""")
+        accesses, _calls = MODULE.analyze(
+            listing, {}, original=False, include_static=True
+        )
+        self.assertIn(MODULE.UNKNOWN, {access.role for access in accesses})
+
+    def test_sequential_lodsw_tracks_affine_source_cursor(self):
+        listing = self.listing("""
+0000                          routine_:
+0000    AD                        lodsw
+0001    AD                        lodsw
+0002    C3                        ret
+""")
+        entry = MODULE.initial_state(listing, original=True).with_register(
+            "ds", "memseg:GAME_DATA:6726"
+        )
+        accesses, _calls = MODULE.analyze(
+            listing, {}, original=True, entry_state=entry
+        )
+        self.assertEqual(
+            {access.displacement for access in accesses}, {0, 2}
+        )
+
+    def test_immediate_base_contributes_to_effective_offset(self):
+        listing = self.listing("""
+0000                          routine_:
+0000    BF B8 20                  mov di,0x20b8
+0003    26 C6 05 00               mov byte ptr es:[di],0
+0007    C3                        ret
+""")
+        entry = MODULE.initial_state(listing, original=True).with_register(
+            "es", "GAME_DATA"
+        )
+        accesses, _calls = MODULE.analyze(
+            listing, {}, original=True, entry_state=entry,
+            include_static=True,
+        )
+        self.assertIn(0x20B8, {
+            access.displacement for access in accesses
+            if access.role == "GAME_DATA"
+        })
 
 
 if __name__ == "__main__":

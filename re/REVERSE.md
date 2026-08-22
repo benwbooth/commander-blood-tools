@@ -6179,27 +6179,46 @@ original routine's complete memory-access behavior remain separate audits.
 `compare_segment_roles.py` performs that separate parity audit. It traces the
 source of dynamic segment values (far-pointer arguments, fixed VGA segments,
 and segment words stored in GAME_DATA/FS_DATA), normalizes compiler register
-allocation, propagates register and stack-argument provenance across direct
-calls, and compares memory-access roles rather than raw instructions. Natural
-C can legitimately replace an original far return slot or global-derived
-segment with a typed return value or equivalent argument-derived segment, so
-those differences require an assembly-to-C data-flow review rather than an
-instruction-count rule.
+allocation, propagates register and BP-frame spill provenance across calls,
+and compares memory-access roles rather than raw instructions. It also follows
+the recovered VM-opcode, navigation, sprite, input-action and byte-parser
+dispatch tables, tracks affine pointer movement through `LODS`, `STOS`,
+`MOVS`, `LEA` and ordinary arithmetic, and invalidates caller-clobbered values
+at external C adapters. Natural C can legitimately replace an original far
+return slot or global-derived segment with a typed return value or equivalent
+argument-derived segment, so those differences require an assembly-to-C
+data-flow review rather than an instruction-count rule.
 
 Accepted differences live in `segment_role_reviews.tsv`. Each entry is bound
 to a hash of the routine's complete role set, access counts, and missing/extra
 access shapes; source or compiler changes that alter any part of that routine's
 comparison invalidate the review. Runtime packaging uses `--fail-unreviewed`,
-so every original-only
-dynamic role must either be proved interprocedurally or have a current reviewed
-equivalence, and every confirmed bug fails the build. The comparator also
-expands accesses to byte-level read/write footprints, proving split dword/word
-and aggregate-field lowerings without relying on instruction counts. The
-current pass has 269 roles across 337 routines: 31 are footprint-equivalent,
-three are interprocedurally equivalent, 29 have reviewed equivalent lowerings,
-zero original-only roles remain unreviewed, and no segment-role bug was found
-in the bounded comparison. Rebuilt-only roles and non-equivalent footprints
-remain explicit parity findings rather than being silently accepted.
+so every missing role, rebuilt-only role, non-equivalent access shape and
+confirmed bug fails the build unless the complete current routine fingerprint
+has an assembly-to-listing equivalence review. Byte-level read/write footprints
+prove split dword/word and aggregate-field lowerings without relying on
+instruction counts. Instruction-site identity permits caller-resolved evidence
+to prove a local dynamic role only when it covers the same access.
+
+The exhaustive pass over all 337 linked routines reports 267 local memory-role
+rows: 34 are byte-footprint equivalent, 49 are interprocedurally equivalent,
+102 are fingerprint-bound reviewed equivalents, 82 are exact, and zero remain
+missing, rebuilt-only, shape-different or confirmed defective. A separate
+`segment_role_context_comparison.tsv` retains the noisier caller-expanded
+effects for diagnosis; it is not substituted for the per-routine gate.
+
+This pass found one real defect. `ship_3d_plane_band_copy` used `_fmemcpy` for
+two VGA write-mode-one transfers; Watcom widened them to `MOVSW` plus a byte
+tail, while the original uses byte-only `MOVSB`. VGA latch behavior makes that
+width observable even though a flat-memory oracle sees identical bytes. The
+recovered routine now uses natural C volatile byte loops, and
+`audit_vga_byte_copy.py` makes packaging fail unless all four compiled
+framebuffer accesses remain byte-wide.
+
+The corrected package executable has SHA-256
+`46d98c617ad7109293f5786269cb3eb218c8c8d35afd4ecc07cac4cc25123cfe`.
+Fresh-boot DOS invariant runs passed all five profiles through the game's real
+loader with expected handle sets 2-6, 37-41, 76-80, 81-85 and 86-90.
 
 `recovered_package_invariant_gate.py` stages the package's 25 source-compiled
 script resources into a separate clean C drive for each requested profile. It

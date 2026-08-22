@@ -7,9 +7,10 @@ tool instead propagates the provenance of segment values and compares accesses
 through dynamic segments such as the VM record image, script image, resource
 buffers, VGA memory, and far-pointer arguments.
 
-The report is intentionally diagnostic rather than a package gate.  A missing
-role is high-signal; count and access-shape differences still require review
-against the routine's original assembly and semantic oracle.
+Missing roles, rebuilt-only roles, and non-equivalent access shapes are package
+gate failures unless a fingerprint-bound assembly-to-listing review classifies
+the complete current routine comparison.  The caller-expanded report remains
+diagnostic and helps establish or reject interprocedural equivalence.
 """
 from __future__ import annotations
 
@@ -18,6 +19,7 @@ import csv
 import hashlib
 import importlib.util
 import re
+import struct
 import sys
 from collections import Counter, deque
 from dataclasses import dataclass, replace
@@ -49,8 +51,19 @@ ORIGINAL_FIXED_SEGMENTS = {
     0x0CE2: "GAME_DATA",
     0x0BBF: "FS_DATA",
 }
+STATIC_DISPATCH_TABLES = (
+    ((0x5627, 0x56C4), 0x142D0, 0x34, 0x053A0),
+    ((0x7E09,), 0x07EB4, 6, 0x077E0),
+    ((0x8700,), 0x08709, 5, 0x077E0),
+    ((0x4506,), 0x04522, 8, 0x02F90),
+    ((0x2137,), 0x020EE, 16, 0x00EB0),
+    ((0x74E5,), 0x0751E, 18, 0x053A0),
+)
 ARGUMENT = "argument"
 UNKNOWN = "unknown"
+REVIEW_REQUIRED_STATUSES = frozenset((
+    "missing_role", "extra_role", "shape_difference",
+))
 
 
 @dataclass(frozen=True)
@@ -65,6 +78,8 @@ class RoleState:
     locals: tuple[tuple[int, str], ...] = ()
     saved_segments: tuple[str, ...] = ()
     pending_pushes: tuple[str, ...] = ()
+    frame_sp: int | None = None
+    deltas: tuple[tuple[str, int | None], ...] = ()
 
     def register(self, name: str) -> str:
         return dict(self.registers).get(audit.canonical_register(name), UNKNOWN)
@@ -82,6 +97,14 @@ class RoleState:
         values[offset] = value
         return replace(self, locals=tuple(sorted(values.items())))
 
+    def delta(self, name: str) -> int | None:
+        return dict(self.deltas).get(audit.canonical_register(name))
+
+    def with_delta(self, name: str, value: int | None) -> RoleState:
+        values = dict(self.deltas)
+        values[audit.canonical_register(name)] = value
+        return replace(self, deltas=tuple(sorted(values.items())))
+
 
 @dataclass(frozen=True)
 class Access:
@@ -90,6 +113,8 @@ class Access:
     width: int
     form: str
     displacement: int
+    site: int = 0
+    operand_index: int = 0
 
     def shape(self) -> str:
         return f"{self.mode}{self.width}:{self.form}:{self.displacement:+#x}"
@@ -176,7 +201,13 @@ def initial_state(listing: audit.Listing, original: bool) -> RoleState:
         "gs": "GAME_DATA",
         "ss": "STACK",
     })
-    return RoleState(tuple(sorted(registers.items())))
+    deltas = {
+        audit.canonical_register(name): 0
+        for name in audit.GENERAL_REGISTERS
+    }
+    return RoleState(
+        tuple(sorted(registers.items())), deltas=tuple(sorted(deltas.items()))
+    )
 
 
 def merge_state(left: RoleState, right: RoleState) -> RoleState:
@@ -204,9 +235,17 @@ def merge_state(left: RoleState, right: RoleState) -> RoleState:
         left.pending_pushes
         if left.pending_pushes == right.pending_pushes else ()
     )
+    frame_sp = left.frame_sp if left.frame_sp == right.frame_sp else None
+    left_deltas = dict(left.deltas)
+    right_deltas = dict(right.deltas)
+    deltas = {
+        key: left_deltas.get(key)
+        if left_deltas.get(key) == right_deltas.get(key) else None
+        for key in left_deltas.keys() | right_deltas.keys()
+    }
     return RoleState(
         tuple(sorted(registers.items())), tuple(sorted(locals_.items())),
-        saved, pending_pushes,
+        saved, pending_pushes, frame_sp, tuple(sorted(deltas.items())),
     )
 
 
@@ -295,6 +334,8 @@ def transfer(item: audit.ListingInstruction, state: RoleState,
         register = audit.canonical_register(insn.reg_name(register_id))
         if register in audit.GENERAL_REGISTERS + audit.SEGMENT_REGISTERS:
             result = result.with_register(register, UNKNOWN)
+            if register in audit.GENERAL_REGISTERS:
+                result = result.with_delta(register, None)
 
     op = audit.mnemonic(item.text)
     operands = audit.split_operands(item.text)
@@ -306,9 +347,30 @@ def transfer(item: audit.ListingInstruction, state: RoleState,
         destination_register = audit.canonical_register(destination)
         if destination_register in audit.GENERAL_REGISTERS + audit.SEGMENT_REGISTERS:
             result = result.with_register(destination_register, value)
-            if (not original and destination_register == "bp" and
-                    audit.canonical_register(source) == "sp"):
-                result = replace(result, pending_pushes=())
+            source_register = audit.canonical_register(source)
+            if destination_register in audit.GENERAL_REGISTERS:
+                if source_register in audit.GENERAL_REGISTERS:
+                    delta = state.delta(source_register)
+                elif insn.operands[1].type == x86_const.X86_OP_IMM:
+                    offset_symbol = re.fullmatch(
+                        r"offset\s+(?P<symbol>_[\w$?@]+)",
+                        source.strip(), re.IGNORECASE,
+                    )
+                    entry = layout.get(offset_symbol["symbol"].lower()) \
+                        if offset_symbol else None
+                    delta = (
+                        entry.offset if entry is not None else
+                        insn.operands[1].imm & 0xFFFF
+                    )
+                else:
+                    delta = None
+                result = result.with_delta(destination_register, delta)
+            if destination_register == "bp" and source_register == "sp":
+                result = replace(
+                    result, pending_pushes=(), frame_sp=0
+                )
+            elif destination_register == "sp" and source_register == "bp":
+                result = replace(result, frame_sp=0)
         else:
             local = audit.local_offset(destination)
             if local is not None:
@@ -318,6 +380,7 @@ def transfer(item: audit.ListingInstruction, state: RoleState,
         right = audit.canonical_register(operands[1])
         if left == right and left in audit.GENERAL_REGISTERS:
             result = result.with_register(left, "constant:0000")
+            result = result.with_delta(left, 0)
     elif op == "xchg" and len(operands) == 2:
         left = audit.canonical_register(operands[0])
         right = audit.canonical_register(operands[1])
@@ -325,6 +388,41 @@ def transfer(item: audit.ListingInstruction, state: RoleState,
                 right in audit.GENERAL_REGISTERS + audit.SEGMENT_REGISTERS):
             result = result.with_register(left, state.register(right))
             result = result.with_register(right, state.register(left))
+            result = result.with_delta(left, state.delta(right))
+            result = result.with_delta(right, state.delta(left))
+    elif (op in ("add", "sub") and len(operands) == 2 and
+            audit.canonical_register(operands[0]) in audit.GENERAL_REGISTERS and
+            audit.canonical_register(operands[0]) != "sp" and
+            len(insn.operands) >= 2 and
+            insn.operands[1].type == x86_const.X86_OP_IMM):
+        register = audit.canonical_register(operands[0])
+        delta = state.delta(register)
+        if delta is not None:
+            amount = insn.operands[1].imm
+            result = result.with_delta(
+                register, delta + amount if op == "add" else delta - amount
+            )
+    elif op in ("inc", "dec") and len(operands) == 1:
+        register = audit.canonical_register(operands[0])
+        delta = state.delta(register)
+        if register in audit.GENERAL_REGISTERS and delta is not None:
+            result = result.with_delta(
+                register, delta + (1 if op == "inc" else -1)
+            )
+    elif op == "lea" and len(operands) == 2 and len(insn.operands) >= 2:
+        destination = audit.canonical_register(operands[0])
+        source_operand = insn.operands[1]
+        if (destination in audit.GENERAL_REGISTERS and
+                source_operand.type == x86_const.X86_OP_MEM and
+                not source_operand.mem.index):
+            base = insn.reg_name(source_operand.mem.base).lower() \
+                if source_operand.mem.base else ""
+            base_delta = state.delta(base) if base else 0
+            result = result.with_delta(
+                destination,
+                None if base_delta is None else
+                base_delta + source_operand.mem.disp,
+            )
     elif op == "push" and len(operands) == 1:
         source = audit.canonical_register(operands[0])
         value = source_role(
@@ -334,6 +432,11 @@ def transfer(item: audit.ListingInstruction, state: RoleState,
             result,
             pending_pushes=(value,) + result.pending_pushes[:63],
         )
+        if state.frame_sp is not None:
+            frame_sp = state.frame_sp - 2
+            result = replace(result, frame_sp=frame_sp).with_local(
+                frame_sp, value
+            )
         if source in audit.SEGMENT_REGISTERS:
             result = replace(
                 result,
@@ -347,6 +450,11 @@ def transfer(item: audit.ListingInstruction, state: RoleState,
             ),
         )
         destination = audit.canonical_register(operands[0])
+        if state.frame_sp is not None:
+            value = state.local(state.frame_sp)
+            result = replace(result, frame_sp=state.frame_sp + 2)
+            if destination in audit.GENERAL_REGISTERS:
+                result = result.with_register(destination, value)
         if destination in audit.SEGMENT_REGISTERS:
             value = (
                 result.saved_segments[0] if result.saved_segments else UNKNOWN
@@ -369,8 +477,56 @@ def transfer(item: audit.ListingInstruction, state: RoleState,
             segment_half=False,
         )
         result = result.with_register(operands[0], offset_role)
+        result = result.with_delta(operands[0], 0)
+    elif op.startswith("lods"):
+        delta = state.delta("si")
+        if delta is not None:
+            width = next(
+                (operand.size for operand in insn.operands
+                 if operand.type == x86_const.X86_OP_MEM),
+                1,
+            )
+            result = result.with_delta("si", delta + width)
+    elif op.startswith("stos"):
+        delta = state.delta("di")
+        if delta is not None:
+            width = next(
+                (operand.size for operand in insn.operands
+                 if operand.type == x86_const.X86_OP_MEM),
+                1,
+            )
+            result = result.with_delta("di", delta + width)
+    elif op.startswith("movs"):
+        width = next(
+            (operand.size for operand in insn.operands
+             if operand.type == x86_const.X86_OP_MEM),
+            1,
+        )
+        for register in ("si", "di"):
+            delta = state.delta(register)
+            if delta is not None:
+                result = result.with_delta(register, delta + width)
     elif op in ("call", "lcall"):
         result = replace(result, pending_pushes=())
+        call_target = operands[0].strip().lower() if operands else ""
+        if not original and call_target.startswith("cb_"):
+            for register in ("ax", "bx", "cx", "dx"):
+                result = result.with_register(register, UNKNOWN)
+                result = result.with_delta(register, None)
+    elif (op in ("add", "sub") and len(operands) == 2 and
+            audit.canonical_register(operands[0]) == "sp" and
+            state.frame_sp is not None and len(insn.operands) >= 2 and
+            insn.operands[1].type == x86_const.X86_OP_IMM):
+        amount = insn.operands[1].imm
+        result = replace(
+            result,
+            frame_sp=(
+                state.frame_sp + amount
+                if op == "add" else state.frame_sp - amount
+            ),
+        )
+    elif op == "leave":
+        result = replace(result, frame_sp=None)
     return result
 
 
@@ -393,7 +549,7 @@ def instruction_accesses(item: audit.ListingInstruction, state: RoleState,
         (entry.owner, entry.offset) for entry in layout.values()
     }
     result: list[Access] = []
-    for operand in insn.operands:
+    for operand_index, operand in enumerate(insn.operands):
         if operand.type != x86_const.X86_OP_MEM:
             continue
         segment = memory_segment(insn, operand)
@@ -411,16 +567,27 @@ def instruction_accesses(item: audit.ListingInstruction, state: RoleState,
             if location is not None and location.owner == role
             else operand.mem.disp
         )
+        if (location is None and normalize_role(role) != "dynamic" and
+                operand.mem.base and not operand.mem.index):
+            base = insn.reg_name(operand.mem.base).lower()
+            delta = state.delta(base)
+            if delta is not None:
+                displacement += delta
         if 0 <= displacement <= 0xFFFF and displacement & 0x8000:
             displacement -= 0x10000
         result.append(Access(
-            role, access_mode(operand), operand.size, form, displacement
+            role, access_mode(operand), operand.size, form, displacement,
+            item.offset, operand_index,
         ))
     return tuple(result)
 
 
 def call_state(state: RoleState) -> RoleState:
-    return RoleState(state.registers, pending_pushes=state.pending_pushes)
+    return RoleState(
+        state.registers,
+        pending_pushes=state.pending_pushes,
+        deltas=state.deltas,
+    )
 
 
 def callee_state(state: RoleState, listing: audit.Listing) -> RoleState:
@@ -444,7 +611,9 @@ def callee_state(state: RoleState, listing: audit.Listing) -> RoleState:
         first_argument + index * 2: role
         for index, role in enumerate(state.pending_pushes)
     }
-    return RoleState(state.registers, tuple(sorted(locals_.items())))
+    return RoleState(
+        state.registers, tuple(sorted(locals_.items())), deltas=state.deltas
+    )
 
 
 def analyze(listing: audit.Listing, layout: dict[str, LayoutEntry],
@@ -482,9 +651,11 @@ def analyze(listing: audit.Listing, layout: dict[str, LayoutEntry],
             by_offset[offset], state, layout, original, include_static
         ))
         if call_resolver is not None:
-            target = call_resolver(by_offset[offset])
-            if target is not None:
-                calls.setdefault(target, []).append(call_state(state))
+            resolved = call_resolver(by_offset[offset])
+            if resolved is not None:
+                targets = (resolved,) if isinstance(resolved, str) else resolved
+                for target in targets:
+                    calls.setdefault(target, []).append(call_state(state))
     return accesses, calls
 
 
@@ -527,6 +698,22 @@ def interprocedural_accesses(
             return results
         entries = updated
     raise ValueError("interprocedural segment provenance did not converge")
+
+
+def static_dispatch_targets(entries: dict[int, str]) \
+        -> dict[int, tuple[str, ...]]:
+    image = (ROOT / "re/bin/BLOODPRG.EXE").read_bytes()
+    result: dict[int, tuple[str, ...]] = {}
+    for sites, table_offset, count, target_base in STATIC_DISPATCH_TABLES:
+        targets = []
+        for index in range(count):
+            raw = struct.unpack_from("<H", image, table_offset + index * 2)[0]
+            stem = entries.get(target_base + raw)
+            if stem is not None and stem not in targets:
+                targets.append(stem)
+        for site in sites:
+            result[site] = tuple(targets)
+    return result
 
 
 def normalize_role(role: str) -> str:
@@ -576,8 +763,14 @@ def read_reviews(path: Path | None) -> dict[tuple[str, str], Review]:
             key = (row["routine"], row["segment_role"])
             if key in reviews:
                 raise ValueError(f"{path}: duplicate review for {key!r}")
+            fingerprint = row["fingerprint"].strip().lower()
+            rationale = row["rationale"].strip()
+            if not re.fullmatch(r"[0-9a-f]{16}", fingerprint):
+                raise ValueError(f"{path}: invalid review fingerprint for {key!r}")
+            if not rationale:
+                raise ValueError(f"{path}: empty review rationale for {key!r}")
             reviews[key] = Review(
-                row["fingerprint"], row["classification"], row["rationale"]
+                fingerprint, row["classification"], rationale
             )
     return reviews
 
@@ -592,10 +785,14 @@ def apply_reviews(rows: list[Comparison], reviews: dict[tuple[str, str], Review]
     for row in rows:
         key = (row.routine, row.role)
         review = reviews.get(key)
+        review_key = key
+        if review is None and row.status in REVIEW_REQUIRED_STATUSES:
+            review_key = (row.routine, "*")
+            review = reviews.get(review_key)
         if review is None:
             result.append(row)
             continue
-        used.add(key)
+        used.add(review_key)
         actual = fingerprints[row.routine]
         if review.fingerprint != actual:
             raise ValueError(
@@ -629,26 +826,31 @@ def byte_footprint(accesses: Counter[Access]) \
     return frozenset(result)
 
 
+def accesses_by_role(accesses: Counter[Access]) \
+        -> dict[str, Counter[Access]]:
+    result: dict[str, Counter[Access]] = {}
+    for access, count in accesses.items():
+        result.setdefault(normalize_role(access.role), Counter())[access] += count
+    return result
+
+
+def shape_counts(accesses: Counter[Access]) -> Counter[str]:
+    result: Counter[str] = Counter()
+    for access, count in accesses.items():
+        result[access.shape()] += count
+    return result
+
+
 def compare(routine: str, original: Counter[Access], rebuilt: Counter[Access]) \
         -> list[Comparison]:
-    original_accesses: dict[str, Counter[Access]] = {}
-    rebuilt_accesses: dict[str, Counter[Access]] = {}
-    for access, count in original.items():
-        role = normalize_role(access.role)
-        original_accesses.setdefault(role, Counter())[access] += count
-    for access, count in rebuilt.items():
-        role = normalize_role(access.role)
-        rebuilt_accesses.setdefault(role, Counter())[access] += count
+    original_accesses = accesses_by_role(original)
+    rebuilt_accesses = accesses_by_role(rebuilt)
     rows: list[Comparison] = []
     for role in sorted(original_accesses.keys() | rebuilt_accesses.keys()):
         before_accesses = original_accesses.get(role, Counter())
         after_accesses = rebuilt_accesses.get(role, Counter())
-        before = Counter({
-            access.shape(): count for access, count in before_accesses.items()
-        })
-        after = Counter({
-            access.shape(): count for access, count in after_accesses.items()
-        })
+        before = shape_counts(before_accesses)
+        after = shape_counts(after_accesses)
         if before and not after:
             status = "missing_role"
         elif after and not before:
@@ -673,26 +875,88 @@ def compare(routine: str, original: Counter[Access], rebuilt: Counter[Access]) \
     return rows
 
 
+def context_covers_local_accesses(
+        local: Counter[Access],
+        own_context: Counter[Access],
+        other_context: Counter[Access]) -> bool:
+    own_by_site = {
+        (access.site, access.operand_index): access
+        for access in own_context
+    }
+    mapped: dict[str, Counter[Access]] = {}
+    for access, count in local.items():
+        contextual = own_by_site.get((access.site, access.operand_index))
+        if contextual is None:
+            return False
+        role = normalize_role(contextual.role)
+        mapped.setdefault(role, Counter())[contextual] += count
+    if not mapped:
+        return False
+    other_by_role = accesses_by_role(other_context)
+    return all(
+        role in other_by_role and
+        byte_footprint(accesses).issubset(
+            byte_footprint(other_by_role[role])
+        )
+        for role, accesses in mapped.items()
+    )
+
+
 def add_context_evidence(local_rows: list[Comparison],
-                         context_rows: list[Comparison]) -> list[Comparison]:
+                         context_rows: list[Comparison],
+                         original_local: Counter[Access] | None = None,
+                         rebuilt_local: Counter[Access] | None = None,
+                         original_context: Counter[Access] | None = None,
+                         rebuilt_context: Counter[Access] | None = None) \
+        -> list[Comparison]:
     context_is_equivalent = bool(context_rows) and all(
         row.status in ("exact", "footprint_equivalent")
         for row in context_rows
     )
-    return [
-        replace(row, status="interprocedural_equivalent")
-        if (context_is_equivalent and row.status in (
-            "missing_role", "extra_role", "shape_difference"
-        )) else row
-        for row in local_rows
-    ]
+    original_groups = accesses_by_role(original_local or Counter())
+    rebuilt_groups = accesses_by_role(rebuilt_local or Counter())
+    result: list[Comparison] = []
+    for row in local_rows:
+        equivalent = context_is_equivalent
+        if (not equivalent and original_context is not None and
+                rebuilt_context is not None):
+            if row.status == "missing_role":
+                equivalent = context_covers_local_accesses(
+                    original_groups.get(row.role, Counter()),
+                    original_context, rebuilt_context,
+                )
+            elif row.status == "extra_role":
+                equivalent = context_covers_local_accesses(
+                    rebuilt_groups.get(row.role, Counter()),
+                    rebuilt_context, original_context,
+                )
+            elif row.status == "shape_difference":
+                equivalent = (
+                    context_covers_local_accesses(
+                        original_groups.get(row.role, Counter()),
+                        original_context, rebuilt_context,
+                    ) and
+                    context_covers_local_accesses(
+                        rebuilt_groups.get(row.role, Counter()),
+                        rebuilt_context, original_context,
+                    )
+                )
+        if equivalent and row.status in (
+                "missing_role", "extra_role", "shape_difference"):
+            row = replace(row, status="interprocedural_equivalent")
+        result.append(row)
+    return result
 
 
 def original_call_resolver(entries: dict[int, str]):
-    def resolve(item: audit.ListingInstruction) -> str | None:
+    dispatch = static_dispatch_targets(entries)
+
+    def resolve(item: audit.ListingInstruction) -> str | tuple[str, ...] | None:
         insn = audit.decode_instruction(item)
         if x86_const.X86_GRP_CALL not in set(insn.groups):
             return None
+        if item.offset in dispatch:
+            return dispatch[item.offset]
         match = re.fullmatch(r"call\s+0x([0-9a-f]+)",
                              item.text.strip(), re.IGNORECASE)
         if not match:
@@ -713,6 +977,31 @@ def rebuilt_call_resolver(functions: dict[str, str]):
             symbol = symbol[:-1]
         return functions.get(symbol)
     return resolve
+
+
+def write_comparisons(stream, rows: list[Comparison]) -> None:
+    writer = csv.writer(stream, delimiter="\t", lineterminator="\n")
+    writer.writerow((
+        "routine", "status", "segment_role", "original_accesses",
+        "rebuilt_accesses", "missing_shapes", "extra_shapes",
+    ))
+    priority = {
+        "missing_role": 0,
+        "extra_role": 1,
+        "shape_difference": 2,
+        "footprint_equivalent": 3,
+        "interprocedural_equivalent": 4,
+        "reviewed_equivalent": 5,
+        "confirmed_bug": 6,
+        "exact": 7,
+    }
+    for row in sorted(rows, key=lambda item: (
+        priority[item.status], item.routine, item.role
+    )):
+        writer.writerow((
+            row.routine, row.status, row.role, row.original_count,
+            row.rebuilt_count, row.missing_shapes, row.extra_shapes,
+        ))
 
 
 def parse_args() -> argparse.Namespace:
@@ -749,12 +1038,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--wdis", type=Path, default=Path("wdis"))
     parser.add_argument("--output", type=Path)
     parser.add_argument(
+        "--context-output", type=Path,
+        help="write the caller-resolved static and dynamic effect comparison",
+    )
+    parser.add_argument(
         "--reviews", type=Path,
         default=ROOT / "re/source/bloodprg/segment_role_reviews.tsv",
     )
     parser.add_argument(
         "--review-template", type=Path,
-        help="write the current unreviewed missing-role fingerprints",
+        help="write every unresolved memory-effect fingerprint",
     )
     parser.add_argument("--fail-unreviewed", action="store_true")
     return parser.parse_args()
@@ -811,6 +1104,7 @@ def main() -> int:
         for stem, listing in rebuilt_listings.items()
     }
     rows: list[Comparison] = []
+    all_context_rows: list[Comparison] = []
     for stem in sorted(linked):
         routine_rows = compare(
             stem,
@@ -822,7 +1116,15 @@ def main() -> int:
             original_context_accesses[stem],
             rebuilt_context_accesses[stem],
         )
-        rows.extend(add_context_evidence(routine_rows, context_rows))
+        all_context_rows.extend(context_rows)
+        rows.extend(add_context_evidence(
+            routine_rows,
+            context_rows,
+            original_accesses[stem],
+            rebuilt_accesses[stem],
+            original_context_accesses[stem],
+            rebuilt_context_accesses[stem],
+        ))
 
     fingerprints = routine_fingerprints(rows)
     reviews = read_reviews(args.reviews.resolve() if args.reviews else None)
@@ -835,40 +1137,30 @@ def main() -> int:
                 "rationale",
             ))
             for row in rows:
-                if row.status == "missing_role":
+                if row.status in REVIEW_REQUIRED_STATUSES:
                     writer.writerow((
                         row.routine, row.role,
                         fingerprints[row.routine], "", ""
                     ))
 
-    stream = (
-        args.output.open("w", newline="", encoding="ascii")
+    stream = args.output.open("w", newline="", encoding="ascii") \
         if args.output else sys.stdout
-    )
-    writer = csv.writer(stream, delimiter="\t", lineterminator="\n")
-    writer.writerow((
-        "routine", "status", "segment_role", "original_accesses",
-        "rebuilt_accesses", "missing_shapes", "extra_shapes",
-    ))
-    priority = {
-        "missing_role": 0,
-        "extra_role": 1,
-        "shape_difference": 2,
-        "footprint_equivalent": 3,
-        "interprocedural_equivalent": 4,
-        "reviewed_equivalent": 5,
-        "confirmed_bug": 6,
-        "exact": 7,
-    }
-    for row in sorted(rows, key=lambda item: (
-        priority[item.status], item.routine, item.role
-    )):
-        writer.writerow((
-            row.routine, row.status, row.role, row.original_count,
-            row.rebuilt_count, row.missing_shapes, row.extra_shapes,
-        ))
+    write_comparisons(stream, rows)
     if args.output:
         stream.close()
+    if args.context_output:
+        with args.context_output.open(
+                "w", newline="", encoding="ascii") as context_stream:
+            write_comparisons(context_stream, all_context_rows)
+        context_counts = Counter(row.status for row in all_context_rows)
+        print(
+            f"caller context: {len(all_context_rows)} roles; "
+            f"{context_counts['missing_role']} missing; "
+            f"{context_counts['extra_role']} extra; "
+            f"{context_counts['shape_difference']} shape differences; "
+            f"{context_counts['footprint_equivalent']} footprint equivalents; "
+            f"{context_counts['exact']} exact"
+        )
     counts = Counter(row.status for row in rows)
     print(
         f"{len(linked)} routines; {len(rows)} dynamic segment roles; "
@@ -881,7 +1173,8 @@ def main() -> int:
         f"{counts['exact']} exact"
     )
     if args.fail_unreviewed and (
-            counts["missing_role"] or counts["confirmed_bug"]):
+            any(counts[status] for status in REVIEW_REQUIRED_STATUSES) or
+            counts["confirmed_bug"]):
         return 1
     return 0
 

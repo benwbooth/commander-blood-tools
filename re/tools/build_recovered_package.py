@@ -584,6 +584,8 @@ def build_bloodprg_runtime(
             "--fail-unreviewed",
             "--output",
             str(final_dir / "segment_role_comparison.tsv"),
+            "--context-output",
+            str(final_dir / "segment_role_context_comparison.tsv"),
         ],
         final_dir / "segment_role_comparison.log",
     )
@@ -594,6 +596,23 @@ def build_bloodprg_runtime(
             str(ROOT / "re/tools/test_compare_segment_roles.py"),
         ],
         final_dir / "segment_role_comparison_tests.log",
+    )
+    run_checked_logged(
+        [
+            sys.executable,
+            "-P",
+            str(ROOT / "re/tools/audit_vga_byte_copy.py"),
+            "--object",
+            str(
+                object_dir / "bloodprg" /
+                "func_00b6dd_ship_3d_plane_band_copy.OBJ"
+            ),
+            "--wdis",
+            args.wdis,
+            "--listing-cache",
+            str(final_dir / "segment_contract_listings"),
+        ],
+        final_dir / "vga_byte_copy_audit.log",
     )
     run_checked_logged(
         [

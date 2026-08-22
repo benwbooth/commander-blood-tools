@@ -186,9 +186,13 @@ natural-C instruction-count differences alone are not treated as defects.
 Equivalent dword/word splits and aggregate field lowerings are proved through
 byte-level read/write footprints; differing offsets or directions remain in
 the report.
+`segment_role_context_comparison.tsv` retains the broader caller-resolved
+GAME_DATA/FS_DATA effect comparison for diagnosing call and dispatch contracts.
 The final validation directory records `data_placement_audit.log`,
 `segment_usage.tsv`, `segment_usage_audit.log`, and
-`runtime_watchdog_tests.log` for inspection.
+`runtime_watchdog_tests.log` for inspection. It also records
+`vga_byte_copy_audit.log`; this gate requires the write-mode-one ship-3D plane
+copy to retain byte-wide framebuffer accesses in the compiled object.
 The fixed-patch directory contains the fixed-layout audit listing and patched
 executable; `cd/BPRG_C.EXE` can be launched with the same arguments as the
 original `BLOODPRG.EXE`.

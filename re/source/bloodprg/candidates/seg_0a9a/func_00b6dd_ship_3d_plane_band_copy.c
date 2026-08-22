@@ -38,6 +38,7 @@ void CB_FAR ship_3d_plane_band_copy(void)
     cb_u16 depth;
     cb_u16 doubled_depth;
     cb_u16 byte_count;
+    cb_u16 byte_index;
     cb_u8 graphics_mode;
 
     if ((ship_3d_plane_blit_crop_enabled_ds & 1u) == 0u) {
@@ -69,9 +70,11 @@ void CB_FAR ship_3d_plane_band_copy(void)
     graphics_mode = (cb_u8)inp(SHIP_3D_VGA_GRAPHICS_DATA_PORT);
     outp(SHIP_3D_VGA_GRAPHICS_DATA_PORT,
         (cb_u8)((graphics_mode & 0xfcu) | SHIP_3D_VGA_WRITE_MODE_ONE));
-    _fmemcpy((void CB_FAR *)framebuffer,
-        (const void CB_FAR *)first_source, byte_count);
-    _fmemcpy((void CB_FAR *)second_destination,
-        (const void CB_FAR *)second_source, byte_count);
+    for (byte_index = 0u; byte_index < byte_count; ++byte_index) {
+        framebuffer[byte_index] = first_source[byte_index];
+    }
+    for (byte_index = 0u; byte_index < byte_count; ++byte_index) {
+        second_destination[byte_index] = second_source[byte_index];
+    }
     outp(SHIP_3D_VGA_GRAPHICS_DATA_PORT, graphics_mode);
 }

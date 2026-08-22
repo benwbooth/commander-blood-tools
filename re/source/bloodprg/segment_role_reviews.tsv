@@ -1,30 +1,89 @@
 routine	segment_role	fingerprint	classification	rationale
-func_000726_startup_option_apply	dynamic	cf56253f4d5875bb	equivalent	Rebuilt C rematerializes the same far pointer instead of retaining the original dynamic segment.
-func_000eb0_bloodprg_main	dynamic	099c7698f6cf6647	equivalent	Both forms construct the GAME_DATA:674a far pointer by storing offset 6790 and the current data segment into its interior segment word.
-func_001b4b_save_load_menu_step	dynamic	442ab33a0b2a5fdf	equivalent	Watcom lowers the recovered aggregate assignment as a block copy with equivalent source and destination objects.
-func_001dd8_save_slot_name_edit_step	dynamic	653312f0c4b2bbbd	equivalent	Watcom lowers the recovered aggregate assignment as a block copy with equivalent source and destination objects.
-func_002140_input_action_move_previous	dynamic	ddf03af9389de325	equivalent	Watcom lowers the recovered aggregate assignment as a block copy with equivalent source and destination objects.
-func_00224d_input_action_cancel	dynamic	9a07d4d7182e6be2	equivalent	The recovered C clears the same aggregate directly instead of using the original dynamic far destination.
-func_0028ca_resource_name_lookup	dynamic	9b02d2f69816ef9f	equivalent	The recovered C materializes the same far pointer as separate offset and segment words.
-func_004536_sprite_blit_raw_transparent	dynamic	db3c4af0c6885ec9	equivalent	The rebuilt blitter transposes segment-register allocation while preserving the caller-provided source object.
-func_004ba8_sprite_blit_raw_opaque	dynamic	198f5aef39e2d098	equivalent	The rebuilt blitter transposes segment-register allocation while preserving the caller-provided source object.
-func_004f62_sprite_blit_scaled_transparent	dynamic	740cbfcc3103df82	equivalent	The rebuilt blitter transposes segment-register allocation while preserving the caller-provided source object.
-func_005190_resource_allocate	dynamic	cfe2182d19ccd962	equivalent	Recovered allocation code makes the original indirect far-pointer output explicit through the typed return ABI.
-func_005816_presentation_scan	dynamic	b42c9528030f2208	equivalent	Caller-propagated VM-heap pointers and typed record fields preserve the original presentation-record accesses.
-func_005b38_record_c1_ship3d_action	memseg:GAME_DATA:6726	19fbfbec9d16cd0f	equivalent	The caller and recovered C pass the same VM-heap segment derived from GAME_DATA:6726 for all record reads and writes.
-func_00813a_nav_actor_handler_2	dynamic	2faba7f5e299ee88	equivalent	Watcom lowers the recovered aggregate assignment as a block copy with equivalent source and destination objects.
-func_0082e8_nav_state_gate	dynamic	8852056a0f48ed40	equivalent	The caller makes ES equal the VM segment; rebuilt C writes the same GAME_DATA:0e18 text buffer explicitly.
-func_0087bd_nav_choice_handler_2	dynamic	d67c4a074860ba19	equivalent	The recovered C names and materializes the same far destination instead of retaining a dynamic segment value.
-func_009083_location_info_panel_dispatch	memseg:GAME_DATA:indirect	d5aafa7bce7317c4	equivalent	The original LES through GAME_DATA:6218 and the typed C frame pointer read the same low-byte stride field.
-func_009240_entity_draw_full	memseg:GAME_DATA:indirect	8db133b6f58711d3	equivalent	The original LES through GAME_DATA:6218 and the typed C extent pointer read the same low-byte width and height fields.
-func_00959d_screen_flags_init	dynamic	08d05c607679105a	equivalent	Both forms copy 768 bytes from GAME_DATA:5b58 to the inherited destination at GAME_DATA:5251.
-func_009d10_dlg_line_id_scene_dispatch	dynamic	03a467300640cb3d	equivalent	Both forms copy 192 palette bytes from GAME_DATA:53d1 to GAME_DATA:59d1 and perform the same bounded dispatch.
-func_009f8e_resource_switch	dynamic	2e5cd180480ceb98	equivalent	The recovered C materializes the same far pointer as separate offset and segment words.
-func_00a117_flag_gated_2751	dynamic	9fdeddd9af7a46cd	equivalent	Watcom lowers the recovered aggregate transfer as a block copy over the same object.
-func_00a2ab_list_d8c_refill	dynamic	6451619ec319608f	equivalent	The recovered aggregate update expands to named fields instead of one dynamic byte store.
-func_00a41a_list_d8c_active_present	dynamic	b0fbb9bb152c4eaa	equivalent	The rebuilt list scan transposes segment-register allocation while preserving the same records.
-func_00a642_banked_list_load	dynamic	827bb8087269a340	equivalent	The recovered C makes the original success output explicit in its typed result path.
-func_00ab25_resource_payload_decode_rect	memseg:GAME_DATA:0abe	e6b2452d7adf141e	equivalent	Caller propagation proves the original and rebuilt decoder use the same staging-buffer segment from GAME_DATA:0abe.
-func_00ab25_resource_payload_decode_rect	memseg:GAME_DATA:5223	e6b2452d7adf141e	equivalent	Caller propagation proves the original and rebuilt decoder use the same framebuffer segment from GAME_DATA:5223.
-func_00b079_ship_3d_hud_init	dynamic	824ff7abfc05889f	equivalent	Both forms copy 192 bytes from GAME_DATA:5d98 to the inherited HUD palette destination at GAME_DATA:5491.
-func_00b34e_ship_3d_navigation_update	dynamic	b8e6968e38db0eb4	equivalent	Both forms copy 192 bytes from GAME_DATA:53d1 to the restored presentation palette destination at GAME_DATA:59d1.
+func_000726_startup_option_apply	*	cf56253f4d5875bb	equivalent	Recovered C rematerializes the same far pointer instead of retaining the original dynamic segment.
+func_000c26_vga_mode_x_initialize	*	d72fb00fbf8d5a43	equivalent	Assembly and listing audit confirms the BIOS data read and 65535-byte VGA clear use the same segments and byte footprint.
+func_000eb0_bloodprg_main	*	f5c143aa417bede0	equivalent	Both forms construct the GAME_DATA 674a far pointer with the same offset and current data segment.
+func_001b4b_save_load_menu_step	*	442ab33a0b2a5fdf	equivalent	The aggregate copy has the same source destination and byte footprint as the original string copy.
+func_001d74_vm_patch_stream_apply	*	6b19bf32ff44f092	equivalent	Explicit packed-field reads match the original LODSW cursor advancement and byte footprint.
+func_001d94_vm_patch_stream_build	*	7f3795f015d09173	equivalent	Explicit packed-field stores match the original STOSW and STOSB cursor advancement and byte footprint.
+func_001dd8_save_slot_name_edit_step	*	653312f0c4b2bbbd	equivalent	The aggregate copy has the same source destination and byte footprint as the original string copy.
+func_002140_input_action_move_previous	*	ddf03af9389de325	equivalent	The aggregate copy has the same source destination and byte footprint as the original string copy.
+func_00218d_input_action_move_next	*	c4cc5d128d5c2e28	equivalent	Four original dword moves and the rebuilt aggregate copy cover the same 16 source and destination bytes.
+func_00224d_input_action_cancel	*	9a07d4d7182e6be2	equivalent	The recovered C clears the same 384-byte palette object using a different instruction width.
+func_0026cf_resource_archive_match	*	5403a7086017e50b	equivalent	Typed archive fields preserve every original read and write while the analyzer merges distinct dynamic objects.
+func_0028ca_resource_name_lookup	*	88fd59f6b3e45218	equivalent	The original DTA dword read is materialized as adjacent words over the same bytes.
+func_002901_resource_file_load_to_xms	*	955d947136ecfdfd	equivalent	DTA and XMS request dwords are split into word fields with identical segments directions and byte ranges.
+func_0029f2_resource_file_load_to_ems	*	2acf457de780fdf5	equivalent	DTA fields are split into words and the EMS page-frame destination remains identical.
+func_002abb_resource_file_load	*	4ce954803fa5ceae	equivalent	DTA dwords are split into words and caller context confirms the same resource objects and directions.
+func_002bfd_pbm_image_load_and_decode	*	909b016f7eb8136f	equivalent	Chunk identifiers are split into words while DTA palette file-buffer and framebuffer effects retain identical byte ranges.
+func_002d50_bridge_panorama_frame_unpack	*	d63ba51b15a45534	equivalent	Assembly and listing audit confirms the same source and framebuffer objects directions and byte footprint.
+func_0030cd_text_width_dual_font	*	3a098b8abf3188db	equivalent	The recovered far text pointer names the same DS SI source used by the original text-width loop.
+func_003106_square_caps_text_draw_display	*	f6cf34895f1e8612	equivalent	The recovered far text pointer names the same DS SI source used by the original renderer.
+func_003192_main_font_text_draw_display	*	c1ae93ec449aba0e	equivalent	The recovered far text pointer names the same DS SI source used by the original renderer.
+func_00339e_framebuffer_rect_palette_remap	*	e70d73ca25a61708	equivalent	Assembly and listing audit confirms the same framebuffer object directions offsets and byte footprint.
+func_00356e_planar_dialogue_text_render	*	a795658fc9e061f1	equivalent	The recovered far text pointer and explicit drawing fields preserve the original source and destination effects.
+func_0036ea_small_text_render	*	5b69634ae61a79bc	equivalent	The recovered far text pointer and explicit drawing fields preserve the original source and destination effects.
+func_0039bb_gfx_clipped_span_fill	*	e8919a35fe3740d7	equivalent	A byte fill is lowered as word stores plus a byte tail over the same clipped span.
+func_003e46_full_screen_blit	*	d4f5de75f54dd5cc	equivalent	MOVSD and MOVSW forms cover the same 65536-byte source and destination framebuffer ranges.
+func_003e5b_fullscreen_copy_to_backbuffer	*	fcdb00ae8249c7cf	equivalent	MOVSD and MOVSW forms cover the same 65536-byte source and destination backbuffer ranges.
+func_003e70_vga_planar_to_chunky	*	d6da13c218ab95c2	equivalent	The looped recovered implementation and unrolled original access the same four planes and chunky destination bytes.
+func_003ece_chunky_to_planar_framebuffer	*	c6ec34d7454b5b1b	equivalent	Assembly and listing audit confirms the same chunky source and planar framebuffer byte effects.
+func_0040d0_entity_object_populate	*	797dc5ca9549af50	equivalent	Packed dword transfers are expressed as typed adjacent fields over the same entity bytes.
+func_00414e_entity_record_setter	*	7424a118a35bcc2a	equivalent	Packed dword transfers are expressed as typed adjacent fields over the same entity bytes.
+func_0046bc_sprite_blit_rle_transparent	*	72803da086bcd2b4	equivalent	Branch duplication and segment-register allocation differ while the decoded source and framebuffer byte effects match.
+func_004ba8_sprite_blit_raw_opaque	*	0972dfaf86da7d3f	equivalent	Segment-register allocation differs while caller context proves the same source and framebuffer byte effects.
+func_004cd6_sprite_blit_rle_opaque	*	4f1059636d1671d4	equivalent	Branch duplication and segment-register allocation differ while the decoded source and framebuffer byte effects match.
+func_00509d_dirty_rects_copy_secondary_to_primary	*	a7fdb45561d727c6	equivalent	Specialized copy paths replace a byte loop while preserving the same primary and secondary framebuffer ranges.
+func_005190_resource_allocate	*	cfe2182d19ccd962	equivalent	Recovered allocation makes the original indirect far-pointer output explicit through the typed return ABI.
+func_0053a0_vm_resource_profile_select	*	c3585e4f8ac177a2	equivalent	VM audit confirms the same dynamic records and access directions after typed-pointer and compiler-shape normalization.
+func_00577a_value_scan_match	*	17112ecf5ad981b9	equivalent	VM audit confirms the same scan source fields and byte footprint after implicit cursor normalization.
+func_005816_presentation_scan	*	b42c9528030f2208	equivalent	Caller-propagated VM heap pointers and typed fields preserve the original presentation-record accesses.
+func_005a74_vm_state_processor	*	7925155ebb183641	equivalent	VM audit confirms the same state records directions and byte footprint after typed-field normalization.
+func_006034_vm_record_lookup_by_threshold	*	a9b39f24d9b8240e	equivalent	The original effective-address arithmetic and recovered typed indexing select the same VM record fields.
+func_0061a6_ship_3d_position_field_resolve	*	e070678aaf3a226c	equivalent	VM audit identifies harmless duplicate reads and confirms matching position-record effects.
+func_006339_vm_condition_5	*	56a50be1d9b8a7eb	equivalent	VM audit identifies harmless duplicate reads and confirms matching condition-record effects.
+func_00660c_vm_op_a6_text	*	7bfc71dd86b9bdd1	equivalent	VM audit confirms typed text operands preserve the original dynamic source and destination byte effects.
+func_006946_vm_op_shared_record_wildcard	*	d9375b83a7b5dd65	equivalent	Original address arithmetic and recovered typed record fields cover the same VM bytes and directions.
+func_006b06_vm_op_b8_record_readwrite	*	14b01d217c59c635	equivalent	Original address arithmetic and recovered typed record fields cover the same VM bytes and directions.
+func_006fb9_vm_op_c9_clear_record_full	*	5c9258ebd35c7673	equivalent	The recovered typed clear covers the same complete VM record byte range as the original loop.
+func_00713d_vm_state_record_processor	*	9f702699ff9a576d	equivalent	VM audit identifies harmless duplicate reads and confirms matching state-record effects.
+func_00739b_vm_cod_scan	*	3a84ae0e5df2fa78	equivalent	Static byte-parser dispatch and cursor tracking prove the same COD stream source effects.
+func_007409_vm_c2_descript_lookup	*	72d1ac062934533a	equivalent	Original effective-address arithmetic and recovered typed lookup select the same descriptor fields.
+func_00755e_index_lookup_dca	*	83073a0a72a8d8d7	equivalent	Parser audit confirms the same indexed source bytes after dynamic-pointer and cursor normalization.
+func_007612_credit_presenter_b_cryo	*	8636703d9d7c860a	equivalent	Parser audit confirms the same input stream and destination bytes after dynamic-pointer normalization.
+func_007629_byte_parser_copy_20b8_printable	*	e80f521cfc4dcd91	equivalent	Implicit LODS and STOS cursor movement is expressed as explicit byte indexing over the same ranges.
+func_00763e_byte_parser_snd_bank_name_load	*	70a13f93455b2ea4	equivalent	Implicit LODS and STOS cursor movement is expressed as explicit byte indexing over the same ranges.
+func_00766f_byte_parser_copy_24c6_printable	*	6a43dd214d5fa83a	equivalent	Implicit LODS and STOS cursor movement is expressed as explicit byte indexing over the same ranges.
+func_0076c0_byte_parser_copy_2460_printable	*	6ef55290399c2d8f	equivalent	Implicit LODS and STOS cursor movement is expressed as explicit byte indexing over the same ranges.
+func_0076d5_byte_parser_copy_247a_printable	*	854c5e0b513df1d7	equivalent	Implicit LODS and STOS cursor movement is expressed as explicit byte indexing over the same ranges.
+func_0076ea_index_lookup_1fd7	*	7c986fde46c91558	equivalent	Parser audit confirms the same indexed source bytes after dynamic-pointer and cursor normalization.
+func_007776_byte_parser_stream_0f18_append	*	afe7b66fabec1aea	equivalent	Implicit LODS and STOS cursor movement is expressed as explicit byte indexing over the same ranges.
+func_0077a9_music_voc_name_patcher	*	e03204e7619a9c92	equivalent	Parser audit confirms the same source and music-name destination bytes after cursor normalization.
+func_00813a_nav_actor_handler_2	*	2faba7f5e299ee88	equivalent	The aggregate copy has the same source destination and byte footprint as the original string copy.
+func_0082e8_nav_state_gate	*	1b038f733f93c2c9	equivalent	Typed record accesses and explicit text-buffer output preserve the original VM segment effects.
+func_008428_list_widget_layout_unified	*	ed5dfd06852d97d4	equivalent	The recovered C names the original inherited label anchor and preserves all list-layout effects.
+func_008cce_nav_camera_state_check	*	fd6c0cec11759229	equivalent	Typed left and width reads match the original LODSW cursor movement and stable duplicate reads.
+func_009083_location_info_panel_dispatch	*	d5aafa7bce7317c4	equivalent	The original LES through GAME_DATA 6218 and typed frame pointer read the same low-byte stride field.
+func_009240_entity_draw_full	*	8db133b6f58711d3	equivalent	The original LES through GAME_DATA 6218 and typed extent pointer read the same width and height bytes.
+func_0092a3_nav_chart_object_pick	*	e938de769037ec9f	equivalent	Negative offsets from the original advanced cursor equal positive typed-structure offsets in the recovered C.
+func_00933a_back_buffer_copy_from	*	4b0ff242dd122177	equivalent	MOVSB and word-plus-tail forms copy the same ordinary RAM source and destination bytes.
+func_009364_nav_center_wipe_span_table_build	*	6b58ec10d6e065f0	equivalent	Implicit STOSW advancement is expressed as explicit adjacent span fields over the same bytes.
+func_00959d_screen_flags_init	*	08d05c607679105a	equivalent	Both forms copy 768 bytes from GAME_DATA 5b58 to the inherited destination at GAME_DATA 5251.
+func_00981b_bridge_panorama_frame_load	*	7597f83c8152dd7a	equivalent	Dword reads and a word loop cover the same eight source bytes and destination bytes.
+func_009d10_dlg_line_id_scene_dispatch	*	03a467300640cb3d	equivalent	Both forms copy 192 palette bytes from GAME_DATA 53d1 to GAME_DATA 59d1 and perform the same dispatch.
+func_009f8e_resource_switch	*	490df291602a15d4	equivalent	DTA and resource-table dwords are materialized as adjacent words over identical byte ranges.
+func_00a117_flag_gated_2751	*	9fdeddd9af7a46cd	equivalent	The recovered aggregate transfer covers the same object and byte range as the original string copy.
+func_00a20c_list_d8c_activate_ready	*	10710b5e2efcc9fa	equivalent	Caller-resolved list-head provenance and typed fields preserve the original active-list effects.
+func_00a2ab_list_d8c_refill	*	499c7c3332009c53	equivalent	Sequential aggregate stores are expressed as named link fields over the same bytes.
+func_00a41a_list_d8c_active_present	*	b0fbb9bb152c4eaa	equivalent	The original inherited active-resource segment is reloaded explicitly and the same list records are scanned.
+func_00a4ed_resource_rect_blit	*	9b0eb0c098dabe89	equivalent	Explicit source and destination loops replace clear-direction string operations over identical byte ranges.
+func_00a552_list_d8c_activate_entry	*	0f93555afe11da91	equivalent	Explicit offset and segment-word reads materialize the same far pointer as the original LES.
+func_00a622_list_d8c_read	*	633790af667b0475	equivalent	A pre-adjusted typed pointer selects the same word as the original advanced cursor at SI minus two.
+func_00a642_banked_list_load	*	827bb8087269a340	equivalent	The original inherited list-head segment is reloaded explicitly and the success output is typed.
+func_00a914_resource_payload_decode_ad	*	22f05a6eb0a428f2	equivalent	Structured token handling preserves the source and destination ranges of the original branch-specific string operations.
+func_00ab25_resource_payload_decode_rect	*	34743ee99f98af4d	equivalent	Caller propagation separates source staging and framebuffer objects whose vectors and full capture match.
+func_00b079_ship_3d_hud_init	*	824ff7abfc05889f	equivalent	Both forms copy 192 bytes from GAME_DATA 5d98 to the inherited HUD palette destination at GAME_DATA 5491.
+func_00b34e_ship_3d_navigation_update	*	b8e6968e38db0eb4	equivalent	Both forms copy 192 bytes from GAME_DATA 53d1 to the restored presentation palette at GAME_DATA 59d1.
+func_00b6dd_ship_3d_plane_band_copy	*	e673c5def7001c3c	equivalent	After replacing widened memcpy calls with byte loops the mode-one copy is byte-only and remaining offsets encode the same band addresses.
+func_00b8cd_snd_play_clip	*	c836d09804304999	equivalent	Typed descriptor and mixer accesses preserve the same audio buffers fields directions and byte ranges.
+func_00bc50_snd_stream_refill	*	d1eac74ef2a73d19	equivalent	Successive STOSW stores are expressed as explicit adjacent stream fields over the same bytes.
+func_00bd26_snd_bank_ems_page_read	*	25b205ae935a16a0	equivalent	MOVSD and word-copy forms transfer the same 16 KiB EMS source and ordinary RAM destination bytes.
