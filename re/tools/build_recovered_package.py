@@ -568,6 +568,34 @@ def build_bloodprg_runtime(
         [
             sys.executable,
             "-P",
+            str(ROOT / "re/tools/compare_segment_roles.py"),
+            "--object-dir",
+            str(object_dir / "bloodprg"),
+            "--link-map",
+            str(final_map),
+            "--data-layout",
+            str(owner_dir / "data_layout.tsv"),
+            "--listing-cache",
+            str(final_dir / "segment_contract_listings"),
+            "--wdis",
+            args.wdis,
+            "--output",
+            str(final_dir / "segment_role_comparison.tsv"),
+        ],
+        final_dir / "segment_role_comparison.log",
+    )
+    run_checked_logged(
+        [
+            sys.executable,
+            "-P",
+            str(ROOT / "re/tools/test_compare_segment_roles.py"),
+        ],
+        final_dir / "segment_role_comparison_tests.log",
+    )
+    run_checked_logged(
+        [
+            sys.executable,
+            "-P",
             str(ROOT / "re/tools/test_runtime_watchdog.py"),
         ],
         final_dir / "runtime_watchdog_tests.log",

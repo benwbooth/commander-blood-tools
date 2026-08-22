@@ -1,0 +1,543 @@
+#!/usr/bin/env python3
+"""Compare original and rebuilt dynamic-memory segment roles per routine.
+
+Natural C changes register allocation and instruction counts substantially, so
+raw assembly diffs are a poor detector for segmented-memory regressions.  This
+tool instead propagates the provenance of segment values and compares accesses
+through dynamic segments such as the VM record image, script image, resource
+buffers, VGA memory, and far-pointer arguments.
+
+The report is intentionally diagnostic rather than a package gate.  A missing
+role is high-signal; count and access-shape differences still require review
+against the routine's original assembly and semantic oracle.
+"""
+from __future__ import annotations
+
+import argparse
+import csv
+import importlib.util
+import re
+import sys
+from collections import Counter, deque
+from dataclasses import dataclass, replace
+from pathlib import Path
+
+import capstone
+from capstone import x86_const
+
+
+ROOT = Path(__file__).resolve().parents[2]
+
+_spec = importlib.util.spec_from_file_location(
+    "segment_contract_audit", ROOT / "re/tools/audit_segment_contracts.py"
+)
+audit = importlib.util.module_from_spec(_spec)
+sys.modules[_spec.name] = audit
+_spec.loader.exec_module(audit)
+
+ORIGINAL_ROW = re.compile(
+    r"^(?P<address>[0-9A-Fa-f]{6,8}):\s+"
+    r"(?P<bytes>(?:[0-9A-Fa-f]{2}\s+)+)\s*(?P<text>.*?)\s*$"
+)
+SYMBOL_EXPRESSION = re.compile(
+    r"(?P<symbol>_[A-Za-z_$?][\w$?@]*)"
+    r"(?P<delta>[+-]0x[0-9A-Fa-f]+|[+-]\d+)?"
+)
+STATIC_ROLES = {"GAME_DATA", "FS_DATA", "STACK", "CODE"}
+ORIGINAL_FIXED_SEGMENTS = {
+    0x0CE2: "GAME_DATA",
+    0x0BBF: "FS_DATA",
+}
+ARGUMENT = "argument"
+UNKNOWN = "unknown"
+
+
+@dataclass(frozen=True)
+class LayoutEntry:
+    owner: str
+    offset: int
+
+
+@dataclass(frozen=True)
+class RoleState:
+    registers: tuple[tuple[str, str], ...]
+    locals: tuple[tuple[int, str], ...] = ()
+    saved_segments: tuple[str, ...] = ()
+
+    def register(self, name: str) -> str:
+        return dict(self.registers).get(audit.canonical_register(name), UNKNOWN)
+
+    def local(self, offset: int) -> str:
+        return dict(self.locals).get(offset, UNKNOWN)
+
+    def with_register(self, name: str, value: str) -> RoleState:
+        values = dict(self.registers)
+        values[audit.canonical_register(name)] = value
+        return replace(self, registers=tuple(sorted(values.items())))
+
+    def with_local(self, offset: int, value: str) -> RoleState:
+        values = dict(self.locals)
+        values[offset] = value
+        return replace(self, locals=tuple(sorted(values.items())))
+
+
+@dataclass(frozen=True)
+class Access:
+    role: str
+    mode: str
+    width: int
+    form: str
+    displacement: int
+
+    def shape(self) -> str:
+        return f"{self.mode}{self.width}:{self.form}:{self.displacement:+#x}"
+
+
+@dataclass(frozen=True)
+class Comparison:
+    routine: str
+    status: str
+    role: str
+    original_count: int
+    rebuilt_count: int
+    missing_shapes: str
+    extra_shapes: str
+
+
+def read_layout(path: Path) -> dict[str, LayoutEntry]:
+    result: dict[str, LayoutEntry] = {}
+    with path.open(newline="", encoding="ascii") as handle:
+        for row in csv.DictReader(handle, delimiter="\t"):
+            if row["status"] != "known" or not row["offset"]:
+                continue
+            owner = "CODE" if row["segment"] == "_CODE" else row["segment"]
+            result[row["symbol"].lower()] = LayoutEntry(
+                owner, int(row["offset"], 0)
+            )
+    if not result:
+        raise ValueError(f"{path}: no layout entries")
+    return result
+
+
+def parse_original(path: Path) -> audit.Listing:
+    instructions: list[audit.ListingInstruction] = []
+    for line in path.read_text(encoding="ascii", errors="replace").splitlines():
+        match = ORIGINAL_ROW.match(line)
+        if not match:
+            continue
+        instructions.append(audit.ListingInstruction(
+            int(match["address"], 16),
+            bytes.fromhex(match["bytes"]),
+            match["text"].strip(),
+        ))
+    if not instructions:
+        raise ValueError(f"{path}: no original instructions")
+    return audit.Listing(path, tuple(instructions), {}, {})
+
+
+def initial_state(listing: audit.Listing, original: bool) -> RoleState:
+    registers = {
+        audit.canonical_register(name): ARGUMENT
+        for name in audit.GENERAL_REGISTERS
+    }
+    ds_role = "GAME_DATA"
+    if original:
+        has_gs = False
+        has_explicit_ds_frame = False
+        for item in listing.instructions:
+            insn = audit.decode_instruction(item)
+            for operand in insn.operands:
+                if operand.type != x86_const.X86_OP_MEM:
+                    continue
+                segment = memory_segment(insn, operand)
+                if segment == "gs":
+                    has_gs = True
+                base = insn.reg_name(operand.mem.base).lower() \
+                    if operand.mem.base else ""
+                if operand.mem.segment and segment == "ds" \
+                        and base in ("bp", "ebp"):
+                    has_explicit_ds_frame = True
+        if has_gs and has_explicit_ds_frame:
+            ds_role = ARGUMENT
+    registers.update({
+        "cs": "CODE",
+        "ds": ds_role,
+        "es": ARGUMENT,
+        "fs": "FS_DATA",
+        "gs": "GAME_DATA",
+        "ss": "STACK",
+    })
+    return RoleState(tuple(sorted(registers.items())))
+
+
+def merge_state(left: RoleState, right: RoleState) -> RoleState:
+    left_registers = dict(left.registers)
+    right_registers = dict(right.registers)
+    registers = {
+        key: left_registers.get(key, UNKNOWN)
+        if left_registers.get(key, UNKNOWN) == right_registers.get(key, UNKNOWN)
+        else UNKNOWN
+        for key in left_registers.keys() | right_registers.keys()
+    }
+    left_locals = dict(left.locals)
+    right_locals = dict(right.locals)
+    locals_ = {
+        key: left_locals.get(key, UNKNOWN)
+        if left_locals.get(key, UNKNOWN) == right_locals.get(key, UNKNOWN)
+        else UNKNOWN
+        for key in left_locals.keys() | right_locals.keys()
+    }
+    saved = (
+        left.saved_segments
+        if left.saved_segments == right.saved_segments else ()
+    )
+    return RoleState(
+        tuple(sorted(registers.items())), tuple(sorted(locals_.items())), saved
+    )
+
+
+def memory_segment(insn: capstone.CsInsn, operand) -> str:
+    if operand.mem.segment:
+        return insn.reg_name(operand.mem.segment).lower()
+    base = insn.reg_name(operand.mem.base).lower() if operand.mem.base else ""
+    return "ss" if base in ("bp", "ebp", "sp", "esp") else "ds"
+
+
+def symbol_location(expression: str,
+                    layout: dict[str, LayoutEntry]) -> LayoutEntry | None:
+    for match in SYMBOL_EXPRESSION.finditer(expression):
+        symbol = match["symbol"].lower()
+        entry = layout.get(symbol)
+        if entry is None:
+            continue
+        prefix = expression[max(0, match.start() - 12):match.start()].lower()
+        if re.search(r"(?:seg|offset)\s+$", prefix):
+            continue
+        delta = int(match["delta"], 0) if match["delta"] else 0
+        return LayoutEntry(entry.owner, (entry.offset + delta) & 0xFFFF)
+    return None
+
+
+def memory_value_role(item: audit.ListingInstruction, insn: capstone.CsInsn,
+                      operand_index: int, operand_text: str, state: RoleState,
+                      layout: dict[str, LayoutEntry], original: bool,
+                      segment_half: bool = False) -> str:
+    local = audit.local_offset(operand_text)
+    if local is not None:
+        return state.local(local)
+    location = None if original else symbol_location(operand_text, layout)
+    operand = insn.operands[operand_index]
+    if location is not None:
+        offset = location.offset + (2 if segment_half else 0)
+        return f"memseg:{location.owner}:{offset & 0xFFFF:04x}"
+    if operand.type != x86_const.X86_OP_MEM:
+        return UNKNOWN
+    segment_role = state.register(memory_segment(insn, operand))
+    if segment_role in STATIC_ROLES and not operand.mem.base and not operand.mem.index:
+        offset = (operand.mem.disp + (2 if segment_half else 0)) & 0xFFFF
+        return f"memseg:{segment_role}:{offset:04x}"
+    return f"memseg:{segment_role}:indirect"
+
+
+def source_role(item: audit.ListingInstruction, insn: capstone.CsInsn,
+                operand_index: int, operand_text: str, state: RoleState,
+                layout: dict[str, LayoutEntry], original: bool) -> str:
+    normalized = operand_text.strip().lower()
+    segment_symbol = re.fullmatch(r"seg\s+(?P<symbol>_[\w$?@]+)", normalized)
+    if segment_symbol:
+        entry = layout.get(segment_symbol["symbol"])
+        return entry.owner if entry else UNKNOWN
+    if normalized.startswith("dgroup:"):
+        return "GAME_DATA"
+    if normalized.upper() in audit.OWNER_BY_SEGMENT_NAME:
+        return audit.OWNER_BY_SEGMENT_NAME[normalized.upper()]
+    register = audit.canonical_register(normalized)
+    if register in audit.GENERAL_REGISTERS + audit.SEGMENT_REGISTERS:
+        return state.register(register)
+    local = audit.local_offset(normalized)
+    if local is not None:
+        return state.local(local)
+    operand = insn.operands[operand_index]
+    if operand.type == x86_const.X86_OP_IMM:
+        if original and (operand.imm & 0xFFFF) in ORIGINAL_FIXED_SEGMENTS:
+            return ORIGINAL_FIXED_SEGMENTS[operand.imm & 0xFFFF]
+        return f"constant:{operand.imm & 0xFFFF:04x}"
+    if operand.type == x86_const.X86_OP_MEM:
+        return memory_value_role(
+            item, insn, operand_index, operand_text, state, layout, original
+        )
+    return UNKNOWN
+
+
+def transfer(item: audit.ListingInstruction, state: RoleState,
+             layout: dict[str, LayoutEntry], original: bool) -> RoleState:
+    insn = audit.decode_instruction(item)
+    result = state
+    try:
+        _read, written = insn.regs_access()
+    except capstone.CsError:
+        written = []
+    for register_id in written:
+        register = audit.canonical_register(insn.reg_name(register_id))
+        if register in audit.GENERAL_REGISTERS + audit.SEGMENT_REGISTERS:
+            result = result.with_register(register, UNKNOWN)
+
+    op = audit.mnemonic(item.text)
+    operands = audit.split_operands(item.text)
+    if op == "mov" and len(operands) == 2 and len(insn.operands) >= 2:
+        destination, source = operands
+        value = source_role(
+            item, insn, 1, source, state, layout, original
+        )
+        destination_register = audit.canonical_register(destination)
+        if destination_register in audit.GENERAL_REGISTERS + audit.SEGMENT_REGISTERS:
+            result = result.with_register(destination_register, value)
+        else:
+            local = audit.local_offset(destination)
+            if local is not None:
+                result = result.with_local(local, value)
+    elif op == "xor" and len(operands) == 2:
+        left = audit.canonical_register(operands[0])
+        right = audit.canonical_register(operands[1])
+        if left == right and left in audit.GENERAL_REGISTERS:
+            result = result.with_register(left, "constant:0000")
+    elif op == "push" and len(operands) == 1:
+        source = audit.canonical_register(operands[0])
+        if source in audit.SEGMENT_REGISTERS:
+            result = replace(
+                result,
+                saved_segments=(state.register(source),) + result.saved_segments,
+            )
+    elif op == "pop" and len(operands) == 1:
+        destination = audit.canonical_register(operands[0])
+        if destination in audit.SEGMENT_REGISTERS:
+            value = (
+                result.saved_segments[0] if result.saved_segments else UNKNOWN
+            )
+            result = replace(
+                result,
+                saved_segments=(
+                    result.saved_segments[1:] if result.saved_segments else ()
+                ),
+            ).with_register(destination, value)
+    elif op in ("lds", "les", "lfs", "lgs") and len(insn.operands) >= 2:
+        segment = op[1:]
+        role = memory_value_role(
+            item, insn, 1, operands[1], state, layout, original,
+            segment_half=True,
+        )
+        result = result.with_register(segment, role)
+        result = result.with_register(operands[0], ARGUMENT)
+    return result
+
+
+def access_mode(operand) -> str:
+    read = bool(operand.access & capstone.CS_AC_READ)
+    write = bool(operand.access & capstone.CS_AC_WRITE)
+    if read and write:
+        return "rw"
+    if write:
+        return "w"
+    return "r"
+
+
+def instruction_accesses(item: audit.ListingInstruction, state: RoleState,
+                         layout: dict[str, LayoutEntry], original: bool) \
+        -> tuple[Access, ...]:
+    insn = audit.decode_instruction(item)
+    known_offsets = {
+        (entry.owner, entry.offset) for entry in layout.values()
+    }
+    result: list[Access] = []
+    for operand in insn.operands:
+        if operand.type != x86_const.X86_OP_MEM:
+            continue
+        segment = memory_segment(insn, operand)
+        role = state.register(segment)
+        if original and segment == "gs":
+            role = "GAME_DATA"
+        elif original and segment == "fs":
+            role = "FS_DATA"
+        elif (original and not operand.mem.base and not operand.mem.index and
+              ("GAME_DATA", operand.mem.disp & 0xFFFF) in known_offsets):
+            role = "GAME_DATA"
+        if role in STATIC_ROLES:
+            continue
+        form = "direct" if not operand.mem.base and not operand.mem.index else "based"
+        displacement = operand.mem.disp
+        if 0 <= displacement <= 0xFFFF and displacement & 0x8000:
+            displacement -= 0x10000
+        result.append(Access(
+            role, access_mode(operand), operand.size, form, displacement
+        ))
+    return tuple(result)
+
+
+def analyze(listing: audit.Listing, layout: dict[str, LayoutEntry],
+            original: bool) -> Counter[Access]:
+    by_offset = {item.offset: item for item in listing.instructions}
+    edges = audit.successors(listing)
+    states: dict[int, RoleState] = {}
+    unseeded = set(by_offset)
+    while unseeded:
+        entry = min(unseeded)
+        states[entry] = initial_state(listing, original)
+        pending = deque([entry])
+        while pending:
+            offset = pending.popleft()
+            unseeded.discard(offset)
+            outgoing = transfer(by_offset[offset], states[offset], layout, original)
+            for target in edges[offset]:
+                previous = states.get(target)
+                merged = outgoing if previous is None else merge_state(previous, outgoing)
+                if previous != merged:
+                    states[target] = merged
+                    pending.append(target)
+    accesses: Counter[Access] = Counter()
+    for offset, state in states.items():
+        accesses.update(instruction_accesses(
+            by_offset[offset], state, layout, original
+        ))
+    return accesses
+
+
+def normalize_role(role: str) -> str:
+    if (role in (ARGUMENT, UNKNOWN) or
+            "argument" in role or "unknown" in role or "STACK" in role or
+            role.startswith("memseg:memseg:")):
+        return "dynamic"
+    return role
+
+
+def compare(routine: str, original: Counter[Access], rebuilt: Counter[Access]) \
+        -> list[Comparison]:
+    original_by_role: dict[str, Counter[str]] = {}
+    rebuilt_by_role: dict[str, Counter[str]] = {}
+    for access, count in original.items():
+        role = normalize_role(access.role)
+        original_by_role.setdefault(role, Counter())[access.shape()] += count
+    for access, count in rebuilt.items():
+        role = normalize_role(access.role)
+        rebuilt_by_role.setdefault(role, Counter())[access.shape()] += count
+    rows: list[Comparison] = []
+    for role in sorted(original_by_role.keys() | rebuilt_by_role.keys()):
+        before = original_by_role.get(role, Counter())
+        after = rebuilt_by_role.get(role, Counter())
+        if before and not after:
+            status = "missing_role"
+        elif after and not before:
+            status = "extra_role"
+        elif before == after:
+            status = "exact"
+        else:
+            status = "shape_difference"
+        missing = before - after
+        extra = after - before
+        rows.append(Comparison(
+            routine,
+            status,
+            role,
+            sum(before.values()),
+            sum(after.values()),
+            ",".join(f"{shape}x{count}" for shape, count in sorted(missing.items())),
+            ",".join(f"{shape}x{count}" for shape, count in sorted(extra.items())),
+        ))
+    return rows
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--manifest", type=Path,
+        default=ROOT / "re/source/bloodprg/candidates/manifest.tsv",
+    )
+    parser.add_argument(
+        "--object-dir", type=Path,
+        default=ROOT / "output/recovered_dos_package/bloodprg_objects/bloodprg",
+    )
+    parser.add_argument(
+        "--link-map", type=Path,
+        default=ROOT / (
+            "output/recovered_dos_package/validation/bloodprg_runtime/"
+            "final/link.map"
+        ),
+    )
+    parser.add_argument(
+        "--data-layout", type=Path,
+        default=ROOT / (
+            "output/recovered_dos_package/validation/bloodprg_runtime/"
+            "data_owner/data_layout.tsv"
+        ),
+    )
+    parser.add_argument(
+        "--listing-cache", type=Path,
+        default=ROOT / (
+            "output/recovered_dos_package/validation/bloodprg_runtime/"
+            "final/segment_contract_listings"
+        ),
+    )
+    parser.add_argument("--wdis", type=Path, default=Path("wdis"))
+    parser.add_argument("--output", type=Path)
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    layout = read_layout(args.data_layout.resolve())
+    linked = audit.linked_project_stems(args.link_map.resolve())
+    objects = {
+        path.stem.lower(): path
+        for path in args.object_dir.resolve().glob("*.[Oo][Bb][Jj]")
+    }
+    manifest: dict[str, dict[str, str]] = {}
+    with args.manifest.resolve().open(newline="", encoding="ascii") as handle:
+        for row in csv.DictReader(handle, delimiter="\t"):
+            manifest[Path(row["source"]).stem.lower()] = row
+
+    rows: list[Comparison] = []
+    for stem in sorted(linked):
+        row = manifest.get(stem)
+        if row is None:
+            raise SystemExit(f"manifest has no linked routine {stem}")
+        original = parse_original(ROOT / row["asm_path"])
+        rebuilt = audit.listing_for_object(
+            args.wdis, objects[stem], args.listing_cache.resolve()
+        )
+        rows.extend(compare(
+            stem,
+            analyze(original, layout, original=True),
+            analyze(rebuilt, layout, original=False),
+        ))
+
+    stream = (
+        args.output.open("w", newline="", encoding="ascii")
+        if args.output else sys.stdout
+    )
+    writer = csv.writer(stream, delimiter="\t", lineterminator="\n")
+    writer.writerow((
+        "routine", "status", "segment_role", "original_accesses",
+        "rebuilt_accesses", "missing_shapes", "extra_shapes",
+    ))
+    priority = {"missing_role": 0, "extra_role": 1,
+                "shape_difference": 2, "exact": 3}
+    for row in sorted(rows, key=lambda item: (
+        priority[item.status], item.routine, item.role
+    )):
+        writer.writerow((
+            row.routine, row.status, row.role, row.original_count,
+            row.rebuilt_count, row.missing_shapes, row.extra_shapes,
+        ))
+    if args.output:
+        stream.close()
+    counts = Counter(row.status for row in rows)
+    print(
+        f"{len(linked)} routines; {len(rows)} dynamic segment roles; "
+        f"{counts['missing_role']} missing; {counts['extra_role']} extra; "
+        f"{counts['shape_difference']} shape differences; "
+        f"{counts['exact']} exact"
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
