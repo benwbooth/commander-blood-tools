@@ -30,6 +30,28 @@ CONVENTIONAL_MEMORY_END = 0xA0000
 GUEST_SNAPSHOT_SIZE = 0x100000
 PTRACE_ATTACH = 16
 PTRACE_DETACH = 17
+VM_PROFILE_COUNT = 5
+VM_RESOURCE_COUNT = 5
+VM_RESOURCE_HANDLES_OFFSET = 0x6712
+VM_RESOURCE_IMAGES_OFFSET = 0x671C
+VM_RESOURCE_PROFILE_INDEX_OFFSET = 0x677E
+VM_SCRIPT_PROFILE_REQUEST_OFFSET = 0x6780
+VM_EXECUTION_ENABLED_OFFSET = 0x67A8
+VM_RESOURCE_PROFILES_OFFSET = 0x11F4
+
+TELEPORT_BLOCKERS = (
+    ("vm_ui", 0x2793, 0x0E),
+    ("ship", 0x24F3, 0xFF),
+    ("render", 0x2751, 0xFF),
+    ("presentation", 0x67AC, 0xFF),
+    ("presentation_defer", 0x67B0, 0xFF),
+    ("text", 0x5E64, 0xFF),
+    ("nav_choice", 0x2565, 0xFF),
+    ("save", 0x2736, 0xFF),
+    ("load", 0x2737, 0xFF),
+    ("nav_transition", 0x27DA, 0xFF),
+    ("nav_actor_transition", 0x2792, 0xFF),
+)
 
 SEGMENT_ROW = re.compile(
     r"^(?P<name>GAME_DATA|FS_DATA)\s+\S+\s+\S+\s+"
@@ -77,6 +99,45 @@ class Mcb:
 
     def owns_segment(self, segment: int) -> bool:
         return self.data_start <= segment < self.data_end
+
+
+@dataclass(frozen=True)
+class ProfileState:
+    profile: int
+    request: int
+    execution_enabled: int
+    handles: tuple[int, ...]
+    expected_handles: tuple[int, ...]
+    images: tuple[tuple[int, int], ...]
+    blockers: tuple[tuple[str, int], ...]
+
+    @property
+    def initialized(self) -> bool:
+        return (
+            0 <= self.profile < VM_PROFILE_COUNT
+            and self.request == -1
+            and self.handles == self.expected_handles
+            and all(segment != 0 for _, segment in self.images)
+        )
+
+    def completed(self, target: int) -> bool:
+        return (
+            self.initialized
+            and self.profile == target
+            and self.execution_enabled == 1
+        )
+
+    @property
+    def teleport_releaseable(self) -> bool:
+        values = dict(self.blockers)
+        return (
+            values.get("vm_ui") == 4
+            and all(
+                value == 0
+                for name, value in self.blockers
+                if name != "vm_ui"
+            )
+        )
 
 
 def parse_segment_layout(path: Path) -> SegmentLayout:
@@ -196,6 +257,16 @@ def exact_read(mem, address: int, size: int) -> bytes:
             f"short host-memory read at {address:#x}: {len(data)} of {size}"
         )
     return data
+
+
+def exact_write(mem, address: int, data: bytes) -> None:
+    mem.seek(address)
+    written = mem.write(data)
+    if written != len(data):
+        raise WatchdogError(
+            f"short host-memory write at {address:#x}: {written} of {len(data)}"
+        )
+    mem.flush()
 
 
 def find_guest_base(pid: int, mem, game_segment: int) -> int | None:
@@ -333,6 +404,67 @@ def game_is_ready(memory: bytes, game_segment: int) -> bool:
     return 0 < free_bytes <= 0x000A0000 and crtc_port == 0x03D4 and timer_hook_active == 1
 
 
+def read_profile_state(
+    memory: bytes, game_segment: int, fs_segment: int
+) -> ProfileState:
+    game = game_segment * 16
+    fs = fs_segment * 16
+    profile = struct.unpack_from(
+        "<H", memory, game + VM_RESOURCE_PROFILE_INDEX_OFFSET
+    )[0]
+    request = struct.unpack_from(
+        "<h", memory, game + VM_SCRIPT_PROFILE_REQUEST_OFFSET
+    )[0]
+    handles = struct.unpack_from(
+        f"<{VM_RESOURCE_COUNT}H", memory, game + VM_RESOURCE_HANDLES_OFFSET
+    )
+    if 0 <= profile < VM_PROFILE_COUNT:
+        expected_handles = struct.unpack_from(
+            f"<{VM_RESOURCE_COUNT}H",
+            memory,
+            fs + VM_RESOURCE_PROFILES_OFFSET + profile * VM_RESOURCE_COUNT * 2,
+        )
+    else:
+        expected_handles = ()
+    images = tuple(
+        struct.unpack_from(
+            "<HH", memory, game + VM_RESOURCE_IMAGES_OFFSET + index * 4
+        )
+        for index in range(VM_RESOURCE_COUNT)
+    )
+    blockers = tuple(
+        (name, memory[game + offset] & mask)
+        for name, offset, mask in TELEPORT_BLOCKERS
+    )
+    return ProfileState(
+        profile,
+        request,
+        memory[game + VM_EXECUTION_ENABLED_OFFSET],
+        handles,
+        expected_handles,
+        images,
+        blockers,
+    )
+
+
+def clear_presentation_ui_busy(flags: int) -> int:
+    return flags & 0xFB
+
+
+def profile_for_report(state: ProfileState) -> dict[str, object]:
+    return {
+        "profile": state.profile,
+        "request": state.request,
+        "execution_enabled": state.execution_enabled,
+        "handles": list(state.handles),
+        "expected_handles": list(state.expected_handles),
+        "images": [
+            f"{segment:04x}:{offset:04x}" for offset, segment in state.images
+        ],
+        "blockers": {name: value for name, value in state.blockers},
+    }
+
+
 def cpu_for_report(state: dict[str, int]) -> dict[str, str]:
     return {name: f"{value:#06x}" for name, value in state.items()}
 
@@ -404,6 +536,17 @@ def main() -> int:
     )
     parser.add_argument("--report", type=Path)
     parser.add_argument("--xvfb", action="store_true")
+    parser.add_argument(
+        "--teleport-profile",
+        type=int,
+        help="request one SCRIPT profile 0..4 from a fresh boot",
+    )
+    parser.add_argument(
+        "--post-teleport-samples",
+        type=int,
+        default=4,
+        help="guarded samples required after the last completed teleport",
+    )
     args = parser.parse_args()
 
     cd_dir = args.cd_dir.resolve()
@@ -412,6 +555,15 @@ def main() -> int:
     layout = parse_segment_layout(link_map)
     if args.stable_samples < 1:
         raise WatchdogError("--stable-samples must be positive")
+    if args.post_teleport_samples < 1:
+        raise WatchdogError("--post-teleport-samples must be positive")
+    if (
+        args.teleport_profile is not None
+        and not 0 <= args.teleport_profile < VM_PROFILE_COUNT
+    ):
+        raise WatchdogError(
+            f"teleport profile must be in 0..4: {args.teleport_profile}"
+        )
 
     report: dict[str, object] = {
         "verdict": "INCOMPLETE",
@@ -488,6 +640,11 @@ def main() -> int:
         stable_samples = 0
         expected = None
         last_context = None
+        teleport_queue = (
+            [] if args.teleport_profile is None else [args.teleport_profile]
+        )
+        teleport_inflight = None
+        teleport_last_completion = None
 
         while time.monotonic() < deadline:
             time.sleep(args.poll_seconds)
@@ -498,8 +655,17 @@ def main() -> int:
             if dosbox.poll() is not None:
                 report["exit_code"] = dosbox.returncode
                 report["verdict"] = (
-                    "CLEAN-EXIT" if expected is not None and dosbox.returncode == 0
-                    else "EXIT-BEFORE-CALIBRATION"
+                    "CLEAN-EXIT"
+                    if (
+                        expected is not None
+                        and dosbox.returncode == 0
+                        and args.teleport_profile is None
+                    )
+                    else (
+                        "GAME-EXIT"
+                        if expected is not None
+                        else "EXIT-BEFORE-CALIBRATION"
+                    )
                 )
                 break
             if expected is None and time.monotonic() >= calibration_deadline:
@@ -512,7 +678,7 @@ def main() -> int:
             os.waitpid(dosbox.pid, 0)
             attached = True
             try:
-                with open(f"/proc/{dosbox.pid}/mem", "rb") as mem:
+                with open(f"/proc/{dosbox.pid}/mem", "r+b", buffering=0) as mem:
                     if cpu_addresses is None:
                         cpu_addresses = locate_cpu_state(dosbox.pid)
                     if cpu_addresses is None:
@@ -646,6 +812,78 @@ def main() -> int:
                         issues.append("guest-memory-anchor-invalid")
 
                     report["guarded_samples"] = int(report["guarded_samples"]) + 1
+                    profile_state = read_profile_state(
+                        memory,
+                        int(expected["game_segment"]),
+                        int(expected["fs_segment"]),
+                    )
+                    if teleport_inflight is not None:
+                        if profile_state.completed(teleport_inflight):
+                            teleports = report.setdefault("teleports", [])
+                            assert isinstance(teleports, list) and teleports
+                            teleports[-1]["completed_sample"] = report[
+                                "guarded_samples"
+                            ]
+                            teleports[-1]["completed_state"] = profile_for_report(
+                                profile_state
+                            )
+                            teleport_inflight = None
+                            teleport_last_completion = int(
+                                report["guarded_samples"]
+                            )
+                    elif (
+                        teleport_queue
+                        and profile_state.initialized
+                        and profile_state.teleport_releaseable
+                    ):
+                        teleport_inflight = teleport_queue.pop(0)
+                        game_address = (
+                            int(expected["guest_base"])
+                            + int(expected["game_segment"]) * 16
+                        )
+                        request_address = (
+                            game_address + VM_SCRIPT_PROFILE_REQUEST_OFFSET
+                        )
+                        exact_write(
+                            mem, request_address, struct.pack("<h", teleport_inflight)
+                        )
+                        blockers = dict(profile_state.blockers)
+                        released_ui_busy = blockers["vm_ui"] == 4
+                        if released_ui_busy:
+                            raw_ui_flags = memory[
+                                int(expected["game_segment"]) * 16 + 0x2793
+                            ]
+                            exact_write(
+                                mem,
+                                game_address + 0x2793,
+                                bytes((clear_presentation_ui_busy(raw_ui_flags),)),
+                            )
+                        memory = exact_read(
+                            mem,
+                            int(expected["guest_base"]),
+                            GUEST_SNAPSHOT_SIZE,
+                        )
+                        written_state = read_profile_state(
+                            memory,
+                            int(expected["game_segment"]),
+                            int(expected["fs_segment"]),
+                        )
+                        if written_state.request != teleport_inflight:
+                            issues.append(
+                                "teleport-request-write-did-not-stick="
+                                f"{written_state.request}"
+                            )
+                        teleports = report.setdefault("teleports", [])
+                        assert isinstance(teleports, list)
+                        teleports.append(
+                            {
+                                "target": teleport_inflight,
+                                "requested_sample": report["guarded_samples"],
+                                "released_ui_busy": released_ui_busy,
+                                "request_state": profile_for_report(written_state),
+                            }
+                        )
+
                     context = (
                         state["cs"],
                         state["ds"],
@@ -666,6 +904,9 @@ def main() -> int:
                             )
                     if issues:
                         report["verdict"] = "ANOMALY"
+                        diagnostics["profile_state"] = profile_for_report(
+                            profile_state
+                        )
                         anomalies = report["anomalies"]
                         assert isinstance(anomalies, list)
                         anomaly = {
@@ -676,16 +917,33 @@ def main() -> int:
                         anomaly.update(diagnostics)
                         anomalies.append(anomaly)
                         break
+                    if (
+                        args.teleport_profile is not None
+                        and not teleport_queue
+                        and teleport_inflight is None
+                        and teleport_last_completion is not None
+                        and int(report["guarded_samples"])
+                        - teleport_last_completion
+                        >= args.post_teleport_samples
+                    ):
+                        report["verdict"] = "TELEPORTS-COMPLETE"
+                        break
             finally:
                 if attached:
                     libc.ptrace(PTRACE_DETACH, dosbox.pid, None, None)
                     attached = False
         else:
-            report["verdict"] = (
-                "TIMEOUT-NO-ANOMALY"
-                if expected is not None and int(report["guarded_samples"]) > 0
-                else "CALIBRATION-TIMEOUT"
-            )
+            if args.teleport_profile is not None:
+                report["verdict"] = "TELEPORT-TIMEOUT"
+                report["teleport_pending"] = (
+                    [teleport_inflight] if teleport_inflight is not None else []
+                ) + teleport_queue
+            else:
+                report["verdict"] = (
+                    "TIMEOUT-NO-ANOMALY"
+                    if expected is not None and int(report["guarded_samples"]) > 0
+                    else "CALIBRATION-TIMEOUT"
+                )
     except Exception as error:
         report["verdict"] = "WATCHDOG-ERROR"
         report["error"] = f"{type(error).__name__}: {error}"
@@ -712,7 +970,11 @@ def main() -> int:
             }
         )
     )
-    return 0 if report["verdict"] in ("TIMEOUT-NO-ANOMALY", "CLEAN-EXIT") else 1
+    return 0 if report["verdict"] in (
+        "TIMEOUT-NO-ANOMALY",
+        "CLEAN-EXIT",
+        "TELEPORTS-COMPLETE",
+    ) else 1
 
 
 if __name__ == "__main__":

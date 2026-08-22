@@ -6093,9 +6093,9 @@ overlay is active. The post-startup IVT hash must remain unchanged.
 
 A rebuilt title-loop run calibrated load 0823, PSP 0813, GAME_DATA 187E and
 FS_DATA 2046, discovered six MCBs from 0450 through the terminal block, and
-completed 36 guarded samples without an anomaly. Seven deterministic tests
-cover link-layout rejection, MCB discovery/corruption, ownership and IVT
-vector diagnostics.
+completed 36 guarded samples without an anomaly. Eleven deterministic tests
+cover link-layout rejection, MCB discovery/corruption, ownership, IVT vector
+diagnostics, profile-state validation and narrow UI-flag release.
 
 An Escape-based drive is not a valid world gate at unrestricted DOSBox speed.
 It reached the shutdown path in both the shipped and rebuilt executables; both
@@ -6103,3 +6103,39 @@ then changed INT 0F from 0070:000E to a high-memory handler at offset 07A7.
 That matched original/rebuilt result rules out a relink-only corruption, but an
 early shutdown remains a failed coverage run. Phase 3 therefore waits on and
 edits identified game state instead of relying on wall-clock UI timing.
+
+## State-aware world teleport gate (2026-08-21)
+
+The watchdog can request any shipped script world from a fresh boot with
+`--teleport-profile 0..4`. It does not replace the loader or write
+resource handles, image pointers, VM state, or the active profile. While DOSBox
+is stopped it waits until the startup presentation's UI bit `0x04` is the only
+profile-handoff blocker, writes the recovered signed request word at
+GAME_DATA:6780, and clears only that bit with the recovered `flags &= 0xfb`
+operation. Every other UI flag is preserved. The main loop then runs the real
+`vm_resource_profile_select`, resource loads, VM reset and VM restart path.
+
+Issuing the request earlier, when the UI byte is zero, is not equivalent. The
+startup presentation can set bit `0x04` before the main loop reaches the pending
+profile check, leaving the request blocked. Both the original and rebuilt game
+showed this ordering. The state driver therefore treats the identified
+bit-`0x04` quiescent point, with all ten other recovered blockers zero, as part
+of the teleport contract rather than using a wall-clock delay.
+
+Fresh-boot probes of the rebuilt executable completed every profile and then
+survived four guarded samples with unchanged FS/GS policy, IVT and MCB chain:
+
+| profile | loaded resource IDs | result |
+| --- | --- | --- |
+| 0 | 2, 3, 4, 5, 6 | `TELEPORTS-COMPLETE` |
+| 1 | 37, 38, 39, 40, 41 | `TELEPORTS-COMPLETE` |
+| 2 | 76, 77, 78, 79, 80 | `TELEPORTS-COMPLETE` |
+| 3 | 81, 82, 83, 84, 85 | `TELEPORTS-COMPLETE` |
+| 4 | 86, 87, 88, 89, 90 | `TELEPORTS-COMPLETE` |
+
+For each completion the current profile matched the target, the request had
+returned to `-1`, VM execution was enabled, all five loaded handles matched the
+FS_DATA profile row, all five image far pointers were non-null, and all eleven
+handoff blockers were zero. Profile runs use fresh boots because the title
+presentation deliberately reaches the normal shutdown path shortly after this
+initial quiescent handoff window at unrestricted DOSBox speed.

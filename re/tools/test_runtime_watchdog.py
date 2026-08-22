@@ -116,5 +116,90 @@ class InterruptVectorTests(unittest.TestCase):
         )
 
 
+class ProfileStateTests(unittest.TestCase):
+    def test_ui_release_preserves_every_unrelated_flag(self) -> None:
+        self.assertEqual(watchdog.clear_presentation_ui_busy(0xFF), 0xFB)
+
+    def test_recognizes_completed_resource_profile(self) -> None:
+        memory = bytearray(MEMORY_SIZE)
+        game_segment = 0x1000
+        fs_segment = 0x2000
+        game = game_segment * 16
+        fs = fs_segment * 16
+        target = 2
+        handles = (0x4C, 0x4D, 0x4E, 0x4F, 0x50)
+        struct.pack_into(
+            "<5H",
+            memory,
+            fs
+            + watchdog.VM_RESOURCE_PROFILES_OFFSET
+            + target * watchdog.VM_RESOURCE_COUNT * 2,
+            *handles,
+        )
+        struct.pack_into(
+            "<5H", memory, game + watchdog.VM_RESOURCE_HANDLES_OFFSET, *handles
+        )
+        struct.pack_into(
+            "<H", memory, game + watchdog.VM_RESOURCE_PROFILE_INDEX_OFFSET, target
+        )
+        struct.pack_into(
+            "<h", memory, game + watchdog.VM_SCRIPT_PROFILE_REQUEST_OFFSET, -1
+        )
+        memory[game + watchdog.VM_EXECUTION_ENABLED_OFFSET] = 1
+        for index in range(watchdog.VM_RESOURCE_COUNT):
+            struct.pack_into(
+                "<HH",
+                memory,
+                game + watchdog.VM_RESOURCE_IMAGES_OFFSET + index * 4,
+                index * 0x10,
+                0x3000 + index,
+            )
+
+        state = watchdog.read_profile_state(memory, game_segment, fs_segment)
+        self.assertTrue(state.initialized)
+        self.assertTrue(state.completed(target))
+        self.assertFalse(state.completed(target + 1))
+        self.assertFalse(state.teleport_releaseable)
+
+        blockers = dict(state.blockers)
+        blockers["vm_ui"] = 4
+        releaseable = watchdog.ProfileState(
+            profile=state.profile,
+            request=state.request,
+            execution_enabled=state.execution_enabled,
+            handles=state.handles,
+            expected_handles=state.expected_handles,
+            images=state.images,
+            blockers=tuple(blockers.items()),
+        )
+        self.assertTrue(releaseable.teleport_releaseable)
+
+    def test_rejects_handle_mismatch_and_unresolved_image(self) -> None:
+        memory = bytearray(MEMORY_SIZE)
+        game_segment = 0x1000
+        fs_segment = 0x2000
+        game = game_segment * 16
+        struct.pack_into(
+            "<H", memory, game + watchdog.VM_RESOURCE_PROFILE_INDEX_OFFSET, 0
+        )
+        struct.pack_into(
+            "<h", memory, game + watchdog.VM_SCRIPT_PROFILE_REQUEST_OFFSET, -1
+        )
+        state = watchdog.read_profile_state(memory, game_segment, fs_segment)
+        self.assertFalse(state.initialized)
+
+    def test_rejects_teleport_while_non_ui_blocker_is_active(self) -> None:
+        state = watchdog.ProfileState(
+            profile=0,
+            request=-1,
+            execution_enabled=1,
+            handles=(2, 3, 4, 5, 6),
+            expected_handles=(2, 3, 4, 5, 6),
+            images=((0, 1),) * 5,
+            blockers=(("vm_ui", 4), ("presentation", 1)),
+        )
+        self.assertFalse(state.teleport_releaseable)
+
+
 if __name__ == "__main__":
     unittest.main()
