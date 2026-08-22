@@ -6049,27 +6049,33 @@ not one-based offsets to `AC`. BloodScript now emits separate `YIELD_B` and
 `SELECTOR_NODE` statements and labels the actual node headers. All five shipped
 BAS files still compile byte-for-byte.
 
-## GS=DS invariant restored in the relinked runtime (2026-08-21)
+## Final-image segment policy (2026-08-21)
 
-The shipped BLOODPRG keeps SS=GS=DS pinned to the game data segment for its
-entire lifetime. The relinked runtime's recovered C entrypoint never
-established this: Open Watcom leaves GS untouched, so unrecovered machine
-code inside the same executable ran with GS=0 whenever it was reached through
-recovered C. The visible failure was the Pterra-entry crash: the resource
-materialization loop loads its buffer pointer with `lds dx, gs:[0xa7c]`
-(0x283D); with GS=0 that read the far pointer out of the interrupt vector
-table at 0000:0A7C, and the following segment-wrapping reads and writes
-clobbered low memory and the IVT (INT-1 storm; 'Packed file is corrupt'
-strings written from stale load-area memory).
+The shipped entrypoint establishes GS=DS and loads FS with the paragraph that
+owns its resource tables. The relinked runtime preserves that convention in
+one startup-only ABI adapter. Recovered C does not use either register for
+ordinary data access: GAME_DATA uses compiler-relocated based pointers and
+FS_DATA uses ordinary far pointers. The remaining segment-sensitive consumers
+are loaded foreign callbacks and overlays, so startup installation belongs at
+the integration boundary rather than in gameplay functions.
 
-The fix is one instruction at the relinked entrypoint:
-`bloodprg_set_gs_to_ds` in bloodprg_relinked_main.c establishes GS=DS before
-bloodprg_entry. Boundary snapshots captured at the PTERRA-file creation
-moment (re/tools/capture_pterra_boundary.py) show gs=0x0000 broken versus
-gs=0x187D (=DS) fixed, with an identical CS:IP neighborhood and no wild
-interrupt vectors after the fix.
+The first segment-audit prototype did not support that conclusion. Its
+`--image` option was ignored, so it scanned the original 1994 executable while
+claiming to scan `BPRG_RE.EXE`. It also linearly decoded strings and tables as
+instructions. The replacement audit reads the requested MZ image, uses its
+final linker map to identify all 340 CODE sections, and recursively decodes
+from project publics plus the MZ entrypoint. A fresh package contains 23,839
+reachable instructions, zero FS/GS-prefixed memory accesses, and nine explicit
+FS/GS writes; the writes are the startup installation and interrupt/foreign-ABI
+save/restore boundaries.
 
-Caveat for future work: FS is likewise zero in the relinked runtime while the
-shipped image uses a distinct FS base (file 0xC1F0 region). No failing path
-has been traced to FS yet; the same boundary-capture harness will surface one
-if it exists.
+The byte-backed owner contains data, not unrecovered executable routines.
+`audit_game_data_placement.py` verifies all 496 documented GAME_DATA and
+FS_DATA symbols against the final map. Both segments must begin at offset zero;
+the runtime owner now paragraph-aligns FS_DATA, correcting its former `0008`
+base before FS is installed.
+
+The earlier Pterra snapshots were captured when startup copied `PTERRA.EXT`
+into the write directory. They did not reach Pterra or execute its world-entry
+path, so they are not evidence of a Pterra crash or fix. World-level claims
+remain gated on an autonomous state-aware driver and runtime watchdog.

@@ -1,24 +1,26 @@
+#include "bloodprg_resource.h"
 #include "bloodprg_startup.h"
+#include <i86.h>
 
 /*
- * The shipped BLOODPRG keeps SS=GS=DS pinned to the game data segment for
- * its whole lifetime; unrecovered machine code inside this executable still
- * addresses globals through GS-prefixed forms (e.g. the resource
- * materialization loop's `lds dx, gs:[0xa7c]` at 0x283D). Open Watcom never
- * touches GS, so entering those routines from recovered C left GS=0 and the
- * copy loop read its buffer pointer out of the interrupt vector table --
- * the Pterra-entry corruption. Establish the shipped invariant once here,
- * before any game code runs.
+ * The shipped BLOODPRG entrypoint establishes GS=DS and gives FS its resource
+ * table segment. Recovered C uses compiler-relocated based/far pointers and
+ * has no FS/GS-prefixed data accesses, but loaded foreign callbacks may retain
+ * the original convention. Install it once at that integration boundary.
+ * GAME_DATA and FS_DATA are paragraph-aligned and begin at offset zero, as
+ * enforced by the package layout audit.
  */
-extern void bloodprg_set_gs_to_ds(void);
-#pragma aux bloodprg_set_gs_to_ds = \
-    "mov ax, ds" \
-    "mov gs, ax" \
-    modify exact [ax];
+extern void bloodprg_install_game_segments(unsigned fs_segment);
+#pragma aux bloodprg_install_game_segments = \
+    "mov dx, ds" \
+    "mov gs, dx" \
+    "mov fs, ax" \
+    parm [ax] \
+    modify exact [dx];
 
 int main(void)
 {
-    bloodprg_set_gs_to_ds();
+    bloodprg_install_game_segments(FP_SEG(fs_resource_handle_table));
     bloodprg_entry();
     return 0;
 }

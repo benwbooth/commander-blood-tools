@@ -34,6 +34,7 @@ fn main() {
                 kind: m.rec_read_pub(object),
                 marker: m.nav_chart_marker(object, context),
                 art_id: commander_blood_tools::levels::world_art_resource_id(&name),
+                far_endpoint: m.nav_chart_far_endpoint(object, context),
                 name,
             }
         })

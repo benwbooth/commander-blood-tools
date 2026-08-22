@@ -311,7 +311,7 @@ def write_asm(
             continue
         class_name = "CODE" if segment == "_CODE" else "FAR_DATA"
         alignment = "word"
-        if runtime_layout and segment == "GAME_DATA":
+        if runtime_layout and segment in ("GAME_DATA", "FS_DATA"):
             alignment = "para"
         lines.extend(
             [
