@@ -129,10 +129,9 @@ Build the Rust VM compiler in the project shell, then run the package builder
 with Open Watcom:
 
 ```sh
-NIXPKGS_ALLOW_UNFREE=1 nix develop --command cargo build --quiet --bin cbvm
+nix develop --command cargo build --quiet --bin cbvm
 
-NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
-  python3 re/tools/build_recovered_package.py \
+nix develop --command python3 re/tools/build_recovered_package.py \
     --cbvm target/debug/cbvm \
     --output-dir output/recovered_dos_package
 ```
@@ -140,8 +139,7 @@ NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
 To include the recovered C runtime and its data-owner synthesis:
 
 ```sh
-NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
-  python3 re/tools/build_recovered_package.py \
+nix develop --command python3 re/tools/build_recovered_package.py \
     --cbvm target/debug/cbvm \
     --include-bloodprg-runtime \
     --output-dir output/recovered_dos_package
@@ -150,8 +148,7 @@ NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
 To emit the conservative game-loadable C-patched executable:
 
 ```sh
-NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
-  python3 re/tools/build_recovered_package.py \
+nix develop --command python3 re/tools/build_recovered_package.py \
     --cbvm target/debug/cbvm \
     --include-bloodprg-fixed-patch \
     --output-dir output/recovered_dos_package
@@ -160,9 +157,7 @@ NIXPKGS_ALLOW_UNFREE=1 nix shell --impure nixpkgs#open-watcom-bin -c \
 With the archived Turbo C tree:
 
 ```sh
-NIXPKGS_ALLOW_UNFREE=1 nix shell --impure \
-  nixpkgs#open-watcom-bin nixpkgs#dosbox-x -c \
-  python3 re/tools/build_recovered_package.py \
+nix develop --command python3 re/tools/build_recovered_package.py \
     --cbvm target/debug/cbvm \
     --include-bloodprg-fixed-patch \
     --turbo-c-toolchain /path/to/tc201 \
@@ -175,6 +170,12 @@ XDB maps/reports and the optional BLOODPRG C runtime),
 `package_manifest.tsv`, and `README.txt`. The optional runtime directory
 contains `BPRG_RE.EXE`, `link.map`, and `unresolved.tsv`; the latter must
 contain only its header. The same executable is copied to `cd/BPRG_RE.EXE`.
+Runtime packaging also fails unless all 496 documented GAME_DATA/FS_DATA
+symbols retain their recovered offsets, reachable project code contains no
+FS/GS memory overrides, and the deterministic runtime-watchdog tests pass.
+The final validation directory records `data_placement_audit.log`,
+`segment_usage.tsv`, `segment_usage_audit.log`, and
+`runtime_watchdog_tests.log` for inspection.
 The fixed-patch directory contains the fixed-layout audit listing and patched
 executable; `cd/BPRG_C.EXE` can be launched with the same arguments as the
 original `BLOODPRG.EXE`.
@@ -244,6 +245,24 @@ host reads of source-compiled `SCRIPT2.COD`, `.BAS`, `.VAR`, `.DIC`, and `.DEB`.
 The gate stages all generated SCRIPT1-5 resources over an isolated copy of the
 installed `C:\cblood` tree because `WRIC:\cblood\` is the runtime script source;
 it never satisfies the check from pre-existing installed script files.
+
+The state-aware invariant gate reaches every script world without UI timing.
+It uses one isolated fresh boot per profile, writes only the recovered pending
+profile request and the presentation UI release bit, and then requires the
+game's own loader to install the exact resource handles and non-null image
+pointers. FS/GS policy, the IVT, and the complete DOS MCB chain remain guarded
+through every run:
+
+```sh
+nix develop --command python3 re/tools/recovered_package_invariant_gate.py \
+  --package-dir output/recovered_dos_package \
+  --install-parent accuracy/cblood_install \
+  --output-dir output/recovered_dos_package/invariant_gate
+```
+
+The gate emits `result.tsv` with the tested executable hash plus a watchdog JSON
+report and command log for each profile. Use repeatable `--profile 0..4`
+arguments to run a subset; without them it validates all five worlds.
 
 The later tutorial checkpoint now passes too. The optimized runtime drove
 `BPRG_RE.EXE` through SCRIPT1, selected CRYOBOX and BOB_MORLOCK, loaded

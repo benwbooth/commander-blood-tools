@@ -6139,3 +6139,30 @@ FS_DATA profile row, all five image far pointers were non-null, and all eleven
 handoff blockers were zero. Profile runs use fresh boots because the title
 presentation deliberately reaches the normal shutdown path shortly after this
 initial quiescent handoff window at unrestricted DOSBox speed.
+
+## Package invariant gates (2026-08-21)
+
+`build_recovered_package.py --include-bloodprg-runtime` now audits the final
+linked image before copying it to `cd/BPRG_RE.EXE`. Packaging fails on any
+documented GAME_DATA/FS_DATA placement difference, any reachable project
+FS/GS-prefixed memory access, or any deterministic watchdog-test failure. The
+final validation directory retains the placement log, segment-usage TSV and
+summary log, and watchdog test log. Python subprocesses use isolated-path mode
+so the repository's x86 `dis.py` cannot shadow Python's standard-library
+module. The project dev shell now supplies Open Watcom and Capstone together.
+
+A fresh integrated build produced identical audited/final-copy SHA-256
+`3497dc27a4cb2149a7d5fa5c5b2043997b4c4b1cc9688ffd48d6a30a79d24fd` and passed:
+
+- 496 documented data symbols, zero absent, misplaced or nonzero-base errors.
+- 23,839 reachable instructions across 340 CODE segments, zero FS/GS memory
+  overrides and nine reviewed segment-register writes.
+- Eleven deterministic runtime-watchdog tests.
+
+`recovered_package_invariant_gate.py` stages the package's 25 source-compiled
+script resources into a separate clean C drive for each requested profile. It
+requires the watchdog's successful verdict plus an exact target, consumed
+request, enabled VM, expected handles, five non-null image pointers, zero
+handoff blockers and zero anomalies. The all-profile gate passed profiles 0
+through 4 against that fresh package and recorded resource sets 2-6, 37-41,
+76-80, 81-85 and 86-90 respectively.

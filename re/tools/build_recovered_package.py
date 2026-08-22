@@ -16,6 +16,7 @@ import hashlib
 import os
 from pathlib import Path
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -317,6 +318,22 @@ def run_checked(command: list[str]) -> None:
     raise SystemExit(f"command failed: {' '.join(command)}\n{output}")
 
 
+def run_checked_logged(command: list[str], log: Path) -> None:
+    process = subprocess.run(command, cwd=ROOT, text=True, capture_output=True)
+    output = "\n".join(
+        part for part in (process.stdout, process.stderr) if part
+    )
+    log.parent.mkdir(parents=True, exist_ok=True)
+    log.write_text(
+        "$ " + shlex.join(command) + "\n" + output,
+        encoding="utf-8",
+    )
+    if process.returncode != 0:
+        raise SystemExit(
+            f"command failed: {shlex.join(command)}; see {log}"
+        )
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cd-root", type=Path, default=DEFAULT_CD_ROOT)
@@ -492,6 +509,40 @@ def build_bloodprg_runtime(
             "relinked BLOODPRG runtime did not resolve cleanly; see "
             f"{final_dir / 'link.log'} and {final_report}"
         )
+
+    final_map = final_dir / "link.map"
+    run_checked_logged(
+        [
+            sys.executable,
+            "-P",
+            str(ROOT / "re/tools/audit_game_data_placement.py"),
+            "--link-map",
+            str(final_map),
+        ],
+        final_dir / "data_placement_audit.log",
+    )
+    run_checked_logged(
+        [
+            sys.executable,
+            "-P",
+            str(ROOT / "re/tools/audit_segment_usage.py"),
+            "--image",
+            str(final_executable),
+            "--link-map",
+            str(final_map),
+            "--output",
+            str(final_dir / "segment_usage.tsv"),
+        ],
+        final_dir / "segment_usage_audit.log",
+    )
+    run_checked_logged(
+        [
+            sys.executable,
+            "-P",
+            str(ROOT / "re/tools/test_runtime_watchdog.py"),
+        ],
+        final_dir / "runtime_watchdog_tests.log",
+    )
 
     runtime_executable = output / "cd" / "BPRG_RE.EXE"
     runtime_executable.parent.mkdir(parents=True, exist_ok=True)
@@ -1075,6 +1126,8 @@ def write_package_metadata(output: Path, records: list[dict[str, str]], cd_root:
         "and byte-backed runtime data owners. It has passed an input-driven DOS\n"
         "package gate through the rebuilt MANU3 overlay, CRYOBOX, Bob's mission,\n"
         "and complete source-built SCRIPT2 resource loads, but not full-game parity.\n"
+        "Its final link is gated by documented data placement, reachable FS/GS\n"
+        "usage, and deterministic runtime-watchdog structural tests.\n"
         "The fixed-patch copy remains limited to routines whose compiled bytes\n"
         "are proven compatible at the original fixed offsets.\n\n"
         "The generated SCRIPT1..5.COD/BAS/DEB/DIC/VAR files are compiled from\n"
@@ -1115,7 +1168,7 @@ def main() -> int:
     output = args.output_dir.resolve()
     output.mkdir(parents=True, exist_ok=True)
     runtime_alias = output / "cd" / "BPRG_RE.EXE"
-    if not args.include_bloodprg_runtime and runtime_alias.exists():
+    if runtime_alias.exists():
         runtime_alias.unlink()
     compile_sources(args, output)
     runtime_records: list[dict[str, str]] = []

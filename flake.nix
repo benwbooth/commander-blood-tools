@@ -18,7 +18,14 @@
       devShells = forAllSystems (
         system:
         let
-          pkgs = import nixpkgs { inherit system; };
+          pkgs = import nixpkgs {
+            inherit system;
+            config.allowUnfreePredicate = pkg:
+              builtins.elem (nixpkgs.lib.getName pkg) [
+                "open-watcom-bin"
+                "open-watcom-bin-unwrapped"
+              ];
+          };
           # Graphics runtime libraries that windowing crates (winit, minifb,
           # softbuffer) dlopen at startup. On Nix these live in isolated store
           # paths rather than a global /usr/lib, so they must be put on
@@ -47,7 +54,7 @@
               )
             );
 
-            packages = with pkgs; [
+            packages = (with pkgs; [
               cargo
               clippy
               curl
@@ -75,6 +82,8 @@
               rustfmt
               xdotool
               xorg-server
+            ]) ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isx86_64 [
+              pkgs.open-watcom-bin
             ];
 
             RUST_BACKTRACE = "1";
