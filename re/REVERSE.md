@@ -6159,6 +6159,23 @@ A fresh integrated build produced identical audited/final-copy SHA-256
   overrides and nine reviewed segment-register writes.
 - Eleven deterministic runtime-watchdog tests.
 
+## Symbolic segment-contract gate (2026-08-22)
+
+`audit_segment_contracts.py` closes the main blind spot in the earlier final-
+image prefix census. It disassembles every linked recovered object while
+relocation symbol names are still present, propagates DS/ES/FS/GS/SS ownership
+through each routine's control-flow graph, and checks each data reference
+against the canonical GAME_DATA/FS_DATA layout. Watcom far-copy segment swaps,
+callee-cleaned arguments, jump tables, BP-relative segment temporaries, and
+the compiler's `DGROUP:CONST` load-DS prologue are modeled explicitly.
+
+Runtime packaging now fails on either a definite owner mismatch or unresolved
+segment provenance. The integrated package rebuild audited 22,602 reachable
+object instructions and proved all 3,130 symbolic data accesses across 337
+linked routines, with zero unresolved accesses and zero mismatches. This gate
+proves static symbol ownership; dynamic far-pointer targets and parity with the
+original routine's complete memory-access behavior remain separate audits.
+
 `recovered_package_invariant_gate.py` stages the package's 25 source-compiled
 script resources into a separate clean C drive for each requested profile. It
 requires the watchdog's successful verdict plus an exact target, consumed

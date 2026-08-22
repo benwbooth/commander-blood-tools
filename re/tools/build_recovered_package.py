@@ -539,6 +539,35 @@ def build_bloodprg_runtime(
         [
             sys.executable,
             "-P",
+            str(ROOT / "re/tools/audit_segment_contracts.py"),
+            "--object-dir",
+            str(object_dir / "bloodprg"),
+            "--link-map",
+            str(final_map),
+            "--data-layout",
+            str(owner_dir / "data_layout.tsv"),
+            "--wdis",
+            args.wdis,
+            "--listing-cache",
+            str(final_dir / "segment_contract_listings"),
+            "--fail-unproven",
+            "--output",
+            str(final_dir / "segment_contracts.tsv"),
+        ],
+        final_dir / "segment_contract_audit.log",
+    )
+    run_checked_logged(
+        [
+            sys.executable,
+            "-P",
+            str(ROOT / "re/tools/test_audit_segment_contracts.py"),
+        ],
+        final_dir / "segment_contract_tests.log",
+    )
+    run_checked_logged(
+        [
+            sys.executable,
+            "-P",
             str(ROOT / "re/tools/test_runtime_watchdog.py"),
         ],
         final_dir / "runtime_watchdog_tests.log",

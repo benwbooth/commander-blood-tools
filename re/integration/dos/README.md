@@ -172,7 +172,10 @@ contains `BPRG_RE.EXE`, `link.map`, and `unresolved.tsv`; the latter must
 contain only its header. The same executable is copied to `cd/BPRG_RE.EXE`.
 Runtime packaging also fails unless all 496 documented GAME_DATA/FS_DATA
 symbols retain their recovered offsets, reachable project code contains no
-FS/GS memory overrides, and the deterministic runtime-watchdog tests pass.
+FS/GS memory overrides, every symbolic data access has a statically proven
+segment owner, and the deterministic runtime-watchdog tests pass. The current
+whole-program segment-contract report covers 3,130 accesses in 337 linked
+routines with zero unresolved accesses or owner mismatches.
 The final validation directory records `data_placement_audit.log`,
 `segment_usage.tsv`, `segment_usage_audit.log`, and
 `runtime_watchdog_tests.log` for inspection.
