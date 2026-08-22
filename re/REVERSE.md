@@ -6140,6 +6140,26 @@ handoff blockers were zero. Profile runs use fresh boots because the title
 presentation deliberately reaches the normal shutdown path shortly after this
 initial quiescent handoff window at unrestricted DOSBox speed.
 
+## Pterra watchdog lifecycle correction (2026-08-22)
+
+The first visible watchdog-assisted trip to Pterra ended when the watchdog
+reported `guest-memory-anchor-invalid` and killed DOSBox. This was a harness
+failure, not a guest crash. The final sample retained a valid MCB chain, the
+expected GS/FS policy and unchanged non-transient interrupt vectors while the
+game entered BIOS code at `F000:1060` and began the Pterra resource transition.
+The startup error strings at GAME_DATA:0000 are a reliable one-time locator,
+but the game legitimately reuses those bytes after startup.
+
+The watchdog now requires the locator only during calibration. Once DOS address
+zero is known, it validates that mapping through the BIOS conventional-memory
+word and INT 21h vector, while the existing MCB, segment and IVT checks remain
+active. Locator reuse is recorded as a transition instead of an anomaly.
+
+An authentic `GAME1.SAV` regression subsequently crossed all three Pterra scene
+lines (41 at render phase 3, 43 at phase 9 and 42 at phase 33), generated
+`PTERRA1F.LBM`, and entered SCRIPT2 `proc pter`. The capture reported no invalid
+instruction, overflowing DOS read, IVT integrity fault, hang or driver error.
+
 ## Package invariant gates (2026-08-21)
 
 `build_recovered_package.py --include-bloodprg-runtime` now audits the final

@@ -442,11 +442,20 @@ def guest_memory_is_plausible(memory: bytes, game_segment: int) -> bool:
     anchor = game_segment * 16
     if memory[anchor : anchor + len(GAME_DATA_ANCHOR)] != GAME_DATA_ANCHOR:
         return False
+    return guest_memory_environment_is_plausible(memory)
+
+
+def guest_memory_environment_is_plausible(memory: bytes) -> bool:
     conventional_kib = struct.unpack_from("<H", memory, 0x0413)[0]
     if not 128 <= conventional_kib <= 640:
         return False
     int_21_offset, int_21_segment = struct.unpack_from("<HH", memory, 0x21 * 4)
     return (int_21_offset | int_21_segment) != 0
+
+
+def game_data_anchor_is_present(memory: bytes, game_segment: int) -> bool:
+    anchor = game_segment * 16
+    return memory[anchor : anchor + len(GAME_DATA_ANCHOR)] == GAME_DATA_ANCHOR
 
 
 def parse_mcb_chain(
@@ -1003,6 +1012,7 @@ def main() -> int:
         calibration_key = None
         stable_samples = 0
         expected = None
+        last_anchor_present = None
         last_context = None
         teleport_queue = (
             [] if args.teleport_profile is None else [args.teleport_profile]
@@ -1190,10 +1200,28 @@ def main() -> int:
                                     change["vector"] for change in changes
                                 )
                             )
-                    if not guest_memory_is_plausible(
+                    if not guest_memory_environment_is_plausible(memory):
+                        issues.append("guest-memory-environment-invalid")
+
+                    anchor_present = game_data_anchor_is_present(
                         memory, int(expected["game_segment"])
-                    ):
-                        issues.append("guest-memory-anchor-invalid")
+                    )
+                    if anchor_present != last_anchor_present:
+                        last_anchor_present = anchor_present
+                        anchor_transitions = report.setdefault(
+                            "game_data_anchor_transitions", []
+                        )
+                        assert isinstance(anchor_transitions, list)
+                        game = int(expected["game_segment"]) * 16
+                        anchor_transitions.append(
+                            {
+                                "sample": int(report["guarded_samples"]) + 1,
+                                "present": anchor_present,
+                                "bytes": memory[
+                                    game : game + len(GAME_DATA_ANCHOR)
+                                ].hex(),
+                            }
+                        )
 
                     report["guarded_samples"] = int(report["guarded_samples"]) + 1
                     profile_state = read_profile_state(

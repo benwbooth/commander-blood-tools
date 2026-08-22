@@ -177,6 +177,28 @@ class InterruptVectorTests(unittest.TestCase):
         self.assertEqual(watchdog.TRANSIENT_INTERRUPT_VECTORS, {0x0F})
 
 
+class GuestMemoryTests(unittest.TestCase):
+    def test_startup_anchor_can_be_reused_after_calibration(self) -> None:
+        memory = bytearray(MEMORY_SIZE)
+        game_segment = 0x1000
+        game = game_segment * 16
+        memory[game : game + len(watchdog.GAME_DATA_ANCHOR)] = (
+            watchdog.GAME_DATA_ANCHOR
+        )
+        struct.pack_into("<H", memory, 0x0413, 640)
+        struct.pack_into("<HH", memory, 0x21 * 4, 0x1234, 0x5678)
+
+        self.assertTrue(watchdog.guest_memory_is_plausible(memory, game_segment))
+        self.assertTrue(watchdog.game_data_anchor_is_present(memory, game_segment))
+
+        memory[game : game + len(watchdog.GAME_DATA_ANCHOR)] = b"x" * len(
+            watchdog.GAME_DATA_ANCHOR
+        )
+
+        self.assertFalse(watchdog.game_data_anchor_is_present(memory, game_segment))
+        self.assertTrue(watchdog.guest_memory_environment_is_plausible(memory))
+
+
 class ProfileStateTests(unittest.TestCase):
     def test_ui_release_preserves_every_unrelated_flag(self) -> None:
         self.assertEqual(watchdog.clear_presentation_ui_busy(0xFF), 0xFB)
