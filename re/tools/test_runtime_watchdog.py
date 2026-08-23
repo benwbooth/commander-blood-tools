@@ -155,6 +155,26 @@ class CpuStateTests(unittest.TestCase):
         )
         self.assertEqual(state["ip"], 0x5678)
 
+    def test_anomaly_snapshot_captures_guest_context(self) -> None:
+        memory = io.BytesIO(bytes(MEMORY_SIZE))
+        memory.seek(0x800)
+        memory.write(struct.pack("<8II", *range(1, 9), 0x20))
+        memory.seek(0x700)
+        memory.write(struct.pack("<6H", 0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000))
+
+        snapshot = watchdog.snapshot_guest(
+            memory,
+            0,
+            0x10000,
+            {"cpu_regs": 0x800, "Segs": 0x700, "Segs_size": 0x30},
+            None,
+            {"profile": 0},
+        )
+
+        self.assertEqual(snapshot["cpu"]["ip"], "0x0020")
+        self.assertEqual(snapshot["segments_minus_game_data"]["fs"], 0)
+        self.assertEqual(snapshot["profile"], {"profile": 0})
+
 
 class InterruptVectorTests(unittest.TestCase):
     def test_reports_only_changed_vectors(self) -> None:
@@ -667,6 +687,14 @@ class ContactScenarioTests(unittest.TestCase):
             ["shared_state", "actor"],
         )
 
+    def test_offset_selector_disambiguates_duplicate_procedure_names(self) -> None:
+        first = self.scenario("SCRIPT4:beau@04c7")
+        second = self.scenario("SCRIPT4:beau@055c")
+        self.assertEqual(first["procedure_offset"], 0x04C7)
+        self.assertEqual(second["procedure_offset"], 0x055C)
+        with self.assertRaisesRegex(watchdog.WatchdogError, "resolved to 2"):
+            self.scenario("SCRIPT4:beau")
+
     def test_plans_presentation_free_morning_oil_predicates(self) -> None:
         scenario = self.scenario("SCRIPT2:Cryomorn2")
         self.assertEqual(scenario["presentations"], [])
@@ -706,6 +734,15 @@ class ContactScenarioTests(unittest.TestCase):
         self.assertEqual(
             {write["offset"]: write["after"] for write in port1["record_writes"]},
             {0x13AA: 0x043A},
+        )
+
+        records[0x025A:0x025C] = b"\xff\xff"
+        hom1 = watchdog.plan_contact_predicate_writes(
+            self.scenario("SCRIPT5:hom1"), records
+        )
+        self.assertEqual(
+            {write["offset"]: write["after"] for write in hom1["record_writes"]},
+            {0x025A: 0},
         )
 
     def test_rejects_an_unknown_predicate_shape(self) -> None:

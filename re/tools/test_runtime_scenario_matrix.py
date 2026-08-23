@@ -142,6 +142,12 @@ class ScenarioSelectionTests(unittest.TestCase):
         selected = matrix.selected_scenarios(None, False, True)
         self.assertEqual(sum(scenario.kind == "contact" for scenario in selected), 65)
         self.assertEqual(len(selected), 65)
+        self.assertEqual(
+            len({scenario.contact_selector for scenario in selected}), 65
+        )
+        self.assertTrue(
+            all("@" in scenario.contact_selector for scenario in selected)
+        )
 
 
 class ReportValidationTests(unittest.TestCase):

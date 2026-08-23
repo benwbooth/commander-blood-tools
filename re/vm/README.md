@@ -95,6 +95,30 @@ and keeps the segment, IVT, MCB, input, audio, and active-presentation liveness
 guards running until four valid lines, the first word choice, or clean dialogue
 completion.
 
+Run the same matrix against the shipped executable using its verified segment
+layout, then compare the reports semantically:
+
+```sh
+python3 -P re/tools/runtime_scenario_matrix.py \
+  --cd-dir output/recovered_dos_package/cd \
+  --install-parent accuracy/cblood_install \
+  --executable BLOODPRG.EXE \
+  --link-map re/bin/BLOODPRG.segments.map \
+  --all-contacts --jobs 4 \
+  --output-dir output/contact-matrix-original
+
+python3 -P re/tools/compare_runtime_scenario_matrices.py \
+  --candidate output/contact-matrix-rebuilt/matrix.json \
+  --reference output/contact-matrix-original/matrix.json \
+  --output output/contact-matrix-differential.json
+```
+
+The comparator removes host sample counts, timer ticks, volatile countdowns,
+and allocated segment values. It retains recovered word-list offsets and
+subtitles plus stable presentation, audio, and anomaly state. A failure shared
+by both binaries is reported as coverage-inconclusive rather than accepted as
+proof of recovered-code parity.
+
 Generate the first proven structured source view with:
 
 ```sh

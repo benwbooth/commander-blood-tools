@@ -6402,7 +6402,7 @@ choice, or a clean presentation end. `runtime_scenario_matrix.py --all-contacts`
 generates all 65 isolated scenarios; `--jobs` runs distinct install trees and X
 displays concurrently while preserving canonical result order.
 
-Four live controls passed against package executable SHA-256
+Four initial live controls passed against package executable SHA-256
 `50757f972bee4d27146529b64538529d08135bf436a0383b935a512683ccd325`:
 
 - SCRIPT1 BOB1 reproduced `078E/07AE/07D4/07EA` and native action
@@ -6414,6 +6414,32 @@ Four live controls passed against package executable SHA-256
 - SCRIPT2 Cryomorn2 wrote `02A2 = FFFF`, `11E0 = 028A`, and `12F2 = 2`, then
   reached four Morning Oil lines despite having no C4 presentation predicate.
 
-All four reports contain zero watchdog anomalies. This validates the three
-shipped entry classes, not yet all 65 individual procedures; the complete sweep
-is the next runtime gate.
+All four reports contain zero watchdog anomalies and validate the three shipped
+entry classes.
+
+The first complete rebuilt sweep reached the configured stop condition in 57
+of 65 procedures. Two duplicate `SCRIPT4.beau` symbols were not launched
+because the original selector lacked an offset. Six probes either timed out or
+hit the active-presentation liveness guard. The harness now emits and accepts
+offset-qualified selectors such as `SCRIPT4:beau@04c7`, captures full guest
+context on anomalies, reloads through a staging profile when the requested
+profile is already active, and uses a canonical non-equal record value instead
+of inventing an adjacent object identifier. Both `beau` procedures pass with
+those corrections.
+
+The shipped `BLOODPRG.EXE` is now a first-class runtime reference. Its verified
+link-relative layout is `GAME_DATA 0ce2:0000` and `FS_DATA 0bbf:0000`; the map is
+checked in as `re/bin/BLOODPRG.segments.map`. A control run of
+`SCRIPT3:scrujo@00c8` against original SHA-256
+`7e756c597190d20e71a0210da3898b9746c39e04db922455b07f74ec26166823`
+reached the same three word lists and subtitles as the rebuilt executable, then
+hit the same presentation stall with the same queue, line, and stable audio
+state. This proves that failure is a synthetic-scenario coverage limitation,
+not evidence of a recovered-code regression.
+
+`compare_runtime_scenario_matrices.py` formalizes that control. It compares
+stable dialogue, presentation, audio, and anomaly state while discarding host
+poll timing, volatile countdowns, and allocated segment values. A matching
+failure is `shared-inconclusive`, not a pass; original-pass/rebuilt-fail is a
+`candidate-regression`. Full 65-by-65 original and rebuilt matrices remain the
+next runtime gate.

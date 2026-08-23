@@ -26,6 +26,8 @@ nix develop --command cargo run --bin cbvm -- compile-bundle re/vm/structured /p
 nix develop --command cargo run --bin cbvm -- build-runtime-tree re/vm/structured /path/to/extracted-cd /tmp/cblood-runtime
 nix develop --command cargo run --bin cbvm -- analyze-contact-manifest /path/to/game re/vm/contact-manifest
 nix develop --command python3 -P re/tools/runtime_scenario_matrix.py --cd-dir output/recovered_dos_package/cd --install-parent accuracy/cblood_install --all-contacts --jobs 4
+nix develop --command python3 -P re/tools/runtime_scenario_matrix.py --cd-dir output/recovered_dos_package/cd --install-parent accuracy/cblood_install --executable BLOODPRG.EXE --link-map re/bin/BLOODPRG.segments.map --all-contacts --jobs 4 --output-dir output/contact-matrix-original
+nix develop --command python3 -P re/tools/compare_runtime_scenario_matrices.py --candidate output/contact-matrix-rebuilt/matrix.json --reference output/contact-matrix-original/matrix.json --output output/contact-matrix-differential.json
 nix develop --command cargo run -- inspect-descript /path/to/DESCRIPT.DES
 nix develop --command cargo run -- inspect-scripts /path/to/extracted-iso
 nix develop --command cargo run -- inspect-character-combinations /path/to/extracted-iso

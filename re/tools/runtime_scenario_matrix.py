@@ -102,7 +102,7 @@ def _load_contact_scenarios() -> tuple[Scenario, ...]:
                 "contact",
                 8 + index,
                 int(script.removeprefix("SCRIPT")) - 1,
-                f"{script}:{name}",
+                f"{script}:{name}@{offset:04x}",
             )
         )
     return tuple(scenarios)

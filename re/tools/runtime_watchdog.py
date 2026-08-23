@@ -694,11 +694,23 @@ def load_contact_scenario(path: Path, selector: str) -> dict[str, object]:
     if not isinstance(manifest, dict) or manifest.get("format_version") != 1:
         raise WatchdogError(f"unsupported contact manifest: {path}")
     try:
-        script_name, procedure_name = selector.split(":", 1)
+        script_name, procedure_selector = selector.split(":", 1)
     except ValueError as error:
         raise WatchdogError(
-            f"contact scenario must be SCRIPTn:procedure, got {selector!r}"
+            "contact scenario must be SCRIPTn:procedure[@offset], "
+            f"got {selector!r}"
         ) from error
+    procedure_name, separator, offset_text = procedure_selector.rpartition("@")
+    procedure_offset = None
+    if separator:
+        try:
+            procedure_offset = int(offset_text, 16)
+        except ValueError as error:
+            raise WatchdogError(
+                f"contact scenario has invalid procedure offset: {selector!r}"
+            ) from error
+    else:
+        procedure_name = procedure_selector
     procedures = manifest.get("procedures")
     if not isinstance(procedures, list):
         raise WatchdogError("contact manifest has no procedure list")
@@ -708,6 +720,10 @@ def load_contact_scenario(path: Path, selector: str) -> dict[str, object]:
         if isinstance(procedure, dict)
         and procedure.get("script") == script_name
         and procedure.get("procedure") == procedure_name
+        and (
+            procedure_offset is None
+            or procedure.get("procedure_offset") == procedure_offset
+        )
     ]
     if len(matches) != 1:
         raise WatchdogError(
@@ -832,7 +848,7 @@ def plan_contact_predicate_writes(
                 raise WatchdogError("malformed contact record predicate")
             value = current_word(offset)
             if inverted and value == expected:
-                value = expected ^ 1
+                value = 0 if expected != 0 else 0xFFFF
             elif not inverted:
                 value = expected
             set_word(offset, value, "record_not_equal" if inverted else "record_equal")
@@ -1313,6 +1329,62 @@ def cpu_for_report(state: dict[str, int]) -> dict[str, str]:
     return {name: f"{value:#06x}" for name, value in state.items()}
 
 
+def snapshot_guest(
+    mem,
+    guest_base: int,
+    game_anchor: int,
+    cpu_addresses: dict[str, int],
+    marker: Path | None,
+    profile: dict[str, object] | None,
+) -> dict[str, object]:
+    state = read_cpu_state(mem, cpu_addresses)
+    game_segment = (game_anchor - guest_base) // 16
+    snapshot: dict[str, object] = {
+        "cpu": cpu_for_report(state),
+        "segments_minus_game_data": {
+            name: state[name] - game_segment
+            for name in ("cs", "ds", "es", "ss", "fs", "gs")
+        },
+    }
+
+    def guest_bytes(linear: int, size: int) -> str | None:
+        if linear < 0 or linear + size > GUEST_SNAPSHOT_SIZE:
+            return None
+        return exact_read(mem, guest_base + linear, size).hex()
+
+    code = guest_bytes(state["cs"] * 16 + state["ip"], 32)
+    if code is not None:
+        snapshot["code_at_cs_ip"] = code
+    stack = guest_bytes(state["ss"] * 16 + state["sp"], 256)
+    if stack is not None:
+        snapshot["stack_at_ss_sp"] = stack
+    bp_linear = state["ss"] * 16 + state["bp"]
+    around_bp = guest_bytes(bp_linear - 64, 256)
+    if around_bp is not None:
+        snapshot["stack_around_ss_bp"] = {
+            "start_offset": (state["bp"] - 64) & 0xFFFF,
+            "bytes": around_bp,
+        }
+    snapshot["ivt"] = exact_read(mem, guest_base, 0x400).hex()
+    snapshot["resource_band"] = {
+        f"{offset:#06x}": struct.unpack(
+            "<H",
+            exact_read(mem, game_anchor + offset, 2),
+        )[0]
+        for offset in range(0x0A40, 0x0B00, 2)
+    }
+    snapshot["back_buffer_area"] = exact_read(
+        mem,
+        game_anchor + 0x5219,
+        0x5240 - 0x5219,
+    ).hex()
+    if marker is not None:
+        snapshot["marker"] = str(marker)
+    if profile is not None:
+        snapshot["profile"] = profile
+    return snapshot
+
+
 def mcb_for_report(block: Mcb) -> dict[str, str | int]:
     return {
         "segment": f"{block.segment:#06x}",
@@ -1613,6 +1685,7 @@ def main() -> int:
         contact_intro_seen = False
         contact_bridge_idle_started = None
         contact_profile_reload_requested = False
+        contact_staging_profile = None
         contact_setup_applied = False
         contact_started = False
         contact_last_word_offset = None
@@ -2760,17 +2833,36 @@ def main() -> int:
                                     - contact_bridge_idle_started
                                     >= RADIO_BRIDGE_IDLE_SECONDS
                                 ):
+                                    target_profile = int(
+                                        contact_scenario["profile"]
+                                    )
+                                    contact_staging_profile = (
+                                        (target_profile + 1) % VM_PROFILE_COUNT
+                                        if profile_state.profile == target_profile
+                                        else None
+                                    )
+                                    requested_profile = (
+                                        contact_staging_profile
+                                        if contact_staging_profile is not None
+                                        else target_profile
+                                    )
                                     exact_write(
                                         mem,
                                         game_address
                                         + VM_SCRIPT_PROFILE_REQUEST_OFFSET,
                                         struct.pack(
-                                            "<h", int(contact_scenario["profile"])
+                                            "<h", requested_profile
                                         ),
                                     )
-                                    contact_profile_reload_requested = True
-                                    contact_probe_phase = "wait-profile-reload"
-                                    probe["profile_reload_sample"] = report[
+                                    contact_profile_reload_requested = (
+                                        contact_staging_profile is None
+                                    )
+                                    contact_probe_phase = (
+                                        "wait-staging-profile"
+                                        if contact_staging_profile is not None
+                                        else "wait-profile-reload"
+                                    )
+                                    probe["profile_request_sample"] = report[
                                         "guarded_samples"
                                     ]
                             else:
@@ -2779,6 +2871,26 @@ def main() -> int:
                                     send_mouse_button(args.display, False)
                                     radio_physical_mouse_held = False
                                 contact_bridge_idle_started = None
+                        elif (
+                            contact_probe_phase == "wait-staging-profile"
+                            and contact_staging_profile is not None
+                            and profile_state.completed(contact_staging_profile)
+                            and all(value == 0 for value in blockers.values())
+                            and presentation_state["presentation_mode"] == 0
+                        ):
+                            exact_write(
+                                mem,
+                                game_address + VM_SCRIPT_PROFILE_REQUEST_OFFSET,
+                                struct.pack(
+                                    "<h", int(contact_scenario["profile"])
+                                ),
+                            )
+                            contact_profile_reload_requested = True
+                            contact_probe_phase = "wait-profile-reload"
+                            probe["staging_profile"] = contact_staging_profile
+                            probe["profile_reload_sample"] = report[
+                                "guarded_samples"
+                            ]
                         elif (
                             contact_probe_phase == "wait-profile-reload"
                             and contact_profile_reload_requested
