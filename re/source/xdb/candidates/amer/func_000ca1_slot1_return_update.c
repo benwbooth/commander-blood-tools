@@ -9,5 +9,5 @@ void XDB_NEAR xdb_amer_slot1_return_update(
     if (state->field_054 != 0) {
         return;
     }
-    state->callback = xdb_amer_slot1_finish_update;
+    state->callback = xdb_amer_slot1_state_update;
 }

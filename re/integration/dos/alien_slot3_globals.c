@@ -79,6 +79,10 @@ volatile xdb_u16 XDB_CODE_DATA SLOT11_QUEUE_READ_CURSOR;
 volatile xdb_u16 XDB_CODE_DATA SLOT11_CURRENT_STATE;
 volatile xdb_u16 XDB_CODE_DATA SLOT11_STATE_QUEUE[8];
 volatile xdb_u16 XDB_CODE_DATA SLOT1_SELECTION_STATE;
+#if defined(TEST_AMER)
+xdb_alien_state_cursor XDB_CODE_DATA xdb_amer_slot1_selected_state;
+volatile xdb_i16 XDB_CODE_DATA xdb_amer_slot1_current_sample;
+#endif
 
 xdb_u16 XDB_NEAR xdb_test_slot3_resume_countdown(void)
 {
@@ -151,6 +155,24 @@ void XDB_NEAR xdb_test_set_slot1_selection_state(xdb_u16 state)
 {
     SLOT1_SELECTION_STATE = state;
 }
+
+#if defined(TEST_AMER)
+xdb_i16 XDB_NEAR xdb_test_amer_slot1_current_sample(void)
+{
+    return xdb_amer_slot1_current_sample;
+}
+
+void XDB_NEAR xdb_test_set_amer_slot1_current_sample(xdb_i16 sample)
+{
+    xdb_amer_slot1_current_sample = sample;
+}
+
+void XDB_NEAR xdb_test_set_amer_slot1_selected_state(
+        xdb_alien_state_cursor state)
+{
+    xdb_amer_slot1_selected_state = state;
+}
+#endif
 
 void XDB_NEAR xdb_test_set_method_delta(xdb_i16 delta)
 {

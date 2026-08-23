@@ -179,7 +179,10 @@ CASES = (
         recovered_sources=alien_slot3_sources(
             "amer",
             (
+                "000b37_slot1_wave_update",
+                "000bd0_slot1_finish_update",
                 "000bea_slot1_state_update",
+                "000ca1_slot1_return_update",
                 "000cac_slot1_motion_continuation",
             ),
         ),
@@ -216,6 +219,7 @@ CASES = (
         recovered_sources=alien_slot3_sources(
             "amer",
             (
+                "0012b3_slot3_initial_update",
                 "001414_slot3_update",
                 "001558_slot3_restart_initial_update",
                 "00158a_slot3_resume_callback",
@@ -261,6 +265,7 @@ CASES = (
         recovered_sources=alien_slot3_sources(
             "croolis",
             (
+                "0013a0_slot3_initial_update",
                 "00146c_slot3_update",
                 "0015b0_slot3_restart_initial_update",
                 "0015e2_slot3_resume_callback",
@@ -284,6 +289,7 @@ CASES = (
         recovered_sources=alien_slot3_sources(
             "scrut",
             (
+                "0012f2_slot3_initial_update",
                 "00145a_slot3_update",
                 "00159e_slot3_restart_initial_update",
                 "0015d0_slot3_resume_callback",

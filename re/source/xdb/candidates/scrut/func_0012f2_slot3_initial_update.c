@@ -95,4 +95,30 @@ void XDB_NEAR xdb_scrut_slot3_initial_update(
     xdb_scrut_slot3_ring[ring_index].field_000 = (xdb_i16)ax;
     xdb_scrut_slot3_ring[ring_index].field_002 = (xdb_i16)bx;
     xdb_scrut_slot3_ring[ring_index].field_004 = (xdb_i16)dx;
+
+    ax = (xdb_u16)(state->field_050 & 0x0ffcu);
+    if ((xdb_i16)state->position_z >= 0x2328) {
+        dx = (xdb_u16)(0x0800u - (ax & 0x0ffcu));
+    } else if ((xdb_i16)state->position_z <= 0) {
+        dx = (xdb_u16)(0x0800u - ((ax + 0x0800u) & 0x0ffcu));
+    } else if ((xdb_i16)state->position_x >= 0x0bb8) {
+        dx = (xdb_u16)(0x0800u - ((ax - 0x0400u) & 0x0ffcu));
+    } else if ((xdb_i16)state->position_x <= (xdb_i16)0xf448u) {
+        dx = (xdb_u16)(0x0800u - ((ax + 0x0400u) & 0x0ffcu));
+    } else {
+        goto correct_horizontal_bounds;
+    }
+    xdb_scrut_slot3_ring[ring_index].field_002 = sar16((xdb_i16)dx, 4u);
+
+correct_horizontal_bounds:
+    ax = (xdb_u16)state->field_04e;
+    if ((xdb_i16)state->position_y <= -0x03e8) {
+        bx = (xdb_u16)(0x0600u - ((ax + 0x0800u) & 0x0ffcu));
+    } else if ((xdb_i16)state->position_y >= 0x03e8) {
+        bx = (xdb_u16)(0x0a00u - ((ax + 0x0800u) & 0x0ffcu));
+    } else {
+        return;
+    }
+    state->field_056 = 0;
+    xdb_scrut_slot3_ring[ring_index].field_000 = sar16((xdb_i16)bx, 3u);
 }

@@ -25,6 +25,7 @@ void XDB_NEAR xdb_amer_slot1_wave_update(
         xdb_amer_slot1_selection_state = 0;
         xdb_alien_palette_pulse_1.value -= 0x1e;
         xdb_alien_palette_pulse_2.value -= 0x23;
+        xdb_alien_callback_countdown = 4;
         return;
     }
 

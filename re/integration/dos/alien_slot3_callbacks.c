@@ -136,14 +136,6 @@ static xdb_test_state_space pair_state_space;
 static xdb_alien_biased_state pair_other;
 static xdb_alien_biased_state slot11_target;
 
-void XDB_NEAR INITIAL_UPDATE(
-        xdb_alien_biased_state XDB_NEAR *state,
-        xdb_alien_method_context XDB_NEAR *context)
-{
-    (void)state;
-    (void)context;
-}
-
 void XDB_NEAR SLOT1_WAVE_UPDATE(
         xdb_alien_biased_state XDB_NEAR *state,
         xdb_alien_method_context XDB_NEAR *context)
@@ -385,6 +377,23 @@ int main(void)
     xdb_alien_method_context context;
     volatile xdb_alien_ring_entry XDB_CODE_DATA *ring;
     const char *resume_error;
+
+    memset(&state, 0, sizeof(state));
+    memset(&context, 0, sizeof(context));
+    memset((void *)&SLOT3_RING[0], 0, sizeof(SLOT3_RING[0]) * 2u);
+    state.field_056 = 2;
+    state.position_x = 1;
+    state.position_y = -0x03e8L;
+    state.position_z = 1;
+    SLOT3_TIMER = 0;
+    INITIAL_UPDATE(&state, &context);
+    if (state.ring_offset != 8u
+            || state.field_056 != 0
+            || SLOT3_RING[1].field_000 != -0x0040
+            || SLOT3_RING[1].field_002 != 0
+            || SLOT3_RING[1].field_004 != 0) {
+        return write_result("FAIL initial bounds correction");
+    }
 
     memset(&state, 0, sizeof(state));
     memset(&context, 0, sizeof(context));

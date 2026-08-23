@@ -43,7 +43,7 @@ void XDB_NEAR xdb_amer_slot1_motion_continuation(
         goto advance;
     }
 
-    random = ror3_sbb_zero(state->field_05c);
+    random = state->field_05c;
     z_distance = (xdb_i16)(state->position_z + xdb_alien_view_z);
     distance = (xdb_i16)(state->field_050 + 0x0800);
     if (z_distance < -0x03e8) {
@@ -77,13 +77,14 @@ void XDB_NEAR xdb_amer_slot1_motion_continuation(
 
 fixed_step:
     distance = (xdb_i16)((xdb_u16)distance & 0x0ffcu);
+    denominator = 0x0020;
     state->field_010 = 0x0010;
     step = (xdb_i16)(-sar16((xdb_i16)(distance - 0x0800), 2u));
 
 divide_step:
     numerator = (xdb_i16)(step - state->ring_offset);
     state->field_05c = random;
-    state->field_056 = (xdb_i16)(numerator / state->field_010);
+    state->field_056 = (xdb_i16)(numerator / denominator);
 
 advance:
     distance = (xdb_i16)(state->field_056 + state->ring_offset);
@@ -92,5 +93,5 @@ advance:
     cursor = (xdb_u16)((state->field_058 + 0x0080u) & 0x0ffcu);
     state->field_058 = cursor;
     sample = sar16(motion_sample(cursor), 5u);
-    state->field_052 = (xdb_i16)(state->field_052 + distance + sample);
+    state->field_052 = (xdb_i16)(distance + sample);
 }
