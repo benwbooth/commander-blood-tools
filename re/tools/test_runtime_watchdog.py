@@ -588,6 +588,17 @@ class DialogueAudioTests(unittest.TestCase):
             watchdog.presentation_work_is_active(presentation, audio)
         )
 
+    def test_persistent_presentation_mode_is_not_pending_work(self) -> None:
+        presentation = {name: 0 for name in watchdog.PRESENTATION_FLOW_OFFSETS}
+        audio = {name: 0 for name in watchdog.DIALOGUE_AUDIO_OFFSETS}
+        presentation["c2_presentation_gate"] = 1
+        presentation["presentation_box_mode"] = 1
+        presentation["ui_state"] = 0x45
+
+        self.assertFalse(
+            watchdog.presentation_work_is_active(presentation, audio)
+        )
+
 
 class Script2RadioTests(unittest.TestCase):
     def test_primary_press_writes_both_input_latches(self) -> None:

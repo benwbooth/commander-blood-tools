@@ -1227,10 +1227,10 @@ def presentation_work_is_active(
 ) -> bool:
     if word_choice_waiting_for_input(presentation):
         return False
+    # The C2 gate and box mode describe the persistent presentation mode. Both
+    # remain set at the normal command wait and do not imply pending work.
     return any(
         (
-            presentation["c2_presentation_gate"] & 1,
-            presentation["presentation_box_mode"] & 1,
             presentation["text_display_active"] & 1,
             presentation["presentation_active"] & 1,
             presentation["presentation_defer"] & 1,
