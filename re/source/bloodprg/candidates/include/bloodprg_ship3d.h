@@ -211,7 +211,6 @@ extern volatile ship_3d_hud_layout_entry CB_GAME_DATA ship_3d_hud_layout[];
 
 #if defined(__WATCOMC__)
 #pragma aux binary_u32_sqrt parm [dx ax] value [ax] modify exact [ax]
-#pragma aux ship_3d_position_distance parm [si] [di] [dx] value [ax] modify exact [ax]
 #pragma aux ship_3d_object_table_bit_test_full parm [ax] [si] value [ax] modify exact [ax]
 /* Open Watcom C16 reserves BP, so the natural-C boundary uses BX for the
  * output cursor; an integration adapter must translate the binary's BP ABI. */
@@ -235,8 +234,8 @@ extern volatile ship_3d_hud_layout_entry CB_GAME_DATA ship_3d_hud_layout[];
 
 cb_u16 CB_FAR binary_u32_sqrt(cb_u32 value); /* 0x002E33 */
 cb_u16 CB_NEAR ship_3d_position_distance(
-        const volatile bloodprg_vm_object_header CB_NEAR *first_record,
-        const volatile bloodprg_vm_object_header CB_NEAR *second_record,
+        const volatile bloodprg_vm_object_header CB_FAR *first_record,
+        const volatile bloodprg_vm_object_header CB_FAR *second_record,
         cb_u16 inherited_kind100_compare_word); /* 0x0060DD */
 volatile ship_3d_position_field CB_FAR *CB_NEAR
 ship_3d_position_field_resolve(

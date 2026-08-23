@@ -159,6 +159,58 @@ class RelinkedAbiAuditTests(unittest.TestCase):
         )
         self.assertEqual(MODULE.audit_overlay_request_segment(subject), [])
 
+    def test_accepts_vm_record_far_pointer_call(self):
+        caller = listing(
+            "vm_op_c1_record_state_",
+            [
+                "mov ax,word ptr es:_vm_record_base_gs+2",
+                "mov es,dx",
+                "mov word ptr -2[bp],ax",
+                "mov ax,word ptr -4[bp]",
+                "push cx",
+                "mov cx,word ptr -2[bp]",
+                "mov bx,si",
+                "mov dx,cx",
+                "call near ptr ship_3d_position_distance_",
+                "ret",
+            ],
+        )
+        callee = listing(
+            "ship_3d_position_distance_",
+            [
+                "mov si,ax",
+                "mov word ptr -2[bp],dx",
+                "mov di,bx",
+                "mov word ptr -4[bp],cx",
+                "mov es,dx",
+                "mov es,word ptr -4[bp]",
+                "ret 2",
+            ],
+        )
+        self.assertEqual(
+            MODULE.audit_vm_record_distance_call(caller, callee), []
+        )
+
+    def test_rejects_vm_record_near_pointer_call(self):
+        caller = listing(
+            "vm_op_c1_record_state_",
+            [
+                "mov ax,word ptr es:_vm_record_base_gs+2",
+                "mov word ptr -2[bp],ax",
+                "mov si,word ptr -4[bp]",
+                "mov di,bx",
+                "call near ptr ship_3d_position_distance_",
+                "ret",
+            ],
+        )
+        callee = listing(
+            "ship_3d_position_distance_",
+            ["mov ax,word ptr [si]", "ret"],
+        )
+        errors = MODULE.audit_vm_record_distance_call(caller, callee)
+        self.assertTrue(any("far-pointer pairs" in error for error in errors))
+        self.assertTrue(any("retain both" in error for error in errors))
+
 
 if __name__ == "__main__":
     unittest.main()

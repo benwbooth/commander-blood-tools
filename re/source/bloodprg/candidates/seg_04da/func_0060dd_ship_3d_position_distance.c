@@ -1,12 +1,12 @@
 #include "../include/bloodprg_ship3d.h"
 
 cb_u16 CB_NEAR ship_3d_position_distance(
-        const volatile bloodprg_vm_object_header CB_NEAR *first_record,
-        const volatile bloodprg_vm_object_header CB_NEAR *second_record,
+        const volatile bloodprg_vm_object_header CB_FAR *first_record,
+        const volatile bloodprg_vm_object_header CB_FAR *second_record,
         cb_u16 inherited_kind100_compare_word)
 {
-    const volatile cb_u8 CB_NEAR *first_record_bytes;
-    const volatile cb_u8 CB_NEAR *second_record_bytes;
+    const volatile cb_u8 CB_FAR *first_record_bytes;
+    const volatile cb_u8 CB_FAR *second_record_bytes;
     const volatile ship_3d_position_field CB_FAR *first;
     const volatile ship_3d_position_field CB_FAR *second;
     cb_u16 field_offset;
@@ -18,18 +18,18 @@ cb_u16 CB_NEAR ship_3d_position_distance(
     cb_i32 dy;
     cb_u32 squared;
 
-    first_record_bytes = (const volatile cb_u8 CB_NEAR *)first_record;
-    second_record_bytes = (const volatile cb_u8 CB_NEAR *)second_record;
+    first_record_bytes = (const volatile cb_u8 CB_FAR *)first_record;
+    second_record_bytes = (const volatile cb_u8 CB_FAR *)second_record;
     compare_word = inherited_kind100_compare_word;
 
     if (first_record->kind == SHIP_3D_OBJECT_KIND_POSITION_KIND100) {
         field_offset = (cb_u16)vm_field_offset(
             SHIP_3D_FIELD_SELECTOR_KIND100_RELATION_WORD, second_record->kind);
-        compare_word = *(const volatile cb_u16 CB_NEAR *)
+        compare_word = *(const volatile cb_u16 CB_FAR *)
             (second_record_bytes + field_offset);
         field_offset = (cb_u16)vm_field_offset(
             SHIP_3D_FIELD_SELECTOR_KIND100_MATCH_WORD, first_record->kind);
-        selector = *(const volatile cb_u16 CB_NEAR *)
+        selector = *(const volatile cb_u16 CB_FAR *)
             (first_record_bytes + field_offset) == compare_word
             ? SHIP_3D_KIND100_POS_MATCH_FIELD
             : SHIP_3D_KIND100_POS_MISMATCH_FIELD;
@@ -50,11 +50,11 @@ cb_u16 CB_NEAR ship_3d_position_distance(
     if (second_record->kind == SHIP_3D_OBJECT_KIND_POSITION_KIND100) {
         field_offset = (cb_u16)vm_field_offset(
             SHIP_3D_FIELD_SELECTOR_KIND100_RELATION_WORD, first_record->kind);
-        compare_word = *(const volatile cb_u16 CB_NEAR *)
+        compare_word = *(const volatile cb_u16 CB_FAR *)
             (first_record_bytes + field_offset);
         field_offset = (cb_u16)vm_field_offset(
             SHIP_3D_FIELD_SELECTOR_KIND100_MATCH_WORD, second_record->kind);
-        selector = *(const volatile cb_u16 CB_NEAR *)
+        selector = *(const volatile cb_u16 CB_FAR *)
             (second_record_bytes + field_offset) == compare_word
             ? SHIP_3D_KIND100_POS_MATCH_FIELD
             : SHIP_3D_KIND100_POS_MISMATCH_FIELD;

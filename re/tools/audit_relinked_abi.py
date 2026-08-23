@@ -194,6 +194,126 @@ def audit_overlay_request_segment(adapter_listing) -> list[str]:
     return []
 
 
+def audit_vm_record_distance_call(caller_listing, callee_listing) -> list[str]:
+    caller = normalized_text(
+        routine_instructions(caller_listing, "vm_op_c1_record_state_")
+    )
+    callee = normalized_text(
+        routine_instructions(callee_listing, "ship_3d_position_distance_")
+    )
+    errors: list[str] = []
+
+    segment_load = next(
+        (
+            (index, match)
+            for index, text in enumerate(caller)
+            if (match := re.match(
+                r"^mov\s+(?P<reg>[a-z]{2}),word ptr "
+                r"(?:[a-z]{2}:)?_vm_record_base_gs\+(?:0x)?0*2$",
+                text,
+            ))
+        ),
+        None,
+    )
+    segment_slot = None
+    if segment_load is not None:
+        load_index, match = segment_load
+        register = match["reg"]
+        for text in caller[load_index + 1 : load_index + 6]:
+            stored = re.match(
+                rf"^mov\s+word ptr (?P<slot>[^,]+\[bp\]),{register}$",
+                text,
+            )
+            if stored is not None:
+                segment_slot = stored["slot"]
+                break
+    if segment_slot is None:
+        errors.append(
+            "vm C1 distance call does not retain the VM record-base segment"
+        )
+
+    call_index = next(
+        (
+            index
+            for index, text in enumerate(caller)
+            if re.match(
+                r"^call\s+(?:near ptr )?ship_3d_position_distance_$", text
+            )
+        ),
+        None,
+    )
+    if call_index is None:
+        errors.append("vm C1 distance call is missing or no longer near")
+    elif segment_slot is not None:
+        window = caller[max(0, call_index - 8) : call_index]
+        required = (
+            rf"^mov\s+cx,word ptr {re.escape(segment_slot)}$",
+            r"^mov\s+bx,si$",
+            r"^mov\s+dx,cx$",
+        )
+        cursor = 0
+        for pattern in required:
+            position = next(
+                (
+                    index
+                    for index in range(cursor, len(window))
+                    if re.match(pattern, window[index])
+                ),
+                None,
+            )
+            if position is None:
+                errors.append(
+                    "vm C1 distance call does not pass the record segment in "
+                    f"both far-pointer pairs: missing {pattern}"
+                )
+                break
+            cursor = position + 1
+
+    required_callee = (
+        r"^mov\s+si,ax$",
+        r"^mov\s+word ptr (?P<first>[^,]+\[bp\]),dx$",
+        r"^mov\s+di,bx$",
+        r"^mov\s+word ptr (?P<second>[^,]+\[bp\]),cx$",
+        r"^mov\s+es,dx$",
+    )
+    cursor = 0
+    second_slot = None
+    for pattern in required_callee:
+        match_index = next(
+            (
+                index
+                for index in range(cursor, min(len(callee), 24))
+                if re.match(pattern, callee[index])
+            ),
+            None,
+        )
+        if match_index is None:
+            errors.append(
+                "ship_3d_position_distance does not retain both far-pointer "
+                f"segments: missing {pattern}"
+            )
+            break
+        matched = re.match(pattern, callee[match_index])
+        if matched is not None and "second" in matched.groupdict():
+            second_slot = matched["second"]
+        cursor = match_index + 1
+    if second_slot is not None and not any(
+        re.match(rf"^mov\s+es,word ptr {re.escape(second_slot)}$", text)
+        for text in callee
+    ):
+        errors.append(
+            "ship_3d_position_distance never selects the second record segment"
+        )
+    returns = [text for text in callee if re.match(r"^ret(?:\s|$)", text)]
+    if not returns or any(
+        re.match(r"^ret\s+(?:0x)?0*2$", text) is None for text in returns
+    ):
+        errors.append(
+            "ship_3d_position_distance no longer pops its stacked compare word"
+        )
+    return errors
+
+
 def startup_segment_rows(link_map: Path) -> tuple[int, int]:
     text = link_map.read_text(encoding="ascii", errors="replace")
     dgroup = DGROUP_ROW.search(text)
@@ -256,13 +376,23 @@ def audit_startup_image(image: Path, link_map: Path) -> list[str]:
     return audit_startup_sequence(text, dgroup, game_data)
 
 
-def audit(sound_listing, critical_listing, adapter_listing, main_listing) -> list[str]:
+def audit(
+    sound_listing,
+    critical_listing,
+    adapter_listing,
+    main_listing,
+    vm_c1_listing,
+    position_distance_listing,
+) -> list[str]:
     return [
         *audit_sound(sound_listing),
         *audit_critical_error(critical_listing),
         *audit_xms_allocate(adapter_listing),
         *audit_overlay_request_segment(adapter_listing),
         *audit_segment_install(main_listing),
+        *audit_vm_record_distance_call(
+            vm_c1_listing, position_distance_listing
+        ),
     ]
 
 
@@ -289,6 +419,8 @@ def main() -> int:
 
     sound = cached("func_00b8cd_snd_play_clip.lst")
     critical = cached("func_000c1a_bloodprg_critical_error_handler.lst")
+    vm_c1 = cached("func_006b4c_vm_op_c1_record_state.lst")
+    position_distance = cached("func_0060dd_ship_3d_position_distance.lst")
     adapter = SEGMENTS.listing_for_object(
         args.wdis, args.adapter_object, listing_dir
     )
@@ -296,14 +428,21 @@ def main() -> int:
         args.wdis, args.main_object, listing_dir
     )
     errors = [
-        *audit(sound, critical, adapter, main_listing),
+        *audit(
+            sound,
+            critical,
+            adapter,
+            main_listing,
+            vm_c1,
+            position_distance,
+        ),
         *audit_startup_image(args.image.resolve(), args.link_map.resolve()),
     ]
     if errors:
         raise SystemExit("\n".join(errors))
     print(
         "relinked ABI: startup/overlay segments, foreign-DS sound, "
-        "XMS AX/DX result, and INT 24h epilogue verified"
+        "VM-record far pointers, XMS AX/DX result, and INT 24h epilogue verified"
     )
     return 0
 

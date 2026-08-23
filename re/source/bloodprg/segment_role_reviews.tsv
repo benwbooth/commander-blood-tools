@@ -41,7 +41,6 @@ func_00577a_value_scan_match	*	17112ecf5ad981b9	equivalent	VM audit confirms the
 func_005816_presentation_scan	*	b42c9528030f2208	equivalent	Caller-propagated VM heap pointers and typed fields preserve the original presentation-record accesses.
 func_005a74_vm_state_processor	*	7925155ebb183641	equivalent	VM audit confirms the same state records directions and byte footprint after typed-field normalization.
 func_006034_vm_record_lookup_by_threshold	*	a9b39f24d9b8240e	equivalent	The original effective-address arithmetic and recovered typed indexing select the same VM record fields.
-func_0061a6_ship_3d_position_field_resolve	*	e070678aaf3a226c	equivalent	VM audit identifies harmless duplicate reads and confirms matching position-record effects.
 func_006339_vm_condition_5	*	56a50be1d9b8a7eb	equivalent	VM audit identifies harmless duplicate reads and confirms matching condition-record effects.
 func_00660c_vm_op_a6_text	*	7bfc71dd86b9bdd1	equivalent	VM audit confirms typed text operands preserve the original dynamic source and destination byte effects.
 func_006946_vm_op_shared_record_wildcard	*	d9375b83a7b5dd65	equivalent	Original address arithmetic and recovered typed record fields cover the same VM bytes and directions.

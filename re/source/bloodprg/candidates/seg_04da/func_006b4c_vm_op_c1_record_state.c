@@ -5,12 +5,8 @@
 #include <dos.h>
 #define VM_C1_RECORD_AT(base, offset) \
     ((volatile cb_u8 CB_FAR *)MK_FP(FP_SEG(base), (offset)))
-#define VM_C1_NEAR_OBJECT(offset) \
-    ((const volatile bloodprg_vm_object_header CB_NEAR *)(offset))
 #else
 #define VM_C1_RECORD_AT(base, offset) ((base) + (offset))
-#define VM_C1_NEAR_OBJECT(offset) \
-    ((const volatile bloodprg_vm_object_header *)(vm_record_base + (offset)))
 #endif
 
 #define VM_C1_RECORD_KIND 0x00c1u
@@ -100,8 +96,10 @@ bloodprg_vm_image_ptr CB_NEAR vm_op_c1_record_state(
         /* The binary clears DL but inherits DH here. The game-level value is
          * the zero-extended A1 flag used by the position resolver. */
         if (ship_3d_position_distance(
-                VM_C1_NEAR_OBJECT(operand_offset),
-                VM_C1_NEAR_OBJECT(owner_offset),
+                (const volatile bloodprg_vm_object_header CB_FAR *)
+                    VM_C1_RECORD_AT(record_base, operand_offset),
+                (const volatile bloodprg_vm_object_header CB_FAR *)
+                    VM_C1_RECORD_AT(record_base, owner_offset),
                 (cb_u16)inverted) != 0u) {
             field_offset = (cb_u16)vm_field_offset(
                 VM_C1_PARENT_SELECTOR, owner->kind);
@@ -159,4 +157,3 @@ bloodprg_vm_image_ptr CB_NEAR vm_op_c1_record_state(
 }
 
 #undef VM_C1_RECORD_AT
-#undef VM_C1_NEAR_OBJECT

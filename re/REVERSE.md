@@ -6514,3 +6514,41 @@ resolved `0823:4D98` to `func_003ece_chunky_to_planar_framebuffer_TEXT` at
 function offset `005B`; an eight-second unattended boot produced no false crash
 bundle. The scenario matrix passes the same hot-loop limit to every watchdog
 scenario.
+
+## Whole-program static audit and VM record-pointer correction (2026-08-23)
+
+Three independent source-to-assembly reviews covered segmented-pointer
+provenance, all 183 XDB routines, and whole-program ABI/linkage. The XDB review
+found no proved C-to-assembly logic mismatch: all 1,476 symbolic accesses, 218
+emitted ABI contracts, 86 callback stores, six tail transfers, and available
+oracle vectors passed. It did identify runtime invariants that static routine
+equivalence cannot establish, led by MANU3 raster-list acyclicity and pool
+bounds. The captured textured-span loop is finite for each valid boundary; a
+cyclic or corrupted boundary list, or a pathological valid workload, remains
+the leading explanation for that capture.
+
+The segmented-pointer review found one high-severity integration defect.
+Original `vm_op_c1_record_state` installs the loaded VM record segment in DS
+before calling `ship_3d_position_distance`, which consumes DS:SI and DS:DI. The
+prior natural C cast both record offsets to near pointers without changing DS.
+In live runs GAME_DATA and the separately allocated VM record image have
+different segments, so the callee read unrelated GAME_DATA bytes as object
+kinds, links, and coordinates.
+
+The relinked boundary now passes two explicit far record pointers and retains
+their segment words throughout field resolution. Watcom emits the first pointer
+in DX:AX, the second in CX:BX, and the compare word on the stack. The package ABI
+audit traces `vm_record_base_gs.segment` into both pairs, verifies both callee
+segment saves/selections, and requires the matching `ret 2` cleanup. A mutation
+test restores the near-pointer shape and is rejected. The changed memory-role
+flow also made the old `ship_3d_position_field_resolve` equivalence review
+unnecessary, so that waiver was removed rather than refreshed.
+
+The complete package rebuild passed after the correction. The automated Bob
+first-contact scenario also passed. Authentic Pterra progressed to a separate
+original-style audio-selection loop with `snd_streamed_clip_count == 0`; that
+loop is intentionally finite only under the game's sound-bank invariant and is
+not evidence against the pointer correction. It demonstrates why the remaining
+work must combine interprocedural static contracts with runtime state
+invariants and differential original/rebuilt snapshots. The full program is
+specified in `re/AUTOMATED_PARITY_PLAN.md`.
