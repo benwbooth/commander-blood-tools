@@ -88,6 +88,48 @@ class RelinkedAbiAuditTests(unittest.TestCase):
         )
         self.assertTrue(MODULE.audit_xms_allocate(subject))
 
+    def test_accepts_startup_segment_alias(self):
+        text = [
+            "jmp 0x8b",
+            "mov cx, 0x1069",
+            "mov es, cx",
+            "mov ss, cx",
+            "mov sp, bx",
+            "mov dx, 0x1069",
+            "mov ds, dx",
+        ]
+        self.assertEqual(MODULE.audit_startup_sequence(text, 0x1069, 0x1069), [])
+
+    def test_rejects_separate_game_data_segment(self):
+        self.assertTrue(MODULE.audit_startup_sequence([], 0x1069, 0x106A))
+
+    def test_rejects_delayed_stack_pointer_load(self):
+        text = [
+            "mov cx, 0x1069",
+            "mov es, cx",
+            "mov ss, cx",
+            "nop",
+            "mov sp, bx",
+            "mov dx, 0x1069",
+            "mov ds, dx",
+        ]
+        errors = MODULE.audit_startup_sequence(text, 0x1069, 0x1069)
+        self.assertTrue(any("immediately" in error for error in errors))
+
+    def test_accepts_main_segment_install(self):
+        subject = listing(
+            "main_",
+            ["mov dx,ds", "mov gs,dx", "mov fs,ax", "call bloodprg_entry_"],
+        )
+        self.assertEqual(MODULE.audit_segment_install(subject), [])
+
+    def test_accepts_overlay_inherited_bp_contract(self):
+        subject = listing(
+            "cb_overlay_call_inherited_bp_",
+            ["mov bp,si", "call dword ptr ss:[bx]", "ret"],
+        )
+        self.assertEqual(MODULE.audit_overlay_request_segment(subject), [])
+
 
 if __name__ == "__main__":
     unittest.main()
