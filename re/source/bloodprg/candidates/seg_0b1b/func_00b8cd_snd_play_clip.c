@@ -35,7 +35,7 @@ void CB_SAVE_REGS CB_FAR snd_play_clip(cb_i16 clip_index)
         return;
     }
 
-    if ((snd_driver_pending_flag & 2u) == 0) {
+    if ((snd_driver_pending_flag_gs & 2u) == 0) {
         snd_driver_call();
 
         if (clip_index >= 0) {
@@ -154,7 +154,7 @@ void CB_SAVE_REGS CB_FAR snd_play_clip(cb_i16 clip_index)
     }
 
     destination = buffer->data + SND_CLIP_HEADER_BYTES;
-    position = audio_position_callback();
+    position = audio_position_callback_gs();
     if (position == 0xffffu) {
         return;
     }

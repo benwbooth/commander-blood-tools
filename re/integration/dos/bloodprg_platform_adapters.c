@@ -296,11 +296,13 @@ void CB_FAR fullscreen_copy_to_backbuffer_far(
 #pragma aux cb_platform_xms_allocate = \
         "mov ah,09h" \
         "call dword ptr xms_driver_entry" \
-        "xor dh,dh" \
-        "or bl,bl" \
-        "jz short cb_xms_allocate_ok" \
-        "inc dh" \
-        "cb_xms_allocate_ok:" \
+        "mov cx,dx" \
+        "xor dx,dx" \
+        "or ax,ax" \
+        "jz short cb_xms_allocate_done" \
+        "inc dx" \
+        "cb_xms_allocate_done:" \
+        "mov ax,cx" \
         parm [dx] value [dx ax] modify exact [ax bx cx dx]
 #endif
 
@@ -324,7 +326,7 @@ int CB_NEAR cb_xms_allocate_kb(cb_u16 kilobytes, cb_u16 *handle)
     cb_u32 result = cb_platform_xms_allocate(kilobytes);
 
     *handle = (cb_u16)result;
-    return (cb_u16)(result >> 16) == 0u;
+    return (cb_u16)(result >> 16) != 0u;
 }
 
 void CB_NEAR cb_snd_stream_service(

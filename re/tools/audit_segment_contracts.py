@@ -284,7 +284,7 @@ def parse_listing(path: Path, text: str) -> Listing:
     for raw_line in text.splitlines():
         if raw_line.startswith("Segment: "):
             in_code = bool(re.match(
-                r"^Segment:\s+func_\S+_TEXT\s+BYTE\s+USE16\b", raw_line
+                r"^Segment:\s+\S+_TEXT\s+BYTE\s+USE16\b", raw_line
             ))
             continue
         if not in_code:

@@ -586,6 +586,28 @@ def build_bloodprg_runtime(
         [
             sys.executable,
             "-P",
+            str(ROOT / "re/tools/audit_relinked_abi.py"),
+            "--listing-dir",
+            str(final_dir / "segment_contract_listings"),
+            "--adapter-object",
+            str(adapter_object),
+            "--wdis",
+            args.wdis,
+        ],
+        final_dir / "relinked_abi_audit.log",
+    )
+    run_checked_logged(
+        [
+            sys.executable,
+            "-P",
+            str(ROOT / "re/tools/test_audit_relinked_abi.py"),
+        ],
+        final_dir / "relinked_abi_tests.log",
+    )
+    run_checked_logged(
+        [
+            sys.executable,
+            "-P",
             str(ROOT / "re/tools/compare_segment_roles.py"),
             "--object-dir",
             str(object_dir / "bloodprg"),
