@@ -78,6 +78,23 @@ exception: its Morning Oil entry is selected by location, state, and inventory
 holder requirements instead. Five contact procedures begin disabled. JSON
 retains exact typed predicate operands; TSV is the compact review index.
 
+Run every recovered entry through a fresh isolated DOS guest with:
+
+```sh
+python3 -P re/tools/runtime_scenario_matrix.py \
+  --cd-dir output/recovered_dos_package/cd \
+  --install-parent accuracy/cblood_install \
+  --all-contacts --jobs 4
+```
+
+The generic contact probe reloads the requested profile through the native
+loader, disables competing D1 procedures, satisfies the manifest's supported
+VAR/timer predicates, and submits the recovered object through the normal
+contact transition. It accepts only word-list offsets owned by that procedure
+and keeps the segment, IVT, MCB, input, audio, and active-presentation liveness
+guards running until four valid lines, the first word choice, or clean dialogue
+completion.
+
 Generate the first proven structured source view with:
 
 ```sh

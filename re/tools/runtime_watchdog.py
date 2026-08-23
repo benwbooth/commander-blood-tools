@@ -37,6 +37,16 @@ GUEST_SNAPSHOT_SIZE = 0x100000
 PTRACE_ATTACH = 16
 PTRACE_DETACH = 17
 TRANSIENT_INTERRUPT_VECTORS = frozenset((0x0F,))
+SUCCESSFUL_VERDICTS = frozenset(
+    (
+        "TIMEOUT-NO-ANOMALY",
+        "CLEAN-EXIT",
+        "TELEPORTS-COMPLETE",
+        "RADIO-PROBE-COMPLETE",
+        "BOB-PROBE-COMPLETE",
+        "CONTACT-PROBE-COMPLETE",
+    )
+)
 VM_PROFILE_COUNT = 5
 VM_RESOURCE_COUNT = 5
 VM_RESOURCE_HANDLES_OFFSET = 0x6712
@@ -93,6 +103,7 @@ SCRIPT1_BOB_CHECKPOINTS = (
     (0x07D4, "MY EARS ARE FRAGILE"),
     (0x07EA, "DO YOU WANT ME TO EXPLAIN YOUR MISSION"),
 )
+DEFAULT_CONTACT_MANIFEST = ROOT / "re/vm/contact-manifest/contact-manifest.json"
 
 DIALOGUE_AUDIO_OFFSETS = {
     "voc_playback_enabled": (0x0ADE, "B"),
@@ -673,6 +684,315 @@ def write_script2_variant(
     )
 
 
+def load_contact_scenario(path: Path, selector: str) -> dict[str, object]:
+    try:
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        raise WatchdogError(
+            f"cannot read contact manifest {path}: {type(error).__name__}: {error}"
+        ) from error
+    if not isinstance(manifest, dict) or manifest.get("format_version") != 1:
+        raise WatchdogError(f"unsupported contact manifest: {path}")
+    try:
+        script_name, procedure_name = selector.split(":", 1)
+    except ValueError as error:
+        raise WatchdogError(
+            f"contact scenario must be SCRIPTn:procedure, got {selector!r}"
+        ) from error
+    procedures = manifest.get("procedures")
+    if not isinstance(procedures, list):
+        raise WatchdogError("contact manifest has no procedure list")
+    matches = [
+        procedure
+        for procedure in procedures
+        if isinstance(procedure, dict)
+        and procedure.get("script") == script_name
+        and procedure.get("procedure") == procedure_name
+    ]
+    if len(matches) != 1:
+        raise WatchdogError(
+            f"contact scenario {selector!r} resolved to {len(matches)} procedures"
+        )
+    match = dict(matches[0])
+    script_match = re.fullmatch(r"SCRIPT([1-5])", script_name)
+    if script_match is None:
+        raise WatchdogError(f"invalid contact script name: {script_name!r}")
+    profile_procedures = [
+        procedure
+        for procedure in procedures
+        if isinstance(procedure, dict) and procedure.get("script") == script_name
+    ]
+    texts = match.get("texts")
+    if not isinstance(texts, list) or not texts:
+        raise WatchdogError(f"contact scenario {selector!r} has no text tokens")
+    word_offsets = [
+        text.get("word_list_offset")
+        for text in texts
+        if isinstance(text, dict)
+    ]
+    if (
+        len(word_offsets) != len(texts)
+        or any(not isinstance(offset, int) for offset in word_offsets)
+        or len(set(word_offsets)) != len(word_offsets)
+    ):
+        raise WatchdogError(
+            f"contact scenario {selector!r} has invalid text word-list offsets"
+        )
+    match["selector"] = selector
+    match["profile"] = int(script_match.group(1)) - 1
+    match["profile_procedures"] = profile_procedures
+    match["text_by_word_offset"] = {
+        int(text["word_list_offset"]): text for text in texts
+    }
+    return match
+
+
+def plan_contact_predicate_writes(
+    scenario: dict[str, object], records: bytes | bytearray
+) -> dict[str, object]:
+    entry_tokens = scenario.get("entry_tokens")
+    if not isinstance(entry_tokens, list):
+        raise WatchdogError("contact scenario has no entry token list")
+    values: dict[int, int] = {}
+    reasons: dict[int, list[str]] = {}
+    timers: set[int] = set()
+
+    def current_word(offset: int) -> int:
+        if offset < 0 or offset + 2 > len(records):
+            raise WatchdogError(
+                f"contact predicate record offset {offset:#06x} is outside VAR"
+            )
+        return values.get(offset, struct.unpack_from("<H", records, offset)[0])
+
+    def set_word(offset: int, value: int, reason: str) -> None:
+        current_word(offset)
+        values[offset] = value & 0xFFFF
+        reasons.setdefault(offset, []).append(reason)
+
+    for entry in entry_tokens:
+        if not isinstance(entry, dict):
+            raise WatchdogError("contact entry token is not an object")
+        kind = entry.get("kind")
+        token_wrapper = entry.get("token")
+        if not isinstance(token_wrapper, dict) or len(token_wrapper) != 1:
+            raise WatchdogError("contact entry token has invalid typed payload")
+        variant, token = next(iter(token_wrapper.items()))
+        if not isinstance(token, dict):
+            raise WatchdogError("contact entry token payload is not an object")
+        if kind == "actor" and variant == "Actor":
+            continue
+        if kind == "guard_push" and variant == "GuardPush":
+            continue
+        if kind == "state_array" and variant == "StateArray":
+            index = token.get("index")
+            if not isinstance(index, int) or token.get("value") is not None:
+                raise WatchdogError("unsupported contact state-array predicate")
+            timers.add(index)
+            continue
+        if kind == "shared_state" and variant == "SharedState":
+            if (
+                token.get("opcode") not in (0xBF, 0xC0)
+                or token.get("operator") != 0xF5
+                or token.get("rhs_mode") != 0xC1
+            ):
+                raise WatchdogError("unsupported contact shared-state predicate")
+            offset = token.get("field_offset")
+            rhs = token.get("rhs")
+            if not isinstance(offset, int) or not isinstance(rhs, int):
+                raise WatchdogError("malformed contact shared-state predicate")
+            set_word(offset, rhs, "shared_state_equal")
+            continue
+        if kind == "shared_bit_state" and variant == "SharedBitState":
+            if token.get("opcode") not in (0xAE, 0xB0):
+                raise WatchdogError("unsupported contact shared-bit predicate")
+            offset = token.get("field_offset")
+            mask = token.get("mask")
+            inverted = token.get("inverted")
+            if (
+                not isinstance(offset, int)
+                or not isinstance(mask, int)
+                or not isinstance(inverted, bool)
+            ):
+                raise WatchdogError("malformed contact shared-bit predicate")
+            value = current_word(offset)
+            value = value & ~mask if inverted else value | mask
+            set_word(offset, value, "shared_bit_clear" if inverted else "shared_bit_set")
+            continue
+        if kind == "record_wildcard" and variant == "RecordWildcard":
+            if token.get("opcode") != 0xAF:
+                raise WatchdogError("unsupported contact record predicate")
+            offset = token.get("record_offset")
+            expected = token.get("value")
+            inverted = token.get("inverted")
+            if (
+                not isinstance(offset, int)
+                or not isinstance(expected, int)
+                or not isinstance(inverted, bool)
+            ):
+                raise WatchdogError("malformed contact record predicate")
+            value = current_word(offset)
+            if inverted and value == expected:
+                value = expected ^ 1
+            elif not inverted:
+                value = expected
+            set_word(offset, value, "record_not_equal" if inverted else "record_equal")
+            continue
+        raise WatchdogError(
+            f"unsupported contact entry token {kind!r}/{variant!r}"
+        )
+
+    for entry in entry_tokens:
+        assert isinstance(entry, dict)
+        token_wrapper = entry["token"]
+        variant, token = next(iter(token_wrapper.items()))
+        if variant == "SharedState":
+            if current_word(token["field_offset"]) != token["rhs"]:
+                raise WatchdogError("contact shared-state predicates conflict")
+        elif variant == "SharedBitState":
+            matched = current_word(token["field_offset"]) & token["mask"] != 0
+            if matched == token["inverted"]:
+                raise WatchdogError("contact shared-bit predicates conflict")
+        elif variant == "RecordWildcard":
+            matched = current_word(token["record_offset"]) == token["value"]
+            if matched == token["inverted"]:
+                raise WatchdogError("contact record predicates conflict")
+
+    return {
+        "record_writes": [
+            {
+                "offset": offset,
+                "before": struct.unpack_from("<H", records, offset)[0],
+                "after": value,
+                "reasons": reasons[offset],
+            }
+            for offset, value in sorted(values.items())
+        ],
+        "timer_indices": sorted(timers),
+    }
+
+
+def apply_contact_scenario(
+    mem,
+    guest_base: int,
+    game_segment: int,
+    profile_state: ProfileState,
+    scenario: dict[str, object],
+    memory: bytes,
+) -> dict[str, object]:
+    if profile_state.profile != scenario["profile"]:
+        raise WatchdogError("contact scenario profile is not loaded")
+    cod_offset, cod_segment = profile_state.images[0]
+    record_offset, record_segment = profile_state.images[2]
+    if cod_segment == 0 or record_segment == 0:
+        raise WatchdogError("contact scenario COD or VAR image is unavailable")
+    cod_address = guest_base + cod_segment * 16 + cod_offset
+    records_address = guest_base + record_segment * 16 + record_offset
+    records_offset = record_segment * 16 + record_offset
+    plan = plan_contact_predicate_writes(scenario, memory[records_offset:])
+
+    profile_procedures = scenario["profile_procedures"]
+    assert isinstance(profile_procedures, list)
+    activation_writes = []
+    for procedure in profile_procedures:
+        assert isinstance(procedure, dict)
+        procedure_offset = procedure.get("procedure_offset")
+        if not isinstance(procedure_offset, int):
+            raise WatchdogError("contact procedure has no activation offset")
+        enabled = procedure_offset == scenario["procedure_offset"]
+        exact_write(
+            mem,
+            cod_address + procedure_offset + 1,
+            b"\x01" if enabled else b"\0",
+        )
+        activation_writes.append(
+            {
+                "procedure": procedure.get("procedure"),
+                "offset": procedure_offset + 1,
+                "enabled": enabled,
+            }
+        )
+
+    for write in plan["record_writes"]:
+        assert isinstance(write, dict)
+        exact_write(
+            mem,
+            records_address + int(write["offset"]),
+            struct.pack("<H", int(write["after"])),
+        )
+
+    contact_object = scenario.get("contact_object_offset")
+    if not isinstance(contact_object, int):
+        raise WatchdogError("contact scenario has no object offset")
+    active_records = sorted({contact_object, 0x0028})
+    planned_values = {
+        int(write["offset"]): int(write["after"])
+        for write in plan["record_writes"]
+    }
+    active_writes = []
+    for object_offset in active_records:
+        flags_offset = records_offset + object_offset + 2
+        before = struct.unpack_from("<H", memory, flags_offset)[0]
+        after = planned_values.get(object_offset + 2, before) | 1
+        exact_write(
+            mem,
+            records_address + object_offset + 2,
+            struct.pack("<H", after),
+        )
+        active_writes.append(
+            {"object_offset": object_offset, "before": before, "after": after}
+        )
+
+    game_address = guest_base + game_segment * 16
+    for index in plan["timer_indices"]:
+        exact_write(
+            mem,
+            game_address + VM_STATE_ARRAY_OFFSET + int(index) * 2,
+            b"\0\0",
+        )
+    exact_write(
+        mem,
+        game_address + 0x676A,
+        struct.pack("<H", contact_object),
+    )
+    exact_write(mem, game_address + 0x2751, b"\x01")
+    plan["activation_writes"] = activation_writes
+    plan["active_writes"] = active_writes
+    plan["selected_object"] = contact_object
+    return plan
+
+
+def read_contact_probe_state(
+    memory: bytes,
+    game_segment: int,
+    profile_state: ProfileState,
+    scenario: dict[str, object],
+) -> dict[str, object] | None:
+    if profile_state.profile != scenario["profile"]:
+        return None
+    cod_offset, cod_segment = profile_state.images[0]
+    record_offset, record_segment = profile_state.images[2]
+    if cod_segment == 0 or record_segment == 0:
+        return None
+    procedure_offset = scenario["procedure_offset"]
+    contact_object = scenario["contact_object_offset"]
+    assert isinstance(procedure_offset, int)
+    assert isinstance(contact_object, int)
+    cod = cod_segment * 16 + cod_offset
+    records = record_segment * 16 + record_offset
+    state = {
+        "procedure_enabled": memory[cod + procedure_offset + 1],
+        "contact_action": memory[
+            records + contact_object + 0x3A:
+            records + contact_object + 0x3A + 6
+        ].hex(),
+    }
+    state.update(read_active_vm_subtitle(memory, game_segment))
+    state["word_list_known"] = (
+        state["menu_words_offset"] in scenario["text_by_word_offset"]
+    )
+    return state
+
+
 def send_mouse_button(display: str, pressed: bool) -> None:
     subprocess.run(
         ["xdotool", "mousedown" if pressed else "mouseup", "1"],
@@ -1094,6 +1414,26 @@ def main() -> int:
         ),
     )
     parser.add_argument(
+        "--contact-probe",
+        metavar="SCRIPT:PROCEDURE",
+        help=(
+            "load GAME1.SAV, switch to the manifest procedure's profile, "
+            "satisfy its recovered entry predicates, and drive its normal contact transition"
+        ),
+    )
+    parser.add_argument(
+        "--contact-manifest",
+        type=Path,
+        default=DEFAULT_CONTACT_MANIFEST,
+        help=f"binary-derived contact manifest (default: {DEFAULT_CONTACT_MANIFEST})",
+    )
+    parser.add_argument(
+        "--contact-min-lines",
+        type=int,
+        default=4,
+        help="valid procedure lines required before a contact probe completes (default: 4)",
+    )
+    parser.add_argument(
         "--input-liveness-samples",
         type=int,
         default=0,
@@ -1125,6 +1465,8 @@ def main() -> int:
         raise WatchdogError("--input-liveness-samples cannot be negative")
     if args.active_liveness_samples < 0:
         raise WatchdogError("--active-liveness-samples cannot be negative")
+    if args.contact_min_lines < 1:
+        raise WatchdogError("--contact-min-lines must be positive")
     if (
         args.teleport_profile is not None
         and not 0 <= args.teleport_profile < VM_PROFILE_COUNT
@@ -1132,21 +1474,36 @@ def main() -> int:
         raise WatchdogError(
             f"teleport profile must be in 0..4: {args.teleport_profile}"
         )
-    if args.script2_radio_probe or args.script1_bob_probe:
+    dialogue_probe_count = sum(
+        bool(probe)
+        for probe in (
+            args.script2_radio_probe,
+            args.script1_bob_probe,
+            args.contact_probe,
+        )
+    )
+    if dialogue_probe_count:
         if args.teleport_profile is not None:
             raise WatchdogError(
                 "dialogue probes cannot be combined with --teleport-profile"
             )
-    if args.script2_radio_probe and args.script1_bob_probe:
+    if dialogue_probe_count > 1:
         raise WatchdogError(
-            "--script2-radio-probe and --script1-bob-probe are mutually exclusive"
+            "dialogue probe modes are mutually exclusive"
         )
-    if args.script2_radio_probe or args.script1_bob_probe:
+    if dialogue_probe_count:
         save_path = install_parent / "cblood" / "GAME1.SAV"
         if not save_path.is_file():
             raise WatchdogError(
                 f"dialogue probes require {save_path}"
             )
+    contact_scenario = (
+        None
+        if args.contact_probe is None
+        else load_contact_scenario(
+            args.contact_manifest.resolve(), args.contact_probe
+        )
+    )
 
     report: dict[str, object] = {
         "verdict": "INCOMPLETE",
@@ -1251,6 +1608,15 @@ def main() -> int:
         bob_profile_reload_requested = False
         bob_lines: list[str] = []
         bob_checkpoint_index = 0
+        contact_probe_phase = "wait-title-idle"
+        contact_load_slot_pressed = False
+        contact_intro_seen = False
+        contact_bridge_idle_started = None
+        contact_profile_reload_requested = False
+        contact_setup_applied = False
+        contact_started = False
+        contact_last_word_offset = None
+        contact_checkpoints: list[dict[str, object]] = []
         previous_presentation_state = None
         input_attempt = None
         active_progress = None
@@ -1272,6 +1638,7 @@ def main() -> int:
                         and args.teleport_profile is None
                         and not args.script2_radio_probe
                         and not args.script1_bob_probe
+                        and not args.contact_probe
                     )
                     else (
                         "GAME-EXIT"
@@ -1545,6 +1912,16 @@ def main() -> int:
                         int(expected["game_segment"]),
                         profile_state,
                     )
+                    contact_state = (
+                        None
+                        if contact_scenario is None
+                        else read_contact_probe_state(
+                            memory,
+                            int(expected["game_segment"]),
+                            profile_state,
+                            contact_scenario,
+                        )
+                    )
                     report["last_runtime"] = {
                         "cpu": cpu_for_report(state),
                         "profile_state": profile_for_report(profile_state),
@@ -1552,6 +1929,7 @@ def main() -> int:
                         "presentation_flow": presentation_state,
                         "radio_flow": radio_state,
                         "bob_flow": bob_state,
+                        "contact_flow": contact_state,
                     }
                     runtime_samples = report.setdefault("runtime_samples", [])
                     assert isinstance(runtime_samples, list)
@@ -1563,6 +1941,7 @@ def main() -> int:
                             "presentation_flow": presentation_state,
                             "radio_flow": radio_state,
                             "bob_flow": bob_state,
+                            "contact_flow": contact_state,
                         }
                     )
                     del runtime_samples[:-4096]
@@ -2244,6 +2623,280 @@ def main() -> int:
 
                         probe["phase"] = bob_probe_phase
 
+                    if contact_scenario is not None:
+                        game_offset = int(expected["game_segment"]) * 16
+                        game_address = int(expected["guest_base"]) + game_offset
+                        blockers = dict(profile_state.blockers)
+                        texts = contact_scenario["texts"]
+                        text_by_word_offset = contact_scenario[
+                            "text_by_word_offset"
+                        ]
+                        assert isinstance(texts, list)
+                        assert isinstance(text_by_word_offset, dict)
+                        target_line_count = min(args.contact_min_lines, len(texts))
+                        probe = report.setdefault(
+                            "contact_probe",
+                            {
+                                "phase": contact_probe_phase,
+                                "selector": contact_scenario["selector"],
+                                "script": contact_scenario["script"],
+                                "procedure": contact_scenario["procedure"],
+                                "procedure_offset": contact_scenario[
+                                    "procedure_offset"
+                                ],
+                                "contact_object": contact_scenario[
+                                    "contact_object"
+                                ],
+                                "contact_object_offset": contact_scenario[
+                                    "contact_object_offset"
+                                ],
+                                "target_line_count": target_line_count,
+                                "checkpoints": contact_checkpoints,
+                            },
+                        )
+                        assert isinstance(probe, dict)
+
+                        if (
+                            contact_probe_phase == "wait-title-idle"
+                            and profile_state.profile == SCRIPT1_PROFILE
+                            and profile_state.teleport_releaseable
+                        ):
+                            exact_write(
+                                mem,
+                                game_address + LOAD_REQUEST_ACTIVE_OFFSET,
+                                b"\x01",
+                            )
+                            exact_write(
+                                mem,
+                                game_address + SAVE_SLOT_MENU_PHASE_OFFSET,
+                                b"\x01",
+                            )
+                            contact_probe_phase = "wait-load-menu"
+                            probe["load_menu_sample"] = report[
+                                "guarded_samples"
+                            ]
+                        elif contact_probe_phase in (
+                            "wait-load-menu",
+                            "press-load-slot",
+                        ):
+                            if blockers.get("load", 0) != 0:
+                                exact_write(
+                                    mem,
+                                    game_address + MOUSE_X_OFFSET,
+                                    struct.pack("<h", 110),
+                                )
+                                exact_write(
+                                    mem,
+                                    game_address + MOUSE_Y_OFFSET,
+                                    struct.pack("<h", 47),
+                                )
+                                exact_write(
+                                    mem,
+                                    game_address + MOUSE_PRIMARY_PRESSED_OFFSET,
+                                    b"\x01",
+                                )
+                                contact_load_slot_pressed = True
+                                contact_probe_phase = "press-load-slot"
+                            elif (
+                                contact_load_slot_pressed
+                                and profile_state.completed(SCRIPT2_PROFILE)
+                            ):
+                                exact_write(
+                                    mem,
+                                    game_address + MOUSE_PRIMARY_PRESSED_OFFSET,
+                                    b"\0",
+                                )
+                                contact_probe_phase = "wait-post-load-intro"
+                                probe["save_loaded_sample"] = report[
+                                    "guarded_samples"
+                                ]
+                        elif contact_probe_phase == "wait-post-load-intro":
+                            if (
+                                presentation_state["active_line"] == 2
+                                and presentation_state[
+                                    "c2_presentation_gate"
+                                ] == 1
+                            ):
+                                contact_intro_seen = True
+                                contact_probe_phase = "dismiss-post-load-intro"
+                        elif contact_probe_phase == "dismiss-post-load-intro":
+                            if (
+                                presentation_state["active_line"] == 2
+                                and presentation_state[
+                                    "c2_presentation_gate"
+                                ] == 1
+                            ):
+                                exact_write(
+                                    mem,
+                                    game_address + MOUSE_X_OFFSET,
+                                    struct.pack("<h", 110),
+                                )
+                                exact_write(
+                                    mem,
+                                    game_address + MOUSE_Y_OFFSET,
+                                    struct.pack("<h", 96),
+                                )
+                                write_primary_press(mem, game_address, True)
+                                if not radio_physical_mouse_held:
+                                    send_mouse_button(args.display, True)
+                                    radio_physical_mouse_held = True
+                                contact_bridge_idle_started = None
+                            elif (
+                                contact_intro_seen
+                                and presentation_state["active_line"] == 0xFFFF
+                                and presentation_state[
+                                    "c2_presentation_gate"
+                                ] == 0
+                                and all(value == 0 for value in blockers.values())
+                            ):
+                                write_primary_press(mem, game_address, False)
+                                if radio_physical_mouse_held:
+                                    send_mouse_button(args.display, False)
+                                    radio_physical_mouse_held = False
+                                if contact_bridge_idle_started is None:
+                                    contact_bridge_idle_started = time.monotonic()
+                                if (
+                                    time.monotonic()
+                                    - contact_bridge_idle_started
+                                    >= RADIO_BRIDGE_IDLE_SECONDS
+                                ):
+                                    exact_write(
+                                        mem,
+                                        game_address
+                                        + VM_SCRIPT_PROFILE_REQUEST_OFFSET,
+                                        struct.pack(
+                                            "<h", int(contact_scenario["profile"])
+                                        ),
+                                    )
+                                    contact_profile_reload_requested = True
+                                    contact_probe_phase = "wait-profile-reload"
+                                    probe["profile_reload_sample"] = report[
+                                        "guarded_samples"
+                                    ]
+                            else:
+                                write_primary_press(mem, game_address, False)
+                                if radio_physical_mouse_held:
+                                    send_mouse_button(args.display, False)
+                                    radio_physical_mouse_held = False
+                                contact_bridge_idle_started = None
+                        elif (
+                            contact_probe_phase == "wait-profile-reload"
+                            and contact_profile_reload_requested
+                            and profile_state.completed(
+                                int(contact_scenario["profile"])
+                            )
+                            and all(value == 0 for value in blockers.values())
+                            and presentation_state["presentation_mode"] == 0
+                        ):
+                            deferred = (
+                                presentation_state["deferred_record_type"],
+                                presentation_state["deferred_record_related"],
+                                presentation_state["deferred_record_value"],
+                            )
+                            if deferred != (0, 0, 0):
+                                issues.append(
+                                    "contact-probe-deferred-record-not-idle="
+                                    + ":".join(
+                                        f"{value:#06x}" for value in deferred
+                                    )
+                                )
+                            else:
+                                probe["setup"] = apply_contact_scenario(
+                                    mem,
+                                    int(expected["guest_base"]),
+                                    int(expected["game_segment"]),
+                                    profile_state,
+                                    contact_scenario,
+                                    memory,
+                                )
+                                contact_setup_applied = True
+                                contact_probe_phase = "wait-contact"
+                                probe["contact_selected_sample"] = report[
+                                    "guarded_samples"
+                                ]
+
+                        if (
+                            contact_probe_phase == "wait-contact"
+                            and contact_setup_applied
+                            and contact_state is not None
+                        ):
+                            subtitle = str(contact_state["subtitle"])
+                            word_offset = int(contact_state["menu_words_offset"])
+                            expected_text = text_by_word_offset.get(word_offset)
+                            if (
+                                subtitle
+                                and expected_text is not None
+                                and word_offset != contact_last_word_offset
+                            ):
+                                assert isinstance(expected_text, dict)
+                                checkpoint = {
+                                    "sample": report["guarded_samples"],
+                                    "menu_words_offset": word_offset,
+                                    "subtitle": subtitle,
+                                    "expected_subtitle": expected_text[
+                                        "subtitle"
+                                    ],
+                                }
+                                contact_checkpoints.append(checkpoint)
+                                probe["checkpoints"] = contact_checkpoints
+                                line_states = probe.setdefault("line_states", [])
+                                assert isinstance(line_states, list)
+                                line_states.append(
+                                    {
+                                        **checkpoint,
+                                        "cpu": cpu_for_report(state),
+                                        "audio_flow": audio_state,
+                                        "presentation_flow": presentation_state,
+                                        "contact_flow": contact_state,
+                                    }
+                                )
+                                contact_started = True
+                                contact_last_word_offset = word_offset
+                            elif (
+                                contact_started
+                                and subtitle
+                                and word_offset != contact_last_word_offset
+                                and expected_text is None
+                            ):
+                                issues.append(
+                                    "contact-probe-unexpected-word-list="
+                                    f"{word_offset:#06x}"
+                                )
+                                diagnostics["contact_flow"] = contact_state
+
+                            completion_reason = None
+                            if len(contact_checkpoints) >= target_line_count:
+                                completion_reason = "line-target"
+                            elif contact_checkpoints and word_choice_waiting_for_input(
+                                presentation_state
+                            ):
+                                completion_reason = "word-choice"
+                            elif (
+                                contact_started
+                                and contact_checkpoints
+                                and presentation_state["active_line"] == 0xFFFF
+                                and presentation_state[
+                                    "c2_presentation_gate"
+                                ] == 0
+                                and presentation_state[
+                                    "presentation_active"
+                                ] == 0
+                                and presentation_state[
+                                    "text_display_active"
+                                ] == 0
+                                and all(value == 0 for value in blockers.values())
+                            ):
+                                completion_reason = "presentation-complete"
+                            if completion_reason is not None:
+                                report["verdict"] = "CONTACT-PROBE-COMPLETE"
+                                probe["completion_reason"] = completion_reason
+                                probe["completed_sample"] = report[
+                                    "guarded_samples"
+                                ]
+                                break
+
+                        probe["phase"] = contact_probe_phase
+
                     context = (
                         state["cs"],
                         state["ds"],
@@ -2290,6 +2943,7 @@ def main() -> int:
                         args.teleport_profile is not None
                         and not args.script2_radio_probe
                         and not args.script1_bob_probe
+                        and not args.contact_probe
                         and not teleport_queue
                         and teleport_inflight is None
                         and teleport_last_completion is not None
@@ -2314,6 +2968,11 @@ def main() -> int:
                 probe = report.setdefault("bob_probe", {})
                 if isinstance(probe, dict):
                     probe["phase"] = bob_probe_phase
+            elif args.contact_probe:
+                report["verdict"] = "CONTACT-PROBE-TIMEOUT"
+                probe = report.setdefault("contact_probe", {})
+                if isinstance(probe, dict):
+                    probe["phase"] = contact_probe_phase
             elif args.teleport_profile is not None:
                 report["verdict"] = "TELEPORT-TIMEOUT"
                 report["teleport_pending"] = (
@@ -2352,13 +3011,7 @@ def main() -> int:
             }
         )
     )
-    return 0 if report["verdict"] in (
-        "TIMEOUT-NO-ANOMALY",
-        "CLEAN-EXIT",
-        "TELEPORTS-COMPLETE",
-        "RADIO-PROBE-COMPLETE",
-        "BOB-PROBE-COMPLETE",
-    ) else 1
+    return 0 if report["verdict"] in SUCCESSFUL_VERDICTS else 1
 
 
 if __name__ == "__main__":

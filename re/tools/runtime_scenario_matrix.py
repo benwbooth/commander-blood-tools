@@ -24,7 +24,9 @@ Examples:
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import json
+import re
 import shlex
 import shutil
 import subprocess
@@ -38,6 +40,7 @@ ROOT = Path(__file__).resolve().parents[2]
 WATCHDOG = Path(__file__).with_name("runtime_watchdog.py")
 PTERRA_CAPTURE = Path(__file__).with_name("capture_pterra_boundary.py")
 DEFAULT_OUTPUT_DIR = ROOT / "output" / "runtime-scenario-matrix"
+DEFAULT_CONTACT_MANIFEST = ROOT / "re/vm/contact-manifest/contact-manifest.json"
 AUTHENTIC_PTERRA = "authentic-pterra"
 SCRIPT1_BOB_CHECKPOINTS = (
     (0x078E, "GOOD DAY COMMANDER. MY NAME IS BOB, BOB MORLOCK"),
@@ -60,9 +63,10 @@ class Scenario:
     kind: str
     display_slot: int
     profile: int | None = None
+    contact_selector: str | None = None
 
 
-SCENARIOS = tuple(
+BASE_SCENARIOS = tuple(
     Scenario(f"teleport-{profile}", "teleport", profile, profile)
     for profile in range(5)
 ) + (
@@ -70,9 +74,45 @@ SCENARIOS = tuple(
     Scenario("script1-bob-first-contact", "bob", 6),
     Scenario(AUTHENTIC_PTERRA, "pterra", 7),
 )
+
+
+def _load_contact_scenarios() -> tuple[Scenario, ...]:
+    try:
+        manifest = json.loads(DEFAULT_CONTACT_MANIFEST.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        raise RuntimeError(
+            f"cannot load contact scenarios from {DEFAULT_CONTACT_MANIFEST}: {error}"
+        ) from error
+    procedures = manifest.get("procedures") if isinstance(manifest, dict) else None
+    if not isinstance(procedures, list) or len(procedures) != 65:
+        raise RuntimeError("contact manifest must contain exactly 65 procedures")
+    scenarios = []
+    for index, procedure in enumerate(procedures):
+        if not isinstance(procedure, dict):
+            raise RuntimeError("contact manifest procedure is not an object")
+        script = procedure.get("script")
+        name = procedure.get("procedure")
+        offset = procedure.get("procedure_offset")
+        if not isinstance(script, str) or not isinstance(name, str) or not isinstance(offset, int):
+            raise RuntimeError("contact manifest procedure identity is incomplete")
+        slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+        scenarios.append(
+            Scenario(
+                f"contact-{script.lower()}-{slug}-{offset:04x}",
+                "contact",
+                8 + index,
+                int(script.removeprefix("SCRIPT")) - 1,
+                f"{script}:{name}",
+            )
+        )
+    return tuple(scenarios)
+
+
+CONTACT_SCENARIOS = _load_contact_scenarios()
+SCENARIOS = BASE_SCENARIOS + CONTACT_SCENARIOS
 SCENARIO_BY_NAME = {scenario.name: scenario for scenario in SCENARIOS}
 DEFAULT_SCENARIOS = tuple(
-    scenario.name for scenario in SCENARIOS if scenario.kind != "pterra"
+    scenario.name for scenario in BASE_SCENARIOS if scenario.kind != "pterra"
 )
 
 
@@ -124,6 +164,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="add the authentic-save Pterra route to the default or selected set",
     )
     parser.add_argument(
+        "--all-contacts",
+        action="store_true",
+        help="add all 65 binary-derived contact procedures to the selected matrix",
+    )
+    parser.add_argument(
         "--list-scenarios",
         action="store_true",
         help="list scenario names and exit",
@@ -132,7 +177,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--display-base",
         type=int,
         default=90,
-        help="first X display number; stable scenario slots use base through base+7",
+        help="first X display number; stable scenario slots use base through base+72",
+    )
+    parser.add_argument(
+        "--jobs",
+        type=int,
+        default=1,
+        help="isolated scenarios to run concurrently (default: 1)",
     )
     parser.add_argument(
         "--teleport-seconds",
@@ -151,6 +202,18 @@ def build_parser() -> argparse.ArgumentParser:
         type=float,
         default=240.0,
         help="watchdog duration for SCRIPT1 Bob first contact (default: 240)",
+    )
+    parser.add_argument(
+        "--contact-seconds",
+        type=float,
+        default=240.0,
+        help="watchdog duration for each generated contact probe (default: 240)",
+    )
+    parser.add_argument(
+        "--contact-manifest",
+        type=Path,
+        default=DEFAULT_CONTACT_MANIFEST,
+        help=f"binary-derived contact manifest (default: {DEFAULT_CONTACT_MANIFEST})",
     )
     parser.add_argument(
         "--pterra-timeout",
@@ -199,10 +262,18 @@ def build_parser() -> argparse.ArgumentParser:
 def selected_scenarios(
     requested: Sequence[str] | None,
     include_authentic_pterra: bool,
+    all_contacts: bool = False,
 ) -> list[Scenario]:
-    names = set(requested or DEFAULT_SCENARIOS)
+    if requested:
+        names = set(requested)
+    elif all_contacts:
+        names = set()
+    else:
+        names = set(DEFAULT_SCENARIOS)
     if include_authentic_pterra:
         names.add(AUTHENTIC_PTERRA)
+    if all_contacts:
+        names.update(scenario.name for scenario in CONTACT_SCENARIOS)
     return [scenario for scenario in SCENARIOS if scenario.name in names]
 
 
@@ -326,6 +397,46 @@ def _validate_bob(report: dict[str, object]) -> list[str]:
     return errors
 
 
+def _validate_contact(
+    report: dict[str, object], scenario: Scenario
+) -> list[str]:
+    errors: list[str] = []
+    if report.get("verdict") != "CONTACT-PROBE-COMPLETE":
+        errors.append("verdict is not CONTACT-PROBE-COMPLETE")
+    if report.get("anomalies") != []:
+        errors.append("anomalies are present or missing")
+    probe = report.get("contact_probe")
+    if not isinstance(probe, dict):
+        errors.append("contact probe is missing")
+        return errors
+    if probe.get("selector") != scenario.contact_selector:
+        errors.append("contact selector does not match the scenario")
+    if not isinstance(probe.get("completed_sample"), int):
+        errors.append("contact completion sample is missing")
+    if probe.get("completion_reason") not in (
+        "line-target",
+        "word-choice",
+        "presentation-complete",
+    ):
+        errors.append("contact completion reason is invalid")
+    checkpoints = probe.get("checkpoints")
+    if not isinstance(checkpoints, list) or not checkpoints:
+        errors.append("contact checkpoints are missing")
+    elif any(
+        not isinstance(checkpoint, dict)
+        or not isinstance(checkpoint.get("menu_words_offset"), int)
+        or not isinstance(checkpoint.get("subtitle"), str)
+        for checkpoint in checkpoints
+    ):
+        errors.append("contact checkpoint data is malformed")
+    setup = probe.get("setup")
+    if not isinstance(setup, dict) or setup.get("selected_object") != probe.get(
+        "contact_object_offset"
+    ):
+        errors.append("contact predicate setup is missing or selected the wrong object")
+    return errors
+
+
 def _validate_dialogue_checkpoints(
     actual: object,
     expected: Sequence[tuple[int | None, str]],
@@ -394,6 +505,8 @@ def validate_report(
         return _validate_radio(report)
     if scenario.kind == "bob":
         return _validate_bob(report)
+    if scenario.kind == "contact":
+        return _validate_contact(report, scenario)
     if scenario.kind == "pterra":
         return _validate_pterra(report)
     return [f"unknown scenario kind: {scenario.kind}"]
@@ -411,7 +524,7 @@ def _build_command(
         args.python,
         "-P",
     ]
-    if scenario.kind in ("teleport", "radio", "bob"):
+    if scenario.kind in ("teleport", "radio", "bob", "contact"):
         command = common + [
             str(WATCHDOG),
             "--cd-dir",
@@ -448,13 +561,24 @@ def _build_command(
                 "--script2-radio-probe",
             ]
             duration = args.radio_seconds
-        else:
+        elif scenario.kind == "bob":
             command += [
                 "--seconds",
                 str(args.bob_seconds),
                 "--script1-bob-probe",
             ]
             duration = args.bob_seconds
+        else:
+            assert scenario.contact_selector is not None
+            command += [
+                "--seconds",
+                str(args.contact_seconds),
+                "--contact-manifest",
+                str(args.contact_manifest),
+                "--contact-probe",
+                scenario.contact_selector,
+            ]
+            duration = args.contact_seconds
         command += [
             "--input-liveness-samples",
             str(args.input_liveness_samples),
@@ -616,6 +740,7 @@ def _validate_arguments(
         ("--teleport-seconds", args.teleport_seconds),
         ("--radio-seconds", args.radio_seconds),
         ("--bob-seconds", args.bob_seconds),
+        ("--contact-seconds", args.contact_seconds),
         ("--pterra-timeout", args.pterra_timeout),
         ("--calibration-timeout", args.calibration_timeout),
         ("--subprocess-grace-seconds", args.subprocess_grace_seconds),
@@ -632,10 +757,13 @@ def _validate_arguments(
             parser.error(f"{name} cannot be negative")
     if args.display_base < 1:
         parser.error("--display-base must be at least 1")
+    if args.jobs < 1:
+        parser.error("--jobs must be positive")
 
     args.cd_dir = args.cd_dir.resolve()
     args.install_parent = args.install_parent.resolve()
     args.output_dir = args.output_dir.resolve()
+    args.contact_manifest = args.contact_manifest.resolve()
     if args.link_map is not None:
         args.link_map = args.link_map.resolve()
     if not args.cd_dir.is_dir():
@@ -651,20 +779,36 @@ def _validate_arguments(
         parser.error("--output-dir cannot be inside the source cblood tree")
     if args.link_map is not None and not args.link_map.is_file():
         parser.error(f"link map does not exist: {args.link_map}")
+    if not args.contact_manifest.is_file():
+        parser.error(f"contact manifest does not exist: {args.contact_manifest}")
 
 
 def run_matrix(args: argparse.Namespace) -> tuple[int, dict[str, object]]:
     scenarios = selected_scenarios(
         args.scenario,
         args.include_authentic_pterra,
+        args.all_contacts,
     )
     output_dir = args.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
     source_cblood = args.install_parent / "cblood"
-    results = [
-        _run_one(args, scenario, output_dir, source_cblood)
-        for scenario in scenarios
-    ]
+    if args.jobs == 1:
+        results = [
+            _run_one(args, scenario, output_dir, source_cblood)
+            for scenario in scenarios
+        ]
+    else:
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=args.jobs
+        ) as executor:
+            results = list(
+                executor.map(
+                    lambda scenario: _run_one(
+                        args, scenario, output_dir, source_cblood
+                    ),
+                    scenarios,
+                )
+            )
     passed = sum(result["status"] == "PASS" for result in results)
     aggregate: dict[str, object] = {
         "cd_dir": str(args.cd_dir),

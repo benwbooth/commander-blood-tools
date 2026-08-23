@@ -647,5 +647,125 @@ class Script1BobTests(unittest.TestCase):
         )
 
 
+class ContactScenarioTests(unittest.TestCase):
+    @staticmethod
+    def scenario(selector: str) -> dict[str, object]:
+        return watchdog.load_contact_scenario(
+            watchdog.DEFAULT_CONTACT_MANIFEST, selector
+        )
+
+    def test_contact_completion_is_a_successful_watchdog_verdict(self) -> None:
+        self.assertIn(
+            "CONTACT-PROBE-COMPLETE", watchdog.SUCCESSFUL_VERDICTS
+        )
+
+    def test_loads_all_predicates_even_when_d1_is_last(self) -> None:
+        scenario = self.scenario("SCRIPT2:morntv")
+        self.assertEqual(scenario["profile"], 1)
+        self.assertEqual(
+            [entry["kind"] for entry in scenario["entry_tokens"]],
+            ["shared_state", "actor"],
+        )
+
+    def test_plans_presentation_free_morning_oil_predicates(self) -> None:
+        scenario = self.scenario("SCRIPT2:Cryomorn2")
+        self.assertEqual(scenario["presentations"], [])
+        plan = watchdog.plan_contact_predicate_writes(
+            scenario, bytearray(0x2000)
+        )
+        self.assertEqual(
+            {
+                write["offset"]: write["after"]
+                for write in plan["record_writes"]
+            },
+            {0x02A2: 0xFFFF, 0x11E0: 0x028A, 0x12F2: 2},
+        )
+
+    def test_plans_equality_inequality_bits_and_timer_zero(self) -> None:
+        records = bytearray(0x2000)
+        boba2 = watchdog.plan_contact_predicate_writes(
+            self.scenario("SCRIPT2:boba2"), records
+        )
+        self.assertEqual(
+            [(write["offset"], write["after"]) for write in boba2["record_writes"]],
+            [(0x12B4, 2)],
+        )
+
+        beaureg = watchdog.plan_contact_predicate_writes(
+            self.scenario("SCRIPT4:beaureg"), records
+        )
+        self.assertEqual(
+            {write["offset"]: write["after"] for write in beaureg["record_writes"]},
+            {0x104E: 2, 0x150C: 0},
+        )
+
+        port1 = watchdog.plan_contact_predicate_writes(
+            self.scenario("SCRIPT3:port1"), records
+        )
+        self.assertEqual(port1["timer_indices"], [2])
+        self.assertEqual(
+            {write["offset"]: write["after"] for write in port1["record_writes"]},
+            {0x13AA: 0x043A},
+        )
+
+    def test_rejects_an_unknown_predicate_shape(self) -> None:
+        scenario = self.scenario("SCRIPT2:boba2")
+        scenario["entry_tokens"][1]["token"]["SharedState"]["operator"] = 0
+        with self.assertRaisesRegex(
+            watchdog.WatchdogError, "unsupported contact shared-state"
+        ):
+            watchdog.plan_contact_predicate_writes(
+                scenario, bytearray(0x2000)
+            )
+
+    def test_applies_one_contact_and_disables_competitors(self) -> None:
+        scenario = self.scenario("SCRIPT2:boba2")
+        memory = bytearray(MEMORY_SIZE)
+        game_segment = 0x1800
+        cod_segment = 0x3000
+        record_segment = 0x3800
+        profile = watchdog.ProfileState(
+            profile=1,
+            request=-1,
+            execution_enabled=1,
+            handles=(1, 2, 3, 4, 5),
+            expected_handles=(1, 2, 3, 4, 5),
+            images=(
+                (0, cod_segment),
+                (0, 0x3200),
+                (0, record_segment),
+                (0, 0x3A00),
+                (0, 0x3C00),
+            ),
+            blockers=(),
+        )
+        host_memory = io.BytesIO(memory)
+        plan = watchdog.apply_contact_scenario(
+            host_memory,
+            0,
+            game_segment,
+            profile,
+            scenario,
+            bytes(memory),
+        )
+        written = host_memory.getvalue()
+        records = record_segment * 16
+        cod = cod_segment * 16
+        game = game_segment * 16
+        self.assertEqual(struct.unpack_from("<H", written, records + 0x12B4)[0], 2)
+        self.assertEqual(
+            struct.unpack_from("<H", written, game + 0x676A)[0],
+            scenario["contact_object_offset"],
+        )
+        self.assertEqual(written[game + 0x2751], 1)
+        enabled = [
+            procedure
+            for procedure in scenario["profile_procedures"]
+            if written[cod + procedure["procedure_offset"] + 1] == 1
+        ]
+        self.assertEqual([procedure["procedure"] for procedure in enabled], ["boba2"])
+        self.assertEqual(plan["selected_object"], 0x004A)
+
+
 if __name__ == "__main__":
     unittest.main()

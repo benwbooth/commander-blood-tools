@@ -6378,3 +6378,42 @@ directly. Its first opcode/word-list pair is `0788/078E`; the mission choice is
 regenerates the JSON and TSV census from the source-compiled script bundle and
 fails if any contact, predicate, actor, dictionary word, or CFG owner becomes
 unresolved.
+
+## Manifest-driven contact runtime probes (2026-08-23)
+
+`runtime_watchdog.py --contact-probe SCRIPTn:procedure` turns one census row
+into a fresh-guest runtime scenario. It loads GAME1.SAV only to reach the bridge,
+reloads the requested SCRIPT profile through the real resource loader, disables
+the other D1 procedures in that profile, and satisfies the target's recovered
+entry predicates in the loaded VAR/timer state. The selected object is then
+submitted through the same `676A` plus scene-transition path used by the proven
+Bob driver. The probe does not write a C4 action or presentation record.
+
+The synthesis is fail-closed over all shipped entry shapes: immediate equality
+for BF/C0 shared words, set/clear for AE/B0 bit tests, equality/inequality for AF
+record words, and zero for the one A5 timer query. Actor and guard-stack tokens
+do not require state writes. Competing predicate writes are re-evaluated after
+synthesis, and an unsupported opcode/operator/mode aborts before DOSBox starts.
+
+The runtime accepts only exact COD word-list offsets belonging to the selected
+procedure. It continues under the existing segment, IVT, MCB, input, audio, and
+active-presentation liveness guards until four valid lines, the first word
+choice, or a clean presentation end. `runtime_scenario_matrix.py --all-contacts`
+generates all 65 isolated scenarios; `--jobs` runs distinct install trees and X
+displays concurrently while preserving canonical result order.
+
+Four live controls passed against package executable SHA-256
+`50757f972bee4d27146529b64538529d08135bf436a0383b935a512683ccd325`:
+
+- SCRIPT1 BOB1 reproduced `078E/07AE/07D4/07EA` and native action
+  `C4 0028 FFFF` with no predicate writes.
+- SCRIPT2 scrujo reached word lists `0392/03B9/03CF/03EB` with no predicate
+  writes.
+- SCRIPT2 boba2 wrote only state word `12B4 = 2`, reached three valid lines,
+  and stopped at the procedure's first word choice.
+- SCRIPT2 Cryomorn2 wrote `02A2 = FFFF`, `11E0 = 028A`, and `12F2 = 2`, then
+  reached four Morning Oil lines despite having no C4 presentation predicate.
+
+All four reports contain zero watchdog anomalies. This validates the three
+shipped entry classes, not yet all 65 individual procedures; the complete sweep
+is the next runtime gate.

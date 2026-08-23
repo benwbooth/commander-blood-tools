@@ -80,6 +80,23 @@ def valid_bob_report() -> dict[str, object]:
     }
 
 
+def valid_contact_report(selector: str) -> dict[str, object]:
+    return {
+        "verdict": "CONTACT-PROBE-COMPLETE",
+        "anomalies": [],
+        "contact_probe": {
+            "selector": selector,
+            "completed_sample": 40,
+            "completion_reason": "line-target",
+            "contact_object_offset": 0x004A,
+            "setup": {"selected_object": 0x004A},
+            "checkpoints": [
+                {"menu_words_offset": 0x078E, "subtitle": "Good day COMMANDER"}
+            ],
+        },
+    }
+
+
 def valid_pterra_report() -> dict[str, object]:
     return {
         "mode": "authentic-save-pterra",
@@ -120,6 +137,11 @@ class ScenarioSelectionTests(unittest.TestCase):
             ],
             ["teleport-2", "script2-radio", "authentic-pterra"],
         )
+
+    def test_full_contact_selection_adds_all_manifest_procedures(self) -> None:
+        selected = matrix.selected_scenarios(None, False, True)
+        self.assertEqual(sum(scenario.kind == "contact" for scenario in selected), 65)
+        self.assertEqual(len(selected), 65)
 
 
 class ReportValidationTests(unittest.TestCase):
@@ -173,6 +195,17 @@ class ReportValidationTests(unittest.TestCase):
             matrix.validate_report(scenario, report),
         )
 
+    def test_contact_requires_manifest_identity_and_a_real_checkpoint(self) -> None:
+        scenario = matrix.CONTACT_SCENARIOS[0]
+        assert scenario.contact_selector is not None
+        report = valid_contact_report(scenario.contact_selector)
+        self.assertEqual(matrix.validate_report(scenario, report), [])
+        report["contact_probe"]["selector"] = "SCRIPT5:not-this-one"
+        self.assertIn(
+            "contact selector does not match the scenario",
+            matrix.validate_report(scenario, report),
+        )
+
 
 class MatrixExecutionTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -217,6 +250,9 @@ class MatrixExecutionTests(unittest.TestCase):
                 report = valid_teleport_report(profile)
             elif "--script1-bob-probe" in command:
                 report = valid_bob_report()
+            elif "--contact-probe" in command:
+                selector = command[command.index("--contact-probe") + 1]
+                report = valid_contact_report(selector)
             else:
                 report = valid_radio_report()
         else:
@@ -389,6 +425,45 @@ class MatrixExecutionTests(unittest.TestCase):
         self.assertEqual(result["status"], "PASS")
         self.assertEqual(result["display"], ":126")
         self.assertIn("--script1-bob-probe", result["command"])
+
+    @mock.patch.object(matrix.subprocess, "run")
+    def test_generated_contact_uses_manifest_watchdog_mode(
+        self, run: mock.Mock
+    ) -> None:
+        run.side_effect = self.successful_subprocess
+        scenario = matrix.CONTACT_SCENARIOS[0]
+
+        exit_code, aggregate = matrix.run_matrix(
+            self.args("--scenario", scenario.name)
+        )
+
+        self.assertEqual(exit_code, 0)
+        result = aggregate["results"][0]
+        self.assertIn("--contact-probe", result["command"])
+        self.assertIn("--contact-manifest", result["command"])
+        self.assertIn(scenario.contact_selector, result["command"])
+
+    @mock.patch.object(matrix.subprocess, "run")
+    def test_parallel_contacts_keep_canonical_result_order(
+        self, run: mock.Mock
+    ) -> None:
+        run.side_effect = self.successful_subprocess
+        first, second = matrix.CONTACT_SCENARIOS[:2]
+        args = self.args(
+            "--scenario",
+            second.name,
+            "--scenario",
+            first.name,
+            "--jobs",
+            "2",
+        )
+
+        exit_code, aggregate = matrix.run_matrix(args)
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(
+            aggregate["selected_scenarios"], [first.name, second.name]
+        )
 
 
 if __name__ == "__main__":
