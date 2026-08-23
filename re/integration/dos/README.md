@@ -176,6 +176,11 @@ FS/GS memory overrides, every symbolic data access has a statically proven
 segment owner, and the deterministic runtime-watchdog tests pass. The current
 whole-program segment-contract report covers 3,130 accesses in 337 linked
 routines with zero unresolved accesses or owner mismatches.
+The corresponding source-XDB report covers all 183 linked overlay routines and
+proves 1,476 symbolic accesses across 21,454 reachable object instructions.
+Each overlay build retains its declaration-derived `segment_owners.tsv`; the
+package also retains the aggregate `segment_contracts.tsv`, cached listings,
+test log, and fail-closed audit log under `validation/source_xdb/`.
 `segment_role_comparison.tsv` is the complementary dynamic far-memory report.
 The package build fails if an original-only role is neither proved through
 direct-call provenance nor covered by a current assembly-to-C equivalence in

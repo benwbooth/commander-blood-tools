@@ -41,6 +41,7 @@ GENERAL_REGISTERS = (
 OWNER_BY_SEGMENT_NAME = {
     "GAME_DATA": "GAME_DATA",
     "FS_DATA": "FS_DATA",
+    "XDB_DATA": "XDB_DATA",
     "_CODE": "CODE",
     "STACK": "STACK",
 }
@@ -141,7 +142,9 @@ def canonical_register(name: str) -> str:
     return lowered
 
 
-def initial_state() -> AbstractState:
+def initial_state(
+    segment_overrides: dict[str, str] | None = None,
+) -> AbstractState:
     values = {name: UNKNOWN for name in GENERAL_REGISTERS}
     values.update({
         "cs": "CODE",
@@ -151,6 +154,8 @@ def initial_state() -> AbstractState:
         "gs": "GAME_DATA",
         "ss": "STACK",
     })
+    if segment_overrides is not None:
+        values.update(segment_overrides)
     return AbstractState(tuple(sorted(
         (canonical_register(name), value) for name, value in values.items()
     )))
@@ -198,8 +203,14 @@ def local_offset(operand: str) -> int | None:
 
 
 def source_provenance(operand: str, state: AbstractState,
-                      owners: dict[str, str]) -> str:
+                      owners: dict[str, str],
+                      values: dict[str, str] | None = None) -> str:
     normalized = operand.strip().lower()
+    if values is not None:
+        for match in SYMBOL_TOKEN.finditer(normalized):
+            value = values.get(match.group(0))
+            if value is not None:
+                return value
     if normalized.startswith("dgroup:"):
         return "GAME_DATA"
     seg_match = re.fullmatch(r"seg\s+(?P<symbol>_[\w$?@]+)", normalized)
@@ -230,7 +241,8 @@ def decode_instruction(item: ListingInstruction) -> capstone.CsInsn:
 
 
 def transfer(item: ListingInstruction, state: AbstractState,
-             owners: dict[str, str]) -> AbstractState:
+             owners: dict[str, str],
+             values: dict[str, str] | None = None) -> AbstractState:
     insn = decode_instruction(item)
     result = state
     try:
@@ -246,7 +258,7 @@ def transfer(item: ListingInstruction, state: AbstractState,
     operands = split_operands(item.text)
     if op == "mov" and len(operands) == 2:
         destination, source = operands
-        value = source_provenance(source, state, owners)
+        value = source_provenance(source, state, owners, values)
         destination_register = canonical_register(destination)
         if destination_register in GENERAL_REGISTERS + SEGMENT_REGISTERS:
             result = result.with_register(destination_register, value)
@@ -558,11 +570,21 @@ def effective_segment(text: str, symbol: str) -> str:
     override = re.search(r"\b(es|cs|ss|ds|fs|gs)\s*:[^,]*$", prefix)
     if override:
         return override.group(1)
+    operand_start = prefix.rfind(",") + 1
+    operand_end = lowered.find(",", position)
+    if operand_end < 0:
+        operand_end = len(lowered)
+    operand = lowered[operand_start:operand_end]
+    if re.search(r"\[[^]]*\b(?:e?[bs]p)\b[^]]*\]", operand):
+        return "ss"
     return "ds"
 
 
 def analyze_listing(listing: Listing,
-                    owners: dict[str, str]) -> tuple[list[Finding], int]:
+                    owners: dict[str, str],
+                    initial_segments: dict[str, str] | None = None,
+                    symbol_values: dict[str, str] | None = None,
+                    ) -> tuple[list[Finding], int]:
     by_offset = {item.offset: item for item in listing.instructions}
     edges = successors(listing)
     entrypoints = listing.entrypoints or (min(by_offset),)
@@ -573,7 +595,7 @@ def analyze_listing(listing: Listing,
             f"{listing.object_path}: function entry is not executable: {formatted}"
         )
     states: dict[int, AbstractState] = {
-        entry: initial_state() for entry in entrypoints
+        entry: initial_state(initial_segments) for entry in entrypoints
     }
     pending = deque(entrypoints)
     visits = 0
@@ -582,7 +604,9 @@ def analyze_listing(listing: Listing,
         visits += 1
         if visits > len(by_offset) * 200:
             raise ValueError(f"{listing.object_path}: dataflow did not converge")
-        outgoing = transfer(by_offset[offset], states[offset], owners)
+        outgoing = transfer(
+            by_offset[offset], states[offset], owners, symbol_values
+        )
         for target in edges[offset]:
             previous = states.get(target)
             merged = outgoing if previous is None else merge_state(previous, outgoing)
@@ -632,7 +656,7 @@ def read_owners(path: Path) -> dict[str, str]:
             if row["status"] != "known":
                 continue
             owner = row["segment"]
-            if owner not in ("GAME_DATA", "FS_DATA", "_CODE"):
+            if owner not in ("GAME_DATA", "FS_DATA", "XDB_DATA", "_CODE"):
                 continue
             owners[row["symbol"].lower()] = (
                 "CODE" if owner == "_CODE" else owner

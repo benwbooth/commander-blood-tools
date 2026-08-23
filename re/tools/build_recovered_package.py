@@ -1089,6 +1089,32 @@ def build_source_xdb_files(
             }
         )
 
+    run_checked_logged(
+        [
+            sys.executable,
+            "-P",
+            str(ROOT / "re/tools/audit_xdb_segment_contracts.py"),
+            "--source-xdb-root",
+            str(validation_root),
+            "--object-root",
+            str(output / "xdb_objects"),
+            "--wdis",
+            args.wdis,
+            "--output",
+            str(validation_root / "segment_contracts.tsv"),
+            "--fail-unproven",
+        ],
+        validation_root / "segment_contract_audit.log",
+    )
+    run_checked_logged(
+        [
+            sys.executable,
+            "-P",
+            str(ROOT / "re/tools/test_audit_xdb_segment_contracts.py"),
+        ],
+        validation_root / "segment_contract_tests.log",
+    )
+
     callback_report = validation_root / "callback_edges.tsv"
     run_checked(
         [

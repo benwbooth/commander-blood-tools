@@ -6196,6 +6196,20 @@ linked routines, with zero unresolved accesses and zero mismatches. This gate
 proves static symbol ownership; dynamic far-pointer targets and parity with the
 original routine's complete memory-access behavior remain separate audits.
 
+The same fail-closed proof now covers the four source-linked XDB overlays.
+`build_source_xdb.py` emits `segment_owners.tsv` from the linked code/data
+declarations, and `audit_xdb_segment_contracts.py` requires an exact bijection
+between the final map's recovered `func_*_TEXT` sections and the 183 compiled
+objects. Alien API/main entry state begins with foreign DS/FS and is proved
+through the CS-resident runtime data-selector relocation; ordinary alien and
+MANU3 routines begin with DS/FS owned by `XDB_DATA`, while SS remains the host
+stack and GS remains foreign. The integrated build proved all 1,476 symbolic
+accesses across 21,454 reachable instructions, with zero unresolved accesses
+or mismatches. Reports, listings, tests, and owner manifests are retained under
+`validation/source_xdb/`. This is a storage-owner proof; emitted callback ABI,
+dynamic far-pointee provenance, and runtime story checkpoints remain separate
+gates.
+
 `compare_segment_roles.py` performs that separate parity audit. It traces the
 source of dynamic segment values (far-pointer arguments, fixed VGA segments,
 and segment words stored in GAME_DATA/FS_DATA), normalizes compiler register

@@ -524,6 +524,23 @@ def owner_assembly(
     path.write_text("\n".join(lines) + "\n", encoding="ascii")
 
 
+def write_segment_owners(
+    path: Path,
+    declared: list[Declaration],
+) -> None:
+    with path.open("w", newline="", encoding="ascii") as handle:
+        writer = csv.writer(handle, delimiter="\t", lineterminator="\n")
+        writer.writerow(("symbol", "status", "segment", "offset", "header"))
+        for item in declared:
+            writer.writerow((
+                item.symbol,
+                "known",
+                item.segment,
+                f"0x{item.offset:04x}",
+                item.header,
+            ))
+
+
 def manifest_sources(module: str) -> set[str]:
     prefix = f"xdb_{module}:"
     with MANIFEST.open(newline="", encoding="ascii") as handle:
@@ -602,6 +619,7 @@ def main() -> int:
     rebindings = payload_rebindings(args.module, module, image)
     owner_source = output / f"{args.module}_source_owner.asm"
     owner_assembly(owner_source, args.module, module, image, declared, rebindings)
+    write_segment_owners(output / "segment_owners.tsv", declared)
     owner_object = output / f"{args.module}_source_owner.obj"
     run([tool(args.wasm), "-q", f"-fo={owner_object}", str(owner_source)])
 

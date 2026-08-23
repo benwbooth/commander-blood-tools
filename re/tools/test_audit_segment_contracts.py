@@ -129,6 +129,44 @@ class SegmentContractAuditTests(unittest.TestCase):
         )
         self.assertEqual([finding.status for finding in findings], ["ok"])
 
+    def test_bp_symbolic_access_uses_stack_segment_by_default(self):
+        listing = self.listing("""
+0000                          routine_:
+0000    8B 86 00 00               mov ax,word ptr _stack_word[bp]
+0004    CB                        retf
+""")
+        findings, _ = MODULE.analyze_listing(
+            listing, {"_stack_word": "STACK"}
+        )
+        self.assertEqual([finding.status for finding in findings], ["ok"])
+        self.assertEqual(findings[0].effective_segment, "SS")
+
+    def test_segment_initial_state_can_model_overlay_data(self):
+        listing = self.listing("""
+0000                          routine_:
+0000    A1 00 00                  mov ax,word ptr _overlay_word
+0003    CB                        retf
+""")
+        findings, _ = MODULE.analyze_listing(
+            listing,
+            {"_overlay_word": "XDB_DATA"},
+            {"ds": "XDB_DATA", "fs": "XDB_DATA", "gs": "unknown"},
+        )
+        self.assertEqual([finding.status for finding in findings], ["ok"])
+
+    def test_linker_filled_segment_symbol_has_value_provenance(self):
+        state = MODULE.initial_state({"ds": MODULE.UNKNOWN})
+
+        self.assertEqual(
+            MODULE.source_provenance(
+                "word ptr cs:_xdb_amer_data_segment",
+                state,
+                {"_xdb_amer_data_segment": "CODE"},
+                {"_xdb_amer_data_segment": "XDB_DATA"},
+            ),
+            "XDB_DATA",
+        )
+
     def test_code_segment_data_before_routine_is_not_disassembled(self):
         listing = self.listing("""
 Segment: func_example_TEXT BYTE USE16 0000000E bytes
