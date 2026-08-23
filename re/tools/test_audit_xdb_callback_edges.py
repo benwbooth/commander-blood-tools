@@ -179,6 +179,14 @@ class Fixture:
             )
             writer.writeheader()
             writer.writerows(manifest_rows)
+        include = self.manifest.parent / "include"
+        include.mkdir()
+        pragmas = [
+            f"#pragma aux {routine.function} parm [si] [di]\n"
+            for routine in self.routines
+            if routine.entry in owned_entries
+        ]
+        (include / "xdb_alien.h").write_text("".join(pragmas), encoding="ascii")
         return MODULE.AuditConfig(
             self.root,
             self.index,
@@ -355,6 +363,35 @@ class CallbackEdgeAuditTests(unittest.TestCase):
         )
         self.assertTrue(any("outside code" in error for error in result.errors))
         self.assertEqual(result.stores[0].status, "unresolved_pointer")
+
+    def test_missing_callback_register_abi_fails(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        fixture = Fixture(
+            Path(temporary.name),
+            "xdb_amer",
+            [
+                Routine(
+                    0x1414,
+                    "xdb_amer_slot3_update",
+                    state_store(0x0C81),
+                    source_target="xdb_amer_slot1_motion_update",
+                ),
+                Routine(0x0C81, "xdb_amer_slot1_motion_update", b"\xC3"),
+            ],
+        )
+        config = fixture.write()
+        header = fixture.manifest.parent / "include" / "xdb_alien.h"
+        header.write_text(
+            "#pragma aux xdb_amer_slot3_update parm [si] [di]\n",
+            encoding="ascii",
+        )
+        result = MODULE.audit_module(config, "xdb_amer")
+        self.assertTrue(
+            any("missing explicit" in error for error in result.errors),
+            result.errors,
+        )
+        self.assertEqual(result.stores[0].status, "callback_abi_missing")
 
     def test_tsv_is_deterministic_and_sorted(self):
         stores = [

@@ -168,6 +168,9 @@ struct xdb_alien_biased_state {
     xdb_u16 field_05c;
 };
 
+typedef char xdb_alien_state_callback_offset_must_be_0x0e[
+        offsetof(xdb_alien_biased_state, callback) == 0x0e ? 1 : -1];
+
 typedef struct xdb_alien_ring_entry {
     xdb_i16 field_000;
     xdb_i16 field_002;
@@ -837,7 +840,43 @@ void XDB_NEAR xdb_scrut_slot3_update(
 void XDB_NEAR xdb_croolis_slot1_wave_update(
         xdb_alien_biased_state XDB_NEAR *state,
         xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_slot1_finish_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_slot1_state_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_slot1_camera_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_slot1_motion_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_slot1_return_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_slot1_motion_continuation(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_scrut_slot1_wave_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_slot1_finish_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_slot1_state_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_slot1_camera_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_slot1_motion_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_slot1_return_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_slot1_motion_continuation(
         xdb_alien_biased_state XDB_NEAR *state,
         xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_amer_slot1_wave_update(
@@ -980,6 +1019,24 @@ void XDB_NEAR xdb_amer_slot2_finish_update(
 #if defined(__WATCOMC__)
 #pragma aux xdb_alien_method_function \
         parm [di] modify exact [ax bx cx dx si di bp es]
+extern xdb_alien_biased_state XDB_NEAR *XDB_NEAR
+xdb_alien_state_tail_or_get(void);
+#pragma aux xdb_alien_state_tail_or_get = \
+        "mov si,word ptr 16h[di]" \
+        "add si,5eh" \
+        "test word ptr 36h[di],0ffffh" \
+        "je short done" \
+        "jmp word ptr 0eh[si]" \
+        "done:" \
+        value [si] modify exact [si]
+extern void XDB_NEAR xdb_alien_resume_tail_or_continue(void);
+#pragma aux xdb_alien_resume_tail_or_continue = \
+        "mov bx,word ptr 36h[di]" \
+        "or bx,bx" \
+        "je short done" \
+        "jmp bx" \
+        "done:" \
+        modify exact [bx]
 extern void XDB_NEAR xdb_alien_frame_callback_invoke(
         xdb_u16 event,
         xdb_u32 clock);
@@ -1008,6 +1065,66 @@ extern void XDB_NEAR xdb_alien_data_segment_restore(
         modify exact []
 #pragma aux xdb_alien_resume_function parm [di]
 #pragma aux xdb_alien_state_function parm [si] [di] modify exact [ax bx cx dx]
+
+/* Every address stored in a callback field uses the original register ABI. */
+#pragma aux xdb_amer_slot1_finish_update parm [si] [di]
+#pragma aux xdb_amer_slot1_motion_update parm [si] [di]
+#pragma aux xdb_amer_slot1_return_update parm [si] [di]
+#pragma aux xdb_amer_slot1_state_update parm [si] [di]
+#pragma aux xdb_amer_slot1_wave_update parm [si] [di]
+#pragma aux xdb_amer_slot2_finish_update parm [si] [di]
+#pragma aux xdb_amer_slot2_selection_late_update parm [si] [di]
+#pragma aux xdb_amer_slot2_selection_update parm [si] [di]
+#pragma aux xdb_amer_slot2_selection_wait parm [si] [di]
+#pragma aux xdb_amer_slot2_update parm [si] [di]
+#pragma aux xdb_amer_slot3_initial_update parm [si] [di]
+#pragma aux xdb_amer_slot3_restart_initial_update parm [si] [di]
+#pragma aux xdb_amer_slot3_resume_callback parm [si] [di]
+#pragma aux xdb_amer_slot3_ring_zero_callback parm [si] [di]
+#pragma aux xdb_amer_slot3_update parm [si] [di]
+#pragma aux xdb_croolis_slot1_finish_update parm [si] [di]
+#pragma aux xdb_croolis_slot1_motion_update parm [si] [di]
+#pragma aux xdb_croolis_slot1_return_update parm [si] [di]
+#pragma aux xdb_croolis_slot1_state_update parm [si] [di]
+#pragma aux xdb_croolis_slot1_wave_update parm [si] [di]
+#pragma aux xdb_croolis_slot2_fade_update parm [si] [di]
+#pragma aux xdb_croolis_slot2_selection_update parm [si] [di]
+#pragma aux xdb_croolis_slot2_update parm [si] [di]
+#pragma aux xdb_croolis_slot3_initial_update parm [si] [di]
+#pragma aux xdb_croolis_slot3_restart_initial_update parm [si] [di]
+#pragma aux xdb_croolis_slot3_resume_callback parm [si] [di]
+#pragma aux xdb_croolis_slot3_ring_zero_callback parm [si] [di]
+#pragma aux xdb_croolis_slot3_update parm [si] [di]
+#pragma aux xdb_scrut_slot1_finish_update parm [si] [di]
+#pragma aux xdb_scrut_slot1_motion_update parm [si] [di]
+#pragma aux xdb_scrut_slot1_return_update parm [si] [di]
+#pragma aux xdb_scrut_slot1_state_update parm [si] [di]
+#pragma aux xdb_scrut_slot1_wave_update parm [si] [di]
+#pragma aux xdb_scrut_slot2_fade_update parm [si] [di]
+#pragma aux xdb_scrut_slot2_finish_update parm [si] [di]
+#pragma aux xdb_scrut_slot2_selection_approach parm [si] [di]
+#pragma aux xdb_scrut_slot2_selection_begin parm [si] [di]
+#pragma aux xdb_scrut_slot2_selection_damp parm [si] [di]
+#pragma aux xdb_scrut_slot2_selection_restart parm [si] [di]
+#pragma aux xdb_scrut_slot2_update parm [si] [di]
+#pragma aux xdb_scrut_slot3_initial_update parm [si] [di]
+#pragma aux xdb_scrut_slot3_restart_initial_update parm [si] [di]
+#pragma aux xdb_scrut_slot3_resume_callback parm [si] [di]
+#pragma aux xdb_scrut_slot3_ring_zero_callback parm [si] [di]
+#pragma aux xdb_scrut_slot3_update parm [si] [di]
+
+#pragma aux xdb_amer_resume_1c34 parm [di]
+#pragma aux xdb_amer_resume_stage_final parm [di]
+#pragma aux xdb_amer_resume_stage_pair parm [di]
+#pragma aux xdb_amer_resume_stage_timeout parm [di]
+#pragma aux xdb_croolis_resume_1b85 parm [di]
+#pragma aux xdb_croolis_resume_stage_final parm [di]
+#pragma aux xdb_croolis_resume_stage_pair parm [di]
+#pragma aux xdb_croolis_resume_stage_timeout parm [di]
+#pragma aux xdb_scrut_resume_1c45 parm [di]
+#pragma aux xdb_scrut_resume_stage_final parm [di]
+#pragma aux xdb_scrut_resume_stage_pair parm [di]
+#pragma aux xdb_scrut_resume_stage_timeout parm [di]
 #pragma aux xdb_amer_slot2_return_update \
         parm [si] [di] modify exact [ax bx cx dx]
 #pragma aux xdb_amer_slot2_steer_update \
@@ -1018,9 +1135,9 @@ extern void XDB_NEAR xdb_alien_data_segment_restore(
 #pragma aux xdb_amer_method_slot_12_apply_delta parm [di] value [ax] modify exact [ax si]
 #pragma aux xdb_croolis_method_slot_12_apply_delta parm [di] value [ax] modify exact [ax si]
 #pragma aux xdb_scrut_method_slot_12_lower_state parm [di] value [si] modify exact [si]
-#pragma aux xdb_amer_method_slot_13_resume_or_init parm [di]
-#pragma aux xdb_croolis_method_slot_13_resume_or_init parm [di]
-#pragma aux xdb_scrut_method_slot_13_resume_or_init parm [di]
+#pragma aux xdb_amer_method_slot_13_resume_or_init parm [di] modify exact [bx]
+#pragma aux xdb_croolis_method_slot_13_resume_or_init parm [di] modify exact [bx]
+#pragma aux xdb_scrut_method_slot_13_resume_or_init parm [di] modify exact [bx]
 #pragma aux xdb_amer_method_slot_8_apply_sample_delta \
         parm [di] value [ax] modify exact [ax bx cx si]
 #pragma aux xdb_croolis_method_slot_8_apply_sample_delta \

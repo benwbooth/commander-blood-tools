@@ -125,12 +125,3 @@ void XDB_NEAR xdb_scrut_method_slot_1_wave_update_or_init(
         ++object;
     } while (--count != 0u);
 }
-
-/* The original entry is shared by the method table and state callbacks. */
-void XDB_NEAR xdb_scrut_slot1_wave_update(
-        xdb_alien_biased_state XDB_NEAR *state,
-        xdb_alien_method_context XDB_NEAR *context)
-{
-    (void)state;
-    xdb_scrut_method_slot_1_wave_update_or_init(context);
-}

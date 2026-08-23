@@ -110,7 +110,7 @@ dummy definitions or treats an unresolved link as a runnable game binary.
 ## Recovered package
 
 The package gate compiles the BloodScript sources and every XDB C candidate,
-then links all 169 recovered routines into complete AMER, CROOLIS, MANU3, and
+then links all 183 recovered routines into complete AMER, CROOLIS, MANU3, and
 SCRUT overlays. Each linked image retains the original data payload apart from
 verified callback-pointer rebindings and has one load-time data-segment delta.
 Because the natural-C code is larger than the original assembly, the builder

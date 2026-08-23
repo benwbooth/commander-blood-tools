@@ -392,6 +392,16 @@ def c_function_calls(text: str) -> Counter[str]:
     return Counter(calls)
 
 
+def callback_abi_declared(header: str, function: str, field: str) -> bool:
+    parameters = r"\[si\]\s+\[di\]" if field == "state+0x0e" else r"\[di\]"
+    pattern = re.compile(
+        rf"^\s*#pragma\s+aux\s+{re.escape(function)}\s+"
+        rf"(?:\\\s*)?parm\s+{parameters}(?:\s|$)",
+        re.MULTILINE,
+    )
+    return pattern.search(header) is not None
+
+
 def resolve_target(
     config: AuditConfig,
     module: str,
@@ -479,9 +489,19 @@ def audit_module(config: AuditConfig, module: str) -> AuditResult:
 
     routine_rows = read_tsv(config.routine_index)
     manifest_rows = read_tsv(config.manifest)
+    header_path = config.manifest.parent / "include" / "xdb_alien.h"
+    if header_path.is_file():
+        callback_abi_header = header_path.read_text(
+            encoding="utf-8", errors="replace"
+        )
+        header_errors: list[str] = []
+    else:
+        callback_abi_header = ""
+        header_errors = [f"{module}: missing callback ABI header {header_path}"]
     owners, index_by_entry, errors = build_owner_inventory(
         config, module, routine_rows
     )
+    errors.extend(header_errors)
     manifest_by_entry: dict[int, list[dict[str, str]]] = defaultdict(list)
     prefix = module + ":"
     for row in manifest_rows:
@@ -536,6 +556,28 @@ def audit_module(config: AuditConfig, module: str) -> AuditResult:
         store.asm_path = target_row["asm_path"]
         store.source = target_row["source"]
         store.status = "owned_pointer"
+
+    checked_abis: set[tuple[str, str]] = set()
+    for store in stores:
+        if store.status != "owned_pointer":
+            continue
+        key = (store.target_function, store.field)
+        if key in checked_abis:
+            continue
+        checked_abis.add(key)
+        if not callback_abi_declared(
+            callback_abi_header, store.target_function, store.field
+        ):
+            errors.append(
+                f"{module}: {store.target_function}: missing explicit "
+                f"{store.field} register ABI pragma"
+            )
+            for matching in stores:
+                if (
+                    matching.target_function == store.target_function
+                    and matching.field == store.field
+                ):
+                    matching.status = "callback_abi_missing"
 
     expected_by_writer: dict[tuple[int, str], Counter[str]] = defaultdict(Counter)
     stores_by_writer: dict[tuple[int, str], list[CallbackStore]] = defaultdict(list)

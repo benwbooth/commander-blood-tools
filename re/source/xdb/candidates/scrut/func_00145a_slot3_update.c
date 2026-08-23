@@ -108,6 +108,6 @@ void XDB_NEAR xdb_scrut_slot3_update(
     state->position_z = 0x20;
     xdb_alien_palette_pulse_1.value += 0x1e;
     xdb_alien_palette_pulse_2.value += 0x23;
-    state->callback = xdb_scrut_slot1_wave_update;
+    state->callback = xdb_scrut_slot1_motion_update;
     xdb_alien_callback_countdown = 5;
 }

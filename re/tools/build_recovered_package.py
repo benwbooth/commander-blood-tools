@@ -1081,6 +1081,31 @@ def build_source_xdb_files(
             }
         )
 
+    callback_report = validation_root / "callback_edges.tsv"
+    run_checked(
+        [
+            sys.executable,
+            str(ROOT / "re/tools/audit_xdb_callback_edges.py"),
+            "--check",
+            "--xdb-dir",
+            str(args.xdb_dir.resolve()),
+            "--output",
+            str(callback_report),
+        ]
+    )
+    tail_report = validation_root / "tail_transfers.tsv"
+    run_checked(
+        [
+            sys.executable,
+            str(ROOT / "re/tools/audit_xdb_tail_transfers.py"),
+            "--check",
+            "--source-xdb-root",
+            str(validation_root),
+            "--output",
+            str(tail_report),
+        ]
+    )
+
     return records
 
 
@@ -1286,7 +1311,7 @@ def write_package_metadata(output: Path, records: list[dict[str, str]], cd_root:
         "Copy these resources into the WRIT C:\\cblood directory when testing an\n"
         "existing installation; the DOS integration gate stages them automatically.\n"
         "No shipped VM resource is retained in the package. AMER.XDB,\n"
-        "CROOLIS.XDB, MANU3.XDB, and SCRUT.XDB are linked from all 169 recovered\n"
+        "CROOLIS.XDB, MANU3.XDB, and SCRUT.XDB are linked from all 183 recovered\n"
         "C routines. Their original data payloads are retained byte-for-byte\n"
         "apart from verified callback-pointer rebindings to the linked C code.\n"
         "The size-changing overlays are installed by rebuilding the BLOOD.DAT\n"

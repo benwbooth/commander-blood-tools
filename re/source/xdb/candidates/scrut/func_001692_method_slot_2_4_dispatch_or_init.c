@@ -2,19 +2,40 @@
 
 #include <stdlib.h>
 
+void XDB_NEAR xdb_scrut_slot2_initialize(
+        xdb_alien_method_context XDB_NEAR *context,
+        xdb_alien_biased_state XDB_NEAR *state);
+
+#if defined(__WATCOMC__)
+#pragma aux xdb_scrut_slot2_initialize \
+        parm [di] [si] modify exact [ax bx cx dx si di bp]
+#endif
+
 void XDB_NEAR xdb_scrut_method_slot_2_4_dispatch_or_init(
         xdb_alien_method_context XDB_NEAR *context)
 {
-    xdb_alien_biased_state XDB_NEAR *state =
+    xdb_alien_biased_state XDB_NEAR *state;
+
+#if defined(__WATCOMC__)
+    state = xdb_alien_state_tail_or_get();
+    xdb_scrut_slot2_initialize(context, state);
+#else
+    state =
             (xdb_alien_biased_state XDB_NEAR *)
             ((xdb_u8 XDB_NEAR *)context->state + XDB_ALIEN_CURSOR_BIAS);
-    xdb_u16 value;
-    xdb_u16 remaining;
-
     if (context->control.state != 0) {
         state->callback(state, context);
         return;
     }
+    xdb_scrut_slot2_initialize(context, state);
+#endif
+}
+
+void XDB_NEAR xdb_scrut_slot2_initialize(
+        xdb_alien_method_context XDB_NEAR *context,
+        xdb_alien_biased_state XDB_NEAR *state)
+{
+    xdb_u16 value;
 
     value = xdb_alien_random_state;
     value = _rotr(value, 7);
@@ -36,10 +57,10 @@ void XDB_NEAR xdb_scrut_method_slot_2_4_dispatch_or_init(
     state->field_058 = 0;
     state->ring_offset = 0;
 
-    remaining = context->state_count - 1u;
+    value = context->state_count - 1u;
     do {
         ++state;
         state->field_056 = (xdb_i16)(xdb_u16)state->position_x;
         state->ring_offset = (xdb_u16)state->position_z;
-    } while (--remaining != 0);
+    } while (--value != 0);
 }
