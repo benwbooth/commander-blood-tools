@@ -365,6 +365,18 @@ class DialogueAudioTests(unittest.TestCase):
         self.assertEqual(state["deferred_record_type"], 0x00C4)
         self.assertEqual(state["deferred_record_related"], 0x06C2)
 
+    def test_ui_state_begins_at_2793(self) -> None:
+        memory = bytearray(0x20000)
+        game_segment = 0x1000
+        game = game_segment * 16
+        memory[game + 0x2792] = 0xAA
+        memory[game + 0x2793] = 0x34
+        memory[game + 0x2794] = 0x12
+
+        state = watchdog.read_presentation_flow_state(memory, game_segment)
+
+        self.assertEqual(state["ui_state"], 0x1234)
+
     def test_classifies_idle_word_choice_without_calling_it_a_crash(self) -> None:
         state = {name: 0 for name in watchdog.PRESENTATION_FLOW_OFFSETS}
         state["word_choice_active"] = 1
@@ -379,6 +391,46 @@ class DialogueAudioTests(unittest.TestCase):
         state["nav_target_selection"] = 2
         self.assertNotEqual(watchdog.presentation_progress_key(state), before)
         self.assertFalse(watchdog.word_choice_waiting_for_input(state))
+
+    def test_classifies_sampled_click_and_consumption(self) -> None:
+        before = {name: 0 for name in watchdog.PRESENTATION_FLOW_OFFSETS}
+        before["word_choice_active"] = 1
+        before["presentation_text_wait"] = 2
+        pressed = dict(before)
+        pressed["mouse_primary_pressed"] = 1
+
+        self.assertTrue(watchdog.word_choice_input_attempted(before, pressed))
+        key = watchdog.presentation_progress_key(before)
+        self.assertFalse(watchdog.word_choice_input_consumed(key, before))
+        consumed = dict(before)
+        consumed["nav_target_selection"] = 2
+        self.assertTrue(watchdog.word_choice_input_consumed(key, consumed))
+
+    def test_active_progress_key_ignores_timer_and_bridge_animation(self) -> None:
+        presentation = {name: 0 for name in watchdog.PRESENTATION_FLOW_OFFSETS}
+        audio = {name: 0 for name in watchdog.DIALOGUE_AUDIO_OFFSETS}
+        before = watchdog.active_presentation_progress_key(
+            presentation, audio
+        )
+        presentation["bridge_view_frame"] = 45
+        audio["timer_tick"] = 123
+        self.assertEqual(
+            watchdog.active_presentation_progress_key(presentation, audio),
+            before,
+        )
+
+    def test_active_presentation_excludes_word_choice_wait(self) -> None:
+        presentation = {name: 0 for name in watchdog.PRESENTATION_FLOW_OFFSETS}
+        audio = {name: 0 for name in watchdog.DIALOGUE_AUDIO_OFFSETS}
+        presentation["presentation_active"] = 1
+        self.assertTrue(
+            watchdog.presentation_work_is_active(presentation, audio)
+        )
+        presentation["word_choice_active"] = 1
+        presentation["presentation_text_wait"] = 2
+        self.assertFalse(
+            watchdog.presentation_work_is_active(presentation, audio)
+        )
 
 
 class Script2RadioTests(unittest.TestCase):

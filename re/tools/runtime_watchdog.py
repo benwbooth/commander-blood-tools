@@ -85,6 +85,7 @@ DIALOGUE_AUDIO_OFFSETS = {
     "frame_delay": (0x0B2D, "H"),
     "dialogue_delay": (0x0B33, "H"),
     "dialogue_hold_countdown": (0x0B35, "H"),
+    "clip_playback_state": (0x0B39, "H"),
     "bank_clip_count": (0x0BBB, "H"),
     "bank_dialogue_delay_base": (0x0BBD, "B"),
     "bank_dialogue_delay_limit": (0x0BBE, "B"),
@@ -128,7 +129,7 @@ PRESENTATION_FLOW_OFFSETS = {
     "list_rollover_state": (0x0DAC, "B"),
     "list_entry_metric": (0x0DAF, "H"),
     "c2_presentation_gate": (0x1FB2, "B"),
-    "ui_state": (0x2792, "H"),
+    "ui_state": (0x2793, "H"),
     "presentation_mode": (0x27E0, "B"),
     "presentation_box_mode": (0x27E1, "B"),
     "presentation_box_phase": (0x2B93, "h"),
@@ -718,6 +719,84 @@ def word_choice_waiting_for_input(state: dict[str, int]) -> bool:
     )
 
 
+def word_choice_input_attempted(
+    previous: dict[str, int], current: dict[str, int]
+) -> bool:
+    return word_choice_waiting_for_input(previous) and (
+        (current["mouse_button_state"] & 1) != 0
+        or (current["mouse_primary_pressed"] & 1) != 0
+        or (current["mouse_press_pending"] & 1) != 0
+    )
+
+
+def word_choice_input_consumed(
+    progress_key: tuple[int, ...], current: dict[str, int]
+) -> bool:
+    return presentation_progress_key(current) != progress_key
+
+
+def active_presentation_progress_key(
+    presentation: dict[str, int], audio: dict[str, int]
+) -> tuple[int, ...]:
+    """State that must eventually change while presentation work is active."""
+    presentation_fields = (
+        "list_state",
+        "list_read_wrap_index",
+        "list_wrap_count",
+        "list_read_wrap_limit",
+        "resource_source_offset",
+        "resource_source_remaining",
+        "list_head_offset",
+        "list_tail_offset",
+        "list_queued_bytes",
+        "list_iteration_count",
+        "list_entry_metric",
+        "c2_presentation_gate",
+        "presentation_box_phase",
+        "text_reveal_phase",
+        "active_line",
+        "displayed_line",
+        "presentation_request_flags",
+        "presentation_active",
+        "presentation_defer",
+        "presentation_start_lock",
+        "presentation_text_wait",
+        "dialogue_hold_complete",
+        "presentation_hold_ready",
+    )
+    audio_fields = (
+        "dialogue_delay",
+        "dialogue_hold_countdown",
+        "clip_playback_state",
+        "bank_clip_count",
+        "last_clip",
+        "streamed_clip_count",
+        "text_mode_play",
+        "text_voice_trigger",
+    )
+    return tuple(presentation[name] for name in presentation_fields) + tuple(
+        audio[name] for name in audio_fields
+    )
+
+
+def presentation_work_is_active(
+    presentation: dict[str, int], audio: dict[str, int]
+) -> bool:
+    if word_choice_waiting_for_input(presentation):
+        return False
+    return any(
+        (
+            presentation["c2_presentation_gate"] & 1,
+            presentation["presentation_box_mode"] & 1,
+            presentation["text_display_active"] & 1,
+            presentation["presentation_active"] & 1,
+            presentation["presentation_defer"] & 1,
+            presentation["presentation_start_lock"] & 1,
+            audio["clip_playback_state"],
+        )
+    )
+
+
 def read_c_string(memory: bytes, address: int, limit: int = 160) -> str:
     end = min(address + limit, len(memory))
     raw = memory[address:end].split(b"\0", 1)[0]
@@ -945,6 +1024,24 @@ def main() -> int:
             "through YOU DO THE COUNTING to Honk's report"
         ),
     )
+    parser.add_argument(
+        "--input-liveness-samples",
+        type=int,
+        default=0,
+        help=(
+            "fail when a sampled click while a word-choice menu is waiting does "
+            "not advance presentation state within this many guarded samples"
+        ),
+    )
+    parser.add_argument(
+        "--active-liveness-samples",
+        type=int,
+        default=0,
+        help=(
+            "fail when noninteractive presentation work makes no queue, text, "
+            "VM, or audio progress for this many guarded samples"
+        ),
+    )
     args = parser.parse_args()
 
     cd_dir = args.cd_dir.resolve()
@@ -955,6 +1052,10 @@ def main() -> int:
         raise WatchdogError("--stable-samples must be positive")
     if args.post_teleport_samples < 1:
         raise WatchdogError("--post-teleport-samples must be positive")
+    if args.input_liveness_samples < 0:
+        raise WatchdogError("--input-liveness-samples cannot be negative")
+    if args.active_liveness_samples < 0:
+        raise WatchdogError("--active-liveness-samples cannot be negative")
     if (
         args.teleport_profile is not None
         and not 0 <= args.teleport_profile < VM_PROFILE_COUNT
@@ -1068,6 +1169,9 @@ def main() -> int:
         radio_orb_click_count = 0
         radio_snapshot_written = False
         radio_lines: list[str] = []
+        previous_presentation_state = None
+        input_attempt = None
+        active_progress = None
 
         while time.monotonic() < deadline:
             sample_delay = args.poll_seconds
@@ -1273,6 +1377,79 @@ def main() -> int:
                     presentation_state = read_presentation_flow_state(
                         memory, int(expected["game_segment"])
                     )
+                    guarded_sample = int(report["guarded_samples"])
+                    if args.input_liveness_samples > 0:
+                        if input_attempt is not None:
+                            attempt_sample, attempt_key = input_attempt
+                            if word_choice_input_consumed(
+                                attempt_key, presentation_state
+                            ):
+                                attempts = report.setdefault(
+                                    "input_liveness", []
+                                )
+                                assert isinstance(attempts, list)
+                                attempts.append(
+                                    {
+                                        "pressed_sample": attempt_sample,
+                                        "consumed_sample": guarded_sample,
+                                        "status": "consumed",
+                                    }
+                                )
+                                input_attempt = None
+                            elif (
+                                guarded_sample - attempt_sample
+                                >= args.input_liveness_samples
+                            ):
+                                issues.append(
+                                    "word-choice-input-not-consumed="
+                                    f"pressed:{attempt_sample},"
+                                    f"current:{guarded_sample}"
+                                )
+                                diagnostics["presentation_flow"] = (
+                                    presentation_state
+                                )
+                        if (
+                            input_attempt is None
+                            and previous_presentation_state is not None
+                            and word_choice_input_attempted(
+                                previous_presentation_state,
+                                presentation_state,
+                            )
+                        ):
+                            input_attempt = (
+                                guarded_sample,
+                                presentation_progress_key(
+                                    previous_presentation_state
+                                ),
+                            )
+                        previous_presentation_state = presentation_state
+                    if args.active_liveness_samples > 0:
+                        if presentation_work_is_active(
+                            presentation_state, audio_state
+                        ):
+                            progress_key = active_presentation_progress_key(
+                                presentation_state, audio_state
+                            )
+                            if (
+                                active_progress is None
+                                or active_progress[1] != progress_key
+                            ):
+                                active_progress = (guarded_sample, progress_key)
+                            elif (
+                                guarded_sample - active_progress[0]
+                                >= args.active_liveness_samples
+                            ):
+                                issues.append(
+                                    "active-presentation-stalled="
+                                    f"start:{active_progress[0]},"
+                                    f"current:{guarded_sample}"
+                                )
+                                diagnostics["audio_flow"] = audio_state
+                                diagnostics["presentation_flow"] = (
+                                    presentation_state
+                                )
+                        else:
+                            active_progress = None
                     radio_state = read_script2_radio_state(
                         memory,
                         int(expected["game_segment"]),
@@ -1725,6 +1902,15 @@ def main() -> int:
                         report["verdict"] = "ANOMALY"
                         diagnostics["profile_state"] = profile_for_report(
                             profile_state
+                        )
+                        diagnostics["guest_context"] = snapshot_guest(
+                            mem,
+                            int(expected["guest_base"]),
+                            int(expected["guest_base"])
+                            + int(expected["game_segment"]) * 16,
+                            cpu_addresses,
+                            None,
+                            profile_for_report(profile_state),
                         )
                         anomalies = report["anomalies"]
                         assert isinstance(anomalies, list)

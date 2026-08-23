@@ -328,11 +328,24 @@ impl Cpu {
                 let lin = (self.cs as u32) * 16 + self.ip as u32;
                 if self.exec_watch_linear.contains(&lin) {
                     if self.exec_watch_dump_regs {
+                        let sp = m.regs.esp & 0xffff;
+                        let ss = m.regs.ss as u32;
+                        let stack_word = |delta: u32| {
+                            let offset = (sp + delta) & 0xffff;
+                            let address = (ss * 16 + offset) as usize % m.mem.len();
+                            m.mem[address] as u16
+                                | ((m.mem[(address + 1) % m.mem.len()] as u16) << 8)
+                        };
+                        let near_return = stack_word(0);
                         eprintln!(
                             "EXECREGS lin={lin:#07x} ax={:#06x} bx={:#06x} cx={:#06x} dx={:#06x} \
-                             si={:#06x} di={:#06x} @ {} steps",
+                             si={:#06x} di={:#06x} ds={:#06x} es={:#06x} ss:sp={:#06x}:{sp:#06x} \
+                             near-caller={:04x}:{near_return:04x} stack=[{:04x},{:04x},{:04x},{:04x}] \
+                             @ {} steps",
                             m.regs.ax(), m.regs.bx(), m.regs.cx(), m.regs.dx(),
-                            m.regs.si(), m.regs.di(), self.steps
+                            m.regs.si(), m.regs.di(), m.regs.ds, m.regs.es, m.regs.ss,
+                            self.cs, stack_word(0), stack_word(2), stack_word(4), stack_word(6),
+                            self.steps
                         );
                     }
                     let step = self.steps;

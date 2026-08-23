@@ -608,6 +608,24 @@ def build_bloodprg_runtime(
         [
             sys.executable,
             "-P",
+            str(ROOT / "re/tools/audit_relinked_control_flow.py"),
+            "--listing-dir",
+            str(final_dir / "segment_contract_listings"),
+        ],
+        final_dir / "relinked_control_flow_audit.log",
+    )
+    run_checked_logged(
+        [
+            sys.executable,
+            "-P",
+            str(ROOT / "re/tools/test_audit_relinked_control_flow.py"),
+        ],
+        final_dir / "relinked_control_flow_tests.log",
+    )
+    run_checked_logged(
+        [
+            sys.executable,
+            "-P",
             str(ROOT / "re/tools/compare_segment_roles.py"),
             "--object-dir",
             str(object_dir / "bloodprg"),
@@ -661,6 +679,14 @@ def build_bloodprg_runtime(
             str(ROOT / "re/tools/test_runtime_watchdog.py"),
         ],
         final_dir / "runtime_watchdog_tests.log",
+    )
+    run_checked_logged(
+        [
+            sys.executable,
+            "-P",
+            str(ROOT / "re/tools/test_compare_runtime_traces.py"),
+        ],
+        final_dir / "runtime_trace_comparison_tests.log",
     )
 
     runtime_executable = output / "cd" / "BPRG_RE.EXE"

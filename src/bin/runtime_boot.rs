@@ -7,6 +7,7 @@
 //! C:\cblood\), D: = output/_tmp_iso (the CD), CWD = D:\, launch args from BLOOD.BAT.
 
 use commander_blood_tools::recomp::runtime::{RunEnd, Runtime};
+use std::io::Write as _;
 use std::path::PathBuf;
 
 const GAME_DATA_ANCHOR: &[u8] = b"386 minimum !\0Not enough memory (570Ko min) !\0";
@@ -31,6 +32,164 @@ fn game_data_segment(rt: &Runtime) -> Result<u16, String> {
 
 fn read_word(rt: &Runtime, segment: u16, offset: u32) -> u16 {
     u16::from_le_bytes([rt.m.read8(segment, offset), rt.m.read8(segment, offset + 1)])
+}
+
+fn read_runtime_text(rt: &Runtime, segment: u16, offset: u32, limit: u32) -> String {
+    (0..limit)
+        .map(|delta| rt.m.read8(segment, offset + delta))
+        .take_while(|&byte| byte != 0)
+        .map(|byte| {
+            if byte.is_ascii_graphic() || byte == b' ' {
+                byte as char
+            } else {
+                ' '
+            }
+        })
+        .collect::<String>()
+        .trim()
+        .to_string()
+}
+
+fn fnv1a64(bytes: &[u8]) -> String {
+    let mut hash = 0xcbf29ce484222325u64;
+    for byte in bytes {
+        hash ^= u64::from(*byte);
+        hash = hash.wrapping_mul(0x100000001b3);
+    }
+    format!("{hash:016x}")
+}
+
+fn runtime_bytes(rt: &Runtime, segment: u16, offset: u32, length: u32) -> Vec<u8> {
+    (0..length)
+        .map(|delta| rt.m.read8(segment, offset + delta))
+        .collect()
+}
+
+fn presentation_progress_key(rt: &Runtime, game_segment: u16) -> [u16; 8] {
+    [
+        u16::from(rt.m.read8(game_segment, 0x27d7)),
+        u16::from(rt.m.read8(game_segment, 0x67ba)),
+        read_word(rt, game_segment, 0x6788),
+        read_word(rt, game_segment, 0x678a),
+        u16::from(rt.m.read8(game_segment, 0x27e7)),
+        u16::from(rt.m.read8(game_segment, 0x67ac)),
+        u16::from(rt.m.read8(game_segment, 0x67b0)),
+        u16::from(rt.m.read8(game_segment, 0x5e64)),
+    ]
+}
+
+fn word_choice_waiting_for_input(rt: &Runtime, game_segment: u16) -> bool {
+    (rt.m.read8(game_segment, 0x27d7) & 1) != 0
+        && rt.m.read8(game_segment, 0x67ba) == 2
+        && (rt.m.read8(game_segment, 0x0a3e) & 1) == 0
+        && (rt.m.read8(game_segment, 0x0a40) & 1) == 0
+        && rt.m.read8(game_segment, 0x27e7) == 0
+}
+
+fn semantic_trace_snapshot(rt: &Runtime, game_segment: u16) -> serde_json::Value {
+    let state_array = runtime_bytes(rt, game_segment, 0x6ade, 0x0200);
+    let character_slots = runtime_bytes(rt, game_segment, 0x6cde, 0x0060);
+    let record_offset = read_word(rt, game_segment, 0x6724);
+    let record_segment = read_word(rt, game_segment, 0x6726);
+    let record_hash = (record_segment != 0).then(|| {
+        fnv1a64(&runtime_bytes(
+            rt,
+            record_segment,
+            u32::from(record_offset),
+            0x1312,
+        ))
+    });
+    let resource_handles: Vec<u16> = (0..5)
+        .map(|index| read_word(rt, game_segment, 0x6712 + index * 2))
+        .collect();
+    let opened_files: Vec<&str> = rt
+        .opened_files
+        .iter()
+        .map(|(_, path)| path.as_str())
+        .collect();
+    let audio_events: Vec<serde_json::Value> = rt
+        .sb_play_log
+        .iter()
+        .map(|(_, length, rate)| serde_json::json!([length, rate]))
+        .collect();
+    let screen = rt.screen_indices();
+
+    serde_json::json!({
+        "vm": {
+            "resource_profile": read_word(rt, game_segment, 0x677e),
+            "profile_request": read_word(rt, game_segment, 0x6780) as i16,
+            "execution_enabled": rt.m.read8(game_segment, 0x67a8),
+            "resource_handles": resource_handles,
+            "active_line": read_word(rt, game_segment, 0x6788),
+            "displayed_line": read_word(rt, game_segment, 0x678a),
+        },
+        "presentation": {
+            "ui_flags": read_word(rt, game_segment, 0x2793),
+            "actor_transition": rt.m.read8(game_segment, 0x2792),
+            "bridge_frame": read_word(rt, game_segment, 0x2795) as i16,
+            "mode": rt.m.read8(game_segment, 0x27e0),
+            "box_mode": rt.m.read8(game_segment, 0x27e1),
+            "word_choice_active": rt.m.read8(game_segment, 0x27d7),
+            "nav_target_selection": rt.m.read8(game_segment, 0x27e7),
+            "active": rt.m.read8(game_segment, 0x67ac),
+            "defer": rt.m.read8(game_segment, 0x67b0),
+            "text_wait": rt.m.read8(game_segment, 0x67ba),
+            "text_display_active": rt.m.read8(game_segment, 0x5e64),
+            "progress_key": presentation_progress_key(rt, game_segment),
+            "waiting_for_input": word_choice_waiting_for_input(rt, game_segment),
+        },
+        "input": {
+            "mouse_x": read_word(rt, game_segment, 0x0a2a) as i16,
+            "mouse_y": read_word(rt, game_segment, 0x0a2c) as i16,
+            "buttons": read_word(rt, game_segment, 0x0a2e),
+            "previous_buttons": read_word(rt, game_segment, 0x0a30),
+            "primary_pressed": rt.m.read8(game_segment, 0x0a3e),
+            "press_pending": rt.m.read8(game_segment, 0x0a40),
+        },
+        "audio": {
+            "driver_pending": rt.m.read8(game_segment, 0x0ba0),
+            "stream_mode": rt.m.read8(game_segment, 0x0ba2),
+            "stream_channel": rt.m.read8(game_segment, 0x0ba3),
+            "dialogue_delay": read_word(rt, game_segment, 0x0b33),
+            "dialogue_hold": read_word(rt, game_segment, 0x0b35),
+            "clip_playback_state": read_word(rt, game_segment, 0x0b39),
+            "last_clip": read_word(rt, game_segment, 0x0c4d),
+            "streamed_clip_count": read_word(rt, game_segment, 0x0c53),
+            "events": audio_events,
+        },
+        "subtitle": read_runtime_text(rt, game_segment, 0x0e18, 160),
+        "persistent": {
+            "state_array_hash": fnv1a64(&state_array),
+            "character_slots_hash": fnv1a64(&character_slots),
+            "record_block": format!("{record_segment:04x}:{record_offset:04x}"),
+            "record_hash": record_hash,
+        },
+        "assets": opened_files,
+        "video": {
+            "screen_hash": fnv1a64(&screen),
+            "palette_hash": fnv1a64(&rt.dac),
+        },
+    })
+}
+
+fn run_trace_target(rt: &mut Runtime, target: u64, guest_end: &mut Option<String>) {
+    if guest_end.is_some() {
+        return;
+    }
+    if let end @ (RunEnd::Exited(_) | RunEnd::Fatal(_)) = rt.run(target) {
+        *guest_end = Some(format!("{end:?}"));
+    }
+}
+
+fn write_trace_record(
+    output: &mut Option<std::io::BufWriter<std::fs::File>>,
+    record: &serde_json::Value,
+) {
+    if let Some(output) = output.as_mut() {
+        serde_json::to_writer(&mut *output, record).expect("write semantic trace record");
+        writeln!(output).expect("terminate semantic trace record");
+        output.flush().expect("flush semantic trace record");
+    }
 }
 
 fn nav_kind2_labels(rt: &Runtime, game_segment: u16) -> Vec<String> {
@@ -194,6 +353,15 @@ fn main() {
             rt.m.watch_addr = Some(g as usize * 16 + offset as usize);
             println!("VIABILITY: watching DS:{offset:#06x}");
         }
+        if let Ok(specification) = std::env::var("VIABILITY_EXECWATCH_LINEAR") {
+            for value in specification.split(',') {
+                let linear = u32::from_str_radix(value.trim().trim_start_matches("0x"), 16)
+                    .expect("VIABILITY_EXECWATCH_LINEAR contains invalid hexadecimal");
+                rt.cpu.exec_watch_linear.push(linear);
+                println!("VIABILITY: execution watch armed at linear {linear:#07x}");
+            }
+            rt.cpu.exec_watch_dump_regs = true;
+        }
         let bridge_ready = |runtime: &Runtime| {
             let frame = read_word(runtime, g, 0x2795);
             runtime.m.read8(g, 0x67a8) == 1
@@ -252,6 +420,10 @@ fn main() {
                     &rt.m.mem[..0x100000],
                 )
                 .unwrap();
+                if let Ok(path) = std::env::var("VIABILITY_SAVE_STATE") {
+                    rt.save_state(std::path::Path::new(&path)).unwrap();
+                    println!("VIABILITY: state saved to {path}");
+                }
                 if let Some(offset) = watch_offset {
                     println!("VIABILITY: writes to DS:{offset:#06x}:");
                     for &(value, cs, ip) in &rt.m.addr_hits {
@@ -1834,8 +2006,8 @@ fn main() {
                         "round {round}: mission choice rect=({layout_x},{layout_y},w={layout_width}) active={:02x}",
                         rt.m.read8(g, 0x259b)
                     );
-                    let choice_ring = (answer_x + choice_frame as i32 * 8 - 160)
-                        .rem_euclid(1440) as u16;
+                    let choice_ring =
+                        (answer_x + choice_frame as i32 * 8 - 160).rem_euclid(1440) as u16;
                     rt.set_mouse_pos(choice_ring, answer_y as u16);
                     let _ = rt.run(rt.cpu.steps + scaled_steps(700_000));
                     rt.mouse_press(0);
@@ -4800,8 +4972,8 @@ fn main() {
         };
         click(&mut rt, 100, 98); // CANCEL the arrival presentation (the real gate)
         let _ = rt.run(rt.cpu.steps + 30_000_000); // full teardown (the scenario's wait 20)
-        // The HONK console row -> fresh presentation. NO settle after: capture starts
-        // at the click so the reveal is caught mid-flight.
+                                                   // The HONK console row -> fresh presentation. NO settle after: capture starts
+                                                   // at the click so the reveal is caught mid-flight.
         click(&mut rt, 230, 88);
         for i in 0..160 {
             let _ = rt.run(rt.cpu.steps + 150_000);
@@ -4826,7 +4998,9 @@ fn main() {
         // VERIFYSTATE overrides the resume state (default: the clean hub).
         let state_path =
             std::env::var("VERIFYSTATE").unwrap_or_else(|_| "accuracy/script2.state".into());
-        rt.load_state(std::path::Path::new(&state_path)).unwrap();
+        if state_path != "-" {
+            rt.load_state(std::path::Path::new(&state_path)).unwrap();
+        }
         // Optional write watch during the scenario (WRITEWATCHLIN=<linear hex>):
         // reports every write to the address with the writer's cs:ip — the story
         // event tracer (e.g. the scr record slot at block+0x1276).
@@ -4845,7 +5019,43 @@ fn main() {
                 eprintln!("write-watch armed at linear {lin:#x}");
             }
         }
-        let g = 0x0e84u16;
+        let g = game_data_segment(&rt).unwrap_or_else(|error| {
+            eprintln!("VERIFYSCRIPT: {error}");
+            std::process::exit(1);
+        });
+        let mut trace_output = std::env::var("VERIFYTRACE").ok().map(|path| {
+            let path = PathBuf::from(path);
+            if let Some(parent) = path.parent() {
+                std::fs::create_dir_all(parent).expect("create semantic trace directory");
+            }
+            std::io::BufWriter::new(std::fs::File::create(path).expect("create semantic trace"))
+        });
+        let mut guest_end: Option<String> = None;
+        write_trace_record(
+            &mut trace_output,
+            &serde_json::json!({
+                "schema": 1,
+                "executable": executable,
+                "scenario": scenario,
+                "action_index": 0,
+                "phase": "initial",
+                "action": null,
+                "steps": rt.cpu.steps,
+                "machine": {
+                    "cs": rt.cpu.cs,
+                    "ip": rt.cpu.ip,
+                    "ds": rt.m.regs.ds,
+                    "es": rt.m.regs.es,
+                    "fs": rt.m.regs.fs,
+                    "gs": rt.m.regs.gs,
+                    "ss": rt.m.regs.ss,
+                    "game_segment": g,
+                },
+                "guest_end": guest_end,
+                "liveness": "initial",
+                "semantic": semantic_trace_snapshot(&rt, g),
+            }),
+        );
         // EXECWATCHLIN works during scenarios too: comma-separated FILE offsets.
         if let Ok(w) = std::env::var("EXECWATCHLIN") {
             for tok in w.split(',') {
@@ -4902,13 +5112,17 @@ fn main() {
         let frame =
             |rt: &Runtime| rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
         let text = std::fs::read_to_string(&scenario).expect("scenario file");
-        let settle = 1_500_000u64;
+        let scaled_steps = |steps: u64| steps.saturating_mul(cpu_multiplier);
+        let settle = scaled_steps(1_500_000);
         let mut step = 0usize;
         for line in text.lines() {
             let toks: Vec<&str> = line.split_whitespace().collect();
             if toks.is_empty() || toks[0].starts_with('#') {
                 continue;
             }
+            let before_progress = presentation_progress_key(&rt, g);
+            let waiting_before = word_choice_waiting_for_input(&rt, g);
+            let input_action = matches!(toks[0], "click" | "sclick" | "key" | "drag" | "hold");
             match toks[0] {
                 "move" => {
                     let (sx, sy): (i32, u16) = (toks[1].parse().unwrap(), toks[2].parse().unwrap());
@@ -4919,9 +5133,11 @@ fn main() {
                     let (sx, sy): (i32, u16) = (toks[1].parse().unwrap(), toks[2].parse().unwrap());
                     let ring = (sx + frame(&rt) as i32 * 8 - 160).rem_euclid(1440) as u16;
                     rt.set_mouse_pos(ring, sy);
-                    let _ = rt.run(rt.cpu.steps + 400_000);
+                    let target = rt.cpu.steps + scaled_steps(400_000);
+                    run_trace_target(&mut rt, target, &mut guest_end);
                     rt.mouse_press(0);
-                    let _ = rt.run(rt.cpu.steps + 300_000);
+                    let target = rt.cpu.steps + scaled_steps(300_000);
+                    run_trace_target(&mut rt, target, &mut guest_end);
                     rt.mouse_release(0);
                 }
                 // sclick <x> <y>: RAW screen coordinates (no ring conversion) — for
@@ -4930,9 +5146,11 @@ fn main() {
                 "sclick" => {
                     let (sx, sy): (u16, u16) = (toks[1].parse().unwrap(), toks[2].parse().unwrap());
                     rt.set_mouse_pos(sx * 2, sy);
-                    let _ = rt.run(rt.cpu.steps + 400_000);
+                    let target = rt.cpu.steps + scaled_steps(400_000);
+                    run_trace_target(&mut rt, target, &mut guest_end);
                     rt.mouse_press(0);
-                    let _ = rt.run(rt.cpu.steps + 300_000);
+                    let target = rt.cpu.steps + scaled_steps(300_000);
+                    run_trace_target(&mut rt, target, &mut guest_end);
                     rt.mouse_release(0);
                 }
                 "key" => {
@@ -4941,7 +5159,8 @@ fn main() {
                     let sc: u8 = toks[1].parse().unwrap();
                     let ascii: u8 = toks.get(2).map(|t| t.parse().unwrap()).unwrap_or(0);
                     rt.inject_key(sc, ascii);
-                    let _ = rt.run(rt.cpu.steps + 200_000);
+                    let target = rt.cpu.steps + scaled_steps(200_000);
+                    run_trace_target(&mut rt, target, &mut guest_end);
                     rt.inject_key(sc | 0x80, 0);
                 }
                 "wait" => {
@@ -4953,7 +5172,8 @@ fn main() {
                         let slices = (frames * 1_850_000 / 200_000).max(1);
                         let mut last = String::new();
                         for _ in 0..slices {
-                            let _ = rt.run(rt.cpu.steps + 200_000);
+                            let target = rt.cpu.steps + scaled_steps(200_000);
+                            run_trace_target(&mut rt, target, &mut guest_end);
                             let text: String = (0..160u32)
                                 .map(|i| rt.m.read8(g, 0xe18 + i))
                                 .take_while(|&b| b != 0)
@@ -4972,7 +5192,8 @@ fn main() {
                             }
                         }
                     } else {
-                        let _ = rt.run(rt.cpu.steps + frames * 1_850_000);
+                        let target = rt.cpu.steps + scaled_steps(frames * 1_850_000);
+                        run_trace_target(&mut rt, target, &mut guest_end);
                     }
                 }
                 // poke <gs-off-hex> <byte-hex>: write one byte into the engine's
@@ -4981,7 +5202,7 @@ fn main() {
                 "poke" => {
                     let off = u32::from_str_radix(toks[1].trim_start_matches("0x"), 16).unwrap();
                     let val = u8::from_str_radix(toks[2].trim_start_matches("0x"), 16).unwrap();
-                    let lin = 0x0e84usize * 16 + off as usize;
+                    let lin = g as usize * 16 + off as usize;
                     rt.m.mem[lin] = val;
                 }
                 // drag <x1> <y1> <x2> <y2>: press at 1, glide to 2, release —
@@ -4991,15 +5212,18 @@ fn main() {
                     let (x2, y2): (i32, u16) = (toks[3].parse().unwrap(), toks[4].parse().unwrap());
                     let ring1 = (x1 + frame(&rt) as i32 * 8 - 160).rem_euclid(1440) as u16;
                     rt.set_mouse_pos(ring1, y1);
-                    let _ = rt.run(rt.cpu.steps + 400_000);
+                    let target = rt.cpu.steps + scaled_steps(400_000);
+                    run_trace_target(&mut rt, target, &mut guest_end);
                     rt.mouse_press(0);
-                    let _ = rt.run(rt.cpu.steps + 300_000);
+                    let target = rt.cpu.steps + scaled_steps(300_000);
+                    run_trace_target(&mut rt, target, &mut guest_end);
                     for i in 1..=8 {
                         let xi = x1 + (x2 - x1) * i / 8;
                         let yi = (y1 as i32 + (y2 as i32 - y1 as i32) * i / 8) as u16;
                         let ring = (xi + frame(&rt) as i32 * 8 - 160).rem_euclid(1440) as u16;
                         rt.set_mouse_pos(ring, yi);
-                        let _ = rt.run(rt.cpu.steps + 200_000);
+                        let target = rt.cpu.steps + scaled_steps(200_000);
+                        run_trace_target(&mut rt, target, &mut guest_end);
                     }
                     rt.mouse_release(0);
                 }
@@ -5010,9 +5234,11 @@ fn main() {
                     let frames: u64 = toks[3].parse().unwrap();
                     let ring = (sx + frame(&rt) as i32 * 8 - 160).rem_euclid(1440) as u16;
                     rt.set_mouse_pos(ring, sy);
-                    let _ = rt.run(rt.cpu.steps + 400_000);
+                    let target = rt.cpu.steps + scaled_steps(400_000);
+                    run_trace_target(&mut rt, target, &mut guest_end);
                     rt.mouse_press(0);
-                    let _ = rt.run(rt.cpu.steps + frames * 1_850_000);
+                    let target = rt.cpu.steps + scaled_steps(frames * 1_850_000);
+                    run_trace_target(&mut rt, target, &mut guest_end);
                     rt.mouse_release(0);
                 }
                 // dumprecords <path>: export the LIVE record state in the DOS
@@ -5065,13 +5291,15 @@ fn main() {
                         let ring =
                             (ex as i32 + frame(&rt) as i32 * 8 - 160).rem_euclid(1440) as u16;
                         rt.set_mouse_pos(ring, 100);
-                        let _ = rt.run(rt.cpu.steps + 1_000_000);
+                        let target = rt.cpu.steps + scaled_steps(1_000_000);
+                        run_trace_target(&mut rt, target, &mut guest_end);
                     }
                     eprintln!("park: frame now {}", frame(&rt));
                 }
                 _ => {}
             }
-            let _ = rt.run(rt.cpu.steps + settle);
+            let target = rt.cpu.steps + settle;
+            run_trace_target(&mut rt, target, &mut guest_end);
             // DSDUMP=<off>,<off>...: print gs bytes per step (pose, flags...).
             if let Ok(spec) = std::env::var("DSDUMP") {
                 let mut line = format!("DS step {step}:");
@@ -5116,7 +5344,46 @@ fn main() {
             rt.write_ppm(&out.join(format!("vs_{step:03}.ppm")))
                 .unwrap();
             std::fs::write(out.join(format!("vs_{step:03}.idx")), rt.screen_indices()).unwrap();
+            let after_progress = presentation_progress_key(&rt, g);
+            let waiting_after = word_choice_waiting_for_input(&rt, g);
+            let liveness = if guest_end.is_some() {
+                "guest_stopped"
+            } else if input_action && waiting_before && before_progress == after_progress {
+                "input_not_consumed"
+            } else if waiting_after {
+                "waiting_for_input"
+            } else {
+                "progress"
+            };
+            write_trace_record(
+                &mut trace_output,
+                &serde_json::json!({
+                    "schema": 1,
+                    "executable": executable,
+                    "scenario": scenario,
+                    "action_index": step + 1,
+                    "phase": "after",
+                    "action": line.trim(),
+                    "steps": rt.cpu.steps,
+                    "machine": {
+                        "cs": rt.cpu.cs,
+                        "ip": rt.cpu.ip,
+                        "ds": rt.m.regs.ds,
+                        "es": rt.m.regs.es,
+                        "fs": rt.m.regs.fs,
+                        "gs": rt.m.regs.gs,
+                        "ss": rt.m.regs.ss,
+                        "game_segment": g,
+                    },
+                    "guest_end": guest_end,
+                    "liveness": liveness,
+                    "semantic": semantic_trace_snapshot(&rt, g),
+                }),
+            );
             step += 1;
+            if guest_end.is_some() {
+                break;
+            }
         }
         rec_dump(&rt, "end");
         for &(lin, first, count) in &rt.cpu.exec_hits_linear {
@@ -5150,9 +5417,9 @@ fn main() {
         println!(
             "  bios_keys pending: {}, [0xB15]={:#04x}, [0x2738]={:#04x}, [0x272E]={}",
             rt.bios_keys.len(),
-            rt.m.mem[0xE840 + 0xB15],
-            rt.m.mem[0xE840 + 0x2738],
-            rt.m.mem[0xE840 + 0x272E] as u16 | ((rt.m.mem[0xE840 + 0x272F] as u16) << 8)
+            rt.m.read8(g, 0x0b15),
+            rt.m.read8(g, 0x2738),
+            read_word(&rt, g, 0x272e),
         );
         for (st, f) in rt.opened_files.iter().rev().take(8) {
             println!("  opened @{st}: {f}");
