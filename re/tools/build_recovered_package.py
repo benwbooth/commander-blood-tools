@@ -1140,6 +1140,40 @@ def build_source_xdb_files(
         ]
     )
 
+    emitted_abi_command = [
+        sys.executable,
+        "-P",
+        str(ROOT / "re/tools/audit_xdb_emitted_abi.py"),
+        "--source-xdb-root",
+        str(validation_root),
+        "--callback-edges",
+        str(callback_report),
+        "--output",
+        str(validation_root / "emitted_abi.tsv"),
+    ]
+    if args.include_bloodprg_runtime:
+        emitted_abi_command.extend((
+            "--bloodprg-listing-root",
+            str(
+                output / "validation/bloodprg_runtime/final/"
+                "segment_contract_listings"
+            ),
+        ))
+    else:
+        emitted_abi_command.append("--skip-frame-callback")
+    run_checked_logged(
+        emitted_abi_command,
+        validation_root / "emitted_abi_audit.log",
+    )
+    run_checked_logged(
+        [
+            sys.executable,
+            "-P",
+            str(ROOT / "re/tools/test_audit_xdb_emitted_abi.py"),
+        ],
+        validation_root / "emitted_abi_tests.log",
+    )
+
     return records
 
 

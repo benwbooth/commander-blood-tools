@@ -181,6 +181,12 @@ proves 1,476 symbolic accesses across 21,454 reachable object instructions.
 Each overlay build retains its declaration-derived `segment_owners.tsv`; the
 package also retains the aggregate `segment_contracts.tsv`, cached listings,
 test log, and fail-closed audit log under `validation/source_xdb/`.
+`emitted_abi.tsv` and `emitted_abi_audit.log` add machine-code checks for the
+four overlay entry shims, method/state/resume/frame callback call widths and
+returns, callback stack and segment preservation, and 2,898 dynamic far-
+segment uses. The current report contains 218 passing contracts and rejects an
+ES-based access unless its selector definition reaches that instruction across
+every control-flow path.
 `segment_role_comparison.tsv` is the complementary dynamic far-memory report.
 The package build fails if an original-only role is neither proved through
 direct-call provenance nor covered by a current assembly-to-C equivalence in

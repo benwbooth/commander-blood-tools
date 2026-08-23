@@ -6210,6 +6210,25 @@ or mismatches. Reports, listings, tests, and owner manifests are retained under
 dynamic far-pointee provenance, and runtime story checkpoints remain separate
 gates.
 
+`audit_xdb_emitted_abi.py` supplies the emitted-machine half of that proof. It
+decodes all four generated overlay entry shims, requires the alien shims to
+preserve the host general and segment registers, and checks the MANU3 segment-
+installation boundary separately. It verifies near/far call and return width,
+stack-neutral callback exits and compatible direct tail calls, the emitted
+method/state/resume dispatch setup, and the AX/EDX far frame-callback setup.
+All 58 unique state/resume callback targets and all 36 unique method-table
+targets are checked for forbidden DS/FS/GS/SS clobbers. The host-side far frame
+callback is tied to the `snd_play_clip_callback = snd_play_clip` assignment and
+must save/restore DS around every RETF.
+
+The same control-flow pass requires a reaching selector definition for every
+explicit dynamic far-memory use, invalidating transient ES after every call.
+Only the declared ES:SI face callback ABI supplies ES at function entry. The
+integrated report contains 218 passing ABI rows and proves 2,898 explicit far-
+segment uses in 116 routines; mutation tests cover missing register restores,
+wrong return width, stack imbalance, segment clobber, legal near tail calls,
+missing LES/MOV segment definitions, and call-clobbered ES.
+
 `compare_segment_roles.py` performs that separate parity audit. It traces the
 source of dynamic segment values (far-pointer arguments, fixed VGA segments,
 and segment words stored in GAME_DATA/FS_DATA), normalizes compiler register
