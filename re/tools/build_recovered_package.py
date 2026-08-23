@@ -690,6 +690,14 @@ def build_bloodprg_runtime(
         [
             sys.executable,
             "-P",
+            str(ROOT / "re/tools/test_runtime_scenario_matrix.py"),
+        ],
+        final_dir / "runtime_scenario_matrix_tests.log",
+    )
+    run_checked_logged(
+        [
+            sys.executable,
+            "-P",
             str(ROOT / "re/tools/test_compare_runtime_traces.py"),
         ],
         final_dir / "runtime_trace_comparison_tests.log",

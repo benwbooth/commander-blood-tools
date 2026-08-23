@@ -190,7 +190,10 @@ the report.
 GAME_DATA/FS_DATA effect comparison for diagnosing call and dispatch contracts.
 The final validation directory records `data_placement_audit.log`,
 `segment_usage.tsv`, `segment_usage_audit.log`, and
-`runtime_watchdog_tests.log` for inspection. It also records
+`runtime_watchdog_tests.log` for inspection. The package also gates the
+scenario runner itself in `runtime_scenario_matrix_tests.log`; actual emulator
+scenarios remain a separate post-build step because they require an installed
+game drive. It also records
 `vga_byte_copy_audit.log`; this gate requires the write-mode-one ship-3D plane
 copy to retain byte-wide framebuffer accesses in the compiled object.
 The fixed-patch directory contains the fixed-layout audit listing and patched
@@ -280,6 +283,27 @@ nix develop --command python3 re/tools/recovered_package_invariant_gate.py \
 The gate emits `result.tsv` with the tested executable hash plus a watchdog JSON
 report and command log for each profile. Use repeatable `--profile 0..4`
 arguments to run a subset; without them it validates all five worlds.
+
+The runtime scenario matrix combines those state-driven world checks with the
+SCRIPT2 radio/conversation probe and the authentic saved-game Pterra route. It
+runs every scenario on a separate copy of the installed drive and a distinct X
+display, validates each underlying JSON report, and fails if a tool exits
+without producing a valid report:
+
+```sh
+nix develop --command python3 -P re/tools/runtime_scenario_matrix.py \
+  --cd-dir output/recovered_dos_package/cd \
+  --install-parent accuracy/cblood_install \
+  --output-dir output/runtime-scenario-matrix \
+  --include-authentic-pterra
+```
+
+Without `--include-authentic-pterra`, the default matrix runs all five
+teleports and the SCRIPT2 probe. The Pterra scenario removes old
+`PTERRA1D/F/G.LBM` markers only from its disposable copy before launch; the
+source install is never modified. `matrix.json`, per-scenario reports, command
+logs, emulator logs, and guest snapshots retain enough evidence to reproduce a
+failure without manually replaying the route.
 
 The later tutorial checkpoint now passes too. The optimized runtime drove
 `BPRG_RE.EXE` through SCRIPT1, selected CRYOBOX and BOB_MORLOCK, loaded
