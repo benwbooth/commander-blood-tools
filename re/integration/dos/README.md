@@ -296,10 +296,10 @@ report and command log for each profile. Use repeatable `--profile 0..4`
 arguments to run a subset; without them it validates all five worlds.
 
 The runtime scenario matrix combines those state-driven world checks with the
-SCRIPT2 radio/conversation probe and the authentic saved-game Pterra route. It
-runs every scenario on a separate copy of the installed drive and a distinct X
-display, validates each underlying JSON report, and fails if a tool exits
-without producing a valid report:
+SCRIPT2 radio/conversation probe, SCRIPT1 Bob first-contact probe, and the
+authentic saved-game Pterra route. It runs every scenario on a separate copy
+of the installed drive and a distinct X display, validates each underlying
+JSON report, and fails if a tool exits without producing a valid report:
 
 ```sh
 nix develop --command python3 -P re/tools/runtime_scenario_matrix.py \
@@ -310,11 +310,16 @@ nix develop --command python3 -P re/tools/runtime_scenario_matrix.py \
 ```
 
 Without `--include-authentic-pterra`, the default matrix runs all five
-teleports and the SCRIPT2 probe. The Pterra scenario removes old
-`PTERRA1D/F/G.LBM` markers only from its disposable copy before launch; the
-source install is never modified. `matrix.json`, per-scenario reports, command
-logs, emulator logs, and guest snapshots retain enough evidence to reproduce a
-failure without manually replaying the route.
+teleports and both dialogue probes. The SCRIPT2 probe requires the ordered
+`MESSAGE RADIO`, `OKAY OKAY, WISE GUY`, `YOU DO THE COUNTING`, `CRUIIIIK`, and
+Honk-report checkpoints, including the source word-list offsets. The Bob probe
+uses the real save-load path to enter the bridge, switches to SCRIPT1, submits
+the same scene-transition request as the contact menu, and requires all four
+lines from Bob's greeting through the mission question. The Pterra scenario
+removes old `PTERRA1D/F/G.LBM` markers only from its disposable copy before
+launch; the source install is never modified. `matrix.json`, per-scenario
+reports, command logs, emulator logs, and guest snapshots retain enough
+evidence to reproduce a failure without manually replaying the route.
 
 The later tutorial checkpoint now passes too. The optimized runtime drove
 `BPRG_RE.EXE` through SCRIPT1, selected CRYOBOX and BOB_MORLOCK, loaded

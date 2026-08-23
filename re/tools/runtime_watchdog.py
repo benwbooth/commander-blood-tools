@@ -76,6 +76,23 @@ SCRIPT2_RADIO_PROCEDURE_FLAGS = {
     "radio1": 0x27D0,
 }
 SCRIPT2_SCRUTER_K_ACTION_OFFSET = 0x06FC
+SCRIPT2_RADIO_CHECKPOINTS = (
+    (0x2B05, "MESSAGE RADIO:"),
+    (0x2BB5, "OKAY OKAY, WISE GUY!"),
+    (0x2BC9, "YOU DO THE COUNTING"),
+    (0x2BDB, "CRUIIIIK!"),
+    (None, "REPORT FROM HONK"),
+)
+SCRIPT1_PROFILE = 0
+SCRIPT1_BOB_OBJECT_OFFSET = 0x004A
+SCRIPT1_BOB_ACTION_OFFSET = 0x0084
+SCRIPT1_BOB_PROCEDURE_FLAG_OFFSET = 0x077E
+SCRIPT1_BOB_CHECKPOINTS = (
+    (0x078E, "GOOD DAY COMMANDER. MY NAME IS BOB, BOB MORLOCK"),
+    (0x07AE, "IF THE PHONE RINGS"),
+    (0x07D4, "MY EARS ARE FRAGILE"),
+    (0x07EA, "DO YOU WANT ME TO EXPLAIN YOUR MISSION"),
+)
 
 DIALOGUE_AUDIO_OFFSETS = {
     "voc_playback_enabled": (0x0ADE, "B"),
@@ -832,24 +849,11 @@ def read_vm_word_list(
     return "".join(parts)
 
 
-def read_script2_radio_state(
+def read_active_vm_subtitle(
     memory: bytes,
     game_segment: int,
-    profile_state: ProfileState,
-) -> dict[str, object] | None:
-    if profile_state.profile != SCRIPT2_PROFILE:
-        return None
-    cod_offset, cod_segment = profile_state.images[0]
-    record_offset, record_segment = profile_state.images[2]
-    if cod_segment == 0 or record_segment == 0:
-        return None
-    cod = cod_segment * 16 + cod_offset
-    records = record_segment * 16 + record_offset
+) -> dict[str, object]:
     game = game_segment * 16
-    action = memory[
-        records + SCRIPT2_SCRUTER_K_ACTION_OFFSET:
-        records + SCRIPT2_SCRUTER_K_ACTION_OFFSET + 6
-    ]
     menu_words_offset, menu_words_segment = struct.unpack_from(
         "<HH", memory, game + 0x674A
     )
@@ -869,6 +873,34 @@ def read_script2_radio_state(
     else:
         subtitle = buffered_subtitle
     return {
+        "subtitle": subtitle,
+        "buffered_subtitle": buffered_subtitle,
+        "menu_subtitle": menu_subtitle,
+        "menu_words": f"{menu_words_segment:04x}:{menu_words_offset:04x}",
+        "menu_words_offset": menu_words_offset,
+        "dictionary": f"{dictionary_segment:04x}:{dictionary_offset:04x}",
+    }
+
+
+def read_script2_radio_state(
+    memory: bytes,
+    game_segment: int,
+    profile_state: ProfileState,
+) -> dict[str, object] | None:
+    if profile_state.profile != SCRIPT2_PROFILE:
+        return None
+    cod_offset, cod_segment = profile_state.images[0]
+    record_offset, record_segment = profile_state.images[2]
+    if cod_segment == 0 or record_segment == 0:
+        return None
+    cod = cod_segment * 16 + cod_offset
+    records = record_segment * 16 + record_offset
+    game = game_segment * 16
+    action = memory[
+        records + SCRIPT2_SCRUTER_K_ACTION_OFFSET:
+        records + SCRIPT2_SCRUTER_K_ACTION_OFFSET + 6
+    ]
+    state = {
         "procedures": {
             name: memory[cod + offset]
             for name, offset in SCRIPT2_RADIO_PROCEDURE_FLAGS.items()
@@ -887,12 +919,40 @@ def read_script2_radio_state(
             "<HHH", memory, game + 0x6768
         ),
         "actor_slot_4": memory[game + 0x2A33:game + 0x2A33 + 24].hex(),
-        "subtitle": subtitle,
-        "buffered_subtitle": buffered_subtitle,
-        "menu_subtitle": menu_subtitle,
-        "menu_words": f"{menu_words_segment:04x}:{menu_words_offset:04x}",
-        "dictionary": f"{dictionary_segment:04x}:{dictionary_offset:04x}",
     }
+    state.update(read_active_vm_subtitle(memory, game_segment))
+    return state
+
+
+def read_script1_bob_state(
+    memory: bytes,
+    game_segment: int,
+    profile_state: ProfileState,
+) -> dict[str, object] | None:
+    if profile_state.profile != SCRIPT1_PROFILE:
+        return None
+    cod_offset, cod_segment = profile_state.images[0]
+    record_offset, record_segment = profile_state.images[2]
+    if cod_segment == 0 or record_segment == 0:
+        return None
+    cod = cod_segment * 16 + cod_offset
+    records = record_segment * 16 + record_offset
+    game = game_segment * 16
+    state = {
+        "bob1_enabled": memory[cod + SCRIPT1_BOB_PROCEDURE_FLAG_OFFSET],
+        "bob_action": memory[
+            records + SCRIPT1_BOB_ACTION_OFFSET:
+            records + SCRIPT1_BOB_ACTION_OFFSET + 6
+        ].hex(),
+        "nav_pending_record_link": struct.unpack_from(
+            "<H", memory, game + 0x675A
+        )[0],
+        "deferred_record": struct.unpack_from(
+            "<HHH", memory, game + 0x6768
+        ),
+    }
+    state.update(read_active_vm_subtitle(memory, game_segment))
+    return state
 
 
 def dialogue_audio_stall_reason(state: dict[str, int]) -> str | None:
@@ -1025,6 +1085,15 @@ def main() -> int:
         ),
     )
     parser.add_argument(
+        "--script1-bob-probe",
+        action="store_true",
+        help=(
+            "load GAME1.SAV to enter the bridge, switch to SCRIPT1, select "
+            "Bob through the normal scene transition, and require his first "
+            "four dialogue checkpoints"
+        ),
+    )
+    parser.add_argument(
         "--input-liveness-samples",
         type=int,
         default=0,
@@ -1063,15 +1132,20 @@ def main() -> int:
         raise WatchdogError(
             f"teleport profile must be in 0..4: {args.teleport_profile}"
         )
-    if args.script2_radio_probe:
+    if args.script2_radio_probe or args.script1_bob_probe:
         if args.teleport_profile is not None:
             raise WatchdogError(
-                "--script2-radio-probe uses GAME1.SAV and cannot teleport"
+                "dialogue probes cannot be combined with --teleport-profile"
             )
+    if args.script2_radio_probe and args.script1_bob_probe:
+        raise WatchdogError(
+            "--script2-radio-probe and --script1-bob-probe are mutually exclusive"
+        )
+    if args.script2_radio_probe or args.script1_bob_probe:
         save_path = install_parent / "cblood" / "GAME1.SAV"
         if not save_path.is_file():
             raise WatchdogError(
-                f"--script2-radio-probe requires {save_path}"
+                f"dialogue probes require {save_path}"
             )
 
     report: dict[str, object] = {
@@ -1169,6 +1243,14 @@ def main() -> int:
         radio_orb_click_count = 0
         radio_snapshot_written = False
         radio_lines: list[str] = []
+        radio_checkpoint_index = 0
+        bob_probe_phase = "wait-title-idle"
+        bob_load_slot_pressed = False
+        bob_intro_seen = False
+        bob_bridge_idle_started = None
+        bob_profile_reload_requested = False
+        bob_lines: list[str] = []
+        bob_checkpoint_index = 0
         previous_presentation_state = None
         input_attempt = None
         active_progress = None
@@ -1188,6 +1270,8 @@ def main() -> int:
                         expected is not None
                         and dosbox.returncode == 0
                         and args.teleport_profile is None
+                        and not args.script2_radio_probe
+                        and not args.script1_bob_probe
                     )
                     else (
                         "GAME-EXIT"
@@ -1215,6 +1299,7 @@ def main() -> int:
                     report["samples"] = int(report["samples"]) + 1
 
                     if expected is None:
+                        report["last_calibration_cpu"] = cpu_for_report(state)
                         if state["gs"] < layout.game_data:
                             continue
                         load_segment = state["gs"] - layout.game_data
@@ -1455,12 +1540,18 @@ def main() -> int:
                         int(expected["game_segment"]),
                         profile_state,
                     )
+                    bob_state = read_script1_bob_state(
+                        memory,
+                        int(expected["game_segment"]),
+                        profile_state,
+                    )
                     report["last_runtime"] = {
                         "cpu": cpu_for_report(state),
                         "profile_state": profile_for_report(profile_state),
                         "audio_flow": audio_state,
                         "presentation_flow": presentation_state,
                         "radio_flow": radio_state,
+                        "bob_flow": bob_state,
                     }
                     runtime_samples = report.setdefault("runtime_samples", [])
                     assert isinstance(runtime_samples, list)
@@ -1471,6 +1562,7 @@ def main() -> int:
                             "audio_flow": audio_state,
                             "presentation_flow": presentation_state,
                             "radio_flow": radio_state,
+                            "bob_flow": bob_state,
                         }
                     )
                     del runtime_samples[:-4096]
@@ -1556,7 +1648,11 @@ def main() -> int:
                         blockers = dict(profile_state.blockers)
                         probe = report.setdefault(
                             "radio_probe",
-                            {"phase": radio_probe_phase, "lines": radio_lines},
+                            {
+                                "phase": radio_probe_phase,
+                                "lines": radio_lines,
+                                "checkpoints": [],
+                            },
                         )
                         assert isinstance(probe, dict)
 
@@ -1854,6 +1950,38 @@ def main() -> int:
                                     "radio_flow": radio_state,
                                 }
                             )
+                        if radio_checkpoint_index < len(
+                            SCRIPT2_RADIO_CHECKPOINTS
+                        ):
+                            expected_offset, expected_text = (
+                                SCRIPT2_RADIO_CHECKPOINTS[
+                                    radio_checkpoint_index
+                                ]
+                            )
+                            if (
+                                (
+                                    expected_offset is None
+                                    or radio_state["menu_words_offset"]
+                                    == expected_offset
+                                )
+                                and expected_text in subtitle.upper()
+                            ):
+                                checkpoints = probe.setdefault(
+                                    "checkpoints", []
+                                )
+                                assert isinstance(checkpoints, list)
+                                checkpoints.append(
+                                    {
+                                        "sample": report[
+                                            "guarded_samples"
+                                        ],
+                                        "menu_words_offset": (
+                                            radio_state["menu_words_offset"]
+                                        ),
+                                        "subtitle": subtitle,
+                                    }
+                                )
+                                radio_checkpoint_index += 1
                         normalized = subtitle.upper()
                         if (
                             radio_orb_click_count == 2
@@ -1871,7 +1999,11 @@ def main() -> int:
                                 send_mouse_button(args.display, False)
                                 radio_physical_mouse_held = False
                             radio_input_held = False
-                        elif "REPORT FROM HONK" in normalized:
+                        elif (
+                            "REPORT FROM HONK" in normalized
+                            and radio_checkpoint_index
+                            == len(SCRIPT2_RADIO_CHECKPOINTS)
+                        ):
                             report["verdict"] = "RADIO-PROBE-COMPLETE"
                             probe = report.setdefault("radio_probe", {})
                             assert isinstance(probe, dict)
@@ -1879,6 +2011,238 @@ def main() -> int:
                                 "guarded_samples"
                             ]
                             break
+
+                    if args.script1_bob_probe:
+                        game_offset = int(expected["game_segment"]) * 16
+                        game_address = int(expected["guest_base"]) + game_offset
+                        blockers = dict(profile_state.blockers)
+                        probe = report.setdefault(
+                            "bob_probe",
+                            {
+                                "phase": bob_probe_phase,
+                                "lines": bob_lines,
+                                "checkpoints": [],
+                            },
+                        )
+                        assert isinstance(probe, dict)
+
+                        if (
+                            bob_probe_phase == "wait-title-idle"
+                            and profile_state.profile == SCRIPT1_PROFILE
+                            and profile_state.teleport_releaseable
+                        ):
+                            exact_write(
+                                mem,
+                                game_address + LOAD_REQUEST_ACTIVE_OFFSET,
+                                b"\x01",
+                            )
+                            exact_write(
+                                mem,
+                                game_address + SAVE_SLOT_MENU_PHASE_OFFSET,
+                                b"\x01",
+                            )
+                            bob_probe_phase = "wait-load-menu"
+                            probe["load_menu_sample"] = report[
+                                "guarded_samples"
+                            ]
+                        elif bob_probe_phase in (
+                            "wait-load-menu",
+                            "press-load-slot",
+                        ):
+                            if blockers.get("load", 0) != 0:
+                                exact_write(
+                                    mem,
+                                    game_address + MOUSE_X_OFFSET,
+                                    struct.pack("<h", 110),
+                                )
+                                exact_write(
+                                    mem,
+                                    game_address + MOUSE_Y_OFFSET,
+                                    struct.pack("<h", 47),
+                                )
+                                exact_write(
+                                    mem,
+                                    game_address + MOUSE_PRIMARY_PRESSED_OFFSET,
+                                    b"\x01",
+                                )
+                                bob_load_slot_pressed = True
+                                bob_probe_phase = "press-load-slot"
+                            elif (
+                                bob_load_slot_pressed
+                                and profile_state.completed(SCRIPT2_PROFILE)
+                            ):
+                                exact_write(
+                                    mem,
+                                    game_address + MOUSE_PRIMARY_PRESSED_OFFSET,
+                                    b"\0",
+                                )
+                                bob_probe_phase = "wait-post-load-intro"
+                                probe["save_loaded_sample"] = report[
+                                    "guarded_samples"
+                                ]
+                        elif bob_probe_phase == "wait-post-load-intro":
+                            if (
+                                presentation_state["active_line"] == 2
+                                and presentation_state[
+                                    "c2_presentation_gate"
+                                ] == 1
+                            ):
+                                bob_intro_seen = True
+                                bob_probe_phase = "dismiss-post-load-intro"
+                        elif bob_probe_phase == "dismiss-post-load-intro":
+                            if (
+                                presentation_state["active_line"] == 2
+                                and presentation_state[
+                                    "c2_presentation_gate"
+                                ] == 1
+                            ):
+                                exact_write(
+                                    mem,
+                                    game_address + MOUSE_X_OFFSET,
+                                    struct.pack("<h", 110),
+                                )
+                                exact_write(
+                                    mem,
+                                    game_address + MOUSE_Y_OFFSET,
+                                    struct.pack("<h", 96),
+                                )
+                                write_primary_press(mem, game_address, True)
+                                if not radio_physical_mouse_held:
+                                    send_mouse_button(args.display, True)
+                                    radio_physical_mouse_held = True
+                                bob_bridge_idle_started = None
+                            elif (
+                                bob_intro_seen
+                                and presentation_state["active_line"] == 0xFFFF
+                                and presentation_state[
+                                    "c2_presentation_gate"
+                                ] == 0
+                                and all(value == 0 for value in blockers.values())
+                            ):
+                                write_primary_press(mem, game_address, False)
+                                if radio_physical_mouse_held:
+                                    send_mouse_button(args.display, False)
+                                    radio_physical_mouse_held = False
+                                if bob_bridge_idle_started is None:
+                                    bob_bridge_idle_started = time.monotonic()
+                                if (
+                                    time.monotonic() - bob_bridge_idle_started
+                                    >= RADIO_BRIDGE_IDLE_SECONDS
+                                ):
+                                    exact_write(
+                                        mem,
+                                        game_address
+                                        + VM_SCRIPT_PROFILE_REQUEST_OFFSET,
+                                        struct.pack("<h", SCRIPT1_PROFILE),
+                                    )
+                                    bob_profile_reload_requested = True
+                                    bob_probe_phase = "wait-profile-reload"
+                                    probe["profile_reload_sample"] = report[
+                                        "guarded_samples"
+                                    ]
+                            else:
+                                write_primary_press(mem, game_address, False)
+                                if radio_physical_mouse_held:
+                                    send_mouse_button(args.display, False)
+                                    radio_physical_mouse_held = False
+                                bob_bridge_idle_started = None
+                        elif (
+                            bob_probe_phase == "wait-profile-reload"
+                            and bob_profile_reload_requested
+                            and profile_state.completed(SCRIPT1_PROFILE)
+                            and all(value == 0 for value in blockers.values())
+                            and presentation_state["presentation_mode"] == 0
+                        ):
+                            deferred = (
+                                presentation_state["deferred_record_type"],
+                                presentation_state["deferred_record_related"],
+                                presentation_state["deferred_record_value"],
+                            )
+                            if deferred != (0, 0, 0):
+                                issues.append(
+                                    "bob-probe-deferred-record-not-idle="
+                                    + ":".join(f"{value:#06x}" for value in deferred)
+                                )
+                            elif bob_state is None:
+                                issues.append("bob-probe-script1-state-unavailable")
+                            elif bob_state["bob1_enabled"] != 1:
+                                issues.append(
+                                    "bob-probe-bob1-disabled="
+                                    f"{bob_state['bob1_enabled']!r}"
+                                )
+                            else:
+                                exact_write(
+                                    mem,
+                                    game_address + 0x676A,
+                                    struct.pack("<H", SCRIPT1_BOB_OBJECT_OFFSET),
+                                )
+                                exact_write(mem, game_address + 0x2751, b"\x01")
+                                bob_probe_phase = "wait-first-contact"
+                                probe["contact_selected_sample"] = report[
+                                    "guarded_samples"
+                                ]
+
+                        if (
+                            bob_probe_phase == "wait-first-contact"
+                            and bob_state is not None
+                        ):
+                            subtitle = str(bob_state["subtitle"])
+                            if subtitle and (
+                                not bob_lines or bob_lines[-1] != subtitle
+                            ):
+                                bob_lines.append(subtitle)
+                                probe["lines"] = bob_lines
+                                line_states = probe.setdefault("line_states", [])
+                                assert isinstance(line_states, list)
+                                line_states.append(
+                                    {
+                                        "sample": report["guarded_samples"],
+                                        "subtitle": subtitle,
+                                        "cpu": cpu_for_report(state),
+                                        "audio_flow": audio_state,
+                                        "presentation_flow": presentation_state,
+                                        "bob_flow": bob_state,
+                                    }
+                                )
+                            if bob_checkpoint_index < len(
+                                SCRIPT1_BOB_CHECKPOINTS
+                            ):
+                                expected_offset, expected_text = (
+                                    SCRIPT1_BOB_CHECKPOINTS[
+                                        bob_checkpoint_index
+                                    ]
+                                )
+                                if (
+                                    bob_state["menu_words_offset"]
+                                    == expected_offset
+                                    and expected_text in subtitle.upper()
+                                ):
+                                    checkpoints = probe.setdefault(
+                                        "checkpoints", []
+                                    )
+                                    assert isinstance(checkpoints, list)
+                                    checkpoints.append(
+                                        {
+                                            "sample": report[
+                                                "guarded_samples"
+                                            ],
+                                            "menu_words_offset": (
+                                                expected_offset
+                                            ),
+                                            "subtitle": subtitle,
+                                        }
+                                    )
+                                    bob_checkpoint_index += 1
+                            if bob_checkpoint_index == len(
+                                SCRIPT1_BOB_CHECKPOINTS
+                            ):
+                                report["verdict"] = "BOB-PROBE-COMPLETE"
+                                probe["completed_sample"] = report[
+                                    "guarded_samples"
+                                ]
+                                break
+
+                        probe["phase"] = bob_probe_phase
 
                     context = (
                         state["cs"],
@@ -1925,6 +2289,7 @@ def main() -> int:
                     if (
                         args.teleport_profile is not None
                         and not args.script2_radio_probe
+                        and not args.script1_bob_probe
                         and not teleport_queue
                         and teleport_inflight is None
                         and teleport_last_completion is not None
@@ -1944,6 +2309,11 @@ def main() -> int:
                 probe = report.setdefault("radio_probe", {})
                 if isinstance(probe, dict):
                     probe["phase"] = radio_probe_phase
+            elif args.script1_bob_probe:
+                report["verdict"] = "BOB-PROBE-TIMEOUT"
+                probe = report.setdefault("bob_probe", {})
+                if isinstance(probe, dict):
+                    probe["phase"] = bob_probe_phase
             elif args.teleport_profile is not None:
                 report["verdict"] = "TELEPORT-TIMEOUT"
                 report["teleport_pending"] = (
@@ -1987,6 +2357,7 @@ def main() -> int:
         "CLEAN-EXIT",
         "TELEPORTS-COMPLETE",
         "RADIO-PROBE-COMPLETE",
+        "BOB-PROBE-COMPLETE",
     ) else 1
 
 

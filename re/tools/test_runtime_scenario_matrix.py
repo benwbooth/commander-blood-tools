@@ -49,7 +49,30 @@ def valid_radio_report() -> dict[str, object]:
     return {
         "verdict": "RADIO-PROBE-COMPLETE",
         "anomalies": [],
-        "radio_probe": {"completed_sample": 20},
+        "radio_probe": {
+            "completed_sample": 20,
+            "checkpoints": [
+                {
+                    "menu_words_offset": offset if offset is not None else 0x2BDB,
+                    "subtitle": text,
+                }
+                for offset, text in matrix.SCRIPT2_RADIO_CHECKPOINTS
+            ],
+        },
+    }
+
+
+def valid_bob_report() -> dict[str, object]:
+    return {
+        "verdict": "BOB-PROBE-COMPLETE",
+        "anomalies": [],
+        "bob_probe": {
+            "completed_sample": 30,
+            "checkpoints": [
+                {"menu_words_offset": offset, "subtitle": text}
+                for offset, text in matrix.SCRIPT1_BOB_CHECKPOINTS
+            ],
+        },
     }
 
 
@@ -79,6 +102,7 @@ class ScenarioSelectionTests(unittest.TestCase):
                 "teleport-3",
                 "teleport-4",
                 "script2-radio",
+                "script1-bob-first-contact",
             ],
         )
 
@@ -113,6 +137,24 @@ class ReportValidationTests(unittest.TestCase):
             matrix.validate_report(
                 matrix.SCENARIO_BY_NAME["authentic-pterra"], report
             ),
+        )
+
+    def test_radio_requires_ordered_semantic_checkpoints(self) -> None:
+        scenario = matrix.SCENARIO_BY_NAME["script2-radio"]
+        report = valid_radio_report()
+        self.assertEqual(matrix.validate_report(scenario, report), [])
+        checkpoints = report["radio_probe"]["checkpoints"]
+        checkpoints[1], checkpoints[2] = checkpoints[2], checkpoints[1]
+        self.assertTrue(matrix.validate_report(scenario, report))
+
+    def test_bob_requires_all_first_contact_checkpoints(self) -> None:
+        scenario = matrix.SCENARIO_BY_NAME["script1-bob-first-contact"]
+        report = valid_bob_report()
+        self.assertEqual(matrix.validate_report(scenario, report), [])
+        report["bob_probe"]["checkpoints"].pop()
+        self.assertIn(
+            "Bob checkpoint count is 3, expected 4",
+            matrix.validate_report(scenario, report),
         )
 
 
@@ -157,6 +199,8 @@ class MatrixExecutionTests(unittest.TestCase):
             if "--teleport-profile" in command:
                 profile = int(command[command.index("--teleport-profile") + 1])
                 report = valid_teleport_report(profile)
+            elif "--script1-bob-probe" in command:
+                report = valid_bob_report()
             else:
                 report = valid_radio_report()
         else:
@@ -303,7 +347,7 @@ class MatrixExecutionTests(unittest.TestCase):
         self.assertIn("--open-load-menu", command)
         self.assertIn("--trigger-pterra-after-load", command)
         self.assertIn("--drive-authentic-save", command)
-        self.assertEqual(aggregate["results"][0]["display"], ":126")
+        self.assertEqual(aggregate["results"][0]["display"], ":127")
         self.assertEqual(
             aggregate["results"][0]["removed_stale_artifacts"],
             ["PTERRA1D.LBM", "PTERRA1F.LBM", "PTERRA1G.LBM"],
@@ -313,6 +357,22 @@ class MatrixExecutionTests(unittest.TestCase):
         ) / "cblood"
         self.assertFalse(any(copied_cblood.glob("PTERRA1[DFG].LBM")))
         self.assertTrue(all(marker.is_file() for marker in source_markers))
+
+    @mock.patch.object(matrix.subprocess, "run")
+    def test_bob_probe_uses_its_named_watchdog_mode(
+        self, run: mock.Mock
+    ) -> None:
+        run.side_effect = self.successful_subprocess
+
+        exit_code, aggregate = matrix.run_matrix(
+            self.args("--scenario", "script1-bob-first-contact")
+        )
+
+        self.assertEqual(exit_code, 0)
+        result = aggregate["results"][0]
+        self.assertEqual(result["status"], "PASS")
+        self.assertEqual(result["display"], ":126")
+        self.assertIn("--script1-bob-probe", result["command"])
 
 
 if __name__ == "__main__":

@@ -14,7 +14,7 @@ Examples:
   python3 -P re/tools/runtime_scenario_matrix.py \
       --cd-dir output/recovered_dos_package/cd \
       --install-parent accuracy/cblood_install \
-      --scenario teleport-2 --scenario script2-radio
+      --scenario script1-bob-first-contact --scenario script2-radio
 
   python3 -P re/tools/runtime_scenario_matrix.py \
       --cd-dir output/recovered_dos_package/cd \
@@ -39,6 +39,19 @@ WATCHDOG = Path(__file__).with_name("runtime_watchdog.py")
 PTERRA_CAPTURE = Path(__file__).with_name("capture_pterra_boundary.py")
 DEFAULT_OUTPUT_DIR = ROOT / "output" / "runtime-scenario-matrix"
 AUTHENTIC_PTERRA = "authentic-pterra"
+SCRIPT1_BOB_CHECKPOINTS = (
+    (0x078E, "GOOD DAY COMMANDER. MY NAME IS BOB, BOB MORLOCK"),
+    (0x07AE, "IF THE PHONE RINGS"),
+    (0x07D4, "MY EARS ARE FRAGILE"),
+    (0x07EA, "DO YOU WANT ME TO EXPLAIN YOUR MISSION"),
+)
+SCRIPT2_RADIO_CHECKPOINTS = (
+    (0x2B05, "MESSAGE RADIO:"),
+    (0x2BB5, "OKAY OKAY, WISE GUY!"),
+    (0x2BC9, "YOU DO THE COUNTING"),
+    (0x2BDB, "CRUIIIIK!"),
+    (None, "REPORT FROM HONK"),
+)
 
 
 @dataclass(frozen=True)
@@ -54,7 +67,8 @@ SCENARIOS = tuple(
     for profile in range(5)
 ) + (
     Scenario("script2-radio", "radio", 5),
-    Scenario(AUTHENTIC_PTERRA, "pterra", 6),
+    Scenario("script1-bob-first-contact", "bob", 6),
+    Scenario(AUTHENTIC_PTERRA, "pterra", 7),
 )
 SCENARIO_BY_NAME = {scenario.name: scenario for scenario in SCENARIOS}
 DEFAULT_SCENARIOS = tuple(
@@ -72,8 +86,8 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             f"Scenarios: {names}\n"
-            "With no --scenario, the five teleports and SCRIPT2 radio probe "
-            "run. Authentic-save Pterra is opt-in."
+            "With no --scenario, the five teleports, SCRIPT2 radio, and "
+            "SCRIPT1 Bob probes run. Authentic-save Pterra is opt-in."
         ),
     )
     parser.add_argument(
@@ -118,7 +132,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--display-base",
         type=int,
         default=90,
-        help="first X display number; stable scenario slots use base through base+6",
+        help="first X display number; stable scenario slots use base through base+7",
     )
     parser.add_argument(
         "--teleport-seconds",
@@ -131,6 +145,12 @@ def build_parser() -> argparse.ArgumentParser:
         type=float,
         default=240.0,
         help="watchdog duration for SCRIPT2 radio (default: 240)",
+    )
+    parser.add_argument(
+        "--bob-seconds",
+        type=float,
+        default=240.0,
+        help="watchdog duration for SCRIPT1 Bob first contact (default: 240)",
     )
     parser.add_argument(
         "--pterra-timeout",
@@ -268,10 +288,71 @@ def _validate_radio(report: dict[str, object]) -> list[str]:
     if report.get("anomalies") != []:
         errors.append("anomalies are present or missing")
     probe = report.get("radio_probe")
-    if not isinstance(probe, dict) or not isinstance(
-        probe.get("completed_sample"), int
-    ):
+    if not isinstance(probe, dict):
+        errors.append("radio probe is missing")
+        return errors
+    if not isinstance(probe.get("completed_sample"), int):
         errors.append("radio completion sample is missing")
+    errors.extend(
+        _validate_dialogue_checkpoints(
+            probe.get("checkpoints"), SCRIPT2_RADIO_CHECKPOINTS, "radio"
+        )
+    )
+    return errors
+
+
+def _validate_bob(report: dict[str, object]) -> list[str]:
+    errors: list[str] = []
+    if report.get("verdict") != "BOB-PROBE-COMPLETE":
+        errors.append("verdict is not BOB-PROBE-COMPLETE")
+    if report.get("anomalies") != []:
+        errors.append("anomalies are present or missing")
+    probe = report.get("bob_probe")
+    if not isinstance(probe, dict):
+        errors.append("Bob probe is missing")
+        return errors
+    if not isinstance(probe.get("completed_sample"), int):
+        errors.append("Bob completion sample is missing")
+    errors.extend(
+        _validate_dialogue_checkpoints(
+            probe.get("checkpoints"), SCRIPT1_BOB_CHECKPOINTS, "Bob"
+        )
+    )
+    return errors
+
+
+def _validate_dialogue_checkpoints(
+    actual: object,
+    expected: Sequence[tuple[int | None, str]],
+    label: str,
+) -> list[str]:
+    if not isinstance(actual, list):
+        return [f"{label} checkpoints are missing"]
+    if len(actual) != len(expected):
+        return [
+            f"{label} checkpoint count is {len(actual)}, expected {len(expected)}"
+        ]
+    errors: list[str] = []
+    for index, ((expected_offset, expected_text), checkpoint) in enumerate(
+        zip(expected, actual, strict=True), start=1
+    ):
+        if not isinstance(checkpoint, dict):
+            errors.append(f"{label} checkpoint {index} is not an object")
+            continue
+        if (
+            expected_offset is not None
+            and checkpoint.get("menu_words_offset") != expected_offset
+        ):
+            errors.append(
+                f"{label} checkpoint {index} word-list offset is not "
+                f"{expected_offset:#06x}"
+            )
+        subtitle = checkpoint.get("subtitle")
+        if not isinstance(subtitle, str) or expected_text not in subtitle.upper():
+            errors.append(
+                f"{label} checkpoint {index} subtitle does not contain "
+                f"{expected_text!r}"
+            )
     return errors
 
 
@@ -306,6 +387,8 @@ def validate_report(
         return _validate_teleport(report, scenario.profile)
     if scenario.kind == "radio":
         return _validate_radio(report)
+    if scenario.kind == "bob":
+        return _validate_bob(report)
     if scenario.kind == "pterra":
         return _validate_pterra(report)
     return [f"unknown scenario kind: {scenario.kind}"]
@@ -323,7 +406,7 @@ def _build_command(
         args.python,
         "-P",
     ]
-    if scenario.kind in ("teleport", "radio"):
+    if scenario.kind in ("teleport", "radio", "bob"):
         command = common + [
             str(WATCHDOG),
             "--cd-dir",
@@ -353,16 +436,27 @@ def _build_command(
                 str(args.post_teleport_samples),
             ]
             return command, args.teleport_seconds + args.subprocess_grace_seconds
+        if scenario.kind == "radio":
+            command += [
+                "--seconds",
+                str(args.radio_seconds),
+                "--script2-radio-probe",
+            ]
+            duration = args.radio_seconds
+        else:
+            command += [
+                "--seconds",
+                str(args.bob_seconds),
+                "--script1-bob-probe",
+            ]
+            duration = args.bob_seconds
         command += [
-            "--seconds",
-            str(args.radio_seconds),
-            "--script2-radio-probe",
             "--input-liveness-samples",
             str(args.input_liveness_samples),
             "--active-liveness-samples",
             str(args.active_liveness_samples),
         ]
-        return command, args.radio_seconds + args.subprocess_grace_seconds
+        return command, duration + args.subprocess_grace_seconds
 
     command = common + [
         str(PTERRA_CAPTURE),
@@ -516,6 +610,7 @@ def _validate_arguments(
     positive = (
         ("--teleport-seconds", args.teleport_seconds),
         ("--radio-seconds", args.radio_seconds),
+        ("--bob-seconds", args.bob_seconds),
         ("--pterra-timeout", args.pterra_timeout),
         ("--calibration-timeout", args.calibration_timeout),
         ("--subprocess-grace-seconds", args.subprocess_grace_seconds),

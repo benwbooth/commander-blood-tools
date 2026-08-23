@@ -6301,12 +6301,12 @@ used by the interactive test instead of silently failing calibration.
 
 The deterministic probe loads the same GAME1.SAV used by the manual run, drives
 the real actor-resource and radio-bank handoff, selects SCRIPT2 branch 4, and
-requires progress through these decoded lines:
+requires progress through these decoded lines and word-list identities:
 
-- `TWELVE SECONDS...`
-- `OKAY OKAY, WISE GUY!`
-- `YOU DO THE COUNTING...`
-- `CRUIIIIK!`
+- `MESSAGE RADIO:` (`COD:2B05`)
+- `OKAY OKAY, WISE GUY!` (`COD:2BB5`)
+- `YOU DO THE COUNTING...` (`COD:2BC9`)
+- `CRUIIIIK!` (`COD:2BDB`)
 - `Report from Honk, onboard computing entity:`
 
 The final package executable completed that sequence under DOSBox Staging with
@@ -6319,3 +6319,27 @@ reader became available, so its exact guest state could not be recovered and
 no game C routine was changed on the basis of that report. The integrated
 package rebuild passed all 21 watchdog tests and retained executable SHA-256
 `46d98c617ad7109293f5786269cb3eb218c8c8d35afd4ecc07cac4cc25123cfe`.
+
+## Named dialogue checkpoint gates (2026-08-22)
+
+The runtime scenario matrix now treats intermediate VM dialogue identity as a
+first-class contract rather than accepting a terminal scene alone. The
+SCRIPT2 Scruter route passed five ordered checkpoints: `2B05` MESSAGE RADIO,
+`2BB5` OKAY OKAY WISE GUY, `2BC9` YOU DO THE COUNTING, `2BDB` CRUIIIIK, and
+Honk's report. Each checkpoint retains its decoded subtitle, active COD
+word-list offset, CPU selectors, audio state, and presentation state.
+
+The new SCRIPT1 Bob route uses GAME1.SAV only to enter the bridge, requests
+profile 0 through the normal resource switch, and submits Bob object `004A`
+through the same selected-contact plus scene-transition state used by
+`nav_choice_handler_2`. It does not write Bob's action or presentation fields.
+The recovered executable naturally produced action `C4 0028 FFFF` and passed
+the ordered `078E`, `07AE`, `07D4`, and `07EA` word lists with no watchdog
+anomaly. `07EA` is proved by the choice-bearing A6 encoding: bytes `07E8-07E9`
+hold loop target `083D`, so the dictionary list starts two bytes later.
+
+An earlier probe submitted the contact while presentation mode 1 suppressed
+`vm_run_wrapper`. It reproducibly left deferred `C4 -> 004A` at scene phase
+`89`, but that was an invalid driver precondition, not a recovered-runtime
+defect. The accepted route requires presentation mode 0 and all profile
+handoff blockers clear before selecting Bob.

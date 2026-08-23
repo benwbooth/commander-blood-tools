@@ -554,6 +554,7 @@ class Script2RadioTests(unittest.TestCase):
         assert state is not None
         self.assertEqual(state["subtitle"], "OKAY OKAY, WISE GUY!")
         self.assertEqual(state["menu_words"], "3000:0200")
+        self.assertEqual(state["menu_words_offset"], 0x0200)
 
     def test_requires_script2_profile(self) -> None:
         profile = watchdog.ProfileState(
@@ -567,6 +568,80 @@ class Script2RadioTests(unittest.TestCase):
         )
         self.assertIsNone(
             watchdog.read_script2_radio_state(
+                bytes(MEMORY_SIZE), 0x1800, profile
+            )
+        )
+
+
+class Script1BobTests(unittest.TestCase):
+    def test_reads_bob_action_procedure_and_dictionary_subtitle(self) -> None:
+        memory = bytearray(MEMORY_SIZE)
+        game_segment = 0x1800
+        cod_segment = 0x3000
+        dictionary_segment = 0x3200
+        record_segment = 0x3800
+        profile = watchdog.ProfileState(
+            profile=watchdog.SCRIPT1_PROFILE,
+            request=-1,
+            execution_enabled=1,
+            handles=(1, 2, 3, 4, 5),
+            expected_handles=(1, 2, 3, 4, 5),
+            images=(
+                (0, cod_segment),
+                (0, dictionary_segment),
+                (0, record_segment),
+                (0, 0x3A00),
+                (0, 0x3C00),
+            ),
+            blockers=(),
+        )
+        game = game_segment * 16
+        cod = cod_segment * 16
+        dictionary = dictionary_segment * 16
+        records = record_segment * 16
+        memory[cod + watchdog.SCRIPT1_BOB_PROCEDURE_FLAG_OFFSET] = 1
+        action = records + watchdog.SCRIPT1_BOB_ACTION_OFFSET
+        memory[action:action + 6] = bytes.fromhex("c4002800ffff")
+        words_offset = watchdog.SCRIPT1_BOB_CHECKPOINTS[0][0]
+        struct.pack_into(
+            "<HH", memory, game + 0x674A, words_offset, cod_segment
+        )
+        struct.pack_into("<HH", memory, game + 0x6728, 0, dictionary_segment)
+        struct.pack_into(
+            "<4H", memory, cod + words_offset, 0x10, 0x20, 0x30, 0
+        )
+        memory[dictionary + 0x10:dictionary + 0x19] = b"Good day\0"
+        memory[dictionary + 0x20:dictionary + 0x2A] = b"COMMANDER\0"
+        memory[dictionary + 0x30:dictionary + 0x47] = (
+            b"My name is BOB MORLOCK\0"
+        )
+        memory[game + 0x67B0] = 1
+
+        state = watchdog.read_script1_bob_state(
+            bytes(memory), game_segment, profile
+        )
+
+        self.assertIsNotNone(state)
+        assert state is not None
+        self.assertEqual(state["bob1_enabled"], 1)
+        self.assertEqual(state["bob_action"], "c4002800ffff")
+        self.assertEqual(state["menu_words_offset"], words_offset)
+        self.assertEqual(
+            state["subtitle"], "Good day COMMANDER My name is BOB MORLOCK"
+        )
+
+    def test_requires_script1_profile(self) -> None:
+        profile = watchdog.ProfileState(
+            profile=1,
+            request=-1,
+            execution_enabled=1,
+            handles=(),
+            expected_handles=(),
+            images=(),
+            blockers=(),
+        )
+        self.assertIsNone(
+            watchdog.read_script1_bob_state(
                 bytes(MEMORY_SIZE), 0x1800, profile
             )
         )
