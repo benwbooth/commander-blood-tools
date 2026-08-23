@@ -1,9 +1,9 @@
 #include "../include/bloodprg_random.h"
 
-volatile cb_u16 blood_prng_seed_word = 0;
-volatile cb_u8 blood_prng_mix_low = 0;
-volatile cb_u8 blood_prng_mix_high = 0;
-volatile cb_u8 blood_prng_counter = 0;
+volatile cb_u16 CB_CODE_DATA blood_prng_seed_word = 0;
+volatile cb_u8 CB_CODE_DATA blood_prng_mix_low = 0;
+volatile cb_u8 CB_CODE_DATA blood_prng_mix_high = 0;
+volatile cb_u8 CB_CODE_DATA blood_prng_counter = 0;
 
 cb_u16 CB_FAR blood_prng_next(cb_u16 modulus)
 {

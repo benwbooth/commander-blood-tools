@@ -2,7 +2,7 @@
 
 #include "../include/bloodprg_ems.h"
 
-static const cb_u8 ems_device_signature[8] = {
+static const cb_u8 CB_CODE_DATA ems_device_signature[8] = {
     'E', 'M', 'M', 'X', 'X', 'X', 'X', '0'
 };
 

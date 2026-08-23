@@ -129,6 +129,21 @@ class SegmentContractAuditTests(unittest.TestCase):
         )
         self.assertEqual([finding.status for finding in findings], ["ok"])
 
+    def test_code_segment_data_before_routine_is_not_disassembled(self):
+        listing = self.listing("""
+Segment: func_example_TEXT BYTE USE16 0000000E bytes
+0000                          _signature:
+0000    45 4D 4D 58 58 58 58 30   EMMXXXX0
+0008                          routine_:
+0008    2E A0 00 00               mov al,byte ptr cs:_signature
+000C    CB                        retf
+Segment: _DATA WORD USE16 00000000 bytes
+""")
+        self.assertEqual(
+            [instruction.offset for instruction in listing.instructions],
+            [0x0008, 0x000C],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

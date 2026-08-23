@@ -568,6 +568,24 @@ def build_bloodprg_runtime(
         [
             sys.executable,
             "-P",
+            str(ROOT / "re/tools/audit_code_data_ownership.py"),
+            "--listing-dir",
+            str(final_dir / "segment_contract_listings"),
+        ],
+        final_dir / "code_data_ownership_audit.log",
+    )
+    run_checked_logged(
+        [
+            sys.executable,
+            "-P",
+            str(ROOT / "re/tools/test_audit_code_data_ownership.py"),
+        ],
+        final_dir / "code_data_ownership_tests.log",
+    )
+    run_checked_logged(
+        [
+            sys.executable,
+            "-P",
             str(ROOT / "re/tools/compare_segment_roles.py"),
             "--object-dir",
             str(object_dir / "bloodprg"),

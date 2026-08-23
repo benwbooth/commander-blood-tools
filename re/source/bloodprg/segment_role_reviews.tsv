@@ -9,6 +9,8 @@ func_001dd8_save_slot_name_edit_step	*	653312f0c4b2bbbd	equivalent	The aggregate
 func_002140_input_action_move_previous	*	ddf03af9389de325	equivalent	The aggregate copy has the same source destination and byte footprint as the original string copy.
 func_00218d_input_action_move_next	*	c4cc5d128d5c2e28	equivalent	Four original dword moves and the rebuilt aggregate copy cover the same 16 source and destination bytes.
 func_00224d_input_action_cancel	*	9a07d4d7182e6be2	equivalent	The recovered C clears the same 384-byte palette object using a different instruction width.
+func_0024b2_decimal_append_i16	constant:0000	ebd4771616eb91c1	equivalent	Recovered C uses an ES based pointer to the CS-owned scratch buffer while preserving the caller's destination ES; the original temporarily sets DS to CS.
+func_0024eb_decimal_append_i32	constant:0000	c7db86caee47cabb	equivalent	Recovered C uses an ES based pointer to the CS-owned scratch buffer while preserving the caller's destination ES; the original temporarily sets DS to CS.
 func_0026cf_resource_archive_match	*	5403a7086017e50b	equivalent	Typed archive fields preserve every original read and write while the analyzer merges distinct dynamic objects.
 func_0028ca_resource_name_lookup	*	88fd59f6b3e45218	equivalent	The original DTA dword read is materialized as adjacent words over the same bytes.
 func_002901_resource_file_load_to_xms	*	955d947136ecfdfd	equivalent	DTA and XMS request dwords are split into word fields with identical segments directions and byte ranges.

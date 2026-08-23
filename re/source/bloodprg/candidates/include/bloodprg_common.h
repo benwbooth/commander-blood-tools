@@ -49,7 +49,7 @@ typedef signed long cb_i32;
 #define CB_FS_DATA CB_FAR
 #endif
 
-extern cb_u8 decimal_append_scratch[12];
+extern cb_u8 CB_CODE_DATA decimal_append_scratch[12];
 
 cb_u16 CB_FAR bloodprg_strlen(const volatile char CB_FAR *text); /* 0x002665 */
 cb_i16 CB_FAR ascii_digit_parse(const char CB_NEAR *text);       /* 0x002612 */

@@ -2,11 +2,11 @@
 
 #define BLOODPRG_DECIMAL_SCRATCH_END 11u
 
-cb_u8 decimal_append_scratch[12] = {0};
+cb_u8 CB_CODE_DATA decimal_append_scratch[12] = {0};
 
 void CB_FAR decimal_append_i16(cb_i16 value, char CB_FAR *destination)
 {
-    cb_u8 *cursor;
+    cb_u8 CB_CODE_DATA *cursor;
     cb_u16 magnitude;
     cb_u16 quotient;
 

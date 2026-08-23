@@ -308,7 +308,14 @@ def parse_listing(path: Path, text: str) -> Listing:
             continue
         if body.upper().startswith(("DB ", "DW ", "DD ", "DQ ")):
             continue
-        instructions.append(ListingInstruction(offset, data, body))
+        item = ListingInstruction(offset, data, body)
+        try:
+            decode_instruction(item)
+        except ValueError:
+            # Watcom emits CB_CODE_DATA bytes in the CODE listing as data rows.
+            # They are not part of the routine control-flow graph.
+            continue
+        instructions.append(item)
 
     jump_tables: dict[str, tuple[int, ...]] = {}
     for label, start in labels.items():

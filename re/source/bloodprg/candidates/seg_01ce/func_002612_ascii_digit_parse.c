@@ -1,7 +1,7 @@
 #include "../include/bloodprg_common.h"
 
 /* CS:0x02DA, immediately before ascii_digit_parse in the recovered image. */
-static const cb_u16 decimal_digit_place_values[] = {
+static const cb_u16 CB_CODE_DATA decimal_digit_place_values[] = {
     0u, 1u, 2u, 3u, 4u, 5u, 6u, 7u, 8u, 9u,
     0u, 10u, 20u, 30u, 40u, 50u, 60u, 70u, 80u, 90u,
     0u, 100u, 200u, 300u, 400u, 500u, 600u, 700u, 800u, 900u,
