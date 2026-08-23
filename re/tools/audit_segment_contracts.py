@@ -49,10 +49,15 @@ ZERO = "zero"
 
 INSTRUCTION_ROW = re.compile(
     r"^(?P<offset>[0-9A-Fa-f]{4,8})\s+"
-    r"(?P<bytes>(?:[0-9A-Fa-f]{2}\s+)+)\s*(?P<text>.*?)\s*$"
+    r"(?P<bytes>(?:[0-9A-Fa-f]{2}(?:\s+|$))+)(?P<text>.*?)\s*$"
 )
+INSTRUCTION_CONTINUATION_ROW = re.compile(r"^\s+(?P<text>\S.*?)\s*$")
 LABEL_ROW = re.compile(
     r"^(?P<offset>[0-9A-Fa-f]{4,8})\s+(?P<label>[A-Za-z_$?][\w$?@]*):\s*$"
+)
+ROUTINE_SIZE_ROW = re.compile(
+    r"^Routine Size:\s+(?P<size>\d+) bytes,\s+Routine Base:\s+"
+    r"\S+\s+\+\s+(?P<offset>[0-9A-Fa-f]{4,8})\s*$"
 )
 SYMBOL_TOKEN = re.compile(r"_[A-Za-z_$?][\w$?@]*")
 LOCAL_OPERAND = re.compile(
@@ -80,6 +85,8 @@ class Listing:
     instructions: tuple[ListingInstruction, ...]
     labels: dict[str, int]
     jump_tables: dict[str, tuple[int, ...]]
+    entrypoints: tuple[int, ...] = ()
+    executable_ranges: tuple[tuple[int, int], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -276,18 +283,58 @@ def transfer(item: ListingInstruction, state: AbstractState,
 
 
 def parse_listing(path: Path, text: str) -> Listing:
-    instructions: list[ListingInstruction] = []
+    parsed_instructions: list[ListingInstruction] = []
     labels: dict[str, int] = {}
     table_entries: dict[int, str] = {}
+    addressed_rows: list[tuple[int, bytes]] = []
+    unparsed_rows: list[tuple[int, bytes, str]] = []
+    routine_ranges: list[tuple[int, int]] = []
+    pending: tuple[int, bytes] | None = None
     has_segments = any(line.startswith("Segment: ") for line in text.splitlines())
     in_code = not has_segments
+
+    def add_instruction(offset: int, data: bytes, body: str) -> None:
+        addressed_rows.append((offset, data))
+        data_match = re.fullmatch(
+            r"D[WBD]\s+offset\s+(\S+)", body, re.IGNORECASE
+        )
+        if data_match:
+            table_entries[offset] = data_match.group(1)
+            return
+        if body.upper().startswith(("DB ", "DW ", "DD ", "DQ ")):
+            return
+        item = ListingInstruction(offset, data, body)
+        try:
+            decode_instruction(item)
+        except ValueError:
+            unparsed_rows.append((offset, data, body))
+            return
+        parsed_instructions.append(item)
+
     for raw_line in text.splitlines():
+        if pending is not None:
+            continuation = INSTRUCTION_CONTINUATION_ROW.match(raw_line)
+            if continuation:
+                offset, data = pending
+                add_instruction(offset, data, continuation["text"].strip())
+                pending = None
+                continue
+            offset, data = pending
+            addressed_rows.append((offset, data))
+            unparsed_rows.append((offset, data, "<missing continuation>"))
+            pending = None
+
         if raw_line.startswith("Segment: "):
             in_code = bool(re.match(
                 r"^Segment:\s+\S+_TEXT\s+BYTE\s+USE16\b", raw_line
             ))
             continue
         if not in_code:
+            continue
+        routine_match = ROUTINE_SIZE_ROW.match(raw_line)
+        if routine_match:
+            start = int(routine_match["offset"], 16)
+            routine_ranges.append((start, start + int(routine_match["size"])))
             continue
         label_match = LABEL_ROW.match(raw_line)
         if label_match:
@@ -299,23 +346,80 @@ def parse_listing(path: Path, text: str) -> Listing:
         offset = int(match["offset"], 16)
         data = bytes.fromhex(match["bytes"])
         body = match["text"].strip()
-        if re.fullmatch(r"(?:[0-9A-Fa-f]{2}\s*)+", body):
+        if not body:
+            pending = (offset, data)
             continue
-        data_match = re.fullmatch(r"D[WBD]\s+offset\s+(\S+)", body,
-                                  re.IGNORECASE)
-        if data_match:
-            table_entries[offset] = data_match.group(1)
-            continue
-        if body.upper().startswith(("DB ", "DW ", "DD ", "DQ ")):
-            continue
-        item = ListingInstruction(offset, data, body)
-        try:
-            decode_instruction(item)
-        except ValueError:
-            # Watcom emits CB_CODE_DATA bytes in the CODE listing as data rows.
-            # They are not part of the routine control-flow graph.
-            continue
-        instructions.append(item)
+        add_instruction(offset, data, body)
+
+    if pending is not None:
+        offset, data = pending
+        addressed_rows.append((offset, data))
+        unparsed_rows.append((offset, data, "<missing continuation>"))
+
+    function_labels = {
+        offset
+        for label, offset in labels.items()
+        if not label.startswith(("_", "L$"))
+    }
+    if not function_labels:
+        raise ValueError(f"{path}: no public function entry found")
+
+    if routine_ranges:
+        ranges_by_start = {start: end for start, end in routine_ranges}
+        entrypoints = tuple(sorted(function_labels & ranges_by_start.keys()))
+        missing_spans = sorted(function_labels - ranges_by_start.keys())
+        if missing_spans:
+            formatted = ", ".join(f"0x{offset:04x}" for offset in missing_spans)
+            raise ValueError(
+                f"{path}: public function entries have no routine span: {formatted}"
+            )
+        executable_ranges = tuple(
+            (entry, ranges_by_start[entry]) for entry in entrypoints
+        )
+    else:
+        entrypoints = tuple(sorted(function_labels))
+        if not addressed_rows:
+            raise ValueError(f"{path}: no addressed rows found")
+        executable_ranges = ((
+            min(entrypoints),
+            max(offset + len(data) for offset, data in addressed_rows),
+        ),)
+
+    def executable(offset: int, size: int = 1) -> bool:
+        end = offset + size
+        return any(start <= offset and end <= limit
+                   for start, limit in executable_ranges)
+
+    for offset, data, body in unparsed_rows:
+        if executable(offset, len(data)):
+            raise ValueError(
+                f"{path}: unparsed executable row at 0x{offset:04x}: {body}"
+            )
+
+    covered: set[int] = set()
+    for offset, data in addressed_rows:
+        for position in range(offset, offset + len(data)):
+            if any(start <= position < end for start, end in executable_ranges):
+                covered.add(position)
+    missing_bytes = [
+        position
+        for start, end in executable_ranges
+        for position in range(start, end)
+        if position not in covered
+    ]
+    if missing_bytes:
+        formatted = ", ".join(
+            f"0x{position:04x}" for position in missing_bytes[:8]
+        )
+        suffix = "..." if len(missing_bytes) > 8 else ""
+        raise ValueError(
+            f"{path}: uncovered executable byte(s): {formatted}{suffix}"
+        )
+
+    instructions = [
+        item for item in parsed_instructions
+        if executable(item.offset, len(item.data))
+    ]
 
     jump_tables: dict[str, tuple[int, ...]] = {}
     for label, start in labels.items():
@@ -330,7 +434,14 @@ def parse_listing(path: Path, text: str) -> Listing:
             jump_tables[label] = tuple(targets)
     if not instructions:
         raise ValueError(f"{path}: no instructions found in Watcom listing")
-    return Listing(path, tuple(instructions), labels, jump_tables)
+    return Listing(
+        path,
+        tuple(instructions),
+        labels,
+        jump_tables,
+        entrypoints,
+        executable_ranges,
+    )
 
 
 def listing_for_object(wdis: Path, object_path: Path,
@@ -449,9 +560,17 @@ def analyze_listing(listing: Listing,
                     owners: dict[str, str]) -> tuple[list[Finding], int]:
     by_offset = {item.offset: item for item in listing.instructions}
     edges = successors(listing)
-    entry = min(by_offset)
-    states: dict[int, AbstractState] = {entry: initial_state()}
-    pending = deque([entry])
+    entrypoints = listing.entrypoints or (min(by_offset),)
+    missing_entries = sorted(set(entrypoints) - by_offset.keys())
+    if missing_entries:
+        formatted = ", ".join(f"0x{offset:04x}" for offset in missing_entries)
+        raise ValueError(
+            f"{listing.object_path}: function entry is not executable: {formatted}"
+        )
+    states: dict[int, AbstractState] = {
+        entry: initial_state() for entry in entrypoints
+    }
+    pending = deque(entrypoints)
     visits = 0
     while pending:
         offset = pending.popleft()
@@ -465,6 +584,15 @@ def analyze_listing(listing: Listing,
             if previous != merged:
                 states[target] = merged
                 pending.append(target)
+
+    unreachable = sorted(by_offset.keys() - states.keys())
+    if unreachable:
+        formatted = ", ".join(f"0x{offset:04x}" for offset in unreachable[:8])
+        suffix = "..." if len(unreachable) > 8 else ""
+        raise ValueError(
+            f"{listing.object_path}: disconnected executable instruction(s): "
+            f"{formatted}{suffix}"
+        )
 
     findings: list[Finding] = []
     for offset, state in sorted(states.items()):

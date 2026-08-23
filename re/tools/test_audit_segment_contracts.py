@@ -144,6 +144,112 @@ Segment: _DATA WORD USE16 00000000 bytes
             [0x0008, 0x000C],
         )
 
+    def test_wrapped_main_instruction_keeps_tail_reachable(self):
+        listing = self.listing("""
+Segment: func_main_TEXT BYTE USE16 0000000F bytes
+0000                          routine_:
+0000    B8 00 00                  mov ax,seg _game_word
+0003    66 C7 46 E6 D0 02 96 00
+                                  mov dword ptr -0x1a[bp],0x009602d0
+000B    A1 00 00                  mov ax,word ptr _game_word
+000E    CB                        retf
+Routine Size: 15 bytes,    Routine Base: func_main_TEXT + 0000
+Segment: _DATA WORD USE16 00000000 bytes
+""")
+        findings, reached = MODULE.analyze_listing(
+            listing, {"_game_word": "GAME_DATA"}
+        )
+        self.assertEqual(reached, 4)
+        self.assertEqual([finding.status for finding in findings], ["ok"])
+        self.assertEqual(listing.instructions[1].text,
+                         "mov dword ptr -0x1a[bp],0x009602d0")
+
+    def test_wrapped_sprite_instruction_keeps_tail_reachable(self):
+        listing = self.listing("""
+Segment: func_sprite_TEXT BYTE USE16 0000000C bytes
+0000                          routine_:
+0000    66 C7 46 D8 00 00 00 00
+                                  mov dword ptr -0x28[bp],0x00000000
+0008    A1 00 00                  mov ax,word ptr _game_word
+000B    CB                        retf
+Routine Size: 12 bytes,    Routine Base: func_sprite_TEXT + 0000
+Segment: _DATA WORD USE16 00000000 bytes
+""")
+        findings, reached = MODULE.analyze_listing(
+            listing, {"_game_word": "GAME_DATA"}
+        )
+        self.assertEqual(reached, 3)
+        self.assertEqual([finding.status for finding in findings], ["ok"])
+
+    def test_zero_code_data_does_not_replace_prng_function_entry(self):
+        listing = self.listing("""
+Segment: func_prng_TEXT BYTE USE16 00000007 bytes
+0000                          _seed:
+0000    00 00                                           ..
+0002                          _mix:
+0002    00 00 00                                        ...
+Routine Size: 5 bytes,    Routine Base: func_prng_TEXT + 0000
+0005                          routine_:
+0005    31 C0                     xor ax,ax
+0007    CB                        retf
+Routine Size: 3 bytes,    Routine Base: func_prng_TEXT + 0005
+Segment: _DATA WORD USE16 00000000 bytes
+""")
+        self.assertEqual(listing.entrypoints, (0x0005,))
+        self.assertEqual(
+            [instruction.offset for instruction in listing.instructions],
+            [0x0005, 0x0007],
+        )
+        _findings, reached = MODULE.analyze_listing(listing, {})
+        self.assertEqual(reached, 2)
+
+    def test_consecutive_wrapped_resource_instructions_are_reconstructed(self):
+        listing = self.listing("""
+Segment: func_resource_TEXT BYTE USE16 00000019 bytes
+0000                          routine_:
+0000    26 66 C7 06 00 00 00 7D 00 00
+                                  mov dword ptr es:_move_request,0x00007d00
+000A    26 66 C7 06 06 00 00 00 00 00
+                                  mov dword ptr es:_move_request+0x6,0x00000000
+0014    26 A1 00 00               mov ax,word ptr es:_move_request
+0018    CB                        retf
+Routine Size: 25 bytes,    Routine Base: func_resource_TEXT + 0000
+Segment: _DATA WORD USE16 00000000 bytes
+""")
+        findings, reached = MODULE.analyze_listing(
+            listing, {"_move_request": "GAME_DATA"}
+        )
+        self.assertEqual(reached, 4)
+        self.assertEqual(
+            [finding.status for finding in findings],
+            ["unproven", "unproven", "unproven"],
+        )
+
+    def test_disconnected_executable_instruction_fails_closed(self):
+        listing = self.listing("""
+Segment: func_disconnected_TEXT BYTE USE16 00000004 bytes
+0000                          routine_:
+0000    EB 01                     jmp L$1
+0002    90                        nop
+0003                          L$1:
+0003    CB                        retf
+Routine Size: 4 bytes,    Routine Base: func_disconnected_TEXT + 0000
+Segment: _DATA WORD USE16 00000000 bytes
+""")
+        with self.assertRaisesRegex(ValueError, "disconnected executable"):
+            MODULE.analyze_listing(listing, {})
+
+    def test_unparsed_executable_instruction_fails_closed(self):
+        with self.assertRaisesRegex(ValueError, "unparsed executable row"):
+            self.listing("""
+Segment: func_unparsed_TEXT BYTE USE16 00000002 bytes
+0000                          routine_:
+0000    FF                        invalid
+0001    CB                        retf
+Routine Size: 2 bytes,    Routine Base: func_unparsed_TEXT + 0000
+Segment: _DATA WORD USE16 00000000 bytes
+""")
+
 
 if __name__ == "__main__":
     unittest.main()
