@@ -782,6 +782,14 @@ def compile_sources(args: argparse.Namespace, output: Path) -> None:
     )
     run_checked(
         [
+            str(cbvm),
+            "analyze-contact-manifest",
+            str(scripts.resolve()),
+            str((output / "validation" / "contact_manifest").resolve()),
+        ]
+    )
+    run_checked(
+        [
             sys.executable,
             str(ROOT / "re/tools/build_xdb_objects.py"),
             "--manifest",

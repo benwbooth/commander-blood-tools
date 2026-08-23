@@ -31,6 +31,7 @@ pub mod bloodprg;
 pub mod bloodsav;
 pub mod bridge;
 pub mod concept_menu;
+pub mod contact_manifest;
 pub mod croolis;
 pub mod decompress;
 pub mod descript;

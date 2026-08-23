@@ -24,6 +24,7 @@ nix develop --command cargo run --bin cbvm -- decompile-bloodscript /path/to/gam
 nix develop --command cargo run --bin cbvm -- decompile-data-bundle /path/to/game re/vm/structured
 nix develop --command cargo run --bin cbvm -- compile-bundle re/vm/structured /path/to/game /tmp/cbvm-bundle
 nix develop --command cargo run --bin cbvm -- build-runtime-tree re/vm/structured /path/to/extracted-cd /tmp/cblood-runtime
+nix develop --command cargo run --bin cbvm -- analyze-contact-manifest /path/to/game re/vm/contact-manifest
 nix develop --command cargo run -- inspect-descript /path/to/DESCRIPT.DES
 nix develop --command cargo run -- inspect-scripts /path/to/extracted-iso
 nix develop --command cargo run -- inspect-character-combinations /path/to/extracted-iso
@@ -48,6 +49,9 @@ DEB/DIC/VAR companions and requires each source to compile byte-exactly.
 refusing any result that differs from the shipped resource. `cbvm
 build-runtime-tree` installs that bundle into a hard-linked extracted-CD tree
 for DOSBox substitution testing.
+`cbvm analyze-contact-manifest` derives every COD contact procedure, its complete
+entry predicate region, presentation object, activation state, exact subtitle
+word-list offsets, and choices directly from COD/DEB/DIC plus the recovered CFG.
 `inspect-descript` emits typed JSON for `DESCRIPT.DES`.
 `inspect-scripts` emits typed JSON for `SCRIPT*.DEB`, `SCRIPT*.VAR`,
 `SCRIPT*.DIC`, and recovered speech bytecode events.

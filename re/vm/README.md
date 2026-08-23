@@ -61,6 +61,23 @@ cargo run --bin cbvm -- analyze-control-flow \
   accuracy/cblood_install/cblood re/vm/control-flow
 ```
 
+Generate the binary-derived contact census with:
+
+```sh
+cargo run --bin cbvm -- analyze-contact-manifest \
+  accuracy/cblood_install/cblood re/vm/contact-manifest
+```
+
+This pass finds all 65 procedures gated by native opcode `D1` (`during
+contact`) and retains the whole activation predicate region regardless of
+whether D1 appears before, between, or after the other requirements. The
+shipped split is `1/15/16/19/14` procedures by profile, with 29 direct and 36
+state-conditioned entries containing 661 TEXT tokens. Sixty-four procedures
+have a C4 presentation predicate. `SCRIPT2.Cryomorn2` is the sole deliberate
+exception: its Morning Oil entry is selected by location, state, and inventory
+holder requirements instead. Five contact procedures begin disabled. JSON
+retains exact typed predicate operands; TSV is the compact review index.
+
 Generate the first proven structured source view with:
 
 ```sh

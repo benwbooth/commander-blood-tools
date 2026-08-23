@@ -6352,3 +6352,29 @@ then its intro set only the normal `vm_ui = 4` presentation-busy bit before the
 watchdog sampled completion. The validator now accepts `vm_ui` 0 or 4 while
 still requiring every non-UI handoff blocker to be zero. A focused profile-4
 emulator rerun and all eight retained full-matrix reports pass that rule.
+
+## Binary-derived contact census (2026-08-23)
+
+`cbvm analyze-contact-manifest` establishes the binary source of truth for
+expanding beyond the two handwritten dialogue routes. It walks the byte-exact COD token
+model, DEB code/object symbols, DIC words, and recovered CFG to identify every
+procedure containing native opcode D1. Entry predicates are collected across
+the complete activation guard, because shipped procedure `SCRIPT2.morntv`
+places requirements before D1 while most procedures place D1 first.
+
+All 65 shipped contact procedures resolve: `1/15/16/19/14` by profile, 29 with
+only the presentation predicate and 36 with additional state predicates. They
+contain 661 TEXT tokens and 14 distinct first-line objects. Sixty-four entries
+test a C4 presentation action. `SCRIPT2.Cryomorn2` is the sole exception and is
+selected by Morning Oil's location, a shared state word, and the batteries'
+holder. Five procedures begin disabled; their exact A9 flag and next-procedure
+target are retained rather than normalized away.
+
+The Bob oracle anchors the address interpretation: BOB1 begins at COD `077D`,
+D1 is `0781`, C4 tests action record `0084 = Bob_Morlock 004A + TALK 003A`
+against related record `0028`, and the first TEXT stores object record `004A`
+directly. Its first opcode/word-list pair is `0788/078E`; the mission choice is
+`07E2/07EA`, including the optional loop-target word. Package construction now
+regenerates the JSON and TSV census from the source-compiled script bundle and
+fails if any contact, predicate, actor, dictionary word, or CFG owner becomes
+unresolved.

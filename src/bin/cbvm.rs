@@ -1,8 +1,9 @@
 use std::path::{Path, PathBuf};
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use commander_blood_tools::bas_cfg::{self, BasControlFlow};
 use commander_blood_tools::bloodscript;
+use commander_blood_tools::contact_manifest;
 use commander_blood_tools::vm_bundle;
 use commander_blood_tools::vm_cfg::{self, CodControlFlow};
 use commander_blood_tools::vm_data::{self, DataKind};
@@ -10,7 +11,7 @@ use commander_blood_tools::vm_source::{self, ImageKind};
 
 fn usage() -> ! {
     eprintln!(
-        "usage:\n  cbvm disassemble <cod|bas> <image> <dictionary> <output>\n  cbvm assemble <source> <output>\n  cbvm decompile-bundle <game-dir> <output-dir>\n  cbvm decompile-bloodscript <game-dir> <output-dir>\n  cbvm decompile-structured <game-dir> <output-dir>\n  cbvm decompile-data-bundle <game-dir> <output-dir>\n  cbvm compile-bloodscript <source> <output> [dictionary]\n  cbvm compile-data <deb|dic|var> <source> <output>\n  cbvm compile-bundle <source-dir> <game-dir> <output-dir>\n  cbvm build-runtime-tree <source-dir> <game-dir> <output-dir>\n  cbvm analyze-control-flow <game-dir> <output-dir>\n  cbvm analyze-bas-control-flow <game-dir> <output-dir>"
+        "usage:\n  cbvm disassemble <cod|bas> <image> <dictionary> <output>\n  cbvm assemble <source> <output>\n  cbvm decompile-bundle <game-dir> <output-dir>\n  cbvm decompile-bloodscript <game-dir> <output-dir>\n  cbvm decompile-structured <game-dir> <output-dir>\n  cbvm decompile-data-bundle <game-dir> <output-dir>\n  cbvm compile-bloodscript <source> <output> [dictionary]\n  cbvm compile-data <deb|dic|var> <source> <output>\n  cbvm compile-bundle <source-dir> <game-dir> <output-dir>\n  cbvm build-runtime-tree <source-dir> <game-dir> <output-dir>\n  cbvm analyze-control-flow <game-dir> <output-dir>\n  cbvm analyze-bas-control-flow <game-dir> <output-dir>\n  cbvm analyze-contact-manifest <game-dir> <output-dir>"
     );
     std::process::exit(2);
 }
@@ -565,6 +566,30 @@ fn main() -> Result<()> {
             }
             std::fs::write(output_dir.join("manifest.tsv"), manifest)?;
             std::fs::write(output_dir.join("scenarios.tsv"), scenarios)?;
+        }
+        Some("analyze-contact-manifest") => {
+            let game_dir = PathBuf::from(args.next().unwrap_or_else(|| usage()));
+            let output_dir = PathBuf::from(args.next().unwrap_or_else(|| usage()));
+            if args.next().is_some() {
+                usage();
+            }
+            std::fs::create_dir_all(&output_dir)?;
+            let manifest = contact_manifest::analyze_game_dir(&game_dir)?;
+            let mut json = serde_json::to_vec_pretty(&manifest)?;
+            json.push(b'\n');
+            std::fs::write(output_dir.join("contact-manifest.json"), json)?;
+            std::fs::write(
+                output_dir.join("contact-manifest.tsv"),
+                contact_manifest::tsv(&manifest),
+            )?;
+            println!(
+                "wrote {}: {} contact procedure(s), {} direct, {} conditioned, {} text token(s)",
+                output_dir.display(),
+                manifest.procedure_count,
+                manifest.direct_entry_count,
+                manifest.conditioned_entry_count,
+                manifest.text_count,
+            );
         }
         _ => usage(),
     }
