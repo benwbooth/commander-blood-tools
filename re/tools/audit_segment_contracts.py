@@ -365,17 +365,22 @@ def parse_listing(path: Path, text: str) -> Listing:
         raise ValueError(f"{path}: no public function entry found")
 
     if routine_ranges:
-        ranges_by_start = {start: end for start, end in routine_ranges}
-        entrypoints = tuple(sorted(function_labels & ranges_by_start.keys()))
-        missing_spans = sorted(function_labels - ranges_by_start.keys())
+        executable_ranges = tuple(sorted({
+            (start, end)
+            for start, end in routine_ranges
+            if any(start <= entry < end for entry in function_labels)
+        }))
+        entrypoints = tuple(sorted(
+            entry
+            for entry in function_labels
+            if any(start <= entry < end for start, end in executable_ranges)
+        ))
+        missing_spans = sorted(function_labels - set(entrypoints))
         if missing_spans:
             formatted = ", ".join(f"0x{offset:04x}" for offset in missing_spans)
             raise ValueError(
                 f"{path}: public function entries have no routine span: {formatted}"
             )
-        executable_ranges = tuple(
-            (entry, ranges_by_start[entry]) for entry in entrypoints
-        )
     else:
         entrypoints = tuple(sorted(function_labels))
         if not addressed_rows:

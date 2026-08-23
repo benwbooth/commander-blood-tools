@@ -164,7 +164,7 @@ void CB_NEAR cb_snd_clip_play(cb_u16 command,
 void CB_SAVE_REGS CB_FAR audio_param_init_cd5(
         cb_u16 driver_segment); /* 0x00B7B0 */
 void CB_SAVE_REGS CB_FAR audio_process_ade(void);         /* 0x00B7E3 */
-void CB_SAVE_REGS CB_FAR snd_play_clip(
+void CB_SAVE_REGS CB_LOAD_DS CB_FAR snd_play_clip(
         cb_i16 clip_index);                               /* 0x00B8CD */
 void CB_FAR snd_bank_loader(
     cb_u16 mode,

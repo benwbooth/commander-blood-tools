@@ -36,6 +36,29 @@ MODULE_SPECS = {
     "xdb_scrut": ("scrut.xdb", 0x33B0),
 }
 MODULE_ORDER = {module: index for index, module in enumerate(MODULE_SPECS)}
+MODULE_ROOTS = {
+    "xdb_amer": frozenset(
+        (
+            0x0000, 0x0355, 0x0925, 0x0958, 0x09EF, 0x0B0F, 0x0B1F,
+            0x1286, 0x12B3, 0x1414, 0x164C, 0x1692, 0x1B5F, 0x1B8F,
+            0x1BEA, 0x1C34, 0x1DD6,
+        )
+    ),
+    "xdb_croolis": frozenset(
+        (
+            0x0000, 0x036A, 0x0966, 0x0999, 0x0A30, 0x0B50, 0x0B60,
+            0x12DE, 0x130B, 0x146C, 0x16A4, 0x1727, 0x1ACB, 0x1AFB,
+            0x1B46, 0x1B85, 0x1D27,
+        )
+    ),
+    "xdb_scrut": frozenset(
+        (
+            0x0000, 0x036A, 0x0966, 0x0999, 0x0A35, 0x0B55, 0x0B65,
+            0x12CC, 0x12F9, 0x145A, 0x1692, 0x171B, 0x1B80, 0x1BB0,
+            0x1BFB, 0x1C45, 0x1DE7,
+        )
+    ),
+}
 
 # context+0x36 is a union. These values are observed control states, not code.
 CONTEXT_SCALAR_VALUES = frozenset((0x0000, 0x0001, 0x8001, 0xFFFF))
@@ -82,6 +105,7 @@ class AuditConfig:
     routine_index: Path
     manifest: Path
     xdb_dir: Path
+    root_entries: dict[str, tuple[int, ...]] | None = None
 
 
 @dataclass(frozen=True)
@@ -512,12 +536,11 @@ def audit_module(config: AuditConfig, module: str) -> AuditResult:
         module,
         image,
         code_end,
-        {
-            address
-            for owner in owners
-            for address in owner.instruction_addresses
-            if address < code_end
-        },
+        set(
+            config.root_entries[module]
+            if config.root_entries is not None
+            else MODULE_ROOTS[module]
+        ),
     )
     errors.extend(closure_errors)
     target_cache: dict[int, dict[str, str] | None] = {}

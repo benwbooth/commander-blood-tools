@@ -192,6 +192,7 @@ class Fixture:
             self.index,
             self.manifest,
             self.raw_dir,
+            {self.module: tuple(routine.entry for routine in self.routines)},
         )
 
 
@@ -208,34 +209,34 @@ class CallbackEdgeAuditTests(unittest.TestCase):
         config = fixture.write(owned_entries)
         return MODULE.audit_module(config, module)
 
-    def test_rejects_former_slot3_wave_target_substitutions(self):
+    def test_rejects_dead_slot3_motion_target_substitutions(self):
         cases = (
             (
                 "xdb_amer",
                 0x1414,
-                0x0C81,
+                0x0B37,
                 "xdb_amer_slot3_update",
-                "xdb_amer_slot1_motion_update",
                 "xdb_amer_slot1_wave_update",
+                "xdb_amer_slot1_motion_update",
             ),
             (
                 "xdb_croolis",
                 0x146C,
-                0x0CD9,
+                0x0B78,
                 "xdb_croolis_slot3_update",
-                "xdb_croolis_slot1_motion_update",
                 "xdb_croolis_slot1_wave_update",
+                "xdb_croolis_slot1_motion_update",
             ),
             (
                 "xdb_scrut",
                 0x145A,
-                0x0CC7,
+                0x0B78,
                 "xdb_scrut_slot3_update",
-                "xdb_scrut_slot1_motion_update",
                 "xdb_scrut_slot1_wave_update",
+                "xdb_scrut_slot1_motion_update",
             ),
         )
-        for module, writer, target, writer_name, motion_name, wrong_name in cases:
+        for module, writer, target, writer_name, wave_name, wrong_name in cases:
             with self.subTest(module=module):
                 result = self.fixture_result(
                     module,
@@ -246,36 +247,57 @@ class CallbackEdgeAuditTests(unittest.TestCase):
                             state_store(target),
                             source_target=wrong_name,
                         ),
-                        Routine(target, motion_name, b"\xC3"),
+                        Routine(target, wave_name, b"\xC3"),
                     ],
                 )
                 self.assertTrue(
                     any("target mismatch" in error for error in result.errors),
                     result.errors,
                 )
-                self.assertEqual(result.stores[0].target_function, motion_name)
+                self.assertEqual(result.stores[0].target_function, wave_name)
                 self.assertEqual(result.stores[0].status, "source_target_mismatch")
+
+    def test_dead_callback_store_is_not_promoted_to_root(self):
+        writer = 0x1414
+        motion = 0x0C81
+        wave = 0x0B37
+        body = b"\xeb\x05" + state_store(motion)[:-1] + state_store(wave)
+        result = self.fixture_result(
+            "xdb_amer",
+            [
+                Routine(
+                    writer,
+                    "xdb_amer_slot3_update",
+                    body,
+                    source_target="xdb_amer_slot1_wave_update",
+                ),
+                Routine(motion, "xdb_amer_slot1_motion_update", b"\xC3"),
+                Routine(wave, "xdb_amer_slot1_wave_update", b"\xC3"),
+            ],
+        )
+        self.assertEqual(result.errors, ())
+        self.assertEqual([store.value for store in result.stores], [wave])
 
     def test_closes_formerly_missing_croolis_and_scrut_chains(self):
         cases = (
             (
                 "xdb_croolis",
                 (
-                    (0x146C, 0x0CD9),
-                    (0x0CD9, 0x0CF9),
-                    (0x0CF9, 0x0C3E),
                     (0x0C3E, 0x0B78),
                     (0x0B78, 0x0C24),
+                    (0x0CB5, 0x0CD9),
+                    (0x0CD9, 0x0CF9),
+                    (0x0CF9, 0x0C3E),
                 ),
             ),
             (
                 "xdb_scrut",
                 (
-                    (0x145A, 0x0CC7),
-                    (0x0CC7, 0x0CE7),
-                    (0x0CE7, 0x0C32),
                     (0x0C32, 0x0B78),
                     (0x0B78, 0x0C18),
+                    (0x0CA3, 0x0CC7),
+                    (0x0CC7, 0x0CE7),
+                    (0x0CE7, 0x0C32),
                 ),
             ),
         )
@@ -292,8 +314,11 @@ class CallbackEdgeAuditTests(unittest.TestCase):
                     )
                     for writer, target in chain
                 ]
-                terminal = chain[-1][1]
-                routines.append(Routine(terminal, function(terminal), b"\xC3"))
+                writer_entries = {writer for writer, _target in chain}
+                routines.extend(
+                    Routine(target, function(target), b"\xC3")
+                    for target in target_entries - writer_entries
+                )
                 result = self.fixture_result(module, routines)
                 self.assertEqual(result.errors, ())
                 self.assertEqual(
@@ -305,11 +330,11 @@ class CallbackEdgeAuditTests(unittest.TestCase):
 
     def test_missing_chain_ownership_fails_but_discovery_continues(self):
         chain = (
-            (0x146C, 0x0CD9),
-            (0x0CD9, 0x0CF9),
-            (0x0CF9, 0x0C3E),
             (0x0C3E, 0x0B78),
             (0x0B78, 0x0C24),
+            (0x0CB5, 0x0CD9),
+            (0x0CD9, 0x0CF9),
+            (0x0CF9, 0x0C3E),
         )
         function = lambda entry: f"xdb_croolis_callback_{entry:04x}"
         routines = [
@@ -323,13 +348,13 @@ class CallbackEdgeAuditTests(unittest.TestCase):
         ]
         routines.append(Routine(0x0C24, function(0x0C24), b"\xC3"))
         result = self.fixture_result(
-            "xdb_croolis", routines, owned_entries={0x146C}
+            "xdb_croolis", routines, owned_entries={0x0C3E}
         )
         self.assertEqual(
             {store.value for store in result.stores},
             {target for _, target in chain},
         )
-        for target in {target for _, target in chain}:
+        for target in {target for _, target in chain} - {0x0C3E}:
             self.assertTrue(
                 any(f"0x{target:06x}" in error for error in result.errors),
                 (target, result.errors),

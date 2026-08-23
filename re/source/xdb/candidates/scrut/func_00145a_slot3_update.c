@@ -100,14 +100,5 @@ void XDB_NEAR xdb_scrut_slot3_update(
     }
 
     xdb_scrut_slot3_ring[ring_index].field_006 = 1;
-    xdb_scrut_slot1_selection_state = 1;
-    state->owner_offset = 0x25a8u;
-    state->field_054 = 0;
-    state->position_x = 0;
-    state->position_y = 0;
-    state->position_z = 0x20;
-    xdb_alien_palette_pulse_1.value += 0x1e;
-    xdb_alien_palette_pulse_2.value += 0x23;
-    state->callback = xdb_scrut_slot1_motion_update;
-    xdb_alien_callback_countdown = 5;
+    xdb_scrut_slot1_state_update(state, context);
 }

@@ -203,6 +203,31 @@ Segment: _DATA WORD USE16 00000000 bytes
         _findings, reached = MODULE.analyze_listing(listing, {})
         self.assertEqual(reached, 2)
 
+    def test_public_helper_inside_declared_routine_span_is_an_entrypoint(self):
+        listing = self.listing("""
+Segment: func_adapter_TEXT BYTE USE16 00000004 bytes
+0000                          adapter_:
+0000    90                        nop
+0001                          helper_:
+0001    90                        nop
+0002    EB FD                     jmp helper_
+Routine Size: 4 bytes,    Routine Base: func_adapter_TEXT + 0000
+Segment: _DATA WORD USE16 00000000 bytes
+""")
+        self.assertEqual(listing.entrypoints, (0x0000, 0x0001))
+
+    def test_public_entry_outside_declared_routine_span_fails_closed(self):
+        with self.assertRaisesRegex(ValueError, "no routine span"):
+            self.listing("""
+Segment: func_adapter_TEXT BYTE USE16 00000004 bytes
+0000                          adapter_:
+0000    C3                        ret
+Routine Size: 1 bytes,    Routine Base: func_adapter_TEXT + 0000
+0001                          orphan_:
+0001    C3                        ret
+Segment: _DATA WORD USE16 00000000 bytes
+""")
+
     def test_consecutive_wrapped_resource_instructions_are_reconstructed(self):
         listing = self.listing("""
 Segment: func_resource_TEXT BYTE USE16 00000019 bytes

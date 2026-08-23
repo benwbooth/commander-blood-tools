@@ -837,6 +837,12 @@ void XDB_NEAR xdb_scrut_slot3_initial_update(
 void XDB_NEAR xdb_scrut_slot3_update(
         xdb_alien_biased_state XDB_NEAR *state,
         xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_amer_method_noop(
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_method_noop(
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_method_noop(
+        xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_croolis_slot1_wave_update(
         xdb_alien_biased_state XDB_NEAR *state,
         xdb_alien_method_context XDB_NEAR *context);
@@ -1065,6 +1071,9 @@ extern void XDB_NEAR xdb_alien_data_segment_restore(
         modify exact []
 #pragma aux xdb_alien_resume_function parm [di]
 #pragma aux xdb_alien_state_function parm [si] [di] modify exact [ax bx cx dx]
+#pragma aux xdb_amer_method_noop parm [di] modify exact []
+#pragma aux xdb_croolis_method_noop parm [di] modify exact []
+#pragma aux xdb_scrut_method_noop parm [di] modify exact []
 
 /* Every address stored in a callback field uses the original register ABI. */
 #pragma aux xdb_amer_slot1_finish_update parm [si] [di]

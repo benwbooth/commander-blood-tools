@@ -8,7 +8,7 @@
 #define SND_CLIP_HEADER_BYTES 6u
 #define SND_STREAMED_INDEX_MASK 0x3fffu
 
-void CB_SAVE_REGS CB_FAR snd_play_clip(cb_i16 clip_index)
+void CB_SAVE_REGS CB_LOAD_DS CB_FAR snd_play_clip(cb_i16 clip_index)
 {
     volatile bloodprg_snd_stream_buffer CB_GAME_DATA *buffer;
     volatile bloodprg_snd_stream_buffer CB_GAME_DATA *other_buffer;

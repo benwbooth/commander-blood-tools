@@ -31,10 +31,39 @@ def listing(label: str, texts: list[str], extra_labels=None):
 
 
 class RelinkedAbiAuditTests(unittest.TestCase):
+    def test_accepts_sound_entry_that_restores_linked_dgroup(self):
+        subject = listing(
+            "snd_play_clip_",
+            [
+                "push bx",
+                "push ds",
+                "mov ax,DGROUP:CONST",
+                "mov ds,ax",
+                "test byte ptr gs:_snd_driver_pending_flag_gs,0x02",
+                "call dword ptr gs:_audio_position_callback_gs",
+            ],
+        )
+        self.assertEqual(MODULE.audit_sound(subject), [])
+
+    def test_rejects_sound_entry_that_inherits_foreign_ds(self):
+        subject = listing(
+            "snd_play_clip_",
+            [
+                "push bx",
+                "test byte ptr gs:_snd_driver_pending_flag_gs,0x02",
+                "call dword ptr gs:_audio_position_callback_gs",
+            ],
+        )
+        errors = MODULE.audit_sound(subject)
+        self.assertTrue(any("restore DS" in error for error in errors))
+
     def test_rejects_sound_access_through_caller_ds(self):
         subject = listing(
             "snd_play_clip_",
             [
+                "push ds",
+                "mov ax,DGROUP:CONST",
+                "mov ds,ax",
                 "test byte ptr _snd_driver_pending_flag_gs,0x02",
                 "call dword ptr es:_audio_position_callback_gs",
             ],

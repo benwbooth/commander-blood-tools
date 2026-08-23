@@ -58,6 +58,29 @@ def normalized_text(items) -> list[str]:
 def audit_sound(listing) -> list[str]:
     errors: list[str] = []
     instructions = routine_instructions(listing, "snd_play_clip_")
+    text = normalized_text(instructions)
+    load_sequence = (
+        r"^push\s+ds$",
+        r"^mov\s+ax,dgroup(?::\w+)?$",
+        r"^mov\s+ds,ax$",
+    )
+    cursor = 0
+    for pattern in load_sequence:
+        position = next(
+            (
+                index
+                for index in range(cursor, min(len(text), 20))
+                if re.search(pattern, text[index])
+            ),
+            None,
+        )
+        if position is None:
+            errors.append(
+                "snd_play_clip: entry does not restore DS from linked DGROUP "
+                f"before foreign-XDB callers: missing {pattern}"
+            )
+            break
+        cursor = position + 1
     for symbol in (
         "_snd_driver_pending_flag_gs",
         "_audio_position_callback_gs",
