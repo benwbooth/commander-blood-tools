@@ -1189,6 +1189,25 @@ def build_source_xdb_files(
         ],
         validation_root / "emitted_abi_tests.log",
     )
+    run_checked_logged(
+        [
+            sys.executable,
+            "-P",
+            str(ROOT / "re/tools/test_oracle_branch_coverage.py"),
+        ],
+        validation_root / "oracle_branch_coverage_tests.log",
+    )
+    run_checked_logged(
+        [
+            sys.executable,
+            "-P",
+            str(ROOT / "re/tools/xdb_candidate_oracle.py"),
+            "--check",
+            "--xdb-dir",
+            str(args.xdb_dir.resolve()),
+        ],
+        validation_root / "candidate_oracle.log",
+    )
 
     return records
 

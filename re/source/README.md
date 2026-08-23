@@ -65,6 +65,16 @@ nix develop -c python3 re/tools/input_action_oracle.py --check
 nix develop -c python3 re/tools/xdb_candidate_oracle.py --check
 ```
 
+The XDB oracle records instruction and conditional-edge coverage while it runs.
+`xdb/oracle_branch_coverage.tsv` reports every one of the 183 source routines:
+104 now have direct original-overlay vectors, 84 of those cover every decoded
+conditional edge, 20 retain an exact reviewed missing-edge set, and 79 still
+require direct original execution. The package gate rejects a stale report, an
+unexecuted direct oracle, or any missing-edge change not pinned in
+`xdb/oracle_branch_coverage_reviews.tsv`. Review rows are explicit coverage debt,
+not equivalence waivers; their only accepted disposition is
+`directed_vectors_required`.
+
 The XDB source inventory cross-checks standardized callable owners against the
 top-level routine index. Separate assembly artifacts retained for reviewed
 internal branch labels are checked against `re/assembly/boundary_overrides.tsv`

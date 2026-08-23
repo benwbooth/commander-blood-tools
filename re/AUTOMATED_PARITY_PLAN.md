@@ -20,8 +20,10 @@ when the original binary supplies the behavioral oracle.
   1,476 XDB symbolic accesses, and 2,898 explicit XDB far-segment uses.
 - The XDB ABI gate covers 218 contracts and 58 callback targets.
 - The 25 VM resources compile byte-for-byte.
-- Existing routine vectors cover all BLOODPRG candidates and 101 XDB
-  candidates; 82 XDB routines still rely on static control-flow review.
+- Existing routine vectors cover all BLOODPRG candidates and 104 XDB
+  candidates; 79 XDB routines still rely on static control-flow review. The
+  XDB oracle now records conditional-edge coverage: 84 direct routines are
+  complete and 20 have exact reviewed edge debt that cannot change silently.
 
 These checks prove storage ownership and selected ABI boundaries. They do not
 prove all caller-to-callee pointer provenance, loop invariants, signed overflow,
@@ -88,7 +90,7 @@ the original and rebuilt implementations from identical snapshots. Compare:
 - termination, instruction budget, and fault behavior.
 
 Use boundary-value and randomized inputs, then minimize the first divergence.
-Prioritize the 82 XDB routines without direct vectors and all routines reachable
+Prioritize the 79 XDB routines without direct vectors and all routines reachable
 from reported failures.
 
 ## Phase 5: XDB Data-Structure Invariants

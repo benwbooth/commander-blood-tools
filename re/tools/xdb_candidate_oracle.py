@@ -13,6 +13,7 @@ sys.path[:] = [
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import struct
 from pathlib import Path
@@ -48,6 +49,24 @@ from unicorn.x86_const import (
 )
 
 
+_COVERAGE_SPEC = importlib.util.spec_from_file_location(
+    "oracle_branch_coverage", Path(_HERE) / "oracle_branch_coverage.py"
+)
+assert _COVERAGE_SPEC is not None and _COVERAGE_SPEC.loader is not None
+oracle_branch_coverage = importlib.util.module_from_spec(_COVERAGE_SPEC)
+sys.modules[_COVERAGE_SPEC.name] = oracle_branch_coverage
+_COVERAGE_SPEC.loader.exec_module(oracle_branch_coverage)
+CoverageRecorder = oracle_branch_coverage.CoverageRecorder
+build_coverage_report = oracle_branch_coverage.build_report
+require_complete_direct_coverage = (
+    oracle_branch_coverage.require_complete_direct_coverage
+)
+require_reviewed_direct_coverage = (
+    oracle_branch_coverage.require_reviewed_direct_coverage
+)
+update_coverage_report = oracle_branch_coverage.update_report
+
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 VECTOR_ROOT = REPO_ROOT / "re/tools/oracle_vectors"
 IMAGE_PATHS = {
@@ -78,6 +97,10 @@ REGISTERS = {
     "ss": UC_X86_REG_SS,
     "flags": UC_X86_REG_EFLAGS,
 }
+XDB_MANIFEST = REPO_ROOT / "re/source/xdb/candidates/manifest.tsv"
+XDB_COVERAGE_REPORT = REPO_ROOT / "re/source/xdb/oracle_branch_coverage.tsv"
+XDB_COVERAGE_REVIEWS = REPO_ROOT / "re/source/xdb/oracle_branch_coverage_reviews.tsv"
+_COVERAGE_RECORDER: CoverageRecorder | None = None
 
 
 def load_image(module: str) -> bytes:
@@ -129,6 +152,11 @@ def execute(
             machine.emu_stop()
 
     machine.hook_add(UC_HOOK_CODE, stop_at_return)
+    if _COVERAGE_RECORDER is not None:
+        machine.hook_add(
+            UC_HOOK_CODE,
+            _COVERAGE_RECORDER.hook_for(image, code_segment),
+        )
     if code_handler is not None:
         machine.hook_add(UC_HOOK_CODE, code_handler)
     if interrupt_handler is not None:
@@ -14281,6 +14309,228 @@ def update_vector(path: Path, vectors: list[dict[str, object]], check: bool) -> 
     print(f"wrote {path.relative_to(REPO_ROOT)} ({len(vectors)} vectors)")
 
 
+def alien_slot1_callback_head_vectors(
+    module: str,
+    entry: int,
+    body_size: int,
+    body_hash: str,
+    active_offset: int,
+    selection_offset: int,
+    selected_offset: int,
+    finish_callback: int,
+    camera_callback: int,
+    pulse_updates: tuple[tuple[int, int], ...],
+    clear_active_on_selection: bool,
+) -> list[dict[str, object]]:
+    """Exercise every branch in the slot-1 wave callback head."""
+    image = load_image(module)
+    actual_hash = hashlib.sha256(image[entry : entry + body_size]).hexdigest()
+    if actual_hash != body_hash:
+        raise AssertionError(
+            f"{module}:{entry:#x}: recovered {body_size}-byte body changed"
+        )
+
+    data_segment = 0x5000
+    extra_segment = 0x7000
+    fs_segment = 0x9000
+    game_segment = 0xA000
+    stack_segment = 0xB000
+    state = 0x4000
+    context = 0x3000
+    return_address = 0xF000
+    stack_sentinel = bytes.fromhex("5aa596698778")
+    selected_state = 0x3456
+    cases = (
+        ("inactive_no_selection", 0, 0, 0x0010),
+        ("inactive_selected_unclamped", 0, 2, 0x0010),
+        ("inactive_selected_clamped", 0, 2, 0x007A),
+        ("active_camera_handoff", 1, 2, 0xA55A),
+    )
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", memory, offset, value & 0xFFFF)
+
+    def put_i16(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<h", memory, offset, value)
+
+    def put_u32(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<I", memory, offset, value & 0xFFFFFFFF)
+
+    def get_u16(memory: bytearray, offset: int) -> int:
+        return struct.unpack_from("<H", memory, offset)[0]
+
+    def get_u32(memory: bytearray, offset: int) -> int:
+        return struct.unpack_from("<I", memory, offset)[0]
+
+    vectors: list[dict[str, object]] = []
+    for case_index, (name, active, selection, delta) in enumerate(cases):
+        code_before = bytearray(image)
+        code_expected = bytearray(image)
+        put_u16(code_before, active_offset, active)
+        put_u16(code_expected, active_offset, active)
+        put_u16(code_before, selection_offset, selection)
+        put_u16(code_expected, selection_offset, selection)
+        put_u16(code_before, selected_offset, selected_state)
+        put_u16(code_expected, selected_offset, selected_state)
+        put_u16(code_before, 0x0099, delta)
+        put_u16(code_expected, 0x0099, delta)
+        # The active path tail-jumps to a separately recovered routine. A RET
+        # at that routine's entry preserves the original head's tail boundary.
+        code_before[camera_callback] = 0xC3
+        code_expected[camera_callback] = 0xC3
+
+        data_before = bytearray(
+            (offset * 29 + case_index * 17 + 3) & 0xFF
+            for offset in range(0x10000)
+        )
+        data_expected = bytearray(data_before)
+        for field, value in (
+            (0x00, 0x1111),
+            (0x0E, 0x2222),
+            (0x4E, 0x3333),
+            (0x50, 0x4444),
+            (0x52, 0xFFF0),
+        ):
+            put_u16(data_before, state + field, value)
+            put_u16(data_expected, state + field, value)
+        for field, value in (
+            (0x42, 0x11223344),
+            (0x46, 0x55667788),
+            (0x4A, 0x99AABBCC),
+        ):
+            put_u32(data_before, state + field, value)
+            put_u32(data_expected, state + field, value)
+        for offset, _amount in pulse_updates:
+            value = 0x10203040 + offset
+            put_u32(data_before, offset, value)
+            put_u32(data_expected, offset, value)
+        put_u16(data_before, 0x001E, 0x7777)
+        put_u16(data_expected, 0x001E, 0x7777)
+        for offset, value in ((0x22EC, -123), (0x22F0, 456), (0x22F4, -32768)):
+            put_i16(data_before, offset, value)
+            put_i16(data_expected, offset, value)
+
+        if active == 0:
+            put_u16(data_expected, state + 0x4E, 0)
+            put_u16(data_expected, state + 0x50, 0x0800)
+            put_u16(data_expected, state + 0x52, 0x0025)
+            if selection & 2:
+                put_u16(code_expected, 0x0099, min(delta + 8, 0x007F))
+                put_u16(data_expected, state, selected_state)
+                put_u16(data_expected, state + 0x0E, finish_callback)
+                put_u16(code_expected, selection_offset, 0)
+                for offset, amount in pulse_updates:
+                    put_u32(data_expected, offset, get_u32(data_expected, offset) - amount)
+                if clear_active_on_selection:
+                    put_u16(code_expected, active_offset, 0)
+                put_u16(data_expected, 0x001E, 4)
+        else:
+            put_u16(code_expected, selection_offset, 0)
+            for offset, amount in pulse_updates:
+                put_u32(data_expected, offset, get_u32(data_expected, offset) - amount)
+            put_u16(data_expected, state, 0x22A8)
+            for field, source in ((0x42, 0x22EC), (0x46, 0x22F0), (0x4A, 0x22F4)):
+                signed_value = struct.unpack_from("<h", data_before, source)[0]
+                put_u32(data_expected, state + field, -signed_value)
+
+        initial = {
+            "eax": 0xA1A11111 + case_index,
+            "ebx": 0xB2B22222 + case_index,
+            "ecx": 0xC3C33333 + case_index,
+            "edx": 0xD4D44444 + case_index,
+            "esi": 0xE5E50000 | state,
+            "edi": 0xF6F60000 | context,
+            "ebp": 0x97975555 + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0293 | (0x0400 if case_index & 1 else 0),
+        }
+        extra_before = bytes(
+            (offset * 13 + case_index + 7) & 0xFF for offset in range(0x10000)
+        )
+        fs_before = bytes(
+            (offset * 11 + case_index + 9) & 0xFF for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 7 + case_index + 5) & 0xFF for offset in range(0x10000)
+        )
+        machine = execute(
+            bytes(code_before),
+            entry,
+            return_address,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (extra_segment, 0, extra_before),
+                (fs_segment, 0, fs_before),
+                (game_segment, 0, game_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+        )
+        actual_code = bytes(machine.mem_read(0, len(image)))
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_code != bytes(code_expected):
+            differences = [
+                (offset, actual_code[offset], code_expected[offset])
+                for offset in range(len(image))
+                if actual_code[offset] != code_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: code differs at {differences}"
+            )
+        if actual_data != bytes(data_expected):
+            differences = [
+                (offset, actual_data[offset], data_expected[offset])
+                for offset in range(0x10000)
+                if actual_data[offset] != data_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: data differs at {differences}"
+            )
+        for segment, expected in (
+            (extra_segment, extra_before),
+            (fs_segment, fs_before),
+            (game_segment, game_before),
+        ):
+            if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: decoy {segment:#x} changed"
+                )
+        if machine.reg_read(UC_X86_REG_SP) != 0xFF02:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "active_before": active,
+                "active_after": get_u16(code_expected, active_offset),
+                "selection_before": selection,
+                "selection_after": get_u16(code_expected, selection_offset),
+                "delta_before": delta,
+                "delta_after": get_u16(code_expected, 0x0099),
+                "owner_after": get_u16(data_expected, state),
+                "callback_after": get_u16(data_expected, state + 0x0E),
+                "countdown_after": get_u16(data_expected, 0x001E),
+                "code_sha256": hashlib.sha256(code_expected).hexdigest(),
+                "data_sha256": hashlib.sha256(data_expected).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def alien_slot3_callback_vectors(
     module: str,
     kind: str,
@@ -14532,6 +14782,7 @@ def alien_slot3_callback_vectors(
 
 
 def main() -> int:
+    global _COVERAGE_RECORDER
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--check", action="store_true", help="fail unless committed vectors are current"
@@ -14539,11 +14790,91 @@ def main() -> int:
     parser.add_argument(
         "--only-slot3-callbacks",
         action="store_true",
-        help="generate or check only the recovered alien slot-3 callback vectors",
+        help=(
+            "generate or check only the recovered alien slot-1 callback heads "
+            "and slot-3 callbacks"
+        ),
+    )
+    parser.add_argument(
+        "--xdb-dir",
+        type=Path,
+        help="directory containing amer/croolis/manu3/scrut XDB images",
+    )
+    parser.add_argument(
+        "--require-complete-coverage",
+        action="store_true",
+        help="reject all incomplete direct-oracle branch coverage",
+    )
+    parser.add_argument(
+        "--allow-unreviewed-coverage",
+        action="store_true",
+        help="write a report before its changed missing-edge set is reviewed",
     )
     args = parser.parse_args()
 
+    if args.xdb_dir is not None:
+        for module in IMAGE_PATHS:
+            IMAGE_PATHS[module] = args.xdb_dir.resolve() / f"{module}.xdb"
+
+    if not args.only_slot3_callbacks:
+        canonical_images = {module: load_image(module) for module in IMAGE_PATHS}
+        image_sizes = {
+            len(image): module for module, image in canonical_images.items()
+        }
+        if len(image_sizes) != len(canonical_images):
+            raise SystemExit("XDB image sizes do not uniquely identify all modules")
+        _COVERAGE_RECORDER = CoverageRecorder(image_sizes, canonical_images)
+
     VECTOR_ROOT.mkdir(parents=True, exist_ok=True)
+    for (
+        module,
+        entry,
+        body_size,
+        body_hash,
+        active_offset,
+        selection_offset,
+        selected_offset,
+        finish_callback,
+        camera_callback,
+        pulse_updates,
+        clear_active_on_selection,
+    ) in (
+        (
+            "amer", 0x0B37, 153,
+            "99050300f8178ba956418cd222a091f5e9f5e2857f374d4a0ea0927aea9c42ff",
+            0x1648, 0x0B2F, 0x0B33, 0x0BD0, 0x0C5D,
+            ((0x2594, 0x1E), (0x25F2, 0x23)), False,
+        ),
+        (
+            "croolis", 0x0B78, 172,
+            "b31f5bd9edba9484f09f381b769138430c73c30375fdf4a09a000a6d39be513c",
+            0x16A0, 0x0B70, 0x0B74, 0x0C24, 0x0CB5,
+            ((0x2536, 0x19), (0x2594, 0x1E), (0x25F2, 0x23)), True,
+        ),
+        (
+            "scrut", 0x0B78, 160,
+            "866abe2a41ca054d817fe1087b3d101a04de02c0c324cb695badd2499d5bf815",
+            0x168E, 0x0B70, 0x0B74, 0x0C18, 0x0CA3,
+            ((0x2594, 0x1E), (0x25F2, 0x23)), True,
+        ),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            alien_slot1_callback_head_vectors(
+                module,
+                entry,
+                body_size,
+                body_hash,
+                active_offset,
+                selection_offset,
+                selected_offset,
+                finish_callback,
+                camera_callback,
+                pulse_updates,
+                clear_active_on_selection,
+            ),
+            args.check,
+        )
     for (
         module,
         timer_offset,
@@ -15473,6 +15804,26 @@ def main() -> int:
             near_noop_vectors(module, entry),
             args.check,
         )
+    assert _COVERAGE_RECORDER is not None
+    coverage_rows = build_coverage_report(
+        REPO_ROOT,
+        XDB_MANIFEST,
+        {module: load_image(module) for module in IMAGE_PATHS},
+        _COVERAGE_RECORDER,
+    )
+    update_coverage_report(XDB_COVERAGE_REPORT, coverage_rows, args.check)
+    if args.require_complete_coverage:
+        require_complete_direct_coverage(coverage_rows)
+    elif not args.allow_unreviewed_coverage:
+        require_reviewed_direct_coverage(coverage_rows, XDB_COVERAGE_REVIEWS)
+    direct_count = sum(
+        "oracle_verified" in row["oracle_status"] for row in coverage_rows
+    )
+    pending_count = len(coverage_rows) - direct_count
+    print(
+        f"OK: {XDB_COVERAGE_REPORT.relative_to(REPO_ROOT)} "
+        f"({direct_count} direct, {pending_count} pending)"
+    )
     return 0
 
 

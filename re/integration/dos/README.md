@@ -187,6 +187,10 @@ returns, callback stack and segment preservation, and 2,898 dynamic far-
 segment uses. The current report contains 218 passing contracts and rejects an
 ES-based access unless its selector definition reaches that instruction across
 every control-flow path.
+`candidate_oracle.log` regenerates every direct XDB original-overlay vector and
+checks the committed branch-edge report. The build rejects new or changed
+coverage debt unless its exact missing-edge fingerprint is reviewed; the
+separate `oracle_branch_coverage_tests.log` verifies that fail-closed behavior.
 `segment_role_comparison.tsv` is the complementary dynamic far-memory report.
 The package build fails if an original-only role is neither proved through
 direct-call provenance nor covered by a current assembly-to-C equivalence in
