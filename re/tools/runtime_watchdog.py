@@ -99,7 +99,12 @@ DIALOGUE_AUDIO_OFFSETS = {
 PRESENTATION_FLOW_OFFSETS = {
     "mouse_x": (0x0A2A, "h"),
     "mouse_y": (0x0A2C, "h"),
+    "mouse_button_state": (0x0A2E, "H"),
+    "mouse_previous_button_state": (0x0A30, "H"),
     "nav_actor_presentation_state": (0x0A32, "H"),
+    "nav_target_presentation_state": (0x0A34, "H"),
+    "mouse_last_x": (0x0A38, "h"),
+    "mouse_last_y": (0x0A3A, "h"),
     "mouse_primary_pressed": (0x0A3E, "B"),
     "mouse_secondary_pressed": (0x0A3F, "B"),
     "mouse_press_pending": (0x0A40, "B"),
@@ -128,7 +133,13 @@ PRESENTATION_FLOW_OFFSETS = {
     "presentation_box_mode": (0x27E1, "B"),
     "presentation_box_phase": (0x2B93, "h"),
     "bridge_view_frame": (0x2795, "h"),
+    "nav_target_hover_row": (0x27C7, "B"),
     "word_choice_active": (0x27D7, "B"),
+    "nav_target_selection": (0x27E7, "B"),
+    "choice_rect_x": (0x2AAB, "h"),
+    "choice_rect_y": (0x2AAD, "h"),
+    "choice_rect_width": (0x2AAF, "h"),
+    "choice_rect_height": (0x2AB1, "h"),
     "text_display_active": (0x5E64, "B"),
     "text_reveal_phase": (0x5E65, "H"),
     "active_line": (0x6788, "H"),
@@ -678,6 +689,33 @@ def read_presentation_flow_state(
             "<" + field_type, memory, game + offset
         )[0]
     return state
+
+
+def presentation_progress_key(state: dict[str, int]) -> tuple[int, ...]:
+    """Fields that must change when an active word-choice consumes input."""
+    return tuple(
+        state[name]
+        for name in (
+            "word_choice_active",
+            "presentation_text_wait",
+            "active_line",
+            "displayed_line",
+            "nav_target_selection",
+            "presentation_active",
+            "presentation_defer",
+            "text_display_active",
+        )
+    )
+
+
+def word_choice_waiting_for_input(state: dict[str, int]) -> bool:
+    return (
+        (state["word_choice_active"] & 1) != 0
+        and state["presentation_text_wait"] == 2
+        and (state["mouse_primary_pressed"] & 1) == 0
+        and (state["mouse_press_pending"] & 1) == 0
+        and state["nav_target_selection"] == 0
+    )
 
 
 def read_c_string(memory: bytes, address: int, limit: int = 160) -> str:

@@ -325,7 +325,14 @@ class DialogueAudioTests(unittest.TestCase):
         struct.pack_into("<I", memory, game + 0x0D88, 0x12345678)
         struct.pack_into("<h", memory, game + 0x0A2A, 230)
         struct.pack_into("<h", memory, game + 0x0A2C, 103)
+        struct.pack_into("<H", memory, game + 0x0A2E, 1)
+        struct.pack_into("<H", memory, game + 0x0A30, 0)
+        struct.pack_into("<h", memory, game + 0x0A38, 229)
+        struct.pack_into("<h", memory, game + 0x0A3A, 102)
         struct.pack_into("<h", memory, game + 0x2795, 45)
+        memory[game + 0x27C7] = 3
+        memory[game + 0x27E7] = 3
+        struct.pack_into("<hhhh", memory, game + 0x2AAB, 170, 52, 120, 96)
         struct.pack_into("<H", memory, game + 0x675A, 0x06C2)
         struct.pack_into("<H", memory, game + 0x6768, 0x00C4)
         struct.pack_into("<H", memory, game + 0x676A, 0x06C2)
@@ -338,10 +345,40 @@ class DialogueAudioTests(unittest.TestCase):
         self.assertEqual(state["resource_source_remaining"], 0x12345678)
         self.assertEqual(state["mouse_x"], 230)
         self.assertEqual(state["mouse_y"], 103)
+        self.assertEqual(state["mouse_button_state"], 1)
+        self.assertEqual(state["mouse_previous_button_state"], 0)
+        self.assertEqual(state["mouse_last_x"], 229)
+        self.assertEqual(state["mouse_last_y"], 102)
         self.assertEqual(state["bridge_view_frame"], 45)
+        self.assertEqual(state["nav_target_hover_row"], 3)
+        self.assertEqual(state["nav_target_selection"], 3)
+        self.assertEqual(
+            [
+                state["choice_rect_x"],
+                state["choice_rect_y"],
+                state["choice_rect_width"],
+                state["choice_rect_height"],
+            ],
+            [170, 52, 120, 96],
+        )
         self.assertEqual(state["nav_pending_record_link"], 0x06C2)
         self.assertEqual(state["deferred_record_type"], 0x00C4)
         self.assertEqual(state["deferred_record_related"], 0x06C2)
+
+    def test_classifies_idle_word_choice_without_calling_it_a_crash(self) -> None:
+        state = {name: 0 for name in watchdog.PRESENTATION_FLOW_OFFSETS}
+        state["word_choice_active"] = 1
+        state["presentation_text_wait"] = 2
+
+        self.assertTrue(watchdog.word_choice_waiting_for_input(state))
+        before = watchdog.presentation_progress_key(state)
+
+        state["mouse_x"] = 220
+        state["mouse_y"] = 80
+        self.assertEqual(watchdog.presentation_progress_key(state), before)
+        state["nav_target_selection"] = 2
+        self.assertNotEqual(watchdog.presentation_progress_key(state), before)
+        self.assertFalse(watchdog.word_choice_waiting_for_input(state))
 
 
 class Script2RadioTests(unittest.TestCase):

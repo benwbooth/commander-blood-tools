@@ -7,6 +7,8 @@
   "entrypoint_count": 1,
   "direct_next_count": 0,
   "edge_count": 3,
+  "menu_choice_count": 1,
+  "dialogue_event_count": 1,
   "entrypoints": [
     {
       "object_name": "Honk",
@@ -44,7 +46,50 @@
       "body_end": 31,
       "terminator": "end",
       "body_token_count": 2,
-      "list_index": 0
+      "list_index": 0,
+      "menu_choices": [
+        {
+          "offset": 2647,
+          "text": "adieu"
+        }
+      ],
+      "dialogue_events": [
+        {
+          "offset": 11,
+          "line_index": 2090,
+          "voice_selector": 255,
+          "flags_b4": 97,
+          "flags_b5": 128,
+          "loop_target": null,
+          "control_word": null,
+          "words": [
+            {
+              "offset": 2304,
+              "text": "Yes"
+            },
+            {
+              "offset": 240,
+              "text": "!"
+            },
+            {
+              "offset": 1257,
+              "text": "Commander"
+            },
+            {
+              "offset": 1439,
+              "text": "?"
+            },
+            {
+              "offset": 65535,
+              "text": null
+            },
+            {
+              "offset": 2653,
+              "text": "bye_bye"
+            }
+          ]
+        }
+      ]
     }
   ],
   "edges": [

@@ -51,6 +51,24 @@ pub struct BasEntrypoint {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct BasDictionaryWord {
+    pub offset: u16,
+    pub text: Option<String>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct BasDialogueEvent {
+    pub offset: usize,
+    pub line_index: u16,
+    pub voice_selector: u8,
+    pub flags_b4: u8,
+    pub flags_b5: u8,
+    pub loop_target: Option<u16>,
+    pub control_word: Option<u16>,
+    pub words: Vec<BasDictionaryWord>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct BasSelectorNode {
     pub offset: usize,
     pub selector: u16,
@@ -62,6 +80,8 @@ pub struct BasSelectorNode {
     pub terminator: BasTerminatorKind,
     pub body_token_count: usize,
     pub list_index: usize,
+    pub menu_choices: Vec<BasDictionaryWord>,
+    pub dialogue_events: Vec<BasDialogueEvent>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
@@ -83,6 +103,8 @@ pub struct BasControlFlow {
     pub entrypoint_count: usize,
     pub direct_next_count: usize,
     pub edge_count: usize,
+    pub menu_choice_count: usize,
+    pub dialogue_event_count: usize,
     pub entrypoints: Vec<BasEntrypoint>,
     pub lists: Vec<BasSelectorList>,
     pub nodes: Vec<BasSelectorNode>,
@@ -164,10 +186,14 @@ pub fn analyze_bas(
             let Some(body_head) = tokens.get(body_index) else {
                 bail!("BAS selector node 0x{node_offset:04X} has no body");
             };
-            let menu_offset = match body_head.token {
-                BasToken::Menu { offset, .. } if offset == node_offset + 4 => offset,
+            let (menu_offset, menu_word_offsets) = match &body_head.token {
+                BasToken::Menu {
+                    offset,
+                    word_offsets,
+                } if *offset == node_offset + 4 => (*offset, word_offsets),
                 _ => bail!("BAS selector body at 0x{node_offset:04X} does not begin with MENU"),
             };
+            let menu_choices = dictionary_words(menu_word_offsets, dictionary);
 
             let (terminator_index, terminator) = if next != 0 {
                 let target = usize::from(next);
@@ -220,6 +246,31 @@ pub fn analyze_bas(
             let body_start = body_head.token.offset();
             let body_end = tokens[terminator_index].token.offset();
             let body_token_count = terminator_index - body_index;
+            let dialogue_events = tokens[body_index + 1..terminator_index]
+                .iter()
+                .filter_map(|decoded| match &decoded.token {
+                    BasToken::Text(vm::VmToken::Text {
+                        offset,
+                        line_index,
+                        voice_selector,
+                        flags_b4,
+                        flags_b5,
+                        loop_target,
+                        control_word,
+                        word_offsets,
+                    }) => Some(BasDialogueEvent {
+                        offset: *offset,
+                        line_index: *line_index,
+                        voice_selector: *voice_selector,
+                        flags_b4: *flags_b4,
+                        flags_b5: *flags_b5,
+                        loop_target: *loop_target,
+                        control_word: *control_word,
+                        words: dictionary_words(word_offsets, dictionary),
+                    }),
+                    _ => None,
+                })
+                .collect();
             let next_offset = (next != 0).then_some(usize::from(next));
             nodes.push(BasSelectorNode {
                 offset: node_offset,
@@ -235,6 +286,8 @@ pub fn analyze_bas(
                 terminator,
                 body_token_count,
                 list_index,
+                menu_choices,
+                dialogue_events,
             });
             edges.insert(BasEdge {
                 from: node_offset,
@@ -285,6 +338,8 @@ pub fn analyze_bas(
 
     nodes.sort_by_key(|node| node.offset);
     let direct_next_count = nodes.iter().filter(|node| node.next.is_some()).count();
+    let menu_choice_count = nodes.iter().map(|node| node.menu_choices.len()).sum();
+    let dialogue_event_count = nodes.iter().map(|node| node.dialogue_events.len()).sum();
     let edges: Vec<_> = edges.into_iter().collect();
     Ok(BasControlFlow {
         script: script.to_string(),
@@ -295,11 +350,23 @@ pub fn analyze_bas(
         entrypoint_count: entrypoints.len(),
         direct_next_count,
         edge_count: edges.len(),
+        menu_choice_count,
+        dialogue_event_count,
         entrypoints,
         lists,
         nodes,
         edges,
     })
+}
+
+fn dictionary_words(offsets: &[u16], dictionary: &HashMap<u16, String>) -> Vec<BasDictionaryWord> {
+    offsets
+        .iter()
+        .map(|offset| BasDictionaryWord {
+            offset: *offset,
+            text: dictionary.get(offset).cloned(),
+        })
+        .collect()
 }
 
 fn decode_typed_stream(

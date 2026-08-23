@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Result, bail};
+use anyhow::{bail, Context, Result};
 use commander_blood_tools::bas_cfg::{self, BasControlFlow};
 use commander_blood_tools::bloodscript;
 use commander_blood_tools::vm_bundle;
@@ -508,7 +508,10 @@ fn main() -> Result<()> {
             }
             std::fs::create_dir_all(&output_dir)?;
             let mut manifest = String::from(
-                "script\tinput_bytes\ttokens\tselector_nodes\tlists\tentrypoints\tdirect_next\tedges\n",
+                "script\tinput_bytes\ttokens\tselector_nodes\tlists\tentrypoints\tdirect_next\tedges\tmenu_choices\tdialogue_events\n",
+            );
+            let mut scenarios = String::from(
+                "scenario\tscript\tobject\tlist_index\tnode_offset\tselector_offset\tselector\tmenu_row\tchoice_offset\tchoice\tdialogue_events\n",
             );
             for script in 1..=5 {
                 let name = format!("SCRIPT{script}");
@@ -520,7 +523,7 @@ fn main() -> Result<()> {
                 let graph =
                     write_bas_control_flow(&name, &image, &var, &dictionary, &symbols, &output)?;
                 manifest.push_str(&format!(
-                    "{name}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
+                    "{name}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
                     graph.image_bytes,
                     graph.token_count,
                     graph.selector_node_count,
@@ -528,10 +531,40 @@ fn main() -> Result<()> {
                     graph.entrypoint_count,
                     graph.direct_next_count,
                     graph.edge_count,
+                    graph.menu_choice_count,
+                    graph.dialogue_event_count,
                 ));
+                for node in &graph.nodes {
+                    let object = &graph.lists[node.list_index].entrypoint.object_name;
+                    for (row, choice) in node.menu_choices.iter().enumerate() {
+                        let selector = node.selector_name.replace(['\t', '\n', '\r'], " ");
+                        let choice_text = choice
+                            .text
+                            .as_deref()
+                            .unwrap_or("<unknown>")
+                            .replace(['\t', '\n', '\r'], " ");
+                        let scenario = format!(
+                            "{}:{}:{:04x}:{}",
+                            name.to_ascii_lowercase(),
+                            object,
+                            node.offset,
+                            row,
+                        );
+                        scenarios.push_str(&format!(
+                            "{scenario}\t{name}\t{object}\t{}\t0x{:04x}\t0x{:04x}\t{selector}\t{}\t0x{:04x}\t{choice_text}\t{}\n",
+                            node.list_index,
+                            node.offset,
+                            node.selector,
+                            row,
+                            choice.offset,
+                            node.dialogue_events.len(),
+                        ));
+                    }
+                }
                 println!("analyzed {} -> {}", image.display(), output.display());
             }
             std::fs::write(output_dir.join("manifest.tsv"), manifest)?;
+            std::fs::write(output_dir.join("scenarios.tsv"), scenarios)?;
         }
         _ => usage(),
     }

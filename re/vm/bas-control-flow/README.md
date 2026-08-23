@@ -27,6 +27,20 @@ owns all 321 selector nodes exactly once and accounts for all 284 nonzero
 `next` fields. Every matched body begins with `MENU` and ends at the precise
 `AC`, `AA`, or `FF` boundary used by the native executor.
 
+The generated node records are also the authoritative scenario inventory.
+They retain every menu dictionary offset and decoded label, plus every TEXT
+event in the matched body with its BAS offset, line-record index, voice
+selector, presentation flags, optional control operands, and dictionary-word
+payload. Across all five profiles this accounts for 1,396 selectable menu rows
+and 1,849 dialogue events. A runtime coverage runner can therefore identify a
+scenario by `(script, object, selector, menu row)` and compare observed events
+with bytecode-derived expectations without embedding hand-written dialogue or
+choice lists.
+
+`scenarios.tsv` flattens that inventory into one stable row per selectable
+choice. Its 1,396 data rows are the work queue for original-versus-rebuilt
+runtime probes; offsets keep duplicate labels and repeated selectors distinct.
+
 The duplicate selector `0x0001` in SCRIPT3's Izwalito list is retained. It is
 not an analyzer artifact: both nodes belong to the same object-owned chain and
 are represented as distinct match tests at offsets `0x0397` and `0x03C9`.
