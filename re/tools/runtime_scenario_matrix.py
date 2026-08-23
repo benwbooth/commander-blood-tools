@@ -275,9 +275,14 @@ def _validate_teleport(
     if (
         not isinstance(blockers, dict)
         or not blockers
-        or any(value != 0 for value in blockers.values())
+        or blockers.get("vm_ui", 0) not in (0, 4)
+        or any(
+            value != 0
+            for name, value in blockers.items()
+            if name != "vm_ui"
+        )
     ):
-        errors.append("profile handoff blockers are not all clear")
+        errors.append("profile handoff blockers contain unexpected state")
     return errors
 
 

@@ -6343,3 +6343,12 @@ An earlier probe submitted the contact while presentation mode 1 suppressed
 `89`, but that was an invalid driver precondition, not a recovered-runtime
 defect. The accepted route requires presentation mode 0 and all profile
 handoff blockers clear before selecting Bob.
+
+The complete eight-scenario matrix then passed all five profile transitions,
+both named dialogue routes, and authentic Pterra with zero reported runtime
+anomalies. Profile 4 exposed a sampling ambiguity in the matrix validator: the
+resource handoff completed with exact handles `86-90` and five resolved images,
+then its intro set only the normal `vm_ui = 4` presentation-busy bit before the
+watchdog sampled completion. The validator now accepts `vm_ui` 0 or 4 while
+still requiring every non-UI handoff blocker to be zero. A focused profile-4
+emulator rerun and all eight retained full-matrix reports pass that rule.

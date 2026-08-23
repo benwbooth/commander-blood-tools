@@ -38,7 +38,11 @@ def valid_teleport_report(profile: int) -> dict[str, object]:
                     "handles": handles,
                     "expected_handles": handles,
                     "images": [f"1234:{index:04x}" for index in range(5)],
-                    "blockers": {"presentation": 0, "ship": 0},
+                    "blockers": {
+                        "vm_ui": 0,
+                        "presentation": 0,
+                        "ship": 0,
+                    },
                 },
             }
         ],
@@ -126,6 +130,18 @@ class ReportValidationTests(unittest.TestCase):
         report["teleports"][0]["completed_state"]["request"] = 3
         self.assertIn(
             "completed request was not cleared",
+            matrix.validate_report(scenario, report),
+        )
+
+    def test_teleport_allows_intro_ui_busy_but_no_other_blocker(self) -> None:
+        scenario = matrix.SCENARIO_BY_NAME["teleport-4"]
+        report = valid_teleport_report(4)
+        state = report["teleports"][0]["completed_state"]
+        state["blockers"]["vm_ui"] = 4
+        self.assertEqual(matrix.validate_report(scenario, report), [])
+        state["blockers"]["render"] = 1
+        self.assertIn(
+            "profile handoff blockers contain unexpected state",
             matrix.validate_report(scenario, report),
         )
 

@@ -320,6 +320,8 @@ removes old `PTERRA1D/F/G.LBM` markers only from its disposable copy before
 launch; the source install is never modified. `matrix.json`, per-scenario
 reports, command logs, emulator logs, and guest snapshots retain enough
 evidence to reproduce a failure without manually replaying the route.
+Profile completion permits `vm_ui` to be either 0 or the normal intro-busy bit
+4; every non-UI handoff blocker must still be zero.
 
 The later tutorial checkpoint now passes too. The optimized runtime drove
 `BPRG_RE.EXE` through SCRIPT1, selected CRYOBOX and BOB_MORLOCK, loaded
