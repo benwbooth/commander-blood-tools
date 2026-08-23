@@ -22,10 +22,12 @@ import hashlib
 import importlib.util
 import json
 import re
+import signal
 import struct
 import subprocess
 import threading
 import time
+from collections import Counter, deque
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -37,6 +39,25 @@ GUEST_SNAPSHOT_SIZE = 0x100000
 PTRACE_ATTACH = 16
 PTRACE_DETACH = 17
 TRANSIENT_INTERRUPT_VECTORS = frozenset((0x0F,))
+DOSBOX_FAULT_PATTERNS = (
+    (
+        "illegal-interrupt",
+        re.compile(
+            rb"Illegal Unhandled Interrupt Called ([0-9]+)",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "fatal-error",
+        re.compile(
+            rb"(?:DOSBox-X fatal error|E_Exit:|Segmentation fault|"
+            rb"Assertion .{0,160} failed)",
+            re.IGNORECASE,
+        ),
+    ),
+)
+DOSBOX_LOG_CARRY_SIZE = 512
+MAX_HOT_LOOP_IPS = 16
 SUCCESSFUL_VERDICTS = frozenset(
     (
         "TIMEOUT-NO-ANOMALY",
@@ -206,6 +227,11 @@ SEGMENT_ROW = re.compile(
     r"(?P<segment>[0-9A-Fa-f]{4}):(?P<offset>[0-9A-Fa-f]{4})\s+"
     r"(?P<size>[0-9A-Fa-f]{8})$"
 )
+CODE_SEGMENT_ROW = re.compile(
+    r"^(?P<name>\S+)\s+CODE\s+\S+\s+"
+    r"(?P<segment>[0-9A-Fa-f]{4}):(?P<offset>[0-9A-Fa-f]{4})\s+"
+    r"(?P<size>[0-9A-Fa-f]{8})$"
+)
 
 
 class WatchdogError(RuntimeError):
@@ -286,6 +312,19 @@ class ProfileState:
                 if name != "vm_ui"
             )
         )
+
+
+@dataclass(frozen=True)
+class ExecutionSample:
+    sample: int
+    cs: int
+    ip: int
+    ss: int
+    sp: int
+    bp: int
+    progress: tuple[object, ...]
+    waiting_for_input: bool
+    game_owned_code: bool
 
 
 def parse_segment_layout(path: Path) -> SegmentLayout:
@@ -405,6 +444,56 @@ def write_json_report(path: Path, report: dict[str, object]) -> None:
         json.dumps(report, indent=2) + "\n", encoding="utf-8"
     )
     temporary.replace(path)
+
+
+def write_binary_atomic(path: Path, data: bytes) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(path.name + ".tmp")
+    temporary.write_bytes(data)
+    temporary.replace(path)
+
+
+def find_dosbox_fault(data: bytes) -> dict[str, object] | None:
+    for kind, pattern in DOSBOX_FAULT_PATTERNS:
+        match = pattern.search(data)
+        if match is None:
+            continue
+        line_start = data.rfind(b"\n", 0, match.start()) + 1
+        line_end = data.find(b"\n", match.end())
+        if line_end < 0:
+            line_end = len(data)
+        fault: dict[str, object] = {
+            "kind": kind,
+            "message": data[line_start:line_end].decode(
+                "utf-8", errors="replace"
+            ),
+        }
+        if kind == "illegal-interrupt":
+            fault["interrupt"] = int(match.group(1), 10)
+        return fault
+    return None
+
+
+def scan_dosbox_log(
+    path: Path,
+    offset: int,
+    carry: bytes,
+) -> tuple[dict[str, object] | None, int, bytes]:
+    if not path.exists():
+        return None, offset, carry
+    size = path.stat().st_size
+    if size < offset:
+        offset = 0
+        carry = b""
+    with path.open("rb") as stream:
+        stream.seek(offset)
+        chunk = stream.read()
+    combined = carry + chunk
+    return (
+        find_dosbox_fault(combined),
+        size,
+        combined[-DOSBOX_LOG_CARRY_SIZE:],
+    )
 
 
 def host_mappings(pid: int) -> list[HostMapping]:
@@ -1150,6 +1239,71 @@ def presentation_work_is_active(
     )
 
 
+def execution_progress_key(
+    profile: ProfileState,
+    presentation: dict[str, int],
+    audio: dict[str, int],
+) -> tuple[object, ...]:
+    return (
+        profile.profile,
+        profile.request,
+        profile.execution_enabled,
+        profile.handles,
+        profile.images,
+        profile.blockers,
+        active_presentation_progress_key(presentation, audio),
+        presentation["ui_state"],
+        presentation["presentation_mode"],
+        presentation["presentation_box_mode"],
+        presentation["bridge_view_frame"],
+        presentation["nav_target_selection"],
+        presentation["nav_pending_record_link"],
+    )
+
+
+def classify_execution_stall(
+    samples: list[ExecutionSample] | deque[ExecutionSample],
+    load_segment: int,
+) -> dict[str, object] | None:
+    """Recognize a frozen, non-main hot loop without flagging input waits."""
+    if not samples:
+        return None
+    if any(sample.waiting_for_input for sample in samples):
+        return None
+    if not all(sample.game_owned_code for sample in samples):
+        return None
+    if any(sample.cs == load_segment for sample in samples):
+        return None
+    if len({sample.cs for sample in samples}) != 1:
+        return None
+    if len({(sample.ss, sample.sp, sample.bp) for sample in samples}) != 1:
+        return None
+    if len({sample.progress for sample in samples}) != 1:
+        return None
+    ip_counts = Counter(sample.ip for sample in samples)
+    if len(ip_counts) > MAX_HOT_LOOP_IPS:
+        return None
+    first = samples[0]
+    last = samples[-1]
+    return {
+        "reason": "game-owned execution hot loop with frozen runtime state",
+        "first_sample": first.sample,
+        "last_sample": last.sample,
+        "sample_count": len(samples),
+        "cs": f"{first.cs:#06x}",
+        "ss": f"{first.ss:#06x}",
+        "sp": f"{first.sp:#06x}",
+        "bp": f"{first.bp:#06x}",
+        "distinct_ips": [
+            f"{ip:#06x}" for ip in sorted(ip_counts)
+        ],
+        "ip_histogram": {
+            f"{ip:#06x}": count
+            for ip, count in ip_counts.most_common()
+        },
+    }
+
+
 def read_c_string(memory: bytes, address: int, limit: int = 160) -> str:
     end = min(address + limit, len(memory))
     raw = memory[address:end].split(b"\0", 1)[0]
@@ -1339,6 +1493,23 @@ def snapshot_guest(
 ) -> dict[str, object]:
     state = read_cpu_state(mem, cpu_addresses)
     game_segment = (game_anchor - guest_base) // 16
+    memory = exact_read(mem, guest_base, GUEST_SNAPSHOT_SIZE)
+    return snapshot_guest_memory(
+        memory,
+        state,
+        game_segment,
+        marker,
+        profile,
+    )
+
+
+def snapshot_guest_memory(
+    memory: bytes,
+    state: dict[str, int],
+    game_segment: int,
+    marker: Path | None,
+    profile: dict[str, object] | None,
+) -> dict[str, object]:
     snapshot: dict[str, object] = {
         "cpu": cpu_for_report(state),
         "segments_minus_game_data": {
@@ -1348,9 +1519,9 @@ def snapshot_guest(
     }
 
     def guest_bytes(linear: int, size: int) -> str | None:
-        if linear < 0 or linear + size > GUEST_SNAPSHOT_SIZE:
+        if linear < 0 or linear + size > len(memory):
             return None
-        return exact_read(mem, guest_base + linear, size).hex()
+        return memory[linear : linear + size].hex()
 
     code = guest_bytes(state["cs"] * 16 + state["ip"], 32)
     if code is not None:
@@ -1365,19 +1536,17 @@ def snapshot_guest(
             "start_offset": (state["bp"] - 64) & 0xFFFF,
             "bytes": around_bp,
         }
-    snapshot["ivt"] = exact_read(mem, guest_base, 0x400).hex()
+    snapshot["ivt"] = memory[:0x400].hex()
+    game_anchor = game_segment * 16
     snapshot["resource_band"] = {
-        f"{offset:#06x}": struct.unpack(
-            "<H",
-            exact_read(mem, game_anchor + offset, 2),
+        f"{offset:#06x}": struct.unpack_from(
+            "<H", memory, game_anchor + offset
         )[0]
         for offset in range(0x0A40, 0x0B00, 2)
     }
-    snapshot["back_buffer_area"] = exact_read(
-        mem,
-        game_anchor + 0x5219,
-        0x5240 - 0x5219,
-    ).hex()
+    snapshot["back_buffer_area"] = memory[
+        game_anchor + 0x5219 : game_anchor + 0x5240
+    ].hex()
     if marker is not None:
         snapshot["marker"] = str(marker)
     if profile is not None:
@@ -1392,6 +1561,147 @@ def mcb_for_report(block: Mcb) -> dict[str, str | int]:
         "owner": f"{block.owner:#06x}",
         "paragraphs": block.paragraphs,
         "name": block.name,
+    }
+
+
+def code_region_at(path: Path, offset: int) -> dict[str, object] | None:
+    for line in path.read_text(encoding="ascii", errors="replace").splitlines():
+        match = CODE_SEGMENT_ROW.match(line.strip())
+        if match is None or int(match["segment"], 16) != 0:
+            continue
+        start = int(match["offset"], 16)
+        size = int(match["size"], 16)
+        if start <= offset < start + size:
+            return {
+                "name": match["name"],
+                "start": f"{start:#06x}",
+                "size": size,
+                "offset_in_region": f"{offset - start:#06x}",
+                "map": str(path),
+            }
+    return None
+
+
+def mz_image_offset(path: Path, file_offset: int) -> int | None:
+    header = path.read_bytes()[:0x1C]
+    if len(header) < 0x1C or header[:2] != b"MZ":
+        return None
+    header_size = struct.unpack_from("<H", header, 8)[0] * 16
+    if file_offset < header_size:
+        return None
+    return file_offset - header_size
+
+
+def candidate_code_images(cd_dir: Path) -> list[Path]:
+    package = cd_dir.parent
+    roots = (
+        cd_dir,
+        package / "xdb",
+        package / "validation/source_xdb",
+        ROOT / "output/_tmp_dat",
+    )
+    paths: list[Path] = []
+    seen: set[Path] = set()
+    for root in roots:
+        if not root.exists():
+            continue
+        for path in sorted(root.rglob("*")):
+            if not path.is_file() or path.suffix.lower() not in (".exe", ".xdb"):
+                continue
+            resolved = path.resolve()
+            if resolved not in seen:
+                seen.add(resolved)
+                paths.append(resolved)
+    return paths
+
+
+def match_code_images(
+    needle: bytes,
+    cd_dir: Path,
+    link_map: Path,
+) -> list[dict[str, object]]:
+    if len(needle) < 16:
+        return []
+    matches = []
+    for path in candidate_code_images(cd_dir):
+        data = path.read_bytes()
+        offset = data.find(needle)
+        if offset < 0:
+            continue
+        match: dict[str, object] = {
+            "path": str(path),
+            "file_offset": f"{offset:#08x}",
+        }
+        map_path = None
+        logical_offset = offset
+        if path.suffix.lower() == ".exe":
+            logical_offset = mz_image_offset(path, offset)
+            if path.name.upper() == "BPRG_RE.EXE":
+                map_path = link_map
+        else:
+            module = path.stem.lower()
+            candidate_map = (
+                cd_dir.parent
+                / "validation/source_xdb"
+                / module
+                / f"{module}_source_link.map"
+            )
+            if candidate_map.is_file():
+                map_path = candidate_map
+        if logical_offset is not None:
+            match["image_offset"] = f"{logical_offset:#06x}"
+            if map_path is not None:
+                region = code_region_at(map_path, logical_offset)
+                if region is not None:
+                    match["code_region"] = region
+        matches.append(match)
+    return matches[:20]
+
+
+def describe_execution_location(
+    memory: bytes,
+    state: dict[str, int],
+    load_segment: int,
+    blocks: list[Mcb],
+    cd_dir: Path,
+    link_map: Path,
+) -> dict[str, object]:
+    linear = state["cs"] * 16 + state["ip"]
+    location: dict[str, object] = {
+        "guest_address": f"{state['cs']:04x}:{state['ip']:04x}",
+        "guest_linear": f"{linear:#07x}",
+        "fs_minus_cs": state["fs"] - state["cs"],
+    }
+    owner = next(
+        (block for block in blocks if block.owns_segment(state["cs"])),
+        None,
+    )
+    if owner is not None:
+        location["mcb_owner"] = mcb_for_report(owner)
+    if state["cs"] == load_segment:
+        region = code_region_at(link_map, state["ip"])
+        if region is not None:
+            location["code_region"] = region
+    needle = memory[linear : linear + 24]
+    location["binary_matches"] = match_code_images(
+        needle, cd_dir, link_map
+    )
+    return location
+
+
+def write_crash_bundle(
+    directory: Path,
+    memory: bytes,
+    context: dict[str, object],
+) -> dict[str, str]:
+    guest_path = directory / "guest.bin"
+    context_path = directory / "context.json"
+    write_binary_atomic(guest_path, memory)
+    write_json_report(context_path, context)
+    return {
+        "directory": str(directory.resolve()),
+        "guest_memory": str(guest_path.resolve()),
+        "context": str(context_path.resolve()),
     }
 
 
@@ -1523,6 +1833,29 @@ def main() -> int:
             "VM, or audio progress for this many guarded samples"
         ),
     )
+    parser.add_argument(
+        "--hang-samples",
+        type=int,
+        default=120,
+        help=(
+            "capture a crash bundle when game-owned non-main code remains on "
+            "one stack frame with frozen runtime state for this many samples "
+            "(default: 120; zero disables)"
+        ),
+    )
+    parser.add_argument(
+        "--dosbox-log",
+        type=Path,
+        help="capture DOSBox output and treat fatal guest diagnostics as faults",
+    )
+    parser.add_argument(
+        "--crash-dir",
+        type=Path,
+        help=(
+            "crash bundle directory; defaults beside --report and contains "
+            "guest.bin plus context.json"
+        ),
+    )
     args = parser.parse_args()
 
     cd_dir = args.cd_dir.resolve()
@@ -1537,6 +1870,8 @@ def main() -> int:
         raise WatchdogError("--input-liveness-samples cannot be negative")
     if args.active_liveness_samples < 0:
         raise WatchdogError("--active-liveness-samples cannot be negative")
+    if args.hang_samples < 0:
+        raise WatchdogError("--hang-samples cannot be negative")
     if args.contact_min_lines < 1:
         raise WatchdogError("--contact-min-lines must be positive")
     if (
@@ -1576,20 +1911,48 @@ def main() -> int:
             args.contact_manifest.resolve(), args.contact_probe
         )
     )
+    dosbox_log = args.dosbox_log
+    if dosbox_log is None and args.report is not None:
+        dosbox_log = args.report.with_suffix(".dosbox.log")
+    if dosbox_log is not None:
+        dosbox_log = dosbox_log.resolve()
+    crash_dir = args.crash_dir
+    if crash_dir is None and args.report is not None:
+        crash_dir = args.report.with_name(args.report.stem + "-crash")
+    if crash_dir is not None:
+        crash_dir = crash_dir.resolve()
 
     report: dict[str, object] = {
         "verdict": "INCOMPLETE",
         "samples": 0,
         "guarded_samples": 0,
         "anomalies": [],
+        "recorder": {
+            "watchdog_pid": os.getpid(),
+            "manual_snapshot_signal": "SIGUSR1",
+            "hang_samples": args.hang_samples,
+            "dosbox_log": None if dosbox_log is None else str(dosbox_log),
+            "crash_dir": None if crash_dir is None else str(crash_dir),
+        },
     }
     env = dict(os.environ, DISPLAY=args.display, SDL_VIDEODRIVER="x11")
     xvfb = None
     dosbox = None
+    log_stream = None
     attached = False
     radio_physical_mouse_held = False
     driver_errors: list[str] = []
     libc = ptrace_libc()
+    snapshot_requested = threading.Event()
+    previous_sigusr1 = signal.getsignal(signal.SIGUSR1)
+    signal.signal(signal.SIGUSR1, lambda _signum, _frame: snapshot_requested.set())
+    last_guest_memory: bytes | None = None
+    last_guest_context: dict[str, object] | None = None
+    last_guest_state: dict[str, int] | None = None
+    last_guest_blocks: list[Mcb] = []
+    pending_dosbox_fault: dict[str, object] | None = None
+    log_offset = 0
+    log_carry = b""
 
     try:
         if args.xvfb:
@@ -1625,12 +1988,16 @@ def main() -> int:
             "-c",
             "exit",
         ]
+        if dosbox_log is not None:
+            dosbox_log.parent.mkdir(parents=True, exist_ok=True)
+            log_stream = dosbox_log.open("wb", buffering=0)
         dosbox = subprocess.Popen(
             dosbox_args,
             env=env,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stdout=(subprocess.DEVNULL if log_stream is None else log_stream),
+            stderr=(subprocess.DEVNULL if log_stream is None else subprocess.STDOUT),
         )
+        report["recorder"]["dosbox_pid"] = dosbox.pid
 
         if args.actions:
             actions = args.actions.read_text(encoding="utf-8").splitlines()
@@ -1693,32 +2060,93 @@ def main() -> int:
         previous_presentation_state = None
         input_attempt = None
         active_progress = None
+        execution_samples: deque[ExecutionSample] = deque(
+            maxlen=max(1, args.hang_samples)
+        )
 
         while time.monotonic() < deadline:
             sample_delay = args.poll_seconds
             time.sleep(sample_delay)
+            if dosbox_log is not None and pending_dosbox_fault is None:
+                (
+                    pending_dosbox_fault,
+                    log_offset,
+                    log_carry,
+                ) = scan_dosbox_log(dosbox_log, log_offset, log_carry)
             if driver_errors:
                 report["verdict"] = "DRIVER-ERROR"
                 report["error"] = driver_errors[0]
                 break
             if dosbox.poll() is not None:
                 report["exit_code"] = dosbox.returncode
-                report["verdict"] = (
-                    "CLEAN-EXIT"
+                if pending_dosbox_fault is not None:
+                    report["verdict"] = "DOSBOX-FAULT"
                     if (
-                        expected is not None
-                        and dosbox.returncode == 0
-                        and args.teleport_profile is None
-                        and not args.script2_radio_probe
-                        and not args.script1_bob_probe
-                        and not args.contact_probe
+                        last_guest_context is not None
+                        and last_guest_memory is not None
+                        and last_guest_state is not None
+                        and expected is not None
+                    ):
+                        last_guest_context["execution_location"] = (
+                            describe_execution_location(
+                                last_guest_memory,
+                                last_guest_state,
+                                int(expected["load_segment"]),
+                                last_guest_blocks,
+                                cd_dir,
+                                link_map,
+                            )
+                        )
+                    anomaly = {
+                        "sample": report["guarded_samples"],
+                        "issues": [
+                            "dosbox-log-fault="
+                            + str(pending_dosbox_fault["kind"])
+                        ],
+                        "dosbox_fault": pending_dosbox_fault,
+                        "last_runtime": report.get("last_runtime"),
+                        "guest_context": last_guest_context,
+                    }
+                    anomalies = report["anomalies"]
+                    assert isinstance(anomalies, list)
+                    anomalies.append(anomaly)
+                    if (
+                        crash_dir is not None
+                        and last_guest_memory is not None
+                        and last_guest_context is not None
+                    ):
+                        report["crash_artifacts"] = write_crash_bundle(
+                            crash_dir,
+                            last_guest_memory,
+                            {
+                                "verdict": report["verdict"],
+                                "anomaly": anomaly,
+                                "calibrated": report.get("calibrated"),
+                                "last_runtime": report.get("last_runtime"),
+                                "dosbox_log": (
+                                    None
+                                    if dosbox_log is None
+                                    else str(dosbox_log)
+                                ),
+                            },
+                        )
+                else:
+                    report["verdict"] = (
+                        "CLEAN-EXIT"
+                        if (
+                            expected is not None
+                            and dosbox.returncode == 0
+                            and args.teleport_profile is None
+                            and not args.script2_radio_probe
+                            and not args.script1_bob_probe
+                            and not args.contact_probe
+                        )
+                        else (
+                            "GAME-EXIT"
+                            if expected is not None
+                            else "EXIT-BEFORE-CALIBRATION"
+                        )
                     )
-                    else (
-                        "GAME-EXIT"
-                        if expected is not None
-                        else "EXIT-BEFORE-CALIBRATION"
-                    )
-                )
                 break
             if expected is None and time.monotonic() >= calibration_deadline:
                 report["verdict"] = "CALIBRATION-TIMEOUT"
@@ -1975,6 +2403,50 @@ def main() -> int:
                                 )
                         else:
                             active_progress = None
+                    execution_stall = None
+                    if args.hang_samples > 0:
+                        owner = program_owned_block(
+                            blocks, state["cs"], int(expected["psp"])
+                        )
+                        execution_samples.append(
+                            ExecutionSample(
+                                sample=guarded_sample,
+                                cs=state["cs"],
+                                ip=state["ip"],
+                                ss=state["ss"],
+                                sp=state["sp"],
+                                bp=state["bp"],
+                                progress=execution_progress_key(
+                                    profile_state,
+                                    presentation_state,
+                                    audio_state,
+                                ),
+                                waiting_for_input=word_choice_waiting_for_input(
+                                    presentation_state
+                                ),
+                                game_owned_code=owner is not None,
+                            )
+                        )
+                        if len(execution_samples) == args.hang_samples:
+                            execution_stall = classify_execution_stall(
+                                execution_samples,
+                                int(expected["load_segment"]),
+                            )
+                            if execution_stall is not None:
+                                issues.append("execution-hot-loop-stalled")
+                                diagnostics["execution_stall"] = execution_stall
+                    if pending_dosbox_fault is not None:
+                        issues.append(
+                            "dosbox-log-fault="
+                            + str(pending_dosbox_fault["kind"])
+                        )
+                        diagnostics["dosbox_fault"] = pending_dosbox_fault
+                    if snapshot_requested.is_set():
+                        issues.append("manual-snapshot-requested")
+                        diagnostics["manual_snapshot"] = {
+                            "signal": "SIGUSR1",
+                            "watchdog_pid": os.getpid(),
+                        }
                     radio_state = read_script2_radio_state(
                         memory,
                         int(expected["game_segment"]),
@@ -2004,12 +2476,23 @@ def main() -> int:
                         "bob_flow": bob_state,
                         "contact_flow": contact_state,
                     }
+                    last_guest_memory = memory
+                    last_guest_state = dict(state)
+                    last_guest_blocks = list(blocks)
+                    last_guest_context = snapshot_guest_memory(
+                        memory,
+                        state,
+                        int(expected["game_segment"]),
+                        None,
+                        profile_for_report(profile_state),
+                    )
                     runtime_samples = report.setdefault("runtime_samples", [])
                     assert isinstance(runtime_samples, list)
                     runtime_samples.append(
                         {
                             "sample": report["guarded_samples"],
                             "cpu": cpu_for_report(state),
+                            "profile_state": profile_for_report(profile_state),
                             "audio_flow": audio_state,
                             "presentation_flow": presentation_state,
                             "radio_flow": radio_state,
@@ -2923,6 +3406,10 @@ def main() -> int:
                                 )
                                 contact_setup_applied = True
                                 contact_probe_phase = "wait-contact"
+                                deadline = time.monotonic() + args.seconds
+                                probe["contact_runtime_started_sample"] = report[
+                                    "guarded_samples"
+                                ]
                                 probe["contact_selected_sample"] = report[
                                     "guarded_samples"
                                 ]
@@ -3028,19 +3515,35 @@ def main() -> int:
                                 }
                             )
                     if issues:
-                        report["verdict"] = "ANOMALY"
+                        if snapshot_requested.is_set():
+                            report["verdict"] = "MANUAL-SNAPSHOT"
+                        elif execution_stall is not None:
+                            report["verdict"] = "EXECUTION-STALL"
+                        elif pending_dosbox_fault is not None:
+                            report["verdict"] = "DOSBOX-FAULT"
+                        else:
+                            report["verdict"] = "ANOMALY"
                         diagnostics["profile_state"] = profile_for_report(
                             profile_state
                         )
-                        diagnostics["guest_context"] = snapshot_guest(
-                            mem,
-                            int(expected["guest_base"]),
-                            int(expected["guest_base"])
-                            + int(expected["game_segment"]) * 16,
-                            cpu_addresses,
+                        guest_context = snapshot_guest_memory(
+                            memory,
+                            state,
+                            int(expected["game_segment"]),
                             None,
                             profile_for_report(profile_state),
                         )
+                        guest_context["execution_location"] = (
+                            describe_execution_location(
+                                memory,
+                                state,
+                                int(expected["load_segment"]),
+                                blocks,
+                                cd_dir,
+                                link_map,
+                            )
+                        )
+                        diagnostics["guest_context"] = guest_context
                         anomalies = report["anomalies"]
                         assert isinstance(anomalies, list)
                         anomaly = {
@@ -3050,6 +3553,23 @@ def main() -> int:
                         }
                         anomaly.update(diagnostics)
                         anomalies.append(anomaly)
+                        if crash_dir is not None:
+                            report["crash_artifacts"] = write_crash_bundle(
+                                crash_dir,
+                                memory,
+                                {
+                                    "verdict": report["verdict"],
+                                    "anomaly": anomaly,
+                                    "calibrated": report.get("calibrated"),
+                                    "last_runtime": report.get("last_runtime"),
+                                    "dosbox_log": (
+                                        None
+                                        if dosbox_log is None
+                                        else str(dosbox_log)
+                                    ),
+                                },
+                            )
+                        snapshot_requested.clear()
                         break
                     if (
                         args.teleport_profile is not None
@@ -3107,9 +3627,12 @@ def main() -> int:
                 libc.ptrace(PTRACE_DETACH, dosbox.pid, None, None)
             dosbox.kill()
             dosbox.wait()
+        if log_stream is not None:
+            log_stream.close()
         if xvfb is not None:
             xvfb.terminate()
             xvfb.wait()
+        signal.signal(signal.SIGUSR1, previous_sigusr1)
 
     if args.report:
         write_json_report(args.report, report)

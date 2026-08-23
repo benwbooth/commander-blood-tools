@@ -127,17 +127,12 @@ def semantic_report_signature(report: Any) -> dict[str, Any] | None:
                 }
             )
 
-    line_states = contact.get("line_states", [])
-    final_line = line_states[-1] if isinstance(line_states, list) and line_states else None
-    if anomaly_signatures:
-        final_line = None
     return {
         "verdict": report.get("verdict"),
         "contact": {
             "phase": contact.get("phase"),
             "completion_reason": contact.get("completion_reason"),
             "checkpoints": checkpoints,
-            "final_line": _observation_signature(final_line),
         },
         "anomalies": anomaly_signatures,
     }
@@ -162,6 +157,44 @@ def classify_result_pair(
     if candidate_pass and not reference_pass:
         return "candidate-only-pass"
     if candidate_signature == reference_signature and candidate_signature is not None:
+        return "shared-inconclusive"
+    return "divergent-failure"
+
+
+def classify_attempts(
+    candidate_attempts: list[dict[str, Any]],
+    reference_attempts: list[dict[str, Any]],
+) -> str:
+    candidate_passes = [
+        attempt for attempt in candidate_attempts if attempt["status"] == "PASS"
+    ]
+    reference_passes = [
+        attempt for attempt in reference_attempts if attempt["status"] == "PASS"
+    ]
+    if candidate_passes and reference_passes:
+        if any(
+            candidate["signature"] == reference["signature"]
+            and candidate["signature"] is not None
+            for candidate in candidate_passes
+            for reference in reference_passes
+        ):
+            return "verified-match"
+        if any(
+            attempt["signature"] is None
+            for attempt in candidate_passes + reference_passes
+        ):
+            return "divergent-pass-report"
+        return "divergent-pass"
+    if not candidate_passes and reference_passes:
+        return "candidate-regression"
+    if candidate_passes and not reference_passes:
+        return "candidate-only-pass"
+    if any(
+        candidate["signature"] == reference["signature"]
+        and candidate["signature"] is not None
+        for candidate in candidate_attempts
+        for reference in reference_attempts
+    ):
         return "shared-inconclusive"
     return "divergent-failure"
 
@@ -198,16 +231,59 @@ def _load_result_report(matrix_path: Path, result: dict[str, Any]) -> Any:
     return _read_json(report_path)
 
 
-def compare_matrices(candidate_path: Path, reference_path: Path) -> dict[str, Any]:
-    candidate_matrix = _read_json(candidate_path)
-    reference_matrix = _read_json(reference_path)
-    if not isinstance(candidate_matrix, dict) or not isinstance(reference_matrix, dict):
+def _load_attempt_groups(
+    base_path: Path, retry_paths: tuple[Path, ...]
+) -> dict[str, list[dict[str, Any]]]:
+    matrix = _read_json(base_path)
+    if not isinstance(matrix, dict):
         raise ValueError("matrix root must be an object")
-    candidate_results = _result_map(candidate_matrix)
-    reference_results = _result_map(reference_matrix)
-    if candidate_results.keys() != reference_results.keys():
-        missing_candidate = sorted(reference_results.keys() - candidate_results.keys())
-        missing_reference = sorted(candidate_results.keys() - reference_results.keys())
+    base_results = _result_map(matrix)
+    groups: dict[str, list[dict[str, Any]]] = {
+        name: [] for name in base_results
+    }
+    for matrix_path in (base_path, *retry_paths):
+        retry_matrix = _read_json(matrix_path)
+        if not isinstance(retry_matrix, dict):
+            raise ValueError(f"matrix root must be an object: {matrix_path}")
+        retry_results = _result_map(retry_matrix)
+        unexpected = sorted(retry_results.keys() - base_results.keys())
+        if unexpected:
+            raise ValueError(
+                f"retry matrix {matrix_path} has unexpected scenarios: {unexpected}"
+            )
+        for name, result in retry_results.items():
+            groups[name].append(
+                {
+                    "matrix": str(matrix_path),
+                    "status": str(result.get("status")),
+                    "tool_verdict": result.get("tool_verdict"),
+                    "signature": semantic_report_signature(
+                        _load_result_report(matrix_path, result)
+                    ),
+                }
+            )
+    return groups
+
+
+def compare_matrices(
+    candidate_path: Path,
+    reference_path: Path,
+    candidate_retry_paths: tuple[Path, ...] = (),
+    reference_retry_paths: tuple[Path, ...] = (),
+) -> dict[str, Any]:
+    candidate_attempts = _load_attempt_groups(
+        candidate_path, candidate_retry_paths
+    )
+    reference_attempts = _load_attempt_groups(
+        reference_path, reference_retry_paths
+    )
+    if candidate_attempts.keys() != reference_attempts.keys():
+        missing_candidate = sorted(
+            reference_attempts.keys() - candidate_attempts.keys()
+        )
+        missing_reference = sorted(
+            candidate_attempts.keys() - reference_attempts.keys()
+        )
         raise ValueError(
             "scenario sets differ: "
             f"missing candidate={missing_candidate}, missing reference={missing_reference}"
@@ -215,30 +291,36 @@ def compare_matrices(candidate_path: Path, reference_path: Path) -> dict[str, An
 
     rows = []
     counts: Counter[str] = Counter()
-    for name in candidate_results:
-        candidate = candidate_results[name]
-        reference = reference_results[name]
-        candidate_signature = semantic_report_signature(
-            _load_result_report(candidate_path, candidate)
-        )
-        reference_signature = semantic_report_signature(
-            _load_result_report(reference_path, reference)
-        )
-        classification = classify_result_pair(
-            str(candidate.get("status")),
-            str(reference.get("status")),
-            candidate_signature,
-            reference_signature,
+    for name in candidate_attempts:
+        scenario_candidate_attempts = candidate_attempts[name]
+        scenario_reference_attempts = reference_attempts[name]
+        classification = classify_attempts(
+            scenario_candidate_attempts,
+            scenario_reference_attempts,
         )
         counts[classification] += 1
         rows.append(
             {
                 "name": name,
                 "classification": classification,
-                "candidate_status": candidate.get("status"),
-                "reference_status": reference.get("status"),
-                "candidate_signature": candidate_signature,
-                "reference_signature": reference_signature,
+                "candidate_status": (
+                    "PASS"
+                    if any(
+                        attempt["status"] == "PASS"
+                        for attempt in scenario_candidate_attempts
+                    )
+                    else "FAIL"
+                ),
+                "reference_status": (
+                    "PASS"
+                    if any(
+                        attempt["status"] == "PASS"
+                        for attempt in scenario_reference_attempts
+                    )
+                    else "FAIL"
+                ),
+                "candidate_attempts": scenario_candidate_attempts,
+                "reference_attempts": scenario_reference_attempts,
             }
         )
 
@@ -251,9 +333,15 @@ def compare_matrices(candidate_path: Path, reference_path: Path) -> dict[str, An
         "INCONCLUSIVE" if counts["shared-inconclusive"] else "COMPLETE"
     )
     return {
-        "format_version": 1,
+        "format_version": 2,
         "candidate_matrix": str(candidate_path),
+        "candidate_retry_matrices": [
+            str(path) for path in candidate_retry_paths
+        ],
         "reference_matrix": str(reference_path),
+        "reference_retry_matrices": [
+            str(path) for path in reference_retry_paths
+        ],
         "scenario_count": len(rows),
         "behavior_status": behavior_status,
         "coverage_status": coverage_status,
@@ -265,11 +353,30 @@ def compare_matrices(candidate_path: Path, reference_path: Path) -> dict[str, An
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--candidate", type=Path, required=True)
+    parser.add_argument(
+        "--candidate-retry",
+        type=Path,
+        action="append",
+        default=[],
+        help="focused candidate retry matrix; repeat as needed",
+    )
     parser.add_argument("--reference", type=Path, required=True)
+    parser.add_argument(
+        "--reference-retry",
+        type=Path,
+        action="append",
+        default=[],
+        help="focused reference retry matrix; repeat as needed",
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     try:
-        comparison = compare_matrices(args.candidate, args.reference)
+        comparison = compare_matrices(
+            args.candidate,
+            args.reference,
+            tuple(args.candidate_retry),
+            tuple(args.reference_retry),
+        )
     except (OSError, ValueError, json.JSONDecodeError) as error:
         parser.error(str(error))
     args.output.parent.mkdir(parents=True, exist_ok=True)

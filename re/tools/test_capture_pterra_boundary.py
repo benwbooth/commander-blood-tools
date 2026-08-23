@@ -59,6 +59,19 @@ class StableSceneReleaseTests(unittest.TestCase):
             self.state(cs=0xF000, ip=0x1234),
             0x187E, "BLOODPRG.EXE"))
 
+    def test_illegal_interrupt_detector_includes_divide_error(self) -> None:
+        match = capture.ILLEGAL_INTERRUPT_RE.search(
+            b"ERROR CPU:Illegal Unhandled Interrupt Called 0")
+        self.assertIsNotNone(match)
+        assert match is not None
+        self.assertEqual(int(match.group(1), 10), 0)
+
+    def test_choice_row_point_uses_list_widget_row_pitch(self) -> None:
+        self.assertEqual(
+            capture.choice_row_point((100, 52, 120, 96), 4),
+            (160, 105),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

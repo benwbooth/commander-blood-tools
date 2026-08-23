@@ -197,6 +197,142 @@ class InterruptVectorTests(unittest.TestCase):
         self.assertEqual(watchdog.TRANSIENT_INTERRUPT_VECTORS, {0x0F})
 
 
+class CrashRecorderTests(unittest.TestCase):
+    @staticmethod
+    def execution_samples(
+        *,
+        count: int = 8,
+        cs: int = 0x2216,
+        waiting: bool = False,
+        changing_progress: bool = False,
+    ) -> list[watchdog.ExecutionSample]:
+        return [
+            watchdog.ExecutionSample(
+                sample=index + 1,
+                cs=cs,
+                ip=(0x1431, 0x1465)[index % 2],
+                ss=0x188E,
+                sp=0x9750,
+                bp=0x97CC,
+                progress=(index if changing_progress else 7,),
+                waiting_for_input=waiting,
+                game_owned_code=True,
+            )
+            for index in range(count)
+        ]
+
+    def test_detects_illegal_interrupt_across_log_reads(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "dosbox.log"
+            path.write_bytes(b"CPU:Illegal Unhandled Inter")
+            fault, offset, carry = watchdog.scan_dosbox_log(path, 0, b"")
+            self.assertIsNone(fault)
+
+            with path.open("ab") as stream:
+                stream.write(b"rupt Called 6\n")
+            fault, _, _ = watchdog.scan_dosbox_log(path, offset, carry)
+
+        self.assertIsNotNone(fault)
+        assert fault is not None
+        self.assertEqual(fault["kind"], "illegal-interrupt")
+        self.assertEqual(fault["interrupt"], 6)
+
+    def test_detects_dosbox_fatal_error(self) -> None:
+        fault = watchdog.find_dosbox_fault(
+            b"DOSBox-X fatal error: dynrec page fault\n"
+        )
+        self.assertIsNotNone(fault)
+        assert fault is not None
+        self.assertEqual(fault["kind"], "fatal-error")
+
+    def test_classifies_captured_overlay_hot_loop(self) -> None:
+        diagnosis = watchdog.classify_execution_stall(
+            self.execution_samples(),
+            load_segment=0x0823,
+        )
+        self.assertIsNotNone(diagnosis)
+        assert diagnosis is not None
+        self.assertEqual(diagnosis["cs"], "0x2216")
+        self.assertEqual(
+            diagnosis["distinct_ips"], ["0x1431", "0x1465"]
+        )
+
+    def test_does_not_classify_main_loop_or_input_wait(self) -> None:
+        self.assertIsNone(
+            watchdog.classify_execution_stall(
+                self.execution_samples(cs=0x0823),
+                load_segment=0x0823,
+            )
+        )
+        self.assertIsNone(
+            watchdog.classify_execution_stall(
+                self.execution_samples(waiting=True),
+                load_segment=0x0823,
+            )
+        )
+
+    def test_does_not_classify_runtime_progress(self) -> None:
+        self.assertIsNone(
+            watchdog.classify_execution_stall(
+                self.execution_samples(changing_progress=True),
+                load_segment=0x0823,
+            )
+        )
+
+    def test_maps_raw_xdb_code_to_owning_function(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            package = Path(directory) / "package"
+            cd_dir = package / "cd"
+            xdb_dir = package / "xdb"
+            map_dir = package / "validation/source_xdb/manu3"
+            cd_dir.mkdir(parents=True)
+            xdb_dir.mkdir(parents=True)
+            map_dir.mkdir(parents=True)
+            needle = bytes(range(0x80, 0x98))
+            (xdb_dir / "manu3.xdb").write_bytes(b"x" * 0x1431 + needle)
+            map_path = map_dir / "manu3_source_link.map"
+            map_path.write_text(
+                "func_000700_face_bucket_sort_TEXT CODE AUTO "
+                "0000:0b3e 00000b3f\n",
+                encoding="ascii",
+            )
+            main_map = package / "main.map"
+            main_map.write_text("", encoding="ascii")
+
+            matches = watchdog.match_code_images(
+                needle, cd_dir, main_map
+            )
+
+        manu3 = next(
+            match
+            for match in matches
+            if Path(match["path"]).name == "manu3.xdb"
+        )
+        self.assertEqual(manu3["image_offset"], "0x1431")
+        self.assertEqual(
+            manu3["code_region"]["name"],
+            "func_000700_face_bucket_sort_TEXT",
+        )
+
+    def test_crash_bundle_is_complete_and_atomic(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            crash_dir = Path(directory) / "crash"
+            artifacts = watchdog.write_crash_bundle(
+                crash_dir,
+                b"guest-memory",
+                {"verdict": "EXECUTION-STALL"},
+            )
+            self.assertEqual(
+                Path(artifacts["guest_memory"]).read_bytes(),
+                b"guest-memory",
+            )
+            self.assertIn(
+                "EXECUTION-STALL",
+                Path(artifacts["context"]).read_text(encoding="utf-8"),
+            )
+            self.assertEqual(list(crash_dir.glob("*.tmp")), [])
+
+
 class GuestMemoryTests(unittest.TestCase):
     def test_startup_anchor_can_be_reused_after_calibration(self) -> None:
         memory = bytearray(MEMORY_SIZE)

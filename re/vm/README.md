@@ -93,7 +93,9 @@ VAR/timer predicates, and submits the recovered object through the normal
 contact transition. It accepts only word-list offsets owned by that procedure
 and keeps the segment, IVT, MCB, input, audio, and active-presentation liveness
 guards running until four valid lines, the first word choice, or clean dialogue
-completion.
+completion. Contact setup and post-selection dialogue each have a separately
+bounded runtime window, so a slow native save load cannot consume the dialogue
+observation period.
 
 Run the same matrix against the shipped executable using its verified segment
 layout, then compare the reports semantically:
@@ -110,14 +112,21 @@ python3 -P re/tools/runtime_scenario_matrix.py \
 python3 -P re/tools/compare_runtime_scenario_matrices.py \
   --candidate output/contact-matrix-rebuilt/matrix.json \
   --reference output/contact-matrix-original/matrix.json \
+  --reference-retry output/contact-matrix-original-retry/matrix.json \
   --output output/contact-matrix-differential.json
 ```
 
-The comparator removes host sample counts, timer ticks, volatile countdowns,
-and allocated segment values. It retains recovered word-list offsets and
-subtitles plus stable presentation, audio, and anomaly state. A failure shared
-by both binaries is reported as coverage-inconclusive rather than accepted as
-proof of recovered-code parity.
+For successful probes, the comparator requires the same completion reason and
+ordered recovered word-list offsets and subtitles; it does not compare the
+arbitrary in-progress queue and chatter snapshot taken when the stop condition
+fires. For failures, it additionally compares stable terminal presentation,
+audio, and anomaly state while removing host sample counts, timer ticks,
+volatile countdowns, and allocated segment values. A failure shared by both
+binaries is reported as coverage-inconclusive rather than accepted as proof of
+recovered-code parity. Focused retry matrices may cover any subset of the base
+matrix. All attempts remain in the differential report, and a retry proves a
+match only when both sides have a successful attempt with an identical semantic
+signature.
 
 Generate the first proven structured source view with:
 

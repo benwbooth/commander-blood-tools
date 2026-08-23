@@ -5,8 +5,10 @@ Launches dosbox-x exactly like BLOOD.BAT does. The authentic-save route opens
 the game's own load menu, waits for GAME1.SAV and its presentation to finish,
 then emits the recovered Pterra destination event. From that boundary onward
 the capture stops at the first interrupt-vector mutation, invalid instruction,
-transition hang, or successful entry into SCRIPT2 ``proc pter``. This avoids
-treating a copied PTERRA.EXT or an unreliable UI route as a world-entry proof.
+transition hang, or successful completion of SCRIPT2 ``proc pter``. The
+driver advances each dialogue hold, selects ``exxos`` and ``teleport`` through
+the game's list widget, then requires fault-free runtime after the presentation
+closes. This avoids treating the first Pterra dialogue frame as a pass.
 
     { cpu: cs:ip + segments + registers,
       ivt: 1024 bytes of interrupt vectors,
@@ -70,6 +72,14 @@ SAVE_SLOT_MENU_PHASE_OFFSET = 0x2738
 MOUSE_X_OFFSET = 0x0A2A
 MOUSE_Y_OFFSET = 0x0A2C
 MOUSE_PRIMARY_PRESSED_OFFSET = 0x0A3E
+MOUSE_SECONDARY_PRESSED_OFFSET = 0x0A3F
+MOUSE_PRESS_PENDING_OFFSET = 0x0A40
+PRESENTATION_CHOICE_RESULT_OFFSET = 0x0ACA
+PRESENTATION_CHOICE_ACTIVE_OFFSET = 0x259B
+PRESENTATION_CHOICE_PHASE_OFFSET = 0x259C
+VM_WORD_CHOICE_ACTIVE_OFFSET = 0x27D7
+VM_OPERAND_WORD_COUNT_OFFSET = 0x27CF
+VM_TEXT_MENU_END_OFFSET = 0x27D3
 CHOICE_RECT_OFFSET = 0x2AAB
 BRIDGE_STATIONS_OFFSET = 0x2A1B
 BRIDGE_STATION_SIZE = 0x18
@@ -77,7 +87,19 @@ BRIDGE_STATION_COUNT = 4
 VM_SCENE_GATE_OFFSET = 0x274F
 RESOURCE_VERTICAL_OFFSET = 0x1FA7
 RESOURCE_INDEX_OFFSET = 0x1FB5
-FAULT_TEXT = b"Illegal Unhandled Interrupt Called 6"
+RESOURCE_FRAME_PRESENTED_OFFSET = 0x0DB8
+VM_PRESENTATION_SELECTED_WORD_OFFSET = 0x6796
+VM_PRESENTATION_TEXT_WAIT_OFFSET = 0x67BA
+VM_DIALOGUE_HOLD_COMPLETE_OFFSET = 0x67BB
+VM_PRESENTATION_HOLD_READY_OFFSET = 0x67BC
+VM_BLOCK_MATCH_VALUE_OFFSET = 0x6762
+VM_PRESENTATION_DEFER_OFFSET = 0x67B0
+VM_TEXT_DISPLAY_ACTIVE_OFFSET = 0x5E64
+VM_PRESENTATION_WORD_BUFFER_OFFSET = 0x67F8
+SCRIPT2_EXXOS_WORD = 0x0171
+SCRIPT2_TELEPORT_WORD = 0x02A8
+ILLEGAL_INTERRUPT_RE = re.compile(
+    rb"Illegal Unhandled Interrupt Called ([0-9]+)", re.IGNORECASE)
 DOS_READ_WARNING_RE = re.compile(
     rb"INT 21h READ warning: DX=([0-9a-f]+)h CX=([0-9a-f]+)h "
     rb"exceeds 64KB",
@@ -180,6 +202,12 @@ def send_mouse_button(display: str, pressed: bool) -> None:
         ["xdotool", "mousedown" if pressed else "mouseup", "1"],
         env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         check=False)
+
+
+def choice_row_point(rect: tuple[int, int, int, int],
+                     row_index: int) -> tuple[int, int]:
+    x, y, width, _height = rect
+    return x + width // 2, y + 4 + row_index * 11 + 5
 
 
 def activate_script2_pterra_procedure(mem, guest_base: int,
@@ -383,10 +411,36 @@ def read_profile_state(mem, guest_base: int, game_segment: int,
             "primary_pressed": read_guest(
                 mem, guest_base,
                 game + MOUSE_PRIMARY_PRESSED_OFFSET, 1)[0],
+            "secondary_pressed": read_guest(
+                mem, guest_base,
+                game + MOUSE_SECONDARY_PRESSED_OFFSET, 1)[0],
+            "press_pending": read_guest(
+                mem, guest_base,
+                game + MOUSE_PRESS_PENDING_OFFSET, 1)[0],
             "save_menu_phase": read_guest(
                 mem, guest_base,
                 game + SAVE_SLOT_MENU_PHASE_OFFSET, 1)[0],
             "choice_rect": list(choice_rect),
+            "choice_active": read_guest(
+                mem, guest_base,
+                game + PRESENTATION_CHOICE_ACTIVE_OFFSET, 1)[0],
+            "choice_phase": read_guest(
+                mem, guest_base,
+                game + PRESENTATION_CHOICE_PHASE_OFFSET, 1)[0],
+            "choice_result": struct.unpack(
+                "<H", read_guest(
+                    mem, guest_base,
+                    game + PRESENTATION_CHOICE_RESULT_OFFSET, 2))[0],
+            "word_choice_active": read_guest(
+                mem, guest_base,
+                game + VM_WORD_CHOICE_ACTIVE_OFFSET, 1)[0],
+            "word_choice_phase": read_guest(
+                mem, guest_base,
+                game + VM_PRESENTATION_TEXT_WAIT_OFFSET, 1)[0],
+            "selected_word": struct.unpack(
+                "<H", read_guest(
+                    mem, guest_base,
+                    game + VM_PRESENTATION_SELECTED_WORD_OFFSET, 2))[0],
             "bridge_stations": bridge_stations,
             "bridge_panorama_frame": read_guest(
                 mem, guest_base,
@@ -452,6 +506,20 @@ def read_profile_state(mem, guest_base: int, game_segment: int,
             "list_entry_metric": struct.unpack(
                 "<H", read_guest(
                     mem, guest_base, game + 0x0DAF, 2))[0],
+            "operand_word_count": struct.unpack(
+                "<H", read_guest(
+                    mem, guest_base,
+                    game + VM_OPERAND_WORD_COUNT_OFFSET, 2))[0],
+            "text_menu_end": struct.unpack(
+                "<H", read_guest(
+                    mem, guest_base,
+                    game + VM_TEXT_MENU_END_OFFSET, 2))[0],
+            "dialogue_hold_complete": read_guest(
+                mem, guest_base,
+                game + VM_DIALOGUE_HOLD_COMPLETE_OFFSET, 1)[0],
+            "presentation_hold_ready": read_guest(
+                mem, guest_base,
+                game + VM_PRESENTATION_HOLD_READY_OFFSET, 1)[0],
         },
         "audio_flow": {
             "voc_playback_enabled": read_guest(
@@ -851,7 +919,9 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                          open_load_menu: bool = False,
                          trigger_pterra_after_load: bool = False,
                          drive_authentic_save: bool = False,
-                         guest_snapshot: Path | None = None) \
+                         guest_snapshot: Path | None = None,
+                         post_pter_seconds: float = 5.0,
+                         diagnostic_mute_pterra: bool = False) \
         -> dict[str, object]:
     deadline = time.monotonic() + timeout
     cpu_addresses = None
@@ -870,12 +940,24 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
     guest_snapshot_written = False
     destination_committed = False
     pter_reached = False
+    pter_reached_at = None
+    pter_completed_at = None
+    pter_last_progress_at = None
+    pter_last_semantic_key = None
+    pter_sustained = False
+    pter_choice_was_active = False
+    pter_choice_results: list[int] = []
+    pter_input_pressed = None
+    pter_next_input_at = 0.0
+    diagnostic_audio_muted = False
     marker_snapshot = None
     fault_snapshot = None
     dos_read_overflow_snapshot = None
     integrity_fault_snapshot = None
     hang_snapshot = None
     pter_snapshot = None
+    post_pter_snapshot = None
+    post_pter_cpu_samples: list[dict[str, int]] = []
     ivt_baseline = None
     last_profile = None
     last_cpu_state = None
@@ -899,7 +981,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
         if db.poll() is not None:
             raise RuntimeError(f"dosbox exited early with {db.returncode}")
 
-        fault_seen = False
+        illegal_interrupt = None
         dos_read_warning = None
         if log_path.exists():
             with log_path.open("rb") as stream:
@@ -907,11 +989,12 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                 chunk = stream.read()
                 log_offset += len(chunk)
             combined_log = log_tail + chunk
-            fault_seen = FAULT_TEXT in combined_log
+            illegal_interrupt = ILLEGAL_INTERRUPT_RE.search(combined_log)
             dos_read_warning = (
                 DOS_READ_WARNING_RE.search(combined_log) if chunk else None)
             log_tail = combined_log[-max(
-                len(FAULT_TEXT), len(DOS_READ_WARNING_RE.pattern)):]
+                len(ILLEGAL_INTERRUPT_RE.pattern),
+                len(DOS_READ_WARNING_RE.pattern)):]
 
         hit = next(marker.glob("PTERRA1[DFG].LBM"), None)
         attached = False
@@ -959,6 +1042,9 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                     ) if last_profile["blockers"]["load"] else (),
                     last_profile["input"]["save_menu_phase"],
                     tuple(last_profile["input"]["choice_rect"]),
+                    last_profile["input"]["word_choice_active"],
+                    last_profile["input"]["word_choice_phase"],
+                    last_profile["input"]["selected_word"],
                     last_profile["input"]["bridge_panorama_frame"],
                     tuple(
                         (station["flags"], tuple(station["hit_rect"]))
@@ -1286,6 +1372,22 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                         and blockers["render"] == 0
                         and flow["active_line"] == 0xffff
                         and flow["c2_presentation_gate"] == 0):
+                    if diagnostic_mute_pterra:
+                        # The synthetic destination event omits the queue
+                        # callback which loads SN\SCRUT.SND. Disable playback
+                        # before proc pter can enter audio_process_ade(); doing
+                        # this after the first dialogue frame is too late.
+                        write_guest(
+                            mem, guest_base, game + 0x0ADE, b"\x00")
+                        write_guest(
+                            mem, guest_base,
+                            game + RESOURCE_FRAME_PRESENTED_OFFSET, b"\x01")
+                        diagnostic_audio_muted = True
+                        print(
+                            "diagnostic: muted Pterra audio before proc pter "
+                            "to bypass the synthetic route's missing "
+                            "SN\\SCRUT.SND callback",
+                            flush=True)
                     record_segment, record_offset = \
                         activate_script2_pterra_procedure(
                             mem, guest_base, game_segment)
@@ -1296,16 +1398,186 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                         f"{record_segment:04x}:{record_offset:04x}",
                         flush=True)
 
-                if (destination_committed
+                if (not pter_reached
+                        and destination_committed
                         and blockers["presentation"] != 0
                         and blockers["ship"] != 0
                         and flow["active_line"] != 0xffff):
                     pter_reached = True
+                    pter_reached_at = time.monotonic()
+                    pter_last_progress_at = pter_reached_at
                     pter_snapshot = snapshot_guest(
                         mem, guest_base, anchor, cpu_addresses,
                         hit, last_profile)
-                    print("success: entered SCRIPT2 proc pter", flush=True)
-                    break
+                    print(
+                        "state: entered SCRIPT2 proc pter; driving the full "
+                        "dialogue and choice sequence",
+                        flush=True)
+
+                if pter_reached:
+                    input_state = last_profile["input"]
+                    audio_flow = last_profile["audio_flow"]
+                    assert isinstance(input_state, dict)
+                    assert isinstance(audio_flow, dict)
+                    semantic_key = (
+                        flow["active_line"],
+                        flow["c2_presentation_gate"],
+                        blockers["presentation"],
+                        blockers["presentation_defer"],
+                        blockers["text"],
+                        input_state["word_choice_active"],
+                        input_state["word_choice_phase"],
+                        input_state["selected_word"],
+                        flow["text_menu_end"],
+                        flow["dialogue_hold_complete"],
+                        flow["presentation_hold_ready"],
+                        audio_flow["dialogue_hold_countdown"],
+                    )
+                    now = time.monotonic()
+                    if semantic_key != pter_last_semantic_key:
+                        pter_last_semantic_key = semantic_key
+                        pter_last_progress_at = now
+
+                    word_choice_active = bool(
+                        input_state["word_choice_active"] & 1)
+                    if diagnostic_mute_pterra and word_choice_active:
+                        # The omitted renderer callback also republishes this
+                        # bit while its choice frame is visible.
+                        write_guest(
+                            mem, guest_base,
+                            game + RESOURCE_FRAME_PRESENTED_OFFSET, b"\x01")
+                    if word_choice_active:
+                        pter_choice_was_active = True
+                    elif pter_choice_was_active:
+                        selected_word = int(input_state["selected_word"])
+                        pter_choice_results.append(selected_word)
+                        pter_choice_was_active = False
+                        print(
+                            "state: completed Pterra choice "
+                            f"{len(pter_choice_results)} with dictionary "
+                            f"word {selected_word:#06x}", flush=True)
+
+                    if pter_input_pressed is not None:
+                        pressed_offset = (
+                            MOUSE_PRIMARY_PRESSED_OFFSET
+                            if pter_input_pressed == "primary"
+                            else MOUSE_SECONDARY_PRESSED_OFFSET)
+                        write_guest(
+                            mem, guest_base, game + pressed_offset, b"\x00")
+                        pter_input_pressed = None
+                    elif now >= pter_next_input_at:
+                        if diagnostic_mute_pterra and word_choice_active:
+                            selected_word = (
+                                SCRIPT2_EXXOS_WORD
+                                if not pter_choice_results
+                                else SCRIPT2_TELEPORT_WORD)
+                            request_flags = read_guest(
+                                mem, guest_base,
+                                game + VM_PRESENTATION_REQUEST_FLAGS_OFFSET,
+                                1)[0]
+                            # Publish the exact terminal state of
+                            # presentation_ready_gate(). The synthetic route
+                            # has no renderer callback to open this widget.
+                            write_guest(
+                                mem, guest_base,
+                                game + VM_PRESENTATION_SELECTED_WORD_OFFSET,
+                                struct.pack("<H", selected_word))
+                            write_guest(
+                                mem, guest_base,
+                                game + VM_BLOCK_MATCH_VALUE_OFFSET,
+                                struct.pack("<H", selected_word))
+                            write_guest(
+                                mem, guest_base,
+                                game + VM_WORD_CHOICE_ACTIVE_OFFSET, b"\x00")
+                            write_guest(
+                                mem, guest_base,
+                                game + VM_PRESENTATION_DEFER_OFFSET, b"\x00")
+                            write_guest(
+                                mem, guest_base,
+                                game + VM_TEXT_DISPLAY_ACTIVE_OFFSET, b"\x00")
+                            write_guest(
+                                mem, guest_base,
+                                game + VM_DIALOGUE_HOLD_COMPLETE_OFFSET,
+                                b"\x00")
+                            write_guest(
+                                mem, guest_base,
+                                game + VM_PRESENTATION_TEXT_WAIT_OFFSET,
+                                b"\x00")
+                            write_guest(
+                                mem, guest_base,
+                                game + VM_PRESENTATION_WORD_BUFFER_OFFSET,
+                                b"\x00\x00")
+                            write_guest(
+                                mem, guest_base,
+                                game + VM_PRESENTATION_REQUEST_FLAGS_OFFSET,
+                                bytes((request_flags & 0xFE,)))
+                            pter_next_input_at = now + 0.5
+                            print(
+                                "diagnostic: published completed Pterra word "
+                                f"choice {selected_word:#06x}", flush=True)
+                        elif (word_choice_active
+                                and (input_state["word_choice_phase"] & 7)
+                                == 2):
+                            target_rows = (4, 0)
+                            target_row = target_rows[min(
+                                len(pter_choice_results),
+                                len(target_rows) - 1)]
+                            point = choice_row_point(
+                                tuple(input_state["choice_rect"]),
+                                target_row)
+                            write_guest(
+                                mem, guest_base, game + MOUSE_X_OFFSET,
+                                struct.pack("<h", point[0]))
+                            write_guest(
+                                mem, guest_base, game + MOUSE_Y_OFFSET,
+                                struct.pack("<h", point[1]))
+                            write_guest(
+                                mem, guest_base,
+                                game + MOUSE_PRIMARY_PRESSED_OFFSET, b"\x01")
+                            write_guest(
+                                mem, guest_base,
+                                game + MOUSE_PRESS_PENDING_OFFSET, b"\x01")
+                            pter_input_pressed = "primary"
+                            pter_next_input_at = now + 0.25
+                            print(
+                                "state: selected Pterra choice row "
+                                f"{target_row + 1} at {point[0]},{point[1]}",
+                                flush=True)
+                        elif (not word_choice_active
+                              and blockers["presentation"] != 0):
+                            write_guest(
+                                mem, guest_base,
+                                game + MOUSE_SECONDARY_PRESSED_OFFSET,
+                                b"\x01")
+                            write_guest(
+                                mem, guest_base,
+                                game + MOUSE_PRESS_PENDING_OFFSET, b"\x01")
+                            pter_input_pressed = "secondary"
+                            pter_next_input_at = now + 0.5
+
+                    if (pter_completed_at is None
+                            and len(pter_choice_results) >= 2
+                            and blockers["presentation"] == 0):
+                        pter_completed_at = now
+                        post_pter_cpu_samples.clear()
+                        print(
+                            "state: completed SCRIPT2 proc pter; beginning "
+                            f"{post_pter_seconds:g}s liveness gate",
+                            flush=True)
+                    if pter_completed_at is not None:
+                        post_pter_cpu_samples.append(state.copy())
+                    elif (pter_last_progress_at is not None
+                          and now - pter_last_progress_at >= 15.0):
+                        hang_snapshot = snapshot_guest(
+                            mem, guest_base, anchor, cpu_addresses,
+                            hit, last_profile)
+                        hang_snapshot["reason"] = (
+                            "Pterra encounter made no semantic progress for "
+                            "15 seconds")
+                        print(
+                            "hang: Pterra encounter made no semantic progress "
+                            "for 15 seconds", flush=True)
+                        break
 
                 resource_flow = last_profile["resource_flow"]
                 scene_43 = resource_flow["scene_entries"]["43"]
@@ -1367,12 +1639,17 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                 else:
                     final_transition_stall_started = None
                     final_transition_cpu_samples.clear()
-                if fault_seen:
+                if illegal_interrupt is not None:
                     fault_snapshot = snapshot_guest(
                         mem, guest_base, anchor, cpu_addresses,
                         hit, last_profile)
+                    fault_snapshot["interrupt"] = int(
+                        illegal_interrupt.group(1), 10)
+                    fault_snapshot["message"] = illegal_interrupt.group(0).decode(
+                        "ascii")
                     print(
-                        "fault: first invalid instruction at "
+                        "fault: illegal interrupt "
+                        f"{fault_snapshot['interrupt']} at "
                         f"{fault_snapshot['cpu']['cs']:04x}:"
                         f"{fault_snapshot['cpu']['ip']:04x}", flush=True)
                     break
@@ -1396,6 +1673,39 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                         f"cx={dos_read_overflow_snapshot['dos_read']['byte_count']:04x}",
                         flush=True)
                     break
+                if (pter_completed_at is not None
+                        and time.monotonic() - pter_completed_at
+                        >= post_pter_seconds):
+                    progress = {
+                        (sample["cs"], sample["ip"], sample["sp"])
+                        for sample in post_pter_cpu_samples
+                    }
+                    if len(progress) < 2:
+                        hang_snapshot = snapshot_guest(
+                            mem, guest_base, anchor, cpu_addresses,
+                            hit, last_profile)
+                        hang_snapshot["reason"] = (
+                            "Pterra post-encounter CPU state did not advance")
+                        hang_snapshot["cpu_samples"] = post_pter_cpu_samples
+                        print(
+                            "hang: Pterra post-encounter CPU state did not "
+                            "advance",
+                            flush=True)
+                    else:
+                        pter_sustained = True
+                        post_pter_snapshot = snapshot_guest(
+                            mem, guest_base, anchor, cpu_addresses,
+                            hit, last_profile)
+                        post_pter_snapshot["duration_seconds"] = \
+                            post_pter_seconds
+                        post_pter_snapshot["distinct_cpu_states"] = len(progress)
+                        print(
+                            "success: completed SCRIPT2 proc pter and sustained "
+                            "runtime for "
+                            f"{post_pter_seconds:g}s across "
+                            f"{len(progress)} CPU states",
+                            flush=True)
+                    break
         finally:
             if attached:
                 libc.ptrace(PTRACE_DETACH, db.pid, None, None)
@@ -1404,7 +1714,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                 or dos_read_overflow_snapshot is not None
                 or integrity_fault_snapshot is not None
                 or hang_snapshot is not None
-                or pter_snapshot is not None):
+                or pter_sustained):
             break
         time.sleep(0.01)
 
@@ -1431,6 +1741,9 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
             and integrity_fault_snapshot is None
             and dos_read_overflow_snapshot is None):
         errors.append("Pterra trigger ran, but no Pterra image was created")
+    if (pter_reached and not pter_sustained
+            and fault_snapshot is None and hang_snapshot is None):
+        errors.append("Pterra encounter completion gate did not complete")
     return {
         "mode": (
             "authentic-save-pterra" if trigger_pterra_after_load
@@ -1449,6 +1762,11 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
         "destination_committed": destination_committed,
         "pter": pter_snapshot,
         "pter_reached": pter_reached,
+        "pter_completed": pter_completed_at is not None,
+        "pter_choice_results": pter_choice_results,
+        "pter_sustained": pter_sustained,
+        "diagnostic_audio_muted": diagnostic_audio_muted,
+        "post_pter": post_pter_snapshot,
         "completed_scene_lines": completed_scene_lines,
         "last_profile": last_profile,
         "last_cpu": last_cpu_state,
@@ -1465,6 +1783,14 @@ def main() -> None:
     parser.add_argument("--display", default=":83")
     parser.add_argument("--timeout", type=float, default=900.0,
                         help="seconds to wait for the boundary")
+    parser.add_argument(
+        "--post-pter-seconds", type=float, default=5.0,
+        help=("fault-free runtime required after completing proc pter "
+              "(default: 5)"))
+    parser.add_argument(
+        "--diagnostic-mute-pterra", action="store_true",
+        help=("mute audio after proc pter starts; diagnostic only, because "
+              "the synthetic transition omits the SN\\SCRUT.SND callback"))
     parser.add_argument("--drive", action="store_true",
                         help="script the navigation instead of a human")
     parser.add_argument("--display-for-drive", default=None,
@@ -1506,6 +1832,8 @@ def main() -> None:
     if args.drive_authentic_save and not args.trigger_pterra_after_load:
         parser.error(
             "--drive-authentic-save requires --trigger-pterra-after-load")
+    if args.post_pter_seconds <= 0:
+        parser.error("--post-pter-seconds must be positive")
 
     env = dict(os.environ, DISPLAY=args.display, SDL_VIDEODRIVER="x11")
     xvfb = None
@@ -1557,7 +1885,9 @@ def main() -> None:
                 open_load_menu=args.open_load_menu,
                 trigger_pterra_after_load=args.trigger_pterra_after_load,
                 drive_authentic_save=args.drive_authentic_save,
-                guest_snapshot=args.guest_snapshot)
+                guest_snapshot=args.guest_snapshot,
+                post_pter_seconds=args.post_pter_seconds,
+                diagnostic_mute_pterra=args.diagnostic_mute_pterra)
             args.output.write_text(json.dumps(snapshot, indent=1))
             print(f"wrote {args.output}")
             errors = snapshot.get("errors", [])

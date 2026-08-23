@@ -106,8 +106,13 @@ def valid_pterra_report() -> dict[str, object]:
         "integrity_fault_detected": False,
         "hang_detected": False,
         "destination_committed": True,
+        "diagnostic_audio_muted": False,
         "pter_reached": True,
         "pter": {"cpu": {}},
+        "pter_completed": True,
+        "pter_choice_results": [0x1234, 0x5678],
+        "pter_sustained": True,
+        "post_pter": {"cpu": {}, "duration_seconds": 5.0},
         "marker": {"path": "PTERRA1D.LBM"},
     }
 
@@ -181,6 +186,25 @@ class ReportValidationTests(unittest.TestCase):
             matrix.validate_report(
                 matrix.SCENARIO_BY_NAME["authentic-pterra"], report
             ),
+        )
+
+    def test_pterra_requires_full_encounter_and_post_liveness(self) -> None:
+        report = valid_pterra_report()
+        report["pter_completed"] = False
+        report["pter_choice_results"] = [0x1234]
+        report["pter_sustained"] = False
+        report["post_pter"] = None
+        errors = matrix.validate_report(
+            matrix.SCENARIO_BY_NAME["authentic-pterra"], report
+        )
+        self.assertIn(
+            "Pterra procedure was not completed", errors
+        )
+        self.assertIn(
+            "Pterra did not complete both scripted choices", errors
+        )
+        self.assertIn(
+            "Pterra post-encounter liveness was not sustained", errors
         )
 
     def test_radio_requires_ordered_semantic_checkpoints(self) -> None:
@@ -267,6 +291,27 @@ class MatrixExecutionTests(unittest.TestCase):
         report_path.parent.mkdir(parents=True, exist_ok=True)
         report_path.write_text(json.dumps(report), encoding="utf-8")
         return subprocess.CompletedProcess(command, 0, "tool stdout", "")
+
+    @mock.patch.object(matrix.subprocess, "run")
+    def test_contact_timeout_covers_setup_and_dialogue_windows(
+        self, run: mock.Mock
+    ) -> None:
+        run.side_effect = self.successful_subprocess
+        scenario = matrix.CONTACT_SCENARIOS[0]
+        args = self.args(
+            "--scenario",
+            scenario.name,
+            "--contact-seconds",
+            "40",
+            "--subprocess-grace-seconds",
+            "5",
+        )
+
+        exit_code, aggregate = matrix.run_matrix(args)
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(aggregate["results"][0]["timeout_seconds"], 85)
+        self.assertEqual(run.call_args.kwargs["timeout"], 85)
 
     @mock.patch.object(matrix.subprocess, "run")
     def test_runs_focused_scenarios_on_isolated_installs_and_displays(

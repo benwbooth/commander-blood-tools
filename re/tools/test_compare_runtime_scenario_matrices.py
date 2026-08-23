@@ -79,11 +79,15 @@ def report(
 
 class SemanticSignatureTests(unittest.TestCase):
     def test_matching_passes_are_verified(self) -> None:
-        signature = comparison.semantic_report_signature(
-            report("CONTACT-PROBE-COMPLETE")
+        candidate = comparison.semantic_report_signature(
+            report("CONTACT-PROBE-COMPLETE", segment=0x2000, timer_tick=100)
         )
+        reference = comparison.semantic_report_signature(
+            report("CONTACT-PROBE-COMPLETE", segment=0x3000, timer_tick=200)
+        )
+        self.assertEqual(candidate, reference)
         self.assertEqual(
-            comparison.classify_result_pair("PASS", "PASS", signature, signature),
+            comparison.classify_result_pair("PASS", "PASS", candidate, reference),
             "verified-match",
         )
 
@@ -130,6 +134,22 @@ class SemanticSignatureTests(unittest.TestCase):
         self.assertEqual(
             comparison.classify_result_pair("FAIL", "FAIL", candidate, reference),
             "divergent-failure",
+        )
+
+    def test_matching_retry_pass_overrides_a_failed_base_attempt(self) -> None:
+        signature = comparison.semantic_report_signature(
+            report("CONTACT-PROBE-COMPLETE")
+        )
+        failed = comparison.semantic_report_signature(report("ANOMALY", anomaly=True))
+        self.assertEqual(
+            comparison.classify_attempts(
+                [{"status": "PASS", "signature": signature}],
+                [
+                    {"status": "FAIL", "signature": failed},
+                    {"status": "PASS", "signature": signature},
+                ],
+            ),
+            "verified-match",
         )
 
 

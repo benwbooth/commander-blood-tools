@@ -246,6 +246,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="SCRIPT2 radio presentation-stall limit (default: 120)",
     )
     parser.add_argument(
+        "--hang-samples",
+        type=int,
+        default=120,
+        help="non-main execution hot-loop limit (default: 120)",
+    )
+    parser.add_argument(
         "--subprocess-grace-seconds",
         type=float,
         default=30.0,
@@ -488,8 +494,17 @@ def _validate_pterra(report: dict[str, object]) -> list[str]:
             errors.append(f"{key} is true or missing")
     if report.get("destination_committed") is not True:
         errors.append("Pterra destination was not committed")
+    if report.get("diagnostic_audio_muted") is not False:
+        errors.append("Pterra capture used diagnostic audio muting")
     if report.get("pter_reached") is not True or report.get("pter") is None:
         errors.append("Pterra procedure was not reached")
+    if report.get("pter_completed") is not True:
+        errors.append("Pterra procedure was not completed")
+    choices = report.get("pter_choice_results")
+    if not isinstance(choices, list) or len(choices) != 2:
+        errors.append("Pterra did not complete both scripted choices")
+    if report.get("pter_sustained") is not True or report.get("post_pter") is None:
+        errors.append("Pterra post-encounter liveness was not sustained")
     if report.get("marker") is None:
         errors.append("Pterra boundary marker is missing")
     return errors
@@ -578,12 +593,17 @@ def _build_command(
                 "--contact-probe",
                 scenario.contact_selector,
             ]
-            duration = args.contact_seconds
+            # The watchdog gives setup and post-selection dialogue their own
+            # bounded windows so a slow native save load cannot consume the
+            # contact observation period.
+            duration = args.contact_seconds * 2
         command += [
             "--input-liveness-samples",
             str(args.input_liveness_samples),
             "--active-liveness-samples",
             str(args.active_liveness_samples),
+            "--hang-samples",
+            str(args.hang_samples),
         ]
         return command, duration + args.subprocess_grace_seconds
 
@@ -752,6 +772,7 @@ def _validate_arguments(
     for name, value in (
         ("--input-liveness-samples", args.input_liveness_samples),
         ("--active-liveness-samples", args.active_liveness_samples),
+        ("--hang-samples", args.hang_samples),
     ):
         if value < 0:
             parser.error(f"{name} cannot be negative")

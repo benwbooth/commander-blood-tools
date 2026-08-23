@@ -6437,9 +6437,80 @@ hit the same presentation stall with the same queue, line, and stable audio
 state. This proves that failure is a synthetic-scenario coverage limitation,
 not evidence of a recovered-code regression.
 
-`compare_runtime_scenario_matrices.py` formalizes that control. It compares
-stable dialogue, presentation, audio, and anomaly state while discarding host
-poll timing, volatile countdowns, and allocated segment values. A matching
-failure is `shared-inconclusive`, not a pass; original-pass/rebuilt-fail is a
-`candidate-regression`. Full 65-by-65 original and rebuilt matrices remain the
-next runtime gate.
+`compare_runtime_scenario_matrices.py` formalizes that control. Successful
+probes require the same completion reason and ordered word-list/subtitle
+checkpoints; arbitrary queue and chatter state sampled at the stop instant is
+not compared. Failed probes additionally require matching stable presentation,
+audio, and anomaly state after host poll timing, volatile countdowns, and
+allocated segment values are removed. A matching failure is
+`shared-inconclusive`, not a pass; original-pass/rebuilt-fail is a
+`candidate-regression`.
+
+The complete differential gate has now run against all 65 contacts. The rebuilt
+matrix reached 59 procedures and failed six. The initial original matrix reached
+50 because native save loading varied enough under four concurrent guests to
+consume the old global contact timeout. Focused retries resolved every apparent
+candidate-only pass and one Bronk checkpoint-sampling difference. The watchdog
+now gives setup and post-selection dialogue separate bounded windows, and the
+comparator aggregates partial retry matrices without discarding failed
+attempts.
+
+Final corrected and retry-aware classification is:
+
+- 59 `verified-match`: at least one successful original and rebuilt attempt has
+  an identical ordered semantic report.
+- 6 `shared-inconclusive`: `SCRIPT2.scrub` and `SCRIPT5.hom1` produce no line
+  for the full post-selection window in either binary; `SCRIPT3.scrujo`,
+  `SCRIPT4.scrujo`, `SCRIPT5.scrujo`, and `SCRIPT5.hom0` hit identical terminal
+  active-presentation stalls in both binaries.
+- 0 candidate regressions, candidate-only passes, divergent passes, or
+  divergent failures after retries.
+
+No run reported a segment-policy, IVT, or MCB-chain violation. This is strong
+evidence that the recovered executable matches the shipped executable for the
+59 reachable generated contact prefixes. It is not complete contact coverage:
+the stop gate observes at most four lines, the first word choice, or early
+presentation completion, and the six shared failures prove that entry
+predicates alone do not reconstruct every required world/resource state. The
+next contact gate is to recover those broader preconditions and drive complete
+procedures rather than relaxing the oracle.
+
+## DOS guest crash recorder and MANU3 hot-loop capture (2026-08-23)
+
+The manual freeze reported after leaving the contact screen was preserved by a
+live watchdog report. It was not another unlocalized segmented-memory fault.
+Starting at guarded sample 355, all 830 remaining samples executed with
+`CS=2216`, `SS:SP=188E:9750`, and `BP=97CC`; 810 samples were at `IP=1431` or
+`IP=1465`. VM, presentation, queue, subtitle, and audio-selection state stayed
+fixed, while the render blocker remained 9. The old liveness gate ignored the
+run because it only classified active subtitle/presentation work.
+
+The selectors identify the code owner without guessing. `FS=2442` minus
+`CS=2216` is `022C`, exactly the source-linked MANU3 XDB data-segment delta.
+Offsets `1431` and `1465` are inside source function
+`xdb_manu3_face_bucket_sort`, whose linked region is `0B3E..167C`; they are the
+textured vertical-span loop generated from
+`func_000700_face_bucket_sort.c:598..613`. This classifies the observed failure
+as a MANU3 renderer hot loop or extreme slowdown. It does not yet establish
+which input record made that loop pathological, because the run predated full
+guest-memory crash capture.
+
+`runtime_watchdog.py` now acts as a Valgrind-like boundary around the 16-bit DOS
+guest. DOSBox stdout/stderr is retained and scanned incrementally for every
+illegal interrupt plus fatal emulator diagnostics. A conservative execution
+gate detects game-owned non-main code that remains on one stack frame, within a
+small instruction set, while all tracked runtime state is frozen. Normal main
+loop and word-choice input waits are excluded. `SIGUSR1` requests an immediate
+manual snapshot for freezes that cannot be distinguished statically from an
+idle UI.
+
+The first fault writes an atomic bundle containing the complete 1 MiB guest
+address space, CS:IP code bytes, stack and frame bytes, IVT, MCB owner, active
+resource/profile state, DOSBox log location, and the semantic state history.
+Code bytes are matched against the final `BPRG_RE.EXE` and all source/original
+XDB images, then resolved through the corresponding linker map to the owning C
+function. A live `SIGUSR1` control produced a 1,048,576-byte image and correctly
+resolved `0823:4D98` to `func_003ece_chunky_to_planar_framebuffer_TEXT` at
+function offset `005B`; an eight-second unattended boot produced no false crash
+bundle. The scenario matrix passes the same hot-loop limit to every watchdog
+scenario.

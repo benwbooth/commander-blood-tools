@@ -26,8 +26,9 @@ nix develop --command cargo run --bin cbvm -- compile-bundle re/vm/structured /p
 nix develop --command cargo run --bin cbvm -- build-runtime-tree re/vm/structured /path/to/extracted-cd /tmp/cblood-runtime
 nix develop --command cargo run --bin cbvm -- analyze-contact-manifest /path/to/game re/vm/contact-manifest
 nix develop --command python3 -P re/tools/runtime_scenario_matrix.py --cd-dir output/recovered_dos_package/cd --install-parent accuracy/cblood_install --all-contacts --jobs 4
+nix develop --command python3 -P re/tools/runtime_watchdog.py --cd-dir output/recovered_dos_package/cd --install-parent accuracy/cblood_install --executable BPRG_RE.EXE --display :0 --seconds 900 --report output/manual-watchdog.json
 nix develop --command python3 -P re/tools/runtime_scenario_matrix.py --cd-dir output/recovered_dos_package/cd --install-parent accuracy/cblood_install --executable BLOODPRG.EXE --link-map re/bin/BLOODPRG.segments.map --all-contacts --jobs 4 --output-dir output/contact-matrix-original
-nix develop --command python3 -P re/tools/compare_runtime_scenario_matrices.py --candidate output/contact-matrix-rebuilt/matrix.json --reference output/contact-matrix-original/matrix.json --output output/contact-matrix-differential.json
+nix develop --command python3 -P re/tools/compare_runtime_scenario_matrices.py --candidate output/contact-matrix-rebuilt/matrix.json --reference output/contact-matrix-original/matrix.json --reference-retry output/contact-matrix-original-retry/matrix.json --output output/contact-matrix-differential.json
 nix develop --command cargo run -- inspect-descript /path/to/DESCRIPT.DES
 nix develop --command cargo run -- inspect-scripts /path/to/extracted-iso
 nix develop --command cargo run -- inspect-character-combinations /path/to/extracted-iso
@@ -55,6 +56,12 @@ for DOSBox substitution testing.
 `cbvm analyze-contact-manifest` derives every COD contact procedure, its complete
 entry predicate region, presentation object, activation state, exact subtitle
 word-list offsets, and choices directly from COD/DEB/DIC plus the recovered CFG.
+`runtime_watchdog.py` is the DOS guest crash recorder. It continuously checks
+segment, IVT, MCB, VM, audio, presentation, input, and execution-liveness state;
+captures DOSBox fatal diagnostics; and writes `guest.bin` plus `context.json`
+beside the report on the first detected fault. Send `SIGUSR1` to the
+`recorder.watchdog_pid` recorded in the live report to snapshot an ambiguous
+manual freeze immediately.
 `inspect-descript` emits typed JSON for `DESCRIPT.DES`.
 `inspect-scripts` emits typed JSON for `SCRIPT*.DEB`, `SCRIPT*.VAR`,
 `SCRIPT*.DIC`, and recovered speech bytecode events.

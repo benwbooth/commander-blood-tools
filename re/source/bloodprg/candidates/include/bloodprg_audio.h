@@ -153,7 +153,7 @@ void CB_NEAR cb_snd_clip_play(cb_u16 command,
         snd_driver_init_abi)
 #pragma aux audio_param_init_cd5 parm [ax] modify exact [ax]
 #pragma aux audio_process_ade modify exact [ax]
-#pragma aux snd_bank_loader parm [ax] [si] modify exact []
+#pragma aux snd_bank_loader parm [ax] [es si] modify exact []
 #pragma aux snd_play_clip parm [ax] modify exact [ax]
 #pragma aux snd_stream_source_load parm [si] modify exact []
 #pragma aux cb_snd_stream_service parm [ax] [si] [es di]
@@ -168,7 +168,7 @@ void CB_SAVE_REGS CB_LOAD_DS CB_FAR snd_play_clip(
         cb_i16 clip_index);                               /* 0x00B8CD */
 void CB_FAR snd_bank_loader(
     cb_u16 mode,
-    volatile char CB_NEAR *path);       /* 0x0B1B:0855 */
+    volatile char CB_FAR *path);        /* 0x0B1B:0855 */
 void CB_SAVE_REGS CB_LOAD_DS CB_FAR snd_driver_call(void); /* 0x00BB9D */
 void CB_FAR snd_stream_start(void);     /* 0x00BBB3 */
 void CB_FAR snd_stream_refill(void);    /* 0x00BC50 */
