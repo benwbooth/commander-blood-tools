@@ -58,6 +58,7 @@ DOSBOX_FAULT_PATTERNS = (
 )
 DOSBOX_LOG_CARRY_SIZE = 512
 MAX_HOT_LOOP_IPS = 16
+MAX_RUNTIME_SAMPLES = 512
 SUCCESSFUL_VERDICTS = frozenset(
     (
         "TIMEOUT-NO-ANOMALY",
@@ -1864,6 +1865,8 @@ def main() -> int:
     layout = parse_segment_layout(link_map)
     if args.stable_samples < 1:
         raise WatchdogError("--stable-samples must be positive")
+    if args.poll_seconds <= 0:
+        raise WatchdogError("--poll-seconds must be positive")
     if args.post_teleport_samples < 1:
         raise WatchdogError("--post-teleport-samples must be positive")
     if args.input_liveness_samples < 0:
@@ -2063,6 +2066,9 @@ def main() -> int:
         execution_samples: deque[ExecutionSample] = deque(
             maxlen=max(1, args.hang_samples)
         )
+        report_checkpoint_samples = max(
+            1, round(1.0 / args.poll_seconds)
+        )
 
         while time.monotonic() < deadline:
             sample_delay = args.poll_seconds
@@ -2123,6 +2129,7 @@ def main() -> int:
                                 "anomaly": anomaly,
                                 "calibrated": report.get("calibrated"),
                                 "last_runtime": report.get("last_runtime"),
+                                "runtime_samples": report.get("runtime_samples"),
                                 "dosbox_log": (
                                     None
                                     if dosbox_log is None
@@ -2500,10 +2507,12 @@ def main() -> int:
                             "contact_flow": contact_state,
                         }
                     )
-                    del runtime_samples[:-4096]
-                    if args.report and (
-                        args.poll_seconds >= 0.05
-                        or int(report["guarded_samples"]) % 50 == 0
+                    del runtime_samples[:-MAX_RUNTIME_SAMPLES]
+                    if (
+                        args.report
+                        and int(report["guarded_samples"])
+                        % report_checkpoint_samples
+                        == 0
                     ):
                         write_json_report(args.report, report)
                     audio_stall = dialogue_audio_stall_reason(audio_state)
@@ -3562,6 +3571,7 @@ def main() -> int:
                                     "anomaly": anomaly,
                                     "calibrated": report.get("calibrated"),
                                     "last_runtime": report.get("last_runtime"),
+                                    "runtime_samples": runtime_samples,
                                     "dosbox_log": (
                                         None
                                         if dosbox_log is None
