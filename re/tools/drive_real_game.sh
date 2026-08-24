@@ -20,7 +20,8 @@
 #   wait_title          (wait for the orange title control)
 #   shot <name>         (capture the game area to <out-dir>/<name>.png)
 #   wait <seconds>
-# Interactive runs default to DOSBox Staging's dynamic core at maximum cycles.
+# Interactive and screenshot runs render every emulator frame. They still use
+# DOSBox Staging's dynamic core at maximum cycles by default.
 # Override DOSBOX_BINARY, DOSBOX_CORE, DOSBOX_CYCLES, or DOSBOX_FRAMESKIP when a
 # strict DOSBox-X normal-core comparison is required.
 # Set DOSBOX_TRACE_FILE to record host file reads with strace. By default only
@@ -42,7 +43,7 @@ GAME_EXECUTABLE="${5:-BLOODPRG.EXE}"
 DOSBOX_BINARY="${DOSBOX_BINARY:-dosbox-staging}"
 DOSBOX_CORE="${DOSBOX_CORE:-dynamic}"
 DOSBOX_CYCLES="${DOSBOX_CYCLES:-max}"
-DOSBOX_FRAMESKIP="${DOSBOX_FRAMESKIP:-10}"
+DOSBOX_FRAMESKIP="${DOSBOX_FRAMESKIP:-0}"
 DOSBOX_WINDOW_NAME="${DOSBOX_WINDOW_NAME:-$GAME_EXECUTABLE}"
 export DISPLAY="$DISP" SDL_VIDEODRIVER=x11
 
