@@ -1,7 +1,7 @@
 #include "../include/bloodprg_input.h"
 #include "../include/bloodprg_platform.h"
 
-static const cb_i8 input_action_translation[256] = {
+static const cb_i8 CB_CODE_DATA input_action_translation[256] = {
     -1, -1, -1, -1, -1, -1, -1, -1,  8, -1, -1, -1, -1,  6, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  7, -1, -1, -1, -1,
      7,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,
