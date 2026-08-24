@@ -410,12 +410,6 @@ def c_callback_assignments(text: str) -> dict[str, Counter[str]]:
     return result
 
 
-def c_function_calls(text: str) -> Counter[str]:
-    source = strip_c_comments(text)
-    calls = re.findall(r"\b([A-Za-z_]\w*)\s*\(", source)
-    return Counter(calls)
-
-
 def callback_abi_declared(header: str, function: str, field: str) -> bool:
     parameters = r"\[si\]\s+\[di\]" if field == "state+0x0e" else r"\[di\]"
     pattern = re.compile(
@@ -618,7 +612,6 @@ def audit_module(config: AuditConfig, module: str) -> AuditResult:
         entry: rows[0] for entry, rows in manifest_by_entry.items() if len(rows) == 1
     }
     assignment_cache: dict[int, dict[str, Counter[str]]] = {}
-    call_cache: dict[int, Counter[str]] = {}
     for (writer_entry, field), expected in sorted(expected_by_writer.items()):
         writer_row = manifest_exact.get(writer_entry)
         if writer_row is None:
@@ -636,13 +629,7 @@ def audit_module(config: AuditConfig, module: str) -> AuditResult:
                 continue
             writer_text = writer_source.read_text(encoding="utf-8", errors="replace")
             assignment_cache[writer_entry] = c_callback_assignments(writer_text)
-            call_cache[writer_entry] = c_function_calls(writer_text)
         actual = assignment_cache[writer_entry][field]
-        if not actual and all(
-            call_cache[writer_entry][target] >= count
-            for target, count in expected.items()
-        ):
-            continue
         if actual != expected:
             errors.append(
                 f"{module}:0x{writer_entry:06x}: {field} target mismatch; "

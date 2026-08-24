@@ -36,6 +36,7 @@ class Routine:
     function: str
     body: bytes
     source_target: str | None = None
+    source_call_target: str | None = None
     source_field: str = "state+0x0e"
 
 
@@ -54,6 +55,8 @@ def source_text(routine: Routine) -> str:
             assignment = f"    state->callback = {routine.source_target};\n"
         else:
             assignment = f"    context->control.resume = {routine.source_target};\n"
+    if routine.source_call_target is not None:
+        assignment += f"    {routine.source_call_target}(state, context);\n"
     return (
         f"void {routine.function}(void)\n"
         "{\n"
@@ -277,6 +280,29 @@ class CallbackEdgeAuditTests(unittest.TestCase):
         )
         self.assertEqual(result.errors, ())
         self.assertEqual([store.value for store in result.stores], [wave])
+
+    def test_direct_call_does_not_satisfy_deferred_callback_store(self):
+        writer = 0x1868
+        target = 0x1810
+        target_name = "xdb_scrut_slot2_selection_restart"
+        result = self.fixture_result(
+            "xdb_scrut",
+            [
+                Routine(
+                    writer,
+                    "xdb_scrut_slot2_selection_approach",
+                    state_store(target),
+                    source_call_target=target_name,
+                ),
+                Routine(target, target_name, b"\xC3"),
+            ],
+        )
+
+        self.assertTrue(
+            any("target mismatch" in error for error in result.errors),
+            result.errors,
+        )
+        self.assertEqual(result.stores[0].status, "source_target_mismatch")
 
     def test_closes_formerly_missing_croolis_and_scrut_chains(self):
         cases = (

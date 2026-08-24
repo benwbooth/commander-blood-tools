@@ -62,7 +62,7 @@ void XDB_NEAR xdb_scrut_slot2_selection_approach(
     if ((xdb_i16)state->field_040 < 0x012c
             || (xdb_u16)((xdb_u16)state->field_038 + 0x0bb8u)
                     > 0x1770u) {
-        xdb_scrut_slot2_selection_restart(state, context);
+        state->callback = xdb_scrut_slot2_selection_restart;
         return;
     }
     if (xdb_scrut_slot2_steering_helper(state, 0x13u)) {
