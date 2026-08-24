@@ -6559,7 +6559,10 @@ runs. `drive_real_game.sh` formerly inherited the diagnostic `frameskip=10`
 setting, so DOSBox displayed only one frame out of every eleven while mouse
 motion forced continuous bridge redraws. The interactive and screenshot driver
 now defaults to `frameskip=0`; the environment override remains available, and
-nonvisual watchdogs retain their reduced-rendering setting.
+nonvisual watchdogs retain their reduced-rendering setting. The driver also no
+longer performs an absolute host-pointer move after DOSBox captures the mouse;
+under relative capture that move was delivered to the game as a large cursor
+delta before the first user action.
 
 ## Whole-program static audit and VM record-pointer correction (2026-08-23)
 

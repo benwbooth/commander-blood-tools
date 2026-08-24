@@ -171,7 +171,8 @@ done
 echo "driving window $WID: $(xdotool getwindowname "$WID")"
 xdotool windowactivate "$WID" 2>/dev/null || true
 xdotool windowfocus --sync "$WID" 2>/dev/null || true
-xdotool mousemove --window "$WID" 400 300
+# DOSBox has already captured and centered its relative mouse. An absolute X11
+# move here is delivered as a large guest delta and corrupts the in-game cursor.
 
 while read -r action a b; do
   case "$action" in
