@@ -34,7 +34,6 @@ import re
 import signal
 import struct
 import subprocess
-import sys
 import threading
 import time
 from pathlib import Path
@@ -185,6 +184,7 @@ PTERRA_NATIVE_INPUT_TRIGGER_COUNTDOWN = 7
 PTERRA_NATIVE_INPUT_MAX_EDGES = 6
 PTERRA_TRANSITION_SAMPLE_INTERVAL_SECONDS = 1.0
 PTERRA_TRANSITION_SAMPLE_LIMIT = 256
+GRAPHICS_POINTER_TRANSITION_LIMIT = 512
 TIMER_PROGRESS_STALL_SECONDS = 1.5
 TIMER_PROGRESS_SAMPLE_LIMIT = 64
 STARTUP_DOS_POOL_POINTER_OFFSET = 0x0A42
@@ -374,6 +374,36 @@ def graphics_pointer_errors(pointers: dict[str, object],
             errors.append(f"{name} exceeds real-mode memory at {pointer}")
         elif (offset, segment) not in allowed:
             errors.append(f"{name} selected unknown surface {pointer}")
+    return errors
+
+
+def graphics_pointer_changes(
+        previous: dict[str, object] | None,
+        current: dict[str, object]) -> list[dict[str, object]]:
+    changes = []
+    for name, entry in current.items():
+        assert isinstance(entry, dict)
+        before = previous.get(name) if previous is not None else None
+        assert before is None or isinstance(before, dict)
+        before_pointer = None if before is None else str(before["pointer"])
+        after_pointer = str(entry["pointer"])
+        if before_pointer != after_pointer:
+            changes.append({
+                "name": name,
+                "before": before_pointer,
+                "after": after_pointer,
+            })
+    return changes
+
+
+def graphics_surface_content_errors(
+        surfaces: dict[str, object]) -> list[str]:
+    errors = []
+    for name, entry in surfaces.items():
+        assert isinstance(entry, dict)
+        content_error = entry.get("content_error")
+        if content_error is not None:
+            errors.append(f"{name}: {content_error}")
     return errors
 
 
@@ -1865,6 +1895,9 @@ def snapshot_linear_surfaces(mem, guest_base: int, game_segment: int,
         if segment != 0 and linear + 320 * 200 <= 0x100000:
             data = read_guest(mem, guest_base, linear, 320 * 200)
             entry.update(linear_surface_summary(data))
+            if data.startswith(LOCATOR_ANCHOR):
+                entry["content_error"] = (
+                    "surface aliases the GAME_DATA locator anchor")
             if capture_dir is not None:
                 capture_dir.mkdir(parents=True, exist_ok=True)
                 path = capture_dir / f"pterra-marker-{name}.bin"
@@ -1969,7 +2002,6 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
     pterra_triggered = manual and not trigger_pterra_after_load
     load_menu_requested = not open_load_menu
     authentic_save_loaded = False
-    post_load_presentation_seen = False
     load_selection_started = False
     load_slot_pressing = False
     title_accept_sent = False
@@ -2068,6 +2100,8 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
     ivt_baseline = None
     graphics_pointer_baseline = None
     graphics_pointer_faults: list[str] = []
+    graphics_pointer_previous = None
+    graphics_pointer_transitions: list[dict[str, object]] = []
     last_profile = None
     last_cpu_state = None
     last_profile_key = None
@@ -2111,36 +2145,68 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                         db.pid, mem, state["gs"])
                     if anchor is None or guest_base is None:
                         continue
+                game_segment = (anchor - guest_base) // 16
+                graphics_pointers = read_graphics_pointer_state(
+                    mem, guest_base, game_segment)
+                now = time.monotonic()
+                pointer_changes = graphics_pointer_changes(
+                    graphics_pointer_previous, graphics_pointers)
+                if pointer_changes:
+                    graphics_pointer_transitions.append({
+                        "elapsed_seconds": round(
+                            now - capture_started_at, 3),
+                        "game_ready": game_is_ready(mem, anchor),
+                        "phase": (
+                            "pterra-encounter" if pter_reached else
+                            "ship-navigation" if pterra_triggered else
+                            "map-transition"
+                            if pterra_map_command_consumed else
+                            "nav-chart" if pterra_nav_chart_started else
+                            "save-loaded" if authentic_save_loaded else
+                            "startup"),
+                        "cpu": state.copy(),
+                        "changes": pointer_changes,
+                        "pointers": graphics_pointers,
+                    })
+                    del graphics_pointer_transitions[
+                        :-GRAPHICS_POINTER_TRANSITION_LIMIT]
+                    graphics_pointer_previous = graphics_pointers
                 if not game_is_ready(mem, anchor):
                     continue
 
-                game_segment = (anchor - guest_base) // 16
                 if fs_segment is None:
                     fs_segment = state["fs"]
                 last_profile = read_profile_state(
                     mem, guest_base, game_segment, fs_segment)
-                now = time.monotonic()
                 graphics_pointers = last_profile["graphics_pointers"]
                 assert isinstance(graphics_pointers, dict)
                 if graphics_pointer_baseline is None:
-                    graphics_pointer_baseline = graphics_pointers
+                    candidate_baseline = graphics_pointers
+                    graphics_pointer_faults = graphics_pointer_errors(
+                        graphics_pointers,
+                        candidate_baseline,
+                        game_segment)
+                    if not graphics_pointer_faults:
+                        graphics_pointer_baseline = candidate_baseline
                 else:
                     graphics_pointer_faults = graphics_pointer_errors(
                         graphics_pointers,
                         graphics_pointer_baseline,
                         game_segment)
-                    if graphics_pointer_faults:
-                        integrity_fault_snapshot = snapshot_guest(
-                            mem, guest_base, anchor, cpu_addresses,
-                            hit, last_profile)
-                        integrity_fault_snapshot["graphics_pointer_baseline"] = \
-                            graphics_pointer_baseline
-                        integrity_fault_snapshot["graphics_pointer_faults"] = \
-                            graphics_pointer_faults
-                        print(
-                            "integrity: " + graphics_pointer_faults[0],
-                            flush=True)
-                        break
+                if graphics_pointer_faults:
+                    integrity_fault_snapshot = snapshot_guest(
+                        mem, guest_base, anchor, cpu_addresses,
+                        hit, last_profile)
+                    integrity_fault_snapshot["graphics_pointer_baseline"] = \
+                        graphics_pointer_baseline
+                    integrity_fault_snapshot["graphics_pointer_faults"] = \
+                        graphics_pointer_faults
+                    integrity_fault_snapshot["graphics_pointer_transitions"] = \
+                        graphics_pointer_transitions.copy()
+                    print(
+                        "integrity: " + graphics_pointer_faults[0],
+                        flush=True)
+                    break
                 scene_flow = last_profile["scene_flow"]
                 audio_flow = last_profile["audio_flow"]
                 assert isinstance(audio_flow, dict)
@@ -2425,7 +2491,6 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                         and blockers["load"] == 0
                         and flow["active_line"] == 2
                         and flow["c2_presentation_gate"] == 1):
-                    post_load_presentation_seen = True
                     if (guest_snapshot is not None
                             and not guest_snapshot_written):
                         guest_snapshot.parent.mkdir(parents=True, exist_ok=True)
@@ -3586,6 +3651,24 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                         guest_snapshot.parent
                         if guest_snapshot is not None else None)
                     print(f"boundary marker: {hit.name}", flush=True)
+                    marker_surfaces = marker_snapshot.get("linear_surfaces")
+                    assert isinstance(marker_surfaces, dict)
+                    surface_errors = graphics_surface_content_errors(
+                        marker_surfaces)
+                    if surface_errors:
+                        graphics_pointer_faults = surface_errors
+                        integrity_fault_snapshot = marker_snapshot
+                        integrity_fault_snapshot[
+                            "graphics_pointer_baseline"] = \
+                            graphics_pointer_baseline
+                        integrity_fault_snapshot[
+                            "graphics_pointer_faults"] = surface_errors
+                        integrity_fault_snapshot[
+                            "graphics_pointer_transitions"] = \
+                            graphics_pointer_transitions.copy()
+                        print(
+                            "integrity: " + surface_errors[0], flush=True)
+                        break
                 if illegal_interrupt is not None:
                     fault_snapshot = snapshot_guest(
                         mem, guest_base, anchor, cpu_addresses,
@@ -3773,6 +3856,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
         "integrity_fault_detected": integrity_fault_snapshot is not None,
         "graphics_pointer_baseline": graphics_pointer_baseline,
         "graphics_pointer_faults": graphics_pointer_faults,
+        "graphics_pointer_transitions": graphics_pointer_transitions,
         "hang": hang_snapshot,
         "hang_detected": hang_snapshot is not None,
         "scruter_scene_requested": scruter_scene_requested,

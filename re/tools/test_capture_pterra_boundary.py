@@ -155,6 +155,64 @@ class CaptureHelperTests(unittest.TestCase):
             ["display_buffer selected unknown surface 2800:0000"],
         )
 
+    def test_first_ready_pointer_set_is_still_validated(self) -> None:
+        current = {
+            "display_buffer": {
+                "offset": 0, "segment": 0x107C,
+                "pointer": "107c:0000", "linear": 0x107C0,
+            },
+        }
+        self.assertEqual(
+            capture.graphics_pointer_errors(current, current, 0x107C),
+            ["display_buffer points into DGROUP at 107c:0000"],
+        )
+
+    def test_graphics_pointer_changes_reports_only_changed_slots(self) -> None:
+        previous = {
+            "display_buffer": {
+                "offset": 0, "segment": 0x2000,
+                "pointer": "2000:0000", "linear": 0x20000,
+            },
+            "back_buffer": {
+                "offset": 0, "segment": 0x3000,
+                "pointer": "3000:0000", "linear": 0x30000,
+            },
+        }
+        current = {name: entry.copy() for name, entry in previous.items()}
+        current["back_buffer"] = {
+            "offset": 0, "segment": 0x107C,
+            "pointer": "107c:0000", "linear": 0x107C0,
+        }
+        self.assertEqual(
+            capture.graphics_pointer_changes(previous, current),
+            [{
+                "name": "back_buffer",
+                "before": "3000:0000",
+                "after": "107c:0000",
+            }],
+        )
+
+    def test_surface_capture_rejects_game_data_as_pixels(self) -> None:
+        memory = bytearray(0x100000)
+        game_segment = 0x107C
+        game = game_segment * 16
+        memory[game:game + len(capture.LOCATOR_ANCHOR)] = \
+            capture.LOCATOR_ANCHOR
+        for pointer_offset in (
+                capture.GRAPHICS_DISPLAY_BUFFER_OFFSET,
+                capture.GRAPHICS_BACK_BUFFER_OFFSET):
+            struct.pack_into(
+                "<HH", memory, game + pointer_offset, 0, game_segment)
+        surfaces = capture.snapshot_linear_surfaces(
+            io.BytesIO(memory), 0, game_segment)
+        self.assertEqual(
+            capture.graphics_surface_content_errors(surfaces),
+            [
+                "display: surface aliases the GAME_DATA locator anchor",
+                "back_buffer: surface aliases the GAME_DATA locator anchor",
+            ],
+        )
+
     def test_pterra_intro_input_stops_before_hud_selector(self) -> None:
         blockers = {"ship": 5}
         flow = {
