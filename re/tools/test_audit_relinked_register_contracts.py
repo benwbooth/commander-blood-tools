@@ -161,6 +161,31 @@ class RelinkedRegisterContractTests(unittest.TestCase):
         self.assertEqual("SI", caller.emitted_clobbers)
         self.assertEqual("register_mismatch", callee.status)
 
+    def test_bp_clobber_invalidates_caller_frame_and_stack(self):
+        def resolver(item, _kind):
+            return ("callee",) if "callee" in item.text else None
+
+        caller = routine(
+            "caller",
+            [
+                ("55", "push bp"),
+                ("89e5", "mov bp,sp"),
+                ("e80000", "call callee"),
+                ("c9", "leave"),
+                ("c3", "ret"),
+            ],
+            resolver,
+        )
+        callee = routine("callee", [("89c5", "mov bp,ax"), ("c3", "ret")])
+        summaries = AUDIT.summarize_program({"caller": caller, "callee": callee})
+        summary = summaries["caller"]
+        self.assertNotIn("BP", summary.preserved)
+        self.assertNotIn("SP", summary.preserved)
+        self.assertTrue(any(
+            "return stack delta is unknown" in blocker
+            for blocker in summary.blockers
+        ))
+
     def test_unresolved_indirect_call_is_a_hard_failure(self):
         subject = routine("subject", [("ffd3", "call bx"), ("c3", "ret")])
         summary = AUDIT.summarize_program({"subject": subject})["subject"]

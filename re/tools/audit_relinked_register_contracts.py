@@ -648,6 +648,8 @@ def apply_callee(
     for register in GENERAL_REGISTERS:
         if register[1:].upper() not in preserved:
             result = result.with_parent_unknown(register)
+            if register == "ebp":
+                result = replace(result, bp_delta=None)
     for register in SEGMENT_REGISTERS:
         if register.upper() not in preserved:
             result = result.with_parent_unknown(register)

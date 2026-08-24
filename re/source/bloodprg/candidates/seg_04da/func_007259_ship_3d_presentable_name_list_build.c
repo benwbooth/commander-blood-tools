@@ -13,8 +13,9 @@
     ((cb_u16)((const volatile cb_u8 *)(target) - vm_record_base))
 #endif
 
-volatile cb_u16 CB_NEAR *CB_FAR ship_3d_presentable_name_list_build(
-        const volatile bloodprg_vm_object_header CB_FAR *target)
+cb_u16 CB_SAVE_REGS CB_FAR ship_3d_presentable_name_list_build(
+        const volatile bloodprg_vm_object_header CB_FAR *target,
+        cb_u16 record_segment)
 {
     const volatile cb_u16 CB_GAME_DATA *source;
     volatile cb_u16 *destination;
@@ -44,5 +45,5 @@ volatile cb_u16 CB_NEAR *CB_FAR ship_3d_presentable_name_list_build(
     }
 
     *destination = 0xffffu;
-    return destination;
+    return record_segment;
 }

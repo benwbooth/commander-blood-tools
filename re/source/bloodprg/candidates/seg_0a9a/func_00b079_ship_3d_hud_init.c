@@ -59,7 +59,8 @@ void CB_NEAR ship_3d_hud_init(void)
 
         record = SHIP_3D_RECORD_AT(vm_arche_record_offset);
         (void)ship_3d_presentable_name_list_build(
-                (const volatile bloodprg_vm_object_header CB_FAR *)record);
+                (const volatile bloodprg_vm_object_header CB_FAR *)record,
+                (cb_u16)FP_SEG(record));
         target = *(volatile cb_u16 CB_FAR *)(
                 record + SHIP_3D_RECORD_LINK_OFFSET);
         /* The binary probes ES:EAX here, but the link and every later record
@@ -68,7 +69,8 @@ void CB_NEAR ship_3d_hud_init(void)
                 & SHIP_3D_RECORD_PROBE_MASK) == 0u) {
             record = SHIP_3D_RECORD_AT(target);
             (void)ship_3d_presentable_name_list_build(
-                    (const volatile bloodprg_vm_object_header CB_FAR *)record);
+                    (const volatile bloodprg_vm_object_header CB_FAR *)record,
+                    (cb_u16)FP_SEG(record));
             ship_3d_current_target = target;
         } else {
             ship_3d_current_target = (cb_u16)(

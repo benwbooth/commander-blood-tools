@@ -218,7 +218,10 @@ extern volatile ship_3d_hud_layout_entry CB_GAME_DATA ship_3d_hud_layout[];
 #pragma aux ship_3d_navigation_candidate_build parm [es di] \
         modify exact [ax bx di es]
 #pragma aux vm_state_record_processor modify exact [ax]
-#pragma aux ship_3d_presentable_name_list_build parm [es di] value [bp] modify exact [bp]
+/* The original returned an unused output cursor in BP.  Recovered C callers
+ * use BP as a frame pointer, so the closed-world source ABI preserves it. */
+#pragma aux ship_3d_presentable_name_list_build \
+        parm [es di] [ax] value [ax] modify exact []
 #pragma aux matrix_table_clear_2a1b modify exact []
 #pragma aux ship_3d_projection_matrix_build modify exact [ax es]
 #pragma aux ship_3d_point_cloud_randomize modify exact [ax es]
@@ -251,8 +254,9 @@ void CB_FAR ship_3d_navigation_candidate_build(
         const volatile bloodprg_vm_object_header CB_FAR *target);
                                                 /* 0x0070EE */
 void CB_SAVE_REGS CB_FAR vm_state_record_processor(void); /* 0x00713D */
-volatile cb_u16 CB_NEAR *CB_FAR ship_3d_presentable_name_list_build(
-        const volatile bloodprg_vm_object_header CB_FAR *target);
+cb_u16 CB_SAVE_REGS CB_FAR ship_3d_presentable_name_list_build(
+        const volatile bloodprg_vm_object_header CB_FAR *target,
+        cb_u16 record_segment);
                                                 /* 0x007259 */
 void CB_FAR matrix_table_clear_2a1b(void);     /* 0x00963F */
 void CB_FAR ship_3d_projection_matrix_build(void); /* 0x0098B9 */
