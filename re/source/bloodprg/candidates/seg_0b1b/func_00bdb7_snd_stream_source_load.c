@@ -10,7 +10,7 @@
 
 void CB_FAR snd_stream_source_load(volatile char CB_NEAR *path)
 {
-    bloodprg_graphics_buffer_ptr saved_framebuffer;
+    bloodprg_graphics_buffer_ptr volatile saved_framebuffer;
     cb_u32 seek_offset;
     cb_u16 source_handle;
     cb_u16 request_bytes;

@@ -38,7 +38,7 @@ void CB_NEAR screen_mode_update(cb_u16 queued_scene_link_target)
     volatile char CB_NEAR *selected_record;
     volatile char CB_NEAR *source;
     volatile char CB_GAME_DATA *destination;
-    volatile cb_u8 CB_FAR *saved_display;
+    volatile cb_u8 CB_FAR * volatile saved_display;
     cb_u16 scene_link_target;
     cb_i16 phase;
     cb_i16 table_index;

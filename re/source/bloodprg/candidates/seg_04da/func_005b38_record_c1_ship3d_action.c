@@ -64,7 +64,7 @@ void CB_NEAR record_c1_ship3d_action(
     volatile ship_3d_position_field CB_FAR *owner_position;
     volatile ship_3d_position_field CB_FAR *related_position;
     volatile cb_u16 CB_FAR *word_field;
-    bloodprg_graphics_buffer_ptr saved_framebuffer;
+    bloodprg_graphics_buffer_ptr volatile saved_framebuffer;
     cb_u16 record_segment;
     cb_u16 owner_offset;
     cb_u16 related_offset;

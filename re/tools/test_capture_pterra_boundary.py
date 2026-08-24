@@ -81,6 +81,76 @@ class CaptureHelperTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "320x200"):
             capture.linear_surface_summary(b"short")
 
+    def test_graphics_pointer_monitor_accepts_known_surface_swaps(self) \
+            -> None:
+        baseline = {
+            "work_surface": {
+                "offset": 0, "segment": 0x5000,
+                "pointer": "5000:0000", "linear": 0x50000,
+            },
+            "draw_framebuffer": {
+                "offset": 0x4000, "segment": 0xA000,
+                "pointer": "a000:4000", "linear": 0xA4000,
+            },
+            "screen_buffer": {
+                "offset": 0, "segment": 0xA000,
+                "pointer": "a000:0000", "linear": 0xA0000,
+            },
+            "display_buffer": {
+                "offset": 0, "segment": 0x2000,
+                "pointer": "2000:0000", "linear": 0x20000,
+            },
+            "back_buffer": {
+                "offset": 0, "segment": 0x3000,
+                "pointer": "3000:0000", "linear": 0x30000,
+            },
+        }
+        current = {name: entry.copy() for name, entry in baseline.items()}
+        current["display_buffer"] = baseline["back_buffer"].copy()
+        current["back_buffer"] = baseline["work_surface"].copy()
+        current["draw_framebuffer"] = {
+            "offset": 0xC000, "segment": 0xA000,
+            "pointer": "a000:c000", "linear": 0xAC000,
+        }
+        self.assertEqual(
+            capture.graphics_pointer_errors(current, baseline, 0x1000), [])
+
+    def test_graphics_pointer_monitor_rejects_dgroup_restore(self) -> None:
+        baseline = {
+            "back_buffer": {
+                "offset": 0, "segment": 0x3000,
+                "pointer": "3000:0000", "linear": 0x30000,
+            },
+        }
+        current = {
+            "back_buffer": {
+                "offset": 0, "segment": 0x107C,
+                "pointer": "107c:0000", "linear": 0x107C0,
+            },
+        }
+        self.assertEqual(
+            capture.graphics_pointer_errors(current, baseline, 0x107C),
+            ["back_buffer points into DGROUP at 107c:0000"],
+        )
+
+    def test_graphics_pointer_monitor_rejects_unknown_surface(self) -> None:
+        baseline = {
+            "display_buffer": {
+                "offset": 0, "segment": 0x2000,
+                "pointer": "2000:0000", "linear": 0x20000,
+            },
+        }
+        current = {
+            "display_buffer": {
+                "offset": 0, "segment": 0x2800,
+                "pointer": "2800:0000", "linear": 0x28000,
+            },
+        }
+        self.assertEqual(
+            capture.graphics_pointer_errors(current, baseline, 0x1000),
+            ["display_buffer selected unknown surface 2800:0000"],
+        )
+
     def test_pterra_intro_input_stops_before_hud_selector(self) -> None:
         blockers = {"ship": 5}
         flow = {

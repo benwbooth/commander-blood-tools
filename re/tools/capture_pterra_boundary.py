@@ -121,6 +121,24 @@ MOUSE_LAST_Y_OFFSET = 0x0A3A
 MOUSE_PRIMARY_PRESSED_OFFSET = 0x0A3E
 MOUSE_SECONDARY_PRESSED_OFFSET = 0x0A3F
 MOUSE_PRESS_PENDING_OFFSET = 0x0A40
+GRAPHICS_WORK_SURFACE_OFFSET = 0x0ABC
+GRAPHICS_DRAW_FRAMEBUFFER_OFFSET = 0x5219
+GRAPHICS_SCREEN_BUFFER_OFFSET = 0x521D
+GRAPHICS_DISPLAY_BUFFER_OFFSET = 0x5221
+GRAPHICS_BACK_BUFFER_OFFSET = 0x5229
+GRAPHICS_SURFACE_BYTES = 320 * 200
+GRAPHICS_POINTER_OFFSETS = (
+    ("work_surface", GRAPHICS_WORK_SURFACE_OFFSET),
+    ("draw_framebuffer", GRAPHICS_DRAW_FRAMEBUFFER_OFFSET),
+    ("screen_buffer", GRAPHICS_SCREEN_BUFFER_OFFSET),
+    ("display_buffer", GRAPHICS_DISPLAY_BUFFER_OFFSET),
+    ("back_buffer", GRAPHICS_BACK_BUFFER_OFFSET),
+)
+VGA_GRAPHICS_POINTERS = frozenset((
+    (0x0000, 0xA000),
+    (0x4000, 0xA000),
+    (0xC000, 0xA000),
+))
 PRESENTATION_CHOICE_RESULT_OFFSET = 0x0ACA
 PRESENTATION_CHOICE_ACTIVE_OFFSET = 0x259B
 PRESENTATION_CHOICE_PHASE_OFFSET = 0x259C
@@ -286,6 +304,49 @@ def read_guest(mem, guest_base: int, linear: int, size: int) -> bytes:
         raise RuntimeError(
             f"short guest read at {linear:#x}: {len(data)} of {size}")
     return data
+
+
+def read_graphics_pointer_state(mem, guest_base: int,
+                                game_segment: int) -> dict[str, object]:
+    game = game_segment * 16
+    pointers: dict[str, object] = {}
+    for name, pointer_offset in GRAPHICS_POINTER_OFFSETS:
+        offset, segment = struct.unpack(
+            "<HH", read_guest(
+                mem, guest_base, game + pointer_offset, 4))
+        pointers[name] = {
+            "offset": offset,
+            "segment": segment,
+            "pointer": f"{segment:04x}:{offset:04x}",
+            "linear": segment * 16 + offset,
+        }
+    return pointers
+
+
+def graphics_pointer_errors(pointers: dict[str, object],
+                            baseline: dict[str, object],
+                            game_segment: int) -> list[str]:
+    allowed = set(VGA_GRAPHICS_POINTERS)
+    for entry in baseline.values():
+        assert isinstance(entry, dict)
+        allowed.add((int(entry["offset"]), int(entry["segment"])))
+
+    errors = []
+    for name, entry in pointers.items():
+        assert isinstance(entry, dict)
+        offset = int(entry["offset"])
+        segment = int(entry["segment"])
+        pointer = str(entry["pointer"])
+        linear = int(entry["linear"])
+        if offset == 0 and segment == 0:
+            errors.append(f"{name} became null")
+        elif segment == game_segment:
+            errors.append(f"{name} points into DGROUP at {pointer}")
+        elif linear + GRAPHICS_SURFACE_BYTES > 0x100000:
+            errors.append(f"{name} exceeds real-mode memory at {pointer}")
+        elif (offset, segment) not in allowed:
+            errors.append(f"{name} selected unknown surface {pointer}")
+    return errors
 
 
 def read_manu3_runtime_state(mem, guest_base: int, game_segment: int,
@@ -1182,6 +1243,8 @@ def read_profile_state(mem, guest_base: int, game_segment: int,
         "images": [f"{segment:04x}:{offset:04x}"
                    for offset, segment in images],
         "blockers": blockers,
+        "graphics_pointers": read_graphics_pointer_state(
+            mem, guest_base, game_segment),
         "input": {
             "mouse_x": mouse_x,
             "mouse_y": mouse_y,
@@ -1972,6 +2035,8 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
     transition_cpu_samples: list[dict[str, object]] = []
     transition_next_sample_at = None
     ivt_baseline = None
+    graphics_pointer_baseline = None
+    graphics_pointer_faults: list[str] = []
     last_profile = None
     last_cpu_state = None
     last_profile_key = None
@@ -2023,6 +2088,27 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                     fs_segment = state["fs"]
                 last_profile = read_profile_state(
                     mem, guest_base, game_segment, fs_segment)
+                graphics_pointers = last_profile["graphics_pointers"]
+                assert isinstance(graphics_pointers, dict)
+                if graphics_pointer_baseline is None:
+                    graphics_pointer_baseline = graphics_pointers
+                else:
+                    graphics_pointer_faults = graphics_pointer_errors(
+                        graphics_pointers,
+                        graphics_pointer_baseline,
+                        game_segment)
+                    if graphics_pointer_faults:
+                        integrity_fault_snapshot = snapshot_guest(
+                            mem, guest_base, anchor, cpu_addresses,
+                            hit, last_profile)
+                        integrity_fault_snapshot["graphics_pointer_baseline"] = \
+                            graphics_pointer_baseline
+                        integrity_fault_snapshot["graphics_pointer_faults"] = \
+                            graphics_pointer_faults
+                        print(
+                            "integrity: " + graphics_pointer_faults[0],
+                            flush=True)
+                        break
                 scene_flow = last_profile["scene_flow"]
                 audio_flow = last_profile["audio_flow"]
                 assert isinstance(audio_flow, dict)
@@ -2391,6 +2477,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                             "timer_tick": int(audio_flow["timer_tick"]),
                             "frame_delay": int(audio_flow["frame_delay"]),
                         },
+                        "graphics_pointers": graphics_pointers,
                         "manu3": read_manu3_runtime_state(
                             mem, guest_base, game_segment, state),
                     })
@@ -3613,6 +3700,8 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
         "dos_read_overflow_detected": dos_read_overflow_snapshot is not None,
         "integrity_fault": integrity_fault_snapshot,
         "integrity_fault_detected": integrity_fault_snapshot is not None,
+        "graphics_pointer_baseline": graphics_pointer_baseline,
+        "graphics_pointer_faults": graphics_pointer_faults,
         "hang": hang_snapshot,
         "hang_detected": hang_snapshot is not None,
         "scruter_scene_requested": scruter_scene_requested,

@@ -5,7 +5,7 @@
 
 cb_i16 CB_FAR backbuffer_clear_flags(void)
 {
-    bloodprg_graphics_buffer_ptr saved_framebuffer;
+    bloodprg_graphics_buffer_ptr volatile saved_framebuffer;
     cb_i16 load_result;
 
     pbm_palette_refresh = 0u;

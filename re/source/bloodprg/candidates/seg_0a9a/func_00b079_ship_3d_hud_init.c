@@ -31,7 +31,7 @@ void CB_NEAR ship_3d_hud_init(void)
 {
     volatile cb_u8 CB_FAR *record;
     volatile bloodprg_vm_record_triple CB_FAR *command;
-    bloodprg_graphics_buffer_ptr saved_framebuffer;
+    bloodprg_graphics_buffer_ptr volatile saved_framebuffer;
     cb_u16 target;
 
     if ((ship_3d_hud_initialized & 1u) == 0u) {

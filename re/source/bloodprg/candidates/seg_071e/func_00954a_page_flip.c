@@ -4,7 +4,7 @@
 
 cb_u16 CB_FAR page_flip(void)
 {
-    bloodprg_graphics_buffer_ptr saved_display_buffer;
+    bloodprg_graphics_buffer_ptr volatile saved_display_buffer;
     volatile cb_u16 first_object_id;
     volatile cb_u16 last_object_id;
     cb_u16 frame;

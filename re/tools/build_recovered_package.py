@@ -593,6 +593,26 @@ def build_bloodprg_runtime(
         [
             sys.executable,
             "-P",
+            str(ROOT / "re/tools/audit_far_pointer_lifetimes.py"),
+            "--source-root",
+            str(ROOT / "re/source/bloodprg/candidates"),
+            "--listing-dir",
+            str(final_dir / "segment_contract_listings"),
+        ],
+        final_dir / "far_pointer_lifetime_audit.log",
+    )
+    run_checked_logged(
+        [
+            sys.executable,
+            "-P",
+            str(ROOT / "re/tools/test_audit_far_pointer_lifetimes.py"),
+        ],
+        final_dir / "far_pointer_lifetime_tests.log",
+    )
+    run_checked_logged(
+        [
+            sys.executable,
+            "-P",
             str(ROOT / "re/tools/audit_relinked_abi.py"),
             "--listing-dir",
             str(final_dir / "segment_contract_listings"),

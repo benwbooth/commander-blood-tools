@@ -58,7 +58,7 @@ void CB_NEAR nav_camera_state_check(
     volatile nav_camera_chart_record CB_FAR *arche;
     volatile nav_camera_chart_record CB_FAR *current_location;
     volatile nav_camera_chart_record CB_FAR *object;
-    bloodprg_graphics_buffer_ptr saved_buffer;
+    bloodprg_graphics_buffer_ptr volatile saved_buffer;
     volatile cb_u8 *entity_flags;
     cb_u16 object_offset;
     cb_u16 picked_offset;

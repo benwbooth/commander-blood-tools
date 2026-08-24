@@ -10,7 +10,7 @@
 
 void CB_NEAR startup_loading_screen_and_write_directory_prepare(void)
 {
-    bloodprg_graphics_buffer_ptr saved_draw_framebuffer;
+    bloodprg_graphics_buffer_ptr volatile saved_draw_framebuffer;
     const bloodprg_resource_name_entry CB_GAME_DATA *entry;
     struct find_t find_data;
     union REGS registers;
