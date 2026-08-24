@@ -108,6 +108,62 @@ class CaptureHelperTests(unittest.TestCase):
         flow["dialogue_hold_countdown"] = 0
         self.assertFalse(capture.pterra_ship_intro_ready_for_edge(flow))
 
+    def test_pterra_intro_press_uses_guest_observable_pulse(self) -> None:
+        self.assertFalse(capture.pterra_ship_intro_press_should_release(
+            10.19, 10.0))
+        self.assertTrue(capture.pterra_ship_intro_press_should_release(
+            10.21, 10.0))
+        self.assertFalse(capture.pterra_ship_intro_press_should_release(
+            10.21, None))
+
+    def test_pterra_intro_active_pulse_cannot_start_another_press(self) \
+            -> None:
+        self.assertEqual(capture.pterra_ship_intro_input_action(
+            pressing=True, release_ready=False, latch_active=False,
+            can_press=True), "hold")
+        self.assertEqual(capture.pterra_ship_intro_input_action(
+            pressing=True, release_ready=True, latch_active=False,
+            can_press=True), "release")
+        self.assertEqual(capture.pterra_ship_intro_input_action(
+            pressing=False, release_ready=False, latch_active=True,
+            can_press=True), "wait")
+        self.assertEqual(capture.pterra_ship_intro_input_action(
+            pressing=False, release_ready=False, latch_active=False,
+            can_press=True), "press")
+
+    def test_pterra_intro_accepts_guest_latched_hud_before_expiry(self) \
+            -> None:
+        flow = {
+            "dialogue_hold_complete": 1,
+            "dialogue_hold_countdown": 2,
+        }
+        input_state = {
+            "ship_hud_initialized": 1,
+            "ship_target_select_phase": 1,
+        }
+        self.assertEqual(capture.pterra_ship_intro_consumed_before_expiry(
+            flow, input_state, [4, 5], edge_count=5,
+            raw_seen=True, latch_seen=True),
+            (True, "guest-latched-hud-handoff"))
+        flow["dialogue_hold_countdown"] = 0
+        self.assertEqual(capture.pterra_ship_intro_consumed_before_expiry(
+            flow, input_state, [4, 5], edge_count=5,
+            raw_seen=True, latch_seen=True), (False, None))
+
+    def test_pterra_intro_hud_handoff_requires_guest_input_evidence(self) \
+            -> None:
+        flow = {
+            "dialogue_hold_complete": 1,
+            "dialogue_hold_countdown": 2,
+        }
+        input_state = {
+            "ship_hud_initialized": 1,
+            "ship_target_select_phase": 1,
+        }
+        self.assertEqual(capture.pterra_ship_intro_consumed_before_expiry(
+            flow, input_state, [4, 5], edge_count=5,
+            raw_seen=True, latch_seen=False), (False, None))
+
     def test_pterra_intro_accepts_complete_no_hold_hud_handoff(self) -> None:
         blockers = {"ship": 5}
         flow = {
@@ -136,25 +192,6 @@ class CaptureHelperTests(unittest.TestCase):
             blockers, flow, input_state, [4, 5], edge_count=1))
         self.assertFalse(capture.pterra_ship_intro_is_naturally_complete(
             blockers, flow, input_state, [5], edge_count=0))
-
-    def test_carried_nav_press_waits_for_transition_or_settle(self) -> None:
-        now = 10.0
-        self.assertTrue(capture.carried_nav_press_should_release(
-            now, 9.9, capture.SCRIPT2_PTERRA_RECORD, view_state=6))
-        self.assertFalse(capture.carried_nav_press_should_release(
-            now, 8.0, 0, view_state=6))
-        self.assertTrue(capture.carried_nav_press_should_release(
-            now, 8.0, 0, view_state=0))
-
-    def test_carried_nav_marker_approaches_y_before_x(self) -> None:
-        self.assertEqual(
-            capture.carried_nav_marker_step(158, 152, 201, 93),
-            (158, 93),
-        )
-        self.assertEqual(
-            capture.carried_nav_marker_step(158, 95, 201, 93),
-            (201, 93),
-        )
 
     def test_illegal_interrupt_detector_includes_divide_error(self) -> None:
         match = capture.ILLEGAL_INTERRUPT_RE.search(
