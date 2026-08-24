@@ -178,6 +178,8 @@ PTERRA_MAP_TRANSITION_TIMEOUT_SECONDS = 120.0
 PTERRA_BRIDGE_ROTATION_TIMEOUT_SECONDS = 360.0
 PTERRA_NAV_ACTIVATION_TIMEOUT_SECONDS = 30.0
 PTERRA_NAV_CHART_MAX_REOPEN_ATTEMPTS = 3
+PTERRA_BRIDGE_HOST_STALL_SECONDS = 2.0
+PTERRA_BRIDGE_HOST_RECENTER_LIMIT = 12
 PTERRA_NATIVE_INPUT_TIMEOUT_SECONDS = 10.0
 PTERRA_NATIVE_INPUT_EDGE_INTERVAL_SECONDS = 0.25
 PTERRA_NATIVE_INPUT_PULSE_SECONDS = 0.2
@@ -956,6 +958,16 @@ def bridge_navigation_timed_out(
     return (
         now - last_progress_at >= PTERRA_MAP_TRANSITION_TIMEOUT_SECONDS
         or now - started_at >= PTERRA_BRIDGE_ROTATION_TIMEOUT_SECONDS
+    )
+
+
+def bridge_host_pointer_needs_recenter(
+        now: float, last_rotation_at: float,
+        station_ready: bool) -> bool:
+    """Detect a captured host pointer pinned at the host-screen edge."""
+    return (
+        not station_ready
+        and now - last_rotation_at >= PTERRA_BRIDGE_HOST_STALL_SECONDS
     )
 
 
@@ -2139,6 +2151,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
     pterra_nav_pointer_last_position = None
     pterra_nav_pointer_last_changed_at = None
     pterra_nav_pointer_recapture_count = 0
+    pterra_nav_pan_recenter_count = 0
     pterra_host_mouse_ready_at = None
     pterra_nav_chart_pressing = False
     pterra_nav_chart_selected = False
@@ -2785,6 +2798,8 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                     assert isinstance(station, dict)
                     station_rect = tuple(station["hit_rect"])
                     station_center = selectable_rect_center(station_rect)
+                    station_ready = bridge_station_ready_for_click(
+                        station_rect)
                     pointer_position = (
                         int(input_state["mouse_x"]),
                         int(input_state["mouse_y"]))
@@ -2821,7 +2836,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                         pterra_nav_station_pressing = False
                     elif station_center is not None \
                             and int(station["flags"]) & 1 \
-                            and bridge_station_ready_for_click(station_rect):
+                            and station_ready:
                         current_x = int(input_state["mouse_x"])
                         current_y = int(input_state["mouse_y"])
                         pterra_nav_station_target_y = station_center[1]
@@ -2862,6 +2877,29 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                         # Bring station zero into view through the bridge's
                         # own edge-pan behavior. Its handler owns the complete
                         # chart-open and chart-close actor state.
+                        if bridge_host_pointer_needs_recenter(
+                                now, pterra_map_last_progress_at,
+                                station_ready):
+                            if (pterra_nav_pan_recenter_count >=
+                                    PTERRA_BRIDGE_HOST_RECENTER_LIMIT):
+                                hang_snapshot = snapshot_guest(
+                                    mem, guest_base, anchor, cpu_addresses,
+                                    hit, last_profile)
+                                hang_snapshot["reason"] = (
+                                    "bridge panorama stopped responding to "
+                                    "recentered captured mouse input")
+                                print(
+                                    "hang: bridge panorama ignored recentered "
+                                    "captured mouse input", flush=True)
+                                break
+                            recapture = recapture_game_mouse(
+                                display, executable, toggle_mouse_capture)
+                            pterra_nav_pan_recenter_count += 1
+                            pterra_map_last_progress_at = now
+                            assert isinstance(pterra_map_setup, dict)
+                            pterra_map_setup.setdefault(
+                                "bridge_pan_host_recenters", []).append(
+                                    recapture)
                         move_captured_game_mouse(
                             display,
                             int(input_state["mouse_x"]),

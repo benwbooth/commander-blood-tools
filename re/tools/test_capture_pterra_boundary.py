@@ -831,6 +831,17 @@ class CaptureHelperTests(unittest.TestCase):
             last_progress_at=capture.PTERRA_BRIDGE_ROTATION_TIMEOUT_SECONDS
             - 1.0))
 
+    def test_bridge_host_pointer_recenter_requires_rotation_stall(self) \
+            -> None:
+        self.assertFalse(capture.bridge_host_pointer_needs_recenter(
+            now=1.9, last_rotation_at=0.0, station_ready=False))
+        self.assertTrue(capture.bridge_host_pointer_needs_recenter(
+            now=2.0, last_rotation_at=0.0, station_ready=False))
+
+    def test_visible_bridge_station_suppresses_host_recenter(self) -> None:
+        self.assertFalse(capture.bridge_host_pointer_needs_recenter(
+            now=100.0, last_rotation_at=0.0, station_ready=True))
+
     def test_bridge_station_click_gets_bounded_activation_window(self) -> None:
         self.assertFalse(capture.bridge_navigation_timed_out(
             now=365.0, started_at=0.0, last_progress_at=365.0,
