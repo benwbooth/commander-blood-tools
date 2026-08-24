@@ -1,0 +1,21 @@
+diff --git a/src/libs/manymouse/linux_evdev.c b/src/libs/manymouse/linux_evdev.c
+index 43ac8411d..26a966c17 100644
+--- a/src/libs/manymouse/linux_evdev.c
++++ b/src/libs/manymouse/linux_evdev.c
+@@ -26,2 +26,3 @@
+ #include <unistd.h>
++#include <sys/sysmacros.h>
+ #include <sys/stat.h>
+@@ -253,9 +254,9 @@ static int open_if_mouse(const char *fname)
+-    /* evdev node ids are major 13, minor 64-96. Is this safe to check? */
+-    const int devmajor = (statbuf.st_rdev & 0xFF00) >> 8;
+-    const int devminor = (statbuf.st_rdev & 0x00FF);
+-    if ( (devmajor != 13) || (devminor < 64) || (devminor > 96) ) {
++    /* Linux allocates additional evdev nodes from minor 256 upward. */
++    const unsigned int devmajor = major(statbuf.st_rdev);
++    const unsigned int devminor = minor(statbuf.st_rdev);
++    if ((devmajor != 13) || (devminor < 64)) {
+         close(fd);
+-        return 0;  /* not an evdev. */
++        return 0; /* not an evdev */
+     }
