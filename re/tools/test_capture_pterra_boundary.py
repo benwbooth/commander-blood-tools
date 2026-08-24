@@ -69,6 +69,74 @@ class CaptureHelperTests(unittest.TestCase):
             init_enabled
         return io.BytesIO(data)
 
+    def test_linear_surface_summary_hashes_every_row(self) -> None:
+        surface = bytes(range(256)) * 250
+        summary = capture.linear_surface_summary(surface)
+        self.assertEqual(summary["byte_count"], 64000)
+        self.assertEqual(summary["unique_byte_count"], 256)
+        self.assertEqual(summary["nonzero_row_count"], 200)
+        self.assertEqual(len(summary["row_sha256"]), 200)
+
+    def test_linear_surface_summary_rejects_wrong_size(self) -> None:
+        with self.assertRaisesRegex(ValueError, "320x200"):
+            capture.linear_surface_summary(b"short")
+
+    def test_pterra_intro_input_stops_before_hud_selector(self) -> None:
+        blockers = {"ship": 5}
+        flow = {
+            "active_line": 5,
+            "displayed_line": 5,
+            "dialogue_hold_complete": 1,
+            "dialogue_hold_countdown": 6,
+        }
+        input_state = {
+            "ship_hud_initialized": 0,
+            "ship_target_select_phase": 0,
+        }
+        self.assertTrue(capture.pterra_ship_intro_waiting_for_input(
+            blockers, flow, input_state))
+        input_state["ship_hud_initialized"] = 1
+        input_state["ship_target_select_phase"] = 1
+        self.assertFalse(capture.pterra_ship_intro_waiting_for_input(
+            blockers, flow, input_state))
+
+    def test_pterra_intro_edge_waits_for_decisive_countdown(self) -> None:
+        flow = {"dialogue_hold_countdown": 7}
+        self.assertFalse(capture.pterra_ship_intro_ready_for_edge(flow))
+        flow["dialogue_hold_countdown"] = 2
+        self.assertTrue(capture.pterra_ship_intro_ready_for_edge(flow))
+        flow["dialogue_hold_countdown"] = 0
+        self.assertFalse(capture.pterra_ship_intro_ready_for_edge(flow))
+
+    def test_pterra_intro_accepts_observed_hold_countdown_to_hud(self) -> None:
+        blockers = {"ship": 5}
+        flow = {
+            "dialogue_hold_complete": 0,
+            "dialogue_hold_countdown": 0,
+        }
+        input_state = {
+            "ship_hud_initialized": 1,
+            "ship_target_select_phase": 1,
+        }
+        self.assertTrue(capture.pterra_ship_intro_is_naturally_complete(
+            blockers, flow, input_state, [4, 5], edge_count=0))
+
+    def test_pterra_intro_natural_completion_rejects_ambiguous_edge(self) \
+            -> None:
+        blockers = {"ship": 5}
+        flow = {
+            "dialogue_hold_complete": 0,
+            "dialogue_hold_countdown": 0,
+        }
+        input_state = {
+            "ship_hud_initialized": 1,
+            "ship_target_select_phase": 1,
+        }
+        self.assertFalse(capture.pterra_ship_intro_is_naturally_complete(
+            blockers, flow, input_state, [4, 5], edge_count=1))
+        self.assertFalse(capture.pterra_ship_intro_is_naturally_complete(
+            blockers, flow, input_state, [5], edge_count=0))
+
     def test_illegal_interrupt_detector_includes_divide_error(self) -> None:
         match = capture.ILLEGAL_INTERRUPT_RE.search(
             b"ERROR CPU:Illegal Unhandled Interrupt Called 0")
@@ -308,9 +376,18 @@ class CaptureHelperTests(unittest.TestCase):
         completed = mock.Mock(returncode=0, stdout="")
         with mock.patch.object(
                 capture.subprocess, "run",
-                side_effect=[search, geometry, completed, completed]) as run:
+                side_effect=[search, geometry, completed, completed,
+                             completed]) as run:
             result = capture.recapture_game_mouse(":9", "BLOODPRG.EXE")
         self.assertEqual(result["window_point"], [320, 200])
+        self.assertTrue(result["window_activated"])
+        self.assertEqual(
+            [call.args[0] for call in run.call_args_list[2:4]],
+            [
+                ["xdotool", "windowactivate", "--sync", "1234"],
+                ["xdotool", "windowfocus", "--sync", "1234"],
+            ],
+        )
         self.assertEqual(
             run.call_args_list[-1].args[0],
             ["xdotool", "mousemove", "--sync", "--window", "1234",
@@ -325,11 +402,12 @@ class CaptureHelperTests(unittest.TestCase):
         with mock.patch.object(
                 capture.subprocess, "run",
                 side_effect=[search, geometry, completed, completed,
-                             completed, completed]) as run, \
+                             completed, completed, completed]) as run, \
                 mock.patch.object(capture.time, "sleep"):
             result = capture.recapture_game_mouse(
                 ":9", "BLOODPRG.EXE", toggle_capture=True)
         self.assertTrue(result["capture_toggled"])
+        self.assertTrue(result["window_activated"])
         self.assertEqual(
             [call.args[0] for call in run.call_args_list[-3:]],
             [
@@ -339,6 +417,20 @@ class CaptureHelperTests(unittest.TestCase):
                 ["xdotool", "click", "2"],
             ],
         )
+
+    def test_recapture_allows_missing_ewmh_window_manager(self) -> None:
+        search = mock.Mock(returncode=0, stdout="1234\n")
+        geometry = mock.Mock(
+            returncode=0, stdout="WIDTH=640\nHEIGHT=400\n")
+        unavailable = mock.Mock(returncode=1, stdout="")
+        completed = mock.Mock(returncode=0, stdout="")
+        with mock.patch.object(
+                capture.subprocess, "run",
+                side_effect=[search, geometry, unavailable, completed,
+                             completed]):
+            result = capture.recapture_game_mouse(":9", "BLOODPRG.EXE")
+        self.assertFalse(result["window_activated"])
+        self.assertEqual(result["window_point"], [320, 200])
 
     def test_dosbox_staging_captures_mouse_on_start(self) -> None:
         self.assertEqual(
@@ -367,6 +459,14 @@ class CaptureHelperTests(unittest.TestCase):
             started_at=0.0,
             last_progress_at=capture.PTERRA_BRIDGE_ROTATION_TIMEOUT_SECONDS
             - 1.0))
+
+    def test_bridge_station_click_gets_bounded_activation_window(self) -> None:
+        self.assertFalse(capture.bridge_navigation_timed_out(
+            now=365.0, started_at=0.0, last_progress_at=365.0,
+            first_click_at=360.0))
+        self.assertTrue(capture.bridge_navigation_timed_out(
+            now=390.0, started_at=0.0, last_progress_at=389.0,
+            first_click_at=360.0))
 
     def test_pterra_choices_are_recorded_only_in_verified_order(self) -> None:
         results: list[int] = []

@@ -138,8 +138,18 @@ def valid_pterra_report() -> dict[str, object]:
             "entity_rect": [120, 70, 80, 60],
             "entity_click_count": 1,
             "pterra_access_count_before": 0,
-            "intro_completed_naturally": True,
-            "intro_input_edges": 0,
+            "intro_hold_observed": True,
+            "intro_hold_dismissed": True,
+            "intro_input_edges": 1,
+            "intro_input_evidence": {
+                "adapter": "host-secondary-edge",
+            },
+            "intro_raw_secondary_seen": True,
+            "intro_guest_latch_seen": True,
+            "intro_hold_countdown_after": 4,
+            "hud_initialized_after_intro_dismissal": True,
+            "hud_text_active_after_intro_dismissal": True,
+            "target_select_phases_seen": [0, 1, 2, 0],
             "target_name_offsets": [0x0F60, 0x0DA4],
             "pterra_target_row": 1,
             "target_click_evidence": {
@@ -318,6 +328,65 @@ class ReportValidationTests(unittest.TestCase):
         self.assertIn(
             "native ship navigation lacks current-location input evidence",
             errors,
+        )
+
+    def test_pterra_rejects_timer_expiry_as_intro_input_evidence(self) -> None:
+        report = valid_pterra_report()
+        setup = report["pterra_travel_setup"]
+        setup["intro_hold_countdown_after"] = 0
+        setup["target_select_phases_seen"] = [1]
+        errors = matrix.validate_report(
+            matrix.SCENARIO_BY_NAME["authentic-pterra"], report
+        )
+        self.assertIn(
+            "first-visit ship intro lacks a verified hold outcome and "
+            "complete HUD target-selector phase sequence",
+            errors,
+        )
+
+    def test_pterra_accepts_natural_intro_without_observed_hold(self) -> None:
+        report = valid_pterra_report()
+        setup = report["pterra_travel_setup"]
+        setup.update({
+            "intro_hold_observed": False,
+            "intro_completed_naturally": True,
+            "intro_input_edges": 0,
+        })
+        for key in (
+            "intro_hold_dismissed",
+            "intro_input_evidence",
+            "intro_raw_secondary_seen",
+            "intro_guest_latch_seen",
+            "intro_hold_countdown_after",
+        ):
+            setup.pop(key, None)
+        self.assertEqual(
+            matrix.validate_report(
+                matrix.SCENARIO_BY_NAME["authentic-pterra"], report),
+            [],
+        )
+
+    def test_pterra_accepts_observed_hold_expiring_without_input(self) -> None:
+        report = valid_pterra_report()
+        setup = report["pterra_travel_setup"]
+        setup.update({
+            "intro_hold_observed": True,
+            "intro_hold_expired_naturally": True,
+            "intro_completed_naturally": True,
+            "intro_input_edges": 0,
+        })
+        for key in (
+            "intro_hold_dismissed",
+            "intro_input_evidence",
+            "intro_raw_secondary_seen",
+            "intro_guest_latch_seen",
+            "intro_hold_countdown_after",
+        ):
+            setup.pop(key, None)
+        self.assertEqual(
+            matrix.validate_report(
+                matrix.SCENARIO_BY_NAME["authentic-pterra"], report),
+            [],
         )
 
     def test_pterra_requires_exact_script_choices(self) -> None:

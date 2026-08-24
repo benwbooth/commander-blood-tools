@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import argparse
 import ctypes
+import hashlib
 import json
 import os
 import re
@@ -126,6 +127,10 @@ PRESENTATION_CHOICE_PHASE_OFFSET = 0x259C
 VM_WORD_CHOICE_ACTIVE_OFFSET = 0x27D7
 VM_OPERAND_WORD_COUNT_OFFSET = 0x27CF
 VM_TEXT_MENU_END_OFFSET = 0x27D3
+VM_TEXT_REVEAL_CURSOR_OFFSET = 0x5E58
+VM_TEXT_DISPLAY_ACTIVE_OFFSET = 0x5E64
+VM_DISPLAYED_LINE_OFFSET = 0x678A
+VM_PRESENTATION_OWNER_OFFSET = 0x679A
 CHOICE_RECT_OFFSET = 0x2AAB
 BRIDGE_STATIONS_OFFSET = 0x2A1B
 BRIDGE_STATION_SIZE = 0x18
@@ -152,6 +157,11 @@ EXPECTED_PTERRA_CHOICES = (SCRIPT2_EXXOS_WORD, SCRIPT2_TELEPORT_WORD)
 PTERRA_TRAVEL_MOVIE_TIMEOUT_SECONDS = 120.0
 PTERRA_MAP_TRANSITION_TIMEOUT_SECONDS = 120.0
 PTERRA_BRIDGE_ROTATION_TIMEOUT_SECONDS = 360.0
+PTERRA_NAV_ACTIVATION_TIMEOUT_SECONDS = 30.0
+PTERRA_NATIVE_INPUT_TIMEOUT_SECONDS = 10.0
+PTERRA_NATIVE_INPUT_EDGE_INTERVAL_SECONDS = 0.25
+PTERRA_NATIVE_INPUT_TRIGGER_COUNTDOWN = 2
+PTERRA_NATIVE_INPUT_MAX_EDGES = 3
 PTERRA_TRANSITION_SAMPLE_INTERVAL_SECONDS = 1.0
 PTERRA_TRANSITION_SAMPLE_LIMIT = 256
 STARTUP_DOS_POOL_POINTER_OFFSET = 0x0A42
@@ -517,6 +527,10 @@ def recapture_game_mouse(display: str, executable: str,
             fields[key] = int(value)
     width = fields.get("WIDTH", 640)
     height = fields.get("HEIGHT", 400)
+    activate = subprocess.run(
+        ["xdotool", "windowactivate", "--sync", window_id],
+        env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        check=False)
     focus = subprocess.run(
         ["xdotool", "windowfocus", "--sync", window_id],
         env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
@@ -535,6 +549,8 @@ def recapture_game_mouse(display: str, executable: str,
          str(width // 2), str(height // 2)],
         env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         check=False)
+    # windowactivate requires an EWMH window manager.  The isolated Xephyr
+    # display deliberately has none, so direct X focus is the required gate.
     if focus.returncode != 0 or moved.returncode != 0:
         raise RuntimeError(
             f"could not recapture the DOSBox mouse in window {window_id}")
@@ -552,6 +568,7 @@ def recapture_game_mouse(display: str, executable: str,
         "window_size": [width, height],
         "window_point": [width // 2, height // 2],
         "capture_toggled": toggle_capture,
+        "window_activated": activate.returncode == 0,
     }
 
 
@@ -611,6 +628,42 @@ def pterra_destination_ready(blockers: dict[str, int],
     )
 
 
+def pterra_ship_intro_waiting_for_input(
+        blockers: dict[str, int], flow: dict[str, object],
+        input_state: dict[str, object]) -> bool:
+    """Recognize the final intro hold without spilling input into the HUD."""
+    return (
+        int(blockers["ship"]) & 6 != 0
+        and int(input_state["ship_hud_initialized"]) == 0
+        and int(input_state["ship_target_select_phase"]) == 0
+        and (int(flow["active_line"]) == 5
+             or int(flow["displayed_line"]) == 5)
+        and int(flow["dialogue_hold_complete"]) & 1 != 0
+        and int(flow["dialogue_hold_countdown"]) > 0
+    )
+
+
+def pterra_ship_intro_ready_for_edge(flow: dict[str, object]) -> bool:
+    countdown = int(flow["dialogue_hold_countdown"])
+    return 0 < countdown <= PTERRA_NATIVE_INPUT_TRIGGER_COUNTDOWN
+
+
+def pterra_ship_intro_is_naturally_complete(
+        blockers: dict[str, int], flow: dict[str, object],
+        input_state: dict[str, object], lines_seen: list[int],
+        edge_count: int) -> bool:
+    """Recognize a complete countdown-to-HUD handoff with no input edge."""
+    return (
+        edge_count == 0
+        and lines_seen[-2:] == [4, 5]
+        and int(flow["dialogue_hold_complete"]) == 0
+        and int(flow["dialogue_hold_countdown"]) == 0
+        and int(blockers["ship"]) & 4 != 0
+        and int(input_state["ship_hud_initialized"]) & 1 != 0
+        and int(input_state["ship_target_select_phase"]) > 0
+    )
+
+
 def native_gameplay_control_ready(audio_flow: dict[str, object],
                                   blockers: dict[str, int],
                                   flow: dict[str, object]) -> bool:
@@ -627,8 +680,11 @@ def native_gameplay_control_ready(audio_flow: dict[str, object],
     )
 
 
-def bridge_navigation_timed_out(now: float, started_at: float,
-                                last_progress_at: float) -> bool:
+def bridge_navigation_timed_out(
+        now: float, started_at: float, last_progress_at: float,
+        first_click_at: float | None = None) -> bool:
+    if first_click_at is not None:
+        return now - first_click_at >= PTERRA_NAV_ACTIVATION_TIMEOUT_SECONDS
     return (
         now - last_progress_at >= PTERRA_MAP_TRANSITION_TIMEOUT_SECONDS
         or now - started_at >= PTERRA_BRIDGE_ROTATION_TIMEOUT_SECONDS
@@ -1267,6 +1323,21 @@ def read_profile_state(mem, guest_base: int, game_segment: int,
                 "<H", read_guest(
                     mem, guest_base,
                     game + VM_TEXT_MENU_END_OFFSET, 2))[0],
+            "text_display_active": read_guest(
+                mem, guest_base,
+                game + VM_TEXT_DISPLAY_ACTIVE_OFFSET, 1)[0],
+            "text_reveal_cursor": struct.unpack(
+                "<H", read_guest(
+                    mem, guest_base,
+                    game + VM_TEXT_REVEAL_CURSOR_OFFSET, 2))[0],
+            "displayed_line": struct.unpack(
+                "<H", read_guest(
+                    mem, guest_base,
+                    game + VM_DISPLAYED_LINE_OFFSET, 2))[0],
+            "presentation_owner_offset": struct.unpack(
+                "<H", read_guest(
+                    mem, guest_base,
+                    game + VM_PRESENTATION_OWNER_OFFSET, 2))[0],
             "dialogue_hold_complete": read_guest(
                 mem, guest_base,
                 game + VM_DIALOGUE_HOLD_COMPLETE_OFFSET, 1)[0],
@@ -1632,9 +1703,54 @@ def run_driver(actions: list[str], display: str, executable: str) -> None:
             emit(verb, arguments[0], arguments[1])
 
 
+def linear_surface_summary(data: bytes) -> dict[str, object]:
+    if len(data) != 320 * 200:
+        raise ValueError("a linear game surface must be exactly 320x200 bytes")
+    rows = [data[row * 320:(row + 1) * 320] for row in range(200)]
+    return {
+        "sha256": hashlib.sha256(data).hexdigest(),
+        "byte_count": len(data),
+        "unique_byte_count": len(set(data)),
+        "nonzero_row_count": sum(any(row) for row in rows),
+        "row_sha256": [hashlib.sha256(row).hexdigest() for row in rows],
+    }
+
+
+def snapshot_linear_surfaces(mem, guest_base: int, game_segment: int,
+                             capture_dir: Path | None = None) \
+        -> dict[str, object]:
+    surfaces: dict[str, object] = {}
+    game = game_segment * 16
+    for name, pointer_offset in (
+        ("display", 0x5221),
+        ("back_buffer", 0x5229),
+    ):
+        offset, segment = struct.unpack(
+            "<HH", read_guest(mem, guest_base, game + pointer_offset, 4))
+        linear = segment * 16 + offset
+        entry: dict[str, object] = {
+            "pointer": f"{segment:04x}:{offset:04x}",
+            "linear": linear,
+        }
+        if segment != 0 and linear + 320 * 200 <= 0x100000:
+            data = read_guest(mem, guest_base, linear, 320 * 200)
+            entry.update(linear_surface_summary(data))
+            if capture_dir is not None:
+                capture_dir.mkdir(parents=True, exist_ok=True)
+                path = capture_dir / f"pterra-marker-{name}.bin"
+                path.write_bytes(data)
+                entry["capture"] = str(path)
+        else:
+            entry["error"] = "surface pointer is outside conventional memory"
+        surfaces[name] = entry
+    return surfaces
+
+
 def snapshot_guest(mem, guest_base: int, anchor: int,
                    cpu_addresses: dict[str, int], marker: Path | None,
-                   profile: dict[str, object] | None) -> dict[str, object]:
+                   profile: dict[str, object] | None,
+                   surface_capture_dir: Path | None = None) \
+        -> dict[str, object]:
     state = read_cpu_state(mem, cpu_addresses)
     game_segment = (anchor - guest_base) // 16
     snapshot: dict[str, object] = {
@@ -1669,6 +1785,9 @@ def snapshot_guest(mem, guest_base: int, anchor: int,
     snapshot["back_buffer_area"] = read_guest(
         mem, guest_base, game_segment * 16 + 0x5219,
         0x5240 - 0x5219).hex()
+    if marker is not None:
+        snapshot["linear_surfaces"] = snapshot_linear_surfaces(
+            mem, guest_base, game_segment, surface_capture_dir)
     if marker is not None:
         snapshot["marker"] = str(marker)
     if profile is not None:
@@ -1740,7 +1859,12 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
     pterra_nav_open_started_at = None
     pterra_bridge_panorama_frame = None
     pterra_nav_station_pressing = False
+    pterra_nav_station_target_y = None
+    pterra_nav_station_first_click_at = None
     pterra_nav_station_click_count = 0
+    pterra_nav_pointer_last_position = None
+    pterra_nav_pointer_last_changed_at = None
+    pterra_nav_pointer_recapture_count = 0
     pterra_host_mouse_ready_at = None
     pterra_nav_chart_pressing = False
     pterra_nav_chart_selected = False
@@ -1767,7 +1891,18 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
     pterra_ship_region_click_count = 0
     pterra_ship_region_next_press_at = 0.0
     pterra_ship_intro_lines_seen: list[int] = []
+    pterra_ship_intro_started_at = None
+    pterra_ship_intro_next_edge_at = 0.0
+    pterra_ship_intro_capture_ready_at = None
+    pterra_ship_intro_edge_count = 0
+    pterra_ship_intro_input_evidence = None
+    pterra_ship_intro_pressing = False
+    pterra_ship_intro_raw_seen = False
+    pterra_ship_intro_latch_seen = False
+    pterra_ship_intro_hold_observed = False
+    pterra_ship_intro_dismissed = False
     pterra_ship_intro_completed_naturally = False
+    pterra_ship_target_phases_seen: list[int] = []
     pterra_ship_hud_progress_key = None
     pterra_ship_hud_last_progress_at = None
     pterra_arrival_progress_key = None
@@ -1858,6 +1993,10 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                     audio_flow["presentation_mode_27e1"],
                     scene_flow["active_line"],
                     scene_flow["c2_presentation_gate"],
+                    scene_flow["text_display_active"],
+                    scene_flow["text_reveal_cursor"],
+                    scene_flow["displayed_line"],
+                    scene_flow["presentation_owner_offset"],
                     scene_flow["list_d8c_state"],
                     (
                         last_profile["input"]["mouse_x"],
@@ -2237,29 +2376,78 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                     assert isinstance(station, dict)
                     station_rect = tuple(station["hit_rect"])
                     station_center = selectable_rect_center(station_rect)
+                    pointer_position = (
+                        int(input_state["mouse_x"]),
+                        int(input_state["mouse_y"]))
+                    if pointer_position != pterra_nav_pointer_last_position:
+                        pterra_nav_pointer_last_position = pointer_position
+                        pterra_nav_pointer_last_changed_at = now
+                    elif (pterra_nav_station_target_y is not None
+                            and abs(pointer_position[1]
+                                    - pterra_nav_station_target_y) > 2
+                            and pterra_nav_pointer_last_changed_at is not None
+                            and now - pterra_nav_pointer_last_changed_at
+                            >= 2.0):
+                        if pterra_nav_pointer_recapture_count >= 3:
+                            hang_snapshot = snapshot_guest(
+                                mem, guest_base, anchor, cpu_addresses,
+                                hit, last_profile)
+                            hang_snapshot["reason"] = (
+                                "captured host pointer did not move the DOS "
+                                "cursor toward the bridge station")
+                            print(
+                                "hang: captured pointer did not move toward "
+                                "the bridge station", flush=True)
+                            break
+                        recapture = recapture_game_mouse(
+                            display, executable, toggle_mouse_capture)
+                        pterra_nav_pointer_recapture_count += 1
+                        pterra_nav_pointer_last_changed_at = now
+                        assert isinstance(pterra_map_setup, dict)
+                        pterra_map_setup.setdefault(
+                            "pointer_liveness_recaptures", []).append(
+                                recapture)
                     if pterra_nav_station_pressing:
                         send_mouse_button(display, False, button=1)
                         pterra_nav_station_pressing = False
                     elif station_center is not None \
                             and int(station["flags"]) & 1:
-                        if move_captured_game_mouse(
-                                display,
-                                int(input_state["mouse_x"]),
-                                int(input_state["mouse_y"]),
-                                station_center[0], station_center[1]):
-                            send_mouse_button(display, True, button=1)
-                            pterra_nav_station_pressing = True
-                            pterra_nav_station_click_count += 1
-                            pterra_map_last_progress_at = now
-                            assert isinstance(pterra_map_setup, dict)
-                            pterra_map_setup["bridge_station_rect"] = \
-                                list(station_rect)
-                            pterra_map_setup["bridge_station_click_count"] = \
-                                pterra_nav_station_click_count
-                            print(
-                                "state: pressed native bridge navigation "
-                                f"station at {station_center[0]},"
-                                f"{station_center[1]}", flush=True)
+                        current_x = int(input_state["mouse_x"])
+                        current_y = int(input_state["mouse_y"])
+                        pterra_nav_station_target_y = station_center[1]
+                        if abs(current_y - station_center[1]) > 2:
+                            move_captured_game_mouse(
+                                display, current_x, current_y,
+                                current_x, station_center[1])
+                        else:
+                            station_x = station_center[0]
+                            close_enough = abs(current_x - station_x) <= 32
+                            moved = move_captured_game_mouse(
+                                display, current_x, current_y,
+                                station_x, station_center[1])
+                            if close_enough or moved:
+                                send_mouse_button(display, True, button=1)
+                                pterra_nav_station_pressing = True
+                                pterra_nav_station_click_count += 1
+                                if pterra_nav_station_first_click_at is None:
+                                    pterra_nav_station_first_click_at = now
+                                pterra_map_last_progress_at = now
+                                assert isinstance(pterra_map_setup, dict)
+                                pterra_map_setup["bridge_station_rect"] = \
+                                    list(station_rect)
+                                pterra_map_setup[
+                                    "bridge_station_click_count"] = \
+                                    pterra_nav_station_click_count
+                                pterra_map_setup[
+                                    "bridge_station_click_evidence"] = {
+                                        "adapter": "host-primary-edge",
+                                        "point": [
+                                            station_x, station_center[1]],
+                                    }
+                                print(
+                                    "state: pressed native bridge navigation "
+                                    f"station at {station_x},"
+                                    f"{station_center[1]}", flush=True)
                     else:
                         # Bring station zero into view through the bridge's
                         # own edge-pan behavior. Its handler owns the complete
@@ -2267,7 +2455,10 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                         move_captured_game_mouse(
                             display,
                             int(input_state["mouse_x"]),
-                            int(input_state["mouse_y"]), 2, 100)
+                            int(input_state["mouse_y"]), 2,
+                            pterra_nav_station_target_y
+                            if pterra_nav_station_target_y is not None
+                            else 100)
 
                 if (trigger_pterra_after_load
                         and pterra_nav_chart_started
@@ -2278,14 +2469,36 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                         and SCRIPT2_PTERRA_RECORD in input_state[
                             "nav_chart_object_offsets"]):
                     pterra_nav_chart_active = True
-                    pterra_host_mouse_ready_at = now + 0.25
+                    # DOSBox Staging's captured relative pointer can warp when
+                    # the station press is released during this handoff.  Keep
+                    # it held while positioning over the chart, then release
+                    # at the marker and send a distinct selection edge.
+                    if not pterra_nav_station_pressing:
+                        pterra_host_mouse_ready_at = now + 0.25
                     pterra_map_last_progress_at = now
                     assert isinstance(pterra_map_setup, dict)
                     pterra_map_setup["chart_object_offsets"] = list(
                         input_state["nav_chart_object_offsets"])
                     print(
-                        "state: native nav chart is interactive and contains "
-                        "Pterra", flush=True)
+                            "state: native nav chart is interactive and contains "
+                            "Pterra", flush=True)
+
+                if (trigger_pterra_after_load
+                        and pterra_nav_chart_active
+                        and not pterra_nav_chart_selected
+                        and pterra_map_last_progress_at is not None
+                        and now - pterra_map_last_progress_at
+                        >= PTERRA_MAP_TRANSITION_TIMEOUT_SECONDS):
+                    hang_snapshot = snapshot_guest(
+                        mem, guest_base, anchor, cpu_addresses,
+                        hit, last_profile)
+                    hang_snapshot["reason"] = (
+                        "native nav chart did not select Pterra after it "
+                        "became interactive")
+                    print(
+                        "hang: interactive nav chart did not select Pterra",
+                        flush=True)
+                    break
 
                 if (trigger_pterra_after_load
                         and pterra_nav_chart_started
@@ -2294,7 +2507,8 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                         and pterra_map_last_progress_at is not None
                         and bridge_navigation_timed_out(
                             now, pterra_nav_open_started_at,
-                            pterra_map_last_progress_at)):
+                            pterra_map_last_progress_at,
+                            pterra_nav_station_first_click_at)):
                     hang_snapshot = snapshot_guest(
                         mem, guest_base, anchor, cpu_addresses,
                         hit, last_profile)
@@ -2314,7 +2528,19 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                     marker_x, marker_y = map_context["pterra_marker"]
                     selected_location = int(
                         input_state["nav_selected_location_record"])
-                    if pterra_nav_chart_pressing:
+                    if pterra_nav_station_pressing:
+                        if move_captured_game_mouse(
+                                display,
+                                int(input_state["mouse_x"]),
+                                int(input_state["mouse_y"]),
+                                marker_x, marker_y):
+                            send_mouse_button(display, False, button=1)
+                            pterra_nav_station_pressing = False
+                            pterra_host_mouse_ready_at = now + 0.25
+                            print(
+                                "state: released carried bridge-station "
+                                "press at the Pterra marker", flush=True)
+                    elif pterra_nav_chart_pressing:
                         send_mouse_button(display, False, button=1)
                         pterra_nav_chart_pressing = False
                     elif (not pterra_nav_chart_selected
@@ -2567,21 +2793,183 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                         print(
                             "state: native ship intro reached dialogue line "
                             f"{active_line}", flush=True)
-                    if (not pterra_ship_intro_completed_naturally
-                            and int(blockers["ship"]) & 4
-                            and int(input_state["ship_hud_initialized"]) & 1):
+                    intro_latch_active = bool(
+                        int(input_state["secondary_pressed"]) & 1
+                        or int(input_state["press_pending"]) & 1)
+                    if intro_latch_active:
+                        pterra_ship_intro_latch_seen = True
+                    if int(input_state["mouse_button_state"]) & 2:
+                        pterra_ship_intro_raw_seen = True
+
+                    intro_waiting_for_input = (
+                        pterra_ship_intro_waiting_for_input(
+                            blockers, flow, input_state))
+                    if intro_waiting_for_input:
+                        pterra_ship_intro_hold_observed = True
+                        assert isinstance(pterra_travel_setup, dict)
+                        pterra_travel_setup["intro_hold_observed"] = True
+                        if pterra_ship_intro_capture_ready_at is None:
+                            pterra_ship_intro_input_evidence = {
+                                "adapter": "host-secondary-edge",
+                                "recapture": recapture_game_mouse(
+                                    display, executable,
+                                    toggle_mouse_capture),
+                            }
+                            pterra_ship_intro_capture_ready_at = now + 0.25
+
+                    hold_cleared_early = (
+                            pterra_ship_intro_edge_count > 0
+                            and int(flow["dialogue_hold_complete"]) == 0
+                            and int(flow["dialogue_hold_countdown"]) > 0
+                    )
+                    if not pterra_ship_intro_dismissed and hold_cleared_early:
+                        pterra_ship_intro_dismissed = True
+                        assert isinstance(pterra_travel_setup, dict)
+                        pterra_travel_setup.update({
+                            "intro_hold_dismissed": True,
+                            "intro_input_evidence":
+                                pterra_ship_intro_input_evidence,
+                            "intro_input_edges": pterra_ship_intro_edge_count,
+                            "intro_raw_secondary_seen":
+                                pterra_ship_intro_raw_seen,
+                            "intro_guest_latch_seen":
+                                pterra_ship_intro_latch_seen,
+                            "intro_hold_countdown_after": int(
+                                flow["dialogue_hold_countdown"]),
+                        })
+                        print(
+                            "state: guest cleared the native ship-intro "
+                            "hold before its countdown expired", flush=True)
+                        if pterra_ship_intro_pressing:
+                            send_mouse_button(display, False, button=3)
+                            pterra_ship_intro_pressing = False
+                    elif (not pterra_ship_intro_dismissed
+                            and intro_waiting_for_input):
+                        if (pterra_ship_intro_started_at is not None
+                                and now - pterra_ship_intro_started_at
+                                >= PTERRA_NATIVE_INPUT_TIMEOUT_SECONDS):
+                            hang_snapshot = snapshot_guest(
+                                mem, guest_base, anchor, cpu_addresses,
+                                hit, last_profile)
+                            hang_snapshot["reason"] = (
+                                "guest did not consume bounded secondary "
+                                "button edges before the ship-intro hold "
+                                "countdown expired; latch_seen="
+                                f"{pterra_ship_intro_latch_seen}, attempts="
+                                f"{pterra_ship_intro_edge_count}")
+                            print(
+                                "hang: guest did not consume bounded ship-"
+                                "intro secondary edges", flush=True)
+                            break
+                        if (int(flow["dialogue_hold_countdown"]) == 0
+                                and not pterra_ship_intro_dismissed):
+                            hang_snapshot = snapshot_guest(
+                                mem, guest_base, anchor, cpu_addresses,
+                                hit, last_profile)
+                            hang_snapshot["reason"] = (
+                                "ship-intro hold expired before a verified "
+                                "secondary-button dismissal")
+                            print(
+                                "hang: ship-intro hold expired without a "
+                                "verified secondary edge", flush=True)
+                            break
+                        if pterra_ship_intro_pressing:
+                            send_mouse_button(display, False, button=3)
+                            pterra_ship_intro_pressing = False
+                            pterra_ship_intro_next_edge_at = (
+                                now
+                                + PTERRA_NATIVE_INPUT_EDGE_INTERVAL_SECONDS)
+                        elif intro_latch_active:
+                            pass
+                        elif (pterra_ship_intro_edge_count
+                                < PTERRA_NATIVE_INPUT_MAX_EDGES
+                                and pterra_ship_intro_ready_for_edge(flow)
+                                and pterra_ship_intro_capture_ready_at
+                                is not None
+                                and now
+                                >= pterra_ship_intro_capture_ready_at
+                                and now >= pterra_ship_intro_next_edge_at):
+                            if pterra_ship_intro_started_at is None:
+                                pterra_ship_intro_started_at = now
+                            assert isinstance(pterra_travel_setup, dict)
+                            pterra_travel_setup.setdefault(
+                                "intro_hold_countdown_before",
+                                int(flow["dialogue_hold_countdown"]))
+                            send_mouse_button(display, True, button=3)
+                            pterra_ship_intro_pressing = True
+                            pterra_ship_intro_edge_count += 1
+                            print(
+                                "state: sent native ship-intro secondary "
+                                f"edge {pterra_ship_intro_edge_count}",
+                                flush=True)
+                    if (not pterra_ship_intro_dismissed
+                            and not pterra_ship_intro_completed_naturally
+                            and pterra_ship_intro_is_naturally_complete(
+                                blockers, flow, input_state,
+                                pterra_ship_intro_lines_seen,
+                                pterra_ship_intro_edge_count)):
                         pterra_ship_intro_completed_naturally = True
                         assert isinstance(pterra_travel_setup, dict)
-                        pterra_travel_setup[
-                            "intro_completed_naturally"] = True
-                        pterra_travel_setup["intro_input_edges"] = 0
+                        pterra_travel_setup.update({
+                            "intro_hold_observed":
+                                pterra_ship_intro_hold_observed,
+                            "intro_hold_expired_naturally":
+                                pterra_ship_intro_hold_observed,
+                            "intro_completed_naturally": True,
+                            "intro_input_edges": 0,
+                            "intro_selector_phase_on_completion": int(
+                                input_state["ship_target_select_phase"]),
+                        })
                         print(
-                            "state: native ship intro completed without "
-                            "injected input", flush=True)
+                            "state: native ship intro completed through its "
+                            "countdown without an injected edge", flush=True)
+
+                    intro_resolved = (
+                        pterra_ship_intro_dismissed
+                        or pterra_ship_intro_completed_naturally)
+                    if (pterra_ship_intro_hold_observed
+                            and not intro_resolved
+                            and int(input_state[
+                                "ship_hud_initialized"]) & 1):
+                        hang_snapshot = snapshot_guest(
+                            mem, guest_base, anchor, cpu_addresses,
+                            hit, last_profile)
+                        hang_snapshot["reason"] = (
+                            "observed ship-intro hold reached the HUD without "
+                            "a verified guest dismissal")
+                        print(
+                            "hang: observed ship-intro hold reached the HUD "
+                            "without verified dismissal", flush=True)
+                        break
+                    if (intro_resolved
+                            and int(blockers["ship"]) & 4
+                            and int(input_state["ship_hud_initialized"]) & 1):
+                        assert isinstance(pterra_travel_setup, dict)
+                        pterra_travel_setup[
+                            "hud_initialized_after_intro_dismissal"] = True
+                        if int(flow["text_display_active"]) & 1:
+                            pterra_travel_setup[
+                                "hud_text_active_after_intro_dismissal"] = True
+
+                    if intro_resolved:
+                        target_phase = int(
+                            input_state["ship_target_select_phase"])
+                        if (not pterra_ship_target_phases_seen
+                                or pterra_ship_target_phases_seen[-1]
+                                != target_phase):
+                            pterra_ship_target_phases_seen.append(target_phase)
+                            assert isinstance(pterra_travel_setup, dict)
+                            pterra_travel_setup[
+                                "target_select_phases_seen"] = list(
+                                    pterra_ship_target_phases_seen)
 
                     ship_hud_progress_key = (
                         int(flow["active_line"]),
                         int(flow["c2_presentation_gate"]),
+                        int(flow["text_display_active"]),
+                        int(flow["text_reveal_cursor"]),
+                        int(flow["displayed_line"]),
+                        int(flow["presentation_owner_offset"]),
                         int(flow["list_d8c_state"]),
                         int(flow["resource_source_remaining"]),
                         int(flow["list_queued_bytes"]),
@@ -2938,7 +3326,9 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                 if hit is not None and marker_snapshot is None:
                     marker_snapshot = snapshot_guest(
                         mem, guest_base, anchor, cpu_addresses,
-                        hit, last_profile)
+                        hit, last_profile,
+                        guest_snapshot.parent
+                        if guest_snapshot is not None else None)
                     print(f"boundary marker: {hit.name}", flush=True)
                 if illegal_interrupt is not None:
                     fault_snapshot = snapshot_guest(
@@ -3015,6 +3405,10 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
             break
         time.sleep(0.01)
 
+    if pterra_ship_intro_pressing:
+        send_mouse_button(display, False, button=3)
+        pterra_ship_intro_pressing = False
+
     overall_timeout_reached = (
         time.monotonic() >= deadline
         and fault_snapshot is None
@@ -3066,6 +3460,14 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
     if trigger_pterra_after_load and not pterra_ship_navigation_activated:
         errors.append(
             "native current-location interaction never activated ship navigation")
+    if (trigger_pterra_after_load
+            and pterra_travel_setup is not None
+            and int(pterra_travel_setup.get("pterra_access_count_before", 0)) == 0
+            and not (pterra_ship_intro_dismissed
+                     or pterra_ship_intro_completed_naturally)):
+        errors.append(
+            "final first-visit ship intro neither consumed its observed hold "
+            "nor completed without a hold")
     if trigger_pterra_after_load and not pterra_travel_command_generated:
         errors.append("native ship HUD never generated the Orxx Pterra C1 command")
     if trigger_pterra_after_load and not pterra_travel_command_consumed:

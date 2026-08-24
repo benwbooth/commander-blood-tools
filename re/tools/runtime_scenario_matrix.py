@@ -585,11 +585,50 @@ def _validate_pterra(report: dict[str, object]) -> list[str]:
                 or int(travel_setup.get("entity_click_count", 0)) <= 0:
             errors.append(
                 "native ship navigation lacks current-location input evidence")
-        if travel_setup.get("pterra_access_count_before") == 0 \
-                and (travel_setup.get("intro_completed_naturally") is not True
-                     or travel_setup.get("intro_input_edges") != 0):
-            errors.append(
-                "first-visit ship intro did not reach HUD without input")
+        if travel_setup.get("pterra_access_count_before") == 0:
+            hold_observed = travel_setup.get("intro_hold_observed") is True
+            if hold_observed:
+                dismissed_early = (
+                    travel_setup.get("intro_hold_dismissed") is True
+                    and int(travel_setup.get("intro_input_edges", 0)) > 0
+                    and travel_setup.get(
+                        "intro_raw_secondary_seen") is True
+                    and travel_setup.get("intro_guest_latch_seen") is True
+                    and isinstance(
+                        travel_setup.get("intro_input_evidence"), dict)
+                    and travel_setup["intro_input_evidence"].get("adapter")
+                    == "host-secondary-edge"
+                    and int(travel_setup.get(
+                        "intro_hold_countdown_after", 0)) > 0
+                )
+                expired_naturally = (
+                    travel_setup.get("intro_completed_naturally") is True
+                    and travel_setup.get(
+                        "intro_hold_expired_naturally") is True
+                    and int(travel_setup.get("intro_input_edges", -1)) == 0
+                )
+                intro_valid = dismissed_early or expired_naturally
+            else:
+                intro_valid = (
+                    travel_setup.get("intro_hold_observed") is False
+                    and travel_setup.get("intro_completed_naturally") is True
+                    and int(travel_setup.get("intro_input_edges", -1)) == 0
+                )
+            intro_valid = (
+                intro_valid
+                and travel_setup.get(
+                    "hud_initialized_after_intro_dismissal") is True
+                and travel_setup.get(
+                    "hud_text_active_after_intro_dismissal") is True
+                and isinstance(
+                    travel_setup.get("target_select_phases_seen"), list)
+                and travel_setup.get("target_select_phases_seen")[-3:]
+                == [1, 2, 0]
+            )
+            if not intro_valid:
+                errors.append(
+                    "first-visit ship intro lacks a verified hold outcome "
+                    "and complete HUD target-selector phase sequence")
         target_offsets = travel_setup.get("target_name_offsets")
         setup_row = travel_setup.get("pterra_target_row")
         if not isinstance(target_offsets, list) \
