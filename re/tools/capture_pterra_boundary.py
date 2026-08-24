@@ -792,11 +792,16 @@ def pterra_destination_ready(blockers: dict[str, int],
 def pterra_ship_intro_waiting_for_input(
         blockers: dict[str, int], flow: dict[str, object],
         input_state: dict[str, object]) -> bool:
-    """Recognize the final intro hold without spilling input into the HUD."""
+    """Recognize the final intro hold through the first HUD selector phase."""
+    hud_initialized = int(input_state["ship_hud_initialized"])
+    selector_phase = int(input_state["ship_target_select_phase"])
+    before_or_at_selector = (
+        (hud_initialized == 0 and selector_phase == 0)
+        or (hud_initialized & 1 != 0 and selector_phase == 1)
+    )
     return (
         int(blockers["ship"]) & 6 != 0
-        and int(input_state["ship_hud_initialized"]) == 0
-        and int(input_state["ship_target_select_phase"]) == 0
+        and before_or_at_selector
         and (int(flow["active_line"]) == 5
              or int(flow["displayed_line"]) == 5)
         and int(flow["dialogue_hold_complete"]) & 1 != 0
@@ -831,19 +836,12 @@ def pterra_ship_intro_consumed_before_expiry(
         flow: dict[str, object], input_state: dict[str, object],
         lines_seen: list[int], edge_count: int, raw_seen: bool,
         latch_seen: bool) -> tuple[bool, str | None]:
+    del input_state, lines_seen, raw_seen, latch_seen
     if edge_count == 0 or int(flow["dialogue_hold_countdown"]) <= 0:
         return False, None
     if int(flow["dialogue_hold_complete"]) == 0:
         return True, "hold-clear-observed"
-    hud_handoff = (
-        raw_seen
-        and latch_seen
-        and lines_seen[-2:] == [4, 5]
-        and int(input_state["ship_hud_initialized"]) & 1 != 0
-        and int(input_state["ship_target_select_phase"]) > 0
-    )
-    return (True, "guest-latched-hud-handoff") \
-        if hud_handoff else (False, None)
+    return False, None
 
 
 def pterra_ship_intro_is_naturally_complete(
@@ -3320,7 +3318,8 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                     if (pterra_ship_intro_hold_observed
                             and not intro_resolved
                             and int(input_state[
-                                "ship_hud_initialized"]) & 1):
+                                "ship_hud_initialized"]) & 1
+                            and not intro_waiting_for_input):
                         if pterra_ship_intro_pressing:
                             send_mouse_button(display, False, button=3)
                             pterra_ship_intro_pressing = False
