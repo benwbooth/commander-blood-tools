@@ -39,7 +39,7 @@ void CB_FAR list_d8c_active_present(void)
         x = *cursor++;
         y = *cursor++;
     }
-    y = (cb_u16)(y + resource_vertical_offset);
+    y = (cb_u16)(y + resource_vertical_offset_gs);
 
     display_base = (volatile cb_u8 CB_FAR *)MK_FP(
             FP_SEG(graphics_display_buffer), 0u);
@@ -75,7 +75,7 @@ void CB_FAR list_d8c_active_present(void)
                 (volatile cb_u8 CB_FAR *)MK_FP(
                         list_d8c_default_entry_segment, 0u),
                 display_base,
-                resource_vertical_offset,
+                resource_vertical_offset_gs,
                 list_d8c_active_layout,
                 list_d8c_active_row_mode);
         return;

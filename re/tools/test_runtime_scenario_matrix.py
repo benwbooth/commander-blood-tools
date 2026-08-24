@@ -101,16 +101,61 @@ def valid_pterra_report() -> dict[str, object]:
     return {
         "mode": "authentic-save-pterra",
         "errors": [],
+        "title_transition_confirmed": True,
+        "title_transition_evidence": [
+            "startup-presentation-line",
+            "native-gameplay-load-boundary",
+            "authentic-save-loaded",
+        ],
+        "authentic_save_loaded": True,
         "fault_detected": False,
         "dos_read_overflow_detected": False,
         "integrity_fault_detected": False,
         "hang_detected": False,
+        "pterra_unlock_requested": True,
+        "pterra_unlock_completed": True,
+        "pterra_nav_chart_started": True,
+        "pterra_nav_chart_active": True,
+        "pterra_nav_chart_selected": True,
+        "pterra_nav_panel_close_confirmed": True,
+        "pterra_map_command_generated": True,
+        "pterra_map_command_consumed": True,
+        "pterra_map_destination_committed": True,
+        "pterra_ship_navigation_activated": True,
+        "pterra_map_setup": {
+            "chart_object_offsets": [0x0D34, 0x0DA0],
+            "pterra_marker": [201, 93],
+            "generated_via": "deferred-record",
+            "panel_close_confirmed": True,
+        },
+        "pterra_travel_command_generated": True,
+        "pterra_travel_command_consumed": True,
+        "pterra_target_row": 1,
+        "pterra_travel_setup": {
+            "entry": "native-current-location-entity",
+            "entity_index": 31,
+            "entity_rect": [120, 70, 80, 60],
+            "entity_click_count": 1,
+            "pterra_access_count_before": 0,
+            "intro_hold_dismissed": True,
+            "target_name_offsets": [0x0F60, 0x0DA4],
+            "pterra_target_row": 1,
+            "target_click_evidence": {
+                "adapter": "guest-primary-edge",
+                "point": [202, 115],
+            },
+        },
+        "scruter_scene_requested": True,
+        "scruter_scene_active_seen": True,
+        "scruter_scene_completed": True,
+        "scruter_sound_bank_loaded": True,
+        "scruter_streamed_clip_count_before": 0,
+        "scruter_streamed_clip_count": 19,
         "destination_committed": True,
-        "diagnostic_audio_muted": False,
         "pter_reached": True,
         "pter": {"cpu": {}},
         "pter_completed": True,
-        "pter_choice_results": [0x1234, 0x5678],
+        "pter_choice_results": [0x0171, 0x02A8],
         "pter_sustained": True,
         "post_pter": {"cpu": {}, "duration_seconds": 5.0},
         "marker": {"path": "PTERRA1D.LBM"},
@@ -188,6 +233,16 @@ class ReportValidationTests(unittest.TestCase):
             ),
         )
 
+    def test_pterra_requires_confirmed_native_title_transition(self) -> None:
+        report = valid_pterra_report()
+        report["title_transition_confirmed"] = False
+        report["title_transition_evidence"] = []
+        errors = matrix.validate_report(
+            matrix.SCENARIO_BY_NAME["authentic-pterra"], report
+        )
+        self.assertIn("native title transition was not confirmed", errors)
+        self.assertIn("native title transition evidence is invalid", errors)
+
     def test_pterra_requires_full_encounter_and_post_liveness(self) -> None:
         report = valid_pterra_report()
         report["pter_completed"] = False
@@ -201,10 +256,76 @@ class ReportValidationTests(unittest.TestCase):
             "Pterra procedure was not completed", errors
         )
         self.assertIn(
-            "Pterra did not complete both scripted choices", errors
+            "Pterra scripted choices are not exxos then teleport", errors
         )
         self.assertIn(
             "Pterra post-encounter liveness was not sustained", errors
+        )
+
+    def test_pterra_requires_native_streamed_sound_bank(self) -> None:
+        report = valid_pterra_report()
+        report["scruter_sound_bank_loaded"] = False
+        report["scruter_streamed_clip_count"] = 0
+        errors = matrix.validate_report(
+            matrix.SCENARIO_BY_NAME["authentic-pterra"], report
+        )
+        self.assertIn(
+            "native Scruter_Jo streamed sound bank was not loaded", errors
+        )
+        self.assertIn(
+            "Scruter_Jo streamed clip count is not positive", errors
+        )
+
+    def test_pterra_requires_completed_native_scruter_transition(self) -> None:
+        report = valid_pterra_report()
+        report["scruter_scene_completed"] = False
+        errors = matrix.validate_report(
+            matrix.SCENARIO_BY_NAME["authentic-pterra"], report
+        )
+        self.assertIn(
+            "native Scruter_Jo Pterra lifecycle did not complete",
+            errors,
+        )
+
+    def test_pterra_requires_both_native_c1_commands(self) -> None:
+        report = valid_pterra_report()
+        report["pterra_map_command_consumed"] = False
+        report["pterra_travel_command_generated"] = False
+        errors = matrix.validate_report(
+            matrix.SCENARIO_BY_NAME["authentic-pterra"], report
+        )
+        self.assertIn(
+            "native VM did not consume the map Pterra C1 command", errors
+        )
+        self.assertIn(
+            "native ship HUD did not generate the Orxx Pterra C1 command",
+            errors,
+        )
+
+    def test_pterra_requires_native_ship_navigation_input(self) -> None:
+        report = valid_pterra_report()
+        report["pterra_ship_navigation_activated"] = False
+        report["pterra_travel_setup"].pop("entity_rect")
+        errors = matrix.validate_report(
+            matrix.SCENARIO_BY_NAME["authentic-pterra"], report
+        )
+        self.assertIn(
+            "native current-location interaction did not activate ship navigation",
+            errors,
+        )
+        self.assertIn(
+            "native ship navigation lacks current-location input evidence",
+            errors,
+        )
+
+    def test_pterra_requires_exact_script_choices(self) -> None:
+        report = valid_pterra_report()
+        report["pter_choice_results"] = [0x02A8, 0x0171]
+        errors = matrix.validate_report(
+            matrix.SCENARIO_BY_NAME["authentic-pterra"], report
+        )
+        self.assertIn(
+            "Pterra scripted choices are not exxos then teleport", errors
         )
 
     def test_radio_requires_ordered_semantic_checkpoints(self) -> None:

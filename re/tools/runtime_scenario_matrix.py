@@ -484,6 +484,18 @@ def _validate_pterra(report: dict[str, object]) -> list[str]:
         errors.append("capture mode is not authentic-save-pterra")
     if report.get("errors") != []:
         errors.append("capture errors are present or missing")
+    title_evidence = report.get("title_transition_evidence")
+    if report.get("title_transition_confirmed") is not True:
+        errors.append("native title transition was not confirmed")
+    if not isinstance(title_evidence, list) or not title_evidence \
+            or not all(item in {
+                "startup-presentation-line",
+                "native-gameplay-load-boundary",
+                "authentic-save-loaded",
+            } for item in title_evidence):
+        errors.append("native title transition evidence is invalid")
+    if report.get("authentic_save_loaded") is not True:
+        errors.append("authentic GAME1.SAV load was not observed")
     for key in (
         "fault_detected",
         "dos_read_overflow_detected",
@@ -492,17 +504,103 @@ def _validate_pterra(report: dict[str, object]) -> list[str]:
     ):
         if report.get(key) is not False:
             errors.append(f"{key} is true or missing")
+    for key, label in (
+        ("pterra_unlock_requested", "SCRIPT2 Pterra unlock was not requested"),
+        ("pterra_unlock_completed", "SCRIPT2 Pterra unlock did not complete"),
+        ("pterra_nav_chart_started", "native nav chart was not started"),
+        ("pterra_nav_chart_active", "native nav chart did not become active"),
+        ("pterra_nav_chart_selected", "native nav chart did not select Pterra"),
+        ("pterra_nav_panel_close_confirmed",
+         "native Pterra location panel did not complete"),
+        ("pterra_map_command_generated",
+         "native map did not generate the Pterra C1 command"),
+        ("pterra_map_command_consumed",
+         "native VM did not consume the map Pterra C1 command"),
+        ("pterra_map_destination_committed",
+         "native map travel did not commit Pterra"),
+        ("pterra_ship_navigation_activated",
+         "native current-location interaction did not activate ship navigation"),
+        ("pterra_travel_command_generated",
+         "native ship HUD did not generate the Orxx Pterra C1 command"),
+        ("pterra_travel_command_consumed",
+         "native VM did not consume the Orxx Pterra C1 command"),
+    ):
+        if report.get(key) is not True:
+            errors.append(label)
+    map_setup = report.get("pterra_map_setup")
+    if not isinstance(map_setup, dict):
+        errors.append("native Pterra map setup is missing")
+    else:
+        chart_offsets = map_setup.get("chart_object_offsets")
+        if not isinstance(chart_offsets, list) or 0x0DA0 not in chart_offsets:
+            errors.append("native nav chart setup does not contain Pterra")
+        if map_setup.get("pterra_marker") != [201, 93]:
+            errors.append("native Pterra chart marker is not exact")
+        if map_setup.get("generated_via") not in (
+                "arche-action", "deferred-record"):
+            errors.append("native Pterra map C1 provenance is invalid")
+        if map_setup.get("panel_close_confirmed") is not True:
+            errors.append("native Pterra panel close evidence is missing")
+    travel_setup = report.get("pterra_travel_setup")
+    target_row = report.get("pterra_target_row")
+    if not isinstance(travel_setup, dict):
+        errors.append("native Pterra ship-HUD setup is missing")
+    else:
+        if travel_setup.get("entry") != "native-current-location-entity" \
+                or travel_setup.get("entity_index") != 31 \
+                or not isinstance(travel_setup.get("entity_rect"), list) \
+                or int(travel_setup.get("entity_click_count", 0)) <= 0:
+            errors.append(
+                "native ship navigation lacks current-location input evidence")
+        if travel_setup.get("pterra_access_count_before") == 0 \
+                and travel_setup.get("intro_hold_dismissed") is not True:
+            errors.append(
+                "first-visit ship intro was not dismissed before HUD entry")
+        target_offsets = travel_setup.get("target_name_offsets")
+        setup_row = travel_setup.get("pterra_target_row")
+        if not isinstance(target_offsets, list) \
+                or not isinstance(setup_row, int) \
+                or setup_row < 0 \
+                or setup_row >= len(target_offsets) \
+                or target_offsets[setup_row] != 0x0DA4:
+            errors.append("native ship target row does not identify Pterra")
+        if target_row != setup_row:
+            errors.append("reported Pterra target row is inconsistent")
+        click_evidence = travel_setup.get("target_click_evidence")
+        click_point = (click_evidence.get("point")
+                       if isinstance(click_evidence, dict) else None)
+        if not isinstance(click_evidence, dict) \
+                or click_evidence.get("adapter") not in (
+                    "host-primary-edge", "guest-primary-edge") \
+                or not isinstance(click_point, list) \
+                or len(click_point) != 2 \
+                or not all(isinstance(value, int) for value in click_point):
+            errors.append("native Pterra target click evidence is invalid")
     if report.get("destination_committed") is not True:
         errors.append("Pterra destination was not committed")
-    if report.get("diagnostic_audio_muted") is not False:
-        errors.append("Pterra capture used diagnostic audio muting")
+    if report.get("scruter_scene_requested") is not True:
+        errors.append("native Scruter_Jo descriptor transition was not requested")
+    if report.get("scruter_scene_active_seen") is not True:
+        errors.append("native Scruter_Jo descriptor transition never became active")
+    if report.get("scruter_scene_completed") is not True:
+        errors.append("native Scruter_Jo Pterra lifecycle did not complete")
+    if report.get("scruter_sound_bank_loaded") is not True:
+        errors.append("native Scruter_Jo streamed sound bank was not loaded")
+    clip_count_before = report.get("scruter_streamed_clip_count_before")
+    clip_count = report.get("scruter_streamed_clip_count")
+    if not isinstance(clip_count_before, int) or clip_count_before < 0:
+        errors.append("Scruter_Jo initial streamed clip count is invalid")
+    if not isinstance(clip_count, int) or clip_count <= 0:
+        errors.append("Scruter_Jo streamed clip count is not positive")
+    elif isinstance(clip_count_before, int) and clip_count == clip_count_before:
+        errors.append("Scruter_Jo streamed clip count did not change")
     if report.get("pter_reached") is not True or report.get("pter") is None:
         errors.append("Pterra procedure was not reached")
     if report.get("pter_completed") is not True:
         errors.append("Pterra procedure was not completed")
     choices = report.get("pter_choice_results")
-    if not isinstance(choices, list) or len(choices) != 2:
-        errors.append("Pterra did not complete both scripted choices")
+    if choices != [0x0171, 0x02A8]:
+        errors.append("Pterra scripted choices are not exxos then teleport")
     if report.get("pter_sustained") is not True or report.get("post_pter") is None:
         errors.append("Pterra post-encounter liveness was not sustained")
     if report.get("marker") is None:

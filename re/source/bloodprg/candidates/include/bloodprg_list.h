@@ -24,27 +24,33 @@ extern volatile cb_u16 list_d8c_head_segment;      /* GS:0x0D8E */
 extern volatile cb_u16 list_d8c_tail_offset;       /* GS:0x0D90 */
 extern volatile cb_u16 list_d8c_tail_segment;      /* GS:0x0D92 */
 extern volatile cb_u16 CB_FAR *list_d8c_tail_pointer; /* DS:0x0D90 */
-extern volatile cb_u16 list_d8c_active_offset;     /* GS:0x0D94 */
-extern volatile cb_u16 list_d8c_active_segment;    /* GS:0x0D96 */
+extern volatile cb_u16 CB_GAME_DATA list_d8c_active_offset; /* GS:0x0D94 */
+extern volatile cb_u16 CB_GAME_DATA list_d8c_active_segment; /* GS:0x0D96 */
 extern volatile cb_u16 list_d8c_wrap_limit;        /* GS:0x0D98 */
 extern volatile cb_u16 list_d8c_byte_count;        /* game data:0x0D9A */
 extern volatile cb_u16 list_d8c_sound_offset;      /* game data:0x0D9C */
 extern volatile cb_u16 list_d8c_palette_offset;    /* game data:0x0D9E */
 extern cb_u16 list_d8c_iteration_count;            /* GS:0x0DA0 */
 extern cb_u16 list_d8c_entry_metric;               /* game data:0x0DAF */
-extern volatile cb_u16 list_d8c_buffer_end_offset; /* GS:0x5233 */
+extern volatile cb_u16 CB_GAME_DATA
+        list_d8c_buffer_end_offset;                /* GS:0x5233 */
 extern volatile cb_u16 list_d8c_sequence_index;    /* DS:0x131C */
-extern volatile cb_u16 list_d8c_default_entry_segment; /* GS:0x0ABE */
+extern volatile cb_u16 CB_GAME_DATA
+        list_d8c_default_entry_segment;            /* GS:0x0ABE */
 extern volatile cb_u16 list_d8c_alternate_entry_segment; /* GS:0x0DA8 */
-extern volatile cb_u16 list_d8c_active_layout;     /* GS:0x0DA4 */
-extern volatile cb_u16 list_d8c_active_row_mode;   /* GS:0x0DA6 */
-extern volatile cb_u16 list_d8c_retired_segment;   /* GS:0x0DAA */
+extern volatile cb_u16 CB_GAME_DATA list_d8c_active_layout; /* GS:0x0DA4 */
+extern volatile cb_u16 CB_GAME_DATA list_d8c_active_row_mode; /* GS:0x0DA6 */
+extern volatile cb_u16 CB_GAME_DATA list_d8c_retired_segment; /* GS:0x0DAA */
 extern volatile cb_u8 list_d8c_rollover_state;     /* DS:0x0DAC */
-extern volatile cb_u8 resource_frame_presented;    /* GS:0x0DB8 */
-extern volatile cb_u8 resource_draw_via_back_buffer; /* GS:0x0DB9 */
-extern volatile cb_u8 resource_decode_rectangular; /* GS:0x0DBA */
-extern volatile cb_u8 resource_skip_back_buffer_present; /* GS:0x0DBB */
-extern volatile cb_u8 resource_unclamped_row_count; /* GS:0x0DBD */
+extern volatile cb_u8 CB_GAME_DATA resource_frame_presented; /* GS:0x0DB8 */
+extern volatile cb_u8 CB_GAME_DATA
+        resource_draw_via_back_buffer;             /* GS:0x0DB9 */
+extern volatile cb_u8 CB_GAME_DATA
+        resource_decode_rectangular;               /* GS:0x0DBA */
+extern volatile cb_u8 CB_GAME_DATA
+        resource_skip_back_buffer_present;         /* GS:0x0DBB */
+extern volatile cb_u8 CB_GAME_DATA
+        resource_unclamped_row_count;              /* GS:0x0DBD */
 extern const cb_u8 presentation_unclamped_line_ids[9]; /* caller ES:0x0DBE */
 extern volatile cb_u16 resource_vertical_offset;   /* GS:0x1FA7 */
 extern volatile cb_u16 CB_GAME_DATA
