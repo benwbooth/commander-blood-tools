@@ -598,6 +598,9 @@ def _validate_pterra(report: dict[str, object]) -> list[str]:
             errors.append("native Pterra panel close evidence is missing")
     travel_setup = report.get("pterra_travel_setup")
     target_row = report.get("pterra_target_row")
+    if report.get("pterra_travel_command_evidence") not in (
+            "direct-orxx-c1-observation", "downstream-scruter-bank"):
+        errors.append("native Pterra travel command evidence is invalid")
     if not isinstance(travel_setup, dict):
         errors.append("native Pterra ship-HUD setup is missing")
     else:
@@ -668,6 +671,9 @@ def _validate_pterra(report: dict[str, object]) -> list[str]:
         errors.append("Pterra destination was not committed")
     if report.get("scruter_scene_requested") is not True:
         errors.append("native Scruter_Jo descriptor transition was not requested")
+    if report.get("scruter_scene_request_evidence") not in (
+            "direct-deferred-c4-observation", "downstream-scruter-bank"):
+        errors.append("native Scruter_Jo transition evidence is invalid")
     if report.get("scruter_scene_active_seen") is not True:
         errors.append("native Scruter_Jo descriptor transition never became active")
     if report.get("scruter_scene_completed") is not True:

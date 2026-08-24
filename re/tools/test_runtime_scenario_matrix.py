@@ -131,6 +131,7 @@ def valid_pterra_report() -> dict[str, object]:
         },
         "pterra_travel_command_generated": True,
         "pterra_travel_command_consumed": True,
+        "pterra_travel_command_evidence": "direct-orxx-c1-observation",
         "pterra_target_row": 1,
         "pterra_travel_setup": {
             "entry": "native-current-location-entity",
@@ -158,6 +159,7 @@ def valid_pterra_report() -> dict[str, object]:
             },
         },
         "scruter_scene_requested": True,
+        "scruter_scene_request_evidence": "direct-deferred-c4-observation",
         "scruter_scene_active_seen": True,
         "scruter_scene_completed": True,
         "scruter_sound_bank_loaded": True,
@@ -319,6 +321,17 @@ class ReportValidationTests(unittest.TestCase):
             "native Scruter_Jo Pterra lifecycle did not complete",
             errors,
         )
+
+    def test_pterra_requires_direct_or_durable_transition_evidence(self) \
+            -> None:
+        report = valid_pterra_report()
+        report["pterra_travel_command_evidence"] = None
+        report["scruter_scene_request_evidence"] = "guessed"
+        errors = matrix.validate_report(
+            matrix.SCENARIO_BY_NAME["authentic-pterra"], report
+        )
+        self.assertIn("native Pterra travel command evidence is invalid", errors)
+        self.assertIn("native Scruter_Jo transition evidence is invalid", errors)
 
     def test_pterra_requires_both_native_c1_commands(self) -> None:
         report = valid_pterra_report()

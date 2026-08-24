@@ -65,6 +65,7 @@ VM_RESOURCE_COUNT = 5
 SCRIPT2_PROFILE = 1
 SCRIPT2_BLOOD_RECORD = 0x0028
 SCRIPT2_SCRUTER_JO_RECORD = 0x070A
+SCRIPT2_SCRUTER_STREAMED_CLIP_COUNT = 19
 SCRIPT2_SCRUTER_JO_ACTION_OFFSET = 0x0744
 SCRIPT2_PTERRA_RECORD = 0x0DA0
 SCRIPT2_PTERRA_FLAGS_OFFSET = SCRIPT2_PTERRA_RECORD + 2
@@ -657,6 +658,15 @@ def inject_guest_primary_click(mem, guest_base: int, game_segment: int,
     return {"adapter": "guest-primary-edge", "point": [x, y]}
 
 
+def release_guest_primary_click(mem, guest_base: int,
+                                game_segment: int) -> None:
+    game = game_segment * 16
+    write_guest(
+        mem, guest_base, game + MOUSE_PRIMARY_PRESSED_OFFSET, b"\x00")
+    write_guest(
+        mem, guest_base, game + MOUSE_PRESS_PENDING_OFFSET, b"\x00")
+
+
 def guest_mouse_point_is_valid(x: int, y: int) -> bool:
     return 0 <= x < 320 and 0 <= y < 200
 
@@ -792,16 +802,13 @@ def pterra_destination_ready(blockers: dict[str, int],
 def pterra_ship_intro_waiting_for_input(
         blockers: dict[str, int], flow: dict[str, object],
         input_state: dict[str, object]) -> bool:
-    """Recognize the final intro hold through the first HUD selector phase."""
+    """Recognize the final intro hold before the HUD owns input."""
     hud_initialized = int(input_state["ship_hud_initialized"])
     selector_phase = int(input_state["ship_target_select_phase"])
-    before_or_at_selector = (
-        (hud_initialized == 0 and selector_phase == 0)
-        or (hud_initialized & 1 != 0 and selector_phase == 1)
-    )
     return (
         int(blockers["ship"]) & 6 != 0
-        and before_or_at_selector
+        and hud_initialized == 0
+        and selector_phase == 0
         and (int(flow["active_line"]) == 5
              or int(flow["displayed_line"]) == 5)
         and int(flow["dialogue_hold_complete"]) & 1 != 0
@@ -826,7 +833,7 @@ def pterra_ship_intro_input_action(
         pressing: bool, release_ready: bool, latch_active: bool,
         can_press: bool) -> str:
     if pressing:
-        return "release" if release_ready else "hold"
+        return "release" if release_ready or latch_active else "hold"
     if latch_active:
         return "wait"
     return "press" if can_press else "wait"
@@ -837,11 +844,14 @@ def pterra_ship_intro_consumed_before_expiry(
         input_state: dict[str, object],
         lines_seen: list[int], edge_count: int, raw_seen: bool,
         latch_seen: bool) -> tuple[bool, str | None]:
-    del input_state, lines_seen, raw_seen, latch_seen
+    del lines_seen, raw_seen, latch_seen
     if edge_count == 0 or int(flow["dialogue_hold_countdown"]) <= 0:
         return False, None
     if (int(blockers["ship"]) & 4 != 0
-            and int(flow["dialogue_hold_complete"]) == 0):
+            and int(flow["dialogue_hold_complete"]) == 0
+            and int(flow["text_display_active"]) & 1 != 0
+            and int(input_state["ship_hud_initialized"]) & 1 != 0
+            and int(input_state["ship_target_select_phase"]) > 0):
         return True, "hold-clear-observed"
     return False, None
 
@@ -859,6 +869,21 @@ def pterra_ship_intro_is_naturally_complete(
         and int(blockers["ship"]) & 4 != 0
         and int(input_state["ship_hud_initialized"]) & 1 != 0
         and int(input_state["ship_target_select_phase"]) > 0
+    )
+
+
+def pterra_scruter_bank_transition_observed(
+        pterra_triggered: bool, pterra_map_destination_committed: bool,
+        audio_flow: dict[str, object], streamed_clip_count_before: int) -> bool:
+    """Use the native Scruter bank as durable proof of encounter entry."""
+    current_clip_count = int(audio_flow["streamed_clip_count"])
+    return (
+        pterra_triggered
+        and pterra_map_destination_committed
+        and int(audio_flow["bank_clip_count"])
+        == SCRIPT2_SCRUTER_STREAMED_CLIP_COUNT
+        and current_clip_count > 0
+        and current_clip_count != streamed_clip_count_before
     )
 
 
@@ -2062,6 +2087,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
     pterra_nav_open_started_at = None
     pterra_bridge_panorama_frame = None
     pterra_nav_station_pressing = False
+    pterra_nav_station_input_adapter = None
     pterra_nav_station_target_y = None
     pterra_nav_station_first_click_at = None
     pterra_nav_station_click_count = 0
@@ -2081,6 +2107,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
     pterra_map_last_progress_at = None
     pterra_map_setup = None
     scruter_scene_requested = False
+    scruter_scene_request_evidence = None
     scruter_scene_active_seen = False
     scruter_scene_completed = False
     scruter_sound_bank_loaded = False
@@ -2115,6 +2142,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
     pterra_target_pressing = False
     pterra_travel_command_generated = False
     pterra_travel_command_consumed = False
+    pterra_travel_command_evidence = None
     destination_committed = False
     pter_reached = False
     pter_reached_at = None
@@ -2745,46 +2773,38 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                             "pointer_liveness_recaptures", []).append(
                                 recapture)
                     if pterra_nav_station_pressing:
-                        send_mouse_button(display, False, button=1)
+                        if pterra_nav_station_input_adapter == "guest-primary":
+                            release_guest_primary_click(
+                                mem, guest_base, game_segment)
+                        else:
+                            send_mouse_button(display, False, button=1)
                         pterra_nav_station_pressing = False
+                        pterra_nav_station_input_adapter = None
                     elif station_center is not None \
                             and int(station["flags"]) & 1:
-                        current_x = int(input_state["mouse_x"])
-                        current_y = int(input_state["mouse_y"])
                         pterra_nav_station_target_y = station_center[1]
-                        if abs(current_y - station_center[1]) > 2:
-                            move_captured_game_mouse(
-                                display, current_x, current_y,
-                                current_x, station_center[1])
-                        else:
-                            station_x = station_center[0]
-                            close_enough = abs(current_x - station_x) <= 32
-                            moved = move_captured_game_mouse(
-                                display, current_x, current_y,
-                                station_x, station_center[1])
-                            if close_enough or moved:
-                                send_mouse_button(display, True, button=1)
-                                pterra_nav_station_pressing = True
-                                pterra_nav_station_click_count += 1
-                                if pterra_nav_station_first_click_at is None:
-                                    pterra_nav_station_first_click_at = now
-                                pterra_map_last_progress_at = now
-                                assert isinstance(pterra_map_setup, dict)
-                                pterra_map_setup["bridge_station_rect"] = \
-                                    list(station_rect)
-                                pterra_map_setup[
-                                    "bridge_station_click_count"] = \
-                                    pterra_nav_station_click_count
-                                pterra_map_setup[
-                                    "bridge_station_click_evidence"] = {
-                                        "adapter": "host-primary-edge",
-                                        "point": [
-                                            station_x, station_center[1]],
-                                    }
-                                print(
-                                    "state: pressed native bridge navigation "
-                                    f"station at {station_x},"
-                                    f"{station_center[1]}", flush=True)
+                        station_x = station_center[0]
+                        click_evidence = inject_guest_primary_click(
+                            mem, guest_base, game_segment,
+                            station_x, station_center[1])
+                        pterra_nav_station_pressing = True
+                        pterra_nav_station_input_adapter = "guest-primary"
+                        pterra_nav_station_click_count += 1
+                        if pterra_nav_station_first_click_at is None:
+                            pterra_nav_station_first_click_at = now
+                        pterra_map_last_progress_at = now
+                        assert isinstance(pterra_map_setup, dict)
+                        pterra_map_setup["bridge_station_rect"] = \
+                            list(station_rect)
+                        pterra_map_setup[
+                            "bridge_station_click_count"] = \
+                            pterra_nav_station_click_count
+                        pterra_map_setup[
+                            "bridge_station_click_evidence"] = click_evidence
+                        print(
+                            "state: pressed native bridge navigation "
+                            f"station at {station_x},"
+                            f"{station_center[1]} via guest edge", flush=True)
                     else:
                         # Bring station zero into view through the bridge's
                         # own edge-pan behavior. Its handler owns the complete
@@ -3474,6 +3494,8 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                     if (not pterra_travel_command_generated
                             and orxx_action == expected_c1):
                         pterra_travel_command_generated = True
+                        pterra_travel_command_evidence = \
+                            "direct-orxx-c1-observation"
                         pterra_arrival_last_progress_at = time.monotonic()
                         assert isinstance(pterra_travel_setup, dict)
                         pterra_travel_setup["generated_context"] = \
@@ -3513,6 +3535,8 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                             and flow["deferred_record_related"]
                             == SCRIPT2_SCRUTER_JO_RECORD):
                         scruter_scene_requested = True
+                        scruter_scene_request_evidence = \
+                            "direct-deferred-c4-observation"
                         print(
                             "state: native travel queued Scruter_Jo C4",
                             flush=True)
@@ -3567,11 +3591,52 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                         f"{stall_seconds:g} seconds", flush=True)
                     break
 
+                audio_flow = last_profile["audio_flow"]
+                assert isinstance(audio_flow, dict)
+                durable_scruter_transition = (
+                    pterra_scruter_bank_transition_observed(
+                        pterra_triggered,
+                        pterra_map_destination_committed,
+                        audio_flow,
+                        scruter_streamed_clip_count_before))
+                if durable_scruter_transition:
+                    travel_context = read_script2_pterra_context(
+                        mem, guest_base, game_segment)
+                    if (int(travel_context["current_location"])
+                            == SCRIPT2_PTERRA_RECORD):
+                        evidence = "downstream-scruter-bank"
+                        if not pterra_travel_command_generated:
+                            pterra_travel_command_generated = True
+                            pterra_travel_command_evidence = evidence
+                            assert isinstance(pterra_travel_setup, dict)
+                            pterra_travel_setup[
+                                "generated_evidence"] = evidence
+                        if not pterra_travel_command_consumed:
+                            pterra_travel_command_consumed = True
+                            assert isinstance(pterra_travel_setup, dict)
+                            pterra_travel_setup[
+                                "consumed_evidence"] = evidence
+                        if not destination_committed:
+                            destination_committed = True
+                            assert isinstance(pterra_travel_setup, dict)
+                            pterra_travel_setup[
+                                "arrival_context"] = travel_context
+                        if not scruter_scene_requested:
+                            scruter_scene_requested = True
+                            scruter_scene_request_evidence = evidence
+                            print(
+                                "state: inferred missed transient travel/C4 "
+                                "events from the native Scruter sound bank",
+                                flush=True)
+
+                direct_pter_entry = (
+                    pterra_travel_command_consumed
+                    and blockers["presentation"] != 0
+                    and blockers["ship"] != 0
+                    and flow["active_line"] != 0xffff)
                 if (not pter_reached
-                        and pterra_travel_command_consumed
-                        and blockers["presentation"] != 0
-                        and blockers["ship"] != 0
-                        and flow["active_line"] != 0xffff):
+                        and (direct_pter_entry
+                             or durable_scruter_transition)):
                     pter_reached = True
                     scruter_scene_active_seen = True
                     pter_reached_at = time.monotonic()
@@ -3598,6 +3663,10 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                         scruter_streamed_clip_count = current_clip_count
                         scruter_sound_bank_loaded = True
                         scruter_scene_active_seen = True
+                        if not scruter_scene_requested:
+                            scruter_scene_requested = True
+                            scruter_scene_request_evidence = \
+                                "downstream-scruter-bank"
                         print(
                             "state: Pterra actor transition loaded "
                             f"{scruter_streamed_clip_count} Scruter_Jo streamed "
@@ -3937,6 +4006,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
         "hang": hang_snapshot,
         "hang_detected": hang_snapshot is not None,
         "scruter_scene_requested": scruter_scene_requested,
+        "scruter_scene_request_evidence": scruter_scene_request_evidence,
         "scruter_scene_active_seen": scruter_scene_active_seen,
         "scruter_scene_completed": scruter_scene_completed,
         "scruter_sound_bank_loaded": scruter_sound_bank_loaded,
@@ -3959,6 +4029,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
         "pterra_map_setup": pterra_map_setup,
         "pterra_travel_command_generated": pterra_travel_command_generated,
         "pterra_travel_command_consumed": pterra_travel_command_consumed,
+        "pterra_travel_command_evidence": pterra_travel_command_evidence,
         "pterra_ship_navigation_activated": (
             pterra_ship_navigation_activated),
         "pterra_travel_setup": pterra_travel_setup,

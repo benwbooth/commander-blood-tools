@@ -239,7 +239,7 @@ class CaptureHelperTests(unittest.TestCase):
             ],
         )
 
-    def test_pterra_intro_input_continues_through_first_hud_phase(self) \
+    def test_pterra_intro_input_stops_when_hud_owns_phase_one(self) \
             -> None:
         blockers = {"ship": 5}
         flow = {
@@ -256,7 +256,7 @@ class CaptureHelperTests(unittest.TestCase):
             blockers, flow, input_state))
         input_state["ship_hud_initialized"] = 1
         input_state["ship_target_select_phase"] = 1
-        self.assertTrue(capture.pterra_ship_intro_waiting_for_input(
+        self.assertFalse(capture.pterra_ship_intro_waiting_for_input(
             blockers, flow, input_state))
         input_state["ship_target_select_phase"] = 2
         self.assertFalse(capture.pterra_ship_intro_waiting_for_input(
@@ -284,6 +284,9 @@ class CaptureHelperTests(unittest.TestCase):
             pressing=True, release_ready=False, latch_active=False,
             can_press=True), "hold")
         self.assertEqual(capture.pterra_ship_intro_input_action(
+            pressing=True, release_ready=False, latch_active=True,
+            can_press=True), "release")
+        self.assertEqual(capture.pterra_ship_intro_input_action(
             pressing=True, release_ready=True, latch_active=False,
             can_press=True), "release")
         self.assertEqual(capture.pterra_ship_intro_input_action(
@@ -298,6 +301,7 @@ class CaptureHelperTests(unittest.TestCase):
         flow = {
             "dialogue_hold_complete": 1,
             "dialogue_hold_countdown": 2,
+            "text_display_active": 1,
         }
         input_state = {
             "ship_hud_initialized": 1,
@@ -313,11 +317,27 @@ class CaptureHelperTests(unittest.TestCase):
             raw_seen=True, latch_seen=True),
             (True, "hold-clear-observed"))
 
+    def test_pterra_intro_rejects_hud_handoff_with_text_gate_cleared(self) \
+            -> None:
+        flow = {
+            "dialogue_hold_complete": 0,
+            "dialogue_hold_countdown": 1,
+            "text_display_active": 0,
+        }
+        input_state = {
+            "ship_hud_initialized": 1,
+            "ship_target_select_phase": 1,
+        }
+        self.assertEqual(capture.pterra_ship_intro_consumed_before_expiry(
+            {"ship": 5}, flow, input_state, [4, 5], edge_count=6,
+            raw_seen=True, latch_seen=True), (False, None))
+
     def test_pterra_intro_rejects_transient_clear_before_hud_stage(self) \
             -> None:
         flow = {
             "dialogue_hold_complete": 0,
             "dialogue_hold_countdown": 7,
+            "text_display_active": 1,
         }
         input_state = {
             "ship_hud_initialized": 0,
@@ -332,6 +352,7 @@ class CaptureHelperTests(unittest.TestCase):
         flow = {
             "dialogue_hold_complete": 1,
             "dialogue_hold_countdown": 2,
+            "text_display_active": 1,
         }
         input_state = {
             "ship_hud_initialized": 1,
@@ -369,6 +390,19 @@ class CaptureHelperTests(unittest.TestCase):
             blockers, flow, input_state, [4, 5], edge_count=1))
         self.assertFalse(capture.pterra_ship_intro_is_naturally_complete(
             blockers, flow, input_state, [5], edge_count=0))
+
+    def test_scruter_bank_is_durable_encounter_entry_evidence(self) -> None:
+        audio = {
+            "bank_clip_count": 19,
+            "streamed_clip_count": 19,
+        }
+        self.assertTrue(capture.pterra_scruter_bank_transition_observed(
+            True, True, audio, 0))
+        self.assertFalse(capture.pterra_scruter_bank_transition_observed(
+            False, True, audio, 0))
+        audio["bank_clip_count"] = 17
+        self.assertFalse(capture.pterra_scruter_bank_transition_observed(
+            True, True, audio, 0))
 
     def test_illegal_interrupt_detector_includes_divide_error(self) -> None:
         match = capture.ILLEGAL_INTERRUPT_RE.search(
@@ -639,6 +673,12 @@ class CaptureHelperTests(unittest.TestCase):
         memory.seek(game + capture.MOUSE_PRESS_PENDING_OFFSET)
         self.assertEqual(memory.read(1), b"\x01")
         self.assertEqual(evidence["adapter"], "guest-primary-edge")
+
+        capture.release_guest_primary_click(memory, 0, 0x1000)
+        memory.seek(game + capture.MOUSE_PRIMARY_PRESSED_OFFSET)
+        self.assertEqual(memory.read(1), b"\x00")
+        memory.seek(game + capture.MOUSE_PRESS_PENDING_OFFSET)
+        self.assertEqual(memory.read(1), b"\x00")
 
     def test_guest_mouse_point_rejects_staging_wrap_coordinate(self) -> None:
         self.assertTrue(capture.guest_mouse_point_is_valid(202, 104))
