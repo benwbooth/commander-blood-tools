@@ -366,7 +366,7 @@ class ReportValidationTests(unittest.TestCase):
             [],
         )
 
-    def test_pterra_accepts_observed_hold_expiring_without_input(self) -> None:
+    def test_pterra_rejects_observed_hold_expiring_without_input(self) -> None:
         report = valid_pterra_report()
         setup = report["pterra_travel_setup"]
         setup.update({
@@ -383,10 +383,12 @@ class ReportValidationTests(unittest.TestCase):
             "intro_hold_countdown_after",
         ):
             setup.pop(key, None)
-        self.assertEqual(
-            matrix.validate_report(
-                matrix.SCENARIO_BY_NAME["authentic-pterra"], report),
-            [],
+        errors = matrix.validate_report(
+            matrix.SCENARIO_BY_NAME["authentic-pterra"], report)
+        self.assertIn(
+            "first-visit ship intro lacks a verified hold outcome and "
+            "complete HUD target-selector phase sequence",
+            errors,
         )
 
     def test_pterra_requires_exact_script_choices(self) -> None:

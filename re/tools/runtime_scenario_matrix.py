@@ -588,7 +588,7 @@ def _validate_pterra(report: dict[str, object]) -> list[str]:
         if travel_setup.get("pterra_access_count_before") == 0:
             hold_observed = travel_setup.get("intro_hold_observed") is True
             if hold_observed:
-                dismissed_early = (
+                intro_valid = (
                     travel_setup.get("intro_hold_dismissed") is True
                     and int(travel_setup.get("intro_input_edges", 0)) > 0
                     and travel_setup.get(
@@ -601,13 +601,6 @@ def _validate_pterra(report: dict[str, object]) -> list[str]:
                     and int(travel_setup.get(
                         "intro_hold_countdown_after", 0)) > 0
                 )
-                expired_naturally = (
-                    travel_setup.get("intro_completed_naturally") is True
-                    and travel_setup.get(
-                        "intro_hold_expired_naturally") is True
-                    and int(travel_setup.get("intro_input_edges", -1)) == 0
-                )
-                intro_valid = dismissed_early or expired_naturally
             else:
                 intro_valid = (
                     travel_setup.get("intro_hold_observed") is False

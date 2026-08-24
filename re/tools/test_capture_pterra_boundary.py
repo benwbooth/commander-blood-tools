@@ -101,14 +101,14 @@ class CaptureHelperTests(unittest.TestCase):
             blockers, flow, input_state))
 
     def test_pterra_intro_edge_waits_for_decisive_countdown(self) -> None:
-        flow = {"dialogue_hold_countdown": 7}
+        flow = {"dialogue_hold_countdown": 8}
         self.assertFalse(capture.pterra_ship_intro_ready_for_edge(flow))
-        flow["dialogue_hold_countdown"] = 2
+        flow["dialogue_hold_countdown"] = 7
         self.assertTrue(capture.pterra_ship_intro_ready_for_edge(flow))
         flow["dialogue_hold_countdown"] = 0
         self.assertFalse(capture.pterra_ship_intro_ready_for_edge(flow))
 
-    def test_pterra_intro_accepts_observed_hold_countdown_to_hud(self) -> None:
+    def test_pterra_intro_accepts_complete_no_hold_hud_handoff(self) -> None:
         blockers = {"ship": 5}
         flow = {
             "dialogue_hold_complete": 0,
@@ -136,6 +136,25 @@ class CaptureHelperTests(unittest.TestCase):
             blockers, flow, input_state, [4, 5], edge_count=1))
         self.assertFalse(capture.pterra_ship_intro_is_naturally_complete(
             blockers, flow, input_state, [5], edge_count=0))
+
+    def test_carried_nav_press_waits_for_transition_or_settle(self) -> None:
+        now = 10.0
+        self.assertTrue(capture.carried_nav_press_should_release(
+            now, 9.9, capture.SCRIPT2_PTERRA_RECORD, view_state=6))
+        self.assertFalse(capture.carried_nav_press_should_release(
+            now, 8.0, 0, view_state=6))
+        self.assertTrue(capture.carried_nav_press_should_release(
+            now, 8.0, 0, view_state=0))
+
+    def test_carried_nav_marker_approaches_y_before_x(self) -> None:
+        self.assertEqual(
+            capture.carried_nav_marker_step(158, 152, 201, 93),
+            (158, 93),
+        )
+        self.assertEqual(
+            capture.carried_nav_marker_step(158, 95, 201, 93),
+            (201, 93),
+        )
 
     def test_illegal_interrupt_detector_includes_divide_error(self) -> None:
         match = capture.ILLEGAL_INTERRUPT_RE.search(
