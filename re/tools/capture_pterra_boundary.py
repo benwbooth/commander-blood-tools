@@ -185,6 +185,8 @@ PTERRA_NATIVE_INPUT_TRIGGER_COUNTDOWN = 7
 PTERRA_NATIVE_INPUT_MAX_EDGES = 6
 PTERRA_TRANSITION_SAMPLE_INTERVAL_SECONDS = 1.0
 PTERRA_TRANSITION_SAMPLE_LIMIT = 256
+TIMER_PROGRESS_STALL_SECONDS = 1.5
+TIMER_PROGRESS_SAMPLE_LIMIT = 64
 STARTUP_DOS_POOL_POINTER_OFFSET = 0x0A42
 MANU3_ORIGINAL_PREFIX = bytes.fromhex("1e2e8b0e")
 MANU3_ORIGINAL_DATA_SEGMENT_DELTA_OFFSET = 0x1368
@@ -280,6 +282,7 @@ def read_cpu_state(mem, addresses):
     mem.seek(addresses["cpu_regs"])
     registers = struct.unpack("<8I", mem.read(32))
     ip = struct.unpack("<I", mem.read(4))[0]
+    flags = struct.unpack("<I", mem.read(4))[0]
     if addresses.get("Segs_size") == 0x30:
         mem.seek(addresses["Segs"])
         segments = list(struct.unpack("<6H", mem.read(12)))
@@ -289,13 +292,37 @@ def read_cpu_state(mem, addresses):
             mem.seek(addresses["Segs"] + index * 8)
             segments.append(struct.unpack("<Q", mem.read(8))[0] & 0xffff)
     es, cs, ss, ds, fs, gs = segments
-    return {"cs": cs, "ip": ip & 0xFFFF, "ds": ds, "es": es, "ss": ss,
+    return {"cs": cs, "ip": ip & 0xFFFF, "flags": flags,
+            "interrupts_enabled": bool(flags & 0x0200),
+            "direction_flag": bool(flags & 0x0400),
+            "ds": ds, "es": es, "ss": ss,
             "fs": fs, "gs": gs,
             # dosbox cpu_regs stores AX,CX,DX,BX,SP,BP,SI,DI (x86 order)
             "ax": registers[0] & 0xFFFF, "cx": registers[1] & 0xFFFF,
             "dx": registers[2] & 0xFFFF, "bx": registers[3] & 0xFFFF,
             "sp": registers[4] & 0xFFFF, "bp": registers[5] & 0xFFFF,
             "si": registers[6] & 0xFFFF, "di": registers[7] & 0xFFFF}
+
+
+def timer_progress_required(profile: dict[str, object]) -> bool:
+    audio = profile["audio_flow"]
+    assert isinstance(audio, dict)
+    return (
+        bool(profile["initialized"])
+        and int(profile["execution_enabled"]) == 1
+        and int(audio["timer_hook_active"]) & 1 != 0
+        and int(audio["game_mode"]) & 1 == 0
+        and int(audio["frame_delay"]) != 0
+    )
+
+
+def timer_progress_stalled(now: float, last_progress_at: float | None,
+                           profile: dict[str, object]) -> bool:
+    return (
+        last_progress_at is not None
+        and timer_progress_required(profile)
+        and now - last_progress_at >= TIMER_PROGRESS_STALL_SECONDS
+    )
 
 
 def read_guest(mem, guest_base: int, linear: int, size: int) -> bytes:
@@ -2035,6 +2062,9 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
     post_pter_cpu_samples: list[dict[str, int]] = []
     transition_cpu_samples: list[dict[str, object]] = []
     transition_next_sample_at = None
+    timer_progress_tick = None
+    timer_progress_last_at = None
+    timer_progress_samples: list[dict[str, object]] = []
     ivt_baseline = None
     graphics_pointer_baseline = None
     graphics_pointer_faults: list[str] = []
@@ -2089,6 +2119,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                     fs_segment = state["fs"]
                 last_profile = read_profile_state(
                     mem, guest_base, game_segment, fs_segment)
+                now = time.monotonic()
                 graphics_pointers = last_profile["graphics_pointers"]
                 assert isinstance(graphics_pointers, dict)
                 if graphics_pointer_baseline is None:
@@ -2113,6 +2144,46 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                 scene_flow = last_profile["scene_flow"]
                 audio_flow = last_profile["audio_flow"]
                 assert isinstance(audio_flow, dict)
+                current_timer_tick = int(audio_flow["timer_tick"])
+                timer_service_enabled = (
+                    bool(last_profile["initialized"])
+                    and int(last_profile["execution_enabled"]) == 1
+                    and int(audio_flow["timer_hook_active"]) & 1 != 0
+                    and int(audio_flow["game_mode"]) & 1 == 0
+                )
+                if (not timer_service_enabled
+                        or timer_progress_tick != current_timer_tick):
+                    timer_progress_tick = current_timer_tick
+                    timer_progress_last_at = now
+                timer_progress_samples.append({
+                    "elapsed_seconds": round(now - capture_started_at, 3),
+                    "cpu": state.copy(),
+                    "timer_tick": current_timer_tick,
+                    "frame_delay": int(audio_flow["frame_delay"]),
+                    "timer_hook_active": int(
+                        audio_flow["timer_hook_active"]),
+                    "game_mode": int(audio_flow["game_mode"]),
+                })
+                del timer_progress_samples[:-TIMER_PROGRESS_SAMPLE_LIMIT]
+                if timer_progress_stalled(
+                        now, timer_progress_last_at, last_profile):
+                    hang_snapshot = snapshot_guest(
+                        mem, guest_base, anchor, cpu_addresses,
+                        hit, last_profile)
+                    assert timer_progress_last_at is not None
+                    hang_snapshot["reason"] = (
+                        "enabled game timer made no progress while a frame "
+                        "delay was pending")
+                    hang_snapshot["timer_progress"] = {
+                        "stalled_seconds": round(
+                            now - timer_progress_last_at, 3),
+                        "samples": timer_progress_samples.copy(),
+                    }
+                    print(
+                        "hang: enabled game timer made no progress for "
+                        f"{now - timer_progress_last_at:.3f}s while frame "
+                        f"delay={audio_flow['frame_delay']}", flush=True)
+                    break
                 profile_key = (
                     last_profile["profile"],
                     last_profile["request"],
@@ -2301,7 +2372,6 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
 
                 flow = last_profile["scene_flow"]
                 assert isinstance(flow, dict)
-                now = time.monotonic()
                 if (drive_authentic_save
                         and not authentic_save_loaded
                         and blockers["load"] != 0):
@@ -3732,6 +3802,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
             pterra_ship_navigation_activated),
         "pterra_travel_setup": pterra_travel_setup,
         "transition_cpu_samples": transition_cpu_samples,
+        "timer_progress_samples": timer_progress_samples,
         "pter_semantic_checkpoints": pter_semantic_checkpoints,
         "destination_committed": destination_committed,
         "pter": pter_snapshot,

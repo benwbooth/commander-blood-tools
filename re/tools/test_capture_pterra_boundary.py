@@ -276,7 +276,8 @@ class CaptureHelperTests(unittest.TestCase):
 
     def test_reads_dosbox_staging_segment_array(self) -> None:
         data = bytearray(256)
-        struct.pack_into("<8II", data, 32, *range(0x10, 0x18), 0x12345)
+        struct.pack_into(
+            "<8III", data, 32, *range(0x10, 0x18), 0x12345, 0x0602)
         struct.pack_into("<6H", data, 128,
                          0x100, 0x200, 0x300, 0x400, 0x500, 0x600)
         state = capture.read_cpu_state(
@@ -286,10 +287,14 @@ class CaptureHelperTests(unittest.TestCase):
             [state[name] for name in ("es", "cs", "ss", "ds", "fs", "gs")],
             [0x100, 0x200, 0x300, 0x400, 0x500, 0x600])
         self.assertEqual(state["ip"], 0x2345)
+        self.assertEqual(state["flags"], 0x0602)
+        self.assertTrue(state["interrupts_enabled"])
+        self.assertTrue(state["direction_flag"])
 
     def test_reads_dosbox_x_interleaved_segments(self) -> None:
         data = bytearray(256)
-        struct.pack_into("<8II", data, 32, *range(0x10, 0x18), 0x12345)
+        struct.pack_into(
+            "<8III", data, 32, *range(0x10, 0x18), 0x12345, 0x0002)
         for index, value in enumerate(
                 (0x100, 0x200, 0x300, 0x400, 0x500, 0x600)):
             struct.pack_into("<Q", data, 128 + index * 8, value)
@@ -299,6 +304,43 @@ class CaptureHelperTests(unittest.TestCase):
         self.assertEqual(
             [state[name] for name in ("es", "cs", "ss", "ds", "fs", "gs")],
             [0x100, 0x200, 0x300, 0x400, 0x500, 0x600])
+        self.assertFalse(state["interrupts_enabled"])
+        self.assertFalse(state["direction_flag"])
+
+    def test_timer_watchdog_requires_live_unpaused_frame_wait(self) -> None:
+        profile = {
+            "initialized": True,
+            "execution_enabled": 1,
+            "audio_flow": {
+                "timer_hook_active": 1,
+                "game_mode": 0,
+                "frame_delay": 1,
+            },
+        }
+        self.assertTrue(capture.timer_progress_required(profile))
+        self.assertFalse(capture.timer_progress_stalled(
+            10.0, 9.0, profile))
+        self.assertTrue(capture.timer_progress_stalled(
+            10.5, 9.0, profile))
+
+        profile["audio_flow"]["frame_delay"] = 0
+        self.assertFalse(capture.timer_progress_required(profile))
+        profile["audio_flow"]["frame_delay"] = 1
+        profile["audio_flow"]["game_mode"] = 1
+        self.assertFalse(capture.timer_progress_required(profile))
+
+    def test_timer_watchdog_ignores_inactive_hook(self) -> None:
+        profile = {
+            "initialized": True,
+            "execution_enabled": 1,
+            "audio_flow": {
+                "timer_hook_active": 0,
+                "game_mode": 0,
+                "frame_delay": 1,
+            },
+        }
+        self.assertFalse(capture.timer_progress_stalled(
+            100.0, 0.0, profile))
 
     def test_reads_compact_manu3_runtime_state(self) -> None:
         memory = bytearray(0x100000)
