@@ -218,8 +218,6 @@ void XDB_NEAR xdb_manu3_face_bucket_sort(
     tail->advance_offset = XDB_MANU3_ADVANCE_COLUMN_OFFSET;
     tail->remaining = -1;
     *active_list_root = XDB_MANU3_ACTIVE_LIST_MIDDLE_OFFSET;
-    head->flags = 1u;
-    head->output_end = XDB_MANU3_ACTIVE_LIST_HEAD_OFFSET + 0x10u;
     *bucket_cursor_cell = bucket_offset;
     *column_cell = column;
 
@@ -242,6 +240,8 @@ next_column:
     }
 
     if (head->next != XDB_MANU3_ACTIVE_LIST_MIDDLE_OFFSET) {
+        head->flags = 1u;
+        head->output_end = XDB_MANU3_ACTIVE_LIST_HEAD_OFFSET + 0x10u;
         edge = XDB_FAR_AT(
                 volatile xdb_manu3_raster_record,
                 raster_segment,
@@ -326,6 +326,9 @@ next_column:
             boundary->flags = 0u;
             boundary->source_offset = (xdb_u16)FP_OFF(span);
         } else {
+            if (edge == middle) {
+                goto finish_span_boundaries;
+            }
             boundary->flags = 1u;
             boundary->next_boundary_offset = (xdb_u16)FP_OFF(edge);
             boundary = XDB_FAR_AT(

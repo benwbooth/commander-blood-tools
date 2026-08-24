@@ -1208,6 +1208,40 @@ def build_source_xdb_files(
         ],
         validation_root / "candidate_oracle.log",
     )
+    run_checked_logged(
+        [
+            sys.executable,
+            "-P",
+            str(ROOT / "re/tools/test_manu3_pterra_differential.py"),
+        ],
+        validation_root / "manu3_pterra_differential_tests.log",
+    )
+    run_checked_logged(
+        [
+            sys.executable,
+            "-P",
+            str(ROOT / "re/tools/manu3_pterra_differential.py"),
+            "--original",
+            str((args.xdb_dir / "manu3.xdb").resolve()),
+            "--recovered",
+            str((validation_root / "manu3/manu3.xdb").resolve()),
+            "--recovered-map",
+            str(
+                (
+                    validation_root
+                    / "manu3/manu3_source_link.map"
+                ).resolve()
+            ),
+            "--report",
+            str(
+                (
+                    validation_root
+                    / "manu3_pterra_differential.json"
+                ).resolve()
+            ),
+        ],
+        validation_root / "manu3_pterra_differential.log",
+    )
 
     return records
 

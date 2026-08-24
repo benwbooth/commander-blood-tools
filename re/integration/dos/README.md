@@ -630,6 +630,16 @@ that triangle, the linear framebuffer continuation, and the same texture bytes
 as the direct raw-overlay oracle. The DOS executable writes all 64,000 output
 bytes; the host runner requires their SHA-256 to match the unmodified overlay.
 
+The package build also runs `manu3_pterra_differential.py`. It asks the shipped
+MANU3 overlay to project Pterra's 216-face mesh at cursor `(224, 0)`, then runs
+the original `0x0700` renderer and the linked C renderer from that identical
+state under Unicorn. Both routines must return, all 64,000 framebuffer bytes
+must match, and all persistent geometry, global, and raster state must match.
+The comparison excludes only the original assembly's documented gradient
+scratch cells, final framebuffer-column scratch word, and per-record temporary
+sort links. This is the deterministic regression gate for the former Pterra
+column-224 boundary-list loop.
+
 `manu3_face_activate.c` independently drives the wide vertical-first-edge case
 through `0x0D7D` and compares the complete 90-byte raster record against the
 raw overlay. This specifically covers the 32-bit texture-delta operation order
