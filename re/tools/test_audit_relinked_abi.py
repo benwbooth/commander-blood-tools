@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -54,28 +55,40 @@ class RelinkedAbiAuditTests(unittest.TestCase):
             (MODULE.ReturnSite("far", 4),),
         )
 
-    def test_cleanup_operand_mutation_is_rejected(self):
+    def test_closed_world_cleanup_difference_is_reviewable(self):
         original = MODULE.RoutineAbi(
             (MODULE.ReturnSite("far", 0),), (), "callee exits"
         )
         recovered = MODULE.RoutineAbi(
             (MODULE.ReturnSite("far", 2),), (), "callee exits"
         )
-        errors = MODULE.compare_routine_abi("mutated_cleanup", original, recovered)
-        self.assertTrue(any("return convention mismatch" in error for error in errors))
+        review, errors = MODULE.classify_routine_abi(
+            "typed_c_function", original, recovered
+        )
+        self.assertEqual(errors, [])
+        self.assertEqual(review.classification, "closed_world_difference")
 
-    def test_near_to_far_return_mutation_is_rejected(self):
+    def test_external_cleanup_mutation_is_rejected(self):
+        original = MODULE.RoutineAbi(
+            (MODULE.ReturnSite("far", 0),), (), "callee exits"
+        )
+        recovered = MODULE.RoutineAbi(
+            (MODULE.ReturnSite("far", 2),), (), "callee exits"
+        )
+        contract = MODULE.AbiBoundaryContract(
+            "foreign_callback", MODULE.ReturnSite("far", 0), "fixture"
+        )
+        review, errors = MODULE.classify_routine_abi(
+            "callback", original, recovered, ("callback.c",), contract
+        )
+        self.assertEqual(review.classification, "external_incompatible")
+        self.assertTrue(any("recovered foreign_callback return" in error for error in errors))
+
+    def test_unresolved_recovered_mixed_returns_fail_closed(self):
         original = MODULE.RoutineAbi(
             (MODULE.ReturnSite("near", 0),), (), "callee exits"
         )
         recovered = MODULE.RoutineAbi(
-            (MODULE.ReturnSite("far", 0),), (), "callee exits"
-        )
-        errors = MODULE.compare_routine_abi("mutated_width", original, recovered)
-        self.assertTrue(any("return convention mismatch" in error for error in errors))
-
-    def test_unresolved_mixed_returns_fail_closed(self):
-        original = MODULE.RoutineAbi(
             (
                 MODULE.ReturnSite("near", 0),
                 MODULE.ReturnSite("near", 2),
@@ -83,23 +96,54 @@ class RelinkedAbiAuditTests(unittest.TestCase):
             (),
             "callee exits",
         )
-        errors = MODULE.compare_routine_abi("ambiguous", original, original)
-        self.assertTrue(any("unresolved original" in error for error in errors))
-        self.assertTrue(any("unresolved recovered" in error for error in errors))
+        review, errors = MODULE.classify_routine_abi(
+            "ambiguous", original, recovered
+        )
+        self.assertEqual(review.classification, "unresolved_recovered_return")
+        self.assertTrue(any("ambiguous return" in error for error in errors))
 
-    def test_return_register_mutation_is_rejected(self):
+    def test_external_return_register_mutation_is_rejected(self):
         original = MODULE.RoutineAbi(
-            (MODULE.ReturnSite("near", 0),),
+            (MODULE.ReturnSite("far", 0),),
             (MODULE.ReturnCarrier("ax", 16),),
             "direct callers",
         )
         recovered = MODULE.RoutineAbi(
-            (MODULE.ReturnSite("near", 0),),
+            (MODULE.ReturnSite("far", 0),),
             (MODULE.ReturnCarrier("dx", 16),),
             "direct callers",
         )
-        errors = MODULE.compare_routine_abi("mutated_register", original, recovered)
-        self.assertTrue(any("return carrier mismatch" in error for error in errors))
+        contract = MODULE.AbiBoundaryContract(
+            "foreign_callback", MODULE.ReturnSite("far", 0), "fixture"
+        )
+        review, errors = MODULE.classify_routine_abi(
+            "mutated_register", original, recovered, ("callback.c",), contract
+        )
+        self.assertEqual(review.classification, "external_incompatible")
+        self.assertTrue(any("external ABI differs" in error for error in errors))
+
+    def test_unclassified_function_escape_fails_closed(self):
+        abi = MODULE.RoutineAbi(
+            (MODULE.ReturnSite("far", 0),), (), "callee exits"
+        )
+        review, errors = MODULE.classify_routine_abi(
+            "unknown_callback", abi, abi, ("publisher.c",)
+        )
+        self.assertEqual(review.classification, "unresolved_external_escape")
+        self.assertTrue(any("without an ABI contract" in error for error in errors))
+
+    def test_external_contract_without_escape_fails_closed(self):
+        abi = MODULE.RoutineAbi(
+            (MODULE.ReturnSite("far", 0),), (), "callee exits"
+        )
+        contract = MODULE.AbiBoundaryContract(
+            "foreign_callback", MODULE.ReturnSite("far", 0), "fixture"
+        )
+        review, errors = MODULE.classify_routine_abi(
+            "missing_callback", abi, abi, (), contract
+        )
+        self.assertEqual(review.classification, "unobserved_external_contract")
+        self.assertTrue(any("has no recovered address escape" in error for error in errors))
 
     def test_derives_resource_resolve_ax_and_far_pointer_carriers(self):
         subject = machine_listing(
@@ -120,7 +164,7 @@ class RelinkedAbiAuditTests(unittest.TestCase):
             ),
         )
 
-    def test_hidden_far_struct_result_is_rejected(self):
+    def test_closed_world_hidden_far_struct_result_is_reviewable(self):
         original = MODULE.RoutineAbi(
             (MODULE.ReturnSite("far", 0),),
             (
@@ -136,10 +180,12 @@ class RelinkedAbiAuditTests(unittest.TestCase):
             "direct callers",
             hidden_result_width=6,
         )
-        errors = MODULE.compare_routine_abi(
+        review, errors = MODULE.classify_routine_abi(
             "resource_handle_resolve", original, recovered
         )
-        self.assertTrue(any("hidden-ds:si-memory:48" in error for error in errors))
+        self.assertEqual(errors, [])
+        self.assertEqual(review.classification, "closed_world_difference")
+        self.assertIn("hidden-ds:si-memory:48", review.recovered_carriers)
 
     def test_derives_hidden_struct_copy_width(self):
         subject = machine_listing(
@@ -153,7 +199,7 @@ class RelinkedAbiAuditTests(unittest.TestCase):
         )
         self.assertEqual(MODULE.copied_result_width(subject), 6)
 
-    def test_dic_ax_carry_to_dx_ax_mutation_is_rejected(self):
+    def test_closed_world_dic_carrier_difference_is_reviewable(self):
         original_listing = machine_listing(
             "dic_word_lookup_",
             [
@@ -180,8 +226,47 @@ class RelinkedAbiAuditTests(unittest.TestCase):
             MODULE.locally_modified_carriers(recovered_listing),
             "callee exits",
         )
-        errors = MODULE.compare_routine_abi("dic_word_lookup", original, recovered)
-        self.assertTrue(any("flags:1" in error and "dx:16" in error for error in errors))
+        review, errors = MODULE.classify_routine_abi(
+            "dic_word_lookup", original, recovered
+        )
+        self.assertEqual(errors, [])
+        self.assertEqual(review.classification, "closed_world_difference")
+        self.assertIn("flags:1", review.original_carriers)
+        self.assertIn("dx:16", review.recovered_carriers)
+
+    def test_escape_scanner_ignores_calls_and_finds_publications(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "callbacks.c"
+            source.write_text(
+                "void callback(void);\n"
+                "void caller(void) { callback(); table[0] = callback; }\n"
+                "/* callback */ const char *name = \"callback\";\n",
+                encoding="ascii",
+            )
+            escapes = MODULE.find_function_escapes([source], {"callback", "caller"})
+        self.assertEqual(set(escapes), {"callback"})
+
+    def test_reviewed_abi_baseline_rejects_shape_drift(self):
+        abi = MODULE.RoutineAbi(
+            (MODULE.ReturnSite("far", 0),), (), "direct callers"
+        )
+        review, errors = MODULE.classify_routine_abi("sample", abi, abi)
+        self.assertEqual(errors, [])
+        with tempfile.TemporaryDirectory() as directory:
+            baseline = Path(directory) / "abi.tsv"
+            MODULE.write_abi_report(baseline, [review])
+            mutated = MODULE.RoutineAbi(
+                (MODULE.ReturnSite("far", 2),), (), "direct callers"
+            )
+            changed, errors = MODULE.classify_routine_abi(
+                "sample", abi, mutated
+            )
+            self.assertEqual(errors, [])
+            baseline_errors = MODULE.compare_abi_baseline([changed], baseline)
+        self.assertTrue(any(
+            "unreviewed emitted ABI change" in item
+            for item in baseline_errors
+        ))
 
     def test_accepts_sound_entry_that_restores_linked_dgroup(self):
         subject = listing(

@@ -640,6 +640,8 @@ def build_bloodprg_runtime(
             str(ROOT / "re/tools/audit_relinked_abi.py"),
             "--listing-dir",
             str(final_dir / "segment_contract_listings"),
+            "--abi-report",
+            str(final_dir / "relinked_abi_contracts.tsv"),
             "--adapter-object",
             str(adapter_object),
             "--main-object",

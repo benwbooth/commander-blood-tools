@@ -7,7 +7,7 @@ import csv
 import importlib.util
 import re
 import sys
-from collections import defaultdict, deque
+from collections import Counter, defaultdict, deque
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -41,6 +41,7 @@ GAME_DATA_ROW = re.compile(
     re.MULTILINE,
 )
 MANIFEST = ROOT / "re/source/bloodprg/candidates/manifest.tsv"
+ABI_BASELINE = ROOT / "re/source/bloodprg/relinked_abi_contracts.tsv"
 ASM_SEGMENT_ROW = re.compile(
     r"^; seg_off:\s*(?P<segment>[0-9A-Fa-f]+):"
     r"(?P<offset>[0-9A-Fa-f]+)\s*$",
@@ -105,6 +106,53 @@ class RoutineAbi:
     carriers: tuple[ReturnCarrier, ...]
     carrier_evidence: str
     hidden_result_width: int = 0
+
+
+@dataclass(frozen=True)
+class AbiBoundaryContract:
+    role: str
+    returned_via: ReturnSite
+    evidence: str
+
+
+@dataclass(frozen=True)
+class RoutineAbiReview:
+    function: str
+    classification: str
+    exposure: str
+    contract: str
+    original_returns: str
+    recovered_returns: str
+    original_carriers: str
+    recovered_carriers: str
+    original_evidence: str
+    recovered_evidence: str
+    escape_sources: str
+
+
+ABI_REPORT_FIELDS = tuple(RoutineAbiReview.__dataclass_fields__)
+EXTERNAL_ABI_CONTRACTS = {
+    "bloodprg_timer_isr": AbiBoundaryContract(
+        "dos_interrupt_08",
+        ReturnSite("interrupt", 0),
+        "installed by _dos_setvect(0x08)",
+    ),
+    "bloodprg_ctrl_break_handler": AbiBoundaryContract(
+        "dos_interrupt_23",
+        ReturnSite("interrupt", 0),
+        "installed by _dos_setvect(0x23)",
+    ),
+    "bloodprg_critical_error_handler": AbiBoundaryContract(
+        "dos_interrupt_24",
+        ReturnSite("interrupt", 0),
+        "installed by _dos_setvect(0x24)",
+    ),
+    "snd_play_clip": AbiBoundaryContract(
+        "alien_xdb_callback",
+        ReturnSite("far", 0),
+        "published through GAME_DATA snd_play_clip_callback",
+    ),
+}
 
 
 def parse_number(value: str) -> int:
@@ -477,35 +525,178 @@ def format_carriers(abi: RoutineAbi) -> str:
     return ",".join(values) if values else "void"
 
 
-def compare_routine_abi(
-    function: str, original: RoutineAbi, recovered: RoutineAbi
-) -> list[str]:
+def format_returns(abi: RoutineAbi) -> str:
+    return ",".join(
+        f"{site.kind}:{site.cleanup}" for site in abi.returns
+    )
+
+
+def mask_c_non_code(text: str) -> str:
+    """Blank comments, literals, and preprocessing lines but retain layout."""
+    pattern = re.compile(
+        r"/\*.*?\*/|//[^\n]*|\"(?:\\.|[^\"\\])*\"|"
+        r"'(?:\\.|[^'\\])*'",
+        re.DOTALL,
+    )
+
+    def blank(match: re.Match[str]) -> str:
+        return "".join("\n" if value == "\n" else " " for value in match.group())
+
+    masked = pattern.sub(blank, text)
+    return re.sub(r"(?m)^[ \t]*\#(?:\\\n|[^\n])*", blank, masked)
+
+
+def find_function_escapes(
+    source_paths: list[Path], functions: set[str]
+) -> dict[str, tuple[str, ...]]:
+    """Find recovered functions used as values instead of direct C calls."""
+    token = re.compile(r"\b[A-Za-z_]\w*\b")
+    escapes: dict[str, set[str]] = defaultdict(set)
+    for path in source_paths:
+        text = mask_c_non_code(path.read_text(encoding="ascii", errors="replace"))
+        resolved = path.resolve()
+        try:
+            source_name = str(resolved.relative_to(ROOT))
+        except ValueError:
+            source_name = str(resolved)
+        for match in token.finditer(text):
+            function = match.group()
+            if function not in functions:
+                continue
+            cursor = match.end()
+            while cursor < len(text) and text[cursor].isspace():
+                cursor += 1
+            if cursor < len(text) and text[cursor] != "(":
+                escapes[function].add(source_name)
+    return {
+        function: tuple(sorted(paths))
+        for function, paths in escapes.items()
+    }
+
+
+def classify_routine_abi(
+    function: str,
+    original: RoutineAbi,
+    recovered: RoutineAbi,
+    escape_sources: tuple[str, ...] = (),
+    contract: AbiBoundaryContract | None = None,
+) -> tuple[RoutineAbiReview, list[str]]:
+    """Separate strict foreign ABIs from reviewed rebuilt-C ABI differences."""
     errors: list[str] = []
-    if len(original.returns) != 1:
+    exact = original == recovered
+    if escape_sources and contract is None:
+        classification = "unresolved_external_escape"
         errors.append(
-            f"{function}: unresolved original return convention {original.returns}"
+            f"{function}: address escapes direct rebuilt C calls without an ABI "
+            f"contract: {','.join(escape_sources)}"
         )
-    if len(recovered.returns) != 1:
+    elif contract is not None and not escape_sources:
+        classification = "unobserved_external_contract"
         errors.append(
-            f"{function}: unresolved recovered return convention {recovered.returns}"
+            f"{function}: external ABI contract has no recovered address escape "
+            f"({contract.evidence})"
         )
-    if original.returns != recovered.returns:
-        errors.append(
-            f"{function}: return convention mismatch: original="
-            f"{original.returns}, recovered={recovered.returns}"
-        )
-    if (original.carriers != recovered.carriers or
-            recovered.hidden_result_width):
-        errors.append(
-            f"{function}: return carrier mismatch: original="
-            f"{format_carriers(original)} ({original.carrier_evidence}), "
-            f"recovered={format_carriers(recovered)} "
-            f"({recovered.carrier_evidence})"
-        )
+    elif contract is not None:
+        classification = "external_exact" if exact else "external_incompatible"
+        required = (contract.returned_via,)
+        if original.returns != required:
+            errors.append(
+                f"{function}: shipped {contract.role} return does not match its "
+                f"contract: observed={original.returns}, required={required}"
+            )
+        if recovered.returns != required:
+            errors.append(
+                f"{function}: recovered {contract.role} return does not match its "
+                f"contract: observed={recovered.returns}, required={required}"
+            )
+        if not exact:
+            errors.append(
+                f"{function}: external ABI differs from shipped boundary: "
+                f"returns {format_returns(original)} -> {format_returns(recovered)}, "
+                f"carriers {format_carriers(original)} -> {format_carriers(recovered)}"
+            )
+    else:
+        classification = "closed_world_exact" if exact else "closed_world_difference"
+        if len(recovered.returns) != 1:
+            classification = "unresolved_recovered_return"
+            errors.append(
+                f"{function}: rebuilt routine has ambiguous return conventions "
+                f"{recovered.returns}"
+            )
+
+    review = RoutineAbiReview(
+        function=function,
+        classification=classification,
+        exposure="external" if escape_sources else "direct_rebuilt_calls",
+        contract=contract.role if contract is not None else "none",
+        original_returns=format_returns(original),
+        recovered_returns=format_returns(recovered),
+        original_carriers=format_carriers(original),
+        recovered_carriers=format_carriers(recovered),
+        original_evidence=original.carrier_evidence,
+        recovered_evidence=recovered.carrier_evidence,
+        escape_sources=",".join(escape_sources) if escape_sources else "none",
+    )
+    return review, errors
+
+
+def write_abi_report(path: Path, reviews: list[RoutineAbiReview]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="", encoding="ascii") as handle:
+        writer = csv.DictWriter(handle, fieldnames=ABI_REPORT_FIELDS, delimiter="\t")
+        writer.writeheader()
+        for review in reviews:
+            writer.writerow(review.__dict__)
+
+
+def compare_abi_baseline(
+    reviews: list[RoutineAbiReview], expected_path: Path
+) -> list[str]:
+    if not expected_path.is_file():
+        return [f"missing reviewed ABI baseline {expected_path}"]
+    with expected_path.open(newline="", encoding="ascii") as handle:
+        reader = csv.DictReader(handle, delimiter="\t")
+        if tuple(reader.fieldnames or ()) != ABI_REPORT_FIELDS:
+            return [
+                f"{expected_path}: ABI baseline columns do not match "
+                f"{ABI_REPORT_FIELDS}"
+            ]
+        expected_rows = list(reader)
+    expected = {row["function"]: row for row in expected_rows}
+    if len(expected) != len(expected_rows):
+        return [f"{expected_path}: duplicate function in ABI baseline"]
+    observed = {
+        review.function: {
+            field: str(getattr(review, field)) for field in ABI_REPORT_FIELDS
+        }
+        for review in reviews
+    }
+    errors: list[str] = []
+    for function in sorted(expected.keys() - observed.keys()):
+        errors.append(f"{function}: reviewed ABI baseline routine is missing")
+    for function in sorted(observed.keys() - expected.keys()):
+        errors.append(f"{function}: emitted ABI has no reviewed baseline")
+    for function in sorted(expected.keys() & observed.keys()):
+        changed = [
+            field for field in ABI_REPORT_FIELDS
+            if expected[function][field] != observed[function][field]
+        ]
+        if changed:
+            details = "; ".join(
+                f"{field}={expected[function][field]!r} -> "
+                f"{observed[function][field]!r}"
+                for field in changed
+            )
+            errors.append(f"{function}: unreviewed emitted ABI change: {details}")
     return errors
 
 
-def audit_all_routine_abis(listing_dir: Path, manifest: Path = MANIFEST) -> tuple[list[str], int]:
+def audit_all_routine_abis(
+    listing_dir: Path,
+    report_path: Path,
+    manifest: Path = MANIFEST,
+    expected_path: Path = ABI_BASELINE,
+) -> tuple[list[str], list[RoutineAbiReview]]:
     with manifest.open(newline="", encoding="ascii") as handle:
         rows = list(csv.DictReader(handle, delimiter="\t"))
     required = {"entry", "source", "asm_path", "function"}
@@ -536,17 +727,35 @@ def audit_all_routine_abis(listing_dir: Path, manifest: Path = MANIFEST) -> tupl
         except (OSError, ValueError) as error:
             errors.append(f"{function}: unresolved ABI evidence: {error}")
     if errors:
-        return errors, len(rows)
+        return errors, []
 
     try:
         abis = derive_corpus_abis(rows, original_listings, recovered_listings)
+        source_paths = sorted({
+            (manifest.parent / row["source"]).resolve() for row in rows
+        })
+        escapes = find_function_escapes(source_paths, set(original_listings))
     except ValueError as error:
-        return [f"unresolved ABI evidence: {error}"], len(rows)
+        return [f"unresolved ABI evidence: {error}"], []
+    except OSError as error:
+        return [f"unresolved ABI source evidence: {error}"], []
+    reviews: list[RoutineAbiReview] = []
     for row in rows:
         function = row["function"]
         original, recovered = abis[function]
-        errors.extend(compare_routine_abi(function, original, recovered))
-    return errors, len(rows)
+        review, review_errors = classify_routine_abi(
+            function,
+            original,
+            recovered,
+            escapes.get(function, ()),
+            EXTERNAL_ABI_CONTRACTS.get(function),
+        )
+        reviews.append(review)
+        errors.extend(review_errors)
+    write_abi_report(report_path, reviews)
+    if not errors:
+        errors.extend(compare_abi_baseline(reviews, expected_path))
+    return errors, reviews
 
 
 def routine_instructions(listing, label: str):
@@ -979,6 +1188,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--listing-dir", type=Path, required=True)
     parser.add_argument("--manifest", type=Path, default=MANIFEST)
+    parser.add_argument("--abi-report", type=Path, required=True)
+    parser.add_argument("--expected-abi", type=Path, default=ABI_BASELINE)
     parser.add_argument("--adapter-object", type=Path, required=True)
     parser.add_argument("--main-object", type=Path, required=True)
     parser.add_argument("--image", type=Path, required=True)
@@ -1020,14 +1231,22 @@ def main() -> int:
         ),
         *audit_startup_image(args.image.resolve(), args.link_map.resolve()),
     ]
-    whole_program_errors, routine_count = audit_all_routine_abis(
-        listing_dir, args.manifest.resolve()
+    whole_program_errors, reviews = audit_all_routine_abis(
+        listing_dir,
+        args.abi_report.resolve(),
+        args.manifest.resolve(),
+        args.expected_abi.resolve(),
     )
     errors.extend(whole_program_errors)
     if errors:
         raise SystemExit("\n".join(errors))
+    classifications = Counter(review.classification for review in reviews)
+    class_summary = ", ".join(
+        f"{name}={count}" for name, count in sorted(classifications.items())
+    )
     print(
-        f"relinked ABI: {routine_count} routine returns/carriers, "
+        f"relinked ABI: {len(reviews)} fingerprinted routine contracts "
+        f"({class_summary}), "
         "startup/overlay segments, foreign-DS sound, "
         "VM-record far pointers, ship-transition liveness, XMS AX/DX result, "
         "and INT 24h epilogue verified"

@@ -6242,6 +6242,24 @@ return slot or global-derived segment with a typed return value or equivalent
 argument-derived segment, so those differences require an assembly-to-C
 data-flow review rather than an instruction-count rule.
 
+`audit_relinked_abi.py` now separates those closed-world compiler choices from
+actual foreign entry contracts. A source escape census proves that only four of
+the 337 recovered BLOODPRG routine addresses leave ordinary rebuilt C calls:
+the INT 08h timer ISR, the INT 23h and INT 24h handlers, and `snd_play_clip`
+published to the alien XDB. Those four must retain the shipped return kind,
+cleanup, and register-carrier shape exactly. A newly address-taken routine has
+no implicit default: packaging fails until its foreign or internal callback
+contract is identified.
+
+The complete observed inventory is checked into
+`re/source/bloodprg/relinked_abi_contracts.tsv`. It records return kind, stack
+cleanup, observed result carriers, caller evidence, and source exposure for
+every routine. The current linked image has 147 closed-world exact rows, 186
+fingerprint-bound closed-world differences, and four exact external rows. Any
+emitted ABI or exposure change invalidates that reviewed fingerprint while
+allowing a rebuilt caller and callee to use natural, mutually consistent C
+calling conventions.
+
 Accepted differences live in `segment_role_reviews.tsv`. Each entry is bound
 to a hash of the routine's complete role set, access counts, and missing/extra
 access shapes; source or compiler changes that alter any part of that routine's
