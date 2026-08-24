@@ -658,15 +658,6 @@ def inject_guest_primary_click(mem, guest_base: int, game_segment: int,
     return {"adapter": "guest-primary-edge", "point": [x, y]}
 
 
-def release_guest_primary_click(mem, guest_base: int,
-                                game_segment: int) -> None:
-    game = game_segment * 16
-    write_guest(
-        mem, guest_base, game + MOUSE_PRIMARY_PRESSED_OFFSET, b"\x00")
-    write_guest(
-        mem, guest_base, game + MOUSE_PRESS_PENDING_OFFSET, b"\x00")
-
-
 def guest_mouse_point_is_valid(x: int, y: int) -> bool:
     return 0 <= x < 320 and 0 <= y < 200
 
@@ -786,6 +777,19 @@ def choice_row_point(rect: tuple[int, int, int, int],
                      row_index: int) -> tuple[int, int]:
     x, y, width, _height = rect
     return x + width // 2, y + 4 + row_index * 11 + 5
+
+
+def bridge_station_ready_for_click(
+        rect: tuple[int, int, int, int]) -> bool:
+    x, y, width, height = rect
+    return (
+        width > 0
+        and height > 0
+        and x >= 32
+        and x + width <= 288
+        and y >= 0
+        and y + height <= 200
+    )
 
 
 def pterra_destination_ready(blockers: dict[str, int],
@@ -2087,7 +2091,6 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
     pterra_nav_open_started_at = None
     pterra_bridge_panorama_frame = None
     pterra_nav_station_pressing = False
-    pterra_nav_station_input_adapter = None
     pterra_nav_station_target_y = None
     pterra_nav_station_first_click_at = None
     pterra_nav_station_click_count = 0
@@ -2773,38 +2776,47 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                             "pointer_liveness_recaptures", []).append(
                                 recapture)
                     if pterra_nav_station_pressing:
-                        if pterra_nav_station_input_adapter == "guest-primary":
-                            release_guest_primary_click(
-                                mem, guest_base, game_segment)
-                        else:
-                            send_mouse_button(display, False, button=1)
+                        send_mouse_button(display, False, button=1)
                         pterra_nav_station_pressing = False
-                        pterra_nav_station_input_adapter = None
                     elif station_center is not None \
-                            and int(station["flags"]) & 1:
+                            and int(station["flags"]) & 1 \
+                            and bridge_station_ready_for_click(station_rect):
+                        current_x = int(input_state["mouse_x"])
+                        current_y = int(input_state["mouse_y"])
                         pterra_nav_station_target_y = station_center[1]
-                        station_x = station_center[0]
-                        click_evidence = inject_guest_primary_click(
-                            mem, guest_base, game_segment,
-                            station_x, station_center[1])
-                        pterra_nav_station_pressing = True
-                        pterra_nav_station_input_adapter = "guest-primary"
-                        pterra_nav_station_click_count += 1
-                        if pterra_nav_station_first_click_at is None:
-                            pterra_nav_station_first_click_at = now
-                        pterra_map_last_progress_at = now
-                        assert isinstance(pterra_map_setup, dict)
-                        pterra_map_setup["bridge_station_rect"] = \
-                            list(station_rect)
-                        pterra_map_setup[
-                            "bridge_station_click_count"] = \
-                            pterra_nav_station_click_count
-                        pterra_map_setup[
-                            "bridge_station_click_evidence"] = click_evidence
-                        print(
-                            "state: pressed native bridge navigation "
-                            f"station at {station_x},"
-                            f"{station_center[1]} via guest edge", flush=True)
+                        if abs(current_y - station_center[1]) > 2:
+                            move_captured_game_mouse(
+                                display, current_x, current_y,
+                                current_x, station_center[1])
+                        else:
+                            station_x = station_center[0]
+                            close_enough = abs(current_x - station_x) <= 32
+                            moved = move_captured_game_mouse(
+                                display, current_x, current_y,
+                                station_x, station_center[1])
+                            if close_enough or moved:
+                                send_mouse_button(display, True, button=1)
+                                pterra_nav_station_pressing = True
+                                pterra_nav_station_click_count += 1
+                                if pterra_nav_station_first_click_at is None:
+                                    pterra_nav_station_first_click_at = now
+                                pterra_map_last_progress_at = now
+                                assert isinstance(pterra_map_setup, dict)
+                                pterra_map_setup["bridge_station_rect"] = \
+                                    list(station_rect)
+                                pterra_map_setup[
+                                    "bridge_station_click_count"] = \
+                                    pterra_nav_station_click_count
+                                pterra_map_setup[
+                                    "bridge_station_click_evidence"] = {
+                                        "adapter": "host-primary-edge",
+                                        "point": [
+                                            station_x, station_center[1]],
+                                    }
+                                print(
+                                    "state: pressed native bridge navigation "
+                                    f"station at {station_x},"
+                                    f"{station_center[1]}", flush=True)
                     else:
                         # Bring station zero into view through the bridge's
                         # own edge-pan behavior. Its handler owns the complete

@@ -642,6 +642,15 @@ class CaptureHelperTests(unittest.TestCase):
             (160, 105),
         )
 
+    def test_bridge_station_click_requires_a_fully_visible_rectangle(self) \
+            -> None:
+        self.assertFalse(capture.bridge_station_ready_for_click(
+            (0, 141, 16, 45)))
+        self.assertTrue(capture.bridge_station_ready_for_click(
+            (133, 130, 51, 44)))
+        self.assertFalse(capture.bridge_station_ready_for_click(
+            (-1, -1, -1, -1)))
+
     def test_captured_mouse_accepts_observed_target(self) -> None:
         with mock.patch.object(capture.subprocess, "run") as run:
             self.assertTrue(capture.move_captured_game_mouse(
@@ -673,12 +682,6 @@ class CaptureHelperTests(unittest.TestCase):
         memory.seek(game + capture.MOUSE_PRESS_PENDING_OFFSET)
         self.assertEqual(memory.read(1), b"\x01")
         self.assertEqual(evidence["adapter"], "guest-primary-edge")
-
-        capture.release_guest_primary_click(memory, 0, 0x1000)
-        memory.seek(game + capture.MOUSE_PRIMARY_PRESSED_OFFSET)
-        self.assertEqual(memory.read(1), b"\x00")
-        memory.seek(game + capture.MOUSE_PRESS_PENDING_OFFSET)
-        self.assertEqual(memory.read(1), b"\x00")
 
     def test_guest_mouse_point_rejects_staging_wrap_coordinate(self) -> None:
         self.assertTrue(capture.guest_mouse_point_is_valid(202, 104))
