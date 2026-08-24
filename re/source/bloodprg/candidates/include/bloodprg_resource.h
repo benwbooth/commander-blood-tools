@@ -113,8 +113,8 @@ extern const bloodprg_resource_name_entry CB_GAME_DATA
         resource_write_directory_names[];           /* GS:0x0259 */
 
 #if defined(__WATCOMC__)
-#pragma aux resource_release parm [ax] modify exact []
-#pragma aux resource_free_inner parm [ax] modify exact []
+#pragma aux resource_release parm [ax] modify exact [ax es]
+#pragma aux resource_free_inner parm [ax] modify exact [ax es]
 #pragma aux resource_get_field4 parm [ax] value [dx ax] modify exact [ax dx]
 #pragma aux lookup_table_1fb5 parm [ax] value [bx] modify [bx]
 #pragma aux resource_load_by_id parm [ax] value [ax] modify exact [ax]

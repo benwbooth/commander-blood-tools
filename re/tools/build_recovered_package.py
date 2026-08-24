@@ -613,6 +613,30 @@ def build_bloodprg_runtime(
         [
             sys.executable,
             "-P",
+            str(ROOT / "re/tools/audit_watcom_modify_contracts.py"),
+            "--emitted-image",
+            str(final_executable),
+            "--link-map",
+            str(final_map),
+            "--listing-dir",
+            str(final_dir / "segment_contract_listings"),
+            "--output",
+            str(final_dir / "watcom_modify_contracts.tsv"),
+        ],
+        final_dir / "watcom_modify_contract_audit.log",
+    )
+    run_checked_logged(
+        [
+            sys.executable,
+            "-P",
+            str(ROOT / "re/tools/test_audit_watcom_modify_contracts.py"),
+        ],
+        final_dir / "watcom_modify_contract_tests.log",
+    )
+    run_checked_logged(
+        [
+            sys.executable,
+            "-P",
             str(ROOT / "re/tools/audit_relinked_abi.py"),
             "--listing-dir",
             str(final_dir / "segment_contract_listings"),

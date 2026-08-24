@@ -127,24 +127,24 @@ void CB_FAR entity_object_populate(cb_u16 entity_id,
 #if defined(__WATCOMC__)
 #pragma aux bloodprg_sprite_blitter parm [di] modify exact []
 #pragma aux entity_object_populate \
-        parm caller [ax] [dx] [bx] [cx] modify exact []
+        parm caller [ax] [dx] [bx] [cx] modify exact [ax es]
 #pragma aux entity_record_setter \
-        parm caller [ax] [es di] [bx] [cx] modify exact []
+        parm caller [ax] [es di] [bx] [cx] modify exact [ax es]
 #pragma aux entity_flag_state_transition parm [ax]
 #pragma aux sprite_slot_position_update parm [ax] [bx] [cx]
 #pragma aux sprite_slot_extent_update parm [ax] [cx] [dx] [es si]
 #pragma aux sprite_slot_range_mark_dirty parm [ax] [bx]
 #pragma aux sprite_slot_commit_dirty_range parm [ax] [bx]
 #pragma aux sprite_slot_dirty_range_render parm [ax] [bx]
-#pragma aux sprite_blit_raw_transparent parm [di] modify exact []
-#pragma aux sprite_blit_rle_transparent parm [di] modify exact []
-#pragma aux sprite_blit_raw_opaque parm [di] modify exact []
-#pragma aux sprite_blit_rle_opaque parm [di] modify exact []
-#pragma aux sprite_blit_scaled_transparent parm [di] modify exact []
+#pragma aux sprite_blit_raw_transparent parm [di] modify exact [ax es]
+#pragma aux sprite_blit_rle_transparent parm [di] modify exact [ax es]
+#pragma aux sprite_blit_raw_opaque parm [di] modify exact [ax es]
+#pragma aux sprite_blit_rle_opaque parm [di] modify exact [ax es]
+#pragma aux sprite_blit_scaled_transparent parm [di] modify exact [ax es]
 #pragma aux sprite_blitter_noop_5 parm [di] modify exact []
 #pragma aux sprite_blitter_noop_6 parm [di] modify exact []
 #pragma aux sprite_blitter_noop_7 parm [di] modify exact []
-#pragma aux dirty_rects_copy_secondary_to_primary parm [es di] modify exact []
+#pragma aux dirty_rects_copy_secondary_to_primary parm [es di] modify exact [ax]
 #endif
 
 #endif
