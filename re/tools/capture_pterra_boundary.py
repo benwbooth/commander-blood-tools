@@ -96,6 +96,9 @@ SCENE_TRANSITION_FLAGS_OFFSET = 0x2751
 VM_UI_FLAGS_OFFSET = 0x2793
 VM_UI_STATE_OFFSET = 0x2792
 BRIDGE_PANORAMA_FRAME_OFFSET = 0x2795
+BRIDGE_SEEK_TARGET_ARC_OFFSET = 0x279B
+BRIDGE_SEEK_INITIAL_DISTANCE_OFFSET = 0x279D
+BRIDGE_TURN_DIRECTION_OFFSET = 0x27DB
 NAV_CAMERA_VIEW_ACTIVE_OFFSET = 0x278A
 NAV_CAMERA_VIEW_STATE_OFFSET = 0x278B
 NAV_LOCATION_PANEL_TRANSITION_STATE_OFFSET = 0x2788
@@ -151,6 +154,28 @@ PTERRA_TRAVEL_MOVIE_TIMEOUT_SECONDS = 120.0
 PTERRA_MAP_TRANSITION_TIMEOUT_SECONDS = 120.0
 PTERRA_BRIDGE_ROTATION_TIMEOUT_SECONDS = 360.0
 PTERRA_NATIVE_INPUT_TIMEOUT_SECONDS = 10.0
+PTERRA_TRANSITION_SAMPLE_INTERVAL_SECONDS = 1.0
+PTERRA_TRANSITION_SAMPLE_LIMIT = 256
+STARTUP_DOS_POOL_POINTER_OFFSET = 0x0A42
+MANU3_ORIGINAL_PREFIX = bytes.fromhex("1e2e8b0e")
+MANU3_ORIGINAL_DATA_SEGMENT_DELTA_OFFSET = 0x1368
+MANU3_RECOVERED_PREFIX = bytes.fromhex("1e8cc82e")
+MANU3_RECOVERED_DATA_SEGMENT_DELTA_OFFSET = 0x001B
+MANU3_SEGMENT_DIRECTORY_SIZE = 0x0014
+MANU3_CURRENT_STATE_OFFSET = 0x2248
+MANU3_PROJECTION_REMAINING_OFFSET = 0x224A
+MANU3_FACE_LIST_OFFSET = 0x2300
+MANU3_FACE_COUNT_OFFSET = 0x2304
+MANU3_ACTIVE_LIST_HEAD_OFFSET = 0x0964
+MANU3_ACTIVE_LIST_MIDDLE_OFFSET = 0x09BE
+MANU3_ACTIVE_LIST_TAIL_OFFSET = 0x0A18
+MANU3_RASTER_POOL_OFFSET = 0x0A72
+MANU3_RASTER_POOL_RECORD_SIZE = 0x005A
+MANU3_RASTER_POOL_RECORD_COUNT = 0x00C8
+MANU3_RASTER_STATE_OFFSETS = (
+    0x067E, 0x0680, 0x0682, 0x0684, 0x0908, 0x0962, 0x0A28,
+)
+MANU3_RASTER_RECORD_OFFSETS = (0x0964, 0x09BE, 0x0A18)
 ILLEGAL_INTERRUPT_RE = re.compile(
     rb"Illegal Unhandled Interrupt Called ([0-9]+)", re.IGNORECASE)
 DOS_READ_WARNING_RE = re.compile(
@@ -251,6 +276,176 @@ def read_guest(mem, guest_base: int, linear: int, size: int) -> bytes:
         raise RuntimeError(
             f"short guest read at {linear:#x}: {len(data)} of {size}")
     return data
+
+
+def read_manu3_runtime_state(mem, guest_base: int, game_segment: int,
+                             cpu_state: dict[str, int]) \
+        -> dict[str, object]:
+    """Read the loaded MANU3 overlay's compact renderer state."""
+    game = game_segment * 16
+    image_offset, code_segment = struct.unpack(
+        "<HH", read_guest(
+            mem, guest_base,
+            game + STARTUP_DOS_POOL_POINTER_OFFSET, 4))
+    result: dict[str, object] = {
+        "image_pointer": f"{code_segment:04x}:{image_offset:04x}",
+        "code_segment": code_segment,
+        "cpu_in_manu3": int(cpu_state["cs"]) == code_segment,
+        "local_ip": (
+            int(cpu_state["ip"])
+            if int(cpu_state["cs"]) == code_segment else None),
+    }
+    if code_segment < 0x0050:
+        result["loaded"] = False
+        return result
+
+    code = code_segment * 16 + image_offset
+    code_prefix = read_guest(mem, guest_base, code, 4)
+    if code_prefix == MANU3_ORIGINAL_PREFIX:
+        image_layout = "original"
+        data_segment_delta_offset = \
+            MANU3_ORIGINAL_DATA_SEGMENT_DELTA_OFFSET
+    elif code_prefix == MANU3_RECOVERED_PREFIX:
+        image_layout = "recovered"
+        data_segment_delta_offset = \
+            MANU3_RECOVERED_DATA_SEGMENT_DELTA_OFFSET
+    else:
+        result.update({
+            "loaded": False,
+            "image_layout": "unknown",
+            "code_prefix": code_prefix.hex(),
+        })
+        return result
+
+    data_segment_delta = struct.unpack(
+        "<H", read_guest(
+            mem, guest_base,
+            code + data_segment_delta_offset, 2))[0]
+    data_segment = (code_segment + data_segment_delta) & 0xffff
+    result.update({
+        "loaded": True,
+        "image_layout": image_layout,
+        "data_segment_delta_offset": data_segment_delta_offset,
+        "data_segment_delta": data_segment_delta,
+        "data_segment": data_segment,
+    })
+    data = data_segment * 16
+    segment_directory = struct.unpack(
+        "<10H", read_guest(
+            mem, guest_base, data, MANU3_SEGMENT_DIRECTORY_SIZE))
+    raster_segment = segment_directory[3]
+
+    def data_word(offset: int) -> int:
+        return struct.unpack(
+            "<H", read_guest(mem, guest_base, data + offset, 2))[0]
+
+    result["renderer"] = {
+        "segment_directory": list(segment_directory),
+        "current_state": data_word(MANU3_CURRENT_STATE_OFFSET),
+        "projection_remaining": data_word(
+            MANU3_PROJECTION_REMAINING_OFFSET),
+        "face_list": data_word(MANU3_FACE_LIST_OFFSET),
+        "face_count": data_word(MANU3_FACE_COUNT_OFFSET),
+    }
+    if raster_segment < 0x0050:
+        result["raster"] = {
+            "segment": raster_segment,
+            "loaded": False,
+        }
+        return result
+
+    raster = raster_segment * 16
+    raster_words = {
+        f"{offset:04x}": struct.unpack(
+            "<H", read_guest(mem, guest_base, raster + offset, 2))[0]
+        for offset in MANU3_RASTER_STATE_OFFSETS
+    }
+    result["raster"] = {
+        "segment": raster_segment,
+        "loaded": True,
+        "words": raster_words,
+        "records": {
+            f"{offset:04x}": read_guest(
+                mem, guest_base, raster + offset, 16).hex()
+            for offset in MANU3_RASTER_RECORD_OFFSETS
+        },
+        "boundary_chain": read_manu3_boundary_chain(
+            mem, guest_base, raster_segment),
+    }
+    return result
+
+
+def read_manu3_boundary_chain(mem, guest_base: int, raster_segment: int) \
+        -> dict[str, object]:
+    """Follow the renderer's offset-linked vertical boundary list."""
+    raster = raster_segment * 16
+    sentinels = {
+        offset + boundary_offset
+        for offset in (
+            MANU3_ACTIVE_LIST_HEAD_OFFSET,
+            MANU3_ACTIVE_LIST_MIDDLE_OFFSET,
+            MANU3_ACTIVE_LIST_TAIL_OFFSET,
+        )
+        for boundary_offset in (0, 0x10)
+    }
+    pool_end = (
+        MANU3_RASTER_POOL_OFFSET
+        + MANU3_RASTER_POOL_RECORD_SIZE * MANU3_RASTER_POOL_RECORD_COUNT)
+
+    def valid_boundary_offset(offset: int) -> bool:
+        if offset in sentinels:
+            return True
+        if not MANU3_RASTER_POOL_OFFSET <= offset < pool_end:
+            return False
+        within_record = (
+            (offset - MANU3_RASTER_POOL_OFFSET)
+            % MANU3_RASTER_POOL_RECORD_SIZE)
+        return within_record in (0, 0x10)
+
+    offset = MANU3_ACTIVE_LIST_HEAD_OFFSET
+    seen: dict[int, int] = {}
+    nodes: list[dict[str, object]] = []
+    termination = "limit"
+    cycle_at = None
+    invalid_at = None
+    for _index in range(MANU3_RASTER_POOL_RECORD_COUNT + 3):
+        if offset in seen:
+            termination = "cycle"
+            cycle_at = offset
+            break
+        if not valid_boundary_offset(offset):
+            termination = "invalid-offset"
+            invalid_at = offset
+            break
+        seen[offset] = len(seen)
+        raw = read_guest(mem, guest_base, raster + offset, 12)
+        field_000, flags, source_offset, next_offset, field_008, coordinate = \
+            struct.unpack("<HHHHHh", raw)
+        if len(nodes) < 32:
+            nodes.append({
+                "offset": offset,
+                "field_000": field_000,
+                "flags": flags,
+                "source_offset": source_offset,
+                "next_offset": next_offset,
+                "field_008": field_008,
+                "coordinate": coordinate,
+            })
+        if flags & 0x8000:
+            termination = "terminal"
+            break
+        if next_offset == 0:
+            termination = "null"
+            break
+        offset = next_offset
+
+    return {
+        "termination": termination,
+        "visited_count": len(seen),
+        "cycle_at": cycle_at,
+        "invalid_at": invalid_at,
+        "nodes": nodes,
+    }
 
 
 def write_guest(mem, guest_base: int, linear: int, data: bytes) -> None:
@@ -947,6 +1142,20 @@ def read_profile_state(mem, guest_base: int, game_segment: int,
             "bridge_panorama_frame": read_guest(
                 mem, guest_base,
                 game + BRIDGE_PANORAMA_FRAME_OFFSET, 1)[0],
+            "bridge_ui_state": struct.unpack(
+                "<H", read_guest(
+                    mem, guest_base, game + VM_UI_FLAGS_OFFSET, 2))[0],
+            "bridge_seek_target_arc": struct.unpack(
+                "<H", read_guest(
+                    mem, guest_base,
+                    game + BRIDGE_SEEK_TARGET_ARC_OFFSET, 2))[0],
+            "bridge_seek_initial_distance": struct.unpack(
+                "<H", read_guest(
+                    mem, guest_base,
+                    game + BRIDGE_SEEK_INITIAL_DISTANCE_OFFSET, 2))[0],
+            "bridge_turn_direction": read_guest(
+                mem, guest_base,
+                game + BRIDGE_TURN_DIRECTION_OFFSET, 1)[0],
             "ship_target_name_offsets": ship_target_name_offsets,
             "ship_current_target": struct.unpack(
                 "<H", read_guest(
@@ -1502,7 +1711,8 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                          post_pter_seconds: float = 5.0,
                          toggle_mouse_capture: bool = False) \
         -> dict[str, object]:
-    deadline = time.monotonic() + timeout
+    capture_started_at = time.monotonic()
+    deadline = capture_started_at + timeout
     cpu_addresses = None
     anchor = None
     guest_base = None
@@ -1590,6 +1800,8 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
     pter_snapshot = None
     post_pter_snapshot = None
     post_pter_cpu_samples: list[dict[str, int]] = []
+    transition_cpu_samples: list[dict[str, object]] = []
+    transition_next_sample_at = None
     ivt_baseline = None
     last_profile = None
     last_cpu_state = None
@@ -1680,6 +1892,11 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                     last_profile["input"]["nav_selected_location_record"],
                     tuple(last_profile["input"][
                         "nav_chart_object_offsets"]),
+                    last_profile["input"]["bridge_panorama_frame"],
+                    last_profile["input"]["bridge_ui_state"],
+                    last_profile["input"]["bridge_seek_target_arc"],
+                    last_profile["input"]["bridge_seek_initial_distance"],
+                    last_profile["input"]["bridge_turn_direction"],
                 )
                 if profile_key != last_profile_key:
                     last_profile_key = profile_key
@@ -1969,6 +2186,43 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
 
                 input_state = last_profile["input"]
                 assert isinstance(input_state, dict)
+                if (trigger_pterra_after_load
+                        and pterra_nav_chart_started
+                        and len(transition_cpu_samples)
+                        < PTERRA_TRANSITION_SAMPLE_LIMIT
+                        and (transition_next_sample_at is None
+                             or now >= transition_next_sample_at)):
+                    transition_cpu_samples.append({
+                        "elapsed_seconds": round(
+                            now - capture_started_at, 3),
+                        "phase": (
+                            "ship-navigation"
+                            if pterra_triggered else
+                            "map-transition"
+                            if pterra_map_command_consumed else
+                            "nav-chart"),
+                        "cpu": state.copy(),
+                        "bridge": {
+                            "panorama_frame": int(input_state[
+                                "bridge_panorama_frame"]),
+                            "ui_state": int(input_state[
+                                "bridge_ui_state"]),
+                            "seek_target_arc": int(input_state[
+                                "bridge_seek_target_arc"]),
+                            "seek_initial_distance": int(input_state[
+                                "bridge_seek_initial_distance"]),
+                            "turn_direction": int(input_state[
+                                "bridge_turn_direction"]),
+                        },
+                        "timing": {
+                            "timer_tick": int(audio_flow["timer_tick"]),
+                            "frame_delay": int(audio_flow["frame_delay"]),
+                        },
+                        "manu3": read_manu3_runtime_state(
+                            mem, guest_base, game_segment, state),
+                    })
+                    transition_next_sample_at = (
+                        now + PTERRA_TRANSITION_SAMPLE_INTERVAL_SECONDS)
                 if (trigger_pterra_after_load
                         and pterra_nav_chart_started
                         and not pterra_nav_chart_active
@@ -2819,6 +3073,14 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
             break
         time.sleep(0.01)
 
+    overall_timeout_reached = (
+        time.monotonic() >= deadline
+        and fault_snapshot is None
+        and dos_read_overflow_snapshot is None
+        and integrity_fault_snapshot is None
+        and hang_snapshot is None
+        and not pter_sustained
+    )
     confirmed_title_evidence = title_transition_evidence(
         startup_presentation_line_seen=startup_presentation_line_seen,
         load_menu_requested=load_menu_requested if open_load_menu else False,
@@ -2826,6 +3088,9 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
     )
     title_transition_confirmed = bool(confirmed_title_evidence)
     errors = []
+    if overall_timeout_reached:
+        errors.append(
+            f"scenario exceeded its {timeout:g}-second overall timeout")
     if not manual and not request_written:
         errors.append("SCRIPT2 request boundary was never reached")
     if not manual and not profile_loaded:
@@ -2896,6 +3161,8 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
         "load_menu_requested": load_menu_requested,
         "authentic_save_loaded": authentic_save_loaded,
         "title_pointer_recapture": title_pointer_recapture,
+        "overall_timeout_seconds": timeout,
+        "overall_timeout_reached": overall_timeout_reached,
         "log": str(log_path),
         "marker": marker_snapshot,
         "fault": fault_snapshot,
@@ -2932,6 +3199,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
         "pterra_ship_navigation_activated": (
             pterra_ship_navigation_activated),
         "pterra_travel_setup": pterra_travel_setup,
+        "transition_cpu_samples": transition_cpu_samples,
         "pter_semantic_checkpoints": pter_semantic_checkpoints,
         "destination_committed": destination_committed,
         "pter": pter_snapshot,

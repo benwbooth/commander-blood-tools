@@ -19,7 +19,6 @@ cb_i16 CB_FAR ui_region_31_poll(void)
                     &record->draw_x)) {
             return attempts_remaining;
         }
-        --record;
         --attempts_remaining;
     } while (attempts_remaining >= 0);
 

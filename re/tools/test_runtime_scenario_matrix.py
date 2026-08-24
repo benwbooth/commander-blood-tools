@@ -562,7 +562,10 @@ class MatrixExecutionTests(unittest.TestCase):
             marker.write_bytes(b"old capture")
 
         exit_code, aggregate = matrix.run_matrix(
-            self.args("--scenario", "authentic-pterra")
+            self.args(
+                "--scenario", "authentic-pterra",
+                "--dosbox", "dosbox-staging-test",
+            )
         )
 
         self.assertEqual(exit_code, 0)
@@ -571,6 +574,10 @@ class MatrixExecutionTests(unittest.TestCase):
         self.assertIn("--open-load-menu", command)
         self.assertIn("--trigger-pterra-after-load", command)
         self.assertIn("--drive-authentic-save", command)
+        self.assertEqual(
+            command[command.index("--dosbox") + 1],
+            "dosbox-staging-test",
+        )
         self.assertEqual(aggregate["results"][0]["display"], ":127")
         self.assertEqual(
             aggregate["results"][0]["removed_stale_artifacts"],
@@ -589,7 +596,10 @@ class MatrixExecutionTests(unittest.TestCase):
         run.side_effect = self.successful_subprocess
 
         exit_code, aggregate = matrix.run_matrix(
-            self.args("--scenario", "script1-bob-first-contact")
+            self.args(
+                "--scenario", "script1-bob-first-contact",
+                "--dosbox", "dosbox-staging-test",
+            )
         )
 
         self.assertEqual(exit_code, 0)
@@ -597,6 +607,10 @@ class MatrixExecutionTests(unittest.TestCase):
         self.assertEqual(result["status"], "PASS")
         self.assertEqual(result["display"], ":126")
         self.assertIn("--script1-bob-probe", result["command"])
+        self.assertEqual(
+            result["command"][result["command"].index("--dosbox") + 1],
+            "dosbox-staging-test",
+        )
 
     @mock.patch.object(matrix.subprocess, "run")
     def test_generated_contact_uses_manifest_watchdog_mode(

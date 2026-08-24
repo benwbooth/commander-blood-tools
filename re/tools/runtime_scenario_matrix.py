@@ -142,6 +142,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--executable", default="BPRG_RE.EXE")
     parser.add_argument(
+        "--dosbox",
+        default="dosbox-x",
+        help="DOSBox-X or DOSBox Staging executable (default: dosbox-x)",
+    )
+    parser.add_argument(
         "--link-map",
         type=Path,
         help="link map passed to runtime_watchdog.py (default: its package path)",
@@ -218,8 +223,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--pterra-timeout",
         type=float,
-        default=600.0,
-        help="authentic-save Pterra capture timeout (default: 600)",
+        default=1800.0,
+        help="authentic-save Pterra capture timeout (default: 1800)",
     )
     parser.add_argument(
         "--calibration-timeout",
@@ -646,6 +651,8 @@ def _build_command(
             str(install_parent),
             "--executable",
             args.executable,
+            "--dosbox",
+            args.dosbox,
             "--display",
             display,
             "--calibration-timeout",
@@ -713,6 +720,8 @@ def _build_command(
         str(install_parent),
         "--executable",
         args.executable,
+        "--dosbox",
+        args.dosbox,
         "--output",
         str(raw_report),
         "--display",

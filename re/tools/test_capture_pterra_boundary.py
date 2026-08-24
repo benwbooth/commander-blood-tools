@@ -102,6 +102,163 @@ class CaptureHelperTests(unittest.TestCase):
             [state[name] for name in ("es", "cs", "ss", "ds", "fs", "gs")],
             [0x100, 0x200, 0x300, 0x400, 0x500, 0x600])
 
+    def test_reads_compact_manu3_runtime_state(self) -> None:
+        memory = bytearray(0x100000)
+        game_segment = 0x1000
+        code_segment = 0x2000
+        data_segment = 0x2300
+        raster_segment = 0x3000
+        struct.pack_into(
+            "<HH", memory,
+            game_segment * 16 + capture.STARTUP_DOS_POOL_POINTER_OFFSET,
+            0, code_segment)
+        memory[code_segment * 16:code_segment * 16 + 4] = \
+            capture.MANU3_RECOVERED_PREFIX
+        struct.pack_into(
+            "<H", memory,
+            code_segment * 16
+            + capture.MANU3_RECOVERED_DATA_SEGMENT_DELTA_OFFSET,
+            data_segment - code_segment)
+        data = data_segment * 16
+        struct.pack_into(
+            "<10H", memory, data,
+            0xAABB, 0x3100, 0x3200, raster_segment,
+            0x3400, 0x3500, 0x3600, 0x3700, 0x3800, 0x3900)
+        struct.pack_into(
+            "<HH", memory, data + capture.MANU3_CURRENT_STATE_OFFSET,
+            0x1111, 0x2222)
+        struct.pack_into(
+            "<H", memory, data + capture.MANU3_FACE_LIST_OFFSET, 0x3333)
+        struct.pack_into(
+            "<H", memory, data + capture.MANU3_FACE_COUNT_OFFSET, 7)
+        raster = raster_segment * 16
+        for index, offset in enumerate(capture.MANU3_RASTER_STATE_OFFSETS):
+            struct.pack_into("<H", memory, raster + offset, 0x4000 + index)
+        for index, offset in enumerate(capture.MANU3_RASTER_RECORD_OFFSETS):
+            memory[raster + offset:raster + offset + 16] = bytes(
+                [0x50 + index]) * 16
+        struct.pack_into(
+            "<HHHHHh", memory,
+            raster + capture.MANU3_ACTIVE_LIST_HEAD_OFFSET,
+            0, 1, 0, capture.MANU3_ACTIVE_LIST_MIDDLE_OFFSET, 0, -1)
+        struct.pack_into(
+            "<HHHHHh", memory,
+            raster + capture.MANU3_ACTIVE_LIST_MIDDLE_OFFSET,
+            0, 0x8000, 0, capture.MANU3_ACTIVE_LIST_TAIL_OFFSET, 0, 200)
+
+        state = capture.read_manu3_runtime_state(
+            io.BytesIO(memory), 0, game_segment,
+            {"cs": code_segment, "ip": 0x1431})
+
+        self.assertTrue(state["loaded"])
+        self.assertEqual(state["image_layout"], "recovered")
+        self.assertTrue(state["cpu_in_manu3"])
+        self.assertEqual(state["local_ip"], 0x1431)
+        self.assertEqual(state["data_segment"], data_segment)
+        self.assertEqual(state["renderer"]["projection_remaining"], 0x2222)
+        self.assertEqual(state["renderer"]["face_list"], 0x3333)
+        self.assertEqual(state["renderer"]["face_count"], 7)
+        self.assertEqual(state["raster"]["words"]["0684"], 0x4003)
+        self.assertEqual(
+            state["raster"]["boundary_chain"]["termination"], "terminal")
+        self.assertEqual(
+            state["raster"]["boundary_chain"]["visited_count"], 2)
+
+    def test_reads_original_manu3_data_segment_delta(self) -> None:
+        memory = bytearray(0x100000)
+        game_segment = 0x1000
+        code_segment = 0x2000
+        data_segment = 0x2137
+        raster_segment = 0x3000
+        struct.pack_into(
+            "<HH", memory,
+            game_segment * 16 + capture.STARTUP_DOS_POOL_POINTER_OFFSET,
+            0, code_segment)
+        code = code_segment * 16
+        memory[code:code + 4] = capture.MANU3_ORIGINAL_PREFIX
+        struct.pack_into(
+            "<H", memory,
+            code + capture.MANU3_ORIGINAL_DATA_SEGMENT_DELTA_OFFSET,
+            data_segment - code_segment)
+        struct.pack_into(
+            "<10H", memory, data_segment * 16,
+            0, 0, 0, raster_segment, 0, 0, 0, 0, 0, 0)
+        struct.pack_into(
+            "<HHHHHh", memory,
+            raster_segment * 16 + capture.MANU3_ACTIVE_LIST_HEAD_OFFSET,
+            0, 0x8000, 0, 0, 0, -1)
+
+        state = capture.read_manu3_runtime_state(
+            io.BytesIO(memory), 0, game_segment,
+            {"cs": code_segment, "ip": 0x0C2A})
+
+        self.assertTrue(state["loaded"])
+        self.assertEqual(state["image_layout"], "original")
+        self.assertEqual(state["data_segment"], data_segment)
+        self.assertEqual(
+            state["data_segment_delta_offset"],
+            capture.MANU3_ORIGINAL_DATA_SEGMENT_DELTA_OFFSET)
+
+    def test_manu3_runtime_state_rejects_unknown_image_layout(self) -> None:
+        memory = bytearray(0x40000)
+        game_segment = 0x1000
+        code_segment = 0x2000
+        struct.pack_into(
+            "<HH", memory,
+            game_segment * 16 + capture.STARTUP_DOS_POOL_POINTER_OFFSET,
+            0, code_segment)
+        memory[code_segment * 16:code_segment * 16 + 4] = b"BAD!"
+
+        state = capture.read_manu3_runtime_state(
+            io.BytesIO(memory), 0, game_segment,
+            {"cs": code_segment, "ip": 0})
+
+        self.assertFalse(state["loaded"])
+        self.assertEqual(state["image_layout"], "unknown")
+        self.assertEqual(state["code_prefix"], "42414421")
+
+    def test_manu3_boundary_chain_reports_invalid_offset(self) -> None:
+        memory = bytearray(0x50000)
+        raster_segment = 0x3000
+        raster = raster_segment * 16
+        struct.pack_into(
+            "<HHHHHh", memory,
+            raster + capture.MANU3_ACTIVE_LIST_HEAD_OFFSET,
+            0, 1, 0, 1, 0, 0)
+        chain = capture.read_manu3_boundary_chain(
+            io.BytesIO(memory), 0, raster_segment)
+        self.assertEqual(chain["termination"], "invalid-offset")
+        self.assertEqual(chain["invalid_at"], 1)
+        self.assertEqual(chain["visited_count"], 1)
+
+    def test_manu3_boundary_chain_accepts_sentinel_overlay(self) -> None:
+        memory = bytearray(0x50000)
+        raster_segment = 0x3000
+        raster = raster_segment * 16
+        overlay = capture.MANU3_ACTIVE_LIST_TAIL_OFFSET + 0x10
+        struct.pack_into(
+            "<HHHHHh", memory,
+            raster + capture.MANU3_ACTIVE_LIST_HEAD_OFFSET,
+            0, 1, 0, overlay, 0, -1)
+        struct.pack_into(
+            "<HHHHHh", memory, raster + overlay,
+            0, 0x8000, 0, 0, 0, 200)
+
+        chain = capture.read_manu3_boundary_chain(
+            io.BytesIO(memory), 0, raster_segment)
+
+        self.assertEqual(chain["termination"], "terminal")
+        self.assertEqual(chain["visited_count"], 2)
+
+    def test_manu3_runtime_state_handles_unloaded_pool(self) -> None:
+        memory = bytearray(0x20000)
+        state = capture.read_manu3_runtime_state(
+            io.BytesIO(memory), 0, 0x1000,
+            {"cs": 0x1111, "ip": 0x2222})
+        self.assertFalse(state["loaded"])
+        self.assertFalse(state["cpu_in_manu3"])
+        self.assertIsNone(state["local_ip"])
+
     def test_choice_row_point_uses_list_widget_row_pitch(self) -> None:
         self.assertEqual(
             capture.choice_row_point((100, 52, 120, 96), 4),
