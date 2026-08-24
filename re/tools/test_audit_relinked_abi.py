@@ -396,6 +396,41 @@ class RelinkedAbiAuditTests(unittest.TestCase):
         )
         self.assertEqual(MODULE.audit_overlay_request_segment(subject), [])
 
+    def test_accepts_fullscreen_copy_far_source_contract(self):
+        subject = listing(
+            "fullscreen_copy_to_backbuffer_far_",
+            [
+                "mov si,ax",
+                "mov ax,0xfa00",
+                "mov cx,dx",
+                "les di,dword ptr es:_graphics_back_buffer",
+                "push ds",
+                "xchg ax,cx",
+                "mov ds,ax",
+                "shr cx,0x01",
+                "rep movsw",
+                "adc cx,cx",
+                "rep movsb",
+                "pop ds",
+                "retf",
+            ],
+        )
+        self.assertEqual(MODULE.audit_fullscreen_copy_adapter(subject), [])
+
+    def test_rejects_fullscreen_copy_far_source_truncation(self):
+        subject = listing(
+            "fullscreen_copy_to_backbuffer_far_",
+            [
+                "push si",
+                "mov si,ax",
+                "call fullscreen_copy_to_backbuffer_",
+                "pop si",
+                "retf",
+            ],
+        )
+        errors = MODULE.audit_fullscreen_copy_adapter(subject)
+        self.assertTrue(any("DX:AX far source" in error for error in errors))
+
     def test_accepts_vm_record_far_pointer_call(self):
         caller = listing(
             "vm_op_c1_record_state_",

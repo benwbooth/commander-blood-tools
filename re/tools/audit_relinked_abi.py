@@ -914,6 +914,36 @@ def audit_overlay_request_segment(adapter_listing) -> list[str]:
     return []
 
 
+def audit_fullscreen_copy_adapter(adapter_listing) -> list[str]:
+    instructions = routine_instructions(
+        adapter_listing, "fullscreen_copy_to_backbuffer_far_"
+    )
+    required = (
+        r"^mov\s+si,\s*ax\b",
+        r"^mov\s+ax,\s*0x0*fa00\b",
+        r"^mov\s+cx,\s*dx\b",
+        r"^les\s+di,dword ptr (?:[a-z]{2}:)?_graphics_back_buffer\b",
+        r"^push\s+ds$",
+        r"^xchg\s+ax,\s*cx\b",
+        r"^mov\s+ds,\s*ax\b",
+        r"^shr\s+cx,\s*0x0*1\b",
+        r"^rep movsw\b",
+        r"^adc\s+cx,\s*cx\b",
+        r"^rep movsb\b",
+        r"^pop\s+ds$",
+    )
+    cursor = 0
+    for pattern in required:
+        position = find_instruction(instructions, cursor, pattern)
+        if position is None:
+            return [
+                "fullscreen back-buffer bridge truncates or misroutes its "
+                "DX:AX far source: missing emitted pattern " + pattern
+            ]
+        cursor = position + 1
+    return []
+
+
 def audit_vm_record_distance_call(caller_listing, callee_listing) -> list[str]:
     caller = normalized_text(
         routine_instructions(caller_listing, "vm_op_c1_record_state_")
@@ -1176,6 +1206,7 @@ def audit(
         *audit_critical_error(critical_listing),
         *audit_xms_allocate(adapter_listing),
         *audit_overlay_request_segment(adapter_listing),
+        *audit_fullscreen_copy_adapter(adapter_listing),
         *audit_segment_install(main_listing),
         *audit_vm_record_distance_call(
             vm_c1_listing, position_distance_listing

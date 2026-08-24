@@ -280,7 +280,8 @@ void CB_FAR bridge_panorama_frame_unpack_c(const cb_u8 CB_FAR *source)
 void CB_FAR fullscreen_copy_to_backbuffer_far(
         const cb_u32 CB_FAR *source)
 {
-    fullscreen_copy_to_backbuffer((const cb_u32 CB_NEAR *)source);
+    _fmemcpy((void CB_FAR *)graphics_back_buffer,
+            (const void CB_FAR *)source, 0xfa00u);
 }
 
 /* HIMEM.SYS uses command and result registers that have no natural C ABI. */
