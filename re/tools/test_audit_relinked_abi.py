@@ -211,6 +211,35 @@ class RelinkedAbiAuditTests(unittest.TestCase):
         self.assertTrue(any("far-pointer pairs" in error for error in errors))
         self.assertTrue(any("retain both" in error for error in errors))
 
+    def test_accepts_preserved_ship_transition_completion(self):
+        subject = listing(
+            "ship_3d_target_record_select_",
+            [
+                "sete al",
+                "movzx bx,al",
+                "call framebuffer_rect_interpolate_and_remap_step_",
+                "test bx,bx",
+                "je L$1",
+            ],
+        )
+        self.assertEqual(
+            MODULE.audit_ship_target_transition_liveness(subject), []
+        )
+
+    def test_rejects_ship_transition_completion_left_in_ax(self):
+        subject = listing(
+            "ship_3d_target_record_select_",
+            [
+                "sete al",
+                "xor ah,ah",
+                "call framebuffer_rect_interpolate_and_remap_step_",
+                "test ax,ax",
+                "je L$1",
+            ],
+        )
+        errors = MODULE.audit_ship_target_transition_liveness(subject)
+        self.assertTrue(any("AX-clobbering" in error for error in errors))
+
 
 if __name__ == "__main__":
     unittest.main()

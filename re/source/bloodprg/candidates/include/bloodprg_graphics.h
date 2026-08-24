@@ -184,9 +184,9 @@ extern const cb_u8 CB_GAME_DATA
         small_font_character_map[256]; /* GS:0x6FA8 */
 extern const cb_u8 CB_GAME_DATA
         small_font_glyphs[]; /* SS:0x7028 */
+/* DS:0x7BB8; span: 192 */
 extern const cb_u8 selected_mask_rows
         [BLOODPRG_SELECTED_MASK_COUNT][BLOODPRG_SELECTED_MASK_BYTES];
-        /* DS:0x7BB8; span: 192 */
 extern volatile cb_i8 selected_mask_index; /* DS:0x27E3 */
 
 #if defined(__TURBOC__) || defined(__BORLANDC__) || defined(__WATCOMC__)
@@ -338,7 +338,7 @@ void CB_NEAR list_walk_f18(void); /* 0x007CE8 */
 #if defined(__WATCOMC__)
 #pragma aux layout_offset_calc parm [ax] [bx] value [bx ax]
 #pragma aux framebuffer_rect_interpolate_and_remap_step \
-        parm [si] [di] modify exact []
+        parm [si] [di] modify exact [ax es]
 #pragma aux framebuffer_noise_rect parm caller [ax] [bx] [cx] [dx] modify exact []
 #pragma aux framebuffer_rect_fill parm caller [ax] [bx] [cx] [dx] modify exact []
 #pragma aux page_offset_helper modify exact [ax dx]

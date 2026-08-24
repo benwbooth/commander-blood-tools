@@ -212,8 +212,12 @@ def declarations(header_dir: Path) -> dict[str, Declaration]:
         for match in re.finditer(r"\bextern\b(?P<body>.*?;)", text, re.S):
             body = match.group("body")
             following = text[match.end() :]
+            # A comment after the semicolon belongs to this declaration only
+            # when it starts on the same line.  Allowing ``\s*`` here consumed
+            # the standalone ownership comment for the *next* declaration and
+            # shifted runs of global offsets by one symbol.
             trailing_comment = re.match(
-                r"\s*(?:/\*.*?\*/|//[^\n]*)", following, re.S
+                r"[ \t]*(?:/\*.*?\*/|//[^\n]*)", following, re.S
             )
             local_comment = body
             if trailing_comment is not None:

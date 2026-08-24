@@ -472,6 +472,13 @@ def build_bloodprg_runtime(
     run_checked(
         [
             sys.executable,
+            "-P",
+            str(ROOT / "re/tools/test_bloodprg_data_layout_probe.py"),
+        ]
+    )
+    run_checked(
+        [
+            sys.executable,
             str(ROOT / "re/tools/bloodprg_data_layout_probe.py"),
             "--unresolved",
             str(unresolved),

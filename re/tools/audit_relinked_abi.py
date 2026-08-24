@@ -314,6 +314,72 @@ def audit_vm_record_distance_call(caller_listing, callee_listing) -> list[str]:
     return errors
 
 
+def audit_ship_target_transition_liveness(listing) -> list[str]:
+    """Require the pre-call completion flag to survive the real interpolator."""
+    instructions = routine_instructions(
+        listing, "ship_3d_target_record_select_"
+    )
+    text = normalized_text(instructions)
+    call_index = next(
+        (
+            index
+            for index, item in enumerate(text)
+            if re.match(
+                r"^call\s+(?:far ptr )?"
+                r"framebuffer_rect_interpolate_and_remap_step_$",
+                item,
+            )
+        ),
+        None,
+    )
+    if call_index is None:
+        return ["ship target selector no longer calls the rectangle interpolator"]
+
+    set_index = next(
+        (
+            index
+            for index in range(call_index - 1, max(-1, call_index - 12), -1)
+            if re.match(r"^sete\s+al$", text[index])
+        ),
+        None,
+    )
+    if set_index is None:
+        return ["ship target selector does not snapshot transition completion"]
+
+    preserved_operand = None
+    for item in text[set_index + 1 : call_index]:
+        register = re.match(
+            r"^movzx\s+(?P<operand>bx|cx|dx|si|di|bp),al$", item
+        )
+        spill = re.match(
+            r"^mov\s+byte ptr (?P<operand>[^,]*\[bp\]),al$", item
+        )
+        match = register or spill
+        if match is not None:
+            preserved_operand = match["operand"]
+            break
+    if preserved_operand is None:
+        return [
+            "ship target selector leaves transition completion in AX across "
+            "the AX-clobbering rectangle interpolator"
+        ]
+
+    tested = any(
+        re.match(
+            rf"^(?:test\s+{re.escape(preserved_operand)},"
+            rf"{re.escape(preserved_operand)}|cmp\s+{re.escape(preserved_operand)},0)$",
+            item,
+        )
+        for item in text[call_index + 1 : call_index + 6]
+    )
+    if not tested:
+        return [
+            "ship target selector does not consume the preserved transition "
+            "completion value after interpolation"
+        ]
+    return []
+
+
 def startup_segment_rows(link_map: Path) -> tuple[int, int]:
     text = link_map.read_text(encoding="ascii", errors="replace")
     dgroup = DGROUP_ROW.search(text)
@@ -383,6 +449,7 @@ def audit(
     main_listing,
     vm_c1_listing,
     position_distance_listing,
+    ship_target_listing,
 ) -> list[str]:
     return [
         *audit_sound(sound_listing),
@@ -393,6 +460,7 @@ def audit(
         *audit_vm_record_distance_call(
             vm_c1_listing, position_distance_listing
         ),
+        *audit_ship_target_transition_liveness(ship_target_listing),
     ]
 
 
@@ -421,6 +489,7 @@ def main() -> int:
     critical = cached("func_000c1a_bloodprg_critical_error_handler.lst")
     vm_c1 = cached("func_006b4c_vm_op_c1_record_state.lst")
     position_distance = cached("func_0060dd_ship_3d_position_distance.lst")
+    ship_target = cached("func_00b2bb_ship_3d_target_record_select.lst")
     adapter = SEGMENTS.listing_for_object(
         args.wdis, args.adapter_object, listing_dir
     )
@@ -435,6 +504,7 @@ def main() -> int:
             main_listing,
             vm_c1,
             position_distance,
+            ship_target,
         ),
         *audit_startup_image(args.image.resolve(), args.link_map.resolve()),
     ]
@@ -442,7 +512,8 @@ def main() -> int:
         raise SystemExit("\n".join(errors))
     print(
         "relinked ABI: startup/overlay segments, foreign-DS sound, "
-        "VM-record far pointers, XMS AX/DX result, and INT 24h epilogue verified"
+        "VM-record far pointers, ship-transition liveness, XMS AX/DX result, "
+        "and INT 24h epilogue verified"
     )
     return 0
 

@@ -121,9 +121,9 @@ extern volatile cb_u8 CB_FAR * CB_GAME_DATA
 /* BP addresses this table through SS; the shipped runtime has SS=GS. */
 extern volatile cb_u16 CB_GAME_DATA
         vm_resource_handles[BLOODPRG_VM_RESOURCE_COUNT]; /* GS:0x6712 */
+/* FS:0x11F4; span:0x003C */
 extern const bloodprg_vm_resource_profile CB_FS_DATA
         vm_resource_profiles[BLOODPRG_VM_RESOURCE_PROFILE_COUNT];
-        /* FS:0x11F4; span:0x003C */
 /* These five pointers alias the individually named 0x671c..0x672f globals. */
 extern bloodprg_vm_image_ptr CB_GAME_DATA
         vm_resource_images[BLOODPRG_VM_RESOURCE_COUNT]; /* GS:0x671C */
