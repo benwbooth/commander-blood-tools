@@ -82,6 +82,7 @@
               rustfmt
               xdotool
               xorg-server
+              xterm
             ]) ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isx86_64 [
               pkgs.open-watcom-bin
             ];

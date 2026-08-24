@@ -174,6 +174,26 @@ def valid_pterra_report() -> dict[str, object]:
     }
 
 
+def valid_focus_report() -> dict[str, object]:
+    return {
+        "verdict": "FOCUS-RECAPTURE-COMPLETE",
+        "errors": [],
+        "focus_events": [
+            {"phase": "game-focused"},
+            {"phase": "game-unfocused"},
+            {"phase": "game-refocused"},
+        ],
+        "timer_evidence": {
+            "unfocused_delta": 120,
+            "restored_delta": 50,
+        },
+        "watchdog": {
+            "verdict": "TIMEOUT-NO-ANOMALY",
+            "anomalies": [],
+        },
+    }
+
+
 class ScenarioSelectionTests(unittest.TestCase):
     def test_defaults_exclude_only_authentic_pterra(self) -> None:
         self.assertEqual(
@@ -186,6 +206,7 @@ class ScenarioSelectionTests(unittest.TestCase):
                 "teleport-4",
                 "script2-radio",
                 "script1-bob-first-contact",
+                "focus-loss-recapture",
             ],
         )
 
@@ -430,6 +451,18 @@ class ReportValidationTests(unittest.TestCase):
             matrix.validate_report(scenario, report),
         )
 
+    def test_focus_requires_ownership_timer_and_clean_watchdog(self) -> None:
+        scenario = matrix.SCENARIO_BY_NAME["focus-loss-recapture"]
+        report = valid_focus_report()
+        self.assertEqual(matrix.validate_report(scenario, report), [])
+        report["timer_evidence"]["unfocused_delta"] = 0
+        report["watchdog"]["anomalies"] = [{"issues": ["fault"]}]
+        errors = matrix.validate_report(scenario, report)
+        self.assertIn("guest timer did not advance while unfocused", errors)
+        self.assertIn(
+            "focus-loss watchdog reported runtime anomalies", errors
+        )
+
 
 class MatrixExecutionTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -485,7 +518,11 @@ class MatrixExecutionTests(unittest.TestCase):
                 report = valid_radio_report()
         else:
             report_path = Path(command[command.index("--output") + 1])
-            report = valid_pterra_report()
+            report = (
+                valid_focus_report()
+                if str(matrix.FOCUS_PROBE) in command
+                else valid_pterra_report()
+            )
         report_path.parent.mkdir(parents=True, exist_ok=True)
         report_path.write_text(json.dumps(report), encoding="utf-8")
         return subprocess.CompletedProcess(command, 0, "tool stdout", "")
@@ -768,6 +805,31 @@ class MatrixExecutionTests(unittest.TestCase):
         self.assertIn("--contact-probe", result["command"])
         self.assertIn("--contact-manifest", result["command"])
         self.assertIn(scenario.contact_selector, result["command"])
+
+    @mock.patch.object(matrix.subprocess, "run")
+    def test_focus_probe_uses_isolated_display_and_runtime_limits(
+        self, run: mock.Mock
+    ) -> None:
+        run.side_effect = self.successful_subprocess
+
+        exit_code, aggregate = matrix.run_matrix(
+            self.args(
+                "--scenario",
+                "focus-loss-recapture",
+                "--focus-unfocused-seconds",
+                "9",
+                "--focus-post-seconds",
+                "4",
+            )
+        )
+
+        self.assertEqual(exit_code, 0)
+        result = aggregate["results"][0]
+        self.assertEqual(result["status"], "PASS")
+        self.assertEqual(result["display"], ":193")
+        self.assertIn(str(matrix.FOCUS_PROBE), result["command"])
+        self.assertIn("--unfocused-seconds", result["command"])
+        self.assertIn("--post-focus-seconds", result["command"])
 
     @mock.patch.object(matrix.subprocess, "run")
     def test_parallel_contacts_keep_canonical_result_order(

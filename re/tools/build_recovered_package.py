@@ -743,6 +743,14 @@ def build_bloodprg_runtime(
         [
             sys.executable,
             "-P",
+            str(ROOT / "re/tools/test_focus_loss_probe.py"),
+        ],
+        final_dir / "focus_loss_probe_tests.log",
+    )
+    run_checked_logged(
+        [
+            sys.executable,
+            "-P",
             str(ROOT / "re/tools/test_runtime_scenario_matrix.py"),
         ],
         final_dir / "runtime_scenario_matrix_tests.log",

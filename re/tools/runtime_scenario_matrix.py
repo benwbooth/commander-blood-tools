@@ -40,6 +40,7 @@ from typing import Sequence
 ROOT = Path(__file__).resolve().parents[2]
 WATCHDOG = Path(__file__).with_name("runtime_watchdog.py")
 PTERRA_CAPTURE = Path(__file__).with_name("capture_pterra_boundary.py")
+FOCUS_PROBE = Path(__file__).with_name("focus_loss_probe.py")
 DEFAULT_OUTPUT_DIR = ROOT / "output" / "runtime-scenario-matrix"
 DEFAULT_CONTACT_MANIFEST = ROOT / "re/vm/contact-manifest/contact-manifest.json"
 AUTHENTIC_PTERRA = "authentic-pterra"
@@ -74,6 +75,7 @@ BASE_SCENARIOS = tuple(
     Scenario("script2-radio", "radio", 5),
     Scenario("script1-bob-first-contact", "bob", 6),
     Scenario(AUTHENTIC_PTERRA, "pterra", 7),
+    Scenario("focus-loss-recapture", "focus", 73),
 )
 
 
@@ -127,8 +129,9 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             f"Scenarios: {names}\n"
-            "With no --scenario, the five teleports, SCRIPT2 radio, and "
-            "SCRIPT1 Bob probes run. Authentic-save Pterra is opt-in."
+            "With no --scenario, the five teleports, SCRIPT2 radio, "
+            "SCRIPT1 Bob, and focus-loss probes run. Authentic-save Pterra "
+            "is opt-in."
         ),
     )
     parser.add_argument(
@@ -191,7 +194,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--display-base",
         type=int,
         default=90,
-        help="first X display number; stable scenario slots use base through base+72",
+        help="first X display number; stable scenario slots use base through base+73",
     )
     parser.add_argument(
         "--jobs",
@@ -222,6 +225,18 @@ def build_parser() -> argparse.ArgumentParser:
         type=float,
         default=240.0,
         help="watchdog duration for each generated contact probe (default: 240)",
+    )
+    parser.add_argument(
+        "--focus-unfocused-seconds",
+        type=float,
+        default=12.0,
+        help="time the game remains unfocused in the focus probe (default: 12)",
+    )
+    parser.add_argument(
+        "--focus-post-seconds",
+        type=float,
+        default=5.0,
+        help="liveness window after focus is restored (default: 5)",
     )
     parser.add_argument(
         "--contact-manifest",
@@ -674,6 +689,44 @@ def _validate_pterra(report: dict[str, object]) -> list[str]:
     return errors
 
 
+def _validate_focus(report: dict[str, object]) -> list[str]:
+    errors = []
+    if report.get("verdict") != "FOCUS-RECAPTURE-COMPLETE":
+        errors.append("focus-loss probe did not complete")
+    if report.get("errors") != []:
+        errors.append("focus-loss probe reported errors")
+    events = report.get("focus_events")
+    phases = (
+        [
+            event.get("phase") if isinstance(event, dict) else None
+            for event in events
+        ]
+        if isinstance(events, list)
+        else []
+    )
+    if phases != ["game-focused", "game-unfocused", "game-refocused"]:
+        errors.append("focus ownership transitions are incomplete")
+    evidence = report.get("timer_evidence")
+    if not isinstance(evidence, dict):
+        errors.append("focus-loss timer evidence is missing")
+    else:
+        unfocused_delta = evidence.get("unfocused_delta")
+        restored_delta = evidence.get("restored_delta")
+        if not isinstance(unfocused_delta, int) or unfocused_delta <= 0:
+            errors.append("guest timer did not advance while unfocused")
+        if not isinstance(restored_delta, int) or restored_delta <= 0:
+            errors.append("guest timer did not advance after focus restore")
+    watchdog = report.get("watchdog")
+    if not isinstance(watchdog, dict):
+        errors.append("focus-loss watchdog result is missing")
+    else:
+        if watchdog.get("verdict") != "TIMEOUT-NO-ANOMALY":
+            errors.append("focus-loss watchdog did not finish cleanly")
+        if watchdog.get("anomalies") != []:
+            errors.append("focus-loss watchdog reported runtime anomalies")
+    return errors
+
+
 def validate_report(
     scenario: Scenario, report: dict[str, object]
 ) -> list[str]:
@@ -688,6 +741,8 @@ def validate_report(
         return _validate_contact(report, scenario)
     if scenario.kind == "pterra":
         return _validate_pterra(report)
+    if scenario.kind == "focus":
+        return _validate_focus(report)
     return [f"unknown scenario kind: {scenario.kind}"]
 
 
@@ -703,6 +758,41 @@ def _build_command(
         args.python,
         "-P",
     ]
+    if scenario.kind == "focus":
+        command = common + [
+            str(FOCUS_PROBE),
+            "--cd-dir",
+            str(args.cd_dir),
+            "--install-parent",
+            str(install_parent),
+            "--executable",
+            args.executable,
+            "--dosbox",
+            args.dosbox,
+            "--display",
+            display,
+            "--output",
+            str(raw_report),
+            "--artifact-dir",
+            str(artifact_dir),
+            "--calibration-timeout",
+            str(args.calibration_timeout),
+            "--unfocused-seconds",
+            str(args.focus_unfocused_seconds),
+            "--post-focus-seconds",
+            str(args.focus_post_seconds),
+            "--hang-samples",
+            str(args.hang_samples),
+        ]
+        if args.link_map is not None:
+            command += ["--link-map", str(args.link_map)]
+        duration = (
+            args.calibration_timeout
+            + args.focus_unfocused_seconds
+            + args.focus_post_seconds
+            + 15.0
+        )
+        return command, duration + args.subprocess_grace_seconds
     if scenario.kind in ("teleport", "radio", "bob", "contact"):
         command = common + [
             str(WATCHDOG),
@@ -931,6 +1021,8 @@ def _validate_arguments(
         ("--radio-seconds", args.radio_seconds),
         ("--bob-seconds", args.bob_seconds),
         ("--contact-seconds", args.contact_seconds),
+        ("--focus-unfocused-seconds", args.focus_unfocused_seconds),
+        ("--focus-post-seconds", args.focus_post_seconds),
         ("--pterra-timeout", args.pterra_timeout),
         ("--calibration-timeout", args.calibration_timeout),
         ("--subprocess-grace-seconds", args.subprocess_grace_seconds),

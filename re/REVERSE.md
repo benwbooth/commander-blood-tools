@@ -6545,6 +6545,15 @@ function offset `005B`; an eight-second unattended boot produced no false crash
 bundle. The scenario matrix passes the same hot-loop limit to every watchdog
 scenario.
 
+Host focus loss is a first-class matrix scenario rather than a manual
+observation. `focus_loss_probe.py` runs the standard watchdog on an isolated X
+display, proves the DOSBox and focus-sink window identities, moves focus away
+for a bounded interval, and restores it without injecting a game command. The
+gate requires guarded sampling and the interrupt-driven 16-bit game timer to
+advance in both intervals, requires all sampled guest mouse coordinates to
+remain in bounds, and accepts only the watchdog's zero-anomaly timeout verdict.
+This separates an SDL mouse-capture transition from a stopped DOS guest.
+
 ## Whole-program static audit and VM record-pointer correction (2026-08-23)
 
 Three independent source-to-assembly reviews covered segmented-pointer

@@ -27,6 +27,7 @@ nix develop --command cargo run --bin cbvm -- build-runtime-tree re/vm/structure
 nix develop --command cargo run --bin cbvm -- analyze-contact-manifest /path/to/game re/vm/contact-manifest
 nix develop --command python3 -P re/tools/runtime_scenario_matrix.py --cd-dir output/recovered_dos_package/cd --install-parent accuracy/cblood_install --all-contacts --jobs 4
 nix develop --command python3 -P re/tools/runtime_watchdog.py --cd-dir output/recovered_dos_package/cd --install-parent accuracy/cblood_install --executable BPRG_RE.EXE --display :0 --seconds 900 --report output/manual-watchdog.json
+nix develop --command python3 -P re/tools/focus_loss_probe.py --cd-dir output/recovered_dos_package/cd --install-parent accuracy/cblood_install --output output/focus-loss-probe.json
 nix develop --command python3 -P re/tools/runtime_scenario_matrix.py --cd-dir output/recovered_dos_package/cd --install-parent accuracy/cblood_install --executable BLOODPRG.EXE --link-map re/bin/BLOODPRG.segments.map --all-contacts --jobs 4 --output-dir output/contact-matrix-original
 nix develop --command python3 -P re/tools/compare_runtime_scenario_matrices.py --candidate output/contact-matrix-rebuilt/matrix.json --reference output/contact-matrix-original/matrix.json --reference-retry output/contact-matrix-original-retry/matrix.json --output output/contact-matrix-differential.json
 nix develop --command cargo run -- inspect-descript /path/to/DESCRIPT.DES
@@ -62,6 +63,10 @@ captures DOSBox fatal diagnostics; and writes `guest.bin` plus `context.json`
 beside the report on the first detected fault. Send `SIGUSR1` to the
 `recorder.watchdog_pid` recorded in the live report to snapshot an ambiguous
 manual freeze immediately.
+`focus_loss_probe.py` runs that watchdog while moving X focus to an isolated
+window and back. It requires the guest timer, watchdog sampling, mouse state,
+and every memory-integrity gate to remain healthy before, during, and after the
+focus transition.
 `inspect-descript` emits typed JSON for `DESCRIPT.DES`.
 `inspect-scripts` emits typed JSON for `SCRIPT*.DEB`, `SCRIPT*.VAR`,
 `SCRIPT*.DIC`, and recovered speech bytecode events.
