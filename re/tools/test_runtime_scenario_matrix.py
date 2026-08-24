@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import json
 import subprocess
 import sys
@@ -137,7 +138,8 @@ def valid_pterra_report() -> dict[str, object]:
             "entity_rect": [120, 70, 80, 60],
             "entity_click_count": 1,
             "pterra_access_count_before": 0,
-            "intro_hold_dismissed": True,
+            "intro_completed_naturally": True,
+            "intro_input_edges": 0,
             "target_name_offsets": [0x0F60, 0x0DA4],
             "pterra_target_row": 1,
             "target_click_evidence": {
@@ -367,6 +369,7 @@ class MatrixExecutionTests(unittest.TestCase):
         self.output_dir = self.root / "matrix"
         self.cd_dir.mkdir()
         (self.cd_dir / "BPRG_RE.EXE").write_bytes(b"MZ")
+        (self.cd_dir / "BLOOD.DAT").write_bytes(b"overlays")
         (self.install_parent / "cblood").mkdir(parents=True)
         (self.install_parent / "cblood" / "GAME1.SAV").write_bytes(b"save")
         (self.install_parent / "cblood" / "CONFIG.DAT").write_bytes(b"config")
@@ -391,6 +394,9 @@ class MatrixExecutionTests(unittest.TestCase):
         )
         matrix._validate_arguments(parser, args)
         return args
+
+    def sha256(self, path: Path) -> str:
+        return hashlib.sha256(path.read_bytes()).hexdigest()
 
     @staticmethod
     def successful_subprocess(command: list[str], **_: object):
@@ -467,6 +473,69 @@ class MatrixExecutionTests(unittest.TestCase):
             (self.output_dir / "matrix.json").read_text(encoding="utf-8")
         )
         self.assertEqual(written["status"], "PASS")
+        self.assertEqual(
+            written["input_identity"]["executable"]["sha256"],
+            self.sha256(self.cd_dir / "BPRG_RE.EXE"),
+        )
+        self.assertEqual(
+            written["input_identity"]["blood_dat"]["sha256"],
+            self.sha256(self.cd_dir / "BLOOD.DAT"),
+        )
+        self.assertEqual(
+            aggregate["results"][0]["input_identity"],
+            written["input_identity"],
+        )
+
+    @mock.patch.object(matrix.subprocess, "run")
+    def test_expected_input_hashes_accept_exact_images(self, run: mock.Mock) -> None:
+        run.side_effect = self.successful_subprocess
+        executable_hash = self.sha256(self.cd_dir / "BPRG_RE.EXE")
+        blood_dat_hash = self.sha256(self.cd_dir / "BLOOD.DAT")
+
+        exit_code, aggregate = matrix.run_matrix(
+            self.args(
+                "--scenario",
+                "teleport-0",
+                "--expect-executable-sha256",
+                executable_hash.upper(),
+                "--expect-blood-dat-sha256",
+                blood_dat_hash,
+            )
+        )
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(
+            aggregate["input_identity"]["executable"]["sha256"],
+            executable_hash,
+        )
+        self.assertEqual(
+            aggregate["input_identity"]["blood_dat"]["sha256"],
+            blood_dat_hash,
+        )
+        run.assert_called_once()
+
+    @mock.patch.object(matrix.subprocess, "run")
+    def test_expected_input_hash_mismatch_stops_before_dosbox(
+        self, run: mock.Mock
+    ) -> None:
+        parser = matrix.build_parser()
+        args = parser.parse_args(
+            [
+                "--cd-dir",
+                str(self.cd_dir),
+                "--install-parent",
+                str(self.install_parent),
+                "--output-dir",
+                str(self.output_dir),
+                "--expect-blood-dat-sha256",
+                "0" * 64,
+            ]
+        )
+
+        with self.assertRaises(SystemExit):
+            matrix._validate_arguments(parser, args)
+
+        run.assert_not_called()
 
     @mock.patch.object(matrix.subprocess, "run")
     def test_nonzero_subprocess_fails_even_with_a_valid_report(

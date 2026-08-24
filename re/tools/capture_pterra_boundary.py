@@ -115,7 +115,6 @@ MOUSE_X_OFFSET = 0x0A2A
 MOUSE_Y_OFFSET = 0x0A2C
 MOUSE_BUTTON_STATE_OFFSET = 0x0A2E
 MOUSE_PREVIOUS_BUTTON_STATE_OFFSET = 0x0A30
-MOUSE_SECONDARY_BUTTON_MASK = 0x02
 MOUSE_LAST_X_OFFSET = 0x0A38
 MOUSE_LAST_Y_OFFSET = 0x0A3A
 MOUSE_PRIMARY_PRESSED_OFFSET = 0x0A3E
@@ -153,7 +152,6 @@ EXPECTED_PTERRA_CHOICES = (SCRIPT2_EXXOS_WORD, SCRIPT2_TELEPORT_WORD)
 PTERRA_TRAVEL_MOVIE_TIMEOUT_SECONDS = 120.0
 PTERRA_MAP_TRANSITION_TIMEOUT_SECONDS = 120.0
 PTERRA_BRIDGE_ROTATION_TIMEOUT_SECONDS = 360.0
-PTERRA_NATIVE_INPUT_TIMEOUT_SECONDS = 10.0
 PTERRA_TRANSITION_SAMPLE_INTERVAL_SECONDS = 1.0
 PTERRA_TRANSITION_SAMPLE_LIMIT = 256
 STARTUP_DOS_POOL_POINTER_OFFSET = 0x0A42
@@ -1768,13 +1766,8 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
     pterra_ship_region_pressing = False
     pterra_ship_region_click_count = 0
     pterra_ship_region_next_press_at = 0.0
-    pterra_ship_intro_pressing = False
-    pterra_ship_intro_press_started_at = None
-    pterra_ship_intro_started_at = None
-    pterra_ship_intro_next_press_at = 0.0
-    pterra_ship_intro_press_count = 0
-    pterra_ship_intro_raw_secondary_seen = False
-    pterra_ship_intro_dismissed = False
+    pterra_ship_intro_lines_seen: list[int] = []
+    pterra_ship_intro_completed_naturally = False
     pterra_ship_hud_progress_key = None
     pterra_ship_hud_last_progress_at = None
     pterra_arrival_progress_key = None
@@ -2563,77 +2556,28 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
 
                 if (trigger_pterra_after_load
                         and pterra_ship_navigation_activated):
-                    if (int(input_state["mouse_button_state"])
-                            & MOUSE_SECONDARY_BUTTON_MASK):
-                        pterra_ship_intro_raw_secondary_seen = True
-                    if pterra_ship_intro_pressing:
-                        if (int(flow["dialogue_hold_complete"]) == 0
-                                and int(input_state[
-                                    "ship_hud_initialized"]) == 0):
-                            send_mouse_button(display, False, button=3)
-                            pterra_ship_intro_pressing = False
-                            pterra_ship_intro_dismissed = True
-                            assert isinstance(pterra_travel_setup, dict)
-                            pterra_travel_setup[
-                                "intro_hold_dismissed"] = True
-                            pterra_travel_setup[
-                                "intro_press_count"] = \
-                                pterra_ship_intro_press_count
-                            pterra_travel_setup[
-                                "intro_raw_secondary_seen"] = \
-                                pterra_ship_intro_raw_secondary_seen
-                            print(
-                                "state: guest confirmed native ship intro "
-                                "hold dismissal", flush=True)
-                        elif (pterra_ship_intro_press_started_at is not None
-                                and now - pterra_ship_intro_press_started_at
-                                >= 0.2):
-                            send_mouse_button(display, False, button=3)
-                            pterra_ship_intro_pressing = False
-                            pterra_ship_intro_next_press_at = now + 0.25
-                    elif (not pterra_ship_intro_dismissed
-                            and int(flow["active_line"]) == 5
-                            and int(flow["c2_presentation_gate"]) == 1
-                            and int(flow["dialogue_hold_complete"]) & 1
-                            and int(blockers["ship"]) & 2):
-                        if (pterra_ship_intro_started_at is not None
-                                and now - pterra_ship_intro_started_at
-                                >= PTERRA_NATIVE_INPUT_TIMEOUT_SECONDS):
-                            hang_snapshot = snapshot_guest(
-                                mem, guest_base, anchor, cpu_addresses,
-                                hit, last_profile)
-                            hang_snapshot["reason"] = (
-                                "guest did not consume repeated secondary "
-                                "button edges during ship intro; raw buttons="
-                                f"{int(input_state['mouse_button_state']):#06x}, "
-                                "previous="
-                                f"{int(input_state['mouse_previous_button_state']):#06x}, "
-                                "attempts="
-                                f"{pterra_ship_intro_press_count}")
-                            print(
-                                "hang: guest did not consume repeated "
-                                "secondary edges during ship intro",
-                                flush=True)
-                            break
-                        if (now >= pterra_ship_intro_next_press_at
-                                and int(input_state[
-                                    "mouse_button_state"]) == 0
-                                and int(input_state[
-                                    "mouse_previous_button_state"]) == 0):
-                            if pterra_ship_intro_started_at is None:
-                                pterra_ship_intro_started_at = now
-                                assert isinstance(pterra_travel_setup, dict)
-                                pterra_travel_setup[
-                                    "intro_hold_countdown_before"] = int(
-                                        flow["dialogue_hold_countdown"])
-                            send_mouse_button(display, True, button=3)
-                            pterra_ship_intro_pressing = True
-                            pterra_ship_intro_press_started_at = now
-                            pterra_ship_intro_press_count += 1
-                            print(
-                                "state: sent native ship-intro secondary "
-                                f"edge {pterra_ship_intro_press_count}",
-                                flush=True)
+                    active_line = int(flow["active_line"])
+                    if (int(blockers["ship"]) & 2
+                            and active_line in (4, 5)
+                            and active_line not in pterra_ship_intro_lines_seen):
+                        pterra_ship_intro_lines_seen.append(active_line)
+                        assert isinstance(pterra_travel_setup, dict)
+                        pterra_travel_setup["intro_lines_seen"] = list(
+                            pterra_ship_intro_lines_seen)
+                        print(
+                            "state: native ship intro reached dialogue line "
+                            f"{active_line}", flush=True)
+                    if (not pterra_ship_intro_completed_naturally
+                            and int(blockers["ship"]) & 4
+                            and int(input_state["ship_hud_initialized"]) & 1):
+                        pterra_ship_intro_completed_naturally = True
+                        assert isinstance(pterra_travel_setup, dict)
+                        pterra_travel_setup[
+                            "intro_completed_naturally"] = True
+                        pterra_travel_setup["intro_input_edges"] = 0
+                        print(
+                            "state: native ship intro completed without "
+                            "injected input", flush=True)
 
                     ship_hud_progress_key = (
                         int(flow["active_line"]),
@@ -2924,8 +2868,6 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                     if pter_input_pressed is not None:
                         if pter_input_pressed == "primary":
                             send_mouse_button(display, False, button=1)
-                        elif pter_input_pressed == "secondary":
-                            send_mouse_button(display, False, button=3)
                         pter_input_pressed = None
                     elif now >= pter_next_input_at:
                         if (word_choice_active

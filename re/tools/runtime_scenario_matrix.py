@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import concurrent.futures
+import hashlib
 import json
 import re
 import shlex
@@ -141,6 +142,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="source C-drive directory containing cblood/",
     )
     parser.add_argument("--executable", default="BPRG_RE.EXE")
+    parser.add_argument(
+        "--expect-executable-sha256",
+        help="reject the run unless the executable has this SHA-256 digest",
+    )
+    parser.add_argument(
+        "--expect-blood-dat-sha256",
+        help="reject the run unless BLOOD.DAT has this SHA-256 digest",
+    )
     parser.add_argument(
         "--dosbox",
         default="dosbox-x",
@@ -296,6 +305,25 @@ def _write_json(path: Path, value: object) -> None:
         encoding="utf-8",
     )
     temporary.replace(path)
+
+
+def _file_identity(path: Path) -> dict[str, object]:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return {
+        "path": str(path),
+        "sha256": digest.hexdigest(),
+        "size": path.stat().st_size,
+    }
+
+
+def _input_identity(args: argparse.Namespace) -> dict[str, dict[str, object]]:
+    return {
+        "blood_dat": _file_identity(args.cd_dir / "BLOOD.DAT"),
+        "executable": _file_identity(args.cd_dir / args.executable),
+    }
 
 
 def _read_report(path: Path) -> tuple[dict[str, object] | None, str | None]:
@@ -558,9 +586,10 @@ def _validate_pterra(report: dict[str, object]) -> list[str]:
             errors.append(
                 "native ship navigation lacks current-location input evidence")
         if travel_setup.get("pterra_access_count_before") == 0 \
-                and travel_setup.get("intro_hold_dismissed") is not True:
+                and (travel_setup.get("intro_completed_naturally") is not True
+                     or travel_setup.get("intro_input_edges") != 0):
             errors.append(
-                "first-visit ship intro was not dismissed before HUD entry")
+                "first-visit ship intro did not reach HUD without input")
         target_offsets = travel_setup.get("target_name_offsets")
         setup_row = travel_setup.get("pterra_target_row")
         if not isinstance(target_offsets, list) \
@@ -753,6 +782,7 @@ def _run_one(
     scenario: Scenario,
     output_dir: Path,
     source_cblood: Path,
+    input_identity: dict[str, dict[str, object]],
 ) -> dict[str, object]:
     display = f":{args.display_base + scenario.display_slot}"
     work_dir = output_dir / "work" / scenario.name
@@ -763,6 +793,7 @@ def _run_one(
     artifact_dir = output_dir / "artifacts" / scenario.name
     result: dict[str, object] = {
         "display": display,
+        "input_identity": input_identity,
         "install_parent": str(install_parent),
         "name": scenario.name,
         "raw_report": str(raw_report),
@@ -898,6 +929,9 @@ def _validate_arguments(
         parser.error(f"CD directory does not exist: {args.cd_dir}")
     if not (args.cd_dir / args.executable).is_file():
         parser.error(f"executable does not exist: {args.cd_dir / args.executable}")
+    blood_dat = args.cd_dir / "BLOOD.DAT"
+    if not blood_dat.is_file():
+        parser.error(f"BLOOD.DAT does not exist: {blood_dat}")
     source_cblood = args.install_parent / "cblood"
     if not source_cblood.is_dir():
         parser.error(f"install tree does not exist: {source_cblood}")
@@ -909,6 +943,26 @@ def _validate_arguments(
         parser.error(f"link map does not exist: {args.link_map}")
     if not args.contact_manifest.is_file():
         parser.error(f"contact manifest does not exist: {args.contact_manifest}")
+    for name, value in (
+        ("--expect-executable-sha256", args.expect_executable_sha256),
+        ("--expect-blood-dat-sha256", args.expect_blood_dat_sha256),
+    ):
+        if value is not None and re.fullmatch(r"[0-9a-fA-F]{64}", value) is None:
+            parser.error(f"{name} must be exactly 64 hexadecimal digits")
+    identity = _input_identity(args)
+    for name, expected, key in (
+        (
+            "executable",
+            args.expect_executable_sha256,
+            "executable",
+        ),
+        ("BLOOD.DAT", args.expect_blood_dat_sha256, "blood_dat"),
+    ):
+        actual = identity[key]["sha256"]
+        if expected is not None and actual != expected.lower():
+            parser.error(
+                f"{name} SHA-256 mismatch: expected {expected.lower()}, got {actual}"
+            )
 
 
 def run_matrix(args: argparse.Namespace) -> tuple[int, dict[str, object]]:
@@ -920,9 +974,10 @@ def run_matrix(args: argparse.Namespace) -> tuple[int, dict[str, object]]:
     output_dir = args.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
     source_cblood = args.install_parent / "cblood"
+    input_identity = _input_identity(args)
     if args.jobs == 1:
         results = [
-            _run_one(args, scenario, output_dir, source_cblood)
+            _run_one(args, scenario, output_dir, source_cblood, input_identity)
             for scenario in scenarios
         ]
     else:
@@ -932,7 +987,11 @@ def run_matrix(args: argparse.Namespace) -> tuple[int, dict[str, object]]:
             results = list(
                 executor.map(
                     lambda scenario: _run_one(
-                        args, scenario, output_dir, source_cblood
+                        args,
+                        scenario,
+                        output_dir,
+                        source_cblood,
+                        input_identity,
                     ),
                     scenarios,
                 )
@@ -941,6 +1000,7 @@ def run_matrix(args: argparse.Namespace) -> tuple[int, dict[str, object]]:
     aggregate: dict[str, object] = {
         "cd_dir": str(args.cd_dir),
         "executable": args.executable,
+        "input_identity": input_identity,
         "install_source": str(args.install_parent),
         "passed": passed,
         "results": results,
