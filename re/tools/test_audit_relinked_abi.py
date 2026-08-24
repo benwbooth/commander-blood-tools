@@ -30,7 +30,159 @@ def listing(label: str, texts: list[str], extra_labels=None):
     )
 
 
+def machine_listing(label: str, rows: list[tuple[str, str]]):
+    offset = 0
+    instructions = []
+    for encoded, text in rows:
+        data = bytes.fromhex(encoded)
+        instructions.append(
+            SimpleNamespace(offset=offset, data=data, text=text)
+        )
+        offset += len(data)
+    return SimpleNamespace(
+        object_path=Path("fixture.obj"),
+        instructions=tuple(instructions),
+        labels={label: 0},
+    )
+
+
 class RelinkedAbiAuditTests(unittest.TestCase):
+    def test_derives_return_kind_and_cleanup_operand(self):
+        subject = machine_listing("sample_", [("ca0400", "retf 0x0004")])
+        self.assertEqual(
+            MODULE.routine_return_sites(subject.instructions),
+            (MODULE.ReturnSite("far", 4),),
+        )
+
+    def test_cleanup_operand_mutation_is_rejected(self):
+        original = MODULE.RoutineAbi(
+            (MODULE.ReturnSite("far", 0),), (), "callee exits"
+        )
+        recovered = MODULE.RoutineAbi(
+            (MODULE.ReturnSite("far", 2),), (), "callee exits"
+        )
+        errors = MODULE.compare_routine_abi("mutated_cleanup", original, recovered)
+        self.assertTrue(any("return convention mismatch" in error for error in errors))
+
+    def test_near_to_far_return_mutation_is_rejected(self):
+        original = MODULE.RoutineAbi(
+            (MODULE.ReturnSite("near", 0),), (), "callee exits"
+        )
+        recovered = MODULE.RoutineAbi(
+            (MODULE.ReturnSite("far", 0),), (), "callee exits"
+        )
+        errors = MODULE.compare_routine_abi("mutated_width", original, recovered)
+        self.assertTrue(any("return convention mismatch" in error for error in errors))
+
+    def test_unresolved_mixed_returns_fail_closed(self):
+        original = MODULE.RoutineAbi(
+            (
+                MODULE.ReturnSite("near", 0),
+                MODULE.ReturnSite("near", 2),
+            ),
+            (),
+            "callee exits",
+        )
+        errors = MODULE.compare_routine_abi("ambiguous", original, original)
+        self.assertTrue(any("unresolved original" in error for error in errors))
+        self.assertTrue(any("unresolved recovered" in error for error in errors))
+
+    def test_return_register_mutation_is_rejected(self):
+        original = MODULE.RoutineAbi(
+            (MODULE.ReturnSite("near", 0),),
+            (MODULE.ReturnCarrier("ax", 16),),
+            "direct callers",
+        )
+        recovered = MODULE.RoutineAbi(
+            (MODULE.ReturnSite("near", 0),),
+            (MODULE.ReturnCarrier("dx", 16),),
+            "direct callers",
+        )
+        errors = MODULE.compare_routine_abi("mutated_register", original, recovered)
+        self.assertTrue(any("return carrier mismatch" in error for error in errors))
+
+    def test_derives_resource_resolve_ax_and_far_pointer_carriers(self):
+        subject = machine_listing(
+            "resource_handle_resolve_",
+            [
+                ("b80100", "mov ax,0x0001"),
+                ("8ed8", "mov ds,ax"),
+                ("33f6", "xor si,si"),
+                ("cb", "retf"),
+            ],
+        )
+        self.assertEqual(
+            MODULE.locally_modified_carriers(subject),
+            (
+                MODULE.ReturnCarrier("ax", 16),
+                MODULE.ReturnCarrier("ds", 16),
+                MODULE.ReturnCarrier("si", 16),
+            ),
+        )
+
+    def test_hidden_far_struct_result_is_rejected(self):
+        original = MODULE.RoutineAbi(
+            (MODULE.ReturnSite("far", 0),),
+            (
+                MODULE.ReturnCarrier("ax", 16),
+                MODULE.ReturnCarrier("ds", 16),
+                MODULE.ReturnCarrier("si", 16),
+            ),
+            "direct callers",
+        )
+        recovered = MODULE.RoutineAbi(
+            (MODULE.ReturnSite("far", 0),),
+            (),
+            "direct callers",
+            hidden_result_width=6,
+        )
+        errors = MODULE.compare_routine_abi(
+            "resource_handle_resolve", original, recovered
+        )
+        self.assertTrue(any("hidden-ds:si-memory:48" in error for error in errors))
+
+    def test_derives_hidden_struct_copy_width(self):
+        subject = machine_listing(
+            "resource_handle_resolve_",
+            [
+                ("a5", "movsw"),
+                ("a5", "movsw"),
+                ("a5", "movsw"),
+                ("cb", "retf"),
+            ],
+        )
+        self.assertEqual(MODULE.copied_result_width(subject), 6)
+
+    def test_dic_ax_carry_to_dx_ax_mutation_is_rejected(self):
+        original_listing = machine_listing(
+            "dic_word_lookup_",
+            [
+                ("b80100", "mov ax,0x0001"),
+                ("f9", "stc"),
+                ("c3", "ret"),
+            ],
+        )
+        recovered_listing = machine_listing(
+            "dic_word_lookup_",
+            [
+                ("b80100", "mov ax,0x0001"),
+                ("ba0100", "mov dx,0x0001"),
+                ("c3", "ret"),
+            ],
+        )
+        original = MODULE.RoutineAbi(
+            MODULE.routine_return_sites(original_listing.instructions),
+            MODULE.locally_modified_carriers(original_listing),
+            "callee exits",
+        )
+        recovered = MODULE.RoutineAbi(
+            MODULE.routine_return_sites(recovered_listing.instructions),
+            MODULE.locally_modified_carriers(recovered_listing),
+            "callee exits",
+        )
+        errors = MODULE.compare_routine_abi("dic_word_lookup", original, recovered)
+        self.assertTrue(any("flags:1" in error and "dx:16" in error for error in errors))
+
     def test_accepts_sound_entry_that_restores_linked_dgroup(self):
         subject = listing(
             "snd_play_clip_",
