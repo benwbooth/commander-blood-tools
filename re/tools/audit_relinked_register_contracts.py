@@ -145,9 +145,11 @@ class Routine:
     calls: tuple[tuple[int, tuple[str, ...]], ...]
     tails: tuple[tuple[int, tuple[str, ...]], ...]
     exits: tuple[int, ...]
+    effects: tuple[tuple[int, EffectContract], ...]
     opaque_effects: frozenset[int]
     stack_consuming_calls: frozenset[int]
     direct_blockers: frozenset[str]
+    public_effect: EffectContract | None
 
 
 @dataclass(frozen=True)
@@ -156,6 +158,13 @@ class ExitContract:
     preserved: frozenset[str]
     flags_preserved: bool
     cleanup: int
+
+
+@dataclass(frozen=True)
+class EffectContract:
+    modifies: frozenset[str]
+    flags_preserved: bool = False
+    cleanup: int = 0
 
 
 @dataclass(frozen=True)
@@ -182,6 +191,102 @@ class Comparison:
 
 
 TargetResolver = Callable[[object, str], tuple[str, ...] | None]
+EffectResolver = Callable[[object], EffectContract | None]
+
+
+def register_effect(*modifies: str) -> EffectContract:
+    return EffectContract(frozenset(modifies))
+
+
+PUBLIC_LINKED_EFFECTS = {
+    "int86": register_effect("AX", "DX", "ES"),
+    "int86x": register_effect("AX", "DX", "ES"),
+    "_bios_keybrd": register_effect("AX"),
+    "_dos_setdrive": register_effect("AX"),
+    "chdir": register_effect("AX"),
+}
+LINKED_INDIRECT_EFFECTS = {
+    "cb_overlay_call_inherited_bp": register_effect(
+        "AX", "BX", "CX", "DX", "SI", "DI"
+    ),
+    "cb_xms_move": register_effect("AX", "BX", "CX", "DX"),
+    "cb_xms_release": register_effect("AX", "BX", "CX", "DX"),
+    "cb_xms_allocate_kb": register_effect("AX", "BX", "CX", "DX"),
+    "cb_snd_stream_service": register_effect(
+        "AX", "BX", "CX", "DX", "SI", "DI"
+    ),
+    "cb_snd_stream_play": register_effect(
+        "AX", "BX", "CX", "DX", "SI", "DI"
+    ),
+    "cb_snd_clip_play": register_effect(
+        "AX", "BX", "CX", "DX", "SI", "DI"
+    ),
+}
+RECOVERED_INDIRECT_EFFECTS = (
+    ("_audio_position_callback", register_effect("AX", "DX")),
+    (
+        "_snd_driver_entries",
+        register_effect("AX", "BX", "CX", "DX", "SI", "DI", "ES"),
+    ),
+    (
+        "_snd_driver_callback",
+        register_effect("AX", "BX", "CX", "DX"),
+    ),
+)
+
+
+def canonical_symbol(symbol: str) -> str:
+    return symbol.lower().rstrip("_")
+
+
+def recovered_effect_resolver(item) -> EffectContract | None:
+    instruction = CORE.decode_instruction(item)
+    if x86_const.X86_GRP_CALL not in set(instruction.groups):
+        return None
+    lowered = item.text.lower()
+    for marker, effect in RECOVERED_INDIRECT_EFFECTS:
+        if marker in lowered:
+            return effect
+    return None
+
+
+def linked_effect_resolver(symbols: Iterable[str]) -> EffectResolver:
+    names = {canonical_symbol(symbol) for symbol in symbols}
+    indirect = next(
+        (LINKED_INDIRECT_EFFECTS[name] for name in names
+         if name in LINKED_INDIRECT_EFFECTS),
+        None,
+    )
+    dos_find_first = "cb_dos_find_first" in names
+
+    def resolve(item) -> EffectContract | None:
+        instruction = CORE.decode_instruction(item)
+        if instruction.mnemonic in ("int", "int1", "int3", "into"):
+            target = immediate_target(instruction)
+            if dos_find_first and target == 0x21:
+                return register_effect("AX")
+            return None
+        if (
+            indirect is not None
+            and x86_const.X86_GRP_CALL in set(instruction.groups)
+            and immediate_target(instruction) is None
+            and far_target(item.text, 0) is None
+        ):
+            return indirect
+        return None
+
+    return resolve
+
+
+def public_linked_effect(symbols: Iterable[str]) -> EffectContract | None:
+    effects = {
+        PUBLIC_LINKED_EFFECTS[name]
+        for name in {canonical_symbol(symbol) for symbol in symbols}
+        if name in PUBLIC_LINKED_EFFECTS
+    }
+    if len(effects) > 1:
+        raise ValueError(f"linked aliases disagree on public ABI: {sorted(symbols)}")
+    return next(iter(effects), None)
 
 
 def initial_state() -> MachineState:
@@ -266,6 +371,8 @@ def build_routine(
     listing,
     resolver: TargetResolver,
     *,
+    effect_resolver: EffectResolver | None = None,
+    public_effect: EffectContract | None = None,
     interrupt_effects_unresolved: bool = True,
 ) -> Routine:
     by_offset = {item.offset: item for item in listing.instructions}
@@ -280,6 +387,7 @@ def build_routine(
     calls: dict[int, tuple[str, ...]] = {}
     tails: dict[int, tuple[str, ...]] = {}
     exits: list[int] = []
+    effects: dict[int, EffectContract] = {}
     opaque_effects: set[int] = set()
     blockers: set[str] = set()
 
@@ -292,11 +400,17 @@ def build_routine(
         if x86_const.X86_GRP_CALL in groups:
             targets = resolver(item, "call")
             if not targets:
-                blockers.add(
-                    f"{display_name}@0x{item.offset:x}: unresolved indirect or "
-                    f"external call effect: {item.text.strip()}"
+                effect = (
+                    effect_resolver(item) if effect_resolver is not None else None
                 )
-                opaque_effects.add(item.offset)
+                if effect is not None:
+                    effects[item.offset] = effect
+                elif public_effect is None:
+                    blockers.add(
+                        f"{display_name}@0x{item.offset:x}: unresolved indirect or "
+                        f"external call effect: {item.text.strip()}"
+                    )
+                    opaque_effects.add(item.offset)
                 calls[item.offset] = ()
             else:
                 calls[item.offset] = targets
@@ -352,8 +466,18 @@ def build_routine(
             exits.append(item.offset)
         else:
             if instruction.mnemonic in ("int", "int1", "int3", "into"):
-                opaque_effects.add(item.offset)
-                if interrupt_effects_unresolved:
+                effect = (
+                    effect_resolver(item) if effect_resolver is not None else None
+                )
+                if effect is not None:
+                    effects[item.offset] = effect
+                elif public_effect is None:
+                    opaque_effects.add(item.offset)
+                if (
+                    effect is None
+                    and public_effect is None
+                    and interrupt_effects_unresolved
+                ):
                     blockers.add(
                         f"{display_name}@0x{item.offset:x}: interrupt register/FLAGS "
                         f"effect is unresolved: {item.text.strip()}"
@@ -404,9 +528,11 @@ def build_routine(
         tuple(sorted(calls.items())),
         tuple(sorted(tails.items())),
         tuple(sorted(exits)),
+        tuple(sorted(effects.items())),
         frozenset(opaque_effects),
         frozenset(stack_consuming_calls),
         frozenset(blockers),
+        public_effect,
     )
 
 
@@ -538,6 +664,16 @@ def apply_callee(
     return result
 
 
+def effect_summary(effect: EffectContract) -> Summary:
+    return Summary(
+        frozenset(set(CONTRACT_REGISTERS) - set(effect.modifies)),
+        effect.flags_preserved,
+        effect.cleanup,
+        (),
+        frozenset(),
+    )
+
+
 def merge_states(left: MachineState, right: MachineState) -> tuple[MachineState, bool]:
     left_registers = dict(left.registers)
     right_registers = dict(right.registers)
@@ -580,6 +716,7 @@ def transfer_instruction(
     state: MachineState,
     callee: Summary | None = None,
     *,
+    effect: EffectContract | None = None,
     opaque_effect: bool = False,
 ) -> MachineState:
     instruction = CORE.decode_instruction(item)
@@ -587,7 +724,9 @@ def transfer_instruction(
     operands = instruction.operands
     result = state
 
-    if opaque_effect:
+    if effect is not None:
+        result = apply_callee(result, effect_summary(effect))
+    elif opaque_effect:
         result = apply_callee(result, None)
     elif x86_const.X86_GRP_CALL in set(instruction.groups):
         result = apply_callee(result, callee)
@@ -789,9 +928,24 @@ def return_cleanup(instruction) -> int:
 def analyze_routine(routine: Routine, summaries: dict[str, Summary]) -> Summary:
     listing = routine.listing
     by_offset = {item.offset: item for item in listing.instructions}
+    if routine.public_effect is not None:
+        effect = effect_summary(routine.public_effect)
+        offset = (listing.entrypoints or (min(by_offset),))[0]
+        contract = ExitContract(
+            offset,
+            effect.preserved,
+            effect.flags_preserved,
+            routine.public_effect.cleanup,
+        )
+        return replace(
+            effect,
+            exits=(contract,),
+            blockers=routine.direct_blockers,
+        )
     edges = dict(routine.edges)
     calls = dict(routine.calls)
     tails = dict(routine.tails)
+    effects = dict(routine.effects)
     entry = (listing.entrypoints or (min(by_offset),))[0]
     entry_state = INITIAL_STATE
     if any(
@@ -824,6 +978,7 @@ def analyze_routine(routine: Routine, summaries: dict[str, Summary]) -> Summary:
             by_offset[offset],
             states[offset],
             callee,
+            effect=effects.get(offset),
             opaque_effect=offset in routine.opaque_effects,
         )
         if offset in routine.stack_consuming_calls:
@@ -1006,19 +1161,17 @@ def recursive_routines(routines: dict[str, Routine]) -> frozenset[str]:
 
 def summarize_program(routines: dict[str, Routine]) -> dict[str, Summary]:
     recursive = recursive_routines(routines)
-    if recursive:
-        routines = {
-            key: replace(
-                routine,
-                direct_blockers=routine.direct_blockers | frozenset((
-                    f"{routine.display_name}: recursive call contract needs "
-                    "a separate relational proof",
-                )),
-            ) if key in recursive else routine
-            for key, routine in routines.items()
-        }
     summaries = {
-        key: Summary(frozenset(), False, None, (), routine.direct_blockers)
+        key: Summary(
+            (
+                frozenset(CONTRACT_REGISTERS)
+                if key in recursive else frozenset()
+            ),
+            key in recursive,
+            0 if key in recursive else None,
+            (),
+            routine.direct_blockers,
+        )
         for key, routine in routines.items()
     }
     callers: dict[str, set[str]] = {key: set() for key in routines}
@@ -1146,10 +1299,26 @@ def original_resolver(
     return resolve
 
 
-def emitted_resolver(functions: dict[str, str]) -> TargetResolver:
+VM_DISPATCH_CALL_SITES = (0x5627, 0x56C4)
+
+
+def emitted_resolver(
+    functions: dict[str, str],
+    indirect_targets: dict[int, tuple[str, ...]] | None = None,
+) -> TargetResolver:
     def resolve(item, _kind: str) -> tuple[str, ...] | None:
         symbol = emitted_symbol(item)
         if symbol is None:
+            if (
+                indirect_targets is not None
+                and "_vm_opcode_handlers" in item.text.lower()
+            ):
+                targets = {
+                    target
+                    for call_site in VM_DISPATCH_CALL_SITES
+                    for target in indirect_targets.get(call_site, ())
+                }
+                return tuple(sorted(targets)) or None
             return None
         for variant in symbol_variants(symbol):
             if variant in functions:
@@ -1354,6 +1523,7 @@ def discover_linked_dependencies(
     address_keys = dict(recovered_addresses)
     symbol_keys = dict(recovered_functions)
     entries: dict[str, int] = {}
+    key_symbols: dict[str, set[str]] = {}
     pending: deque[str] = deque()
 
     def allocate(address: int) -> str | None:
@@ -1376,6 +1546,7 @@ def discover_linked_dependencies(
                 f"{link_map}: direct symbol {symbol} resolves outside CODE at "
                 f"0x{address:x}"
             )
+        key_symbols.setdefault(key, set()).add(symbol)
         for variant in symbol_variants(symbol):
             symbol_keys[variant] = key
 
@@ -1402,10 +1573,17 @@ def discover_linked_dependencies(
         key = address_keys.get(target)
         return (key,) if key is not None else None
 
-    routines = {
-        key: build_routine(key, key + ":emitted-linked", listing, binary_resolver)
-        for key, listing in listings.items()
-    }
+    routines = {}
+    for key, listing in listings.items():
+        names = key_symbols.get(key, set())
+        routines[key] = build_routine(
+            key,
+            key + ":emitted-linked",
+            listing,
+            binary_resolver,
+            effect_resolver=linked_effect_resolver(names),
+            public_effect=public_linked_effect(names),
+        )
     return routines, symbol_keys
 
 
@@ -1513,7 +1691,7 @@ def load_programs(
     original_target_resolver = original_resolver(
         entries, mz_header_size(original_image), dispatch
     )
-    emitted_target_resolver = emitted_resolver(emitted_functions)
+    emitted_target_resolver = emitted_resolver(emitted_functions, dispatch)
     original: dict[str, Routine] = {}
     emitted: dict[str, Routine] = {}
     for row in rows:
@@ -1542,7 +1720,11 @@ def load_programs(
         if emitted_listing is None:
             continue
         emitted[stem] = build_routine(
-            stem, stem + ":emitted", emitted_listing, emitted_target_resolver
+            stem,
+            stem + ":emitted",
+            emitted_listing,
+            emitted_target_resolver,
+            effect_resolver=recovered_effect_resolver,
         )
     emitted.update(linked_routines)
     missing_programs = sorted(stems - original.keys())

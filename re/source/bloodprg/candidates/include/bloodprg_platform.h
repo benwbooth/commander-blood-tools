@@ -108,9 +108,9 @@ cb_u16 CB_FAR kbd_read_int16(void);     /* 0x00267D */
 #pragma aux kbd_read_int16 value [ax] modify exact [ax]
 #pragma aux mouse_set_ranges parm [ax] [bx] [cx] [dx]
 #pragma aux print_string_dos parm [si]
-#pragma aux cdrom_audio_prepare modify exact []
-#pragma aux cdrom_audio_stop modify exact []
-#pragma aux cdrom_audio_play_track_2 modify exact []
+#pragma aux cdrom_audio_prepare modify exact [ax es]
+#pragma aux cdrom_audio_stop modify exact [ax es]
+#pragma aux cdrom_audio_play_track_2 modify exact [ax es]
 #endif
 
 #endif

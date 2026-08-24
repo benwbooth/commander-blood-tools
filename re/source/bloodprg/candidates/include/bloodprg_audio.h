@@ -153,9 +153,9 @@ void CB_NEAR cb_snd_clip_play(cb_u16 command,
         snd_driver_init_abi)
 #pragma aux audio_param_init_cd5 parm [ax] modify exact [ax]
 #pragma aux audio_process_ade modify exact [ax]
-#pragma aux snd_bank_loader parm [ax] [es si] modify exact []
+#pragma aux snd_bank_loader parm [ax] [es si] modify exact [ax es]
 #pragma aux snd_play_clip parm [ax] modify exact [ax]
-#pragma aux snd_stream_source_load parm [si] modify exact []
+#pragma aux snd_stream_source_load parm [si] modify exact [ax es]
 #pragma aux cb_snd_stream_service parm [ax] [si] [es di]
 #pragma aux cb_snd_stream_play parm [ax] [si] [es di]
 #pragma aux cb_snd_clip_play parm [ax] [si]

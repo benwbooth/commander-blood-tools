@@ -68,9 +68,9 @@ void CB_FAR extended_memory_backends_init(void); /* 0x00099F */
 void CB_FAR extended_memory_backends_release(void); /* 0x000A99 */
 
 #if defined(__WATCOMC__)
-#pragma aux snd_bank_ems_page_read parm [ax] [es di] modify exact []
-#pragma aux snd_bank_xms_page_read parm [ax] [es di] modify exact []
-#pragma aux snd_bank_file_page_read parm [ax] [es di] modify exact []
+#pragma aux snd_bank_ems_page_read parm [ax] [es di] modify exact [ax]
+#pragma aux snd_bank_xms_page_read parm [ax] [es di] modify exact [ax es]
+#pragma aux snd_bank_file_page_read parm [ax] [es di] modify exact [ax es]
 #pragma aux snd_bank_page_read parm [ax] [es di]
 #endif
 

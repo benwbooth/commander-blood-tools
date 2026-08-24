@@ -46,8 +46,22 @@ def listing(rows, labels=None):
     )
 
 
-def routine(key, rows, resolver=lambda _item, _kind: None):
-    return AUDIT.build_routine(key, key, listing(rows), resolver)
+def routine(
+    key,
+    rows,
+    resolver=lambda _item, _kind: None,
+    *,
+    effect_resolver=None,
+    public_effect=None,
+):
+    return AUDIT.build_routine(
+        key,
+        key,
+        listing(rows),
+        resolver,
+        effect_resolver=effect_resolver,
+        public_effect=public_effect,
+    )
 
 
 class RelinkedRegisterContractTests(unittest.TestCase):
@@ -152,6 +166,67 @@ class RelinkedRegisterContractTests(unittest.TestCase):
         summary = AUDIT.summarize_program({"subject": subject})["subject"]
         self.assertTrue(summary.blockers)
         self.assertTrue(any("unresolved indirect" in item for item in summary.blockers))
+
+    def test_typed_indirect_call_uses_only_its_proven_effect(self):
+        effect = AUDIT.register_effect("AX", "DX")
+        subject = routine(
+            "subject",
+            [("ffd3", "call bx"), ("c3", "ret")],
+            effect_resolver=lambda _item: effect,
+        )
+        summary = AUDIT.summarize_program({"subject": subject})["subject"]
+        self.assertEqual(frozenset(), summary.blockers)
+        self.assertNotIn("AX", summary.preserved)
+        self.assertNotIn("DX", summary.preserved)
+        self.assertIn("BX", summary.preserved)
+
+    def test_public_effect_hides_internal_interrupt_details_only(self):
+        subject = routine(
+            "subject",
+            [("cd21", "int 0x21"), ("c3", "ret")],
+            public_effect=AUDIT.register_effect("AX"),
+        )
+        summary = AUDIT.summarize_program({"subject": subject})["subject"]
+        self.assertEqual(frozenset(), summary.blockers)
+        self.assertNotIn("AX", summary.preserved)
+        self.assertIn("DX", summary.preserved)
+
+    def test_recursive_preservation_contract_converges(self):
+        def resolver(item, _kind):
+            return ("subject",) if "subject" in item.text else None
+
+        subject = routine(
+            "subject",
+            [
+                ("85c0", "test ax,ax"),
+                ("7403", "je 0x7"),
+                ("e80000", "call subject"),
+                ("c3", "ret"),
+            ],
+            resolver,
+        )
+        summary = AUDIT.summarize_program({"subject": subject})["subject"]
+        self.assertEqual(frozenset(), summary.blockers)
+        self.assertIn("BX", summary.preserved)
+
+    def test_recursive_mutation_is_not_optimistically_preserved(self):
+        def resolver(item, _kind):
+            return ("subject",) if "subject" in item.text else None
+
+        subject = routine(
+            "subject",
+            [
+                ("85c0", "test ax,ax"),
+                ("7404", "je 0x8"),
+                ("43", "inc bx"),
+                ("e80000", "call subject"),
+                ("c3", "ret"),
+            ],
+            resolver,
+        )
+        summary = AUDIT.summarize_program({"subject": subject})["subject"]
+        self.assertEqual(frozenset(), summary.blockers)
+        self.assertNotIn("BX", summary.preserved)
 
     def test_unresolved_indirect_jump_is_not_treated_as_an_exit(self):
         subject = routine("subject", [("ffe3", "jmp bx")])
@@ -259,6 +334,19 @@ class RelinkedRegisterContractTests(unittest.TestCase):
         self.assertEqual((), caller.edges[0][1])
         summary = AUDIT.summarize_program({"caller": caller, "callee": callee})
         self.assertEqual(frozenset(), summary["caller"].blockers)
+
+    def test_emitted_vm_table_uses_original_static_dispatch_targets(self):
+        resolver = AUDIT.emitted_resolver(
+            {},
+            {
+                0x5627: ("op_a0", "op_a1"),
+                0x56C4: ("op_a0", "op_a1"),
+            },
+        )
+        item = listing([
+            ("26ff97c00c", "call word ptr es:_vm_opcode_handlers[bx]")
+        ]).instructions[0]
+        self.assertEqual(("op_a0", "op_a1"), resolver(item, "call"))
 
     def test_linked_direct_dependency_is_derived_from_map_and_image(self):
         with tempfile.TemporaryDirectory() as directory:

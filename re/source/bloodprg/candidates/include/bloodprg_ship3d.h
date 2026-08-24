@@ -215,7 +215,8 @@ extern volatile ship_3d_hud_layout_entry CB_GAME_DATA ship_3d_hud_layout[];
 /* Open Watcom C16 reserves BP, so the natural-C boundary uses BX for the
  * output cursor; an integration adapter must translate the binary's BP ABI. */
 #pragma aux ship_3d_nav_source_list_build_full parm [es di] [bx] value [bx] modify exact [bx]
-#pragma aux ship_3d_navigation_candidate_build parm [es di] modify exact [bx di es]
+#pragma aux ship_3d_navigation_candidate_build parm [es di] \
+        modify exact [ax bx di es]
 #pragma aux vm_state_record_processor modify exact [ax]
 #pragma aux ship_3d_presentable_name_list_build parm [es di] value [bp] modify exact [bp]
 #pragma aux matrix_table_clear_2a1b modify exact []
@@ -226,7 +227,7 @@ extern volatile ship_3d_hud_layout_entry CB_GAME_DATA ship_3d_hud_layout[];
 #pragma aux ship_3d_object_sprite_project modify exact [ax es]
 #pragma aux ship_3d_plane_band_copy modify exact [ax es]
 #pragma aux ship_3d_target_record_select value [ax] modify exact [ax]
-#pragma aux draw_hud_element_2bc7 modify exact []
+#pragma aux draw_hud_element_2bc7 modify exact [ax es]
 #pragma aux bridge_panorama_frame_load parm [ax] modify exact [ax es]
 #pragma aux page_flip value [ax] modify exact [ax bx]
 #pragma aux alien_overlay_cycle modify exact [ax dx si di bp]

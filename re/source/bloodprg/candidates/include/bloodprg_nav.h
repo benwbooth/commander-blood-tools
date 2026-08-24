@@ -248,7 +248,7 @@ extern volatile char CB_FS_DATA
 #if defined(__WATCOMC__)
 #pragma aux nav_choice_handler_0 modify exact [ax]
 #pragma aux nav_choice_dispatch modify exact [ax di]
-#pragma aux screen_mode_update parm [ax] modify exact [di es]
+#pragma aux screen_mode_update parm [ax] modify exact [ax di es]
 #pragma aux nav_kind2_target_list_build value [ax] modify exact [ax cx]
 #pragma aux nav_chart_object_pick \
         parm [es di] value [ax] modify exact [ax bx cx dx bp di]
