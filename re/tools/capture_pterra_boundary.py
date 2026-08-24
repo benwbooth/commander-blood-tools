@@ -833,13 +833,15 @@ def pterra_ship_intro_input_action(
 
 
 def pterra_ship_intro_consumed_before_expiry(
-        flow: dict[str, object], input_state: dict[str, object],
+        blockers: dict[str, int], flow: dict[str, object],
+        input_state: dict[str, object],
         lines_seen: list[int], edge_count: int, raw_seen: bool,
         latch_seen: bool) -> tuple[bool, str | None]:
     del input_state, lines_seen, raw_seen, latch_seen
     if edge_count == 0 or int(flow["dialogue_hold_countdown"]) <= 0:
         return False, None
-    if int(flow["dialogue_hold_complete"]) == 0:
+    if (int(blockers["ship"]) & 4 != 0
+            and int(flow["dialogue_hold_complete"]) == 0):
         return True, "hold-clear-observed"
     return False, None
 
@@ -3196,7 +3198,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
 
                     hold_consumed, hold_resolution = (
                         pterra_ship_intro_consumed_before_expiry(
-                            flow, input_state,
+                            blockers, flow, input_state,
                             pterra_ship_intro_lines_seen,
                             pterra_ship_intro_edge_count,
                             pterra_ship_intro_raw_seen,
