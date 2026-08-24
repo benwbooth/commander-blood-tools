@@ -185,6 +185,7 @@ PTERRA_NATIVE_INPUT_MAX_EDGES = 6
 PTERRA_TRANSITION_SAMPLE_INTERVAL_SECONDS = 1.0
 PTERRA_TRANSITION_SAMPLE_LIMIT = 256
 GRAPHICS_POINTER_TRANSITION_LIMIT = 512
+STACK_SAMPLE_LIMIT = 512
 TIMER_PROGRESS_STALL_SECONDS = 1.5
 TIMER_PROGRESS_SAMPLE_LIMIT = 64
 STARTUP_DOS_POOL_POINTER_OFFSET = 0x0A42
@@ -217,6 +218,16 @@ DOS_READ_WARNING_RE = re.compile(
 # Pterra resources, then restore the DOSBox default vector.
 TRANSIENT_INTERRUPT_VECTORS = frozenset((0x0F,))
 
+DGROUP_MAP_RE = re.compile(
+    r"^DGROUP\s+[0-9a-f]+:[0-9a-f]+\s+(?P<size>[0-9a-f]+)\s*$",
+    re.IGNORECASE | re.MULTILINE,
+)
+STACK_MAP_RE = re.compile(
+    r"^STACK\s+STACK\s+DGROUP\s+[0-9a-f]+:[0-9a-f]+\s+"
+    r"(?P<size>[0-9a-f]+)\s*$",
+    re.IGNORECASE | re.MULTILINE,
+)
+
 TELEPORT_BLOCKERS = (
     ("vm_ui", 0x2793, 0x0E),
     ("ship", 0x24F3, 0xFF),
@@ -238,6 +249,35 @@ def libc_ptrace():
     libc.ptrace.argtypes = [ctypes.c_long, ctypes.c_long,
                             ctypes.c_void_p, ctypes.c_void_p]
     return libc
+
+
+def parse_linked_stack_bounds(link_map: Path) -> dict[str, int]:
+    text = link_map.read_text(encoding="ascii")
+    dgroup = DGROUP_MAP_RE.search(text)
+    stack = STACK_MAP_RE.search(text)
+    if dgroup is None or stack is None:
+        raise ValueError(f"cannot derive DGROUP/STACK sizes from {link_map}")
+    upper = int(dgroup.group("size"), 16)
+    size = int(stack.group("size"), 16)
+    if size <= 0 or size > upper:
+        raise ValueError(
+            f"invalid linked stack size {size:#x} for DGROUP {upper:#x}")
+    return {"lower": upper - size, "upper": upper, "size": size}
+
+
+def stack_pointer_errors(state: dict[str, int], game_segment: int,
+                         bounds: dict[str, int] | None) -> list[str]:
+    if bounds is None:
+        return []
+    errors = []
+    if state["ss"] != game_segment:
+        errors.append(
+            f"SS {state['ss']:04x} does not alias DGROUP {game_segment:04x}")
+    if not bounds["lower"] <= state["sp"] <= bounds["upper"]:
+        errors.append(
+            f"SP {state['sp']:04x} is outside linked stack "
+            f"{bounds['lower']:04x}..{bounds['upper']:04x}")
+    return errors
 
 
 def locate_cpu_state(pid):
@@ -1989,7 +2029,8 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                          drive_authentic_save: bool = False,
                          guest_snapshot: Path | None = None,
                          post_pter_seconds: float = 5.0,
-                         toggle_mouse_capture: bool = False) \
+                         toggle_mouse_capture: bool = False,
+                         stack_bounds: dict[str, int] | None = None) \
         -> dict[str, object]:
     capture_started_at = time.monotonic()
     deadline = capture_started_at + timeout
@@ -2102,6 +2143,8 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
     graphics_pointer_faults: list[str] = []
     graphics_pointer_previous = None
     graphics_pointer_transitions: list[dict[str, object]] = []
+    stack_faults: list[str] = []
+    stack_samples: list[dict[str, object]] = []
     last_profile = None
     last_cpu_state = None
     last_profile_key = None
@@ -2173,6 +2216,36 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                     graphics_pointer_previous = graphics_pointers
                 if not game_is_ready(mem, anchor):
                     continue
+
+                stack_faults = stack_pointer_errors(
+                    state, game_segment, stack_bounds)
+                stack_samples.append({
+                    "elapsed_seconds": round(now - capture_started_at, 3),
+                    "phase": (
+                        "pterra-encounter" if pter_reached else
+                        "ship-navigation" if pterra_triggered else
+                        "map-transition" if pterra_map_command_consumed else
+                        "nav-chart" if pterra_nav_chart_started else
+                        "save-loaded" if authentic_save_loaded else
+                        "startup"),
+                    "ss": state["ss"],
+                    "sp": state["sp"],
+                    "bp": state["bp"],
+                    "cs": state["cs"],
+                    "ip": state["ip"],
+                })
+                del stack_samples[:-STACK_SAMPLE_LIMIT]
+                if stack_faults:
+                    integrity_fault_snapshot = snapshot_guest(
+                        mem, guest_base, anchor, cpu_addresses,
+                        hit, None)
+                    integrity_fault_snapshot["stack_bounds"] = stack_bounds
+                    integrity_fault_snapshot["stack_faults"] = \
+                        stack_faults.copy()
+                    integrity_fault_snapshot["stack_samples"] = \
+                        stack_samples.copy()
+                    print("integrity: " + stack_faults[0], flush=True)
+                    break
 
                 if fs_segment is None:
                     fs_segment = state["fs"]
@@ -3857,6 +3930,9 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
         "graphics_pointer_baseline": graphics_pointer_baseline,
         "graphics_pointer_faults": graphics_pointer_faults,
         "graphics_pointer_transitions": graphics_pointer_transitions,
+        "stack_bounds": stack_bounds,
+        "stack_faults": stack_faults,
+        "stack_samples": stack_samples,
         "hang": hang_snapshot,
         "hang_detected": hang_snapshot is not None,
         "scruter_scene_requested": scruter_scene_requested,
@@ -3945,6 +4021,9 @@ def main() -> None:
     parser.add_argument(
         "--dosbox-log", type=Path,
         help="DOSBox log used to stop at the first invalid instruction")
+    parser.add_argument(
+        "--link-map", type=Path,
+        help="Watcom map used to enforce the linked DGROUP stack bounds")
     args = parser.parse_args()
     if args.state_pterra and args.manual_pterra:
         parser.error("--state-pterra and --manual-pterra are mutually exclusive")
@@ -4005,6 +4084,9 @@ def main() -> None:
                               stdout=log_stream,
                               stderr=subprocess.STDOUT)
         if args.state_pterra or args.manual_pterra:
+            stack_bounds = (
+                parse_linked_stack_bounds(args.link_map.resolve())
+                if args.link_map is not None else None)
             snapshot = capture_state_pterra(
                 db, libc, marker, log_path, args.timeout,
                 args.display, args.executable, manual=args.manual_pterra,
@@ -4014,7 +4096,8 @@ def main() -> None:
                 guest_snapshot=args.guest_snapshot,
                 post_pter_seconds=args.post_pter_seconds,
                 toggle_mouse_capture=dosbox_needs_capture_toggle(
-                    args.dosbox))
+                    args.dosbox),
+                stack_bounds=stack_bounds)
             args.output.write_text(json.dumps(snapshot, indent=1))
             print(f"wrote {args.output}")
             errors = snapshot.get("errors", [])

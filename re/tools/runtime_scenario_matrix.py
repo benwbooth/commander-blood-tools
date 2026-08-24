@@ -888,6 +888,8 @@ def _build_command(
         "--dosbox-log",
         str(artifact_dir / "dosbox.log"),
     ]
+    if args.link_map is not None:
+        command += ["--link-map", str(args.link_map)]
     return command, args.pterra_timeout + args.subprocess_grace_seconds
 
 

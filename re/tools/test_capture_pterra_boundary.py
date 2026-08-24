@@ -6,6 +6,7 @@ import io
 import importlib.util
 import struct
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -76,6 +77,31 @@ class CaptureHelperTests(unittest.TestCase):
         self.assertEqual(summary["unique_byte_count"], 256)
         self.assertEqual(summary["nonzero_row_count"], 200)
         self.assertEqual(len(summary["row_sha256"]), 200)
+
+    def test_linked_stack_bounds_come_from_dgroup_and_stack_sizes(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            link_map = Path(directory) / "link.map"
+            link_map.write_text(
+                "DGROUP 1093:0000 00009770\n"
+                "STACK STACK DGROUP 198a:0000 00000800\n",
+                encoding="ascii",
+            )
+            bounds = capture.parse_linked_stack_bounds(link_map)
+        self.assertEqual(
+            bounds, {"lower": 0x8F70, "upper": 0x9770, "size": 0x0800})
+
+    def test_stack_pointer_monitor_rejects_game_data_collision(self) -> None:
+        bounds = {"lower": 0x8F70, "upper": 0x9770, "size": 0x0800}
+        self.assertEqual(
+            capture.stack_pointer_errors(
+                {"ss": 0x1236, "sp": 0x96EC}, 0x1236, bounds),
+            [],
+        )
+        self.assertEqual(
+            capture.stack_pointer_errors(
+                {"ss": 0x1236, "sp": 0x250B}, 0x1236, bounds),
+            ["SP 250b is outside linked stack 8f70..9770"],
+        )
 
     def test_linear_surface_summary_rejects_wrong_size(self) -> None:
         with self.assertRaisesRegex(ValueError, "320x200"):
