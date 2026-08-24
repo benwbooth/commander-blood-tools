@@ -112,6 +112,10 @@ class CaptureHelperTests(unittest.TestCase):
             "offset": 0xC000, "segment": 0xA000,
             "pointer": "a000:c000", "linear": 0xAC000,
         }
+        current["screen_buffer"] = {
+            "offset": 0x8000, "segment": 0xA000,
+            "pointer": "a000:8000", "linear": 0xA8000,
+        }
         self.assertEqual(
             capture.graphics_pointer_errors(current, baseline, 0x1000), [])
 
