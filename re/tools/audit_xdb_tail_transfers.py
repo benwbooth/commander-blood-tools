@@ -16,6 +16,8 @@ sys.path[:] = [
 import argparse
 import csv
 from dataclasses import dataclass
+from dataclasses import replace
+import hashlib
 import io
 import re
 
@@ -23,6 +25,7 @@ import re
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_ASSEMBLY_ROOT = ROOT / "re" / "assembly" / "xdb"
 DEFAULT_SOURCE_XDB_ROOT = ROOT / "output" / "recovered_dos_package" / "validation" / "source_xdb"
+DEFAULT_REVIEWS = ROOT / "re" / "source" / "xdb" / "tail_transfer_reviews.tsv"
 MODULES = ("amer", "croolis", "scrut")
 
 SLOT2_PREFIX = bytes.fromhex("8b751683c65ef74536ffff7403ff640e")
@@ -74,6 +77,11 @@ LISTING_RETURN = re.compile(
     r"^\s*([0-9A-Fa-f]+)\s+(?:[0-9A-Fa-f]{2}\s+)+(retf?|iret)\b",
     re.IGNORECASE,
 )
+LISTING_INSTRUCTION = re.compile(
+    r"^\s*([0-9A-Fa-f]+)\s+((?:[0-9A-Fa-f]{2}\s+)+)"
+    r"([A-Za-z][A-Za-z0-9]*)\b",
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True)
@@ -121,6 +129,25 @@ class Result:
     emitted_offset: int | None
     actual: bytes
     status: str
+    source_sha256: str = ""
+    target_sha256: str = ""
+    epilogue: str = ""
+
+
+@dataclass(frozen=True)
+class ReviewedTransfer:
+    module: str
+    source_symbol: str
+    target_symbol: str
+    original_jump_offset: int
+    original_target_offset: int
+    source_sha256: str
+    target_sha256: str
+    epilogue: str
+    evidence: str
+
+
+REVIEW_FIELDS = tuple(ReviewedTransfer.__dataclass_fields__)
 
 
 def read_map_symbols(path: Path) -> dict[str, list[tuple[int, int]]]:
@@ -346,6 +373,64 @@ def read_listing_references(
     return references, returns
 
 
+def listing_routine_sha256(path: Path, start_offset: int) -> str:
+    """Hash emitted instruction bytes with unresolved relocations canonicalized."""
+    encoded = bytearray()
+    for line in path.read_text(encoding="ascii", errors="replace").splitlines():
+        match = LISTING_INSTRUCTION.match(line)
+        if match is not None and int(match.group(1), 16) >= start_offset:
+            encoded.extend(bytes.fromhex(match.group(2)))
+    if not encoded:
+        raise ValueError(f"{path}: no emitted bytes at or after 0x{start_offset:04x}")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def prove_near_call_epilogue(
+    image: bytes, start: int, segment: CodeSegment
+) -> tuple[bool, str]:
+    """Prove a CALL successor only restores the source frame and returns."""
+    cursor = start
+    visited: set[int] = set()
+    operations: list[str] = []
+    lower = segment.offset
+    upper = segment.offset + segment.size
+    register_names = ("ax", "cx", "dx", "bx", "sp", "bp", "si", "di")
+    while len(visited) < 32:
+        if cursor in visited:
+            return False, ",".join(operations + ["cycle"])
+        if not (lower <= cursor < upper) or cursor >= len(image):
+            return False, ",".join(operations + [f"outside_0x{cursor:04x}"])
+        visited.add(cursor)
+        opcode = image[cursor]
+        if opcode == 0xC3:
+            operations.append("ret")
+            return True, ",".join(operations)
+        if opcode == 0xC9:
+            operations.append("leave")
+            cursor += 1
+            continue
+        if 0x58 <= opcode <= 0x5F and opcode != 0x5C:
+            operations.append(f"pop_{register_names[opcode - 0x58]}")
+            cursor += 1
+            continue
+        if opcode == 0xE9 and cursor + 3 <= len(image):
+            displacement = int.from_bytes(
+                image[cursor + 1:cursor + 3], "little", signed=True
+            )
+            operations.append("jmp_near")
+            cursor = (cursor + 3 + displacement) & 0xFFFF
+            continue
+        if opcode == 0xEB and cursor + 2 <= len(image):
+            displacement = int.from_bytes(
+                image[cursor + 1:cursor + 2], "little", signed=True
+            )
+            operations.append("jmp_short")
+            cursor = (cursor + 2 + displacement) & 0xFFFF
+            continue
+        return False, ",".join(operations + [f"opcode_{opcode:02x}"])
+    return False, ",".join(operations + ["step_limit"])
+
+
 def decode_linked_transfer(image: bytes, offset: int) -> tuple[str, int | None, bytes]:
     if offset >= len(image):
         return "truncated", None, b""
@@ -404,21 +489,48 @@ def audit_direct_transfers(
         segment = containing_code_segment(
             module, source_symbol, source_offset, segments, errors
         )
+        target_segment = containing_code_segment(
+            module, target_symbol, target_offset, segments, errors
+        )
         status = "pending"
         references: list[EmittedReference] = []
-        returns: list[int] = []
-        if segment is None:
+        source_sha256 = ""
+        target_sha256 = ""
+        epilogue = ""
+        if segment is None or target_segment is None:
             status = "unresolved_source_segment"
         else:
             listing_name = f"{segment.name[:-5]}.lst"
             listing_path = module_dir / "segment_contract_listings" / listing_name
-            if not listing_path.is_file():
-                errors.append(f"{module}: missing emitted listing {listing_path}")
+            target_listing_name = f"{target_segment.name[:-5]}.lst"
+            target_listing_path = (
+                module_dir / "segment_contract_listings" / target_listing_name
+            )
+            missing = [
+                path for path in (listing_path, target_listing_path)
+                if not path.is_file()
+            ]
+            if missing:
+                errors.extend(
+                    f"{module}: missing emitted listing {path}" for path in missing
+                )
                 status = "missing_emitted_listing"
             else:
-                references, returns = read_listing_references(
-                    listing_path, source_offset - segment.offset, target_symbol
-                )
+                try:
+                    source_local = source_offset - segment.offset
+                    target_local = target_offset - target_segment.offset
+                    references, _returns = read_listing_references(
+                        listing_path, source_local, target_symbol
+                    )
+                    source_sha256 = listing_routine_sha256(
+                        listing_path, source_local
+                    )
+                    target_sha256 = listing_routine_sha256(
+                        target_listing_path, target_local
+                    )
+                except ValueError as error:
+                    errors.append(f"{module}: {error}")
+                    status = "unresolved_emitted_fingerprint"
 
         emitted_offset: int | None = None
         actual = b""
@@ -469,13 +581,23 @@ def audit_direct_transfers(
                 elif mnemonics == {"jmp"}:
                     status = "tail_jump"
                 elif mnemonics == {"call"}:
-                    has_return = bool(returns)
-                    status = "call_then_return" if has_return else "call_not_tail_jump"
-                    errors.append(
-                        f"{module}: {source_symbol} emits CALL"
-                        f"{' + RET' if has_return else ''} to {target_symbol}; "
-                        "original control flow requires a tail JMP"
-                    )
+                    proofs = [
+                        prove_near_call_epilogue(
+                            image,
+                            item[1] + len(item[4]),
+                            segment,
+                        )
+                        for item in linked
+                    ]
+                    epilogue = "|".join(proof[1] for proof in proofs)
+                    if proofs and all(proof[0] for proof in proofs):
+                        status = "call_return_equivalent"
+                    else:
+                        status = "call_return_unproven"
+                        errors.append(
+                            f"{module}: {source_symbol} CALL to {target_symbol} "
+                            f"has an observable or unresolved epilogue ({epilogue})"
+                        )
                 else:
                     status = "mixed_call_and_tail_jump"
                     errors.append(
@@ -495,6 +617,9 @@ def audit_direct_transfers(
                     emitted_offset,
                     actual,
                     status,
+                    source_sha256,
+                    target_sha256,
+                    epilogue,
                 )
             )
     results.sort(key=lambda item: item.original_jump_offset or -1)
@@ -583,6 +708,131 @@ def audit_module(
     return results, errors
 
 
+def transfer_key(result: Result) -> tuple[str, str, str, int, int]:
+    assert result.original_jump_offset is not None
+    assert result.original_target_offset is not None
+    return (
+        result.module,
+        result.source_symbol,
+        result.target_symbol,
+        result.original_jump_offset,
+        result.original_target_offset,
+    )
+
+
+def reviewed_key(review: ReviewedTransfer) -> tuple[str, str, str, int, int]:
+    return (
+        review.module,
+        review.source_symbol,
+        review.target_symbol,
+        review.original_jump_offset,
+        review.original_target_offset,
+    )
+
+
+def read_reviews(path: Path) -> tuple[list[ReviewedTransfer], list[str]]:
+    if not path.is_file():
+        return [], [f"missing reviewed CALL/RET equivalence file {path}"]
+    with path.open(newline="", encoding="ascii") as handle:
+        reader = csv.DictReader(handle, delimiter="\t")
+        if tuple(reader.fieldnames or ()) != REVIEW_FIELDS:
+            return [], [
+                f"{path}: review columns do not match {REVIEW_FIELDS}"
+            ]
+        rows = list(reader)
+    reviews: list[ReviewedTransfer] = []
+    errors: list[str] = []
+    for row_number, row in enumerate(rows, 2):
+        try:
+            review = ReviewedTransfer(
+                module=row["module"],
+                source_symbol=row["source_symbol"],
+                target_symbol=row["target_symbol"],
+                original_jump_offset=int(row["original_jump_offset"], 0),
+                original_target_offset=int(row["original_target_offset"], 0),
+                source_sha256=row["source_sha256"],
+                target_sha256=row["target_sha256"],
+                epilogue=row["epilogue"],
+                evidence=row["evidence"],
+            )
+        except ValueError as error:
+            errors.append(f"{path}:{row_number}: invalid review offset: {error}")
+            continue
+        for field in ("source_sha256", "target_sha256"):
+            if re.fullmatch(r"[0-9a-f]{64}", getattr(review, field)) is None:
+                errors.append(
+                    f"{path}:{row_number}: invalid {field} fingerprint"
+                )
+        if not review.epilogue or not review.evidence:
+            errors.append(
+                f"{path}:{row_number}: review requires epilogue and evidence"
+            )
+        reviews.append(review)
+    return reviews, errors
+
+
+def apply_reviews(
+    results: list[Result], reviews: list[ReviewedTransfer]
+) -> tuple[list[Result], list[str]]:
+    errors: list[str] = []
+    expected: dict[tuple[str, str, str, int, int], ReviewedTransfer] = {}
+    for review in reviews:
+        key = reviewed_key(review)
+        if key in expected:
+            errors.append(
+                f"{review.module}: duplicate CALL/RET review for "
+                f"{review.source_symbol} at 0x{review.original_jump_offset:04x}"
+            )
+        expected[key] = review
+
+    observed = {
+        transfer_key(result): result
+        for result in results
+        if result.kind == "direct" and result.status == "call_return_equivalent"
+    }
+    reviewed_results: list[Result] = []
+    for result in results:
+        if result.kind != "direct" or result.status != "call_return_equivalent":
+            reviewed_results.append(result)
+            continue
+        key = transfer_key(result)
+        review = expected.get(key)
+        if review is None:
+            errors.append(
+                f"{result.module}: unreviewed CALL/RET tail equivalence "
+                f"{result.source_symbol} -> {result.target_symbol} at "
+                f"0x{result.original_jump_offset:04x}"
+            )
+            reviewed_results.append(replace(result, status="unreviewed_call_return"))
+            continue
+        changed = []
+        for field in ("source_sha256", "target_sha256", "epilogue"):
+            if getattr(result, field) != getattr(review, field):
+                changed.append(
+                    f"{field}={getattr(review, field)!r} -> "
+                    f"{getattr(result, field)!r}"
+                )
+        if changed:
+            errors.append(
+                f"{result.module}: invalidated CALL/RET review for "
+                f"{result.source_symbol} -> {result.target_symbol}: "
+                + "; ".join(changed)
+            )
+            reviewed_results.append(replace(result, status="invalidated_call_return"))
+        else:
+            reviewed_results.append(replace(
+                result, status="reviewed_call_return_equivalent"
+            ))
+    for key, review in expected.items():
+        if key not in observed:
+            errors.append(
+                f"{review.module}: stale CALL/RET review for "
+                f"{review.source_symbol} -> {review.target_symbol} at "
+                f"0x{review.original_jump_offset:04x}"
+            )
+    return reviewed_results, errors
+
+
 def render_tsv(results: list[Result]) -> str:
     output = io.StringIO()
     writer = csv.writer(output, delimiter="\t", lineterminator="\n")
@@ -597,6 +847,9 @@ def render_tsv(results: list[Result]) -> str:
             "emitted_offset",
             "actual",
             "status",
+            "source_sha256",
+            "target_sha256",
+            "epilogue",
         )
     )
     for result in results:
@@ -619,6 +872,9 @@ def render_tsv(results: list[Result]) -> str:
                 "" if result.emitted_offset is None else f"0x{result.emitted_offset:04x}",
                 result.actual.hex(),
                 result.status,
+                result.source_sha256,
+                result.target_sha256,
+                result.epilogue,
             )
         )
     return output.getvalue()
@@ -640,6 +896,12 @@ def parse_args() -> argparse.Namespace:
         help="directory containing per-module linked images, maps, and listings",
     )
     parser.add_argument("--output", type=Path, help="write a deterministic TSV report")
+    parser.add_argument(
+        "--reviews",
+        type=Path,
+        default=DEFAULT_REVIEWS,
+        help="fingerprinted reviews for structurally equivalent CALL/RET tails",
+    )
     return parser.parse_args()
 
 
@@ -657,6 +919,11 @@ def main() -> int:
         results.extend(module_results)
         errors.extend(module_errors)
 
+    reviews, review_errors = read_reviews(args.reviews.resolve())
+    errors.extend(review_errors)
+    results, applied_errors = apply_reviews(results, reviews)
+    errors.extend(applied_errors)
+
     report = render_tsv(results)
     if args.output is None:
         sys.stdout.write(report)
@@ -671,8 +938,12 @@ def main() -> int:
         return 1
     direct_count = sum(result.kind == "direct" for result in results)
     dynamic_count = sum(result.kind == "dynamic" for result in results)
+    reviewed_count = sum(
+        result.status == "reviewed_call_return_equivalent" for result in results
+    )
     print(
-        f"OK: {direct_count} derived direct tail transfer(s), "
+        f"OK: {direct_count} derived direct tail transfer(s) "
+        f"({reviewed_count} reviewed CALL/RET equivalence(s)), "
         f"{dynamic_count} dynamic dispatch tail(s)"
     )
     return 0

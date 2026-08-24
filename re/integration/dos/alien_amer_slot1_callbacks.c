@@ -9,8 +9,7 @@ static int camera_calls;
 
 xdb_u16 XDB_NEAR xdb_test_slot1_selection_state(void);
 void XDB_NEAR xdb_test_set_slot1_selection_state(xdb_u16 state);
-xdb_i16 XDB_NEAR xdb_test_amer_slot1_current_sample(void);
-void XDB_NEAR xdb_test_set_amer_slot1_current_sample(xdb_i16 sample);
+void XDB_NEAR xdb_test_set_method_delta(xdb_i16 delta);
 void XDB_NEAR xdb_test_set_amer_slot1_selected_state(
         xdb_alien_state_cursor state);
 void XDB_NEAR xdb_test_set_slot2_active(xdb_u16 active);
@@ -159,13 +158,13 @@ int main(void)
     xdb_test_set_slot2_active(0);
     xdb_test_set_slot1_selection_state(2);
     xdb_test_set_amer_slot1_selected_state((xdb_alien_state_cursor)&selected);
-    xdb_test_set_amer_slot1_current_sample(0x0077);
+    xdb_test_set_method_delta(0x0077);
     xdb_alien_callback_countdown = 0;
     xdb_alien_palette_pulse_1.value = 0x0100;
     xdb_alien_palette_pulse_2.value = 0x0200;
     xdb_amer_slot1_wave_update(&state, &context);
-    if (xdb_test_amer_slot1_current_sample() != 0x007f) {
-        sprintf(status, "FAIL slot1 wave sample %d", xdb_test_amer_slot1_current_sample());
+    if (xdb_alien_method_delta != 0x007f) {
+        sprintf(status, "FAIL slot1 wave sample %d", xdb_alien_method_delta);
         return write_result(status);
     }
     if (state.owner_offset != (xdb_u16)(size_t)&selected) {

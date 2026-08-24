@@ -6229,6 +6229,18 @@ segment uses in 116 routines; mutation tests cover missing register restores,
 wrong return width, stack imbalance, segment clobber, legal near tail calls,
 missing LES/MOV segment definitions, and call-clobbered ES.
 
+`audit_xdb_tail_transfers.py` derives all 15 direct cross-routine jumps from
+the original alien overlays and keeps all six register-indirect dispatch tails
+byte-exact. Watcom lowers the 15 direct natural-C tail calls as a near `CALL`
+followed by the source epilogue and `RET`. The audit now proves each post-call
+path contains only `LEAVE`, register restores, unconditional local jumps, and
+the final near return. It then requires the complete relocation-normalized
+source and target instruction hashes in `re/source/xdb/tail_transfer_reviews.tsv`.
+The reviews are backed by the original-overlay slot-1 vectors, the AMER,
+CROOLIS, and SCRUT real-mode callback-family probes, and the 218-row emitted
+callback ABI gate. A new edge, observable post-call instruction, changed
+epilogue, or changed source/target body fails packaging until re-investigated.
+
 `compare_segment_roles.py` performs that separate parity audit. It traces the
 source of dynamic segment values (far-pointer arguments, fixed VGA segments,
 and segment words stored in GAME_DATA/FS_DATA), normalizes compiler register
@@ -6538,8 +6550,9 @@ scenario.
 Three independent source-to-assembly reviews covered segmented-pointer
 provenance, all 183 XDB routines, and whole-program ABI/linkage. The XDB review
 found no proved C-to-assembly logic mismatch: all 1,476 symbolic accesses, 218
-emitted ABI contracts, 86 callback stores, six tail transfers, and available
-oracle vectors passed. It did identify runtime invariants that static routine
+emitted ABI contracts, 86 callback stores, 15 direct transfer relationships,
+six dynamic tail prefixes, and available oracle vectors passed. It did identify
+runtime invariants that static routine
 equivalence cannot establish, led by MANU3 raster-list acyclicity and pool
 bounds. The captured textured-span loop is finite for each valid boundary; a
 cyclic or corrupted boundary list, or a pathological valid workload, remains

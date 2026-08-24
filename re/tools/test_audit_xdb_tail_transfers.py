@@ -78,6 +78,12 @@ class TailTransferAuditTests(unittest.TestCase):
             "0003    C3                        ret\n",
             encoding="ascii",
         )
+        (listings / "func_000200_target.lst").write_text(
+            "Segment: func_000200_target_TEXT BYTE USE16 00000001 bytes\n"
+            "0000                          xdb_amer_target_:\n"
+            "0000    C3                        ret\n",
+            encoding="ascii",
+        )
         return assembly_root, source_root
 
     def audit_fixture(self, root: Path, **kwargs: object):
@@ -120,13 +126,58 @@ class TailTransferAuditTests(unittest.TestCase):
             self.assertEqual(0x0100, results[0].original_jump_offset)
             self.assertEqual(0x0010, results[0].emitted_offset)
 
-    def test_call_then_return_mutation_fails(self) -> None:
+    def test_call_then_return_requires_fingerprinted_review(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             results, errors = self.audit_fixture(
                 Path(directory), emitted_mnemonic="call"
             )
-            self.assertEqual("call_then_return", results[0].status)
-            self.assertTrue(any("emits CALL + RET" in error for error in errors))
+            self.assertEqual([], errors)
+            self.assertEqual("call_return_equivalent", results[0].status)
+            reviewed, review_errors = AUDIT.apply_reviews(results, [])
+            self.assertEqual("unreviewed_call_return", reviewed[0].status)
+            self.assertTrue(any(
+                "unreviewed CALL/RET" in error for error in review_errors
+            ))
+
+    def test_matching_call_then_return_review_passes(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            results, errors = self.audit_fixture(
+                Path(directory), emitted_mnemonic="call"
+            )
+            self.assertEqual([], errors)
+            result = results[0]
+            review = AUDIT.ReviewedTransfer(
+                module=result.module,
+                source_symbol=result.source_symbol,
+                target_symbol=result.target_symbol,
+                original_jump_offset=result.original_jump_offset,
+                original_target_offset=result.original_target_offset,
+                source_sha256=result.source_sha256,
+                target_sha256=result.target_sha256,
+                epilogue=result.epilogue,
+                evidence="fixture",
+            )
+            reviewed, review_errors = AUDIT.apply_reviews(results, [review])
+            self.assertEqual([], review_errors)
+            self.assertEqual(
+                "reviewed_call_return_equivalent", reviewed[0].status
+            )
+
+            invalid = AUDIT.replace(review, source_sha256="0" * 64)
+            reviewed, review_errors = AUDIT.apply_reviews(results, [invalid])
+            self.assertEqual("invalidated_call_return", reviewed[0].status)
+            self.assertTrue(any(
+                "invalidated CALL/RET review" in error
+                for error in review_errors
+            ))
+
+    def test_observable_call_epilogue_is_rejected(self) -> None:
+        image = bytes.fromhex("40c3")
+        proved, evidence = AUDIT.prove_near_call_epilogue(
+            image, 0, AUDIT.CodeSegment("fixture", 0, 0, len(image))
+        )
+        self.assertFalse(proved)
+        self.assertEqual("opcode_40", evidence)
 
     def test_linked_jump_target_mutation_fails(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
