@@ -18,56 +18,155 @@ SPEC.loader.exec_module(AUDIT)
 
 
 class TailTransferAuditTests(unittest.TestCase):
-    def make_module(self, root: Path, module: str, corrupt: bool = False) -> None:
-        module_dir = root / module
-        module_dir.mkdir(parents=True)
-        image = bytearray(0x80)
-        map_lines: list[str] = []
-        offset = 0x10
-        for symbol, prefix in AUDIT.MODULE_SYMBOLS[module]:
-            payload = bytearray(prefix)
-            if corrupt:
-                payload[0] = 0x55
-                corrupt = False
-            image[offset : offset + len(payload)] = payload
-            map_lines.append(f"0000:{offset:04x}      {symbol}\n")
-            offset += 0x20
-        (module_dir / f"{module}.xdb").write_bytes(image)
-        (module_dir / f"{module}_source_link.map").write_text(
-            "".join(map_lines), encoding="ascii"
+    def make_fixture(
+        self,
+        root: Path,
+        *,
+        original_target: int = 0x0200,
+        emitted_mnemonic: str = "jmp",
+        linked_target: int = 0x0020,
+        include_target_symbol: bool = True,
+    ) -> tuple[Path, Path]:
+        assembly_root = root / "assembly"
+        module_assembly = assembly_root / "amer" / "callbacks"
+        module_assembly.mkdir(parents=True)
+        (module_assembly / "func_000100_source.asm").write_text(
+            "; overlay_offset: 0x000100\n"
+            "; byte_count: 3\n"
+            "; routine_entry: 0x000100\n"
+            "; raw stop: 0x000103\n"
+            f"000100:  E9 FD 00  jmp  0x{original_target:x}\n",
+            encoding="ascii",
+        )
+        (module_assembly / "func_000200_target.asm").write_text(
+            "; overlay_offset: 0x000200\n"
+            "; byte_count: 1\n"
+            "; routine_entry: 0x000200\n"
+            "; raw stop: 0x000201\n"
+            "000200:  C3  ret\n",
+            encoding="ascii",
         )
 
-    def test_exact_prefixes_pass(self) -> None:
+        source_root = root / "linked"
+        module_dir = source_root / "amer"
+        listings = module_dir / "segment_contract_listings"
+        listings.mkdir(parents=True)
+        image = bytearray(0x40)
+        opcode = 0xE9 if emitted_mnemonic == "jmp" else 0xE8
+        displacement = (linked_target - 0x0013) & 0xFFFF
+        image[0x10:0x13] = bytes((opcode, displacement & 0xFF, displacement >> 8))
+        image[0x13] = 0xC3
+        image[0x20] = 0xC3
+        (module_dir / "amer.xdb").write_bytes(image)
+
+        target_map_line = (
+            "0000:0020      xdb_amer_target_\n" if include_target_symbol else ""
+        )
+        (module_dir / "amer_source_link.map").write_text(
+            "func_000100_source_TEXT CODE AUTO 0000:0010       00000004\n"
+            "func_000200_target_TEXT CODE AUTO 0000:0020       00000001\n"
+            "0000:0010      xdb_amer_source_\n"
+            + target_map_line,
+            encoding="ascii",
+        )
+        listing_opcode = "E9" if emitted_mnemonic == "jmp" else "E8"
+        (listings / "func_000100_source.lst").write_text(
+            "Segment: func_000100_source_TEXT BYTE USE16 00000004 bytes\n"
+            "0000                          xdb_amer_source_:\n"
+            f"0000    {listing_opcode} 00 00                  "
+            f"{emitted_mnemonic}        xdb_amer_target_\n"
+            "0003    C3                        ret\n",
+            encoding="ascii",
+        )
+        return assembly_root, source_root
+
+    def audit_fixture(self, root: Path, **kwargs: object):
+        assembly_root, source_root = self.make_fixture(root, **kwargs)
+        return AUDIT.audit_module(
+            assembly_root, source_root, "amer", include_dynamic=False
+        )
+
+    def test_repository_derives_all_fifteen_direct_sites(self) -> None:
+        offsets = {}
+        transfers = []
+        errors = []
+        for module in AUDIT.MODULES:
+            module_transfers, module_errors = AUDIT.derive_original_transfers(
+                AUDIT.DEFAULT_ASSEMBLY_ROOT, module
+            )
+            offsets[module] = {
+                transfer.original_jump_offset for transfer in module_transfers
+            }
+            transfers.extend(module_transfers)
+            errors.extend(module_errors)
+        self.assertEqual([], errors)
+        self.assertEqual(
+            {
+                "amer": {0x0BCD, 0x19BD, 0x1A28},
+                "croolis": {0x0C21, 0x1804, 0x1812, 0x19CB, 0x19DA},
+                "scrut": {0x0C15, 0x17F1, 0x17FF, 0x19CC, 0x1A00, 0x1A80, 0x1A8F},
+            },
+            offsets,
+        )
+        self.assertEqual(15, len(transfers))
+        self.assertEqual(15, len({(item.module, item.original_jump_offset) for item in transfers}))
+
+    def test_direct_linked_tail_jump_passes(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            self.make_module(root, "amer")
-            results, errors = AUDIT.audit_module(root, "amer")
+            results, errors = self.audit_fixture(Path(directory))
             self.assertEqual([], errors)
-            self.assertEqual(
-                ["exact_tail_prefix", "exact_tail_prefix"],
-                [result.status for result in results],
-            )
+            self.assertEqual(1, len(results))
+            self.assertEqual("tail_jump", results[0].status)
+            self.assertEqual(0x0100, results[0].original_jump_offset)
+            self.assertEqual(0x0010, results[0].emitted_offset)
 
-    def test_stack_prologue_prefix_fails(self) -> None:
+    def test_call_then_return_mutation_fails(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            self.make_module(root, "croolis", corrupt=True)
-            results, errors = AUDIT.audit_module(root, "croolis")
-            self.assertEqual("prefix_mismatch", results[0].status)
-            self.assertIn("changes the callback tail contract", errors[0])
-
-    def test_duplicate_map_symbol_fails(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            self.make_module(root, "scrut")
-            map_path = root / "scrut" / "scrut_source_link.map"
-            original = map_path.read_text(encoding="ascii")
-            map_path.write_text(
-                original + original.splitlines(True)[0], encoding="ascii"
+            results, errors = self.audit_fixture(
+                Path(directory), emitted_mnemonic="call"
             )
-            results, errors = AUDIT.audit_module(root, "scrut")
-            self.assertEqual("missing_symbol", results[0].status)
-            self.assertIn("2 map locations", errors[0])
+            self.assertEqual("call_then_return", results[0].status)
+            self.assertTrue(any("emits CALL + RET" in error for error in errors))
+
+    def test_linked_jump_target_mutation_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            results, errors = self.audit_fixture(Path(directory), linked_target=0x0021)
+            self.assertEqual("linked_target_mismatch", results[0].status)
+            self.assertTrue(any("do not match linked bytes" in error for error in errors))
+
+    def test_unresolved_original_target_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            assembly_root, _source_root = self.make_fixture(
+                Path(directory), original_target=0x0300
+            )
+            transfers, errors = AUDIT.derive_original_transfers(assembly_root, "amer")
+            self.assertEqual([], transfers)
+            self.assertTrue(
+                any("unresolved original cross-routine jump" in error for error in errors)
+            )
+            self.assertTrue(any("derived zero" in error for error in errors))
+
+    def test_missing_recovered_target_symbol_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            results, errors = self.audit_fixture(
+                Path(directory), include_target_symbol=False
+            )
+            self.assertEqual("unresolved_emitted_symbol", results[0].status)
+            self.assertTrue(any("has 0 map locations" in error for error in errors))
+
+    def test_dynamic_dispatch_prefix_mutation_still_fails(self) -> None:
+        symbols = {"xdb_amer_method_slot_2_dispatch_or_init_": [(0, 0x10)]}
+        image = bytearray(0x40)
+        image[0x10 : 0x10 + len(AUDIT.SLOT2_PREFIX)] = AUDIT.SLOT2_PREFIX
+        results, errors = AUDIT.audit_dynamic_dispatches("amer", bytes(image), symbols)
+        self.assertEqual("exact_tail_prefix", results[0].status)
+        self.assertEqual("unresolved_emitted_symbol", results[1].status)
+        self.assertTrue(any("method_slot_13" in error for error in errors))
+
+        image[0x10] = 0x55
+        results, errors = AUDIT.audit_dynamic_dispatches("amer", bytes(image), symbols)
+        self.assertEqual("prefix_mismatch", results[0].status)
+        self.assertTrue(any("changes the dynamic tail contract" in error for error in errors))
 
 
 if __name__ == "__main__":
