@@ -44,6 +44,7 @@ FOCUS_PROBE = Path(__file__).with_name("focus_loss_probe.py")
 DEFAULT_OUTPUT_DIR = ROOT / "output" / "runtime-scenario-matrix"
 DEFAULT_CONTACT_MANIFEST = ROOT / "re/vm/contact-manifest/contact-manifest.json"
 AUTHENTIC_PTERRA = "authentic-pterra"
+DISPLAY_SLOT_STRIDE = 74
 SCRIPT1_BOB_CHECKPOINTS = (
     (0x078E, "GOOD DAY COMMANDER. MY NAME IS BOB, BOB MORLOCK"),
     (0x07AE, "IF THE PHONE RINGS"),
@@ -201,6 +202,12 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=1,
         help="isolated scenarios to run concurrently (default: 1)",
+    )
+    parser.add_argument(
+        "--repeat",
+        type=int,
+        default=1,
+        help="run every selected scenario this many times (default: 1)",
     )
     parser.add_argument(
         "--teleport-seconds",
@@ -904,23 +911,30 @@ def _text(value: str | bytes | None) -> str:
 def _run_one(
     args: argparse.Namespace,
     scenario: Scenario,
+    repeat_index: int,
     output_dir: Path,
     source_cblood: Path,
     input_identity: dict[str, dict[str, object]],
 ) -> dict[str, object]:
-    display = f":{args.display_base + scenario.display_slot}"
-    work_dir = output_dir / "work" / scenario.name
+    run_name = scenario.name
+    if args.repeat > 1:
+        run_name = f"{scenario.name}--run-{repeat_index + 1:02d}"
+    display_slot = repeat_index * DISPLAY_SLOT_STRIDE + scenario.display_slot
+    display = f":{args.display_base + display_slot}"
+    work_dir = output_dir / "work" / run_name
     install_parent = work_dir / "install"
-    raw_report = output_dir / "reports" / f"{scenario.name}.json"
-    result_path = output_dir / "results" / f"{scenario.name}.json"
-    log_path = output_dir / "logs" / f"{scenario.name}.log"
-    artifact_dir = output_dir / "artifacts" / scenario.name
+    raw_report = output_dir / "reports" / f"{run_name}.json"
+    result_path = output_dir / "results" / f"{run_name}.json"
+    log_path = output_dir / "logs" / f"{run_name}.log"
+    artifact_dir = output_dir / "artifacts" / run_name
     result: dict[str, object] = {
         "display": display,
         "input_identity": input_identity,
         "install_parent": str(install_parent),
-        "name": scenario.name,
+        "name": run_name,
         "raw_report": str(raw_report),
+        "repeat_index": repeat_index + 1,
+        "scenario": scenario.name,
         "status": "FAIL",
         "validation_errors": [],
     }
@@ -1044,6 +1058,8 @@ def _validate_arguments(
         parser.error("--display-base must be at least 1")
     if args.jobs < 1:
         parser.error("--jobs must be positive")
+    if args.repeat < 1:
+        parser.error("--repeat must be positive")
 
     args.cd_dir = args.cd_dir.resolve()
     args.install_parent = args.install_parent.resolve()
@@ -1101,10 +1117,22 @@ def run_matrix(args: argparse.Namespace) -> tuple[int, dict[str, object]]:
     output_dir.mkdir(parents=True, exist_ok=True)
     source_cblood = args.install_parent / "cblood"
     input_identity = _input_identity(args)
+    runs = [
+        (scenario, repeat_index)
+        for repeat_index in range(args.repeat)
+        for scenario in scenarios
+    ]
     if args.jobs == 1:
         results = [
-            _run_one(args, scenario, output_dir, source_cblood, input_identity)
-            for scenario in scenarios
+            _run_one(
+                args,
+                scenario,
+                repeat_index,
+                output_dir,
+                source_cblood,
+                input_identity,
+            )
+            for scenario, repeat_index in runs
         ]
     else:
         with concurrent.futures.ThreadPoolExecutor(
@@ -1112,14 +1140,15 @@ def run_matrix(args: argparse.Namespace) -> tuple[int, dict[str, object]]:
         ) as executor:
             results = list(
                 executor.map(
-                    lambda scenario: _run_one(
+                    lambda run: _run_one(
                         args,
-                        scenario,
+                        run[0],
+                        run[1],
                         output_dir,
                         source_cblood,
                         input_identity,
                     ),
-                    scenarios,
+                    runs,
                 )
             )
     passed = sum(result["status"] == "PASS" for result in results)
@@ -1129,6 +1158,7 @@ def run_matrix(args: argparse.Namespace) -> tuple[int, dict[str, object]]:
         "input_identity": input_identity,
         "install_source": str(args.install_parent),
         "passed": passed,
+        "repeat": args.repeat,
         "results": results,
         "scenario_count": len(results),
         "selected_scenarios": [scenario.name for scenario in scenarios],

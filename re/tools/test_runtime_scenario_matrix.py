@@ -595,6 +595,50 @@ class MatrixExecutionTests(unittest.TestCase):
         )
 
     @mock.patch.object(matrix.subprocess, "run")
+    def test_repeats_use_distinct_installs_reports_and_displays(
+        self, run: mock.Mock
+    ) -> None:
+        run.side_effect = self.successful_subprocess
+        args = self.args(
+            "--scenario",
+            "teleport-2",
+            "--scenario",
+            "script2-radio",
+            "--repeat",
+            "3",
+        )
+
+        exit_code, aggregate = matrix.run_matrix(args)
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(aggregate["repeat"], 3)
+        self.assertEqual(aggregate["scenario_count"], 6)
+        self.assertEqual(
+            [result["name"] for result in aggregate["results"]],
+            [
+                "teleport-2--run-01",
+                "script2-radio--run-01",
+                "teleport-2--run-02",
+                "script2-radio--run-02",
+                "teleport-2--run-03",
+                "script2-radio--run-03",
+            ],
+        )
+        self.assertEqual(
+            [result["display"] for result in aggregate["results"]],
+            [":122", ":125", ":196", ":199", ":270", ":273"],
+        )
+        self.assertEqual(
+            len({result["install_parent"] for result in aggregate["results"]}),
+            6,
+        )
+        self.assertEqual(
+            len({result["raw_report"] for result in aggregate["results"]}),
+            6,
+        )
+        self.assertEqual(run.call_count, 6)
+
+    @mock.patch.object(matrix.subprocess, "run")
     def test_expected_input_hashes_accept_exact_images(self, run: mock.Mock) -> None:
         run.side_effect = self.successful_subprocess
         executable_hash = self.sha256(self.cd_dir / "BPRG_RE.EXE")
