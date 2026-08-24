@@ -717,24 +717,77 @@ class CaptureHelperTests(unittest.TestCase):
         geometry = mock.Mock(
             returncode=0, stdout="WIDTH=640\nHEIGHT=400\n")
         completed = mock.Mock(returncode=0, stdout="")
+        released = mock.Mock(
+            returncode=0,
+            stdout=("BPRG_RE.EXE - to capture the mouse press Ctrl+F10 "
+                    "or click any button"))
+        captured = mock.Mock(
+            returncode=0,
+            stdout=("BPRG_RE.EXE - mouse captured, Ctrl+F10 or "
+                    "middle-click to release"))
         with mock.patch.object(
                 capture.subprocess, "run",
                 side_effect=[search, geometry, completed, completed,
-                             completed, completed, completed]) as run, \
+                             released, completed, released, completed,
+                             captured]) as run, \
                 mock.patch.object(capture.time, "sleep"):
             result = capture.recapture_game_mouse(
                 ":9", "BLOODPRG.EXE", toggle_capture=True)
         self.assertTrue(result["capture_toggled"])
+        self.assertFalse(result["capture_state_before"])
+        self.assertTrue(result["capture_state_after"])
         self.assertTrue(result["window_activated"])
         self.assertEqual(
-            [call.args[0] for call in run.call_args_list[-3:]],
+            [call.args[0] for call in run.call_args_list[4:]],
             [
+                ["xdotool", "getwindowname", "1234"],
+                ["xdotool", "mousemove", "--sync", "--window", "1234",
+                 "320", "200"],
+                ["xdotool", "getwindowname", "1234"],
+                ["xdotool", "click", "2"],
+                ["xdotool", "getwindowname", "1234"],
+            ],
+        )
+
+    def test_staging_recapture_releases_an_observed_capture_first(self) \
+            -> None:
+        search = mock.Mock(returncode=0, stdout="1234\n")
+        geometry = mock.Mock(
+            returncode=0, stdout="WIDTH=640\nHEIGHT=400\n")
+        completed = mock.Mock(returncode=0, stdout="")
+        released = mock.Mock(
+            returncode=0, stdout="to capture the mouse press Ctrl+F10")
+        captured = mock.Mock(returncode=0, stdout="mouse captured")
+        with mock.patch.object(
+                capture.subprocess, "run",
+                side_effect=[search, geometry, completed, completed,
+                             captured, completed, completed, released,
+                             completed, captured]) as run, \
+                mock.patch.object(capture.time, "sleep"):
+            result = capture.recapture_game_mouse(
+                ":9", "BLOODPRG.EXE", toggle_capture=True)
+        self.assertTrue(result["capture_state_before"])
+        self.assertTrue(result["capture_state_after"])
+        self.assertEqual(
+            [call.args[0] for call in run.call_args_list[4:]],
+            [
+                ["xdotool", "getwindowname", "1234"],
                 ["xdotool", "click", "2"],
                 ["xdotool", "mousemove", "--sync", "--window", "1234",
                  "320", "200"],
+                ["xdotool", "getwindowname", "1234"],
                 ["xdotool", "click", "2"],
+                ["xdotool", "getwindowname", "1234"],
             ],
         )
+
+    def test_mouse_capture_state_comes_from_dosbox_title_hint(self) -> None:
+        self.assertTrue(capture.mouse_capture_state_from_title(
+            "BPRG_RE.EXE - mouse captured, Ctrl+F10 to release"))
+        self.assertFalse(capture.mouse_capture_state_from_title(
+            "BPRG_RE.EXE - to capture the mouse press Ctrl+F10"))
+        self.assertIsNone(capture.mouse_capture_state_from_title(
+            "BPRG_RE.EXE - max 100% cycles/ms"))
 
     def test_recapture_allows_missing_ewmh_window_manager(self) -> None:
         search = mock.Mock(returncode=0, stdout="1234\n")
@@ -754,7 +807,7 @@ class CaptureHelperTests(unittest.TestCase):
         self.assertEqual(
             capture.dosbox_mouse_settings("/nix/store/hash/bin/dosbox"),
             [
-                "-set", "mouse mouse_capture=onstart",
+                "-set", "mouse mouse_capture=onclick",
                 "-set", "mouse mouse_raw_input=false",
             ],
         )

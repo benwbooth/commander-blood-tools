@@ -662,6 +662,15 @@ def guest_mouse_point_is_valid(x: int, y: int) -> bool:
     return 0 <= x < 320 and 0 <= y < 200
 
 
+def mouse_capture_state_from_title(title: str) -> bool | None:
+    normalized = title.lower()
+    if "mouse captured" in normalized:
+        return True
+    if "to capture the mouse" in normalized:
+        return False
+    return None
+
+
 def recapture_game_mouse(display: str, executable: str,
                          toggle_capture: bool = False) -> dict[str, object]:
     """Recenter the host pointer without injecting guest-relative motion."""
@@ -697,15 +706,24 @@ def recapture_game_mouse(display: str, executable: str,
         ["xdotool", "windowfocus", "--sync", window_id],
         env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         check=False)
+    capture_state_before = None
     if toggle_capture:
-        released = subprocess.run(
-            ["xdotool", "click", "2"], env=env,
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-            check=False)
-        if released.returncode != 0:
+        title = subprocess.run(
+            ["xdotool", "getwindowname", window_id], env=env,
+            capture_output=True, text=True, check=False)
+        if title.returncode != 0:
             raise RuntimeError(
-                f"could not release mouse capture in window {window_id}")
-        time.sleep(0.05)
+                f"could not read mouse capture state for window {window_id}")
+        capture_state_before = mouse_capture_state_from_title(title.stdout)
+        if capture_state_before is True:
+            released = subprocess.run(
+                ["xdotool", "click", "2"], env=env,
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                check=False)
+            if released.returncode != 0:
+                raise RuntimeError(
+                    f"could not release mouse capture in window {window_id}")
+            time.sleep(0.05)
     moved = subprocess.run(
         ["xdotool", "mousemove", "--sync", "--window", window_id,
          str(width // 2), str(height // 2)],
@@ -716,7 +734,18 @@ def recapture_game_mouse(display: str, executable: str,
     if focus.returncode != 0 or moved.returncode != 0:
         raise RuntimeError(
             f"could not recapture the DOSBox mouse in window {window_id}")
+    capture_state_after = None
     if toggle_capture:
+        title = subprocess.run(
+            ["xdotool", "getwindowname", window_id], env=env,
+            capture_output=True, text=True, check=False)
+        capture_state_after = (
+            mouse_capture_state_from_title(title.stdout)
+            if title.returncode == 0 else None)
+        if capture_state_after is not False:
+            raise RuntimeError(
+                "DOSBox mouse was not observably released before recapture; "
+                f"title={title.stdout.strip()!r}")
         captured = subprocess.run(
             ["xdotool", "click", "2"], env=env,
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
@@ -725,11 +754,23 @@ def recapture_game_mouse(display: str, executable: str,
             raise RuntimeError(
                 f"could not restore mouse capture in window {window_id}")
         time.sleep(0.05)
+        title = subprocess.run(
+            ["xdotool", "getwindowname", window_id], env=env,
+            capture_output=True, text=True, check=False)
+        capture_state_after = (
+            mouse_capture_state_from_title(title.stdout)
+            if title.returncode == 0 else None)
+        if capture_state_after is not True:
+            raise RuntimeError(
+                "DOSBox mouse capture did not become observable; "
+                f"title={title.stdout.strip()!r}")
     return {
         "window_id": window_id,
         "window_size": [width, height],
         "window_point": [width // 2, height // 2],
         "capture_toggled": toggle_capture,
+        "capture_state_before": capture_state_before,
+        "capture_state_after": capture_state_after,
         "window_activated": activate.returncode == 0,
     }
 
@@ -739,7 +780,7 @@ def dosbox_mouse_settings(executable: str) -> list[str]:
     if Path(executable).name.lower() == "dosbox-x":
         return ["-set", "sdl autolock=true"]
     return [
-        "-set", "mouse mouse_capture=onstart",
+        "-set", "mouse mouse_capture=onclick",
         "-set", "mouse mouse_raw_input=false",
     ]
 
