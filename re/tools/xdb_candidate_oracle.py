@@ -4796,6 +4796,7 @@ def alien_primary_mesh_vectors(
         put_u16(data_expected, 0x227E, common_clip)
         put_u16(data_expected, 0x2280, 0)
         face_results = []
+        semantic_buckets: dict[int, list[int]] = {}
         if common_clip == 0:
             for face_index, vertex_indices in enumerate(faces):
                 current_face_offset = face_offsets[face_index]
@@ -4841,6 +4842,13 @@ def alien_primary_mesh_vectors(
                             geometry_expected,
                             current_face_offset,
                             previous_head,
+                        )
+                        bucket_column = (
+                            (bucket_offset - bucket_base) & 0xFFFF
+                        ) // 2
+                        semantic_buckets.setdefault(bucket_column, []).insert(
+                            0,
+                            face_index,
                         )
                 face_results.append(
                     {
@@ -4989,6 +4997,59 @@ def alien_primary_mesh_vectors(
                 "name": case["name"],
                 "module": module,
                 "entry": entry,
+                "camera_matrix": [signed_dword(value) for value in matrix],
+                "screen_center": [
+                    signed_dword(center[0]),
+                    signed_dword(center[1]),
+                ],
+                "vertices_before": [
+                    {
+                        "position": [signed_word(value) for value in coordinates],
+                        "screen": [
+                            signed_word(0xA100 + vertex_index),
+                            signed_word(0xB200 + vertex_index),
+                        ],
+                        "raster_depth": signed_dword(
+                            0xC3C40000 + vertex_index
+                        ),
+                    }
+                    for vertex_index, coordinates in enumerate(vertices)
+                ],
+                "faces_before": [list(face) for face in faces],
+                "projected_vertices": [
+                    {
+                        "valid_depth": vertex["valid_depth"],
+                        "screen": [vertex["screen_x"], vertex["screen_y"]],
+                        "clip_flags": vertex["clip_flags"],
+                    }
+                    for vertex in vertex_results
+                ],
+                "face_decisions": [
+                    {
+                        "vertices": [
+                            vertex_offsets.index(vertex_offset)
+                            for vertex_offset in face["vertices"]
+                        ],
+                        "left_x": face["left_x"],
+                        "bucket_column": (
+                            None
+                            if face["bucket_offset"] is None
+                            else (
+                                (face["bucket_offset"] - bucket_base) & 0xFFFF
+                            )
+                            // 2
+                        ),
+                    }
+                    for face in face_results
+                ],
+                "buckets": [
+                    {
+                        "column": column,
+                        "faces": faces,
+                    }
+                    for column, faces in sorted(semantic_buckets.items())
+                ],
+                "render_requested": common_clip == 0,
                 "vertex_count": len(vertices),
                 "face_count": len(faces),
                 "vertices": vertex_results,

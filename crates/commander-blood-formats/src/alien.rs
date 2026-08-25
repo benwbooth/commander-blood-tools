@@ -67,6 +67,8 @@ const NODE_RADIAL_OFFSET_FIELD: usize = 0x0054;
 const VERTEX_RECORD_SIZE: usize = 20;
 const VERTEX_TEXTURE_FIELD: usize = 0x0000;
 const VERTEX_POSITION_FIELD: usize = 0x0004;
+const VERTEX_SCREEN_FIELD: usize = 0x000a;
+const VERTEX_RASTER_DEPTH_FIELD: usize = 0x000e;
 const FACE_RECORD_SIZE: usize = 8;
 const FACE_FIRST_VERTEX_FIELD: usize = 0x0002;
 const METHOD_SLOT_SIZE: usize = 2;
@@ -165,6 +167,10 @@ pub struct AlienVertexData {
     pub texture: [i16; 2],
     /// Object-space position; an alias retains zero and uses a projection copy.
     pub position: [i16; AXIS_COUNT],
+    /// Initial projected coordinate retained by primary vertices with invalid depth.
+    pub initial_screen: [i16; 2],
+    /// Authored depth/interpolation value consumed by the face raster stage.
+    pub raster_depth: i32,
 }
 
 /// Projection sharing for a UV-seam alias vertex.
@@ -390,6 +396,13 @@ fn vertex(data: &[u8], object_start: usize, offset: usize) -> Option<AlienVertex
                 position + VERTEX_POSITION_FIELD + axis * size_of::<i16>(),
             )
         })?,
+        initial_screen: checked_array(|axis| {
+            read_i16(
+                data,
+                position + VERTEX_SCREEN_FIELD + axis * size_of::<i16>(),
+            )
+        })?,
+        raster_depth: read_i32(data, position + VERTEX_RASTER_DEPTH_FIELD)?,
     })
 }
 
@@ -664,6 +677,7 @@ mod tests {
     const EXPECTED_AMER_MODEL_COUNT: usize = 19;
     const EXPECTED_CROOLIS_MODEL_COUNT: usize = 15;
     const EXPECTED_SCRUT_MODEL_COUNT: usize = 14;
+    const ZERO_RASTER_DEPTH: i32 = 0;
 
     fn original_xdb(name: &str) -> Option<PathBuf> {
         [
@@ -702,6 +716,14 @@ mod tests {
             assert_eq!(
                 asset.primary_model.mesh.faces.len(),
                 EXPECTED_PRIMARY_FACE_COUNT
+            );
+            assert!(
+                asset
+                    .primary_model
+                    .mesh
+                    .vertices
+                    .iter()
+                    .any(|vertex| vertex.raster_depth != ZERO_RASTER_DEPTH)
             );
             assert_eq!(asset.texture.pixels.len(), TEXTURE_WIDTH * TEXTURE_HEIGHT);
             assert!(

@@ -3,6 +3,55 @@
     "name": "negative_depth_accumulator",
     "module": "scrut",
     "entry": 1500,
+    "camera_matrix": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "screen_center": [
+      160,
+      100
+    ],
+    "vertices_before": [
+      {
+        "position": [
+          -1,
+          2,
+          3
+        ],
+        "screen": [
+          -24320,
+          -19968
+        ],
+        "raster_depth": -1010565120
+      }
+    ],
+    "faces_before": [
+      [
+        0,
+        0,
+        0
+      ]
+    ],
+    "projected_vertices": [
+      {
+        "valid_depth": false,
+        "screen": [
+          -24320,
+          -19968
+        ],
+        "clip_flags": 32783
+      }
+    ],
+    "face_decisions": [],
+    "buckets": [],
+    "render_requested": false,
     "vertex_count": 1,
     "face_count": 1,
     "vertices": [
@@ -24,6 +73,55 @@
     "name": "positive_depth_shifts_to_zero",
     "module": "scrut",
     "entry": 1500,
+    "camera_matrix": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "screen_center": [
+      160,
+      100
+    ],
+    "vertices_before": [
+      {
+        "position": [
+          255,
+          1,
+          0
+        ],
+        "screen": [
+          -24320,
+          -19968
+        ],
+        "raster_depth": -1010565120
+      }
+    ],
+    "faces_before": [
+      [
+        0,
+        0,
+        0
+      ]
+    ],
+    "projected_vertices": [
+      {
+        "valid_depth": false,
+        "screen": [
+          -24320,
+          -19968
+        ],
+        "clip_flags": 32783
+      }
+    ],
+    "face_decisions": [],
+    "buckets": [],
+    "render_requested": false,
     "vertex_count": 1,
     "face_count": 1,
     "vertices": [
@@ -45,6 +143,112 @@
     "name": "interior_projection_and_face",
     "module": "scrut",
     "entry": 1500,
+    "camera_matrix": [
+      256,
+      0,
+      0,
+      0,
+      256,
+      0,
+      0,
+      0,
+      65536
+    ],
+    "screen_center": [
+      160,
+      100
+    ],
+    "vertices_before": [
+      {
+        "position": [
+          -10,
+          0,
+          1
+        ],
+        "screen": [
+          -24320,
+          -19968
+        ],
+        "raster_depth": -1010565120
+      },
+      {
+        "position": [
+          20,
+          5,
+          1
+        ],
+        "screen": [
+          -24319,
+          -19967
+        ],
+        "raster_depth": -1010565119
+      },
+      {
+        "position": [
+          40,
+          -5,
+          1
+        ],
+        "screen": [
+          -24318,
+          -19966
+        ],
+        "raster_depth": -1010565118
+      }
+    ],
+    "faces_before": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "projected_vertices": [
+      {
+        "valid_depth": true,
+        "screen": [
+          150,
+          100
+        ],
+        "clip_flags": 0
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          180,
+          95
+        ],
+        "clip_flags": 0
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          200,
+          105
+        ],
+        "clip_flags": 0
+      }
+    ],
+    "face_decisions": [
+      {
+        "vertices": [
+          0,
+          1,
+          2
+        ],
+        "left_x": 150,
+        "bucket_column": 150
+      }
+    ],
+    "buckets": [
+      {
+        "column": 150,
+        "faces": [
+          0
+        ]
+      }
+    ],
+    "render_requested": true,
     "vertex_count": 3,
     "face_count": 1,
     "vertices": [
@@ -98,6 +302,172 @@
     "name": "all_four_clip_edges",
     "module": "scrut",
     "entry": 1500,
+    "camera_matrix": [
+      256,
+      0,
+      0,
+      0,
+      256,
+      0,
+      0,
+      0,
+      65536
+    ],
+    "screen_center": [
+      160,
+      100
+    ],
+    "vertices_before": [
+      {
+        "position": [
+          -161,
+          0,
+          1
+        ],
+        "screen": [
+          -24320,
+          -19968
+        ],
+        "raster_depth": -1010565120
+      },
+      {
+        "position": [
+          160,
+          0,
+          1
+        ],
+        "screen": [
+          -24319,
+          -19967
+        ],
+        "raster_depth": -1010565119
+      },
+      {
+        "position": [
+          0,
+          101,
+          1
+        ],
+        "screen": [
+          -24318,
+          -19966
+        ],
+        "raster_depth": -1010565118
+      },
+      {
+        "position": [
+          0,
+          -100,
+          1
+        ],
+        "screen": [
+          -24317,
+          -19965
+        ],
+        "raster_depth": -1010565117
+      },
+      {
+        "position": [
+          0,
+          0,
+          1
+        ],
+        "screen": [
+          -24316,
+          -19964
+        ],
+        "raster_depth": -1010565116
+      }
+    ],
+    "faces_before": [
+      [
+        0,
+        1,
+        4
+      ],
+      [
+        2,
+        3,
+        4
+      ]
+    ],
+    "projected_vertices": [
+      {
+        "valid_depth": true,
+        "screen": [
+          -1,
+          100
+        ],
+        "clip_flags": 1
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          320,
+          100
+        ],
+        "clip_flags": 2
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          160,
+          -1
+        ],
+        "clip_flags": 4
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          160,
+          200
+        ],
+        "clip_flags": 8
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          160,
+          100
+        ],
+        "clip_flags": 0
+      }
+    ],
+    "face_decisions": [
+      {
+        "vertices": [
+          0,
+          1,
+          4
+        ],
+        "left_x": -1,
+        "bucket_column": 0
+      },
+      {
+        "vertices": [
+          2,
+          3,
+          4
+        ],
+        "left_x": 160,
+        "bucket_column": 160
+      }
+    ],
+    "buckets": [
+      {
+        "column": 0,
+        "faces": [
+          0
+        ]
+      },
+      {
+        "column": 160,
+        "faces": [
+          1
+        ]
+      }
+    ],
+    "render_requested": true,
     "vertex_count": 5,
     "face_count": 2,
     "vertices": [
@@ -175,6 +545,95 @@
     "name": "common_left_clip_rejection",
     "module": "scrut",
     "entry": 1500,
+    "camera_matrix": [
+      256,
+      0,
+      0,
+      0,
+      256,
+      0,
+      0,
+      0,
+      65536
+    ],
+    "screen_center": [
+      0,
+      100
+    ],
+    "vertices_before": [
+      {
+        "position": [
+          -200,
+          0,
+          1
+        ],
+        "screen": [
+          -24320,
+          -19968
+        ],
+        "raster_depth": -1010565120
+      },
+      {
+        "position": [
+          -180,
+          5,
+          1
+        ],
+        "screen": [
+          -24319,
+          -19967
+        ],
+        "raster_depth": -1010565119
+      },
+      {
+        "position": [
+          -170,
+          -5,
+          1
+        ],
+        "screen": [
+          -24318,
+          -19966
+        ],
+        "raster_depth": -1010565118
+      }
+    ],
+    "faces_before": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "projected_vertices": [
+      {
+        "valid_depth": true,
+        "screen": [
+          -200,
+          100
+        ],
+        "clip_flags": 1
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          -180,
+          95
+        ],
+        "clip_flags": 1
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          -170,
+          105
+        ],
+        "clip_flags": 1
+      }
+    ],
+    "face_decisions": [],
+    "buckets": [],
+    "render_requested": false,
     "vertex_count": 3,
     "face_count": 1,
     "vertices": [
@@ -210,6 +669,337 @@
     "name": "both_rotations_and_ties",
     "module": "scrut",
     "entry": 1500,
+    "camera_matrix": [
+      256,
+      0,
+      0,
+      0,
+      256,
+      0,
+      0,
+      0,
+      65536
+    ],
+    "screen_center": [
+      0,
+      100
+    ],
+    "vertices_before": [
+      {
+        "position": [
+          30,
+          0,
+          1
+        ],
+        "screen": [
+          -24320,
+          -19968
+        ],
+        "raster_depth": -1010565120
+      },
+      {
+        "position": [
+          20,
+          0,
+          1
+        ],
+        "screen": [
+          -24319,
+          -19967
+        ],
+        "raster_depth": -1010565119
+      },
+      {
+        "position": [
+          10,
+          0,
+          1
+        ],
+        "screen": [
+          -24318,
+          -19966
+        ],
+        "raster_depth": -1010565118
+      },
+      {
+        "position": [
+          30,
+          0,
+          1
+        ],
+        "screen": [
+          -24317,
+          -19965
+        ],
+        "raster_depth": -1010565117
+      },
+      {
+        "position": [
+          10,
+          0,
+          1
+        ],
+        "screen": [
+          -24316,
+          -19964
+        ],
+        "raster_depth": -1010565116
+      },
+      {
+        "position": [
+          20,
+          0,
+          1
+        ],
+        "screen": [
+          -24315,
+          -19963
+        ],
+        "raster_depth": -1010565115
+      },
+      {
+        "position": [
+          20,
+          0,
+          1
+        ],
+        "screen": [
+          -24314,
+          -19962
+        ],
+        "raster_depth": -1010565114
+      },
+      {
+        "position": [
+          10,
+          0,
+          1
+        ],
+        "screen": [
+          -24313,
+          -19961
+        ],
+        "raster_depth": -1010565113
+      },
+      {
+        "position": [
+          10,
+          0,
+          1
+        ],
+        "screen": [
+          -24312,
+          -19960
+        ],
+        "raster_depth": -1010565112
+      },
+      {
+        "position": [
+          10,
+          0,
+          1
+        ],
+        "screen": [
+          -24311,
+          -19959
+        ],
+        "raster_depth": -1010565111
+      },
+      {
+        "position": [
+          20,
+          0,
+          1
+        ],
+        "screen": [
+          -24310,
+          -19958
+        ],
+        "raster_depth": -1010565110
+      },
+      {
+        "position": [
+          20,
+          0,
+          1
+        ],
+        "screen": [
+          -24309,
+          -19957
+        ],
+        "raster_depth": -1010565109
+      }
+    ],
+    "faces_before": [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        3,
+        4,
+        5
+      ],
+      [
+        6,
+        7,
+        8
+      ],
+      [
+        9,
+        10,
+        11
+      ]
+    ],
+    "projected_vertices": [
+      {
+        "valid_depth": true,
+        "screen": [
+          30,
+          100
+        ],
+        "clip_flags": 0
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          20,
+          100
+        ],
+        "clip_flags": 0
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          10,
+          100
+        ],
+        "clip_flags": 0
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          30,
+          100
+        ],
+        "clip_flags": 0
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          10,
+          100
+        ],
+        "clip_flags": 0
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          20,
+          100
+        ],
+        "clip_flags": 0
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          20,
+          100
+        ],
+        "clip_flags": 0
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          10,
+          100
+        ],
+        "clip_flags": 0
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          10,
+          100
+        ],
+        "clip_flags": 0
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          10,
+          100
+        ],
+        "clip_flags": 0
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          20,
+          100
+        ],
+        "clip_flags": 0
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          20,
+          100
+        ],
+        "clip_flags": 0
+      }
+    ],
+    "face_decisions": [
+      {
+        "vertices": [
+          2,
+          0,
+          1
+        ],
+        "left_x": 10,
+        "bucket_column": 10
+      },
+      {
+        "vertices": [
+          4,
+          5,
+          3
+        ],
+        "left_x": 10,
+        "bucket_column": 10
+      },
+      {
+        "vertices": [
+          7,
+          8,
+          6
+        ],
+        "left_x": 10,
+        "bucket_column": 10
+      },
+      {
+        "vertices": [
+          9,
+          10,
+          11
+        ],
+        "left_x": 10,
+        "bucket_column": 10
+      }
+    ],
+    "buckets": [
+      {
+        "column": 10,
+        "faces": [
+          3,
+          2,
+          1,
+          0
+        ]
+      }
+    ],
+    "render_requested": true,
     "vertex_count": 12,
     "face_count": 4,
     "vertices": [
@@ -356,6 +1146,260 @@
     "name": "face_clip_and_width_boundaries",
     "module": "scrut",
     "entry": 1500,
+    "camera_matrix": [
+      256,
+      0,
+      0,
+      0,
+      256,
+      0,
+      0,
+      0,
+      65536
+    ],
+    "screen_center": [
+      0,
+      100
+    ],
+    "vertices_before": [
+      {
+        "position": [
+          -10,
+          0,
+          1
+        ],
+        "screen": [
+          -24320,
+          -19968
+        ],
+        "raster_depth": -1010565120
+      },
+      {
+        "position": [
+          -9,
+          0,
+          1
+        ],
+        "screen": [
+          -24319,
+          -19967
+        ],
+        "raster_depth": -1010565119
+      },
+      {
+        "position": [
+          -8,
+          0,
+          1
+        ],
+        "screen": [
+          -24318,
+          -19966
+        ],
+        "raster_depth": -1010565118
+      },
+      {
+        "position": [
+          -100,
+          0,
+          1
+        ],
+        "screen": [
+          -24317,
+          -19965
+        ],
+        "raster_depth": -1010565117
+      },
+      {
+        "position": [
+          399,
+          0,
+          1
+        ],
+        "screen": [
+          -24316,
+          -19964
+        ],
+        "raster_depth": -1010565116
+      },
+      {
+        "position": [
+          0,
+          0,
+          1
+        ],
+        "screen": [
+          -24315,
+          -19963
+        ],
+        "raster_depth": -1010565115
+      },
+      {
+        "position": [
+          -100,
+          0,
+          1
+        ],
+        "screen": [
+          -24314,
+          -19962
+        ],
+        "raster_depth": -1010565114
+      },
+      {
+        "position": [
+          400,
+          0,
+          1
+        ],
+        "screen": [
+          -24313,
+          -19961
+        ],
+        "raster_depth": -1010565113
+      },
+      {
+        "position": [
+          0,
+          0,
+          1
+        ],
+        "screen": [
+          -24312,
+          -19960
+        ],
+        "raster_depth": -1010565112
+      }
+    ],
+    "faces_before": [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        3,
+        4,
+        5
+      ],
+      [
+        6,
+        7,
+        8
+      ]
+    ],
+    "projected_vertices": [
+      {
+        "valid_depth": true,
+        "screen": [
+          -10,
+          100
+        ],
+        "clip_flags": 1
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          -9,
+          100
+        ],
+        "clip_flags": 1
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          -8,
+          100
+        ],
+        "clip_flags": 1
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          -100,
+          100
+        ],
+        "clip_flags": 1
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          399,
+          100
+        ],
+        "clip_flags": 2
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          0,
+          100
+        ],
+        "clip_flags": 0
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          -100,
+          100
+        ],
+        "clip_flags": 1
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          400,
+          100
+        ],
+        "clip_flags": 2
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          0,
+          100
+        ],
+        "clip_flags": 0
+      }
+    ],
+    "face_decisions": [
+      {
+        "vertices": [
+          0,
+          1,
+          2
+        ],
+        "left_x": -10,
+        "bucket_column": null
+      },
+      {
+        "vertices": [
+          3,
+          4,
+          5
+        ],
+        "left_x": -100,
+        "bucket_column": 0
+      },
+      {
+        "vertices": [
+          6,
+          7,
+          8
+        ],
+        "left_x": -100,
+        "bucket_column": null
+      }
+    ],
+    "buckets": [
+      {
+        "column": 0,
+        "faces": [
+          1
+        ]
+      }
+    ],
+    "render_requested": true,
     "vertex_count": 9,
     "face_count": 3,
     "vertices": [
@@ -471,6 +1515,187 @@
     "name": "negative_bucket_and_lifo_links",
     "module": "scrut",
     "entry": 1500,
+    "camera_matrix": [
+      256,
+      0,
+      0,
+      0,
+      256,
+      0,
+      0,
+      0,
+      65536
+    ],
+    "screen_center": [
+      0,
+      100
+    ],
+    "vertices_before": [
+      {
+        "position": [
+          -20,
+          0,
+          1
+        ],
+        "screen": [
+          -24320,
+          -19968
+        ],
+        "raster_depth": -1010565120
+      },
+      {
+        "position": [
+          0,
+          0,
+          1
+        ],
+        "screen": [
+          -24319,
+          -19967
+        ],
+        "raster_depth": -1010565119
+      },
+      {
+        "position": [
+          15,
+          0,
+          1
+        ],
+        "screen": [
+          -24318,
+          -19966
+        ],
+        "raster_depth": -1010565118
+      },
+      {
+        "position": [
+          -20,
+          0,
+          1
+        ],
+        "screen": [
+          -24317,
+          -19965
+        ],
+        "raster_depth": -1010565117
+      },
+      {
+        "position": [
+          8,
+          0,
+          1
+        ],
+        "screen": [
+          -24316,
+          -19964
+        ],
+        "raster_depth": -1010565116
+      },
+      {
+        "position": [
+          4,
+          0,
+          1
+        ],
+        "screen": [
+          -24315,
+          -19963
+        ],
+        "raster_depth": -1010565115
+      }
+    ],
+    "faces_before": [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        3,
+        4,
+        5
+      ]
+    ],
+    "projected_vertices": [
+      {
+        "valid_depth": true,
+        "screen": [
+          -20,
+          100
+        ],
+        "clip_flags": 1
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          0,
+          100
+        ],
+        "clip_flags": 0
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          15,
+          100
+        ],
+        "clip_flags": 0
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          -20,
+          100
+        ],
+        "clip_flags": 1
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          8,
+          100
+        ],
+        "clip_flags": 0
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          4,
+          100
+        ],
+        "clip_flags": 0
+      }
+    ],
+    "face_decisions": [
+      {
+        "vertices": [
+          0,
+          1,
+          2
+        ],
+        "left_x": -20,
+        "bucket_column": 0
+      },
+      {
+        "vertices": [
+          3,
+          4,
+          5
+        ],
+        "left_x": -20,
+        "bucket_column": 0
+      }
+    ],
+    "buckets": [
+      {
+        "column": 0,
+        "faces": [
+          1,
+          0
+        ]
+      }
+    ],
+    "render_requested": true,
     "vertex_count": 6,
     "face_count": 2,
     "vertices": [
@@ -555,6 +1780,95 @@
     "name": "modular_products_and_centers",
     "module": "scrut",
     "entry": 1500,
+    "camera_matrix": [
+      2147483647,
+      -1879048188,
+      305419900,
+      -19088740,
+      1610612740,
+      -1610612732,
+      0,
+      0,
+      65536
+    ],
+    "screen_center": [
+      2147483632,
+      -2147483616
+    ],
+    "vertices_before": [
+      {
+        "position": [
+          32767,
+          -32768,
+          1
+        ],
+        "screen": [
+          -24320,
+          -19968
+        ],
+        "raster_depth": -1010565120
+      },
+      {
+        "position": [
+          -32768,
+          32767,
+          2
+        ],
+        "screen": [
+          -24319,
+          -19967
+        ],
+        "raster_depth": -1010565119
+      },
+      {
+        "position": [
+          0,
+          0,
+          1
+        ],
+        "screen": [
+          -24318,
+          -19966
+        ],
+        "raster_depth": -1010565118
+      }
+    ],
+    "faces_before": [
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    "projected_vertices": [
+      {
+        "valid_depth": true,
+        "screen": [
+          12743,
+          -28454
+        ],
+        "clip_flags": 6
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          13703,
+          -23009
+        ],
+        "clip_flags": 6
+      },
+      {
+        "valid_depth": true,
+        "screen": [
+          13382,
+          31
+        ],
+        "clip_flags": 5
+      }
+    ],
+    "face_decisions": [],
+    "buckets": [],
+    "render_requested": false,
     "vertex_count": 3,
     "face_count": 1,
     "vertices": [

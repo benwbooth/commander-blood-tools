@@ -3,9 +3,9 @@
 use std::collections::BTreeMap;
 use std::fmt;
 
-use commander_blood_formats::alien::AXIS_COUNT;
+use commander_blood_formats::alien::{AXIS_COUNT, AlienFaceData};
 
-use super::{AlienModelPose, AlienSpecies};
+use super::{AlienModelPose, AlienProjectedVertex, AlienSpecies};
 
 const FIRST_VERTEX: usize = 0;
 const SECOND_VERTEX: usize = 1;
@@ -16,6 +16,8 @@ const BUCKET_SCALE_SHIFT: u32 = 1;
 const BEHIND_CAMERA_CLIP: u16 = 0x8000;
 const FIRST_BUCKET_COLUMN: usize = 0;
 const ZERO_SCREEN_COORDINATE: i16 = 0;
+
+pub(super) type AlienFaceBucketMap = BTreeMap<usize, Vec<AlienFaceReference>>;
 
 /// Typed replacement for the original pointer-valued behind-camera latch.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -107,70 +109,17 @@ pub fn select_faces(
     }
 
     let mut decisions = Vec::with_capacity(models.len());
-    let mut buckets = BTreeMap::<usize, Vec<AlienFaceReference>>::new();
+    let mut buckets = AlienFaceBucketMap::new();
     let mut behind_camera = AlienBehindCameraSignal::Unchanged;
     for (model_index, model) in models.iter_mut().enumerate() {
-        let mut model_decisions = Vec::with_capacity(model.faces.len());
-        let mut model_crosses_camera = false;
-        for (face_index, face) in model.faces.iter_mut().enumerate() {
-            let mut vertices = face.vertices;
-            let projected = vertices.map(|vertex_index| {
-                model.projected_vertices.get(vertex_index).copied().ok_or(
-                    AlienFaceSelectionError::InvalidVertex {
-                        model_index,
-                        face_index,
-                        vertex_index,
-                        available: model.projected_vertices.len(),
-                    },
-                )
-            });
-            let [vertex_0, vertex_1, vertex_2] = projected;
-            let projected = [vertex_0?, vertex_1?, vertex_2?];
-            let mut screen_x = projected.map(|vertex| vertex.screen[FIRST_VERTEX]);
-            let common_clip = projected
-                .iter()
-                .fold(u16::MAX, |clip, vertex| clip & vertex.clip_flags);
-            let mut bucket_column = None;
-
-            if common_clip == u16::MIN {
-                let combined_clip = projected
-                    .iter()
-                    .fold(u16::MIN, |clip, vertex| clip | vertex.clip_flags);
-                if combined_clip & BEHIND_CAMERA_CLIP != u16::MIN {
-                    model_crosses_camera = true;
-                    if species == AlienSpecies::Amer {
-                        behind_camera = AlienBehindCameraSignal::General;
-                    }
-                }
-
-                rotate_leftmost(&mut vertices, &mut screen_x);
-                face.vertices = vertices;
-                let first_x = screen_x[FIRST_VERTEX] as u16;
-                let first_span = (screen_x[SECOND_VERTEX] as u16).wrapping_sub(first_x);
-                let second_span = (screen_x[THIRD_VERTEX] as u16).wrapping_sub(first_x);
-                if first_span < MAXIMUM_FACE_WIDTH && second_span < MAXIMUM_FACE_WIDTH {
-                    let doubled_x = first_x.wrapping_shl(BUCKET_SCALE_SHIFT);
-                    let column = if doubled_x as i16 >= ZERO_SCREEN_COORDINATE {
-                        usize::from(doubled_x >> BUCKET_SCALE_SHIFT)
-                    } else {
-                        FIRST_BUCKET_COLUMN
-                    };
-                    bucket_column = Some(column);
-                    buckets.entry(column).or_default().insert(
-                        FIRST_VERTEX,
-                        AlienFaceReference {
-                            model_index,
-                            face_index,
-                        },
-                    );
-                }
-            }
-
-            model_decisions.push(AlienFaceDecision {
-                vertices,
-                left_x: screen_x[FIRST_VERTEX],
-                bucket_column,
-            });
+        let (model_decisions, model_crosses_camera) = select_model_faces(
+            model_index,
+            &mut model.faces,
+            &model.projected_vertices,
+            &mut buckets,
+        )?;
+        if species == AlienSpecies::Amer && model_crosses_camera {
+            behind_camera = AlienBehindCameraSignal::General;
         }
         if species != AlienSpecies::Amer && model_crosses_camera {
             behind_camera = AlienBehindCameraSignal::Model(model_index);
@@ -180,12 +129,82 @@ pub fn select_faces(
 
     Ok(AlienFaceSelection {
         decisions,
-        buckets: buckets
-            .into_iter()
-            .map(|(column, faces)| AlienFaceBucket { column, faces })
-            .collect(),
+        buckets: finish_buckets(buckets),
         behind_camera,
     })
+}
+
+pub(super) fn select_model_faces(
+    model_index: usize,
+    faces: &mut [AlienFaceData],
+    projected_vertices: &[AlienProjectedVertex],
+    buckets: &mut AlienFaceBucketMap,
+) -> Result<(Vec<AlienFaceDecision>, bool), AlienFaceSelectionError> {
+    let mut decisions = Vec::with_capacity(faces.len());
+    let mut crosses_camera = false;
+    for (face_index, face) in faces.iter_mut().enumerate() {
+        let mut vertices = face.vertices;
+        let projected = vertices.map(|vertex_index| {
+            projected_vertices.get(vertex_index).copied().ok_or(
+                AlienFaceSelectionError::InvalidVertex {
+                    model_index,
+                    face_index,
+                    vertex_index,
+                    available: projected_vertices.len(),
+                },
+            )
+        });
+        let [vertex_0, vertex_1, vertex_2] = projected;
+        let projected = [vertex_0?, vertex_1?, vertex_2?];
+        let mut screen_x = projected.map(|vertex| vertex.screen[FIRST_VERTEX]);
+        let common_clip = projected
+            .iter()
+            .fold(u16::MAX, |clip, vertex| clip & vertex.clip_flags);
+        let mut bucket_column = None;
+
+        if common_clip == u16::MIN {
+            let combined_clip = projected
+                .iter()
+                .fold(u16::MIN, |clip, vertex| clip | vertex.clip_flags);
+            crosses_camera |= combined_clip & BEHIND_CAMERA_CLIP != u16::MIN;
+
+            rotate_leftmost(&mut vertices, &mut screen_x);
+            face.vertices = vertices;
+            let first_x = screen_x[FIRST_VERTEX] as u16;
+            let first_span = (screen_x[SECOND_VERTEX] as u16).wrapping_sub(first_x);
+            let second_span = (screen_x[THIRD_VERTEX] as u16).wrapping_sub(first_x);
+            if first_span < MAXIMUM_FACE_WIDTH && second_span < MAXIMUM_FACE_WIDTH {
+                let doubled_x = first_x.wrapping_shl(BUCKET_SCALE_SHIFT);
+                let column = if doubled_x as i16 >= ZERO_SCREEN_COORDINATE {
+                    usize::from(doubled_x >> BUCKET_SCALE_SHIFT)
+                } else {
+                    FIRST_BUCKET_COLUMN
+                };
+                bucket_column = Some(column);
+                buckets.entry(column).or_default().insert(
+                    FIRST_VERTEX,
+                    AlienFaceReference {
+                        model_index,
+                        face_index,
+                    },
+                );
+            }
+        }
+
+        decisions.push(AlienFaceDecision {
+            vertices,
+            left_x: screen_x[FIRST_VERTEX],
+            bucket_column,
+        });
+    }
+    Ok((decisions, crosses_camera))
+}
+
+pub(super) fn finish_buckets(buckets: AlienFaceBucketMap) -> Vec<AlienFaceBucket> {
+    buckets
+        .into_iter()
+        .map(|(column, faces)| AlienFaceBucket { column, faces })
+        .collect()
 }
 
 fn rotate_leftmost(
@@ -213,7 +232,7 @@ mod tests {
     use serde::Deserialize;
 
     use super::*;
-    use crate::native::alien::{AlienProjectedVertex, AlienScreenCenter};
+    use crate::native::alien::AlienScreenCenter;
 
     const DEFAULT_SCREEN_Y: i16 = 0;
     const DEFAULT_DEPTH: i32 = 0;

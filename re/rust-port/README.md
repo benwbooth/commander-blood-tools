@@ -64,6 +64,13 @@ negative columns, LIFO bucket order, multi-model traversal, and typed
 species-specific camera-plane signals. Raster-segment bucket offsets and
 pointer-valued context latches do not enter the Rust model.
 
+The camera-relative primary mesh coordinator is translated for all three
+overlays. Twenty-seven direct binary cases verify retained authored raster
+depth, negative and sub-byte depth rejection, modular matrix products, all clip
+edges, whole-mesh rejection, face rotations and ties, width limits, and LIFO
+buckets. The decoder now preserves the primary vertices' authored screen and
+raster-depth fields rather than treating the entire vertex tail as scratch.
+
 The typed format layer now decodes all three original XDB images: the shared
 primary mesh, 48 named behavior models, camera/root/node hierarchy, vertices,
 projection aliases, faces, 256-by-512 indexed texture atlas, display palette,
@@ -71,9 +78,8 @@ trigonometry table, and 500-entry raster reciprocal table. It also resolves
 method-table slots to semantic behavior kinds. File-relative relocation and
 object offsets are loader inputs only and become validated Rust indices.
 
-The next runtime layer ports the shared starfield and primary-mesh projection
-routines over these owned resources, then connects the decoded alien scenes to
-wgpu.
+The next runtime layer ports the shared starfield over these owned resources,
+then connects the decoded alien scenes to wgpu.
 
 Run the current interactive path with original assets:
 
