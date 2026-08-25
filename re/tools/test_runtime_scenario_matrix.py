@@ -783,6 +783,18 @@ class MatrixExecutionTests(unittest.TestCase):
             )
         )
 
+    def test_authentic_pterra_rejects_host_pointer_automation(self) -> None:
+        parser = matrix.build_parser()
+        args = parser.parse_args([
+            "--cd-dir", str(self.cd_dir),
+            "--install-parent", str(self.install_parent),
+            "--output-dir", str(self.output_dir),
+            "--scenario", "authentic-pterra",
+        ])
+
+        with self.assertRaises(SystemExit):
+            matrix._validate_arguments(parser, args)
+
     @mock.patch.object(matrix.subprocess, "run")
     def test_authentic_pterra_uses_existing_capture_driver_flags(
         self, run: mock.Mock
@@ -798,7 +810,8 @@ class MatrixExecutionTests(unittest.TestCase):
         exit_code, aggregate = matrix.run_matrix(
             self.args(
                 "--scenario", "authentic-pterra",
-                "--dosbox", "dosbox-staging-test",
+                "--dosbox", "dosbox-staging-cbtest",
+                "--virtual-dos-mouse",
             )
         )
 
@@ -810,7 +823,7 @@ class MatrixExecutionTests(unittest.TestCase):
         self.assertIn("--drive-authentic-save", command)
         self.assertEqual(
             command[command.index("--dosbox") + 1],
-            "dosbox-staging-test",
+            "dosbox-staging-cbtest",
         )
         self.assertEqual(aggregate["results"][0]["display"], ":127")
         self.assertEqual(
@@ -822,6 +835,23 @@ class MatrixExecutionTests(unittest.TestCase):
         ) / "cblood"
         self.assertFalse(any(copied_cblood.glob("PTERRA1[DFG].LBM")))
         self.assertTrue(all(marker.is_file() for marker in source_markers))
+
+    @mock.patch.object(matrix.subprocess, "run")
+    def test_authentic_pterra_can_select_virtual_dos_mouse(
+        self, run: mock.Mock
+    ) -> None:
+        run.side_effect = self.successful_subprocess
+        exit_code, aggregate = matrix.run_matrix(
+            self.args(
+                "--scenario", "authentic-pterra",
+                "--dosbox", "dosbox-staging-cbtest",
+                "--virtual-dos-mouse",
+            )
+        )
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn(
+            "--virtual-dos-mouse", aggregate["results"][0]["command"])
 
     @mock.patch.object(matrix.subprocess, "run")
     def test_bob_probe_uses_its_named_watchdog_mode(

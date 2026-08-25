@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import importlib.util
+import os
 import struct
 import sys
 import tempfile
@@ -667,6 +668,84 @@ class CaptureHelperTests(unittest.TestCase):
             run.call_args.args[0],
             ["xdotool", "mousemove_relative", "--sync", "--", "32", "-32"],
         )
+
+    def test_virtual_mouse_mapping_status_requires_named_dos_mapping(self) \
+            -> None:
+        name = "CommanderBloodTestMouse"
+        status = (
+            "\x1b[36;1mDOS \x1b[0m X:+100 Y:+100 200 "
+            "mapped physical mouse\n"
+            f"\x1b[36;1mDOS \x1b[0m {name}\n"
+        )
+        self.assertEqual(
+            capture.parse_virtual_mouse_mapping_status(status, name),
+            {
+                "adapter": "mapped-manymouse-device",
+                "name": name,
+                "status": "mapped physical mouse",
+            },
+        )
+        with self.assertRaisesRegex(RuntimeError, "enumerate"):
+            capture.parse_virtual_mouse_mapping_status(
+                status.replace(name, "AnotherMouse"), name)
+
+    def test_virtual_mouse_uses_private_pipe_for_events(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            install_parent = Path(directory)
+            driver = capture.VirtualDosMouseDriver()
+            driver.dosbox_commands(install_parent)
+            assert driver.pipe_path is not None
+            reader = os.open(driver.pipe_path, os.O_RDWR | os.O_NONBLOCK)
+            driver.pipe_fd = os.open(
+                driver.pipe_path, os.O_WRONLY | os.O_NONBLOCK)
+            try:
+                self.assertFalse(driver.move_toward(100, 100, 201, 67))
+                driver.button(True, button=3)
+                driver.button(False, button=3)
+                size = capture.LINUX_INPUT_EVENT.size
+                events = [
+                    capture.LINUX_INPUT_EVENT.unpack(os.read(reader, size))
+                    for _ in range(4)
+                ]
+                self.assertEqual(
+                    [(event[2], event[3], event[4]) for event in events],
+                    [
+                        (capture.EV_REL, capture.REL_X, 32),
+                        (capture.EV_REL, capture.REL_Y, -32),
+                        (capture.EV_KEY, capture.BTN_RIGHT, 1),
+                        (capture.EV_KEY, capture.BTN_RIGHT, 0),
+                    ],
+                )
+            finally:
+                driver.close()
+                os.close(reader)
+
+    def test_virtual_mouse_dosbox_commands_and_environment(self) -> None:
+        driver = capture.VirtualDosMouseDriver()
+        with tempfile.TemporaryDirectory() as directory:
+            install_parent = Path(directory)
+            status_path = install_parent / capture.VIRTUAL_DOS_MOUSE_STATUS
+            status_path.write_text("stale", encoding="ascii")
+            commands = driver.dosbox_commands(install_parent)
+            environment = driver.environment()
+            self.assertFalse(status_path.exists())
+            assert driver.pipe_path is not None
+            self.assertTrue(driver.pipe_path.is_fifo())
+            self.assertEqual(
+                environment,
+                {capture.VIRTUAL_DOS_MOUSE_PIPE_ENV:
+                 str(driver.pipe_path.resolve())},
+            )
+            self.assertEqual(
+                commands,
+                [
+                    "-c", "mousectl DOS -map CommanderBloodTestMouse",
+                    "-c", "mousectl -all > c:\\CBMOUSE.TXT",
+                ],
+            )
+            driver.close()
+            self.assertFalse((install_parent /
+                              f".cbmouse-{os.getpid()}.fifo").exists())
 
     def test_guest_primary_adapter_injects_native_edge_latches(self) -> None:
         memory = io.BytesIO(bytearray(0x40000))

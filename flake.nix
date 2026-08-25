@@ -92,7 +92,6 @@
                 (python3.withPackages (
                   ps: with ps; [
                     capstone
-                    evdev
                     numpy
                     pillow
                     unicorn

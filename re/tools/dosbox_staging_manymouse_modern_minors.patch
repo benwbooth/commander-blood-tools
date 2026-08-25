@@ -1,12 +1,50 @@
 diff --git a/src/libs/manymouse/linux_evdev.c b/src/libs/manymouse/linux_evdev.c
-index 43ac8411d..26a966c17 100644
+index 43ac8411d..ba48a225f 100644
 --- a/src/libs/manymouse/linux_evdev.c
 +++ b/src/libs/manymouse/linux_evdev.c
 @@ -26,2 +26,3 @@
  #include <unistd.h>
 +#include <sys/sysmacros.h>
  #include <sys/stat.h>
-@@ -253,9 +254,9 @@ static int open_if_mouse(const char *fname)
+@@ -47,1 +48,37 @@ static MouseStruct mice[MAX_MICE];
+ static unsigned int available_mice = 0;
++#define TEST_PIPE_ENV "DOSBOX_MANYMOUSE_TEST_PIPE"
++#define TEST_PIPE_NAME "CommanderBloodTestMouse"
++
++/*
++ * Test automation can feed native input_event records through a private FIFO.
++ * Unlike uinput, this cannot be discovered or consumed by the host desktop.
++ */
++static int open_test_pipe(void)
++{
++    const char *path = getenv(TEST_PIPE_ENV);
++    struct stat statbuf;
++    MouseStruct *mouse;
++    int fd;
++
++    if ((path == NULL) || (*path == '\0'))
++        return 0;
++    if (available_mice >= MAX_MICE)
++        return -1;
++
++    fd = open(path, O_RDWR | O_NONBLOCK);
++    if (fd == -1)
++        return -1;
++    if ((fstat(fd, &statbuf) == -1) || !S_ISFIFO(statbuf.st_mode))
++    {
++        close(fd);
++        return -1;
++    }
++
++    mouse = &mice[available_mice++];
++    mouse->fd = fd;
++    mouse->min_x = mouse->min_y = 0;
++    mouse->max_x = mouse->max_y = 0;
++    snprintf(mouse->name, sizeof (mouse->name), "%s", TEST_PIPE_NAME);
++    return 1;
++}
++
+@@ -253,7 +290,7 @@ static int open_if_mouse(const char *fname)
 -    /* evdev node ids are major 13, minor 64-96. Is this safe to check? */
 -    const int devmajor = (statbuf.st_rdev & 0xFF00) >> 8;
 -    const int devminor = (statbuf.st_rdev & 0x00FF);
@@ -19,3 +57,14 @@ index 43ac8411d..26a966c17 100644
 -        return 0;  /* not an evdev. */
 +        return 0; /* not an evdev */
      }
+@@ -275,2 +312,5 @@ static int linux_evdev_init(void)
+     for (i = 0; i < MAX_MICE; i++)
+         mice[i].fd = -1;
++    if (open_test_pipe() == -1)
++        return -1;
++
+@@ -278,3 +318,3 @@ static int linux_evdev_init(void)
+     dirp = opendir("/dev/input");
+     if (!dirp)
+-        return -1;
++        return available_mice ? (int)available_mice : -1;

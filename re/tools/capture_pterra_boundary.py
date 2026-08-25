@@ -180,6 +180,17 @@ PTERRA_NAV_ACTIVATION_TIMEOUT_SECONDS = 30.0
 PTERRA_NAV_CHART_MAX_REOPEN_ATTEMPTS = 3
 PTERRA_BRIDGE_HOST_STALL_SECONDS = 2.0
 PTERRA_BRIDGE_HOST_RECENTER_LIMIT = 12
+VIRTUAL_DOS_MOUSE_NAME = "CommanderBloodTestMouse"
+VIRTUAL_DOS_MOUSE_STATUS = "CBMOUSE.TXT"
+VIRTUAL_DOS_MOUSE_PIPE_ENV = "DOSBOX_MANYMOUSE_TEST_PIPE"
+LINUX_INPUT_EVENT = struct.Struct("@llHHi")
+EV_KEY = 0x01
+EV_REL = 0x02
+REL_X = 0x00
+REL_Y = 0x01
+BTN_LEFT = 0x110
+BTN_RIGHT = 0x111
+BTN_MIDDLE = 0x112
 PTERRA_NATIVE_INPUT_TIMEOUT_SECONDS = 10.0
 PTERRA_NATIVE_INPUT_EDGE_INTERVAL_SECONDS = 0.25
 PTERRA_NATIVE_INPUT_PULSE_SECONDS = 0.2
@@ -814,6 +825,120 @@ def move_captured_game_mouse(display: str, current_x: int, current_y: int,
             "could not move the captured host mouse toward game point "
             f"{target_x},{target_y}")
     return False
+
+
+def parse_virtual_mouse_mapping_status(
+        status: str, expected_name: str) -> dict[str, object]:
+    plain = re.sub(r"\x1b\[[0-9;]*m", "", status)
+    if expected_name not in plain:
+        raise RuntimeError(
+            f"DOSBox did not enumerate {expected_name!r}")
+    if not re.search(
+            r"DOS\s+X:[^\r\n]+mapped physical mouse", plain):
+        raise RuntimeError("DOSBox did not map the virtual mouse to DOS")
+    if not re.search(
+            rf"DOS\s+{re.escape(expected_name)}", plain):
+        raise RuntimeError(
+            "DOSBox mapped a different physical mouse to DOS")
+    return {
+        "adapter": "mapped-manymouse-device",
+        "name": expected_name,
+        "status": "mapped physical mouse",
+    }
+
+
+class VirtualDosMouseDriver:
+    def __init__(self) -> None:
+        self.name = VIRTUAL_DOS_MOUSE_NAME
+        self.pipe_path: Path | None = None
+        self.pipe_fd: int | None = None
+
+    def dosbox_commands(self, install_parent: Path) -> list[str]:
+        status_path = install_parent / VIRTUAL_DOS_MOUSE_STATUS
+        status_path.unlink(missing_ok=True)
+        self.pipe_path = install_parent / f".cbmouse-{os.getpid()}.fifo"
+        self.pipe_path.unlink(missing_ok=True)
+        os.mkfifo(self.pipe_path, mode=0o600)
+        return [
+            "-c", f"mousectl DOS -map {self.name}",
+            "-c", f"mousectl -all > c:\\{VIRTUAL_DOS_MOUSE_STATUS}",
+        ]
+
+    def environment(self) -> dict[str, str]:
+        if self.pipe_path is None:
+            raise RuntimeError("private DOS mouse pipe is not prepared")
+        return {VIRTUAL_DOS_MOUSE_PIPE_ENV: str(self.pipe_path.resolve())}
+
+    def verify_ready(self, install_parent: Path,
+                     db: subprocess.Popen[bytes]) -> dict[str, object]:
+        if self.pipe_path is None:
+            raise RuntimeError("private DOS mouse pipe is not prepared")
+        status_path = install_parent / VIRTUAL_DOS_MOUSE_STATUS
+        deadline = time.monotonic() + 10.0
+        while time.monotonic() < deadline:
+            if status_path.is_file():
+                status = status_path.read_text(
+                    encoding="ascii", errors="replace")
+                evidence = parse_virtual_mouse_mapping_status(
+                    status, self.name)
+                self.pipe_fd = os.open(
+                    self.pipe_path, os.O_WRONLY | os.O_NONBLOCK)
+                evidence["adapter"] = "private-manymouse-pipe"
+                evidence["pipe"] = str(self.pipe_path)
+                status_path.unlink()
+                return evidence
+            if db.poll() is not None:
+                raise RuntimeError(
+                    "DOSBox exited before mapping the virtual DOS mouse")
+            time.sleep(0.05)
+        raise RuntimeError("DOSBox virtual-mouse mapping report timed out")
+
+    def recenter(self) -> dict[str, object]:
+        return {
+            "adapter": "private-manymouse-pipe",
+            "pipe": str(self.pipe_path),
+            "capture_toggled": False,
+        }
+
+    def _write_event(self, event_type: int, code: int, value: int) -> None:
+        if self.pipe_fd is None:
+            raise RuntimeError("private DOS mouse pipe is not connected")
+        event = LINUX_INPUT_EVENT.pack(0, 0, event_type, code, value)
+        written = os.write(self.pipe_fd, event)
+        if written != len(event):
+            raise RuntimeError("short write to private DOS mouse pipe")
+
+    def move_toward(self, current_x: int, current_y: int,
+                    target_x: int, target_y: int) -> bool:
+        delta_x = target_x - current_x
+        delta_y = target_y - current_y
+        if abs(delta_x) <= 2 and abs(delta_y) <= 2:
+            return True
+        step_x = max(-32, min(32, delta_x))
+        step_y = max(-32, min(32, delta_y))
+        if step_x != 0:
+            self._write_event(EV_REL, REL_X, step_x)
+        if step_y != 0:
+            self._write_event(EV_REL, REL_Y, step_y)
+        return False
+
+    def button(self, pressed: bool, button: int = 1) -> None:
+        button_codes = {
+            1: BTN_LEFT,
+            2: BTN_MIDDLE,
+            3: BTN_RIGHT,
+        }
+        if button not in button_codes:
+            raise ValueError(f"unsupported DOS mouse button {button}")
+        self._write_event(EV_KEY, button_codes[button], int(pressed))
+
+    def close(self) -> None:
+        if self.pipe_fd is not None:
+            os.close(self.pipe_fd)
+            self.pipe_fd = None
+        if self.pipe_path is not None:
+            self.pipe_path.unlink(missing_ok=True)
+            self.pipe_path = None
 
 
 def choice_row_point(rect: tuple[int, int, int, int],
@@ -2112,8 +2237,12 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                          guest_snapshot: Path | None = None,
                          post_pter_seconds: float = 5.0,
                          toggle_mouse_capture: bool = False,
+                         mouse_driver=None,
                          stack_bounds: dict[str, int] | None = None) \
         -> dict[str, object]:
+    if mouse_driver is None:
+        raise RuntimeError(
+            "Pterra automation requires the private DOS mouse adapter")
     capture_started_at = time.monotonic()
     deadline = capture_started_at + timeout
     cpu_addresses = None
@@ -2480,19 +2609,17 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                     and int(scene_flow["c2_presentation_gate"]) == 0
                     and resource_pipeline_idle(scene_flow))
                 if title_accept_pressing:
-                    send_mouse_button(display, False, button=1)
+                    mouse_driver.button(False, button=1)
                     title_accept_pressing = False
                 elif title_idle_ready:
                     if title_pointer_recapture is None:
-                        title_pointer_recapture = recapture_game_mouse(
-                            display, executable, toggle_mouse_capture)
+                        title_pointer_recapture = mouse_driver.recenter()
                     input_state = last_profile["input"]
                     assert isinstance(input_state, dict)
-                    if move_captured_game_mouse(
-                            display,
+                    if mouse_driver.move_toward(
                             int(input_state["mouse_x"]),
                             int(input_state["mouse_y"]), 160, 161):
-                        send_mouse_button(display, True, button=1)
+                        mouse_driver.button(True, button=1)
                         title_accept_sent = True
                         title_accept_pressing = True
                         print(
@@ -2727,8 +2854,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                     pterra_map_setup = prepare_native_nav_chart(
                         mem, guest_base, game_segment)
                     pterra_map_setup["pointer_recapture"] = (
-                        recapture_game_mouse(
-                            display, executable, toggle_mouse_capture))
+                        mouse_driver.recenter())
                     pterra_nav_chart_started = True
                     pterra_nav_open_started_at = now
                     pterra_map_last_progress_at = now
@@ -2823,8 +2949,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                                 "hang: captured pointer did not move toward "
                                 "the bridge station", flush=True)
                             break
-                        recapture = recapture_game_mouse(
-                            display, executable, toggle_mouse_capture)
+                        recapture = mouse_driver.recenter()
                         pterra_nav_pointer_recapture_count += 1
                         pterra_nav_pointer_last_changed_at = now
                         assert isinstance(pterra_map_setup, dict)
@@ -2832,7 +2957,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                             "pointer_liveness_recaptures", []).append(
                                 recapture)
                     if pterra_nav_station_pressing:
-                        send_mouse_button(display, False, button=1)
+                        mouse_driver.button(False, button=1)
                         pterra_nav_station_pressing = False
                     elif station_center is not None \
                             and int(station["flags"]) & 1 \
@@ -2841,17 +2966,17 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                         current_y = int(input_state["mouse_y"])
                         pterra_nav_station_target_y = station_center[1]
                         if abs(current_y - station_center[1]) > 2:
-                            move_captured_game_mouse(
-                                display, current_x, current_y,
+                            mouse_driver.move_toward(
+                                current_x, current_y,
                                 current_x, station_center[1])
                         else:
                             station_x = station_center[0]
                             close_enough = abs(current_x - station_x) <= 32
-                            moved = move_captured_game_mouse(
-                                display, current_x, current_y,
+                            moved = mouse_driver.move_toward(
+                                current_x, current_y,
                                 station_x, station_center[1])
                             if close_enough or moved:
-                                send_mouse_button(display, True, button=1)
+                                mouse_driver.button(True, button=1)
                                 pterra_nav_station_pressing = True
                                 pterra_nav_station_click_count += 1
                                 if pterra_nav_station_first_click_at is None:
@@ -2892,16 +3017,14 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                                     "hang: bridge panorama ignored recentered "
                                     "captured mouse input", flush=True)
                                 break
-                            recapture = recapture_game_mouse(
-                                display, executable, toggle_mouse_capture)
+                            recapture = mouse_driver.recenter()
                             pterra_nav_pan_recenter_count += 1
                             pterra_map_last_progress_at = now
                             assert isinstance(pterra_map_setup, dict)
                             pterra_map_setup.setdefault(
                                 "bridge_pan_host_recenters", []).append(
                                     recapture)
-                        move_captured_game_mouse(
-                            display,
+                        mouse_driver.move_toward(
                             int(input_state["mouse_x"]),
                             int(input_state["mouse_y"]), 2,
                             pterra_nav_station_target_y
@@ -2922,7 +3045,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                     # moving; carrying it over a chart object can close the
                     # chart instead of selecting the object.
                     if pterra_nav_station_pressing:
-                        send_mouse_button(display, False, button=1)
+                        mouse_driver.button(False, button=1)
                         pterra_nav_station_pressing = False
                         print(
                             "state: released bridge-station press at the "
@@ -3018,7 +3141,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                             "bridge-station press crossed the nav-chart "
                             "handoff without being released")
                     elif pterra_nav_chart_pressing:
-                        send_mouse_button(display, False, button=1)
+                        mouse_driver.button(False, button=1)
                         pterra_nav_chart_pressing = False
                     elif (not pterra_nav_chart_selected
                             and selected_location
@@ -3040,12 +3163,11 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                                 "nav_camera_view_active"]) & 1
                             and int(input_state[
                                 "nav_camera_view_state"]) == 0):
-                        if move_captured_game_mouse(
-                                display,
+                        if mouse_driver.move_toward(
                                 int(input_state["mouse_x"]),
                                 int(input_state["mouse_y"]),
                                 marker_x, marker_y):
-                            send_mouse_button(display, True, button=1)
+                            mouse_driver.button(True, button=1)
                             pterra_nav_chart_pressing = True
                             assert isinstance(pterra_map_setup, dict)
                             pterra_map_setup["pterra_marker"] = [
@@ -3056,7 +3178,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                                 flush=True)
 
                     if pterra_nav_panel_close_pressing:
-                        send_mouse_button(display, False, button=1)
+                        mouse_driver.button(False, button=1)
                         pterra_nav_panel_close_pressing = False
                     elif (pterra_nav_chart_selected
                             and not pterra_nav_panel_close_requested
@@ -3073,12 +3195,11 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                         travel_center = selectable_rect_center(travel_rect)
                         if (travel_center is not None
                                 and int(travel_station["flags"]) & 1
-                                and move_captured_game_mouse(
-                                    display,
+                                and mouse_driver.move_toward(
                                     int(input_state["mouse_x"]),
                                     int(input_state["mouse_y"]),
                                     travel_center[0], travel_center[1])):
-                            send_mouse_button(display, True, button=1)
+                            mouse_driver.button(True, button=1)
                             pterra_nav_panel_close_pressing = True
                             pterra_nav_panel_close_requested = True
                             pterra_map_last_progress_at = now
@@ -3183,8 +3304,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                         audio_flow["streamed_clip_count"])
                     pterra_travel_setup = prepare_script2_orxx_descent(
                         mem, guest_base, game_segment)
-                    intro_recapture = recapture_game_mouse(
-                        display, executable, toggle_mouse_capture)
+                    intro_recapture = mouse_driver.recenter()
                     pterra_ship_intro_input_evidence = {
                         "adapter": "host-secondary-edge",
                         "recapture": intro_recapture,
@@ -3228,19 +3348,18 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                         assert isinstance(stations, list)
                         station_flags = int(stations[3]["flags"])
                         if pterra_ship_region_pressing:
-                            send_mouse_button(display, False, button=1)
+                            mouse_driver.button(False, button=1)
                             pterra_ship_region_pressing = False
                             pterra_ship_region_next_press_at = now + 0.5
                         elif (now >= pterra_ship_region_next_press_at
                                 and entity_center is not None
                                 and int(entity["flags"]) & 1
                                 and station_flags & 1
-                                and move_captured_game_mouse(
-                                    display,
+                                and mouse_driver.move_toward(
                                     int(input_state["mouse_x"]),
                                     int(input_state["mouse_y"]),
                                     entity_center[0], entity_center[1])):
-                            send_mouse_button(display, True, button=1)
+                            mouse_driver.button(True, button=1)
                             pterra_ship_region_pressing = True
                             pterra_ship_region_click_count += 1
                             assert isinstance(pterra_travel_setup, dict)
@@ -3295,9 +3414,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                         assert isinstance(pterra_travel_setup, dict)
                         pterra_travel_setup["intro_hold_observed"] = True
                         if pterra_ship_intro_capture_ready_at is None:
-                            recapture = recapture_game_mouse(
-                                display, executable,
-                                toggle_mouse_capture)
+                            recapture = mouse_driver.recenter()
                             pterra_ship_intro_input_evidence = {
                                 "adapter": "host-secondary-edge",
                                 "recapture": recapture,
@@ -3334,7 +3451,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                             "state: guest cleared the native ship-intro "
                             "hold before its countdown expired", flush=True)
                         if pterra_ship_intro_pressing:
-                            send_mouse_button(display, False, button=3)
+                            mouse_driver.button(False, button=3)
                             pterra_ship_intro_pressing = False
                             pterra_ship_intro_press_started_at = None
                     elif (not pterra_ship_intro_dismissed
@@ -3384,7 +3501,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                             intro_latch_active,
                             can_press)
                         if input_action == "release":
-                            send_mouse_button(display, False, button=3)
+                            mouse_driver.button(False, button=3)
                             pterra_ship_intro_pressing = False
                             pterra_ship_intro_press_started_at = None
                             pterra_ship_intro_next_edge_at = (
@@ -3397,7 +3514,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                             pterra_travel_setup.setdefault(
                                 "intro_hold_countdown_before",
                                 int(flow["dialogue_hold_countdown"]))
-                            send_mouse_button(display, True, button=3)
+                            mouse_driver.button(True, button=3)
                             pterra_ship_intro_pressing = True
                             pterra_ship_intro_press_started_at = now
                             pterra_ship_intro_edge_count += 1
@@ -3434,7 +3551,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                                 "ship_hud_initialized"]) & 1
                             and not intro_waiting_for_input):
                         if pterra_ship_intro_pressing:
-                            send_mouse_button(display, False, button=3)
+                            mouse_driver.button(False, button=3)
                             pterra_ship_intro_pressing = False
                             pterra_ship_intro_press_started_at = None
                         hang_snapshot = snapshot_guest(
@@ -3536,7 +3653,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                     assert isinstance(target_name_offsets, list)
                     pterra_name_offset = SCRIPT2_PTERRA_RECORD + 4
                     if pterra_target_pressing:
-                        send_mouse_button(display, False, button=1)
+                        mouse_driver.button(False, button=1)
                         pterra_target_pressing = False
                     elif (not pterra_travel_command_generated
                             and pterra_name_offset in target_name_offsets
@@ -3557,9 +3674,9 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                                 current_x, current_y):
                             click_evidence = inject_guest_primary_click(
                                 mem, guest_base, game_segment, x, y)
-                        elif move_captured_game_mouse(
-                                display, current_x, current_y, x, y):
-                            send_mouse_button(display, True, button=1)
+                        elif mouse_driver.move_toward(
+                                current_x, current_y, x, y):
+                            mouse_driver.button(True, button=1)
                             click_evidence = {
                                 "adapter": "host-primary-edge",
                                 "point": [x, y],
@@ -3810,7 +3927,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
 
                     if pter_input_pressed is not None:
                         if pter_input_pressed == "primary":
-                            send_mouse_button(display, False, button=1)
+                            mouse_driver.button(False, button=1)
                         pter_input_pressed = None
                     elif now >= pter_next_input_at:
                         if (word_choice_active
@@ -3832,10 +3949,10 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                                     mem, guest_base, game_segment,
                                     point[0], point[1])
                                 input_adapter = "guest-primary"
-                            elif move_captured_game_mouse(
-                                    display, current_x, current_y,
+                            elif mouse_driver.move_toward(
+                                    current_x, current_y,
                                     point[0], point[1]):
-                                send_mouse_button(display, True, button=1)
+                                mouse_driver.button(True, button=1)
                                 input_adapter = "primary"
                             if input_adapter is not None:
                                 pter_input_pressed = input_adapter
@@ -3848,7 +3965,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                                     flush=True)
                         elif (not word_choice_active
                               and blockers["presentation"] != 0):
-                            send_mouse_button(display, True, button=1)
+                            mouse_driver.button(True, button=1)
                             pter_input_pressed = "primary"
                             pter_next_input_at = now + 0.5
 
@@ -3979,7 +4096,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
         time.sleep(0.01)
 
     if pterra_ship_intro_pressing:
-        send_mouse_button(display, False, button=3)
+        mouse_driver.button(False, button=3)
         pterra_ship_intro_pressing = False
 
     overall_timeout_reached = (
@@ -4150,6 +4267,10 @@ def main() -> None:
     parser.add_argument(
         "--dosbox", default="dosbox-x",
         help="DOSBox-X or DOSBox Staging executable (default: dosbox-x)")
+    parser.add_argument(
+        "--virtual-dos-mouse", action="store_true",
+        help=("map a private named-pipe mouse through the patched "
+              "dosbox-staging-cbtest executable"))
     parser.add_argument("--timeout", type=float, default=900.0,
                         help="seconds to wait for the boundary")
     parser.add_argument(
@@ -4200,13 +4321,28 @@ def main() -> None:
     if args.drive_authentic_save and not args.trigger_pterra_after_load:
         parser.error(
             "--drive-authentic-save requires --trigger-pterra-after-load")
+    if args.drive:
+        parser.error(
+            "--drive is disabled because it controls the host pointer; "
+            "use a private DOS-mouse scenario instead")
+    if ((args.state_pterra or args.manual_pterra)
+            and not args.virtual_dos_mouse):
+        parser.error(
+            "Pterra capture requires --virtual-dos-mouse; host-pointer "
+            "automation is disabled")
     if args.post_pter_seconds <= 0:
         parser.error("--post-pter-seconds must be positive")
+    if (args.virtual_dos_mouse
+            and "dosbox-staging-cbtest" not in Path(args.dosbox).name):
+        parser.error(
+            "--virtual-dos-mouse requires dosbox-staging-cbtest")
 
     env = dict(os.environ, DISPLAY=args.display, SDL_VIDEODRIVER="x11")
     xvfb = None
     db = None
     log_stream = None
+    mouse_driver = None
+    mouse_input_evidence = None
     if not args.display.startswith(":0"):
         xvfb = subprocess.Popen(
             ["Xvfb", args.display, "-screen", "0", "800x600x24"],
@@ -4231,6 +4367,13 @@ def main() -> None:
                 names = ", ".join(path.name for path in stale)
                 raise RuntimeError(
                     f"Pterra capture requires a clean drive; remove {names}")
+        mouse_driver = (
+            VirtualDosMouseDriver() if args.virtual_dos_mouse else None)
+        mouse_commands = (
+            mouse_driver.dosbox_commands(args.install_parent)
+            if mouse_driver is not None else [])
+        if mouse_driver is not None:
+            env.update(mouse_driver.environment())
         dosbox_args = [
             args.dosbox, "--noprimaryconf", "--nolocalconf",
             "-set", "sdl output=surface",
@@ -4239,6 +4382,7 @@ def main() -> None:
             "-set", "cpu core=dynamic",
             "-set", "render frameskip=10",
             "-c", f"mount c {args.install_parent}",
+            *mouse_commands,
             "-c", f"mount d {args.cd_dir} -t cdrom",
             "-c", "d:",
             "-c", f"{args.executable} AMR S162227 EMS WRIC:\\cblood\\",
@@ -4246,6 +4390,9 @@ def main() -> None:
         db = subprocess.Popen(dosbox_args, env=env,
                               stdout=log_stream,
                               stderr=subprocess.STDOUT)
+        if mouse_driver is not None:
+            mouse_input_evidence = mouse_driver.verify_ready(
+                args.install_parent, db)
         if args.state_pterra or args.manual_pterra:
             stack_bounds = (
                 parse_linked_stack_bounds(args.link_map.resolve())
@@ -4260,7 +4407,9 @@ def main() -> None:
                 post_pter_seconds=args.post_pter_seconds,
                 toggle_mouse_capture=dosbox_needs_capture_toggle(
                     args.dosbox),
+                mouse_driver=mouse_driver,
                 stack_bounds=stack_bounds)
+            snapshot["mouse_input_adapter"] = mouse_input_evidence
             args.output.write_text(json.dumps(snapshot, indent=1))
             print(f"wrote {args.output}")
             errors = snapshot.get("errors", [])
@@ -4327,6 +4476,8 @@ def main() -> None:
             mem.seek(best + 0x5219)
             snapshot["back_buffer_area"] = mem.read(0x5240 - 0x5219).hex()
             snapshot["marker"] = str(hit)
+        if mouse_input_evidence is not None:
+            snapshot["mouse_input_adapter"] = mouse_input_evidence
         args.output.write_text(json.dumps(snapshot, indent=1))
         print(f"wrote {args.output}")
     finally:
@@ -4342,6 +4493,8 @@ def main() -> None:
                 pass
         if log_stream is not None:
             log_stream.close()
+        if mouse_driver is not None:
+            mouse_driver.close()
         if xvfb is not None:
             xvfb.terminate()
 

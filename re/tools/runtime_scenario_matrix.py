@@ -160,6 +160,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="DOSBox-X or DOSBox Staging executable (default: dosbox-x)",
     )
     parser.add_argument(
+        "--virtual-dos-mouse",
+        action="store_true",
+        help="use the private dosbox-staging-cbtest named-pipe adapter",
+    )
+    parser.add_argument(
         "--link-map",
         type=Path,
         help="link map passed to runtime_watchdog.py (default: its package path)",
@@ -903,6 +908,8 @@ def _build_command(
     ]
     if args.link_map is not None:
         command += ["--link-map", str(args.link_map)]
+    if args.virtual_dos_mouse:
+        command.append("--virtual-dos-mouse")
     return command, args.pterra_timeout + args.subprocess_grace_seconds
 
 
@@ -1066,6 +1073,18 @@ def _validate_arguments(
         parser.error("--jobs must be positive")
     if args.repeat < 1:
         parser.error("--repeat must be positive")
+    if (args.virtual_dos_mouse
+            and "dosbox-staging-cbtest" not in Path(args.dosbox).name):
+        parser.error(
+            "--virtual-dos-mouse requires dosbox-staging-cbtest")
+    if (AUTHENTIC_PTERRA in {
+            scenario.name for scenario in selected_scenarios(
+                args.scenario,
+                args.include_authentic_pterra,
+                args.all_contacts)} and not args.virtual_dos_mouse):
+        parser.error(
+            "authentic-pterra requires --virtual-dos-mouse; host-pointer "
+            "automation is disabled")
 
     args.cd_dir = args.cd_dir.resolve()
     args.install_parent = args.install_parent.resolve()
