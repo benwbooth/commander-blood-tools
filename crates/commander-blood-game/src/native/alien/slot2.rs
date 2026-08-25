@@ -135,6 +135,8 @@ pub enum AlienSlot2Callback {
     AmerSelectionLate,
     /// Publish CROOLIS's fade marker while retaining ordinary motion.
     CroolisFade,
+    /// Track CROOLIS's camera-relative selection motion.
+    CroolisSelection,
 }
 
 /// Callback-owned state parallel to one animated model node.
@@ -944,6 +946,19 @@ pub fn update_croolis_head(
     Ok(AlienCroolisUpdateHead::CommonRequested)
 }
 
+/// Begin CROOLIS selection tracking and request same-pass dispatch.
+pub fn begin_croolis_selection(
+    pose: &AlienModelPose,
+    animation: &mut AlienSlot2AnimationState,
+    scene: &mut AlienCallbackSceneState,
+) -> Result<AlienSlot2Callback, AlienSlot2Error> {
+    validate_state(AlienSpecies::Croolis, pose, animation)?;
+    animation.callback = Some(AlienSlot2Callback::CroolisSelection);
+    scene.slot2_selected_model = None;
+    scene.slot2_active = false;
+    Ok(AlienSlot2Callback::CroolisSelection)
+}
+
 /// Preserve the observable behavior of the unreachable steering sibling.
 ///
 /// No original alien method table or callback points at this routine. Keeping
@@ -1337,6 +1352,17 @@ mod tests {
         motion_accumulator_after: u16,
         radial_target_before: u16,
         radial_target_after: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct CroolisSelectionInitVector {
+        name: String,
+        module: String,
+        next_stage: String,
+        active_before: u16,
+        active_after: u16,
+        selected_before: bool,
+        selected_after: bool,
     }
 
     #[derive(Deserialize)]
@@ -2217,6 +2243,49 @@ mod tests {
                 vector.name
             );
             assert_eq!(animation.callback, Some(AlienSlot2Callback::Update));
+        }
+    }
+
+    #[test]
+    fn croolis_selection_entry_matches_every_original_overlay_vector() {
+        let vectors: Vec<CroolisSelectionInitVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/xdb_croolis_func_1815_natural.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            assert_eq!(vector.module, "croolis");
+            assert_eq!(vector.next_stage, "selection");
+            let pose = pose(&[EMPTY_NODE_VECTOR; PRIMARY_AND_FOLLOWER_NODE_COUNT]);
+            let mut animation = AlienSlot2AnimationState::new(PRIMARY_AND_FOLLOWER_NODE_COUNT);
+            animation.callback = Some(AlienSlot2Callback::Update);
+            let mut scene = AlienCallbackSceneState {
+                slot2_active: vector.active_before != u16::default(),
+                slot2_selected_model: vector.selected_before.then_some(OTHER_MODEL_INDEX),
+                ..AlienCallbackSceneState::default()
+            };
+
+            assert_eq!(
+                begin_croolis_selection(&pose, &mut animation, &mut scene).unwrap(),
+                AlienSlot2Callback::CroolisSelection,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                scene.slot2_active,
+                vector.active_after != u16::default(),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                scene.slot2_selected_model.is_some(),
+                vector.selected_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                animation.callback,
+                Some(AlienSlot2Callback::CroolisSelection)
+            );
         }
     }
 

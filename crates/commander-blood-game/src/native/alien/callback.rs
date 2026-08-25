@@ -34,6 +34,8 @@ pub struct AlienCallbackSceneState {
     pub method_delta: i16,
     /// Whether the slot-2 callback family currently owns the camera handoff.
     pub slot2_active: bool,
+    /// Model currently owning CROOLIS slot-2 selection tracking.
+    pub slot2_selected_model: Option<usize>,
     /// Scene node selected by the latest successful wave bounds check.
     pub wave_selected_node: Option<AlienSceneNode>,
     /// Fixed transition queue storing typed model-node indices.

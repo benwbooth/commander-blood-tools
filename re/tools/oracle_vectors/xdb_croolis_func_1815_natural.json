@@ -1,0 +1,50 @@
+[
+  {
+    "name": "ordinary",
+    "module": "croolis",
+    "entry": 6165,
+    "next_stage": "selection",
+    "active_before": 1,
+    "active_after": 0,
+    "selected_before": true,
+    "selected_after": false,
+    "callback_after": 6184,
+    "data_sha256": "42add071a6184d3689c264680cabf15a09f606de6b0c0a0d93e757f290d20c16"
+  },
+  {
+    "name": "inactive_with_selection",
+    "module": "croolis",
+    "entry": 6165,
+    "next_stage": "selection",
+    "active_before": 0,
+    "active_after": 0,
+    "selected_before": true,
+    "selected_after": false,
+    "callback_after": 6184,
+    "data_sha256": "88d2af276eb38cd3ab683235df28dbdcff314dafeb24faf503f22c0850f30b68"
+  },
+  {
+    "name": "active_without_selection",
+    "module": "croolis",
+    "entry": 6165,
+    "next_stage": "selection",
+    "active_before": 7,
+    "active_after": 0,
+    "selected_before": false,
+    "selected_after": false,
+    "callback_after": 6184,
+    "data_sha256": "39cc7e5c0cc3b536110687311e63b259bdb892d968ab69fcb17bda9f6a3074dc"
+  },
+  {
+    "name": "wrapped_state_offsets",
+    "module": "croolis",
+    "entry": 6165,
+    "next_stage": "selection",
+    "active_before": 65535,
+    "active_after": 0,
+    "selected_before": true,
+    "selected_after": false,
+    "callback_after": 6184,
+    "data_sha256": "c9df8491964342f0b7e87cfd01c0f14bc83cd13e55ca769746431ddb1c920e09"
+  }
+]
