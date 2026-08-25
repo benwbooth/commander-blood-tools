@@ -32,6 +32,7 @@ const DIRECTORY_RASTER_DELTA_FIELD: usize = 0x0010;
 const TRIGONOMETRY_POSITION: usize = 0x0036;
 const TRIGONOMETRY_RECORD_SIZE: usize = 4;
 const DISPLAY_PALETTE_POSITION: usize = 0x1f6a;
+const INITIAL_METHOD_DELTA_POSITION: usize = 0x0099;
 const PALETTE_ENTRY_COUNT: usize = 256;
 const RGB_COMPONENT_COUNT: usize = 3;
 const PALETTE_BYTE_COUNT: usize = PALETTE_ENTRY_COUNT * RGB_COMPONENT_COUNT;
@@ -338,6 +339,8 @@ pub struct AlienAsset {
     pub raster_reciprocals: [i32; RASTER_RECIPROCAL_COUNT],
     /// Initial camera and control values.
     pub camera: AlienCameraData,
+    /// Initial shared signed delta consumed by behavior methods.
+    pub initial_method_delta: i16,
     /// Distance-to-palette lookup used by the starfield.
     pub star_shade_table: [u8; STAR_SHADE_TABLE_ENTRY_COUNT],
     /// Deterministic seed used to generate the static star distribution.
@@ -773,6 +776,7 @@ pub fn decode_alien_xdb(data: &[u8], kind: AlienXdbKind) -> Option<AlienAsset> {
         trigonometry,
         raster_reciprocals,
         camera,
+        initial_method_delta: read_i16(data, INITIAL_METHOD_DELTA_POSITION)?,
         star_shade_table,
         star_seed,
     })
@@ -790,6 +794,7 @@ mod tests {
     const EXPECTED_CROOLIS_MODEL_COUNT: usize = 15;
     const EXPECTED_SCRUT_MODEL_COUNT: usize = 14;
     const ZERO_RASTER_DEPTH: i32 = 0;
+    const EXPECTED_INITIAL_METHOD_DELTA: i16 = -4;
 
     fn original_xdb(name: &str) -> Option<PathBuf> {
         [
@@ -821,6 +826,7 @@ mod tests {
             let asset = decode_alien_xdb(&data, kind).unwrap();
             assert_eq!(asset.kind, kind);
             assert_eq!(asset.models.len(), expected_models);
+            assert_eq!(asset.initial_method_delta, EXPECTED_INITIAL_METHOD_DELTA);
             assert_eq!(
                 asset.primary_model.mesh.vertices.len(),
                 EXPECTED_PRIMARY_VERTEX_COUNT

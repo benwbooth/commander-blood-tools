@@ -2,15 +2,18 @@
 
 use std::fmt;
 
-use commander_blood_formats::alien::{AXIS_COUNT, AlienAsset, AlienTransformData, AlienXdbKind};
+use commander_blood_formats::alien::{
+    AXIS_COUNT, AlienAsset, AlienBehaviorMethod, AlienTransformData, AlienXdbKind,
+};
 
 use super::{
-    AlienBehindCameraSignal, AlienCameraAngles, AlienCameraControl, AlienCameraStep,
-    AlienCameraTransform, AlienFaceSelection, AlienFaceSelectionError, AlienModelPose,
-    AlienMouseSample, AlienPrimaryMeshFrame, AlienPrimaryMeshPose, AlienPrimaryProjectionError,
-    AlienProjectionError, AlienRasterError, AlienRenderGeometry, AlienScreenCenter, AlienSpecies,
-    AlienStarfieldError, AlienStarfieldFrame, generate_starfield, prepare_render_geometry,
-    select_faces,
+    AlienBehaviorError, AlienBehindCameraSignal, AlienCallbackSceneState, AlienCameraAngles,
+    AlienCameraControl, AlienCameraStep, AlienCameraTransform, AlienFaceSelection,
+    AlienFaceSelectionError, AlienModelPose, AlienMouseSample, AlienPrimaryMeshFrame,
+    AlienPrimaryMeshPose, AlienPrimaryProjectionError, AlienProjectionError, AlienRasterError,
+    AlienRenderGeometry, AlienSceneNode, AlienScreenCenter, AlienSpecies, AlienStarfieldError,
+    AlienStarfieldFrame, adjust_state, anchor_state, bounds_then_wrap, generate_starfield,
+    prepare_render_geometry, select_faces, wrap_positions,
 };
 
 const INITIAL_VIEW: [i16; AXIS_COUNT] = [1_885, -239, -9_790];
@@ -51,6 +54,10 @@ pub struct AlienScene {
     pub models: Vec<AlienModelPose>,
     /// Model selected by the latest CROOLIS/SCRUT camera-plane signal.
     pub selected_model: Option<usize>,
+    /// Shared state published and consumed by translated behavior callbacks.
+    pub callback_state: AlienCallbackSceneState,
+    /// Original scene-exit word published by the bounds behavior.
+    exit_requested: u16,
 }
 
 /// Failure in one typed alien-scene frame stage.
@@ -71,6 +78,13 @@ pub enum AlienSceneError {
     Starfield(AlienStarfieldError),
     /// Textured triangle preparation failed.
     Raster(AlienRasterError),
+    /// One model's direct behavior method rejected its typed state.
+    Behavior {
+        /// Model that failed.
+        model_index: usize,
+        /// Underlying behavior failure.
+        error: AlienBehaviorError,
+    },
 }
 
 impl fmt::Display for AlienSceneError {
@@ -140,6 +154,10 @@ impl AlienScene {
             .iter()
             .map(AlienModelPose::from_model)
             .collect();
+        let callback_state = AlienCallbackSceneState {
+            method_delta: asset.initial_method_delta,
+            ..AlienCallbackSceneState::default()
+        };
         Self {
             asset,
             species,
@@ -148,6 +166,8 @@ impl AlienScene {
             primary,
             models,
             selected_model: None,
+            callback_state,
+            exit_requested: u16::MIN,
         }
     }
 
@@ -180,6 +200,43 @@ impl AlienScene {
         for (model_index, (model, pose)) in
             self.asset.models.iter().zip(&mut self.models).enumerate()
         {
+            let behavior_result = match model.behavior {
+                AlienBehaviorMethod::WrapPositions => {
+                    Some(wrap_positions(&mut pose.nodes, self.camera.view))
+                }
+                AlienBehaviorMethod::BoundsThenWrap => Some(bounds_then_wrap(
+                    &mut pose.nodes,
+                    self.camera.view,
+                    &mut self.exit_requested,
+                )),
+                AlienBehaviorMethod::AnchorState => {
+                    Some(anchor_state(&mut pose.nodes).map(|node_index| {
+                        self.callback_state.active_node = Some(AlienSceneNode {
+                            model_index,
+                            node_index,
+                        });
+                    }))
+                }
+                AlienBehaviorMethod::AdjustState => Some(
+                    adjust_state(
+                        self.species,
+                        &mut pose.nodes,
+                        self.callback_state.method_delta,
+                    )
+                    .map(drop),
+                ),
+                AlienBehaviorMethod::NoOperation
+                | AlienBehaviorMethod::Wave
+                | AlienBehaviorMethod::AnimationDispatch
+                | AlienBehaviorMethod::RingAnimation
+                | AlienBehaviorMethod::PaletteUpdate
+                | AlienBehaviorMethod::ApplySampleDelta
+                | AlienBehaviorMethod::ApplyScaledSampleDelta
+                | AlienBehaviorMethod::Resume => None,
+            };
+            if let Some(result) = behavior_result {
+                result.map_err(|error| AlienSceneError::Behavior { model_index, error })?;
+            }
             pose.transform_and_project(
                 &model.mesh,
                 scene_camera,
@@ -227,6 +284,11 @@ impl AlienScene {
     pub fn asset(&self) -> &AlienAsset {
         &self.asset
     }
+
+    /// Whether a translated bounds method requested leaving this scene.
+    pub fn exit_requested(&self) -> bool {
+        self.exit_requested != u16::MIN
+    }
 }
 
 #[cfg(test)]
@@ -242,6 +304,11 @@ mod tests {
         y: 512,
         buttons: 0,
     };
+    const BOUNDS_ANGLE_STEP: u16 = 64;
+    const STATE_ANGLE_STEP: u16 = 15;
+    const BOUNDS_ANGLE_AXIS: usize = 1;
+    const STATE_ANGLE_AXIS: usize = 2;
+    const EXPECTED_INITIAL_METHOD_DELTA: i16 = -4;
 
     fn original_xdb(name: &str) -> Option<PathBuf> {
         [
@@ -267,10 +334,55 @@ mod tests {
             let asset = decode_alien_xdb(&data, kind).unwrap();
             let model_count = asset.models.len();
             let mut scene = AlienScene::from_asset(asset);
+            let initial_angles = scene
+                .models
+                .iter()
+                .map(|model| model.nodes[0].angles)
+                .collect::<Vec<_>>();
             let frame = scene.step(CENTERED_MOUSE).unwrap();
             assert_eq!(frame.models.decisions.len(), model_count);
             assert!(!frame.starfield.stars.is_empty());
             assert_eq!(scene.camera.view, INITIAL_VIEW);
+            assert_eq!(
+                scene.callback_state.method_delta,
+                EXPECTED_INITIAL_METHOD_DELTA
+            );
+
+            let mut expected_anchor = None;
+            for (model_index, model) in scene.asset.models.iter().enumerate() {
+                let angles = scene.models[model_index].nodes[0].angles;
+                match model.behavior {
+                    AlienBehaviorMethod::BoundsThenWrap => assert_eq!(
+                        angles[BOUNDS_ANGLE_AXIS],
+                        initial_angles[model_index][BOUNDS_ANGLE_AXIS]
+                            .wrapping_add(BOUNDS_ANGLE_STEP)
+                    ),
+                    AlienBehaviorMethod::AnchorState => {
+                        assert_eq!(
+                            angles[STATE_ANGLE_AXIS],
+                            initial_angles[model_index][STATE_ANGLE_AXIS]
+                                .wrapping_sub(STATE_ANGLE_STEP)
+                        );
+                        expected_anchor = Some(AlienSceneNode {
+                            model_index,
+                            node_index: usize::MIN,
+                        });
+                    }
+                    AlienBehaviorMethod::AdjustState if kind == AlienXdbKind::Scrut => {
+                        assert_eq!(
+                            angles[STATE_ANGLE_AXIS],
+                            initial_angles[model_index][STATE_ANGLE_AXIS]
+                                .wrapping_sub(STATE_ANGLE_STEP)
+                        );
+                    }
+                    AlienBehaviorMethod::AdjustState => assert_eq!(
+                        angles[STATE_ANGLE_AXIS],
+                        initial_angles[model_index][STATE_ANGLE_AXIS]
+                    ),
+                    _ => {}
+                }
+            }
+            assert_eq!(scene.callback_state.active_node, expected_anchor);
         }
     }
 }

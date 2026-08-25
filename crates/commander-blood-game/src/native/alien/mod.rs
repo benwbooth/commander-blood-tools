@@ -21,7 +21,9 @@ pub use behavior::{
     AlienBehaviorError, AlienSampleState, adjust_state, anchor_state, apply_sample_delta,
     apply_scaled_sample_delta, bounds_then_wrap, wrap_positions,
 };
-pub use callback::{AlienCallbackSceneState, AlienControlLatch};
+pub use callback::{
+    ALIEN_TRANSITION_QUEUE_CAPACITY, AlienCallbackSceneState, AlienControlLatch,
+};
 pub use camera::{AlienCameraAngles, AlienCameraTransform};
 pub use control::{
     AlienCameraControl, AlienCameraStep, AlienInputAction, AlienMouseSample, AlienSpecies,
@@ -47,8 +49,8 @@ pub use resume::{
     ALIEN_RESUME_QUEUE_CAPACITY, AlienResumeCallback, AlienResumeCallbacks,
     AlienResumeFinalStageError, AlienResumeMethodState, AlienResumePairStageError,
     AlienResumePairContext, AlienResumePairStageUpdate, AlienResumePairUpdate,
-    AlienResumeQueueContext, AlienResumeQueueError, AlienResumeQueueState, AlienResumeQueueUpdate,
-    AlienResumeTextureError, AlienResumeTextureUpdate, AlienResumeTimeoutUpdate, AlienResumeUpdate,
+    AlienResumeQueueContext, AlienResumeQueueError, AlienResumeQueueUpdate, AlienResumeTextureError,
+    AlienResumeTextureUpdate, AlienResumeTimeoutUpdate, AlienResumeUpdate,
     initialize_or_dispatch_resume, update_resume_final_stage, update_resume_pair_stage,
     update_resume_pair_steering, update_resume_queue, update_resume_texture_motion,
     update_resume_timeout,

@@ -4,7 +4,10 @@ use std::fmt;
 
 use commander_blood_formats::alien::{AlienTrigonometryPair, TRIGONOMETRY_ENTRY_COUNT};
 
-use super::{AlienNodePose, AlienRingCallback, AlienSceneNode, AlienSpecies};
+use super::{
+    ALIEN_TRANSITION_QUEUE_CAPACITY, AlienCallbackSceneState, AlienNodePose, AlienRingCallback,
+    AlienSceneNode, AlienSpecies,
+};
 
 const X_AXIS: usize = 0;
 const Y_AXIS: usize = 1;
@@ -35,7 +38,7 @@ const SCRUT_RESUME_TEXTURE_VERTEX_COUNT: usize = 44;
 const PAIRED_RESUME_COUNTDOWN: u16 = 24;
 const FINAL_RETURN_RADIAL_OFFSET: i16 = 100;
 /// Number of typed slots in the recovered resume queue.
-pub const ALIEN_RESUME_QUEUE_CAPACITY: usize = 8;
+pub const ALIEN_RESUME_QUEUE_CAPACITY: usize = ALIEN_TRANSITION_QUEUE_CAPACITY;
 const IDLE_PITCH_STEP: u16 = 2_016;
 const IDLE_PITCH_MASK: u16 = 0x0ffc;
 const IDLE_PITCH_BIAS: u16 = 2_048;
@@ -85,17 +88,6 @@ pub struct AlienResumeMethodState {
     pub paired_node: Option<AlienSceneNode>,
     /// Optional node whose state is being resumed.
     pub resumed_node: Option<AlienSceneNode>,
-}
-
-/// Flat queue shared by the resume method and the active-node selector.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct AlienResumeQueueState {
-    /// Slot inspected by the next begin-stage invocation.
-    pub read_index: usize,
-    /// Node currently published as the active queue anchor.
-    pub active_node: Option<AlienSceneNode>,
-    /// Queued scene-node identities; `None` is an authored empty slot.
-    pub entries: [Option<AlienSceneNode>; ALIEN_RESUME_QUEUE_CAPACITY],
 }
 
 /// Resolved partner borrowed by an occupied resume queue slot.
@@ -191,7 +183,7 @@ pub enum AlienResumeQueueUpdate {
     /// An empty slot advanced the read index and applied idle angle drift.
     Idle {
         /// Slot inspected by the next invocation.
-        read_index: usize,
+        read_slot: usize,
     },
     /// An occupied slot was consumed and immediately ran the pair stage.
     PairDispatched {
@@ -265,7 +257,7 @@ impl std::error::Error for AlienResumeFinalStageError {}
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AlienResumeQueueError {
     /// The queue cursor does not select one of its typed slots.
-    InvalidReadIndex {
+    InvalidReadSlot {
         /// Invalid slot index.
         index: usize,
     },
@@ -327,7 +319,7 @@ pub fn initialize_or_dispatch_resume<C: AlienResumeCallbacks>(
 pub fn update_resume_queue(
     species: AlienSpecies,
     state: &mut AlienResumeMethodState,
-    queue: &mut AlienResumeQueueState,
+    scene: &mut AlienCallbackSceneState,
     context: AlienResumeQueueContext<'_>,
 ) -> Result<AlienResumeQueueUpdate, AlienResumeQueueError> {
     let AlienResumeQueueContext {
@@ -338,16 +330,17 @@ pub fn update_resume_queue(
         trigonometry,
         countdown,
     } = context;
-    if queue.read_index >= ALIEN_RESUME_QUEUE_CAPACITY {
-        return Err(AlienResumeQueueError::InvalidReadIndex {
-            index: queue.read_index,
+    if scene.transition_queue_read_slot >= ALIEN_RESUME_QUEUE_CAPACITY {
+        return Err(AlienResumeQueueError::InvalidReadSlot {
+            index: scene.transition_queue_read_slot,
         });
     }
-    let Some(paired_node) = queue.entries[queue.read_index] else {
+    let Some(paired_node) = scene.transition_queue[scene.transition_queue_read_slot] else {
         if paired.is_some() {
             return Err(AlienResumeQueueError::UnexpectedPairContext);
         }
-        queue.read_index = (queue.read_index + 1) % ALIEN_RESUME_QUEUE_CAPACITY;
+        scene.transition_queue_read_slot =
+            (scene.transition_queue_read_slot + 1) % ALIEN_RESUME_QUEUE_CAPACITY;
         let pitch = match species {
             AlienSpecies::Amer => current_pose.angles[PITCH_AXIS].wrapping_add(IDLE_PITCH_STEP),
             AlienSpecies::Croolis | AlienSpecies::Scrut => {
@@ -360,7 +353,7 @@ pub fn update_resume_queue(
                 current_pose.angles[PAN_AXIS].wrapping_add(AMER_IDLE_PAN_STEP);
         }
         return Ok(AlienResumeQueueUpdate::Idle {
-            read_index: queue.read_index,
+            read_slot: scene.transition_queue_read_slot,
         });
     };
 
@@ -389,8 +382,8 @@ pub fn update_resume_queue(
         .into());
     }
 
-    queue.active_node = None;
-    queue.entries[queue.read_index] = None;
+    scene.active_node = None;
+    scene.transition_queue[scene.transition_queue_read_slot] = None;
     state.callback = Some(AlienResumeCallback::Pair);
     state.paired_node = Some(paired_node);
 
@@ -1462,13 +1455,15 @@ mod tests {
                 };
                 let active_node = state_node(ACTIVE_NODE);
                 let mut paired_callback = AlienRingCallback::FollowCourse;
-                let mut queue = AlienResumeQueueState {
-                    read_index: vector.selected_slot,
+                let mut scene = AlienCallbackSceneState {
+                    transition_queue_read_slot: vector.selected_slot,
                     active_node: Some(active_node),
-                    entries: std::array::from_fn(|slot| Some(state_node(100 + slot))),
+                    transition_queue: std::array::from_fn(|slot| Some(state_node(100 + slot))),
+                    ..AlienCallbackSceneState::default()
                 };
-                queue.entries[vector.selected_slot] = vector.occupied.then_some(paired_node);
-                let mut expected_entries = queue.entries;
+                scene.transition_queue[vector.selected_slot] =
+                    vector.occupied.then_some(paired_node);
+                let mut expected_entries = scene.transition_queue;
                 if vector.occupied {
                     expected_entries[vector.selected_slot] = None;
                 }
@@ -1490,7 +1485,7 @@ mod tests {
                 let result = update_resume_queue(
                     species,
                     &mut state,
-                    &mut queue,
+                    &mut scene,
                     AlienResumeQueueContext {
                         current: current_node,
                         current_pose: &mut current,
@@ -1521,19 +1516,19 @@ mod tests {
                     })
                 } else {
                     Ok(AlienResumeQueueUpdate::Idle {
-                        read_index: usize::from(vector.cursor_after) / 2,
+                        read_slot: usize::from(vector.cursor_after) / 2,
                     })
                 };
                 assert_eq!(result, expected_result, "{}", vector.name);
-                assert_eq!(queue.entries, expected_entries, "{}", vector.name);
+                assert_eq!(scene.transition_queue, expected_entries, "{}", vector.name);
                 assert_eq!(
-                    queue.read_index,
+                    scene.transition_queue_read_slot,
                     usize::from(vector.cursor_after) / 2,
                     "{}",
                     vector.name
                 );
                 assert_eq!(
-                    queue.active_node,
+                    scene.active_node,
                     if vector.occupied {
                         None
                     } else {
@@ -1640,17 +1635,17 @@ mod tests {
         let original_state = state;
         let mut countdown = 7;
         let trigonometry = [AlienTrigonometryPair::default(); TRIGONOMETRY_ENTRY_COUNT];
-        let mut queue = AlienResumeQueueState {
-            read_index: ALIEN_RESUME_QUEUE_CAPACITY,
+        let mut scene = AlienCallbackSceneState {
+            transition_queue_read_slot: ALIEN_RESUME_QUEUE_CAPACITY,
             active_node: Some(current_node),
-            entries: [None; ALIEN_RESUME_QUEUE_CAPACITY],
+            ..AlienCallbackSceneState::default()
         };
-        let original_queue = queue.clone();
+        let original_scene = scene;
 
         let result = update_resume_queue(
             species,
             &mut state,
-            &mut queue,
+            &mut scene,
             AlienResumeQueueContext {
                 current: current_node,
                 current_pose: &mut current,
@@ -1663,24 +1658,24 @@ mod tests {
 
         assert_eq!(
             result,
-            Err(AlienResumeQueueError::InvalidReadIndex {
+            Err(AlienResumeQueueError::InvalidReadSlot {
                 index: ALIEN_RESUME_QUEUE_CAPACITY,
             })
         );
-        assert_eq!(queue, original_queue);
+        assert_eq!(scene, original_scene);
         assert_eq!(current, original_current);
         assert_eq!(other, original_other);
         assert_eq!(textures, original_textures);
         assert_eq!(state, original_state);
         assert_eq!(countdown, 7);
 
-        queue.read_index = 0;
-        queue.entries[0] = Some(current_node);
-        let original_queue = queue.clone();
+        scene.transition_queue_read_slot = 0;
+        scene.transition_queue[0] = Some(current_node);
+        let original_scene = scene;
         let result = update_resume_queue(
             species,
             &mut state,
-            &mut queue,
+            &mut scene,
             AlienResumeQueueContext {
                 current: current_node,
                 current_pose: &mut current,
@@ -1699,19 +1694,19 @@ mod tests {
             result,
             Err(AlienResumeQueueError::AliasedPair { node: current_node })
         );
-        assert_eq!(queue, original_queue);
+        assert_eq!(scene, original_scene);
         assert_eq!(current, original_current);
         assert_eq!(other, original_other);
         assert_eq!(textures, original_textures);
         assert_eq!(state, original_state);
         assert_eq!(countdown, 7);
 
-        queue.entries[0] = Some(other_node);
-        let original_queue = queue.clone();
+        scene.transition_queue[0] = Some(other_node);
+        let original_scene = scene;
         let result = update_resume_queue(
             species,
             &mut state,
-            &mut queue,
+            &mut scene,
             AlienResumeQueueContext {
                 current: current_node,
                 current_pose: &mut current,
@@ -1725,19 +1720,19 @@ mod tests {
             result,
             Err(AlienResumeQueueError::MissingPairContext { queued: other_node })
         );
-        assert_eq!(queue, original_queue);
+        assert_eq!(scene, original_scene);
         assert_eq!(current, original_current);
         assert_eq!(other, original_other);
         assert_eq!(textures, original_textures);
         assert_eq!(state, original_state);
         assert_eq!(countdown, 7);
 
-        queue.entries[0] = None;
-        let original_queue = queue.clone();
+        scene.transition_queue[0] = None;
+        let original_scene = scene;
         let result = update_resume_queue(
             species,
             &mut state,
-            &mut queue,
+            &mut scene,
             AlienResumeQueueContext {
                 current: current_node,
                 current_pose: &mut current,
@@ -1752,20 +1747,20 @@ mod tests {
             },
         );
         assert_eq!(result, Err(AlienResumeQueueError::UnexpectedPairContext));
-        assert_eq!(queue, original_queue);
+        assert_eq!(scene, original_scene);
         assert_eq!(current, original_current);
         assert_eq!(other, original_other);
         assert_eq!(textures, original_textures);
         assert_eq!(state, original_state);
         assert_eq!(countdown, 7);
 
-        queue.entries[0] = Some(other_node);
+        scene.transition_queue[0] = Some(other_node);
         let supplied_node = state_node(2);
-        let original_queue = queue.clone();
+        let original_scene = scene;
         let result = update_resume_queue(
             species,
             &mut state,
-            &mut queue,
+            &mut scene,
             AlienResumeQueueContext {
                 current: current_node,
                 current_pose: &mut current,
@@ -1786,7 +1781,7 @@ mod tests {
                 supplied: supplied_node,
             })
         );
-        assert_eq!(queue, original_queue);
+        assert_eq!(scene, original_scene);
         assert_eq!(current, original_current);
         assert_eq!(other, original_other);
         assert_eq!(textures, original_textures);

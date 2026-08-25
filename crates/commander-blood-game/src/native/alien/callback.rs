@@ -5,7 +5,8 @@ use commander_blood_formats::alien::AXIS_COUNT;
 use super::projection::AlienSceneNode;
 use super::wave::AlienWaveSelection;
 
-const TRANSITION_QUEUE_LENGTH: usize = 8;
+/// Number of scene-node slots in the shared ring-to-resume transition queue.
+pub const ALIEN_TRANSITION_QUEUE_CAPACITY: usize = 8;
 
 /// Typed replacement for the scene-wide callback control word.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -41,9 +42,13 @@ pub struct AlienCallbackSceneState {
     /// Scene node selected by the latest successful wave bounds check.
     pub wave_selected_node: Option<AlienSceneNode>,
     /// Fixed transition queue storing typed scene-node identities.
-    pub transition_queue: [Option<AlienSceneNode>; TRANSITION_QUEUE_LENGTH],
+    pub transition_queue: [Option<AlienSceneNode>; ALIEN_TRANSITION_QUEUE_CAPACITY],
     /// Queue slot selected by the surrounding slot-11 behavior.
     pub transition_queue_slot: usize,
+    /// Queue slot inspected by the next resume begin-stage invocation.
+    pub transition_queue_read_slot: usize,
+    /// Node currently published as the active queue anchor.
+    pub active_node: Option<AlienSceneNode>,
     /// Most recently published scene-node identity.
     pub current_node: Option<AlienSceneNode>,
 }
