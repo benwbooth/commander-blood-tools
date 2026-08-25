@@ -11,7 +11,8 @@ use commander_blood_formats::script::{
 use crate::native::math::binary_u32_sqrt;
 
 use super::{
-    ScriptFieldSelector, ScriptObjectFlag, object_has_flag, script_field_offset,
+    ScriptFieldSelector, ScriptObjectFlag, active_objects_in_play, object_has_flag,
+    script_field_offset,
 };
 
 const BITS_PER_BYTE: usize = u8::BITS as usize;
@@ -124,6 +125,20 @@ pub fn objects_at_arche_position(
         .map(|object| object.id)
         .collect::<Vec<_>>();
     filter_objects_at_arche_position(state, arche, &candidates)
+}
+
+/// Return in-play actors offered by the navigation-choice interface.
+///
+/// This translates `nav_kind2_target_list_build` at BLOODPRG file offset
+/// `0x0071CF`. The in-play helper supplies owned IDs, while Honk and Radio are
+/// explicit typed exclusions rather than offsets in a terminated scratch list.
+pub fn navigation_actor_targets(
+    state: &ScriptState,
+    honk: ScriptObjectId,
+    radio: ScriptObjectId,
+) -> Vec<ScriptObjectId> {
+    let source = active_objects_in_play(state);
+    filter_navigation_actor_targets(state, &source, honk, radio)
 }
 
 /// Resolve the live coordinate pair used for one navigation object.
@@ -367,6 +382,24 @@ fn filter_objects_at_arche_position(
     Ok(output)
 }
 
+fn filter_navigation_actor_targets(
+    state: &ScriptState,
+    source: &[ScriptObjectId],
+    honk: ScriptObjectId,
+    radio: ScriptObjectId,
+) -> Vec<ScriptObjectId> {
+    source
+        .iter()
+        .copied()
+        .filter(|object| *object != honk && *object != radio)
+        .filter(|object| {
+            state
+                .object(*object)
+                .is_some_and(|record| record.kind == ScriptObjectKind::Actor)
+        })
+        .collect()
+}
+
 fn object_field(
     state: &ScriptState,
     object: ScriptObjectId,
@@ -450,6 +483,7 @@ mod tests {
     const NAVIGATION_SOURCE_VECTOR_COUNT: usize = 8;
     const NAVIGATION_CANDIDATE_VECTOR_COUNT: usize = 7;
     const ARCHE_POSITION_VECTOR_COUNT: usize = 16;
+    const NAVIGATION_ACTOR_TARGET_VECTOR_COUNT: usize = 9;
     const POSITION_RESOLVER_VECTOR_COUNT: usize = 8;
     const POSITION_DISTANCE_VECTOR_COUNT: usize = 6;
     const DIRECTORY_ENTRY_SIZE: usize = 20;
@@ -492,12 +526,27 @@ mod tests {
         output: Vec<u16>,
     }
 
+    #[derive(Deserialize)]
+    struct NavigationActorTargetOracle {
+        name: String,
+        source: Vec<u16>,
+        output: Vec<u16>,
+        count: usize,
+    }
+
     struct ArchePositionCase {
         kinds: Vec<ScriptObjectKind>,
         parents: Vec<Option<usize>>,
         flags: Vec<u8>,
         positions: Vec<(usize, [u16; 2])>,
         source_indices: Vec<usize>,
+    }
+
+    struct NavigationActorTargetCase {
+        kinds: Vec<ScriptObjectKind>,
+        source_indices: Vec<usize>,
+        honk_index: usize,
+        radio_index: usize,
     }
 
     #[derive(Deserialize)]
@@ -838,6 +887,75 @@ mod tests {
     }
 
     #[test]
+    fn navigation_actor_filter_matches_every_original_case() {
+        let vectors: Vec<NavigationActorTargetOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_71cf_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), NAVIGATION_ACTOR_TARGET_VECTOR_COUNT);
+
+        for vector in vectors {
+            let case = navigation_actor_target_case(&vector.name);
+            let state = navigation_fixture(&case.kinds, &vec![None; case.kinds.len()]);
+            let objects = state
+                .objects()
+                .iter()
+                .map(|object| object.id)
+                .collect::<Vec<_>>();
+            let source = case
+                .source_indices
+                .iter()
+                .map(|index| objects[*index])
+                .collect::<Vec<_>>();
+            assert_eq!(source.len(), vector.source.len(), "{}", vector.name);
+            let expected = vector
+                .output
+                .iter()
+                .map(|offset| {
+                    let source_index = vector
+                        .source
+                        .iter()
+                        .position(|source_offset| source_offset == offset)
+                        .unwrap();
+                    source[source_index]
+                })
+                .collect::<Vec<_>>();
+            let actual = filter_navigation_actor_targets(
+                &state,
+                &source,
+                objects[case.honk_index],
+                objects[case.radio_index],
+            );
+
+            assert_eq!(actual, expected, "{}", vector.name);
+            assert_eq!(actual.len(), vector.count, "{}", vector.name);
+        }
+    }
+
+    #[test]
+    fn navigation_actor_targets_begin_with_the_in_play_object_set() {
+        let mut state = navigation_fixture(
+            &[ScriptObjectKind::Actor; 4],
+            &[None, None, None, None],
+        );
+        let objects = state
+            .objects()
+            .iter()
+            .map(|object| object.id)
+            .collect::<Vec<_>>();
+        let flags = [2, 0, 2, 2];
+        for (object, flag) in objects.iter().copied().zip(flags) {
+            let field = state.object_byte(object, OBJECT_FLAGS_BYTE_OFFSET).unwrap();
+            assert!(state.set_byte(field, flag));
+        }
+
+        assert_eq!(
+            navigation_actor_targets(&state, objects[2], objects[3]),
+            vec![objects[0]]
+        );
+    }
+
+    #[test]
     fn every_shipped_navigation_relation_resolves_to_typed_objects() {
         for profile in 1..=5 {
             let directory = decode_script_directory(
@@ -1129,6 +1247,61 @@ mod tests {
             | "directory_pointer_and_sentinel_wrap"
             | "reverse_direction_preserved" => direct_match(ScriptObjectKind::CelestialBody),
             _ => panic!("unknown Arche-position oracle {name}"),
+        }
+    }
+
+    fn navigation_actor_target_case(name: &str) -> NavigationActorTargetCase {
+        let actors_with_external_exclusions = |count: usize| {
+            let mut kinds = vec![ScriptObjectKind::Actor; count];
+            kinds.extend([ScriptObjectKind::Player, ScriptObjectKind::Player]);
+            NavigationActorTargetCase {
+                source_indices: (0..count).collect(),
+                honk_index: count,
+                radio_index: count + 1,
+                kinds,
+            }
+        };
+
+        match name {
+            "empty_active_list" => actors_with_external_exclusions(0),
+            "two_kind2_targets"
+            | "zero_offset_is_valid"
+            | "unsigned_high_offsets_do_not_terminate" => actors_with_external_exclusions(2),
+            "exclude_honk_and_menu" => NavigationActorTargetCase {
+                kinds: vec![ScriptObjectKind::Actor; 3],
+                source_indices: vec![0, 1, 2],
+                honk_index: 0,
+                radio_index: 1,
+            },
+            "kind_must_equal_two" => NavigationActorTargetCase {
+                kinds: vec![
+                    ScriptObjectKind::Player,
+                    ScriptObjectKind::BlackHole,
+                    ScriptObjectKind::Actor,
+                    ScriptObjectKind::Actor,
+                    ScriptObjectKind::CelestialBody,
+                    ScriptObjectKind::CelestialBody,
+                ],
+                source_indices: vec![0, 1, 2, 3],
+                honk_index: 4,
+                radio_index: 5,
+            },
+            "addr32_record_sum_does_not_wrap" | "inherited_reverse_direction" => {
+                actors_with_external_exclusions(1)
+            }
+            "all_kinds_rejected" => NavigationActorTargetCase {
+                kinds: vec![
+                    ScriptObjectKind::Player,
+                    ScriptObjectKind::CelestialBody,
+                    ScriptObjectKind::WorldState,
+                    ScriptObjectKind::NavigationEntity,
+                    ScriptObjectKind::NavigationEntity,
+                ],
+                source_indices: vec![0, 1, 2],
+                honk_index: 3,
+                radio_index: 4,
+            },
+            _ => panic!("unknown navigation-actor-target oracle {name}"),
         }
     }
 
