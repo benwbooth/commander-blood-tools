@@ -15,22 +15,31 @@ extern volatile xdb_mouse_state xdb_alien_mouse_state; /* DS:0x002A */
 #define xdb_alien_mouse_buttons xdb_alien_mouse_state.buttons
 
 #if defined(__WATCOMC__)
-extern void XDB_NEAR xdb_mouse_driver_poll(void);
-#pragma aux xdb_mouse_driver_poll = \
-        "mov ax,3" \
-        "int 33h" \
-        "mov word ptr xdb_alien_mouse_state,cx" \
-        "mov word ptr xdb_alien_mouse_state+2,dx" \
-        "mov word ptr xdb_alien_mouse_state+4,bx" \
-        modify exact [ax bx cx dx]
-extern void XDB_NEAR xdb_mouse_driver_command(
-        xdb_u16 function,
-        xdb_u16 x,
-        xdb_u16 y);
-#pragma aux xdb_mouse_driver_command = \
-        "int 33h" \
-        parm [ax] [cx] [dx] \
-        modify exact [ax bx cx dx]
+#define xdb_mouse_driver_poll() \
+    do { \
+        union REGS registers; \
+        registers.x.ax = 3u; \
+        registers.x.bx = 0u; \
+        registers.x.cx = 0u; \
+        registers.x.dx = 0u; \
+        registers.x.si = 0u; \
+        registers.x.di = 0u; \
+        int86(0x33, &registers, &registers); \
+        xdb_alien_mouse_x = registers.x.cx; \
+        xdb_alien_mouse_y = registers.x.dx; \
+        xdb_alien_mouse_buttons = registers.x.bx; \
+    } while (0)
+#define xdb_mouse_driver_command(function, position_x, position_y) \
+    do { \
+        union REGS registers; \
+        registers.x.ax = (function); \
+        registers.x.bx = 0u; \
+        registers.x.cx = (position_x); \
+        registers.x.dx = (position_y); \
+        registers.x.si = 0u; \
+        registers.x.di = 0u; \
+        int86(0x33, &registers, &registers); \
+    } while (0)
 #define xdb_mouse_driver_set_position(x, y) \
     xdb_mouse_driver_command(4, (x), (y))
 #define xdb_mouse_driver_set_vertical_bounds(minimum, maximum) \

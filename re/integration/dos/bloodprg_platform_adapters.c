@@ -27,22 +27,6 @@ volatile bloodprg_adapter_trace_record bloodprg_adapter_trace = {
 };
 #endif
 
-#if defined(__WATCOMC__)
-static int bloodprg_dos_find_first_interrupt(
-        const volatile char CB_FAR *path);
-#pragma aux bloodprg_dos_find_first_interrupt = \
-        "push ds" \
-        "mov ds,dx" \
-        "mov dx,ax" \
-        "xor cx,cx" \
-        "mov ax,4e00h" \
-        "int 21h" \
-        "sbb ax,ax" \
-        "inc ax" \
-        "pop ds" \
-        parm [dx ax] value [ax] modify exact [ax cx dx]
-#endif
-
 static volatile bloodprg_dos_dta bloodprg_dos_dta_buffer;
 
 #if defined(__WATCOMC__)
@@ -103,16 +87,12 @@ volatile bloodprg_dos_dta CB_FAR *CB_NEAR cb_dos_get_dta(void)
 
 int CB_NEAR cb_dos_find_first(const volatile char CB_FAR *path)
 {
-#if defined(__WATCOMC__)
-    return bloodprg_dos_find_first_interrupt(path);
-#else
     union REGS registers;
     struct SREGS segments;
 
     registers.x.ax = 0x4e00u;
     registers.x.cx = 0u;
     return bloodprg_dos_call_far_path(&registers, &segments, path);
-#endif
 }
 
 int CB_NEAR cb_dos_open_read_only(
