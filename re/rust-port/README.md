@@ -98,6 +98,14 @@ pool, linked span records, Mode X planes, and framebuffer writes are classified
 as eliminated presentation adapters. Offscreen GPU tests render all three
 shipped overlays at wide and portrait output sizes.
 
+Four shared behavior operations are translated for all three species. Ninety-six
+direct binary cases verify camera-relative position wrapping, bounds and exit
+updates, anchor publication, and the AMER/CROOLIS half-delta versus SCRUT fixed
+state adjustment. Three malformed zero-count wrapping vectors are rejected by
+the typed API instead of reproducing a 65,536-iteration address-space walk.
+These operations remain outside the live scene loop until every method-table
+variant needed by shipped models has a real implementation.
+
 Run the current interactive path with original assets:
 
 ```sh

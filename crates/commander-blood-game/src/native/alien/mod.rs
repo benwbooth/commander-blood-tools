@@ -1,5 +1,6 @@
 //! Shared native engine used by the AMER, CROOLIS, and SCRUT 3D scenes.
 
+mod behavior;
 mod camera;
 mod control;
 mod faces;
@@ -9,6 +10,9 @@ mod raster;
 mod scene;
 mod starfield;
 
+pub use behavior::{
+    AlienBehaviorError, adjust_state, anchor_state, bounds_then_wrap, wrap_positions,
+};
 pub use camera::{AlienCameraAngles, AlienCameraTransform};
 pub use control::{
     AlienCameraControl, AlienCameraStep, AlienInputAction, AlienMouseSample, AlienSpecies,

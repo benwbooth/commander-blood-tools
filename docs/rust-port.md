@@ -78,3 +78,9 @@ triangles. SDL3 input drives the scene and wgpu renders the primary mesh,
 palette-colored stars, and behavior models in recovered order at the host
 resolution. Behavior method dispatch and original frame timing are still
 pending, so the overlay main routine is not yet listed as ported.
+
+The first behavior-method slice covers position wrapping, bounds and exit
+updates, anchor selection, and species-specific state adjustment. It operates
+directly on typed node poses and passes 96 original-overlay cases. The scene
+loop will invoke behavior dispatch only after every method used by the shipped
+models is translated; pending variants are not treated as no-ops.
