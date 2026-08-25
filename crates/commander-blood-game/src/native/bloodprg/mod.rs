@@ -43,6 +43,7 @@ mod record;
 mod record_state;
 mod resource_cache;
 mod script;
+mod script_profile;
 mod screen_presentation;
 mod selected_mask;
 mod sequence;
@@ -274,6 +275,13 @@ pub use selected_mask::{
     PresentationChoiceMaskError, PresentationChoiceNumber, draw_presentation_choice_number,
 };
 pub use script::{ScriptControl, ScriptResumeState, ScriptRuntime, ScriptRuntimeError};
+pub use script_profile::{
+    BLOODPRG_SCRIPT_PROFILE_TABLE_FILE_OFFSET, ORIGINAL_SCRIPT_PROFILE_COUNT,
+    SCRIPT_PROFILE_RESOURCE_COUNT, LoadedScriptProfile, OriginalScriptProfileCatalog,
+    ScriptProfileBuiltins, ScriptProfileDataKind, ScriptProfileError, ScriptProfileId,
+    ScriptProfileLoadOutcome, ScriptProfileManager, ScriptProfileResourceKind,
+    ScriptProfileResources,
+};
 pub use screen_presentation::{
     PresentationDescriptPlan, PresentationMusicChange, PresentationPanelPhase,
     PresentationPanelStep, PresentationRenderRegion, PresentationRenderTarget,

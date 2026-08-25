@@ -1,0 +1,664 @@
+//! Loading and ownership of complete authored BloodScript profiles.
+
+use std::error::Error;
+use std::fmt;
+
+use commander_blood_formats::bas::{ScriptBas, ScriptBasError, decode_script_bas};
+use commander_blood_formats::code::{ScriptCode, ScriptCodeError, decode_script_code};
+use commander_blood_formats::script::{
+    ScriptDataError, ScriptDictionary, ScriptDirectory, ScriptObjectId, ScriptState,
+    ScriptSymbolKind, decode_script_dictionary, decode_script_directory, decode_script_state,
+};
+
+use crate::assets::OriginalResourceStore;
+
+use super::{
+    OriginalResourceCache, OriginalResourceCatalog, ResourceCacheError, ResourceId,
+    ResourceLoadStatus, ScriptRuntime,
+};
+
+/// File position of the five playable resource profiles in `BLOODPRG.EXE`.
+pub const BLOODPRG_SCRIPT_PROFILE_TABLE_FILE_OFFSET: usize = 0x00D3E4;
+/// Number of playable script profiles shipped by Commander Blood.
+pub const ORIGINAL_SCRIPT_PROFILE_COUNT: usize = 5;
+/// Number of companion files loaded for each script profile.
+pub const SCRIPT_PROFILE_RESOURCE_COUNT: usize = 5;
+
+const SERIALIZED_RESOURCE_ID_SIZE: usize = 2;
+const SENTINEL_PROFILE_COUNT: usize = 1;
+const BUILTIN_PLAYER_NAME: &[u8] = b"blood";
+const BUILTIN_WORLD_NAME: &[u8] = b"orxx";
+const BUILTIN_HORN_NAME: &[u8] = b"Honk";
+const BUILTIN_MENU_NAME: &[u8] = b"menu";
+const BUILTIN_ARCHETYPE_NAME: &[u8] = b"arche";
+const BUILTIN_ARK_NAME: &[u8] = b"Ark";
+const BUILTIN_SCRUTER_JO_NAME: &[u8] = b"Scruter_Jo";
+const BUILTIN_VIDEO_STATE_NAME: &[u8] = b"vbio";
+
+/// Zero-based identity of one playable BloodScript profile.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct ScriptProfileId(u8);
+
+impl ScriptProfileId {
+    /// Validate a numeric profile identity against the five shipped profiles.
+    pub const fn new(value: u8) -> Option<Self> {
+        if value < ORIGINAL_SCRIPT_PROFILE_COUNT as u8 {
+            Some(Self(value))
+        } else {
+            None
+        }
+    }
+
+    /// Return the original zero-based numeric identity.
+    pub const fn value(self) -> u8 {
+        self.0
+    }
+
+    /// Iterate every playable profile in authored order.
+    pub fn all() -> impl Iterator<Item = Self> {
+        (u8::MIN..ORIGINAL_SCRIPT_PROFILE_COUNT as u8).map(Self)
+    }
+
+    const fn index(self) -> usize {
+        self.0 as usize
+    }
+}
+
+/// Semantic role of one file in a BloodScript profile.
+#[repr(usize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ScriptProfileResourceKind {
+    /// Executable VM instruction image (`SCRIPT*.COD`).
+    Code = 0,
+    /// Dialogue and menu instruction image (`SCRIPT*.BAS`).
+    Dialogue = 1,
+    /// Mutable object-state image (`SCRIPT*.VAR`).
+    State = 2,
+    /// Interned word dictionary (`SCRIPT*.DIC`).
+    Dictionary = 3,
+    /// Object, procedure, and label directory (`SCRIPT*.DEB`).
+    Directory = 4,
+}
+
+impl ScriptProfileResourceKind {
+    const fn index(self) -> usize {
+        self as usize
+    }
+}
+
+/// Five original resource IDs composing one complete BloodScript profile.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptProfileResources {
+    resources: [ResourceId; SCRIPT_PROFILE_RESOURCE_COUNT],
+}
+
+impl ScriptProfileResources {
+    /// Return the resource ID assigned to one semantic companion-file role.
+    pub const fn resource(self, kind: ScriptProfileResourceKind) -> ResourceId {
+        self.resources[kind.index()]
+    }
+
+    /// Return all five IDs in native load order.
+    pub const fn all(self) -> [ResourceId; SCRIPT_PROFILE_RESOURCE_COUNT] {
+        self.resources
+    }
+}
+
+/// Resource-ID matrix recovered from the original executable.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct OriginalScriptProfileCatalog {
+    profiles: [ScriptProfileResources; ORIGINAL_SCRIPT_PROFILE_COUNT],
+}
+
+impl OriginalScriptProfileCatalog {
+    /// Decode the five playable rows and verify the following all-zero sentinel.
+    pub fn decode_bloodprg(executable: &[u8]) -> Result<Self, ScriptProfileError> {
+        let serialized_profile_size = SCRIPT_PROFILE_RESOURCE_COUNT * SERIALIZED_RESOURCE_ID_SIZE;
+        let required = BLOODPRG_SCRIPT_PROFILE_TABLE_FILE_OFFSET
+            + (ORIGINAL_SCRIPT_PROFILE_COUNT + SENTINEL_PROFILE_COUNT) * serialized_profile_size;
+        if executable.len() < required {
+            return Err(ScriptProfileError::ExecutableTooShort {
+                required,
+                actual: executable.len(),
+            });
+        }
+
+        let mut profiles = Vec::with_capacity(ORIGINAL_SCRIPT_PROFILE_COUNT);
+        for profile_index in 0..ORIGINAL_SCRIPT_PROFILE_COUNT {
+            let start =
+                BLOODPRG_SCRIPT_PROFILE_TABLE_FILE_OFFSET + profile_index * serialized_profile_size;
+            let resources = std::array::from_fn(|resource_index| {
+                let position = start + resource_index * SERIALIZED_RESOURCE_ID_SIZE;
+                ResourceId::new(u16::from_le_bytes(
+                    executable[position..position + SERIALIZED_RESOURCE_ID_SIZE]
+                        .try_into()
+                        .expect("validated script-profile resource ID"),
+                ))
+            });
+            profiles.push(ScriptProfileResources { resources });
+        }
+
+        let sentinel_start = BLOODPRG_SCRIPT_PROFILE_TABLE_FILE_OFFSET
+            + ORIGINAL_SCRIPT_PROFILE_COUNT * serialized_profile_size;
+        let sentinel_end = sentinel_start + serialized_profile_size;
+        if executable[sentinel_start..sentinel_end]
+            .iter()
+            .any(|byte| *byte != u8::MIN)
+        {
+            return Err(ScriptProfileError::InvalidProfileSentinel);
+        }
+
+        Ok(Self {
+            profiles: profiles
+                .try_into()
+                .expect("decoded exactly five playable script profiles"),
+        })
+    }
+
+    /// Return one playable profile's resource IDs.
+    pub fn profile(&self, profile: ScriptProfileId) -> ScriptProfileResources {
+        self.profiles[profile.index()]
+    }
+}
+
+/// Typed bindings for the names treated specially by the native VM.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct ScriptProfileBuiltins {
+    /// Global player object named `blood`.
+    pub player: Option<ScriptObjectId>,
+    /// Global world-state object named `orxx`.
+    pub world: Option<ScriptObjectId>,
+    /// Horn-control object named `Honk`.
+    pub horn: Option<ScriptObjectId>,
+    /// Menu-control object named `menu`.
+    pub menu: Option<ScriptObjectId>,
+    /// Archetype or current-position object named `arche`.
+    pub archetype: Option<ScriptObjectId>,
+    /// Ark navigation object named `Ark`.
+    pub ark: Option<ScriptObjectId>,
+    /// Character object named `Scruter_Jo`, absent from profile one.
+    pub scruter_jo: Option<ScriptObjectId>,
+    /// State-image byte position named `vbio`, absent from profile one.
+    pub video_state_offset: Option<u16>,
+}
+
+impl ScriptProfileBuiltins {
+    fn bind(directory: &ScriptDirectory) -> Self {
+        let video_state_offset = directory.entries().iter().find_map(|entry| {
+            (entry.kind == ScriptSymbolKind::StateLabel && entry.name() == BUILTIN_VIDEO_STATE_NAME)
+                .then_some(entry.value)
+        });
+        Self {
+            player: directory.find_active_object(BUILTIN_PLAYER_NAME),
+            world: directory.find_active_object(BUILTIN_WORLD_NAME),
+            horn: directory.find_active_object(BUILTIN_HORN_NAME),
+            menu: directory.find_active_object(BUILTIN_MENU_NAME),
+            archetype: directory.find_active_object(BUILTIN_ARCHETYPE_NAME),
+            ark: directory.find_active_object(BUILTIN_ARK_NAME),
+            scruter_jo: directory.find_active_object(BUILTIN_SCRUTER_JO_NAME),
+            video_state_offset,
+        }
+    }
+}
+
+/// One completely decoded and independently owned BloodScript profile.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LoadedScriptProfile {
+    id: ScriptProfileId,
+    resources: ScriptProfileResources,
+    code: ScriptCode,
+    dialogue: ScriptBas,
+    state: ScriptState,
+    dictionary: ScriptDictionary,
+    directory: ScriptDirectory,
+    builtins: ScriptProfileBuiltins,
+    runtime: ScriptRuntime,
+}
+
+impl LoadedScriptProfile {
+    /// Return this profile's zero-based identity.
+    pub const fn id(&self) -> ScriptProfileId {
+        self.id
+    }
+
+    /// Return the five original resource IDs backing this profile.
+    pub const fn resources(&self) -> ScriptProfileResources {
+        self.resources
+    }
+
+    /// Borrow the decoded COD instruction image.
+    pub const fn code(&self) -> &ScriptCode {
+        &self.code
+    }
+
+    /// Borrow the decoded BAS dialogue and menu image.
+    pub const fn dialogue(&self) -> &ScriptBas {
+        &self.dialogue
+    }
+
+    /// Borrow the mutable profile object-state image.
+    pub const fn state(&self) -> &ScriptState {
+        &self.state
+    }
+
+    /// Mutably borrow the profile object-state image.
+    pub fn state_mut(&mut self) -> &mut ScriptState {
+        &mut self.state
+    }
+
+    /// Borrow the interned profile dictionary.
+    pub const fn dictionary(&self) -> &ScriptDictionary {
+        &self.dictionary
+    }
+
+    /// Borrow the decoded object and procedure directory.
+    pub const fn directory(&self) -> &ScriptDirectory {
+        &self.directory
+    }
+
+    /// Return the native VM's specially named object bindings.
+    pub const fn builtins(&self) -> ScriptProfileBuiltins {
+        self.builtins
+    }
+
+    /// Borrow the fresh control-flow runtime associated with this profile.
+    pub const fn runtime(&self) -> &ScriptRuntime {
+        &self.runtime
+    }
+
+    /// Mutably borrow this profile's control-flow runtime.
+    pub fn runtime_mut(&mut self) -> &mut ScriptRuntime {
+        &mut self.runtime
+    }
+}
+
+/// Resource effects produced by selecting one script profile.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptProfileLoadOutcome {
+    /// Whether the selected identity differs from the prior loaded profile.
+    pub profile_changed: bool,
+    /// Number of prior profile resources removed before loading.
+    pub released_resources: usize,
+    /// Fresh-or-resident result for each file in native load order.
+    pub resource_statuses: [ResourceLoadStatus; SCRIPT_PROFILE_RESOURCE_COUNT],
+}
+
+/// Owner of the active decoded profile and its replacement lifecycle.
+#[derive(Clone, Debug)]
+pub struct ScriptProfileManager {
+    catalog: OriginalScriptProfileCatalog,
+    current: Option<LoadedScriptProfile>,
+}
+
+impl ScriptProfileManager {
+    /// Construct a manager from the executable's decoded profile matrix.
+    pub const fn new(catalog: OriginalScriptProfileCatalog) -> Self {
+        Self {
+            catalog,
+            current: None,
+        }
+    }
+
+    /// Load, decode, bind, and reset one complete script profile.
+    ///
+    /// This is the typed ownership translation of `vm_resource_profile_select`
+    /// at BLOODPRG file offset `0x0053A0`. Selecting a different profile first
+    /// releases all five old resource IDs. Selecting the same profile reuses the
+    /// bytes but still rebuilds decoded state and a fresh [`ScriptRuntime`].
+    pub fn select(
+        &mut self,
+        profile: ScriptProfileId,
+        cache: &mut OriginalResourceCache,
+        store: &OriginalResourceStore,
+        resources: &OriginalResourceCatalog,
+    ) -> Result<ScriptProfileLoadOutcome, ScriptProfileError> {
+        let profile_changed = self
+            .current
+            .as_ref()
+            .is_none_or(|current| current.id != profile);
+        let released_resources = if profile_changed {
+            self.current
+                .take()
+                .map(|current| {
+                    current
+                        .resources
+                        .all()
+                        .into_iter()
+                        .filter(|resource| cache.release(*resource))
+                        .count()
+                })
+                .unwrap_or(usize::MIN)
+        } else {
+            usize::MIN
+        };
+
+        let profile_resources = self.catalog.profile(profile);
+        let mut resource_statuses =
+            [ResourceLoadStatus::AlreadyLoaded; SCRIPT_PROFILE_RESOURCE_COUNT];
+        for (index, resource) in profile_resources.all().into_iter().enumerate() {
+            resource_statuses[index] = cache
+                .load_by_id(store, resources, resource)
+                .map_err(ScriptProfileError::Resource)?;
+        }
+
+        self.current = Some(decode_loaded_profile(profile, profile_resources, cache)?);
+        Ok(ScriptProfileLoadOutcome {
+            profile_changed,
+            released_resources,
+            resource_statuses,
+        })
+    }
+
+    /// Borrow the currently selected profile, when one has loaded successfully.
+    pub const fn current(&self) -> Option<&LoadedScriptProfile> {
+        self.current.as_ref()
+    }
+
+    /// Mutably borrow the currently selected profile.
+    pub fn current_mut(&mut self) -> Option<&mut LoadedScriptProfile> {
+        self.current.as_mut()
+    }
+}
+
+/// Companion image that failed typed profile decoding.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ScriptProfileDataKind {
+    /// Mutable VAR object-state image.
+    State,
+    /// DIC interned-word image.
+    Dictionary,
+    /// DEB object and procedure directory.
+    Directory,
+}
+
+/// Invalid profile matrix, resource operation, or companion image.
+#[derive(Debug)]
+pub enum ScriptProfileError {
+    /// The executable ends before the matrix and sentinel are complete.
+    ExecutableTooShort {
+        /// Minimum required executable byte count.
+        required: usize,
+        /// Actual executable byte count.
+        actual: usize,
+    },
+    /// The sixth nonplayable matrix row was not entirely zero.
+    InvalidProfileSentinel,
+    /// Loading or releasing one original resource failed.
+    Resource(ResourceCacheError),
+    /// A loaded cache entry disappeared before profile decoding.
+    MissingLoadedResource {
+        /// Missing original resource identifier.
+        resource: ResourceId,
+    },
+    /// The COD instruction image failed lossless framing.
+    Code(ScriptCodeError),
+    /// The BAS dialogue image failed typed decoding.
+    Dialogue(ScriptBasError),
+    /// A VAR, DIC, or DEB companion image failed typed decoding.
+    Data {
+        /// Companion image being decoded.
+        kind: ScriptProfileDataKind,
+        /// Underlying format error.
+        source: ScriptDataError,
+    },
+}
+
+impl fmt::Display for ScriptProfileError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            formatter,
+            "invalid Commander Blood script profile: {self:?}"
+        )
+    }
+}
+
+impl Error for ScriptProfileError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::Resource(source) => Some(source),
+            Self::Code(source) => Some(source),
+            Self::Dialogue(source) => Some(source),
+            Self::Data { source, .. } => Some(source),
+            _ => None,
+        }
+    }
+}
+
+fn decode_loaded_profile(
+    profile: ScriptProfileId,
+    resources: ScriptProfileResources,
+    cache: &OriginalResourceCache,
+) -> Result<LoadedScriptProfile, ScriptProfileError> {
+    let directory_bytes = loaded_resource(
+        cache,
+        resources.resource(ScriptProfileResourceKind::Directory),
+    )?;
+    let directory =
+        decode_script_directory(directory_bytes).map_err(|source| ScriptProfileError::Data {
+            kind: ScriptProfileDataKind::Directory,
+            source,
+        })?;
+    let dictionary_bytes = loaded_resource(
+        cache,
+        resources.resource(ScriptProfileResourceKind::Dictionary),
+    )?;
+    let dictionary =
+        decode_script_dictionary(dictionary_bytes).map_err(|source| ScriptProfileError::Data {
+            kind: ScriptProfileDataKind::Dictionary,
+            source,
+        })?;
+    let code = decode_script_code(loaded_resource(
+        cache,
+        resources.resource(ScriptProfileResourceKind::Code),
+    )?)
+    .map_err(ScriptProfileError::Code)?;
+    let dialogue = decode_script_bas(
+        loaded_resource(
+            cache,
+            resources.resource(ScriptProfileResourceKind::Dialogue),
+        )?,
+        &dictionary,
+    )
+    .map_err(ScriptProfileError::Dialogue)?;
+    let state = decode_script_state(
+        loaded_resource(cache, resources.resource(ScriptProfileResourceKind::State))?,
+        &directory,
+    )
+    .map_err(|source| ScriptProfileError::Data {
+        kind: ScriptProfileDataKind::State,
+        source,
+    })?;
+    let builtins = ScriptProfileBuiltins::bind(&directory);
+
+    Ok(LoadedScriptProfile {
+        id: profile,
+        resources,
+        code,
+        dialogue,
+        state,
+        dictionary,
+        directory,
+        builtins,
+        runtime: ScriptRuntime::new(),
+    })
+}
+
+fn loaded_resource(
+    cache: &OriginalResourceCache,
+    resource: ResourceId,
+) -> Result<&[u8], ScriptProfileError> {
+    cache
+        .resolve(resource)
+        .ok_or(ScriptProfileError::MissingLoadedResource { resource })
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::{Path, PathBuf};
+
+    use super::*;
+
+    const FIRST_PROFILE: ScriptProfileId = ScriptProfileId(0);
+    const SECOND_PROFILE: ScriptProfileId = ScriptProfileId(1);
+    const FIRST_PROFILE_RESOURCES: [u16; SCRIPT_PROFILE_RESOURCE_COUNT] = [2, 3, 4, 5, 6];
+    const SECOND_PROFILE_RESOURCES: [u16; SCRIPT_PROFILE_RESOURCE_COUNT] = [37, 38, 39, 40, 41];
+    const FINAL_PROFILE_RESOURCES: [u16; SCRIPT_PROFILE_RESOURCE_COUNT] = [86, 87, 88, 89, 90];
+
+    fn original_data_root() -> Option<PathBuf> {
+        [
+            Path::new("output/_tmp_iso"),
+            Path::new("commander-blood-audio/_tmp_iso"),
+            Path::new("accuracy/cblood_install/cblood"),
+        ]
+        .into_iter()
+        .find(|root| root.join("SCRIPT1.COD").is_file())
+        .map(Path::to_owned)
+    }
+
+    fn original_resource_catalog() -> OriginalResourceCatalog {
+        OriginalResourceCatalog::decode_bloodprg(include_bytes!(
+            "../../../../../re/bin/BLOODPRG.EXE"
+        ))
+        .unwrap()
+    }
+
+    fn numeric_resources(
+        resources: ScriptProfileResources,
+    ) -> [u16; SCRIPT_PROFILE_RESOURCE_COUNT] {
+        resources.all().map(ResourceId::value)
+    }
+
+    #[test]
+    fn executable_profile_matrix_matches_every_authored_row_and_sentinel() {
+        let executable = include_bytes!("../../../../../re/bin/BLOODPRG.EXE");
+        let profiles = OriginalScriptProfileCatalog::decode_bloodprg(executable).unwrap();
+
+        assert_eq!(
+            numeric_resources(profiles.profile(FIRST_PROFILE)),
+            FIRST_PROFILE_RESOURCES
+        );
+        assert_eq!(
+            numeric_resources(profiles.profile(SECOND_PROFILE)),
+            SECOND_PROFILE_RESOURCES
+        );
+        assert_eq!(
+            numeric_resources(
+                profiles.profile(
+                    ScriptProfileId::new((ORIGINAL_SCRIPT_PROFILE_COUNT - 1) as u8).unwrap()
+                )
+            ),
+            FINAL_PROFILE_RESOURCES
+        );
+        assert!(ScriptProfileId::new(ORIGINAL_SCRIPT_PROFILE_COUNT as u8).is_none());
+    }
+
+    #[test]
+    fn every_shipped_profile_loads_round_trips_and_rebinds_typed_builtins() {
+        let Some(root) = original_data_root() else {
+            return;
+        };
+        let store = OriginalResourceStore::new(root.clone(), None, [], true);
+        let resources = original_resource_catalog();
+        let profile_catalog = OriginalScriptProfileCatalog::decode_bloodprg(include_bytes!(
+            "../../../../../re/bin/BLOODPRG.EXE"
+        ))
+        .unwrap();
+        let mut manager = ScriptProfileManager::new(profile_catalog);
+        let mut cache = OriginalResourceCache::new();
+        let mut previous_resources = None;
+
+        for profile in ScriptProfileId::all() {
+            let outcome = manager
+                .select(profile, &mut cache, &store, &resources)
+                .unwrap();
+            assert!(outcome.profile_changed);
+            assert_eq!(
+                outcome.resource_statuses,
+                [ResourceLoadStatus::LoadedNow; SCRIPT_PROFILE_RESOURCE_COUNT]
+            );
+            assert_eq!(
+                outcome.released_resources,
+                previous_resources
+                    .map(|_resources: ScriptProfileResources| SCRIPT_PROFILE_RESOURCE_COUNT)
+                    .unwrap_or(usize::MIN)
+            );
+
+            let loaded = manager.current().unwrap();
+            assert_eq!(loaded.id(), profile);
+            let file_number = usize::from(profile.value()) + 1;
+            assert_eq!(
+                loaded.code().encode(),
+                std::fs::read(root.join(format!("SCRIPT{file_number}.COD"))).unwrap()
+            );
+            assert_eq!(
+                loaded.dialogue().encode(),
+                std::fs::read(root.join(format!("SCRIPT{file_number}.BAS"))).unwrap()
+            );
+            assert_eq!(
+                loaded.state().encode(),
+                std::fs::read(root.join(format!("SCRIPT{file_number}.VAR"))).unwrap()
+            );
+            assert_eq!(
+                loaded.dictionary().encode(),
+                std::fs::read(root.join(format!("SCRIPT{file_number}.DIC"))).unwrap()
+            );
+            assert_eq!(
+                loaded.directory().encode(),
+                std::fs::read(root.join(format!("SCRIPT{file_number}.DEB"))).unwrap()
+            );
+            let builtins = loaded.builtins();
+            assert!(builtins.player.is_some());
+            assert!(builtins.world.is_some());
+            assert!(builtins.horn.is_some());
+            assert!(builtins.menu.is_some());
+            assert!(builtins.archetype.is_some());
+            assert!(builtins.ark.is_some());
+            assert_eq!(builtins.scruter_jo.is_some(), profile != FIRST_PROFILE);
+            assert_eq!(
+                builtins.video_state_offset.is_some(),
+                profile != FIRST_PROFILE
+            );
+
+            if let Some(old) = previous_resources {
+                for resource in old.all() {
+                    assert!(!cache.is_loaded(resource));
+                }
+            }
+            for resource in loaded.resources().all() {
+                assert!(cache.is_loaded(resource));
+            }
+            previous_resources = Some(loaded.resources());
+        }
+    }
+
+    #[test]
+    fn selecting_the_same_profile_reuses_bytes_but_resets_control_state() {
+        let Some(root) = original_data_root() else {
+            return;
+        };
+        let store = OriginalResourceStore::new(root, None, [], true);
+        let resources = original_resource_catalog();
+        let profile_catalog = OriginalScriptProfileCatalog::decode_bloodprg(include_bytes!(
+            "../../../../../re/bin/BLOODPRG.EXE"
+        ))
+        .unwrap();
+        let mut manager = ScriptProfileManager::new(profile_catalog);
+        let mut cache = OriginalResourceCache::new();
+
+        manager
+            .select(SECOND_PROFILE, &mut cache, &store, &resources)
+            .unwrap();
+        manager.current_mut().unwrap().runtime_mut().request_yield();
+        let outcome = manager
+            .select(SECOND_PROFILE, &mut cache, &store, &resources)
+            .unwrap();
+
+        assert!(!outcome.profile_changed);
+        assert_eq!(outcome.released_resources, usize::MIN);
+        assert_eq!(
+            outcome.resource_statuses,
+            [ResourceLoadStatus::AlreadyLoaded; SCRIPT_PROFILE_RESOURCE_COUNT]
+        );
+        assert!(!manager.current().unwrap().runtime().yield_requested());
+    }
+}
