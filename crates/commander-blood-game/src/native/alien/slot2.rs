@@ -65,9 +65,9 @@ const AMER_CAMERA_DEPTH_RESET: i16 = -64;
 const AMER_RETURN_CALLBACK_COUNTDOWN: u16 = 1;
 const UNREFERENCED_STEERING_RADIAL_OFFSET: i16 = 10;
 const UNREFERENCED_STEERING_TURN_STEP: i16 = 16;
-const AMER_MOTION_RANDOM_ROTATION: u32 = 3;
-const AMER_MOTION_RANDOM_BORROW_SHIFT: u32 = 2;
-const AMER_MOTION_RANDOM_BORROW_MASK: u16 = 1;
+const SLOT2_MOTION_RANDOM_ROTATION: u32 = 3;
+const SLOT2_MOTION_RANDOM_BORROW_SHIFT: u32 = 2;
+const SLOT2_MOTION_RANDOM_BORROW_MASK: u16 = 1;
 const AMER_MOTION_TARGET_MASK: u16 = 0x07ff;
 const AMER_MOTION_TARGET_CENTER: u16 = 1_023;
 const AMER_MOTION_DURATION_SHIFT: u32 = 2;
@@ -104,6 +104,17 @@ const CROOLIS_FADE_POSITION_STEP: u16 = 30;
 const CROOLIS_FADE_INITIAL_DURATION: i16 = 178;
 const CROOLIS_FADE_DURATION_STEP: i16 = 4;
 const CROOLIS_FADE_MINIMUM_DURATION: i16 = 146;
+const CROOLIS_RESTART_RADIAL_TARGET: u16 = 100;
+const CROOLIS_CAMERA_X_MINIMUM: i16 = -1_000;
+const CROOLIS_CAMERA_X_MAXIMUM: i16 = 1_000;
+const CROOLIS_CAMERA_Z_MINIMUM: i16 = -500;
+const CROOLIS_CAMERA_Z_MAXIMUM: i16 = 2_500;
+const CROOLIS_TARGET_ROLL_MASK: u16 = 0x03ff;
+const CROOLIS_TARGET_ROLL_CENTER: u16 = 511;
+const CROOLIS_DURATION_SHIFT: u32 = 1;
+const CROOLIS_DURATION_BIAS: u16 = 16;
+const CROOLIS_RADIAL_ORIGIN: u16 = 768;
+const CROOLIS_RADIAL_SHIFT: u32 = 3;
 
 /// Callback stage selected for one slot-2 animation model.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -308,6 +319,17 @@ pub enum AlienCroolisFadeUpdate {
     MotionRequested,
     /// Continue immediately through the separately recovered restart routine.
     RestartRequested,
+}
+
+/// Typed continuation chosen by CROOLIS's ordinary update head.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienCroolisUpdateHead {
+    /// Continue immediately through CROOLIS selection initialization.
+    SelectionRequested,
+    /// Continue immediately through the shared latch dispatch.
+    CommonRequested,
+    /// Continue immediately through the separately recovered camera reset.
+    ResetRequested,
 }
 
 /// Invalid flat state supplied to the slot-2 coordinator.
@@ -603,7 +625,7 @@ pub fn update_amer_head(
         return Ok(AlienAmerUpdateHead::ResetRequested);
     }
 
-    let random_value = transform_amer_motion_random(animation.random_value);
+    let random_value = transform_slot2_motion_random(animation.random_value);
     let target_roll =
         ((random_value & AMER_MOTION_TARGET_MASK).wrapping_sub(AMER_MOTION_TARGET_CENTER)) as i16;
     let duration = ((target_roll.unsigned_abs() >> AMER_MOTION_DURATION_SHIFT)
@@ -871,6 +893,57 @@ pub fn update_croolis_fade(
     Ok(AlienCroolisFadeUpdate::RestartRequested)
 }
 
+/// Restart CROOLIS's ordinary update and request same-pass callback dispatch.
+pub fn restart_croolis_update(
+    pose: &AlienModelPose,
+    animation: &mut AlienSlot2AnimationState,
+) -> Result<AlienSlot2Callback, AlienSlot2Error> {
+    validate_state(AlienSpecies::Croolis, pose, animation)?;
+    animation.nodes[PRIMARY_NODE].radial_target = CROOLIS_RESTART_RADIAL_TARGET;
+    animation.callback = Some(AlienSlot2Callback::Update);
+    Ok(AlienSlot2Callback::Update)
+}
+
+/// Select and prepare CROOLIS's next ordinary-update continuation.
+pub fn update_croolis_head(
+    pose: &AlienModelPose,
+    animation: &mut AlienSlot2AnimationState,
+    scene: &AlienCallbackSceneState,
+) -> Result<AlienCroolisUpdateHead, AlienSlot2Error> {
+    validate_state(AlienSpecies::Croolis, pose, animation)?;
+    if scene.wave_selection != AlienWaveSelection::Disabled {
+        return Ok(AlienCroolisUpdateHead::SelectionRequested);
+    }
+
+    animation.phase_timer = animation.phase_timer.wrapping_sub(1);
+    if animation.phase_timer >= i16::default() {
+        return Ok(AlienCroolisUpdateHead::CommonRequested);
+    }
+
+    let primary = &pose.nodes[PRIMARY_NODE];
+    let camera_x = transformed_component(primary, X_AXIS);
+    let camera_z = transformed_component(primary, Z_AXIS);
+    if !(CROOLIS_CAMERA_X_MINIMUM..=CROOLIS_CAMERA_X_MAXIMUM).contains(&camera_x)
+        || !(CROOLIS_CAMERA_Z_MINIMUM..=CROOLIS_CAMERA_Z_MAXIMUM).contains(&camera_z)
+    {
+        return Ok(AlienCroolisUpdateHead::ResetRequested);
+    }
+
+    let random_value = transform_slot2_motion_random(animation.random_value);
+    let target_roll =
+        (random_value & CROOLIS_TARGET_ROLL_MASK).wrapping_sub(CROOLIS_TARGET_ROLL_CENTER) as i16;
+    let absolute_roll = target_roll.unsigned_abs();
+    let duration =
+        ((absolute_roll >> CROOLIS_DURATION_SHIFT).wrapping_add(CROOLIS_DURATION_BIAS)) as i16;
+    animation.phase_timer = duration;
+    animation.random_value = random_value;
+    animation.croolis_motion_accumulator =
+        target_roll.wrapping_sub(primary.angles[Z_AXIS] as i16) / duration;
+    animation.nodes[PRIMARY_NODE].radial_target =
+        CROOLIS_RADIAL_ORIGIN.wrapping_sub(absolute_roll) >> CROOLIS_RADIAL_SHIFT;
+    Ok(AlienCroolisUpdateHead::CommonRequested)
+}
+
 /// Preserve the observable behavior of the unreachable steering sibling.
 ///
 /// No original alien method table or callback points at this routine. Keeping
@@ -934,10 +1007,10 @@ fn transform_random(value: u16) -> u16 {
         .wrapping_sub((value >> RANDOM_BORROW_SHIFT) & RANDOM_BORROW_MASK)
 }
 
-fn transform_amer_motion_random(value: u16) -> u16 {
+fn transform_slot2_motion_random(value: u16) -> u16 {
     value
-        .rotate_right(AMER_MOTION_RANDOM_ROTATION)
-        .wrapping_sub((value >> AMER_MOTION_RANDOM_BORROW_SHIFT) & AMER_MOTION_RANDOM_BORROW_MASK)
+        .rotate_right(SLOT2_MOTION_RANDOM_ROTATION)
+        .wrapping_sub((value >> SLOT2_MOTION_RANDOM_BORROW_SHIFT) & SLOT2_MOTION_RANDOM_BORROW_MASK)
 }
 
 fn seed_step(species: AlienSpecies) -> u16 {
@@ -1236,6 +1309,34 @@ mod tests {
         fade_position_after: u32,
         active_before: u16,
         active_after: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct CroolisRestartVector {
+        name: String,
+        module: String,
+        next_stage: String,
+        radial_target_before: u16,
+        radial_target_after: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct CroolisUpdateHeadVector {
+        name: String,
+        module: String,
+        selection_state: u16,
+        continuation: String,
+        duration_before: u16,
+        duration_after: u16,
+        camera_x_before: u16,
+        camera_z_before: u16,
+        random_before: u16,
+        random_after: u16,
+        roll_before: u16,
+        motion_accumulator_before: u16,
+        motion_accumulator_after: u16,
+        radial_target_before: u16,
+        radial_target_after: u16,
     }
 
     #[derive(Deserialize)]
@@ -2020,6 +2121,102 @@ mod tests {
                 vector.name
             );
             assert_eq!(animation.callback, Some(AlienSlot2Callback::CroolisFade));
+        }
+    }
+
+    #[test]
+    fn croolis_restart_matches_every_original_overlay_vector() {
+        let vectors: Vec<CroolisRestartVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/xdb_croolis_func_171d_natural.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            assert_eq!(vector.module, "croolis");
+            assert_eq!(vector.next_stage, "update");
+            let pose = pose(&[EMPTY_NODE_VECTOR; PRIMARY_AND_FOLLOWER_NODE_COUNT]);
+            let mut animation = AlienSlot2AnimationState::new(PRIMARY_AND_FOLLOWER_NODE_COUNT);
+            animation.callback = Some(AlienSlot2Callback::CroolisFade);
+            animation.nodes[PRIMARY_NODE].radial_target = vector.radial_target_before;
+
+            assert_eq!(
+                restart_croolis_update(&pose, &mut animation).unwrap(),
+                AlienSlot2Callback::Update,
+                "{}",
+                vector.name
+            );
+            assert_eq!(animation.callback, Some(AlienSlot2Callback::Update));
+            assert_eq!(
+                animation.nodes[PRIMARY_NODE].radial_target, vector.radial_target_after,
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    #[test]
+    fn croolis_update_head_matches_every_original_overlay_vector() {
+        let vectors: Vec<CroolisUpdateHeadVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/xdb_croolis_func_1727_head_natural.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            assert_eq!(vector.module, "croolis");
+            let mut pose = pose(&[EMPTY_NODE_VECTOR; PRIMARY_AND_FOLLOWER_NODE_COUNT]);
+            let primary = &mut pose.nodes[PRIMARY_NODE];
+            primary.transform.translation[X_AXIS] =
+                join_words(vector.camera_x_before, TRANSFORM_LOW_WORD_SENTINEL);
+            primary.transform.translation[Z_AXIS] =
+                join_words(vector.camera_z_before, TRANSFORM_LOW_WORD_SENTINEL);
+            primary.angles[Z_AXIS] = vector.roll_before;
+            let mut animation = AlienSlot2AnimationState::new(PRIMARY_AND_FOLLOWER_NODE_COUNT);
+            animation.callback = Some(AlienSlot2Callback::Update);
+            animation.phase_timer = vector.duration_before as i16;
+            animation.random_value = vector.random_before;
+            animation.croolis_motion_accumulator = vector.motion_accumulator_before as i16;
+            animation.nodes[PRIMARY_NODE].radial_target = vector.radial_target_before;
+            let scene = AlienCallbackSceneState {
+                wave_selection: match vector.selection_state {
+                    0 => AlienWaveSelection::Disabled,
+                    1 => AlienWaveSelection::Requested,
+                    2 => AlienWaveSelection::Selected,
+                    state => panic!("unknown CROOLIS selection state {state}"),
+                },
+                ..AlienCallbackSceneState::default()
+            };
+            let expected = match vector.continuation.as_str() {
+                "selection" => AlienCroolisUpdateHead::SelectionRequested,
+                "common" => AlienCroolisUpdateHead::CommonRequested,
+                "reset" => AlienCroolisUpdateHead::ResetRequested,
+                continuation => panic!("unknown CROOLIS update continuation {continuation}"),
+            };
+
+            assert_eq!(
+                update_croolis_head(&pose, &mut animation, &scene).unwrap(),
+                expected,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                animation.phase_timer as u16, vector.duration_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                animation.random_value, vector.random_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                animation.croolis_motion_accumulator as u16, vector.motion_accumulator_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                animation.nodes[PRIMARY_NODE].radial_target, vector.radial_target_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(animation.callback, Some(AlienSlot2Callback::Update));
         }
     }
 

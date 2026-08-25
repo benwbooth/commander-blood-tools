@@ -1,0 +1,29 @@
+[
+  {
+    "name": "ordinary",
+    "module": "croolis",
+    "entry": 5917,
+    "next_stage": "update",
+    "radial_target_before": 4951,
+    "radial_target_after": 100,
+    "data_sha256": "3fae2eb1f40c269f09bf63c3c0b0e55a46598c2eb2a85259b46012e36e6bc8f2"
+  },
+  {
+    "name": "high_values",
+    "module": "croolis",
+    "entry": 5917,
+    "next_stage": "update",
+    "radial_target_before": 32768,
+    "radial_target_after": 100,
+    "data_sha256": "5c9955719013d00ce547304285e9ec29d38ceac6cbd6989d81b9f40a3377bc6d"
+  },
+  {
+    "name": "wrapped_state_offsets",
+    "module": "croolis",
+    "entry": 5917,
+    "next_stage": "update",
+    "radial_target_before": 22136,
+    "radial_target_after": 100,
+    "data_sha256": "7462d2b63a593a21da663de752b83022533f1e3d57fff68f81bf82b6f173798f"
+  }
+]
