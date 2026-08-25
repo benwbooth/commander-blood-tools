@@ -229,28 +229,36 @@ pub fn decode_sound_bank_name(
 
 /// Background selection paired with one character talk animation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum DescriptTalkBackground {
+pub enum DescriptCharacterBackground {
     /// Draw the talk animation without one of the four cached LBM backgrounds.
     None,
     /// Draw over one explicitly selected cached background.
     Cached(DescriptBackgroundSlot),
 }
 
+fn decode_character_background(encoded: u8) -> Option<DescriptCharacterBackground> {
+    if encoded == NO_TALK_BACKGROUND_ID {
+        Some(DescriptCharacterBackground::None)
+    } else {
+        DescriptBackgroundSlot::decode(encoded).map(DescriptCharacterBackground::Cached)
+    }
+}
+
 /// One opcode-07 character talk animation and its background selection.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DescriptTalkClip {
-    background: DescriptTalkBackground,
+    background: DescriptCharacterBackground,
     video: DescriptVideoName,
 }
 
 impl DescriptTalkClip {
     /// Build one decoded talk clip.
-    pub fn new(background: DescriptTalkBackground, video: DescriptVideoName) -> Self {
+    pub fn new(background: DescriptCharacterBackground, video: DescriptVideoName) -> Self {
         Self { background, video }
     }
 
     /// Return the background selected for this animation.
-    pub const fn background(&self) -> DescriptTalkBackground {
+    pub const fn background(&self) -> DescriptCharacterBackground {
         self.background
     }
 
@@ -278,17 +286,64 @@ pub fn decode_talk_clip(
     let (&encoded_background, video_and_tail) = payload
         .split_first()
         .ok_or(DescriptTalkClipError::MissingBackground)?;
-    let background = if encoded_background == NO_TALK_BACKGROUND_ID {
-        DescriptTalkBackground::None
-    } else {
-        DescriptBackgroundSlot::decode(encoded_background)
-            .map(DescriptTalkBackground::Cached)
-            .ok_or(DescriptTalkClipError::InvalidBackground(encoded_background))?
-    };
+    let background = decode_character_background(encoded_background)
+        .ok_or(DescriptTalkClipError::InvalidBackground(encoded_background))?;
     let (video_name, tail) = decode_printable_resource_name(video_and_tail)
         .map_err(|_| DescriptTalkClipError::MissingStopByte)?;
     Ok((
         DescriptTalkClip::new(background, DescriptVideoName::new(video_name)),
+        tail,
+    ))
+}
+
+/// One opcode-0B character idle animation and its background selection.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DescriptIdleClip {
+    background: DescriptCharacterBackground,
+    video: DescriptVideoName,
+}
+
+impl DescriptIdleClip {
+    /// Build one decoded idle clip.
+    pub fn new(background: DescriptCharacterBackground, video: DescriptVideoName) -> Self {
+        Self { background, video }
+    }
+
+    /// Return the background selected for the idle animation.
+    pub const fn background(&self) -> DescriptCharacterBackground {
+        self.background
+    }
+
+    /// Return the HNM resource used for the idle animation.
+    pub fn video(&self) -> &DescriptVideoName {
+        &self.video
+    }
+}
+
+/// Failure while decoding an opcode-0B character idle animation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DescriptIdleClipError {
+    /// The command ended before its background ID.
+    MissingBackground,
+    /// The background ID is neither one through four nor the shipped no-background sentinel.
+    InvalidBackground(u8),
+    /// The HNM name reaches the end of the record without a stop byte.
+    MissingStopByte,
+}
+
+/// Decode an idle animation while leaving the following opcode unconsumed.
+pub fn decode_idle_clip(
+    payload: &[u8],
+) -> Result<(DescriptIdleClip, &[u8]), DescriptIdleClipError> {
+    let (&encoded_background, video_and_tail) = payload
+        .split_first()
+        .ok_or(DescriptIdleClipError::MissingBackground)?;
+    let background = decode_character_background(encoded_background)
+        .ok_or(DescriptIdleClipError::InvalidBackground(encoded_background))?;
+    let (video_name, tail) = decode_printable_resource_name(video_and_tail)
+        .map_err(|_| DescriptIdleClipError::MissingStopByte)?;
+    Ok((
+        DescriptIdleClip::new(background, DescriptVideoName::new(video_name)),
         tail,
     ))
 }
@@ -446,7 +501,7 @@ mod tests {
         let (cached, tail) = decode_talk_clip(&cached_payload).unwrap();
         assert_eq!(
             cached.background(),
-            DescriptTalkBackground::Cached(
+            DescriptCharacterBackground::Cached(
                 DescriptBackgroundSlot::decode(CACHED_BACKGROUND).unwrap()
             )
         );
@@ -455,7 +510,10 @@ mod tests {
 
         let no_background_payload = [NO_TALK_BACKGROUND_ID, NEXT_OPCODE];
         let (no_background, tail) = decode_talk_clip(&no_background_payload).unwrap();
-        assert_eq!(no_background.background(), DescriptTalkBackground::None);
+        assert_eq!(
+            no_background.background(),
+            DescriptCharacterBackground::None
+        );
         assert!(no_background.video().as_bytes().is_empty());
         assert_eq!(tail, &[NEXT_OPCODE]);
     }
@@ -470,6 +528,26 @@ mod tests {
         let (layout, tail) = decode_location_layout(&payload).unwrap();
 
         assert_eq!(layout.top_row(), SHIPPED_LOCATION_TOP_ROW);
+        assert_eq!(tail, &[NEXT_OPCODE]);
+    }
+
+    #[test]
+    fn idle_clip_reuses_the_character_background_domain() {
+        const CACHED_BACKGROUND: u8 = 1;
+        const NEXT_OPCODE: u8 = 12;
+
+        let mut payload = vec![CACHED_BACKGROUND];
+        payload.extend_from_slice(b"aabob.hnm");
+        payload.push(NEXT_OPCODE);
+        let (clip, tail) = decode_idle_clip(&payload).unwrap();
+
+        assert_eq!(
+            clip.background(),
+            DescriptCharacterBackground::Cached(
+                DescriptBackgroundSlot::decode(CACHED_BACKGROUND).unwrap()
+            )
+        );
+        assert_eq!(clip.video().as_bytes(), b"aabob.hnm");
         assert_eq!(tail, &[NEXT_OPCODE]);
     }
 }

@@ -24,9 +24,10 @@ pub use aboard::{
 };
 pub use descript::{
     CachedDescriptBackground, DescriptBackgroundCache, DescriptBackgroundCacheOutcome,
-    DescriptBackgroundSource, DescriptPresentationAssets, DescriptRecordBoundary,
-    DescriptSoundBankLoader, append_descript_talk_clip, cache_background_image,
-    load_descript_sound_bank, select_character_left_scene_video,
+    DescriptBackgroundSource, DescriptIdleClipSource, DescriptPresentationAssets,
+    DescriptRecordBoundary, DescriptSoundBankLoader, append_descript_talk_clip,
+    cache_background_image, load_descript_idle_clip, load_descript_sound_bank,
+    select_character_left_scene_video,
     select_character_right_scene_video, select_location_scene_video, select_object_scene_video,
     set_location_scene_top_row, stage_descript_caption, stop_before_character_record,
     stop_before_location_record, stop_before_object_record, stop_before_sequence_record,

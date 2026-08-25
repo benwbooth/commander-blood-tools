@@ -1,7 +1,7 @@
 //! Runtime state produced while applying typed DESCRIPT records.
 
 use commander_blood_formats::descript::{
-    DescriptBackgroundCommand, DescriptBackgroundSlot, DescriptCaptionCommand,
+    DescriptBackgroundCommand, DescriptBackgroundSlot, DescriptCaptionCommand, DescriptIdleClip,
     DescriptLocationLayout, DescriptRecordKind, DescriptSoundBankName, DescriptTalkClip,
     DescriptVideoName,
 };
@@ -120,6 +120,8 @@ pub struct DescriptPresentationAssets {
     sound_bank: Option<Box<[u8]>>,
     talk_clips: Vec<DescriptTalkClip>,
     location_scene_top_row: Option<u16>,
+    idle_clip: Option<DescriptIdleClip>,
+    encoded_idle_video: Option<Box<[u8]>>,
 }
 
 impl DescriptPresentationAssets {
@@ -157,6 +159,16 @@ impl DescriptPresentationAssets {
     pub const fn location_scene_top_row(&self) -> Option<u16> {
         self.location_scene_top_row
     }
+
+    /// Return the character idle animation selected by the record.
+    pub fn idle_clip(&self) -> Option<&DescriptIdleClip> {
+        self.idle_clip.as_ref()
+    }
+
+    /// Return the encoded idle HNM loaded for the modern renderer.
+    pub fn encoded_idle_video(&self) -> Option<&[u8]> {
+        self.encoded_idle_video.as_deref()
+    }
 }
 
 /// Audio backend used to load a selected DESCRIPT SND bank.
@@ -166,6 +178,15 @@ pub trait DescriptSoundBankLoader {
 
     /// Load one logical SND bank by its case-preserving resource name.
     fn load_sound_bank(&mut self, bank_name: &[u8]) -> Result<(), Self::Error>;
+}
+
+/// Resource backend used to load an idle HNM into owned memory.
+pub trait DescriptIdleClipSource {
+    /// Backend-specific load failure.
+    type Error;
+
+    /// Load the complete encoded idle animation.
+    fn load_idle_clip(&mut self, video_name: &[u8]) -> Result<Box<[u8]>, Self::Error>;
 }
 
 /// Select the primary location scene HNM.
@@ -251,6 +272,26 @@ pub fn set_location_scene_top_row(
     assets.location_scene_top_row = Some(layout.top_row());
 }
 
+/// Select and, when no presentation is active, load a character idle animation.
+///
+/// This translates `index_lookup_1fd7` at BLOODPRG file offset `0x0076EA`.
+/// Owned bytes replace both original EMS and XMS cache paths.
+pub fn load_descript_idle_clip<Source: DescriptIdleClipSource>(
+    clip: &DescriptIdleClip,
+    presentation_active: bool,
+    assets: &mut DescriptPresentationAssets,
+    source: &mut Source,
+) -> Result<bool, Source::Error> {
+    assets.idle_clip = Some(clip.clone());
+    assets.encoded_idle_video = None;
+    if presentation_active {
+        return Ok(false);
+    }
+
+    assets.encoded_idle_video = Some(source.load_idle_clip(clip.video().as_bytes())?);
+    Ok(true)
+}
+
 /// Boundary detected after the current DESCRIPT command stream.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct DescriptRecordBoundary {
@@ -310,9 +351,9 @@ mod tests {
     use std::convert::Infallible;
 
     use commander_blood_formats::descript::{
-        DescriptBackgroundError, DescriptTalkBackground, DescriptTalkClipError,
-        decode_background_command, decode_caption_command, decode_location_layout,
-        decode_sound_bank_name, decode_talk_clip, decode_video_name,
+        DescriptBackgroundError, DescriptCharacterBackground, DescriptIdleClipError,
+        DescriptTalkClipError, decode_background_command, decode_caption_command, decode_idle_clip,
+        decode_location_layout, decode_sound_bank_name, decode_talk_clip, decode_video_name,
     };
     use serde::Deserialize;
 
@@ -322,6 +363,7 @@ mod tests {
     const BACKGROUND_ORACLE_VECTOR_COUNT: usize = 8;
     const INVALID_TALK_BACKGROUND_HIGH: u8 = 128;
     const INVALID_TALK_BACKGROUND_ZERO: u8 = 0;
+    const IDLE_CLIP_ORACLE_VECTOR_COUNT: usize = 10;
     const LOCATION_LAYOUT_ORACLE_VECTOR_COUNT: usize = 8;
     const PRESENTATION_ACTIVE_BIT: u16 = 1;
     const SOUND_BANK_ORACLE_VECTOR_COUNT: usize = 8;
@@ -386,6 +428,16 @@ mod tests {
         destination_after: u16,
     }
 
+    #[derive(Deserialize)]
+    struct IdleClipOracle {
+        name: String,
+        asset_id: u8,
+        copied_hex: String,
+        stopping_byte: u8,
+        ui_state: u16,
+        helper_called: Option<String>,
+    }
+
     #[derive(Clone, Copy)]
     enum VideoAssetField {
         Location,
@@ -414,6 +466,21 @@ mod tests {
     #[derive(Default)]
     struct RecordingSoundBankLoader {
         loaded_banks: Vec<Box<[u8]>>,
+    }
+
+    #[derive(Default)]
+    struct RecordingIdleClipSource {
+        payload: Box<[u8]>,
+        loaded_names: Vec<Box<[u8]>>,
+    }
+
+    impl DescriptIdleClipSource for RecordingIdleClipSource {
+        type Error = Infallible;
+
+        fn load_idle_clip(&mut self, video_name: &[u8]) -> Result<Box<[u8]>, Self::Error> {
+            self.loaded_names.push(Box::from(video_name));
+            Ok(self.payload.clone())
+        }
     }
 
     impl DescriptSoundBankLoader for RecordingSoundBankLoader {
@@ -777,14 +844,14 @@ mod tests {
             if vector.asset_id == u8::MAX {
                 assert_eq!(
                     clip.background(),
-                    DescriptTalkBackground::None,
+                    DescriptCharacterBackground::None,
                     "{}",
                     vector.name
                 );
             } else {
                 assert_eq!(
                     clip.background(),
-                    DescriptTalkBackground::Cached(
+                    DescriptCharacterBackground::Cached(
                         DescriptBackgroundSlot::decode(vector.asset_id).unwrap()
                     ),
                     "{}",
@@ -822,6 +889,70 @@ mod tests {
             assert_eq!(
                 assets.location_scene_top_row(),
                 Some(vector.destination_after),
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    #[test]
+    fn idle_clip_loading_matches_every_original_valid_vector() {
+        let vectors: Vec<IdleClipOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_76ea_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), IDLE_CLIP_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let expected_video = bytes_from_hex(&vector.copied_hex);
+            let mut payload = vec![vector.asset_id];
+            payload.extend_from_slice(&expected_video);
+            payload.push(vector.stopping_byte);
+            let decoded = decode_idle_clip(&payload);
+
+            if matches!(
+                vector.asset_id,
+                INVALID_TALK_BACKGROUND_ZERO | INVALID_TALK_BACKGROUND_HIGH
+            ) {
+                assert_eq!(
+                    decoded,
+                    Err(DescriptIdleClipError::InvalidBackground(vector.asset_id)),
+                    "{}",
+                    vector.name
+                );
+                continue;
+            }
+
+            let (clip, tail) = decoded.unwrap();
+            assert_eq!(tail, &[vector.stopping_byte], "{}", vector.name);
+            let presentation_active = vector.ui_state & PRESENTATION_ACTIVE_BIT != u16::MIN;
+            assert_eq!(
+                vector.helper_called.is_some(),
+                !presentation_active,
+                "{}",
+                vector.name
+            );
+
+            let mut assets = DescriptPresentationAssets::default();
+            let mut source = RecordingIdleClipSource {
+                payload: vec![165; expected_video.len() + 1].into_boxed_slice(),
+                ..RecordingIdleClipSource::default()
+            };
+            let loaded =
+                load_descript_idle_clip(&clip, presentation_active, &mut assets, &mut source)
+                    .unwrap();
+
+            assert_eq!(loaded, !presentation_active, "{}", vector.name);
+            assert_eq!(assets.idle_clip(), Some(&clip), "{}", vector.name);
+            assert_eq!(
+                source.loaded_names.len(),
+                usize::from(loaded),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                assets.encoded_idle_video().is_some(),
+                loaded,
                 "{}",
                 vector.name
             );
