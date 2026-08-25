@@ -11,6 +11,7 @@ const X_AXIS: usize = 0;
 const Y_AXIS: usize = 1;
 const Z_AXIS: usize = 2;
 const SCREEN_AXIS_COUNT: usize = 2;
+const TEXTURE_AXIS_COUNT: usize = 2;
 const ANGLE_MASK: u16 = 0x0ffc;
 const ANGLE_TABLE_SHIFT: u32 = 2;
 const DOUBLE_COMPONENT: i32 = 2;
@@ -106,6 +107,10 @@ pub struct AlienModelPose {
     pub nodes: Vec<AlienNodePose>,
     /// Projection output parallel to the decoded mesh vertex array.
     pub projected_vertices: Vec<AlienProjectedVertex>,
+    /// Mutable texture coordinates parallel to the decoded mesh vertex array.
+    pub texture_coordinates: Vec<[i16; TEXTURE_AXIS_COUNT]>,
+    /// Number of authored vertices before projection-only UV aliases.
+    pub authored_vertex_count: usize,
     /// Mutable cyclic vertex ordering for the model's authored faces.
     pub faces: Vec<AlienFaceData>,
     /// Rotation matrix generated for the final node in the last projection pass.
@@ -121,6 +126,13 @@ impl AlienModelPose {
             root: model.root,
             nodes: model.nodes.iter().map(AlienNodePose::from).collect(),
             projected_vertices: vec![AlienProjectedVertex::default(); model.mesh.vertices.len()],
+            texture_coordinates: model
+                .mesh
+                .vertices
+                .iter()
+                .map(|vertex| vertex.texture)
+                .collect(),
+            authored_vertex_count: model.nodes.iter().map(|node| node.vertex_count).sum(),
             faces: model.mesh.faces.clone(),
             last_rotation_matrix: [[ZERO_COMPONENT; AXIS_COUNT]; AXIS_COUNT],
             last_common_clip: COMMON_CLIP_INITIAL,
@@ -599,6 +611,8 @@ mod tests {
             },
             nodes,
             projected_vertices: vec![AlienProjectedVertex::default(); mesh.vertices.len()],
+            texture_coordinates: mesh.vertices.iter().map(|vertex| vertex.texture).collect(),
+            authored_vertex_count: mesh.vertices.len(),
             faces: mesh.faces.clone(),
             last_rotation_matrix: [[ZERO_COMPONENT; AXIS_COUNT]; AXIS_COUNT],
             last_common_clip: COMMON_CLIP_INITIAL,

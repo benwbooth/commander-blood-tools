@@ -106,6 +106,14 @@ the typed API instead of reproducing a 65,536-iteration address-space walk.
 These operations remain outside the live scene loop until every method-table
 variant needed by shipped models has a real implementation.
 
+The full-scale and one-sixteenth-scale cyclic sample methods are translated for
+all three species as typed texture animation. Thirty well-formed binary cases
+verify signed cosine sampling, phase wrapping, prior-sample differencing,
+wrapping texture-U updates, multi-vertex traversal, and preservation of
+texture-V. Six unaligned source states and six zero-count address-space walks
+are deliberately rejected. Mutable UV arrays feed the wgpu triangle path
+directly, with no retained source addresses or memory facade.
+
 Run the current interactive path with original assets:
 
 ```sh

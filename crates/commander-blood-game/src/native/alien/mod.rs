@@ -11,7 +11,8 @@ mod scene;
 mod starfield;
 
 pub use behavior::{
-    AlienBehaviorError, adjust_state, anchor_state, bounds_then_wrap, wrap_positions,
+    AlienBehaviorError, AlienSampleState, adjust_state, anchor_state, apply_sample_delta,
+    apply_scaled_sample_delta, bounds_then_wrap, wrap_positions,
 };
 pub use camera::{AlienCameraAngles, AlienCameraTransform};
 pub use control::{

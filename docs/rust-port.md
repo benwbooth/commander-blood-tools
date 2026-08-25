@@ -84,3 +84,12 @@ updates, anchor selection, and species-specific state adjustment. It operates
 directly on typed node poses and passes 96 original-overlay cases. The scene
 loop will invoke behavior dispatch only after every method used by the shipped
 models is translated; pending variants are not treated as no-ops.
+
+Both cyclic sample-delta methods are now translated for all three overlays.
+They advance a typed cosine-table phase and mutate the texture-U coordinates of
+authored vertices in owned model poses; the wgpu triangle path consumes those
+runtime coordinates. Thirty well-formed binary cases match exactly. Six
+unaligned source states and six zero-count address-space walks from the oracle
+suite are rejected at the typed boundary instead of being reproduced. The
+architecture gate also rejects DOS pointer and real-mode address types from the
+game crate.

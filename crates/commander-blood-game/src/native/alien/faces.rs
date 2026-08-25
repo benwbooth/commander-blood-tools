@@ -303,6 +303,8 @@ mod tests {
         AlienModelPose {
             root: AlienTransformData::default(),
             nodes: Vec::new(),
+            texture_coordinates: vec![[i16::MIN; 2]; projected_vertices.len()],
+            authored_vertex_count: projected_vertices.len(),
             projected_vertices,
             faces: model_faces,
             last_rotation_matrix: Default::default(),

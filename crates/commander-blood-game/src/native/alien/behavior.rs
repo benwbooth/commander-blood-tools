@@ -2,9 +2,9 @@
 
 use std::fmt;
 
-use commander_blood_formats::alien::AXIS_COUNT;
+use commander_blood_formats::alien::{AXIS_COUNT, AlienTrigonometryPair, TRIGONOMETRY_ENTRY_COUNT};
 
-use super::{AlienNodePose, AlienSpecies};
+use super::{AlienModelPose, AlienNodePose, AlienSpecies};
 
 const X_AXIS: usize = 0;
 const Y_AXIS: usize = 1;
@@ -19,12 +19,31 @@ const BOUNDS_LIMIT: i16 = 100;
 const EXIT_REQUESTED: u16 = 1;
 const STATE_ANGLE_DELTA: u16 = 15;
 const METHOD_DELTA_SHIFT: u32 = 1;
+const TEXTURE_U_AXIS: usize = 0;
+const SCALED_SAMPLE_SHIFT: u32 = 4;
+const SAMPLE_TABLE_STEP: usize = 1;
 
 /// Invalid typed behavior state supplied to a recovered method.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AlienBehaviorError {
     /// Every recovered behavior context contains at least one node.
     EmptyNodeList,
+    /// A recovered sample method requires at least one authored vertex.
+    EmptyVertexList,
+    /// The model's authored vertex boundary exceeds its typed texture array.
+    InvalidAuthoredVertexCount {
+        /// Authored vertices requested by the model.
+        authored: usize,
+        /// Texture coordinates available in the runtime pose.
+        available: usize,
+    },
+    /// A cyclic sample phase falls outside the decoded trigonometry table.
+    InvalidSampleIndex {
+        /// Invalid sample-table index.
+        index: usize,
+        /// Number of available samples.
+        available: usize,
+    },
 }
 
 impl fmt::Display for AlienBehaviorError {
@@ -34,6 +53,15 @@ impl fmt::Display for AlienBehaviorError {
 }
 
 impl std::error::Error for AlienBehaviorError {}
+
+/// Typed continuation state for cyclic texture-coordinate animation.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct AlienSampleState {
+    /// Current entry in the decoded cosine table.
+    pub table_index: usize,
+    /// Sample published by the preceding update.
+    pub previous: i16,
+}
 
 /// Wrap every node-local position around the camera's signed 15-bit world cell.
 pub fn wrap_positions(
@@ -109,6 +137,60 @@ pub fn adjust_state(
     Ok(delta)
 }
 
+/// Add one full-scale cyclic sample delta to every authored texture-U value.
+pub fn apply_sample_delta(
+    state: &mut AlienSampleState,
+    pose: &mut AlienModelPose,
+    trigonometry: &[AlienTrigonometryPair; TRIGONOMETRY_ENTRY_COUNT],
+) -> Result<i16, AlienBehaviorError> {
+    apply_sample_delta_with_scale(state, pose, trigonometry, false)
+}
+
+/// Add one sixteenth-scale cyclic sample delta to every authored texture-U value.
+pub fn apply_scaled_sample_delta(
+    state: &mut AlienSampleState,
+    pose: &mut AlienModelPose,
+    trigonometry: &[AlienTrigonometryPair; TRIGONOMETRY_ENTRY_COUNT],
+) -> Result<i16, AlienBehaviorError> {
+    apply_sample_delta_with_scale(state, pose, trigonometry, true)
+}
+
+fn apply_sample_delta_with_scale(
+    state: &mut AlienSampleState,
+    pose: &mut AlienModelPose,
+    trigonometry: &[AlienTrigonometryPair; TRIGONOMETRY_ENTRY_COUNT],
+    scaled: bool,
+) -> Result<i16, AlienBehaviorError> {
+    if pose.authored_vertex_count == usize::MIN {
+        return Err(AlienBehaviorError::EmptyVertexList);
+    }
+    if pose.authored_vertex_count > pose.texture_coordinates.len() {
+        return Err(AlienBehaviorError::InvalidAuthoredVertexCount {
+            authored: pose.authored_vertex_count,
+            available: pose.texture_coordinates.len(),
+        });
+    }
+    let sample =
+        trigonometry
+            .get(state.table_index)
+            .ok_or(AlienBehaviorError::InvalidSampleIndex {
+                index: state.table_index,
+                available: trigonometry.len(),
+            })?;
+    let current = if scaled {
+        sample.cosine >> SCALED_SAMPLE_SHIFT
+    } else {
+        sample.cosine
+    };
+    let delta = current.wrapping_sub(state.previous);
+    state.table_index = (state.table_index + SAMPLE_TABLE_STEP) % TRIGONOMETRY_ENTRY_COUNT;
+    state.previous = current;
+    for texture in &mut pose.texture_coordinates[..pose.authored_vertex_count] {
+        texture[TEXTURE_U_AXIS] = texture[TEXTURE_U_AXIS].wrapping_add(delta);
+    }
+    Ok(delta)
+}
+
 fn high_word(value: i32) -> u16 {
     (value as u32 >> u16::BITS) as u16
 }
@@ -120,12 +202,19 @@ fn within_signed_bounds(value: u16) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use commander_blood_formats::alien::{AlienNodeParent, AlienTransformData};
+    use commander_blood_formats::alien::{AlienFaceData, AlienNodeParent, AlienTransformData};
     use serde::Deserialize;
 
     use super::*;
 
     const ZERO_COMPONENT: i32 = 0;
+    const SAMPLE_RECORD_BYTE_COUNT: u16 = 4;
+    const OBJECT_RECORD_BYTE_COUNT: u16 = 20;
+    const BYTE_PATTERN_MULTIPLIER: u32 = 37;
+    const CASE_PATTERN_STEP: u32 = 11;
+    const BYTE_MASK: u32 = 0xff;
+    const HIGH_BYTE_SHIFT: u32 = 8;
+    const TEXTURE_V_SENTINEL: i16 = 123;
 
     #[derive(Deserialize)]
     struct WrapStateVector {
@@ -174,6 +263,21 @@ mod tests {
         field_after: u16,
     }
 
+    #[derive(Deserialize)]
+    struct SampleVector {
+        name: String,
+        scaled: bool,
+        sample_cursor_before: u16,
+        sample_cursor_after: u16,
+        raw_sample: u16,
+        current_sample: u16,
+        previous_sample: u16,
+        delta: u16,
+        object_offset: u16,
+        object_count: u16,
+        effective_iterations: usize,
+    }
+
     fn node() -> AlienNodePose {
         AlienNodePose {
             parent: AlienNodeParent::Root,
@@ -188,6 +292,30 @@ mod tests {
 
     fn translation_with_high_words(words: [u16; AXIS_COUNT]) -> [i32; AXIS_COUNT] {
         words.map(|word| (u32::from(word) << u16::BITS) as i32)
+    }
+
+    fn sample_pose(texture_coordinates: Vec<[i16; 2]>) -> AlienModelPose {
+        AlienModelPose {
+            root: AlienTransformData::default(),
+            nodes: Vec::new(),
+            projected_vertices: vec![Default::default(); texture_coordinates.len()],
+            authored_vertex_count: texture_coordinates.len(),
+            texture_coordinates,
+            faces: Vec::<AlienFaceData>::new(),
+            last_rotation_matrix: Default::default(),
+            last_common_clip: u16::MIN,
+        }
+    }
+
+    fn patterned_object_word(case_index: usize, object_position: u16) -> i16 {
+        let byte = |position: u16| {
+            ((u32::from(position) * BYTE_PATTERN_MULTIPLIER
+                + case_index as u32 * CASE_PATTERN_STEP)
+                & BYTE_MASK) as u8
+        };
+        let low = u16::from(byte(object_position));
+        let high = u16::from(byte(object_position.wrapping_add(1)));
+        (low | (high << HIGH_BYTE_SHIFT)) as i16
     }
 
     #[test]
@@ -352,5 +480,123 @@ mod tests {
                 vector.name
             );
         }
+    }
+
+    #[test]
+    fn sample_driven_texture_updates_match_every_typed_original_overlay_vector() {
+        let fixtures = [
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_amer_func_1b5f_natural.json"),
+            include_str!(
+                "../../../../../re/tools/oracle_vectors/xdb_croolis_func_1acb_natural.json"
+            ),
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_scrut_func_1b80_natural.json"),
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_amer_func_1b8f_natural.json"),
+            include_str!(
+                "../../../../../re/tools/oracle_vectors/xdb_croolis_func_1afb_natural.json"
+            ),
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_scrut_func_1bb0_natural.json"),
+        ];
+        for fixture in fixtures {
+            let vectors: Vec<SampleVector> = serde_json::from_str(fixture).unwrap();
+            for (case_index, vector) in vectors.into_iter().enumerate() {
+                if vector.sample_cursor_before % SAMPLE_RECORD_BYTE_COUNT != u16::MIN {
+                    assert_eq!(vector.name, "odd_cursor");
+                    continue;
+                }
+                let table_index =
+                    usize::from(vector.sample_cursor_before / SAMPLE_RECORD_BYTE_COUNT);
+                let mut state = AlienSampleState {
+                    table_index,
+                    previous: vector.previous_sample as i16,
+                };
+                let mut table = [AlienTrigonometryPair::default(); TRIGONOMETRY_ENTRY_COUNT];
+                table[table_index].cosine = vector.raw_sample as i16;
+                if vector.object_count == u16::MIN {
+                    assert!(vector.effective_iterations > usize::MIN);
+                    let mut pose = sample_pose(Vec::new());
+                    let result = if vector.scaled {
+                        apply_scaled_sample_delta(&mut state, &mut pose, &table)
+                    } else {
+                        apply_sample_delta(&mut state, &mut pose, &table)
+                    };
+                    assert_eq!(result, Err(AlienBehaviorError::EmptyVertexList));
+                    continue;
+                }
+
+                assert_eq!(
+                    vector.effective_iterations,
+                    usize::from(vector.object_count)
+                );
+                let original_u = (0..vector.object_count)
+                    .map(|index| {
+                        let position = vector
+                            .object_offset
+                            .wrapping_add(index.wrapping_mul(OBJECT_RECORD_BYTE_COUNT));
+                        patterned_object_word(case_index, position)
+                    })
+                    .collect::<Vec<_>>();
+                let mut pose = sample_pose(
+                    original_u
+                        .iter()
+                        .map(|coordinate| [*coordinate, TEXTURE_V_SENTINEL])
+                        .collect(),
+                );
+                let delta = if vector.scaled {
+                    apply_scaled_sample_delta(&mut state, &mut pose, &table)
+                } else {
+                    apply_sample_delta(&mut state, &mut pose, &table)
+                }
+                .unwrap();
+
+                assert_eq!(delta as u16, vector.delta, "{}", vector.name);
+                assert_eq!(
+                    state.table_index,
+                    usize::from(vector.sample_cursor_after / SAMPLE_RECORD_BYTE_COUNT),
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    state.previous as u16, vector.current_sample,
+                    "{}",
+                    vector.name
+                );
+                for (texture, original) in pose.texture_coordinates.iter().zip(original_u) {
+                    assert_eq!(
+                        texture[TEXTURE_U_AXIS],
+                        original.wrapping_add(vector.delta as i16),
+                        "{}",
+                        vector.name
+                    );
+                    assert_eq!(texture[1], TEXTURE_V_SENTINEL, "{}", vector.name);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn sample_updates_validate_flat_typed_ranges_before_mutating_state() {
+        let table = [AlienTrigonometryPair::default(); TRIGONOMETRY_ENTRY_COUNT];
+        let mut state = AlienSampleState {
+            table_index: TRIGONOMETRY_ENTRY_COUNT,
+            previous: i16::MAX,
+        };
+        let mut pose = sample_pose(vec![[i16::MIN; 2]]);
+        assert_eq!(
+            apply_sample_delta(&mut state, &mut pose, &table),
+            Err(AlienBehaviorError::InvalidSampleIndex {
+                index: TRIGONOMETRY_ENTRY_COUNT,
+                available: TRIGONOMETRY_ENTRY_COUNT,
+            })
+        );
+
+        state.table_index = usize::MIN;
+        pose.authored_vertex_count = pose.texture_coordinates.len() + 1;
+        assert_eq!(
+            apply_sample_delta(&mut state, &mut pose, &table),
+            Err(AlienBehaviorError::InvalidAuthoredVertexCount {
+                authored: pose.texture_coordinates.len() + 1,
+                available: pose.texture_coordinates.len(),
+            })
+        );
     }
 }

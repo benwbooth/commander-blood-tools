@@ -8,7 +8,7 @@
 use std::fmt;
 
 use commander_blood_formats::alien::{
-    AXIS_COUNT, AlienMeshData, AlienModelData, AlienVertexData, RASTER_RECIPROCAL_COUNT,
+    AXIS_COUNT, AlienMeshData, AlienModelData, RASTER_RECIPROCAL_COUNT,
 };
 
 use super::{
@@ -140,7 +140,12 @@ fn prepare_primary_triangles(
         if face_is_active(face.vertices, &pose.projected_vertices, reciprocals, true) {
             triangles.push(AlienRenderTriangle {
                 source,
-                vertices: render_vertices(source, face.vertices, mesh, &pose.projected_vertices)?,
+                vertices: render_mesh_vertices(
+                    source,
+                    face.vertices,
+                    mesh,
+                    &pose.projected_vertices,
+                )?,
             });
         }
     }
@@ -155,7 +160,7 @@ fn prepare_model_triangles(
 ) -> Result<Vec<AlienRenderTriangle>, AlienRasterError> {
     let mut triangles = Vec::new();
     for source in bucket_faces(buckets) {
-        let model = models
+        models
             .get(source.model_index)
             .ok_or(AlienRasterError::InvalidModel {
                 model_index: source.model_index,
@@ -178,12 +183,7 @@ fn prepare_model_triangles(
         if face_is_active(face.vertices, &pose.projected_vertices, reciprocals, true) {
             triangles.push(AlienRenderTriangle {
                 source,
-                vertices: render_vertices(
-                    source,
-                    face.vertices,
-                    &model.mesh,
-                    &pose.projected_vertices,
-                )?,
+                vertices: render_pose_vertices(source, face.vertices, pose)?,
             });
         }
     }
@@ -196,22 +196,49 @@ fn bucket_faces(buckets: &[AlienFaceBucket]) -> impl Iterator<Item = AlienFaceRe
         .flat_map(|bucket| bucket.faces.iter().copied())
 }
 
-fn render_vertices(
+fn render_mesh_vertices(
     source: AlienFaceReference,
     indices: [usize; TRIANGLE_VERTEX_COUNT],
     mesh: &AlienMeshData,
     projected: &[AlienProjectedVertex],
 ) -> Result<[AlienRenderVertex; TRIANGLE_VERTEX_COUNT], AlienRasterError> {
+    render_vertices(
+        source,
+        indices,
+        mesh.vertices.len(),
+        projected,
+        |vertex_index| mesh.vertices.get(vertex_index).map(|vertex| vertex.texture),
+    )
+}
+
+fn render_pose_vertices(
+    source: AlienFaceReference,
+    indices: [usize; TRIANGLE_VERTEX_COUNT],
+    pose: &AlienModelPose,
+) -> Result<[AlienRenderVertex; TRIANGLE_VERTEX_COUNT], AlienRasterError> {
+    render_vertices(
+        source,
+        indices,
+        pose.texture_coordinates.len(),
+        &pose.projected_vertices,
+        |vertex_index| pose.texture_coordinates.get(vertex_index).copied(),
+    )
+}
+
+fn render_vertices(
+    source: AlienFaceReference,
+    indices: [usize; TRIANGLE_VERTEX_COUNT],
+    texture_count: usize,
+    projected: &[AlienProjectedVertex],
+    texture_at: impl Fn(usize) -> Option<[i16; 2]>,
+) -> Result<[AlienRenderVertex; TRIANGLE_VERTEX_COUNT], AlienRasterError> {
     let vertices = indices.map(|vertex_index| {
-        let authored = mesh
-            .vertices
-            .get(vertex_index)
-            .ok_or(AlienRasterError::InvalidVertex {
-                model_index: source.model_index,
-                face_index: source.face_index,
-                vertex_index,
-                available: mesh.vertices.len(),
-            })?;
+        let texture = texture_at(vertex_index).ok_or(AlienRasterError::InvalidVertex {
+            model_index: source.model_index,
+            face_index: source.face_index,
+            vertex_index,
+            available: texture_count,
+        })?;
         let projected = projected
             .get(vertex_index)
             .ok_or(AlienRasterError::InvalidVertex {
@@ -220,16 +247,16 @@ fn render_vertices(
                 vertex_index,
                 available: projected.len(),
             })?;
-        Ok(render_vertex(*authored, *projected))
+        Ok(render_vertex(texture, *projected))
     });
     let [first, second, third] = vertices;
     Ok([first?, second?, third?])
 }
 
-fn render_vertex(authored: AlienVertexData, projected: AlienProjectedVertex) -> AlienRenderVertex {
+fn render_vertex(texture: [i16; 2], projected: AlienProjectedVertex) -> AlienRenderVertex {
     AlienRenderVertex {
         screen: projected.screen,
-        texture: authored.texture.map(|coordinate| coordinate as u16),
+        texture: texture.map(|coordinate| coordinate as u16),
         depth: projected.depth,
     }
 }
@@ -305,7 +332,7 @@ const fn word_difference(left: i16, right: i16) -> u16 {
 mod tests {
     use std::path::{Path, PathBuf};
 
-    use commander_blood_formats::alien::{AlienXdbKind, decode_alien_xdb};
+    use commander_blood_formats::alien::{AlienTransformData, AlienXdbKind, decode_alien_xdb};
     use serde::Deserialize;
 
     use super::*;
@@ -318,6 +345,13 @@ mod tests {
     };
     const RESOURCE_EXHAUSTION_VECTOR: &str = "inactive";
     const RECIPROCAL_SCALE: u32 = 65_536;
+    const TEST_FACE_REFERENCE: AlienFaceReference = AlienFaceReference {
+        model_index: 0,
+        face_index: 0,
+    };
+    const TEST_FACE_VERTICES: [usize; TRIANGLE_VERTEX_COUNT] = [0, 1, 2];
+    const TEST_TEXTURE_COORDINATES: [[i16; 2]; TRIANGLE_VERTEX_COUNT] =
+        [[11, 12], [21, 22], [31, 32]];
 
     #[derive(Deserialize)]
     struct ActivationVector {
@@ -366,6 +400,32 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn model_triangle_submission_uses_mutable_runtime_texture_coordinates() {
+        let pose = AlienModelPose {
+            root: AlienTransformData::default(),
+            nodes: Vec::new(),
+            projected_vertices: TEST_FACE_VERTICES
+                .map(|vertex_index| AlienProjectedVertex {
+                    screen: [vertex_index as i16, vertex_index as i16],
+                    depth: i32::MAX,
+                    clip_flags: u16::MIN,
+                })
+                .to_vec(),
+            texture_coordinates: TEST_TEXTURE_COORDINATES.to_vec(),
+            authored_vertex_count: TEST_FACE_VERTICES.len(),
+            faces: Vec::new(),
+            last_rotation_matrix: Default::default(),
+            last_common_clip: u16::MIN,
+        };
+        let rendered =
+            render_pose_vertices(TEST_FACE_REFERENCE, TEST_FACE_VERTICES, &pose).unwrap();
+        assert_eq!(
+            rendered.map(|vertex| vertex.texture),
+            TEST_TEXTURE_COORDINATES.map(|texture| texture.map(|coordinate| coordinate as u16))
+        );
     }
 
     #[test]
