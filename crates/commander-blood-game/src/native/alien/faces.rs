@@ -304,6 +304,7 @@ mod tests {
             root: AlienTransformData::default(),
             nodes: Vec::new(),
             texture_coordinates: vec![[i16::MIN; 2]; projected_vertices.len()],
+            object_positions: vec![[i16::MIN; AXIS_COUNT]; projected_vertices.len()],
             authored_vertex_count: projected_vertices.len(),
             projected_vertices,
             faces: model_faces,

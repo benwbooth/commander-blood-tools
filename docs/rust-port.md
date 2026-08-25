@@ -101,3 +101,10 @@ species pulse levels, and bounded regions of an owned texture atlas. All 24
 binary vectors match, including complete 64 KiB texture-result SHA-256 hashes.
 It remains outside live behavior dispatch until the other active method kinds
 are translated.
+
+The wave method is translated for all three overlays. Runtime model poses now
+own mutable object-space vertex positions, and hierarchy projection consumes
+those positions directly. Typed per-model phases drive both cyclic and
+distance-weighted cosine motion while scene state records selection requests
+and the selected model index. All 33 binary vectors match; the 30 active cases
+also match complete reconstructed vertex-record SHA-256 hashes.

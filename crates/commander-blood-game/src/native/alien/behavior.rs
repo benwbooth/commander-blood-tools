@@ -300,6 +300,7 @@ mod tests {
             nodes: Vec::new(),
             projected_vertices: vec![Default::default(); texture_coordinates.len()],
             authored_vertex_count: texture_coordinates.len(),
+            object_positions: vec![[i16::MIN; AXIS_COUNT]; texture_coordinates.len()],
             texture_coordinates,
             faces: Vec::<AlienFaceData>::new(),
             last_rotation_matrix: Default::default(),

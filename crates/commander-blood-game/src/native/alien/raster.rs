@@ -415,6 +415,7 @@ mod tests {
                 })
                 .to_vec(),
             texture_coordinates: TEST_TEXTURE_COORDINATES.to_vec(),
+            object_positions: vec![[i16::MIN; AXIS_COUNT]; TEST_FACE_VERTICES.len()],
             authored_vertex_count: TEST_FACE_VERTICES.len(),
             faces: Vec::new(),
             last_rotation_matrix: Default::default(),

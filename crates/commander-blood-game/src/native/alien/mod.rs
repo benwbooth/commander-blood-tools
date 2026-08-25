@@ -10,6 +10,7 @@ mod projection;
 mod raster;
 mod scene;
 mod starfield;
+mod wave;
 
 pub use behavior::{
     AlienBehaviorError, AlienSampleState, adjust_state, anchor_state, apply_sample_delta,
@@ -39,4 +40,8 @@ pub use scene::{AlienScene, AlienSceneError, AlienSceneFrame};
 pub use starfield::{
     AlienStar, AlienStarRejections, AlienStarfieldError, AlienStarfieldFrame, STAR_COUNT,
     generate_starfield,
+};
+pub use wave::{
+    AlienWaveError, AlienWaveMethodState, AlienWaveSceneState, AlienWaveSelection, AlienWaveUpdate,
+    update_or_initialize_wave,
 };

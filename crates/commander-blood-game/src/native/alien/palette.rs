@@ -397,6 +397,7 @@ mod tests {
             nodes: vec![node],
             projected_vertices: vec![AlienProjectedVertex::default()],
             texture_coordinates: vec![[i16::MIN; 2]],
+            object_positions: vec![[i16::MIN; AXIS_COUNT]],
             authored_vertex_count: 1,
             faces: Vec::<AlienFaceData>::new(),
             last_rotation_matrix: Default::default(),

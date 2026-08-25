@@ -109,6 +109,8 @@ pub struct AlienModelPose {
     pub projected_vertices: Vec<AlienProjectedVertex>,
     /// Mutable texture coordinates parallel to the decoded mesh vertex array.
     pub texture_coordinates: Vec<[i16; TEXTURE_AXIS_COUNT]>,
+    /// Mutable object-space positions parallel to the decoded mesh vertex array.
+    pub object_positions: Vec<[i16; AXIS_COUNT]>,
     /// Number of authored vertices before projection-only UV aliases.
     pub authored_vertex_count: usize,
     /// Mutable cyclic vertex ordering for the model's authored faces.
@@ -131,6 +133,12 @@ impl AlienModelPose {
                 .vertices
                 .iter()
                 .map(|vertex| vertex.texture)
+                .collect(),
+            object_positions: model
+                .mesh
+                .vertices
+                .iter()
+                .map(|vertex| vertex.position)
                 .collect(),
             authored_vertex_count: model.nodes.iter().map(|node| node.vertex_count).sum(),
             faces: model.mesh.faces.clone(),
@@ -185,19 +193,20 @@ impl AlienModelPose {
                     available: mesh.vertices.len(),
                 },
             )?;
-            if end_vertex > mesh.vertices.len() {
+            let available_vertices = mesh.vertices.len().min(self.object_positions.len());
+            if end_vertex > available_vertices {
                 return Err(AlienProjectionError::InvalidVertexRange {
                     node_index,
                     first_vertex,
                     vertex_count,
-                    available: mesh.vertices.len(),
+                    available: available_vertices,
                 });
             }
 
             let transform = self.nodes[node_index].transform;
             let mut common_clip = COMMON_CLIP_INITIAL;
             for vertex_index in first_vertex..end_vertex {
-                let object_position = mesh.vertices[vertex_index].position.map(i32::from);
+                let object_position = self.object_positions[vertex_index].map(i32::from);
                 let camera_position = std::array::from_fn(|row| {
                     wrapping_dot(
                         transform.matrix[row],
@@ -612,6 +621,7 @@ mod tests {
             nodes,
             projected_vertices: vec![AlienProjectedVertex::default(); mesh.vertices.len()],
             texture_coordinates: mesh.vertices.iter().map(|vertex| vertex.texture).collect(),
+            object_positions: mesh.vertices.iter().map(|vertex| vertex.position).collect(),
             authored_vertex_count: mesh.vertices.len(),
             faces: mesh.faces.clone(),
             last_rotation_matrix: [[ZERO_COMPONENT; AXIS_COUNT]; AXIS_COUNT],

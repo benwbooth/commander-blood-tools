@@ -121,6 +121,13 @@ regions, reversed intervals, and complete 64 KiB texture-result SHA-256 hashes.
 The 256-entry remap table is decoded directly from each XDB. Runtime state uses
 typed transforms, counters, and owned texture bytes only.
 
+The wave method is translated for all three species with 33 original-binary
+vectors. It initializes typed node and phase state, performs camera-relative
+selection, decays accelerated phases, and applies both cyclic and
+distance-weighted cosine motion to owned object-space vertex positions. The 30
+active cases match complete reconstructed vertex-record SHA-256 hashes.
+Hierarchy projection now consumes those mutable positions directly.
+
 Run the current interactive path with original assets:
 
 ```sh
