@@ -1,0 +1,12 @@
+//! Modern Commander Blood game port.
+//!
+//! Native game behavior is translated from the recovered C sources and checked
+//! against original-binary oracle vectors. Host services and presentation use
+//! modern platform APIs; they do not emulate DOS registers or segmented memory.
+
+#![deny(missing_docs)]
+
+pub mod app;
+pub mod assets;
+pub mod native;
+pub mod render;

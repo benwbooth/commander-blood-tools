@@ -55,6 +55,7 @@
             libxrandr
             libxcb
             libxkbcommon
+            sdl3
             wayland
             libGL
             vulkan-loader
@@ -82,6 +83,7 @@
                 pkg-config
                 alsa-lib
                 libxcb
+                sdl3
                 vulkan-tools
                 # unicorn: the ORACLE for the recomp pipeline. re/tools/auto_oracle.py and
                 # gen_oracle_vectors.py run the REAL DOS code under it to produce the

@@ -1,0 +1,19 @@
+[package]
+name = "commander-blood-game"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "commander-blood"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+commander-blood-formats = { path = "../commander-blood-formats" }
+pollster = "0.4"
+sdl3 = { version = "0.18.4", features = ["raw-window-handle", "use-pkg-config"] }
+wgpu = "29.0.1"
+
+[dev-dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
