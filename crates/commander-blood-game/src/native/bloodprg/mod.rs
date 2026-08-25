@@ -43,7 +43,8 @@ pub use startup::{
     StartupConfiguration,
 };
 pub use state::{
-    apply_shared_bit_operation, apply_shared_state_operation, ScriptStateOperationError,
+    apply_bit_flag_operation, apply_shared_bit_operation, apply_shared_state_operation,
+    ScriptStateOperationError,
 };
 pub use text::{bounded_nul_byte_len, nul_terminated_byte_len, nul_terminated_bytes_equal};
 pub use text_handler::{

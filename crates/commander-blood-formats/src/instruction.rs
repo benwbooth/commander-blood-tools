@@ -5,7 +5,7 @@ use std::fmt;
 use crate::code::{ScriptCodeOffset, ScriptDecodingMode, ScriptOpcode, ScriptToken};
 use crate::script::{
     ScriptDictionary, ScriptDirectory, ScriptObjectId, ScriptProcedureId, ScriptState,
-    ScriptStateWord, ScriptWordId,
+    ScriptStateByte, ScriptStateWord, ScriptWordId,
 };
 
 const GUARD_BEGIN_OPCODE: u8 = 0xA0;
@@ -30,6 +30,7 @@ const DIRECT_RECORD_D_OPCODE: u8 = 0xB3;
 const SHARED_STATE_B_OPCODE: u8 = 0xB4;
 const SHARED_STATE_C_OPCODE: u8 = 0xB5;
 const SHARED_STATE_D_OPCODE: u8 = 0xB6;
+const BIT_FLAG_OPCODE: u8 = 0xB7;
 const DIRECT_RECORD_E_OPCODE: u8 = 0xBA;
 const DIRECT_RECORD_F_OPCODE: u8 = 0xBB;
 const DIRECT_RECORD_TOPIC_OPCODE: u8 = 0xBC;
@@ -59,6 +60,8 @@ const SHARED_STATE_SIZE: usize = OPCODE_SIZE + WORD_SIZE + BYTE_SIZE + BYTE_SIZE
 const SHARED_BIT_STATE_SIZE: usize = OPCODE_SIZE + WORD_SIZE + WORD_SIZE;
 const DIRECT_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE + WORD_SIZE;
 const TRANSFER_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 3;
+const BIT_FLAG_SIZE: usize = OPCODE_SIZE + WORD_SIZE + BYTE_SIZE;
+const BITS_PER_BYTE: u8 = u8::BITS as u8;
 const INDIRECT_STATE_MODE_A: u8 = 0xC0;
 const INDIRECT_STATE_MODE_B: u8 = 0xC2;
 const TIMER_SLOT_COUNT: u8 = 128;
@@ -332,6 +335,17 @@ pub struct ScriptTransfer {
     pub inverted: bool,
 }
 
+/// One B7 high-bit-first state-bit query or mutation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptBitFlagOperation {
+    /// Bounded owned byte containing the selected bit.
+    pub target: ScriptStateByte,
+    /// High-bit-first mask derived from the authored bit index.
+    pub mask: u8,
+    /// Whether query equality is inverted or assignment clears the bit.
+    pub inverted_or_clear: bool,
+}
+
 impl ScriptSequenceRequest {
     /// Construct a safe owned request from raw non-NUL basename bytes.
     pub fn new(basename: impl Into<Box<[u8]>>) -> Option<Self> {
@@ -455,6 +469,13 @@ pub enum ScriptInstructionError {
         /// Token position.
         source_offset: ScriptCodeOffset,
         /// Unresolved VAR object position.
+        encoded_offset: u16,
+    },
+    /// A bit-flag operand reaches outside all typed VAR regions.
+    InvalidStateByte {
+        /// Token position.
+        source_offset: ScriptCodeOffset,
+        /// Unresolved VAR byte position after applying the bit index.
         encoded_offset: u16,
     },
 }
@@ -840,6 +861,39 @@ pub fn decode_script_transfer(
     })
 }
 
+/// Decode one B7 high-bit-first flag into a bounded byte and mask.
+pub fn decode_script_bit_flag_operation(
+    token: &ScriptToken,
+    state: &ScriptState,
+) -> Result<ScriptBitFlagOperation, ScriptInstructionError> {
+    if token.opcode().byte() != BIT_FLAG_OPCODE {
+        return Err(ScriptInstructionError::UntranslatedOpcode {
+            opcode: token.opcode(),
+        });
+    }
+    let bytes = token.encoded_bytes();
+    let inverted_or_clear = bytes.get(OPCODE_SIZE) == Some(&INVERTED_CONDITION_PREFIX);
+    let prefix_size = usize::from(inverted_or_clear);
+    require_size(token, BIT_FLAG_SIZE + prefix_size)?;
+    let operand_offset = OPCODE_SIZE + prefix_size;
+    let base_offset = read_word(bytes, operand_offset);
+    let bit_index = bytes[operand_offset + WORD_SIZE];
+    let encoded_offset = base_offset.wrapping_add(u16::from(bit_index / BITS_PER_BYTE));
+    let target = state.resolve_byte_source_offset(encoded_offset).ok_or(
+        ScriptInstructionError::InvalidStateByte {
+            source_offset: token.source_offset(),
+            encoded_offset,
+        },
+    )?;
+    let bit_in_byte = bit_index % BITS_PER_BYTE;
+    let mask = 1_u8 << (BITS_PER_BYTE - 1 - bit_in_byte);
+    Ok(ScriptBitFlagOperation {
+        target,
+        mask,
+        inverted_or_clear,
+    })
+}
+
 const fn is_direct_record_opcode(opcode: u8) -> bool {
     matches!(
         opcode,
@@ -969,6 +1023,8 @@ mod tests {
     const EXPECTED_OBJECT_RECORD_COUNT: usize = 531;
     const EXPECTED_TOPIC_RECORD_COUNT: usize = 49;
     const EXPECTED_TRANSFER_COUNTS: [usize; PROFILE_COUNT] = [0, 18, 14, 10, 4];
+    const EXPECTED_BIT_FLAG_COUNTS: [usize; PROFILE_COUNT] = [0, 2, 1, 0, 0];
+    const EXPECTED_SHIPPED_BIT_FLAG_MASK: u8 = 32;
     const MAXIMUM_SHIPPED_SEQUENCE_BASENAME_LENGTH: usize = 12;
 
     fn original_asset(name: &str) -> PathBuf {
@@ -1278,6 +1334,36 @@ mod tests {
         }
 
         assert_eq!(counts, EXPECTED_TRANSFER_COUNTS);
+    }
+
+    #[test]
+    fn every_shipped_bit_flag_resolves_to_one_typed_object_byte() {
+        let mut counts = [usize::MIN; PROFILE_COUNT];
+
+        for profile in 1..=PROFILE_COUNT {
+            let code_data = std::fs::read(original_asset(&format!("SCRIPT{profile}.COD"))).unwrap();
+            let directory_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.DEB"))).unwrap();
+            let state_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.VAR"))).unwrap();
+            let code = decode_script_code(&code_data).unwrap();
+            let directory = decode_script_directory(&directory_data).unwrap();
+            let state = decode_script_state(&state_data, &directory).unwrap();
+
+            for token in code
+                .tokens()
+                .iter()
+                .filter(|token| token.opcode().byte() == BIT_FLAG_OPCODE)
+            {
+                let operation = decode_script_bit_flag_operation(token, &state).unwrap();
+                assert!(operation.target.object().is_some());
+                assert_eq!(operation.mask, EXPECTED_SHIPPED_BIT_FLAG_MASK);
+                assert!(!operation.inverted_or_clear);
+                counts[profile - 1] += 1;
+            }
+        }
+
+        assert_eq!(counts, EXPECTED_BIT_FLAG_COUNTS);
     }
 
     #[test]

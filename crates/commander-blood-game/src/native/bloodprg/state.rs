@@ -3,9 +3,10 @@
 use std::fmt;
 
 use commander_blood_formats::instruction::{
-    ScriptSharedBitOperation, ScriptSharedStateOperation, ScriptStateOperand, ScriptStateOperator,
+    ScriptBitFlagOperation, ScriptSharedBitOperation, ScriptSharedStateOperation,
+    ScriptStateOperand, ScriptStateOperator,
 };
-use commander_blood_formats::script::{ScriptState, ScriptStateWord};
+use commander_blood_formats::script::{ScriptState, ScriptStateByte, ScriptStateWord};
 
 use super::{ScriptControl, ScriptRuntime, ScriptRuntimeError};
 
@@ -16,6 +17,11 @@ pub enum ScriptStateOperationError {
     MissingStateWord {
         /// Typed word that could not be accessed.
         word: ScriptStateWord,
+    },
+    /// A resolved byte belongs to a different or truncated profile state.
+    MissingStateByte {
+        /// Typed byte that could not be accessed.
+        byte: ScriptStateByte,
     },
     /// A failed query had no procedure or nested guard destination.
     Control(ScriptRuntimeError),
@@ -112,6 +118,42 @@ pub fn apply_shared_bit_operation(
     }
 }
 
+/// Apply `vm_op_b7_record_op` to one bounded high-bit-first state flag.
+pub fn apply_bit_flag_operation(
+    operation: ScriptBitFlagOperation,
+    state: &mut ScriptState,
+    runtime: &mut ScriptRuntime,
+) -> Result<ScriptControl, ScriptStateOperationError> {
+    let current =
+        state
+            .byte(operation.target)
+            .ok_or(ScriptStateOperationError::MissingStateByte {
+                byte: operation.target,
+            })?;
+    if runtime.query_mode() {
+        let present = current & operation.mask != u8::MIN;
+        if present != operation.inverted_or_clear {
+            Ok(ScriptControl::Continue)
+        } else {
+            runtime
+                .fail_guard()
+                .map_err(ScriptStateOperationError::Control)
+        }
+    } else {
+        let updated = if operation.inverted_or_clear {
+            current & !operation.mask
+        } else {
+            current | operation.mask
+        };
+        if !state.set_byte(operation.target, updated) {
+            return Err(ScriptStateOperationError::MissingStateByte {
+                byte: operation.target,
+            });
+        }
+        Ok(ScriptControl::Continue)
+    }
+}
+
 fn read_state_word(
     state: &ScriptState,
     word: ScriptStateWord,
@@ -127,7 +169,8 @@ mod tests {
 
     use commander_blood_formats::code::{decode_script_code, ScriptCodeOffset};
     use commander_blood_formats::instruction::{
-        decode_script_shared_bit_operation, decode_script_shared_state_operation,
+        decode_script_bit_flag_operation, decode_script_shared_bit_operation,
+        decode_script_shared_state_operation,
     };
     use commander_blood_formats::script::{decode_script_directory, decode_script_state};
     use serde::Deserialize;
@@ -136,6 +179,7 @@ mod tests {
 
     const SHARED_STATE_OPCODE: u8 = 0xB1;
     const SHARED_BIT_OPCODE: u8 = 0xAE;
+    const BIT_FLAG_OPCODE: u8 = 0xB7;
     const INVERTED_OR_CLEAR_PREFIX: u8 = 0xA1;
     const END_MARKER: u8 = 0xFF;
     const TARGET_SOURCE_OFFSET: u16 = 2;
@@ -146,6 +190,7 @@ mod tests {
     const BRANCH_TARGET: usize = 9_320;
     const SHARED_STATE_VECTOR_COUNT: usize = 20;
     const SHARED_BIT_VECTOR_COUNT: usize = 14;
+    const BIT_FLAG_VECTOR_COUNT: usize = 14;
 
     #[derive(Deserialize)]
     struct SharedStateOracle {
@@ -167,6 +212,18 @@ mod tests {
         field_before: u16,
         mask: u16,
         field_after: u16,
+        branch_failed: bool,
+    }
+
+    #[derive(Deserialize)]
+    struct BitFlagOracle {
+        query_mode_before: u8,
+        query_mode_after: u8,
+        inverted: bool,
+        bit_index: u8,
+        mask: u8,
+        field_before: u8,
+        field_after: u8,
         branch_failed: bool,
     }
 
@@ -270,6 +327,53 @@ mod tests {
             let control = apply_shared_bit_operation(operation, &mut state, &mut runtime).unwrap();
 
             assert_eq!(state.word(operation.target), Some(vector.field_after));
+            assert_eq!(
+                runtime.query_mode(),
+                vector.query_mode_after & QUERY_MODE_MASK != u8::MIN
+            );
+            assert_eq!(
+                control,
+                if vector.branch_failed {
+                    ScriptControl::Jump(ScriptCodeOffset::new(BRANCH_TARGET))
+                } else {
+                    ScriptControl::Continue
+                }
+            );
+        }
+    }
+
+    #[test]
+    fn bit_flags_match_every_original_handler_vector() {
+        let vectors: Vec<BitFlagOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_6aa7_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), BIT_FLAG_VECTOR_COUNT);
+        let directory_data = std::fs::read(original_asset("SCRIPT1.DEB")).unwrap();
+        let state_data = std::fs::read(original_asset("SCRIPT1.VAR")).unwrap();
+        let directory = decode_script_directory(&directory_data).unwrap();
+
+        for vector in vectors {
+            let mut token_data = vec![BIT_FLAG_OPCODE];
+            if vector.inverted {
+                token_data.push(INVERTED_OR_CLEAR_PREFIX);
+            }
+            token_data.extend_from_slice(&TARGET_SOURCE_OFFSET.to_le_bytes());
+            token_data.push(vector.bit_index);
+            token_data.push(END_MARKER);
+            let code = decode_script_code(&token_data).unwrap();
+            let mut state = decode_script_state(&state_data, &directory).unwrap();
+            let operation = decode_script_bit_flag_operation(&code.tokens()[0], &state).unwrap();
+            assert_eq!(operation.mask, vector.mask);
+            assert!(state.set_byte(operation.target, vector.field_before));
+            let mut runtime = ScriptRuntime::new();
+            if vector.query_mode_before & QUERY_MODE_MASK != u8::MIN {
+                runtime.begin_root_guard(ScriptCodeOffset::new(BRANCH_TARGET));
+            }
+
+            let control = apply_bit_flag_operation(operation, &mut state, &mut runtime).unwrap();
+
+            assert_eq!(state.byte(operation.target), Some(vector.field_after));
             assert_eq!(
                 runtime.query_mode(),
                 vector.query_mode_after & QUERY_MODE_MASK != u8::MIN
