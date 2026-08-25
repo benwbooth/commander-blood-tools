@@ -58,6 +58,12 @@ enum TextureDirection {
 pub enum AlienResumeCallback {
     /// Begin the species-specific resume state machine.
     Begin,
+    /// Move the current node toward its queued partner.
+    Pair,
+    /// Continue texture motion while the resume delay expires.
+    Timeout,
+    /// Move the current node back toward the active queue anchor.
+    Final,
 }
 
 /// Typed continuation state owned by one resumable behavior method.
@@ -112,6 +118,17 @@ pub struct AlienResumeTextureUpdate {
     pub delta: i16,
     /// Packed animation phase after its wrapping high-byte advance.
     pub phase: u16,
+}
+
+/// State produced by one resume timeout continuation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct AlienResumeTimeoutUpdate {
+    /// Texture-coordinate motion completed before the countdown update.
+    pub texture: AlienResumeTextureUpdate,
+    /// Wrapping post-decrement countdown value.
+    pub countdown: u16,
+    /// Whether the post-decrement sign selected the final continuation.
+    pub final_stage_selected: bool,
 }
 
 /// Invalid model data supplied to the recovered resume texture animation.
@@ -204,6 +221,26 @@ pub fn update_resume_texture_motion(
     Ok(AlienResumeTextureUpdate {
         delta,
         phase: state.phase,
+    })
+}
+
+/// Advance resume texture motion and select the final stage after timeout.
+pub fn update_resume_timeout(
+    species: AlienSpecies,
+    state: &mut AlienResumeMethodState,
+    texture_coordinates: &mut [[i16; TEXTURE_COMPONENT_COUNT]],
+    countdown: &mut u16,
+) -> Result<AlienResumeTimeoutUpdate, AlienResumeTextureError> {
+    let texture = update_resume_texture_motion(species, state, texture_coordinates)?;
+    *countdown = countdown.wrapping_sub(1);
+    let final_stage_selected = (*countdown as i16).is_negative();
+    if final_stage_selected {
+        state.callback = Some(AlienResumeCallback::Final);
+    }
+    Ok(AlienResumeTimeoutUpdate {
+        texture,
+        countdown: *countdown,
+        final_stage_selected,
     })
 }
 
@@ -313,6 +350,21 @@ mod tests {
         after: u16,
     }
 
+    #[derive(Deserialize)]
+    struct ResumeTimeoutVector {
+        name: String,
+        module: String,
+        component: String,
+        required_vertex_count: usize,
+        phase_before: u16,
+        phase_after: u16,
+        signed_delta: i16,
+        targets: Vec<ResumeTextureTargetVector>,
+        countdown_before: u16,
+        countdown_after: u16,
+        final_selected: bool,
+    }
+
     #[derive(Default)]
     struct CallbackRecorder {
         calls: Vec<(AlienSpecies, AlienResumeCallback)>,
@@ -368,6 +420,16 @@ mod tests {
                 "../../../../../re/tools/oracle_vectors/xdb_croolis_func_1b5f_natural.json"
             ),
             include_str!("../../../../../re/tools/oracle_vectors/xdb_scrut_func_1c14_natural.json"),
+        ]
+    }
+
+    fn timeout_fixtures() -> [&'static str; 3] {
+        [
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_amer_func_1cbf_natural.json"),
+            include_str!(
+                "../../../../../re/tools/oracle_vectors/xdb_croolis_func_1c0b_natural.json"
+            ),
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_scrut_func_1ccb_natural.json"),
         ]
     }
 
@@ -604,6 +666,70 @@ mod tests {
             );
             assert_eq!(state, original_state);
             assert_eq!(coordinates, original_coordinates);
+        }
+    }
+
+    #[test]
+    fn timeout_continuation_matches_every_original_overlay_vector() {
+        for fixture in timeout_fixtures() {
+            let vectors: Vec<ResumeTimeoutVector> = serde_json::from_str(fixture).unwrap();
+            for vector in vectors {
+                let component = match vector.component.as_str() {
+                    "u" => TEXTURE_U_COMPONENT,
+                    "v" => TEXTURE_V_COMPONENT,
+                    value => panic!("unknown texture component {value}"),
+                };
+                let mut texture_coordinates =
+                    vec![[12_345_i16, -23_456_i16]; vector.required_vertex_count];
+                for target in &vector.targets {
+                    texture_coordinates[target.vertex][component] = target.before as i16;
+                }
+                let mut expected = texture_coordinates.clone();
+                for target in &vector.targets {
+                    expected[target.vertex][component] = target.after as i16;
+                }
+                let mut state = AlienResumeMethodState {
+                    callback: Some(AlienResumeCallback::Timeout),
+                    phase: vector.phase_before,
+                    paired_node: Some(17),
+                    resumed_node: Some(29),
+                };
+                let mut countdown = vector.countdown_before;
+
+                assert_eq!(
+                    update_resume_timeout(
+                        species(&vector.module),
+                        &mut state,
+                        &mut texture_coordinates,
+                        &mut countdown,
+                    ),
+                    Ok(AlienResumeTimeoutUpdate {
+                        texture: AlienResumeTextureUpdate {
+                            delta: vector.signed_delta,
+                            phase: vector.phase_after,
+                        },
+                        countdown: vector.countdown_after,
+                        final_stage_selected: vector.final_selected,
+                    }),
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(texture_coordinates, expected, "{}", vector.name);
+                assert_eq!(state.phase, vector.phase_after, "{}", vector.name);
+                assert_eq!(countdown, vector.countdown_after, "{}", vector.name);
+                assert_eq!(
+                    state.callback,
+                    Some(if vector.final_selected {
+                        AlienResumeCallback::Final
+                    } else {
+                        AlienResumeCallback::Timeout
+                    }),
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(state.paired_node, Some(17), "{}", vector.name);
+                assert_eq!(state.resumed_node, Some(29), "{}", vector.name);
+            }
         }
     }
 }

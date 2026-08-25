@@ -1,0 +1,194 @@
+[
+  {
+    "name": "ordinary_countdown",
+    "module": "croolis",
+    "entry": 7179,
+    "component": "u",
+    "required_vertex_count": 26,
+    "phase_before": 258,
+    "phase_after": 770,
+    "signed_delta": 2,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 10757,
+        "after": 10759
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 28233,
+        "after": 28231
+      }
+    ],
+    "countdown_before": 2,
+    "countdown_after": 1,
+    "callback_before": 24576,
+    "callback_after": 24576,
+    "final_selected": false,
+    "data_sha256": "c9c453d1e1af4c7e1202d321e3d9d8bcca8ecbf619486643accfd8f6a0cc4b34",
+    "code_sha256": "0c8abcb98d6a324e33333ea0483b79c0731085f1427531903c95431a816d8cf9",
+    "object_sha256": "c1658dd3375b824cb6810d958cd15a0cc131fc152b7ebb08f3dabb8029053352"
+  },
+  {
+    "name": "reaches_zero",
+    "module": "croolis",
+    "entry": 7179,
+    "component": "u",
+    "required_vertex_count": 26,
+    "phase_before": 510,
+    "phase_after": 65534,
+    "signed_delta": -2,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 13584,
+        "after": 13582
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 31060,
+        "after": 31062
+      }
+    ],
+    "countdown_before": 1,
+    "countdown_after": 0,
+    "callback_before": 24578,
+    "callback_after": 24578,
+    "final_selected": false,
+    "data_sha256": "eb1bef1ad41598aa340f9aedb3ede40235c8e7dc8b26920d9dd3674457149141",
+    "code_sha256": "13eba7c4e4f38662c44c849bd07be293c7583d2b2dc9ae273d7fe94746048c31",
+    "object_sha256": "29c6255b15106c38271ffadb9f7c69fabf96430370be93ad5a20e194113dbb0c"
+  },
+  {
+    "name": "zero_underflows",
+    "module": "croolis",
+    "entry": 7179,
+    "component": "u",
+    "required_vertex_count": 26,
+    "phase_before": 0,
+    "phase_after": 2,
+    "signed_delta": 0,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 16411,
+        "after": 16411
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 33887,
+        "after": 33887
+      }
+    ],
+    "countdown_before": 0,
+    "countdown_after": 65535,
+    "callback_before": 24580,
+    "callback_after": 7195,
+    "final_selected": true,
+    "data_sha256": "74a794bcc1af6c80d7768f8ab5039026303d1caf724d5406e3b787f9490cfd94",
+    "code_sha256": "3f412f5350b3061daf49581a315344d44bb071a45e11192fb9f45e37ff490901",
+    "object_sha256": "32b977c02b0419fe32021f0623a6577a3ce6b1af8c1b55453d3c75561f01e281"
+  },
+  {
+    "name": "negative_remains_negative",
+    "module": "croolis",
+    "entry": 7179,
+    "component": "u",
+    "required_vertex_count": 26,
+    "phase_before": 5632,
+    "phase_after": 5886,
+    "signed_delta": 0,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 19238,
+        "after": 19238
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 36714,
+        "after": 36714
+      }
+    ],
+    "countdown_before": 65535,
+    "countdown_after": 65534,
+    "callback_before": 24582,
+    "callback_after": 7195,
+    "final_selected": true,
+    "data_sha256": "dc843fbce153161303ad0240a5a506a867905fe0e1d586dae93236dc46b83da1",
+    "code_sha256": "1e688272a5a66ebd0c24d19c7fa4f322571537865a59105e7a9f169421d0bdc3",
+    "object_sha256": "a517a815b7c135ecdf59542152ee960f982b888d53a492701f785498e5e2ee05"
+  },
+  {
+    "name": "minimum_wraps_positive",
+    "module": "croolis",
+    "entry": 7179,
+    "component": "u",
+    "required_vertex_count": 26,
+    "phase_before": 32513,
+    "phase_after": 32769,
+    "signed_delta": 1,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 22065,
+        "after": 22066
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 39541,
+        "after": 39540
+      }
+    ],
+    "countdown_before": 32768,
+    "countdown_after": 32767,
+    "callback_before": 24584,
+    "callback_after": 24584,
+    "final_selected": false,
+    "data_sha256": "f1997a7e15d4850050b0b3575020f3e328c4fcbcfe139292eeff01249f9ca5c5",
+    "code_sha256": "da96940c8ec6a8f82dcc2670b6b7d939a293a485f249aaebf359341b28c5292f",
+    "object_sha256": "b5b32135b2287bc24fae9276d677dd6a5fdca2c55b1e111a320e1318da6c396a"
+  },
+  {
+    "name": "minimum_reached",
+    "module": "croolis",
+    "entry": 7179,
+    "component": "u",
+    "required_vertex_count": 26,
+    "phase_before": 384,
+    "phase_after": 33152,
+    "signed_delta": -128,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 24892,
+        "after": 24764
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 42368,
+        "after": 42496
+      }
+    ],
+    "countdown_before": 32769,
+    "countdown_after": 32768,
+    "callback_before": 24586,
+    "callback_after": 7195,
+    "final_selected": true,
+    "data_sha256": "82b3155b654da43c878a5206ea0efaf13b0d24466ae7b0595d505c037ff6c3ad",
+    "code_sha256": "bc780aaee0c39df4c4284be48a3723baaf15584836a513131ce7badda738f81d",
+    "object_sha256": "6f485185b790b8e77618dec43667b37e8434b23db9cdfe1a82ea6bf0941973a0"
+  }
+]

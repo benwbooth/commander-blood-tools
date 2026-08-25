@@ -1,0 +1,266 @@
+[
+  {
+    "name": "ordinary_countdown",
+    "module": "amer",
+    "entry": 7359,
+    "component": "v",
+    "required_vertex_count": 54,
+    "phase_before": 258,
+    "phase_after": 770,
+    "signed_delta": 2,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 29775,
+        "after": 29777
+      },
+      {
+        "vertex": 53,
+        "direction": -1,
+        "before": 43139,
+        "after": 43137
+      },
+      {
+        "vertex": 35,
+        "direction": 1,
+        "before": 41083,
+        "after": 41085
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 47251,
+        "after": 47249
+      }
+    ],
+    "countdown_before": 2,
+    "countdown_after": 1,
+    "callback_before": 24576,
+    "callback_after": 24576,
+    "final_selected": false,
+    "data_sha256": "c9c453d1e1af4c7e1202d321e3d9d8bcca8ecbf619486643accfd8f6a0cc4b34",
+    "code_sha256": "e66603bea2fcbf1305c9ae3453de7b0a9fd54dae85b3df1afc668e992a9dd958",
+    "object_sha256": "71202a664e59595f21b0e4685d697e94d9e09f371fe5691334e648a431150a0b"
+  },
+  {
+    "name": "reaches_zero",
+    "module": "amer",
+    "entry": 7359,
+    "component": "v",
+    "required_vertex_count": 54,
+    "phase_before": 510,
+    "phase_after": 65534,
+    "signed_delta": -2,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 32602,
+        "after": 32600
+      },
+      {
+        "vertex": 53,
+        "direction": -1,
+        "before": 45966,
+        "after": 45968
+      },
+      {
+        "vertex": 35,
+        "direction": 1,
+        "before": 43910,
+        "after": 43908
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 50078,
+        "after": 50080
+      }
+    ],
+    "countdown_before": 1,
+    "countdown_after": 0,
+    "callback_before": 24578,
+    "callback_after": 24578,
+    "final_selected": false,
+    "data_sha256": "eb1bef1ad41598aa340f9aedb3ede40235c8e7dc8b26920d9dd3674457149141",
+    "code_sha256": "6fddeb5cc7c62fe5e638900746decc299f1637ea11612c0c51aced367dd12b31",
+    "object_sha256": "a686ceda46a1008a3735b1ecb47644e7ef0a7e179999089b0520ba1890a4f6b3"
+  },
+  {
+    "name": "zero_underflows",
+    "module": "amer",
+    "entry": 7359,
+    "component": "v",
+    "required_vertex_count": 54,
+    "phase_before": 0,
+    "phase_after": 2,
+    "signed_delta": 0,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 35429,
+        "after": 35429
+      },
+      {
+        "vertex": 53,
+        "direction": -1,
+        "before": 48793,
+        "after": 48793
+      },
+      {
+        "vertex": 35,
+        "direction": 1,
+        "before": 46737,
+        "after": 46737
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 52905,
+        "after": 52905
+      }
+    ],
+    "countdown_before": 0,
+    "countdown_after": 65535,
+    "callback_before": 24580,
+    "callback_after": 7375,
+    "final_selected": true,
+    "data_sha256": "2018a9d0464a19e59b43647b7dfc16645bdbcf1d1980a762c780d8b883a7e723",
+    "code_sha256": "aedab698c4178bd14458cca6eabdbe616daabbdb999ce73e4b11bb24782770ce",
+    "object_sha256": "32b977c02b0419fe32021f0623a6577a3ce6b1af8c1b55453d3c75561f01e281"
+  },
+  {
+    "name": "negative_remains_negative",
+    "module": "amer",
+    "entry": 7359,
+    "component": "v",
+    "required_vertex_count": 54,
+    "phase_before": 5632,
+    "phase_after": 5886,
+    "signed_delta": 0,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 38256,
+        "after": 38256
+      },
+      {
+        "vertex": 53,
+        "direction": -1,
+        "before": 51620,
+        "after": 51620
+      },
+      {
+        "vertex": 35,
+        "direction": 1,
+        "before": 49564,
+        "after": 49564
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 55732,
+        "after": 55732
+      }
+    ],
+    "countdown_before": 65535,
+    "countdown_after": 65534,
+    "callback_before": 24582,
+    "callback_after": 7375,
+    "final_selected": true,
+    "data_sha256": "3839e04f2f21560c4a4fb1bf33e734eacb5f1d8001ca53c3682929c1ec195756",
+    "code_sha256": "a67b006e9bd2aa070d22fad705c5f918dd59098106875dff7587f6e35371ae5c",
+    "object_sha256": "a517a815b7c135ecdf59542152ee960f982b888d53a492701f785498e5e2ee05"
+  },
+  {
+    "name": "minimum_wraps_positive",
+    "module": "amer",
+    "entry": 7359,
+    "component": "v",
+    "required_vertex_count": 54,
+    "phase_before": 32513,
+    "phase_after": 32769,
+    "signed_delta": 1,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 41083,
+        "after": 41084
+      },
+      {
+        "vertex": 53,
+        "direction": -1,
+        "before": 54447,
+        "after": 54446
+      },
+      {
+        "vertex": 35,
+        "direction": 1,
+        "before": 52391,
+        "after": 52392
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 58559,
+        "after": 58558
+      }
+    ],
+    "countdown_before": 32768,
+    "countdown_after": 32767,
+    "callback_before": 24584,
+    "callback_after": 24584,
+    "final_selected": false,
+    "data_sha256": "f1997a7e15d4850050b0b3575020f3e328c4fcbcfe139292eeff01249f9ca5c5",
+    "code_sha256": "e815235daacb377ae75d0838a0abc9fc4fc38fe4d7af9c5100e2d8bcaa06cd9a",
+    "object_sha256": "5b698e41931882fd6121f85c69143e54d270d089b797353dfe620c3f784fd663"
+  },
+  {
+    "name": "minimum_reached",
+    "module": "amer",
+    "entry": 7359,
+    "component": "v",
+    "required_vertex_count": 54,
+    "phase_before": 384,
+    "phase_after": 33152,
+    "signed_delta": -128,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 43910,
+        "after": 43782
+      },
+      {
+        "vertex": 53,
+        "direction": -1,
+        "before": 57274,
+        "after": 57402
+      },
+      {
+        "vertex": 35,
+        "direction": 1,
+        "before": 55218,
+        "after": 55090
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 61386,
+        "after": 61514
+      }
+    ],
+    "countdown_before": 32769,
+    "countdown_after": 32768,
+    "callback_before": 24586,
+    "callback_after": 7375,
+    "final_selected": true,
+    "data_sha256": "99728aec568687b2cb78cdd34d9fb01162d529d7850f4e8c30b7622105626400",
+    "code_sha256": "30e91d487c710bacb3f26a101d1330b79ddb95532be11e7c2dfd4a6b9b92ec7e",
+    "object_sha256": "0b74dc1de04bce89b38ef68ed64db5ed357b3258be8b3d9a61c026e1a2c27c83"
+  }
+]

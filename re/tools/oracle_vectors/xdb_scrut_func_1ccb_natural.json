@@ -1,0 +1,266 @@
+[
+  {
+    "name": "ordinary_countdown",
+    "module": "scrut",
+    "entry": 7371,
+    "component": "v",
+    "required_vertex_count": 44,
+    "phase_before": 258,
+    "phase_after": 770,
+    "signed_delta": 2,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 29775,
+        "after": 29777
+      },
+      {
+        "vertex": 43,
+        "direction": -1,
+        "before": 49307,
+        "after": 49305
+      },
+      {
+        "vertex": 42,
+        "direction": 1,
+        "before": 56503,
+        "after": 56505
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 47251,
+        "after": 47249
+      }
+    ],
+    "countdown_before": 2,
+    "countdown_after": 1,
+    "callback_before": 24576,
+    "callback_after": 24576,
+    "final_selected": false,
+    "data_sha256": "c9c453d1e1af4c7e1202d321e3d9d8bcca8ecbf619486643accfd8f6a0cc4b34",
+    "code_sha256": "348edb5ff2082945802ebc1883cb58fa6266ded8bfa119778a7d9a3be6deea81",
+    "object_sha256": "eea960717e52f1f77f9e9cceb7128c3e5a0c391d60215b2db5ba41f38f06113e"
+  },
+  {
+    "name": "reaches_zero",
+    "module": "scrut",
+    "entry": 7371,
+    "component": "v",
+    "required_vertex_count": 44,
+    "phase_before": 510,
+    "phase_after": 65534,
+    "signed_delta": -2,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 32602,
+        "after": 32600
+      },
+      {
+        "vertex": 43,
+        "direction": -1,
+        "before": 52134,
+        "after": 52136
+      },
+      {
+        "vertex": 42,
+        "direction": 1,
+        "before": 59330,
+        "after": 59328
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 50078,
+        "after": 50080
+      }
+    ],
+    "countdown_before": 1,
+    "countdown_after": 0,
+    "callback_before": 24578,
+    "callback_after": 24578,
+    "final_selected": false,
+    "data_sha256": "eb1bef1ad41598aa340f9aedb3ede40235c8e7dc8b26920d9dd3674457149141",
+    "code_sha256": "8522e77aad6639cf9bb06f148048fed3c6bf1cfbe6459c9a0be7b987c3c3ac77",
+    "object_sha256": "49c8882be46289b2c2d2f5cbc6d24e37a763f256f61aa1c3106566148e4c2eee"
+  },
+  {
+    "name": "zero_underflows",
+    "module": "scrut",
+    "entry": 7371,
+    "component": "v",
+    "required_vertex_count": 44,
+    "phase_before": 0,
+    "phase_after": 2,
+    "signed_delta": 0,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 35429,
+        "after": 35429
+      },
+      {
+        "vertex": 43,
+        "direction": -1,
+        "before": 54961,
+        "after": 54961
+      },
+      {
+        "vertex": 42,
+        "direction": 1,
+        "before": 62157,
+        "after": 62157
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 52905,
+        "after": 52905
+      }
+    ],
+    "countdown_before": 0,
+    "countdown_after": 65535,
+    "callback_before": 24580,
+    "callback_after": 7387,
+    "final_selected": true,
+    "data_sha256": "03dc64f70a51e779d3119f8463f5a45b0a6fd47e4aefc5c5bb85567b0b8d01bd",
+    "code_sha256": "7f830c5e38e2cd9d6c35dfed21984d6f4b0d20e4c9c9c8abab16c39a7759977c",
+    "object_sha256": "32b977c02b0419fe32021f0623a6577a3ce6b1af8c1b55453d3c75561f01e281"
+  },
+  {
+    "name": "negative_remains_negative",
+    "module": "scrut",
+    "entry": 7371,
+    "component": "v",
+    "required_vertex_count": 44,
+    "phase_before": 5632,
+    "phase_after": 5886,
+    "signed_delta": 0,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 38256,
+        "after": 38256
+      },
+      {
+        "vertex": 43,
+        "direction": -1,
+        "before": 57788,
+        "after": 57788
+      },
+      {
+        "vertex": 42,
+        "direction": 1,
+        "before": 64984,
+        "after": 64984
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 55732,
+        "after": 55732
+      }
+    ],
+    "countdown_before": 65535,
+    "countdown_after": 65534,
+    "callback_before": 24582,
+    "callback_after": 7387,
+    "final_selected": true,
+    "data_sha256": "8abf8c240fa75a26d7f8b41a30e27f81cd1359ee1b58c66e99ea86a647ffacc7",
+    "code_sha256": "71621d2e4b15bc8982f2d448f99932d2b83e351866e95949ac583ce891d9ec53",
+    "object_sha256": "a517a815b7c135ecdf59542152ee960f982b888d53a492701f785498e5e2ee05"
+  },
+  {
+    "name": "minimum_wraps_positive",
+    "module": "scrut",
+    "entry": 7371,
+    "component": "v",
+    "required_vertex_count": 44,
+    "phase_before": 32513,
+    "phase_after": 32769,
+    "signed_delta": 1,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 41083,
+        "after": 41084
+      },
+      {
+        "vertex": 43,
+        "direction": -1,
+        "before": 60615,
+        "after": 60614
+      },
+      {
+        "vertex": 42,
+        "direction": 1,
+        "before": 2275,
+        "after": 2276
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 58559,
+        "after": 58558
+      }
+    ],
+    "countdown_before": 32768,
+    "countdown_after": 32767,
+    "callback_before": 24584,
+    "callback_after": 24584,
+    "final_selected": false,
+    "data_sha256": "f1997a7e15d4850050b0b3575020f3e328c4fcbcfe139292eeff01249f9ca5c5",
+    "code_sha256": "7d4a3e6aa20d43fea359f5321f1dd30cfd542f555dd68a812b402395992cd1d1",
+    "object_sha256": "80251574b16eb896ac9176642ea4863022f0b1a898d7b0f2a810f81175628717"
+  },
+  {
+    "name": "minimum_reached",
+    "module": "scrut",
+    "entry": 7371,
+    "component": "v",
+    "required_vertex_count": 44,
+    "phase_before": 384,
+    "phase_after": 33152,
+    "signed_delta": -128,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 43910,
+        "after": 43782
+      },
+      {
+        "vertex": 43,
+        "direction": -1,
+        "before": 63442,
+        "after": 63570
+      },
+      {
+        "vertex": 42,
+        "direction": 1,
+        "before": 5102,
+        "after": 4974
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 61386,
+        "after": 61514
+      }
+    ],
+    "countdown_before": 32769,
+    "countdown_after": 32768,
+    "callback_before": 24586,
+    "callback_after": 7387,
+    "final_selected": true,
+    "data_sha256": "2c34f60ac792a586287071d294a3c5572274263549f40de8ccef8724a51eb15b",
+    "code_sha256": "1183b9b209efc1414cc40b7bf5c524d054024845713a6b4ff6579cf71640f213",
+    "object_sha256": "c9c12b8e204d281a06a6a5dcf0cd57435ebbea35dcc153db1493c31605e62fac"
+  }
+]
