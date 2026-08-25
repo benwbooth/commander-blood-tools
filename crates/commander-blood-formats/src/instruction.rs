@@ -48,6 +48,7 @@ const WORLD_STATE_RECORD_OPCODE: u8 = 0xC5;
 const TRAVEL_RECORD_OPCODE: u8 = 0xC6;
 const ACTIVE_OBJECT_RECORD_OPCODE: u8 = 0xC7;
 const OPAQUE_MARKER_RECORD_OPCODE: u8 = 0xC8;
+const RECORD_CLEAR_OPCODE: u8 = 0xC9;
 const TRANSFER_OPCODE: u8 = 0xCD;
 const INVERTED_CONDITION_PREFIX: u8 = GUARD_END_OPCODE;
 const OPCODE_SIZE: usize = 1;
@@ -81,6 +82,7 @@ const WORLD_STATE_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const TRAVEL_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const ACTIVE_OBJECT_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const OPAQUE_MARKER_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
+const RECORD_CLEAR_SIZE: usize = OPCODE_SIZE + WORD_SIZE;
 const BITS_PER_BYTE: u8 = u8::BITS as u8;
 const PRIMARY_NAVIGATION_OPERAND: u16 = 1;
 const SECONDARY_NAVIGATION_OPERAND: u16 = 2;
@@ -480,6 +482,13 @@ pub struct ScriptOpaqueMarkerRecordOperation {
     pub comparison_word: u16,
     /// Whether query-mode equality is inverted.
     pub inverted: bool,
+}
+
+/// One C9 action-record teardown.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptRecordClearOperation {
+    /// Bounded three-word action slot cleared by the operation.
+    pub target: ScriptStateWordTriple,
 }
 
 impl ScriptSequenceRequest {
@@ -1248,6 +1257,26 @@ pub fn decode_script_opaque_marker_record_operation(
     })
 }
 
+/// Decode one C9 clear into a bounded action slot.
+pub fn decode_script_record_clear_operation(
+    token: &ScriptToken,
+    state: &ScriptState,
+) -> Result<ScriptRecordClearOperation, ScriptInstructionError> {
+    if token.opcode().byte() != RECORD_CLEAR_OPCODE {
+        return Err(ScriptInstructionError::UntranslatedOpcode {
+            opcode: token.opcode(),
+        });
+    }
+    require_size(token, RECORD_CLEAR_SIZE)?;
+    Ok(ScriptRecordClearOperation {
+        target: resolve_state_word_triple(
+            token,
+            state,
+            read_word(token.encoded_bytes(), OPCODE_SIZE),
+        )?,
+    })
+}
+
 fn decode_object_record_operands(
     token: &ScriptToken,
     state: &ScriptState,
@@ -1447,6 +1476,7 @@ mod tests {
     const EXPECTED_TRAVEL_RECORD_COUNTS: [usize; PROFILE_COUNT] = [0, 0, 1, 1, 0];
     const EXPECTED_ACTIVE_OBJECT_RECORD_COUNTS: [usize; PROFILE_COUNT] = [0; PROFILE_COUNT];
     const EXPECTED_OPAQUE_MARKER_RECORD_COUNTS: [usize; PROFILE_COUNT] = [0; PROFILE_COUNT];
+    const EXPECTED_RECORD_CLEAR_COUNTS: [usize; PROFILE_COUNT] = [10, 102, 119, 81, 52];
     const TEST_STATE_WORD_INDEX: usize = 1;
     const EXPECTED_SHIPPED_BIT_FLAG_MASK: u8 = 32;
     const EXPECTED_SHIPPED_PAIR_OPCODE: u8 = PAIR_RECORD_C_OPCODE;
@@ -2211,6 +2241,34 @@ mod tests {
             shipped_opcode_counts(OPAQUE_MARKER_RECORD_OPCODE),
             EXPECTED_OPAQUE_MARKER_RECORD_COUNTS
         );
+    }
+
+    #[test]
+    fn every_shipped_cod_c9_clear_resolves_to_a_typed_action_slot() {
+        let mut counts = [usize::MIN; PROFILE_COUNT];
+
+        for profile in 1..=PROFILE_COUNT {
+            let code_data = std::fs::read(original_asset(&format!("SCRIPT{profile}.COD"))).unwrap();
+            let directory_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.DEB"))).unwrap();
+            let state_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.VAR"))).unwrap();
+            let code = decode_script_code(&code_data).unwrap();
+            let directory = decode_script_directory(&directory_data).unwrap();
+            let state = decode_script_state(&state_data, &directory).unwrap();
+
+            for token in code
+                .tokens()
+                .iter()
+                .filter(|token| token.opcode().byte() == RECORD_CLEAR_OPCODE)
+            {
+                let operation = decode_script_record_clear_operation(token, &state).unwrap();
+                assert!(operation.target.object().is_some());
+                counts[profile - 1] += 1;
+            }
+        }
+
+        assert_eq!(counts, EXPECTED_RECORD_CLEAR_COUNTS);
     }
 
     #[test]

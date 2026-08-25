@@ -7,9 +7,9 @@ use commander_blood_formats::instruction::{
     ScriptAboardRecordOperation, ScriptActiveObjectRecordOperation, ScriptActorRecordOperation,
 };
 use commander_blood_formats::instruction::{
-    ScriptOpaqueMarkerRecordOperation, ScriptPresentationQueueOperation, ScriptRecordStateOperand,
-    ScriptRecordStateOperation, ScriptRecordValue, ScriptTravelRecordOperation,
-    ScriptWorldStateRecordOperation,
+    ScriptOpaqueMarkerRecordOperation, ScriptPresentationQueueOperation,
+    ScriptRecordClearOperation, ScriptRecordStateOperand, ScriptRecordStateOperation,
+    ScriptRecordValue, ScriptTravelRecordOperation, ScriptWorldStateRecordOperation,
 };
 use commander_blood_formats::script::{
     ScriptObjectId, ScriptObjectKind, ScriptState, ScriptStateObjectReference,
@@ -22,6 +22,8 @@ use super::{
     insert_aboard_object, navigation_distance, navigation_source_objects, object_has_flag,
     object_links_to, script_field_offset,
 };
+
+const POST_ACTOR_CLEAR_DEPTH_STEP: u8 = 6;
 
 /// Typed contents of one three-word action slot relevant to the C1 handler.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -129,6 +131,22 @@ pub struct ScriptAboardRecordOutcome {
     pub descriptor_checked: bool,
     /// Whether a new presentation line was selected.
     pub presentation_requested: bool,
+}
+
+/// Presentation globals changed only when C9 tears down a C4 actor record.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct ScriptRecordClearPresentationState {
+    /// Whether the native sequence gate at this record layer is active.
+    pub sequence_active: bool,
+    /// Ship-view depth transition step consumed after actor teardown.
+    pub ship_3d_depth_step: u8,
+}
+
+/// Observable result of one C9 action-record teardown.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptRecordClearOutcome {
+    /// Reciprocal actor slot cleared for an old C4 record, if any.
+    pub reciprocal_slot: Option<ScriptStateWordTriple>,
 }
 
 /// Invalid typed state encountered by the C1 handler.
@@ -593,6 +611,30 @@ pub fn apply_opaque_marker_record_operation(
     })
 }
 
+/// Apply `vm_op_c9_clear_record_full` through typed action ownership.
+pub fn apply_record_clear_operation(
+    operation: ScriptRecordClearOperation,
+    state: &ScriptState,
+    records: &mut ScriptActionRecords,
+    presentation: &mut ScriptRecordClearPresentationState,
+) -> Result<ScriptRecordClearOutcome, ScriptRecordStateError> {
+    let old_record = records.record(operation.target);
+    records.set_record(operation.target, ScriptActionRecord::Empty);
+
+    let reciprocal_slot = if let ScriptActionRecord::ActorPresentation(related) = old_record {
+        let reciprocal = action_slot(state, related)
+            .ok_or(ScriptRecordStateError::MissingActionField { object: related })?;
+        presentation.sequence_active = false;
+        presentation.ship_3d_depth_step = POST_ACTOR_CLEAR_DEPTH_STEP;
+        records.set_record(reciprocal, ScriptActionRecord::Empty);
+        Some(reciprocal)
+    } else {
+        None
+    };
+
+    Ok(ScriptRecordClearOutcome { reciprocal_slot })
+}
+
 fn query_record_state(
     operation: ScriptRecordStateOperation,
     state: &ScriptState,
@@ -723,6 +765,7 @@ mod tests {
     const TRAVEL_HANDLER_VECTOR_COUNT: usize = 11;
     const ACTIVE_OBJECT_HANDLER_VECTOR_COUNT: usize = 15;
     const OPAQUE_MARKER_HANDLER_VECTOR_COUNT: usize = 13;
+    const RECORD_CLEAR_HANDLER_VECTOR_COUNT: usize = 8;
     const FAILURE_TARGET: usize = 9_320;
     const HANDLER_VECTOR_COUNT: usize = 21;
     const ABOARD_HANDLER_VECTOR_COUNT: usize = 23;
@@ -770,6 +813,7 @@ mod tests {
     const UNCHANGED_ACTIVE_LINE: u16 = 4_951;
     const SECONDARY_REQUEST_FLAG: u8 = 2;
     const UNRELATED_REQUEST_FLAG: u8 = 64;
+    const INITIAL_RECORD_CLEAR_DEPTH_STEP: u8 = 90;
 
     #[derive(Deserialize)]
     struct HandlerOracle {
@@ -854,6 +898,14 @@ mod tests {
         operand: u16,
         record_before: [u16; 3],
         branch_failed: bool,
+    }
+
+    #[derive(Deserialize)]
+    struct RecordClearHandlerOracle {
+        name: String,
+        old_record: [u16; 3],
+        sequence_active_after: u8,
+        depth_step_after: u8,
     }
 
     #[derive(Deserialize)]
@@ -1606,6 +1658,85 @@ mod tests {
                     vector.name
                 );
             }
+        }
+    }
+
+    #[test]
+    fn record_clear_handler_matches_every_original_decision_vector() {
+        let vectors: Vec<RecordClearHandlerOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_6fb9_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), RECORD_CLEAR_HANDLER_VECTOR_COUNT);
+
+        for vector in vectors {
+            let (state, ids) =
+                actor_handler_fixture(ScriptObjectKind::Actor, ScriptObjectKind::Player);
+            let target = state
+                .object_word_triple(ids[ACTOR_OWNER], OBJECT_FLAGS_WORD_INDEX)
+                .unwrap();
+            let reciprocal = action_slot(&state, ids[ACTOR_RELATED]).unwrap();
+            let mut records = ScriptActionRecords::default();
+            match vector.old_record[0] {
+                ACTOR_RECORD_KIND => records.set_record(
+                    target,
+                    ScriptActionRecord::ActorPresentation(ids[ACTOR_RELATED]),
+                ),
+                OPAQUE_MARKER_RECORD_KIND => records.set_record(
+                    target,
+                    ScriptActionRecord::OpaqueMarker(vector.old_record[1]),
+                ),
+                0 => {}
+                _ => records.set_record(target, ScriptActionRecord::Occupied),
+            }
+            records.set_record(reciprocal, ScriptActionRecord::Occupied);
+            let mut presentation = ScriptRecordClearPresentationState {
+                sequence_active: true,
+                ship_3d_depth_step: INITIAL_RECORD_CLEAR_DEPTH_STEP,
+            };
+
+            let outcome = apply_record_clear_operation(
+                ScriptRecordClearOperation { target },
+                &state,
+                &mut records,
+                &mut presentation,
+            )
+            .unwrap();
+
+            let cleared_actor = vector.old_record[0] == ACTOR_RECORD_KIND;
+            assert_eq!(
+                records.record(target),
+                ScriptActionRecord::Empty,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                records.record(reciprocal),
+                if cleared_actor {
+                    ScriptActionRecord::Empty
+                } else {
+                    ScriptActionRecord::Occupied
+                },
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                outcome.reciprocal_slot,
+                cleared_actor.then_some(reciprocal),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                presentation.sequence_active,
+                vector.sequence_active_after != u8::MIN,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                presentation.ship_3d_depth_step, vector.depth_step_after,
+                "{}",
+                vector.name
+            );
         }
     }
 

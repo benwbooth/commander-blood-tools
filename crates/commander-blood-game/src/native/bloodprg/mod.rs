@@ -42,11 +42,12 @@ pub use record::{
 pub use record_state::{
     apply_aboard_record_operation, apply_active_object_record_operation,
     apply_actor_record_operation, apply_presentation_queue_operation,
-    apply_opaque_marker_record_operation, apply_record_state_operation,
-    apply_travel_record_operation,
+    apply_opaque_marker_record_operation, apply_record_clear_operation,
+    apply_record_state_operation, apply_travel_record_operation,
     apply_world_state_record_operation, ScriptAboardPresentationLine,
     ScriptAboardPresentationState, ScriptAboardRecordContext, ScriptAboardRecordOutcome,
-    ScriptActionRecord, ScriptActionRecords, ScriptRecordStateError,
+    ScriptActionRecord, ScriptActionRecords, ScriptRecordClearOutcome,
+    ScriptRecordClearPresentationState, ScriptRecordStateError,
     ScriptRecordStateNavigationContext, ScriptRecordStateOutcome,
 };
 pub use script::{ScriptControl, ScriptResumeState, ScriptRuntime, ScriptRuntimeError};

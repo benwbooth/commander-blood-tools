@@ -7,11 +7,11 @@
 use std::fmt;
 
 use crate::code::{
-    decode_script_token, ScriptCodeError, ScriptCodeOffset, ScriptToken, ScriptTokenDecoder,
+    ScriptCodeError, ScriptCodeOffset, ScriptToken, ScriptTokenDecoder, decode_script_token,
 };
 use crate::instruction::{
-    decode_script_sequence_request, decode_script_text, decode_script_topic_offer,
     ScriptInstructionError, ScriptSequenceRequest, ScriptText, ScriptTopicOffer,
+    decode_script_sequence_request, decode_script_text, decode_script_topic_offer,
 };
 use crate::script::{ScriptDictionary, ScriptWordId};
 
@@ -378,9 +378,9 @@ fn read_word(data: &[u8], offset: usize) -> u16 {
 mod tests {
     use std::path::{Path, PathBuf};
 
-    use crate::instruction::decode_script_transfer;
+    use crate::instruction::{decode_script_record_clear_operation, decode_script_transfer};
     use crate::script::{
-        decode_script_dictionary, decode_script_directory, decode_script_state, ScriptObjectKind,
+        ScriptObjectKind, decode_script_dictionary, decode_script_directory, decode_script_state,
     };
 
     use super::*;
@@ -391,6 +391,7 @@ mod tests {
     const EXPECTED_YIELD_COUNT: usize = 37;
     const EXPECTED_SELECTOR_YIELD_COUNT: usize = 321;
     const EXPECTED_TRANSFER_COUNTS: [usize; PROFILE_COUNT] = [0, 68, 68, 0, 0];
+    const EXPECTED_RECORD_CLEAR_COUNTS: [usize; PROFILE_COUNT] = [0, 1, 0, 4, 2];
     const MAXIMUM_SHIPPED_SEQUENCE_BASENAME_LENGTH: usize = 12;
 
     fn original_asset(name: &str) -> PathBuf {
@@ -477,5 +478,35 @@ mod tests {
         }
 
         assert_eq!(counts, EXPECTED_TRANSFER_COUNTS);
+    }
+
+    #[test]
+    fn every_shipped_bas_c9_clear_resolves_to_a_typed_action_slot() {
+        let mut counts = [usize::MIN; PROFILE_COUNT];
+
+        for profile in 1..=PROFILE_COUNT {
+            let data = std::fs::read(original_asset(&format!("SCRIPT{profile}.BAS"))).unwrap();
+            let dictionary_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.DIC"))).unwrap();
+            let directory_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.DEB"))).unwrap();
+            let state_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.VAR"))).unwrap();
+            let dictionary = decode_script_dictionary(&dictionary_data).unwrap();
+            let directory = decode_script_directory(&directory_data).unwrap();
+            let state = decode_script_state(&state_data, &directory).unwrap();
+            let bas = decode_script_bas(&data, &dictionary).unwrap();
+
+            for token in bas.tokens() {
+                let ScriptBasInstruction::RecordClear(framed) = token.instruction() else {
+                    continue;
+                };
+                let operation = decode_script_record_clear_operation(framed, &state).unwrap();
+                assert!(operation.target.object().is_some());
+                counts[profile - 1] += 1;
+            }
+        }
+
+        assert_eq!(counts, EXPECTED_RECORD_CLEAR_COUNTS);
     }
 }
