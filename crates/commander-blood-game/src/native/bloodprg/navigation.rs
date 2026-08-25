@@ -108,6 +108,24 @@ pub fn navigation_candidates(
     Ok(filter_navigation_candidates(state, &source, honk))
 }
 
+/// Return active navigation objects sharing Arche's current position.
+///
+/// This translates `vm_state_record_processor` at BLOODPRG file offset
+/// `0x00713D`. Active decoded objects replace the native directory walk;
+/// location coordinates resolve through their typed holder relation, and the
+/// provisional offset buffer becomes a collected sequence of object IDs.
+pub fn objects_at_arche_position(
+    state: &ScriptState,
+    arche: ScriptObjectId,
+) -> Result<Vec<ScriptObjectId>, ScriptNavigationError> {
+    let candidates = state
+        .objects()
+        .iter()
+        .map(|object| object.id)
+        .collect::<Vec<_>>();
+    filter_objects_at_arche_position(state, arche, &candidates)
+}
+
 /// Resolve the live coordinate pair used for one navigation object.
 ///
 /// This translates `ship_3d_position_field_resolve` at BLOODPRG file offset
@@ -280,6 +298,75 @@ fn filter_navigation_candidates(
         .collect()
 }
 
+fn filter_objects_at_arche_position(
+    state: &ScriptState,
+    arche: ScriptObjectId,
+    candidates: &[ScriptObjectId],
+) -> Result<Vec<ScriptObjectId>, ScriptNavigationError> {
+    let arche_position = object_word_pair(
+        state,
+        arche,
+        ScriptFieldSelector::NAVIGATION_POSITION,
+    )?;
+    let arche_position = state
+        .word_pair(arche_position)
+        .ok_or(ScriptNavigationError::MissingPositionField { object: arche })?;
+    let mut output = Vec::new();
+
+    for candidate in candidates.iter().copied() {
+        let candidate_record = state
+            .object(candidate)
+            .ok_or(ScriptNavigationError::MissingObject { object: candidate })?;
+        if object_has_flag(state, candidate, ScriptObjectFlag::Active) != Some(true)
+            || candidate == arche
+        {
+            continue;
+        }
+
+        let effective = match candidate_record.kind {
+            ScriptObjectKind::CelestialBody | ScriptObjectKind::NavigationEntity => candidate,
+            ScriptObjectKind::Location => {
+                let linked = match object_reference(
+                    state,
+                    candidate,
+                    ScriptFieldSelector::HOLDER_OR_LOCATION,
+                )? {
+                    ScriptStateObjectReference::Object(linked) => linked,
+                    ScriptStateObjectReference::Sentinel => {
+                        return Err(ScriptNavigationError::InvalidParentReference {
+                            object: candidate,
+                        });
+                    }
+                };
+                let linked_record = state
+                    .object(linked)
+                    .ok_or(ScriptNavigationError::MissingObject { object: linked })?;
+                if object_has_flag(state, linked, ScriptObjectFlag::Active) != Some(true)
+                    || !matches!(
+                        linked_record.kind,
+                        ScriptObjectKind::CelestialBody | ScriptObjectKind::NavigationEntity
+                    )
+                {
+                    continue;
+                }
+                linked
+            }
+            _ => continue,
+        };
+
+        let position = object_word_pair(
+            state,
+            effective,
+            ScriptFieldSelector::NAVIGATION_POSITION,
+        )?;
+        if state.word_pair(position) == Some(arche_position) {
+            output.push(candidate);
+        }
+    }
+
+    Ok(output)
+}
+
 fn object_field(
     state: &ScriptState,
     object: ScriptObjectId,
@@ -362,12 +449,15 @@ mod tests {
     const OBJECT_LINK_VECTOR_COUNT: usize = 8;
     const NAVIGATION_SOURCE_VECTOR_COUNT: usize = 8;
     const NAVIGATION_CANDIDATE_VECTOR_COUNT: usize = 7;
+    const ARCHE_POSITION_VECTOR_COUNT: usize = 16;
     const POSITION_RESOLVER_VECTOR_COUNT: usize = 8;
     const POSITION_DISTANCE_VECTOR_COUNT: usize = 6;
     const DIRECTORY_ENTRY_SIZE: usize = 20;
     const DIRECTORY_NAME_CAPACITY: usize = 16;
     const DIRECTORY_OBJECT_KIND: u16 = 1;
     const OBJECT_FLAGS_BYTE_OFFSET: usize = 2;
+    const MATCHING_POSITION: [u16; 2] = [1_200, 3_400];
+    const MISMATCHING_POSITION: [u16; 2] = [5_600, 7_800];
 
     #[derive(Deserialize)]
     struct ObjectLinkOracle {
@@ -393,6 +483,21 @@ mod tests {
         name: String,
         source: Vec<u16>,
         output: Vec<u16>,
+    }
+
+    #[derive(Deserialize)]
+    struct ArchePositionOracle {
+        name: String,
+        processed_entries: Vec<u16>,
+        output: Vec<u16>,
+    }
+
+    struct ArchePositionCase {
+        kinds: Vec<ScriptObjectKind>,
+        parents: Vec<Option<usize>>,
+        flags: Vec<u8>,
+        positions: Vec<(usize, [u16; 2])>,
+        source_indices: Vec<usize>,
     }
 
     #[derive(Deserialize)]
@@ -647,6 +752,92 @@ mod tests {
     }
 
     #[test]
+    fn arche_position_filter_matches_every_original_case() {
+        let vectors: Vec<ArchePositionOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_713d_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), ARCHE_POSITION_VECTOR_COUNT);
+
+        for vector in vectors {
+            let case = arche_position_case(&vector.name);
+            let mut state = navigation_fixture(&case.kinds, &case.parents);
+            let objects = state
+                .objects()
+                .iter()
+                .map(|object| object.id)
+                .collect::<Vec<_>>();
+            for (object, flag) in objects.iter().copied().zip(&case.flags) {
+                let field = state.object_byte(object, OBJECT_FLAGS_BYTE_OFFSET).unwrap();
+                assert!(state.set_byte(field, *flag));
+            }
+            for (index, position) in case.positions {
+                let field = object_word_pair(
+                    &state,
+                    objects[index],
+                    ScriptFieldSelector::NAVIGATION_POSITION,
+                )
+                .unwrap();
+                assert!(state.set_word_pair(field, position));
+            }
+            let source = case
+                .source_indices
+                .iter()
+                .map(|index| objects[*index])
+                .collect::<Vec<_>>();
+            assert_eq!(source.len(), vector.processed_entries.len(), "{}", vector.name);
+            let expected = vector
+                .output
+                .iter()
+                .map(|offset| {
+                    let source_index = vector
+                        .processed_entries
+                        .iter()
+                        .position(|candidate_offset| candidate_offset == offset)
+                        .unwrap();
+                    source[source_index]
+                })
+                .collect::<Vec<_>>();
+
+            assert_eq!(
+                filter_objects_at_arche_position(&state, objects[0], &source).unwrap(),
+                expected,
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    #[test]
+    fn arche_position_query_scans_all_decoded_objects_in_order() {
+        let case = arche_position_case("kind80_linked_kind8_match");
+        let mut state = navigation_fixture(&case.kinds, &case.parents);
+        let objects = state
+            .objects()
+            .iter()
+            .map(|object| object.id)
+            .collect::<Vec<_>>();
+        for (object, flag) in objects.iter().copied().zip(&case.flags) {
+            let field = state.object_byte(object, OBJECT_FLAGS_BYTE_OFFSET).unwrap();
+            assert!(state.set_byte(field, *flag));
+        }
+        for (index, position) in case.positions {
+            let field = object_word_pair(
+                &state,
+                objects[index],
+                ScriptFieldSelector::NAVIGATION_POSITION,
+            )
+            .unwrap();
+            assert!(state.set_word_pair(field, position));
+        }
+
+        assert_eq!(
+            objects_at_arche_position(&state, objects[0]).unwrap(),
+            vec![objects[1], objects[2]]
+        );
+    }
+
+    #[test]
     fn every_shipped_navigation_relation_resolves_to_typed_objects() {
         for profile in 1..=5 {
             let directory = decode_script_directory(
@@ -834,6 +1025,111 @@ mod tests {
             navigation_distance(&state, first, second, first, u16::MIN).unwrap(),
             5
         );
+    }
+
+    fn arche_position_case(name: &str) -> ArchePositionCase {
+        let direct_match = |kind| ArchePositionCase {
+            kinds: vec![ScriptObjectKind::CelestialBody, kind],
+            parents: vec![None, None],
+            flags: vec![1, 1],
+            positions: vec![(0, MATCHING_POSITION), (1, MATCHING_POSITION)],
+            source_indices: vec![1],
+        };
+
+        match name {
+            "empty_directory" => ArchePositionCase {
+                kinds: vec![ScriptObjectKind::CelestialBody],
+                parents: vec![None],
+                flags: vec![1],
+                positions: vec![(0, MATCHING_POSITION)],
+                source_indices: vec![],
+            },
+            "direct_kind8_match" => direct_match(ScriptObjectKind::CelestialBody),
+            "direct_kind10_match" => direct_match(ScriptObjectKind::NavigationEntity),
+            "inactive_direct_rejected" => ArchePositionCase {
+                flags: vec![1, 0],
+                ..direct_match(ScriptObjectKind::CelestialBody)
+            },
+            "kind_mask_miss_rejected" => ArchePositionCase {
+                kinds: vec![ScriptObjectKind::CelestialBody, ScriptObjectKind::Actor],
+                parents: vec![None, None],
+                flags: vec![1, 1],
+                positions: vec![(0, MATCHING_POSITION)],
+                source_indices: vec![1],
+            },
+            "arche_entry_excluded" => ArchePositionCase {
+                kinds: vec![ScriptObjectKind::CelestialBody],
+                parents: vec![None],
+                flags: vec![1],
+                positions: vec![(0, MATCHING_POSITION)],
+                source_indices: vec![0],
+            },
+            "direct_position_mismatch" => ArchePositionCase {
+                positions: vec![(0, MATCHING_POSITION), (1, MISMATCHING_POSITION)],
+                ..direct_match(ScriptObjectKind::CelestialBody)
+            },
+            "kind80_linked_kind8_match" => ArchePositionCase {
+                kinds: vec![
+                    ScriptObjectKind::CelestialBody,
+                    ScriptObjectKind::Location,
+                    ScriptObjectKind::CelestialBody,
+                ],
+                parents: vec![None, Some(2), None],
+                flags: vec![1, 1, 1],
+                positions: vec![(0, MATCHING_POSITION), (2, MATCHING_POSITION)],
+                source_indices: vec![1],
+            },
+            "kind80_linked_inactive_rejected" => ArchePositionCase {
+                flags: vec![1, 1, 0],
+                ..arche_position_case("kind80_linked_kind8_match")
+            },
+            "kind80_linked_kind_miss_rejected" => ArchePositionCase {
+                kinds: vec![
+                    ScriptObjectKind::CelestialBody,
+                    ScriptObjectKind::Location,
+                    ScriptObjectKind::Actor,
+                ],
+                parents: vec![None, Some(2), None],
+                flags: vec![1, 1, 1],
+                positions: vec![(0, MATCHING_POSITION)],
+                source_indices: vec![1],
+            },
+            "rejected_provisional_then_accepted" => ArchePositionCase {
+                kinds: vec![
+                    ScriptObjectKind::CelestialBody,
+                    ScriptObjectKind::CelestialBody,
+                    ScriptObjectKind::NavigationEntity,
+                ],
+                parents: vec![None, None, None],
+                flags: vec![1, 1, 1],
+                positions: vec![
+                    (0, MATCHING_POSITION),
+                    (1, MISMATCHING_POSITION),
+                    (2, MATCHING_POSITION),
+                ],
+                source_indices: vec![1, 2],
+            },
+            "next_low_byte_one_ignores_high_byte" => ArchePositionCase {
+                kinds: vec![
+                    ScriptObjectKind::CelestialBody,
+                    ScriptObjectKind::CelestialBody,
+                    ScriptObjectKind::CelestialBody,
+                ],
+                parents: vec![None, None, None],
+                flags: vec![1, 1, 1],
+                positions: vec![
+                    (0, MATCHING_POSITION),
+                    (1, MATCHING_POSITION),
+                    (2, MATCHING_POSITION),
+                ],
+                source_indices: vec![1, 2],
+            },
+            "next_low_byte_zero_stops"
+            | "record_pointer_offset_ignored_and_position_offset_wrap"
+            | "directory_pointer_and_sentinel_wrap"
+            | "reverse_direction_preserved" => direct_match(ScriptObjectKind::CelestialBody),
+            _ => panic!("unknown Arche-position oracle {name}"),
+        }
     }
 
     fn navigation_fixture(kinds: &[ScriptObjectKind], parents: &[Option<usize>]) -> ScriptState {
