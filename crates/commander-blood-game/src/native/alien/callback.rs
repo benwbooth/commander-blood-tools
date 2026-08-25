@@ -29,6 +29,8 @@ pub struct AlienCallbackSceneState {
     pub callback_countdown: u16,
     /// Current camera-relative wave-selection lifecycle.
     pub wave_selection: AlienWaveSelection,
+    /// Current cosine sample published by the wave method.
+    pub wave_current_sample: i16,
     /// Persistent wrapping palette pulse values.
     pub palette_pulses: [i32; AXIS_COUNT],
     /// Shared signed method delta adjusted by wave completion.

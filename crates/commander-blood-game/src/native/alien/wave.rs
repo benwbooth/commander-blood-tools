@@ -4,7 +4,7 @@ use std::fmt;
 
 use commander_blood_formats::alien::{AXIS_COUNT, AlienTrigonometryPair, TRIGONOMETRY_ENTRY_COUNT};
 
-use super::{AlienModelPose, AlienSpecies};
+use super::{AlienCallbackSceneState, AlienModelPose, AlienSceneNode, AlienSpecies};
 
 const X_AXIS: usize = 0;
 const Y_AXIS: usize = 1;
@@ -57,17 +57,6 @@ pub struct AlienWaveMethodState {
     pub secondary_step: i16,
 }
 
-/// Scene-wide selection and sample output produced by wave models.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct AlienWaveSceneState {
-    /// Current selection lifecycle.
-    pub selection: AlienWaveSelection,
-    /// Model selected by the most recent successful bounds check.
-    pub selected_model: Option<usize>,
-    /// Primary cosine sample published for callback behavior.
-    pub current_sample: i16,
-}
-
 /// Stage completed by one invocation of the wave method.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AlienWaveUpdate {
@@ -107,7 +96,7 @@ pub fn update_or_initialize_wave(
     model_index: usize,
     pose: &mut AlienModelPose,
     state: &mut AlienWaveMethodState,
-    scene: &mut AlienWaveSceneState,
+    scene: &mut AlienCallbackSceneState,
     view: [i16; AXIS_COUNT],
     trigonometry: &[AlienTrigonometryPair; TRIGONOMETRY_ENTRY_COUNT],
 ) -> Result<AlienWaveUpdate, AlienWaveError> {
@@ -121,11 +110,14 @@ pub fn update_or_initialize_wave(
         state.primary_step = INITIAL_PRIMARY_STEP;
         state.secondary_phase = INITIAL_SECONDARY_PHASE;
         state.secondary_step = INITIAL_SECONDARY_STEP;
-        scene.selection = AlienWaveSelection::Disabled;
+        scene.wave_selection = AlienWaveSelection::Disabled;
         node.radial_offset = INITIAL_RADIAL_OFFSET;
         node.angles.fill(u16::MIN);
         if species == AlienSpecies::Scrut {
-            scene.selected_model = Some(model_index);
+            scene.wave_selected_node = Some(AlienSceneNode {
+                model_index,
+                node_index: FIRST_NODE,
+            });
         }
         return Ok(AlienWaveUpdate::Initialized);
     }
@@ -141,13 +133,16 @@ pub fn update_or_initialize_wave(
     }
 
     node.angles[SELECTION_COUNTER_AXIS] = node.angles[SELECTION_COUNTER_AXIS].wrapping_add(1);
-    scene.current_sample =
+    scene.wave_current_sample =
         sample_at_phase(trigonometry, state.primary_phase) >> SAMPLE_AMPLITUDE_SHIFT;
-    if scene.selection == AlienWaveSelection::Requested
-        && model_is_selected(node.local_position, view, scene.current_sample)
+    if scene.wave_selection == AlienWaveSelection::Requested
+        && model_is_selected(node.local_position, view, scene.wave_current_sample)
     {
-        scene.selection = AlienWaveSelection::Selected;
-        scene.selected_model = Some(model_index);
+        scene.wave_selection = AlienWaveSelection::Selected;
+        scene.wave_selected_node = Some(AlienSceneNode {
+            model_index,
+            node_index: FIRST_NODE,
+        });
         state.primary_step = ACCELERATED_PRIMARY_STEP;
     }
 
@@ -264,6 +259,13 @@ mod tests {
         [-40, 0x8008_u16 as i16, 0x07ff],
         [0, 0xfff8_u16 as i16, -1],
     ];
+
+    fn scene_node(model_index: usize) -> AlienSceneNode {
+        AlienSceneNode {
+            model_index,
+            node_index: FIRST_NODE,
+        }
+    }
 
     #[derive(Clone, Copy)]
     struct UpdateCase {
@@ -485,10 +487,11 @@ mod tests {
             let species = species(&vector.module);
             let mut pose = model_pose([i32::MIN; AXIS_COUNT], u16::MAX);
             let mut state = AlienWaveMethodState::default();
-            let mut scene = AlienWaveSceneState {
-                selection: AlienWaveSelection::Requested,
-                selected_model: Some(PRESERVED_SELECTED_MODEL),
-                current_sample: i16::MAX,
+            let mut scene = AlienCallbackSceneState {
+                wave_selection: AlienWaveSelection::Requested,
+                wave_selected_node: Some(scene_node(PRESERVED_SELECTED_MODEL)),
+                wave_current_sample: i16::MAX,
+                ..AlienCallbackSceneState::default()
             };
             assert_eq!(
                 update_or_initialize_wave(
@@ -513,11 +516,11 @@ mod tests {
                     secondary_step: INITIAL_SECONDARY_STEP,
                 }
             );
-            assert_eq!(scene.selection, AlienWaveSelection::Disabled);
+            assert_eq!(scene.wave_selection, AlienWaveSelection::Disabled);
             assert_eq!(pose.nodes[FIRST_NODE].radial_offset, INITIAL_RADIAL_OFFSET);
             assert_eq!(pose.nodes[FIRST_NODE].angles, [u16::MIN; AXIS_COUNT]);
             assert_eq!(
-                scene.selected_model == Some(FIRST_NODE),
+                scene.wave_selected_node == Some(scene_node(FIRST_NODE)),
                 vector.publishes_initial_state.unwrap()
             );
         }
@@ -553,10 +556,11 @@ mod tests {
                     case_index as u16
                 };
                 let mut pose = model_pose(case.local_position, initial_counter);
-                let mut scene = AlienWaveSceneState {
-                    selection: case.selection,
-                    selected_model: Some(PRESERVED_SELECTED_MODEL),
-                    current_sample: i16::MIN,
+                let mut scene = AlienCallbackSceneState {
+                    wave_selection: case.selection,
+                    wave_selected_node: Some(scene_node(PRESERVED_SELECTED_MODEL)),
+                    wave_current_sample: i16::MIN,
+                    ..AlienCallbackSceneState::default()
                 };
                 assert_eq!(
                     update_or_initialize_wave(
@@ -575,7 +579,7 @@ mod tests {
                 );
 
                 assert_eq!(
-                    scene.selection,
+                    scene.wave_selection,
                     selection(vector.selection_after.unwrap()),
                     "{}",
                     vector.name
@@ -599,16 +603,16 @@ mod tests {
                     vector.name
                 );
                 assert_eq!(
-                    scene.current_sample, ORACLE_CURRENT_SAMPLE,
+                    scene.wave_current_sample, ORACLE_CURRENT_SAMPLE,
                     "{}",
                     vector.name
                 );
                 assert_eq!(
-                    scene.selected_model,
+                    scene.wave_selected_node,
                     if case.selected {
-                        Some(case_index)
+                        Some(scene_node(case_index))
                     } else {
-                        Some(PRESERVED_SELECTED_MODEL)
+                        Some(scene_node(PRESERVED_SELECTED_MODEL))
                     },
                     "{}",
                     vector.name
@@ -636,7 +640,7 @@ mod tests {
             initialized: true,
             ..AlienWaveMethodState::default()
         };
-        let mut scene = AlienWaveSceneState::default();
+        let mut scene = AlienCallbackSceneState::default();
         let mut pose = model_pose([i32::MIN; AXIS_COUNT], u16::MIN);
         pose.authored_vertex_count = usize::MIN;
         assert_eq!(

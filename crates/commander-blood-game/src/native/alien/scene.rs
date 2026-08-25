@@ -3,7 +3,8 @@
 use std::fmt;
 
 use commander_blood_formats::alien::{
-    AXIS_COUNT, AlienAsset, AlienBehaviorMethod, AlienTransformData, AlienXdbKind,
+    AXIS_COUNT, AlienAsset, AlienBehaviorMethod, AlienTransformData, AlienWaveSelectionData,
+    AlienXdbKind,
 };
 
 use super::{
@@ -12,8 +13,9 @@ use super::{
     AlienFaceSelectionError, AlienModelPose, AlienMouseSample, AlienPrimaryMeshFrame,
     AlienPrimaryMeshPose, AlienPrimaryProjectionError, AlienProjectionError, AlienRasterError,
     AlienRenderGeometry, AlienSceneNode, AlienScreenCenter, AlienSpecies, AlienStarfieldError,
-    AlienStarfieldFrame, adjust_state, anchor_state, bounds_then_wrap, generate_starfield,
-    prepare_render_geometry, select_faces, wrap_positions,
+    AlienStarfieldFrame, AlienWaveError, AlienWaveMethodState, AlienWaveSelection, adjust_state,
+    anchor_state, bounds_then_wrap, generate_starfield, prepare_render_geometry, select_faces,
+    update_or_initialize_wave, wrap_positions,
 };
 
 const INITIAL_VIEW: [i16; AXIS_COUNT] = [1_885, -239, -9_790];
@@ -52,6 +54,8 @@ pub struct AlienScene {
     pub primary: AlienPrimaryMeshPose,
     /// Behavior-model poses in authored dispatch order.
     pub models: Vec<AlienModelPose>,
+    /// Per-model continuation state for authored wave methods.
+    wave_states: Vec<Option<AlienWaveMethodState>>,
     /// Model selected by the latest CROOLIS/SCRUT camera-plane signal.
     pub selected_model: Option<usize>,
     /// Shared state published and consumed by translated behavior callbacks.
@@ -84,6 +88,18 @@ pub enum AlienSceneError {
         model_index: usize,
         /// Underlying behavior failure.
         error: AlienBehaviorError,
+    },
+    /// A wave model has no decoded continuation state.
+    MissingWaveState {
+        /// Model missing its state.
+        model_index: usize,
+    },
+    /// One wave method rejected its typed state.
+    Wave {
+        /// Model that failed.
+        model_index: usize,
+        /// Underlying wave failure.
+        error: AlienWaveError,
     },
 }
 
@@ -154,8 +170,31 @@ impl AlienScene {
             .iter()
             .map(AlienModelPose::from_model)
             .collect();
+        let wave_states = asset
+            .models
+            .iter()
+            .map(|model| {
+                model.wave.map(|state| AlienWaveMethodState {
+                    initialized: state.initialized,
+                    primary_phase: state.primary_phase,
+                    primary_step: state.primary_step,
+                    secondary_phase: state.secondary_phase,
+                    secondary_step: state.secondary_step,
+                })
+            })
+            .collect();
         let callback_state = AlienCallbackSceneState {
             method_delta: asset.initial_method_delta,
+            wave_selection: match asset.wave_scene.selection {
+                AlienWaveSelectionData::Disabled => AlienWaveSelection::Disabled,
+                AlienWaveSelectionData::Requested => AlienWaveSelection::Requested,
+                AlienWaveSelectionData::Selected => AlienWaveSelection::Selected,
+            },
+            wave_current_sample: asset.wave_scene.current_sample,
+            wave_selected_node: asset.wave_scene.selected_node.map(|node| AlienSceneNode {
+                model_index: node.model_index,
+                node_index: node.node_index,
+            }),
             ..AlienCallbackSceneState::default()
         };
         Self {
@@ -165,6 +204,7 @@ impl AlienScene {
             camera,
             primary,
             models,
+            wave_states,
             selected_model: None,
             callback_state,
             exit_requested: u16::MIN,
@@ -200,6 +240,21 @@ impl AlienScene {
         for (model_index, (model, pose)) in
             self.asset.models.iter().zip(&mut self.models).enumerate()
         {
+            if model.behavior == AlienBehaviorMethod::Wave {
+                let state = self.wave_states[model_index]
+                    .as_mut()
+                    .ok_or(AlienSceneError::MissingWaveState { model_index })?;
+                update_or_initialize_wave(
+                    self.species,
+                    model_index,
+                    pose,
+                    state,
+                    &mut self.callback_state,
+                    self.camera.view,
+                    &self.asset.trigonometry,
+                )
+                .map_err(|error| AlienSceneError::Wave { model_index, error })?;
+            }
             let behavior_result = match model.behavior {
                 AlienBehaviorMethod::WrapPositions => {
                     Some(wrap_positions(&mut pose.nodes, self.camera.view))
@@ -339,6 +394,16 @@ mod tests {
                 .iter()
                 .map(|model| model.nodes[0].angles)
                 .collect::<Vec<_>>();
+            let initial_wave_states = scene.wave_states.clone();
+            let expected_wave_node =
+                scene
+                    .asset
+                    .wave_scene
+                    .selected_node
+                    .map(|node| AlienSceneNode {
+                        model_index: node.model_index,
+                        node_index: node.node_index,
+                    });
             let frame = scene.step(CENTERED_MOUSE).unwrap();
             assert_eq!(frame.models.decisions.len(), model_count);
             assert!(!frame.starfield.stars.is_empty());
@@ -383,6 +448,30 @@ mod tests {
                 }
             }
             assert_eq!(scene.callback_state.active_node, expected_anchor);
+            assert_eq!(
+                scene.callback_state.wave_selection,
+                AlienWaveSelection::Disabled
+            );
+            assert_eq!(scene.callback_state.wave_selected_node, expected_wave_node);
+            for (before, after) in initial_wave_states.iter().zip(&scene.wave_states) {
+                let (Some(before), Some(after)) = (before, after) else {
+                    assert_eq!(before.is_none(), after.is_none());
+                    continue;
+                };
+                assert!(before.initialized);
+                assert_eq!(
+                    after.primary_phase,
+                    before
+                        .primary_phase
+                        .wrapping_add(before.primary_step as u16)
+                );
+                assert_eq!(
+                    after.secondary_phase,
+                    before
+                        .secondary_phase
+                        .wrapping_add(before.secondary_step as u16)
+                );
+            }
         }
     }
 }

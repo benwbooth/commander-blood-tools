@@ -103,6 +103,16 @@ const METHOD_SLOT_ANCHOR: usize = 11;
 const METHOD_SLOT_ADJUST_STATE: usize = 12;
 const METHOD_SLOT_RESUME: usize = 13;
 const METHOD_SLOT_NOOP_TERTIARY: usize = 14;
+const METHOD_CONTROL_FIELD: usize = 0x0036;
+const METHOD_CONTINUATION_FIELD: usize = 0x0038;
+const WAVE_PRIMARY_PHASE_FIELD: usize = METHOD_CONTINUATION_FIELD;
+const WAVE_PRIMARY_STEP_FIELD: usize = METHOD_CONTINUATION_FIELD + 2;
+const WAVE_SECONDARY_PHASE_FIELD: usize = METHOD_CONTINUATION_FIELD + 4;
+const WAVE_SECONDARY_STEP_FIELD: usize = METHOD_CONTINUATION_FIELD + 6;
+const AMER_WAVE_SCENE_STATE_POSITION: usize = 0x0b2f;
+const OTHER_WAVE_SCENE_STATE_POSITION: usize = 0x0b70;
+const WAVE_SELECTED_NODE_FIELD: usize = 4;
+const WAVE_CURRENT_SAMPLE_FIELD: usize = 6;
 const INVALID_METHOD_ENTRY: u16 = 0xffff;
 const ZERO_COORDINATE: i16 = 0;
 const ZERO_POSITION: [i16; AXIS_COUNT] = [ZERO_COORDINATE; AXIS_COUNT];
@@ -145,6 +155,13 @@ impl AlienXdbKind {
         match self {
             Self::Amer => AMER_PALETTE_REMAP_POSITION,
             Self::Croolis | Self::Scrut => OTHER_PALETTE_REMAP_POSITION,
+        }
+    }
+
+    fn wave_scene_state_position(self) -> usize {
+        match self {
+            Self::Amer => AMER_WAVE_SCENE_STATE_POSITION,
+            Self::Croolis | Self::Scrut => OTHER_WAVE_SCENE_STATE_POSITION,
         }
     }
 }
@@ -292,6 +309,52 @@ pub enum AlienBehaviorMethod {
     Resume,
 }
 
+/// Authored wave-selection lifecycle stored in an alien overlay.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienWaveSelectionData {
+    /// No model-selection check is pending.
+    Disabled,
+    /// A model-selection check is pending.
+    Requested,
+    /// One wave model satisfied the camera-relative bounds.
+    Selected,
+}
+
+/// Flat reference to one decoded model node.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct AlienModelNodeReference {
+    /// Model in authored context order.
+    pub model_index: usize,
+    /// Node in the model's hierarchy order.
+    pub node_index: usize,
+}
+
+/// Initial continuation state stored in one wave-method context.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct AlienWaveMethodData {
+    /// Whether the original one-time initializer has already run.
+    pub initialized: bool,
+    /// Primary cyclic sample phase.
+    pub primary_phase: u16,
+    /// Signed primary phase advance.
+    pub primary_step: i16,
+    /// Distance-weighted secondary sample phase.
+    pub secondary_phase: u16,
+    /// Signed secondary phase advance.
+    pub secondary_step: i16,
+}
+
+/// Initial scene-wide state shared by all wave contexts.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct AlienWaveSceneData {
+    /// Initial model-selection lifecycle.
+    pub selection: AlienWaveSelectionData,
+    /// Initially selected wave node, when authored.
+    pub selected_node: Option<AlienModelNodeReference>,
+    /// Initial cosine sample published to wave callbacks.
+    pub current_sample: i16,
+}
+
 /// One named hierarchical model and its initial behavior method.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AlienModelData {
@@ -305,6 +368,8 @@ pub struct AlienModelData {
     pub mesh: AlienMeshData,
     /// Behavior selected by the model's method table slot.
     pub behavior: AlienBehaviorMethod,
+    /// Authored continuation state when this is a wave model.
+    pub wave: Option<AlienWaveMethodData>,
 }
 
 /// Indexed atlas shared by all models in one alien overlay.
@@ -341,6 +406,8 @@ pub struct AlienAsset {
     pub camera: AlienCameraData,
     /// Initial shared signed delta consumed by behavior methods.
     pub initial_method_delta: i16,
+    /// Initial scene-wide wave selection and sample state.
+    pub wave_scene: AlienWaveSceneData,
     /// Distance-to-palette lookup used by the starfield.
     pub star_shade_table: [u8; STAR_SHADE_TABLE_ENTRY_COUNT],
     /// Deterministic seed used to generate the static star distribution.
@@ -451,6 +518,48 @@ fn behavior_method(method_table_offset: u16) -> Option<AlienBehaviorMethod> {
         METHOD_SLOT_RESUME => Some(AlienBehaviorMethod::Resume),
         _ => None,
     }
+}
+
+fn wave_method_data(
+    data: &[u8],
+    context: usize,
+    behavior: AlienBehaviorMethod,
+) -> Option<Option<AlienWaveMethodData>> {
+    if behavior != AlienBehaviorMethod::Wave {
+        return Some(None);
+    }
+    Some(Some(AlienWaveMethodData {
+        initialized: read_i16(data, context + METHOD_CONTROL_FIELD)? != i16::MIN,
+        primary_phase: read_u16(data, context + WAVE_PRIMARY_PHASE_FIELD)?,
+        primary_step: read_i16(data, context + WAVE_PRIMARY_STEP_FIELD)?,
+        secondary_phase: read_u16(data, context + WAVE_SECONDARY_PHASE_FIELD)?,
+        secondary_step: read_i16(data, context + WAVE_SECONDARY_STEP_FIELD)?,
+    }))
+}
+
+fn model_node_reference(
+    data: &[u8],
+    data_start: usize,
+    context_offsets: &[usize],
+    target: usize,
+) -> Option<AlienModelNodeReference> {
+    for (model_index, context_offset) in context_offsets.iter().copied().enumerate() {
+        let context = data_start.checked_add(context_offset)?;
+        let root_offset = usize::from(read_u16(data, context + MODEL_ROOT_FIELD)?);
+        let node_count = usize::from(read_u16(data, context + MODEL_NODE_COUNT_FIELD)?);
+        for node_index in 0..node_count {
+            let node_offset = root_offset
+                .checked_add(TRANSFORM_RECORD_SIZE)?
+                .checked_add(node_index.checked_mul(TRANSFORM_RECORD_SIZE)?)?;
+            if node_offset == target {
+                return Some(AlienModelNodeReference {
+                    model_index,
+                    node_index,
+                });
+            }
+        }
+    }
+    None
 }
 
 fn vertex(data: &[u8], object_start: usize, offset: usize) -> Option<AlienVertexData> {
@@ -642,6 +751,7 @@ fn model(
             faces: faces(data, object_start, face_start, face_count, &vertex_indices)?,
         },
         behavior,
+        wave: wave_method_data(data, context, behavior)?,
     })
 }
 
@@ -671,6 +781,7 @@ pub fn decode_alien_xdb(data: &[u8], kind: AlienXdbKind) -> Option<AlienAsset> {
 
     let primary_model = primary_model(data, data_start, object_start)?;
     let mut models = Vec::new();
+    let mut context_offsets = Vec::new();
     let mut seen_contexts = HashMap::new();
     for index in 0..CONTEXT_LIST_LIMIT {
         let list_position = data_start
@@ -684,6 +795,7 @@ pub fn decode_alien_xdb(data: &[u8], kind: AlienXdbKind) -> Option<AlienAsset> {
             return None;
         }
         models.push(model(data, data_start, object_start, context_offset)?);
+        context_offsets.push(context_offset);
     }
     if models.is_empty() || models.len() == CONTEXT_LIST_LIMIT {
         return None;
@@ -759,6 +871,27 @@ pub fn decode_alien_xdb(data: &[u8], kind: AlienXdbKind) -> Option<AlienAsset> {
     let star_seed = read_u32(data, raster_start + kind.star_seed_position())?;
     let palette_remap =
         checked_array(|index| data.get(kind.palette_remap_position() + index).copied())?;
+    let wave_scene_position = kind.wave_scene_state_position();
+    let selection = match read_u16(data, wave_scene_position)? {
+        0 => AlienWaveSelectionData::Disabled,
+        1 => AlienWaveSelectionData::Requested,
+        2 => AlienWaveSelectionData::Selected,
+        _ => return None,
+    };
+    let selected_offset = usize::from(read_u16(
+        data,
+        wave_scene_position + WAVE_SELECTED_NODE_FIELD,
+    )?);
+    let selected_node = if selected_offset == usize::MIN {
+        None
+    } else {
+        Some(model_node_reference(
+            data,
+            data_start,
+            &context_offsets,
+            selected_offset,
+        )?)
+    };
 
     Some(AlienAsset {
         kind,
@@ -777,6 +910,11 @@ pub fn decode_alien_xdb(data: &[u8], kind: AlienXdbKind) -> Option<AlienAsset> {
         raster_reciprocals,
         camera,
         initial_method_delta: read_i16(data, INITIAL_METHOD_DELTA_POSITION)?,
+        wave_scene: AlienWaveSceneData {
+            selection,
+            selected_node,
+            current_sample: read_i16(data, wave_scene_position + WAVE_CURRENT_SAMPLE_FIELD)?,
+        },
         star_shade_table,
         star_seed,
     })
@@ -827,6 +965,41 @@ mod tests {
             assert_eq!(asset.kind, kind);
             assert_eq!(asset.models.len(), expected_models);
             assert_eq!(asset.initial_method_delta, EXPECTED_INITIAL_METHOD_DELTA);
+            let (primary_phase, secondary_phase, current_sample, selected_node) = match kind {
+                AlienXdbKind::Amer => (0x22b4, 0x0b94, 35, None),
+                AlienXdbKind::Croolis => (0x1174, 0x05d4, 56, None),
+                AlienXdbKind::Scrut => (
+                    0x2224,
+                    0x0b64,
+                    46,
+                    Some(AlienModelNodeReference {
+                        model_index: 3,
+                        node_index: 0,
+                    }),
+                ),
+            };
+            assert_eq!(asset.wave_scene.selection, AlienWaveSelectionData::Disabled);
+            assert_eq!(asset.wave_scene.selected_node, selected_node);
+            assert_eq!(asset.wave_scene.current_sample, current_sample);
+            let wave_states = asset
+                .models
+                .iter()
+                .filter_map(|model| model.wave)
+                .collect::<Vec<_>>();
+            assert_eq!(wave_states.len(), 2);
+            assert!(wave_states.iter().all(|state| state.initialized));
+            assert!(
+                wave_states
+                    .iter()
+                    .all(|state| state.primary_phase == primary_phase)
+            );
+            assert!(wave_states.iter().all(|state| state.primary_step == 48));
+            assert!(
+                wave_states
+                    .iter()
+                    .all(|state| state.secondary_phase == secondary_phase)
+            );
+            assert!(wave_states.iter().all(|state| state.secondary_step == 16));
             assert_eq!(
                 asset.primary_model.mesh.vertices.len(),
                 EXPECTED_PRIMARY_VERTEX_COUNT

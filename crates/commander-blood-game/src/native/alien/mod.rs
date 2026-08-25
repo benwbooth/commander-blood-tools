@@ -96,6 +96,6 @@ pub use starfield::{
     generate_starfield,
 };
 pub use wave::{
-    AlienWaveError, AlienWaveMethodState, AlienWaveSceneState, AlienWaveSelection, AlienWaveUpdate,
+    AlienWaveError, AlienWaveMethodState, AlienWaveSelection, AlienWaveUpdate,
     update_or_initialize_wave,
 };
