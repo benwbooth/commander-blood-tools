@@ -122,6 +122,7 @@ pub struct DescriptPresentationAssets {
     location_scene_top_row: Option<u16>,
     idle_clip: Option<DescriptIdleClip>,
     encoded_idle_video: Option<Box<[u8]>>,
+    sequence_videos: Vec<DescriptVideoName>,
 }
 
 impl DescriptPresentationAssets {
@@ -168,6 +169,11 @@ impl DescriptPresentationAssets {
     /// Return the encoded idle HNM loaded for the modern renderer.
     pub fn encoded_idle_video(&self) -> Option<&[u8]> {
         self.encoded_idle_video.as_deref()
+    }
+
+    /// Return standalone sequence videos in authored playback order.
+    pub fn sequence_videos(&self) -> &[DescriptVideoName] {
+        &self.sequence_videos
     }
 }
 
@@ -292,6 +298,18 @@ pub fn load_descript_idle_clip<Source: DescriptIdleClipSource>(
     Ok(true)
 }
 
+/// Append one standalone sequence video in authored playback order.
+///
+/// This translates `byte_parser_copy_131a_entry` at BLOODPRG file offset
+/// `0x007754`. The owned vector replaces the native banked table of fixed-size
+/// name slots and its wrapping byte count.
+pub fn append_descript_sequence_video(
+    video: &DescriptVideoName,
+    assets: &mut DescriptPresentationAssets,
+) {
+    assets.sequence_videos.push(video.clone());
+}
+
 /// Boundary detected after the current DESCRIPT command stream.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct DescriptRecordBoundary {
@@ -368,6 +386,7 @@ mod tests {
     const PRESENTATION_ACTIVE_BIT: u16 = 1;
     const SOUND_BANK_ORACLE_VECTOR_COUNT: usize = 8;
     const TALK_CLIP_ORACLE_VECTOR_COUNT: usize = 12;
+    const SEQUENCE_VIDEO_ORACLE_VECTOR_COUNT: usize = 8;
     const VIDEO_ORACLE_VECTOR_COUNT: usize = 8;
 
     #[derive(Deserialize)]
@@ -956,6 +975,29 @@ mod tests {
                 "{}",
                 vector.name
             );
+        }
+    }
+
+    #[test]
+    fn sequence_video_playlist_matches_every_original_append_vector() {
+        let vectors: Vec<VideoOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_7754_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), SEQUENCE_VIDEO_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let input = bytes_from_hex(&vector.input_hex);
+            let expected = bytes_from_hex(&vector.copied_hex);
+            let (video, tail) = decode_video_name(&input).unwrap();
+            assert_eq!(tail, &[vector.stopping_byte], "{}", vector.name);
+            assert_eq!(video.as_bytes(), expected.as_ref(), "{}", vector.name);
+
+            let first = DescriptVideoName::new(Box::from(*b"first.hnm"));
+            let mut assets = DescriptPresentationAssets::default();
+            append_descript_sequence_video(&first, &mut assets);
+            append_descript_sequence_video(&video, &mut assets);
+            assert_eq!(assets.sequence_videos(), &[first, video], "{}", vector.name);
         }
     }
 }
