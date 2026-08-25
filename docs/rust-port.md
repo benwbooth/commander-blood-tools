@@ -59,3 +59,19 @@ tween construction/stepping, hierarchical matrix construction, and entity
 projection. The typed model connects these stages end to end. GPU face
 submission and the main MANU3 coordinator remain in progress and are not yet
 counted as ported routines.
+
+## Alien-overlay foundation
+
+`commander-blood-formats::alien` decodes the initialized sections of
+`AMER.XDB`, `CROOLIS.XDB`, and `SCRUT.XDB` into owned camera state, model
+hierarchies, meshes, texture and palette data, trigonometry and raster tables,
+and starfield parameters. Original section offsets are consumed only while
+loading the files; no relocated pointers or segmented addresses survive in the
+runtime model.
+
+`commander_blood_game::native::alien` currently connects the translated camera
+control, camera transform, primary-mesh projection, starfield generation,
+hierarchy projection, and face-selection stages in their recovered frame
+order. The three shipped overlays pass this typed frame pipeline. Behavior
+method dispatch, original frame timing, and wgpu submission are still pending,
+so the overlay main routine is not yet listed as ported.

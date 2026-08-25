@@ -5,6 +5,7 @@ mod control;
 mod faces;
 mod primary;
 mod projection;
+mod scene;
 mod starfield;
 
 pub use camera::{AlienCameraAngles, AlienCameraTransform};
@@ -19,6 +20,7 @@ pub use primary::{AlienPrimaryMeshFrame, AlienPrimaryMeshPose, AlienPrimaryProje
 pub use projection::{
     AlienModelPose, AlienNodePose, AlienProjectedVertex, AlienProjectionError, AlienScreenCenter,
 };
+pub use scene::{AlienScene, AlienSceneError, AlienSceneFrame};
 pub use starfield::{
     AlienStar, AlienStarRejections, AlienStarfieldError, AlienStarfieldFrame, generate_starfield,
 };

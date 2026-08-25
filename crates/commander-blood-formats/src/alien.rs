@@ -38,6 +38,17 @@ const PRIMARY_CONTEXT_POSITION: usize = 0x2306;
 const CONTEXT_LIST_POSITION: usize = 0x2308;
 const CONTEXT_LIST_LIMIT: usize = 256;
 const SCENE_CAMERA_TRANSFORM_POSITION: usize = 0x22a8;
+const CAMERA_MATRIX_POSITION: usize = 0x22ba;
+const CAMERA_RESULT_POSITION: usize = 0x22de;
+const CAMERA_POSITION_POSITION: usize = 0x22ea;
+const CAMERA_ANGLE_POSITION: usize = 0x22f6;
+const CAMERA_DEPTH_VELOCITY_POSITION: usize = 0x22fc;
+const CAMERA_HORIZONTAL_FILTER_POSITION: usize = 0x1058;
+const AMER_STAR_SHADE_TABLE_POSITION: usize = 0x07d4;
+const OTHER_STAR_SHADE_TABLE_POSITION: usize = 0x07d6;
+const AMER_STAR_SEED_POSITION: usize = 0x08d4;
+const OTHER_STAR_SEED_POSITION: usize = 0x08d6;
+const STAR_SHADE_TABLE_ENTRY_COUNT: usize = 256;
 const MODEL_MAGIC_POSITION: usize = 0x0000;
 const MODEL_MAGIC: &[u8; 4] = b"3DB0";
 const MODEL_HEADER_SIZE_FIELD: usize = 0x0004;
@@ -110,6 +121,20 @@ impl AlienXdbKind {
             Self::Scrut => SCRUT_DATA_DELTA_FIELD,
         }
     }
+
+    fn star_shade_table_position(self) -> usize {
+        match self {
+            Self::Amer => AMER_STAR_SHADE_TABLE_POSITION,
+            Self::Croolis | Self::Scrut => OTHER_STAR_SHADE_TABLE_POSITION,
+        }
+    }
+
+    fn star_seed_position(self) -> usize {
+        match self {
+            Self::Amer => AMER_STAR_SEED_POSITION,
+            Self::Croolis | Self::Scrut => OTHER_STAR_SEED_POSITION,
+        }
+    }
 }
 
 /// Fixed-point cosine and sine pair from an alien XDB.
@@ -128,6 +153,23 @@ pub struct AlienTransformData {
     pub matrix: [[i32; AXIS_COUNT]; AXIS_COUNT],
     /// Three-component translation.
     pub translation: [i32; AXIS_COUNT],
+}
+
+/// Initial camera and control values authored in one alien overlay.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct AlienCameraData {
+    /// Initial eased camera orientation matrix.
+    pub matrix: [[i32; AXIS_COUNT]; AXIS_COUNT],
+    /// Initial fixed-point camera position.
+    pub position: [i32; AXIS_COUNT],
+    /// Initial matrix-transformed view vector.
+    pub transformed_view: [i32; AXIS_COUNT],
+    /// Initial pitch, pan, and secondary-pan accumulators.
+    pub angles: [i16; AXIS_COUNT],
+    /// Initial forward/backward camera velocity.
+    pub depth_velocity: i16,
+    /// Initial horizontal mouse filter accumulator.
+    pub horizontal_filter: i16,
 }
 
 /// Typed parent relation in one model hierarchy.
@@ -281,6 +323,12 @@ pub struct AlienAsset {
     pub trigonometry: [AlienTrigonometryPair; TRIGONOMETRY_ENTRY_COUNT],
     /// Fixed-point face-raster reciprocal table.
     pub raster_reciprocals: [i32; RASTER_RECIPROCAL_COUNT],
+    /// Initial camera and control values.
+    pub camera: AlienCameraData,
+    /// Distance-to-palette lookup used by the starfield.
+    pub star_shade_table: [u8; STAR_SHADE_TABLE_ENTRY_COUNT],
+    /// Deterministic seed used to generate the static star distribution.
+    pub star_seed: u32,
 }
 
 fn read_u16(data: &[u8], position: usize) -> Option<u16> {
@@ -302,6 +350,14 @@ fn read_i16(data: &[u8], position: usize) -> Option<i16> {
 fn read_i32(data: &[u8], position: usize) -> Option<i32> {
     Some(i32::from_le_bytes(
         data.get(position..position.checked_add(size_of::<i32>())?)?
+            .try_into()
+            .ok()?,
+    ))
+}
+
+fn read_u32(data: &[u8], position: usize) -> Option<u32> {
+    Some(u32::from_le_bytes(
+        data.get(position..position.checked_add(size_of::<u32>())?)?
             .try_into()
             .ok()?,
     ))
@@ -648,6 +704,43 @@ pub fn decode_alien_xdb(data: &[u8], kind: AlienXdbKind) -> Option<AlienAsset> {
             raster_start.checked_add(index.checked_mul(size_of::<i32>())?)?,
         )
     })?;
+    let camera = AlienCameraData {
+        matrix: checked_array(|row| {
+            checked_array(|column| {
+                read_i32(
+                    data,
+                    data_start
+                        + CAMERA_MATRIX_POSITION
+                        + (row * AXIS_COUNT + column) * size_of::<i32>(),
+                )
+            })
+        })?,
+        position: checked_array(|axis| {
+            read_i32(
+                data,
+                data_start + CAMERA_POSITION_POSITION + axis * size_of::<i32>(),
+            )
+        })?,
+        transformed_view: checked_array(|axis| {
+            read_i32(
+                data,
+                data_start + CAMERA_RESULT_POSITION + axis * size_of::<i32>(),
+            )
+        })?,
+        angles: checked_array(|axis| {
+            read_i16(
+                data,
+                data_start + CAMERA_ANGLE_POSITION + axis * size_of::<i16>(),
+            )
+        })?,
+        depth_velocity: read_i16(data, data_start + CAMERA_DEPTH_VELOCITY_POSITION)?,
+        horizontal_filter: read_i16(data, data_start + CAMERA_HORIZONTAL_FILTER_POSITION)?,
+    };
+    let star_shade_table = checked_array(|index| {
+        data.get(raster_start + kind.star_shade_table_position() + index)
+            .copied()
+    })?;
+    let star_seed = read_u32(data, raster_start + kind.star_seed_position())?;
 
     Some(AlienAsset {
         kind,
@@ -663,6 +756,9 @@ pub fn decode_alien_xdb(data: &[u8], kind: AlienXdbKind) -> Option<AlienAsset> {
         palette,
         trigonometry,
         raster_reciprocals,
+        camera,
+        star_shade_table,
+        star_seed,
     })
 }
 
