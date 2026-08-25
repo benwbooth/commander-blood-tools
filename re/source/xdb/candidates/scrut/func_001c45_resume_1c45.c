@@ -19,4 +19,5 @@ void XDB_NEAR xdb_scrut_resume_1c45(
     xdb_scrut_slot11_state_queue[queue_cursor >> 1] = 0;
     context->control.resume = xdb_scrut_resume_stage_pair;
     context->continuation.resume_state.paired_state = queued_state;
+    xdb_scrut_resume_stage_pair(context);
 }

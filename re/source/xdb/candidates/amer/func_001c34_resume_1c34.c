@@ -21,4 +21,5 @@ void XDB_NEAR xdb_amer_resume_1c34(
     xdb_amer_slot11_state_queue[queue_cursor >> 1] = 0;
     context->control.resume = xdb_amer_resume_stage_pair;
     context->continuation.resume_state.paired_state = queued_state;
+    xdb_amer_resume_stage_pair(context);
 }

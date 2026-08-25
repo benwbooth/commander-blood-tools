@@ -251,23 +251,37 @@ static const char *check_resume_routines(void)
         return "FAIL resume empty queue";
     }
 
+    memset(&context, 0, sizeof(context));
+    memset(&pair_state_space, 0, sizeof(pair_state_space));
     memset(&pair_other, 0, sizeof(pair_other));
+    current = (xdb_alien_biased_state *)(
+            pair_state_space.bytes + XDB_ALIEN_CURSOR_BIAS);
+    context.state = (xdb_alien_state *)pair_state_space.bytes;
     context.continuation.resume_state.phase = 0x0102;
     context.continuation.resume_state.paired_state = 0;
     context.continuation.resume_state.resumed_state = 0x6666;
+    pair_other.callback = INITIAL_UPDATE;
+    prepare_object_context(&context);
+    initialize_object_words(1000);
     xdb_test_set_slot11_queue_read_cursor(4);
     xdb_test_set_slot11_current_state(0x7777);
     xdb_test_set_slot11_state_at(4, (xdb_u16)(size_t)&pair_other);
+    xdb_test_set_slot3_resume_countdown(9);
     RESUME_MAIN(&context);
     if (xdb_test_slot11_queue_read_cursor() != 4
             || xdb_test_slot11_current_state() != 0
             || xdb_test_slot11_state_at(4) != 0
-            || context.control.resume != RESUME_STAGE_PAIR
-            || context.continuation.resume_state.phase != 0x0102
+            || context.control.resume != RESUME_STAGE_TIMEOUT
+            || context.continuation.resume_state.phase != 0x0302
             || context.continuation.resume_state.paired_state
                     != (xdb_u16)(size_t)&pair_other
-            || context.continuation.resume_state.resumed_state != 0x6666) {
-        return "FAIL resume queued state";
+            || context.continuation.resume_state.resumed_state
+                    != (xdb_u16)(size_t)&pair_other
+            || pair_other.callback != RESUME_CALLBACK
+            || current->field_054 != 0
+            || xdb_test_slot3_resume_countdown() != 0x18
+            || !check_object_words(1002, 998)) {
+        return "FAIL resume queued tail dispatch";
     }
 
     memset(&pair_state_space, 0, sizeof(pair_state_space));

@@ -19,4 +19,5 @@ void XDB_NEAR xdb_croolis_resume_1b85(
     xdb_croolis_slot11_state_queue[queue_cursor >> 1] = 0;
     context->control.resume = xdb_croolis_resume_stage_pair;
     context->continuation.resume_state.paired_state = queued_state;
+    xdb_croolis_resume_stage_pair(context);
 }

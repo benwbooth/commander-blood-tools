@@ -10063,6 +10063,369 @@ def alien_resume_final_stage_vectors(module: str, entry: int) -> list[dict[str, 
     return vectors
 
 
+def alien_resume_queue_vectors(module: str, entry: int) -> list[dict[str, object]]:
+    image = load_image(module)
+    configs = {
+        "amer": (
+            73,
+            "60374253ea4ef91b0d6d368d979149fc12d5d62d6c114adc50238467d340058e",
+            0x1BC4,
+            0x1BC8,
+            0x1BCA,
+            0x1C7D,
+            0x1CBF,
+            0x158A,
+            0x0D5F,
+            2016,
+            8,
+            1,
+            ((0, 1), (53, -1), (35, 1), (25, -1)),
+        ),
+        "croolis": (
+            68,
+            "c80321702e0c0ab6c36580c421b8185cbe6f1dea84515c44341e38a020c76e13",
+            0x1B30,
+            0x1B34,
+            0x1B36,
+            0x1BC9,
+            0x1C0B,
+            0x15E2,
+            0x0DB7,
+            -2016,
+            0,
+            0,
+            ((0, 1), (25, -1)),
+        ),
+        "scrut": (
+            68,
+            "87ae27e0dddce719d73cc636e6b66a703b3bdf12cb0aceb7b8613db316dc8854",
+            0x1BE5,
+            0x1BE9,
+            0x1BEB,
+            0x1C89,
+            0x1CCB,
+            0x15D0,
+            0x0DA5,
+            -2016,
+            0,
+            1,
+            ((0, 1), (43, -1), (42, 1), (25, -1)),
+        ),
+    }
+    (
+        body_size,
+        body_hash,
+        active_offset,
+        cursor_offset,
+        queue_offset,
+        pair_callback,
+        timeout_callback,
+        resume_node_callback,
+        countdown_offset,
+        primary_step,
+        secondary_step,
+        component,
+        texture_targets,
+    ) = configs[module]
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered body changed")
+
+    cases = (
+        ("empty_start", 0, 0, 0, 0, False),
+        ("empty_wrap", 14, 0, 0x7FFF, 0xFFFC, False),
+        ("empty_negative", 4, 0, 0x8000, 0x7FFF, False),
+        ("empty_masks_low_bits", 10, 0, 0x1235, 0xA55A, False),
+        ("occupied_tail_outside", 0, 0x5000, 0x1234, 0x5678, False),
+        ("occupied_tail_inside", 14, 0x5000, 0x8000, 0xFFFF, True),
+    )
+    data_segment = 0x5000
+    object_segment = 0x7000
+    extra_segment = 0x9000
+    fs_segment = 0xA000
+    game_segment = 0xB000
+    stack_segment = 0xC000
+    context = 0x3000
+    state = 0x4000
+    current = state + 0x005E
+    other = 0x5000
+    object_offset = 0x6000
+    return_address = 0xF000
+    queue_slot_count = 8
+    record_size = 20
+    component_offset = component * 2
+    vectors: list[dict[str, object]] = []
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        encoded = struct.pack("<H", value & 0xFFFF)
+        for index, byte in enumerate(encoded):
+            memory[(offset + index) & 0xFFFF] = byte
+
+    def get_u16(memory: bytes | bytearray, offset: int) -> int:
+        return memory[offset & 0xFFFF] | (memory[(offset + 1) & 0xFFFF] << 8)
+
+    def put_u32(memory: bytearray, offset: int, value: int) -> None:
+        encoded = struct.pack("<I", value & 0xFFFFFFFF)
+        for index, byte in enumerate(encoded):
+            memory[(offset + index) & 0xFFFF] = byte
+
+    def signed_word(value: int) -> int:
+        value &= 0xFFFF
+        return value if value < 0x8000 else value - 0x10000
+
+    for case_index, (name, cursor, queued_state, primary, secondary, pair_inside) in enumerate(cases):
+        callback_before = 0x6200 + case_index * 2
+        paired_before = 0x6600 + case_index * 2
+        active_before = 0x6800 + case_index * 2
+        resumed_before = 0x6A00 + case_index * 2
+        other_callback_before = 0x6C00 + case_index * 2
+        phase = 0x0102
+        countdown_before = 9 + case_index
+        data_before = bytearray(
+            (offset * 31 + case_index * 19 + 7) & 0xFF
+            for offset in range(0x10000)
+        )
+        put_u16(data_before, 0x0002, object_segment)
+        put_u16(data_before, context + 0x0016, state)
+        put_u16(data_before, context + 0x001C, object_offset)
+        put_u16(data_before, context + 0x0036, callback_before)
+        put_u16(data_before, context + 0x0038, phase)
+        put_u16(data_before, context + 0x003A, paired_before)
+        put_u16(data_before, context + 0x003C, resumed_before)
+        put_u16(data_before, state + 0x00AC, primary)
+        put_u16(data_before, state + 0x00AE, secondary)
+        current_position = (0, 0, 0)
+        other_position = (0, 0, 0) if pair_inside else (300, 0, 0)
+        for node, position in ((current, current_position), (other, other_position)):
+            for offset, value in zip((0x42, 0x46, 0x4A), position):
+                put_u32(data_before, node + offset, value)
+        put_u16(data_before, current + 0x54, 40)
+        put_u16(data_before, other + 0x54, 20)
+        put_u16(data_before, other + 0x0E, other_callback_before)
+        sample_offset = secondary & 0x0FFC
+        put_u16(data_before, 0x0036 + sample_offset, 20_000)
+        put_u16(data_before, 0x0038 + sample_offset, -8_000)
+        data_expected = bytearray(data_before)
+
+        object_before = bytearray(
+            (offset * 37 + case_index * 11 + 5) & 0xFF
+            for offset in range(0x10000)
+        )
+        object_expected = bytearray(object_before)
+        texture_results = []
+
+        code_before = bytearray(image)
+        code_expected = bytearray(image)
+        struct.pack_into("<H", code_before, active_offset, active_before)
+        struct.pack_into("<H", code_expected, active_offset, active_before)
+        struct.pack_into("<H", code_before, cursor_offset, cursor)
+        struct.pack_into("<H", code_expected, cursor_offset, cursor)
+        struct.pack_into("<H", code_before, countdown_offset, countdown_before)
+        struct.pack_into("<H", code_expected, countdown_offset, countdown_before)
+        queue_before = []
+        for slot in range(queue_slot_count):
+            value = (0x7000 + case_index * 0x20 + slot * 2) & 0xFFFF
+            struct.pack_into("<H", code_before, queue_offset + slot * 2, value)
+            struct.pack_into("<H", code_expected, queue_offset + slot * 2, value)
+            queue_before.append(value)
+        selected_slot = cursor >> 1
+        struct.pack_into("<H", code_before, queue_offset + cursor, queued_state)
+        struct.pack_into("<H", code_expected, queue_offset + cursor, queued_state)
+        queue_before[selected_slot] = queued_state
+
+        if queued_state == 0:
+            cursor_after = (cursor + 2) & 0x000F
+            struct.pack_into("<H", code_expected, cursor_offset, cursor_after)
+            primary_after = ((primary + primary_step) & 0x0FFC) - 0x0800
+            secondary_after = (secondary + secondary_step) & 0xFFFF
+            put_u16(data_expected, state + 0x00AC, primary_after)
+            put_u16(data_expected, state + 0x00AE, secondary_after)
+            pair_relationship = None
+        else:
+            cursor_after = cursor
+            primary_after = primary
+            secondary_after = secondary
+            struct.pack_into("<H", code_expected, active_offset, 0)
+            struct.pack_into("<H", code_expected, queue_offset + cursor, 0)
+            put_u16(data_expected, context + 0x0036, pair_callback)
+            put_u16(data_expected, context + 0x003A, queued_state)
+
+            signed_delta = phase & 0xFF
+            if signed_delta >= 0x80:
+                signed_delta -= 0x100
+            for vertex, direction in texture_targets:
+                offset = object_offset + vertex * record_size + component_offset
+                before = get_u16(object_expected, offset)
+                after = (before + direction * signed_delta) & 0xFFFF
+                put_u16(object_expected, offset, after)
+                texture_results.append(
+                    {
+                        "vertex": vertex,
+                        "direction": direction,
+                        "before": before,
+                        "after": after,
+                    }
+                )
+            put_u16(data_expected, context + 0x0038, 0x0302)
+            put_u16(data_expected, current + 0x54, 35)
+            pair_relationship = "inside" if pair_inside else "outside"
+            if pair_inside:
+                put_u16(data_expected, context + 0x0036, timeout_callback)
+                put_u16(data_expected, current + 0x54, 0)
+                put_u16(data_expected, other + 0x0E, resume_node_callback)
+                put_u16(data_expected, context + 0x003C, other)
+                struct.pack_into("<H", code_expected, countdown_offset, 24)
+            else:
+                put_u16(data_expected, current + 0x4E, signed_word(primary) >> 1)
+                put_u16(data_expected, current + 0x50, sample_offset + 16)
+
+        extra_before = bytes(
+            (offset * 13 + case_index + 3) & 0xFF for offset in range(0x10000)
+        )
+        fs_before = bytes(
+            (offset * 17 + case_index + 5) & 0xFF for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 23 + case_index + 9) & 0xFF for offset in range(0x10000)
+        )
+        stack_sentinel = bytes.fromhex("877869965aa5")
+        initial = {
+            "eax": 0xA1A12345,
+            "ebx": 0xB2B23456,
+            "ecx": 0xC3C34567,
+            "edx": 0xD4D45678,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F60000 | context,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0292 | (0x0400 if case_index & 1 else 0),
+        }
+        machine = execute(
+            bytes(code_before),
+            entry,
+            return_address,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (object_segment, 0, bytes(object_before)),
+                (extra_segment, 0, extra_before),
+                (fs_segment, 0, fs_before),
+                (game_segment, 0, game_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            max_instructions=100,
+        )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(data_expected):
+            differences = [
+                (offset, actual_data[offset], data_expected[offset])
+                for offset in range(0x10000)
+                if actual_data[offset] != data_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: data differs at {differences}"
+            )
+        actual_code = bytes(machine.mem_read(0, len(image)))
+        if actual_code != bytes(code_expected):
+            differences = [
+                (offset, actual_code[offset], code_expected[offset])
+                for offset in range(len(image))
+                if actual_code[offset] != code_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: code differs at {differences}"
+            )
+        for segment, expected in (
+            (extra_segment, extra_before),
+            (fs_segment, fs_before),
+            (game_segment, game_before),
+        ):
+            if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: segment {segment:#x} changed"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, len(stack_sentinel))) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+        if machine.reg_read(UC_X86_REG_SP) != 0xFF02:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack pointer changed")
+
+        actual_objects = bytes(machine.mem_read(object_segment * 16, 0x10000))
+        if actual_objects != bytes(object_expected):
+            differences = [
+                (offset, actual_objects[offset], object_expected[offset])
+                for offset in range(0x10000)
+                if actual_objects[offset] != object_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: objects differ at {differences}"
+            )
+        queue_after = [
+            struct.unpack_from("<H", code_expected, queue_offset + slot * 2)[0]
+            for slot in range(queue_slot_count)
+        ]
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "occupied": queued_state != 0,
+                "pair_relationship": pair_relationship,
+                "cursor_before": cursor,
+                "cursor_after": cursor_after,
+                "selected_slot": selected_slot,
+                "queue_before": queue_before,
+                "queue_after": queue_after,
+                "active_before": active_before,
+                "active_after": struct.unpack_from("<H", code_expected, active_offset)[0],
+                "primary_before": primary,
+                "primary_after": primary_after & 0xFFFF,
+                "secondary_before": secondary,
+                "secondary_after": secondary_after,
+                "callback_before": callback_before,
+                "callback_after": get_u16(data_expected, context + 0x0036),
+                "paired_before": paired_before,
+                "paired_after": get_u16(data_expected, context + 0x003A),
+                "resumed_before": resumed_before,
+                "resumed_after": get_u16(data_expected, context + 0x003C),
+                "component": "u" if component == 0 else "v",
+                "required_vertex_count": max(vertex for vertex, _ in texture_targets) + 1,
+                "phase_before": phase,
+                "phase_after": get_u16(data_expected, context + 0x0038),
+                "signed_delta": 2 if queued_state != 0 else 0,
+                "texture_targets": texture_results,
+                "current_position_after": [
+                    struct.unpack_from("<I", data_expected, current + offset)[0]
+                    for offset in (0x42, 0x46, 0x4A)
+                ],
+                "other_position_after": [
+                    struct.unpack_from("<I", data_expected, other + offset)[0]
+                    for offset in (0x42, 0x46, 0x4A)
+                ],
+                "current_pitch_after": get_u16(data_expected, current + 0x4E),
+                "current_pan_after": get_u16(data_expected, current + 0x50),
+                "current_radial_after": get_u16(data_expected, current + 0x54),
+                "other_radial_after": get_u16(data_expected, other + 0x54),
+                "other_callback_before": other_callback_before,
+                "other_callback_after": get_u16(data_expected, other + 0x0E),
+                "countdown_before": countdown_before,
+                "countdown_after": struct.unpack_from("<H", code_expected, countdown_offset)[0],
+                "data_sha256": hashlib.sha256(data_expected).hexdigest(),
+                "code_sha256": hashlib.sha256(code_expected).hexdigest(),
+                "object_sha256": hashlib.sha256(object_expected).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def alien_resume_pair_outside_vectors(module: str, entry: int) -> list[dict[str, object]]:
     image = load_image(module)
     configs = {
@@ -25536,6 +25899,16 @@ def main() -> int:
         update_vector(
             VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
             alien_resume_final_stage_vectors(module, entry),
+            args.check,
+        )
+    for module, entry in (
+        ("amer", 0x1C34),
+        ("croolis", 0x1B85),
+        ("scrut", 0x1C45),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            alien_resume_queue_vectors(module, entry),
             args.check,
         )
     for module, entry in (
