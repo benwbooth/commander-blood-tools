@@ -183,6 +183,7 @@ PTERRA_BRIDGE_HOST_RECENTER_LIMIT = 12
 VIRTUAL_DOS_MOUSE_NAME = "CommanderBloodTestMouse"
 VIRTUAL_DOS_MOUSE_STATUS = "CBMOUSE.TXT"
 VIRTUAL_DOS_MOUSE_PIPE_ENV = "DOSBOX_MANYMOUSE_TEST_PIPE"
+VIRTUAL_DOS_MOUSE_TRACE_ENV = "DOSBOX_MANYMOUSE_TEST_TRACE"
 LINUX_INPUT_EVENT = struct.Struct("@llHHi")
 EV_KEY = 0x01
 EV_REL = 0x02
@@ -684,6 +685,53 @@ def mouse_capture_state_from_title(title: str) -> bool | None:
     return None
 
 
+def focus_private_dosbox_window(
+        display: str, pid: int, timeout: float = 5.0) -> dict[str, object]:
+    """Focus an isolated DOSBox window without moving or clicking a pointer."""
+    env = dict(os.environ, DISPLAY=display)
+    deadline = time.monotonic() + timeout
+    window_id = None
+    while time.monotonic() < deadline:
+        search = subprocess.run(
+            ["xdotool", "search", "--pid", str(pid)],
+            env=env, capture_output=True, text=True, check=False)
+        window_ids = [line.strip() for line in search.stdout.splitlines()
+                      if line.strip()]
+        if search.returncode == 0 and window_ids:
+            window_id = window_ids[0]
+            break
+        time.sleep(0.05)
+    if window_id is None:
+        raise RuntimeError(
+            f"could not locate isolated DOSBox window for process {pid}")
+
+    focused = subprocess.run(
+        ["xdotool", "windowfocus", "--sync", window_id],
+        env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        check=False)
+    if focused.returncode != 0:
+        raise RuntimeError(
+            f"could not focus isolated DOSBox window {window_id}")
+    time.sleep(0.05)
+    title = subprocess.run(
+        ["xdotool", "getwindowname", window_id], env=env,
+        capture_output=True, text=True, check=False)
+    if title.returncode != 0:
+        raise RuntimeError(
+            f"could not inspect isolated DOSBox window {window_id}")
+    capture_state = mouse_capture_state_from_title(title.stdout)
+    if capture_state is not True:
+        raise RuntimeError(
+            "isolated DOSBox window did not capture private mouse input; "
+            f"title={title.stdout.strip()!r}")
+    return {
+        "window_id": window_id,
+        "focused": True,
+        "capture_state": "captured",
+        "pointer_moved": False,
+    }
+
+
 def recapture_game_mouse(display: str, executable: str,
                          toggle_capture: bool = False) -> dict[str, object]:
     """Recenter the host pointer without injecting guest-relative motion."""
@@ -788,12 +836,14 @@ def recapture_game_mouse(display: str, executable: str,
     }
 
 
-def dosbox_mouse_settings(executable: str) -> list[str]:
+def dosbox_mouse_settings(
+        executable: str, private_input: bool = False) -> list[str]:
     """Return emulator-specific settings for deterministic relative input."""
     if Path(executable).name.lower() == "dosbox-x":
         return ["-set", "sdl autolock=true"]
+    capture_mode = "onstart" if private_input else "onclick"
     return [
-        "-set", "mouse mouse_capture=onclick",
+        "-set", f"mouse mouse_capture={capture_mode}",
         "-set", "mouse mouse_raw_input=false",
     ]
 
@@ -852,6 +902,7 @@ class VirtualDosMouseDriver:
         self.name = VIRTUAL_DOS_MOUSE_NAME
         self.pipe_path: Path | None = None
         self.pipe_fd: int | None = None
+        self.evidence: dict[str, object] | None = None
 
     def dosbox_commands(self, install_parent: Path) -> list[str]:
         status_path = install_parent / VIRTUAL_DOS_MOUSE_STATUS
@@ -867,7 +918,10 @@ class VirtualDosMouseDriver:
     def environment(self) -> dict[str, str]:
         if self.pipe_path is None:
             raise RuntimeError("private DOS mouse pipe is not prepared")
-        return {VIRTUAL_DOS_MOUSE_PIPE_ENV: str(self.pipe_path.resolve())}
+        return {
+            VIRTUAL_DOS_MOUSE_PIPE_ENV: str(self.pipe_path.resolve()),
+            VIRTUAL_DOS_MOUSE_TRACE_ENV: "1",
+        }
 
     def verify_ready(self, install_parent: Path,
                      db: subprocess.Popen[bytes]) -> dict[str, object]:
@@ -875,29 +929,52 @@ class VirtualDosMouseDriver:
             raise RuntimeError("private DOS mouse pipe is not prepared")
         status_path = install_parent / VIRTUAL_DOS_MOUSE_STATUS
         deadline = time.monotonic() + 10.0
+        last_mapping_error: RuntimeError | None = None
         while time.monotonic() < deadline:
             if status_path.is_file():
                 status = status_path.read_text(
                     encoding="ascii", errors="replace")
-                evidence = parse_virtual_mouse_mapping_status(
-                    status, self.name)
+                try:
+                    evidence = parse_virtual_mouse_mapping_status(
+                        status, self.name)
+                except RuntimeError as error:
+                    last_mapping_error = error
+                    if db.poll() is not None:
+                        raise RuntimeError(
+                            "DOSBox exited with an incomplete virtual-mouse "
+                            f"mapping report: {error}") from error
+                    time.sleep(0.05)
+                    continue
                 self.pipe_fd = os.open(
                     self.pipe_path, os.O_WRONLY | os.O_NONBLOCK)
                 evidence["adapter"] = "private-manymouse-pipe"
                 evidence["pipe"] = str(self.pipe_path)
+                evidence["event_records_written"] = 0
+                evidence["relative_records_written"] = 0
+                evidence["button_records_written"] = 0
+                evidence["recenter_requests"] = 0
+                self.evidence = evidence
                 status_path.unlink()
                 return evidence
             if db.poll() is not None:
                 raise RuntimeError(
                     "DOSBox exited before mapping the virtual DOS mouse")
             time.sleep(0.05)
-        raise RuntimeError("DOSBox virtual-mouse mapping report timed out")
+        detail = (
+            f": {last_mapping_error}" if last_mapping_error is not None
+            else "")
+        raise RuntimeError(
+            f"DOSBox virtual-mouse mapping report timed out{detail}")
 
     def recenter(self) -> dict[str, object]:
+        if self.evidence is not None:
+            self.evidence["recenter_requests"] = (
+                int(self.evidence["recenter_requests"]) + 1)
         return {
             "adapter": "private-manymouse-pipe",
             "pipe": str(self.pipe_path),
             "capture_toggled": False,
+            "recenter_is_noop": True,
         }
 
     def _write_event(self, event_type: int, code: int, value: int) -> None:
@@ -907,6 +984,18 @@ class VirtualDosMouseDriver:
         written = os.write(self.pipe_fd, event)
         if written != len(event):
             raise RuntimeError("short write to private DOS mouse pipe")
+        if self.evidence is not None:
+            self.evidence["event_records_written"] = (
+                int(self.evidence["event_records_written"]) + 1)
+            counter = (
+                "relative_records_written"
+                if event_type == EV_REL else "button_records_written")
+            self.evidence[counter] = int(self.evidence[counter]) + 1
+            self.evidence["last_event"] = {
+                "type": event_type,
+                "code": code,
+                "value": value,
+            }
 
     def move_toward(self, current_x: int, current_y: int,
                     target_x: int, target_y: int) -> bool:
@@ -4377,7 +4466,8 @@ def main() -> None:
         dosbox_args = [
             args.dosbox, "--noprimaryconf", "--nolocalconf",
             "-set", "sdl output=surface",
-            *dosbox_mouse_settings(args.dosbox),
+            *dosbox_mouse_settings(
+                args.dosbox, private_input=args.virtual_dos_mouse),
             "-set", "cpu cycles=max",
             "-set", "cpu core=dynamic",
             "-set", "render frameskip=10",
@@ -4393,6 +4483,8 @@ def main() -> None:
         if mouse_driver is not None:
             mouse_input_evidence = mouse_driver.verify_ready(
                 args.install_parent, db)
+            mouse_input_evidence["window_focus"] = (
+                focus_private_dosbox_window(args.display, db.pid))
         if args.state_pterra or args.manual_pterra:
             stack_bounds = (
                 parse_linked_stack_bounds(args.link_map.resolve())

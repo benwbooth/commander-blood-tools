@@ -8,6 +8,8 @@ import os
 import struct
 import sys
 import tempfile
+import threading
+import time
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -716,6 +718,25 @@ class CaptureHelperTests(unittest.TestCase):
                         (capture.EV_KEY, capture.BTN_RIGHT, 0),
                     ],
                 )
+                driver.evidence = {
+                    "event_records_written": 0,
+                    "relative_records_written": 0,
+                    "button_records_written": 0,
+                    "recenter_requests": 0,
+                }
+                driver.recenter()
+                driver.button(True)
+                self.assertEqual(driver.evidence, {
+                    "event_records_written": 1,
+                    "relative_records_written": 0,
+                    "button_records_written": 1,
+                    "recenter_requests": 1,
+                    "last_event": {
+                        "type": capture.EV_KEY,
+                        "code": capture.BTN_LEFT,
+                        "value": 1,
+                    },
+                })
             finally:
                 driver.close()
                 os.close(reader)
@@ -734,7 +755,8 @@ class CaptureHelperTests(unittest.TestCase):
             self.assertEqual(
                 environment,
                 {capture.VIRTUAL_DOS_MOUSE_PIPE_ENV:
-                 str(driver.pipe_path.resolve())},
+                 str(driver.pipe_path.resolve()),
+                 capture.VIRTUAL_DOS_MOUSE_TRACE_ENV: "1"},
             )
             self.assertEqual(
                 commands,
@@ -746,6 +768,36 @@ class CaptureHelperTests(unittest.TestCase):
             driver.close()
             self.assertFalse((install_parent /
                               f".cbmouse-{os.getpid()}.fifo").exists())
+
+    def test_virtual_mouse_waits_for_complete_mapping_report(self) -> None:
+        driver = capture.VirtualDosMouseDriver()
+        with tempfile.TemporaryDirectory() as directory:
+            install_parent = Path(directory)
+            driver.dosbox_commands(install_parent)
+            assert driver.pipe_path is not None
+            reader = os.open(driver.pipe_path, os.O_RDWR | os.O_NONBLOCK)
+            status_path = install_parent / capture.VIRTUAL_DOS_MOUSE_STATUS
+            status_path.write_text("Interface Mouse Name\n", encoding="ascii")
+
+            def finish_report() -> None:
+                time.sleep(0.02)
+                status_path.write_text(
+                    "DOS X:+100 Y:+100 200 mapped physical mouse\n"
+                    "DOS CommanderBloodTestMouse\n",
+                    encoding="ascii",
+                )
+
+            writer = threading.Thread(target=finish_report)
+            writer.start()
+            try:
+                evidence = driver.verify_ready(
+                    install_parent, mock.Mock(poll=mock.Mock(return_value=None)))
+                self.assertEqual(evidence["adapter"],
+                                 "private-manymouse-pipe")
+            finally:
+                writer.join()
+                driver.close()
+                os.close(reader)
 
     def test_guest_primary_adapter_injects_native_edge_latches(self) -> None:
         memory = io.BytesIO(bytearray(0x40000))
@@ -882,6 +934,24 @@ class CaptureHelperTests(unittest.TestCase):
         self.assertFalse(result["window_activated"])
         self.assertEqual(result["window_point"], [320, 200])
 
+    def test_private_window_focus_never_moves_or_clicks_pointer(self) -> None:
+        search = mock.Mock(returncode=0, stdout="1234\n")
+        focused = mock.Mock(returncode=0, stdout="")
+        title = mock.Mock(
+            returncode=0, stdout="BPRG_RE.EXE - Mouse captured\n")
+        with mock.patch.object(
+                capture.subprocess, "run",
+                side_effect=[search, focused, title]) as run:
+            result = capture.focus_private_dosbox_window(":9", 456)
+
+        commands = [call.args[0] for call in run.call_args_list]
+        self.assertEqual(commands, [
+            ["xdotool", "search", "--pid", "456"],
+            ["xdotool", "windowfocus", "--sync", "1234"],
+            ["xdotool", "getwindowname", "1234"],
+        ])
+        self.assertFalse(result["pointer_moved"])
+
     def test_dosbox_staging_captures_mouse_on_start(self) -> None:
         self.assertEqual(
             capture.dosbox_mouse_settings("/nix/store/hash/bin/dosbox"),
@@ -891,6 +961,16 @@ class CaptureHelperTests(unittest.TestCase):
             ],
         )
         self.assertTrue(capture.dosbox_needs_capture_toggle("dosbox"))
+
+    def test_private_dos_mouse_captures_isolated_window_on_start(self) -> None:
+        self.assertEqual(
+            capture.dosbox_mouse_settings(
+                "/nix/store/hash/bin/dosbox", private_input=True),
+            [
+                "-set", "mouse mouse_capture=onstart",
+                "-set", "mouse mouse_raw_input=false",
+            ],
+        )
 
     def test_dosbox_x_uses_autolock(self) -> None:
         self.assertEqual(
