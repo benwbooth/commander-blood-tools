@@ -6,6 +6,7 @@ pub mod alien;
 pub mod bas;
 pub mod code;
 pub mod descript;
+pub mod descript_database;
 pub mod instruction;
 pub mod lbm;
 pub mod manu3;
