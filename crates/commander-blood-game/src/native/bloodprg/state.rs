@@ -3,7 +3,7 @@
 use std::fmt;
 
 use commander_blood_formats::instruction::{
-    ScriptSharedStateOperation, ScriptStateOperand, ScriptStateOperator,
+    ScriptSharedBitOperation, ScriptSharedStateOperation, ScriptStateOperand, ScriptStateOperator,
 };
 use commander_blood_formats::script::{ScriptState, ScriptStateWord};
 
@@ -81,6 +81,37 @@ pub fn apply_shared_state_operation(
     }
 }
 
+/// Apply `vm_op_shared_ae_b0_state` to one typed state word.
+pub fn apply_shared_bit_operation(
+    operation: ScriptSharedBitOperation,
+    state: &mut ScriptState,
+    runtime: &mut ScriptRuntime,
+) -> Result<ScriptControl, ScriptStateOperationError> {
+    let current = read_state_word(state, operation.target)?;
+    if runtime.query_mode() {
+        let any_present = current & operation.mask != u16::MIN;
+        if any_present != operation.inverted_or_clear {
+            Ok(ScriptControl::Continue)
+        } else {
+            runtime
+                .fail_guard()
+                .map_err(ScriptStateOperationError::Control)
+        }
+    } else {
+        let updated = if operation.inverted_or_clear {
+            current & !operation.mask
+        } else {
+            current | operation.mask
+        };
+        if !state.set_word(operation.target, updated) {
+            return Err(ScriptStateOperationError::MissingStateWord {
+                word: operation.target,
+            });
+        }
+        Ok(ScriptControl::Continue)
+    }
+}
+
 fn read_state_word(
     state: &ScriptState,
     word: ScriptStateWord,
@@ -95,13 +126,17 @@ mod tests {
     use std::path::{Path, PathBuf};
 
     use commander_blood_formats::code::{decode_script_code, ScriptCodeOffset};
-    use commander_blood_formats::instruction::decode_script_shared_state_operation;
+    use commander_blood_formats::instruction::{
+        decode_script_shared_bit_operation, decode_script_shared_state_operation,
+    };
     use commander_blood_formats::script::{decode_script_directory, decode_script_state};
     use serde::Deserialize;
 
     use super::*;
 
     const SHARED_STATE_OPCODE: u8 = 0xB1;
+    const SHARED_BIT_OPCODE: u8 = 0xAE;
+    const INVERTED_OR_CLEAR_PREFIX: u8 = 0xA1;
     const END_MARKER: u8 = 0xFF;
     const TARGET_SOURCE_OFFSET: u16 = 2;
     const OPERAND_SOURCE_OFFSET: u16 = 4;
@@ -110,6 +145,7 @@ mod tests {
     const QUERY_MODE_MASK: u8 = 1;
     const BRANCH_TARGET: usize = 9_320;
     const SHARED_STATE_VECTOR_COUNT: usize = 20;
+    const SHARED_BIT_VECTOR_COUNT: usize = 14;
 
     #[derive(Deserialize)]
     struct SharedStateOracle {
@@ -120,6 +156,17 @@ mod tests {
         field_after: u16,
         query_mode_before: u8,
         query_mode_after: u8,
+        branch_failed: bool,
+    }
+
+    #[derive(Deserialize)]
+    struct SharedBitOracle {
+        query_mode_before: u8,
+        query_mode_after: u8,
+        inverted: bool,
+        field_before: u16,
+        mask: u16,
+        field_after: u16,
         branch_failed: bool,
     }
 
@@ -175,6 +222,52 @@ mod tests {
 
             let control =
                 apply_shared_state_operation(operation, &mut state, &mut runtime).unwrap();
+
+            assert_eq!(state.word(operation.target), Some(vector.field_after));
+            assert_eq!(
+                runtime.query_mode(),
+                vector.query_mode_after & QUERY_MODE_MASK != u8::MIN
+            );
+            assert_eq!(
+                control,
+                if vector.branch_failed {
+                    ScriptControl::Jump(ScriptCodeOffset::new(BRANCH_TARGET))
+                } else {
+                    ScriptControl::Continue
+                }
+            );
+        }
+    }
+
+    #[test]
+    fn shared_bits_match_every_original_handler_vector() {
+        let vectors: Vec<SharedBitOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_6902_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), SHARED_BIT_VECTOR_COUNT);
+        let directory_data = std::fs::read(original_asset("SCRIPT1.DEB")).unwrap();
+        let state_data = std::fs::read(original_asset("SCRIPT1.VAR")).unwrap();
+        let directory = decode_script_directory(&directory_data).unwrap();
+
+        for vector in vectors {
+            let mut token_data = vec![SHARED_BIT_OPCODE];
+            if vector.inverted {
+                token_data.push(INVERTED_OR_CLEAR_PREFIX);
+            }
+            token_data.extend_from_slice(&TARGET_SOURCE_OFFSET.to_le_bytes());
+            token_data.extend_from_slice(&vector.mask.to_le_bytes());
+            token_data.push(END_MARKER);
+            let code = decode_script_code(&token_data).unwrap();
+            let mut state = decode_script_state(&state_data, &directory).unwrap();
+            let operation = decode_script_shared_bit_operation(&code.tokens()[0], &state).unwrap();
+            assert!(state.set_word(operation.target, vector.field_before));
+            let mut runtime = ScriptRuntime::new();
+            if vector.query_mode_before & QUERY_MODE_MASK != u8::MIN {
+                runtime.begin_root_guard(ScriptCodeOffset::new(BRANCH_TARGET));
+            }
+
+            let control = apply_shared_bit_operation(operation, &mut state, &mut runtime).unwrap();
 
             assert_eq!(state.word(operation.target), Some(vector.field_after));
             assert_eq!(

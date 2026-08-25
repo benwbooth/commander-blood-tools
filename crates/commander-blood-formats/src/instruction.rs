@@ -20,6 +20,8 @@ const SEQUENCE_REQUEST_OPCODE: u8 = 0xA8;
 const PROCEDURE_GATE_OPCODE: u8 = 0xA9;
 const YIELD_OPCODE: u8 = 0xAA;
 const PROCEDURE_ACTIVATION_OPCODE: u8 = 0xAB;
+const SHARED_BIT_STATE_A_OPCODE: u8 = 0xAE;
+const SHARED_BIT_STATE_B_OPCODE: u8 = 0xB0;
 const SHARED_STATE_A_OPCODE: u8 = 0xB1;
 const SHARED_STATE_B_OPCODE: u8 = 0xB4;
 const SHARED_STATE_C_OPCODE: u8 = 0xB5;
@@ -46,6 +48,7 @@ const PROCEDURE_ACTIVATION_SIZE: usize = OPCODE_SIZE + BYTE_SIZE + WORD_SIZE;
 const YIELD_SIZE: usize = OPCODE_SIZE;
 const ENABLED_FLAG_MASK: u8 = 1;
 const SHARED_STATE_SIZE: usize = OPCODE_SIZE + WORD_SIZE + BYTE_SIZE + BYTE_SIZE + WORD_SIZE;
+const SHARED_BIT_STATE_SIZE: usize = OPCODE_SIZE + WORD_SIZE + WORD_SIZE;
 const INDIRECT_STATE_MODE_A: u8 = 0xC0;
 const INDIRECT_STATE_MODE_B: u8 = 0xC2;
 const TIMER_SLOT_COUNT: u8 = 128;
@@ -267,6 +270,17 @@ pub struct ScriptSharedStateOperation {
     pub operator: ScriptStateOperator,
     /// Immediate or state-backed right-hand value.
     pub operand: ScriptStateOperand,
+}
+
+/// One shared AE/B0 masked-bit query or mutation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptSharedBitOperation {
+    /// State word tested or assigned.
+    pub target: ScriptStateWord,
+    /// Authored mask applied to the target word.
+    pub mask: u16,
+    /// Query for absence instead of presence, or clear instead of set.
+    pub inverted_or_clear: bool,
 }
 
 impl ScriptSequenceRequest {
@@ -664,6 +678,34 @@ pub fn decode_script_shared_state_operation(
     })
 }
 
+/// Decode the shared AE/B0 masked-bit handler family.
+pub fn decode_script_shared_bit_operation(
+    token: &ScriptToken,
+    state: &ScriptState,
+) -> Result<ScriptSharedBitOperation, ScriptInstructionError> {
+    if !matches!(
+        token.opcode().byte(),
+        SHARED_BIT_STATE_A_OPCODE | SHARED_BIT_STATE_B_OPCODE
+    ) {
+        return Err(ScriptInstructionError::UntranslatedOpcode {
+            opcode: token.opcode(),
+        });
+    }
+    let bytes = token.encoded_bytes();
+    let inverted_or_clear = bytes.get(OPCODE_SIZE) == Some(&INVERTED_CONDITION_PREFIX);
+    let prefix_size = usize::from(inverted_or_clear);
+    let expected_size = SHARED_BIT_STATE_SIZE + prefix_size;
+    require_size(token, expected_size)?;
+    let target_offset = OPCODE_SIZE + prefix_size;
+    let target = resolve_state_word(token, state, read_word(bytes, target_offset))?;
+    let mask = read_word(bytes, target_offset + WORD_SIZE);
+    Ok(ScriptSharedBitOperation {
+        target,
+        mask,
+        inverted_or_clear,
+    })
+}
+
 fn resolve_state_word(
     token: &ScriptToken,
     state: &ScriptState,
@@ -775,6 +817,7 @@ mod tests {
     const EXPECTED_PROCEDURE_DISABLE_COUNT: usize =
         EXPECTED_PROCEDURE_ACTIVATION_COUNT - EXPECTED_PROCEDURE_ENABLE_COUNT;
     const EXPECTED_SHARED_STATE_COUNTS: [usize; PROFILE_COUNT] = [2, 400, 301, 64, 172];
+    const EXPECTED_SHARED_BIT_COUNTS: [usize; PROFILE_COUNT] = [0, 69, 46, 32, 24];
     const MAXIMUM_SHIPPED_SEQUENCE_BASENAME_LENGTH: usize = 12;
 
     fn original_asset(name: &str) -> PathBuf {
@@ -966,6 +1009,34 @@ mod tests {
         assert_eq!(counts, EXPECTED_SHARED_STATE_COUNTS);
         assert!(saw_object_word);
         assert!(saw_trailing_state_word);
+    }
+
+    #[test]
+    fn every_shipped_shared_bit_token_resolves_to_a_typed_var_word() {
+        let mut counts = [usize::MIN; PROFILE_COUNT];
+
+        for profile in 1..=PROFILE_COUNT {
+            let code_data = std::fs::read(original_asset(&format!("SCRIPT{profile}.COD"))).unwrap();
+            let directory_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.DEB"))).unwrap();
+            let state_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.VAR"))).unwrap();
+            let code = decode_script_code(&code_data).unwrap();
+            let directory = decode_script_directory(&directory_data).unwrap();
+            let state = decode_script_state(&state_data, &directory).unwrap();
+
+            for token in code.tokens().iter().filter(|token| {
+                matches!(
+                    token.opcode().byte(),
+                    SHARED_BIT_STATE_A_OPCODE | SHARED_BIT_STATE_B_OPCODE
+                )
+            }) {
+                decode_script_shared_bit_operation(token, &state).unwrap();
+                counts[profile - 1] += 1;
+            }
+        }
+
+        assert_eq!(counts, EXPECTED_SHARED_BIT_COUNTS);
     }
 
     #[test]
