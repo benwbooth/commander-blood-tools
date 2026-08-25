@@ -2,6 +2,16 @@ use std::path::{Path, PathBuf};
 
 const FORBIDDEN_HEURISTIC_DEPENDENCIES: [&str; 3] =
     ["commander_blood_tools", "EngineState", "recomp::"];
+const FORBIDDEN_SEGMENTED_MEMORY_MARKERS: [&str; 8] = [
+    "FarPtr",
+    "NearPtr",
+    "HugePtr",
+    "SegmentedMemory",
+    "read_16_far",
+    "write_16_far",
+    "segment_to_linear",
+    "segment_register",
+];
 
 fn rust_sources(directory: &Path, output: &mut Vec<PathBuf>) {
     for entry in std::fs::read_dir(directory).unwrap() {
@@ -28,6 +38,24 @@ fn modern_game_does_not_depend_on_the_retired_heuristic_runtime() {
             assert!(
                 !source.contains(forbidden),
                 "{} references retired heuristic dependency {forbidden}",
+                source_path.display()
+            );
+        }
+    }
+}
+
+#[test]
+fn modern_game_does_not_recreate_segmented_memory() {
+    let game_root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let mut sources = Vec::new();
+    rust_sources(&game_root.join("src"), &mut sources);
+
+    for source_path in sources {
+        let source = std::fs::read_to_string(&source_path).unwrap();
+        for forbidden in FORBIDDEN_SEGMENTED_MEMORY_MARKERS {
+            assert!(
+                !source.contains(forbidden),
+                "{} contains segmented-memory marker {forbidden}",
                 source_path.display()
             );
         }

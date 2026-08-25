@@ -33,6 +33,10 @@ routines remain unported; there is no inferred or percentage-based credit.
   addresses, and other binary-facing notation.
 - Keep host adaptation in platform and rendering modules. Native game logic may
   not emulate segmented memory, register state, or DOS services.
+- Use ordinary Rust ownership, references, slices, and typed indices. Near,
+  far, and huge pointers; segment arithmetic; 16-bit address wrapping; and
+  offset-addressed memory facades are prohibited in the game crate. Original
+  addresses may appear only as routine provenance and oracle-fixture data.
 
 ## Current executable
 
