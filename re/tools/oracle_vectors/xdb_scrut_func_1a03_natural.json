@@ -1,0 +1,46 @@
+[
+  {
+    "name": "zero_state",
+    "module": "scrut",
+    "entry": 6659,
+    "continuation": "reset",
+    "active_before": 0,
+    "active_after": 1,
+    "selection_value_before": 0,
+    "selection_value_after": 0,
+    "code_sha256": "9e07b1a12876fccec5b42c68220c1cbfb50f3d9173cba29b647ff575bc4dcd30"
+  },
+  {
+    "name": "active_positive",
+    "module": "scrut",
+    "entry": 6659,
+    "continuation": "reset",
+    "active_before": 1,
+    "active_after": 1,
+    "selection_value_before": 4660,
+    "selection_value_after": 0,
+    "code_sha256": "9e07b1a12876fccec5b42c68220c1cbfb50f3d9173cba29b647ff575bc4dcd30"
+  },
+  {
+    "name": "high_values",
+    "module": "scrut",
+    "entry": 6659,
+    "continuation": "reset",
+    "active_before": 65535,
+    "active_after": 1,
+    "selection_value_before": 32767,
+    "selection_value_after": 0,
+    "code_sha256": "9e07b1a12876fccec5b42c68220c1cbfb50f3d9173cba29b647ff575bc4dcd30"
+  },
+  {
+    "name": "negative_selection",
+    "module": "scrut",
+    "entry": 6659,
+    "continuation": "reset",
+    "active_before": 32768,
+    "active_after": 1,
+    "selection_value_before": 32768,
+    "selection_value_after": 0,
+    "code_sha256": "9e07b1a12876fccec5b42c68220c1cbfb50f3d9173cba29b647ff575bc4dcd30"
+  }
+]

@@ -1,0 +1,354 @@
+[
+  {
+    "name": "ordinary",
+    "module": "scrut",
+    "entry": 6607,
+    "continuation": "restart",
+    "active_before": 1,
+    "active_after": 0,
+    "radial_target_before": 200,
+    "radial_target_after": 0,
+    "motion_parameter_before": 65520,
+    "motion_parameter_after": 0,
+    "visual_positions_before": [
+      [
+        286326800,
+        572653600
+      ],
+      [
+        858980400,
+        1145307200
+      ]
+    ],
+    "visual_positions_after": [
+      [
+        286327041,
+        572654082
+      ],
+      [
+        858981123,
+        1145308164
+      ]
+    ],
+    "saved_positions": [
+      [
+        257,
+        514
+      ],
+      [
+        771,
+        1028
+      ]
+    ],
+    "data_sha256": "95e94568e2c08a10f80d3d4396fcca2c929d9cc3261e41c392eeef36289ac738",
+    "code_sha256": "8522e77aad6639cf9bb06f148048fed3c6bf1cfbe6459c9a0be7b987c3c3ac77"
+  },
+  {
+    "name": "inactive_before",
+    "module": "scrut",
+    "entry": 6607,
+    "continuation": "restart",
+    "active_before": 0,
+    "active_after": 0,
+    "radial_target_before": 200,
+    "radial_target_after": 0,
+    "motion_parameter_before": 65520,
+    "motion_parameter_after": 0,
+    "visual_positions_before": [
+      [
+        286326800,
+        572653600
+      ],
+      [
+        858980400,
+        1145307200
+      ]
+    ],
+    "visual_positions_after": [
+      [
+        286327041,
+        572654082
+      ],
+      [
+        858981123,
+        1145308164
+      ]
+    ],
+    "saved_positions": [
+      [
+        257,
+        514
+      ],
+      [
+        771,
+        1028
+      ]
+    ],
+    "data_sha256": "c7f34c544d79c1f0d85986d94c136d644f1c4143ec32c68f28e5ec577cfea455",
+    "code_sha256": "8522e77aad6639cf9bb06f148048fed3c6bf1cfbe6459c9a0be7b987c3c3ac77"
+  },
+  {
+    "name": "saved_signed_words",
+    "module": "scrut",
+    "entry": 6607,
+    "continuation": "restart",
+    "active_before": 1,
+    "active_after": 0,
+    "radial_target_before": 200,
+    "radial_target_after": 0,
+    "motion_parameter_before": 65520,
+    "motion_parameter_after": 0,
+    "visual_positions_before": [
+      [
+        286326800,
+        572653600
+      ],
+      [
+        858980400,
+        1145307200
+      ]
+    ],
+    "visual_positions_after": [
+      [
+        286359552,
+        572719103
+      ],
+      [
+        859013119,
+        1145307136
+      ]
+    ],
+    "saved_positions": [
+      [
+        32768,
+        65535
+      ],
+      [
+        32767,
+        0
+      ]
+    ],
+    "data_sha256": "b7d16b76bce2f14423c4a7e21b2887b9d1c129cd6103ea36ca057ea17ec4794f",
+    "code_sha256": "8522e77aad6639cf9bb06f148048fed3c6bf1cfbe6459c9a0be7b987c3c3ac77"
+  },
+  {
+    "name": "preserve_position_high_words",
+    "module": "scrut",
+    "entry": 6607,
+    "continuation": "restart",
+    "active_before": 1,
+    "active_after": 0,
+    "radial_target_before": 200,
+    "radial_target_after": 0,
+    "motion_parameter_before": 65520,
+    "motion_parameter_after": 0,
+    "visual_positions_before": [
+      [
+        2863333375,
+        3149627392
+      ],
+      [
+        3435954175,
+        3722248193
+      ]
+    ],
+    "visual_positions_after": [
+      [
+        2863268097,
+        3149595138
+      ],
+      [
+        3435922179,
+        3722249220
+      ]
+    ],
+    "saved_positions": [
+      [
+        257,
+        514
+      ],
+      [
+        771,
+        1028
+      ]
+    ],
+    "data_sha256": "0ce7347b66f8d681a68735cf69be2accf3feab8db94047850a07b959b61c7574",
+    "code_sha256": "8522e77aad6639cf9bb06f148048fed3c6bf1cfbe6459c9a0be7b987c3c3ac77"
+  },
+  {
+    "name": "zero_motion",
+    "module": "scrut",
+    "entry": 6607,
+    "continuation": "restart",
+    "active_before": 1,
+    "active_after": 0,
+    "radial_target_before": 200,
+    "radial_target_after": 0,
+    "motion_parameter_before": 0,
+    "motion_parameter_after": 0,
+    "visual_positions_before": [
+      [
+        286326800,
+        572653600
+      ],
+      [
+        858980400,
+        1145307200
+      ]
+    ],
+    "visual_positions_after": [
+      [
+        286327041,
+        572654082
+      ],
+      [
+        858981123,
+        1145308164
+      ]
+    ],
+    "saved_positions": [
+      [
+        257,
+        514
+      ],
+      [
+        771,
+        1028
+      ]
+    ],
+    "data_sha256": "9924ef4a21dc521a4b494bfbaf45ac9d226c9bcec748d160fe77e8daa35ef63d",
+    "code_sha256": "8522e77aad6639cf9bb06f148048fed3c6bf1cfbe6459c9a0be7b987c3c3ac77"
+  },
+  {
+    "name": "zero_radial",
+    "module": "scrut",
+    "entry": 6607,
+    "continuation": "restart",
+    "active_before": 1,
+    "active_after": 0,
+    "radial_target_before": 0,
+    "radial_target_after": 0,
+    "motion_parameter_before": 65520,
+    "motion_parameter_after": 0,
+    "visual_positions_before": [
+      [
+        286326800,
+        572653600
+      ],
+      [
+        858980400,
+        1145307200
+      ]
+    ],
+    "visual_positions_after": [
+      [
+        286327041,
+        572654082
+      ],
+      [
+        858981123,
+        1145308164
+      ]
+    ],
+    "saved_positions": [
+      [
+        257,
+        514
+      ],
+      [
+        771,
+        1028
+      ]
+    ],
+    "data_sha256": "b08fe9132a66af6cc7a0fca47f210ee87dd8213869ec03c77183fd348fdfb872",
+    "code_sha256": "8522e77aad6639cf9bb06f148048fed3c6bf1cfbe6459c9a0be7b987c3c3ac77"
+  },
+  {
+    "name": "high_state_words",
+    "module": "scrut",
+    "entry": 6607,
+    "continuation": "restart",
+    "active_before": 65535,
+    "active_after": 0,
+    "radial_target_before": 65535,
+    "radial_target_after": 0,
+    "motion_parameter_before": 32768,
+    "motion_parameter_after": 0,
+    "visual_positions_before": [
+      [
+        286326800,
+        572653600
+      ],
+      [
+        858980400,
+        1145307200
+      ]
+    ],
+    "visual_positions_after": [
+      [
+        286327041,
+        572654082
+      ],
+      [
+        858981123,
+        1145308164
+      ]
+    ],
+    "saved_positions": [
+      [
+        257,
+        514
+      ],
+      [
+        771,
+        1028
+      ]
+    ],
+    "data_sha256": "5cd75e2f143536f6543e3dcf25c11ebc4c9ffa2d86280f495a092acb4d7c8177",
+    "code_sha256": "8522e77aad6639cf9bb06f148048fed3c6bf1cfbe6459c9a0be7b987c3c3ac77"
+  },
+  {
+    "name": "wrapped_state_offsets",
+    "module": "scrut",
+    "entry": 6607,
+    "continuation": "restart",
+    "active_before": 1,
+    "active_after": 0,
+    "radial_target_before": 200,
+    "radial_target_after": 0,
+    "motion_parameter_before": 65520,
+    "motion_parameter_after": 0,
+    "visual_positions_before": [
+      [
+        4008607743,
+        4294934528
+      ],
+      [
+        305463295,
+        1450704897
+      ]
+    ],
+    "visual_positions_after": [
+      [
+        4008579927,
+        4294911080
+      ],
+      [
+        305440090,
+        1450728101
+      ]
+    ],
+    "saved_positions": [
+      [
+        4951,
+        9320
+      ],
+      [
+        42330,
+        23205
+      ]
+    ],
+    "data_sha256": "b0fc69ff774b548b010e3161139ca2c97def5cd5f53cb47bbaa546fdbde9a9ba",
+    "code_sha256": "8522e77aad6639cf9bb06f148048fed3c6bf1cfbe6459c9a0be7b987c3c3ac77"
+  }
+]
