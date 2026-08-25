@@ -44,6 +44,7 @@ mod record_state;
 mod resource_cache;
 mod script;
 mod script_profile;
+mod script_profile_request;
 mod screen_presentation;
 mod selected_mask;
 mod sequence;
@@ -281,6 +282,9 @@ pub use script_profile::{
     ScriptProfileBuiltins, ScriptProfileDataKind, ScriptProfileError, ScriptProfileId,
     ScriptProfileLoadOutcome, ScriptProfileManager, ScriptProfileResourceKind,
     ScriptProfileResources,
+};
+pub use script_profile_request::{
+    PendingScriptProfileRequest, ScriptProfileRequestError, ScriptProfileRequestSlot,
 };
 pub use screen_presentation::{
     PresentationDescriptPlan, PresentationMusicChange, PresentationPanelPhase,

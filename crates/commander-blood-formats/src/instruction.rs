@@ -50,6 +50,7 @@ const ACTIVE_OBJECT_RECORD_OPCODE: u8 = 0xC7;
 const OPAQUE_MARKER_RECORD_OPCODE: u8 = 0xC8;
 const RECORD_CLEAR_OPCODE: u8 = 0xC9;
 const TRANSFER_OPCODE: u8 = 0xCD;
+const PROFILE_REQUEST_OPCODE: u8 = 0xD2;
 const INVERTED_CONDITION_PREFIX: u8 = GUARD_END_OPCODE;
 const OPCODE_SIZE: usize = 1;
 const BYTE_SIZE: usize = 1;
@@ -83,6 +84,7 @@ const TRAVEL_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const ACTIVE_OBJECT_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const OPAQUE_MARKER_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const RECORD_CLEAR_SIZE: usize = OPCODE_SIZE + WORD_SIZE;
+const PROFILE_REQUEST_SIZE: usize = OPCODE_SIZE + BYTE_SIZE;
 const BITS_PER_BYTE: u8 = u8::BITS as u8;
 const PRIMARY_NAVIGATION_OPERAND: u16 = 1;
 const SECONDARY_NAVIGATION_OPERAND: u16 = 2;
@@ -244,6 +246,24 @@ pub struct ScriptTopicOffer {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ScriptSequenceRequest {
     basename: Box<[u8]>,
+}
+
+/// One D2 request to switch the active five-file BloodScript profile.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptProfileRequest {
+    one_based_profile_number: i8,
+}
+
+impl ScriptProfileRequest {
+    /// Return the signed one-based profile number encoded by the authored token.
+    pub const fn one_based_profile_number(self) -> i8 {
+        self.one_based_profile_number
+    }
+
+    /// Return the exact signed zero-based value written by the native handler.
+    pub const fn zero_based_profile_index(self) -> i16 {
+        self.one_based_profile_number as i16 - 1
+    }
 }
 
 /// One A9 procedure entry gate resolved through the companion directory.
@@ -807,6 +827,21 @@ pub fn decode_script_sequence_request(
     }
     Ok(ScriptSequenceRequest {
         basename: Box::from(&bytes[OPCODE_SIZE..bytes.len() - WORD_SIZE]),
+    })
+}
+
+/// Decode one D2 profile request without assuming its operand is playable.
+pub fn decode_script_profile_request(
+    token: &ScriptToken,
+) -> Result<ScriptProfileRequest, ScriptInstructionError> {
+    if token.opcode().byte() != PROFILE_REQUEST_OPCODE {
+        return Err(ScriptInstructionError::UntranslatedOpcode {
+            opcode: token.opcode(),
+        });
+    }
+    require_size(token, PROFILE_REQUEST_SIZE)?;
+    Ok(ScriptProfileRequest {
+        one_based_profile_number: token.encoded_bytes()[OPCODE_SIZE] as i8,
     })
 }
 
@@ -1477,6 +1512,8 @@ mod tests {
     const EXPECTED_ACTIVE_OBJECT_RECORD_COUNTS: [usize; PROFILE_COUNT] = [0; PROFILE_COUNT];
     const EXPECTED_OPAQUE_MARKER_RECORD_COUNTS: [usize; PROFILE_COUNT] = [0; PROFILE_COUNT];
     const EXPECTED_RECORD_CLEAR_COUNTS: [usize; PROFILE_COUNT] = [10, 102, 119, 81, 52];
+    const EXPECTED_PROFILE_REQUESTS: [&[i8]; PROFILE_COUNT] =
+        [&[2, 2, 2], &[3, 4, 5, 3], &[4], &[5], &[]];
     const TEST_STATE_WORD_INDEX: usize = 1;
     const EXPECTED_SHIPPED_BIT_FLAG_MASK: u8 = 32;
     const EXPECTED_SHIPPED_PAIR_OPCODE: u8 = PAIR_RECORD_C_OPCODE;
@@ -2279,6 +2316,28 @@ mod tests {
             decode_script_instruction(&code.tokens()[0], &dictionary).unwrap(),
             ScriptInstruction::Yield
         );
+    }
+
+    #[test]
+    fn every_shipped_d2_request_resolves_to_a_playable_profile_number() {
+        for profile in 1..=PROFILE_COUNT {
+            let code = decode_script_code(
+                &std::fs::read(original_asset(&format!("SCRIPT{profile}.COD"))).unwrap(),
+            )
+            .unwrap();
+            let requests = code
+                .tokens()
+                .iter()
+                .filter(|token| token.opcode().byte() == PROFILE_REQUEST_OPCODE)
+                .map(|token| {
+                    decode_script_profile_request(token)
+                        .unwrap()
+                        .one_based_profile_number()
+                })
+                .collect::<Vec<_>>();
+
+            assert_eq!(requests, EXPECTED_PROFILE_REQUESTS[profile - 1]);
+        }
     }
 
     #[test]
