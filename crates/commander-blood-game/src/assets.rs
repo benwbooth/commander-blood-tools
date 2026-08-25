@@ -112,6 +112,37 @@ impl OriginalResourceStore {
         }
     }
 
+    /// Create or truncate one loose resource and write all supplied bytes.
+    ///
+    /// This translates `file_create_and_write` at BLOODPRG file offset
+    /// `0x002B6B`. The configured root replaces drive and current-directory
+    /// changes, and Rust's complete-slice write replaces chunk cursor updates.
+    pub fn write_loose(&self, name: &BloodResourceName, data: &[u8]) -> Result<usize> {
+        let path = self.loose_path(name)?;
+        std::fs::write(&path, data)
+            .with_context(|| format!("writing original resource {}", path.display()))?;
+        Ok(data.len())
+    }
+
+    /// Copy a nonempty resource to a loose destination below the data root.
+    ///
+    /// This translates `startup_resource_file_copy` at BLOODPRG file offset
+    /// `0x00280F`. A zero-length source preserves the original skip behavior;
+    /// successful copies use the same typed archive-or-loose source policy as
+    /// ordinary loads.
+    pub fn copy_to_loose(
+        &self,
+        source: &BloodResourceName,
+        destination: &BloodResourceName,
+    ) -> Result<bool> {
+        let data = self.load(source)?;
+        if data.is_empty() {
+            return Ok(false);
+        }
+        self.write_loose(destination, &data)?;
+        Ok(true)
+    }
+
     fn loose_path(&self, name: &BloodResourceName) -> Result<PathBuf> {
         let folded = name.archive_lookup_key();
         let host_name = std::str::from_utf8(&folded)
@@ -437,5 +468,40 @@ mod tests {
             loose_payload.len()
         );
         assert_eq!(&*store.load(&loose_name).unwrap(), loose_payload);
+    }
+
+    #[test]
+    fn copies_and_truncates_resources_below_the_explicit_root() {
+        let root = TemporaryResourceRoot::create();
+        let source_name = resource_name("SOURCE.DAT");
+        let destination_name = resource_name("COPIED.DAT");
+        let empty_name = resource_name("EMPTY.DAT");
+        let empty_destination_name = resource_name("NOFILE.DAT");
+        let payload = b"complete copied resource";
+        let archive = BloodArchive::decode(archive_bytes(&[
+            (source_name.clone(), payload),
+            (empty_name.clone(), &[]),
+        ]))
+        .unwrap();
+        let store = OriginalResourceStore::new(root.0.clone(), Some(archive), [], false);
+
+        assert!(
+            store
+                .copy_to_loose(&source_name, &destination_name)
+                .unwrap()
+        );
+        assert_eq!(std::fs::read(root.0.join("COPIED.DAT")).unwrap(), payload);
+        assert!(
+            !store
+                .copy_to_loose(&empty_name, &empty_destination_name)
+                .unwrap()
+        );
+        assert!(!root.0.join("NOFILE.DAT").exists());
+
+        assert_eq!(
+            store.write_loose(&destination_name, &[]).unwrap(),
+            usize::MIN
+        );
+        assert!(std::fs::read(root.0.join("COPIED.DAT")).unwrap().is_empty());
     }
 }
