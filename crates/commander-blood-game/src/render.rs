@@ -10,7 +10,9 @@ use sdl3::video::Window;
 
 use crate::alien_render::AlienRenderer;
 use crate::assets::OriginalFrame;
+use crate::bridge_render::BridgeRenderer;
 use crate::native::alien::AlienSceneFrame;
+use crate::native::bloodprg::{BridgeSceneFrame, IndexedGamePalette};
 use crate::native::manu3::model::Manu3Model;
 use crate::native::manu3::raster::RenderTriangle;
 
@@ -37,6 +39,7 @@ const DEPTH_TEXTURE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Fl
 const CLEAR_DEPTH: f32 = 1.0;
 const EQUAL_DEPTH_VALUE: f32 = 0.5;
 const ZERO_DEPTH_RANGE: f64 = 0.0;
+const MAXIMUM_ACTIVE_SCENE_COUNT: usize = 1;
 
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
@@ -67,6 +70,7 @@ pub struct Renderer<'window> {
     image_bind_group: wgpu::BindGroup,
     manu3: Option<Manu3Renderer>,
     alien: Option<AlienRenderer>,
+    bridge: Option<BridgeRenderer>,
 }
 
 impl<'window> Renderer<'window> {
@@ -76,9 +80,13 @@ impl<'window> Renderer<'window> {
         image: &OriginalFrame,
         manu3_model: Option<&Manu3Model>,
         alien_asset: Option<&AlienAsset>,
+        bridge_palette: Option<&IndexedGamePalette>,
     ) -> Result<Self> {
-        if manu3_model.is_some() && alien_asset.is_some() {
-            anyhow::bail!("MANU3 and alien scene renderers cannot be active together");
+        let active_scene_count = usize::from(manu3_model.is_some())
+            + usize::from(alien_asset.is_some())
+            + usize::from(bridge_palette.is_some());
+        if active_scene_count > MAXIMUM_ACTIVE_SCENE_COUNT {
+            anyhow::bail!("only one modern 3D scene renderer may be active");
         }
         let instance =
             wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle_from_env());
@@ -252,6 +260,8 @@ impl<'window> Renderer<'window> {
         let alien = alien_asset.map(|asset| {
             AlienRenderer::new(&device, &queue, format, config.width, config.height, asset)
         });
+        let bridge =
+            bridge_palette.map(|palette| BridgeRenderer::new(&device, &queue, format, palette));
 
         Ok(Self {
             surface,
@@ -262,6 +272,7 @@ impl<'window> Renderer<'window> {
             image_bind_group,
             manu3,
             alien,
+            bridge,
         })
     }
 
@@ -281,11 +292,12 @@ impl<'window> Renderer<'window> {
         }
     }
 
-    /// Present the current artwork, MANU3, or alien-scene frame once.
+    /// Present the current artwork, MANU3, alien, or bridge frame once.
     pub fn render(
         &mut self,
         manu3_triangles: &[RenderTriangle],
         alien_frame: Option<&AlienSceneFrame>,
+        bridge_frame: Option<&BridgeSceneFrame>,
     ) -> Result<()> {
         let manu3_vertex_count = self
             .manu3
@@ -322,6 +334,9 @@ impl<'window> Renderer<'window> {
             ORIGINAL_DISPLAY_ASPECT_HEIGHT,
         );
         if let Some(alien) = &self.alien {
+            if bridge_frame.is_some() {
+                anyhow::bail!("bridge frame supplied to the alien scene renderer");
+            }
             let alien_frame = alien_frame.context("alien renderer has no native scene frame")?;
             alien.encode(
                 &self.queue,
@@ -330,9 +345,24 @@ impl<'window> Renderer<'window> {
                 (x, y, width, height),
                 alien_frame,
             )?;
+        } else if let Some(bridge) = &self.bridge {
+            if alien_frame.is_some() {
+                anyhow::bail!("alien frame supplied to the bridge scene renderer");
+            }
+            let bridge_frame = bridge_frame.context("bridge renderer has no native scene frame")?;
+            bridge.encode(
+                &self.queue,
+                &mut encoder,
+                &view,
+                (x, y, width, height),
+                bridge_frame,
+            )?;
         } else {
             if alien_frame.is_some() {
                 anyhow::bail!("alien scene frame supplied without alien GPU resources");
+            }
+            if bridge_frame.is_some() {
+                anyhow::bail!("bridge scene frame supplied without bridge GPU resources");
             }
             {
                 let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {

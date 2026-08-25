@@ -11,5 +11,6 @@
 mod alien_render;
 pub mod app;
 pub mod assets;
+mod bridge_render;
 pub mod native;
 pub mod render;

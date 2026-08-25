@@ -9,6 +9,7 @@ const RGBA_COMPONENT_COUNT: usize = 4;
 const OPAQUE_ALPHA: u8 = 255;
 const TITLE_FILENAME: &str = "BLOOD.LBM";
 const EXECUTABLE_FILENAME: &str = "BLOODPRG.EXE";
+const BRIDGE_PANORAMA_FILENAME: &str = "TB.BIG";
 
 /// One decoded original frame ready for upload to a modern GPU texture.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -122,6 +123,31 @@ pub fn find_bloodprg_executable(explicit: Option<&Path>) -> Result<PathBuf> {
         .into_iter()
         .find(|path| path.is_file())
         .context("BLOODPRG.EXE not found; pass --bloodprg PATH or set CBLOOD_DATA")
+}
+
+/// Find the original `TB.BIG` bridge panorama from an explicit path or data root.
+pub fn find_bridge_panorama(explicit: Option<&Path>) -> Result<PathBuf> {
+    if let Some(path) = explicit {
+        if path.is_file() {
+            return Ok(path.to_owned());
+        }
+        bail!("bridge panorama does not exist: {}", path.display());
+    }
+
+    let mut candidates = Vec::new();
+    if let Some(root) = std::env::var_os("CBLOOD_DATA") {
+        candidates.push(PathBuf::from(root).join(BRIDGE_PANORAMA_FILENAME));
+    }
+    candidates.extend([
+        PathBuf::from("commander-blood-audio/_tmp_iso").join(BRIDGE_PANORAMA_FILENAME),
+        PathBuf::from("output/_tmp_iso").join(BRIDGE_PANORAMA_FILENAME),
+        PathBuf::from("accuracy/cblood_install/cblood").join(BRIDGE_PANORAMA_FILENAME),
+    ]);
+
+    candidates
+        .into_iter()
+        .find(|path| path.is_file())
+        .context("TB.BIG not found; pass --panorama PATH or set CBLOOD_DATA")
 }
 
 #[cfg(test)]

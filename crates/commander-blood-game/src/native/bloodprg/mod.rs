@@ -5,6 +5,7 @@ mod actor_slots;
 mod bridge_input;
 mod bridge_page;
 mod bridge_panorama;
+mod bridge_scene;
 mod bridge_screen;
 mod bridge_steering;
 mod bridge_console;
@@ -69,13 +70,17 @@ pub use bridge_page::{
 pub use bridge_panorama::{
     BridgePanoramaLoadTarget, BridgeStationOrbBoxes, load_bridge_panorama_frame,
 };
+pub use bridge_scene::{
+    BridgeScene, BridgeSceneError, BridgeSceneFrame, BridgeSceneInput, INITIAL_BRIDGE_VIEW_FRAME,
+};
 pub use bridge_screen::{
     BRIDGE_CONSOLE_TINT_FIRST, BRIDGE_DARK_PALETTE_ADJUSTMENT, BridgePaletteAdjustment,
     BridgeScreenInitializationBackend, BridgeScreenInitializationOutcome,
     BridgeScreenInitializationPath, BridgeScreenInitializationState, initialize_bridge_screen,
 };
 pub use bridge_steering::{
-    BRIDGE_ARC_UNIT_COUNT, BRIDGE_CURSOR_RING_UNIT_COUNT, BRIDGE_VIEW_FRAME_COUNT,
+    BRIDGE_ARC_UNIT_COUNT, BRIDGE_ARC_UNITS_PER_VIEW_FRAME, BRIDGE_CURSOR_RING_UNIT_COUNT,
+    BRIDGE_CURSOR_UNITS_PER_VIEW_FRAME, BRIDGE_LOGICAL_SCREEN_CENTER_X, BRIDGE_VIEW_FRAME_COUNT,
     BridgeSteeringInteraction, BridgeSteeringOutcome, BridgeSteeringState, BridgeTurnDirection,
     update_bridge_steering,
 };
@@ -256,8 +261,9 @@ pub use ship_view::{
     ShipViewEntityId, ShipViewEntityPlacement, ShipViewResourceId, ShipViewResourceRequest,
 };
 pub use ship_hud::{
-    SHIP_HUD_PALETTE_COLOR_COUNT, SHIP_HUD_PALETTE_FIRST, IndexedGamePalette, ShipHudBackend,
-    ShipHudPaletteSnapshot, ShipHudState, snapshot_ship_hud_palette_and_reset_camera,
+    SHIP_CAMERA_RESET, SHIP_HUD_PALETTE_COLOR_COUNT, SHIP_HUD_PALETTE_FIRST, IndexedGamePalette,
+    ShipHudBackend, ShipHudPaletteSnapshot, ShipHudState,
+    snapshot_ship_hud_palette_and_reset_camera,
 };
 pub use sprite_geometry::{
     BRIDGE_SPRITE_ENTITY_COUNT, BridgeSpriteEntity, BridgeSpriteEntityError, BridgeSpriteExtent,

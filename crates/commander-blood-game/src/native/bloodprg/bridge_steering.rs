@@ -6,8 +6,14 @@ use super::NavActorSeekState;
 pub const BRIDGE_VIEW_FRAME_COUNT: u16 = 180;
 /// Number of angular units in one complete bridge rotation.
 pub const BRIDGE_ARC_UNIT_COUNT: u16 = 360;
+/// Number of quarter-ring arc units represented by one panorama frame.
+pub const BRIDGE_ARC_UNITS_PER_VIEW_FRAME: u16 = 2;
 /// Number of high-resolution cursor units in one complete bridge rotation.
 pub const BRIDGE_CURSOR_RING_UNIT_COUNT: u16 = 1_440;
+/// Number of cursor-ring units represented by one authored panorama frame.
+pub const BRIDGE_CURSOR_UNITS_PER_VIEW_FRAME: u16 = 8;
+/// Horizontal center of the original logical display.
+pub const BRIDGE_LOGICAL_SCREEN_CENTER_X: u16 = 160;
 
 const HALF_BRIDGE_VIEW_FRAME_COUNT: i16 = 90;
 const HALF_BRIDGE_ARC_UNIT_COUNT: i16 = 180;
@@ -18,7 +24,6 @@ const STEERING_TRAIL: u16 = 30;
 const CURSOR_UNITS_PER_ARC_UNIT_SHIFT: u32 = 2;
 const ARC_UNITS_PER_FRAME_SHIFT: u32 = 1;
 const CURSOR_UNITS_PER_FRAME_SHIFT: u32 = 3;
-const HALF_LOGICAL_SCREEN_WIDTH: u16 = 160;
 const CURSOR_FRAME_ALIGNMENT_MASK: u16 = !7;
 const MINIMUM_SEEK_STEP: u16 = 1;
 
@@ -190,7 +195,7 @@ pub fn update_bridge_steering(
         state.projection_heading = frame;
         state.frame_angle_bias = frame
             .wrapping_shl(CURSOR_UNITS_PER_FRAME_SHIFT)
-            .wrapping_sub(HALF_LOGICAL_SCREEN_WIDTH);
+            .wrapping_sub(BRIDGE_LOGICAL_SCREEN_CENTER_X);
         cursor_ring &= CURSOR_FRAME_ALIGNMENT_MASK;
     }
 

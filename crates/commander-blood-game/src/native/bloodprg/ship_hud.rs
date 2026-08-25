@@ -7,7 +7,8 @@ pub const SHIP_HUD_PALETTE_FIRST: usize = 128;
 /// Number of palette entries captured for the 3D ship HUD.
 pub const SHIP_HUD_PALETTE_COLOR_COUNT: usize = 64;
 
-const SHIP_CAMERA_RESET: [i16; 3] = [10_000, 12_000, 0];
+/// Camera origin installed before the bridge's procedural 3D projection pass.
+pub const SHIP_CAMERA_RESET: [i16; 3] = [10_000, 12_000, 0];
 
 /// Complete indexed palette used by original artwork and bridge rendering.
 pub type IndexedGamePalette = [[u8; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
