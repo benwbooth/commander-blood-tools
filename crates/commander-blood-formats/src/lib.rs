@@ -3,6 +3,7 @@
 #![deny(missing_docs)]
 
 pub mod alien;
+pub mod code;
 pub mod lbm;
 pub mod manu3;
 pub mod palette;
