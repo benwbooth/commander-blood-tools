@@ -1,11 +1,92 @@
 //! Typed helper logic used by the BloodScript runtime.
 
 use commander_blood_formats::script::{
-    ScriptDictionary, ScriptDirectory, ScriptObjectId, ScriptWordId,
+    ScriptDictionary, ScriptDirectory, ScriptObjectId, ScriptObjectKind, ScriptWordId,
 };
 
 const MAXIMUM_ORIGINAL_OPERAND_COUNT: usize = u16::MAX as usize;
 const POSITIVE_OPERAND_BOUNDARY: i16 = 0;
+const FIELD_SELECTOR_COUNT: usize = 21;
+const OBJECT_KIND_COUNT: usize = 9;
+
+const FIELD_OFFSETS: [[u8; OBJECT_KIND_COUNT]; FIELD_SELECTOR_COUNT] = [
+    [2, 2, 2, 2, 2, 2, 2, 2, 2],
+    [4, 22, 0, 0, 0, 0, 0, 0, 0],
+    [0, 26, 0, 0, 0, 0, 0, 0, 0],
+    [0, 50, 0, 0, 0, 0, 0, 0, 0],
+    [0, 52, 0, 0, 0, 0, 0, 0, 0],
+    [0, 30, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 56, 0, 0, 0, 0, 0, 0, 0],
+    [0, 54, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 24, 0, 0],
+    [0, 0, 0, 0, 0, 0, 28, 0, 0],
+    [0, 0, 24, 24, 0, 0, 0, 6, 0],
+    [0, 0, 0, 0, 0, 0, 20, 0, 0],
+    [0, 0, 0, 0, 0, 0, 22, 0, 0],
+    [32, 68, 28, 34, 0, 22, 0, 16, 22],
+    [0, 70, 0, 0, 0, 0, 0, 0, 0],
+    [0, 20, 20, 20, 0, 0, 0, 0, 0],
+    [6, 24, 22, 22, 0, 20, 0, 4, 20],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [8, 58, 0, 28, 0, 0, 0, 10, 0],
+    [16, 0, 0, 0, 0, 0, 0, 0, 0],
+];
+
+/// Typed selector row in the recovered VM object-field matrix.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptFieldSelector(u8);
+
+impl ScriptFieldSelector {
+    /// Field used by presentation handoff logic.
+    pub const PRESENTATION_HANDOFF: Self = Self(2);
+    /// Per-actor encounter counter.
+    pub const ENCOUNTER_COUNT: Self = Self(8);
+    /// Object holder or current location.
+    pub const HOLDER_OR_LOCATION: Self = Self(17);
+    /// Talk, action, or reciprocal presentation link.
+    pub const ACTION: Self = Self(19);
+
+    /// Construct any selector represented by the recovered matrix.
+    pub const fn new(value: u8) -> Option<Self> {
+        if value < FIELD_SELECTOR_COUNT as u8 {
+            Some(Self(value))
+        } else {
+            None
+        }
+    }
+
+    /// Return the selector's zero-based matrix row.
+    pub const fn index(self) -> usize {
+        self.0 as usize
+    }
+}
+
+/// Resolve a typed object field to its byte position within the object's record.
+///
+/// This translates `vm_field_offset` at BLOODPRG file offset `0x006023`.
+/// Absent matrix cells return `None`; signed table bytes and arbitrary selector
+/// indexing from malformed machine state are outside the shipped data domain.
+pub fn script_field_offset(kind: ScriptObjectKind, selector: ScriptFieldSelector) -> Option<usize> {
+    let offset = FIELD_OFFSETS[selector.index()][object_kind_index(kind)];
+    (offset != u8::MIN).then_some(usize::from(offset))
+}
+
+/// Return the active object whose state record begins immediately below a threshold.
+///
+/// This translates `vm_record_lookup_by_threshold` at BLOODPRG file offset
+/// `0x006034`. Thresholds at or below the first object return `None` instead of
+/// reading the record preceding the directory.
+pub fn object_before_threshold(
+    directory: &ScriptDirectory,
+    threshold: u16,
+) -> Option<ScriptObjectId> {
+    directory
+        .active_objects()
+        .take_while(|(_object, entry)| entry.value < threshold)
+        .map(|(object, _entry)| object)
+        .last()
+}
 
 /// Resolve an interned dictionary word to an active script object.
 ///
@@ -35,6 +116,20 @@ pub fn count_positive_operands(operands: &[i16]) -> usize {
         .count()
 }
 
+const fn object_kind_index(kind: ScriptObjectKind) -> usize {
+    match kind {
+        ScriptObjectKind::Player => 0,
+        ScriptObjectKind::Actor => 1,
+        ScriptObjectKind::CelestialBody => 2,
+        ScriptObjectKind::NavigationEntity => 3,
+        ScriptObjectKind::Auxiliary => 4,
+        ScriptObjectKind::Location => 5,
+        ScriptObjectKind::BlackHole => 6,
+        ScriptObjectKind::WorldState => 7,
+        ScriptObjectKind::InventoryItem => 8,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use serde::Deserialize;
@@ -45,7 +140,22 @@ mod tests {
 
     const LOOKUP_ORACLE_VECTOR_COUNT: usize = 8;
     const OPERAND_SCAN_ORACLE_VECTOR_COUNT: usize = 10;
+    const FIELD_ORACLE_VECTOR_COUNT: usize = 8;
+    const THRESHOLD_ORACLE_VECTOR_COUNT: usize = 9;
     const DIRECTORY_NAME_CAPACITY: usize = 16;
+    const ORIGINAL_FIELD_TABLE_FILE_OFFSET: usize = 0x14180;
+    const ORIGINAL_FIELD_TABLE_KIND_COUNT: usize = 16;
+    const SHIPPED_OBJECT_KINDS: [ScriptObjectKind; OBJECT_KIND_COUNT] = [
+        ScriptObjectKind::Player,
+        ScriptObjectKind::Actor,
+        ScriptObjectKind::CelestialBody,
+        ScriptObjectKind::NavigationEntity,
+        ScriptObjectKind::Auxiliary,
+        ScriptObjectKind::Location,
+        ScriptObjectKind::BlackHole,
+        ScriptObjectKind::WorldState,
+        ScriptObjectKind::InventoryItem,
+    ];
 
     #[derive(Deserialize)]
     struct LookupOracleVector {
@@ -58,6 +168,96 @@ mod tests {
     struct ScanOracleVector {
         count: usize,
         final_ax: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct FieldOracleVector {
+        selector: u16,
+        kind_mask: u16,
+        lowest_set_bit: usize,
+    }
+
+    #[derive(Deserialize)]
+    struct ThresholdOracleVector {
+        threshold: u16,
+        entries: Vec<u16>,
+        stop_index: usize,
+        ax: u16,
+    }
+
+    #[test]
+    fn field_selector_indexing_matches_every_original_vector() {
+        let vectors: Vec<FieldOracleVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_6023_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), FIELD_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            assert_eq!(
+                vector.kind_mask.trailing_zeros() as usize,
+                vector.lowest_set_bit
+            );
+            if let (Some(selector), Some(kind)) = (
+                u8::try_from(vector.selector)
+                    .ok()
+                    .and_then(ScriptFieldSelector::new),
+                ScriptObjectKind::decode(vector.kind_mask & vector.kind_mask.wrapping_neg()),
+            ) {
+                let offset = script_field_offset(kind, selector);
+                assert!(offset.is_none_or(|value| value < kind.record_size()));
+            }
+        }
+    }
+
+    #[test]
+    fn field_matrix_matches_every_shipped_kind_in_the_original_binary() {
+        let executable = include_bytes!("../../../../../re/bin/BLOODPRG.EXE");
+
+        for selector_index in 0..FIELD_SELECTOR_COUNT {
+            let selector = ScriptFieldSelector::new(selector_index as u8).unwrap();
+            for kind in SHIPPED_OBJECT_KINDS {
+                let original_kind_index = kind.mask().trailing_zeros() as usize;
+                let original_offset = executable[ORIGINAL_FIELD_TABLE_FILE_OFFSET
+                    + selector_index * ORIGINAL_FIELD_TABLE_KIND_COUNT
+                    + original_kind_index];
+                let expected = (original_offset != u8::MIN).then_some(usize::from(original_offset));
+                assert_eq!(
+                    script_field_offset(kind, selector),
+                    expected,
+                    "selector {selector_index}, kind {kind:?}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn threshold_lookup_matches_valid_results_and_rejects_predecessor_reads() {
+        let vectors: Vec<ThresholdOracleVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_6034_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), THRESHOLD_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let entries = vector
+                .entries
+                .iter()
+                .map(|value| DirectoryFixture {
+                    name: b"object",
+                    value: *value,
+                    active: true,
+                })
+                .collect::<Vec<_>>();
+            let directory = decode_script_directory(&directory_image(&entries)).unwrap();
+            let result = object_before_threshold(&directory, vector.threshold);
+            if vector.stop_index == usize::MIN {
+                assert_eq!(result, None);
+            } else {
+                let object = result.unwrap();
+                assert_eq!(directory.object(object).unwrap().value, vector.ax);
+            }
+        }
     }
 
     #[test]

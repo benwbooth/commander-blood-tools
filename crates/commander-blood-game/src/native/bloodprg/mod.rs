@@ -14,4 +14,7 @@ pub use startup::{
     StartupConfiguration,
 };
 pub use text::{nul_terminated_byte_len, nul_terminated_bytes_equal};
-pub use vm::{count_positive_operands, resolve_dictionary_object};
+pub use vm::{
+    count_positive_operands, object_before_threshold, resolve_dictionary_object,
+    script_field_offset, ScriptFieldSelector,
+};
