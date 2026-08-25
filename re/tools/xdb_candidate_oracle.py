@@ -962,6 +962,16 @@ def mouse_camera_step_vectors(
                 "module": module,
                 "entry": entry,
                 "mouse": {"x": mouse_x, "y": mouse_y, "buttons": buttons},
+                "filter_x_before": signed_word(word(case["filter_x"])),
+                "camera_before": {
+                    "pitch": signed_word(word(case["camera"][0])),
+                    "pan": signed_word(word(case["camera"][1])),
+                    "pan_target": signed_word(word(case["camera"][2])),
+                    "depth_step": signed_word(word(case["camera"][3])),
+                },
+                "control_before": word(case["control"]),
+                "key_before": key_before,
+                "code_flags_before": code_flags_before,
                 "centered": {
                     "x": signed_word(centered_x),
                     "y": signed_word(centered_y),

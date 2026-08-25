@@ -35,6 +35,20 @@ flat-memory setup rather than recreated. `eliminated.tsv` records those mappings
 separately from translated routines, and the coverage gate verifies that all
 twelve recovered MANU3 entries are accounted for exactly once.
 
+## Alien scene status
+
+AMER, CROOLIS, and SCRUT are sibling instances of one interactive 3D engine.
+The Rust port therefore uses a shared typed engine with explicit species policy
+for the behavioral differences found in the overlays. The first shared routine,
+mouse-driven camera control, is translated for all three overlays and checked
+against twenty-four direct original-binary vectors. It retains the original
+16-bit wrapping accumulator behavior without retaining DOS mouse interrupts,
+register state, or segmented addresses.
+
+The next layer decodes each XDB's authored scene resources into owned transforms,
+vertices, faces, textures, palettes, and behavior contexts. File-relative
+relocation values are loader inputs only and become validated Rust indices.
+
 Run the current interactive path with original assets:
 
 ```sh

@@ -8,6 +8,16 @@
       "y": 512,
       "buttons": 0
     },
+    "filter_x_before": 0,
+    "camera_before": {
+      "pitch": 0,
+      "pan": 0,
+      "pan_target": 0,
+      "depth_step": 0
+    },
+    "control_before": 0,
+    "key_before": 0,
+    "code_flags_before": 4611,
     "centered": {
       "x": 0,
       "y": 0
@@ -43,6 +53,16 @@
       "y": 464,
       "buttons": 1
     },
+    "filter_x_before": 7,
+    "camera_before": {
+      "pitch": 9,
+      "pan": 256,
+      "pan_target": -32,
+      "depth_step": 4
+    },
+    "control_before": 0,
+    "key_before": 18432,
+    "code_flags_before": 8709,
     "centered": {
       "x": 100,
       "y": -48
@@ -78,6 +98,16 @@
       "y": 576,
       "buttons": 2
     },
+    "filter_x_before": -9,
+    "camera_before": {
+      "pitch": -12,
+      "pan": -300,
+      "pan_target": 288,
+      "depth_step": -20
+    },
+    "control_before": 0,
+    "key_before": 20480,
+    "code_flags_before": 13319,
     "centered": {
       "x": -100,
       "y": 64
@@ -113,6 +143,16 @@
       "y": 507,
       "buttons": 3
     },
+    "filter_x_before": 3,
+    "camera_before": {
+      "pitch": 2,
+      "pan": -1,
+      "pan_target": 8,
+      "depth_step": -8
+    },
+    "control_before": 1,
+    "key_before": 14624,
+    "code_flags_before": 1,
     "centered": {
       "x": 10,
       "y": -5
@@ -147,6 +187,16 @@
       "y": 512,
       "buttons": 0
     },
+    "filter_x_before": -32768,
+    "camera_before": {
+      "pitch": -32768,
+      "pan": 32767,
+      "pan_target": -32768,
+      "depth_step": 7
+    },
+    "control_before": 2,
+    "key_before": 4660,
+    "code_flags_before": 32784,
     "centered": {
       "x": 0,
       "y": 0
@@ -182,6 +232,16 @@
       "y": 0,
       "buttons": 0
     },
+    "filter_x_before": 32767,
+    "camera_before": {
+      "pitch": 32767,
+      "pan": -32768,
+      "pan_target": 32767,
+      "depth_step": -9
+    },
+    "control_before": 1,
+    "key_before": 32,
+    "code_flags_before": 42240,
     "centered": {
       "x": -321,
       "y": -512
@@ -216,6 +276,16 @@
       "y": 32768,
       "buttons": 3
     },
+    "filter_x_before": 16384,
+    "camera_before": {
+      "pitch": 16384,
+      "pan": -4,
+      "pan_target": 3,
+      "depth_step": 32767
+    },
+    "control_before": 32768,
+    "key_before": 20512,
+    "code_flags_before": 23104,
     "centered": {
       "x": 32448,
       "y": 32256
@@ -250,6 +320,16 @@
       "y": 33280,
       "buttons": 0
     },
+    "filter_x_before": 0,
+    "camera_before": {
+      "pitch": 0,
+      "pan": 0,
+      "pan_target": 0,
+      "depth_step": 0
+    },
+    "control_before": 0,
+    "key_before": 0,
+    "code_flags_before": 240,
     "centered": {
       "x": 0,
       "y": -32768
