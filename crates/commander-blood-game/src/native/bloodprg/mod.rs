@@ -2,6 +2,7 @@
 
 mod aboard;
 mod descript;
+mod descript_lookup;
 mod menu_reveal;
 mod navigation;
 mod numbers;
@@ -33,6 +34,10 @@ pub use descript::{
     select_descript_music, select_location_scene_video, select_object_scene_video,
     set_location_scene_top_row, stage_descript_caption, stop_before_character_record,
     stop_before_location_record, stop_before_object_record, stop_before_sequence_record,
+};
+pub use descript_lookup::{
+    DescriptApplicationContext, DescriptApplicationError, DescriptApplicationResult,
+    DescriptRecordApplication, lookup_and_apply_descript_record,
 };
 pub use menu_reveal::{
     reveal_inline_menu_step, InlineMenuRevealError, InlineMenuRevealFrame,

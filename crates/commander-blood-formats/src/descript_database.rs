@@ -312,6 +312,7 @@ fn decode_record(
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeSet;
     use std::path::{Path, PathBuf};
 
     use super::*;
@@ -321,6 +322,22 @@ mod tests {
     const EXPECTED_SEQUENCE_VIDEO_COUNT: usize = 59;
     const EXPECTED_MUSIC_COUNT: usize = 55;
     const EXPECTED_CHARACTER_SPRITE_COUNT: usize = 25;
+    const EXPECTED_COMMAND_VARIANTS: [&str; 14] = [
+        "background",
+        "caption",
+        "character_left_video",
+        "character_right_video",
+        "character_sprite",
+        "idle_clip",
+        "location_layout",
+        "location_video",
+        "music",
+        "object_video",
+        "sequence_subtitle",
+        "sequence_video",
+        "sound_bank",
+        "talk_clip",
+    ];
 
     fn original_asset() -> PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -345,20 +362,61 @@ mod tests {
         let mut sequence_videos = 0;
         let mut music = 0;
         let mut character_sprites = 0;
+        let mut command_variants = BTreeSet::new();
         for command in commands {
-            match command {
-                DescriptCommand::SequenceSubtitle(_) => sequence_subtitles += 1,
-                DescriptCommand::SequenceVideo(_) => sequence_videos += 1,
-                DescriptCommand::Music(_) => music += 1,
-                DescriptCommand::CharacterSprite(_) => character_sprites += 1,
-                _ => {}
-            }
+            let variant = match command {
+                DescriptCommand::Background(_) => "background",
+                DescriptCommand::Caption(_) => "caption",
+                DescriptCommand::LocationVideo(_) => "location_video",
+                DescriptCommand::TalkClip(_) => "talk_clip",
+                DescriptCommand::LocationLayout(_) => "location_layout",
+                DescriptCommand::CharacterRightVideo(_) => "character_right_video",
+                DescriptCommand::CharacterLeftVideo(_) => "character_left_video",
+                DescriptCommand::IdleClip(_) => "idle_clip",
+                DescriptCommand::SequenceVideo(_) => {
+                    sequence_videos += 1;
+                    "sequence_video"
+                }
+                DescriptCommand::SequenceSubtitle(_) => {
+                    sequence_subtitles += 1;
+                    "sequence_subtitle"
+                }
+                DescriptCommand::CharacterSprite(_) => {
+                    character_sprites += 1;
+                    "character_sprite"
+                }
+                DescriptCommand::ObjectVideo(_) => "object_video",
+                DescriptCommand::SoundBank(_) => "sound_bank",
+                DescriptCommand::Music(_) => {
+                    music += 1;
+                    "music"
+                }
+            };
+            command_variants.insert(variant);
         }
 
         assert_eq!(sequence_subtitles, EXPECTED_SEQUENCE_SUBTITLE_COUNT);
         assert_eq!(sequence_videos, EXPECTED_SEQUENCE_VIDEO_COUNT);
         assert_eq!(music, EXPECTED_MUSIC_COUNT);
         assert_eq!(character_sprites, EXPECTED_CHARACTER_SPRITE_COUNT);
+        assert_eq!(
+            command_variants,
+            EXPECTED_COMMAND_VARIANTS.into_iter().collect()
+        );
+        for expected_end in [
+            DescriptRecordEnd::NextRecord(DescriptRecordKind::Location),
+            DescriptRecordEnd::NextRecord(DescriptRecordKind::Character),
+            DescriptRecordEnd::NextRecord(DescriptRecordKind::Sequence),
+            DescriptRecordEnd::NextRecord(DescriptRecordKind::Object),
+            DescriptRecordEnd::EndOfDatabase,
+        ] {
+            assert!(
+                database
+                    .records()
+                    .iter()
+                    .any(|record| record.end() == expected_end)
+            );
+        }
     }
 
     #[test]

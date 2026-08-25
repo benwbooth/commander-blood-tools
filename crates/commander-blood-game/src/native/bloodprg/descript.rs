@@ -129,6 +129,21 @@ pub struct DescriptPresentationAssets {
 }
 
 impl DescriptPresentationAssets {
+    pub(crate) fn begin_record_application(&mut self) {
+        self.location_scene_video = None;
+        self.object_scene_video = None;
+        self.character_right_scene_video = None;
+        self.character_left_scene_video = None;
+        self.sound_bank = None;
+        self.talk_clips.clear();
+        self.location_scene_top_row = None;
+        self.idle_clip = None;
+        self.encoded_idle_video = None;
+        self.sequence_videos.clear();
+        self.sequence_subtitles.clear();
+        self.character_sprite = None;
+    }
+
     /// Return the location scene's primary HNM resource.
     pub fn location_scene_video(&self) -> Option<&[u8]> {
         self.location_scene_video.as_deref()
@@ -189,7 +204,7 @@ impl DescriptPresentationAssets {
         self.character_sprite.as_ref()
     }
 
-    /// Return the normalized background-music VOC selected by this record.
+    /// Return the current normalized background-music VOC.
     pub fn music(&self) -> Option<&DescriptMusicName> {
         self.music.as_ref()
     }
