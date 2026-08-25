@@ -22,7 +22,7 @@ pub use aboard::{
 pub use navigation::{
     navigation_actor_targets, navigation_candidates, navigation_chart_objects,
     navigation_distance, navigation_source_objects, object_links_to, objects_at_arche_position,
-    resolve_navigation_position, ScriptNavigationError,
+    presentable_navigation_objects, resolve_navigation_position, ScriptNavigationError,
 };
 pub use numbers::{
     append_decimal_i16, append_decimal_i32, packed_bcd_to_binary, parse_startup_audio_number,

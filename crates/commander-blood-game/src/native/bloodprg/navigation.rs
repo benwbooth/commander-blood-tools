@@ -151,6 +151,24 @@ pub fn navigation_chart_objects(state: &ScriptState) -> Vec<ScriptObjectId> {
     filter_navigation_chart_objects(state, &source)
 }
 
+/// Return presentable navigation objects rooted at one target.
+///
+/// This translates `ship_3d_presentable_name_list_build` at BLOODPRG file
+/// offset `0x007259`. Target-first depth-first object IDs replace pointers to
+/// embedded name fields, preserving kind, in-play, and Arche exclusion gates.
+pub fn presentable_navigation_objects(
+    state: &ScriptState,
+    target: ScriptObjectId,
+    arche: ScriptObjectId,
+) -> Result<Vec<ScriptObjectId>, ScriptNavigationError> {
+    let mut source = Vec::with_capacity(state.objects().len());
+    source.push(target);
+    source.extend(navigation_source_objects(state, target)?);
+    Ok(filter_presentable_navigation_objects(
+        state, &source, arche,
+    ))
+}
+
 /// Resolve the live coordinate pair used for one navigation object.
 ///
 /// This translates `ship_3d_position_field_resolve` at BLOODPRG file offset
@@ -430,6 +448,28 @@ fn filter_navigation_chart_objects(
         .collect()
 }
 
+fn filter_presentable_navigation_objects(
+    state: &ScriptState,
+    source: &[ScriptObjectId],
+    arche: ScriptObjectId,
+) -> Vec<ScriptObjectId> {
+    source
+        .iter()
+        .copied()
+        .filter(|object| *object != arche)
+        .filter(|object| {
+            state.object(*object).is_some_and(|record| {
+                matches!(
+                    record.kind,
+                    ScriptObjectKind::CelestialBody
+                        | ScriptObjectKind::NavigationEntity
+                        | ScriptObjectKind::Location
+                ) && object_has_flag(state, *object, ScriptObjectFlag::InPlay) == Some(true)
+            })
+        })
+        .collect()
+}
+
 fn object_field(
     state: &ScriptState,
     object: ScriptObjectId,
@@ -515,12 +555,14 @@ mod tests {
     const ARCHE_POSITION_VECTOR_COUNT: usize = 16;
     const NAVIGATION_ACTOR_TARGET_VECTOR_COUNT: usize = 9;
     const NAVIGATION_CHART_VECTOR_COUNT: usize = 7;
+    const PRESENTABLE_NAVIGATION_VECTOR_COUNT: usize = 11;
     const POSITION_RESOLVER_VECTOR_COUNT: usize = 8;
     const POSITION_DISTANCE_VECTOR_COUNT: usize = 6;
     const DIRECTORY_ENTRY_SIZE: usize = 20;
     const DIRECTORY_NAME_CAPACITY: usize = 16;
     const DIRECTORY_OBJECT_KIND: u16 = 1;
     const OBJECT_FLAGS_BYTE_OFFSET: usize = 2;
+    const NATIVE_OBJECT_NAME_OFFSET: u16 = 4;
     const MATCHING_POSITION: [u16; 2] = [1_200, 3_400];
     const MISMATCHING_POSITION: [u16; 2] = [5_600, 7_800];
 
@@ -573,6 +615,14 @@ mod tests {
         count: usize,
     }
 
+    #[derive(Deserialize)]
+    struct PresentableNavigationOracle {
+        name: String,
+        target: [u16; 2],
+        source: Vec<u16>,
+        output_name_offsets: Vec<u16>,
+    }
+
     struct ArchePositionCase {
         kinds: Vec<ScriptObjectKind>,
         parents: Vec<Option<usize>>,
@@ -591,6 +641,13 @@ mod tests {
     struct NavigationChartCase {
         kinds: Vec<ScriptObjectKind>,
         source_indices: Vec<usize>,
+    }
+
+    struct PresentableNavigationCase {
+        kinds: Vec<ScriptObjectKind>,
+        flags: Vec<u8>,
+        source_indices: Vec<usize>,
+        arche_index: usize,
     }
 
     #[derive(Deserialize)]
@@ -1075,6 +1132,88 @@ mod tests {
     }
 
     #[test]
+    fn presentable_navigation_filter_matches_every_original_case() {
+        let vectors: Vec<PresentableNavigationOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_7259_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), PRESENTABLE_NAVIGATION_VECTOR_COUNT);
+
+        for vector in vectors {
+            let case = presentable_navigation_case(&vector.name);
+            let mut state = navigation_fixture(&case.kinds, &vec![None; case.kinds.len()]);
+            let objects = state
+                .objects()
+                .iter()
+                .map(|object| object.id)
+                .collect::<Vec<_>>();
+            for (object, flag) in objects.iter().copied().zip(&case.flags) {
+                let field = state.object_byte(object, OBJECT_FLAGS_BYTE_OFFSET).unwrap();
+                assert!(state.set_byte(field, *flag));
+            }
+            let source_offsets = std::iter::once(vector.target[1])
+                .chain(vector.source.iter().copied())
+                .collect::<Vec<_>>();
+            let source = case
+                .source_indices
+                .iter()
+                .map(|index| objects[*index])
+                .collect::<Vec<_>>();
+            assert_eq!(source.len(), source_offsets.len(), "{}", vector.name);
+            let expected = vector
+                .output_name_offsets
+                .iter()
+                .map(|name_offset| name_offset.wrapping_sub(NATIVE_OBJECT_NAME_OFFSET))
+                .map(|object_offset| {
+                    let source_index = source_offsets
+                        .iter()
+                        .position(|source_offset| *source_offset == object_offset)
+                        .unwrap();
+                    source[source_index]
+                })
+                .collect::<Vec<_>>();
+
+            assert_eq!(
+                filter_presentable_navigation_objects(
+                    &state,
+                    &source,
+                    objects[case.arche_index]
+                ),
+                expected,
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    #[test]
+    fn presentable_navigation_objects_are_target_first_and_depth_first() {
+        let mut state = navigation_fixture(
+            &[
+                ScriptObjectKind::CelestialBody,
+                ScriptObjectKind::Location,
+                ScriptObjectKind::NavigationEntity,
+                ScriptObjectKind::Actor,
+            ],
+            &[None, Some(0), Some(1), None],
+        );
+        let objects = state
+            .objects()
+            .iter()
+            .map(|object| object.id)
+            .collect::<Vec<_>>();
+        for object in &objects[..3] {
+            let field = state.object_byte(*object, OBJECT_FLAGS_BYTE_OFFSET).unwrap();
+            assert!(state.set_byte(field, 2));
+        }
+
+        assert_eq!(
+            presentable_navigation_objects(&state, objects[0], objects[3]).unwrap(),
+            vec![objects[0], objects[1], objects[2]]
+        );
+    }
+
+    #[test]
     fn every_shipped_navigation_relation_resolves_to_typed_objects() {
         for profile in 1..=5 {
             let directory = decode_script_directory(
@@ -1475,6 +1614,129 @@ mod tests {
                 source_indices: vec![0, 1],
             },
             _ => panic!("unknown navigation-chart oracle {name}"),
+        }
+    }
+
+    fn presentable_navigation_case(name: &str) -> PresentableNavigationCase {
+        let target_and_children =
+            |kinds: Vec<ScriptObjectKind>, flags: Vec<u8>, arche_index: usize| {
+                PresentableNavigationCase {
+                    source_indices: (0..kinds.len() - 1).collect(),
+                    kinds,
+                    flags,
+                    arche_index,
+                }
+            };
+
+        match name {
+            "target_only_accepted" => target_and_children(
+                vec![ScriptObjectKind::CelestialBody, ScriptObjectKind::Actor],
+                vec![2, 0],
+                1,
+            ),
+            "target_rejected_child_accepted" => target_and_children(
+                vec![
+                    ScriptObjectKind::Player,
+                    ScriptObjectKind::NavigationEntity,
+                    ScriptObjectKind::Actor,
+                ],
+                vec![2, 2, 0],
+                2,
+            ),
+            "all_presentable_kind_bits" => target_and_children(
+                vec![
+                    ScriptObjectKind::CelestialBody,
+                    ScriptObjectKind::NavigationEntity,
+                    ScriptObjectKind::Location,
+                    ScriptObjectKind::CelestialBody,
+                    ScriptObjectKind::Actor,
+                ],
+                vec![2, 162, 2, 254, 0],
+                4,
+            ),
+            "kind_mask_must_be_nonzero" => target_and_children(
+                vec![
+                    ScriptObjectKind::BlackHole,
+                    ScriptObjectKind::Player,
+                    ScriptObjectKind::Actor,
+                    ScriptObjectKind::InventoryItem,
+                    ScriptObjectKind::Auxiliary,
+                    ScriptObjectKind::NavigationEntity,
+                ],
+                vec![2, 2, 2, 2, 2, 0],
+                5,
+            ),
+            "in_play_bit_two_required" => target_and_children(
+                vec![
+                    ScriptObjectKind::CelestialBody,
+                    ScriptObjectKind::CelestialBody,
+                    ScriptObjectKind::CelestialBody,
+                    ScriptObjectKind::CelestialBody,
+                    ScriptObjectKind::Actor,
+                ],
+                vec![0, 1, 2, 254, 0],
+                4,
+            ),
+            "exclude_arche_after_record_tests" => PresentableNavigationCase {
+                kinds: vec![
+                    ScriptObjectKind::NavigationEntity,
+                    ScriptObjectKind::NavigationEntity,
+                    ScriptObjectKind::NavigationEntity,
+                ],
+                flags: vec![2, 2, 2],
+                source_indices: vec![0, 1, 2],
+                arche_index: 1,
+            },
+            "zero_offset_is_valid" => target_and_children(
+                vec![
+                    ScriptObjectKind::Location,
+                    ScriptObjectKind::CelestialBody,
+                    ScriptObjectKind::Actor,
+                ],
+                vec![2, 2, 0],
+                2,
+            ),
+            "target_and_name_offset_wrap" => target_and_children(
+                vec![
+                    ScriptObjectKind::CelestialBody,
+                    ScriptObjectKind::Location,
+                    ScriptObjectKind::Actor,
+                ],
+                vec![2, 2, 0],
+                2,
+            ),
+            "unsigned_source_fffe_is_not_sentinel" => target_and_children(
+                vec![
+                    ScriptObjectKind::Player,
+                    ScriptObjectKind::NavigationEntity,
+                    ScriptObjectKind::Location,
+                    ScriptObjectKind::Actor,
+                ],
+                vec![2, 2, 2, 0],
+                3,
+            ),
+            "all_rejected" => PresentableNavigationCase {
+                kinds: vec![
+                    ScriptObjectKind::Player,
+                    ScriptObjectKind::CelestialBody,
+                    ScriptObjectKind::Actor,
+                    ScriptObjectKind::NavigationEntity,
+                ],
+                flags: vec![0, 0, 2, 2],
+                source_indices: vec![0, 1, 2, 3],
+                arche_index: 3,
+            },
+            "inherited_reverse_direction" => target_and_children(
+                vec![
+                    ScriptObjectKind::CelestialBody,
+                    ScriptObjectKind::NavigationEntity,
+                    ScriptObjectKind::Location,
+                    ScriptObjectKind::Actor,
+                ],
+                vec![2, 2, 2, 0],
+                3,
+            ),
+            _ => panic!("unknown presentable-navigation oracle {name}"),
         }
     }
 
