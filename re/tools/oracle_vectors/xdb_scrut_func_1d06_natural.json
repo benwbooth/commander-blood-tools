@@ -1,0 +1,597 @@
+[
+  {
+    "name": "inside_zero",
+    "module": "scrut",
+    "entry": 7430,
+    "outside": false,
+    "depth_bound": 200,
+    "current_position": [
+      0,
+      0,
+      0
+    ],
+    "other_position": [
+      0,
+      0,
+      0
+    ],
+    "pitch_before": 300,
+    "pitch_after": 300,
+    "pan_before": 1110,
+    "pan_after": 1110,
+    "cosine": 16000,
+    "sine": 57536,
+    "direction": null,
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_after": [
+      0,
+      0,
+      0
+    ],
+    "data_sha256": "f0f00bb3b2cd81dc415349f102064b4faa15a855448376c7e644a8dbfc926f0e"
+  },
+  {
+    "name": "inside_depth_low",
+    "module": "scrut",
+    "entry": 7430,
+    "outside": false,
+    "depth_bound": 200,
+    "current_position": [
+      0,
+      0,
+      0
+    ],
+    "other_position": [
+      0,
+      0,
+      4294967096
+    ],
+    "pitch_before": 300,
+    "pitch_after": 300,
+    "pan_before": 1110,
+    "pan_after": 1110,
+    "cosine": 16000,
+    "sine": 57536,
+    "direction": null,
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_after": [
+      0,
+      0,
+      4294967096
+    ],
+    "data_sha256": "a96c6dd732dd19fe30a72bcfc403407ddff0995136e8200c89422055a786578a"
+  },
+  {
+    "name": "inside_depth_high",
+    "module": "scrut",
+    "entry": 7430,
+    "outside": false,
+    "depth_bound": 200,
+    "current_position": [
+      0,
+      0,
+      0
+    ],
+    "other_position": [
+      0,
+      0,
+      200
+    ],
+    "pitch_before": 300,
+    "pitch_after": 300,
+    "pan_before": 1110,
+    "pan_after": 1110,
+    "cosine": 16000,
+    "sine": 57536,
+    "direction": null,
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_after": [
+      0,
+      0,
+      200
+    ],
+    "data_sha256": "d45aa5a3c51c0be9fabc13a0555959843cee79281fde266666584694a3e56f53"
+  },
+  {
+    "name": "inside_lateral_low",
+    "module": "scrut",
+    "entry": 7430,
+    "outside": false,
+    "depth_bound": 200,
+    "current_position": [
+      0,
+      0,
+      0
+    ],
+    "other_position": [
+      4294967096,
+      0,
+      0
+    ],
+    "pitch_before": 300,
+    "pitch_after": 300,
+    "pan_before": 1110,
+    "pan_after": 1110,
+    "cosine": 16000,
+    "sine": 57536,
+    "direction": null,
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_after": [
+      4294967096,
+      0,
+      0
+    ],
+    "data_sha256": "101f0bfba18fa23a7c8c04c5377fbafcd7e61839edce94f1387def31aabbbcc6"
+  },
+  {
+    "name": "inside_lateral_high",
+    "module": "scrut",
+    "entry": 7430,
+    "outside": false,
+    "depth_bound": 200,
+    "current_position": [
+      0,
+      0,
+      0
+    ],
+    "other_position": [
+      200,
+      0,
+      0
+    ],
+    "pitch_before": 300,
+    "pitch_after": 300,
+    "pan_before": 1110,
+    "pan_after": 1110,
+    "cosine": 16000,
+    "sine": 57536,
+    "direction": null,
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_after": [
+      200,
+      0,
+      0
+    ],
+    "data_sha256": "400bfb69662c93a8ac4e0ffd5bd47cd576dc89ea93f2741438eaf00ef0506f4e"
+  },
+  {
+    "name": "inside_vertical_low",
+    "module": "scrut",
+    "entry": 7430,
+    "outside": false,
+    "depth_bound": 200,
+    "current_position": [
+      0,
+      0,
+      0
+    ],
+    "other_position": [
+      0,
+      4294967096,
+      0
+    ],
+    "pitch_before": 300,
+    "pitch_after": 300,
+    "pan_before": 1110,
+    "pan_after": 1110,
+    "cosine": 16000,
+    "sine": 57536,
+    "direction": null,
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_after": [
+      0,
+      4294967096,
+      0
+    ],
+    "data_sha256": "2b3ece21501eae4536673af4a693c6b12658e85a80c263bf4852be0ea8446bd9"
+  },
+  {
+    "name": "inside_vertical_high",
+    "module": "scrut",
+    "entry": 7430,
+    "outside": false,
+    "depth_bound": 200,
+    "current_position": [
+      0,
+      0,
+      0
+    ],
+    "other_position": [
+      0,
+      199,
+      0
+    ],
+    "pitch_before": 300,
+    "pitch_after": 300,
+    "pan_before": 1110,
+    "pan_after": 1110,
+    "cosine": 16000,
+    "sine": 57536,
+    "direction": null,
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_after": [
+      0,
+      199,
+      0
+    ],
+    "data_sha256": "6523552341e64d062cf6cf036388e3d1eaed144d7c349bc3f717c1bf84d111fd"
+  },
+  {
+    "name": "outside_depth_low",
+    "module": "scrut",
+    "entry": 7430,
+    "outside": true,
+    "depth_bound": 200,
+    "current_position": [
+      0,
+      0,
+      0
+    ],
+    "other_position": [
+      0,
+      0,
+      4294967095
+    ],
+    "pitch_before": 300,
+    "pitch_after": 150,
+    "pan_before": 1110,
+    "pan_after": 1076,
+    "cosine": 16000,
+    "sine": 57536,
+    "direction": 4293359296,
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_after": [
+      0,
+      0,
+      4294967095
+    ],
+    "data_sha256": "b73abb4833ddccc70e59d8a646c96158ac647c6752d524f3b8d2783fde2655c2"
+  },
+  {
+    "name": "outside_depth_high",
+    "module": "scrut",
+    "entry": 7430,
+    "outside": true,
+    "depth_bound": 200,
+    "current_position": [
+      0,
+      0,
+      0
+    ],
+    "other_position": [
+      0,
+      0,
+      201
+    ],
+    "pitch_before": 300,
+    "pitch_after": 150,
+    "pan_before": 1110,
+    "pan_after": 1124,
+    "cosine": 16000,
+    "sine": 57536,
+    "direction": 1608000,
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_after": [
+      0,
+      0,
+      201
+    ],
+    "data_sha256": "6d5d2ab3289e32862b503c257498fd363fbb3cc61af49fd0e92e03c9f6cb2005"
+  },
+  {
+    "name": "outside_lateral_low",
+    "module": "scrut",
+    "entry": 7430,
+    "outside": true,
+    "depth_bound": 200,
+    "current_position": [
+      0,
+      0,
+      0
+    ],
+    "other_position": [
+      4294967095,
+      0,
+      0
+    ],
+    "pitch_before": 300,
+    "pitch_after": 150,
+    "pan_before": 1110,
+    "pan_after": 1076,
+    "cosine": 16000,
+    "sine": 57536,
+    "direction": 4291751296,
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_after": [
+      4294967095,
+      0,
+      0
+    ],
+    "data_sha256": "fea6ce8cda0261cec729bbed91bc9c6436e4863bbe50ecfe93f3034b641e40e8"
+  },
+  {
+    "name": "outside_lateral_high",
+    "module": "scrut",
+    "entry": 7430,
+    "outside": true,
+    "depth_bound": 200,
+    "current_position": [
+      0,
+      0,
+      0
+    ],
+    "other_position": [
+      201,
+      0,
+      0
+    ],
+    "pitch_before": 300,
+    "pitch_after": 150,
+    "pan_before": 1110,
+    "pan_after": 1124,
+    "cosine": 16000,
+    "sine": 57536,
+    "direction": 3216000,
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_after": [
+      201,
+      0,
+      0
+    ],
+    "data_sha256": "8b30ae9a7f67e489e184dbdf004409fa7e9bb138bbfa3bc5db8ea63356d214d1"
+  },
+  {
+    "name": "outside_vertical_low",
+    "module": "scrut",
+    "entry": 7430,
+    "outside": true,
+    "depth_bound": 200,
+    "current_position": [
+      0,
+      0,
+      0
+    ],
+    "other_position": [
+      0,
+      4294967095,
+      0
+    ],
+    "pitch_before": 300,
+    "pitch_after": 163,
+    "pan_before": 1110,
+    "pan_after": 1124,
+    "cosine": 16000,
+    "sine": 57536,
+    "direction": 0,
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_after": [
+      0,
+      4294967095,
+      0
+    ],
+    "data_sha256": "3725e062316b2c5b4dd5a3ed796e1adc16d57aeaa6f769606edf4549244b74c1"
+  },
+  {
+    "name": "outside_vertical_high",
+    "module": "scrut",
+    "entry": 7430,
+    "outside": true,
+    "depth_bound": 200,
+    "current_position": [
+      0,
+      0,
+      0
+    ],
+    "other_position": [
+      0,
+      200,
+      0
+    ],
+    "pitch_before": 300,
+    "pitch_after": 137,
+    "pan_before": 1110,
+    "pan_after": 1124,
+    "cosine": 16000,
+    "sine": 57536,
+    "direction": 0,
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_after": [
+      0,
+      200,
+      0
+    ],
+    "data_sha256": "84728e8eb944f0d63d014aff950be53da471a62aec42f71f60031e442bce7a64"
+  },
+  {
+    "name": "outside_negative_direction",
+    "module": "scrut",
+    "entry": 7430,
+    "outside": true,
+    "depth_bound": 200,
+    "current_position": [
+      0,
+      0,
+      0
+    ],
+    "other_position": [
+      4294967095,
+      72,
+      0
+    ],
+    "pitch_before": 300,
+    "pitch_after": 145,
+    "pan_before": 1110,
+    "pan_after": 1076,
+    "cosine": 20000,
+    "sine": 0,
+    "direction": 4290947296,
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_after": [
+      4294967095,
+      72,
+      0
+    ],
+    "data_sha256": "c094447b67a49f1e7fd9478e794745ed4b9e74dfa98531627a13fb710e33df44"
+  },
+  {
+    "name": "wrapped_vertical_delta",
+    "module": "scrut",
+    "entry": 7430,
+    "outside": false,
+    "depth_bound": 200,
+    "current_position": [
+      0,
+      32767,
+      0
+    ],
+    "other_position": [
+      0,
+      4294934528,
+      0
+    ],
+    "pitch_before": 300,
+    "pitch_after": 300,
+    "pan_before": 1110,
+    "pan_after": 1110,
+    "cosine": 16000,
+    "sine": 57536,
+    "direction": null,
+    "current_position_after": [
+      0,
+      32767,
+      0
+    ],
+    "other_position_after": [
+      0,
+      4294934528,
+      0
+    ],
+    "data_sha256": "7af466d12242daceebc6c6d9b5a5a10c39ae5da8924add49bd49d4cb27caef2f"
+  },
+  {
+    "name": "pitch_and_pan_wrap",
+    "module": "scrut",
+    "entry": 7430,
+    "outside": true,
+    "depth_bound": 200,
+    "current_position": [
+      0,
+      0,
+      0
+    ],
+    "other_position": [
+      4294967095,
+      4294967095,
+      0
+    ],
+    "pitch_before": 32768,
+    "pitch_after": 49165,
+    "pan_before": 65535,
+    "pan_after": 4060,
+    "cosine": 20000,
+    "sine": 0,
+    "direction": 4290947296,
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_after": [
+      4294967095,
+      4294967095,
+      0
+    ],
+    "data_sha256": "3ac77725e0df3b0205d83268f3a1621c8eb8f08f484b815db89dc383bf38cfab"
+  },
+  {
+    "name": "wrapped_state_offsets",
+    "module": "scrut",
+    "entry": 7430,
+    "outside": true,
+    "depth_bound": 200,
+    "current_position": [
+      0,
+      0,
+      0
+    ],
+    "other_position": [
+      201,
+      200,
+      201
+    ],
+    "pitch_before": 300,
+    "pitch_after": 137,
+    "pan_before": 1110,
+    "pan_after": 1124,
+    "cosine": 16000,
+    "sine": 57536,
+    "direction": 4824000,
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_after": [
+      201,
+      200,
+      201
+    ],
+    "data_sha256": "d78a9a13fb65f6aea950df2b6fc60ff694a7ca8d0a34847ed03f7fbc66b3da48"
+  }
+]

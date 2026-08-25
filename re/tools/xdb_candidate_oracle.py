@@ -9039,6 +9039,268 @@ def scrut_slot2_reset_or_camera_vectors(entry: int) -> list[dict[str, object]]:
     return vectors
 
 
+def alien_resume_pair_outside_vectors(module: str, entry: int) -> list[dict[str, object]]:
+    image = load_image(module)
+    configs = {
+        "amer": (
+            127,
+            "357e06679a3b1192aed9232d67f7409e4f0f7cc6d250b14e6ddfe709f76c1b0c",
+            100,
+        ),
+        "croolis": (
+            129,
+            "4040f1efbaa817b8e622ac90cfcd07d6ebc06d4aaa1d4cc58ae812f569f39149",
+            200,
+        ),
+        "scrut": (
+            129,
+            "4040f1efbaa817b8e622ac90cfcd07d6ebc06d4aaa1d4cc58ae812f569f39149",
+            200,
+        ),
+    }
+    body_size, body_hash, depth_bound = configs[module]
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered body changed")
+
+    data_segment = 0x5000
+    extra_segment = 0x7000
+    fs_segment = 0x9000
+    game_segment = 0xA000
+    stack_segment = 0xB000
+    return_address = 0xF000
+    angle_table_offset = 0x0036
+    defaults = {
+        "current": 0x4000,
+        "other": 0x5000,
+        "current_position": (0, 0, 0),
+        "other_position": (0, 0, 0),
+        "pitch": 300,
+        "pan": 0x0456,
+        "cosine": 16_000,
+        "sine": -8_000,
+    }
+    cases = (
+        ("inside_zero", {}),
+        ("inside_depth_low", {"other_position": (0, 0, -depth_bound)}),
+        ("inside_depth_high", {"other_position": (0, 0, depth_bound)}),
+        ("inside_lateral_low", {"other_position": (-200, 0, 0)}),
+        ("inside_lateral_high", {"other_position": (200, 0, 0)}),
+        ("inside_vertical_low", {"other_position": (0, -200, 0)}),
+        ("inside_vertical_high", {"other_position": (0, 199, 0)}),
+        ("outside_depth_low", {"other_position": (0, 0, -depth_bound - 1)}),
+        ("outside_depth_high", {"other_position": (0, 0, depth_bound + 1)}),
+        ("outside_lateral_low", {"other_position": (-201, 0, 0)}),
+        ("outside_lateral_high", {"other_position": (201, 0, 0)}),
+        ("outside_vertical_low", {"other_position": (0, -201, 0)}),
+        ("outside_vertical_high", {"other_position": (0, 200, 0)}),
+        (
+            "outside_negative_direction",
+            {
+                "other_position": (-201, 72, 0),
+                "cosine": 20_000,
+                "sine": 0,
+            },
+        ),
+        (
+            "wrapped_vertical_delta",
+            {
+                "current_position": (0, 32_767, 0),
+                "other_position": (0, -32_768, 0),
+            },
+        ),
+        (
+            "pitch_and_pan_wrap",
+            {
+                "other_position": (-201, -201, 0),
+                "pitch": -32_768,
+                "pan": 0xFFFF,
+                "cosine": 20_000,
+                "sine": 0,
+            },
+        ),
+        (
+            "wrapped_state_offsets",
+            {
+                "current": 0xFF80,
+                "other": 0x0200,
+                "other_position": (201, 200, depth_bound + 1),
+            },
+        ),
+    )
+    vectors: list[dict[str, object]] = []
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        encoded = struct.pack("<H", value & 0xFFFF)
+        for index, byte in enumerate(encoded):
+            memory[(offset + index) & 0xFFFF] = byte
+
+    def put_u32(memory: bytearray, offset: int, value: int) -> None:
+        encoded = struct.pack("<I", value & 0xFFFFFFFF)
+        for index, byte in enumerate(encoded):
+            memory[(offset + index) & 0xFFFF] = byte
+
+    def get_u16(memory: bytes | bytearray, offset: int) -> int:
+        return memory[offset & 0xFFFF] | (memory[(offset + 1) & 0xFFFF] << 8)
+
+    def get_u32(memory: bytes | bytearray, offset: int) -> int:
+        return get_u16(memory, offset) | (get_u16(memory, offset + 2) << 16)
+
+    def signed_word(value: int) -> int:
+        value &= 0xFFFF
+        return value if value < 0x8000 else value - 0x10000
+
+    def signed_dword(value: int) -> int:
+        value &= 0xFFFFFFFF
+        return value if value < 0x80000000 else value - 0x100000000
+
+    for case_index, (name, overrides) in enumerate(cases):
+        case = defaults | overrides
+        current = int(case["current"])
+        other = int(case["other"])
+        current_position = tuple(int(value) for value in case["current_position"])
+        other_position = tuple(int(value) for value in case["other_position"])
+        pitch = int(case["pitch"])
+        pan = int(case["pan"])
+        cosine = int(case["cosine"])
+        sine = int(case["sine"])
+        data_before = bytearray(
+            (offset * 31 + case_index * 19 + 7) & 0xFF
+            for offset in range(0x10000)
+        )
+        for state, position in ((current, current_position), (other, other_position)):
+            for offset, component in zip((0x42, 0x46, 0x4A), position):
+                put_u32(data_before, state + offset, component)
+        put_u16(data_before, current + 0x4E, pitch)
+        put_u16(data_before, current + 0x50, pan)
+        sample_offset = pan & 0x0FFC
+        put_u16(data_before, angle_table_offset + sample_offset, cosine)
+        put_u16(data_before, angle_table_offset + sample_offset + 2, sine)
+        data_expected = bytearray(data_before)
+
+        z_delta = signed_word(other_position[2]) - signed_word(current_position[2])
+        x_delta = signed_word(other_position[0]) - signed_word(current_position[0])
+        y_delta = signed_word(other_position[1] - current_position[1])
+        outside = not (
+            -depth_bound <= z_delta <= depth_bound
+            and -200 <= x_delta <= 200
+            and -200 <= y_delta < 200
+        )
+        direction = None
+        if outside:
+            y_step = y_delta >> 3
+            steering = signed_word(pitch - y_step)
+            pitch_after = steering >> 1
+            put_u16(data_expected, current + 0x4E, pitch_after)
+            direction = (
+                ((cosine & 0xFFFFFFFF) * (x_delta & 0xFFFFFFFF))
+                - ((sine & 0xFFFFFFFF) * (z_delta & 0xFFFFFFFF))
+            ) & 0xFFFFFFFF
+            pan_step = -32 if signed_dword(direction) < 0 else 16
+            put_u16(data_expected, current + 0x50, sample_offset + pan_step)
+
+        extra_before = bytes(
+            (offset * 13 + case_index + 3) & 0xFF for offset in range(0x10000)
+        )
+        fs_before = bytes(
+            (offset * 17 + case_index + 5) & 0xFF for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 23 + case_index + 9) & 0xFF for offset in range(0x10000)
+        )
+        stack_sentinel = bytes.fromhex("877869965aa5")
+        stack_before = struct.pack("<H", return_address) + stack_sentinel
+        initial = {
+            "eax": 0xA1A12345,
+            "ebx": 0xB2B23456,
+            "ecx": 0xC3C34567,
+            "edx": 0xD4D45678,
+            "esi": 0xE5E50000 | current,
+            "edi": 0xF6F60000 | other,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0292 | (0x0400 if case_index & 1 else 0),
+        }
+        machine = execute(
+            image,
+            entry,
+            return_address,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (extra_segment, 0, extra_before),
+                (fs_segment, 0, fs_before),
+                (game_segment, 0, game_before),
+                (stack_segment, 0xFF00, stack_before),
+            ],
+            max_instructions=100,
+        )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(data_expected):
+            differences = [
+                (offset, actual_data[offset], data_expected[offset])
+                for offset in range(0x10000)
+                if actual_data[offset] != data_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: data differs at {differences}"
+            )
+        if bytes(machine.mem_read(0, len(image))) != image:
+            raise AssertionError(f"{module}:{entry:#x} {name}: code changed")
+        for segment, expected in (
+            (extra_segment, extra_before),
+            (fs_segment, fs_before),
+            (game_segment, game_before),
+        ):
+            if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: segment {segment:#x} changed"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, len(stack_sentinel))) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+        if machine.reg_read(UC_X86_REG_SP) != 0xFF02:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack pointer changed")
+        carry_after = bool(machine.reg_read(UC_X86_REG_EFLAGS) & 1)
+        if carry_after != (not outside):
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: carry={carry_after}, outside={outside}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "outside": outside,
+                "depth_bound": depth_bound,
+                "current_position": [value & 0xFFFFFFFF for value in current_position],
+                "other_position": [value & 0xFFFFFFFF for value in other_position],
+                "pitch_before": pitch & 0xFFFF,
+                "pitch_after": get_u16(data_expected, current + 0x4E),
+                "pan_before": pan & 0xFFFF,
+                "pan_after": get_u16(data_expected, current + 0x50),
+                "cosine": cosine & 0xFFFF,
+                "sine": sine & 0xFFFF,
+                "direction": direction,
+                "current_position_after": [
+                    get_u32(data_expected, current + offset)
+                    for offset in (0x42, 0x46, 0x4A)
+                ],
+                "other_position_after": [
+                    get_u32(data_expected, other + offset)
+                    for offset in (0x42, 0x46, 0x4A)
+                ],
+                "data_sha256": hashlib.sha256(data_expected).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def scrut_slot2_steering_vectors(entry: int) -> list[dict[str, object]]:
     module = "scrut"
     image = load_image(module)
@@ -24212,6 +24474,16 @@ def main() -> int:
         scrut_slot2_reset_or_camera_vectors(0x1A11),
         args.check,
     )
+    for module, entry in (
+        ("amer", 0x1CFA),
+        ("croolis", 0x1C46),
+        ("scrut", 0x1D06),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            alien_resume_pair_outside_vectors(module, entry),
+            args.check,
+        )
     update_vector(
         VECTOR_ROOT / "xdb_scrut_func_18d9_natural.json",
         scrut_slot2_steering_vectors(0x18D9),

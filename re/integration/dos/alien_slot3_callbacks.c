@@ -24,6 +24,7 @@
 #define RESUME_STAGE_FINAL xdb_amer_resume_stage_final
 #define RESUME_PAIR_OUTSIDE xdb_amer_resume_pair_outside
 #define SLOT1_WAVE_UPDATE xdb_amer_slot1_wave_update
+#define SLOT1_STATE_UPDATE xdb_amer_slot1_state_update
 #define SLOT11_QUEUE_CURSOR xdb_amer_slot11_queue_cursor
 #define SLOT11_CURRENT_STATE xdb_amer_slot11_current_state
 #define SLOT11_STATE_QUEUE xdb_amer_slot11_state_queue
@@ -57,6 +58,7 @@
 #define RESUME_STAGE_FINAL xdb_croolis_resume_stage_final
 #define RESUME_PAIR_OUTSIDE xdb_croolis_resume_pair_outside
 #define SLOT1_WAVE_UPDATE xdb_croolis_slot1_wave_update
+#define SLOT1_STATE_UPDATE xdb_croolis_slot1_state_update
 #define SLOT11_QUEUE_CURSOR xdb_croolis_slot11_queue_cursor
 #define SLOT11_CURRENT_STATE xdb_croolis_slot11_current_state
 #define SLOT11_STATE_QUEUE xdb_croolis_slot11_state_queue
@@ -88,6 +90,7 @@
 #define RESUME_STAGE_FINAL xdb_scrut_resume_stage_final
 #define RESUME_PAIR_OUTSIDE xdb_scrut_resume_pair_outside
 #define SLOT1_WAVE_UPDATE xdb_scrut_slot1_wave_update
+#define SLOT1_STATE_UPDATE xdb_scrut_slot1_state_update
 #define SLOT11_QUEUE_CURSOR xdb_scrut_slot11_queue_cursor
 #define SLOT11_CURRENT_STATE xdb_scrut_slot11_current_state
 #define SLOT11_STATE_QUEUE xdb_scrut_slot11_state_queue
@@ -135,6 +138,7 @@ static xdb_test_object_space object_space;
 static xdb_test_state_space pair_state_space;
 static xdb_alien_biased_state pair_other;
 static xdb_alien_biased_state slot11_target;
+static xdb_u16 slot1_state_update_calls;
 
 void XDB_NEAR SLOT1_WAVE_UPDATE(
         xdb_alien_biased_state XDB_NEAR *state,
@@ -142,6 +146,15 @@ void XDB_NEAR SLOT1_WAVE_UPDATE(
 {
     (void)state;
     (void)context;
+}
+
+void XDB_NEAR SLOT1_STATE_UPDATE(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context)
+{
+    (void)state;
+    (void)context;
+    ++slot1_state_update_calls;
 }
 
 static int write_result(const char *status)
@@ -520,6 +533,22 @@ int main(void)
             || xdb_test_slot11_current_state() != (xdb_u16)(size_t)&state
             || xdb_test_slot11_state_at(6) != (xdb_u16)(size_t)&state) {
         return write_result("FAIL update restart dispatch");
+    }
+
+    memset(&state, 0, sizeof(state));
+    memset(&context, 0, sizeof(context));
+    state.ring_offset = 0x01a8;
+    ring = &SLOT3_RING[(state.ring_offset + 8u) >> 3];
+    memset(ring, 0, sizeof(*ring));
+    SLOT3_TIMER = 0;
+    SLOT1_SELECTION_STATE = 0;
+    xdb_alien_callback_countdown = 0;
+    slot1_state_update_calls = 0;
+    UPDATE(&state, &context);
+    if (slot1_state_update_calls != 1
+            || ring->field_004 != 8 || ring->field_006 != 1
+            || xdb_alien_callback_countdown != 2) {
+        return write_result("FAIL update slot1 dispatch");
     }
 
     resume_error = check_resume_routines();

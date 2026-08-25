@@ -1,6 +1,25 @@
-//! Initialization and indirect dispatch for alien resume behavior.
+//! Typed state and callbacks for alien resume behavior.
 
-use super::AlienSpecies;
+use commander_blood_formats::alien::{AlienTrigonometryPair, TRIGONOMETRY_ENTRY_COUNT};
+
+use super::{AlienNodePose, AlienSpecies};
+
+const X_AXIS: usize = 0;
+const Y_AXIS: usize = 1;
+const Z_AXIS: usize = 2;
+const PITCH_AXIS: usize = 0;
+const PAN_AXIS: usize = 1;
+const AMER_DEPTH_BOUND: i32 = 100;
+const OTHER_DEPTH_BOUND: i32 = 200;
+const LATERAL_BOUND: i32 = 200;
+const VERTICAL_MINIMUM: i16 = -200;
+const VERTICAL_MAXIMUM_EXCLUSIVE: i16 = 200;
+const VERTICAL_EASING_SHIFT: u32 = 3;
+const PITCH_EASING_SHIFT: u32 = 1;
+const ANGLE_MASK: u16 = 0x0ffc;
+const ANGLE_INDEX_SHIFT: u32 = 2;
+const NEGATIVE_DIRECTION_PAN_STEP: i16 = -32;
+const NONNEGATIVE_DIRECTION_PAN_STEP: i16 = 16;
 
 /// Resume callback selected by the recovered slot-13 coordinator.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -45,6 +64,15 @@ pub enum AlienResumeUpdate {
     CallbackInvoked,
 }
 
+/// Spatial relationship found while steering a resumed model pair.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienResumePairUpdate {
+    /// Both nodes are inside the species-specific pairing bounds.
+    Inside,
+    /// The current node was steered toward an outlying paired node.
+    Outside,
+}
+
 /// Initialize or dispatch the recovered slot-13 resume method.
 pub fn initialize_or_dispatch_resume<C: AlienResumeCallbacks>(
     species: AlienSpecies,
@@ -62,10 +90,56 @@ pub fn initialize_or_dispatch_resume<C: AlienResumeCallbacks>(
     Ok(AlienResumeUpdate::Initialized)
 }
 
+/// Test a resumed node pair and steer the current node when they remain apart.
+pub fn update_resume_pair_steering(
+    species: AlienSpecies,
+    current: &mut AlienNodePose,
+    other: &AlienNodePose,
+    trigonometry: &[AlienTrigonometryPair; TRIGONOMETRY_ENTRY_COUNT],
+) -> AlienResumePairUpdate {
+    let depth_delta = i32::from(position_word(other, Z_AXIS))
+        .wrapping_sub(i32::from(position_word(current, Z_AXIS)));
+    let lateral_delta = i32::from(position_word(other, X_AXIS))
+        .wrapping_sub(i32::from(position_word(current, X_AXIS)));
+    let vertical_delta = position_word(other, Y_AXIS).wrapping_sub(position_word(current, Y_AXIS));
+    let depth_bound = match species {
+        AlienSpecies::Amer => AMER_DEPTH_BOUND,
+        AlienSpecies::Croolis | AlienSpecies::Scrut => OTHER_DEPTH_BOUND,
+    };
+    if (-depth_bound..=depth_bound).contains(&depth_delta)
+        && (-LATERAL_BOUND..=LATERAL_BOUND).contains(&lateral_delta)
+        && (VERTICAL_MINIMUM..VERTICAL_MAXIMUM_EXCLUSIVE).contains(&vertical_delta)
+    {
+        return AlienResumePairUpdate::Inside;
+    }
+
+    let vertical_step = vertical_delta >> VERTICAL_EASING_SHIFT;
+    let pitch = (current.angles[PITCH_AXIS] as i16).wrapping_sub(vertical_step);
+    current.angles[PITCH_AXIS] = (pitch >> PITCH_EASING_SHIFT) as u16;
+
+    let sample_offset = current.angles[PAN_AXIS] & ANGLE_MASK;
+    let sample = trigonometry[usize::from(sample_offset >> ANGLE_INDEX_SHIFT)];
+    let direction = i32::from(sample.cosine)
+        .wrapping_mul(lateral_delta)
+        .wrapping_sub(i32::from(sample.sine).wrapping_mul(depth_delta));
+    let pan_step = if direction < i32::default() {
+        NEGATIVE_DIRECTION_PAN_STEP
+    } else {
+        NONNEGATIVE_DIRECTION_PAN_STEP
+    };
+    current.angles[PAN_AXIS] = sample_offset.wrapping_add(pan_step as u16);
+    AlienResumePairUpdate::Outside
+}
+
+fn position_word(node: &AlienNodePose, axis: usize) -> i16 {
+    node.local_position[axis] as i16
+}
+
 #[cfg(test)]
 mod tests {
     use std::convert::Infallible;
 
+    use commander_blood_formats::alien::{AXIS_COUNT, AlienNodeParent, AlienTransformData};
     use serde::Deserialize;
 
     use super::*;
@@ -83,6 +157,23 @@ mod tests {
         resume_value_before: u16,
         resume_value_after: u16,
         tail_dispatched: bool,
+    }
+
+    #[derive(Deserialize)]
+    struct ResumePairVector {
+        name: String,
+        module: String,
+        outside: bool,
+        current_position: [u32; AXIS_COUNT],
+        other_position: [u32; AXIS_COUNT],
+        pitch_before: u16,
+        pitch_after: u16,
+        pan_before: u16,
+        pan_after: u16,
+        cosine: u16,
+        sine: u16,
+        current_position_after: [u32; AXIS_COUNT],
+        other_position_after: [u32; AXIS_COUNT],
     }
 
     #[derive(Default)]
@@ -121,6 +212,29 @@ mod tests {
             ),
             include_str!("../../../../../re/tools/oracle_vectors/xdb_scrut_func_1bfb_natural.json"),
         ]
+    }
+
+    fn pair_fixtures() -> [&'static str; 3] {
+        [
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_amer_func_1cfa_natural.json"),
+            include_str!(
+                "../../../../../re/tools/oracle_vectors/xdb_croolis_func_1c46_natural.json"
+            ),
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_scrut_func_1d06_natural.json"),
+        ]
+    }
+
+    fn node(position: [u32; AXIS_COUNT], pitch: u16, pan: u16) -> AlienNodePose {
+        AlienNodePose {
+            parent: AlienNodeParent::Root,
+            scene_parent: None,
+            first_vertex: usize::default(),
+            vertex_count: 1,
+            transform: AlienTransformData::default(),
+            local_position: position.map(|value| value as i32),
+            angles: [pitch, pan, u16::default()],
+            radial_offset: i16::default(),
+        }
     }
 
     #[test]
@@ -197,6 +311,62 @@ mod tests {
                 assert_eq!(
                     callbacks.calls,
                     vec![(species(&vector.module), AlienResumeCallback::Begin)]
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn pair_steering_matches_every_original_overlay_vector() {
+        for fixture in pair_fixtures() {
+            let vectors: Vec<ResumePairVector> = serde_json::from_str(fixture).unwrap();
+            for vector in vectors {
+                let species = species(&vector.module);
+                let mut current = node(
+                    vector.current_position,
+                    vector.pitch_before,
+                    vector.pan_before,
+                );
+                let other = node(vector.other_position, u16::default(), u16::default());
+                let mut trigonometry = [AlienTrigonometryPair::default(); TRIGONOMETRY_ENTRY_COUNT];
+                let sample_index =
+                    usize::from((vector.pan_before & ANGLE_MASK) >> ANGLE_INDEX_SHIFT);
+                trigonometry[sample_index] = AlienTrigonometryPair {
+                    cosine: vector.cosine as i16,
+                    sine: vector.sine as i16,
+                };
+
+                assert_eq!(
+                    update_resume_pair_steering(species, &mut current, &other, &trigonometry,),
+                    if vector.outside {
+                        AlienResumePairUpdate::Outside
+                    } else {
+                        AlienResumePairUpdate::Inside
+                    },
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    current.angles[PITCH_AXIS], vector.pitch_after,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    current.angles[PAN_AXIS], vector.pan_after,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    current.local_position.map(|value| value as u32),
+                    vector.current_position_after,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    other.local_position.map(|value| value as u32),
+                    vector.other_position_after,
+                    "{}",
+                    vector.name
                 );
             }
         }

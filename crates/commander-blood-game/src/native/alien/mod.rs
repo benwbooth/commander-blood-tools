@@ -44,8 +44,8 @@ pub use raster::{
     prepare_render_geometry,
 };
 pub use resume::{
-    AlienResumeCallback, AlienResumeCallbacks, AlienResumeMethodState, AlienResumeUpdate,
-    initialize_or_dispatch_resume,
+    AlienResumeCallback, AlienResumeCallbacks, AlienResumeMethodState, AlienResumePairUpdate,
+    AlienResumeUpdate, initialize_or_dispatch_resume, update_resume_pair_steering,
 };
 pub use ring::{
     AlienRingAnimationState, AlienRingCallback, AlienRingCallbacks, AlienRingClearUpdate,
