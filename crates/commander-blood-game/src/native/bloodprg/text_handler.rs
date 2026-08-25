@@ -124,6 +124,10 @@ pub struct TextPresentationState {
     pub menu_word_count: usize,
     /// Number of menu words currently exposed by progressive reveal.
     pub menu_reveal_count: usize,
+    /// Frames remaining before the next menu word or completion transition.
+    pub dialogue_hold_countdown: u16,
+    /// The final menu hold has already been armed.
+    pub dialogue_hold_complete: bool,
     /// Post-condition concept words published by the resume control.
     pub condition_presentation_words: Box<[ScriptWordId]>,
     /// Subtitle bytes with carriage-return line separators and no C terminator.
@@ -149,6 +153,8 @@ impl Default for TextPresentationState {
             menu_pending: false,
             menu_word_count: usize::MIN,
             menu_reveal_count: usize::MIN,
+            dialogue_hold_countdown: u16::MIN,
+            dialogue_hold_complete: false,
             condition_presentation_words: Box::new([]),
             subtitle_text: Box::new([]),
             menu_words: Box::new([]),
@@ -316,6 +322,8 @@ pub fn handle_text_instruction(
             .take_while(|word| matches!(word, ScriptTextWord::Dictionary(_)))
             .count();
         presentation.menu_reveal_count = usize::MIN;
+        presentation.dialogue_hold_countdown = u16::MIN;
+        presentation.dialogue_hold_complete = false;
         presentation.menu_words = menu_words;
         Ok(TextHandlerOutcome::MenuPublished)
     }

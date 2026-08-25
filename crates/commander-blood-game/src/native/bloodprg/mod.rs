@@ -1,6 +1,7 @@
 //! Native BLOODPRG game logic translated to flat, typed Rust data.
 
 mod aboard;
+mod menu_reveal;
 mod navigation;
 mod numbers;
 mod presentation;
@@ -18,6 +19,11 @@ mod vm;
 
 pub use aboard::{
     insert_aboard_object, remove_aboard_object, AboardObjectRoster, ABOARD_OBJECT_CAPACITY,
+};
+pub use menu_reveal::{
+    reveal_inline_menu_step, InlineMenuRevealError, InlineMenuRevealFrame,
+    InlineMenuRevealGate, InlineMenuRevealOutcome, InlineMenuTextMetrics,
+    InlineMenuWordPlacement,
 };
 pub use navigation::{
     navigation_actor_targets, navigation_candidates, navigation_chart_objects,
