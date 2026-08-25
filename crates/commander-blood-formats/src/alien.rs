@@ -127,6 +127,17 @@ const RING_NODE_COURSE_FRAMES_FIELD: usize = 0x0056;
 const RING_NODE_FEEDBACK_PHASE_FIELD: usize = 0x0058;
 const RING_NODE_CURSOR_FIELD: usize = 0x005a;
 const RING_NODE_BEHAVIOR_SEED_FIELD: usize = 0x005c;
+const SLOT2_NODE_CALLBACK_FIELD: usize = RING_NODE_CALLBACK_FIELD;
+const SLOT2_NODE_MOTION_PARAMETER_FIELD: usize = RING_NODE_COURSE_FRAMES_FIELD;
+const SLOT2_NODE_RADIAL_TARGET_FIELD: usize = RING_NODE_FEEDBACK_PHASE_FIELD;
+const SLOT2_NODE_SECONDARY_MOTION_FIELD: usize = RING_NODE_CURSOR_FIELD;
+const SLOT2_NODE_BEHAVIOR_SEED_FIELD: usize = RING_NODE_BEHAVIOR_SEED_FIELD;
+const SLOT2_PHASE_TIMER_FIELD: usize = 0x0038;
+const SLOT2_SECONDARY_CONTEXT_FIELD: usize = 0x003a;
+const SLOT2_TERTIARY_CONTEXT_FIELD: usize = 0x003c;
+const SLOT2_AMER_RANDOM_FIELD: usize = 0x0040;
+const SLOT2_COMMON_RANDOM_FIELD: usize = 0x0042;
+const SLOT2_AMER_ANIMATION_PHASE_FIELD: usize = 0x0042;
 const RING_ENTRY_SIZE: usize = 8;
 const RING_ENTRY_PITCH_STEP_FIELD: usize = 0;
 const RING_ENTRY_PAN_STEP_FIELD: usize = 2;
@@ -156,6 +167,14 @@ const SCRUT_INITIAL_COURSE_CALLBACK: u16 = 0x12f9;
 const AMER_FOLLOW_COURSE_CALLBACK: u16 = 0x1414;
 const CROOLIS_FOLLOW_COURSE_CALLBACK: u16 = 0x146c;
 const SCRUT_FOLLOW_COURSE_CALLBACK: u16 = 0x145a;
+const AMER_SLOT2_UPDATE_CALLBACK: u16 = 0x1692;
+const CROOLIS_SLOT2_UPDATE_CALLBACK: u16 = 0x1727;
+const SCRUT_SLOT2_UPDATE_CALLBACK: u16 = 0x171b;
+const AMER_SLOT2_ACTIVE_POSITION: usize = 0x1648;
+const CROOLIS_SLOT2_ACTIVE_POSITION: usize = 0x16a0;
+const SCRUT_SLOT2_ACTIVE_POSITION: usize = 0x168e;
+const CROOLIS_SLOT2_SPECIES_SEED_POSITION: usize = 0x16a2;
+const SCRUT_SLOT2_SPECIES_SEED_POSITION: usize = 0x1690;
 const INVALID_METHOD_ENTRY: u16 = 0xffff;
 const ZERO_COORDINATE: i16 = 0;
 const ZERO_POSITION: [i16; AXIS_COUNT] = [ZERO_COORDINATE; AXIS_COUNT];
@@ -240,6 +259,30 @@ impl AlienXdbKind {
                 initial_course_callback: SCRUT_INITIAL_COURSE_CALLBACK,
                 follow_course_callback: SCRUT_FOLLOW_COURSE_CALLBACK,
             },
+        }
+    }
+
+    fn slot2_update_callback(self) -> u16 {
+        match self {
+            Self::Amer => AMER_SLOT2_UPDATE_CALLBACK,
+            Self::Croolis => CROOLIS_SLOT2_UPDATE_CALLBACK,
+            Self::Scrut => SCRUT_SLOT2_UPDATE_CALLBACK,
+        }
+    }
+
+    fn slot2_active_position(self) -> usize {
+        match self {
+            Self::Amer => AMER_SLOT2_ACTIVE_POSITION,
+            Self::Croolis => CROOLIS_SLOT2_ACTIVE_POSITION,
+            Self::Scrut => SCRUT_SLOT2_ACTIVE_POSITION,
+        }
+    }
+
+    fn slot2_species_seed_position(self) -> Option<usize> {
+        match self {
+            Self::Amer => None,
+            Self::Croolis => Some(CROOLIS_SLOT2_SPECIES_SEED_POSITION),
+            Self::Scrut => Some(SCRUT_SLOT2_SPECIES_SEED_POSITION),
         }
     }
 }
@@ -535,6 +578,58 @@ pub struct AlienRingSceneData {
     pub entries: [AlienRingEntryData; ALIEN_RING_ENTRY_COUNT],
 }
 
+/// Callback stage present in an initialized authored slot-2/4 model.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienSlot2InitialCallbackData {
+    /// Advance the species-specific ordinary animation head.
+    Update,
+}
+
+/// Initial semantic callback state for one slot-2/4 model node.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct AlienSlot2NodeData {
+    /// Species-specific timer, velocity, or follower phase.
+    pub motion_parameter: i16,
+    /// Desired radial displacement approached by the callback family.
+    pub radial_target: u16,
+    /// Secondary species-specific timer, target, or captured component.
+    pub secondary_motion_parameter: i16,
+    /// Deterministic behavior seed used by species-specific transitions.
+    pub behavior_seed: u16,
+}
+
+/// Initial continuation state for one slot-2/4 animation model.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AlienSlot2ModelData {
+    /// Whether the one-time model initializer has already run.
+    pub initialized: bool,
+    /// Authored callback stage when initialized.
+    pub callback: Option<AlienSlot2InitialCallbackData>,
+    /// Timer controlling the current callback phase.
+    pub phase_timer: i16,
+    /// CROOLIS-only signed motion accumulator.
+    pub croolis_motion_accumulator: i16,
+    /// Sign-extended CROOLIS/SCRUT seed captured during initialization.
+    pub species_seed_at_initialization: i32,
+    /// Deterministic random value owned by this model.
+    pub random_value: u16,
+    /// AMER-only wrapped follower-animation phase.
+    pub amer_animation_phase: u16,
+    /// AMER-only signed return-flight velocity.
+    pub amer_velocity: [i16; AXIS_COUNT],
+    /// Callback state parallel to the model hierarchy.
+    pub nodes: Vec<AlienSlot2NodeData>,
+}
+
+/// Initial scene-wide state consumed by slot-2/4 models.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct AlienSlot2SceneData {
+    /// Whether a species animation currently owns the camera handoff.
+    pub active: bool,
+    /// CROOLIS/SCRUT seed remaining after authored model initialization.
+    pub species_seed: u16,
+}
+
 /// One named hierarchical model and its initial behavior method.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AlienModelData {
@@ -552,6 +647,8 @@ pub struct AlienModelData {
     pub wave: Option<AlienWaveMethodData>,
     /// Authored continuation state when this is a ring-animation model.
     pub ring: Option<AlienRingModelData>,
+    /// Authored continuation state when this is a slot-2/4 animation model.
+    pub slot2: Option<AlienSlot2ModelData>,
 }
 
 /// Indexed atlas shared by all models in one alien overlay.
@@ -596,6 +693,8 @@ pub struct AlienAsset {
     pub palette_animation: AlienPaletteAnimationData,
     /// Initial scene-wide ring timer and motion history.
     pub ring_scene: AlienRingSceneData,
+    /// Initial scene-wide slot-2/4 ownership and species seed.
+    pub slot2_scene: AlienSlot2SceneData,
     /// Distance-to-palette lookup used by the starfield.
     pub star_shade_table: [u8; STAR_SHADE_TABLE_ENTRY_COUNT],
     /// Deterministic seed used to generate the static star distribution.
@@ -781,6 +880,108 @@ fn ring_model_data(
         });
     }
     Some(Some(AlienRingModelData { lifecycle, nodes }))
+}
+
+fn slot2_model_data(
+    data: &[u8],
+    data_start: usize,
+    context: usize,
+    root_offset: usize,
+    node_count: usize,
+    behavior: AlienBehaviorMethod,
+    kind: AlienXdbKind,
+) -> Option<Option<AlienSlot2ModelData>> {
+    if behavior != AlienBehaviorMethod::AnimationDispatch {
+        return Some(None);
+    }
+    let initialized = match read_u16(data, context + METHOD_CONTROL_FIELD)? {
+        0 => false,
+        1 => true,
+        _ => return None,
+    };
+    let callback = if initialized {
+        let primary_position = data_start
+            .checked_add(root_offset)?
+            .checked_add(TRANSFORM_RECORD_SIZE)?;
+        if read_u16(data, primary_position + SLOT2_NODE_CALLBACK_FIELD)?
+            != kind.slot2_update_callback()
+        {
+            return None;
+        }
+        Some(AlienSlot2InitialCallbackData::Update)
+    } else {
+        None
+    };
+    let mut nodes = Vec::with_capacity(node_count);
+    for node_index in 0..node_count {
+        let node_offset = root_offset
+            .checked_add(TRANSFORM_RECORD_SIZE)?
+            .checked_add(node_index.checked_mul(TRANSFORM_RECORD_SIZE)?)?;
+        let position = data_start.checked_add(node_offset)?;
+        nodes.push(AlienSlot2NodeData {
+            motion_parameter: read_i16(data, position + SLOT2_NODE_MOTION_PARAMETER_FIELD)?,
+            radial_target: read_u16(data, position + SLOT2_NODE_RADIAL_TARGET_FIELD)?,
+            secondary_motion_parameter: read_i16(
+                data,
+                position + SLOT2_NODE_SECONDARY_MOTION_FIELD,
+            )?,
+            behavior_seed: read_u16(data, position + SLOT2_NODE_BEHAVIOR_SEED_FIELD)?,
+        });
+    }
+    let (croolis_motion_accumulator, species_seed_at_initialization, random_value) = match kind {
+        AlienXdbKind::Amer => (
+            i16::default(),
+            i32::default(),
+            read_u16(data, context + SLOT2_AMER_RANDOM_FIELD)?,
+        ),
+        AlienXdbKind::Croolis => (
+            read_i16(data, context + SLOT2_SECONDARY_CONTEXT_FIELD)?,
+            read_i32(data, context + SLOT2_TERTIARY_CONTEXT_FIELD)?,
+            read_u16(data, context + SLOT2_COMMON_RANDOM_FIELD)?,
+        ),
+        AlienXdbKind::Scrut => (
+            i16::default(),
+            read_i32(data, context + SLOT2_SECONDARY_CONTEXT_FIELD)?,
+            read_u16(data, context + SLOT2_COMMON_RANDOM_FIELD)?,
+        ),
+    };
+    Some(Some(AlienSlot2ModelData {
+        initialized,
+        callback,
+        phase_timer: read_i16(data, context + SLOT2_PHASE_TIMER_FIELD)?,
+        croolis_motion_accumulator,
+        species_seed_at_initialization,
+        random_value,
+        amer_animation_phase: match kind {
+            AlienXdbKind::Amer => read_u16(data, context + SLOT2_AMER_ANIMATION_PHASE_FIELD)?,
+            AlienXdbKind::Croolis | AlienXdbKind::Scrut => u16::default(),
+        },
+        amer_velocity: match kind {
+            AlienXdbKind::Amer => checked_array(|axis| {
+                read_i16(
+                    data,
+                    context + SLOT2_SECONDARY_CONTEXT_FIELD + axis * size_of::<i16>(),
+                )
+            })?,
+            AlienXdbKind::Croolis | AlienXdbKind::Scrut => [i16::default(); AXIS_COUNT],
+        },
+        nodes,
+    }))
+}
+
+fn slot2_scene_data(data: &[u8], kind: AlienXdbKind) -> Option<AlienSlot2SceneData> {
+    let active = match read_u16(data, kind.slot2_active_position())? {
+        0 => false,
+        1 => true,
+        _ => return None,
+    };
+    Some(AlienSlot2SceneData {
+        active,
+        species_seed: match kind.slot2_species_seed_position() {
+            Some(position) => read_u16(data, position)?,
+            None => u16::default(),
+        },
+    })
 }
 
 fn ring_scene_data(
@@ -1045,6 +1246,15 @@ fn model(
             behavior,
             kind,
         )?,
+        slot2: slot2_model_data(
+            data,
+            data_start,
+            context,
+            root_offset,
+            node_count,
+            behavior,
+            kind,
+        )?,
     })
 }
 
@@ -1224,6 +1434,7 @@ pub fn decode_alien_xdb(data: &[u8], kind: AlienXdbKind) -> Option<AlienAsset> {
             })?,
         },
         ring_scene: ring_scene_data(data, data_start, &context_offsets, kind)?,
+        slot2_scene: slot2_scene_data(data, kind)?,
         star_shade_table,
         star_seed,
     })
@@ -1397,6 +1608,42 @@ mod tests {
             );
             assert!(asset.models.iter().all(|model| {
                 model.ring.is_some() == (model.behavior == AlienBehaviorMethod::RingAnimation)
+            }));
+            let (expected_slot2_phases, expected_slot2_seed, expected_slot2_node_count) = match kind
+            {
+                AlienXdbKind::Amer => (vec![16, 96, 87, 143, 108], 0, 40),
+                AlienXdbKind::Croolis => (vec![-43, -43, -43], 500, 24),
+                AlienXdbKind::Scrut => (vec![-132, 123, 112], 600, 42),
+            };
+            assert!(!asset.slot2_scene.active);
+            assert_eq!(asset.slot2_scene.species_seed, expected_slot2_seed);
+            let slot2_models = asset
+                .models
+                .iter()
+                .filter_map(|model| model.slot2.as_ref())
+                .collect::<Vec<_>>();
+            assert_eq!(slot2_models.len(), expected_slot2_phases.len());
+            assert_eq!(
+                slot2_models
+                    .iter()
+                    .map(|model| model.phase_timer)
+                    .collect::<Vec<_>>(),
+                expected_slot2_phases
+            );
+            assert_eq!(
+                slot2_models
+                    .iter()
+                    .map(|model| model.nodes.len())
+                    .sum::<usize>(),
+                expected_slot2_node_count
+            );
+            assert!(slot2_models.iter().all(|model| {
+                model.initialized
+                    && model.callback == Some(AlienSlot2InitialCallbackData::Update)
+                    && model.random_value != u16::MIN
+            }));
+            assert!(asset.models.iter().all(|model| {
+                model.slot2.is_some() == (model.behavior == AlienBehaviorMethod::AnimationDispatch)
             }));
             let wave_states = asset
                 .models
