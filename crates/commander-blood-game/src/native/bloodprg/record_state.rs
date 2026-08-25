@@ -7,8 +7,8 @@ use commander_blood_formats::instruction::{
     ScriptAboardRecordOperation, ScriptActiveObjectRecordOperation, ScriptActorRecordOperation,
 };
 use commander_blood_formats::instruction::{
-    ScriptRecordStateOperand, ScriptRecordStateOperation, ScriptRecordValue,
-    ScriptTravelRecordOperation, ScriptWorldStateRecordOperation,
+    ScriptPresentationQueueOperation, ScriptRecordStateOperand, ScriptRecordStateOperation,
+    ScriptRecordValue, ScriptTravelRecordOperation, ScriptWorldStateRecordOperation,
 };
 use commander_blood_formats::script::{
     ScriptObjectId, ScriptObjectKind, ScriptState, ScriptStateObjectReference,
@@ -32,6 +32,8 @@ pub enum ScriptActionRecord {
     Navigation(ScriptRecordStateOperand),
     /// C2 aboard-object request produced by the wider record processor.
     AboardRequest(ScriptObjectId),
+    /// C3 presentation queued for later promotion to an active actor record.
+    PresentationQueue(ScriptObjectId),
     /// C4 actor-presentation action carrying its related object.
     ActorPresentation(ScriptObjectId),
     /// C5 link to an active world-state object.
@@ -348,6 +350,49 @@ pub fn apply_aboard_record_operation(
     })
 }
 
+/// Apply `vm_op_c3_state_record` to one typed presentation-queue slot.
+pub fn apply_presentation_queue_operation(
+    operation: ScriptPresentationQueueOperation,
+    state: &ScriptState,
+    records: &mut ScriptActionRecords,
+    runtime: &mut ScriptRuntime,
+) -> Result<ScriptRecordStateOutcome, ScriptRecordStateError> {
+    let owner = operation
+        .target
+        .object()
+        .ok_or(ScriptRecordStateError::MissingOwner {
+            slot: operation.target,
+        })?;
+    let owner_active = object_has_flag(state, owner, ScriptObjectFlag::Active) == Some(true);
+    let matches = owner_active
+        && records.record(operation.target)
+            == ScriptActionRecord::PresentationQueue(operation.related);
+    if runtime.query_mode() {
+        if matches != operation.inverted {
+            return Ok(ScriptRecordStateOutcome {
+                control: ScriptControl::Continue,
+                written_slot: None,
+            });
+        }
+        return failed_outcome(runtime);
+    }
+
+    let related_active =
+        object_has_flag(state, operation.related, ScriptObjectFlag::Active) == Some(true);
+    if !owner_active || !related_active || record_is_actor(records.record(operation.target)) {
+        return failed_outcome(runtime);
+    }
+
+    records.set_record(
+        operation.target,
+        ScriptActionRecord::PresentationQueue(operation.related),
+    );
+    Ok(ScriptRecordStateOutcome {
+        control: ScriptControl::Continue,
+        written_slot: Some(operation.target),
+    })
+}
+
 /// Apply `vm_op_c4_actor` to typed actor-presentation action slots.
 pub fn apply_actor_record_operation(
     operation: ScriptActorRecordOperation,
@@ -639,6 +684,7 @@ mod tests {
     const SHIPPED_RECORD_STATE_COUNT: usize = 20;
     const SHIPPED_ACTOR_RECORD_COUNTS: [usize; PROFILE_COUNT] = [9, 95, 138, 66, 81];
     const ACTOR_HANDLER_VECTOR_COUNT: usize = 20;
+    const PRESENTATION_QUEUE_HANDLER_VECTOR_COUNT: usize = 16;
     const WORLD_STATE_HANDLER_VECTOR_COUNT: usize = 14;
     const TRAVEL_HANDLER_VECTOR_COUNT: usize = 11;
     const ACTIVE_OBJECT_HANDLER_VECTOR_COUNT: usize = 15;
@@ -677,6 +723,7 @@ mod tests {
     const WORLD_STATE_KIND_MASK: u16 = 512;
     const INVENTORY_ITEM_KIND_MASK: u16 = 1_024;
     const MIXED_CELESTIAL_WORLD_KIND_MASK: u16 = CELESTIAL_BODY_KIND_MASK | WORLD_STATE_KIND_MASK;
+    const PRESENTATION_QUEUE_RECORD_KIND: u16 = 195;
     const ACTOR_RECORD_KIND: u16 = 196;
     const WORLD_STATE_RECORD_KIND: u16 = 197;
     const TRAVEL_RECORD_KIND: u16 = 198;
@@ -716,6 +763,18 @@ mod tests {
     #[derive(Deserialize)]
     struct ActorReciprocalOracle {
         value: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct PresentationQueueHandlerOracle {
+        name: String,
+        query_mode_before: u8,
+        inverted: bool,
+        owner_flags: u16,
+        related_offset: u16,
+        related_flags: u16,
+        record_before: [u16; 3],
+        branch_failed: bool,
     }
 
     #[derive(Deserialize)]
@@ -1129,6 +1188,84 @@ mod tests {
                 assert_eq!(
                     records.record(target),
                     ScriptActionRecord::ActorPresentation(ids[ACTOR_RELATED]),
+                    "{}",
+                    vector.name
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn presentation_queue_handler_matches_every_original_decision_vector() {
+        let vectors: Vec<PresentationQueueHandlerOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_6eee_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), PRESENTATION_QUEUE_HANDLER_VECTOR_COUNT);
+
+        for vector in vectors {
+            let (mut state, ids) =
+                actor_handler_fixture(ScriptObjectKind::Actor, ScriptObjectKind::Player);
+            set_flags(&mut state, ids[ACTOR_OWNER], vector.owner_flags);
+            set_flags(&mut state, ids[ACTOR_RELATED], vector.related_flags);
+            let target = state
+                .object_word_triple(ids[ACTOR_OWNER], OBJECT_FLAGS_WORD_INDEX)
+                .unwrap();
+            let operation = ScriptPresentationQueueOperation {
+                target,
+                related: ids[ACTOR_RELATED],
+                inverted: vector.inverted,
+            };
+            let mut records = ScriptActionRecords::default();
+            match vector.record_before[0] {
+                PRESENTATION_QUEUE_RECORD_KIND => {
+                    let related = if vector.record_before[1] == vector.related_offset {
+                        ids[ACTOR_RELATED]
+                    } else {
+                        ids[ACTOR_ALTERNATE_RELATED]
+                    };
+                    records.set_record(target, ScriptActionRecord::PresentationQueue(related));
+                }
+                ACTOR_RECORD_KIND => records.set_record(
+                    target,
+                    ScriptActionRecord::ActorPresentation(ids[ACTOR_ALTERNATE_RELATED]),
+                ),
+                0 => {}
+                _ => records.set_record(target, ScriptActionRecord::Occupied),
+            }
+
+            let mut runtime = ScriptRuntime::new();
+            if vector.query_mode_before & QUERY_MODE_FLAG != u8::MIN {
+                runtime.begin_root_guard(ScriptCodeOffset::new(FAILURE_TARGET));
+            } else {
+                runtime.arm_root_failure_target(ScriptCodeOffset::new(FAILURE_TARGET));
+            }
+            let outcome =
+                apply_presentation_queue_operation(operation, &state, &mut records, &mut runtime)
+                    .unwrap();
+
+            assert_eq!(
+                outcome.control,
+                if vector.branch_failed {
+                    ScriptControl::Jump(ScriptCodeOffset::new(FAILURE_TARGET))
+                } else {
+                    ScriptControl::Continue
+                },
+                "{}",
+                vector.name
+            );
+            let expected_write =
+                vector.query_mode_before & QUERY_MODE_FLAG == u8::MIN && !vector.branch_failed;
+            assert_eq!(
+                outcome.written_slot.is_some(),
+                expected_write,
+                "{}",
+                vector.name
+            );
+            if expected_write {
+                assert_eq!(
+                    records.record(target),
+                    ScriptActionRecord::PresentationQueue(ids[ACTOR_RELATED]),
                     "{}",
                     vector.name
                 );

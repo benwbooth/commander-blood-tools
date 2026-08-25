@@ -42,6 +42,7 @@ const SHARED_STATE_F_OPCODE: u8 = 0xBF;
 const SHARED_STATE_G_OPCODE: u8 = 0xC0;
 const RECORD_STATE_OPCODE: u8 = 0xC1;
 const ABOARD_RECORD_OPCODE: u8 = 0xC2;
+const PRESENTATION_QUEUE_OPCODE: u8 = 0xC3;
 const ACTOR_RECORD_OPCODE: u8 = 0xC4;
 const WORLD_STATE_RECORD_OPCODE: u8 = 0xC5;
 const TRAVEL_RECORD_OPCODE: u8 = 0xC6;
@@ -73,6 +74,7 @@ const BIT_FLAG_SIZE: usize = OPCODE_SIZE + WORD_SIZE + BYTE_SIZE;
 const PAIR_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 3;
 const RECORD_STATE_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const ABOARD_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
+const PRESENTATION_QUEUE_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const ACTOR_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const WORLD_STATE_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const TRAVEL_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
@@ -403,6 +405,17 @@ pub struct ScriptAboardRecordOperation {
     /// Bounded three-word action slot used by query mode.
     pub target: ScriptStateWordTriple,
     /// Object moved aboard in assignment mode or compared in query mode.
+    pub related: ScriptObjectId,
+    /// Whether query-mode equality is inverted.
+    pub inverted: bool,
+}
+
+/// One optionally inverted C3 queued-presentation operation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptPresentationQueueOperation {
+    /// Bounded three-word presentation-action slot.
+    pub target: ScriptStateWordTriple,
+    /// Object related to the queued presentation.
     pub related: ScriptObjectId,
     /// Whether query-mode equality is inverted.
     pub inverted: bool,
@@ -1096,6 +1109,26 @@ pub fn decode_script_aboard_record_operation(
     })
 }
 
+/// Decode one C3 queued presentation into bounded typed identities.
+pub fn decode_script_presentation_queue_operation(
+    token: &ScriptToken,
+    state: &ScriptState,
+    directory: &ScriptDirectory,
+) -> Result<ScriptPresentationQueueOperation, ScriptInstructionError> {
+    let (target, related, inverted) = decode_object_record_operands(
+        token,
+        state,
+        directory,
+        PRESENTATION_QUEUE_OPCODE,
+        PRESENTATION_QUEUE_SIZE,
+    )?;
+    Ok(ScriptPresentationQueueOperation {
+        target,
+        related,
+        inverted,
+    })
+}
+
 /// Decode one C4 actor-presentation operation into bounded typed identities.
 pub fn decode_script_actor_record_operation(
     token: &ScriptToken,
@@ -1369,6 +1402,7 @@ mod tests {
     const EXPECTED_PAIR_RECORD_COUNTS: [usize; PROFILE_COUNT] = [0, 0, 2, 0, 0];
     const EXPECTED_RECORD_STATE_COUNT: usize = 20;
     const EXPECTED_ABOARD_RECORD_COUNTS: [usize; PROFILE_COUNT] = [0, 2, 0, 0, 0];
+    const EXPECTED_PRESENTATION_QUEUE_COUNTS: [usize; PROFILE_COUNT] = [1, 14, 11, 7, 2];
     const EXPECTED_ACTOR_RECORD_COUNTS: [usize; PROFILE_COUNT] = [9, 95, 138, 66, 81];
     const EXPECTED_WORLD_STATE_RECORD_COUNTS: [usize; PROFILE_COUNT] = [0; PROFILE_COUNT];
     const EXPECTED_TRAVEL_RECORD_COUNTS: [usize; PROFILE_COUNT] = [0, 0, 1, 1, 0];
@@ -1907,6 +1941,45 @@ mod tests {
         }
 
         assert_eq!(counts, EXPECTED_ABOARD_RECORD_COUNTS);
+    }
+
+    #[test]
+    fn every_shipped_c3_record_is_a_typed_presentation_queue() {
+        let mut counts = [usize::MIN; PROFILE_COUNT];
+
+        for profile in 1..=PROFILE_COUNT {
+            let code_data = std::fs::read(original_asset(&format!("SCRIPT{profile}.COD"))).unwrap();
+            let directory_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.DEB"))).unwrap();
+            let state_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.VAR"))).unwrap();
+            let code = decode_script_code(&code_data).unwrap();
+            let directory = decode_script_directory(&directory_data).unwrap();
+            let state = decode_script_state(&state_data, &directory).unwrap();
+
+            for token in code
+                .tokens()
+                .iter()
+                .filter(|token| token.opcode().byte() == PRESENTATION_QUEUE_OPCODE)
+            {
+                let operation =
+                    decode_script_presentation_queue_operation(token, &state, &directory).unwrap();
+                let owner = operation.target.object().unwrap();
+                assert_eq!(
+                    state.object(owner).unwrap().kind,
+                    crate::script::ScriptObjectKind::Actor
+                );
+                assert_eq!(
+                    state.object(operation.related).unwrap().kind,
+                    crate::script::ScriptObjectKind::Player
+                );
+                assert_eq!(token.mode_before(), ScriptDecodingMode::Normal);
+                assert!(!operation.inverted);
+                counts[profile - 1] += 1;
+            }
+        }
+
+        assert_eq!(counts, EXPECTED_PRESENTATION_QUEUE_COUNTS);
     }
 
     #[test]
