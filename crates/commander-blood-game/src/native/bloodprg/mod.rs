@@ -3,6 +3,7 @@
 mod numbers;
 mod startup;
 mod text;
+mod vm;
 
 pub use numbers::{
     append_decimal_i16, append_decimal_i32, packed_bcd_to_binary, parse_startup_audio_number,
@@ -13,3 +14,4 @@ pub use startup::{
     StartupConfiguration,
 };
 pub use text::{nul_terminated_byte_len, nul_terminated_bytes_equal};
+pub use vm::{count_positive_operands, resolve_dictionary_object};
