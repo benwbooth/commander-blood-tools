@@ -2,6 +2,7 @@
 
 mod aboard;
 mod bridge_frame;
+mod camera_navigation;
 mod descript;
 mod descript_lookup;
 mod menu_reveal;
@@ -31,6 +32,11 @@ pub use aboard::{
 pub use bridge_frame::{
     BridgeActorPresentationState, BridgeFrameBackend, BridgeFrameOutcome, BridgeFrameState,
     BridgeSceneContext, BridgeSpriteRange, render_bridge_frame,
+};
+pub use camera_navigation::{
+    CameraNavigationLocation, CameraNavigationOutcome, CameraNavigationPaletteTransition,
+    CameraNavigationPresentation, CameraNavigationRegionPoll, CameraNavigationShipMode,
+    CameraNavigationSlot, CameraNavigationState, update_camera_navigation,
 };
 pub use descript::{
     CachedDescriptBackground, DescriptBackgroundCache, DescriptBackgroundCacheOutcome,
