@@ -6,6 +6,7 @@ mod bridge_input;
 mod bridge_page;
 mod bridge_panorama;
 mod bridge_screen;
+mod bridge_steering;
 mod bridge_console;
 mod actor_handler_black_hole;
 mod actor_handler_camera;
@@ -72,6 +73,11 @@ pub use bridge_screen::{
     BRIDGE_CONSOLE_TINT_FIRST, BRIDGE_DARK_PALETTE_ADJUSTMENT, BridgePaletteAdjustment,
     BridgeScreenInitializationBackend, BridgeScreenInitializationOutcome,
     BridgeScreenInitializationPath, BridgeScreenInitializationState, initialize_bridge_screen,
+};
+pub use bridge_steering::{
+    BRIDGE_ARC_UNIT_COUNT, BRIDGE_CURSOR_RING_UNIT_COUNT, BRIDGE_VIEW_FRAME_COUNT,
+    BridgeSteeringInteraction, BridgeSteeringOutcome, BridgeSteeringState, BridgeTurnDirection,
+    update_bridge_steering,
 };
 pub use actor_handler_black_hole::{
     BLACK_HOLE_IDLE_PRESENTATION_RESOURCE, BLACK_HOLE_TRANSITION_PRESENTATION_RESOURCE,
