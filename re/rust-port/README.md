@@ -142,6 +142,12 @@ nodes use `Option<usize>` and ring positions use checked slots; callback entry
 addresses and byte cursors do not survive into runtime data. The initial-course
 and follower-course callback bodies remain pending direct oracle coverage.
 
+The slot-13 resume coordinator is translated for all three species with 18
+direct binary cases. Callback presence is a typed enum option, and paired or
+resumed model state uses optional node indices. Initialization and indirect
+dispatch therefore retain the native state-machine decision without retaining
+routine addresses or model-record pointers.
+
 Run the current interactive path with original assets:
 
 ```sh

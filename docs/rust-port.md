@@ -124,3 +124,9 @@ updates, deterministic random transition, and callback changes. The original
 captured node address is represented as `Option<usize>`, and even the native
 misaligned ring-end cases reduce to checked slot indices. The two larger course
 generation callbacks still require direct oracle coverage before translation.
+
+The slot-13 resume coordinator is translated for all three overlays. Eighteen
+binary cases verify callback initialization, phase and pairing reset, indirect
+dispatch, and state preservation. Native callback addresses are represented by
+`Option<AlienResumeCallback>`, while paired and resumed state references are
+typed optional node indices.

@@ -8,6 +8,7 @@ mod palette;
 mod primary;
 mod projection;
 mod raster;
+mod resume;
 mod ring;
 mod scene;
 mod starfield;
@@ -36,6 +37,10 @@ pub use projection::{
 pub use raster::{
     AlienRasterError, AlienRenderGeometry, AlienRenderTriangle, AlienRenderVertex,
     prepare_render_geometry,
+};
+pub use resume::{
+    AlienResumeCallback, AlienResumeCallbacks, AlienResumeMethodState, AlienResumeUpdate,
+    initialize_or_dispatch_resume,
 };
 pub use ring::{
     AlienRingAnimationState, AlienRingCallback, AlienRingCallbacks, AlienRingClearUpdate,
