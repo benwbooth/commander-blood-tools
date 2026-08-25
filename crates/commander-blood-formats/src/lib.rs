@@ -3,3 +3,4 @@
 #![deny(missing_docs)]
 
 pub mod lbm;
+pub mod manu3;

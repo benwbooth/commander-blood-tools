@@ -44,3 +44,18 @@ routines remain unported; there is no inferred or percentage-based credit.
 `BLOOD.LBM` title art in an SDL window and presents it with wgpu. The renderer
 uses nearest-neighbor sampling and aspect-correct letterboxing, preserving the
 decoded source image while allowing arbitrary output resolution.
+
+## MANU3 foundation
+
+`commander-blood-formats::manu3` follows the original XDB's own initialized
+section directory and decodes the authored skeletal hand directly from
+`MANU3.XDB`: 16 nodes, 110 model vertices, 32 UV-seam aliases, 216 faces, the
+indexed texture, the Q14 trigonometry table, and all 32 animation selectors.
+No savestate or runtime memory dump is linked into the modern game.
+
+`commander_blood_game::native::manu3` owns the flat-memory runtime. Six MANU3
+routines are currently translated and oracle checked: animation selection,
+tween construction/stepping, hierarchical matrix construction, and entity
+projection. The typed model connects these stages end to end. GPU face
+submission and the main MANU3 coordinator remain in progress and are not yet
+counted as ported routines.

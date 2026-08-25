@@ -411,6 +411,12 @@ fn transformed_component(transform: &Transform3, row: usize, position: Vector3) 
     add_wrapping(accumulator, transform.translation[row])
 }
 
+/// Transform one signed model-space point with native wrapping arithmetic.
+pub fn transform_point(transform: &Transform3, position: [i16; MATRIX_DIMENSION]) -> Vector3 {
+    let position = position.map(i32::from);
+    std::array::from_fn(|row| transformed_component(transform, row, position))
+}
+
 /// Project all node-owned vertices and apply explicit projection-copy pairs.
 ///
 /// This translates `xdb_manu3_entity_project` at MANU3 file offset `0x0549`.
@@ -433,17 +439,15 @@ pub fn project_entities(
         let transform = node.transform();
         for vertex in &mut vertices[node.vertices.clone()] {
             vertex.projected.clip_flags = ClipFlags::BEHIND_CAMERA;
-            let position = vertex.position.map(i32::from);
-            let depth =
-                transformed_component(&transform, Z_AXIS, position) >> DEPTH_FRACTIONAL_BITS;
+            let transformed = transform_point(&transform, vertex.position);
+            let depth = transformed[Z_AXIS] >> DEPTH_FRACTIONAL_BITS;
             vertex.projected.depth = depth;
             if depth <= PROJECTION_PLANE_DEPTH {
                 continue;
             }
 
-            let projected_x = transformed_component(&transform, X_AXIS, position) / depth;
-            let projected_y =
-                (transformed_component(&transform, Y_AXIS, position) / depth).wrapping_neg();
+            let projected_x = transformed[X_AXIS] / depth;
+            let projected_y = (transformed[Y_AXIS] / depth).wrapping_neg();
             let mut screen_x = add_wrapping(projected_x, center.x);
             let mut screen_y = add_wrapping(projected_y, center.y);
             let mut flags = ClipFlags::NONE;

@@ -2,3 +2,4 @@
 
 pub mod animation;
 pub mod geometry;
+pub mod model;

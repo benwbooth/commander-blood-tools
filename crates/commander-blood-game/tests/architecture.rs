@@ -12,6 +12,12 @@ const FORBIDDEN_SEGMENTED_MEMORY_MARKERS: [&str; 8] = [
     "segment_to_linear",
     "segment_register",
 ];
+const FORBIDDEN_RUNTIME_CAPTURE_MARKERS: [&str; 4] = [
+    "accuracy/manu3",
+    "manu3_ds.bin",
+    "manu3_seg2_1b76.bin",
+    "manu3_seg4_1c94.bin",
+];
 
 fn rust_sources(directory: &Path, output: &mut Vec<PathBuf>) {
     for entry in std::fs::read_dir(directory).unwrap() {
@@ -56,6 +62,24 @@ fn modern_game_does_not_recreate_segmented_memory() {
             assert!(
                 !source.contains(forbidden),
                 "{} contains segmented-memory marker {forbidden}",
+                source_path.display()
+            );
+        }
+    }
+}
+
+#[test]
+fn modern_game_does_not_ship_runtime_memory_captures() {
+    let game_root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let mut sources = Vec::new();
+    rust_sources(&game_root.join("src"), &mut sources);
+
+    for source_path in sources {
+        let source = std::fs::read_to_string(&source_path).unwrap();
+        for forbidden in FORBIDDEN_RUNTIME_CAPTURE_MARKERS {
+            assert!(
+                !source.contains(forbidden),
+                "{} references runtime capture {forbidden}",
                 source_path.display()
             );
         }
