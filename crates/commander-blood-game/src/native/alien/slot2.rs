@@ -75,6 +75,17 @@ const AMER_MOTION_CAMERA_X_MINIMUM: i16 = -1_500;
 const AMER_MOTION_CAMERA_X_MAXIMUM: i16 = 1_500;
 const AMER_MOTION_CAMERA_Z_MINIMUM: i16 = -1_000;
 const AMER_MOTION_CAMERA_Z_MAXIMUM: i16 = 1_500;
+const AMER_SELECTION_DEPTH_MAXIMUM: u16 = 3_000;
+const AMER_SELECTION_CAMERA_X_MINIMUM: i16 = -1_000;
+const AMER_SELECTION_CAMERA_X_MAXIMUM: i16 = 1_000;
+const AMER_SELECTION_LATE_DEPTH: i16 = 800;
+const AMER_SELECTION_LATE_RADIAL_TARGET: u16 = 80;
+const AMER_SELECTION_TURN_STEP: u16 = 64;
+const AMER_LATE_SELECTION_DEPTH_MAXIMUM: u16 = 1_000;
+const AMER_LATE_SELECTION_CAMERA_X_MINIMUM: i16 = -500;
+const AMER_LATE_SELECTION_CAMERA_X_MAXIMUM: i16 = 500;
+const AMER_LATE_SELECTION_DEPTH_ORIGIN: i16 = 200;
+const AMER_LATE_SELECTION_ROLL_VELOCITY: i16 = 48;
 
 /// Callback stage selected for one slot-2 animation model.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -91,6 +102,8 @@ pub enum AlienSlot2Callback {
     AmerSelectionWait,
     /// Track the active camera-relative selection target for AMER.
     AmerSelection,
+    /// Track AMER after it crosses into the close selection phase.
+    AmerSelectionLate,
 }
 
 /// Callback-owned state parallel to one animated model node.
@@ -229,6 +242,30 @@ pub enum AlienAmerCommonUpdate {
 pub enum AlienAmerUpdateHead {
     /// Continue immediately through the selection-entry callback.
     SelectionRequested,
+    /// Continue immediately through AMER's motion reset.
+    ResetRequested,
+    /// Continue immediately through AMER's shared animation tail.
+    CommonRequested,
+}
+
+/// Typed continuation chosen by AMER's primary selection callback.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienAmerSelectionUpdate {
+    /// Continue immediately through the ordinary-update restart.
+    RestartRequested,
+    /// Continue immediately through AMER's motion reset.
+    ResetRequested,
+    /// The close selection callback was installed for a later frame.
+    LateSelectionStarted,
+    /// Continue immediately through AMER's shared animation tail.
+    CommonRequested,
+}
+
+/// Typed continuation chosen by AMER's close selection callback.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienAmerLateSelectionUpdate {
+    /// Continue immediately through the selection-entry callback.
+    SelectionWaitRequested,
     /// Continue immediately through AMER's motion reset.
     ResetRequested,
     /// Continue immediately through AMER's shared animation tail.
@@ -537,6 +574,81 @@ pub fn update_amer_head(
     Ok(AlienAmerUpdateHead::CommonRequested)
 }
 
+/// Select and prepare AMER's primary selection continuation.
+pub fn update_amer_selection(
+    pose: &mut AlienModelPose,
+    animation: &mut AlienSlot2AnimationState,
+    scene: &AlienCallbackSceneState,
+    camera_view_y: i16,
+) -> Result<AlienAmerSelectionUpdate, AlienSlot2Error> {
+    validate_state(AlienSpecies::Amer, pose, animation)?;
+    if scene.wave_selection != AlienWaveSelection::Requested {
+        return Ok(AlienAmerSelectionUpdate::RestartRequested);
+    }
+
+    let primary = &mut pose.nodes[PRIMARY_NODE];
+    let camera_depth = transformed_component(primary, Z_AXIS) as u16;
+    let camera_x = transformed_component(primary, X_AXIS);
+    if camera_depth > AMER_SELECTION_DEPTH_MAXIMUM
+        || !(AMER_SELECTION_CAMERA_X_MINIMUM..=AMER_SELECTION_CAMERA_X_MAXIMUM).contains(&camera_x)
+    {
+        return Ok(AlienAmerSelectionUpdate::ResetRequested);
+    }
+    if (camera_depth as i16) < AMER_SELECTION_LATE_DEPTH {
+        animation.nodes[PRIMARY_NODE].radial_target = AMER_SELECTION_LATE_RADIAL_TARGET;
+        animation.callback = Some(AlienSlot2Callback::AmerSelectionLate);
+        return Ok(AlienAmerSelectionUpdate::LateSelectionStarted);
+    }
+
+    let camera_z = camera_depth as i16;
+    let score = i32::from(camera_z)
+        .wrapping_neg()
+        .wrapping_mul(primary.transform.matrix[X_AXIS][Z_AXIS])
+        .wrapping_add(i32::from(camera_x).wrapping_mul(primary.transform.matrix[Z_AXIS][Z_AXIS]));
+    animation.amer_velocity[X_AXIS] = RESET_SIGNED_VALUE;
+    primary.angles[Y_AXIS] = if score < i32::default() {
+        primary.angles[Y_AXIS].wrapping_add(AMER_SELECTION_TURN_STEP)
+    } else {
+        primary.angles[Y_AXIS].wrapping_sub(AMER_SELECTION_TURN_STEP)
+    };
+    primary.angles[Z_AXIS] = RESET_ANGLE;
+    update_amer_selection_pitch(primary, camera_view_y);
+    Ok(AlienAmerSelectionUpdate::CommonRequested)
+}
+
+/// Select and prepare AMER's close-selection continuation.
+pub fn update_amer_late_selection(
+    pose: &mut AlienModelPose,
+    animation: &mut AlienSlot2AnimationState,
+    camera_view_y: i16,
+) -> Result<AlienAmerLateSelectionUpdate, AlienSlot2Error> {
+    validate_state(AlienSpecies::Amer, pose, animation)?;
+    let primary = &mut pose.nodes[PRIMARY_NODE];
+    let camera_depth = transformed_component(primary, Z_AXIS) as u16;
+    if camera_depth > AMER_LATE_SELECTION_DEPTH_MAXIMUM {
+        return Ok(AlienAmerLateSelectionUpdate::SelectionWaitRequested);
+    }
+    let camera_x = transformed_component(primary, X_AXIS);
+    if !(AMER_LATE_SELECTION_CAMERA_X_MINIMUM..=AMER_LATE_SELECTION_CAMERA_X_MAXIMUM)
+        .contains(&camera_x)
+    {
+        return Ok(AlienAmerLateSelectionUpdate::ResetRequested);
+    }
+
+    let depth_from_origin = (camera_depth as i16).wrapping_sub(AMER_LATE_SELECTION_DEPTH_ORIGIN);
+    let score = i32::from(depth_from_origin)
+        .wrapping_neg()
+        .wrapping_mul(primary.transform.matrix[X_AXIS][Z_AXIS])
+        .wrapping_add(i32::from(camera_x).wrapping_mul(primary.transform.matrix[Z_AXIS][Z_AXIS]));
+    animation.amer_velocity[X_AXIS] = if score < i32::default() {
+        AMER_LATE_SELECTION_ROLL_VELOCITY
+    } else {
+        -AMER_LATE_SELECTION_ROLL_VELOCITY
+    };
+    update_amer_selection_pitch(primary, camera_view_y);
+    Ok(AlienAmerLateSelectionUpdate::CommonRequested)
+}
+
 /// Run AMER's shared motion tail using flat model and camera state.
 pub fn update_amer_common(
     pose: &mut AlienModelPose,
@@ -738,6 +850,16 @@ fn update_amer_followers(followers: &mut [super::AlienNodePose], roll: i16, anim
     }
 }
 
+fn update_amer_selection_pitch(primary: &mut super::AlienNodePose, camera_view_y: i16) {
+    let position_y = primary.local_position[Y_AXIS] as i16;
+    primary.angles[X_AXIS] = position_y
+        .wrapping_add(camera_view_y)
+        .wrapping_add(primary.angles[X_AXIS] as i16)
+        .wrapping_shr(AMER_CAMERA_HEIGHT_EASING_SHIFT)
+        .clamp(AMER_CAMERA_HEIGHT_MINIMUM, AMER_CAMERA_HEIGHT_MAXIMUM)
+        as u16;
+}
+
 #[cfg(test)]
 mod tests {
     use commander_blood_formats::alien::{
@@ -923,6 +1045,30 @@ mod tests {
         roll_before: u16,
         random_before: u16,
         random_after: u16,
+        velocity_x_before: u16,
+        velocity_x_after: u16,
+        radial_target_before: u16,
+        radial_target_after: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct AmerSelectionVector {
+        name: String,
+        variant: String,
+        continuation: String,
+        selection_state: u16,
+        camera_x_before: u16,
+        camera_z_before: u16,
+        position_y_low: u16,
+        view_y: u16,
+        forward_x_before: u32,
+        forward_z_before: u32,
+        pitch_before: u16,
+        pitch_after: u16,
+        pan_before: u16,
+        pan_after: u16,
+        roll_before: u16,
+        roll_after: u16,
         velocity_x_before: u16,
         velocity_x_after: u16,
         radial_target_before: u16,
@@ -1553,6 +1699,23 @@ mod tests {
     }
 
     #[test]
+    fn amer_selection_callbacks_match_every_isolated_original_overlay_vector() {
+        for input in [
+            include_str!(
+                "../../../../../re/tools/oracle_vectors/xdb_amer_func_1948_head_natural.json"
+            ),
+            include_str!(
+                "../../../../../re/tools/oracle_vectors/xdb_amer_func_19cb_head_natural.json"
+            ),
+        ] {
+            let vectors: Vec<AmerSelectionVector> = serde_json::from_str(input).unwrap();
+            for vector in vectors {
+                assert_amer_selection_vector(vector);
+            }
+        }
+    }
+
+    #[test]
     fn unreferenced_steering_matches_all_three_original_overlays() {
         for input in [
             include_str!("../../../../../re/tools/oracle_vectors/xdb_amer_func_1b1a_natural.json"),
@@ -1640,5 +1803,91 @@ mod tests {
 
     fn join_words(high: u16, low: u16) -> i32 {
         (u32::from(high) << u16::BITS | u32::from(low)) as i32
+    }
+
+    fn assert_amer_selection_vector(vector: AmerSelectionVector) {
+        let mut pose = pose(&[EMPTY_NODE_VECTOR]);
+        let primary = &mut pose.nodes[PRIMARY_NODE];
+        primary.transform.translation[X_AXIS] =
+            join_words(vector.camera_x_before, TRANSFORM_LOW_WORD_SENTINEL);
+        primary.transform.translation[Z_AXIS] =
+            join_words(vector.camera_z_before, TRANSFORM_LOW_WORD_SENTINEL);
+        primary.transform.matrix[X_AXIS][Z_AXIS] = vector.forward_x_before as i32;
+        primary.transform.matrix[Z_AXIS][Z_AXIS] = vector.forward_z_before as i32;
+        primary.local_position[Y_AXIS] = join_words(0xA5A5, vector.position_y_low);
+        primary.angles[X_AXIS] = vector.pitch_before;
+        primary.angles[Y_AXIS] = vector.pan_before;
+        primary.angles[Z_AXIS] = vector.roll_before;
+        let mut animation = AlienSlot2AnimationState::new(1);
+        animation.callback = Some(if vector.variant == "late" {
+            AlienSlot2Callback::AmerSelectionLate
+        } else {
+            AlienSlot2Callback::AmerSelection
+        });
+        animation.amer_velocity[X_AXIS] = vector.velocity_x_before as i16;
+        animation.nodes[PRIMARY_NODE].radial_target = vector.radial_target_before;
+        let scene = AlienCallbackSceneState {
+            wave_selection: match vector.selection_state {
+                0 => AlienWaveSelection::Disabled,
+                1 => AlienWaveSelection::Requested,
+                2 => AlienWaveSelection::Selected,
+                state => panic!("unknown wave-selection state {state}"),
+            },
+            ..AlienCallbackSceneState::default()
+        };
+
+        if vector.variant == "late" {
+            let expected = match vector.continuation.as_str() {
+                "selection_wait" => AlienAmerLateSelectionUpdate::SelectionWaitRequested,
+                "reset" => AlienAmerLateSelectionUpdate::ResetRequested,
+                "common" => AlienAmerLateSelectionUpdate::CommonRequested,
+                continuation => panic!("unknown late-selection continuation {continuation}"),
+            };
+            assert_eq!(
+                update_amer_late_selection(&mut pose, &mut animation, vector.view_y as i16,)
+                    .unwrap(),
+                expected,
+                "{}",
+                vector.name
+            );
+        } else {
+            let expected = match vector.continuation.as_str() {
+                "restart" => AlienAmerSelectionUpdate::RestartRequested,
+                "reset" => AlienAmerSelectionUpdate::ResetRequested,
+                "late" => AlienAmerSelectionUpdate::LateSelectionStarted,
+                "common" => AlienAmerSelectionUpdate::CommonRequested,
+                continuation => panic!("unknown selection continuation {continuation}"),
+            };
+            assert_eq!(
+                update_amer_selection(&mut pose, &mut animation, &scene, vector.view_y as i16,)
+                    .unwrap(),
+                expected,
+                "{}",
+                vector.name
+            );
+        }
+
+        let primary = &pose.nodes[PRIMARY_NODE];
+        assert_eq!(primary.angles[X_AXIS], vector.pitch_after);
+        assert_eq!(primary.angles[Y_AXIS], vector.pan_after);
+        assert_eq!(primary.angles[Z_AXIS], vector.roll_after);
+        assert_eq!(
+            animation.amer_velocity[X_AXIS] as u16,
+            vector.velocity_x_after
+        );
+        assert_eq!(
+            animation.nodes[PRIMARY_NODE].radial_target,
+            vector.radial_target_after
+        );
+        assert_eq!(
+            animation.callback,
+            Some(
+                if vector.continuation == "late" || vector.variant == "late" {
+                    AlienSlot2Callback::AmerSelectionLate
+                } else {
+                    AlienSlot2Callback::AmerSelection
+                }
+            )
+        );
     }
 }

@@ -4192,6 +4192,271 @@ def amer_slot2_update_head_vectors(entry: int) -> list[dict[str, object]]:
     return vectors
 
 
+def amer_slot2_selection_vectors(entry: int, late: bool) -> list[dict[str, object]]:
+    module = "amer"
+    image = load_image(module)
+    if late:
+        body_size = 96
+        body_hash = "f66d3ed73fcbbcac9a3bd53a3f6299b5684cc80aa4985b09321150334c4ebf01"
+        cases = (
+            ("depth_above_limit", 1, 1001, 0, 0, 0, 0, 0, 0, 0x0100),
+            ("depth_high_bit", 1, 0x8000, 0, 0, 0, 0, 0, 0, 0x0200),
+            ("camera_x_high", 1, 500, 501, 0, 0, 0, 0, 0, 0x0300),
+            ("camera_x_low", 1, 500, -501, 0, 0, 0, 0, 0, 0x0400),
+            ("negative_score", 1, 200, -1, 0, 0, 0, 1, 0, 0x0500),
+            ("positive_score", 1, 200, 1, 0, 0, 0, 1, 0, 0x0600),
+            ("zero_score", 1, 200, 0, 0, 0, 0, 0, 0, 0x0700),
+            ("wrapped_score", 1, 0, 1, 0, 0, 0x7FFFFFFF, 1, 0, 0x0800),
+            ("pitch_high_clamp", 1, 200, 0, 1000, 1000, 1000, 0, 0, 0x0900),
+            ("pitch_low_clamp", 1, 200, 0, -1000, -1000, -1000, 0, 0, 0x0A00),
+        )
+    else:
+        body_size = 131
+        body_hash = "607c4b8b7c9d038246d66392924856b59b01b12ec35a5ae5f5dac4016066a9c7"
+        cases = (
+            ("selection_disabled", 0, 900, 0, 0, 0, 0, 0, 0, 0x0100),
+            ("selected_state_is_disabled", 2, 900, 0, 0, 0, 0, 0, 0, 0x0200),
+            ("depth_unsigned_high", 1, 3001, 0, 0, 0, 0, 0, 0, 0x0300),
+            ("depth_high_bit", 1, 0x8000, 0, 0, 0, 0, 0, 0, 0x0400),
+            ("camera_x_high", 1, 1000, 1001, 0, 0, 0, 0, 0, 0x0500),
+            ("camera_x_low", 1, 1000, -1001, 0, 0, 0, 0, 0, 0x0600),
+            ("late_transition", 1, 799, 0, 0, 0, 0, 0, 0, 0x0700),
+            ("negative_score", 1, 800, -1, 0, 0, 0, 1, 0, 0x0800),
+            ("positive_score", 1, 800, 1, 0, 0, 0, 1, 0, 0x0900),
+            ("zero_score", 1, 800, 0, 0, 0, 0, 0, 0, 0x0A00),
+            ("pitch_high_clamp", 1, 800, 0, 1000, 1000, 1000, 0, 0, 0x0B00),
+            ("pitch_low_clamp", 1, 800, 0, -1000, -1000, -1000, 0, 0, 0x0C00),
+        )
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered body changed")
+
+    data_segment = 0x5000
+    extra_segment = 0x7000
+    fs_segment = 0x9000
+    game_segment = 0xA000
+    stack_segment = 0xB000
+    context = 0x3000
+    state = 0x4000
+    return_address = 0xF000
+    stack_sentinel = bytes.fromhex("699678875aa5")
+    transfer_entries = {
+        "common": 0x171D,
+        "restart": 0x1688,
+        "selection_wait": 0x193E,
+        "reset": 0x1A2B,
+    }
+    vectors: list[dict[str, object]] = []
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", memory, offset, value & 0xFFFF)
+
+    def put_u32(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<I", memory, offset, value & 0xFFFFFFFF)
+
+    def get_u16(memory: bytes | bytearray, offset: int) -> int:
+        return struct.unpack_from("<H", memory, offset)[0]
+
+    def signed_word(value: int) -> int:
+        value &= 0xFFFF
+        return value if value < 0x8000 else value - 0x10000
+
+    def signed_dword(value: int) -> int:
+        value &= 0xFFFFFFFF
+        return value if value < 0x80000000 else value - 0x100000000
+
+    for case_index, case in enumerate(cases):
+        (
+            name,
+            selection_state,
+            camera_z,
+            camera_x,
+            position_y,
+            view_y,
+            pitch,
+            forward_z,
+            forward_x,
+            pan,
+        ) = case
+        data_before = bytearray(
+            (offset * 29 + case_index * 17 + 3) & 0xFF
+            for offset in range(0x10000)
+        )
+        put_u16(data_before, context + 0x3A, 0x7777)
+        put_u32(data_before, state + 0x1A, forward_x)
+        put_u32(data_before, state + 0x32, forward_z)
+        put_u16(data_before, state + 0x38, camera_x)
+        put_u16(data_before, state + 0x40, camera_z)
+        put_u32(data_before, state + 0x46, 0xA5A50000 | (position_y & 0xFFFF))
+        put_u16(data_before, state + 0x4E, pitch)
+        put_u16(data_before, state + 0x50, pan)
+        put_u16(data_before, state + 0x52, 0x2468)
+        put_u16(data_before, state + 0x58, 0xA55A)
+        put_u16(data_before, state + 0x0E, 0xBEEF)
+        put_u16(data_before, 0x22F0, view_y)
+        data_expected = bytearray(data_before)
+        code_before = bytearray(image)
+        put_u16(code_before, 0x0B2F, selection_state)
+        for target in transfer_entries.values():
+            code_before[target] = 0xC3
+
+        if late:
+            if camera_z & 0xFFFF > 1000:
+                continuation = "selection_wait"
+            elif camera_x > 500 or camera_x < -500:
+                continuation = "reset"
+            else:
+                continuation = "common"
+                first_factor = -signed_word((camera_z - 200) & 0xFFFF)
+                score = (
+                    first_factor * signed_dword(forward_x)
+                    + camera_x * signed_dword(forward_z)
+                ) & 0xFFFFFFFF
+                velocity = 48 if score & 0x80000000 else -48
+                put_u16(data_expected, context + 0x3A, velocity)
+        elif selection_state & 1 == 0:
+            continuation = "restart"
+        elif (
+            camera_z & 0xFFFF > 3000
+            or camera_x > 1000
+            or camera_x < -1000
+        ):
+            continuation = "reset"
+        elif signed_word(camera_z) < 800:
+            continuation = "late"
+            put_u16(data_expected, state + 0x58, 80)
+            put_u16(data_expected, state + 0x0E, 0x19CB)
+        else:
+            continuation = "common"
+            score = (
+                -signed_word(camera_z) * signed_dword(forward_x)
+                + camera_x * signed_dword(forward_z)
+            ) & 0xFFFFFFFF
+            turn = 64 if score & 0x80000000 else -64
+            put_u16(data_expected, context + 0x3A, 0)
+            put_u16(data_expected, state + 0x50, pan + turn)
+            put_u16(data_expected, state + 0x52, 0)
+
+        if continuation == "common":
+            averaged_pitch = signed_word((position_y + view_y + pitch) & 0xFFFF) >> 1
+            clamped_pitch = max(-768, min(768, averaged_pitch))
+            put_u16(data_expected, state + 0x4E, clamped_pitch)
+
+        transfers: list[int] = []
+
+        def record_transfer(
+            _machine: Uc, address: int, _size: int, _data: object
+        ) -> None:
+            if address in transfer_entries.values():
+                transfers.append(address)
+
+        initial = {
+            "eax": 0xA1A12345,
+            "ebx": 0xB2B23456,
+            "ecx": 0xC3C34567,
+            "edx": 0xD4D45678,
+            "esi": 0xE5E50000 | state,
+            "edi": 0xF6F60000 | context,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0293 | (0x0400 if case_index & 1 else 0),
+        }
+        extra_before = bytes(
+            (offset * 13 + case_index + 7) & 0xFF for offset in range(0x10000)
+        )
+        fs_before = bytes(
+            (offset * 19 + case_index + 5) & 0xFF for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 11 + case_index + 9) & 0xFF for offset in range(0x10000)
+        )
+        machine = execute(
+            bytes(code_before),
+            entry,
+            return_address,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (extra_segment, 0, extra_before),
+                (fs_segment, 0, fs_before),
+                (game_segment, 0, game_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            code_handler=record_transfer,
+        )
+        expected_transfers = (
+            [] if continuation == "late" else [transfer_entries[continuation]]
+        )
+        if transfers != expected_transfers:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: transfers={transfers}, "
+                f"expected={expected_transfers}"
+            )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(data_expected):
+            differences = [
+                (offset, actual_data[offset], data_expected[offset])
+                for offset in range(0x10000)
+                if actual_data[offset] != data_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: data differs at {differences}"
+            )
+        if bytes(machine.mem_read(0, len(image))) != bytes(code_before):
+            raise AssertionError(f"{module}:{entry:#x} {name}: code changed")
+        for segment, expected in (
+            (extra_segment, extra_before),
+            (fs_segment, fs_before),
+            (game_segment, game_before),
+        ):
+            if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: segment {segment:#x} changed"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "variant": "late" if late else "selection",
+                "continuation": continuation,
+                "selection_state": selection_state,
+                "camera_x_before": camera_x & 0xFFFF,
+                "camera_z_before": camera_z & 0xFFFF,
+                "position_y_low": position_y & 0xFFFF,
+                "view_y": view_y & 0xFFFF,
+                "forward_x_before": forward_x & 0xFFFFFFFF,
+                "forward_z_before": forward_z & 0xFFFFFFFF,
+                "pitch_before": pitch & 0xFFFF,
+                "pitch_after": get_u16(data_expected, state + 0x4E),
+                "pan_before": pan,
+                "pan_after": get_u16(data_expected, state + 0x50),
+                "roll_before": get_u16(data_before, state + 0x52),
+                "roll_after": get_u16(data_expected, state + 0x52),
+                "velocity_x_before": get_u16(data_before, context + 0x3A),
+                "velocity_x_after": get_u16(data_expected, context + 0x3A),
+                "radial_target_before": get_u16(data_before, state + 0x58),
+                "radial_target_after": get_u16(data_expected, state + 0x58),
+                "callback_before": get_u16(data_before, state + 0x0E),
+                "callback_after": get_u16(data_expected, state + 0x0E),
+                "data_sha256": hashlib.sha256(data_expected).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def alien_unreferenced_steering_vectors(
     module: str, entry: int
 ) -> list[dict[str, object]]:
@@ -19008,6 +19273,16 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "xdb_amer_func_1692_head_natural.json",
         amer_slot2_update_head_vectors(0x1692),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "xdb_amer_func_1948_head_natural.json",
+        amer_slot2_selection_vectors(0x1948, False),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "xdb_amer_func_19cb_head_natural.json",
+        amer_slot2_selection_vectors(0x19CB, True),
         args.check,
     )
     for module, entry in (
