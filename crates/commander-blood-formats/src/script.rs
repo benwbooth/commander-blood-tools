@@ -35,6 +35,17 @@ impl ScriptObjectId {
     }
 }
 
+/// Stable identity of one procedure declared by a script directory.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct ScriptProcedureId(usize);
+
+impl ScriptProcedureId {
+    /// Return the zero-based procedure index in directory order.
+    pub const fn index(self) -> usize {
+        self.0
+    }
+}
+
 /// Proven kind word and fixed record shape for one VAR state object.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ScriptObjectKind {
@@ -253,6 +264,35 @@ impl ScriptDirectory {
     pub fn find_active_object(&self, name: &[u8]) -> Option<ScriptObjectId> {
         self.active_objects()
             .find_map(|(object, entry)| (entry.name() == name).then_some(object))
+    }
+
+    /// Iterate procedures in authored directory order.
+    pub fn procedures(&self) -> impl Iterator<Item = (ScriptProcedureId, &ScriptDirectoryEntry)> {
+        self.entries
+            .iter()
+            .filter(|entry| entry.kind == ScriptSymbolKind::Procedure)
+            .enumerate()
+            .map(|(index, entry)| (ScriptProcedureId(index), entry))
+    }
+
+    /// Resolve a typed procedure identity back to its directory entry.
+    pub fn procedure(&self, procedure: ScriptProcedureId) -> Option<&ScriptDirectoryEntry> {
+        self.procedures()
+            .nth(procedure.index())
+            .map(|(_procedure, entry)| entry)
+    }
+
+    /// Resolve an encoded procedure enabled-byte target to a typed identity.
+    ///
+    /// Kind-2 DEB values are one-based COD entry positions. They therefore
+    /// equal both a procedure's start plus one and the AB instruction target
+    /// for its mutable A9 enabled flag.
+    pub fn resolve_procedure_activation_target(
+        &self,
+        encoded_target: u16,
+    ) -> Option<ScriptProcedureId> {
+        self.procedures()
+            .find_map(|(procedure, entry)| (entry.value == encoded_target).then_some(procedure))
     }
 
     /// Re-encode the directory byte for byte.

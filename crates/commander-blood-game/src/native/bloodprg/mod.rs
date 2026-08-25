@@ -2,6 +2,7 @@
 
 mod numbers;
 mod presentation;
+mod procedure;
 mod script;
 mod sequence;
 mod startup;
@@ -15,6 +16,10 @@ pub use numbers::{
 };
 pub use presentation::{
     evaluate_text_conditions, ScriptWordHistory, TextConditionEffects, TextConditionError,
+};
+pub use procedure::{
+    apply_procedure_activation, evaluate_procedure_gate, ScriptProcedureStateError,
+    ScriptProcedureStates,
 };
 pub use script::{ScriptControl, ScriptResumeState, ScriptRuntime, ScriptRuntimeError};
 pub use sequence::{

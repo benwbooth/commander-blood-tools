@@ -3,7 +3,7 @@
 use std::fmt;
 
 use crate::code::{ScriptCodeOffset, ScriptDecodingMode, ScriptOpcode, ScriptToken};
-use crate::script::{ScriptDictionary, ScriptWordId};
+use crate::script::{ScriptDictionary, ScriptDirectory, ScriptProcedureId, ScriptWordId};
 
 const GUARD_BEGIN_OPCODE: u8 = 0xA0;
 const GUARD_END_OPCODE: u8 = 0xA1;
@@ -14,6 +14,9 @@ const TIMER_STATE_OPCODE: u8 = 0xA5;
 const TEXT_OPCODE: u8 = 0xA6;
 const TOPIC_OFFER_OPCODE: u8 = 0xA7;
 const SEQUENCE_REQUEST_OPCODE: u8 = 0xA8;
+const PROCEDURE_GATE_OPCODE: u8 = 0xA9;
+const YIELD_OPCODE: u8 = 0xAA;
+const PROCEDURE_ACTIVATION_OPCODE: u8 = 0xAB;
 const INVERTED_CONDITION_PREFIX: u8 = GUARD_END_OPCODE;
 const OPCODE_SIZE: usize = 1;
 const BYTE_SIZE: usize = 1;
@@ -28,6 +31,10 @@ const TIMER_GUARD_SIZE: usize = OPCODE_SIZE + BYTE_SIZE;
 const TIMER_ASSIGNMENT_SIZE: usize = TIMER_GUARD_SIZE + WORD_SIZE;
 const TOPIC_OFFER_SIZE: usize = OPCODE_SIZE + WORD_SIZE;
 const MINIMUM_SEQUENCE_REQUEST_SIZE: usize = OPCODE_SIZE + WORD_SIZE;
+const PROCEDURE_GATE_SIZE: usize = OPCODE_SIZE + BYTE_SIZE + WORD_SIZE;
+const PROCEDURE_ACTIVATION_SIZE: usize = OPCODE_SIZE + BYTE_SIZE + WORD_SIZE;
+const YIELD_SIZE: usize = OPCODE_SIZE;
+const ENABLED_FLAG_MASK: u8 = 1;
 const TIMER_SLOT_COUNT: u8 = 128;
 const TEXT_FIXED_HEADER_SIZE: usize = OPCODE_SIZE + WORD_SIZE + BYTE_SIZE + WORD_SIZE;
 const TEXT_PRESERVE_ACTIVE: u16 = 0x0001;
@@ -186,6 +193,26 @@ pub struct ScriptSequenceRequest {
     basename: Box<[u8]>,
 }
 
+/// One A9 procedure entry gate resolved through the companion directory.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptProcedureGate {
+    /// Procedure whose mutable enabled state controls this gate.
+    pub procedure: ScriptProcedureId,
+    /// Enabled state authored into the original COD image.
+    pub initially_enabled: bool,
+    /// Destination used when the procedure is disabled or its query fails.
+    pub failure_target: ScriptCodeOffset,
+}
+
+/// One AB write to a procedure's typed mutable enabled state.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptProcedureActivation {
+    /// Procedure whose enabled state changes.
+    pub procedure: ScriptProcedureId,
+    /// New enabled state derived from the written byte's only observed bit.
+    pub enabled: bool,
+}
+
 impl ScriptSequenceRequest {
     /// Construct a safe owned request from raw non-NUL basename bytes.
     pub fn new(basename: impl Into<Box<[u8]>>) -> Option<Self> {
@@ -238,6 +265,8 @@ pub enum ScriptInstruction {
         /// Authored value.
         value: u16,
     },
+    /// Stop the current execution pass.
+    Yield,
 }
 
 /// Failure while converting a framed token into known instruction semantics.
@@ -283,6 +312,18 @@ pub enum ScriptInstructionError {
         /// Token position.
         source_offset: ScriptCodeOffset,
     },
+    /// An A9 token is not the entry instruction of a declared procedure.
+    InvalidProcedureGate {
+        /// Token position.
+        source_offset: ScriptCodeOffset,
+    },
+    /// An AB token targets no procedure enabled flag in the companion directory.
+    InvalidProcedureActivationTarget {
+        /// Token position.
+        source_offset: ScriptCodeOffset,
+        /// Unresolved one-based procedure entry position.
+        encoded_target: u16,
+    },
 }
 
 impl fmt::Display for ScriptInstructionError {
@@ -327,6 +368,10 @@ pub fn decode_script_instruction(
             })
         }
         TIMER_STATE_OPCODE => decode_timer_state(token),
+        YIELD_OPCODE => {
+            require_size(token, YIELD_SIZE)?;
+            Ok(ScriptInstruction::Yield)
+        }
         _ => Err(ScriptInstructionError::UntranslatedOpcode {
             opcode: token.opcode(),
         }),
@@ -452,6 +497,62 @@ pub fn decode_script_sequence_request(
     })
 }
 
+/// Decode an A9 procedure gate without retaining its mutable COD byte.
+pub fn decode_script_procedure_gate(
+    token: &ScriptToken,
+    directory: &ScriptDirectory,
+) -> Result<ScriptProcedureGate, ScriptInstructionError> {
+    if token.opcode().byte() != PROCEDURE_GATE_OPCODE {
+        return Err(ScriptInstructionError::UntranslatedOpcode {
+            opcode: token.opcode(),
+        });
+    }
+    require_size(token, PROCEDURE_GATE_SIZE)?;
+    let encoded_entry = token
+        .source_offset()
+        .index()
+        .checked_add(OPCODE_SIZE)
+        .and_then(|offset| u16::try_from(offset).ok())
+        .ok_or(ScriptInstructionError::InvalidProcedureGate {
+            source_offset: token.source_offset(),
+        })?;
+    let procedure = directory
+        .resolve_procedure_activation_target(encoded_entry)
+        .ok_or(ScriptInstructionError::InvalidProcedureGate {
+            source_offset: token.source_offset(),
+        })?;
+    Ok(ScriptProcedureGate {
+        procedure,
+        initially_enabled: token.encoded_bytes()[OPCODE_SIZE] & ENABLED_FLAG_MASK != u8::MIN,
+        failure_target: ScriptCodeOffset::new(usize::from(read_word(
+            token.encoded_bytes(),
+            OPCODE_SIZE + BYTE_SIZE,
+        ))),
+    })
+}
+
+/// Decode an AB procedure activation into a typed Boolean assignment.
+pub fn decode_script_procedure_activation(
+    token: &ScriptToken,
+    directory: &ScriptDirectory,
+) -> Result<ScriptProcedureActivation, ScriptInstructionError> {
+    if token.opcode().byte() != PROCEDURE_ACTIVATION_OPCODE {
+        return Err(ScriptInstructionError::UntranslatedOpcode {
+            opcode: token.opcode(),
+        });
+    }
+    require_size(token, PROCEDURE_ACTIVATION_SIZE)?;
+    let enabled = token.encoded_bytes()[OPCODE_SIZE] & ENABLED_FLAG_MASK != u8::MIN;
+    let encoded_target = read_word(token.encoded_bytes(), OPCODE_SIZE + BYTE_SIZE);
+    let procedure = directory
+        .resolve_procedure_activation_target(encoded_target)
+        .ok_or(ScriptInstructionError::InvalidProcedureActivationTarget {
+            source_offset: token.source_offset(),
+            encoded_target,
+        })?;
+    Ok(ScriptProcedureActivation { procedure, enabled })
+}
+
 fn decode_concept_guard(
     token: &ScriptToken,
     dictionary: &ScriptDictionary,
@@ -531,10 +632,11 @@ fn read_word(data: &[u8], offset: usize) -> u16 {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeSet;
     use std::path::{Path, PathBuf};
 
     use crate::code::decode_script_code;
-    use crate::script::decode_script_dictionary;
+    use crate::script::{decode_script_dictionary, decode_script_directory};
 
     use super::*;
 
@@ -543,6 +645,11 @@ mod tests {
     const EXPECTED_CONTROL_INSTRUCTION_COUNTS: [usize; PROFILE_COUNT] = [27, 782, 766, 318, 392];
     const EXPECTED_TEXT_COUNTS: [usize; PROFILE_COUNT] = [111, 1_157, 1_048, 719, 652];
     const EXPECTED_COD_SEQUENCE_REQUEST_COUNT: usize = 86;
+    const EXPECTED_PROCEDURE_GATE_COUNTS: [usize; PROFILE_COUNT] = [13, 127, 166, 85, 89];
+    const EXPECTED_PROCEDURE_ACTIVATION_COUNT: usize = 413;
+    const EXPECTED_PROCEDURE_ENABLE_COUNT: usize = 149;
+    const EXPECTED_PROCEDURE_DISABLE_COUNT: usize =
+        EXPECTED_PROCEDURE_ACTIVATION_COUNT - EXPECTED_PROCEDURE_ENABLE_COUNT;
     const MAXIMUM_SHIPPED_SEQUENCE_BASENAME_LENGTH: usize = 12;
 
     fn original_asset(name: &str) -> PathBuf {
@@ -643,6 +750,62 @@ mod tests {
         let code = decode_script_code(&[TOPIC_OFFER_OPCODE, 0, 0, CODE_END_MARKER]).unwrap();
         let offer = decode_script_topic_offer(&code.tokens()[0], &dictionary).unwrap();
         assert_eq!(offer.topic, None);
+    }
+
+    #[test]
+    fn every_shipped_a9_gate_and_ab_write_resolves_to_a_typed_procedure() {
+        let mut activation_count = usize::MIN;
+        let mut enable_count = usize::MIN;
+        let mut disable_count = usize::MIN;
+
+        for profile in 1..=PROFILE_COUNT {
+            let code_data = std::fs::read(original_asset(&format!("SCRIPT{profile}.COD"))).unwrap();
+            let directory_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.DEB"))).unwrap();
+            let code = decode_script_code(&code_data).unwrap();
+            let directory = decode_script_directory(&directory_data).unwrap();
+            let gates = code
+                .tokens()
+                .iter()
+                .filter(|token| token.opcode().byte() == PROCEDURE_GATE_OPCODE)
+                .map(|token| decode_script_procedure_gate(token, &directory).unwrap())
+                .collect::<Vec<_>>();
+            let gate_procedures = gates
+                .iter()
+                .map(|gate| gate.procedure)
+                .collect::<BTreeSet<_>>();
+            assert_eq!(gates.len(), EXPECTED_PROCEDURE_GATE_COUNTS[profile - 1]);
+            assert_eq!(gates.len(), directory.procedures().count());
+            assert_eq!(gate_procedures.len(), gates.len());
+
+            for token in code
+                .tokens()
+                .iter()
+                .filter(|token| token.opcode().byte() == PROCEDURE_ACTIVATION_OPCODE)
+            {
+                let activation = decode_script_procedure_activation(token, &directory).unwrap();
+                activation_count += 1;
+                if activation.enabled {
+                    enable_count += 1;
+                } else {
+                    disable_count += 1;
+                }
+            }
+        }
+
+        assert_eq!(activation_count, EXPECTED_PROCEDURE_ACTIVATION_COUNT);
+        assert_eq!(enable_count, EXPECTED_PROCEDURE_ENABLE_COUNT);
+        assert_eq!(disable_count, EXPECTED_PROCEDURE_DISABLE_COUNT);
+    }
+
+    #[test]
+    fn aa_yield_has_explicit_typed_cod_semantics() {
+        let code = decode_script_code(&[YIELD_OPCODE, CODE_END_MARKER]).unwrap();
+        let dictionary = decode_script_dictionary(&[u8::MIN]).unwrap();
+        assert_eq!(
+            decode_script_instruction(&code.tokens()[0], &dictionary).unwrap(),
+            ScriptInstruction::Yield
+        );
     }
 
     #[test]

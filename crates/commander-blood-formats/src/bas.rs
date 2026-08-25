@@ -385,6 +385,8 @@ mod tests {
     const PROFILE_COUNT: usize = 5;
     const EXPECTED_TOPIC_OFFER_COUNT: usize = 19;
     const EXPECTED_BAS_SEQUENCE_REQUEST_COUNT: usize = 3;
+    const EXPECTED_YIELD_COUNT: usize = 37;
+    const EXPECTED_SELECTOR_YIELD_COUNT: usize = 321;
     const MAXIMUM_SHIPPED_SEQUENCE_BASENAME_LENGTH: usize = 12;
 
     fn original_asset(name: &str) -> PathBuf {
@@ -398,6 +400,8 @@ mod tests {
     fn every_shipped_bas_image_has_complete_typed_framing_and_exact_round_trip() {
         let mut topic_offer_count = usize::MIN;
         let mut sequence_request_count = usize::MIN;
+        let mut yield_count = usize::MIN;
+        let mut selector_yield_count = usize::MIN;
 
         for profile in 1..=PROFILE_COUNT {
             let data = std::fs::read(original_asset(&format!("SCRIPT{profile}.BAS"))).unwrap();
@@ -420,6 +424,8 @@ mod tests {
                         );
                         sequence_request_count += 1;
                     }
+                    ScriptBasInstruction::Yield => yield_count += 1,
+                    ScriptBasInstruction::SelectorYield => selector_yield_count += 1,
                     _ => {}
                 }
             }
@@ -427,5 +433,7 @@ mod tests {
 
         assert_eq!(topic_offer_count, EXPECTED_TOPIC_OFFER_COUNT);
         assert_eq!(sequence_request_count, EXPECTED_BAS_SEQUENCE_REQUEST_COUNT);
+        assert_eq!(yield_count, EXPECTED_YIELD_COUNT);
+        assert_eq!(selector_yield_count, EXPECTED_SELECTOR_YIELD_COUNT);
     }
 }

@@ -50,6 +50,7 @@ pub struct ScriptRuntime {
     alternate_concept: Option<ScriptWordId>,
     resume: Option<ScriptResumeState>,
     pending_skip_count: Option<u8>,
+    yield_requested: bool,
     timer_words: [u16; ScriptTimerSlot::COUNT],
 }
 
@@ -69,6 +70,7 @@ impl ScriptRuntime {
             alternate_concept: None,
             resume: None,
             pending_skip_count: None,
+            yield_requested: false,
             timer_words: [u16::MAX; ScriptTimerSlot::COUNT],
         }
     }
@@ -101,6 +103,11 @@ impl ScriptRuntime {
         self.pending_skip_count
     }
 
+    /// Return whether execution must stop at the end of the current instruction.
+    pub const fn yield_requested(&self) -> bool {
+        self.yield_requested
+    }
+
     /// Set the primary concept chosen by the player.
     pub fn set_selected_concept(&mut self, concept: Option<ScriptWordId>) {
         self.selected_concept = concept;
@@ -127,6 +134,21 @@ impl ScriptRuntime {
     /// Arm an authored number of framed instructions to skip.
     pub fn arm_skip(&mut self, count: u8) {
         self.pending_skip_count = Some(count);
+    }
+
+    /// Apply `vm_op_aa_yield` using a flat execution-state flag.
+    pub fn request_yield(&mut self) {
+        self.yield_requested = true;
+    }
+
+    /// Apply the distinct `vm_op_ac_yield` entry before BAS selector dispatch.
+    pub fn request_selector_yield(&mut self) {
+        self.yield_requested = true;
+    }
+
+    /// Consume and clear the current execution-pass yield request.
+    pub fn take_yield_request(&mut self) -> bool {
+        std::mem::take(&mut self.yield_requested)
     }
 
     /// Read one proven transient timer/state slot.
@@ -158,6 +180,10 @@ impl ScriptRuntime {
             ScriptInstruction::TimerAssignment { slot, value } => {
                 self.timer_state(slot, Some(value))
             }
+            ScriptInstruction::Yield => {
+                self.request_yield();
+                Ok(ScriptControl::Continue)
+            }
         }
     }
 
@@ -165,6 +191,18 @@ impl ScriptRuntime {
     pub fn begin_guard(&mut self, failure_target: ScriptCodeOffset) {
         self.query_mode = true;
         self.guard_targets.push(failure_target);
+    }
+
+    /// Replace any prior guard stack with one procedure-root failure target.
+    pub fn begin_root_guard(&mut self, failure_target: ScriptCodeOffset) {
+        self.query_mode = true;
+        self.guard_targets.clear();
+        self.guard_targets.push(failure_target);
+    }
+
+    /// Return the current innermost guard target.
+    pub fn current_guard_target(&self) -> Option<ScriptCodeOffset> {
+        self.guard_targets.last().copied()
     }
 
     /// Leave query mode and discard only a nested guard target.
@@ -266,6 +304,8 @@ mod tests {
 
     use super::*;
 
+    const YIELD_ORACLE_VECTOR_COUNT: usize = 6;
+
     fn dictionary_words() -> (ScriptWordId, ScriptWordId) {
         let dictionary = decode_script_dictionary(b"alpha\0beta\0").unwrap();
         (
@@ -324,6 +364,12 @@ mod tests {
         final_state: u16,
     }
 
+    #[derive(Deserialize)]
+    struct YieldOracle {
+        yield_before: u8,
+        yield_after: u8,
+    }
+
     #[test]
     fn guard_stack_retains_its_root_until_a_condition_fails() {
         let root = ScriptCodeOffset::new(100);
@@ -341,6 +387,40 @@ mod tests {
             runtime.fail_guard().unwrap_err(),
             ScriptRuntimeError::MissingGuardTarget
         );
+    }
+
+    #[test]
+    fn aa_yield_matches_every_original_vector() {
+        let vectors: Vec<YieldOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_6855_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), YIELD_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let mut runtime = ScriptRuntime::new();
+            runtime.yield_requested = vector.yield_before != u8::MIN;
+            runtime.request_yield();
+            assert_eq!(runtime.yield_requested(), vector.yield_after != u8::MIN);
+            assert!(runtime.take_yield_request());
+            assert!(!runtime.yield_requested());
+        }
+    }
+
+    #[test]
+    fn ac_yield_matches_every_original_vector() {
+        let vectors: Vec<YieldOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_685c_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), YIELD_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let mut runtime = ScriptRuntime::new();
+            runtime.yield_requested = vector.yield_before != u8::MIN;
+            runtime.request_selector_yield();
+            assert_eq!(runtime.yield_requested(), vector.yield_after != u8::MIN);
+        }
     }
 
     #[test]
