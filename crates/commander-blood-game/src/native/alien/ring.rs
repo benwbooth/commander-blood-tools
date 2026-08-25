@@ -80,6 +80,8 @@ pub enum AlienRingCallback {
     /// Generate the leading node's initial motion course.
     #[default]
     InitialCourse,
+    /// Reinitialize a paired node's generated course on its next callback.
+    RestartInitialCourse,
     /// Reset a paired node and begin clearing its motion history.
     BeginResumeClear,
     /// Follow the shared history produced by the leading node.

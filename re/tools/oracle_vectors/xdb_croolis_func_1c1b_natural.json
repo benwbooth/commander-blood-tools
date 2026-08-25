@@ -1,0 +1,242 @@
+[
+  {
+    "name": "inside_center",
+    "module": "croolis",
+    "entry": 7195,
+    "inside": true,
+    "current_position_before": [
+      0,
+      0,
+      0
+    ],
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "anchor_position_before": [
+      0,
+      0,
+      0
+    ],
+    "anchor_position_after": [
+      0,
+      0,
+      0
+    ],
+    "pitch_before": 300,
+    "pitch_after": 300,
+    "pan_before": 1110,
+    "pan_after": 1110,
+    "radial_before": 17,
+    "radial_after": 0,
+    "callback_before": 25088,
+    "callback_after": 7045,
+    "paired_callback_before": 26112,
+    "paired_callback_after": 5552,
+    "anchor_callback_before": 26624,
+    "anchor_callback_after": 26624,
+    "data_sha256": "1d1e97263efd9237398aa60960adbeff47e0e447a997f312621e74dc9cea36c0",
+    "code_sha256": "fedbebfeb49135ee61265c7a7fae0a8e326094108ea3c43af317c2f92385e0ed"
+  },
+  {
+    "name": "inside_edges",
+    "module": "croolis",
+    "entry": 7195,
+    "inside": true,
+    "current_position_before": [
+      0,
+      0,
+      0
+    ],
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "anchor_position_before": [
+      200,
+      199,
+      200
+    ],
+    "anchor_position_after": [
+      200,
+      199,
+      200
+    ],
+    "pitch_before": 65236,
+    "pitch_after": 65236,
+    "pan_before": 2048,
+    "pan_after": 2048,
+    "radial_before": 65519,
+    "radial_after": 0,
+    "callback_before": 25090,
+    "callback_after": 7045,
+    "paired_callback_before": 26114,
+    "paired_callback_after": 5552,
+    "anchor_callback_before": 26626,
+    "anchor_callback_after": 26626,
+    "data_sha256": "33eff569dc77f47de2bb6baafb0e9fa0bd2a72a9e11fc2fc013d882599d82044",
+    "code_sha256": "fedbebfeb49135ee61265c7a7fae0a8e326094108ea3c43af317c2f92385e0ed"
+  },
+  {
+    "name": "outside_lateral_high",
+    "module": "croolis",
+    "entry": 7195,
+    "inside": false,
+    "current_position_before": [
+      0,
+      0,
+      0
+    ],
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "anchor_position_before": [
+      201,
+      72,
+      0
+    ],
+    "anchor_position_after": [
+      201,
+      72,
+      0
+    ],
+    "pitch_before": 300,
+    "pitch_after": 145,
+    "pan_before": 1110,
+    "pan_after": 1124,
+    "radial_before": 32767,
+    "radial_after": 100,
+    "callback_before": 25092,
+    "callback_after": 25092,
+    "paired_callback_before": 26116,
+    "paired_callback_after": 26116,
+    "anchor_callback_before": 26628,
+    "anchor_callback_after": 26628,
+    "data_sha256": "6b4a5babead8befc7f024f695dadb252bb3ede6846153105c77f0158bcdf4823",
+    "code_sha256": "fedbebfeb49135ee61265c7a7fae0a8e326094108ea3c43af317c2f92385e0ed"
+  },
+  {
+    "name": "outside_lateral_low",
+    "module": "croolis",
+    "entry": 7195,
+    "inside": false,
+    "current_position_before": [
+      0,
+      0,
+      0
+    ],
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "anchor_position_before": [
+      4294967095,
+      4294967224,
+      0
+    ],
+    "anchor_position_after": [
+      4294967095,
+      4294967224,
+      0
+    ],
+    "pitch_before": 65236,
+    "pitch_after": 65390,
+    "pan_before": 2048,
+    "pan_after": 2016,
+    "radial_before": 32768,
+    "radial_after": 100,
+    "callback_before": 25094,
+    "callback_after": 25094,
+    "paired_callback_before": 26118,
+    "paired_callback_after": 26118,
+    "anchor_callback_before": 26630,
+    "anchor_callback_after": 26630,
+    "data_sha256": "e1317c778eddc542dbb791a6857a97e50bfe4a37a0c38f1b105979fb2dafca8d",
+    "code_sha256": "fedbebfeb49135ee61265c7a7fae0a8e326094108ea3c43af317c2f92385e0ed"
+  },
+  {
+    "name": "outside_depth",
+    "module": "croolis",
+    "entry": 7195,
+    "inside": false,
+    "current_position_before": [
+      0,
+      0,
+      0
+    ],
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "anchor_position_before": [
+      0,
+      0,
+      201
+    ],
+    "anchor_position_after": [
+      0,
+      0,
+      201
+    ],
+    "pitch_before": 300,
+    "pitch_after": 150,
+    "pan_before": 4095,
+    "pan_after": 4108,
+    "radial_before": 1,
+    "radial_after": 100,
+    "callback_before": 25096,
+    "callback_after": 25096,
+    "paired_callback_before": 26120,
+    "paired_callback_after": 26120,
+    "anchor_callback_before": 26632,
+    "anchor_callback_after": 26632,
+    "data_sha256": "75881e1199d9169575760f7fca189c102f4c035432b56f3d425f1e50ef9ad28e",
+    "code_sha256": "fedbebfeb49135ee61265c7a7fae0a8e326094108ea3c43af317c2f92385e0ed"
+  },
+  {
+    "name": "outside_vertical",
+    "module": "croolis",
+    "entry": 7195,
+    "inside": false,
+    "current_position_before": [
+      0,
+      0,
+      0
+    ],
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "anchor_position_before": [
+      0,
+      200,
+      0
+    ],
+    "anchor_position_after": [
+      0,
+      200,
+      0
+    ],
+    "pitch_before": 32768,
+    "pitch_after": 16371,
+    "pan_before": 65535,
+    "pan_after": 4108,
+    "radial_before": 65535,
+    "radial_after": 100,
+    "callback_before": 25098,
+    "callback_after": 25098,
+    "paired_callback_before": 26122,
+    "paired_callback_after": 26122,
+    "anchor_callback_before": 26634,
+    "anchor_callback_after": 26634,
+    "data_sha256": "347c35af8241ae0e227a33cc662d092d04aad9e1088e3da9fdcf2016066b7f0e",
+    "code_sha256": "fedbebfeb49135ee61265c7a7fae0a8e326094108ea3c43af317c2f92385e0ed"
+  }
+]

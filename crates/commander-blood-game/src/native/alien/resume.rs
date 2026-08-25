@@ -33,6 +33,7 @@ const AMER_RESUME_TEXTURE_VERTEX_COUNT: usize = 54;
 const CROOLIS_RESUME_TEXTURE_VERTEX_COUNT: usize = 26;
 const SCRUT_RESUME_TEXTURE_VERTEX_COUNT: usize = 44;
 const PAIRED_RESUME_COUNTDOWN: u16 = 24;
+const FINAL_RETURN_RADIAL_OFFSET: i16 = 100;
 const AMER_RESUME_TEXTURE_TARGETS: [(usize, TextureDirection); 4] = [
     (0, TextureDirection::Add),
     (53, TextureDirection::Subtract),
@@ -185,6 +186,21 @@ impl From<AlienResumeTextureError> for AlienResumePairStageError {
     }
 }
 
+/// Invalid typed state supplied to the final resume continuation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienResumeFinalStageError {
+    /// The method has no typed index for the node that must restart.
+    MissingPairedNode,
+}
+
+impl fmt::Display for AlienResumeFinalStageError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(formatter, "invalid alien resume final state: {self:?}")
+    }
+}
+
+impl std::error::Error for AlienResumeFinalStageError {}
+
 /// Initialize or dispatch the recovered slot-13 resume method.
 pub fn initialize_or_dispatch_resume<C: AlienResumeCallbacks>(
     species: AlienSpecies,
@@ -311,6 +327,28 @@ pub fn update_resume_pair_stage(
         texture,
         relationship,
     })
+}
+
+/// Steer the current node back to the queue anchor and restart its partner.
+pub fn update_resume_final_stage(
+    species: AlienSpecies,
+    state: &mut AlienResumeMethodState,
+    current: &mut AlienNodePose,
+    anchor: &AlienNodePose,
+    paired_callback: &mut AlienRingCallback,
+    trigonometry: &[AlienTrigonometryPair; TRIGONOMETRY_ENTRY_COUNT],
+) -> Result<AlienResumePairUpdate, AlienResumeFinalStageError> {
+    state
+        .paired_node
+        .ok_or(AlienResumeFinalStageError::MissingPairedNode)?;
+    current.radial_offset = FINAL_RETURN_RADIAL_OFFSET;
+    let relationship = update_resume_pair_steering(species, current, anchor, trigonometry);
+    if relationship == AlienResumePairUpdate::Inside {
+        state.callback = Some(AlienResumeCallback::Begin);
+        *paired_callback = AlienRingCallback::RestartInitialCourse;
+        current.radial_offset = i16::default();
+    }
+    Ok(relationship)
 }
 
 /// Test a resumed node pair and steer the current node when they remain apart.
@@ -462,6 +500,23 @@ mod tests {
         countdown_after: u16,
     }
 
+    #[derive(Deserialize)]
+    struct ResumeFinalStageVector {
+        name: String,
+        module: String,
+        inside: bool,
+        current_position_before: [u32; AXIS_COUNT],
+        current_position_after: [u32; AXIS_COUNT],
+        anchor_position_before: [u32; AXIS_COUNT],
+        anchor_position_after: [u32; AXIS_COUNT],
+        pitch_before: u16,
+        pitch_after: u16,
+        pan_before: u16,
+        pan_after: u16,
+        radial_before: u16,
+        radial_after: u16,
+    }
+
     #[derive(Default)]
     struct CallbackRecorder {
         calls: Vec<(AlienSpecies, AlienResumeCallback)>,
@@ -537,6 +592,16 @@ mod tests {
                 "../../../../../re/tools/oracle_vectors/xdb_croolis_func_1bc9_natural.json"
             ),
             include_str!("../../../../../re/tools/oracle_vectors/xdb_scrut_func_1c89_natural.json"),
+        ]
+    }
+
+    fn final_stage_fixtures() -> [&'static str; 3] {
+        [
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_amer_func_1ccf_natural.json"),
+            include_str!(
+                "../../../../../re/tools/oracle_vectors/xdb_croolis_func_1c1b_natural.json"
+            ),
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_scrut_func_1cdb_natural.json"),
         ]
     }
 
@@ -984,6 +1049,116 @@ mod tests {
                     vector.name
                 );
                 assert_eq!(countdown, vector.countdown_after, "{}", vector.name);
+            }
+        }
+    }
+
+    #[test]
+    fn final_continuation_matches_every_original_overlay_vector() {
+        const PAIRED_NODE: usize = 17;
+        const PRESERVED_RESUMED_NODE: usize = 29;
+
+        for fixture in final_stage_fixtures() {
+            let vectors: Vec<ResumeFinalStageVector> = serde_json::from_str(fixture).unwrap();
+            for vector in vectors {
+                let mut current = node(
+                    vector.current_position_before,
+                    vector.pitch_before,
+                    vector.pan_before,
+                );
+                current.radial_offset = vector.radial_before as i16;
+                let anchor = node(
+                    vector.anchor_position_before,
+                    u16::default(),
+                    u16::default(),
+                );
+                let mut paired_callback = AlienRingCallback::FollowCourse;
+                let mut trigonometry = [AlienTrigonometryPair::default(); TRIGONOMETRY_ENTRY_COUNT];
+                let sample_index =
+                    usize::from((vector.pan_before & ANGLE_MASK) >> ANGLE_INDEX_SHIFT);
+                trigonometry[sample_index] = AlienTrigonometryPair {
+                    cosine: 20_000,
+                    sine: -8_000,
+                };
+                let mut state = AlienResumeMethodState {
+                    callback: Some(AlienResumeCallback::Final),
+                    phase: 0x1234,
+                    paired_node: Some(PAIRED_NODE),
+                    resumed_node: Some(PRESERVED_RESUMED_NODE),
+                };
+
+                assert_eq!(
+                    update_resume_final_stage(
+                        species(&vector.module),
+                        &mut state,
+                        &mut current,
+                        &anchor,
+                        &mut paired_callback,
+                        &trigonometry,
+                    ),
+                    Ok(if vector.inside {
+                        AlienResumePairUpdate::Inside
+                    } else {
+                        AlienResumePairUpdate::Outside
+                    }),
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    current.local_position.map(|value| value as u32),
+                    vector.current_position_after,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    anchor.local_position.map(|value| value as u32),
+                    vector.anchor_position_after,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    current.angles[PITCH_AXIS], vector.pitch_after,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    current.angles[PAN_AXIS], vector.pan_after,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    current.radial_offset as u16, vector.radial_after,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    state.callback,
+                    Some(if vector.inside {
+                        AlienResumeCallback::Begin
+                    } else {
+                        AlienResumeCallback::Final
+                    }),
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    paired_callback,
+                    if vector.inside {
+                        AlienRingCallback::RestartInitialCourse
+                    } else {
+                        AlienRingCallback::FollowCourse
+                    },
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(state.phase, 0x1234, "{}", vector.name);
+                assert_eq!(state.paired_node, Some(PAIRED_NODE), "{}", vector.name);
+                assert_eq!(
+                    state.resumed_node,
+                    Some(PRESERVED_RESUMED_NODE),
+                    "{}",
+                    vector.name
+                );
             }
         }
     }
