@@ -2,6 +2,7 @@
 
 mod aboard;
 mod actor_slots;
+mod actor_handler_black_hole;
 mod actor_handler_camera;
 mod actor_handler_palette;
 mod actor_handler_panel;
@@ -39,6 +40,14 @@ pub use actor_slots::{
     NAV_ACTOR_SLOT_COUNT, NavActorBusyState, NavActorHandler, NavActorMouseState,
     NavActorSeekState, NavActorSlot, NavActorSlotBackend, NavActorSlotFlags,
     NavActorSlotUpdateOutcome, update_nav_actor_slots,
+};
+pub use actor_handler_black_hole::{
+    BLACK_HOLE_IDLE_PRESENTATION_RESOURCE, BLACK_HOLE_TRANSITION_PRESENTATION_RESOURCE,
+    BlackHoleActorPresentation, BlackHoleDeferredAction, BlackHoleNavigationTarget,
+    BlackHolePresentationActorBackend, BlackHolePresentationActorContext,
+    BlackHolePresentationActorOutcome, BlackHolePresentationActorState,
+    BlackHolePresentationBlockers,
+    update_black_hole_presentation_actor,
 };
 pub use actor_handler_camera::{
     CAMERA_TRANSITION_FRAME, CAMERA_VIEW_TRANSITION_STEPS, CameraActorPresentation,
