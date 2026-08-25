@@ -1,0 +1,541 @@
+[
+  {
+    "name": "inside_center",
+    "module": "amer",
+    "entry": 7293,
+    "inside": true,
+    "component": "v",
+    "required_vertex_count": 54,
+    "phase_before": 258,
+    "phase_after": 770,
+    "signed_delta": 2,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 29775,
+        "after": 29777
+      },
+      {
+        "vertex": 53,
+        "direction": -1,
+        "before": 43139,
+        "after": 43137
+      },
+      {
+        "vertex": 35,
+        "direction": 1,
+        "before": 41083,
+        "after": 41085
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 47251,
+        "after": 47249
+      }
+    ],
+    "current_position_before": [
+      0,
+      0,
+      0
+    ],
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_before": [
+      0,
+      0,
+      0
+    ],
+    "other_position_after": [
+      0,
+      0,
+      0
+    ],
+    "pitch_before": 300,
+    "pitch_after": 300,
+    "pan_before": 1110,
+    "pan_after": 1110,
+    "current_radial_before": 40,
+    "current_radial_after_average": 35,
+    "current_radial_after": 0,
+    "other_radial_before": 20,
+    "other_radial_after": 20,
+    "callback_before": 25088,
+    "callback_after": 7359,
+    "other_callback_before": 26624,
+    "other_callback_after": 5514,
+    "resumed_before": 26112,
+    "resumed_after": 20480,
+    "countdown_before": 9,
+    "countdown_after": 24,
+    "data_sha256": "baaa24a66a70589f642c899dc1075919c043d24845a7fb2b68dcf0446edb9998",
+    "code_sha256": "e73287346f6bae6cb4565c619585ba9c5e50b6b1a71b9804028f1a767147bbe8",
+    "object_sha256": "c8febf63349e53a0a62d3273717415d50a41b16fb6d338b196f708daa84c9afa"
+  },
+  {
+    "name": "inside_edges",
+    "module": "amer",
+    "entry": 7293,
+    "inside": true,
+    "component": "v",
+    "required_vertex_count": 54,
+    "phase_before": 510,
+    "phase_after": 65534,
+    "signed_delta": -2,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 32602,
+        "after": 32600
+      },
+      {
+        "vertex": 53,
+        "direction": -1,
+        "before": 45966,
+        "after": 45968
+      },
+      {
+        "vertex": 35,
+        "direction": 1,
+        "before": 43910,
+        "after": 43908
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 50078,
+        "after": 50080
+      }
+    ],
+    "current_position_before": [
+      0,
+      0,
+      0
+    ],
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_before": [
+      200,
+      199,
+      100
+    ],
+    "other_position_after": [
+      200,
+      199,
+      100
+    ],
+    "pitch_before": 0,
+    "pitch_after": 0,
+    "pan_before": 0,
+    "pan_after": 0,
+    "current_radial_before": 32768,
+    "current_radial_after_average": 16383,
+    "current_radial_after": 0,
+    "other_radial_before": 65535,
+    "other_radial_after": 65535,
+    "callback_before": 25090,
+    "callback_after": 7359,
+    "other_callback_before": 26626,
+    "other_callback_after": 5514,
+    "resumed_before": 26114,
+    "resumed_after": 20480,
+    "countdown_before": 10,
+    "countdown_after": 24,
+    "data_sha256": "0ac7f9c38ed03a74da685dc2541531682a520eadf95247754a696038aa8ba776",
+    "code_sha256": "e73287346f6bae6cb4565c619585ba9c5e50b6b1a71b9804028f1a767147bbe8",
+    "object_sha256": "31728fd942f68e00233eb60669e47ba018425e7051bef2f7ec5bd11c8907a11c"
+  },
+  {
+    "name": "outside_lateral_high",
+    "module": "amer",
+    "entry": 7293,
+    "inside": false,
+    "component": "v",
+    "required_vertex_count": 54,
+    "phase_before": 0,
+    "phase_after": 2,
+    "signed_delta": 0,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 35429,
+        "after": 35429
+      },
+      {
+        "vertex": 53,
+        "direction": -1,
+        "before": 48793,
+        "after": 48793
+      },
+      {
+        "vertex": 35,
+        "direction": 1,
+        "before": 46737,
+        "after": 46737
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 52905,
+        "after": 52905
+      }
+    ],
+    "current_position_before": [
+      0,
+      0,
+      0
+    ],
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_before": [
+      201,
+      72,
+      0
+    ],
+    "other_position_after": [
+      201,
+      72,
+      0
+    ],
+    "pitch_before": 300,
+    "pitch_after": 145,
+    "pan_before": 1110,
+    "pan_after": 1124,
+    "current_radial_before": 40,
+    "current_radial_after_average": 35,
+    "current_radial_after": 35,
+    "other_radial_before": 20,
+    "other_radial_after": 20,
+    "callback_before": 25092,
+    "callback_after": 25092,
+    "other_callback_before": 26628,
+    "other_callback_after": 26628,
+    "resumed_before": 26116,
+    "resumed_after": 26116,
+    "countdown_before": 11,
+    "countdown_after": 11,
+    "data_sha256": "14dc1580deb901a3abfb4c8ec2ae96f49c6ee7f74f216cb23c981bf58884659c",
+    "code_sha256": "9a2bbc56cb324d7f67846c18f26644d98b1d5d5796dccdc61d64f8d3b101912a",
+    "object_sha256": "32b977c02b0419fe32021f0623a6577a3ce6b1af8c1b55453d3c75561f01e281"
+  },
+  {
+    "name": "outside_lateral_low",
+    "module": "amer",
+    "entry": 7293,
+    "inside": false,
+    "component": "v",
+    "required_vertex_count": 54,
+    "phase_before": 5632,
+    "phase_after": 5886,
+    "signed_delta": 0,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 38256,
+        "after": 38256
+      },
+      {
+        "vertex": 53,
+        "direction": -1,
+        "before": 51620,
+        "after": 51620
+      },
+      {
+        "vertex": 35,
+        "direction": 1,
+        "before": 49564,
+        "after": 49564
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 55732,
+        "after": 55732
+      }
+    ],
+    "current_position_before": [
+      0,
+      0,
+      0
+    ],
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_before": [
+      4294967095,
+      4294967224,
+      0
+    ],
+    "other_position_after": [
+      4294967095,
+      4294967224,
+      0
+    ],
+    "pitch_before": 65236,
+    "pitch_after": 65390,
+    "pan_before": 2048,
+    "pan_after": 2016,
+    "current_radial_before": 40,
+    "current_radial_after_average": 35,
+    "current_radial_after": 35,
+    "other_radial_before": 20,
+    "other_radial_after": 20,
+    "callback_before": 25094,
+    "callback_after": 25094,
+    "other_callback_before": 26630,
+    "other_callback_after": 26630,
+    "resumed_before": 26118,
+    "resumed_after": 26118,
+    "countdown_before": 12,
+    "countdown_after": 12,
+    "data_sha256": "c5106df7ea5bd496cece3ec2041ce83f158e7831d2c3bd284f1462092c5d16dc",
+    "code_sha256": "3ddc469b2564c23393658d82da5259276c1a9e2b4602ac8d7477403c280f43e3",
+    "object_sha256": "a517a815b7c135ecdf59542152ee960f982b888d53a492701f785498e5e2ee05"
+  },
+  {
+    "name": "outside_depth",
+    "module": "amer",
+    "entry": 7293,
+    "inside": false,
+    "component": "v",
+    "required_vertex_count": 54,
+    "phase_before": 32513,
+    "phase_after": 32769,
+    "signed_delta": 1,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 41083,
+        "after": 41084
+      },
+      {
+        "vertex": 53,
+        "direction": -1,
+        "before": 54447,
+        "after": 54446
+      },
+      {
+        "vertex": 35,
+        "direction": 1,
+        "before": 52391,
+        "after": 52392
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 58559,
+        "after": 58558
+      }
+    ],
+    "current_position_before": [
+      0,
+      0,
+      0
+    ],
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_before": [
+      0,
+      0,
+      101
+    ],
+    "other_position_after": [
+      0,
+      0,
+      101
+    ],
+    "pitch_before": 300,
+    "pitch_after": 150,
+    "pan_before": 4095,
+    "pan_after": 4108,
+    "current_radial_before": 40,
+    "current_radial_after_average": 35,
+    "current_radial_after": 35,
+    "other_radial_before": 20,
+    "other_radial_after": 20,
+    "callback_before": 25096,
+    "callback_after": 25096,
+    "other_callback_before": 26632,
+    "other_callback_after": 26632,
+    "resumed_before": 26120,
+    "resumed_after": 26120,
+    "countdown_before": 13,
+    "countdown_after": 13,
+    "data_sha256": "3fb2c4b05e5dae94f7d12f119833aebb7192132c416ec79ae6f9b931905683e0",
+    "code_sha256": "bbc5de703f12c75c42673944a60fd179ff37974b919d6f16fe020149e40098a4",
+    "object_sha256": "4deab6f4aacd2ebe3de609feec5149117199bd7ec889de357d4fdbcef9dc3678"
+  },
+  {
+    "name": "outside_positive_radial_wrap",
+    "module": "amer",
+    "entry": 7293,
+    "inside": false,
+    "component": "v",
+    "required_vertex_count": 54,
+    "phase_before": 384,
+    "phase_after": 33152,
+    "signed_delta": -128,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 43910,
+        "after": 43782
+      },
+      {
+        "vertex": 53,
+        "direction": -1,
+        "before": 57274,
+        "after": 57402
+      },
+      {
+        "vertex": 35,
+        "direction": 1,
+        "before": 55218,
+        "after": 55090
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 61386,
+        "after": 61514
+      }
+    ],
+    "current_position_before": [
+      0,
+      0,
+      0
+    ],
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_before": [
+      201,
+      0,
+      0
+    ],
+    "other_position_after": [
+      201,
+      0,
+      0
+    ],
+    "pitch_before": 300,
+    "pitch_after": 150,
+    "pan_before": 0,
+    "pan_after": 16,
+    "current_radial_before": 32767,
+    "current_radial_after_average": 8190,
+    "current_radial_after": 8190,
+    "other_radial_before": 32767,
+    "other_radial_after": 32767,
+    "callback_before": 25098,
+    "callback_after": 25098,
+    "other_callback_before": 26634,
+    "other_callback_after": 26634,
+    "resumed_before": 26122,
+    "resumed_after": 26122,
+    "countdown_before": 14,
+    "countdown_after": 14,
+    "data_sha256": "edcb93df17f6672f85cb65100e51e396e81decdb01032eba0f3c714c3d3f85f3",
+    "code_sha256": "44f0c718bc25e951d0714ee692103e77fc1e7b5ef19e7aae7a551f2c450ac9c2",
+    "object_sha256": "a9c61e7fa470d47fe3e6171e9838c20bf16f63942c64ae1841ff5300879d4ecd"
+  },
+  {
+    "name": "outside_negative_radial_wrap",
+    "module": "amer",
+    "entry": 7293,
+    "inside": false,
+    "component": "v",
+    "required_vertex_count": 54,
+    "phase_before": 65281,
+    "phase_after": 2,
+    "signed_delta": 1,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 46737,
+        "after": 46738
+      },
+      {
+        "vertex": 53,
+        "direction": -1,
+        "before": 60101,
+        "after": 60100
+      },
+      {
+        "vertex": 35,
+        "direction": 1,
+        "before": 58045,
+        "after": 58046
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 64213,
+        "after": 64212
+      }
+    ],
+    "current_position_before": [
+      0,
+      0,
+      0
+    ],
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_before": [
+      201,
+      0,
+      0
+    ],
+    "other_position_after": [
+      201,
+      0,
+      0
+    ],
+    "pitch_before": 300,
+    "pitch_after": 150,
+    "pan_before": 0,
+    "pan_after": 16,
+    "current_radial_before": 32768,
+    "current_radial_after_average": 16383,
+    "current_radial_after": 16383,
+    "other_radial_before": 65535,
+    "other_radial_after": 65535,
+    "callback_before": 25100,
+    "callback_after": 25100,
+    "other_callback_before": 26636,
+    "other_callback_after": 26636,
+    "resumed_before": 26124,
+    "resumed_after": 26124,
+    "countdown_before": 15,
+    "countdown_after": 15,
+    "data_sha256": "d43d2c6476635012992b34a9134ef0f9a8d99232ea75409a9127907376418abb",
+    "code_sha256": "cffbe7cc7b4dafe11929e53a6bb826674e2cc606a5614c0be3684cf48346efb3",
+    "object_sha256": "e2bb29f4e911bbcec71abd0aad76f9514f2a4ad11c2ca115bf8c68046ac0959f"
+  }
+]

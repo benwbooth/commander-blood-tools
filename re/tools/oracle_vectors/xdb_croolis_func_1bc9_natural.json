@@ -1,0 +1,457 @@
+[
+  {
+    "name": "inside_center",
+    "module": "croolis",
+    "entry": 7113,
+    "inside": true,
+    "component": "u",
+    "required_vertex_count": 26,
+    "phase_before": 258,
+    "phase_after": 770,
+    "signed_delta": 2,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 10757,
+        "after": 10759
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 28233,
+        "after": 28231
+      }
+    ],
+    "current_position_before": [
+      0,
+      0,
+      0
+    ],
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_before": [
+      0,
+      0,
+      0
+    ],
+    "other_position_after": [
+      0,
+      0,
+      0
+    ],
+    "pitch_before": 300,
+    "pitch_after": 300,
+    "pan_before": 1110,
+    "pan_after": 1110,
+    "current_radial_before": 40,
+    "current_radial_after_average": 35,
+    "current_radial_after": 0,
+    "other_radial_before": 20,
+    "other_radial_after": 20,
+    "callback_before": 25088,
+    "callback_after": 7179,
+    "other_callback_before": 26624,
+    "other_callback_after": 5602,
+    "resumed_before": 26112,
+    "resumed_after": 20480,
+    "countdown_before": 9,
+    "countdown_after": 24,
+    "data_sha256": "9cf86779333ebbe119589fd08601447731b65a7390dbaef80984bfe010ef7bf8",
+    "code_sha256": "7c63e1590d478f97d7a3e2abc9b5be6eb8bd4b0980c562b95fc91563d7851330",
+    "object_sha256": "43cf10486e764ffb825554e21d25bc5811ff976c7d5aed124e0c11e1b2776763"
+  },
+  {
+    "name": "inside_edges",
+    "module": "croolis",
+    "entry": 7113,
+    "inside": true,
+    "component": "u",
+    "required_vertex_count": 26,
+    "phase_before": 510,
+    "phase_after": 65534,
+    "signed_delta": -2,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 13584,
+        "after": 13582
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 31060,
+        "after": 31062
+      }
+    ],
+    "current_position_before": [
+      0,
+      0,
+      0
+    ],
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_before": [
+      200,
+      199,
+      200
+    ],
+    "other_position_after": [
+      200,
+      199,
+      200
+    ],
+    "pitch_before": 0,
+    "pitch_after": 0,
+    "pan_before": 0,
+    "pan_after": 0,
+    "current_radial_before": 32768,
+    "current_radial_after_average": 16383,
+    "current_radial_after": 0,
+    "other_radial_before": 65535,
+    "other_radial_after": 65535,
+    "callback_before": 25090,
+    "callback_after": 7179,
+    "other_callback_before": 26626,
+    "other_callback_after": 5602,
+    "resumed_before": 26114,
+    "resumed_after": 20480,
+    "countdown_before": 10,
+    "countdown_after": 24,
+    "data_sha256": "4a58e1e0f977d19d09c9771b6b15895339247b9d86509b5464c0841c2737acca",
+    "code_sha256": "7c63e1590d478f97d7a3e2abc9b5be6eb8bd4b0980c562b95fc91563d7851330",
+    "object_sha256": "b36e7726dd5431e4b457973c5ea9cc5df4fa628ef446ae62f4fde6aaff2e3a27"
+  },
+  {
+    "name": "outside_lateral_high",
+    "module": "croolis",
+    "entry": 7113,
+    "inside": false,
+    "component": "u",
+    "required_vertex_count": 26,
+    "phase_before": 0,
+    "phase_after": 2,
+    "signed_delta": 0,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 16411,
+        "after": 16411
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 33887,
+        "after": 33887
+      }
+    ],
+    "current_position_before": [
+      0,
+      0,
+      0
+    ],
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_before": [
+      201,
+      72,
+      0
+    ],
+    "other_position_after": [
+      201,
+      72,
+      0
+    ],
+    "pitch_before": 300,
+    "pitch_after": 145,
+    "pan_before": 1110,
+    "pan_after": 1124,
+    "current_radial_before": 40,
+    "current_radial_after_average": 35,
+    "current_radial_after": 35,
+    "other_radial_before": 20,
+    "other_radial_after": 20,
+    "callback_before": 25092,
+    "callback_after": 25092,
+    "other_callback_before": 26628,
+    "other_callback_after": 26628,
+    "resumed_before": 26116,
+    "resumed_after": 26116,
+    "countdown_before": 11,
+    "countdown_after": 11,
+    "data_sha256": "14dc1580deb901a3abfb4c8ec2ae96f49c6ee7f74f216cb23c981bf58884659c",
+    "code_sha256": "ef76d3b4a1e6d81be013002d87a715047df096dbea295951dc84adac5e8f130d",
+    "object_sha256": "32b977c02b0419fe32021f0623a6577a3ce6b1af8c1b55453d3c75561f01e281"
+  },
+  {
+    "name": "outside_lateral_low",
+    "module": "croolis",
+    "entry": 7113,
+    "inside": false,
+    "component": "u",
+    "required_vertex_count": 26,
+    "phase_before": 5632,
+    "phase_after": 5886,
+    "signed_delta": 0,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 19238,
+        "after": 19238
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 36714,
+        "after": 36714
+      }
+    ],
+    "current_position_before": [
+      0,
+      0,
+      0
+    ],
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_before": [
+      4294967095,
+      4294967224,
+      0
+    ],
+    "other_position_after": [
+      4294967095,
+      4294967224,
+      0
+    ],
+    "pitch_before": 65236,
+    "pitch_after": 65390,
+    "pan_before": 2048,
+    "pan_after": 2016,
+    "current_radial_before": 40,
+    "current_radial_after_average": 35,
+    "current_radial_after": 35,
+    "other_radial_before": 20,
+    "other_radial_after": 20,
+    "callback_before": 25094,
+    "callback_after": 25094,
+    "other_callback_before": 26630,
+    "other_callback_after": 26630,
+    "resumed_before": 26118,
+    "resumed_after": 26118,
+    "countdown_before": 12,
+    "countdown_after": 12,
+    "data_sha256": "c5106df7ea5bd496cece3ec2041ce83f158e7831d2c3bd284f1462092c5d16dc",
+    "code_sha256": "58ba1a10dfe70899d1123598d69aeaf2d40b377192e12406cf6fc76054a1c315",
+    "object_sha256": "a517a815b7c135ecdf59542152ee960f982b888d53a492701f785498e5e2ee05"
+  },
+  {
+    "name": "outside_depth",
+    "module": "croolis",
+    "entry": 7113,
+    "inside": false,
+    "component": "u",
+    "required_vertex_count": 26,
+    "phase_before": 32513,
+    "phase_after": 32769,
+    "signed_delta": 1,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 22065,
+        "after": 22066
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 39541,
+        "after": 39540
+      }
+    ],
+    "current_position_before": [
+      0,
+      0,
+      0
+    ],
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_before": [
+      0,
+      0,
+      201
+    ],
+    "other_position_after": [
+      0,
+      0,
+      201
+    ],
+    "pitch_before": 300,
+    "pitch_after": 150,
+    "pan_before": 4095,
+    "pan_after": 4108,
+    "current_radial_before": 40,
+    "current_radial_after_average": 35,
+    "current_radial_after": 35,
+    "other_radial_before": 20,
+    "other_radial_after": 20,
+    "callback_before": 25096,
+    "callback_after": 25096,
+    "other_callback_before": 26632,
+    "other_callback_after": 26632,
+    "resumed_before": 26120,
+    "resumed_after": 26120,
+    "countdown_before": 13,
+    "countdown_after": 13,
+    "data_sha256": "036a4aa875b902087548dbbbac8bc33b3e0e0b313c6a387d2f24d60e275fd7e0",
+    "code_sha256": "179b3a3769c61646be460fba1e75c5c2557fe8e56e62dbf8a69a10b260ab92f7",
+    "object_sha256": "30c7b73f9e8fc73f2fdf761a8d803da548d14ad4130e5b89387922807cb4f61e"
+  },
+  {
+    "name": "outside_positive_radial_wrap",
+    "module": "croolis",
+    "entry": 7113,
+    "inside": false,
+    "component": "u",
+    "required_vertex_count": 26,
+    "phase_before": 384,
+    "phase_after": 33152,
+    "signed_delta": -128,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 24892,
+        "after": 24764
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 42368,
+        "after": 42496
+      }
+    ],
+    "current_position_before": [
+      0,
+      0,
+      0
+    ],
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_before": [
+      201,
+      0,
+      0
+    ],
+    "other_position_after": [
+      201,
+      0,
+      0
+    ],
+    "pitch_before": 300,
+    "pitch_after": 150,
+    "pan_before": 0,
+    "pan_after": 16,
+    "current_radial_before": 32767,
+    "current_radial_after_average": 8190,
+    "current_radial_after": 8190,
+    "other_radial_before": 32767,
+    "other_radial_after": 32767,
+    "callback_before": 25098,
+    "callback_after": 25098,
+    "other_callback_before": 26634,
+    "other_callback_after": 26634,
+    "resumed_before": 26122,
+    "resumed_after": 26122,
+    "countdown_before": 14,
+    "countdown_after": 14,
+    "data_sha256": "edcb93df17f6672f85cb65100e51e396e81decdb01032eba0f3c714c3d3f85f3",
+    "code_sha256": "550161b5b6fa2ad82befd58adff5458f2d49f818384a0d84dd3e82903399fbbf",
+    "object_sha256": "ba1a9f91288a461eb6e1f20049df1d9e17a057799e9555a577db434a2f395bb2"
+  },
+  {
+    "name": "outside_negative_radial_wrap",
+    "module": "croolis",
+    "entry": 7113,
+    "inside": false,
+    "component": "u",
+    "required_vertex_count": 26,
+    "phase_before": 65281,
+    "phase_after": 2,
+    "signed_delta": 1,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 27719,
+        "after": 27720
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 45195,
+        "after": 45194
+      }
+    ],
+    "current_position_before": [
+      0,
+      0,
+      0
+    ],
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_before": [
+      201,
+      0,
+      0
+    ],
+    "other_position_after": [
+      201,
+      0,
+      0
+    ],
+    "pitch_before": 300,
+    "pitch_after": 150,
+    "pan_before": 0,
+    "pan_after": 16,
+    "current_radial_before": 32768,
+    "current_radial_after_average": 16383,
+    "current_radial_after": 16383,
+    "other_radial_before": 65535,
+    "other_radial_after": 65535,
+    "callback_before": 25100,
+    "callback_after": 25100,
+    "other_callback_before": 26636,
+    "other_callback_after": 26636,
+    "resumed_before": 26124,
+    "resumed_after": 26124,
+    "countdown_before": 15,
+    "countdown_after": 15,
+    "data_sha256": "d43d2c6476635012992b34a9134ef0f9a8d99232ea75409a9127907376418abb",
+    "code_sha256": "fea7293ed85a97baaee24c159b60375383e0c2ab8d977ee44ca12f0952208626",
+    "object_sha256": "dae64487b2a95ae81c7fb70ac50f4321241ade9f5c252510fc94f1d286b4de54"
+  }
+]

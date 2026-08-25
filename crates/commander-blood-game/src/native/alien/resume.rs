@@ -4,7 +4,7 @@ use std::fmt;
 
 use commander_blood_formats::alien::{AlienTrigonometryPair, TRIGONOMETRY_ENTRY_COUNT};
 
-use super::{AlienNodePose, AlienSpecies};
+use super::{AlienNodePose, AlienRingCallback, AlienSpecies};
 
 const X_AXIS: usize = 0;
 const Y_AXIS: usize = 1;
@@ -32,6 +32,7 @@ const PHASE_REVERSE_STEP: u8 = 254;
 const AMER_RESUME_TEXTURE_VERTEX_COUNT: usize = 54;
 const CROOLIS_RESUME_TEXTURE_VERTEX_COUNT: usize = 26;
 const SCRUT_RESUME_TEXTURE_VERTEX_COUNT: usize = 44;
+const PAIRED_RESUME_COUNTDOWN: u16 = 24;
 const AMER_RESUME_TEXTURE_TARGETS: [(usize, TextureDirection); 4] = [
     (0, TextureDirection::Add),
     (53, TextureDirection::Subtract),
@@ -131,6 +132,15 @@ pub struct AlienResumeTimeoutUpdate {
     pub final_stage_selected: bool,
 }
 
+/// State produced by one paired-node approach continuation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct AlienResumePairStageUpdate {
+    /// Texture-coordinate motion completed before node steering.
+    pub texture: AlienResumeTextureUpdate,
+    /// Whether the paired nodes remain apart after radial averaging.
+    pub relationship: AlienResumePairUpdate,
+}
+
 /// Invalid model data supplied to the recovered resume texture animation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct AlienResumeTextureError {
@@ -151,6 +161,29 @@ impl fmt::Display for AlienResumeTextureError {
 }
 
 impl std::error::Error for AlienResumeTextureError {}
+
+/// Invalid typed state supplied to the paired-node resume continuation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienResumePairStageError {
+    /// The method has no typed index for the node represented by `other`.
+    MissingPairedNode,
+    /// The model cannot satisfy the species-specific texture animation.
+    Texture(AlienResumeTextureError),
+}
+
+impl fmt::Display for AlienResumePairStageError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(formatter, "invalid alien resume pair state: {self:?}")
+    }
+}
+
+impl std::error::Error for AlienResumePairStageError {}
+
+impl From<AlienResumeTextureError> for AlienResumePairStageError {
+    fn from(error: AlienResumeTextureError) -> Self {
+        Self::Texture(error)
+    }
+}
 
 /// Initialize or dispatch the recovered slot-13 resume method.
 pub fn initialize_or_dispatch_resume<C: AlienResumeCallbacks>(
@@ -241,6 +274,42 @@ pub fn update_resume_timeout(
         texture,
         countdown: *countdown,
         final_stage_selected,
+    })
+}
+
+/// Animate and steer one node toward its queued resume partner.
+#[allow(clippy::too_many_arguments)]
+pub fn update_resume_pair_stage(
+    species: AlienSpecies,
+    state: &mut AlienResumeMethodState,
+    current: &mut AlienNodePose,
+    other: &mut AlienNodePose,
+    other_callback: &mut AlienRingCallback,
+    texture_coordinates: &mut [[i16; TEXTURE_COMPONENT_COUNT]],
+    trigonometry: &[AlienTrigonometryPair; TRIGONOMETRY_ENTRY_COUNT],
+    countdown: &mut u16,
+) -> Result<AlienResumePairStageUpdate, AlienResumePairStageError> {
+    let paired_node = state
+        .paired_node
+        .ok_or(AlienResumePairStageError::MissingPairedNode)?;
+    let texture = update_resume_texture_motion(species, state, texture_coordinates)?;
+    let half_other = other.radial_offset >> 1;
+    let average = other
+        .radial_offset
+        .wrapping_add(current.radial_offset)
+        .wrapping_add(half_other);
+    current.radial_offset = average >> 1;
+    let relationship = update_resume_pair_steering(species, current, other, trigonometry);
+    if relationship == AlienResumePairUpdate::Inside {
+        state.callback = Some(AlienResumeCallback::Timeout);
+        current.radial_offset = i16::default();
+        *other_callback = AlienRingCallback::BeginResumeClear;
+        state.resumed_node = Some(paired_node);
+        *countdown = PAIRED_RESUME_COUNTDOWN;
+    }
+    Ok(AlienResumePairStageUpdate {
+        texture,
+        relationship,
     })
 }
 
@@ -365,6 +434,34 @@ mod tests {
         final_selected: bool,
     }
 
+    #[derive(Deserialize)]
+    struct ResumePairStageVector {
+        name: String,
+        module: String,
+        inside: bool,
+        component: String,
+        required_vertex_count: usize,
+        phase_before: u16,
+        phase_after: u16,
+        signed_delta: i16,
+        targets: Vec<ResumeTextureTargetVector>,
+        current_position_before: [u32; AXIS_COUNT],
+        current_position_after: [u32; AXIS_COUNT],
+        other_position_before: [u32; AXIS_COUNT],
+        other_position_after: [u32; AXIS_COUNT],
+        pitch_before: u16,
+        pitch_after: u16,
+        pan_before: u16,
+        pan_after: u16,
+        current_radial_before: u16,
+        current_radial_after_average: u16,
+        current_radial_after: u16,
+        other_radial_before: u16,
+        other_radial_after: u16,
+        countdown_before: u16,
+        countdown_after: u16,
+    }
+
     #[derive(Default)]
     struct CallbackRecorder {
         calls: Vec<(AlienSpecies, AlienResumeCallback)>,
@@ -430,6 +527,16 @@ mod tests {
                 "../../../../../re/tools/oracle_vectors/xdb_croolis_func_1c0b_natural.json"
             ),
             include_str!("../../../../../re/tools/oracle_vectors/xdb_scrut_func_1ccb_natural.json"),
+        ]
+    }
+
+    fn pair_stage_fixtures() -> [&'static str; 3] {
+        [
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_amer_func_1c7d_natural.json"),
+            include_str!(
+                "../../../../../re/tools/oracle_vectors/xdb_croolis_func_1bc9_natural.json"
+            ),
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_scrut_func_1c89_natural.json"),
         ]
     }
 
@@ -729,6 +836,154 @@ mod tests {
                 );
                 assert_eq!(state.paired_node, Some(17), "{}", vector.name);
                 assert_eq!(state.resumed_node, Some(29), "{}", vector.name);
+            }
+        }
+    }
+
+    #[test]
+    fn paired_node_continuation_matches_every_original_overlay_vector() {
+        const PAIRED_NODE: usize = 17;
+        const PRESERVED_RESUMED_NODE: usize = 29;
+
+        for fixture in pair_stage_fixtures() {
+            let vectors: Vec<ResumePairStageVector> = serde_json::from_str(fixture).unwrap();
+            for vector in vectors {
+                let species = species(&vector.module);
+                let component = match vector.component.as_str() {
+                    "u" => TEXTURE_U_COMPONENT,
+                    "v" => TEXTURE_V_COMPONENT,
+                    value => panic!("unknown texture component {value}"),
+                };
+                let mut texture_coordinates =
+                    vec![[12_345_i16, -23_456_i16]; vector.required_vertex_count];
+                for target in &vector.targets {
+                    texture_coordinates[target.vertex][component] = target.before as i16;
+                }
+                let mut expected_textures = texture_coordinates.clone();
+                for target in &vector.targets {
+                    expected_textures[target.vertex][component] = target.after as i16;
+                }
+                let mut current = node(
+                    vector.current_position_before,
+                    vector.pitch_before,
+                    vector.pan_before,
+                );
+                current.radial_offset = vector.current_radial_before as i16;
+                let mut other = node(vector.other_position_before, u16::default(), u16::default());
+                other.radial_offset = vector.other_radial_before as i16;
+                let mut other_callback = AlienRingCallback::FollowCourse;
+                let mut trigonometry = [AlienTrigonometryPair::default(); TRIGONOMETRY_ENTRY_COUNT];
+                let sample_index =
+                    usize::from((vector.pan_before & ANGLE_MASK) >> ANGLE_INDEX_SHIFT);
+                trigonometry[sample_index] = AlienTrigonometryPair {
+                    cosine: 20_000,
+                    sine: -8_000,
+                };
+                let mut state = AlienResumeMethodState {
+                    callback: Some(AlienResumeCallback::Pair),
+                    phase: vector.phase_before,
+                    paired_node: Some(PAIRED_NODE),
+                    resumed_node: Some(PRESERVED_RESUMED_NODE),
+                };
+                let mut countdown = vector.countdown_before;
+
+                assert_eq!(
+                    update_resume_pair_stage(
+                        species,
+                        &mut state,
+                        &mut current,
+                        &mut other,
+                        &mut other_callback,
+                        &mut texture_coordinates,
+                        &trigonometry,
+                        &mut countdown,
+                    ),
+                    Ok(AlienResumePairStageUpdate {
+                        texture: AlienResumeTextureUpdate {
+                            delta: vector.signed_delta,
+                            phase: vector.phase_after,
+                        },
+                        relationship: if vector.inside {
+                            AlienResumePairUpdate::Inside
+                        } else {
+                            AlienResumePairUpdate::Outside
+                        },
+                    }),
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(texture_coordinates, expected_textures, "{}", vector.name);
+                assert_eq!(
+                    current.local_position.map(|value| value as u32),
+                    vector.current_position_after,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    other.local_position.map(|value| value as u32),
+                    vector.other_position_after,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    current.angles[PITCH_AXIS], vector.pitch_after,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    current.angles[PAN_AXIS], vector.pan_after,
+                    "{}",
+                    vector.name
+                );
+                if !vector.inside {
+                    assert_eq!(
+                        current.radial_offset as u16, vector.current_radial_after_average,
+                        "{}",
+                        vector.name
+                    );
+                }
+                assert_eq!(
+                    current.radial_offset as u16, vector.current_radial_after,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    other.radial_offset as u16, vector.other_radial_after,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(state.phase, vector.phase_after, "{}", vector.name);
+                assert_eq!(
+                    state.callback,
+                    Some(if vector.inside {
+                        AlienResumeCallback::Timeout
+                    } else {
+                        AlienResumeCallback::Pair
+                    }),
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    other_callback,
+                    if vector.inside {
+                        AlienRingCallback::BeginResumeClear
+                    } else {
+                        AlienRingCallback::FollowCourse
+                    },
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    state.resumed_node,
+                    Some(if vector.inside {
+                        PAIRED_NODE
+                    } else {
+                        PRESERVED_RESUMED_NODE
+                    }),
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(countdown, vector.countdown_after, "{}", vector.name);
             }
         }
     }

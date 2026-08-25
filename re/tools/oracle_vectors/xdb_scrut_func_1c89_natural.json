@@ -1,0 +1,541 @@
+[
+  {
+    "name": "inside_center",
+    "module": "scrut",
+    "entry": 7305,
+    "inside": true,
+    "component": "v",
+    "required_vertex_count": 44,
+    "phase_before": 258,
+    "phase_after": 770,
+    "signed_delta": 2,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 29775,
+        "after": 29777
+      },
+      {
+        "vertex": 43,
+        "direction": -1,
+        "before": 49307,
+        "after": 49305
+      },
+      {
+        "vertex": 42,
+        "direction": 1,
+        "before": 56503,
+        "after": 56505
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 47251,
+        "after": 47249
+      }
+    ],
+    "current_position_before": [
+      0,
+      0,
+      0
+    ],
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_before": [
+      0,
+      0,
+      0
+    ],
+    "other_position_after": [
+      0,
+      0,
+      0
+    ],
+    "pitch_before": 300,
+    "pitch_after": 300,
+    "pan_before": 1110,
+    "pan_after": 1110,
+    "current_radial_before": 40,
+    "current_radial_after_average": 35,
+    "current_radial_after": 0,
+    "other_radial_before": 20,
+    "other_radial_after": 20,
+    "callback_before": 25088,
+    "callback_after": 7371,
+    "other_callback_before": 26624,
+    "other_callback_after": 5584,
+    "resumed_before": 26112,
+    "resumed_after": 20480,
+    "countdown_before": 9,
+    "countdown_after": 24,
+    "data_sha256": "b4832f372031fc9deb3763c85ca7e839a0aa15f53a2c237177fedb15f94d19c8",
+    "code_sha256": "319912d081928be22df58038d72ca9562c2abd6666583ecbd1210042598bdb40",
+    "object_sha256": "e7e98c3c679f207a1858edf973ddea414d0317acae27c9ed3e9498f7dedd9959"
+  },
+  {
+    "name": "inside_edges",
+    "module": "scrut",
+    "entry": 7305,
+    "inside": true,
+    "component": "v",
+    "required_vertex_count": 44,
+    "phase_before": 510,
+    "phase_after": 65534,
+    "signed_delta": -2,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 32602,
+        "after": 32600
+      },
+      {
+        "vertex": 43,
+        "direction": -1,
+        "before": 52134,
+        "after": 52136
+      },
+      {
+        "vertex": 42,
+        "direction": 1,
+        "before": 59330,
+        "after": 59328
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 50078,
+        "after": 50080
+      }
+    ],
+    "current_position_before": [
+      0,
+      0,
+      0
+    ],
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_before": [
+      200,
+      199,
+      200
+    ],
+    "other_position_after": [
+      200,
+      199,
+      200
+    ],
+    "pitch_before": 0,
+    "pitch_after": 0,
+    "pan_before": 0,
+    "pan_after": 0,
+    "current_radial_before": 32768,
+    "current_radial_after_average": 16383,
+    "current_radial_after": 0,
+    "other_radial_before": 65535,
+    "other_radial_after": 65535,
+    "callback_before": 25090,
+    "callback_after": 7371,
+    "other_callback_before": 26626,
+    "other_callback_after": 5584,
+    "resumed_before": 26114,
+    "resumed_after": 20480,
+    "countdown_before": 10,
+    "countdown_after": 24,
+    "data_sha256": "3dfc5cab603cae649103dcf192fc26d7279cd5a78499ab1d2c5b27de1f2133b6",
+    "code_sha256": "319912d081928be22df58038d72ca9562c2abd6666583ecbd1210042598bdb40",
+    "object_sha256": "0e2083950ad42d87e8bf20b4edda6f22c3a3af0d43fe0889e060afe95fdad301"
+  },
+  {
+    "name": "outside_lateral_high",
+    "module": "scrut",
+    "entry": 7305,
+    "inside": false,
+    "component": "v",
+    "required_vertex_count": 44,
+    "phase_before": 0,
+    "phase_after": 2,
+    "signed_delta": 0,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 35429,
+        "after": 35429
+      },
+      {
+        "vertex": 43,
+        "direction": -1,
+        "before": 54961,
+        "after": 54961
+      },
+      {
+        "vertex": 42,
+        "direction": 1,
+        "before": 62157,
+        "after": 62157
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 52905,
+        "after": 52905
+      }
+    ],
+    "current_position_before": [
+      0,
+      0,
+      0
+    ],
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_before": [
+      201,
+      72,
+      0
+    ],
+    "other_position_after": [
+      201,
+      72,
+      0
+    ],
+    "pitch_before": 300,
+    "pitch_after": 145,
+    "pan_before": 1110,
+    "pan_after": 1124,
+    "current_radial_before": 40,
+    "current_radial_after_average": 35,
+    "current_radial_after": 35,
+    "other_radial_before": 20,
+    "other_radial_after": 20,
+    "callback_before": 25092,
+    "callback_after": 25092,
+    "other_callback_before": 26628,
+    "other_callback_after": 26628,
+    "resumed_before": 26116,
+    "resumed_after": 26116,
+    "countdown_before": 11,
+    "countdown_after": 11,
+    "data_sha256": "14dc1580deb901a3abfb4c8ec2ae96f49c6ee7f74f216cb23c981bf58884659c",
+    "code_sha256": "a02fc4d8ca1141cae44512206239bf7abc0848a12ddc857cca531ad717c4f426",
+    "object_sha256": "32b977c02b0419fe32021f0623a6577a3ce6b1af8c1b55453d3c75561f01e281"
+  },
+  {
+    "name": "outside_lateral_low",
+    "module": "scrut",
+    "entry": 7305,
+    "inside": false,
+    "component": "v",
+    "required_vertex_count": 44,
+    "phase_before": 5632,
+    "phase_after": 5886,
+    "signed_delta": 0,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 38256,
+        "after": 38256
+      },
+      {
+        "vertex": 43,
+        "direction": -1,
+        "before": 57788,
+        "after": 57788
+      },
+      {
+        "vertex": 42,
+        "direction": 1,
+        "before": 64984,
+        "after": 64984
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 55732,
+        "after": 55732
+      }
+    ],
+    "current_position_before": [
+      0,
+      0,
+      0
+    ],
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_before": [
+      4294967095,
+      4294967224,
+      0
+    ],
+    "other_position_after": [
+      4294967095,
+      4294967224,
+      0
+    ],
+    "pitch_before": 65236,
+    "pitch_after": 65390,
+    "pan_before": 2048,
+    "pan_after": 2016,
+    "current_radial_before": 40,
+    "current_radial_after_average": 35,
+    "current_radial_after": 35,
+    "other_radial_before": 20,
+    "other_radial_after": 20,
+    "callback_before": 25094,
+    "callback_after": 25094,
+    "other_callback_before": 26630,
+    "other_callback_after": 26630,
+    "resumed_before": 26118,
+    "resumed_after": 26118,
+    "countdown_before": 12,
+    "countdown_after": 12,
+    "data_sha256": "c5106df7ea5bd496cece3ec2041ce83f158e7831d2c3bd284f1462092c5d16dc",
+    "code_sha256": "05fdbd051983ac616a410bb947e166f8bca9b911a3f1399ec23714917f951eb5",
+    "object_sha256": "a517a815b7c135ecdf59542152ee960f982b888d53a492701f785498e5e2ee05"
+  },
+  {
+    "name": "outside_depth",
+    "module": "scrut",
+    "entry": 7305,
+    "inside": false,
+    "component": "v",
+    "required_vertex_count": 44,
+    "phase_before": 32513,
+    "phase_after": 32769,
+    "signed_delta": 1,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 41083,
+        "after": 41084
+      },
+      {
+        "vertex": 43,
+        "direction": -1,
+        "before": 60615,
+        "after": 60614
+      },
+      {
+        "vertex": 42,
+        "direction": 1,
+        "before": 2275,
+        "after": 2276
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 58559,
+        "after": 58558
+      }
+    ],
+    "current_position_before": [
+      0,
+      0,
+      0
+    ],
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_before": [
+      0,
+      0,
+      201
+    ],
+    "other_position_after": [
+      0,
+      0,
+      201
+    ],
+    "pitch_before": 300,
+    "pitch_after": 150,
+    "pan_before": 4095,
+    "pan_after": 4108,
+    "current_radial_before": 40,
+    "current_radial_after_average": 35,
+    "current_radial_after": 35,
+    "other_radial_before": 20,
+    "other_radial_after": 20,
+    "callback_before": 25096,
+    "callback_after": 25096,
+    "other_callback_before": 26632,
+    "other_callback_after": 26632,
+    "resumed_before": 26120,
+    "resumed_after": 26120,
+    "countdown_before": 13,
+    "countdown_after": 13,
+    "data_sha256": "036a4aa875b902087548dbbbac8bc33b3e0e0b313c6a387d2f24d60e275fd7e0",
+    "code_sha256": "ac26ecc847258f4206e62c59e810fae05e0e68e2d5a915348d25277954f55619",
+    "object_sha256": "83f8447ebf18cac90d8082eb041787cc054f3d5127a68f01bab586ccb2440c37"
+  },
+  {
+    "name": "outside_positive_radial_wrap",
+    "module": "scrut",
+    "entry": 7305,
+    "inside": false,
+    "component": "v",
+    "required_vertex_count": 44,
+    "phase_before": 384,
+    "phase_after": 33152,
+    "signed_delta": -128,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 43910,
+        "after": 43782
+      },
+      {
+        "vertex": 43,
+        "direction": -1,
+        "before": 63442,
+        "after": 63570
+      },
+      {
+        "vertex": 42,
+        "direction": 1,
+        "before": 5102,
+        "after": 4974
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 61386,
+        "after": 61514
+      }
+    ],
+    "current_position_before": [
+      0,
+      0,
+      0
+    ],
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_before": [
+      201,
+      0,
+      0
+    ],
+    "other_position_after": [
+      201,
+      0,
+      0
+    ],
+    "pitch_before": 300,
+    "pitch_after": 150,
+    "pan_before": 0,
+    "pan_after": 16,
+    "current_radial_before": 32767,
+    "current_radial_after_average": 8190,
+    "current_radial_after": 8190,
+    "other_radial_before": 32767,
+    "other_radial_after": 32767,
+    "callback_before": 25098,
+    "callback_after": 25098,
+    "other_callback_before": 26634,
+    "other_callback_after": 26634,
+    "resumed_before": 26122,
+    "resumed_after": 26122,
+    "countdown_before": 14,
+    "countdown_after": 14,
+    "data_sha256": "edcb93df17f6672f85cb65100e51e396e81decdb01032eba0f3c714c3d3f85f3",
+    "code_sha256": "784ebb8ebe1db3e6616afd85387a2ecf03b3f2d70d8c4a08e0ee6d632efab7b2",
+    "object_sha256": "fd889913304d92d14c25b08152633a6fc6488f8141bedc8444b5fb7105e82b35"
+  },
+  {
+    "name": "outside_negative_radial_wrap",
+    "module": "scrut",
+    "entry": 7305,
+    "inside": false,
+    "component": "v",
+    "required_vertex_count": 44,
+    "phase_before": 65281,
+    "phase_after": 2,
+    "signed_delta": 1,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 46737,
+        "after": 46738
+      },
+      {
+        "vertex": 43,
+        "direction": -1,
+        "before": 733,
+        "after": 732
+      },
+      {
+        "vertex": 42,
+        "direction": 1,
+        "before": 7929,
+        "after": 7930
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 64213,
+        "after": 64212
+      }
+    ],
+    "current_position_before": [
+      0,
+      0,
+      0
+    ],
+    "current_position_after": [
+      0,
+      0,
+      0
+    ],
+    "other_position_before": [
+      201,
+      0,
+      0
+    ],
+    "other_position_after": [
+      201,
+      0,
+      0
+    ],
+    "pitch_before": 300,
+    "pitch_after": 150,
+    "pan_before": 0,
+    "pan_after": 16,
+    "current_radial_before": 32768,
+    "current_radial_after_average": 16383,
+    "current_radial_after": 16383,
+    "other_radial_before": 65535,
+    "other_radial_after": 65535,
+    "callback_before": 25100,
+    "callback_after": 25100,
+    "other_callback_before": 26636,
+    "other_callback_after": 26636,
+    "resumed_before": 26124,
+    "resumed_after": 26124,
+    "countdown_before": 15,
+    "countdown_after": 15,
+    "data_sha256": "d43d2c6476635012992b34a9134ef0f9a8d99232ea75409a9127907376418abb",
+    "code_sha256": "75ff59016ab1eeccc0ef8d21cef3b8a724231e38a15d552aecb3f55d3a2a35b9",
+    "object_sha256": "332626efa3af3116633da70b96570f7955b1a28923612624f4159f850569f24e"
+  }
+]
