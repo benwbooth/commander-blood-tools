@@ -46,6 +46,39 @@ impl ScriptProcedureId {
     }
 }
 
+/// Typed word within one owned script state object.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct ScriptStateWord {
+    owner: ScriptStateWordOwner,
+    word_index: usize,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+enum ScriptStateWordOwner {
+    Object(ScriptObjectId),
+    TrailingState,
+}
+
+impl ScriptStateWord {
+    /// Return the object that owns this word.
+    pub const fn object(self) -> Option<ScriptObjectId> {
+        match self.owner {
+            ScriptStateWordOwner::Object(object) => Some(object),
+            ScriptStateWordOwner::TrailingState => None,
+        }
+    }
+
+    /// Return the zero-based word index within the owning object.
+    pub const fn word_index(self) -> usize {
+        self.word_index
+    }
+
+    /// Return whether this word belongs to the trailing profile-state block.
+    pub const fn is_trailing_state(self) -> bool {
+        matches!(self.owner, ScriptStateWordOwner::TrailingState)
+    }
+}
+
 /// Proven kind word and fixed record shape for one VAR state object.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ScriptObjectKind {
@@ -124,10 +157,16 @@ pub struct ScriptStateObject {
     pub id: ScriptObjectId,
     /// Proven fixed record kind.
     pub kind: ScriptObjectKind,
+    source_offset: usize,
     bytes: Box<[u8]>,
 }
 
 impl ScriptStateObject {
+    /// Return this record's byte position in the serialized VAR image.
+    pub const fn source_offset(&self) -> usize {
+        self.source_offset
+    }
+
     /// Return the object's exact authored record bytes.
     pub fn bytes(&self) -> &[u8] {
         &self.bytes
@@ -138,6 +177,7 @@ impl ScriptStateObject {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ScriptState {
     objects: Vec<ScriptStateObject>,
+    trailing_source_offset: usize,
     trailing_data: Box<[u8]>,
 }
 
@@ -150,6 +190,67 @@ impl ScriptState {
     /// Resolve a typed object identity to its owned state record.
     pub fn object(&self, object: ScriptObjectId) -> Option<&ScriptStateObject> {
         self.objects.get(object.index())
+    }
+
+    /// Resolve an encoded VAR byte position to an aligned owned object word.
+    pub fn resolve_word_source_offset(&self, source_offset: u16) -> Option<ScriptStateWord> {
+        let source_offset = usize::from(source_offset);
+        self.objects
+            .iter()
+            .find_map(|object| {
+                let relative = source_offset.checked_sub(object.source_offset)?;
+                let word_end = relative.checked_add(WORD_SIZE)?;
+                (relative.is_multiple_of(WORD_SIZE) && word_end <= object.bytes.len()).then_some(
+                    ScriptStateWord {
+                        owner: ScriptStateWordOwner::Object(object.id),
+                        word_index: relative / WORD_SIZE,
+                    },
+                )
+            })
+            .or_else(|| {
+                let relative = source_offset.checked_sub(self.trailing_source_offset)?;
+                let word_end = relative.checked_add(WORD_SIZE)?;
+                (relative.is_multiple_of(WORD_SIZE) && word_end <= self.trailing_data.len())
+                    .then_some(ScriptStateWord {
+                        owner: ScriptStateWordOwner::TrailingState,
+                        word_index: relative / WORD_SIZE,
+                    })
+            })
+    }
+
+    /// Read one resolved object word.
+    pub fn word(&self, field: ScriptStateWord) -> Option<u16> {
+        let offset = field.word_index.checked_mul(WORD_SIZE)?;
+        let bytes = match field.owner {
+            ScriptStateWordOwner::Object(object) => {
+                self.object(object)?.bytes.get(offset..offset + WORD_SIZE)?
+            }
+            ScriptStateWordOwner::TrailingState => {
+                self.trailing_data.get(offset..offset + WORD_SIZE)?
+            }
+        };
+        Some(u16::from_le_bytes(bytes.try_into().ok()?))
+    }
+
+    /// Assign one resolved object word.
+    pub fn set_word(&mut self, field: ScriptStateWord, value: u16) -> bool {
+        let Some(offset) = field.word_index.checked_mul(WORD_SIZE) else {
+            return false;
+        };
+        let bytes = match field.owner {
+            ScriptStateWordOwner::Object(object) => {
+                let Some(object) = self.objects.get_mut(object.index()) else {
+                    return false;
+                };
+                object.bytes.get_mut(offset..offset + WORD_SIZE)
+            }
+            ScriptStateWordOwner::TrailingState => {
+                self.trailing_data.get_mut(offset..offset + WORD_SIZE)
+            }
+        };
+        let Some(bytes) = bytes else { return false };
+        bytes.copy_from_slice(&value.to_le_bytes());
+        true
     }
 
     /// Return authored VAR data following the final fixed-size object.
@@ -507,12 +608,14 @@ pub fn decode_script_state(
         objects.push(ScriptStateObject {
             id: object,
             kind,
+            source_offset: cursor,
             bytes: Box::from(&data[cursor..end]),
         });
         cursor = end;
     }
     Ok(ScriptState {
         objects,
+        trailing_source_offset: cursor,
         trailing_data: Box::from(&data[cursor..]),
     })
 }

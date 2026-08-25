@@ -3,7 +3,10 @@
 use std::fmt;
 
 use crate::code::{ScriptCodeOffset, ScriptDecodingMode, ScriptOpcode, ScriptToken};
-use crate::script::{ScriptDictionary, ScriptDirectory, ScriptProcedureId, ScriptWordId};
+use crate::script::{
+    ScriptDictionary, ScriptDirectory, ScriptProcedureId, ScriptState, ScriptStateWord,
+    ScriptWordId,
+};
 
 const GUARD_BEGIN_OPCODE: u8 = 0xA0;
 const GUARD_END_OPCODE: u8 = 0xA1;
@@ -17,6 +20,13 @@ const SEQUENCE_REQUEST_OPCODE: u8 = 0xA8;
 const PROCEDURE_GATE_OPCODE: u8 = 0xA9;
 const YIELD_OPCODE: u8 = 0xAA;
 const PROCEDURE_ACTIVATION_OPCODE: u8 = 0xAB;
+const SHARED_STATE_A_OPCODE: u8 = 0xB1;
+const SHARED_STATE_B_OPCODE: u8 = 0xB4;
+const SHARED_STATE_C_OPCODE: u8 = 0xB5;
+const SHARED_STATE_D_OPCODE: u8 = 0xB6;
+const SHARED_STATE_E_OPCODE: u8 = 0xBE;
+const SHARED_STATE_F_OPCODE: u8 = 0xBF;
+const SHARED_STATE_G_OPCODE: u8 = 0xC0;
 const INVERTED_CONDITION_PREFIX: u8 = GUARD_END_OPCODE;
 const OPCODE_SIZE: usize = 1;
 const BYTE_SIZE: usize = 1;
@@ -35,6 +45,9 @@ const PROCEDURE_GATE_SIZE: usize = OPCODE_SIZE + BYTE_SIZE + WORD_SIZE;
 const PROCEDURE_ACTIVATION_SIZE: usize = OPCODE_SIZE + BYTE_SIZE + WORD_SIZE;
 const YIELD_SIZE: usize = OPCODE_SIZE;
 const ENABLED_FLAG_MASK: u8 = 1;
+const SHARED_STATE_SIZE: usize = OPCODE_SIZE + WORD_SIZE + BYTE_SIZE + BYTE_SIZE + WORD_SIZE;
+const INDIRECT_STATE_MODE_A: u8 = 0xC0;
+const INDIRECT_STATE_MODE_B: u8 = 0xC2;
 const TIMER_SLOT_COUNT: u8 = 128;
 const TEXT_FIXED_HEADER_SIZE: usize = OPCODE_SIZE + WORD_SIZE + BYTE_SIZE + WORD_SIZE;
 const TEXT_PRESERVE_ACTIVE: u16 = 0x0001;
@@ -213,6 +226,49 @@ pub struct ScriptProcedureActivation {
     pub enabled: bool,
 }
 
+/// Recovered signed-comparison or wrapping-assignment operator.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ScriptStateOperator {
+    /// Signed or unsigned inequality; both interpretations agree.
+    NotEqual,
+    /// Signed less-than comparison.
+    LessThan,
+    /// Signed greater-than comparison.
+    GreaterThan,
+    /// Signed less-than-or-equal comparison.
+    LessThanOrEqual,
+    /// Signed greater-than-or-equal comparison.
+    GreaterThanOrEqual,
+    /// Equality in query mode or assignment in set mode.
+    EqualOrAssign,
+    /// Wrapping addition in set mode; query mode fails.
+    Add,
+    /// Wrapping subtraction in set mode; query mode fails.
+    Subtract,
+    /// Any other original byte: query mode fails and set mode preserves the word.
+    PreserveOrFail(u8),
+}
+
+/// Right-hand value of one shared VAR-state operation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ScriptStateOperand {
+    /// Authored immediate word.
+    Immediate(u16),
+    /// Value read from another resolved state word.
+    StateWord(ScriptStateWord),
+}
+
+/// One shared B1/B4/B5/B6/BE/BF/C0 state operation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptSharedStateOperation {
+    /// State word read and optionally assigned.
+    pub target: ScriptStateWord,
+    /// Comparison or mutation selected by the authored operator byte.
+    pub operator: ScriptStateOperator,
+    /// Immediate or state-backed right-hand value.
+    pub operand: ScriptStateOperand,
+}
+
 impl ScriptSequenceRequest {
     /// Construct a safe owned request from raw non-NUL basename bytes.
     pub fn new(basename: impl Into<Box<[u8]>>) -> Option<Self> {
@@ -323,6 +379,13 @@ pub enum ScriptInstructionError {
         source_offset: ScriptCodeOffset,
         /// Unresolved one-based procedure entry position.
         encoded_target: u16,
+    },
+    /// A shared-state operand is unaligned or outside all typed VAR regions.
+    InvalidStateWord {
+        /// Token position.
+        source_offset: ScriptCodeOffset,
+        /// Unresolved VAR byte position.
+        encoded_offset: u16,
     },
 }
 
@@ -553,6 +616,67 @@ pub fn decode_script_procedure_activation(
     Ok(ScriptProcedureActivation { procedure, enabled })
 }
 
+/// Decode the shared B1/B4/B5/B6/BE/BF/C0 handler family.
+pub fn decode_script_shared_state_operation(
+    token: &ScriptToken,
+    state: &ScriptState,
+) -> Result<ScriptSharedStateOperation, ScriptInstructionError> {
+    if !matches!(
+        token.opcode().byte(),
+        SHARED_STATE_A_OPCODE
+            | SHARED_STATE_B_OPCODE
+            | SHARED_STATE_C_OPCODE
+            | SHARED_STATE_D_OPCODE
+            | SHARED_STATE_E_OPCODE
+            | SHARED_STATE_F_OPCODE
+            | SHARED_STATE_G_OPCODE
+    ) {
+        return Err(ScriptInstructionError::UntranslatedOpcode {
+            opcode: token.opcode(),
+        });
+    }
+    require_size(token, SHARED_STATE_SIZE)?;
+    let bytes = token.encoded_bytes();
+    let target = resolve_state_word(token, state, read_word(bytes, OPCODE_SIZE))?;
+    let operator = match bytes[OPCODE_SIZE + WORD_SIZE] {
+        0xF0 => ScriptStateOperator::NotEqual,
+        0xF1 => ScriptStateOperator::LessThan,
+        0xF2 => ScriptStateOperator::GreaterThan,
+        0xF3 => ScriptStateOperator::LessThanOrEqual,
+        0xF4 => ScriptStateOperator::GreaterThanOrEqual,
+        0xF5 => ScriptStateOperator::EqualOrAssign,
+        0xF6 => ScriptStateOperator::Add,
+        0xF7 => ScriptStateOperator::Subtract,
+        other => ScriptStateOperator::PreserveOrFail(other),
+    };
+    let operand_offset = OPCODE_SIZE + WORD_SIZE + BYTE_SIZE + BYTE_SIZE;
+    let encoded_operand = read_word(bytes, operand_offset);
+    let operand = match bytes[OPCODE_SIZE + WORD_SIZE + BYTE_SIZE] {
+        INDIRECT_STATE_MODE_A | INDIRECT_STATE_MODE_B => {
+            ScriptStateOperand::StateWord(resolve_state_word(token, state, encoded_operand)?)
+        }
+        _ => ScriptStateOperand::Immediate(encoded_operand),
+    };
+    Ok(ScriptSharedStateOperation {
+        target,
+        operator,
+        operand,
+    })
+}
+
+fn resolve_state_word(
+    token: &ScriptToken,
+    state: &ScriptState,
+    encoded_offset: u16,
+) -> Result<ScriptStateWord, ScriptInstructionError> {
+    state.resolve_word_source_offset(encoded_offset).ok_or(
+        ScriptInstructionError::InvalidStateWord {
+            source_offset: token.source_offset(),
+            encoded_offset,
+        },
+    )
+}
+
 fn decode_concept_guard(
     token: &ScriptToken,
     dictionary: &ScriptDictionary,
@@ -636,7 +760,7 @@ mod tests {
     use std::path::{Path, PathBuf};
 
     use crate::code::decode_script_code;
-    use crate::script::{decode_script_dictionary, decode_script_directory};
+    use crate::script::{decode_script_dictionary, decode_script_directory, decode_script_state};
 
     use super::*;
 
@@ -650,6 +774,7 @@ mod tests {
     const EXPECTED_PROCEDURE_ENABLE_COUNT: usize = 149;
     const EXPECTED_PROCEDURE_DISABLE_COUNT: usize =
         EXPECTED_PROCEDURE_ACTIVATION_COUNT - EXPECTED_PROCEDURE_ENABLE_COUNT;
+    const EXPECTED_SHARED_STATE_COUNTS: [usize; PROFILE_COUNT] = [2, 400, 301, 64, 172];
     const MAXIMUM_SHIPPED_SEQUENCE_BASENAME_LENGTH: usize = 12;
 
     fn original_asset(name: &str) -> PathBuf {
@@ -796,6 +921,51 @@ mod tests {
         assert_eq!(activation_count, EXPECTED_PROCEDURE_ACTIVATION_COUNT);
         assert_eq!(enable_count, EXPECTED_PROCEDURE_ENABLE_COUNT);
         assert_eq!(disable_count, EXPECTED_PROCEDURE_DISABLE_COUNT);
+    }
+
+    #[test]
+    fn every_shipped_shared_state_token_resolves_to_typed_var_words() {
+        let mut counts = [usize::MIN; PROFILE_COUNT];
+        let mut saw_object_word = false;
+        let mut saw_trailing_state_word = false;
+
+        for profile in 1..=PROFILE_COUNT {
+            let code_data = std::fs::read(original_asset(&format!("SCRIPT{profile}.COD"))).unwrap();
+            let directory_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.DEB"))).unwrap();
+            let state_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.VAR"))).unwrap();
+            let code = decode_script_code(&code_data).unwrap();
+            let directory = decode_script_directory(&directory_data).unwrap();
+            let state = decode_script_state(&state_data, &directory).unwrap();
+
+            for token in code.tokens().iter().filter(|token| {
+                matches!(
+                    token.opcode().byte(),
+                    SHARED_STATE_A_OPCODE
+                        | SHARED_STATE_B_OPCODE
+                        | SHARED_STATE_C_OPCODE
+                        | SHARED_STATE_D_OPCODE
+                        | SHARED_STATE_E_OPCODE
+                        | SHARED_STATE_F_OPCODE
+                        | SHARED_STATE_G_OPCODE
+                )
+            }) {
+                let operation = decode_script_shared_state_operation(token, &state).unwrap();
+                for word in std::iter::once(operation.target).chain(match operation.operand {
+                    ScriptStateOperand::Immediate(_) => None,
+                    ScriptStateOperand::StateWord(word) => Some(word),
+                }) {
+                    saw_object_word |= word.object().is_some();
+                    saw_trailing_state_word |= word.is_trailing_state();
+                }
+                counts[profile - 1] += 1;
+            }
+        }
+
+        assert_eq!(counts, EXPECTED_SHARED_STATE_COUNTS);
+        assert!(saw_object_word);
+        assert!(saw_trailing_state_word);
     }
 
     #[test]
