@@ -237,12 +237,13 @@ pub use sequence_subtitles::{
     SequenceSubtitleRenderer, present_sequence_subtitle,
 };
 pub use ship_projection::{
-    FULL_SHIP_PROJECTION_CLIP, SHIP_POINT_CLOUD_COUNT, SHIP_TRIGONOMETRY_SAMPLE_COUNT,
-    ShipCameraPosition, ShipPlottedPoint, ShipPointCloudProjection, ShipPointRecord,
+    FULL_SHIP_PROJECTION_CLIP, SHIP_OBJECT_ANCHOR_COUNT, SHIP_POINT_CLOUD_COUNT,
+    SHIP_TRIGONOMETRY_SAMPLE_COUNT, ShipCameraPosition, ShipObjectAnchor,
+    ShipObjectSpriteProjection, ShipPlottedPoint, ShipPointCloudProjection, ShipPointRecord,
     ShipProjectedPoint, ShipProjectionAngleRole, ShipProjectionAngles, ShipProjectionClip,
     ShipProjectionError, ShipProjectionMatrix, ShipTrigonometrySample,
-    build_ship_projection_matrix, plot_ship_point, project_ship_point_cloud,
-    randomize_ship_point_cloud,
+    build_ship_projection_matrix, plot_ship_point, project_ship_object_sprites,
+    project_ship_point_cloud, randomize_ship_point_cloud,
 };
 pub use ship_view::{
     select_ship_view_artwork, ShipViewArtworkError, ShipViewArtworkSelection,

@@ -5,12 +5,18 @@ use std::fmt;
 
 use crate::native::random::BloodPrng;
 
-use super::{LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_WIDTH};
+use super::{
+    BRIDGE_SPRITE_ENTITY_COUNT, BridgeSpriteEntity, BridgeSpriteEntityError, BridgeSpriteExtent,
+    BridgeSpritePosition, LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_WIDTH,
+    update_bridge_sprite_extent, update_bridge_sprite_position,
+};
 
 /// Number of authored angle samples in one complete rotation.
 pub const SHIP_TRIGONOMETRY_SAMPLE_COUNT: usize = 180;
 /// Number of points in the bridge starfield.
 pub const SHIP_POINT_CLOUD_COUNT: usize = 1_000;
+/// Number of navigation-object anchors projected over the bridge starfield.
+pub const SHIP_OBJECT_ANCHOR_COUNT: usize = 11;
 
 const X_AXIS: usize = 0;
 const Y_AXIS: usize = 1;
@@ -27,6 +33,12 @@ const Q14_TO_Q15_SCALE: i32 = 2;
 const NON_VISIBLE_DEPTH_CEILING: i32 = 0;
 const LOGICAL_SCREEN_ORIGIN: i16 = 0;
 const POINT_RANDOM_MODULUS: u16 = u16::MAX;
+const FIRST_NAVIGATION_ENTITY_INDEX: usize = 21;
+const ENTITY_INDEX_STEP: usize = 1;
+const OBJECT_DEPTH_WRAP: i32 = 65_536;
+const OBJECT_SCALE_NUMERATOR: u32 = 1_048_576;
+const OBJECT_DIMENSION_SHIFT: u32 = 10;
+const HALF_EXTENT_SHIFT: u32 = 1;
 
 /// Signed Q14 cosine and sine sample from the recovered bridge angle table.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -62,6 +74,13 @@ pub struct ShipPointRecord {
     pub position: [u16; MATRIX_DIMENSION],
     /// Unrelated persistent word carried by the original eight-byte record.
     pub scratch: u16,
+}
+
+/// One world-space anchor for a bridge navigation object sprite.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct ShipObjectAnchor {
+    /// World-space coordinates stored as wrapping words by the original game.
+    pub position: [u16; MATRIX_DIMENSION],
 }
 
 /// Current bridge camera position in the source coordinate domain.
@@ -127,6 +146,27 @@ pub struct ShipPointCloudProjection {
     pub last_camera_relative_point: ShipPointRecord,
 }
 
+/// One visible, nonzero-depth navigation-object projection.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ShipObjectSpriteProjection {
+    /// Source anchor index in forward authored order.
+    pub anchor_index: usize,
+    /// Destination bridge entity index, assigned in reverse order.
+    pub entity_index: usize,
+    /// Camera-relative wrapping coordinates used by the dot products.
+    pub camera_relative_position: [u16; MATRIX_DIMENSION],
+    /// Logical screen center calculated before sprite centering.
+    pub screen: [u16; SCREEN_DIMENSION],
+    /// Wrapped positive depth used by perspective division.
+    pub depth: u16,
+    /// Reciprocal depth scale used for source dimensions.
+    pub depth_scale: u16,
+    /// Perspective-scaled destination extent requested from the entity helper.
+    pub scaled_extent: BridgeSpriteExtent,
+    /// Centered logical position requested from the entity helper.
+    pub draw_position: BridgeSpritePosition,
+}
+
 /// Invalid typed input to the bridge projection pipeline.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ShipProjectionError {
@@ -144,6 +184,27 @@ pub enum ShipProjectionError {
         /// Supplied point count.
         actual: usize,
     },
+    /// The navigation-object list did not contain its fixed authored anchors.
+    InvalidObjectAnchorCount {
+        /// Supplied anchor count.
+        actual: usize,
+    },
+    /// The entity table could not contain navigation entities 21 through 31.
+    InvalidSpriteEntityCount {
+        /// Supplied entity count.
+        actual: usize,
+        /// Minimum required entity count.
+        required: usize,
+    },
+    /// An entity index became invalid after the complete table was validated.
+    SpriteEntity(BridgeSpriteEntityError),
+    /// Native negative-depth wrapping produced a non-positive divisor.
+    InvalidWrappedObjectDepth {
+        /// Anchor being projected.
+        anchor_index: usize,
+        /// Wrapped depth that could not be divided by.
+        depth: i32,
+    },
     /// The compatibility framebuffer cannot hold one logical game frame.
     FramebufferTooShort {
         /// Supplied byte count.
@@ -158,6 +219,12 @@ impl fmt::Display for ShipProjectionError {
 }
 
 impl Error for ShipProjectionError {}
+
+impl From<BridgeSpriteEntityError> for ShipProjectionError {
+    fn from(error: BridgeSpriteEntityError) -> Self {
+        Self::SpriteEntity(error)
+    }
+}
 
 /// Runtime role identifying an invalid projection angle.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -298,6 +365,105 @@ pub fn randomize_ship_point_cloud(
     Ok(())
 }
 
+/// Project bridge navigation anchors into their sprite entities.
+///
+/// This translates `ship_3d_object_sprite_project` at BLOODPRG routine offset
+/// `0x009B98`. Eleven owned anchors map forward to entity indices 31 through 21.
+/// The extent helper's historical ambient input is supplied as an explicit typed
+/// value, while decoded source dimensions and mutable entity geometry stay owned.
+pub fn project_ship_object_sprites(
+    anchors: &[ShipObjectAnchor],
+    camera: ShipCameraPosition,
+    matrix: ShipProjectionMatrix,
+    extent_comparison: BridgeSpriteExtent,
+    entities: &mut [BridgeSpriteEntity],
+) -> Result<Box<[ShipObjectSpriteProjection]>, ShipProjectionError> {
+    if anchors.len() != SHIP_OBJECT_ANCHOR_COUNT {
+        return Err(ShipProjectionError::InvalidObjectAnchorCount {
+            actual: anchors.len(),
+        });
+    }
+    if entities.len() < BRIDGE_SPRITE_ENTITY_COUNT {
+        return Err(ShipProjectionError::InvalidSpriteEntityCount {
+            actual: entities.len(),
+            required: BRIDGE_SPRITE_ENTITY_COUNT,
+        });
+    }
+
+    let mut staged_entities = entities.to_vec();
+    let mut projections = Vec::with_capacity(SHIP_OBJECT_ANCHOR_COUNT);
+    for (anchor_index, anchor) in anchors.iter().copied().enumerate() {
+        let entity_index = FIRST_NAVIGATION_ENTITY_INDEX
+            + (SHIP_OBJECT_ANCHOR_COUNT - ENTITY_INDEX_STEP - anchor_index);
+        if !staged_entities[entity_index].flags.is_visible() {
+            continue;
+        }
+
+        let camera_relative_position =
+            std::array::from_fn(|axis| anchor.position[axis].wrapping_sub(camera.position[axis]));
+        let signed_position = camera_relative_position.map(|component| i32::from(component as i16));
+        let raw_depth = wrapping_dot(signed_position, matrix.rows[Z_AXIS]) >> MATRIX_FIXED_SHIFT;
+        if raw_depth == NON_VISIBLE_DEPTH_CEILING {
+            continue;
+        }
+        let depth = if raw_depth < NON_VISIBLE_DEPTH_CEILING {
+            raw_depth.wrapping_add(OBJECT_DEPTH_WRAP)
+        } else {
+            raw_depth
+        };
+        let depth_divisor =
+            u32::try_from(depth).map_err(|_| ShipProjectionError::InvalidWrappedObjectDepth {
+                anchor_index,
+                depth,
+            })?;
+        if depth_divisor == u32::MIN {
+            return Err(ShipProjectionError::InvalidWrappedObjectDepth {
+                anchor_index,
+                depth,
+            });
+        }
+
+        let depth_scale = (OBJECT_SCALE_NUMERATOR / depth_divisor) as u16;
+        let x_axis = wrapping_dot(signed_position, matrix.rows[X_AXIS]) >> PROJECTION_AXIS_SHIFT;
+        let y_axis = wrapping_dot(signed_position, matrix.rows[Y_AXIS]) >> PROJECTION_AXIS_SHIFT;
+        let screen = [
+            ((x_axis / depth) as u16).wrapping_add(PROJECTION_CENTER_X),
+            ((y_axis / depth) as u16).wrapping_add(PROJECTION_CENTER_Y),
+        ];
+        let source_extent = staged_entities[entity_index].source_extent;
+        let scaled_extent = BridgeSpriteExtent {
+            width: scale_object_dimension(source_extent.width, depth_scale),
+            height: scale_object_dimension(source_extent.height, depth_scale),
+        };
+        update_bridge_sprite_extent(
+            &mut staged_entities,
+            entity_index,
+            scaled_extent,
+            extent_comparison,
+        )?;
+
+        let extent = staged_entities[entity_index].extent;
+        let draw_position = BridgeSpritePosition {
+            x: screen[X_AXIS].wrapping_sub(extent.width >> HALF_EXTENT_SHIFT),
+            y: screen[Y_AXIS].wrapping_sub(extent.height >> HALF_EXTENT_SHIFT),
+        };
+        update_bridge_sprite_position(&mut staged_entities, entity_index, draw_position)?;
+        projections.push(ShipObjectSpriteProjection {
+            anchor_index,
+            entity_index,
+            camera_relative_position,
+            screen,
+            depth: depth as u16,
+            depth_scale,
+            scaled_extent,
+            draw_position,
+        });
+    }
+
+    entities.copy_from_slice(&staged_entities);
+    Ok(projections.into_boxed_slice())
+}
+
 /// Plot one projected bridge point into the original-resolution indexed frame.
 ///
 /// This translates `ship_3d_plot_point` at BLOODPRG routine offset `0x009B04`.
@@ -358,6 +524,10 @@ fn doubled_angle_pair(
 
 fn fixed_multiply(left: i32, right: i32) -> i32 {
     left.wrapping_mul(right) >> MATRIX_FIXED_SHIFT
+}
+
+fn scale_object_dimension(dimension: u16, depth_scale: u16) -> u16 {
+    (u32::from(dimension).wrapping_mul(u32::from(depth_scale)) >> OBJECT_DIMENSION_SHIFT) as u16
 }
 
 fn camera_relative_point(point: ShipPointRecord, camera: ShipCameraPosition) -> ShipPointRecord {
@@ -421,12 +591,14 @@ mod tests {
     use serde::Deserialize;
     use sha2::{Digest, Sha256};
 
+    use super::super::BridgeSpriteFlags;
     use super::*;
 
     const MATRIX_ORACLE_COUNT: usize = 12;
     const POINT_CLOUD_ORACLE_COUNT: usize = 6;
     const PLOT_ORACLE_COUNT: usize = 14;
     const RANDOMIZE_ORACLE_COUNT: usize = 4;
+    const OBJECT_ORACLE_COUNT: usize = 5;
     const POINT_RECORD_COMPONENT_COUNT: usize = 4;
     const VALID_MATRIX_ORACLE_COUNT: usize = MATRIX_ORACLE_COUNT - 1;
     const VALID_POINT_CLOUD_ORACLE_COUNT: usize = POINT_CLOUD_ORACLE_COUNT - 1;
@@ -457,6 +629,60 @@ mod tests {
     const LCG_MULTIPLIER: u16 = 25_173;
     const LCG_INCREMENT: u16 = 13_849;
     const EXTREMA_CYCLE: [u16; 6] = [0, 1, 32_767, 32_768, 65_533, 65_534];
+    const OBJECT_CASE_SEEDS: [usize; OBJECT_ORACLE_COUNT] = [17, 43, 69, 95, 121];
+    const OBJECT_EVENT_WORD_COUNT: usize = 6;
+    const OBJECT_EVENT_BYTE_COUNT: usize = 1 + OBJECT_EVENT_WORD_COUNT * 2;
+    const EXTENT_EVENT_TAG: u8 = 0;
+    const POSITION_EVENT_TAG: u8 = 1;
+    const MIXED_VISIBILITY_CASE: usize = 1;
+    const NEGATIVE_DEPTH_CASE: usize = 2;
+    const EQUAL_SOURCE_EXTENT_CASE: usize = 3;
+    const OVERFLOW_MATRIX_CASE: usize = 4;
+    const COMPARISON_WIDTH_BASE: usize = 32;
+    const COMPARISON_HEIGHT_BASE: usize = 24;
+    const COMPARISON_WIDTH_STEP: usize = 3;
+    const COMPARISON_HEIGHT_STEP: usize = 5;
+    const ORACLE_ZERO: i32 = 0;
+    const ORACLE_POSITIVE_UNIT: i32 = 32_768;
+    const ORACLE_NEGATIVE_UNIT: i32 = -32_768;
+    const ORACLE_MATRIX_COMPARISON_VALUE: i32 = 1_744_830_976;
+    const OVERFLOW_MATRIX_X_X: i32 = 1_879_048_193;
+    const OVERFLOW_MATRIX_X_Z: i32 = -54_880_137;
+    const OVERFLOW_MATRIX_Y_X: i32 = 1_790_762_751;
+    const OVERFLOW_MATRIX_Y_Y: i32 = -19_088_743;
+    const OBJECT_CAMERA_X_BASE: usize = 256;
+    const OBJECT_CAMERA_Y: u16 = 33_280;
+    const OBJECT_CAMERA_Z: u16 = 65_280;
+    const OBJECT_ANCHOR_X_BASE: usize = 4_608;
+    const OBJECT_ANCHOR_Y_BASE: usize = 17_152;
+    const OBJECT_ANCHOR_X_SEED_SCALE: usize = 17;
+    const OBJECT_ANCHOR_Y_SEED_SCALE: usize = 11;
+    const OBJECT_ANCHOR_X_STEP: usize = 977;
+    const OBJECT_ANCHOR_Y_STEP: usize = 613;
+    const OBJECT_POSITIVE_DEPTH_BASE: usize = 900;
+    const OBJECT_DEPTH_STEP: usize = 37;
+    const OBJECT_NEGATIVE_DEPTH_BASE: usize = 1_000;
+    const OBJECT_NEGATIVE_DEPTH_STEP: usize = 17;
+    const FINAL_OBJECT_DEPTH: u16 = 1_024;
+    const ENTITY_FLAG_HIGH_BITS: u16 = 43_776;
+    const ENTITY_STATE_ZERO_BIT: u16 = 1;
+    const ENTITY_VISIBLE_BIT: u16 = 128;
+    const ENTITY_EXTENT_CHANGED_BIT: u16 = 16;
+    const ENTITY_DRAW_X_BASE: usize = 28_672;
+    const ENTITY_DRAW_Y_BASE: usize = 32_768;
+    const ENTITY_DRAW_X_STEP: usize = 13;
+    const ENTITY_DRAW_Y_STEP: usize = 17;
+    const ENTITY_EXTENT_WIDTH_BASE: usize = 9;
+    const ENTITY_EXTENT_HEIGHT_BASE: usize = 11;
+    const ENTITY_SOURCE_WIDTH_BASE: usize = 17;
+    const ENTITY_SOURCE_HEIGHT_BASE: usize = 13;
+    const ENTITY_SOURCE_WIDTH_STEP: usize = 2;
+    const ENTITY_SOURCE_HEIGHT_STEP: usize = 3;
+    const VISIBILITY_PATTERN_DIVISOR: usize = 3;
+    const HIDDEN_VISIBILITY_REMAINDER: usize = 1;
+    const FIRST_ZERO_DEPTH_ANCHOR: usize = 2;
+    const SECOND_ZERO_DEPTH_ANCHOR: usize = 7;
+    const FINAL_OVERREAD_BASE: usize = 42_240;
     const CASE_SEEDS: [usize; POINT_CLOUD_ORACLE_COUNT] = [17, 43, 69, 95, 121, 147];
     const FIRST_CASE_DEPTHS: [u16; 6] = [0, 1, 1_000, 32_767, 65_535, 32_768];
 
@@ -511,6 +737,28 @@ mod tests {
         last_record: [u16; POINT_RECORD_COMPONENT_COUNT],
         point_cloud_sha256: String,
         scratch_sha256: String,
+    }
+
+    #[derive(Deserialize)]
+    struct ObjectProjectionOracle {
+        name: String,
+        anchors: usize,
+        entity_ids_in_order: Vec<usize>,
+        helper_events: usize,
+        extent_comparison_loads: usize,
+        helper_sequence_sha256: String,
+        first_event: serde_json::Value,
+        last_event: serde_json::Value,
+        final_work: [u16; POINT_RECORD_COMPONENT_COUNT],
+    }
+
+    struct ObjectProjectionFixture {
+        seed: usize,
+        anchors: Vec<ShipObjectAnchor>,
+        camera: ShipCameraPosition,
+        matrix: ShipProjectionMatrix,
+        comparison: BridgeSpriteExtent,
+        entities: Vec<BridgeSpriteEntity>,
     }
 
     #[test]
@@ -737,6 +985,97 @@ mod tests {
     }
 
     #[test]
+    fn object_sprite_projection_matches_every_typed_original_vector() {
+        let vectors: Vec<ObjectProjectionOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_9b98_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), OBJECT_ORACLE_COUNT);
+
+        for (case_index, vector) in vectors.into_iter().enumerate() {
+            let fixture = object_projection_fixture(case_index);
+            assert_eq!(vector.anchors, SHIP_OBJECT_ANCHOR_COUNT, "{}", vector.name);
+            assert_eq!(
+                vector.entity_ids_in_order,
+                (usize::MIN..SHIP_OBJECT_ANCHOR_COUNT)
+                    .map(|anchor_index| {
+                        FIRST_NAVIGATION_ENTITY_INDEX
+                            + (SHIP_OBJECT_ANCHOR_COUNT - ENTITY_INDEX_STEP - anchor_index)
+                    })
+                    .collect::<Vec<_>>(),
+                "{}",
+                vector.name
+            );
+
+            let final_entity_visible = fixture.entities[FIRST_NAVIGATION_ENTITY_INDEX]
+                .flags
+                .is_visible();
+            let mut entities = fixture.entities;
+            let projections = project_ship_object_sprites(
+                &fixture.anchors,
+                fixture.camera,
+                fixture.matrix,
+                fixture.comparison,
+                &mut entities,
+            )
+            .unwrap();
+            assert_eq!(
+                vector.helper_events,
+                projections.len() * 2,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                vector.extent_comparison_loads,
+                projections.len(),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                object_projection_hash(&projections),
+                vector.helper_sequence_sha256,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                object_extent_event(projections.first().unwrap()),
+                vector.first_event,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                object_position_event(projections.last().unwrap()),
+                vector.last_event,
+                "{}",
+                vector.name
+            );
+
+            let final_anchor = fixture.anchors[SHIP_OBJECT_ANCHOR_COUNT - ENTITY_INDEX_STEP];
+            let expected_final_position = if final_entity_visible {
+                std::array::from_fn(|axis| {
+                    final_anchor.position[axis].wrapping_sub(fixture.camera.position[axis])
+                })
+            } else {
+                final_anchor.position
+            };
+            assert_eq!(
+                vector.final_work[..MATRIX_DIMENSION],
+                expected_final_position,
+                "{}",
+                vector.name
+            );
+            // The fourth oracle word is an unused source-window lookahead. It is
+            // checked as evidence but intentionally has no runtime representation.
+            assert_eq!(
+                vector.final_work[POINT_RECORD_COMPONENT_COUNT - ENTITY_INDEX_STEP],
+                (FINAL_OVERREAD_BASE + fixture.seed) as u16,
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    #[test]
     fn malformed_flat_inputs_fail_before_framebuffer_mutation() {
         let matrix = ShipProjectionMatrix::default();
         let points = vec![ShipPointRecord::default(); SHIP_POINT_CLOUD_COUNT - 1];
@@ -788,6 +1127,227 @@ mod tests {
             })
         );
         assert_eq!(random, random_before);
+
+        let anchors = vec![ShipObjectAnchor::default(); SHIP_OBJECT_ANCHOR_COUNT];
+        let mut entities = vec![BridgeSpriteEntity::default(); BRIDGE_SPRITE_ENTITY_COUNT];
+        let entity_before = entities.clone();
+        assert_eq!(
+            project_ship_object_sprites(
+                &anchors[..SHIP_OBJECT_ANCHOR_COUNT - ENTITY_INDEX_STEP],
+                ShipCameraPosition::default(),
+                matrix,
+                BridgeSpriteExtent::default(),
+                &mut entities,
+            ),
+            Err(ShipProjectionError::InvalidObjectAnchorCount {
+                actual: SHIP_OBJECT_ANCHOR_COUNT - ENTITY_INDEX_STEP,
+            })
+        );
+        assert_eq!(entities, entity_before);
+
+        let mut short_entities =
+            vec![BridgeSpriteEntity::default(); BRIDGE_SPRITE_ENTITY_COUNT - ENTITY_INDEX_STEP];
+        let short_entity_before = short_entities.clone();
+        assert_eq!(
+            project_ship_object_sprites(
+                &anchors,
+                ShipCameraPosition::default(),
+                matrix,
+                BridgeSpriteExtent::default(),
+                &mut short_entities,
+            ),
+            Err(ShipProjectionError::InvalidSpriteEntityCount {
+                actual: BRIDGE_SPRITE_ENTITY_COUNT - ENTITY_INDEX_STEP,
+                required: BRIDGE_SPRITE_ENTITY_COUNT,
+            })
+        );
+        assert_eq!(short_entities, short_entity_before);
+    }
+
+    fn object_projection_fixture(case_index: usize) -> ObjectProjectionFixture {
+        let seed = OBJECT_CASE_SEEDS[case_index];
+        let camera = ShipCameraPosition {
+            position: [
+                (OBJECT_CAMERA_X_BASE + seed) as u16,
+                OBJECT_CAMERA_Y,
+                OBJECT_CAMERA_Z,
+            ],
+        };
+        let mut anchors: Vec<ShipObjectAnchor> = (usize::MIN..SHIP_OBJECT_ANCHOR_COUNT)
+            .map(|anchor_index| {
+                let z = if case_index == NEGATIVE_DEPTH_CASE {
+                    camera.position[Z_AXIS].wrapping_sub(
+                        (OBJECT_NEGATIVE_DEPTH_BASE + anchor_index * OBJECT_NEGATIVE_DEPTH_STEP)
+                            as u16,
+                    )
+                } else if case_index == MIXED_VISIBILITY_CASE
+                    && matches!(
+                        anchor_index,
+                        FIRST_ZERO_DEPTH_ANCHOR | SECOND_ZERO_DEPTH_ANCHOR
+                    )
+                {
+                    camera.position[Z_AXIS]
+                } else {
+                    camera.position[Z_AXIS].wrapping_add(
+                        (OBJECT_POSITIVE_DEPTH_BASE + anchor_index * OBJECT_DEPTH_STEP) as u16,
+                    )
+                };
+                ShipObjectAnchor {
+                    position: [
+                        (OBJECT_ANCHOR_X_BASE
+                            + seed * OBJECT_ANCHOR_X_SEED_SCALE
+                            + anchor_index * OBJECT_ANCHOR_X_STEP) as u16,
+                        (OBJECT_ANCHOR_Y_BASE
+                            + seed * OBJECT_ANCHOR_Y_SEED_SCALE
+                            + anchor_index * OBJECT_ANCHOR_Y_STEP) as u16,
+                        z,
+                    ],
+                }
+            })
+            .collect();
+        anchors[SHIP_OBJECT_ANCHOR_COUNT - ENTITY_INDEX_STEP].position = [
+            camera.position[X_AXIS],
+            camera.position[Y_AXIS],
+            camera.position[Z_AXIS].wrapping_add(FINAL_OBJECT_DEPTH),
+        ];
+
+        let mut matrix = ShipProjectionMatrix {
+            rows: [
+                [
+                    ORACLE_POSITIVE_UNIT,
+                    ORACLE_MATRIX_COMPARISON_VALUE,
+                    ORACLE_ZERO,
+                ],
+                [ORACLE_ZERO, ORACLE_NEGATIVE_UNIT, ORACLE_ZERO],
+                [ORACLE_ZERO, ORACLE_ZERO, ORACLE_POSITIVE_UNIT],
+            ],
+        };
+        if case_index == OVERFLOW_MATRIX_CASE {
+            matrix.rows[X_AXIS][X_AXIS] = OVERFLOW_MATRIX_X_X;
+            matrix.rows[X_AXIS][Z_AXIS] = OVERFLOW_MATRIX_X_Z;
+            matrix.rows[Y_AXIS][X_AXIS] = OVERFLOW_MATRIX_Y_X;
+            matrix.rows[Y_AXIS][Y_AXIS] = OVERFLOW_MATRIX_Y_Y;
+        }
+
+        let comparison = BridgeSpriteExtent {
+            width: (COMPARISON_WIDTH_BASE + case_index * COMPARISON_WIDTH_STEP) as u16,
+            height: (COMPARISON_HEIGHT_BASE + case_index * COMPARISON_HEIGHT_STEP) as u16,
+        };
+        let mut entities = vec![BridgeSpriteEntity::default(); BRIDGE_SPRITE_ENTITY_COUNT];
+        for (entity_index, entity) in entities
+            .iter_mut()
+            .enumerate()
+            .skip(FIRST_NAVIGATION_ENTITY_INDEX)
+        {
+            let anchor_index = BRIDGE_SPRITE_ENTITY_COUNT - ENTITY_INDEX_STEP - entity_index;
+            let mixed_visibility =
+                matches!(case_index, MIXED_VISIBILITY_CASE | OVERFLOW_MATRIX_CASE);
+            let visible = !mixed_visibility
+                || anchor_index % VISIBILITY_PATTERN_DIVISOR != HIDDEN_VISIBILITY_REMAINDER;
+            let mut flags = ENTITY_FLAG_HIGH_BITS
+                | ENTITY_STATE_ZERO_BIT
+                | if visible {
+                    ENTITY_VISIBLE_BIT
+                } else {
+                    u16::MIN
+                };
+            if case_index == EQUAL_SOURCE_EXTENT_CASE {
+                flags |= ENTITY_EXTENT_CHANGED_BIT;
+            }
+            let source_extent = if case_index == EQUAL_SOURCE_EXTENT_CASE {
+                comparison
+            } else {
+                BridgeSpriteExtent {
+                    width: (ENTITY_SOURCE_WIDTH_BASE + entity_index * ENTITY_SOURCE_WIDTH_STEP)
+                        as u16,
+                    height: (ENTITY_SOURCE_HEIGHT_BASE + entity_index * ENTITY_SOURCE_HEIGHT_STEP)
+                        as u16,
+                }
+            };
+            *entity = BridgeSpriteEntity {
+                flags: BridgeSpriteFlags::from_bits(flags),
+                source_extent,
+                draw_position: BridgeSpritePosition {
+                    x: (ENTITY_DRAW_X_BASE + entity_index * ENTITY_DRAW_X_STEP) as u16,
+                    y: (ENTITY_DRAW_Y_BASE + entity_index * ENTITY_DRAW_Y_STEP) as u16,
+                },
+                extent: BridgeSpriteExtent {
+                    width: (ENTITY_EXTENT_WIDTH_BASE + entity_index) as u16,
+                    height: (ENTITY_EXTENT_HEIGHT_BASE + entity_index) as u16,
+                },
+            };
+        }
+
+        ObjectProjectionFixture {
+            seed,
+            anchors,
+            camera,
+            matrix,
+            comparison,
+            entities,
+        }
+    }
+
+    fn object_projection_hash(projections: &[ShipObjectSpriteProjection]) -> String {
+        let mut bytes = Vec::with_capacity(projections.len() * OBJECT_EVENT_BYTE_COUNT * 2);
+        for projection in projections {
+            append_object_event(
+                &mut bytes,
+                EXTENT_EVENT_TAG,
+                [
+                    projection.entity_index as u16,
+                    projection.scaled_extent.width,
+                    projection.scaled_extent.height,
+                    projection.screen[X_AXIS],
+                    projection.screen[Y_AXIS],
+                    projection.depth_scale,
+                ],
+            );
+            append_object_event(
+                &mut bytes,
+                POSITION_EVENT_TAG,
+                [
+                    projection.entity_index as u16,
+                    projection.draw_position.x,
+                    projection.draw_position.y,
+                    projection.screen[X_AXIS],
+                    projection.screen[Y_AXIS],
+                    projection.depth_scale,
+                ],
+            );
+        }
+        format!("{:x}", Sha256::digest(bytes))
+    }
+
+    fn append_object_event(bytes: &mut Vec<u8>, tag: u8, words: [u16; OBJECT_EVENT_WORD_COUNT]) {
+        bytes.push(tag);
+        for word in words {
+            bytes.extend_from_slice(&word.to_le_bytes());
+        }
+    }
+
+    fn object_extent_event(projection: &ShipObjectSpriteProjection) -> serde_json::Value {
+        serde_json::json!([
+            "extent",
+            projection.entity_index,
+            projection.scaled_extent.width,
+            projection.scaled_extent.height,
+            projection.screen[X_AXIS],
+            projection.screen[Y_AXIS],
+            projection.depth_scale,
+        ])
+    }
+
+    fn object_position_event(projection: &ShipObjectSpriteProjection) -> serde_json::Value {
+        serde_json::json!([
+            "position",
+            projection.entity_index,
+            projection.draw_position.x,
+            projection.draw_position.y,
+            projection.screen[X_AXIS],
+            projection.screen[Y_AXIS],
+            projection.depth_scale,
+        ])
     }
 
     fn point_cloud_fixture(case_index: usize, vector: &PointCloudOracle) -> Vec<ShipPointRecord> {
