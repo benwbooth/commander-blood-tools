@@ -30,6 +30,7 @@ mod navigation;
 mod navigation_status;
 mod navigation_wipe;
 mod numbers;
+mod palette_pipeline;
 mod presentation;
 mod presentation_hover;
 mod presentation_line;
@@ -207,6 +208,11 @@ pub use navigation_wipe::{
 pub use numbers::{
     append_decimal_i16, append_decimal_i32, packed_bcd_to_binary, parse_startup_audio_number,
     STARTUP_AUDIO_NUMBER_LENGTH,
+};
+pub use palette_pipeline::{
+    PalettePipelineError, PaletteRemapTable, SCENE_PALETTE_CLEAR_COLOR_COUNT,
+    TINT_PALETTE_BANK_SIZE, build_banked_tint_table, build_palette_blend_remap_table,
+    clear_scene_palette_entries, interpolate_palette_range,
 };
 pub use presentation::{
     evaluate_text_conditions, ScriptWordHistory, TextConditionEffects, TextConditionError,

@@ -19395,11 +19395,22 @@ def palette_scene_entries_clear_vectors() -> list[dict[str, object]]:
             {
                 "name": name,
                 "direction": "descending" if direction_set else "ascending",
+                "seed": seed,
                 "clear_start": clear_start,
                 "clear_end_exclusive": clear_end,
                 "cleared_bytes": clear_end - clear_start,
                 "palette_entries_cleared": 192 if not direction_set else None,
                 "upper_palette_entries_preserved": 64 if not direction_set else None,
+                "palette_before_sha256": hashlib.sha256(
+                    game_before[
+                        0x5251 - window_offset : 0x5551 - window_offset
+                    ]
+                ).hexdigest(),
+                "palette_after_sha256": hashlib.sha256(
+                    actual_game[
+                        0x5251 - window_offset : 0x5551 - window_offset
+                    ]
+                ).hexdigest(),
                 "result_sha256": hashlib.sha256(actual_game).hexdigest(),
                 "defined_flags": expected_flags,
             }

@@ -2,11 +2,14 @@
   {
     "name": "ascending_pattern",
     "direction": "ascending",
+    "seed": 17,
     "clear_start": 21073,
     "clear_end_exclusive": 21649,
     "cleared_bytes": 576,
     "palette_entries_cleared": 192,
     "upper_palette_entries_preserved": 64,
+    "palette_before_sha256": "189a0c805e71998b842999ee952230be53eefbcf88ec6932f247b1936aad1a4f",
+    "palette_after_sha256": "b1eec474bf014e73e409f0d3d8996fe5921b807c4ab7b3867bfc5d708acfabfe",
     "result_sha256": "30302817e8980c12d13f1b65de88477370fccd3f8fbc49892620c63b45034778",
     "defined_flags": {
       "cf": false,
@@ -20,11 +23,14 @@
   {
     "name": "ascending_already_zero",
     "direction": "ascending",
+    "seed": 0,
     "clear_start": 21073,
     "clear_end_exclusive": 21649,
     "cleared_bytes": 576,
     "palette_entries_cleared": 192,
     "upper_palette_entries_preserved": 64,
+    "palette_before_sha256": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
+    "palette_after_sha256": "ef115a0e0c15cdc41958ca46b5b14b456115f4baec5e3ca68599d2a8f435e3b8",
     "result_sha256": "7b4fc1a8dbe6b6121f16ada516e2ac27e02964716bacea5fb7d07cf30595948e",
     "defined_flags": {
       "cf": false,
@@ -38,11 +44,14 @@
   {
     "name": "ascending_ffff",
     "direction": "ascending",
+    "seed": 255,
     "clear_start": 21073,
     "clear_end_exclusive": 21649,
     "cleared_bytes": 576,
     "palette_entries_cleared": 192,
     "upper_palette_entries_preserved": 64,
+    "palette_before_sha256": "069af124b2f3cf012a5020a5fbb99a474031f732f11b3429aac3f1e6beb13aab",
+    "palette_after_sha256": "72ff51d97bc9cc396c926dd9127f03a0c527a1eaea04a25a9e7a19c94e50b5b3",
     "result_sha256": "07df9284382742c3b3fd80b36ac210b65611448f0d87ad5b7f6700469bbe8c8d",
     "defined_flags": {
       "cf": false,
@@ -56,11 +65,14 @@
   {
     "name": "descending_pattern",
     "direction": "descending",
+    "seed": 83,
     "clear_start": 20501,
     "clear_end_exclusive": 21077,
     "cleared_bytes": 576,
     "palette_entries_cleared": null,
     "upper_palette_entries_preserved": null,
+    "palette_before_sha256": "6916e35bf7223fa5ffe9d5f527d5bbb11b8bd401e828fe4daaf0302ac627f505",
+    "palette_after_sha256": "76adeb3467911a38ec8b2914d38c9d9f3c4778321db9132ab8f1872b20624e2a",
     "result_sha256": "3554d7ae122cb7d1a875693576abc60a58942ca62178faa9c63ff3dd658b0736",
     "defined_flags": {
       "cf": false,
