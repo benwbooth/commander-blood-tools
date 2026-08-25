@@ -53,6 +53,13 @@ pub struct ScriptStateWord {
     word_index: usize,
 }
 
+/// Typed adjacent word pair within one owned script state region.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct ScriptStateWordPair {
+    owner: ScriptStateOwner,
+    first_word_index: usize,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum ScriptStateOwner {
     Object(ScriptObjectId),
@@ -74,6 +81,26 @@ impl ScriptStateWord {
     }
 
     /// Return whether this word belongs to the trailing profile-state block.
+    pub const fn is_trailing_state(self) -> bool {
+        matches!(self.owner, ScriptStateOwner::TrailingState)
+    }
+}
+
+impl ScriptStateWordPair {
+    /// Return the object that owns both words.
+    pub const fn object(self) -> Option<ScriptObjectId> {
+        match self.owner {
+            ScriptStateOwner::Object(object) => Some(object),
+            ScriptStateOwner::TrailingState => None,
+        }
+    }
+
+    /// Return the zero-based index of the first word within the owning region.
+    pub const fn first_word_index(self) -> usize {
+        self.first_word_index
+    }
+
+    /// Return whether this pair belongs to the trailing profile-state block.
     pub const fn is_trailing_state(self) -> bool {
         matches!(self.owner, ScriptStateOwner::TrailingState)
     }
@@ -292,6 +319,73 @@ impl ScriptState {
         };
         let Some(bytes) = bytes else { return false };
         bytes.copy_from_slice(&value.to_le_bytes());
+        true
+    }
+
+    /// Resolve an encoded VAR byte position to two adjacent owned words.
+    pub fn resolve_word_pair_source_offset(
+        &self,
+        source_offset: u16,
+    ) -> Option<ScriptStateWordPair> {
+        let source_offset = usize::from(source_offset);
+        self.objects
+            .iter()
+            .find_map(|object| {
+                let relative = source_offset.checked_sub(object.source_offset)?;
+                let pair_end = relative.checked_add(WORD_SIZE * 2)?;
+                (relative.is_multiple_of(WORD_SIZE) && pair_end <= object.bytes.len()).then_some(
+                    ScriptStateWordPair {
+                        owner: ScriptStateOwner::Object(object.id),
+                        first_word_index: relative / WORD_SIZE,
+                    },
+                )
+            })
+            .or_else(|| {
+                let relative = source_offset.checked_sub(self.trailing_source_offset)?;
+                let pair_end = relative.checked_add(WORD_SIZE * 2)?;
+                (relative.is_multiple_of(WORD_SIZE) && pair_end <= self.trailing_data.len())
+                    .then_some(ScriptStateWordPair {
+                        owner: ScriptStateOwner::TrailingState,
+                        first_word_index: relative / WORD_SIZE,
+                    })
+            })
+    }
+
+    /// Read one resolved adjacent word pair.
+    pub fn word_pair(&self, field: ScriptStateWordPair) -> Option<[u16; 2]> {
+        let offset = field.first_word_index.checked_mul(WORD_SIZE)?;
+        let bytes = match field.owner {
+            ScriptStateOwner::Object(object) => self
+                .object(object)?
+                .bytes
+                .get(offset..offset + WORD_SIZE * 2)?,
+            ScriptStateOwner::TrailingState => {
+                self.trailing_data.get(offset..offset + WORD_SIZE * 2)?
+            }
+        };
+        Some([
+            u16::from_le_bytes(bytes[..WORD_SIZE].try_into().ok()?),
+            u16::from_le_bytes(bytes[WORD_SIZE..].try_into().ok()?),
+        ])
+    }
+
+    /// Assign one resolved adjacent word pair atomically.
+    pub fn set_word_pair(&mut self, field: ScriptStateWordPair, value: [u16; 2]) -> bool {
+        let Some(offset) = field.first_word_index.checked_mul(WORD_SIZE) else {
+            return false;
+        };
+        let bytes = match field.owner {
+            ScriptStateOwner::Object(object) => self
+                .objects
+                .get_mut(object.index())
+                .and_then(|object| object.bytes.get_mut(offset..offset + WORD_SIZE * 2)),
+            ScriptStateOwner::TrailingState => {
+                self.trailing_data.get_mut(offset..offset + WORD_SIZE * 2)
+            }
+        };
+        let Some(bytes) = bytes else { return false };
+        bytes[..WORD_SIZE].copy_from_slice(&value[0].to_le_bytes());
+        bytes[WORD_SIZE..].copy_from_slice(&value[1].to_le_bytes());
         true
     }
 

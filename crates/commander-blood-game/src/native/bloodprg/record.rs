@@ -4,10 +4,11 @@ use std::collections::BTreeMap;
 use std::fmt;
 
 use commander_blood_formats::instruction::{
-    ScriptDirectRecordOperation, ScriptRecordValue, ScriptTransfer,
+    ScriptDirectRecordOperation, ScriptRecordPairOperation, ScriptRecordValue, ScriptTransfer,
 };
 use commander_blood_formats::script::{
-    ScriptObjectId, ScriptObjectKind, ScriptState, ScriptStateWord, ScriptWordId,
+    ScriptObjectId, ScriptObjectKind, ScriptState, ScriptStateWord, ScriptStateWordPair,
+    ScriptWordId,
 };
 
 use super::{
@@ -35,6 +36,24 @@ pub struct ScriptTransferRecord {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ScriptTransferRecords {
     records: BTreeMap<ScriptStateWord, ScriptTransferRecord>,
+}
+
+/// Typed owner reference invalidated when its object's adjacent-word record changes.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct ScriptRecordPairReference {
+    object: Option<ScriptObjectId>,
+}
+
+impl ScriptRecordPairReference {
+    /// Construct the owner reference held by the native active-presentation record.
+    pub const fn new(object: Option<ScriptObjectId>) -> Self {
+        Self { object }
+    }
+
+    /// Return the currently referenced object.
+    pub const fn object(self) -> Option<ScriptObjectId> {
+        self.object
+    }
 }
 
 impl ScriptTransferRecords {
@@ -154,6 +173,11 @@ pub enum ScriptRecordError {
         /// Missing field identity.
         field: ScriptStateWord,
     },
+    /// An adjacent-word field belongs to a different or truncated profile state.
+    MissingPair {
+        /// Missing pair identity.
+        pair: ScriptStateWordPair,
+    },
     /// An aboard transition targets state not owned by a profile object.
     MissingOwner {
         /// Ownerless field identity.
@@ -241,6 +265,36 @@ pub fn apply_direct_record_operation(
         operation.value
     };
     fields.set_value(operation.target, stored_value);
+    Ok(ScriptControl::Continue)
+}
+
+/// Apply `vm_op_b8_record_readwrite` to a bounded pair and typed owner reference.
+pub fn apply_record_pair_operation(
+    operation: ScriptRecordPairOperation,
+    state: &mut ScriptState,
+    reference: &mut ScriptRecordPairReference,
+    runtime: &mut ScriptRuntime,
+) -> Result<ScriptControl, ScriptRecordError> {
+    let current = state
+        .word_pair(operation.target)
+        .ok_or(ScriptRecordError::MissingPair {
+            pair: operation.target,
+        })?;
+    if runtime.query_mode() {
+        if current == operation.value {
+            return Ok(ScriptControl::Continue);
+        }
+        return runtime.fail_guard().map_err(ScriptRecordError::Control);
+    }
+
+    if !state.set_word_pair(operation.target, operation.value) {
+        return Err(ScriptRecordError::MissingPair {
+            pair: operation.target,
+        });
+    }
+    if reference.object == operation.target.object() {
+        reference.object = None;
+    }
     Ok(ScriptControl::Continue)
 }
 
@@ -346,7 +400,8 @@ pub fn apply_transfer(
 mod tests {
     use std::path::{Path, PathBuf};
 
-    use commander_blood_formats::code::ScriptCodeOffset;
+    use commander_blood_formats::code::{decode_script_code, ScriptCodeOffset};
+    use commander_blood_formats::instruction::decode_script_record_pair_operation;
     use commander_blood_formats::script::{
         decode_script_directory, decode_script_state, ScriptDirectory, ScriptState,
     };
@@ -356,11 +411,15 @@ mod tests {
 
     const DIRECT_RECORD_VECTOR_COUNT: usize = 17;
     const TRANSFER_VECTOR_COUNT: usize = 20;
+    const RECORD_PAIR_VECTOR_COUNT: usize = 10;
     const QUERY_MODE_MASK: u8 = 1;
     const TOPIC_PUBLICATION_OPCODE: u8 = 0xBC;
     const SECONDARY_PRESENTATION_REQUEST_BIT: u8 = 2;
     const BRANCH_TARGET: usize = 9_320;
     const TEST_FIELD_WORD_INDEX: usize = 1;
+    const PAIR_RECORD_OPCODE: u8 = 0xBD;
+    const END_MARKER: u8 = 0xFF;
+    const POSITION_BYTE_OFFSET: u16 = 24;
 
     #[derive(Deserialize)]
     struct DirectRecordOracle {
@@ -393,11 +452,102 @@ mod tests {
         branch_failed: bool,
     }
 
+    #[derive(Deserialize)]
+    struct RecordPairOracle {
+        name: String,
+        query_mode_before: u8,
+        requested_pair: [u16; 2],
+        pair_before: [u16; 2],
+        pair_after: [u16; 2],
+        owner: u16,
+        secondary_link_before: u16,
+        secondary_link_after: u16,
+        branch_failed: bool,
+        query_mode_after: u8,
+    }
+
     fn original_asset(name: &str) -> PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("../..")
             .join("accuracy/cblood_install/cblood")
             .join(name)
+    }
+
+    #[test]
+    fn record_pairs_match_every_original_handler_vector() {
+        let vectors: Vec<RecordPairOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_6b06_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), RECORD_PAIR_VECTOR_COUNT);
+        let directory_data = std::fs::read(original_asset("SCRIPT3.DEB")).unwrap();
+        let state_data = std::fs::read(original_asset("SCRIPT3.VAR")).unwrap();
+        let directory = decode_script_directory(&directory_data).unwrap();
+        let owner = directory.find_active_object(b"Kraner").unwrap();
+        let other = directory.find_active_object(b"blood").unwrap();
+        let owner_offset = directory.object(owner).unwrap().value;
+
+        for vector in vectors {
+            let target_offset = owner_offset.wrapping_add(POSITION_BYTE_OFFSET);
+            let mut token_data = vec![PAIR_RECORD_OPCODE];
+            token_data.extend_from_slice(&target_offset.to_le_bytes());
+            token_data.extend_from_slice(&vector.requested_pair[0].to_le_bytes());
+            token_data.extend_from_slice(&vector.requested_pair[1].to_le_bytes());
+            token_data.push(END_MARKER);
+            let code = decode_script_code(&token_data).unwrap();
+            let mut state = decode_script_state(&state_data, &directory).unwrap();
+            let operation =
+                decode_script_record_pair_operation(&code.tokens()[0], &state).unwrap();
+            assert_eq!(operation.target.object(), Some(owner), "{}", vector.name);
+            assert!(state.set_word_pair(operation.target, vector.pair_before));
+            let initial_reference = if vector.secondary_link_before == u16::MIN {
+                None
+            } else if vector.secondary_link_before == vector.owner {
+                Some(owner)
+            } else {
+                Some(other)
+            };
+            let mut reference = ScriptRecordPairReference::new(initial_reference);
+            let mut runtime = ScriptRuntime::new();
+            if vector.query_mode_before & QUERY_MODE_MASK != u8::MIN {
+                runtime.begin_root_guard(ScriptCodeOffset::new(BRANCH_TARGET));
+            }
+
+            let control =
+                apply_record_pair_operation(operation, &mut state, &mut reference, &mut runtime)
+                    .unwrap();
+
+            assert_eq!(
+                state.word_pair(operation.target),
+                Some(vector.pair_after),
+                "{}",
+                vector.name
+            );
+            let expected_reference = if vector.secondary_link_after == u16::MIN {
+                None
+            } else if vector.secondary_link_after == vector.owner {
+                Some(owner)
+            } else {
+                Some(other)
+            };
+            assert_eq!(reference.object(), expected_reference, "{}", vector.name);
+            assert_eq!(
+                runtime.query_mode(),
+                vector.query_mode_after & QUERY_MODE_MASK != u8::MIN,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                control,
+                if vector.branch_failed {
+                    ScriptControl::Jump(ScriptCodeOffset::new(BRANCH_TARGET))
+                } else {
+                    ScriptControl::Continue
+                },
+                "{}",
+                vector.name
+            );
+        }
     }
 
     fn profile(number: usize) -> (ScriptDirectory, ScriptState) {

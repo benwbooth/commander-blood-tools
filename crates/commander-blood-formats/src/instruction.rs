@@ -5,7 +5,7 @@ use std::fmt;
 use crate::code::{ScriptCodeOffset, ScriptDecodingMode, ScriptOpcode, ScriptToken};
 use crate::script::{
     ScriptDictionary, ScriptDirectory, ScriptObjectId, ScriptProcedureId, ScriptState,
-    ScriptStateByte, ScriptStateWord, ScriptWordId,
+    ScriptStateByte, ScriptStateWord, ScriptStateWordPair, ScriptWordId,
 };
 
 const GUARD_BEGIN_OPCODE: u8 = 0xA0;
@@ -31,9 +31,12 @@ const SHARED_STATE_B_OPCODE: u8 = 0xB4;
 const SHARED_STATE_C_OPCODE: u8 = 0xB5;
 const SHARED_STATE_D_OPCODE: u8 = 0xB6;
 const BIT_FLAG_OPCODE: u8 = 0xB7;
+const PAIR_RECORD_A_OPCODE: u8 = 0xB8;
+const PAIR_RECORD_B_OPCODE: u8 = 0xB9;
 const DIRECT_RECORD_E_OPCODE: u8 = 0xBA;
 const DIRECT_RECORD_F_OPCODE: u8 = 0xBB;
 const DIRECT_RECORD_TOPIC_OPCODE: u8 = 0xBC;
+const PAIR_RECORD_C_OPCODE: u8 = 0xBD;
 const SHARED_STATE_E_OPCODE: u8 = 0xBE;
 const SHARED_STATE_F_OPCODE: u8 = 0xBF;
 const SHARED_STATE_G_OPCODE: u8 = 0xC0;
@@ -61,6 +64,7 @@ const SHARED_BIT_STATE_SIZE: usize = OPCODE_SIZE + WORD_SIZE + WORD_SIZE;
 const DIRECT_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE + WORD_SIZE;
 const TRANSFER_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 3;
 const BIT_FLAG_SIZE: usize = OPCODE_SIZE + WORD_SIZE + BYTE_SIZE;
+const PAIR_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 3;
 const BITS_PER_BYTE: u8 = u8::BITS as u8;
 const INDIRECT_STATE_MODE_A: u8 = 0xC0;
 const INDIRECT_STATE_MODE_B: u8 = 0xC2;
@@ -346,6 +350,15 @@ pub struct ScriptBitFlagOperation {
     pub inverted_or_clear: bool,
 }
 
+/// One B8/B9/BD adjacent-word comparison or assignment.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptRecordPairOperation {
+    /// Bounded pair contained by one owned VAR region.
+    pub target: ScriptStateWordPair,
+    /// Two authored words compared or assigned in order.
+    pub value: [u16; 2],
+}
+
 impl ScriptSequenceRequest {
     /// Construct a safe owned request from raw non-NUL basename bytes.
     pub fn new(basename: impl Into<Box<[u8]>>) -> Option<Self> {
@@ -476,6 +489,13 @@ pub enum ScriptInstructionError {
         /// Token position.
         source_offset: ScriptCodeOffset,
         /// Unresolved VAR byte position after applying the bit index.
+        encoded_offset: u16,
+    },
+    /// A pair-record operand is unaligned, truncated, or crosses a VAR owner boundary.
+    InvalidStateWordPair {
+        /// Token position.
+        source_offset: ScriptCodeOffset,
+        /// Unresolved VAR byte position.
         encoded_offset: u16,
     },
 }
@@ -894,6 +914,34 @@ pub fn decode_script_bit_flag_operation(
     })
 }
 
+/// Decode the shared B8/B9/BD handler into one bounded adjacent word pair.
+pub fn decode_script_record_pair_operation(
+    token: &ScriptToken,
+    state: &ScriptState,
+) -> Result<ScriptRecordPairOperation, ScriptInstructionError> {
+    if !is_pair_record_opcode(token.opcode().byte()) {
+        return Err(ScriptInstructionError::UntranslatedOpcode {
+            opcode: token.opcode(),
+        });
+    }
+    require_size(token, PAIR_RECORD_SIZE)?;
+    let bytes = token.encoded_bytes();
+    let encoded_offset = read_word(bytes, OPCODE_SIZE);
+    let target = state
+        .resolve_word_pair_source_offset(encoded_offset)
+        .ok_or(ScriptInstructionError::InvalidStateWordPair {
+            source_offset: token.source_offset(),
+            encoded_offset,
+        })?;
+    Ok(ScriptRecordPairOperation {
+        target,
+        value: [
+            read_word(bytes, OPCODE_SIZE + WORD_SIZE),
+            read_word(bytes, OPCODE_SIZE + WORD_SIZE * 2),
+        ],
+    })
+}
+
 const fn is_direct_record_opcode(opcode: u8) -> bool {
     matches!(
         opcode,
@@ -904,6 +952,13 @@ const fn is_direct_record_opcode(opcode: u8) -> bool {
             | DIRECT_RECORD_E_OPCODE
             | DIRECT_RECORD_F_OPCODE
             | DIRECT_RECORD_TOPIC_OPCODE
+    )
+}
+
+const fn is_pair_record_opcode(opcode: u8) -> bool {
+    matches!(
+        opcode,
+        PAIR_RECORD_A_OPCODE | PAIR_RECORD_B_OPCODE | PAIR_RECORD_C_OPCODE
     )
 }
 
@@ -1024,7 +1079,9 @@ mod tests {
     const EXPECTED_TOPIC_RECORD_COUNT: usize = 49;
     const EXPECTED_TRANSFER_COUNTS: [usize; PROFILE_COUNT] = [0, 18, 14, 10, 4];
     const EXPECTED_BIT_FLAG_COUNTS: [usize; PROFILE_COUNT] = [0, 2, 1, 0, 0];
+    const EXPECTED_PAIR_RECORD_COUNTS: [usize; PROFILE_COUNT] = [0, 0, 2, 0, 0];
     const EXPECTED_SHIPPED_BIT_FLAG_MASK: u8 = 32;
+    const EXPECTED_SHIPPED_PAIR_OPCODE: u8 = PAIR_RECORD_C_OPCODE;
     const MAXIMUM_SHIPPED_SEQUENCE_BASENAME_LENGTH: usize = 12;
 
     fn original_asset(name: &str) -> PathBuf {
@@ -1364,6 +1421,41 @@ mod tests {
         }
 
         assert_eq!(counts, EXPECTED_BIT_FLAG_COUNTS);
+    }
+
+    #[test]
+    fn every_shipped_pair_record_resolves_within_one_typed_object() {
+        let mut counts = [usize::MIN; PROFILE_COUNT];
+
+        for profile in 1..=PROFILE_COUNT {
+            let code_data = std::fs::read(original_asset(&format!("SCRIPT{profile}.COD"))).unwrap();
+            let directory_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.DEB"))).unwrap();
+            let state_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.VAR"))).unwrap();
+            let code = decode_script_code(&code_data).unwrap();
+            let directory = decode_script_directory(&directory_data).unwrap();
+            let state = decode_script_state(&state_data, &directory).unwrap();
+
+            for token in code
+                .tokens()
+                .iter()
+                .filter(|token| is_pair_record_opcode(token.opcode().byte()))
+            {
+                let operation = decode_script_record_pair_operation(token, &state).unwrap();
+                let owner = operation.target.object().unwrap();
+                assert_eq!(owner, directory.find_active_object(b"Kraner").unwrap());
+                assert_eq!(
+                    state.object(owner).unwrap().kind,
+                    crate::script::ScriptObjectKind::NavigationEntity
+                );
+                assert_eq!(token.opcode().byte(), EXPECTED_SHIPPED_PAIR_OPCODE);
+                assert_eq!(operation.target.first_word_index(), 12);
+                counts[profile - 1] += 1;
+            }
+        }
+
+        assert_eq!(counts, EXPECTED_PAIR_RECORD_COUNTS);
     }
 
     #[test]
