@@ -1,0 +1,372 @@
+[
+  {
+    "name": "positive_step",
+    "module": "scrut",
+    "entry": 7188,
+    "component": "v",
+    "required_vertex_count": 44,
+    "phase_before": 258,
+    "phase_after": 770,
+    "signed_delta": 2,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 29775,
+        "after": 29777
+      },
+      {
+        "vertex": 43,
+        "direction": -1,
+        "before": 49307,
+        "after": 49305
+      },
+      {
+        "vertex": 42,
+        "direction": 1,
+        "before": 56503,
+        "after": 56505
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 47251,
+        "after": 47249
+      }
+    ],
+    "object_memory_sha256": "701d7fbefcccd155c8adfd57e890eb3ce2c16f2510acc3def8d15fd101eebb9d"
+  },
+  {
+    "name": "negative_step",
+    "module": "scrut",
+    "entry": 7188,
+    "component": "v",
+    "required_vertex_count": 44,
+    "phase_before": 510,
+    "phase_after": 65534,
+    "signed_delta": -2,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 32602,
+        "after": 32600
+      },
+      {
+        "vertex": 43,
+        "direction": -1,
+        "before": 52134,
+        "after": 52136
+      },
+      {
+        "vertex": 42,
+        "direction": 1,
+        "before": 59330,
+        "after": 59328
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 50078,
+        "after": 50080
+      }
+    ],
+    "object_memory_sha256": "a8d029b569ff710f175c84a1c221e33cd5aa1c9a8c0a0d79c229430acc32505b"
+  },
+  {
+    "name": "zero_step",
+    "module": "scrut",
+    "entry": 7188,
+    "component": "v",
+    "required_vertex_count": 44,
+    "phase_before": 256,
+    "phase_after": 256,
+    "signed_delta": 0,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 35429,
+        "after": 35429
+      },
+      {
+        "vertex": 43,
+        "direction": -1,
+        "before": 54961,
+        "after": 54961
+      },
+      {
+        "vertex": 42,
+        "direction": 1,
+        "before": 62157,
+        "after": 62157
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 52905,
+        "after": 52905
+      }
+    ],
+    "object_memory_sha256": "32b977c02b0419fe32021f0623a6577a3ce6b1af8c1b55453d3c75561f01e281"
+  },
+  {
+    "name": "zero_phase_repairs_step",
+    "module": "scrut",
+    "entry": 7188,
+    "component": "v",
+    "required_vertex_count": 44,
+    "phase_before": 0,
+    "phase_after": 2,
+    "signed_delta": 0,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 38256,
+        "after": 38256
+      },
+      {
+        "vertex": 43,
+        "direction": -1,
+        "before": 57788,
+        "after": 57788
+      },
+      {
+        "vertex": 42,
+        "direction": 1,
+        "before": 64984,
+        "after": 64984
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 55732,
+        "after": 55732
+      }
+    ],
+    "object_memory_sha256": "a517a815b7c135ecdf59542152ee960f982b888d53a492701f785498e5e2ee05"
+  },
+  {
+    "name": "wrapped_high_repairs_step",
+    "module": "scrut",
+    "entry": 7188,
+    "component": "v",
+    "required_vertex_count": 44,
+    "phase_before": 65281,
+    "phase_after": 2,
+    "signed_delta": 1,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 41083,
+        "after": 41084
+      },
+      {
+        "vertex": 43,
+        "direction": -1,
+        "before": 60615,
+        "after": 60614
+      },
+      {
+        "vertex": 42,
+        "direction": 1,
+        "before": 2275,
+        "after": 2276
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 58559,
+        "after": 58558
+      }
+    ],
+    "object_memory_sha256": "1c5266994dbd69cde1e42c3c61b220cc60dc92e438f04e112c735e7a4e596e16"
+  },
+  {
+    "name": "clamp_at_threshold",
+    "module": "scrut",
+    "entry": 7188,
+    "component": "v",
+    "required_vertex_count": 44,
+    "phase_before": 5632,
+    "phase_after": 5886,
+    "signed_delta": 0,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 43910,
+        "after": 43910
+      },
+      {
+        "vertex": 43,
+        "direction": -1,
+        "before": 63442,
+        "after": 63442
+      },
+      {
+        "vertex": 42,
+        "direction": 1,
+        "before": 5102,
+        "after": 5102
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 61386,
+        "after": 61386
+      }
+    ],
+    "object_memory_sha256": "2d433628261daea3dde9589894afe654dcb5679671e28c6242908764f5858949"
+  },
+  {
+    "name": "sum_reaches_clamp",
+    "module": "scrut",
+    "entry": 7188,
+    "component": "v",
+    "required_vertex_count": 44,
+    "phase_before": 5377,
+    "phase_after": 5886,
+    "signed_delta": 1,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 46737,
+        "after": 46738
+      },
+      {
+        "vertex": 43,
+        "direction": -1,
+        "before": 733,
+        "after": 732
+      },
+      {
+        "vertex": 42,
+        "direction": 1,
+        "before": 7929,
+        "after": 7930
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 64213,
+        "after": 64212
+      }
+    ],
+    "object_memory_sha256": "77c7434b288ea5406ac9a673b62c4d9b0d53e6ce802bf8876e7d144af51c3393"
+  },
+  {
+    "name": "signed_high_avoids_clamp",
+    "module": "scrut",
+    "entry": 7188,
+    "component": "v",
+    "required_vertex_count": 44,
+    "phase_before": 32513,
+    "phase_after": 32769,
+    "signed_delta": 1,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 49564,
+        "after": 49565
+      },
+      {
+        "vertex": 43,
+        "direction": -1,
+        "before": 3560,
+        "after": 3559
+      },
+      {
+        "vertex": 42,
+        "direction": 1,
+        "before": 10500,
+        "after": 10501
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 1504,
+        "after": 1503
+      }
+    ],
+    "object_memory_sha256": "9ceb8541a3ac91c6cbe8a6a2b5855fc1bf62c54790e843be19062fe1d53831c0"
+  },
+  {
+    "name": "minimum_signed_step",
+    "module": "scrut",
+    "entry": 7188,
+    "component": "v",
+    "required_vertex_count": 44,
+    "phase_before": 384,
+    "phase_after": 33152,
+    "signed_delta": -128,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 52391,
+        "after": 52263
+      },
+      {
+        "vertex": 43,
+        "direction": -1,
+        "before": 6387,
+        "after": 6515
+      },
+      {
+        "vertex": 42,
+        "direction": 1,
+        "before": 13327,
+        "after": 13199
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 4331,
+        "after": 4459
+      }
+    ],
+    "object_memory_sha256": "503d5f188a27788b2094dc915e8c9a78a7bcf0a375e6b55f2d9c1d937edcf42e"
+  },
+  {
+    "name": "object_offset_and_word_wrap",
+    "module": "scrut",
+    "entry": 7188,
+    "component": "v",
+    "required_vertex_count": 44,
+    "phase_before": 383,
+    "phase_after": 32895,
+    "signed_delta": 127,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 34658,
+        "after": 34785
+      },
+      {
+        "vertex": 43,
+        "direction": -1,
+        "before": 54190,
+        "after": 54063
+      },
+      {
+        "vertex": 42,
+        "direction": 1,
+        "before": 61386,
+        "after": 61513
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 52134,
+        "after": 52007
+      }
+    ],
+    "object_memory_sha256": "490075ea8c5c8a9b5afb4ad0eba9429c41139fba5cab7d085b6bda1d8026302c"
+  }
+]

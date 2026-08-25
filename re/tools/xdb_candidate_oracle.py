@@ -9039,6 +9039,226 @@ def scrut_slot2_reset_or_camera_vectors(entry: int) -> list[dict[str, object]]:
     return vectors
 
 
+def alien_resume_texture_motion_vectors(module: str, entry: int) -> list[dict[str, object]]:
+    image = load_image(module)
+    configs = {
+        "amer": (
+            49,
+            "5a55516b0dc5aa9000623a38a700941b02546abda10af5a7615608b77516d16a",
+            1,
+            ((0, 1), (53, -1), (35, 1), (25, -1)),
+        ),
+        "croolis": (
+            38,
+            "d0846d2653c7edb275038d45f3b0a9e3d2896a74492c0de63b33082175d4a552",
+            0,
+            ((0, 1), (25, -1)),
+        ),
+        "scrut": (
+            49,
+            "a4a99542e0dbb814845cf741cef70cd493f95ec4274a49401fc39ca31f048f4e",
+            1,
+            ((0, 1), (43, -1), (42, 1), (25, -1)),
+        ),
+    }
+    body_size, body_hash, component, targets = configs[module]
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered body changed")
+
+    cases = (
+        ("positive_step", 0x0102, 0x2000),
+        ("negative_step", 0x01FE, 0x2400),
+        ("zero_step", 0x0100, 0x2800),
+        ("zero_phase_repairs_step", 0x0000, 0x2C00),
+        ("wrapped_high_repairs_step", 0xFF01, 0x3000),
+        ("clamp_at_threshold", 0x1600, 0x3400),
+        ("sum_reaches_clamp", 0x1501, 0x3800),
+        ("signed_high_avoids_clamp", 0x7F01, 0x3C00),
+        ("minimum_signed_step", 0x0180, 0x4000),
+        ("object_offset_and_word_wrap", 0x017F, 0xFFF0),
+    )
+    data_segment = 0x5000
+    object_segment = 0x7000
+    extra_segment = 0x9000
+    fs_segment = 0xA000
+    game_segment = 0xB000
+    stack_segment = 0xC000
+    context_offset = 0x3000
+    return_address = 0xF000
+    record_size = 20
+    component_offset = component * 2
+    vectors: list[dict[str, object]] = []
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        encoded = struct.pack("<H", value & 0xFFFF)
+        for index, byte in enumerate(encoded):
+            memory[(offset + index) & 0xFFFF] = byte
+
+    def get_u16(memory: bytes | bytearray, offset: int) -> int:
+        return memory[offset & 0xFFFF] | (memory[(offset + 1) & 0xFFFF] << 8)
+
+    for case_index, (name, phase, object_offset) in enumerate(cases):
+        data_before = bytearray(
+            (offset * 31 + case_index * 19 + 7) & 0xFF
+            for offset in range(0x10000)
+        )
+        put_u16(data_before, 0x0002, object_segment)
+        put_u16(data_before, context_offset + 0x001C, object_offset)
+        put_u16(data_before, context_offset + 0x0038, phase)
+        data_expected = bytearray(data_before)
+
+        object_before = bytearray(
+            (offset * 37 + case_index * 11 + 5) & 0xFF
+            for offset in range(0x10000)
+        )
+        object_expected = bytearray(object_before)
+        low = phase & 0xFF
+        signed_delta = low if low < 0x80 else low - 0x100
+        target_results = []
+        for vertex, direction in targets:
+            offset = (object_offset + vertex * record_size + component_offset) & 0xFFFF
+            before = get_u16(object_expected, offset)
+            after = (before + direction * signed_delta) & 0xFFFF
+            put_u16(object_expected, offset, after)
+            target_results.append(
+                {
+                    "vertex": vertex,
+                    "direction": direction,
+                    "before": before,
+                    "after": after,
+                }
+            )
+
+        high = (((phase >> 8) & 0xFF) + low) & 0xFF
+        low_after = low
+        if high == 0:
+            low_after = 2
+        signed_high = high if high < 0x80 else high - 0x100
+        if signed_high >= 22:
+            low_after = 0xFE
+        phase_after = (high << 8) | low_after
+        put_u16(data_expected, context_offset + 0x0038, phase_after)
+
+        extra_before = bytes(
+            (offset * 13 + case_index + 3) & 0xFF for offset in range(0x10000)
+        )
+        fs_before = bytes(
+            (offset * 17 + case_index + 5) & 0xFF for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 23 + case_index + 9) & 0xFF for offset in range(0x10000)
+        )
+        stack_sentinel = bytes.fromhex("877869965aa5")
+        initial = {
+            "eax": 0xA1A12345,
+            "ebx": 0xB2B23456,
+            "ecx": 0xC3C34567,
+            "edx": 0xD4D45678,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F60000 | context_offset,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0292 | (0x0400 if case_index & 1 else 0),
+        }
+        machine = execute(
+            image,
+            entry,
+            return_address,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (object_segment, 0, bytes(object_before)),
+                (extra_segment, 0, extra_before),
+                (fs_segment, 0, fs_before),
+                (game_segment, 0, game_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            max_instructions=100,
+        )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(data_expected):
+            differences = [
+                (offset, actual_data[offset], data_expected[offset])
+                for offset in range(0x10000)
+                if actual_data[offset] != data_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: data differs at {differences}"
+            )
+        actual_objects = bytes(machine.mem_read(object_segment * 16, 0x10000))
+        if actual_objects != bytes(object_expected):
+            differences = [
+                (offset, actual_objects[offset], object_expected[offset])
+                for offset in range(0x10000)
+                if actual_objects[offset] != object_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: objects differ at {differences}"
+            )
+        actual_code = bytes(machine.mem_read(0, len(image)))
+        if actual_code != image:
+            differences = [
+                (offset, actual_code[offset], image[offset])
+                for offset in range(len(image))
+                if actual_code[offset] != image[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: code differs at {differences}"
+            )
+        for segment, expected in (
+            (extra_segment, extra_before),
+            (fs_segment, fs_before),
+            (game_segment, game_before),
+        ):
+            if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: segment {segment:#x} changed"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, len(stack_sentinel))) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+        if machine.reg_read(UC_X86_REG_SP) != 0xFF02:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack pointer changed")
+        expected_registers = {
+            "eax": (initial["eax"] & 0xFFFF0000) | (signed_delta & 0xFFFF),
+            "edx": (initial["edx"] & 0xFFFF0000) | phase_after,
+            "esi": (initial["esi"] & 0xFFFF0000) | object_offset,
+            "edi": initial["edi"],
+        }
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: "
+                    f"{register}={actual:#x}, expected={expected:#x}"
+                )
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "component": "u" if component == 0 else "v",
+                "required_vertex_count": max(vertex for vertex, _ in targets) + 1,
+                "phase_before": phase,
+                "phase_after": phase_after,
+                "signed_delta": signed_delta,
+                "targets": target_results,
+                "object_memory_sha256": hashlib.sha256(object_expected).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def alien_resume_pair_outside_vectors(module: str, entry: int) -> list[dict[str, object]]:
     image = load_image(module)
     configs = {
@@ -24474,6 +24694,16 @@ def main() -> int:
         scrut_slot2_reset_or_camera_vectors(0x1A11),
         args.check,
     )
+    for module, entry in (
+        ("amer", 0x1C03),
+        ("croolis", 0x1B5F),
+        ("scrut", 0x1C14),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            alien_resume_texture_motion_vectors(module, entry),
+            args.check,
+        )
     for module, entry in (
         ("amer", 0x1CFA),
         ("croolis", 0x1C46),

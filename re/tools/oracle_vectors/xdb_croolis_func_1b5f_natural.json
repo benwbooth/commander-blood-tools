@@ -1,0 +1,252 @@
+[
+  {
+    "name": "positive_step",
+    "module": "croolis",
+    "entry": 7007,
+    "component": "u",
+    "required_vertex_count": 26,
+    "phase_before": 258,
+    "phase_after": 770,
+    "signed_delta": 2,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 10757,
+        "after": 10759
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 28233,
+        "after": 28231
+      }
+    ],
+    "object_memory_sha256": "f13294385a96e2b416b592c981247f729d7c8258baf67b6037504472fd785f12"
+  },
+  {
+    "name": "negative_step",
+    "module": "croolis",
+    "entry": 7007,
+    "component": "u",
+    "required_vertex_count": 26,
+    "phase_before": 510,
+    "phase_after": 65534,
+    "signed_delta": -2,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 13584,
+        "after": 13582
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 31060,
+        "after": 31062
+      }
+    ],
+    "object_memory_sha256": "813e6fb8c8b76f103c0360e705a148ea37de8eabf2e8cb7d630fe8c4f147ae15"
+  },
+  {
+    "name": "zero_step",
+    "module": "croolis",
+    "entry": 7007,
+    "component": "u",
+    "required_vertex_count": 26,
+    "phase_before": 256,
+    "phase_after": 256,
+    "signed_delta": 0,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 16411,
+        "after": 16411
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 33887,
+        "after": 33887
+      }
+    ],
+    "object_memory_sha256": "32b977c02b0419fe32021f0623a6577a3ce6b1af8c1b55453d3c75561f01e281"
+  },
+  {
+    "name": "zero_phase_repairs_step",
+    "module": "croolis",
+    "entry": 7007,
+    "component": "u",
+    "required_vertex_count": 26,
+    "phase_before": 0,
+    "phase_after": 2,
+    "signed_delta": 0,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 19238,
+        "after": 19238
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 36714,
+        "after": 36714
+      }
+    ],
+    "object_memory_sha256": "a517a815b7c135ecdf59542152ee960f982b888d53a492701f785498e5e2ee05"
+  },
+  {
+    "name": "wrapped_high_repairs_step",
+    "module": "croolis",
+    "entry": 7007,
+    "component": "u",
+    "required_vertex_count": 26,
+    "phase_before": 65281,
+    "phase_after": 2,
+    "signed_delta": 1,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 22065,
+        "after": 22066
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 39541,
+        "after": 39540
+      }
+    ],
+    "object_memory_sha256": "39d00112ed9a77435cda525e815111483a2734e115baf44ea80c4a45aa5ca585"
+  },
+  {
+    "name": "clamp_at_threshold",
+    "module": "croolis",
+    "entry": 7007,
+    "component": "u",
+    "required_vertex_count": 26,
+    "phase_before": 5632,
+    "phase_after": 5886,
+    "signed_delta": 0,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 24892,
+        "after": 24892
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 42368,
+        "after": 42368
+      }
+    ],
+    "object_memory_sha256": "2d433628261daea3dde9589894afe654dcb5679671e28c6242908764f5858949"
+  },
+  {
+    "name": "sum_reaches_clamp",
+    "module": "croolis",
+    "entry": 7007,
+    "component": "u",
+    "required_vertex_count": 26,
+    "phase_before": 5377,
+    "phase_after": 5886,
+    "signed_delta": 1,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 27719,
+        "after": 27720
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 45195,
+        "after": 45194
+      }
+    ],
+    "object_memory_sha256": "7c7ccdb1494255a8cc3c24b6e9e8e28096f2ae5978479f2c679d99841b37c44e"
+  },
+  {
+    "name": "signed_high_avoids_clamp",
+    "module": "croolis",
+    "entry": 7007,
+    "component": "u",
+    "required_vertex_count": 26,
+    "phase_before": 32513,
+    "phase_after": 32769,
+    "signed_delta": 1,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 30546,
+        "after": 30547
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 48022,
+        "after": 48021
+      }
+    ],
+    "object_memory_sha256": "019ce26232d4924c8eea97658863926a57190eca72912cc24724845a5752850c"
+  },
+  {
+    "name": "minimum_signed_step",
+    "module": "croolis",
+    "entry": 7007,
+    "component": "u",
+    "required_vertex_count": 26,
+    "phase_before": 384,
+    "phase_after": 33152,
+    "signed_delta": -128,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 33373,
+        "after": 33245
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 50849,
+        "after": 50977
+      }
+    ],
+    "object_memory_sha256": "d8ca6feaf55a449c635b03431b5d6a695c139d9675cb68ff15c4742c71fe9230"
+  },
+  {
+    "name": "object_offset_and_word_wrap",
+    "module": "croolis",
+    "entry": 7007,
+    "component": "u",
+    "required_vertex_count": 26,
+    "phase_before": 383,
+    "phase_after": 32895,
+    "signed_delta": 127,
+    "targets": [
+      {
+        "vertex": 0,
+        "direction": 1,
+        "before": 15640,
+        "after": 15767
+      },
+      {
+        "vertex": 25,
+        "direction": -1,
+        "before": 33116,
+        "after": 32989
+      }
+    ],
+    "object_memory_sha256": "633153a492b77356674be878b74ca9442444eeb5fcce5d3a44e7641057c92760"
+  }
+]

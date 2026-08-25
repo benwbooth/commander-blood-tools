@@ -9,7 +9,7 @@ void XDB_NEAR xdb_croolis_resume_apply_object_delta(
     xdb_u8 high;
 
     object = XDB_FAR_AT(xdb_i16, xdb_alien_object_segment,
-            (xdb_u16)(context->object_offset + 0x0002u));
+            context->object_offset);
     *object = (xdb_i16)((xdb_u16)*object + (xdb_u16)delta);
     object = XDB_FAR_AT(xdb_i16, xdb_alien_object_segment,
             (xdb_u16)(context->object_offset + 0x01f4u));

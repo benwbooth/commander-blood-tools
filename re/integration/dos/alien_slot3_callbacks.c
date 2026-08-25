@@ -68,7 +68,7 @@
 #define POSITION_Z 0L
 #define EMPTY_POSITION_AC ((xdb_i16)0x20)
 #define EMPTY_POSITION_AE ((xdb_i16)7)
-#define OBJECT_PLUS_0 0x0002u
+#define OBJECT_PLUS_0 0x0000u
 #define OBJECT_MINUS_0 0x01f4u
 #define OBJECT_PAIR_COUNT 1
 #elif defined(TEST_SCRUT)

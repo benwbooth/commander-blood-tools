@@ -1,5 +1,7 @@
 //! Typed state and callbacks for alien resume behavior.
 
+use std::fmt;
+
 use commander_blood_formats::alien::{AlienTrigonometryPair, TRIGONOMETRY_ENTRY_COUNT};
 
 use super::{AlienNodePose, AlienSpecies};
@@ -20,6 +22,36 @@ const ANGLE_MASK: u16 = 0x0ffc;
 const ANGLE_INDEX_SHIFT: u32 = 2;
 const NEGATIVE_DIRECTION_PAN_STEP: i16 = -32;
 const NONNEGATIVE_DIRECTION_PAN_STEP: i16 = 16;
+const TEXTURE_COMPONENT_COUNT: usize = 2;
+const TEXTURE_U_COMPONENT: usize = 0;
+const TEXTURE_V_COMPONENT: usize = 1;
+const PHASE_HIGH_BYTE_SHIFT: u32 = 8;
+const PHASE_HIGH_CLAMP: i8 = 22;
+const PHASE_ZERO_STEP: u8 = 2;
+const PHASE_REVERSE_STEP: u8 = 254;
+const AMER_RESUME_TEXTURE_VERTEX_COUNT: usize = 54;
+const CROOLIS_RESUME_TEXTURE_VERTEX_COUNT: usize = 26;
+const SCRUT_RESUME_TEXTURE_VERTEX_COUNT: usize = 44;
+const AMER_RESUME_TEXTURE_TARGETS: [(usize, TextureDirection); 4] = [
+    (0, TextureDirection::Add),
+    (53, TextureDirection::Subtract),
+    (35, TextureDirection::Add),
+    (25, TextureDirection::Subtract),
+];
+const CROOLIS_RESUME_TEXTURE_TARGETS: [(usize, TextureDirection); 2] =
+    [(0, TextureDirection::Add), (25, TextureDirection::Subtract)];
+const SCRUT_RESUME_TEXTURE_TARGETS: [(usize, TextureDirection); 4] = [
+    (0, TextureDirection::Add),
+    (43, TextureDirection::Subtract),
+    (42, TextureDirection::Add),
+    (25, TextureDirection::Subtract),
+];
+
+#[derive(Clone, Copy)]
+enum TextureDirection {
+    Add,
+    Subtract,
+}
 
 /// Resume callback selected by the recovered slot-13 coordinator.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -73,6 +105,36 @@ pub enum AlienResumePairUpdate {
     Outside,
 }
 
+/// Texture animation result produced by one resume-state update.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct AlienResumeTextureUpdate {
+    /// Signed low-byte displacement applied to the selected coordinates.
+    pub delta: i16,
+    /// Packed animation phase after its wrapping high-byte advance.
+    pub phase: u16,
+}
+
+/// Invalid model data supplied to the recovered resume texture animation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct AlienResumeTextureError {
+    /// Number of texture coordinates required by the species animation.
+    pub required: usize,
+    /// Number of texture coordinates present in the decoded model.
+    pub available: usize,
+}
+
+impl fmt::Display for AlienResumeTextureError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            formatter,
+            "resume texture animation requires {} vertices, but the model contains {}",
+            self.required, self.available
+        )
+    }
+}
+
+impl std::error::Error for AlienResumeTextureError {}
+
 /// Initialize or dispatch the recovered slot-13 resume method.
 pub fn initialize_or_dispatch_resume<C: AlienResumeCallbacks>(
     species: AlienSpecies,
@@ -88,6 +150,61 @@ pub fn initialize_or_dispatch_resume<C: AlienResumeCallbacks>(
     state.phase = u16::MIN;
     state.paired_node = None;
     Ok(AlienResumeUpdate::Initialized)
+}
+
+/// Animate the species-specific texture vertices used by the resume sequence.
+pub fn update_resume_texture_motion(
+    species: AlienSpecies,
+    state: &mut AlienResumeMethodState,
+    texture_coordinates: &mut [[i16; TEXTURE_COMPONENT_COUNT]],
+) -> Result<AlienResumeTextureUpdate, AlienResumeTextureError> {
+    let (component, required, targets): (_, _, &[(usize, TextureDirection)]) = match species {
+        AlienSpecies::Amer => (
+            TEXTURE_V_COMPONENT,
+            AMER_RESUME_TEXTURE_VERTEX_COUNT,
+            &AMER_RESUME_TEXTURE_TARGETS,
+        ),
+        AlienSpecies::Croolis => (
+            TEXTURE_U_COMPONENT,
+            CROOLIS_RESUME_TEXTURE_VERTEX_COUNT,
+            &CROOLIS_RESUME_TEXTURE_TARGETS,
+        ),
+        AlienSpecies::Scrut => (
+            TEXTURE_V_COMPONENT,
+            SCRUT_RESUME_TEXTURE_VERTEX_COUNT,
+            &SCRUT_RESUME_TEXTURE_TARGETS,
+        ),
+    };
+    if texture_coordinates.len() < required {
+        return Err(AlienResumeTextureError {
+            required,
+            available: texture_coordinates.len(),
+        });
+    }
+
+    let low = state.phase as u8;
+    let delta = i16::from(low as i8);
+    for &(vertex, direction) in targets {
+        let coordinate = &mut texture_coordinates[vertex][component];
+        *coordinate = match direction {
+            TextureDirection::Add => coordinate.wrapping_add(delta),
+            TextureDirection::Subtract => coordinate.wrapping_sub(delta),
+        };
+    }
+
+    let high = ((state.phase >> PHASE_HIGH_BYTE_SHIFT) as u8).wrapping_add(low);
+    let next_low = if (high as i8) >= PHASE_HIGH_CLAMP {
+        PHASE_REVERSE_STEP
+    } else if high == u8::default() {
+        PHASE_ZERO_STEP
+    } else {
+        low
+    };
+    state.phase = (u16::from(high) << PHASE_HIGH_BYTE_SHIFT) | u16::from(next_low);
+    Ok(AlienResumeTextureUpdate {
+        delta,
+        phase: state.phase,
+    })
 }
 
 /// Test a resumed node pair and steer the current node when they remain apart.
@@ -176,6 +293,26 @@ mod tests {
         other_position_after: [u32; AXIS_COUNT],
     }
 
+    #[derive(Deserialize)]
+    struct ResumeTextureVector {
+        name: String,
+        module: String,
+        component: String,
+        required_vertex_count: usize,
+        phase_before: u16,
+        phase_after: u16,
+        signed_delta: i16,
+        targets: Vec<ResumeTextureTargetVector>,
+    }
+
+    #[derive(Deserialize)]
+    struct ResumeTextureTargetVector {
+        vertex: usize,
+        direction: i16,
+        before: u16,
+        after: u16,
+    }
+
     #[derive(Default)]
     struct CallbackRecorder {
         calls: Vec<(AlienSpecies, AlienResumeCallback)>,
@@ -221,6 +358,16 @@ mod tests {
                 "../../../../../re/tools/oracle_vectors/xdb_croolis_func_1c46_natural.json"
             ),
             include_str!("../../../../../re/tools/oracle_vectors/xdb_scrut_func_1d06_natural.json"),
+        ]
+    }
+
+    fn texture_fixtures() -> [&'static str; 3] {
+        [
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_amer_func_1c03_natural.json"),
+            include_str!(
+                "../../../../../re/tools/oracle_vectors/xdb_croolis_func_1b5f_natural.json"
+            ),
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_scrut_func_1c14_natural.json"),
         ]
     }
 
@@ -369,6 +516,94 @@ mod tests {
                     vector.name
                 );
             }
+        }
+    }
+
+    #[test]
+    fn texture_motion_matches_every_original_overlay_vector() {
+        for fixture in texture_fixtures() {
+            let vectors: Vec<ResumeTextureVector> = serde_json::from_str(fixture).unwrap();
+            for vector in vectors {
+                let component = match vector.component.as_str() {
+                    "u" => TEXTURE_U_COMPONENT,
+                    "v" => TEXTURE_V_COMPONENT,
+                    value => panic!("unknown texture component {value}"),
+                };
+                let mut texture_coordinates =
+                    vec![[12_345_i16, -23_456_i16]; vector.required_vertex_count];
+                for target in &vector.targets {
+                    texture_coordinates[target.vertex][component] = target.before as i16;
+                }
+                let mut expected = texture_coordinates.clone();
+                for target in &vector.targets {
+                    expected[target.vertex][component] = target.after as i16;
+                    assert!(matches!(target.direction, -1 | 1));
+                }
+                let preserved_callback = Some(AlienResumeCallback::Begin);
+                let preserved_paired_node = Some(17);
+                let preserved_resumed_node = Some(29);
+                let mut state = AlienResumeMethodState {
+                    callback: preserved_callback,
+                    phase: vector.phase_before,
+                    paired_node: preserved_paired_node,
+                    resumed_node: preserved_resumed_node,
+                };
+
+                assert_eq!(
+                    update_resume_texture_motion(
+                        species(&vector.module),
+                        &mut state,
+                        &mut texture_coordinates,
+                    ),
+                    Ok(AlienResumeTextureUpdate {
+                        delta: vector.signed_delta,
+                        phase: vector.phase_after,
+                    }),
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(texture_coordinates, expected, "{}", vector.name);
+                assert_eq!(state.phase, vector.phase_after, "{}", vector.name);
+                assert_eq!(state.callback, preserved_callback, "{}", vector.name);
+                assert_eq!(state.paired_node, preserved_paired_node, "{}", vector.name);
+                assert_eq!(
+                    state.resumed_node, preserved_resumed_node,
+                    "{}",
+                    vector.name
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn texture_motion_rejects_truncated_model_data_without_mutation() {
+        for species in [
+            AlienSpecies::Amer,
+            AlienSpecies::Croolis,
+            AlienSpecies::Scrut,
+        ] {
+            let required = match species {
+                AlienSpecies::Amer => AMER_RESUME_TEXTURE_VERTEX_COUNT,
+                AlienSpecies::Croolis => CROOLIS_RESUME_TEXTURE_VERTEX_COUNT,
+                AlienSpecies::Scrut => SCRUT_RESUME_TEXTURE_VERTEX_COUNT,
+            };
+            let mut state = AlienResumeMethodState {
+                phase: 0x0102,
+                ..AlienResumeMethodState::default()
+            };
+            let original_state = state;
+            let mut coordinates = vec![[123, 456]; required - 1];
+            let original_coordinates = coordinates.clone();
+
+            assert_eq!(
+                update_resume_texture_motion(species, &mut state, &mut coordinates),
+                Err(AlienResumeTextureError {
+                    required,
+                    available: required - 1,
+                })
+            );
+            assert_eq!(state, original_state);
+            assert_eq!(coordinates, original_coordinates);
         }
     }
 }
