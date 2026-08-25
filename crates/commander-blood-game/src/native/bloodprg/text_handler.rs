@@ -14,7 +14,7 @@ const SUBTITLE_LINE_LIMIT: u8 = 35;
 const TEXT_YIELD_SIGNAL_INCREMENT: u8 = 2;
 const CONDITION_YIELD_SIGNAL: u8 = 1;
 const TEXT_REQUEST_PENDING: u8 = 1;
-const SEQUENCE_REQUEST_PENDING: u8 = 2;
+const SECONDARY_PRESENTATION_REQUEST_PENDING: u8 = 2;
 const CHARACTER_LENGTH_INCREMENT: u8 = 1;
 
 /// Typed state replacing the active bit that the DOS handler changed in COD bytes.
@@ -72,7 +72,12 @@ impl PresentationRequestFlags {
 
     /// Return whether a sequence or other secondary presentation is pending.
     pub const fn sequence_request_pending(self) -> bool {
-        self.0 & SEQUENCE_REQUEST_PENDING != u8::MIN
+        self.secondary_request_pending()
+    }
+
+    /// Return whether a sequence or descriptor-backed presentation is pending.
+    pub const fn secondary_request_pending(self) -> bool {
+        self.0 & SECONDARY_PRESENTATION_REQUEST_PENDING != u8::MIN
     }
 
     fn request_text(&mut self) {
@@ -80,7 +85,11 @@ impl PresentationRequestFlags {
     }
 
     pub(super) fn request_sequence(&mut self) {
-        self.0 |= SEQUENCE_REQUEST_PENDING;
+        self.request_secondary();
+    }
+
+    pub(super) fn request_secondary(&mut self) {
+        self.0 |= SECONDARY_PRESENTATION_REQUEST_PENDING;
     }
 }
 

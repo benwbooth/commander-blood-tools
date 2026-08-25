@@ -3,11 +3,16 @@
 use std::collections::BTreeMap;
 use std::fmt;
 
-use commander_blood_formats::instruction::{ScriptDirectRecordOperation, ScriptRecordValue};
-use commander_blood_formats::script::{ScriptObjectId, ScriptStateWord, ScriptWordId};
+use commander_blood_formats::instruction::{
+    ScriptDirectRecordOperation, ScriptRecordValue, ScriptTransfer,
+};
+use commander_blood_formats::script::{
+    ScriptObjectId, ScriptObjectKind, ScriptState, ScriptStateWord, ScriptWordId,
+};
 
 use super::{
-    insert_aboard_object, remove_aboard_object, AboardObjectRoster, ScriptControl, ScriptRuntime,
+    insert_aboard_object, remove_aboard_object, script_field_offset, AboardObjectRoster,
+    PresentationRequestFlags, ScriptControl, ScriptFieldSelector, ScriptRuntime,
     ScriptRuntimeError,
 };
 
@@ -15,6 +20,38 @@ use super::{
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ScriptRecordFields {
     values: BTreeMap<ScriptStateWord, ScriptRecordValue>,
+}
+
+/// One typed CD record triple retained for query-mode comparisons.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptTransferRecord {
+    /// Object moved by the transfer.
+    pub item: ScriptObjectId,
+    /// Destination object encoded by the transfer record.
+    pub destination: ScriptObjectId,
+}
+
+/// Owned CD record triples keyed by their typed state-field identity.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ScriptTransferRecords {
+    records: BTreeMap<ScriptStateWord, ScriptTransferRecord>,
+}
+
+impl ScriptTransferRecords {
+    /// Read one transfer record, or `None` when another record kind occupies it.
+    pub fn record(&self, field: ScriptStateWord) -> Option<ScriptTransferRecord> {
+        self.records.get(&field).copied()
+    }
+
+    /// Store one typed transfer record for later query-mode evaluation.
+    pub fn set_record(&mut self, field: ScriptStateWord, record: ScriptTransferRecord) {
+        self.records.insert(field, record);
+    }
+
+    /// Remove any transfer record at the selected field.
+    pub fn clear_record(&mut self, field: ScriptStateWord) {
+        self.records.remove(&field);
+    }
 }
 
 impl ScriptRecordFields {
@@ -71,6 +108,44 @@ impl ScriptRecordRuntime {
     }
 }
 
+/// Presentation line selected after a descriptor-backed inventory transfer.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ScriptTransferPresentationLine {
+    /// Native active-line value 43, selected for a moved inventory item.
+    InventoryMoved,
+}
+
+/// Presentation state changed by a successful descriptor-backed transfer.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ScriptTransferPresentationState {
+    /// Existing presentation work still owns the descriptor path.
+    pub presentation_gate_active: bool,
+    /// Presentation line requested by the transfer handler.
+    pub active_line: Option<ScriptTransferPresentationLine>,
+}
+
+/// Already-resolved host and descriptor inputs used by transfer presentation gates.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct ScriptTransferContext {
+    /// The ship interface currently blocks transfer presentation work.
+    pub ship_interface_active: bool,
+    /// The moved object's name has a matching descriptor entry.
+    pub descriptor_available: bool,
+}
+
+/// Observable effects of one CD handler invocation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptTransferOutcome {
+    /// Script control flow after a query or assignment.
+    pub control: ScriptControl,
+    /// Whether the moved object's holder changed.
+    pub holder_changed: bool,
+    /// Whether the descriptor catalog was consulted after all earlier gates.
+    pub descriptor_checked: bool,
+    /// Whether descriptor-backed presentation work was requested.
+    pub presentation_requested: bool,
+}
+
 /// Invalid typed state or control flow in one direct-record operation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ScriptRecordError {
@@ -83,6 +158,16 @@ pub enum ScriptRecordError {
     MissingOwner {
         /// Ownerless field identity.
         field: ScriptStateWord,
+    },
+    /// The moved object is absent from the decoded profile state.
+    MissingObject {
+        /// Missing object identity.
+        object: ScriptObjectId,
+    },
+    /// The moved object's kind has no proven holder field.
+    MissingHolderField {
+        /// Object whose holder field could not be resolved.
+        object: ScriptObjectId,
     },
     /// A failed query had no procedure or nested guard destination.
     Control(ScriptRuntimeError),
@@ -159,6 +244,104 @@ pub fn apply_direct_record_operation(
     Ok(ScriptControl::Continue)
 }
 
+/// Apply `vm_op_cd_state_gated` as a typed object transfer or record query.
+#[allow(clippy::too_many_arguments)]
+pub fn apply_transfer(
+    transfer: ScriptTransfer,
+    profile: &ScriptState,
+    transfer_records: &ScriptTransferRecords,
+    fields: &mut ScriptRecordFields,
+    record_runtime: &mut ScriptRecordRuntime,
+    context: ScriptTransferContext,
+    request_flags: &mut PresentationRequestFlags,
+    presentation: &mut ScriptTransferPresentationState,
+    script_runtime: &mut ScriptRuntime,
+) -> Result<ScriptTransferOutcome, ScriptRecordError> {
+    if script_runtime.query_mode() {
+        let expected = ScriptTransferRecord {
+            item: transfer.item,
+            destination: transfer.destination,
+        };
+        let matches = transfer_records.record(transfer.source_record) == Some(expected);
+        let control = if matches != transfer.inverted {
+            ScriptControl::Continue
+        } else {
+            script_runtime
+                .fail_guard()
+                .map_err(ScriptRecordError::Control)?
+        };
+        return Ok(ScriptTransferOutcome {
+            control,
+            holder_changed: false,
+            descriptor_checked: false,
+            presentation_requested: false,
+        });
+    }
+
+    let source = transfer
+        .source_record
+        .object()
+        .ok_or(ScriptRecordError::MissingOwner {
+            field: transfer.source_record,
+        })?;
+    let item = profile
+        .object(transfer.item)
+        .ok_or(ScriptRecordError::MissingObject {
+            object: transfer.item,
+        })?;
+    let holder_byte_offset =
+        script_field_offset(item.kind, ScriptFieldSelector::HOLDER_OR_LOCATION).ok_or(
+            ScriptRecordError::MissingHolderField {
+                object: transfer.item,
+            },
+        )?;
+    let holder_field = profile
+        .object_word(transfer.item, holder_byte_offset / size_of::<u16>())
+        .ok_or(ScriptRecordError::MissingHolderField {
+            object: transfer.item,
+        })?;
+
+    if source == record_runtime.special_object {
+        remove_aboard_object(&mut record_runtime.aboard_objects, transfer.item);
+    }
+    let destination_is_aboard = transfer.destination == record_runtime.special_object;
+    if destination_is_aboard
+        && !insert_aboard_object(&mut record_runtime.aboard_objects, transfer.item)
+    {
+        return Ok(ScriptTransferOutcome {
+            control: ScriptControl::Continue,
+            holder_changed: false,
+            descriptor_checked: false,
+            presentation_requested: false,
+        });
+    }
+    fields.set_value(
+        holder_field,
+        if destination_is_aboard {
+            ScriptRecordValue::Aboard
+        } else {
+            ScriptRecordValue::Object(transfer.destination)
+        },
+    );
+
+    let can_check_descriptor = !context.ship_interface_active
+        && !request_flags.secondary_request_pending()
+        && item.kind == ScriptObjectKind::InventoryItem;
+    let presentation_requested = can_check_descriptor && context.descriptor_available;
+    if presentation_requested {
+        presentation.presentation_gate_active = false;
+        request_flags.request_secondary();
+        presentation.active_line = Some(ScriptTransferPresentationLine::InventoryMoved);
+    }
+
+    Ok(ScriptTransferOutcome {
+        control: ScriptControl::Continue,
+        holder_changed: true,
+        descriptor_checked: can_check_descriptor,
+        presentation_requested,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::{Path, PathBuf};
@@ -172,8 +355,10 @@ mod tests {
     use super::*;
 
     const DIRECT_RECORD_VECTOR_COUNT: usize = 17;
+    const TRANSFER_VECTOR_COUNT: usize = 20;
     const QUERY_MODE_MASK: u8 = 1;
     const TOPIC_PUBLICATION_OPCODE: u8 = 0xBC;
+    const SECONDARY_PRESENTATION_REQUEST_BIT: u8 = 2;
     const BRANCH_TARGET: usize = 9_320;
     const TEST_FIELD_WORD_INDEX: usize = 1;
 
@@ -191,6 +376,23 @@ mod tests {
         branch_failed: bool,
     }
 
+    #[derive(Deserialize)]
+    struct TransferOracle {
+        name: String,
+        query_mode_before: u8,
+        inverted: bool,
+        third_record: u16,
+        kind: Option<u16>,
+        field_before: Option<u16>,
+        field_after: Option<u16>,
+        remove_called: bool,
+        insert_called: bool,
+        insert_success: bool,
+        c2_called: bool,
+        c2_result: Option<u16>,
+        branch_failed: bool,
+    }
+
     fn original_asset(name: &str) -> PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("../..")
@@ -198,16 +400,35 @@ mod tests {
             .join(name)
     }
 
-    fn profile() -> (ScriptDirectory, ScriptState) {
-        let directory =
-            decode_script_directory(&std::fs::read(original_asset("SCRIPT1.DEB")).unwrap())
-                .unwrap();
+    fn profile(number: usize) -> (ScriptDirectory, ScriptState) {
+        let directory = decode_script_directory(
+            &std::fs::read(original_asset(&format!("SCRIPT{number}.DEB"))).unwrap(),
+        )
+        .unwrap();
         let state = decode_script_state(
-            &std::fs::read(original_asset("SCRIPT1.VAR")).unwrap(),
+            &std::fs::read(original_asset(&format!("SCRIPT{number}.VAR"))).unwrap(),
             &directory,
         )
         .unwrap();
         (directory, state)
+    }
+
+    fn object_of_kind(state: &ScriptState, kind: ScriptObjectKind) -> ScriptObjectId {
+        state
+            .objects()
+            .iter()
+            .find_map(|object| (object.kind == kind).then_some(object.id))
+            .unwrap()
+    }
+
+    fn holder_field(state: &ScriptState, object: ScriptObjectId) -> ScriptStateWord {
+        let state_object = state.object(object).unwrap();
+        let byte_offset =
+            script_field_offset(state_object.kind, ScriptFieldSelector::HOLDER_OR_LOCATION)
+                .unwrap();
+        state
+            .object_word(object, byte_offset / size_of::<u16>())
+            .unwrap()
     }
 
     fn oracle_value(
@@ -231,7 +452,7 @@ mod tests {
         ))
         .unwrap();
         assert_eq!(vectors.len(), DIRECT_RECORD_VECTOR_COUNT);
-        let (directory, state) = profile();
+        let (directory, state) = profile(1);
         let special_object = directory.find_active_object(b"blood").unwrap();
         let target_owner = directory.active_objects().nth(1).unwrap().0;
         let target = state
@@ -319,6 +540,193 @@ mod tests {
                 (vector.opcode == TOPIC_PUBLICATION_OPCODE
                     && vector.query_mode_before & QUERY_MODE_MASK == u8::MIN)
                     .then_some(requested),
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    #[test]
+    fn transfers_match_every_original_handler_vector() {
+        let vectors: Vec<TransferOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_69c7_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), TRANSFER_VECTOR_COUNT);
+        let (directory, state) = profile(2);
+        let special_object = directory.find_active_object(b"blood").unwrap();
+        let actor = object_of_kind(&state, ScriptObjectKind::Actor);
+        let inventory_item = object_of_kind(&state, ScriptObjectKind::InventoryItem);
+        let world_state = object_of_kind(&state, ScriptObjectKind::WorldState);
+        let alternate_object = state
+            .objects()
+            .iter()
+            .find_map(|object| {
+                (object.id != actor && object.id != inventory_item && object.id != special_object)
+                    .then_some(object.id)
+            })
+            .unwrap();
+
+        for vector in vectors {
+            let query_mode = vector.query_mode_before & QUERY_MODE_MASK != u8::MIN;
+            let item = if query_mode || vector.kind == Some(ScriptObjectKind::InventoryItem.mask())
+            {
+                inventory_item
+            } else {
+                world_state
+            };
+            let source = if vector.remove_called {
+                special_object
+            } else {
+                actor
+            };
+            let destination = if vector.insert_called {
+                special_object
+            } else {
+                actor
+            };
+            let source_record = state.object_word(source, TEST_FIELD_WORD_INDEX).unwrap();
+            let transfer = ScriptTransfer {
+                source_record,
+                item,
+                destination,
+                inverted: vector.inverted,
+            };
+            let mut records = ScriptTransferRecords::default();
+            if query_mode && !vector.name.contains("kind_mismatch") {
+                records.set_record(
+                    source_record,
+                    ScriptTransferRecord {
+                        item: if vector.name.contains("second_mismatch") {
+                            alternate_object
+                        } else {
+                            item
+                        },
+                        destination: if vector.name.contains("third_mismatch")
+                            || vector.name.contains("inverted_mismatch")
+                            || vector.name.contains("inverted_segment_end")
+                        {
+                            alternate_object
+                        } else {
+                            destination
+                        },
+                    },
+                );
+            }
+
+            let field = holder_field(&state, item);
+            let mut fields = ScriptRecordFields::default();
+            if let Some(initial_value) = vector.field_before.or_else(|| {
+                (vector.insert_called && !vector.insert_success)
+                    .then_some(vector.field_after)
+                    .flatten()
+            }) {
+                fields.set_value(field, ScriptRecordValue::NativeWord(initial_value));
+            }
+            let mut record_runtime = ScriptRecordRuntime::new(special_object);
+            if vector.remove_called || vector.name.contains("insert_existing") {
+                assert!(insert_aboard_object(
+                    record_runtime.aboard_objects_mut(),
+                    item
+                ));
+            } else if vector.name.contains("insert_full") {
+                for object in directory
+                    .active_objects()
+                    .map(|(object, _entry)| object)
+                    .filter(|object| *object != item && object.index() != usize::MIN)
+                    .take(super::super::ABOARD_OBJECT_CAPACITY)
+                {
+                    assert!(insert_aboard_object(
+                        record_runtime.aboard_objects_mut(),
+                        object
+                    ));
+                }
+            }
+            let initial_request_flags = if vector.name == "set_request_gate" {
+                SECONDARY_PRESENTATION_REQUEST_BIT
+            } else {
+                u8::MIN
+            };
+            let mut request_flags = PresentationRequestFlags::decode(initial_request_flags);
+            let mut presentation = ScriptTransferPresentationState {
+                presentation_gate_active: true,
+                ..ScriptTransferPresentationState::default()
+            };
+            let context = ScriptTransferContext {
+                ship_interface_active: vector.name == "set_ui_gate",
+                descriptor_available: vector.c2_result == Some(1),
+            };
+            let mut script_runtime = ScriptRuntime::new();
+            if query_mode {
+                script_runtime.begin_root_guard(ScriptCodeOffset::new(BRANCH_TARGET));
+            }
+
+            let outcome = apply_transfer(
+                transfer,
+                &state,
+                &records,
+                &mut fields,
+                &mut record_runtime,
+                context,
+                &mut request_flags,
+                &mut presentation,
+                &mut script_runtime,
+            )
+            .unwrap();
+
+            assert_eq!(
+                outcome.control,
+                if vector.branch_failed {
+                    ScriptControl::Jump(ScriptCodeOffset::new(BRANCH_TARGET))
+                } else {
+                    ScriptControl::Continue
+                },
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                outcome.descriptor_checked, vector.c2_called,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                outcome.presentation_requested,
+                vector.c2_result == Some(1),
+                "{}",
+                vector.name
+            );
+            if let Some(field_after) = vector.field_after {
+                let expected = if field_after == u16::MAX {
+                    ScriptRecordValue::Aboard
+                } else if field_after == vector.third_record {
+                    ScriptRecordValue::Object(destination)
+                } else {
+                    ScriptRecordValue::NativeWord(field_after)
+                };
+                assert_eq!(fields.value(field), Some(expected), "{}", vector.name);
+                assert_eq!(
+                    outcome.holder_changed,
+                    vector.insert_success || !vector.insert_called,
+                    "{}",
+                    vector.name
+                );
+            }
+            assert_eq!(
+                presentation.active_line,
+                outcome
+                    .presentation_requested
+                    .then_some(ScriptTransferPresentationLine::InventoryMoved),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                request_flags.bits(),
+                initial_request_flags
+                    | if outcome.presentation_requested {
+                        SECONDARY_PRESENTATION_REQUEST_BIT
+                    } else {
+                        u8::MIN
+                    },
                 "{}",
                 vector.name
             );

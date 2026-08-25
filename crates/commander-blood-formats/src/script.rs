@@ -192,6 +192,21 @@ impl ScriptState {
         self.objects.get(object.index())
     }
 
+    /// Resolve a bounded word index within one typed object record.
+    pub fn object_word(
+        &self,
+        object: ScriptObjectId,
+        word_index: usize,
+    ) -> Option<ScriptStateWord> {
+        let state_object = self.object(object)?;
+        let byte_offset = word_index.checked_mul(WORD_SIZE)?;
+        let word_end = byte_offset.checked_add(WORD_SIZE)?;
+        (word_end <= state_object.bytes.len()).then_some(ScriptStateWord {
+            owner: ScriptStateWordOwner::Object(object),
+            word_index,
+        })
+    }
+
     /// Resolve an encoded VAR byte position to an aligned owned object word.
     pub fn resolve_word_source_offset(&self, source_offset: u16) -> Option<ScriptStateWord> {
         let source_offset = usize::from(source_offset);

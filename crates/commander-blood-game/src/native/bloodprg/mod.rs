@@ -28,7 +28,10 @@ pub use procedure::{
     ScriptProcedureStates,
 };
 pub use record::{
-    apply_direct_record_operation, ScriptRecordError, ScriptRecordFields, ScriptRecordRuntime,
+    apply_direct_record_operation, apply_transfer, ScriptRecordError, ScriptRecordFields,
+    ScriptRecordRuntime, ScriptTransferContext, ScriptTransferOutcome,
+    ScriptTransferPresentationLine, ScriptTransferPresentationState, ScriptTransferRecord,
+    ScriptTransferRecords,
 };
 pub use script::{ScriptControl, ScriptResumeState, ScriptRuntime, ScriptRuntimeError};
 pub use sequence::{

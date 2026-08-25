@@ -36,6 +36,7 @@ const DIRECT_RECORD_TOPIC_OPCODE: u8 = 0xBC;
 const SHARED_STATE_E_OPCODE: u8 = 0xBE;
 const SHARED_STATE_F_OPCODE: u8 = 0xBF;
 const SHARED_STATE_G_OPCODE: u8 = 0xC0;
+const TRANSFER_OPCODE: u8 = 0xCD;
 const INVERTED_CONDITION_PREFIX: u8 = GUARD_END_OPCODE;
 const OPCODE_SIZE: usize = 1;
 const BYTE_SIZE: usize = 1;
@@ -57,6 +58,7 @@ const ENABLED_FLAG_MASK: u8 = 1;
 const SHARED_STATE_SIZE: usize = OPCODE_SIZE + WORD_SIZE + BYTE_SIZE + BYTE_SIZE + WORD_SIZE;
 const SHARED_BIT_STATE_SIZE: usize = OPCODE_SIZE + WORD_SIZE + WORD_SIZE;
 const DIRECT_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE + WORD_SIZE;
+const TRANSFER_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 3;
 const INDIRECT_STATE_MODE_A: u8 = 0xC0;
 const INDIRECT_STATE_MODE_B: u8 = 0xC2;
 const TIMER_SLOT_COUNT: u8 = 128;
@@ -317,6 +319,19 @@ pub struct ScriptDirectRecordOperation {
     pub publishes_value: bool,
 }
 
+/// One CD object transfer or optionally inverted transfer-record query.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptTransfer {
+    /// Typed action field whose owner is the source object in assignment mode.
+    pub source_record: ScriptStateWord,
+    /// Object moved between holders.
+    pub item: ScriptObjectId,
+    /// Destination holder; the built-in player object denotes aboard.
+    pub destination: ScriptObjectId,
+    /// Whether query-mode triple equality is inverted.
+    pub inverted: bool,
+}
+
 impl ScriptSequenceRequest {
     /// Construct a safe owned request from raw non-NUL basename bytes.
     pub fn new(basename: impl Into<Box<[u8]>>) -> Option<Self> {
@@ -433,6 +448,13 @@ pub enum ScriptInstructionError {
         /// Token position.
         source_offset: ScriptCodeOffset,
         /// Unresolved VAR byte position.
+        encoded_offset: u16,
+    },
+    /// A transfer operand names no active object in the companion directory.
+    InvalidObjectReference {
+        /// Token position.
+        source_offset: ScriptCodeOffset,
+        /// Unresolved VAR object position.
         encoded_offset: u16,
     },
 }
@@ -782,6 +804,42 @@ pub fn decode_script_direct_record_operation(
     })
 }
 
+/// Decode one CD transfer into typed source, item, and destination identities.
+pub fn decode_script_transfer(
+    token: &ScriptToken,
+    state: &ScriptState,
+    directory: &ScriptDirectory,
+) -> Result<ScriptTransfer, ScriptInstructionError> {
+    if token.opcode().byte() != TRANSFER_OPCODE {
+        return Err(ScriptInstructionError::UntranslatedOpcode {
+            opcode: token.opcode(),
+        });
+    }
+    let bytes = token.encoded_bytes();
+    let inverted = bytes.get(OPCODE_SIZE) == Some(&INVERTED_CONDITION_PREFIX);
+    let prefix_size = usize::from(inverted);
+    require_size(token, TRANSFER_SIZE + prefix_size)?;
+    let operand_offset = OPCODE_SIZE + prefix_size;
+    let source_record = resolve_state_word(token, state, read_word(bytes, operand_offset))?;
+    let resolve_object = |encoded_offset| {
+        directory
+            .active_objects()
+            .find_map(|(object, entry)| (entry.value == encoded_offset).then_some(object))
+            .ok_or(ScriptInstructionError::InvalidObjectReference {
+                source_offset: token.source_offset(),
+                encoded_offset,
+            })
+    };
+    let item = resolve_object(read_word(bytes, operand_offset + WORD_SIZE))?;
+    let destination = resolve_object(read_word(bytes, operand_offset + WORD_SIZE * 2))?;
+    Ok(ScriptTransfer {
+        source_record,
+        item,
+        destination,
+        inverted,
+    })
+}
+
 const fn is_direct_record_opcode(opcode: u8) -> bool {
     matches!(
         opcode,
@@ -910,6 +968,7 @@ mod tests {
     const EXPECTED_DIRECT_RECORD_COUNTS: [usize; PROFILE_COUNT] = [7, 158, 188, 128, 99];
     const EXPECTED_OBJECT_RECORD_COUNT: usize = 531;
     const EXPECTED_TOPIC_RECORD_COUNT: usize = 49;
+    const EXPECTED_TRANSFER_COUNTS: [usize; PROFILE_COUNT] = [0, 18, 14, 10, 4];
     const MAXIMUM_SHIPPED_SEQUENCE_BASENAME_LENGTH: usize = 12;
 
     fn original_asset(name: &str) -> PathBuf {
@@ -1175,6 +1234,50 @@ mod tests {
         assert_eq!(counts, EXPECTED_DIRECT_RECORD_COUNTS);
         assert_eq!(object_records, EXPECTED_OBJECT_RECORD_COUNT);
         assert_eq!(topic_records, EXPECTED_TOPIC_RECORD_COUNT);
+    }
+
+    #[test]
+    fn every_shipped_cod_transfer_resolves_to_typed_inventory_relationships() {
+        let mut counts = [usize::MIN; PROFILE_COUNT];
+
+        for profile in 1..=PROFILE_COUNT {
+            let code_data = std::fs::read(original_asset(&format!("SCRIPT{profile}.COD"))).unwrap();
+            let directory_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.DEB"))).unwrap();
+            let state_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.VAR"))).unwrap();
+            let code = decode_script_code(&code_data).unwrap();
+            let directory = decode_script_directory(&directory_data).unwrap();
+            let state = decode_script_state(&state_data, &directory).unwrap();
+
+            for token in code
+                .tokens()
+                .iter()
+                .filter(|token| token.opcode().byte() == TRANSFER_OPCODE)
+            {
+                let transfer = decode_script_transfer(token, &state, &directory).unwrap();
+                let source = transfer.source_record.object().unwrap();
+                assert_ne!(transfer.source_record.word_index(), usize::MIN);
+                assert!(matches!(
+                    state.object(source).unwrap().kind,
+                    crate::script::ScriptObjectKind::Player
+                        | crate::script::ScriptObjectKind::Actor
+                ));
+                assert_eq!(
+                    state.object(transfer.item).unwrap().kind,
+                    crate::script::ScriptObjectKind::InventoryItem
+                );
+                assert!(matches!(
+                    state.object(transfer.destination).unwrap().kind,
+                    crate::script::ScriptObjectKind::Player
+                        | crate::script::ScriptObjectKind::Actor
+                ));
+                assert!(!transfer.inverted);
+                counts[profile - 1] += 1;
+            }
+        }
+
+        assert_eq!(counts, EXPECTED_TRANSFER_COUNTS);
     }
 
     #[test]

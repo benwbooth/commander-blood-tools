@@ -378,7 +378,10 @@ fn read_word(data: &[u8], offset: usize) -> u16 {
 mod tests {
     use std::path::{Path, PathBuf};
 
-    use crate::script::decode_script_dictionary;
+    use crate::instruction::decode_script_transfer;
+    use crate::script::{
+        decode_script_dictionary, decode_script_directory, decode_script_state, ScriptObjectKind,
+    };
 
     use super::*;
 
@@ -387,6 +390,7 @@ mod tests {
     const EXPECTED_BAS_SEQUENCE_REQUEST_COUNT: usize = 3;
     const EXPECTED_YIELD_COUNT: usize = 37;
     const EXPECTED_SELECTOR_YIELD_COUNT: usize = 321;
+    const EXPECTED_TRANSFER_COUNTS: [usize; PROFILE_COUNT] = [0, 68, 68, 0, 0];
     const MAXIMUM_SHIPPED_SEQUENCE_BASENAME_LENGTH: usize = 12;
 
     fn original_asset(name: &str) -> PathBuf {
@@ -435,5 +439,43 @@ mod tests {
         assert_eq!(sequence_request_count, EXPECTED_BAS_SEQUENCE_REQUEST_COUNT);
         assert_eq!(yield_count, EXPECTED_YIELD_COUNT);
         assert_eq!(selector_yield_count, EXPECTED_SELECTOR_YIELD_COUNT);
+    }
+
+    #[test]
+    fn every_shipped_bas_transfer_resolves_to_typed_inventory_relationships() {
+        let mut counts = [usize::MIN; PROFILE_COUNT];
+
+        for profile in 1..=PROFILE_COUNT {
+            let data = std::fs::read(original_asset(&format!("SCRIPT{profile}.BAS"))).unwrap();
+            let dictionary_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.DIC"))).unwrap();
+            let directory_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.DEB"))).unwrap();
+            let state_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.VAR"))).unwrap();
+            let dictionary = decode_script_dictionary(&dictionary_data).unwrap();
+            let directory = decode_script_directory(&directory_data).unwrap();
+            let state = decode_script_state(&state_data, &directory).unwrap();
+            let bas = decode_script_bas(&data, &dictionary).unwrap();
+
+            for token in bas.tokens() {
+                let ScriptBasInstruction::RecordTriple(framed) = token.instruction() else {
+                    continue;
+                };
+                let transfer = decode_script_transfer(framed, &state, &directory).unwrap();
+                assert_eq!(
+                    state.object(transfer.item).unwrap().kind,
+                    ScriptObjectKind::InventoryItem
+                );
+                assert!(matches!(
+                    state.object(transfer.destination).unwrap().kind,
+                    ScriptObjectKind::Player | ScriptObjectKind::Actor
+                ));
+                assert!(!transfer.inverted);
+                counts[profile - 1] += 1;
+            }
+        }
+
+        assert_eq!(counts, EXPECTED_TRANSFER_COUNTS);
     }
 }
