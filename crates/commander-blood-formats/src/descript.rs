@@ -177,25 +177,53 @@ impl DescriptVideoName {
     }
 }
 
-/// Failure while decoding a printable DESCRIPT video name.
+/// Failure while decoding a printable DESCRIPT resource name.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum DescriptVideoNameError {
+pub enum DescriptResourceNameError {
     /// The printable name reaches the end of the record without a stop byte.
     MissingStopByte,
+}
+
+fn decode_printable_resource_name(
+    payload: &[u8],
+) -> Result<(Box<[u8]>, &[u8]), DescriptResourceNameError> {
+    let name_length = payload
+        .iter()
+        .position(|byte| !(*byte >= PRINTABLE_NAME_START && *byte <= PRINTABLE_NAME_END))
+        .ok_or(DescriptResourceNameError::MissingStopByte)?;
+    Ok((Box::from(&payload[..name_length]), &payload[name_length..]))
 }
 
 /// Decode a printable HNM name while leaving the following opcode unconsumed.
 pub fn decode_video_name(
     payload: &[u8],
-) -> Result<(DescriptVideoName, &[u8]), DescriptVideoNameError> {
-    let name_length = payload
-        .iter()
-        .position(|byte| !(*byte >= PRINTABLE_NAME_START && *byte <= PRINTABLE_NAME_END))
-        .ok_or(DescriptVideoNameError::MissingStopByte)?;
-    Ok((
-        DescriptVideoName::new(Box::from(&payload[..name_length])),
-        &payload[name_length..],
-    ))
+) -> Result<(DescriptVideoName, &[u8]), DescriptResourceNameError> {
+    let (source_name, tail) = decode_printable_resource_name(payload)?;
+    Ok((DescriptVideoName::new(source_name), tail))
+}
+
+/// Case-preserving SND bank name decoded from a DESCRIPT audio command.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DescriptSoundBankName(Box<[u8]>);
+
+impl DescriptSoundBankName {
+    /// Build a sound-bank name from owned bytes without a trailing zero.
+    pub fn new(source_name: Box<[u8]>) -> Self {
+        Self(source_name)
+    }
+
+    /// Return the SND bank name exactly as authored.
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+/// Decode a printable SND bank name while leaving the following opcode unconsumed.
+pub fn decode_sound_bank_name(
+    payload: &[u8],
+) -> Result<(DescriptSoundBankName, &[u8]), DescriptResourceNameError> {
+    let (source_name, tail) = decode_printable_resource_name(payload)?;
+    Ok((DescriptSoundBankName::new(source_name), tail))
 }
 
 #[cfg(test)]
@@ -289,6 +317,18 @@ mod tests {
         let (video, tail) = decode_video_name(&payload).unwrap();
 
         assert_eq!(video.as_bytes(), b"pterra10.hnm");
+        assert_eq!(tail, &[NEXT_OPCODE]);
+    }
+
+    #[test]
+    fn sound_bank_payload_uses_the_shared_printable_name_framing() {
+        const NEXT_OPCODE: u8 = 18;
+
+        let mut payload = b"scrut.snd".to_vec();
+        payload.push(NEXT_OPCODE);
+        let (bank, tail) = decode_sound_bank_name(&payload).unwrap();
+
+        assert_eq!(bank.as_bytes(), b"scrut.snd");
         assert_eq!(tail, &[NEXT_OPCODE]);
     }
 }

@@ -2,7 +2,7 @@
 
 use commander_blood_formats::descript::{
     DescriptBackgroundCommand, DescriptBackgroundSlot, DescriptCaptionCommand, DescriptRecordKind,
-    DescriptVideoName,
+    DescriptSoundBankName, DescriptVideoName,
 };
 
 use super::text_handler::TextPresentationState;
@@ -116,6 +116,7 @@ pub struct DescriptPresentationAssets {
     object_scene_video: Option<Box<[u8]>>,
     character_right_scene_video: Option<Box<[u8]>>,
     character_left_scene_video: Option<Box<[u8]>>,
+    sound_bank: Option<Box<[u8]>>,
 }
 
 impl DescriptPresentationAssets {
@@ -138,6 +139,20 @@ impl DescriptPresentationAssets {
     pub fn character_left_scene_video(&self) -> Option<&[u8]> {
         self.character_left_scene_video.as_deref()
     }
+
+    /// Return the character chatter and reaction SND bank.
+    pub fn sound_bank(&self) -> Option<&[u8]> {
+        self.sound_bank.as_deref()
+    }
+}
+
+/// Audio backend used to load a selected DESCRIPT SND bank.
+pub trait DescriptSoundBankLoader {
+    /// Backend-specific load failure.
+    type Error;
+
+    /// Load one logical SND bank by its case-preserving resource name.
+    fn load_sound_bank(&mut self, bank_name: &[u8]) -> Result<(), Self::Error>;
 }
 
 /// Select the primary location scene HNM.
@@ -182,6 +197,26 @@ pub fn select_character_left_scene_video(
     assets: &mut DescriptPresentationAssets,
 ) {
     assets.character_left_scene_video = Some(Box::from(video.as_bytes()));
+}
+
+/// Select and, when no presentation is active, load a character SND bank.
+///
+/// This translates `byte_parser_snd_bank_name_load` at BLOODPRG file offset
+/// `0x00763E`. The original loader's mode one and `sn/` path prefix are backend
+/// details rather than runtime game state.
+pub fn load_descript_sound_bank<Loader: DescriptSoundBankLoader>(
+    bank: &DescriptSoundBankName,
+    presentation_active: bool,
+    assets: &mut DescriptPresentationAssets,
+    loader: &mut Loader,
+) -> Result<bool, Loader::Error> {
+    assets.sound_bank = Some(Box::from(bank.as_bytes()));
+    if presentation_active {
+        return Ok(false);
+    }
+
+    loader.load_sound_bank(bank.as_bytes())?;
+    Ok(true)
 }
 
 /// Boundary detected after the current DESCRIPT command stream.
@@ -244,7 +279,7 @@ mod tests {
 
     use commander_blood_formats::descript::{
         DescriptBackgroundError, decode_background_command, decode_caption_command,
-        decode_video_name,
+        decode_sound_bank_name, decode_video_name,
     };
     use serde::Deserialize;
 
@@ -252,6 +287,8 @@ mod tests {
 
     const ORACLE_VECTOR_COUNT: usize = 2;
     const BACKGROUND_ORACLE_VECTOR_COUNT: usize = 8;
+    const PRESENTATION_ACTIVE_BIT: u16 = 1;
+    const SOUND_BANK_ORACLE_VECTOR_COUNT: usize = 8;
     const VIDEO_ORACLE_VECTOR_COUNT: usize = 8;
 
     #[derive(Deserialize)]
@@ -287,6 +324,16 @@ mod tests {
         stopping_byte: u8,
     }
 
+    #[derive(Deserialize)]
+    struct SoundBankOracle {
+        name: String,
+        input_hex: String,
+        copied_hex: String,
+        stopping_byte: u8,
+        ui_state: u16,
+        loader_called: bool,
+    }
+
     #[derive(Clone, Copy)]
     enum VideoAssetField {
         Location,
@@ -310,6 +357,20 @@ mod tests {
     struct RecordingBackgroundSource {
         payload: Box<[u8]>,
         loaded_names: Vec<Box<[u8]>>,
+    }
+
+    #[derive(Default)]
+    struct RecordingSoundBankLoader {
+        loaded_banks: Vec<Box<[u8]>>,
+    }
+
+    impl DescriptSoundBankLoader for RecordingSoundBankLoader {
+        type Error = Infallible;
+
+        fn load_sound_bank(&mut self, bank_name: &[u8]) -> Result<(), Self::Error> {
+            self.loaded_banks.push(Box::from(bank_name));
+            Ok(())
+        }
     }
 
     impl DescriptBackgroundSource for RecordingBackgroundSource {
@@ -582,5 +643,46 @@ mod tests {
             VideoAssetField::CharacterLeft,
             select_character_left_scene_video,
         );
+    }
+
+    #[test]
+    fn sound_bank_loading_matches_every_original_gate_vector() {
+        let vectors: Vec<SoundBankOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_763e_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), SOUND_BANK_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let input = bytes_from_hex(&vector.input_hex);
+            let expected = bytes_from_hex(&vector.copied_hex);
+            let (bank, tail) = decode_sound_bank_name(&input).unwrap();
+            assert_eq!(tail, &[vector.stopping_byte], "{}", vector.name);
+            assert_eq!(bank.as_bytes(), expected.as_ref(), "{}", vector.name);
+
+            let mut assets = DescriptPresentationAssets::default();
+            let mut loader = RecordingSoundBankLoader::default();
+            let loaded = load_descript_sound_bank(
+                &bank,
+                vector.ui_state & PRESENTATION_ACTIVE_BIT != u16::MIN,
+                &mut assets,
+                &mut loader,
+            )
+            .unwrap();
+
+            assert_eq!(loaded, vector.loader_called, "{}", vector.name);
+            assert_eq!(
+                assets.sound_bank(),
+                Some(expected.as_ref()),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                loader.loaded_banks.len(),
+                usize::from(vector.loader_called),
+                "{}",
+                vector.name
+            );
+        }
     }
 }
