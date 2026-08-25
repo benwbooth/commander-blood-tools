@@ -2,6 +2,9 @@
 
 use std::ffi::CStr;
 
+const MAXIMUM_BOUNDED_STRING_SCAN: usize = u16::MAX as usize;
+const UNTERMINATED_STRING_LENGTH: usize = MAXIMUM_BOUNDED_STRING_SCAN - 1;
+
 /// Compare two NUL-terminated byte strings for exact equality.
 ///
 /// This is the typed equivalent of `string_compare` at BLOODPRG file offset
@@ -20,6 +23,18 @@ pub fn nul_terminated_byte_len(text: &CStr) -> usize {
     text.to_bytes().len()
 }
 
+/// Return the recovered `strlen_b` result for a bounded byte image.
+///
+/// Valid NUL-terminated strings return their payload length. Malformed input
+/// saturates at the original maximum result without reading outside the slice.
+pub fn bounded_nul_byte_len(bytes: &[u8]) -> usize {
+    bytes
+        .iter()
+        .take(MAXIMUM_BOUNDED_STRING_SCAN)
+        .position(|byte| *byte == u8::MIN)
+        .unwrap_or(UNTERMINATED_STRING_LENGTH)
+}
+
 #[cfg(test)]
 mod tests {
     use serde::Deserialize;
@@ -28,6 +43,7 @@ mod tests {
 
     const STRING_COMPARE_ORACLE_VECTOR_COUNT: usize = 10;
     const STRING_LENGTH_ORACLE_VECTOR_COUNT: usize = 9;
+    const BOUNDED_STRING_LENGTH_ORACLE_VECTOR_COUNT: usize = 8;
 
     #[derive(Deserialize)]
     struct EqualityOracleVector {
@@ -37,6 +53,13 @@ mod tests {
 
     #[derive(Deserialize)]
     struct LengthOracleVector {
+        return_length: usize,
+    }
+
+    #[derive(Deserialize)]
+    struct BoundedLengthOracleVector {
+        terminated: bool,
+        payload_length: usize,
         return_length: usize,
     }
 
@@ -75,6 +98,23 @@ mod tests {
             bytes.push(u8::MIN);
             let text = CStr::from_bytes_with_nul(&bytes).unwrap();
             assert_eq!(nul_terminated_byte_len(text), vector.return_length);
+        }
+    }
+
+    #[test]
+    fn bounded_length_matches_every_original_result() {
+        let vectors: Vec<BoundedLengthOracleVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_67a7_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), BOUNDED_STRING_LENGTH_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let mut bytes = vec![b'x'; vector.payload_length];
+            if vector.terminated {
+                bytes.push(u8::MIN);
+            }
+            assert_eq!(bounded_nul_byte_len(&bytes), vector.return_length);
         }
     }
 

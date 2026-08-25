@@ -12,6 +12,8 @@ const CONCEPT_GUARD_OPCODE: u8 = 0xA3;
 const JUMP_OPCODE: u8 = 0xA4;
 const TIMER_STATE_OPCODE: u8 = 0xA5;
 const TEXT_OPCODE: u8 = 0xA6;
+const TOPIC_OFFER_OPCODE: u8 = 0xA7;
+const SEQUENCE_REQUEST_OPCODE: u8 = 0xA8;
 const INVERTED_CONDITION_PREFIX: u8 = GUARD_END_OPCODE;
 const OPCODE_SIZE: usize = 1;
 const BYTE_SIZE: usize = 1;
@@ -24,6 +26,8 @@ const INVERTED_CONCEPT_GUARD_SIZE: usize = CONCEPT_GUARD_SIZE + BYTE_SIZE;
 const JUMP_SIZE: usize = OPCODE_SIZE + WORD_SIZE;
 const TIMER_GUARD_SIZE: usize = OPCODE_SIZE + BYTE_SIZE;
 const TIMER_ASSIGNMENT_SIZE: usize = TIMER_GUARD_SIZE + WORD_SIZE;
+const TOPIC_OFFER_SIZE: usize = OPCODE_SIZE + WORD_SIZE;
+const MINIMUM_SEQUENCE_REQUEST_SIZE: usize = OPCODE_SIZE + WORD_SIZE;
 const TIMER_SLOT_COUNT: u8 = 128;
 const TEXT_FIXED_HEADER_SIZE: usize = OPCODE_SIZE + WORD_SIZE + BYTE_SIZE + WORD_SIZE;
 const TEXT_PRESERVE_ACTIVE: u16 = 0x0001;
@@ -169,6 +173,32 @@ pub struct ScriptText {
     pub words: Box<[ScriptTextWord]>,
 }
 
+/// One optional dictionary topic offered by an A7 instruction.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptTopicOffer {
+    /// Interned concept identity, or `None` for the native zero sentinel.
+    pub topic: Option<ScriptWordId>,
+}
+
+/// Owned resource basename loaded by an A8 instruction.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ScriptSequenceRequest {
+    basename: Box<[u8]>,
+}
+
+impl ScriptSequenceRequest {
+    /// Construct a safe owned request from raw non-NUL basename bytes.
+    pub fn new(basename: impl Into<Box<[u8]>>) -> Option<Self> {
+        let basename = basename.into();
+        (!basename.contains(&u8::MIN)).then_some(Self { basename })
+    }
+
+    /// Return the basename appended to the game's `sq/` resource directory.
+    pub fn basename(&self) -> &[u8] {
+        &self.basename
+    }
+}
+
 /// Typed instruction semantics for the first recovered VM control family.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ScriptInstruction {
@@ -245,6 +275,11 @@ pub enum ScriptInstructionError {
     },
     /// An A6 token's optional controls and terminated word list are inconsistent.
     MalformedText {
+        /// Token position.
+        source_offset: ScriptCodeOffset,
+    },
+    /// An A8 payload lacks its NUL terminator and consumed pad byte.
+    MalformedSequenceRequest {
         /// Token position.
         source_offset: ScriptCodeOffset,
     },
@@ -369,6 +404,54 @@ pub fn decode_script_text(
     })
 }
 
+/// Decode an A7 presentation-topic offer through the companion dictionary.
+pub fn decode_script_topic_offer(
+    token: &ScriptToken,
+    dictionary: &ScriptDictionary,
+) -> Result<ScriptTopicOffer, ScriptInstructionError> {
+    if token.opcode().byte() != TOPIC_OFFER_OPCODE {
+        return Err(ScriptInstructionError::UntranslatedOpcode {
+            opcode: token.opcode(),
+        });
+    }
+    require_size(token, TOPIC_OFFER_SIZE)?;
+    let source_offset = read_word(token.encoded_bytes(), OPCODE_SIZE);
+    let topic = if source_offset == u16::MIN {
+        None
+    } else {
+        Some(dictionary.resolve_source_offset(source_offset).ok_or(
+            ScriptInstructionError::InvalidDictionaryOffset {
+                source_offset: token.source_offset(),
+                dictionary_offset: source_offset,
+            },
+        )?)
+    };
+    Ok(ScriptTopicOffer { topic })
+}
+
+/// Decode an A8 NUL-terminated sequence basename and discard its format pad.
+pub fn decode_script_sequence_request(
+    token: &ScriptToken,
+) -> Result<ScriptSequenceRequest, ScriptInstructionError> {
+    if token.opcode().byte() != SEQUENCE_REQUEST_OPCODE {
+        return Err(ScriptInstructionError::UntranslatedOpcode {
+            opcode: token.opcode(),
+        });
+    }
+    let bytes = token.encoded_bytes();
+    if bytes.len() < MINIMUM_SEQUENCE_REQUEST_SIZE
+        || bytes[bytes.len() - WORD_SIZE] != u8::MIN
+        || bytes[OPCODE_SIZE..bytes.len() - WORD_SIZE].contains(&u8::MIN)
+    {
+        return Err(ScriptInstructionError::MalformedSequenceRequest {
+            source_offset: token.source_offset(),
+        });
+    }
+    Ok(ScriptSequenceRequest {
+        basename: Box::from(&bytes[OPCODE_SIZE..bytes.len() - WORD_SIZE]),
+    })
+}
+
 fn decode_concept_guard(
     token: &ScriptToken,
     dictionary: &ScriptDictionary,
@@ -459,6 +542,8 @@ mod tests {
     const CODE_END_MARKER: u8 = 0xFF;
     const EXPECTED_CONTROL_INSTRUCTION_COUNTS: [usize; PROFILE_COUNT] = [27, 782, 766, 318, 392];
     const EXPECTED_TEXT_COUNTS: [usize; PROFILE_COUNT] = [111, 1_157, 1_048, 719, 652];
+    const EXPECTED_COD_SEQUENCE_REQUEST_COUNT: usize = 86;
+    const MAXIMUM_SHIPPED_SEQUENCE_BASENAME_LENGTH: usize = 12;
 
     fn original_asset(name: &str) -> PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -522,6 +607,42 @@ mod tests {
                 .unwrap();
             assert_eq!(decoded.len(), EXPECTED_TEXT_COUNTS[profile - 1]);
         }
+    }
+
+    #[test]
+    fn every_shipped_a8_token_has_typed_sequence_semantics() {
+        let mut sequence_request_count = usize::MIN;
+
+        for profile in 1..=PROFILE_COUNT {
+            let code_data = std::fs::read(original_asset(&format!("SCRIPT{profile}.COD"))).unwrap();
+            let code = decode_script_code(&code_data).unwrap();
+
+            for token in code.tokens() {
+                if token.opcode().byte() == SEQUENCE_REQUEST_OPCODE {
+                    let request = decode_script_sequence_request(token).unwrap();
+                    assert!(request.basename().ends_with(b".hnm"));
+                    assert!(request.basename().len() <= MAXIMUM_SHIPPED_SEQUENCE_BASENAME_LENGTH);
+                    sequence_request_count += 1;
+                }
+            }
+        }
+
+        assert_eq!(sequence_request_count, EXPECTED_COD_SEQUENCE_REQUEST_COUNT);
+    }
+
+    #[test]
+    fn a7_topic_offer_decodes_its_bas_compatible_fixed_token() {
+        let dictionary = decode_script_dictionary(b"\0topic\0").unwrap();
+        let code = decode_script_code(&[TOPIC_OFFER_OPCODE, 1, 0, CODE_END_MARKER]).unwrap();
+        let offer = decode_script_topic_offer(&code.tokens()[0], &dictionary).unwrap();
+        assert_eq!(
+            offer.topic,
+            Some(dictionary.resolve_source_offset(1).unwrap())
+        );
+
+        let code = decode_script_code(&[TOPIC_OFFER_OPCODE, 0, 0, CODE_END_MARKER]).unwrap();
+        let offer = decode_script_topic_offer(&code.tokens()[0], &dictionary).unwrap();
+        assert_eq!(offer.topic, None);
     }
 
     #[test]

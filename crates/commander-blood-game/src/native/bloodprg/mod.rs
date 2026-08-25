@@ -3,6 +3,7 @@
 mod numbers;
 mod presentation;
 mod script;
+mod sequence;
 mod startup;
 mod text;
 mod text_handler;
@@ -16,11 +17,15 @@ pub use presentation::{
     evaluate_text_conditions, ScriptWordHistory, TextConditionEffects, TextConditionError,
 };
 pub use script::{ScriptControl, ScriptResumeState, ScriptRuntime, ScriptRuntimeError};
+pub use sequence::{
+    load_sequence_request, offer_topic_if_presentation_active, PresentationResourceLine,
+    SequencePresentationState, SequenceRequestContext,
+};
 pub use startup::{
     apply_startup_option, tokenize_startup_command, StartupAudioConfiguration, StartupAudioDriver,
     StartupConfiguration,
 };
-pub use text::{nul_terminated_byte_len, nul_terminated_bytes_equal};
+pub use text::{bounded_nul_byte_len, nul_terminated_byte_len, nul_terminated_bytes_equal};
 pub use text_handler::{
     handle_text_instruction, PresentationRequestFlags, TextConditionInputs, TextHandlerError,
     TextHandlerGate, TextHandlerOutcome, TextInstructionState, TextLineKind, TextLineState,
