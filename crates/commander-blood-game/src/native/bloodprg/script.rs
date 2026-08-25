@@ -103,6 +103,11 @@ impl ScriptRuntime {
         self.pending_skip_count
     }
 
+    /// Return the alternate concept selected by resumed presentation handling.
+    pub const fn alternate_concept(&self) -> Option<ScriptWordId> {
+        self.alternate_concept
+    }
+
     /// Return whether execution must stop at the end of the current instruction.
     pub const fn yield_requested(&self) -> bool {
         self.yield_requested
@@ -116,6 +121,12 @@ impl ScriptRuntime {
     /// Set the alternate concept used by resumed menu handling.
     pub fn set_alternate_concept(&mut self, concept: Option<ScriptWordId>) {
         self.alternate_concept = concept;
+    }
+
+    /// Clear the alternate concept and the resume state it shares in the native VM.
+    pub fn clear_alternate_resume_state(&mut self) {
+        self.alternate_concept = None;
+        self.resume = None;
     }
 
     /// Arm a destination used by presentation resume logic.

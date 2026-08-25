@@ -50,6 +50,10 @@ const ACTIVE_OBJECT_RECORD_OPCODE: u8 = 0xC7;
 const OPAQUE_MARKER_RECORD_OPCODE: u8 = 0xC8;
 const RECORD_CLEAR_OPCODE: u8 = 0xC9;
 const TRANSFER_OPCODE: u8 = 0xCD;
+const BRIDGE_ACTIVITY_GUARD_OPCODE: u8 = 0xCE;
+const ALTERNATE_CONCEPT_CLEAR_OPCODE: u8 = 0xCF;
+const TRAVEL_ACTIVITY_GUARD_OPCODE: u8 = 0xD0;
+const CONTACT_ACTIVITY_GUARD_OPCODE: u8 = 0xD1;
 const PROFILE_REQUEST_OPCODE: u8 = 0xD2;
 const INVERTED_CONDITION_PREFIX: u8 = GUARD_END_OPCODE;
 const OPCODE_SIZE: usize = 1;
@@ -84,6 +88,7 @@ const TRAVEL_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const ACTIVE_OBJECT_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const OPAQUE_MARKER_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const RECORD_CLEAR_SIZE: usize = OPCODE_SIZE + WORD_SIZE;
+const ENVIRONMENT_INSTRUCTION_SIZE: usize = OPCODE_SIZE;
 const PROFILE_REQUEST_SIZE: usize = OPCODE_SIZE + BYTE_SIZE;
 const BITS_PER_BYTE: u8 = u8::BITS as u8;
 const PRIMARY_NAVIGATION_OPERAND: u16 = 1;
@@ -264,6 +269,19 @@ impl ScriptProfileRequest {
     pub const fn zero_based_profile_index(self) -> i16 {
         self.one_based_profile_number as i16 - 1
     }
+}
+
+/// One no-operand instruction controlled by the surrounding game presentation state.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ScriptEnvironmentInstruction {
+    /// Continue only while the bridge renderer is active (CE).
+    RequireBridgeActivity,
+    /// Clear the alternate concept and its shared resume state (CF).
+    ClearAlternateConcept,
+    /// Continue only while travel presentation is active (D0).
+    RequireTravelActivity,
+    /// Continue only while contact presentation is active (D1).
+    RequireContactActivity,
 }
 
 /// One A9 procedure entry gate resolved through the companion directory.
@@ -843,6 +861,25 @@ pub fn decode_script_profile_request(
     Ok(ScriptProfileRequest {
         one_based_profile_number: token.encoded_bytes()[OPCODE_SIZE] as i8,
     })
+}
+
+/// Decode one CE through D1 environment instruction.
+pub fn decode_script_environment_instruction(
+    token: &ScriptToken,
+) -> Result<ScriptEnvironmentInstruction, ScriptInstructionError> {
+    let instruction = match token.opcode().byte() {
+        BRIDGE_ACTIVITY_GUARD_OPCODE => ScriptEnvironmentInstruction::RequireBridgeActivity,
+        ALTERNATE_CONCEPT_CLEAR_OPCODE => ScriptEnvironmentInstruction::ClearAlternateConcept,
+        TRAVEL_ACTIVITY_GUARD_OPCODE => ScriptEnvironmentInstruction::RequireTravelActivity,
+        CONTACT_ACTIVITY_GUARD_OPCODE => ScriptEnvironmentInstruction::RequireContactActivity,
+        _ => {
+            return Err(ScriptInstructionError::UntranslatedOpcode {
+                opcode: token.opcode(),
+            });
+        }
+    };
+    require_size(token, ENVIRONMENT_INSTRUCTION_SIZE)?;
+    Ok(instruction)
 }
 
 /// Decode an A9 procedure gate without retaining its mutable COD byte.
@@ -1514,6 +1551,10 @@ mod tests {
     const EXPECTED_RECORD_CLEAR_COUNTS: [usize; PROFILE_COUNT] = [10, 102, 119, 81, 52];
     const EXPECTED_PROFILE_REQUESTS: [&[i8]; PROFILE_COUNT] =
         [&[2, 2, 2], &[3, 4, 5, 3], &[4], &[5], &[]];
+    const EXPECTED_BRIDGE_ACTIVITY_GUARD_COUNTS: [usize; PROFILE_COUNT] = [8, 38, 36, 21, 10];
+    const EXPECTED_ALTERNATE_CONCEPT_CLEAR_COUNTS: [usize; PROFILE_COUNT] = [4, 73, 120, 42, 75];
+    const EXPECTED_TRAVEL_ACTIVITY_GUARD_COUNTS: [usize; PROFILE_COUNT] = [0, 50, 89, 27, 58];
+    const EXPECTED_CONTACT_ACTIVITY_GUARD_COUNTS: [usize; PROFILE_COUNT] = [1, 15, 16, 19, 14];
     const TEST_STATE_WORD_INDEX: usize = 1;
     const EXPECTED_SHIPPED_BIT_FLAG_MASK: u8 = 32;
     const EXPECTED_SHIPPED_PAIR_OPCODE: u8 = PAIR_RECORD_C_OPCODE;
@@ -2337,6 +2378,54 @@ mod tests {
                 .collect::<Vec<_>>();
 
             assert_eq!(requests, EXPECTED_PROFILE_REQUESTS[profile - 1]);
+        }
+    }
+
+    #[test]
+    fn every_shipped_ce_through_d1_environment_token_has_typed_semantics() {
+        let expected = [
+            (
+                BRIDGE_ACTIVITY_GUARD_OPCODE,
+                ScriptEnvironmentInstruction::RequireBridgeActivity,
+                EXPECTED_BRIDGE_ACTIVITY_GUARD_COUNTS,
+            ),
+            (
+                ALTERNATE_CONCEPT_CLEAR_OPCODE,
+                ScriptEnvironmentInstruction::ClearAlternateConcept,
+                EXPECTED_ALTERNATE_CONCEPT_CLEAR_COUNTS,
+            ),
+            (
+                TRAVEL_ACTIVITY_GUARD_OPCODE,
+                ScriptEnvironmentInstruction::RequireTravelActivity,
+                EXPECTED_TRAVEL_ACTIVITY_GUARD_COUNTS,
+            ),
+            (
+                CONTACT_ACTIVITY_GUARD_OPCODE,
+                ScriptEnvironmentInstruction::RequireContactActivity,
+                EXPECTED_CONTACT_ACTIVITY_GUARD_COUNTS,
+            ),
+        ];
+
+        for (opcode, expected_instruction, expected_counts) in expected {
+            let mut actual_counts = [usize::MIN; PROFILE_COUNT];
+            for profile in 1..=PROFILE_COUNT {
+                let code = decode_script_code(
+                    &std::fs::read(original_asset(&format!("SCRIPT{profile}.COD"))).unwrap(),
+                )
+                .unwrap();
+                for token in code
+                    .tokens()
+                    .iter()
+                    .filter(|token| token.opcode().byte() == opcode)
+                {
+                    assert_eq!(
+                        decode_script_environment_instruction(token).unwrap(),
+                        expected_instruction
+                    );
+                    actual_counts[profile - 1] += 1;
+                }
+            }
+            assert_eq!(actual_counts, expected_counts);
         }
     }
 

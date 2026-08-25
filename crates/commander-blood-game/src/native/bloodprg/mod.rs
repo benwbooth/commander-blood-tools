@@ -43,6 +43,7 @@ mod record;
 mod record_state;
 mod resource_cache;
 mod script;
+mod script_environment;
 mod script_profile;
 mod script_profile_request;
 mod screen_presentation;
@@ -276,6 +277,7 @@ pub use selected_mask::{
     PresentationChoiceMaskError, PresentationChoiceNumber, draw_presentation_choice_number,
 };
 pub use script::{ScriptControl, ScriptResumeState, ScriptRuntime, ScriptRuntimeError};
+pub use script_environment::ScriptEnvironmentActivity;
 pub use script_profile::{
     BLOODPRG_SCRIPT_PROFILE_TABLE_FILE_OFFSET, ORIGINAL_SCRIPT_PROFILE_COUNT,
     SCRIPT_PROFILE_RESOURCE_COUNT, LoadedScriptProfile, OriginalScriptProfileCatalog,
