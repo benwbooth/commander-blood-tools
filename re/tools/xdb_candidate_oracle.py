@@ -3160,6 +3160,161 @@ def amer_slot2_steer_update_vectors(entry: int) -> list[dict[str, object]]:
     return vectors
 
 
+def amer_slot2_reset_vectors(entry: int) -> list[dict[str, object]]:
+    module = "amer"
+    image = load_image(module)
+    body_size = 49
+    body_hash = "d7e35b8fcb41a11a654f391fead15a119688738b4cf48b5391bfb0461604c403"
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered body changed")
+
+    data_segment = 0x5000
+    extra_segment = 0x7000
+    fs_segment = 0x9000
+    game_segment = 0xA000
+    stack_segment = 0xB000
+    context = 0x3000
+    return_address = 0xF000
+    stack_sentinel = bytes.fromhex("5aa596698778")
+    cases = (
+        ("random_zero", 0x4000, 0x0000),
+        ("random_borrow", 0x4400, 0x0040),
+        ("random_high", 0x4800, 0x8001),
+        ("random_wrap", 0x4C00, 0xFFFF),
+    )
+    vectors: list[dict[str, object]] = []
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", memory, offset, value & 0xFFFF)
+
+    def get_u16(memory: bytes | bytearray, offset: int) -> int:
+        return struct.unpack_from("<H", memory, offset)[0]
+
+    def signed_word(value: int) -> int:
+        value &= 0xFFFF
+        return value if value < 0x8000 else value - 0x10000
+
+    def transform_random(value: int) -> int:
+        rotated = ((value >> 7) | (value << 9)) & 0xFFFF
+        return (rotated - ((value >> 6) & 1)) & 0xFFFF
+
+    for case_index, (name, state, random_before) in enumerate(cases):
+        data_before = bytearray(
+            (offset * 29 + case_index * 17 + 3) & 0xFF
+            for offset in range(0x10000)
+        )
+        put_u16(data_before, context + 0x3A, 0x1110 + case_index)
+        put_u16(data_before, context + 0x40, random_before)
+        put_u16(data_before, state + 0x0E, 0xBEEF)
+        put_u16(data_before, state + 0x4E, 0x2220 + case_index)
+        put_u16(data_before, state + 0x52, 0x3330 + case_index)
+        put_u16(data_before, state + 0x54, 0x4440 + case_index)
+        put_u16(data_before, state + 0x56, 0x5550 + case_index)
+        put_u16(data_before, state + 0x5C, 0x6660 + case_index)
+        data_expected = bytearray(data_before)
+
+        random_after = transform_random(random_before)
+        pitch_after = signed_word(random_after) >> 6
+        put_u16(data_expected, context + 0x3A, 0)
+        put_u16(data_expected, context + 0x40, random_after)
+        put_u16(data_expected, state + 0x0E, 0x1A5C)
+        put_u16(data_expected, state + 0x4E, pitch_after)
+        put_u16(data_expected, state + 0x52, 0)
+        put_u16(data_expected, state + 0x54, 60)
+        put_u16(data_expected, state + 0x56, 32)
+        put_u16(data_expected, state + 0x5C, 0)
+
+        code_before = bytearray(image)
+        code_before[return_address] = 0xCC
+        extra_before = bytes(
+            (offset * 13 + case_index + 7) & 0xFF for offset in range(0x10000)
+        )
+        fs_before = bytes(
+            (offset * 19 + case_index + 5) & 0xFF for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 11 + case_index + 9) & 0xFF for offset in range(0x10000)
+        )
+        initial = {
+            "eax": 0xA1A12345,
+            "ebx": 0xB2B23456,
+            "ecx": 0xC3C34567,
+            "edx": 0xD4D45678,
+            "esi": 0xE5E50000 | state,
+            "edi": 0xF6F60000 | context,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0293 | (0x0400 if case_index & 1 else 0),
+        }
+        machine = execute(
+            bytes(code_before),
+            entry,
+            return_address,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (extra_segment, 0, extra_before),
+                (fs_segment, 0, fs_before),
+                (game_segment, 0, game_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+        )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(data_expected):
+            differences = [
+                (offset, actual_data[offset], data_expected[offset])
+                for offset in range(0x10000)
+                if actual_data[offset] != data_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: data differs at {differences}"
+            )
+        if bytes(machine.mem_read(0, len(image))) != bytes(code_before):
+            raise AssertionError(f"{module}:{entry:#x} {name}: code changed")
+        for segment, expected in (
+            (extra_segment, extra_before),
+            (fs_segment, fs_before),
+            (game_segment, game_before),
+        ):
+            if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: segment {segment:#x} changed"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "random_before": random_before,
+                "random_after": get_u16(data_expected, context + 0x40),
+                "velocity_x_after": signed_word(
+                    get_u16(data_expected, context + 0x3A)
+                ),
+                "pitch_after": get_u16(data_expected, state + 0x4E),
+                "roll_after": get_u16(data_expected, state + 0x52),
+                "radial_after": get_u16(data_expected, state + 0x54),
+                "countdown_after": get_u16(data_expected, state + 0x56),
+                "behavior_seed_after": get_u16(data_expected, state + 0x5C),
+                "callback_after": get_u16(data_expected, state + 0x0E),
+                "data_sha256": hashlib.sha256(data_expected).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def alien_api_entry_vectors(
     module: str,
     body_hash: str,
@@ -17739,6 +17894,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "xdb_amer_func_1a5c_natural.json",
         amer_slot2_steer_update_vectors(0x1A5C),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "xdb_amer_func_1a2b_natural.json",
+        amer_slot2_reset_vectors(0x1A2B),
         args.check,
     )
     for module, entry in (

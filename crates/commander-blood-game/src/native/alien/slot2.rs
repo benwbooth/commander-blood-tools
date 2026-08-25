@@ -29,6 +29,7 @@ const AMER_VELOCITY_SHIFT: u32 = 5;
 const AMER_STEERING_DISTANCE: i32 = 1_000;
 const AMER_STEERING_TURN_STEP: u16 = 32;
 const AMER_FINISH_COUNTDOWN: i16 = 64;
+const AMER_RESET_RADIAL_OFFSET: i16 = 60;
 
 /// Callback stage selected for one slot-2 animation model.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -297,6 +298,27 @@ pub fn update_amer_steering(
     Ok(AlienAmerSteeringUpdate::FinishStarted)
 }
 
+/// Reset AMER's autonomous motion after a bounds or phase transition.
+pub fn reset_amer_motion(
+    pose: &mut AlienModelPose,
+    animation: &mut AlienSlot2AnimationState,
+) -> Result<(), AlienSlot2Error> {
+    validate_state(AlienSpecies::Amer, pose, animation)?;
+    let random_value = transform_random(animation.random_value);
+    animation.random_value = random_value;
+    animation.amer_velocity[X_AXIS] = RESET_SIGNED_VALUE;
+    animation.callback = Some(AlienSlot2Callback::AmerSteer);
+
+    let primary = &mut pose.nodes[PRIMARY_NODE];
+    primary.angles[X_AXIS] = (random_value.cast_signed() >> RANDOM_BORROW_SHIFT) as u16;
+    primary.angles[Z_AXIS] = RESET_ANGLE;
+    primary.radial_offset = AMER_RESET_RADIAL_OFFSET;
+    let node_state = &mut animation.nodes[PRIMARY_NODE];
+    node_state.motion_parameter = AMER_RESTART_COUNTDOWN;
+    node_state.behavior_seed = u16::default();
+    Ok(())
+}
+
 fn validate_state(
     species: AlienSpecies,
     pose: &AlienModelPose,
@@ -429,6 +451,19 @@ mod tests {
         field_050_after: u16,
         countdown_before: u16,
         countdown_after: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct AmerResetVector {
+        name: String,
+        random_before: u16,
+        random_after: u16,
+        velocity_x_after: i16,
+        pitch_after: u16,
+        roll_after: u16,
+        radial_after: u16,
+        countdown_after: u16,
+        behavior_seed_after: u16,
     }
 
     #[derive(Default)]
@@ -741,6 +776,49 @@ mod tests {
                     AlienSlot2Callback::AmerSteer
                 })
             );
+        }
+    }
+
+    #[test]
+    fn amer_reset_matches_every_original_overlay_vector() {
+        let vectors: Vec<AmerResetVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/xdb_amer_func_1a2b_natural.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            let mut pose = pose(&[EMPTY_NODE_VECTOR]);
+            let primary = &mut pose.nodes[PRIMARY_NODE];
+            primary.angles[X_AXIS] = TOUCHED_FIELD_SENTINEL;
+            primary.angles[Z_AXIS] = TOUCHED_FIELD_SENTINEL;
+            primary.radial_offset = TOUCHED_FIELD_SENTINEL as i16;
+            let mut animation = AlienSlot2AnimationState::new(SINGLE_VERTEX_COUNT);
+            animation.callback = Some(AlienSlot2Callback::Update);
+            animation.random_value = vector.random_before;
+            animation.amer_velocity[X_AXIS] = TOUCHED_FIELD_SENTINEL as i16;
+            animation.nodes[PRIMARY_NODE].motion_parameter = TOUCHED_FIELD_SENTINEL as i16;
+            animation.nodes[PRIMARY_NODE].behavior_seed = TOUCHED_FIELD_SENTINEL;
+
+            reset_amer_motion(&mut pose, &mut animation).unwrap();
+
+            let primary = &pose.nodes[PRIMARY_NODE];
+            assert_eq!(
+                animation.random_value, vector.random_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(animation.amer_velocity[X_AXIS], vector.velocity_x_after);
+            assert_eq!(primary.angles[X_AXIS], vector.pitch_after);
+            assert_eq!(primary.angles[Z_AXIS], vector.roll_after);
+            assert_eq!(primary.radial_offset as u16, vector.radial_after);
+            assert_eq!(
+                animation.nodes[PRIMARY_NODE].motion_parameter as u16,
+                vector.countdown_after
+            );
+            assert_eq!(
+                animation.nodes[PRIMARY_NODE].behavior_seed,
+                vector.behavior_seed_after
+            );
+            assert_eq!(animation.callback, Some(AlienSlot2Callback::AmerSteer));
         }
     }
 

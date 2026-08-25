@@ -1,0 +1,62 @@
+[
+  {
+    "name": "random_zero",
+    "module": "amer",
+    "entry": 6699,
+    "random_before": 0,
+    "random_after": 0,
+    "velocity_x_after": 0,
+    "pitch_after": 0,
+    "roll_after": 0,
+    "radial_after": 60,
+    "countdown_after": 32,
+    "behavior_seed_after": 0,
+    "callback_after": 6748,
+    "data_sha256": "8b1660eb90e0d3ee878e70d34a371695ca202f7750ecffe81c42dfdccabb8f0e"
+  },
+  {
+    "name": "random_borrow",
+    "module": "amer",
+    "entry": 6699,
+    "random_before": 64,
+    "random_after": 32767,
+    "velocity_x_after": 0,
+    "pitch_after": 511,
+    "roll_after": 0,
+    "radial_after": 60,
+    "countdown_after": 32,
+    "behavior_seed_after": 0,
+    "callback_after": 6748,
+    "data_sha256": "67c70991b1291cce427c53285e933806cf0ad7100bb0daa6cdd62f72db9d0bd7"
+  },
+  {
+    "name": "random_high",
+    "module": "amer",
+    "entry": 6699,
+    "random_before": 32769,
+    "random_after": 768,
+    "velocity_x_after": 0,
+    "pitch_after": 12,
+    "roll_after": 0,
+    "radial_after": 60,
+    "countdown_after": 32,
+    "behavior_seed_after": 0,
+    "callback_after": 6748,
+    "data_sha256": "6658d83291f0a4d5181abe2374d89cc80619da13396e78f09f9271aa26c419a7"
+  },
+  {
+    "name": "random_wrap",
+    "module": "amer",
+    "entry": 6699,
+    "random_before": 65535,
+    "random_after": 65534,
+    "velocity_x_after": 0,
+    "pitch_after": 65535,
+    "roll_after": 0,
+    "radial_after": 60,
+    "countdown_after": 32,
+    "behavior_seed_after": 0,
+    "callback_after": 6748,
+    "data_sha256": "d1726481eeae108d12159690ad19da891c14d0e7e4960cf02a8af7028c969679"
+  }
+]
