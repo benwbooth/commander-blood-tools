@@ -4,7 +4,9 @@ use std::fmt;
 
 use commander_blood_formats::alien::AXIS_COUNT;
 
-use super::{AlienCallbackSceneState, AlienCameraTransform, AlienModelPose, AlienSpecies};
+use super::{
+    AlienCallbackSceneState, AlienCameraTransform, AlienModelPose, AlienSpecies, AlienWaveSelection,
+};
 
 const PRIMARY_NODE: usize = 0;
 const X_AXIS: usize = 0;
@@ -62,6 +64,17 @@ const AMER_CAMERA_DEPTH_RESET: i16 = -64;
 const AMER_RETURN_CALLBACK_COUNTDOWN: u16 = 1;
 const UNREFERENCED_STEERING_RADIAL_OFFSET: i16 = 10;
 const UNREFERENCED_STEERING_TURN_STEP: i16 = 16;
+const AMER_MOTION_RANDOM_ROTATION: u32 = 3;
+const AMER_MOTION_RANDOM_BORROW_SHIFT: u32 = 2;
+const AMER_MOTION_RANDOM_BORROW_MASK: u16 = 1;
+const AMER_MOTION_TARGET_MASK: u16 = 0x07ff;
+const AMER_MOTION_TARGET_CENTER: u16 = 1_023;
+const AMER_MOTION_DURATION_SHIFT: u32 = 2;
+const AMER_MOTION_DURATION_BIAS: u16 = 16;
+const AMER_MOTION_CAMERA_X_MINIMUM: i16 = -1_500;
+const AMER_MOTION_CAMERA_X_MAXIMUM: i16 = 1_500;
+const AMER_MOTION_CAMERA_Z_MINIMUM: i16 = -1_000;
+const AMER_MOTION_CAMERA_Z_MAXIMUM: i16 = 1_500;
 
 /// Callback stage selected for one slot-2 animation model.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -209,6 +222,17 @@ pub enum AlienAmerCommonUpdate {
     CameraFacing,
     /// The model was placed ahead of the camera and began its return flight.
     ReturnStarted,
+}
+
+/// Typed continuation chosen by AMER's ordinary slot-2 callback head.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienAmerUpdateHead {
+    /// Continue immediately through the selection-entry callback.
+    SelectionRequested,
+    /// Continue immediately through AMER's motion reset.
+    ResetRequested,
+    /// Continue immediately through AMER's shared animation tail.
+    CommonRequested,
 }
 
 /// Invalid flat state supplied to the slot-2 coordinator.
@@ -466,6 +490,53 @@ pub fn update_amer_finish(
     Ok(AlienAmerFinishUpdate::Steering)
 }
 
+/// Select and prepare AMER's next ordinary-update continuation.
+pub fn update_amer_head(
+    pose: &mut AlienModelPose,
+    animation: &mut AlienSlot2AnimationState,
+    scene: &AlienCallbackSceneState,
+) -> Result<AlienAmerUpdateHead, AlienSlot2Error> {
+    validate_state(AlienSpecies::Amer, pose, animation)?;
+    if scene.method_delta >= RESET_SIGNED_VALUE
+        && scene.wave_selection == AlienWaveSelection::Requested
+    {
+        return Ok(AlienAmerUpdateHead::SelectionRequested);
+    }
+
+    animation.phase_timer = animation.phase_timer.wrapping_sub(1);
+    if animation.phase_timer >= RESET_SIGNED_VALUE {
+        return Ok(AlienAmerUpdateHead::CommonRequested);
+    }
+
+    let primary = &mut pose.nodes[PRIMARY_NODE];
+    let camera_x = transformed_component(primary, X_AXIS);
+    let camera_z = transformed_component(primary, Z_AXIS);
+    let in_motion_bounds = (AMER_MOTION_CAMERA_X_MINIMUM..=AMER_MOTION_CAMERA_X_MAXIMUM)
+        .contains(&camera_x)
+        && (AMER_MOTION_CAMERA_Z_MINIMUM..=AMER_MOTION_CAMERA_Z_MAXIMUM).contains(&camera_z);
+    if !in_motion_bounds {
+        return Ok(AlienAmerUpdateHead::ResetRequested);
+    }
+
+    let random_value = transform_amer_motion_random(animation.random_value);
+    let target_roll =
+        ((random_value & AMER_MOTION_TARGET_MASK).wrapping_sub(AMER_MOTION_TARGET_CENTER)) as i16;
+    let duration = ((target_roll.unsigned_abs() >> AMER_MOTION_DURATION_SHIFT)
+        .wrapping_add(AMER_MOTION_DURATION_BIAS)) as i16;
+    animation.phase_timer = duration;
+    animation.random_value = random_value;
+    animation.amer_velocity[X_AXIS] =
+        target_roll.wrapping_sub(primary.angles[Z_AXIS] as i16) / duration;
+    animation.nodes[PRIMARY_NODE].radial_target = INITIAL_AMER_RADIAL_TARGET;
+    let camera_y = transformed_component(primary, Y_AXIS);
+    primary.angles[X_AXIS] = camera_y
+        .wrapping_add(primary.angles[X_AXIS] as i16)
+        .wrapping_shr(AMER_CAMERA_HEIGHT_EASING_SHIFT)
+        .clamp(AMER_CAMERA_HEIGHT_MINIMUM, AMER_CAMERA_HEIGHT_MAXIMUM)
+        as u16;
+    Ok(AlienAmerUpdateHead::CommonRequested)
+}
+
 /// Run AMER's shared motion tail using flat model and camera state.
 pub fn update_amer_common(
     pose: &mut AlienModelPose,
@@ -600,6 +671,12 @@ fn transform_random(value: u16) -> u16 {
     value
         .rotate_right(RANDOM_ROTATION)
         .wrapping_sub((value >> RANDOM_BORROW_SHIFT) & RANDOM_BORROW_MASK)
+}
+
+fn transform_amer_motion_random(value: u16) -> u16 {
+    value
+        .rotate_right(AMER_MOTION_RANDOM_ROTATION)
+        .wrapping_sub((value >> AMER_MOTION_RANDOM_BORROW_SHIFT) & AMER_MOTION_RANDOM_BORROW_MASK)
 }
 
 fn seed_step(species: AlienSpecies) -> u16 {
@@ -830,6 +907,26 @@ mod tests {
         active_after: u16,
         callback_countdown_before: u16,
         callback_countdown_after: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct AmerUpdateHeadVector {
+        name: String,
+        transfer: String,
+        method_delta: u16,
+        selection_state: u16,
+        countdown_before: u16,
+        countdown_after: u16,
+        camera_before: [u16; AXIS_COUNT],
+        pitch_before: u16,
+        pitch_after: u16,
+        roll_before: u16,
+        random_before: u16,
+        random_after: u16,
+        velocity_x_before: u16,
+        velocity_x_after: u16,
+        radial_target_before: u16,
+        radial_target_after: u16,
     }
 
     #[derive(Deserialize)]
@@ -1393,6 +1490,65 @@ mod tests {
                 assert_eq!(node.angles[X_AXIS], expected.pitch);
                 assert_eq!(node.angles[Z_AXIS], expected.roll);
             }
+        }
+    }
+
+    #[test]
+    fn amer_update_head_matches_every_isolated_original_overlay_vector() {
+        let vectors: Vec<AmerUpdateHeadVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/xdb_amer_func_1692_head_natural.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            let mut pose = pose(&[EMPTY_NODE_VECTOR]);
+            let primary = &mut pose.nodes[PRIMARY_NODE];
+            for axis in usize::default()..AXIS_COUNT {
+                primary.transform.translation[axis] =
+                    join_words(vector.camera_before[axis], TRANSFORM_LOW_WORD_SENTINEL);
+            }
+            primary.angles[X_AXIS] = vector.pitch_before;
+            primary.angles[Z_AXIS] = vector.roll_before;
+            let mut animation = AlienSlot2AnimationState::new(1);
+            animation.callback = Some(AlienSlot2Callback::Update);
+            animation.phase_timer = vector.countdown_before as i16;
+            animation.random_value = vector.random_before;
+            animation.amer_velocity[X_AXIS] = vector.velocity_x_before as i16;
+            animation.nodes[PRIMARY_NODE].radial_target = vector.radial_target_before;
+            let scene = AlienCallbackSceneState {
+                method_delta: vector.method_delta as i16,
+                wave_selection: match vector.selection_state {
+                    0 => AlienWaveSelection::Disabled,
+                    1 => AlienWaveSelection::Requested,
+                    2 => AlienWaveSelection::Selected,
+                    state => panic!("unknown wave-selection state {state}"),
+                },
+                ..AlienCallbackSceneState::default()
+            };
+            let expected = match vector.transfer.as_str() {
+                "selection" => AlienAmerUpdateHead::SelectionRequested,
+                "reset" => AlienAmerUpdateHead::ResetRequested,
+                "common" => AlienAmerUpdateHead::CommonRequested,
+                transfer => panic!("unknown AMER head transfer {transfer}"),
+            };
+
+            assert_eq!(
+                update_amer_head(&mut pose, &mut animation, &scene).unwrap(),
+                expected,
+                "{}",
+                vector.name
+            );
+            assert_eq!(animation.phase_timer as u16, vector.countdown_after);
+            assert_eq!(animation.random_value, vector.random_after);
+            assert_eq!(
+                animation.amer_velocity[X_AXIS] as u16,
+                vector.velocity_x_after
+            );
+            assert_eq!(
+                animation.nodes[PRIMARY_NODE].radial_target,
+                vector.radial_target_after
+            );
+            assert_eq!(pose.nodes[PRIMARY_NODE].angles[X_AXIS], vector.pitch_after);
+            assert_eq!(animation.callback, Some(AlienSlot2Callback::Update));
         }
     }
 
