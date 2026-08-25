@@ -1,0 +1,50 @@
+[
+  {
+    "name": "waiting",
+    "module": "scrut",
+    "entry": 3303,
+    "countdown_before": 2,
+    "countdown_after": 1,
+    "callback_before": 21845,
+    "callback_after": 21845,
+    "transitioned": false,
+    "data_sha256": "60aa9e87cdd782a347d62f39749dd70fc2c19c9abbe339936441f7c7d58b49bc",
+    "code_sha256": "72ab15be92222b409f5460cfe18734cedd201cde4979f2a3f89a0eb0d1045dca"
+  },
+  {
+    "name": "transition",
+    "module": "scrut",
+    "entry": 3303,
+    "countdown_before": 1,
+    "countdown_after": 0,
+    "callback_before": 21845,
+    "callback_after": 3122,
+    "transitioned": true,
+    "data_sha256": "eed6dd58b9944ed61dd9e3f5a0a59b33183eab79b1b332f7bbe8c0cbf91167d8",
+    "code_sha256": "72ab15be92222b409f5460cfe18734cedd201cde4979f2a3f89a0eb0d1045dca"
+  },
+  {
+    "name": "zero_wrap",
+    "module": "scrut",
+    "entry": 3303,
+    "countdown_before": 0,
+    "countdown_after": 65535,
+    "callback_before": 21845,
+    "callback_after": 21845,
+    "transitioned": false,
+    "data_sha256": "04181d687a019378fce8b38060781314f9650a61593fa1fa65236df0a5c18f69",
+    "code_sha256": "72ab15be92222b409f5460cfe18734cedd201cde4979f2a3f89a0eb0d1045dca"
+  },
+  {
+    "name": "signed_value",
+    "module": "scrut",
+    "entry": 3303,
+    "countdown_before": 32768,
+    "countdown_after": 32767,
+    "callback_before": 21845,
+    "callback_after": 21845,
+    "transitioned": false,
+    "data_sha256": "44ed665529a15129f7219e62fa9f5f639a1fd470a20999e35b42526f4196a1e6",
+    "code_sha256": "72ab15be92222b409f5460cfe18734cedd201cde4979f2a3f89a0eb0d1045dca"
+  }
+]

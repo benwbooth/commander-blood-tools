@@ -55,8 +55,9 @@ pub use ring::{
 };
 pub use scene::{AlienScene, AlienSceneError, AlienSceneFrame};
 pub use selection::{
-    AlienSelectionError, AlienSelectionUpdate, AlienWaveCallbackUpdate, update_wave_callback,
-    update_wave_camera, update_wave_finish, update_wave_selection,
+    AlienSelectionError, AlienSelectionUpdate, AlienWaveCallbackUpdate, AlienWaveMotionUpdate,
+    AlienWaveReturnUpdate, update_wave_callback, update_wave_camera, update_wave_finish,
+    update_wave_motion, update_wave_return, update_wave_selection,
 };
 pub use starfield::{
     AlienStar, AlienStarRejections, AlienStarfieldError, AlienStarfieldFrame, STAR_COUNT,

@@ -14682,6 +14682,266 @@ def update_vector(path: Path, vectors: list[dict[str, object]], check: bool) -> 
     print(f"wrote {path.relative_to(REPO_ROOT)} ({len(vectors)} vectors)")
 
 
+def verify_alien_slot1_leaf_case(
+    module: str,
+    image: bytes,
+    entry: int,
+    case_index: int,
+    data_before: bytearray,
+    data_expected: bytearray,
+) -> tuple[str, str]:
+    """Run one near state callback and verify its complete memory ownership."""
+    data_segment = 0x5000
+    extra_segment = 0x7000
+    fs_segment = 0x9000
+    game_segment = 0xA000
+    stack_segment = 0xB000
+    state = 0x4000
+    context = 0x3000
+    return_address = 0xF000
+    stack_sentinel = bytes.fromhex("5aa596698778")
+    code_before = bytearray(image)
+    code_before[return_address] = 0xCC
+    extra_before = bytes(
+        (offset * 13 + case_index + 7) & 0xFF for offset in range(0x10000)
+    )
+    fs_before = bytes(
+        (offset * 11 + case_index + 9) & 0xFF for offset in range(0x10000)
+    )
+    game_before = bytes(
+        (offset * 7 + case_index + 5) & 0xFF for offset in range(0x10000)
+    )
+    initial = {
+        "eax": 0xA1A10000 | ((0x1111 + case_index) & 0xFFFF),
+        "ebx": 0xB2B20000 | ((0x2222 + case_index) & 0xFFFF),
+        "ecx": 0xC3C30000 | ((0x3333 + case_index) & 0xFFFF),
+        "edx": 0xD4D40000 | ((0x4444 + case_index) & 0xFFFF),
+        "esi": 0xE5E50000 | state,
+        "edi": 0xF6F60000 | context,
+        "ebp": 0x97975555 + case_index,
+        "sp": 0xFF00,
+        "ds": data_segment,
+        "es": extra_segment,
+        "fs": fs_segment,
+        "gs": game_segment,
+        "ss": stack_segment,
+        "flags": 0x0293 | (0x0400 if case_index & 1 else 0),
+    }
+    machine = execute(
+        bytes(code_before),
+        entry,
+        return_address,
+        initial,
+        [
+            (data_segment, 0, bytes(data_before)),
+            (extra_segment, 0, extra_before),
+            (fs_segment, 0, fs_before),
+            (game_segment, 0, game_before),
+            (
+                stack_segment,
+                0xFF00,
+                struct.pack("<H", return_address) + stack_sentinel,
+            ),
+        ],
+    )
+    actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+    if actual_data != bytes(data_expected):
+        differences = [
+            (offset, actual_data[offset], data_expected[offset])
+            for offset in range(0x10000)
+            if actual_data[offset] != data_expected[offset]
+        ][:8]
+        raise AssertionError(
+            f"{module}:{entry:#x} case {case_index}: data differs at {differences}"
+        )
+    actual_code = bytes(machine.mem_read(0, len(image)))
+    if actual_code != bytes(code_before):
+        differences = [
+            (offset, actual_code[offset], code_before[offset])
+            for offset in range(len(image))
+            if actual_code[offset] != code_before[offset]
+        ][:8]
+        raise AssertionError(
+            f"{module}:{entry:#x} case {case_index}: code differs at {differences}"
+        )
+    for segment, expected in (
+        (extra_segment, extra_before),
+        (fs_segment, fs_before),
+        (game_segment, game_before),
+    ):
+        if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+            raise AssertionError(
+                f"{module}:{entry:#x} case {case_index}: decoy {segment:#x} changed"
+            )
+    if machine.reg_read(UC_X86_REG_SP) != 0xFF02:
+        raise AssertionError(f"{module}:{entry:#x} case {case_index}: stack changed")
+    if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+        raise AssertionError(
+            f"{module}:{entry:#x} case {case_index}: stack sentinel changed"
+        )
+    return (
+        hashlib.sha256(data_expected).hexdigest(),
+        hashlib.sha256(code_before).hexdigest(),
+    )
+
+
+def alien_slot1_motion_vectors(
+    module: str,
+    entry: int,
+    body_hash: str,
+    return_callback: int,
+) -> list[dict[str, object]]:
+    """Exercise integration and signed phase routing in slot-1 motion."""
+    image = load_image(module)
+    body_size = 32
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered slot-1 motion changed")
+
+    callback_before = 0x5555
+    cases = (
+        ("zero", 0x0000, 0x0000, 0x0000, 0x0000, 0x0000),
+        ("inclusive_threshold", 0x0010, 0x0100, 0x0200, 0x000E, 0x0020),
+        ("threshold_transition", 0x0010, 0x0100, 0x0200, 0x000F, 0x0020),
+        ("negative_steps", 0xFFE0, 0x0100, 0x0200, 0x0005, 0xFFD0),
+        ("motion_wrap", 0x8001, 0xFFF0, 0x8000, 0x000F, 0x0030),
+        ("signed_phase_wrap", 0x0001, 0x1234, 0x5678, 0x7FFF, 0x0002),
+        ("phase_zero_wrap", 0xFFFF, 0xAAAA, 0x5555, 0xFFFF, 0xFFFF),
+    )
+    state = 0x4000
+    vectors: list[dict[str, object]] = []
+
+    def i16(value: int) -> int:
+        value &= 0xFFFF
+        return value - 0x10000 if value & 0x8000 else value
+
+    for case_index, (
+        name,
+        roll_step,
+        pan,
+        roll,
+        phase,
+        pan_step,
+    ) in enumerate(cases):
+        data_before = bytearray(
+            (offset * 29 + case_index * 17 + 3) & 0xFF
+            for offset in range(0x10000)
+        )
+        data_expected = bytearray(data_before)
+        for field, value in (
+            (0x0E, callback_before),
+            (0x10, roll_step),
+            (0x50, pan),
+            (0x52, roll),
+            (0x54, phase),
+            (0x56, pan_step),
+        ):
+            struct.pack_into("<H", data_before, state + field, value)
+            struct.pack_into("<H", data_expected, state + field, value)
+
+        pan_after = (pan + pan_step) & 0xFFFF
+        roll_after = (roll - roll_step) & 0xFFFF
+        integrated_phase = (phase + 1) & 0xFFFF
+        transition = i16(integrated_phase) > 15
+        phase_after = 64 if transition else integrated_phase
+        callback_after = return_callback if transition else callback_before
+        for field, value in (
+            (0x0E, callback_after),
+            (0x50, pan_after),
+            (0x52, roll_after),
+            (0x54, phase_after),
+        ):
+            struct.pack_into("<H", data_expected, state + field, value)
+        data_sha256, code_sha256 = verify_alien_slot1_leaf_case(
+            module,
+            image,
+            entry,
+            case_index,
+            data_before,
+            data_expected,
+        )
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "pan_before": pan,
+                "roll_before": roll,
+                "pan_step": pan_step,
+                "roll_step": roll_step,
+                "phase_before": phase,
+                "pan_after": pan_after,
+                "roll_after": roll_after,
+                "phase_after": phase_after,
+                "callback_before": callback_before,
+                "callback_after": callback_after,
+                "transitioned": transition,
+                "data_sha256": data_sha256,
+                "code_sha256": code_sha256,
+            }
+        )
+    return vectors
+
+
+def alien_slot1_return_vectors(
+    module: str,
+    entry: int,
+    body_hash: str,
+    selection_callback: int,
+) -> list[dict[str, object]]:
+    """Exercise wrapping countdown and callback routing in slot-1 return."""
+    image = load_image(module)
+    body_size = 11
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered slot-1 return changed")
+
+    callback_before = 0x5555
+    cases = (
+        ("waiting", 0x0002),
+        ("transition", 0x0001),
+        ("zero_wrap", 0x0000),
+        ("signed_value", 0x8000),
+    )
+    state = 0x4000
+    vectors: list[dict[str, object]] = []
+    for case_index, (name, countdown) in enumerate(cases):
+        data_before = bytearray(
+            (offset * 29 + case_index * 17 + 3) & 0xFF
+            for offset in range(0x10000)
+        )
+        data_expected = bytearray(data_before)
+        for field, value in ((0x0E, callback_before), (0x54, countdown)):
+            struct.pack_into("<H", data_before, state + field, value)
+            struct.pack_into("<H", data_expected, state + field, value)
+        countdown_after = (countdown - 1) & 0xFFFF
+        transitioned = countdown_after == 0
+        callback_after = selection_callback if transitioned else callback_before
+        struct.pack_into("<H", data_expected, state + 0x0E, callback_after)
+        struct.pack_into("<H", data_expected, state + 0x54, countdown_after)
+        data_sha256, code_sha256 = verify_alien_slot1_leaf_case(
+            module,
+            image,
+            entry,
+            case_index,
+            data_before,
+            data_expected,
+        )
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "countdown_before": countdown,
+                "countdown_after": countdown_after,
+                "callback_before": callback_before,
+                "callback_after": callback_after,
+                "transitioned": transitioned,
+                "data_sha256": data_sha256,
+                "code_sha256": code_sha256,
+            }
+        )
+    return vectors
+
+
 def alien_slot1_finish_vectors(
     module: str,
     entry: int,
@@ -16513,6 +16773,60 @@ def main() -> int:
                 entry,
                 body_hash,
                 motion_callback,
+            ),
+            args.check,
+        )
+    for module, entry, body_hash, return_callback in (
+        (
+            "amer", 0x0C81,
+            "33b806a8aa8f63b65b44e42bb08a3e22f28c096dd52463286b4e002857ed3dbc",
+            0x0CA1,
+        ),
+        (
+            "croolis", 0x0CD9,
+            "2be0d433e1cfc88eec92546572f709494b1c447bccf92f56814b981c3009a0a2",
+            0x0CF9,
+        ),
+        (
+            "scrut", 0x0CC7,
+            "b50a287b70398f27f31ada746b8b5b9ad06fe7f654bb15612041930c850b9856",
+            0x0CE7,
+        ),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            alien_slot1_motion_vectors(
+                module,
+                entry,
+                body_hash,
+                return_callback,
+            ),
+            args.check,
+        )
+    for module, entry, body_hash, selection_callback in (
+        (
+            "amer", 0x0CA1,
+            "3be9fc348ca22fcee496cfab1bcdef23da23f238d3df9f7436a4330bb7b20bea",
+            0x0BEA,
+        ),
+        (
+            "croolis", 0x0CF9,
+            "bbf6b1d62aeca626500417b8c6af31c9eda0c270c47d9e7d3ab188952d56deb9",
+            0x0C3E,
+        ),
+        (
+            "scrut", 0x0CE7,
+            "d5580cd2f2ac4ce275691820010419226fecba0aad027399eb80a0b62e8a4d61",
+            0x0C32,
+        ),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            alien_slot1_return_vectors(
+                module,
+                entry,
+                body_hash,
+                selection_callback,
             ),
             args.check,
         )

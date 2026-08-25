@@ -34,6 +34,11 @@ const FINISH_SAMPLE_BIAS: u16 = 176;
 const FINISH_ANGLE_ADVANCE: [u16; AXIS_COUNT] = [160, 208, 224];
 const CAMERA_ANGLE_MASK: u16 = 0x0ffc;
 const CAMERA_MOTION_SHIFT: u32 = 4;
+const WAVE_MOTION_PHASE_STEP: i16 = 1;
+const WAVE_MOTION_PHASE_LIMIT: i16 = 15;
+const WAVE_RETURN_COUNTDOWN: i16 = 64;
+const WAVE_RETURN_COUNTDOWN_STEP: i16 = 1;
+const COMPLETED_RETURN_COUNTDOWN: i16 = 0;
 
 /// Typed continuation selected by the slot-1 bounds callback.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -55,6 +60,24 @@ pub enum AlienWaveCallbackUpdate {
     FinishRequested,
     /// Continue the separately recovered camera-update callback.
     CameraUpdateRequested,
+}
+
+/// Stage completed by one per-frame wave camera-motion callback.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienWaveMotionUpdate {
+    /// Camera-relative angular motion remains active.
+    Moving,
+    /// Motion completed and the delayed return callback was selected.
+    ReturnDelayStarted,
+}
+
+/// Stage completed by one delayed wave-return callback.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienWaveReturnUpdate {
+    /// The return countdown remains active.
+    Waiting,
+    /// The countdown completed and wave selection was requested.
+    SelectionRequested,
 }
 
 /// Invalid flat state supplied to the slot-1 selection callback.
@@ -226,6 +249,44 @@ pub fn update_wave_camera(
     Ok(())
 }
 
+/// Integrate one recovered frame of camera-relative wave motion.
+pub fn update_wave_motion(
+    node_index: usize,
+    pose: &mut AlienModelPose,
+    animation: &mut AlienRingAnimationState,
+) -> Result<AlienWaveMotionUpdate, AlienSelectionError> {
+    validate_node(node_index, pose, animation)?;
+    let state = &mut animation.nodes[node_index];
+    let node = &mut pose.nodes[node_index];
+    node.angles[Y_AXIS] = node.angles[Y_AXIS].wrapping_add(state.wave_pan_step as u16);
+    node.angles[Z_AXIS] = node.angles[Z_AXIS].wrapping_sub(state.wave_roll_step as u16);
+    node.radial_offset = node.radial_offset.wrapping_add(WAVE_MOTION_PHASE_STEP);
+    if node.radial_offset <= WAVE_MOTION_PHASE_LIMIT {
+        return Ok(AlienWaveMotionUpdate::Moving);
+    }
+
+    node.radial_offset = WAVE_RETURN_COUNTDOWN;
+    state.callback = AlienRingCallback::WaveReturn;
+    Ok(AlienWaveMotionUpdate::ReturnDelayStarted)
+}
+
+/// Advance the recovered delay before resuming wave target selection.
+pub fn update_wave_return(
+    node_index: usize,
+    pose: &mut AlienModelPose,
+    animation: &mut AlienRingAnimationState,
+) -> Result<AlienWaveReturnUpdate, AlienSelectionError> {
+    validate_node(node_index, pose, animation)?;
+    let node = &mut pose.nodes[node_index];
+    node.radial_offset = node.radial_offset.wrapping_sub(WAVE_RETURN_COUNTDOWN_STEP);
+    if node.radial_offset != COMPLETED_RETURN_COUNTDOWN {
+        return Ok(AlienWaveReturnUpdate::Waiting);
+    }
+
+    animation.nodes[node_index].callback = AlienRingCallback::WaveSelection;
+    Ok(AlienWaveReturnUpdate::SelectionRequested)
+}
+
 fn validate_node(
     node_index: usize,
     pose: &AlienModelPose,
@@ -296,6 +357,7 @@ mod tests {
     const ORIGINAL_PARENT_SENTINEL: u16 = 0x4444;
     const ORIGINAL_WAVE_PARENT_SENTINEL: u16 = 0x1111;
     const ORIGINAL_WAVE_CALLBACK_SENTINEL: u16 = 0x2222;
+    const ORIGINAL_LEAF_CALLBACK_SENTINEL: u16 = 0x5555;
     const ORIGINAL_SELECTED_NODE: u16 = 0x3456;
     const ORIGINAL_SCENE_CAMERA_OFFSET: u16 = 0x22A8;
     const UNCHANGED_PULSE: i32 = 0x1357_9BDF;
@@ -366,6 +428,34 @@ mod tests {
         callback_after: u16,
     }
 
+    #[derive(Deserialize)]
+    struct WaveMotionVector {
+        name: String,
+        module: String,
+        pan_before: u16,
+        roll_before: u16,
+        pan_step: u16,
+        roll_step: u16,
+        phase_before: u16,
+        pan_after: u16,
+        roll_after: u16,
+        phase_after: u16,
+        callback_before: u16,
+        callback_after: u16,
+        transitioned: bool,
+    }
+
+    #[derive(Deserialize)]
+    struct WaveReturnVector {
+        name: String,
+        module: String,
+        countdown_before: u16,
+        countdown_after: u16,
+        callback_before: u16,
+        callback_after: u16,
+        transitioned: bool,
+    }
+
     fn fixtures() -> [&'static str; AXIS_COUNT] {
         [
             include_str!("../../../../../re/tools/oracle_vectors/xdb_amer_func_0bea_natural.json"),
@@ -403,6 +493,26 @@ mod tests {
                 "../../../../../re/tools/oracle_vectors/xdb_croolis_func_0cb5_natural.json"
             ),
             include_str!("../../../../../re/tools/oracle_vectors/xdb_scrut_func_0ca3_natural.json"),
+        ]
+    }
+
+    fn wave_motion_fixtures() -> [&'static str; AXIS_COUNT] {
+        [
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_amer_func_0c81_natural.json"),
+            include_str!(
+                "../../../../../re/tools/oracle_vectors/xdb_croolis_func_0cd9_natural.json"
+            ),
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_scrut_func_0cc7_natural.json"),
+        ]
+    }
+
+    fn wave_return_fixtures() -> [&'static str; AXIS_COUNT] {
+        [
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_amer_func_0ca1_natural.json"),
+            include_str!(
+                "../../../../../re/tools/oracle_vectors/xdb_croolis_func_0cf9_natural.json"
+            ),
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_scrut_func_0ce7_natural.json"),
         ]
     }
 
@@ -456,6 +566,24 @@ mod tests {
             "amer" => 0x0C81,
             "croolis" => 0x0CD9,
             "scrut" => 0x0CC7,
+            _ => panic!("unknown alien module {module}"),
+        }
+    }
+
+    fn return_callback(module: &str) -> u16 {
+        match module {
+            "amer" => 0x0CA1,
+            "croolis" => 0x0CF9,
+            "scrut" => 0x0CE7,
+            _ => panic!("unknown alien module {module}"),
+        }
+    }
+
+    fn selection_callback(module: &str) -> u16 {
+        match module {
+            "amer" => 0x0BEA,
+            "croolis" => 0x0C3E,
+            "scrut" => 0x0C32,
             _ => panic!("unknown alien module {module}"),
         }
     }
@@ -744,6 +872,98 @@ mod tests {
                     vector.module, vector.name
                 );
                 assert_eq!(state.callback, AlienRingCallback::WaveMotion);
+            }
+        }
+    }
+
+    #[test]
+    fn wave_motion_matches_every_original_overlay_vector() {
+        for fixture in wave_motion_fixtures() {
+            let vectors: Vec<WaveMotionVector> = serde_json::from_str(fixture).unwrap();
+            for vector in vectors {
+                assert_eq!(vector.callback_before, ORIGINAL_LEAF_CALLBACK_SENTINEL);
+                let mut pose = pose([i32::MIN; AXIS_COUNT], [u32::MIN; AXIS_COUNT]);
+                pose.nodes[FIRST_NODE].angles[Y_AXIS] = vector.pan_before;
+                pose.nodes[FIRST_NODE].angles[Z_AXIS] = vector.roll_before;
+                pose.nodes[FIRST_NODE].radial_offset = vector.phase_before as i16;
+                let mut animation = AlienRingAnimationState::new(SINGLE_NODE_COUNT);
+                animation.nodes[FIRST_NODE].callback = AlienRingCallback::WaveMotion;
+                animation.nodes[FIRST_NODE].wave_pan_step = vector.pan_step as i16;
+                animation.nodes[FIRST_NODE].wave_roll_step = vector.roll_step as i16;
+
+                let update = update_wave_motion(FIRST_NODE, &mut pose, &mut animation).unwrap();
+
+                assert_eq!(
+                    pose.nodes[FIRST_NODE].angles[Y_AXIS], vector.pan_after,
+                    "{} {}",
+                    vector.module, vector.name
+                );
+                assert_eq!(
+                    pose.nodes[FIRST_NODE].angles[Z_AXIS], vector.roll_after,
+                    "{} {}",
+                    vector.module, vector.name
+                );
+                assert_eq!(
+                    pose.nodes[FIRST_NODE].radial_offset as u16, vector.phase_after,
+                    "{} {}",
+                    vector.module, vector.name
+                );
+                assert_eq!(
+                    update,
+                    if vector.transitioned {
+                        AlienWaveMotionUpdate::ReturnDelayStarted
+                    } else {
+                        AlienWaveMotionUpdate::Moving
+                    }
+                );
+                assert_eq!(
+                    animation.nodes[FIRST_NODE].callback,
+                    if vector.callback_after == ORIGINAL_LEAF_CALLBACK_SENTINEL {
+                        AlienRingCallback::WaveMotion
+                    } else {
+                        assert_eq!(vector.callback_after, return_callback(&vector.module));
+                        AlienRingCallback::WaveReturn
+                    }
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn wave_return_matches_every_original_overlay_vector() {
+        for fixture in wave_return_fixtures() {
+            let vectors: Vec<WaveReturnVector> = serde_json::from_str(fixture).unwrap();
+            for vector in vectors {
+                assert_eq!(vector.callback_before, ORIGINAL_LEAF_CALLBACK_SENTINEL);
+                let mut pose = pose([i32::MIN; AXIS_COUNT], [u32::MIN; AXIS_COUNT]);
+                pose.nodes[FIRST_NODE].radial_offset = vector.countdown_before as i16;
+                let mut animation = AlienRingAnimationState::new(SINGLE_NODE_COUNT);
+                animation.nodes[FIRST_NODE].callback = AlienRingCallback::WaveReturn;
+
+                let update = update_wave_return(FIRST_NODE, &mut pose, &mut animation).unwrap();
+
+                assert_eq!(
+                    pose.nodes[FIRST_NODE].radial_offset as u16, vector.countdown_after,
+                    "{} {}",
+                    vector.module, vector.name
+                );
+                assert_eq!(
+                    update,
+                    if vector.transitioned {
+                        AlienWaveReturnUpdate::SelectionRequested
+                    } else {
+                        AlienWaveReturnUpdate::Waiting
+                    }
+                );
+                assert_eq!(
+                    animation.nodes[FIRST_NODE].callback,
+                    if vector.callback_after == ORIGINAL_LEAF_CALLBACK_SENTINEL {
+                        AlienRingCallback::WaveReturn
+                    } else {
+                        assert_eq!(vector.callback_after, selection_callback(&vector.module));
+                        AlienRingCallback::WaveSelection
+                    }
+                );
             }
         }
     }

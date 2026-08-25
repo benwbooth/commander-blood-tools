@@ -1,0 +1,50 @@
+[
+  {
+    "name": "waiting",
+    "module": "croolis",
+    "entry": 3321,
+    "countdown_before": 2,
+    "countdown_after": 1,
+    "callback_before": 21845,
+    "callback_after": 21845,
+    "transitioned": false,
+    "data_sha256": "60aa9e87cdd782a347d62f39749dd70fc2c19c9abbe339936441f7c7d58b49bc",
+    "code_sha256": "5834fd228471c489560cfcc05d475c263891c3c987a66de0f7100486a0173832"
+  },
+  {
+    "name": "transition",
+    "module": "croolis",
+    "entry": 3321,
+    "countdown_before": 1,
+    "countdown_after": 0,
+    "callback_before": 21845,
+    "callback_after": 3134,
+    "transitioned": true,
+    "data_sha256": "150c8fd483ae1f58eb65b3242421e29bb98dc071354a8abf593f0dd690360d89",
+    "code_sha256": "5834fd228471c489560cfcc05d475c263891c3c987a66de0f7100486a0173832"
+  },
+  {
+    "name": "zero_wrap",
+    "module": "croolis",
+    "entry": 3321,
+    "countdown_before": 0,
+    "countdown_after": 65535,
+    "callback_before": 21845,
+    "callback_after": 21845,
+    "transitioned": false,
+    "data_sha256": "04181d687a019378fce8b38060781314f9650a61593fa1fa65236df0a5c18f69",
+    "code_sha256": "5834fd228471c489560cfcc05d475c263891c3c987a66de0f7100486a0173832"
+  },
+  {
+    "name": "signed_value",
+    "module": "croolis",
+    "entry": 3321,
+    "countdown_before": 32768,
+    "countdown_after": 32767,
+    "callback_before": 21845,
+    "callback_after": 21845,
+    "transitioned": false,
+    "data_sha256": "44ed665529a15129f7219e62fa9f5f639a1fd470a20999e35b42526f4196a1e6",
+    "code_sha256": "5834fd228471c489560cfcc05d475c263891c3c987a66de0f7100486a0173832"
+  }
+]

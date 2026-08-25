@@ -90,6 +90,10 @@ pub enum AlienRingCallback {
     WaveFinish,
     /// Converge the node's pan and roll toward the camera orientation.
     WaveMotion,
+    /// Wait before returning a wave node to camera-relative selection.
+    WaveReturn,
+    /// Select a camera-relative wave target for this node.
+    WaveSelection,
 }
 
 /// Per-node state used by the circular motion-history behavior.

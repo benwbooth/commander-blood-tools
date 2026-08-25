@@ -1,0 +1,50 @@
+[
+  {
+    "name": "waiting",
+    "module": "amer",
+    "entry": 3233,
+    "countdown_before": 2,
+    "countdown_after": 1,
+    "callback_before": 21845,
+    "callback_after": 21845,
+    "transitioned": false,
+    "data_sha256": "60aa9e87cdd782a347d62f39749dd70fc2c19c9abbe339936441f7c7d58b49bc",
+    "code_sha256": "e3b34e1d64365fcd470ab69ebcc5eb86905d9995c06c10dee27c5ef179241cab"
+  },
+  {
+    "name": "transition",
+    "module": "amer",
+    "entry": 3233,
+    "countdown_before": 1,
+    "countdown_after": 0,
+    "callback_before": 21845,
+    "callback_after": 3050,
+    "transitioned": true,
+    "data_sha256": "a05d16899b40a94358311c23cbc2682c7cc9e89d9845a3d2dd5ea3be4f378359",
+    "code_sha256": "e3b34e1d64365fcd470ab69ebcc5eb86905d9995c06c10dee27c5ef179241cab"
+  },
+  {
+    "name": "zero_wrap",
+    "module": "amer",
+    "entry": 3233,
+    "countdown_before": 0,
+    "countdown_after": 65535,
+    "callback_before": 21845,
+    "callback_after": 21845,
+    "transitioned": false,
+    "data_sha256": "04181d687a019378fce8b38060781314f9650a61593fa1fa65236df0a5c18f69",
+    "code_sha256": "e3b34e1d64365fcd470ab69ebcc5eb86905d9995c06c10dee27c5ef179241cab"
+  },
+  {
+    "name": "signed_value",
+    "module": "amer",
+    "entry": 3233,
+    "countdown_before": 32768,
+    "countdown_after": 32767,
+    "callback_before": 21845,
+    "callback_after": 21845,
+    "transitioned": false,
+    "data_sha256": "44ed665529a15129f7219e62fa9f5f639a1fd470a20999e35b42526f4196a1e6",
+    "code_sha256": "e3b34e1d64365fcd470ab69ebcc5eb86905d9995c06c10dee27c5ef179241cab"
+  }
+]
