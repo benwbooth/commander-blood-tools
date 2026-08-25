@@ -3,7 +3,7 @@
 use commander_blood_formats::descript::{
     DescriptBackgroundCommand, DescriptBackgroundSlot, DescriptCaptionCommand, DescriptIdleClip,
     DescriptLocationLayout, DescriptRecordKind, DescriptSequenceSubtitle, DescriptSoundBankName,
-    DescriptTalkClip, DescriptVideoName,
+    DescriptSpriteName, DescriptTalkClip, DescriptVideoName,
 };
 
 use super::text_handler::TextPresentationState;
@@ -124,6 +124,7 @@ pub struct DescriptPresentationAssets {
     encoded_idle_video: Option<Box<[u8]>>,
     sequence_videos: Vec<DescriptVideoName>,
     sequence_subtitles: Vec<DescriptSequenceSubtitle>,
+    character_sprite: Option<DescriptSpriteName>,
 }
 
 impl DescriptPresentationAssets {
@@ -180,6 +181,11 @@ impl DescriptPresentationAssets {
     /// Return centered sequence subtitles in authored threshold order.
     pub fn sequence_subtitles(&self) -> &[DescriptSequenceSubtitle] {
         &self.sequence_subtitles
+    }
+
+    /// Return the character portrait sprite selected by this record.
+    pub fn character_sprite(&self) -> Option<&DescriptSpriteName> {
+        self.character_sprite.as_ref()
     }
 }
 
@@ -328,6 +334,18 @@ pub fn append_descript_sequence_subtitle(
     assets.sequence_subtitles.push(subtitle.clone());
 }
 
+/// Select the character portrait sprite used by the name-area presentation.
+///
+/// This translates `fs_name_area_read` at BLOODPRG file offset `0x007788`.
+/// Command presence in this typed option replaces both the FS-backed filename
+/// area and its separate dirty flag.
+pub fn select_descript_character_sprite(
+    sprite: &DescriptSpriteName,
+    assets: &mut DescriptPresentationAssets,
+) {
+    assets.character_sprite = Some(sprite.clone());
+}
+
 /// Boundary detected after the current DESCRIPT command stream.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct DescriptRecordBoundary {
@@ -389,8 +407,8 @@ mod tests {
     use commander_blood_formats::descript::{
         DescriptBackgroundError, DescriptCharacterBackground, DescriptIdleClipError,
         DescriptTalkClipError, decode_background_command, decode_caption_command, decode_idle_clip,
-        decode_location_layout, decode_sequence_subtitle, decode_sound_bank_name, decode_talk_clip,
-        decode_video_name,
+        decode_location_layout, decode_sequence_subtitle, decode_sound_bank_name,
+        decode_sprite_name, decode_talk_clip, decode_video_name,
     };
     use serde::Deserialize;
 
@@ -407,6 +425,7 @@ mod tests {
     const TALK_CLIP_ORACLE_VECTOR_COUNT: usize = 12;
     const SEQUENCE_VIDEO_ORACLE_VECTOR_COUNT: usize = 8;
     const SEQUENCE_SUBTITLE_ORACLE_VECTOR_COUNT: usize = 7;
+    const SPRITE_ORACLE_VECTOR_COUNT: usize = 8;
     const VIDEO_ORACLE_VECTOR_COUNT: usize = 8;
 
     #[derive(Deserialize)]
@@ -1060,6 +1079,27 @@ mod tests {
             let mut assets = DescriptPresentationAssets::default();
             append_descript_sequence_subtitle(&subtitle, &mut assets);
             assert_eq!(assets.sequence_subtitles(), &[subtitle], "{}", vector.name);
+        }
+    }
+
+    #[test]
+    fn character_sprite_selection_matches_every_original_name_area_vector() {
+        let vectors: Vec<VideoOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_7788_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), SPRITE_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let input = bytes_from_hex(&vector.input_hex);
+            let expected = bytes_from_hex(&vector.copied_hex);
+            let (sprite, tail) = decode_sprite_name(&input).unwrap();
+            assert_eq!(tail, &[vector.stopping_byte], "{}", vector.name);
+            assert_eq!(sprite.as_bytes(), expected.as_ref(), "{}", vector.name);
+
+            let mut assets = DescriptPresentationAssets::default();
+            select_descript_character_sprite(&sprite, &mut assets);
+            assert_eq!(assets.character_sprite(), Some(&sprite), "{}", vector.name);
         }
     }
 }

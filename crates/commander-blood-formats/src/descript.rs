@@ -285,6 +285,30 @@ pub fn decode_sound_bank_name(
     Ok((DescriptSoundBankName::new(source_name), tail))
 }
 
+/// Case-preserving SPR resource name decoded from a character record.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DescriptSpriteName(Box<[u8]>);
+
+impl DescriptSpriteName {
+    /// Build a sprite name from owned bytes without a trailing zero.
+    pub fn new(source_name: Box<[u8]>) -> Self {
+        Self(source_name)
+    }
+
+    /// Return the SPR resource name exactly as authored.
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+/// Decode a printable SPR name while leaving the following opcode unconsumed.
+pub fn decode_sprite_name(
+    payload: &[u8],
+) -> Result<(DescriptSpriteName, &[u8]), DescriptResourceNameError> {
+    let (source_name, tail) = decode_printable_resource_name(payload)?;
+    Ok((DescriptSpriteName::new(source_name), tail))
+}
+
 /// Background selection paired with one character talk animation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DescriptCharacterBackground {
@@ -571,6 +595,18 @@ mod tests {
         let (bank, tail) = decode_sound_bank_name(&payload).unwrap();
 
         assert_eq!(bank.as_bytes(), b"scrut.snd");
+        assert_eq!(tail, &[NEXT_OPCODE]);
+    }
+
+    #[test]
+    fn sprite_name_payload_uses_the_shared_printable_name_framing() {
+        const NEXT_OPCODE: u8 = 2;
+
+        let mut payload = b"izwalito.spr".to_vec();
+        payload.push(NEXT_OPCODE);
+        let (sprite, tail) = decode_sprite_name(&payload).unwrap();
+
+        assert_eq!(sprite.as_bytes(), b"izwalito.spr");
         assert_eq!(tail, &[NEXT_OPCODE]);
     }
 
