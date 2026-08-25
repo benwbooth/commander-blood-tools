@@ -14978,6 +14978,7 @@ def alien_slot1_callback_head_vectors(
     return_address = 0xF000
     stack_sentinel = bytes.fromhex("5aa596698778")
     selected_state = 0x3456
+    view = (-123, 456, -32768)
     cases = (
         ("inactive_no_selection", 0, 0, 0x0010),
         ("inactive_selected_unclamped", 0, 2, 0x0010),
@@ -15038,13 +15039,15 @@ def alien_slot1_callback_head_vectors(
         ):
             put_u32(data_before, state + field, value)
             put_u32(data_expected, state + field, value)
+        pulse_before: list[int] = []
         for offset, _amount in pulse_updates:
             value = 0x10203040 + offset
+            pulse_before.append(value & 0xFFFFFFFF)
             put_u32(data_before, offset, value)
             put_u32(data_expected, offset, value)
         put_u16(data_before, 0x001E, 0x7777)
         put_u16(data_expected, 0x001E, 0x7777)
-        for offset, value in ((0x22EC, -123), (0x22F0, 456), (0x22F4, -32768)):
+        for offset, value in zip((0x22EC, 0x22F0, 0x22F4), view):
             put_i16(data_before, offset, value)
             put_i16(data_expected, offset, value)
 
@@ -15158,9 +15161,38 @@ def alien_slot1_callback_head_vectors(
                 "selection_after": get_u16(code_expected, selection_offset),
                 "delta_before": delta,
                 "delta_after": get_u16(code_expected, 0x0099),
+                "selected_state": selected_state,
+                "view": list(view),
+                "motion_before": [
+                    0x3333,
+                    0x4444,
+                    0xFFF0,
+                    0x11223344,
+                    0x55667788,
+                    0x99AABBCC,
+                ],
+                "motion_after": [
+                    get_u16(data_expected, state + field)
+                    for field in (0x4E, 0x50, 0x52)
+                ]
+                + [
+                    get_u32(data_expected, state + field)
+                    for field in (0x42, 0x46, 0x4A)
+                ],
                 "owner_after": get_u16(data_expected, state),
                 "callback_after": get_u16(data_expected, state + 0x0E),
                 "countdown_after": get_u16(data_expected, 0x001E),
+                "pulse_before": pulse_before,
+                "pulse_after": [
+                    get_u32(data_expected, offset) for offset, _amount in pulse_updates
+                ],
+                "expected_action": (
+                    "camera"
+                    if active != 0
+                    else "finish"
+                    if selection & 2
+                    else "waiting"
+                ),
                 "code_sha256": hashlib.sha256(code_expected).hexdigest(),
                 "data_sha256": hashlib.sha256(data_expected).hexdigest(),
             }

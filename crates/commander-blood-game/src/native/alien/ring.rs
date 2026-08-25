@@ -86,6 +86,8 @@ pub enum AlienRingCallback {
     ClearHistory,
     /// Run the camera-relative wave-selection callback family.
     Wave,
+    /// Complete a selected wave transition.
+    WaveFinish,
 }
 
 /// Per-node state used by the circular motion-history behavior.

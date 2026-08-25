@@ -2,7 +2,7 @@
 
 use std::fmt;
 
-use commander_blood_formats::alien::AXIS_COUNT;
+use commander_blood_formats::alien::{AXIS_COUNT, AlienNodeParent};
 
 use super::{
     AlienCallbackSceneState, AlienControlLatch, AlienModelPose, AlienRingAnimationState,
@@ -23,6 +23,13 @@ const AMER_AND_SCRUT_PULSE_ADVANCE: [i32; AXIS_COUNT] = [0, 30, 35];
 const CROOLIS_PULSE_ADVANCE: [i32; AXIS_COUNT] = [25, 30, 35];
 const WAVE_ANCHOR_MODEL_INDEX: usize = 0;
 const WAVE_ANCHOR_NODE_INDEX: usize = 3;
+const WAVE_PITCH: u16 = 0;
+const WAVE_PAN: u16 = 0x0800;
+const WAVE_SECONDARY_PAN_STEP: u16 = 53;
+const METHOD_DELTA_STEP: u16 = 8;
+const METHOD_DELTA_LIMIT: u16 = 128;
+const METHOD_DELTA_MAXIMUM: u16 = 127;
+const FINISH_CALLBACK_COUNTDOWN: u16 = 4;
 
 /// Typed continuation selected by the slot-1 bounds callback.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -33,6 +40,17 @@ pub enum AlienSelectionUpdate {
     CameraUpdateRequested,
     /// The node was prepared for its wave callback.
     WaveStarted,
+}
+
+/// Typed continuation selected by the active wave callback.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienWaveCallbackUpdate {
+    /// No model has completed the requested wave selection yet.
+    Waiting,
+    /// Continue the separately recovered wave-finish callback.
+    FinishRequested,
+    /// Continue the separately recovered camera-update callback.
+    CameraUpdateRequested,
 }
 
 /// Invalid flat state supplied to the slot-1 selection callback.
@@ -52,6 +70,8 @@ pub enum AlienSelectionError {
         /// Number of nodes available in the hierarchy.
         node_count: usize,
     },
+    /// A completed selection did not publish its typed scene node.
+    MissingSelectedSceneNode,
 }
 
 impl fmt::Display for AlienSelectionError {
@@ -99,16 +119,63 @@ pub fn update_wave_selection(
     node.local_position[Z_AXIS] =
         replace_low_word(node.local_position[Z_AXIS], SELECTED_DEPTH_LOW_WORD);
 
-    let advances = match species {
-        AlienSpecies::Amer | AlienSpecies::Scrut => AMER_AND_SCRUT_PULSE_ADVANCE,
-        AlienSpecies::Croolis => CROOLIS_PULSE_ADVANCE,
-    };
-    for (pulse, advance) in scene.palette_pulses.iter_mut().zip(advances) {
+    for (pulse, advance) in scene
+        .palette_pulses
+        .iter_mut()
+        .zip(palette_pulse_advances(species))
+    {
         *pulse = pulse.wrapping_add(advance);
     }
     animation.nodes[node_index].callback = AlienRingCallback::Wave;
     scene.callback_countdown = ACTIVE_CALLBACK_COUNTDOWN;
     Ok(AlienSelectionUpdate::WaveStarted)
+}
+
+/// Apply one recovered slot-1 wave callback up to its typed continuation.
+pub fn update_wave_callback(
+    species: AlienSpecies,
+    node_index: usize,
+    pose: &mut AlienModelPose,
+    animation: &mut AlienRingAnimationState,
+    scene: &mut AlienCallbackSceneState,
+    view: [i16; AXIS_COUNT],
+) -> Result<AlienWaveCallbackUpdate, AlienSelectionError> {
+    validate_node(node_index, pose, animation)?;
+    let node = &mut pose.nodes[node_index];
+    if !scene.slot2_active {
+        node.angles[X_AXIS] = WAVE_PITCH;
+        node.angles[Y_AXIS] = WAVE_PAN;
+        node.angles[Z_AXIS] = node.angles[Z_AXIS].wrapping_add(WAVE_SECONDARY_PAN_STEP);
+        if scene.wave_selection != AlienWaveSelection::Selected {
+            return Ok(AlienWaveCallbackUpdate::Waiting);
+        }
+
+        let selected_node = scene
+            .wave_selected_node
+            .ok_or(AlienSelectionError::MissingSelectedSceneNode)?;
+        let next_delta = (scene.method_delta as u16).wrapping_add(METHOD_DELTA_STEP);
+        scene.method_delta = if next_delta >= METHOD_DELTA_LIMIT {
+            METHOD_DELTA_MAXIMUM as i16
+        } else {
+            next_delta as i16
+        };
+        node.scene_parent = Some(selected_node);
+        animation.nodes[node_index].callback = AlienRingCallback::WaveFinish;
+        scene.wave_selection = AlienWaveSelection::Disabled;
+        subtract_palette_pulses(species, &mut scene.palette_pulses);
+        if species != AlienSpecies::Amer {
+            scene.slot2_active = false;
+        }
+        scene.callback_countdown = FINISH_CALLBACK_COUNTDOWN;
+        return Ok(AlienWaveCallbackUpdate::FinishRequested);
+    }
+
+    scene.wave_selection = AlienWaveSelection::Disabled;
+    subtract_palette_pulses(species, &mut scene.palette_pulses);
+    node.parent = AlienNodeParent::SceneCamera;
+    node.scene_parent = None;
+    node.local_position = view.map(|component| -i32::from(component));
+    Ok(AlienWaveCallbackUpdate::CameraUpdateRequested)
 }
 
 fn validate_node(
@@ -148,9 +215,22 @@ fn replace_low_word(value: i32, low_word: u16) -> i32 {
     ((value as u32 & HIGH_WORD_MASK) | u32::from(low_word)) as i32
 }
 
+fn palette_pulse_advances(species: AlienSpecies) -> [i32; AXIS_COUNT] {
+    match species {
+        AlienSpecies::Amer | AlienSpecies::Scrut => AMER_AND_SCRUT_PULSE_ADVANCE,
+        AlienSpecies::Croolis => CROOLIS_PULSE_ADVANCE,
+    }
+}
+
+fn subtract_palette_pulses(species: AlienSpecies, pulses: &mut [i32; AXIS_COUNT]) {
+    for (pulse, advance) in pulses.iter_mut().zip(palette_pulse_advances(species)) {
+        *pulse = pulse.wrapping_sub(advance);
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use commander_blood_formats::alien::{AlienFaceData, AlienNodeParent, AlienTransformData};
+    use commander_blood_formats::alien::{AlienFaceData, AlienTransformData};
     use serde::Deserialize;
 
     use super::*;
@@ -163,8 +243,14 @@ mod tests {
     const ORIGINAL_WAVE_ANCHOR_OFFSET: u16 = 0x25A8;
     const ORIGINAL_CALLBACK_COUNTDOWN: u16 = 0x7777;
     const ORIGINAL_PARENT_SENTINEL: u16 = 0x4444;
+    const ORIGINAL_WAVE_PARENT_SENTINEL: u16 = 0x1111;
+    const ORIGINAL_WAVE_CALLBACK_SENTINEL: u16 = 0x2222;
+    const ORIGINAL_SELECTED_NODE: u16 = 0x3456;
+    const ORIGINAL_SCENE_CAMERA_OFFSET: u16 = 0x22A8;
     const UNCHANGED_PULSE: i32 = 0x1357_9BDF;
     const FIXED_FRACTION_SAMPLE: i32 = 0x5678;
+    const SELECTED_MODEL_INDEX: usize = 6;
+    const SELECTED_NODE_INDEX: usize = 2;
 
     #[derive(Deserialize)]
     struct SelectionVector {
@@ -184,6 +270,28 @@ mod tests {
         expected_action: String,
     }
 
+    #[derive(Deserialize)]
+    struct WaveCallbackVector {
+        name: String,
+        module: String,
+        active_before: u16,
+        active_after: u16,
+        selection_before: u16,
+        selection_after: u16,
+        delta_before: u16,
+        delta_after: u16,
+        selected_state: u16,
+        view: [i16; AXIS_COUNT],
+        motion_before: [u32; 6],
+        motion_after: [u32; 6],
+        owner_after: u16,
+        callback_after: u16,
+        countdown_after: u16,
+        pulse_before: Vec<u32>,
+        pulse_after: Vec<u32>,
+        expected_action: String,
+    }
+
     fn fixtures() -> [&'static str; AXIS_COUNT] {
         [
             include_str!("../../../../../re/tools/oracle_vectors/xdb_amer_func_0bea_natural.json"),
@@ -191,6 +299,16 @@ mod tests {
                 "../../../../../re/tools/oracle_vectors/xdb_croolis_func_0c3e_natural.json"
             ),
             include_str!("../../../../../re/tools/oracle_vectors/xdb_scrut_func_0c32_natural.json"),
+        ]
+    }
+
+    fn wave_callback_fixtures() -> [&'static str; AXIS_COUNT] {
+        [
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_amer_func_0b37_natural.json"),
+            include_str!(
+                "../../../../../re/tools/oracle_vectors/xdb_croolis_func_0b78_natural.json"
+            ),
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_scrut_func_0b78_natural.json"),
         ]
     }
 
@@ -221,6 +339,24 @@ mod tests {
         }
     }
 
+    fn wave_callback_update(value: &str) -> AlienWaveCallbackUpdate {
+        match value {
+            "waiting" => AlienWaveCallbackUpdate::Waiting,
+            "finish" => AlienWaveCallbackUpdate::FinishRequested,
+            "camera" => AlienWaveCallbackUpdate::CameraUpdateRequested,
+            _ => panic!("unknown wave callback action {value}"),
+        }
+    }
+
+    fn finish_callback(module: &str) -> u16 {
+        match module {
+            "amer" => 0x0BD0,
+            "croolis" => 0x0C24,
+            "scrut" => 0x0C18,
+            _ => panic!("unknown alien module {module}"),
+        }
+    }
+
     fn control_latch(value: u16) -> AlienControlLatch {
         match value {
             u16::MIN => AlienControlLatch::Inactive,
@@ -242,7 +378,10 @@ mod tests {
         ((integer as i16 as i32) << u16::BITS) | FIXED_FRACTION_SAMPLE
     }
 
-    fn pose(vector: &SelectionVector) -> AlienModelPose {
+    fn pose(
+        translation_integer_words: [i32; AXIS_COUNT],
+        local_position: [u32; AXIS_COUNT],
+    ) -> AlienModelPose {
         AlienModelPose {
             root: AlienTransformData::default(),
             nodes: vec![AlienNodePose {
@@ -251,12 +390,10 @@ mod tests {
                 first_vertex: usize::MIN,
                 vertex_count: SINGLE_NODE_COUNT,
                 transform: AlienTransformData {
-                    translation: vector
-                        .translation_integer_words
-                        .map(fixed_with_integer_word),
+                    translation: translation_integer_words.map(fixed_with_integer_word),
                     ..AlienTransformData::default()
                 },
-                local_position: vector.position_before.map(|value| value as i32),
+                local_position: local_position.map(|value| value as i32),
                 angles: [u16::MIN; AXIS_COUNT],
                 radial_offset: 0x6666,
             }],
@@ -276,7 +413,7 @@ mod tests {
             let vectors: Vec<SelectionVector> = serde_json::from_str(fixture).unwrap();
             for vector in vectors {
                 let species = species(&vector.module);
-                let mut pose = pose(&vector);
+                let mut pose = pose(vector.translation_integer_words, vector.position_before);
                 let mut animation = AlienRingAnimationState::new(SINGLE_NODE_COUNT);
                 animation.nodes[FIRST_NODE].callback = AlienRingCallback::FollowCourse;
                 let mut scene = AlienCallbackSceneState {
@@ -341,6 +478,111 @@ mod tests {
                         AlienRingCallback::Wave
                     } else {
                         AlienRingCallback::FollowCourse
+                    }
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn wave_callback_matches_every_original_overlay_vector() {
+        let selected_node = AlienSceneNode {
+            model_index: SELECTED_MODEL_INDEX,
+            node_index: SELECTED_NODE_INDEX,
+        };
+        for fixture in wave_callback_fixtures() {
+            let vectors: Vec<WaveCallbackVector> = serde_json::from_str(fixture).unwrap();
+            for vector in vectors {
+                assert_eq!(vector.selected_state, ORIGINAL_SELECTED_NODE);
+                let species = species(&vector.module);
+                let mut pose = pose(
+                    [i32::MIN; AXIS_COUNT],
+                    [
+                        vector.motion_before[3],
+                        vector.motion_before[4],
+                        vector.motion_before[5],
+                    ],
+                );
+                pose.nodes[FIRST_NODE].parent = AlienNodeParent::Root;
+                pose.nodes[FIRST_NODE].angles = [
+                    vector.motion_before[0] as u16,
+                    vector.motion_before[1] as u16,
+                    vector.motion_before[2] as u16,
+                ];
+                pose.nodes[FIRST_NODE].local_position = [
+                    vector.motion_before[3] as i32,
+                    vector.motion_before[4] as i32,
+                    vector.motion_before[5] as i32,
+                ];
+                let mut animation = AlienRingAnimationState::new(SINGLE_NODE_COUNT);
+                animation.nodes[FIRST_NODE].callback = AlienRingCallback::Wave;
+                let mut scene = AlienCallbackSceneState {
+                    callback_countdown: ORIGINAL_CALLBACK_COUNTDOWN,
+                    wave_selection: wave_selection(vector.selection_before),
+                    palette_pulses: palette_pulses(&vector.module, &vector.pulse_before),
+                    method_delta: vector.delta_before as i16,
+                    slot2_active: vector.active_before != u16::MIN,
+                    wave_selected_node: Some(selected_node),
+                    ..AlienCallbackSceneState::default()
+                };
+
+                let update = update_wave_callback(
+                    species,
+                    FIRST_NODE,
+                    &mut pose,
+                    &mut animation,
+                    &mut scene,
+                    vector.view,
+                )
+                .unwrap();
+
+                assert_eq!(
+                    update,
+                    wave_callback_update(&vector.expected_action),
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(scene.slot2_active, vector.active_after != u16::MIN);
+                assert_eq!(scene.wave_selection, wave_selection(vector.selection_after));
+                assert_eq!(scene.method_delta as u16, vector.delta_after);
+                assert_eq!(scene.callback_countdown, vector.countdown_after);
+                assert_eq!(
+                    scene.palette_pulses,
+                    palette_pulses(&vector.module, &vector.pulse_after)
+                );
+                assert_eq!(
+                    [
+                        u32::from(pose.nodes[FIRST_NODE].angles[X_AXIS]),
+                        u32::from(pose.nodes[FIRST_NODE].angles[Y_AXIS]),
+                        u32::from(pose.nodes[FIRST_NODE].angles[Z_AXIS]),
+                        pose.nodes[FIRST_NODE].local_position[X_AXIS] as u32,
+                        pose.nodes[FIRST_NODE].local_position[Y_AXIS] as u32,
+                        pose.nodes[FIRST_NODE].local_position[Z_AXIS] as u32,
+                    ],
+                    vector.motion_after
+                );
+                match vector.owner_after {
+                    ORIGINAL_WAVE_PARENT_SENTINEL => {
+                        assert_eq!(pose.nodes[FIRST_NODE].parent, AlienNodeParent::Root);
+                        assert_eq!(pose.nodes[FIRST_NODE].scene_parent, None);
+                    }
+                    ORIGINAL_SELECTED_NODE => {
+                        assert_eq!(pose.nodes[FIRST_NODE].parent, AlienNodeParent::Root);
+                        assert_eq!(pose.nodes[FIRST_NODE].scene_parent, Some(selected_node));
+                    }
+                    ORIGINAL_SCENE_CAMERA_OFFSET => {
+                        assert_eq!(pose.nodes[FIRST_NODE].parent, AlienNodeParent::SceneCamera);
+                        assert_eq!(pose.nodes[FIRST_NODE].scene_parent, None);
+                    }
+                    value => panic!("unknown wave parent {value:#06x}"),
+                }
+                assert_eq!(
+                    animation.nodes[FIRST_NODE].callback,
+                    if vector.callback_after == ORIGINAL_WAVE_CALLBACK_SENTINEL {
+                        AlienRingCallback::Wave
+                    } else {
+                        assert_eq!(vector.callback_after, finish_callback(&vector.module));
+                        AlienRingCallback::WaveFinish
                     }
                 );
             }

@@ -54,7 +54,10 @@ pub use ring::{
     update_follow_course, update_initial_course, update_or_initialize_ring,
 };
 pub use scene::{AlienScene, AlienSceneError, AlienSceneFrame};
-pub use selection::{AlienSelectionError, AlienSelectionUpdate, update_wave_selection};
+pub use selection::{
+    AlienSelectionError, AlienSelectionUpdate, AlienWaveCallbackUpdate, update_wave_callback,
+    update_wave_selection,
+};
 pub use starfield::{
     AlienStar, AlienStarRejections, AlienStarfieldError, AlienStarfieldFrame, STAR_COUNT,
     generate_starfield,

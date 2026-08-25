@@ -9,9 +9,40 @@
     "selection_after": 0,
     "delta_before": 16,
     "delta_after": 16,
+    "selected_state": 13398,
+    "view": [
+      -123,
+      456,
+      -32768
+    ],
+    "motion_before": [
+      13107,
+      17476,
+      65520,
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "motion_after": [
+      0,
+      2048,
+      37,
+      287454020,
+      1432778632,
+      2578103244
+    ],
     "owner_after": 4369,
     "callback_after": 8738,
     "countdown_after": 30583,
+    "pulse_before": [
+      270554580,
+      270554674
+    ],
+    "pulse_after": [
+      270554580,
+      270554674
+    ],
+    "expected_action": "waiting",
     "code_sha256": "d889df9828c207776ead237867232d061805eed31066dae3da7542b3e511d04c",
     "data_sha256": "1e9e0f91c7f75fe0d555dd573478f78c3f6c5ae8f6ca4097117fdca6bd294737"
   },
@@ -25,9 +56,40 @@
     "selection_after": 0,
     "delta_before": 16,
     "delta_after": 24,
+    "selected_state": 13398,
+    "view": [
+      -123,
+      456,
+      -32768
+    ],
+    "motion_before": [
+      13107,
+      17476,
+      65520,
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "motion_after": [
+      0,
+      2048,
+      37,
+      287454020,
+      1432778632,
+      2578103244
+    ],
     "owner_after": 13398,
     "callback_after": 3096,
     "countdown_after": 4,
+    "pulse_before": [
+      270554580,
+      270554674
+    ],
+    "pulse_after": [
+      270554550,
+      270554639
+    ],
+    "expected_action": "finish",
     "code_sha256": "962a7f3a07717c8454cd233c6a7155a0b9ea88a463d4be3ea509cecf0ce19aba",
     "data_sha256": "521632f5bceb0e13bf95d23f91133092238da5dde513f50fa069e70eebed4a26"
   },
@@ -41,9 +103,40 @@
     "selection_after": 0,
     "delta_before": 122,
     "delta_after": 127,
+    "selected_state": 13398,
+    "view": [
+      -123,
+      456,
+      -32768
+    ],
+    "motion_before": [
+      13107,
+      17476,
+      65520,
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "motion_after": [
+      0,
+      2048,
+      37,
+      287454020,
+      1432778632,
+      2578103244
+    ],
     "owner_after": 13398,
     "callback_after": 3096,
     "countdown_after": 4,
+    "pulse_before": [
+      270554580,
+      270554674
+    ],
+    "pulse_after": [
+      270554550,
+      270554639
+    ],
+    "expected_action": "finish",
     "code_sha256": "d0181aa3162ff1009a7fd4b626a49c4a3a40e2265fdf5da95c2d0ef471490140",
     "data_sha256": "fa73e0a10e0a77256b9a0878e5251c9620832520d7502a5fc428282aa1296666"
   },
@@ -57,9 +150,40 @@
     "selection_after": 0,
     "delta_before": 42330,
     "delta_after": 42330,
+    "selected_state": 13398,
+    "view": [
+      -123,
+      456,
+      -32768
+    ],
+    "motion_before": [
+      13107,
+      17476,
+      65520,
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "motion_after": [
+      13107,
+      17476,
+      65520,
+      123,
+      4294966840,
+      32768
+    ],
     "owner_after": 8872,
     "callback_after": 8738,
     "countdown_after": 30583,
+    "pulse_before": [
+      270554580,
+      270554674
+    ],
+    "pulse_after": [
+      270554550,
+      270554639
+    ],
+    "expected_action": "camera",
     "code_sha256": "f3b4783a456cde9907938dad806ff328a132d3e4477def00fe0a6ffaedd23f42",
     "data_sha256": "fffcf8a2dcb3e9cd347461cc226ef5e02437f826bffde5467c95ee475d9bf33f"
   }

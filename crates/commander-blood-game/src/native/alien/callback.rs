@@ -2,6 +2,7 @@
 
 use commander_blood_formats::alien::AXIS_COUNT;
 
+use super::projection::AlienSceneNode;
 use super::wave::AlienWaveSelection;
 
 const TRANSITION_QUEUE_LENGTH: usize = 8;
@@ -29,6 +30,12 @@ pub struct AlienCallbackSceneState {
     pub wave_selection: AlienWaveSelection,
     /// Persistent wrapping palette pulse values.
     pub palette_pulses: [i32; AXIS_COUNT],
+    /// Shared signed method delta adjusted by wave completion.
+    pub method_delta: i16,
+    /// Whether the slot-2 callback family currently owns the camera handoff.
+    pub slot2_active: bool,
+    /// Scene node selected by the latest successful wave bounds check.
+    pub wave_selected_node: Option<AlienSceneNode>,
     /// Fixed transition queue storing typed model-node indices.
     pub transition_queue: [Option<usize>; TRANSITION_QUEUE_LENGTH],
     /// Queue slot selected by the surrounding slot-11 behavior.
