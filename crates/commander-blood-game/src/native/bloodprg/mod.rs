@@ -2,6 +2,7 @@
 
 mod aboard;
 mod actor_slots;
+mod actor_handler_camera;
 mod actor_handler_palette;
 mod actor_handler_panel;
 mod actor_handler_radio;
@@ -38,6 +39,12 @@ pub use actor_slots::{
     NAV_ACTOR_SLOT_COUNT, NavActorBusyState, NavActorHandler, NavActorMouseState,
     NavActorSeekState, NavActorSlot, NavActorSlotBackend, NavActorSlotFlags,
     NavActorSlotUpdateOutcome, update_nav_actor_slots,
+};
+pub use actor_handler_camera::{
+    CAMERA_TRANSITION_FRAME, CAMERA_VIEW_TRANSITION_STEPS, CameraActorPresentation,
+    CameraPageFlipOutcome, CameraPresentationActorBackend, CameraPresentationActorOutcome,
+    CameraPresentationActorState, CameraPresentationBlockers, CameraViewAnimation,
+    update_camera_presentation_actor,
 };
 pub use actor_handler_palette::{
     SHIP_ACTOR_PALETTE_BYTES, ShipPaletteActorBackend, ShipPaletteActorOutcome,
