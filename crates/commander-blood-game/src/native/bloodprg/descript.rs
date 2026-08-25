@@ -2,6 +2,7 @@
 
 use commander_blood_formats::descript::{
     DescriptBackgroundCommand, DescriptBackgroundSlot, DescriptCaptionCommand, DescriptRecordKind,
+    DescriptVideoName,
 };
 
 use super::text_handler::TextPresentationState;
@@ -108,6 +109,81 @@ pub fn stage_descript_caption(
     presentation.subtitle_reveal_cursor = usize::MIN;
 }
 
+/// Video resources selected by one decoded DESCRIPT record.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct DescriptPresentationAssets {
+    location_scene_video: Option<Box<[u8]>>,
+    object_scene_video: Option<Box<[u8]>>,
+    character_right_scene_video: Option<Box<[u8]>>,
+    character_left_scene_video: Option<Box<[u8]>>,
+}
+
+impl DescriptPresentationAssets {
+    /// Return the location scene's primary HNM resource.
+    pub fn location_scene_video(&self) -> Option<&[u8]> {
+        self.location_scene_video.as_deref()
+    }
+
+    /// Return the inventory or world-object HNM resource.
+    pub fn object_scene_video(&self) -> Option<&[u8]> {
+        self.object_scene_video.as_deref()
+    }
+
+    /// Return the character HNM authored for the right-side view.
+    pub fn character_right_scene_video(&self) -> Option<&[u8]> {
+        self.character_right_scene_video.as_deref()
+    }
+
+    /// Return the character HNM authored for the left-side view.
+    pub fn character_left_scene_video(&self) -> Option<&[u8]> {
+        self.character_left_scene_video.as_deref()
+    }
+}
+
+/// Select the primary location scene HNM.
+///
+/// This translates `byte_parser_copy_20b8_printable` at BLOODPRG file offset
+/// `0x007629`.
+pub fn select_location_scene_video(
+    video: &DescriptVideoName,
+    assets: &mut DescriptPresentationAssets,
+) {
+    assets.location_scene_video = Some(Box::from(video.as_bytes()));
+}
+
+/// Select the inventory or world-object scene HNM.
+///
+/// This translates `byte_parser_copy_24c6_printable` at BLOODPRG file offset
+/// `0x00766F`.
+pub fn select_object_scene_video(
+    video: &DescriptVideoName,
+    assets: &mut DescriptPresentationAssets,
+) {
+    assets.object_scene_video = Some(Box::from(video.as_bytes()));
+}
+
+/// Select the character HNM authored for the right-side view.
+///
+/// This translates `byte_parser_copy_2460_printable` at BLOODPRG file offset
+/// `0x0076C0`.
+pub fn select_character_right_scene_video(
+    video: &DescriptVideoName,
+    assets: &mut DescriptPresentationAssets,
+) {
+    assets.character_right_scene_video = Some(Box::from(video.as_bytes()));
+}
+
+/// Select the character HNM authored for the left-side view.
+///
+/// This translates `byte_parser_copy_247a_printable` at BLOODPRG file offset
+/// `0x0076D5`.
+pub fn select_character_left_scene_video(
+    video: &DescriptVideoName,
+    assets: &mut DescriptPresentationAssets,
+) {
+    assets.character_left_scene_video = Some(Box::from(video.as_bytes()));
+}
+
 /// Boundary detected after the current DESCRIPT command stream.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct DescriptRecordBoundary {
@@ -168,6 +244,7 @@ mod tests {
 
     use commander_blood_formats::descript::{
         DescriptBackgroundError, decode_background_command, decode_caption_command,
+        decode_video_name,
     };
     use serde::Deserialize;
 
@@ -175,6 +252,7 @@ mod tests {
 
     const ORACLE_VECTOR_COUNT: usize = 2;
     const BACKGROUND_ORACLE_VECTOR_COUNT: usize = 8;
+    const VIDEO_ORACLE_VECTOR_COUNT: usize = 8;
 
     #[derive(Deserialize)]
     struct StopOracle {
@@ -199,6 +277,33 @@ mod tests {
         input_hex: String,
         reveal_active_after: u8,
         reveal_timer_after: usize,
+    }
+
+    #[derive(Deserialize)]
+    struct VideoOracle {
+        name: String,
+        input_hex: String,
+        copied_hex: String,
+        stopping_byte: u8,
+    }
+
+    #[derive(Clone, Copy)]
+    enum VideoAssetField {
+        Location,
+        Object,
+        CharacterRight,
+        CharacterLeft,
+    }
+
+    impl VideoAssetField {
+        fn selected(self, assets: &DescriptPresentationAssets) -> Option<&[u8]> {
+            match self {
+                Self::Location => assets.location_scene_video(),
+                Self::Object => assets.object_scene_video(),
+                Self::CharacterRight => assets.character_right_scene_video(),
+                Self::CharacterLeft => assets.character_left_scene_video(),
+            }
+        }
     }
 
     #[derive(Default)]
@@ -254,6 +359,33 @@ mod tests {
             assert_eq!(
                 boundary.next_record_kind(),
                 Some(expected_kind),
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    fn assert_video_selector(
+        input: &str,
+        field: VideoAssetField,
+        selector: fn(&DescriptVideoName, &mut DescriptPresentationAssets),
+    ) {
+        let vectors: Vec<VideoOracle> = serde_json::from_str(input).unwrap();
+        assert_eq!(vectors.len(), VIDEO_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let input = bytes_from_hex(&vector.input_hex);
+            let expected = bytes_from_hex(&vector.copied_hex);
+            let (video, tail) = decode_video_name(&input).unwrap();
+            assert_eq!(tail, &[vector.stopping_byte], "{}", vector.name);
+            assert_eq!(video.as_bytes(), expected.as_ref(), "{}", vector.name);
+
+            let mut assets = DescriptPresentationAssets::default();
+            selector(&DescriptVideoName::new(Box::from(*b"old.hnm")), &mut assets);
+            selector(&video, &mut assets);
+            assert_eq!(
+                field.selected(&assets),
+                Some(expected.as_ref()),
                 "{}",
                 vector.name
             );
@@ -414,5 +546,41 @@ mod tests {
                 vector.name
             );
         }
+    }
+
+    #[test]
+    fn location_video_selection_matches_every_original_copy_vector() {
+        assert_video_selector(
+            include_str!("../../../../../re/tools/oracle_vectors/func_7629_natural.json"),
+            VideoAssetField::Location,
+            select_location_scene_video,
+        );
+    }
+
+    #[test]
+    fn object_video_selection_matches_every_original_copy_vector() {
+        assert_video_selector(
+            include_str!("../../../../../re/tools/oracle_vectors/func_766f_natural.json"),
+            VideoAssetField::Object,
+            select_object_scene_video,
+        );
+    }
+
+    #[test]
+    fn character_right_video_selection_matches_every_original_copy_vector() {
+        assert_video_selector(
+            include_str!("../../../../../re/tools/oracle_vectors/func_76c0_natural.json"),
+            VideoAssetField::CharacterRight,
+            select_character_right_scene_video,
+        );
+    }
+
+    #[test]
+    fn character_left_video_selection_matches_every_original_copy_vector() {
+        assert_video_selector(
+            include_str!("../../../../../re/tools/oracle_vectors/func_76d5_natural.json"),
+            VideoAssetField::CharacterLeft,
+            select_character_left_scene_video,
+        );
     }
 }

@@ -161,6 +161,43 @@ pub fn decode_caption_command(
     ))
 }
 
+/// Case-preserving HNM resource name decoded from a DESCRIPT video command.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DescriptVideoName(Box<[u8]>);
+
+impl DescriptVideoName {
+    /// Build a video name from owned bytes without a trailing zero.
+    pub fn new(source_name: Box<[u8]>) -> Self {
+        Self(source_name)
+    }
+
+    /// Return the HNM resource name exactly as authored.
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+/// Failure while decoding a printable DESCRIPT video name.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DescriptVideoNameError {
+    /// The printable name reaches the end of the record without a stop byte.
+    MissingStopByte,
+}
+
+/// Decode a printable HNM name while leaving the following opcode unconsumed.
+pub fn decode_video_name(
+    payload: &[u8],
+) -> Result<(DescriptVideoName, &[u8]), DescriptVideoNameError> {
+    let name_length = payload
+        .iter()
+        .position(|byte| !(*byte >= PRINTABLE_NAME_START && *byte <= PRINTABLE_NAME_END))
+        .ok_or(DescriptVideoNameError::MissingStopByte)?;
+    Ok((
+        DescriptVideoName::new(Box::from(&payload[..name_length])),
+        &payload[name_length..],
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::{Path, PathBuf};
@@ -240,6 +277,18 @@ mod tests {
         let (command, tail) = decode_caption_command(&payload).unwrap();
 
         assert_eq!(command.text(), &[128, 255, 1]);
+        assert_eq!(tail, &[NEXT_OPCODE]);
+    }
+
+    #[test]
+    fn video_name_payload_keeps_the_following_opcode_unconsumed() {
+        const NEXT_OPCODE: u8 = 9;
+
+        let mut payload = b"pterra10.hnm".to_vec();
+        payload.push(NEXT_OPCODE);
+        let (video, tail) = decode_video_name(&payload).unwrap();
+
+        assert_eq!(video.as_bytes(), b"pterra10.hnm");
         assert_eq!(tail, &[NEXT_OPCODE]);
     }
 }

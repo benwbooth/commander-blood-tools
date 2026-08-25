@@ -24,7 +24,9 @@ pub use aboard::{
 };
 pub use descript::{
     CachedDescriptBackground, DescriptBackgroundCache, DescriptBackgroundCacheOutcome,
-    DescriptBackgroundSource, DescriptRecordBoundary, cache_background_image,
+    DescriptBackgroundSource, DescriptPresentationAssets, DescriptRecordBoundary,
+    cache_background_image, select_character_left_scene_video,
+    select_character_right_scene_video, select_location_scene_video, select_object_scene_video,
     stage_descript_caption, stop_before_character_record, stop_before_location_record,
     stop_before_object_record, stop_before_sequence_record,
 };
