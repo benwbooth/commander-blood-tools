@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import re
 import struct
 from pathlib import Path
@@ -20,6 +21,21 @@ from check_hud_position_domain import (
 FIELD_SELECTOR_PARENT_LINK = 0x11
 PRESENTABLE_KIND_MASK = 0x0098
 LINKED_KIND_MASK = 0x0018
+
+
+def state_object_identifier(name: bytes) -> str:
+    """Match vm_profile.rs identifier_from_bytes(cp437_string(name))."""
+    output = ""
+    for byte in name.decode("cp437").encode("utf-8"):
+        if chr(byte).isalnum() and byte < 0x80 or byte == ord("_"):
+            output += chr(byte)
+        else:
+            output += f"_{byte:02X}"
+    if not output:
+        output = "unnamed"
+    if output[0].isdigit():
+        output = "_" + output
+    return output
 
 
 def read_word(image: bytes, offset: int, path: Path, label: str) -> int:
@@ -53,7 +69,7 @@ def checked_field_end(
 
 
 def audit_profile(
-    number: int, game_dir: Path, structured_dir: Path, matrix: bytes
+    number: int, game_dir: Path, source_dir: Path, matrix: bytes
 ) -> tuple[int, int, int, int, int, int, int, set[int], set[int], set[int]]:
     deb_path = game_dir / f"SCRIPT{number}.DEB"
     var_path = game_dir / f"SCRIPT{number}.VAR"
@@ -156,10 +172,7 @@ def audit_profile(
             ),
         )
 
-    vm_text = "\n".join(
-        (structured_dir / f"script{number}.{image}.blood").read_text()
-        for image in ("cod", "bas")
-    )
+    vm_text = (source_dir / f"script{number}.blood").read_text()
     if "VAR kind 0x0080, selector(s) 11" in vm_text:
         raise ValueError(f"SCRIPT{number}: VM source aliases a kind-0x80 parent field")
     direct_parent_refs = {
@@ -174,21 +187,49 @@ def audit_profile(
             + ", ".join(f"0x{value:04X}" for value in sorted(direct_parent_refs))
         )
 
-    cd_related = [
-        int(value, 16)
-        for value in re.findall(
-            r"(?im)^\s*record_triple\s+\S+\s+0x([0-9a-f]{4})\s+", vm_text
-        )
-    ]
-    c2_related = [
-        int(value, 16)
-        for value in re.findall(
-            r"(?im)^\s*record_state\s+0xC2\s+\S+\s+0x([0-9a-f]{4})\s+",
+    source_names = [
+        ast.literal_eval(quoted_name).encode("cp437")
+        for quoted_name in re.findall(
+            r'(?m)^\s*(?:player|character|planet|ship|universe|location|'
+            r'black_hole|navigation_controller|item)\s+'
+            r'("(?:\\.|[^"\\])*")\s+\{',
             vm_text,
         )
     ]
-    cd_kinds = {kinds_by_offset.get(offset) for offset in cd_related}
-    c2_kinds = {kinds_by_offset.get(offset) for offset in c2_related}
+    directory_names = [name for name, _ in entries]
+    if source_names != directory_names:
+        mismatch = next(
+            (
+                index
+                for index, (source, directory) in enumerate(
+                    zip(source_names, directory_names)
+                )
+                if source != directory
+            ),
+            min(len(source_names), len(directory_names)),
+        )
+        raise ValueError(
+            f"SCRIPT{number}: state object order diverges from DEB at index "
+            f"{mismatch} (source={len(source_names)}, DEB={len(directory_names)})"
+        )
+
+    aliases: dict[str, int] = {}
+    for name, offset in entries:
+        identifier = state_object_identifier(name)
+        prior = aliases.setdefault(identifier, offset)
+        if prior != offset:
+            raise ValueError(
+                f"SCRIPT{number}: alias {identifier} resolves to two records"
+            )
+
+    cd_related = re.findall(
+        r"(?im)^\s*transfer\s+([A-Za-z_][A-Za-z0-9_]*)\s+from\s+", vm_text
+    )
+    c2_related = re.findall(
+        r"(?im)^\s*bring\s+([A-Za-z_][A-Za-z0-9_]*)\s+aboard\s*$", vm_text
+    )
+    cd_kinds = {kinds_by_offset.get(aliases.get(identifier, -1)) for identifier in cd_related}
+    c2_kinds = {kinds_by_offset.get(aliases.get(identifier, -1)) for identifier in c2_related}
     if cd_kinds - {0x0400} or c2_kinds - {0x0002}:
         raise ValueError(
             f"SCRIPT{number}: unexpected selector-0x11 writer kinds "
@@ -225,13 +266,13 @@ def main() -> None:
         "--game-dir", type=Path, default=Path("accuracy/cdrive/CBLOOD")
     )
     parser.add_argument(
-        "--structured-dir", type=Path, default=Path("re/vm/structured")
+        "--source-dir", type=Path, default=Path("re/vm/profiles")
     )
     args = parser.parse_args()
 
     matrix = field_matrix(args.executable)
     totals = [
-        audit_profile(number, args.game_dir, args.structured_dir, matrix)
+        audit_profile(number, args.game_dir, args.source_dir, matrix)
         for number in range(1, 6)
     ]
     expected_profiles = [

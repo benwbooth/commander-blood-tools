@@ -1,10 +1,10 @@
 //! Typed, lossless source language for Commander Blood VM programs.
 //!
-//! BloodScript IR is the compiler-facing layer above CBVM-ASM. It gives proven
-//! token families authoritative typed statements while retaining `OP` and `RAW`
-//! escapes for constructs whose high-level structure is not established. The
-//! syntax is reconstructed for this project; it is not claimed to be the lost
-//! historical source syntax.
+//! BloodScript 8 is the canonical editable layer for all five VM resource
+//! bundles. Every shipped token and companion-data field has authoritative
+//! typed syntax; canonical profiles reject unresolved opcode, byte, address, or
+//! state-field fallbacks. The syntax is reconstructed for this project and is
+//! not claimed to be the lost historical source spelling.
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fmt::Write as _;
@@ -17,7 +17,7 @@ use crate::vm::{self, VmToken};
 use crate::vm_cfg::{GuardRecovery, GuardRejection, StructuredGuard, analyze_structured_guards};
 use crate::vm_source::{self, ImageKind};
 
-const SOURCE_FORMAT: &str = "bloodscript-v5";
+const SOURCE_FORMAT: &str = "bloodscript-program-v1";
 const READABLE_SOURCE_FORMAT: &str = "bloodscript-v2";
 const LEGACY_SOURCE_FORMAT: &str = "bloodscript-ir-v1";
 
@@ -48,6 +48,17 @@ pub struct Decompilation {
     pub field_alias_uses: usize,
     pub structured_selector_lists: usize,
     pub structured_cases: usize,
+}
+
+/// A compiled VM program plus the layout symbols needed by the unified profile
+/// compiler to rebuild the companion DEB directory without hard-coded offsets.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Compilation {
+    pub image: Vec<u8>,
+    pub label_offsets: HashMap<String, u16>,
+    pub procedure_offsets: HashMap<String, u16>,
+    /// First selector-node offset for each structured BAS selector list.
+    pub selector_offsets: HashMap<String, u16>,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -227,8 +238,7 @@ impl DictionaryPhraseLexicon {
             .then(|| phrase.as_bytes().get(position).copied())
             .flatten()
             .filter(|byte| matches!(byte, b' ' | b'|'));
-        let start = position
-            + usize::from(matches!(separator, Some(b' ') | Some(b'|')));
+        let start = position + usize::from(matches!(separator, Some(b' ') | Some(b'|')));
         let Some(first_character) = phrase.get(start..).and_then(|tail| tail.chars().next()) else {
             return Vec::new();
         };
@@ -264,6 +274,69 @@ impl DictionaryPhraseLexicon {
     }
 }
 
+/// Make every no-space token boundary in modern `say` phrases explicit. This
+/// lets the profile compiler reconstruct DIC without consulting a companion
+/// dictionary while preserving normal spaces in the displayed text.
+pub(crate) fn make_phrase_boundaries_explicit(
+    source: &str,
+    dictionary: &HashMap<u16, String>,
+) -> Result<String> {
+    let lexicon = DictionaryPhraseLexicon::new(dictionary);
+    let mut output = String::new();
+    for line in source.lines() {
+        let trimmed = line.trim();
+        if !trimmed.starts_with("say ") {
+            writeln!(output, "{line}")?;
+            continue;
+        }
+        let colon = line
+            .find(" : ")
+            .ok_or_else(|| anyhow!("say statement has no phrase separator"))?;
+        let phrase_start = colon + 3;
+        let phrase_end = quoted_json_end(&line[phrase_start..])? + phrase_start;
+        let phrase: String = serde_json::from_str(&line[phrase_start..phrase_end])?;
+        let offsets = lexicon
+            .tokenize(&phrase)
+            .ok_or_else(|| anyhow!("say phrase has no exact dictionary tokenization"))?;
+        let texts = offsets
+            .iter()
+            .map(|offset| {
+                dictionary
+                    .get(offset)
+                    .cloned()
+                    .ok_or_else(|| anyhow!("say phrase references an unknown dictionary word"))
+            })
+            .collect::<Result<Vec<_>>>()?;
+        let explicit = render_phrase_texts(&texts, &vec![true; texts.len()]);
+        let quoted = serde_json::to_string(&explicit)?;
+        writeln!(
+            output,
+            "{}{}{}",
+            &line[..phrase_start],
+            quoted,
+            &line[phrase_end..]
+        )?;
+    }
+    Ok(output.trim_end_matches('\n').to_string())
+}
+
+fn quoted_json_end(value: &str) -> Result<usize> {
+    if !value.starts_with('"') {
+        bail!("expected quoted phrase");
+    }
+    let mut escaped = false;
+    for (index, character) in value.char_indices().skip(1) {
+        if escaped {
+            escaped = false;
+        } else if character == '\\' {
+            escaped = true;
+        } else if character == '"' {
+            return Ok(index + 1);
+        }
+    }
+    bail!("unterminated quoted phrase")
+}
+
 fn render_phrase_texts(texts: &[String], forced_boundaries: &[bool]) -> String {
     let mut phrase = String::new();
     for (index, text) in texts.iter().enumerate() {
@@ -281,10 +354,12 @@ fn render_phrase_texts(texts: &[String], forced_boundaries: &[bool]) -> String {
 
 fn phrase_needs_space(prior_ends_open: bool, text: &str) -> bool {
     !prior_ends_open
-        && !text
-            .chars()
-            .next()
-            .is_some_and(|character| matches!(character, ',' | '.' | '!' | '?' | ';' | ':' | '%' | ')' | ']' | '}'))
+        && !text.chars().next().is_some_and(|character| {
+            matches!(
+                character,
+                ',' | '.' | '!' | '?' | ';' | ':' | '%' | ')' | ']' | '}'
+            )
+        })
 }
 
 fn phrase_ends_open(text: &str) -> bool {
@@ -373,8 +448,13 @@ enum ModernBlock {
     WhenElse {
         end_target: String,
     },
-    Selector(String),
-    Case,
+    Selector {
+        name: String,
+        pending_case_label: Option<String>,
+    },
+    Case {
+        continues: bool,
+    },
 }
 
 pub fn decompile(
@@ -523,6 +603,10 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
 }
 
 pub fn compile_with_dictionary(source: &str, dictionary: &HashMap<u16, String>) -> Result<Vec<u8>> {
+    Ok(compile_with_layout(source, dictionary)?.image)
+}
+
+pub fn compile_with_layout(source: &str, dictionary: &HashMap<u16, String>) -> Result<Compilation> {
     let normalized_source = normalize_modern_source(source, dictionary)?;
     let source = normalized_source.as_deref().unwrap_or(source);
     let (mut lines, format) = parse_source_lines(source)?;
@@ -647,6 +731,18 @@ pub fn compile_with_dictionary(source: &str, dictionary: &HashMap<u16, String>) 
     }
 
     let mut image = Vec::new();
+    let selector_offsets = lines
+        .iter()
+        .filter(|line| line.name == "SELECTOR_LIST")
+        .map(|line| {
+            Ok((
+                line.args[0].to_string(),
+                u16::try_from(line.offset).map_err(|_| {
+                    anyhow!("line {}: selector root exceeds 64 KiB", line.line_number)
+                })?,
+            ))
+        })
+        .collect::<Result<HashMap<_, _>>>()?;
     let mut current_procedure: Option<&str> = None;
     let mut procedure_condition_open = false;
     let mut open_whens: Vec<OpenWhen<'_>> = Vec::new();
@@ -760,12 +856,8 @@ pub fn compile_with_dictionary(source: &str, dictionary: &HashMap<u16, String>) 
                         open.false_target
                     );
                 }
-                let false_offset = parse_address(
-                    line.args[0],
-                    &labels,
-                    line.line_number,
-                    "ELSE false target",
-                )?;
+                let false_offset =
+                    parse_address(line.args[0], &labels, line.line_number, "ELSE false target")?;
                 if usize::from(false_offset) != line.offset + 3 {
                     bail!(
                         "line {}: ELSE false target {:?} must follow its jump",
@@ -999,7 +1091,26 @@ pub fn compile_with_dictionary(source: &str, dictionary: &HashMap<u16, String>) 
     if let Some(open) = open_selector_list {
         bail!("SELECTOR_LIST {:?} has no END_SELECTOR_LIST", open.name);
     }
-    Ok(image)
+    let procedure_offsets = procedure_names
+        .into_iter()
+        .map(|name| {
+            let offset = labels
+                .get(name)
+                .copied()
+                .expect("every declared procedure is included in the label layout");
+            (name.to_string(), offset)
+        })
+        .collect();
+    let label_offsets = labels
+        .into_iter()
+        .map(|(name, offset)| (name.to_string(), offset))
+        .collect();
+    Ok(Compilation {
+        image,
+        label_offsets,
+        procedure_offsets,
+        selector_offsets,
+    })
 }
 
 fn parse_source_lines(source: &str) -> Result<(Vec<ParsedSourceLine<'_>>, SourceFormat)> {
@@ -1018,8 +1129,8 @@ fn parse_source_lines(source: &str) -> Result<(Vec<ParsedSourceLine<'_>>, Source
             bail!("line {}: duplicate format header", line_index + 1);
         }
     }
-    let format = format
-        .ok_or_else(|| anyhow!("missing '; format: {READABLE_SOURCE_FORMAT}' header"))?;
+    let format =
+        format.ok_or_else(|| anyhow!("missing '; format: {READABLE_SOURCE_FORMAT}' header"))?;
     let mut lines = Vec::new();
     for (line_index, original_line) in source.lines().enumerate() {
         let line_number = line_index + 1;
@@ -1181,7 +1292,8 @@ fn normalize_modern_source(
             &lexicon,
             &mut blocks,
             &mut next_control_block,
-        )? else {
+        )?
+        else {
             continue;
         };
         write!(normalized, "{statement}")?;
@@ -1278,8 +1390,16 @@ fn normalize_modern_braced_statement(
             ModernBlock::WhenElse { end_target } => {
                 Ok(Some(format!("LABEL {end_target}\nEND_WHEN {end_target}")))
             }
-            ModernBlock::Selector(name) => Ok(Some(format!("END_SELECTOR_LIST {name}"))),
-            ModernBlock::Case => Ok(None),
+            ModernBlock::Selector {
+                name,
+                pending_case_label,
+            } => {
+                if pending_case_label.is_some() {
+                    bail!("line {line_number}: final selector case cannot continue");
+                }
+                Ok(Some(format!("END_SELECTOR_LIST {name}")))
+            }
+            ModernBlock::Case { continues } => Ok(continues.then(|| "YIELD_B".to_string())),
             ModernBlock::WhenCondition { .. } => {
                 bail!("line {line_number}: when closes without a following then block")
             }
@@ -1394,13 +1514,49 @@ fn normalize_modern_braced_statement(
                 )
             }
             "selector" if fields.len() == 2 => (
-                ModernBlock::Selector(fields[1].to_string()),
-                normalize_modern_statement(opener, line_number, lexicon)?,
+                ModernBlock::Selector {
+                    name: fields[1].to_string(),
+                    pending_case_label: None,
+                },
+                format!(
+                    "{}\nYIELD_B",
+                    normalize_modern_statement(opener, line_number, lexicon)?
+                ),
             ),
-            "case" if fields.len() == 4 && fields[2] == "->" => (
-                ModernBlock::Case,
-                normalize_modern_statement(opener, line_number, lexicon)?,
-            ),
+            "case" if fields.len() == 2 || (fields.len() == 3 && fields[2] == "continues") => {
+                let selector = blocks
+                    .iter_mut()
+                    .rev()
+                    .find_map(|block| match block {
+                        ModernBlock::Selector {
+                            pending_case_label, ..
+                        } => Some(pending_case_label),
+                        _ => None,
+                    })
+                    .ok_or_else(|| anyhow!("line {line_number}: case outside selector block"))?;
+                let prior_label = selector
+                    .take()
+                    .map(|label| format!("LABEL {label}\n"))
+                    .unwrap_or_default();
+                let target = if fields.len() == 3 {
+                    let id = *next_control_block;
+                    *next_control_block += 1;
+                    let label = format!("__selector_case_{id}");
+                    *selector = Some(label.clone());
+                    label
+                } else {
+                    "0".to_string()
+                };
+                (
+                    ModernBlock::Case {
+                        continues: fields.len() == 3,
+                    },
+                    format!(
+                        "{prior_label}CASE {} {target}",
+                        modern_operand_to_canonical(fields[1], line_number)?
+                    ),
+                )
+            }
             _ => bail!("line {line_number}: unsupported BloodScript block opener {opener:?}"),
         };
         blocks.push(block);
@@ -1494,14 +1650,10 @@ fn normalize_modern_statement(
         "proc" => normalize_modern_fixed("PROCEDURE", &fields[1..], 1, line_number),
         "when" => normalize_modern_fixed("WHEN", &fields[1..], 1, line_number),
         "then" => normalize_modern_fixed("GUARD_POP", &fields[1..], 0, line_number),
-        "selector" => {
-            normalize_modern_fixed("SELECTOR_LIST", &fields[1..], 1, line_number)
-        }
+        "selector" => normalize_modern_fixed("SELECTOR_LIST", &fields[1..], 1, line_number),
         "activation" => {
             if fields.len() != 4 || fields[2] != "until" {
-                bail!(
-                    "line {line_number}: expected 'activation enabled|disabled until TARGET'"
-                );
+                bail!("line {line_number}: expected 'activation enabled|disabled until TARGET'");
             }
             let flags = match fields[1] {
                 "enabled" => "01",
@@ -1521,29 +1673,20 @@ fn normalize_modern_statement(
                 return Ok(format!("RECORD_CLEAR {}.action", fields[2]));
             }
             if fields.len() != 3 {
-                bail!(
-                    "line {line_number}: expected 'end proc|when|selector|presentation NAME'"
-                );
+                bail!("line {line_number}: expected 'end proc|when|selector|presentation NAME'");
             }
             let canonical = match fields[1].to_ascii_lowercase().as_str() {
                 "proc" => "END_PROCEDURE",
                 "when" => "END_WHEN",
                 "selector" => "END_SELECTOR_LIST",
-                _ => bail!(
-                    "line {line_number}: expected 'end proc', 'end when', or 'end selector'"
-                ),
+                _ => {
+                    bail!("line {line_number}: expected 'end proc', 'end when', or 'end selector'")
+                }
             };
             Ok(format!("{canonical} {}", fields[2]))
         }
         "case" => {
-            if fields.len() != 4 || fields[2] != "->" {
-                bail!("line {line_number}: expected 'case WORD -> TARGET'");
-            }
-            Ok(format!(
-                "CASE {} {}",
-                modern_operand_to_canonical(fields[1], line_number)?,
-                modern_operand_to_canonical(fields[3], line_number)?
-            ))
+            bail!("line {line_number}: case must be used as a selector block opener")
         }
         "say" => normalize_modern_say(&fields, line_number, lexicon),
         "text" | "text_tokens" => normalize_modern_text(&fields, line_number),
@@ -1556,19 +1699,14 @@ fn normalize_modern_statement(
         }
         "transfer" => {
             if fields.len() != 6 || fields[2] != "from" || fields[4] != "to" {
-                bail!(
-                    "line {line_number}: expected 'transfer ITEM from SOURCE to DESTINATION'"
-                );
+                bail!("line {line_number}: expected 'transfer ITEM from SOURCE to DESTINATION'");
             }
             validate_identifier(fields[1], line_number)?;
             validate_identifier(fields[3], line_number)?;
             validate_identifier(fields[5], line_number)?;
             let source = transfer_holder_to_object(fields[3]);
             let destination = transfer_holder_to_object(fields[5]);
-            Ok(format!(
-                "TRANSFER {} {source} {destination}",
-                fields[1],
-            ))
+            Ok(format!("TRANSFER {} {source} {destination}", fields[1],))
         }
         "navigate" => {
             if fields.len() != 3 || fields[1] != "to" {
@@ -1607,6 +1745,17 @@ fn normalize_modern_statement(
                 modern_operand_to_canonical(fields[2], line_number)?
             ))
         }
+        "run" => {
+            if fields.len() != 3 || fields[1] != "profile" {
+                bail!("line {line_number}: expected 'run profile SCRIPT1..SCRIPT5'");
+            }
+            let profile = fields[2]
+                .strip_prefix("SCRIPT")
+                .and_then(|value| value.parse::<u8>().ok())
+                .filter(|value| (1..=5).contains(value))
+                .ok_or_else(|| anyhow!("line {line_number}: invalid profile {:?}", fields[2]))?;
+            Ok(format!("RUN_PROFILE {profile:02X}"))
+        }
         "during" => {
             if fields.len() != 2 {
                 bail!("line {line_number}: expected 'during bridge|travel|contact'");
@@ -1620,19 +1769,19 @@ fn normalize_modern_statement(
                 ),
             })
         }
+        "check" => normalize_modern_marked_bit_expression(&fields, true, line_number),
+        "mark" => normalize_modern_marked_bit_expression(&fields, false, line_number),
         "require" => {
             if fields.len() == 4 && fields[1] == "travel" && fields[2] == "through" {
                 validate_identifier(fields[3], line_number)?;
                 return Ok(format!("REQUIRE_TRAVEL_THROUGH {}", fields[3]));
             }
-            if let Some(statement) = normalize_modern_timer_expression(
-                &fields[1..],
-                true,
-                line_number,
-            )? {
+            if let Some(statement) =
+                normalize_modern_timer_expression(&fields[1..], true, line_number)?
+            {
                 return Ok(statement);
             }
-            if fields.len() == 4 && fields[2] == "in" && fields[3].ends_with(".links") {
+            if fields.len() == 4 && fields[2] == "in" && fields[3].ends_with(".known_objects") {
                 validate_identifier(fields[1], line_number)?;
                 validate_field_identifier(fields[3], line_number)?;
                 return Ok(format!("BLOOD_LINK {} {} 0", fields[3], fields[1]));
@@ -1640,7 +1789,7 @@ fn normalize_modern_statement(
             if fields.len() == 5
                 && fields[2] == "not"
                 && fields[3] == "in"
-                && fields[4].ends_with(".links")
+                && fields[4].ends_with(".known_objects")
             {
                 validate_identifier(fields[1], line_number)?;
                 validate_field_identifier(fields[4], line_number)?;
@@ -1651,14 +1800,11 @@ fn normalize_modern_statement(
             {
                 return Ok(statement);
             }
-            if let Some(statement) =
-                normalize_modern_choice_expression(&fields[1..], line_number)?
+            if let Some(statement) = normalize_modern_choice_expression(&fields[1..], line_number)?
             {
                 return Ok(statement);
             }
-            if let Some(statement) =
-                normalize_modern_clock_expression(&fields[1..], line_number)?
-            {
+            if let Some(statement) = normalize_modern_clock_expression(&fields[1..], line_number)? {
                 return Ok(statement);
             }
             if let Some(statement) =
@@ -1700,7 +1846,7 @@ fn normalize_modern_statement(
             }
             if fields.len() == 3
                 && matches!(fields[1], "+=" | "-=")
-                && fields[0].ends_with(".links")
+                && fields[0].ends_with(".known_objects")
             {
                 validate_field_identifier(fields[0], line_number)?;
                 validate_identifier(fields[2], line_number)?;
@@ -1718,9 +1864,7 @@ fn normalize_modern_statement(
                     .strip_prefix('(')
                     .and_then(|value| value.strip_suffix(')'))
                     .ok_or_else(|| {
-                        anyhow!(
-                            "line {line_number}: position assignment requires '(X, Y)'"
-                        )
+                        anyhow!("line {line_number}: position assignment requires '(X, Y)'")
                     })?;
                 let (x, y) = inner.split_once(',').ok_or_else(|| {
                     anyhow!("line {line_number}: position assignment requires '(X, Y)'")
@@ -1731,15 +1875,12 @@ fn normalize_modern_statement(
                 return Ok(format!(
                     "POSITION {} {} {}",
                     fields[0],
-                    modern_operand_to_canonical(x.trim(), line_number)?,
-                    modern_operand_to_canonical(y.trim(), line_number)?
+                    decimal_word_to_canonical(x.trim(), line_number, "X coordinate")?,
+                    decimal_word_to_canonical(y.trim(), line_number, "Y coordinate")?
                 ));
             }
-            if let Some(statement) = normalize_modern_timer_expression(
-                &fields,
-                false,
-                line_number,
-            )? {
+            if let Some(statement) = normalize_modern_timer_expression(&fields, false, line_number)?
+            {
                 return Ok(statement);
             }
             if let Some(statement) = normalize_modern_bit_expression(&fields, false, line_number)? {
@@ -1819,18 +1960,11 @@ fn normalize_modern_presentation_expression(
         ),
     };
     validate_identifier(fields[2], line_number)?;
-    Ok(Some(format!(
-        "ACTOR {}.action blood {inverted}",
-        fields[2]
-    )))
+    Ok(Some(format!("ACTOR {}.action blood {inverted}", fields[2])))
 }
 
 fn transfer_holder_to_object(value: &str) -> &str {
-    if value == "aboard" {
-        "blood"
-    } else {
-        value
-    }
+    if value == "aboard" { "blood" } else { value }
 }
 
 fn parse_modern_u16(value: &str, line_number: usize, field: &str) -> Result<u16> {
@@ -1856,9 +1990,7 @@ fn parse_timer_index(value: &str, line_number: usize) -> Result<Option<u8>> {
         .ok_or_else(|| anyhow!("line {line_number}: timer reference must end with ']'"))?;
     let index = parse_modern_u16(index, line_number, "timer index")?;
     if index >= 0x1E {
-        bail!(
-            "line {line_number}: timer index {index} is outside the ISR-managed range 0..29"
-        );
+        bail!("line {line_number}: timer index {index} is outside the ISR-managed range 0..29");
     }
     Ok(Some(index as u8))
 }
@@ -1875,7 +2007,9 @@ fn normalize_modern_timer_expression(
         return Ok(None);
     };
     if fields.len() != 3 || !matches!(fields[1], "=" | "==") {
-        bail!("line {line_number}: expected 'require timer[{index}] == 0' or 'timer[{index}] = VALUE'");
+        bail!(
+            "line {line_number}: expected 'require timer[{index}] == 0' or 'timer[{index}] = VALUE'"
+        );
     }
     if query {
         if fields[1] != "==" || fields[2] != "0" {
@@ -1944,13 +2078,11 @@ fn normalize_modern_clock_expression(
             "GLOBAL_WORD_COMPARE {operator} C1 {hour:04X}"
         )));
     }
-    if fields.first() != Some(&"clock.date") {
+    if fields.first() != Some(&"annual_date") {
         return Ok(None);
     }
-    if fields.len() != 5 || fields[3] != "using" || fields[4] != "month_day_only" {
-        bail!(
-            "line {line_number}: expected 'require clock.date OP YYYY-MM-DD using month_day_only'"
-        );
+    if fields.len() != 3 {
+        bail!("line {line_number}: expected 'require annual_date OP YYYY-MM-DD'");
     }
     let operator = modern_rtc_operator(fields[1], line_number)?;
     let mut parts = fields[2].split('-');
@@ -1980,9 +2112,7 @@ fn modern_rtc_operator(operator: &str, line_number: usize) -> Result<&'static st
         "<" => Ok("F1"),
         ">" => Ok("F2"),
         "==" => Ok("F5"),
-        _ => bail!(
-            "line {line_number}: RTC comparison operator must be '<', '>', or '=='"
-        ),
+        _ => bail!("line {line_number}: RTC comparison operator must be '<', '>', or '=='"),
     }
 }
 
@@ -1991,11 +2121,7 @@ fn normalize_modern_bit_expression(
     query: bool,
     line_number: usize,
 ) -> Result<Option<String>> {
-    let (fields, opcode) = if fields.ends_with(&["using", "alternate_encoding"]) {
-        (&fields[..fields.len() - 2], "B0")
-    } else {
-        (fields, "AE")
-    };
+    let opcode = "AE";
     let (target, inverted) = if query {
         if fields.len() != 1 {
             return Ok(None);
@@ -2024,14 +2150,47 @@ fn normalize_modern_bit_expression(
     )))
 }
 
+fn normalize_modern_marked_bit_expression(
+    fields: &[&str],
+    query: bool,
+    line_number: usize,
+) -> Result<String> {
+    let connector = if query { "is" } else { "as" };
+    if fields.len() != 4 || fields[2] != connector {
+        bail!(
+            "line {line_number}: expected '{} TARGET {connector} STATE'",
+            if query { "check" } else { "mark" }
+        );
+    }
+    let (target, inverted) = match fields[3] {
+        "active" => (format!("{}.active", fields[1]), false),
+        "inactive" => (format!("{}.active", fields[1]), true),
+        "known" => (format!("{}.known", fields[1]), false),
+        "unknown" => (format!("{}.known", fields[1]), true),
+        "portable" => (format!("{}.portable", fields[1]), false),
+        "not_portable" => (format!("{}.portable", fields[1]), true),
+        "set" if fields[1].starts_with("bits(") => (fields[1].to_string(), false),
+        "clear" if fields[1].starts_with("bits(") => (fields[1].to_string(), true),
+        state => bail!(
+            "line {line_number}: bit state must be active, inactive, known, unknown, portable, not_portable, set, or clear; found {state:?}"
+        ),
+    };
+    let (field, mask) = modern_bit_target_to_canonical(&target, line_number)?
+        .ok_or_else(|| anyhow!("line {line_number}: {target:?} is not a boolean state field"))?;
+    Ok(format!(
+        "SHARED_BIT_STATE B0 {field} {mask} {}",
+        bool_digit(inverted)
+    ))
+}
+
 fn modern_bit_target_to_canonical(
     value: &str,
     line_number: usize,
 ) -> Result<Option<(String, String)>> {
     for (suffix, mask) in [
         (".active", "0001"),
-        (".in_play", "0002"),
-        (".presentable", "0020"),
+        (".known", "0002"),
+        (".portable", "0020"),
     ] {
         if let Some(owner) = value.strip_suffix(suffix) {
             return Ok(Some((
@@ -2155,20 +2314,26 @@ fn modern_shared_target_to_canonical(
     if let Some(inner) = bracketed_operand(value, "state") {
         return Ok(("C0", modern_operand_to_canonical(inner, line_number)?));
     }
-    if value.ends_with(".conversation_progress") {
+    if bracketed_operand(value, "globals").is_some() {
+        return Ok(("C0", value.to_string()));
+    }
+    if value.starts_with("globals.") {
+        return Ok(("C0", modern_operand_to_canonical(value, line_number)?));
+    }
+    if value.ends_with(".aggressiveness") {
         return Ok(("B4", modern_operand_to_canonical(value, line_number)?));
     }
     if value.ends_with(".encounter_count") {
         return Ok(("BF", modern_operand_to_canonical(value, line_number)?));
     }
-    if let Some(inner) = bracketed_operand(value, "conversation_progress") {
+    if let Some(inner) = bracketed_operand(value, "aggressiveness") {
         return Ok(("B4", modern_operand_to_canonical(inner, line_number)?));
     }
     if let Some(inner) = bracketed_operand(value, "encounter_count") {
         return Ok(("BF", modern_operand_to_canonical(inner, line_number)?));
     }
     bail!(
-        "line {line_number}: shared-state target must be state[ADDRESS], OBJECT.conversation_progress, or OBJECT.encounter_count"
+        "line {line_number}: shared-state target must be state[ADDRESS], OBJECT.aggressiveness, or OBJECT.encounter_count"
     )
 }
 
@@ -2179,10 +2344,23 @@ fn modern_shared_rhs_to_canonical(
     if let Some(inner) = bracketed_operand(value, "state") {
         return Ok(("C0", modern_operand_to_canonical(inner, line_number)?));
     }
+    if bracketed_operand(value, "globals").is_some() {
+        return Ok(("C0", value.to_string()));
+    }
     if value.contains('.') {
         return Ok(("C0", modern_operand_to_canonical(value, line_number)?));
     }
-    Ok(("C1", modern_operand_to_canonical(value, line_number)?))
+    Ok((
+        "C1",
+        decimal_word_to_canonical(value, line_number, "state value")?,
+    ))
+}
+
+fn decimal_word_to_canonical(value: &str, line_number: usize, field: &str) -> Result<String> {
+    Ok(format!(
+        "{:04X}",
+        parse_modern_u16(value, line_number, field)?
+    ))
 }
 
 fn bracketed_operand<'a>(value: &'a str, prefix: &str) -> Option<&'a str> {
@@ -2225,9 +2403,7 @@ fn normalize_modern_text(fields: &[&str], line_number: usize) -> Result<String> 
             bail!("line {line_number}: expected {expected_name}=VALUE in text statement");
         };
         if name != expected_name {
-            bail!(
-                "line {line_number}: expected {expected_name}=VALUE, found {name}=VALUE"
-            );
+            bail!("line {line_number}: expected {expected_name}=VALUE, found {name}=VALUE");
         }
         controls.push(modern_operand_to_canonical(value, line_number)?);
     }
@@ -2250,26 +2426,119 @@ fn normalize_modern_say(
     line_number: usize,
     lexicon: &DictionaryPhraseLexicon,
 ) -> Result<String> {
-    if fields.len() < 9 {
+    if fields.len() < 5 {
         bail!(
-            "line {line_number}: say expects OBJECT, five named controls, ':', and a quoted phrase"
+            "line {line_number}: say expects OBJECT, presentation=LINE, ':', and a quoted phrase"
         );
     }
-    let expected_names = ["voice", "flags", "display", "loop", "control"];
-    let mut controls = Vec::with_capacity(expected_names.len());
-    for (field, expected_name) in fields[2..7].iter().zip(expected_names) {
-        let Some((name, value)) = field.split_once('=') else {
-            bail!("line {line_number}: expected {expected_name}=VALUE in say statement");
-        };
-        if name != expected_name {
-            bail!("line {line_number}: expected {expected_name}=VALUE, found {name}=VALUE");
+    let separator = fields
+        .iter()
+        .position(|field| *field == ":")
+        .ok_or_else(|| anyhow!("line {line_number}: expected ':' before dialogue phrase"))?;
+    if separator + 1 >= fields.len() {
+        bail!("line {line_number}: say has no quoted phrase");
+    }
+
+    let mut presentation = None;
+    let mut flags_b4 = 0u8;
+    let mut flags_b5 = crate::vm::TEXT_ACTIVE_DISPLAY_FLAG;
+    let mut loop_target = None;
+    let mut control_word = None;
+    let mut recent_choice_requirement: Option<&str> = None;
+    let mut modifier = 2usize;
+    while modifier < separator {
+        let field = fields[modifier];
+        if let Some(value) = field.strip_prefix("presentation=") {
+            let line_id = value.parse::<i16>().map_err(|_| {
+                anyhow!("line {line_number}: presentation line must be a decimal integer")
+            })?;
+            let selector = line_id
+                .checked_sub(crate::vm::DLG_LINE_ID_BIAS)
+                .ok_or_else(|| {
+                    anyhow!("line {line_number}: presentation line is outside the selector range")
+                })?;
+            if !(-128..=127).contains(&selector) {
+                bail!("line {line_number}: presentation line is outside the selector range");
+            }
+            presentation = Some(selector as i8 as u8);
+        } else if field == "chatter" {
+            flags_b4 |= 0x20;
+        } else if field == "repeatable" {
+            flags_b4 |= crate::vm::TEXT_PRESERVE_ACTIVE_FLAG;
+        } else if field == "chance=20%" {
+            flags_b4 |= 0x02;
+        } else if field == "if_not_shown" {
+            let value = fields
+                .get(modifier + 1)
+                .and_then(|field| field.strip_prefix("skip_next="))
+                .ok_or_else(|| {
+                    anyhow!("line {line_number}: expected 'if_not_shown skip_next=COUNT'")
+                })?;
+            let count = value
+                .parse::<u8>()
+                .map_err(|_| anyhow!("line {line_number}: skip count must be a decimal integer"))?;
+            if !(1..=8).contains(&count) {
+                bail!("line {line_number}: skip count must be between 1 and 8");
+            }
+            flags_b4 |= crate::vm::TEXT_CONDITIONAL_SKIP_FLAG;
+            flags_b5 |= (count - 1) << 4;
+            modifier += 1;
+        } else if let Some(value) = field.strip_prefix("resume_at=") {
+            loop_target = Some(modern_operand_to_canonical(value, line_number)?);
+            flags_b4 |= crate::vm::TEXT_LOOP_TARGET_FLAG;
+        } else if field == "when" {
+            if fields.get(modifier + 1) == Some(&"aggressiveness")
+                && fields.get(modifier + 2) == Some(&"==")
+            {
+                let value = fields.get(modifier + 3).ok_or_else(|| {
+                    anyhow!("line {line_number}: conversation-progress condition has no value")
+                })?;
+                let value = value.parse::<u16>().map_err(|_| {
+                    anyhow!("line {line_number}: conversation-progress value must be decimal")
+                })?;
+                flags_b4 |= crate::vm::TEXT_EXTRA_CONTROL_WORD_FLAG;
+                // b5 bits 1..3 select field 3; bit 0 selects equality.
+                flags_b5 |= 0x05;
+                control_word = Some(format!("{value:04X}"));
+                modifier += 3;
+            } else if fields.get(modifier + 1) == Some(&"last_8_choices")
+                && fields.get(modifier + 2) == Some(&"count")
+                && fields.get(modifier + 4) == Some(&">=")
+            {
+                let choice = fields.get(modifier + 3).ok_or_else(|| {
+                    anyhow!("line {line_number}: recent-choice condition has no choice")
+                })?;
+                let count = fields
+                    .get(modifier + 5)
+                    .ok_or_else(|| {
+                        anyhow!("line {line_number}: recent-choice condition has no count")
+                    })?
+                    .parse::<u8>()
+                    .map_err(|_| {
+                        anyhow!("line {line_number}: recent-choice count must be decimal")
+                    })?;
+                if !(1..=7).contains(&count) {
+                    bail!("line {line_number}: recent-choice count must be between 1 and 7");
+                }
+                flags_b4 |= 0x40;
+                flags_b5 |= count;
+                recent_choice_requirement = Some(choice);
+                modifier += 5;
+            } else {
+                bail!(
+                    "line {line_number}: expected 'when aggressiveness == VALUE' or \
+                     'when last_8_choices count WORD >= COUNT'"
+                );
+            }
+        } else {
+            bail!("line {line_number}: unknown say modifier {field:?}");
         }
-        controls.push(modern_operand_to_canonical(value, line_number)?);
+        modifier += 1;
     }
-    if fields[7] != ":" {
-        bail!("line {line_number}: expected ':' before dialogue phrase");
-    }
-    let phrase: String = serde_json::from_str(fields[8])
+    let presentation = presentation
+        .ok_or_else(|| anyhow!("line {line_number}: say is missing presentation=LINE"))?;
+
+    let phrase: String = serde_json::from_str(fields[separator + 1])
         .map_err(|_| anyhow!("line {line_number}: dialogue phrase must be a quoted string"))?;
     let word_offsets = lexicon.tokenize(&phrase).ok_or_else(|| {
         anyhow!(
@@ -2277,16 +2546,36 @@ fn normalize_modern_say(
         )
     })?;
 
-    let mut args = vec![modern_operand_to_canonical(fields[1], line_number)?];
-    args.extend(controls);
-    args.extend(word_offsets.iter().map(|offset| format!("{offset:04X}")));
-    if fields.len() > 9 {
-        if fields[9] != "choices" || fields.len() == 10 {
+    let choices = fields.get(separator + 2..).unwrap_or_default();
+    if !choices.is_empty() {
+        if choices[0] != "choices" || choices.len() == 1 {
             bail!("line {line_number}: expected 'choices WORD...' after dialogue phrase");
         }
+        if loop_target.is_none() {
+            flags_b4 |= 0x40;
+        }
+    }
+    if let Some(required_choice) = recent_choice_requirement {
+        if choices != ["choices", required_choice] {
+            bail!(
+                "line {line_number}: recent-choice condition must name the line's sole trailing choice"
+            );
+        }
+    }
+
+    let mut args = vec![
+        modern_operand_to_canonical(fields[1], line_number)?,
+        format!("{presentation:02X}"),
+        format!("{flags_b4:02X}"),
+        format!("{flags_b5:02X}"),
+        loop_target.unwrap_or_else(|| "-".to_string()),
+        control_word.unwrap_or_else(|| "-".to_string()),
+    ];
+    args.extend(word_offsets.iter().map(|offset| format!("{offset:04X}")));
+    if !choices.is_empty() {
         args.push("FFFF".to_string());
         args.extend(
-            fields[10..]
+            choices[1..]
                 .iter()
                 .map(|value| modern_operand_to_canonical(value, line_number))
                 .collect::<Result<Vec<_>>>()?,
@@ -2403,11 +2692,17 @@ fn modern_statement(
         "END_WHEN" => Ok("}".to_string()),
         "SELECTOR_LIST" => Ok(format!("selector {} {{", args[0])),
         "END_SELECTOR_LIST" => Ok("}".to_string()),
-        "CASE" => Ok(format!(
-            "case {} -> {} {{",
-            canonical_operand_to_modern(args[0]),
-            canonical_operand_to_modern(args[1])
-        )),
+        "CASE" => {
+            let continuation = if args[1] == "0000" || args[1] == "0" {
+                ""
+            } else {
+                " continues"
+            };
+            Ok(format!(
+                "case {}{continuation} {{",
+                canonical_operand_to_modern(args[0])
+            ))
+        }
         "TEXT" => {
             if args.len() < 6 {
                 bail!("line {line_number}: malformed generated TEXT statement");
@@ -2422,23 +2717,111 @@ fn modern_statement(
             let phrase = exact_offsets
                 .as_ref()
                 .and_then(|offsets| lexicon.render_exact(offsets, dictionary));
-            let phrase_is_exact = phrase.as_ref().is_some_and(|phrase| {
-                lexicon.tokenize(phrase).as_ref() == exact_offsets.as_ref()
-            });
+            let phrase_is_exact = phrase
+                .as_ref()
+                .is_some_and(|phrase| lexicon.tokenize(phrase).as_ref() == exact_offsets.as_ref());
             let words = raw_words
                 .iter()
                 .map(|value| canonical_operand_to_modern(value))
                 .collect::<Vec<_>>()
                 .join(" ");
-            let command = if phrase_is_exact { "say" } else { "text_tokens" };
+            let command = if phrase_is_exact {
+                "say"
+            } else {
+                "text_tokens"
+            };
+            let selector = u8::from_str_radix(args[1], 16).map_err(|_| {
+                anyhow!("line {line_number}: invalid generated presentation selector")
+            })?;
+            let flags_b4 = u8::from_str_radix(args[2], 16)
+                .map_err(|_| anyhow!("line {line_number}: invalid generated text controls"))?;
+            let flags_b5 = u8::from_str_radix(args[3], 16)
+                .map_err(|_| anyhow!("line {line_number}: invalid generated text state"))?;
+            if flags_b5 & crate::vm::TEXT_ACTIVE_DISPLAY_FLAG == 0 {
+                bail!("line {line_number}: shipped dialogue line is not active");
+            }
+            let mut modifiers = vec![format!(
+                "presentation={}",
+                crate::vm::dlg_line_id_for_selector(selector)
+            )];
+            if flags_b4 & 0x20 != 0 {
+                modifiers.push("chatter".to_string());
+            }
+            if flags_b4 & crate::vm::TEXT_PRESERVE_ACTIVE_FLAG != 0 {
+                modifiers.push("repeatable".to_string());
+            }
+            if flags_b4 & 0x02 != 0 {
+                modifiers.push("chance=20%".to_string());
+            }
+            if flags_b4 & crate::vm::TEXT_CONDITIONAL_SKIP_FLAG != 0 {
+                let count = ((flags_b5 >> 4) & 0x07) + 1;
+                modifiers.push(format!("if_not_shown skip_next={count}"));
+            }
+            if flags_b4 & crate::vm::TEXT_LOOP_TARGET_FLAG != 0 {
+                modifiers.push(format!(
+                    "resume_at={}",
+                    canonical_operand_to_modern(args[4])
+                ));
+            } else if args[4] != "-" {
+                bail!("line {line_number}: dialogue has a resume target without its flag");
+            }
+            if flags_b4 & crate::vm::TEXT_EXTRA_CONTROL_WORD_FLAG != 0 {
+                if flags_b5 != 0x85 {
+                    bail!(
+                        "line {line_number}: dialogue predicate flags have no established source form"
+                    );
+                }
+                let value = u16::from_str_radix(args[5], 16).map_err(|_| {
+                    anyhow!("line {line_number}: invalid conversation-progress value")
+                })?;
+                modifiers.push(format!("when aggressiveness == {value}"));
+            } else if args[5] != "-" {
+                bail!("line {line_number}: dialogue has a predicate word without its flag");
+            }
+            if flags_b4 & 0x40 != 0 {
+                let history = flags_b5 & 0x07;
+                if history != 0 {
+                    let choice = separator
+                        .and_then(|separator| raw_words.get(separator + 1..))
+                        .filter(|choices| choices.len() == 1)
+                        .and_then(|choices| choices.first())
+                        .ok_or_else(|| {
+                            anyhow!(
+                                "line {line_number}: recent-choice predicate requires exactly one trailing choice"
+                            )
+                        })?;
+                    modifiers.push(format!(
+                        "when last_8_choices count {} >= {history}",
+                        canonical_operand_to_modern(choice)
+                    ));
+                }
+            }
+            let known_b4 = crate::vm::TEXT_PRESERVE_ACTIVE_FLAG
+                | 0x02
+                | crate::vm::TEXT_EXTRA_CONTROL_WORD_FLAG
+                | crate::vm::TEXT_CONDITIONAL_SKIP_FLAG
+                | crate::vm::TEXT_LOOP_TARGET_FLAG
+                | 0x20
+                | 0x40;
+            if flags_b4 & !known_b4 != 0 {
+                bail!("line {line_number}: dialogue controls contain unknown bits");
+            }
+            let payload_mask = if flags_b4 & crate::vm::TEXT_CONDITIONAL_SKIP_FLAG != 0 {
+                0x70
+            } else if flags_b4 & 0x40 != 0 {
+                0x07
+            } else if flags_b4 & crate::vm::TEXT_EXTRA_CONTROL_WORD_FLAG != 0 {
+                0x07
+            } else {
+                0
+            };
+            if flags_b5 & !(crate::vm::TEXT_ACTIVE_DISPLAY_FLAG | payload_mask) != 0 {
+                bail!("line {line_number}: dialogue state contains unknown bits");
+            }
             let mut result = format!(
-                "{command} {} voice={} flags={} display={} loop={} control={} :",
+                "{command} {} {} :",
                 canonical_operand_to_modern(args[0]),
-                canonical_operand_to_modern(args[1]),
-                canonical_operand_to_modern(args[2]),
-                canonical_operand_to_modern(args[3]),
-                canonical_operand_to_modern(args[4]),
-                canonical_operand_to_modern(args[5])
+                modifiers.join(" ")
             );
             if let Some(phrase) = phrase.filter(|_| phrase_is_exact) {
                 result.push(' ');
@@ -2473,9 +2856,7 @@ fn modern_statement(
         }
         "CLEAR_ALTERNATE_CONCEPT" => {
             if !args.is_empty() {
-                bail!(
-                    "line {line_number}: malformed generated CLEAR_ALTERNATE_CONCEPT statement"
-                );
+                bail!("line {line_number}: malformed generated CLEAR_ALTERNATE_CONCEPT statement");
             }
             Ok("choice = none".to_string())
         }
@@ -2550,9 +2931,7 @@ fn modern_statement(
         }
         "REQUIRE_TRAVEL_THROUGH" => {
             if args.len() != 1 {
-                bail!(
-                    "line {line_number}: malformed generated REQUIRE_TRAVEL_THROUGH statement"
-                );
+                bail!("line {line_number}: malformed generated REQUIRE_TRAVEL_THROUGH statement");
             }
             validate_identifier(args[0], line_number)?;
             Ok(format!("require travel through {}", args[0]))
@@ -2587,8 +2966,8 @@ fn modern_statement(
             Ok(format!(
                 "{} = ({}, {})",
                 args[0],
-                canonical_operand_to_modern(args[1]),
-                canonical_operand_to_modern(args[2])
+                canonical_word_to_decimal(args[1])?,
+                canonical_word_to_decimal(args[2])?
             ))
         }
         "OFFER_TOPIC" => {
@@ -2624,7 +3003,11 @@ fn modern_statement(
             }
             Ok(format!(
                 "activation {} until {}",
-                if args[0] == "01" { "enabled" } else { "disabled" },
+                if args[0] == "01" {
+                    "enabled"
+                } else {
+                    "disabled"
+                },
                 canonical_operand_to_modern(args[1])
             ))
         }
@@ -2657,6 +3040,11 @@ fn modern_statement(
         "BRANCH_PRESENTATION" if args.is_empty() => Ok("during bridge".to_string()),
         "BRANCH_GAMEFLAG" if args.is_empty() => Ok("during travel".to_string()),
         "BRANCH_FLAG_274F" if args.is_empty() => Ok("during contact".to_string()),
+        "RUN_PROFILE" if args.len() == 1 => {
+            let profile = u8::from_str_radix(args[0], 16)
+                .map_err(|_| anyhow!("line {line_number}: invalid generated profile number"))?;
+            Ok(format!("run profile SCRIPT{profile}"))
+        }
         "GUARD_POP" if args.is_empty() => Ok("then".to_string()),
         "END" => Ok("halt".to_string()),
         _ => {
@@ -2779,7 +3167,7 @@ fn modern_rtc_date_compare(args: &[&str], line_number: usize) -> Result<String> 
         ));
     }
     Ok(format!(
-        "require clock.date {operator} {year:04}-{month:02}-{day:02} using month_day_only"
+        "require annual_date {operator} {year:04}-{month:02}-{day:02}"
     ))
 }
 
@@ -2787,35 +3175,43 @@ fn modern_shared_bit_state(args: &[&str], query: bool, line_number: usize) -> Re
     if args.len() != 4 {
         bail!("line {line_number}: malformed generated SHARED_BIT_STATE statement");
     }
-    let encoding = match args[0] {
-        "AE" => "",
-        "B0" => " using alternate_encoding",
+    match args[0] {
+        "AE" | "B0" => {}
         opcode => bail!(
             "line {line_number}: shared-bit opcode 0x{opcode} has no established shipped meaning"
         ),
-    };
+    }
     let field = canonical_operand_to_modern(args[1]);
     let target = match (field.strip_suffix(".flags"), args[2]) {
         (Some(owner), "0001") => format!("{owner}.active"),
-        (Some(owner), "0002") => format!("{owner}.in_play"),
-        (Some(owner), "0020") => format!("{owner}.presentable"),
-        _ => format!(
-            "bits({},{})",
-            field,
-            canonical_operand_to_modern(args[2])
-        ),
+        (Some(owner), "0002") => format!("{owner}.known"),
+        (Some(owner), "0020") => format!("{owner}.portable"),
+        _ => format!("bits({},{})", field, canonical_operand_to_modern(args[2])),
     };
     let inverted = args[3] == "1";
     if !matches!(args[3], "0" | "1") {
         bail!("line {line_number}: shared-bit inversion must be 0 or 1");
     }
+    if args[0] == "B0" {
+        let (owner, state) = if let Some(owner) = target.strip_suffix(".active") {
+            (owner, if inverted { "inactive" } else { "active" })
+        } else if let Some(owner) = target.strip_suffix(".known") {
+            (owner, if inverted { "unknown" } else { "known" })
+        } else if let Some(owner) = target.strip_suffix(".portable") {
+            (owner, if inverted { "not_portable" } else { "portable" })
+        } else {
+            (target.as_str(), if inverted { "clear" } else { "set" })
+        };
+        return Ok(if query {
+            format!("check {owner} is {state}")
+        } else {
+            format!("mark {owner} as {state}")
+        });
+    }
     Ok(if query {
-        format!(
-            "require {}{target}{encoding}",
-            if inverted { "!" } else { "" }
-        )
+        format!("require {}{target}", if inverted { "!" } else { "" })
     } else {
-        format!("{target} = {}{encoding}", if inverted { "false" } else { "true" })
+        format!("{target} = {}", if inverted { "false" } else { "true" })
     })
 }
 
@@ -2850,13 +3246,10 @@ fn modern_record_wildcard(args: &[&str], query: bool, line_number: usize) -> Res
                 format!("{left} = {right}")
             })
         }
-        "BC" if !query && !inverted => Ok(format!(
-            "{left} = {}",
-            canonical_operand_to_modern(args[2])
-        )),
-        "BC" => bail!(
-            "line {line_number}: shipped 0xBC publishes a topic only in update mode"
-        ),
+        "BC" if !query && !inverted => {
+            Ok(format!("{left} = {}", canonical_operand_to_modern(args[2])))
+        }
+        "BC" => bail!("line {line_number}: shipped 0xBC publishes a topic only in update mode"),
         opcode => bail!(
             "line {line_number}: record-wildcard opcode 0x{opcode} has no established shipped source meaning"
         ),
@@ -2868,11 +3261,7 @@ fn modern_shared_state(args: &[&str], query: bool, line_number: usize) -> Result
         bail!("line {line_number}: malformed generated SHARED_STATE statement");
     }
     let left = match args[0] {
-        "B4" => modern_typed_shared_target(
-            args[1],
-            ".conversation_progress",
-            "conversation_progress",
-        ),
+        "B4" => modern_typed_shared_target(args[1], ".aggressiveness", "aggressiveness"),
         "BF" => modern_typed_shared_target(args[1], ".encounter_count", "encounter_count"),
         "C0" => format!("state[{}]", canonical_operand_to_modern(args[1])),
         opcode => bail!(
@@ -2897,7 +3286,7 @@ fn modern_shared_state(args: &[&str], query: bool, line_number: usize) -> Result
     };
     let right = match args[3] {
         "C0" => format!("state[{}]", canonical_operand_to_modern(args[4])),
-        "C1" => canonical_operand_to_modern(args[4]),
+        "C1" => canonical_word_to_decimal(args[4])?,
         mode => bail!(
             "line {line_number}: shared-state RHS mode 0x{mode} has not been assigned source semantics"
         ),
@@ -2906,6 +3295,12 @@ fn modern_shared_state(args: &[&str], query: bool, line_number: usize) -> Result
         "{}{left} {operator} {right}",
         if query { "require " } else { "" }
     ))
+}
+
+fn canonical_word_to_decimal(value: &str) -> Result<String> {
+    Ok(u16::from_str_radix(value, 16)
+        .map_err(|_| anyhow!("invalid generated word {value:?}"))?
+        .to_string())
 }
 
 fn modern_typed_shared_target(value: &str, suffix: &str, fallback: &str) -> String {
@@ -2989,14 +3384,12 @@ fn generated_address_offset(value: &str, labels: &HashMap<String, usize>) -> Opt
         .or_else(|| usize::from_str_radix(value, 16).ok())
 }
 
-fn format_modern_source(
-    source: &str,
-    dictionary: &HashMap<u16, String>,
-) -> Result<String> {
+fn format_modern_source(source: &str, dictionary: &HashMap<u16, String>) -> Result<String> {
     let lexicon = DictionaryPhraseLexicon::new(dictionary);
     let procedure_layout = modern_procedure_layout(source)?;
     let mut output = String::new();
     let mut indent = 0usize;
+    let mut selector_list_open = false;
     let mut selector_case_open = false;
     let mut query_mode = false;
     let mut pending_procedure = None;
@@ -3036,6 +3429,18 @@ fn format_modern_source(
             .copied()
             .ok_or_else(|| anyhow!("line {line_number}: missing statement"))?;
 
+        if name == "LABEL"
+            && selector_case_open
+            && fields
+                .get(1)
+                .is_some_and(|label| label.starts_with("selector_"))
+        {
+            continue;
+        }
+        if name == "YIELD_B" && selector_list_open {
+            continue;
+        }
+
         if name == "PROCEDURE" {
             if pending_procedure.replace(fields[1].to_string()).is_some() {
                 bail!("line {line_number}: consecutive procedure declarations");
@@ -3046,9 +3451,7 @@ fn format_modern_source(
             if !output.is_empty() && !output.ends_with("\n\n") {
                 output.push('\n');
             }
-            if name == "CONDITIONAL_BLOCK"
-                && fields.len() == 3
-                && matches!(fields[1], "00" | "01")
+            if name == "CONDITIONAL_BLOCK" && fields.len() == 3 && matches!(fields[1], "00" | "01")
             {
                 let state = if fields[1] == "01" {
                     "enabled"
@@ -3074,10 +3477,7 @@ fn format_modern_source(
             indent += 1;
         }
 
-        if name == "SELECTOR_LIST"
-            && !output.is_empty()
-            && !output.ends_with("\n\n")
-        {
+        if name == "SELECTOR_LIST" && !output.is_empty() && !output.ends_with("\n\n") {
             output.push('\n');
         }
 
@@ -3102,6 +3502,7 @@ fn format_modern_source(
                     selector_case_open = false;
                 }
                 indent = indent.saturating_sub(1);
+                selector_list_open = false;
             }
             _ => {}
         }
@@ -3109,13 +3510,7 @@ fn format_modern_source(
         let rendered = if name == "GUARD_POP" && procedure_condition_open {
             "} then {".to_string()
         } else {
-            modern_statement(
-                statement,
-                line_number,
-                dictionary,
-                &lexicon,
-                query_mode,
-            )?
+            modern_statement(statement, line_number, dictionary, &lexicon, query_mode)?
         };
         write!(output, "{}{rendered}", "    ".repeat(indent))?;
         let useful_comment = if name == "FIELD" || name == "RAW" {
@@ -3131,7 +3526,12 @@ fn format_modern_source(
         output.push('\n');
 
         match name {
-            "WHEN" | "THEN" | "ELSE" | "SELECTOR_LIST" => indent += 1,
+            "WHEN" | "THEN" | "ELSE" | "SELECTOR_LIST" => {
+                if name == "SELECTOR_LIST" {
+                    selector_list_open = true;
+                }
+                indent += 1;
+            }
             "GUARD_POP" if procedure_condition_open => {
                 indent += 1;
                 procedure_condition_open = false;
@@ -3157,7 +3557,47 @@ fn format_modern_source(
     if let Some(procedure) = pending_procedure {
         bail!("procedure {procedure:?} has no body");
     }
-    Ok(output)
+    Ok(remove_unreferenced_flow_labels(&output))
+}
+
+fn remove_unreferenced_flow_labels(source: &str) -> String {
+    let removable = source
+        .lines()
+        .filter_map(|line| line.trim().strip_suffix(':'))
+        .filter(|label| {
+            label.contains("_branch_")
+                || label.contains("_jump_target_")
+                || label.contains("_dialogue_resume_")
+        })
+        .filter(|label| identifier_occurrences(source, label) == 1)
+        .collect::<HashSet<_>>();
+    let mut output = source
+        .lines()
+        .filter(|line| {
+            !line
+                .trim()
+                .strip_suffix(':')
+                .is_some_and(|label| removable.contains(label))
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    if source.ends_with('\n') {
+        output.push('\n');
+    }
+    output
+}
+
+fn identifier_occurrences(source: &str, identifier: &str) -> usize {
+    source
+        .match_indices(identifier)
+        .filter(|(start, _)| {
+            let before = source[..*start].chars().next_back();
+            let after = source[*start + identifier.len()..].chars().next();
+            !before.is_some_and(|character| character.is_ascii_alphanumeric() || character == '_')
+                && !after
+                    .is_some_and(|character| character.is_ascii_alphanumeric() || character == '_')
+        })
+        .count()
 }
 
 fn comment_after_code(line: &str, line_number: usize) -> Result<Option<&str>> {
@@ -3195,12 +3635,7 @@ fn decompile_cod(
     let proven_statements = var
         .map(|var| proven_statement_offsets(&tokens, symbols, var, &field_aliases))
         .unwrap_or_default();
-    add_proven_statement_objects(
-        &mut object_aliases,
-        &tokens,
-        &proven_statements,
-        symbols,
-    );
+    add_proven_statement_objects(&mut object_aliases, &tokens, &proven_statements, symbols);
     simplify_alias_identifiers(&mut object_aliases, &mut field_aliases);
     let dictionary_aliases = dictionary_aliases(
         tokens.iter().flat_map(dictionary_operand_values),
@@ -3348,12 +3783,7 @@ fn decompile_bas(
     let proven_statements = var
         .map(|var| proven_statement_offsets(&vm_tokens, symbols, var, &field_aliases))
         .unwrap_or_default();
-    add_proven_statement_objects(
-        &mut object_aliases,
-        &vm_tokens,
-        &proven_statements,
-        symbols,
-    );
+    add_proven_statement_objects(&mut object_aliases, &vm_tokens, &proven_statements, symbols);
     simplify_alias_identifiers(&mut object_aliases, &mut field_aliases);
     let dictionary_values = bas_dictionary_operand_values(image, dictionary);
     let dictionary_aliases = dictionary_aliases(dictionary_values.iter().copied(), dictionary);
@@ -3565,16 +3995,63 @@ fn cod_annotations(
             .push(format!("END_PROCEDURE {prior}"));
     }
 
-    let targets: BTreeSet<u16> = tokens.iter().filter_map(cod_target).collect();
-    for target in targets {
+    for symbol in symbols.iter().filter(|symbol| symbol.kind == 4) {
+        let target = symbol.offset;
+        if !boundaries.contains(&usize::from(target)) {
+            bail!(
+                "DEB kind-4 symbol {:?} at 0x{target:04X} does not resolve to a COD token boundary",
+                symbol.name
+            );
+        }
+        if annotations.labels.contains_key(&target) {
+            continue;
+        }
+        let base = identifier_component(&symbol.name);
+        let base = if used_label_names.contains(&base) {
+            format!("{base}_label")
+        } else {
+            base
+        };
+        let identifier = unique_identifier(base, target, &mut used_label_names);
+        annotations
+            .directives
+            .entry(usize::from(target))
+            .or_default()
+            .push(format!("LABEL {identifier}"));
+        annotations.labels.insert(target, identifier);
+    }
+
+    let mut target_roles: BTreeMap<u16, &'static str> = BTreeMap::new();
+    for token in tokens {
+        let Some((target, role)) = cod_target_role(token) else {
+            continue;
+        };
+        target_roles
+            .entry(target)
+            .and_modify(|current| {
+                if flow_role_priority(role) > flow_role_priority(*current) {
+                    *current = role;
+                }
+            })
+            .or_insert(role);
+    }
+    let mut role_counts: HashMap<(String, &'static str), usize> = HashMap::new();
+    for (target, role) in target_roles {
         if !boundaries.contains(&usize::from(target)) {
             bail!("COD target 0x{target:04X} does not resolve to a token boundary");
         }
         if annotations.labels.contains_key(&target) {
             continue;
         }
+        let owner = procedures
+            .range(..=usize::from(target))
+            .next_back()
+            .map(|(_, (identifier, _))| identifier.clone())
+            .unwrap_or_else(|| "script".to_string());
+        let count = role_counts.entry((owner.clone(), role)).or_default();
+        *count += 1;
         let identifier = unique_identifier(
-            format!("block_{target:04X}"),
+            format!("{owner}_{role}_{count}"),
             target,
             &mut used_label_names,
         );
@@ -3588,16 +4065,25 @@ fn cod_annotations(
     Ok(annotations)
 }
 
-fn cod_target(token: &VmToken) -> Option<u16> {
+fn cod_target_role(token: &VmToken) -> Option<(u16, &'static str)> {
     match token {
         VmToken::Text {
             loop_target: Some(target),
             ..
+        } => Some((*target, "dialogue_resume")),
+        VmToken::Jump { target, .. } => Some((*target, "jump_target")),
+        VmToken::GuardPush { target, .. } | VmToken::ConditionalBlock { target, .. } => {
+            Some((*target, "branch"))
         }
-        | VmToken::GuardPush { target, .. }
-        | VmToken::Jump { target, .. }
-        | VmToken::ConditionalBlock { target, .. } => Some(*target),
         _ => None,
+    }
+}
+
+fn flow_role_priority(role: &str) -> u8 {
+    match role {
+        "dialogue_resume" => 3,
+        "jump_target" => 2,
+        _ => 1,
     }
 }
 
@@ -3922,9 +4408,9 @@ fn semantic_field_component(alias: &FieldAlias) -> Option<&'static str> {
     match (alias.kind, alias.selectors.as_slice()) {
         (_, [0x00]) => Some("flags"),
         (_, [0x13]) => Some("action"),
-        (0x0002, [0x03]) => Some("conversation_progress"),
+        (0x0002, [0x03]) => Some("aggressiveness"),
         (0x0002, [0x08]) => Some("encounter_count"),
-        (0x0002, [0x05]) => Some("links"),
+        (0x0002, [0x05]) => Some("known_objects"),
         (0x0010, [0x0B]) => Some("position"),
         (0x0002 | 0x0010 | 0x0200, [0x11]) => Some("current_location"),
         (0x0400, [0x11]) => Some("holder"),
@@ -3933,13 +4419,17 @@ fn semantic_field_component(alias: &FieldAlias) -> Option<&'static str> {
     }
 }
 
-fn unique_identifier(base: String, offset: u16, used: &mut HashSet<String>) -> String {
+fn unique_identifier(base: String, _offset: u16, used: &mut HashSet<String>) -> String {
     if used.insert(base.clone()) {
         return base;
     }
-    let candidate = format!("{base}_{offset:04X}");
-    used.insert(candidate.clone());
-    candidate
+    for occurrence in 2usize.. {
+        let candidate = format!("{base}_{occurrence}");
+        if used.insert(candidate.clone()) {
+            return candidate;
+        }
+    }
+    unreachable!("an unbounded numeric suffix must produce a unique identifier")
 }
 
 fn dictionary_aliases(
@@ -4023,6 +4513,21 @@ fn bas_dictionary_operand_values(image: &[u8], dictionary: &HashMap<u16, String>
             cursor += 1;
         }
     }
+    values
+}
+
+/// Dictionary offsets in the order the two shipped program streams first
+/// expose them to the compiler. COD precedes BAS, matching profile source order.
+pub(crate) fn dictionary_operand_order(
+    cod: &[u8],
+    bas: &[u8],
+    dictionary: &HashMap<u16, String>,
+) -> Vec<u16> {
+    let mut values = vm::walk(cod, 0, cod.len())
+        .iter()
+        .flat_map(dictionary_operand_values)
+        .collect::<Vec<_>>();
+    values.extend(bas_dictionary_operand_values(bas, dictionary));
     values
 }
 
@@ -4138,9 +4643,8 @@ fn proven_statement_offsets(
                     .is_some_and(|symbol| symbol.name.eq_ignore_ascii_case(name))
         })
     };
-    let object_kind_matches = |offset: &u16, kind: u16| {
-        objects.contains_key(offset) && var_kind(*offset) == Some(kind)
-    };
+    let object_kind_matches =
+        |offset: &u16, kind: u16| objects.contains_key(offset) && var_kind(*offset) == Some(kind);
     let is_holder = |offset: u16| {
         objects.get(&offset).is_some_and(|symbol| {
             var_kind(offset) == Some(0x0002) || symbol.name.eq_ignore_ascii_case("blood")
@@ -4234,8 +4738,7 @@ fn proven_statement_offsets(
             } if !query_mode => {
                 let source = fields.get(record_offset);
                 let source_is_holder = source.is_some_and(|field| {
-                    field.selectors.as_slice() == [0x13]
-                        && is_holder(field.owner_offset)
+                    field.selectors.as_slice() == [0x13] && is_holder(field.owner_offset)
                 });
                 if source_is_holder
                     && objects.contains_key(first_word)
@@ -4856,7 +5359,10 @@ fn compile_statement(
             }
             let procedure = parse_address(args[0], labels, line, "procedure")?;
             let address = procedure.checked_add(1).ok_or_else(|| {
-                anyhow!("line {line}: procedure {:?} has no addressable enable byte", args[0])
+                anyhow!(
+                    "line {line}: procedure {:?} has no addressable enable byte",
+                    args[0]
+                )
             })?;
             output.push(vm::OP_POKE_BYTE);
             output.push(u8::from(parse_bool(args[1], line, "enabled")?));
@@ -4887,10 +5393,10 @@ fn compile_statement(
             let voice = parse_byte(args[1], line, "voice")?;
             let flags_b4 = parse_byte(args[2], line, "control flags")?;
             let flags_b5 = parse_byte(args[3], line, "display flags")?;
-            let loop_target = parse_optional_address(args[4], labels, line, "loop target")?;
+            let loop_target = parse_optional_address(args[4], labels, line, "resume target")?;
             let control_word = parse_optional_word(args[5], line, "control word")?;
             if (flags_b4 & 0x10 != 0) != loop_target.is_some() {
-                bail!("line {line}: TEXT loop target disagrees with flag 0x10");
+                bail!("line {line}: TEXT resume target disagrees with flag 0x10");
             }
             if (flags_b4 & 0x04 != 0) != control_word.is_some() {
                 bail!("line {line}: TEXT control word disagrees with flag 0x04");
@@ -4980,9 +5486,7 @@ fn compile_statement(
             }
             let blood = parse_object_address(args[1], objects, line, "blood object")?;
             if blood != 0x0028 {
-                bail!(
-                    "line {line}: built-in blood must be the invariant VAR object at 0x0028"
-                );
+                bail!("line {line}: built-in blood must be the invariant VAR object at 0x0028");
             }
             output.push(vm::OP_BIT_FLAG);
             if parse_bool(args[2], line, "remove link")? {
@@ -5222,6 +5726,22 @@ fn parse_object_address(
     line: usize,
     field: &str,
 ) -> Result<u16> {
+    if let Some(index) = bracketed_operand(value, "globals") {
+        let base = objects
+            .get("globals")
+            .copied()
+            .ok_or_else(|| anyhow!("line {line}: globals block is not declared"))?;
+        let index = index
+            .parse::<u16>()
+            .map_err(|_| anyhow!("line {line}: global index must be a decimal integer"))?;
+        return base
+            .checked_add(
+                index
+                    .checked_mul(2)
+                    .ok_or_else(|| anyhow!("line {line}: global index exceeds the state image"))?,
+            )
+            .ok_or_else(|| anyhow!("line {line}: global index exceeds the state image"));
+    }
     objects
         .get(value)
         .copied()
@@ -5517,16 +6037,8 @@ mod tests {
 
         let decompiled = decompile(ImageKind::Cod, &expected, &HashMap::new()).unwrap();
         assert_eq!(decompiled.generic_op_statements, 0);
-        assert!(
-            decompiled
-                .source
-                .contains("state[0x1234] += state[0x5678]")
-        );
-        assert!(
-            decompiled
-                .source
-                .contains("bits(0x2345,0x00FF) = false")
-        );
+        assert!(decompiled.source.contains("state[0x1234] += state[0x5678]"));
+        assert!(decompiled.source.contains("bits(0x2345,0x00FF) = false"));
         assert!(
             decompiled
                 .source
@@ -5553,20 +6065,24 @@ mod tests {
         ];
         let decompiled = decompile(ImageKind::Cod, &image, &HashMap::new()).unwrap();
         assert!(decompiled.source.contains("require clock.hour < 8"));
-        assert!(decompiled.source.contains(
-            "require clock.date == 1994-12-25 using month_day_only"
-        ));
+        assert!(
+            decompiled
+                .source
+                .contains("require annual_date == 1994-12-25")
+        );
         assert_eq!(compile(&decompiled.source).unwrap(), image);
 
         let edited = concat!(
-            "// format: bloodscript-v5\n",
+            "// format: bloodscript-program-v1\n",
             "require clock.hour > 21\n",
-            "require clock.date == 1995-01-01 using month_day_only\n",
+            "require annual_date == 1995-01-01\n",
             "halt\n",
         );
         assert_eq!(
             compile(edited).unwrap(),
-            vec![0xCA, 0xF2, 0xC1, 0x15, 0x00, 0xCB, 0xF5, 0x01, 0x01, 0xCB, 0x07, 0xFF]
+            vec![
+                0xCA, 0xF2, 0xC1, 0x15, 0x00, 0xCB, 0xF5, 0x01, 0x01, 0xCB, 0x07, 0xFF
+            ]
         );
     }
 
@@ -5590,7 +6106,7 @@ mod tests {
         assert_eq!(compile(&decompiled.source).unwrap(), image);
 
         let edited = concat!(
-            "// format: bloodscript-v5\n",
+            "// format: bloodscript-program-v1\n",
             "request sequence \"scene.hnm\"\n",
             "halt\n",
         );
@@ -5619,7 +6135,7 @@ mod tests {
             "request sequence \"scene.dat\"",
             "request sequence \"12345678901234567.hnm\"",
         ] {
-            let source = format!("// format: bloodscript-v5\n{invalid}\nhalt\n");
+            let source = format!("// format: bloodscript-program-v1\n{invalid}\nhalt\n");
             assert!(compile(&source).is_err(), "accepted {invalid}");
         }
 
@@ -5672,13 +6188,8 @@ mod tests {
                 kind: 2,
             },
         ];
-        let decompiled = decompile_structured_cod_with_symbols(
-            &image,
-            &var,
-            &HashMap::new(),
-            &symbols,
-        )
-        .unwrap();
+        let decompiled =
+            decompile_structured_cod_with_symbols(&image, &var, &HashMap::new(), &symbols).unwrap();
         for statement in [
             "field Beauregard.action = Beauregard + 0x003A",
             "require presentation == Beauregard",
@@ -5746,13 +6257,8 @@ mod tests {
                 kind: 1,
             },
         ];
-        let decompiled = decompile_structured_cod_with_symbols(
-            &image,
-            &var,
-            &HashMap::new(),
-            &symbols,
-        )
-        .unwrap();
+        let decompiled =
+            decompile_structured_cod_with_symbols(&image, &var, &HashMap::new(), &symbols).unwrap();
         for statement in [
             "object blood = 0x0028",
             "object Bug_Deluxe = 0x0100",
@@ -5781,13 +6287,9 @@ mod tests {
             vm::OP_POP,
             0xFF,
         ];
-        let query = decompile_structured_cod_with_symbols(
-            &query_image,
-            &var,
-            &HashMap::new(),
-            &symbols,
-        )
-        .unwrap();
+        let query =
+            decompile_structured_cod_with_symbols(&query_image, &var, &HashMap::new(), &symbols)
+                .unwrap();
         assert!(
             query
                 .source
@@ -5873,13 +6375,8 @@ mod tests {
             kind: 1,
         })
         .collect::<Vec<_>>();
-        let decompiled = decompile_structured_cod_with_symbols(
-            &image,
-            &var,
-            &HashMap::new(),
-            &symbols,
-        )
-        .unwrap();
+        let decompiled =
+            decompile_structured_cod_with_symbols(&image, &var, &HashMap::new(), &symbols).unwrap();
         for statement in [
             "navigate to observatory",
             "bring Bronko aboard",
@@ -5907,13 +6404,9 @@ mod tests {
             vm::OP_POP,
             0xFF,
         ];
-        let query = decompile_structured_cod_with_symbols(
-            &query_image,
-            &var,
-            &HashMap::new(),
-            &symbols,
-        )
-        .unwrap();
+        let query =
+            decompile_structured_cod_with_symbols(&query_image, &var, &HashMap::new(), &symbols)
+                .unwrap();
         assert!(
             query
                 .source
@@ -5940,8 +6433,7 @@ mod tests {
         assert_eq!(compile(&wrong_kind.source).unwrap(), image);
 
         let mut wrong_character_kind_var = var.clone();
-        wrong_character_kind_var[0x100..0x102]
-            .copy_from_slice(&0x0400u16.to_le_bytes());
+        wrong_character_kind_var[0x100..0x102].copy_from_slice(&0x0400u16.to_le_bytes());
         let wrong_character_kind = decompile_structured_cod_with_symbols(
             &image,
             &wrong_character_kind_var,
@@ -5958,13 +6450,9 @@ mod tests {
         assert_eq!(compile(&wrong_character_kind.source).unwrap(), image);
 
         let update_c6 = [0xC6, 0x1C, 0x04, 0x00, 0x05, 0xFF];
-        let update = decompile_structured_cod_with_symbols(
-            &update_c6,
-            &var,
-            &HashMap::new(),
-            &symbols,
-        )
-        .unwrap();
+        let update =
+            decompile_structured_cod_with_symbols(&update_c6, &var, &HashMap::new(), &symbols)
+                .unwrap();
         assert!(
             update
                 .source
@@ -6005,16 +6493,21 @@ mod tests {
     #[test]
     fn position_and_blood_links_use_typed_object_syntax() {
         let image = vec![
-            0xBD, 0x18, 0x01, 0x0A, 0x00, 0x64, 0x00, // Kraner position
-            vm::OP_BIT_FLAG, 0x1E, 0x02, 0x02, // Bug_Deluxe links to blood
+            0xBD,
+            0x18,
+            0x01,
+            0x0A,
+            0x00,
+            0x64,
+            0x00, // Kraner position
+            vm::OP_BIT_FLAG,
+            0x1E,
+            0x02,
+            0x02, // Bug_Deluxe links to blood
             0xFF,
         ];
         let mut var = vec![0; 0x300];
-        for (offset, kind) in [
-            (0x0028, 0x0001u16),
-            (0x0100, 0x0010),
-            (0x0200, 0x0002),
-        ] {
+        for (offset, kind) in [(0x0028, 0x0001u16), (0x0100, 0x0010), (0x0200, 0x0002)] {
             var[offset..offset + 2].copy_from_slice(&kind.to_le_bytes());
         }
         let symbols = [
@@ -6032,19 +6525,14 @@ mod tests {
         })
         .collect::<Vec<_>>();
 
-        let decompiled = decompile_structured_cod_with_symbols(
-            &image,
-            &var,
-            &HashMap::new(),
-            &symbols,
-        )
-        .unwrap();
+        let decompiled =
+            decompile_structured_cod_with_symbols(&image, &var, &HashMap::new(), &symbols).unwrap();
         for statement in [
             "object blood = 0x0028",
             "field Kraner.position = Kraner + 0x0018",
-            "field Bug_Deluxe.links = Bug_Deluxe + 0x001E",
-            "Kraner.position = (0x000A, 0x0064)",
-            "Bug_Deluxe.links += blood",
+            "field Bug_Deluxe.known_objects = Bug_Deluxe + 0x001E",
+            "Kraner.position = (10, 100)",
+            "Bug_Deluxe.known_objects += blood",
         ] {
             assert!(decompiled.source.contains(statement), "missing {statement}");
         }
@@ -6058,45 +6546,68 @@ mod tests {
 
         let edited = decompiled
             .source
-            .replace("(0x000A, 0x0064)", "(0x0064, 0x000A)")
-            .replace("links += blood", "links -= blood");
+            .replace("(10, 100)", "(100, 10)")
+            .replace("known_objects += blood", "known_objects -= blood");
         let expected = vec![
-            0xBD, 0x18, 0x01, 0x64, 0x00, 0x0A, 0x00,
-            vm::OP_BIT_FLAG, vm::OP_POP, 0x1E, 0x02, 0x02,
+            0xBD,
+            0x18,
+            0x01,
+            0x64,
+            0x00,
+            0x0A,
+            0x00,
+            vm::OP_BIT_FLAG,
+            vm::OP_POP,
+            0x1E,
+            0x02,
+            0x02,
             0xFF,
         ];
         assert_eq!(compile(&edited).unwrap(), expected);
 
         let query_image = vec![
-            vm::OP_PUSH, 0x08, 0x00,
-            vm::OP_BIT_FLAG, 0x1E, 0x02, 0x02,
+            vm::OP_PUSH,
+            0x08,
+            0x00,
+            vm::OP_BIT_FLAG,
+            0x1E,
+            0x02,
+            0x02,
             vm::OP_POP,
             0xFF,
         ];
-        let query = decompile_structured_cod_with_symbols(
-            &query_image,
-            &var,
-            &HashMap::new(),
-            &symbols,
-        )
-        .unwrap();
-        assert!(query.source.contains("require blood in Bug_Deluxe.links"));
+        let query =
+            decompile_structured_cod_with_symbols(&query_image, &var, &HashMap::new(), &symbols)
+                .unwrap();
+        assert!(
+            query
+                .source
+                .contains("require blood in Bug_Deluxe.known_objects")
+        );
         assert_eq!(compile(&query.source).unwrap(), query_image);
 
         let query_position = vec![
-            vm::OP_PUSH, 0x0B, 0x00,
-            0xBD, 0x18, 0x01, 0x0A, 0x00, 0x64, 0x00,
+            vm::OP_PUSH,
+            0x0B,
+            0x00,
+            0xBD,
+            0x18,
+            0x01,
+            0x0A,
+            0x00,
+            0x64,
+            0x00,
             vm::OP_POP,
             0xFF,
         ];
-        let query = decompile_structured_cod_with_symbols(
-            &query_position,
-            &var,
-            &HashMap::new(),
-            &symbols,
-        )
-        .unwrap();
-        assert!(query.source.contains("pair_record 0xBD Kraner.position 0x000A 0x0064"));
+        let query =
+            decompile_structured_cod_with_symbols(&query_position, &var, &HashMap::new(), &symbols)
+                .unwrap();
+        assert!(
+            query
+                .source
+                .contains("pair_record 0xBD Kraner.position 0x000A 0x0064")
+        );
         assert!(!query.source.contains("Kraner.position = ("));
         assert_eq!(compile(&query.source).unwrap(), query_position);
 
@@ -6119,8 +6630,12 @@ mod tests {
             &symbols,
         )
         .unwrap();
-        assert!(fallback.source.contains("bit_flag Bug_Deluxe.links 0x03 0"));
-        assert!(!fallback.source.contains("links +="));
+        assert!(
+            fallback
+                .source
+                .contains("bit_flag Bug_Deluxe.known_objects 0x03 0")
+        );
+        assert!(!fallback.source.contains("known_objects +="));
         assert_eq!(compile(&fallback.source).unwrap(), wrong_link_index);
 
         let mut wrong_symbols = symbols.clone();
@@ -6132,15 +6647,19 @@ mod tests {
             &wrong_symbols,
         )
         .unwrap();
-        assert!(fallback.source.contains("bit_flag Bug_Deluxe.links 0x02 0"));
-        assert!(!fallback.source.contains("links +="));
+        assert!(
+            fallback
+                .source
+                .contains("bit_flag Bug_Deluxe.known_objects 0x02 0")
+        );
+        assert!(!fallback.source.contains("known_objects +="));
         assert_eq!(compile(&fallback.source).unwrap(), &image[7..]);
 
         for invalid in [
             "Kraner.position = 0x000A, 0x0064",
             "Kraner.position = (0x000A)",
-            "Bug_Deluxe.links += Kraner",
-            "require blood inside Bug_Deluxe.links",
+            "Bug_Deluxe.known_objects += Kraner",
+            "require blood inside Bug_Deluxe.known_objects",
         ] {
             let source = format!("// format: {SOURCE_FORMAT}\n{invalid}\nhalt\n");
             assert!(compile(&source).is_err(), "accepted {invalid}");
@@ -6173,23 +6692,16 @@ mod tests {
                 if u16::from_le_bytes([var[base], var[base + 1]]) == 2 {
                     assert!(base + 0x36 <= var.len());
                     assert!(
-                        var[base + 0x1E..base + 0x36]
-                            .iter()
-                            .all(|&byte| byte == 0),
+                        var[base + 0x1E..base + 0x36].iter().all(|&byte| byte == 0),
                         "SCRIPT{script} {} has a nonempty initial link set",
                         symbol.name
                     );
                 }
             }
 
-            let decompiled = decompile_structured_cod_with_symbols(
-                &image,
-                &var,
-                &dictionary,
-                &symbols,
-            )
-            .unwrap();
-            link_statements += decompiled.source.matches(".links += blood").count();
+            let decompiled =
+                decompile_structured_cod_with_symbols(&image, &var, &dictionary, &symbols).unwrap();
+            link_statements += decompiled.source.matches(".known_objects += blood").count();
             position_statements += decompiled.source.matches(".position = (").count();
             assert!(!decompiled.source.contains("pair_record "));
             assert!(!decompiled.source.contains("bit_flag "));
@@ -6207,7 +6719,7 @@ mod tests {
     fn semantic_flags_and_topics_preserve_query_mode_and_encoding() {
         let image = vec![
             0xA9, 0x01, 0x0F, 0x00, // conditional block -> query mode
-            0xB0, 0x02, 0x01, 0x02, 0x00, // alternate encoding: planet.in_play
+            0xB0, 0x02, 0x01, 0x02, 0x00, // alternate encoding: planet.known
             0xA1, // return to update mode
             0xBC, 0x46, 0x02, 0x34, 0x12, // actor.topic = "secrets"
             0xFF,
@@ -6228,17 +6740,12 @@ mod tests {
             },
         ];
         let dictionary = HashMap::from([(0x1234, "secrets".to_string())]);
-        let decompiled = decompile_structured_cod_with_symbols(
-            &image,
-            &var,
-            &dictionary,
-            &symbols,
-        )
-        .unwrap();
+        let decompiled =
+            decompile_structured_cod_with_symbols(&image, &var, &dictionary, &symbols).unwrap();
         for statement in [
             "field planet.flags = planet + 0x0002",
             "field actor.topic = actor + 0x0046",
-            "require planet.in_play using alternate_encoding",
+            "check planet is known",
             "actor.topic = \"secrets\"",
         ] {
             assert!(decompiled.source.contains(statement), "missing {statement}");
@@ -6279,12 +6786,12 @@ mod tests {
         let decompiled = decompile(ImageKind::Cod, &expected, &HashMap::new()).unwrap();
         assert_eq!(decompiled.generic_op_statements, 0);
         for statement in [
-            "guard_push block_0005",
+            "guard_push script_branch_1",
             "state_array_test 0xFE",
             "then",
             "timer[2] = 22136",
-            "jump block_000D",
-            "activation enabled until block_0011",
+            "jump script_jump_target_1",
+            "activation enabled until script_branch_2",
             "during bridge",
             "during travel",
         ] {
@@ -6296,11 +6803,20 @@ mod tests {
     #[test]
     fn countdown_timers_and_offered_topics_use_domain_syntax() {
         let cod = vec![
-            vm::OP_COND_STATE_ARRAY, 0x03, 0x0A, 0x00,
-            vm::OP_PUSH, 0x0A, 0x00,
-            vm::OP_COND_STATE_ARRAY, 0x03,
+            vm::OP_COND_STATE_ARRAY,
+            0x03,
+            0x0A,
+            0x00,
+            vm::OP_PUSH,
+            0x0A,
+            0x00,
+            vm::OP_COND_STATE_ARRAY,
+            0x03,
             vm::OP_POP,
-            vm::OP_COND_STATE_ARRAY, 0x01, 0xFF, 0xFF,
+            vm::OP_COND_STATE_ARRAY,
+            0x01,
+            0xFF,
+            0xFF,
             0xFF,
         ];
         let decompiled = decompile(ImageKind::Cod, &cod, &HashMap::new()).unwrap();
@@ -6319,11 +6835,20 @@ mod tests {
             .replace("timer[3] = 10", "timer[3] = 25")
             .replace("timer[1] = disabled", "timer[1] = 0");
         let expected = vec![
-            vm::OP_COND_STATE_ARRAY, 0x03, 0x19, 0x00,
-            vm::OP_PUSH, 0x0A, 0x00,
-            vm::OP_COND_STATE_ARRAY, 0x03,
+            vm::OP_COND_STATE_ARRAY,
+            0x03,
+            0x19,
+            0x00,
+            vm::OP_PUSH,
+            0x0A,
+            0x00,
+            vm::OP_COND_STATE_ARRAY,
+            0x03,
             vm::OP_POP,
-            vm::OP_COND_STATE_ARRAY, 0x01, 0x00, 0x00,
+            vm::OP_COND_STATE_ARRAY,
+            0x01,
+            0x00,
+            0x00,
             0xFF,
         ];
         assert_eq!(compile(&edited).unwrap(), expected);
@@ -6383,9 +6908,7 @@ mod tests {
         assert!(!decompiled.source.contains("// GUARD_POP"));
         assert_eq!(compile(&decompiled.source).unwrap(), image);
 
-        let malformed = decompiled
-            .source
-            .replace("when {", "when wrong extra {");
+        let malformed = decompiled.source.replace("when {", "when wrong extra {");
         assert!(compile(&malformed).is_err());
     }
 
@@ -6406,7 +6929,7 @@ mod tests {
         assert_eq!(decompiled.unstructured_guards, 0);
         assert!(decompiled.source.contains("} else {"));
         assert!(!decompiled.source.contains("guard_push"));
-        assert!(!decompiled.source.contains("jump block_000E"));
+        assert!(!decompiled.source.contains("jump script_jump_target_1"));
         assert_eq!(compile(&decompiled.source).unwrap(), image);
     }
 
@@ -6425,7 +6948,7 @@ mod tests {
         assert_eq!(decompiled.structured_guards, 1);
         assert_eq!(decompiled.unstructured_guards, 0);
         assert!(decompiled.source.contains("when {"));
-        assert!(decompiled.source.contains("block_000A:"));
+        assert!(decompiled.source.contains("script_jump_target_1:"));
         assert!(!decompiled.source.contains("guard_push"));
         assert_eq!(compile(&decompiled.source).unwrap(), image);
     }
@@ -6449,7 +6972,7 @@ mod tests {
         assert_eq!(decompiled.object_alias_uses, 2);
         for statement in [
             "object Tina_Burner = 0x1234",
-            "say Tina_Burner voice=0xFF flags=0x00 display=0x80",
+            "say Tina_Burner presentation=8",
             "record_clear Tina_Burner",
         ] {
             assert!(decompiled.source.contains(statement), "missing {statement}");
@@ -6492,7 +7015,7 @@ mod tests {
         for statement in [
             "object actor = 0x0100",
             "field actor.current_location = actor + 0x0018",
-            "state[actor.current_location] = 0x0001",
+            "state[actor.current_location] = 1",
         ] {
             assert!(decompiled.source.contains(statement), "missing {statement}");
         }
@@ -6530,11 +7053,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(ambiguous.field_aliases, 0);
-        assert!(
-            ambiguous
-                .source
-                .contains("state[0x0118] = 0x0001")
-        );
+        assert!(ambiguous.source.contains("state[0x0118] = 1"));
 
         let base_image = vec![0xC0, 0x02, 0x01, 0xF5, 0xC1, 0x01, 0x00, 0xFF];
         let mut base_var = vec![0; 0x200];
@@ -6561,7 +7080,7 @@ mod tests {
         .unwrap();
         assert_eq!(exact_base.field_aliases, 0);
         assert_eq!(exact_base.object_aliases, 1);
-        assert!(exact_base.source.contains("state[exact] = 0x0001"));
+        assert!(exact_base.source.contains("state[exact] = 1"));
     }
 
     #[test]
@@ -6578,7 +7097,7 @@ mod tests {
         assert_eq!(decompiled.dictionary_uses, 2);
         for statement in [
             "require choice == \"TALK\"",
-            "say 0x2000 voice=0xFF flags=0x00 display=0x80 loop=none control=none : \"TALK\"",
+            "say 0x2000 presentation=8 : \"TALK\"",
         ] {
             assert!(
                 decompiled.source.contains(statement),
@@ -6670,7 +7189,7 @@ mod tests {
         assert_eq!(decompiled.symbolic_labels, 2);
         assert!(decompiled.source.contains("proc entry enabled {"));
         assert!(!decompiled.source.contains(" until "));
-        assert!(decompiled.source.contains("    block_0004:"));
+        assert!(!decompiled.source.contains("entry_branch_"));
         assert!(decompiled.source.trim_end().ends_with('}'));
         assert!(!decompiled.source.lines().any(|line| {
             let line = line.trim_start();
@@ -6705,7 +7224,7 @@ mod tests {
         assert!(
             decompiled
                 .source
-                .contains("proc entry enabled until block_0005 {")
+                .contains("proc entry enabled until entry_branch_1 {")
         );
         assert_eq!(compile(&decompiled.source).unwrap(), image);
     }
@@ -6742,9 +7261,10 @@ mod tests {
         assert!(decompiled.source.contains("poke_byte 0x1234 0x01"));
         assert_eq!(compile(&decompiled.source).unwrap(), image);
 
-        let nonprocedure = decompiled
-            .source
-            .replace("entry.enabled = false", "block_000D.enabled = false");
+        let nonprocedure = decompiled.source.replace(
+            "entry.enabled = false",
+            "undeclared_procedure.enabled = false",
+        );
         assert!(
             compile(&nonprocedure)
                 .unwrap_err()
@@ -6881,8 +7401,8 @@ mod tests {
         assert_eq!(decompiled.dictionary_uses, 4);
         for statement in [
             "selector actor_choices {",
-            "case \"talk\" -> selector_000C {",
-            "case \"leave\" -> 0x0000 {",
+            "case \"talk\" continues {",
+            "case \"leave\" {",
             "menu \"leave\"",
             "menu \"talk\"",
         ] {
@@ -6896,10 +7416,7 @@ mod tests {
 
         let malformed = decompiled
             .source
-            .replace(
-                "case \"talk\" -> selector_000C {",
-                "case \"talk\" -> 0x0000 {",
-            );
+            .replace("case \"talk\" continues {", "case \"talk\" {");
         assert!(compile_with_dictionary(&malformed, &dictionary).is_err());
     }
 

@@ -1,0 +1,3165 @@
+bloodscript 8
+profile SCRIPT4
+concepts "talk" "hello"
+
+state {
+    universe "baby1" {
+        known
+    }
+    universe "baby" {
+    }
+    player "blood" {
+        active
+        population = 30
+        location = "arche"
+    }
+    character "Bratakas" {
+        active
+        race = sinox
+        population = 60
+        location = "Vistar"
+        topic = "talk"
+    }
+    character "Rotator" {
+        active
+        race = sinox
+        population = 60
+        location = "Masta"
+        topic = "talk"
+    }
+    character "Maziok" {
+        active
+        race = sinox
+        population = 60
+        location = "Malus"
+        topic = "talk"
+    }
+    character "Betakam" {
+        active
+        race = sinox
+        population = 60
+        location = "Attrox"
+        topic = "talk"
+    }
+    character "Outrageor" {
+        active
+        race = sinox
+        population = 60
+        location = "machine"
+        topic = "talk"
+    }
+    character "Super_Tromp" {
+        active
+        race = sinox
+        population = 60
+        location = "Vista"
+        topic = "talk"
+    }
+    character "Sinox" {
+        active
+        race = sinox
+        population = 60
+        location = "tombeau"
+        topic = "talk"
+    }
+    character "Bob_Morlock" {
+        active
+        race = sinox
+        population = 60
+        topic = "talk"
+    }
+    character "Bug_Deluxe" {
+        active
+        race = sinox
+        population = 60
+        location = "Venusia"
+        topic = "talk"
+    }
+    character "Ulikan" {
+        active
+        race = sinox
+        population = 43
+        location = "Trashlando"
+        topic = "talk"
+    }
+    character "receiver" {
+        active
+        race = sinox
+        population = 43
+        location = "Trashlando"
+        topic = "talk"
+    }
+    character "Eviscerator" {
+        active
+        race = sinox
+        population = 50
+        location = "prison"
+        topic = "talk"
+    }
+    character "Hom" {
+        active
+        race = sinox
+        population = 50
+        location = "Kortex"
+        topic = "hello"
+    }
+    character "Yoko" {
+        active
+        race = sinox
+        population = 50
+        location = "pavillon"
+        topic = "hello"
+    }
+    character "Cyberquizz" {
+        active
+        race = sinox
+        population = 20
+        location = "Cyberock"
+        topic = "talk"
+    }
+    character "Morning_Oil" {
+        active
+        race = sinox
+        population = 100
+        location = "Ark"
+        topic = "talk"
+    }
+    character "Jerry_Khan" {
+        active
+        race = sinox
+        population = 150
+        location = "Trashlando"
+        topic = "talk"
+    }
+    character "Bronko" {
+        active
+        race = sinox
+        population = 200
+        location = "usine"
+        topic = "talk"
+    }
+    character "ondoyant" {
+        active
+        race = sinox
+        population = 50
+        location = "Ondoya"
+        topic = "talk"
+    }
+    character "Anna_Haf" {
+        active
+        race = sinox
+        population = 50
+        location = "Magnus"
+        topic = "talk"
+    }
+    character "Migrator" {
+        race = sinox
+        population = 50
+        location = "airport"
+        topic = "talk"
+    }
+    character "Daddy_Gluxx" {
+        active
+        race = sinox
+        population = 50
+        location = "Ekatomb"
+        topic = "talk"
+    }
+    character "Beauregard" {
+        active
+        race = sinox
+        population = 50
+        location = "Tumul"
+        topic = "talk"
+    }
+    character "Kran_Dobu" {
+        active
+        race = sinox
+        population = 50
+        location = "Kraner"
+        topic = "talk"
+    }
+    character "Maxxon" {
+        active
+        race = sinox
+        population = 50
+        location = "observatory"
+        topic = "talk"
+    }
+    character "Izwalito" {
+        active
+        race = sinox
+        population = 50
+        location = "Hito"
+        topic = "talk"
+    }
+    character "Fifi" {
+        active
+        race = sinox
+        population = 50
+        location = "Hito"
+        topic = "talk"
+    }
+    character "Amigo" {
+        active
+        race = sinox
+        population = 50
+        location = "hall"
+        topic = "talk"
+    }
+    character "Otto_Von_Smile" {
+        active
+        race = sinox
+        population = 50
+        location = "Erazor"
+        topic = "talk"
+    }
+    character "Scruter_Jo" {
+        active
+        race = sinox
+        population = 50
+        location = "porte"
+        topic = "talk"
+    }
+    character "Scruter_Mac" {
+        active
+        race = sinox
+        population = 50
+        location = "porte"
+        topic = "talk"
+    }
+    character "Scruter_K" {
+        active
+        race = sinox
+        population = 50
+        location = "Pterra"
+        topic = "talk"
+    }
+    character "Tina_Burner" {
+        active
+        race = sinox
+        population = 50
+        location = "bar"
+        topic = "talk"
+    }
+    character "Super_Zen" {
+        active
+        race = sinox
+        population = 50
+        location = "Crazystone"
+        topic = "talk"
+    }
+    character "Tromp_la_Mort" {
+        active
+        race = sinox
+        population = 50
+        location = "Vista"
+        topic = "talk"
+    }
+    character "Emasculator" {
+        race = sinox
+        population = 50
+        location = "Trashlando"
+        topic = "talk"
+    }
+    character "Honk" {
+        active
+        race = sinox
+        population = 50
+        location = "Trashlando"
+    }
+    character "menu" {
+        active
+        race = sinox
+        population = 50
+        location = "Trashlando"
+    }
+    planet "Venusia" {
+        active
+        position = (83, 11)
+    }
+    planet "Sat" {
+        active
+        position = (269, 11)
+    }
+    planet "Erazo" {
+        active
+        position = (286, 14)
+    }
+    planet "Erazor" {
+        active
+        position = (125, 16)
+    }
+    location "piscine" {
+        active
+        parent = "Erazor"
+    }
+    planet "Masta" {
+        active
+        position = (220, 19)
+    }
+    location "machine" {
+        active
+        parent = "Masta"
+    }
+    planet "Mastachok" {
+        active
+        position = (149, 20)
+    }
+    location "porte" {
+        active
+        parent = "Mastachok"
+    }
+    location "prison" {
+        active
+        parent = "Mastachok"
+    }
+    location "factory" {
+        active
+        parent = "Mastachok"
+    }
+    planet "Vistar" {
+        active
+        position = (106, 21)
+    }
+    location "cache" {
+        active
+        parent = "Vistar"
+    }
+    planet "Vista" {
+        active
+        position = (75, 31)
+    }
+    location "tombeau" {
+        active
+        parent = "Vista"
+    }
+    planet "Golgos" {
+        active
+        position = (201, 33)
+    }
+    planet "Kortex" {
+        active
+        position = (59, 36)
+    }
+    planet "Ron" {
+        active
+        position = (42, 37)
+    }
+    planet "Rondo" {
+        active
+        position = (281, 40)
+    }
+    location "pavillon" {
+        active
+        parent = "Rondo"
+    }
+    location "observatory" {
+        active
+        parent = "Rondo"
+    }
+    planet "Edena" {
+        active
+        position = (191, 44)
+    }
+    planet "Eden" {
+        active
+        position = (16, 46)
+    }
+    location "hall" {
+        active
+        parent = "Eden"
+    }
+    location "bar" {
+        active
+        parent = "Eden"
+    }
+    planet "Magnu" {
+        active
+        position = (77, 49)
+    }
+    planet "Magnus" {
+        active
+        position = (270, 49)
+    }
+    planet "Ondoya" {
+        active
+        position = (37, 50)
+    }
+    planet "Qx20" {
+        active
+        position = (100, 76)
+    }
+    planet "Crazystone" {
+        active
+        position = (179, 81)
+    }
+    planet "Tumul" {
+        active
+        position = (230, 83)
+    }
+    location "land" {
+        active
+        parent = "Tumul"
+    }
+    location "fresque" {
+        active
+        parent = "Tumul"
+    }
+    location "rubble" {
+        active
+        parent = "Tumul"
+    }
+    location "tumulus" {
+        active
+        parent = "Tumul"
+    }
+    planet "Cyberock" {
+        active
+        position = (77, 86)
+    }
+    planet "Corpo" {
+        active
+        position = (292, 86)
+    }
+    location "Hito" {
+        active
+        parent = "Corpo"
+    }
+    location "Hita" {
+        active
+        parent = "Corpo"
+    }
+    planet "Malus" {
+        active
+        position = (220, 92)
+    }
+    location "trompo" {
+        active
+        parent = "Malus"
+    }
+    planet "Pterra" {
+        active
+        position = (201, 93)
+    }
+    planet "Bonus" {
+        active
+        position = (279, 94)
+    }
+    planet "Lovia" {
+        active
+        position = (62, 95)
+    }
+    planet "Cyborg" {
+        active
+        position = (256, 96)
+    }
+    planet "Kult" {
+        active
+        position = (222, 108)
+    }
+    planet "Tempest" {
+        active
+        position = (16, 110)
+    }
+    planet "Vulcan" {
+        active
+        position = (35, 110)
+    }
+    planet "Troma" {
+        active
+        position = (50, 110)
+    }
+    planet "Attrox" {
+        active
+        position = (235, 117)
+    }
+    planet "Ekato" {
+        active
+        position = (55, 122)
+    }
+    planet "Ekatomb" {
+        active
+        position = (76, 125)
+    }
+    planet "Trashlando" {
+        active
+        position = (249, 127)
+    }
+    planet "Moskito" {
+        active
+        position = (38, 135)
+    }
+    location "usine" {
+        active
+        parent = "Moskito"
+    }
+    location "airport" {
+        active
+        parent = "Moskito"
+    }
+    black_hole "Oddland" {
+        active
+        universe1 = "baby1"
+        universe2 = "baby"
+        position1 = (132, 34)
+        position2 = (150, 0)
+    }
+    ship "arche" {
+        active
+        visits = 1
+        position = (10, 10)
+    }
+    location "Ark" {
+        active
+        known
+        parent = "arche"
+    }
+    ship "Shark" {
+        active
+        position = (236, 11)
+    }
+    ship "Kukaracha" {
+        active
+        position = (176, 58)
+    }
+    ship "Kraner" {
+        active
+        position = (243, 65)
+    }
+    ship "radioship" {
+        active
+        position = (126, 72)
+    }
+    item "mummy" {
+        active
+        holder = nowhere
+    }
+    item "painting" {
+        active
+        holder = "Anna_Haf"
+    }
+    item "picture" {
+        active
+        holder = "Bratakas"
+    }
+    item "body_scruter" {
+        active
+        holder = "Scruter_Mac"
+    }
+    item "dork" {
+        active
+        holder = "Cyberquizz"
+    }
+    item "urout" {
+        active
+        holder = "Cyberquizz"
+    }
+    item "cred" {
+        active
+        holder = "Izwalito"
+    }
+    item "perfume" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "decoder" {
+        active
+        holder = "Izwalito"
+    }
+    item "murffalos" {
+        active
+        holder = "Bronko"
+    }
+    item "murffalo" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "tie" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "rouge" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "jewel" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "creams" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "ball" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "boxing_gloves" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "coquilles" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "tools" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "pharmaceutics" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "video_game" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "hifi" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "splatch" {
+        active
+        holder = "Amigo"
+    }
+    item "lens" {
+        active
+        holder = "Otto_Von_Smile"
+    }
+    item "bionium" {
+        active
+        holder = "Emasculator"
+    }
+    item "batteries" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "ring" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "guitar" {
+        active
+        holder = "Kran_Dobu"
+    }
+    item "transmitter" {
+        active
+        holder = "Kran_Dobu"
+    }
+    item "scrambler" {
+        active
+        holder = "Hom"
+    }
+    item "hat" {
+        active
+        holder = "Fifi"
+    }
+    navigation_controller "orxx" {
+        active
+    }
+}
+
+logic {
+    proc init enabled {
+    } then {
+        sequence_slots[2] = "maledict"
+        sequence_slots[3] = "maledict"
+        sequence_slots[4] = "maledict"
+        sequence_slots[5] = "maledict"
+        sequence_slots[1] = "maledict"
+        sequence_slots[6] = "present"
+        Ron.known = true
+        Morning_Oil.current_location = Trashlando
+        Outrageor.current_location = machine
+        Rotator.current_location = Masta
+        Maziok.current_location = Magnu
+        Otto_Von_Smile.current_location = Erazo
+        Super_Zen.current_location = Crazystone
+        Hom.current_location = cache
+        Yoko.current_location = Trashlando
+        Jerry_Khan.current_location = Shark
+        Fifi.current_location = Ron
+        Scruter_Jo.current_location = aboard
+        Bronko.current_location = aboard
+        Beauregard.current_location = aboard
+        Anna_Haf.current_location = aboard
+        scrambler.holder = blood
+        mummy.holder = blood
+        dork.holder = blood
+        receiver.current_location = aboard
+        decoder.holder = aboard
+        globals.maledict = 1
+        globals.compris = 1
+        globals.vbio = 3
+        init.enabled = false
+    }
+    global maledict = 0
+    global compris = 0
+    global vbio = 0
+    proc bronk2 enabled {
+        during contact
+        require presentation == Bronko
+    } then {
+        say Bronko presentation=text_only : "Me busy do onboard cooking|. Me make tasty meals for Cap'n Bob|..."
+        say Bronko presentation=text_only chatter : "Let him do his job|, Commander|. It's about time we had something edible to eat|..."
+        say Bronko presentation=text_only : "Me not have time|, Commander|..."
+        say Bronko presentation=text_only if_not_shown skip_next=1 : "..."
+        end presentation Bronko
+    }
+    proc scrujo enabled {
+        during contact
+        require presentation == Scruter_Jo
+    } then {
+        say Scruter_Jo presentation=scr20.hnm : "Commander you go get BIONIUM in CYBERSPACE of SCRUTER JO..."
+        when {
+            require globals.compris == 0
+        } then {
+            say Scruter_Jo presentation=text_only : "Me explain to you how get BIONIUM..."
+            say Scruter_Jo presentation=text_only : "You find BIOXX|. Bioxx be small energy creatures|..."
+            say Scruter_Jo presentation=scr02.hnm : "You touch BIOXX once with hand|."
+            say Scruter_Jo presentation=text_only chatter : "Sounds like a piece of cake to me|, Commander|!!"
+            say Scruter_Jo presentation=scr03.hnm : "If you touch BIOXX twice|, you CAPTURE BIOXX on tip of your finger|..."
+            say Scruter_Jo presentation=text_only chatter : "Catch him on the tip of your finger|!!! Sounds easy as pie|, Commander|..."
+            say Scruter_Jo presentation=scr04.hnm : "Then you can carry BIOXX to cybernetic MANTAS"
+            say Scruter_Jo presentation=scr06.hnm : "You place BIOXX in belly of Manta..."
+            say Scruter_Jo presentation=scr05.hnm : "BIOXX stay stuck to MANTAS..."
+            say Scruter_Jo presentation=text_only chatter : "I'd love to see that|..."
+            say Scruter_Jo presentation=scr07.hnm : "Mantas change BIOXX into BIONIUM..."
+            say Scruter_Jo presentation=scr06.hnm : "More BIOXX you give to Mantas, more BIONIUM you get|..."
+            dictionary blank after "More"
+            say Scruter_Jo presentation=text_only chatter : "Yes|!!! BIONIUM|... I can taste it already|..."
+            say Scruter_Jo presentation=scr05.hnm : "To come back from CYBERSPACE|, you touch BLUE BOX|...."
+            say Scruter_Jo presentation=scr07.hnm : "You understand|?"
+            say Scruter_Jo presentation=text_only chatter : "We understand perfectly|, Mister SCRUTER JO... Right|, Commander?"
+        }
+        say Scruter_Jo presentation=scr21.hnm : "YOU go|, Commander|..."
+        say Scruter_Jo presentation=scr22.hnm : "Ahh! Me feel better|..."
+        when {
+            require globals.vbio > 0
+        } then {
+            say Scruter_Jo presentation=scr03.hnm : "Good work|... You did succeed|..."
+            say Scruter_Jo presentation=scr04.hnm : "You did get BIONIUM..."
+            say Scruter_Jo presentation=text_only chatter : "YES|!!! Commander|, remind me to tell you you're a champ|..."
+            say Scruter_Jo presentation=text_only chatter : "This BIONIUM is extraordinary|. My clock frequency's through the roof|..."
+            say Scruter_Jo presentation=text_only chatter if_not_shown skip_next=1 : "I feel even smarter|... I can feel I'll be a great help to you|, Commander|..."
+            globals.compris = 1
+        }
+        when {
+            require globals.vbio == 0
+        } then {
+            say Scruter_Jo presentation=scr05.hnm : "Not good|, friend|... You fail|..."
+            say Scruter_Jo presentation=text_only chatter : "Commander, you didn't understand the technique|..."
+            say Scruter_Jo presentation=text_only chatter : "I need BIONIUM, Commander|. It makes me smarter|..."
+            say Scruter_Jo presentation=scr05.hnm : "Ha! Ha! You need much much BIONIUM|. Ha! Ha!..."
+            say Scruter_Jo presentation=text_only chatter : "Why don't you shut up|, wiseguy|!!!"
+        }
+        say Scruter_Jo presentation=scr08.hnm if_not_shown skip_next=1 : "Bye bye|, Commander|. Me return to CYBERSPACE..."
+        end presentation Scruter_Jo
+    }
+    proc recept enabled {
+        during contact
+        require presentation == receiver
+    } then {
+        say receiver presentation=text_only : "zzzzzzzzzz shshshshs... crak|..."
+        say receiver presentation=text_only chatter : "It won't work, Commander. We're too far away|..."
+        say receiver presentation=text_only if_not_shown skip_next=1 : "Krouikk..."
+        end presentation receiver
+    }
+    proc beau enabled {
+        during contact
+        require presentation == Beauregard
+        require globals.maledict == 1
+    } then {
+        say Beauregard presentation=zhboa.hnm : "AAAAAHHH. Commander|, I'm cursed..."
+        say Beauregard presentation=zhbob.hnm : "AAAAAAAAA|!!!"
+        say Beauregard presentation=zhbod.hnm : "OOOOOOOO|!!!"
+        say Beauregard presentation=zhbol.hnm : "The the CURSE|...."
+        say Beauregard presentation=zhbok.hnm : "hhhhhhhhhhh"
+        say Beauregard presentation=zhbol.hnm : "CURSE..."
+        say Beauregard presentation=text_only chatter : "Gee|, Commander|. That doesn't sound like fun|...|!!!"
+        say Beauregard presentation=zhbol.hnm : "aaaa..."
+        say Beauregard presentation=text_only if_not_shown skip_next=1 : "..."
+        end presentation Beauregard
+    }
+    proc beau_2 as "beau" enabled {
+        during contact
+        require presentation == Beauregard
+        check Attrox is unknown
+        require globals.maledict == 0
+    } then {
+        say Beauregard presentation=bor_b_tr.hnm : "Ahhhh... Commander|... I feel better now|..."
+        say Beauregard presentation=bor_c_tr.hnm : "I saw the flames of hell, Commander. Not a pretty sight.."
+        say Beauregard presentation=bor_d_tr.hnm : "Honk has explained our problem, Commander. Looks like the mummy of BETAKAM IV threw a spell on us..."
+        say Beauregard presentation=bor_e_tr.hnm : "Commander|... I'd like to find the planet PATAGOS and meet king BETAKAM IV..."
+        dictionary blank after "IV..."
+        say Beauregard presentation=borb_atr.hnm : "It's amazing, Commander... We have his mummy aboard and yet we can meet him as a living being..."
+        say Beauregard presentation=bor_e_tr.hnm : "That's a unique archeological experiment..."
+        say Beauregard presentation=borb_atr.hnm : "According to the ancient texts from PATAGOS, Tumul translates as Attrox..."
+        say Beauregard presentation=bor_b_tr.hnm : "So the thing to do is find the planet Attrox, Commander..."
+        say Beauregard presentation=text_only chatter : "Commander, Mister Beauregard is so amazingly intelligent..."
+        say Beauregard presentation=bor_b_tr.hnm if_not_shown skip_next=1 : "See you soon, Commander..."
+        end presentation Beauregard
+    }
+    proc beaureg enabled {
+        during contact
+        require presentation == Beauregard
+        require Attrox.known
+        require globals.maledict == 0
+    } then {
+        say Beauregard presentation=bor_b_tr.hnm : "Ahhhh... Commander|... I feel better now|..."
+        say Beauregard presentation=bor_c_tr.hnm : "I saw the flames of hell, Commander. Not a pretty sight.."
+        say Beauregard presentation=bor_b_tr.hnm if_not_shown skip_next=1 : "See you soon, Commander..."
+        end presentation Beauregard
+    }
+    proc fif enabled {
+        during travel
+        require arche.current_location == Ron
+        require presentation == Fifi
+    } then {
+        say Fifi presentation=ompa.hnm : "Caa..."
+        say Fifi presentation=ompb.hnm : "aake.."
+        say Fifi presentation=ompb.hnm : "eat|..."
+        when {
+            require Fifi.encounter_count == 1
+        } then {
+            say Fifi presentation=ompa.hnm : "Me Fifi|... Hee Hee Hee|..."
+            say Fifi presentation=text_only chatter : "Heh heh... That guy's funny, Commander... I love his name|..."
+            say Fifi presentation=ompb.hnm : "Fifi like gift"
+            say Fifi presentation=ompc.hnm : "OOO! eat"
+            say Fifi presentation=ompa.hnm : "After eat|, Fifi sleep..."
+            say Fifi presentation=ompc.hnm : "Hee hee hee|..."
+        }
+        say Fifi presentation=ompa.hnm : "Me go|. You bad vibrations|..."
+        say Fifi presentation=ompc.hnm : "Me scared|..."
+        say Fifi presentation=text_only chatter : "Commander, maybe we could use the Mind Scrambler..."
+        say Fifi presentation=text_only resume_at=fif_dialogue_resume_1 : "USE MIND SCRAMBLER" choices "use" "refuse"
+        when {
+            require choice == "use"
+        } then {
+            choice = none
+        }
+        when {
+            require choice == "refuse"
+        } then {
+            say Fifi presentation=text_only chatter : "You're calling the shots, Commander..."
+            say Fifi presentation=ompa.hnm : "Bye bye|... Me go phone female Tromp"
+            say Fifi presentation=ompc.hnm : "Trompette live on planet Magnu... Heee! Hee|! Hee! Me like female Tromp|..."
+            say Fifi presentation=ompb.hnm if_not_shown skip_next=1 : "Magnu be at coordinates x453 y543..."
+            Magnu.known = true
+            say Fifi presentation=text_only if_not_shown skip_next=4 : "Bye bye..."
+            fif.enabled = false
+            fif1.enabled = true
+            choice = none
+            end presentation Fifi
+        }
+        fif_dialogue_resume_1:
+        say Fifi presentation=ompf.hnm if_not_shown skip_next=1 : "Zorglu... Eta ouch..."
+        request sequence "brouil.hnm"
+        say Fifi presentation=ompd.hnm : "Haga...."
+        say Fifi presentation=ompe.hnm : "HATA HATA..."
+        say Fifi presentation=text_only : "HOGLO HOGLO..."
+        say Fifi presentation=text_only chatter if_not_shown skip_next=1 : "You can interrogate him, Commander. He's ready..."
+        Fifi.topic = "hello"
+        say Fifi presentation=text_only if_not_shown skip_next=2 : "Bye bye, Commander..." choices "bye_bye"
+        Fifi.topic = "rien"
+        end presentation Fifi
+    }
+    proc fif1 disabled {
+        during travel
+        require arche.current_location == Ron
+        require presentation == Fifi
+    } then {
+        say Fifi presentation=ompd.hnm : "GA... Me Fifi|... Hee Hee Hee..."
+        say Fifi presentation=text_only chatter : "Heh heh... That guy knocks me out, Commander..."
+        say Fifi presentation=ompc.hnm : "Fifi like cake"
+        say Fifi presentation=ompa.hnm : "After eat, Fifi sleep..."
+        say Fifi presentation=ompc.hnm : "Hee hee hee hee|..."
+        when {
+            require picture.holder == aboard
+        } then {
+            say Fifi presentation=text_only chatter : "Give him the picture of the ondoyant, Commander... That'll make him happy..."
+            say Fifi presentation=text_only resume_at=fif1_dialogue_resume_1 : "TELEPORT PICTURE TO FIFI" choices "teleport" "refuse"
+            when {
+                require choice == "teleport"
+            } then {
+                say Fifi presentation=text_only if_not_shown skip_next=2 : "TELEPORTING PICTURE TO FIFI"
+                transfer picture from aboard to Fifi
+                choice = none
+            }
+            when {
+                require choice == "refuse"
+            } then {
+                say Fifi presentation=text_only chatter if_not_shown skip_next=1 : "If that's the way you want it|, Commander..."
+                choice = none
+            }
+        }
+        fif1_dialogue_resume_1:
+        when {
+            require picture.holder == Fifi
+        } then {
+            say Fifi presentation=ompb.hnm : "Oh nice picture. Nice female|. Me like..."
+            say Fifi presentation=ompc.hnm : "Kiss... Kiss... Nice... Nice..."
+            say Fifi presentation=ompd.hnm : "Me like|... Me like|... Me thank you|..."
+            say Fifi presentation=ompb.hnm if_not_shown skip_next=3 : "Fifi go run|..."
+            fif2.enabled = true
+            fif1.enabled = false
+            end presentation Fifi
+        }
+        say Fifi presentation=ompb.hnm if_not_shown skip_next=1 : "Fifi go run|... Bye bye|..."
+        end presentation Fifi
+    }
+    proc fif2 disabled {
+        during travel
+        require arche.current_location == Ron
+        require presentation == Fifi
+    } then {
+        say Fifi presentation=ompd.hnm : "Me Fifi|... Hee hee hee|..."
+        say Fifi presentation=text_only chatter : "Heh heh|... I can't get enough of him, Commander..."
+        say Fifi presentation=ompc.hnm : "Hee hee hee hee|..."
+        say Fifi presentation=ompa.hnm : "Fifi like ondoyant... Ohh nice|..."
+        when {
+            require globals.maledict == 0
+        } then {
+            say Fifi presentation=ompb.hnm : "Me give you gift. Me did find nice hat..."
+            say Fifi presentation=ompc.hnm : "Me give you nice hat..."
+            say Fifi presentation=text_only resume_at=fif2_dialogue_resume_1 : "TELEPORT HAT TO CRYOBOX" choices "teleport"
+            when {
+                require choice == "teleport"
+            } then {
+                say Fifi presentation=text_only if_not_shown skip_next=2 : "TELEPORTING HAT TO CRYOBOX"
+                transfer hat from Fifi to aboard
+                choice = none
+            }
+            fif2_dialogue_resume_1:
+            say Fifi presentation=text_only chatter : "But Commander, that's EVISCERATOR's hat... Where did he find it?"
+            say Fifi presentation=text_only chatter : "Commander, EVISCERATOR must be near here|..."
+            say Fifi presentation=text_only chatter : "Who gave you the hat, Mister Fifi?"
+            dictionary blank after "hat,"
+            say Fifi presentation=ompb.hnm : "Me find on ground|... Nice hat|..."
+            say Fifi presentation=ompa.hnm : "Fifi go walk|... bye friend|..."
+            say Fifi presentation=text_only if_not_shown skip_next=3 : "..."
+            Fifi.current_location = Trashlando
+            fif2.enabled = false
+            end presentation Fifi
+        }
+        say Fifi presentation=ompa.hnm if_not_shown skip_next=1 : "Fifi go walk|... Bye bye friend|..."
+        end presentation Fifi
+    }
+    proc fif3bis enabled {
+        require hat.holder == Super_Zen
+    } then {
+        Fifi.current_location = Ron
+        fif4.enabled = true
+        fif3bis.enabled = false
+    }
+    proc fif4 disabled {
+        during travel
+        require Fifi.current_location == Ron
+        require arche.current_location == Ron
+        require presentation == Fifi
+    } then {
+        say Fifi presentation=ompd.hnm : "Me Fifi|... Hee hee hee|..."
+        say Fifi presentation=text_only chatter : "Heh heh... Still the same crazy guy he always was, Commander..."
+        say Fifi presentation=ompc.hnm : "Hee hee hee..."
+        say Fifi presentation=ompa.hnm : "Fifi like ondoyant... Ohh nice|..."
+        say Fifi presentation=text_only : "Fifi want go planet Malus|..."
+        say Fifi presentation=text_only : "Fifi have friends planet MALUS|... You take me|?"
+        say Fifi presentation=text_only chatter : "Howzabout we teleport him|, Commander. He's such a character|..."
+        dictionary blank after "Howzabout"
+        say Fifi presentation=text_only resume_at=fif5 : "TELEPORT FIFI TO CRYOBOX" choices "teleport" "refuse"
+        when {
+            require choice == "teleport"
+        } then {
+            say Fifi presentation=text_only if_not_shown skip_next=2 : "TELEPORTING FIFI TO CRYOBOX"
+            Fifi.current_location = aboard
+            choice = none
+            end presentation Fifi
+        }
+        when {
+            require choice == "refuse"
+        } then {
+            say Fifi presentation=text_only : "Me not happy... CRY CRY..."
+            say Fifi presentation=text_only chatter : "How can you be so heartless|, Commander|?"
+            say Fifi presentation=text_only if_not_shown skip_next=2 : "..."
+            choice = none
+            end presentation Fifi
+        }
+    }
+    proc fif5 enabled {
+        during contact
+        require presentation == Fifi
+    } then {
+        say Fifi presentation=ompd.hnm : "Fifi happy|... Hee hee hee..."
+        say Fifi presentation=text_only chatter : "Heh heh|... he'll never change|, Commander|..."
+        when {
+            require arche.current_location != Malus
+        } then {
+            say Fifi presentation=ompc.hnm : "Hee hee hee|..."
+            say Fifi presentation=ompa.hnm : "Fifi like ondoyant|... Ohh nice|..."
+            say Fifi presentation=text_only if_not_shown skip_next=1 : "Planet MALUS be coordinates x654 y765|..."
+            Malus.known = true
+            say Fifi presentation=text_only : "You leave Fifi on MALUS, friend|... Me have friends|..."
+            say Fifi presentation=text_only : "HEE|! HEE|! HEE|!"
+            say Fifi presentation=text_only if_not_shown skip_next=1 : "..."
+            end presentation Fifi
+        }
+        when {
+            require arche.current_location == Malus
+        } then {
+            say Fifi presentation=text_only chatter : "You can teleport him|, Commander|... We've arrived|..."
+            say Fifi presentation=text_only resume_at=fif6 : "TELEPORT FIFI TO PLANET MALUS" choices "teleport"
+            when {
+                require choice == "teleport"
+            } then {
+                say Fifi presentation=text_only if_not_shown skip_next=3 : "TELEPORTING FIFI TO MALUS"
+                Fifi.current_location = Malus
+                end presentation Fifi
+                choice = none
+            }
+        }
+    }
+    proc fif6 enabled {
+        during travel
+        require Fifi.current_location == Malus
+        require arche.current_location == Malus
+        require presentation == Fifi
+    } then {
+        say Fifi presentation=ompd.hnm : "Me happy|... Hee hee hee|..."
+        say Fifi presentation=text_only chatter : "Heh heh|... he'll never change|, Commander..."
+        say Fifi presentation=ompc.hnm : "Hee hee hee|..."
+        say Fifi presentation=ompa.hnm : "Fifi like ondoyant|... Ohh nice|..."
+        say Fifi presentation=text_only : "You transport Fifi here|... Fifi very happy|..."
+        when {
+            check Ondoya is unknown
+        } then {
+            say Fifi presentation=text_only : "Fifi tell you big secret|... You think ondoyant not exist|..."
+            say Fifi presentation=text_only : "You go Planet ONDOYA... Hee hee hee|... You have surprise..."
+            say Fifi presentation=text_only chatter : "What a joker, Commander..."
+            say Fifi presentation=text_only if_not_shown skip_next=1 : "Planet Ondoya be coordinates x432 y765|... Hee hee hee..."
+            Ondoya.known = true
+        }
+        say Fifi presentation=text_only : "Hee hee hee|... You nice|... Fifi like you|..."
+        say Fifi presentation=text_only if_not_shown skip_next=1 : "Bye bye friend|..."
+        end presentation Fifi
+    }
+    proc ondo1 enabled {
+        during travel
+        require arche.current_location == Ondoya
+        require presentation == ondoyant
+    } then {
+        say ondoyant presentation=onda01.hnm : "..."
+        say ondoyant presentation=onda03.hnm : "..."
+        say ondoyant presentation=text_only chatter : "Wowww!!! That is beautiful|... Aaaahhh..."
+        say ondoyant presentation=onda04.hnm : "Good to see you at last|, my Commander..."
+        say ondoyant presentation=onda05.hnm : "I've been waiting billions of years for you|..."
+        say ondoyant presentation=text_only chatter : "Commander|... This makes a nice change from TINA BURNER..."
+        say ondoyant presentation=onda06.hnm : "Take me with you|..."
+        say ondoyant presentation=text_only chatter : "Commander... ondoyants exist after all|... I knew it|..."
+        say ondoyant presentation=text_only chatter : "Let's teleport her and fast|..."
+        say ondoyant presentation=text_only resume_at=ondo1_2 : "TELEPORT ondoyant TO ARK..." choices "teleport"
+        when {
+            require choice == "teleport"
+        } then {
+            say ondoyant presentation=text_only if_not_shown skip_next=3 : "TELEPORTING ondoyant VERY GENTLY TO ARK"
+            ondoyant.current_location = aboard
+            choice = none
+            end presentation ondoyant
+        }
+    }
+    proc ondo1_2 as "ondo1" enabled {
+        during contact
+        require presentation == ondoyant
+    } then {
+        say ondoyant presentation=onda01.hnm : "..."
+        say ondoyant presentation=onda03.hnm : "..."
+        say ondoyant presentation=text_only chatter : "Woww!!! That is beautiful... Aaaahhh..."
+        say ondoyant presentation=onda04.hnm : "Oh my Commander..."
+        say ondoyant presentation=onda05.hnm : "I've been waiting billions of years for you|..."
+        say ondoyant presentation=text_only chatter : "Commander|... This makes a nice change from TINA BURNER..."
+        say ondoyant presentation=onda06.hnm : "..."
+        say ondoyant presentation=onda07.hnm if_not_shown skip_next=1 : "..."
+        end presentation ondoyant
+    }
+    proc tromp1 enabled {
+        during travel
+        require arche.current_location == Magnu
+        require presentation == Maziok
+    } then {
+        say Maziok presentation=ompe.hnm : "Ga|..."
+        say Maziok presentation=text_only chatter : "Hey, you know what he reminds me of? A ball of Tromp hair|. Heh heh..."
+        say Maziok presentation=ompe.hnm : "GA..."
+        say Maziok presentation=ompd.hnm resume_at=tromp1_dialogue_resume_1 : "Ga ga|?" choices "ga" "hello" "planet" "laugh" "joke"
+        when {
+            require choice == "ga"
+        } then {
+            say Maziok presentation=text_only if_not_shown skip_next=3 : "ga ga ga ga ga|..."
+            tromp1.enabled = false
+            choice = none
+            jump gaga
+        }
+        when {
+            require choice != "ga"
+        } then {
+            choice = none
+        }
+        tromp1_dialogue_resume_1:
+        say Maziok presentation=omph.hnm : "GA|..."
+        say Maziok presentation=text_only chatter : "Commander|, I don't think he has the power of speech|... And get a load of that trunk..."
+        say Maziok presentation=text_only chatter : "Looks like a Tromp-haired rat|! Ha! Ha! Ha|!Ha! Ha!"
+        say Maziok presentation=ompg.hnm : "What makes you think MAZIOK can't speak|?"
+        say Maziok presentation=ompf.hnm : "You have no respect for custom|..."
+        say Maziok presentation=ompi.hnm : "When someone says GA|, you have to answer GA|. That's the tradition..."
+        say Maziok presentation=ompf.hnm : "For generations I have said GA when soemone has said GA to me|..."
+        say Maziok presentation=ompe.hnm : "You young people have no respect for anything|..."
+        say Maziok presentation=ompe.hnm : "When I was young|, we always said GA..."
+        say Maziok presentation=ompi.hnm : "You're weird|, stranger. You look like you have the evil eye|..."
+        say Maziok presentation=ompj.hnm : "Leave me|... I have things to do|..."
+        say Maziok presentation=text_only if_not_shown skip_next=2 : "..."
+        tromp1.enabled = false
+        end presentation Maziok
+    }
+    proc tromp2 enabled {
+        during travel
+        require arche.current_location == Magnu
+        require presentation == Maziok
+        require globals.maledict == 1
+    } then {
+        say Maziok presentation=ompg.hnm : "GA..."
+        say Maziok presentation=ompd.hnm resume_at=gaga : "Ga..." choices "ga" "hello" "weather_report" "work" "family" "fatherland"
+        when {
+            require choice == "ga"
+        } then {
+            say Maziok presentation=ompf.hnm if_not_shown skip_next=1 : "You are most polite|, stranger..."
+            choice = none
+        }
+        when {
+            require choice != "ga"
+        } then {
+            say Maziok presentation=ompe.hnm if_not_shown skip_next=2 : "You are so rude|... Bye bye|, stranger..."
+            end presentation Maziok
+            choice = none
+        }
+        gaga:
+        say Maziok presentation=text_only chatter : "Smart thinking|, Commander|..."
+        say Maziok presentation=ompi.hnm : "You're weird|, stranger. You look like you have the evil eye|..."
+        say Maziok presentation=ompg.hnm : "You're weird|... You look like|... you're under a spell|..."
+        say Maziok presentation=ompf.hnm : "Or a curse|... Ha!!! Mmmm|..."
+        say Maziok presentation=text_only chatter : "We've got a CURSE|. I knew it|, Commander..."
+        say Maziok presentation=ompi.hnm : "..."
+        when {
+            require globals.zen == 1
+        } then {
+            say Maziok presentation=ompf.hnm : "You need to get to CRAZYSTONE... X432 Y456|. You'll find a remedy there|..."
+            say Maziok presentation=text_only chatter : "Commander, I'm not feeling so good|..."
+            say Maziok presentation=ompf.hnm if_not_shown skip_next=1 : "Take care|, stranger|..."
+            Crazystone.known = true
+        }
+        when {
+            require Crazystone.known
+        } then {
+            say Maziok presentation=ompj.hnm if_not_shown skip_next=3 : "Well|, I have things to do|... Bye bye|..." choices "bye_bye"
+            tromp2.enabled = false
+            tromp2bis.enabled = true
+            end presentation Maziok
+        }
+        say Maziok presentation=ompj.hnm if_not_shown skip_next=1 : "Well|, I have things to do|... Bye bye|.." choices "bye_bye"
+        end presentation Maziok
+    }
+    export label "gaga"
+    global zen = 0
+    proc tromp2bis disabled {
+        during travel
+        require arche.current_location == Magnu
+        require presentation == Maziok
+        require globals.maledict == 1
+    } then {
+        say Maziok presentation=ompd.hnm resume_at=tromp2bis_dialogue_resume_1 : "Ga..." choices "ga" "hello" "weather_report" "work" "family" "fatherland"
+        when {
+            require choice == "ga"
+        } then {
+            say Maziok presentation=ompf.hnm if_not_shown skip_next=1 : "You are most polite|, stranger..."
+            choice = none
+        }
+        when {
+            require choice != "ga"
+        } then {
+            say Maziok presentation=ompe.hnm if_not_shown skip_next=2 : "You are so rude|... Bye bye|, stranger..."
+            end presentation Maziok
+            choice = none
+        }
+        tromp2bis_dialogue_resume_1:
+        say Maziok presentation=ompi.hnm : "You're weird|, stranger. You look like you have the evil eye|..."
+        say Maziok presentation=ompg.hnm : "You're weird|... You look like|... you're under a spell|..."
+        say Maziok presentation=ompf.hnm : "Or a curse|... Ha!!! Mmmm|..."
+        say Maziok presentation=text_only chatter : "We've got a CURSE|. I knew it|, Commander..."
+        say Maziok presentation=ompi.hnm if_not_shown skip_next=1 : "..."
+        end presentation Maziok
+    }
+    proc tromp3 enabled {
+        during travel
+        require arche.current_location == Magnu
+        require presentation == Maziok
+        require globals.maledict == 0
+    } then {
+        say Maziok presentation=ompg.hnm : "GA..."
+        say Maziok presentation=ompd.hnm resume_at=tromp3_dialogue_resume_1 : "Ga..." choices "ga" "hello" "weather_report" "work" "family" "fatherland"
+        when {
+            require choice == "ga"
+        } then {
+            say Maziok presentation=text_only if_not_shown skip_next=1 : "ga ga ga ga ga|..."
+            choice = none
+        }
+        when {
+            require choice != "ga"
+        } then {
+            say Maziok presentation=ompg.hnm if_not_shown skip_next=2 : "You are so rude|... Bye bye|, stranger..."
+            end presentation Maziok
+            choice = none
+        }
+        tromp3_dialogue_resume_1:
+        say Maziok presentation=ompd.hnm if_not_shown skip_next=1 : "What do you want to know|?"
+        Maziok.topic = "planet"
+        say Maziok presentation=ompd.hnm if_not_shown skip_next=1 : "Ekato..." choices "ekato"
+        globals.ek = 1
+        when {
+            require globals.ek == 1
+        } then {
+            say Maziok presentation=ompe.hnm : "The planet Ekato is a very weird place|..."
+            say Maziok presentation=ompe.hnm : "It's covered in jellyfish|..."
+            say Maziok presentation=ompc.hnm : "I used to have some cousins there|..."
+            say Maziok presentation=ompe.hnm if_not_shown skip_next=1 : "Ekato is at coordinates x567 y321|..."
+            Ekato.known = true
+            say Maziok presentation=text_only chatter : "Commander, if this keeps up|, we'll have visited the entire galaxy|... Ha! Ha! Ha!"
+            dictionary blank after "if"
+        }
+        say Maziok presentation=ompc.hnm if_not_shown skip_next=1 : "Sat is a very attractive desert planet... x456 y654..." choices "tourism"
+        Sat.known = true
+        say Maziok presentation=text_only chatter : "Mister Maziok knows some real interesting stuff|..." choices "tourism"
+        when {
+            require Sat.known
+            require globals.ekato == globals.est
+        } then {
+            say Maziok presentation=text_only if_not_shown skip_next=2 : "Bye bye|... May the Great Yolk guide your trajectory|..." choices "bye_bye"
+            Maziok.current_location = Trashlando
+            end presentation Maziok
+        }
+        say Maziok presentation=text_only if_not_shown skip_next=1 : "Bye bye|... May the Great Yolk guide your trajectory|..." choices "bye_bye"
+        end presentation Maziok
+    }
+    global ek = 0
+    global ekato = 0
+    global est = 0
+    proc bra1 enabled {
+        during travel
+        require arche.current_location == Vistar
+        require Hom.current_location != aboard
+        require Bratakas.current_location == Vistar
+        require presentation == Bratakas
+    } then {
+        when {
+            require Bratakas.encounter_count == 1
+        } then {
+            say Bratakas presentation=trma_tr.hnm : "You seem to fear nothing|... Why have you come to my planet|, stranger|?"
+            say Bratakas presentation=trmc_tr.hnm : "Have you any idea who you're talking to|? I am none other than Bratakas|, terror of the planet VISTAR|..."
+            say Bratakas presentation=trmb_tr.hnm : "My name strikes fear in all Tromps throughout the galaxy|..."
+        }
+        say Bratakas presentation=trmc_tr.hnm if_not_shown skip_next=1 : "How can I help you|, stranger|?"
+        Bratakas.topic = "talk"
+        when {
+            require globals.planete == 1
+        } then {
+            say Bratakas presentation=trma_tr.hnm : "I know a few planets. let me see|... My memory's letting me down here|..."
+            say Bratakas presentation=trmb_tr.hnm : "The planet|... I can't seem to recall|..."
+            say Bratakas presentation=trmc_tr.hnm : "It'll come to me|..."
+        }
+        when {
+            require globals.decodeur == 1
+            require decoder.holder != Bratakas
+        } then {
+            say Bratakas presentation=text_only chatter : "Commander, what say we give him our old decoder|... He won't pick up very much|, but it might make him happy|..."
+            Bratakas.topic = "rien"
+            say Bratakas presentation=text_only resume_at=bra1_dialogue_resume_1 : "TELEPORT OLD DECODER TO PLANET VISTAR" choices "teleport"
+            when {
+                require choice == "teleport"
+            } then {
+                say Bratakas presentation=text_only if_not_shown skip_next=2 : "TELEPORT DECODER TO BRATAKAS"
+                transfer decoder from aboard to Bratakas
+                choice = none
+            }
+        }
+        bra1_dialogue_resume_1:
+        when {
+            require decoder.holder == Bratakas
+            require picture.holder != blood
+        } then {
+            say Bratakas presentation=trmb_tr.hnm : "Oh|, what a nice decoder|... That's quite a gift|, stranger|..."
+            Bratakas.topic = "rien"
+            say Bratakas presentation=trmc_tr.hnm : "I wonder what I can offer you in exchange|... What would you say to a pretty picture|?"
+            say Bratakas presentation=trma_tr.hnm : "It represents the female of your dreams|. What I see is a female Trump|..."
+            say Bratakas presentation=trmb_tr.hnm : "They're called ondoyants|... Dream creatures|..."
+            say Bratakas presentation=trma_tr.hnm : "This is for you|, stranger|..."
+            say Bratakas presentation=trmb_tr.hnm : "Don't look at it too often|... And don't show it to anybody|..."
+            say Bratakas presentation=text_only resume_at=bra1_dialogue_resume_2 : "TELEPORT PICTURE TO CRYOBOX" choices "teleport"
+            when {
+                require choice == "teleport"
+            } then {
+                say Bratakas presentation=text_only if_not_shown skip_next=3 : "TELEPORT PICTURE TO CRYOBOX"
+                transfer picture from Bratakas to aboard
+                Bratakas.topic = "talk"
+                choice = none
+            }
+        }
+        bra1_dialogue_resume_2:
+        when {
+            require choice == "bye_bye"
+            require globals.decodeur == 0
+        } then {
+            say Bratakas presentation=text_only if_not_shown skip_next=1 : "Bye bye|..."
+            end presentation Bratakas
+        }
+        when {
+            require choice == "bye_bye"
+            require globals.decodeur == 1
+        } then {
+            say Bratakas presentation=trmb_tr.hnm : "Bye bye|... Leaving so soon|?"
+            say Bratakas presentation=trmc_tr.hnm : "Hold on|... There's someone who'd like to see you before you leave|..."
+            say Bratakas presentation=text_only if_not_shown skip_next=1 : "..."
+            navigate to cache
+        }
+    }
+    global planete = 0
+    global decodeur = 0
+    proc braz enabled {
+        require decoder.holder == Bratakas
+        require picture.holder == blood
+        require Hom.current_location == aboard
+    } then {
+        Bratakas.current_location = Trashlando
+    }
+    proc bra2 enabled {
+        during travel
+        require arche.current_location == Vistar
+        require presentation == Hom
+    } then {
+        say Hom presentation=homm_02.hnm if_not_shown skip_next=1 : "Welcome|, stranger|. My name is Hom|..."
+        Hom.topic = "hello"
+        say Hom presentation=homm_03.hnm : "Make yourself comfortable|..."
+        when {
+            require Hom.encounter_count == 1
+        } then {
+            say Hom presentation=text_only chatter : "BUT COMMANDER|, IT'S HOM... HE ALREADY EXISTED AT THIS TIME|..."
+            dictionary blank after "EXISTED"
+            say Hom presentation=homm_03.hnm : "You good|, stranger|. You did give decoder to BRATAKAS... Me LIKE you|..."
+            say Hom presentation=text_only chatter : "He didn't try his print stunt|, Commander..."
+            say Hom presentation=text_only chatter : "Probably didn't exist at this time|..."
+            say Hom presentation=homm_05.hnm resume_at=bra2_dialogue_resume_1 : "YOU CLICK HARD|? FRIEND|... ME CATCH PRINT|..." choices "click"
+            when {
+                require choice == "click"
+            } then {
+                say Hom presentation=text_only chatter : "Forget I spoke|, Commander|..."
+                choice = none
+            }
+            bra2_dialogue_resume_1:
+            say Hom presentation=homm_06.hnm if_not_shown skip_next=1 : "Ohh|! Nice print|..."
+            request sequence "scandoig.hnm"
+        }
+        when {
+            require picture.holder == blood
+            require decoder.holder == Bratakas
+        } then {
+            say Hom presentation=text_only chatter : "Commander, I have an idea|..."
+            say Hom presentation=text_only chatter : "Why not give him our D.O.R.K. diploma|? The one we so brilliantly earned on Cyberock..."
+            say Hom presentation=text_only chatter : "Maybe that'll remind him of something|..."
+            say Hom presentation=text_only resume_at=bra2_dialogue_resume_2 : "TELEPORT D.O.R.K. TO HOM" choices "teleport"
+            when {
+                require choice == "teleport"
+            } then {
+                say Hom presentation=text_only if_not_shown skip_next=2 : "TELEPORTING D.O.R.K. TO HOM..."
+                transfer dork from aboard to Hom
+                choice = none
+            }
+        }
+        bra2_dialogue_resume_2:
+        when {
+            require dork.holder == Hom
+        } then {
+            say Hom presentation=homm_02.hnm : "But|... This be D.O.R.K... You with \"GUILD OF MEMBERS\"|..."
+            say Hom presentation=homm_03.hnm : "But date all wrong|... This date be in future|... Not yet happen|..."
+            say Hom presentation=homm_04.hnm : "You be mysterious|, friend|..."
+            say Hom presentation=text_only chatter : "You sure got him with that slick move|, Commander..."
+            say Hom presentation=homm_05.hnm : "Me not understand|..."
+            say Hom presentation=text_only chatter : "We're from the FUTURE|, Mister Hom!!!"
+            say Hom presentation=homm_06.hnm : "From the future|!!!"
+            say Hom presentation=text_only chatter : "We have a big ship that travels through BLACK HOLES|... We're looking for the BIG BANG|..."
+            say Hom presentation=text_only chatter : "Crazy|, huh|..."
+            say Hom presentation=homm_07.hnm : "Big Bang... Black holes|... Big ship|... You be crazy okay|..."
+            say Hom presentation=homm_08.hnm : "Me like that|... Big Bang... Black holes|..."
+            say Hom presentation=homm_09.hnm : "Me want come with you|... Me have big tubular brain|..."
+            say Hom presentation=homm_10.hnm if_not_shown skip_next=1 : "Me have CDROM in head|... Me know universe|..."
+            Hom.topic = "hello"
+            say Hom presentation=text_only resume_at=bra2_dialogue_resume_3 : "TELEPORT HOM TO ARK" choices "teleport"
+            when {
+                require choice == "teleport"
+            } then {
+                say Hom presentation=text_only if_not_shown skip_next=3 : "TELEPORTING HOM TO CRYOBOX"
+                Hom.current_location = aboard
+                choice = none
+                end presentation Hom
+            }
+        }
+        bra2_dialogue_resume_3:
+        say Hom presentation=homm_05.hnm if_not_shown skip_next=1 : "What you want know|, friend|? Me be OMNISCIENT... ME KNOW EVERYTHING|..."
+        Hom.topic = "hello"
+        when {
+            require choice == "bye_bye"
+        } then {
+            end presentation Hom
+        }
+    }
+    proc HO enabled {
+        during contact
+        require presentation == Hom
+    } then {
+        say Hom presentation=homm_07.hnm : "Me HOM..."
+        say Hom presentation=homm_02.hnm : "Me be OMNISCIENT... ME KNOW EVERYTHING|..."
+        say Hom presentation=homm_03.hnm if_not_shown skip_next=1 : "Bye bye|... Me sleep in star dust|..."
+        end presentation Hom
+    }
+    proc zen1 enabled {
+        during travel
+        require presentation == Super_Zen
+        require painting.holder != blood
+        require arche.current_location == Crazystone
+    } then {
+        say Super_Zen presentation=text_only : "..."
+        say Super_Zen presentation=text_only : "..."
+        say Super_Zen presentation=text_only : "..."
+        say Super_Zen presentation=text_only chatter : "Shhh|, Commander|. Don't disturb him|..."
+        say Super_Zen presentation=zen01.hnm : "I sense the magic of the PATAGOS|... STRONG MAGIC|..."
+        say Super_Zen presentation=text_only : "..."
+        say Super_Zen presentation=text_only : "..."
+        say Super_Zen presentation=text_only chatter : "He's concentrating|, Commander..."
+        say Super_Zen presentation=zen02.hnm : "Magic magic|... It|... It's the CURSE OF THE MUMMY OF BETAKAM IV OF THE PATAGOS|!!!"
+        say Super_Zen presentation=zen06.hnm : "IT'S IMPOSSIBLE|... HE ISN'T DEAD YET|... IT'S MAGIC|..."
+        say Super_Zen presentation=text_only chatter : "Commander, the poor guy doesn't know we brought the mummy from the future|. Ha! Ha! Ha!"
+        say Super_Zen presentation=zen07.hnm : "How can this be|?"
+        say Super_Zen presentation=zen08.hnm : "Excuse me a moment|... I'm going to TELEPATH to BETAKAM to get to the bottom of this mystery|..."
+        say Super_Zen presentation=zen01.hnm : "Be silent when I telepath|..."
+        say Super_Zen presentation=zen02.hnm : "Calling BETAKAM IV on the neuronal channel|... Come in|!"
+        say Super_Zen presentation=zen06.hnm : "It's me|, Super ZEN|... Something incredible's just happened|..."
+        say Super_Zen presentation=text_only : "..."
+        say Super_Zen presentation=text_only chatter : "Commander, he's telling him the story telepathically|..."
+        say Super_Zen presentation=text_only : "..."
+        say Super_Zen presentation=zen07.hnm : "Ha! Ha! He thought your story was very funny|..."
+        say Super_Zen presentation=zen08.hnm resume_at=zen1_dialogue_resume_1 : "So|... How much have you got|?" choices "nothing" "ship" "hope"
+        when {
+            require choice == "nothing"
+        } then {
+            choice = none
+        }
+        when {
+            require choice != "nothing"
+        } then {
+            choice = none
+        }
+        zen1_dialogue_resume_1:
+        say Super_Zen presentation=zen06.hnm : "I see|..."
+        say Super_Zen presentation=zen07.hnm : "Look|... I have a mission for you|..."
+        say Super_Zen presentation=zen08.hnm : "I want you to steal the portrait of the GREAT YOLK for me|... from the planet VISTA|..."
+        say Super_Zen presentation=zen06.hnm if_not_shown skip_next=1 : "The planet VISTA is at coordinates x453 y654|..."
+        Vista.known = true
+        say Super_Zen presentation=text_only chatter : "How about that|! He wants us to steal the painting of the GREAT YOLK|!"
+        say Super_Zen presentation=zen07.hnm : "When you bring me the portrait|, painted in the GREAT YOLK's own yellow blood|, I'll remove your curse|..."
+        say Super_Zen presentation=zen08.hnm : "See you soon|, my friend|..."
+        say Super_Zen presentation=text_only if_not_shown skip_next=3 : "..."
+        zen1.enabled = false
+        Super_Zen.current_location = Trashlando
+        end presentation Super_Zen
+    }
+    proc zen2 enabled {
+        require painting.holder == blood
+    } then {
+        Super_Zen.current_location = Crazystone
+        zen2.enabled = false
+    }
+    proc zen3 enabled {
+        during travel
+        require presentation == Super_Zen
+        require painting.holder == blood
+        require arche.current_location == Crazystone
+    } then {
+        say Super_Zen presentation=text_only : "..."
+        say Super_Zen presentation=zen01.hnm : "Well|... You are indeed talented|..."
+        say Super_Zen presentation=text_only resume_at=zen4 : "Teleport him the painting|, Commander..." choices "teleport"
+        when {
+            require choice == "teleport"
+        } then {
+            say Super_Zen presentation=text_only if_not_shown skip_next=2 : "TELEPORTING PAINTING TO PLANET CRAZYSTONE"
+            transfer painting from aboard to Super_Zen
+            choice = none
+        }
+    }
+    proc zen4 enabled {
+        during travel
+        require presentation == Super_Zen
+        require painting.holder == Super_Zen
+        require arche.current_location == Crazystone
+    } then {
+        say Super_Zen presentation=text_only chatter : "NICE MOVE|, Commander..."
+        say Super_Zen presentation=zen03.hnm : "If you're ready|, we'll begin the disenchantment ceremony|.."
+        say Super_Zen presentation=text_only : "..."
+        say Super_Zen presentation=text_only : "..."
+        say Super_Zen presentation=text_only chatter : "Look|, Commander|! He's concentrating|... I think|..."
+        say Super_Zen presentation=zen12.hnm : "ATA ATA HOGLO HULU..."
+        say Super_Zen presentation=zenj_tr.hnm : "ATA ATA HOGLO HULU..."
+        say Super_Zen presentation=text_only if_not_shown skip_next=1 : "HAM TOT ZAGLO HOLO HULU..."
+        request sequence "tourbi.hnm"
+        say Super_Zen presentation=zen04.hnm : "ATA ATA HOGLO HULU..."
+        say Super_Zen presentation=text_only if_not_shown skip_next=1 : "ATA ATA HOGLO HULU..."
+        request sequence "momi10.hnm"
+        say Super_Zen presentation=text_only if_not_shown skip_next=1 : "HER TOT ZAGLO HOLO HULU..."
+        request sequence "star2.hnm"
+        say Super_Zen presentation=text_only chatter : "Hey|, Commander|! The curse has been lifted|!"
+        say Super_Zen presentation=text_only chatter : "I'll bet Mister Beauregard is happy about it|..."
+        say Super_Zen presentation=zen05.hnm : "Shhh|... It's not finished|..."
+        say Super_Zen presentation=zen09.hnm : "The curse of Betakam IV is the sneakiest curse I know|..."
+        dictionary blank after "sneakiest"
+        say Super_Zen presentation=zen06.hnm : "Betakam would like to meet you|..."
+        say Super_Zen presentation=zen01.hnm : "He can't figure out how you were cursed by his mummy|, since he's still alive|..."
+        say Super_Zen presentation=zen02.hnm if_not_shown skip_next=1 : "You'll find him on the planet Attrox, coordinates x342 y765..."
+        Attrox.known = true
+        sequence_slots[1] = "present"
+        sequence_slots[2] = "present"
+        sequence_slots[3] = "present"
+        sequence_slots[4] = "present"
+        sequence_slots[5] = "present"
+        say Super_Zen presentation=text_only chatter : "Commander... This is just great|!"
+        say Super_Zen presentation=zen01.hnm if_not_shown skip_next=4 : "Bye bye|..."
+        globals.maledict = 0
+        zen4.enabled = false
+        Super_Zen.current_location = Trashlando
+        end presentation Super_Zen
+    }
+    proc zen5 enabled {
+        require painting.holder == Super_Zen
+        require hat.holder == aboard
+    } then {
+        Super_Zen.current_location = Crazystone
+        zen5.enabled = false
+    }
+    proc zen6 enabled {
+        during travel
+        require presentation == Super_Zen
+        require painting.holder == Super_Zen
+        require arche.current_location == Crazystone
+    } then {
+        say Super_Zen presentation=text_only : "..."
+        say Super_Zen presentation=text_only : "..."
+        say Super_Zen presentation=text_only : "..."
+        say Super_Zen presentation=text_only : "..."
+        say Super_Zen presentation=text_only : "..."
+        say Super_Zen presentation=text_only chatter : "Commander, I think he's meditating|..."
+        when {
+            require hat.holder == aboard
+        } then {
+            say Super_Zen presentation=zen01.hnm : "Welcome friend|... How can I help you|?"
+            say Super_Zen presentation=text_only chatter : "Why don't we give him Eviscerator's hat|, Commander|... He might give us some information|..."
+            say Super_Zen presentation=text_only resume_at=zen6_dialogue_resume_1 : "TELEPORT HAT TO SUPER ZEN" choices "teleport" "refuse"
+            when {
+                require choice == "teleport"
+            } then {
+                say Super_Zen presentation=text_only if_not_shown skip_next=2 : "TELEPORTING HAT TO SUPER ZEN"
+                transfer hat from aboard to Super_Zen
+                choice = none
+            }
+            when {
+                require choice == "refuse"
+            } then {
+                say Super_Zen presentation=text_only chatter : "It's your decision|, Commander..."
+                choice = none
+            }
+        }
+        zen6_dialogue_resume_1:
+        when {
+            require hat.holder == Super_Zen
+        } then {
+            say Super_Zen presentation=zen01.hnm : "OOOh... A hat|..."
+            say Super_Zen presentation=zen02.hnm : "Uuh|! Bad vibrations... I sense fury and noisy|..."
+            say Super_Zen presentation=zen06.hnm : "I sense pain|, blood and tears|..."
+            dictionary blank after "tears"
+            say Super_Zen presentation=zen07.hnm : "I see|... Ha|!!! A planet|... Big ships|..."
+            say Super_Zen presentation=zen01.hnm : "The planet is called|..."
+            say Super_Zen presentation=text_only chatter : "He's gonna say it|, Commander|... I can feel it|..."
+            say Super_Zen presentation=zen01.hnm : "The planet is called|..."
+            say Super_Zen presentation=text_only chatter : "Okay|... Cut the suspense|!!!"
+            say Super_Zen presentation=zen01.hnm : "MASTA|..."
+            say Super_Zen presentation=text_only chatter : "MASTACHOK... I knew it|, Commander|..."
+            say Super_Zen presentation=zen01.hnm if_not_shown skip_next=1 : "Not Mastachok|! MASTA|. Coordinates x564 y098..."
+            Masta.known = true
+            say Super_Zen presentation=text_only chatter : "YES|!!! Got it|... MASTA|... What kind of a name is that for a planet|..."
+            dictionary blank after "kind"
+            say Super_Zen presentation=text_only chatter : "Time to make tracks|, Commander|..."
+            say Super_Zen presentation=text_only chatter : "You did good|, Mister Zen|. Thanks a zill|..."
+            say Super_Zen presentation=zen08.hnm : "So long|, my friends|... I must travel for some time now|..."
+            say Super_Zen presentation=text_only if_not_shown skip_next=2 : "..."
+            Super_Zen.current_location = Trashlando
+            end presentation Super_Zen
+        }
+        say Super_Zen presentation=text_only chatter : "We'll come back later|..."
+        say Super_Zen presentation=text_only if_not_shown skip_next=1 : "..."
+        end presentation Super_Zen
+    }
+    proc beta1 enabled {
+        during travel
+        require arche.current_location == Attrox
+        require presentation == Betakam
+    } then {
+        say Betakam presentation=pagotour.hnm : "..."
+        say Betakam presentation=pagotour.hnm : "..."
+        say Betakam presentation=pagotour.hnm : "..."
+        say Betakam presentation=pagotete.hnm : "Welcome to the planet Attrox|, stranger|..."
+        say Betakam presentation=pagotour.hnm : "..."
+        say Betakam presentation=pagotour.hnm : "..."
+        say Betakam presentation=pagotour.hnm : "..."
+        say Betakam presentation=text_only : "I am Betakam IV|, king of the PATAGOS|..."
+        say Betakam presentation=text_only : "You see the sun up in the sky|? It is named GLADIS|..."
+        say Betakam presentation=pagotour.hnm : "..."
+        say Betakam presentation=pagotour.hnm : "..."
+        say Betakam presentation=pagotour.hnm : "..."
+        say Betakam presentation=text_only : "Its heat warms the PATAGOS|..."
+        say Betakam presentation=text_only : "Super Zen spoke to me of you|! Some story about a CURSE|!!"
+        say Betakam presentation=text_only chatter : "Commander, this is rich|... We have that guy's mummy in the Ark|!"
+        say Betakam presentation=text_only chatter : "Commander|, I'd like to wake up Mister Beauregard|. He's the only one who can explain some of this|..."
+        say Betakam presentation=text_only chatter resume_at=beta1_dialogue_resume_1 : "Is that okay with you|, Commander|?" choices "accept" "refuse"
+        when {
+            require choice == "accept"
+        } then {
+            choice = none
+        }
+        when {
+            require choice == "refuse"
+        } then {
+            say Betakam presentation=text_only chatter : "You're the bossman|, Commander..."
+            say Betakam presentation=text_only chatter if_not_shown skip_next=2 : "But I have a feeling we're out of our depth here|..."
+            choice = none
+            end presentation Betakam
+        }
+        beta1_dialogue_resume_1:
+        say Betakam presentation=text_only chatter : "Ok|, Commander... Mister Beauregard|, wakey wakey|!"
+        say Betakam presentation=text_only if_not_shown skip_next=1 : "Yes|... I'm here|..."
+        request sequence "hboc.hnm"
+        say Betakam presentation=text_only chatter : "We're in the middle of a conversation with king Betakam|..."
+        say Betakam presentation=text_only if_not_shown skip_next=1 : "You're here|, Betakam|??? I can hardly believe it|... I spent years studying your civilization|..."
+        request sequence "hboc.hnm"
+        say Betakam presentation=text_only : "Commander how about teleporting his mummy, perhaps it would please him|..."
+        say Betakam presentation=text_only : "What are you doing|? You're going to seriously traumatize the poor guy|!"
+        say Betakam presentation=text_only if_not_shown skip_next=1 : "Betakam... We know your sun Gladis is going to explode and all your descendants will perish|..."
+        request sequence "hboc.hnm"
+        say Betakam presentation=text_only : "How amusing|... You realize of course that nobody can predict the future|!"
+        say Betakam presentation=text_only if_not_shown skip_next=1 : "Oh yes they can|!!! Betakam|, we know the future|... That's where we come from|..."
+        request sequence "hboc.hnm"
+        say Betakam presentation=text_only : "From the future|, eh|? I suppose you forgot to bring proof|..."
+        say Betakam presentation=text_only : "Teleport him some technological gadget|, Commander|..."
+        say Betakam presentation=text_only chatter : "I know|, Commander... The Mind Scrambler|!"
+        say Betakam presentation=text_only if_not_shown skip_next=1 : "Excellent idea|, Mister Honk|!!!"
+        request sequence "hboc.hnm"
+        say Betakam presentation=text_only resume_at=beta1_dialogue_resume_2 : "TELEPORT MIND SCRAMBLER TO KING BETAKAM IV" choices "teleport" "refuse"
+        when {
+            require choice == "teleport"
+        } then {
+            say Betakam presentation=text_only if_not_shown skip_next=2 : "TELEPORTING MIND SCRAMBLER"
+            transfer scrambler from aboard to Betakam
+            choice = none
+        }
+        when {
+            require choice == "refuse"
+        } then {
+            say Betakam presentation=text_only if_not_shown skip_next=1 : "If that's the way you want it|, Commander..."
+            choice = none
+        }
+        beta1_dialogue_resume_2:
+        when {
+            require scrambler.holder == Betakam
+        } then {
+            say Betakam presentation=text_only : "What an intriguing device|... I'm beginning to believe you|..."
+            say Betakam presentation=text_only : "Okay|, Mister Betakam|, what we can do is try to find a viable planet for you|..."
+            say Betakam presentation=text_only if_not_shown skip_next=1 : "We're gonna teleport and transport you|..."
+            request sequence "hboc.hnm"
+            say Betakam presentation=text_only : "All right|..."
+            say Betakam presentation=text_only chatter : "Nice and easy|, Commander|... This is all new to him|..."
+            say Betakam presentation=text_only resume_at=beta1_dialogue_resume_3 : "TELEPORT BETAKAM IV TO CRYOBOX" choices "teleport"
+            when {
+                require choice == "teleport"
+            } then {
+                say Betakam presentation=text_only if_not_shown skip_next=3 : "TELEPORTING BETAKAM IV TO ARK"
+                Betakam.current_location = aboard
+                choice = none
+                end presentation Betakam
+            }
+        }
+        beta1_dialogue_resume_3:
+        say Betakam presentation=text_only : "I don't know about you|, but I have some murffalo meat in the oven|..."
+        say Betakam presentation=pagotour.hnm : "..."
+        say Betakam presentation=pagotour.hnm : "..."
+        say Betakam presentation=pagotour.hnm : "..."
+        say Betakam presentation=text_only if_not_shown skip_next=1 : "See you soon|..."
+        end presentation Betakam
+    }
+    proc beta2 enabled {
+        during contact
+        require presentation == Betakam
+    } then {
+        say Betakam presentation=text_only : "Did you find a planet|?"
+        when {
+            require arche.current_location == Sat
+        } then {
+            say Betakam presentation=text_only chatter : "We're on a fine planet|... An abandoned Croolis base|..."
+            say Betakam presentation=text_only : "All right|... leave me on Sat|... The murffalo intestines are favorable|..."
+            say Betakam presentation=text_only resume_at=beta2_dialogue_resume_1 : "TELEPORT BETAKAM TO SAT" choices "teleport"
+            when {
+                require choice == "teleport"
+            } then {
+                say Betakam presentation=text_only if_not_shown skip_next=3 : "TELEPORTING BETAKAM TO PLANET SAT"
+                Betakam.current_location = Sat
+                choice = none
+                end presentation Betakam
+            }
+        }
+        beta2_dialogue_resume_1:
+        when {
+            require arche.current_location != Sat
+        } then {
+            say Betakam presentation=text_only : "That planet doesn't have good vibrations|..."
+            say Betakam presentation=text_only : "The murffalo intestines are not favorable|..."
+            say Betakam presentation=text_only if_not_shown skip_next=1 : "I don't wish to go there|..."
+            end presentation Betakam
+        }
+    }
+    proc beta3 enabled {
+        during travel
+        require presentation == Betakam
+        require arche.current_location == Sat
+    } then {
+        say Betakam presentation=text_only : "It's not bad|... I'm enjoying it|..."
+        say Betakam presentation=text_only : "Makes a change|..."
+        say Betakam presentation=text_only : "It's more up to date|, you know|?|... Stinks of oil|..."
+        say Betakam presentation=text_only : "Well|, I have to go read the murffalo intestines|..."
+        say Betakam presentation=text_only if_not_shown skip_next=1 : "Bye|, friends|..."
+        end presentation Betakam
+    }
+    proc st1 enabled {
+        during travel
+        require presentation == Super_Tromp
+        require arche.current_location == Vista
+    } then {
+        say Super_Tromp presentation=strag_tr.hnm : "Welcome to the planet Vista|, stranger|..."
+        say Super_Tromp presentation=stra_tr.hnm if_not_shown skip_next=1 : "How may I help you|?"
+        Super_Tromp.topic = "talk"
+        say Super_Tromp presentation=strb_tr.hnm if_not_shown skip_next=1 : "You're leaving|? See you again|, stranger|..." choices "bye_bye"
+        end presentation Super_Tromp
+        when {
+            require globals.yo == 1
+        } then {
+            say Super_Tromp presentation=strb_tr.hnm : "You wish to visit the tomb of the Great Yolk|?"
+            say Super_Tromp presentation=strc_tr.hnm if_not_shown skip_next=1 : "Enter with respect|... This is a sacred place|..."
+            navigate to tombeau
+        }
+    }
+    global yo = 0
+    proc sin1 enabled {
+        during travel
+        require arche.current_location == Vista
+        require presentation == Sinox
+    } then {
+        say Sinox presentation=sytr_1.hnm : "Shhh|... Do not make noise|, stranger|..."
+        say Sinox presentation=sytr_2.hnm : "For ten centuries|, the Great Yolk has rested in peace in this mausoleum|..."
+        say Sinox presentation=sytr_3.hnm : "The mausoleum was built by Jeph d'Ulikan|, who defeated the Black Larsen Hordes in the year 453765..."
+        say Sinox presentation=sytr_5.hnm : "You may light a murffalo grease candle|. It will bring you good fortune|..."
+        say Sinox presentation=text_only resume_at=sin1_dialogue_resume_1 : "LIGHT A CANDLE|..." choices "accept" "refuse"
+        when {
+            require choice == "accept"
+        } then {
+            say Sinox presentation=sytr_6.hnm : "Your candle will burn for three years|..."
+            choice = none
+        }
+        when {
+            require choice == "refuse"
+        } then {
+            say Sinox presentation=sytr_7.hnm : "You're wasting a fine opportunity|..."
+            choice = none
+        }
+        sin1_dialogue_resume_1:
+        say Sinox presentation=sytr_8.hnm : "You cannot see the portrait of the Great Yolk|, painted with his own yellow blood|..."
+        say Sinox presentation=sytr_1.hnm : "It is currently being restored not far from here|..."
+        say Sinox presentation=sytr_10.hnm : "The painting is magical|... It gives its possessor Wisdom and Strength|..."
+        say Sinox presentation=sytr_2.hnm : "Thousands of Tromps died to preserve the masterpiece|..."
+        say Sinox presentation=sytr_3.hnm : "Legend says the painting's yellow blood becomes liquid every 100,000 years|..."
+        say Sinox presentation=sytr_3.hnm : "That date has not yet come|, unfortunately|... So we don't know if the story is true|..."
+        say Sinox presentation=sytr_5.hnm : "The visit is now over|..."
+        say Sinox presentation=sytr_1.hnm : "Goodbye|, space pilgrim|... May the Great Yolk go with you|..."
+        say Sinox presentation=sytr_2.hnm if_not_shown skip_next=2 : "..."
+        Sinox.current_location = Trashlando
+        end presentation Sinox
+    }
+    proc clay1 enabled {
+        during contact
+        require !Vista.known
+        require presentation == Anna_Haf
+    } then {
+        say Anna_Haf presentation=text_only : "..."
+        say Anna_Haf presentation=text_only resume_at=clay2 : "BROKEN ROBOT" choices "bye_bye"
+        when {
+            require choice == "bye_bye"
+        } then {
+            say Anna_Haf presentation=text_only if_not_shown skip_next=1 : "..."
+            end presentation Anna_Haf
+            choice = none
+        }
+    }
+    proc clay2 enabled {
+        during contact
+        require Vista.known
+        require presentation == Anna_Haf
+    } then {
+        say Anna_Haf presentation=text_only chatter : "I've got him fixed|, Commander|... His name's Sighs Ate Anna Haf|..."
+        say Anna_Haf presentation=text_only chatter : "His multiplexors are shot to hell|..."
+        say Anna_Haf presentation=text_only chatter : "Hello Mister Haf|. You may now address our onboard comander|..."
+        say Anna_Haf presentation=cltr10_2.hnm : "Hello|, Commander... I am Robot Sighs Ate Anna Haf|..."
+        say Anna_Haf presentation=cltr10_3.hnm : "I am descended from the noble Anna Haf family, naturally|..."
+        say Anna_Haf presentation=cltr10_4.hnm : "Alas|, I fell upon hard times|..."
+        say Anna_Haf presentation=cltr10_5.hnm : "So I was forced to work|... Burglary|, mostly|..."
+        say Anna_Haf presentation=cltr10_6.hnm : "If you need any burglaries done|, I'm your robot|!"
+        say Anna_Haf presentation=text_only chatter : "I'd call that somewhat rich possibility-wise|. Right|, Commander|?"
+        say Anna_Haf presentation=text_only if_not_shown skip_next=2 : "..."
+        clay2.enabled = false
+        end presentation Anna_Haf
+    }
+    proc clay1bis enabled {
+        require Vista.known
+        require Sinox.encounter_count > 0
+    } then {
+        clay1.enabled = false
+        clay3.enabled = true
+        clay1bis.enabled = false
+    }
+    proc clay3 disabled {
+        during contact
+        require presentation == Anna_Haf
+    } then {
+        when {
+            require arche.current_location == Vista
+        } then {
+            say Anna_Haf presentation=text_only chatter : "Howzabout having Haf here snatch the portrait from Vista|, Commander|?"
+            say Anna_Haf presentation=cltr10_4.hnm : "Honk filled me in on the problem|, Commander|. An easy job|..."
+            say Anna_Haf presentation=text_only resume_at=clay3_dialogue_resume_1 : "TELEPORT HAF TO PLANET VISTA" choices "teleport" "refuse"
+            when {
+                require choice == "teleport"
+            } then {
+                say Anna_Haf presentation=text_only if_not_shown skip_next=4 : "TELEPORTING HAF TO PLANET VISTA"
+                Anna_Haf.current_location = tombeau
+                clay3.enabled = false
+                choice = none
+                end presentation Anna_Haf
+            }
+            when {
+                require choice == "refuse"
+            } then {
+                say Anna_Haf presentation=text_only chatter : "Whatever you say|, Commander|..."
+                say Anna_Haf presentation=cltr10_4.hnm if_not_shown skip_next=2 : "Maybe you ought to think about it|, Commander|..."
+                choice = none
+                end presentation Anna_Haf
+            }
+        }
+        clay3_dialogue_resume_1:
+        say Anna_Haf presentation=text_only chatter : "He could help us get our hands on that painting|, Commander|..."
+        say Anna_Haf presentation=cltr10_4.hnm : "Quite true|, Commander|. Honk has brought me up to speed on the situation|..."
+        say Anna_Haf presentation=text_only chatter : "Think about it|, Commander... We just have to approach Vista and say the word to Haf|..."
+        say Anna_Haf presentation=text_only if_not_shown skip_next=1 : "..."
+        end presentation Anna_Haf
+    }
+    proc clay4 enabled {
+        during travel
+        require arche.current_location == Vista
+        require presentation == Anna_Haf
+    } then {
+        say Anna_Haf presentation=cltr10_2.hnm : "Don't stay here|, Commander|. I'll look for the painting|... There are some cases to examine|..."
+        say Anna_Haf presentation=cltr10_3.hnm : "See you later|, Commander|..."
+        say Anna_Haf presentation=cltr10_4.hnm if_not_shown skip_next=2 : "Bye bye|... Leave now and let me do my job|..."
+        Anna_Haf.known = true
+        end presentation Anna_Haf
+    }
+    proc clay5 enabled {
+        during bridge
+        require presentation == Anna_Haf
+    } then {
+        when {
+            require arche.current_location != Vista
+        } then {
+            say Anna_Haf presentation=text_only : "KKKKK hello... KKKK RRR... KRUIK... KRUAK..."
+            say Anna_Haf presentation=text_only chatter : "Sighs Ate Anna Haf here|. This is a lousy line|, Commander..."
+            say Anna_Haf presentation=text_only chatter : "We're too far away|. We'll need to get closer to the planet Vista|.."
+            say Anna_Haf presentation=text_only if_not_shown skip_next=1 : "KL KL KL KRUIKKKk..."
+            end presentation Anna_Haf
+        }
+        when {
+            require arche.current_location == Vista
+        } then {
+            say Anna_Haf presentation=text_only : "Is that you|, Commander|? You're coming in loud and clear|..."
+            say Anna_Haf presentation=text_only : "I found the painting|. It's protected by a sophisticated security system|..."
+            say Anna_Haf presentation=text_only : "I can take care of it|, Commander|... I'll get back to you when I've finished|..."
+            say Anna_Haf presentation=text_only : "Until then, just let me work in peace|..."
+            say Anna_Haf presentation=text_only : "KRUIKK..."
+            say Anna_Haf presentation=text_only if_not_shown skip_next=4 : "..."
+            Anna_Haf.known = false
+            timer[7] = 60
+            clay5.enabled = false
+            end presentation Anna_Haf
+        }
+    }
+    proc clay6 enabled {
+        require timer[7] == 0
+    } then {
+        queue presentation Anna_Haf
+        clay7.enabled = true
+        clay6.enabled = false
+    }
+    proc clay7 disabled {
+        during bridge
+        require Anna_Haf.current_location == tombeau
+        require presentation == Anna_Haf
+    } then {
+        say Anna_Haf presentation=text_only : "Come in|, Commander|... I'VE GOT THE PORTRAIT OF THE GREAT YOLK|!"
+        say Anna_Haf presentation=text_only chatter : "YES|!!! Commander, he did it|!"
+        say Anna_Haf presentation=text_only : "You better come get me|... I don't want to hang around here..."
+        say Anna_Haf presentation=text_only : "Hurry|, Commander..."
+        say Anna_Haf presentation=text_only if_not_shown skip_next=3 : "Kruikkk..."
+        clay4.enabled = false
+        Anna_Haf.known = false
+        end presentation Anna_Haf
+    }
+    proc clay8 enabled {
+        during travel
+        require presentation == Anna_Haf
+    } then {
+        say Anna_Haf presentation=cltr10_4.hnm : "Come in|, Commander|... I'VE GOT THE PORTRAIT OF THE GREAT YOLK|!"
+        say Anna_Haf presentation=text_only chatter : "YES|!!! Commander, he did it|!"
+        say Anna_Haf presentation=text_only resume_at=clay8_dialogue_resume_1 : "TELEPORT PAINTING TO ARK" choices "teleport"
+        when {
+            require choice == "teleport"
+        } then {
+            say Anna_Haf presentation=text_only if_not_shown skip_next=2 : "TELEPORTING PAINTING TO ARK"
+            transfer painting from Anna_Haf to aboard
+            choice = none
+        }
+        clay8_dialogue_resume_1:
+        say Anna_Haf presentation=cltr10_6.hnm : "Teleport me|, Commander|. Hurry|..."
+        say Anna_Haf presentation=text_only resume_at=clay9 : "Teleport him|, Commander..." choices "teleport"
+        when {
+            require choice == "teleport"
+        } then {
+            say Anna_Haf presentation=text_only if_not_shown skip_next=3 : "TELEPORT HAF TO ARK"
+            Anna_Haf.current_location = aboard
+            choice = none
+            end presentation Anna_Haf
+        }
+    }
+    proc clay9 enabled {
+        during contact
+        require presentation == Anna_Haf
+    } then {
+        say Anna_Haf presentation=cltr10_4.hnm : "Hello|, Commander... I'm sleeping real well|..."
+        say Anna_Haf presentation=cltr10_6.hnm : "Just call if you need me|..."
+        say Anna_Haf presentation=cltr10_7.hnm if_not_shown skip_next=1 : "Nite nite|..."
+        end presentation Anna_Haf
+    }
+    proc masta1 enabled {
+        during travel
+        require presentation == Rotator
+    } then {
+        say Rotator presentation=g_garag.hnm : "Halt|! Who goes there|? I am ROTATOR|, second class Croolis ventriloquist|..."
+        say Rotator presentation=g_garb.hnm : "Careful|, stranger|. Don't try anything|... My laser-pulper could do bad things to your body|..."
+        say Rotator presentation=g_garc.hnm : "Rotator's laser-pulper is set to maximum pulp position|..."
+        say Rotator presentation=text_only chatter : "Commander|, this could be tricky|... I'm scared|..."
+        say Rotator presentation=g_garc.hnm : "My chief will want to see you|... Your toes will be toasted and your eardrums punctured in several places|..."
+        dictionary blank after "toasted"
+        say Rotator presentation=g_gard.hnm : "Your limbs will be reduced to paste texture|. Your nose will be removed|, your skin peeled off|..."
+        say Rotator presentation=g_gare.hnm : "You will be required to eat your teeth|... repeatedly|..."
+        say Rotator presentation=text_only chatter : "Co Co... Commander... Maybe this isn't such a good place to be|..."
+        say Rotator presentation=text_only if_not_shown skip_next=2 : "The CHIEF is waiting|..."
+        navigate to machine
+        masta1.enabled = false
+    }
+    proc masta2 enabled {
+        during travel
+        require presentation == Outrageor
+    } then {
+        say Outrageor presentation=r_pria.hnm : "Enter|, Commander|... Surprised that I call you Commander|???"
+        say Outrageor presentation=r_prib.hnm : "Our radar has been tracking you for some time|..."
+        say Outrageor presentation=r_pric.hnm : "We know you visited the Tromps|... I've sent a full report to General EVISCERATOR..."
+        say Outrageor presentation=text_only chatter : "This is serious|, Commander|. These folks are using this base to prepare for war|!"
+        say Outrageor presentation=text_only chatter : "THEY 'RE BUILDING MORNING OILS|!!!"
+        say Outrageor presentation=r_prid.hnm : "We're going to eliminate you|... WE KNOW YOU POSSESS THE CROOLIS WAR TREASURE|..."
+        say Outrageor presentation=text_only chatter : "What|? We don't have any such thing|!"
+        say Outrageor presentation=text_only if_not_shown skip_next=1 : "Excuse me|, Commander|... But I'm having trouble getting to sleep|..."
+        request sequence "hboc.hnm"
+        say Outrageor presentation=text_only chatter : "This isn't a good moment|, Mister Beauregard|..."
+        say Outrageor presentation=text_only if_not_shown skip_next=1 : "I have something on my conscience... Something I have to confess to you|..."
+        request sequence "hboc.hnm"
+        say Outrageor presentation=text_only if_not_shown skip_next=1 : "The treasure|... Commander|... EVISCERATOR's treasure|... You see|, I found it|, Commander..."
+        request sequence "hboc.hnm"
+        say Outrageor presentation=text_only if_not_shown skip_next=1 : "It's|... IN THE MUMMY|..."
+        request sequence "hboc.hnm"
+        say Outrageor presentation=text_only chatter : "Oh boy That wasn't the smartest thing you ever did|, Mister Beauregard..."
+        say Outrageor presentation=text_only if_not_shown skip_next=1 : "Well|, I did intend telling you|..."
+        request sequence "hboc.hnm"
+        say Outrageor presentation=text_only chatter : "Looks like we'd better hand over the mummy|, Commander|..."
+        say Outrageor presentation=r_prif.hnm : "If you've quite finished your nice little conversation|... I'd like your attention|..."
+        say Outrageor presentation=text_only chatter : "He's pretty persuasive|, I find|..."
+        say Outrageor presentation=text_only chatter : "No problem We'll teleport you the treasure|... It's safe inside a mummy|..."
+        say Outrageor presentation=r_prig.hnm : "We know it's safe inside a mummy|. We're the ones who hid it there|!"
+        say Outrageor presentation=text_only resume_at=masta2_dialogue_resume_1 : "TELEPORT MUMMY TO CROOLIS OUTRAGEOR" choices "teleport"
+        when {
+            require choice == "teleport"
+        } then {
+            say Outrageor presentation=text_only if_not_shown skip_next=2 : "TELEPORTING MUMMY TO OUTRAGEOR"
+            transfer mummy from aboard to Outrageor
+            choice = none
+        }
+        masta2_dialogue_resume_1:
+        say Outrageor presentation=r_prif.hnm : "Ha! Ha! Ha! Everything in its place|, as I always say|..."
+        say Outrageor presentation=text_only chatter : "LET MISTER MAXXON GO FREE|..."
+        say Outrageor presentation=r_prie.hnm : "HA! HA! HA! I'll think about it|... maybe|... Ha! Ha! Ha!"
+        say Outrageor presentation=text_only chatter : "We're dealing with an exceptionally witty Croolis here|, Commander|..."
+        say Outrageor presentation=r_prib.hnm : "Get out of here|... Don't let me see you again|!"
+        say Outrageor presentation=text_only if_not_shown skip_next=4 : "Bye bye"
+        timer[15] = 60
+        Outrageor.current_location = Trashlando
+        Eviscerator.current_location = machine
+        end presentation Outrageor
+    }
+    proc masta6 enabled {
+        during travel
+        require presentation == Rotator
+    } then {
+        say Rotator presentation=g_garag.hnm : "Halt|! Who goes there|? I am ROTATOR|, second class Croolis ventriloquist|..."
+        say Rotator presentation=g_garb.hnm : "Careful|, stranger|. Don't try anything|... My laser-pulper could do bad things to your body|..."
+        say Rotator presentation=g_garc.hnm : "Rotator's laser-pulper is set to maximum pulp position|..."
+        say Rotator presentation=text_only chatter : "Commander|, this could be tricky|... I'm scared|..."
+        say Rotator presentation=g_garc.hnm : "Your toes will be toasted and your eardrums punctured in several places|..."
+        say Rotator presentation=g_gard.hnm : "Your limbs will be reduced to paste texture|. Your nose will be removed|, your skin peeled off|..."
+        say Rotator presentation=g_gare.hnm : "You will be required to eat your teeth|... repeatedly|..."
+        say Rotator presentation=text_only chatter : "Co Co... Commander... Maybe this isn't such a good place to be|..."
+        say Rotator presentation=g_gare.hnm if_not_shown skip_next=2 : "BAAAOOOM..."
+        request sequence "explo3.hnm"
+        end presentation Rotator
+    }
+    proc masta3 enabled {
+        require timer[15] == 0
+    } then {
+        queue presentation Eviscerator
+        masta4.enabled = true
+        masta3.enabled = false
+    }
+    proc masta4 disabled {
+        during bridge
+        require globals.Eviscarator == globals.dialog
+    } then {
+        say Eviscerator presentation=crl01.hnm : "Come in|, Commander|!!! This is General EVISCERATOR|..."
+        say Eviscerator presentation=text_only : "I'm mad as mad can be|, Commander|... Your mummy has laid a CURSE on us|..."
+        say Eviscerator presentation=text_only : "We're all sick... having nightmares|... We see mummies all over the place|... Even on TV|..."
+        say Eviscerator presentation=text_only : "You win|..."
+        say Eviscerator presentation=text_only : "We're letting MAXXON go|..."
+        say Eviscerator presentation=text_only : "He's a prisoner on a ship called the KUKARACHA|. Coordinates x231 y654|..."
+        say Eviscerator presentation=text_only chatter : "Commander|!!! Whaddaya say|!!! We're getting MAXXON back|!!"
+        say Eviscerator presentation=text_only : "In return|, you take the CURSE off of us|..."
+        say Eviscerator presentation=text_only : "OK|?... We're waiting|..."
+        say Eviscerator presentation=text_only if_not_shown skip_next=2 : "KRUIIK"
+        Kukaracha.known = true
+        end presentation Eviscerator
+    }
+    global Eviscarator = 0
+    global dialog = 0
+    proc jer1 enabled {
+        require Kukaracha.known
+    } then {
+        queue presentation Jerry_Khan
+        jer2.enabled = true
+        jer1.enabled = false
+    }
+    proc jer2 disabled {
+        during bridge
+        require presentation == Jerry_Khan
+    } then {
+        say Jerry_Khan presentation=text_only : "Come in Commander|... This is Inspector Jerry Khan..."
+        say Jerry_Khan presentation=text_only : "Do you have any news|?"
+        say Jerry_Khan presentation=text_only chatter : "Sure do|, Inspector|. We know where Maxxon is|... On a ship called Kukaracha|..."
+        say Jerry_Khan presentation=text_only : "Good work|!!! Kukaracha|... I'll send Yoko to pick up his father|..."
+        say Jerry_Khan presentation=text_only : "See you|..."
+        say Jerry_Khan presentation=text_only if_not_shown skip_next=4 : "KRUIIK"
+        Yoko.current_location = Kukaracha
+        Jerry_Khan.known = false
+        jer2.enabled = false
+        end presentation Jerry_Khan
+    }
+    proc kuka1 enabled {
+        during travel
+        require presentation == Yoko
+        require arche.current_location == Kukaracha
+    } then {
+        say Yoko presentation=text_only : "Me happy see you|, Commander|..."
+        say Yoko presentation=text_only if_not_shown skip_next=1 : "Hurry|, I want see father MAXXON|..."
+        request sequence "aready30.hnm"
+        say Yoko presentation=text_only if_not_shown skip_next=1 : "Behind that door|..."
+        request sequence "aready40.hnm"
+        say Yoko presentation=text_only chatter resume_at=yoo : "Teleport them|, Commander, quick|..." choices "teleport"
+        when {
+            require choice == "teleport"
+        } then {
+            say Yoko presentation=text_only if_not_shown skip_next=5 : "TELEPORTING MAXXON AND YOKO TO ARK"
+            Maxxon.current_location = aboard
+            Yoko.current_location = aboard
+            Kukaracha.known = false
+            choice = none
+            end presentation Yoko
+        }
+    }
+    proc yoo enabled {
+        during contact
+        require presentation == Yoko
+    } then {
+        say Yoko presentation=text_only : "Thank you... Thank you|... Commander..."
+        say Yoko presentation=text_only : "Me happy see you|, Commander|..."
+        say Yoko presentation=text_only : "You have save my father..."
+        say Yoko presentation=text_only : "Thank you..."
+        say Yoko presentation=text_only if_not_shown skip_next=1 : "Thank you..."
+        end presentation Yoko
+    }
+    proc maxo enabled {
+        during contact
+        require presentation == Maxxon
+    } then {
+        say Maxxon presentation=text_only : "Thank you|... Commander..."
+        say Maxxon presentation=text_only : "It was terrible... Eviscerator is crazy..."
+        say Maxxon presentation=text_only : "The nightmare is off now..."
+        say Maxxon presentation=text_only if_not_shown skip_next=1 : "Thank you..."
+        end presentation Maxxon
+    }
+    proc fin1 enabled {
+        require Betakam.current_location == Sat
+        require Maxxon.current_location == aboard
+        require Yoko.current_location == aboard
+        require ondoyant.current_location == aboard
+    } then {
+        queue presentation Jerry_Khan
+        fin2.enabled = true
+        fin1.enabled = false
+    }
+    proc fin2 disabled {
+        during bridge
+        require presentation == Jerry_Khan
+    } then {
+        say Jerry_Khan presentation=text_only : "Come in, Commander|... This is Inspector JERRY KHAN on the SHARK..."
+        say Jerry_Khan presentation=text_only : "I have good news|..."
+        say Jerry_Khan presentation=text_only : "I just captured Doctor Otto Von Smile|..."
+        say Jerry_Khan presentation=text_only : "I found the GLUXX kids|..."
+        say Jerry_Khan presentation=text_only : "We're going home|, Commander..."
+        dictionary blank after "home"
+        say Jerry_Khan presentation=text_only : "I've found the Oddland black hole..."
+        say Jerry_Khan presentation=text_only if_not_shown skip_next=1 : "Oddland is at coordinates x465 Y342..."
+        Oddland.known = true
+        say Jerry_Khan presentation=text_only chatter : "Say|, Commander|... We've had quite an adventure|..."
+        say Jerry_Khan presentation=text_only : "I'll see you on the other side of the black hole|, Commander|..."
+        say Jerry_Khan presentation=text_only : "This is Morning Oil|: see you soon|, Commander|..."
+        say Jerry_Khan presentation=text_only : "BYE BYE COMMANDER|..."
+        say Jerry_Khan presentation=text_only if_not_shown skip_next=2 : "..."
+        Od_dland.enabled = true
+        end presentation Jerry_Khan
+    }
+    proc Od_dland disabled {
+        require travel through Oddland
+    } then {
+        run profile SCRIPT5
+    }
+    proc jerry enabled {
+    } then {
+        timer[1] = 100
+        jerry.enabled = false
+    }
+    proc jerry2 enabled {
+        require timer[1] == 0
+    } then {
+        queue presentation Jerry_Khan
+        jerry3.enabled = true
+        jerry2.enabled = false
+    }
+    proc jerry3 disabled {
+        during bridge
+        require presentation == Jerry_Khan
+    } then {
+        say Jerry_Khan presentation=text_only : "Come in|, Commander|... This is Inspector JERRY KHAN on the SHARK..."
+        say Jerry_Khan presentation=text_only : "We're through the black hole... An amazing experience|, Commander|..."
+        say Jerry_Khan presentation=text_only : "WE HAVE TRAVELLED SEVERAL HUNDRED THOUSAND YEARS BACK IN TIME|..."
+        say Jerry_Khan presentation=text_only : "WE ARE COORDINATES X123 y432"
+        say Jerry_Khan presentation=text_only : "COME AND JOIN US|..."
+        say Jerry_Khan presentation=text_only chatter : "Commander|... It's funny but I don't feel so good|..."
+        say Jerry_Khan presentation=text_only : "GOOD LUCK|..."
+        say Jerry_Khan presentation=text_only : "KRUIKKK..."
+        say Jerry_Khan presentation=text_only if_not_shown skip_next=4 : "..."
+        Shark.known = true
+        Jerry_Khan.known = false
+        jerry3.enabled = false
+        end presentation Jerry_Khan
+    }
+    proc shark enabled {
+        during travel
+        require arche.current_location == Shark
+        require presentation == Jerry_Khan
+    } then {
+        say Jerry_Khan presentation=jerry_13.hnm : "Welcome aboard the Shark, Commander..."
+        say Jerry_Khan presentation=jerry_14.hnm : "What a crazy adventure|... have you visited the sector|?"
+        say Jerry_Khan presentation=jerry_15.hnm : "I identified the planet Ron|. It's RONDO in fact|... Yoko's planet|..."
+        say Jerry_Khan presentation=text_only chatter : "Wow|... That's weird|..."
+        say Jerry_Khan presentation=jerry_11.hnm : "I identified the planet Vistar|..."
+        say Jerry_Khan presentation=jerry_12.hnm if_not_shown skip_next=1 : "Vistar is at coordinates x564 y987..."
+        Vistar.known = true
+        say Jerry_Khan presentation=text_only chatter : "Thank you Inspector|..."
+        say Jerry_Khan presentation=jerry_14.hnm : "I'm going to start my investigation|, Commander|. We'll stay in radio contact|..."
+        say Jerry_Khan presentation=jerry_12.hnm : "Eviscerator's hiding somewhere among those stars|."
+        say Jerry_Khan presentation=jerry_13.hnm : "He mustn't be allowed to make trouble|..."
+        say Jerry_Khan presentation=jerry_16.hnm : "Well|... I wish you good luck|, Commander|..."
+        say Jerry_Khan presentation=text_only if_not_shown skip_next=4 : "..."
+        Shark.known = false
+        shark.enabled = false
+        tamy.enabled = true
+        end presentation Jerry_Khan
+    }
+    proc tamy disabled {
+    } then {
+        timer[13] = 200
+        tamy.enabled = false
+    }
+    proc tamx enabled {
+    } then {
+        when {
+            require timer[13] == 0
+        } then {
+            globals.ta += 1
+            timer[13] = 200
+        }
+    }
+    global ta = 0
+    proc tam1 enabled {
+        require globals.ta == 1
+    } then {
+        queue presentation Jerry_Khan
+    }
+    proc tam1B enabled {
+        during bridge
+        require presentation == Jerry_Khan
+        require globals.ta == 1
+    } then {
+        say Jerry_Khan presentation=jerry_11.hnm : "This is Inspector Jerry Khan..."
+        say Jerry_Khan presentation=text_only : "Commander|, I picked up a message for you from someone called CBRION JANIOR."
+        say Jerry_Khan presentation=text_only : "The message was pretty garbled|... Probably because of the black hole|..."
+        say Jerry_Khan presentation=text_only : "My investigation's going fine|. I know where doctor Otto Von Smile is..."
+        say Jerry_Khan presentation=text_only : "SEE YOU"
+        say Jerry_Khan presentation=text_only if_not_shown skip_next=2 : "Kruikk..."
+        tam1.enabled = false
+        end presentation Jerry_Khan
+    }
+    proc tam2 enabled {
+        require globals.ta == 2
+    } then {
+        queue presentation Jerry_Khan
+    }
+    proc tam2B enabled {
+        during bridge
+        require presentation == Jerry_Khan
+        require globals.ta == 2
+    } then {
+        say Jerry_Khan presentation=jerry_11.hnm : "This is Jerry Khan..."
+        say Jerry_Khan presentation=text_only : "Everything okay|, Commander|?"
+        say Jerry_Khan presentation=text_only chatter : "Sure|!!! We're doing great|..."
+        say Jerry_Khan presentation=text_only : "Glad to hear it|... I'll call you if I need any help|..."
+        say Jerry_Khan presentation=text_only if_not_shown skip_next=2 : "See you|, Commander..."
+        tam2.enabled = false
+        end presentation Jerry_Khan
+    }
+    proc menbr enabled {
+        during bridge
+        require presentation == menu
+        require Bronko.current_location == aboard
+    } then {
+        say menu presentation=text_only : "\"IMPROVED MENU\""
+        say menu presentation=text_only : "Today CHEF BRONKO has laid out for you|:"
+        say menu presentation=text_only : "Tasty MUFFALO soup Bronko-style|."
+        say menu presentation=text_only : "MURFFALO kidneys Bronko-style|."
+        say menu presentation=text_only : "MURFFALO hamburger with Bar-B-Q recycled-oil dip|."
+        say menu presentation=text_only : "Smooth MURFFALO-chip ice cream|."
+        dictionary blank after "ice"
+        say menu presentation=text_only : "Recycled water"
+        say menu presentation=text_only : "Chef Bronko says|... Burping's bad manners|!|..."
+        say menu presentation=text_only if_not_shown skip_next=1 : "stop"
+        end presentation menu
+    }
+    proc men1 enabled {
+        during bridge
+        require presentation == menu
+        require Bronko.current_location != aboard
+    } then {
+        say menu presentation=text_only : "\"MENU\""
+        say menu presentation=text_only : "Today's fare|:"
+        say menu presentation=text_only : "PLASMA soup HONK-style|."
+        say menu presentation=text_only : "WRIGGLER belly in slobber sauce|."
+        say menu presentation=text_only : "Jellied URTIKAN with MURFFALO bone marrow|."
+        say menu presentation=text_only : "GLOK eye pie|."
+        say menu presentation=text_only : "Recycled water"
+        say menu presentation=text_only : "The chef says|... Don't eat with your mouth full|!|..."
+        dictionary blank after "mouth"
+        say menu presentation=text_only if_not_shown skip_next=2 : "Stop"
+        men1.enabled = false
+        end presentation menu
+    }
+    proc men2 enabled {
+        during bridge
+        require presentation == menu
+        require Bronko.current_location != aboard
+    } then {
+        say menu presentation=text_only : "\"MENU\""
+        say menu presentation=text_only : "Today's fare|:"
+        say menu presentation=text_only : "PLASMA soup HONK-style|."
+        say menu presentation=text_only : "WRIGGLER snout stew|."
+        say menu presentation=text_only : "URTIKAN seeds in MURFFALO venom|."
+        say menu presentation=text_only : "GLOK juice dessert|."
+        say menu presentation=text_only : "Recycled water"
+        say menu presentation=text_only : "The chef says|... Don't talk with your mouth open|!|..."
+        say menu presentation=text_only if_not_shown skip_next=2 : "stop"
+        men2.enabled = false
+        end presentation menu
+    }
+    proc men3 enabled {
+        during bridge
+        require Bronko.current_location != aboard
+        require presentation == menu
+    } then {
+        say menu presentation=text_only : "\"MENU\""
+        say menu presentation=text_only : "Today's fare|:"
+        say menu presentation=text_only : "PLASMA soup HONK-style|."
+        say menu presentation=text_only : "WRIGGLER feet in emulsive sauce|."
+        say menu presentation=text_only : "URTIKAN leaves in MURFFALO sweat|."
+        say menu presentation=text_only : "GLOK flake dessert|."
+        say menu presentation=text_only : "Recycled water"
+        say menu presentation=text_only : "The chef says|... Somebody didn't finish his wrigglers yesterday|..."
+        say menu presentation=text_only if_not_shown skip_next=2 : "stop"
+        men3.enabled = false
+        end presentation menu
+    }
+    proc men4 enabled {
+        during bridge
+        require presentation == menu
+        require Bronko.current_location != aboard
+    } then {
+        say menu presentation=text_only : "\"MENU\""
+        say menu presentation=text_only : "Today's fare|:"
+        say menu presentation=text_only : "HONK-style PLASMA soup|."
+        say menu presentation=text_only : "WRIGGLER brain|, stewed in its own juice|."
+        say menu presentation=text_only : "URTIKAN trunk|, stuffed with MURFFALO liver|."
+        say menu presentation=text_only : "GLOK dee-lite|."
+        say menu presentation=text_only : "Recycled water"
+        say menu presentation=text_only : "The chef says|... Plenty more in the kitchen|!|..."
+        say menu presentation=text_only if_not_shown skip_next=2 : "stop"
+        men4.enabled = false
+        end presentation menu
+    }
+    proc men5 enabled {
+        during bridge
+        require presentation == menu
+        require Bronko.current_location != aboard
+    } then {
+        say menu presentation=text_only : "\"IMPROVED MENU\""
+        say menu presentation=text_only : "Today's fare|:"
+        say menu presentation=text_only : "Soup of PLASMA HONK-style|."
+        say menu presentation=text_only : "WRIGGLER hearts in green blood coagulate|."
+        say menu presentation=text_only : "URTIKAN roots|, deep fried in recycled oil|."
+        say menu presentation=text_only : "Candied GLOK tongue|."
+        say menu presentation=text_only : "Recycled water"
+        say menu presentation=text_only : "The chef says|... You eat what you are|!|..."
+        say menu presentation=text_only if_not_shown skip_next=3 : "stop"
+        men5.enabled = false
+        men6.enabled = true
+        end presentation menu
+    }
+    proc men6 disabled {
+    } then {
+        men1.enabled = true
+        men2.enabled = true
+        men3.enabled = true
+        men4.enabled = true
+        men5.enabled = true
+        men6.enabled = false
+    }
+    proc honk1 enabled {
+        during bridge
+        require presentation == Honk
+    } then {
+        say Honk presentation=text_only chatter : "I exist only to obey|, Commander"
+        when {
+            require globals.vbio == 0
+        } then {
+            say Honk presentation=text_only chatter : "Commander|, we don't have any BIONIUM|... COMMANDER|, please|..."
+            say Honk presentation=text_only chatter : "I need that energy|..."
+            say Honk presentation=text_only chatter : "You must enter Scruter Jo's CYBERSPACE|..."
+            dictionary blank after "Scruter"
+            say Honk presentation=text_only chatter : "Wake up Scruter Jo|, Commander|. He's sleeping in the Cryobox|..."
+        }
+        when {
+            require globals.vbio == 1
+        } then {
+            say Honk presentation=text_only chatter : "We've got one dose of BIONIUM left|, Commander"
+            say Honk presentation=text_only chatter : "You must enter Scruter Jo's CYBERSPACE|..."
+            say Honk presentation=text_only chatter : "I don't feel too sure of myself|, Commander... I really need that energy|..."
+        }
+        when {
+            require globals.vbio == 2
+        } then {
+            say Honk presentation=text_only chatter : "We've got two doses of BIONIUM left|, Commander"
+            say Honk presentation=text_only chatter : "You must enter Scruter Jo's CYBERSPACE|..."
+        }
+        when {
+            require globals.vbio == 3
+        } then {
+            say Honk presentation=text_only chatter : "We've got three doses of BIONIUM left|, Commander"
+        }
+        when {
+            require globals.vbio == 4
+        } then {
+            say Honk presentation=text_only chatter : "We've got four doses of BIONIUM left|, Commander"
+        }
+        when {
+            require globals.vbio == 5
+        } then {
+            say Honk presentation=text_only chatter : "We've got five doses of BIONIUM left|, Commander"
+        }
+        when {
+            require globals.vbio == 6
+        } then {
+            say Honk presentation=text_only chatter : "We've got six doses of BIONIUM left|, Commander"
+        }
+        when {
+            require globals.vbio == 7
+        } then {
+            say Honk presentation=text_only chatter : "We've got seven doses of BIONIUM left|, Commander"
+        }
+        when {
+            require globals.vbio == 8
+        } then {
+            say Honk presentation=text_only chatter : "We've got eight doses of BIONIUM left|, Commander"
+            say Honk presentation=text_only chatter : "You're the best|, Commander|..."
+        }
+    }
+    proc help1 enabled {
+        during bridge
+        require presentation == Honk
+        require globals.vbio > 2
+        require Anna_Haf.current_location == aboard
+        require painting.holder != aboard
+        require painting.holder != Super_Zen
+        require Vista.known
+    } then {
+        say Honk presentation=text_only chatter if_not_shown skip_next=1 : "Go near Vista|, and talk to Anna Haf in the cryobox|..."
+        globals.vbio -= 3
+        say Honk presentation=text_only chatter if_not_shown skip_next=2 : "Service with a smile|! That's the story of my life|, Commander|..."
+        help1.enabled = false
+        end presentation Honk
+    }
+    proc help2 enabled {
+        during bridge
+        require presentation == Honk
+        require globals.vbio > 2
+        require hat.holder == aboard
+    } then {
+        say Honk presentation=text_only chatter if_not_shown skip_next=1 : "I'm sure Super Zen can help us|..."
+        globals.vbio -= 3
+        say Honk presentation=text_only chatter if_not_shown skip_next=2 : "Service with a smile|! That's the story of my life|, Commander|..."
+        help2.enabled = false
+        end presentation Honk
+    }
+    proc help3 enabled {
+        during bridge
+        require presentation == Honk
+        require globals.vbio > 2
+        require !Sat.known
+        require Betakam.current_location == aboard
+    } then {
+        say Honk presentation=text_only chatter if_not_shown skip_next=1 : "Maziok can help us, Commander|..."
+        globals.vbio -= 3
+        say Honk presentation=text_only chatter if_not_shown skip_next=2 : "Service with a smile|! That's the story of my life|, Commander|..."
+        help3.enabled = false
+        end presentation Honk
+    }
+    proc help4 enabled {
+        during bridge
+        require presentation == Honk
+        require globals.vbio > 2
+        require Fifi.encounter_count > 0
+        require picture.holder == aboard
+    } then {
+        say Honk presentation=text_only chatter if_not_shown skip_next=1 : "Fifi 'll love this ondoyant picture|..."
+        globals.vbio -= 3
+        say Honk presentation=text_only chatter if_not_shown skip_next=2 : "Service with a smile|! That's the story of my life|, Commander|..."
+        help4.enabled = false
+        end presentation Honk
+    }
+    proc help5 enabled {
+        during bridge
+        require presentation == Honk
+        require globals.vbio > 2
+        require Fifi.current_location == aboard
+    } then {
+        say Honk presentation=text_only chatter if_not_shown skip_next=1 : "Fifi wants to go to planet Malus|..."
+        globals.vbio -= 3
+        say Honk presentation=text_only chatter if_not_shown skip_next=2 : "Service with a smile|! That's the story of my life|, Commander|..."
+        help5.enabled = false
+        end presentation Honk
+    }
+    proc what enabled {
+        during bridge
+        require presentation == Honk
+    } then {
+        say Honk presentation=text_only chatter if_not_shown skip_next=1 : "Bye bye|, Commander|..."
+        end presentation Honk
+    }
+    proc boba1 enabled {
+        during contact
+        require presentation == Bob_Morlock
+    } then {
+        say Bob_Morlock presentation=bobc.hnm : "What do you want|, Commander?"
+        Bob_Morlock.topic = "talk"
+        say Bob_Morlock presentation=text_only if_not_shown skip_next=1 : "..."
+        timer[1] = 30
+        when {
+            require timer[1] == 0
+        } then {
+            say Bob_Morlock presentation=bobg.hnm : "I feel awful|, Commander|..."
+            say Bob_Morlock presentation=bobd.hnm : "Ahhhh|!!!"
+            say Bob_Morlock presentation=text_only if_not_shown skip_next=2 : "stop"
+            timer[1] = disabled
+            end presentation Bob_Morlock
+        }
+        say Bob_Morlock presentation=bobg.hnm if_not_shown skip_next=1 : "I feel weak|..." choices "bye_bye"
+        globals.adieu = 1
+        when {
+            require globals.adieu == 1
+        } then {
+            say Bob_Morlock presentation=text_only chatter : "..."
+            say Bob_Morlock presentation=text_only if_not_shown skip_next=3 : "stop"
+            globals.adieu = 0
+            timer[1] = disabled
+            end presentation Bob_Morlock
+        }
+    }
+    global adieu = 0
+    proc augmen enabled {
+        during contact
+        require presentation == Bob_Morlock
+        require globals.emplo == 1
+        require globals.emp == 0
+    } then {
+        say Bob_Morlock presentation=text_only chatter : "By the way|, Cap'n Bob sir|, I have a request to make|..."
+        say Bob_Morlock presentation=text_only chatter : "Olga and me want a raise|... Just a few more megawatts|..."
+        say Bob_Morlock presentation=bobf.hnm : "WHAT|... YOU'LL HAVE TO SPEAK LOUDER|... I'M GETTING A BIT DEAF COMMANDER|..."
+        say Bob_Morlock presentation=text_only chatter : "WE WANT A RAISE IN MEGAWATTS|!!!"
+        say Bob_Morlock presentation=bobe.hnm : "I'm feeling a bit sick|, Commander|. Aaah|!!! It's my heart|...."
+        say Bob_Morlock presentation=text_only chatter if_not_shown skip_next=1 : "Heart my foot|... he means his power generator|. They're all the same|... You just have to say the word raise|."
+        globals.emp = 1
+    }
+    global emplo = 0
+    global emp = 0
+    proc revel enabled {
+        during contact
+        require presentation == Bob_Morlock
+        require globals.reve == 1
+        require globals.revelat == 0
+    } then {
+        say Bob_Morlock presentation=bobh.hnm : "I'm going to tell you an unbearable truth|, Commander|:"
+        say Bob_Morlock presentation=bobg.hnm : "HONK! Switch yourself off for ten seconds|!!!"
+        say Bob_Morlock presentation=text_only chatter : "But Cap'n Bob|... I|..."
+        say Bob_Morlock presentation=bobf.hnm : "I SAID SWITCH OFF|, GOSH DARN IT|!!!"
+        say Bob_Morlock presentation=text_only chatter : "Yes sir|....."
+        say Bob_Morlock presentation=text_only chatter : "KRUIIIIK|!!! AAAaaaaaaaaaaaaaaaaaaaaa|!!!"
+        say Bob_Morlock presentation=bobf.hnm : "COMMANDER, YOU ARE ME|...."
+        say Bob_Morlock presentation=bobg.hnm : "WE ARE THE SAME BEING AT TWO DIFFERENT AGES|..."
+        say Bob_Morlock presentation=bobe.hnm : "YOU ARE MUCH MORE THAN A SON TO ME|..."
+        say Bob_Morlock presentation=bobf.hnm : "We're the same person|... I am the first self-creating being|!"
+        say Bob_Morlock presentation=bobe.hnm : "Thanks to space-time contortion|, I can relive my youth|: YOU ARE BOB|, COMMANDER|..."
+        say Bob_Morlock presentation=bobc.hnm : "I am what you'll be in several hundred thousand years|..."
+        say Bob_Morlock presentation=bobg.hnm : "OK Honk|, you can switch on|..."
+        say Bob_Morlock presentation=text_only chatter : "KROIIIIkkk|!!! -&KRUIIIIkkk|!!! -&Look|, I'm supposed to know everything that goes on around here|!|... Don't tell me you switched off Olga|???"
+        say Bob_Morlock presentation=bobf.hnm if_not_shown skip_next=2 : "Cut the whining and get to work|..."
+        globals.revelat = 1
+        globals.reve = 0
+        halt
+    }
+    global reve = 0
+    global revelat = 0
+    global viol = 0
+    global caches = 0
+}
+
+conversations {
+    yield
+
+    selector Super_Tromp_choices {
+        case "talk" {
+            menu "bye_bye" "painting" "culture" "yolk"
+            say Super_Tromp presentation=strag_tr.hnm : "The GREAT YOLK was a Slimer|... An important thinker|..." choices "yolk"
+            say Super_Tromp presentation=stra_tr.hnm : "He died a long time ago and he's buried here on Vista..." choices "yolk"
+            say Super_Tromp presentation=strb_tr.hnm : "This palace was specially built to house the remains of the GREAT YOLK|..." choices "yolk"
+            say Super_Tromp presentation=strc_tr.hnm if_not_shown skip_next=1 : "The whole universe admires the GREAT YOLK|..." choices "yolk"
+            globals.yo = 1
+            say Super_Tromp presentation=text_only : "The portrait in this palace was painted with the GREAT YOLK's own yellow blood|..." choices "painting"
+            say Super_Tromp presentation=text_only : "The painting is beyond price|... It is magical|..." choices "painting"
+            say Super_Tromp presentation=text_only : "It is said that he who possesses it is immortal|..." choices "painting"
+            say Super_Tromp presentation=text_only : "The GREAT YOLK said|: \"One plus one equals three|, thanks to the coefficient of reproduction\"|..." choices "culture"
+            say Super_Tromp presentation=text_only : "The GREAT YOLK said|:\"Silence feeds on sound and fury\"|." choices "culture"
+            say Super_Tromp presentation=text_only : "The GREAT YOLK said|: \"It takes thirteen murffalos to reproduce|, but one day it will take fourteen\"" choices "culture"
+            yield
+        }
+    }
+
+    selector Maziok_choices {
+        case "talk" continues {
+            menu "bye_bye" "medicine" "curse"
+            say Maziok presentation=ompd.hnm : "Me know good medicine and good doctor|... You be very sick|..." choices "medicine"
+            say Maziok presentation=ompe.hnm if_not_shown skip_next=1 : "You have nightmares and you not be lucky|..." choices "medicine"
+            offer topic "sorceror"
+            say Maziok presentation=ompf.hnm if_not_shown skip_next=1 : "You need sorceror medicine|???" choices "medicine"
+            offer topic "sorceror"
+            say Maziok presentation=ompg.hnm : "Curse come from land of dead|... You did be bad to dead|..." choices "curse"
+            say Maziok presentation=ompb.hnm : "Me scared|..." choices "curse"
+            say Maziok presentation=ompd.hnm if_not_shown skip_next=1 : "Yes|, yes|... Me know good sorceror|, friend|..." choices "sorceror"
+            offer topic "sorceror"
+            say Maziok presentation=ompe.hnm if_not_shown skip_next=1 : "Him live alone on desert planet|..." choices "sorceror"
+            globals.zen = 1
+        }
+        case "planet" {
+            menu "bye_bye" "vista" "tromp" "ondoyant" "tourism"
+            say Maziok presentation=ompe.hnm : "The planet Vista is where I'm from|... It suits me|..." choices "vista"
+            say Maziok presentation=ompd.hnm if_not_shown skip_next=1 : "There's a saying which goes|: \"Hasta la Vista\"" choices "vista"
+            offer topic "ekato"
+            say Maziok presentation=ompd.hnm : "We Trumps are an ancient people|... We like peace|..." choices "tromp"
+            say Maziok presentation=ompd.hnm : "We fear nothing as much as the Trump tail hunters|..." choices "tromp"
+            say Maziok presentation=ompd.hnm : "They come in big ships, with enormous weapons attached to their arms|. They are vulgar and uncouth|.."
+            say Maziok presentation=ompc.hnm if_not_shown skip_next=1 : "To think there are those who would smoke our tails|..." choices "tromp"
+            offer topic "ekato"
+            say Maziok presentation=ompd.hnm : "There are even fools that believe in ondoyants|..." choices "ondoyant"
+            say Maziok presentation=ompc.hnm if_not_shown skip_next=1 : "ondoyants live only in dreams|..." choices "ondoyant"
+            offer topic "ekato"
+            yield
+        }
+    }
+
+    selector Fifi_choices {
+        case "hello" {
+            menu "bye_bye" "planet" "information" "races"
+            say Fifi presentation=ompe.hnm : "Uhh|... Me not remember planet|..." choices "planet"
+            say Fifi presentation=ompf.hnm : "Information... Me not understand information|... Uhh|!" choices "information"
+            dictionary blank after "Information..."
+            say Fifi presentation=ompf.hnm : "You be sure you know talk|, friend|?" choices "races"
+            say Fifi presentation=ompc.hnm repeatable : "Uhh|... Me sick|..."
+            yield
+        }
+    }
+
+    selector Bratakas_choices {
+        case "talk" {
+            menu "bye_bye" "Vistar" "planet" "race" "croolis"
+            say Bratakas presentation=trmc_tr.hnm : "You want to talk|, friend..." choices "talk"
+            say Bratakas presentation=trmc_tr.hnm : "Vistar is the name of my planet|. I am alone here|..." choices "Vistar"
+            say Bratakas presentation=trma_tr.hnm if_not_shown skip_next=1 : "I find peace here|... Nobody to bother me|..." choices "Vistar"
+            offer topic "leisure"
+            say Bratakas presentation=trmb_tr.hnm if_not_shown skip_next=1 : "It's calm here|. No neighbors|, no noise|, no TV|..." choices "Vistar"
+            offer topic "leisure"
+            say Bratakas presentation=trmc_tr.hnm if_not_shown skip_next=1 : "Ah|, It's true that the winter nights would be nicer with TV|..." choices "leisure"
+            offer topic "leisure"
+            say Bratakas presentation=trma_tr.hnm if_not_shown skip_next=1 : "To watch TV|, I'd need a good decoder|..." choices "leisure"
+            globals.decodeur = 1
+            say Bratakas presentation=trma_tr.hnm : "No shortage of planets|, that's for sure|..." choices "planet"
+            say Bratakas presentation=trmc_tr.hnm if_not_shown skip_next=1 : "Planets|! You're quite fascinated by them|..." choices "planet"
+            globals.planete = 1
+            say Bratakas presentation=trmc_tr.hnm : "Only Tromps here.. We seldom get strangers|..." choices "race"
+            say Bratakas presentation=trmb_tr.hnm if_not_shown skip_next=1 : "Big ships pass nearby from time to time|..." choices "race"
+            offer topic "leisure"
+            say Bratakas presentation=trma_tr.hnm : "Aren't you feeling well|?" choices "croolis"
+            say Bratakas presentation=trmb_tr.hnm : "I'm sure you're insulting me|...I don't like insults I don't understand|..." choices "croolis"
+            say Bratakas presentation=trmc_tr.hnm : "Don't insult me|, stranger|... I don't like it|..." choices "croolis"
+            yield
+        }
+    }
+
+    selector Beauregard_choices {
+        case "talk" {
+            menu "bye_bye" "listen" "insist" "treat"
+            say Beauregard presentation=hboc.hnm repeatable : "Aaaah|... Eeeerrr..." choices "listen"
+            say Beauregard presentation=hbod.hnm : "Aaaa|..." choices "bye_bye"
+            say Beauregard presentation=hboe.hnm : "I've been struck by the CURSE of BETAKAM IV|..." choices "insist"
+            say Beauregard presentation=text_only chatter if_not_shown skip_next=1 : "That sounds like a bad thing to get struck by|, Commander|..." choices "insist"
+            offer topic "gladis"
+            say Beauregard presentation=hbof.hnm if_not_shown skip_next=1 : "Gladis is the sun of the Tumul system|. It exploded|..." choices "gladis"
+            offer topic "gladis"
+            say Beauregard presentation=text_only chatter if_not_shown skip_next=1 : "What do you mean|, a sun|?" choices "gladis"
+            offer topic "gladis"
+            say Beauregard presentation=hbog.hnm : "Gladis killed every living thing|. It's miracle I survived|... Aaarr.." choices "insist"
+            say Beauregard presentation=hboh.hnm : "My body is completely fried|... I must have a new body|... Friend|..." choices "treat"
+            say Beauregard presentation=hboi.hnm : "My brain is intact but the rest is history|... Ash|... Aaaarrr|..." choices "treat"
+            say Beauregard presentation=text_only chatter : "Better not tire him out|, Commander|..." choices "treat"
+            say Beauregard presentation=hboi1.hnm repeatable : "I must have a new body|..." choices "treat"
+            say Beauregard presentation=hboj.hnm repeatable : "Aaaarrr"
+            yield
+        }
+    }
+
+    selector Honk_choices {
+        case "talk" {
+            menu "bye_bye" "help" "message"
+            say Honk presentation=text_only chatter repeatable : "I hear and obey|, Commander|..." choices "talk"
+            say Honk presentation=text_only chatter repeatable : "Hup|! Commander|..." choices "bye_bye"
+            yield
+        }
+    }
+
+    selector Morning_Oil_choices {
+        case "talk" continues {
+            menu "hello" "say_nothing" "laugh" "bye_bye"
+            say Morning_Oil presentation=morn01.hnm : "Hi Commander" choices "hello"
+            say Morning_Oil presentation=morn02.hnm : "Such silence|..." choices "say_nothing"
+            say Morning_Oil presentation=morn03.hnm : "Ha ha ha ha ha ha..." choices "laugh"
+            say Morning_Oil presentation=morn04.hnm : "Bye bye Commander" choices "bye_bye"
+        }
+        case "history" continues {
+            menu "bye_bye" "war" "croolis" "treasure" "battles" "mastachok"
+        }
+        case "war" continues {
+            menu "bye_bye" "match"
+            say Morning_Oil presentation=morn06.hnm : "That was a real bad war|... It all started the day of the boxing match between EVISCERATOR and EMASCULATOR..." choices "war"
+            say Morning_Oil presentation=morn03.hnm : "You should've seen it|, Commander|... What a fight|..." choices "war"
+            say Morning_Oil presentation=morn04.hnm : "They made BIONIUM bombs|... Those things could blow away whole planets|..." choices "war"
+            say Morning_Oil presentation=morn06.hnm : "The whole galaxy seemed to be burning|... BBOOOOMMM|!!! BAM|! RA TA TA TA TA|... Ha! Ha! Ha!" choices "war"
+            say Morning_Oil presentation=morn05.hnm : "The boxing match ended badly|. They televised it throughout the universe|..." choices "match"
+            say Morning_Oil presentation=morn04.hnm : "The war was between the two Croolis chiefs|, Eviscerator and Emasculator... It was a bad one|..." choices "match"
+            say Morning_Oil presentation=morn04.hnm : "The match was televised throughout the universe|... Ahh|, I can picture it now|..." choices "match"
+        }
+        case "croolis" continues {
+            menu "bye_bye" "history" "terror" "eviscerator" "emasculator"
+            say Morning_Oil presentation=morn06.hnm : "Croolis are exceptional warriors" choices "croolis"
+            say Morning_Oil presentation=morn05.hnm : "My master|, EVISCERATOR specialised in BIONIUM prospection|..." choices "croolis"
+            say Morning_Oil presentation=morn06.hnm : "he found BIONIUN in the galactic cyberspace contraction|..." choices "croolis"
+            say Morning_Oil presentation=morn07.hnm : "Those Croolis are serious dingbats|!!!" choices "croolis"
+            say Morning_Oil presentation=morn08.hnm : "The planets lived in terror for countless years|..." choices "terror"
+            say Morning_Oil presentation=morn06.hnm : "Terror was the Croolis secret weapon|..." choices "terror"
+            say Morning_Oil presentation=morn03.hnm : "We robots were programmed to feel no fear|..." choices "terror"
+            say Morning_Oil presentation=morn04.hnm : "Eviscerator finished up badly|. When SCRUT put a stop to the war|, they jailed him" choices "eviscerator"
+            say Morning_Oil presentation=morn05.hnm : "Eviscerator is dangerous|, Commander|. He's a ruthless killer|..." choices "eviscerator"
+            say Morning_Oil presentation=text_only chatter if_not_shown skip_next=1 : "Commander|... I'm worried that memories of his old master might make him violent|..." choices "eviscerator"
+            globals.viol = 1
+            say Morning_Oil presentation=morn06.hnm : "Emasculator is completely brainless|... Mean and stupid|..." choices "emasculator"
+            say Morning_Oil presentation=morn03.hnm : "That's one Croolis I hate|..." choices "emasculator"
+        }
+        case "treasure" continues {
+            menu "bye_bye" "history" "hiding_place"
+            say Morning_Oil presentation=morn03.hnm : "Ah|! The treasure|. You should've seen it|, Commander|... Incredible|..." choices "treasure"
+            say Morning_Oil presentation=morn04.hnm : "Stones from Galabar|, horns from Rla|, authentic Rhinox bone vases|..." choices "treasure"
+            say Morning_Oil presentation=morn07.hnm : "Ha! Ha! Hard to say where he hid it|, Commander|..." choices "hiding_place"
+            say Morning_Oil presentation=morn06.hnm : "I don't mind giving you a few clues|, but it's confidential information|..." choices "hiding_place"
+            say Morning_Oil presentation=morn07.hnm if_not_shown skip_next=1 : "I don't want HONK to hear|..." choices "hiding_place"
+            globals.caches = 1
+            say Morning_Oil presentation=morn05.hnm : "Millions were wiped out in the battles|. Planets were stripped to the bone|..." choices "battle"
+            say Morning_Oil presentation=morn06.hnm : "The Izwals suffered heavy losses|. They weren't ready|..." choices "battle"
+            say Morning_Oil presentation=morn07.hnm : "The SCRUT armies finally won after a gigantic battle that shook the galaxy to its knees|.." choices "battle"
+            say Morning_Oil presentation=morn06.hnm : "The defeated Croolis ended up on Trashlando|. That's a BAD place|, Commander|..." choices "battle"
+        }
+        case "mastachok" {
+            menu "bye_bye" "history" "information"
+            say Morning_Oil presentation=morn06.hnm : "Mastachok is a dead planet|... Nothing lives any more on its surface|..." choices "mastachok"
+            say Morning_Oil presentation=morn07.hnm : "The factory was replaced by the jail|... With permanent SCRUT guards|..." choices "mastachok"
+            dictionary blank after "guards"
+            say Morning_Oil presentation=morn03.hnm : "Mastachok is absolutely polluted|... Nothing more than a cinder block|..." choices "mastachok"
+            yield
+        }
+    }
+
+    selector Bronko_choices {
+        case "talk" continues {
+            menu "bye_bye" "robot" "cred" "murffalos" "weapons"
+        }
+        case "robot" continues {
+            menu "talk" "bye_bye" "robot" "intelligence" "energy" "technology" "retirement"
+            say Bronko presentation=rgbtr6.hnm if_not_shown skip_next=1 : "See you soon|, friend|..." choices "bye_bye"
+            end presentation Bronko
+            say Bronko presentation=rgbtr3.hnm : "Me robot Bronko AX34 BUTCHER model|..." choices "robot"
+            say Bronko presentation=rgbtr4.hnm : "Robot be strong friend|. Robot Bronko know how chop meat with chopper|..." choices "robot"
+            say Bronko presentation=rgbtr2.hnm : "Me big robot|... Sophisticated|..." choices "robot"
+            say Bronko presentation=rgbtr2.hnm : "Me big cybernetic intelligence|. Much cheap memory|..." choices "intelligence"
+            say Bronko presentation=rgbtr3.hnm : "Me know think|. Me smart|..." choices "intelligence"
+            say Bronko presentation=rgbtr4.hnm : "Me big CDROM in head... Ha! Ha! Ha! Ha!" choices "intelligence"
+            say Bronko presentation=rgbtr3.hnm : "Bronko intelligent..." choices "intelligence"
+            say Bronko presentation=rgbtr5.hnm : "Me much energy|: Bronko have fresh batteries|, friend|...." choices "energy"
+            say Bronko presentation=rgbtr6.hnm : "Me munch high energy zinc flakes with mercury every day|..." choices "energy"
+            say Bronko presentation=rgbtr2.hnm : "You look for batteries|, friend|... Me buy batteries at VENUSIA Supramarket" choices "energy"
+            say Bronko presentation=rgbtr5.hnm : "VENUSIA Supramarket sell cheap batteries|. You not see commercial on TV|, friend|?" choices "energy"
+            say Bronko presentation=rgbtr2.hnm : "Bronko big technology|, friend|..." choices "technology"
+        }
+        case "cred" continues {
+            menu "talk" "bye_bye" "cred" "buy"
+            say Bronko presentation=rgbtr2.hnm : "Me work to earn much CRED|, friend|..." choices "cred"
+            dictionary blank after "CRED"
+            say Bronko presentation=rgbtr3.hnm : "Creds be hard to earn|..." choices "cred"
+            say Bronko presentation=rgbtr4.hnm repeatable : "You like creds|, friend|..." choices "cred"
+            say Bronko presentation=rgbtr5.hnm : "Me want buy big ship|... Take vacation through universe|..." choices "buy"
+            say Bronko presentation=rgbtr4.hnm : "Me want buy home on planet Troma|... Grow nuts|, bolts|, screws|..." choices "buy"
+            say Bronko presentation=rgbtr3.hnm : "Me want breed cybernetic wheelbarrows|, lawnmowers|... Me dream|, friend|..." choices "buy"
+            say Bronko presentation=rgbtr5.hnm : "To buy|, me must earn creds|..." choices "buy"
+        }
+        case "murffalos" continues {
+            menu "talk" "bye_bye" "hunt"
+            say Bronko presentation=rgbtr2.hnm : "Thirteen murffalos to reproduce... One in middle|. twelve around|. That be murffalo reproduction|..." choices "murffalos"
+            say Bronko presentation=rgbtr3.hnm : "Me not like murffalo|... Not good|, too tender|... Me like lawnmower leg|..." choices "murffalos"
+            say Bronko presentation=rgbtr4.hnm : "Me know chop murffalos|..." choices "murffalos"
+            say Bronko presentation=rgbtr5.hnm : "Me like hunt satellite game with laser-pulper|... Bang Bang at satellites|..." choices "hunt"
+            say Bronko presentation=rgbtr4.hnm : "Hunting be nice sport|..." choices "hunt"
+        }
+        case "weapons" continues {
+            menu "talk" "bye_bye" "planets" "war"
+            say Bronko presentation=rgbtr5.hnm : "To buy good weapons|, must pay much creds|, Commander" choices "weapons"
+            say Bronko presentation=rgbtr3.hnm : "Me have weapons at end of arms|..." choices "weapons"
+            say Bronko presentation=rgbtr3.hnm : "You be big traveller|. Know planets|, friend|..." choices "planets"
+            say Bronko presentation=rgbtr4.hnm : "Croolis war do much damage|... Bad war|, friend|..." choices "war"
+        }
+        case "retirement" {
+            menu "talk" "bye_bye" "Magnus"
+            say Bronko presentation=rgbtr2.hnm : "Ah retirement|! Them send me to planet Magnus|, with other old old robots|... CRY CRY|..." choices "retirement"
+            yield
+        }
+    }
+
+    selector Bob_Morlock_choices {
+        case "talk" continues {
+            menu "bye_bye" "black_hole" "Big_Bang" "Bob_Morlock" "kanary" "mission" "corpo" "good_"
+            say Bob_Morlock presentation=bobc.hnm chance=20% : "What do you want to know|, Commander?" choices "talk"
+            say Bob_Morlock presentation=bobd.hnm if_not_shown skip_next=1 : "Goodbye|, Commander|..." choices "bye_bye"
+            end presentation Bob_Morlock
+            say Bob_Morlock presentation=bobc.hnm : "After years of research|, I was able to isolate time|, Commander" choices "black_hole"
+            say Bob_Morlock presentation=bobb.hnm : "Certain black holes can be used to travel back in time|." choices "black_hole"
+            say Bob_Morlock presentation=bobc.hnm if_not_shown skip_next=1 : "Honk has been programmed to identify appropriate black holes" choices "black_hole"
+            Bob_Morlock.aggressiveness += 1
+            say Bob_Morlock presentation=bobb.hnm if_not_shown skip_next=1 : "To reach the BIG BANG, you must travel through a number of black holes|..." choices "black_hole"
+            Bob_Morlock.aggressiveness += 1
+            say Bob_Morlock presentation=bobc.hnm repeatable if_not_shown skip_next=1 : "Black holes are amazing natural devices|, Commander|..." choices "black_hole"
+            Bob_Morlock.aggressiveness += 1
+            say Bob_Morlock presentation=bobd.hnm : "I have devoted my life to the pursuit of Truth|, Commander|..." choices "Big_Bang"
+            say Bob_Morlock presentation=bobc.hnm : "I know that truth lies beyond the BIG BANG, Commander|!" choices "Big_Bang"
+            say Bob_Morlock presentation=bobb.hnm repeatable : "My memory is not what it used to be|..." choices "Big_Bang"
+            say Bob_Morlock presentation=bobc.hnm : "Thanks to the scientists of KANARY|, I am the oldest being in the UNIVERSE" choices "Bob_Morlock"
+            say Bob_Morlock presentation=bobb.hnm : "In my time|, I've been a crooner|, a magician|, an adventurer|... I created KANARY|, the biggest business empire in the universe|." choices "Bob_Morlock"
+            say Bob_Morlock presentation=bobc.hnm : "Women have found me irresistible|. Thousands of generations have admired me. I am immortal|!" choices "Bob_Morlock"
+            say Bob_Morlock presentation=bobc.hnm if_not_shown skip_next=1 : "Commander|, you are going to relive my past|. I envy you|..." choices "Bob_Morlock"
+            Bob_Morlock.aggressiveness += 1
+            say Bob_Morlock presentation=bobb.hnm if_not_shown skip_next=1 : "Ah|... Otto Von Smile|, Eviscerator|, Jeph d'Ulikan|, Yolk|, old Tina Burner|, and all the others|..." choices "Bob_Morlock"
+            Bob_Morlock.aggressiveness += 1
+            say Bob_Morlock presentation=bobb.hnm repeatable if_not_shown skip_next=1 : "Ahh! Those were good times|, Commander|..." choices "Bob_Morlock"
+            offer topic "revelation"
+            say Bob_Morlock presentation=bobc.hnm if_not_shown skip_next=1 : "You want revelations|, Commander|?" choices "revelation"
+            globals.reve = 1
+            say Bob_Morlock presentation=bobc.hnm : "Your mission is to find and travel through the right black holes, taking us back through time to the BIG BANG" choices "mission"
+            say Bob_Morlock presentation=bobb.hnm : "You'll meet fabulous beings|, some of them very dangerous|. You'll need all your talents, Commander" choices "mission"
+            say Bob_Morlock presentation=bobc.hnm : "You'll see terrible wars|, cross impossible frontiers|..." choices "mission"
+            say Bob_Morlock presentation=bobb.hnm : "You must rally strange beings to your cause|..." choices "mission"
+            say Bob_Morlock presentation=bobc.hnm repeatable if_not_shown skip_next=1 : "You will be in sole command|, unless you decide to wake me|..." choices "mission"
+            Bob_Morlock.aggressiveness += 1
+            say Bob_Morlock presentation=bobb.hnm : "Corpo is my home planet" choices "It"
+            say Bob_Morlock presentation=bobd.hnm repeatable if_not_shown skip_next=1 : "Corpo is a rare and fabulous planet|... Its resources are unlimited|." choices "corpo"
+            Bob_Morlock.aggressiveness += 2
+            say Bob_Morlock presentation=bobc.hnm : "Truth is to be found at the creation of the universe|, just before the BIG BANG|..." choices "truth"
+            say Bob_Morlock presentation=bobb.hnm repeatable if_not_shown skip_next=1 : "Ah! Truth|..." choices "truth"
+            Bob_Morlock.aggressiveness += 1
+            say Bob_Morlock presentation=text_only if_not_shown skip_next=1 : "I'm getting pictures from the Ark|, Commander. All systems are nominal|..." choices "good_"
+            request sequence "arch01.hnm"
+            say Bob_Morlock presentation=bobb.hnm : "You flatter me|, Commander|..." choices "good_"
+            say Bob_Morlock presentation=bobc.hnm chance=20% if_not_shown skip_next=1 : "You're embarrassing me|, Commander|..." choices "good_"
+            Bob_Morlock.aggressiveness += 1
+            say Bob_Morlock presentation=bobb.hnm repeatable chance=20% : "Heh heh|..." choices "good_"
+        }
+        case "kanary" {
+            menu "talk" "bye_bye" "cottage" "clones" "employees" "reports"
+            say Bob_Morlock presentation=bobb.hnm : "The Cottage Research department is my secret project" choices "cottage"
+            say Bob_Morlock presentation=bobb.hnm : "The vegetable kingdom is a marvel of nature" choices "cottage"
+            say Bob_Morlock presentation=bobb.hnm : "The Cottage Research department develops miracles of nature" choices "cottage"
+            say Bob_Morlock presentation=bobd.hnm : "Kanary's lawns mow themselves every weekend|..." choices "cottage"
+            say Bob_Morlock presentation=bobc.hnm repeatable if_not_shown skip_next=1 : "Kanary's artificial orchids produce centuries old whiskey" choices "cottage"
+            Bob_Morlock.aggressiveness += 5
+            say Bob_Morlock presentation=bobb.hnm : "Kanary has devoted itself to synthetic cloning" choices "clones"
+            say Bob_Morlock presentation=bobc.hnm : "Kanary's four million employees were built by and for Kanary" choices "clones"
+            say Bob_Morlock presentation=bobb.hnm : "I am the last natural bio-being and I control everything|..." choices "clones"
+            say Bob_Morlock presentation=bobb.hnm : "Every year|, my employees wake me for ten minutes on my birthday|... I blow out the candles on my cake and sign the company reports" choices "clones"
+            say Bob_Morlock presentation=bobb.hnm repeatable if_not_shown skip_next=1 : "I instructed Kanary's scientists to to create the perfect adventurer to take me to the BIG BANG|..." choices "clones"
+            Bob_Morlock.aggressiveness += 3
+            say Bob_Morlock presentation=bobd.hnm : "All Kanary employees were built by the CLONE CONSORTIUM|. Including YOU|, Commander" choices "employees"
+            say Bob_Morlock presentation=bobe.hnm : "You are all my employees|: YOU Honk|, YOU Commander|, YOU Olga|... ALL OF YOU|..." choices "employees"
+            say Bob_Morlock presentation=bobf.hnm repeatable if_not_shown skip_next=1 : "Kanary builds the cheapest and most efficient employees in the universe|..." choices "employees"
+            globals.emplo = 1
+            say Bob_Morlock presentation=bobb.hnm chance=20% : "Kanary is the biggest company in the known universe" choices "kanary"
+            say Bob_Morlock presentation=bobc.hnm repeatable if_not_shown skip_next=1 : "Kanary invents|, builds|, consumes and controls everything in the universe" choices "kanary"
+            Bob_Morlock.aggressiveness += 1
+            say Bob_Morlock presentation=bobd.hnm : "Kanary is so well managed that its products are built at negative cost" choices "reports"
+            say Bob_Morlock presentation=bobc.hnm : "A complete cottage costs 100,990 Negabucks..." choices "reports"
+            dictionary blank after "Negabucks..."
+            say Bob_Morlock presentation=bobf.hnm : "Our turnover is so big that nobody can say the figure in a normal life span" choices "reports"
+            say Bob_Morlock presentation=bobg.hnm repeatable if_not_shown skip_next=1 : "Our only competitor is CRYO" choices "They"
+            Bob_Morlock.aggressiveness += 2
+            yield
+        }
+    }
+
+    selector Hom_choices {
+        case "hello" continues {
+            menu "bye_bye" "talk" "not_talk"
+            say Hom presentation=homm_03.hnm : "My name Hom. Me big tube brain" choices "not_talk"
+            say Hom presentation=homm_02.hnm chance=20% : "Ooooh! Stranger what you want?" choices "talk"
+            say Hom presentation=homm_01.hnm chance=20% : "Oooooh! You strange intelligence. You know talk?" choices "talk"
+            say Hom presentation=homm_04.hnm chance=20% : "Stranger from sky. Me say hi there..." choices "talk"
+            say Hom presentation=homm_05.hnm chance=20% : "Me salute you, handsome stranger..." choices "talk"
+            say Hom presentation=homm_07.hnm : "You no tongue?" choices "not_talk"
+            say Hom presentation=homm_08.hnm : "You tongue, me like conversation" choices "talk"
+            say Hom presentation=homm_09.hnm : "You dumb..." choices "not_talk"
+            say Hom presentation=homm_12.hnm : "You deaf too..." choices "not_talk"
+            say Hom presentation=homm_07.hnm if_not_shown skip_next=1 : "Me tired. Bye bye..." choices "not_talk"
+            end presentation Hom
+        }
+        case "talk" continues {
+            menu "bye_bye" "race" "planet" "science" "politics" "art" "consumption"
+            say Hom presentation=homm_03.hnm : "What you want know, friend..."
+            say Hom presentation=homm_06.hnm : "Race big subject, friend..." choices "race"
+            say Hom presentation=homm_08.hnm : "Science big subject" choices "science"
+            say Hom presentation=homm_07.hnm : "Planet. Me know planet" choices "planet"
+            say Hom presentation=homm_08.hnm : "You interested politics..." choices "politics"
+            say Hom presentation=homm_06.hnm : "Me know plenty people..." choices "politics"
+            say Hom presentation=homm_11.hnm : "Me like artists..." choices "art"
+            say Hom presentation=homm_11.hnm : "Consumerism big fun" choices "consumption"
+        }
+        case "race" continues {
+            menu "talk" "bye_bye" "izwal" "croolis" "slimer" "tubular_brain" "sinox" "buggol" "migrax" "ondoyant"
+            say Hom presentation=homm_02.hnm chance=20% : "Race big metaphysical thing. Natural magic"
+            say Hom presentation=homm_01.hnm chance=20% : "Race heavy mystery..."
+        }
+        case "izwal" continues {
+            menu "bye_bye" "race" "talk" "planet" "intelligence" "food" "science"
+            say Hom presentation=homm_06.hnm : "Izwal small brain. very nice." choices "intelligence"
+            say Hom presentation=homm_07.hnm : "Intelligence Izwal lively. Very noisy primitive brain" choices "intelligence"
+            say Hom presentation=homm_07.hnm : "Neuronal intelligence yuk. Tube brain big progress" choices "intelligence"
+            say Hom presentation=homm_01.hnm : "Calculate 4234543 plus 67754355 over 4533555 minus 4234557.94508 equals 0." choices "intelligence"
+            dictionary blank after "Calculate"
+            say Hom presentation=homm_04.hnm : "Intelligence, entropy, power. Too complex for you, friend." choices "intelligence"
+            say Hom presentation=homm_08.hnm : "They catch flies with trunk. Hom not like flies" choices "food"
+            say Hom presentation=homm_09.hnm : "Izwals like good food. They delicate stomach" choices "food"
+            say Hom presentation=homm_10.hnm : "I eat spiritual food" choices "food"
+            say Hom presentation=homm_11.hnm : "You always talk food. You hungry maybe..." choices "food"
+            say Hom presentation=homm_01.hnm if_not_shown skip_next=1 : "Now you make me hungry. I go eat. Bye bye, friend..." choices "food"
+            end presentation Hom
+            say Hom presentation=homm_14.hnm : "Izwals like astronomy, like stars" choices "science"
+            say Hom presentation=homm_12.hnm : "Izwal small science, big telescope" choices "science"
+            say Hom presentation=homm_13.hnm : "They build wood space ships... laugh laugh..." choices "science"
+            say Hom presentation=homm_08.hnm : "Me like Izwal science. Funny... laugh laugh..." choices "science"
+            say Hom presentation=homm_07.hnm : "Science, science, you talk science all time.." choices "science"
+            say Hom presentation=homm_06.hnm : "They live on planet. Planet name Rondo" choices "planet"
+            say Hom presentation=homm_04.hnm : "Izwal planet name Rondo. Nice" choices "planet" "rondo"
+            say Hom presentation=homm_06.hnm : "Izwal palace wood. Built around Rondo. Nice" choices "planet" "rondo"
+            say Hom presentation=homm_06.hnm : "Izwal like sing by planet light" choices "info"
+            say Hom presentation=homm_03.hnm : "Izwal house funny. Complicated. Nice, but not practical..." choices "info"
+            say Hom presentation=homm_10.hnm chance=20% : "Me like, they nice"
+            say Hom presentation=homm_11.hnm chance=20% : "They soft fur..."
+        }
+        case "croolis" continues {
+            menu "bye_bye" "race" "war" "science" "info" "joke" "planet"
+            say Hom presentation=homm_07.hnm : "Me not like war. Not like ships..." choices "war"
+            say Hom presentation=homm_07.hnm : "Us Tubular Brain despise Croolis" choices "war"
+            say Hom presentation=homm_04.hnm : "War favorite sport Croolis" choices "war"
+            say Hom presentation=homm_08.hnm : "Croolis know muscle science, them muscle brain" choices "war" "science"
+            say Hom presentation=homm_11.hnm : "Croolis mean" choices "war"
+            say Hom presentation=homm_05.hnm : "Croolis cruel, fool, drool, laugh laugh..." choices "joke"
+            say Hom presentation=homm_04.hnm : "Croolis crude crud... laugh laugh laugh cry laugh" choices "joke"
+            say Hom presentation=homm_03.hnm : "You like laugh" choices "joke"
+            say Hom presentation=homm_08.hnm : "Croolis stupid, big muscle, where brain go?" choices "info"
+            say Hom presentation=homm_10.hnm : "Croolis planet Mastachok" choices "info" "planet"
+            say Hom presentation=homm_11.hnm : "Oh, Commander,me hallucinate when see violence" choices "info"
+            say Hom presentation=homm_12.hnm : "Mastachok be black planet. Full of holes" choices "planet" "mastachok"
+            say Hom presentation=homm_15.hnm : "Croolis like smash planets, kill life" choices "planet" "mastachok"
+            say Hom presentation=homm_12.hnm : "Croolis hate peace, spit on life. Hate nature" choices "planet" "mastachok"
+        }
+        case "slimer" continues {
+            menu "bye_bye" "race" "planet" "science" "politics" "yolk" "info"
+            say Hom presentation=homm_17.hnm : "Slimer strange creatures. Me personally know great Yolk" choices "yolk"
+            say Hom presentation=homm_12.hnm : "Yolk big thinker, great master. Me respect" choices "yolk"
+            say Hom presentation=homm_03.hnm : "Yolk invent respect between races. Yolk was big friend" choices "politics" "yolk"
+            say Hom presentation=homm_02.hnm : "Yolk lots ideas, mental science" choices "science" "yolk"
+            say Hom presentation=homm_04.hnm : "Yolk buried in big mausoleum, planet Vista" choices "planet" "yolk"
+            say Hom presentation=homm_06.hnm : "Slimer not go away" choices "info"
+            say Hom presentation=homm_02.hnm : "Portrait of Great Yolk, famous painting..." choices "info" "art"
+            say Hom presentation=homm_06.hnm : "Slimers live strange houses, planet Ekatomb" choices "info" "planet"
+            say Hom presentation=homm_07.hnm : "Slimers good and Slimers bad also" choices "info"
+            say Hom presentation=homm_06.hnm : "Slimer planet name Ekatomb. Exotic planet. Nice..." choices "planet" "ekatomb"
+            say Hom presentation=homm_10.hnm : "Slimer like low gravity." choices "planet"
+            say Hom presentation=homm_11.hnm : "Me like exotic Slimer planet. Nice" choices "planet"
+            say Hom presentation=homm_08.hnm : "Ha ha ha ha Slimer science. You joke. You not know Doctor Otto Von Smile?" choices "science"
+            say Hom presentation=homm_06.hnm : "Slimers want live forever. Afraid oldness" choices "science"
+            say Hom presentation=homm_11.hnm : "Slimers eat lot vitamins, ho ho ho..." choices "science"
+            say Hom presentation=homm_12.hnm : "Slimer politics simple. They want live forever..." choices "politics"
+            say Hom presentation=homm_12.hnm : "Slimers weird race" choices "race"
+            say Hom presentation=homm_17.hnm : "Slimers evolve from space jellyfish" choices "race"
+        }
+        case "tubular_brain" continues {
+            menu "bye_bye" "brain" "info"
+            say Hom presentation=homm_02.hnm : "Tubular Brain think good." choices "brain"
+            say Hom presentation=homm_01.hnm : "Tube brain complex. You not understand." choices "brain"
+            say Hom presentation=homm_04.hnm : "Tubes resonate far in space, capture mind force" choices "brain"
+            say Hom presentation=homm_12.hnm : "Me big Tubular Brain." choices "info"
+            say Hom presentation=homm_14.hnm : "Tubular Brain be superior race" choices "info"
+        }
+        case "sinox" continues {
+            menu "bye_bye" "race" "science" "technology" "info"
+            say Hom presentation=homm_06.hnm : "Sinox hard workers. Big big technology" choices "technology"
+            say Hom presentation=homm_10.hnm : "Sinox build computers, machines, Sinox like money" choices "info"
+            say Hom presentation=homm_11.hnm : "Sinox science most powerful in universe" choices "science"
+            say Hom presentation=homm_03.hnm : "Sinox want total power. You careful" choices "race" "sinox"
+            say Hom presentation=homm_06.hnm : "Sinox powerful people" choices "race" "sinox"
+        }
+        case "migrax" continues {
+            menu "bye_bye" "race" "talk" "info" "murffalos"
+            say Hom presentation=homm_07.hnm : "Migrax not much in brain" choices "info"
+            say Hom presentation=homm_12.hnm : "Migrax like lot money. Sell dad. Sell mom. Bad" choices "info"
+            say Hom presentation=homm_15.hnm : "Migrax eat murffalos boiled in mercury. Ugh..." choices "murffalos"
+            say Hom presentation=homm_08.hnm : "Migrax talk too much..." choices "talk"
+            say Hom presentation=homm_07.hnm : "You like talk?" choices "talk"
+        }
+        case "buggol" continues {
+            menu "bye_bye" "race" "politics" "info" "joke"
+            say Hom presentation=homm_06.hnm : "Democracy Buggol wise" choices "politics"
+            say Hom presentation=homm_04.hnm : "Me not ever see Buggol..." choices "race"
+        }
+        case "ondoyant" continues {
+            menu "bye_bye" "talk" "info" "reproduction"
+            say Hom presentation=homm_02.hnm : "Ahhhhh! ondoyant, you not say such word..." choices "info"
+            say Hom presentation=homm_04.hnm : "Love, all time, big magic, big hot..." choices "reproduction"
+            say Hom presentation=homm_12.hnm : "Hom eternal. Hom not reproduce, cry cry..." choices "reproduction"
+        }
+        case "murffalos" continues {
+            menu "bye_bye" "planet" "reproduction" "consumption" "info"
+            say Hom presentation=homm_03.hnm : "Murffalos be creatures with horn." choices "info"
+            say Hom presentation=homm_06.hnm : "Murffalos tender meat. Tasty" choices "consumption"
+            say Hom presentation=homm_10.hnm : "Can buy frozen murffallos on planet Moskito" choices "planet"
+            say Hom presentation=homm_10.hnm : "Murffalos 13 to reproduce. One in middle, 12 surround" choices "reproduction"
+            say Hom presentation=homm_06.hnm : "Murffalos small small brain. Meat nice" choices "consumption"
+        }
+        case "planet" continues {
+            menu "bye_bye" "talk" "erazor" "mastachok" "qx20" "tumul" "rondo" "cyberock" "troma" "ekatomb" "attrox" "Oddland" "corpo"
+            say Hom presentation=homm_06.hnm : "Nice Sinox planet" choices "venusia"
+            say Hom presentation=homm_10.hnm : "Me not ever be to Venusia" choices "venusia"
+            say Hom presentation=homm_08.hnm : "Me sense badness. Bad vibe" choices "erazor"
+            say Hom presentation=homm_09.hnm : "Erazor Slimer planet. Weird doctor live there" choices "erazor"
+            say Hom presentation=homm_15.hnm : "Mastachok Croolis planet. Vibe no good" choices "mastachok"
+            say Hom presentation=homm_16.hnm : "Me not like Mastachok" choices "mastachok"
+            say Hom presentation=homm_12.hnm : "Sinox live Qx20" choices "qx20"
+            say Hom presentation=homm_17.hnm : "Qx20 big store. Nice products" choices "qx20"
+            say Hom presentation=homm_10.hnm : "Planet of Pago-tagos. Nice" choices "tumul"
+            say Hom presentation=homm_11.hnm : "Tumul orbit round sun Gladis" choices "tumul"
+            say Hom presentation=homm_03.hnm : "Round planet..." choices "rondo"
+            say Hom presentation=homm_06.hnm : "Izwals live there..." choices "rondo"
+            say Hom presentation=homm_06.hnm : "Big cyber college, big culture..." choices "cyberock"
+            say Hom presentation=homm_11.hnm : "Cyberock be place for big knowledge" choices "cyberock"
+            say Hom presentation=homm_06.hnm : "Problem war against Scorps. Insects. Big danger" choices "troma"
+            say Hom presentation=homm_11.hnm : "Troma cursed planet..." choices "troma"
+            say Hom presentation=homm_06.hnm : "Oddland be black hole near planet Pterra" choices "Oddland"
+            say Hom presentation=homm_07.hnm : "Big fun town. Money, good times, wink wink" choices "attrox"
+            say Hom presentation=homm_11.hnm : "Ah, planet of great Yolk. Nice one" choices "ekatomb"
+            say Hom presentation=homm_11.hnm : "Corpo big planet" choices "corpo"
+            say Hom presentation=homm_10.hnm : "Lot people visit Corpo" choices "corpo"
+            say Hom presentation=homm_06.hnm : "Eden Migrax planet" choices "eden"
+            say Hom presentation=homm_11.hnm : "Me sense Eden, friend..." choices "eden"
+            say Hom presentation=homm_03.hnm repeatable chance=20% : "Stars explode, big bang, plasma boom!!!"
+            say Hom presentation=homm_01.hnm repeatable chance=20% : "Heat, fusion, sun. Bang!"
+        }
+        case "television" continues {
+            menu "bye_bye" "info" "consumption" "politics"
+            say Hom presentation=homm_15.hnm chance=20% : "Me Hom. Me big power.Television inside head..." choices "television"
+            say Hom presentation=homm_14.hnm : "Television not good for reproduction..." choices "television"
+            say Hom presentation=homm_04.hnm chance=20% : "Television good info for weak brain" choices "info"
+            say Hom presentation=homm_07.hnm : "Me not watch television. Programs no good" choices "info"
+            say Hom presentation=homm_07.hnm : "Watch television, always buy more and more" choices "consumption"
+        }
+        case "art" continues {
+            menu "bye_bye" "talk" "info" "painting"
+            say Hom presentation=homm_06.hnm : "Me like painting" choices "info"
+            say Hom presentation=homm_11.hnm : "Me like art food. And murffalos liver boiled in mercury" choices "info"
+            say Hom presentation=homm_10.hnm : "Jeph d'Ulikan big artist, big thoughts. You read thoughts of Jeph." choices "info"
+            say Hom presentation=homm_06.hnm : "Portrait Great Yolk. Great painting. Famous" choices "painting"
+        }
+        case "peace" continues {
+            menu "bye_bye" "politics" "friendship" "izwal"
+            say Hom presentation=homm_02.hnm : "Peace good idea. Me like" choices "Friendship"
+            say Hom presentation=homm_11.hnm : "Friendship among peoples, races. Me like, friend..." choices "friendship"
+            say Hom presentation=homm_06.hnm : "Izwal weak. Like peace. they not violent" choices "izwal"
+            dictionary blank after "peace."
+            say Hom presentation=homm_11.hnm : "Peace make mind connections. Progress" choices "peace"
+        }
+        case "war" continues {
+            menu "bye_bye" "politics" "croolis"
+            say Hom presentation=homm_07.hnm : "Croolis like fight, like kill" choices "croolis"
+            say Hom presentation=homm_07.hnm : "War stupid. Destroy, hate, die, die" choices "war"
+            say Hom presentation=homm_15.hnm : "Why hate? Lot hate. Why?" choices "war"
+        }
+        case "politics" continues {
+            menu "bye_bye" "race" "democracy" "television" "joke" "peace" "war"
+            say Hom presentation=homm_12.hnm : "Democracy important. Cyborg planet big democracy" choices "democracy"
+            say Hom presentation=homm_13.hnm : "Politics bad vibe. Me prefer ondoyants" choices "race"
+            say Hom presentation=homm_02.hnm : "Television big political power. Fascination. Lie" choices "television"
+            say Hom presentation=homm_17.hnm : "Polly ticks... laugh laugh laugh" choices "joke"
+            say Hom presentation=homm_13.hnm : "Politics big business, money, power, bad vibe..." choices "politics"
+        }
+        case "reproduction" continues {
+            menu "bye_bye" "race" "hom" "ondoyant" "info" "joke"
+            say Hom presentation=homm_14.hnm : "Not know reproduction. Hom not reproduce. Hom eternal" choices "hom"
+            say Hom presentation=homm_10.hnm : "ondoyants like reproduction" choices "ondoyant"
+            say Hom presentation=homm_11.hnm : "Reproduction Hom forbidden. Big copyright..." choices "joke"
+        }
+        case "science" continues {
+            menu "bye_bye" "talk" "race" "planet" "universe" "info" "origin" "mind"
+            say Hom presentation=homm_02.hnm : "Hom detect, sense, understand universe." choices "universe"
+            say Hom presentation=homm_03.hnm : "Universe filled with small creatures..." choices "universe"
+            say Hom presentation=homm_08.hnm : "Hom big mind power. Me know you, stranger." choices "info"
+            say Hom presentation=homm_06.hnm : "Izwal like dream science, astronomy." choices "race"
+            say Hom presentation=homm_03.hnm : "You want know origin universe." choices "origin"
+            say Hom presentation=homm_12.hnm : "Origin universe big major mystery." choices "origin" "universe"
+            say Hom presentation=homm_13.hnm : "Me know origin universe? Me promised not tell." choices "origin"
+            say Hom presentation=homm_12.hnm : "Univers have billions planets" choices "universe" "planet"
+            say Hom presentation=homm_03.hnm : "Mind more big than universe" choices "mind"
+            say Hom presentation=homm_02.hnm : "Big power, major wisdom, beauty..." choices "mind"
+            say Hom presentation=homm_08.hnm : "Me like crunch numbers." choices "science"
+        }
+        case "consuption" continues {
+            menu "bye_bye" "talk" "sinox" "food"
+            say Hom presentation=homm_06.hnm : "Sinox build hi tech products" choices "sinox"
+            say Hom presentation=homm_07.hnm : "Food big problem. Murffalos big solution" choices "food"
+            say Hom presentation=homm_11.hnm repeatable : "Me not big consumer. Me eat mind food, friend..." choices "food"
+            say Hom presentation=homm_03.hnm : "You want talk consumption, friend" choices "consuption"
+        }
+        case "joke" {
+            menu "bye_bye" "talk" "race" "planet" "info" "laugh"
+            say Hom presentation=homm_13.hnm : "Hom not like joke... laugh, laugh, cry, laugh, laugh, laugh" choices "laugh"
+            say Hom presentation=homm_12.hnm : "Izwal build telescope, laugh, laugh" choices "izwal" "joke"
+            say Hom presentation=homm_17.hnm : "Me eat Izwal telescope. Telesteak, laugh, laugh, cry, laugh, laugh" choices "joke"
+            say Hom presentation=homm_12.hnm : "You want me sing?"
+            say Hom presentation=homm_03.hnm repeatable chance=20% : "You talk all time, friend..."
+            halt
+        }
+    }
+}

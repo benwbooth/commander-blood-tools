@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compile the complete recovered BloodScript and BloodData VM bundle."""
+"""Compile the five unified BloodScript profiles into all 25 VM resources."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import subprocess
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_SOURCE_DIR = ROOT / "re" / "vm" / "structured"
+DEFAULT_SOURCE_DIR = ROOT / "re" / "vm" / "profiles"
 DEFAULT_OUTPUT_DIR = ROOT / "output" / "recovered_scripts"
 DEFAULT_REFERENCE_DIR = ROOT / "accuracy" / "cblood_install" / "cblood"
 SCRIPT_EXTENSIONS = ("COD", "BAS", "DEB", "DIC", "VAR")
@@ -28,13 +28,13 @@ def run_checked(command: list[str]) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Compile all 25 recovered BloodScript/BloodData VM resources."
+        description="Compile all 25 resources from unified BloodScript profiles."
     )
     parser.add_argument(
         "--source-dir",
         type=Path,
         default=DEFAULT_SOURCE_DIR,
-        help="directory containing the structured .blood and .blooddata sources",
+        help="directory containing script1.blood through script5.blood",
     )
     parser.add_argument(
         "--output-dir",

@@ -25,7 +25,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CD_ROOT = ROOT / "output" / "_tmp_iso"
 DEFAULT_XDB_DIR = ROOT / "output" / "_tmp_dat"
-DEFAULT_SOURCE_DIR = ROOT / "re" / "vm" / "structured"
+DEFAULT_SOURCE_DIR = ROOT / "re" / "vm" / "profiles"
 DEFAULT_REFERENCE_DIR = ROOT / "accuracy" / "cblood_install" / "cblood"
 DEFAULT_OUTPUT_DIR = ROOT / "output" / "recovered_dos_package"
 XDB_MANIFEST = ROOT / "re" / "source" / "xdb" / "candidates" / "manifest.tsv"
@@ -842,6 +842,16 @@ def compile_sources(args: argparse.Namespace, output: Path) -> None:
         raise SystemExit(f"cbvm executable was not created: {cbvm}")
     run_checked(
         [
+            sys.executable,
+            str(ROOT / "re/tools/check_vm_state_record_domain.py"),
+            "--game-dir",
+            str(args.reference_dir.resolve()),
+            "--source-dir",
+            str(args.source_dir.resolve()),
+        ]
+    )
+    run_checked(
+        [
             str(cbvm),
             "compile-bundle",
             str(args.source_dir.resolve()),
@@ -1424,13 +1434,12 @@ def patch_archive(
                 raise SystemExit(f"generated script is not byte-exact: {name}")
             destination = output / "cd" / name
             link_or_copy(generated, destination)
-            source_kind = "bloodscript" if extension in ("COD", "BAS") else "blooddata"
             records.append(
                 {
                     "component": name,
                     "source": str(generated.relative_to(output)),
                     "output": str(destination.relative_to(output)),
-                    "status": f"{source_kind}_byte_exact",
+                    "status": "bloodscript_v8_byte_exact",
                     "offset": "loose_cd_file",
                     "original_sha256": sha256(original),
                     "output_sha256": sha256(destination),
@@ -1505,7 +1514,8 @@ def write_package_metadata(output: Path, records: list[dict[str, str]], cd_root:
         "The fixed-patch copy remains limited to routines whose compiled bytes\n"
         "are proven compatible at the original fixed offsets.\n\n"
         "The generated SCRIPT1..5.COD/BAS/DEB/DIC/VAR files are compiled from\n"
-        "re/vm/structured and compared byte-for-byte with the installed reference.\n"
+        "the five unified re/vm/profiles BloodScript sources and compared\n"
+        "byte-for-byte with the installed reference.\n"
         "Copy these resources into the WRIT C:\\cblood directory when testing an\n"
         "existing installation; the DOS integration gate stages them automatically.\n"
         "No shipped VM resource is retained in the package. AMER.XDB,\n"

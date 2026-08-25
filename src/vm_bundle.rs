@@ -5,11 +5,10 @@ use std::path::Path;
 
 use anyhow::{Context, Result, anyhow, bail};
 
-use crate::{bloodscript, vm_data};
+use crate::vm_profile;
 
 const SCRIPT_COUNT: usize = 5;
-const PROGRAM_EXTENSIONS: [&str; 2] = ["COD", "BAS"];
-const DATA_EXTENSIONS: [&str; 3] = ["DEB", "DIC", "VAR"];
+const SCRIPT_EXTENSIONS: [&str; 5] = ["COD", "BAS", "DEB", "DIC", "VAR"];
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BundleEntry {
@@ -27,9 +26,9 @@ pub struct RuntimeTreeStats {
     pub directories: usize,
 }
 
-/// Compile all 25 checked-in BloodScript and BloodData sources. Every output is
-/// compared with the shipped resource before it is written; a mismatch aborts
-/// the bundle.
+/// Compile the five unified BloodScript profiles into all 25 VM resources.
+/// Every output is compared with the shipped resource before it is written; a
+/// mismatch aborts the bundle.
 pub fn compile_bundle(
     source_dir: &Path,
     original_dir: &Path,
@@ -41,55 +40,30 @@ pub fn compile_bundle(
 
     for script in 1..=SCRIPT_COUNT {
         let script_name = format!("SCRIPT{script}");
-        let dictionary_source_path = source_dir.join(format!("script{script}.dic.blooddata"));
-        let dictionary_source = fs::read_to_string(&dictionary_source_path).with_context(|| {
-            format!(
-                "reading BloodData source {}",
-                dictionary_source_path.display()
-            )
-        })?;
-        let dictionary_bytes = vm_data::compile(vm_data::DataKind::Dic, &dictionary_source)
-            .with_context(|| format!("compiling {}", dictionary_source_path.display()))?;
-        let dictionary = crate::script::parse_dictionary(&dictionary_bytes);
+        let source_path = source_dir.join(format!("script{script}.blood"));
+        let source = fs::read_to_string(&source_path)
+            .with_context(|| format!("reading unified source {}", source_path.display()))?;
+        let profile = vm_profile::compile(&source)
+            .with_context(|| format!("compiling {}", source_path.display()))?;
+        if !profile.name.eq_ignore_ascii_case(&script_name) {
+            bail!(
+                "{} declares profile {:?}, expected {script_name}",
+                source_path.display(),
+                profile.name
+            );
+        }
 
-        for extension in PROGRAM_EXTENSIONS {
-            let lower = extension.to_ascii_lowercase();
-            let source_path = source_dir.join(format!("script{script}.{lower}.blood"));
-            let source = fs::read_to_string(&source_path)
-                .with_context(|| format!("reading BloodScript source {}", source_path.display()))?;
-            let compiled = bloodscript::compile_with_dictionary(&source, &dictionary)
-                .with_context(|| format!("compiling {}", source_path.display()))?;
+        for extension in SCRIPT_EXTENSIONS {
+            let compiled = profile
+                .image(extension)
+                .expect("known unified profile extension");
             let file_name = format!("{script_name}.{extension}");
             let original_path = original_dir.join(&file_name);
             let original = fs::read(&original_path)
                 .with_context(|| format!("reading shipped VM image {}", original_path.display()))?;
-            require_equal(&file_name, &compiled, &original)?;
-            fs::write(output_dir.join(&file_name), &compiled)
+            require_equal(&file_name, compiled, &original)?;
+            fs::write(output_dir.join(&file_name), compiled)
                 .with_context(|| format!("writing compiled VM image {file_name}"))?;
-            entries.push(BundleEntry {
-                script: script_name.clone(),
-                extension: extension.to_string(),
-                bytes: compiled.len(),
-                origin: "compiled",
-                comparison: "byte_exact",
-            });
-        }
-
-        for extension in DATA_EXTENSIONS {
-            let lower = extension.to_ascii_lowercase();
-            let source_path = source_dir.join(format!("script{script}.{lower}.blooddata"));
-            let source = fs::read_to_string(&source_path)
-                .with_context(|| format!("reading BloodData source {}", source_path.display()))?;
-            let kind = vm_data::DataKind::parse(extension)?;
-            let compiled = vm_data::compile(kind, &source)
-                .with_context(|| format!("compiling {}", source_path.display()))?;
-            let file_name = format!("{script_name}.{extension}");
-            let original_path = original_dir.join(&file_name);
-            let original = fs::read(&original_path)
-                .with_context(|| format!("reading shipped VM data {}", original_path.display()))?;
-            require_equal(&file_name, &compiled, &original)?;
-            fs::write(output_dir.join(&file_name), &compiled)
-                .with_context(|| format!("writing compiled VM data {file_name}"))?;
             entries.push(BundleEntry {
                 script: script_name.clone(),
                 extension: extension.to_string(),
@@ -217,9 +191,8 @@ fn is_script_resource(relative: &Path) -> bool {
     };
     let upper = name.to_ascii_uppercase();
     (1..=SCRIPT_COUNT).any(|script| {
-        PROGRAM_EXTENSIONS
+        SCRIPT_EXTENSIONS
             .iter()
-            .chain(DATA_EXTENSIONS.iter())
             .any(|extension| upper == format!("SCRIPT{script}.{extension}"))
     })
 }
@@ -247,40 +220,43 @@ mod tests {
         fs::create_dir_all(&sources).unwrap();
         fs::create_dir_all(&original).unwrap();
         for script in 1..=SCRIPT_COUNT {
-            for extension in PROGRAM_EXTENSIONS {
+            let profile_source = format!(
+                r#"bloodscript 8
+profile SCRIPT{script}
+concepts "D{script}"
+
+state {{
+    universe "baby1" {{
+        known
+    }}
+    universe "object{script}" {{
+    }}
+    navigation_controller "orxx" {{
+        active
+    }}
+}}
+
+logic {{
+    halt
+}}
+
+conversations {{
+    halt
+}}
+"#
+            );
+            fs::write(
+                sources.join(format!("script{script}.blood")),
+                &profile_source,
+            )
+            .unwrap();
+            let profile = vm_profile::compile(&profile_source).unwrap();
+            for extension in SCRIPT_EXTENSIONS {
                 fs::write(
-                    sources.join(format!(
-                        "script{script}.{}.blood",
-                        extension.to_ascii_lowercase()
-                    )),
-                    "; format: bloodscript-v2\nEND\n",
+                    original.join(format!("SCRIPT{script}.{extension}")),
+                    profile.image(extension).unwrap(),
                 )
                 .unwrap();
-                fs::write(original.join(format!("SCRIPT{script}.{extension}")), [0xFF]).unwrap();
-            }
-            for extension in DATA_EXTENSIONS {
-                let kind = vm_data::DataKind::parse(extension).unwrap();
-                let bytes = match kind {
-                    vm_data::DataKind::Deb => {
-                        let mut record = vec![0u8; 20];
-                        record[0] = b'A' + script as u8;
-                        record[16] = script as u8;
-                        record[18] = 1;
-                        record
-                    }
-                    vm_data::DataKind::Dic => vec![script as u8, b'D', 0],
-                    vm_data::DataKind::Var => vec![script as u8, b'V'],
-                };
-                let source = vm_data::decompile(kind, &bytes).unwrap();
-                fs::write(
-                    sources.join(format!(
-                        "script{script}.{}.blooddata",
-                        extension.to_ascii_lowercase()
-                    )),
-                    source.source,
-                )
-                .unwrap();
-                fs::write(original.join(format!("SCRIPT{script}.{extension}")), bytes).unwrap();
             }
         }
         (sources, original)
@@ -295,9 +271,9 @@ mod tests {
         assert_eq!(entries.len(), 25);
         assert_eq!(fs::read(output.join("SCRIPT3.COD")).unwrap(), [0xFF]);
         let deb = fs::read(output.join("SCRIPT3.DEB")).unwrap();
-        assert_eq!(deb.len(), 20);
-        assert_eq!(deb[0], b'D');
-        assert_eq!(deb[16], 3);
+        assert_eq!(deb.len(), 100);
+        assert_eq!(&deb[..5], b"baby1");
+        assert_eq!(deb[18], 1);
         assert!(entries.iter().all(|entry| entry.comparison == "byte_exact"));
         assert!(entries.iter().all(|entry| entry.origin == "compiled"));
         fs::remove_dir_all(root).unwrap();

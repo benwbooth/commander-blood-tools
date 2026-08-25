@@ -16,6 +16,52 @@ Each of the five script profiles ships as a related bundle:
 | `SCRIPTn.DIC` | Null-terminated text and concept dictionary |
 | `SCRIPTn.VAR` | Initial mutable object/state records |
 
+## Recovered object vocabulary
+
+The Big Bug Bang sequel retains Commander Blood's complete 21-by-16-byte
+field-offset matrix and also retains the compiler's field-name table beside it.
+The names map by selector index to `ETAT`, `POP`, `BASE`, `AGR`, `NRJ`,
+`CONNAIS`, `PORTEE`, `EVL`, `RENCONTRE`, `POSITION1`, `POSITION2`, `POSITION`,
+`UNIVERS1`, `UNIVERS2`, `UNIVERS`, `SUJET`, `RACE`, `LIEU`, `MESSAGE`, `ACTION`,
+and `ICONE`. The sequel appends an `ATTAQUE` selector at character byte 72 and
+expands its character record from 72 to 74 bytes; that sequel-only field is not
+part of Commander Blood's schema. Its HUD independently reads character offsets 22, 50, 52, and 56
+and labels them `POPULATION`, `AGRESSIVITE`, `ENERGIE`, and `EVOLUTION`.
+
+The adjacent status table supplies both the applicable kind mask and stored
+bit for `OK`, `CONNUS`, `CHEF`, `GUERRE`, `PRESENT`, `OCCUPE`, `PLEIN`,
+`BLOQUE`, `EMET`, `AGIT`, `ACTIF`, and `PORTABLE`. BloodScript translates the
+shipped subset to `active`, `known`, `leader`, `at_war`, `present`, `full`,
+`acting`, `enabled`, and `portable`. The same executable retains the exact
+16-value race table: `croolis_red`, `croolis_green`, `migrax`, `slimers`,
+`izwals`, `sinox`, `waves`, `tromps`, `kam`, `tubular_brain`, `quizzers`,
+`zen`, `scruters`, `robots`, `bob`, and `gluxx`.
+
+BloodScript 8 uses those names in typed VAR records. Inline object names,
+zeroed action records, known-object storage, reserved padding, and character BAS
+roots are compiler-derived. Character BAS
+roots come from the matching `selector NAME_choices` declaration; globals are
+allocated in source declaration order. The all-five-profile byte gate verifies
+the derived layout against every shipped VAR, BAS, and DEB byte.
+
+The omitted padding has been investigated rather than assigned guessed field
+names. Character byte 28 and bytes 64 through 67 are zero in all 593 character
+records across the five Commander Blood profiles and the seven available sequel
+profiles. Neither the original nor sequel field matrix addresses them, and the
+complete BLOODPRG disassembly has no character-relative access to bytes 64 or
+66. The XDB instructions that use displacements 64 and 66 operate on their own
+94-byte overlay object records, not on VM VAR records.
+
+The final `orxx` object is 36 bytes in both games. Its matrix-addressable fields
+end at byte 17; bytes 18 through 35 are zero in every inspected profile and the
+only two native consumers of the resolved `orxx` base use its position fields or
+its six-byte action at byte 10. Every DEB places a kind-5 state symbol named
+`tblood` at `orxx + 36`, followed by ordinary globals at `+38`. `tblood` starts
+at zero, has no COD or BAS reference in either game, and is not the special
+kind-5 symbol that BLOODPRG resolves (`vbio` is). It is therefore a separate,
+unused compiler-injected state word, not part of the navigation controller and
+not an editable gameplay variable.
+
 The executable contains a 52-slot opcode dispatch table for byte values
 `0xA0..0xD3`. Native handler recovery establishes a custom event/state VM with
 dialogue, object-record operations, tests, control flow, yields, and script
@@ -24,9 +70,8 @@ routine boundaries; `.DIC` and `.VAR` establish separate interned-text and
 initial-state inputs.
 
 All ten shipped `.COD` and `.BAS` images now round-trip byte exactly through
-both `CBVM-ASM` and `bloodscript-v5`. The current BloodScript manifest records
-the unresolved generic-opcode and raw-byte totals rather than folding them into
-semantic coverage.
+both `CBVM-ASM` and the program sections of `bloodscript 8`. The canonical
+profiles contain no generic `OP` or `RAW` statements.
 
 Three dispatch-table-proven shared handler families now have lossless typed
 statements: `SHARED_STATE` (`0x6863`), `SHARED_BIT_STATE` (`0x6902`), and
@@ -36,7 +81,7 @@ coverage while retaining byte-exact output across all five COD images.
 The `0x6863` family is now lifted one level further. Its assembly proves signed
 query operators `F0..F5`, update operators `F5..F7`, and state-indirect RHS
 modes `C0`/`C2`. The shipped images use family tag `B4` only for Bob Morlock's
-conversation-progress field, `BF` only for kind-2 encounter counters, and `C0`
+aggressiveness field, `BF` only for kind-2 encounter counters, and `C0`
 for script-global words. A whole-image assembly census found no reader of those
 three family tags outside the dispatch table; the common handler does not read
 the tag either. BloodScript therefore renders the shipped operations as `=`,
@@ -48,11 +93,12 @@ shipped meaning of `AE` and `B0`. In query mode an optional `A1` inverts an
 any-masked-bit test; in update mode it switches OR-mask to AND-complement-mask.
 The outer opcode is never read after dispatch, and the same field, mask,
 polarity, and effect occur under both opcode bytes in the shipped corpus. Native
-consumers establish mask `0x0001` as object `active`, `0x0002` as `in_play`, and
-`0x0020` as the C2 presentation eligibility bit (`presentable`). BloodScript
-therefore emits boolean property expressions. It preserves `B0` with the
-non-semantic `using alternate_encoding` code-generation clause because no
-runtime distinction exists from which that byte could be re-derived.
+consumers establish mask `0x0001` as object `active`, `0x0002` as `known`, and
+`0x0020` as the C2 presentation eligibility bit (`portable`). BloodScript
+therefore emits boolean property expressions. Ordinary assignments and
+`require` select `AE`; the semantic synonyms `mark OBJECT as STATE` and
+`check OBJECT is STATE` select `B0`. Both forms say what the operation does while
+retaining the otherwise execution-identical opcode byte.
 
 This alias result has been investigated to the boundary of the shipped
 artifacts. `SCRIPT*.DEB` records only name, offset, and kind; `SCRIPT*.VAR`
@@ -77,7 +123,7 @@ use it as `holder`.
 a BAS case and stores it in the active actor's kind-2 selector-`0x0F` field.
 Every shipped `BC` RHS resolves to a DIC word such as `talk`, `hello`, `rien`,
 or `secrets`. BloodScript consequently names the field `topic` and interns the
-quoted RHS through the companion dictionary. All 531 shipped `AF` operations
+quoted RHS through the profile dictionary. All 531 shipped `AF` operations
 and 49 `BC` operations reproduce their original bytes.
 
 Finally, opcode `A9` sets the native query bit just as an `A0` guard does. The
@@ -101,9 +147,9 @@ and a year. Its four shipped operands decode to `1994-12-25`, `1994-01-01`, and
 `1995-01-01`, matching their Christmas and New Year dialogue. Native routine
 `0x6510` compares only day/month against `GS:0x0AA8/0x0AAA`; exhaustive native
 reference search finds `GS:0x0AAC` written by the BIOS RTC loader but never read.
-BloodScript therefore requires `using month_day_only` on date requirements and
-still re-emits the consumed year exactly. This records a shipped VM behavior,
-not an attempt to repair it.
+BloodScript therefore calls this value `annual_date` and still re-emits the
+consumed source year exactly. The name records that the game compares only the
+month and day; it does not attempt to repair the shipped behavior.
 
 Seven control-flow encodings now have lossless typed statements: `GUARD_PUSH`
 and `GUARD_POP` (`0xA0`/`0xA1`), `JUMP` (`0xA4`), `STATE_ARRAY_TEST` and
@@ -135,8 +181,7 @@ inert. Initialization at `0x53F6` fills the larger 256-word saved block with
 `0xFFFF`. All 75 shipped `A5` instructions use indices `1..22`: 48 writes use a
 positive count or `0xFFFF`, and 27 tests require zero. BloodScript therefore
 uses `timer[n] = ticks`, `timer[n] = disabled`, and
-`require timer[n] == 0`. The low-level state-array spelling remains for an
-index outside the ISR loop or an unmatched negative value.
+`require timer[n] == 0`. No shipped profile requires a lower-level spelling.
 
 `A7` is a one-topic offer, not an untyped presentation register. Handler
 `0x67BA` consumes a word and, only while `GS:0x67AC & 1` marks a presentation
@@ -147,8 +192,8 @@ clears the pending slot, and writes the final terminator. The presentation
 choice coordinator at `0x8963` consumes this resulting list. Every one of the
 19 shipped A7 operands is an exact DIC offset (`sorceror`, `ekato`, `leisure`,
 `gladis`, or `revelation` by text). Their surrounding dialogue uses them as the
-additional selectable concepts. BloodScript emits `offer topic "word"`; an
-operand not found in the companion DIC stays `presentation_register`.
+additional selectable concepts. BloodScript emits `offer topic "word"` and
+rejects an operand that does not resolve through the profile dictionary.
 
 The final six native-handler families accounted for those remaining 4,567 bytes:
 concept guards (`0xA3`), string loads (`0xA8`), procedure activation writes
@@ -157,9 +202,7 @@ and the contact-scene branch (`0xD1`). Every one of the 413 shipped `AB` writes
 stores zero or one at exactly one byte after a named kind-2 procedure start,
 which is the procedure's `A9` flag byte. The corpus contains 149 enables and 264
 disables. BloodScript renders them as `procedure.enabled = true|false`; its
-compiler restores the target address as `procedure + 1`. The low-level
-`poke_byte` form remains available for an arbitrary address or value, but no
-shipped statement needs it. All 118,787 shipped COD bytes now compile from
+compiler restores the target address as `procedure + 1`. All 118,787 shipped COD bytes now compile from
 typed statements with zero generic `OP` coverage.
 
 Opcode `A3` is the choice condition used after dialogue menus. Native routine
@@ -272,7 +315,7 @@ emits `navigate to LOCATION`.
 
 Both shipped C2 tokens also run in update mode without inversion. They target
 `blood.action` and name a kind-2 character. Handler `0x6E34` requires the
-character's dynamic presentable bit, inserts it into the 16-word special-slot
+character's dynamic portable bit, inserts it into the 16-word special-slot
 list, writes `0xFFFF` to its selector-`0x11` current-location field, and stages
 active line `0x27`. This is `bring CHARACTER aboard`; failure of a runtime gate
 remains part of the native operation and does not change its source meaning.
@@ -299,12 +342,10 @@ directory to turn an object offset into the bit index before testing selector
 `0x05`/kind 2, proving that the bit number is an object-directory index rather
 than an unnamed Boolean flag. Every initial kind-2 selector-`0x05` region in
 all five VAR images is zero; these three statements are the only population
-sites. BloodScript consequently emits `Character.links += blood` and reserves
-the neutral word `links`: its sole native consumer is the kind-`0x10` C1 source
-filter, but that shipped call site supplies a cursor in persistent scratch
-`DS:0x6886`, not the character record itself. Calling the relation a radio,
-navigation, knowledge, or aboard flag would assert semantics the binary does
-not establish.
+sites. BloodScript consequently emits `Character.known_objects += blood`. The
+sequel executable independently retains the original compiler field name
+`CONNAIS`, confirming the knowledge relation rather than merely suggesting it
+from native behavior.
 
 The two shipped pair records have a complete coordinate proof. Both are
 opcode `BD`, both run in update mode, and both target `Kraner + 0x18`, which the
@@ -313,7 +354,7 @@ field matrix identifies as selector `0x0B` for initial kind `0x0010`. Native
 positions; the distance, state-processing, HUD, and camera paths consume the
 same two adjacent words as x/y. The values `(10, 10)` and `(100, 10)` bracket
 the `krando20.hnm` race sequence and its completion. BloodScript renders these
-as `Kraner.position = (0x000A, 0x000A)` and `(0x0064, 0x000A)`. The proof gate
+as `Kraner.position = (10, 10)` and `(100, 10)`. The proof gate
 does not lift query-mode pairs, `B8`/`B9`, another kind, or another selector.
 
 The remaining 3,780 BAS bytes form 1,003 complete records: three one-topic menus,
@@ -343,14 +384,17 @@ immediately before one physical selector-list root, with no missing or interior
 entry. Following those roots covers all 321 nodes exactly once.
 
 BloodScript's structured BAS form therefore names lists after their owning DEB
-objects and spells each linked node as `CASE selector next`. This is a
-reconstructed source notation, not a claim about the original token spelling.
-The compiler keeps the exact yield and menu records visible, validates the
-proven list grammar, and reproduces all five BAS images byte for byte.
+objects and lists their cases in the exact linked order. `continues` marks a
+case with a following node; the compiler derives the BAS next-node address and
+the otherwise invisible `0xAC` prefix/terminator records. Ordinary `yield` and
+`halt` remain visible because they change behavior. This is reconstructed source
+notation, not a claim about the original token spelling, and all five BAS images
+remain byte exact.
 
-The whole ten-image corpus therefore compiles byte-for-byte from typed
-BloodScript IR. This closes byte framing, not source structuring: record fields
-and reducible control-flow blocks still need to be lifted above the exact IR.
+The whole ten-image corpus therefore compiles byte-for-byte from structured,
+typed BloodScript 8. All 682 guards are balanced `when` regions, with only
+behaviorally necessary nonlocal jumps and dialogue resume points left as named
+labels.
 
 Address correlation establishes three corpus-wide rules:
 
@@ -363,36 +407,33 @@ The one-based rule applies only to `.DEB` routine values. Treating BAS `next`
 values as one-based points at the preceding `0xAC`, not the node that the native
 scanner reads.
 
-BloodScript now emits 480 balanced `PROCEDURE`/`END_PROCEDURE` regions from the
-DEB names, plus `LABEL` directives for other COD blocks and BAS selector nodes. Its
-two-pass compiler resolves symbolic operands while retaining explicit source
-offsets and exact statement order. Across the corpus this yields 1,059 distinct
-COD symbols and 284 BAS labels without changing any output byte.
+BloodScript emits 480 named `proc` regions from the DEB names. Behaviorally
+necessary COD jumps and dialogue resumes retain procedure-scoped role names;
+internal guard and BAS selector addresses are compiler-derived and absent from
+source. Its two-pass compiler derives addresses from source order without
+exposing line offsets.
 
-Kind-1 DEB entries also establish exact VAR object-base names. The structured
-COD and BAS corpus contains 302 image-local declarations with 6,781 uses,
-including object values recovered from record relations and inventory
-transfers.
-`OBJECT` declarations emit no bytes and retain the original numeric offset.
+Kind-1 DEB entries also establish exact VAR object-base names. BloodScript 8
+integrates those objects into the `state` section in DEB order. Logic uses their
+derived identifiers for record relations and inventory transfers; source no
+longer carries separate zero-byte `OBJECT` declarations or numeric offsets.
 
 The native field-offset matrix plus each object's initial VAR kind establishes
-367 unambiguous physical subrecord fields used by 1,880 operands. Each `FIELD`
-declaration names an object and a wrapping byte delta; its comment records the
-VAR kind and every matrix selector sharing that physical offset. The decompiler
+367 unambiguous physical subrecord fields used by 1,880 operands. BloodScript
+uses the sequel's retained field names directly as object properties; the
+compiler derives each byte offset from the object's kind. The decompiler
 requires one unique owner, excludes zero matrix entries, and gives exact object
-bases priority over fields. Other numeric subrecord addresses remain hexadecimal
-rather than being assigned to a nearby object.
+bases priority over fields. Every shipped operand has a unique proven owner;
+decompilation fails instead of emitting an unresolved numeric subrecord address.
 
-Exact DIC string boundaries establish a second symbolic namespace. The
-structured corpus uses 13,713 referenced offsets in 53,262 proven dictionary
-operands across COD and BAS, including offered and actor topics. All shipped
-operands are interned bare string
-literals resolved through the companion DIC rather than routed through generated
-declarations. The compiler chooses the lowest offset as the canonical identity
-for duplicate text and retains `"text"@offset` only for a noncanonical physical
-entry. It rejects dictionary references in ordinary numeric or VAR-address
-operands, and the DIC companion source remains the owner of the actual string
-bytes.
+Exact DIC string boundaries establish a second symbolic namespace. The corpus
+uses 13,713 referenced offsets in 53,262 proven dictionary operands across COD
+and BAS, including offered and actor topics. All shipped operands are readable
+quoted literals. BloodScript 8 derives physical DIC order from `concepts`
+followed by first use in `logic` and `conversations`. An inline
+`dictionary blank after "word"` declaration preserves each otherwise invisible
+empty entry. Dictionary literals are
+still rejected in ordinary numeric or VAR-address operands.
 
 The first structured COD pass recovers 7,010 basic blocks and 17,287 edges. It
 models the native query bit and guard-target stack, direct jumps, text skips and
@@ -423,69 +464,18 @@ target instruction. A guard beginning in the middle of a block could therefore
 appear to exit its own interval. CFG edges now retain both addresses; regression
 tests distinguish this case from a real jump to an alternate exit.
 
-## What is not established
+## Historical boundary
 
-The `.BAS` files are binary data, not surviving text source. No QuickBASIC,
-BASCOM, BRUN, QBX, or VBDOS signature has been found in the ten program images.
-The `.BAS` suffix is evidence that the developers used the term "BAS", but it
-does not identify a Microsoft or Borland BASIC grammar, compiler, or runtime.
+The `.BAS` files are binary VM programs, not surviving BASIC text. No
+QuickBASIC, BASCOM, BRUN, QBX, VBDOS, parser, compiler executable, source text,
+or language manual is present in the shipped artifacts. The suffix proves only
+that the original developers used the term `BAS`; it cannot prove historical
+keywords or declaration spelling.
 
-No source text, grammar, parser, compiler executable, or language manual has
-been recovered. Consequently, exact keywords, expression syntax, declaration
-syntax, and whether the historical implementation was called BASIC cannot be
-recovered from the suffix alone.
-
-## Defensible reconstruction
-
-The available evidence supports a small, game-specific event language more
-strongly than a general-purpose BASIC dialect. A useful reconstructed language
-will need these constructs:
-
-- named procedures from `.DEB` offsets;
-- guards and conditional blocks from VM tests and control-flow tokens;
-- object and global state reads, comparisons, and assignments;
-- actor/background/resource selection and profile transitions;
-- dialogue records with speaker, sound, presentation flags, and dictionary text;
-- concept menus and responses from `.BAS` plus `.DIC`;
-- explicit yield/resume points matching interpreter behavior.
-
-A plausible high-level form might look like this:
-
-```basic
-PROCEDURE ScruterJo
-  WHEN Scruter.state = Waiting
-    ACTOR ScruterJo
-    SAY voice 1, "SCANNING STRANGER..."
-    YIELD
-  END WHEN
-END PROCEDURE
-```
-
-This example is proposed BloodScript syntax. It is not a decompilation of a
-specific byte range and must never be labelled as the original 1994 source.
-
-## Recovery path
-
-1. Give each generic `OP` a typed statement only after its native handler and
-   operand semantics are proven.
-2. Decode the remaining BAS structures without changing a byte of the rebuilt
-   images.
-3. Use the recovered procedures and symbolic targets to construct typed basic
-   blocks and per-procedure control-flow graphs. Complete for shipped COD.
-4. Lift reducible graph regions into guards and conditional blocks while
-   retaining symbolic labels and explicit rejection evidence for irreducible
-   regions. The current guard lift proves 633 of 682 `A0` regions and classifies
-   all 49 retained low-level guards.
-5. Add symbolic object, field, and dictionary names without changing numeric
-   identity in the compiler IR. Exact DEB object bases and referenced dictionary
-   words are complete for the currently proven operand families. The first field
-   pass names every direct operand with a unique nonzero DEB/VAR/matrix relation;
-   unproven subrecord addresses remain numeric.
-6. Compile the structured syntax back through the exact IR and require all ten
-   images to remain byte exact.
-7. Emit complete `.COD`, `.BAS`, `.DEB`, `.DIC`, and `.VAR` bundles and
-   substitute them into the installed game for DOSBox scenario tests.
-
-The historical spelling of the language may remain unknowable. Behavioral and
-binary fidelity do not depend on guessing it: the reconstructed compiler is
-accepted only when its output and the original VM agree.
+This is a provenance boundary, not an unresolved runtime behavior. Every
+shipped COD and BAS token, operand, branch, procedure, state field, dictionary
+entry, and directory record has a lossless BloodScript 8 representation. The
+compiler accepts the reconstructed language only when all 25 generated VM
+resources match the originals byte for byte. BloodScript syntax is deliberately
+documented as reconstructed syntax rather than falsely presented as the exact
+1994 source spelling.

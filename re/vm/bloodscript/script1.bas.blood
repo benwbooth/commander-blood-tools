@@ -1,9 +1,0 @@
-// format: bloodscript-v5
-// image: BAS
-
-yield
-yield_b
-selector_node "parler" 0x0000
-menu "adieu"
-say 0x082A voice=0xFF flags=0x61 display=0x80 loop=none control=none : "Yes! Commander?" choices "bye_bye"
-halt

@@ -1,0 +1,829 @@
+bloodscript 8
+profile SCRIPT1
+concepts "talk" "hello"
+
+state {
+    universe "baby1" {
+        known
+    }
+    universe "baby" {
+    }
+    player "blood" {
+        active
+        population = 30
+        location = "arche"
+    }
+    character "Bob_Morlock" {
+        active
+        race = sinox
+        population = 60
+    }
+    character "Bug_Deluxe" {
+        active
+        race = sinox
+        population = 60
+        location = "Venusia"
+        topic = "talk"
+    }
+    character "Ulikan" {
+        active
+        race = sinox
+        population = 43
+        location = "Trashlando"
+        topic = "talk"
+    }
+    character "porte_clés" {
+        active
+        race = sinox
+        population = 43
+        location = "Trashlando"
+        topic = "talk"
+    }
+    character "Eviscerator" {
+        active
+        race = sinox
+        population = 50
+        location = "prison"
+        topic = "talk"
+    }
+    character "Hom" {
+        active
+        race = sinox
+        population = 50
+        location = "Kortex"
+        topic = "hello"
+    }
+    character "Yoko" {
+        active
+        race = sinox
+        population = 50
+        location = "pavillon"
+        topic = "hello"
+    }
+    character "Cyberquizz" {
+        active
+        race = sinox
+        population = 20
+        location = "Cyberock"
+        topic = "talk"
+    }
+    character "Morning_Oil" {
+        active
+        race = sinox
+        population = 100
+        location = "Magnus"
+        topic = "talk"
+    }
+    character "Jerry_Khan" {
+        active
+        race = sinox
+        population = 150
+        location = "Trashlando"
+        topic = "talk"
+    }
+    character "Bronko" {
+        active
+        race = sinox
+        population = 200
+        location = "usine"
+        topic = "talk"
+    }
+    character "ondoyant" {
+        active
+        race = sinox
+        population = 50
+        location = "Qx20"
+        topic = "talk"
+    }
+    character "Anna_Haf" {
+        active
+        race = sinox
+        population = 50
+        location = "Magnus"
+        topic = "talk"
+    }
+    character "Migrator" {
+        race = sinox
+        population = 50
+        location = "airport"
+        topic = "talk"
+    }
+    character "Daddy_Gluxx" {
+        active
+        race = sinox
+        population = 50
+        location = "Ekatomb"
+        topic = "talk"
+    }
+    character "Beauregard" {
+        active
+        race = sinox
+        population = 50
+        location = "Tumul"
+        topic = "talk"
+    }
+    character "Kran_Dobu" {
+        active
+        race = sinox
+        population = 50
+        location = "Kraner"
+        topic = "talk"
+    }
+    character "Maxxon" {
+        active
+        race = sinox
+        population = 50
+        location = "observatory"
+        topic = "talk"
+    }
+    character "Izwalito" {
+        active
+        race = sinox
+        population = 50
+        location = "Hito"
+    }
+    character "Amigo" {
+        active
+        race = sinox
+        population = 50
+        location = "hall"
+        topic = "talk"
+    }
+    character "Otto_Von_Smile" {
+        active
+        race = sinox
+        population = 50
+        location = "Erazor"
+        topic = "talk"
+    }
+    character "Little_Brain" {
+        active
+        race = sinox
+        population = 50
+        location = "Radioship"
+        topic = "talk"
+    }
+    character "Scruter_Mac" {
+        active
+        race = sinox
+        population = 50
+        location = "porte"
+        topic = "talk"
+    }
+    character "Scruter_K" {
+        active
+        race = sinox
+        population = 50
+        location = "Pterra"
+        topic = "talk"
+    }
+    character "Tina_Burner" {
+        active
+        race = sinox
+        population = 50
+        location = "bar"
+        topic = "talk"
+    }
+    character "Super_Zen" {
+        active
+        race = sinox
+        population = 50
+        location = "Crazystone"
+        topic = "talk"
+    }
+    character "Tromp_la_Mort" {
+        active
+        race = sinox
+        population = 50
+        location = "Vista"
+        topic = "talk"
+    }
+    character "Emasculator" {
+        race = sinox
+        population = 50
+        location = "Trashlando"
+        topic = "talk"
+    }
+    character "Honk" {
+        active
+        race = sinox
+        population = 50
+        location = "Trashlando"
+    }
+    character "menu" {
+        active
+        race = sinox
+        population = 50
+        location = "Trashlando"
+    }
+    planet "Venusia2" {
+        active
+        position = (153, 7)
+    }
+    planet "Venusia" {
+        active
+        position = (83, 11)
+    }
+    planet "Sat" {
+        active
+        position = (269, 11)
+    }
+    planet "Erazo" {
+        active
+        position = (286, 14)
+    }
+    planet "Erazor" {
+        active
+        position = (125, 16)
+    }
+    location "piscine" {
+        active
+        parent = "Erazor"
+    }
+    planet "Masta" {
+        active
+        position = (220, 19)
+    }
+    location "machine" {
+        active
+        parent = "Masta"
+    }
+    planet "Mastachok" {
+        active
+        position = (149, 20)
+    }
+    location "porte" {
+        active
+        parent = "Mastachok"
+    }
+    location "prison" {
+        active
+        parent = "Mastachok"
+    }
+    location "factory" {
+        active
+        parent = "Mastachok"
+    }
+    planet "Vistar" {
+        active
+        position = (106, 21)
+    }
+    location "cache" {
+        active
+        parent = "Vistar"
+    }
+    planet "Vista" {
+        active
+        position = (75, 31)
+    }
+    location "garde" {
+        active
+        parent = "Vista"
+    }
+    location "tombeau" {
+        active
+        parent = "Vista"
+    }
+    planet "Golgos" {
+        active
+        position = (201, 33)
+    }
+    planet "Kortex" {
+        active
+        position = (59, 36)
+    }
+    planet "Ron" {
+        active
+        position = (42, 37)
+    }
+    planet "Rondo" {
+        active
+        position = (281, 40)
+    }
+    location "pavillon" {
+        active
+        parent = "Rondo"
+    }
+    location "observatory" {
+        active
+        parent = "Rondo"
+    }
+    planet "Edena" {
+        active
+        position = (191, 44)
+    }
+    planet "Eden" {
+        active
+        position = (16, 46)
+    }
+    location "hall" {
+        active
+        parent = "Eden"
+    }
+    location "bar" {
+        active
+        parent = "Eden"
+    }
+    planet "Magnu" {
+        active
+        position = (77, 49)
+    }
+    planet "Magnus" {
+        active
+        position = (270, 49)
+    }
+    planet "Ondoya" {
+        active
+        position = (37, 50)
+    }
+    planet "Qx20" {
+        active
+        position = (100, 76)
+    }
+    planet "Crazystone" {
+        active
+        position = (179, 81)
+    }
+    planet "Tumul" {
+        active
+        position = (230, 83)
+    }
+    location "land" {
+        active
+        parent = "Tumul"
+    }
+    location "fresque" {
+        active
+        parent = "Tumul"
+    }
+    location "ebouli" {
+        active
+        parent = "Tumul"
+    }
+    location "momie" {
+        active
+        parent = "Tumul"
+    }
+    planet "Cyberock" {
+        active
+        position = (77, 86)
+    }
+    planet "Corpo" {
+        active
+        position = (292, 86)
+    }
+    location "Hito" {
+        active
+        parent = "Corpo"
+    }
+    location "Hita" {
+        active
+        parent = "Corpo"
+    }
+    planet "Malus" {
+        active
+        position = (220, 92)
+    }
+    location "trompo" {
+        active
+        parent = "Malus"
+    }
+    planet "Pterra" {
+        active
+        position = (201, 93)
+    }
+    planet "Bonus" {
+        active
+        position = (279, 94)
+    }
+    planet "Lovia" {
+        active
+        position = (62, 95)
+    }
+    planet "Cyborg" {
+        active
+        position = (256, 96)
+    }
+    planet "Kult" {
+        active
+        position = (222, 108)
+    }
+    planet "Tempest" {
+        active
+        position = (16, 110)
+    }
+    planet "Vulcan" {
+        active
+        position = (35, 110)
+    }
+    planet "Troma" {
+        active
+        position = (50, 110)
+    }
+    planet "Attrox" {
+        active
+        position = (235, 117)
+    }
+    planet "Ekato" {
+        active
+        position = (55, 122)
+    }
+    planet "Ekatomb" {
+        active
+        position = (76, 125)
+    }
+    planet "Trashlando" {
+        active
+        position = (249, 127)
+    }
+    planet "Moskito" {
+        active
+        position = (38, 135)
+    }
+    location "usine" {
+        active
+        parent = "Moskito"
+    }
+    location "airport" {
+        active
+        parent = "Moskito"
+    }
+    ship "arche" {
+        active
+        visits = 1
+        position = (10, 10)
+    }
+    location "Ark" {
+        active
+        known
+        parent = "arche"
+    }
+    ship "Shark" {
+        active
+        position = (236, 11)
+    }
+    ship "Kukaracha" {
+        active
+        position = (176, 58)
+    }
+    ship "Kraner" {
+        active
+        position = (243, 65)
+    }
+    ship "Radioship" {
+        active
+        position = (126, 72)
+    }
+    item "cred" {
+        active
+        holder = "Izwalito"
+    }
+    item "perfume" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "decoder" {
+        active
+        holder = "Izwalito"
+    }
+    item "murffalos" {
+        active
+        holder = "Bronko"
+    }
+    item "murffalo" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "cravate" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "rouge" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "jewel" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "beaume" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "ball" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "boxing_gloves" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "coquilles" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "tools" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "pharmacie" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "video_game" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "hifi" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "splatch" {
+        active
+        holder = "Amigo"
+    }
+    item "lens" {
+        active
+        holder = "Otto_Von_Smile"
+    }
+    item "bionium" {
+        active
+        holder = "Emasculator"
+    }
+    item "batteries" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "bague" {
+        active
+        holder = "Jerry_Khan"
+    }
+    item "guitar" {
+        active
+        holder = "Kran_Dobu"
+    }
+    item "porte_clefs" {
+        active
+        holder = "Kran_Dobu"
+    }
+    item "scrambler" {
+        active
+        holder = "Hom"
+    }
+    navigation_controller "orxx" {
+        active
+    }
+}
+
+logic {
+    proc menbr enabled {
+        during bridge
+        require presentation == menu
+        require Bronko.current_location == aboard
+    } then {
+        say menu presentation=text_only : "\"IMPROVED MENU\""
+        say menu presentation=text_only : "Today CHEF BRONKO has laid on for you|:"
+        say menu presentation=text_only : "Tasty MURFFALO soup Bronko-style|."
+        say menu presentation=text_only : "MURFFALO kidneys Bronko-style|."
+        say menu presentation=text_only : "MURFFALO hamburger with Bar-B-Q recycled-oil dip|."
+        say menu presentation=text_only : "Smooth MURFFALO-chip ice cream|."
+        say menu presentation=text_only : "Recycled water"
+        say menu presentation=text_only : "Chef Bronko says|... Burping's bad manners|!|..."
+        say menu presentation=text_only if_not_shown skip_next=1 : "stop"
+        end presentation menu
+    }
+    proc men1 enabled {
+        during bridge
+        require presentation == menu
+        require Bronko.current_location != aboard
+    } then {
+        say menu presentation=text_only : "\"MENU\""
+        say menu presentation=text_only : "Today's fare|:"
+        say menu presentation=text_only : "PLASMA soup HONK-style|."
+        say menu presentation=text_only : "WRIGGLER belly in slobber sauce|."
+        say menu presentation=text_only : "Jellied URTIKAN with MURFFALO bone marrow|."
+        say menu presentation=text_only : "GLOK eye pie|."
+        say menu presentation=text_only : "Recycled water"
+        say menu presentation=text_only : "The chef says|... Don't eat with your mouth full|!|..."
+        say menu presentation=text_only if_not_shown skip_next=2 : "Stop"
+        men1.enabled = false
+        end presentation menu
+    }
+    proc men2 enabled {
+        during bridge
+        require presentation == menu
+        require Bronko.current_location != aboard
+    } then {
+        say menu presentation=text_only : "\"MENU\""
+        say menu presentation=text_only : "Today's fare|:"
+        say menu presentation=text_only : "PLASMA soup HONK-style|."
+        say menu presentation=text_only : "WRIGGLER snout stew|."
+        say menu presentation=text_only : "URTIKAN seeds in MURFFALO venom|."
+        say menu presentation=text_only : "GLOK juice dessert|."
+        say menu presentation=text_only : "Recycled water"
+        say menu presentation=text_only : "The chef says|... Don't talk with your mouth open|!|..."
+        say menu presentation=text_only if_not_shown skip_next=2 : "stop"
+        men2.enabled = false
+        end presentation menu
+    }
+    proc men3 enabled {
+        during bridge
+        require Bronko.current_location != aboard
+        require presentation == menu
+    } then {
+        say menu presentation=text_only : "\"MENU\""
+        say menu presentation=text_only : "Today's fare|:"
+        say menu presentation=text_only : "PLASMA soup HONK-style|."
+        say menu presentation=text_only : "WRIGGLER feet in emulsive sauce|."
+        say menu presentation=text_only : "URTIKAN leaves in MURFFALO sweat|."
+        say menu presentation=text_only : "GLOK flake dessert|."
+        say menu presentation=text_only : "Recycled water"
+        say menu presentation=text_only : "The chef says|... Somebody didn't finish his wrigglers yesterday|..."
+        say menu presentation=text_only if_not_shown skip_next=2 : "stop"
+        men3.enabled = false
+        end presentation menu
+    }
+    proc men4 enabled {
+        during bridge
+        require presentation == menu
+        require Bronko.current_location != aboard
+    } then {
+        say menu presentation=text_only : "\"MENU\""
+        say menu presentation=text_only : "Today's fare|:"
+        say menu presentation=text_only : "HONK-style PLASMA soup|."
+        say menu presentation=text_only : "WRIGGLER brain|, stewed in its own juice|."
+        say menu presentation=text_only : "URTIKAN trunk|, stuffed with MURFFALO liver|."
+        say menu presentation=text_only : "GLOK dee-lite|."
+        say menu presentation=text_only : "Recycled water"
+        say menu presentation=text_only : "The chef says|... Plenty more in the kitchen|!|..."
+        say menu presentation=text_only if_not_shown skip_next=2 : "stop"
+        men4.enabled = false
+        end presentation menu
+    }
+    proc men5 enabled {
+        during bridge
+        require presentation == menu
+        require Bronko.current_location != aboard
+    } then {
+        say menu presentation=text_only : "\"IMPROVED MENU\""
+        say menu presentation=text_only : "Today's fare|:"
+        say menu presentation=text_only : "Soup of PLASMA HONK-style|."
+        say menu presentation=text_only : "WRIGGLER hearts in green blood coagulate|."
+        say menu presentation=text_only : "URTIKAN roots|, deep fried in recycled oil|."
+        say menu presentation=text_only : "Candied GLOK tongue|."
+        say menu presentation=text_only : "Recycled water"
+        say menu presentation=text_only : "The chef says|... You eat what you are|!|..."
+        say menu presentation=text_only if_not_shown skip_next=3 : "stop"
+        men5.enabled = false
+        men6.enabled = true
+        end presentation menu
+    }
+    proc men6 disabled {
+    } then {
+        men1.enabled = true
+        men2.enabled = true
+        men3.enabled = true
+        men4.enabled = true
+        men5.enabled = true
+        men6.enabled = false
+    }
+    proc tima enabled {
+    } then {
+        timer[22] = 5
+        tima.enabled = false
+    }
+    proc ho enabled {
+        require timer[22] == 0
+    } then {
+        queue presentation Izwalito
+        ho.enabled = false
+    }
+    proc ho1 enabled {
+        during bridge
+        require presentation == Izwalito
+    } then {
+        say Izwalito presentation=text_only if_not_shown skip_next=1 : "You found the right button|. So far so good|..."
+        Izwalito.topic = "rien"
+        say Izwalito presentation=text_only resume_at=ho1_dialogue_resume_1 : "Click quick, Cap'n Bob is waiting|..." choices "explanations" "game"
+        when {
+            require choice == "game"
+        } then {
+            say Izwalito presentation=text_only if_not_shown skip_next=3 : "GAME"
+            run profile SCRIPT2
+            choice = none
+            end presentation Izwalito
+        }
+        when {
+            require choice == "explanations"
+        } then {
+            choice = none
+        }
+        ho1_dialogue_resume_1:
+        say Izwalito presentation=text_only : "You can modify the text speed by clicking on \"OPTION\""
+        say Izwalito presentation=text_only : "You can wake Cap'n Bob by clicking on \"CRYOBOX\""
+        say Izwalito presentation=text_only : "Or load a \"Saved Game\" by clicking on \"OPTION\""
+        say Izwalito presentation=text_only : "The OPTION \"LAST\" is the \"AUTOMATIC PERMANENT SAVE\". If you forget to save, click on \"LAST\"..."
+        dictionary blank after "save,"
+        say Izwalito presentation=text_only : "We would like to draw your ATTENTION to certain RISKS|..."
+        say Izwalito presentation=text_only : "If you experience UNUSUAL SENSATIONS|, DIZZINESS or FACIAL DISTORTION|..."
+        say Izwalito presentation=text_only : "Stay CALM|..."
+        say Izwalito presentation=text_only : "It may only be a CRISIS, a SPELL|, a CURSE or|, at worst|, a SCRAMBLED BRAIN|..."
+        say Izwalito presentation=text_only : "In which case|, write to|: SUPER ZEN|, end of corridor|, CRAZYSTONE planet|, BABY1 UNIVERSE|..."
+        say Izwalito presentation=text_only : "Click quick on \"HONK\"|. He has important information for YOU|..."
+        say Izwalito presentation=text_only if_not_shown skip_next=1 : "..."
+        end presentation Izwalito
+    }
+    proc hon enabled {
+        during bridge
+        require presentation == Honk
+    } then {
+        say Honk presentation=text_only chatter : "Welcome aboard the ARK|, Commander|. I'm HONK|, your trusted computer|..."
+        say Honk presentation=text_only chatter : "I'm here to help you a lot|..."
+        say Honk presentation=text_only chatter : "If the phone rings|, just hit the \"RED BUTTON\" in front of you|..."
+        say Honk presentation=text_only chatter : "Cap'n Bob, our revered leader|, is cryonized in the CRYOBOX|..."
+        say Honk presentation=text_only chatter : "Of course you can wake Cap'n Bob and question him|... But like not too often|, okay|?|..."
+        dictionary blank after "?"
+        say Honk presentation=text_only chatter : "Cap'n Bob knows everything|... That's why he's the boss|..."
+        say Honk presentation=text_only chatter : "Our ship is currently surrounded by things called stars|..."
+        say Honk presentation=text_only chatter : "Remember|, deep space is no place for night clubs|!|..."
+        say Honk presentation=text_only chatter : "If you have questions, I have all the answers|..."
+        say Honk presentation=text_only chatter : "Click quick on \"CRYOBOX\" Cap'n Bob is waiting|..."
+        say Honk presentation=text_only chatter if_not_shown skip_next=1 : "End of report|..."
+        end presentation Honk
+    }
+    proc BOB1 enabled {
+        during contact
+        require presentation == Bob_Morlock
+    } then {
+        say Bob_Morlock presentation=bobd.hnm : "Good day COMMANDER|. My name is BOB|, BOB MORLOCK|..."
+        say Bob_Morlock presentation=bobb.hnm : "If the phone rings|, press the \"RED BUTTON\" on the radio to answer|..."
+        say Bob_Morlock presentation=bobc.hnm : "My ears are fragile, Commander|..."
+        say Bob_Morlock presentation=bobc.hnm resume_at=BOB1_dialogue_resume_1 : "Do you want me to explain your mission to you|, Commander|?" choices "yes" "no"
+        when {
+            require choice == "no"
+        } then {
+            say Bob_Morlock presentation=bobg.hnm if_not_shown skip_next=1 : "I'm going to explain it all the same|... It's important|..."
+            choice = none
+        }
+        when {
+            require choice != "no"
+        } then {
+            choice = none
+        }
+        BOB1_dialogue_resume_1:
+        say Bob_Morlock presentation=bobb.hnm : "I'm more than 800,000 years old|... I feel ancient|, Commander|..."
+        say Bob_Morlock presentation=bobc.hnm : "Too ancient to go looking for adventure|. That's where you come in|: I DON'T WANT TO DIE STUPID|. I WANT TO SEE THE BIG BANG|..."
+        say Bob_Morlock presentation=bobb.hnm : "This ship|, specially built for you|, is called the ARK|. It's a true marvel of technology|."
+        say Bob_Morlock presentation=bobd.hnm if_not_shown skip_next=3 : "Just hit the \"SPACE\" bar if you've had enough|..."
+        request sequence "aarche10.hnm"
+        say Bob_Morlock presentation=text_only if_not_shown skip_next=1 : ""
+        request sequence "aarche20.hnm"
+        say Bob_Morlock presentation=text_only if_not_shown skip_next=1 : ""
+        request sequence "aarche30.hnm"
+        say Bob_Morlock presentation=text_only if_not_shown skip_next=1 : ""
+        request sequence "aarche40.hnm"
+        say Bob_Morlock presentation=bobf.hnm : "I want to understand the world and WHERE I COME FROM|... WHY I EXIST|..."
+        dictionary blank after "COME"
+        say Bob_Morlock presentation=bobc.hnm : "You and me are going to travel through SPACE and TIME, through BLACK HOLES|..."
+        say Bob_Morlock presentation=bobb.hnm : "And quite a few BLACK HOLES later|, we'll get to the BIG BANG|..."
+        say Bob_Morlock presentation=bobc.hnm : "The tough part will be finding those BLACK HOLES|, Commander|..."
+        say Bob_Morlock presentation=bobb.hnm : "That's because BLACK HOLES are UNDETECTABLE in the universe|. We'll need to make contact with ALIEN BEINGS|..."
+        say Bob_Morlock presentation=bobe.hnm : "You can expect to see bloodchilling WARS and astonishing PHENOMENA..."
+        say Bob_Morlock presentation=bobe.hnm : "My age dictates I sleep through most of it in the CRYOBOX|. WAKE ME ONLY IN AN EMERGENCY|. My time is very precious|..."
+        dictionary blank after "sleep"
+        say Bob_Morlock presentation=bobc.hnm : "I have provided you with an ONBOARD COMPUTER called HONK|..."
+        say Bob_Morlock presentation=bobc.hnm : "YOU THERE|, HONK|?"
+        say Bob_Morlock presentation=text_only chatter : "HONK: Yes sir, Cap'n Bob|. Present|, willing and able|..."
+        say Bob_Morlock presentation=bobf.hnm : "Why, you hunk 'o junk|... YOU WERE ASLEEP|!!!"
+        say Bob_Morlock presentation=text_only chatter : "HONK: No|, Cap'n Bob|. I was calculating our trajectory to the black hole|! I swear it on my old mother's head|!"
+        say Bob_Morlock presentation=bobc.hnm : "Your mother|!! I've a good mind to short-circuit every wire in your lazy carcass|! Keep an eye on him|, Commander|..."
+        say Bob_Morlock presentation=bobf.hnm : "GET TO WORK|, HONK|!!!"
+        say Bob_Morlock presentation=text_only chatter : "HONK: Sure thing, Cap'n Bob|... I'm crunching numbers as I speak|..."
+        say Bob_Morlock presentation=bobj.hnm : "I can't see a thing|... Feel so weak|..."
+        say Bob_Morlock presentation=bobc.hnm : "IF YOU NEED ME|, WAKE ME UP|..."
+        say Bob_Morlock presentation=bobe.hnm : "See you later|, Commander|. Or do I mean earlier|? I'm cryonizing|... Aaaahhhh|!"
+        say Bob_Morlock presentation=text_only chatter : "The old turkey's out for the count|..."
+        say Bob_Morlock presentation=text_only if_not_shown skip_next=2 : "stop"
+        run profile SCRIPT2
+        end presentation Bob_Morlock
+    }
+    proc scr2 enabled {
+        require Honk.encounter_count == 1
+        require Bob_Morlock.encounter_count == 1
+    } then {
+        run profile SCRIPT2
+        halt
+    }
+}
+
+conversations {
+    yield
+
+    selector Honk_choices {
+        case "parler" {
+            menu "adieu"
+            say Honk presentation=text_only chatter repeatable : "Yes|! Commander|?" choices "bye_bye"
+            halt
+        }
+    }
+}
