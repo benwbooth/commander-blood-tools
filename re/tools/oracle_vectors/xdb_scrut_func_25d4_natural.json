@@ -3,6 +3,50 @@
     "name": "accepted_without_rotation",
     "module": "scrut",
     "entry": 9684,
+    "contexts_before": [
+      [
+        {
+          "screen_x": [
+            10,
+            20,
+            30
+          ],
+          "clip_flags": [
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    ],
+    "decisions": [
+      [
+        {
+          "vertices": [
+            0,
+            1,
+            2
+          ],
+          "left_x": 10,
+          "bucket_column": 10
+        }
+      ]
+    ],
+    "buckets": [
+      {
+        "column": 10,
+        "faces": [
+          [
+            0,
+            0
+          ]
+        ]
+      }
+    ],
+    "behind_signal": {
+      "kind": "unchanged",
+      "context": null
+    },
     "context_count": 1,
     "face_counts": [
       1
@@ -31,6 +75,50 @@
     "name": "rotate_vertex_2_leftmost",
     "module": "scrut",
     "entry": 9684,
+    "contexts_before": [
+      [
+        {
+          "screen_x": [
+            30,
+            20,
+            10
+          ],
+          "clip_flags": [
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    ],
+    "decisions": [
+      [
+        {
+          "vertices": [
+            2,
+            0,
+            1
+          ],
+          "left_x": 10,
+          "bucket_column": 10
+        }
+      ]
+    ],
+    "buckets": [
+      {
+        "column": 10,
+        "faces": [
+          [
+            0,
+            0
+          ]
+        ]
+      }
+    ],
+    "behind_signal": {
+      "kind": "unchanged",
+      "context": null
+    },
     "context_count": 1,
     "face_counts": [
       1
@@ -59,6 +147,50 @@
     "name": "rotate_vertex_1_leftmost",
     "module": "scrut",
     "entry": 9684,
+    "contexts_before": [
+      [
+        {
+          "screen_x": [
+            30,
+            10,
+            20
+          ],
+          "clip_flags": [
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    ],
+    "decisions": [
+      [
+        {
+          "vertices": [
+            1,
+            2,
+            0
+          ],
+          "left_x": 10,
+          "bucket_column": 10
+        }
+      ]
+    ],
+    "buckets": [
+      {
+        "column": 10,
+        "faces": [
+          [
+            0,
+            0
+          ]
+        ]
+      }
+    ],
+    "behind_signal": {
+      "kind": "unchanged",
+      "context": null
+    },
     "context_count": 1,
     "face_counts": [
       1
@@ -87,6 +219,75 @@
     "name": "ties_preserve_or_rotate_by_branch",
     "module": "scrut",
     "entry": 9684,
+    "contexts_before": [
+      [
+        {
+          "screen_x": [
+            10,
+            20,
+            20
+          ],
+          "clip_flags": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "screen_x": [
+            20,
+            10,
+            10
+          ],
+          "clip_flags": [
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    ],
+    "decisions": [
+      [
+        {
+          "vertices": [
+            0,
+            1,
+            2
+          ],
+          "left_x": 10,
+          "bucket_column": 10
+        },
+        {
+          "vertices": [
+            4,
+            5,
+            3
+          ],
+          "left_x": 10,
+          "bucket_column": 10
+        }
+      ]
+    ],
+    "buckets": [
+      {
+        "column": 10,
+        "faces": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            0
+          ]
+        ]
+      }
+    ],
+    "behind_signal": {
+      "kind": "unchanged",
+      "context": null
+    },
     "context_count": 1,
     "face_counts": [
       2
@@ -125,6 +326,92 @@
     "name": "common_clip_and_width_boundaries",
     "module": "scrut",
     "entry": 9684,
+    "contexts_before": [
+      [
+        {
+          "screen_x": [
+            1,
+            2,
+            3
+          ],
+          "clip_flags": [
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "screen_x": [
+            0,
+            500,
+            200
+          ],
+          "clip_flags": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "screen_x": [
+            0,
+            499,
+            200
+          ],
+          "clip_flags": [
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    ],
+    "decisions": [
+      [
+        {
+          "vertices": [
+            0,
+            1,
+            2
+          ],
+          "left_x": 1,
+          "bucket_column": null
+        },
+        {
+          "vertices": [
+            3,
+            4,
+            5
+          ],
+          "left_x": 0,
+          "bucket_column": null
+        },
+        {
+          "vertices": [
+            6,
+            7,
+            8
+          ],
+          "left_x": 0,
+          "bucket_column": 0
+        }
+      ]
+    ],
+    "buckets": [
+      {
+        "column": 0,
+        "faces": [
+          [
+            0,
+            2
+          ]
+        ]
+      }
+    ],
+    "behind_signal": {
+      "kind": "unchanged",
+      "context": null
+    },
     "context_count": 1,
     "face_counts": [
       3
@@ -173,6 +460,100 @@
     "name": "negative_bucket_and_lifo_links",
     "module": "scrut",
     "entry": 9684,
+    "contexts_before": [
+      [
+        {
+          "screen_x": [
+            -20,
+            0,
+            15
+          ],
+          "clip_flags": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "screen_x": [
+            -20,
+            8,
+            4
+          ],
+          "clip_flags": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "screen_x": [
+            -32768,
+            -32760,
+            -32750
+          ],
+          "clip_flags": [
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    ],
+    "decisions": [
+      [
+        {
+          "vertices": [
+            0,
+            1,
+            2
+          ],
+          "left_x": -20,
+          "bucket_column": 0
+        },
+        {
+          "vertices": [
+            3,
+            4,
+            5
+          ],
+          "left_x": -20,
+          "bucket_column": 0
+        },
+        {
+          "vertices": [
+            6,
+            7,
+            8
+          ],
+          "left_x": -32768,
+          "bucket_column": 0
+        }
+      ]
+    ],
+    "buckets": [
+      {
+        "column": 0,
+        "faces": [
+          [
+            0,
+            2
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            0
+          ]
+        ]
+      }
+    ],
+    "behind_signal": {
+      "kind": "unchanged",
+      "context": null
+    },
     "context_count": 1,
     "face_counts": [
       3
@@ -221,6 +602,75 @@
     "name": "first_context_behind_signal",
     "module": "scrut",
     "entry": 9684,
+    "contexts_before": [
+      [
+        {
+          "screen_x": [
+            0,
+            600,
+            200
+          ],
+          "clip_flags": [
+            32768,
+            0,
+            0
+          ]
+        }
+      ],
+      [
+        {
+          "screen_x": [
+            5,
+            15,
+            25
+          ],
+          "clip_flags": [
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    ],
+    "decisions": [
+      [
+        {
+          "vertices": [
+            0,
+            1,
+            2
+          ],
+          "left_x": 0,
+          "bucket_column": null
+        }
+      ],
+      [
+        {
+          "vertices": [
+            0,
+            1,
+            2
+          ],
+          "left_x": 5,
+          "bucket_column": 5
+        }
+      ]
+    ],
+    "buckets": [
+      {
+        "column": 5,
+        "faces": [
+          [
+            1,
+            0
+          ]
+        ]
+      }
+    ],
+    "behind_signal": {
+      "kind": "context",
+      "context": 0
+    },
     "context_count": 2,
     "face_counts": [
       1,
@@ -262,6 +712,84 @@
     "name": "last_context_behind_signal",
     "module": "scrut",
     "entry": 9684,
+    "contexts_before": [
+      [
+        {
+          "screen_x": [
+            5,
+            15,
+            25
+          ],
+          "clip_flags": [
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      [
+        {
+          "screen_x": [
+            0,
+            100,
+            200
+          ],
+          "clip_flags": [
+            0,
+            32768,
+            0
+          ]
+        }
+      ]
+    ],
+    "decisions": [
+      [
+        {
+          "vertices": [
+            0,
+            1,
+            2
+          ],
+          "left_x": 5,
+          "bucket_column": 5
+        }
+      ],
+      [
+        {
+          "vertices": [
+            0,
+            1,
+            2
+          ],
+          "left_x": 0,
+          "bucket_column": 0
+        }
+      ]
+    ],
+    "buckets": [
+      {
+        "column": 0,
+        "faces": [
+          [
+            1,
+            0
+          ]
+        ]
+      },
+      {
+        "column": 5,
+        "faces": [
+          [
+            0,
+            0
+          ]
+        ]
+      }
+    ],
+    "behind_signal": {
+      "kind": "context",
+      "context": 1
+    },
     "context_count": 2,
     "face_counts": [
       1,
@@ -303,6 +831,40 @@
     "name": "common_behind_clip_does_not_signal",
     "module": "scrut",
     "entry": 9684,
+    "contexts_before": [
+      [
+        {
+          "screen_x": [
+            0,
+            10,
+            20
+          ],
+          "clip_flags": [
+            32768,
+            32768,
+            32768
+          ]
+        }
+      ]
+    ],
+    "decisions": [
+      [
+        {
+          "vertices": [
+            0,
+            1,
+            2
+          ],
+          "left_x": 0,
+          "bucket_column": null
+        }
+      ]
+    ],
+    "buckets": [],
+    "behind_signal": {
+      "kind": "unchanged",
+      "context": null
+    },
     "context_count": 1,
     "face_counts": [
       1
@@ -331,6 +893,61 @@
     "name": "wrapped_unsigned_width_rejection",
     "module": "scrut",
     "entry": 9684,
+    "contexts_before": [
+      [
+        {
+          "screen_x": [
+            -32760,
+            32760,
+            -32750
+          ],
+          "clip_flags": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "screen_x": [
+            32760,
+            -32760,
+            32767
+          ],
+          "clip_flags": [
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    ],
+    "decisions": [
+      [
+        {
+          "vertices": [
+            0,
+            1,
+            2
+          ],
+          "left_x": -32760,
+          "bucket_column": null
+        },
+        {
+          "vertices": [
+            4,
+            5,
+            3
+          ],
+          "left_x": -32760,
+          "bucket_column": null
+        }
+      ]
+    ],
+    "buckets": [],
+    "behind_signal": {
+      "kind": "unchanged",
+      "context": null
+    },
     "context_count": 1,
     "face_counts": [
       2

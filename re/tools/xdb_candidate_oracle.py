@@ -5173,6 +5173,7 @@ def alien_face_bucket_vectors(
         if per_context_signal:
             put_u16(raster_expected, 0x07D4, 0)
         accepted: list[list[dict[str, object]]] = []
+        semantic_buckets: dict[int, list[list[int]]] = {}
         for context_index, faces in enumerate(case["contexts"]):
             context_offset = context_offsets[context_index]
             context_accepted = []
@@ -5214,6 +5215,13 @@ def alien_face_bucket_vectors(
                         old_head = get_u16(raster_expected, bucket_offset)
                         put_u16(raster_expected, bucket_offset, face_offset)
                         put_u16(geometry_expected, face_offset, old_head)
+                        bucket_column = (
+                            (bucket_offset - bucket_base) & 0xFFFF
+                        ) // 2
+                        semantic_buckets.setdefault(bucket_column, []).insert(
+                            0,
+                            [context_index, face_index],
+                        )
                 context_accepted.append(
                     {
                         "face_offset": face_offset,
@@ -5329,6 +5337,98 @@ def alien_face_bucket_vectors(
                 "name": case["name"],
                 "module": module,
                 "entry": entry,
+                "contexts_before": [
+                    [
+                        {
+                            "screen_x": [
+                                signed_word(value) for value in screen_x_values
+                            ],
+                            "clip_flags": [value & 0xFFFF for value in clip_values],
+                        }
+                        for screen_x_values, clip_values in faces
+                    ]
+                    for faces in case["contexts"]
+                ],
+                "decisions": [
+                    [
+                        {
+                            "vertices": [
+                                {
+                                    offset: local_index
+                                    for local_index, offset in enumerate(
+                                        vertex
+                                        for face_vertices in vertex_offsets[context_index]
+                                        for vertex in face_vertices
+                                    )
+                                }[vertex_offset]
+                                for vertex_offset in face["vertices"]
+                            ],
+                            "left_x": face["left_x"],
+                            "bucket_column": (
+                                None
+                                if face["bucket_offset"] is None
+                                else (
+                                    (
+                                        face["bucket_offset"] - bucket_base
+                                    )
+                                    & 0xFFFF
+                                )
+                                // 2
+                            ),
+                        }
+                        for face in context_faces
+                    ]
+                    for context_index, context_faces in enumerate(accepted)
+                ],
+                "buckets": [
+                    {
+                        "column": column,
+                        "faces": faces,
+                    }
+                    for column, faces in sorted(semantic_buckets.items())
+                ],
+                "behind_signal": (
+                    {
+                        "kind": "context",
+                        "context": next(
+                            (
+                                context_index
+                                for context_index in range(
+                                    len(case["contexts"]) - 1,
+                                    -1,
+                                    -1,
+                                )
+                                if any(
+                                    (clips[0] & clips[1] & clips[2]) == 0
+                                    and (clips[0] | clips[1] | clips[2]) & 0x8000
+                                    for _screen, clips in case["contexts"][context_index]
+                                )
+                            ),
+                            None,
+                        ),
+                    }
+                    if per_context_signal
+                    and any(
+                        (clips[0] & clips[1] & clips[2]) == 0
+                        and (clips[0] | clips[1] | clips[2]) & 0x8000
+                        for faces in case["contexts"]
+                        for _screen, clips in faces
+                    )
+                    else {
+                        "kind": (
+                            "general"
+                            if not per_context_signal
+                            and any(
+                                (clips[0] & clips[1] & clips[2]) == 0
+                                and (clips[0] | clips[1] | clips[2]) & 0x8000
+                                for faces in case["contexts"]
+                                for _screen, clips in faces
+                            )
+                            else "unchanged"
+                        ),
+                        "context": None,
+                    }
+                ),
                 "context_count": len(case["contexts"]),
                 "face_counts": [len(faces) for faces in case["contexts"]],
                 "faces": accepted,

@@ -57,6 +57,13 @@ positive and nonpositive depth paths, every clipping edge, common-clip
 rejection, and UV-alias projection copies. The runtime operates on model, node,
 and vertex arrays; the original data and object segment split is eliminated.
 
+Face selection and screen-column bucketing are translated for all three
+overlays. Thirty direct binary cases verify common-clip rejection, cyclic
+leftmost-vertex ordering, both tie branches, unsigned width limits, wrapped and
+negative columns, LIFO bucket order, multi-model traversal, and typed
+species-specific camera-plane signals. Raster-segment bucket offsets and
+pointer-valued context latches do not enter the Rust model.
+
 The typed format layer now decodes all three original XDB images: the shared
 primary mesh, 48 named behavior models, camera/root/node hierarchy, vertices,
 projection aliases, faces, 256-by-512 indexed texture atlas, display palette,
@@ -64,8 +71,9 @@ trigonometry table, and 500-entry raster reciprocal table. It also resolves
 method-table slots to semantic behavior kinds. File-relative relocation and
 object offsets are loader inputs only and become validated Rust indices.
 
-The next runtime layer ports the shared starfield and face-selection routines
-over these owned resources, then connects the decoded alien scenes to wgpu.
+The next runtime layer ports the shared starfield and primary-mesh projection
+routines over these owned resources, then connects the decoded alien scenes to
+wgpu.
 
 Run the current interactive path with original assets:
 

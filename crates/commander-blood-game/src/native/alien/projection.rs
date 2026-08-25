@@ -3,8 +3,8 @@
 use std::fmt;
 
 use commander_blood_formats::alien::{
-    AXIS_COUNT, AlienMeshData, AlienModelData, AlienNodeData, AlienNodeParent, AlienTransformData,
-    AlienTrigonometryPair, TRIGONOMETRY_ENTRY_COUNT,
+    AXIS_COUNT, AlienFaceData, AlienMeshData, AlienModelData, AlienNodeData, AlienNodeParent,
+    AlienTransformData, AlienTrigonometryPair, TRIGONOMETRY_ENTRY_COUNT,
 };
 
 const X_AXIS: usize = 0;
@@ -106,6 +106,8 @@ pub struct AlienModelPose {
     pub nodes: Vec<AlienNodePose>,
     /// Projection output parallel to the decoded mesh vertex array.
     pub projected_vertices: Vec<AlienProjectedVertex>,
+    /// Mutable cyclic vertex ordering for the model's authored faces.
+    pub faces: Vec<AlienFaceData>,
     /// Rotation matrix generated for the final node in the last projection pass.
     pub last_rotation_matrix: Matrix,
     /// Common clip mask generated for the final node in the last projection pass.
@@ -119,6 +121,7 @@ impl AlienModelPose {
             root: model.root,
             nodes: model.nodes.iter().map(AlienNodePose::from).collect(),
             projected_vertices: vec![AlienProjectedVertex::default(); model.mesh.vertices.len()],
+            faces: model.mesh.faces.clone(),
             last_rotation_matrix: [[ZERO_COMPONENT; AXIS_COUNT]; AXIS_COUNT],
             last_common_clip: COMMON_CLIP_INITIAL,
         }
@@ -466,7 +469,7 @@ mod tests {
     use std::path::{Path, PathBuf};
 
     use commander_blood_formats::alien::{
-        AlienFaceData, AlienProjectionCopyData, AlienVertexData, AlienXdbKind, decode_alien_xdb,
+        AlienProjectionCopyData, AlienVertexData, AlienXdbKind, decode_alien_xdb,
     };
     use serde::Deserialize;
 
@@ -596,6 +599,7 @@ mod tests {
             },
             nodes,
             projected_vertices: vec![AlienProjectedVertex::default(); mesh.vertices.len()],
+            faces: mesh.faces.clone(),
             last_rotation_matrix: [[ZERO_COMPONENT; AXIS_COUNT]; AXIS_COUNT],
             last_common_clip: COMMON_CLIP_INITIAL,
         };
