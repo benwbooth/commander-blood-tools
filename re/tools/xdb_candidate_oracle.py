@@ -9558,6 +9558,39 @@ def manu3_matrix_build_vectors() -> list[dict[str, object]]:
                 "final_rotation_matrix": [
                     signed_dword(value) for row in final_rotation for value in row
                 ],
+                "states_after": [
+                    {
+                        "matrix": [
+                            signed_dword(
+                                read_dword(
+                                    active_expected,
+                                    state_offset + 0x12 + (row * 3 + column) * 4,
+                                )
+                            )
+                            for row in range(3)
+                            for column in range(3)
+                        ],
+                        "translation": [
+                            signed_dword(
+                                read_dword(
+                                    active_expected,
+                                    state_offset + 0x36 + axis * 4,
+                                )
+                            )
+                            for axis in range(3)
+                        ],
+                        "local_position": [
+                            signed_dword(
+                                read_dword(
+                                    active_expected,
+                                    state_offset + 0x42 + axis * 4,
+                                )
+                            )
+                            for axis in range(3)
+                        ],
+                    }
+                    for state_offset in state_offsets
+                ],
                 "defined_flags": expected_flags,
             }
         )
