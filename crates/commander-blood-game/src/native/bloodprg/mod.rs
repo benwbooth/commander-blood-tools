@@ -1,6 +1,7 @@
 //! Native BLOODPRG game logic translated to flat, typed Rust data.
 
 mod numbers;
+mod script;
 mod startup;
 mod text;
 mod vm;
@@ -9,6 +10,7 @@ pub use numbers::{
     append_decimal_i16, append_decimal_i32, packed_bcd_to_binary, parse_startup_audio_number,
     STARTUP_AUDIO_NUMBER_LENGTH,
 };
+pub use script::{ScriptControl, ScriptRuntime, ScriptRuntimeError};
 pub use startup::{
     apply_startup_option, tokenize_startup_command, StartupAudioConfiguration, StartupAudioDriver,
     StartupConfiguration,

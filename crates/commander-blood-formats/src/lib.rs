@@ -4,6 +4,7 @@
 
 pub mod alien;
 pub mod code;
+pub mod instruction;
 pub mod lbm;
 pub mod manu3;
 pub mod palette;
