@@ -67,6 +67,11 @@ impl ScriptTimerSlot {
 pub struct ScriptLineRecordOffset(u16);
 
 impl ScriptLineRecordOffset {
+    /// Decode an authored line-record byte offset.
+    pub const fn decode(encoded: u16) -> Self {
+        Self(encoded)
+    }
+
     /// Return the encoded byte offset.
     pub const fn byte_offset(self) -> usize {
         self.0 as usize
@@ -78,9 +83,19 @@ impl ScriptLineRecordOffset {
 pub struct ScriptTextControl(u16);
 
 impl ScriptTextControl {
+    /// Decode an authored A6 control word.
+    pub const fn decode(encoded: u16) -> Self {
+        Self(encoded)
+    }
+
     /// Return the exact encoded flag word.
     pub const fn bits(self) -> u16 {
         self.0
+    }
+
+    /// Return the high detail byte used by field and history conditions.
+    pub const fn detail(self) -> u8 {
+        (self.0 >> u8::BITS) as u8
     }
 
     /// Return whether accepting the line leaves its active bit set.
@@ -300,9 +315,9 @@ pub fn decode_script_text(
         });
     }
 
-    let line_record = ScriptLineRecordOffset(read_word(bytes, OPCODE_SIZE));
+    let line_record = ScriptLineRecordOffset::decode(read_word(bytes, OPCODE_SIZE));
     let presentation_selector = bytes[OPCODE_SIZE + WORD_SIZE] as i8;
-    let control = ScriptTextControl(read_word(bytes, OPCODE_SIZE + WORD_SIZE + BYTE_SIZE));
+    let control = ScriptTextControl::decode(read_word(bytes, OPCODE_SIZE + WORD_SIZE + BYTE_SIZE));
     let mut cursor = TEXT_FIXED_HEADER_SIZE;
     let resume_target = if control.arms_resume() {
         let target = read_text_word(token, cursor)?;
