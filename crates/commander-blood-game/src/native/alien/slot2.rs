@@ -31,6 +31,11 @@ const AMER_STEERING_DISTANCE: i32 = 1_000;
 const AMER_STEERING_TURN_STEP: u16 = 32;
 const AMER_FINISH_COUNTDOWN: i16 = 64;
 const AMER_RESET_RADIAL_OFFSET: i16 = 60;
+const AMER_CAMERA_HEIGHT_MINIMUM: i16 = -768;
+const AMER_CAMERA_HEIGHT_MAXIMUM: i16 = 768;
+const AMER_CAMERA_HEIGHT_EASING_SHIFT: u32 = 1;
+const AMER_FINISH_RADIAL_STEP: i16 = 10;
+const AMER_FINISH_SAMPLE_PHASE: u16 = 500;
 
 /// Callback stage selected for one slot-2 animation model.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -43,6 +48,8 @@ pub enum AlienSlot2Callback {
     AmerSteer,
     /// Complete AMER's camera-relative steering phase.
     AmerFinish,
+    /// Wait for AMER's active selection-tracking callback.
+    AmerSelectionWait,
     /// Track the active camera-relative selection target for AMER.
     AmerSelection,
 }
@@ -144,6 +151,17 @@ pub enum AlienAmerSteeringUpdate {
     Steering,
     /// The phase timer expired and the finish callback was selected.
     FinishStarted,
+}
+
+/// Continuation selected by one AMER finish-callback pass.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienAmerFinishUpdate {
+    /// Continue immediately through the separately recovered reset routine.
+    ResetRequested,
+    /// Wait for the next frame before beginning selection tracking.
+    SelectionWaitStarted,
+    /// Continue camera-relative steering in the current finish phase.
+    Steering,
 }
 
 /// Invalid flat state supplied to the slot-2 coordinator.
@@ -348,6 +366,54 @@ pub fn begin_amer_selection(
     )
 }
 
+/// Advance AMER's finish phase up to its typed reset or selection transition.
+pub fn update_amer_finish(
+    pose: &mut AlienModelPose,
+    animation: &mut AlienSlot2AnimationState,
+    camera_depth_step: u16,
+) -> Result<AlienAmerFinishUpdate, AlienSlot2Error> {
+    validate_state(AlienSpecies::Amer, pose, animation)?;
+    let primary = &mut pose.nodes[PRIMARY_NODE];
+    let node_state = &mut animation.nodes[PRIMARY_NODE];
+    node_state.motion_parameter = node_state.motion_parameter.wrapping_sub(1);
+    if node_state.motion_parameter < RESET_SIGNED_VALUE {
+        return Ok(AlienAmerFinishUpdate::ResetRequested);
+    }
+
+    let camera_y = transformed_component(primary, Y_AXIS);
+    primary.angles[X_AXIS] = camera_y
+        .wrapping_add(primary.angles[X_AXIS] as i16)
+        .wrapping_shr(AMER_CAMERA_HEIGHT_EASING_SHIFT)
+        .clamp(AMER_CAMERA_HEIGHT_MINIMUM, AMER_CAMERA_HEIGHT_MAXIMUM)
+        as u16;
+    let camera_x = transformed_component(primary, X_AXIS);
+    let camera_z = transformed_component(primary, Z_AXIS);
+    let horizontal = i32::from(camera_z)
+        .wrapping_sub(i32::from(camera_depth_step))
+        .wrapping_sub(AMER_STEERING_DISTANCE);
+    let vertical = i32::from(camera_x);
+    if (i32::default()..=AMER_STEERING_DISTANCE).contains(&horizontal)
+        && (-AMER_STEERING_DISTANCE..=AMER_STEERING_DISTANCE).contains(&vertical)
+    {
+        animation.callback = Some(AlienSlot2Callback::AmerSelectionWait);
+        primary.radial_offset >>= 1;
+        return Ok(AlienAmerFinishUpdate::SelectionWaitStarted);
+    }
+
+    primary.radial_offset = primary.radial_offset.wrapping_add(AMER_FINISH_RADIAL_STEP);
+    node_state.sample_phase = AMER_FINISH_SAMPLE_PHASE;
+    let score = horizontal
+        .wrapping_neg()
+        .wrapping_mul(primary.transform.matrix[X_AXIS][Z_AXIS])
+        .wrapping_add(vertical.wrapping_mul(primary.transform.matrix[Z_AXIS][Z_AXIS]));
+    primary.angles[Y_AXIS] = if score < i32::default() {
+        primary.angles[Y_AXIS].wrapping_add(AMER_STEERING_TURN_STEP)
+    } else {
+        primary.angles[Y_AXIS].wrapping_sub(AMER_STEERING_TURN_STEP)
+    };
+    Ok(AlienAmerFinishUpdate::Steering)
+}
+
 fn validate_state(
     species: AlienSpecies,
     pose: &AlienModelPose,
@@ -511,6 +577,26 @@ mod tests {
     struct AmerSetupVector {
         name: String,
         next_stage: String,
+        sample_phase_before: u16,
+        sample_phase_after: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct AmerFinishVector {
+        name: String,
+        path: String,
+        countdown_before: u16,
+        countdown_after: u16,
+        camera_before: [u16; AXIS_COUNT],
+        camera_depth_step: u16,
+        forward_x_before: u32,
+        forward_z_before: u32,
+        pitch_before: u16,
+        pitch_after: u16,
+        pan_before: u16,
+        pan_after: u16,
+        radial_before: u16,
+        radial_after: u16,
         sample_phase_before: u16,
         sample_phase_after: u16,
     }
@@ -906,6 +992,64 @@ mod tests {
                     vector.sample_phase_after
                 );
             }
+        }
+    }
+
+    #[test]
+    fn amer_finish_matches_every_original_overlay_vector() {
+        let vectors: Vec<AmerFinishVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/xdb_amer_func_1aa0_natural.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            let mut pose = pose(&[EMPTY_NODE_VECTOR]);
+            let primary = &mut pose.nodes[PRIMARY_NODE];
+            primary.angles = [vector.pitch_before, vector.pan_before, UNCHANGED_PITCH];
+            primary.radial_offset = vector.radial_before as i16;
+            for axis in usize::default()..AXIS_COUNT {
+                primary.transform.translation[axis] =
+                    join_words(vector.camera_before[axis], TRANSFORM_LOW_WORD_SENTINEL);
+            }
+            primary.transform.matrix[X_AXIS][Z_AXIS] = vector.forward_x_before as i32;
+            primary.transform.matrix[Z_AXIS][Z_AXIS] = vector.forward_z_before as i32;
+            let mut animation = AlienSlot2AnimationState::new(SINGLE_VERTEX_COUNT);
+            animation.callback = Some(AlienSlot2Callback::AmerFinish);
+            animation.nodes[PRIMARY_NODE].motion_parameter = vector.countdown_before as i16;
+            animation.nodes[PRIMARY_NODE].sample_phase = vector.sample_phase_before;
+
+            let expected_stage = match vector.path.as_str() {
+                "reset" => AlienAmerFinishUpdate::ResetRequested,
+                "selection" => AlienAmerFinishUpdate::SelectionWaitStarted,
+                "steering" => AlienAmerFinishUpdate::Steering,
+                path => panic!("unknown AMER finish path {path}"),
+            };
+            assert_eq!(
+                update_amer_finish(&mut pose, &mut animation, vector.camera_depth_step,).unwrap(),
+                expected_stage,
+                "{}",
+                vector.name
+            );
+
+            let primary = &pose.nodes[PRIMARY_NODE];
+            assert_eq!(
+                animation.nodes[PRIMARY_NODE].motion_parameter as u16,
+                vector.countdown_after
+            );
+            assert_eq!(primary.angles[X_AXIS], vector.pitch_after);
+            assert_eq!(primary.angles[Y_AXIS], vector.pan_after);
+            assert_eq!(primary.radial_offset as u16, vector.radial_after);
+            assert_eq!(
+                animation.nodes[PRIMARY_NODE].sample_phase,
+                vector.sample_phase_after
+            );
+            assert_eq!(
+                animation.callback,
+                Some(if vector.path == "selection" {
+                    AlienSlot2Callback::AmerSelectionWait
+                } else {
+                    AlienSlot2Callback::AmerFinish
+                })
+            );
         }
     }
 
