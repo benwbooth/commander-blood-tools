@@ -28,23 +28,26 @@ DEFAULT_SOURCE_XDB_ROOT = ROOT / "output" / "recovered_dos_package" / "validatio
 DEFAULT_REVIEWS = ROOT / "re" / "source" / "xdb" / "tail_transfer_reviews.tsv"
 MODULES = ("amer", "croolis", "scrut")
 
-SLOT2_PREFIX = bytes.fromhex("8b751683c65ef74536ffff7403ff640e")
-SLOT13_PREFIX = bytes.fromhex("8b5d360bdb7402ffe3")
+SLOT2_C_CALL_RETURN = bytes.fromhex(
+    "8b5d1683c35e837d3600740689deff570ec3"
+)
+SLOT13_C_PREFIX = bytes.fromhex("57068b453685c0750ec74536")
+SLOT13_C_SUFFIX = bytes.fromhex("89453889453a075fc3ffd0075fc3")
 
 # These dynamically targeted jumps cannot be resolved to one routine statically. Keep
 # their existing exact machine-code proof alongside the derived direct-transfer audit.
 DYNAMIC_DISPATCH_SYMBOLS = {
     "amer": (
-        ("xdb_amer_method_slot_2_dispatch_or_init_", SLOT2_PREFIX),
-        ("xdb_amer_method_slot_13_resume_or_init_", SLOT13_PREFIX),
+        ("xdb_amer_method_slot_2_dispatch_or_init_", "state"),
+        ("xdb_amer_method_slot_13_resume_or_init_", "resume"),
     ),
     "croolis": (
-        ("xdb_croolis_method_slot_2_4_dispatch_or_init_", SLOT2_PREFIX),
-        ("xdb_croolis_method_slot_13_resume_or_init_", SLOT13_PREFIX),
+        ("xdb_croolis_method_slot_2_4_dispatch_or_init_", "state"),
+        ("xdb_croolis_method_slot_13_resume_or_init_", "resume"),
     ),
     "scrut": (
-        ("xdb_scrut_method_slot_2_4_dispatch_or_init_", SLOT2_PREFIX),
-        ("xdb_scrut_method_slot_13_resume_or_init_", SLOT13_PREFIX),
+        ("xdb_scrut_method_slot_2_4_dispatch_or_init_", "state"),
+        ("xdb_scrut_method_slot_13_resume_or_init_", "resume"),
     ),
 }
 
@@ -633,7 +636,7 @@ def audit_dynamic_dispatches(
 ) -> tuple[list[Result], list[str]]:
     errors: list[str] = []
     results: list[Result] = []
-    for symbol, expected in DYNAMIC_DISPATCH_SYMBOLS[module]:
+    for symbol, dispatch_kind in DYNAMIC_DISPATCH_SYMBOLS[module]:
         location = unique_symbol_location(module, symbol, symbols, errors)
         if location is None:
             results.append(
@@ -651,8 +654,17 @@ def audit_dynamic_dispatches(
             )
             continue
         offset = location[1]
-        actual = image[offset : offset + len(expected)]
-        status = "exact_tail_prefix" if actual == expected else "prefix_mismatch"
+        if dispatch_kind == "state":
+            actual = image[offset : offset + len(SLOT2_C_CALL_RETURN)]
+            equivalent = actual == SLOT2_C_CALL_RETURN
+        else:
+            size = len(SLOT13_C_PREFIX) + 2 + len(SLOT13_C_SUFFIX)
+            actual = image[offset : offset + size]
+            equivalent = (
+                actual.startswith(SLOT13_C_PREFIX)
+                and actual[len(SLOT13_C_PREFIX) + 2 :] == SLOT13_C_SUFFIX
+            )
+        status = "c_call_return_equivalent" if equivalent else "dispatch_mismatch"
         results.append(
             Result(
                 "dynamic",
@@ -666,10 +678,11 @@ def audit_dynamic_dispatches(
                 status,
             )
         )
-        if actual != expected:
+        if not equivalent:
             errors.append(
-                f"{module}: {symbol} at 0x{offset:04x} changes the dynamic tail "
-                f"contract; expected {expected.hex()}, got {actual.hex()}"
+                f"{module}: {symbol} at 0x{offset:04x} does not preserve the "
+                f"C callback call/return equivalent of the dynamic tail contract; "
+                f"got {actual.hex()}"
             )
     return results, errors
 

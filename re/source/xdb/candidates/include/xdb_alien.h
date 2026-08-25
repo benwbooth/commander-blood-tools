@@ -1025,24 +1025,6 @@ void XDB_NEAR xdb_amer_slot2_finish_update(
 #if defined(__WATCOMC__)
 #pragma aux xdb_alien_method_function \
         parm [di] modify exact [ax bx cx dx si di bp es]
-extern xdb_alien_biased_state XDB_NEAR *XDB_NEAR
-xdb_alien_state_tail_or_get(void);
-#pragma aux xdb_alien_state_tail_or_get = \
-        "mov si,word ptr 16h[di]" \
-        "add si,5eh" \
-        "test word ptr 36h[di],0ffffh" \
-        "je short done" \
-        "jmp word ptr 0eh[si]" \
-        "done:" \
-        value [si] modify exact [si]
-extern void XDB_NEAR xdb_alien_resume_tail_or_continue(void);
-#pragma aux xdb_alien_resume_tail_or_continue = \
-        "mov bx,word ptr 36h[di]" \
-        "or bx,bx" \
-        "je short done" \
-        "jmp bx" \
-        "done:" \
-        modify exact [bx]
 extern void XDB_NEAR xdb_alien_frame_callback_invoke(
         xdb_u16 event,
         xdb_u32 clock);

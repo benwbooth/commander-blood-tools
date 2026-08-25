@@ -205,19 +205,21 @@ class TailTransferAuditTests(unittest.TestCase):
             self.assertEqual("unresolved_emitted_symbol", results[0].status)
             self.assertTrue(any("has 0 map locations" in error for error in errors))
 
-    def test_dynamic_dispatch_prefix_mutation_still_fails(self) -> None:
+    def test_dynamic_dispatch_c_call_return_mutation_still_fails(self) -> None:
         symbols = {"xdb_amer_method_slot_2_dispatch_or_init_": [(0, 0x10)]}
         image = bytearray(0x40)
-        image[0x10 : 0x10 + len(AUDIT.SLOT2_PREFIX)] = AUDIT.SLOT2_PREFIX
+        image[0x10 : 0x10 + len(AUDIT.SLOT2_C_CALL_RETURN)] = (
+            AUDIT.SLOT2_C_CALL_RETURN
+        )
         results, errors = AUDIT.audit_dynamic_dispatches("amer", bytes(image), symbols)
-        self.assertEqual("exact_tail_prefix", results[0].status)
+        self.assertEqual("c_call_return_equivalent", results[0].status)
         self.assertEqual("unresolved_emitted_symbol", results[1].status)
         self.assertTrue(any("method_slot_13" in error for error in errors))
 
         image[0x10] = 0x55
         results, errors = AUDIT.audit_dynamic_dispatches("amer", bytes(image), symbols)
-        self.assertEqual("prefix_mismatch", results[0].status)
-        self.assertTrue(any("changes the dynamic tail contract" in error for error in errors))
+        self.assertEqual("dispatch_mismatch", results[0].status)
+        self.assertTrue(any("dynamic tail contract" in error for error in errors))
 
 
 if __name__ == "__main__":

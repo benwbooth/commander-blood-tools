@@ -136,6 +136,13 @@ nix develop --command python3 re/tools/build_recovered_package.py \
     --output-dir output/recovered_dos_package
 ```
 
+Before compiling any recovered source, the package gate runs
+`audit_inline_assembly.py`. ABI-only `#pragma aux` declarations are ordinary
+compiler contracts and do not count as assembly. Code-emitting pragmas are
+limited to an exact reviewed set of DOS overlay, XMS, CPU-flags, segment, and
+host-callback adapters. Any instruction body in recovered game logic, or any
+unreviewed change to a platform adapter, fails the package build.
+
 To include the recovered C runtime and its data-owner synthesis:
 
 ```sh

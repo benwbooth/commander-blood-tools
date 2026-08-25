@@ -16,10 +16,6 @@ void XDB_NEAR xdb_croolis_method_slot_2_4_dispatch_or_init(
 {
     xdb_alien_biased_state XDB_NEAR *state;
 
-#if defined(__WATCOMC__)
-    state = xdb_alien_state_tail_or_get();
-    xdb_croolis_slot2_initialize(context, state);
-#else
     state =
             (xdb_alien_biased_state XDB_NEAR *)
             ((xdb_u8 XDB_NEAR *)context->state + XDB_ALIEN_CURSOR_BIAS);
@@ -28,7 +24,6 @@ void XDB_NEAR xdb_croolis_method_slot_2_4_dispatch_or_init(
         return;
     }
     xdb_croolis_slot2_initialize(context, state);
-#endif
 }
 
 void XDB_NEAR xdb_croolis_slot2_initialize(

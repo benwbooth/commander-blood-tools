@@ -1541,6 +1541,24 @@ def main() -> int:
         args.dosbox = resolve_executable(args.dosbox)
     output = args.output_dir.resolve()
     output.mkdir(parents=True, exist_ok=True)
+    source_audit_dir = output / "validation" / "source_policy"
+    run_checked(
+        [
+            sys.executable,
+            "-P",
+            str(ROOT / "re/tools/audit_inline_assembly.py"),
+            "--check",
+            "--output",
+            str(source_audit_dir / "inline_assembly.tsv"),
+        ]
+    )
+    run_checked(
+        [
+            sys.executable,
+            "-P",
+            str(ROOT / "re/tools/test_audit_inline_assembly.py"),
+        ]
+    )
     runtime_alias = output / "cd" / "BPRG_RE.EXE"
     if runtime_alias.exists():
         runtime_alias.unlink()
