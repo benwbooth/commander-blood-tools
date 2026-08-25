@@ -67,7 +67,8 @@ pub use slot2::{
     AlienSlot2NodeState, AlienSlot2SceneState, AlienSlot2Update, AlienUnreferencedSteeringState,
     begin_amer_selection, initialize_or_dispatch_slot2, reset_amer_motion, restart_amer_update,
     update_amer_common, update_amer_finish, update_amer_head, update_amer_late_selection,
-    update_amer_return, update_amer_selection, update_amer_steering, update_unreferenced_steering,
+    update_amer_return, update_amer_selection, update_amer_steering, update_croolis_motion,
+    update_unreferenced_steering,
 };
 pub use starfield::{
     AlienStar, AlienStarRejections, AlienStarfieldError, AlienStarfieldFrame, STAR_COUNT,

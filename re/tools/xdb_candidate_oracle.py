@@ -4457,6 +4457,192 @@ def amer_slot2_selection_vectors(entry: int, late: bool) -> list[dict[str, objec
     return vectors
 
 
+def croolis_slot2_motion_vectors(entry: int) -> list[dict[str, object]]:
+    module = "croolis"
+    image = load_image(module)
+    body_size = 80
+    body_hash = "3f9771607db8b021979ce6d5a245793abd7ae12b76304810cebf22bf86dad7bf"
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered body changed")
+
+    data_segment = 0x5000
+    extra_segment = 0x7000
+    fs_segment = 0x9000
+    game_segment = 0xA000
+    stack_segment = 0xB000
+    context = 0x3000
+    return_address = 0xF000
+    stack_sentinel = bytes.fromhex("877869965aa5")
+    cases = (
+        ("ordinary_no_carry", 0x4000, 100, 20, 40, 40, 80, 10, 7, 1000),
+        ("positive_heading_carry", 0x4400, 100, 20, 0, 40, 80, 0, 8, 1000),
+        ("negative_rounds_to_zero", 0x4800, 100, 20, 0, 40, 80, 0, -1, 1000),
+        ("negative_without_carry", 0x4C00, 100, 20, 0, 40, 80, 0, -9, 1000),
+        ("pitch_high_clamp", 0x5000, 7000, 1000, 0, 0, 0, 0, 0, 0),
+        ("pitch_low_clamp", 0x5400, -7000, -1000, 0, 0, 0, 0, 0, 0),
+        ("radial_wrapping_delta", 0x5800, 0, 0, 0, 0x7FF0, 0x800F, 0, 0, 0),
+        ("roll_sign_wrap", 0x5C00, 0, 0, 0, 0, 0, 0x7FFF, 1, 0x7FFF),
+        ("wrapped_state_offsets", 0xFEF0, -50, 25, -16, 500, 20, -30, 16, 0xFFF8),
+    )
+    vectors: list[dict[str, object]] = []
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        encoded = struct.pack("<H", value & 0xFFFF)
+        for index, byte in enumerate(encoded):
+            memory[(offset + index) & 0xFFFF] = byte
+
+    def get_u16(memory: bytes | bytearray, offset: int) -> int:
+        return memory[offset & 0xFFFF] | (memory[(offset + 1) & 0xFFFF] << 8)
+
+    def signed_word(value: int) -> int:
+        value &= 0xFFFF
+        return value if value < 0x8000 else value - 0x10000
+
+    for case_index, case in enumerate(cases):
+        (
+            name,
+            state,
+            camera_y,
+            seed,
+            pitch,
+            radial_target,
+            radial,
+            roll,
+            roll_velocity,
+            pan,
+        ) = case
+        data_before = bytearray(
+            (offset * 31 + case_index * 19 + 7) & 0xFF
+            for offset in range(0x10000)
+        )
+        put_u16(data_before, context + 0x3A, roll_velocity)
+        put_u16(data_before, context + 0x3C, seed)
+        put_u16(data_before, state + 0x3C, camera_y)
+        put_u16(data_before, state + 0x4E, pitch)
+        put_u16(data_before, state + 0x50, pan)
+        put_u16(data_before, state + 0x52, roll)
+        put_u16(data_before, state + 0x54, radial)
+        put_u16(data_before, state + 0x58, radial_target)
+        for offset in (0x00AE, 0x010A, 0x0168):
+            put_u16(data_before, state + offset, 0xA55A)
+        data_expected = bytearray(data_before)
+
+        pitch_delta = signed_word((camera_y + seed - pitch) & 0xFFFF)
+        pitch_after = max(-768, min(768, pitch + (pitch_delta >> 3)))
+        radial_delta = signed_word((radial_target - radial) & 0xFFFF)
+        radial_after = (radial + (radial_delta >> 3)) & 0xFFFF
+        roll_after = (roll + roll_velocity) & 0xFFFF
+        half_roll = signed_word(roll_after) >> 1
+        negative_half = (-half_roll) & 0xFFFF
+        heading_delta = signed_word(roll_after) >> 4
+        heading_carry = (roll_after >> 3) & 1
+        pan_after = (pan + heading_delta + heading_carry) & 0xFFFF
+        put_u16(data_expected, state + 0x4E, pitch_after)
+        put_u16(data_expected, state + 0x50, pan_after)
+        put_u16(data_expected, state + 0x52, roll_after)
+        put_u16(data_expected, state + 0x54, radial_after)
+        put_u16(data_expected, state + 0x00AE, negative_half)
+        put_u16(data_expected, state + 0x010A, half_roll)
+        put_u16(data_expected, state + 0x0168, negative_half)
+
+        initial = {
+            "eax": 0xA1A12345,
+            "ebx": 0xB2B23456,
+            "ecx": 0xC3C34567,
+            "edx": 0xD4D45678,
+            "esi": 0xE5E50000 | state,
+            "edi": 0xF6F60000 | context,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0293 | (0x0400 if case_index & 1 else 0),
+        }
+        code_before = bytearray(image)
+        code_before[return_address] = 0xCC
+        extra_before = bytes(
+            (offset * 13 + case_index + 3) & 0xFF for offset in range(0x10000)
+        )
+        fs_before = bytes(
+            (offset * 17 + case_index + 5) & 0xFF for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 23 + case_index + 9) & 0xFF for offset in range(0x10000)
+        )
+        machine = execute(
+            bytes(code_before),
+            entry,
+            return_address,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (extra_segment, 0, extra_before),
+                (fs_segment, 0, fs_before),
+                (game_segment, 0, game_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+        )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(data_expected):
+            differences = [
+                (offset, actual_data[offset], data_expected[offset])
+                for offset in range(0x10000)
+                if actual_data[offset] != data_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: data differs at {differences}"
+            )
+        if bytes(machine.mem_read(0, len(image))) != bytes(code_before):
+            raise AssertionError(f"{module}:{entry:#x} {name}: code changed")
+        for segment, expected in (
+            (extra_segment, extra_before),
+            (fs_segment, fs_before),
+            (game_segment, game_before),
+        ):
+            if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: segment {segment:#x} changed"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "camera_y_before": camera_y & 0xFFFF,
+                "seed_low_word": seed & 0xFFFF,
+                "pitch_before": get_u16(data_before, state + 0x4E),
+                "pitch_after": get_u16(data_expected, state + 0x4E),
+                "radial_target": radial_target & 0xFFFF,
+                "radial_before": radial & 0xFFFF,
+                "radial_after": get_u16(data_expected, state + 0x54),
+                "roll_velocity": roll_velocity & 0xFFFF,
+                "roll_before": roll & 0xFFFF,
+                "roll_after": get_u16(data_expected, state + 0x52),
+                "pan_before": pan & 0xFFFF,
+                "pan_after": get_u16(data_expected, state + 0x50),
+                "heading_carry": heading_carry,
+                "follower_pan_after": get_u16(data_expected, state + 0x00AE),
+                "follower_pitch_after": [
+                    get_u16(data_expected, state + 0x010A),
+                    get_u16(data_expected, state + 0x0168),
+                ],
+                "data_sha256": hashlib.sha256(data_expected).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def alien_unreferenced_steering_vectors(
     module: str, entry: int
 ) -> list[dict[str, object]]:
@@ -19283,6 +19469,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "xdb_amer_func_19cb_head_natural.json",
         amer_slot2_selection_vectors(0x19CB, True),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "xdb_croolis_func_1794_natural.json",
+        croolis_slot2_motion_vectors(0x1794),
         args.check,
     )
     for module, entry in (

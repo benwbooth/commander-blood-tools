@@ -86,6 +86,17 @@ const AMER_LATE_SELECTION_CAMERA_X_MINIMUM: i16 = -500;
 const AMER_LATE_SELECTION_CAMERA_X_MAXIMUM: i16 = 500;
 const AMER_LATE_SELECTION_DEPTH_ORIGIN: i16 = 200;
 const AMER_LATE_SELECTION_ROLL_VELOCITY: i16 = 48;
+const CROOLIS_MOTION_NODE_COUNT: usize = 4;
+const CROOLIS_FOLLOWER_PAN_NODE: usize = 1;
+const CROOLIS_FOLLOWER_PITCH_NODE: usize = 2;
+const CROOLIS_FOLLOWER_COUNTER_PITCH_NODE: usize = 3;
+const CROOLIS_EASING_SHIFT: u32 = 3;
+const CROOLIS_PITCH_MINIMUM: i16 = -768;
+const CROOLIS_PITCH_MAXIMUM: i16 = 768;
+const CROOLIS_FOLLOWER_SHIFT: u32 = 1;
+const CROOLIS_HEADING_SHIFT: u32 = 4;
+const CROOLIS_HEADING_CARRY_SHIFT: u32 = 3;
+const CROOLIS_HEADING_CARRY_MASK: u16 = 1;
 
 /// Callback stage selected for one slot-2 animation model.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -291,6 +302,11 @@ pub enum AlienSlot2Error {
     },
     /// AMER's common animation tail requires its four follower nodes.
     MissingAmerAnimationNodes {
+        /// Nodes supplied by the caller.
+        node_count: usize,
+    },
+    /// CROOLIS motion updates the primary node and three follower nodes.
+    MissingCroolisMotionNodes {
         /// Nodes supplied by the caller.
         node_count: usize,
     },
@@ -722,6 +738,51 @@ pub fn update_amer_common(
     Ok(AlienAmerCommonUpdate::MotionUpdated)
 }
 
+/// Advance CROOLIS's eased primary pose and three coupled follower angles.
+pub fn update_croolis_motion(
+    pose: &mut AlienModelPose,
+    animation: &AlienSlot2AnimationState,
+) -> Result<(), AlienSlot2Error> {
+    validate_state(AlienSpecies::Croolis, pose, animation)?;
+    if pose.nodes.len() < CROOLIS_MOTION_NODE_COUNT {
+        return Err(AlienSlot2Error::MissingCroolisMotionNodes {
+            node_count: pose.nodes.len(),
+        });
+    }
+
+    let radial_target = animation.nodes[PRIMARY_NODE].radial_target;
+    let primary = &mut pose.nodes[PRIMARY_NODE];
+    let pitch = primary.angles[X_AXIS] as i16;
+    let desired_pitch = transformed_component(primary, Y_AXIS)
+        .wrapping_add(animation.species_seed_at_initialization as i16);
+    let pitch_delta = desired_pitch.wrapping_sub(pitch);
+    primary.angles[X_AXIS] = pitch
+        .wrapping_add(pitch_delta >> CROOLIS_EASING_SHIFT)
+        .clamp(CROOLIS_PITCH_MINIMUM, CROOLIS_PITCH_MAXIMUM) as u16;
+
+    let radial_delta = radial_target
+        .wrapping_sub(primary.radial_offset as u16)
+        .cast_signed();
+    primary.radial_offset = primary
+        .radial_offset
+        .wrapping_add(radial_delta >> CROOLIS_EASING_SHIFT);
+
+    let roll = primary.angles[Z_AXIS].wrapping_add(animation.croolis_motion_accumulator as u16);
+    primary.angles[Z_AXIS] = roll;
+    let half_roll = roll.cast_signed() >> CROOLIS_FOLLOWER_SHIFT;
+    let counter_angle = half_roll.wrapping_neg() as u16;
+    pose.nodes[CROOLIS_FOLLOWER_PAN_NODE].angles[Y_AXIS] = counter_angle;
+    pose.nodes[CROOLIS_FOLLOWER_PITCH_NODE].angles[X_AXIS] = half_roll as u16;
+    pose.nodes[CROOLIS_FOLLOWER_COUNTER_PITCH_NODE].angles[X_AXIS] = counter_angle;
+
+    let heading_delta = roll.cast_signed() >> CROOLIS_HEADING_SHIFT;
+    let heading_carry = (roll >> CROOLIS_HEADING_CARRY_SHIFT) & CROOLIS_HEADING_CARRY_MASK;
+    pose.nodes[PRIMARY_NODE].angles[Y_AXIS] = pose.nodes[PRIMARY_NODE].angles[Y_AXIS]
+        .wrapping_add(heading_delta as u16)
+        .wrapping_add(heading_carry);
+    Ok(())
+}
+
 /// Preserve the observable behavior of the unreachable steering sibling.
 ///
 /// No original alien method table or callback points at this routine. Keeping
@@ -1029,6 +1090,27 @@ mod tests {
         active_after: u16,
         callback_countdown_before: u16,
         callback_countdown_after: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct CroolisMotionVector {
+        name: String,
+        module: String,
+        camera_y_before: u16,
+        seed_low_word: u16,
+        pitch_before: u16,
+        pitch_after: u16,
+        radial_target: u16,
+        radial_before: u16,
+        radial_after: u16,
+        roll_velocity: u16,
+        roll_before: u16,
+        roll_after: u16,
+        pan_before: u16,
+        pan_after: u16,
+        heading_carry: u16,
+        follower_pan_after: u16,
+        follower_pitch_after: [u16; 2],
     }
 
     #[derive(Deserialize)]
@@ -1640,6 +1722,66 @@ mod tests {
     }
 
     #[test]
+    fn croolis_motion_matches_every_original_overlay_vector() {
+        let vectors: Vec<CroolisMotionVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/xdb_croolis_func_1794_natural.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            assert_eq!(vector.module, "croolis");
+            let mut pose = pose(&[EMPTY_NODE_VECTOR; CROOLIS_MOTION_NODE_COUNT]);
+            let primary = &mut pose.nodes[PRIMARY_NODE];
+            primary.transform.translation[Y_AXIS] =
+                join_words(vector.camera_y_before, TRANSFORM_LOW_WORD_SENTINEL);
+            primary.angles = [vector.pitch_before, vector.pan_before, vector.roll_before];
+            primary.radial_offset = vector.radial_before as i16;
+            let mut animation = AlienSlot2AnimationState::new(CROOLIS_MOTION_NODE_COUNT);
+            animation.species_seed_at_initialization = i32::from(vector.seed_low_word as i16);
+            animation.croolis_motion_accumulator = vector.roll_velocity as i16;
+            animation.nodes[PRIMARY_NODE].radial_target = vector.radial_target;
+
+            update_croolis_motion(&mut pose, &animation).unwrap();
+
+            let primary = &pose.nodes[PRIMARY_NODE];
+            assert_eq!(
+                primary.angles[X_AXIS], vector.pitch_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(primary.angles[Y_AXIS], vector.pan_after, "{}", vector.name);
+            assert_eq!(primary.angles[Z_AXIS], vector.roll_after, "{}", vector.name);
+            assert_eq!(
+                primary.radial_offset as u16, vector.radial_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                (vector.roll_after >> CROOLIS_HEADING_CARRY_SHIFT) & CROOLIS_HEADING_CARRY_MASK,
+                vector.heading_carry,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                pose.nodes[CROOLIS_FOLLOWER_PAN_NODE].angles[Y_AXIS], vector.follower_pan_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                pose.nodes[CROOLIS_FOLLOWER_PITCH_NODE].angles[X_AXIS],
+                vector.follower_pitch_after[0],
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                pose.nodes[CROOLIS_FOLLOWER_COUNTER_PITCH_NODE].angles[X_AXIS],
+                vector.follower_pitch_after[1],
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    #[test]
     fn amer_update_head_matches_every_isolated_original_overlay_vector() {
         let vectors: Vec<AmerUpdateHeadVector> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/xdb_amer_func_1692_head_natural.json"
@@ -1798,6 +1940,15 @@ mod tests {
                 &mut callbacks,
             ),
             Err(AlienSlot2Error::MissingFollowerNode { node_count: 1 })
+        );
+
+        let mut short_pose = pose(&[node; CROOLIS_MOTION_NODE_COUNT - 1]);
+        let short_animation = AlienSlot2AnimationState::new(CROOLIS_MOTION_NODE_COUNT - 1);
+        assert_eq!(
+            update_croolis_motion(&mut short_pose, &short_animation),
+            Err(AlienSlot2Error::MissingCroolisMotionNodes {
+                node_count: CROOLIS_MOTION_NODE_COUNT - 1,
+            })
         );
     }
 
