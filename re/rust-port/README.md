@@ -135,6 +135,13 @@ callback enum and dispatch trait. Three malformed zero-count cases are rejected
 instead of reproducing the original full-address-space walk. Concrete callback
 bodies remain pending and this method is not yet connected to live dispatch.
 
+Four supporting slot-3 callback operations are translated for every species:
+course restart, resume-clear setup, resume capture, and timer-gated history
+clearing. All 42 direct binary vectors match their represented state. Captured
+nodes use `Option<usize>` and ring positions use checked slots; callback entry
+addresses and byte cursors do not survive into runtime data. The initial-course
+and follower-course callback bodies remain pending direct oracle coverage.
+
 Run the current interactive path with original assets:
 
 ```sh

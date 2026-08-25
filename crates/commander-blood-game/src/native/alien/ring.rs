@@ -21,6 +21,14 @@ const FOLLOWING_PHASE_STEP: u16 = 256;
 const INITIAL_BEHAVIOR_SEED: u16 = 0xa957;
 const INITIAL_RADIAL_OFFSET: i16 = 70;
 const ZERO_POSITION_COMPONENT: i32 = 0;
+const ZERO_MOTION_COMPONENT: i16 = 0;
+const RESTART_RADIAL_OFFSET: i16 = 8;
+const RESTART_COURSE_FRAMES: i16 = 30;
+const RESUME_COUNTDOWN: u16 = 18;
+const RESUME_COMMAND_FLAGS: u16 = 2;
+const RANDOM_BORROW_BIT: u16 = 1;
+const RANDOM_BORROW_SHIFT: u32 = 2;
+const RANDOM_ROTATION: u32 = 3;
 
 /// One motion-history sample consumed by the recovered slot-3 callbacks.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -43,6 +51,8 @@ pub enum AlienRingCallback {
     InitialCourse,
     /// Follow the shared history produced by the leading node.
     FollowCourse,
+    /// Clear successive history entries while a captured node resumes.
+    ClearHistory,
 }
 
 /// Per-node state used by the circular motion-history behavior.
@@ -103,6 +113,15 @@ impl AlienRingAnimationState {
     }
 }
 
+/// Scene state published while a ring node is captured for resumption.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct AlienRingResumeState {
+    /// Frames remaining before the resume sequence advances.
+    pub countdown: u16,
+    /// Typed model-node index selected for the resume sequence.
+    pub selected_node: Option<usize>,
+}
+
 /// Indirect callback boundary retained by the recovered coordinator.
 ///
 /// Implementations may update the pose and animation state, but must preserve
@@ -131,6 +150,18 @@ pub enum AlienRingUpdate {
     },
 }
 
+/// Result of one history-clearing callback.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienRingClearUpdate {
+    /// The shared timer has not yet reached zero.
+    Waiting,
+    /// The node advanced and cleared the reported history slot.
+    Cleared {
+        /// Slot reset by this callback.
+        slot: usize,
+    },
+}
+
 /// Invalid typed state supplied to the recovered ring coordinator.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AlienRingError {
@@ -155,6 +186,13 @@ pub enum AlienRingError {
         /// Invalid slot supplied by the caller.
         slot: usize,
     },
+    /// A callback selected a node outside its typed model hierarchy.
+    InvalidNodeIndex {
+        /// Invalid node supplied by the caller.
+        node_index: usize,
+        /// Number of nodes available in the hierarchy.
+        node_count: usize,
+    },
 }
 
 impl fmt::Display for AlienRingError {
@@ -164,6 +202,94 @@ impl fmt::Display for AlienRingError {
 }
 
 impl std::error::Error for AlienRingError {}
+
+/// Restart one node's generated course using the recovered random transition.
+pub fn restart_initial_course(
+    node_index: usize,
+    pose: &mut AlienModelPose,
+    animation: &mut AlienRingAnimationState,
+    random_state: &mut u16,
+) -> Result<(), AlienRingError> {
+    let slot = validate_node_pair(node_index, pose, animation)?;
+    animation.entries[slot].command_flags = u16::MIN;
+    animation.entries[slot].radial_offset = RESTART_RADIAL_OFFSET;
+    animation.nodes[node_index].callback = AlienRingCallback::InitialCourse;
+    animation.nodes[node_index].course_frames_remaining = RESTART_COURSE_FRAMES;
+    pose.nodes[node_index].angles[Z_AXIS] = u16::MIN;
+    pose.nodes[node_index].radial_offset = RESTART_RADIAL_OFFSET;
+
+    let next_random = random_transition(*random_state);
+    animation.nodes[node_index].behavior_seed = next_random;
+    *random_state = next_random;
+    Ok(())
+}
+
+/// Reset one node and begin clearing its circular history during resumption.
+pub fn begin_resume_clear(
+    species: AlienSpecies,
+    node_index: usize,
+    pose: &mut AlienModelPose,
+    animation: &mut AlienRingAnimationState,
+) -> Result<(), AlienRingError> {
+    let slot = validate_node_pair(node_index, pose, animation)?;
+    reset_pose_node(&mut pose.nodes[node_index], initial_position(species));
+    animation.nodes[node_index].callback = AlienRingCallback::ClearHistory;
+    animation.entries[slot] = AlienRingEntry {
+        command_flags: RESUME_COMMAND_FLAGS,
+        ..AlienRingEntry::default()
+    };
+    Ok(())
+}
+
+/// Capture one node for the resume sequence and reset its transform state.
+pub fn capture_resume_state(
+    species: AlienSpecies,
+    node_index: usize,
+    pose: &mut AlienModelPose,
+    resume: &mut AlienRingResumeState,
+) -> Result<(), AlienRingError> {
+    let node_count = pose.nodes.len();
+    let node = pose
+        .nodes
+        .get_mut(node_index)
+        .ok_or(AlienRingError::InvalidNodeIndex {
+            node_index,
+            node_count,
+        })?;
+    resume.countdown = RESUME_COUNTDOWN;
+    resume.selected_node = Some(node_index);
+    reset_pose_node(node, initial_position(species));
+    Ok(())
+}
+
+/// Advance and clear one node's history entry when the shared timer expires.
+pub fn clear_next_ring_entry(
+    node_index: usize,
+    animation: &mut AlienRingAnimationState,
+) -> Result<AlienRingClearUpdate, AlienRingError> {
+    let node_count = animation.nodes.len();
+    let node = animation
+        .nodes
+        .get_mut(node_index)
+        .ok_or(AlienRingError::InvalidNodeIndex {
+            node_index,
+            node_count,
+        })?;
+    if node.ring_slot >= RING_ENTRY_COUNT {
+        return Err(AlienRingError::InvalidNodeRingSlot {
+            node_index,
+            slot: node.ring_slot,
+        });
+    }
+    if animation.timer != u16::MIN {
+        return Ok(AlienRingClearUpdate::Waiting);
+    }
+
+    node.ring_slot = next_slot(node.ring_slot);
+    let slot = node.ring_slot;
+    animation.entries[slot] = AlienRingEntry::default();
+    Ok(AlienRingClearUpdate::Cleared { slot })
+}
 
 /// Initialize or advance the recovered slot-3 motion-history coordinator.
 pub fn update_or_initialize_ring(
@@ -237,18 +363,7 @@ fn initialize(
 ) {
     animation.lifecycle = AlienRingLifecycle::TimerRunning;
     animation.timer = INITIAL_TIMER;
-    let initial_position = match species {
-        AlienSpecies::Amer | AlienSpecies::Croolis => [
-            ZERO_POSITION_COMPONENT,
-            INITIAL_POSITION,
-            ZERO_POSITION_COMPONENT,
-        ],
-        AlienSpecies::Scrut => [
-            INITIAL_POSITION,
-            ZERO_POSITION_COMPONENT,
-            ZERO_POSITION_COMPONENT,
-        ],
-    };
+    let initial_position = initial_position(species);
     let mut current_slot = animation.next_ring_slot;
 
     reset_pose_node(&mut pose.nodes[FIRST_NODE], initial_position);
@@ -260,8 +375,8 @@ fn initialize(
         behavior_seed: INITIAL_BEHAVIOR_SEED,
     };
     animation.entries[current_slot] = AlienRingEntry {
-        pitch_step: i16::MIN,
-        pan_step: i16::MIN,
+        pitch_step: ZERO_MOTION_COMPONENT,
+        pan_step: ZERO_MOTION_COMPONENT,
         radial_offset: INITIAL_RADIAL_OFFSET,
         command_flags: u16::MIN,
     };
@@ -276,7 +391,7 @@ fn initialize(
     if animation.generation != u16::MIN {
         animation.lifecycle = AlienRingLifecycle::TimerSuspended;
         animation.nodes[FIRST_NODE].callback = AlienRingCallback::FollowCourse;
-        animation.entries[current_slot].radial_offset = i16::MIN;
+        animation.entries[current_slot].radial_offset = ZERO_MOTION_COMPONENT;
         pose.nodes[FIRST_NODE].angles.fill(u16::MIN);
         pose.nodes[FIRST_NODE].local_position = initial_position;
     }
@@ -304,7 +419,52 @@ fn reset_pose_node(node: &mut super::AlienNodePose, position: [i32; AXIS_COUNT])
     node.local_position[Y_AXIS] = position[Y_AXIS];
     node.local_position[Z_AXIS] = position[Z_AXIS];
     node.angles.fill(u16::MIN);
-    node.radial_offset = i16::MIN;
+    node.radial_offset = ZERO_MOTION_COMPONENT;
+}
+
+fn initial_position(species: AlienSpecies) -> [i32; AXIS_COUNT] {
+    match species {
+        AlienSpecies::Amer | AlienSpecies::Croolis => [
+            ZERO_POSITION_COMPONENT,
+            INITIAL_POSITION,
+            ZERO_POSITION_COMPONENT,
+        ],
+        AlienSpecies::Scrut => [
+            INITIAL_POSITION,
+            ZERO_POSITION_COMPONENT,
+            ZERO_POSITION_COMPONENT,
+        ],
+    }
+}
+
+fn validate_node_pair(
+    node_index: usize,
+    pose: &AlienModelPose,
+    animation: &AlienRingAnimationState,
+) -> Result<usize, AlienRingError> {
+    if pose.nodes.len() != animation.nodes.len() {
+        return Err(AlienRingError::NodeStateCountMismatch {
+            pose: pose.nodes.len(),
+            animation: animation.nodes.len(),
+        });
+    }
+    if node_index >= pose.nodes.len() {
+        return Err(AlienRingError::InvalidNodeIndex {
+            node_index,
+            node_count: pose.nodes.len(),
+        });
+    }
+    let slot = animation.nodes[node_index].ring_slot;
+    if slot >= RING_ENTRY_COUNT {
+        return Err(AlienRingError::InvalidNodeRingSlot { node_index, slot });
+    }
+    Ok(slot)
+}
+
+fn random_transition(value: u16) -> u16 {
+    value
+        .rotate_right(RANDOM_ROTATION)
+        .wrapping_sub((value >> RANDOM_BORROW_SHIFT) & RANDOM_BORROW_BIT)
 }
 
 fn previous_slot(slot: usize) -> usize {
@@ -312,6 +472,14 @@ fn previous_slot(slot: usize) -> usize {
         RING_ENTRY_COUNT - 1
     } else {
         slot - 1
+    }
+}
+
+fn next_slot(slot: usize) -> usize {
+    if slot == RING_ENTRY_COUNT - 1 {
+        usize::MIN
+    } else {
+        slot + 1
     }
 }
 
@@ -328,6 +496,13 @@ mod tests {
     const INITIAL_NODE_COUNTS: [usize; 4] = [1, 3, 2, 2];
     const ORIGINAL_RING_ENTRY_BYTES: usize = 8;
     const PRESERVED_COURSE_FRAMES: i16 = 321;
+    const CALLBACK_POSITION: [i32; AXIS_COUNT] = [0x1122_3344, 0x5566_7788, 0x99aa_bbcc_u32 as i32];
+    const CALLBACK_ANGLES: [u16; AXIS_COUNT] = [0x1111, 0x2222, 0x3333];
+    const CALLBACK_RADIAL_OFFSET: i16 = 0x4444;
+    const CALLBACK_COURSE_FRAMES: i16 = 0x5555;
+    const CALLBACK_BEHAVIOR_SEED: u16 = 0x6666;
+    const CALLBACK_FEEDBACK_PHASE: u16 = 0x7777;
+    const RESTART_RANDOM_INPUTS: [u16; 4] = [0, 0x1234, u16::MAX, 4];
 
     #[derive(Deserialize)]
     struct RingVector {
@@ -342,6 +517,19 @@ mod tests {
         timer_before: Option<u16>,
         timer_after: Option<u16>,
         effective_callbacks: Option<usize>,
+    }
+
+    #[derive(Deserialize)]
+    struct CallbackVector {
+        name: String,
+        module: String,
+        kind: String,
+        ring_before: u16,
+        ring_after: u16,
+        position_after: [u32; AXIS_COUNT],
+        motion_after: [u16; 6],
+        resume_countdown_after: u16,
+        resume_state_after: u16,
     }
 
     #[derive(Default)]
@@ -422,6 +610,91 @@ mod tests {
         ]
     }
 
+    fn callback_fixtures(kind: &str) -> [&'static str; 3] {
+        match kind {
+            "restart" => [
+                include_str!(
+                    "../../../../../re/tools/oracle_vectors/xdb_amer_func_1558_natural.json"
+                ),
+                include_str!(
+                    "../../../../../re/tools/oracle_vectors/xdb_croolis_func_15b0_natural.json"
+                ),
+                include_str!(
+                    "../../../../../re/tools/oracle_vectors/xdb_scrut_func_159e_natural.json"
+                ),
+            ],
+            "resume" => [
+                include_str!(
+                    "../../../../../re/tools/oracle_vectors/xdb_amer_func_158a_natural.json"
+                ),
+                include_str!(
+                    "../../../../../re/tools/oracle_vectors/xdb_croolis_func_15e2_natural.json"
+                ),
+                include_str!(
+                    "../../../../../re/tools/oracle_vectors/xdb_scrut_func_15d0_natural.json"
+                ),
+            ],
+            "capture" => [
+                include_str!(
+                    "../../../../../re/tools/oracle_vectors/xdb_amer_func_15db_natural.json"
+                ),
+                include_str!(
+                    "../../../../../re/tools/oracle_vectors/xdb_croolis_func_1633_natural.json"
+                ),
+                include_str!(
+                    "../../../../../re/tools/oracle_vectors/xdb_scrut_func_1621_natural.json"
+                ),
+            ],
+            "ring_zero" => [
+                include_str!(
+                    "../../../../../re/tools/oracle_vectors/xdb_amer_func_1614_natural.json"
+                ),
+                include_str!(
+                    "../../../../../re/tools/oracle_vectors/xdb_croolis_func_166c_natural.json"
+                ),
+                include_str!(
+                    "../../../../../re/tools/oracle_vectors/xdb_scrut_func_165a_natural.json"
+                ),
+            ],
+            _ => panic!("unknown callback fixture kind {kind}"),
+        }
+    }
+
+    fn callback_state(ring_cursor: u16) -> (AlienModelPose, AlienRingAnimationState) {
+        let mut pose = pose(SINGLE_NODE_COUNT);
+        pose.nodes[FIRST_NODE].local_position = CALLBACK_POSITION;
+        pose.nodes[FIRST_NODE].angles = CALLBACK_ANGLES;
+        pose.nodes[FIRST_NODE].radial_offset = CALLBACK_RADIAL_OFFSET;
+        let mut animation = seeded_animation(SINGLE_NODE_COUNT);
+        animation.nodes[FIRST_NODE] = AlienRingNodeState {
+            callback: AlienRingCallback::FollowCourse,
+            course_frames_remaining: CALLBACK_COURSE_FRAMES,
+            feedback_phase: CALLBACK_FEEDBACK_PHASE,
+            ring_slot: usize::from(ring_cursor) / ORIGINAL_RING_ENTRY_BYTES,
+            behavior_seed: CALLBACK_BEHAVIOR_SEED,
+        };
+        (pose, animation)
+    }
+
+    fn callback_position(pose: &AlienModelPose) -> [u32; AXIS_COUNT] {
+        pose.nodes[FIRST_NODE]
+            .local_position
+            .map(|component| component as u32)
+    }
+
+    fn callback_motion(pose: &AlienModelPose, animation: &AlienRingAnimationState) -> [u16; 6] {
+        let node = &pose.nodes[FIRST_NODE];
+        let behavior = &animation.nodes[FIRST_NODE];
+        [
+            node.angles[X_AXIS],
+            node.angles[Y_AXIS],
+            node.angles[Z_AXIS],
+            node.radial_offset as u16,
+            behavior.course_frames_remaining as u16,
+            behavior.behavior_seed,
+        ]
+    }
+
     #[test]
     fn initialization_matches_every_well_formed_original_vector() {
         for fixture in fixtures() {
@@ -494,7 +767,7 @@ mod tests {
                 {
                     assert_eq!(node.local_position, initial_position, "{}", vector.name);
                     assert_eq!(node.angles, [u16::MIN; AXIS_COUNT], "{}", vector.name);
-                    assert_eq!(node.radial_offset, i16::MIN, "{}", vector.name);
+                    assert_eq!(node.radial_offset, ZERO_MOTION_COMPONENT, "{}", vector.name);
                     assert_eq!(
                         behavior.feedback_phase,
                         (node_index as u16).wrapping_mul(FOLLOWING_PHASE_STEP),
@@ -525,8 +798,8 @@ mod tests {
                 assert_eq!(
                     animation.entries[initial_slot],
                     AlienRingEntry {
-                        pitch_step: i16::MIN,
-                        pan_step: i16::MIN,
+                        pitch_step: ZERO_MOTION_COMPONENT,
+                        pan_step: ZERO_MOTION_COMPONENT,
                         radial_offset: INITIAL_RADIAL_OFFSET,
                         command_flags: u16::MIN,
                     },
@@ -539,7 +812,7 @@ mod tests {
                     let pre_follower_slot = previous_slot(initial_slot);
                     if generation_after != u16::MIN {
                         let mut expected = entries_before[pre_follower_slot];
-                        expected.radial_offset = i16::MIN;
+                        expected.radial_offset = ZERO_MOTION_COMPONENT;
                         assert_eq!(
                             animation.entries[pre_follower_slot], expected,
                             "{}",
@@ -623,6 +896,217 @@ mod tests {
                     "{}",
                     vector.name
                 );
+            }
+        }
+    }
+
+    #[test]
+    fn course_restart_matches_every_original_overlay_vector() {
+        for fixture in callback_fixtures("restart") {
+            let vectors: Vec<CallbackVector> = serde_json::from_str(fixture).unwrap();
+            for (case_index, vector) in vectors.into_iter().enumerate() {
+                assert_eq!(vector.kind, "restart");
+                let (mut pose, mut animation) = callback_state(vector.ring_before);
+                let slot = animation.nodes[FIRST_NODE].ring_slot;
+                let entry_before = animation.entries[slot];
+                let mut random_state = RESTART_RANDOM_INPUTS[case_index];
+
+                restart_initial_course(FIRST_NODE, &mut pose, &mut animation, &mut random_state)
+                    .unwrap();
+
+                assert_eq!(
+                    callback_position(&pose),
+                    vector.position_after,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    callback_motion(&pose, &animation),
+                    vector.motion_after,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    animation.nodes[FIRST_NODE].callback,
+                    AlienRingCallback::InitialCourse,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    animation.nodes[FIRST_NODE].ring_slot,
+                    usize::from(vector.ring_after) / ORIGINAL_RING_ENTRY_BYTES,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(random_state, vector.motion_after[5], "{}", vector.name);
+                assert_eq!(animation.entries[slot].pitch_step, entry_before.pitch_step);
+                assert_eq!(animation.entries[slot].pan_step, entry_before.pan_step);
+                assert_eq!(animation.entries[slot].radial_offset, RESTART_RADIAL_OFFSET);
+                assert_eq!(animation.entries[slot].command_flags, u16::MIN);
+                assert_eq!(vector.resume_countdown_after, u16::MIN);
+                assert_eq!(vector.resume_state_after, u16::MIN);
+            }
+        }
+    }
+
+    #[test]
+    fn resume_clear_setup_matches_every_original_overlay_vector() {
+        for fixture in callback_fixtures("resume") {
+            let vectors: Vec<CallbackVector> = serde_json::from_str(fixture).unwrap();
+            for vector in vectors {
+                assert_eq!(vector.kind, "resume");
+                let (mut pose, mut animation) = callback_state(vector.ring_before);
+                let slot = animation.nodes[FIRST_NODE].ring_slot;
+
+                begin_resume_clear(
+                    species(&vector.module),
+                    FIRST_NODE,
+                    &mut pose,
+                    &mut animation,
+                )
+                .unwrap();
+
+                assert_eq!(
+                    callback_position(&pose),
+                    vector.position_after,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    callback_motion(&pose, &animation),
+                    vector.motion_after,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    animation.nodes[FIRST_NODE].callback,
+                    AlienRingCallback::ClearHistory,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    animation.nodes[FIRST_NODE].ring_slot,
+                    usize::from(vector.ring_after) / ORIGINAL_RING_ENTRY_BYTES,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    animation.entries[slot],
+                    AlienRingEntry {
+                        command_flags: RESUME_COMMAND_FLAGS,
+                        ..AlienRingEntry::default()
+                    },
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(vector.resume_countdown_after, u16::MIN);
+                assert_eq!(vector.resume_state_after, u16::MIN);
+            }
+        }
+    }
+
+    #[test]
+    fn resume_capture_matches_every_original_overlay_vector() {
+        for fixture in callback_fixtures("capture") {
+            let vectors: Vec<CallbackVector> = serde_json::from_str(fixture).unwrap();
+            for vector in vectors {
+                assert_eq!(vector.kind, "capture");
+                let (mut pose, animation) = callback_state(vector.ring_before);
+                let animation_before = animation.clone();
+                let mut resume = AlienRingResumeState {
+                    countdown: u16::MAX,
+                    selected_node: None,
+                };
+
+                capture_resume_state(species(&vector.module), FIRST_NODE, &mut pose, &mut resume)
+                    .unwrap();
+
+                assert_eq!(
+                    callback_position(&pose),
+                    vector.position_after,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    callback_motion(&pose, &animation),
+                    vector.motion_after,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(animation, animation_before, "{}", vector.name);
+                assert_eq!(
+                    resume.countdown, vector.resume_countdown_after,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(resume.selected_node, Some(FIRST_NODE), "{}", vector.name);
+                assert_ne!(vector.resume_state_after, u16::MIN);
+                assert_eq!(
+                    animation.nodes[FIRST_NODE].ring_slot,
+                    usize::from(vector.ring_after) / ORIGINAL_RING_ENTRY_BYTES,
+                    "{}",
+                    vector.name
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn history_clear_matches_every_original_overlay_vector() {
+        for fixture in callback_fixtures("ring_zero") {
+            let vectors: Vec<CallbackVector> = serde_json::from_str(fixture).unwrap();
+            for vector in vectors {
+                assert_eq!(vector.kind, "ring_zero");
+                let (pose, mut animation) = callback_state(vector.ring_before);
+                let pose_before = pose.clone();
+                animation.timer = if vector.name == "timer_blocks" {
+                    SINGLE_NODE_COUNT as u16
+                } else {
+                    u16::MIN
+                };
+                let animation_before = animation.clone();
+
+                let result = clear_next_ring_entry(FIRST_NODE, &mut animation).unwrap();
+                let expected_slot = usize::from(vector.ring_after) / ORIGINAL_RING_ENTRY_BYTES;
+                if vector.name == "timer_blocks" {
+                    assert_eq!(result, AlienRingClearUpdate::Waiting, "{}", vector.name);
+                    assert_eq!(animation, animation_before, "{}", vector.name);
+                } else {
+                    assert_eq!(
+                        result,
+                        AlienRingClearUpdate::Cleared {
+                            slot: expected_slot
+                        },
+                        "{}",
+                        vector.name
+                    );
+                    assert_eq!(
+                        animation.entries[expected_slot],
+                        AlienRingEntry::default(),
+                        "{}",
+                        vector.name
+                    );
+                }
+                assert_eq!(pose, pose_before, "{}", vector.name);
+                assert_eq!(
+                    callback_position(&pose),
+                    vector.position_after,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    callback_motion(&pose, &animation),
+                    vector.motion_after,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    animation.nodes[FIRST_NODE].ring_slot, expected_slot,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(vector.resume_countdown_after, u16::MIN);
+                assert_eq!(vector.resume_state_after, u16::MIN);
             }
         }
     }

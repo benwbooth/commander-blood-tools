@@ -116,3 +116,11 @@ well-formed binary cases verify initialization, generation wrapping, timer rules
 and callback order. The three zero-count cases that walk all 65,536 original
 addresses are rejected by the nonempty typed hierarchy boundary. Concrete
 callback bodies remain outside live dispatch until they are translated.
+
+Twelve directly verified slot-3 callback helpers are also translated: course
+restart, resume-clear setup, resume capture, and timer-gated history clearing
+for each overlay. Forty-two binary vectors verify their transform fields, ring
+updates, deterministic random transition, and callback changes. The original
+captured node address is represented as `Option<usize>`, and even the native
+misaligned ring-end cases reduce to checked slot indices. The two larger course
+generation callbacks still require direct oracle coverage before translation.
