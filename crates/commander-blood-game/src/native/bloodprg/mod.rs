@@ -5,6 +5,7 @@ mod presentation;
 mod script;
 mod startup;
 mod text;
+mod text_handler;
 mod vm;
 
 pub use numbers::{
@@ -14,12 +15,17 @@ pub use numbers::{
 pub use presentation::{
     evaluate_text_conditions, ScriptWordHistory, TextConditionEffects, TextConditionError,
 };
-pub use script::{ScriptControl, ScriptRuntime, ScriptRuntimeError};
+pub use script::{ScriptControl, ScriptResumeState, ScriptRuntime, ScriptRuntimeError};
 pub use startup::{
     apply_startup_option, tokenize_startup_command, StartupAudioConfiguration, StartupAudioDriver,
     StartupConfiguration,
 };
 pub use text::{nul_terminated_byte_len, nul_terminated_bytes_equal};
+pub use text_handler::{
+    handle_text_instruction, PresentationRequestFlags, TextConditionInputs, TextHandlerError,
+    TextHandlerGate, TextHandlerOutcome, TextInstructionState, TextLineKind, TextLineState,
+    TextPresentationState,
+};
 pub use vm::{
     count_positive_operands, object_before_threshold, resolve_dictionary_object,
     script_field_offset, ScriptFieldSelector,

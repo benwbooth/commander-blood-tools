@@ -17,6 +17,15 @@ pub enum ScriptControl {
     Jump(ScriptCodeOffset),
 }
 
+/// Resume destination and value retained across a yielded script pass.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptResumeState {
+    /// Typed destination in the current COD image.
+    pub target: ScriptCodeOffset,
+    /// Value selected by the presentation path before execution resumes.
+    pub value: u16,
+}
+
 /// Invalid typed runtime state detected while applying an instruction.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ScriptRuntimeError {
@@ -39,7 +48,8 @@ pub struct ScriptRuntime {
     guard_targets: Vec<ScriptCodeOffset>,
     selected_concept: Option<ScriptWordId>,
     alternate_concept: Option<ScriptWordId>,
-    resume_target: Option<ScriptCodeOffset>,
+    resume: Option<ScriptResumeState>,
+    pending_skip_count: Option<u8>,
     timer_words: [u16; ScriptTimerSlot::COUNT],
 }
 
@@ -57,7 +67,8 @@ impl ScriptRuntime {
             guard_targets: Vec::new(),
             selected_concept: None,
             alternate_concept: None,
-            resume_target: None,
+            resume: None,
+            pending_skip_count: None,
             timer_words: [u16::MAX; ScriptTimerSlot::COUNT],
         }
     }
@@ -74,7 +85,20 @@ impl ScriptRuntime {
 
     /// Return the current resume destination, when one is armed.
     pub const fn resume_target(&self) -> Option<ScriptCodeOffset> {
-        self.resume_target
+        match self.resume {
+            Some(resume) => Some(resume.target),
+            None => None,
+        }
+    }
+
+    /// Return the complete pending resume state.
+    pub const fn resume_state(&self) -> Option<ScriptResumeState> {
+        self.resume
+    }
+
+    /// Return the number of framed instructions to skip after this handler.
+    pub const fn pending_skip_count(&self) -> Option<u8> {
+        self.pending_skip_count
     }
 
     /// Set the primary concept chosen by the player.
@@ -89,7 +113,20 @@ impl ScriptRuntime {
 
     /// Arm a destination used by presentation resume logic.
     pub fn set_resume_target(&mut self, target: Option<ScriptCodeOffset>) {
-        self.resume_target = target;
+        self.resume = target.map(|target| ScriptResumeState {
+            target,
+            value: u16::MIN,
+        });
+    }
+
+    /// Arm a presentation resume destination with its selected value.
+    pub fn arm_resume(&mut self, target: ScriptCodeOffset, value: u16) {
+        self.resume = Some(ScriptResumeState { target, value });
+    }
+
+    /// Arm an authored number of framed instructions to skip.
+    pub fn arm_skip(&mut self, count: u8) {
+        self.pending_skip_count = Some(count);
     }
 
     /// Read one proven transient timer/state slot.
@@ -178,7 +215,7 @@ impl ScriptRuntime {
     /// Jump directly and clear the pending resume/alternate-concept state.
     pub fn jump(&mut self, target: ScriptCodeOffset) -> ScriptControl {
         self.alternate_concept = None;
-        self.resume_target = None;
+        self.resume = None;
         ScriptControl::Jump(target)
     }
 
