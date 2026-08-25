@@ -45,6 +45,8 @@ impl ScriptFieldSelector {
     pub const PRESENTATION_HANDOFF: Self = Self(2);
     /// Per-actor encounter counter.
     pub const ENCOUNTER_COUNT: Self = Self(8);
+    /// Per-character high-bit-first object-link set.
+    pub const OBJECT_LINKS: Self = Self(5);
     /// Object holder or current location.
     pub const HOLDER_OR_LOCATION: Self = Self(17);
     /// Talk, action, or reciprocal presentation link.
@@ -333,8 +335,8 @@ mod tests {
 
                 let mut object = [u8::MIN; ACTOR_RECORD_SIZE];
                 object[..OBJECT_HEADER_WORD_SIZE].copy_from_slice(&ACTOR_KIND.to_le_bytes());
-                object[OBJECT_FLAGS_BYTE_OFFSET
-                    ..OBJECT_FLAGS_BYTE_OFFSET + OBJECT_HEADER_WORD_SIZE]
+                object
+                    [OBJECT_FLAGS_BYTE_OFFSET..OBJECT_FLAGS_BYTE_OFFSET + OBJECT_HEADER_WORD_SIZE]
                     .copy_from_slice(&entry.flags.to_le_bytes());
                 state_data.extend_from_slice(&object);
             }

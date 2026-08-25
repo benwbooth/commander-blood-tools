@@ -113,6 +113,15 @@ pub struct ScriptStateByte {
     byte_index: usize,
 }
 
+/// Typed interpretation of a VAR word used as an object relation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ScriptStateObjectReference {
+    /// Reference to one decoded profile object.
+    Object(ScriptObjectId),
+    /// Original `0xFFFF` terminator or contextual fallback marker.
+    Sentinel,
+}
+
 impl ScriptStateByte {
     /// Return the object that owns this byte.
     pub const fn object(self) -> Option<ScriptObjectId> {
@@ -261,6 +270,34 @@ impl ScriptState {
         })
     }
 
+    /// Resolve a bounded byte index within one typed object record.
+    pub fn object_byte(
+        &self,
+        object: ScriptObjectId,
+        byte_index: usize,
+    ) -> Option<ScriptStateByte> {
+        let state_object = self.object(object)?;
+        (byte_index < state_object.bytes.len()).then_some(ScriptStateByte {
+            owner: ScriptStateOwner::Object(object),
+            byte_index,
+        })
+    }
+
+    /// Resolve two adjacent words within one typed object record.
+    pub fn object_word_pair(
+        &self,
+        object: ScriptObjectId,
+        first_word_index: usize,
+    ) -> Option<ScriptStateWordPair> {
+        let state_object = self.object(object)?;
+        let byte_offset = first_word_index.checked_mul(WORD_SIZE)?;
+        let pair_end = byte_offset.checked_add(WORD_SIZE * 2)?;
+        (pair_end <= state_object.bytes.len()).then_some(ScriptStateWordPair {
+            owner: ScriptStateOwner::Object(object),
+            first_word_index,
+        })
+    }
+
     /// Resolve an encoded VAR byte position to an aligned owned object word.
     pub fn resolve_word_source_offset(&self, source_offset: u16) -> Option<ScriptStateWord> {
         let source_offset = usize::from(source_offset);
@@ -387,6 +424,18 @@ impl ScriptState {
         bytes[..WORD_SIZE].copy_from_slice(&value[0].to_le_bytes());
         bytes[WORD_SIZE..].copy_from_slice(&value[1].to_le_bytes());
         true
+    }
+
+    /// Interpret one resolved word as a typed object identity or sentinel.
+    pub fn object_reference(&self, field: ScriptStateWord) -> Option<ScriptStateObjectReference> {
+        let encoded = self.word(field)?;
+        if encoded == u16::MAX {
+            return Some(ScriptStateObjectReference::Sentinel);
+        }
+        self.objects.iter().find_map(|object| {
+            (object.source_offset == usize::from(encoded))
+                .then_some(ScriptStateObjectReference::Object(object.id))
+        })
     }
 
     /// Resolve an encoded VAR byte position to one bounded owned byte.
