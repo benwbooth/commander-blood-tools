@@ -3,6 +3,8 @@
 use std::error::Error;
 use std::fmt;
 
+use crate::native::random::BloodPrng;
+
 use super::{LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_WIDTH};
 
 /// Number of authored angle samples in one complete rotation.
@@ -24,6 +26,7 @@ const POINT_SHADE_BASE: u8 = 239;
 const Q14_TO_Q15_SCALE: i32 = 2;
 const NON_VISIBLE_DEPTH_CEILING: i32 = 0;
 const LOGICAL_SCREEN_ORIGIN: i16 = 0;
+const POINT_RANDOM_MODULUS: u16 = u16::MAX;
 
 /// Signed Q14 cosine and sine sample from the recovered bridge angle table.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -277,6 +280,24 @@ pub fn project_ship_point_cloud(
     })
 }
 
+/// Fill the persistent bridge point cloud from Commander Blood's PRNG.
+///
+/// This translates `ship_3d_point_cloud_randomize` at BLOODPRG routine offset
+/// `0x009B67`. Exactly three random values populate each owned point record and
+/// the persistent scratch word is intentionally left unchanged.
+pub fn randomize_ship_point_cloud(
+    points: &mut [ShipPointRecord],
+    random: &mut BloodPrng,
+) -> Result<(), ShipProjectionError> {
+    if points.len() != SHIP_POINT_CLOUD_COUNT {
+        return Err(ShipProjectionError::InvalidPointCount {
+            actual: points.len(),
+        });
+    }
+    fill_ship_point_cloud(points, || random.next(POINT_RANDOM_MODULUS));
+    Ok(())
+}
+
 /// Plot one projected bridge point into the original-resolution indexed frame.
 ///
 /// This translates `ship_3d_plot_point` at BLOODPRG routine offset `0x009B04`.
@@ -389,6 +410,12 @@ fn validate_framebuffer(framebuffer: &[u8]) -> Result<(), ShipProjectionError> {
     Ok(())
 }
 
+fn fill_ship_point_cloud(points: &mut [ShipPointRecord], mut next_random: impl FnMut() -> u16) {
+    for point in points {
+        point.position = std::array::from_fn(|_| next_random());
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use serde::Deserialize;
@@ -399,6 +426,7 @@ mod tests {
     const MATRIX_ORACLE_COUNT: usize = 12;
     const POINT_CLOUD_ORACLE_COUNT: usize = 6;
     const PLOT_ORACLE_COUNT: usize = 14;
+    const RANDOMIZE_ORACLE_COUNT: usize = 4;
     const POINT_RECORD_COMPONENT_COUNT: usize = 4;
     const VALID_MATRIX_ORACLE_COUNT: usize = MATRIX_ORACLE_COUNT - 1;
     const VALID_POINT_CLOUD_ORACLE_COUNT: usize = POINT_CLOUD_ORACLE_COUNT - 1;
@@ -418,6 +446,17 @@ mod tests {
     const FRAMEBUFFER_TEST_VALUE: u8 = 37;
     const SHORT_FRAMEBUFFER_TEST_VALUE: u8 = 41;
     const PROJECTION_HASH_RECORD_SIZE: usize = 10;
+    const POINT_RECORD_SIZE: usize = 8;
+    const POINT_POSITION_BYTE_COUNT: usize = 6;
+    const RANDOM_OUTPUT_COUNT: usize = SHIP_POINT_CLOUD_COUNT * MATRIX_DIMENSION;
+    const RANDOM_INITIAL_BYTE_MULTIPLIER: usize = 17;
+    const RANDOM_CASE_SEEDS: [usize; RANDOMIZE_ORACLE_COUNT] = [17, 55, 93, 131];
+    const RAMP_START: usize = 4_660;
+    const RAMP_STEP: usize = 37;
+    const LCG_INITIAL_STATE: u16 = 44_257;
+    const LCG_MULTIPLIER: u16 = 25_173;
+    const LCG_INCREMENT: u16 = 13_849;
+    const EXTREMA_CYCLE: [u16; 6] = [0, 1, 32_767, 32_768, 65_533, 65_534];
     const CASE_SEEDS: [usize; POINT_CLOUD_ORACLE_COUNT] = [17, 43, 69, 95, 121, 147];
     const FIRST_CASE_DEPTHS: [u16; 6] = [0, 1, 1_000, 32_767, 65_535, 32_768];
 
@@ -461,6 +500,17 @@ mod tests {
         natural_offset: Option<usize>,
         pixel_before: u8,
         pixel_after: u8,
+    }
+
+    #[derive(Deserialize)]
+    struct RandomizeOracle {
+        name: String,
+        prng_call_count: usize,
+        prng_outputs_sha256: String,
+        first_record: [u16; POINT_RECORD_COMPONENT_COUNT],
+        last_record: [u16; POINT_RECORD_COMPONENT_COUNT],
+        point_cloud_sha256: String,
+        scratch_sha256: String,
     }
 
     #[test]
@@ -621,6 +671,72 @@ mod tests {
     }
 
     #[test]
+    fn point_cloud_randomizer_matches_every_original_call_order_vector() {
+        let vectors: Vec<RandomizeOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_9b67_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), RANDOMIZE_ORACLE_COUNT);
+
+        for (case_index, vector) in vectors.into_iter().enumerate() {
+            let outputs = random_outputs(case_index);
+            assert_eq!(outputs.len(), vector.prng_call_count, "{}", vector.name);
+            assert_eq!(
+                hash_words(&outputs),
+                vector.prng_outputs_sha256,
+                "{}",
+                vector.name
+            );
+
+            let seed = RANDOM_CASE_SEEDS[case_index];
+            let raw_before: Vec<u8> = (usize::MIN..SHIP_POINT_CLOUD_COUNT * POINT_RECORD_SIZE)
+                .map(|index| (seed + index * RANDOM_INITIAL_BYTE_MULTIPLIER) as u8)
+                .collect();
+            let mut points: Vec<ShipPointRecord> = raw_before
+                .chunks_exact(POINT_RECORD_SIZE)
+                .map(decode_point_record)
+                .collect();
+            let mut output_index = usize::MIN;
+            fill_ship_point_cloud(&mut points, || {
+                let value = outputs[output_index];
+                output_index += 1;
+                value
+            });
+            assert_eq!(output_index, RANDOM_OUTPUT_COUNT, "{}", vector.name);
+
+            let raw_after = encode_point_cloud(&points);
+            let scratch: Vec<u8> = raw_after
+                .chunks_exact(POINT_RECORD_SIZE)
+                .flat_map(|record| record[POINT_POSITION_BYTE_COUNT..].iter().copied())
+                .collect();
+            assert_eq!(
+                record_words(points[usize::MIN]),
+                vector.first_record,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                record_words(points[SHIP_POINT_CLOUD_COUNT - 1]),
+                vector.last_record,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                format!("{:x}", Sha256::digest(raw_after)),
+                vector.point_cloud_sha256,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                format!("{:x}", Sha256::digest(scratch)),
+                vector.scratch_sha256,
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    #[test]
     fn malformed_flat_inputs_fail_before_framebuffer_mutation() {
         let matrix = ShipProjectionMatrix::default();
         let points = vec![ShipPointRecord::default(); SHIP_POINT_CLOUD_COUNT - 1];
@@ -656,6 +772,22 @@ mod tests {
             })
         );
         assert_eq!(short_framebuffer, short_before);
+
+        let mut random = BloodPrng {
+            seed: 4_660,
+            mix_low: 37,
+            mix_high: 41,
+            counter: 43,
+        };
+        let random_before = random;
+        let mut short_points = vec![ShipPointRecord::default(); SHIP_POINT_CLOUD_COUNT - 1];
+        assert_eq!(
+            randomize_ship_point_cloud(&mut short_points, &mut random),
+            Err(ShipProjectionError::InvalidPointCount {
+                actual: SHIP_POINT_CLOUD_COUNT - 1,
+            })
+        );
+        assert_eq!(random, random_before);
     }
 
     fn point_cloud_fixture(case_index: usize, vector: &PointCloudOracle) -> Vec<ShipPointRecord> {
@@ -726,6 +858,57 @@ mod tests {
             bytes.extend_from_slice(&point.depth.to_le_bytes());
         }
         format!("{:x}", Sha256::digest(bytes))
+    }
+
+    fn random_outputs(case_index: usize) -> Vec<u16> {
+        match case_index {
+            0 => vec![u16::MIN; RANDOM_OUTPUT_COUNT],
+            1 => (usize::MIN..RANDOM_OUTPUT_COUNT)
+                .map(|index| ((RAMP_START + index * RAMP_STEP) % usize::from(u16::MAX)) as u16)
+                .collect(),
+            2 => (usize::MIN..RANDOM_OUTPUT_COUNT)
+                .map(|index| EXTREMA_CYCLE[index % EXTREMA_CYCLE.len()])
+                .collect(),
+            3 => {
+                let mut state = LCG_INITIAL_STATE;
+                (usize::MIN..RANDOM_OUTPUT_COUNT)
+                    .map(|_| {
+                        state = state
+                            .wrapping_mul(LCG_MULTIPLIER)
+                            .wrapping_add(LCG_INCREMENT);
+                        state % u16::MAX
+                    })
+                    .collect()
+            }
+            _ => panic!("unexpected randomizer fixture"),
+        }
+    }
+
+    fn hash_words(words: &[u16]) -> String {
+        let bytes: Vec<u8> = words.iter().flat_map(|word| word.to_le_bytes()).collect();
+        format!("{:x}", Sha256::digest(bytes))
+    }
+
+    fn decode_point_record(bytes: &[u8]) -> ShipPointRecord {
+        ShipPointRecord {
+            position: [
+                u16::from_le_bytes([bytes[0], bytes[1]]),
+                u16::from_le_bytes([bytes[2], bytes[3]]),
+                u16::from_le_bytes([bytes[4], bytes[5]]),
+            ],
+            scratch: u16::from_le_bytes([bytes[6], bytes[7]]),
+        }
+    }
+
+    fn encode_point_cloud(points: &[ShipPointRecord]) -> Vec<u8> {
+        let mut bytes = Vec::with_capacity(points.len() * POINT_RECORD_SIZE);
+        for point in points {
+            for component in point.position {
+                bytes.extend_from_slice(&component.to_le_bytes());
+            }
+            bytes.extend_from_slice(&point.scratch.to_le_bytes());
+        }
+        bytes
     }
 
     fn matrix_from_flat(

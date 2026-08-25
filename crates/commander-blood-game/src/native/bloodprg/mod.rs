@@ -41,6 +41,7 @@ mod sequence_subtitles;
 mod ship_projection;
 mod ship_view;
 mod ship_hud;
+mod sprite_geometry;
 mod startup;
 mod state;
 mod text;
@@ -241,6 +242,7 @@ pub use ship_projection::{
     ShipProjectedPoint, ShipProjectionAngleRole, ShipProjectionAngles, ShipProjectionClip,
     ShipProjectionError, ShipProjectionMatrix, ShipTrigonometrySample,
     build_ship_projection_matrix, plot_ship_point, project_ship_point_cloud,
+    randomize_ship_point_cloud,
 };
 pub use ship_view::{
     select_ship_view_artwork, ShipViewArtworkError, ShipViewArtworkSelection,
@@ -249,6 +251,11 @@ pub use ship_view::{
 pub use ship_hud::{
     SHIP_HUD_PALETTE_COLOR_COUNT, SHIP_HUD_PALETTE_FIRST, IndexedGamePalette, ShipHudBackend,
     ShipHudPaletteSnapshot, ShipHudState, snapshot_ship_hud_palette_and_reset_camera,
+};
+pub use sprite_geometry::{
+    BRIDGE_SPRITE_ENTITY_COUNT, BridgeSpriteEntity, BridgeSpriteEntityError, BridgeSpriteExtent,
+    BridgeSpriteFlags, BridgeSpriteGeometryUpdate, BridgeSpritePosition,
+    update_bridge_sprite_extent, update_bridge_sprite_position,
 };
 pub use startup::{
     apply_startup_option, tokenize_startup_command, StartupAudioConfiguration, StartupAudioDriver,
