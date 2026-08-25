@@ -4,6 +4,7 @@ mod aboard;
 mod numbers;
 mod presentation;
 mod procedure;
+mod record;
 mod script;
 mod sequence;
 mod startup;
@@ -25,6 +26,9 @@ pub use presentation::{
 pub use procedure::{
     apply_procedure_activation, evaluate_procedure_gate, ScriptProcedureStateError,
     ScriptProcedureStates,
+};
+pub use record::{
+    apply_direct_record_operation, ScriptRecordError, ScriptRecordFields, ScriptRecordRuntime,
 };
 pub use script::{ScriptControl, ScriptResumeState, ScriptRuntime, ScriptRuntimeError};
 pub use sequence::{

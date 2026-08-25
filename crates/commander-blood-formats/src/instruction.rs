@@ -4,8 +4,8 @@ use std::fmt;
 
 use crate::code::{ScriptCodeOffset, ScriptDecodingMode, ScriptOpcode, ScriptToken};
 use crate::script::{
-    ScriptDictionary, ScriptDirectory, ScriptProcedureId, ScriptState, ScriptStateWord,
-    ScriptWordId,
+    ScriptDictionary, ScriptDirectory, ScriptObjectId, ScriptProcedureId, ScriptState,
+    ScriptStateWord, ScriptWordId,
 };
 
 const GUARD_BEGIN_OPCODE: u8 = 0xA0;
@@ -20,12 +20,19 @@ const SEQUENCE_REQUEST_OPCODE: u8 = 0xA8;
 const PROCEDURE_GATE_OPCODE: u8 = 0xA9;
 const YIELD_OPCODE: u8 = 0xAA;
 const PROCEDURE_ACTIVATION_OPCODE: u8 = 0xAB;
+const DIRECT_RECORD_A_OPCODE: u8 = 0xAD;
 const SHARED_BIT_STATE_A_OPCODE: u8 = 0xAE;
+const DIRECT_RECORD_B_OPCODE: u8 = 0xAF;
 const SHARED_BIT_STATE_B_OPCODE: u8 = 0xB0;
 const SHARED_STATE_A_OPCODE: u8 = 0xB1;
+const DIRECT_RECORD_C_OPCODE: u8 = 0xB2;
+const DIRECT_RECORD_D_OPCODE: u8 = 0xB3;
 const SHARED_STATE_B_OPCODE: u8 = 0xB4;
 const SHARED_STATE_C_OPCODE: u8 = 0xB5;
 const SHARED_STATE_D_OPCODE: u8 = 0xB6;
+const DIRECT_RECORD_E_OPCODE: u8 = 0xBA;
+const DIRECT_RECORD_F_OPCODE: u8 = 0xBB;
+const DIRECT_RECORD_TOPIC_OPCODE: u8 = 0xBC;
 const SHARED_STATE_E_OPCODE: u8 = 0xBE;
 const SHARED_STATE_F_OPCODE: u8 = 0xBF;
 const SHARED_STATE_G_OPCODE: u8 = 0xC0;
@@ -49,6 +56,7 @@ const YIELD_SIZE: usize = OPCODE_SIZE;
 const ENABLED_FLAG_MASK: u8 = 1;
 const SHARED_STATE_SIZE: usize = OPCODE_SIZE + WORD_SIZE + BYTE_SIZE + BYTE_SIZE + WORD_SIZE;
 const SHARED_BIT_STATE_SIZE: usize = OPCODE_SIZE + WORD_SIZE + WORD_SIZE;
+const DIRECT_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE + WORD_SIZE;
 const INDIRECT_STATE_MODE_A: u8 = 0xC0;
 const INDIRECT_STATE_MODE_B: u8 = 0xC2;
 const TIMER_SLOT_COUNT: u8 = 128;
@@ -281,6 +289,32 @@ pub struct ScriptSharedBitOperation {
     pub mask: u16,
     /// Query for absence instead of presence, or clear instead of set.
     pub inverted_or_clear: bool,
+}
+
+/// Typed value compared or assigned by the direct-record handler family.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ScriptRecordValue {
+    /// Relationship to one active profile object.
+    Object(ScriptObjectId),
+    /// Original `0xFFFF` relationship denoting an object aboard the ship.
+    Aboard,
+    /// Topic interned from the companion dictionary by shipped BC instructions.
+    Topic(ScriptWordId),
+    /// Proven native word domain for dispatch aliases absent from shipped COD.
+    NativeWord(u16),
+}
+
+/// One AD/AF/B2/B3/BA/BB/BC direct-record query or assignment.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptDirectRecordOperation {
+    /// Typed state field compared or assigned.
+    pub target: ScriptStateWord,
+    /// Typed relationship, topic, or unshipped native word.
+    pub value: ScriptRecordValue,
+    /// Whether query-mode equality is inverted.
+    pub inverted: bool,
+    /// Whether assignment also publishes the value for presentation dispatch.
+    pub publishes_value: bool,
 }
 
 impl ScriptSequenceRequest {
@@ -706,6 +740,61 @@ pub fn decode_script_shared_bit_operation(
     })
 }
 
+/// Decode the shared direct-record handler into flat typed identities.
+pub fn decode_script_direct_record_operation(
+    token: &ScriptToken,
+    state: &ScriptState,
+    directory: &ScriptDirectory,
+    dictionary: &ScriptDictionary,
+) -> Result<ScriptDirectRecordOperation, ScriptInstructionError> {
+    if !is_direct_record_opcode(token.opcode().byte()) {
+        return Err(ScriptInstructionError::UntranslatedOpcode {
+            opcode: token.opcode(),
+        });
+    }
+    let bytes = token.encoded_bytes();
+    let inverted = bytes.get(OPCODE_SIZE) == Some(&INVERTED_CONDITION_PREFIX);
+    let prefix_size = usize::from(inverted);
+    require_size(token, DIRECT_RECORD_SIZE + prefix_size)?;
+    let operand_offset = OPCODE_SIZE + prefix_size;
+    let target = resolve_state_word(token, state, read_word(bytes, operand_offset))?;
+    let encoded_value = read_word(bytes, operand_offset + WORD_SIZE);
+    let publishes_value = token.opcode().byte() == DIRECT_RECORD_TOPIC_OPCODE;
+    let value = if publishes_value {
+        dictionary
+            .resolve_source_offset(encoded_value)
+            .map(ScriptRecordValue::Topic)
+            .unwrap_or(ScriptRecordValue::NativeWord(encoded_value))
+    } else if encoded_value == u16::MAX {
+        ScriptRecordValue::Aboard
+    } else {
+        directory
+            .active_objects()
+            .find_map(|(object, entry)| (entry.value == encoded_value).then_some(object))
+            .map(ScriptRecordValue::Object)
+            .unwrap_or(ScriptRecordValue::NativeWord(encoded_value))
+    };
+    Ok(ScriptDirectRecordOperation {
+        target,
+        value,
+        inverted,
+        publishes_value,
+    })
+}
+
+const fn is_direct_record_opcode(opcode: u8) -> bool {
+    matches!(
+        opcode,
+        DIRECT_RECORD_A_OPCODE
+            | DIRECT_RECORD_B_OPCODE
+            | DIRECT_RECORD_C_OPCODE
+            | DIRECT_RECORD_D_OPCODE
+            | DIRECT_RECORD_E_OPCODE
+            | DIRECT_RECORD_F_OPCODE
+            | DIRECT_RECORD_TOPIC_OPCODE
+    )
+}
+
 fn resolve_state_word(
     token: &ScriptToken,
     state: &ScriptState,
@@ -818,6 +907,9 @@ mod tests {
         EXPECTED_PROCEDURE_ACTIVATION_COUNT - EXPECTED_PROCEDURE_ENABLE_COUNT;
     const EXPECTED_SHARED_STATE_COUNTS: [usize; PROFILE_COUNT] = [2, 400, 301, 64, 172];
     const EXPECTED_SHARED_BIT_COUNTS: [usize; PROFILE_COUNT] = [0, 69, 46, 32, 24];
+    const EXPECTED_DIRECT_RECORD_COUNTS: [usize; PROFILE_COUNT] = [7, 158, 188, 128, 99];
+    const EXPECTED_OBJECT_RECORD_COUNT: usize = 531;
+    const EXPECTED_TOPIC_RECORD_COUNT: usize = 49;
     const MAXIMUM_SHIPPED_SEQUENCE_BASENAME_LENGTH: usize = 12;
 
     fn original_asset(name: &str) -> PathBuf {
@@ -1037,6 +1129,52 @@ mod tests {
         }
 
         assert_eq!(counts, EXPECTED_SHARED_BIT_COUNTS);
+    }
+
+    #[test]
+    fn every_shipped_direct_record_token_has_typed_relationship_semantics() {
+        let mut counts = [usize::MIN; PROFILE_COUNT];
+        let mut object_records = usize::MIN;
+        let mut topic_records = usize::MIN;
+
+        for profile in 1..=PROFILE_COUNT {
+            let code_data = std::fs::read(original_asset(&format!("SCRIPT{profile}.COD"))).unwrap();
+            let directory_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.DEB"))).unwrap();
+            let dictionary_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.DIC"))).unwrap();
+            let state_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.VAR"))).unwrap();
+            let code = decode_script_code(&code_data).unwrap();
+            let directory = decode_script_directory(&directory_data).unwrap();
+            let dictionary = decode_script_dictionary(&dictionary_data).unwrap();
+            let state = decode_script_state(&state_data, &directory).unwrap();
+
+            for token in code
+                .tokens()
+                .iter()
+                .filter(|token| is_direct_record_opcode(token.opcode().byte()))
+            {
+                let operation =
+                    decode_script_direct_record_operation(token, &state, &directory, &dictionary)
+                        .unwrap();
+                assert!(operation.target.object().is_some());
+                assert_ne!(operation.target.word_index(), usize::MIN);
+                match (token.opcode().byte(), operation.value) {
+                    (
+                        DIRECT_RECORD_B_OPCODE,
+                        ScriptRecordValue::Object(_) | ScriptRecordValue::Aboard,
+                    ) => object_records += 1,
+                    (DIRECT_RECORD_TOPIC_OPCODE, ScriptRecordValue::Topic(_)) => topic_records += 1,
+                    unexpected => panic!("untyped shipped record operation: {unexpected:?}"),
+                }
+                counts[profile - 1] += 1;
+            }
+        }
+
+        assert_eq!(counts, EXPECTED_DIRECT_RECORD_COUNTS);
+        assert_eq!(object_records, EXPECTED_OBJECT_RECORD_COUNT);
+        assert_eq!(topic_records, EXPECTED_TOPIC_RECORD_COUNT);
     }
 
     #[test]
