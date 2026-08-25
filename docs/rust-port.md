@@ -130,3 +130,10 @@ binary cases verify callback initialization, phase and pairing reset, indirect
 dispatch, and state preservation. Native callback addresses are represented by
 `Option<AlienResumeCallback>`, while paired and resumed state references are
 typed optional node indices.
+
+The slot-3 initial-course callback is translated for all three overlays with 39
+direct binary cases. Tests cover the timer gate, circular history advance and
+wrap, deterministic random generation, and every species-specific scene-bound
+correction. The new oracle also corrected a recovered-C transcription error:
+AMER uses a 7-bit generated radial mask, while CROOLIS and SCRUT use 6 bits.
+The Rust policy preserves that difference without retaining native cursors.

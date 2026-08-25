@@ -14904,6 +14904,273 @@ def alien_slot1_callback_head_vectors(
     return vectors
 
 
+def alien_slot3_initial_update_vectors(
+    module: str,
+    entry: int,
+    body_hash: str,
+    timer_offset: int,
+    ring_offset: int,
+    depth_maximum: int,
+    lateral_maximum: int,
+    vertical_maximum: int,
+    random_radial_mask: int,
+) -> list[dict[str, object]]:
+    image = load_image(module)
+    body_size = 353
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered initial callback changed")
+
+    def u16(value: int) -> int:
+        return value & 0xFFFF
+
+    def i16(value: int) -> int:
+        value &= 0xFFFF
+        return value - 0x10000 if value & 0x8000 else value
+
+    def sar16(value: int, shift: int) -> int:
+        return u16(i16(value) >> shift)
+
+    def random_transition(value: int) -> int:
+        rotated = ((value >> 3) | (value << 13)) & 0xFFFF
+        return (rotated - ((value >> 2) & 1)) & 0xFFFF
+
+    def signed_divide(numerator: int, denominator: int) -> int:
+        magnitude = abs(numerator) // abs(denominator)
+        return -magnitude if (numerator < 0) != (denominator < 0) else magnitude
+
+    def put_bytes(memory: bytearray, offset: int, value: bytes) -> None:
+        for index, byte in enumerate(value):
+            memory[(offset + index) & 0xFFFF] = byte
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        put_bytes(memory, offset, struct.pack("<H", u16(value)))
+
+    def put_u32(memory: bytearray, offset: int, value: int) -> None:
+        put_bytes(memory, offset, struct.pack("<I", value & 0xFFFFFFFF))
+
+    def get_u16(memory: bytearray, offset: int) -> int:
+        return memory[offset & 0xFFFF] | (memory[(offset + 1) & 0xFFFF] << 8)
+
+    cases = (
+        ("timer_blocks", 0x0198, 1, 5, 0x1234, 0, 0, 100, ("timer",)),
+        ("random_zero", 0x0000, 0, 0, 0x0000, 0, 0, 100, ("random",)),
+        ("random_ordinary", 0x0200, 0, 0, 0x1234, 0, 0, 100, ("random",)),
+        ("random_borrow", 0x0300, 0, 0, 0x0004, 0, 0, 100, ("random",)),
+        ("random_ring_wrap", 0x03F8, 0, 0, 0xFFFF, 0, 0, 100, ("random", "wrap")),
+        ("within_bounds", 0x0080, 0, 5, 0x2222, 0, 0, 100, ("continue", "inside")),
+        ("depth_high", 0x0100, 0, 5, 0x2222, 0, 0, depth_maximum, ("continue", "depth_high")),
+        ("depth_low", 0x0180, 0, 5, 0x2222, 0, 0, 0, ("continue", "depth_low")),
+        ("lateral_high", 0x0200, 0, 5, 0x2222, lateral_maximum, 0, 1, ("continue", "lateral_high")),
+        ("lateral_low", 0x0280, 0, 5, 0x2222, -lateral_maximum, 0, 1, ("continue", "lateral_low")),
+        ("vertical_low", 0x0300, 0, 5, 0x2222, 0, -1000, 1, ("continue", "vertical_low")),
+        ("vertical_high", 0x0380, 0, 5, 0x2222, 0, vertical_maximum, 1, ("continue", "vertical_high")),
+        ("combined_bounds", 0x03F8, 0, 5, 0x2222, lateral_maximum, vertical_maximum, 1, ("continue", "lateral_high", "vertical_high", "wrap")),
+    )
+    data_segment = 0x5000
+    extra_segment = 0x7000
+    game_segment = 0x9000
+    stack_segment = 0xB000
+    state = 0x4000
+    context = 0x3000
+    return_address = 0xF000
+    stack_sentinel = bytes.fromhex("5aa596698778")
+    vectors: list[dict[str, object]] = []
+
+    for case_index, (
+        name,
+        ring_cursor,
+        timer,
+        course_frames,
+        behavior_seed,
+        position_x,
+        position_y,
+        position_z,
+        branch_classes,
+    ) in enumerate(cases):
+        data_before = bytearray(
+            (offset * 29 + case_index * 17 + 3) & 0xFF
+            for offset in range(0x10000)
+        )
+        data_expected = bytearray(data_before)
+        code_before = bytearray(image)
+        code_expected = bytearray(code_before)
+        code_before[return_address] = 0xCC
+        code_expected[return_address] = 0xCC
+        put_u16(code_before, timer_offset, timer)
+        put_u16(code_expected, timer_offset, timer)
+
+        position = (position_x, position_y, position_z)
+        for field, value in zip((0x42, 0x46, 0x4A), position):
+            put_u32(data_before, state + field, value)
+            put_u32(data_expected, state + field, value)
+        motion_before = (0x07F0, 0x0FF0, 0x3333, 0x4444, course_frames, behavior_seed)
+        for field, value in zip((0x4E, 0x50, 0x52, 0x54, 0x56, 0x5C), motion_before):
+            put_u16(data_before, state + field, value)
+            put_u16(data_expected, state + field, value)
+        put_u16(data_before, state + 0x5A, ring_cursor)
+        put_u16(data_expected, state + 0x5A, ring_cursor)
+
+        current_entry_before = (0x0011, 0xFFDE, 0x0033, 0xA5A5)
+        next_cursor = (ring_cursor + 8) & 0x03FC
+        next_entry_before = (0x4444, 0x5555, 0x6666, 0x7777)
+        for field, value in zip((0, 2, 4, 6), current_entry_before):
+            put_u16(code_before, ring_offset + ring_cursor + field, value)
+            put_u16(code_expected, ring_offset + ring_cursor + field, value)
+        for field, value in zip((0, 2, 4, 6), next_entry_before):
+            put_u16(code_before, ring_offset + next_cursor + field, value)
+            put_u16(code_expected, ring_offset + next_cursor + field, value)
+
+        pitch = u16(motion_before[0] + current_entry_before[0])
+        pan = u16(motion_before[1] + current_entry_before[1])
+        radial = current_entry_before[2]
+        put_u16(data_expected, state + 0x4E, pitch)
+        put_u16(data_expected, state + 0x50, pan)
+        put_u16(data_expected, state + 0x54, radial)
+        put_u16(code_expected, ring_offset + ring_cursor + 6, 0)
+
+        if timer == 0:
+            put_u16(data_expected, state + 0x5A, next_cursor)
+            course_after = u16(course_frames - 1)
+            put_u16(data_expected, state + 0x56, course_after)
+            if i16(course_after) < 0:
+                random_a = random_transition(behavior_seed)
+                divisor = (random_a & 0x003F) + 8
+                random_b = random_transition(random_a)
+                put_u16(code_expected, ring_offset + next_cursor + 2, sar16(random_b, 9))
+
+                pitch = u16(((pitch + 0x0800) & 0x0FFC) - 0x0800)
+                put_u16(data_expected, state + 0x4E, pitch)
+                opposite_pitch = u16(-pitch)
+                random_c = random_transition(random_b)
+                numerator_bits = u16((random_c & 0x0FFC) - 0x0800)
+                carry = (numerator_bits >> 1) & 1
+                numerator_bits = u16(sar16(numerator_bits, 2) + opposite_pitch + carry)
+                quotient = signed_divide(i16(numerator_bits), divisor)
+                put_u16(code_expected, ring_offset + next_cursor, quotient)
+                put_u16(data_expected, state + 0x56, sar16(divisor, 3))
+                random_after = random_transition(random_c)
+                put_u16(data_expected, state + 0x5C, random_after)
+                put_u16(
+                    code_expected,
+                    ring_offset + next_cursor + 4,
+                    (random_after & random_radial_mask) + 8,
+                )
+            else:
+                for field, value in zip((0, 2, 4), current_entry_before[:3]):
+                    put_u16(code_expected, ring_offset + next_cursor + field, value)
+                normalized_pan = pan & 0x0FFC
+                horizontal_delta: int | None = None
+                if i16(position_z) >= depth_maximum:
+                    horizontal_delta = u16(0x0800 - normalized_pan)
+                elif i16(position_z) <= 0:
+                    horizontal_delta = u16(0x0800 - ((normalized_pan + 0x0800) & 0x0FFC))
+                elif i16(position_x) >= lateral_maximum:
+                    horizontal_delta = u16(0x0800 - ((normalized_pan - 0x0400) & 0x0FFC))
+                elif i16(position_x) <= -lateral_maximum:
+                    horizontal_delta = u16(0x0800 - ((normalized_pan + 0x0400) & 0x0FFC))
+                if horizontal_delta is not None:
+                    put_u16(code_expected, ring_offset + next_cursor + 2, sar16(horizontal_delta, 4))
+
+                vertical_delta: int | None = None
+                if i16(position_y) <= -1000:
+                    vertical_delta = u16(0x0600 - ((pitch + 0x0800) & 0x0FFC))
+                elif i16(position_y) >= vertical_maximum:
+                    vertical_delta = u16(0x0A00 - ((pitch + 0x0800) & 0x0FFC))
+                if vertical_delta is not None:
+                    put_u16(data_expected, state + 0x56, 0)
+                    put_u16(code_expected, ring_offset + next_cursor, sar16(vertical_delta, 3))
+
+        initial = {
+            "eax": 0xA1A1BEEF + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E50000 | state,
+            "edi": 0xF6F60000 | context,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0xA000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0293 | (0x0400 if case_index & 1 else 0),
+        }
+        extra_before = bytes((offset * 13 + case_index + 7) & 0xFF for offset in range(0x10000))
+        game_before = bytes((offset * 11 + case_index + 9) & 0xFF for offset in range(0x10000))
+        machine = execute(
+            bytes(code_before),
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (data_segment, 0, bytes(data_before)),
+                (extra_segment, 0, extra_before),
+                (game_segment, 0, game_before),
+                (stack_segment, 0xFF00, struct.pack("<H", return_address) + stack_sentinel),
+            ],
+            max_instructions=10000,
+        )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        actual_code = bytes(machine.mem_read(0, len(image)))
+        if actual_data != bytes(data_expected):
+            differences = [
+                (offset, actual_data[offset], data_expected[offset])
+                for offset in range(0x10000)
+                if actual_data[offset] != data_expected[offset]
+            ][:8]
+            raise AssertionError(f"{module}:{entry:#x} {name}: data differs at {differences}")
+        if actual_code != bytes(code_expected):
+            differences = [
+                (offset, actual_code[offset], code_expected[offset])
+                for offset in range(len(image))
+                if actual_code[offset] != code_expected[offset]
+            ][:8]
+            raise AssertionError(f"{module}:{entry:#x} {name}: code differs at {differences}")
+        if bytes(machine.mem_read(extra_segment * 16, 0x10000)) != extra_before:
+            raise AssertionError(f"{module}:{entry:#x} {name}: extra data changed")
+        if bytes(machine.mem_read(game_segment * 16, 0x10000)) != game_before:
+            raise AssertionError(f"{module}:{entry:#x} {name}: game data changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, len(stack_sentinel))) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+
+        motion_after = [
+            get_u16(data_expected, state + field)
+            for field in (0x4E, 0x50, 0x52, 0x54, 0x56, 0x5C)
+        ]
+        current_entry_after = [
+            get_u16(code_expected, ring_offset + ring_cursor + field)
+            for field in (0, 2, 4, 6)
+        ]
+        next_entry_after = [
+            get_u16(code_expected, ring_offset + next_cursor + field)
+            for field in (0, 2, 4, 6)
+        ]
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "timer": timer,
+                "ring_slot_before": ring_cursor >> 3,
+                "ring_slot_after": get_u16(data_expected, state + 0x5A) >> 3,
+                "position": [value & 0xFFFFFFFF for value in position],
+                "motion_before": list(motion_before),
+                "motion_after": motion_after,
+                "current_entry_before": list(current_entry_before),
+                "current_entry_after": current_entry_after,
+                "next_entry_before": list(next_entry_before),
+                "next_entry_after": next_entry_after,
+                "branch_classes": list(branch_classes),
+                "data_sha256": hashlib.sha256(data_expected).hexdigest(),
+                "code_sha256": hashlib.sha256(code_expected).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def alien_slot3_callback_vectors(
     module: str,
     kind: str,
@@ -15245,6 +15512,66 @@ def main() -> int:
                 camera_callback,
                 pulse_updates,
                 clear_active_on_selection,
+            ),
+            args.check,
+        )
+    for (
+        module,
+        entry,
+        body_hash,
+        timer_offset,
+        ring_offset,
+        depth_maximum,
+        lateral_maximum,
+        vertical_maximum,
+        random_radial_mask,
+    ) in (
+        (
+            "amer",
+            0x12B3,
+            "b5021ea5d40c07d698185bfa6ab5a5413305a56fb7e50a63701b9ca55e5540c9",
+            0x0B31,
+            0x0D63,
+            0x3000,
+            0x1500,
+            0x0708,
+            0x007F,
+        ),
+        (
+            "croolis",
+            0x130B,
+            "cbc387f1acb3362bddf8707c8a72921f522b1bfead168a90025709f94d671c7e",
+            0x0B72,
+            0x0DBB,
+            0x2328,
+            0x0BB8,
+            0x03E8,
+            0x003F,
+        ),
+        (
+            "scrut",
+            0x12F9,
+            "08cba9d7d3807f6bcc0f527f6278a633f99b6697fb42110ad9cf04a75a697c4d",
+            0x0B72,
+            0x0DA9,
+            0x2328,
+            0x0BB8,
+            0x03E8,
+            0x003F,
+        ),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            alien_slot3_initial_update_vectors(
+                module,
+                entry,
+                body_hash,
+                timer_offset,
+                ring_offset,
+                depth_maximum,
+                lateral_maximum,
+                vertical_maximum,
+                random_radial_mask,
             ),
             args.check,
         )

@@ -148,6 +148,12 @@ resumed model state uses optional node indices. Initialization and indirect
 dispatch therefore retain the native state-machine decision without retaining
 routine addresses or model-record pointers.
 
+The leading-node slot-3 course callback is translated for all three species
+with 39 direct binary cases. It applies timer-gated ring motion, generates new
+deterministic courses, and corrects every depth, lateral, and vertical scene
+boundary through typed node and ring state. Oracle work corrected the recovered
+C radial mask to 7 bits for AMER and 6 bits for CROOLIS/SCRUT.
+
 Run the current interactive path with original assets:
 
 ```sh

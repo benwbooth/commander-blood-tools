@@ -87,7 +87,7 @@ void XDB_NEAR xdb_scrut_slot3_initial_update(
         ax = ror3_sbb_zero(random_b);
         state->field_05c = ax;
         xdb_scrut_slot3_ring[ring_cursor >> 3].field_004 =
-                (xdb_i16)((ax & 0x007fu) + 8u);
+                (xdb_i16)((ax & 0x003fu) + 8u);
         return;
     }
 

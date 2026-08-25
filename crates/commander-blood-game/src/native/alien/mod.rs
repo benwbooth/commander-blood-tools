@@ -44,9 +44,10 @@ pub use resume::{
 };
 pub use ring::{
     AlienRingAnimationState, AlienRingCallback, AlienRingCallbacks, AlienRingClearUpdate,
-    AlienRingEntry, AlienRingError, AlienRingLifecycle, AlienRingNodeState, AlienRingResumeState,
-    AlienRingUpdate, begin_resume_clear, capture_resume_state, clear_next_ring_entry,
-    restart_initial_course, update_or_initialize_ring,
+    AlienRingCourseUpdate, AlienRingEntry, AlienRingError, AlienRingLifecycle, AlienRingNodeState,
+    AlienRingResumeState, AlienRingUpdate, begin_resume_clear, capture_resume_state,
+    clear_next_ring_entry, restart_initial_course, update_initial_course,
+    update_or_initialize_ring,
 };
 pub use scene::{AlienScene, AlienSceneError, AlienSceneFrame};
 pub use starfield::{

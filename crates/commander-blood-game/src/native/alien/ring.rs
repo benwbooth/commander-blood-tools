@@ -29,6 +29,27 @@ const RESUME_COMMAND_FLAGS: u16 = 2;
 const RANDOM_BORROW_BIT: u16 = 1;
 const RANDOM_BORROW_SHIFT: u32 = 2;
 const RANDOM_ROTATION: u32 = 3;
+const COURSE_ANGLE_MASK: u16 = 0x0ffc;
+const COURSE_HALF_TURN: u16 = 0x0800;
+const COURSE_QUARTER_TURN: u16 = 0x0400;
+const COURSE_VERTICAL_LOW_TARGET: u16 = 0x0600;
+const COURSE_VERTICAL_HIGH_TARGET: u16 = 0x0a00;
+const COURSE_VERTICAL_MINIMUM: i16 = -1_000;
+const GENERATED_DIVISOR_MASK: u16 = 0x003f;
+const GENERATED_DIVISOR_BIAS: u16 = 8;
+const GENERATED_PAN_SHIFT: u32 = 9;
+const GENERATED_PITCH_SHIFT: u32 = 2;
+const GENERATED_COURSE_SHIFT: u32 = 3;
+const HORIZONTAL_CORRECTION_SHIFT: u32 = 4;
+const VERTICAL_CORRECTION_SHIFT: u32 = 3;
+const AMER_DEPTH_MAXIMUM: i16 = 12_288;
+const OTHER_DEPTH_MAXIMUM: i16 = 9_000;
+const AMER_LATERAL_MAXIMUM: i16 = 5_376;
+const OTHER_LATERAL_MAXIMUM: i16 = 3_000;
+const AMER_VERTICAL_MAXIMUM: i16 = 1_800;
+const OTHER_VERTICAL_MAXIMUM: i16 = 1_000;
+const AMER_GENERATED_RADIAL_MASK: u16 = 0x007f;
+const OTHER_GENERATED_RADIAL_MASK: u16 = 0x003f;
 
 /// One motion-history sample consumed by the recovered slot-3 callbacks.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -162,6 +183,17 @@ pub enum AlienRingClearUpdate {
     },
 }
 
+/// Stage completed by one invocation of the initial-course callback.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienRingCourseUpdate {
+    /// Current motion was applied while the shared timer remained active.
+    TimerWaiting,
+    /// A new deterministic course entry was generated.
+    CourseGenerated,
+    /// The current course was copied forward and corrected for scene bounds.
+    CourseContinued,
+}
+
 /// Invalid typed state supplied to the recovered ring coordinator.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AlienRingError {
@@ -289,6 +321,45 @@ pub fn clear_next_ring_entry(
     let slot = node.ring_slot;
     animation.entries[slot] = AlienRingEntry::default();
     Ok(AlienRingClearUpdate::Cleared { slot })
+}
+
+/// Apply or generate one leading node's recovered circular motion course.
+pub fn update_initial_course(
+    species: AlienSpecies,
+    node_index: usize,
+    pose: &mut AlienModelPose,
+    animation: &mut AlienRingAnimationState,
+) -> Result<AlienRingCourseUpdate, AlienRingError> {
+    let current_slot = validate_node_pair(node_index, pose, animation)?;
+    let current_entry = animation.entries[current_slot];
+    animation.entries[current_slot].command_flags = u16::MIN;
+    pose.nodes[node_index].angles[X_AXIS] =
+        pose.nodes[node_index].angles[X_AXIS].wrapping_add(current_entry.pitch_step as u16);
+    pose.nodes[node_index].angles[Y_AXIS] =
+        pose.nodes[node_index].angles[Y_AXIS].wrapping_add(current_entry.pan_step as u16);
+    pose.nodes[node_index].radial_offset = current_entry.radial_offset;
+    if animation.timer != u16::MIN {
+        return Ok(AlienRingCourseUpdate::TimerWaiting);
+    }
+
+    let next_ring_slot = next_slot(current_slot);
+    animation.nodes[node_index].ring_slot = next_ring_slot;
+    animation.nodes[node_index].course_frames_remaining = animation.nodes[node_index]
+        .course_frames_remaining
+        .wrapping_sub(1);
+    if animation.nodes[node_index]
+        .course_frames_remaining
+        .is_negative()
+    {
+        generate_course_entry(node_index, pose, animation, next_ring_slot, species);
+        return Ok(AlienRingCourseUpdate::CourseGenerated);
+    }
+
+    animation.entries[next_ring_slot].pitch_step = current_entry.pitch_step;
+    animation.entries[next_ring_slot].pan_step = current_entry.pan_step;
+    animation.entries[next_ring_slot].radial_offset = current_entry.radial_offset;
+    correct_course_bounds(node_index, species, pose, animation, next_ring_slot);
+    Ok(AlienRingCourseUpdate::CourseContinued)
 }
 
 /// Initialize or advance the recovered slot-3 motion-history coordinator.
@@ -467,6 +538,107 @@ fn random_transition(value: u16) -> u16 {
         .wrapping_sub((value >> RANDOM_BORROW_SHIFT) & RANDOM_BORROW_BIT)
 }
 
+fn generate_course_entry(
+    node_index: usize,
+    pose: &mut AlienModelPose,
+    animation: &mut AlienRingAnimationState,
+    ring_slot: usize,
+    species: AlienSpecies,
+) {
+    let random_a = random_transition(animation.nodes[node_index].behavior_seed);
+    let divisor = (random_a & GENERATED_DIVISOR_MASK).wrapping_add(GENERATED_DIVISOR_BIAS);
+    let random_b = random_transition(random_a);
+    animation.entries[ring_slot].pan_step = (random_b as i16) >> GENERATED_PAN_SHIFT;
+
+    let pitch =
+        pose.nodes[node_index].angles[X_AXIS].wrapping_add(COURSE_HALF_TURN) & COURSE_ANGLE_MASK;
+    let pitch = pitch.wrapping_sub(COURSE_HALF_TURN);
+    pose.nodes[node_index].angles[X_AXIS] = pitch;
+    let opposite_pitch = pitch.wrapping_neg();
+
+    let random_c = random_transition(random_b);
+    let numerator = (random_c & COURSE_ANGLE_MASK).wrapping_sub(COURSE_HALF_TURN);
+    let carry = (numerator >> (GENERATED_PITCH_SHIFT - 1)) & 1;
+    let numerator = ((numerator as i16) >> GENERATED_PITCH_SHIFT) as u16;
+    let numerator = numerator.wrapping_add(opposite_pitch).wrapping_add(carry) as i16;
+    animation.entries[ring_slot].pitch_step = numerator / divisor as i16;
+    animation.nodes[node_index].course_frames_remaining =
+        (divisor as i16) >> GENERATED_COURSE_SHIFT;
+
+    let random_after = random_transition(random_c);
+    animation.nodes[node_index].behavior_seed = random_after;
+    let radial_mask = match species {
+        AlienSpecies::Amer => AMER_GENERATED_RADIAL_MASK,
+        AlienSpecies::Croolis | AlienSpecies::Scrut => OTHER_GENERATED_RADIAL_MASK,
+    };
+    animation.entries[ring_slot].radial_offset =
+        ((random_after & radial_mask).wrapping_add(GENERATED_DIVISOR_BIAS)) as i16;
+}
+
+fn correct_course_bounds(
+    node_index: usize,
+    species: AlienSpecies,
+    pose: &AlienModelPose,
+    animation: &mut AlienRingAnimationState,
+    ring_slot: usize,
+) {
+    let (depth_maximum, lateral_maximum, vertical_maximum) = match species {
+        AlienSpecies::Amer => (
+            AMER_DEPTH_MAXIMUM,
+            AMER_LATERAL_MAXIMUM,
+            AMER_VERTICAL_MAXIMUM,
+        ),
+        AlienSpecies::Croolis | AlienSpecies::Scrut => (
+            OTHER_DEPTH_MAXIMUM,
+            OTHER_LATERAL_MAXIMUM,
+            OTHER_VERTICAL_MAXIMUM,
+        ),
+    };
+    let position = pose.nodes[node_index]
+        .local_position
+        .map(|component| component as i16);
+    let pan = pose.nodes[node_index].angles[Y_AXIS] & COURSE_ANGLE_MASK;
+    let horizontal_delta = if position[Z_AXIS] >= depth_maximum {
+        Some(COURSE_HALF_TURN.wrapping_sub(pan))
+    } else if position[Z_AXIS] <= ZERO_MOTION_COMPONENT {
+        Some(COURSE_HALF_TURN.wrapping_sub(pan.wrapping_add(COURSE_HALF_TURN) & COURSE_ANGLE_MASK))
+    } else if position[X_AXIS] >= lateral_maximum {
+        Some(
+            COURSE_HALF_TURN
+                .wrapping_sub(pan.wrapping_sub(COURSE_QUARTER_TURN) & COURSE_ANGLE_MASK),
+        )
+    } else if position[X_AXIS] <= lateral_maximum.wrapping_neg() {
+        Some(
+            COURSE_HALF_TURN
+                .wrapping_sub(pan.wrapping_add(COURSE_QUARTER_TURN) & COURSE_ANGLE_MASK),
+        )
+    } else {
+        None
+    };
+    if let Some(delta) = horizontal_delta {
+        animation.entries[ring_slot].pan_step = (delta as i16) >> HORIZONTAL_CORRECTION_SHIFT;
+    }
+
+    let pitch = pose.nodes[node_index].angles[X_AXIS];
+    let vertical_delta = if position[Y_AXIS] <= COURSE_VERTICAL_MINIMUM {
+        Some(
+            COURSE_VERTICAL_LOW_TARGET
+                .wrapping_sub(pitch.wrapping_add(COURSE_HALF_TURN) & COURSE_ANGLE_MASK),
+        )
+    } else if position[Y_AXIS] >= vertical_maximum {
+        Some(
+            COURSE_VERTICAL_HIGH_TARGET
+                .wrapping_sub(pitch.wrapping_add(COURSE_HALF_TURN) & COURSE_ANGLE_MASK),
+        )
+    } else {
+        None
+    };
+    if let Some(delta) = vertical_delta {
+        animation.nodes[node_index].course_frames_remaining = ZERO_MOTION_COMPONENT;
+        animation.entries[ring_slot].pitch_step = (delta as i16) >> VERTICAL_CORRECTION_SHIFT;
+    }
+}
+
 fn previous_slot(slot: usize) -> usize {
     if slot == usize::MIN {
         RING_ENTRY_COUNT - 1
@@ -530,6 +702,23 @@ mod tests {
         motion_after: [u16; 6],
         resume_countdown_after: u16,
         resume_state_after: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct InitialCourseVector {
+        name: String,
+        module: String,
+        timer: u16,
+        ring_slot_before: usize,
+        ring_slot_after: usize,
+        position: [u32; AXIS_COUNT],
+        motion_before: [u16; 6],
+        motion_after: [u16; 6],
+        current_entry_before: [u16; 4],
+        current_entry_after: [u16; 4],
+        next_entry_before: [u16; 4],
+        next_entry_after: [u16; 4],
+        branch_classes: Vec<String>,
     }
 
     #[derive(Default)]
@@ -660,6 +849,16 @@ mod tests {
         }
     }
 
+    fn initial_course_fixtures() -> [&'static str; 3] {
+        [
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_amer_func_12b3_natural.json"),
+            include_str!(
+                "../../../../../re/tools/oracle_vectors/xdb_croolis_func_130b_natural.json"
+            ),
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_scrut_func_12f9_natural.json"),
+        ]
+    }
+
     fn callback_state(ring_cursor: u16) -> (AlienModelPose, AlienRingAnimationState) {
         let mut pose = pose(SINGLE_NODE_COUNT);
         pose.nodes[FIRST_NODE].local_position = CALLBACK_POSITION;
@@ -693,6 +892,15 @@ mod tests {
             behavior.course_frames_remaining as u16,
             behavior.behavior_seed,
         ]
+    }
+
+    fn ring_entry(fields: [u16; 4]) -> AlienRingEntry {
+        AlienRingEntry {
+            pitch_step: fields[0] as i16,
+            pan_step: fields[1] as i16,
+            radial_offset: fields[2] as i16,
+            command_flags: fields[3],
+        }
     }
 
     #[test]
@@ -834,6 +1042,90 @@ mod tests {
                         );
                     }
                 }
+            }
+        }
+    }
+
+    #[test]
+    fn initial_course_callback_matches_every_original_overlay_vector() {
+        for fixture in initial_course_fixtures() {
+            let vectors: Vec<InitialCourseVector> = serde_json::from_str(fixture).unwrap();
+            for vector in vectors {
+                let mut pose = pose(SINGLE_NODE_COUNT);
+                pose.nodes[FIRST_NODE].local_position =
+                    vector.position.map(|component| component as i32);
+                pose.nodes[FIRST_NODE].angles = [
+                    vector.motion_before[0],
+                    vector.motion_before[1],
+                    vector.motion_before[2],
+                ];
+                pose.nodes[FIRST_NODE].radial_offset = vector.motion_before[3] as i16;
+                let mut animation = AlienRingAnimationState::new(SINGLE_NODE_COUNT);
+                animation.timer = vector.timer;
+                animation.nodes[FIRST_NODE] = AlienRingNodeState {
+                    callback: AlienRingCallback::InitialCourse,
+                    course_frames_remaining: vector.motion_before[4] as i16,
+                    feedback_phase: CALLBACK_FEEDBACK_PHASE,
+                    ring_slot: vector.ring_slot_before,
+                    behavior_seed: vector.motion_before[5],
+                };
+                let next_ring_slot = next_slot(vector.ring_slot_before);
+                animation.entries[vector.ring_slot_before] =
+                    ring_entry(vector.current_entry_before);
+                animation.entries[next_ring_slot] = ring_entry(vector.next_entry_before);
+
+                let update = update_initial_course(
+                    species(&vector.module),
+                    FIRST_NODE,
+                    &mut pose,
+                    &mut animation,
+                )
+                .unwrap();
+
+                let expected_update = if vector.branch_classes.iter().any(|class| class == "timer")
+                {
+                    AlienRingCourseUpdate::TimerWaiting
+                } else if vector.branch_classes.iter().any(|class| class == "random") {
+                    AlienRingCourseUpdate::CourseGenerated
+                } else {
+                    AlienRingCourseUpdate::CourseContinued
+                };
+                assert_eq!(update, expected_update, "{}", vector.name);
+                assert_eq!(callback_position(&pose), vector.position, "{}", vector.name);
+                assert_eq!(
+                    callback_motion(&pose, &animation),
+                    vector.motion_after,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    animation.nodes[FIRST_NODE].ring_slot, vector.ring_slot_after,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    animation.nodes[FIRST_NODE].feedback_phase, CALLBACK_FEEDBACK_PHASE,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    animation.nodes[FIRST_NODE].callback,
+                    AlienRingCallback::InitialCourse,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    animation.entries[vector.ring_slot_before],
+                    ring_entry(vector.current_entry_after),
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    animation.entries[next_ring_slot],
+                    ring_entry(vector.next_entry_after),
+                    "{}",
+                    vector.name
+                );
             }
         }
     }

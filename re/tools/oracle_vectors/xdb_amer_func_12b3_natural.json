@@ -1,0 +1,767 @@
+[
+  {
+    "name": "timer_blocks",
+    "module": "amer",
+    "entry": 4787,
+    "timer": 1,
+    "ring_slot_before": 51,
+    "ring_slot_after": 51,
+    "position": [
+      0,
+      0,
+      100
+    ],
+    "motion_before": [
+      2032,
+      4080,
+      13107,
+      17476,
+      5,
+      4660
+    ],
+    "motion_after": [
+      2049,
+      4046,
+      13107,
+      51,
+      5,
+      4660
+    ],
+    "current_entry_before": [
+      17,
+      65502,
+      51,
+      42405
+    ],
+    "current_entry_after": [
+      17,
+      65502,
+      51,
+      0
+    ],
+    "next_entry_before": [
+      17476,
+      21845,
+      26214,
+      30583
+    ],
+    "next_entry_after": [
+      17476,
+      21845,
+      26214,
+      30583
+    ],
+    "branch_classes": [
+      "timer"
+    ],
+    "data_sha256": "0849110d842a457a87eb90b89ee5feaa5b8b7f9838092da311c3e4443b6d3376",
+    "code_sha256": "645b765ba11785fa3892096c3e2a1f49fa3cbca95466c9b4fd237aa993446161"
+  },
+  {
+    "name": "random_zero",
+    "module": "amer",
+    "entry": 4787,
+    "timer": 0,
+    "ring_slot_before": 0,
+    "ring_slot_after": 1,
+    "position": [
+      0,
+      0,
+      100
+    ],
+    "motion_before": [
+      2032,
+      4080,
+      13107,
+      17476,
+      0,
+      0
+    ],
+    "motion_after": [
+      63488,
+      4046,
+      13107,
+      51,
+      1,
+      0
+    ],
+    "current_entry_before": [
+      17,
+      65502,
+      51,
+      42405
+    ],
+    "current_entry_after": [
+      17,
+      65502,
+      51,
+      0
+    ],
+    "next_entry_before": [
+      17476,
+      21845,
+      26214,
+      30583
+    ],
+    "next_entry_after": [
+      192,
+      0,
+      8,
+      30583
+    ],
+    "branch_classes": [
+      "random"
+    ],
+    "data_sha256": "f138617200d4f7ca6a77aae001dddb64070825bf7f5486ada4bb3bbb00fe8cd5",
+    "code_sha256": "aede274768b2a9e1a3628ce849b0214534fcaa7dfd870a2ad8c871357196def9"
+  },
+  {
+    "name": "random_ordinary",
+    "module": "amer",
+    "entry": 4787,
+    "timer": 0,
+    "ring_slot_before": 64,
+    "ring_slot_after": 65,
+    "position": [
+      0,
+      0,
+      100
+    ],
+    "motion_before": [
+      2032,
+      4080,
+      13107,
+      17476,
+      0,
+      4660
+    ],
+    "motion_after": [
+      63488,
+      4046,
+      13107,
+      51,
+      1,
+      65215
+    ],
+    "current_entry_before": [
+      17,
+      65502,
+      51,
+      42405
+    ],
+    "current_entry_after": [
+      17,
+      65502,
+      51,
+      0
+    ],
+    "next_entry_before": [
+      17476,
+      21845,
+      26214,
+      30583
+    ],
+    "next_entry_after": [
+      147,
+      65496,
+      71,
+      30583
+    ],
+    "branch_classes": [
+      "random"
+    ],
+    "data_sha256": "68cd0d08331c7bcdb62135057ec74fd92b9036991bd136a6e609f90767557b89",
+    "code_sha256": "3c282eab128f476edfa8c823b57665f811430f86e4939d964370b95d92d32c26"
+  },
+  {
+    "name": "random_borrow",
+    "module": "amer",
+    "entry": 4787,
+    "timer": 0,
+    "ring_slot_before": 96,
+    "ring_slot_after": 97,
+    "position": [
+      0,
+      0,
+      100
+    ],
+    "motion_before": [
+      2032,
+      4080,
+      13107,
+      17476,
+      0,
+      4
+    ],
+    "motion_after": [
+      63488,
+      4046,
+      13107,
+      51,
+      8,
+      56254
+    ],
+    "current_entry_before": [
+      17,
+      65502,
+      51,
+      42405
+    ],
+    "current_entry_after": [
+      17,
+      65502,
+      51,
+      0
+    ],
+    "next_entry_before": [
+      17476,
+      21845,
+      26214,
+      30583
+    ],
+    "next_entry_after": [
+      34,
+      65527,
+      70,
+      30583
+    ],
+    "branch_classes": [
+      "random"
+    ],
+    "data_sha256": "422465a346e988895e6520d0b3e1f135ab0964dc0cf578001f86b6b696b0e978",
+    "code_sha256": "93aad289052d82e0a0a3370526e9636824d9adcefd27a74b4b7be22d1daef2e8"
+  },
+  {
+    "name": "random_ring_wrap",
+    "module": "amer",
+    "entry": 4787,
+    "timer": 0,
+    "ring_slot_before": 127,
+    "ring_slot_after": 0,
+    "position": [
+      0,
+      0,
+      100
+    ],
+    "motion_before": [
+      2032,
+      4080,
+      13107,
+      17476,
+      0,
+      65535
+    ],
+    "motion_after": [
+      63488,
+      4046,
+      13107,
+      51,
+      8,
+      56190
+    ],
+    "current_entry_before": [
+      17,
+      65502,
+      51,
+      42405
+    ],
+    "current_entry_after": [
+      17,
+      65502,
+      51,
+      0
+    ],
+    "next_entry_before": [
+      17476,
+      21845,
+      26214,
+      30583
+    ],
+    "next_entry_after": [
+      32,
+      65519,
+      134,
+      30583
+    ],
+    "branch_classes": [
+      "random",
+      "wrap"
+    ],
+    "data_sha256": "3d08ca3e8d198caa6b5af3d460e8041e8bcad5932387600e8c416d34bb610f2d",
+    "code_sha256": "1dc802af8402a3495f97d19afa3b423d7aa65d5b7fc43d88335d30509cc43412"
+  },
+  {
+    "name": "within_bounds",
+    "module": "amer",
+    "entry": 4787,
+    "timer": 0,
+    "ring_slot_before": 16,
+    "ring_slot_after": 17,
+    "position": [
+      0,
+      0,
+      100
+    ],
+    "motion_before": [
+      2032,
+      4080,
+      13107,
+      17476,
+      5,
+      8738
+    ],
+    "motion_after": [
+      2049,
+      4046,
+      13107,
+      51,
+      4,
+      8738
+    ],
+    "current_entry_before": [
+      17,
+      65502,
+      51,
+      42405
+    ],
+    "current_entry_after": [
+      17,
+      65502,
+      51,
+      0
+    ],
+    "next_entry_before": [
+      17476,
+      21845,
+      26214,
+      30583
+    ],
+    "next_entry_after": [
+      17,
+      65502,
+      51,
+      30583
+    ],
+    "branch_classes": [
+      "continue",
+      "inside"
+    ],
+    "data_sha256": "81adc18ad7bc5dc70001f419d717661ac2b112b65866923083e1c29ef9f4388e",
+    "code_sha256": "2573666bee0d32eafd5c373bcbf696421349539dbccb1039a269cc07dc49e347"
+  },
+  {
+    "name": "depth_high",
+    "module": "amer",
+    "entry": 4787,
+    "timer": 0,
+    "ring_slot_before": 32,
+    "ring_slot_after": 33,
+    "position": [
+      0,
+      0,
+      12288
+    ],
+    "motion_before": [
+      2032,
+      4080,
+      13107,
+      17476,
+      5,
+      8738
+    ],
+    "motion_after": [
+      2049,
+      4046,
+      13107,
+      51,
+      4,
+      8738
+    ],
+    "current_entry_before": [
+      17,
+      65502,
+      51,
+      42405
+    ],
+    "current_entry_after": [
+      17,
+      65502,
+      51,
+      0
+    ],
+    "next_entry_before": [
+      17476,
+      21845,
+      26214,
+      30583
+    ],
+    "next_entry_after": [
+      17,
+      65411,
+      51,
+      30583
+    ],
+    "branch_classes": [
+      "continue",
+      "depth_high"
+    ],
+    "data_sha256": "d8796dcf1d4a27d26b5c647c023e2696e7c352d1e5e8d3bf85fde8d1ade832a2",
+    "code_sha256": "b29b9c01237bf8d8a40d9543ff28187ab9386735523d7e36e35126d5f162eabd"
+  },
+  {
+    "name": "depth_low",
+    "module": "amer",
+    "entry": 4787,
+    "timer": 0,
+    "ring_slot_before": 48,
+    "ring_slot_after": 49,
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "motion_before": [
+      2032,
+      4080,
+      13107,
+      17476,
+      5,
+      8738
+    ],
+    "motion_after": [
+      2049,
+      4046,
+      13107,
+      51,
+      4,
+      8738
+    ],
+    "current_entry_before": [
+      17,
+      65502,
+      51,
+      42405
+    ],
+    "current_entry_after": [
+      17,
+      65502,
+      51,
+      0
+    ],
+    "next_entry_before": [
+      17476,
+      21845,
+      26214,
+      30583
+    ],
+    "next_entry_after": [
+      17,
+      3,
+      51,
+      30583
+    ],
+    "branch_classes": [
+      "continue",
+      "depth_low"
+    ],
+    "data_sha256": "b27546e5e36d860278cf6501e578be24972fc09f67f57e1a733c9248c38017c1",
+    "code_sha256": "3d0cbfd1af1269a185649cc45b8ac6f694fd599b30f774cdff5c3e37cddcf5c3"
+  },
+  {
+    "name": "lateral_high",
+    "module": "amer",
+    "entry": 4787,
+    "timer": 0,
+    "ring_slot_before": 64,
+    "ring_slot_after": 65,
+    "position": [
+      5376,
+      0,
+      1
+    ],
+    "motion_before": [
+      2032,
+      4080,
+      13107,
+      17476,
+      5,
+      8738
+    ],
+    "motion_after": [
+      2049,
+      4046,
+      13107,
+      51,
+      4,
+      8738
+    ],
+    "current_entry_before": [
+      17,
+      65502,
+      51,
+      42405
+    ],
+    "current_entry_after": [
+      17,
+      65502,
+      51,
+      0
+    ],
+    "next_entry_before": [
+      17476,
+      21845,
+      26214,
+      30583
+    ],
+    "next_entry_after": [
+      17,
+      65475,
+      51,
+      30583
+    ],
+    "branch_classes": [
+      "continue",
+      "lateral_high"
+    ],
+    "data_sha256": "b2512b58e0d49d95ce9cb41c0761da964f072ca0055081aa710d5408d0f1516a",
+    "code_sha256": "84dcc18866d9a94725d5b1f31d52bbcd1c8933d97bc9fa355ab12933ba632dc4"
+  },
+  {
+    "name": "lateral_low",
+    "module": "amer",
+    "entry": 4787,
+    "timer": 0,
+    "ring_slot_before": 80,
+    "ring_slot_after": 81,
+    "position": [
+      4294961920,
+      0,
+      1
+    ],
+    "motion_before": [
+      2032,
+      4080,
+      13107,
+      17476,
+      5,
+      8738
+    ],
+    "motion_after": [
+      2049,
+      4046,
+      13107,
+      51,
+      4,
+      8738
+    ],
+    "current_entry_before": [
+      17,
+      65502,
+      51,
+      42405
+    ],
+    "current_entry_after": [
+      17,
+      65502,
+      51,
+      0
+    ],
+    "next_entry_before": [
+      17476,
+      21845,
+      26214,
+      30583
+    ],
+    "next_entry_after": [
+      17,
+      67,
+      51,
+      30583
+    ],
+    "branch_classes": [
+      "continue",
+      "lateral_low"
+    ],
+    "data_sha256": "c12b00acae8c687b0b7cbf0c62d1bc96720579c478b8c323e61ba15f029622d5",
+    "code_sha256": "8d86759e759d1ddb29624f958b92f3588a61c7f7bbd80118d6ec17310c698c97"
+  },
+  {
+    "name": "vertical_low",
+    "module": "amer",
+    "entry": 4787,
+    "timer": 0,
+    "ring_slot_before": 96,
+    "ring_slot_after": 97,
+    "position": [
+      0,
+      4294966296,
+      1
+    ],
+    "motion_before": [
+      2032,
+      4080,
+      13107,
+      17476,
+      5,
+      8738
+    ],
+    "motion_after": [
+      2049,
+      4046,
+      13107,
+      51,
+      0,
+      8738
+    ],
+    "current_entry_before": [
+      17,
+      65502,
+      51,
+      42405
+    ],
+    "current_entry_after": [
+      17,
+      65502,
+      51,
+      0
+    ],
+    "next_entry_before": [
+      17476,
+      21845,
+      26214,
+      30583
+    ],
+    "next_entry_after": [
+      192,
+      65502,
+      51,
+      30583
+    ],
+    "branch_classes": [
+      "continue",
+      "vertical_low"
+    ],
+    "data_sha256": "f3f90f487ccc4e4a9c6a0d5dcec826fb2362c0ca369240f4f9d6ca3efc45579c",
+    "code_sha256": "efdb7e89bb87aa5d227dd56b7d34a195f4c4873132d7e7ea7ce7ceac70650837"
+  },
+  {
+    "name": "vertical_high",
+    "module": "amer",
+    "entry": 4787,
+    "timer": 0,
+    "ring_slot_before": 112,
+    "ring_slot_after": 113,
+    "position": [
+      0,
+      1800,
+      1
+    ],
+    "motion_before": [
+      2032,
+      4080,
+      13107,
+      17476,
+      5,
+      8738
+    ],
+    "motion_after": [
+      2049,
+      4046,
+      13107,
+      51,
+      0,
+      8738
+    ],
+    "current_entry_before": [
+      17,
+      65502,
+      51,
+      42405
+    ],
+    "current_entry_after": [
+      17,
+      65502,
+      51,
+      0
+    ],
+    "next_entry_before": [
+      17476,
+      21845,
+      26214,
+      30583
+    ],
+    "next_entry_after": [
+      320,
+      65502,
+      51,
+      30583
+    ],
+    "branch_classes": [
+      "continue",
+      "vertical_high"
+    ],
+    "data_sha256": "a832d507bed8efc09e31af43d45316c3f3dde2475233a82574da145d25342cba",
+    "code_sha256": "1939a25f088f9b9547497470b04df1510301241977d958f7cfc8ee5e99278c1e"
+  },
+  {
+    "name": "combined_bounds",
+    "module": "amer",
+    "entry": 4787,
+    "timer": 0,
+    "ring_slot_before": 127,
+    "ring_slot_after": 0,
+    "position": [
+      5376,
+      1800,
+      1
+    ],
+    "motion_before": [
+      2032,
+      4080,
+      13107,
+      17476,
+      5,
+      8738
+    ],
+    "motion_after": [
+      2049,
+      4046,
+      13107,
+      51,
+      0,
+      8738
+    ],
+    "current_entry_before": [
+      17,
+      65502,
+      51,
+      42405
+    ],
+    "current_entry_after": [
+      17,
+      65502,
+      51,
+      0
+    ],
+    "next_entry_before": [
+      17476,
+      21845,
+      26214,
+      30583
+    ],
+    "next_entry_after": [
+      320,
+      65475,
+      51,
+      30583
+    ],
+    "branch_classes": [
+      "continue",
+      "lateral_high",
+      "vertical_high",
+      "wrap"
+    ],
+    "data_sha256": "d5bf69f1530c9051285cdc0941c45154028f8330c08126800bab850213478926",
+    "code_sha256": "36d68b1582022db20f37ec6d6c038bc15e1847600acafc35cd79ad7754e257fc"
+  }
+]
