@@ -1,0 +1,722 @@
+//! Typed C1 action records and navigation-state dispatch.
+
+use std::collections::BTreeMap;
+use std::fmt;
+
+use commander_blood_formats::instruction::{ScriptRecordStateOperand, ScriptRecordStateOperation};
+use commander_blood_formats::script::{
+    ScriptObjectId, ScriptObjectKind, ScriptState, ScriptStateObjectReference,
+    ScriptStateWordTriple,
+};
+
+use super::{
+    ScriptControl, ScriptFieldSelector, ScriptNavigationError, ScriptObjectFlag, ScriptRuntime,
+    ScriptRuntimeError, navigation_distance, navigation_source_objects, object_has_flag,
+    object_links_to, script_field_offset,
+};
+
+/// Typed contents of one three-word action slot relevant to the C1 handler.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum ScriptActionRecord {
+    /// All three words are available for a new action.
+    #[default]
+    Empty,
+    /// C1 navigation action carrying its typed operand.
+    Navigation(ScriptRecordStateOperand),
+    /// Another native record kind currently owns the slot.
+    Occupied,
+}
+
+/// Sparse typed action slots; absent entries are empty.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ScriptActionRecords {
+    records: BTreeMap<ScriptStateWordTriple, ScriptActionRecord>,
+}
+
+impl ScriptActionRecords {
+    /// Read one action slot, treating an unmaterialized slot as empty.
+    pub fn record(&self, slot: ScriptStateWordTriple) -> ScriptActionRecord {
+        self.records.get(&slot).copied().unwrap_or_default()
+    }
+
+    /// Initialize or replace one typed action slot.
+    pub fn set_record(&mut self, slot: ScriptStateWordTriple, record: ScriptActionRecord) {
+        if record == ScriptActionRecord::Empty {
+            self.records.remove(&slot);
+        } else {
+            self.records.insert(slot, record);
+        }
+    }
+}
+
+/// Explicit object identities replacing C1's special raw operands 1 and 2.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptRecordStateNavigationContext {
+    /// Object selected by the original primary special operand.
+    pub primary_object: ScriptObjectId,
+    /// Object selected by the original secondary special operand.
+    pub secondary_object: ScriptObjectId,
+    /// Navigation arche used when a parent relation contains the sentinel.
+    pub arche: ScriptObjectId,
+}
+
+/// Observable result of one C1 query or assignment.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptRecordStateOutcome {
+    /// Resulting BloodScript control flow.
+    pub control: ScriptControl,
+    /// Slot written by a successful assignment, including redirected writes.
+    pub written_slot: Option<ScriptStateWordTriple>,
+}
+
+/// Invalid typed state encountered by the C1 handler.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ScriptRecordStateError {
+    /// The authored record slot has no owning profile object.
+    MissingOwner {
+        /// Ownerless slot.
+        slot: ScriptStateWordTriple,
+    },
+    /// An object identity does not exist in this profile state.
+    MissingObject {
+        /// Missing object.
+        object: ScriptObjectId,
+    },
+    /// A required action field is absent from an object's proven layout.
+    MissingActionField {
+        /// Object lacking the field.
+        object: ScriptObjectId,
+    },
+    /// A special operand was applied without its explicit object mapping.
+    MissingNavigationContext,
+    /// An untyped native operand cannot participate in object navigation.
+    MissingOperandObject,
+    /// A typed navigation helper rejected malformed state.
+    Navigation(ScriptNavigationError),
+    /// A failed operation had no branch target to consume.
+    Control(ScriptRuntimeError),
+}
+
+impl fmt::Display for ScriptRecordStateError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(formatter, "{self:?}")
+    }
+}
+
+impl std::error::Error for ScriptRecordStateError {}
+
+/// Apply `vm_op_c1_record_state` to typed action slots and object relations.
+pub fn apply_record_state_operation(
+    operation: ScriptRecordStateOperation,
+    state: &ScriptState,
+    records: &mut ScriptActionRecords,
+    navigation: Option<ScriptRecordStateNavigationContext>,
+    runtime: &mut ScriptRuntime,
+) -> Result<ScriptRecordStateOutcome, ScriptRecordStateError> {
+    if runtime.query_mode() {
+        return query_record_state(operation, state, records, runtime);
+    }
+
+    let owner = operation
+        .target
+        .object()
+        .ok_or(ScriptRecordStateError::MissingOwner {
+            slot: operation.target,
+        })?;
+    if object_has_flag(state, owner, ScriptObjectFlag::Active) != Some(true) {
+        return failed_outcome(runtime);
+    }
+
+    let mut target = owner;
+    if is_special_operand(operation.operand) {
+        let context = navigation.ok_or(ScriptRecordStateError::MissingNavigationContext)?;
+        let operand_object = operand_object(operation.operand, Some(context))?;
+        let distance = navigation_distance(
+            state,
+            operand_object,
+            owner,
+            context.arche,
+            u16::from(operation.inverted),
+        )
+        .map_err(ScriptRecordStateError::Navigation)?;
+        if distance != u16::MIN {
+            let Some(parent) = parent_object(state, owner) else {
+                return failed_outcome(runtime);
+            };
+            if state.object(parent).map(|object| object.kind)
+                != Some(ScriptObjectKind::NavigationEntity)
+            {
+                return failed_outcome(runtime);
+            }
+            target = parent;
+        }
+    }
+
+    let destination = if state.object(target).map(|object| object.kind)
+        == Some(ScriptObjectKind::NavigationEntity)
+    {
+        let operand_object = operand_object(operation.operand, navigation)?;
+        let sources =
+            navigation_source_objects(state, target).map_err(ScriptRecordStateError::Navigation)?;
+        let operand_in_play =
+            object_has_flag(state, operand_object, ScriptObjectFlag::InPlay) == Some(true);
+        let accepted = sources
+            .iter()
+            .any(|source| match state.object(*source).map(|o| o.kind) {
+                Some(ScriptObjectKind::Actor) => {
+                    object_links_to(state, *source, operand_object) == Some(true)
+                }
+                Some(ScriptObjectKind::Player) => operand_in_play,
+                _ => false,
+            });
+        if !accepted {
+            return Ok(ScriptRecordStateOutcome {
+                control: ScriptControl::Continue,
+                written_slot: None,
+            });
+        }
+        action_slot(state, target)
+            .ok_or(ScriptRecordStateError::MissingActionField { object: target })?
+    } else {
+        operation.target
+    };
+
+    if records.record(destination) != ScriptActionRecord::Empty {
+        return failed_outcome(runtime);
+    }
+    records.set_record(
+        destination,
+        ScriptActionRecord::Navigation(operation.operand),
+    );
+    Ok(ScriptRecordStateOutcome {
+        control: ScriptControl::Continue,
+        written_slot: Some(destination),
+    })
+}
+
+fn query_record_state(
+    operation: ScriptRecordStateOperation,
+    state: &ScriptState,
+    records: &ScriptActionRecords,
+    runtime: &mut ScriptRuntime,
+) -> Result<ScriptRecordStateOutcome, ScriptRecordStateError> {
+    let direct = records.record(operation.target);
+    let comparison_slot = if is_special_operand(operation.operand)
+        && !matches!(direct, ScriptActionRecord::Navigation(_))
+    {
+        resolved_query_slot(state, operation.target, operation.operand)
+    } else {
+        Some(operation.target)
+    };
+    let matches = comparison_slot.is_some_and(|slot| {
+        records.record(slot) == ScriptActionRecord::Navigation(operation.operand)
+    });
+    if matches != operation.inverted {
+        Ok(ScriptRecordStateOutcome {
+            control: ScriptControl::Continue,
+            written_slot: None,
+        })
+    } else {
+        failed_outcome(runtime)
+    }
+}
+
+fn resolved_query_slot(
+    state: &ScriptState,
+    direct_slot: ScriptStateWordTriple,
+    operand: ScriptRecordStateOperand,
+) -> Option<ScriptStateWordTriple> {
+    let owner = direct_slot.object()?;
+    let layout_kind = match operand {
+        ScriptRecordStateOperand::PrimaryNavigationObject => ScriptObjectKind::Player,
+        ScriptRecordStateOperand::SecondaryNavigationObject => ScriptObjectKind::Actor,
+        _ => return None,
+    };
+    let field_offset = script_field_offset(layout_kind, ScriptFieldSelector::HOLDER_OR_LOCATION)?;
+    let field = state.object_word(owner, field_offset / std::mem::size_of::<u16>())?;
+    let ScriptStateObjectReference::Object(target) = state.object_reference(field)? else {
+        return None;
+    };
+    action_slot(state, target)
+}
+
+fn parent_object(state: &ScriptState, object: ScriptObjectId) -> Option<ScriptObjectId> {
+    let state_object = state.object(object)?;
+    let field_offset =
+        script_field_offset(state_object.kind, ScriptFieldSelector::HOLDER_OR_LOCATION)?;
+    let field = state.object_word(object, field_offset / std::mem::size_of::<u16>())?;
+    match state.object_reference(field)? {
+        ScriptStateObjectReference::Object(parent) => Some(parent),
+        ScriptStateObjectReference::Sentinel => None,
+    }
+}
+
+fn action_slot(state: &ScriptState, object: ScriptObjectId) -> Option<ScriptStateWordTriple> {
+    let state_object = state.object(object)?;
+    let field_offset = script_field_offset(state_object.kind, ScriptFieldSelector::ACTION)?;
+    state.object_word_triple(object, field_offset / std::mem::size_of::<u16>())
+}
+
+fn operand_object(
+    operand: ScriptRecordStateOperand,
+    context: Option<ScriptRecordStateNavigationContext>,
+) -> Result<ScriptObjectId, ScriptRecordStateError> {
+    match operand {
+        ScriptRecordStateOperand::PrimaryNavigationObject => context
+            .map(|context| context.primary_object)
+            .ok_or(ScriptRecordStateError::MissingNavigationContext),
+        ScriptRecordStateOperand::SecondaryNavigationObject => context
+            .map(|context| context.secondary_object)
+            .ok_or(ScriptRecordStateError::MissingNavigationContext),
+        ScriptRecordStateOperand::Object(object) => Ok(object),
+        ScriptRecordStateOperand::NativeWord(_) => {
+            Err(ScriptRecordStateError::MissingOperandObject)
+        }
+    }
+}
+
+const fn is_special_operand(operand: ScriptRecordStateOperand) -> bool {
+    matches!(
+        operand,
+        ScriptRecordStateOperand::PrimaryNavigationObject
+            | ScriptRecordStateOperand::SecondaryNavigationObject
+    )
+}
+
+fn failed_outcome(
+    runtime: &mut ScriptRuntime,
+) -> Result<ScriptRecordStateOutcome, ScriptRecordStateError> {
+    Ok(ScriptRecordStateOutcome {
+        control: runtime
+            .fail_guard()
+            .map_err(ScriptRecordStateError::Control)?,
+        written_slot: None,
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::{Path, PathBuf};
+
+    use commander_blood_formats::code::{ScriptCodeOffset, decode_script_code};
+    use commander_blood_formats::instruction::decode_script_record_state_operation;
+    use commander_blood_formats::script::{
+        ScriptDirectory, decode_script_directory, decode_script_state,
+    };
+    use serde::Deserialize;
+
+    use super::*;
+
+    const PROFILE_COUNT: usize = 5;
+    const RECORD_STATE_OPCODE: u8 = 0xC1;
+    const SHIPPED_RECORD_STATE_COUNT: usize = 20;
+    const FAILURE_TARGET: usize = 9_320;
+    const HANDLER_VECTOR_COUNT: usize = 21;
+    const DIRECTORY_ENTRY_SIZE: usize = 20;
+    const DIRECTORY_NAME_CAPACITY: usize = 16;
+    const DIRECTORY_OBJECT_KIND: u16 = 1;
+    const ACTIVE_FLAG: u16 = 1;
+    const IN_PLAY_FLAG: u16 = 2;
+    const QUERY_MODE_FLAG: u8 = 1;
+    const PRIMARY_NAVIGATION_OPERAND: u16 = 1;
+    const SECONDARY_NAVIGATION_OPERAND: u16 = 2;
+    const OBJECT_FLAGS_WORD_INDEX: usize = 1;
+    const EMPTY_ACTION_RECORD: [u16; 3] = [u16::MIN; 3];
+
+    const PRIMARY_OBJECT: usize = 0;
+    const SECONDARY_OBJECT: usize = 1;
+    const DIRECT_OWNER: usize = 2;
+    const DESTINATION_OBJECT: usize = 3;
+    const NAVIGATION_TARGET: usize = 4;
+    const ACTOR_SOURCE: usize = 5;
+    const PLAYER_SOURCE: usize = 6;
+    const WRONG_PARENT: usize = 7;
+    const ARCHE_OBJECT: usize = 8;
+    const AUXILIARY_OWNER: usize = 9;
+
+    #[derive(Deserialize)]
+    struct HandlerOracle {
+        name: String,
+        query_mode_before: u8,
+        inverted: bool,
+        operand: u16,
+        branch_failed: bool,
+        destination_offset: Option<u16>,
+    }
+
+    fn original_asset(name: &str) -> PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../..")
+            .join("accuracy/cblood_install/cblood")
+            .join(name)
+    }
+
+    #[test]
+    fn every_shipped_c1_navigation_request_writes_its_typed_action() {
+        let mut count = usize::MIN;
+
+        for profile in 1..=PROFILE_COUNT {
+            let code = decode_script_code(
+                &std::fs::read(original_asset(&format!("SCRIPT{profile}.COD"))).unwrap(),
+            )
+            .unwrap();
+            let directory = decode_script_directory(
+                &std::fs::read(original_asset(&format!("SCRIPT{profile}.DEB"))).unwrap(),
+            )
+            .unwrap();
+            let state = decode_script_state(
+                &std::fs::read(original_asset(&format!("SCRIPT{profile}.VAR"))).unwrap(),
+                &directory,
+            )
+            .unwrap();
+
+            for token in code
+                .tokens()
+                .iter()
+                .filter(|token| token.opcode().byte() == RECORD_STATE_OPCODE)
+            {
+                let operation =
+                    decode_script_record_state_operation(token, &state, &directory).unwrap();
+                assert_eq!(
+                    state.word_triple(operation.target),
+                    Some(EMPTY_ACTION_RECORD),
+                    "shipped C1 destination starts occupied"
+                );
+                let mut records = ScriptActionRecords::default();
+                let mut runtime = ScriptRuntime::new();
+                runtime.arm_root_failure_target(ScriptCodeOffset::new(FAILURE_TARGET));
+
+                let outcome = apply_record_state_operation(
+                    operation,
+                    &state,
+                    &mut records,
+                    None,
+                    &mut runtime,
+                )
+                .unwrap();
+
+                assert_eq!(outcome.control, ScriptControl::Continue);
+                assert_eq!(outcome.written_slot, Some(operation.target));
+                assert_eq!(
+                    records.record(operation.target),
+                    ScriptActionRecord::Navigation(operation.operand)
+                );
+                count += 1;
+            }
+        }
+
+        assert_eq!(count, SHIPPED_RECORD_STATE_COUNT);
+    }
+
+    #[test]
+    fn record_state_handler_matches_every_original_decision_vector() {
+        let vectors: Vec<HandlerOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_6b4c_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), HANDLER_VECTOR_COUNT);
+
+        for vector in vectors {
+            let (directory, mut state) = handler_fixture();
+            let ids = state
+                .objects()
+                .iter()
+                .map(|object| object.id)
+                .collect::<Vec<_>>();
+            let context = ScriptRecordStateNavigationContext {
+                primary_object: ids[PRIMARY_OBJECT],
+                secondary_object: ids[SECONDARY_OBJECT],
+                arche: ids[ARCHE_OBJECT],
+            };
+            let operand = match vector.operand {
+                PRIMARY_NAVIGATION_OPERAND => ScriptRecordStateOperand::PrimaryNavigationObject,
+                SECONDARY_NAVIGATION_OPERAND => ScriptRecordStateOperand::SecondaryNavigationObject,
+                _ => ScriptRecordStateOperand::Object(ids[DESTINATION_OBJECT]),
+            };
+            let uses_navigation_slot = vector.name.starts_with("set_nav_");
+            let uses_auxiliary_owner =
+                vector.name == "set_zero_parent_field_follows_kind_word_as_pointer";
+            let owner = if uses_navigation_slot {
+                ids[NAVIGATION_TARGET]
+            } else if uses_auxiliary_owner {
+                ids[AUXILIARY_OWNER]
+            } else {
+                ids[DIRECT_OWNER]
+            };
+            let target = if uses_auxiliary_owner {
+                state
+                    .object_word_triple(owner, OBJECT_FLAGS_WORD_INDEX)
+                    .unwrap()
+            } else {
+                action_slot(&state, owner).unwrap()
+            };
+            let operation = ScriptRecordStateOperation {
+                target,
+                operand,
+                inverted: vector.inverted,
+            };
+            let mut records = ScriptActionRecords::default();
+            configure_handler_case(
+                &vector.name,
+                &directory,
+                &mut state,
+                &mut records,
+                operation,
+                &ids,
+            );
+            let mut runtime = ScriptRuntime::new();
+            if vector.query_mode_before & QUERY_MODE_FLAG != u8::MIN {
+                runtime.begin_root_guard(ScriptCodeOffset::new(FAILURE_TARGET));
+            } else {
+                runtime.arm_root_failure_target(ScriptCodeOffset::new(FAILURE_TARGET));
+            }
+
+            let outcome = apply_record_state_operation(
+                operation,
+                &state,
+                &mut records,
+                Some(context),
+                &mut runtime,
+            )
+            .unwrap();
+
+            assert_eq!(
+                outcome.control,
+                if vector.branch_failed {
+                    ScriptControl::Jump(ScriptCodeOffset::new(FAILURE_TARGET))
+                } else {
+                    ScriptControl::Continue
+                },
+                "{}",
+                vector.name
+            );
+            let expected_write = vector.query_mode_before & QUERY_MODE_FLAG == u8::MIN
+                && !vector.branch_failed
+                && vector.destination_offset.is_some();
+            assert_eq!(
+                outcome.written_slot.is_some(),
+                expected_write,
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    fn configure_handler_case(
+        name: &str,
+        directory: &ScriptDirectory,
+        state: &mut ScriptState,
+        records: &mut ScriptActionRecords,
+        operation: ScriptRecordStateOperation,
+        ids: &[ScriptObjectId],
+    ) {
+        let direct_slot = action_slot(state, ids[DIRECT_OWNER]).unwrap();
+        let navigation_slot = action_slot(state, ids[NAVIGATION_TARGET]).unwrap();
+        match name {
+            "query_direct_exact_pass_owner_activity_irrelevant"
+            | "query_direct_exact_inverted_branches"
+            | "query_operand_one_direct_c1_skips_resolution" => {
+                records.set_record(
+                    operation.target,
+                    ScriptActionRecord::Navigation(operation.operand),
+                );
+            }
+            "query_direct_kind_mismatch_branches" => {
+                records.set_record(operation.target, ScriptActionRecord::Occupied);
+            }
+            "query_direct_related_mismatch_inverted_passes" => {
+                records.set_record(
+                    operation.target,
+                    ScriptActionRecord::Navigation(
+                        ScriptRecordStateOperand::PrimaryNavigationObject,
+                    ),
+                );
+            }
+            "query_operand_two_resolves_exact_slot" => {
+                set_layout_relation(
+                    directory,
+                    state,
+                    ids[DIRECT_OWNER],
+                    ScriptObjectKind::Actor,
+                    ids[NAVIGATION_TARGET],
+                );
+                records.set_record(
+                    navigation_slot,
+                    ScriptActionRecord::Navigation(operation.operand),
+                );
+            }
+            "query_resolved_zero_destination_field_branches" => {
+                set_layout_relation(
+                    directory,
+                    state,
+                    ids[DIRECT_OWNER],
+                    ScriptObjectKind::Player,
+                    ids[AUXILIARY_OWNER],
+                );
+            }
+            "query_resolved_mismatch_inverted_passes_with_negative_field" => {
+                set_layout_relation(
+                    directory,
+                    state,
+                    ids[DIRECT_OWNER],
+                    ScriptObjectKind::Actor,
+                    ids[NAVIGATION_TARGET],
+                );
+                records.set_record(navigation_slot, ScriptActionRecord::Occupied);
+            }
+            "set_inactive_owner_branches" => {
+                set_flags(state, ids[DIRECT_OWNER], u16::MIN);
+            }
+            "set_direct_occupied_record_branches" => {
+                records.set_record(direct_slot, ScriptActionRecord::Occupied);
+            }
+            "set_operand_one_zero_distance_uses_requested_record" => {
+                set_position(state, ids[DIRECT_OWNER], [10, 10]);
+                set_position(state, ids[ARCHE_OBJECT], [10, 10]);
+            }
+            "set_distance_redirect_wrong_kind_branches" => {
+                set_position(state, ids[DIRECT_OWNER], [10, 10]);
+                set_position(state, ids[ARCHE_OBJECT], [0, 0]);
+                set_parent(directory, state, ids[DIRECT_OWNER], ids[WRONG_PARENT]);
+            }
+            "set_nav_skips_unknown_then_accepts_kind_one_flag" => {
+                set_parent(directory, state, ids[PLAYER_SOURCE], ids[NAVIGATION_TARGET]);
+                set_flags(state, ids[DESTINATION_OBJECT], ACTIVE_FLAG | IN_PLAY_FLAG);
+                records.set_record(navigation_slot, ScriptActionRecord::Occupied);
+            }
+            "set_nav_kind_one_flag_missing_exhausts_list" => {
+                set_parent(directory, state, ids[PLAYER_SOURCE], ids[NAVIGATION_TARGET]);
+                set_flags(state, ids[DESTINATION_OBJECT], ACTIVE_FLAG);
+            }
+            "set_nav_kind_two_reject_then_accept" => {
+                set_parent(directory, state, ids[ACTOR_SOURCE], ids[NAVIGATION_TARGET]);
+                set_parent(
+                    directory,
+                    state,
+                    ids[SECONDARY_OBJECT],
+                    ids[NAVIGATION_TARGET],
+                );
+                set_link(state, ids[SECONDARY_OBJECT], ids[DESTINATION_OBJECT]);
+                records.set_record(navigation_slot, ScriptActionRecord::Occupied);
+            }
+            "set_nav_accepted_destination_occupied_branches" => {
+                set_parent(directory, state, ids[ACTOR_SOURCE], ids[NAVIGATION_TARGET]);
+                set_link(state, ids[ACTOR_SOURCE], ids[DESTINATION_OBJECT]);
+                records.set_record(navigation_slot, ScriptActionRecord::Occupied);
+            }
+            "set_a1_distance_inherits_dh_and_redirects" => {
+                set_position(state, ids[DIRECT_OWNER], [10, 10]);
+                set_position(state, ids[ARCHE_OBJECT], [0, 0]);
+                set_parent(directory, state, ids[DIRECT_OWNER], ids[NAVIGATION_TARGET]);
+                set_parent(directory, state, ids[ACTOR_SOURCE], ids[NAVIGATION_TARGET]);
+                set_link(state, ids[ACTOR_SOURCE], ids[SECONDARY_OBJECT]);
+                records.set_record(navigation_slot, ScriptActionRecord::Occupied);
+            }
+            "set_direct_empty_record_writes_triple"
+            | "set_zero_parent_field_follows_kind_word_as_pointer"
+            | "set_nav_empty_list_reaches_shipped_epilogue_defect"
+            | "set_direct_script_cursor_wraps" => {}
+            unknown => panic!("unknown C1 oracle case {unknown}"),
+        }
+    }
+
+    fn handler_fixture() -> (ScriptDirectory, ScriptState) {
+        let kinds = [
+            ScriptObjectKind::Player,
+            ScriptObjectKind::Actor,
+            ScriptObjectKind::WorldState,
+            ScriptObjectKind::Location,
+            ScriptObjectKind::NavigationEntity,
+            ScriptObjectKind::Actor,
+            ScriptObjectKind::Player,
+            ScriptObjectKind::Location,
+            ScriptObjectKind::CelestialBody,
+            ScriptObjectKind::Auxiliary,
+        ];
+        let mut offsets = Vec::with_capacity(kinds.len());
+        let mut cursor = usize::MIN;
+        for kind in kinds {
+            offsets.push(cursor);
+            cursor += kind.record_size();
+        }
+
+        let mut directory_data = Vec::new();
+        let mut state_data = Vec::with_capacity(cursor);
+        for (index, kind) in kinds.into_iter().enumerate() {
+            let mut entry = [u8::MIN; DIRECTORY_ENTRY_SIZE];
+            entry[0] = b'a' + u8::try_from(index).unwrap();
+            entry[DIRECTORY_NAME_CAPACITY..DIRECTORY_NAME_CAPACITY + 2]
+                .copy_from_slice(&u16::try_from(offsets[index]).unwrap().to_le_bytes());
+            entry[DIRECTORY_NAME_CAPACITY + 2..]
+                .copy_from_slice(&DIRECTORY_OBJECT_KIND.to_le_bytes());
+            directory_data.extend_from_slice(&entry);
+
+            let mut object = vec![u8::MIN; kind.record_size()];
+            object[..2].copy_from_slice(&kind.mask().to_le_bytes());
+            object[2..4].copy_from_slice(&ACTIVE_FLAG.to_le_bytes());
+            if let Some(parent_offset) =
+                script_field_offset(kind, ScriptFieldSelector::HOLDER_OR_LOCATION)
+            {
+                object[parent_offset..parent_offset + 2].copy_from_slice(&u16::MAX.to_le_bytes());
+            }
+            state_data.extend_from_slice(&object);
+        }
+        directory_data.extend_from_slice(&[u8::MIN; DIRECTORY_ENTRY_SIZE]);
+        let directory = decode_script_directory(&directory_data).unwrap();
+        let state = decode_script_state(&state_data, &directory).unwrap();
+        (directory, state)
+    }
+
+    fn set_flags(state: &mut ScriptState, object: ScriptObjectId, flags: u16) {
+        assert!(state.set_word(
+            state.object_word(object, OBJECT_FLAGS_WORD_INDEX).unwrap(),
+            flags
+        ));
+    }
+
+    fn set_parent(
+        directory: &ScriptDirectory,
+        state: &mut ScriptState,
+        object: ScriptObjectId,
+        parent: ScriptObjectId,
+    ) {
+        let kind = state.object(object).unwrap().kind;
+        set_layout_relation(directory, state, object, kind, parent);
+    }
+
+    fn set_layout_relation(
+        directory: &ScriptDirectory,
+        state: &mut ScriptState,
+        object: ScriptObjectId,
+        layout_kind: ScriptObjectKind,
+        target: ScriptObjectId,
+    ) {
+        let byte_offset =
+            script_field_offset(layout_kind, ScriptFieldSelector::HOLDER_OR_LOCATION).unwrap();
+        let field = state
+            .object_word(object, byte_offset / std::mem::size_of::<u16>())
+            .unwrap();
+        assert!(state.set_word(field, directory.object(target).unwrap().value));
+    }
+
+    fn set_position(state: &mut ScriptState, object: ScriptObjectId, position: [u16; 2]) {
+        let kind = state.object(object).unwrap().kind;
+        let byte_offset =
+            script_field_offset(kind, ScriptFieldSelector::NAVIGATION_POSITION).unwrap();
+        let field = state
+            .object_word_pair(object, byte_offset / std::mem::size_of::<u16>())
+            .unwrap();
+        assert!(state.set_word_pair(field, position));
+    }
+
+    fn set_link(state: &mut ScriptState, source: ScriptObjectId, target: ScriptObjectId) {
+        let source_kind = state.object(source).unwrap().kind;
+        let field_offset =
+            script_field_offset(source_kind, ScriptFieldSelector::OBJECT_LINKS).unwrap();
+        let byte_index = field_offset + target.index() / u8::BITS as usize;
+        let field = state.object_byte(source, byte_index).unwrap();
+        let mask = 1_u8 << (u8::BITS as usize - 1 - target.index() % u8::BITS as usize);
+        let value = state.byte(field).unwrap() | mask;
+        assert!(state.set_byte(field, value));
+    }
+}

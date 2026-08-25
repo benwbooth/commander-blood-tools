@@ -60,6 +60,13 @@ pub struct ScriptStateWordPair {
     first_word_index: usize,
 }
 
+/// Typed adjacent three-word record within one owned script state region.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct ScriptStateWordTriple {
+    owner: ScriptStateOwner,
+    first_word_index: usize,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum ScriptStateOwner {
     Object(ScriptObjectId),
@@ -101,6 +108,26 @@ impl ScriptStateWordPair {
     }
 
     /// Return whether this pair belongs to the trailing profile-state block.
+    pub const fn is_trailing_state(self) -> bool {
+        matches!(self.owner, ScriptStateOwner::TrailingState)
+    }
+}
+
+impl ScriptStateWordTriple {
+    /// Return the object that owns all three words.
+    pub const fn object(self) -> Option<ScriptObjectId> {
+        match self.owner {
+            ScriptStateOwner::Object(object) => Some(object),
+            ScriptStateOwner::TrailingState => None,
+        }
+    }
+
+    /// Return the zero-based index of the first word within the owning region.
+    pub const fn first_word_index(self) -> usize {
+        self.first_word_index
+    }
+
+    /// Return whether this record belongs to the trailing profile-state block.
     pub const fn is_trailing_state(self) -> bool {
         matches!(self.owner, ScriptStateOwner::TrailingState)
     }
@@ -298,6 +325,21 @@ impl ScriptState {
         })
     }
 
+    /// Resolve three adjacent words within one typed object record.
+    pub fn object_word_triple(
+        &self,
+        object: ScriptObjectId,
+        first_word_index: usize,
+    ) -> Option<ScriptStateWordTriple> {
+        let state_object = self.object(object)?;
+        let byte_offset = first_word_index.checked_mul(WORD_SIZE)?;
+        let record_end = byte_offset.checked_add(WORD_SIZE * 3)?;
+        (record_end <= state_object.bytes.len()).then_some(ScriptStateWordTriple {
+            owner: ScriptStateOwner::Object(object),
+            first_word_index,
+        })
+    }
+
     /// Resolve an encoded VAR byte position to an aligned owned object word.
     pub fn resolve_word_source_offset(&self, source_offset: u16) -> Option<ScriptStateWord> {
         let source_offset = usize::from(source_offset);
@@ -423,6 +465,75 @@ impl ScriptState {
         let Some(bytes) = bytes else { return false };
         bytes[..WORD_SIZE].copy_from_slice(&value[0].to_le_bytes());
         bytes[WORD_SIZE..].copy_from_slice(&value[1].to_le_bytes());
+        true
+    }
+
+    /// Resolve an encoded VAR byte position to three adjacent owned words.
+    pub fn resolve_word_triple_source_offset(
+        &self,
+        source_offset: u16,
+    ) -> Option<ScriptStateWordTriple> {
+        let source_offset = usize::from(source_offset);
+        self.objects
+            .iter()
+            .find_map(|object| {
+                let relative = source_offset.checked_sub(object.source_offset)?;
+                let record_end = relative.checked_add(WORD_SIZE * 3)?;
+                (relative.is_multiple_of(WORD_SIZE) && record_end <= object.bytes.len()).then_some(
+                    ScriptStateWordTriple {
+                        owner: ScriptStateOwner::Object(object.id),
+                        first_word_index: relative / WORD_SIZE,
+                    },
+                )
+            })
+            .or_else(|| {
+                let relative = source_offset.checked_sub(self.trailing_source_offset)?;
+                let record_end = relative.checked_add(WORD_SIZE * 3)?;
+                (relative.is_multiple_of(WORD_SIZE) && record_end <= self.trailing_data.len())
+                    .then_some(ScriptStateWordTriple {
+                        owner: ScriptStateOwner::TrailingState,
+                        first_word_index: relative / WORD_SIZE,
+                    })
+            })
+    }
+
+    /// Read one resolved adjacent three-word record.
+    pub fn word_triple(&self, field: ScriptStateWordTriple) -> Option<[u16; 3]> {
+        let offset = field.first_word_index.checked_mul(WORD_SIZE)?;
+        let bytes = match field.owner {
+            ScriptStateOwner::Object(object) => self
+                .object(object)?
+                .bytes
+                .get(offset..offset + WORD_SIZE * 3)?,
+            ScriptStateOwner::TrailingState => {
+                self.trailing_data.get(offset..offset + WORD_SIZE * 3)?
+            }
+        };
+        Some([
+            u16::from_le_bytes(bytes[..WORD_SIZE].try_into().ok()?),
+            u16::from_le_bytes(bytes[WORD_SIZE..WORD_SIZE * 2].try_into().ok()?),
+            u16::from_le_bytes(bytes[WORD_SIZE * 2..].try_into().ok()?),
+        ])
+    }
+
+    /// Assign one resolved adjacent three-word record atomically.
+    pub fn set_word_triple(&mut self, field: ScriptStateWordTriple, value: [u16; 3]) -> bool {
+        let Some(offset) = field.first_word_index.checked_mul(WORD_SIZE) else {
+            return false;
+        };
+        let bytes = match field.owner {
+            ScriptStateOwner::Object(object) => self
+                .objects
+                .get_mut(object.index())
+                .and_then(|object| object.bytes.get_mut(offset..offset + WORD_SIZE * 3)),
+            ScriptStateOwner::TrailingState => {
+                self.trailing_data.get_mut(offset..offset + WORD_SIZE * 3)
+            }
+        };
+        let Some(bytes) = bytes else { return false };
+        for (word, destination) in value.into_iter().zip(bytes.chunks_exact_mut(WORD_SIZE)) {
+            destination.copy_from_slice(&word.to_le_bytes());
+        }
         true
     }
 

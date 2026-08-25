@@ -6,6 +6,7 @@ mod numbers;
 mod presentation;
 mod procedure;
 mod record;
+mod record_state;
 mod script;
 mod sequence;
 mod startup;
@@ -38,6 +39,10 @@ pub use record::{
     ScriptTransferOutcome, ScriptTransferPresentationLine, ScriptTransferPresentationState,
     ScriptTransferRecord, ScriptTransferRecords,
 };
+pub use record_state::{
+    apply_record_state_operation, ScriptActionRecord, ScriptActionRecords,
+    ScriptRecordStateError, ScriptRecordStateNavigationContext, ScriptRecordStateOutcome,
+};
 pub use script::{ScriptControl, ScriptResumeState, ScriptRuntime, ScriptRuntimeError};
 pub use sequence::{
     load_sequence_request, offer_topic_if_presentation_active, PresentationResourceLine,
@@ -58,6 +63,6 @@ pub use text_handler::{
     TextPresentationState,
 };
 pub use vm::{
-    active_objects_in_play, count_positive_operands, object_before_threshold,
-    resolve_dictionary_object, script_field_offset, ScriptFieldSelector,
+    active_objects_in_play, count_positive_operands, object_before_threshold, object_has_flag,
+    resolve_dictionary_object, script_field_offset, ScriptFieldSelector, ScriptObjectFlag,
 };

@@ -5,7 +5,7 @@ use std::fmt;
 use crate::code::{ScriptCodeOffset, ScriptDecodingMode, ScriptOpcode, ScriptToken};
 use crate::script::{
     ScriptDictionary, ScriptDirectory, ScriptObjectId, ScriptProcedureId, ScriptState,
-    ScriptStateByte, ScriptStateWord, ScriptStateWordPair, ScriptWordId,
+    ScriptStateByte, ScriptStateWord, ScriptStateWordPair, ScriptStateWordTriple, ScriptWordId,
 };
 
 const GUARD_BEGIN_OPCODE: u8 = 0xA0;
@@ -40,6 +40,7 @@ const PAIR_RECORD_C_OPCODE: u8 = 0xBD;
 const SHARED_STATE_E_OPCODE: u8 = 0xBE;
 const SHARED_STATE_F_OPCODE: u8 = 0xBF;
 const SHARED_STATE_G_OPCODE: u8 = 0xC0;
+const RECORD_STATE_OPCODE: u8 = 0xC1;
 const TRANSFER_OPCODE: u8 = 0xCD;
 const INVERTED_CONDITION_PREFIX: u8 = GUARD_END_OPCODE;
 const OPCODE_SIZE: usize = 1;
@@ -65,7 +66,10 @@ const DIRECT_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE + WORD_SIZE;
 const TRANSFER_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 3;
 const BIT_FLAG_SIZE: usize = OPCODE_SIZE + WORD_SIZE + BYTE_SIZE;
 const PAIR_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 3;
+const RECORD_STATE_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const BITS_PER_BYTE: u8 = u8::BITS as u8;
+const PRIMARY_NAVIGATION_OPERAND: u16 = 1;
+const SECONDARY_NAVIGATION_OPERAND: u16 = 2;
 const INDIRECT_STATE_MODE_A: u8 = 0xC0;
 const INDIRECT_STATE_MODE_B: u8 = 0xC2;
 const TIMER_SLOT_COUNT: u8 = 128;
@@ -359,6 +363,30 @@ pub struct ScriptRecordPairOperation {
     pub value: [u16; 2],
 }
 
+/// Special selector or typed value carried by one C1 state record.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ScriptRecordStateOperand {
+    /// Native special operand 1, mapped to an explicit runtime object.
+    PrimaryNavigationObject,
+    /// Native special operand 2, mapped to an explicit runtime object.
+    SecondaryNavigationObject,
+    /// One active profile object.
+    Object(ScriptObjectId),
+    /// Unshipped value retained in the native record-value domain.
+    NativeWord(u16),
+}
+
+/// One optionally inverted C1 action-record query or assignment.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptRecordStateOperation {
+    /// Bounded three-word action slot.
+    pub target: ScriptStateWordTriple,
+    /// Typed action value or explicit special navigation selector.
+    pub operand: ScriptRecordStateOperand,
+    /// Whether query-mode equality is inverted.
+    pub inverted: bool,
+}
+
 impl ScriptSequenceRequest {
     /// Construct a safe owned request from raw non-NUL basename bytes.
     pub fn new(basename: impl Into<Box<[u8]>>) -> Option<Self> {
@@ -493,6 +521,13 @@ pub enum ScriptInstructionError {
     },
     /// A pair-record operand is unaligned, truncated, or crosses a VAR owner boundary.
     InvalidStateWordPair {
+        /// Token position.
+        source_offset: ScriptCodeOffset,
+        /// Unresolved VAR byte position.
+        encoded_offset: u16,
+    },
+    /// A state-record operand is unaligned, truncated, or crosses a VAR owner boundary.
+    InvalidStateWordTriple {
         /// Token position.
         source_offset: ScriptCodeOffset,
         /// Unresolved VAR byte position.
@@ -942,6 +977,46 @@ pub fn decode_script_record_pair_operation(
     })
 }
 
+/// Decode one C1 action-record operation into a bounded slot and typed operand.
+pub fn decode_script_record_state_operation(
+    token: &ScriptToken,
+    state: &ScriptState,
+    directory: &ScriptDirectory,
+) -> Result<ScriptRecordStateOperation, ScriptInstructionError> {
+    if token.opcode().byte() != RECORD_STATE_OPCODE {
+        return Err(ScriptInstructionError::UntranslatedOpcode {
+            opcode: token.opcode(),
+        });
+    }
+    let bytes = token.encoded_bytes();
+    let inverted = bytes.get(OPCODE_SIZE) == Some(&INVERTED_CONDITION_PREFIX);
+    let prefix_size = usize::from(inverted);
+    require_size(token, RECORD_STATE_SIZE + prefix_size)?;
+    let operand_offset = OPCODE_SIZE + prefix_size;
+    let encoded_target = read_word(bytes, operand_offset);
+    let target = state
+        .resolve_word_triple_source_offset(encoded_target)
+        .ok_or(ScriptInstructionError::InvalidStateWordTriple {
+            source_offset: token.source_offset(),
+            encoded_offset: encoded_target,
+        })?;
+    let encoded_operand = read_word(bytes, operand_offset + WORD_SIZE);
+    let operand = match encoded_operand {
+        PRIMARY_NAVIGATION_OPERAND => ScriptRecordStateOperand::PrimaryNavigationObject,
+        SECONDARY_NAVIGATION_OPERAND => ScriptRecordStateOperand::SecondaryNavigationObject,
+        _ => directory
+            .active_objects()
+            .find_map(|(object, entry)| (entry.value == encoded_operand).then_some(object))
+            .map(ScriptRecordStateOperand::Object)
+            .unwrap_or(ScriptRecordStateOperand::NativeWord(encoded_operand)),
+    };
+    Ok(ScriptRecordStateOperation {
+        target,
+        operand,
+        inverted,
+    })
+}
+
 const fn is_direct_record_opcode(opcode: u8) -> bool {
     matches!(
         opcode,
@@ -1080,6 +1155,7 @@ mod tests {
     const EXPECTED_TRANSFER_COUNTS: [usize; PROFILE_COUNT] = [0, 18, 14, 10, 4];
     const EXPECTED_BIT_FLAG_COUNTS: [usize; PROFILE_COUNT] = [0, 2, 1, 0, 0];
     const EXPECTED_PAIR_RECORD_COUNTS: [usize; PROFILE_COUNT] = [0, 0, 2, 0, 0];
+    const EXPECTED_RECORD_STATE_COUNT: usize = 20;
     const EXPECTED_SHIPPED_BIT_FLAG_MASK: u8 = 32;
     const EXPECTED_SHIPPED_PAIR_OPCODE: u8 = PAIR_RECORD_C_OPCODE;
     const MAXIMUM_SHIPPED_SEQUENCE_BASENAME_LENGTH: usize = 12;
@@ -1456,6 +1532,47 @@ mod tests {
         }
 
         assert_eq!(counts, EXPECTED_PAIR_RECORD_COUNTS);
+    }
+
+    #[test]
+    fn every_shipped_c1_record_is_a_typed_navigation_request() {
+        let mut count = usize::MIN;
+
+        for profile in 1..=PROFILE_COUNT {
+            let code_data = std::fs::read(original_asset(&format!("SCRIPT{profile}.COD"))).unwrap();
+            let directory_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.DEB"))).unwrap();
+            let state_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.VAR"))).unwrap();
+            let code = decode_script_code(&code_data).unwrap();
+            let directory = decode_script_directory(&directory_data).unwrap();
+            let state = decode_script_state(&state_data, &directory).unwrap();
+
+            for token in code
+                .tokens()
+                .iter()
+                .filter(|token| token.opcode().byte() == RECORD_STATE_OPCODE)
+            {
+                let operation =
+                    decode_script_record_state_operation(token, &state, &directory).unwrap();
+                let owner = operation.target.object().unwrap();
+                assert_eq!(
+                    state.object(owner).unwrap().kind,
+                    crate::script::ScriptObjectKind::WorldState
+                );
+                let ScriptRecordStateOperand::Object(destination) = operation.operand else {
+                    panic!("shipped C1 operand is not a typed object");
+                };
+                assert_eq!(
+                    state.object(destination).unwrap().kind,
+                    crate::script::ScriptObjectKind::Location
+                );
+                assert!(!operation.inverted);
+                count += 1;
+            }
+        }
+
+        assert_eq!(count, EXPECTED_RECORD_STATE_COUNT);
     }
 
     #[test]

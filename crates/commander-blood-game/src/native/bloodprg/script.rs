@@ -200,6 +200,16 @@ impl ScriptRuntime {
         self.guard_targets.push(failure_target);
     }
 
+    /// Install a root failure target without changing assignment/query mode.
+    ///
+    /// Native procedure execution can retain a branch destination while the
+    /// low query bit is clear; state-record assignment failures consume that
+    /// destination through the same branch helper as failed conditions.
+    pub fn arm_root_failure_target(&mut self, failure_target: ScriptCodeOffset) {
+        self.guard_targets.clear();
+        self.guard_targets.push(failure_target);
+    }
+
     /// Return the current innermost guard target.
     pub fn current_guard_target(&self) -> Option<ScriptCodeOffset> {
         self.guard_targets.last().copied()

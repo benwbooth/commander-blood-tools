@@ -10,6 +10,7 @@ const FIELD_SELECTOR_COUNT: usize = 21;
 const OBJECT_KIND_COUNT: usize = 9;
 const OBJECT_FLAGS_BYTE_OFFSET: usize = 2;
 const OBJECT_HEADER_WORD_SIZE: usize = std::mem::size_of::<u16>();
+const OBJECT_ACTIVE_FLAG: u16 = 1;
 const OBJECT_IN_PLAY_FLAG: u16 = 2;
 
 const FIELD_OFFSETS: [[u8; OBJECT_KIND_COUNT]; FIELD_SELECTOR_COUNT] = [
@@ -39,6 +40,15 @@ const FIELD_OFFSETS: [[u8; OBJECT_KIND_COUNT]; FIELD_SELECTOR_COUNT] = [
 /// Typed selector row in the recovered VM object-field matrix.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ScriptFieldSelector(u8);
+
+/// Recovered low object-header flags used by typed runtime gates.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ScriptObjectFlag {
+    /// Object can receive state-record updates.
+    Active,
+    /// Object participates in navigation and source-list filtering.
+    InPlay,
+}
 
 impl ScriptFieldSelector {
     /// Field used by presentation handoff logic.
@@ -113,9 +123,22 @@ pub fn active_objects_in_play(state: &ScriptState) -> Vec<ScriptObjectId> {
     state
         .objects()
         .iter()
-        .filter(|object| object_flags(object.bytes()) & OBJECT_IN_PLAY_FLAG != u16::MIN)
+        .filter(|object| object_has_flag(state, object.id, ScriptObjectFlag::InPlay) == Some(true))
         .map(|object| object.id)
         .collect()
+}
+
+/// Test one typed object-header flag without exposing the serialized header word.
+pub fn object_has_flag(
+    state: &ScriptState,
+    object: ScriptObjectId,
+    flag: ScriptObjectFlag,
+) -> Option<bool> {
+    let mask = match flag {
+        ScriptObjectFlag::Active => OBJECT_ACTIVE_FLAG,
+        ScriptObjectFlag::InPlay => OBJECT_IN_PLAY_FLAG,
+    };
+    Some(object_flags(state.object(object)?.bytes()) & mask != u16::MIN)
 }
 
 /// Resolve an interned dictionary word to an active script object.
