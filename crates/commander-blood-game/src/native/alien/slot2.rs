@@ -140,6 +140,27 @@ const CROOLIS_CAMERA_RESET_DURATION: i16 = 8;
 const CROOLIS_RADIAL_SCORE_SHIFT: u32 = 15;
 const CROOLIS_RADIAL_FALLBACK_SHIFT: u32 = 1;
 const CROOLIS_RESET_TURN_STEP: i16 = 16;
+const SCRUT_MOTION_NODE_COUNT: usize = 6;
+const SCRUT_RESTART_RADIAL_TARGET: u16 = 100;
+const SCRUT_CAMERA_X_MINIMUM: i16 = -1_000;
+const SCRUT_CAMERA_X_MAXIMUM: i16 = 1_000;
+const SCRUT_CAMERA_Z_MINIMUM: i16 = -500;
+const SCRUT_CAMERA_Z_MAXIMUM: i16 = 2_500;
+const SCRUT_TARGET_ROLL_MASK: u16 = 0x07ff;
+const SCRUT_TARGET_ROLL_CENTER: u16 = 1_023;
+const SCRUT_TARGET_COMPLEMENT_ORIGIN: u16 = 1_024;
+const SCRUT_DURATION_SHIFT: u32 = 3;
+const SCRUT_DURATION_BIAS: u16 = 32;
+const SCRUT_RADIAL_TARGET_SHIFT: u32 = 4;
+const SCRUT_PITCH_AVERAGE_SHIFT: u32 = 1;
+const SCRUT_EASING_SHIFT: u32 = 3;
+const SCRUT_PITCH_MINIMUM: i16 = -768;
+const SCRUT_PITCH_MAXIMUM: i16 = 768;
+const SCRUT_HEADING_SHIFT: u32 = 5;
+const SCRUT_HEADING_CARRY_SHIFT: u32 = 4;
+const SCRUT_HEADING_CARRY_MASK: u16 = 1;
+const SCRUT_FOLLOWER_PAN_SHIFT: u32 = 1;
+const SCRUT_FOLLOWER_ROLL_SHIFT: u32 = 2;
 
 /// Callback stage selected for one slot-2 animation model.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -380,6 +401,26 @@ pub enum AlienCroolisResetUpdate {
     CameraReset,
 }
 
+/// Typed continuation chosen by SCRUT's ordinary slot-2 callback head.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienScrutUpdateHead {
+    /// Continue immediately through SCRUT selection initialization.
+    SelectionRequested,
+    /// Continue immediately through the shared latch dispatch.
+    CommonRequested,
+    /// Continue immediately through SCRUT's separately recovered reset.
+    ResetRequested,
+}
+
+/// Typed continuation chosen by SCRUT's shared control-latch dispatch.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienScrutCommonDispatch {
+    /// Continue immediately through ordinary SCRUT motion.
+    MotionRequested,
+    /// The current model owns the latch, so this callback pass ends.
+    Halted,
+}
+
 /// Invalid flat state supplied to the slot-2 coordinator.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AlienSlot2Error {
@@ -414,6 +455,11 @@ pub enum AlienSlot2Error {
     },
     /// CROOLIS selection animates its final three nodes.
     MissingCroolisSelectionNodes {
+        /// Nodes supplied by the caller.
+        node_count: usize,
+    },
+    /// SCRUT motion updates the primary node and five follower nodes.
+    MissingScrutMotionNodes {
         /// Nodes supplied by the caller.
         node_count: usize,
     },
@@ -1182,6 +1228,117 @@ pub fn update_croolis_reset_or_camera(
     Ok(AlienCroolisResetUpdate::CommonRequested)
 }
 
+/// Restart SCRUT's ordinary update and request same-pass callback dispatch.
+pub fn restart_scrut_update(
+    pose: &AlienModelPose,
+    animation: &mut AlienSlot2AnimationState,
+) -> Result<AlienSlot2Callback, AlienSlot2Error> {
+    validate_state(AlienSpecies::Scrut, pose, animation)?;
+    animation.nodes[PRIMARY_NODE].radial_target = SCRUT_RESTART_RADIAL_TARGET;
+    animation.callback = Some(AlienSlot2Callback::Update);
+    Ok(AlienSlot2Callback::Update)
+}
+
+/// Select and prepare SCRUT's next ordinary-update continuation.
+pub fn update_scrut_head(
+    pose: &AlienModelPose,
+    animation: &mut AlienSlot2AnimationState,
+    scene: &AlienCallbackSceneState,
+) -> Result<AlienScrutUpdateHead, AlienSlot2Error> {
+    validate_state(AlienSpecies::Scrut, pose, animation)?;
+    if scene.wave_selection != AlienWaveSelection::Disabled {
+        return Ok(AlienScrutUpdateHead::SelectionRequested);
+    }
+
+    animation.phase_timer = animation.phase_timer.wrapping_sub(1);
+    if animation.phase_timer >= i16::default() {
+        return Ok(AlienScrutUpdateHead::CommonRequested);
+    }
+
+    let primary = &pose.nodes[PRIMARY_NODE];
+    let camera_x = transformed_component(primary, X_AXIS);
+    let camera_z = transformed_component(primary, Z_AXIS);
+    if !(SCRUT_CAMERA_X_MINIMUM..=SCRUT_CAMERA_X_MAXIMUM).contains(&camera_x)
+        || !(SCRUT_CAMERA_Z_MINIMUM..=SCRUT_CAMERA_Z_MAXIMUM).contains(&camera_z)
+    {
+        return Ok(AlienScrutUpdateHead::ResetRequested);
+    }
+
+    let random_value = transform_slot2_motion_random(animation.random_value);
+    let target_roll =
+        (random_value & SCRUT_TARGET_ROLL_MASK).wrapping_sub(SCRUT_TARGET_ROLL_CENTER) as i16;
+    let target_complement = SCRUT_TARGET_COMPLEMENT_ORIGIN.wrapping_sub(target_roll.unsigned_abs());
+    let duration =
+        ((target_complement >> SCRUT_DURATION_SHIFT).wrapping_add(SCRUT_DURATION_BIAS)) as i16;
+    let roll_delta = target_roll.wrapping_sub(primary.angles[Z_AXIS] as i16);
+    animation.phase_timer = duration;
+    animation.random_value = random_value;
+    animation.nodes[PRIMARY_NODE].motion_parameter = roll_delta / duration;
+    animation.nodes[PRIMARY_NODE].radial_target = target_complement >> SCRUT_RADIAL_TARGET_SHIFT;
+    Ok(AlienScrutUpdateHead::CommonRequested)
+}
+
+/// Stop at SCRUT's active model latch or request ordinary motion.
+pub fn dispatch_scrut_common(
+    model_index: usize,
+    scene: &AlienCallbackSceneState,
+) -> AlienScrutCommonDispatch {
+    if scene.control_latch == AlienControlLatch::Model(model_index) {
+        AlienScrutCommonDispatch::Halted
+    } else {
+        AlienScrutCommonDispatch::MotionRequested
+    }
+}
+
+/// Advance SCRUT's eased primary pose and five coupled follower angles.
+pub fn update_scrut_motion(
+    pose: &mut AlienModelPose,
+    animation: &AlienSlot2AnimationState,
+) -> Result<(), AlienSlot2Error> {
+    validate_state(AlienSpecies::Scrut, pose, animation)?;
+    if pose.nodes.len() < SCRUT_MOTION_NODE_COUNT {
+        return Err(AlienSlot2Error::MissingScrutMotionNodes {
+            node_count: pose.nodes.len(),
+        });
+    }
+
+    let radial_target = animation.nodes[PRIMARY_NODE].radial_target;
+    let roll_velocity = animation.nodes[PRIMARY_NODE].motion_parameter;
+    let primary = &mut pose.nodes[PRIMARY_NODE];
+    let pitch = primary.angles[X_AXIS] as i16;
+    let desired_pitch = transformed_component(primary, Y_AXIS)
+        .wrapping_add(animation.species_seed_at_initialization as i16)
+        >> SCRUT_PITCH_AVERAGE_SHIFT;
+    let pitch_delta = desired_pitch.wrapping_sub(pitch);
+    primary.angles[X_AXIS] = pitch
+        .wrapping_add(pitch_delta >> SCRUT_EASING_SHIFT)
+        .clamp(SCRUT_PITCH_MINIMUM, SCRUT_PITCH_MAXIMUM) as u16;
+
+    let radial_delta = radial_target
+        .wrapping_sub(primary.radial_offset as u16)
+        .cast_signed();
+    primary.radial_offset = primary
+        .radial_offset
+        .wrapping_add(radial_delta >> SCRUT_EASING_SHIFT);
+
+    let roll = primary.angles[Z_AXIS].wrapping_add(roll_velocity as u16);
+    primary.angles[Z_AXIS] = roll;
+    let heading_delta = roll.cast_signed() >> SCRUT_HEADING_SHIFT;
+    let heading_carry = (roll >> SCRUT_HEADING_CARRY_SHIFT) & SCRUT_HEADING_CARRY_MASK;
+    primary.angles[Y_AXIS] = primary.angles[Y_AXIS]
+        .wrapping_add(heading_delta as u16)
+        .wrapping_add(heading_carry);
+
+    let counter_roll = roll.cast_signed().wrapping_neg();
+    let follower_pan = counter_roll >> SCRUT_FOLLOWER_PAN_SHIFT;
+    let follower_roll = counter_roll >> SCRUT_FOLLOWER_ROLL_SHIFT;
+    for follower in &mut pose.nodes[1..SCRUT_MOTION_NODE_COUNT] {
+        follower.angles[Y_AXIS] = follower_pan as u16;
+        follower.angles[Z_AXIS] = follower_roll as u16;
+    }
+    Ok(())
+}
+
 /// Preserve the observable behavior of the unreachable steering sibling.
 ///
 /// No original alien method table or callback points at this routine. Keeping
@@ -1677,6 +1834,63 @@ mod tests {
         radial_after: u16,
         radial_target_before: u16,
         radial_target_after: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct ScrutRestartVector {
+        name: String,
+        module: String,
+        next_stage: String,
+        radial_target_before: u16,
+        radial_target_after: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct ScrutUpdateHeadVector {
+        name: String,
+        module: String,
+        selection_state: u16,
+        continuation: String,
+        duration_before: u16,
+        duration_after: u16,
+        camera_x_before: u16,
+        camera_z_before: u16,
+        random_before: u16,
+        random_after: u16,
+        roll_before: u16,
+        motion_parameter_before: u16,
+        motion_parameter_after: u16,
+        radial_target_before: u16,
+        radial_target_after: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct ScrutCommonDispatchVector {
+        name: String,
+        module: String,
+        control_latch: String,
+        continuation: String,
+    }
+
+    #[derive(Deserialize)]
+    struct ScrutMotionVector {
+        name: String,
+        module: String,
+        camera_y_before: u16,
+        seed_low_word: u16,
+        pitch_before: u16,
+        pitch_after: u16,
+        radial_target: u16,
+        radial_before: u16,
+        radial_after: u16,
+        roll_velocity: u16,
+        roll_before: u16,
+        roll_after: u16,
+        pan_before: u16,
+        pan_after: u16,
+        heading_carry: u16,
+        follower_pan_after: u16,
+        follower_roll_after: u16,
     }
 
     #[derive(Deserialize)]
@@ -2557,6 +2771,190 @@ mod tests {
                 vector.name
             );
             assert_eq!(animation.callback, Some(AlienSlot2Callback::Update));
+        }
+    }
+
+    #[test]
+    fn scrut_restart_matches_every_original_overlay_vector() {
+        let vectors: Vec<ScrutRestartVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/xdb_scrut_func_1711_natural.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            assert_eq!(vector.module, "scrut");
+            assert_eq!(vector.next_stage, "update");
+            let pose = pose(&[EMPTY_NODE_VECTOR; PRIMARY_AND_FOLLOWER_NODE_COUNT]);
+            let mut animation = AlienSlot2AnimationState::new(PRIMARY_AND_FOLLOWER_NODE_COUNT);
+            animation.callback = Some(AlienSlot2Callback::CroolisFade);
+            animation.nodes[PRIMARY_NODE].radial_target = vector.radial_target_before;
+
+            assert_eq!(
+                restart_scrut_update(&pose, &mut animation).unwrap(),
+                AlienSlot2Callback::Update,
+                "{}",
+                vector.name
+            );
+            assert_eq!(animation.callback, Some(AlienSlot2Callback::Update));
+            assert_eq!(
+                animation.nodes[PRIMARY_NODE].radial_target, vector.radial_target_after,
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    #[test]
+    fn scrut_update_head_matches_every_original_overlay_vector() {
+        let vectors: Vec<ScrutUpdateHeadVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/xdb_scrut_func_171b_head_natural.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            assert_eq!(vector.module, "scrut");
+            let mut pose = pose(&[EMPTY_NODE_VECTOR; PRIMARY_AND_FOLLOWER_NODE_COUNT]);
+            let primary = &mut pose.nodes[PRIMARY_NODE];
+            primary.transform.translation[X_AXIS] =
+                join_words(vector.camera_x_before, TRANSFORM_LOW_WORD_SENTINEL);
+            primary.transform.translation[Z_AXIS] =
+                join_words(vector.camera_z_before, TRANSFORM_LOW_WORD_SENTINEL);
+            primary.angles[Z_AXIS] = vector.roll_before;
+            let mut animation = AlienSlot2AnimationState::new(PRIMARY_AND_FOLLOWER_NODE_COUNT);
+            animation.callback = Some(AlienSlot2Callback::Update);
+            animation.phase_timer = vector.duration_before as i16;
+            animation.random_value = vector.random_before;
+            animation.nodes[PRIMARY_NODE].motion_parameter = vector.motion_parameter_before as i16;
+            animation.nodes[PRIMARY_NODE].radial_target = vector.radial_target_before;
+            let scene = AlienCallbackSceneState {
+                wave_selection: match vector.selection_state {
+                    0 => AlienWaveSelection::Disabled,
+                    1 => AlienWaveSelection::Requested,
+                    2 => AlienWaveSelection::Selected,
+                    state => panic!("unknown SCRUT selection state {state}"),
+                },
+                ..AlienCallbackSceneState::default()
+            };
+            let expected = match vector.continuation.as_str() {
+                "selection" => AlienScrutUpdateHead::SelectionRequested,
+                "common" => AlienScrutUpdateHead::CommonRequested,
+                "reset" => AlienScrutUpdateHead::ResetRequested,
+                continuation => panic!("unknown SCRUT update continuation {continuation}"),
+            };
+
+            assert_eq!(
+                update_scrut_head(&pose, &mut animation, &scene).unwrap(),
+                expected,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                animation.phase_timer as u16, vector.duration_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                animation.random_value, vector.random_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                animation.nodes[PRIMARY_NODE].motion_parameter as u16,
+                vector.motion_parameter_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                animation.nodes[PRIMARY_NODE].radial_target, vector.radial_target_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(animation.callback, Some(AlienSlot2Callback::Update));
+        }
+    }
+
+    #[test]
+    fn scrut_common_dispatch_matches_every_original_overlay_vector() {
+        let vectors: Vec<ScrutCommonDispatchVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/xdb_scrut_func_1781_natural.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            assert_eq!(vector.module, "scrut");
+            let scene = AlienCallbackSceneState {
+                control_latch: match vector.control_latch.as_str() {
+                    "inactive" => AlienControlLatch::Inactive,
+                    "other_model" => AlienControlLatch::Model(OTHER_MODEL_INDEX),
+                    "current_model" => AlienControlLatch::Model(CURRENT_MODEL_INDEX),
+                    latch => panic!("unknown SCRUT control latch {latch}"),
+                },
+                ..AlienCallbackSceneState::default()
+            };
+            let expected = match vector.continuation.as_str() {
+                "motion" => AlienScrutCommonDispatch::MotionRequested,
+                "halted" => AlienScrutCommonDispatch::Halted,
+                continuation => panic!("unknown SCRUT common continuation {continuation}"),
+            };
+
+            assert_eq!(
+                dispatch_scrut_common(CURRENT_MODEL_INDEX, &scene),
+                expected,
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    #[test]
+    fn scrut_motion_matches_every_original_overlay_vector() {
+        let vectors: Vec<ScrutMotionVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/xdb_scrut_func_1787_natural.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            assert_eq!(vector.module, "scrut");
+            let mut pose = pose(&[EMPTY_NODE_VECTOR; SCRUT_MOTION_NODE_COUNT]);
+            let primary = &mut pose.nodes[PRIMARY_NODE];
+            primary.transform.translation[Y_AXIS] =
+                join_words(vector.camera_y_before, TRANSFORM_LOW_WORD_SENTINEL);
+            primary.angles = [vector.pitch_before, vector.pan_before, vector.roll_before];
+            primary.radial_offset = vector.radial_before as i16;
+            let mut animation = AlienSlot2AnimationState::new(SCRUT_MOTION_NODE_COUNT);
+            animation.species_seed_at_initialization = i32::from(vector.seed_low_word as i16);
+            animation.nodes[PRIMARY_NODE].motion_parameter = vector.roll_velocity as i16;
+            animation.nodes[PRIMARY_NODE].radial_target = vector.radial_target;
+
+            update_scrut_motion(&mut pose, &animation).unwrap();
+
+            let primary = &pose.nodes[PRIMARY_NODE];
+            assert_eq!(
+                primary.angles[X_AXIS], vector.pitch_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(primary.angles[Y_AXIS], vector.pan_after, "{}", vector.name);
+            assert_eq!(primary.angles[Z_AXIS], vector.roll_after, "{}", vector.name);
+            assert_eq!(
+                primary.radial_offset as u16, vector.radial_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                (vector.roll_after >> SCRUT_HEADING_CARRY_SHIFT) & SCRUT_HEADING_CARRY_MASK,
+                vector.heading_carry,
+                "{}",
+                vector.name
+            );
+            for follower in &pose.nodes[1..SCRUT_MOTION_NODE_COUNT] {
+                assert_eq!(
+                    follower.angles[Y_AXIS], vector.follower_pan_after,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    follower.angles[Z_AXIS], vector.follower_roll_after,
+                    "{}",
+                    vector.name
+                );
+            }
         }
     }
 

@@ -1,0 +1,34 @@
+[
+  {
+    "name": "inactive",
+    "module": "scrut",
+    "entry": 6017,
+    "control_latch": "inactive",
+    "continuation": "motion",
+    "data_sha256": "a1d44f955b6d9b4cf506fa2ca9358b9bd3f9c26d3ceb1868add7821c6ba57f7e"
+  },
+  {
+    "name": "other_model",
+    "module": "scrut",
+    "entry": 6017,
+    "control_latch": "other_model",
+    "continuation": "motion",
+    "data_sha256": "9b98f5e4d2298f07e61256e571050898776fb6992ec3bf214656f413b6bfeac8"
+  },
+  {
+    "name": "current_model",
+    "module": "scrut",
+    "entry": 6017,
+    "control_latch": "current_model",
+    "continuation": "halted",
+    "data_sha256": "7f043007c326652278f9fb488fb568d18e7fa73aa7a931e6578a1113b040401a"
+  },
+  {
+    "name": "high_current_model",
+    "module": "scrut",
+    "entry": 6017,
+    "control_latch": "current_model",
+    "continuation": "halted",
+    "data_sha256": "2b0b5872377b106cd1f595898f74c1dd74663e69f639ca8a01918f0041b49165"
+  }
+]

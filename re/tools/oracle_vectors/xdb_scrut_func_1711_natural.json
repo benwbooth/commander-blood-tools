@@ -1,0 +1,29 @@
+[
+  {
+    "name": "ordinary",
+    "module": "scrut",
+    "entry": 5905,
+    "next_stage": "update",
+    "radial_target_before": 4951,
+    "radial_target_after": 100,
+    "data_sha256": "2dd17f5ff5701bb2a7a8249a082f3f7cd3255db03586fdef54a3296874372271"
+  },
+  {
+    "name": "high_values",
+    "module": "scrut",
+    "entry": 5905,
+    "next_stage": "update",
+    "radial_target_before": 32768,
+    "radial_target_after": 100,
+    "data_sha256": "1a108887be1531e4278df4f3df4cf342968c7baf146cb02b4ee05ea3055e243c"
+  },
+  {
+    "name": "wrapped_state_offsets",
+    "module": "scrut",
+    "entry": 5905,
+    "next_stage": "update",
+    "radial_target_before": 22136,
+    "radial_target_after": 100,
+    "data_sha256": "0f0a2c0fd5738279d60701d8e3686de4fee735cc101332862d04888c513c2736"
+  }
+]
