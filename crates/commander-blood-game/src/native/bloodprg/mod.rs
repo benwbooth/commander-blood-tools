@@ -14,6 +14,7 @@ mod record_state;
 mod script;
 mod selected_mask;
 mod sequence;
+mod sequence_subtitles;
 mod ship_view;
 mod startup;
 mod state;
@@ -90,6 +91,10 @@ pub use script::{ScriptControl, ScriptResumeState, ScriptRuntime, ScriptRuntimeE
 pub use sequence::{
     load_sequence_request, offer_topic_if_presentation_active, PresentationResourceLine,
     SequencePresentationState, SequenceRequestContext,
+};
+pub use sequence_subtitles::{
+    CenteredSequenceSubtitleLine, SequenceSubtitleOutcome, SequenceSubtitlePlayback,
+    SequenceSubtitleRenderer, present_sequence_subtitle,
 };
 pub use ship_view::{
     select_ship_view_artwork, ShipViewArtworkError, ShipViewArtworkSelection,
