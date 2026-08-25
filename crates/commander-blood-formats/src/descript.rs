@@ -5,6 +5,9 @@ const BACKGROUND_SLOT_COUNT: u8 = 4;
 const LAST_BACKGROUND_SLOT: u8 = FIRST_BACKGROUND_SLOT + BACKGROUND_SLOT_COUNT - 1;
 const PRINTABLE_NAME_START: u8 = 32;
 const PRINTABLE_NAME_END: u8 = 127;
+const MUSIC_NAME_START: u8 = PRINTABLE_NAME_START + 1;
+const MUSIC_NAME_LOWERCASE_START: u8 = b'a';
+const MUSIC_NAME_UPPERCASE_MASK: u8 = 0xDF;
 const NO_TALK_BACKGROUND_ID: u8 = u8::MAX;
 
 /// Semantic kind byte stored immediately before each DESCRIPT record length.
@@ -309,6 +312,45 @@ pub fn decode_sprite_name(
     Ok((DescriptSpriteName::new(source_name), tail))
 }
 
+/// Normalized VOC resource name decoded from a location or sequence record.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DescriptMusicName(Box<[u8]>);
+
+impl DescriptMusicName {
+    /// Build a music name from normalized owned bytes without a trailing zero.
+    pub fn new(source_name: Box<[u8]>) -> Self {
+        Self(source_name)
+    }
+
+    /// Return the VOC resource name after the original byte normalization.
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+/// Decode and normalize a VOC name while leaving the following opcode unconsumed.
+pub fn decode_music_name(
+    payload: &[u8],
+) -> Result<(DescriptMusicName, &[u8]), DescriptResourceNameError> {
+    let name_length = payload
+        .iter()
+        .position(|byte| !(*byte >= MUSIC_NAME_START && *byte <= PRINTABLE_NAME_END))
+        .ok_or(DescriptResourceNameError::MissingStopByte)?;
+    let source_name = payload[..name_length]
+        .iter()
+        .map(|byte| {
+            if *byte >= MUSIC_NAME_LOWERCASE_START {
+                *byte & MUSIC_NAME_UPPERCASE_MASK
+            } else {
+                *byte
+            }
+        })
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+
+    Ok((DescriptMusicName::new(source_name), &payload[name_length..]))
+}
+
 /// Background selection paired with one character talk animation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DescriptCharacterBackground {
@@ -607,6 +649,17 @@ mod tests {
         let (sprite, tail) = decode_sprite_name(&payload).unwrap();
 
         assert_eq!(sprite.as_bytes(), b"izwalito.spr");
+        assert_eq!(tail, &[NEXT_OPCODE]);
+    }
+
+    #[test]
+    fn music_name_payload_preserves_the_original_byte_mask() {
+        const NEXT_OPCODE: u8 = 2;
+
+        let payload = [b'a', b'`', b'{', NEXT_OPCODE];
+        let (music, tail) = decode_music_name(&payload).unwrap();
+
+        assert_eq!(music.as_bytes(), b"A`[");
         assert_eq!(tail, &[NEXT_OPCODE]);
     }
 

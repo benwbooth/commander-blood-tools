@@ -2,8 +2,8 @@
 
 use commander_blood_formats::descript::{
     DescriptBackgroundCommand, DescriptBackgroundSlot, DescriptCaptionCommand, DescriptIdleClip,
-    DescriptLocationLayout, DescriptRecordKind, DescriptSequenceSubtitle, DescriptSoundBankName,
-    DescriptSpriteName, DescriptTalkClip, DescriptVideoName,
+    DescriptLocationLayout, DescriptMusicName, DescriptRecordKind, DescriptSequenceSubtitle,
+    DescriptSoundBankName, DescriptSpriteName, DescriptTalkClip, DescriptVideoName,
 };
 
 use super::text_handler::TextPresentationState;
@@ -125,6 +125,7 @@ pub struct DescriptPresentationAssets {
     sequence_videos: Vec<DescriptVideoName>,
     sequence_subtitles: Vec<DescriptSequenceSubtitle>,
     character_sprite: Option<DescriptSpriteName>,
+    music: Option<DescriptMusicName>,
 }
 
 impl DescriptPresentationAssets {
@@ -186,6 +187,11 @@ impl DescriptPresentationAssets {
     /// Return the character portrait sprite selected by this record.
     pub fn character_sprite(&self) -> Option<&DescriptSpriteName> {
         self.character_sprite.as_ref()
+    }
+
+    /// Return the normalized background-music VOC selected by this record.
+    pub fn music(&self) -> Option<&DescriptMusicName> {
+        self.music.as_ref()
     }
 }
 
@@ -346,6 +352,38 @@ pub fn select_descript_character_sprite(
     assets.character_sprite = Some(sprite.clone());
 }
 
+/// Result of selecting one DESCRIPT background-music resource.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DescriptMusicSelectionOutcome {
+    /// The normalized name differs within the newly authored name's length.
+    Changed,
+    /// The current name begins with every byte of the newly authored name.
+    Reused,
+}
+
+/// Select a normalized background-music VOC and report whether it changed.
+///
+/// This translates `music_voc_name_patcher` at BLOODPRG file offset `0x0077A9`.
+/// The original prefix-only comparison is retained, while the path template and
+/// its accumulated changed/unchanged flag bytes become a typed outcome.
+pub fn select_descript_music(
+    music: &DescriptMusicName,
+    assets: &mut DescriptPresentationAssets,
+) -> DescriptMusicSelectionOutcome {
+    let changed = !assets
+        .music
+        .as_ref()
+        .map_or(&[][..], DescriptMusicName::as_bytes)
+        .starts_with(music.as_bytes());
+    assets.music = Some(music.clone());
+
+    if changed {
+        DescriptMusicSelectionOutcome::Changed
+    } else {
+        DescriptMusicSelectionOutcome::Reused
+    }
+}
+
 /// Boundary detected after the current DESCRIPT command stream.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct DescriptRecordBoundary {
@@ -407,8 +445,8 @@ mod tests {
     use commander_blood_formats::descript::{
         DescriptBackgroundError, DescriptCharacterBackground, DescriptIdleClipError,
         DescriptTalkClipError, decode_background_command, decode_caption_command, decode_idle_clip,
-        decode_location_layout, decode_sequence_subtitle, decode_sound_bank_name,
-        decode_sprite_name, decode_talk_clip, decode_video_name,
+        decode_location_layout, decode_music_name, decode_sequence_subtitle,
+        decode_sound_bank_name, decode_sprite_name, decode_talk_clip, decode_video_name,
     };
     use serde::Deserialize;
 
@@ -426,6 +464,7 @@ mod tests {
     const SEQUENCE_VIDEO_ORACLE_VECTOR_COUNT: usize = 8;
     const SEQUENCE_SUBTITLE_ORACLE_VECTOR_COUNT: usize = 7;
     const SPRITE_ORACLE_VECTOR_COUNT: usize = 8;
+    const MUSIC_ORACLE_VECTOR_COUNT: usize = 11;
     const VIDEO_ORACLE_VECTOR_COUNT: usize = 8;
 
     #[derive(Deserialize)]
@@ -502,6 +541,16 @@ mod tests {
         leading_word: u16,
         suffix_hex: String,
         copied_hex: String,
+    }
+
+    #[derive(Deserialize)]
+    struct MusicOracle {
+        name: String,
+        input_hex: String,
+        transformed_hex: String,
+        stopping_byte: u8,
+        changed_before: u8,
+        changed_after: u8,
     }
 
     #[derive(Clone, Copy)]
@@ -1100,6 +1149,49 @@ mod tests {
             let mut assets = DescriptPresentationAssets::default();
             select_descript_character_sprite(&sprite, &mut assets);
             assert_eq!(assets.character_sprite(), Some(&sprite), "{}", vector.name);
+        }
+    }
+
+    #[test]
+    fn music_selection_matches_every_original_clean_comparison_vector() {
+        let vectors: Vec<MusicOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_77a9_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), MUSIC_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let input = bytes_from_hex(&vector.input_hex);
+            let expected = bytes_from_hex(&vector.transformed_hex);
+            let (music, tail) = decode_music_name(&input).unwrap();
+            assert_eq!(tail, &[vector.stopping_byte], "{}", vector.name);
+            assert_eq!(music.as_bytes(), expected.as_ref(), "{}", vector.name);
+
+            let prior: &[u8] = match vector.name.as_str() {
+                "immediate_space" | "immediate_nul" | "immediate_high" => b"OLD",
+                "equal_upper" | "lowercase_matches" => b"ABCZ",
+                "mismatch_sets_changed" => b"AXCZ",
+                "backtick_not_masked" => b"`Z",
+                "brace_masks_to_bracket" => b"[Z",
+                "prechanged_bit_blocks_unchanged"
+                | "even_changed_value_allows_unchanged"
+                | "source_wrap" => b"AZ",
+                name => panic!("unknown music oracle {name}"),
+            };
+            let mut assets = DescriptPresentationAssets::default();
+            let previous = DescriptMusicName::new(Box::from(prior));
+            select_descript_music(&previous, &mut assets);
+            let outcome = select_descript_music(&music, &mut assets);
+
+            if vector.changed_before == u8::MIN {
+                assert_eq!(
+                    outcome == DescriptMusicSelectionOutcome::Changed,
+                    vector.changed_after != u8::MIN,
+                    "{}",
+                    vector.name
+                );
+            }
+            assert_eq!(assets.music(), Some(&music), "{}", vector.name);
         }
     }
 }
