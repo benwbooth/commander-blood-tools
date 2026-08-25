@@ -19,6 +19,8 @@ pub const TEXTURE_WIDTH: usize = 256;
 pub const TEXTURE_HEIGHT: usize = 512;
 /// Number of entries in the texture-index remap table.
 pub const PALETTE_REMAP_ENTRY_COUNT: usize = 256;
+/// Number of entries in the scene-wide alien motion-history ring.
+pub const ALIEN_RING_ENTRY_COUNT: usize = 128;
 
 const AMER_DATA_DELTA_FIELD: usize = 0x3275;
 const CROOLIS_DATA_DELTA_FIELD: usize = 0x32e5;
@@ -119,6 +121,34 @@ const AMER_WAVE_SCENE_STATE_POSITION: usize = 0x0b2f;
 const OTHER_WAVE_SCENE_STATE_POSITION: usize = 0x0b70;
 const WAVE_SELECTED_NODE_FIELD: usize = 4;
 const WAVE_CURRENT_SAMPLE_FIELD: usize = 6;
+const RING_NODE_CALLBACK_FIELD: usize = 0x000e;
+const RING_NODE_COURSE_FRAMES_FIELD: usize = 0x0056;
+const RING_NODE_FEEDBACK_PHASE_FIELD: usize = 0x0058;
+const RING_NODE_CURSOR_FIELD: usize = 0x005a;
+const RING_NODE_BEHAVIOR_SEED_FIELD: usize = 0x005c;
+const RING_ENTRY_SIZE: usize = 8;
+const RING_ENTRY_PITCH_STEP_FIELD: usize = 0;
+const RING_ENTRY_PAN_STEP_FIELD: usize = 2;
+const RING_ENTRY_RADIAL_OFFSET_FIELD: usize = 4;
+const RING_ENTRY_COMMAND_FLAGS_FIELD: usize = 6;
+const AMER_RING_TIMER_POSITION: usize = 0x0b31;
+const CROOLIS_RING_TIMER_POSITION: usize = 0x0b72;
+const SCRUT_RING_TIMER_POSITION: usize = 0x0b72;
+const AMER_RING_GENERATION_POSITION: usize = 0x0d5b;
+const CROOLIS_RING_GENERATION_POSITION: usize = 0x0db3;
+const SCRUT_RING_GENERATION_POSITION: usize = 0x0da1;
+const AMER_RING_CURSOR_POSITION: usize = 0x0d5d;
+const CROOLIS_RING_CURSOR_POSITION: usize = 0x0db5;
+const SCRUT_RING_CURSOR_POSITION: usize = 0x0da3;
+const AMER_RING_ENTRIES_POSITION: usize = 0x0d63;
+const CROOLIS_RING_ENTRIES_POSITION: usize = 0x0dbb;
+const SCRUT_RING_ENTRIES_POSITION: usize = 0x0da9;
+const AMER_INITIAL_COURSE_CALLBACK: u16 = 0x12b3;
+const CROOLIS_INITIAL_COURSE_CALLBACK: u16 = 0x130b;
+const SCRUT_INITIAL_COURSE_CALLBACK: u16 = 0x12f9;
+const AMER_FOLLOW_COURSE_CALLBACK: u16 = 0x1414;
+const CROOLIS_FOLLOW_COURSE_CALLBACK: u16 = 0x146c;
+const SCRUT_FOLLOW_COURSE_CALLBACK: u16 = 0x145a;
 const INVALID_METHOD_ENTRY: u16 = 0xffff;
 const ZERO_COORDINATE: i16 = 0;
 const ZERO_POSITION: [i16; AXIS_COUNT] = [ZERO_COORDINATE; AXIS_COUNT];
@@ -170,6 +200,46 @@ impl AlienXdbKind {
             Self::Croolis | Self::Scrut => OTHER_WAVE_SCENE_STATE_POSITION,
         }
     }
+
+    fn ring_layout(self) -> AlienRingSourceLayout {
+        match self {
+            Self::Amer => AlienRingSourceLayout {
+                timer_position: AMER_RING_TIMER_POSITION,
+                generation_position: AMER_RING_GENERATION_POSITION,
+                cursor_position: AMER_RING_CURSOR_POSITION,
+                entries_position: AMER_RING_ENTRIES_POSITION,
+                initial_course_callback: AMER_INITIAL_COURSE_CALLBACK,
+                follow_course_callback: AMER_FOLLOW_COURSE_CALLBACK,
+            },
+            Self::Croolis => AlienRingSourceLayout {
+                timer_position: CROOLIS_RING_TIMER_POSITION,
+                generation_position: CROOLIS_RING_GENERATION_POSITION,
+                cursor_position: CROOLIS_RING_CURSOR_POSITION,
+                entries_position: CROOLIS_RING_ENTRIES_POSITION,
+                initial_course_callback: CROOLIS_INITIAL_COURSE_CALLBACK,
+                follow_course_callback: CROOLIS_FOLLOW_COURSE_CALLBACK,
+            },
+            Self::Scrut => AlienRingSourceLayout {
+                timer_position: SCRUT_RING_TIMER_POSITION,
+                generation_position: SCRUT_RING_GENERATION_POSITION,
+                cursor_position: SCRUT_RING_CURSOR_POSITION,
+                entries_position: SCRUT_RING_ENTRIES_POSITION,
+                initial_course_callback: SCRUT_INITIAL_COURSE_CALLBACK,
+                follow_course_callback: SCRUT_FOLLOW_COURSE_CALLBACK,
+            },
+        }
+    }
+}
+
+/// Decoder-only locations and callback values in one original XDB image.
+#[derive(Clone, Copy)]
+struct AlienRingSourceLayout {
+    timer_position: usize,
+    generation_position: usize,
+    cursor_position: usize,
+    entries_position: usize,
+    initial_course_callback: u16,
+    follow_course_callback: u16,
 }
 
 /// Fixed-point cosine and sine pair from an alien XDB.
@@ -376,6 +446,76 @@ pub struct AlienPaletteAnimationData {
     pub pulse_levels: [u16; AXIS_COUNT],
 }
 
+/// Initial timer policy for one authored ring-animation model.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienRingLifecycleData {
+    /// The model has not run its one-time ring initializer.
+    Uninitialized,
+    /// The model advances the scene-wide ring timer before dispatching nodes.
+    TimerRunning,
+    /// The model dispatches nodes without advancing the shared timer.
+    TimerSuspended,
+}
+
+/// Callback stages that can be present in an unmodified XDB model.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienRingInitialCallbackData {
+    /// Generate motion history for the leading node.
+    InitialCourse,
+    /// Consume motion history produced by the leading node.
+    FollowCourse,
+}
+
+/// Initial semantic state for one node in a ring-animation model.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct AlienRingNodeData {
+    /// Authored callback stage.
+    pub callback: AlienRingInitialCallbackData,
+    /// Frames remaining in the current generated course.
+    pub course_frames_remaining: i16,
+    /// Cyclic phase used by callback feedback.
+    pub feedback_phase: u16,
+    /// Flat index into the shared motion-history ring.
+    pub ring_slot: usize,
+    /// Deterministic callback seed or stage marker.
+    pub behavior_seed: u16,
+}
+
+/// Initial continuation state for one ring-animation model.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AlienRingModelData {
+    /// Authored initialization and timer policy.
+    pub lifecycle: AlienRingLifecycleData,
+    /// Behavior state parallel to the model hierarchy.
+    pub nodes: Vec<AlienRingNodeData>,
+}
+
+/// One decoded motion-history sample.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct AlienRingEntryData {
+    /// Pitch increment applied by a node callback.
+    pub pitch_step: i16,
+    /// Pan increment applied by a node callback.
+    pub pan_step: i16,
+    /// Radial displacement applied by a node callback.
+    pub radial_offset: i16,
+    /// Command bits consumed by callback transitions.
+    pub command_flags: u16,
+}
+
+/// Initial scene-wide motion history shared by every ring model.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AlienRingSceneData {
+    /// Shared callback countdown.
+    pub timer: u16,
+    /// Wrapping generation counter used while allocating model chains.
+    pub generation: u16,
+    /// Flat ring slot reserved for the next model initialization.
+    pub next_ring_slot: usize,
+    /// Complete fixed-size motion history.
+    pub entries: [AlienRingEntryData; ALIEN_RING_ENTRY_COUNT],
+}
+
 /// One named hierarchical model and its initial behavior method.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AlienModelData {
@@ -391,6 +531,8 @@ pub struct AlienModelData {
     pub behavior: AlienBehaviorMethod,
     /// Authored continuation state when this is a wave model.
     pub wave: Option<AlienWaveMethodData>,
+    /// Authored continuation state when this is a ring-animation model.
+    pub ring: Option<AlienRingModelData>,
 }
 
 /// Indexed atlas shared by all models in one alien overlay.
@@ -431,6 +573,8 @@ pub struct AlienAsset {
     pub wave_scene: AlienWaveSceneData,
     /// Initial shared palette-animation continuation state.
     pub palette_animation: AlienPaletteAnimationData,
+    /// Initial scene-wide ring timer and motion history.
+    pub ring_scene: AlienRingSceneData,
     /// Distance-to-palette lookup used by the starfield.
     pub star_shade_table: [u8; STAR_SHADE_TABLE_ENTRY_COUNT],
     /// Deterministic seed used to generate the static star distribution.
@@ -560,6 +704,84 @@ fn wave_method_data(
     }))
 }
 
+fn ring_slot(cursor: u16) -> Option<usize> {
+    let cursor = usize::from(cursor);
+    if cursor % RING_ENTRY_SIZE != usize::MIN {
+        return None;
+    }
+    let slot = cursor / RING_ENTRY_SIZE;
+    (slot < ALIEN_RING_ENTRY_COUNT).then_some(slot)
+}
+
+fn ring_callback(
+    callback: u16,
+    layout: AlienRingSourceLayout,
+) -> Option<AlienRingInitialCallbackData> {
+    if callback == layout.initial_course_callback {
+        Some(AlienRingInitialCallbackData::InitialCourse)
+    } else if callback == layout.follow_course_callback {
+        Some(AlienRingInitialCallbackData::FollowCourse)
+    } else {
+        None
+    }
+}
+
+fn ring_model_data(
+    data: &[u8],
+    data_start: usize,
+    context: usize,
+    root_offset: usize,
+    node_count: usize,
+    behavior: AlienBehaviorMethod,
+    kind: AlienXdbKind,
+) -> Option<Option<AlienRingModelData>> {
+    if behavior != AlienBehaviorMethod::RingAnimation {
+        return Some(None);
+    }
+    let lifecycle = match read_u16(data, context + METHOD_CONTROL_FIELD)? {
+        0 => AlienRingLifecycleData::Uninitialized,
+        1 => AlienRingLifecycleData::TimerRunning,
+        u16::MAX => AlienRingLifecycleData::TimerSuspended,
+        _ => return None,
+    };
+    let layout = kind.ring_layout();
+    let mut nodes = Vec::with_capacity(node_count);
+    for node_index in 0..node_count {
+        let node_offset = root_offset
+            .checked_add(TRANSFORM_RECORD_SIZE)?
+            .checked_add(node_index.checked_mul(TRANSFORM_RECORD_SIZE)?)?;
+        let position = data_start.checked_add(node_offset)?;
+        nodes.push(AlienRingNodeData {
+            callback: ring_callback(read_u16(data, position + RING_NODE_CALLBACK_FIELD)?, layout)?,
+            course_frames_remaining: read_i16(data, position + RING_NODE_COURSE_FRAMES_FIELD)?,
+            feedback_phase: read_u16(data, position + RING_NODE_FEEDBACK_PHASE_FIELD)?,
+            ring_slot: ring_slot(read_u16(data, position + RING_NODE_CURSOR_FIELD)?)?,
+            behavior_seed: read_u16(data, position + RING_NODE_BEHAVIOR_SEED_FIELD)?,
+        });
+    }
+    Some(Some(AlienRingModelData { lifecycle, nodes }))
+}
+
+fn ring_scene_data(data: &[u8], kind: AlienXdbKind) -> Option<AlienRingSceneData> {
+    let layout = kind.ring_layout();
+    Some(AlienRingSceneData {
+        timer: read_u16(data, layout.timer_position)?,
+        generation: read_u16(data, layout.generation_position)?,
+        next_ring_slot: ring_slot(read_u16(data, layout.cursor_position)?)?,
+        entries: checked_array(|index| {
+            let position = layout
+                .entries_position
+                .checked_add(index.checked_mul(RING_ENTRY_SIZE)?)?;
+            Some(AlienRingEntryData {
+                pitch_step: read_i16(data, position + RING_ENTRY_PITCH_STEP_FIELD)?,
+                pan_step: read_i16(data, position + RING_ENTRY_PAN_STEP_FIELD)?,
+                radial_offset: read_i16(data, position + RING_ENTRY_RADIAL_OFFSET_FIELD)?,
+                command_flags: read_u16(data, position + RING_ENTRY_COMMAND_FLAGS_FIELD)?,
+            })
+        })?,
+    })
+}
+
 fn model_node_reference(
     data: &[u8],
     data_start: usize,
@@ -673,6 +895,7 @@ fn model(
     data_start: usize,
     object_start: usize,
     offset: usize,
+    kind: AlienXdbKind,
 ) -> Option<AlienModelData> {
     let context = data_start.checked_add(offset)?;
     let name = model_header(data, context)?;
@@ -775,6 +998,15 @@ fn model(
         },
         behavior,
         wave: wave_method_data(data, context, behavior)?,
+        ring: ring_model_data(
+            data,
+            data_start,
+            context,
+            root_offset,
+            node_count,
+            behavior,
+            kind,
+        )?,
     })
 }
 
@@ -817,7 +1049,7 @@ pub fn decode_alien_xdb(data: &[u8], kind: AlienXdbKind) -> Option<AlienAsset> {
         if seen_contexts.insert(context_offset, index).is_some() {
             return None;
         }
-        models.push(model(data, data_start, object_start, context_offset)?);
+        models.push(model(data, data_start, object_start, context_offset, kind)?);
         context_offsets.push(context_offset);
     }
     if models.is_empty() || models.len() == CONTEXT_LIST_LIMIT {
@@ -952,6 +1184,7 @@ pub fn decode_alien_xdb(data: &[u8], kind: AlienXdbKind) -> Option<AlienAsset> {
                 read_u16(data, data_start + PALETTE_PULSE_POSITIONS[axis])
             })?,
         },
+        ring_scene: ring_scene_data(data, kind)?,
         star_shade_table,
         star_seed,
     })
@@ -959,7 +1192,10 @@ pub fn decode_alien_xdb(data: &[u8], kind: AlienXdbKind) -> Option<AlienAsset> {
 
 #[cfg(test)]
 mod tests {
-    use std::path::{Path, PathBuf};
+    use std::{
+        collections::HashSet,
+        path::{Path, PathBuf},
+    };
 
     use super::*;
 
@@ -971,6 +1207,7 @@ mod tests {
     const ZERO_RASTER_DEPTH: i32 = 0;
     const EXPECTED_INITIAL_METHOD_DELTA: i16 = -4;
     const EXPECTED_PALETTE_PULSE_LEVELS: [u16; AXIS_COUNT] = [10, 13, 11];
+    const INITIAL_RING_RADIAL_OFFSET: i16 = 70;
 
     fn original_xdb(name: &str) -> Option<PathBuf> {
         [
@@ -1027,6 +1264,92 @@ mod tests {
             assert_eq!(asset.wave_scene.selection, AlienWaveSelectionData::Disabled);
             assert_eq!(asset.wave_scene.selected_node, selected_node);
             assert_eq!(asset.wave_scene.current_sample, current_sample);
+            let (
+                expected_ring_timer,
+                expected_ring_generation,
+                expected_next_ring_slot,
+                expected_ring_model_count,
+                expected_ring_node_count,
+                expected_initial_ring_slot,
+                expected_initial_course_frames,
+                expected_initial_seed,
+            ) = match kind {
+                AlienXdbKind::Amer => (6, 6, 54, 7, 67, 23, 2, 0xa957),
+                AlienXdbKind::Croolis => (2, 3, 90, 4, 34, 11, 2, 0x99f3),
+                AlienXdbKind::Scrut => (1, 3, 90, 4, 34, 22, 3, 0xa957),
+            };
+            assert_eq!(asset.ring_scene.timer, expected_ring_timer);
+            assert_eq!(asset.ring_scene.generation, expected_ring_generation);
+            assert_eq!(asset.ring_scene.next_ring_slot, expected_next_ring_slot);
+            assert_eq!(
+                asset.ring_scene.entries[usize::MIN],
+                AlienRingEntryData {
+                    radial_offset: INITIAL_RING_RADIAL_OFFSET,
+                    ..AlienRingEntryData::default()
+                }
+            );
+            let ring_models = asset
+                .models
+                .iter()
+                .filter_map(|model| model.ring.as_ref())
+                .collect::<Vec<_>>();
+            assert_eq!(ring_models.len(), expected_ring_model_count);
+            assert_eq!(
+                ring_models
+                    .iter()
+                    .map(|model| model.nodes.len())
+                    .sum::<usize>(),
+                expected_ring_node_count
+            );
+            assert_eq!(
+                ring_models[usize::MIN].lifecycle,
+                AlienRingLifecycleData::TimerRunning
+            );
+            assert!(
+                ring_models
+                    .iter()
+                    .skip(1)
+                    .all(|model| model.lifecycle == AlienRingLifecycleData::TimerSuspended)
+            );
+            let ring_nodes = ring_models
+                .iter()
+                .flat_map(|model| &model.nodes)
+                .collect::<Vec<_>>();
+            assert_eq!(
+                ring_nodes
+                    .iter()
+                    .filter(|node| { node.callback == AlienRingInitialCallbackData::InitialCourse })
+                    .count(),
+                1
+            );
+            assert_eq!(
+                ring_nodes
+                    .iter()
+                    .filter(|node| node.callback == AlienRingInitialCallbackData::FollowCourse)
+                    .count(),
+                expected_ring_node_count - 1
+            );
+            let initial_node = ring_nodes
+                .iter()
+                .find(|node| node.callback == AlienRingInitialCallbackData::InitialCourse)
+                .unwrap();
+            assert_eq!(initial_node.ring_slot, expected_initial_ring_slot);
+            assert_eq!(
+                initial_node.course_frames_remaining,
+                expected_initial_course_frames
+            );
+            assert_eq!(initial_node.behavior_seed, expected_initial_seed);
+            assert_eq!(
+                ring_nodes
+                    .iter()
+                    .map(|node| node.ring_slot)
+                    .collect::<HashSet<_>>()
+                    .len(),
+                expected_ring_node_count
+            );
+            assert!(asset.models.iter().all(|model| {
+                model.ring.is_some() == (model.behavior == AlienBehaviorMethod::RingAnimation)
+            }));
             let wave_states = asset
                 .models
                 .iter()
