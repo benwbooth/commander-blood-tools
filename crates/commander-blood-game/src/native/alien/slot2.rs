@@ -115,6 +115,24 @@ const CROOLIS_DURATION_SHIFT: u32 = 1;
 const CROOLIS_DURATION_BIAS: u16 = 16;
 const CROOLIS_RADIAL_ORIGIN: u16 = 768;
 const CROOLIS_RADIAL_SHIFT: u32 = 3;
+const CROOLIS_SELECTION_NODE_START: usize = 5;
+const CROOLIS_SELECTION_NODE_COUNT: usize = 3;
+const CROOLIS_SELECTION_REQUIRED_NODE_COUNT: usize =
+    CROOLIS_SELECTION_NODE_START + CROOLIS_SELECTION_NODE_COUNT;
+const CROOLIS_SELECTION_DEPTH_MAXIMUM: u16 = 1_500;
+const CROOLIS_SELECTION_FORWARD_MAXIMUM: i16 = -20_480;
+const CROOLIS_SELECTION_X_MINIMUM: i16 = -500;
+const CROOLIS_SELECTION_X_MAXIMUM: i16 = 500;
+const CROOLIS_SELECTION_DEPTH_BIAS: i32 = 100;
+const CROOLIS_SELECTION_TURN_STEP: i16 = 48;
+const CROOLIS_SELECTION_HEIGHT_HALF_SHIFT: u32 = 1;
+const CROOLIS_SELECTION_HEIGHT_EASING_SHIFT: u32 = 2;
+const CROOLIS_SELECTION_RADIAL_TARGET: i16 = 200;
+const CROOLIS_SELECTION_RADIAL_EASING_SHIFT: u32 = 2;
+const CROOLIS_SELECTION_PHASE_STEP: i16 = 16;
+const CROOLIS_SELECTION_PHASE_MASK: u16 = 0x007f;
+/// Camera distance supplied when CROOLIS selection returns to reset motion.
+pub const CROOLIS_SELECTION_RESET_DISTANCE: i32 = 1_000;
 
 /// Callback stage selected for one slot-2 animation model.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -142,7 +160,7 @@ pub enum AlienSlot2Callback {
 /// Callback-owned state parallel to one animated model node.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct AlienSlot2NodeState {
-    /// Species-specific motion parameter: AMER timer or follower velocity.
+    /// Species-specific timer, velocity, or authored follower phase.
     pub motion_parameter: i16,
     /// Desired radial displacement approached by the callback family.
     pub radial_target: u16,
@@ -334,6 +352,18 @@ pub enum AlienCroolisUpdateHead {
     ResetRequested,
 }
 
+/// Typed continuation chosen by one CROOLIS selection-tracking update.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienCroolisSelectionUpdate {
+    /// Selection tracking and follower animation advanced normally.
+    Tracking,
+    /// Continue immediately through CROOLIS's separately recovered reset.
+    ResetRequested {
+        /// Camera-relative distance supplied to the reset routine.
+        camera_distance: i32,
+    },
+}
+
 /// Invalid flat state supplied to the slot-2 coordinator.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AlienSlot2Error {
@@ -363,6 +393,11 @@ pub enum AlienSlot2Error {
     },
     /// CROOLIS fade publication requires the fifth animated node.
     MissingCroolisFadeNode {
+        /// Nodes supplied by the caller.
+        node_count: usize,
+    },
+    /// CROOLIS selection animates its final three nodes.
+    MissingCroolisSelectionNodes {
         /// Nodes supplied by the caller.
         node_count: usize,
     },
@@ -959,6 +994,110 @@ pub fn begin_croolis_selection(
     Ok(AlienSlot2Callback::CroolisSelection)
 }
 
+/// Track CROOLIS selection using owned model, scene, and callback state.
+pub fn update_croolis_selection(
+    model_index: usize,
+    pose: &mut AlienModelPose,
+    animation: &mut AlienSlot2AnimationState,
+    scene: &mut AlienCallbackSceneState,
+    camera_view_y: i16,
+) -> Result<AlienCroolisSelectionUpdate, AlienSlot2Error> {
+    validate_state(AlienSpecies::Croolis, pose, animation)?;
+    if pose.nodes.len() < CROOLIS_SELECTION_REQUIRED_NODE_COUNT {
+        return Err(AlienSlot2Error::MissingCroolisSelectionNodes {
+            node_count: pose.nodes.len(),
+        });
+    }
+
+    let reset = |pose: &mut AlienModelPose,
+                 animation: &AlienSlot2AnimationState|
+     -> AlienCroolisSelectionUpdate {
+        restore_croolis_selection_followers(pose, animation);
+        AlienCroolisSelectionUpdate::ResetRequested {
+            camera_distance: CROOLIS_SELECTION_RESET_DISTANCE,
+        }
+    };
+    if scene.wave_selection == AlienWaveSelection::Disabled {
+        animation.callback = Some(AlienSlot2Callback::Update);
+        animation.phase_timer = i16::default();
+        scene.slot2_active = false;
+        scene.slot2_selected_model = None;
+        return Ok(reset(pose, animation));
+    }
+    if scene
+        .slot2_selected_model
+        .is_some_and(|selected| selected != model_index)
+    {
+        return Ok(reset(pose, animation));
+    }
+
+    let primary = &pose.nodes[PRIMARY_NODE];
+    let camera_x = transformed_component(primary, X_AXIS);
+    let camera_z = transformed_component(primary, Z_AXIS);
+    let forward_z = primary.transform.matrix[Z_AXIS][Z_AXIS];
+    let in_selection_bounds = (camera_z as u16) <= CROOLIS_SELECTION_DEPTH_MAXIMUM
+        && (forward_z as i16) <= CROOLIS_SELECTION_FORWARD_MAXIMUM
+        && (CROOLIS_SELECTION_X_MINIMUM..=CROOLIS_SELECTION_X_MAXIMUM).contains(&camera_x);
+    if !in_selection_bounds {
+        scene.slot2_selected_model = None;
+        return Ok(reset(pose, animation));
+    }
+    if scene.control_latch == AlienControlLatch::Model(model_index) {
+        scene.slot2_active = true;
+        scene.slot2_selected_model = None;
+        return Ok(reset(pose, animation));
+    }
+
+    scene.slot2_selected_model = Some(model_index);
+    let primary = &mut pose.nodes[PRIMARY_NODE];
+    let forward_x = primary.transform.matrix[X_AXIS][Z_AXIS];
+    let score = i32::from(camera_x).wrapping_mul(forward_z).wrapping_sub(
+        i32::from(camera_z)
+            .wrapping_add(CROOLIS_SELECTION_DEPTH_BIAS)
+            .wrapping_mul(forward_x),
+    );
+    let roll_step = if score < i32::default() {
+        CROOLIS_SELECTION_TURN_STEP
+    } else {
+        -CROOLIS_SELECTION_TURN_STEP
+    };
+    let roll = (primary.angles[Z_AXIS] as i16)
+        .wrapping_add(roll_step)
+        .clamp(CROOLIS_PITCH_MINIMUM, CROOLIS_PITCH_MAXIMUM);
+    primary.angles[Z_AXIS] = roll as u16;
+    primary.angles[Y_AXIS] =
+        primary.angles[Y_AXIS].wrapping_add((roll >> CROOLIS_HEADING_SHIFT) as u16);
+
+    let pitch = primary.angles[X_AXIS] as i16;
+    let half_height = (primary.local_position[Y_AXIS] as i16).wrapping_add(camera_view_y)
+        >> CROOLIS_SELECTION_HEIGHT_HALF_SHIFT;
+    let pitch_delta = half_height.wrapping_sub(pitch);
+    primary.angles[X_AXIS] = pitch
+        .wrapping_add(pitch_delta >> CROOLIS_SELECTION_HEIGHT_EASING_SHIFT)
+        .clamp(CROOLIS_PITCH_MINIMUM, CROOLIS_PITCH_MAXIMUM) as u16;
+    let radial_delta = CROOLIS_SELECTION_RADIAL_TARGET.wrapping_sub(primary.radial_offset);
+    primary.radial_offset = primary
+        .radial_offset
+        .wrapping_add(radial_delta >> CROOLIS_SELECTION_RADIAL_EASING_SHIFT);
+
+    let signed_phase = animation.nodes[PRIMARY_NODE]
+        .motion_parameter
+        .wrapping_sub(CROOLIS_SELECTION_PHASE_STEP);
+    if signed_phase < i16::default() {
+        scene.callback_countdown = 1;
+    }
+    let phase = (signed_phase as u16) & CROOLIS_SELECTION_PHASE_MASK;
+    animation.nodes[PRIMARY_NODE].motion_parameter = phase as i16;
+    for node_index in CROOLIS_SELECTION_NODE_START..CROOLIS_SELECTION_REQUIRED_NODE_COUNT {
+        let position = pose.nodes[node_index].local_position[Z_AXIS];
+        let animated_position =
+            (animation.nodes[node_index].motion_parameter as u16).wrapping_add(phase);
+        pose.nodes[node_index].local_position[Z_AXIS] =
+            replace_position_word(position, animated_position);
+    }
+    Ok(AlienCroolisSelectionUpdate::Tracking)
+}
+
 /// Preserve the observable behavior of the unreachable steering sibling.
 ///
 /// No original alien method table or callback points at this routine. Keeping
@@ -1101,6 +1240,19 @@ fn update_amer_selection_pitch(primary: &mut super::AlienNodePose, camera_view_y
         as u16;
 }
 
+fn restore_croolis_selection_followers(
+    pose: &mut AlienModelPose,
+    animation: &AlienSlot2AnimationState,
+) {
+    for node_index in CROOLIS_SELECTION_NODE_START..CROOLIS_SELECTION_REQUIRED_NODE_COUNT {
+        let position = pose.nodes[node_index].local_position[Z_AXIS];
+        pose.nodes[node_index].local_position[Z_AXIS] = replace_position_word(
+            position,
+            animation.nodes[node_index].motion_parameter as u16,
+        );
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use commander_blood_formats::alien::{
@@ -1118,6 +1270,8 @@ mod tests {
     const TRANSFORM_LOW_WORD_SENTINEL: u16 = 0x6a5a;
     const CURRENT_MODEL_INDEX: usize = 2;
     const OTHER_MODEL_INDEX: usize = 3;
+    const CROOLIS_UPDATE_ENTRY: u16 = 0x1727;
+    const CROOLIS_SELECTION_ENTRY: u16 = 0x1828;
 
     #[derive(Deserialize)]
     struct Slot2Vector {
@@ -1363,6 +1517,44 @@ mod tests {
         active_after: u16,
         selected_before: bool,
         selected_after: bool,
+    }
+
+    #[derive(Deserialize)]
+    struct CroolisSelectionVector {
+        name: String,
+        module: String,
+        continuation: String,
+        reset_distance: Option<i32>,
+        selection_state: u16,
+        selected_before: String,
+        selected_after: String,
+        control_latch: String,
+        active_before: u16,
+        active_after: u16,
+        duration_before: u16,
+        duration_after: u16,
+        camera_x_before: u16,
+        camera_z_before: u16,
+        forward_x_before: u32,
+        forward_z_before: u32,
+        position_y_before: u32,
+        view_y: u16,
+        pitch_before: u16,
+        pitch_after: u16,
+        pan_before: u16,
+        pan_after: u16,
+        roll_before: u16,
+        roll_after: u16,
+        radial_before: u16,
+        radial_after: u16,
+        phase_before: u16,
+        phase_after: u16,
+        callback_countdown_before: u16,
+        callback_countdown_after: u16,
+        callback_after: u16,
+        follower_phases: [u16; CROOLIS_SELECTION_NODE_COUNT],
+        follower_positions_before: [u32; CROOLIS_SELECTION_NODE_COUNT],
+        follower_positions_after: [u32; CROOLIS_SELECTION_NODE_COUNT],
     }
 
     #[derive(Deserialize)]
@@ -2290,6 +2482,142 @@ mod tests {
     }
 
     #[test]
+    fn croolis_selection_update_matches_every_original_overlay_vector() {
+        let vectors: Vec<CroolisSelectionVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/xdb_croolis_func_1828_head_natural.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            assert_eq!(vector.module, "croolis");
+            let mut pose = pose(&[EMPTY_NODE_VECTOR; CROOLIS_SELECTION_REQUIRED_NODE_COUNT]);
+            let primary = &mut pose.nodes[PRIMARY_NODE];
+            primary.transform.translation[X_AXIS] =
+                join_words(vector.camera_x_before, TRANSFORM_LOW_WORD_SENTINEL);
+            primary.transform.translation[Z_AXIS] =
+                join_words(vector.camera_z_before, TRANSFORM_LOW_WORD_SENTINEL);
+            primary.transform.matrix[X_AXIS][Z_AXIS] = vector.forward_x_before as i32;
+            primary.transform.matrix[Z_AXIS][Z_AXIS] = vector.forward_z_before as i32;
+            primary.local_position[Y_AXIS] = vector.position_y_before as i32;
+            primary.angles = [vector.pitch_before, vector.pan_before, vector.roll_before];
+            primary.radial_offset = vector.radial_before as i16;
+            for (node, position) in pose.nodes
+                [CROOLIS_SELECTION_NODE_START..CROOLIS_SELECTION_REQUIRED_NODE_COUNT]
+                .iter_mut()
+                .zip(vector.follower_positions_before)
+            {
+                node.local_position[Z_AXIS] = position as i32;
+            }
+            let mut animation =
+                AlienSlot2AnimationState::new(CROOLIS_SELECTION_REQUIRED_NODE_COUNT);
+            animation.callback = Some(AlienSlot2Callback::CroolisSelection);
+            animation.phase_timer = vector.duration_before as i16;
+            animation.nodes[PRIMARY_NODE].motion_parameter = vector.phase_before as i16;
+            for (node, phase) in animation.nodes
+                [CROOLIS_SELECTION_NODE_START..CROOLIS_SELECTION_REQUIRED_NODE_COUNT]
+                .iter_mut()
+                .zip(vector.follower_phases)
+            {
+                node.motion_parameter = phase as i16;
+            }
+            let mut scene = AlienCallbackSceneState {
+                control_latch: match vector.control_latch.as_str() {
+                    "inactive" => AlienControlLatch::Inactive,
+                    "current" => AlienControlLatch::Model(CURRENT_MODEL_INDEX),
+                    latch => panic!("unknown CROOLIS control latch {latch}"),
+                },
+                callback_countdown: vector.callback_countdown_before,
+                wave_selection: match vector.selection_state {
+                    0 => AlienWaveSelection::Disabled,
+                    1 => AlienWaveSelection::Requested,
+                    2 => AlienWaveSelection::Selected,
+                    state => panic!("unknown CROOLIS selection state {state}"),
+                },
+                slot2_active: vector.active_before != u16::default(),
+                slot2_selected_model: selected_model(&vector.selected_before),
+                ..AlienCallbackSceneState::default()
+            };
+            let expected = match vector.continuation.as_str() {
+                "tracking" => AlienCroolisSelectionUpdate::Tracking,
+                "reset" => AlienCroolisSelectionUpdate::ResetRequested {
+                    camera_distance: vector.reset_distance.unwrap(),
+                },
+                continuation => panic!("unknown CROOLIS selection continuation {continuation}"),
+            };
+
+            assert_eq!(
+                update_croolis_selection(
+                    CURRENT_MODEL_INDEX,
+                    &mut pose,
+                    &mut animation,
+                    &mut scene,
+                    vector.view_y as i16,
+                )
+                .unwrap(),
+                expected,
+                "{}",
+                vector.name
+            );
+            let primary = &pose.nodes[PRIMARY_NODE];
+            assert_eq!(
+                primary.angles[X_AXIS], vector.pitch_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(primary.angles[Y_AXIS], vector.pan_after, "{}", vector.name);
+            assert_eq!(primary.angles[Z_AXIS], vector.roll_after, "{}", vector.name);
+            assert_eq!(
+                primary.radial_offset as u16, vector.radial_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                animation.nodes[PRIMARY_NODE].motion_parameter as u16, vector.phase_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                animation.phase_timer as u16, vector.duration_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                scene.callback_countdown, vector.callback_countdown_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                scene.slot2_active,
+                vector.active_after != u16::default(),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                scene.slot2_selected_model,
+                selected_model(&vector.selected_after),
+                "{}",
+                vector.name
+            );
+            let expected_callback = match vector.callback_after {
+                CROOLIS_UPDATE_ENTRY => AlienSlot2Callback::Update,
+                CROOLIS_SELECTION_ENTRY => AlienSlot2Callback::CroolisSelection,
+                callback => panic!("unknown CROOLIS callback {callback:#x}"),
+            };
+            assert_eq!(animation.callback, Some(expected_callback));
+            for (node, expected_position) in pose.nodes
+                [CROOLIS_SELECTION_NODE_START..CROOLIS_SELECTION_REQUIRED_NODE_COUNT]
+                .iter()
+                .zip(vector.follower_positions_after)
+            {
+                assert_eq!(
+                    node.local_position[Z_AXIS] as u32, expected_position,
+                    "{}",
+                    vector.name
+                );
+            }
+        }
+    }
+
+    #[test]
     fn amer_update_head_matches_every_isolated_original_overlay_vector() {
         let vectors: Vec<AmerUpdateHeadVector> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/xdb_amer_func_1692_head_natural.json"
@@ -2472,10 +2800,35 @@ mod tests {
                 node_count: CROOLIS_FADE_NODE_COUNT - 1,
             })
         );
+
+        let mut short_selection_pose = pose(&[node; CROOLIS_SELECTION_REQUIRED_NODE_COUNT - 1]);
+        let mut short_selection_animation =
+            AlienSlot2AnimationState::new(CROOLIS_SELECTION_REQUIRED_NODE_COUNT - 1);
+        assert_eq!(
+            update_croolis_selection(
+                CURRENT_MODEL_INDEX,
+                &mut short_selection_pose,
+                &mut short_selection_animation,
+                &mut callback_scene,
+                i16::default(),
+            ),
+            Err(AlienSlot2Error::MissingCroolisSelectionNodes {
+                node_count: CROOLIS_SELECTION_REQUIRED_NODE_COUNT - 1,
+            })
+        );
     }
 
     fn join_words(high: u16, low: u16) -> i32 {
         (u32::from(high) << u16::BITS | u32::from(low)) as i32
+    }
+
+    fn selected_model(kind: &str) -> Option<usize> {
+        match kind {
+            "none" => None,
+            "current" => Some(CURRENT_MODEL_INDEX),
+            "other" => Some(OTHER_MODEL_INDEX),
+            selected => panic!("unknown selected-model state {selected}"),
+        }
     }
 
     fn assert_amer_selection_vector(vector: AmerSelectionVector) {

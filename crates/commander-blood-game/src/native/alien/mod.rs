@@ -63,14 +63,16 @@ pub use selection::{
 pub use slot2::{
     AlienAmerCommonUpdate, AlienAmerFinishUpdate, AlienAmerLateSelectionUpdate,
     AlienAmerReturnUpdate, AlienAmerSelectionUpdate, AlienAmerSteeringUpdate, AlienAmerUpdateHead,
-    AlienCroolisCommonDispatch, AlienCroolisFadeUpdate, AlienCroolisUpdateHead,
-    AlienSlot2AnimationState, AlienSlot2Callback, AlienSlot2Callbacks, AlienSlot2Error,
-    AlienSlot2NodeState, AlienSlot2SceneState, AlienSlot2Update, AlienUnreferencedSteeringState,
-    begin_amer_selection, begin_croolis_fade, begin_croolis_selection, dispatch_croolis_common,
+    AlienCroolisCommonDispatch, AlienCroolisFadeUpdate, AlienCroolisSelectionUpdate,
+    AlienCroolisUpdateHead, AlienSlot2AnimationState, AlienSlot2Callback, AlienSlot2Callbacks,
+    AlienSlot2Error, AlienSlot2NodeState, AlienSlot2SceneState, AlienSlot2Update,
+    AlienUnreferencedSteeringState, CROOLIS_SELECTION_RESET_DISTANCE, begin_amer_selection,
+    begin_croolis_fade, begin_croolis_selection, dispatch_croolis_common,
     initialize_or_dispatch_slot2, reset_amer_motion, restart_amer_update, restart_croolis_update,
     update_amer_common, update_amer_finish, update_amer_head, update_amer_late_selection,
     update_amer_return, update_amer_selection, update_amer_steering, update_croolis_fade,
-    update_croolis_head, update_croolis_motion, update_unreferenced_steering,
+    update_croolis_head, update_croolis_motion, update_croolis_selection,
+    update_unreferenced_steering,
 };
 pub use starfield::{
     AlienStar, AlienStarRejections, AlienStarfieldError, AlienStarfieldFrame, STAR_COUNT,
