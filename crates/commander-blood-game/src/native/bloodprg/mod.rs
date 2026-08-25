@@ -31,6 +31,7 @@ mod navigation_status;
 mod navigation_wipe;
 mod numbers;
 mod palette_pipeline;
+mod pbm_image;
 mod presentation;
 mod presentation_hover;
 mod presentation_line;
@@ -213,6 +214,10 @@ pub use palette_pipeline::{
     PalettePipelineError, PaletteRemapTable, SCENE_PALETTE_CLEAR_COLOR_COUNT,
     TINT_PALETTE_BANK_SIZE, build_banked_tint_table, build_palette_blend_remap_table,
     clear_scene_palette_entries, interpolate_palette_range,
+};
+pub use pbm_image::{
+    PBM_SCENE_PALETTE_COLOR_COUNT, PbmDecodeError, PbmDecodeOptions, PbmDecodeResult, PbmMarker,
+    PbmPaletteUpdate, PbmTransparency, decode_pbm_image,
 };
 pub use presentation::{
     evaluate_text_conditions, ScriptWordHistory, TextConditionEffects, TextConditionError,

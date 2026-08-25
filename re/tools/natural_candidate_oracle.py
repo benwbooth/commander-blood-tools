@@ -30615,6 +30615,10 @@ def pbm_image_load_and_decode_vectors() -> list[dict[str, object]]:
         vectors.append(
             {
                 "name": name,
+                "payload_hex": payload.hex(),
+                "palette_before_hex": palette_seed.hex(),
+                "framebuffer_seed_byte": output_seed[0],
+                "succeeded": succeeded,
                 "embedded_flag": embedded_flag,
                 "content": content,
                 "file_size": file_size,
