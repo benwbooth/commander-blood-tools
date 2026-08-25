@@ -38,6 +38,7 @@ mod screen_presentation;
 mod selected_mask;
 mod sequence;
 mod sequence_subtitles;
+mod ship_projection;
 mod ship_view;
 mod ship_hud;
 mod startup;
@@ -233,6 +234,13 @@ pub use sequence::{
 pub use sequence_subtitles::{
     CenteredSequenceSubtitleLine, SequenceSubtitleOutcome, SequenceSubtitlePlayback,
     SequenceSubtitleRenderer, present_sequence_subtitle,
+};
+pub use ship_projection::{
+    FULL_SHIP_PROJECTION_CLIP, SHIP_POINT_CLOUD_COUNT, SHIP_TRIGONOMETRY_SAMPLE_COUNT,
+    ShipCameraPosition, ShipPlottedPoint, ShipPointCloudProjection, ShipPointRecord,
+    ShipProjectedPoint, ShipProjectionAngleRole, ShipProjectionAngles, ShipProjectionClip,
+    ShipProjectionError, ShipProjectionMatrix, ShipTrigonometrySample,
+    build_ship_projection_matrix, plot_ship_point, project_ship_point_cloud,
 };
 pub use ship_view::{
     select_ship_view_artwork, ShipViewArtworkError, ShipViewArtworkSelection,
