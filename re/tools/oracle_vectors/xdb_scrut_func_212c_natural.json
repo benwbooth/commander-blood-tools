@@ -3,6 +3,93 @@
     "name": "interior_projection_and_copy",
     "module": "scrut",
     "entry": 8492,
+    "screen_center": [
+      160,
+      100
+    ],
+    "trigonometry_pattern": {
+      "cosine_multiplier": 0,
+      "cosine_offset": 16384,
+      "sine_multiplier": 0,
+      "sine_offset": 0
+    },
+    "root": {
+      "matrix": [
+        32768,
+        0,
+        0,
+        0,
+        32768,
+        0,
+        0,
+        0,
+        32768
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ]
+    },
+    "nodes_before": [
+      {
+        "parent": null,
+        "angles": [
+          0,
+          0,
+          0
+        ],
+        "radial_offset": 0,
+        "local_position": [
+          0,
+          0,
+          0
+        ],
+        "vertices": [
+          [
+            20,
+            30,
+            256
+          ],
+          [
+            -40,
+            -25,
+            256
+          ]
+        ]
+      }
+    ],
+    "nodes_after": [
+      {
+        "local_position": [
+          0,
+          0,
+          0
+        ],
+        "matrix": [
+          32768,
+          0,
+          0,
+          0,
+          32768,
+          0,
+          0,
+          0,
+          32768
+        ],
+        "translation": [
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "projection_copies": [
+      {
+        "source": 1,
+        "destination": 2
+      }
+    ],
     "state_count": 1,
     "vertex_counts": [
       2
@@ -24,6 +111,26 @@
         }
       ]
     ],
+    "projected_vertices": [
+      {
+        "screen_x": 180,
+        "screen_y": 70,
+        "depth": 32768,
+        "flags": 0
+      },
+      {
+        "screen_x": 120,
+        "screen_y": 125,
+        "depth": 32768,
+        "flags": 0
+      },
+      {
+        "screen_x": 120,
+        "screen_y": 125,
+        "depth": 32768,
+        "flags": 0
+      }
+    ],
     "last_rotation_matrix": [
       32768,
       0,
@@ -43,6 +150,88 @@
     "name": "nonpositive_depth_shift",
     "module": "scrut",
     "entry": 8492,
+    "screen_center": [
+      160,
+      100
+    ],
+    "trigonometry_pattern": {
+      "cosine_multiplier": 0,
+      "cosine_offset": 16384,
+      "sine_multiplier": 0,
+      "sine_offset": 0
+    },
+    "root": {
+      "matrix": [
+        32768,
+        0,
+        0,
+        0,
+        32768,
+        0,
+        0,
+        0,
+        32768
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ]
+    },
+    "nodes_before": [
+      {
+        "parent": null,
+        "angles": [
+          4092,
+          4097,
+          8194
+        ],
+        "radial_offset": 0,
+        "local_position": [
+          0,
+          0,
+          0
+        ],
+        "vertices": [
+          [
+            12,
+            -7,
+            0
+          ],
+          [
+            -18,
+            9,
+            -2
+          ]
+        ]
+      }
+    ],
+    "nodes_after": [
+      {
+        "local_position": [
+          0,
+          0,
+          0
+        ],
+        "matrix": [
+          32768,
+          0,
+          0,
+          0,
+          32768,
+          0,
+          0,
+          0,
+          32768
+        ],
+        "translation": [
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "projection_copies": [],
     "state_count": 1,
     "vertex_counts": [
       2
@@ -64,6 +253,20 @@
         }
       ]
     ],
+    "projected_vertices": [
+      {
+        "screen_x": 256,
+        "screen_y": 156,
+        "depth": 0,
+        "flags": 255
+      },
+      {
+        "screen_x": 16,
+        "screen_y": 28,
+        "depth": -256,
+        "flags": 255
+      }
+    ],
     "last_rotation_matrix": [
       32768,
       0,
@@ -83,6 +286,108 @@
     "name": "all_clip_and_clamp_edges",
     "module": "scrut",
     "entry": 8492,
+    "screen_center": [
+      160,
+      100
+    ],
+    "trigonometry_pattern": {
+      "cosine_multiplier": 0,
+      "cosine_offset": 16384,
+      "sine_multiplier": 0,
+      "sine_offset": 0
+    },
+    "root": {
+      "matrix": [
+        32768,
+        0,
+        0,
+        0,
+        32768,
+        0,
+        0,
+        0,
+        32768
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ]
+    },
+    "nodes_before": [
+      {
+        "parent": null,
+        "angles": [
+          0,
+          0,
+          0
+        ],
+        "radial_offset": 0,
+        "local_position": [
+          0,
+          0,
+          0
+        ],
+        "vertices": [
+          [
+            -300,
+            0,
+            256
+          ],
+          [
+            300,
+            0,
+            256
+          ],
+          [
+            0,
+            250,
+            256
+          ],
+          [
+            0,
+            -250,
+            256
+          ],
+          [
+            -200,
+            150,
+            256
+          ],
+          [
+            200,
+            -150,
+            256
+          ]
+        ]
+      }
+    ],
+    "nodes_after": [
+      {
+        "local_position": [
+          0,
+          0,
+          0
+        ],
+        "matrix": [
+          32768,
+          0,
+          0,
+          0,
+          32768,
+          0,
+          0,
+          0,
+          32768
+        ],
+        "translation": [
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "projection_copies": [],
     "state_count": 1,
     "vertex_counts": [
       6
@@ -128,6 +433,44 @@
         }
       ]
     ],
+    "projected_vertices": [
+      {
+        "screen_x": -89,
+        "screen_y": 100,
+        "depth": 32768,
+        "flags": 1
+      },
+      {
+        "screen_x": 409,
+        "screen_y": 100,
+        "depth": 32768,
+        "flags": 2
+      },
+      {
+        "screen_x": 160,
+        "screen_y": -149,
+        "depth": 32768,
+        "flags": 4
+      },
+      {
+        "screen_x": 160,
+        "screen_y": 349,
+        "depth": 32768,
+        "flags": 8
+      },
+      {
+        "screen_x": -40,
+        "screen_y": -50,
+        "depth": 32768,
+        "flags": 5
+      },
+      {
+        "screen_x": 360,
+        "screen_y": 250,
+        "depth": 32768,
+        "flags": 10
+      }
+    ],
     "last_rotation_matrix": [
       32768,
       0,
@@ -147,6 +490,88 @@
     "name": "common_left_clip_rejection",
     "module": "scrut",
     "entry": 8492,
+    "screen_center": [
+      160,
+      100
+    ],
+    "trigonometry_pattern": {
+      "cosine_multiplier": 0,
+      "cosine_offset": 16384,
+      "sine_multiplier": 0,
+      "sine_offset": 0
+    },
+    "root": {
+      "matrix": [
+        32768,
+        0,
+        0,
+        0,
+        32768,
+        0,
+        0,
+        0,
+        32768
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ]
+    },
+    "nodes_before": [
+      {
+        "parent": null,
+        "angles": [
+          0,
+          0,
+          0
+        ],
+        "radial_offset": 0,
+        "local_position": [
+          0,
+          0,
+          0
+        ],
+        "vertices": [
+          [
+            -170,
+            0,
+            256
+          ],
+          [
+            -300,
+            20,
+            256
+          ]
+        ]
+      }
+    ],
+    "nodes_after": [
+      {
+        "local_position": [
+          0,
+          0,
+          0
+        ],
+        "matrix": [
+          32768,
+          0,
+          0,
+          0,
+          32768,
+          0,
+          0,
+          0,
+          32768
+        ],
+        "translation": [
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "projection_copies": [],
     "state_count": 1,
     "vertex_counts": [
       2
@@ -168,6 +593,20 @@
         }
       ]
     ],
+    "projected_vertices": [
+      {
+        "screen_x": -10,
+        "screen_y": 100,
+        "depth": 32768,
+        "flags": 255
+      },
+      {
+        "screen_x": -89,
+        "screen_y": 80,
+        "depth": 32768,
+        "flags": 255
+      }
+    ],
     "last_rotation_matrix": [
       32768,
       0,
@@ -187,6 +626,97 @@
     "name": "masked_angles_and_radial_rounding",
     "module": "scrut",
     "entry": 8492,
+    "screen_center": [
+      -17,
+      243
+    ],
+    "trigonometry_pattern": {
+      "cosine_multiplier": 40503,
+      "cosine_offset": 38763,
+      "sine_multiplier": 27947,
+      "sine_offset": 44521
+    },
+    "root": {
+      "matrix": [
+        32768,
+        0,
+        0,
+        0,
+        32768,
+        0,
+        0,
+        0,
+        32768
+      ],
+      "translation": [
+        305419896,
+        -19088744,
+        4194304
+      ]
+    },
+    "nodes_before": [
+      {
+        "parent": null,
+        "angles": [
+          62263,
+          5738,
+          10653
+        ],
+        "radial_offset": -32767,
+        "local_position": [
+          2147483647,
+          -2147483647,
+          305463295
+        ],
+        "vertices": [
+          [
+            3,
+            -5,
+            17
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ]
+      }
+    ],
+    "nodes_after": [
+      {
+        "local_position": [
+          2147482424,
+          -2147477159,
+          305464445
+        ],
+        "matrix": [
+          -2302,
+          16494,
+          2446,
+          8084,
+          23320,
+          -12976,
+          18100,
+          -22798,
+          -2302
+        ],
+        "translation": [
+          265311864,
+          193542808,
+          41844736
+        ]
+      }
+    ],
+    "projection_copies": [
+      {
+        "source": 0,
+        "destination": 2
+      },
+      {
+        "source": 1,
+        "destination": 3
+      }
+    ],
     "state_count": 1,
     "vertex_counts": [
       2
@@ -208,6 +738,32 @@
         }
       ]
     ],
+    "projected_vertices": [
+      {
+        "screen_x": 409,
+        "screen_y": -149,
+        "depth": 163960,
+        "flags": 255
+      },
+      {
+        "screen_x": 409,
+        "screen_y": -149,
+        "depth": 163447,
+        "flags": 255
+      },
+      {
+        "screen_x": 409,
+        "screen_y": -149,
+        "depth": 163960,
+        "flags": 255
+      },
+      {
+        "screen_x": 409,
+        "screen_y": -149,
+        "depth": 163447,
+        "flags": 255
+      }
+    ],
     "last_rotation_matrix": [
       -2302,
       16494,
@@ -227,6 +783,137 @@
     "name": "two_state_parent_chain",
     "module": "scrut",
     "entry": 8492,
+    "screen_center": [
+      160,
+      100
+    ],
+    "trigonometry_pattern": {
+      "cosine_multiplier": 0,
+      "cosine_offset": 16384,
+      "sine_multiplier": 0,
+      "sine_offset": 0
+    },
+    "root": {
+      "matrix": [
+        32768,
+        0,
+        0,
+        0,
+        32768,
+        0,
+        0,
+        0,
+        32768
+      ],
+      "translation": [
+        4096,
+        8192,
+        12288
+      ]
+    },
+    "nodes_before": [
+      {
+        "parent": null,
+        "angles": [
+          0,
+          0,
+          0
+        ],
+        "radial_offset": 5,
+        "local_position": [
+          1,
+          2,
+          3
+        ],
+        "vertices": [
+          [
+            1,
+            2,
+            256
+          ]
+        ]
+      },
+      {
+        "parent": 0,
+        "angles": [
+          4092,
+          4092,
+          4092
+        ],
+        "radial_offset": -7,
+        "local_position": [
+          -4,
+          5,
+          6
+        ],
+        "vertices": [
+          [
+            -8,
+            12,
+            300
+          ],
+          [
+            15,
+            -20,
+            400
+          ]
+        ]
+      }
+    ],
+    "nodes_after": [
+      {
+        "local_position": [
+          1,
+          2,
+          5
+        ],
+        "matrix": [
+          32768,
+          0,
+          0,
+          0,
+          32768,
+          0,
+          0,
+          0,
+          32768
+        ],
+        "translation": [
+          36864,
+          73728,
+          176128
+        ]
+      },
+      {
+        "local_position": [
+          -4,
+          5,
+          2
+        ],
+        "matrix": [
+          32768,
+          0,
+          0,
+          0,
+          32768,
+          0,
+          0,
+          0,
+          32768
+        ],
+        "translation": [
+          -94208,
+          237568,
+          241664
+        ]
+      }
+    ],
+    "projection_copies": [
+      {
+        "source": 0,
+        "destination": 3
+      }
+    ],
     "state_count": 2,
     "vertex_counts": [
       1,
@@ -257,6 +944,32 @@
         }
       ]
     ],
+    "projected_vertices": [
+      {
+        "screen_x": 162,
+        "screen_y": 96,
+        "depth": 33456,
+        "flags": 0
+      },
+      {
+        "screen_x": 151,
+        "screen_y": 84,
+        "depth": 39344,
+        "flags": 0
+      },
+      {
+        "screen_x": 167,
+        "screen_y": 108,
+        "depth": 52144,
+        "flags": 0
+      },
+      {
+        "screen_x": 162,
+        "screen_y": 96,
+        "depth": 33456,
+        "flags": 0
+      }
+    ],
     "last_rotation_matrix": [
       32768,
       0,
@@ -276,6 +989,88 @@
     "name": "modular_transform_overflow",
     "module": "scrut",
     "entry": 8492,
+    "screen_center": [
+      2147483632,
+      -2147483616
+    ],
+    "trigonometry_pattern": {
+      "cosine_multiplier": 40503,
+      "cosine_offset": 55669,
+      "sine_multiplier": 27947,
+      "sine_offset": 12811
+    },
+    "root": {
+      "matrix": [
+        1879048196,
+        -1879048188,
+        305419900,
+        -19088740,
+        1610612740,
+        -1610612732,
+        2147483640,
+        -2147483640,
+        -1
+      ],
+      "translation": [
+        2147483644,
+        -2147483644,
+        -2147483648
+      ]
+    },
+    "nodes_before": [
+      {
+        "parent": null,
+        "angles": [
+          1364,
+          2728,
+          3820
+        ],
+        "radial_offset": 16385,
+        "local_position": [
+          2147450880,
+          -2147450881,
+          -65535
+        ],
+        "vertices": [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            1,
+            -1,
+            2
+          ]
+        ]
+      }
+    ],
+    "nodes_after": [
+      {
+        "local_position": [
+          2147451724,
+          -2147438121,
+          -70658
+        ],
+        "matrix": [
+          -20901,
+          -43189,
+          -57886,
+          -19225,
+          56645,
+          31024,
+          3,
+          21,
+          12
+        ],
+        "translation": [
+          1959950224,
+          -1033391704,
+          100442
+        ]
+      }
+    ],
+    "projection_copies": [],
     "state_count": 1,
     "vertex_counts": [
       2
@@ -297,6 +1092,20 @@
         }
       ]
     ],
+    "projected_vertices": [
+      {
+        "screen_x": -89,
+        "screen_y": -149,
+        "depth": 392,
+        "flags": 255
+      },
+      {
+        "screen_x": -89,
+        "screen_y": -149,
+        "depth": 392,
+        "flags": 255
+      }
+    ],
     "last_rotation_matrix": [
       -31242,
       -68666,
@@ -316,6 +1125,106 @@
     "name": "copy_list_indirection",
     "module": "scrut",
     "entry": 8492,
+    "screen_center": [
+      211,
+      73
+    ],
+    "trigonometry_pattern": {
+      "cosine_multiplier": 0,
+      "cosine_offset": 16384,
+      "sine_multiplier": 0,
+      "sine_offset": 0
+    },
+    "root": {
+      "matrix": [
+        32768,
+        0,
+        0,
+        0,
+        32768,
+        0,
+        0,
+        0,
+        32768
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ]
+    },
+    "nodes_before": [
+      {
+        "parent": null,
+        "angles": [
+          0,
+          0,
+          0
+        ],
+        "radial_offset": 0,
+        "local_position": [
+          0,
+          0,
+          0
+        ],
+        "vertices": [
+          [
+            5,
+            7,
+            256
+          ],
+          [
+            11,
+            -13,
+            512
+          ],
+          [
+            19,
+            23,
+            256
+          ]
+        ]
+      }
+    ],
+    "nodes_after": [
+      {
+        "local_position": [
+          0,
+          0,
+          0
+        ],
+        "matrix": [
+          32768,
+          0,
+          0,
+          0,
+          32768,
+          0,
+          0,
+          0,
+          32768
+        ],
+        "translation": [
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "projection_copies": [
+      {
+        "source": 2,
+        "destination": 3
+      },
+      {
+        "source": 0,
+        "destination": 4
+      },
+      {
+        "source": 1,
+        "destination": 5
+      }
+    ],
     "state_count": 1,
     "vertex_counts": [
       3
@@ -342,6 +1251,44 @@
           "flags": 0
         }
       ]
+    ],
+    "projected_vertices": [
+      {
+        "screen_x": 216,
+        "screen_y": 66,
+        "depth": 32768,
+        "flags": 0
+      },
+      {
+        "screen_x": 216,
+        "screen_y": 79,
+        "depth": 65536,
+        "flags": 0
+      },
+      {
+        "screen_x": 230,
+        "screen_y": 50,
+        "depth": 32768,
+        "flags": 0
+      },
+      {
+        "screen_x": 230,
+        "screen_y": 50,
+        "depth": 32768,
+        "flags": 0
+      },
+      {
+        "screen_x": 216,
+        "screen_y": 66,
+        "depth": 32768,
+        "flags": 0
+      },
+      {
+        "screen_x": 216,
+        "screen_y": 79,
+        "depth": 65536,
+        "flags": 0
+      }
     ],
     "last_rotation_matrix": [
       32768,

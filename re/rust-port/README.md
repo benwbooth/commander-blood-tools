@@ -50,6 +50,13 @@ Eighteen direct binary cases verify angle masking, fixed-point target-matrix
 construction, matrix easing and roundoff, depth-motion integration, overflow,
 and transformed view publication.
 
+The shared hierarchy-transform and projection routine is translated for all
+three overlays as well. Twenty-four direct binary cases verify typed parent
+resolution, Q15 matrix composition, local and radial motion, wrapping overflow,
+positive and nonpositive depth paths, every clipping edge, common-clip
+rejection, and UV-alias projection copies. The runtime operates on model, node,
+and vertex arrays; the original data and object segment split is eliminated.
+
 The typed format layer now decodes all three original XDB images: the shared
 primary mesh, 48 named behavior models, camera/root/node hierarchy, vertices,
 projection aliases, faces, 256-by-512 indexed texture atlas, display palette,
@@ -57,8 +64,8 @@ trigonometry table, and 500-entry raster reciprocal table. It also resolves
 method-table slots to semantic behavior kinds. File-relative relocation and
 object offsets are loader inputs only and become validated Rust indices.
 
-The next runtime layer ports the shared camera-matrix, hierarchical transform,
-projection, starfield, and face-selection routines over these owned resources.
+The next runtime layer ports the shared starfield and face-selection routines
+over these owned resources, then connects the decoded alien scenes to wgpu.
 
 Run the current interactive path with original assets:
 

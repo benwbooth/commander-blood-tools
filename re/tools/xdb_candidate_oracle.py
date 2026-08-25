@@ -5953,10 +5953,110 @@ def alien_transform_and_project_vectors(
                 "name": case["name"],
                 "module": module,
                 "entry": entry,
+                "screen_center": [
+                    signed_dword(case["center"][0]),
+                    signed_dword(case["center"][1]),
+                ],
+                "trigonometry_pattern": {
+                    "cosine_multiplier": (
+                        0 if case["trig"] == "identity" else 0x9E37
+                    ),
+                    "cosine_offset": (
+                        0x4000
+                        if case["trig"] == "identity"
+                        else (case_index * 0x2105 + 0x1357) & 0xFFFF
+                    ),
+                    "sine_multiplier": (
+                        0 if case["trig"] == "identity" else 0x6D2B
+                    ),
+                    "sine_offset": (
+                        0
+                        if case["trig"] == "identity"
+                        else (case_index * 0x4211 + 0xA5A5) & 0xFFFF
+                    ),
+                },
+                "root": {
+                    "matrix": [signed_dword(value) for value in case["root_matrix"]],
+                    "translation": [
+                        signed_dword(value) for value in case["root_translation"]
+                    ],
+                },
+                "nodes_before": [
+                    {
+                        "parent": state["parent"],
+                        "angles": [value & 0xFFFF for value in state["angles"]],
+                        "radial_offset": signed_word(state["radial"]),
+                        "local_position": [
+                            signed_dword(value) for value in state["local"]
+                        ],
+                        "vertices": [
+                            [signed_word(value) for value in vertex]
+                            for vertex in state["vertices"]
+                        ],
+                    }
+                    for state in case["states"]
+                ],
+                "nodes_after": [
+                    {
+                        "local_position": [
+                            signed_dword(
+                                get_u32(
+                                    data_expected,
+                                    state_offsets[state_index] + 0x42 + axis * 4,
+                                )
+                            )
+                            for axis in range(3)
+                        ],
+                        "matrix": [
+                            signed_dword(
+                                get_u32(
+                                    data_expected,
+                                    state_offsets[state_index] + 0x12 + index * 4,
+                                )
+                            )
+                            for index in range(9)
+                        ],
+                        "translation": [
+                            signed_dword(
+                                get_u32(
+                                    data_expected,
+                                    state_offsets[state_index] + 0x36 + axis * 4,
+                                )
+                            )
+                            for axis in range(3)
+                        ],
+                    }
+                    for state_index in range(len(case["states"]))
+                ],
+                "projection_copies": [
+                    {
+                        "source": sum(
+                            len(state["vertices"])
+                            for state in case["states"][:source_state]
+                        )
+                        + source_vertex,
+                        "destination": sum(
+                            len(state["vertices"]) for state in case["states"]
+                        )
+                        + copy_index,
+                    }
+                    for copy_index, (source_state, source_vertex) in enumerate(
+                        case["copies"]
+                    )
+                ],
                 "state_count": len(case["states"]),
                 "vertex_counts": [len(state["vertices"]) for state in case["states"]],
                 "copy_count": len(case["copies"]),
                 "projected": projected,
+                "projected_vertices": [
+                    vertex
+                    for state_vertices in projected
+                    for vertex in state_vertices
+                ]
+                + [
+                    projected[source_state][source_vertex]
+                    for source_state, source_vertex in case["copies"]
+                ],
                 "last_rotation_matrix": [
                     signed_dword(get_u32(data_expected, 0x2284 + index * 4))
                     for index in range(9)
