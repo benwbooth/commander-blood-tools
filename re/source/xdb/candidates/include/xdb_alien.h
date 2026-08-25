@@ -444,6 +444,7 @@ struct xdb_alien_method_context {
             xdb_i16 velocity_y;
             xdb_i16 velocity_z;
             xdb_u16 random_value;
+            xdb_u16 animation_phase;
         } amer_slot2_motion;
         struct {
             xdb_i16 duration;

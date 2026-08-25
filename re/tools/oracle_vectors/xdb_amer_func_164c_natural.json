@@ -46,7 +46,7 @@
         "roll_after": 4339,
         "radial_after": 18989,
         "velocity_after": 33895,
-        "sample_phase_after": 20,
+        "radial_target_after": 20,
         "depth_target_after": 63707
       }
     ],
@@ -87,7 +87,7 @@
         "roll_after": 8452,
         "radial_after": 23358,
         "velocity_after": 38264,
-        "sample_phase_after": 20,
+        "radial_target_after": 20,
         "depth_target_after": 2540
       },
       {
@@ -97,7 +97,7 @@
         "roll_after": 51114,
         "radial_after": 484,
         "velocity_after": 15134,
-        "sample_phase_after": 30040,
+        "radial_target_after": 30040,
         "depth_target_after": 44946
       },
       {
@@ -107,7 +107,7 @@
         "roll_after": 27984,
         "radial_after": 42890,
         "velocity_after": 57796,
-        "sample_phase_after": 7166,
+        "radial_target_after": 7166,
         "depth_target_after": 21816
       }
     ],
@@ -178,7 +178,7 @@
         "roll_after": 25414,
         "radial_after": 40320,
         "velocity_after": 55226,
-        "sample_phase_after": 20,
+        "radial_target_after": 20,
         "depth_target_after": 19246
       },
       {
@@ -188,7 +188,7 @@
         "roll_after": 2540,
         "radial_after": 17190,
         "velocity_after": 32096,
-        "sample_phase_after": 47002,
+        "radial_target_after": 47002,
         "depth_target_after": 61908
       }
     ],

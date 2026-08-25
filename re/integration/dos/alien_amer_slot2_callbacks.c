@@ -82,6 +82,7 @@ static const char *check_reset(void)
 
 static const char *check_countdown_common_tail(void)
 {
+    static char failure[160];
     extended_state state_space;
     extended_context context_space;
     xdb_alien_biased_state *state;
@@ -103,10 +104,18 @@ static const char *check_countdown_common_tail(void)
             || state->field_054 != 4
             || state->field_052 != 8
             || state->field_050 != 1
-            || *(xdb_u16 *)(context_space.bytes + 0x42) != 0x84
-            || *(xdb_i16 *)(state_space.bytes + 0x0ac)
-                    != (xdb_i16)0xfe00u) {
-        return "FAIL amer slot2 common tail";
+            || context->continuation.amer_slot2_motion.animation_phase != 0x84
+            || state[1].field_04e != (xdb_i16)0xff00u) {
+        sprintf(
+                failure,
+                "FAIL common %04x %04x %04x %04x %04x %04x",
+                context->continuation.amer_slot2.field_038,
+                state->field_054,
+                state->field_052,
+                state->field_050,
+                context->continuation.amer_slot2_motion.animation_phase,
+                (xdb_u16)state[1].field_04e);
+        return failure;
     }
     return NULL;
 }

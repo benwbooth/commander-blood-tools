@@ -4,15 +4,15 @@ use std::fmt;
 
 use commander_blood_formats::alien::AXIS_COUNT;
 
-use super::{AlienModelPose, AlienSpecies};
+use super::{AlienCallbackSceneState, AlienCameraTransform, AlienModelPose, AlienSpecies};
 
 const PRIMARY_NODE: usize = 0;
 const X_AXIS: usize = 0;
 const Y_AXIS: usize = 1;
 const Z_AXIS: usize = 2;
 const INITIAL_DURATION: i16 = 50;
-const INITIAL_AMER_SAMPLE_PHASE: u16 = 20;
-const INITIAL_AMER_SELECTION_SAMPLE_PHASE: u16 = 40;
+const INITIAL_AMER_RADIAL_TARGET: u16 = 20;
+const INITIAL_AMER_SELECTION_RADIAL_TARGET: u16 = 40;
 const ANGLE_MASK: u16 = 0x0ffc;
 const CROOLIS_SEED_STEP: u16 = 250;
 const SCRUT_SEED_STEP: u16 = 300;
@@ -35,7 +35,31 @@ const AMER_CAMERA_HEIGHT_MINIMUM: i16 = -768;
 const AMER_CAMERA_HEIGHT_MAXIMUM: i16 = 768;
 const AMER_CAMERA_HEIGHT_EASING_SHIFT: u32 = 1;
 const AMER_FINISH_RADIAL_STEP: i16 = 10;
-const AMER_FINISH_SAMPLE_PHASE: u16 = 500;
+const AMER_FINISH_RADIAL_TARGET: u16 = 500;
+const AMER_COMMON_NODE_COUNT: usize = 5;
+const AMER_RADIAL_EASING_SHIFT: u32 = 3;
+const AMER_CENTER_X_MINIMUM: i16 = -40;
+const AMER_CENTER_X_MAXIMUM_EXCLUSIVE: i16 = 40;
+const AMER_CENTER_Y_MINIMUM: i16 = -40;
+const AMER_CENTER_Y_MAXIMUM: i16 = 40;
+const AMER_CENTER_Z_MINIMUM_EXCLUSIVE: i16 = -80;
+const AMER_CENTER_Z_MAXIMUM: i16 = 40;
+const AMER_CAMERA_HALF_TURN: u16 = 0x0800;
+const AMER_ANIMATION_PHASE_STEP: u16 = 132;
+const AMER_ANIMATION_PHASE_MASK: u16 = 0x03ff;
+const AMER_ROLL_TO_PAN_SHIFT: u32 = 3;
+const AMER_ROLL_REGION_BIAS: i16 = 32;
+const AMER_ROLL_REGION_WIDTH: i16 = 64;
+const AMER_FOLLOWER_PITCH: i16 = 256;
+const AMER_FOLLOWER_PITCH_DOUBLE: i16 = 512;
+const AMER_CAMERA_PLACEMENT_DISTANCE: i32 = -160;
+const AMER_MINIMUM_RETURN_DEPTH: i16 = 40;
+const AMER_RETURN_DEPTH_SHIFT: u32 = 1;
+const AMER_RETURN_TIMER_SHIFT: u32 = 2;
+const AMER_RETURN_TIMER_BIAS: u16 = 20;
+const AMER_RETURN_VELOCITY_SHIFT: u32 = 18;
+const AMER_CAMERA_DEPTH_RESET: i16 = -64;
+const AMER_RETURN_CALLBACK_COUNTDOWN: u16 = 1;
 
 /// Callback stage selected for one slot-2 animation model.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -59,8 +83,8 @@ pub enum AlienSlot2Callback {
 pub struct AlienSlot2NodeState {
     /// Species-specific motion parameter: AMER timer or follower velocity.
     pub motion_parameter: i16,
-    /// Cyclic sample phase used by animation feedback.
-    pub sample_phase: u16,
+    /// Desired radial displacement approached by the callback family.
+    pub radial_target: u16,
     /// SCRUT depth target retained independently from node ownership.
     pub depth_target: i16,
     /// Deterministic behavior seed used by AMER's reset path.
@@ -82,6 +106,8 @@ pub struct AlienSlot2AnimationState {
     pub species_seed_at_initialization: i32,
     /// Deterministic random value owned by this model.
     pub random_value: u16,
+    /// Wrapped phase driving AMER's four follower-node poses.
+    pub amer_animation_phase: u16,
     /// AMER-only signed per-axis velocity used during its return flight.
     pub amer_velocity: [i16; AXIS_COUNT],
     /// Callback state parallel to the model pose nodes.
@@ -98,6 +124,7 @@ impl AlienSlot2AnimationState {
             croolis_motion_accumulator: i16::default(),
             species_seed_at_initialization: i32::default(),
             random_value: u16::default(),
+            amer_animation_phase: u16::default(),
             amer_velocity: [i16::default(); AXIS_COUNT],
             nodes: vec![AlienSlot2NodeState::default(); node_count],
         }
@@ -164,6 +191,17 @@ pub enum AlienAmerFinishUpdate {
     Steering,
 }
 
+/// Stage completed by AMER's common animation tail.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienAmerCommonUpdate {
+    /// Ordinary autonomous animation and follower poses were advanced.
+    MotionUpdated,
+    /// The model faced back toward the current camera pan.
+    CameraFacing,
+    /// The model was placed ahead of the camera and began its return flight.
+    ReturnStarted,
+}
+
 /// Invalid flat state supplied to the slot-2 coordinator.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AlienSlot2Error {
@@ -178,6 +216,11 @@ pub enum AlienSlot2Error {
     },
     /// CROOLIS and SCRUT initialization requires at least one follower node.
     MissingFollowerNode {
+        /// Nodes supplied by the caller.
+        node_count: usize,
+    },
+    /// AMER's common animation tail requires its four follower nodes.
+    MissingAmerAnimationNodes {
         /// Nodes supplied by the caller.
         node_count: usize,
     },
@@ -216,7 +259,7 @@ pub fn initialize_or_dispatch_slot2(
         animation.phase_timer = RESET_SIGNED_VALUE;
         animation.random_value = first_random;
         pose.nodes[PRIMARY_NODE].angles[Y_AXIS] = first_random & ANGLE_MASK;
-        animation.nodes[PRIMARY_NODE].sample_phase = INITIAL_AMER_SAMPLE_PHASE;
+        animation.nodes[PRIMARY_NODE].radial_target = INITIAL_AMER_RADIAL_TARGET;
         return Ok(AlienSlot2Update::Initialized);
     }
 
@@ -232,7 +275,7 @@ pub fn initialize_or_dispatch_slot2(
     primary.angles[Z_AXIS] = RESET_ANGLE;
     primary.radial_offset = RESET_SIGNED_VALUE;
     animation.nodes[PRIMARY_NODE].motion_parameter = RESET_SIGNED_VALUE;
-    animation.nodes[PRIMARY_NODE].sample_phase = RESET_ANGLE;
+    animation.nodes[PRIMARY_NODE].radial_target = RESET_ANGLE;
     if species == AlienSpecies::Scrut {
         animation.nodes[PRIMARY_NODE].depth_target = RESET_SIGNED_VALUE;
     }
@@ -348,7 +391,7 @@ pub fn restart_amer_update(
     prepare_amer_immediate_callback(
         pose,
         animation,
-        INITIAL_AMER_SAMPLE_PHASE,
+        INITIAL_AMER_RADIAL_TARGET,
         AlienSlot2Callback::Update,
     )
 }
@@ -361,7 +404,7 @@ pub fn begin_amer_selection(
     prepare_amer_immediate_callback(
         pose,
         animation,
-        INITIAL_AMER_SELECTION_SAMPLE_PHASE,
+        INITIAL_AMER_SELECTION_RADIAL_TARGET,
         AlienSlot2Callback::AmerSelection,
     )
 }
@@ -401,7 +444,7 @@ pub fn update_amer_finish(
     }
 
     primary.radial_offset = primary.radial_offset.wrapping_add(AMER_FINISH_RADIAL_STEP);
-    node_state.sample_phase = AMER_FINISH_SAMPLE_PHASE;
+    node_state.radial_target = AMER_FINISH_RADIAL_TARGET;
     let score = horizontal
         .wrapping_neg()
         .wrapping_mul(primary.transform.matrix[X_AXIS][Z_AXIS])
@@ -412,6 +455,79 @@ pub fn update_amer_finish(
         primary.angles[Y_AXIS].wrapping_sub(AMER_STEERING_TURN_STEP)
     };
     Ok(AlienAmerFinishUpdate::Steering)
+}
+
+/// Run AMER's shared motion tail using flat model and camera state.
+pub fn update_amer_common(
+    pose: &mut AlienModelPose,
+    animation: &mut AlienSlot2AnimationState,
+    scene: &mut AlienCallbackSceneState,
+    camera: &AlienCameraTransform,
+    camera_pan: u16,
+    camera_depth_step: &mut i16,
+) -> Result<AlienAmerCommonUpdate, AlienSlot2Error> {
+    validate_state(AlienSpecies::Amer, pose, animation)?;
+    if pose.nodes.len() < AMER_COMMON_NODE_COUNT {
+        return Err(AlienSlot2Error::MissingAmerAnimationNodes {
+            node_count: pose.nodes.len(),
+        });
+    }
+
+    let radial_target = animation.nodes[PRIMARY_NODE].radial_target as i16;
+    let primary = &mut pose.nodes[PRIMARY_NODE];
+    let radial_delta = radial_target.wrapping_sub(primary.radial_offset);
+    primary.radial_offset = primary
+        .radial_offset
+        .wrapping_add(radial_delta >> AMER_RADIAL_EASING_SHIFT);
+    let camera_x = transformed_component(primary, X_AXIS);
+    let camera_y = transformed_component(primary, Y_AXIS);
+    let camera_z = transformed_component(primary, Z_AXIS);
+    let centered = (AMER_CENTER_X_MINIMUM..AMER_CENTER_X_MAXIMUM_EXCLUSIVE).contains(&camera_x)
+        && (AMER_CENTER_Y_MINIMUM..=AMER_CENTER_Y_MAXIMUM).contains(&camera_y)
+        && camera_z > AMER_CENTER_Z_MINIMUM_EXCLUSIVE
+        && camera_z <= AMER_CENTER_Z_MAXIMUM;
+    if centered && camera_z < RESET_SIGNED_VALUE {
+        primary.angles[Y_AXIS] = camera_pan.wrapping_add(AMER_CAMERA_HALF_TURN) & ANGLE_MASK;
+        return Ok(AlienAmerCommonUpdate::CameraFacing);
+    }
+    if centered {
+        primary.radial_offset = RESET_SIGNED_VALUE;
+        for axis in usize::default()..AXIS_COUNT {
+            let camera_offset = camera.matrix[Z_AXIS][axis]
+                .wrapping_mul(AMER_CAMERA_PLACEMENT_DISTANCE)
+                .wrapping_add(camera.position[axis]);
+            primary.local_position[axis] = (camera_offset >> u16::BITS).wrapping_neg();
+        }
+        let depth = (*camera_depth_step >> AMER_RETURN_DEPTH_SHIFT).max(AMER_MINIMUM_RETURN_DEPTH);
+        animation.phase_timer = (((depth as u16) >> AMER_RETURN_TIMER_SHIFT)
+            .wrapping_add(AMER_RETURN_TIMER_BIAS)) as i16;
+        for axis in usize::default()..AXIS_COUNT {
+            animation.amer_velocity[axis] = (camera.matrix[Z_AXIS][axis]
+                .wrapping_mul(i32::from(depth))
+                >> AMER_RETURN_VELOCITY_SHIFT) as i16;
+        }
+        *camera_depth_step = AMER_CAMERA_DEPTH_RESET;
+        animation.callback = Some(AlienSlot2Callback::AmerReturn);
+        scene.slot2_active = true;
+        scene.callback_countdown = AMER_RETURN_CALLBACK_COUNTDOWN;
+        return Ok(AlienAmerCommonUpdate::ReturnStarted);
+    }
+
+    primary.angles[Z_AXIS] =
+        primary.angles[Z_AXIS].wrapping_add(animation.amer_velocity[X_AXIS] as u16);
+    primary.angles[Y_AXIS] = primary.angles[Y_AXIS]
+        .wrapping_add((primary.angles[Z_AXIS] as i16 >> AMER_ROLL_TO_PAN_SHIFT) as u16);
+    animation.amer_animation_phase = animation
+        .amer_animation_phase
+        .wrapping_add(AMER_ANIMATION_PHASE_STEP)
+        & AMER_ANIMATION_PHASE_MASK;
+    let roll = primary.angles[Z_AXIS] as i16;
+    update_amer_followers(
+        &mut pose.nodes[1..AMER_COMMON_NODE_COUNT],
+        roll,
+        animation.amer_animation_phase,
+    );
+    Ok(AlienAmerCommonUpdate::MotionUpdated)
 }
 
 fn validate_state(
@@ -461,13 +577,44 @@ fn transformed_component(node: &super::AlienNodePose, axis: usize) -> i16 {
 fn prepare_amer_immediate_callback(
     pose: &AlienModelPose,
     animation: &mut AlienSlot2AnimationState,
-    sample_phase: u16,
+    radial_target: u16,
     callback: AlienSlot2Callback,
 ) -> Result<AlienSlot2Callback, AlienSlot2Error> {
     validate_state(AlienSpecies::Amer, pose, animation)?;
-    animation.nodes[PRIMARY_NODE].sample_phase = sample_phase;
+    animation.nodes[PRIMARY_NODE].radial_target = radial_target;
     animation.callback = Some(callback);
     Ok(callback)
+}
+
+fn update_amer_followers(followers: &mut [super::AlienNodePose], roll: i16, animation_phase: u16) {
+    let negative_phase = animation_phase.wrapping_neg();
+    let roll_region = roll.wrapping_add(AMER_ROLL_REGION_BIAS);
+    let values = if roll_region < RESET_SIGNED_VALUE {
+        [
+            (-AMER_FOLLOWER_PITCH, animation_phase),
+            (AMER_FOLLOWER_PITCH, negative_phase),
+            (-AMER_FOLLOWER_PITCH_DOUBLE, RESET_ANGLE),
+            (AMER_FOLLOWER_PITCH_DOUBLE, RESET_ANGLE),
+        ]
+    } else if roll_region.wrapping_sub(AMER_ROLL_REGION_WIDTH) >= RESET_SIGNED_VALUE {
+        [
+            (-AMER_FOLLOWER_PITCH_DOUBLE, RESET_ANGLE),
+            (AMER_FOLLOWER_PITCH_DOUBLE, RESET_ANGLE),
+            (-AMER_FOLLOWER_PITCH, negative_phase),
+            (AMER_FOLLOWER_PITCH, animation_phase),
+        ]
+    } else {
+        [
+            (-AMER_FOLLOWER_PITCH, animation_phase),
+            (AMER_FOLLOWER_PITCH, negative_phase),
+            (-AMER_FOLLOWER_PITCH, negative_phase),
+            (AMER_FOLLOWER_PITCH, animation_phase),
+        ]
+    };
+    for (node, (pitch, node_roll)) in followers.iter_mut().zip(values) {
+        node.angles[X_AXIS] = pitch as u16;
+        node.angles[Z_AXIS] = node_roll;
+    }
 }
 
 #[cfg(test)]
@@ -483,6 +630,7 @@ mod tests {
     const SINGLE_VERTEX_COUNT: usize = 1;
     const UNCHANGED_PITCH: u16 = 0x4444;
     const TOUCHED_FIELD_SENTINEL: u16 = 0x5555;
+    const RANDOM_STATE_SENTINEL: u16 = 0xa55a;
     const TRANSFORM_LOW_WORD_SENTINEL: u16 = 0x6a5a;
 
     #[derive(Deserialize)]
@@ -510,7 +658,7 @@ mod tests {
         roll_after: u16,
         radial_after: u16,
         velocity_after: u16,
-        sample_phase_after: u16,
+        radial_target_after: u16,
         depth_target_after: u16,
     }
 
@@ -521,7 +669,7 @@ mod tests {
         roll_after: u16::MIN,
         radial_after: u16::MIN,
         velocity_after: u16::MIN,
-        sample_phase_after: u16::MIN,
+        radial_target_after: u16::MIN,
         depth_target_after: u16::MIN,
     };
 
@@ -577,8 +725,8 @@ mod tests {
     struct AmerSetupVector {
         name: String,
         next_stage: String,
-        sample_phase_before: u16,
-        sample_phase_after: u16,
+        radial_target_before: u16,
+        radial_target_after: u16,
     }
 
     #[derive(Deserialize)]
@@ -597,8 +745,47 @@ mod tests {
         pan_after: u16,
         radial_before: u16,
         radial_after: u16,
-        sample_phase_before: u16,
-        sample_phase_after: u16,
+        radial_target_before: u16,
+        radial_target_after: u16,
+    }
+
+    #[derive(Clone, Copy, Deserialize)]
+    struct AmerFollowerVector {
+        pitch: u16,
+        roll: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct AmerCommonVector {
+        name: String,
+        path: String,
+        camera_translation_before: [u16; AXIS_COUNT],
+        camera_pan: u16,
+        camera_matrix: [u32; AXIS_COUNT],
+        camera_position: [u32; AXIS_COUNT],
+        camera_depth_step_before: u16,
+        camera_depth_step_after: u16,
+        phase_timer_before: u16,
+        phase_timer_after: u16,
+        velocity_before: [i16; AXIS_COUNT],
+        velocity_after: [i16; AXIS_COUNT],
+        animation_phase_before: u16,
+        animation_phase_after: u16,
+        position_before: [u32; AXIS_COUNT],
+        position_after: [u32; AXIS_COUNT],
+        pan_before: u16,
+        pan_after: u16,
+        roll_before: u16,
+        roll_after: u16,
+        radial_before: u16,
+        radial_target: u16,
+        radial_after: u16,
+        followers_before: [AmerFollowerVector; AMER_COMMON_NODE_COUNT - 1],
+        followers_after: [AmerFollowerVector; AMER_COMMON_NODE_COUNT - 1],
+        active_before: u16,
+        active_after: u16,
+        callback_countdown_before: u16,
+        callback_countdown_after: u16,
     }
 
     #[derive(Default)]
@@ -691,13 +878,13 @@ mod tests {
                 for (node_index, expected) in node_vectors.iter().enumerate() {
                     animation.nodes[node_index] = AlienSlot2NodeState {
                         motion_parameter: expected.velocity_after as i16,
-                        sample_phase: expected.sample_phase_after,
+                        radial_target: expected.radial_target_after,
                         depth_target: expected.depth_target_after as i16,
                         behavior_seed: u16::default(),
                     };
                 }
                 pose.nodes[PRIMARY_NODE].angles[Y_AXIS] = TOUCHED_FIELD_SENTINEL;
-                animation.nodes[PRIMARY_NODE].sample_phase = TOUCHED_FIELD_SENTINEL;
+                animation.nodes[PRIMARY_NODE].radial_target = TOUCHED_FIELD_SENTINEL;
                 if species != AlienSpecies::Amer {
                     pose.nodes[PRIMARY_NODE].angles[Z_AXIS] = TOUCHED_FIELD_SENTINEL;
                     pose.nodes[PRIMARY_NODE].radial_offset = TOUCHED_FIELD_SENTINEL as i16;
@@ -766,8 +953,8 @@ mod tests {
                         expected.velocity_after
                     );
                     assert_eq!(
-                        animation.nodes[node_index].sample_phase,
-                        expected.sample_phase_after
+                        animation.nodes[node_index].radial_target,
+                        expected.radial_target_after
                     );
                     assert_eq!(
                         animation.nodes[node_index].depth_target as u16,
@@ -968,7 +1155,7 @@ mod tests {
                 let pose = pose(&[EMPTY_NODE_VECTOR]);
                 let mut animation = AlienSlot2AnimationState::new(SINGLE_VERTEX_COUNT);
                 animation.callback = Some(AlienSlot2Callback::AmerReturn);
-                animation.nodes[PRIMARY_NODE].sample_phase = vector.sample_phase_before;
+                animation.nodes[PRIMARY_NODE].radial_target = vector.radial_target_before;
 
                 let expected_callback = match vector.next_stage.as_str() {
                     "update" => AlienSlot2Callback::Update,
@@ -988,8 +1175,8 @@ mod tests {
                 assert_eq!(callback, expected_callback, "{}", vector.name);
                 assert_eq!(animation.callback, Some(expected_callback));
                 assert_eq!(
-                    animation.nodes[PRIMARY_NODE].sample_phase,
-                    vector.sample_phase_after
+                    animation.nodes[PRIMARY_NODE].radial_target,
+                    vector.radial_target_after
                 );
             }
         }
@@ -1015,7 +1202,7 @@ mod tests {
             let mut animation = AlienSlot2AnimationState::new(SINGLE_VERTEX_COUNT);
             animation.callback = Some(AlienSlot2Callback::AmerFinish);
             animation.nodes[PRIMARY_NODE].motion_parameter = vector.countdown_before as i16;
-            animation.nodes[PRIMARY_NODE].sample_phase = vector.sample_phase_before;
+            animation.nodes[PRIMARY_NODE].radial_target = vector.radial_target_before;
 
             let expected_stage = match vector.path.as_str() {
                 "reset" => AlienAmerFinishUpdate::ResetRequested,
@@ -1039,8 +1226,8 @@ mod tests {
             assert_eq!(primary.angles[Y_AXIS], vector.pan_after);
             assert_eq!(primary.radial_offset as u16, vector.radial_after);
             assert_eq!(
-                animation.nodes[PRIMARY_NODE].sample_phase,
-                vector.sample_phase_after
+                animation.nodes[PRIMARY_NODE].radial_target,
+                vector.radial_target_after
             );
             assert_eq!(
                 animation.callback,
@@ -1050,6 +1237,101 @@ mod tests {
                     AlienSlot2Callback::AmerFinish
                 })
             );
+        }
+    }
+
+    #[test]
+    fn amer_common_update_matches_every_original_overlay_vector() {
+        let vectors: Vec<AmerCommonVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/xdb_amer_func_171d_natural.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            let mut pose = pose(&[EMPTY_NODE_VECTOR; AMER_COMMON_NODE_COUNT]);
+            let primary = &mut pose.nodes[PRIMARY_NODE];
+            primary.local_position = vector.position_before.map(|value| value as i32);
+            primary.angles = [UNCHANGED_PITCH, vector.pan_before, vector.roll_before];
+            primary.radial_offset = vector.radial_before as i16;
+            for axis in usize::default()..AXIS_COUNT {
+                primary.transform.translation[axis] = join_words(
+                    vector.camera_translation_before[axis],
+                    TRANSFORM_LOW_WORD_SENTINEL,
+                );
+            }
+            for (node, follower) in pose.nodes[1..].iter_mut().zip(vector.followers_before) {
+                node.angles[X_AXIS] = follower.pitch;
+                node.angles[Z_AXIS] = follower.roll;
+            }
+            let mut animation = AlienSlot2AnimationState::new(AMER_COMMON_NODE_COUNT);
+            animation.callback = Some(AlienSlot2Callback::Update);
+            animation.phase_timer = vector.phase_timer_before as i16;
+            animation.amer_velocity = vector.velocity_before;
+            animation.random_value = RANDOM_STATE_SENTINEL;
+            animation.amer_animation_phase = vector.animation_phase_before;
+            animation.nodes[PRIMARY_NODE].radial_target = vector.radial_target;
+            let mut scene = AlienCallbackSceneState {
+                slot2_active: vector.active_before != u16::default(),
+                callback_countdown: vector.callback_countdown_before,
+                ..AlienCallbackSceneState::default()
+            };
+            let mut camera = AlienCameraTransform {
+                position: vector.camera_position.map(|value| value as i32),
+                ..AlienCameraTransform::default()
+            };
+            for axis in usize::default()..AXIS_COUNT {
+                camera.matrix[Z_AXIS][axis] = vector.camera_matrix[axis] as i32;
+            }
+            let mut camera_depth_step = vector.camera_depth_step_before as i16;
+
+            let expected_stage = match vector.path.as_str() {
+                "motion" => AlienAmerCommonUpdate::MotionUpdated,
+                "camera_facing" => AlienAmerCommonUpdate::CameraFacing,
+                "return_started" => AlienAmerCommonUpdate::ReturnStarted,
+                path => panic!("unknown AMER common path {path}"),
+            };
+            assert_eq!(
+                update_amer_common(
+                    &mut pose,
+                    &mut animation,
+                    &mut scene,
+                    &camera,
+                    vector.camera_pan,
+                    &mut camera_depth_step,
+                )
+                .unwrap(),
+                expected_stage,
+                "{}",
+                vector.name
+            );
+
+            let primary = &pose.nodes[PRIMARY_NODE];
+            assert_eq!(primary.angles[X_AXIS], UNCHANGED_PITCH);
+            assert_eq!(primary.angles[Y_AXIS], vector.pan_after);
+            assert_eq!(primary.angles[Z_AXIS], vector.roll_after);
+            assert_eq!(primary.radial_offset as u16, vector.radial_after);
+            assert_eq!(
+                primary.local_position.map(|value| value as u32),
+                vector.position_after
+            );
+            assert_eq!(animation.phase_timer as u16, vector.phase_timer_after);
+            assert_eq!(animation.amer_velocity, vector.velocity_after);
+            assert_eq!(animation.random_value, RANDOM_STATE_SENTINEL);
+            assert_eq!(animation.amer_animation_phase, vector.animation_phase_after);
+            assert_eq!(camera_depth_step as u16, vector.camera_depth_step_after);
+            assert_eq!(scene.slot2_active, vector.active_after != u16::default());
+            assert_eq!(scene.callback_countdown, vector.callback_countdown_after);
+            assert_eq!(
+                animation.callback,
+                Some(if vector.path == "return_started" {
+                    AlienSlot2Callback::AmerReturn
+                } else {
+                    AlienSlot2Callback::Update
+                })
+            );
+            for (node, expected) in pose.nodes[1..].iter().zip(vector.followers_after) {
+                assert_eq!(node.angles[X_AXIS], expected.pitch);
+                assert_eq!(node.angles[Z_AXIS], expected.roll);
+            }
         }
     }
 

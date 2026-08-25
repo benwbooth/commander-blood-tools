@@ -1,0 +1,972 @@
+[
+  {
+    "name": "outside_x_low_negative_roll",
+    "module": "amer",
+    "entry": 5917,
+    "path": "motion",
+    "camera_translation_before": [
+      65495,
+      0,
+      0
+    ],
+    "camera_pan": 512,
+    "camera_matrix": [
+      73728,
+      4294909952,
+      98304
+    ],
+    "camera_position": [
+      1114112,
+      4294377472,
+      2097152
+    ],
+    "camera_depth_step_before": 20,
+    "camera_depth_step_after": 20,
+    "phase_timer_before": 9320,
+    "phase_timer_after": 9320,
+    "velocity_before": [
+      0,
+      8738,
+      13107
+    ],
+    "velocity_after": [
+      0,
+      8738,
+      13107
+    ],
+    "animation_phase_before": 100,
+    "animation_phase_after": 232,
+    "position_before": [
+      286326784,
+      572653568,
+      858980352
+    ],
+    "position_after": [
+      286326784,
+      572653568,
+      858980352
+    ],
+    "pan_before": 4608,
+    "pan_after": 4602,
+    "roll_before": 65488,
+    "roll_after": 65488,
+    "radial_before": 10,
+    "radial_target": 20,
+    "radial_after": 11,
+    "followers_before": [
+      {
+        "pitch": 16385,
+        "roll": 20481
+      },
+      {
+        "pitch": 16386,
+        "roll": 20482
+      },
+      {
+        "pitch": 16387,
+        "roll": 20483
+      },
+      {
+        "pitch": 16388,
+        "roll": 20484
+      }
+    ],
+    "followers_after": [
+      {
+        "pitch": 65280,
+        "roll": 232
+      },
+      {
+        "pitch": 256,
+        "roll": 65304
+      },
+      {
+        "pitch": 65024,
+        "roll": 0
+      },
+      {
+        "pitch": 512,
+        "roll": 0
+      }
+    ],
+    "callback_after": 48879,
+    "active_before": 28672,
+    "active_after": 28672,
+    "callback_countdown_before": 30583,
+    "callback_countdown_after": 30583,
+    "data_sha256": "e8ba028c36d548d0549037a60faed58193cc5176262ed9509e4d5622770b2a61"
+  },
+  {
+    "name": "outside_x_high_middle_roll",
+    "module": "amer",
+    "entry": 5917,
+    "path": "motion",
+    "camera_translation_before": [
+      40,
+      0,
+      0
+    ],
+    "camera_pan": 816,
+    "camera_matrix": [
+      73984,
+      4294910080,
+      98240
+    ],
+    "camera_position": [
+      1118208,
+      4294379520,
+      2096128
+    ],
+    "camera_depth_step_before": 60,
+    "camera_depth_step_after": 60,
+    "phase_timer_before": 9320,
+    "phase_timer_after": 9320,
+    "velocity_before": [
+      0,
+      8738,
+      13107
+    ],
+    "velocity_after": [
+      0,
+      8738,
+      13107
+    ],
+    "animation_phase_before": 900,
+    "animation_phase_after": 8,
+    "position_before": [
+      286326785,
+      572653569,
+      858980353
+    ],
+    "position_after": [
+      286326785,
+      572653569,
+      858980353
+    ],
+    "pan_before": 4881,
+    "pan_after": 4881,
+    "roll_before": 0,
+    "roll_after": 0,
+    "radial_before": 20,
+    "radial_target": 27,
+    "radial_after": 20,
+    "followers_before": [
+      {
+        "pitch": 16385,
+        "roll": 20481
+      },
+      {
+        "pitch": 16386,
+        "roll": 20482
+      },
+      {
+        "pitch": 16387,
+        "roll": 20483
+      },
+      {
+        "pitch": 16388,
+        "roll": 20484
+      }
+    ],
+    "followers_after": [
+      {
+        "pitch": 65280,
+        "roll": 8
+      },
+      {
+        "pitch": 256,
+        "roll": 65528
+      },
+      {
+        "pitch": 65280,
+        "roll": 65528
+      },
+      {
+        "pitch": 256,
+        "roll": 8
+      }
+    ],
+    "callback_after": 48879,
+    "active_before": 28673,
+    "active_after": 28673,
+    "callback_countdown_before": 30583,
+    "callback_countdown_after": 30583,
+    "data_sha256": "2bd5d376b29eed0738b917e13799a6a9601e8551f42377cd0117e3535f4085f1"
+  },
+  {
+    "name": "outside_y_low_positive_roll",
+    "module": "amer",
+    "entry": 5917,
+    "path": "motion",
+    "camera_translation_before": [
+      0,
+      65495,
+      0
+    ],
+    "camera_pan": 1120,
+    "camera_matrix": [
+      74240,
+      4294910208,
+      98176
+    ],
+    "camera_position": [
+      1122304,
+      4294381568,
+      2095104
+    ],
+    "camera_depth_step_before": 65472,
+    "camera_depth_step_after": 65472,
+    "phase_timer_before": 9320,
+    "phase_timer_after": 9320,
+    "velocity_before": [
+      0,
+      8738,
+      13107
+    ],
+    "velocity_after": [
+      0,
+      8738,
+      13107
+    ],
+    "animation_phase_before": 1000,
+    "animation_phase_after": 108,
+    "position_before": [
+      286326786,
+      572653570,
+      858980354
+    ],
+    "position_after": [
+      286326786,
+      572653570,
+      858980354
+    ],
+    "pan_before": 5154,
+    "pan_after": 5159,
+    "roll_before": 40,
+    "roll_after": 40,
+    "radial_before": 30,
+    "radial_target": 34,
+    "radial_after": 30,
+    "followers_before": [
+      {
+        "pitch": 16385,
+        "roll": 20481
+      },
+      {
+        "pitch": 16386,
+        "roll": 20482
+      },
+      {
+        "pitch": 16387,
+        "roll": 20483
+      },
+      {
+        "pitch": 16388,
+        "roll": 20484
+      }
+    ],
+    "followers_after": [
+      {
+        "pitch": 65024,
+        "roll": 0
+      },
+      {
+        "pitch": 512,
+        "roll": 0
+      },
+      {
+        "pitch": 65280,
+        "roll": 65428
+      },
+      {
+        "pitch": 256,
+        "roll": 108
+      }
+    ],
+    "callback_after": 48879,
+    "active_before": 28674,
+    "active_after": 28674,
+    "callback_countdown_before": 30583,
+    "callback_countdown_after": 30583,
+    "data_sha256": "61b1cce34228004eded2ef3e5b89420083421d9e917c92672401173ee5e05955"
+  },
+  {
+    "name": "outside_y_high",
+    "module": "amer",
+    "entry": 5917,
+    "path": "motion",
+    "camera_translation_before": [
+      0,
+      41,
+      0
+    ],
+    "camera_pan": 1424,
+    "camera_matrix": [
+      74496,
+      4294910336,
+      98112
+    ],
+    "camera_position": [
+      1126400,
+      4294383616,
+      2094080
+    ],
+    "camera_depth_step_before": 127,
+    "camera_depth_step_after": 127,
+    "phase_timer_before": 9320,
+    "phase_timer_after": 9320,
+    "velocity_before": [
+      -3,
+      8738,
+      13107
+    ],
+    "velocity_after": [
+      -3,
+      8738,
+      13107
+    ],
+    "animation_phase_before": 65535,
+    "animation_phase_after": 131,
+    "position_before": [
+      286326787,
+      572653571,
+      858980355
+    ],
+    "position_after": [
+      286326787,
+      572653571,
+      858980355
+    ],
+    "pan_before": 5427,
+    "pan_after": 5427,
+    "roll_before": 5,
+    "roll_after": 2,
+    "radial_before": 40,
+    "radial_target": 41,
+    "radial_after": 40,
+    "followers_before": [
+      {
+        "pitch": 16385,
+        "roll": 20481
+      },
+      {
+        "pitch": 16386,
+        "roll": 20482
+      },
+      {
+        "pitch": 16387,
+        "roll": 20483
+      },
+      {
+        "pitch": 16388,
+        "roll": 20484
+      }
+    ],
+    "followers_after": [
+      {
+        "pitch": 65280,
+        "roll": 131
+      },
+      {
+        "pitch": 256,
+        "roll": 65405
+      },
+      {
+        "pitch": 65280,
+        "roll": 65405
+      },
+      {
+        "pitch": 256,
+        "roll": 131
+      }
+    ],
+    "callback_after": 48879,
+    "active_before": 28675,
+    "active_after": 28675,
+    "callback_countdown_before": 30583,
+    "callback_countdown_after": 30583,
+    "data_sha256": "338f9e581829c34b3698fc7d28aaf92bd8d157423e17378be755c6f379834f0d"
+  },
+  {
+    "name": "outside_z_high",
+    "module": "amer",
+    "entry": 5917,
+    "path": "motion",
+    "camera_translation_before": [
+      0,
+      0,
+      41
+    ],
+    "camera_pan": 1728,
+    "camera_matrix": [
+      74752,
+      4294910464,
+      98048
+    ],
+    "camera_position": [
+      1130496,
+      4294385664,
+      2093056
+    ],
+    "camera_depth_step_before": 256,
+    "camera_depth_step_after": 256,
+    "phase_timer_before": 9320,
+    "phase_timer_after": 9320,
+    "velocity_before": [
+      3,
+      8738,
+      13107
+    ],
+    "velocity_after": [
+      3,
+      8738,
+      13107
+    ],
+    "animation_phase_before": 1008,
+    "animation_phase_after": 116,
+    "position_before": [
+      286326788,
+      572653572,
+      858980356
+    ],
+    "position_after": [
+      286326788,
+      572653572,
+      858980356
+    ],
+    "pan_before": 5700,
+    "pan_after": 5699,
+    "roll_before": 65531,
+    "roll_after": 65534,
+    "radial_before": 50,
+    "radial_target": 48,
+    "radial_after": 49,
+    "followers_before": [
+      {
+        "pitch": 16385,
+        "roll": 20481
+      },
+      {
+        "pitch": 16386,
+        "roll": 20482
+      },
+      {
+        "pitch": 16387,
+        "roll": 20483
+      },
+      {
+        "pitch": 16388,
+        "roll": 20484
+      }
+    ],
+    "followers_after": [
+      {
+        "pitch": 65280,
+        "roll": 116
+      },
+      {
+        "pitch": 256,
+        "roll": 65420
+      },
+      {
+        "pitch": 65280,
+        "roll": 65420
+      },
+      {
+        "pitch": 256,
+        "roll": 116
+      }
+    ],
+    "callback_after": 48879,
+    "active_before": 28676,
+    "active_after": 28676,
+    "callback_countdown_before": 30583,
+    "callback_countdown_after": 30583,
+    "data_sha256": "fb272c0fff270d9e7753259a5281890ef9ed71270415f55ea43505aaf0457131"
+  },
+  {
+    "name": "outside_z_low",
+    "module": "amer",
+    "entry": 5917,
+    "path": "motion",
+    "camera_translation_before": [
+      0,
+      0,
+      65456
+    ],
+    "camera_pan": 2032,
+    "camera_matrix": [
+      75008,
+      4294910592,
+      97984
+    ],
+    "camera_position": [
+      1134592,
+      4294387712,
+      2092032
+    ],
+    "camera_depth_step_before": 65535,
+    "camera_depth_step_after": 65535,
+    "phase_timer_before": 9320,
+    "phase_timer_after": 9320,
+    "velocity_before": [
+      1,
+      8738,
+      13107
+    ],
+    "velocity_after": [
+      1,
+      8738,
+      13107
+    ],
+    "animation_phase_before": 896,
+    "animation_phase_after": 4,
+    "position_before": [
+      286326789,
+      572653573,
+      858980357
+    ],
+    "position_after": [
+      286326789,
+      572653573,
+      858980357
+    ],
+    "pan_before": 5973,
+    "pan_after": 5977,
+    "roll_before": 31,
+    "roll_after": 32,
+    "radial_before": 60,
+    "radial_target": 55,
+    "radial_after": 59,
+    "followers_before": [
+      {
+        "pitch": 16385,
+        "roll": 20481
+      },
+      {
+        "pitch": 16386,
+        "roll": 20482
+      },
+      {
+        "pitch": 16387,
+        "roll": 20483
+      },
+      {
+        "pitch": 16388,
+        "roll": 20484
+      }
+    ],
+    "followers_after": [
+      {
+        "pitch": 65024,
+        "roll": 0
+      },
+      {
+        "pitch": 512,
+        "roll": 0
+      },
+      {
+        "pitch": 65280,
+        "roll": 65532
+      },
+      {
+        "pitch": 256,
+        "roll": 4
+      }
+    ],
+    "callback_after": 48879,
+    "active_before": 28677,
+    "active_after": 28677,
+    "callback_countdown_before": 30583,
+    "callback_countdown_after": 30583,
+    "data_sha256": "d8101d15c5043197c80c62722dbbfb00fcf12f5b010c315894ff0c3ba9e63d11"
+  },
+  {
+    "name": "wrapped_negative_roll",
+    "module": "amer",
+    "entry": 5917,
+    "path": "motion",
+    "camera_translation_before": [
+      41,
+      0,
+      0
+    ],
+    "camera_pan": 2336,
+    "camera_matrix": [
+      75264,
+      4294910720,
+      97920
+    ],
+    "camera_position": [
+      1138688,
+      4294389760,
+      2091008
+    ],
+    "camera_depth_step_before": 72,
+    "camera_depth_step_after": 72,
+    "phase_timer_before": 9320,
+    "phase_timer_after": 9320,
+    "velocity_before": [
+      0,
+      8738,
+      13107
+    ],
+    "velocity_after": [
+      0,
+      8738,
+      13107
+    ],
+    "animation_phase_before": 800,
+    "animation_phase_after": 932,
+    "position_before": [
+      286326790,
+      572653574,
+      858980358
+    ],
+    "position_after": [
+      286326790,
+      572653574,
+      858980358
+    ],
+    "pan_before": 6246,
+    "pan_after": 10338,
+    "roll_before": 32736,
+    "roll_after": 32736,
+    "radial_before": 65,
+    "radial_target": 62,
+    "radial_after": 64,
+    "followers_before": [
+      {
+        "pitch": 16385,
+        "roll": 20481
+      },
+      {
+        "pitch": 16386,
+        "roll": 20482
+      },
+      {
+        "pitch": 16387,
+        "roll": 20483
+      },
+      {
+        "pitch": 16388,
+        "roll": 20484
+      }
+    ],
+    "followers_after": [
+      {
+        "pitch": 65280,
+        "roll": 932
+      },
+      {
+        "pitch": 256,
+        "roll": 64604
+      },
+      {
+        "pitch": 65024,
+        "roll": 0
+      },
+      {
+        "pitch": 512,
+        "roll": 0
+      }
+    ],
+    "callback_after": 48879,
+    "active_before": 28678,
+    "active_after": 28678,
+    "callback_countdown_before": 30583,
+    "callback_countdown_after": 30583,
+    "data_sha256": "96c38a7d6c0442312ecd01f21fe1ddca2a835f41a2134a0dd849a3c4a744e3c2"
+  },
+  {
+    "name": "camera_facing",
+    "module": "amer",
+    "entry": 5917,
+    "path": "camera_facing",
+    "camera_translation_before": [
+      0,
+      0,
+      65535
+    ],
+    "camera_pan": 2640,
+    "camera_matrix": [
+      75520,
+      4294910848,
+      97856
+    ],
+    "camera_position": [
+      1142784,
+      4294391808,
+      2089984
+    ],
+    "camera_depth_step_before": 40,
+    "camera_depth_step_after": 40,
+    "phase_timer_before": 9320,
+    "phase_timer_after": 9320,
+    "velocity_before": [
+      0,
+      8738,
+      13107
+    ],
+    "velocity_after": [
+      0,
+      8738,
+      13107
+    ],
+    "animation_phase_before": 512,
+    "animation_phase_after": 512,
+    "position_before": [
+      286326791,
+      572653575,
+      858980359
+    ],
+    "position_after": [
+      286326791,
+      572653575,
+      858980359
+    ],
+    "pan_before": 6519,
+    "pan_after": 592,
+    "roll_before": 7,
+    "roll_after": 7,
+    "radial_before": 70,
+    "radial_target": 69,
+    "radial_after": 69,
+    "followers_before": [
+      {
+        "pitch": 16385,
+        "roll": 20481
+      },
+      {
+        "pitch": 16386,
+        "roll": 20482
+      },
+      {
+        "pitch": 16387,
+        "roll": 20483
+      },
+      {
+        "pitch": 16388,
+        "roll": 20484
+      }
+    ],
+    "followers_after": [
+      {
+        "pitch": 16385,
+        "roll": 20481
+      },
+      {
+        "pitch": 16386,
+        "roll": 20482
+      },
+      {
+        "pitch": 16387,
+        "roll": 20483
+      },
+      {
+        "pitch": 16388,
+        "roll": 20484
+      }
+    ],
+    "callback_after": 48879,
+    "active_before": 28679,
+    "active_after": 28679,
+    "callback_countdown_before": 30583,
+    "callback_countdown_after": 30583,
+    "data_sha256": "0fb4780d138788aa4903ecea70f80fec8f2735d84b9dac38f70ff7bb8d9a8ceb"
+  },
+  {
+    "name": "handoff_clamped_depth",
+    "module": "amer",
+    "entry": 5917,
+    "path": "return_started",
+    "camera_translation_before": [
+      0,
+      0,
+      0
+    ],
+    "camera_pan": 2944,
+    "camera_matrix": [
+      75776,
+      4294910976,
+      97792
+    ],
+    "camera_position": [
+      1146880,
+      4294393856,
+      2088960
+    ],
+    "camera_depth_step_before": 20,
+    "camera_depth_step_after": 65472,
+    "phase_timer_before": 9320,
+    "phase_timer_after": 30,
+    "velocity_before": [
+      0,
+      8738,
+      13107
+    ],
+    "velocity_after": [
+      11,
+      -9,
+      14
+    ],
+    "animation_phase_before": 256,
+    "animation_phase_after": 256,
+    "position_before": [
+      286326792,
+      572653576,
+      858980360
+    ],
+    "position_after": [
+      168,
+      4294967168,
+      207
+    ],
+    "pan_before": 6792,
+    "pan_after": 6792,
+    "roll_before": 9,
+    "roll_after": 9,
+    "radial_before": 80,
+    "radial_target": 76,
+    "radial_after": 0,
+    "followers_before": [
+      {
+        "pitch": 16385,
+        "roll": 20481
+      },
+      {
+        "pitch": 16386,
+        "roll": 20482
+      },
+      {
+        "pitch": 16387,
+        "roll": 20483
+      },
+      {
+        "pitch": 16388,
+        "roll": 20484
+      }
+    ],
+    "followers_after": [
+      {
+        "pitch": 16385,
+        "roll": 20481
+      },
+      {
+        "pitch": 16386,
+        "roll": 20482
+      },
+      {
+        "pitch": 16387,
+        "roll": 20483
+      },
+      {
+        "pitch": 16388,
+        "roll": 20484
+      }
+    ],
+    "callback_after": 6355,
+    "active_before": 28680,
+    "active_after": 1,
+    "callback_countdown_before": 30583,
+    "callback_countdown_after": 1,
+    "data_sha256": "7c8f2d8e6967dd720d36fe414acdeede71ce8afc4a0f7d9df4114e5db947a685"
+  },
+  {
+    "name": "handoff_moving_depth",
+    "module": "amer",
+    "entry": 5917,
+    "path": "return_started",
+    "camera_translation_before": [
+      65496,
+      40,
+      40
+    ],
+    "camera_pan": 3248,
+    "camera_matrix": [
+      76032,
+      4294911104,
+      97728
+    ],
+    "camera_position": [
+      1150976,
+      4294395904,
+      2087936
+    ],
+    "camera_depth_step_before": 200,
+    "camera_depth_step_after": 65472,
+    "phase_timer_before": 9320,
+    "phase_timer_after": 45,
+    "velocity_before": [
+      0,
+      8738,
+      13107
+    ],
+    "velocity_after": [
+      29,
+      -22,
+      37
+    ],
+    "animation_phase_before": 1,
+    "animation_phase_after": 1,
+    "position_before": [
+      286326793,
+      572653577,
+      858980361
+    ],
+    "position_after": [
+      169,
+      4294967168,
+      207
+    ],
+    "pan_before": 7065,
+    "pan_after": 7065,
+    "roll_before": 11,
+    "roll_after": 11,
+    "radial_before": 90,
+    "radial_target": 83,
+    "radial_after": 0,
+    "followers_before": [
+      {
+        "pitch": 16385,
+        "roll": 20481
+      },
+      {
+        "pitch": 16386,
+        "roll": 20482
+      },
+      {
+        "pitch": 16387,
+        "roll": 20483
+      },
+      {
+        "pitch": 16388,
+        "roll": 20484
+      }
+    ],
+    "followers_after": [
+      {
+        "pitch": 16385,
+        "roll": 20481
+      },
+      {
+        "pitch": 16386,
+        "roll": 20482
+      },
+      {
+        "pitch": 16387,
+        "roll": 20483
+      },
+      {
+        "pitch": 16388,
+        "roll": 20484
+      }
+    ],
+    "callback_after": 6355,
+    "active_before": 28681,
+    "active_after": 1,
+    "callback_countdown_before": 30583,
+    "callback_countdown_after": 1,
+    "data_sha256": "80c07e5c4c91a6e78197b8621576bcb142c75786c7ba97725ffc03057ee5e2b7"
+  }
+]

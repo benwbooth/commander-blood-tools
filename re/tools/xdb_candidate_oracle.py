@@ -2492,7 +2492,7 @@ def alien_slot2_dispatch_or_init_vectors(
                     "roll_after": get_u16(data_expected, node_state + 0x52),
                     "radial_after": get_u16(data_expected, node_state + 0x54),
                     "velocity_after": get_u16(data_expected, node_state + 0x56),
-                    "sample_phase_after": get_u16(data_expected, node_state + 0x58),
+                    "radial_target_after": get_u16(data_expected, node_state + 0x58),
                     "depth_target_after": get_u16(data_expected, node_state + 0x5A),
                 }
             )
@@ -3319,7 +3319,7 @@ def amer_slot2_setup_transition_vectors(
     entry: int,
     body_hash: str,
     next_entry: int,
-    sample_phase: int,
+    radial_target: int,
     next_stage: str,
 ) -> list[dict[str, object]]:
     module = "amer"
@@ -3355,7 +3355,7 @@ def amer_slot2_setup_transition_vectors(
         put_u16(data_before, state + 0x58, phase_before)
         data_expected = bytearray(data_before)
         put_u16(data_expected, state + 0x0E, next_entry)
-        put_u16(data_expected, state + 0x58, sample_phase)
+        put_u16(data_expected, state + 0x58, radial_target)
 
         extra_before = bytes(
             (offset * 13 + case_index + 7) & 0xFF for offset in range(0x10000)
@@ -3430,8 +3430,8 @@ def amer_slot2_setup_transition_vectors(
                 "next_stage": next_stage,
                 "callback_before": callback_before,
                 "callback_after": get_u16(data_expected, state + 0x0E),
-                "sample_phase_before": phase_before,
-                "sample_phase_after": get_u16(data_expected, state + 0x58),
+                "radial_target_before": phase_before,
+                "radial_target_after": get_u16(data_expected, state + 0x58),
                 "data_sha256": hashlib.sha256(data_expected).hexdigest(),
             }
         )
@@ -3627,11 +3627,334 @@ def amer_slot2_finish_update_vectors(entry: int) -> list[dict[str, object]]:
                 "pan_after": get_u16(data_expected, state + 0x50),
                 "radial_before": radial & 0xFFFF,
                 "radial_after": get_u16(data_expected, state + 0x54),
-                "sample_phase_before": get_u16(data_before, state + 0x58),
-                "sample_phase_after": get_u16(data_expected, state + 0x58),
+                "radial_target_before": get_u16(data_before, state + 0x58),
+                "radial_target_after": get_u16(data_expected, state + 0x58),
                 "callback_before": get_u16(data_before, state + 0x0E),
                 "callback_after": get_u16(data_expected, state + 0x0E),
                 "score": score,
+                "data_sha256": hashlib.sha256(data_expected).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
+def amer_slot2_common_update_vectors(entry: int) -> list[dict[str, object]]:
+    module = "amer"
+    image = load_image(module)
+    body_size = 438
+    body_hash = "e56a182c0ba482e63a1b97cf0b19ba137f36df4c06c0aeea54ac64984c2fa3f1"
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered body changed")
+
+    data_segment = 0x5000
+    extra_segment = 0x7000
+    fs_segment = 0x9000
+    game_segment = 0xA000
+    stack_segment = 0xB000
+    context = 0x3000
+    state = 0x4000
+    return_address = 0xF000
+    active_offset = 0x1648
+    stack_sentinel = bytes.fromhex("5aa596698778")
+    cases = (
+        ("outside_x_low_negative_roll", -41, 0, 0, -48, 0, 100, 10),
+        ("outside_x_high_middle_roll", 40, 0, 0, 0, 0, 900, 20),
+        ("outside_y_low_positive_roll", 0, -41, 0, 40, 0, 1000, 30),
+        ("outside_y_high", 0, 41, 0, 5, -3, 0xFFFF, 40),
+        ("outside_z_high", 0, 0, 41, -5, 3, 0x03F0, 50),
+        ("outside_z_low", 0, 0, -80, 31, 1, 0x0380, 60),
+        ("wrapped_negative_roll", 41, 0, 0, 0x7FE0, 0, 0x0320, 65),
+        ("camera_facing", 0, 0, -1, 7, 0, 0x0200, 70),
+        ("handoff_clamped_depth", 0, 0, 0, 9, 0, 0x0100, 80),
+        ("handoff_moving_depth", -40, 40, 40, 11, 0, 0x0001, 90),
+    )
+    vectors: list[dict[str, object]] = []
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", memory, offset, value & 0xFFFF)
+
+    def put_u32(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<I", memory, offset, value & 0xFFFFFFFF)
+
+    def get_u16(memory: bytes | bytearray, offset: int) -> int:
+        return struct.unpack_from("<H", memory, offset)[0]
+
+    def get_u32(memory: bytes | bytearray, offset: int) -> int:
+        return struct.unpack_from("<I", memory, offset)[0]
+
+    def signed_word(value: int) -> int:
+        value &= 0xFFFF
+        return value if value < 0x8000 else value - 0x10000
+
+    def signed_dword(value: int) -> int:
+        value &= 0xFFFFFFFF
+        return value if value < 0x80000000 else value - 0x100000000
+
+    def follower_snapshot(memory: bytes | bytearray) -> list[dict[str, int]]:
+        return [
+            {
+                "pitch": get_u16(memory, state + node_index * 0x5E + 0x4E),
+                "roll": get_u16(memory, state + node_index * 0x5E + 0x52),
+            }
+            for node_index in range(1, 5)
+        ]
+
+    for case_index, case in enumerate(cases):
+        name, camera_x, camera_y, camera_z, roll, velocity_x, phase, radial = case
+        target_radial = 20 + case_index * 7
+        pan = (0x1200 + case_index * 0x0111) & 0xFFFF
+        camera_pan = (0x0200 + case_index * 0x0130) & 0xFFFF
+        camera_depth_step = (20, 60, -64, 127, 256, -1, 72, 40, 20, 200)[case_index]
+        camera_matrix = [
+            0x00012000 + case_index * 0x100,
+            -0x0000E000 + case_index * 0x80,
+            0x00018000 - case_index * 0x40,
+        ]
+        camera_position = [
+            0x00110000 + case_index * 0x1000,
+            -0x00090000 + case_index * 0x0800,
+            0x00200000 - case_index * 0x0400,
+        ]
+        velocity_before = [velocity_x, 0x2222, 0x3333]
+        position_before = [
+            0x11110000 + case_index,
+            0x22220000 + case_index,
+            0x33330000 + case_index,
+        ]
+        data_before = bytearray(
+            (offset * 29 + case_index * 17 + 3) & 0xFF
+            for offset in range(0x10000)
+        )
+        put_u16(data_before, context + 0x36, 0xA55A)
+        put_u16(data_before, context + 0x38, 0x2468)
+        for offset, value in zip((0x3A, 0x3C, 0x3E), velocity_before):
+            put_u16(data_before, context + offset, value)
+        put_u16(data_before, context + 0x42, phase)
+        put_u16(data_before, state + 0x0E, 0xBEEF)
+        put_u16(data_before, state + 0x38, camera_x)
+        put_u16(data_before, state + 0x3C, camera_y)
+        put_u16(data_before, state + 0x40, camera_z)
+        for offset, value in zip((0x42, 0x46, 0x4A), position_before):
+            put_u32(data_before, state + offset, value)
+        put_u16(data_before, state + 0x50, pan)
+        put_u16(data_before, state + 0x52, roll)
+        put_u16(data_before, state + 0x54, radial)
+        put_u16(data_before, state + 0x58, target_radial)
+        for node_index in range(1, 5):
+            node = state + node_index * 0x5E
+            put_u16(data_before, node + 0x4E, 0x4000 + node_index)
+            put_u16(data_before, node + 0x52, 0x5000 + node_index)
+        put_u16(data_before, 0x001E, 0x7777)
+        put_u16(data_before, 0x22F8, camera_pan)
+        put_u16(data_before, 0x22FC, camera_depth_step)
+        for offset, value in zip((0x22D2, 0x22D6, 0x22DA), camera_matrix):
+            put_u32(data_before, offset, value)
+        for offset, value in zip((0x22EA, 0x22EE, 0x22F2), camera_position):
+            put_u32(data_before, offset, value)
+        data_expected = bytearray(data_before)
+        code_before = bytearray(image)
+        active_before = 0x7000 + case_index
+        put_u16(code_before, active_offset, active_before)
+        code_expected = bytearray(code_before)
+
+        radial_delta = (target_radial - radial) & 0xFFFF
+        radial_after = (radial + (signed_word(radial_delta) >> 3)) & 0xFFFF
+        put_u16(data_expected, state + 0x54, radial_after)
+        in_center = (
+            -40 <= camera_x < 40
+            and -40 <= camera_y <= 40
+            and -80 < camera_z <= 40
+        )
+        if in_center and camera_z < 0:
+            path = "camera_facing"
+            put_u16(data_expected, state + 0x50, (camera_pan + 0x0800) & 0x0FFC)
+        elif in_center:
+            path = "return_started"
+            put_u16(data_expected, state + 0x54, 0)
+            generated_position = []
+            for matrix_value, position_value in zip(camera_matrix, camera_position):
+                product = ((matrix_value & 0xFFFFFFFF) * (-160 & 0xFFFFFFFF))
+                combined = (product + (position_value & 0xFFFFFFFF)) & 0xFFFFFFFF
+                generated = -(
+                    signed_dword(combined) >> 16
+                )
+                generated_position.append(generated & 0xFFFFFFFF)
+            for offset, value in zip((0x42, 0x46, 0x4A), generated_position):
+                put_u32(data_expected, state + offset, value)
+            depth = signed_word(camera_depth_step) >> 1
+            depth = max(depth, 40)
+            scale = ((depth & 0xFFFF) >> 2) + 20
+            velocity_after = [
+                signed_dword((value & 0xFFFFFFFF) * depth) >> 18
+                for value in camera_matrix
+            ]
+            put_u16(data_expected, context + 0x36, 0x8001)
+            put_u16(data_expected, context + 0x38, scale)
+            for offset, value in zip((0x3A, 0x3C, 0x3E), velocity_after):
+                put_u16(data_expected, context + offset, value)
+            put_u16(data_expected, state + 0x0E, 0x18D3)
+            put_u16(data_expected, 0x001E, 1)
+            put_u16(data_expected, 0x22FC, -64)
+            put_u16(code_expected, active_offset, 1)
+        else:
+            path = "motion"
+            roll_after = (roll + velocity_x) & 0xFFFF
+            put_u16(data_expected, state + 0x52, roll_after)
+            put_u16(
+                data_expected,
+                state + 0x50,
+                pan + (signed_word(roll_after) >> 3),
+            )
+            phase_after = (phase + 132) & 0x03FF
+            put_u16(data_expected, context + 0x42, phase_after)
+            negative_phase = (-phase_after) & 0xFFFF
+            roll_region = signed_word((roll_after + 32) & 0xFFFF)
+            if roll_region < 0:
+                follower_values = (
+                    (-256, phase_after),
+                    (256, negative_phase),
+                    (-512, 0),
+                    (512, 0),
+                )
+            elif signed_word((roll_region - 64) & 0xFFFF) >= 0:
+                follower_values = (
+                    (-512, 0),
+                    (512, 0),
+                    (-256, negative_phase),
+                    (256, phase_after),
+                )
+            else:
+                follower_values = (
+                    (-256, phase_after),
+                    (256, negative_phase),
+                    (-256, negative_phase),
+                    (256, phase_after),
+                )
+            for node_index, (pitch_after, roll_value) in enumerate(
+                follower_values, start=1
+            ):
+                node = state + node_index * 0x5E
+                put_u16(data_expected, node + 0x4E, pitch_after)
+                put_u16(data_expected, node + 0x52, roll_value)
+
+        initial = {
+            "eax": 0xA1A12345,
+            "ebx": 0xB2B23456,
+            "ecx": 0xC3C34567,
+            "edx": 0xD4D45678,
+            "esi": 0xE5E50000 | state,
+            "edi": 0xF6F60000 | context,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0293 | (0x0400 if case_index & 1 else 0),
+        }
+        extra_before = bytes(
+            (offset * 13 + case_index + 7) & 0xFF for offset in range(0x10000)
+        )
+        fs_before = bytes(
+            (offset * 19 + case_index + 5) & 0xFF for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 11 + case_index + 9) & 0xFF for offset in range(0x10000)
+        )
+        machine = execute(
+            bytes(code_before),
+            entry,
+            return_address,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (extra_segment, 0, extra_before),
+                (fs_segment, 0, fs_before),
+                (game_segment, 0, game_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+        )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(data_expected):
+            differences = [
+                (offset, actual_data[offset], data_expected[offset])
+                for offset in range(0x10000)
+                if actual_data[offset] != data_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: data differs at {differences}"
+            )
+        actual_code = bytes(machine.mem_read(0, len(image)))
+        if actual_code != bytes(code_expected):
+            differences = [
+                (offset, actual_code[offset], code_expected[offset])
+                for offset in range(len(image))
+                if actual_code[offset] != code_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: code differs at {differences}"
+            )
+        for segment, expected in (
+            (extra_segment, extra_before),
+            (fs_segment, fs_before),
+            (game_segment, game_before),
+        ):
+            if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: segment {segment:#x} changed"
+                )
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "path": path,
+                "camera_translation_before": [
+                    value & 0xFFFF for value in (camera_x, camera_y, camera_z)
+                ],
+                "camera_pan": camera_pan,
+                "camera_matrix": [value & 0xFFFFFFFF for value in camera_matrix],
+                "camera_position": [value & 0xFFFFFFFF for value in camera_position],
+                "camera_depth_step_before": camera_depth_step & 0xFFFF,
+                "camera_depth_step_after": get_u16(data_expected, 0x22FC),
+                "phase_timer_before": get_u16(data_before, context + 0x38),
+                "phase_timer_after": get_u16(data_expected, context + 0x38),
+                "velocity_before": [
+                    signed_word(get_u16(data_before, context + offset))
+                    for offset in (0x3A, 0x3C, 0x3E)
+                ],
+                "velocity_after": [
+                    signed_word(get_u16(data_expected, context + offset))
+                    for offset in (0x3A, 0x3C, 0x3E)
+                ],
+                "animation_phase_before": phase,
+                "animation_phase_after": get_u16(data_expected, context + 0x42),
+                "position_before": position_before,
+                "position_after": [
+                    get_u32(data_expected, state + offset)
+                    for offset in (0x42, 0x46, 0x4A)
+                ],
+                "pan_before": pan,
+                "pan_after": get_u16(data_expected, state + 0x50),
+                "roll_before": roll & 0xFFFF,
+                "roll_after": get_u16(data_expected, state + 0x52),
+                "radial_before": radial & 0xFFFF,
+                "radial_target": target_radial,
+                "radial_after": get_u16(data_expected, state + 0x54),
+                "followers_before": follower_snapshot(data_before),
+                "followers_after": follower_snapshot(data_expected),
+                "callback_after": get_u16(data_expected, state + 0x0E),
+                "active_before": active_before,
+                "active_after": get_u16(code_expected, active_offset),
+                "callback_countdown_before": get_u16(data_before, 0x001E),
+                "callback_countdown_after": get_u16(data_expected, 0x001E),
                 "data_sha256": hashlib.sha256(data_expected).hexdigest(),
             }
         )
@@ -18225,7 +18548,7 @@ def main() -> int:
         amer_slot2_reset_vectors(0x1A2B),
         args.check,
     )
-    for entry, body_hash, next_entry, sample_phase, next_stage in (
+    for entry, body_hash, next_entry, radial_target, next_stage in (
         (
             0x1688,
             "1040cb5e1877ffda8f47ee00354659d4e5dfb0841fe1fd83c7a34aa0388cc794",
@@ -18247,7 +18570,7 @@ def main() -> int:
                 entry,
                 body_hash,
                 next_entry,
-                sample_phase,
+                radial_target,
                 next_stage,
             ),
             args.check,
@@ -18255,6 +18578,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "xdb_amer_func_1aa0_natural.json",
         amer_slot2_finish_update_vectors(0x1AA0),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "xdb_amer_func_171d_natural.json",
+        amer_slot2_common_update_vectors(0x171D),
         args.check,
     )
     for module, entry in (
