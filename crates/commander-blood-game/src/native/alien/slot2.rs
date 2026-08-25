@@ -192,6 +192,15 @@ const SCRUT_STEERING_DAMPING_SHIFT: u32 = 20;
 const SCRUT_STEERING_APPROACH_SHIFT: u32 = 19;
 const SCRUT_STEERING_MINIMUM: i16 = -32;
 const SCRUT_STEERING_MAXIMUM: i16 = 32;
+const SCRUT_RESET_CAMERA_DEPTH_THRESHOLD: i16 = -500;
+const SCRUT_RESET_STEERING_DISTANCE: i32 = 2_000;
+const SCRUT_RESET_RADIAL_SCORE_SHIFT: u32 = 15;
+const SCRUT_RESET_RADIAL_FALLBACK_SHIFT: u32 = 2;
+const SCRUT_RESET_RADIAL_FALLBACK_BIAS: i16 = 16;
+const SCRUT_RESET_TURN_STEP: i16 = 16;
+const SCRUT_RESET_CAMERA_ANGLE_SHIFT: u32 = 2;
+const SCRUT_RESET_CAMERA_DEPTH_BIAS: u16 = 300;
+const SCRUT_RESET_CAMERA_DURATION: i16 = 8;
 
 /// Callback stage selected for one slot-2 animation model.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -561,6 +570,15 @@ pub enum AlienScrutSelectionResetUpdate {
 pub enum AlienScrutActiveResetSetup {
     /// Continue immediately through SCRUT's shared reset and camera routine.
     ResetRequested,
+}
+
+/// Stage completed by SCRUT's shared reset and camera-placement routine.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienScrutResetUpdate {
+    /// Steering state was prepared for immediate shared dispatch.
+    CommonRequested,
+    /// The model was repositioned relative to the current camera and returned.
+    CameraReset,
 }
 
 /// Invalid flat state supplied to the slot-2 coordinator.
@@ -1802,6 +1820,73 @@ pub fn begin_unreferenced_scrut_active_reset(
     Ok(AlienScrutActiveResetSetup::ResetRequested)
 }
 
+/// Reset SCRUT steering or reposition it from the current flat camera state.
+pub fn update_scrut_reset_or_camera(
+    pose: &mut AlienModelPose,
+    animation: &mut AlienSlot2AnimationState,
+    camera: &AlienCameraTransform,
+    camera_angles: AlienCameraAngles,
+    camera_depth_step: i16,
+    trigonometry: &[AlienTrigonometryPair; TRIGONOMETRY_ENTRY_COUNT],
+) -> Result<AlienScrutResetUpdate, AlienSlot2Error> {
+    validate_state(AlienSpecies::Scrut, pose, animation)?;
+    let primary = &mut pose.nodes[PRIMARY_NODE];
+    let camera_z = transformed_component(primary, Z_AXIS);
+    if camera_z < SCRUT_RESET_CAMERA_DEPTH_THRESHOLD {
+        let random_value = transform_random(animation.random_value);
+        animation.random_value = random_value;
+        let sample_index =
+            usize::from((random_value & ANGLE_MASK) >> SCRUT_RESET_CAMERA_ANGLE_SHIFT);
+        let axis = i32::from(trigonometry[sample_index].cosine);
+        for spatial_axis in usize::default()..AXIS_COUNT {
+            let transformed = axis
+                .wrapping_mul(camera.matrix[spatial_axis][X_AXIS])
+                .wrapping_add(axis.wrapping_mul(camera.matrix[spatial_axis][Y_AXIS]));
+            let component = (transformed >> u16::BITS) as i16;
+            let position_word = component.wrapping_sub(camera.view[spatial_axis]) as u16;
+            let position = primary.local_position[spatial_axis];
+            primary.local_position[spatial_axis] = replace_position_word(position, position_word);
+        }
+        primary.angles[X_AXIS] = camera_angles.pitch as u16;
+        primary.angles[Y_AXIS] = camera_angles.pan as u16;
+        primary.angles[Z_AXIS] = u16::default();
+        let depth = (camera_depth_step as u16).wrapping_add(SCRUT_RESET_CAMERA_DEPTH_BIAS);
+        primary.radial_offset = depth as i16;
+        animation.nodes[PRIMARY_NODE].radial_target = depth;
+        animation.phase_timer = SCRUT_RESET_CAMERA_DURATION;
+        return Ok(AlienScrutResetUpdate::CameraReset);
+    }
+
+    let camera_x = transformed_component(primary, X_AXIS);
+    let horizontal = i32::from(camera_z).wrapping_sub(SCRUT_RESET_STEERING_DISTANCE);
+    let vertical = i32::from(camera_x).wrapping_sub(animation.species_seed_at_initialization);
+    let forward_x = primary.transform.matrix[X_AXIS][Z_AXIS];
+    let forward_z = primary.transform.matrix[Z_AXIS][Z_AXIS];
+    let radial_score = horizontal
+        .wrapping_mul(forward_z)
+        .wrapping_add(vertical.wrapping_mul(forward_x))
+        .wrapping_neg()
+        >> SCRUT_RESET_RADIAL_SCORE_SHIFT;
+    animation.nodes[PRIMARY_NODE].radial_target = if radial_score < i32::default() {
+        ((animation.nodes[PRIMARY_NODE].radial_target as i16) >> SCRUT_RESET_RADIAL_FALLBACK_SHIFT)
+            .wrapping_add(SCRUT_RESET_RADIAL_FALLBACK_BIAS) as u16
+    } else {
+        radial_score as u16
+    };
+
+    let turn_score = vertical
+        .wrapping_mul(forward_z)
+        .wrapping_sub(horizontal.wrapping_mul(forward_x));
+    animation.nodes[PRIMARY_NODE].motion_parameter = if turn_score < i32::default() {
+        SCRUT_RESET_TURN_STEP
+    } else {
+        -SCRUT_RESET_TURN_STEP
+    };
+    primary.angles[Z_AXIS] =
+        (primary.angles[Z_AXIS] as i16).clamp(SCRUT_PITCH_MINIMUM, SCRUT_PITCH_MAXIMUM) as u16;
+    Ok(AlienScrutResetUpdate::CommonRequested)
+}
+
 /// Preserve the observable behavior of the unreachable steering sibling.
 ///
 /// No original alien method table or callback points at this routine. Keeping
@@ -2527,6 +2612,43 @@ mod tests {
         active_after: u16,
         selection_value_before: u16,
         selection_value_after: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct ScrutResetVector {
+        name: String,
+        module: String,
+        mode: String,
+        continuation: String,
+        camera_x_before: u16,
+        camera_z_before: u16,
+        seed: i32,
+        forward_x_before: u32,
+        forward_z_before: u32,
+        random_before: u16,
+        random_after: u16,
+        cosine: u16,
+        camera_matrix: [[u32; 2]; AXIS_COUNT],
+        camera_view: [u16; AXIS_COUNT],
+        camera_pitch: u16,
+        camera_pan: u16,
+        camera_depth_step: u16,
+        positions_before: [u32; AXIS_COUNT],
+        positions_after: [u32; AXIS_COUNT],
+        duration_before: u16,
+        duration_after: u16,
+        motion_parameter_before: u16,
+        motion_parameter_after: u16,
+        pitch_before: u16,
+        pitch_after: u16,
+        pan_before: u16,
+        pan_after: u16,
+        roll_before: u16,
+        roll_after: u16,
+        radial_before: u16,
+        radial_after: u16,
+        radial_target_before: u16,
+        radial_target_after: u16,
     }
 
     #[derive(Deserialize)]
@@ -4241,6 +4363,119 @@ mod tests {
             );
             assert_eq!(
                 scene.scrut_selection_signal as u16, vector.selection_value_after,
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    #[test]
+    fn scrut_reset_or_camera_matches_every_original_overlay_vector() {
+        let vectors: Vec<ScrutResetVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/xdb_scrut_func_1a11_natural.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            assert_eq!(vector.module, "scrut");
+            let mut pose = pose(&[EMPTY_NODE_VECTOR; PRIMARY_AND_FOLLOWER_NODE_COUNT]);
+            let primary = &mut pose.nodes[PRIMARY_NODE];
+            primary.transform.translation[X_AXIS] =
+                join_words(vector.camera_x_before, TRANSFORM_LOW_WORD_SENTINEL);
+            primary.transform.translation[Z_AXIS] =
+                join_words(vector.camera_z_before, TRANSFORM_LOW_WORD_SENTINEL);
+            primary.transform.matrix[X_AXIS][Z_AXIS] = vector.forward_x_before as i32;
+            primary.transform.matrix[Z_AXIS][Z_AXIS] = vector.forward_z_before as i32;
+            primary.local_position = vector.positions_before.map(|value| value as i32);
+            primary.angles = [vector.pitch_before, vector.pan_before, vector.roll_before];
+            primary.radial_offset = vector.radial_before as i16;
+            let mut animation = AlienSlot2AnimationState::new(PRIMARY_AND_FOLLOWER_NODE_COUNT);
+            animation.phase_timer = vector.duration_before as i16;
+            animation.species_seed_at_initialization = vector.seed;
+            animation.random_value = vector.random_before;
+            animation.nodes[PRIMARY_NODE].motion_parameter = vector.motion_parameter_before as i16;
+            animation.nodes[PRIMARY_NODE].radial_target = vector.radial_target_before;
+            let mut camera = AlienCameraTransform {
+                view: vector.camera_view.map(|value| value as i16),
+                ..AlienCameraTransform::default()
+            };
+            for (matrix_row, source) in camera.matrix.iter_mut().zip(vector.camera_matrix) {
+                matrix_row[X_AXIS] = source[X_AXIS] as i32;
+                matrix_row[Y_AXIS] = source[Y_AXIS] as i32;
+            }
+            let mut trigonometry = [AlienTrigonometryPair::default(); TRIGONOMETRY_ENTRY_COUNT];
+            let sample_index =
+                usize::from((vector.random_after & ANGLE_MASK) >> SCRUT_RESET_CAMERA_ANGLE_SHIFT);
+            trigonometry[sample_index].cosine = vector.cosine as i16;
+            let camera_angles = AlienCameraAngles {
+                pitch: vector.camera_pitch as i16,
+                pan: vector.camera_pan as i16,
+                secondary_pan: i16::default(),
+            };
+            let expected = match vector.mode.as_str() {
+                "steering" => AlienScrutResetUpdate::CommonRequested,
+                "camera_reset" => AlienScrutResetUpdate::CameraReset,
+                mode => panic!("unknown SCRUT reset mode {mode}"),
+            };
+            assert_eq!(
+                vector.continuation,
+                if vector.mode == "steering" {
+                    "common"
+                } else {
+                    "complete"
+                }
+            );
+
+            assert_eq!(
+                update_scrut_reset_or_camera(
+                    &mut pose,
+                    &mut animation,
+                    &camera,
+                    camera_angles,
+                    vector.camera_depth_step as i16,
+                    &trigonometry,
+                )
+                .unwrap(),
+                expected,
+                "{}",
+                vector.name
+            );
+            let primary = &pose.nodes[PRIMARY_NODE];
+            assert_eq!(
+                primary.local_position.map(|value| value as u32),
+                vector.positions_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                primary.angles[X_AXIS], vector.pitch_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(primary.angles[Y_AXIS], vector.pan_after, "{}", vector.name);
+            assert_eq!(primary.angles[Z_AXIS], vector.roll_after, "{}", vector.name);
+            assert_eq!(
+                primary.radial_offset as u16, vector.radial_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                animation.nodes[PRIMARY_NODE].radial_target, vector.radial_target_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                animation.nodes[PRIMARY_NODE].motion_parameter as u16,
+                vector.motion_parameter_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                animation.phase_timer as u16, vector.duration_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                animation.random_value, vector.random_after,
                 "{}",
                 vector.name
             );
