@@ -154,14 +154,6 @@ pub enum AlienRingLifecycle {
 pub struct AlienRingAnimationState {
     /// Current initialization and timer policy.
     pub lifecycle: AlienRingLifecycle,
-    /// Countdown shared by every node callback in this model.
-    pub timer: u16,
-    /// Wrapping generation counter used when constructing follower chains.
-    pub generation: u16,
-    /// Ring slot reserved for the next initialized model.
-    pub next_ring_slot: usize,
-    /// Fixed-size motion-history ring.
-    pub entries: [AlienRingEntry; RING_ENTRY_COUNT],
     /// Behavior metadata parallel to the model pose's node vector.
     pub nodes: Vec<AlienRingNodeState>,
 }
@@ -171,11 +163,31 @@ impl AlienRingAnimationState {
     pub fn new(node_count: usize) -> Self {
         Self {
             lifecycle: AlienRingLifecycle::Uninitialized,
+            nodes: vec![AlienRingNodeState::default(); node_count],
+        }
+    }
+}
+
+/// Scene-wide circular history shared by every ring-animation model.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AlienRingSharedState {
+    /// Countdown observed by every ring callback.
+    pub timer: u16,
+    /// Wrapping generation counter used when constructing follower chains.
+    pub generation: u16,
+    /// Ring slot reserved for the next initialized model.
+    pub next_ring_slot: usize,
+    /// Fixed-size motion-history ring.
+    pub entries: [AlienRingEntry; RING_ENTRY_COUNT],
+}
+
+impl Default for AlienRingSharedState {
+    fn default() -> Self {
+        Self {
             timer: u16::MIN,
             generation: u16::MIN,
             next_ring_slot: usize::MIN,
             entries: [AlienRingEntry::default(); RING_ENTRY_COUNT],
-            nodes: vec![AlienRingNodeState::default(); node_count],
         }
     }
 }
@@ -202,6 +214,7 @@ pub trait AlienRingCallbacks {
         node_index: usize,
         pose: &mut AlienModelPose,
         animation: &mut AlienRingAnimationState,
+        shared: &mut AlienRingSharedState,
     ) -> Result<(), AlienRingError>;
 }
 
@@ -318,11 +331,12 @@ pub fn restart_initial_course(
     node_index: usize,
     pose: &mut AlienModelPose,
     animation: &mut AlienRingAnimationState,
+    shared: &mut AlienRingSharedState,
     random_state: &mut u16,
 ) -> Result<(), AlienRingError> {
     let slot = validate_node_pair(node_index, pose, animation)?;
-    animation.entries[slot].command_flags = u16::MIN;
-    animation.entries[slot].radial_offset = RESTART_RADIAL_OFFSET;
+    shared.entries[slot].command_flags = u16::MIN;
+    shared.entries[slot].radial_offset = RESTART_RADIAL_OFFSET;
     animation.nodes[node_index].callback = AlienRingCallback::InitialCourse;
     animation.nodes[node_index].course_frames_remaining = RESTART_COURSE_FRAMES;
     pose.nodes[node_index].angles[Z_AXIS] = u16::MIN;
@@ -340,11 +354,12 @@ pub fn begin_resume_clear(
     node_index: usize,
     pose: &mut AlienModelPose,
     animation: &mut AlienRingAnimationState,
+    shared: &mut AlienRingSharedState,
 ) -> Result<(), AlienRingError> {
     let slot = validate_node_pair(node_index, pose, animation)?;
     reset_pose_node(&mut pose.nodes[node_index], initial_position(species));
     animation.nodes[node_index].callback = AlienRingCallback::ClearHistory;
-    animation.entries[slot] = AlienRingEntry {
+    shared.entries[slot] = AlienRingEntry {
         command_flags: RESUME_COMMAND_FLAGS,
         ..AlienRingEntry::default()
     };
@@ -376,6 +391,7 @@ pub fn capture_resume_state(
 pub fn clear_next_ring_entry(
     node_index: usize,
     animation: &mut AlienRingAnimationState,
+    shared: &mut AlienRingSharedState,
 ) -> Result<AlienRingClearUpdate, AlienRingError> {
     let node_count = animation.nodes.len();
     let node = animation
@@ -391,13 +407,13 @@ pub fn clear_next_ring_entry(
             slot: node.ring_slot,
         });
     }
-    if animation.timer != u16::MIN {
+    if shared.timer != u16::MIN {
         return Ok(AlienRingClearUpdate::Waiting);
     }
 
     node.ring_slot = next_slot(node.ring_slot);
     let slot = node.ring_slot;
-    animation.entries[slot] = AlienRingEntry::default();
+    shared.entries[slot] = AlienRingEntry::default();
     Ok(AlienRingClearUpdate::Cleared { slot })
 }
 
@@ -407,16 +423,17 @@ pub fn update_initial_course(
     node_index: usize,
     pose: &mut AlienModelPose,
     animation: &mut AlienRingAnimationState,
+    shared: &mut AlienRingSharedState,
 ) -> Result<AlienRingCourseUpdate, AlienRingError> {
     let current_slot = validate_node_pair(node_index, pose, animation)?;
-    let current_entry = animation.entries[current_slot];
-    animation.entries[current_slot].command_flags = u16::MIN;
+    let current_entry = shared.entries[current_slot];
+    shared.entries[current_slot].command_flags = u16::MIN;
     pose.nodes[node_index].angles[X_AXIS] =
         pose.nodes[node_index].angles[X_AXIS].wrapping_add(current_entry.pitch_step as u16);
     pose.nodes[node_index].angles[Y_AXIS] =
         pose.nodes[node_index].angles[Y_AXIS].wrapping_add(current_entry.pan_step as u16);
     pose.nodes[node_index].radial_offset = current_entry.radial_offset;
-    if animation.timer != u16::MIN {
+    if shared.timer != u16::MIN {
         return Ok(AlienRingCourseUpdate::TimerWaiting);
     }
 
@@ -429,14 +446,14 @@ pub fn update_initial_course(
         .course_frames_remaining
         .is_negative()
     {
-        generate_course_entry(node_index, pose, animation, next_ring_slot, species);
+        generate_course_entry(node_index, pose, animation, shared, next_ring_slot, species);
         return Ok(AlienRingCourseUpdate::CourseGenerated);
     }
 
-    animation.entries[next_ring_slot].pitch_step = current_entry.pitch_step;
-    animation.entries[next_ring_slot].pan_step = current_entry.pan_step;
-    animation.entries[next_ring_slot].radial_offset = current_entry.radial_offset;
-    correct_course_bounds(node_index, species, pose, animation, next_ring_slot);
+    shared.entries[next_ring_slot].pitch_step = current_entry.pitch_step;
+    shared.entries[next_ring_slot].pan_step = current_entry.pan_step;
+    shared.entries[next_ring_slot].radial_offset = current_entry.radial_offset;
+    correct_course_bounds(node_index, species, pose, animation, shared, next_ring_slot);
     Ok(AlienRingCourseUpdate::CourseContinued)
 }
 
@@ -450,10 +467,11 @@ pub fn update_follow_course(
     node_index: usize,
     pose: &mut AlienModelPose,
     animation: &mut AlienRingAnimationState,
+    shared: &mut AlienRingSharedState,
     scene: &mut AlienCallbackSceneState,
 ) -> Result<AlienRingFollowerUpdate, AlienRingError> {
     let current_slot = validate_node_pair(node_index, pose, animation)?;
-    let current_entry = animation.entries[current_slot];
+    let current_entry = shared.entries[current_slot];
     {
         let node = &mut pose.nodes[node_index];
         node.angles[X_AXIS] = node.angles[X_AXIS].wrapping_add(current_entry.pitch_step as u16);
@@ -461,7 +479,7 @@ pub fn update_follow_course(
         node.radial_offset = current_entry.radial_offset;
     }
 
-    let selected_slot = if animation.timer == u16::MIN {
+    let selected_slot = if shared.timer == u16::MIN {
         let slot = next_slot(current_slot);
         animation.nodes[node_index].ring_slot = slot;
         slot
@@ -469,8 +487,8 @@ pub fn update_follow_course(
         current_slot
     };
 
-    let command = if animation.timer == u16::MIN {
-        animation.entries[selected_slot].command_flags & FOLLOW_COMMAND_MASK
+    let command = if shared.timer == u16::MIN {
+        shared.entries[selected_slot].command_flags & FOLLOW_COMMAND_MASK
     } else {
         u16::MIN
     };
@@ -513,13 +531,13 @@ pub fn update_follow_course(
     if scene.callback_countdown == u16::MIN {
         scene.callback_countdown = FOLLOW_CALLBACK_COUNTDOWN;
     }
-    animation.entries[selected_slot].radial_offset = RESTART_RADIAL_OFFSET;
+    shared.entries[selected_slot].radial_offset = RESTART_RADIAL_OFFSET;
     if scene.wave_selection != AlienWaveSelection::Disabled {
         advance_feedback_phase(&mut animation.nodes[node_index]);
         return Ok(AlienRingFollowerUpdate::FeedbackAdvanced);
     }
 
-    animation.entries[selected_slot].command_flags = FOLLOW_RESTART_COMMAND;
+    shared.entries[selected_slot].command_flags = FOLLOW_RESTART_COMMAND;
     Ok(AlienRingFollowerUpdate::WaveSelectionRequested)
 }
 
@@ -528,25 +546,26 @@ pub fn update_or_initialize_ring(
     species: AlienSpecies,
     pose: &mut AlienModelPose,
     animation: &mut AlienRingAnimationState,
+    shared: &mut AlienRingSharedState,
     callbacks: &mut impl AlienRingCallbacks,
 ) -> Result<AlienRingUpdate, AlienRingError> {
-    validate_state(pose, animation)?;
+    validate_state(pose, animation, shared)?;
     if animation.lifecycle == AlienRingLifecycle::Uninitialized {
-        initialize(species, pose, animation);
+        initialize(species, pose, animation, shared);
         return Ok(AlienRingUpdate::Initialized);
     }
 
     if animation.lifecycle == AlienRingLifecycle::TimerRunning {
-        animation.timer = animation.timer.wrapping_sub(1);
-        if (animation.timer as i16).is_negative() {
-            animation.timer = INITIAL_TIMER;
+        shared.timer = shared.timer.wrapping_sub(1);
+        if (shared.timer as i16).is_negative() {
+            shared.timer = INITIAL_TIMER;
         }
     }
 
     let node_count = pose.nodes.len();
     for node_index in usize::MIN..node_count {
         let callback = animation.nodes[node_index].callback;
-        callbacks.invoke(species, callback, node_index, pose, animation)?;
+        callbacks.invoke(species, callback, node_index, pose, animation, shared)?;
         if pose.nodes.len() != node_count || animation.nodes.len() != node_count {
             return Err(AlienRingError::NodeStateCountMismatch {
                 pose: pose.nodes.len(),
@@ -560,6 +579,7 @@ pub fn update_or_initialize_ring(
 fn validate_state(
     pose: &AlienModelPose,
     animation: &AlienRingAnimationState,
+    shared: &AlienRingSharedState,
 ) -> Result<(), AlienRingError> {
     if pose.nodes.is_empty() {
         return Err(AlienRingError::EmptyNodeList);
@@ -570,9 +590,9 @@ fn validate_state(
             animation: animation.nodes.len(),
         });
     }
-    if animation.next_ring_slot >= RING_ENTRY_COUNT {
+    if shared.next_ring_slot >= RING_ENTRY_COUNT {
         return Err(AlienRingError::InvalidNextRingSlot {
-            slot: animation.next_ring_slot,
+            slot: shared.next_ring_slot,
         });
     }
     if animation.lifecycle != AlienRingLifecycle::Uninitialized {
@@ -592,11 +612,12 @@ fn initialize(
     species: AlienSpecies,
     pose: &mut AlienModelPose,
     animation: &mut AlienRingAnimationState,
+    shared: &mut AlienRingSharedState,
 ) {
     animation.lifecycle = AlienRingLifecycle::TimerRunning;
-    animation.timer = INITIAL_TIMER;
+    shared.timer = INITIAL_TIMER;
     let initial_position = initial_position(species);
-    let mut current_slot = animation.next_ring_slot;
+    let mut current_slot = shared.next_ring_slot;
 
     reset_pose_node(&mut pose.nodes[FIRST_NODE], initial_position);
     animation.nodes[FIRST_NODE] = AlienRingNodeState {
@@ -609,7 +630,7 @@ fn initialize(
         wave_roll_step: i16::MIN,
         steering: AlienWaveSteeringState::default(),
     };
-    animation.entries[current_slot] = AlienRingEntry {
+    shared.entries[current_slot] = AlienRingEntry {
         pitch_step: ZERO_MOTION_COMPONENT,
         pan_step: ZERO_MOTION_COMPONENT,
         radial_offset: INITIAL_RADIAL_OFFSET,
@@ -617,16 +638,16 @@ fn initialize(
     };
 
     if pose.nodes.len() == SINGLE_NODE_COUNT {
-        animation.next_ring_slot = previous_slot(current_slot);
+        shared.next_ring_slot = previous_slot(current_slot);
         return;
     }
 
     current_slot = previous_slot(current_slot);
-    animation.generation = animation.generation.wrapping_add(1);
-    if animation.generation != u16::MIN {
+    shared.generation = shared.generation.wrapping_add(1);
+    if shared.generation != u16::MIN {
         animation.lifecycle = AlienRingLifecycle::TimerSuspended;
         animation.nodes[FIRST_NODE].callback = AlienRingCallback::FollowCourse;
-        animation.entries[current_slot].radial_offset = ZERO_MOTION_COMPONENT;
+        shared.entries[current_slot].radial_offset = ZERO_MOTION_COMPONENT;
         pose.nodes[FIRST_NODE].angles.fill(u16::MIN);
         pose.nodes[FIRST_NODE].local_position = initial_position;
     }
@@ -646,10 +667,10 @@ fn initialize(
             wave_roll_step: i16::MIN,
             steering: AlienWaveSteeringState::default(),
         };
-        animation.entries[current_slot] = AlienRingEntry::default();
+        shared.entries[current_slot] = AlienRingEntry::default();
         reset_pose_node(&mut pose.nodes[node_index], initial_position);
     }
-    animation.next_ring_slot = previous_slot(current_slot);
+    shared.next_ring_slot = previous_slot(current_slot);
 }
 
 fn reset_pose_node(node: &mut super::AlienNodePose, position: [i32; AXIS_COUNT]) {
@@ -760,13 +781,14 @@ fn generate_course_entry(
     node_index: usize,
     pose: &mut AlienModelPose,
     animation: &mut AlienRingAnimationState,
+    shared: &mut AlienRingSharedState,
     ring_slot: usize,
     species: AlienSpecies,
 ) {
     let random_a = random_transition(animation.nodes[node_index].behavior_seed);
     let divisor = (random_a & GENERATED_DIVISOR_MASK).wrapping_add(GENERATED_DIVISOR_BIAS);
     let random_b = random_transition(random_a);
-    animation.entries[ring_slot].pan_step = (random_b as i16) >> GENERATED_PAN_SHIFT;
+    shared.entries[ring_slot].pan_step = (random_b as i16) >> GENERATED_PAN_SHIFT;
 
     let pitch =
         pose.nodes[node_index].angles[X_AXIS].wrapping_add(COURSE_HALF_TURN) & COURSE_ANGLE_MASK;
@@ -779,7 +801,7 @@ fn generate_course_entry(
     let carry = (numerator >> (GENERATED_PITCH_SHIFT - 1)) & 1;
     let numerator = ((numerator as i16) >> GENERATED_PITCH_SHIFT) as u16;
     let numerator = numerator.wrapping_add(opposite_pitch).wrapping_add(carry) as i16;
-    animation.entries[ring_slot].pitch_step = numerator / divisor as i16;
+    shared.entries[ring_slot].pitch_step = numerator / divisor as i16;
     animation.nodes[node_index].course_frames_remaining =
         (divisor as i16) >> GENERATED_COURSE_SHIFT;
 
@@ -789,7 +811,7 @@ fn generate_course_entry(
         AlienSpecies::Amer => AMER_GENERATED_RADIAL_MASK,
         AlienSpecies::Croolis | AlienSpecies::Scrut => OTHER_GENERATED_RADIAL_MASK,
     };
-    animation.entries[ring_slot].radial_offset =
+    shared.entries[ring_slot].radial_offset =
         ((random_after & radial_mask).wrapping_add(GENERATED_DIVISOR_BIAS)) as i16;
 }
 
@@ -798,6 +820,7 @@ fn correct_course_bounds(
     species: AlienSpecies,
     pose: &AlienModelPose,
     animation: &mut AlienRingAnimationState,
+    shared: &mut AlienRingSharedState,
     ring_slot: usize,
 ) {
     let (depth_maximum, lateral_maximum, vertical_maximum) = match species {
@@ -834,7 +857,7 @@ fn correct_course_bounds(
         None
     };
     if let Some(delta) = horizontal_delta {
-        animation.entries[ring_slot].pan_step = (delta as i16) >> HORIZONTAL_CORRECTION_SHIFT;
+        shared.entries[ring_slot].pan_step = (delta as i16) >> HORIZONTAL_CORRECTION_SHIFT;
     }
 
     let pitch = pose.nodes[node_index].angles[X_AXIS];
@@ -853,7 +876,7 @@ fn correct_course_bounds(
     };
     if let Some(delta) = vertical_delta {
         animation.nodes[node_index].course_frames_remaining = ZERO_MOTION_COMPONENT;
-        animation.entries[ring_slot].pitch_step = (delta as i16) >> VERTICAL_CORRECTION_SHIFT;
+        shared.entries[ring_slot].pitch_step = (delta as i16) >> VERTICAL_CORRECTION_SHIFT;
     }
 }
 
@@ -985,6 +1008,7 @@ mod tests {
             node_index: usize,
             _pose: &mut AlienModelPose,
             _animation: &mut AlienRingAnimationState,
+            _shared: &mut AlienRingSharedState,
         ) -> Result<(), AlienRingError> {
             self.calls.push((callback, node_index));
             Ok(())
@@ -1025,9 +1049,10 @@ mod tests {
         }
     }
 
-    fn seeded_animation(node_count: usize) -> AlienRingAnimationState {
+    fn seeded_animation(node_count: usize) -> (AlienRingSharedState, AlienRingAnimationState) {
+        let mut shared = AlienRingSharedState::default();
         let mut animation = AlienRingAnimationState::new(node_count);
-        for (slot, entry) in animation.entries.iter_mut().enumerate() {
+        for (slot, entry) in shared.entries.iter_mut().enumerate() {
             *entry = AlienRingEntry {
                 pitch_step: slot as i16 + 101,
                 pan_step: slot as i16 + 201,
@@ -1038,7 +1063,7 @@ mod tests {
         for node in &mut animation.nodes {
             node.course_frames_remaining = PRESERVED_COURSE_FRAMES;
         }
-        animation
+        (shared, animation)
     }
 
     fn fixtures() -> [&'static str; 3] {
@@ -1121,12 +1146,18 @@ mod tests {
         ]
     }
 
-    fn callback_state(ring_cursor: u16) -> (AlienModelPose, AlienRingAnimationState) {
+    fn callback_state(
+        ring_cursor: u16,
+    ) -> (
+        AlienModelPose,
+        AlienRingSharedState,
+        AlienRingAnimationState,
+    ) {
         let mut pose = pose(SINGLE_NODE_COUNT);
         pose.nodes[FIRST_NODE].local_position = CALLBACK_POSITION;
         pose.nodes[FIRST_NODE].angles = CALLBACK_ANGLES;
         pose.nodes[FIRST_NODE].radial_offset = CALLBACK_RADIAL_OFFSET;
-        let mut animation = seeded_animation(SINGLE_NODE_COUNT);
+        let (shared, mut animation) = seeded_animation(SINGLE_NODE_COUNT);
         animation.nodes[FIRST_NODE] = AlienRingNodeState {
             callback: AlienRingCallback::FollowCourse,
             course_frames_remaining: CALLBACK_COURSE_FRAMES,
@@ -1137,7 +1168,7 @@ mod tests {
             wave_roll_step: i16::MIN,
             steering: AlienWaveSteeringState::default(),
         };
-        (pose, animation)
+        (pose, shared, animation)
     }
 
     fn callback_position(pose: &AlienModelPose) -> [u32; AXIS_COUNT] {
@@ -1228,10 +1259,10 @@ mod tests {
                     usize::from(INITIAL_RING_CURSORS[case_index]) / ORIGINAL_RING_ENTRY_BYTES;
                 let initial_generation = INITIAL_GENERATIONS[case_index];
                 let mut pose = pose(node_count);
-                let mut animation = seeded_animation(node_count);
-                animation.next_ring_slot = initial_slot;
-                animation.generation = initial_generation;
-                let entries_before = animation.entries;
+                let (mut shared, mut animation) = seeded_animation(node_count);
+                shared.next_ring_slot = initial_slot;
+                shared.generation = initial_generation;
+                let entries_before = shared.entries;
                 let mut callbacks = CallbackRecorder::default();
 
                 assert_eq!(
@@ -1239,6 +1270,7 @@ mod tests {
                         species(&vector.module),
                         &mut pose,
                         &mut animation,
+                        &mut shared,
                         &mut callbacks,
                     )
                     .unwrap(),
@@ -1247,9 +1279,9 @@ mod tests {
                     vector.name
                 );
                 assert!(callbacks.calls.is_empty(), "{}", vector.name);
-                assert_eq!(animation.timer, INITIAL_TIMER, "{}", vector.name);
+                assert_eq!(shared.timer, INITIAL_TIMER, "{}", vector.name);
                 assert_eq!(
-                    animation.generation,
+                    shared.generation,
                     vector.generation_after.unwrap(),
                     "{}",
                     vector.name
@@ -1265,7 +1297,7 @@ mod tests {
                     vector.name
                 );
                 assert_eq!(
-                    animation.next_ring_slot * ORIGINAL_RING_ENTRY_BYTES,
+                    shared.next_ring_slot * ORIGINAL_RING_ENTRY_BYTES,
                     usize::from(vector.ring_cursor_after.unwrap()),
                     "{}",
                     vector.name
@@ -1317,7 +1349,7 @@ mod tests {
                     );
                 }
                 assert_eq!(
-                    animation.entries[initial_slot],
+                    shared.entries[initial_slot],
                     AlienRingEntry {
                         pitch_step: ZERO_MOTION_COMPONENT,
                         pan_step: ZERO_MOTION_COMPONENT,
@@ -1335,20 +1367,20 @@ mod tests {
                         let mut expected = entries_before[pre_follower_slot];
                         expected.radial_offset = ZERO_MOTION_COMPONENT;
                         assert_eq!(
-                            animation.entries[pre_follower_slot], expected,
+                            shared.entries[pre_follower_slot], expected,
                             "{}",
                             vector.name
                         );
                     } else {
                         assert_eq!(
-                            animation.entries[pre_follower_slot], entries_before[pre_follower_slot],
+                            shared.entries[pre_follower_slot], entries_before[pre_follower_slot],
                             "{}",
                             vector.name
                         );
                     }
                     for behavior in animation.nodes.iter().skip(1) {
                         assert_eq!(
-                            animation.entries[behavior.ring_slot],
+                            shared.entries[behavior.ring_slot],
                             AlienRingEntry::default(),
                             "{}",
                             vector.name
@@ -1374,7 +1406,10 @@ mod tests {
                 ];
                 pose.nodes[FIRST_NODE].radial_offset = vector.motion_before[3] as i16;
                 let mut animation = AlienRingAnimationState::new(SINGLE_NODE_COUNT);
-                animation.timer = vector.timer;
+                let mut shared = AlienRingSharedState {
+                    timer: vector.timer,
+                    ..AlienRingSharedState::default()
+                };
                 animation.nodes[FIRST_NODE] = AlienRingNodeState {
                     callback: AlienRingCallback::InitialCourse,
                     course_frames_remaining: vector.motion_before[4] as i16,
@@ -1386,15 +1421,15 @@ mod tests {
                     steering: AlienWaveSteeringState::default(),
                 };
                 let next_ring_slot = next_slot(vector.ring_slot_before);
-                animation.entries[vector.ring_slot_before] =
-                    ring_entry(vector.current_entry_before);
-                animation.entries[next_ring_slot] = ring_entry(vector.next_entry_before);
+                shared.entries[vector.ring_slot_before] = ring_entry(vector.current_entry_before);
+                shared.entries[next_ring_slot] = ring_entry(vector.next_entry_before);
 
                 let update = update_initial_course(
                     species(&vector.module),
                     FIRST_NODE,
                     &mut pose,
                     &mut animation,
+                    &mut shared,
                 )
                 .unwrap();
 
@@ -1431,13 +1466,13 @@ mod tests {
                     vector.name
                 );
                 assert_eq!(
-                    animation.entries[vector.ring_slot_before],
+                    shared.entries[vector.ring_slot_before],
                     ring_entry(vector.current_entry_after),
                     "{}",
                     vector.name
                 );
                 assert_eq!(
-                    animation.entries[next_ring_slot],
+                    shared.entries[next_ring_slot],
                     ring_entry(vector.next_entry_after),
                     "{}",
                     vector.name
@@ -1475,7 +1510,10 @@ mod tests {
                     .collect();
 
                 let mut animation = AlienRingAnimationState::new(SINGLE_NODE_COUNT);
-                animation.timer = vector.timer;
+                let mut shared = AlienRingSharedState {
+                    timer: vector.timer,
+                    ..AlienRingSharedState::default()
+                };
                 animation.nodes[FIRST_NODE] = AlienRingNodeState {
                     callback: AlienRingCallback::FollowCourse,
                     course_frames_remaining: PRESERVED_COURSE_FRAMES,
@@ -1487,9 +1525,8 @@ mod tests {
                     steering: AlienWaveSteeringState::default(),
                 };
                 let next_ring_slot = next_slot(vector.ring_slot_before);
-                animation.entries[vector.ring_slot_before] =
-                    ring_entry(vector.current_entry_before);
-                animation.entries[next_ring_slot] = ring_entry(vector.next_entry_before);
+                shared.entries[vector.ring_slot_before] = ring_entry(vector.current_entry_before);
+                shared.entries[next_ring_slot] = ring_entry(vector.next_entry_before);
 
                 let queue_slot = vector.queue_cursor_after / ORIGINAL_QUEUE_ENTRY_BYTES;
                 let mut scene = AlienCallbackSceneState {
@@ -1504,6 +1541,7 @@ mod tests {
                     FIRST_NODE,
                     &mut pose,
                     &mut animation,
+                    &mut shared,
                     &mut scene,
                 )
                 .unwrap();
@@ -1554,13 +1592,13 @@ mod tests {
                     oracle_node(vector.queued_state_after)
                 );
                 assert_eq!(
-                    animation.entries[vector.ring_slot_before],
+                    shared.entries[vector.ring_slot_before],
                     ring_entry(vector.current_entry_after),
                     "{}",
                     vector.name
                 );
                 assert_eq!(
-                    animation.entries[vector.ring_slot_after],
+                    shared.entries[vector.ring_slot_after],
                     ring_entry(vector.selected_entry_after),
                     "{}",
                     vector.name
@@ -1593,7 +1631,10 @@ mod tests {
                     u16::MAX => AlienRingLifecycle::TimerSuspended,
                     value => panic!("unexpected original lifecycle {value}"),
                 };
-                animation.timer = vector.timer_before.unwrap();
+                let mut shared = AlienRingSharedState {
+                    timer: vector.timer_before.unwrap(),
+                    ..AlienRingSharedState::default()
+                };
                 for (node_index, node) in animation.nodes.iter_mut().enumerate() {
                     node.callback = if node_index == FIRST_NODE {
                         AlienRingCallback::InitialCourse
@@ -1608,6 +1649,7 @@ mod tests {
                         species(&vector.module),
                         &mut pose,
                         &mut animation,
+                        &mut shared,
                         &mut callbacks,
                     )
                     .unwrap(),
@@ -1615,12 +1657,7 @@ mod tests {
                     "{}",
                     vector.name
                 );
-                assert_eq!(
-                    animation.timer,
-                    vector.timer_after.unwrap(),
-                    "{}",
-                    vector.name
-                );
+                assert_eq!(shared.timer, vector.timer_after.unwrap(), "{}", vector.name);
                 assert_eq!(
                     callbacks.calls.len(),
                     vector.effective_callbacks.unwrap(),
@@ -1647,13 +1684,19 @@ mod tests {
             let vectors: Vec<CallbackVector> = serde_json::from_str(fixture).unwrap();
             for (case_index, vector) in vectors.into_iter().enumerate() {
                 assert_eq!(vector.kind, "restart");
-                let (mut pose, mut animation) = callback_state(vector.ring_before);
+                let (mut pose, mut shared, mut animation) = callback_state(vector.ring_before);
                 let slot = animation.nodes[FIRST_NODE].ring_slot;
-                let entry_before = animation.entries[slot];
+                let entry_before = shared.entries[slot];
                 let mut random_state = RESTART_RANDOM_INPUTS[case_index];
 
-                restart_initial_course(FIRST_NODE, &mut pose, &mut animation, &mut random_state)
-                    .unwrap();
+                restart_initial_course(
+                    FIRST_NODE,
+                    &mut pose,
+                    &mut animation,
+                    &mut shared,
+                    &mut random_state,
+                )
+                .unwrap();
 
                 assert_eq!(
                     callback_position(&pose),
@@ -1680,10 +1723,10 @@ mod tests {
                     vector.name
                 );
                 assert_eq!(random_state, vector.motion_after[5], "{}", vector.name);
-                assert_eq!(animation.entries[slot].pitch_step, entry_before.pitch_step);
-                assert_eq!(animation.entries[slot].pan_step, entry_before.pan_step);
-                assert_eq!(animation.entries[slot].radial_offset, RESTART_RADIAL_OFFSET);
-                assert_eq!(animation.entries[slot].command_flags, u16::MIN);
+                assert_eq!(shared.entries[slot].pitch_step, entry_before.pitch_step);
+                assert_eq!(shared.entries[slot].pan_step, entry_before.pan_step);
+                assert_eq!(shared.entries[slot].radial_offset, RESTART_RADIAL_OFFSET);
+                assert_eq!(shared.entries[slot].command_flags, u16::MIN);
                 assert_eq!(vector.resume_countdown_after, u16::MIN);
                 assert_eq!(vector.resume_state_after, u16::MIN);
             }
@@ -1696,7 +1739,7 @@ mod tests {
             let vectors: Vec<CallbackVector> = serde_json::from_str(fixture).unwrap();
             for vector in vectors {
                 assert_eq!(vector.kind, "resume");
-                let (mut pose, mut animation) = callback_state(vector.ring_before);
+                let (mut pose, mut shared, mut animation) = callback_state(vector.ring_before);
                 let slot = animation.nodes[FIRST_NODE].ring_slot;
 
                 begin_resume_clear(
@@ -1704,6 +1747,7 @@ mod tests {
                     FIRST_NODE,
                     &mut pose,
                     &mut animation,
+                    &mut shared,
                 )
                 .unwrap();
 
@@ -1732,7 +1776,7 @@ mod tests {
                     vector.name
                 );
                 assert_eq!(
-                    animation.entries[slot],
+                    shared.entries[slot],
                     AlienRingEntry {
                         command_flags: RESUME_COMMAND_FLAGS,
                         ..AlienRingEntry::default()
@@ -1752,7 +1796,7 @@ mod tests {
             let vectors: Vec<CallbackVector> = serde_json::from_str(fixture).unwrap();
             for vector in vectors {
                 assert_eq!(vector.kind, "capture");
-                let (mut pose, animation) = callback_state(vector.ring_before);
+                let (mut pose, _shared, animation) = callback_state(vector.ring_before);
                 let animation_before = animation.clone();
                 let mut resume = AlienRingResumeState {
                     countdown: u16::MAX,
@@ -1798,20 +1842,23 @@ mod tests {
             let vectors: Vec<CallbackVector> = serde_json::from_str(fixture).unwrap();
             for vector in vectors {
                 assert_eq!(vector.kind, "ring_zero");
-                let (pose, mut animation) = callback_state(vector.ring_before);
+                let (pose, mut shared, mut animation) = callback_state(vector.ring_before);
                 let pose_before = pose.clone();
-                animation.timer = if vector.name == "timer_blocks" {
+                shared.timer = if vector.name == "timer_blocks" {
                     SINGLE_NODE_COUNT as u16
                 } else {
                     u16::MIN
                 };
                 let animation_before = animation.clone();
+                let shared_before = shared.clone();
 
-                let result = clear_next_ring_entry(FIRST_NODE, &mut animation).unwrap();
+                let result =
+                    clear_next_ring_entry(FIRST_NODE, &mut animation, &mut shared).unwrap();
                 let expected_slot = usize::from(vector.ring_after) / ORIGINAL_RING_ENTRY_BYTES;
                 if vector.name == "timer_blocks" {
                     assert_eq!(result, AlienRingClearUpdate::Waiting, "{}", vector.name);
                     assert_eq!(animation, animation_before, "{}", vector.name);
+                    assert_eq!(shared, shared_before, "{}", vector.name);
                 } else {
                     assert_eq!(
                         result,
@@ -1822,7 +1869,7 @@ mod tests {
                         vector.name
                     );
                     assert_eq!(
-                        animation.entries[expected_slot],
+                        shared.entries[expected_slot],
                         AlienRingEntry::default(),
                         "{}",
                         vector.name
@@ -1862,19 +1909,23 @@ mod tests {
             let mut pose = pose(usize::MIN);
             let mut animation = AlienRingAnimationState::new(usize::MIN);
             animation.lifecycle = AlienRingLifecycle::TimerSuspended;
-            animation.timer = vector.timer_before.unwrap();
+            let mut shared = AlienRingSharedState {
+                timer: vector.timer_before.unwrap(),
+                ..AlienRingSharedState::default()
+            };
             let mut callbacks = CallbackRecorder::default();
             assert_eq!(
                 update_or_initialize_ring(
                     species(&vector.module),
                     &mut pose,
                     &mut animation,
+                    &mut shared,
                     &mut callbacks,
                 ),
                 Err(AlienRingError::EmptyNodeList)
             );
             assert!(callbacks.calls.is_empty());
-            assert_eq!(animation.timer, vector.timer_before.unwrap());
+            assert_eq!(shared.timer, vector.timer_before.unwrap());
         }
     }
 
@@ -1882,13 +1933,17 @@ mod tests {
     fn invalid_flat_indices_and_shape_changes_are_rejected() {
         let mut pose = pose(1);
         let mut animation = AlienRingAnimationState::new(1);
-        animation.next_ring_slot = RING_ENTRY_COUNT;
+        let mut shared = AlienRingSharedState {
+            next_ring_slot: RING_ENTRY_COUNT,
+            ..AlienRingSharedState::default()
+        };
         let mut callbacks = CallbackRecorder::default();
         assert_eq!(
             update_or_initialize_ring(
                 AlienSpecies::Amer,
                 &mut pose,
                 &mut animation,
+                &mut shared,
                 &mut callbacks,
             ),
             Err(AlienRingError::InvalidNextRingSlot {
@@ -1896,13 +1951,14 @@ mod tests {
             })
         );
 
-        animation.next_ring_slot = usize::MIN;
+        shared.next_ring_slot = usize::MIN;
         animation.nodes.clear();
         assert_eq!(
             update_or_initialize_ring(
                 AlienSpecies::Amer,
                 &mut pose,
                 &mut animation,
+                &mut shared,
                 &mut callbacks,
             ),
             Err(AlienRingError::NodeStateCountMismatch {
