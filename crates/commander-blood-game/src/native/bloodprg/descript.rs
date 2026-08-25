@@ -1,8 +1,10 @@
 //! Runtime state produced while applying typed DESCRIPT records.
 
 use commander_blood_formats::descript::{
-    DescriptBackgroundCommand, DescriptBackgroundSlot, DescriptRecordKind,
+    DescriptBackgroundCommand, DescriptBackgroundSlot, DescriptCaptionCommand, DescriptRecordKind,
 };
+
+use super::text_handler::TextPresentationState;
 
 /// One background resource retained for modern rendering.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -92,6 +94,20 @@ pub fn cache_background_image<Source: DescriptBackgroundSource>(
     Ok(DescriptBackgroundCacheOutcome::Loaded { encoded_byte_count })
 }
 
+/// Stage one DESCRIPT location or ship caption for progressive subtitle reveal.
+///
+/// This translates `credit_presenter_b_cryo` at BLOODPRG file offset
+/// `0x007612`. The old fixed text buffer becomes owned caption bytes, and the
+/// pointer-valued reveal cursor becomes a zero-based byte index.
+pub fn stage_descript_caption(
+    command: &DescriptCaptionCommand,
+    presentation: &mut TextPresentationState,
+) {
+    presentation.subtitle_text = Box::from(command.text());
+    presentation.subtitle_display_active = true;
+    presentation.subtitle_reveal_cursor = usize::MIN;
+}
+
 /// Boundary detected after the current DESCRIPT command stream.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct DescriptRecordBoundary {
@@ -150,7 +166,9 @@ pub fn stop_before_sequence_record(boundary: &mut DescriptRecordBoundary) {
 mod tests {
     use std::convert::Infallible;
 
-    use commander_blood_formats::descript::{DescriptBackgroundError, decode_background_command};
+    use commander_blood_formats::descript::{
+        DescriptBackgroundError, decode_background_command, decode_caption_command,
+    };
     use serde::Deserialize;
 
     use super::*;
@@ -175,6 +193,14 @@ mod tests {
         written_bytes: usize,
     }
 
+    #[derive(Deserialize)]
+    struct CaptionOracle {
+        name: String,
+        input_hex: String,
+        reveal_active_after: u8,
+        reveal_timer_after: usize,
+    }
+
     #[derive(Default)]
     struct RecordingBackgroundSource {
         payload: Box<[u8]>,
@@ -192,6 +218,15 @@ mod tests {
 
     fn background_command(slot: DescriptBackgroundSlot, name: &[u8]) -> DescriptBackgroundCommand {
         DescriptBackgroundCommand::new(slot, Box::from(name))
+    }
+
+    fn bytes_from_hex(encoded: &str) -> Box<[u8]> {
+        encoded
+            .as_bytes()
+            .chunks_exact(2)
+            .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+            .collect::<Vec<_>>()
+            .into_boxed_slice()
     }
 
     fn assert_stop_handler(
@@ -340,6 +375,44 @@ mod tests {
                     vector.name
                 );
             }
+        }
+    }
+
+    #[test]
+    fn caption_staging_matches_every_original_presenter_vector() {
+        let vectors: Vec<CaptionOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_7612_natural.json"
+        ))
+        .unwrap();
+
+        for vector in vectors {
+            let input = bytes_from_hex(&vector.input_hex);
+            let (command, tail) = decode_caption_command(&input).unwrap();
+            assert!(tail.is_empty(), "{}", vector.name);
+
+            let mut presentation = TextPresentationState {
+                subtitle_reveal_cursor: usize::MAX,
+                ..TextPresentationState::default()
+            };
+            stage_descript_caption(&command, &mut presentation);
+
+            assert_eq!(
+                presentation.subtitle_text.as_ref(),
+                &input[..input.len() - 1],
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                presentation.subtitle_display_active,
+                vector.reveal_active_after != u8::MIN,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                presentation.subtitle_reveal_cursor, vector.reveal_timer_after,
+                "{}",
+                vector.name
+            );
         }
     }
 }

@@ -25,8 +25,8 @@ pub use aboard::{
 pub use descript::{
     CachedDescriptBackground, DescriptBackgroundCache, DescriptBackgroundCacheOutcome,
     DescriptBackgroundSource, DescriptRecordBoundary, cache_background_image,
-    stop_before_character_record, stop_before_location_record, stop_before_object_record,
-    stop_before_sequence_record,
+    stage_descript_caption, stop_before_character_record, stop_before_location_record,
+    stop_before_object_record, stop_before_sequence_record,
 };
 pub use menu_reveal::{
     reveal_inline_menu_step, InlineMenuRevealError, InlineMenuRevealFrame,

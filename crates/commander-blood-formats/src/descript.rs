@@ -122,6 +122,45 @@ pub fn decode_background_command(
     ))
 }
 
+/// One decoded opcode-05 caption shown through the subtitle reveal system.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DescriptCaptionCommand {
+    text: Box<[u8]>,
+}
+
+impl DescriptCaptionCommand {
+    /// Build a caption from owned game-font bytes without a trailing zero.
+    pub fn new(text: Box<[u8]>) -> Self {
+        Self { text }
+    }
+
+    /// Return the caption bytes exactly as authored in DESCRIPT.DES.
+    pub fn text(&self) -> &[u8] {
+        &self.text
+    }
+}
+
+/// Failure while decoding the payload following a DESCRIPT opcode-05 byte.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DescriptCaptionError {
+    /// The record ended before the caption's terminating zero byte.
+    MissingTerminator,
+}
+
+/// Decode a zero-terminated caption and return the unconsumed following bytes.
+pub fn decode_caption_command(
+    payload: &[u8],
+) -> Result<(DescriptCaptionCommand, &[u8]), DescriptCaptionError> {
+    let text_length = payload
+        .iter()
+        .position(|byte| *byte == u8::MIN)
+        .ok_or(DescriptCaptionError::MissingTerminator)?;
+    Ok((
+        DescriptCaptionCommand::new(Box::from(&payload[..text_length])),
+        &payload[text_length + 1..],
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::{Path, PathBuf};
@@ -191,5 +230,16 @@ mod tests {
             decode_background_command(&[INVALID_SLOT, 0]),
             Err(DescriptBackgroundError::InvalidSlot(INVALID_SLOT))
         );
+    }
+
+    #[test]
+    fn caption_payload_preserves_game_font_bytes_and_consumes_its_terminator() {
+        const NEXT_OPCODE: u8 = 6;
+
+        let payload = [128, 255, 1, 0, NEXT_OPCODE];
+        let (command, tail) = decode_caption_command(&payload).unwrap();
+
+        assert_eq!(command.text(), &[128, 255, 1]);
+        assert_eq!(tail, &[NEXT_OPCODE]);
     }
 }
