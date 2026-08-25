@@ -5,8 +5,8 @@ use std::fmt;
 use commander_blood_formats::alien::AXIS_COUNT;
 
 use super::{
-    AlienCallbackSceneState, AlienControlLatch, AlienModelPose, AlienSceneNode, AlienSpecies,
-    AlienWaveSelection,
+    AlienCallbackSceneState, AlienControlLatch, AlienModelPose, AlienSceneNode,
+    AlienSelectionError, AlienSpecies, AlienWaveSelection,
 };
 
 const X_AXIS: usize = 0;
@@ -197,8 +197,8 @@ impl Default for AlienRingSharedState {
 pub struct AlienRingResumeState {
     /// Frames remaining before the resume sequence advances.
     pub countdown: u16,
-    /// Typed model-node index selected for the resume sequence.
-    pub selected_node: Option<usize>,
+    /// Typed scene node selected for the resume sequence.
+    pub selected_node: Option<AlienSceneNode>,
 }
 
 /// Indirect callback boundary retained by the recovered coordinator.
@@ -316,6 +316,8 @@ pub enum AlienRingError {
         /// Texture coordinates available in the model pose.
         available: usize,
     },
+    /// A typed wave-selection continuation rejected its model state.
+    Selection(AlienSelectionError),
 }
 
 impl fmt::Display for AlienRingError {
@@ -325,6 +327,12 @@ impl fmt::Display for AlienRingError {
 }
 
 impl std::error::Error for AlienRingError {}
+
+impl From<AlienSelectionError> for AlienRingError {
+    fn from(error: AlienSelectionError) -> Self {
+        Self::Selection(error)
+    }
+}
 
 /// Restart one node's generated course using the recovered random transition.
 pub fn restart_initial_course(
@@ -369,6 +377,7 @@ pub fn begin_resume_clear(
 /// Capture one node for the resume sequence and reset its transform state.
 pub fn capture_resume_state(
     species: AlienSpecies,
+    model_index: usize,
     node_index: usize,
     pose: &mut AlienModelPose,
     resume: &mut AlienRingResumeState,
@@ -382,7 +391,10 @@ pub fn capture_resume_state(
             node_count,
         })?;
     resume.countdown = RESUME_COUNTDOWN;
-    resume.selected_node = Some(node_index);
+    resume.selected_node = Some(AlienSceneNode {
+        model_index,
+        node_index,
+    });
     reset_pose_node(node, initial_position(species));
     Ok(())
 }
@@ -1803,8 +1815,14 @@ mod tests {
                     selected_node: None,
                 };
 
-                capture_resume_state(species(&vector.module), FIRST_NODE, &mut pose, &mut resume)
-                    .unwrap();
+                capture_resume_state(
+                    species(&vector.module),
+                    TEST_MODEL,
+                    FIRST_NODE,
+                    &mut pose,
+                    &mut resume,
+                )
+                .unwrap();
 
                 assert_eq!(
                     callback_position(&pose),
@@ -1824,7 +1842,15 @@ mod tests {
                     "{}",
                     vector.name
                 );
-                assert_eq!(resume.selected_node, Some(FIRST_NODE), "{}", vector.name);
+                assert_eq!(
+                    resume.selected_node,
+                    Some(AlienSceneNode {
+                        model_index: TEST_MODEL,
+                        node_index: FIRST_NODE,
+                    }),
+                    "{}",
+                    vector.name
+                );
                 assert_ne!(vector.resume_state_after, u16::MIN);
                 assert_eq!(
                     animation.nodes[FIRST_NODE].ring_slot,

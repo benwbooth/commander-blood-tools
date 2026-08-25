@@ -57,6 +57,7 @@ const CAMERA_POSITION_POSITION: usize = 0x22ea;
 const CAMERA_ANGLE_POSITION: usize = 0x22f6;
 const CAMERA_DEPTH_VELOCITY_POSITION: usize = 0x22fc;
 const CAMERA_HORIZONTAL_FILTER_POSITION: usize = 0x1058;
+const BEHAVIOR_RANDOM_STATE_POSITION: usize = 0x105c;
 const AMER_STAR_SHADE_TABLE_POSITION: usize = 0x07d4;
 const OTHER_STAR_SHADE_TABLE_POSITION: usize = 0x07d6;
 const AMER_STAR_SEED_POSITION: usize = 0x08d4;
@@ -140,6 +141,12 @@ const SCRUT_RING_GENERATION_POSITION: usize = 0x0da1;
 const AMER_RING_CURSOR_POSITION: usize = 0x0d5d;
 const CROOLIS_RING_CURSOR_POSITION: usize = 0x0db5;
 const SCRUT_RING_CURSOR_POSITION: usize = 0x0da3;
+const AMER_RING_RESUME_COUNTDOWN_POSITION: usize = 0x0d5f;
+const CROOLIS_RING_RESUME_COUNTDOWN_POSITION: usize = 0x0db7;
+const SCRUT_RING_RESUME_COUNTDOWN_POSITION: usize = 0x0da5;
+const AMER_RING_RESUME_NODE_POSITION: usize = 0x0d61;
+const CROOLIS_RING_RESUME_NODE_POSITION: usize = 0x0db9;
+const SCRUT_RING_RESUME_NODE_POSITION: usize = 0x0da7;
 const AMER_RING_ENTRIES_POSITION: usize = 0x0d63;
 const CROOLIS_RING_ENTRIES_POSITION: usize = 0x0dbb;
 const SCRUT_RING_ENTRIES_POSITION: usize = 0x0da9;
@@ -207,6 +214,8 @@ impl AlienXdbKind {
                 timer_position: AMER_RING_TIMER_POSITION,
                 generation_position: AMER_RING_GENERATION_POSITION,
                 cursor_position: AMER_RING_CURSOR_POSITION,
+                resume_countdown_position: AMER_RING_RESUME_COUNTDOWN_POSITION,
+                resume_node_position: AMER_RING_RESUME_NODE_POSITION,
                 entries_position: AMER_RING_ENTRIES_POSITION,
                 initial_course_callback: AMER_INITIAL_COURSE_CALLBACK,
                 follow_course_callback: AMER_FOLLOW_COURSE_CALLBACK,
@@ -215,6 +224,8 @@ impl AlienXdbKind {
                 timer_position: CROOLIS_RING_TIMER_POSITION,
                 generation_position: CROOLIS_RING_GENERATION_POSITION,
                 cursor_position: CROOLIS_RING_CURSOR_POSITION,
+                resume_countdown_position: CROOLIS_RING_RESUME_COUNTDOWN_POSITION,
+                resume_node_position: CROOLIS_RING_RESUME_NODE_POSITION,
                 entries_position: CROOLIS_RING_ENTRIES_POSITION,
                 initial_course_callback: CROOLIS_INITIAL_COURSE_CALLBACK,
                 follow_course_callback: CROOLIS_FOLLOW_COURSE_CALLBACK,
@@ -223,6 +234,8 @@ impl AlienXdbKind {
                 timer_position: SCRUT_RING_TIMER_POSITION,
                 generation_position: SCRUT_RING_GENERATION_POSITION,
                 cursor_position: SCRUT_RING_CURSOR_POSITION,
+                resume_countdown_position: SCRUT_RING_RESUME_COUNTDOWN_POSITION,
+                resume_node_position: SCRUT_RING_RESUME_NODE_POSITION,
                 entries_position: SCRUT_RING_ENTRIES_POSITION,
                 initial_course_callback: SCRUT_INITIAL_COURSE_CALLBACK,
                 follow_course_callback: SCRUT_FOLLOW_COURSE_CALLBACK,
@@ -237,6 +250,8 @@ struct AlienRingSourceLayout {
     timer_position: usize,
     generation_position: usize,
     cursor_position: usize,
+    resume_countdown_position: usize,
+    resume_node_position: usize,
     entries_position: usize,
     initial_course_callback: u16,
     follow_course_callback: u16,
@@ -512,6 +527,10 @@ pub struct AlienRingSceneData {
     pub generation: u16,
     /// Flat ring slot reserved for the next model initialization.
     pub next_ring_slot: usize,
+    /// Frames remaining before the captured node advances its resume sequence.
+    pub resume_countdown: u16,
+    /// Captured node selected for resumption, when authored.
+    pub resume_node: Option<AlienModelNodeReference>,
     /// Complete fixed-size motion history.
     pub entries: [AlienRingEntryData; ALIEN_RING_ENTRY_COUNT],
 }
@@ -569,6 +588,8 @@ pub struct AlienAsset {
     pub camera: AlienCameraData,
     /// Initial shared signed delta consumed by behavior methods.
     pub initial_method_delta: i16,
+    /// Initial deterministic state shared by animation and ring callbacks.
+    pub initial_behavior_random_state: u16,
     /// Initial scene-wide wave selection and sample state.
     pub wave_scene: AlienWaveSceneData,
     /// Initial shared palette-animation continuation state.
@@ -762,12 +783,29 @@ fn ring_model_data(
     Some(Some(AlienRingModelData { lifecycle, nodes }))
 }
 
-fn ring_scene_data(data: &[u8], kind: AlienXdbKind) -> Option<AlienRingSceneData> {
+fn ring_scene_data(
+    data: &[u8],
+    data_start: usize,
+    context_offsets: &[usize],
+    kind: AlienXdbKind,
+) -> Option<AlienRingSceneData> {
     let layout = kind.ring_layout();
+    let resume_offset = usize::from(read_u16(data, layout.resume_node_position)?);
     Some(AlienRingSceneData {
         timer: read_u16(data, layout.timer_position)?,
         generation: read_u16(data, layout.generation_position)?,
         next_ring_slot: ring_slot(read_u16(data, layout.cursor_position)?)?,
+        resume_countdown: read_u16(data, layout.resume_countdown_position)?,
+        resume_node: if resume_offset == usize::MIN {
+            None
+        } else {
+            Some(model_node_reference(
+                data,
+                data_start,
+                context_offsets,
+                resume_offset,
+            )?)
+        },
         entries: checked_array(|index| {
             let position = layout
                 .entries_position
@@ -1165,6 +1203,7 @@ pub fn decode_alien_xdb(data: &[u8], kind: AlienXdbKind) -> Option<AlienAsset> {
         raster_reciprocals,
         camera,
         initial_method_delta: read_i16(data, INITIAL_METHOD_DELTA_POSITION)?,
+        initial_behavior_random_state: read_u16(data, data_start + BEHAVIOR_RANDOM_STATE_POSITION)?,
         wave_scene: AlienWaveSceneData {
             selection,
             selected_node,
@@ -1184,7 +1223,7 @@ pub fn decode_alien_xdb(data: &[u8], kind: AlienXdbKind) -> Option<AlienAsset> {
                 read_u16(data, data_start + PALETTE_PULSE_POSITIONS[axis])
             })?,
         },
-        ring_scene: ring_scene_data(data, kind)?,
+        ring_scene: ring_scene_data(data, data_start, &context_offsets, kind)?,
         star_shade_table,
         star_seed,
     })
@@ -1240,6 +1279,13 @@ mod tests {
             assert_eq!(asset.kind, kind);
             assert_eq!(asset.models.len(), expected_models);
             assert_eq!(asset.initial_method_delta, EXPECTED_INITIAL_METHOD_DELTA);
+            assert_eq!(
+                asset.initial_behavior_random_state,
+                match kind {
+                    AlienXdbKind::Amer => 0xf2b3,
+                    AlienXdbKind::Croolis | AlienXdbKind::Scrut => 0x3cad,
+                }
+            );
             assert_eq!(asset.palette_animation.previous_level, u16::MIN);
             assert_eq!(asset.palette_animation.step, 1);
             assert_eq!(asset.palette_animation.countdown, 3);
@@ -1281,6 +1327,8 @@ mod tests {
             assert_eq!(asset.ring_scene.timer, expected_ring_timer);
             assert_eq!(asset.ring_scene.generation, expected_ring_generation);
             assert_eq!(asset.ring_scene.next_ring_slot, expected_next_ring_slot);
+            assert_eq!(asset.ring_scene.resume_countdown, u16::MIN);
+            assert_eq!(asset.ring_scene.resume_node, None);
             assert_eq!(
                 asset.ring_scene.entries[usize::MIN],
                 AlienRingEntryData {

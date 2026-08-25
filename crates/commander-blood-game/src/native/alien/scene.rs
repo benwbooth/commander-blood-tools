@@ -3,8 +3,9 @@
 use std::fmt;
 
 use commander_blood_formats::alien::{
-    AXIS_COUNT, AlienAsset, AlienBehaviorMethod, AlienTransformData, AlienWaveSelectionData,
-    AlienXdbKind,
+    AXIS_COUNT, AlienAsset, AlienBehaviorMethod, AlienRingInitialCallbackData,
+    AlienRingLifecycleData, AlienTransformData, AlienTrigonometryPair, AlienWaveSelectionData,
+    AlienXdbKind, TRIGONOMETRY_ENTRY_COUNT,
 };
 
 use super::{
@@ -13,10 +14,16 @@ use super::{
     AlienFaceSelectionError, AlienModelPose, AlienMouseSample, AlienPaletteAnimationState,
     AlienPaletteError, AlienPaletteInput, AlienPrimaryMeshFrame, AlienPrimaryMeshPose,
     AlienPrimaryProjectionError, AlienProjectionError, AlienRasterError, AlienRenderGeometry,
-    AlienSceneNode, AlienScreenCenter, AlienSpecies, AlienStarfieldError, AlienStarfieldFrame,
-    AlienWaveError, AlienWaveMethodState, AlienWaveSelection, adjust_state, anchor_state,
-    bounds_then_wrap, generate_starfield, prepare_render_geometry, select_faces,
-    update_or_initialize_wave, update_palette_animation, wrap_positions,
+    AlienRingAnimationState, AlienRingCallback, AlienRingCallbacks, AlienRingEntry, AlienRingError,
+    AlienRingLifecycle, AlienRingNodeState, AlienRingResumeState, AlienRingSharedState,
+    AlienSceneNode, AlienScreenCenter, AlienSelectionUpdate, AlienSpecies, AlienStarfieldError,
+    AlienStarfieldFrame, AlienWaveCallbackUpdate, AlienWaveError, AlienWaveMethodState,
+    AlienWaveSelection, adjust_state, anchor_state, begin_resume_clear, bounds_then_wrap,
+    capture_resume_state, clear_next_ring_entry, continue_wave_steering, generate_starfield,
+    prepare_render_geometry, restart_initial_course, select_faces, update_follow_course,
+    update_initial_course, update_or_initialize_ring, update_or_initialize_wave,
+    update_palette_animation, update_wave_callback, update_wave_camera, update_wave_finish,
+    update_wave_motion, update_wave_return, update_wave_selection, wrap_positions,
 };
 
 const INITIAL_VIEW: [i16; AXIS_COUNT] = [1_885, -239, -9_790];
@@ -26,6 +33,150 @@ const INITIAL_SECONDARY_PAN: i16 = 0;
 const INITIAL_DEPTH_VELOCITY: i16 = 0;
 const ACTIVE_INTERACTION_SIGNAL: u16 = 1;
 const ORIGINAL_SCREEN_CENTER: AlienScreenCenter = AlienScreenCenter { x: 160, y: 100 };
+
+struct AlienSceneRingCallbacks<'a> {
+    model_index: usize,
+    scene: &'a mut AlienCallbackSceneState,
+    resume: &'a mut AlienRingResumeState,
+    random_state: &'a mut u16,
+    camera_view: [i16; AXIS_COUNT],
+    camera_pan: u16,
+    trigonometry: &'a [AlienTrigonometryPair; TRIGONOMETRY_ENTRY_COUNT],
+}
+
+impl AlienSceneRingCallbacks<'_> {
+    fn invoke_wave_selection(
+        &mut self,
+        species: AlienSpecies,
+        node_index: usize,
+        pose: &mut AlienModelPose,
+        animation: &mut AlienRingAnimationState,
+    ) -> Result<(), AlienRingError> {
+        match update_wave_selection(
+            species,
+            self.model_index,
+            node_index,
+            pose,
+            animation,
+            self.scene,
+        )? {
+            AlienSelectionUpdate::MotionContinuationRequested => continue_wave_steering(
+                node_index,
+                pose,
+                animation,
+                self.camera_view,
+                self.trigonometry,
+            )?,
+            AlienSelectionUpdate::CameraUpdateRequested => {
+                update_wave_camera(node_index, self.camera_pan, pose, animation)?;
+            }
+            AlienSelectionUpdate::WaveStarted => {}
+        }
+        Ok(())
+    }
+
+    fn invoke_wave(
+        &mut self,
+        species: AlienSpecies,
+        node_index: usize,
+        pose: &mut AlienModelPose,
+        animation: &mut AlienRingAnimationState,
+    ) -> Result<(), AlienRingError> {
+        match update_wave_callback(
+            species,
+            node_index,
+            pose,
+            animation,
+            self.scene,
+            self.camera_view,
+        )? {
+            AlienWaveCallbackUpdate::Waiting => {}
+            AlienWaveCallbackUpdate::FinishRequested => {
+                update_wave_finish(node_index, self.scene.wave_current_sample as u16, pose)?;
+            }
+            AlienWaveCallbackUpdate::CameraUpdateRequested => {
+                update_wave_camera(node_index, self.camera_pan, pose, animation)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl AlienRingCallbacks for AlienSceneRingCallbacks<'_> {
+    fn invoke(
+        &mut self,
+        species: AlienSpecies,
+        callback: AlienRingCallback,
+        node_index: usize,
+        pose: &mut AlienModelPose,
+        animation: &mut AlienRingAnimationState,
+        shared: &mut AlienRingSharedState,
+    ) -> Result<(), AlienRingError> {
+        match callback {
+            AlienRingCallback::InitialCourse => {
+                update_initial_course(species, node_index, pose, animation, shared)?;
+            }
+            AlienRingCallback::RestartInitialCourse => {
+                restart_initial_course(node_index, pose, animation, shared, self.random_state)?
+            }
+            AlienRingCallback::BeginResumeClear => {
+                begin_resume_clear(species, node_index, pose, animation, shared)?;
+            }
+            AlienRingCallback::FollowCourse => {
+                match update_follow_course(
+                    self.model_index,
+                    node_index,
+                    pose,
+                    animation,
+                    shared,
+                    self.scene,
+                )? {
+                    super::AlienRingFollowerUpdate::FeedbackAdvanced => {}
+                    super::AlienRingFollowerUpdate::CaptureResumeRequested => {
+                        capture_resume_state(
+                            species,
+                            self.model_index,
+                            node_index,
+                            pose,
+                            self.resume,
+                        )?;
+                    }
+                    super::AlienRingFollowerUpdate::RestartInitialCourseRequested => {
+                        restart_initial_course(
+                            node_index,
+                            pose,
+                            animation,
+                            shared,
+                            self.random_state,
+                        )?;
+                    }
+                    super::AlienRingFollowerUpdate::WaveSelectionRequested => {
+                        self.invoke_wave_selection(species, node_index, pose, animation)?;
+                    }
+                }
+            }
+            AlienRingCallback::ClearHistory => {
+                clear_next_ring_entry(node_index, animation, shared)?;
+            }
+            AlienRingCallback::Wave => {
+                self.invoke_wave(species, node_index, pose, animation)?;
+            }
+            AlienRingCallback::WaveFinish => {
+                update_wave_finish(node_index, self.scene.wave_current_sample as u16, pose)?;
+            }
+            AlienRingCallback::WaveMotion => {
+                update_wave_motion(node_index, pose, animation)?;
+            }
+            AlienRingCallback::WaveReturn => {
+                update_wave_return(node_index, pose, animation)?;
+            }
+            AlienRingCallback::WaveSelection => {
+                self.invoke_wave_selection(species, node_index, pose, animation)?;
+            }
+        }
+        Ok(())
+    }
+}
 
 /// Render-facing native output produced in recovered main-loop order.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -59,6 +210,14 @@ pub struct AlienScene {
     pub models: Vec<AlienModelPose>,
     /// Per-model continuation state for authored wave methods.
     wave_states: Vec<Option<AlienWaveMethodState>>,
+    /// Per-model callback state for authored ring-animation methods.
+    ring_states: Vec<Option<AlienRingAnimationState>>,
+    /// Scene-wide motion history shared by every ring-animation model.
+    ring_shared: AlienRingSharedState,
+    /// Scene-wide captured-node state used by ring resume transitions.
+    ring_resume: AlienRingResumeState,
+    /// Deterministic random state shared by translated alien callbacks.
+    behavior_random_state: u16,
     /// Shared continuation state for the palette-animation method.
     palette_state: AlienPaletteAnimationState,
     /// Model selected by the latest CROOLIS/SCRUT camera-plane signal.
@@ -105,6 +264,18 @@ pub enum AlienSceneError {
         model_index: usize,
         /// Underlying wave failure.
         error: AlienWaveError,
+    },
+    /// A ring-animation model has no decoded continuation state.
+    MissingRingState {
+        /// Model missing its state.
+        model_index: usize,
+    },
+    /// One ring-animation method rejected its typed state.
+    Ring {
+        /// Model that failed.
+        model_index: usize,
+        /// Underlying ring or wave-continuation failure.
+        error: AlienRingError,
     },
     /// The palette-animation method rejected its typed state.
     Palette(AlienPaletteError),
@@ -190,6 +361,59 @@ impl AlienScene {
                 })
             })
             .collect();
+        let ring_states = asset
+            .models
+            .iter()
+            .map(|model| {
+                model.ring.as_ref().map(|ring| AlienRingAnimationState {
+                    lifecycle: match ring.lifecycle {
+                        AlienRingLifecycleData::Uninitialized => AlienRingLifecycle::Uninitialized,
+                        AlienRingLifecycleData::TimerRunning => AlienRingLifecycle::TimerRunning,
+                        AlienRingLifecycleData::TimerSuspended => {
+                            AlienRingLifecycle::TimerSuspended
+                        }
+                    },
+                    nodes: ring
+                        .nodes
+                        .iter()
+                        .map(|node| AlienRingNodeState {
+                            callback: match node.callback {
+                                AlienRingInitialCallbackData::InitialCourse => {
+                                    AlienRingCallback::InitialCourse
+                                }
+                                AlienRingInitialCallbackData::FollowCourse => {
+                                    AlienRingCallback::FollowCourse
+                                }
+                            },
+                            course_frames_remaining: node.course_frames_remaining,
+                            feedback_phase: node.feedback_phase,
+                            ring_slot: node.ring_slot,
+                            behavior_seed: node.behavior_seed,
+                            ..AlienRingNodeState::default()
+                        })
+                        .collect(),
+                })
+            })
+            .collect();
+        let ring_shared = AlienRingSharedState {
+            timer: asset.ring_scene.timer,
+            generation: asset.ring_scene.generation,
+            next_ring_slot: asset.ring_scene.next_ring_slot,
+            entries: asset.ring_scene.entries.map(|entry| AlienRingEntry {
+                pitch_step: entry.pitch_step,
+                pan_step: entry.pan_step,
+                radial_offset: entry.radial_offset,
+                command_flags: entry.command_flags,
+            }),
+        };
+        let ring_resume = AlienRingResumeState {
+            countdown: asset.ring_scene.resume_countdown,
+            selected_node: asset.ring_scene.resume_node.map(|node| AlienSceneNode {
+                model_index: node.model_index,
+                node_index: node.node_index,
+            }),
+        };
+        let behavior_random_state = asset.initial_behavior_random_state;
         let callback_state = AlienCallbackSceneState {
             method_delta: asset.initial_method_delta,
             wave_selection: match asset.wave_scene.selection {
@@ -219,6 +443,10 @@ impl AlienScene {
             primary,
             models,
             wave_states,
+            ring_states,
+            ring_shared,
+            ring_resume,
+            behavior_random_state,
             palette_state,
             selected_model: None,
             callback_state,
@@ -287,6 +515,28 @@ impl AlienScene {
                     &self.asset.trigonometry,
                 )
                 .map_err(|error| AlienSceneError::Wave { model_index, error })?;
+            }
+            if model.behavior == AlienBehaviorMethod::RingAnimation {
+                let state = self.ring_states[model_index]
+                    .as_mut()
+                    .ok_or(AlienSceneError::MissingRingState { model_index })?;
+                let mut callbacks = AlienSceneRingCallbacks {
+                    model_index,
+                    scene: &mut self.callback_state,
+                    resume: &mut self.ring_resume,
+                    random_state: &mut self.behavior_random_state,
+                    camera_view: self.camera.view,
+                    camera_pan: self.control.pan as u16,
+                    trigonometry: &self.asset.trigonometry,
+                };
+                update_or_initialize_ring(
+                    self.species,
+                    pose,
+                    state,
+                    &mut self.ring_shared,
+                    &mut callbacks,
+                )
+                .map_err(|error| AlienSceneError::Ring { model_index, error })?;
             }
             let behavior_result = match model.behavior {
                 AlienBehaviorMethod::WrapPositions => {
@@ -431,6 +681,8 @@ mod tests {
                 .map(|model| model.nodes[0].angles)
                 .collect::<Vec<_>>();
             let initial_wave_states = scene.wave_states.clone();
+            let initial_ring_timer = scene.ring_shared.timer;
+            let initial_ring_states = scene.ring_states.clone();
             let expected_wave_node =
                 scene
                     .asset
@@ -444,6 +696,26 @@ mod tests {
             assert_eq!(frame.models.decisions.len(), model_count);
             assert!(!frame.starfield.stars.is_empty());
             assert_eq!(scene.camera.view, INITIAL_VIEW);
+            assert_eq!(scene.ring_shared.timer, initial_ring_timer.wrapping_sub(1));
+            let ring_advanced = scene.ring_shared.timer == u16::MIN;
+            let ring_entry_count = scene.ring_shared.entries.len();
+            for (before, after) in initial_ring_states.iter().zip(&scene.ring_states) {
+                let (Some(before), Some(after)) = (before, after) else {
+                    assert_eq!(before.is_none(), after.is_none());
+                    continue;
+                };
+                assert_eq!(before.lifecycle, after.lifecycle);
+                for (before, after) in before.nodes.iter().zip(&after.nodes) {
+                    assert_eq!(
+                        after.ring_slot,
+                        if ring_advanced {
+                            (before.ring_slot + 1) % ring_entry_count
+                        } else {
+                            before.ring_slot
+                        }
+                    );
+                }
+            }
             assert_eq!(
                 scene.callback_state.method_delta,
                 EXPECTED_INITIAL_METHOD_DELTA
