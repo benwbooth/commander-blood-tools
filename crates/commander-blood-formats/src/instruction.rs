@@ -41,6 +41,7 @@ const SHARED_STATE_E_OPCODE: u8 = 0xBE;
 const SHARED_STATE_F_OPCODE: u8 = 0xBF;
 const SHARED_STATE_G_OPCODE: u8 = 0xC0;
 const RECORD_STATE_OPCODE: u8 = 0xC1;
+const ABOARD_RECORD_OPCODE: u8 = 0xC2;
 const ACTOR_RECORD_OPCODE: u8 = 0xC4;
 const WORLD_STATE_RECORD_OPCODE: u8 = 0xC5;
 const TRAVEL_RECORD_OPCODE: u8 = 0xC6;
@@ -71,6 +72,7 @@ const TRANSFER_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 3;
 const BIT_FLAG_SIZE: usize = OPCODE_SIZE + WORD_SIZE + BYTE_SIZE;
 const PAIR_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 3;
 const RECORD_STATE_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
+const ABOARD_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const ACTOR_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const WORLD_STATE_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const TRAVEL_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
@@ -391,6 +393,17 @@ pub struct ScriptRecordStateOperation {
     pub target: ScriptStateWordTriple,
     /// Typed action value or explicit special navigation selector.
     pub operand: ScriptRecordStateOperand,
+    /// Whether query-mode equality is inverted.
+    pub inverted: bool,
+}
+
+/// One optionally inverted C2 aboard-object operation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptAboardRecordOperation {
+    /// Bounded three-word action slot used by query mode.
+    pub target: ScriptStateWordTriple,
+    /// Object moved aboard in assignment mode or compared in query mode.
+    pub related: ScriptObjectId,
     /// Whether query-mode equality is inverted.
     pub inverted: bool,
 }
@@ -1063,6 +1076,26 @@ pub fn decode_script_record_state_operation(
     })
 }
 
+/// Decode one C2 aboard-object operation into bounded typed identities.
+pub fn decode_script_aboard_record_operation(
+    token: &ScriptToken,
+    state: &ScriptState,
+    directory: &ScriptDirectory,
+) -> Result<ScriptAboardRecordOperation, ScriptInstructionError> {
+    let (target, related, inverted) = decode_object_record_operands(
+        token,
+        state,
+        directory,
+        ABOARD_RECORD_OPCODE,
+        ABOARD_RECORD_SIZE,
+    )?;
+    Ok(ScriptAboardRecordOperation {
+        target,
+        related,
+        inverted,
+    })
+}
+
 /// Decode one C4 actor-presentation operation into bounded typed identities.
 pub fn decode_script_actor_record_operation(
     token: &ScriptToken,
@@ -1335,6 +1368,7 @@ mod tests {
     const EXPECTED_BIT_FLAG_COUNTS: [usize; PROFILE_COUNT] = [0, 2, 1, 0, 0];
     const EXPECTED_PAIR_RECORD_COUNTS: [usize; PROFILE_COUNT] = [0, 0, 2, 0, 0];
     const EXPECTED_RECORD_STATE_COUNT: usize = 20;
+    const EXPECTED_ABOARD_RECORD_COUNTS: [usize; PROFILE_COUNT] = [0, 2, 0, 0, 0];
     const EXPECTED_ACTOR_RECORD_COUNTS: [usize; PROFILE_COUNT] = [9, 95, 138, 66, 81];
     const EXPECTED_WORLD_STATE_RECORD_COUNTS: [usize; PROFILE_COUNT] = [0; PROFILE_COUNT];
     const EXPECTED_TRAVEL_RECORD_COUNTS: [usize; PROFILE_COUNT] = [0, 0, 1, 1, 0];
@@ -1834,6 +1868,45 @@ mod tests {
         }
 
         assert_eq!(count, EXPECTED_RECORD_STATE_COUNT);
+    }
+
+    #[test]
+    fn every_shipped_c2_record_is_a_typed_aboard_transfer() {
+        let mut counts = [usize::MIN; PROFILE_COUNT];
+
+        for profile in 1..=PROFILE_COUNT {
+            let code_data = std::fs::read(original_asset(&format!("SCRIPT{profile}.COD"))).unwrap();
+            let directory_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.DEB"))).unwrap();
+            let state_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.VAR"))).unwrap();
+            let code = decode_script_code(&code_data).unwrap();
+            let directory = decode_script_directory(&directory_data).unwrap();
+            let state = decode_script_state(&state_data, &directory).unwrap();
+
+            for token in code
+                .tokens()
+                .iter()
+                .filter(|token| token.opcode().byte() == ABOARD_RECORD_OPCODE)
+            {
+                let operation =
+                    decode_script_aboard_record_operation(token, &state, &directory).unwrap();
+                let owner = operation.target.object().unwrap();
+                assert_eq!(
+                    state.object(owner).unwrap().kind,
+                    crate::script::ScriptObjectKind::Player
+                );
+                assert_eq!(
+                    state.object(operation.related).unwrap().kind,
+                    crate::script::ScriptObjectKind::Actor
+                );
+                assert_eq!(token.mode_before(), ScriptDecodingMode::Normal);
+                assert!(!operation.inverted);
+                counts[profile - 1] += 1;
+            }
+        }
+
+        assert_eq!(counts, EXPECTED_ABOARD_RECORD_COUNTS);
     }
 
     #[test]

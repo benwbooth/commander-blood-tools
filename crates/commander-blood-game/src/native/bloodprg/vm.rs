@@ -12,6 +12,7 @@ const OBJECT_FLAGS_BYTE_OFFSET: usize = 2;
 const OBJECT_HEADER_WORD_SIZE: usize = std::mem::size_of::<u16>();
 const OBJECT_ACTIVE_FLAG: u16 = 1;
 const OBJECT_IN_PLAY_FLAG: u16 = 2;
+const OBJECT_PRESENTABLE_FLAG: u16 = 32;
 
 const FIELD_OFFSETS: [[u8; OBJECT_KIND_COUNT]; FIELD_SELECTOR_COUNT] = [
     [2, 2, 2, 2, 2, 2, 2, 2, 2],
@@ -48,6 +49,8 @@ pub enum ScriptObjectFlag {
     Active,
     /// Object participates in navigation and source-list filtering.
     InPlay,
+    /// Object can be moved aboard through the C2 presentation path.
+    Presentable,
 }
 
 impl ScriptFieldSelector {
@@ -137,6 +140,7 @@ pub fn object_has_flag(
     let mask = match flag {
         ScriptObjectFlag::Active => OBJECT_ACTIVE_FLAG,
         ScriptObjectFlag::InPlay => OBJECT_IN_PLAY_FLAG,
+        ScriptObjectFlag::Presentable => OBJECT_PRESENTABLE_FLAG,
     };
     Some(object_flags(state.object(object)?.bytes()) & mask != u16::MIN)
 }

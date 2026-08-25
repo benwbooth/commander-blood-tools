@@ -4,11 +4,11 @@ use std::collections::BTreeMap;
 use std::fmt;
 
 use commander_blood_formats::instruction::{
-    ScriptActiveObjectRecordOperation, ScriptActorRecordOperation,
+    ScriptAboardRecordOperation, ScriptActiveObjectRecordOperation, ScriptActorRecordOperation,
 };
 use commander_blood_formats::instruction::{
-    ScriptRecordStateOperand, ScriptRecordStateOperation, ScriptTravelRecordOperation,
-    ScriptWorldStateRecordOperation,
+    ScriptRecordStateOperand, ScriptRecordStateOperation, ScriptRecordValue,
+    ScriptTravelRecordOperation, ScriptWorldStateRecordOperation,
 };
 use commander_blood_formats::script::{
     ScriptObjectId, ScriptObjectKind, ScriptState, ScriptStateObjectReference,
@@ -16,8 +16,9 @@ use commander_blood_formats::script::{
 };
 
 use super::{
-    ScriptControl, ScriptFieldSelector, ScriptNavigationError, ScriptObjectFlag, ScriptRuntime,
-    ScriptRuntimeError, navigation_distance, navigation_source_objects, object_has_flag,
+    AboardObjectRoster, PresentationRequestFlags, ScriptControl, ScriptFieldSelector,
+    ScriptNavigationError, ScriptObjectFlag, ScriptRecordFields, ScriptRuntime, ScriptRuntimeError,
+    insert_aboard_object, navigation_distance, navigation_source_objects, object_has_flag,
     object_links_to, script_field_offset,
 };
 
@@ -29,6 +30,8 @@ pub enum ScriptActionRecord {
     Empty,
     /// C1 navigation action carrying its typed operand.
     Navigation(ScriptRecordStateOperand),
+    /// C2 aboard-object request produced by the wider record processor.
+    AboardRequest(ScriptObjectId),
     /// C4 actor-presentation action carrying its related object.
     ActorPresentation(ScriptObjectId),
     /// C5 link to an active world-state object.
@@ -83,6 +86,46 @@ pub struct ScriptRecordStateOutcome {
     pub written_slot: Option<ScriptStateWordTriple>,
 }
 
+/// Presentation line selected after a successful C2 aboard transition.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ScriptAboardPresentationLine {
+    /// Native line 39 for a character moved aboard.
+    ActorArrived,
+    /// Native line 43 for descriptor-backed inventory moved aboard.
+    InventoryArrived,
+}
+
+/// Presentation state changed by a successful C2 aboard transition.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ScriptAboardPresentationState {
+    /// Existing presentation work still owns the C2 gate.
+    pub presentation_gate_active: bool,
+    /// Line selected for the new aboard presentation.
+    pub active_line: Option<ScriptAboardPresentationLine>,
+}
+
+/// Already-resolved host inputs used by C2 presentation gates.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct ScriptAboardRecordContext {
+    /// The ship interface currently suppresses new presentation work.
+    pub ship_interface_active: bool,
+    /// The related inventory object's name has a descriptor entry.
+    pub descriptor_available: bool,
+}
+
+/// Observable effects of one C2 aboard-object operation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptAboardRecordOutcome {
+    /// Script control flow after a query or assignment.
+    pub control: ScriptControl,
+    /// Whether the related object's holder was changed to aboard.
+    pub holder_changed: bool,
+    /// Whether the descriptor catalog was consulted.
+    pub descriptor_checked: bool,
+    /// Whether a new presentation line was selected.
+    pub presentation_requested: bool,
+}
+
 /// Invalid typed state encountered by the C1 handler.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ScriptRecordStateError {
@@ -98,6 +141,11 @@ pub enum ScriptRecordStateError {
     },
     /// A required action field is absent from an object's proven layout.
     MissingActionField {
+        /// Object lacking the field.
+        object: ScriptObjectId,
+    },
+    /// A C2 related object has no proven holder field.
+    MissingHolderField {
         /// Object lacking the field.
         object: ScriptObjectId,
     },
@@ -205,6 +253,98 @@ pub fn apply_record_state_operation(
     Ok(ScriptRecordStateOutcome {
         control: ScriptControl::Continue,
         written_slot: Some(destination),
+    })
+}
+
+/// Apply `vm_op_c2_record_full` as a typed aboard-object transition or query.
+#[allow(clippy::too_many_arguments)]
+pub fn apply_aboard_record_operation(
+    operation: ScriptAboardRecordOperation,
+    state: &ScriptState,
+    records: &ScriptActionRecords,
+    fields: &mut ScriptRecordFields,
+    roster: &mut AboardObjectRoster,
+    context: ScriptAboardRecordContext,
+    request_flags: &mut PresentationRequestFlags,
+    presentation: &mut ScriptAboardPresentationState,
+    runtime: &mut ScriptRuntime,
+) -> Result<ScriptAboardRecordOutcome, ScriptRecordStateError> {
+    let owner = operation
+        .target
+        .object()
+        .ok_or(ScriptRecordStateError::MissingOwner {
+            slot: operation.target,
+        })?;
+    let owner_active = object_has_flag(state, owner, ScriptObjectFlag::Active) == Some(true);
+    if runtime.query_mode() {
+        let matches = owner_active
+            && records.record(operation.target)
+                == ScriptActionRecord::AboardRequest(operation.related);
+        let control = if matches != operation.inverted {
+            ScriptControl::Continue
+        } else {
+            runtime
+                .fail_guard()
+                .map_err(ScriptRecordStateError::Control)?
+        };
+        return Ok(ScriptAboardRecordOutcome {
+            control,
+            holder_changed: false,
+            descriptor_checked: false,
+            presentation_requested: false,
+        });
+    }
+
+    let related_presentable =
+        object_has_flag(state, operation.related, ScriptObjectFlag::Presentable) == Some(true);
+    if !owner_active || !related_presentable || !insert_aboard_object(roster, operation.related) {
+        return Ok(ScriptAboardRecordOutcome {
+            control: ScriptControl::Continue,
+            holder_changed: false,
+            descriptor_checked: false,
+            presentation_requested: false,
+        });
+    }
+
+    let related = state
+        .object(operation.related)
+        .ok_or(ScriptRecordStateError::MissingObject {
+            object: operation.related,
+        })?;
+    let holder_offset = script_field_offset(related.kind, ScriptFieldSelector::HOLDER_OR_LOCATION)
+        .ok_or(ScriptRecordStateError::MissingHolderField {
+            object: operation.related,
+        })?;
+    let holder = state
+        .object_word(
+            operation.related,
+            holder_offset / std::mem::size_of::<u16>(),
+        )
+        .ok_or(ScriptRecordStateError::MissingHolderField {
+            object: operation.related,
+        })?;
+    fields.set_value(holder, ScriptRecordValue::Aboard);
+
+    let can_request = !context.ship_interface_active && !request_flags.secondary_request_pending();
+    let descriptor_checked = can_request && related.kind == ScriptObjectKind::InventoryItem;
+    let active_line = if can_request && related.kind == ScriptObjectKind::Actor {
+        Some(ScriptAboardPresentationLine::ActorArrived)
+    } else if descriptor_checked && context.descriptor_available {
+        request_flags.request_secondary();
+        Some(ScriptAboardPresentationLine::InventoryArrived)
+    } else {
+        None
+    };
+    if let Some(active_line) = active_line {
+        presentation.presentation_gate_active = false;
+        presentation.active_line = Some(active_line);
+    }
+
+    Ok(ScriptAboardRecordOutcome {
+        control: ScriptControl::Continue,
+        holder_changed: true,
+        descriptor_checked,
+        presentation_requested: active_line.is_some(),
     })
 }
 
@@ -504,6 +644,7 @@ mod tests {
     const ACTIVE_OBJECT_HANDLER_VECTOR_COUNT: usize = 15;
     const FAILURE_TARGET: usize = 9_320;
     const HANDLER_VECTOR_COUNT: usize = 21;
+    const ABOARD_HANDLER_VECTOR_COUNT: usize = 23;
     const DIRECTORY_ENTRY_SIZE: usize = 20;
     const DIRECTORY_NAME_CAPACITY: usize = 16;
     const DIRECTORY_OBJECT_KIND: u16 = 1;
@@ -530,6 +671,7 @@ mod tests {
     const ACTOR_RELATED: usize = 1;
     const ACTOR_ALTERNATE_RELATED: usize = 2;
     const PLAYER_KIND_MASK: u16 = 1;
+    const ACTOR_KIND_MASK: u16 = 2;
     const CELESTIAL_BODY_KIND_MASK: u16 = 8;
     const BLACK_HOLE_KIND_MASK: u16 = 256;
     const WORLD_STATE_KIND_MASK: u16 = 512;
@@ -539,6 +681,12 @@ mod tests {
     const WORLD_STATE_RECORD_KIND: u16 = 197;
     const TRAVEL_RECORD_KIND: u16 = 198;
     const ACTIVE_OBJECT_RECORD_KIND: u16 = 199;
+    const ABOARD_RECORD_KIND: u16 = 194;
+    const ACTOR_ABOARD_LINE: u16 = 39;
+    const INVENTORY_ABOARD_LINE: u16 = 43;
+    const UNCHANGED_ACTIVE_LINE: u16 = 4_951;
+    const SECONDARY_REQUEST_FLAG: u8 = 2;
+    const UNRELATED_REQUEST_FLAG: u8 = 64;
 
     #[derive(Deserialize)]
     struct HandlerOracle {
@@ -601,6 +749,36 @@ mod tests {
         record_before: [u16; 3],
         related_active_byte: u16,
         branch_failed: bool,
+    }
+
+    #[derive(Deserialize)]
+    struct AboardHandlerOracle {
+        name: String,
+        query_mode_before: u8,
+        inverted: bool,
+        owner_flags: u16,
+        related_offset: u16,
+        related_kind: u16,
+        related_flags: u16,
+        record: [u16; 3],
+        slot_insert: AboardSlotOracle,
+        field_store: AboardFieldStoreOracle,
+        descript_called: bool,
+        descript_result: u16,
+        branch_failed: bool,
+        request_flags_after: u8,
+        active_line_after: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct AboardSlotOracle {
+        called: bool,
+        succeeded: bool,
+    }
+
+    #[derive(Deserialize)]
+    struct AboardFieldStoreOracle {
+        written: bool,
     }
 
     fn original_asset(name: &str) -> PathBuf {
@@ -732,6 +910,150 @@ mod tests {
         }
 
         assert_eq!(counts, SHIPPED_ACTOR_RECORD_COUNTS);
+    }
+
+    #[test]
+    fn aboard_record_handler_matches_every_original_decision_vector() {
+        let vectors: Vec<AboardHandlerOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_6e34_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), ABOARD_HANDLER_VECTOR_COUNT);
+
+        for vector in vectors {
+            let related_kind = aboard_oracle_kind(vector.related_kind);
+            let (mut state, ids) = aboard_handler_fixture(related_kind);
+            set_flags(&mut state, ids[ACTOR_OWNER], vector.owner_flags);
+            set_flags(&mut state, ids[ACTOR_RELATED], vector.related_flags);
+            let target = state
+                .object_word_triple(ids[ACTOR_OWNER], OBJECT_FLAGS_WORD_INDEX)
+                .unwrap();
+            let operation = ScriptAboardRecordOperation {
+                target,
+                related: ids[ACTOR_RELATED],
+                inverted: vector.inverted,
+            };
+            let mut records = ScriptActionRecords::default();
+            if vector.record[0] == ABOARD_RECORD_KIND {
+                let related = if vector.record[1] == vector.related_offset {
+                    ids[ACTOR_RELATED]
+                } else {
+                    ids[ACTOR_ALTERNATE_RELATED]
+                };
+                records.set_record(target, ScriptActionRecord::AboardRequest(related));
+            } else if vector.record[0] != u16::MIN {
+                records.set_record(target, ScriptActionRecord::Occupied);
+            }
+
+            let mut roster = AboardObjectRoster::default();
+            if vector.name == "set_slot_existing_succeeds" {
+                assert!(insert_aboard_object(&mut roster, ids[ACTOR_RELATED]));
+            } else if vector.name == "set_slot_full_returns_without_branch" {
+                for object in ids
+                    .iter()
+                    .copied()
+                    .skip(ACTOR_ALTERNATE_RELATED)
+                    .take(super::super::ABOARD_OBJECT_CAPACITY)
+                {
+                    assert!(insert_aboard_object(&mut roster, object));
+                }
+            }
+            let slots_before = roster.clone();
+            let mut fields = ScriptRecordFields::default();
+            let initial_request_flags = if vector.name == "set_request_gate_blocks_request" {
+                SECONDARY_REQUEST_FLAG
+            } else if vector.name == "set_descript_success_preserves_other_request_bits" {
+                UNRELATED_REQUEST_FLAG
+            } else {
+                u8::MIN
+            };
+            let mut request_flags = PresentationRequestFlags::decode(initial_request_flags);
+            let mut presentation = ScriptAboardPresentationState {
+                presentation_gate_active: true,
+                active_line: None,
+            };
+            let context = ScriptAboardRecordContext {
+                ship_interface_active: vector.name == "set_ui_gate_blocks_request",
+                descriptor_available: vector.descript_result != u16::MIN,
+            };
+            let mut runtime = ScriptRuntime::new();
+            if vector.query_mode_before & QUERY_MODE_FLAG != u8::MIN {
+                runtime.begin_root_guard(ScriptCodeOffset::new(FAILURE_TARGET));
+            } else {
+                runtime.arm_root_failure_target(ScriptCodeOffset::new(FAILURE_TARGET));
+            }
+
+            let outcome = apply_aboard_record_operation(
+                operation,
+                &state,
+                &records,
+                &mut fields,
+                &mut roster,
+                context,
+                &mut request_flags,
+                &mut presentation,
+                &mut runtime,
+            )
+            .unwrap();
+
+            assert_eq!(
+                outcome.control,
+                if vector.branch_failed {
+                    ScriptControl::Jump(ScriptCodeOffset::new(FAILURE_TARGET))
+                } else {
+                    ScriptControl::Continue
+                },
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                outcome.holder_changed, vector.field_store.written,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                outcome.descriptor_checked, vector.descript_called,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                request_flags.bits(),
+                vector.request_flags_after,
+                "{}",
+                vector.name
+            );
+            let expected_line = match vector.active_line_after {
+                ACTOR_ABOARD_LINE => Some(ScriptAboardPresentationLine::ActorArrived),
+                INVENTORY_ABOARD_LINE => Some(ScriptAboardPresentationLine::InventoryArrived),
+                UNCHANGED_ACTIVE_LINE => None,
+                unknown => panic!("unknown C2 oracle presentation line {unknown}"),
+            };
+            assert_eq!(presentation.active_line, expected_line, "{}", vector.name);
+            assert_eq!(
+                outcome.presentation_requested,
+                expected_line.is_some(),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                vector.slot_insert.called,
+                vector.field_store.written || vector.name == "set_slot_full_returns_without_branch"
+            );
+            if vector.slot_insert.succeeded {
+                assert!(roster.slots().contains(&Some(ids[ACTOR_RELATED])));
+            } else if !vector.slot_insert.called {
+                assert_eq!(roster, slots_before);
+            }
+            if vector.field_store.written {
+                let holder = resolved_object_field(
+                    &state,
+                    ids[ACTOR_RELATED],
+                    ScriptFieldSelector::HOLDER_OR_LOCATION,
+                )
+                .unwrap();
+                assert_eq!(fields.value(holder), Some(ScriptRecordValue::Aboard));
+            }
+        }
     }
 
     #[test]
@@ -1274,6 +1596,31 @@ mod tests {
         (state, ids)
     }
 
+    fn aboard_handler_fixture(
+        related_kind: ScriptObjectKind,
+    ) -> (ScriptState, Vec<ScriptObjectId>) {
+        let mut kinds = vec![ScriptObjectKind::Actor, related_kind];
+        kinds.extend(std::iter::repeat_n(
+            ScriptObjectKind::Location,
+            super::super::ABOARD_OBJECT_CAPACITY + 1,
+        ));
+        let (_directory, state) = state_fixture(&kinds);
+        let ids = state.objects().iter().map(|object| object.id).collect();
+        (state, ids)
+    }
+
+    fn aboard_oracle_kind(mask: u16) -> ScriptObjectKind {
+        match mask {
+            ACTOR_KIND_MASK => ScriptObjectKind::Actor,
+            INVENTORY_ITEM_KIND_MASK => ScriptObjectKind::InventoryItem,
+            // These vectors patch the native field helper for a black-hole
+            // record. Location preserves the no-presentation path while
+            // providing the bounded holder field required by flat Rust state.
+            BLACK_HOLE_KIND_MASK => ScriptObjectKind::Location,
+            unknown => panic!("unknown C2 oracle object-kind mask {unknown}"),
+        }
+    }
+
     fn oracle_object_kind(mask: u16) -> ScriptObjectKind {
         match mask {
             PLAYER_KIND_MASK => ScriptObjectKind::Player,
@@ -1325,6 +1672,16 @@ mod tests {
             state.object_word(object, OBJECT_FLAGS_WORD_INDEX).unwrap(),
             flags
         ));
+    }
+
+    fn resolved_object_field(
+        state: &ScriptState,
+        object: ScriptObjectId,
+        selector: ScriptFieldSelector,
+    ) -> Option<commander_blood_formats::script::ScriptStateWord> {
+        let kind = state.object(object)?.kind;
+        let byte_offset = script_field_offset(kind, selector)?;
+        state.object_word(object, byte_offset / std::mem::size_of::<u16>())
     }
 
     fn set_parent(
