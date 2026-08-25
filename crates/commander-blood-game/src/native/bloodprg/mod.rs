@@ -3,6 +3,8 @@
 mod aboard;
 mod actor_slots;
 mod bridge_input;
+mod bridge_page;
+mod bridge_screen;
 mod bridge_console;
 mod actor_handler_black_hole;
 mod actor_handler_camera;
@@ -56,6 +58,14 @@ pub use bridge_input::{
     STATUS_REGION_POLL_ATTEMPTS, PrimaryPointerSample, StatusRegionPollBackend,
     StatusRegionPollHit, latch_primary_pointer_hit, poll_status_region,
     primary_pointer_hits_region,
+};
+pub use bridge_page::{
+    BridgePageBackend, BridgePageOutcome, BridgePageState, BridgePageTarget, render_bridge_page,
+};
+pub use bridge_screen::{
+    BRIDGE_CONSOLE_TINT_FIRST, BRIDGE_DARK_PALETTE_ADJUSTMENT, BridgePaletteAdjustment,
+    BridgeScreenInitializationBackend, BridgeScreenInitializationOutcome,
+    BridgeScreenInitializationPath, BridgeScreenInitializationState, initialize_bridge_screen,
 };
 pub use actor_handler_black_hole::{
     BLACK_HOLE_IDLE_PRESENTATION_RESOURCE, BLACK_HOLE_TRANSITION_PRESENTATION_RESOURCE,
