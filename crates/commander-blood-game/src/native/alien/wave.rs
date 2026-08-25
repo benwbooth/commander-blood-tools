@@ -416,6 +416,7 @@ mod tests {
             root: AlienTransformData::default(),
             nodes: vec![AlienNodePose {
                 parent: AlienNodeParent::Root,
+                scene_parent: None,
                 first_vertex: usize::MIN,
                 vertex_count: AUTHORED_VERTEX_COUNT,
                 transform: AlienTransformData::default(),

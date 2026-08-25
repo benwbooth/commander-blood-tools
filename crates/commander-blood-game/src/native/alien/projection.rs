@@ -65,11 +65,22 @@ pub struct AlienProjectedVertex {
     pub clip_flags: u16,
 }
 
+/// Flat reference to one node owned by a model in the current alien scene.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct AlienSceneNode {
+    /// Model containing the referenced node.
+    pub model_index: usize,
+    /// Node within the referenced model.
+    pub node_index: usize,
+}
+
 /// Mutable per-node state consumed by alien behavior and projection routines.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AlienNodePose {
     /// Root, scene camera, or earlier node supplying the parent transform.
     pub parent: AlienNodeParent,
+    /// Dynamic cross-model parent selected by callback behavior, when present.
+    pub scene_parent: Option<AlienSceneNode>,
     /// First vertex controlled by this node.
     pub first_vertex: usize,
     /// Number of consecutive vertices controlled by this node.
@@ -88,6 +99,7 @@ impl From<&AlienNodeData> for AlienNodePose {
     fn from(node: &AlienNodeData) -> Self {
         Self {
             parent: node.parent,
+            scene_parent: None,
             first_vertex: node.first_vertex,
             vertex_count: node.vertex_count,
             transform: node.transform,
@@ -253,6 +265,9 @@ impl AlienModelPose {
         node_index: usize,
         scene_camera: AlienTransformData,
     ) -> Result<AlienTransformData, AlienProjectionError> {
+        if let Some(parent) = self.nodes[node_index].scene_parent {
+            return Err(AlienProjectionError::UnresolvedSceneParent { node_index, parent });
+        }
         match self.nodes[node_index].parent {
             AlienNodeParent::SceneCamera => Ok(scene_camera),
             AlienNodeParent::Root => Ok(self.root),
@@ -294,6 +309,13 @@ pub enum AlienProjectionError {
         node_index: usize,
         /// Invalid parent index.
         parent_index: usize,
+    },
+    /// Standalone model projection cannot resolve a cross-model parent.
+    UnresolvedSceneParent {
+        /// Node requesting the external transform.
+        node_index: usize,
+        /// Typed scene node whose transform must be supplied by the coordinator.
+        parent: AlienSceneNode,
     },
     /// A projection-copy source or destination was outside the mesh.
     InvalidProjectionCopy {
@@ -591,6 +613,7 @@ mod tests {
                     parent: node
                         .parent
                         .map_or(AlienNodeParent::Root, AlienNodeParent::Node),
+                    scene_parent: None,
                     first_vertex: node_first_vertex,
                     vertex_count: node.vertices.len(),
                     transform: AlienTransformData::default(),

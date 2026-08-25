@@ -35,7 +35,8 @@ pub use palette::{
 };
 pub use primary::{AlienPrimaryMeshFrame, AlienPrimaryMeshPose, AlienPrimaryProjectionError};
 pub use projection::{
-    AlienModelPose, AlienNodePose, AlienProjectedVertex, AlienProjectionError, AlienScreenCenter,
+    AlienModelPose, AlienNodePose, AlienProjectedVertex, AlienProjectionError, AlienSceneNode,
+    AlienScreenCenter,
 };
 pub use raster::{
     AlienRasterError, AlienRenderGeometry, AlienRenderTriangle, AlienRenderVertex,

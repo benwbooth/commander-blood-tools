@@ -960,6 +960,7 @@ mod tests {
             nodes: (usize::MIN..node_count)
                 .map(|node_index| AlienNodePose {
                     parent: AlienNodeParent::Root,
+                    scene_parent: None,
                     first_vertex: node_index,
                     vertex_count: 1,
                     transform: AlienTransformData::default(),

@@ -281,6 +281,7 @@ mod tests {
     fn node() -> AlienNodePose {
         AlienNodePose {
             parent: AlienNodeParent::Root,
+            scene_parent: None,
             first_vertex: usize::MIN,
             vertex_count: 1,
             transform: AlienTransformData::default(),

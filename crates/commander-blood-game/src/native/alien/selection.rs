@@ -2,11 +2,11 @@
 
 use std::fmt;
 
-use commander_blood_formats::alien::{AXIS_COUNT, AlienNodeParent};
+use commander_blood_formats::alien::AXIS_COUNT;
 
 use super::{
     AlienCallbackSceneState, AlienControlLatch, AlienModelPose, AlienRingAnimationState,
-    AlienRingCallback, AlienSpecies, AlienWaveSelection,
+    AlienRingCallback, AlienSceneNode, AlienSpecies, AlienWaveSelection,
 };
 
 const X_AXIS: usize = 0;
@@ -21,6 +21,8 @@ const LOW_WORD_MASK: u32 = u16::MAX as u32;
 const HIGH_WORD_MASK: u32 = !LOW_WORD_MASK;
 const AMER_AND_SCRUT_PULSE_ADVANCE: [i32; AXIS_COUNT] = [0, 30, 35];
 const CROOLIS_PULSE_ADVANCE: [i32; AXIS_COUNT] = [25, 30, 35];
+const WAVE_ANCHOR_MODEL_INDEX: usize = 0;
+const WAVE_ANCHOR_NODE_INDEX: usize = 3;
 
 /// Typed continuation selected by the slot-1 bounds callback.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -87,7 +89,10 @@ pub fn update_wave_selection(
 
     scene.wave_selection = AlienWaveSelection::Requested;
     let node = &mut pose.nodes[node_index];
-    node.parent = AlienNodeParent::Root;
+    node.scene_parent = Some(AlienSceneNode {
+        model_index: WAVE_ANCHOR_MODEL_INDEX,
+        node_index: WAVE_ANCHOR_NODE_INDEX,
+    });
     node.radial_offset = ZERO_RADIAL_OFFSET;
     node.local_position[X_AXIS] = replace_low_word(node.local_position[X_AXIS], u16::MIN);
     node.local_position[Y_AXIS] = replace_low_word(node.local_position[Y_AXIS], u16::MIN);
@@ -145,7 +150,7 @@ fn replace_low_word(value: i32, low_word: u16) -> i32 {
 
 #[cfg(test)]
 mod tests {
-    use commander_blood_formats::alien::{AlienFaceData, AlienTransformData};
+    use commander_blood_formats::alien::{AlienFaceData, AlienNodeParent, AlienTransformData};
     use serde::Deserialize;
 
     use super::*;
@@ -155,7 +160,7 @@ mod tests {
     const SINGLE_NODE_COUNT: usize = 1;
     const MODEL_INDEX: usize = 7;
     const ORIGINAL_CONTEXT_OFFSET: u16 = 0x3000;
-    const ORIGINAL_ROOT_OFFSET: u16 = 0x25A8;
+    const ORIGINAL_WAVE_ANCHOR_OFFSET: u16 = 0x25A8;
     const ORIGINAL_CALLBACK_COUNTDOWN: u16 = 0x7777;
     const ORIGINAL_PARENT_SENTINEL: u16 = 0x4444;
     const UNCHANGED_PULSE: i32 = 0x1357_9BDF;
@@ -242,6 +247,7 @@ mod tests {
             root: AlienTransformData::default(),
             nodes: vec![AlienNodePose {
                 parent: AlienNodeParent::SceneCamera,
+                scene_parent: None,
                 first_vertex: usize::MIN,
                 vertex_count: SINGLE_NODE_COUNT,
                 transform: AlienTransformData {
@@ -302,13 +308,17 @@ mod tests {
                     control_latch(vector.control_latch_after)
                 );
                 assert_eq!(scene.callback_countdown, vector.callback_countdown_after);
+                assert_eq!(pose.nodes[FIRST_NODE].parent, AlienNodeParent::SceneCamera);
                 assert_eq!(
-                    pose.nodes[FIRST_NODE].parent,
-                    if vector.parent_after == ORIGINAL_ROOT_OFFSET {
-                        AlienNodeParent::Root
+                    pose.nodes[FIRST_NODE].scene_parent,
+                    if vector.parent_after == ORIGINAL_WAVE_ANCHOR_OFFSET {
+                        Some(AlienSceneNode {
+                            model_index: WAVE_ANCHOR_MODEL_INDEX,
+                            node_index: WAVE_ANCHOR_NODE_INDEX,
+                        })
                     } else {
                         assert_eq!(vector.parent_after, ORIGINAL_PARENT_SENTINEL);
-                        AlienNodeParent::SceneCamera
+                        None
                     }
                 );
                 assert_eq!(

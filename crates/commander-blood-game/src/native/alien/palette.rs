@@ -367,6 +367,7 @@ mod tests {
         let index = case_index as u32;
         let node = AlienNodePose {
             parent: AlienNodeParent::SceneCamera,
+            scene_parent: None,
             first_vertex: usize::MIN,
             vertex_count: 1,
             transform: AlienTransformData {
