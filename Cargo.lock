@@ -226,6 +226,10 @@ dependencies = [
 [[package]]
 name = "commander-blood-formats"
 version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
 
 [[package]]
 name = "commander-blood-game"

@@ -12,5 +12,6 @@ pub mod lbm;
 pub mod manu3;
 pub mod name_area_effect;
 pub mod palette;
+pub mod panorama;
 pub mod script;
 pub mod world_art;

@@ -4,6 +4,7 @@ mod aboard;
 mod actor_slots;
 mod bridge_input;
 mod bridge_page;
+mod bridge_panorama;
 mod bridge_screen;
 mod bridge_console;
 mod actor_handler_black_hole;
@@ -61,6 +62,9 @@ pub use bridge_input::{
 };
 pub use bridge_page::{
     BridgePageBackend, BridgePageOutcome, BridgePageState, BridgePageTarget, render_bridge_page,
+};
+pub use bridge_panorama::{
+    BridgePanoramaLoadTarget, BridgeStationOrbBoxes, load_bridge_panorama_frame,
 };
 pub use bridge_screen::{
     BRIDGE_CONSOLE_TINT_FIRST, BRIDGE_DARK_PALETTE_ADJUSTMENT, BridgePaletteAdjustment,
