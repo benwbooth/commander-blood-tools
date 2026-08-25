@@ -72,6 +72,9 @@ runtime model.
 `commander_blood_game::native::alien` currently connects the translated camera
 control, camera transform, primary-mesh projection, starfield generation,
 hierarchy projection, and face-selection stages in their recovered frame
-order. The three shipped overlays pass this typed frame pipeline. Behavior
-method dispatch, original frame timing, and wgpu submission are still pending,
-so the overlay main routine is not yet listed as ported.
+order. The three shipped overlays pass this typed frame pipeline. The recovered
+face-activation decision then converts accepted faces into owned textured
+triangles. SDL3 input drives the scene and wgpu renders the primary mesh,
+palette-colored stars, and behavior models in recovered order at the host
+resolution. Behavior method dispatch and original frame timing are still
+pending, so the overlay main routine is not yet listed as ported.

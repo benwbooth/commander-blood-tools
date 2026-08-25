@@ -8,8 +8,9 @@ use super::{
     AlienBehindCameraSignal, AlienCameraAngles, AlienCameraControl, AlienCameraStep,
     AlienCameraTransform, AlienFaceSelection, AlienFaceSelectionError, AlienModelPose,
     AlienMouseSample, AlienPrimaryMeshFrame, AlienPrimaryMeshPose, AlienPrimaryProjectionError,
-    AlienProjectionError, AlienScreenCenter, AlienSpecies, AlienStarfieldError,
-    AlienStarfieldFrame, generate_starfield, select_faces,
+    AlienProjectionError, AlienRasterError, AlienRenderGeometry, AlienScreenCenter, AlienSpecies,
+    AlienStarfieldError, AlienStarfieldFrame, generate_starfield, prepare_render_geometry,
+    select_faces,
 };
 
 const INITIAL_VIEW: [i16; AXIS_COUNT] = [1_885, -239, -9_790];
@@ -31,6 +32,8 @@ pub struct AlienSceneFrame {
     pub starfield: AlienStarfieldFrame,
     /// Hierarchical model face decisions and buckets.
     pub models: AlienFaceSelection,
+    /// Owned textured triangles for the primary and behavior-model passes.
+    pub geometry: AlienRenderGeometry,
 }
 
 /// Mutable native state for one AMER, CROOLIS, or SCRUT scene.
@@ -66,6 +69,8 @@ pub enum AlienSceneError {
     FaceSelection(AlienFaceSelectionError),
     /// Starfield generation failed.
     Starfield(AlienStarfieldError),
+    /// Textured triangle preparation failed.
+    Raster(AlienRasterError),
 }
 
 impl fmt::Display for AlienSceneError {
@@ -91,6 +96,12 @@ impl From<AlienFaceSelectionError> for AlienSceneError {
 impl From<AlienStarfieldError> for AlienSceneError {
     fn from(error: AlienStarfieldError) -> Self {
         Self::Starfield(error)
+    }
+}
+
+impl From<AlienRasterError> for AlienSceneError {
+    fn from(error: AlienRasterError) -> Self {
+        Self::Raster(error)
     }
 }
 
@@ -178,6 +189,15 @@ impl AlienScene {
             .map_err(|error| AlienSceneError::ModelProjection { model_index, error })?;
         }
         let models = select_faces(self.species, &mut self.models)?;
+        let geometry = prepare_render_geometry(
+            &self.asset.primary_model.mesh,
+            &self.primary,
+            &primary,
+            &self.asset.models,
+            &self.models,
+            &models,
+            &self.asset.raster_reciprocals,
+        )?;
         match models.behind_camera {
             AlienBehindCameraSignal::Unchanged => {}
             AlienBehindCameraSignal::General => {
@@ -194,6 +214,7 @@ impl AlienScene {
             primary,
             starfield,
             models,
+            geometry,
         })
     }
 

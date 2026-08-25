@@ -5,6 +5,7 @@ mod control;
 mod faces;
 mod primary;
 mod projection;
+mod raster;
 mod scene;
 mod starfield;
 
@@ -20,7 +21,12 @@ pub use primary::{AlienPrimaryMeshFrame, AlienPrimaryMeshPose, AlienPrimaryProje
 pub use projection::{
     AlienModelPose, AlienNodePose, AlienProjectedVertex, AlienProjectionError, AlienScreenCenter,
 };
+pub use raster::{
+    AlienRasterError, AlienRenderGeometry, AlienRenderTriangle, AlienRenderVertex,
+    prepare_render_geometry,
+};
 pub use scene::{AlienScene, AlienSceneError, AlienSceneFrame};
 pub use starfield::{
-    AlienStar, AlienStarRejections, AlienStarfieldError, AlienStarfieldFrame, generate_starfield,
+    AlienStar, AlienStarRejections, AlienStarfieldError, AlienStarfieldFrame, STAR_COUNT,
+    generate_starfield,
 };

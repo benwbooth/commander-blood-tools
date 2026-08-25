@@ -6,6 +6,7 @@
 
 #![deny(missing_docs)]
 
+mod alien_render;
 pub mod app;
 pub mod assets;
 pub mod native;

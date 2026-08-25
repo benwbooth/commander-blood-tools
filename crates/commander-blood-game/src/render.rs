@@ -1,13 +1,16 @@
-//! wgpu presentation of original two-dimensional artwork.
+//! wgpu presentation of original artwork and recovered native 3D scenes.
 
 use std::borrow::Cow;
 
 use anyhow::{Context, Result};
 use bytemuck::{Pod, Zeroable};
+use commander_blood_formats::alien::AlienAsset;
 use commander_blood_formats::manu3::IndexedTexture;
 use sdl3::video::Window;
 
+use crate::alien_render::AlienRenderer;
 use crate::assets::OriginalFrame;
+use crate::native::alien::AlienSceneFrame;
 use crate::native::manu3::model::Manu3Model;
 use crate::native::manu3::raster::RenderTriangle;
 
@@ -54,7 +57,7 @@ struct Manu3Renderer {
     depth_view: wgpu::TextureView,
 }
 
-/// GPU state for aspect-correct presentation of a decoded original frame.
+/// GPU state for aspect-correct presentation of decoded 2D and 3D content.
 pub struct Renderer<'window> {
     surface: wgpu::Surface<'window>,
     device: wgpu::Device,
@@ -63,6 +66,7 @@ pub struct Renderer<'window> {
     pipeline: wgpu::RenderPipeline,
     image_bind_group: wgpu::BindGroup,
     manu3: Option<Manu3Renderer>,
+    alien: Option<AlienRenderer>,
 }
 
 impl<'window> Renderer<'window> {
@@ -71,7 +75,11 @@ impl<'window> Renderer<'window> {
         window: &'window Window,
         image: &OriginalFrame,
         manu3_model: Option<&Manu3Model>,
+        alien_asset: Option<&AlienAsset>,
     ) -> Result<Self> {
+        if manu3_model.is_some() && alien_asset.is_some() {
+            anyhow::bail!("MANU3 and alien scene renderers cannot be active together");
+        }
         let instance =
             wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle_from_env());
         let surface = create_surface::create(&instance, window)
@@ -241,6 +249,9 @@ impl<'window> Renderer<'window> {
                 model.faces().len(),
             )
         });
+        let alien = alien_asset.map(|asset| {
+            AlienRenderer::new(&device, &queue, format, config.width, config.height, asset)
+        });
 
         Ok(Self {
             surface,
@@ -250,6 +261,7 @@ impl<'window> Renderer<'window> {
             pipeline,
             image_bind_group,
             manu3,
+            alien,
         })
     }
 
@@ -264,10 +276,17 @@ impl<'window> Renderer<'window> {
         if let Some(manu3) = &mut self.manu3 {
             manu3.resize(&self.device, width, height);
         }
+        if let Some(alien) = &mut self.alien {
+            alien.resize(&self.device, width, height);
+        }
     }
 
-    /// Present the current original frame once.
-    pub fn render(&mut self, manu3_triangles: &[RenderTriangle]) -> Result<()> {
+    /// Present the current artwork, MANU3, or alien-scene frame once.
+    pub fn render(
+        &mut self,
+        manu3_triangles: &[RenderTriangle],
+        alien_frame: Option<&AlienSceneFrame>,
+    ) -> Result<()> {
         let manu3_vertex_count = self
             .manu3
             .as_ref()
@@ -302,64 +321,78 @@ impl<'window> Renderer<'window> {
             ORIGINAL_DISPLAY_ASPECT_WIDTH,
             ORIGINAL_DISPLAY_ASPECT_HEIGHT,
         );
-        {
-            let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Commander Blood artwork pass"),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &view,
-                    resolve_target: None,
-                    depth_slice: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
-                        store: wgpu::StoreOp::Store,
-                    },
-                })],
-                depth_stencil_attachment: None,
-                timestamp_writes: None,
-                occlusion_query_set: None,
-                multiview_mask: None,
-            });
-            pass.set_viewport(x, y, width, height, MINIMUM_DEPTH, MAXIMUM_DEPTH);
-            pass.set_pipeline(&self.pipeline);
-            pass.set_bind_group(IMAGE_TEXTURE_BINDING, &self.image_bind_group, &[]);
-            pass.draw(
-                u32::MIN..FULLSCREEN_QUAD_VERTEX_COUNT,
-                u32::MIN..SINGLE_TEXTURE_LAYER,
-            );
-        }
-        if manu3_vertex_count != u32::MIN {
-            let manu3 = self
-                .manu3
-                .as_ref()
-                .context("MANU3 vertices were uploaded without GPU resources")?;
-            let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Commander Blood MANU3 pass"),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &view,
-                    resolve_target: None,
-                    depth_slice: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Load,
-                        store: wgpu::StoreOp::Store,
-                    },
-                })],
-                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                    view: &manu3.depth_view,
-                    depth_ops: Some(wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(CLEAR_DEPTH),
-                        store: wgpu::StoreOp::Discard,
+        if let Some(alien) = &self.alien {
+            let alien_frame = alien_frame.context("alien renderer has no native scene frame")?;
+            alien.encode(
+                &self.queue,
+                &mut encoder,
+                &view,
+                (x, y, width, height),
+                alien_frame,
+            )?;
+        } else {
+            if alien_frame.is_some() {
+                anyhow::bail!("alien scene frame supplied without alien GPU resources");
+            }
+            {
+                let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                    label: Some("Commander Blood artwork pass"),
+                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                        view: &view,
+                        resolve_target: None,
+                        depth_slice: None,
+                        ops: wgpu::Operations {
+                            load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                            store: wgpu::StoreOp::Store,
+                        },
+                    })],
+                    depth_stencil_attachment: None,
+                    timestamp_writes: None,
+                    occlusion_query_set: None,
+                    multiview_mask: None,
+                });
+                pass.set_viewport(x, y, width, height, MINIMUM_DEPTH, MAXIMUM_DEPTH);
+                pass.set_pipeline(&self.pipeline);
+                pass.set_bind_group(IMAGE_TEXTURE_BINDING, &self.image_bind_group, &[]);
+                pass.draw(
+                    u32::MIN..FULLSCREEN_QUAD_VERTEX_COUNT,
+                    u32::MIN..SINGLE_TEXTURE_LAYER,
+                );
+            }
+            if manu3_vertex_count != u32::MIN {
+                let manu3 = self
+                    .manu3
+                    .as_ref()
+                    .context("MANU3 vertices were uploaded without GPU resources")?;
+                let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                    label: Some("Commander Blood MANU3 pass"),
+                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                        view: &view,
+                        resolve_target: None,
+                        depth_slice: None,
+                        ops: wgpu::Operations {
+                            load: wgpu::LoadOp::Load,
+                            store: wgpu::StoreOp::Store,
+                        },
+                    })],
+                    depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                        view: &manu3.depth_view,
+                        depth_ops: Some(wgpu::Operations {
+                            load: wgpu::LoadOp::Clear(CLEAR_DEPTH),
+                            store: wgpu::StoreOp::Discard,
+                        }),
+                        stencil_ops: None,
                     }),
-                    stencil_ops: None,
-                }),
-                timestamp_writes: None,
-                occlusion_query_set: None,
-                multiview_mask: None,
-            });
-            pass.set_viewport(x, y, width, height, MINIMUM_DEPTH, MAXIMUM_DEPTH);
-            pass.set_pipeline(&manu3.pipeline);
-            pass.set_bind_group(MANU3_TEXTURE_BINDING, &manu3.bind_group, &[]);
-            pass.set_vertex_buffer(u32::MIN, manu3.vertex_buffer.slice(..));
-            pass.draw(u32::MIN..manu3_vertex_count, u32::MIN..SINGLE_TEXTURE_LAYER);
+                    timestamp_writes: None,
+                    occlusion_query_set: None,
+                    multiview_mask: None,
+                });
+                pass.set_viewport(x, y, width, height, MINIMUM_DEPTH, MAXIMUM_DEPTH);
+                pass.set_pipeline(&manu3.pipeline);
+                pass.set_bind_group(MANU3_TEXTURE_BINDING, &manu3.bind_group, &[]);
+                pass.set_vertex_buffer(u32::MIN, manu3.vertex_buffer.slice(..));
+                pass.draw(u32::MIN..manu3_vertex_count, u32::MIN..SINGLE_TEXTURE_LAYER);
+            }
         }
         self.queue.submit([encoder.finish()]);
         frame.present();
@@ -616,7 +649,7 @@ fn create_depth_view(device: &wgpu::Device, width: u32, height: u32) -> wgpu::Te
         .create_view(&wgpu::TextureViewDescriptor::default())
 }
 
-fn aspect_fit_viewport(
+pub(crate) fn aspect_fit_viewport(
     output_width: u32,
     output_height: u32,
     source_width: u32,

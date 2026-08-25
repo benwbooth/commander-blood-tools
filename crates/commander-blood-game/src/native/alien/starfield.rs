@@ -7,7 +7,8 @@ use commander_blood_formats::alien::AXIS_COUNT;
 const X_AXIS: usize = 0;
 const Y_AXIS: usize = 1;
 const Z_AXIS: usize = 2;
-const STAR_COUNT: usize = 1_200;
+/// Number of authored stars generated on every alien-scene frame.
+pub const STAR_COUNT: usize = 1_200;
 const RANDOM_ROTATION: u32 = 7;
 const CAMERA_CELL_SHIFT: u32 = 13;
 const DEPTH_SHIFT: u32 = 8;

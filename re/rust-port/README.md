@@ -85,8 +85,18 @@ trigonometry table, and 500-entry raster reciprocal table. It also resolves
 method-table slots to semantic behavior kinds. File-relative relocation and
 object offsets are loader inputs only and become validated Rust indices.
 
-The next runtime layer connects the decoded alien scenes, primary mesh, model
-faces, and starfield to wgpu.
+The alien face-activation rule is translated for all three overlays. Thirty-nine
+direct vectors verify raster-capacity rejection, fixed-point orientation,
+vertical-edge handling, backface and degenerate rejection, and width limits.
+Accepted faces become owned textured triangles with unsigned 256-by-512 atlas
+coordinates and recovered depth values.
+
+The SDL3 executable now connects the typed alien frame to wgpu. It renders the
+primary mesh, palette-colored starfield, and behavior models in recovered order,
+with independent depth passes for the two mesh layers. The segmented scanline
+pool, linked span records, Mode X planes, and framebuffer writes are classified
+as eliminated presentation adapters. Offscreen GPU tests render all three
+shipped overlays at wide and portrait output sizes.
 
 Run the current interactive path with original assets:
 
@@ -94,6 +104,13 @@ Run the current interactive path with original assets:
 nix develop -c cargo run -p commander-blood-game -- \
   --asset output/_tmp_dat/fd/pterra1f.lbm \
   --manu3 output/_tmp_dat/manu3.xdb
+```
+
+Run one recovered alien scene with:
+
+```sh
+nix develop -c cargo run -p commander-blood-game -- \
+  --alien output/_tmp_dat/amer.xdb
 ```
 
 The renderer never warps or moves the host pointer. SDL mouse events are mapped

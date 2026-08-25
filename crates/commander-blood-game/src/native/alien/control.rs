@@ -97,6 +97,16 @@ pub struct AlienCameraControl {
 }
 
 impl AlienCameraControl {
+    /// Queue one semantic keyboard action for the next recovered input step.
+    pub fn queue_action(&mut self, action: AlienInputAction) {
+        self.key_event = match action {
+            AlienInputAction::None => u16::MIN,
+            AlienInputAction::IncreaseDepth => CURSOR_UP_KEY,
+            AlienInputAction::DecreaseDepth => CURSOR_DOWN_KEY,
+            AlienInputAction::Interact => u16::from(ASCII_SPACE),
+        };
+    }
+
     /// Apply the recovered mouse-camera routine for one alien scene frame.
     ///
     /// All arithmetic intentionally wraps at 16 bits because those accumulators
