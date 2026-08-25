@@ -15,6 +15,7 @@ mod startup;
 mod state;
 mod text;
 mod text_handler;
+mod text_scan;
 mod vm;
 
 pub use aboard::{
@@ -80,6 +81,10 @@ pub use text_handler::{
     handle_text_instruction, PresentationRequestFlags, TextConditionInputs, TextHandlerError,
     TextHandlerGate, TextHandlerOutcome, TextInstructionState, TextLineKind, TextLineState,
     TextPresentationState,
+};
+pub use text_scan::{
+    activate_object_text, BoundTextInstruction, ScriptTextActivationError,
+    ScriptTextActivationRegistry,
 };
 pub use vm::{
     active_objects_in_play, count_positive_operands, object_before_threshold, object_has_flag,

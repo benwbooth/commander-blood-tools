@@ -35,6 +35,10 @@ impl TextInstructionState {
     pub const fn is_active(self) -> bool {
         self.active
     }
+
+    pub(super) fn activate(&mut self) {
+        self.active = true;
+    }
 }
 
 /// Semantic class of the line record resolved before entering the handler.
