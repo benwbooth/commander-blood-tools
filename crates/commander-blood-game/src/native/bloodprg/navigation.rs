@@ -3,11 +3,17 @@
 use std::collections::BTreeSet;
 use std::fmt;
 
-use commander_blood_formats::script::{ScriptObjectId, ScriptState, ScriptStateObjectReference};
+use commander_blood_formats::script::{
+    ScriptObjectId, ScriptObjectKind, ScriptState, ScriptStateObjectReference, ScriptStateWord,
+    ScriptStateWordPair,
+};
+
+use crate::native::math::binary_u32_sqrt;
 
 use super::{ScriptFieldSelector, script_field_offset};
 
 const BITS_PER_BYTE: usize = u8::BITS as usize;
+const WORD_SIGN_BIT: u16 = 1_u16 << (u16::BITS - 1);
 
 /// Failure while traversing typed profile-object relationships.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -25,6 +31,21 @@ pub enum ScriptNavigationError {
     /// Parent relations contain a cycle instead of a navigation tree.
     CyclicParentRelations {
         /// Object encountered twice on one recursion path.
+        object: ScriptObjectId,
+    },
+    /// A requested object identity is absent from this decoded profile.
+    MissingObject {
+        /// Missing object identity.
+        object: ScriptObjectId,
+    },
+    /// A known object kind has no bounded coordinate pair for this path.
+    MissingPositionField {
+        /// Object whose coordinates could not be resolved.
+        object: ScriptObjectId,
+    },
+    /// A black-hole selector or relation word is absent from its typed record.
+    MissingPositionSelector {
+        /// Object containing the missing selector field.
         object: ScriptObjectId,
     },
 }
@@ -70,6 +91,127 @@ pub fn navigation_source_objects(
     Ok(output)
 }
 
+/// Resolve the live coordinate pair used for one navigation object.
+///
+/// This translates `ship_3d_position_field_resolve` at BLOODPRG file offset
+/// `0x0061A6`. Parent links and the arche fallback are typed identities, and a
+/// cycle or unsupported record shape is rejected instead of dereferencing an
+/// arbitrary word as an address.
+pub fn resolve_navigation_position(
+    state: &ScriptState,
+    object: ScriptObjectId,
+    arche: ScriptObjectId,
+    black_hole_compare: u16,
+) -> Result<ScriptStateWordPair, ScriptNavigationError> {
+    let mut current = object;
+    let mut visited = BTreeSet::new();
+    loop {
+        if !visited.insert(current) {
+            return Err(ScriptNavigationError::CyclicParentRelations { object: current });
+        }
+        let state_object = state
+            .object(current)
+            .ok_or(ScriptNavigationError::MissingObject { object: current })?;
+        match state_object.kind {
+            ScriptObjectKind::BlackHole => {
+                let comparison = read_object_word(
+                    state,
+                    current,
+                    ScriptFieldSelector::BLACK_HOLE_COMPARISON,
+                )?;
+                let selector = if comparison == black_hole_compare {
+                    ScriptFieldSelector::BLACK_HOLE_MATCH_POSITION
+                } else {
+                    ScriptFieldSelector::BLACK_HOLE_MISMATCH_POSITION
+                };
+                return object_word_pair(state, current, selector);
+            }
+            ScriptObjectKind::CelestialBody
+            | ScriptObjectKind::NavigationEntity
+            | ScriptObjectKind::WorldState => {
+                return object_word_pair(
+                    state,
+                    current,
+                    ScriptFieldSelector::NAVIGATION_POSITION,
+                );
+            }
+            _ => {
+                let parent = object_reference(
+                    state,
+                    current,
+                    ScriptFieldSelector::HOLDER_OR_LOCATION,
+                )?;
+                current = match parent {
+                    ScriptStateObjectReference::Object(parent) => parent,
+                    ScriptStateObjectReference::Sentinel => arche,
+                };
+            }
+        }
+    }
+}
+
+/// Calculate the original wrapped two-dimensional navigation distance.
+///
+/// This translates `ship_3d_position_distance` at BLOODPRG file offset
+/// `0x0060DD`, including contextual black-hole pair selection, the auxiliary
+/// record's direct first pair, wrapped signed deltas, and the recovered native
+/// integer square root.
+pub fn navigation_distance(
+    state: &ScriptState,
+    first: ScriptObjectId,
+    second: ScriptObjectId,
+    arche: ScriptObjectId,
+    inherited_black_hole_compare: u16,
+) -> Result<u16, ScriptNavigationError> {
+    let mut compare = inherited_black_hole_compare;
+    let first_kind = state
+        .object(first)
+        .ok_or(ScriptNavigationError::MissingObject { object: first })?
+        .kind;
+    let second_kind = state
+        .object(second)
+        .ok_or(ScriptNavigationError::MissingObject { object: second })?
+        .kind;
+
+    let first_position = if first_kind == ScriptObjectKind::BlackHole {
+        compare = read_object_word(
+            state,
+            second,
+            ScriptFieldSelector::BLACK_HOLE_RELATION,
+        )?;
+        resolve_navigation_position(state, first, arche, compare)?
+    } else if first_kind == ScriptObjectKind::Auxiliary {
+        state
+            .object_word_pair(first, usize::MIN)
+            .ok_or(ScriptNavigationError::MissingPositionField { object: first })?
+    } else {
+        resolve_navigation_position(state, first, arche, compare)?
+    };
+
+    let second_position = if second_kind == ScriptObjectKind::BlackHole {
+        compare = read_object_word(
+            state,
+            first,
+            ScriptFieldSelector::BLACK_HOLE_RELATION,
+        )?;
+        resolve_navigation_position(state, second, arche, compare)?
+    } else if second_kind == ScriptObjectKind::Auxiliary {
+        state
+            .object_word_pair(second, usize::MIN)
+            .ok_or(ScriptNavigationError::MissingPositionField { object: second })?
+    } else {
+        resolve_navigation_position(state, second, arche, compare)?
+    };
+
+    let first_position = state
+        .word_pair(first_position)
+        .ok_or(ScriptNavigationError::MissingPositionField { object: first })?;
+    let second_position = state
+        .word_pair(second_position)
+        .ok_or(ScriptNavigationError::MissingPositionField { object: second })?;
+    Ok(distance_between_positions(first_position, second_position))
+}
+
 fn append_navigation_children(
     state: &ScriptState,
     target: ScriptObjectId,
@@ -103,6 +245,74 @@ fn append_navigation_children(
     Ok(())
 }
 
+fn object_field(
+    state: &ScriptState,
+    object: ScriptObjectId,
+    selector: ScriptFieldSelector,
+) -> Result<ScriptStateWord, ScriptNavigationError> {
+    let state_object = state
+        .object(object)
+        .ok_or(ScriptNavigationError::MissingObject { object })?;
+    let byte_offset = script_field_offset(state_object.kind, selector)
+        .ok_or(ScriptNavigationError::MissingPositionSelector { object })?;
+    state
+        .object_word(object, byte_offset / std::mem::size_of::<u16>())
+        .ok_or(ScriptNavigationError::MissingPositionSelector { object })
+}
+
+fn read_object_word(
+    state: &ScriptState,
+    object: ScriptObjectId,
+    selector: ScriptFieldSelector,
+) -> Result<u16, ScriptNavigationError> {
+    state
+        .word(object_field(state, object, selector)?)
+        .ok_or(ScriptNavigationError::MissingPositionSelector { object })
+}
+
+fn object_word_pair(
+    state: &ScriptState,
+    object: ScriptObjectId,
+    selector: ScriptFieldSelector,
+) -> Result<ScriptStateWordPair, ScriptNavigationError> {
+    let field = object_field(state, object, selector)?;
+    state
+        .object_word_pair(object, field.word_index())
+        .ok_or(ScriptNavigationError::MissingPositionField { object })
+}
+
+fn object_reference(
+    state: &ScriptState,
+    object: ScriptObjectId,
+    selector: ScriptFieldSelector,
+) -> Result<ScriptStateObjectReference, ScriptNavigationError> {
+    let field = object_field(state, object, selector)
+        .map_err(|_| ScriptNavigationError::MissingParentField { object })?;
+    state
+        .object_reference(field)
+        .ok_or(ScriptNavigationError::InvalidParentReference { object })
+}
+
+fn distance_between_positions(first: [u16; 2], second: [u16; 2]) -> u16 {
+    binary_u32_sqrt(squared_distance_between_positions(first, second))
+}
+
+fn squared_distance_between_positions(first: [u16; 2], second: [u16; 2]) -> u32 {
+    let dx = wrapped_absolute_delta(first[0], second[0]);
+    let dy = wrapped_absolute_delta(first[1], second[1]);
+    (dx * dx) as u32 + (dy * dy) as u32
+}
+
+fn wrapped_absolute_delta(first: u16, second: u16) -> i32 {
+    let delta = first.wrapping_sub(second);
+    let absolute = if delta & WORD_SIGN_BIT != u16::MIN {
+        u16::MIN.wrapping_sub(delta)
+    } else {
+        delta
+    };
+    i32::from(absolute as i16)
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::{Path, PathBuf};
@@ -116,6 +326,8 @@ mod tests {
 
     const OBJECT_LINK_VECTOR_COUNT: usize = 8;
     const NAVIGATION_SOURCE_VECTOR_COUNT: usize = 8;
+    const POSITION_RESOLVER_VECTOR_COUNT: usize = 8;
+    const POSITION_DISTANCE_VECTOR_COUNT: usize = 6;
     const DIRECTORY_ENTRY_SIZE: usize = 20;
     const DIRECTORY_NAME_CAPACITY: usize = 16;
     const DIRECTORY_OBJECT_KIND: u16 = 1;
@@ -137,6 +349,18 @@ mod tests {
     struct NavigationSourceOracle {
         name: String,
         output_offsets: Vec<u16>,
+    }
+
+    #[derive(Deserialize)]
+    struct PositionResolverOracle {
+        name: String,
+    }
+
+    #[derive(Deserialize)]
+    struct PositionDistanceOracle {
+        name: String,
+        squared_distance: u32,
+        eax: u32,
     }
 
     fn original_asset(name: &str) -> PathBuf {
@@ -298,6 +522,155 @@ mod tests {
         assert_eq!(
             navigation_source_objects(&state, first),
             Err(ScriptNavigationError::CyclicParentRelations { object: first })
+        );
+    }
+
+    #[test]
+    fn position_resolution_matches_every_original_branch_vector() {
+        let vectors: Vec<PositionResolverOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_61a6_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), POSITION_RESOLVER_VECTOR_COUNT);
+        let mut state = navigation_fixture(
+            &[
+                ScriptObjectKind::CelestialBody,
+                ScriptObjectKind::NavigationEntity,
+                ScriptObjectKind::WorldState,
+                ScriptObjectKind::Actor,
+                ScriptObjectKind::CelestialBody,
+                ScriptObjectKind::Actor,
+                ScriptObjectKind::BlackHole,
+            ],
+            &[None, None, None, Some(0), None, None, None],
+        );
+        let objects = state
+            .objects()
+            .iter()
+            .map(|object| object.id)
+            .collect::<Vec<_>>();
+        let arche = objects[4];
+        let comparison = 30_583;
+        assert!(state.set_word(
+            object_field(
+                &state,
+                objects[6],
+                ScriptFieldSelector::BLACK_HOLE_COMPARISON
+            )
+            .unwrap(),
+            comparison
+        ));
+
+        for vector in vectors {
+            let (object, expected_owner, selector, compare) = match vector.name.as_str() {
+                "direct_kind8" | "direct_offset_wrap" => (
+                    objects[0],
+                    objects[0],
+                    ScriptFieldSelector::NAVIGATION_POSITION,
+                    comparison,
+                ),
+                "direct_kind10" => (
+                    objects[1],
+                    objects[1],
+                    ScriptFieldSelector::NAVIGATION_POSITION,
+                    comparison,
+                ),
+                "direct_kind200" => (
+                    objects[2],
+                    objects[2],
+                    ScriptFieldSelector::NAVIGATION_POSITION,
+                    comparison,
+                ),
+                "parent_link_to_direct" => (
+                    objects[3],
+                    objects[0],
+                    ScriptFieldSelector::NAVIGATION_POSITION,
+                    comparison,
+                ),
+                "parent_ffff_falls_back_to_arche" => (
+                    objects[5],
+                    arche,
+                    ScriptFieldSelector::NAVIGATION_POSITION,
+                    comparison,
+                ),
+                "kind100_match" => (
+                    objects[6],
+                    objects[6],
+                    ScriptFieldSelector::BLACK_HOLE_MATCH_POSITION,
+                    comparison,
+                ),
+                "kind100_mismatch" => (
+                    objects[6],
+                    objects[6],
+                    ScriptFieldSelector::BLACK_HOLE_MISMATCH_POSITION,
+                    comparison.wrapping_add(1),
+                ),
+                name => panic!("unknown position-resolver oracle {name}"),
+            };
+            assert_eq!(
+                resolve_navigation_position(&state, object, arche, compare).unwrap(),
+                object_word_pair(&state, expected_owner, selector).unwrap(),
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    #[test]
+    fn wrapped_position_math_matches_every_original_distance_vector() {
+        let vectors: Vec<PositionDistanceOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_60dd_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), POSITION_DISTANCE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let (first, second) = match vector.name.as_str() {
+                "direct_kind40_three_four_five" => ([100, 100], [103, 104]),
+                "delegated_direct_kind_wrap_delta_8000" => ([32_767, 5], [u16::MAX, 5]),
+                "parent_ffff_falls_back_to_arche" => ([10, 10], [13, 14]),
+                "first_kind100_match" => ([0, 0], [6, 8]),
+                "second_kind100_mismatch" => ([4, 5], [7, 9]),
+                "inherited_compare_reaches_linked_kind100" => ([1, 1], [9, 16]),
+                name => panic!("unknown position-distance oracle {name}"),
+            };
+            assert_eq!(
+                squared_distance_between_positions(first, second),
+                vector.squared_distance,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                distance_between_positions(first, second),
+                vector.eax as u16,
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    #[test]
+    fn navigation_distance_reads_live_typed_position_fields() {
+        let mut state = navigation_fixture(
+            &[
+                ScriptObjectKind::CelestialBody,
+                ScriptObjectKind::CelestialBody,
+            ],
+            &[None, None],
+        );
+        let first = state.objects()[0].id;
+        let second = state.objects()[1].id;
+        assert!(state.set_word_pair(
+            object_word_pair(&state, first, ScriptFieldSelector::NAVIGATION_POSITION).unwrap(),
+            [100, 100]
+        ));
+        assert!(state.set_word_pair(
+            object_word_pair(&state, second, ScriptFieldSelector::NAVIGATION_POSITION).unwrap(),
+            [103, 104]
+        ));
+        assert_eq!(
+            navigation_distance(&state, first, second, first, u16::MIN).unwrap(),
+            5
         );
     }
 

@@ -17,7 +17,10 @@ mod vm;
 pub use aboard::{
     insert_aboard_object, remove_aboard_object, AboardObjectRoster, ABOARD_OBJECT_CAPACITY,
 };
-pub use navigation::{navigation_source_objects, object_links_to, ScriptNavigationError};
+pub use navigation::{
+    navigation_distance, navigation_source_objects, object_links_to, resolve_navigation_position,
+    ScriptNavigationError,
+};
 pub use numbers::{
     append_decimal_i16, append_decimal_i32, packed_bcd_to_binary, parse_startup_audio_number,
     STARTUP_AUDIO_NUMBER_LENGTH,

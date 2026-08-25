@@ -45,6 +45,16 @@ impl ScriptFieldSelector {
     pub const PRESENTATION_HANDOFF: Self = Self(2);
     /// Per-actor encounter counter.
     pub const ENCOUNTER_COUNT: Self = Self(8);
+    /// Matching black-hole position pair.
+    pub const BLACK_HOLE_MATCH_POSITION: Self = Self(9);
+    /// Nonmatching black-hole position pair.
+    pub const BLACK_HOLE_MISMATCH_POSITION: Self = Self(10);
+    /// Direct two-word navigation position.
+    pub const NAVIGATION_POSITION: Self = Self(11);
+    /// Comparison word selecting a black-hole position pair.
+    pub const BLACK_HOLE_COMPARISON: Self = Self(12);
+    /// Relation word compared with a black-hole selector.
+    pub const BLACK_HOLE_RELATION: Self = Self(14);
     /// Per-character high-bit-first object-link set.
     pub const OBJECT_LINKS: Self = Self(5);
     /// Object holder or current location.
