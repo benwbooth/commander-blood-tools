@@ -1,0 +1,86 @@
+[
+  {
+    "name": "positive_remaining",
+    "module": "scrut",
+    "entry": 6118,
+    "continuation": "motion",
+    "duration_before": 5,
+    "duration_after": 1,
+    "active_before": 1,
+    "active_after": 1,
+    "data_sha256": "f36c928628e91fab90804af8c9c1b5d35c3e653fd083c602b015ef888187475b",
+    "code_sha256": "91b1f6f853705d0e8c74a1437d2a3fde3e4fc0d9a6cac2f4e880c2e71d4817b8"
+  },
+  {
+    "name": "zero_remaining",
+    "module": "scrut",
+    "entry": 6118,
+    "continuation": "motion",
+    "duration_before": 4,
+    "duration_after": 0,
+    "active_before": 1,
+    "active_after": 1,
+    "data_sha256": "c2a2b08562abecff68c9c423a20fc9b0dd6d957674560af6f105ed4bbda3628e",
+    "code_sha256": "91b1f6f853705d0e8c74a1437d2a3fde3e4fc0d9a6cac2f4e880c2e71d4817b8"
+  },
+  {
+    "name": "negative_result",
+    "module": "scrut",
+    "entry": 6118,
+    "continuation": "restart",
+    "duration_before": 3,
+    "duration_after": 0,
+    "active_before": 1,
+    "active_after": 0,
+    "data_sha256": "73b29d5d15cf84fa9e5335a70a24f9a9a26d81f10c78270daaf8aacc429e81d8",
+    "code_sha256": "8522e77aad6639cf9bb06f148048fed3c6bf1cfbe6459c9a0be7b987c3c3ac77"
+  },
+  {
+    "name": "zero_before",
+    "module": "scrut",
+    "entry": 6118,
+    "continuation": "restart",
+    "duration_before": 0,
+    "duration_after": 0,
+    "active_before": 65535,
+    "active_after": 0,
+    "data_sha256": "f3b80f7b0838b48eaf02c819c8a7ee4074b9da7f75935c25657165b7558936d3",
+    "code_sha256": "8522e77aad6639cf9bb06f148048fed3c6bf1cfbe6459c9a0be7b987c3c3ac77"
+  },
+  {
+    "name": "signed_minimum",
+    "module": "scrut",
+    "entry": 6118,
+    "continuation": "restart",
+    "duration_before": 32768,
+    "duration_after": 0,
+    "active_before": 4660,
+    "active_after": 0,
+    "data_sha256": "8645101c20c6486f81b0e9404e3e9d4064e808dcbb8414ce9f541130d5289851",
+    "code_sha256": "8522e77aad6639cf9bb06f148048fed3c6bf1cfbe6459c9a0be7b987c3c3ac77"
+  },
+  {
+    "name": "signed_negative_near_minimum",
+    "module": "scrut",
+    "entry": 6118,
+    "continuation": "restart",
+    "duration_before": 32771,
+    "duration_after": 0,
+    "active_before": 22136,
+    "active_after": 0,
+    "data_sha256": "f199afee280afd689543cfb9e350b0522ab983733916cd4ce88f179b146554de",
+    "code_sha256": "8522e77aad6639cf9bb06f148048fed3c6bf1cfbe6459c9a0be7b987c3c3ac77"
+  },
+  {
+    "name": "signed_negative_boundary",
+    "module": "scrut",
+    "entry": 6118,
+    "continuation": "restart",
+    "duration_before": 32772,
+    "duration_after": 0,
+    "active_before": 39612,
+    "active_after": 0,
+    "data_sha256": "121ab5df1ea326fbb7f4498f85471ba2dd175fd28803b4e7ddd2d0d6c8f63e2d",
+    "code_sha256": "8522e77aad6639cf9bb06f148048fed3c6bf1cfbe6459c9a0be7b987c3c3ac77"
+  }
+]

@@ -161,6 +161,7 @@ const SCRUT_HEADING_CARRY_SHIFT: u32 = 4;
 const SCRUT_HEADING_CARRY_MASK: u16 = 1;
 const SCRUT_FOLLOWER_PAN_SHIFT: u32 = 1;
 const SCRUT_FOLLOWER_ROLL_SHIFT: u32 = 2;
+const SCRUT_FADE_DURATION_STEP: i16 = 4;
 
 /// Callback stage selected for one slot-2 animation model.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -183,6 +184,8 @@ pub enum AlienSlot2Callback {
     CroolisFade,
     /// Track CROOLIS's camera-relative selection motion.
     CroolisSelection,
+    /// Run SCRUT's compiled but unreferenced fade callback.
+    ScrutFade,
 }
 
 /// Callback-owned state parallel to one animated model node.
@@ -419,6 +422,15 @@ pub enum AlienScrutCommonDispatch {
     MotionRequested,
     /// The current model owns the latch, so this callback pass ends.
     Halted,
+}
+
+/// Typed continuation chosen by SCRUT's compiled fade callback.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienScrutFadeUpdate {
+    /// Continue immediately through ordinary SCRUT motion.
+    MotionRequested,
+    /// Continue immediately through SCRUT's separately recovered restart.
+    RestartRequested,
 }
 
 /// Invalid flat state supplied to the slot-2 coordinator.
@@ -1339,6 +1351,36 @@ pub fn update_scrut_motion(
     Ok(())
 }
 
+/// Install SCRUT's compiled fade callback and request same-pass dispatch.
+///
+/// No original method table, callback store, branch, or in-overlay pointer
+/// references this setup entry, but it remains part of the recovered code set.
+pub fn begin_scrut_fade(
+    pose: &AlienModelPose,
+    animation: &mut AlienSlot2AnimationState,
+) -> Result<AlienSlot2Callback, AlienSlot2Error> {
+    validate_state(AlienSpecies::Scrut, pose, animation)?;
+    animation.callback = Some(AlienSlot2Callback::ScrutFade);
+    Ok(AlienSlot2Callback::ScrutFade)
+}
+
+/// Advance SCRUT's compiled fade timer or request its ordinary restart.
+pub fn update_scrut_fade(
+    pose: &AlienModelPose,
+    animation: &mut AlienSlot2AnimationState,
+    scene: &mut AlienCallbackSceneState,
+) -> Result<AlienScrutFadeUpdate, AlienSlot2Error> {
+    validate_state(AlienSpecies::Scrut, pose, animation)?;
+    if animation.phase_timer >= SCRUT_FADE_DURATION_STEP {
+        animation.phase_timer = animation.phase_timer.wrapping_sub(SCRUT_FADE_DURATION_STEP);
+        return Ok(AlienScrutFadeUpdate::MotionRequested);
+    }
+
+    animation.phase_timer = i16::default();
+    scene.slot2_active = false;
+    Ok(AlienScrutFadeUpdate::RestartRequested)
+}
+
 /// Preserve the observable behavior of the unreachable steering sibling.
 ///
 /// No original alien method table or callback points at this routine. Keeping
@@ -1891,6 +1933,24 @@ mod tests {
         heading_carry: u16,
         follower_pan_after: u16,
         follower_roll_after: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct ScrutBeginFadeVector {
+        name: String,
+        module: String,
+        next_stage: String,
+    }
+
+    #[derive(Deserialize)]
+    struct ScrutFadeVector {
+        name: String,
+        module: String,
+        continuation: String,
+        duration_before: u16,
+        duration_after: u16,
+        active_before: u16,
+        active_after: u16,
     }
 
     #[derive(Deserialize)]
@@ -2955,6 +3015,72 @@ mod tests {
                     vector.name
                 );
             }
+        }
+    }
+
+    #[test]
+    fn scrut_fade_entry_matches_every_original_overlay_vector() {
+        let vectors: Vec<ScrutBeginFadeVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/xdb_scrut_func_17e1_natural.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            assert_eq!(vector.module, "scrut");
+            assert_eq!(vector.next_stage, "fade");
+            let pose = pose(&[EMPTY_NODE_VECTOR; PRIMARY_AND_FOLLOWER_NODE_COUNT]);
+            let mut animation = AlienSlot2AnimationState::new(PRIMARY_AND_FOLLOWER_NODE_COUNT);
+            animation.callback = Some(AlienSlot2Callback::Update);
+
+            assert_eq!(
+                begin_scrut_fade(&pose, &mut animation).unwrap(),
+                AlienSlot2Callback::ScrutFade,
+                "{}",
+                vector.name
+            );
+            assert_eq!(animation.callback, Some(AlienSlot2Callback::ScrutFade));
+        }
+    }
+
+    #[test]
+    fn scrut_fade_update_matches_every_original_overlay_vector() {
+        let vectors: Vec<ScrutFadeVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/xdb_scrut_func_17e6_natural.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            assert_eq!(vector.module, "scrut");
+            let pose = pose(&[EMPTY_NODE_VECTOR; PRIMARY_AND_FOLLOWER_NODE_COUNT]);
+            let mut animation = AlienSlot2AnimationState::new(PRIMARY_AND_FOLLOWER_NODE_COUNT);
+            animation.callback = Some(AlienSlot2Callback::ScrutFade);
+            animation.phase_timer = vector.duration_before as i16;
+            let mut scene = AlienCallbackSceneState {
+                slot2_active: vector.active_before != u16::default(),
+                ..AlienCallbackSceneState::default()
+            };
+            let expected = match vector.continuation.as_str() {
+                "motion" => AlienScrutFadeUpdate::MotionRequested,
+                "restart" => AlienScrutFadeUpdate::RestartRequested,
+                continuation => panic!("unknown SCRUT fade continuation {continuation}"),
+            };
+
+            assert_eq!(
+                update_scrut_fade(&pose, &mut animation, &mut scene).unwrap(),
+                expected,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                animation.phase_timer as u16, vector.duration_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                scene.slot2_active,
+                vector.active_after != u16::default(),
+                "{}",
+                vector.name
+            );
+            assert_eq!(animation.callback, Some(AlienSlot2Callback::ScrutFade));
         }
     }
 

@@ -1,0 +1,29 @@
+[
+  {
+    "name": "ordinary",
+    "module": "scrut",
+    "entry": 6113,
+    "next_stage": "fade",
+    "callback_before": 48879,
+    "callback_after": 6118,
+    "data_sha256": "62c154ba33c8527ef16f9d396fafaac729f367cfeae3d20fd16ecbe698c6f27e"
+  },
+  {
+    "name": "high_callback",
+    "module": "scrut",
+    "entry": 6113,
+    "next_stage": "fade",
+    "callback_before": 65535,
+    "callback_after": 6118,
+    "data_sha256": "fe5156f90fe4c496a8015a525671ef9f103f2aacb570cb376075fc105709b5e2"
+  },
+  {
+    "name": "wrapped_state_offsets",
+    "module": "scrut",
+    "entry": 6113,
+    "next_stage": "fade",
+    "callback_before": 4660,
+    "callback_after": 6118,
+    "data_sha256": "c58ec6f4eba08e9b56aca5dc3c035c4b7f6850ea4a7c16dae796307c669e8e05"
+  }
+]
