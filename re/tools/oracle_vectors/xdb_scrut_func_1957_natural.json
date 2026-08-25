@@ -1,0 +1,482 @@
+[
+  {
+    "name": "depth_boundary_latch_other",
+    "module": "scrut",
+    "entry": 6487,
+    "continuation": "tracking",
+    "depth": 500,
+    "radial_before": 0,
+    "radial_after": 12,
+    "pitch_before": 300,
+    "pitch_after": 300,
+    "control_latch": "other",
+    "active_before": 0,
+    "active_after": 0,
+    "selection_value_before": 65535,
+    "selection_value_after": 1000,
+    "visual_positions_before": [
+      [
+        286326800,
+        572653600
+      ],
+      [
+        858980400,
+        1145307200
+      ]
+    ],
+    "visual_positions_after": [
+      [
+        286326804,
+        572653664
+      ],
+      [
+        858980396,
+        1145307280
+      ]
+    ],
+    "saved_positions": [
+      [
+        257,
+        514
+      ],
+      [
+        771,
+        1028
+      ]
+    ],
+    "data_sha256": "086ecbb3a227f38e789da782552d2edf13cee13b6ed841bf093858f126b9b6e5",
+    "code_sha256": "e6eb26d555b2c0fce672b9317a2f6aaafc0c4b170b7e1f33655c79f1e19a11fd"
+  },
+  {
+    "name": "depth_boundary_latch_current",
+    "module": "scrut",
+    "entry": 6487,
+    "continuation": "tracking",
+    "depth": 500,
+    "radial_before": 0,
+    "radial_after": 12,
+    "pitch_before": 300,
+    "pitch_after": 300,
+    "control_latch": "current",
+    "active_before": 42330,
+    "active_after": 1,
+    "selection_value_before": 65535,
+    "selection_value_after": 1000,
+    "visual_positions_before": [
+      [
+        286326800,
+        572653600
+      ],
+      [
+        858980400,
+        1145307200
+      ]
+    ],
+    "visual_positions_after": [
+      [
+        286326804,
+        572653664
+      ],
+      [
+        858980396,
+        1145307280
+      ]
+    ],
+    "saved_positions": [
+      [
+        257,
+        514
+      ],
+      [
+        771,
+        1028
+      ]
+    ],
+    "data_sha256": "6c28d0316f1330c5ac3bf406c098f83def0ef257a7e36a970074c6d33bad1bac",
+    "code_sha256": "faaa843d6d6dafa8d48ed2e27f76b2aec095fcf9a53c390b390c172c8e44aed0"
+  },
+  {
+    "name": "high_depth_radial_easing",
+    "module": "scrut",
+    "entry": 6487,
+    "continuation": "tracking",
+    "depth": 32767,
+    "radial_before": 32768,
+    "radial_after": 30732,
+    "pitch_before": 300,
+    "pitch_after": 300,
+    "control_latch": "other",
+    "active_before": 1,
+    "active_after": 1,
+    "selection_value_before": 65535,
+    "selection_value_after": 1000,
+    "visual_positions_before": [
+      [
+        286326800,
+        572653600
+      ],
+      [
+        858980400,
+        1145307200
+      ]
+    ],
+    "visual_positions_after": [
+      [
+        286326804,
+        572653664
+      ],
+      [
+        858980396,
+        1145307280
+      ]
+    ],
+    "saved_positions": [
+      [
+        257,
+        514
+      ],
+      [
+        771,
+        1028
+      ]
+    ],
+    "data_sha256": "1e472e65e9d9c825e8588e28f91d6d7bf7e5c82349dc9b14a0749e30dc1577e1",
+    "code_sha256": "faaa843d6d6dafa8d48ed2e27f76b2aec095fcf9a53c390b390c172c8e44aed0"
+  },
+  {
+    "name": "radial_target_fixed_point",
+    "module": "scrut",
+    "entry": 6487,
+    "continuation": "tracking",
+    "depth": 700,
+    "radial_before": 200,
+    "radial_after": 200,
+    "pitch_before": 300,
+    "pitch_after": 300,
+    "control_latch": "other",
+    "active_before": 0,
+    "active_after": 0,
+    "selection_value_before": 65535,
+    "selection_value_after": 1000,
+    "visual_positions_before": [
+      [
+        286326800,
+        572653600
+      ],
+      [
+        858980400,
+        1145307200
+      ]
+    ],
+    "visual_positions_after": [
+      [
+        286326804,
+        572653664
+      ],
+      [
+        858980396,
+        1145307280
+      ]
+    ],
+    "saved_positions": [
+      [
+        257,
+        514
+      ],
+      [
+        771,
+        1028
+      ]
+    ],
+    "data_sha256": "4c6203795512982d1d895c4d82fa11cd0be358777f431322cef2bac13368c2dd",
+    "code_sha256": "e6eb26d555b2c0fce672b9317a2f6aaafc0c4b170b7e1f33655c79f1e19a11fd"
+  },
+  {
+    "name": "middle_depth_upper",
+    "module": "scrut",
+    "entry": 6487,
+    "continuation": "descending",
+    "depth": 499,
+    "radial_before": 0,
+    "radial_after": 0,
+    "pitch_before": 300,
+    "pitch_after": 268,
+    "control_latch": "other",
+    "active_before": 0,
+    "active_after": 0,
+    "selection_value_before": 65535,
+    "selection_value_after": 1000,
+    "visual_positions_before": [
+      [
+        286326800,
+        572653600
+      ],
+      [
+        858980400,
+        1145307200
+      ]
+    ],
+    "visual_positions_after": [
+      [
+        286326804,
+        572653664
+      ],
+      [
+        858980396,
+        1145307280
+      ]
+    ],
+    "saved_positions": [
+      [
+        257,
+        514
+      ],
+      [
+        771,
+        1028
+      ]
+    ],
+    "data_sha256": "10e48c33d3e399f46efa1e452fd3c1cccec18fc2ace8d7b3cc5ab8399ccc70d3",
+    "code_sha256": "e6eb26d555b2c0fce672b9317a2f6aaafc0c4b170b7e1f33655c79f1e19a11fd"
+  },
+  {
+    "name": "middle_depth_zero",
+    "module": "scrut",
+    "entry": 6487,
+    "continuation": "descending",
+    "depth": 0,
+    "radial_before": 0,
+    "radial_after": 0,
+    "pitch_before": 32776,
+    "pitch_after": 32744,
+    "control_latch": "other",
+    "active_before": 0,
+    "active_after": 0,
+    "selection_value_before": 65535,
+    "selection_value_after": 1000,
+    "visual_positions_before": [
+      [
+        286326800,
+        572653600
+      ],
+      [
+        858980400,
+        1145307200
+      ]
+    ],
+    "visual_positions_after": [
+      [
+        286326804,
+        572653664
+      ],
+      [
+        858980396,
+        1145307280
+      ]
+    ],
+    "saved_positions": [
+      [
+        257,
+        514
+      ],
+      [
+        771,
+        1028
+      ]
+    ],
+    "data_sha256": "d2bbba7bce7029a88cc8d57b6e9f885ca393e567ec7e3f4f114ba457d5827f6e",
+    "code_sha256": "e6eb26d555b2c0fce672b9317a2f6aaafc0c4b170b7e1f33655c79f1e19a11fd"
+  },
+  {
+    "name": "negative_depth",
+    "module": "scrut",
+    "entry": 6487,
+    "continuation": "selection_init",
+    "depth": 65535,
+    "radial_before": 0,
+    "radial_after": 0,
+    "pitch_before": 300,
+    "pitch_after": 300,
+    "control_latch": "other",
+    "active_before": 0,
+    "active_after": 0,
+    "selection_value_before": 65535,
+    "selection_value_after": 0,
+    "visual_positions_before": [
+      [
+        286326800,
+        572653600
+      ],
+      [
+        858980400,
+        1145307200
+      ]
+    ],
+    "visual_positions_after": [
+      [
+        286327041,
+        572654082
+      ],
+      [
+        858981123,
+        1145308164
+      ]
+    ],
+    "saved_positions": [
+      [
+        257,
+        514
+      ],
+      [
+        771,
+        1028
+      ]
+    ],
+    "data_sha256": "14374b928e98a409226448c78c3db1b45f4b44445c0a2fc64910eac11c10ceb7",
+    "code_sha256": "dd1da3b906546a3c51dd83b4980745b749f12f1574ce394acd0501c4940f0046"
+  },
+  {
+    "name": "signed_minimum_depth",
+    "module": "scrut",
+    "entry": 6487,
+    "continuation": "selection_init",
+    "depth": 32768,
+    "radial_before": 0,
+    "radial_after": 0,
+    "pitch_before": 300,
+    "pitch_after": 300,
+    "control_latch": "other",
+    "active_before": 65535,
+    "active_after": 0,
+    "selection_value_before": 32767,
+    "selection_value_after": 0,
+    "visual_positions_before": [
+      [
+        286326800,
+        572653600
+      ],
+      [
+        858980400,
+        1145307200
+      ]
+    ],
+    "visual_positions_after": [
+      [
+        286327041,
+        572654082
+      ],
+      [
+        858981123,
+        1145308164
+      ]
+    ],
+    "saved_positions": [
+      [
+        257,
+        514
+      ],
+      [
+        771,
+        1028
+      ]
+    ],
+    "data_sha256": "a5a8ff00a01c78e6eedc227ff2806e9a07614aef698113ecdb41fd657c89421f",
+    "code_sha256": "dd1da3b906546a3c51dd83b4980745b749f12f1574ce394acd0501c4940f0046"
+  },
+  {
+    "name": "visual_word_wrap",
+    "module": "scrut",
+    "entry": 6487,
+    "continuation": "tracking",
+    "depth": 600,
+    "radial_before": 0,
+    "radial_after": 12,
+    "pitch_before": 300,
+    "pitch_after": 300,
+    "control_latch": "other",
+    "active_before": 0,
+    "active_after": 0,
+    "selection_value_before": 65535,
+    "selection_value_after": 1000,
+    "visual_positions_before": [
+      [
+        2863333374,
+        3149660144
+      ],
+      [
+        3435921410,
+        3722313726
+      ]
+    ],
+    "visual_positions_after": [
+      [
+        2863267842,
+        3149594672
+      ],
+      [
+        3435986942,
+        3722248270
+      ]
+    ],
+    "saved_positions": [
+      [
+        257,
+        514
+      ],
+      [
+        771,
+        1028
+      ]
+    ],
+    "data_sha256": "c939204007020d16d8df70f7ec530c5f0f721e6b7d10d8dbfb43f252cac4d76b",
+    "code_sha256": "e6eb26d555b2c0fce672b9317a2f6aaafc0c4b170b7e1f33655c79f1e19a11fd"
+  },
+  {
+    "name": "wrapped_state_offsets",
+    "module": "scrut",
+    "entry": 6487,
+    "continuation": "selection_init",
+    "depth": 65534,
+    "radial_before": 0,
+    "radial_after": 0,
+    "pitch_before": 300,
+    "pitch_after": 300,
+    "control_latch": "other",
+    "active_before": 0,
+    "active_after": 0,
+    "selection_value_before": 65535,
+    "selection_value_after": 0,
+    "visual_positions_before": [
+      [
+        4008607743,
+        4294934528
+      ],
+      [
+        305463295,
+        1450704897
+      ]
+    ],
+    "visual_positions_after": [
+      [
+        4008607744,
+        4294934527
+      ],
+      [
+        305463295,
+        1450704896
+      ]
+    ],
+    "saved_positions": [
+      [
+        32768,
+        32767
+      ],
+      [
+        65535,
+        0
+      ]
+    ],
+    "data_sha256": "b69469da568fcb0c8bf29bf2959a69309f2fbbdcf21b799d84255d1f6123b92a",
+    "code_sha256": "dd1da3b906546a3c51dd83b4980745b749f12f1574ce394acd0501c4940f0046"
+  }
+]

@@ -176,6 +176,18 @@ const SCRUT_APPROACH_VERTICAL_ROUNDING_MASK: u16 = 1;
 const SCRUT_APPROACH_MINIMUM_DEPTH: i16 = 300;
 const SCRUT_APPROACH_LATERAL_BIAS: u16 = 3_000;
 const SCRUT_APPROACH_LATERAL_WIDTH: u16 = 6_000;
+const SCRUT_FINISH_FIRST_VISUAL_NODE: usize = 8;
+const SCRUT_FINISH_SECOND_VISUAL_NODE: usize = 9;
+const SCRUT_FINISH_REQUIRED_NODE_COUNT: usize = SCRUT_FINISH_SECOND_VISUAL_NODE + 1;
+const SCRUT_FINISH_SELECTION_SIGNAL: i16 = 1_000;
+const SCRUT_FINISH_FIRST_X_STEP: u16 = 4;
+const SCRUT_FINISH_FIRST_Z_STEP: u16 = 64;
+const SCRUT_FINISH_SECOND_X_STEP: u16 = 4;
+const SCRUT_FINISH_SECOND_Z_STEP: u16 = 80;
+const SCRUT_FINISH_TRACKING_DEPTH: i16 = 500;
+const SCRUT_FINISH_RADIAL_TARGET: u16 = 200;
+const SCRUT_FINISH_RADIAL_EASING_SHIFT: u32 = 4;
+const SCRUT_FINISH_PITCH_STEP: u16 = 32;
 const SCRUT_STEERING_DAMPING_SHIFT: u32 = 20;
 const SCRUT_STEERING_APPROACH_SHIFT: u32 = 19;
 const SCRUT_STEERING_MINIMUM: i16 = -32;
@@ -210,6 +222,8 @@ pub enum AlienSlot2Callback {
     ScrutSelectionDamp,
     /// Move SCRUT toward the camera-relative selection target.
     ScrutSelectionApproach,
+    /// Complete SCRUT's selected camera-relative animation.
+    ScrutFinish,
 }
 
 /// Callback-owned state parallel to one animated model node.
@@ -524,6 +538,17 @@ pub enum AlienScrutApproachUpdate {
     FinishRequested,
 }
 
+/// Typed continuation chosen by SCRUT's selection finish callback.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienScrutFinishUpdate {
+    /// The model remains in front of the camera and continues radial tracking.
+    Tracking,
+    /// The model crossed the near threshold and lowered its pitch.
+    Descending,
+    /// The model passed behind the camera and restored its authored visual nodes.
+    SelectionInitRequested,
+}
+
 /// Invalid flat state supplied to the slot-2 coordinator.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AlienSlot2Error {
@@ -563,6 +588,11 @@ pub enum AlienSlot2Error {
     },
     /// SCRUT motion updates the primary node and five follower nodes.
     MissingScrutMotionNodes {
+        /// Nodes supplied by the caller.
+        node_count: usize,
+    },
+    /// SCRUT's finish animation requires its two distant visual nodes.
+    MissingScrutFinishNodes {
         /// Nodes supplied by the caller.
         node_count: usize,
     },
@@ -1653,6 +1683,87 @@ pub fn update_scrut_selection_approach(
     }
 }
 
+/// Install SCRUT's finish callback and request same-pass dispatch.
+pub fn begin_scrut_finish(
+    pose: &AlienModelPose,
+    animation: &mut AlienSlot2AnimationState,
+) -> Result<AlienSlot2Callback, AlienSlot2Error> {
+    validate_state(AlienSpecies::Scrut, pose, animation)?;
+    animation.callback = Some(AlienSlot2Callback::ScrutFinish);
+    Ok(AlienSlot2Callback::ScrutFinish)
+}
+
+/// Advance SCRUT's selected finish animation using typed visual nodes.
+pub fn update_scrut_finish(
+    model_index: usize,
+    pose: &mut AlienModelPose,
+    animation: &AlienSlot2AnimationState,
+    scene: &mut AlienCallbackSceneState,
+) -> Result<AlienScrutFinishUpdate, AlienSlot2Error> {
+    validate_state(AlienSpecies::Scrut, pose, animation)?;
+    if pose.nodes.len() < SCRUT_FINISH_REQUIRED_NODE_COUNT {
+        return Err(AlienSlot2Error::MissingScrutFinishNodes {
+            node_count: pose.nodes.len(),
+        });
+    }
+
+    scene.scrut_selection_signal = SCRUT_FINISH_SELECTION_SIGNAL;
+    let first_visual = &mut pose.nodes[SCRUT_FINISH_FIRST_VISUAL_NODE];
+    first_visual.local_position[X_AXIS] = replace_position_word(
+        first_visual.local_position[X_AXIS],
+        (first_visual.local_position[X_AXIS] as u16).wrapping_add(SCRUT_FINISH_FIRST_X_STEP),
+    );
+    first_visual.local_position[Z_AXIS] = replace_position_word(
+        first_visual.local_position[Z_AXIS],
+        (first_visual.local_position[Z_AXIS] as u16).wrapping_add(SCRUT_FINISH_FIRST_Z_STEP),
+    );
+    let second_visual = &mut pose.nodes[SCRUT_FINISH_SECOND_VISUAL_NODE];
+    second_visual.local_position[X_AXIS] = replace_position_word(
+        second_visual.local_position[X_AXIS],
+        (second_visual.local_position[X_AXIS] as u16).wrapping_sub(SCRUT_FINISH_SECOND_X_STEP),
+    );
+    second_visual.local_position[Z_AXIS] = replace_position_word(
+        second_visual.local_position[Z_AXIS],
+        (second_visual.local_position[Z_AXIS] as u16).wrapping_add(SCRUT_FINISH_SECOND_Z_STEP),
+    );
+
+    let primary = &mut pose.nodes[PRIMARY_NODE];
+    let camera_z = transformed_component(primary, Z_AXIS);
+    if camera_z >= SCRUT_FINISH_TRACKING_DEPTH {
+        let radial_delta = SCRUT_FINISH_RADIAL_TARGET
+            .wrapping_sub(primary.radial_offset as u16)
+            .cast_signed();
+        primary.radial_offset = primary
+            .radial_offset
+            .wrapping_add(radial_delta >> SCRUT_FINISH_RADIAL_EASING_SHIFT);
+        if scene.control_latch == AlienControlLatch::Model(model_index) {
+            scene.slot2_active = true;
+        }
+        return Ok(AlienScrutFinishUpdate::Tracking);
+    }
+    if camera_z >= i16::default() {
+        primary.angles[X_AXIS] = primary.angles[X_AXIS].wrapping_sub(SCRUT_FINISH_PITCH_STEP);
+        return Ok(AlienScrutFinishUpdate::Descending);
+    }
+
+    scene.scrut_selection_signal = i16::default();
+    for node_index in [
+        SCRUT_FINISH_FIRST_VISUAL_NODE,
+        SCRUT_FINISH_SECOND_VISUAL_NODE,
+    ] {
+        let node = &mut pose.nodes[node_index];
+        let saved = animation.nodes[node_index];
+        node.local_position[X_AXIS] =
+            replace_position_word(node.local_position[X_AXIS], saved.motion_parameter as u16);
+        node.local_position[Z_AXIS] = replace_position_word(
+            node.local_position[Z_AXIS],
+            saved.secondary_motion_parameter as u16,
+        );
+    }
+    scene.slot2_active = false;
+    Ok(AlienScrutFinishUpdate::SelectionInitRequested)
+}
+
 /// Preserve the observable behavior of the unreachable steering sibling.
 ///
 /// No original alien method table or callback points at this routine. Keeping
@@ -1825,6 +1936,8 @@ mod tests {
     const TRANSFORM_LOW_WORD_SENTINEL: u16 = 0x6a5a;
     const FOLLOWER_PAN_SENTINEL: u16 = 0xa55a;
     const FOLLOWER_ROLL_SENTINEL: u16 = 0x5aa5;
+    const VISUAL_X_COMPONENT: usize = 0;
+    const VISUAL_Z_COMPONENT: usize = 1;
     const CURRENT_MODEL_INDEX: usize = 2;
     const OTHER_MODEL_INDEX: usize = 3;
     const CROOLIS_UPDATE_ENTRY: u16 = 0x1727;
@@ -2303,6 +2416,33 @@ mod tests {
         heading_carry: u16,
         follower_pan_after: Option<u16>,
         follower_roll_after: Option<u16>,
+    }
+
+    #[derive(Deserialize)]
+    struct ScrutFinishSetupVector {
+        name: String,
+        module: String,
+        next_stage: String,
+    }
+
+    #[derive(Deserialize)]
+    struct ScrutFinishVector {
+        name: String,
+        module: String,
+        continuation: String,
+        depth: u16,
+        radial_before: u16,
+        radial_after: u16,
+        pitch_before: u16,
+        pitch_after: u16,
+        control_latch: String,
+        active_before: u16,
+        active_after: u16,
+        selection_value_before: u16,
+        selection_value_after: u16,
+        visual_positions_before: [[u32; 2]; 2],
+        visual_positions_after: [[u32; 2]; 2],
+        saved_positions: [[u16; 2]; 2],
     }
 
     #[derive(Deserialize)]
@@ -3773,6 +3913,135 @@ mod tests {
                 }
                 _ => panic!("incomplete SCRUT follower expectation for {}", vector.name),
             }
+        }
+    }
+
+    #[test]
+    fn scrut_finish_setup_matches_every_original_overlay_vector() {
+        let vectors: Vec<ScrutFinishSetupVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/xdb_scrut_func_1952_natural.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            assert_eq!(vector.module, "scrut");
+            assert_eq!(vector.next_stage, "finish");
+            let pose = pose(&[EMPTY_NODE_VECTOR; PRIMARY_AND_FOLLOWER_NODE_COUNT]);
+            let mut animation = AlienSlot2AnimationState::new(PRIMARY_AND_FOLLOWER_NODE_COUNT);
+
+            assert_eq!(
+                begin_scrut_finish(&pose, &mut animation).unwrap(),
+                AlienSlot2Callback::ScrutFinish,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                animation.callback,
+                Some(AlienSlot2Callback::ScrutFinish),
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    #[test]
+    fn scrut_finish_update_matches_every_original_overlay_vector() {
+        let vectors: Vec<ScrutFinishVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/xdb_scrut_func_1957_natural.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            assert_eq!(vector.module, "scrut");
+            let mut pose = pose(&[EMPTY_NODE_VECTOR; SCRUT_FINISH_REQUIRED_NODE_COUNT]);
+            let primary = &mut pose.nodes[PRIMARY_NODE];
+            primary.transform.translation[Z_AXIS] =
+                join_words(vector.depth, TRANSFORM_LOW_WORD_SENTINEL);
+            primary.radial_offset = vector.radial_before as i16;
+            primary.angles[X_AXIS] = vector.pitch_before;
+            let visual_nodes = [
+                SCRUT_FINISH_FIRST_VISUAL_NODE,
+                SCRUT_FINISH_SECOND_VISUAL_NODE,
+            ];
+            for (visual_index, node_index) in visual_nodes.into_iter().enumerate() {
+                pose.nodes[node_index].local_position[X_AXIS] =
+                    vector.visual_positions_before[visual_index][VISUAL_X_COMPONENT] as i32;
+                pose.nodes[node_index].local_position[Z_AXIS] =
+                    vector.visual_positions_before[visual_index][VISUAL_Z_COMPONENT] as i32;
+            }
+
+            let mut animation = AlienSlot2AnimationState::new(SCRUT_FINISH_REQUIRED_NODE_COUNT);
+            animation.callback = Some(AlienSlot2Callback::ScrutFinish);
+            for (visual_index, node_index) in visual_nodes.into_iter().enumerate() {
+                animation.nodes[node_index].motion_parameter =
+                    vector.saved_positions[visual_index][VISUAL_X_COMPONENT] as i16;
+                animation.nodes[node_index].secondary_motion_parameter =
+                    vector.saved_positions[visual_index][VISUAL_Z_COMPONENT] as i16;
+            }
+            let mut scene = AlienCallbackSceneState {
+                control_latch: match vector.control_latch.as_str() {
+                    "current" => AlienControlLatch::Model(CURRENT_MODEL_INDEX),
+                    "other" => AlienControlLatch::Model(OTHER_MODEL_INDEX),
+                    latch => panic!("unknown SCRUT finish control latch {latch}"),
+                },
+                slot2_active: vector.active_before != u16::default(),
+                scrut_selection_signal: vector.selection_value_before as i16,
+                ..AlienCallbackSceneState::default()
+            };
+            let expected = match vector.continuation.as_str() {
+                "tracking" => AlienScrutFinishUpdate::Tracking,
+                "descending" => AlienScrutFinishUpdate::Descending,
+                "selection_init" => AlienScrutFinishUpdate::SelectionInitRequested,
+                continuation => panic!("unknown SCRUT finish continuation {continuation}"),
+            };
+
+            assert_eq!(
+                update_scrut_finish(CURRENT_MODEL_INDEX, &mut pose, &animation, &mut scene)
+                    .unwrap(),
+                expected,
+                "{}",
+                vector.name
+            );
+            let primary = &pose.nodes[PRIMARY_NODE];
+            assert_eq!(
+                primary.radial_offset as u16, vector.radial_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                primary.angles[X_AXIS], vector.pitch_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                scene.slot2_active,
+                vector.active_after != u16::default(),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                scene.scrut_selection_signal as u16, vector.selection_value_after,
+                "{}",
+                vector.name
+            );
+            for (visual_index, node_index) in visual_nodes.into_iter().enumerate() {
+                assert_eq!(
+                    pose.nodes[node_index].local_position[X_AXIS] as u32,
+                    vector.visual_positions_after[visual_index][VISUAL_X_COMPONENT],
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    pose.nodes[node_index].local_position[Z_AXIS] as u32,
+                    vector.visual_positions_after[visual_index][VISUAL_Z_COMPONENT],
+                    "{}",
+                    vector.name
+                );
+            }
+            assert_eq!(
+                animation.callback,
+                Some(AlienSlot2Callback::ScrutFinish),
+                "{}",
+                vector.name
+            );
         }
     }
 

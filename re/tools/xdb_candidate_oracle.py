@@ -7950,6 +7950,427 @@ def scrut_slot2_selection_approach_vectors(entry: int) -> list[dict[str, object]
     return vectors
 
 
+def scrut_slot2_finish_setup_vectors(entry: int) -> list[dict[str, object]]:
+    module = "scrut"
+    image = load_image(module)
+    body_size = 5
+    body_hash = "de90e82d83a006fce7dde05484a2dc1e184cf3d07a0785f09b4cd03cfcfde814"
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered body changed")
+
+    data_segment = 0x5000
+    extra_segment = 0x7000
+    fs_segment = 0x9000
+    game_segment = 0xA000
+    stack_segment = 0xB000
+    finish_entry = 0x1957
+    cases = (
+        ("ordinary", 0x4000, 0xBEEF),
+        ("high_callback", 0x5000, 0xFFFF),
+        ("wrapped_state_offsets", 0xFFF8, 0x1234),
+    )
+    vectors: list[dict[str, object]] = []
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        encoded = struct.pack("<H", value & 0xFFFF)
+        for index, byte in enumerate(encoded):
+            memory[(offset + index) & 0xFFFF] = byte
+
+    def get_u16(memory: bytes | bytearray, offset: int) -> int:
+        return memory[offset & 0xFFFF] | (memory[(offset + 1) & 0xFFFF] << 8)
+
+    for case_index, (name, state, callback_before) in enumerate(cases):
+        data_before = bytearray(
+            (offset * 31 + case_index * 19 + 7) & 0xFF
+            for offset in range(0x10000)
+        )
+        put_u16(data_before, state + 0x0E, callback_before)
+        data_expected = bytearray(data_before)
+        put_u16(data_expected, state + 0x0E, finish_entry)
+        extra_before = bytes(
+            (offset * 13 + case_index + 3) & 0xFF for offset in range(0x10000)
+        )
+        fs_before = bytes(
+            (offset * 17 + case_index + 5) & 0xFF for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 23 + case_index + 9) & 0xFF for offset in range(0x10000)
+        )
+        stack_before = bytes.fromhex("877869965aa5")
+        initial = {
+            "eax": 0xA1A12345,
+            "ebx": 0xB2B23456,
+            "ecx": 0xC3C34567,
+            "edx": 0xD4D45678,
+            "esi": 0xE5E50000 | state,
+            "edi": 0xF6F63000,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0293 | (0x0400 if case_index & 1 else 0),
+        }
+        machine = execute(
+            image,
+            entry,
+            finish_entry,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (extra_segment, 0, extra_before),
+                (fs_segment, 0, fs_before),
+                (game_segment, 0, game_before),
+                (stack_segment, 0xFF00, stack_before),
+            ],
+            max_instructions=4,
+        )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(data_expected):
+            differences = [
+                (offset, actual_data[offset], data_expected[offset])
+                for offset in range(0x10000)
+                if actual_data[offset] != data_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: data differs at {differences}"
+            )
+        if bytes(machine.mem_read(0, len(image))) != image:
+            raise AssertionError(f"{module}:{entry:#x} {name}: code changed")
+        for segment, expected in (
+            (extra_segment, extra_before),
+            (fs_segment, fs_before),
+            (game_segment, game_before),
+        ):
+            if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: segment {segment:#x} changed"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF00, len(stack_before))) != stack_before:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+        if machine.reg_read(UC_X86_REG_SP) != initial["sp"]:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack pointer changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "next_stage": "finish",
+                "callback_before": callback_before,
+                "callback_after": get_u16(data_expected, state + 0x0E),
+                "data_sha256": hashlib.sha256(data_expected).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
+def scrut_slot2_finish_update_vectors(entry: int) -> list[dict[str, object]]:
+    module = "scrut"
+    image = load_image(module)
+    body_size = 120
+    body_hash = "8be4c09bf2b8dd7ba844acf0172a131a0e932a77d01a3fe576059a6e37a8129a"
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered body changed")
+
+    data_segment = 0x5000
+    extra_segment = 0x7000
+    fs_segment = 0x9000
+    game_segment = 0xA000
+    stack_segment = 0xB000
+    context = 0x3000
+    active_offset = 0x168E
+    selection_value_offset = 0x1690
+    control_latch_offset = 0x2282
+    selection_init_entry = 0x1802
+    return_address = 0xF000
+    stack_before = struct.pack("<H", return_address) + bytes.fromhex("877869965aa5")
+    base = {
+        "state": 0x4000,
+        "depth": 500,
+        "radial": 0,
+        "pitch": 300,
+        "active": 0,
+        "selection_value": -1,
+        "control_latch": "other",
+        "visual_positions": ((0x11110010, 0x22220020), (0x33330030, 0x44440040)),
+        "saved_positions": ((0x0101, 0x0202), (0x0303, 0x0404)),
+    }
+    cases = (
+        {**base, "name": "depth_boundary_latch_other"},
+        {
+            **base,
+            "name": "depth_boundary_latch_current",
+            "state": 0x4400,
+            "active": 0xA55A,
+            "control_latch": "current",
+        },
+        {
+            **base,
+            "name": "high_depth_radial_easing",
+            "state": 0x4800,
+            "depth": 32767,
+            "radial": -32768,
+            "active": 1,
+        },
+        {
+            **base,
+            "name": "radial_target_fixed_point",
+            "state": 0x4C00,
+            "depth": 700,
+            "radial": 200,
+        },
+        {**base, "name": "middle_depth_upper", "state": 0x5000, "depth": 499},
+        {
+            **base,
+            "name": "middle_depth_zero",
+            "state": 0x5400,
+            "depth": 0,
+            "pitch": -32760,
+        },
+        {**base, "name": "negative_depth", "state": 0x5800, "depth": -1},
+        {
+            **base,
+            "name": "signed_minimum_depth",
+            "state": 0x5C00,
+            "depth": -32768,
+            "active": 0xFFFF,
+            "selection_value": 0x7FFF,
+        },
+        {
+            **base,
+            "name": "visual_word_wrap",
+            "state": 0x6000,
+            "depth": 600,
+            "visual_positions": ((0xAAAAFFFE, 0xBBBBFFF0), (0xCCCC0002, 0xDDDDFFFE)),
+        },
+        {
+            **base,
+            "name": "wrapped_state_offsets",
+            "state": 0xFC80,
+            "depth": -2,
+            "visual_positions": ((0xEEEE7FFF, 0xFFFF8000), (0x1234FFFF, 0x56780001)),
+            "saved_positions": ((0x8000, 0x7FFF), (0xFFFF, 0x0000)),
+        },
+    )
+    vectors: list[dict[str, object]] = []
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        encoded = struct.pack("<H", value & 0xFFFF)
+        for index, byte in enumerate(encoded):
+            memory[(offset + index) & 0xFFFF] = byte
+
+    def put_u32(memory: bytearray, offset: int, value: int) -> None:
+        encoded = struct.pack("<I", value & 0xFFFFFFFF)
+        for index, byte in enumerate(encoded):
+            memory[(offset + index) & 0xFFFF] = byte
+
+    def get_u16(memory: bytes | bytearray, offset: int) -> int:
+        return memory[offset & 0xFFFF] | (memory[(offset + 1) & 0xFFFF] << 8)
+
+    def get_u32(memory: bytes | bytearray, offset: int) -> int:
+        return get_u16(memory, offset) | (get_u16(memory, offset + 2) << 16)
+
+    def signed_word(value: int) -> int:
+        value &= 0xFFFF
+        return value if value < 0x8000 else value - 0x10000
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        state = int(case["state"])
+        depth = int(case["depth"])
+        radial = int(case["radial"])
+        pitch = int(case["pitch"])
+        active = int(case["active"])
+        selection_value = int(case["selection_value"])
+        control_latch = str(case["control_latch"])
+        visual_positions = tuple(
+            tuple(int(component) for component in position)
+            for position in case["visual_positions"]
+        )
+        saved_positions = tuple(
+            tuple(int(component) for component in position)
+            for position in case["saved_positions"]
+        )
+
+        data_before = bytearray(
+            (offset * 31 + case_index * 19 + 7) & 0xFF
+            for offset in range(0x10000)
+        )
+        put_u16(data_before, state + 0x40, depth)
+        put_u16(data_before, state + 0x4E, pitch)
+        put_u16(data_before, state + 0x54, radial)
+        for node_index, node_offset in enumerate((0x332, 0x390)):
+            put_u32(data_before, state + node_offset, visual_positions[node_index][0])
+            put_u32(data_before, state + node_offset + 8, visual_positions[node_index][1])
+            put_u16(data_before, state + node_offset + 20, saved_positions[node_index][0])
+            put_u16(data_before, state + node_offset + 24, saved_positions[node_index][1])
+        data_expected = bytearray(data_before)
+        put_u16(
+            data_expected,
+            state + 0x332,
+            get_u16(data_expected, state + 0x332) + 4,
+        )
+        put_u16(
+            data_expected,
+            state + 0x33A,
+            get_u16(data_expected, state + 0x33A) + 64,
+        )
+        put_u16(
+            data_expected,
+            state + 0x390,
+            get_u16(data_expected, state + 0x390) - 4,
+        )
+        put_u16(
+            data_expected,
+            state + 0x398,
+            get_u16(data_expected, state + 0x398) + 80,
+        )
+
+        code_before = bytearray(image)
+        struct.pack_into("<H", code_before, active_offset, active)
+        struct.pack_into("<H", code_before, selection_value_offset, selection_value & 0xFFFF)
+        code_before[return_address] = 0xCC
+        code_expected = bytearray(code_before)
+        struct.pack_into("<H", code_expected, selection_value_offset, 1000)
+        fs_before = bytearray(
+            (offset * 17 + case_index + 5) & 0xFF for offset in range(0x10000)
+        )
+        put_u16(
+            fs_before,
+            control_latch_offset,
+            context if control_latch == "current" else 0x4321,
+        )
+
+        if signed_word(depth) >= 500:
+            continuation = "tracking"
+            target = return_address
+            expected_sp = 0xFF02
+            radial_delta = signed_word(200 - radial)
+            put_u16(data_expected, state + 0x54, radial + (radial_delta >> 4))
+            if control_latch == "current":
+                struct.pack_into("<H", code_expected, active_offset, 1)
+        elif signed_word(depth) >= 0:
+            continuation = "descending"
+            target = return_address
+            expected_sp = 0xFF02
+            put_u16(data_expected, state + 0x4E, pitch - 32)
+        else:
+            continuation = "selection_init"
+            target = selection_init_entry
+            expected_sp = 0xFF00
+            struct.pack_into("<H", code_expected, selection_value_offset, 0)
+            struct.pack_into("<H", code_expected, active_offset, 0)
+            for node_index, node_offset in enumerate((0x332, 0x390)):
+                put_u16(data_expected, state + node_offset, saved_positions[node_index][0])
+                put_u16(data_expected, state + node_offset + 8, saved_positions[node_index][1])
+
+        extra_before = bytes(
+            (offset * 13 + case_index + 3) & 0xFF for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 23 + case_index + 9) & 0xFF for offset in range(0x10000)
+        )
+        initial = {
+            "eax": 0xA1A12345,
+            "ebx": 0xB2B23456,
+            "ecx": 0xC3C34567,
+            "edx": 0xD4D45678,
+            "esi": 0xE5E50000 | state,
+            "edi": 0xF6F60000 | context,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0293 | (0x0400 if case_index & 1 else 0),
+        }
+        machine = execute(
+            bytes(code_before),
+            entry,
+            target,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (extra_segment, 0, extra_before),
+                (fs_segment, 0, bytes(fs_before)),
+                (game_segment, 0, game_before),
+                (stack_segment, 0xFF00, stack_before),
+            ],
+        )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(data_expected):
+            differences = [
+                (offset, actual_data[offset], data_expected[offset])
+                for offset in range(0x10000)
+                if actual_data[offset] != data_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: data differs at {differences}"
+            )
+        if bytes(machine.mem_read(0, len(image))) != bytes(code_expected):
+            raise AssertionError(f"{module}:{entry:#x} {name}: code data changed")
+        if bytes(machine.mem_read(fs_segment * 16, 0x10000)) != bytes(fs_before):
+            raise AssertionError(f"{module}:{entry:#x} {name}: control segment changed")
+        for segment, expected in (
+            (extra_segment, extra_before),
+            (game_segment, game_before),
+        ):
+            if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: segment {segment:#x} changed"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF00, len(stack_before))) != stack_before:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+        if machine.reg_read(UC_X86_REG_SP) != expected_sp:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack pointer changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "continuation": continuation,
+                "depth": depth & 0xFFFF,
+                "radial_before": radial & 0xFFFF,
+                "radial_after": get_u16(data_expected, state + 0x54),
+                "pitch_before": pitch & 0xFFFF,
+                "pitch_after": get_u16(data_expected, state + 0x4E),
+                "control_latch": control_latch,
+                "active_before": active & 0xFFFF,
+                "active_after": struct.unpack_from("<H", code_expected, active_offset)[0],
+                "selection_value_before": selection_value & 0xFFFF,
+                "selection_value_after": struct.unpack_from(
+                    "<H", code_expected, selection_value_offset
+                )[0],
+                "visual_positions_before": [
+                    [component & 0xFFFFFFFF for component in position]
+                    for position in visual_positions
+                ],
+                "visual_positions_after": [
+                    [
+                        get_u32(data_expected, state + node_offset),
+                        get_u32(data_expected, state + node_offset + 8),
+                    ]
+                    for node_offset in (0x332, 0x390)
+                ],
+                "saved_positions": [
+                    [component & 0xFFFF for component in position]
+                    for position in saved_positions
+                ],
+                "data_sha256": hashlib.sha256(data_expected).hexdigest(),
+                "code_sha256": hashlib.sha256(code_expected).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def scrut_slot2_steering_vectors(entry: int) -> list[dict[str, object]]:
     module = "scrut"
     image = load_image(module)
@@ -23096,6 +23517,16 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "xdb_scrut_func_1868_natural.json",
         scrut_slot2_selection_approach_vectors(0x1868),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "xdb_scrut_func_1952_natural.json",
+        scrut_slot2_finish_setup_vectors(0x1952),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "xdb_scrut_func_1957_natural.json",
+        scrut_slot2_finish_update_vectors(0x1957),
         args.check,
     )
     update_vector(
