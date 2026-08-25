@@ -2,6 +2,7 @@
 
 mod aboard;
 mod actor_slots;
+mod bridge_input;
 mod actor_handler_black_hole;
 mod actor_handler_camera;
 mod actor_handler_hyperjump;
@@ -14,6 +15,7 @@ mod descript;
 mod descript_lookup;
 mod menu_reveal;
 mod navigation;
+mod navigation_status;
 mod numbers;
 mod presentation;
 mod presentation_hover;
@@ -41,6 +43,11 @@ pub use actor_slots::{
     NAV_ACTOR_SLOT_COUNT, NavActorBusyState, NavActorHandler, NavActorMouseState,
     NavActorSeekState, NavActorSlot, NavActorSlotBackend, NavActorSlotFlags,
     NavActorSlotUpdateOutcome, update_nav_actor_slots,
+};
+pub use bridge_input::{
+    STATUS_REGION_POLL_ATTEMPTS, PrimaryPointerSample, StatusRegionPollBackend,
+    StatusRegionPollHit, latch_primary_pointer_hit, poll_status_region,
+    primary_pointer_hits_region,
 };
 pub use actor_handler_black_hole::{
     BLACK_HOLE_IDLE_PRESENTATION_RESOURCE, BLACK_HOLE_TRANSITION_PRESENTATION_RESOURCE,
@@ -108,6 +115,12 @@ pub use navigation::{
     navigation_actor_targets, navigation_candidates, navigation_chart_objects,
     navigation_distance, navigation_source_objects, object_links_to, objects_at_arche_position,
     presentable_navigation_objects, resolve_navigation_position, ScriptNavigationError,
+};
+pub use navigation_status::{
+    NavigationStatusContext, NavigationStatusHoverMode, NavigationStatusLabels,
+    NavigationStatusLocation, NavigationStatusLocationKind, NavigationStatusOutcome,
+    NavigationStatusRegion, NavigationStatusSource, NavigationStatusState, NavigationStatusText,
+    update_navigation_status,
 };
 pub use numbers::{
     append_decimal_i16, append_decimal_i32, packed_bcd_to_binary, parse_startup_audio_number,
