@@ -11,6 +11,7 @@ mod navigation;
 mod numbers;
 mod presentation;
 mod presentation_hover;
+mod presentation_line;
 mod procedure;
 mod record;
 mod record_state;
@@ -80,6 +81,10 @@ pub use presentation::{
 pub use presentation_hover::{
     PresentationHitAreas, PresentationHitRectangle, PresentationHitSelection,
     PresentationHoverOutcome, PresentationHoverState, update_presentation_hover,
+};
+pub use presentation_line::{
+    PresentationLine, PresentationLineBackend, PresentationLineFlags, PresentationLineOutcome,
+    PresentationLinePlayback, PresentationResourceId, update_presentation_line,
 };
 pub use procedure::{
     apply_procedure_activation, evaluate_procedure_gate, ScriptProcedureStateError,
