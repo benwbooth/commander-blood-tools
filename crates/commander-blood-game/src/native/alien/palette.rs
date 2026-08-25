@@ -41,8 +41,6 @@ pub struct AlienPaletteInput {
 /// Persistent cycle and pulse state shared by the palette-animation method.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct AlienPaletteAnimationState {
-    /// Current texture-remap phase.
-    pub level: u16,
     /// Phase used to determine which texture pages changed this frame.
     pub previous_level: u16,
     /// Signed phase increment.
@@ -98,6 +96,7 @@ pub fn update_palette_animation(
     species: AlienSpecies,
     pose: &mut AlienModelPose,
     input: AlienPaletteInput,
+    method_delta: &mut i16,
     state: &mut AlienPaletteAnimationState,
     texture: &mut [u8],
     remap: &[u8; PALETTE_REMAP_ENTRY_COUNT],
@@ -137,14 +136,15 @@ pub fn update_palette_animation(
         state.pulse_levels = PULSE_BASE_LEVELS.map(|level| level << shift);
     }
 
-    if state.level > MAXIMUM_CYCLE_LEVEL {
+    let current_level = *method_delta as u16;
+    if current_level > MAXIMUM_CYCLE_LEVEL {
         return Ok(AlienPaletteUpdate::default());
     }
-    let mut lower = MAXIMUM_CYCLE_LEVEL.wrapping_sub(state.level);
+    let mut lower = MAXIMUM_CYCLE_LEVEL.wrapping_sub(current_level);
     let mut upper = MAXIMUM_CYCLE_LEVEL.wrapping_sub(state.previous_level);
-    state.previous_level = state.level;
+    state.previous_level = current_level;
 
-    let next_level = (state.level as u8).wrapping_add(state.step as u8);
+    let next_level = (current_level as u8).wrapping_add(state.step as u8);
     if (next_level as i8).is_negative() {
         return Ok(AlienPaletteUpdate::default());
     }
@@ -155,7 +155,7 @@ pub fn update_palette_animation(
     } else {
         state.countdown = next_countdown;
     }
-    state.level = u16::from(next_level);
+    *method_delta = i16::from(next_level);
 
     if lower == upper {
         return Ok(AlienPaletteUpdate::default());
@@ -432,8 +432,8 @@ mod tests {
             for (case_index, vector) in vectors.into_iter().enumerate() {
                 let initial = INITIAL_CASES[case_index];
                 let mut pose = model_pose(case_index);
+                let mut method_delta = vector.level_before as i16;
                 let mut state = AlienPaletteAnimationState {
-                    level: vector.level_before,
                     previous_level: initial.previous_level,
                     step: initial.step,
                     countdown: initial.countdown,
@@ -455,6 +455,7 @@ mod tests {
                         x: vector.mouse[X_AXIS],
                         y: vector.mouse[Y_AXIS],
                     },
+                    &mut method_delta,
                     &mut state,
                     &mut texture,
                     &remap,
@@ -467,7 +468,7 @@ mod tests {
                     "{}",
                     vector.name
                 );
-                assert_eq!(state.level, vector.level_after, "{}", vector.name);
+                assert_eq!(method_delta as u16, vector.level_after, "{}", vector.name);
                 assert_eq!(
                     state.previous_level, vector.previous_after,
                     "{}",
@@ -526,11 +527,13 @@ mod tests {
         let remap = palette_remap();
         let mut pose = model_pose(usize::MIN);
         pose.nodes.clear();
+        let mut method_delta = i16::MIN;
         assert_eq!(
             update_palette_animation(
                 AlienSpecies::Amer,
                 &mut pose,
                 AlienPaletteInput::default(),
+                &mut method_delta,
                 &mut AlienPaletteAnimationState::default(),
                 &mut [],
                 &remap,
@@ -539,8 +542,8 @@ mod tests {
         );
 
         let mut pose = model_pose(usize::MIN);
+        let mut method_delta = 100;
         let mut state = AlienPaletteAnimationState {
-            level: 100,
             previous_level: 96,
             step: 1,
             countdown: 1,
@@ -551,6 +554,7 @@ mod tests {
                 AlienSpecies::Amer,
                 &mut pose,
                 AlienPaletteInput::default(),
+                &mut method_delta,
                 &mut state,
                 &mut [],
                 &remap,

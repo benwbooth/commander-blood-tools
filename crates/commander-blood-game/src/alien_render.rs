@@ -62,6 +62,8 @@ pub(crate) struct AlienRenderer {
     textured_pipeline: wgpu::RenderPipeline,
     star_pipeline: wgpu::RenderPipeline,
     bind_group: wgpu::BindGroup,
+    indexed_texture: wgpu::Texture,
+    indexed_texture_size: wgpu::Extent3d,
     triangle_vertices: wgpu::Buffer,
     star_vertices: wgpu::Buffer,
     maximum_triangle_vertices: usize,
@@ -292,6 +294,8 @@ impl AlienRenderer {
             textured_pipeline,
             star_pipeline,
             bind_group,
+            indexed_texture: texture_image,
+            indexed_texture_size: texture_size,
             triangle_vertices,
             star_vertices,
             maximum_triangle_vertices,
@@ -307,6 +311,32 @@ impl AlienRenderer {
 
     /// Upload one recovered scene frame into the dynamic GPU buffers.
     fn upload(&self, queue: &wgpu::Queue, frame: &AlienSceneFrame) -> Result<AlienDrawRanges> {
+        if let Some(pixels) = &frame.texture_update {
+            let expected = self.indexed_texture_size.width as usize
+                * self.indexed_texture_size.height as usize;
+            if pixels.len() != expected {
+                anyhow::bail!(
+                    "alien texture update contains {} bytes, expected {}",
+                    pixels.len(),
+                    expected
+                );
+            }
+            queue.write_texture(
+                wgpu::TexelCopyTextureInfo {
+                    texture: &self.indexed_texture,
+                    mip_level: BASE_MIP_LEVEL,
+                    origin: wgpu::Origin3d::ZERO,
+                    aspect: wgpu::TextureAspect::All,
+                },
+                pixels,
+                wgpu::TexelCopyBufferLayout {
+                    offset: u64::MIN,
+                    bytes_per_row: Some(self.indexed_texture_size.width),
+                    rows_per_image: Some(self.indexed_texture_size.height),
+                },
+                self.indexed_texture_size,
+            );
+        }
         let mut triangle_vertices = Vec::new();
         append_triangle_layer(&mut triangle_vertices, &frame.geometry.primary_triangles);
         let primary_end = triangle_vertices.len();

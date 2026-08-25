@@ -33,6 +33,12 @@ const TRIGONOMETRY_POSITION: usize = 0x0036;
 const TRIGONOMETRY_RECORD_SIZE: usize = 4;
 const DISPLAY_PALETTE_POSITION: usize = 0x1f6a;
 const INITIAL_METHOD_DELTA_POSITION: usize = 0x0099;
+const PALETTE_PREVIOUS_LEVEL_POSITION: usize = 0x009b;
+const PALETTE_CYCLE_POSITION: usize = 0x009f;
+const PALETTE_CYCLE_STEP_FIELD: usize = 0;
+const PALETTE_CYCLE_COUNTDOWN_FIELD: usize = 1;
+const OTHER_PALETTE_PULSE_COUNTDOWN_POSITION: usize = 0x02fc;
+const PALETTE_PULSE_POSITIONS: [usize; AXIS_COUNT] = [0x2536, 0x2594, 0x25f2];
 const PALETTE_ENTRY_COUNT: usize = 256;
 const RGB_COMPONENT_COUNT: usize = 3;
 const PALETTE_BYTE_COUNT: usize = PALETTE_ENTRY_COUNT * RGB_COMPONENT_COUNT;
@@ -355,6 +361,21 @@ pub struct AlienWaveSceneData {
     pub current_sample: i16,
 }
 
+/// Initial shared state for the palette-animation method.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct AlienPaletteAnimationData {
+    /// Previous texture-remap level.
+    pub previous_level: u16,
+    /// Signed texture-remap phase increment.
+    pub step: i8,
+    /// Frames remaining before reversing the increment.
+    pub countdown: u8,
+    /// CROOLIS/SCRUT pulse countdown.
+    pub pulse_countdown: u16,
+    /// Initial low-word palette pulse levels.
+    pub pulse_levels: [u16; AXIS_COUNT],
+}
+
 /// One named hierarchical model and its initial behavior method.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AlienModelData {
@@ -408,6 +429,8 @@ pub struct AlienAsset {
     pub initial_method_delta: i16,
     /// Initial scene-wide wave selection and sample state.
     pub wave_scene: AlienWaveSceneData,
+    /// Initial shared palette-animation continuation state.
+    pub palette_animation: AlienPaletteAnimationData,
     /// Distance-to-palette lookup used by the starfield.
     pub star_shade_table: [u8; STAR_SHADE_TABLE_ENTRY_COUNT],
     /// Deterministic seed used to generate the static star distribution.
@@ -915,6 +938,20 @@ pub fn decode_alien_xdb(data: &[u8], kind: AlienXdbKind) -> Option<AlienAsset> {
             selected_node,
             current_sample: read_i16(data, wave_scene_position + WAVE_CURRENT_SAMPLE_FIELD)?,
         },
+        palette_animation: AlienPaletteAnimationData {
+            previous_level: read_u16(data, PALETTE_PREVIOUS_LEVEL_POSITION)?,
+            step: *data.get(PALETTE_CYCLE_POSITION + PALETTE_CYCLE_STEP_FIELD)? as i8,
+            countdown: *data.get(PALETTE_CYCLE_POSITION + PALETTE_CYCLE_COUNTDOWN_FIELD)?,
+            pulse_countdown: match kind {
+                AlienXdbKind::Amer => u16::MIN,
+                AlienXdbKind::Croolis | AlienXdbKind::Scrut => {
+                    read_u16(data, OTHER_PALETTE_PULSE_COUNTDOWN_POSITION)?
+                }
+            },
+            pulse_levels: checked_array(|axis| {
+                read_u16(data, data_start + PALETTE_PULSE_POSITIONS[axis])
+            })?,
+        },
         star_shade_table,
         star_seed,
     })
@@ -933,6 +970,7 @@ mod tests {
     const EXPECTED_SCRUT_MODEL_COUNT: usize = 14;
     const ZERO_RASTER_DEPTH: i32 = 0;
     const EXPECTED_INITIAL_METHOD_DELTA: i16 = -4;
+    const EXPECTED_PALETTE_PULSE_LEVELS: [u16; AXIS_COUNT] = [10, 13, 11];
 
     fn original_xdb(name: &str) -> Option<PathBuf> {
         [
@@ -965,6 +1003,14 @@ mod tests {
             assert_eq!(asset.kind, kind);
             assert_eq!(asset.models.len(), expected_models);
             assert_eq!(asset.initial_method_delta, EXPECTED_INITIAL_METHOD_DELTA);
+            assert_eq!(asset.palette_animation.previous_level, u16::MIN);
+            assert_eq!(asset.palette_animation.step, 1);
+            assert_eq!(asset.palette_animation.countdown, 3);
+            assert_eq!(asset.palette_animation.pulse_countdown, u16::MIN);
+            assert_eq!(
+                asset.palette_animation.pulse_levels,
+                EXPECTED_PALETTE_PULSE_LEVELS
+            );
             let (primary_phase, secondary_phase, current_sample, selected_node) = match kind {
                 AlienXdbKind::Amer => (0x22b4, 0x0b94, 35, None),
                 AlienXdbKind::Croolis => (0x1174, 0x05d4, 56, None),

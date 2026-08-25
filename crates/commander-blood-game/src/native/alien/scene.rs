@@ -10,12 +10,13 @@ use commander_blood_formats::alien::{
 use super::{
     AlienBehaviorError, AlienBehindCameraSignal, AlienCallbackSceneState, AlienCameraAngles,
     AlienCameraControl, AlienCameraStep, AlienCameraTransform, AlienFaceSelection,
-    AlienFaceSelectionError, AlienModelPose, AlienMouseSample, AlienPrimaryMeshFrame,
-    AlienPrimaryMeshPose, AlienPrimaryProjectionError, AlienProjectionError, AlienRasterError,
-    AlienRenderGeometry, AlienSceneNode, AlienScreenCenter, AlienSpecies, AlienStarfieldError,
-    AlienStarfieldFrame, AlienWaveError, AlienWaveMethodState, AlienWaveSelection, adjust_state,
-    anchor_state, bounds_then_wrap, generate_starfield, prepare_render_geometry, select_faces,
-    update_or_initialize_wave, wrap_positions,
+    AlienFaceSelectionError, AlienModelPose, AlienMouseSample, AlienPaletteAnimationState,
+    AlienPaletteError, AlienPaletteInput, AlienPrimaryMeshFrame, AlienPrimaryMeshPose,
+    AlienPrimaryProjectionError, AlienProjectionError, AlienRasterError, AlienRenderGeometry,
+    AlienSceneNode, AlienScreenCenter, AlienSpecies, AlienStarfieldError, AlienStarfieldFrame,
+    AlienWaveError, AlienWaveMethodState, AlienWaveSelection, adjust_state, anchor_state,
+    bounds_then_wrap, generate_starfield, prepare_render_geometry, select_faces,
+    update_or_initialize_wave, update_palette_animation, wrap_positions,
 };
 
 const INITIAL_VIEW: [i16; AXIS_COUNT] = [1_885, -239, -9_790];
@@ -39,6 +40,8 @@ pub struct AlienSceneFrame {
     pub models: AlienFaceSelection,
     /// Owned textured triangles for the primary and behavior-model passes.
     pub geometry: AlienRenderGeometry,
+    /// Complete indexed atlas after a palette-remap frame, when it changed.
+    pub texture_update: Option<Vec<u8>>,
 }
 
 /// Mutable native state for one AMER, CROOLIS, or SCRUT scene.
@@ -56,6 +59,8 @@ pub struct AlienScene {
     pub models: Vec<AlienModelPose>,
     /// Per-model continuation state for authored wave methods.
     wave_states: Vec<Option<AlienWaveMethodState>>,
+    /// Shared continuation state for the palette-animation method.
+    palette_state: AlienPaletteAnimationState,
     /// Model selected by the latest CROOLIS/SCRUT camera-plane signal.
     pub selected_model: Option<usize>,
     /// Shared state published and consumed by translated behavior callbacks.
@@ -101,6 +106,8 @@ pub enum AlienSceneError {
         /// Underlying wave failure.
         error: AlienWaveError,
     },
+    /// The palette-animation method rejected its typed state.
+    Palette(AlienPaletteError),
 }
 
 impl fmt::Display for AlienSceneError {
@@ -197,6 +204,13 @@ impl AlienScene {
             }),
             ..AlienCallbackSceneState::default()
         };
+        let palette_state = AlienPaletteAnimationState {
+            previous_level: asset.palette_animation.previous_level,
+            step: asset.palette_animation.step,
+            countdown: asset.palette_animation.countdown,
+            pulse_countdown: asset.palette_animation.pulse_countdown,
+            pulse_levels: asset.palette_animation.pulse_levels,
+        };
         Self {
             asset,
             species,
@@ -205,6 +219,7 @@ impl AlienScene {
             primary,
             models,
             wave_states,
+            palette_state,
             selected_model: None,
             callback_state,
             exit_requested: u16::MIN,
@@ -237,9 +252,27 @@ impl AlienScene {
             matrix: self.camera.matrix,
             translation: self.camera.transformed_view,
         };
+        let palette_input = AlienPaletteInput {
+            x: camera_step.centered_cursor[0],
+            y: camera_step.centered_cursor[1],
+        };
+        let mut texture_changed = false;
         for (model_index, (model, pose)) in
             self.asset.models.iter().zip(&mut self.models).enumerate()
         {
+            if model.behavior == AlienBehaviorMethod::PaletteUpdate {
+                let update = update_palette_animation(
+                    self.species,
+                    pose,
+                    palette_input,
+                    &mut self.callback_state.method_delta,
+                    &mut self.palette_state,
+                    &mut self.asset.texture.pixels,
+                    &self.asset.palette_remap,
+                )
+                .map_err(AlienSceneError::Palette)?;
+                texture_changed |= update.changed_texture_bytes != usize::MIN;
+            }
             if model.behavior == AlienBehaviorMethod::Wave {
                 let state = self.wave_states[model_index]
                     .as_mut()
@@ -327,6 +360,7 @@ impl AlienScene {
             starfield,
             models,
             geometry,
+            texture_update: texture_changed.then(|| self.asset.texture.pixels.clone()),
         })
     }
 
@@ -364,6 +398,8 @@ mod tests {
     const BOUNDS_ANGLE_AXIS: usize = 1;
     const STATE_ANGLE_AXIS: usize = 2;
     const EXPECTED_INITIAL_METHOD_DELTA: i16 = -4;
+    const REMAP_TEST_LEVEL: i16 = 60;
+    const REMAP_TEST_PREVIOUS_LEVEL: u16 = 56;
 
     fn original_xdb(name: &str) -> Option<PathBuf> {
         [
@@ -453,6 +489,7 @@ mod tests {
                 AlienWaveSelection::Disabled
             );
             assert_eq!(scene.callback_state.wave_selected_node, expected_wave_node);
+            assert!(frame.texture_update.is_none());
             for (before, after) in initial_wave_states.iter().zip(&scene.wave_states) {
                 let (Some(before), Some(after)) = (before, after) else {
                     assert_eq!(before.is_none(), after.is_none());
@@ -472,6 +509,18 @@ mod tests {
                         .wrapping_add(before.secondary_step as u16)
                 );
             }
+
+            scene.callback_state.method_delta = REMAP_TEST_LEVEL;
+            scene.palette_state.previous_level = REMAP_TEST_PREVIOUS_LEVEL;
+            let remapped_texture = scene
+                .step(CENTERED_MOUSE)
+                .unwrap()
+                .texture_update
+                .expect("the verified palette range must remap texture indices");
+            assert_eq!(
+                remapped_texture.len(),
+                scene.asset.texture.width * scene.asset.texture.height
+            );
         }
     }
 }
