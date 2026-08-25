@@ -3,6 +3,7 @@
 #![deny(missing_docs)]
 
 pub mod alien;
+pub mod archive;
 pub mod bas;
 pub mod bloodprg;
 pub mod code;

@@ -1,15 +1,134 @@
 //! Typed loading of original Commander Blood artwork.
 
+use std::collections::BTreeSet;
 use std::ops::RangeInclusive;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
+use commander_blood_formats::archive::{BloodArchive, BloodResourceName};
 
 const RGBA_COMPONENT_COUNT: usize = 4;
 const OPAQUE_ALPHA: u8 = 255;
 const TITLE_FILENAME: &str = "BLOOD.LBM";
 const EXECUTABLE_FILENAME: &str = "BLOODPRG.EXE";
 const BRIDGE_PANORAMA_FILENAME: &str = "TB.BIG";
+
+/// Storage selected for one original game resource.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum OriginalResourceSource {
+    /// Member bytes validated inside `BLOOD.DAT`.
+    EmbeddedArchive,
+    /// Standalone file below the configured game-data root.
+    LooseFile,
+}
+
+/// Unified resource loader replacing DOS files and expanded-memory backends.
+#[derive(Clone, Debug)]
+pub struct OriginalResourceStore {
+    loose_root: PathBuf,
+    archive: Option<BloodArchive>,
+    loose_names: BTreeSet<BloodResourceName>,
+    force_loose: bool,
+}
+
+impl OriginalResourceStore {
+    /// Construct a loader from decoded archive data and exact-case loose names.
+    pub fn new(
+        loose_root: PathBuf,
+        archive: Option<BloodArchive>,
+        loose_names: impl IntoIterator<Item = BloodResourceName>,
+        force_loose: bool,
+    ) -> Self {
+        Self {
+            loose_root,
+            archive,
+            loose_names: loose_names.into_iter().collect(),
+            force_loose,
+        }
+    }
+
+    /// Select the source that can satisfy one resource request.
+    ///
+    /// This translates `resource_source_select` at BLOODPRG file offset
+    /// `0x002693`. The authored loose-name allowlist remains case-sensitive;
+    /// archive lookup uses the executable's distinct DOS byte folding.
+    pub fn source(&self, name: &BloodResourceName) -> OriginalResourceSource {
+        if self.force_loose || self.loose_names.contains(name) {
+            return OriginalResourceSource::LooseFile;
+        }
+        if self
+            .archive
+            .as_ref()
+            .is_some_and(|archive| archive.member(name).is_some())
+        {
+            OriginalResourceSource::EmbeddedArchive
+        } else {
+            OriginalResourceSource::LooseFile
+        }
+    }
+
+    /// Return the byte count of a resolvable resource.
+    ///
+    /// This is the typed host equivalent of `resource_name_lookup` at
+    /// BLOODPRG file offset `0x0028CA`.
+    pub fn resource_len(&self, name: &BloodResourceName) -> Result<usize> {
+        match self.source(name) {
+            OriginalResourceSource::EmbeddedArchive => Ok(self
+                .archive
+                .as_ref()
+                .and_then(|archive| archive.member(name))
+                .expect("source selection validated the archive member")
+                .len()),
+            OriginalResourceSource::LooseFile => {
+                let path = self.loose_path(name)?;
+                let byte_count = std::fs::metadata(&path)
+                    .with_context(|| format!("reading resource metadata {}", path.display()))?
+                    .len();
+                usize::try_from(byte_count)
+                    .with_context(|| format!("resource is too large: {}", path.display()))
+            }
+        }
+    }
+
+    /// Load one resource into a single owned byte allocation.
+    ///
+    /// This translates `resource_file_load` at BLOODPRG file offset
+    /// `0x002ABB`. XMS, EMS, chunk cursors, and address wrapping are obsolete;
+    /// consumers receive the exact member or loose-file bytes directly.
+    pub fn load(&self, name: &BloodResourceName) -> Result<Box<[u8]>> {
+        match self.source(name) {
+            OriginalResourceSource::EmbeddedArchive => Ok(Box::from(
+                self.archive
+                    .as_ref()
+                    .and_then(|archive| archive.member(name))
+                    .expect("source selection validated the archive member"),
+            )),
+            OriginalResourceSource::LooseFile => {
+                let path = self.loose_path(name)?;
+                Ok(std::fs::read(&path)
+                    .with_context(|| format!("reading original resource {}", path.display()))?
+                    .into_boxed_slice())
+            }
+        }
+    }
+
+    fn loose_path(&self, name: &BloodResourceName) -> Result<PathBuf> {
+        let folded = name.archive_lookup_key();
+        let host_name = std::str::from_utf8(&folded)
+            .expect("validated ASCII resource name")
+            .replace('\\', "/");
+        let relative = Path::new(&host_name);
+        let mut path = self.loose_root.clone();
+        for component in relative.components() {
+            match component {
+                Component::Normal(part) => path.push(part),
+                Component::CurDir => {}
+                _ => bail!("resource path escapes the game-data root: {host_name}"),
+            }
+        }
+        Ok(path)
+    }
+}
 
 /// One decoded original frame ready for upload to a modern GPU texture.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -152,12 +271,82 @@ pub fn find_bridge_panorama(explicit: Option<&Path>) -> Result<PathBuf> {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    use commander_blood_formats::archive::BloodArchive;
+    use serde::Deserialize;
+
     use super::*;
 
     const ORIGINAL_TITLE_WIDTH: u32 = 640;
     const ORIGINAL_TITLE_HEIGHT: u32 = 480;
     const MINIMUM_DISTINCT_TITLE_COLORS: usize = 8;
     const ALPHA_COMPONENT_INDEX: usize = RGBA_COMPONENT_COUNT - 1;
+    const DIRECTORY_HEADER_SIZE: usize = 2;
+    const DIRECTORY_ENTRY_SIZE: usize = 25;
+    const RESOURCE_NAME_FIELD_SIZE: usize = 16;
+    const BYTE_COUNT_FIELD_OFFSET: usize = RESOURCE_NAME_FIELD_SIZE;
+    const FILE_POSITION_FIELD_OFFSET: usize = BYTE_COUNT_FIELD_OFFSET + 4;
+    const FILE_POSITION_FIELD_SIZE: usize = 4;
+    const FORCE_LOOSE_BIT: u8 = 1;
+    const TEST_PAYLOAD_BYTE: u8 = 73;
+    static TEMPORARY_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(u64::MIN);
+
+    #[derive(Deserialize)]
+    struct SourceSelectionOracle {
+        filename: String,
+        force_flag: u8,
+        allowlist_entries: Vec<String>,
+        route: String,
+        archive_hit: bool,
+    }
+
+    struct TemporaryResourceRoot(PathBuf);
+
+    impl TemporaryResourceRoot {
+        fn create() -> Self {
+            let sequence = TEMPORARY_ROOT_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+            let path = std::env::temp_dir().join(format!(
+                "commander-blood-resource-test-{}-{sequence}",
+                std::process::id()
+            ));
+            std::fs::create_dir_all(&path).unwrap();
+            Self(path)
+        }
+    }
+
+    impl Drop for TemporaryResourceRoot {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    fn archive_bytes(records: &[(BloodResourceName, &[u8])]) -> Box<[u8]> {
+        let terminator_size = 1;
+        let directory_size =
+            DIRECTORY_HEADER_SIZE + records.len() * DIRECTORY_ENTRY_SIZE + terminator_size;
+        let payload_size: usize = records.iter().map(|(_name, payload)| payload.len()).sum();
+        let mut data = vec![u8::MIN; directory_size + payload_size];
+        data[..DIRECTORY_HEADER_SIZE]
+            .copy_from_slice(&u16::try_from(records.len()).unwrap().to_le_bytes());
+        let mut payload_position = directory_size;
+        for (entry, (name, payload)) in records.iter().enumerate() {
+            let cursor = DIRECTORY_HEADER_SIZE + entry * DIRECTORY_ENTRY_SIZE;
+            data[cursor..cursor + name.as_bytes().len()].copy_from_slice(name.as_bytes());
+            data[cursor + BYTE_COUNT_FIELD_OFFSET..cursor + FILE_POSITION_FIELD_OFFSET]
+                .copy_from_slice(&i32::try_from(payload.len()).unwrap().to_le_bytes());
+            data[cursor + FILE_POSITION_FIELD_OFFSET
+                ..cursor + FILE_POSITION_FIELD_OFFSET + FILE_POSITION_FIELD_SIZE]
+                .copy_from_slice(&i32::try_from(payload_position).unwrap().to_le_bytes());
+            data[payload_position..payload_position + payload.len()].copy_from_slice(payload);
+            payload_position += payload.len();
+        }
+        data.into_boxed_slice()
+    }
+
+    fn resource_name(name: impl AsRef<[u8]>) -> BloodResourceName {
+        BloodResourceName::new(name).unwrap()
+    }
 
     #[test]
     fn converts_the_original_indexed_title_to_rgba() {
@@ -186,5 +375,67 @@ mod tests {
         let distinct_colors: std::collections::BTreeSet<&[u8]> =
             frame.rgba.chunks_exact(RGBA_COMPONENT_COUNT).collect();
         assert!(distinct_colors.len() >= MINIMUM_DISTINCT_TITLE_COLORS);
+    }
+
+    #[test]
+    fn source_selection_matches_every_native_oracle_vector() {
+        let vectors: Vec<SourceSelectionOracle> = serde_json::from_str(include_str!(
+            "../../../re/tools/oracle_vectors/func_2693_natural.json"
+        ))
+        .unwrap();
+
+        for vector in vectors {
+            let requested = resource_name(&vector.filename);
+            let archive_name = if vector.archive_hit {
+                requested.clone()
+            } else {
+                resource_name("UNRELATED.DAT")
+            };
+            let archive =
+                BloodArchive::decode(archive_bytes(&[(archive_name, &[TEST_PAYLOAD_BYTE])]))
+                    .unwrap();
+            let store = OriginalResourceStore::new(
+                PathBuf::new(),
+                Some(archive),
+                vector.allowlist_entries.iter().map(resource_name),
+                vector.force_flag & FORCE_LOOSE_BIT != u8::MIN,
+            );
+            let expected = if vector.route == "write" || !vector.archive_hit {
+                OriginalResourceSource::LooseFile
+            } else {
+                OriginalResourceSource::EmbeddedArchive
+            };
+
+            assert_eq!(store.source(&requested), expected, "{}", vector.filename);
+        }
+    }
+
+    #[test]
+    fn loads_owned_archive_and_nested_loose_resource_bytes() {
+        let root = TemporaryResourceRoot::create();
+        let loose_name = resource_name(r"DIR\LOOSE.DAT");
+        let loose_payload = b"loose resource";
+        let loose_path = root.0.join("DIR/LOOSE.DAT");
+        std::fs::create_dir_all(loose_path.parent().unwrap()).unwrap();
+        std::fs::write(&loose_path, loose_payload).unwrap();
+
+        let embedded_name = resource_name("EMBED.DAT");
+        let embedded_payload = b"embedded resource";
+        let archive =
+            BloodArchive::decode(archive_bytes(&[(embedded_name.clone(), embedded_payload)]))
+                .unwrap();
+        let store =
+            OriginalResourceStore::new(root.0.clone(), Some(archive), [loose_name.clone()], false);
+
+        assert_eq!(
+            store.resource_len(&embedded_name).unwrap(),
+            embedded_payload.len()
+        );
+        assert_eq!(&*store.load(&embedded_name).unwrap(), embedded_payload);
+        assert_eq!(
+            store.resource_len(&loose_name).unwrap(),
+            loose_payload.len()
+        );
+        assert_eq!(&*store.load(&loose_name).unwrap(), loose_payload);
     }
 }

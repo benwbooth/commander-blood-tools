@@ -1,6 +1,7 @@
 [
   {
     "name": "forced_write_directory",
+    "filename": "FORCED.DAT",
     "force_flag": 129,
     "allowlist_entries": [
       "FORCED.DAT"
@@ -18,6 +19,7 @@
   },
   {
     "name": "first_allowlisted_name",
+    "filename": "DESCRIPT.DES",
     "force_flag": 0,
     "allowlist_entries": [
       "DESCRIPT.DES",
@@ -43,6 +45,7 @@
   },
   {
     "name": "later_allowlisted_name",
+    "filename": "BLOOD.SAV",
     "force_flag": 0,
     "allowlist_entries": [
       "DESCRIPT.DES",
@@ -84,6 +87,7 @@
   },
   {
     "name": "empty_allowlist_archive_miss",
+    "filename": "MISSING.EXT",
     "force_flag": 0,
     "allowlist_entries": [],
     "comparison_count": 1,
@@ -111,6 +115,7 @@
   },
   {
     "name": "archive_match",
+    "filename": "VENUSIA.EXT",
     "force_flag": 0,
     "allowlist_entries": [
       "DESCRIPT.DES",
@@ -148,6 +153,7 @@
   },
   {
     "name": "comparison_is_case_sensitive",
+    "filename": "blood.sav",
     "force_flag": 0,
     "allowlist_entries": [
       "BLOOD.SAV"
@@ -177,6 +183,7 @@
   },
   {
     "name": "force_high_bits_ignored",
+    "filename": "UNLISTED.DAT",
     "force_flag": 254,
     "allowlist_entries": [
       "OTHER.DAT"
@@ -206,6 +213,7 @@
   },
   {
     "name": "terminator_stops_scan",
+    "filename": "AFTER.DAT",
     "force_flag": 0,
     "allowlist_entries": [
       "BEFORE.DAT"

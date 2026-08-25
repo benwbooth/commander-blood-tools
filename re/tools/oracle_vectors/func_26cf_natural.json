@@ -6,7 +6,7 @@
     "input_filename_hex": "756e746f75636865642e657874",
     "output_filename_hex": "756e746f75636865642e657874",
     "matched_record": null,
-    "record_count": 0,
+    "records": [],
     "embedded_flag": 112,
     "archive_offset": 287454016,
     "archive_remaining": 1432778624,
@@ -20,7 +20,14 @@
     "input_filename_hex": "76656e757369612e657874",
     "output_filename_hex": "56454e555349412e455854",
     "matched_record": 0,
-    "record_count": 1,
+    "records": [
+      {
+        "filename_hex": "56454e555349412e455854",
+        "byte_count": 305419896,
+        "file_offset": 1193046,
+        "trailing": 17
+      }
+    ],
     "embedded_flag": 1,
     "archive_offset": 1193046,
     "archive_remaining": 305419896,
@@ -69,7 +76,20 @@
     "input_filename_hex": "6272696467652e646174",
     "output_filename_hex": "4252494447452e444154",
     "matched_record": 1,
-    "record_count": 2,
+    "records": [
+      {
+        "filename_hex": "4f544845522e444154",
+        "byte_count": 286331153,
+        "file_offset": 16909060,
+        "trailing": 34
+      },
+      {
+        "filename_hex": "4252494447452e444154",
+        "byte_count": 2309737967,
+        "file_offset": 270544960,
+        "trailing": 51
+      }
+    ],
     "embedded_flag": 1,
     "archive_offset": 270544960,
     "archive_remaining": 2309737967,
@@ -118,7 +138,14 @@
     "input_filename_hex": "617b7c7d7e2e657874",
     "output_filename_hex": "415b5c5d5e2e455854",
     "matched_record": 0,
-    "record_count": 1,
+    "records": [
+      {
+        "filename_hex": "415b5c5d5e2e455854",
+        "byte_count": 32000,
+        "file_offset": 1432778632,
+        "trailing": 68
+      }
+    ],
     "embedded_flag": 1,
     "archive_offset": 1432778632,
     "archive_remaining": 32000,
@@ -149,7 +176,14 @@
     "input_filename_hex": "736f756e642e736e64",
     "output_filename_hex": "534f554e442e534e44",
     "matched_record": 0,
-    "record_count": 1,
+    "records": [
+      {
+        "filename_hex": "534f554e442e534e44",
+        "byte_count": 98306,
+        "file_offset": 2712847316,
+        "trailing": 85
+      }
+    ],
     "embedded_flag": 1,
     "archive_offset": 2712847316,
     "archive_remaining": 98306,
@@ -177,7 +211,20 @@
     "input_filename_hex": "6d697373696e672e657874",
     "output_filename_hex": "4d495353494e472e455854",
     "matched_record": null,
-    "record_count": 2,
+    "records": [
+      {
+        "filename_hex": "46495253542e455854",
+        "byte_count": 16843009,
+        "file_offset": 33686018,
+        "trailing": 102
+      },
+      {
+        "filename_hex": "5345434f4e442e455854",
+        "byte_count": 50529027,
+        "file_offset": 67372036,
+        "trailing": 119
+      }
+    ],
     "embedded_flag": 117,
     "archive_offset": 287454021,
     "archive_remaining": 1432778629,
@@ -199,7 +246,14 @@
     "input_filename_hex": "61637475616c2e657874",
     "output_filename_hex": "41435455414c2e455854",
     "matched_record": 0,
-    "record_count": 1,
+    "records": [
+      {
+        "filename_hex": "41435455414c2e455854",
+        "byte_count": 271136839,
+        "file_offset": 1447508009,
+        "trailing": 136
+      }
+    ],
     "embedded_flag": 1,
     "archive_offset": 1447508009,
     "archive_remaining": 271136839,
@@ -230,7 +284,14 @@
     "input_filename_hex": "6e616d652e65787478",
     "output_filename_hex": "4e414d452e45585458",
     "matched_record": null,
-    "record_count": 1,
+    "records": [
+      {
+        "filename_hex": "4e414d452e455854",
+        "byte_count": 2694881440,
+        "file_offset": 2964369584,
+        "trailing": 153
+      }
+    ],
     "embedded_flag": 119,
     "archive_offset": 287454023,
     "archive_remaining": 1432778631,

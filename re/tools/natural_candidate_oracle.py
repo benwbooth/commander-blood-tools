@@ -20592,6 +20592,7 @@ def resource_source_select_vectors() -> list[dict[str, object]]:
         vectors.append(
             {
                 "name": name,
+                "filename": bytes(case["filename"]).decode("ascii"),
                 "force_flag": force,
                 "allowlist_entries": [
                     value.decode("ascii") for value in entries
@@ -21147,7 +21148,15 @@ def resource_archive_match_vectors() -> list[dict[str, object]]:
                 "input_filename_hex": filename.hex(),
                 "output_filename_hex": actual_filename[:-1].hex(),
                 "matched_record": matched_index,
-                "record_count": len(records),
+                "records": [
+                    {
+                        "filename_hex": bytes(record_name).hex(),
+                        "byte_count": int(byte_count),
+                        "file_offset": int(file_offset),
+                        "trailing": int(trailing),
+                    }
+                    for record_name, byte_count, file_offset, trailing in records
+                ],
                 "embedded_flag": actual_embedded,
                 "archive_offset": actual_offset,
                 "archive_remaining": actual_remaining,
