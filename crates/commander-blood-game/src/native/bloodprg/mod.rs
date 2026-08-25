@@ -8,6 +8,7 @@ mod menu_reveal;
 mod navigation;
 mod numbers;
 mod presentation;
+mod presentation_hover;
 mod procedure;
 mod record;
 mod record_state;
@@ -62,6 +63,10 @@ pub use numbers::{
 };
 pub use presentation::{
     evaluate_text_conditions, ScriptWordHistory, TextConditionEffects, TextConditionError,
+};
+pub use presentation_hover::{
+    PresentationHitAreas, PresentationHitRectangle, PresentationHitSelection,
+    PresentationHoverOutcome, PresentationHoverState, update_presentation_hover,
 };
 pub use procedure::{
     apply_procedure_activation, evaluate_procedure_gate, ScriptProcedureStateError,
