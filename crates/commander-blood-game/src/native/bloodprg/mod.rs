@@ -32,6 +32,7 @@ mod presentation_hover;
 mod presentation_line;
 mod presentation_mode;
 mod presentation_word_choice;
+mod pointer_buttons;
 mod procedure;
 mod record;
 mod record_state;
@@ -206,6 +207,10 @@ pub use presentation_word_choice::{
     WORD_CHOICE_TRANSITION_STEPS, PresentationWordChoice, PresentationWordChoiceBackend,
     PresentationWordChoiceContext, PresentationWordChoiceGate, PresentationWordChoiceOutcome,
     PresentationWordChoicePhase, PresentationWordChoiceState, update_presentation_word_choice,
+};
+pub use pointer_buttons::{
+    PointerButton, PointerButtonEdges, PointerButtonState, PointerButtons,
+    update_pointer_button_edges,
 };
 pub use procedure::{
     apply_procedure_activation, evaluate_procedure_gate, ScriptProcedureStateError,
