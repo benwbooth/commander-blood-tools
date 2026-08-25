@@ -3,9 +3,11 @@ use std::path::{Path, PathBuf};
 
 const RECOVERED_BLOODPRG_ROUTINE_COUNT: usize = 337;
 const RECOVERED_XDB_ROUTINE_COUNT: usize = 183;
+const RECOVERED_MANU3_ROUTINE_COUNT: usize = 12;
 const RECOVERED_NATIVE_ROUTINE_COUNT: usize =
     RECOVERED_BLOODPRG_ROUTINE_COUNT + RECOVERED_XDB_ROUTINE_COUNT;
-const CURRENT_PORTED_ROUTINE_COUNT: usize = 10;
+const CURRENT_PORTED_ROUTINE_COUNT: usize = 12;
+const CURRENT_ELIMINATED_ROUTINE_COUNT: usize = 2;
 
 fn workspace_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -85,4 +87,46 @@ fn coverage_ledger_only_accepts_documented_authoritative_routines() {
         assert!(vector_count.parse::<usize>().unwrap() > usize::MIN);
     }
     assert_eq!(ported.len(), CURRENT_PORTED_ROUTINE_COUNT);
+
+    let eliminated = tab_separated_rows(&root.join("re/rust-port/eliminated.tsv"));
+    for row in &eliminated {
+        let key = (row["component"].clone(), row["entry"].clone());
+        assert!(
+            seen.insert(key.clone()),
+            "duplicate Rust mapping row: {key:?}"
+        );
+        let expected = recovered
+            .get(&key)
+            .unwrap_or_else(|| panic!("eliminated row is not in recovered manifests: {key:?}"));
+        assert_eq!(
+            (&row["source"], &row["function"]),
+            (&expected.0, &expected.1)
+        );
+        assert_eq!(
+            row["disposition"], "eliminated_flat_memory_adapter",
+            "{key:?} has an unsupported elimination disposition"
+        );
+        assert!(!row["rationale"].trim().is_empty());
+
+        let rust_path = root.join(&row["rust_path"]);
+        let rust_source = std::fs::read_to_string(&rust_path).unwrap();
+        let function_name = row["rust_symbol"].rsplit("::").next().unwrap();
+        assert!(
+            rust_source.contains(&format!("fn {function_name}")),
+            "{} does not define {}",
+            rust_path.display(),
+            row["rust_symbol"]
+        );
+
+        let (evidence_path, vector_count) = row["evidence"].rsplit_once(':').unwrap();
+        assert!(root.join(evidence_path).is_file());
+        assert!(vector_count.parse::<usize>().unwrap() > usize::MIN);
+    }
+    assert_eq!(eliminated.len(), CURRENT_ELIMINATED_ROUTINE_COUNT);
+    assert_eq!(
+        seen.iter()
+            .filter(|(component, _entry)| component == "xdb_manu3")
+            .count(),
+        RECOVERED_MANU3_ROUTINE_COUNT
+    );
 }

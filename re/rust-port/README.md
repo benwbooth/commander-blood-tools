@@ -18,7 +18,7 @@ not survive into runtime state.
 
 ## MANU3 status
 
-Eight of the twelve MANU3 routines have direct Rust coverage. The current path
+Ten of the twelve MANU3 routines have direct Rust coverage. The current path
 decodes all authored skeleton, animation, geometry, texture, trigonometry, and
 raster-reciprocal data; runs recovered fixed-point animation and projection;
 preserves face selection and activation decisions; and submits indexed textured
@@ -29,9 +29,11 @@ framebuffer segments are implementation details replaced by wgpu. The reserved
 hand palette bank at indices 202 through 251 is decoded from `BLOODPRG.EXE` and
 merged without overwriting scene-owned lower palette entries.
 
-The remaining MANU3 audit covers the two public coordinators and two native-only
-adapters. Offsets `0x0121` and `0x06f6` primarily install relocated segments and
-must be classified as eliminated flat-memory setup rather than recreated.
+The two remaining routines are native-only adapters. Offsets `0x0121` and
+`0x06f6` install relocated segments and must be classified as eliminated
+flat-memory setup rather than recreated. `eliminated.tsv` records those mappings
+separately from translated routines, and the coverage gate verifies that all
+twelve recovered MANU3 entries are accounted for exactly once.
 
 Run the current interactive path with original assets:
 

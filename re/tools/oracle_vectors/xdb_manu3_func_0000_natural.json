@@ -30,8 +30,14 @@
       160,
       100
     ],
+    "selector": 0,
     "masked_selector": 0,
+    "framebuffer_window_offset": 0,
     "framebuffer_segment": 40960,
+    "initial_view": [
+      8721,
+      17442
+    ],
     "adjusted_view": [
       8721,
       17442
@@ -40,7 +46,38 @@
       8721,
       17442
     ],
+    "matrix": [
+      [
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0
+      ]
+    ],
+    "translation": [
+      0,
+      0,
+      256
+    ],
+    "reference": [
+      0,
+      0,
+      0
+    ],
     "depth": 1,
+    "screen_center_before": [
+      322262905,
+      -1968386320
+    ],
     "screen_center": [
       160,
       100
@@ -71,8 +108,14 @@
       10,
       20
     ],
+    "selector": 35,
     "masked_selector": 3,
+    "framebuffer_window_offset": 4660,
     "framebuffer_segment": 41251,
+    "initial_view": [
+      13090,
+      26180
+    ],
     "adjusted_view": [
       12930,
       25880
@@ -81,7 +124,38 @@
       13090,
       26180
     ],
+    "matrix": [
+      [
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0
+      ]
+    ],
+    "translation": [
+      100,
+      -50,
+      256
+    ],
+    "reference": [
+      0,
+      0,
+      0
+    ],
     "depth": 1,
+    "screen_center_before": [
+      339105914,
+      -1951543311
+    ],
     "screen_center": [
       -90,
       -30
@@ -113,8 +187,14 @@
       -120,
       250
     ],
+    "selector": 31,
     "masked_selector": 31,
+    "framebuffer_window_offset": 255,
     "framebuffer_segment": 40975,
+    "initial_view": [
+      17459,
+      34918
+    ],
     "adjusted_view": [
       17759,
       34358
@@ -123,7 +203,38 @@
       17459,
       34918
     ],
+    "matrix": [
+      [
+        2,
+        -3,
+        4
+      ],
+      [
+        -5,
+        6,
+        -7
+      ],
+      [
+        8,
+        -9,
+        10
+      ]
+    ],
+    "translation": [
+      400,
+      -300,
+      1024
+    ],
+    "reference": [
+      -11,
+      13,
+      -17
+    ],
     "depth": 2,
+    "screen_center_before": [
+      355948923,
+      -1934700302
+    ],
     "screen_center": [
       -255,
       226
@@ -155,8 +266,14 @@
       0,
       0
     ],
+    "selector": 32,
     "masked_selector": 0,
+    "framebuffer_window_offset": 15,
     "framebuffer_segment": 40960,
+    "initial_view": [
+      21828,
+      43656
+    ],
     "adjusted_view": [
       21628,
       43336
@@ -165,7 +282,38 @@
       21828,
       43656
     ],
+    "matrix": [
+      [
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0
+      ]
+    ],
+    "translation": [
+      123,
+      456,
+      0
+    ],
+    "reference": [
+      1,
+      2,
+      3
+    ],
     "depth": 0,
+    "screen_center_before": [
+      372791932,
+      -1917857293
+    ],
     "screen_center": [
       372791932,
       -1917857293
@@ -194,8 +342,14 @@
       32767,
       -32768
     ],
+    "selector": 65535,
     "masked_selector": 31,
+    "framebuffer_window_offset": 16,
     "framebuffer_segment": 40961,
+    "initial_view": [
+      26197,
+      52394
+    ],
     "adjusted_view": [
       25997,
       52072
@@ -204,7 +358,38 @@
       26197,
       52394
     ],
+    "matrix": [
+      [
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0
+      ]
+    ],
+    "translation": [
+      -1,
+      1,
+      -256
+    ],
+    "reference": [
+      -1,
+      -1,
+      -1
+    ],
     "depth": -1,
+    "screen_center_before": [
+      389634941,
+      -1901014284
+    ],
     "screen_center": [
       389634941,
       -1901014284
@@ -234,8 +419,14 @@
       -1,
       -32768
     ],
+    "selector": 1,
     "masked_selector": 1,
+    "framebuffer_window_offset": 65520,
     "framebuffer_segment": 45055,
+    "initial_view": [
+      30566,
+      61132
+    ],
     "adjusted_view": [
       30366,
       60810
@@ -244,7 +435,38 @@
       30566,
       61132
     ],
+    "matrix": [
+      [
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0
+      ]
+    ],
+    "translation": [
+      0,
+      0,
+      512
+    ],
+    "reference": [
+      0,
+      0,
+      0
+    ],
     "depth": 2,
+    "screen_center_before": [
+      406477950,
+      -1884171275
+    ],
     "screen_center": [
       -1,
       -32768
@@ -276,8 +498,14 @@
       -32768,
       32767
     ],
+    "selector": 66,
     "masked_selector": 2,
+    "framebuffer_window_offset": 65535,
     "framebuffer_segment": 45055,
+    "initial_view": [
+      34935,
+      4334
+    ],
     "adjusted_view": [
       34733,
       4014
@@ -286,7 +514,38 @@
       34935,
       4334
     ],
+    "matrix": [
+      [
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0
+      ]
+    ],
+    "translation": [
+      -400,
+      600,
+      256
+    ],
+    "reference": [
+      0,
+      0,
+      0
+    ],
     "depth": 1,
+    "screen_center_before": [
+      423320959,
+      -1867328266
+    ],
     "screen_center": [
       -32368,
       33367
