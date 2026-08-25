@@ -10,7 +10,9 @@ use commander_blood_formats::script::{
 
 use crate::native::math::binary_u32_sqrt;
 
-use super::{ScriptFieldSelector, script_field_offset};
+use super::{
+    ScriptFieldSelector, ScriptObjectFlag, object_has_flag, script_field_offset,
+};
 
 const BITS_PER_BYTE: usize = u8::BITS as usize;
 const WORD_SIGN_BIT: u16 = 1_u16 << (u16::BITS - 1);
@@ -89,6 +91,21 @@ pub fn navigation_source_objects(
     let mut output = Vec::new();
     append_navigation_children(state, target, &mut BTreeSet::new(), &mut output)?;
     Ok(output)
+}
+
+/// Build the active actor choices reachable below one navigation target.
+///
+/// This translates `ship_3d_navigation_candidate_build` at BLOODPRG file
+/// offset `0x0070EE`. The source traversal runs before filtering, preserving
+/// authored depth-first order. Owned object identities replace both native
+/// scratch buffers and their incompatible terminators.
+pub fn navigation_candidates(
+    state: &ScriptState,
+    target: ScriptObjectId,
+    honk: ScriptObjectId,
+) -> Result<Vec<ScriptObjectId>, ScriptNavigationError> {
+    let source = navigation_source_objects(state, target)?;
+    Ok(filter_navigation_candidates(state, &source, honk))
 }
 
 /// Resolve the live coordinate pair used for one navigation object.
@@ -245,6 +262,24 @@ fn append_navigation_children(
     Ok(())
 }
 
+fn filter_navigation_candidates(
+    state: &ScriptState,
+    source: &[ScriptObjectId],
+    honk: ScriptObjectId,
+) -> Vec<ScriptObjectId> {
+    source
+        .iter()
+        .copied()
+        .filter(|object| *object != honk)
+        .filter(|object| {
+            state.object(*object).is_some_and(|record| {
+                record.kind == ScriptObjectKind::Actor
+                    && object_has_flag(state, *object, ScriptObjectFlag::Active) == Some(true)
+            })
+        })
+        .collect()
+}
+
 fn object_field(
     state: &ScriptState,
     object: ScriptObjectId,
@@ -326,11 +361,13 @@ mod tests {
 
     const OBJECT_LINK_VECTOR_COUNT: usize = 8;
     const NAVIGATION_SOURCE_VECTOR_COUNT: usize = 8;
+    const NAVIGATION_CANDIDATE_VECTOR_COUNT: usize = 7;
     const POSITION_RESOLVER_VECTOR_COUNT: usize = 8;
     const POSITION_DISTANCE_VECTOR_COUNT: usize = 6;
     const DIRECTORY_ENTRY_SIZE: usize = 20;
     const DIRECTORY_NAME_CAPACITY: usize = 16;
     const DIRECTORY_OBJECT_KIND: u16 = 1;
+    const OBJECT_FLAGS_BYTE_OFFSET: usize = 2;
 
     #[derive(Deserialize)]
     struct ObjectLinkOracle {
@@ -349,6 +386,13 @@ mod tests {
     struct NavigationSourceOracle {
         name: String,
         output_offsets: Vec<u16>,
+    }
+
+    #[derive(Deserialize)]
+    struct NavigationCandidateOracle {
+        name: String,
+        source: Vec<u16>,
+        output: Vec<u16>,
     }
 
     #[derive(Deserialize)]
@@ -482,6 +526,124 @@ mod tests {
                 vector.name
             );
         }
+    }
+
+    #[test]
+    fn navigation_candidate_filter_matches_every_original_case() {
+        let vectors: Vec<NavigationCandidateOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_70ee_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), NAVIGATION_CANDIDATE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let (kinds, flags, source_indices, honk_index): (&[_], &[_], &[_], usize) =
+                match vector.name.as_str() {
+                    "empty_source" => (&[ScriptObjectKind::Actor], &[1], &[], 0),
+                    "two_active_kind_two" => (
+                        &[ScriptObjectKind::Actor; 3],
+                        &[0, 1, 165],
+                        &[1, 2],
+                        0,
+                    ),
+                    "exclude_honk_before_record_read" => {
+                        (&[ScriptObjectKind::Actor; 3], &[0, 1, 1], &[1, 2], 1)
+                    }
+                    "mixed_kind_and_activity" => (
+                        &[
+                            ScriptObjectKind::Actor,
+                            ScriptObjectKind::Player,
+                            ScriptObjectKind::Actor,
+                            ScriptObjectKind::BlackHole,
+                            ScriptObjectKind::Actor,
+                            ScriptObjectKind::Actor,
+                        ],
+                        &[0, 1, 0, 1, 128, 129],
+                        &[1, 2, 3, 4, 5],
+                        0,
+                    ),
+                    "zero_offset_is_valid" | "unsigned_high_offsets" => (
+                        &[ScriptObjectKind::Actor; 3],
+                        &[1, 1, 0],
+                        &[0, 1],
+                        2,
+                    ),
+                    "all_rejected" => (
+                        &[
+                            ScriptObjectKind::Actor,
+                            ScriptObjectKind::CelestialBody,
+                            ScriptObjectKind::Actor,
+                        ],
+                        &[1, 1, 254],
+                        &[0, 1, 2],
+                        0,
+                    ),
+                    name => panic!("unknown navigation-candidate oracle {name}"),
+                };
+            let mut state = navigation_fixture(kinds, &vec![None; kinds.len()]);
+            let objects = state
+                .objects()
+                .iter()
+                .map(|object| object.id)
+                .collect::<Vec<_>>();
+            for (object, flag) in objects.iter().copied().zip(flags) {
+                let field = state.object_byte(object, OBJECT_FLAGS_BYTE_OFFSET).unwrap();
+                assert!(state.set_byte(field, *flag));
+            }
+            let source = source_indices
+                .iter()
+                .map(|index| objects[*index])
+                .collect::<Vec<_>>();
+            assert_eq!(source.len(), vector.source.len(), "{}", vector.name);
+            let expected = vector
+                .output
+                .iter()
+                .map(|offset| {
+                    let source_index = vector
+                        .source
+                        .iter()
+                        .position(|source_offset| source_offset == offset)
+                        .unwrap();
+                    source[source_index]
+                })
+                .collect::<Vec<_>>();
+
+            assert_eq!(
+                filter_navigation_candidates(&state, &source, objects[honk_index]),
+                expected,
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    #[test]
+    fn navigation_candidates_preserve_depth_first_source_order() {
+        let mut state = navigation_fixture(
+            &[
+                ScriptObjectKind::CelestialBody,
+                ScriptObjectKind::Actor,
+                ScriptObjectKind::Actor,
+                ScriptObjectKind::Actor,
+            ],
+            &[None, Some(0), Some(1), Some(0)],
+        );
+        let objects = state
+            .objects()
+            .iter()
+            .map(|object| object.id)
+            .collect::<Vec<_>>();
+        for object in &objects[1..] {
+            let field = state
+                .object_byte(*object, OBJECT_FLAGS_BYTE_OFFSET)
+                .unwrap();
+            assert!(state.set_byte(field, 1));
+        }
+
+        assert_eq!(
+            navigation_candidates(&state, objects[0], objects[1]).unwrap(),
+            vec![objects[2], objects[3]]
+        );
     }
 
     #[test]
