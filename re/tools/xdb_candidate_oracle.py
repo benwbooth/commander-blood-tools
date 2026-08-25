@@ -3315,6 +3315,130 @@ def amer_slot2_reset_vectors(entry: int) -> list[dict[str, object]]:
     return vectors
 
 
+def amer_slot2_setup_transition_vectors(
+    entry: int,
+    body_hash: str,
+    next_entry: int,
+    sample_phase: int,
+    next_stage: str,
+) -> list[dict[str, object]]:
+    module = "amer"
+    image = load_image(module)
+    body_size = 10
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered body changed")
+
+    data_segment = 0x5000
+    extra_segment = 0x7000
+    fs_segment = 0x9000
+    game_segment = 0xA000
+    stack_segment = 0xB000
+    cases = (
+        ("ordinary_state", 0x4000, 0xBEEF, 0x1357),
+        ("high_values", 0x5000, 0xFFFF, 0x8000),
+        ("high_state", 0xFFA0, 0x1234, 0x5678),
+    )
+    vectors: list[dict[str, object]] = []
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", memory, offset, value & 0xFFFF)
+
+    def get_u16(memory: bytes | bytearray, offset: int) -> int:
+        return struct.unpack_from("<H", memory, offset)[0]
+
+    for case_index, (name, state, callback_before, phase_before) in enumerate(cases):
+        data_before = bytearray(
+            (offset * 29 + case_index * 17 + 3) & 0xFF
+            for offset in range(0x10000)
+        )
+        put_u16(data_before, state + 0x0E, callback_before)
+        put_u16(data_before, state + 0x58, phase_before)
+        data_expected = bytearray(data_before)
+        put_u16(data_expected, state + 0x0E, next_entry)
+        put_u16(data_expected, state + 0x58, sample_phase)
+
+        extra_before = bytes(
+            (offset * 13 + case_index + 7) & 0xFF for offset in range(0x10000)
+        )
+        fs_before = bytes(
+            (offset * 19 + case_index + 5) & 0xFF for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 11 + case_index + 9) & 0xFF for offset in range(0x10000)
+        )
+        stack_before = bytes.fromhex("5aa596698778")
+        initial = {
+            "eax": 0xA1A12345,
+            "ebx": 0xB2B23456,
+            "ecx": 0xC3C34567,
+            "edx": 0xD4D45678,
+            "esi": 0xE5E50000 | state,
+            "edi": 0xF6F63000,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0293 | (0x0400 if case_index & 1 else 0),
+        }
+        machine = execute(
+            image,
+            entry,
+            next_entry,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (extra_segment, 0, extra_before),
+                (fs_segment, 0, fs_before),
+                (game_segment, 0, game_before),
+                (stack_segment, 0xFF00, stack_before),
+            ],
+            max_instructions=8,
+        )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(data_expected):
+            differences = [
+                (offset, actual_data[offset], data_expected[offset])
+                for offset in range(0x10000)
+                if actual_data[offset] != data_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: data differs at {differences}"
+            )
+        for segment, expected in (
+            (extra_segment, extra_before),
+            (fs_segment, fs_before),
+            (game_segment, game_before),
+        ):
+            if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: segment {segment:#x} changed"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF00, len(stack_before))) != stack_before:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+        if machine.reg_read(UC_X86_REG_SP) != initial["sp"]:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack pointer changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "next_entry": next_entry,
+                "next_stage": next_stage,
+                "callback_before": callback_before,
+                "callback_after": get_u16(data_expected, state + 0x0E),
+                "sample_phase_before": phase_before,
+                "sample_phase_after": get_u16(data_expected, state + 0x58),
+                "data_sha256": hashlib.sha256(data_expected).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def alien_api_entry_vectors(
     module: str,
     body_hash: str,
@@ -17901,6 +18025,33 @@ def main() -> int:
         amer_slot2_reset_vectors(0x1A2B),
         args.check,
     )
+    for entry, body_hash, next_entry, sample_phase, next_stage in (
+        (
+            0x1688,
+            "1040cb5e1877ffda8f47ee00354659d4e5dfb0841fe1fd83c7a34aa0388cc794",
+            0x1692,
+            20,
+            "update",
+        ),
+        (
+            0x193E,
+            "08d8c6a20b57281888db7c1d0fcf3b352b7e00f818dd170e9056973a7b66aff2",
+            0x1948,
+            40,
+            "selection",
+        ),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_amer_func_{entry:04x}_natural.json",
+            amer_slot2_setup_transition_vectors(
+                entry,
+                body_hash,
+                next_entry,
+                sample_phase,
+                next_stage,
+            ),
+            args.check,
+        )
     for module, entry in (
         ("amer", 0x2027),
         ("croolis", 0x206C),

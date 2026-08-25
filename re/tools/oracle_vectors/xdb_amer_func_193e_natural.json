@@ -1,0 +1,38 @@
+[
+  {
+    "name": "ordinary_state",
+    "module": "amer",
+    "entry": 6462,
+    "next_entry": 6472,
+    "next_stage": "selection",
+    "callback_before": 48879,
+    "callback_after": 6472,
+    "sample_phase_before": 4951,
+    "sample_phase_after": 40,
+    "data_sha256": "686dc3d51e8f3ab4a14717ef5ef2742c6bfc2ad405d5ea4e9bcfe23729026fae"
+  },
+  {
+    "name": "high_values",
+    "module": "amer",
+    "entry": 6462,
+    "next_entry": 6472,
+    "next_stage": "selection",
+    "callback_before": 65535,
+    "callback_after": 6472,
+    "sample_phase_before": 32768,
+    "sample_phase_after": 40,
+    "data_sha256": "bef5ec28293ca8183e3a8b2e20dfd26a07aa9ed1640c4fbe2b02a30eac006ceb"
+  },
+  {
+    "name": "high_state",
+    "module": "amer",
+    "entry": 6462,
+    "next_entry": 6472,
+    "next_stage": "selection",
+    "callback_before": 4660,
+    "callback_after": 6472,
+    "sample_phase_before": 22136,
+    "sample_phase_after": 40,
+    "data_sha256": "108fce88e27422cad4508334f9a6034438ec6d136006c808ac8eadca542a4db7"
+  }
+]

@@ -12,6 +12,7 @@ const Y_AXIS: usize = 1;
 const Z_AXIS: usize = 2;
 const INITIAL_DURATION: i16 = 50;
 const INITIAL_AMER_SAMPLE_PHASE: u16 = 20;
+const INITIAL_AMER_SELECTION_SAMPLE_PHASE: u16 = 40;
 const ANGLE_MASK: u16 = 0x0ffc;
 const CROOLIS_SEED_STEP: u16 = 250;
 const SCRUT_SEED_STEP: u16 = 300;
@@ -42,6 +43,8 @@ pub enum AlienSlot2Callback {
     AmerSteer,
     /// Complete AMER's camera-relative steering phase.
     AmerFinish,
+    /// Track the active camera-relative selection target for AMER.
+    AmerSelection,
 }
 
 /// Callback-owned state parallel to one animated model node.
@@ -319,6 +322,32 @@ pub fn reset_amer_motion(
     Ok(())
 }
 
+/// Restart AMER's ordinary update and request same-pass callback dispatch.
+pub fn restart_amer_update(
+    pose: &AlienModelPose,
+    animation: &mut AlienSlot2AnimationState,
+) -> Result<AlienSlot2Callback, AlienSlot2Error> {
+    prepare_amer_immediate_callback(
+        pose,
+        animation,
+        INITIAL_AMER_SAMPLE_PHASE,
+        AlienSlot2Callback::Update,
+    )
+}
+
+/// Begin AMER selection tracking and request same-pass callback dispatch.
+pub fn begin_amer_selection(
+    pose: &AlienModelPose,
+    animation: &mut AlienSlot2AnimationState,
+) -> Result<AlienSlot2Callback, AlienSlot2Error> {
+    prepare_amer_immediate_callback(
+        pose,
+        animation,
+        INITIAL_AMER_SELECTION_SAMPLE_PHASE,
+        AlienSlot2Callback::AmerSelection,
+    )
+}
+
 fn validate_state(
     species: AlienSpecies,
     pose: &AlienModelPose,
@@ -361,6 +390,18 @@ fn normalize_signed_angle(value: u16) -> i16 {
 
 fn transformed_component(node: &super::AlienNodePose, axis: usize) -> i16 {
     ((node.transform.translation[axis] as u32 >> u16::BITS) as u16) as i16
+}
+
+fn prepare_amer_immediate_callback(
+    pose: &AlienModelPose,
+    animation: &mut AlienSlot2AnimationState,
+    sample_phase: u16,
+    callback: AlienSlot2Callback,
+) -> Result<AlienSlot2Callback, AlienSlot2Error> {
+    validate_state(AlienSpecies::Amer, pose, animation)?;
+    animation.nodes[PRIMARY_NODE].sample_phase = sample_phase;
+    animation.callback = Some(callback);
+    Ok(callback)
 }
 
 #[cfg(test)]
@@ -464,6 +505,14 @@ mod tests {
         radial_after: u16,
         countdown_after: u16,
         behavior_seed_after: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct AmerSetupVector {
+        name: String,
+        next_stage: String,
+        sample_phase_before: u16,
+        sample_phase_after: u16,
     }
 
     #[derive(Default)]
@@ -819,6 +868,44 @@ mod tests {
                 vector.behavior_seed_after
             );
             assert_eq!(animation.callback, Some(AlienSlot2Callback::AmerSteer));
+        }
+    }
+
+    #[test]
+    fn amer_immediate_transitions_match_every_original_overlay_vector() {
+        for fixture in [
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_amer_func_1688_natural.json"),
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_amer_func_193e_natural.json"),
+        ] {
+            let vectors: Vec<AmerSetupVector> = serde_json::from_str(fixture).unwrap();
+            for vector in vectors {
+                let pose = pose(&[EMPTY_NODE_VECTOR]);
+                let mut animation = AlienSlot2AnimationState::new(SINGLE_VERTEX_COUNT);
+                animation.callback = Some(AlienSlot2Callback::AmerReturn);
+                animation.nodes[PRIMARY_NODE].sample_phase = vector.sample_phase_before;
+
+                let expected_callback = match vector.next_stage.as_str() {
+                    "update" => AlienSlot2Callback::Update,
+                    "selection" => AlienSlot2Callback::AmerSelection,
+                    stage => panic!("unknown AMER immediate stage {stage}"),
+                };
+                let callback = match expected_callback {
+                    AlienSlot2Callback::Update => {
+                        restart_amer_update(&pose, &mut animation).unwrap()
+                    }
+                    AlienSlot2Callback::AmerSelection => {
+                        begin_amer_selection(&pose, &mut animation).unwrap()
+                    }
+                    _ => unreachable!("fixture only covers immediate AMER transitions"),
+                };
+
+                assert_eq!(callback, expected_callback, "{}", vector.name);
+                assert_eq!(animation.callback, Some(expected_callback));
+                assert_eq!(
+                    animation.nodes[PRIMARY_NODE].sample_phase,
+                    vector.sample_phase_after
+                );
+            }
         }
     }
 
