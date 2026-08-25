@@ -1,0 +1,847 @@
+[
+  {
+    "name": "steering_default_distance",
+    "module": "croolis",
+    "entry": 6496,
+    "mode": "steering",
+    "continuation": "common",
+    "distance": 2000,
+    "camera_x_before": 100,
+    "camera_z_before": 0,
+    "seed": 20,
+    "forward_x_before": 1,
+    "forward_z_before": 1,
+    "random_before": 4660,
+    "random_after": 4660,
+    "cosine": 9029,
+    "camera_matrix": [
+      [
+        73728,
+        4294934528
+      ],
+      [
+        4294926336,
+        98304
+      ],
+      [
+        131072,
+        16384
+      ]
+    ],
+    "camera_view": [
+      100,
+      65486,
+      200
+    ],
+    "camera_pitch": 291,
+    "camera_pan": 1110,
+    "camera_depth_step": 40,
+    "positions_before": [
+      286326800,
+      572653600,
+      858980400
+    ],
+    "positions_after": [
+      286326800,
+      572653600,
+      858980400
+    ],
+    "duration_before": 9320,
+    "duration_after": 9320,
+    "motion_accumulator_before": 42330,
+    "motion_accumulator_after": 65520,
+    "pitch_before": 4951,
+    "pitch_after": 4951,
+    "pan_before": 9320,
+    "pan_after": 9320,
+    "roll_before": 0,
+    "roll_after": 0,
+    "radial_before": 50,
+    "radial_after": 50,
+    "radial_target_before": 400,
+    "radial_target_after": 0,
+    "score_radial": 1920,
+    "score_turn": 2080,
+    "data_sha256": "3f4a57ade557def66f0336157522d454b7b26cd1fb17a9532234078c21439d06"
+  },
+  {
+    "name": "steering_selection_distance",
+    "module": "croolis",
+    "entry": 6496,
+    "mode": "steering",
+    "continuation": "common",
+    "distance": 1000,
+    "camera_x_before": 100,
+    "camera_z_before": 0,
+    "seed": 20,
+    "forward_x_before": 1,
+    "forward_z_before": 1,
+    "random_before": 4660,
+    "random_after": 4660,
+    "cosine": 9029,
+    "camera_matrix": [
+      [
+        73728,
+        4294934528
+      ],
+      [
+        4294926336,
+        98304
+      ],
+      [
+        131072,
+        16384
+      ]
+    ],
+    "camera_view": [
+      100,
+      65486,
+      200
+    ],
+    "camera_pitch": 291,
+    "camera_pan": 1110,
+    "camera_depth_step": 40,
+    "positions_before": [
+      286326800,
+      572653600,
+      858980400
+    ],
+    "positions_after": [
+      286326800,
+      572653600,
+      858980400
+    ],
+    "duration_before": 9320,
+    "duration_after": 9320,
+    "motion_accumulator_before": 42330,
+    "motion_accumulator_after": 65520,
+    "pitch_before": 4951,
+    "pitch_after": 4951,
+    "pan_before": 9320,
+    "pan_after": 9320,
+    "roll_before": 0,
+    "roll_after": 0,
+    "radial_before": 50,
+    "radial_after": 50,
+    "radial_target_before": 400,
+    "radial_target_after": 0,
+    "score_radial": 920,
+    "score_turn": 1080,
+    "data_sha256": "593d85262cb7fa048b5a6b413c212c2a7df90d297e31f34eaf31193395998a82"
+  },
+  {
+    "name": "steering_radial_fallback",
+    "module": "croolis",
+    "entry": 6496,
+    "mode": "steering",
+    "continuation": "common",
+    "distance": 2000,
+    "camera_x_before": 100,
+    "camera_z_before": 0,
+    "seed": 20,
+    "forward_x_before": 1,
+    "forward_z_before": 4294937296,
+    "random_before": 4660,
+    "random_after": 4660,
+    "cosine": 9029,
+    "camera_matrix": [
+      [
+        73728,
+        4294934528
+      ],
+      [
+        4294926336,
+        98304
+      ],
+      [
+        131072,
+        16384
+      ]
+    ],
+    "camera_view": [
+      100,
+      65486,
+      200
+    ],
+    "camera_pitch": 291,
+    "camera_pan": 1110,
+    "camera_depth_step": 40,
+    "positions_before": [
+      286326800,
+      572653600,
+      858980400
+    ],
+    "positions_after": [
+      286326800,
+      572653600,
+      858980400
+    ],
+    "duration_before": 9320,
+    "duration_after": 9320,
+    "motion_accumulator_before": 42330,
+    "motion_accumulator_after": 16,
+    "pitch_before": 4951,
+    "pitch_after": 4951,
+    "pan_before": 9320,
+    "pan_after": 9320,
+    "roll_before": 0,
+    "roll_after": 0,
+    "radial_before": 50,
+    "radial_after": 50,
+    "radial_target_before": 400,
+    "radial_target_after": 200,
+    "score_radial": 4234967216,
+    "score_turn": 4292569296,
+    "data_sha256": "e5c1fd93296d999762532a23529d33f554e17ecc46a116799110986d58149175"
+  },
+  {
+    "name": "steering_opposite_turn",
+    "module": "croolis",
+    "entry": 6496,
+    "mode": "steering",
+    "continuation": "common",
+    "distance": 2000,
+    "camera_x_before": 100,
+    "camera_z_before": 0,
+    "seed": 20,
+    "forward_x_before": 4294967294,
+    "forward_z_before": 4294967295,
+    "random_before": 4660,
+    "random_after": 4660,
+    "cosine": 9029,
+    "camera_matrix": [
+      [
+        73728,
+        4294934528
+      ],
+      [
+        4294926336,
+        98304
+      ],
+      [
+        131072,
+        16384
+      ]
+    ],
+    "camera_view": [
+      100,
+      65486,
+      200
+    ],
+    "camera_pitch": 291,
+    "camera_pan": 1110,
+    "camera_depth_step": 40,
+    "positions_before": [
+      286326800,
+      572653600,
+      858980400
+    ],
+    "positions_after": [
+      286326800,
+      572653600,
+      858980400
+    ],
+    "duration_before": 9320,
+    "duration_after": 9320,
+    "motion_accumulator_before": 42330,
+    "motion_accumulator_after": 16,
+    "pitch_before": 4951,
+    "pitch_after": 4951,
+    "pan_before": 9320,
+    "pan_after": 9320,
+    "roll_before": 0,
+    "roll_after": 0,
+    "radial_before": 50,
+    "radial_after": 50,
+    "radial_target_before": 400,
+    "radial_target_after": 200,
+    "score_radial": 4294965456,
+    "score_turn": 4294963216,
+    "data_sha256": "136975f85d66109b104f88e26a916d3c57bf7d4bbab4f58ce57fe269dcc592a5"
+  },
+  {
+    "name": "steering_roll_high_clamp",
+    "module": "croolis",
+    "entry": 6496,
+    "mode": "steering",
+    "continuation": "common",
+    "distance": 2000,
+    "camera_x_before": 100,
+    "camera_z_before": 0,
+    "seed": 20,
+    "forward_x_before": 1,
+    "forward_z_before": 1,
+    "random_before": 4660,
+    "random_after": 4660,
+    "cosine": 9029,
+    "camera_matrix": [
+      [
+        73728,
+        4294934528
+      ],
+      [
+        4294926336,
+        98304
+      ],
+      [
+        131072,
+        16384
+      ]
+    ],
+    "camera_view": [
+      100,
+      65486,
+      200
+    ],
+    "camera_pitch": 291,
+    "camera_pan": 1110,
+    "camera_depth_step": 40,
+    "positions_before": [
+      286326800,
+      572653600,
+      858980400
+    ],
+    "positions_after": [
+      286326800,
+      572653600,
+      858980400
+    ],
+    "duration_before": 9320,
+    "duration_after": 9320,
+    "motion_accumulator_before": 42330,
+    "motion_accumulator_after": 65520,
+    "pitch_before": 4951,
+    "pitch_after": 4951,
+    "pan_before": 9320,
+    "pan_after": 9320,
+    "roll_before": 1000,
+    "roll_after": 768,
+    "radial_before": 50,
+    "radial_after": 50,
+    "radial_target_before": 400,
+    "radial_target_after": 0,
+    "score_radial": 1920,
+    "score_turn": 2080,
+    "data_sha256": "b671a7a0dbe06acb18b34693ea1d532059e74319cfb8251fd433ed068dfc5f8d"
+  },
+  {
+    "name": "steering_roll_low_clamp",
+    "module": "croolis",
+    "entry": 6496,
+    "mode": "steering",
+    "continuation": "common",
+    "distance": 2000,
+    "camera_x_before": 100,
+    "camera_z_before": 0,
+    "seed": 20,
+    "forward_x_before": 1,
+    "forward_z_before": 1,
+    "random_before": 4660,
+    "random_after": 4660,
+    "cosine": 9029,
+    "camera_matrix": [
+      [
+        73728,
+        4294934528
+      ],
+      [
+        4294926336,
+        98304
+      ],
+      [
+        131072,
+        16384
+      ]
+    ],
+    "camera_view": [
+      100,
+      65486,
+      200
+    ],
+    "camera_pitch": 291,
+    "camera_pan": 1110,
+    "camera_depth_step": 40,
+    "positions_before": [
+      286326800,
+      572653600,
+      858980400
+    ],
+    "positions_after": [
+      286326800,
+      572653600,
+      858980400
+    ],
+    "duration_before": 9320,
+    "duration_after": 9320,
+    "motion_accumulator_before": 42330,
+    "motion_accumulator_after": 65520,
+    "pitch_before": 4951,
+    "pitch_after": 4951,
+    "pan_before": 9320,
+    "pan_after": 9320,
+    "roll_before": 64536,
+    "roll_after": 64768,
+    "radial_before": 50,
+    "radial_after": 50,
+    "radial_target_before": 400,
+    "radial_target_after": 0,
+    "score_radial": 1920,
+    "score_turn": 2080,
+    "data_sha256": "c8e90c2ecff3f87e54320b8b07bbbc5eb15f0aa627a18356acad33f48c27573e"
+  },
+  {
+    "name": "steering_wrapping_seed",
+    "module": "croolis",
+    "entry": 6496,
+    "mode": "steering",
+    "continuation": "common",
+    "distance": 2000,
+    "camera_x_before": 32768,
+    "camera_z_before": 0,
+    "seed": 32767,
+    "forward_x_before": 1,
+    "forward_z_before": 1,
+    "random_before": 4660,
+    "random_after": 4660,
+    "cosine": 9029,
+    "camera_matrix": [
+      [
+        73728,
+        4294934528
+      ],
+      [
+        4294926336,
+        98304
+      ],
+      [
+        131072,
+        16384
+      ]
+    ],
+    "camera_view": [
+      100,
+      65486,
+      200
+    ],
+    "camera_pitch": 291,
+    "camera_pan": 1110,
+    "camera_depth_step": 40,
+    "positions_before": [
+      286326800,
+      572653600,
+      858980400
+    ],
+    "positions_after": [
+      286326800,
+      572653600,
+      858980400
+    ],
+    "duration_before": 9320,
+    "duration_after": 9320,
+    "motion_accumulator_before": 42330,
+    "motion_accumulator_after": 16,
+    "pitch_before": 4951,
+    "pitch_after": 4951,
+    "pan_before": 9320,
+    "pan_after": 9320,
+    "roll_before": 0,
+    "roll_after": 0,
+    "radial_before": 50,
+    "radial_after": 50,
+    "radial_target_before": 400,
+    "radial_target_after": 2,
+    "score_radial": 67535,
+    "score_turn": 4294903761,
+    "data_sha256": "2613324e3029814cadfc373003e88f4c3fa3f5bd2df0a5e1b5f120b85c58e855"
+  },
+  {
+    "name": "camera_random_zero",
+    "module": "croolis",
+    "entry": 6496,
+    "mode": "camera_reset",
+    "continuation": "complete",
+    "distance": 2000,
+    "camera_x_before": 100,
+    "camera_z_before": 65035,
+    "seed": 20,
+    "forward_x_before": 1,
+    "forward_z_before": 1,
+    "random_before": 0,
+    "random_after": 0,
+    "cosine": 9029,
+    "camera_matrix": [
+      [
+        73728,
+        4294934528
+      ],
+      [
+        4294926336,
+        98304
+      ],
+      [
+        131072,
+        16384
+      ]
+    ],
+    "camera_view": [
+      100,
+      65486,
+      200
+    ],
+    "camera_pitch": 291,
+    "camera_pan": 1110,
+    "camera_depth_step": 40,
+    "positions_before": [
+      286326800,
+      572653600,
+      858980400
+    ],
+    "positions_after": [
+      286332327,
+      572661518,
+      859000467
+    ],
+    "duration_before": 9320,
+    "duration_after": 8,
+    "motion_accumulator_before": 42330,
+    "motion_accumulator_after": 42330,
+    "pitch_before": 4951,
+    "pitch_after": 291,
+    "pan_before": 9320,
+    "pan_after": 1110,
+    "roll_before": 0,
+    "roll_after": 0,
+    "radial_before": 50,
+    "radial_after": 340,
+    "radial_target_before": 400,
+    "radial_target_after": 340,
+    "score_radial": null,
+    "score_turn": null,
+    "data_sha256": "4d0a5d89eb5d6e48ad472d47d256aa6dfab9cae76e97d3c54ab19fac708b1348"
+  },
+  {
+    "name": "camera_random_borrow",
+    "module": "croolis",
+    "entry": 6496,
+    "mode": "camera_reset",
+    "continuation": "complete",
+    "distance": 2000,
+    "camera_x_before": 100,
+    "camera_z_before": 32768,
+    "seed": 20,
+    "forward_x_before": 1,
+    "forward_z_before": 1,
+    "random_before": 64,
+    "random_after": 32767,
+    "cosine": 9029,
+    "camera_matrix": [
+      [
+        73728,
+        4294934528
+      ],
+      [
+        4294926336,
+        98304
+      ],
+      [
+        131072,
+        16384
+      ]
+    ],
+    "camera_view": [
+      100,
+      65486,
+      200
+    ],
+    "camera_pitch": 291,
+    "camera_pan": 1110,
+    "camera_depth_step": 40,
+    "positions_before": [
+      286326800,
+      572653600,
+      858980400
+    ],
+    "positions_after": [
+      286332327,
+      572661518,
+      859000467
+    ],
+    "duration_before": 9320,
+    "duration_after": 8,
+    "motion_accumulator_before": 42330,
+    "motion_accumulator_after": 42330,
+    "pitch_before": 4951,
+    "pitch_after": 291,
+    "pan_before": 9320,
+    "pan_after": 1110,
+    "roll_before": 0,
+    "roll_after": 0,
+    "radial_before": 50,
+    "radial_after": 340,
+    "radial_target_before": 400,
+    "radial_target_after": 340,
+    "score_radial": null,
+    "score_turn": null,
+    "data_sha256": "e20a93be49a61b1c7d47a6af50022c3460b1aafdd2dc6c1e861ca42c93bf8734"
+  },
+  {
+    "name": "camera_random_high_negative_cosine",
+    "module": "croolis",
+    "entry": 6496,
+    "mode": "camera_reset",
+    "continuation": "complete",
+    "distance": 2000,
+    "camera_x_before": 100,
+    "camera_z_before": 64536,
+    "seed": 20,
+    "forward_x_before": 1,
+    "forward_z_before": 1,
+    "random_before": 65535,
+    "random_after": 65534,
+    "cosine": 56507,
+    "camera_matrix": [
+      [
+        73728,
+        4294934528
+      ],
+      [
+        4294926336,
+        98304
+      ],
+      [
+        131072,
+        16384
+      ]
+    ],
+    "camera_view": [
+      100,
+      65486,
+      200
+    ],
+    "camera_pitch": 291,
+    "camera_pan": 1110,
+    "camera_depth_step": 40,
+    "positions_before": [
+      286326800,
+      572653600,
+      858980400
+    ],
+    "positions_after": [
+      286386576,
+      572711253,
+      859025372
+    ],
+    "duration_before": 9320,
+    "duration_after": 8,
+    "motion_accumulator_before": 42330,
+    "motion_accumulator_after": 42330,
+    "pitch_before": 4951,
+    "pitch_after": 291,
+    "pan_before": 9320,
+    "pan_after": 1110,
+    "roll_before": 0,
+    "roll_after": 0,
+    "radial_before": 50,
+    "radial_after": 340,
+    "radial_target_before": 400,
+    "radial_target_after": 340,
+    "score_radial": null,
+    "score_turn": null,
+    "data_sha256": "e6f253c9d72ed1fc23d762d00f2b544cf570b08c72d12e467fc2a03e6ba3a446"
+  },
+  {
+    "name": "camera_depth_wrap",
+    "module": "croolis",
+    "entry": 6496,
+    "mode": "camera_reset",
+    "continuation": "complete",
+    "distance": 2000,
+    "camera_x_before": 100,
+    "camera_z_before": 65035,
+    "seed": 20,
+    "forward_x_before": 1,
+    "forward_z_before": 1,
+    "random_before": 4660,
+    "random_after": 26660,
+    "cosine": 9029,
+    "camera_matrix": [
+      [
+        73728,
+        4294934528
+      ],
+      [
+        4294926336,
+        98304
+      ],
+      [
+        131072,
+        16384
+      ]
+    ],
+    "camera_view": [
+      100,
+      65486,
+      200
+    ],
+    "camera_pitch": 291,
+    "camera_pan": 1110,
+    "camera_depth_step": 65535,
+    "positions_before": [
+      286326800,
+      572653600,
+      858980400
+    ],
+    "positions_after": [
+      286332327,
+      572661518,
+      859000467
+    ],
+    "duration_before": 9320,
+    "duration_after": 8,
+    "motion_accumulator_before": 42330,
+    "motion_accumulator_after": 42330,
+    "pitch_before": 4951,
+    "pitch_after": 291,
+    "pan_before": 9320,
+    "pan_after": 1110,
+    "roll_before": 0,
+    "roll_after": 0,
+    "radial_before": 50,
+    "radial_after": 299,
+    "radial_target_before": 400,
+    "radial_target_after": 299,
+    "score_radial": null,
+    "score_turn": null,
+    "data_sha256": "20e7f1324179182e072ab178a11adf0fb5994bce0d833079272ffff714d53184"
+  },
+  {
+    "name": "camera_position_fraction_underflow",
+    "module": "croolis",
+    "entry": 6496,
+    "mode": "camera_reset",
+    "continuation": "complete",
+    "distance": 2000,
+    "camera_x_before": 100,
+    "camera_z_before": 65035,
+    "seed": 20,
+    "forward_x_before": 1,
+    "forward_z_before": 1,
+    "random_before": 4660,
+    "random_after": 26660,
+    "cosine": 9029,
+    "camera_matrix": [
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        0
+      ]
+    ],
+    "camera_view": [
+      30,
+      40,
+      50
+    ],
+    "camera_pitch": 291,
+    "camera_pan": 1110,
+    "camera_depth_step": 40,
+    "positions_before": [
+      286326800,
+      572653600,
+      858980400
+    ],
+    "positions_after": [
+      286392290,
+      572719064,
+      859045838
+    ],
+    "duration_before": 9320,
+    "duration_after": 8,
+    "motion_accumulator_before": 42330,
+    "motion_accumulator_after": 42330,
+    "pitch_before": 4951,
+    "pitch_after": 291,
+    "pan_before": 9320,
+    "pan_after": 1110,
+    "roll_before": 0,
+    "roll_after": 0,
+    "radial_before": 50,
+    "radial_after": 340,
+    "radial_target_before": 400,
+    "radial_target_after": 340,
+    "score_radial": null,
+    "score_turn": null,
+    "data_sha256": "1774c6fe69b3ccc9f7b4dc4b834c6ad5f9a38afc702d2181a30daa6333d5d6d9"
+  },
+  {
+    "name": "wrapped_state_offsets",
+    "module": "croolis",
+    "entry": 6496,
+    "mode": "camera_reset",
+    "continuation": "complete",
+    "distance": 2000,
+    "camera_x_before": 100,
+    "camera_z_before": 65035,
+    "seed": 20,
+    "forward_x_before": 1,
+    "forward_z_before": 1,
+    "random_before": 4,
+    "random_after": 2048,
+    "cosine": 9029,
+    "camera_matrix": [
+      [
+        73728,
+        4294934528
+      ],
+      [
+        4294926336,
+        98304
+      ],
+      [
+        131072,
+        16384
+      ]
+    ],
+    "camera_view": [
+      100,
+      65486,
+      200
+    ],
+    "camera_pitch": 291,
+    "camera_pan": 1110,
+    "camera_depth_step": 40,
+    "positions_before": [
+      286326800,
+      572653600,
+      858980400
+    ],
+    "positions_after": [
+      286332327,
+      572661518,
+      859000467
+    ],
+    "duration_before": 9320,
+    "duration_after": 8,
+    "motion_accumulator_before": 42330,
+    "motion_accumulator_after": 42330,
+    "pitch_before": 4951,
+    "pitch_after": 291,
+    "pan_before": 9320,
+    "pan_after": 1110,
+    "roll_before": 0,
+    "roll_after": 0,
+    "radial_before": 50,
+    "radial_after": 340,
+    "radial_target_before": 400,
+    "radial_target_after": 340,
+    "score_radial": null,
+    "score_turn": null,
+    "data_sha256": "21c794638f81e331da9d8c26c7f26a4a1b14cdda3494246ad898e411029d2590"
+  }
+]

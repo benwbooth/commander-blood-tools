@@ -4457,6 +4457,343 @@ def amer_slot2_selection_vectors(entry: int, late: bool) -> list[dict[str, objec
     return vectors
 
 
+def croolis_slot2_reset_or_camera_vectors(entry: int) -> list[dict[str, object]]:
+    module = "croolis"
+    image = load_image(module)
+    body_size = 294
+    body_hash = "f953b882ed544eca90e7cb4a23dc35ab074345d5b3f24831b086c79b8522c11e"
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered body changed")
+
+    data_segment = 0x5000
+    extra_segment = 0x7000
+    fs_segment = 0x9000
+    game_segment = 0xA000
+    stack_segment = 0xB000
+    context = 0x3000
+    return_address = 0xF000
+    common_entry = 0x178E
+    distance_entry = entry + 6
+    angle_table_offset = 0x0036
+    camera_matrix_offset = 0x22BA
+    camera_view_offsets = (0x22EC, 0x22F0, 0x22F4)
+    camera_pitch_offset = 0x22F6
+    camera_pan_offset = 0x22F8
+    camera_depth_step_offset = 0x22FC
+    defaults: dict[str, object] = {
+        "state": 0x4000,
+        "distance": 2000,
+        "camera_x": 100,
+        "camera_z": 0,
+        "seed": 20,
+        "forward_x": 1,
+        "forward_z": 1,
+        "random": 0x1234,
+        "roll": 0,
+        "radial": 50,
+        "radial_target": 400,
+        "motion_accumulator": 0xA55A,
+        "duration": 0x2468,
+        "positions": (0x11110010, 0x22220020, 0x33330030),
+        "camera_matrix": (
+            (0x00012000, -0x00008000),
+            (-0x0000A000, 0x00018000),
+            (0x00020000, 0x00004000),
+        ),
+        "camera_view": (100, -50, 200),
+        "camera_pitch": 0x0123,
+        "camera_pan": 0x0456,
+        "camera_depth_step": 40,
+        "cosine": 0x2345,
+        "sine": -0x1234,
+    }
+    cases = (
+        ("steering_default_distance", {}),
+        ("steering_selection_distance", {"distance": 1000}),
+        ("steering_radial_fallback", {"forward_z": -30000}),
+        ("steering_opposite_turn", {"forward_x": -2, "forward_z": -1}),
+        ("steering_roll_high_clamp", {"roll": 1000}),
+        ("steering_roll_low_clamp", {"roll": -1000}),
+        ("steering_wrapping_seed", {"camera_x": -32768, "seed": 32767}),
+        ("camera_random_zero", {"camera_z": -501, "random": 0}),
+        ("camera_random_borrow", {"camera_z": -32768, "random": 64}),
+        (
+            "camera_random_high_negative_cosine",
+            {"camera_z": -1000, "random": 0xFFFF, "cosine": -0x2345},
+        ),
+        ("camera_depth_wrap", {"camera_z": -501, "camera_depth_step": 0xFFFF}),
+        (
+            "camera_position_fraction_underflow",
+            {
+                "camera_z": -501,
+                "camera_matrix": ((0, 0), (0, 0), (0, 0)),
+                "camera_view": (30, 40, 50),
+                "positions": (0x11110010, 0x22220020, 0x33330030),
+            },
+        ),
+        ("wrapped_state_offsets", {"state": 0xFFC0, "camera_z": -501, "random": 4}),
+    )
+    vectors: list[dict[str, object]] = []
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        encoded = struct.pack("<H", value & 0xFFFF)
+        for index, byte in enumerate(encoded):
+            memory[(offset + index) & 0xFFFF] = byte
+
+    def put_u32(memory: bytearray, offset: int, value: int) -> None:
+        encoded = struct.pack("<I", value & 0xFFFFFFFF)
+        for index, byte in enumerate(encoded):
+            memory[(offset + index) & 0xFFFF] = byte
+
+    def get_u16(memory: bytes | bytearray, offset: int) -> int:
+        return memory[offset & 0xFFFF] | (memory[(offset + 1) & 0xFFFF] << 8)
+
+    def get_u32(memory: bytes | bytearray, offset: int) -> int:
+        return get_u16(memory, offset) | (get_u16(memory, offset + 2) << 16)
+
+    def signed_word(value: int) -> int:
+        value &= 0xFFFF
+        return value if value < 0x8000 else value - 0x10000
+
+    def signed_dword(value: int) -> int:
+        value &= 0xFFFFFFFF
+        return value if value < 0x80000000 else value - 0x100000000
+
+    def transform_random(value: int) -> int:
+        rotated = ((value >> 7) | (value << 9)) & 0xFFFF
+        return (rotated - ((value >> 6) & 1)) & 0xFFFF
+
+    for case_index, (name, overrides) in enumerate(cases):
+        case = defaults | overrides
+        state = int(case["state"])
+        distance = int(case["distance"])
+        camera_x = int(case["camera_x"])
+        camera_z = int(case["camera_z"])
+        seed = int(case["seed"])
+        forward_x = int(case["forward_x"])
+        forward_z = int(case["forward_z"])
+        random_before = int(case["random"])
+        roll = int(case["roll"])
+        radial = int(case["radial"])
+        radial_target = int(case["radial_target"])
+        motion_accumulator = int(case["motion_accumulator"])
+        duration = int(case["duration"])
+        positions = tuple(int(value) for value in case["positions"])
+        camera_matrix = tuple(
+            tuple(int(value) for value in row) for row in case["camera_matrix"]
+        )
+        camera_view = tuple(int(value) for value in case["camera_view"])
+        camera_pitch = int(case["camera_pitch"])
+        camera_pan = int(case["camera_pan"])
+        camera_depth_step = int(case["camera_depth_step"])
+        cosine = int(case["cosine"])
+        sine = int(case["sine"])
+
+        data_before = bytearray(
+            (offset * 31 + case_index * 19 + 7) & 0xFF
+            for offset in range(0x10000)
+        )
+        put_u16(data_before, context + 0x38, duration)
+        put_u16(data_before, context + 0x3A, motion_accumulator)
+        put_u32(data_before, context + 0x3C, seed)
+        put_u16(data_before, context + 0x42, random_before)
+        put_u32(data_before, state + 0x1A, forward_x)
+        put_u32(data_before, state + 0x32, forward_z)
+        put_u16(data_before, state + 0x38, camera_x)
+        put_u16(data_before, state + 0x40, camera_z)
+        for offset, position in zip((0x42, 0x46, 0x4A), positions):
+            put_u32(data_before, state + offset, position)
+        put_u16(data_before, state + 0x4E, 0x1357)
+        put_u16(data_before, state + 0x50, 0x2468)
+        put_u16(data_before, state + 0x52, roll)
+        put_u16(data_before, state + 0x54, radial)
+        put_u16(data_before, state + 0x58, radial_target)
+        for row_index, row in enumerate(camera_matrix):
+            for column_index, value in enumerate(row):
+                put_u32(
+                    data_before,
+                    camera_matrix_offset + (row_index * 3 + column_index) * 4,
+                    value,
+                )
+        for offset, value in zip(camera_view_offsets, camera_view):
+            put_u16(data_before, offset, value)
+        put_u16(data_before, camera_pitch_offset, camera_pitch)
+        put_u16(data_before, camera_pan_offset, camera_pan)
+        put_u16(data_before, camera_depth_step_offset, camera_depth_step)
+        random_after = transform_random(random_before)
+        sample_offset = angle_table_offset + (random_after & 0x0FFC)
+        put_u16(data_before, sample_offset, cosine)
+        put_u16(data_before, sample_offset + 2, sine)
+        data_expected = bytearray(data_before)
+
+        camera_reset = signed_word(camera_z) < -500
+        score_radial = None
+        score_turn = None
+        if camera_reset:
+            put_u16(data_expected, context + 0x42, random_after)
+            for axis, (matrix_row, view) in enumerate(zip(camera_matrix, camera_view)):
+                transformed = (
+                    (cosine & 0xFFFFFFFF) * (matrix_row[0] & 0xFFFFFFFF)
+                    + (cosine & 0xFFFFFFFF) * (matrix_row[1] & 0xFFFFFFFF)
+                ) & 0xFFFFFFFF
+                position_component = (
+                    (signed_dword(transformed) >> 16) - signed_word(view)
+                ) & 0xFFFF
+                put_u16(data_expected, state + (0x42, 0x46, 0x4A)[axis], position_component)
+            put_u16(data_expected, state + 0x4E, camera_pitch)
+            put_u16(data_expected, state + 0x50, camera_pan)
+            put_u16(data_expected, state + 0x52, 0)
+            depth = (camera_depth_step + 300) & 0xFFFF
+            put_u16(data_expected, state + 0x54, depth)
+            put_u16(data_expected, state + 0x58, depth)
+            put_u16(data_expected, context + 0x38, 8)
+            continuation = "complete"
+            target = return_address
+            start = entry if distance == 2000 else distance_entry
+        else:
+            horizontal = signed_word(camera_z) - distance
+            vertical = signed_word(camera_x) - seed
+            score_radial = (
+                -(
+                    ((horizontal & 0xFFFFFFFF) * (forward_z & 0xFFFFFFFF))
+                    + ((vertical & 0xFFFFFFFF) * (forward_x & 0xFFFFFFFF))
+                )
+            ) & 0xFFFFFFFF
+            shifted = signed_dword(score_radial) >> 15
+            radial_after = (
+                signed_word(radial_target) >> 1 if shifted < 0 else shifted
+            )
+            put_u16(data_expected, state + 0x58, radial_after)
+            score_turn = (
+                ((vertical & 0xFFFFFFFF) * (forward_z & 0xFFFFFFFF))
+                - ((horizontal & 0xFFFFFFFF) * (forward_x & 0xFFFFFFFF))
+            ) & 0xFFFFFFFF
+            turn = 16 if score_turn & 0x80000000 else -16
+            put_u16(data_expected, context + 0x3A, turn)
+            put_u16(data_expected, state + 0x52, max(-768, min(768, signed_word(roll))))
+            continuation = "common"
+            target = common_entry
+            start = entry if distance == 2000 else distance_entry
+
+        extra_before = bytes(
+            (offset * 13 + case_index + 3) & 0xFF for offset in range(0x10000)
+        )
+        fs_before = bytes(
+            (offset * 17 + case_index + 5) & 0xFF for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 23 + case_index + 9) & 0xFF for offset in range(0x10000)
+        )
+        stack_sentinel = bytes.fromhex("877869965aa5")
+        stack_before = struct.pack("<H", return_address) + stack_sentinel
+        initial = {
+            "eax": 0xA1A12345,
+            "ebx": 0xB2B23456,
+            "ecx": 0xC3C34567,
+            "edx": distance,
+            "esi": 0xE5E50000 | state,
+            "edi": 0xF6F60000 | context,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0293 | (0x0400 if case_index & 1 else 0),
+        }
+        machine = execute(
+            image,
+            start,
+            target,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (extra_segment, 0, extra_before),
+                (fs_segment, 0, fs_before),
+                (game_segment, 0, game_before),
+                (stack_segment, 0xFF00, stack_before),
+            ],
+            max_instructions=100,
+        )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(data_expected):
+            differences = [
+                (offset, actual_data[offset], data_expected[offset])
+                for offset in range(0x10000)
+                if actual_data[offset] != data_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: data differs at {differences}"
+            )
+        if bytes(machine.mem_read(0, len(image))) != image:
+            raise AssertionError(f"{module}:{entry:#x} {name}: code changed")
+        for segment, expected in (
+            (extra_segment, extra_before),
+            (fs_segment, fs_before),
+            (game_segment, game_before),
+        ):
+            if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: segment {segment:#x} changed"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, len(stack_sentinel))) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+        expected_sp = 0xFF02 if camera_reset else 0xFF00
+        if machine.reg_read(UC_X86_REG_SP) != expected_sp:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack pointer changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "mode": "camera_reset" if camera_reset else "steering",
+                "continuation": continuation,
+                "distance": distance,
+                "camera_x_before": camera_x & 0xFFFF,
+                "camera_z_before": camera_z & 0xFFFF,
+                "seed": seed,
+                "forward_x_before": forward_x & 0xFFFFFFFF,
+                "forward_z_before": forward_z & 0xFFFFFFFF,
+                "random_before": random_before,
+                "random_after": get_u16(data_expected, context + 0x42),
+                "cosine": cosine & 0xFFFF,
+                "camera_matrix": [
+                    [value & 0xFFFFFFFF for value in row] for row in camera_matrix
+                ],
+                "camera_view": [value & 0xFFFF for value in camera_view],
+                "camera_pitch": camera_pitch,
+                "camera_pan": camera_pan,
+                "camera_depth_step": camera_depth_step & 0xFFFF,
+                "positions_before": list(positions),
+                "positions_after": [
+                    get_u32(data_expected, state + offset)
+                    for offset in (0x42, 0x46, 0x4A)
+                ],
+                "duration_before": duration,
+                "duration_after": get_u16(data_expected, context + 0x38),
+                "motion_accumulator_before": motion_accumulator,
+                "motion_accumulator_after": get_u16(data_expected, context + 0x3A),
+                "pitch_before": get_u16(data_before, state + 0x4E),
+                "pitch_after": get_u16(data_expected, state + 0x4E),
+                "pan_before": get_u16(data_before, state + 0x50),
+                "pan_after": get_u16(data_expected, state + 0x50),
+                "roll_before": roll & 0xFFFF,
+                "roll_after": get_u16(data_expected, state + 0x52),
+                "radial_before": radial,
+                "radial_after": get_u16(data_expected, state + 0x54),
+                "radial_target_before": radial_target,
+                "radial_target_after": get_u16(data_expected, state + 0x58),
+                "score_radial": score_radial,
+                "score_turn": score_turn,
+                "data_sha256": hashlib.sha256(data_expected).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def croolis_slot2_selection_update_vectors(entry: int) -> list[dict[str, object]]:
     module = "croolis"
     image = load_image(module)
@@ -20684,6 +21021,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "xdb_croolis_func_1828_head_natural.json",
         croolis_slot2_selection_update_vectors(0x1828),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "xdb_croolis_func_1960_natural.json",
+        croolis_slot2_reset_or_camera_vectors(0x1960),
         args.check,
     )
     update_vector(
