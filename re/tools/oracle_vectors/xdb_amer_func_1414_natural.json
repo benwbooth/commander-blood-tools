@@ -1,0 +1,1260 @@
+[
+  {
+    "name": "timer_active_ready",
+    "module": "amer",
+    "entry": 5140,
+    "timer": 1,
+    "ring_slot_before": 51,
+    "ring_slot_after": 51,
+    "translation_integer_words": [
+      0,
+      0,
+      0
+    ],
+    "behavior_seed": 0,
+    "command_flags": 0,
+    "selection": 0,
+    "countdown_before": 0,
+    "countdown_after": 2,
+    "control_latch_after": 1,
+    "feedback_before": 4048,
+    "feedback_after": 4048,
+    "feedback_advanced": false,
+    "expected_call": 20753,
+    "expected_action": "selection",
+    "queue_cursor_after": 6,
+    "current_state_after": 42330,
+    "queued_state_after": 0,
+    "motion_before": [
+      4352,
+      8704,
+      13107,
+      4048,
+      0
+    ],
+    "motion_after": [
+      4369,
+      8670,
+      51,
+      4048,
+      0
+    ],
+    "current_entry_before": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "current_entry_after": [
+      17,
+      65502,
+      8,
+      1
+    ],
+    "next_entry_before": [
+      68,
+      85,
+      102,
+      0
+    ],
+    "selected_entry_after": [
+      17,
+      65502,
+      8,
+      1
+    ],
+    "texture_packed_before": [
+      16777472
+    ],
+    "texture_packed_after": [
+      16777472
+    ],
+    "branch_classes": [
+      "timer",
+      "ready"
+    ],
+    "data_sha256": "8a8f7f0e4dfeaf394189a83869444db74668ef11d6a9a2a9954f42aae4cb6d91",
+    "code_sha256": "ca631911df2f8ef62e61cd58a75eb9457f884357445336eae0d4ca7ae4d91425",
+    "object_sha256": "914ef9cc2bf5d70e9a09da6596979a79dc251c6117ce90d84ebdc6c3924f405a"
+  },
+  {
+    "name": "timer_active_feedback",
+    "module": "amer",
+    "entry": 5140,
+    "timer": 1,
+    "ring_slot_before": 64,
+    "ring_slot_after": 64,
+    "translation_integer_words": [
+      0,
+      0,
+      0
+    ],
+    "behavior_seed": 1,
+    "command_flags": 0,
+    "selection": 0,
+    "countdown_before": 7,
+    "countdown_after": 7,
+    "control_latch_after": 0,
+    "feedback_before": 4052,
+    "feedback_after": 4092,
+    "feedback_advanced": true,
+    "expected_call": 0,
+    "expected_action": "feedback",
+    "queue_cursor_after": 6,
+    "current_state_after": 42330,
+    "queued_state_after": 0,
+    "motion_before": [
+      4355,
+      8709,
+      13107,
+      4052,
+      1
+    ],
+    "motion_after": [
+      4372,
+      8675,
+      51,
+      4092,
+      1
+    ],
+    "current_entry_before": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "current_entry_after": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "next_entry_before": [
+      68,
+      85,
+      102,
+      0
+    ],
+    "selected_entry_after": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "texture_packed_before": [
+      16777472
+    ],
+    "texture_packed_after": [
+      16777472
+    ],
+    "branch_classes": [
+      "timer",
+      "feedback",
+      "marker"
+    ],
+    "data_sha256": "a551200603ae34f487165a989d1988cf92650064b00a818832e30a501c075822",
+    "code_sha256": "46fea09ed36d6ecaecc4d80635d6a6aaa173aa987febbaca2be0dfff8917e339",
+    "object_sha256": "52d4b37c056abbfffd4fd269e9a8a0308c385077828b917620fa81780a5be744"
+  },
+  {
+    "name": "capture",
+    "module": "amer",
+    "entry": 5140,
+    "timer": 0,
+    "ring_slot_before": 80,
+    "ring_slot_after": 81,
+    "translation_integer_words": [
+      0,
+      0,
+      0
+    ],
+    "behavior_seed": 0,
+    "command_flags": 2,
+    "selection": 0,
+    "countdown_before": 0,
+    "countdown_after": 0,
+    "control_latch_after": 0,
+    "feedback_before": 4056,
+    "feedback_after": 4056,
+    "feedback_advanced": false,
+    "expected_call": 51729,
+    "expected_action": "capture",
+    "queue_cursor_after": 6,
+    "current_state_after": 42330,
+    "queued_state_after": 0,
+    "motion_before": [
+      4358,
+      8714,
+      13107,
+      4056,
+      0
+    ],
+    "motion_after": [
+      4375,
+      8680,
+      51,
+      4056,
+      0
+    ],
+    "current_entry_before": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "current_entry_after": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "next_entry_before": [
+      68,
+      85,
+      102,
+      2
+    ],
+    "selected_entry_after": [
+      68,
+      85,
+      102,
+      2
+    ],
+    "texture_packed_before": [
+      16777472
+    ],
+    "texture_packed_after": [
+      16777472
+    ],
+    "branch_classes": [
+      "command",
+      "capture"
+    ],
+    "data_sha256": "de0123dd5cfc9beeccee3bccd0b571c697588a6b9635c8a5843e54840e4c98d6",
+    "code_sha256": "a1fc3fcf83bef8d807168f5a2ecb0756e42cb70dacb541c1830a243ee7428011",
+    "object_sha256": "d9a59deceb844ddbd32d66a9c5718945c498d39b5f15d0b3095a053de8aae203"
+  },
+  {
+    "name": "capture_precedes_restart",
+    "module": "amer",
+    "entry": 5140,
+    "timer": 0,
+    "ring_slot_before": 96,
+    "ring_slot_after": 97,
+    "translation_integer_words": [
+      0,
+      0,
+      0
+    ],
+    "behavior_seed": 0,
+    "command_flags": 3,
+    "selection": 0,
+    "countdown_before": 0,
+    "countdown_after": 0,
+    "control_latch_after": 0,
+    "feedback_before": 4060,
+    "feedback_after": 4060,
+    "feedback_advanced": false,
+    "expected_call": 51729,
+    "expected_action": "capture",
+    "queue_cursor_after": 6,
+    "current_state_after": 42330,
+    "queued_state_after": 0,
+    "motion_before": [
+      4361,
+      8719,
+      13107,
+      4060,
+      0
+    ],
+    "motion_after": [
+      4378,
+      8685,
+      51,
+      4060,
+      0
+    ],
+    "current_entry_before": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "current_entry_after": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "next_entry_before": [
+      68,
+      85,
+      102,
+      3
+    ],
+    "selected_entry_after": [
+      68,
+      85,
+      102,
+      3
+    ],
+    "texture_packed_before": [
+      16777472
+    ],
+    "texture_packed_after": [
+      16777472
+    ],
+    "branch_classes": [
+      "command",
+      "capture",
+      "both_bits"
+    ],
+    "data_sha256": "bc956080a9c53135f0656871c4624f7ae557891f2a4a522b3cbcdce4be9f7419",
+    "code_sha256": "94e0b96668a44291726cdeb07132eeb741d75eed8da27e35a5831bb3dd7f9649",
+    "object_sha256": "674bcb42548179d9df814b248f01ef51d40f7e0644b649e48aedaf2e268b6ebe"
+  },
+  {
+    "name": "restart_marker",
+    "module": "amer",
+    "entry": 5140,
+    "timer": 0,
+    "ring_slot_before": 112,
+    "ring_slot_after": 113,
+    "translation_integer_words": [
+      0,
+      0,
+      0
+    ],
+    "behavior_seed": 1,
+    "command_flags": 1,
+    "selection": 0,
+    "countdown_before": 0,
+    "countdown_after": 0,
+    "control_latch_after": 0,
+    "feedback_before": 4064,
+    "feedback_after": 4064,
+    "feedback_advanced": false,
+    "expected_call": 48657,
+    "expected_action": "restart",
+    "queue_cursor_after": 6,
+    "current_state_after": 16384,
+    "queued_state_after": 16384,
+    "motion_before": [
+      4364,
+      8724,
+      13107,
+      4064,
+      1
+    ],
+    "motion_after": [
+      4381,
+      8690,
+      51,
+      4064,
+      1
+    ],
+    "current_entry_before": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "current_entry_after": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "next_entry_before": [
+      68,
+      85,
+      102,
+      1
+    ],
+    "selected_entry_after": [
+      68,
+      85,
+      102,
+      1
+    ],
+    "texture_packed_before": [
+      16777472
+    ],
+    "texture_packed_after": [
+      16777472
+    ],
+    "branch_classes": [
+      "command",
+      "restart",
+      "marker"
+    ],
+    "data_sha256": "21b13985157b2209a5f83685865df6b2e3bfc1916d579f89305ebb40661cb8c2",
+    "code_sha256": "b952b9b937f923ff145f59763ba427cd39f8e8bf9cad06720177c80087c9f39f",
+    "object_sha256": "6b36b129450f0d495360c4a7a5fab531ea5905ea424b319850ee16e4642b8074"
+  },
+  {
+    "name": "restart_one_object",
+    "module": "amer",
+    "entry": 5140,
+    "timer": 0,
+    "ring_slot_before": 16,
+    "ring_slot_after": 17,
+    "translation_integer_words": [
+      0,
+      0,
+      0
+    ],
+    "behavior_seed": 0,
+    "command_flags": 1,
+    "selection": 0,
+    "countdown_before": 0,
+    "countdown_after": 0,
+    "control_latch_after": 0,
+    "feedback_before": 4068,
+    "feedback_after": 4068,
+    "feedback_advanced": false,
+    "expected_call": 48657,
+    "expected_action": "restart",
+    "queue_cursor_after": 6,
+    "current_state_after": 16384,
+    "queued_state_after": 16384,
+    "motion_before": [
+      4367,
+      8729,
+      13107,
+      4068,
+      0
+    ],
+    "motion_after": [
+      4384,
+      8695,
+      51,
+      4068,
+      0
+    ],
+    "current_entry_before": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "current_entry_after": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "next_entry_before": [
+      68,
+      85,
+      102,
+      1
+    ],
+    "selected_entry_after": [
+      68,
+      85,
+      102,
+      1
+    ],
+    "texture_packed_before": [
+      16777472
+    ],
+    "texture_packed_after": [
+      8388736
+    ],
+    "branch_classes": [
+      "command",
+      "restart",
+      "texture"
+    ],
+    "data_sha256": "f732436f6cc40b853dbe7bdb5b6ab104177cece816f5b1194dc177685cf218ad",
+    "code_sha256": "dd771ba39c514999bf06d591c0daf36122cc0303e711079d4e5d7ae02b94b8a3",
+    "object_sha256": "00e5337be994d282c6f7de7467df348bb90695c8a5dc6bea19c3e7c7b1af28f8"
+  },
+  {
+    "name": "restart_three_objects",
+    "module": "amer",
+    "entry": 5140,
+    "timer": 0,
+    "ring_slot_before": 32,
+    "ring_slot_after": 33,
+    "translation_integer_words": [
+      0,
+      0,
+      0
+    ],
+    "behavior_seed": 0,
+    "command_flags": 1,
+    "selection": 0,
+    "countdown_before": 0,
+    "countdown_after": 0,
+    "control_latch_after": 0,
+    "feedback_before": 4072,
+    "feedback_after": 4072,
+    "feedback_advanced": false,
+    "expected_call": 48657,
+    "expected_action": "restart",
+    "queue_cursor_after": 6,
+    "current_state_after": 16384,
+    "queued_state_after": 16384,
+    "motion_before": [
+      4370,
+      8734,
+      13107,
+      4072,
+      0
+    ],
+    "motion_after": [
+      4387,
+      8700,
+      51,
+      4072,
+      0
+    ],
+    "current_entry_before": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "current_entry_after": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "next_entry_before": [
+      68,
+      85,
+      102,
+      1
+    ],
+    "selected_entry_after": [
+      68,
+      85,
+      102,
+      1
+    ],
+    "texture_packed_before": [
+      16777472,
+      8323199,
+      2147516416
+    ],
+    "texture_packed_after": [
+      8388736,
+      4294901759,
+      2139127680
+    ],
+    "branch_classes": [
+      "command",
+      "restart",
+      "texture",
+      "multiple"
+    ],
+    "data_sha256": "515cf4815246c1dee96344dc6817779497159acc5f2f9723df944fb7c00bab10",
+    "code_sha256": "d209760aa751c905a34885d1dca97ee0d41b3819780903849bcfe4e42fed0a4a",
+    "object_sha256": "737cf1a1fbb2532eb567bffc6d5ff30d745779ad063bd72fcff2b6f615ef4690"
+  },
+  {
+    "name": "feedback_marker",
+    "module": "amer",
+    "entry": 5140,
+    "timer": 0,
+    "ring_slot_before": 48,
+    "ring_slot_after": 49,
+    "translation_integer_words": [
+      0,
+      0,
+      0
+    ],
+    "behavior_seed": 1,
+    "command_flags": 0,
+    "selection": 0,
+    "countdown_before": 0,
+    "countdown_after": 0,
+    "control_latch_after": 0,
+    "feedback_before": 4076,
+    "feedback_after": 20,
+    "feedback_advanced": true,
+    "expected_call": 0,
+    "expected_action": "feedback",
+    "queue_cursor_after": 6,
+    "current_state_after": 42330,
+    "queued_state_after": 0,
+    "motion_before": [
+      4373,
+      8739,
+      13107,
+      4076,
+      1
+    ],
+    "motion_after": [
+      4390,
+      8705,
+      51,
+      20,
+      1
+    ],
+    "current_entry_before": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "current_entry_after": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "next_entry_before": [
+      68,
+      85,
+      102,
+      0
+    ],
+    "selected_entry_after": [
+      68,
+      85,
+      102,
+      0
+    ],
+    "texture_packed_before": [
+      16777472
+    ],
+    "texture_packed_after": [
+      16777472
+    ],
+    "branch_classes": [
+      "feedback",
+      "marker"
+    ],
+    "data_sha256": "30762f367bec39a8c07d5264d2d48e3d19e4a1d06cbebf2fab0d2e7243b9e7d4",
+    "code_sha256": "54f68c68bc0ab0a46381cdea9b0f33c7558fb6b7a4e77bebb634b9a75631765b",
+    "object_sha256": "4a33f7fa9412d76ac871c5e8bc365465b21814c59bfc0975b4251ac3ccd47ef3"
+  },
+  {
+    "name": "feedback_depth_high",
+    "module": "amer",
+    "entry": 5140,
+    "timer": 0,
+    "ring_slot_before": 64,
+    "ring_slot_after": 65,
+    "translation_integer_words": [
+      0,
+      0,
+      65
+    ],
+    "behavior_seed": 0,
+    "command_flags": 0,
+    "selection": 0,
+    "countdown_before": 0,
+    "countdown_after": 0,
+    "control_latch_after": 0,
+    "feedback_before": 4080,
+    "feedback_after": 24,
+    "feedback_advanced": true,
+    "expected_call": 0,
+    "expected_action": "feedback",
+    "queue_cursor_after": 6,
+    "current_state_after": 42330,
+    "queued_state_after": 0,
+    "motion_before": [
+      4376,
+      8744,
+      13107,
+      4080,
+      0
+    ],
+    "motion_after": [
+      4393,
+      8710,
+      51,
+      24,
+      0
+    ],
+    "current_entry_before": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "current_entry_after": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "next_entry_before": [
+      68,
+      85,
+      102,
+      0
+    ],
+    "selected_entry_after": [
+      68,
+      85,
+      102,
+      0
+    ],
+    "texture_packed_before": [
+      16777472
+    ],
+    "texture_packed_after": [
+      16777472
+    ],
+    "branch_classes": [
+      "feedback",
+      "depth_high"
+    ],
+    "data_sha256": "c37d0b2bb0216d2e47582fbfe6d049e16d051789fb07ecb8c45803b940323283",
+    "code_sha256": "e4abb10110b6a338d53d2ce01534e33710aed6635a0a29716e5583bdfdccef96",
+    "object_sha256": "938f06803adbf8486b8bef2e34c5ba7b5f94d14a222fede06859767e2e615524"
+  },
+  {
+    "name": "feedback_lateral_high",
+    "module": "amer",
+    "entry": 5140,
+    "timer": 0,
+    "ring_slot_before": 80,
+    "ring_slot_after": 81,
+    "translation_integer_words": [
+      65,
+      0,
+      0
+    ],
+    "behavior_seed": 0,
+    "command_flags": 0,
+    "selection": 0,
+    "countdown_before": 0,
+    "countdown_after": 0,
+    "control_latch_after": 0,
+    "feedback_before": 4084,
+    "feedback_after": 28,
+    "feedback_advanced": true,
+    "expected_call": 0,
+    "expected_action": "feedback",
+    "queue_cursor_after": 6,
+    "current_state_after": 42330,
+    "queued_state_after": 0,
+    "motion_before": [
+      4379,
+      8749,
+      13107,
+      4084,
+      0
+    ],
+    "motion_after": [
+      4396,
+      8715,
+      51,
+      28,
+      0
+    ],
+    "current_entry_before": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "current_entry_after": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "next_entry_before": [
+      68,
+      85,
+      102,
+      0
+    ],
+    "selected_entry_after": [
+      68,
+      85,
+      102,
+      0
+    ],
+    "texture_packed_before": [
+      16777472
+    ],
+    "texture_packed_after": [
+      16777472
+    ],
+    "branch_classes": [
+      "feedback",
+      "lateral_high"
+    ],
+    "data_sha256": "d9094aea54d3208660abd91e1153dd22836e7fcf11c12322dc80274af75e40b7",
+    "code_sha256": "b50aafd200de0a0846f8b5b8bf11c00f33e6eba1c89b49afc7335b93382f5904",
+    "object_sha256": "e653d70a4e9f109753198fb7089d86f6f909acbde391142529093cfe6c6d23c1"
+  },
+  {
+    "name": "feedback_lateral_low",
+    "module": "amer",
+    "entry": 5140,
+    "timer": 0,
+    "ring_slot_before": 96,
+    "ring_slot_after": 97,
+    "translation_integer_words": [
+      -65,
+      0,
+      0
+    ],
+    "behavior_seed": 0,
+    "command_flags": 0,
+    "selection": 0,
+    "countdown_before": 0,
+    "countdown_after": 0,
+    "control_latch_after": 0,
+    "feedback_before": 4088,
+    "feedback_after": 32,
+    "feedback_advanced": true,
+    "expected_call": 0,
+    "expected_action": "feedback",
+    "queue_cursor_after": 6,
+    "current_state_after": 42330,
+    "queued_state_after": 0,
+    "motion_before": [
+      4382,
+      8754,
+      13107,
+      4088,
+      0
+    ],
+    "motion_after": [
+      4399,
+      8720,
+      51,
+      32,
+      0
+    ],
+    "current_entry_before": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "current_entry_after": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "next_entry_before": [
+      68,
+      85,
+      102,
+      0
+    ],
+    "selected_entry_after": [
+      68,
+      85,
+      102,
+      0
+    ],
+    "texture_packed_before": [
+      16777472
+    ],
+    "texture_packed_after": [
+      16777472
+    ],
+    "branch_classes": [
+      "feedback",
+      "lateral_low"
+    ],
+    "data_sha256": "cb8a2b2f06a2a50976d2a8b94d07b92d91f16d5b81e483dd1fe413f58c6524fc",
+    "code_sha256": "81cd8bf78e9d84e40a377ed3b0d18a2a1307013880ab22a98050f477b8041aa1",
+    "object_sha256": "9c9879b6ddf3007c8ebd64ca05ccf0db2fbe2652f3e50c262088620f451cfdda"
+  },
+  {
+    "name": "feedback_vertical_high",
+    "module": "amer",
+    "entry": 5140,
+    "timer": 0,
+    "ring_slot_before": 112,
+    "ring_slot_after": 113,
+    "translation_integer_words": [
+      0,
+      65,
+      0
+    ],
+    "behavior_seed": 0,
+    "command_flags": 0,
+    "selection": 0,
+    "countdown_before": 0,
+    "countdown_after": 0,
+    "control_latch_after": 0,
+    "feedback_before": 4092,
+    "feedback_after": 36,
+    "feedback_advanced": true,
+    "expected_call": 0,
+    "expected_action": "feedback",
+    "queue_cursor_after": 6,
+    "current_state_after": 42330,
+    "queued_state_after": 0,
+    "motion_before": [
+      4385,
+      8759,
+      13107,
+      4092,
+      0
+    ],
+    "motion_after": [
+      4402,
+      8725,
+      51,
+      36,
+      0
+    ],
+    "current_entry_before": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "current_entry_after": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "next_entry_before": [
+      68,
+      85,
+      102,
+      0
+    ],
+    "selected_entry_after": [
+      68,
+      85,
+      102,
+      0
+    ],
+    "texture_packed_before": [
+      16777472
+    ],
+    "texture_packed_after": [
+      16777472
+    ],
+    "branch_classes": [
+      "feedback",
+      "vertical_high"
+    ],
+    "data_sha256": "3f1a413474bb4d3f3404676f91147e6898532c246b67252c8651dfb3e82fa729",
+    "code_sha256": "faa9d9fe65bb7f9ae2add366786367d8f74b58f8cfea8f95b3fded2f8e7bdb0d",
+    "object_sha256": "2b5d4ed166fa5ca146ce7a89acfdcb597dd60fd4393059029ebc69fa13dc7757"
+  },
+  {
+    "name": "feedback_vertical_low",
+    "module": "amer",
+    "entry": 5140,
+    "timer": 0,
+    "ring_slot_before": 0,
+    "ring_slot_after": 1,
+    "translation_integer_words": [
+      0,
+      -65,
+      0
+    ],
+    "behavior_seed": 0,
+    "command_flags": 0,
+    "selection": 0,
+    "countdown_before": 0,
+    "countdown_after": 0,
+    "control_latch_after": 0,
+    "feedback_before": 0,
+    "feedback_after": 40,
+    "feedback_advanced": true,
+    "expected_call": 0,
+    "expected_action": "feedback",
+    "queue_cursor_after": 6,
+    "current_state_after": 42330,
+    "queued_state_after": 0,
+    "motion_before": [
+      4388,
+      8764,
+      13107,
+      0,
+      0
+    ],
+    "motion_after": [
+      4405,
+      8730,
+      51,
+      40,
+      0
+    ],
+    "current_entry_before": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "current_entry_after": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "next_entry_before": [
+      68,
+      85,
+      102,
+      0
+    ],
+    "selected_entry_after": [
+      68,
+      85,
+      102,
+      0
+    ],
+    "texture_packed_before": [
+      16777472
+    ],
+    "texture_packed_after": [
+      16777472
+    ],
+    "branch_classes": [
+      "feedback",
+      "vertical_low"
+    ],
+    "data_sha256": "f99a87c0f83cede87803b47369b9040708c0f1f85cba65a9fa06e79b8318af15",
+    "code_sha256": "55468d64ff04ba0367f7d7fd0f8450181dbd0ef3e683b3b4081922c4979358cd",
+    "object_sha256": "d9a1d25955579996a2906c65818531ee717e7bca1d00c708f00f15ee29ab448c"
+  },
+  {
+    "name": "selection_busy",
+    "module": "amer",
+    "entry": 5140,
+    "timer": 0,
+    "ring_slot_before": 16,
+    "ring_slot_after": 17,
+    "translation_integer_words": [
+      0,
+      0,
+      0
+    ],
+    "behavior_seed": 0,
+    "command_flags": 0,
+    "selection": 1,
+    "countdown_before": 0,
+    "countdown_after": 2,
+    "control_latch_after": 1,
+    "feedback_before": 4,
+    "feedback_after": 44,
+    "feedback_advanced": true,
+    "expected_call": 0,
+    "expected_action": "feedback",
+    "queue_cursor_after": 6,
+    "current_state_after": 42330,
+    "queued_state_after": 0,
+    "motion_before": [
+      4391,
+      8769,
+      13107,
+      4,
+      0
+    ],
+    "motion_after": [
+      4408,
+      8735,
+      51,
+      44,
+      0
+    ],
+    "current_entry_before": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "current_entry_after": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "next_entry_before": [
+      68,
+      85,
+      102,
+      0
+    ],
+    "selected_entry_after": [
+      68,
+      85,
+      8,
+      0
+    ],
+    "texture_packed_before": [
+      16777472
+    ],
+    "texture_packed_after": [
+      16777472
+    ],
+    "branch_classes": [
+      "selection_busy",
+      "feedback"
+    ],
+    "data_sha256": "4dfadd3bfc634bdeeb8c8c388841840dff5d7601a2471d568388e05e271cab49",
+    "code_sha256": "772e38f539bad5a3ec08e841246d88af05c45e451d8cf7b5fbd0402da51d0b46",
+    "object_sha256": "cf0d1a773c25ec2d549d4e76077a47f9ae62302d9de7c4e807f14f0b1b258016"
+  },
+  {
+    "name": "ready_existing_countdown",
+    "module": "amer",
+    "entry": 5140,
+    "timer": 0,
+    "ring_slot_before": 32,
+    "ring_slot_after": 33,
+    "translation_integer_words": [
+      0,
+      0,
+      0
+    ],
+    "behavior_seed": 0,
+    "command_flags": 0,
+    "selection": 0,
+    "countdown_before": 9,
+    "countdown_after": 9,
+    "control_latch_after": 1,
+    "feedback_before": 8,
+    "feedback_after": 8,
+    "feedback_advanced": false,
+    "expected_call": 20753,
+    "expected_action": "selection",
+    "queue_cursor_after": 6,
+    "current_state_after": 42330,
+    "queued_state_after": 0,
+    "motion_before": [
+      4394,
+      8774,
+      13107,
+      8,
+      0
+    ],
+    "motion_after": [
+      4411,
+      8740,
+      51,
+      8,
+      0
+    ],
+    "current_entry_before": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "current_entry_after": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "next_entry_before": [
+      68,
+      85,
+      102,
+      0
+    ],
+    "selected_entry_after": [
+      68,
+      85,
+      8,
+      1
+    ],
+    "texture_packed_before": [
+      16777472
+    ],
+    "texture_packed_after": [
+      16777472
+    ],
+    "branch_classes": [
+      "ready",
+      "countdown_preserved"
+    ],
+    "data_sha256": "8e155bc6b919bdd44f451d112dfda1d0b4112b1f4343cbb6e6248c34dc1dda45",
+    "code_sha256": "9cb5f75fd15dad2a41510f44de2dd5da49a02dec26b6943e9a6d12a24c1dd54f",
+    "object_sha256": "e9900d27f8e2dc6187c3d428f80eb7e31c9ec2f978b3ae54d1f0821608ad2dae"
+  },
+  {
+    "name": "ready_ring_wrap",
+    "module": "amer",
+    "entry": 5140,
+    "timer": 0,
+    "ring_slot_before": 127,
+    "ring_slot_after": 0,
+    "translation_integer_words": [
+      0,
+      0,
+      0
+    ],
+    "behavior_seed": 0,
+    "command_flags": 0,
+    "selection": 0,
+    "countdown_before": 0,
+    "countdown_after": 2,
+    "control_latch_after": 1,
+    "feedback_before": 12,
+    "feedback_after": 12,
+    "feedback_advanced": false,
+    "expected_call": 20753,
+    "expected_action": "selection",
+    "queue_cursor_after": 6,
+    "current_state_after": 42330,
+    "queued_state_after": 0,
+    "motion_before": [
+      4397,
+      8779,
+      13107,
+      12,
+      0
+    ],
+    "motion_after": [
+      4414,
+      8745,
+      51,
+      12,
+      0
+    ],
+    "current_entry_before": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "current_entry_after": [
+      17,
+      65502,
+      51,
+      42400
+    ],
+    "next_entry_before": [
+      68,
+      85,
+      102,
+      0
+    ],
+    "selected_entry_after": [
+      68,
+      85,
+      8,
+      1
+    ],
+    "texture_packed_before": [
+      16777472
+    ],
+    "texture_packed_after": [
+      16777472
+    ],
+    "branch_classes": [
+      "ready",
+      "wrap"
+    ],
+    "data_sha256": "1c5aae08bb0cb0670b3c343a7e3d33bc4a4a2400429b25840ab1b9e9557d2239",
+    "code_sha256": "266c527427abcfb1a2c690b9ffc383b4a72c03e9b5efae749737e42629cf0849",
+    "object_sha256": "144314f4b1feb6d1ec7fe20093786ca697dccb98b34004da49327e552e6d6fdc"
+  }
+]

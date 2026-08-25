@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 const FORBIDDEN_HEURISTIC_DEPENDENCIES: [&str; 3] =
     ["commander_blood_tools", "EngineState", "recomp::"];
-const FORBIDDEN_SEGMENTED_MEMORY_MARKERS: [&str; 39] = [
+const FORBIDDEN_SEGMENTED_MEMORY_MARKERS: [&str; 54] = [
     "FarPtr",
     "FarPointer",
     "NearPtr",
@@ -42,6 +42,21 @@ const FORBIDDEN_SEGMENTED_MEMORY_MARKERS: [&str; 39] = [
     "dos_address",
     "PhysicalAddress",
     "ParagraphAddress",
+    "SegPtr",
+    "SegPointer",
+    "DosMemory",
+    "RealModeMemory",
+    "EmulatedMemory",
+    "__far",
+    "__near",
+    "__huge",
+    "MK_FP",
+    "FP_SEG",
+    "FP_OFF",
+    "dos_memory",
+    "real_mode_memory",
+    "segment_base",
+    "memory_paragraph",
 ];
 const FORBIDDEN_RUNTIME_CAPTURE_MARKERS: [&str; 4] = [
     "accuracy/manu3",

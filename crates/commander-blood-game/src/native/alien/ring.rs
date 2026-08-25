@@ -50,6 +50,15 @@ const AMER_VERTICAL_MAXIMUM: i16 = 1_800;
 const OTHER_VERTICAL_MAXIMUM: i16 = 1_000;
 const AMER_GENERATED_RADIAL_MASK: u16 = 0x007f;
 const OTHER_GENERATED_RADIAL_MASK: u16 = 0x003f;
+const FOLLOW_COMMAND_MASK: u16 = 3;
+const FOLLOW_RESTART_COMMAND: u16 = 1;
+const FOLLOW_CAPTURE_COMMAND: u16 = 2;
+const FOLLOW_BOUND: i16 = 64;
+const FOLLOW_DEPTH_BOUND: u16 = 64;
+const FOLLOW_FEEDBACK_STEP: u16 = 40;
+const FOLLOW_CALLBACK_COUNTDOWN: u16 = 2;
+const FOLLOW_TRANSITION_QUEUE_LENGTH: usize = 8;
+const PACKED_TEXTURE_ADJUSTMENT: u32 = 0x0080_0080;
 
 /// One motion-history sample consumed by the recovered slot-3 callbacks.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -143,6 +152,21 @@ pub struct AlienRingResumeState {
     pub selected_node: Option<usize>,
 }
 
+/// Scene state shared by the recovered follower-course callbacks.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct AlienRingFollowerSceneState {
+    /// Whether this callback has published the scene control signal.
+    pub control_latch: bool,
+    /// Frames requested before the next scene callback dispatch.
+    pub callback_countdown: u16,
+    /// Fixed transition queue storing typed model-node indices.
+    pub transition_queue: [Option<usize>; FOLLOW_TRANSITION_QUEUE_LENGTH],
+    /// Queue slot selected by the surrounding slot-11 behavior.
+    pub transition_queue_slot: usize,
+    /// Most recently published model-node index.
+    pub current_node: Option<usize>,
+}
+
 /// Indirect callback boundary retained by the recovered coordinator.
 ///
 /// Implementations may update the pose and animation state, but must preserve
@@ -194,6 +218,19 @@ pub enum AlienRingCourseUpdate {
     CourseContinued,
 }
 
+/// Typed continuation selected by one follower-course callback pass.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienRingFollowerUpdate {
+    /// The callback advanced its cyclic feedback phase and returned.
+    FeedbackAdvanced,
+    /// Dispatch the already recovered capture-and-resume callback.
+    CaptureResumeRequested,
+    /// Dispatch the already recovered initial-course restart callback.
+    RestartInitialCourseRequested,
+    /// Dispatch the slot-1 selection-state callback.
+    WaveSelectionRequested,
+}
+
 /// Invalid typed state supplied to the recovered ring coordinator.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AlienRingError {
@@ -224,6 +261,25 @@ pub enum AlienRingError {
         node_index: usize,
         /// Number of nodes available in the hierarchy.
         node_count: usize,
+    },
+    /// A typed transition queue slot lies outside the fixed queue.
+    InvalidTransitionQueueSlot {
+        /// Invalid queue slot supplied by the caller.
+        slot: usize,
+    },
+    /// A restart transition requires at least one texture coordinate.
+    EmptyNodeTextureRange {
+        /// Node whose original zero-count loop cannot be represented safely.
+        node_index: usize,
+    },
+    /// A node's decoded texture range exceeds the model's owned texture array.
+    InvalidNodeTextureRange {
+        /// First texture coordinate owned by the node.
+        first: usize,
+        /// Number of texture coordinates owned by the node.
+        count: usize,
+        /// Texture coordinates available in the model pose.
+        available: usize,
     },
 }
 
@@ -360,6 +416,85 @@ pub fn update_initial_course(
     animation.entries[next_ring_slot].radial_offset = current_entry.radial_offset;
     correct_course_bounds(node_index, species, pose, animation, next_ring_slot);
     Ok(AlienRingCourseUpdate::CourseContinued)
+}
+
+/// Apply one recovered follower-course callback up to its typed continuation.
+///
+/// The original routine tail-transferred to three separately recovered
+/// callbacks. This function returns that continuation explicitly so the caller
+/// can dispatch it without retaining executable addresses in runtime state.
+pub fn update_follow_course(
+    node_index: usize,
+    pose: &mut AlienModelPose,
+    animation: &mut AlienRingAnimationState,
+    scene: &mut AlienRingFollowerSceneState,
+    wave_selection_busy: bool,
+) -> Result<AlienRingFollowerUpdate, AlienRingError> {
+    let current_slot = validate_node_pair(node_index, pose, animation)?;
+    let current_entry = animation.entries[current_slot];
+    {
+        let node = &mut pose.nodes[node_index];
+        node.angles[X_AXIS] = node.angles[X_AXIS].wrapping_add(current_entry.pitch_step as u16);
+        node.angles[Y_AXIS] = node.angles[Y_AXIS].wrapping_add(current_entry.pan_step as u16);
+        node.radial_offset = current_entry.radial_offset;
+    }
+
+    let selected_slot = if animation.timer == u16::MIN {
+        let slot = next_slot(current_slot);
+        animation.nodes[node_index].ring_slot = slot;
+        slot
+    } else {
+        current_slot
+    };
+
+    let command = if animation.timer == u16::MIN {
+        animation.entries[selected_slot].command_flags & FOLLOW_COMMAND_MASK
+    } else {
+        u16::MIN
+    };
+    if command != u16::MIN {
+        if command & FOLLOW_CAPTURE_COMMAND != u16::MIN {
+            return Ok(AlienRingFollowerUpdate::CaptureResumeRequested);
+        }
+
+        let queue_slot = scene.transition_queue_slot;
+        if queue_slot >= FOLLOW_TRANSITION_QUEUE_LENGTH {
+            return Err(AlienRingError::InvalidTransitionQueueSlot { slot: queue_slot });
+        }
+        let texture_range = if animation.nodes[node_index].behavior_seed == u16::MIN {
+            Some(node_texture_range(node_index, pose)?)
+        } else {
+            None
+        };
+        scene.transition_queue[queue_slot] = Some(node_index);
+        scene.current_node = Some(node_index);
+        if let Some(texture_range) = texture_range {
+            for texture in &mut pose.texture_coordinates[texture_range] {
+                adjust_packed_texture(texture);
+            }
+        }
+        return Ok(AlienRingFollowerUpdate::RestartInitialCourseRequested);
+    }
+
+    if animation.nodes[node_index].behavior_seed != u16::MIN
+        || node_outside_follow_bounds(&pose.nodes[node_index])
+    {
+        advance_feedback_phase(&mut animation.nodes[node_index]);
+        return Ok(AlienRingFollowerUpdate::FeedbackAdvanced);
+    }
+
+    scene.control_latch = true;
+    if scene.callback_countdown == u16::MIN {
+        scene.callback_countdown = FOLLOW_CALLBACK_COUNTDOWN;
+    }
+    animation.entries[selected_slot].radial_offset = RESTART_RADIAL_OFFSET;
+    if wave_selection_busy {
+        advance_feedback_phase(&mut animation.nodes[node_index]);
+        return Ok(AlienRingFollowerUpdate::FeedbackAdvanced);
+    }
+
+    animation.entries[selected_slot].command_flags = FOLLOW_RESTART_COMMAND;
+    Ok(AlienRingFollowerUpdate::WaveSelectionRequested)
 }
 
 /// Initialize or advance the recovered slot-3 motion-history coordinator.
@@ -532,6 +667,57 @@ fn validate_node_pair(
     Ok(slot)
 }
 
+fn node_texture_range(
+    node_index: usize,
+    pose: &AlienModelPose,
+) -> Result<std::ops::Range<usize>, AlienRingError> {
+    let node = &pose.nodes[node_index];
+    if node.vertex_count == usize::MIN {
+        return Err(AlienRingError::EmptyNodeTextureRange { node_index });
+    }
+    let available = pose.texture_coordinates.len();
+    let end = node.first_vertex.checked_add(node.vertex_count).ok_or(
+        AlienRingError::InvalidNodeTextureRange {
+            first: node.first_vertex,
+            count: node.vertex_count,
+            available,
+        },
+    )?;
+    if end > available {
+        return Err(AlienRingError::InvalidNodeTextureRange {
+            first: node.first_vertex,
+            count: node.vertex_count,
+            available,
+        });
+    }
+    Ok(node.first_vertex..end)
+}
+
+fn node_outside_follow_bounds(node: &super::AlienNodePose) -> bool {
+    let x = fixed_integer_word(node.transform.translation[X_AXIS]);
+    let y = fixed_integer_word(node.transform.translation[Y_AXIS]);
+    let z = (node.transform.translation[Z_AXIS] as u32 >> u16::BITS) as u16;
+    z > FOLLOW_DEPTH_BOUND
+        || !(-FOLLOW_BOUND..=FOLLOW_BOUND).contains(&x)
+        || !(-FOLLOW_BOUND..=FOLLOW_BOUND).contains(&y)
+}
+
+fn fixed_integer_word(value: i32) -> i16 {
+    (value >> u16::BITS) as i16
+}
+
+fn advance_feedback_phase(node: &mut AlienRingNodeState) {
+    node.feedback_phase =
+        node.feedback_phase.wrapping_add(FOLLOW_FEEDBACK_STEP) & COURSE_ANGLE_MASK;
+}
+
+fn adjust_packed_texture(texture: &mut [i16; 2]) {
+    let packed = u32::from(texture[0] as u16) | (u32::from(texture[1] as u16) << u16::BITS);
+    let adjusted = packed.wrapping_sub(PACKED_TEXTURE_ADJUSTMENT);
+    texture[0] = adjusted as u16 as i16;
+    texture[1] = (adjusted >> u16::BITS) as u16 as i16;
+}
+
 fn random_transition(value: u16) -> u16 {
     value
         .rotate_right(RANDOM_ROTATION)
@@ -675,6 +861,11 @@ mod tests {
     const CALLBACK_BEHAVIOR_SEED: u16 = 0x6666;
     const CALLBACK_FEEDBACK_PHASE: u16 = 0x7777;
     const RESTART_RANDOM_INPUTS: [u16; 4] = [0, 0x1234, u16::MAX, 4];
+    const ORACLE_UNCHANGED_STATE: u16 = 0xA55A;
+    const TYPED_UNCHANGED_NODE: usize = 99;
+    const ORIGINAL_QUEUE_ENTRY_BYTES: usize = 2;
+    const ORIGINAL_SELECTION_MASK: u16 = 3;
+    const FIXED_FRACTION_SAMPLE: i32 = 0x5678;
 
     #[derive(Deserialize)]
     struct RingVector {
@@ -719,6 +910,33 @@ mod tests {
         next_entry_before: [u16; 4],
         next_entry_after: [u16; 4],
         branch_classes: Vec<String>,
+    }
+
+    #[derive(Deserialize)]
+    struct FollowCourseVector {
+        name: String,
+        module: String,
+        timer: u16,
+        ring_slot_before: usize,
+        ring_slot_after: usize,
+        translation_integer_words: [i32; AXIS_COUNT],
+        behavior_seed: u16,
+        selection: u16,
+        countdown_before: u16,
+        countdown_after: u16,
+        control_latch_after: u16,
+        expected_action: String,
+        queue_cursor_after: usize,
+        current_state_after: u16,
+        queued_state_after: u16,
+        motion_before: [u16; 5],
+        motion_after: [u16; 5],
+        current_entry_before: [u16; 4],
+        current_entry_after: [u16; 4],
+        next_entry_before: [u16; 4],
+        selected_entry_after: [u16; 4],
+        texture_packed_before: Vec<u32>,
+        texture_packed_after: Vec<u32>,
     }
 
     #[derive(Default)]
@@ -859,6 +1077,16 @@ mod tests {
         ]
     }
 
+    fn follow_course_fixtures() -> [&'static str; 3] {
+        [
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_amer_func_1414_natural.json"),
+            include_str!(
+                "../../../../../re/tools/oracle_vectors/xdb_croolis_func_146c_natural.json"
+            ),
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_scrut_func_145a_natural.json"),
+        ]
+    }
+
     fn callback_state(ring_cursor: u16) -> (AlienModelPose, AlienRingAnimationState) {
         let mut pose = pose(SINGLE_NODE_COUNT);
         pose.nodes[FIRST_NODE].local_position = CALLBACK_POSITION;
@@ -900,6 +1128,39 @@ mod tests {
             pan_step: fields[1] as i16,
             radial_offset: fields[2] as i16,
             command_flags: fields[3],
+        }
+    }
+
+    fn texture_from_packed(packed: u32) -> [i16; 2] {
+        [packed as u16 as i16, (packed >> u16::BITS) as u16 as i16]
+    }
+
+    fn texture_as_packed(texture: [i16; 2]) -> u32 {
+        u32::from(texture[0] as u16) | (u32::from(texture[1] as u16) << u16::BITS)
+    }
+
+    fn fixed_with_integer_word(integer: i32) -> i32 {
+        ((integer as i16 as i32) << u16::BITS) | FIXED_FRACTION_SAMPLE
+    }
+
+    fn follower_update(action: &str) -> AlienRingFollowerUpdate {
+        match action {
+            "feedback" => AlienRingFollowerUpdate::FeedbackAdvanced,
+            "capture" => AlienRingFollowerUpdate::CaptureResumeRequested,
+            "restart" => AlienRingFollowerUpdate::RestartInitialCourseRequested,
+            "selection" => AlienRingFollowerUpdate::WaveSelectionRequested,
+            _ => panic!("unknown follower action {action}"),
+        }
+    }
+
+    fn oracle_node(value: u16) -> Option<usize> {
+        const ORACLE_NODE_OFFSET: u16 = 0x4000;
+
+        match value {
+            u16::MIN => None,
+            ORACLE_NODE_OFFSET => Some(FIRST_NODE),
+            ORACLE_UNCHANGED_STATE => Some(TYPED_UNCHANGED_NODE),
+            _ => panic!("unknown oracle node value {value:#06x}"),
         }
     }
 
@@ -1123,6 +1384,128 @@ mod tests {
                 assert_eq!(
                     animation.entries[next_ring_slot],
                     ring_entry(vector.next_entry_after),
+                    "{}",
+                    vector.name
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn follower_course_callback_matches_every_original_overlay_vector() {
+        for fixture in follow_course_fixtures() {
+            let vectors: Vec<FollowCourseVector> = serde_json::from_str(fixture).unwrap();
+            for vector in vectors {
+                let _species = species(&vector.module);
+                assert_eq!(
+                    vector.behavior_seed, vector.motion_before[4],
+                    "{}",
+                    vector.name
+                );
+
+                let mut pose = pose(SINGLE_NODE_COUNT);
+                pose.nodes[FIRST_NODE].first_vertex = usize::MIN;
+                pose.nodes[FIRST_NODE].vertex_count = vector.texture_packed_before.len();
+                pose.nodes[FIRST_NODE].transform.translation = vector
+                    .translation_integer_words
+                    .map(fixed_with_integer_word);
+                pose.nodes[FIRST_NODE].angles[X_AXIS] = vector.motion_before[0];
+                pose.nodes[FIRST_NODE].angles[Y_AXIS] = vector.motion_before[1];
+                pose.nodes[FIRST_NODE].radial_offset = vector.motion_before[2] as i16;
+                pose.texture_coordinates = vector
+                    .texture_packed_before
+                    .iter()
+                    .copied()
+                    .map(texture_from_packed)
+                    .collect();
+
+                let mut animation = AlienRingAnimationState::new(SINGLE_NODE_COUNT);
+                animation.timer = vector.timer;
+                animation.nodes[FIRST_NODE] = AlienRingNodeState {
+                    callback: AlienRingCallback::FollowCourse,
+                    course_frames_remaining: PRESERVED_COURSE_FRAMES,
+                    feedback_phase: vector.motion_before[3],
+                    ring_slot: vector.ring_slot_before,
+                    behavior_seed: vector.motion_before[4],
+                };
+                let next_ring_slot = next_slot(vector.ring_slot_before);
+                animation.entries[vector.ring_slot_before] =
+                    ring_entry(vector.current_entry_before);
+                animation.entries[next_ring_slot] = ring_entry(vector.next_entry_before);
+
+                let queue_slot = vector.queue_cursor_after / ORIGINAL_QUEUE_ENTRY_BYTES;
+                let mut scene = AlienRingFollowerSceneState {
+                    callback_countdown: vector.countdown_before,
+                    transition_queue_slot: queue_slot,
+                    current_node: oracle_node(ORACLE_UNCHANGED_STATE),
+                    ..AlienRingFollowerSceneState::default()
+                };
+                let update = update_follow_course(
+                    FIRST_NODE,
+                    &mut pose,
+                    &mut animation,
+                    &mut scene,
+                    vector.selection & ORIGINAL_SELECTION_MASK != u16::MIN,
+                )
+                .unwrap();
+
+                assert_eq!(
+                    update,
+                    follower_update(&vector.expected_action),
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    animation.nodes[FIRST_NODE].ring_slot,
+                    vector.ring_slot_after
+                );
+                assert_eq!(
+                    pose.nodes[FIRST_NODE].angles[X_AXIS],
+                    vector.motion_after[0]
+                );
+                assert_eq!(
+                    pose.nodes[FIRST_NODE].angles[Y_AXIS],
+                    vector.motion_after[1]
+                );
+                assert_eq!(
+                    pose.nodes[FIRST_NODE].radial_offset as u16,
+                    vector.motion_after[2]
+                );
+                assert_eq!(
+                    animation.nodes[FIRST_NODE].feedback_phase,
+                    vector.motion_after[3]
+                );
+                assert_eq!(
+                    animation.nodes[FIRST_NODE].behavior_seed,
+                    vector.motion_after[4]
+                );
+                assert_eq!(scene.control_latch, vector.control_latch_after != u16::MIN);
+                assert_eq!(scene.callback_countdown, vector.countdown_after);
+                assert_eq!(scene.transition_queue_slot, queue_slot);
+                assert_eq!(scene.current_node, oracle_node(vector.current_state_after));
+                assert_eq!(
+                    scene.transition_queue[queue_slot],
+                    oracle_node(vector.queued_state_after)
+                );
+                assert_eq!(
+                    animation.entries[vector.ring_slot_before],
+                    ring_entry(vector.current_entry_after),
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    animation.entries[vector.ring_slot_after],
+                    ring_entry(vector.selected_entry_after),
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    pose.texture_coordinates
+                        .iter()
+                        .copied()
+                        .map(texture_as_packed)
+                        .collect::<Vec<_>>(),
+                    vector.texture_packed_after,
                     "{}",
                     vector.name
                 );

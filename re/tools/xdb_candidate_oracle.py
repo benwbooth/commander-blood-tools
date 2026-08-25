@@ -15171,6 +15171,401 @@ def alien_slot3_initial_update_vectors(
     return vectors
 
 
+def alien_slot3_follow_update_vectors(
+    module: str,
+    entry: int,
+    body_hash: str,
+    timer_offset: int,
+    ring_offset: int,
+    selection_offset: int,
+    current_state_offset: int,
+    queue_cursor_offset: int,
+    queue_offset: int,
+    restart_target: int,
+    capture_target: int,
+    selection_target: int,
+) -> list[dict[str, object]]:
+    """Exercise every branch in the generic slot-3 follower callback."""
+    image = load_image(module)
+    body_size = 324
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered follower callback changed")
+
+    data_segment = 0x5000
+    extra_segment = 0x7000
+    fs_segment = 0x9000
+    game_segment = 0xA000
+    stack_segment = 0xB000
+    object_segment = 0xD000
+    state = 0x4000
+    context = 0x3000
+    object_offset = 0x2000
+    return_address = 0xF000
+    call_marker_offset = 0x2800
+    stack_sentinel = bytes.fromhex("5aa596698778")
+    no_call = 0x0000
+    capture_call = 0xCA11
+    restart_call = 0xBE11
+    selection_call = 0x5111
+    packed_texture_values = (0x01000100, 0x007F007F, 0x80008000)
+
+    # Translation is 16.16 fixed point in the model node. These values are
+    # the signed integer X/Y words and unsigned integer Z word inspected by
+    # the original callback.
+    cases = (
+        ("timer_active_ready", 0x0198, 1, 0, 0, 0, 0, 0, 0, 0, 1, ("timer", "ready")),
+        ("timer_active_feedback", 0x0200, 1, 0, 1, 0, 0, 0, 0, 7, 1, ("timer", "feedback", "marker")),
+        ("capture", 0x0280, 0, 2, 0, 0, 0, 0, 0, 0, 1, ("command", "capture")),
+        ("capture_precedes_restart", 0x0300, 0, 3, 0, 0, 0, 0, 0, 0, 1, ("command", "capture", "both_bits")),
+        ("restart_marker", 0x0380, 0, 1, 1, 0, 0, 0, 0, 0, 1, ("command", "restart", "marker")),
+        ("restart_one_object", 0x0080, 0, 1, 0, 0, 0, 0, 0, 0, 1, ("command", "restart", "texture")),
+        ("restart_three_objects", 0x0100, 0, 1, 0, 0, 0, 0, 0, 0, 3, ("command", "restart", "texture", "multiple")),
+        ("feedback_marker", 0x0180, 0, 0, 1, 0, 0, 0, 0, 0, 1, ("feedback", "marker")),
+        ("feedback_depth_high", 0x0200, 0, 0, 0, 0, 0, 65, 0, 0, 1, ("feedback", "depth_high")),
+        ("feedback_lateral_high", 0x0280, 0, 0, 0, 65, 0, 0, 0, 0, 1, ("feedback", "lateral_high")),
+        ("feedback_lateral_low", 0x0300, 0, 0, 0, -65, 0, 0, 0, 0, 1, ("feedback", "lateral_low")),
+        ("feedback_vertical_high", 0x0380, 0, 0, 0, 0, 65, 0, 0, 0, 1, ("feedback", "vertical_high")),
+        ("feedback_vertical_low", 0x0000, 0, 0, 0, 0, -65, 0, 0, 0, 1, ("feedback", "vertical_low")),
+        ("selection_busy", 0x0080, 0, 0, 0, 0, 0, 0, 1, 0, 1, ("selection_busy", "feedback")),
+        ("ready_existing_countdown", 0x0100, 0, 0, 0, 0, 0, 0, 0, 9, 1, ("ready", "countdown_preserved")),
+        ("ready_ring_wrap", 0x03F8, 0, 0, 0, 0, 0, 0, 0, 0, 1, ("ready", "wrap")),
+    )
+
+    def put_bytes(memory: bytearray, offset: int, value: bytes) -> None:
+        for index, byte in enumerate(value):
+            memory[(offset + index) & 0xFFFF] = byte
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        put_bytes(memory, offset, struct.pack("<H", value & 0xFFFF))
+
+    def put_u32(memory: bytearray, offset: int, value: int) -> None:
+        put_bytes(memory, offset, struct.pack("<I", value & 0xFFFFFFFF))
+
+    def get_u16(memory: bytearray, offset: int) -> int:
+        return memory[offset & 0xFFFF] | (memory[(offset + 1) & 0xFFFF] << 8)
+
+    def get_u32(memory: bytearray, offset: int) -> int:
+        return struct.unpack_from("<I", memory, offset & 0xFFFF)[0]
+
+    def install_stub(code: bytearray, target: int, marker: int) -> None:
+        code[target : target + 7] = (
+            b"\xc7\x06"
+            + struct.pack("<HH", call_marker_offset, marker)
+            + b"\xc3"
+        )
+
+    vectors: list[dict[str, object]] = []
+    for case_index, (
+        name,
+        ring_cursor,
+        timer,
+        command_flags,
+        behavior_seed,
+        translation_x,
+        translation_y,
+        translation_z,
+        selection,
+        countdown,
+        object_count,
+        branch_classes,
+    ) in enumerate(cases):
+        data_before = bytearray(
+            (offset * 29 + case_index * 17 + 3) & 0xFF
+            for offset in range(0x10000)
+        )
+        data_expected = bytearray(data_before)
+        object_before = bytearray(
+            (offset * 23 + case_index * 11 + 5) & 0xFF
+            for offset in range(0x10000)
+        )
+        object_expected = bytearray(object_before)
+        code_before = bytearray(image)
+        code_before[return_address] = 0xCC
+        for target, marker in (
+            (capture_target, capture_call),
+            (restart_target, restart_call),
+            (selection_target, selection_call),
+        ):
+            install_stub(code_before, target, marker)
+        code_expected = bytearray(code_before)
+
+        put_u16(code_before, timer_offset, timer)
+        put_u16(code_expected, timer_offset, timer)
+        put_u16(code_before, selection_offset, selection)
+        put_u16(code_expected, selection_offset, selection)
+        queue_cursor = 6
+        put_u16(code_before, queue_cursor_offset, queue_cursor)
+        put_u16(code_expected, queue_cursor_offset, queue_cursor)
+        put_u16(code_before, current_state_offset, 0xA55A)
+        put_u16(code_expected, current_state_offset, 0xA55A)
+
+        put_u16(data_before, 0x0002, object_segment)
+        put_u16(data_expected, 0x0002, object_segment)
+        put_u16(data_before, 0x001E, countdown)
+        put_u16(data_expected, 0x001E, countdown)
+        put_u16(data_before, 0x2282, 0)
+        put_u16(data_expected, 0x2282, 0)
+        put_u16(data_before, call_marker_offset, no_call)
+        put_u16(data_expected, call_marker_offset, no_call)
+        put_u16(data_before, state + 0x0002, object_count)
+        put_u16(data_expected, state + 0x0002, object_count)
+        put_u16(data_before, state + 0x0006, object_offset)
+        put_u16(data_expected, state + 0x0006, object_offset)
+        put_u16(data_before, state + 0x0038, translation_x)
+        put_u16(data_expected, state + 0x0038, translation_x)
+        put_u16(data_before, state + 0x003C, translation_y)
+        put_u16(data_expected, state + 0x003C, translation_y)
+        put_u16(data_before, state + 0x0040, translation_z)
+        put_u16(data_expected, state + 0x0040, translation_z)
+        pitch_before = (0x1100 + case_index * 3) & 0xFFFF
+        pan_before = (0x2200 + case_index * 5) & 0xFFFF
+        feedback_before = (0x0FD0 + case_index * 4) & 0x0FFC
+        for field, value in (
+            (0x004E, pitch_before),
+            (0x0050, pan_before),
+            (0x0054, 0x3333),
+            (0x0058, feedback_before),
+            (0x005A, ring_cursor),
+            (0x005C, behavior_seed),
+        ):
+            put_u16(data_before, state + field, value)
+            put_u16(data_expected, state + field, value)
+
+        current_entry = (0x0011, 0xFFDE, 0x0033, 0xA5A0)
+        next_cursor = (ring_cursor + 8) & 0x03FC
+        next_entry = (0x0044, 0x0055, 0x0066, command_flags)
+        for field, value in zip((0, 2, 4, 6), current_entry):
+            put_u16(code_before, ring_offset + ring_cursor + field, value)
+            put_u16(code_expected, ring_offset + ring_cursor + field, value)
+        for field, value in zip((0, 2, 4, 6), next_entry):
+            put_u16(code_before, ring_offset + next_cursor + field, value)
+            put_u16(code_expected, ring_offset + next_cursor + field, value)
+        for object_index, packed in enumerate(packed_texture_values):
+            put_u32(object_before, object_offset + object_index * 20, packed)
+            put_u32(object_expected, object_offset + object_index * 20, packed)
+
+        put_u16(data_expected, state + 0x004E, pitch_before + current_entry[0])
+        put_u16(data_expected, state + 0x0050, pan_before + current_entry[1])
+        put_u16(data_expected, state + 0x0054, current_entry[2])
+        selected_cursor = ring_cursor
+        expected_call = no_call
+        expected_action = "feedback"
+        feedback_advances = False
+
+        if timer == 0:
+            selected_cursor = next_cursor
+            put_u16(data_expected, state + 0x005A, selected_cursor)
+
+        effective_flags = command_flags if timer == 0 else 0
+        if effective_flags & 3:
+            if effective_flags & 2:
+                expected_call = capture_call
+                expected_action = "capture"
+            else:
+                put_u16(code_expected, queue_offset + queue_cursor, state)
+                put_u16(code_expected, current_state_offset, state)
+                if behavior_seed == 0:
+                    for object_index in range(object_count):
+                        position = object_offset + object_index * 20
+                        put_u32(
+                            object_expected,
+                            position,
+                            get_u32(object_expected, position) - 0x00800080,
+                        )
+                expected_call = restart_call
+                expected_action = "restart"
+        else:
+            outside_bounds = (
+                behavior_seed != 0
+                or translation_z > 64
+                or translation_x > 64
+                or translation_x < -64
+                or translation_y > 64
+                or translation_y < -64
+            )
+            if outside_bounds:
+                feedback_advances = True
+            else:
+                put_u16(data_expected, 0x2282, 1)
+                if countdown == 0:
+                    put_u16(data_expected, 0x001E, 2)
+                put_u16(code_expected, ring_offset + selected_cursor + 4, 8)
+                if selection & 3:
+                    feedback_advances = True
+                else:
+                    put_u16(code_expected, ring_offset + selected_cursor + 6, 1)
+                    expected_call = selection_call
+                    expected_action = "selection"
+
+        if feedback_advances:
+            put_u16(
+                data_expected,
+                state + 0x0058,
+                (feedback_before + 40) & 0x0FFC,
+            )
+        put_u16(data_expected, call_marker_offset, expected_call)
+
+        initial = {
+            "eax": 0xA1A10000 | ((0x1111 + case_index) & 0xFFFF),
+            "ebx": 0xB2B20000 | ((0x2222 + case_index) & 0xFFFF),
+            "ecx": 0xC3C30000 | ((0x3333 + case_index) & 0xFFFF),
+            "edx": 0xD4D40000 | ((0x4444 + case_index) & 0xFFFF),
+            "esi": 0xE5E50000 | state,
+            "edi": 0xF6F60000 | context,
+            "ebp": 0x97970000 | ring_cursor,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0293 | (0x0400 if case_index & 1 else 0),
+        }
+        extra_before = bytes(
+            (offset * 13 + case_index + 7) & 0xFF for offset in range(0x10000)
+        )
+        fs_before = bytes(
+            (offset * 11 + case_index + 9) & 0xFF for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 7 + case_index + 5) & 0xFF for offset in range(0x10000)
+        )
+        machine = execute(
+            bytes(code_before),
+            entry,
+            return_address,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (extra_segment, 0, extra_before),
+                (fs_segment, 0, fs_before),
+                (game_segment, 0, game_before),
+                (object_segment, 0, bytes(object_before)),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            max_instructions=10000,
+        )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        actual_code = bytes(machine.mem_read(0, len(image)))
+        actual_objects = bytes(machine.mem_read(object_segment * 16, 0x10000))
+        if actual_data != bytes(data_expected):
+            differences = [
+                (offset, actual_data[offset], data_expected[offset])
+                for offset in range(0x10000)
+                if actual_data[offset] != data_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: data differs at {differences}"
+            )
+        if actual_code != bytes(code_expected):
+            differences = [
+                (offset, actual_code[offset], code_expected[offset])
+                for offset in range(len(image))
+                if actual_code[offset] != code_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: code differs at {differences}"
+            )
+        if actual_objects != bytes(object_expected):
+            differences = [
+                (offset, actual_objects[offset], object_expected[offset])
+                for offset in range(0x10000)
+                if actual_objects[offset] != object_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: objects differ at {differences}"
+            )
+        for segment, expected in (
+            (extra_segment, extra_before),
+            (fs_segment, fs_before),
+            (game_segment, game_before),
+        ):
+            if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: decoy {segment:#x} changed"
+                )
+        if machine.reg_read(UC_X86_REG_SP) != 0xFF02:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "timer": timer,
+                "ring_slot_before": ring_cursor >> 3,
+                "ring_slot_after": get_u16(data_expected, state + 0x005A) >> 3,
+                "translation_integer_words": [
+                    translation_x,
+                    translation_y,
+                    translation_z,
+                ],
+                "behavior_seed": behavior_seed,
+                "command_flags": command_flags,
+                "selection": selection,
+                "countdown_before": countdown,
+                "countdown_after": get_u16(data_expected, 0x001E),
+                "control_latch_after": get_u16(data_expected, 0x2282),
+                "feedback_before": feedback_before,
+                "feedback_after": get_u16(data_expected, state + 0x0058),
+                "feedback_advanced": feedback_advances,
+                "expected_call": expected_call,
+                "expected_action": expected_action,
+                "queue_cursor_after": struct.unpack_from(
+                    "<H", code_expected, queue_cursor_offset
+                )[0],
+                "current_state_after": struct.unpack_from(
+                    "<H", code_expected, current_state_offset
+                )[0],
+                "queued_state_after": struct.unpack_from(
+                    "<H", code_expected, queue_offset + queue_cursor
+                )[0],
+                "motion_before": [
+                    pitch_before,
+                    pan_before,
+                    0x3333,
+                    feedback_before,
+                    behavior_seed,
+                ],
+                "motion_after": [
+                    get_u16(data_expected, state + field)
+                    for field in (0x004E, 0x0050, 0x0054, 0x0058, 0x005C)
+                ],
+                "current_entry_before": list(current_entry),
+                "current_entry_after": [
+                    struct.unpack_from(
+                        "<H", code_expected, ring_offset + ring_cursor + field
+                    )[0]
+                    for field in (0, 2, 4, 6)
+                ],
+                "next_entry_before": list(next_entry),
+                "selected_entry_after": [
+                    struct.unpack_from(
+                        "<H", code_expected, ring_offset + selected_cursor + field
+                    )[0]
+                    for field in (0, 2, 4, 6)
+                ],
+                "texture_packed_before": list(packed_texture_values[:object_count]),
+                "texture_packed_after": [
+                    get_u32(object_expected, object_offset + index * 20)
+                    for index in range(object_count)
+                ],
+                "branch_classes": list(branch_classes),
+                "data_sha256": hashlib.sha256(data_expected).hexdigest(),
+                "code_sha256": hashlib.sha256(code_expected).hexdigest(),
+                "object_sha256": hashlib.sha256(object_expected).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def alien_slot3_callback_vectors(
     module: str,
     kind: str,
@@ -15572,6 +15967,81 @@ def main() -> int:
                 lateral_maximum,
                 vertical_maximum,
                 random_radial_mask,
+            ),
+            args.check,
+        )
+    for (
+        module,
+        entry,
+        body_hash,
+        timer_offset,
+        ring_offset,
+        selection_offset,
+        current_state_offset,
+        queue_cursor_offset,
+        queue_offset,
+        restart_target,
+        capture_target,
+        selection_target,
+    ) in (
+        (
+            "amer",
+            0x1414,
+            "fdcedcc20c841d449a6b515919acd3747a57a0c72cfd28e749f8b64ce9aae06f",
+            0x0B31,
+            0x0D63,
+            0x0B2F,
+            0x1BC4,
+            0x1BC6,
+            0x1BCA,
+            0x1558,
+            0x15DB,
+            0x0C17,
+        ),
+        (
+            "croolis",
+            0x146C,
+            "1123ca26e88f4b20189b4fda085212cd066b3b509cdc1d433114c30f6ac28fab",
+            0x0B72,
+            0x0DBB,
+            0x0B70,
+            0x1B30,
+            0x1B32,
+            0x1B36,
+            0x15B0,
+            0x1633,
+            0x0C6B,
+        ),
+        (
+            "scrut",
+            0x145A,
+            "993f9c819402d1b81d3e335edc8bcc80a4763845c0aa2687cf7291ec63d1061a",
+            0x0B72,
+            0x0DA9,
+            0x0B70,
+            0x1BE5,
+            0x1BE7,
+            0x1BEB,
+            0x159E,
+            0x1621,
+            0x0C5F,
+        ),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            alien_slot3_follow_update_vectors(
+                module,
+                entry,
+                body_hash,
+                timer_offset,
+                ring_offset,
+                selection_offset,
+                current_state_offset,
+                queue_cursor_offset,
+                queue_offset,
+                restart_target,
+                capture_target,
+                selection_target,
             ),
             args.check,
         )

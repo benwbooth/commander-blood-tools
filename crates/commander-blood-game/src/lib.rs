@@ -3,6 +3,8 @@
 //! Native game behavior is translated from the recovered C sources and checked
 //! against original-binary oracle vectors. Host services and presentation use
 //! modern platform APIs; they do not emulate DOS registers or segmented memory.
+//! Source-file offsets are consumed by format decoders and never become runtime
+//! addresses. Runtime relationships use typed ownership, indices, and slices.
 
 #![deny(missing_docs)]
 
