@@ -20,8 +20,8 @@ pub use aboard::{
     insert_aboard_object, remove_aboard_object, AboardObjectRoster, ABOARD_OBJECT_CAPACITY,
 };
 pub use navigation::{
-    navigation_actor_targets, navigation_candidates, navigation_distance,
-    navigation_source_objects, object_links_to, objects_at_arche_position,
+    navigation_actor_targets, navigation_candidates, navigation_chart_objects,
+    navigation_distance, navigation_source_objects, object_links_to, objects_at_arche_position,
     resolve_navigation_position, ScriptNavigationError,
 };
 pub use numbers::{

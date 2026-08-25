@@ -141,6 +141,16 @@ pub fn navigation_actor_targets(
     filter_navigation_actor_targets(state, &source, honk, radio)
 }
 
+/// Return in-play objects displayed by the navigation chart.
+///
+/// This translates `nav_chart_list_build` at BLOODPRG file offset `0x00721A`.
+/// Length-delimited object IDs replace the native signed terminator while
+/// preserving the helper-first order and exact supported object classes.
+pub fn navigation_chart_objects(state: &ScriptState) -> Vec<ScriptObjectId> {
+    let source = active_objects_in_play(state);
+    filter_navigation_chart_objects(state, &source)
+}
+
 /// Resolve the live coordinate pair used for one navigation object.
 ///
 /// This translates `ship_3d_position_field_resolve` at BLOODPRG file offset
@@ -400,6 +410,26 @@ fn filter_navigation_actor_targets(
         .collect()
 }
 
+fn filter_navigation_chart_objects(
+    state: &ScriptState,
+    source: &[ScriptObjectId],
+) -> Vec<ScriptObjectId> {
+    source
+        .iter()
+        .copied()
+        .filter(|object| {
+            state.object(*object).is_some_and(|record| {
+                matches!(
+                    record.kind,
+                    ScriptObjectKind::CelestialBody
+                        | ScriptObjectKind::NavigationEntity
+                        | ScriptObjectKind::BlackHole
+                )
+            })
+        })
+        .collect()
+}
+
 fn object_field(
     state: &ScriptState,
     object: ScriptObjectId,
@@ -484,6 +514,7 @@ mod tests {
     const NAVIGATION_CANDIDATE_VECTOR_COUNT: usize = 7;
     const ARCHE_POSITION_VECTOR_COUNT: usize = 16;
     const NAVIGATION_ACTOR_TARGET_VECTOR_COUNT: usize = 9;
+    const NAVIGATION_CHART_VECTOR_COUNT: usize = 7;
     const POSITION_RESOLVER_VECTOR_COUNT: usize = 8;
     const POSITION_DISTANCE_VECTOR_COUNT: usize = 6;
     const DIRECTORY_ENTRY_SIZE: usize = 20;
@@ -534,6 +565,14 @@ mod tests {
         count: usize,
     }
 
+    #[derive(Deserialize)]
+    struct NavigationChartOracle {
+        name: String,
+        active_object_offsets: Vec<u16>,
+        nav_chart_offsets: Vec<u16>,
+        count: usize,
+    }
+
     struct ArchePositionCase {
         kinds: Vec<ScriptObjectKind>,
         parents: Vec<Option<usize>>,
@@ -547,6 +586,11 @@ mod tests {
         source_indices: Vec<usize>,
         honk_index: usize,
         radio_index: usize,
+    }
+
+    struct NavigationChartCase {
+        kinds: Vec<ScriptObjectKind>,
+        source_indices: Vec<usize>,
     }
 
     #[derive(Deserialize)]
@@ -956,6 +1000,81 @@ mod tests {
     }
 
     #[test]
+    fn navigation_chart_filter_matches_every_original_case() {
+        let vectors: Vec<NavigationChartOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_721a_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), NAVIGATION_CHART_VECTOR_COUNT);
+
+        for vector in vectors {
+            let case = navigation_chart_case(&vector.name);
+            let state = navigation_fixture(&case.kinds, &vec![None; case.kinds.len()]);
+            let objects = state
+                .objects()
+                .iter()
+                .map(|object| object.id)
+                .collect::<Vec<_>>();
+            let source_offsets = vector
+                .active_object_offsets
+                .iter()
+                .copied()
+                .take_while(|offset| (*offset as i16).is_positive() || *offset == u16::MIN)
+                .collect::<Vec<_>>();
+            let source = case
+                .source_indices
+                .iter()
+                .map(|index| objects[*index])
+                .collect::<Vec<_>>();
+            assert_eq!(source.len(), source_offsets.len(), "{}", vector.name);
+            let expected = vector
+                .nav_chart_offsets
+                .iter()
+                .take(vector.count)
+                .map(|offset| {
+                    let source_index = source_offsets
+                        .iter()
+                        .position(|source_offset| source_offset == offset)
+                        .unwrap();
+                    source[source_index]
+                })
+                .collect::<Vec<_>>();
+            let actual = filter_navigation_chart_objects(&state, &source);
+
+            assert_eq!(actual, expected, "{}", vector.name);
+            assert_eq!(actual.len(), vector.count, "{}", vector.name);
+        }
+    }
+
+    #[test]
+    fn navigation_chart_objects_begin_with_the_in_play_object_set() {
+        let mut state = navigation_fixture(
+            &[
+                ScriptObjectKind::CelestialBody,
+                ScriptObjectKind::NavigationEntity,
+                ScriptObjectKind::BlackHole,
+                ScriptObjectKind::Actor,
+            ],
+            &[None, None, None, None],
+        );
+        let objects = state
+            .objects()
+            .iter()
+            .map(|object| object.id)
+            .collect::<Vec<_>>();
+        let flags = [2, 0, 2, 2];
+        for (object, flag) in objects.iter().copied().zip(flags) {
+            let field = state.object_byte(object, OBJECT_FLAGS_BYTE_OFFSET).unwrap();
+            assert!(state.set_byte(field, flag));
+        }
+
+        assert_eq!(
+            navigation_chart_objects(&state),
+            vec![objects[0], objects[2]]
+        );
+    }
+
+    #[test]
     fn every_shipped_navigation_relation_resolves_to_typed_objects() {
         for profile in 1..=5 {
             let directory = decode_script_directory(
@@ -1302,6 +1421,60 @@ mod tests {
                 radio_index: 4,
             },
             _ => panic!("unknown navigation-actor-target oracle {name}"),
+        }
+    }
+
+    fn navigation_chart_case(name: &str) -> NavigationChartCase {
+        match name {
+            "empty_list" => NavigationChartCase {
+                kinds: vec![],
+                source_indices: vec![],
+            },
+            "mixed_kind_filter" => NavigationChartCase {
+                kinds: vec![
+                    ScriptObjectKind::CelestialBody,
+                    ScriptObjectKind::Actor,
+                    ScriptObjectKind::BlackHole,
+                    ScriptObjectKind::NavigationEntity,
+                ],
+                source_indices: vec![0, 1, 2, 3],
+            },
+            "exact_mask_and_high_bits" => NavigationChartCase {
+                kinds: vec![
+                    ScriptObjectKind::Player,
+                    ScriptObjectKind::NavigationEntity,
+                    ScriptObjectKind::BlackHole,
+                    ScriptObjectKind::CelestialBody,
+                ],
+                source_indices: vec![0, 1, 2, 3],
+            },
+            "negative_8000_terminator" => NavigationChartCase {
+                kinds: vec![ScriptObjectKind::CelestialBody],
+                source_indices: vec![0],
+            },
+            "record_pointer_base_and_max_positive_offset" => NavigationChartCase {
+                kinds: vec![
+                    ScriptObjectKind::CelestialBody,
+                    ScriptObjectKind::Actor,
+                    ScriptObjectKind::BlackHole,
+                ],
+                source_indices: vec![0, 1, 2],
+            },
+            "helper_rebuild_precedes_scan" => NavigationChartCase {
+                kinds: vec![
+                    ScriptObjectKind::NavigationEntity,
+                    ScriptObjectKind::Auxiliary,
+                ],
+                source_indices: vec![0, 1],
+            },
+            "inherited_reverse_direction" => NavigationChartCase {
+                kinds: vec![
+                    ScriptObjectKind::CelestialBody,
+                    ScriptObjectKind::NavigationEntity,
+                ],
+                source_indices: vec![0, 1],
+            },
+            _ => panic!("unknown navigation-chart oracle {name}"),
         }
     }
 
