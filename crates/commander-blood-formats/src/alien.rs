@@ -1922,6 +1922,10 @@ mod tests {
             assert!(asset.models.iter().all(|model| {
                 model.resume.is_some() == (model.behavior == AlienBehaviorMethod::Resume)
             }));
+            assert!(asset.models.iter().all(|model| !matches!(
+                model.behavior,
+                AlienBehaviorMethod::ApplySampleDelta | AlienBehaviorMethod::ApplyScaledSampleDelta
+            )));
             assert_eq!(
                 asset.resume_scene.anchor_node,
                 Some(AlienModelNodeReference {

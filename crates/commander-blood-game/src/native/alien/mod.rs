@@ -61,7 +61,7 @@ pub use ring::{
     clear_next_ring_entry, restart_initial_course, update_follow_course, update_initial_course,
     update_or_initialize_ring,
 };
-pub use scene::{AlienScene, AlienSceneError, AlienSceneFrame};
+pub use scene::{AlienResumeRuntimeError, AlienScene, AlienSceneError, AlienSceneFrame};
 pub use selection::{
     AlienSelectionError, AlienSelectionUpdate, AlienWaveCallbackUpdate, AlienWaveMotionUpdate,
     AlienWaveReturnUpdate, continue_wave_steering, update_wave_callback, update_wave_camera,
