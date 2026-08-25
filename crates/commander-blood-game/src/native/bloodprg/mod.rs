@@ -13,6 +13,7 @@ mod procedure;
 mod record;
 mod record_state;
 mod script;
+mod screen_presentation;
 mod selected_mask;
 mod sequence;
 mod sequence_subtitles;
@@ -93,6 +94,13 @@ pub use selected_mask::{
     PresentationChoiceMaskError, PresentationChoiceNumber, draw_presentation_choice_number,
 };
 pub use script::{ScriptControl, ScriptResumeState, ScriptRuntime, ScriptRuntimeError};
+pub use screen_presentation::{
+    PresentationDescriptPlan, PresentationMusicChange, PresentationPanelPhase,
+    PresentationPanelStep, PresentationRenderRegion, PresentationRenderTarget,
+    PresentationResourcePlacement, PresentationSceneContext, PresentationSceneStatus,
+    PresentationScreenBackend, PresentationScreenOutcome, PresentationScreenState,
+    PresentationTextOrigin, PresentationTransitionFrame, update_presentation_screen,
+};
 pub use sequence::{
     load_sequence_request, offer_topic_if_presentation_active, PresentationResourceLine,
     SequencePresentationState, SequenceRequestContext,
