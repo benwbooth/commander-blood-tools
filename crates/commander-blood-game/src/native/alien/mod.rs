@@ -1,6 +1,7 @@
 //! Shared native engine used by the AMER, CROOLIS, and SCRUT 3D scenes.
 
 mod behavior;
+mod callback;
 mod camera;
 mod control;
 mod faces;
@@ -11,6 +12,7 @@ mod raster;
 mod resume;
 mod ring;
 mod scene;
+mod selection;
 mod starfield;
 mod wave;
 
@@ -18,6 +20,7 @@ pub use behavior::{
     AlienBehaviorError, AlienSampleState, adjust_state, anchor_state, apply_sample_delta,
     apply_scaled_sample_delta, bounds_then_wrap, wrap_positions,
 };
+pub use callback::{AlienCallbackSceneState, AlienControlLatch};
 pub use camera::{AlienCameraAngles, AlienCameraTransform};
 pub use control::{
     AlienCameraControl, AlienCameraStep, AlienInputAction, AlienMouseSample, AlienSpecies,
@@ -44,12 +47,13 @@ pub use resume::{
 };
 pub use ring::{
     AlienRingAnimationState, AlienRingCallback, AlienRingCallbacks, AlienRingClearUpdate,
-    AlienRingCourseUpdate, AlienRingEntry, AlienRingError, AlienRingFollowerSceneState,
-    AlienRingFollowerUpdate, AlienRingLifecycle, AlienRingNodeState, AlienRingResumeState,
-    AlienRingUpdate, begin_resume_clear, capture_resume_state, clear_next_ring_entry,
-    restart_initial_course, update_follow_course, update_initial_course, update_or_initialize_ring,
+    AlienRingCourseUpdate, AlienRingEntry, AlienRingError, AlienRingFollowerUpdate,
+    AlienRingLifecycle, AlienRingNodeState, AlienRingResumeState, AlienRingUpdate,
+    begin_resume_clear, capture_resume_state, clear_next_ring_entry, restart_initial_course,
+    update_follow_course, update_initial_course, update_or_initialize_ring,
 };
 pub use scene::{AlienScene, AlienSceneError, AlienSceneFrame};
+pub use selection::{AlienSelectionError, AlienSelectionUpdate, update_wave_selection};
 pub use starfield::{
     AlienStar, AlienStarRejections, AlienStarfieldError, AlienStarfieldFrame, STAR_COUNT,
     generate_starfield,

@@ -1,0 +1,389 @@
+[
+  {
+    "name": "depth_high",
+    "module": "amer",
+    "entry": 3050,
+    "translation_integer_words": [
+      0,
+      0,
+      129
+    ],
+    "selection_before": 0,
+    "selection_after": 0,
+    "control_latch_after": 0,
+    "callback_countdown_after": 30583,
+    "parent_after": 17476,
+    "callback_after": 21845,
+    "radial_after": 26214,
+    "position_before": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "pulse_before": [
+      270554580,
+      270554674
+    ],
+    "pulse_after": [
+      270554580,
+      270554674
+    ],
+    "expected_call": 40977,
+    "expected_action": "motion",
+    "branch_classes": [
+      "bounds",
+      "depth_high"
+    ],
+    "data_sha256": "45672b321662978d66731c6c7abd9aad080f40305e1037561d52dd2d9d6f5a4c",
+    "code_sha256": "da1009bfa76d55144824f1c7c7fc47487782314a43b444a5b0818b340901bc95"
+  },
+  {
+    "name": "lateral_high",
+    "module": "amer",
+    "entry": 3050,
+    "translation_integer_words": [
+      65,
+      0,
+      0
+    ],
+    "selection_before": 0,
+    "selection_after": 0,
+    "control_latch_after": 0,
+    "callback_countdown_after": 30583,
+    "parent_after": 17476,
+    "callback_after": 21845,
+    "radial_after": 26214,
+    "position_before": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "pulse_before": [
+      270554580,
+      270554674
+    ],
+    "pulse_after": [
+      270554580,
+      270554674
+    ],
+    "expected_call": 40977,
+    "expected_action": "motion",
+    "branch_classes": [
+      "bounds",
+      "lateral_high"
+    ],
+    "data_sha256": "a6610b2230f0efc0ad7ae988e0215ff94c2fe3a14951a29d28f76e060e12258c",
+    "code_sha256": "da1009bfa76d55144824f1c7c7fc47487782314a43b444a5b0818b340901bc95"
+  },
+  {
+    "name": "lateral_low",
+    "module": "amer",
+    "entry": 3050,
+    "translation_integer_words": [
+      -65,
+      0,
+      0
+    ],
+    "selection_before": 0,
+    "selection_after": 0,
+    "control_latch_after": 0,
+    "callback_countdown_after": 30583,
+    "parent_after": 17476,
+    "callback_after": 21845,
+    "radial_after": 26214,
+    "position_before": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "pulse_before": [
+      270554580,
+      270554674
+    ],
+    "pulse_after": [
+      270554580,
+      270554674
+    ],
+    "expected_call": 40977,
+    "expected_action": "motion",
+    "branch_classes": [
+      "bounds",
+      "lateral_low"
+    ],
+    "data_sha256": "e17f021b62b9466b6ec310bebe1b3ddd2b49511cf5e8589170708cd7a0e82cab",
+    "code_sha256": "da1009bfa76d55144824f1c7c7fc47487782314a43b444a5b0818b340901bc95"
+  },
+  {
+    "name": "vertical_high",
+    "module": "amer",
+    "entry": 3050,
+    "translation_integer_words": [
+      0,
+      65,
+      0
+    ],
+    "selection_before": 0,
+    "selection_after": 0,
+    "control_latch_after": 0,
+    "callback_countdown_after": 30583,
+    "parent_after": 17476,
+    "callback_after": 21845,
+    "radial_after": 26214,
+    "position_before": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "pulse_before": [
+      270554580,
+      270554674
+    ],
+    "pulse_after": [
+      270554580,
+      270554674
+    ],
+    "expected_call": 40977,
+    "expected_action": "motion",
+    "branch_classes": [
+      "bounds",
+      "vertical_high"
+    ],
+    "data_sha256": "4ec2b2173d4d60f5930a85712c868e346954c7169d0f744b01875ac54c38a769",
+    "code_sha256": "da1009bfa76d55144824f1c7c7fc47487782314a43b444a5b0818b340901bc95"
+  },
+  {
+    "name": "vertical_low",
+    "module": "amer",
+    "entry": 3050,
+    "translation_integer_words": [
+      0,
+      -65,
+      0
+    ],
+    "selection_before": 0,
+    "selection_after": 0,
+    "control_latch_after": 0,
+    "callback_countdown_after": 30583,
+    "parent_after": 17476,
+    "callback_after": 21845,
+    "radial_after": 26214,
+    "position_before": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "pulse_before": [
+      270554580,
+      270554674
+    ],
+    "pulse_after": [
+      270554580,
+      270554674
+    ],
+    "expected_call": 40977,
+    "expected_action": "motion",
+    "branch_classes": [
+      "bounds",
+      "vertical_low"
+    ],
+    "data_sha256": "205964d7d6c17198a1e4c39c4ead13e138c4c734f500c688040e8a22245ccb94",
+    "code_sha256": "da1009bfa76d55144824f1c7c7fc47487782314a43b444a5b0818b340901bc95"
+  },
+  {
+    "name": "selection_requested",
+    "module": "amer",
+    "entry": 3050,
+    "translation_integer_words": [
+      0,
+      0,
+      0
+    ],
+    "selection_before": 1,
+    "selection_after": 1,
+    "control_latch_after": 1,
+    "callback_countdown_after": 30583,
+    "parent_after": 17476,
+    "callback_after": 21845,
+    "radial_after": 26214,
+    "position_before": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "pulse_before": [
+      270554580,
+      270554674
+    ],
+    "pulse_after": [
+      270554580,
+      270554674
+    ],
+    "expected_call": 51729,
+    "expected_action": "camera",
+    "branch_classes": [
+      "selection_busy",
+      "requested"
+    ],
+    "data_sha256": "57998e910d0ed7356c57166e316750d7a30b068ba6f6bfe891e86021733b7141",
+    "code_sha256": "c51e5891b0864e266f023ce5d78be20577129b2b26074f1ecfad8f082bcfd265"
+  },
+  {
+    "name": "selection_complete",
+    "module": "amer",
+    "entry": 3050,
+    "translation_integer_words": [
+      0,
+      0,
+      0
+    ],
+    "selection_before": 2,
+    "selection_after": 2,
+    "control_latch_after": 1,
+    "callback_countdown_after": 30583,
+    "parent_after": 17476,
+    "callback_after": 21845,
+    "radial_after": 26214,
+    "position_before": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "pulse_before": [
+      270554580,
+      270554674
+    ],
+    "pulse_after": [
+      270554580,
+      270554674
+    ],
+    "expected_call": 51729,
+    "expected_action": "camera",
+    "branch_classes": [
+      "selection_busy",
+      "complete"
+    ],
+    "data_sha256": "b274266ab0d4f087aa5defb953580684757c2c73f600b0dd80d15366868ce8ff",
+    "code_sha256": "9a795f21cf27b2df02890a1a8449e8c3317a1787f73c5ed7959ef8481e1c34af"
+  },
+  {
+    "name": "ready",
+    "module": "amer",
+    "entry": 3050,
+    "translation_integer_words": [
+      0,
+      0,
+      0
+    ],
+    "selection_before": 0,
+    "selection_after": 1,
+    "control_latch_after": 1,
+    "callback_countdown_after": 5,
+    "parent_after": 9640,
+    "callback_after": 2871,
+    "radial_after": 0,
+    "position_before": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "position_after": [
+      287440896,
+      1432748032,
+      2578055200
+    ],
+    "pulse_before": [
+      270554580,
+      270554674
+    ],
+    "pulse_after": [
+      270554610,
+      270554709
+    ],
+    "expected_call": 0,
+    "expected_action": "selected",
+    "branch_classes": [
+      "ready"
+    ],
+    "data_sha256": "dde132cd37651a44afd0f0992a11e22d61d3a6460dda2d3d0307a10f55848c12",
+    "code_sha256": "c51e5891b0864e266f023ce5d78be20577129b2b26074f1ecfad8f082bcfd265"
+  },
+  {
+    "name": "ready_wrapping_values",
+    "module": "amer",
+    "entry": 3050,
+    "translation_integer_words": [
+      64,
+      -64,
+      128
+    ],
+    "selection_before": 0,
+    "selection_after": 1,
+    "control_latch_after": 1,
+    "callback_countdown_after": 5,
+    "parent_after": 9640,
+    "callback_after": 2871,
+    "radial_after": 0,
+    "position_before": [
+      4294906420,
+      2147505784,
+      2147457724
+    ],
+    "position_after": [
+      4294901760,
+      2147483648,
+      2147418144
+    ],
+    "pulse_before": [
+      4294967280,
+      4294967281
+    ],
+    "pulse_after": [
+      14,
+      20
+    ],
+    "expected_call": 0,
+    "expected_action": "selected",
+    "branch_classes": [
+      "ready",
+      "boundaries",
+      "wrap"
+    ],
+    "data_sha256": "cccb7169f1de3b89799cad5220865143d9248388bc0eaa403fd5f9babebb6a17",
+    "code_sha256": "c51e5891b0864e266f023ce5d78be20577129b2b26074f1ecfad8f082bcfd265"
+  }
+]

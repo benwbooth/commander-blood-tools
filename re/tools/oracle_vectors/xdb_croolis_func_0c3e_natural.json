@@ -1,0 +1,407 @@
+[
+  {
+    "name": "depth_high",
+    "module": "croolis",
+    "entry": 3134,
+    "translation_integer_words": [
+      0,
+      0,
+      129
+    ],
+    "selection_before": 0,
+    "selection_after": 0,
+    "control_latch_after": 0,
+    "callback_countdown_after": 30583,
+    "parent_after": 17476,
+    "callback_after": 21845,
+    "radial_after": 26214,
+    "position_before": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "pulse_before": [
+      270554486,
+      270554580,
+      270554674
+    ],
+    "pulse_after": [
+      270554486,
+      270554580,
+      270554674
+    ],
+    "expected_call": 40977,
+    "expected_action": "motion",
+    "branch_classes": [
+      "bounds",
+      "depth_high"
+    ],
+    "data_sha256": "8baf3516d630fcfdf34dc261c0685ae57c7cc81d913be76dbc4d968f94609b81",
+    "code_sha256": "01780d9fea30fd107a91bbb9595fee427b9d5dff4666244a1a987edcbe34b0bf"
+  },
+  {
+    "name": "lateral_high",
+    "module": "croolis",
+    "entry": 3134,
+    "translation_integer_words": [
+      65,
+      0,
+      0
+    ],
+    "selection_before": 0,
+    "selection_after": 0,
+    "control_latch_after": 0,
+    "callback_countdown_after": 30583,
+    "parent_after": 17476,
+    "callback_after": 21845,
+    "radial_after": 26214,
+    "position_before": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "pulse_before": [
+      270554486,
+      270554580,
+      270554674
+    ],
+    "pulse_after": [
+      270554486,
+      270554580,
+      270554674
+    ],
+    "expected_call": 40977,
+    "expected_action": "motion",
+    "branch_classes": [
+      "bounds",
+      "lateral_high"
+    ],
+    "data_sha256": "479f84597d274cd61d95aba9640207895558148ebe67a8759778c7ac4514fba5",
+    "code_sha256": "01780d9fea30fd107a91bbb9595fee427b9d5dff4666244a1a987edcbe34b0bf"
+  },
+  {
+    "name": "lateral_low",
+    "module": "croolis",
+    "entry": 3134,
+    "translation_integer_words": [
+      -65,
+      0,
+      0
+    ],
+    "selection_before": 0,
+    "selection_after": 0,
+    "control_latch_after": 0,
+    "callback_countdown_after": 30583,
+    "parent_after": 17476,
+    "callback_after": 21845,
+    "radial_after": 26214,
+    "position_before": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "pulse_before": [
+      270554486,
+      270554580,
+      270554674
+    ],
+    "pulse_after": [
+      270554486,
+      270554580,
+      270554674
+    ],
+    "expected_call": 40977,
+    "expected_action": "motion",
+    "branch_classes": [
+      "bounds",
+      "lateral_low"
+    ],
+    "data_sha256": "3284fa16e2c99eeabc3a25d9a1e6b2d2ed7a88c4ecccc6849ce6b932e9944e86",
+    "code_sha256": "01780d9fea30fd107a91bbb9595fee427b9d5dff4666244a1a987edcbe34b0bf"
+  },
+  {
+    "name": "vertical_high",
+    "module": "croolis",
+    "entry": 3134,
+    "translation_integer_words": [
+      0,
+      65,
+      0
+    ],
+    "selection_before": 0,
+    "selection_after": 0,
+    "control_latch_after": 0,
+    "callback_countdown_after": 30583,
+    "parent_after": 17476,
+    "callback_after": 21845,
+    "radial_after": 26214,
+    "position_before": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "pulse_before": [
+      270554486,
+      270554580,
+      270554674
+    ],
+    "pulse_after": [
+      270554486,
+      270554580,
+      270554674
+    ],
+    "expected_call": 40977,
+    "expected_action": "motion",
+    "branch_classes": [
+      "bounds",
+      "vertical_high"
+    ],
+    "data_sha256": "77609801781a1ee0d5eed3aa8be337f86e60dc6ac8cbfe21b332a5258382b67b",
+    "code_sha256": "01780d9fea30fd107a91bbb9595fee427b9d5dff4666244a1a987edcbe34b0bf"
+  },
+  {
+    "name": "vertical_low",
+    "module": "croolis",
+    "entry": 3134,
+    "translation_integer_words": [
+      0,
+      -65,
+      0
+    ],
+    "selection_before": 0,
+    "selection_after": 0,
+    "control_latch_after": 0,
+    "callback_countdown_after": 30583,
+    "parent_after": 17476,
+    "callback_after": 21845,
+    "radial_after": 26214,
+    "position_before": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "pulse_before": [
+      270554486,
+      270554580,
+      270554674
+    ],
+    "pulse_after": [
+      270554486,
+      270554580,
+      270554674
+    ],
+    "expected_call": 40977,
+    "expected_action": "motion",
+    "branch_classes": [
+      "bounds",
+      "vertical_low"
+    ],
+    "data_sha256": "14e22ca0eabf7bb9e700091502b5cac0da88f658269e59039e4d030ffe760236",
+    "code_sha256": "01780d9fea30fd107a91bbb9595fee427b9d5dff4666244a1a987edcbe34b0bf"
+  },
+  {
+    "name": "selection_requested",
+    "module": "croolis",
+    "entry": 3134,
+    "translation_integer_words": [
+      0,
+      0,
+      0
+    ],
+    "selection_before": 1,
+    "selection_after": 1,
+    "control_latch_after": 12288,
+    "callback_countdown_after": 30583,
+    "parent_after": 17476,
+    "callback_after": 21845,
+    "radial_after": 26214,
+    "position_before": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "pulse_before": [
+      270554486,
+      270554580,
+      270554674
+    ],
+    "pulse_after": [
+      270554486,
+      270554580,
+      270554674
+    ],
+    "expected_call": 51729,
+    "expected_action": "camera",
+    "branch_classes": [
+      "selection_busy",
+      "requested"
+    ],
+    "data_sha256": "7a722d0f65a29a5e34091b96fa121bde4f0b77f1c9a4e47036de4220d2b46835",
+    "code_sha256": "52712b40d766d2e5502360a93dba354cf85986c3fb0c46550db27f458045fff7"
+  },
+  {
+    "name": "selection_complete",
+    "module": "croolis",
+    "entry": 3134,
+    "translation_integer_words": [
+      0,
+      0,
+      0
+    ],
+    "selection_before": 2,
+    "selection_after": 2,
+    "control_latch_after": 12288,
+    "callback_countdown_after": 30583,
+    "parent_after": 17476,
+    "callback_after": 21845,
+    "radial_after": 26214,
+    "position_before": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "pulse_before": [
+      270554486,
+      270554580,
+      270554674
+    ],
+    "pulse_after": [
+      270554486,
+      270554580,
+      270554674
+    ],
+    "expected_call": 51729,
+    "expected_action": "camera",
+    "branch_classes": [
+      "selection_busy",
+      "complete"
+    ],
+    "data_sha256": "941a7ea6ccf1402ef38a5e6c997933b6045bdaa55bb75abd3695c21d43a70632",
+    "code_sha256": "79ca632e10d54d9e9147e2bddc17df79aa82a4d0ac8dee46218f6cec5c360698"
+  },
+  {
+    "name": "ready",
+    "module": "croolis",
+    "entry": 3134,
+    "translation_integer_words": [
+      0,
+      0,
+      0
+    ],
+    "selection_before": 0,
+    "selection_after": 1,
+    "control_latch_after": 12288,
+    "callback_countdown_after": 5,
+    "parent_after": 9640,
+    "callback_after": 2936,
+    "radial_after": 0,
+    "position_before": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "position_after": [
+      287440896,
+      1432748032,
+      2578055200
+    ],
+    "pulse_before": [
+      270554486,
+      270554580,
+      270554674
+    ],
+    "pulse_after": [
+      270554511,
+      270554610,
+      270554709
+    ],
+    "expected_call": 0,
+    "expected_action": "selected",
+    "branch_classes": [
+      "ready"
+    ],
+    "data_sha256": "d3a60eca159c5a0f474e3a137b3693182d15165b5b776798d71cdb0298e5588a",
+    "code_sha256": "52712b40d766d2e5502360a93dba354cf85986c3fb0c46550db27f458045fff7"
+  },
+  {
+    "name": "ready_wrapping_values",
+    "module": "croolis",
+    "entry": 3134,
+    "translation_integer_words": [
+      64,
+      -64,
+      128
+    ],
+    "selection_before": 0,
+    "selection_after": 1,
+    "control_latch_after": 12288,
+    "callback_countdown_after": 5,
+    "parent_after": 9640,
+    "callback_after": 2936,
+    "radial_after": 0,
+    "position_before": [
+      4294906420,
+      2147505784,
+      2147457724
+    ],
+    "position_after": [
+      4294901760,
+      2147483648,
+      2147418144
+    ],
+    "pulse_before": [
+      4294967280,
+      4294967281,
+      4294967282
+    ],
+    "pulse_after": [
+      9,
+      15,
+      21
+    ],
+    "expected_call": 0,
+    "expected_action": "selected",
+    "branch_classes": [
+      "ready",
+      "boundaries",
+      "wrap"
+    ],
+    "data_sha256": "f76e78f896b8c217951b640948bdafa2c64fb91839cd3b48e5bb46fb3a8e1879",
+    "code_sha256": "52712b40d766d2e5502360a93dba354cf85986c3fb0c46550db27f458045fff7"
+  }
+]

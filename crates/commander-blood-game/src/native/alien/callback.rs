@@ -1,0 +1,38 @@
+//! Shared typed state for recovered alien behavior callbacks.
+
+use commander_blood_formats::alien::AXIS_COUNT;
+
+use super::wave::AlienWaveSelection;
+
+const TRANSITION_QUEUE_LENGTH: usize = 8;
+
+/// Typed replacement for the scene-wide callback control word.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum AlienControlLatch {
+    /// No callback has published control for the current scene pass.
+    #[default]
+    Inactive,
+    /// A callback published the original literal control signal.
+    Signal,
+    /// A callback published the identity of its owning model context.
+    Model(usize),
+}
+
+/// Scene state shared by the recovered alien callback families.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct AlienCallbackSceneState {
+    /// Current typed callback-control publication.
+    pub control_latch: AlienControlLatch,
+    /// Frames requested before the next scene callback dispatch.
+    pub callback_countdown: u16,
+    /// Current camera-relative wave-selection lifecycle.
+    pub wave_selection: AlienWaveSelection,
+    /// Persistent wrapping palette pulse values.
+    pub palette_pulses: [i32; AXIS_COUNT],
+    /// Fixed transition queue storing typed model-node indices.
+    pub transition_queue: [Option<usize>; TRANSITION_QUEUE_LENGTH],
+    /// Queue slot selected by the surrounding slot-11 behavior.
+    pub transition_queue_slot: usize,
+    /// Most recently published model-node index.
+    pub current_node: Option<usize>,
+}

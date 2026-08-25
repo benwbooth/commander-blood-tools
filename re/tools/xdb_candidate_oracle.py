@@ -14682,6 +14682,271 @@ def update_vector(path: Path, vectors: list[dict[str, object]], check: bool) -> 
     print(f"wrote {path.relative_to(REPO_ROOT)} ({len(vectors)} vectors)")
 
 
+def alien_slot1_state_update_vectors(
+    module: str,
+    entry: int,
+    body_size: int,
+    body_hash: str,
+    selection_offset: int,
+    wave_callback: int,
+    motion_target: int,
+    camera_target: int,
+    pulse_updates: tuple[tuple[int, int], ...],
+    context_latch: bool,
+) -> list[dict[str, object]]:
+    """Exercise every branch in the slot-1 bounds and selection callback."""
+    image = load_image(module)
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered slot-1 state callback changed")
+
+    data_segment = 0x5000
+    extra_segment = 0x7000
+    fs_segment = 0x9000
+    game_segment = 0xA000
+    stack_segment = 0xB000
+    state = 0x4000
+    context = 0x3000
+    return_address = 0xF000
+    call_marker_offset = 0x2800
+    stack_sentinel = bytes.fromhex("5aa596698778")
+    no_call = 0
+    motion_call = 0xA011
+    camera_call = 0xCA11
+    cases = (
+        ("depth_high", 0, 0, 129, 0, False, ("bounds", "depth_high")),
+        ("lateral_high", 65, 0, 0, 0, False, ("bounds", "lateral_high")),
+        ("lateral_low", -65, 0, 0, 0, False, ("bounds", "lateral_low")),
+        ("vertical_high", 0, 65, 0, 0, False, ("bounds", "vertical_high")),
+        ("vertical_low", 0, -65, 0, 0, False, ("bounds", "vertical_low")),
+        ("selection_requested", 0, 0, 0, 1, False, ("selection_busy", "requested")),
+        ("selection_complete", 0, 0, 0, 2, False, ("selection_busy", "complete")),
+        ("ready", 0, 0, 0, 0, False, ("ready",)),
+        ("ready_wrapping_values", 64, -64, 128, 0, True, ("ready", "boundaries", "wrap")),
+    )
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", memory, offset, value & 0xFFFF)
+
+    def put_u32(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<I", memory, offset, value & 0xFFFFFFFF)
+
+    def get_u16(memory: bytearray, offset: int) -> int:
+        return struct.unpack_from("<H", memory, offset)[0]
+
+    def get_u32(memory: bytearray, offset: int) -> int:
+        return struct.unpack_from("<I", memory, offset)[0]
+
+    def install_stub(code: bytearray, target: int, marker: int) -> None:
+        code[target : target + 7] = (
+            b"\xc7\x06"
+            + struct.pack("<HH", call_marker_offset, marker)
+            + b"\xc3"
+        )
+
+    vectors: list[dict[str, object]] = []
+    for case_index, (
+        name,
+        translation_x,
+        translation_y,
+        translation_z,
+        selection,
+        wrapping_values,
+        branch_classes,
+    ) in enumerate(cases):
+        data_before = bytearray(
+            (offset * 29 + case_index * 17 + 3) & 0xFF
+            for offset in range(0x10000)
+        )
+        data_expected = bytearray(data_before)
+        code_before = bytearray(image)
+        code_before[return_address] = 0xCC
+        install_stub(code_before, motion_target, motion_call)
+        install_stub(code_before, camera_target, camera_call)
+        code_expected = bytearray(code_before)
+
+        put_u16(code_before, selection_offset, selection)
+        put_u16(code_expected, selection_offset, selection)
+        put_u16(data_before, call_marker_offset, no_call)
+        put_u16(data_expected, call_marker_offset, no_call)
+        put_u16(data_before, 0x001E, 0x7777)
+        put_u16(data_expected, 0x001E, 0x7777)
+        put_u16(data_before, 0x2282, 0)
+        put_u16(data_expected, 0x2282, 0)
+        for field, value in (
+            (0x0000, 0x4444),
+            (0x000E, 0x5555),
+            (0x0038, translation_x),
+            (0x003C, translation_y),
+            (0x0040, translation_z),
+            (0x0054, 0x6666),
+        ):
+            put_u16(data_before, state + field, value)
+            put_u16(data_expected, state + field, value)
+        position_before = (
+            0xFFFF1234 if wrapping_values else 0x11223344,
+            0x80005678 if wrapping_values else 0x55667788,
+            0x7FFF9ABC if wrapping_values else 0x99AABBCC,
+        )
+        for field, value in zip((0x0042, 0x0046, 0x004A), position_before):
+            put_u32(data_before, state + field, value)
+            put_u32(data_expected, state + field, value)
+        pulse_before: list[int] = []
+        for pulse_index, (offset, _amount) in enumerate(pulse_updates):
+            value = (
+                0xFFFFFFF0 + pulse_index
+                if wrapping_values
+                else 0x10203040 + offset
+            )
+            pulse_before.append(value & 0xFFFFFFFF)
+            put_u32(data_before, offset, value)
+            put_u32(data_expected, offset, value)
+
+        outside_bounds = (
+            translation_z > 128
+            or translation_x > 64
+            or translation_x < -64
+            or translation_y > 64
+            or translation_y < -64
+        )
+        expected_action = "selected"
+        expected_call = no_call
+        if outside_bounds:
+            expected_action = "motion"
+            expected_call = motion_call
+        else:
+            put_u16(data_expected, 0x2282, context if context_latch else 1)
+            if selection & 3:
+                expected_action = "camera"
+                expected_call = camera_call
+            else:
+                put_u16(code_expected, selection_offset, 1)
+                put_u16(data_expected, state + 0x0000, 0x25A8)
+                put_u16(data_expected, state + 0x0054, 0)
+                put_u16(data_expected, state + 0x0042, 0)
+                put_u16(data_expected, state + 0x0046, 0)
+                put_u16(data_expected, state + 0x004A, 32)
+                for offset, amount in pulse_updates:
+                    put_u32(data_expected, offset, get_u32(data_expected, offset) + amount)
+                put_u16(data_expected, state + 0x000E, wave_callback)
+                put_u16(data_expected, 0x001E, 5)
+        put_u16(data_expected, call_marker_offset, expected_call)
+
+        initial = {
+            "eax": 0xA1A10000 | ((0x1111 + case_index) & 0xFFFF),
+            "ebx": 0xB2B20000 | ((0x2222 + case_index) & 0xFFFF),
+            "ecx": 0xC3C30000 | ((0x3333 + case_index) & 0xFFFF),
+            "edx": 0xD4D40000 | ((0x4444 + case_index) & 0xFFFF),
+            "esi": 0xE5E50000 | state,
+            "edi": 0xF6F60000 | context,
+            "ebp": 0x97975555 + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0293 | (0x0400 if case_index & 1 else 0),
+        }
+        extra_before = bytes(
+            (offset * 13 + case_index + 7) & 0xFF for offset in range(0x10000)
+        )
+        fs_before = bytes(
+            (offset * 11 + case_index + 9) & 0xFF for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 7 + case_index + 5) & 0xFF for offset in range(0x10000)
+        )
+        machine = execute(
+            bytes(code_before),
+            entry,
+            return_address,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (extra_segment, 0, extra_before),
+                (fs_segment, 0, fs_before),
+                (game_segment, 0, game_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            max_instructions=10000,
+        )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        actual_code = bytes(machine.mem_read(0, len(image)))
+        if actual_data != bytes(data_expected):
+            differences = [
+                (offset, actual_data[offset], data_expected[offset])
+                for offset in range(0x10000)
+                if actual_data[offset] != data_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: data differs at {differences}"
+            )
+        if actual_code != bytes(code_expected):
+            differences = [
+                (offset, actual_code[offset], code_expected[offset])
+                for offset in range(len(image))
+                if actual_code[offset] != code_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: code differs at {differences}"
+            )
+        for segment, expected in (
+            (extra_segment, extra_before),
+            (fs_segment, fs_before),
+            (game_segment, game_before),
+        ):
+            if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: decoy {segment:#x} changed"
+                )
+        if machine.reg_read(UC_X86_REG_SP) != 0xFF02:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "translation_integer_words": [
+                    translation_x,
+                    translation_y,
+                    translation_z,
+                ],
+                "selection_before": selection,
+                "selection_after": struct.unpack_from(
+                    "<H", code_expected, selection_offset
+                )[0],
+                "control_latch_after": get_u16(data_expected, 0x2282),
+                "callback_countdown_after": get_u16(data_expected, 0x001E),
+                "parent_after": get_u16(data_expected, state + 0x0000),
+                "callback_after": get_u16(data_expected, state + 0x000E),
+                "radial_after": get_u16(data_expected, state + 0x0054),
+                "position_before": list(position_before),
+                "position_after": [
+                    get_u32(data_expected, state + field)
+                    for field in (0x0042, 0x0046, 0x004A)
+                ],
+                "pulse_before": pulse_before,
+                "pulse_after": [
+                    get_u32(data_expected, offset) for offset, _amount in pulse_updates
+                ],
+                "expected_call": expected_call,
+                "expected_action": expected_action,
+                "branch_classes": list(branch_classes),
+                "data_sha256": hashlib.sha256(data_expected).hexdigest(),
+                "code_sha256": hashlib.sha256(code_expected).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def alien_slot1_callback_head_vectors(
     module: str,
     entry: int,
@@ -15861,6 +16126,53 @@ def main() -> int:
         _COVERAGE_RECORDER = CoverageRecorder(image_sizes, canonical_images)
 
     VECTOR_ROOT.mkdir(parents=True, exist_ok=True)
+    for (
+        module,
+        entry,
+        body_size,
+        body_hash,
+        selection_offset,
+        wave_callback,
+        motion_target,
+        camera_target,
+        pulse_updates,
+        context_latch,
+    ) in (
+        (
+            "amer", 0x0BEA, 115,
+            "88a0152008a8470b6d96b9870b07602907490baa31488c22e7de1ba833e2cb57",
+            0x0B2F, 0x0B37, 0x0CAC, 0x0C5D,
+            ((0x2594, 30), (0x25F2, 35)), False,
+        ),
+        (
+            "croolis", 0x0C3E, 119,
+            "7c43e7c97392048a7cd8a9b40ebee22d51ce74cceb5a6630d34d5c52075e8de5",
+            0x0B70, 0x0B78, 0x0D04, 0x0CB5,
+            ((0x2536, 25), (0x2594, 30), (0x25F2, 35)), True,
+        ),
+        (
+            "scrut", 0x0C32, 113,
+            "9a12f55ba875f386f42d1619af6ee241afc7e0957b4436506062d58d27572071",
+            0x0B70, 0x0B78, 0x0CF2, 0x0CA3,
+            ((0x2594, 30), (0x25F2, 35)), True,
+        ),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            alien_slot1_state_update_vectors(
+                module,
+                entry,
+                body_size,
+                body_hash,
+                selection_offset,
+                wave_callback,
+                motion_target,
+                camera_target,
+                pulse_updates,
+                context_latch,
+            ),
+            args.check,
+        )
     for (
         module,
         entry,

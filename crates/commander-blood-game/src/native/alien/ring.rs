@@ -4,7 +4,9 @@ use std::fmt;
 
 use commander_blood_formats::alien::AXIS_COUNT;
 
-use super::{AlienModelPose, AlienSpecies};
+use super::{
+    AlienCallbackSceneState, AlienControlLatch, AlienModelPose, AlienSpecies, AlienWaveSelection,
+};
 
 const X_AXIS: usize = 0;
 const Y_AXIS: usize = 1;
@@ -57,7 +59,6 @@ const FOLLOW_BOUND: i16 = 64;
 const FOLLOW_DEPTH_BOUND: u16 = 64;
 const FOLLOW_FEEDBACK_STEP: u16 = 40;
 const FOLLOW_CALLBACK_COUNTDOWN: u16 = 2;
-const FOLLOW_TRANSITION_QUEUE_LENGTH: usize = 8;
 const PACKED_TEXTURE_ADJUSTMENT: u32 = 0x0080_0080;
 
 /// One motion-history sample consumed by the recovered slot-3 callbacks.
@@ -83,6 +84,8 @@ pub enum AlienRingCallback {
     FollowCourse,
     /// Clear successive history entries while a captured node resumes.
     ClearHistory,
+    /// Run the camera-relative wave-selection callback family.
+    Wave,
 }
 
 /// Per-node state used by the circular motion-history behavior.
@@ -150,21 +153,6 @@ pub struct AlienRingResumeState {
     pub countdown: u16,
     /// Typed model-node index selected for the resume sequence.
     pub selected_node: Option<usize>,
-}
-
-/// Scene state shared by the recovered follower-course callbacks.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct AlienRingFollowerSceneState {
-    /// Whether this callback has published the scene control signal.
-    pub control_latch: bool,
-    /// Frames requested before the next scene callback dispatch.
-    pub callback_countdown: u16,
-    /// Fixed transition queue storing typed model-node indices.
-    pub transition_queue: [Option<usize>; FOLLOW_TRANSITION_QUEUE_LENGTH],
-    /// Queue slot selected by the surrounding slot-11 behavior.
-    pub transition_queue_slot: usize,
-    /// Most recently published model-node index.
-    pub current_node: Option<usize>,
 }
 
 /// Indirect callback boundary retained by the recovered coordinator.
@@ -427,8 +415,7 @@ pub fn update_follow_course(
     node_index: usize,
     pose: &mut AlienModelPose,
     animation: &mut AlienRingAnimationState,
-    scene: &mut AlienRingFollowerSceneState,
-    wave_selection_busy: bool,
+    scene: &mut AlienCallbackSceneState,
 ) -> Result<AlienRingFollowerUpdate, AlienRingError> {
     let current_slot = validate_node_pair(node_index, pose, animation)?;
     let current_entry = animation.entries[current_slot];
@@ -458,7 +445,7 @@ pub fn update_follow_course(
         }
 
         let queue_slot = scene.transition_queue_slot;
-        if queue_slot >= FOLLOW_TRANSITION_QUEUE_LENGTH {
+        if queue_slot >= scene.transition_queue.len() {
             return Err(AlienRingError::InvalidTransitionQueueSlot { slot: queue_slot });
         }
         let texture_range = if animation.nodes[node_index].behavior_seed == u16::MIN {
@@ -483,12 +470,12 @@ pub fn update_follow_course(
         return Ok(AlienRingFollowerUpdate::FeedbackAdvanced);
     }
 
-    scene.control_latch = true;
+    scene.control_latch = AlienControlLatch::Signal;
     if scene.callback_countdown == u16::MIN {
         scene.callback_countdown = FOLLOW_CALLBACK_COUNTDOWN;
     }
     animation.entries[selected_slot].radial_offset = RESTART_RADIAL_OFFSET;
-    if wave_selection_busy {
+    if scene.wave_selection != AlienWaveSelection::Disabled {
         advance_feedback_phase(&mut animation.nodes[node_index]);
         return Ok(AlienRingFollowerUpdate::FeedbackAdvanced);
     }
@@ -1153,6 +1140,15 @@ mod tests {
         }
     }
 
+    fn wave_selection(value: u16) -> AlienWaveSelection {
+        match value & ORIGINAL_SELECTION_MASK {
+            0 => AlienWaveSelection::Disabled,
+            1 => AlienWaveSelection::Requested,
+            2 => AlienWaveSelection::Selected,
+            value => panic!("unknown wave selection {value}"),
+        }
+    }
+
     fn oracle_node(value: u16) -> Option<usize> {
         const ORACLE_NODE_OFFSET: u16 = 0x4000;
 
@@ -1434,20 +1430,16 @@ mod tests {
                 animation.entries[next_ring_slot] = ring_entry(vector.next_entry_before);
 
                 let queue_slot = vector.queue_cursor_after / ORIGINAL_QUEUE_ENTRY_BYTES;
-                let mut scene = AlienRingFollowerSceneState {
+                let mut scene = AlienCallbackSceneState {
                     callback_countdown: vector.countdown_before,
+                    wave_selection: wave_selection(vector.selection),
                     transition_queue_slot: queue_slot,
                     current_node: oracle_node(ORACLE_UNCHANGED_STATE),
-                    ..AlienRingFollowerSceneState::default()
+                    ..AlienCallbackSceneState::default()
                 };
-                let update = update_follow_course(
-                    FIRST_NODE,
-                    &mut pose,
-                    &mut animation,
-                    &mut scene,
-                    vector.selection & ORIGINAL_SELECTION_MASK != u16::MIN,
-                )
-                .unwrap();
+                let update =
+                    update_follow_course(FIRST_NODE, &mut pose, &mut animation, &mut scene)
+                        .unwrap();
 
                 assert_eq!(
                     update,
@@ -1479,7 +1471,14 @@ mod tests {
                     animation.nodes[FIRST_NODE].behavior_seed,
                     vector.motion_after[4]
                 );
-                assert_eq!(scene.control_latch, vector.control_latch_after != u16::MIN);
+                assert_eq!(
+                    scene.control_latch,
+                    if vector.control_latch_after == u16::MIN {
+                        AlienControlLatch::Inactive
+                    } else {
+                        AlienControlLatch::Signal
+                    }
+                );
                 assert_eq!(scene.callback_countdown, vector.countdown_after);
                 assert_eq!(scene.transition_queue_slot, queue_slot);
                 assert_eq!(scene.current_node, oracle_node(vector.current_state_after));

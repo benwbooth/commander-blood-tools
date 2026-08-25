@@ -1,0 +1,389 @@
+[
+  {
+    "name": "depth_high",
+    "module": "scrut",
+    "entry": 3122,
+    "translation_integer_words": [
+      0,
+      0,
+      129
+    ],
+    "selection_before": 0,
+    "selection_after": 0,
+    "control_latch_after": 0,
+    "callback_countdown_after": 30583,
+    "parent_after": 17476,
+    "callback_after": 21845,
+    "radial_after": 26214,
+    "position_before": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "pulse_before": [
+      270554580,
+      270554674
+    ],
+    "pulse_after": [
+      270554580,
+      270554674
+    ],
+    "expected_call": 40977,
+    "expected_action": "motion",
+    "branch_classes": [
+      "bounds",
+      "depth_high"
+    ],
+    "data_sha256": "45672b321662978d66731c6c7abd9aad080f40305e1037561d52dd2d9d6f5a4c",
+    "code_sha256": "2d15232bb709d3bf9e1f3262a41a124ab1ef2f5cb61d7993b0999e1b6d84e447"
+  },
+  {
+    "name": "lateral_high",
+    "module": "scrut",
+    "entry": 3122,
+    "translation_integer_words": [
+      65,
+      0,
+      0
+    ],
+    "selection_before": 0,
+    "selection_after": 0,
+    "control_latch_after": 0,
+    "callback_countdown_after": 30583,
+    "parent_after": 17476,
+    "callback_after": 21845,
+    "radial_after": 26214,
+    "position_before": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "pulse_before": [
+      270554580,
+      270554674
+    ],
+    "pulse_after": [
+      270554580,
+      270554674
+    ],
+    "expected_call": 40977,
+    "expected_action": "motion",
+    "branch_classes": [
+      "bounds",
+      "lateral_high"
+    ],
+    "data_sha256": "a6610b2230f0efc0ad7ae988e0215ff94c2fe3a14951a29d28f76e060e12258c",
+    "code_sha256": "2d15232bb709d3bf9e1f3262a41a124ab1ef2f5cb61d7993b0999e1b6d84e447"
+  },
+  {
+    "name": "lateral_low",
+    "module": "scrut",
+    "entry": 3122,
+    "translation_integer_words": [
+      -65,
+      0,
+      0
+    ],
+    "selection_before": 0,
+    "selection_after": 0,
+    "control_latch_after": 0,
+    "callback_countdown_after": 30583,
+    "parent_after": 17476,
+    "callback_after": 21845,
+    "radial_after": 26214,
+    "position_before": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "pulse_before": [
+      270554580,
+      270554674
+    ],
+    "pulse_after": [
+      270554580,
+      270554674
+    ],
+    "expected_call": 40977,
+    "expected_action": "motion",
+    "branch_classes": [
+      "bounds",
+      "lateral_low"
+    ],
+    "data_sha256": "e17f021b62b9466b6ec310bebe1b3ddd2b49511cf5e8589170708cd7a0e82cab",
+    "code_sha256": "2d15232bb709d3bf9e1f3262a41a124ab1ef2f5cb61d7993b0999e1b6d84e447"
+  },
+  {
+    "name": "vertical_high",
+    "module": "scrut",
+    "entry": 3122,
+    "translation_integer_words": [
+      0,
+      65,
+      0
+    ],
+    "selection_before": 0,
+    "selection_after": 0,
+    "control_latch_after": 0,
+    "callback_countdown_after": 30583,
+    "parent_after": 17476,
+    "callback_after": 21845,
+    "radial_after": 26214,
+    "position_before": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "pulse_before": [
+      270554580,
+      270554674
+    ],
+    "pulse_after": [
+      270554580,
+      270554674
+    ],
+    "expected_call": 40977,
+    "expected_action": "motion",
+    "branch_classes": [
+      "bounds",
+      "vertical_high"
+    ],
+    "data_sha256": "4ec2b2173d4d60f5930a85712c868e346954c7169d0f744b01875ac54c38a769",
+    "code_sha256": "2d15232bb709d3bf9e1f3262a41a124ab1ef2f5cb61d7993b0999e1b6d84e447"
+  },
+  {
+    "name": "vertical_low",
+    "module": "scrut",
+    "entry": 3122,
+    "translation_integer_words": [
+      0,
+      -65,
+      0
+    ],
+    "selection_before": 0,
+    "selection_after": 0,
+    "control_latch_after": 0,
+    "callback_countdown_after": 30583,
+    "parent_after": 17476,
+    "callback_after": 21845,
+    "radial_after": 26214,
+    "position_before": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "pulse_before": [
+      270554580,
+      270554674
+    ],
+    "pulse_after": [
+      270554580,
+      270554674
+    ],
+    "expected_call": 40977,
+    "expected_action": "motion",
+    "branch_classes": [
+      "bounds",
+      "vertical_low"
+    ],
+    "data_sha256": "205964d7d6c17198a1e4c39c4ead13e138c4c734f500c688040e8a22245ccb94",
+    "code_sha256": "2d15232bb709d3bf9e1f3262a41a124ab1ef2f5cb61d7993b0999e1b6d84e447"
+  },
+  {
+    "name": "selection_requested",
+    "module": "scrut",
+    "entry": 3122,
+    "translation_integer_words": [
+      0,
+      0,
+      0
+    ],
+    "selection_before": 1,
+    "selection_after": 1,
+    "control_latch_after": 12288,
+    "callback_countdown_after": 30583,
+    "parent_after": 17476,
+    "callback_after": 21845,
+    "radial_after": 26214,
+    "position_before": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "pulse_before": [
+      270554580,
+      270554674
+    ],
+    "pulse_after": [
+      270554580,
+      270554674
+    ],
+    "expected_call": 51729,
+    "expected_action": "camera",
+    "branch_classes": [
+      "selection_busy",
+      "requested"
+    ],
+    "data_sha256": "08e3b8c1d05e00aad8abeda9cdc7a1feb0b65d421d15d407de8164465a614ca1",
+    "code_sha256": "08f105f367db3dbd0ed7479d9180025b40ae4ebe09e9f63d53f49eb953d1a4a4"
+  },
+  {
+    "name": "selection_complete",
+    "module": "scrut",
+    "entry": 3122,
+    "translation_integer_words": [
+      0,
+      0,
+      0
+    ],
+    "selection_before": 2,
+    "selection_after": 2,
+    "control_latch_after": 12288,
+    "callback_countdown_after": 30583,
+    "parent_after": 17476,
+    "callback_after": 21845,
+    "radial_after": 26214,
+    "position_before": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "position_after": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "pulse_before": [
+      270554580,
+      270554674
+    ],
+    "pulse_after": [
+      270554580,
+      270554674
+    ],
+    "expected_call": 51729,
+    "expected_action": "camera",
+    "branch_classes": [
+      "selection_busy",
+      "complete"
+    ],
+    "data_sha256": "15eb3c4e8396c6f41eba0bba15f96fa5a1572d1aeed1971fdfae559dbf4a6d61",
+    "code_sha256": "a115ccb8689f4b03e9a32c474a7ca86915b0163a240b8204d3fad7ca282ef8b1"
+  },
+  {
+    "name": "ready",
+    "module": "scrut",
+    "entry": 3122,
+    "translation_integer_words": [
+      0,
+      0,
+      0
+    ],
+    "selection_before": 0,
+    "selection_after": 1,
+    "control_latch_after": 12288,
+    "callback_countdown_after": 5,
+    "parent_after": 9640,
+    "callback_after": 2936,
+    "radial_after": 0,
+    "position_before": [
+      287454020,
+      1432778632,
+      2578103244
+    ],
+    "position_after": [
+      287440896,
+      1432748032,
+      2578055200
+    ],
+    "pulse_before": [
+      270554580,
+      270554674
+    ],
+    "pulse_after": [
+      270554610,
+      270554709
+    ],
+    "expected_call": 0,
+    "expected_action": "selected",
+    "branch_classes": [
+      "ready"
+    ],
+    "data_sha256": "f984d7007df35b5ee3677dede64a40933a7245ac08d9c61c6625dcfcd84b15d7",
+    "code_sha256": "08f105f367db3dbd0ed7479d9180025b40ae4ebe09e9f63d53f49eb953d1a4a4"
+  },
+  {
+    "name": "ready_wrapping_values",
+    "module": "scrut",
+    "entry": 3122,
+    "translation_integer_words": [
+      64,
+      -64,
+      128
+    ],
+    "selection_before": 0,
+    "selection_after": 1,
+    "control_latch_after": 12288,
+    "callback_countdown_after": 5,
+    "parent_after": 9640,
+    "callback_after": 2936,
+    "radial_after": 0,
+    "position_before": [
+      4294906420,
+      2147505784,
+      2147457724
+    ],
+    "position_after": [
+      4294901760,
+      2147483648,
+      2147418144
+    ],
+    "pulse_before": [
+      4294967280,
+      4294967281
+    ],
+    "pulse_after": [
+      14,
+      20
+    ],
+    "expected_call": 0,
+    "expected_action": "selected",
+    "branch_classes": [
+      "ready",
+      "boundaries",
+      "wrap"
+    ],
+    "data_sha256": "daa58ad756240a29a6cd747253da30715f0c2bdfb88989fa3609ab37c1d592e0",
+    "code_sha256": "08f105f367db3dbd0ed7479d9180025b40ae4ebe09e9f63d53f49eb953d1a4a4"
+  }
+]
