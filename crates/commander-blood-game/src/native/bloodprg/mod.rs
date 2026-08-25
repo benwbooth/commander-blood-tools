@@ -15,14 +15,17 @@ mod camera_navigation;
 mod choice_list;
 mod descript;
 mod descript_lookup;
+mod framebuffer_copy;
 mod menu_reveal;
 mod name_area_effect;
 mod navigation;
 mod navigation_status;
+mod navigation_wipe;
 mod numbers;
 mod presentation;
 mod presentation_hover;
 mod presentation_line;
+mod presentation_mode;
 mod presentation_word_choice;
 mod procedure;
 mod record;
@@ -47,7 +50,7 @@ pub use aboard::{
 pub use actor_slots::{
     NAV_ACTOR_SLOT_COUNT, NavActorBusyState, NavActorHandler, NavActorMouseState,
     NavActorSeekState, NavActorSlot, NavActorSlotBackend, NavActorSlotFlags,
-    NavActorSlotUpdateOutcome, update_nav_actor_slots,
+    NavActorSlotUpdateOutcome, deactivate_nav_actor_slots, update_nav_actor_slots,
 };
 pub use bridge_input::{
     STATUS_REGION_POLL_ATTEMPTS, PrimaryPointerSample, StatusRegionPollBackend,
@@ -126,6 +129,10 @@ pub use descript_lookup::{
     DescriptApplicationContext, DescriptApplicationError, DescriptApplicationResult,
     DescriptRecordApplication, lookup_and_apply_descript_record,
 };
+pub use framebuffer_copy::{
+    FramebufferCopyError, FramebufferKind, LOGICAL_FRAMEBUFFER_HEIGHT,
+    LOGICAL_FRAMEBUFFER_WIDTH, copy_work_surface_span,
+};
 pub use menu_reveal::{
     reveal_inline_menu_step, InlineMenuRevealError, InlineMenuRevealFrame,
     InlineMenuRevealGate, InlineMenuRevealOutcome, InlineMenuTextMetrics,
@@ -145,6 +152,10 @@ pub use navigation_status::{
     NavigationStatusRegion, NavigationStatusSource, NavigationStatusState, NavigationStatusText,
     update_navigation_status,
 };
+pub use navigation_wipe::{
+    NAVIGATION_WIPE_CENTER_X, NAVIGATION_WIPE_CENTER_Y, NavigationWipeEndpointError,
+    NavigationWipeSpan, build_navigation_wipe_spans,
+};
 pub use numbers::{
     append_decimal_i16, append_decimal_i32, packed_bcd_to_binary, parse_startup_audio_number,
     STARTUP_AUDIO_NUMBER_LENGTH,
@@ -160,6 +171,9 @@ pub use presentation_line::{
     PresentationLine, PresentationLineBackend, PresentationLineFlags, PresentationLineOutcome,
     PresentationLinePlayback, PresentationLineStepper, PresentationResourceId,
     update_presentation_line,
+};
+pub use presentation_mode::{
+    PresentationBridgeMode, update_presentation_bridge_mode,
 };
 pub use presentation_word_choice::{
     WORD_CHOICE_TRANSITION_STEPS, PresentationWordChoice, PresentationWordChoiceBackend,

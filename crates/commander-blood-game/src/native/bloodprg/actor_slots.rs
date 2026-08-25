@@ -152,6 +152,18 @@ pub enum NavActorSlotUpdateOutcome {
     Updated,
 }
 
+/// Deactivate every bridge actor slot while preserving authored slot data.
+///
+/// This translates the misnamed `matrix_table_clear_2a1b` at BLOODPRG routine
+/// offset `0x00963F`. Address `0x2A1B` is the same six-record actor-slot table
+/// consumed by `nav_actor_slot_update_loop`; the original clears only each
+/// record's flags word. No address or record padding enters the Rust model.
+pub fn deactivate_nav_actor_slots(slots: &mut [NavActorSlot; NAV_ACTOR_SLOT_COUNT]) {
+    for slot in slots {
+        slot.flags = NavActorSlotFlags::default();
+    }
+}
+
 /// Update all bridge actor slots and publish mouse/seek side effects.
 ///
 /// This translates `nav_actor_slot_update_loop` at BLOODPRG routine offset
@@ -200,6 +212,12 @@ mod tests {
     use super::*;
 
     const ORACLE_VECTOR_COUNT: usize = 20;
+    const DEACTIVATE_ORACLE_VECTOR_COUNT: usize = 5;
+    const QUARTER_TURN_ARC: u16 = 90;
+    const NATIVE_ACTIVE_FLAG: u16 = 1;
+    const NATIVE_LOCKED_FLAG: u16 = 2;
+    const NATIVE_CLEAR_MOUSE_FLAG: u16 = 4;
+    const NATIVE_AUTO_SEEK_FLAG: u16 = 8;
     const TARGET_ARCS: [u16; NAV_ACTOR_SLOT_COUNT] = [0, 90, 180, 270, 51, 0];
 
     #[derive(Deserialize)]
@@ -215,6 +233,12 @@ mod tests {
         mouse_pending_after: u8,
         slot_flags_after: [u8; NAV_ACTOR_SLOT_COUNT],
         call_sequence: Vec<String>,
+    }
+
+    #[derive(Deserialize)]
+    struct DeactivateOracle {
+        name: String,
+        first_words_before: [u16; NAV_ACTOR_SLOT_COUNT],
     }
 
     struct OracleBackend {
@@ -328,6 +352,48 @@ mod tests {
                 "{}",
                 vector.name,
             );
+        }
+    }
+
+    #[test]
+    fn deactivation_matches_every_original_first_word_clear_vector() {
+        let vectors: Vec<DeactivateOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_963f_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), DEACTIVATE_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let mut slots = std::array::from_fn(|index| NavActorSlot {
+                flags: flags_from_native_word(vector.first_words_before[index]),
+                target_arc: index as u16 * QUARTER_TURN_ARC,
+            });
+            let target_arcs = slots.map(|slot| slot.target_arc);
+
+            deactivate_nav_actor_slots(&mut slots);
+
+            assert!(
+                slots
+                    .iter()
+                    .all(|slot| slot.flags == NavActorSlotFlags::default()),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                slots.map(|slot| slot.target_arc),
+                target_arcs,
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    const fn flags_from_native_word(word: u16) -> NavActorSlotFlags {
+        NavActorSlotFlags {
+            active: word & NATIVE_ACTIVE_FLAG != 0,
+            locked: word & NATIVE_LOCKED_FLAG != 0,
+            clear_mouse_before_hit: word & NATIVE_CLEAR_MOUSE_FLAG != 0,
+            auto_seek: word & NATIVE_AUTO_SEEK_FLAG != 0,
         }
     }
 
