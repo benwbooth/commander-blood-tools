@@ -71,6 +71,13 @@ edges, whole-mesh rejection, face rotations and ties, width limits, and LIFO
 buckets. The decoder now preserves the primary vertices' authored screen and
 raster-depth fields rather than treating the entire vertex tail as scratch.
 
+The shared 1,200-star generator is translated for all three overlays. Twenty-four
+direct binary cases verify the complete random stream, logical camera cells,
+modular fixed-point projection, negative and zero depth, all viewport edges,
+visible-star order, shade selection, and palette lookup. The Rust output is a
+flat vector of typed screen-space stars; VGA plane records and port writes are
+eliminated presentation details.
+
 The typed format layer now decodes all three original XDB images: the shared
 primary mesh, 48 named behavior models, camera/root/node hierarchy, vertices,
 projection aliases, faces, 256-by-512 indexed texture atlas, display palette,
@@ -78,8 +85,8 @@ trigonometry table, and 500-entry raster reciprocal table. It also resolves
 method-table slots to semantic behavior kinds. File-relative relocation and
 object offsets are loader inputs only and become validated Rust indices.
 
-The next runtime layer ports the shared starfield over these owned resources,
-then connects the decoded alien scenes to wgpu.
+The next runtime layer connects the decoded alien scenes, primary mesh, model
+faces, and starfield to wgpu.
 
 Run the current interactive path with original assets:
 

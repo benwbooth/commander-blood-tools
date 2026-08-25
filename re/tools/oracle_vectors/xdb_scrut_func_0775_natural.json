@@ -4,11 +4,287 @@
     "module": "scrut",
     "entry": 1909,
     "seed": 0,
+    "camera_matrix": [
+      0,
+      256,
+      0,
+      0,
+      0,
+      256,
+      65536,
+      0,
+      0
+    ],
+    "camera_position": [
+      0,
+      0,
+      0
+    ],
+    "shade_table": [
+      13,
+      50,
+      87,
+      124,
+      161,
+      198,
+      235,
+      16,
+      53,
+      90,
+      127,
+      164,
+      201,
+      238,
+      19,
+      56,
+      93,
+      130,
+      167,
+      204,
+      241,
+      22,
+      59,
+      96,
+      133,
+      170,
+      207,
+      244,
+      25,
+      62,
+      99,
+      136,
+      173,
+      210,
+      247,
+      28,
+      65,
+      102,
+      139,
+      176,
+      213,
+      250,
+      31,
+      68,
+      105,
+      142,
+      179,
+      216,
+      253,
+      34,
+      71,
+      108,
+      145,
+      182,
+      219,
+      0,
+      37,
+      74,
+      111,
+      148,
+      185,
+      222,
+      3,
+      40,
+      77,
+      114,
+      151,
+      188,
+      225,
+      6,
+      43,
+      80,
+      117,
+      154,
+      191,
+      228,
+      9,
+      46,
+      83,
+      120,
+      157,
+      194,
+      231,
+      12,
+      49,
+      86,
+      123,
+      160,
+      197,
+      234,
+      15,
+      52,
+      89,
+      126,
+      163,
+      200,
+      237,
+      18,
+      55,
+      92,
+      129,
+      166,
+      203,
+      240,
+      21,
+      58,
+      95,
+      132,
+      169,
+      206,
+      243,
+      24,
+      61,
+      98,
+      135,
+      172,
+      209,
+      246,
+      27,
+      64,
+      101,
+      138,
+      175,
+      212,
+      249,
+      30,
+      67,
+      104,
+      141,
+      178,
+      215,
+      252,
+      33,
+      70,
+      107,
+      144,
+      181,
+      218,
+      255,
+      36,
+      73,
+      110,
+      147,
+      184,
+      221,
+      2,
+      39,
+      76,
+      113,
+      150,
+      187,
+      224,
+      5,
+      42,
+      79,
+      116,
+      153,
+      190,
+      227,
+      8,
+      45,
+      82,
+      119,
+      156,
+      193,
+      230,
+      11,
+      48,
+      85,
+      122,
+      159,
+      196,
+      233,
+      14,
+      51,
+      88,
+      125,
+      162,
+      199,
+      236,
+      17,
+      54,
+      91,
+      128,
+      165,
+      202,
+      239,
+      20,
+      57,
+      94,
+      131,
+      168,
+      205,
+      242,
+      23,
+      60,
+      97,
+      134,
+      171,
+      208,
+      245,
+      26,
+      63,
+      100,
+      137,
+      174,
+      211,
+      248,
+      29,
+      66,
+      103,
+      140,
+      177,
+      214,
+      251,
+      32,
+      69,
+      106,
+      143,
+      180,
+      217,
+      254,
+      35,
+      72,
+      109,
+      146,
+      183,
+      220,
+      1,
+      38,
+      75,
+      112,
+      149,
+      186,
+      223,
+      4,
+      41,
+      78,
+      115,
+      152,
+      189,
+      226,
+      7,
+      44,
+      81,
+      118,
+      155,
+      192,
+      229,
+      10,
+      47,
+      84,
+      121,
+      158,
+      195,
+      232
+    ],
     "camera_cells": [
       0,
       0,
       0
     ],
+    "random_after": 0,
+    "stars": [],
     "accepted_per_plane": [
       0,
       0,
@@ -45,10 +321,4951 @@
     "module": "scrut",
     "entry": 1909,
     "seed": 305419896,
+    "camera_matrix": [
+      0,
+      256,
+      0,
+      0,
+      0,
+      256,
+      65536,
+      0,
+      0
+    ],
+    "camera_position": [
+      0,
+      0,
+      0
+    ],
+    "shade_table": [
+      54,
+      91,
+      128,
+      165,
+      202,
+      239,
+      20,
+      57,
+      94,
+      131,
+      168,
+      205,
+      242,
+      23,
+      60,
+      97,
+      134,
+      171,
+      208,
+      245,
+      26,
+      63,
+      100,
+      137,
+      174,
+      211,
+      248,
+      29,
+      66,
+      103,
+      140,
+      177,
+      214,
+      251,
+      32,
+      69,
+      106,
+      143,
+      180,
+      217,
+      254,
+      35,
+      72,
+      109,
+      146,
+      183,
+      220,
+      1,
+      38,
+      75,
+      112,
+      149,
+      186,
+      223,
+      4,
+      41,
+      78,
+      115,
+      152,
+      189,
+      226,
+      7,
+      44,
+      81,
+      118,
+      155,
+      192,
+      229,
+      10,
+      47,
+      84,
+      121,
+      158,
+      195,
+      232,
+      13,
+      50,
+      87,
+      124,
+      161,
+      198,
+      235,
+      16,
+      53,
+      90,
+      127,
+      164,
+      201,
+      238,
+      19,
+      56,
+      93,
+      130,
+      167,
+      204,
+      241,
+      22,
+      59,
+      96,
+      133,
+      170,
+      207,
+      244,
+      25,
+      62,
+      99,
+      136,
+      173,
+      210,
+      247,
+      28,
+      65,
+      102,
+      139,
+      176,
+      213,
+      250,
+      31,
+      68,
+      105,
+      142,
+      179,
+      216,
+      253,
+      34,
+      71,
+      108,
+      145,
+      182,
+      219,
+      0,
+      37,
+      74,
+      111,
+      148,
+      185,
+      222,
+      3,
+      40,
+      77,
+      114,
+      151,
+      188,
+      225,
+      6,
+      43,
+      80,
+      117,
+      154,
+      191,
+      228,
+      9,
+      46,
+      83,
+      120,
+      157,
+      194,
+      231,
+      12,
+      49,
+      86,
+      123,
+      160,
+      197,
+      234,
+      15,
+      52,
+      89,
+      126,
+      163,
+      200,
+      237,
+      18,
+      55,
+      92,
+      129,
+      166,
+      203,
+      240,
+      21,
+      58,
+      95,
+      132,
+      169,
+      206,
+      243,
+      24,
+      61,
+      98,
+      135,
+      172,
+      209,
+      246,
+      27,
+      64,
+      101,
+      138,
+      175,
+      212,
+      249,
+      30,
+      67,
+      104,
+      141,
+      178,
+      215,
+      252,
+      33,
+      70,
+      107,
+      144,
+      181,
+      218,
+      255,
+      36,
+      73,
+      110,
+      147,
+      184,
+      221,
+      2,
+      39,
+      76,
+      113,
+      150,
+      187,
+      224,
+      5,
+      42,
+      79,
+      116,
+      153,
+      190,
+      227,
+      8,
+      45,
+      82,
+      119,
+      156,
+      193,
+      230,
+      11,
+      48,
+      85,
+      122,
+      159,
+      196,
+      233,
+      14,
+      51,
+      88,
+      125,
+      162,
+      199,
+      236,
+      17
+    ],
     "camera_cells": [
       0,
       0,
       0
+    ],
+    "random_after": 3042335856,
+    "stars": [
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 145,
+        "palette_index": 43
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 188,
+        "palette_index": 98
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 51,
+        "palette_index": 149
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 121,
+        "palette_index": 179
+      },
+      {
+        "screen": [
+          160,
+          97
+        ],
+        "shade": 31,
+        "palette_index": 177
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 177,
+        "palette_index": 203
+      },
+      {
+        "screen": [
+          162,
+          100
+        ],
+        "shade": 115,
+        "palette_index": 213
+      },
+      {
+        "screen": [
+          159,
+          99
+        ],
+        "shade": 183,
+        "palette_index": 169
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 221,
+        "palette_index": 39
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 247,
+        "palette_index": 233
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 111,
+        "palette_index": 65
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 223,
+        "palette_index": 113
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 120,
+        "palette_index": 142
+      },
+      {
+        "screen": [
+          157,
+          100
+        ],
+        "shade": 50,
+        "palette_index": 112
+      },
+      {
+        "screen": [
+          162,
+          98
+        ],
+        "shade": 104,
+        "palette_index": 62
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 226,
+        "palette_index": 224
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 235,
+        "palette_index": 45
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 198,
+        "palette_index": 212
+      },
+      {
+        "screen": [
+          167,
+          97
+        ],
+        "shade": 31,
+        "palette_index": 177
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 92,
+        "palette_index": 130
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 186,
+        "palette_index": 24
+      },
+      {
+        "screen": [
+          160,
+          102
+        ],
+        "shade": 80,
+        "palette_index": 198
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 178,
+        "palette_index": 240
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 134,
+        "palette_index": 148
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 178,
+        "palette_index": 240
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 118,
+        "palette_index": 68
+      },
+      {
+        "screen": [
+          150,
+          86
+        ],
+        "shade": 14,
+        "palette_index": 60
+      },
+      {
+        "screen": [
+          162,
+          99
+        ],
+        "shade": 117,
+        "palette_index": 31
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 237,
+        "palette_index": 119
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 235,
+        "palette_index": 45
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 129,
+        "palette_index": 219
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 250,
+        "palette_index": 88
+      },
+      {
+        "screen": [
+          167,
+          112
+        ],
+        "shade": 19,
+        "palette_index": 245
+      },
+      {
+        "screen": [
+          128,
+          128
+        ],
+        "shade": 6,
+        "palette_index": 20
+      },
+      {
+        "screen": [
+          163,
+          101
+        ],
+        "shade": 34,
+        "palette_index": 32
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 172,
+        "palette_index": 18
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 240,
+        "palette_index": 230
+      },
+      {
+        "screen": [
+          160,
+          98
+        ],
+        "shade": 89,
+        "palette_index": 19
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 195,
+        "palette_index": 101
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 251,
+        "palette_index": 125
+      },
+      {
+        "screen": [
+          157,
+          101
+        ],
+        "shade": 33,
+        "palette_index": 251
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 183,
+        "palette_index": 169
+      },
+      {
+        "screen": [
+          161,
+          101
+        ],
+        "shade": 111,
+        "palette_index": 65
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 240,
+        "palette_index": 230
+      },
+      {
+        "screen": [
+          158,
+          100
+        ],
+        "shade": 117,
+        "palette_index": 31
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 203,
+        "palette_index": 141
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 235,
+        "palette_index": 45
+      },
+      {
+        "screen": [
+          161,
+          102
+        ],
+        "shade": 66,
+        "palette_index": 192
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 149,
+        "palette_index": 191
+      },
+      {
+        "screen": [
+          155,
+          105
+        ],
+        "shade": 43,
+        "palette_index": 109
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 114,
+        "palette_index": 176
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 126,
+        "palette_index": 108
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 245,
+        "palette_index": 159
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 194,
+        "palette_index": 64
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 254,
+        "palette_index": 236
+      },
+      {
+        "screen": [
+          158,
+          102
+        ],
+        "shade": 46,
+        "palette_index": 220
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 190,
+        "palette_index": 172
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 34,
+        "palette_index": 32
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 124,
+        "palette_index": 34
+      },
+      {
+        "screen": [
+          182,
+          112
+        ],
+        "shade": 6,
+        "palette_index": 20
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 171,
+        "palette_index": 237
+      },
+      {
+        "screen": [
+          162,
+          102
+        ],
+        "shade": 88,
+        "palette_index": 238
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 193,
+        "palette_index": 27
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 174,
+        "palette_index": 92
+      },
+      {
+        "screen": [
+          158,
+          100
+        ],
+        "shade": 93,
+        "palette_index": 167
+      },
+      {
+        "screen": [
+          158,
+          100
+        ],
+        "shade": 55,
+        "palette_index": 41
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 187,
+        "palette_index": 61
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 135,
+        "palette_index": 185
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 240,
+        "palette_index": 230
+      },
+      {
+        "screen": [
+          145,
+          110
+        ],
+        "shade": 15,
+        "palette_index": 97
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 204,
+        "palette_index": 178
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 255,
+        "palette_index": 17
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 67,
+        "palette_index": 229
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 151,
+        "palette_index": 9
+      },
+      {
+        "screen": [
+          157,
+          101
+        ],
+        "shade": 64,
+        "palette_index": 118
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 111,
+        "palette_index": 65
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 146,
+        "palette_index": 80
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 240,
+        "palette_index": 230
+      },
+      {
+        "screen": [
+          158,
+          96
+        ],
+        "shade": 54,
+        "palette_index": 4
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 236,
+        "palette_index": 82
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 223,
+        "palette_index": 113
+      },
+      {
+        "screen": [
+          161,
+          102
+        ],
+        "shade": 126,
+        "palette_index": 108
+      },
+      {
+        "screen": [
+          155,
+          105
+        ],
+        "shade": 35,
+        "palette_index": 69
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 254,
+        "palette_index": 236
+      },
+      {
+        "screen": [
+          161,
+          99
+        ],
+        "shade": 162,
+        "palette_index": 160
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 222,
+        "palette_index": 76
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 87,
+        "palette_index": 201
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 174,
+        "palette_index": 92
+      },
+      {
+        "screen": [
+          191,
+          111
+        ],
+        "shade": 7,
+        "palette_index": 57
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 123,
+        "palette_index": 253
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 94,
+        "palette_index": 204
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 248,
+        "palette_index": 14
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 190,
+        "palette_index": 172
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 126,
+        "palette_index": 108
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 253,
+        "palette_index": 199
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 245,
+        "palette_index": 159
+      },
+      {
+        "screen": [
+          169,
+          69
+        ],
+        "shade": 7,
+        "palette_index": 57
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 201,
+        "palette_index": 67
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 74,
+        "palette_index": 232
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 180,
+        "palette_index": 58
+      },
+      {
+        "screen": [
+          157,
+          96
+        ],
+        "shade": 47,
+        "palette_index": 1
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 165,
+        "palette_index": 15
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 106,
+        "palette_index": 136
+      },
+      {
+        "screen": [
+          157,
+          102
+        ],
+        "shade": 75,
+        "palette_index": 13
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 230,
+        "palette_index": 116
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 242,
+        "palette_index": 48
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 167,
+        "palette_index": 89
+      },
+      {
+        "screen": [
+          159,
+          99
+        ],
+        "shade": 96,
+        "palette_index": 22
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 211,
+        "palette_index": 181
+      },
+      {
+        "screen": [
+          157,
+          98
+        ],
+        "shade": 60,
+        "palette_index": 226
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 98,
+        "palette_index": 96
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 214,
+        "palette_index": 36
+      },
+      {
+        "screen": [
+          163,
+          94
+        ],
+        "shade": 36,
+        "palette_index": 106
+      },
+      {
+        "screen": [
+          161,
+          102
+        ],
+        "shade": 91,
+        "palette_index": 93
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 165,
+        "palette_index": 15
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 199,
+        "palette_index": 249
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 174,
+        "palette_index": 92
+      },
+      {
+        "screen": [
+          163,
+          100
+        ],
+        "shade": 76,
+        "palette_index": 50
+      },
+      {
+        "screen": [
+          162,
+          102
+        ],
+        "shade": 93,
+        "palette_index": 167
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 154,
+        "palette_index": 120
+      },
+      {
+        "screen": [
+          158,
+          102
+        ],
+        "shade": 31,
+        "palette_index": 177
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 187,
+        "palette_index": 61
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 69,
+        "palette_index": 47
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 120,
+        "palette_index": 142
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 140,
+        "palette_index": 114
+      },
+      {
+        "screen": [
+          161,
+          99
+        ],
+        "shade": 144,
+        "palette_index": 6
+      },
+      {
+        "screen": [
+          161,
+          94
+        ],
+        "shade": 26,
+        "palette_index": 248
+      },
+      {
+        "screen": [
+          159,
+          99
+        ],
+        "shade": 49,
+        "palette_index": 75
+      },
+      {
+        "screen": [
+          161,
+          99
+        ],
+        "shade": 139,
+        "palette_index": 77
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 233,
+        "palette_index": 227
+      },
+      {
+        "screen": [
+          163,
+          100
+        ],
+        "shade": 24,
+        "palette_index": 174
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 201,
+        "palette_index": 67
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 148,
+        "palette_index": 154
+      },
+      {
+        "screen": [
+          163,
+          103
+        ],
+        "shade": 72,
+        "palette_index": 158
+      },
+      {
+        "screen": [
+          163,
+          102
+        ],
+        "shade": 42,
+        "palette_index": 72
+      },
+      {
+        "screen": [
+          161,
+          98
+        ],
+        "shade": 95,
+        "palette_index": 241
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 161,
+        "palette_index": 123
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 208,
+        "palette_index": 70
+      },
+      {
+        "screen": [
+          158,
+          102
+        ],
+        "shade": 83,
+        "palette_index": 53
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 206,
+        "palette_index": 252
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 168,
+        "palette_index": 126
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 117,
+        "palette_index": 31
+      },
+      {
+        "screen": [
+          159,
+          99
+        ],
+        "shade": 97,
+        "palette_index": 59
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 61,
+        "palette_index": 7
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 236,
+        "palette_index": 82
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 211,
+        "palette_index": 181
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 250,
+        "palette_index": 88
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 98,
+        "palette_index": 96
+      },
+      {
+        "screen": [
+          166,
+          80
+        ],
+        "shade": 6,
+        "palette_index": 20
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 213,
+        "palette_index": 255
+      },
+      {
+        "screen": [
+          166,
+          102
+        ],
+        "shade": 36,
+        "palette_index": 106
+      },
+      {
+        "screen": [
+          161,
+          102
+        ],
+        "shade": 88,
+        "palette_index": 238
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 165,
+        "palette_index": 15
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 193,
+        "palette_index": 27
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 76,
+        "palette_index": 50
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 253,
+        "palette_index": 199
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 154,
+        "palette_index": 120
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 55,
+        "palette_index": 41
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 69,
+        "palette_index": 47
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 140,
+        "palette_index": 114
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 241,
+        "palette_index": 11
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 26,
+        "palette_index": 248
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 140,
+        "palette_index": 114
+      },
+      {
+        "screen": [
+          162,
+          91
+        ],
+        "shade": 25,
+        "palette_index": 211
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 201,
+        "palette_index": 67
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 136,
+        "palette_index": 222
+      },
+      {
+        "screen": [
+          162,
+          99
+        ],
+        "shade": 71,
+        "palette_index": 121
+      },
+      {
+        "screen": [
+          161,
+          103
+        ],
+        "shade": 72,
+        "palette_index": 158
+      },
+      {
+        "screen": [
+          164,
+          103
+        ],
+        "shade": 34,
+        "palette_index": 32
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 143,
+        "palette_index": 225
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 161,
+        "palette_index": 123
+      },
+      {
+        "screen": [
+          158,
+          101
+        ],
+        "shade": 48,
+        "palette_index": 38
+      },
+      {
+        "screen": [
+          158,
+          102
+        ],
+        "shade": 83,
+        "palette_index": 53
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 174,
+        "palette_index": 92
+      },
+      {
+        "screen": [
+          159,
+          99
+        ],
+        "shade": 168,
+        "palette_index": 126
+      },
+      {
+        "screen": [
+          161,
+          99
+        ],
+        "shade": 93,
+        "palette_index": 167
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 245,
+        "palette_index": 159
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 97,
+        "palette_index": 59
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 188,
+        "palette_index": 98
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 211,
+        "palette_index": 181
+      },
+      {
+        "screen": [
+          159,
+          99
+        ],
+        "shade": 121,
+        "palette_index": 179
+      },
+      {
+        "screen": [
+          160,
+          98
+        ],
+        "shade": 97,
+        "palette_index": 59
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 212,
+        "palette_index": 218
+      },
+      {
+        "screen": [
+          162,
+          94
+        ],
+        "shade": 36,
+        "palette_index": 106
+      },
+      {
+        "screen": [
+          161,
+          102
+        ],
+        "shade": 99,
+        "palette_index": 133
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 166,
+        "palette_index": 52
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 165,
+        "palette_index": 15
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 215,
+        "palette_index": 73
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 78,
+        "palette_index": 124
+      },
+      {
+        "screen": [
+          163,
+          100
+        ],
+        "shade": 76,
+        "palette_index": 50
+      },
+      {
+        "screen": [
+          161,
+          101
+        ],
+        "shade": 157,
+        "palette_index": 231
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 154,
+        "palette_index": 120
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 95,
+        "palette_index": 241
+      },
+      {
+        "screen": [
+          160,
+          98
+        ],
+        "shade": 59,
+        "palette_index": 189
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 69,
+        "palette_index": 47
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 208,
+        "palette_index": 70
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 140,
+        "palette_index": 114
+      },
+      {
+        "screen": [
+          161,
+          96
+        ],
+        "shade": 26,
+        "palette_index": 248
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 116,
+        "palette_index": 250
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 233,
+        "palette_index": 227
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 140,
+        "palette_index": 114
+      },
+      {
+        "screen": [
+          162,
+          100
+        ],
+        "shade": 26,
+        "palette_index": 248
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 201,
+        "palette_index": 67
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 142,
+        "palette_index": 188
+      },
+      {
+        "screen": [
+          162,
+          99
+        ],
+        "shade": 95,
+        "palette_index": 241
+      },
+      {
+        "screen": [
+          160,
+          103
+        ],
+        "shade": 72,
+        "palette_index": 158
+      },
+      {
+        "screen": [
+          164,
+          103
+        ],
+        "shade": 30,
+        "palette_index": 140
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 191,
+        "palette_index": 209
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 161,
+        "palette_index": 123
+      },
+      {
+        "screen": [
+          158,
+          102
+        ],
+        "shade": 83,
+        "palette_index": 53
+      },
+      {
+        "screen": [
+          160,
+          98
+        ],
+        "shade": 50,
+        "palette_index": 112
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 168,
+        "palette_index": 126
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 253,
+        "palette_index": 199
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 97,
+        "palette_index": 59
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 236,
+        "palette_index": 82
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 211,
+        "palette_index": 181
+      },
+      {
+        "screen": [
+          189,
+          88
+        ],
+        "shade": 5,
+        "palette_index": 239
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 100,
+        "palette_index": 170
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 202,
+        "palette_index": 104
+      },
+      {
+        "screen": [
+          158,
+          103
+        ],
+        "shade": 36,
+        "palette_index": 106
+      },
+      {
+        "screen": [
+          162,
+          102
+        ],
+        "shade": 77,
+        "palette_index": 87
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 142,
+        "palette_index": 188
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 165,
+        "palette_index": 15
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 155,
+        "palette_index": 157
+      },
+      {
+        "screen": [
+          158,
+          99
+        ],
+        "shade": 30,
+        "palette_index": 140
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 76,
+        "palette_index": 50
+      },
+      {
+        "screen": [
+          162,
+          98
+        ],
+        "shade": 71,
+        "palette_index": 121
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 154,
+        "palette_index": 120
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 143,
+        "palette_index": 225
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 69,
+        "palette_index": 47
+      },
+      {
+        "screen": [
+          162,
+          99
+        ],
+        "shade": 48,
+        "palette_index": 38
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 248,
+        "palette_index": 14
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 140,
+        "palette_index": 114
+      },
+      {
+        "screen": [
+          161,
+          101
+        ],
+        "shade": 25,
+        "palette_index": 211
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 243,
+        "palette_index": 85
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 137,
+        "palette_index": 3
+      },
+      {
+        "screen": [
+          162,
+          94
+        ],
+        "shade": 35,
+        "palette_index": 69
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 201,
+        "palette_index": 67
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 162,
+        "palette_index": 160
+      },
+      {
+        "screen": [
+          159,
+          97
+        ],
+        "shade": 72,
+        "palette_index": 158
+      },
+      {
+        "screen": [
+          161,
+          101
+        ],
+        "shade": 85,
+        "palette_index": 127
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 239,
+        "palette_index": 193
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 161,
+        "palette_index": 123
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 171,
+        "palette_index": 237
+      },
+      {
+        "screen": [
+          158,
+          100
+        ],
+        "shade": 83,
+        "palette_index": 53
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 103,
+        "palette_index": 25
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 168,
+        "palette_index": 126
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 225,
+        "palette_index": 187
+      },
+      {
+        "screen": [
+          159,
+          98
+        ],
+        "shade": 97,
+        "palette_index": 59
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 212,
+        "palette_index": 218
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 119,
+        "palette_index": 105
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 88,
+        "palette_index": 238
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 239,
+        "palette_index": 193
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 194,
+        "palette_index": 64
+      },
+      {
+        "screen": [
+          154,
+          105
+        ],
+        "shade": 36,
+        "palette_index": 106
+      },
+      {
+        "screen": [
+          163,
+          104
+        ],
+        "shade": 47,
+        "palette_index": 1
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 165,
+        "palette_index": 15
+      },
+      {
+        "screen": [
+          163,
+          100
+        ],
+        "shade": 76,
+        "palette_index": 50
+      },
+      {
+        "screen": [
+          161,
+          99
+        ],
+        "shade": 187,
+        "palette_index": 61
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 154,
+        "palette_index": 120
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 135,
+        "palette_index": 185
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 69,
+        "palette_index": 47
+      },
+      {
+        "screen": [
+          162,
+          98
+        ],
+        "shade": 32,
+        "palette_index": 214
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 120,
+        "palette_index": 142
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 139,
+        "palette_index": 77
+      },
+      {
+        "screen": [
+          160,
+          105
+        ],
+        "shade": 39,
+        "palette_index": 217
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 182,
+        "palette_index": 132
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 110,
+        "palette_index": 28
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 209,
+        "palette_index": 107
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 221,
+        "palette_index": 39
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 201,
+        "palette_index": 67
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 104,
+        "palette_index": 62
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 135,
+        "palette_index": 185
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 225,
+        "palette_index": 187
+      },
+      {
+        "screen": [
+          162,
+          99
+        ],
+        "shade": 15,
+        "palette_index": 97
+      },
+      {
+        "screen": [
+          163,
+          99
+        ],
+        "shade": 72,
+        "palette_index": 158
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 162,
+        "palette_index": 160
+      },
+      {
+        "screen": [
+          158,
+          99
+        ],
+        "shade": 87,
+        "palette_index": 201
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 100,
+        "palette_index": 170
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 178,
+        "palette_index": 240
+      },
+      {
+        "screen": [
+          159,
+          99
+        ],
+        "shade": 192,
+        "palette_index": 246
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 201,
+        "palette_index": 67
+      },
+      {
+        "screen": [
+          161,
+          101
+        ],
+        "shade": 117,
+        "palette_index": 31
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 236,
+        "palette_index": 82
+      },
+      {
+        "screen": [
+          163,
+          101
+        ],
+        "shade": 54,
+        "palette_index": 4
+      },
+      {
+        "screen": [
+          159,
+          99
+        ],
+        "shade": 87,
+        "palette_index": 201
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 192,
+        "palette_index": 246
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 220,
+        "palette_index": 2
+      },
+      {
+        "screen": [
+          159,
+          97
+        ],
+        "shade": 54,
+        "palette_index": 4
+      },
+      {
+        "screen": [
+          157,
+          96
+        ],
+        "shade": 37,
+        "palette_index": 143
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 133,
+        "palette_index": 111
+      },
+      {
+        "screen": [
+          175,
+          117
+        ],
+        "shade": 12,
+        "palette_index": 242
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 222,
+        "palette_index": 76
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 152,
+        "palette_index": 46
+      },
+      {
+        "screen": [
+          160,
+          97
+        ],
+        "shade": 65,
+        "palette_index": 155
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 125,
+        "palette_index": 71
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 148,
+        "palette_index": 154
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 139,
+        "palette_index": 77
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 251,
+        "palette_index": 125
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 41,
+        "palette_index": 35
+      },
+      {
+        "screen": [
+          166,
+          97
+        ],
+        "shade": 24,
+        "palette_index": 174
+      },
+      {
+        "screen": [
+          189,
+          164
+        ],
+        "shade": 1,
+        "palette_index": 91
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 215,
+        "palette_index": 73
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 149,
+        "palette_index": 191
+      },
+      {
+        "screen": [
+          160,
+          96
+        ],
+        "shade": 44,
+        "palette_index": 146
+      },
+      {
+        "screen": [
+          161,
+          96
+        ],
+        "shade": 51,
+        "palette_index": 149
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 197,
+        "palette_index": 175
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 204,
+        "palette_index": 178
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 225,
+        "palette_index": 187
+      },
+      {
+        "screen": [
+          160,
+          104
+        ],
+        "shade": 39,
+        "palette_index": 217
+      },
+      {
+        "screen": [
+          161,
+          101
+        ],
+        "shade": 70,
+        "palette_index": 84
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 141,
+        "palette_index": 151
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 176,
+        "palette_index": 166
+      },
+      {
+        "screen": [
+          152,
+          105
+        ],
+        "shade": 29,
+        "palette_index": 103
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 98,
+        "palette_index": 96
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 114,
+        "palette_index": 176
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 213,
+        "palette_index": 255
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 245,
+        "palette_index": 159
+      },
+      {
+        "screen": [
+          161,
+          98
+        ],
+        "shade": 88,
+        "palette_index": 238
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 194,
+        "palette_index": 64
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 44,
+        "palette_index": 146
+      },
+      {
+        "screen": [
+          164,
+          97
+        ],
+        "shade": 47,
+        "palette_index": 1
+      },
+      {
+        "screen": [
+          141,
+          116
+        ],
+        "shade": 12,
+        "palette_index": 242
+      },
+      {
+        "screen": [
+          161,
+          101
+        ],
+        "shade": 198,
+        "palette_index": 212
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 242,
+        "palette_index": 48
+      },
+      {
+        "screen": [
+          162,
+          105
+        ],
+        "shade": 29,
+        "palette_index": 103
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 139,
+        "palette_index": 77
+      },
+      {
+        "screen": [
+          159,
+          90
+        ],
+        "shade": 24,
+        "palette_index": 174
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 135,
+        "palette_index": 185
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 149,
+        "palette_index": 191
+      },
+      {
+        "screen": [
+          165,
+          100
+        ],
+        "shade": 32,
+        "palette_index": 214
+      },
+      {
+        "screen": [
+          160,
+          103
+        ],
+        "shade": 43,
+        "palette_index": 109
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 179,
+        "palette_index": 21
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 207,
+        "palette_index": 33
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 156,
+        "palette_index": 194
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 104,
+        "palette_index": 62
+      },
+      {
+        "screen": [
+          160,
+          97
+        ],
+        "shade": 57,
+        "palette_index": 115
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 225,
+        "palette_index": 187
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 63,
+        "palette_index": 81
+      },
+      {
+        "screen": [
+          160,
+          95
+        ],
+        "shade": 8,
+        "palette_index": 94
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 255,
+        "palette_index": 17
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 98,
+        "palette_index": 96
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 213,
+        "palette_index": 255
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 162,
+        "palette_index": 160
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 86,
+        "palette_index": 164
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 103,
+        "palette_index": 25
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 235,
+        "palette_index": 45
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 173,
+        "palette_index": 55
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 207,
+        "palette_index": 33
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 92,
+        "palette_index": 130
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 186,
+        "palette_index": 24
+      },
+      {
+        "screen": [
+          159,
+          98
+        ],
+        "shade": 80,
+        "palette_index": 198
+      },
+      {
+        "screen": [
+          159,
+          99
+        ],
+        "shade": 133,
+        "palette_index": 111
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 177,
+        "palette_index": 203
+      },
+      {
+        "screen": [
+          146,
+          100
+        ],
+        "shade": 12,
+        "palette_index": 242
+      },
+      {
+        "screen": [
+          161,
+          99
+        ],
+        "shade": 116,
+        "palette_index": 250
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 105,
+        "palette_index": 99
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 234,
+        "palette_index": 8
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 227,
+        "palette_index": 5
+      },
+      {
+        "screen": [
+          161,
+          101
+        ],
+        "shade": 140,
+        "palette_index": 114
+      },
+      {
+        "screen": [
+          161,
+          104
+        ],
+        "shade": 26,
+        "palette_index": 248
+      },
+      {
+        "screen": [
+          160,
+          103
+        ],
+        "shade": 83,
+        "palette_index": 53
+      },
+      {
+        "screen": [
+          161,
+          101
+        ],
+        "shade": 80,
+        "palette_index": 198
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 183,
+        "palette_index": 169
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 142,
+        "palette_index": 188
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 178,
+        "palette_index": 240
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 128,
+        "palette_index": 182
+      },
+      {
+        "screen": [
+          160,
+          105
+        ],
+        "shade": 30,
+        "palette_index": 140
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 118,
+        "palette_index": 68
+      },
+      {
+        "screen": [
+          152,
+          110
+        ],
+        "shade": 17,
+        "palette_index": 171
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 237,
+        "palette_index": 119
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 252,
+        "palette_index": 162
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 225,
+        "palette_index": 187
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 129,
+        "palette_index": 219
+      },
+      {
+        "screen": [
+          155,
+          94
+        ],
+        "shade": 19,
+        "palette_index": 245
+      },
+      {
+        "screen": [
+          220,
+          50
+        ],
+        "shade": 2,
+        "palette_index": 128
+      },
+      {
+        "screen": [
+          161,
+          99
+        ],
+        "shade": 100,
+        "palette_index": 170
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 202,
+        "palette_index": 104
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 202,
+        "palette_index": 104
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 77,
+        "palette_index": 87
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 195,
+        "palette_index": 101
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 77,
+        "palette_index": 87
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 155,
+        "palette_index": 157
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 156,
+        "palette_index": 194
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 71,
+        "palette_index": 121
+      },
+      {
+        "screen": [
+          161,
+          102
+        ],
+        "shade": 64,
+        "palette_index": 118
+      },
+      {
+        "screen": [
+          160,
+          102
+        ],
+        "shade": 58,
+        "palette_index": 152
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 143,
+        "palette_index": 225
+      },
+      {
+        "screen": [
+          159,
+          99
+        ],
+        "shade": 146,
+        "palette_index": 80
+      },
+      {
+        "screen": [
+          162,
+          97
+        ],
+        "shade": 48,
+        "palette_index": 38
+      },
+      {
+        "screen": [
+          156,
+          99
+        ],
+        "shade": 53,
+        "palette_index": 223
+      },
+      {
+        "screen": [
+          147,
+          113
+        ],
+        "shade": 12,
+        "palette_index": 242
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 245,
+        "palette_index": 159
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 216,
+        "palette_index": 110
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 137,
+        "palette_index": 3
+      },
+      {
+        "screen": [
+          156,
+          97
+        ],
+        "shade": 36,
+        "palette_index": 106
+      },
+      {
+        "screen": [
+          162,
+          95
+        ],
+        "shade": 43,
+        "palette_index": 109
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 164,
+        "palette_index": 234
+      },
+      {
+        "screen": [
+          163,
+          97
+        ],
+        "shade": 26,
+        "palette_index": 248
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 224,
+        "palette_index": 150
+      },
+      {
+        "screen": [
+          160,
+          102
+        ],
+        "shade": 74,
+        "palette_index": 232
+      },
+      {
+        "screen": [
+          159,
+          99
+        ],
+        "shade": 166,
+        "palette_index": 52
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 141,
+        "palette_index": 151
+      },
+      {
+        "screen": [
+          158,
+          99
+        ],
+        "shade": 78,
+        "palette_index": 124
+      },
+      {
+        "screen": [
+          168,
+          98
+        ],
+        "shade": 29,
+        "palette_index": 103
+      },
+      {
+        "screen": [
+          160,
+          98
+        ],
+        "shade": 104,
+        "palette_index": 62
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 157,
+        "palette_index": 231
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 225,
+        "palette_index": 187
+      },
+      {
+        "screen": [
+          160,
+          103
+        ],
+        "shade": 59,
+        "palette_index": 189
+      },
+      {
+        "screen": [
+          158,
+          100
+        ],
+        "shade": 100,
+        "palette_index": 170
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 201,
+        "palette_index": 67
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 246,
+        "palette_index": 196
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 87,
+        "palette_index": 201
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 223,
+        "palette_index": 113
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 175,
+        "palette_index": 129
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 95,
+        "palette_index": 241
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 209,
+        "palette_index": 107
+      },
+      {
+        "screen": [
+          156,
+          97
+        ],
+        "shade": 50,
+        "palette_index": 112
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 133,
+        "palette_index": 111
+      },
+      {
+        "screen": [
+          149,
+          116
+        ],
+        "shade": 12,
+        "palette_index": 242
+      },
+      {
+        "screen": [
+          161,
+          101
+        ],
+        "shade": 106,
+        "palette_index": 136
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 238,
+        "palette_index": 156
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 230,
+        "palette_index": 116
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 138,
+        "palette_index": 40
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 121,
+        "palette_index": 179
+      },
+      {
+        "screen": [
+          158,
+          100
+        ],
+        "shade": 39,
+        "palette_index": 217
+      },
+      {
+        "screen": [
+          162,
+          100
+        ],
+        "shade": 60,
+        "palette_index": 226
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 210,
+        "palette_index": 144
+      },
+      {
+        "screen": [
+          161,
+          99
+        ],
+        "shade": 145,
+        "palette_index": 43
+      },
+      {
+        "screen": [
+          158,
+          100
+        ],
+        "shade": 109,
+        "palette_index": 247
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 51,
+        "palette_index": 149
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 219,
+        "palette_index": 221
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 143,
+        "palette_index": 225
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 226,
+        "palette_index": 224
+      },
+      {
+        "screen": [
+          165,
+          102
+        ],
+        "shade": 48,
+        "palette_index": 38
+      },
+      {
+        "screen": [
+          156,
+          95
+        ],
+        "shade": 31,
+        "palette_index": 177
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 244,
+        "palette_index": 122
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 144,
+        "palette_index": 6
+      },
+      {
+        "screen": [
+          163,
+          97
+        ],
+        "shade": 54,
+        "palette_index": 4
+      },
+      {
+        "screen": [
+          158,
+          104
+        ],
+        "shade": 49,
+        "palette_index": 75
+      },
+      {
+        "screen": [
+          161,
+          99
+        ],
+        "shade": 219,
+        "palette_index": 221
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 233,
+        "palette_index": 227
+      },
+      {
+        "screen": [
+          161,
+          97
+        ],
+        "shade": 61,
+        "palette_index": 7
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 129,
+        "palette_index": 219
+      },
+      {
+        "screen": [
+          158,
+          109
+        ],
+        "shade": 20,
+        "palette_index": 26
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 248,
+        "palette_index": 14
+      },
+      {
+        "screen": [
+          162,
+          98
+        ],
+        "shade": 78,
+        "palette_index": 124
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 157,
+        "palette_index": 231
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 206,
+        "palette_index": 252
+      },
+      {
+        "screen": [
+          164,
+          97
+        ],
+        "shade": 59,
+        "palette_index": 189
+      },
+      {
+        "screen": [
+          160,
+          97
+        ],
+        "shade": 61,
+        "palette_index": 7
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 215,
+        "palette_index": 73
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 249,
+        "palette_index": 51
+      },
+      {
+        "screen": [
+          107,
+          67
+        ],
+        "shade": 3,
+        "palette_index": 165
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 53,
+        "palette_index": 223
+      },
+      {
+        "screen": [
+          167,
+          103
+        ],
+        "shade": 20,
+        "palette_index": 26
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 216,
+        "palette_index": 110
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 174,
+        "palette_index": 92
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 205,
+        "palette_index": 215
+      },
+      {
+        "screen": [
+          158,
+          99
+        ],
+        "shade": 93,
+        "palette_index": 167
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 55,
+        "palette_index": 41
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 187,
+        "palette_index": 61
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 60,
+        "palette_index": 226
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 135,
+        "palette_index": 185
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 240,
+        "palette_index": 230
+      },
+      {
+        "screen": [
+          153,
+          104
+        ],
+        "shade": 32,
+        "palette_index": 214
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 181,
+        "palette_index": 95
+      },
+      {
+        "screen": [
+          161,
+          98
+        ],
+        "shade": 107,
+        "palette_index": 173
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 231,
+        "palette_index": 153
+      },
+      {
+        "screen": [
+          160,
+          98
+        ],
+        "shade": 23,
+        "palette_index": 137
+      },
+      {
+        "screen": [
+          160,
+          102
+        ],
+        "shade": 98,
+        "palette_index": 96
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 146,
+        "palette_index": 80
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 214,
+        "palette_index": 36
+      },
+      {
+        "screen": [
+          159,
+          102
+        ],
+        "shade": 110,
+        "palette_index": 28
+      },
+      {
+        "screen": [
+          164,
+          104
+        ],
+        "shade": 54,
+        "palette_index": 4
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 221,
+        "palette_index": 39
+      },
+      {
+        "screen": [
+          162,
+          100
+        ],
+        "shade": 94,
+        "palette_index": 204
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 221,
+        "palette_index": 39
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 190,
+        "palette_index": 172
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 120,
+        "palette_index": 142
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 125,
+        "palette_index": 71
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 122,
+        "palette_index": 216
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 252,
+        "palette_index": 162
+      },
+      {
+        "screen": [
+          193,
+          124
+        ],
+        "shade": 5,
+        "palette_index": 239
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 213,
+        "palette_index": 255
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 138,
+        "palette_index": 40
+      },
+      {
+        "screen": [
+          162,
+          98
+        ],
+        "shade": 103,
+        "palette_index": 25
+      },
+      {
+        "screen": [
+          163,
+          103
+        ],
+        "shade": 37,
+        "palette_index": 143
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 159,
+        "palette_index": 49
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 207,
+        "palette_index": 33
+      },
+      {
+        "screen": [
+          162,
+          101
+        ],
+        "shade": 80,
+        "palette_index": 198
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 167,
+        "palette_index": 89
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 178,
+        "palette_index": 240
+      },
+      {
+        "screen": [
+          158,
+          101
+        ],
+        "shade": 80,
+        "palette_index": 198
+      },
+      {
+        "screen": [
+          157,
+          99
+        ],
+        "shade": 79,
+        "palette_index": 161
+      },
+      {
+        "screen": [
+          158,
+          99
+        ],
+        "shade": 117,
+        "palette_index": 31
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 177,
+        "palette_index": 203
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 176,
+        "palette_index": 166
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 236,
+        "palette_index": 82
+      },
+      {
+        "screen": [
+          161,
+          99
+        ],
+        "shade": 115,
+        "palette_index": 213
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 113,
+        "palette_index": 139
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 232,
+        "palette_index": 190
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 244,
+        "palette_index": 122
+      },
+      {
+        "screen": [
+          164,
+          104
+        ],
+        "shade": 26,
+        "palette_index": 248
+      },
+      {
+        "screen": [
+          161,
+          102
+        ],
+        "shade": 101,
+        "palette_index": 207
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 142,
+        "palette_index": 188
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 204,
+        "palette_index": 178
+      },
+      {
+        "screen": [
+          163,
+          103
+        ],
+        "shade": 62,
+        "palette_index": 44
+      },
+      {
+        "screen": [
+          160,
+          107
+        ],
+        "shade": 30,
+        "palette_index": 140
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 70,
+        "palette_index": 84
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 251,
+        "palette_index": 125
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 142,
+        "palette_index": 188
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 252,
+        "palette_index": 162
+      },
+      {
+        "screen": [
+          159,
+          93
+        ],
+        "shade": 29,
+        "palette_index": 103
+      },
+      {
+        "screen": [
+          138,
+          198
+        ],
+        "shade": 1,
+        "palette_index": 91
+      },
+      {
+        "screen": [
+          124,
+          91
+        ],
+        "shade": 5,
+        "palette_index": 239
+      },
+      {
+        "screen": [
+          153,
+          100
+        ],
+        "shade": 18,
+        "palette_index": 208
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 151,
+        "palette_index": 9
+      },
+      {
+        "screen": [
+          163,
+          103
+        ],
+        "shade": 47,
+        "palette_index": 1
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 190,
+        "palette_index": 172
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 231,
+        "palette_index": 153
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 125,
+        "palette_index": 71
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 191,
+        "palette_index": 209
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 251,
+        "palette_index": 125
+      },
+      {
+        "screen": [
+          159,
+          99
+        ],
+        "shade": 127,
+        "palette_index": 145
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 113,
+        "palette_index": 139
+      },
+      {
+        "screen": [
+          147,
+          100
+        ],
+        "shade": 16,
+        "palette_index": 134
+      },
+      {
+        "screen": [
+          100,
+          111
+        ],
+        "shade": 4,
+        "palette_index": 202
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 243,
+        "palette_index": 85
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 234,
+        "palette_index": 8
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 156,
+        "palette_index": 194
+      },
+      {
+        "screen": [
+          163,
+          98
+        ],
+        "shade": 58,
+        "palette_index": 152
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 226,
+        "palette_index": 224
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 79,
+        "palette_index": 161
+      },
+      {
+        "screen": [
+          181,
+          120
+        ],
+        "shade": 11,
+        "palette_index": 205
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 159,
+        "palette_index": 49
+      },
+      {
+        "screen": [
+          163,
+          99
+        ],
+        "shade": 80,
+        "palette_index": 198
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 94,
+        "palette_index": 204
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 178,
+        "palette_index": 240
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 212,
+        "palette_index": 218
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 189,
+        "palette_index": 135
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 117,
+        "palette_index": 31
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 124,
+        "palette_index": 34
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 235,
+        "palette_index": 45
+      },
+      {
+        "screen": [
+          161,
+          99
+        ],
+        "shade": 102,
+        "palette_index": 244
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 249,
+        "palette_index": 51
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 205,
+        "palette_index": 215
+      },
+      {
+        "screen": [
+          210,
+          95
+        ],
+        "shade": 4,
+        "palette_index": 202
+      },
+      {
+        "screen": [
+          157,
+          96
+        ],
+        "shade": 57,
+        "palette_index": 115
+      },
+      {
+        "screen": [
+          161,
+          98
+        ],
+        "shade": 108,
+        "palette_index": 210
+      },
+      {
+        "screen": [
+          180,
+          124
+        ],
+        "shade": 9,
+        "palette_index": 131
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 154,
+        "palette_index": 120
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 217,
+        "palette_index": 147
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 70,
+        "palette_index": 84
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 142,
+        "palette_index": 188
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 175,
+        "palette_index": 129
+      },
+      {
+        "screen": [
+          152,
+          93
+        ],
+        "shade": 31,
+        "palette_index": 177
+      },
+      {
+        "screen": [
+          160,
+          98
+        ],
+        "shade": 37,
+        "palette_index": 143
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 112,
+        "palette_index": 102
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 241,
+        "palette_index": 11
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 178,
+        "palette_index": 240
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 167,
+        "palette_index": 89
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 118,
+        "palette_index": 68
+      },
+      {
+        "screen": [
+          159,
+          98
+        ],
+        "shade": 96,
+        "palette_index": 22
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 237,
+        "palette_index": 119
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 210,
+        "palette_index": 144
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 107,
+        "palette_index": 173
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 129,
+        "palette_index": 219
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 216,
+        "palette_index": 110
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 72,
+        "palette_index": 158
+      },
+      {
+        "screen": [
+          167,
+          112
+        ],
+        "shade": 20,
+        "palette_index": 26
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 162,
+        "palette_index": 160
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 85,
+        "palette_index": 127
+      },
+      {
+        "screen": [
+          162,
+          98
+        ],
+        "shade": 46,
+        "palette_index": 220
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 172,
+        "palette_index": 18
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 224,
+        "palette_index": 150
+      },
+      {
+        "screen": [
+          160,
+          102
+        ],
+        "shade": 89,
+        "palette_index": 19
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 188,
+        "palette_index": 98
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 195,
+        "palette_index": 101
+      },
+      {
+        "screen": [
+          159,
+          99
+        ],
+        "shade": 121,
+        "palette_index": 179
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 109,
+        "palette_index": 247
+      },
+      {
+        "screen": [
+          162,
+          102
+        ],
+        "shade": 36,
+        "palette_index": 106
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 219,
+        "palette_index": 221
+      }
     ],
     "accepted_per_plane": [
       320,
@@ -107,10 +5324,4935 @@
     "module": "scrut",
     "entry": 1909,
     "seed": 3735928559,
+    "camera_matrix": [
+      0,
+      256,
+      0,
+      0,
+      0,
+      256,
+      65536,
+      0,
+      0
+    ],
+    "camera_position": [
+      -19088744,
+      305419896,
+      -2147475456
+    ],
+    "shade_table": [
+      95,
+      132,
+      169,
+      206,
+      243,
+      24,
+      61,
+      98,
+      135,
+      172,
+      209,
+      246,
+      27,
+      64,
+      101,
+      138,
+      175,
+      212,
+      249,
+      30,
+      67,
+      104,
+      141,
+      178,
+      215,
+      252,
+      33,
+      70,
+      107,
+      144,
+      181,
+      218,
+      255,
+      36,
+      73,
+      110,
+      147,
+      184,
+      221,
+      2,
+      39,
+      76,
+      113,
+      150,
+      187,
+      224,
+      5,
+      42,
+      79,
+      116,
+      153,
+      190,
+      227,
+      8,
+      45,
+      82,
+      119,
+      156,
+      193,
+      230,
+      11,
+      48,
+      85,
+      122,
+      159,
+      196,
+      233,
+      14,
+      51,
+      88,
+      125,
+      162,
+      199,
+      236,
+      17,
+      54,
+      91,
+      128,
+      165,
+      202,
+      239,
+      20,
+      57,
+      94,
+      131,
+      168,
+      205,
+      242,
+      23,
+      60,
+      97,
+      134,
+      171,
+      208,
+      245,
+      26,
+      63,
+      100,
+      137,
+      174,
+      211,
+      248,
+      29,
+      66,
+      103,
+      140,
+      177,
+      214,
+      251,
+      32,
+      69,
+      106,
+      143,
+      180,
+      217,
+      254,
+      35,
+      72,
+      109,
+      146,
+      183,
+      220,
+      1,
+      38,
+      75,
+      112,
+      149,
+      186,
+      223,
+      4,
+      41,
+      78,
+      115,
+      152,
+      189,
+      226,
+      7,
+      44,
+      81,
+      118,
+      155,
+      192,
+      229,
+      10,
+      47,
+      84,
+      121,
+      158,
+      195,
+      232,
+      13,
+      50,
+      87,
+      124,
+      161,
+      198,
+      235,
+      16,
+      53,
+      90,
+      127,
+      164,
+      201,
+      238,
+      19,
+      56,
+      93,
+      130,
+      167,
+      204,
+      241,
+      22,
+      59,
+      96,
+      133,
+      170,
+      207,
+      244,
+      25,
+      62,
+      99,
+      136,
+      173,
+      210,
+      247,
+      28,
+      65,
+      102,
+      139,
+      176,
+      213,
+      250,
+      31,
+      68,
+      105,
+      142,
+      179,
+      216,
+      253,
+      34,
+      71,
+      108,
+      145,
+      182,
+      219,
+      0,
+      37,
+      74,
+      111,
+      148,
+      185,
+      222,
+      3,
+      40,
+      77,
+      114,
+      151,
+      188,
+      225,
+      6,
+      43,
+      80,
+      117,
+      154,
+      191,
+      228,
+      9,
+      46,
+      83,
+      120,
+      157,
+      194,
+      231,
+      12,
+      49,
+      86,
+      123,
+      160,
+      197,
+      234,
+      15,
+      52,
+      89,
+      126,
+      163,
+      200,
+      237,
+      18,
+      55,
+      92,
+      129,
+      166,
+      203,
+      240,
+      21,
+      58
+    ],
     "camera_cells": [
       63205,
       37282,
       1
+    ],
+    "random_after": 4085021981,
+    "stars": [
+      {
+        "screen": [
+          159,
+          95
+        ],
+        "shade": 31,
+        "palette_index": 218
+      },
+      {
+        "screen": [
+          162,
+          100
+        ],
+        "shade": 31,
+        "palette_index": 218
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 145,
+        "palette_index": 84
+      },
+      {
+        "screen": [
+          161,
+          103
+        ],
+        "shade": 56,
+        "palette_index": 119
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 220,
+        "palette_index": 43
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 215,
+        "palette_index": 114
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 148,
+        "palette_index": 195
+      },
+      {
+        "screen": [
+          158,
+          97
+        ],
+        "shade": 59,
+        "palette_index": 230
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 138,
+        "palette_index": 81
+      },
+      {
+        "screen": [
+          158,
+          99
+        ],
+        "shade": 106,
+        "palette_index": 177
+      },
+      {
+        "screen": [
+          156,
+          106
+        ],
+        "shade": 41,
+        "palette_index": 76
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 231,
+        "palette_index": 194
+      },
+      {
+        "screen": [
+          163,
+          103
+        ],
+        "shade": 66,
+        "palette_index": 233
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 151,
+        "palette_index": 50
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 244,
+        "palette_index": 163
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 252,
+        "palette_index": 203
+      },
+      {
+        "screen": [
+          160,
+          98
+        ],
+        "shade": 82,
+        "palette_index": 57
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 251,
+        "palette_index": 166
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 183,
+        "palette_index": 210
+      },
+      {
+        "screen": [
+          163,
+          100
+        ],
+        "shade": 69,
+        "palette_index": 88
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 230,
+        "palette_index": 157
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 173,
+        "palette_index": 96
+      },
+      {
+        "screen": [
+          124,
+          96
+        ],
+        "shade": 5,
+        "palette_index": 24
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 248,
+        "palette_index": 55
+      },
+      {
+        "screen": [
+          159,
+          102
+        ],
+        "shade": 36,
+        "palette_index": 147
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 190,
+        "palette_index": 213
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 203,
+        "palette_index": 182
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 136,
+        "palette_index": 7
+      },
+      {
+        "screen": [
+          162,
+          98
+        ],
+        "shade": 97,
+        "palette_index": 100
+      },
+      {
+        "screen": [
+          161,
+          102
+        ],
+        "shade": 51,
+        "palette_index": 190
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 116,
+        "palette_index": 35
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 229,
+        "palette_index": 120
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 121,
+        "palette_index": 220
+      },
+      {
+        "screen": [
+          159,
+          106
+        ],
+        "shade": 14,
+        "palette_index": 101
+      },
+      {
+        "screen": [
+          166,
+          130
+        ],
+        "shade": 6,
+        "palette_index": 61
+      },
+      {
+        "screen": [
+          159,
+          99
+        ],
+        "shade": 164,
+        "palette_index": 19
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 130,
+        "palette_index": 41
+      },
+      {
+        "screen": [
+          161,
+          99
+        ],
+        "shade": 91,
+        "palette_index": 134
+      },
+      {
+        "screen": [
+          164,
+          100
+        ],
+        "shade": 23,
+        "palette_index": 178
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 201,
+        "palette_index": 108
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 182,
+        "palette_index": 173
+      },
+      {
+        "screen": [
+          149,
+          86
+        ],
+        "shade": 13,
+        "palette_index": 64
+      },
+      {
+        "screen": [
+          157,
+          100
+        ],
+        "shade": 53,
+        "palette_index": 8
+      },
+      {
+        "screen": [
+          160,
+          103
+        ],
+        "shade": 64,
+        "palette_index": 159
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 144,
+        "palette_index": 47
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 159,
+        "palette_index": 90
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 150,
+        "palette_index": 13
+      },
+      {
+        "screen": [
+          159,
+          103
+        ],
+        "shade": 68,
+        "palette_index": 51
+      },
+      {
+        "screen": [
+          161,
+          101
+        ],
+        "shade": 100,
+        "palette_index": 211
+      },
+      {
+        "screen": [
+          161,
+          98
+        ],
+        "shade": 80,
+        "palette_index": 239
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 155,
+        "palette_index": 198
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 220,
+        "palette_index": 43
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 195,
+        "palette_index": 142
+      },
+      {
+        "screen": [
+          161,
+          98
+        ],
+        "shade": 73,
+        "palette_index": 236
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 166,
+        "palette_index": 93
+      },
+      {
+        "screen": [
+          163,
+          101
+        ],
+        "shade": 71,
+        "palette_index": 162
+      },
+      {
+        "screen": [
+          161,
+          99
+        ],
+        "shade": 112,
+        "palette_index": 143
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 102,
+        "palette_index": 29
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 178,
+        "palette_index": 25
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 241,
+        "palette_index": 52
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 248,
+        "palette_index": 55
+      },
+      {
+        "screen": [
+          157,
+          108
+        ],
+        "shade": 17,
+        "palette_index": 212
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 155,
+        "palette_index": 198
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 143,
+        "palette_index": 10
+      },
+      {
+        "screen": [
+          158,
+          102
+        ],
+        "shade": 73,
+        "palette_index": 236
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 136,
+        "palette_index": 7
+      },
+      {
+        "screen": [
+          163,
+          100
+        ],
+        "shade": 65,
+        "palette_index": 196
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 181,
+        "palette_index": 136
+      },
+      {
+        "screen": [
+          159,
+          102
+        ],
+        "shade": 51,
+        "palette_index": 190
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 164,
+        "palette_index": 19
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 121,
+        "palette_index": 220
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 110,
+        "palette_index": 69
+      },
+      {
+        "screen": [
+          144,
+          93
+        ],
+        "shade": 13,
+        "palette_index": 64
+      },
+      {
+        "screen": [
+          127,
+          78
+        ],
+        "shade": 6,
+        "palette_index": 61
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 159,
+        "palette_index": 90
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 129,
+        "palette_index": 4
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 98,
+        "palette_index": 137
+      },
+      {
+        "screen": [
+          164,
+          91
+        ],
+        "shade": 22,
+        "palette_index": 141
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 211,
+        "palette_index": 222
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 215,
+        "palette_index": 114
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 193,
+        "palette_index": 68
+      },
+      {
+        "screen": [
+          159,
+          96
+        ],
+        "shade": 48,
+        "palette_index": 79
+      },
+      {
+        "screen": [
+          158,
+          103
+        ],
+        "shade": 81,
+        "palette_index": 20
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 131,
+        "palette_index": 78
+      },
+      {
+        "screen": [
+          162,
+          103
+        ],
+        "shade": 64,
+        "palette_index": 159
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 184,
+        "palette_index": 247
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 27,
+        "palette_index": 70
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 150,
+        "palette_index": 13
+      },
+      {
+        "screen": [
+          158,
+          98
+        ],
+        "shade": 80,
+        "palette_index": 239
+      },
+      {
+        "screen": [
+          157,
+          103
+        ],
+        "shade": 59,
+        "palette_index": 230
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 172,
+        "palette_index": 59
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 194,
+        "palette_index": 105
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 138,
+        "palette_index": 81
+      },
+      {
+        "screen": [
+          162,
+          100
+        ],
+        "shade": 107,
+        "palette_index": 214
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 39,
+        "palette_index": 2
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 234,
+        "palette_index": 49
+      },
+      {
+        "screen": [
+          163,
+          101
+        ],
+        "shade": 72,
+        "palette_index": 199
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 179,
+        "palette_index": 62
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 248,
+        "palette_index": 55
+      },
+      {
+        "screen": [
+          152,
+          93
+        ],
+        "shade": 6,
+        "palette_index": 61
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 152,
+        "palette_index": 87
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 131,
+        "palette_index": 78
+      },
+      {
+        "screen": [
+          161,
+          101
+        ],
+        "shade": 83,
+        "palette_index": 94
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 136,
+        "palette_index": 7
+      },
+      {
+        "screen": [
+          168,
+          101
+        ],
+        "shade": 25,
+        "palette_index": 252
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 185,
+        "palette_index": 28
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 51,
+        "palette_index": 190
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 121,
+        "palette_index": 220
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 206,
+        "palette_index": 37
+      },
+      {
+        "screen": [
+          157,
+          99
+        ],
+        "shade": 61,
+        "palette_index": 48
+      },
+      {
+        "screen": [
+          166,
+          79
+        ],
+        "shade": 6,
+        "palette_index": 61
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 158,
+        "palette_index": 53
+      },
+      {
+        "screen": [
+          161,
+          99
+        ],
+        "shade": 95,
+        "palette_index": 26
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 130,
+        "palette_index": 41
+      },
+      {
+        "screen": [
+          161,
+          99
+        ],
+        "shade": 88,
+        "palette_index": 23
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 226,
+        "palette_index": 9
+      },
+      {
+        "screen": [
+          164,
+          94
+        ],
+        "shade": 25,
+        "palette_index": 252
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 211,
+        "palette_index": 222
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 180,
+        "palette_index": 99
+      },
+      {
+        "screen": [
+          160,
+          97
+        ],
+        "shade": 51,
+        "palette_index": 190
+      },
+      {
+        "screen": [
+          154,
+          100
+        ],
+        "shade": 29,
+        "palette_index": 144
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 121,
+        "palette_index": 220
+      },
+      {
+        "screen": [
+          160,
+          103
+        ],
+        "shade": 64,
+        "palette_index": 159
+      },
+      {
+        "screen": [
+          171,
+          95
+        ],
+        "shade": 7,
+        "palette_index": 98
+      },
+      {
+        "screen": [
+          161,
+          101
+        ],
+        "shade": 150,
+        "palette_index": 13
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 228,
+        "palette_index": 83
+      },
+      {
+        "screen": [
+          159,
+          98
+        ],
+        "shade": 80,
+        "palette_index": 239
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 124,
+        "palette_index": 75
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 195,
+        "palette_index": 142
+      },
+      {
+        "screen": [
+          181,
+          89
+        ],
+        "shade": 11,
+        "palette_index": 246
+      },
+      {
+        "screen": [
+          163,
+          101
+        ],
+        "shade": 71,
+        "palette_index": 162
+      },
+      {
+        "screen": [
+          161,
+          99
+        ],
+        "shade": 113,
+        "palette_index": 180
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 180,
+        "palette_index": 99
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 241,
+        "palette_index": 52
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 248,
+        "palette_index": 55
+      },
+      {
+        "screen": [
+          156,
+          101
+        ],
+        "shade": 11,
+        "palette_index": 246
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 165,
+        "palette_index": 56
+      },
+      {
+        "screen": [
+          162,
+          101
+        ],
+        "shade": 93,
+        "palette_index": 208
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 136,
+        "palette_index": 7
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 241,
+        "palette_index": 52
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 205,
+        "palette_index": 0
+      },
+      {
+        "screen": [
+          156,
+          101
+        ],
+        "shade": 51,
+        "palette_index": 190
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 121,
+        "palette_index": 220
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 109,
+        "palette_index": 32
+      },
+      {
+        "screen": [
+          150,
+          93
+        ],
+        "shade": 21,
+        "palette_index": 104
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 127,
+        "palette_index": 186
+      },
+      {
+        "screen": [
+          160,
+          96
+        ],
+        "shade": 34,
+        "palette_index": 73
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 141,
+        "palette_index": 192
+      },
+      {
+        "screen": [
+          162,
+          98
+        ],
+        "shade": 45,
+        "palette_index": 224
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 210,
+        "palette_index": 185
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 215,
+        "palette_index": 114
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 126,
+        "palette_index": 149
+      },
+      {
+        "screen": [
+          156,
+          102
+        ],
+        "shade": 31,
+        "palette_index": 218
+      },
+      {
+        "screen": [
+          162,
+          97
+        ],
+        "shade": 54,
+        "palette_index": 45
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 217,
+        "palette_index": 188
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 143,
+        "palette_index": 10
+      },
+      {
+        "screen": [
+          158,
+          103
+        ],
+        "shade": 66,
+        "palette_index": 233
+      },
+      {
+        "screen": [
+          163,
+          98
+        ],
+        "shade": 67,
+        "palette_index": 14
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 151,
+        "palette_index": 50
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 156,
+        "palette_index": 235
+      },
+      {
+        "screen": [
+          160,
+          98
+        ],
+        "shade": 82,
+        "palette_index": 57
+      },
+      {
+        "screen": [
+          160,
+          103
+        ],
+        "shade": 76,
+        "palette_index": 91
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 183,
+        "palette_index": 210
+      },
+      {
+        "screen": [
+          156,
+          86
+        ],
+        "shade": 10,
+        "palette_index": 209
+      },
+      {
+        "screen": [
+          161,
+          101
+        ],
+        "shade": 171,
+        "palette_index": 22
+      },
+      {
+        "screen": [
+          161,
+          101
+        ],
+        "shade": 106,
+        "palette_index": 177
+      },
+      {
+        "screen": [
+          163,
+          99
+        ],
+        "shade": 60,
+        "palette_index": 11
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 230,
+        "palette_index": 157
+      },
+      {
+        "screen": [
+          161,
+          99
+        ],
+        "shade": 140,
+        "palette_index": 155
+      },
+      {
+        "screen": [
+          158,
+          99
+        ],
+        "shade": 61,
+        "palette_index": 48
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 248,
+        "palette_index": 55
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 160,
+        "palette_index": 127
+      },
+      {
+        "screen": [
+          159,
+          99
+        ],
+        "shade": 100,
+        "palette_index": 211
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 146,
+        "palette_index": 121
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 219,
+        "palette_index": 6
+      },
+      {
+        "screen": [
+          160,
+          98
+        ],
+        "shade": 55,
+        "palette_index": 82
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 135,
+        "palette_index": 226
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 145,
+        "palette_index": 84
+      },
+      {
+        "screen": [
+          157,
+          101
+        ],
+        "shade": 50,
+        "palette_index": 153
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 69,
+        "palette_index": 88
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 120,
+        "palette_index": 183
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 157,
+        "palette_index": 16
+      },
+      {
+        "screen": [
+          161,
+          92
+        ],
+        "shade": 19,
+        "palette_index": 30
+      },
+      {
+        "screen": [
+          159,
+          99
+        ],
+        "shade": 63,
+        "palette_index": 122
+      },
+      {
+        "screen": [
+          160,
+          102
+        ],
+        "shade": 94,
+        "palette_index": 245
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 162,
+        "palette_index": 201
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 223,
+        "palette_index": 154
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 140,
+        "palette_index": 155
+      },
+      {
+        "screen": [
+          158,
+          99
+        ],
+        "shade": 87,
+        "palette_index": 242
+      },
+      {
+        "screen": [
+          162,
+          99
+        ],
+        "shade": 44,
+        "palette_index": 187
+      },
+      {
+        "screen": [
+          159,
+          99
+        ],
+        "shade": 210,
+        "palette_index": 185
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 234,
+        "palette_index": 49
+      },
+      {
+        "screen": [
+          163,
+          97
+        ],
+        "shade": 57,
+        "palette_index": 156
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 133,
+        "palette_index": 152
+      },
+      {
+        "screen": [
+          162,
+          103
+        ],
+        "shade": 66,
+        "palette_index": 233
+      },
+      {
+        "screen": [
+          157,
+          100
+        ],
+        "shade": 47,
+        "palette_index": 42
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 153,
+        "palette_index": 124
+      },
+      {
+        "screen": [
+          161,
+          101
+        ],
+        "shade": 132,
+        "palette_index": 115
+      },
+      {
+        "screen": [
+          162,
+          98
+        ],
+        "shade": 72,
+        "palette_index": 199
+      },
+      {
+        "screen": [
+          160,
+          104
+        ],
+        "shade": 28,
+        "palette_index": 107
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 180,
+        "palette_index": 99
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 167,
+        "palette_index": 130
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 170,
+        "palette_index": 241
+      },
+      {
+        "screen": [
+          184,
+          90
+        ],
+        "shade": 9,
+        "palette_index": 172
+      },
+      {
+        "screen": [
+          161,
+          99
+        ],
+        "shade": 114,
+        "palette_index": 217
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 102,
+        "palette_index": 29
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 242,
+        "palette_index": 89
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 125,
+        "palette_index": 112
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 248,
+        "palette_index": 55
+      },
+      {
+        "screen": [
+          157,
+          92
+        ],
+        "shade": 13,
+        "palette_index": 64
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 143,
+        "palette_index": 10
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 159,
+        "palette_index": 90
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 65,
+        "palette_index": 196
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 134,
+        "palette_index": 189
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 97,
+        "palette_index": 100
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 165,
+        "palette_index": 56
+      },
+      {
+        "screen": [
+          163,
+          101
+        ],
+        "shade": 47,
+        "palette_index": 42
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 229,
+        "palette_index": 120
+      },
+      {
+        "screen": [
+          161,
+          101
+        ],
+        "shade": 93,
+        "palette_index": 208
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 129,
+        "palette_index": 4
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 205,
+        "palette_index": 0
+      },
+      {
+        "screen": [
+          151,
+          94
+        ],
+        "shade": 22,
+        "palette_index": 141
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 255,
+        "palette_index": 58
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 194,
+        "palette_index": 105
+      },
+      {
+        "screen": [
+          160,
+          98
+        ],
+        "shade": 98,
+        "palette_index": 137
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 197,
+        "palette_index": 216
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 215,
+        "palette_index": 114
+      },
+      {
+        "screen": [
+          160,
+          102
+        ],
+        "shade": 81,
+        "palette_index": 20
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 197,
+        "palette_index": 216
+      },
+      {
+        "screen": [
+          154,
+          106
+        ],
+        "shade": 28,
+        "palette_index": 107
+      },
+      {
+        "screen": [
+          157,
+          103
+        ],
+        "shade": 68,
+        "palette_index": 51
+      },
+      {
+        "screen": [
+          166,
+          110
+        ],
+        "shade": 24,
+        "palette_index": 215
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 171,
+        "palette_index": 22
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 173,
+        "palette_index": 96
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 107,
+        "palette_index": 214
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 187,
+        "palette_index": 102
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 236,
+        "palette_index": 123
+      },
+      {
+        "screen": [
+          154,
+          102
+        ],
+        "shade": 36,
+        "palette_index": 147
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 38,
+        "palette_index": 221
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 200,
+        "palette_index": 71
+      },
+      {
+        "screen": [
+          205,
+          48
+        ],
+        "shade": 3,
+        "palette_index": 206
+      },
+      {
+        "screen": [
+          159,
+          102
+        ],
+        "shade": 110,
+        "palette_index": 69
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 249,
+        "palette_index": 92
+      },
+      {
+        "screen": [
+          149,
+          193
+        ],
+        "shade": 2,
+        "palette_index": 169
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 172,
+        "palette_index": 59
+      },
+      {
+        "screen": [
+          159,
+          99
+        ],
+        "shade": 107,
+        "palette_index": 214
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 130,
+        "palette_index": 41
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 185,
+        "palette_index": 28
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 233,
+        "palette_index": 12
+      },
+      {
+        "screen": [
+          169,
+          104
+        ],
+        "shade": 23,
+        "palette_index": 178
+      },
+      {
+        "screen": [
+          158,
+          101
+        ],
+        "shade": 78,
+        "palette_index": 165
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 253,
+        "palette_index": 240
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 196,
+        "palette_index": 179
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 191,
+        "palette_index": 250
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 87,
+        "palette_index": 242
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 226,
+        "palette_index": 9
+      },
+      {
+        "screen": [
+          163,
+          100
+        ],
+        "shade": 34,
+        "palette_index": 73
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 209,
+        "palette_index": 148
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 200,
+        "palette_index": 71
+      },
+      {
+        "screen": [
+          160,
+          97
+        ],
+        "shade": 33,
+        "palette_index": 36
+      },
+      {
+        "screen": [
+          170,
+          121
+        ],
+        "shade": 10,
+        "palette_index": 209
+      },
+      {
+        "screen": [
+          139,
+          119
+        ],
+        "shade": 11,
+        "palette_index": 246
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 212,
+        "palette_index": 3
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 244,
+        "palette_index": 163
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 235,
+        "palette_index": 86
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 251,
+        "palette_index": 166
+      },
+      {
+        "screen": [
+          154,
+          101
+        ],
+        "shade": 41,
+        "palette_index": 76
+      },
+      {
+        "screen": [
+          173,
+          87
+        ],
+        "shade": 3,
+        "palette_index": 206
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 250,
+        "palette_index": 129
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 228,
+        "palette_index": 83
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 171,
+        "palette_index": 22
+      },
+      {
+        "screen": [
+          158,
+          99
+        ],
+        "shade": 121,
+        "palette_index": 220
+      },
+      {
+        "screen": [
+          158,
+          99
+        ],
+        "shade": 105,
+        "palette_index": 140
+      },
+      {
+        "screen": [
+          193,
+          107
+        ],
+        "shade": 6,
+        "palette_index": 61
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 245,
+        "palette_index": 200
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 117,
+        "palette_index": 72
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 253,
+        "palette_index": 240
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 132,
+        "palette_index": 115
+      },
+      {
+        "screen": [
+          170,
+          94
+        ],
+        "shade": 14,
+        "palette_index": 101
+      },
+      {
+        "screen": [
+          161,
+          92
+        ],
+        "shade": 28,
+        "palette_index": 107
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 161,
+        "palette_index": 164
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 225,
+        "palette_index": 228
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 170,
+        "palette_index": 241
+      },
+      {
+        "screen": [
+          162,
+          99
+        ],
+        "shade": 101,
+        "palette_index": 248
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 103,
+        "palette_index": 66
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 221,
+        "palette_index": 80
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 241,
+        "palette_index": 52
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 246,
+        "palette_index": 237
+      },
+      {
+        "screen": [
+          161,
+          97
+        ],
+        "shade": 79,
+        "palette_index": 202
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 193,
+        "palette_index": 68
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 153,
+        "palette_index": 124
+      },
+      {
+        "screen": [
+          161,
+          102
+        ],
+        "shade": 85,
+        "palette_index": 168
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 93,
+        "palette_index": 208
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 189,
+        "palette_index": 176
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 205,
+        "palette_index": 0
+      },
+      {
+        "screen": [
+          161,
+          99
+        ],
+        "shade": 42,
+        "palette_index": 113
+      },
+      {
+        "screen": [
+          160,
+          102
+        ],
+        "shade": 95,
+        "palette_index": 26
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 228,
+        "palette_index": 83
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 244,
+        "palette_index": 163
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 98,
+        "palette_index": 137
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 216,
+        "palette_index": 151
+      },
+      {
+        "screen": [
+          161,
+          101
+        ],
+        "shade": 164,
+        "palette_index": 19
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 117,
+        "palette_index": 72
+      },
+      {
+        "screen": [
+          159,
+          102
+        ],
+        "shade": 92,
+        "palette_index": 171
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 203,
+        "palette_index": 182
+      },
+      {
+        "screen": [
+          155,
+          102
+        ],
+        "shade": 44,
+        "palette_index": 187
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 108,
+        "palette_index": 251
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 234,
+        "palette_index": 49
+      },
+      {
+        "screen": [
+          161,
+          101
+        ],
+        "shade": 158,
+        "palette_index": 53
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 236,
+        "palette_index": 123
+      },
+      {
+        "screen": [
+          161,
+          99
+        ],
+        "shade": 98,
+        "palette_index": 137
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 216,
+        "palette_index": 151
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 128,
+        "palette_index": 223
+      },
+      {
+        "screen": [
+          163,
+          105
+        ],
+        "shade": 35,
+        "palette_index": 110
+      },
+      {
+        "screen": [
+          163,
+          100
+        ],
+        "shade": 44,
+        "palette_index": 187
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 204,
+        "palette_index": 219
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 235,
+        "palette_index": 86
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 206,
+        "palette_index": 37
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 107,
+        "palette_index": 214
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 232,
+        "palette_index": 231
+      },
+      {
+        "screen": [
+          158,
+          100
+        ],
+        "shade": 86,
+        "palette_index": 205
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 208,
+        "palette_index": 111
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 152,
+        "palette_index": 87
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 84,
+        "palette_index": 131
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 188,
+        "palette_index": 139
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 72,
+        "palette_index": 199
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 179,
+        "palette_index": 62
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 206,
+        "palette_index": 37
+      },
+      {
+        "screen": [
+          158,
+          100
+        ],
+        "shade": 95,
+        "palette_index": 26
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 228,
+        "palette_index": 83
+      },
+      {
+        "screen": [
+          166,
+          99
+        ],
+        "shade": 21,
+        "palette_index": 104
+      },
+      {
+        "screen": [
+          158,
+          100
+        ],
+        "shade": 88,
+        "palette_index": 23
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 193,
+        "palette_index": 68
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 212,
+        "palette_index": 3
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 115,
+        "palette_index": 254
+      },
+      {
+        "screen": [
+          159,
+          102
+        ],
+        "shade": 84,
+        "palette_index": 131
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 188,
+        "palette_index": 139
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 44,
+        "palette_index": 187
+      },
+      {
+        "screen": [
+          159,
+          99
+        ],
+        "shade": 96,
+        "palette_index": 63
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 234,
+        "palette_index": 49
+      },
+      {
+        "screen": [
+          161,
+          101
+        ],
+        "shade": 130,
+        "palette_index": 41
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 228,
+        "palette_index": 83
+      },
+      {
+        "screen": [
+          167,
+          93
+        ],
+        "shade": 26,
+        "palette_index": 33
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 180,
+        "palette_index": 99
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 112,
+        "palette_index": 143
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 127,
+        "palette_index": 186
+      },
+      {
+        "screen": [
+          164,
+          82
+        ],
+        "shade": 12,
+        "palette_index": 27
+      },
+      {
+        "screen": [
+          95,
+          130
+        ],
+        "shade": 3,
+        "palette_index": 206
+      },
+      {
+        "screen": [
+          163,
+          105
+        ],
+        "shade": 32,
+        "palette_index": 255
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 208,
+        "palette_index": 111
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 234,
+        "palette_index": 49
+      },
+      {
+        "screen": [
+          161,
+          99
+        ],
+        "shade": 206,
+        "palette_index": 37
+      },
+      {
+        "screen": [
+          161,
+          99
+        ],
+        "shade": 84,
+        "palette_index": 131
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 246,
+        "palette_index": 237
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 89,
+        "palette_index": 60
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 206,
+        "palette_index": 37
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 200,
+        "palette_index": 71
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 148,
+        "palette_index": 195
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 89,
+        "palette_index": 60
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 60,
+        "palette_index": 11
+      },
+      {
+        "screen": [
+          161,
+          101
+        ],
+        "shade": 29,
+        "palette_index": 144
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 213,
+        "palette_index": 40
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 157,
+        "palette_index": 16
+      },
+      {
+        "screen": [
+          160,
+          102
+        ],
+        "shade": 96,
+        "palette_index": 63
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 228,
+        "palette_index": 83
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 228,
+        "palette_index": 83
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 95,
+        "palette_index": 26
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 226,
+        "palette_index": 9
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 113,
+        "palette_index": 180
+      },
+      {
+        "screen": [
+          164,
+          57
+        ],
+        "shade": 5,
+        "palette_index": 24
+      },
+      {
+        "screen": [
+          165,
+          100
+        ],
+        "shade": 43,
+        "palette_index": 150
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 103,
+        "palette_index": 66
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 223,
+        "palette_index": 154
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 244,
+        "palette_index": 163
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 231,
+        "palette_index": 194
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 252,
+        "palette_index": 203
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 246,
+        "palette_index": 237
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 117,
+        "palette_index": 72
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 239,
+        "palette_index": 234
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 152,
+        "palette_index": 87
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 84,
+        "palette_index": 131
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 187,
+        "palette_index": 102
+      },
+      {
+        "screen": [
+          159,
+          99
+        ],
+        "shade": 222,
+        "palette_index": 117
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 39,
+        "palette_index": 2
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 237,
+        "palette_index": 160
+      },
+      {
+        "screen": [
+          179,
+          77
+        ],
+        "shade": 5,
+        "palette_index": 24
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 254,
+        "palette_index": 21
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 223,
+        "palette_index": 154
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 229,
+        "palette_index": 120
+      },
+      {
+        "screen": [
+          157,
+          100
+        ],
+        "shade": 57,
+        "palette_index": 156
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 255,
+        "palette_index": 58
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 134,
+        "palette_index": 189
+      },
+      {
+        "screen": [
+          163,
+          98
+        ],
+        "shade": 47,
+        "palette_index": 42
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 129,
+        "palette_index": 4
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 203,
+        "palette_index": 182
+      },
+      {
+        "screen": [
+          154,
+          100
+        ],
+        "shade": 37,
+        "palette_index": 184
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 103,
+        "palette_index": 66
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 205,
+        "palette_index": 0
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 242,
+        "palette_index": 89
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 247,
+        "palette_index": 18
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 109,
+        "palette_index": 32
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 237,
+        "palette_index": 160
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 144,
+        "palette_index": 47
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 68,
+        "palette_index": 51
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 155,
+        "palette_index": 198
+      },
+      {
+        "screen": [
+          158,
+          100
+        ],
+        "shade": 73,
+        "palette_index": 236
+      },
+      {
+        "screen": [
+          160,
+          103
+        ],
+        "shade": 62,
+        "palette_index": 85
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 167,
+        "palette_index": 130
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 159,
+        "palette_index": 90
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 116,
+        "palette_index": 35
+      },
+      {
+        "screen": [
+          161,
+          101
+        ],
+        "shade": 98,
+        "palette_index": 137
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 220,
+        "palette_index": 43
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 215,
+        "palette_index": 114
+      },
+      {
+        "screen": [
+          161,
+          98
+        ],
+        "shade": 104,
+        "palette_index": 103
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 241,
+        "palette_index": 52
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 243,
+        "palette_index": 126
+      },
+      {
+        "screen": [
+          159,
+          103
+        ],
+        "shade": 65,
+        "palette_index": 196
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 248,
+        "palette_index": 55
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 251,
+        "palette_index": 166
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 165,
+        "palette_index": 56
+      },
+      {
+        "screen": [
+          158,
+          98
+        ],
+        "shade": 93,
+        "palette_index": 208
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 205,
+        "palette_index": 0
+      },
+      {
+        "screen": [
+          159,
+          99
+        ],
+        "shade": 137,
+        "palette_index": 44
+      },
+      {
+        "screen": [
+          156,
+          99
+        ],
+        "shade": 53,
+        "palette_index": 8
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 234,
+        "palette_index": 49
+      },
+      {
+        "screen": [
+          162,
+          100
+        ],
+        "shade": 109,
+        "palette_index": 32
+      },
+      {
+        "screen": [
+          159,
+          99
+        ],
+        "shade": 125,
+        "palette_index": 112
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 237,
+        "palette_index": 160
+      },
+      {
+        "screen": [
+          144,
+          97
+        ],
+        "shade": 13,
+        "palette_index": 64
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 254,
+        "palette_index": 21
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 248,
+        "palette_index": 55
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 126,
+        "palette_index": 149
+      },
+      {
+        "screen": [
+          163,
+          100
+        ],
+        "shade": 32,
+        "palette_index": 255
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 215,
+        "palette_index": 114
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 149,
+        "palette_index": 232
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 217,
+        "palette_index": 188
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 61,
+        "palette_index": 48
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 158,
+        "palette_index": 53
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 95,
+        "palette_index": 26
+      },
+      {
+        "screen": [
+          161,
+          99
+        ],
+        "shade": 66,
+        "palette_index": 233
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 227,
+        "palette_index": 46
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 151,
+        "palette_index": 50
+      },
+      {
+        "screen": [
+          160,
+          102
+        ],
+        "shade": 95,
+        "palette_index": 26
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 83,
+        "palette_index": 94
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 226,
+        "palette_index": 9
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 188,
+        "palette_index": 139
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 106,
+        "palette_index": 177
+      },
+      {
+        "screen": [
+          165,
+          105
+        ],
+        "shade": 44,
+        "palette_index": 187
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 230,
+        "palette_index": 157
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 233,
+        "palette_index": 12
+      },
+      {
+        "screen": [
+          165,
+          103
+        ],
+        "shade": 44,
+        "palette_index": 187
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 248,
+        "palette_index": 55
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 234,
+        "palette_index": 49
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 252,
+        "palette_index": 203
+      },
+      {
+        "screen": [
+          161,
+          99
+        ],
+        "shade": 134,
+        "palette_index": 189
+      },
+      {
+        "screen": [
+          157,
+          102
+        ],
+        "shade": 48,
+        "palette_index": 79
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 131,
+        "palette_index": 78
+      },
+      {
+        "screen": [
+          161,
+          105
+        ],
+        "shade": 25,
+        "palette_index": 252
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 240,
+        "palette_index": 15
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 223,
+        "palette_index": 154
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 189,
+        "palette_index": 176
+      },
+      {
+        "screen": [
+          159,
+          98
+        ],
+        "shade": 45,
+        "palette_index": 224
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 206,
+        "palette_index": 37
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 237,
+        "palette_index": 160
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 254,
+        "palette_index": 21
+      },
+      {
+        "screen": [
+          160,
+          98
+        ],
+        "shade": 85,
+        "palette_index": 168
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 67,
+        "palette_index": 14
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 207,
+        "palette_index": 74
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 153,
+        "palette_index": 124
+      },
+      {
+        "screen": [
+          161,
+          102
+        ],
+        "shade": 85,
+        "palette_index": 168
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 212,
+        "palette_index": 3
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 189,
+        "palette_index": 176
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 74,
+        "palette_index": 17
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 170,
+        "palette_index": 241
+      },
+      {
+        "screen": [
+          163,
+          103
+        ],
+        "shade": 62,
+        "palette_index": 85
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 96,
+        "palette_index": 63
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 102,
+        "palette_index": 29
+      },
+      {
+        "screen": [
+          161,
+          101
+        ],
+        "shade": 161,
+        "palette_index": 164
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 228,
+        "palette_index": 83
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 242,
+        "palette_index": 89
+      },
+      {
+        "screen": [
+          159,
+          98
+        ],
+        "shade": 88,
+        "palette_index": 23
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 248,
+        "palette_index": 55
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 212,
+        "palette_index": 3
+      },
+      {
+        "screen": [
+          158,
+          101
+        ],
+        "shade": 113,
+        "palette_index": 180
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 136,
+        "palette_index": 7
+      },
+      {
+        "screen": [
+          165,
+          100
+        ],
+        "shade": 44,
+        "palette_index": 187
+      },
+      {
+        "screen": [
+          119,
+          96
+        ],
+        "shade": 5,
+        "palette_index": 24
+      },
+      {
+        "screen": [
+          164,
+          104
+        ],
+        "shade": 37,
+        "palette_index": 184
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 235,
+        "palette_index": 86
+      },
+      {
+        "screen": [
+          110,
+          77
+        ],
+        "shade": 4,
+        "palette_index": 243
+      },
+      {
+        "screen": [
+          161,
+          99
+        ],
+        "shade": 172,
+        "palette_index": 59
+      },
+      {
+        "screen": [
+          155,
+          100
+        ],
+        "shade": 32,
+        "palette_index": 255
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 169,
+        "palette_index": 204
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 104,
+        "palette_index": 103
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 217,
+        "palette_index": 188
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 244,
+        "palette_index": 163
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 128,
+        "palette_index": 223
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 251,
+        "palette_index": 166
+      },
+      {
+        "screen": [
+          160,
+          97
+        ],
+        "shade": 35,
+        "palette_index": 110
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 199,
+        "palette_index": 34
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 142,
+        "palette_index": 229
+      },
+      {
+        "screen": [
+          159,
+          99
+        ],
+        "shade": 101,
+        "palette_index": 248
+      },
+      {
+        "screen": [
+          162,
+          103
+        ],
+        "shade": 63,
+        "palette_index": 122
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 221,
+        "palette_index": 80
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 162,
+        "palette_index": 201
+      },
+      {
+        "screen": [
+          166,
+          104
+        ],
+        "shade": 20,
+        "palette_index": 67
+      },
+      {
+        "screen": [
+          158,
+          102
+        ],
+        "shade": 89,
+        "palette_index": 60
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 200,
+        "palette_index": 71
+      },
+      {
+        "screen": [
+          161,
+          99
+        ],
+        "shade": 140,
+        "palette_index": 155
+      },
+      {
+        "screen": [
+          158,
+          99
+        ],
+        "shade": 43,
+        "palette_index": 150
+      },
+      {
+        "screen": [
+          158,
+          98
+        ],
+        "shade": 98,
+        "palette_index": 137
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 216,
+        "palette_index": 151
+      },
+      {
+        "screen": [
+          157,
+          124
+        ],
+        "shade": 9,
+        "palette_index": 172
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 236,
+        "palette_index": 123
+      },
+      {
+        "screen": [
+          218,
+          190
+        ],
+        "shade": 2,
+        "palette_index": 169
+      },
+      {
+        "screen": [
+          155,
+          95
+        ],
+        "shade": 45,
+        "palette_index": 224
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 128,
+        "palette_index": 223
+      },
+      {
+        "screen": [
+          154,
+          100
+        ],
+        "shade": 36,
+        "palette_index": 147
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 197,
+        "palette_index": 216
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 201,
+        "palette_index": 108
+      },
+      {
+        "screen": [
+          162,
+          99
+        ],
+        "shade": 77,
+        "palette_index": 128
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 173,
+        "palette_index": 96
+      },
+      {
+        "screen": [
+          159,
+          99
+        ],
+        "shade": 109,
+        "palette_index": 32
+      },
+      {
+        "screen": [
+          159,
+          103
+        ],
+        "shade": 64,
+        "palette_index": 159
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 249,
+        "palette_index": 92
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 163,
+        "palette_index": 238
+      },
+      {
+        "screen": [
+          162,
+          101
+        ],
+        "shade": 89,
+        "palette_index": 60
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 198,
+        "palette_index": 253
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 203,
+        "palette_index": 182
+      },
+      {
+        "screen": [
+          158,
+          99
+        ],
+        "shade": 123,
+        "palette_index": 38
+      },
+      {
+        "screen": [
+          181,
+          105
+        ],
+        "shade": 10,
+        "palette_index": 209
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 117,
+        "palette_index": 72
+      },
+      {
+        "screen": [
+          166,
+          101
+        ],
+        "shade": 37,
+        "palette_index": 184
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 240,
+        "palette_index": 15
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 225,
+        "palette_index": 228
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 209,
+        "palette_index": 148
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 179,
+        "palette_index": 62
+      },
+      {
+        "screen": [
+          127,
+          99
+        ],
+        "shade": 6,
+        "palette_index": 61
+      },
+      {
+        "screen": [
+          162,
+          101
+        ],
+        "shade": 65,
+        "palette_index": 196
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 108,
+        "palette_index": 251
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 152,
+        "palette_index": 87
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 120,
+        "palette_index": 183
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 84,
+        "palette_index": 131
+      },
+      {
+        "screen": [
+          163,
+          92
+        ],
+        "shade": 20,
+        "palette_index": 67
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 187,
+        "palette_index": 102
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 217,
+        "palette_index": 188
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 138,
+        "palette_index": 81
+      },
+      {
+        "screen": [
+          165,
+          98
+        ],
+        "shade": 39,
+        "palette_index": 2
+      },
+      {
+        "screen": [
+          164,
+          101
+        ],
+        "shade": 38,
+        "palette_index": 221
+      },
+      {
+        "screen": [
+          156,
+          99
+        ],
+        "shade": 36,
+        "palette_index": 147
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 156,
+        "palette_index": 235
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 147,
+        "palette_index": 158
+      },
+      {
+        "screen": [
+          159,
+          97
+        ],
+        "shade": 74,
+        "palette_index": 17
+      },
+      {
+        "screen": [
+          162,
+          100
+        ],
+        "shade": 57,
+        "palette_index": 156
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 170,
+        "palette_index": 241
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 149,
+        "palette_index": 232
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 104,
+        "palette_index": 103
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 213,
+        "palette_index": 40
+      },
+      {
+        "screen": [
+          159,
+          98
+        ],
+        "shade": 78,
+        "palette_index": 165
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 243,
+        "palette_index": 126
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 191,
+        "palette_index": 250
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 249,
+        "palette_index": 92
+      },
+      {
+        "screen": [
+          161,
+          102
+        ],
+        "shade": 87,
+        "palette_index": 242
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 86,
+        "palette_index": 205
+      },
+      {
+        "screen": [
+          160,
+          101
+        ],
+        "shade": 209,
+        "palette_index": 148
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 131,
+        "palette_index": 78
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 210,
+        "palette_index": 185
+      },
+      {
+        "screen": [
+          165,
+          107
+        ],
+        "shade": 28,
+        "palette_index": 107
+      },
+      {
+        "screen": [
+          159,
+          101
+        ],
+        "shade": 77,
+        "palette_index": 128
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 172,
+        "palette_index": 59
+      },
+      {
+        "screen": [
+          158,
+          99
+        ],
+        "shade": 77,
+        "palette_index": 128
+      },
+      {
+        "screen": [
+          159,
+          100
+        ],
+        "shade": 190,
+        "palette_index": 213
+      },
+      {
+        "screen": [
+          160,
+          99
+        ],
+        "shade": 192,
+        "palette_index": 31
+      },
+      {
+        "screen": [
+          161,
+          105
+        ],
+        "shade": 32,
+        "palette_index": 255
+      },
+      {
+        "screen": [
+          161,
+          101
+        ],
+        "shade": 96,
+        "palette_index": 63
+      },
+      {
+        "screen": [
+          161,
+          100
+        ],
+        "shade": 90,
+        "palette_index": 97
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 214,
+        "palette_index": 77
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 218,
+        "palette_index": 225
+      },
+      {
+        "screen": [
+          160,
+          100
+        ],
+        "shade": 202,
+        "palette_index": 145
+      },
+      {
+        "screen": [
+          161,
+          99
+        ],
+        "shade": 116,
+        "palette_index": 35
+      },
+      {
+        "screen": [
+          160,
+          102
+        ],
+        "shade": 115,
+        "palette_index": 254
+      }
     ],
     "accepted_per_plane": [
       324,
@@ -169,11 +10311,287 @@
     "module": "scrut",
     "entry": 1909,
     "seed": 1,
+    "camera_matrix": [
+      -41216,
+      0,
+      0,
+      0,
+      0,
+      0,
+      65536,
+      0,
+      0
+    ],
+    "camera_position": [
+      0,
+      0,
+      0
+    ],
+    "shade_table": [
+      136,
+      173,
+      210,
+      247,
+      28,
+      65,
+      102,
+      139,
+      176,
+      213,
+      250,
+      31,
+      68,
+      105,
+      142,
+      179,
+      216,
+      253,
+      34,
+      71,
+      108,
+      145,
+      182,
+      219,
+      0,
+      37,
+      74,
+      111,
+      148,
+      185,
+      222,
+      3,
+      40,
+      77,
+      114,
+      151,
+      188,
+      225,
+      6,
+      43,
+      80,
+      117,
+      154,
+      191,
+      228,
+      9,
+      46,
+      83,
+      120,
+      157,
+      194,
+      231,
+      12,
+      49,
+      86,
+      123,
+      160,
+      197,
+      234,
+      15,
+      52,
+      89,
+      126,
+      163,
+      200,
+      237,
+      18,
+      55,
+      92,
+      129,
+      166,
+      203,
+      240,
+      21,
+      58,
+      95,
+      132,
+      169,
+      206,
+      243,
+      24,
+      61,
+      98,
+      135,
+      172,
+      209,
+      246,
+      27,
+      64,
+      101,
+      138,
+      175,
+      212,
+      249,
+      30,
+      67,
+      104,
+      141,
+      178,
+      215,
+      252,
+      33,
+      70,
+      107,
+      144,
+      181,
+      218,
+      255,
+      36,
+      73,
+      110,
+      147,
+      184,
+      221,
+      2,
+      39,
+      76,
+      113,
+      150,
+      187,
+      224,
+      5,
+      42,
+      79,
+      116,
+      153,
+      190,
+      227,
+      8,
+      45,
+      82,
+      119,
+      156,
+      193,
+      230,
+      11,
+      48,
+      85,
+      122,
+      159,
+      196,
+      233,
+      14,
+      51,
+      88,
+      125,
+      162,
+      199,
+      236,
+      17,
+      54,
+      91,
+      128,
+      165,
+      202,
+      239,
+      20,
+      57,
+      94,
+      131,
+      168,
+      205,
+      242,
+      23,
+      60,
+      97,
+      134,
+      171,
+      208,
+      245,
+      26,
+      63,
+      100,
+      137,
+      174,
+      211,
+      248,
+      29,
+      66,
+      103,
+      140,
+      177,
+      214,
+      251,
+      32,
+      69,
+      106,
+      143,
+      180,
+      217,
+      254,
+      35,
+      72,
+      109,
+      146,
+      183,
+      220,
+      1,
+      38,
+      75,
+      112,
+      149,
+      186,
+      223,
+      4,
+      41,
+      78,
+      115,
+      152,
+      189,
+      226,
+      7,
+      44,
+      81,
+      118,
+      155,
+      192,
+      229,
+      10,
+      47,
+      84,
+      121,
+      158,
+      195,
+      232,
+      13,
+      50,
+      87,
+      124,
+      161,
+      198,
+      235,
+      16,
+      53,
+      90,
+      127,
+      164,
+      201,
+      238,
+      19,
+      56,
+      93,
+      130,
+      167,
+      204,
+      241,
+      22,
+      59,
+      96,
+      133,
+      170,
+      207,
+      244,
+      25,
+      62,
+      99
+    ],
     "camera_cells": [
       0,
       0,
       0
     ],
+    "random_after": 3822915800,
+    "stars": [],
     "accepted_per_plane": [
       0,
       0,
@@ -210,11 +10628,287 @@
     "module": "scrut",
     "entry": 1909,
     "seed": 1,
+    "camera_matrix": [
+      40960,
+      0,
+      0,
+      0,
+      0,
+      0,
+      65536,
+      0,
+      0
+    ],
+    "camera_position": [
+      0,
+      0,
+      0
+    ],
+    "shade_table": [
+      177,
+      214,
+      251,
+      32,
+      69,
+      106,
+      143,
+      180,
+      217,
+      254,
+      35,
+      72,
+      109,
+      146,
+      183,
+      220,
+      1,
+      38,
+      75,
+      112,
+      149,
+      186,
+      223,
+      4,
+      41,
+      78,
+      115,
+      152,
+      189,
+      226,
+      7,
+      44,
+      81,
+      118,
+      155,
+      192,
+      229,
+      10,
+      47,
+      84,
+      121,
+      158,
+      195,
+      232,
+      13,
+      50,
+      87,
+      124,
+      161,
+      198,
+      235,
+      16,
+      53,
+      90,
+      127,
+      164,
+      201,
+      238,
+      19,
+      56,
+      93,
+      130,
+      167,
+      204,
+      241,
+      22,
+      59,
+      96,
+      133,
+      170,
+      207,
+      244,
+      25,
+      62,
+      99,
+      136,
+      173,
+      210,
+      247,
+      28,
+      65,
+      102,
+      139,
+      176,
+      213,
+      250,
+      31,
+      68,
+      105,
+      142,
+      179,
+      216,
+      253,
+      34,
+      71,
+      108,
+      145,
+      182,
+      219,
+      0,
+      37,
+      74,
+      111,
+      148,
+      185,
+      222,
+      3,
+      40,
+      77,
+      114,
+      151,
+      188,
+      225,
+      6,
+      43,
+      80,
+      117,
+      154,
+      191,
+      228,
+      9,
+      46,
+      83,
+      120,
+      157,
+      194,
+      231,
+      12,
+      49,
+      86,
+      123,
+      160,
+      197,
+      234,
+      15,
+      52,
+      89,
+      126,
+      163,
+      200,
+      237,
+      18,
+      55,
+      92,
+      129,
+      166,
+      203,
+      240,
+      21,
+      58,
+      95,
+      132,
+      169,
+      206,
+      243,
+      24,
+      61,
+      98,
+      135,
+      172,
+      209,
+      246,
+      27,
+      64,
+      101,
+      138,
+      175,
+      212,
+      249,
+      30,
+      67,
+      104,
+      141,
+      178,
+      215,
+      252,
+      33,
+      70,
+      107,
+      144,
+      181,
+      218,
+      255,
+      36,
+      73,
+      110,
+      147,
+      184,
+      221,
+      2,
+      39,
+      76,
+      113,
+      150,
+      187,
+      224,
+      5,
+      42,
+      79,
+      116,
+      153,
+      190,
+      227,
+      8,
+      45,
+      82,
+      119,
+      156,
+      193,
+      230,
+      11,
+      48,
+      85,
+      122,
+      159,
+      196,
+      233,
+      14,
+      51,
+      88,
+      125,
+      162,
+      199,
+      236,
+      17,
+      54,
+      91,
+      128,
+      165,
+      202,
+      239,
+      20,
+      57,
+      94,
+      131,
+      168,
+      205,
+      242,
+      23,
+      60,
+      97,
+      134,
+      171,
+      208,
+      245,
+      26,
+      63,
+      100,
+      137,
+      174,
+      211,
+      248,
+      29,
+      66,
+      103,
+      140
+    ],
     "camera_cells": [
       0,
       0,
       0
     ],
+    "random_after": 3822915800,
+    "stars": [],
     "accepted_per_plane": [
       0,
       0,
@@ -251,11 +10945,287 @@
     "module": "scrut",
     "entry": 1909,
     "seed": 1,
+    "camera_matrix": [
+      0,
+      0,
+      0,
+      25856,
+      0,
+      0,
+      65536,
+      0,
+      0
+    ],
+    "camera_position": [
+      0,
+      0,
+      0
+    ],
+    "shade_table": [
+      218,
+      255,
+      36,
+      73,
+      110,
+      147,
+      184,
+      221,
+      2,
+      39,
+      76,
+      113,
+      150,
+      187,
+      224,
+      5,
+      42,
+      79,
+      116,
+      153,
+      190,
+      227,
+      8,
+      45,
+      82,
+      119,
+      156,
+      193,
+      230,
+      11,
+      48,
+      85,
+      122,
+      159,
+      196,
+      233,
+      14,
+      51,
+      88,
+      125,
+      162,
+      199,
+      236,
+      17,
+      54,
+      91,
+      128,
+      165,
+      202,
+      239,
+      20,
+      57,
+      94,
+      131,
+      168,
+      205,
+      242,
+      23,
+      60,
+      97,
+      134,
+      171,
+      208,
+      245,
+      26,
+      63,
+      100,
+      137,
+      174,
+      211,
+      248,
+      29,
+      66,
+      103,
+      140,
+      177,
+      214,
+      251,
+      32,
+      69,
+      106,
+      143,
+      180,
+      217,
+      254,
+      35,
+      72,
+      109,
+      146,
+      183,
+      220,
+      1,
+      38,
+      75,
+      112,
+      149,
+      186,
+      223,
+      4,
+      41,
+      78,
+      115,
+      152,
+      189,
+      226,
+      7,
+      44,
+      81,
+      118,
+      155,
+      192,
+      229,
+      10,
+      47,
+      84,
+      121,
+      158,
+      195,
+      232,
+      13,
+      50,
+      87,
+      124,
+      161,
+      198,
+      235,
+      16,
+      53,
+      90,
+      127,
+      164,
+      201,
+      238,
+      19,
+      56,
+      93,
+      130,
+      167,
+      204,
+      241,
+      22,
+      59,
+      96,
+      133,
+      170,
+      207,
+      244,
+      25,
+      62,
+      99,
+      136,
+      173,
+      210,
+      247,
+      28,
+      65,
+      102,
+      139,
+      176,
+      213,
+      250,
+      31,
+      68,
+      105,
+      142,
+      179,
+      216,
+      253,
+      34,
+      71,
+      108,
+      145,
+      182,
+      219,
+      0,
+      37,
+      74,
+      111,
+      148,
+      185,
+      222,
+      3,
+      40,
+      77,
+      114,
+      151,
+      188,
+      225,
+      6,
+      43,
+      80,
+      117,
+      154,
+      191,
+      228,
+      9,
+      46,
+      83,
+      120,
+      157,
+      194,
+      231,
+      12,
+      49,
+      86,
+      123,
+      160,
+      197,
+      234,
+      15,
+      52,
+      89,
+      126,
+      163,
+      200,
+      237,
+      18,
+      55,
+      92,
+      129,
+      166,
+      203,
+      240,
+      21,
+      58,
+      95,
+      132,
+      169,
+      206,
+      243,
+      24,
+      61,
+      98,
+      135,
+      172,
+      209,
+      246,
+      27,
+      64,
+      101,
+      138,
+      175,
+      212,
+      249,
+      30,
+      67,
+      104,
+      141,
+      178,
+      215,
+      252,
+      33,
+      70,
+      107,
+      144,
+      181
+    ],
     "camera_cells": [
       0,
       0,
       0
     ],
+    "random_after": 3822915800,
+    "stars": [],
     "accepted_per_plane": [
       0,
       0,
@@ -292,11 +11262,287 @@
     "module": "scrut",
     "entry": 1909,
     "seed": 1,
+    "camera_matrix": [
+      0,
+      0,
+      0,
+      -25600,
+      0,
+      0,
+      65536,
+      0,
+      0
+    ],
+    "camera_position": [
+      0,
+      0,
+      0
+    ],
+    "shade_table": [
+      3,
+      40,
+      77,
+      114,
+      151,
+      188,
+      225,
+      6,
+      43,
+      80,
+      117,
+      154,
+      191,
+      228,
+      9,
+      46,
+      83,
+      120,
+      157,
+      194,
+      231,
+      12,
+      49,
+      86,
+      123,
+      160,
+      197,
+      234,
+      15,
+      52,
+      89,
+      126,
+      163,
+      200,
+      237,
+      18,
+      55,
+      92,
+      129,
+      166,
+      203,
+      240,
+      21,
+      58,
+      95,
+      132,
+      169,
+      206,
+      243,
+      24,
+      61,
+      98,
+      135,
+      172,
+      209,
+      246,
+      27,
+      64,
+      101,
+      138,
+      175,
+      212,
+      249,
+      30,
+      67,
+      104,
+      141,
+      178,
+      215,
+      252,
+      33,
+      70,
+      107,
+      144,
+      181,
+      218,
+      255,
+      36,
+      73,
+      110,
+      147,
+      184,
+      221,
+      2,
+      39,
+      76,
+      113,
+      150,
+      187,
+      224,
+      5,
+      42,
+      79,
+      116,
+      153,
+      190,
+      227,
+      8,
+      45,
+      82,
+      119,
+      156,
+      193,
+      230,
+      11,
+      48,
+      85,
+      122,
+      159,
+      196,
+      233,
+      14,
+      51,
+      88,
+      125,
+      162,
+      199,
+      236,
+      17,
+      54,
+      91,
+      128,
+      165,
+      202,
+      239,
+      20,
+      57,
+      94,
+      131,
+      168,
+      205,
+      242,
+      23,
+      60,
+      97,
+      134,
+      171,
+      208,
+      245,
+      26,
+      63,
+      100,
+      137,
+      174,
+      211,
+      248,
+      29,
+      66,
+      103,
+      140,
+      177,
+      214,
+      251,
+      32,
+      69,
+      106,
+      143,
+      180,
+      217,
+      254,
+      35,
+      72,
+      109,
+      146,
+      183,
+      220,
+      1,
+      38,
+      75,
+      112,
+      149,
+      186,
+      223,
+      4,
+      41,
+      78,
+      115,
+      152,
+      189,
+      226,
+      7,
+      44,
+      81,
+      118,
+      155,
+      192,
+      229,
+      10,
+      47,
+      84,
+      121,
+      158,
+      195,
+      232,
+      13,
+      50,
+      87,
+      124,
+      161,
+      198,
+      235,
+      16,
+      53,
+      90,
+      127,
+      164,
+      201,
+      238,
+      19,
+      56,
+      93,
+      130,
+      167,
+      204,
+      241,
+      22,
+      59,
+      96,
+      133,
+      170,
+      207,
+      244,
+      25,
+      62,
+      99,
+      136,
+      173,
+      210,
+      247,
+      28,
+      65,
+      102,
+      139,
+      176,
+      213,
+      250,
+      31,
+      68,
+      105,
+      142,
+      179,
+      216,
+      253,
+      34,
+      71,
+      108,
+      145,
+      182,
+      219,
+      0,
+      37,
+      74,
+      111,
+      148,
+      185,
+      222
+    ],
     "camera_cells": [
       0,
       0,
       0
     ],
+    "random_after": 3822915800,
+    "stars": [],
     "accepted_per_plane": [
       0,
       0,
@@ -333,11 +11579,287 @@
     "module": "scrut",
     "entry": 1909,
     "seed": 324508639,
+    "camera_matrix": [
+      0,
+      0,
+      0,
+      1879048192,
+      -1879048192,
+      305419896,
+      1879048192,
+      -1879048192,
+      305419896
+    ],
+    "camera_position": [
+      0,
+      0,
+      0
+    ],
+    "shade_table": [
+      44,
+      81,
+      118,
+      155,
+      192,
+      229,
+      10,
+      47,
+      84,
+      121,
+      158,
+      195,
+      232,
+      13,
+      50,
+      87,
+      124,
+      161,
+      198,
+      235,
+      16,
+      53,
+      90,
+      127,
+      164,
+      201,
+      238,
+      19,
+      56,
+      93,
+      130,
+      167,
+      204,
+      241,
+      22,
+      59,
+      96,
+      133,
+      170,
+      207,
+      244,
+      25,
+      62,
+      99,
+      136,
+      173,
+      210,
+      247,
+      28,
+      65,
+      102,
+      139,
+      176,
+      213,
+      250,
+      31,
+      68,
+      105,
+      142,
+      179,
+      216,
+      253,
+      34,
+      71,
+      108,
+      145,
+      182,
+      219,
+      0,
+      37,
+      74,
+      111,
+      148,
+      185,
+      222,
+      3,
+      40,
+      77,
+      114,
+      151,
+      188,
+      225,
+      6,
+      43,
+      80,
+      117,
+      154,
+      191,
+      228,
+      9,
+      46,
+      83,
+      120,
+      157,
+      194,
+      231,
+      12,
+      49,
+      86,
+      123,
+      160,
+      197,
+      234,
+      15,
+      52,
+      89,
+      126,
+      163,
+      200,
+      237,
+      18,
+      55,
+      92,
+      129,
+      166,
+      203,
+      240,
+      21,
+      58,
+      95,
+      132,
+      169,
+      206,
+      243,
+      24,
+      61,
+      98,
+      135,
+      172,
+      209,
+      246,
+      27,
+      64,
+      101,
+      138,
+      175,
+      212,
+      249,
+      30,
+      67,
+      104,
+      141,
+      178,
+      215,
+      252,
+      33,
+      70,
+      107,
+      144,
+      181,
+      218,
+      255,
+      36,
+      73,
+      110,
+      147,
+      184,
+      221,
+      2,
+      39,
+      76,
+      113,
+      150,
+      187,
+      224,
+      5,
+      42,
+      79,
+      116,
+      153,
+      190,
+      227,
+      8,
+      45,
+      82,
+      119,
+      156,
+      193,
+      230,
+      11,
+      48,
+      85,
+      122,
+      159,
+      196,
+      233,
+      14,
+      51,
+      88,
+      125,
+      162,
+      199,
+      236,
+      17,
+      54,
+      91,
+      128,
+      165,
+      202,
+      239,
+      20,
+      57,
+      94,
+      131,
+      168,
+      205,
+      242,
+      23,
+      60,
+      97,
+      134,
+      171,
+      208,
+      245,
+      26,
+      63,
+      100,
+      137,
+      174,
+      211,
+      248,
+      29,
+      66,
+      103,
+      140,
+      177,
+      214,
+      251,
+      32,
+      69,
+      106,
+      143,
+      180,
+      217,
+      254,
+      35,
+      72,
+      109,
+      146,
+      183,
+      220,
+      1,
+      38,
+      75,
+      112,
+      149,
+      186,
+      223,
+      4,
+      41,
+      78,
+      115,
+      152,
+      189,
+      226,
+      7
+    ],
     "camera_cells": [
       0,
       0,
       0
     ],
+    "random_after": 159722524,
+    "stars": [],
     "accepted_per_plane": [
       0,
       0,

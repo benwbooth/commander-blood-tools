@@ -4269,6 +4269,7 @@ def alien_starfield_vectors(
             )
 
         plane_records: list[list[tuple[int, int]]] = [[], [], [], []]
+        visible_stars: list[dict[str, object]] = []
         rejections = {
             "negative_depth": 0,
             "zero_shifted_depth": 0,
@@ -4330,6 +4331,16 @@ def alien_starfield_vectors(
                     (screen_y * 320 + screen_x) >> 2,
                     (depth & mask32) >> 15,
                 )
+            )
+            shade = (depth & mask32) >> 15
+            visible_stars.append(
+                {
+                    "screen": [screen_x, screen_y],
+                    "shade": shade,
+                    "palette_index": raster_before[
+                        shade_table_offset + shade
+                    ],
+                }
             )
 
         cursors = []
@@ -4469,7 +4480,20 @@ def alien_starfield_vectors(
                 "module": module,
                 "entry": entry,
                 "seed": case["seed"],
+                "camera_matrix": [
+                    signed_dword(value) for value in case["matrix"]
+                ],
+                "camera_position": [
+                    signed_dword(value) for value in case["camera"]
+                ],
+                "shade_table": list(
+                    raster_before[
+                        shade_table_offset : shade_table_offset + 256
+                    ]
+                ),
                 "camera_cells": list(camera_cells),
+                "random_after": random,
+                "stars": visible_stars,
                 "accepted_per_plane": [
                     len(records) for records in plane_records
                 ],
