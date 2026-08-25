@@ -1,5 +1,11 @@
 //! Typed structures for the DESCRIPT scene and dialogue database.
 
+const FIRST_BACKGROUND_SLOT: u8 = 1;
+const BACKGROUND_SLOT_COUNT: u8 = 4;
+const LAST_BACKGROUND_SLOT: u8 = FIRST_BACKGROUND_SLOT + BACKGROUND_SLOT_COUNT - 1;
+const PRINTABLE_NAME_START: u8 = 32;
+const PRINTABLE_NAME_END: u8 = 127;
+
 /// Semantic kind byte stored immediately before each DESCRIPT record length.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(u8)]
@@ -30,6 +36,90 @@ impl DescriptRecordKind {
     pub const fn encode(self) -> u8 {
         self as u8
     }
+}
+
+/// One of the four background-image cache slots encoded as values one through four.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct DescriptBackgroundSlot(u8);
+
+impl DescriptBackgroundSlot {
+    /// Number of background images carried by a DESCRIPT location record.
+    pub const COUNT: usize = BACKGROUND_SLOT_COUNT as usize;
+
+    /// Decode the one-based slot number used by the shipped database.
+    pub const fn decode(encoded: u8) -> Option<Self> {
+        if encoded >= FIRST_BACKGROUND_SLOT && encoded <= LAST_BACKGROUND_SLOT {
+            Some(Self(encoded - FIRST_BACKGROUND_SLOT))
+        } else {
+            None
+        }
+    }
+
+    /// Return this slot's zero-based index in owned Rust collections.
+    pub const fn index(self) -> usize {
+        self.0 as usize
+    }
+
+    /// Return the one-based value serialized in DESCRIPT.DES.
+    pub const fn encode(self) -> u8 {
+        self.0 + FIRST_BACKGROUND_SLOT
+    }
+}
+
+/// One decoded opcode-03 request to cache a background LBM image.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DescriptBackgroundCommand {
+    slot: DescriptBackgroundSlot,
+    source_name: Box<[u8]>,
+}
+
+impl DescriptBackgroundCommand {
+    /// Build a command from a validated slot and an owned resource name.
+    pub fn new(slot: DescriptBackgroundSlot, source_name: Box<[u8]>) -> Self {
+        Self { slot, source_name }
+    }
+
+    /// Return the background cache slot selected by this command.
+    pub const fn slot(&self) -> DescriptBackgroundSlot {
+        self.slot
+    }
+
+    /// Return the case-preserving LBM resource name.
+    pub fn source_name(&self) -> &[u8] {
+        &self.source_name
+    }
+}
+
+/// Failure while decoding the payload following a DESCRIPT opcode-03 byte.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum DescriptBackgroundError {
+    /// The command ended before its one-based cache slot.
+    MissingSlot,
+    /// The slot is outside the four-entry domain used by every shipped record.
+    InvalidSlot(u8),
+    /// The printable resource name reaches the end of the record without a stop byte.
+    MissingNameTerminator,
+}
+
+/// Decode an opcode-03 payload while leaving its stop byte for the command dispatcher.
+pub fn decode_background_command(
+    payload: &[u8],
+) -> Result<(DescriptBackgroundCommand, &[u8]), DescriptBackgroundError> {
+    let (&encoded_slot, name_and_tail) = payload
+        .split_first()
+        .ok_or(DescriptBackgroundError::MissingSlot)?;
+    let slot = DescriptBackgroundSlot::decode(encoded_slot)
+        .ok_or(DescriptBackgroundError::InvalidSlot(encoded_slot))?;
+    let name_length = name_and_tail
+        .iter()
+        .position(|byte| !(*byte >= PRINTABLE_NAME_START && *byte <= PRINTABLE_NAME_END))
+        .ok_or(DescriptBackgroundError::MissingNameTerminator)?;
+    let source_name = Box::from(&name_and_tail[..name_length]);
+
+    Ok((
+        DescriptBackgroundCommand::new(slot, source_name),
+        &name_and_tail[name_length..],
+    ))
 }
 
 #[cfg(test)]
@@ -76,5 +166,30 @@ mod tests {
         }
 
         assert_eq!(counts, EXPECTED_RECORD_COUNTS);
+    }
+
+    #[test]
+    fn background_payload_keeps_the_following_opcode_unconsumed() {
+        const SLOT: u8 = 3;
+        const NEXT_OPCODE: u8 = 15;
+
+        let mut payload = vec![SLOT];
+        payload.extend_from_slice(b"pterra1g.lbm");
+        payload.push(NEXT_OPCODE);
+        let (command, tail) = decode_background_command(&payload).unwrap();
+
+        assert_eq!(command.slot().encode(), SLOT);
+        assert_eq!(command.source_name(), b"pterra1g.lbm");
+        assert_eq!(tail, &[NEXT_OPCODE]);
+    }
+
+    #[test]
+    fn background_payload_rejects_slots_outside_the_shipped_domain() {
+        const INVALID_SLOT: u8 = 128;
+
+        assert_eq!(
+            decode_background_command(&[INVALID_SLOT, 0]),
+            Err(DescriptBackgroundError::InvalidSlot(INVALID_SLOT))
+        );
     }
 }

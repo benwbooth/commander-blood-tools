@@ -1,6 +1,96 @@
 //! Runtime state produced while applying typed DESCRIPT records.
 
-use commander_blood_formats::descript::DescriptRecordKind;
+use commander_blood_formats::descript::{
+    DescriptBackgroundCommand, DescriptBackgroundSlot, DescriptRecordKind,
+};
+
+/// One background resource retained for modern rendering.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CachedDescriptBackground {
+    source_name: Box<[u8]>,
+    encoded_image: Box<[u8]>,
+}
+
+impl CachedDescriptBackground {
+    /// Return the case-preserving LBM resource name.
+    pub fn source_name(&self) -> &[u8] {
+        &self.source_name
+    }
+
+    /// Return the encoded image bytes loaded from the game data.
+    pub fn encoded_image(&self) -> &[u8] {
+        &self.encoded_image
+    }
+}
+
+/// Four owned background images selected by a DESCRIPT location record.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DescriptBackgroundCache {
+    slots: [Option<CachedDescriptBackground>; DescriptBackgroundSlot::COUNT],
+}
+
+impl Default for DescriptBackgroundCache {
+    fn default() -> Self {
+        Self {
+            slots: std::array::from_fn(|_| None),
+        }
+    }
+}
+
+impl DescriptBackgroundCache {
+    /// Return the image currently retained in one typed slot.
+    pub fn get(&self, slot: DescriptBackgroundSlot) -> Option<&CachedDescriptBackground> {
+        self.slots[slot.index()].as_ref()
+    }
+}
+
+/// Resource boundary used to load one LBM directly into owned memory.
+pub trait DescriptBackgroundSource {
+    /// Backend-specific load failure.
+    type Error;
+
+    /// Load the complete encoded image named by a DESCRIPT command.
+    fn load_background(&mut self, source_name: &[u8]) -> Result<Box<[u8]>, Self::Error>;
+}
+
+/// Result of applying one background command to the four-slot cache.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DescriptBackgroundCacheOutcome {
+    /// The requested name matched the beginning of the slot's retained name.
+    Hit,
+    /// A different image was loaded and replaced the selected slot.
+    Loaded {
+        /// Number of encoded bytes retained for the renderer.
+        encoded_byte_count: usize,
+    },
+}
+
+/// Cache one DESCRIPT background image using owned bytes instead of DOS temporary files.
+///
+/// This translates `index_lookup_dca` at BLOODPRG file offset `0x00755E`.
+/// The original compared only the requested name's bytes, so a request such as
+/// `short` deliberately remains a hit for a retained `shorter.lbm` resource.
+pub fn cache_background_image<Source: DescriptBackgroundSource>(
+    command: &DescriptBackgroundCommand,
+    cache: &mut DescriptBackgroundCache,
+    source: &mut Source,
+) -> Result<DescriptBackgroundCacheOutcome, Source::Error> {
+    let slot = command.slot();
+    if cache
+        .get(slot)
+        .is_some_and(|cached| cached.source_name.starts_with(command.source_name()))
+    {
+        return Ok(DescriptBackgroundCacheOutcome::Hit);
+    }
+
+    let encoded_image = source.load_background(command.source_name())?;
+    let encoded_byte_count = encoded_image.len();
+    cache.slots[slot.index()] = Some(CachedDescriptBackground {
+        source_name: Box::from(command.source_name()),
+        encoded_image,
+    });
+    Ok(DescriptBackgroundCacheOutcome::Loaded { encoded_byte_count })
+}
 
 /// Boundary detected after the current DESCRIPT command stream.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -58,16 +148,50 @@ pub fn stop_before_sequence_record(boundary: &mut DescriptRecordBoundary) {
 
 #[cfg(test)]
 mod tests {
+    use std::convert::Infallible;
+
+    use commander_blood_formats::descript::{DescriptBackgroundError, decode_background_command};
     use serde::Deserialize;
 
     use super::*;
 
     const ORACLE_VECTOR_COUNT: usize = 2;
+    const BACKGROUND_ORACLE_VECTOR_COUNT: usize = 8;
 
     #[derive(Deserialize)]
     struct StopOracle {
         name: String,
         flag_after: u8,
+    }
+
+    #[derive(Deserialize)]
+    struct BackgroundOracle {
+        name: String,
+        slot: u8,
+        copied_name: String,
+        stopping_byte: u8,
+        cache_hit: bool,
+        requested_bytes: usize,
+        written_bytes: usize,
+    }
+
+    #[derive(Default)]
+    struct RecordingBackgroundSource {
+        payload: Box<[u8]>,
+        loaded_names: Vec<Box<[u8]>>,
+    }
+
+    impl DescriptBackgroundSource for RecordingBackgroundSource {
+        type Error = Infallible;
+
+        fn load_background(&mut self, source_name: &[u8]) -> Result<Box<[u8]>, Self::Error> {
+            self.loaded_names.push(Box::from(source_name));
+            Ok(self.payload.clone())
+        }
+    }
+
+    fn background_command(slot: DescriptBackgroundSlot, name: &[u8]) -> DescriptBackgroundCommand {
+        DescriptBackgroundCommand::new(slot, Box::from(name))
     }
 
     fn assert_stop_handler(
@@ -135,5 +259,87 @@ mod tests {
             DescriptRecordKind::Sequence,
             stop_before_sequence_record,
         );
+    }
+
+    #[test]
+    fn background_cache_matches_every_original_lookup_vector() {
+        let vectors: Vec<BackgroundOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_755e_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), BACKGROUND_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let mut payload = vec![vector.slot];
+            payload.extend_from_slice(vector.copied_name.as_bytes());
+            payload.push(vector.stopping_byte);
+            let decoded = decode_background_command(&payload);
+
+            if vector.name == "high_stop_decrement_before_sign_extend" {
+                assert_eq!(
+                    decoded,
+                    Err(DescriptBackgroundError::InvalidSlot(vector.slot))
+                );
+                continue;
+            }
+
+            let (command, tail) = decoded.unwrap();
+            assert_eq!(tail, &[vector.stopping_byte], "{}", vector.name);
+            assert!(
+                vector.requested_bytes >= vector.written_bytes,
+                "{}",
+                vector.name
+            );
+
+            let mut cache = DescriptBackgroundCache::default();
+            let mut source = RecordingBackgroundSource::default();
+            if vector.cache_hit {
+                let retained_name: &[u8] = match vector.name.as_str() {
+                    "exact_cache_hit" => b"same.lbm",
+                    "prefix_cache_hit" => b"shorter.lbm",
+                    name => panic!("unknown background cache-hit oracle {name}"),
+                };
+                source.payload = Box::from(*b"seed");
+                cache_background_image(
+                    &background_command(command.slot(), retained_name),
+                    &mut cache,
+                    &mut source,
+                )
+                .unwrap();
+                source.loaded_names.clear();
+            } else {
+                source.payload = vec![165; vector.written_bytes].into_boxed_slice();
+            }
+
+            let outcome = cache_background_image(&command, &mut cache, &mut source).unwrap();
+            assert_eq!(
+                outcome == DescriptBackgroundCacheOutcome::Hit,
+                vector.cache_hit,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                source.loaded_names.len(),
+                usize::from(!vector.cache_hit),
+                "{}",
+                vector.name
+            );
+
+            let cached = cache.get(command.slot()).unwrap();
+            if !vector.cache_hit {
+                assert_eq!(
+                    cached.source_name(),
+                    vector.copied_name.as_bytes(),
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    cached.encoded_image().len(),
+                    vector.written_bytes,
+                    "{}",
+                    vector.name
+                );
+            }
+        }
     }
 }
