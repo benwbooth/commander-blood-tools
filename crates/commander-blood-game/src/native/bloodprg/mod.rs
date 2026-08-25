@@ -1,6 +1,7 @@
 //! Native BLOODPRG game logic translated to flat, typed Rust data.
 
 mod aboard;
+mod bridge_frame;
 mod descript;
 mod descript_lookup;
 mod menu_reveal;
@@ -22,6 +23,10 @@ mod vm;
 
 pub use aboard::{
     insert_aboard_object, remove_aboard_object, AboardObjectRoster, ABOARD_OBJECT_CAPACITY,
+};
+pub use bridge_frame::{
+    BridgeActorPresentationState, BridgeFrameBackend, BridgeFrameOutcome, BridgeFrameState,
+    BridgeSceneContext, BridgeSpriteRange, render_bridge_frame,
 };
 pub use descript::{
     CachedDescriptBackground, DescriptBackgroundCache, DescriptBackgroundCacheOutcome,
