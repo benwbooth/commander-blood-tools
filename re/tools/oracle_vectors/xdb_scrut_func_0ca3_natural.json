@@ -1,0 +1,67 @@
+[
+  {
+    "name": "zero",
+    "module": "scrut",
+    "entry": 3235,
+    "camera_pan": 0,
+    "node_pan": 0,
+    "secondary_pan": 0,
+    "pan_step": 0,
+    "secondary_pan_step": 0,
+    "callback_after": 3271,
+    "data_sha256": "f298d94e5f1d71685037b136b36337f66265e265d37a6597f7f1a6f1448ff304",
+    "code_sha256": "72ab15be92222b409f5460cfe18734cedd201cde4979f2a3f89a0eb0d1045dca"
+  },
+  {
+    "name": "positive_delta",
+    "module": "scrut",
+    "entry": 3235,
+    "camera_pan": 2048,
+    "node_pan": 1024,
+    "secondary_pan": 288,
+    "pan_step": 64,
+    "secondary_pan_step": 18,
+    "callback_after": 3271,
+    "data_sha256": "312e444a6b242aa6e84422e079bafb3e8a17477e3ea318045249be8173b8c148",
+    "code_sha256": "72ab15be92222b409f5460cfe18734cedd201cde4979f2a3f89a0eb0d1045dca"
+  },
+  {
+    "name": "negative_delta",
+    "module": "scrut",
+    "entry": 3235,
+    "camera_pan": 512,
+    "node_pan": 2560,
+    "secondary_pan": 65504,
+    "pan_step": 65408,
+    "secondary_pan_step": 65534,
+    "callback_after": 3271,
+    "data_sha256": "555110f7742abb87bb4e880039005e648be07ae84879131e84e2c19118e83b3e",
+    "code_sha256": "72ab15be92222b409f5460cfe18734cedd201cde4979f2a3f89a0eb0d1045dca"
+  },
+  {
+    "name": "masked_inputs",
+    "module": "scrut",
+    "entry": 3235,
+    "camera_pan": 63779,
+    "node_pan": 57669,
+    "secondary_pan": 32767,
+    "pan_step": 125,
+    "secondary_pan_step": 2047,
+    "callback_after": 3271,
+    "data_sha256": "828d863f7f836acfcd3448d44f1cb99d388b9623c39bf702b7273288c5c89a31",
+    "code_sha256": "72ab15be92222b409f5460cfe18734cedd201cde4979f2a3f89a0eb0d1045dca"
+  },
+  {
+    "name": "wrapped_delta",
+    "module": "scrut",
+    "entry": 3235,
+    "camera_pan": 3840,
+    "node_pan": 256,
+    "secondary_pan": 32768,
+    "pan_step": 224,
+    "secondary_pan_step": 63488,
+    "callback_after": 3271,
+    "data_sha256": "362e2d904fbdbc0a4eef163fc12d6b7636cfc31bd093c6a332e9fe23a1d06848",
+    "code_sha256": "72ab15be92222b409f5460cfe18734cedd201cde4979f2a3f89a0eb0d1045dca"
+  }
+]

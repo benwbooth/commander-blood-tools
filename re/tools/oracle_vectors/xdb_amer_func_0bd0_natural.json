@@ -1,0 +1,82 @@
+[
+  {
+    "name": "zero_sample",
+    "module": "amer",
+    "entry": 3024,
+    "current_sample": 0,
+    "position_y_before": 287454020,
+    "position_y_after": 287506256,
+    "angles_before": [
+      0,
+      0,
+      0
+    ],
+    "angles_after": [
+      160,
+      208,
+      224
+    ],
+    "data_sha256": "156a4092b73ad4346079dcdc3839d0e2533a942a037b8334f86362c3133fc38f",
+    "code_sha256": "e1f10fb87fbb92f20d65a6f4724d9e66e19be5dbad6675e042daa691e43237b7"
+  },
+  {
+    "name": "ordinary",
+    "module": "amer",
+    "entry": 3024,
+    "current_sample": 4660,
+    "position_y_before": 1432778632,
+    "position_y_after": 1432752516,
+    "angles_before": [
+      256,
+      512,
+      768
+    ],
+    "angles_after": [
+      416,
+      720,
+      992
+    ],
+    "data_sha256": "617b9a02a94c6c561c6619427859b200d826648fd68d3a4eb4f0bcb7fa2a7795",
+    "code_sha256": "ebdf5e9b6a832975ea3ab0b7ca0df1a7c9856d8500be2628af299265ab4ba156"
+  },
+  {
+    "name": "sample_underflow",
+    "module": "amer",
+    "entry": 3024,
+    "current_sample": 175,
+    "position_y_before": 2578103244,
+    "position_y_after": 2578120703,
+    "angles_before": [
+      65520,
+      65504,
+      65488
+    ],
+    "angles_after": [
+      144,
+      176,
+      176
+    ],
+    "data_sha256": "9b76aaa80a2dcb2b4c8c5c149c714b654ec2b1b27c816957614af502898e2b14",
+    "code_sha256": "b7b000f2f06af5dcd11af2bbb36145f72b348dba1481dda7ef99ad24a148d75f"
+  },
+  {
+    "name": "motion_wrap",
+    "module": "amer",
+    "entry": 3024,
+    "current_sample": 65535,
+    "position_y_before": 2147488308,
+    "position_y_after": 2147549007,
+    "angles_before": [
+      65408,
+      65376,
+      65344
+    ],
+    "angles_after": [
+      32,
+      48,
+      32
+    ],
+    "data_sha256": "585271119d9d63ef43d5e166ab6861631511ef36cdf1485e3a4113606995ee6d",
+    "code_sha256": "7fcd15f703b1cb775500d119439a292a504af198c29697697fbeeb1d869f0427"
+  }
+]

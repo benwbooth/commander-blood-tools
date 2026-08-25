@@ -88,6 +88,8 @@ pub enum AlienRingCallback {
     Wave,
     /// Complete a selected wave transition.
     WaveFinish,
+    /// Converge the node's pan and roll toward the camera orientation.
+    WaveMotion,
 }
 
 /// Per-node state used by the circular motion-history behavior.
@@ -103,6 +105,10 @@ pub struct AlienRingNodeState {
     pub ring_slot: usize,
     /// Per-node deterministic seed or callback-stage marker.
     pub behavior_seed: u16,
+    /// Per-frame pan increment used by the wave camera transition.
+    pub wave_pan_step: i16,
+    /// Per-frame roll decrement used by the wave camera transition.
+    pub wave_roll_step: i16,
 }
 
 /// Timer policy selected by the recovered slot-3 coordinator.
@@ -568,6 +574,8 @@ fn initialize(
         feedback_phase: INITIAL_FEEDBACK_PHASE,
         ring_slot: current_slot,
         behavior_seed: INITIAL_BEHAVIOR_SEED,
+        wave_pan_step: i16::MIN,
+        wave_roll_step: i16::MIN,
     };
     animation.entries[current_slot] = AlienRingEntry {
         pitch_step: ZERO_MOTION_COMPONENT,
@@ -602,6 +610,8 @@ fn initialize(
             feedback_phase: phase,
             ring_slot: current_slot,
             behavior_seed: u16::MIN,
+            wave_pan_step: i16::MIN,
+            wave_roll_step: i16::MIN,
         };
         animation.entries[current_slot] = AlienRingEntry::default();
         reset_pose_node(&mut pose.nodes[node_index], initial_position);
@@ -1089,6 +1099,8 @@ mod tests {
             feedback_phase: CALLBACK_FEEDBACK_PHASE,
             ring_slot: usize::from(ring_cursor) / ORIGINAL_RING_ENTRY_BYTES,
             behavior_seed: CALLBACK_BEHAVIOR_SEED,
+            wave_pan_step: i16::MIN,
+            wave_roll_step: i16::MIN,
         };
         (pose, animation)
     }
@@ -1328,6 +1340,8 @@ mod tests {
                     feedback_phase: CALLBACK_FEEDBACK_PHASE,
                     ring_slot: vector.ring_slot_before,
                     behavior_seed: vector.motion_before[5],
+                    wave_pan_step: i16::MIN,
+                    wave_roll_step: i16::MIN,
                 };
                 let next_ring_slot = next_slot(vector.ring_slot_before);
                 animation.entries[vector.ring_slot_before] =
@@ -1426,6 +1440,8 @@ mod tests {
                     feedback_phase: vector.motion_before[3],
                     ring_slot: vector.ring_slot_before,
                     behavior_seed: vector.motion_before[4],
+                    wave_pan_step: i16::MIN,
+                    wave_roll_step: i16::MIN,
                 };
                 let next_ring_slot = next_slot(vector.ring_slot_before);
                 animation.entries[vector.ring_slot_before] =

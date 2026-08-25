@@ -1,0 +1,67 @@
+[
+  {
+    "name": "zero",
+    "module": "croolis",
+    "entry": 3253,
+    "camera_pan": 0,
+    "node_pan": 0,
+    "secondary_pan": 0,
+    "pan_step": 0,
+    "secondary_pan_step": 0,
+    "callback_after": 3289,
+    "data_sha256": "1aa0c142d3efb163a562ce026bcba3f7671653ca93cc65c2c4316cd6e273cf88",
+    "code_sha256": "5834fd228471c489560cfcc05d475c263891c3c987a66de0f7100486a0173832"
+  },
+  {
+    "name": "positive_delta",
+    "module": "croolis",
+    "entry": 3253,
+    "camera_pan": 2048,
+    "node_pan": 1024,
+    "secondary_pan": 288,
+    "pan_step": 64,
+    "secondary_pan_step": 18,
+    "callback_after": 3289,
+    "data_sha256": "5967745ec3e18dfe99b6cf0becf9a2b8a9cac8430a85799cf32ae8bd34dc190b",
+    "code_sha256": "5834fd228471c489560cfcc05d475c263891c3c987a66de0f7100486a0173832"
+  },
+  {
+    "name": "negative_delta",
+    "module": "croolis",
+    "entry": 3253,
+    "camera_pan": 512,
+    "node_pan": 2560,
+    "secondary_pan": 65504,
+    "pan_step": 65408,
+    "secondary_pan_step": 65534,
+    "callback_after": 3289,
+    "data_sha256": "aab1dd3ee65d7bf6f6105e467e590652666607fd0a07e211cd40118dc8c1287d",
+    "code_sha256": "5834fd228471c489560cfcc05d475c263891c3c987a66de0f7100486a0173832"
+  },
+  {
+    "name": "masked_inputs",
+    "module": "croolis",
+    "entry": 3253,
+    "camera_pan": 63779,
+    "node_pan": 57669,
+    "secondary_pan": 32767,
+    "pan_step": 125,
+    "secondary_pan_step": 2047,
+    "callback_after": 3289,
+    "data_sha256": "1d4e723dc701c226b939038fb911c451c6594670ee2b61ffbf9ad161fbdd75aa",
+    "code_sha256": "5834fd228471c489560cfcc05d475c263891c3c987a66de0f7100486a0173832"
+  },
+  {
+    "name": "wrapped_delta",
+    "module": "croolis",
+    "entry": 3253,
+    "camera_pan": 3840,
+    "node_pan": 256,
+    "secondary_pan": 32768,
+    "pan_step": 224,
+    "secondary_pan_step": 63488,
+    "callback_after": 3289,
+    "data_sha256": "a71f46d3453ed4734c2bc4160bfd26c22ade601c620086bf4926e90a84be5fb6",
+    "code_sha256": "5834fd228471c489560cfcc05d475c263891c3c987a66de0f7100486a0173832"
+  }
+]

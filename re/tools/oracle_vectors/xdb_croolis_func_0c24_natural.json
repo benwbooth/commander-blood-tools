@@ -1,0 +1,82 @@
+[
+  {
+    "name": "zero_sample",
+    "module": "croolis",
+    "entry": 3108,
+    "current_sample": 0,
+    "position_y_before": 287454020,
+    "position_y_after": 287506256,
+    "angles_before": [
+      0,
+      0,
+      0
+    ],
+    "angles_after": [
+      160,
+      208,
+      224
+    ],
+    "data_sha256": "156a4092b73ad4346079dcdc3839d0e2533a942a037b8334f86362c3133fc38f",
+    "code_sha256": "79d93339f9d36b650838c5c9b86cdfb020e299fbd143ba4fa2da306134acf983"
+  },
+  {
+    "name": "ordinary",
+    "module": "croolis",
+    "entry": 3108,
+    "current_sample": 4660,
+    "position_y_before": 1432778632,
+    "position_y_after": 1432752516,
+    "angles_before": [
+      256,
+      512,
+      768
+    ],
+    "angles_after": [
+      416,
+      720,
+      992
+    ],
+    "data_sha256": "617b9a02a94c6c561c6619427859b200d826648fd68d3a4eb4f0bcb7fa2a7795",
+    "code_sha256": "6af90128ce1e06a8893096e386d0d5f7238273e15dbefdcbb550056b215f321a"
+  },
+  {
+    "name": "sample_underflow",
+    "module": "croolis",
+    "entry": 3108,
+    "current_sample": 175,
+    "position_y_before": 2578103244,
+    "position_y_after": 2578120703,
+    "angles_before": [
+      65520,
+      65504,
+      65488
+    ],
+    "angles_after": [
+      144,
+      176,
+      176
+    ],
+    "data_sha256": "9b76aaa80a2dcb2b4c8c5c149c714b654ec2b1b27c816957614af502898e2b14",
+    "code_sha256": "eea4de2c8afa559be850a7a951f2da00cc767aa970a9b5798ef618f5bf79ef6e"
+  },
+  {
+    "name": "motion_wrap",
+    "module": "croolis",
+    "entry": 3108,
+    "current_sample": 65535,
+    "position_y_before": 2147488308,
+    "position_y_after": 2147549007,
+    "angles_before": [
+      65408,
+      65376,
+      65344
+    ],
+    "angles_after": [
+      32,
+      48,
+      32
+    ],
+    "data_sha256": "585271119d9d63ef43d5e166ab6861631511ef36cdf1485e3a4113606995ee6d",
+    "code_sha256": "614ec6753109c7de2f0f271131e90d550e849717b1edd6984d5e356254c68464"
+  }
+]

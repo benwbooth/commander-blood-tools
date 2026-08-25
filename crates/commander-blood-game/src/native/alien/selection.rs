@@ -30,6 +30,10 @@ const METHOD_DELTA_STEP: u16 = 8;
 const METHOD_DELTA_LIMIT: u16 = 128;
 const METHOD_DELTA_MAXIMUM: u16 = 127;
 const FINISH_CALLBACK_COUNTDOWN: u16 = 4;
+const FINISH_SAMPLE_BIAS: u16 = 176;
+const FINISH_ANGLE_ADVANCE: [u16; AXIS_COUNT] = [160, 208, 224];
+const CAMERA_ANGLE_MASK: u16 = 0x0ffc;
+const CAMERA_MOTION_SHIFT: u32 = 4;
 
 /// Typed continuation selected by the slot-1 bounds callback.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -178,6 +182,50 @@ pub fn update_wave_callback(
     Ok(AlienWaveCallbackUpdate::CameraUpdateRequested)
 }
 
+/// Apply the recovered selected-wave pose update.
+///
+/// The original routine read a module-global sample and replaced only the low
+/// word of the node's Y position. The flat runtime receives that sample as a
+/// normal value while retaining the exact wrapping arithmetic.
+pub fn update_wave_finish(
+    node_index: usize,
+    current_sample: u16,
+    pose: &mut AlienModelPose,
+) -> Result<(), AlienSelectionError> {
+    validate_pose_node(node_index, pose)?;
+    let node = &mut pose.nodes[node_index];
+    node.local_position[Y_AXIS] = replace_low_word(
+        node.local_position[Y_AXIS],
+        current_sample.wrapping_sub(FINISH_SAMPLE_BIAS),
+    );
+    for (angle, advance) in node.angles.iter_mut().zip(FINISH_ANGLE_ADVANCE) {
+        *angle = angle.wrapping_add(advance);
+    }
+    Ok(())
+}
+
+/// Prepare the recovered per-frame motion toward the camera orientation.
+///
+/// Executable callback addresses from the DOS overlay become a typed callback
+/// variant, and the reused C structure words become named motion fields.
+pub fn update_wave_camera(
+    node_index: usize,
+    camera_pan: u16,
+    pose: &AlienModelPose,
+    animation: &mut AlienRingAnimationState,
+) -> Result<(), AlienSelectionError> {
+    validate_node(node_index, pose, animation)?;
+    let node = &pose.nodes[node_index];
+    let masked_camera_pan = camera_pan & CAMERA_ANGLE_MASK;
+    let masked_node_pan = node.angles[Y_AXIS] & CAMERA_ANGLE_MASK;
+    let pan_delta = masked_camera_pan.wrapping_sub(masked_node_pan) as i16;
+    let state = &mut animation.nodes[node_index];
+    state.wave_pan_step = pan_delta >> CAMERA_MOTION_SHIFT;
+    state.wave_roll_step = (node.angles[Z_AXIS] as i16) >> CAMERA_MOTION_SHIFT;
+    state.callback = AlienRingCallback::WaveMotion;
+    Ok(())
+}
+
 fn validate_node(
     node_index: usize,
     pose: &AlienModelPose,
@@ -189,13 +237,16 @@ fn validate_node(
             animation: animation.nodes.len(),
         });
     }
-    if node_index >= pose.nodes.len() {
-        return Err(AlienSelectionError::InvalidNodeIndex {
+    validate_pose_node(node_index, pose)
+}
+
+fn validate_pose_node(node_index: usize, pose: &AlienModelPose) -> Result<(), AlienSelectionError> {
+    (node_index < pose.nodes.len())
+        .then_some(())
+        .ok_or(AlienSelectionError::InvalidNodeIndex {
             node_index,
             node_count: pose.nodes.len(),
-        });
-    }
-    Ok(())
+        })
 }
 
 fn node_outside_selection_bounds(node: &super::AlienNodePose) -> bool {
@@ -292,6 +343,29 @@ mod tests {
         expected_action: String,
     }
 
+    #[derive(Deserialize)]
+    struct WaveFinishVector {
+        name: String,
+        module: String,
+        current_sample: u16,
+        position_y_before: u32,
+        position_y_after: u32,
+        angles_before: [u16; AXIS_COUNT],
+        angles_after: [u16; AXIS_COUNT],
+    }
+
+    #[derive(Deserialize)]
+    struct WaveCameraVector {
+        name: String,
+        module: String,
+        camera_pan: u16,
+        node_pan: u16,
+        secondary_pan: u16,
+        pan_step: u16,
+        secondary_pan_step: u16,
+        callback_after: u16,
+    }
+
     fn fixtures() -> [&'static str; AXIS_COUNT] {
         [
             include_str!("../../../../../re/tools/oracle_vectors/xdb_amer_func_0bea_natural.json"),
@@ -309,6 +383,26 @@ mod tests {
                 "../../../../../re/tools/oracle_vectors/xdb_croolis_func_0b78_natural.json"
             ),
             include_str!("../../../../../re/tools/oracle_vectors/xdb_scrut_func_0b78_natural.json"),
+        ]
+    }
+
+    fn wave_finish_fixtures() -> [&'static str; AXIS_COUNT] {
+        [
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_amer_func_0bd0_natural.json"),
+            include_str!(
+                "../../../../../re/tools/oracle_vectors/xdb_croolis_func_0c24_natural.json"
+            ),
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_scrut_func_0c18_natural.json"),
+        ]
+    }
+
+    fn wave_camera_fixtures() -> [&'static str; AXIS_COUNT] {
+        [
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_amer_func_0c5d_natural.json"),
+            include_str!(
+                "../../../../../re/tools/oracle_vectors/xdb_croolis_func_0cb5_natural.json"
+            ),
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_scrut_func_0ca3_natural.json"),
         ]
     }
 
@@ -353,6 +447,15 @@ mod tests {
             "amer" => 0x0BD0,
             "croolis" => 0x0C24,
             "scrut" => 0x0C18,
+            _ => panic!("unknown alien module {module}"),
+        }
+    }
+
+    fn motion_callback(module: &str) -> u16 {
+        match module {
+            "amer" => 0x0C81,
+            "croolis" => 0x0CD9,
+            "scrut" => 0x0CC7,
             _ => panic!("unknown alien module {module}"),
         }
     }
@@ -585,6 +688,62 @@ mod tests {
                         AlienRingCallback::WaveFinish
                     }
                 );
+            }
+        }
+    }
+
+    #[test]
+    fn wave_finish_matches_every_original_overlay_vector() {
+        for fixture in wave_finish_fixtures() {
+            let vectors: Vec<WaveFinishVector> = serde_json::from_str(fixture).unwrap();
+            for vector in vectors {
+                let mut pose = pose(
+                    [i32::MIN; AXIS_COUNT],
+                    [u32::MIN, vector.position_y_before, u32::MIN],
+                );
+                pose.nodes[FIRST_NODE].angles = vector.angles_before;
+
+                update_wave_finish(FIRST_NODE, vector.current_sample, &mut pose).unwrap();
+
+                assert_eq!(
+                    pose.nodes[FIRST_NODE].local_position[Y_AXIS] as u32, vector.position_y_after,
+                    "{} {}",
+                    vector.module, vector.name
+                );
+                assert_eq!(
+                    pose.nodes[FIRST_NODE].angles, vector.angles_after,
+                    "{} {}",
+                    vector.module, vector.name
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn wave_camera_matches_every_original_overlay_vector() {
+        for fixture in wave_camera_fixtures() {
+            let vectors: Vec<WaveCameraVector> = serde_json::from_str(fixture).unwrap();
+            for vector in vectors {
+                assert_eq!(vector.callback_after, motion_callback(&vector.module));
+                let mut pose = pose([i32::MIN; AXIS_COUNT], [u32::MIN; AXIS_COUNT]);
+                pose.nodes[FIRST_NODE].angles[Y_AXIS] = vector.node_pan;
+                pose.nodes[FIRST_NODE].angles[Z_AXIS] = vector.secondary_pan;
+                let mut animation = AlienRingAnimationState::new(SINGLE_NODE_COUNT);
+
+                update_wave_camera(FIRST_NODE, vector.camera_pan, &pose, &mut animation).unwrap();
+
+                let state = animation.nodes[FIRST_NODE];
+                assert_eq!(
+                    state.wave_pan_step as u16, vector.pan_step,
+                    "{} {}",
+                    vector.module, vector.name
+                );
+                assert_eq!(
+                    state.wave_roll_step as u16, vector.secondary_pan_step,
+                    "{} {}",
+                    vector.module, vector.name
+                );
+                assert_eq!(state.callback, AlienRingCallback::WaveMotion);
             }
         }
     }
