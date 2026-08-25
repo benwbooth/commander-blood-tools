@@ -2478,6 +2478,45 @@ def alien_slot2_dispatch_or_init_vectors(
         if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
             raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
 
+        semantic_node_count = (
+            state_count if 0 < state_count <= 64 else 0
+        )
+        node_states = []
+        for node_index in range(semantic_node_count):
+            node_state = (state_base + (node_index + 1) * 0x5E) & 0xFFFF
+            node_states.append(
+                {
+                    "local_x_before": get_u16(data_before, node_state + 0x42),
+                    "local_z_before": get_u16(data_before, node_state + 0x4A),
+                    "pan_after": get_u16(data_expected, node_state + 0x50),
+                    "roll_after": get_u16(data_expected, node_state + 0x52),
+                    "radial_after": get_u16(data_expected, node_state + 0x54),
+                    "velocity_after": get_u16(data_expected, node_state + 0x56),
+                    "sample_phase_after": get_u16(data_expected, node_state + 0x58),
+                    "depth_target_after": get_u16(data_expected, node_state + 0x5A),
+                }
+            )
+        if module == "amer":
+            duration_after = None
+            motion_accumulator_after = get_u16(
+                data_expected, context_offset + 0x38
+            )
+            signed_seed_after = None
+        elif module == "croolis":
+            duration_after = get_u16(data_expected, context_offset + 0x38)
+            motion_accumulator_after = get_u16(
+                data_expected, context_offset + 0x3A
+            )
+            signed_seed_after = struct.unpack_from(
+                "<i", data_expected, context_offset + 0x3C
+            )[0]
+        else:
+            duration_after = get_u16(data_expected, context_offset + 0x38)
+            motion_accumulator_after = None
+            signed_seed_after = struct.unpack_from(
+                "<i", data_expected, context_offset + 0x3A
+            )[0]
+
         vectors.append(
             {
                 "name": name,
@@ -2499,6 +2538,10 @@ def alien_slot2_dispatch_or_init_vectors(
                     if seed_offset is not None
                     else None
                 ),
+                "duration_after": duration_after,
+                "motion_accumulator_after": motion_accumulator_after,
+                "signed_seed_after": signed_seed_after,
+                "node_states": node_states,
                 "data_sha256": hashlib.sha256(data_expected).hexdigest(),
                 "fs_sha256": hashlib.sha256(fs_expected).hexdigest(),
                 "defined_flags": expected_flags,

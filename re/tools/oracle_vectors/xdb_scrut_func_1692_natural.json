@@ -35,6 +35,31 @@
     "context_random": 0,
     "seed_before": 4660,
     "seed_after": 4960,
+    "duration_after": 50,
+    "motion_accumulator_after": null,
+    "signed_seed_after": 4660,
+    "node_states": [
+      {
+        "local_x_before": 16419,
+        "local_z_before": 10251,
+        "pan_after": 0,
+        "roll_after": 0,
+        "radial_after": 0,
+        "velocity_after": 0,
+        "sample_phase_after": 0,
+        "depth_target_after": 0
+      },
+      {
+        "local_x_before": 59081,
+        "local_z_before": 52913,
+        "pan_after": 31839,
+        "roll_after": 46745,
+        "radial_after": 61651,
+        "velocity_after": 59081,
+        "sample_phase_after": 25671,
+        "depth_target_after": 52913
+      }
+    ],
     "data_sha256": "50a9b15d22728d8f953ad27be40203e93dda1bd6a563b16373fec403ed1d0326",
     "fs_sha256": "b27d99a8e6de8a7778b18ae989fe2b968f39e32c33b57fa32f3033ac326ecb90",
     "defined_flags": {
@@ -62,6 +87,41 @@
     "context_random": 65278,
     "seed_before": 32769,
     "seed_after": 33069,
+    "duration_after": 50,
+    "motion_accumulator_after": null,
+    "signed_seed_after": -32767,
+    "node_states": [
+      {
+        "local_x_before": 20788,
+        "local_z_before": 14620,
+        "pan_after": 3836,
+        "roll_after": 0,
+        "radial_after": 0,
+        "velocity_after": 0,
+        "sample_phase_after": 0,
+        "depth_target_after": 0
+      },
+      {
+        "local_x_before": 63450,
+        "local_z_before": 57282,
+        "pan_after": 36208,
+        "roll_after": 51114,
+        "radial_after": 484,
+        "velocity_after": 63450,
+        "sample_phase_after": 30040,
+        "depth_target_after": 57282
+      },
+      {
+        "local_x_before": 40320,
+        "local_z_before": 34152,
+        "pan_after": 13078,
+        "roll_after": 27984,
+        "radial_after": 42890,
+        "velocity_after": 40320,
+        "sample_phase_after": 7166,
+        "depth_target_after": 34152
+      }
+    ],
     "data_sha256": "853c877d165aa93a5cb7ef8fd77b56e75c03dffdd6d20c776760815778077be9",
     "fs_sha256": "19d555f36a75781184b2fc367557375ad15020c1f3c673cc522dd81b61ac95a7",
     "defined_flags": {
@@ -89,6 +149,21 @@
     "context_random": 6,
     "seed_before": 32767,
     "seed_after": 33067,
+    "duration_after": 52913,
+    "motion_accumulator_after": null,
+    "signed_seed_after": 1109771431,
+    "node_states": [
+      {
+        "local_x_before": 25157,
+        "local_z_before": 18989,
+        "pan_after": 11279,
+        "roll_after": 8709,
+        "radial_after": 41091,
+        "velocity_after": 38521,
+        "sample_phase_after": 5367,
+        "depth_target_after": 14877
+      }
+    ],
     "data_sha256": "917678b90e5f872bd3aa643e52e4e05febd882e67b1a354f38d57c042a1ab104",
     "fs_sha256": "5c91341d0693b8a1106a5bfcf119795012079e4444936df61d57044e902d5d6d",
     "defined_flags": {
@@ -116,6 +191,10 @@
     "context_random": 65022,
     "seed_before": 65535,
     "seed_after": 299,
+    "duration_after": 52142,
+    "motion_accumulator_after": null,
+    "signed_seed_after": 1396102584,
+    "node_states": [],
     "data_sha256": "f05a55a31fda22e7310f353342f4fcdc97f82a9403974bbf9ea005b95df0bf61",
     "fs_sha256": "d988c68586be1a367a34e82c2456651aea22d08d5bfbe90ebbfbf3677f936496",
     "defined_flags": {

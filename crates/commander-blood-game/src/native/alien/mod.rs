@@ -13,6 +13,7 @@ mod resume;
 mod ring;
 mod scene;
 mod selection;
+mod slot2;
 mod starfield;
 mod wave;
 
@@ -58,6 +59,10 @@ pub use selection::{
     AlienSelectionError, AlienSelectionUpdate, AlienWaveCallbackUpdate, AlienWaveMotionUpdate,
     AlienWaveReturnUpdate, continue_wave_steering, update_wave_callback, update_wave_camera,
     update_wave_finish, update_wave_motion, update_wave_return, update_wave_selection,
+};
+pub use slot2::{
+    AlienSlot2AnimationState, AlienSlot2Callback, AlienSlot2Callbacks, AlienSlot2Error,
+    AlienSlot2NodeState, AlienSlot2SceneState, AlienSlot2Update, initialize_or_dispatch_slot2,
 };
 pub use starfield::{
     AlienStar, AlienStarRejections, AlienStarfieldError, AlienStarfieldFrame, STAR_COUNT,

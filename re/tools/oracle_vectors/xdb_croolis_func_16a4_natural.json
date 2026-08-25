@@ -35,6 +35,31 @@
     "context_random": 0,
     "seed_before": 4660,
     "seed_after": 4910,
+    "duration_after": 50,
+    "motion_accumulator_after": 0,
+    "signed_seed_after": 4660,
+    "node_states": [
+      {
+        "local_x_before": 16419,
+        "local_z_before": 10251,
+        "pan_after": 0,
+        "roll_after": 0,
+        "radial_after": 0,
+        "velocity_after": 0,
+        "sample_phase_after": 0,
+        "depth_target_after": 63707
+      },
+      {
+        "local_x_before": 59081,
+        "local_z_before": 52913,
+        "pan_after": 31839,
+        "roll_after": 46745,
+        "radial_after": 61651,
+        "velocity_after": 52913,
+        "sample_phase_after": 25671,
+        "depth_target_after": 40577
+      }
+    ],
     "data_sha256": "8d9ab1ff0662fd66f74b7112e599d70c5f22c71de96b866579a93ad740d50440",
     "fs_sha256": "b27d99a8e6de8a7778b18ae989fe2b968f39e32c33b57fa32f3033ac326ecb90",
     "defined_flags": {
@@ -62,6 +87,41 @@
     "context_random": 65278,
     "seed_before": 32769,
     "seed_after": 33019,
+    "duration_after": 50,
+    "motion_accumulator_after": 0,
+    "signed_seed_after": -32767,
+    "node_states": [
+      {
+        "local_x_before": 20788,
+        "local_z_before": 14620,
+        "pan_after": 3836,
+        "roll_after": 0,
+        "radial_after": 0,
+        "velocity_after": 0,
+        "sample_phase_after": 0,
+        "depth_target_after": 2540
+      },
+      {
+        "local_x_before": 63450,
+        "local_z_before": 57282,
+        "pan_after": 36208,
+        "roll_after": 51114,
+        "radial_after": 484,
+        "velocity_after": 57282,
+        "sample_phase_after": 30040,
+        "depth_target_after": 44946
+      },
+      {
+        "local_x_before": 40320,
+        "local_z_before": 34152,
+        "pan_after": 13078,
+        "roll_after": 27984,
+        "radial_after": 42890,
+        "velocity_after": 34152,
+        "sample_phase_after": 7166,
+        "depth_target_after": 21816
+      }
+    ],
     "data_sha256": "e09ce07079642120a9600b23886ce70b658c651216d6aec90e524e3a939ce964",
     "fs_sha256": "19d555f36a75781184b2fc367557375ad15020c1f3c673cc522dd81b61ac95a7",
     "defined_flags": {
@@ -89,6 +149,21 @@
     "context_random": 6,
     "seed_before": 32767,
     "seed_after": 33017,
+    "duration_after": 52913,
+    "motion_accumulator_after": 44175,
+    "signed_seed_after": -995671515,
+    "node_states": [
+      {
+        "local_x_before": 25157,
+        "local_z_before": 18989,
+        "pan_after": 11279,
+        "roll_after": 2797,
+        "radial_after": 41091,
+        "velocity_after": 8709,
+        "sample_phase_after": 5367,
+        "depth_target_after": 43661
+      }
+    ],
     "data_sha256": "e910ebc1e65a06ff9096536e33d15d1910901aebbbf86f0321bf861c1510dfb8",
     "fs_sha256": "5c91341d0693b8a1106a5bfcf119795012079e4444936df61d57044e902d5d6d",
     "defined_flags": {
@@ -116,6 +191,10 @@
     "context_random": 65022,
     "seed_before": 65535,
     "seed_after": 249,
+    "duration_after": 15134,
+    "motion_accumulator_after": 48544,
+    "signed_seed_after": 823439250,
+    "node_states": [],
     "data_sha256": "00a5e48a180e8e17716c92a2ddaf3c653743c3d5488c293082403dde9ac19d53",
     "fs_sha256": "d988c68586be1a367a34e82c2456651aea22d08d5bfbe90ebbfbf3677f936496",
     "defined_flags": {
