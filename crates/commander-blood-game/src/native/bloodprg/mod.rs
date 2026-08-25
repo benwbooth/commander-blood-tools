@@ -21,6 +21,7 @@ mod choice_list;
 mod descript;
 mod descript_lookup;
 mod framebuffer_copy;
+mod input_dispatch;
 mod menu_reveal;
 mod name_area_effect;
 mod navigation;
@@ -160,6 +161,11 @@ pub use descript_lookup::{
 pub use framebuffer_copy::{
     FramebufferCopyError, FramebufferKind, LOGICAL_FRAMEBUFFER_HEIGHT,
     LOGICAL_FRAMEBUFFER_WIDTH, copy_work_surface_span,
+};
+pub use input_dispatch::{
+    HostInputKey, IgnoredInputAction, InputAction, InputArrowKey, InputDispatchState,
+    InputFunctionKey, dispatch_input_key, latch_input_text_byte, request_input_shutdown,
+    toggle_input_pause, translate_input_key,
 };
 pub use menu_reveal::{
     reveal_inline_menu_step, InlineMenuRevealError, InlineMenuRevealFrame,

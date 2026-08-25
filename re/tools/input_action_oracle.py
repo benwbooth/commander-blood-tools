@@ -183,6 +183,7 @@ def inventory() -> dict[str, object]:
     return {
         "table_file_offset": "0x0020ee",
         "translation_file_offset": "0x001fee",
+        "translation_table": list(translation),
         "mapped_action_indices": mapped,
         "unmapped_handler_indices": [4],
         "handlers": [
