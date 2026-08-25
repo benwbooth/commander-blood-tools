@@ -293,6 +293,42 @@ pub fn decode_talk_clip(
     ))
 }
 
+/// Vertical placement of a location scene's primary video.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct DescriptLocationLayout {
+    top_row: u16,
+}
+
+impl DescriptLocationLayout {
+    /// Build a layout from its authored top row.
+    pub const fn new(top_row: u16) -> Self {
+        Self { top_row }
+    }
+
+    /// Return the first display row occupied by the scene video.
+    pub const fn top_row(self) -> u16 {
+        self.top_row
+    }
+}
+
+/// Failure while decoding an opcode-08 location layout.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DescriptLocationLayoutError {
+    /// The command does not contain the complete little-endian row word.
+    MissingTopRow,
+}
+
+/// Decode a location scene's top row and return the following command bytes.
+pub fn decode_location_layout(
+    payload: &[u8],
+) -> Result<(DescriptLocationLayout, &[u8]), DescriptLocationLayoutError> {
+    let (encoded_row, tail) = payload
+        .split_at_checked(size_of::<u16>())
+        .ok_or(DescriptLocationLayoutError::MissingTopRow)?;
+    let top_row = u16::from_le_bytes(encoded_row.try_into().unwrap());
+    Ok((DescriptLocationLayout::new(top_row), tail))
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::{Path, PathBuf};
@@ -421,6 +457,19 @@ mod tests {
         let (no_background, tail) = decode_talk_clip(&no_background_payload).unwrap();
         assert_eq!(no_background.background(), DescriptTalkBackground::None);
         assert!(no_background.video().as_bytes().is_empty());
+        assert_eq!(tail, &[NEXT_OPCODE]);
+    }
+
+    #[test]
+    fn location_layout_decodes_the_shipped_top_row() {
+        const NEXT_OPCODE: u8 = 5;
+        const SHIPPED_LOCATION_TOP_ROW: u16 = 35;
+
+        let mut payload = SHIPPED_LOCATION_TOP_ROW.to_le_bytes().to_vec();
+        payload.push(NEXT_OPCODE);
+        let (layout, tail) = decode_location_layout(&payload).unwrap();
+
+        assert_eq!(layout.top_row(), SHIPPED_LOCATION_TOP_ROW);
         assert_eq!(tail, &[NEXT_OPCODE]);
     }
 }

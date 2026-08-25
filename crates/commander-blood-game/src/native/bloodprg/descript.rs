@@ -1,8 +1,9 @@
 //! Runtime state produced while applying typed DESCRIPT records.
 
 use commander_blood_formats::descript::{
-    DescriptBackgroundCommand, DescriptBackgroundSlot, DescriptCaptionCommand, DescriptRecordKind,
-    DescriptSoundBankName, DescriptTalkClip, DescriptVideoName,
+    DescriptBackgroundCommand, DescriptBackgroundSlot, DescriptCaptionCommand,
+    DescriptLocationLayout, DescriptRecordKind, DescriptSoundBankName, DescriptTalkClip,
+    DescriptVideoName,
 };
 
 use super::text_handler::TextPresentationState;
@@ -118,6 +119,7 @@ pub struct DescriptPresentationAssets {
     character_left_scene_video: Option<Box<[u8]>>,
     sound_bank: Option<Box<[u8]>>,
     talk_clips: Vec<DescriptTalkClip>,
+    location_scene_top_row: Option<u16>,
 }
 
 impl DescriptPresentationAssets {
@@ -149,6 +151,11 @@ impl DescriptPresentationAssets {
     /// Return character talk animations in authored playback-table order.
     pub fn talk_clips(&self) -> &[DescriptTalkClip] {
         &self.talk_clips
+    }
+
+    /// Return the first display row occupied by the location scene video.
+    pub const fn location_scene_top_row(&self) -> Option<u16> {
+        self.location_scene_top_row
     }
 }
 
@@ -233,6 +240,17 @@ pub fn append_descript_talk_clip(clip: &DescriptTalkClip, assets: &mut DescriptP
     assets.talk_clips.push(clip.clone());
 }
 
+/// Select the vertical placement of a location scene video.
+///
+/// This translates `byte_parser_store_word_1fa5` at BLOODPRG file offset
+/// `0x0076BA`. All 64 shipped location records select row 35.
+pub fn set_location_scene_top_row(
+    layout: DescriptLocationLayout,
+    assets: &mut DescriptPresentationAssets,
+) {
+    assets.location_scene_top_row = Some(layout.top_row());
+}
+
 /// Boundary detected after the current DESCRIPT command stream.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct DescriptRecordBoundary {
@@ -293,8 +311,8 @@ mod tests {
 
     use commander_blood_formats::descript::{
         DescriptBackgroundError, DescriptTalkBackground, DescriptTalkClipError,
-        decode_background_command, decode_caption_command, decode_sound_bank_name,
-        decode_talk_clip, decode_video_name,
+        decode_background_command, decode_caption_command, decode_location_layout,
+        decode_sound_bank_name, decode_talk_clip, decode_video_name,
     };
     use serde::Deserialize;
 
@@ -304,6 +322,7 @@ mod tests {
     const BACKGROUND_ORACLE_VECTOR_COUNT: usize = 8;
     const INVALID_TALK_BACKGROUND_HIGH: u8 = 128;
     const INVALID_TALK_BACKGROUND_ZERO: u8 = 0;
+    const LOCATION_LAYOUT_ORACLE_VECTOR_COUNT: usize = 8;
     const PRESENTATION_ACTIVE_BIT: u16 = 1;
     const SOUND_BANK_ORACLE_VECTOR_COUNT: usize = 8;
     const TALK_CLIP_ORACLE_VECTOR_COUNT: usize = 12;
@@ -358,6 +377,13 @@ mod tests {
         asset_id: u8,
         copied_hex: String,
         stopping_byte: u8,
+    }
+
+    #[derive(Deserialize)]
+    struct LocationLayoutOracle {
+        name: String,
+        operand: u16,
+        destination_after: u16,
     }
 
     #[derive(Clone, Copy)]
@@ -769,6 +795,36 @@ mod tests {
             let mut assets = DescriptPresentationAssets::default();
             append_descript_talk_clip(&clip, &mut assets);
             assert_eq!(assets.talk_clips(), &[clip], "{}", vector.name);
+        }
+    }
+
+    #[test]
+    fn location_scene_top_row_matches_every_original_store_vector() {
+        let vectors: Vec<LocationLayoutOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_76ba_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), LOCATION_LAYOUT_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let encoded = vector.operand.to_le_bytes();
+            let (layout, tail) = decode_location_layout(&encoded).unwrap();
+            assert!(tail.is_empty(), "{}", vector.name);
+            assert_eq!(
+                layout.top_row(),
+                vector.destination_after,
+                "{}",
+                vector.name
+            );
+
+            let mut assets = DescriptPresentationAssets::default();
+            set_location_scene_top_row(layout, &mut assets);
+            assert_eq!(
+                assets.location_scene_top_row(),
+                Some(vector.destination_after),
+                "{}",
+                vector.name
+            );
         }
     }
 }
