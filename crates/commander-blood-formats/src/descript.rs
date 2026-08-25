@@ -162,6 +162,64 @@ pub fn decode_caption_command(
     ))
 }
 
+/// One centered subtitle that becomes visible at a sequence frame.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DescriptSequenceSubtitle {
+    first_visible_frame: u16,
+    text: Box<[u8]>,
+}
+
+impl DescriptSequenceSubtitle {
+    /// Build one subtitle from its playback threshold and owned game-font bytes.
+    pub fn new(first_visible_frame: u16, text: Box<[u8]>) -> Self {
+        Self {
+            first_visible_frame,
+            text,
+        }
+    }
+
+    /// Return the first decoded video frame at which this subtitle is visible.
+    pub const fn first_visible_frame(&self) -> u16 {
+        self.first_visible_frame
+    }
+
+    /// Return the subtitle bytes exactly as authored in DESCRIPT.DES.
+    pub fn text(&self) -> &[u8] {
+        &self.text
+    }
+}
+
+/// Failure while decoding the payload following a DESCRIPT opcode-0D byte.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DescriptSequenceSubtitleError {
+    /// The command ended before its complete little-endian frame threshold.
+    MissingFrame,
+    /// The subtitle reaches the end of the record without a terminating zero.
+    MissingTextTerminator,
+}
+
+/// Decode a frame-thresholded centered subtitle and consume its terminating zero.
+pub fn decode_sequence_subtitle(
+    payload: &[u8],
+) -> Result<(DescriptSequenceSubtitle, &[u8]), DescriptSequenceSubtitleError> {
+    let (encoded_frame, text_and_tail) = payload
+        .split_at_checked(size_of::<u16>())
+        .ok_or(DescriptSequenceSubtitleError::MissingFrame)?;
+    let first_visible_frame = u16::from_le_bytes(encoded_frame.try_into().unwrap());
+    let text_length = text_and_tail
+        .iter()
+        .position(|byte| *byte == u8::MIN)
+        .ok_or(DescriptSequenceSubtitleError::MissingTextTerminator)?;
+
+    Ok((
+        DescriptSequenceSubtitle::new(
+            first_visible_frame,
+            Box::from(&text_and_tail[..text_length]),
+        ),
+        &text_and_tail[text_length + 1..],
+    ))
+}
+
 /// Case-preserving HNM resource name decoded from a DESCRIPT video command.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DescriptVideoName(Box<[u8]>);
@@ -464,6 +522,32 @@ mod tests {
 
         assert_eq!(command.text(), &[128, 255, 1]);
         assert_eq!(tail, &[NEXT_OPCODE]);
+    }
+
+    #[test]
+    fn sequence_subtitle_consumes_its_zero_and_preserves_following_bytes() {
+        const FIRST_VISIBLE_FRAME: u16 = 300;
+        const FOLLOWING_BYTE: u8 = 12;
+
+        let mut payload = FIRST_VISIBLE_FRAME.to_le_bytes().to_vec();
+        payload.extend_from_slice(&[128, 255, 0, FOLLOWING_BYTE]);
+        let (subtitle, tail) = decode_sequence_subtitle(&payload).unwrap();
+
+        assert_eq!(subtitle.first_visible_frame(), FIRST_VISIBLE_FRAME);
+        assert_eq!(subtitle.text(), &[128, 255]);
+        assert_eq!(tail, &[FOLLOWING_BYTE]);
+    }
+
+    #[test]
+    fn sequence_subtitle_rejects_truncated_payloads() {
+        assert_eq!(
+            decode_sequence_subtitle(&[1]),
+            Err(DescriptSequenceSubtitleError::MissingFrame)
+        );
+        assert_eq!(
+            decode_sequence_subtitle(&[1, 0, b'A']),
+            Err(DescriptSequenceSubtitleError::MissingTextTerminator)
+        );
     }
 
     #[test]

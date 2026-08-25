@@ -2,8 +2,8 @@
 
 use commander_blood_formats::descript::{
     DescriptBackgroundCommand, DescriptBackgroundSlot, DescriptCaptionCommand, DescriptIdleClip,
-    DescriptLocationLayout, DescriptRecordKind, DescriptSoundBankName, DescriptTalkClip,
-    DescriptVideoName,
+    DescriptLocationLayout, DescriptRecordKind, DescriptSequenceSubtitle, DescriptSoundBankName,
+    DescriptTalkClip, DescriptVideoName,
 };
 
 use super::text_handler::TextPresentationState;
@@ -123,6 +123,7 @@ pub struct DescriptPresentationAssets {
     idle_clip: Option<DescriptIdleClip>,
     encoded_idle_video: Option<Box<[u8]>>,
     sequence_videos: Vec<DescriptVideoName>,
+    sequence_subtitles: Vec<DescriptSequenceSubtitle>,
 }
 
 impl DescriptPresentationAssets {
@@ -174,6 +175,11 @@ impl DescriptPresentationAssets {
     /// Return standalone sequence videos in authored playback order.
     pub fn sequence_videos(&self) -> &[DescriptVideoName] {
         &self.sequence_videos
+    }
+
+    /// Return centered sequence subtitles in authored threshold order.
+    pub fn sequence_subtitles(&self) -> &[DescriptSequenceSubtitle] {
+        &self.sequence_subtitles
     }
 }
 
@@ -310,6 +316,18 @@ pub fn append_descript_sequence_video(
     assets.sequence_videos.push(video.clone());
 }
 
+/// Append one frame-thresholded centered subtitle in authored order.
+///
+/// This translates `byte_parser_stream_0f18_append` at BLOODPRG file offset
+/// `0x007776`. Typed owned cues replace the packed native byte stream, its
+/// mutable cursor, and its trailing negative-threshold sentinel.
+pub fn append_descript_sequence_subtitle(
+    subtitle: &DescriptSequenceSubtitle,
+    assets: &mut DescriptPresentationAssets,
+) {
+    assets.sequence_subtitles.push(subtitle.clone());
+}
+
 /// Boundary detected after the current DESCRIPT command stream.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct DescriptRecordBoundary {
@@ -371,7 +389,8 @@ mod tests {
     use commander_blood_formats::descript::{
         DescriptBackgroundError, DescriptCharacterBackground, DescriptIdleClipError,
         DescriptTalkClipError, decode_background_command, decode_caption_command, decode_idle_clip,
-        decode_location_layout, decode_sound_bank_name, decode_talk_clip, decode_video_name,
+        decode_location_layout, decode_sequence_subtitle, decode_sound_bank_name, decode_talk_clip,
+        decode_video_name,
     };
     use serde::Deserialize;
 
@@ -387,6 +406,7 @@ mod tests {
     const SOUND_BANK_ORACLE_VECTOR_COUNT: usize = 8;
     const TALK_CLIP_ORACLE_VECTOR_COUNT: usize = 12;
     const SEQUENCE_VIDEO_ORACLE_VECTOR_COUNT: usize = 8;
+    const SEQUENCE_SUBTITLE_ORACLE_VECTOR_COUNT: usize = 7;
     const VIDEO_ORACLE_VECTOR_COUNT: usize = 8;
 
     #[derive(Deserialize)]
@@ -455,6 +475,14 @@ mod tests {
         stopping_byte: u8,
         ui_state: u16,
         helper_called: Option<String>,
+    }
+
+    #[derive(Deserialize)]
+    struct SequenceSubtitleOracle {
+        name: String,
+        leading_word: u16,
+        suffix_hex: String,
+        copied_hex: String,
     }
 
     #[derive(Clone, Copy)]
@@ -998,6 +1026,40 @@ mod tests {
             append_descript_sequence_video(&first, &mut assets);
             append_descript_sequence_video(&video, &mut assets);
             assert_eq!(assets.sequence_videos(), &[first, video], "{}", vector.name);
+        }
+    }
+
+    #[test]
+    fn sequence_subtitle_list_matches_every_original_append_vector() {
+        let vectors: Vec<SequenceSubtitleOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_7776_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), SEQUENCE_SUBTITLE_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let mut input = vector.leading_word.to_le_bytes().to_vec();
+            input.extend_from_slice(&bytes_from_hex(&vector.suffix_hex));
+            let copied = bytes_from_hex(&vector.copied_hex);
+            let (subtitle, tail) = decode_sequence_subtitle(&input).unwrap();
+
+            assert_eq!(
+                subtitle.first_visible_frame(),
+                vector.leading_word,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                subtitle.text(),
+                &copied[size_of::<u16>()..copied.len() - 1],
+                "{}",
+                vector.name
+            );
+            assert_eq!(tail, &input[copied.len()..], "{}", vector.name);
+
+            let mut assets = DescriptPresentationAssets::default();
+            append_descript_sequence_subtitle(&subtitle, &mut assets);
+            assert_eq!(assets.sequence_subtitles(), &[subtitle], "{}", vector.name);
         }
     }
 }
