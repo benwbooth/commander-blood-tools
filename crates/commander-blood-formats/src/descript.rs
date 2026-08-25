@@ -5,6 +5,7 @@ const BACKGROUND_SLOT_COUNT: u8 = 4;
 const LAST_BACKGROUND_SLOT: u8 = FIRST_BACKGROUND_SLOT + BACKGROUND_SLOT_COUNT - 1;
 const PRINTABLE_NAME_START: u8 = 32;
 const PRINTABLE_NAME_END: u8 = 127;
+const NO_TALK_BACKGROUND_ID: u8 = u8::MAX;
 
 /// Semantic kind byte stored immediately before each DESCRIPT record length.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -226,6 +227,72 @@ pub fn decode_sound_bank_name(
     Ok((DescriptSoundBankName::new(source_name), tail))
 }
 
+/// Background selection paired with one character talk animation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DescriptTalkBackground {
+    /// Draw the talk animation without one of the four cached LBM backgrounds.
+    None,
+    /// Draw over one explicitly selected cached background.
+    Cached(DescriptBackgroundSlot),
+}
+
+/// One opcode-07 character talk animation and its background selection.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DescriptTalkClip {
+    background: DescriptTalkBackground,
+    video: DescriptVideoName,
+}
+
+impl DescriptTalkClip {
+    /// Build one decoded talk clip.
+    pub fn new(background: DescriptTalkBackground, video: DescriptVideoName) -> Self {
+        Self { background, video }
+    }
+
+    /// Return the background selected for this animation.
+    pub const fn background(&self) -> DescriptTalkBackground {
+        self.background
+    }
+
+    /// Return the HNM resource used for this animation.
+    pub fn video(&self) -> &DescriptVideoName {
+        &self.video
+    }
+}
+
+/// Failure while decoding an opcode-07 character talk animation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DescriptTalkClipError {
+    /// The command ended before its background ID.
+    MissingBackground,
+    /// The background ID is neither one through four nor the shipped no-background sentinel.
+    InvalidBackground(u8),
+    /// The HNM name reaches the end of the record without a stop byte.
+    MissingStopByte,
+}
+
+/// Decode a talk animation while leaving the following opcode unconsumed.
+pub fn decode_talk_clip(
+    payload: &[u8],
+) -> Result<(DescriptTalkClip, &[u8]), DescriptTalkClipError> {
+    let (&encoded_background, video_and_tail) = payload
+        .split_first()
+        .ok_or(DescriptTalkClipError::MissingBackground)?;
+    let background = if encoded_background == NO_TALK_BACKGROUND_ID {
+        DescriptTalkBackground::None
+    } else {
+        DescriptBackgroundSlot::decode(encoded_background)
+            .map(DescriptTalkBackground::Cached)
+            .ok_or(DescriptTalkClipError::InvalidBackground(encoded_background))?
+    };
+    let (video_name, tail) = decode_printable_resource_name(video_and_tail)
+        .map_err(|_| DescriptTalkClipError::MissingStopByte)?;
+    Ok((
+        DescriptTalkClip::new(background, DescriptVideoName::new(video_name)),
+        tail,
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::{Path, PathBuf};
@@ -329,6 +396,31 @@ mod tests {
         let (bank, tail) = decode_sound_bank_name(&payload).unwrap();
 
         assert_eq!(bank.as_bytes(), b"scrut.snd");
+        assert_eq!(tail, &[NEXT_OPCODE]);
+    }
+
+    #[test]
+    fn talk_clip_decodes_cached_and_no_background_variants() {
+        const CACHED_BACKGROUND: u8 = 4;
+        const NEXT_OPCODE: u8 = 17;
+
+        let mut cached_payload = vec![CACHED_BACKGROUND];
+        cached_payload.extend_from_slice(b"scr01.hnm");
+        cached_payload.push(NEXT_OPCODE);
+        let (cached, tail) = decode_talk_clip(&cached_payload).unwrap();
+        assert_eq!(
+            cached.background(),
+            DescriptTalkBackground::Cached(
+                DescriptBackgroundSlot::decode(CACHED_BACKGROUND).unwrap()
+            )
+        );
+        assert_eq!(cached.video().as_bytes(), b"scr01.hnm");
+        assert_eq!(tail, &[NEXT_OPCODE]);
+
+        let no_background_payload = [NO_TALK_BACKGROUND_ID, NEXT_OPCODE];
+        let (no_background, tail) = decode_talk_clip(&no_background_payload).unwrap();
+        assert_eq!(no_background.background(), DescriptTalkBackground::None);
+        assert!(no_background.video().as_bytes().is_empty());
         assert_eq!(tail, &[NEXT_OPCODE]);
     }
 }

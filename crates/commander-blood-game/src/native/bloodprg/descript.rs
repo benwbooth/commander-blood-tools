@@ -2,7 +2,7 @@
 
 use commander_blood_formats::descript::{
     DescriptBackgroundCommand, DescriptBackgroundSlot, DescriptCaptionCommand, DescriptRecordKind,
-    DescriptSoundBankName, DescriptVideoName,
+    DescriptSoundBankName, DescriptTalkClip, DescriptVideoName,
 };
 
 use super::text_handler::TextPresentationState;
@@ -117,6 +117,7 @@ pub struct DescriptPresentationAssets {
     character_right_scene_video: Option<Box<[u8]>>,
     character_left_scene_video: Option<Box<[u8]>>,
     sound_bank: Option<Box<[u8]>>,
+    talk_clips: Vec<DescriptTalkClip>,
 }
 
 impl DescriptPresentationAssets {
@@ -143,6 +144,11 @@ impl DescriptPresentationAssets {
     /// Return the character chatter and reaction SND bank.
     pub fn sound_bank(&self) -> Option<&[u8]> {
         self.sound_bank.as_deref()
+    }
+
+    /// Return character talk animations in authored playback-table order.
+    pub fn talk_clips(&self) -> &[DescriptTalkClip] {
+        &self.talk_clips
     }
 }
 
@@ -219,6 +225,14 @@ pub fn load_descript_sound_bank<Loader: DescriptSoundBankLoader>(
     Ok(true)
 }
 
+/// Append one character talk animation and its typed background selection.
+///
+/// This translates `dlg_line_asset_table_fill` at BLOODPRG file offset
+/// `0x007684`. Owned vector entries replace the native parallel cursor tables.
+pub fn append_descript_talk_clip(clip: &DescriptTalkClip, assets: &mut DescriptPresentationAssets) {
+    assets.talk_clips.push(clip.clone());
+}
+
 /// Boundary detected after the current DESCRIPT command stream.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct DescriptRecordBoundary {
@@ -278,8 +292,9 @@ mod tests {
     use std::convert::Infallible;
 
     use commander_blood_formats::descript::{
-        DescriptBackgroundError, decode_background_command, decode_caption_command,
-        decode_sound_bank_name, decode_video_name,
+        DescriptBackgroundError, DescriptTalkBackground, DescriptTalkClipError,
+        decode_background_command, decode_caption_command, decode_sound_bank_name,
+        decode_talk_clip, decode_video_name,
     };
     use serde::Deserialize;
 
@@ -287,8 +302,11 @@ mod tests {
 
     const ORACLE_VECTOR_COUNT: usize = 2;
     const BACKGROUND_ORACLE_VECTOR_COUNT: usize = 8;
+    const INVALID_TALK_BACKGROUND_HIGH: u8 = 128;
+    const INVALID_TALK_BACKGROUND_ZERO: u8 = 0;
     const PRESENTATION_ACTIVE_BIT: u16 = 1;
     const SOUND_BANK_ORACLE_VECTOR_COUNT: usize = 8;
+    const TALK_CLIP_ORACLE_VECTOR_COUNT: usize = 12;
     const VIDEO_ORACLE_VECTOR_COUNT: usize = 8;
 
     #[derive(Deserialize)]
@@ -332,6 +350,14 @@ mod tests {
         stopping_byte: u8,
         ui_state: u16,
         loader_called: bool,
+    }
+
+    #[derive(Deserialize)]
+    struct TalkClipOracle {
+        name: String,
+        asset_id: u8,
+        copied_hex: String,
+        stopping_byte: u8,
     }
 
     #[derive(Clone, Copy)]
@@ -683,6 +709,66 @@ mod tests {
                 "{}",
                 vector.name
             );
+        }
+    }
+
+    #[test]
+    fn talk_clip_table_matches_every_original_fill_vector() {
+        let vectors: Vec<TalkClipOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_7684_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), TALK_CLIP_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let expected_video = bytes_from_hex(&vector.copied_hex);
+            let mut payload = vec![vector.asset_id];
+            payload.extend_from_slice(&expected_video);
+            payload.push(vector.stopping_byte);
+            let decoded = decode_talk_clip(&payload);
+
+            if matches!(
+                vector.asset_id,
+                INVALID_TALK_BACKGROUND_ZERO | INVALID_TALK_BACKGROUND_HIGH
+            ) {
+                assert_eq!(
+                    decoded,
+                    Err(DescriptTalkClipError::InvalidBackground(vector.asset_id)),
+                    "{}",
+                    vector.name
+                );
+                continue;
+            }
+
+            let (clip, tail) = decoded.unwrap();
+            assert_eq!(tail, &[vector.stopping_byte], "{}", vector.name);
+            assert_eq!(
+                clip.video().as_bytes(),
+                expected_video.as_ref(),
+                "{}",
+                vector.name
+            );
+            if vector.asset_id == u8::MAX {
+                assert_eq!(
+                    clip.background(),
+                    DescriptTalkBackground::None,
+                    "{}",
+                    vector.name
+                );
+            } else {
+                assert_eq!(
+                    clip.background(),
+                    DescriptTalkBackground::Cached(
+                        DescriptBackgroundSlot::decode(vector.asset_id).unwrap()
+                    ),
+                    "{}",
+                    vector.name
+                );
+            }
+
+            let mut assets = DescriptPresentationAssets::default();
+            append_descript_talk_clip(&clip, &mut assets);
+            assert_eq!(assets.talk_clips(), &[clip], "{}", vector.name);
         }
     }
 }
