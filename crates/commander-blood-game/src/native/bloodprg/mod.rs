@@ -3,6 +3,7 @@
 mod aboard;
 mod actor_slots;
 mod actor_handler_palette;
+mod actor_handler_radio;
 mod bridge_frame;
 mod camera_navigation;
 mod descript;
@@ -40,6 +41,10 @@ pub use actor_slots::{
 pub use actor_handler_palette::{
     SHIP_ACTOR_PALETTE_BYTES, ShipPaletteActorBackend, ShipPaletteActorOutcome,
     ShipPaletteActorPresentation, ShipPaletteActorState, update_ship_palette_actor,
+};
+pub use actor_handler_radio::{
+    RadioActorBackend, RadioActorDeferredAction, RadioActorOutcome, RadioActorPresentation,
+    RadioActorState, update_radio_actor,
 };
 pub use bridge_frame::{
     BridgeActorPresentationState, BridgeFrameBackend, BridgeFrameOutcome, BridgeFrameState,
