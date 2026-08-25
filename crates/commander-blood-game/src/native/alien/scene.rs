@@ -4,25 +4,42 @@ use std::fmt;
 
 use commander_blood_formats::alien::{
     AXIS_COUNT, AlienAsset, AlienBehaviorMethod, AlienRingInitialCallbackData,
-    AlienRingLifecycleData, AlienTransformData, AlienTrigonometryPair, AlienWaveSelectionData,
-    AlienXdbKind, TRIGONOMETRY_ENTRY_COUNT,
+    AlienRingLifecycleData, AlienSlot2InitialCallbackData, AlienTransformData,
+    AlienTrigonometryPair, AlienWaveSelectionData, AlienXdbKind, TRIGONOMETRY_ENTRY_COUNT,
 };
 
 use super::{
-    AlienBehaviorError, AlienBehindCameraSignal, AlienCallbackSceneState, AlienCameraAngles,
-    AlienCameraControl, AlienCameraStep, AlienCameraTransform, AlienFaceSelection,
+    AlienAmerFinishUpdate, AlienAmerLateSelectionUpdate, AlienAmerSelectionUpdate,
+    AlienAmerUpdateHead, AlienBehaviorError, AlienBehindCameraSignal, AlienCallbackSceneState,
+    AlienCameraAngles, AlienCameraControl, AlienCameraStep, AlienCameraTransform,
+    AlienCroolisCommonDispatch, AlienCroolisFadeUpdate, AlienCroolisResetUpdate,
+    AlienCroolisSelectionUpdate, AlienCroolisUpdateHead, AlienFaceSelection,
     AlienFaceSelectionError, AlienModelPose, AlienMouseSample, AlienPaletteAnimationState,
     AlienPaletteError, AlienPaletteInput, AlienPrimaryMeshFrame, AlienPrimaryMeshPose,
     AlienPrimaryProjectionError, AlienProjectionError, AlienRasterError, AlienRenderGeometry,
     AlienRingAnimationState, AlienRingCallback, AlienRingCallbacks, AlienRingEntry, AlienRingError,
     AlienRingLifecycle, AlienRingNodeState, AlienRingResumeState, AlienRingSharedState,
-    AlienSceneNode, AlienScreenCenter, AlienSelectionUpdate, AlienSpecies, AlienStarfieldError,
+    AlienSceneNode, AlienScreenCenter, AlienScrutApproachUpdate, AlienScrutCommonDispatch,
+    AlienScrutDampingUpdate, AlienScrutFadeUpdate, AlienScrutFinishUpdate, AlienScrutResetUpdate,
+    AlienScrutSelectionBeginUpdate, AlienScrutSteeringPrecision, AlienScrutUpdateHead,
+    AlienSelectionUpdate, AlienSlot2AnimationState, AlienSlot2Callback, AlienSlot2Callbacks,
+    AlienSlot2Error, AlienSlot2NodeState, AlienSlot2SceneState, AlienSpecies, AlienStarfieldError,
     AlienStarfieldFrame, AlienWaveCallbackUpdate, AlienWaveError, AlienWaveMethodState,
-    AlienWaveSelection, adjust_state, anchor_state, begin_resume_clear, bounds_then_wrap,
-    capture_resume_state, clear_next_ring_entry, continue_wave_steering, generate_starfield,
-    prepare_render_geometry, restart_initial_course, select_faces, update_follow_course,
-    update_initial_course, update_or_initialize_ring, update_or_initialize_wave,
-    update_palette_animation, update_wave_callback, update_wave_camera, update_wave_finish,
+    AlienWaveSelection, CROOLIS_AUTONOMOUS_RESET_DISTANCE, adjust_state, anchor_state,
+    begin_amer_selection, begin_croolis_fade, begin_croolis_selection, begin_resume_clear,
+    begin_scrut_finish, begin_scrut_selection, bounds_then_wrap, capture_resume_state,
+    clear_next_ring_entry, continue_wave_steering, dispatch_croolis_common, dispatch_scrut_common,
+    generate_starfield, initialize_or_dispatch_slot2, prepare_render_geometry, reset_amer_motion,
+    reset_scrut_selection, restart_amer_update, restart_croolis_update, restart_initial_course,
+    restart_scrut_selection, restart_scrut_update, select_faces, update_amer_common,
+    update_amer_finish, update_amer_head, update_amer_late_selection, update_amer_return,
+    update_amer_selection, update_amer_steering, update_croolis_fade, update_croolis_head,
+    update_croolis_motion, update_croolis_reset_or_camera, update_croolis_selection,
+    update_follow_course, update_initial_course, update_or_initialize_ring,
+    update_or_initialize_wave, update_palette_animation, update_scrut_fade, update_scrut_finish,
+    update_scrut_head, update_scrut_motion, update_scrut_reset_or_camera,
+    update_scrut_selection_approach, update_scrut_selection_begin, update_scrut_selection_damping,
+    update_scrut_steering, update_wave_callback, update_wave_camera, update_wave_finish,
     update_wave_motion, update_wave_return, update_wave_selection, wrap_positions,
 };
 
@@ -32,6 +49,7 @@ const INITIAL_PAN: i16 = 1_656;
 const INITIAL_SECONDARY_PAN: i16 = 0;
 const INITIAL_DEPTH_VELOCITY: i16 = 0;
 const ACTIVE_INTERACTION_SIGNAL: u16 = 1;
+const CAMERA_VERTICAL_AXIS: usize = 1;
 const ORIGINAL_SCREEN_CENTER: AlienScreenCenter = AlienScreenCenter { x: 160, y: 100 };
 
 struct AlienSceneRingCallbacks<'a> {
@@ -178,6 +196,393 @@ impl AlienRingCallbacks for AlienSceneRingCallbacks<'_> {
     }
 }
 
+/// Flat runtime context used to follow the recovered slot-2 callback graph.
+struct AlienSceneSlot2Callbacks<'a> {
+    model_index: usize,
+    callback_scene: &'a mut AlienCallbackSceneState,
+    camera: &'a AlienCameraTransform,
+    camera_angles: AlienCameraAngles,
+    camera_pan: u16,
+    camera_depth_step: &'a mut i16,
+    trigonometry: &'a [AlienTrigonometryPair; TRIGONOMETRY_ENTRY_COUNT],
+}
+
+impl AlienSceneSlot2Callbacks<'_> {
+    fn invoke_callback(
+        &mut self,
+        species: AlienSpecies,
+        callback: AlienSlot2Callback,
+        pose: &mut AlienModelPose,
+        animation: &mut AlienSlot2AnimationState,
+        slot2_scene: &mut AlienSlot2SceneState,
+    ) -> Result<(), AlienSlot2Error> {
+        match callback {
+            AlienSlot2Callback::Update => {
+                self.invoke_update(species, pose, animation, slot2_scene)?;
+            }
+            AlienSlot2Callback::AmerReturn => {
+                update_amer_return(pose, animation, &mut self.callback_scene.slot2_active)?;
+            }
+            AlienSlot2Callback::AmerSteer => {
+                update_amer_steering(pose, animation, *self.camera_depth_step as u16)?;
+            }
+            AlienSlot2Callback::AmerFinish => {
+                match update_amer_finish(pose, animation, *self.camera_depth_step as u16)? {
+                    AlienAmerFinishUpdate::ResetRequested => reset_amer_motion(pose, animation)?,
+                    AlienAmerFinishUpdate::SelectionWaitStarted
+                    | AlienAmerFinishUpdate::Steering => {}
+                }
+            }
+            AlienSlot2Callback::AmerSelectionWait => {
+                let next = begin_amer_selection(pose, animation)?;
+                self.invoke_callback(species, next, pose, animation, slot2_scene)?;
+            }
+            AlienSlot2Callback::AmerSelection => {
+                self.invoke_amer_selection(species, pose, animation, slot2_scene)?;
+            }
+            AlienSlot2Callback::AmerSelectionLate => {
+                self.invoke_amer_late_selection(species, pose, animation, slot2_scene)?;
+            }
+            AlienSlot2Callback::CroolisFade => {
+                match update_croolis_fade(pose, animation, self.callback_scene)? {
+                    AlienCroolisFadeUpdate::MotionRequested => {
+                        update_croolis_motion(pose, animation)?;
+                    }
+                    AlienCroolisFadeUpdate::RestartRequested => {
+                        let next = restart_croolis_update(pose, animation)?;
+                        self.invoke_callback(species, next, pose, animation, slot2_scene)?;
+                    }
+                }
+            }
+            AlienSlot2Callback::CroolisSelection => {
+                match update_croolis_selection(
+                    self.model_index,
+                    pose,
+                    animation,
+                    self.callback_scene,
+                    self.camera.view[CAMERA_VERTICAL_AXIS],
+                )? {
+                    AlienCroolisSelectionUpdate::Tracking => {}
+                    AlienCroolisSelectionUpdate::ResetRequested { camera_distance } => {
+                        self.invoke_croolis_reset(
+                            species,
+                            pose,
+                            animation,
+                            camera_distance,
+                            slot2_scene,
+                        )?;
+                    }
+                }
+            }
+            AlienSlot2Callback::ScrutFade => {
+                match update_scrut_fade(pose, animation, self.callback_scene)? {
+                    AlienScrutFadeUpdate::MotionRequested => {
+                        update_scrut_motion(pose, animation)?;
+                    }
+                    AlienScrutFadeUpdate::RestartRequested => {
+                        let next = restart_scrut_update(pose, animation)?;
+                        self.invoke_callback(species, next, pose, animation, slot2_scene)?;
+                    }
+                }
+            }
+            AlienSlot2Callback::ScrutSelectionBegin => {
+                match update_scrut_selection_begin(pose, animation, self.callback_scene)? {
+                    AlienScrutSelectionBeginUpdate::SelectionResetRequested => {
+                        self.invoke_scrut_selection_reset(species, pose, animation, slot2_scene)?;
+                    }
+                    AlienScrutSelectionBeginUpdate::CameraResetRequested => {
+                        self.invoke_scrut_reset(pose, animation)?;
+                    }
+                    AlienScrutSelectionBeginUpdate::DampingRequested => self.invoke_callback(
+                        species,
+                        AlienSlot2Callback::ScrutSelectionDamp,
+                        pose,
+                        animation,
+                        slot2_scene,
+                    )?,
+                }
+            }
+            AlienSlot2Callback::ScrutSelectionDamp => {
+                match update_scrut_selection_damping(pose, animation)? {
+                    AlienScrutDampingUpdate::SteeringRequested => {
+                        update_scrut_steering(
+                            pose,
+                            animation,
+                            AlienScrutSteeringPrecision::Damping,
+                        )?;
+                    }
+                    AlienScrutDampingUpdate::ApproachRequested => self.invoke_callback(
+                        species,
+                        AlienSlot2Callback::ScrutSelectionApproach,
+                        pose,
+                        animation,
+                        slot2_scene,
+                    )?,
+                }
+            }
+            AlienSlot2Callback::ScrutSelectionApproach => {
+                match update_scrut_selection_approach(
+                    pose,
+                    animation,
+                    self.callback_scene,
+                    self.camera,
+                )? {
+                    AlienScrutApproachUpdate::SelectionResetRequested => {
+                        self.invoke_scrut_selection_reset(species, pose, animation, slot2_scene)?;
+                    }
+                    AlienScrutApproachUpdate::SelectionRestarted
+                    | AlienScrutApproachUpdate::Steering => {}
+                    AlienScrutApproachUpdate::FinishRequested => {
+                        let next = begin_scrut_finish(pose, animation)?;
+                        self.invoke_callback(species, next, pose, animation, slot2_scene)?;
+                    }
+                }
+            }
+            AlienSlot2Callback::ScrutFinish => {
+                match update_scrut_finish(self.model_index, pose, animation, self.callback_scene)? {
+                    AlienScrutFinishUpdate::Tracking | AlienScrutFinishUpdate::Descending => {}
+                    AlienScrutFinishUpdate::SelectionInitRequested => {
+                        self.invoke_scrut_selection_init(species, pose, animation, slot2_scene)?;
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn invoke_update(
+        &mut self,
+        species: AlienSpecies,
+        pose: &mut AlienModelPose,
+        animation: &mut AlienSlot2AnimationState,
+        slot2_scene: &mut AlienSlot2SceneState,
+    ) -> Result<(), AlienSlot2Error> {
+        match species {
+            AlienSpecies::Amer => match update_amer_head(pose, animation, self.callback_scene)? {
+                AlienAmerUpdateHead::SelectionRequested => {
+                    let next = begin_amer_selection(pose, animation)?;
+                    self.invoke_callback(species, next, pose, animation, slot2_scene)?;
+                }
+                AlienAmerUpdateHead::ResetRequested => reset_amer_motion(pose, animation)?,
+                AlienAmerUpdateHead::CommonRequested => {
+                    update_amer_common(
+                        pose,
+                        animation,
+                        self.callback_scene,
+                        self.camera,
+                        self.camera_pan,
+                        self.camera_depth_step,
+                    )?;
+                }
+            },
+            AlienSpecies::Croolis => {
+                match update_croolis_head(pose, animation, self.callback_scene)? {
+                    AlienCroolisUpdateHead::SelectionRequested => {
+                        let next = begin_croolis_selection(pose, animation, self.callback_scene)?;
+                        self.invoke_callback(species, next, pose, animation, slot2_scene)?;
+                    }
+                    AlienCroolisUpdateHead::CommonRequested => {
+                        self.invoke_croolis_common(pose, animation, species, slot2_scene)?;
+                    }
+                    AlienCroolisUpdateHead::ResetRequested => self.invoke_croolis_reset(
+                        species,
+                        pose,
+                        animation,
+                        CROOLIS_AUTONOMOUS_RESET_DISTANCE,
+                        slot2_scene,
+                    )?,
+                }
+            }
+            AlienSpecies::Scrut => match update_scrut_head(pose, animation, self.callback_scene)? {
+                AlienScrutUpdateHead::SelectionRequested => {
+                    self.invoke_scrut_selection_init(species, pose, animation, slot2_scene)?;
+                }
+                AlienScrutUpdateHead::CommonRequested => {
+                    self.invoke_scrut_common(pose, animation)?;
+                }
+                AlienScrutUpdateHead::ResetRequested => {
+                    self.invoke_scrut_reset(pose, animation)?;
+                }
+            },
+        }
+        Ok(())
+    }
+
+    fn invoke_amer_selection(
+        &mut self,
+        species: AlienSpecies,
+        pose: &mut AlienModelPose,
+        animation: &mut AlienSlot2AnimationState,
+        slot2_scene: &mut AlienSlot2SceneState,
+    ) -> Result<(), AlienSlot2Error> {
+        match update_amer_selection(
+            pose,
+            animation,
+            self.callback_scene,
+            self.camera.view[CAMERA_VERTICAL_AXIS],
+        )? {
+            AlienAmerSelectionUpdate::RestartRequested => {
+                let next = restart_amer_update(pose, animation)?;
+                self.invoke_callback(species, next, pose, animation, slot2_scene)?;
+            }
+            AlienAmerSelectionUpdate::ResetRequested => reset_amer_motion(pose, animation)?,
+            AlienAmerSelectionUpdate::LateSelectionStarted => {}
+            AlienAmerSelectionUpdate::CommonRequested => {
+                update_amer_common(
+                    pose,
+                    animation,
+                    self.callback_scene,
+                    self.camera,
+                    self.camera_pan,
+                    self.camera_depth_step,
+                )?;
+            }
+        }
+        Ok(())
+    }
+
+    fn invoke_amer_late_selection(
+        &mut self,
+        species: AlienSpecies,
+        pose: &mut AlienModelPose,
+        animation: &mut AlienSlot2AnimationState,
+        slot2_scene: &mut AlienSlot2SceneState,
+    ) -> Result<(), AlienSlot2Error> {
+        match update_amer_late_selection(pose, animation, self.camera.view[CAMERA_VERTICAL_AXIS])? {
+            AlienAmerLateSelectionUpdate::SelectionWaitRequested => {
+                let next = begin_amer_selection(pose, animation)?;
+                self.invoke_callback(species, next, pose, animation, slot2_scene)?;
+            }
+            AlienAmerLateSelectionUpdate::ResetRequested => reset_amer_motion(pose, animation)?,
+            AlienAmerLateSelectionUpdate::CommonRequested => {
+                update_amer_common(
+                    pose,
+                    animation,
+                    self.callback_scene,
+                    self.camera,
+                    self.camera_pan,
+                    self.camera_depth_step,
+                )?;
+            }
+        }
+        Ok(())
+    }
+
+    fn invoke_croolis_common(
+        &mut self,
+        pose: &mut AlienModelPose,
+        animation: &mut AlienSlot2AnimationState,
+        species: AlienSpecies,
+        slot2_scene: &mut AlienSlot2SceneState,
+    ) -> Result<(), AlienSlot2Error> {
+        match dispatch_croolis_common(self.model_index, self.callback_scene) {
+            AlienCroolisCommonDispatch::MotionRequested => {
+                update_croolis_motion(pose, animation)?;
+            }
+            AlienCroolisCommonDispatch::FadeRequested => {
+                let next = begin_croolis_fade(pose, animation)?;
+                self.invoke_callback(species, next, pose, animation, slot2_scene)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn invoke_croolis_reset(
+        &mut self,
+        species: AlienSpecies,
+        pose: &mut AlienModelPose,
+        animation: &mut AlienSlot2AnimationState,
+        camera_distance: i32,
+        slot2_scene: &mut AlienSlot2SceneState,
+    ) -> Result<(), AlienSlot2Error> {
+        match update_croolis_reset_or_camera(
+            pose,
+            animation,
+            self.camera,
+            self.camera_angles,
+            *self.camera_depth_step,
+            self.trigonometry,
+            camera_distance,
+        )? {
+            AlienCroolisResetUpdate::CommonRequested => {
+                self.invoke_croolis_common(pose, animation, species, slot2_scene)?;
+            }
+            AlienCroolisResetUpdate::CameraReset => {}
+        }
+        Ok(())
+    }
+
+    fn invoke_scrut_selection_init(
+        &mut self,
+        species: AlienSpecies,
+        pose: &mut AlienModelPose,
+        animation: &mut AlienSlot2AnimationState,
+        slot2_scene: &mut AlienSlot2SceneState,
+    ) -> Result<(), AlienSlot2Error> {
+        begin_scrut_selection(pose, animation, self.callback_scene)?;
+        let next = restart_scrut_selection(pose, animation)?;
+        self.invoke_callback(species, next, pose, animation, slot2_scene)
+    }
+
+    fn invoke_scrut_selection_reset(
+        &mut self,
+        species: AlienSpecies,
+        pose: &mut AlienModelPose,
+        animation: &mut AlienSlot2AnimationState,
+        slot2_scene: &mut AlienSlot2SceneState,
+    ) -> Result<(), AlienSlot2Error> {
+        reset_scrut_selection(pose, animation, self.callback_scene)?;
+        let next = restart_scrut_update(pose, animation)?;
+        self.invoke_callback(species, next, pose, animation, slot2_scene)
+    }
+
+    fn invoke_scrut_common(
+        &mut self,
+        pose: &mut AlienModelPose,
+        animation: &AlienSlot2AnimationState,
+    ) -> Result<(), AlienSlot2Error> {
+        match dispatch_scrut_common(self.model_index, self.callback_scene) {
+            AlienScrutCommonDispatch::MotionRequested => update_scrut_motion(pose, animation)?,
+            AlienScrutCommonDispatch::Halted => {}
+        }
+        Ok(())
+    }
+
+    fn invoke_scrut_reset(
+        &mut self,
+        pose: &mut AlienModelPose,
+        animation: &mut AlienSlot2AnimationState,
+    ) -> Result<(), AlienSlot2Error> {
+        match update_scrut_reset_or_camera(
+            pose,
+            animation,
+            self.camera,
+            self.camera_angles,
+            *self.camera_depth_step,
+            self.trigonometry,
+        )? {
+            AlienScrutResetUpdate::CommonRequested => {
+                self.invoke_scrut_common(pose, animation)?;
+            }
+            AlienScrutResetUpdate::CameraReset => {}
+        }
+        Ok(())
+    }
+}
+
+impl AlienSlot2Callbacks for AlienSceneSlot2Callbacks<'_> {
+    fn invoke(
+        &mut self,
+        species: AlienSpecies,
+        callback: AlienSlot2Callback,
+        pose: &mut AlienModelPose,
+        animation: &mut AlienSlot2AnimationState,
+        scene: &mut AlienSlot2SceneState,
+    ) -> Result<(), AlienSlot2Error> {
+        self.invoke_callback(species, callback, pose, animation, scene)
+    }
+}
+
 /// Render-facing native output produced in recovered main-loop order.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AlienSceneFrame {
@@ -212,12 +617,16 @@ pub struct AlienScene {
     wave_states: Vec<Option<AlienWaveMethodState>>,
     /// Per-model callback state for authored ring-animation methods.
     ring_states: Vec<Option<AlienRingAnimationState>>,
+    /// Per-model callback state for authored slot-2/4 animation methods.
+    slot2_states: Vec<Option<AlienSlot2AnimationState>>,
     /// Scene-wide motion history shared by every ring-animation model.
     ring_shared: AlienRingSharedState,
     /// Scene-wide captured-node state used by ring resume transitions.
     ring_resume: AlienRingResumeState,
     /// Deterministic random state shared by translated alien callbacks.
     behavior_random_state: u16,
+    /// Species seed shared by slot-2 model initialization in authored order.
+    slot2_scene: AlienSlot2SceneState,
     /// Shared continuation state for the palette-animation method.
     palette_state: AlienPaletteAnimationState,
     /// Model selected by the latest CROOLIS/SCRUT camera-plane signal.
@@ -276,6 +685,18 @@ pub enum AlienSceneError {
         model_index: usize,
         /// Underlying ring or wave-continuation failure.
         error: AlienRingError,
+    },
+    /// A slot-2 animation model has no decoded continuation state.
+    MissingSlot2State {
+        /// Model missing its state.
+        model_index: usize,
+    },
+    /// One slot-2 callback rejected its typed state.
+    Slot2 {
+        /// Model that failed.
+        model_index: usize,
+        /// Underlying slot-2 callback failure.
+        error: AlienSlot2Error,
     },
     /// The palette-animation method rejected its typed state.
     Palette(AlienPaletteError),
@@ -395,6 +816,34 @@ impl AlienScene {
                 })
             })
             .collect();
+        let slot2_states = asset
+            .models
+            .iter()
+            .map(|model| {
+                model.slot2.as_ref().map(|slot2| AlienSlot2AnimationState {
+                    initialized: slot2.initialized,
+                    callback: slot2.callback.map(|callback| match callback {
+                        AlienSlot2InitialCallbackData::Update => AlienSlot2Callback::Update,
+                    }),
+                    phase_timer: slot2.phase_timer,
+                    croolis_motion_accumulator: slot2.croolis_motion_accumulator,
+                    species_seed_at_initialization: slot2.species_seed_at_initialization,
+                    random_value: slot2.random_value,
+                    amer_animation_phase: slot2.amer_animation_phase,
+                    amer_velocity: slot2.amer_velocity,
+                    nodes: slot2
+                        .nodes
+                        .iter()
+                        .map(|node| AlienSlot2NodeState {
+                            motion_parameter: node.motion_parameter,
+                            radial_target: node.radial_target,
+                            secondary_motion_parameter: node.secondary_motion_parameter,
+                            behavior_seed: node.behavior_seed,
+                        })
+                        .collect(),
+                })
+            })
+            .collect();
         let ring_shared = AlienRingSharedState {
             timer: asset.ring_scene.timer,
             generation: asset.ring_scene.generation,
@@ -414,6 +863,9 @@ impl AlienScene {
             }),
         };
         let behavior_random_state = asset.initial_behavior_random_state;
+        let slot2_scene = AlienSlot2SceneState {
+            species_seed: asset.slot2_scene.species_seed,
+        };
         let callback_state = AlienCallbackSceneState {
             method_delta: asset.initial_method_delta,
             wave_selection: match asset.wave_scene.selection {
@@ -426,6 +878,7 @@ impl AlienScene {
                 model_index: node.model_index,
                 node_index: node.node_index,
             }),
+            slot2_active: asset.slot2_scene.active,
             ..AlienCallbackSceneState::default()
         };
         let palette_state = AlienPaletteAnimationState {
@@ -444,9 +897,11 @@ impl AlienScene {
             models,
             wave_states,
             ring_states,
+            slot2_states,
             ring_shared,
             ring_resume,
             behavior_random_state,
+            slot2_scene,
             palette_state,
             selected_model: None,
             callback_state,
@@ -537,6 +992,33 @@ impl AlienScene {
                     &mut callbacks,
                 )
                 .map_err(|error| AlienSceneError::Ring { model_index, error })?;
+            }
+            if model.behavior == AlienBehaviorMethod::AnimationDispatch {
+                let state = self.slot2_states[model_index]
+                    .as_mut()
+                    .ok_or(AlienSceneError::MissingSlot2State { model_index })?;
+                let mut callbacks = AlienSceneSlot2Callbacks {
+                    model_index,
+                    callback_scene: &mut self.callback_state,
+                    camera: &self.camera,
+                    camera_angles: AlienCameraAngles {
+                        pitch: self.control.pitch,
+                        pan: self.control.pan,
+                        secondary_pan: self.control.secondary_pan,
+                    },
+                    camera_pan: self.control.pan as u16,
+                    camera_depth_step: &mut self.control.depth_velocity,
+                    trigonometry: &self.asset.trigonometry,
+                };
+                initialize_or_dispatch_slot2(
+                    self.species,
+                    pose,
+                    state,
+                    &mut self.slot2_scene,
+                    &mut self.behavior_random_state,
+                    &mut callbacks,
+                )
+                .map_err(|error| AlienSceneError::Slot2 { model_index, error })?;
             }
             let behavior_result = match model.behavior {
                 AlienBehaviorMethod::WrapPositions => {
@@ -683,6 +1165,7 @@ mod tests {
             let initial_wave_states = scene.wave_states.clone();
             let initial_ring_timer = scene.ring_shared.timer;
             let initial_ring_states = scene.ring_states.clone();
+            let initial_slot2_states = scene.slot2_states.clone();
             let expected_wave_node =
                 scene
                     .asset
@@ -715,6 +1198,14 @@ mod tests {
                         }
                     );
                 }
+            }
+            for (before, after) in initial_slot2_states.iter().zip(&scene.slot2_states) {
+                let (Some(before), Some(after)) = (before, after) else {
+                    assert_eq!(before.is_none(), after.is_none());
+                    continue;
+                };
+                assert!(before.initialized);
+                assert_ne!(before, after);
             }
             assert_eq!(
                 scene.callback_state.method_delta,

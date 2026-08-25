@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 const FORBIDDEN_HEURISTIC_DEPENDENCIES: [&str; 3] =
     ["commander_blood_tools", "EngineState", "recomp::"];
-const FORBIDDEN_SEGMENTED_MEMORY_MARKERS: [&str; 54] = [
+const FORBIDDEN_LEGACY_MEMORY_MODEL_MARKERS: [&str; 68] = [
     "FarPtr",
     "FarPointer",
     "NearPtr",
@@ -57,6 +57,20 @@ const FORBIDDEN_SEGMENTED_MEMORY_MARKERS: [&str; 54] = [
     "real_mode_memory",
     "segment_base",
     "memory_paragraph",
+    "AddressTranslation",
+    "address_translation",
+    "AddressSpace",
+    "address_space",
+    "CpuRegisters",
+    "cpu_registers",
+    "CpuRegisterState",
+    "cpu_register_state",
+    "RegisterFile",
+    "register_file",
+    "RegisterState",
+    "register_state",
+    "MemoryBus",
+    "memory_bus",
 ];
 const FORBIDDEN_RUNTIME_CAPTURE_MARKERS: [&str; 4] = [
     "accuracy/manu3",
@@ -104,10 +118,10 @@ fn modern_game_does_not_recreate_segmented_memory() {
 
     for source_path in sources {
         let source = std::fs::read_to_string(&source_path).unwrap();
-        for forbidden in FORBIDDEN_SEGMENTED_MEMORY_MARKERS {
+        for forbidden in FORBIDDEN_LEGACY_MEMORY_MODEL_MARKERS {
             assert!(
                 !source.contains(forbidden),
-                "{} contains segmented-memory marker {forbidden}",
+                "{} contains legacy memory-model marker {forbidden}",
                 source_path.display()
             );
         }

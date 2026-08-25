@@ -131,6 +131,8 @@ const CROOLIS_SELECTION_RADIAL_TARGET: i16 = 200;
 const CROOLIS_SELECTION_RADIAL_EASING_SHIFT: u32 = 2;
 const CROOLIS_SELECTION_PHASE_STEP: i16 = 16;
 const CROOLIS_SELECTION_PHASE_MASK: u16 = 0x007f;
+/// Camera distance supplied when ordinary CROOLIS motion leaves its bounds.
+pub const CROOLIS_AUTONOMOUS_RESET_DISTANCE: i32 = 2_000;
 /// Camera distance supplied when CROOLIS selection returns to reset motion.
 pub const CROOLIS_SELECTION_RESET_DISTANCE: i32 = 1_000;
 const CROOLIS_CAMERA_RESET_DEPTH_THRESHOLD: i16 = -500;
@@ -288,11 +290,9 @@ impl AlienSlot2AnimationState {
     }
 }
 
-/// Scene-owned random state shared while slot-2 models initialize in order.
+/// Scene-owned species state shared while slot-2 models initialize in order.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct AlienSlot2SceneState {
-    /// Deterministic random stream shared by all animation models.
-    pub random_state: u16,
     /// CROOLIS/SCRUT initialization seed, initially zero in both overlays.
     pub species_seed: u16,
 }
@@ -646,6 +646,7 @@ pub fn initialize_or_dispatch_slot2(
     pose: &mut AlienModelPose,
     animation: &mut AlienSlot2AnimationState,
     scene: &mut AlienSlot2SceneState,
+    random_state: &mut u16,
     callbacks: &mut impl AlienSlot2Callbacks,
 ) -> Result<AlienSlot2Update, AlienSlot2Error> {
     validate_state(species, pose, animation)?;
@@ -655,8 +656,8 @@ pub fn initialize_or_dispatch_slot2(
         return Ok(AlienSlot2Update::CallbackInvoked);
     }
 
-    let first_random = transform_random(scene.random_state);
-    scene.random_state = first_random;
+    let first_random = transform_random(*random_state);
+    *random_state = first_random;
     animation.initialized = true;
     animation.callback = Some(AlienSlot2Callback::Update);
     if species == AlienSpecies::Amer {
@@ -2849,8 +2850,8 @@ mod tests {
                 animation.croolis_motion_accumulator = TOUCHED_FIELD_SENTINEL as i16;
                 animation.species_seed_at_initialization = i32::from(TOUCHED_FIELD_SENTINEL);
                 animation.random_value = TOUCHED_FIELD_SENTINEL;
+                let mut random_state = vector.random_before.unwrap();
                 let mut scene = AlienSlot2SceneState {
-                    random_state: vector.random_before.unwrap(),
                     species_seed: vector.seed_before.unwrap_or(u16::MIN),
                 };
                 let mut callbacks = CallbackRecorder::default();
@@ -2861,6 +2862,7 @@ mod tests {
                         &mut pose,
                         &mut animation,
                         &mut scene,
+                        &mut random_state,
                         &mut callbacks,
                     )
                     .unwrap(),
@@ -2869,7 +2871,7 @@ mod tests {
                     vector.name
                 );
 
-                assert_eq!(scene.random_state, vector.random_after.unwrap());
+                assert_eq!(random_state, vector.random_after.unwrap());
                 assert_eq!(scene.species_seed, vector.seed_after.unwrap_or(u16::MIN));
                 assert_eq!(animation.callback, Some(AlienSlot2Callback::Update));
                 assert_eq!(animation.random_value, vector.context_random.unwrap());
@@ -2926,6 +2928,7 @@ mod tests {
             animation.initialized = true;
             animation.callback = Some(AlienSlot2Callback::Update);
             let mut scene = AlienSlot2SceneState::default();
+            let mut random_state = TOUCHED_FIELD_SENTINEL;
             let mut callbacks = CallbackRecorder::default();
 
             assert_eq!(
@@ -2934,6 +2937,7 @@ mod tests {
                     &mut pose,
                     &mut animation,
                     &mut scene,
+                    &mut random_state,
                     &mut callbacks,
                 )
                 .unwrap(),
@@ -4972,6 +4976,7 @@ mod tests {
         let mut empty_pose = pose(&[]);
         let mut empty_animation = AlienSlot2AnimationState::new(usize::MIN);
         let mut scene = AlienSlot2SceneState::default();
+        let mut random_state = u16::default();
         let mut callbacks = CallbackRecorder::default();
         assert_eq!(
             initialize_or_dispatch_slot2(
@@ -4979,6 +4984,7 @@ mod tests {
                 &mut empty_pose,
                 &mut empty_animation,
                 &mut scene,
+                &mut random_state,
                 &mut callbacks,
             ),
             Err(AlienSlot2Error::EmptyNodeList)
@@ -4993,6 +4999,7 @@ mod tests {
                 &mut single_pose,
                 &mut single_animation,
                 &mut scene,
+                &mut random_state,
                 &mut callbacks,
             ),
             Err(AlienSlot2Error::MissingFollowerNode { node_count: 1 })
