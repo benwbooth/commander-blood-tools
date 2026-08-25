@@ -16,6 +16,7 @@ mod choice_list;
 mod descript;
 mod descript_lookup;
 mod menu_reveal;
+mod name_area_effect;
 mod navigation;
 mod navigation_status;
 mod numbers;
@@ -32,6 +33,7 @@ mod selected_mask;
 mod sequence;
 mod sequence_subtitles;
 mod ship_view;
+mod ship_hud;
 mod startup;
 mod state;
 mod text;
@@ -129,6 +131,9 @@ pub use menu_reveal::{
     InlineMenuRevealGate, InlineMenuRevealOutcome, InlineMenuTextMetrics,
     InlineMenuWordPlacement,
 };
+pub use name_area_effect::{
+    NameAreaEffectError, NameAreaEffectOutcome, NameAreaEffectState, update_name_area_effect,
+};
 pub use navigation::{
     navigation_actor_targets, navigation_candidates, navigation_chart_objects,
     navigation_distance, navigation_source_objects, object_links_to, objects_at_arche_position,
@@ -204,6 +209,10 @@ pub use sequence_subtitles::{
 pub use ship_view::{
     select_ship_view_artwork, ShipViewArtworkError, ShipViewArtworkSelection,
     ShipViewEntityId, ShipViewEntityPlacement, ShipViewResourceId, ShipViewResourceRequest,
+};
+pub use ship_hud::{
+    SHIP_HUD_PALETTE_COLOR_COUNT, SHIP_HUD_PALETTE_FIRST, IndexedGamePalette, ShipHudBackend,
+    ShipHudPaletteSnapshot, ShipHudState, snapshot_ship_hud_palette_and_reset_camera,
 };
 pub use startup::{
     apply_startup_option, tokenize_startup_command, StartupAudioConfiguration, StartupAudioDriver,
