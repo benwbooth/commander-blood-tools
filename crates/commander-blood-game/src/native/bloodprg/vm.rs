@@ -1,13 +1,16 @@
 //! Typed helper logic used by the BloodScript runtime.
 
 use commander_blood_formats::script::{
-    ScriptDictionary, ScriptDirectory, ScriptObjectId, ScriptObjectKind, ScriptWordId,
+    ScriptDictionary, ScriptDirectory, ScriptObjectId, ScriptObjectKind, ScriptState, ScriptWordId,
 };
 
 const MAXIMUM_ORIGINAL_OPERAND_COUNT: usize = u16::MAX as usize;
 const POSITIVE_OPERAND_BOUNDARY: i16 = 0;
 const FIELD_SELECTOR_COUNT: usize = 21;
 const OBJECT_KIND_COUNT: usize = 9;
+const OBJECT_FLAGS_BYTE_OFFSET: usize = 2;
+const OBJECT_HEADER_WORD_SIZE: usize = std::mem::size_of::<u16>();
+const OBJECT_IN_PLAY_FLAG: u16 = 2;
 
 const FIELD_OFFSETS: [[u8; OBJECT_KIND_COUNT]; FIELD_SELECTOR_COUNT] = [
     [2, 2, 2, 2, 2, 2, 2, 2, 2],
@@ -88,6 +91,21 @@ pub fn object_before_threshold(
         .last()
 }
 
+/// Return every decoded profile object carrying the native in-play flag.
+///
+/// This translates `active_object_list_build` at BLOODPRG file offset
+/// `0x00604E`. The decoded [`ScriptState`] already represents the directory's
+/// contiguous active-object prefix, so the DOS sentinel and offset list become
+/// an owned sequence of stable object identities.
+pub fn active_objects_in_play(state: &ScriptState) -> Vec<ScriptObjectId> {
+    state
+        .objects()
+        .iter()
+        .filter(|object| object_flags(object.bytes()) & OBJECT_IN_PLAY_FLAG != u16::MIN)
+        .map(|object| object.id)
+        .collect()
+}
+
 /// Resolve an interned dictionary word to an active script object.
 ///
 /// This is the flat, typed translation of `dic_word_lookup` at BLOODPRG file
@@ -130,11 +148,21 @@ const fn object_kind_index(kind: ScriptObjectKind) -> usize {
     }
 }
 
+fn object_flags(bytes: &[u8]) -> u16 {
+    u16::from_le_bytes(
+        bytes[OBJECT_FLAGS_BYTE_OFFSET..OBJECT_FLAGS_BYTE_OFFSET + OBJECT_HEADER_WORD_SIZE]
+            .try_into()
+            .expect("decoded state objects contain their fixed header"),
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use serde::Deserialize;
 
-    use commander_blood_formats::script::{decode_script_dictionary, decode_script_directory};
+    use commander_blood_formats::script::{
+        decode_script_dictionary, decode_script_directory, decode_script_state,
+    };
 
     use super::*;
 
@@ -142,7 +170,11 @@ mod tests {
     const OPERAND_SCAN_ORACLE_VECTOR_COUNT: usize = 10;
     const FIELD_ORACLE_VECTOR_COUNT: usize = 8;
     const THRESHOLD_ORACLE_VECTOR_COUNT: usize = 9;
+    const ACTIVE_OBJECT_ORACLE_VECTOR_COUNT: usize = 5;
     const DIRECTORY_NAME_CAPACITY: usize = 16;
+    const DIRECTORY_ENTRY_SIZE: usize = 20;
+    const ACTOR_RECORD_SIZE: usize = 72;
+    const ACTOR_KIND: u16 = 2;
     const ORIGINAL_FIELD_TABLE_FILE_OFFSET: usize = 0x14180;
     const ORIGINAL_FIELD_TABLE_KIND_COUNT: usize = 16;
     const SHIPPED_OBJECT_KINDS: [ScriptObjectKind; OBJECT_KIND_COUNT] = [
@@ -183,6 +215,20 @@ mod tests {
         entries: Vec<u16>,
         stop_index: usize,
         ax: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct ActiveObjectOracleVector {
+        name: String,
+        entries: Vec<ActiveObjectOracleEntry>,
+        active_objects: Vec<u16>,
+    }
+
+    #[derive(Deserialize)]
+    struct ActiveObjectOracleEntry {
+        object_offset: u16,
+        entry_kind: u16,
+        flags: u16,
     }
 
     #[test]
@@ -257,6 +303,50 @@ mod tests {
                 let object = result.unwrap();
                 assert_eq!(directory.object(object).unwrap().value, vector.ax);
             }
+        }
+    }
+
+    #[test]
+    fn active_object_filter_matches_every_original_vector() {
+        let vectors: Vec<ActiveObjectOracleVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_604e_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), ACTIVE_OBJECT_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let active_entries = vector
+                .entries
+                .iter()
+                .take_while(|entry| entry.entry_kind == 1)
+                .collect::<Vec<_>>();
+            let mut directory_data = Vec::new();
+            let mut state_data = Vec::new();
+            for (index, entry) in active_entries.iter().enumerate() {
+                let mut directory_entry = [u8::MIN; DIRECTORY_ENTRY_SIZE];
+                let state_offset = u16::try_from(index * ACTOR_RECORD_SIZE).unwrap();
+                directory_entry[DIRECTORY_NAME_CAPACITY..DIRECTORY_NAME_CAPACITY + 2]
+                    .copy_from_slice(&state_offset.to_le_bytes());
+                directory_entry[DIRECTORY_NAME_CAPACITY + 2..]
+                    .copy_from_slice(&1_u16.to_le_bytes());
+                directory_data.extend_from_slice(&directory_entry);
+
+                let mut object = [u8::MIN; ACTOR_RECORD_SIZE];
+                object[..OBJECT_HEADER_WORD_SIZE].copy_from_slice(&ACTOR_KIND.to_le_bytes());
+                object[OBJECT_FLAGS_BYTE_OFFSET
+                    ..OBJECT_FLAGS_BYTE_OFFSET + OBJECT_HEADER_WORD_SIZE]
+                    .copy_from_slice(&entry.flags.to_le_bytes());
+                state_data.extend_from_slice(&object);
+            }
+            directory_data.extend_from_slice(&[u8::MIN; DIRECTORY_ENTRY_SIZE]);
+            let directory = decode_script_directory(&directory_data).unwrap();
+            let state = decode_script_state(&state_data, &directory).unwrap();
+
+            let actual = active_objects_in_play(&state)
+                .into_iter()
+                .map(|object| active_entries[object.index()].object_offset)
+                .collect::<Vec<_>>();
+            assert_eq!(actual, vector.active_objects, "{}", vector.name);
         }
     }
 

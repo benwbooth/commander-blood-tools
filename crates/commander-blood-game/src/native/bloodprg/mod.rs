@@ -53,6 +53,6 @@ pub use text_handler::{
     TextPresentationState,
 };
 pub use vm::{
-    count_positive_operands, object_before_threshold, resolve_dictionary_object,
-    script_field_offset, ScriptFieldSelector,
+    active_objects_in_play, count_positive_operands, object_before_threshold,
+    resolve_dictionary_object, script_field_offset, ScriptFieldSelector,
 };
