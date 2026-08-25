@@ -45,6 +45,11 @@ against twenty-four direct original-binary vectors. It retains the original
 16-bit wrapping accumulator behavior without retaining DOS mouse interrupts,
 register state, or segmented addresses.
 
+The shared camera-transform routine is also translated for all three overlays.
+Eighteen direct binary cases verify angle masking, fixed-point target-matrix
+construction, matrix easing and roundoff, depth-motion integration, overflow,
+and transformed view publication.
+
 The typed format layer now decodes all three original XDB images: the shared
 primary mesh, 48 named behavior models, camera/root/node hierarchy, vertices,
 projection aliases, faces, 256-by-512 indexed texture atlas, display palette,

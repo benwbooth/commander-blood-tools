@@ -6362,10 +6362,32 @@ def alien_camera_matrix_update_vectors(
                 "name": name,
                 "module": module,
                 "entry": entry,
+                "trigonometry_pattern": {
+                    "cosine_multiplier": 0x9E37,
+                    "cosine_offset": (
+                        case_index * 0x2105 + 0x1357
+                    ) & 0xFFFF,
+                    "sine_multiplier": 0x6D2B,
+                    "sine_offset": (
+                        case_index * 0x4211 + 0xA5A5
+                    ) & 0xFFFF,
+                },
+                "angles_before": [
+                    pitch_input,
+                    pan_input,
+                    secondary_input,
+                ],
                 "normalized_angles": [pitch, pan, secondary],
                 "depth_step": signed_word(depth_input),
+                "camera_matrix_before": [
+                    signed_dword(get_u32(data_before, 0x22BA + index * 4))
+                    for index in range(9)
+                ],
                 "target_matrix": [signed_dword(value) for value in target],
                 "camera_matrix": [signed_dword(value) for value in matrix],
+                "camera_position_before": [
+                    signed_dword(value) for value in positions
+                ],
                 "camera_position": [
                     signed_dword(get_u32(data_expected, 0x22EA + index * 4))
                     for index in range(3)

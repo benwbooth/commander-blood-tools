@@ -3,12 +3,34 @@
     "name": "positive_rounding",
     "module": "amer",
     "entry": 7640,
+    "trigonometry_pattern": {
+      "cosine_multiplier": 40503,
+      "cosine_offset": 4951,
+      "sine_multiplier": 27947,
+      "sine_offset": 42405
+    },
+    "angles_before": [
+      0,
+      0,
+      0
+    ],
     "normalized_angles": [
       0,
       0,
       0
     ],
     "depth_step": 0,
+    "camera_matrix_before": [
+      9902,
+      46261,
+      46260,
+      -3,
+      9898,
+      -46267,
+      -46269,
+      46254,
+      9903
+    ],
     "target_matrix": [
       9902,
       46262,
@@ -30,6 +52,11 @@
       -46268,
       46255,
       9903
+    ],
+    "camera_position_before": [
+      0,
+      2147418113,
+      -2147418113
     ],
     "camera_position": [
       0,
@@ -62,12 +89,34 @@
     "name": "negative_rounding_and_masking",
     "module": "amer",
     "entry": 7640,
+    "trigonometry_pattern": {
+      "cosine_multiplier": 40503,
+      "cosine_offset": 13404,
+      "sine_multiplier": 27947,
+      "sine_offset": 59318
+    },
+    "angles_before": [
+      65535,
+      32771,
+      4102
+    ],
     "normalized_angles": [
       4092,
       0,
       4
     ],
     "depth_step": -1,
+    "camera_matrix_before": [
+      17593,
+      22081,
+      -6906,
+      11867,
+      42285,
+      -65140,
+      31605,
+      -19738,
+      17580
+    ],
     "target_matrix": [
       17592,
       22078,
@@ -89,6 +138,11 @@
       31604,
       -19737,
       17582
+    ],
+    "camera_position_before": [
+      305419896,
+      -1985229329,
+      267242409
     ],
     "camera_position": [
       305423846,
@@ -121,12 +175,34 @@
     "name": "wrapped_angle_sums",
     "module": "amer",
     "entry": 7640,
+    "trigonometry_pattern": {
+      "cosine_multiplier": 40503,
+      "cosine_offset": 21857,
+      "sine_multiplier": 27947,
+      "sine_offset": 10695
+    },
+    "angles_before": [
+      4092,
+      4092,
+      4092
+    ],
     "normalized_angles": [
       4092,
       4092,
       4092
     ],
     "depth_step": 32767,
+    "camera_matrix_before": [
+      -35772,
+      -9560,
+      3098,
+      -24680,
+      18772,
+      -26422,
+      8504,
+      -55608,
+      14932
+    ],
     "target_matrix": [
       -35756,
       -9528,
@@ -148,6 +224,11 @@
       8632,
       -55352,
       15444
+    ],
+    "camera_position_before": [
+      -1,
+      -2147483648,
+      2147483647
     ],
     "camera_position": [
       -35355594,
@@ -180,12 +261,34 @@
     "name": "delta_sign_boundaries",
     "module": "amer",
     "entry": 7640,
+    "trigonometry_pattern": {
+      "cosine_multiplier": 40503,
+      "cosine_offset": 30310,
+      "sine_multiplier": 27947,
+      "sine_offset": 27608
+    },
+    "angles_before": [
+      2050,
+      3075,
+      63493
+    ],
     "normalized_angles": [
       2048,
       3072,
       2052
     ],
     "depth_step": -32768,
+    "camera_matrix_before": [
+      -2147460400,
+      -2147463685,
+      2147454654,
+      2147478610,
+      -2147473101,
+      49186,
+      -53844,
+      -1073710004,
+      1073699528
+    ],
     "target_matrix": [
       23244,
       19962,
@@ -207,6 +310,11 @@
       -53843,
       -939492275,
       939481801
+    ],
+    "camera_position_before": [
+      2147483644,
+      -2147483644,
+      -65535
     ],
     "camera_position": [
       1926942716,
@@ -239,12 +347,34 @@
     "name": "product_and_dot_overflow",
     "module": "amer",
     "entry": 7640,
+    "trigonometry_pattern": {
+      "cosine_multiplier": 40503,
+      "cosine_offset": 38763,
+      "sine_multiplier": 27947,
+      "sine_offset": 44521
+    },
+    "angles_before": [
+      1364,
+      2728,
+      3820
+    ],
     "normalized_angles": [
       1364,
       2728,
       3820
     ],
     "depth_step": 16385,
+    "camera_matrix_before": [
+      -1879014946,
+      1879101784,
+      -305411856,
+      19118378,
+      -1610628820,
+      1610628278,
+      -2147482378,
+      2147471256,
+      11235
+    ],
     "target_matrix": [
       33250,
       53596,
@@ -266,6 +396,11 @@
       -1879046923,
       1879035801,
       11235
+    ],
+    "camera_position_before": [
+      324478056,
+      610800471,
+      -1515890086
     ],
     "camera_position": [
       556760009,
@@ -298,12 +433,34 @@
     "name": "position_high_words_feed_view",
     "module": "amer",
     "entry": 7640,
+    "trigonometry_pattern": {
+      "cosine_multiplier": 40503,
+      "cosine_offset": 47216,
+      "sine_multiplier": 27947,
+      "sine_offset": 61434
+    },
+    "angles_before": [
+      823,
+      1642,
+      2461
+    ],
     "normalized_angles": [
       820,
       1640,
       2460
     ],
     "depth_step": -2,
+    "camera_matrix_before": [
+      14568,
+      39726,
+      -15826,
+      16362,
+      -25474,
+      10832,
+      36044,
+      -47062,
+      14312
+    ],
     "target_matrix": [
       14604,
       39794,
@@ -325,6 +482,11 @@
       36073,
       -47029,
       14349
+    ],
+    "camera_position_before": [
+      65535,
+      -65536,
+      2147450880
     ],
     "camera_position": [
       74553,
