@@ -1,0 +1,93 @@
+[
+  {
+    "name": "ordinary_motion",
+    "module": "croolis",
+    "entry": 6130,
+    "continuation": "motion",
+    "duration_before": 178,
+    "duration_after": 174,
+    "fade_position_before": 305440090,
+    "fade_position_after": 305397938,
+    "active_before": 1,
+    "active_after": 1,
+    "data_sha256": "7667d94607335694f54591eb6e9ef311c3c063d17ef902eb632da28c056c0990"
+  },
+  {
+    "name": "motion_boundary",
+    "module": "croolis",
+    "entry": 6130,
+    "continuation": "motion",
+    "duration_before": 150,
+    "duration_after": 146,
+    "fade_position_before": 591766874,
+    "fade_position_after": 591724694,
+    "active_before": 2,
+    "active_after": 2,
+    "data_sha256": "1334cdb4291367c44b19ffc1b5082350aadb6945229faa0d01234aa8c30df05c"
+  },
+  {
+    "name": "below_boundary_restart",
+    "module": "croolis",
+    "entry": 6130,
+    "continuation": "restart",
+    "duration_before": 149,
+    "duration_after": 0,
+    "fade_position_before": 878093658,
+    "fade_position_after": 878051477,
+    "active_before": 3,
+    "active_after": 0,
+    "data_sha256": "f6809da6239871f1758651ac462ab9bacfb047fc2ad92dd8dec0e0336b4caeff"
+  },
+  {
+    "name": "zero_restart",
+    "module": "croolis",
+    "entry": 6130,
+    "continuation": "restart",
+    "duration_before": 0,
+    "duration_after": 0,
+    "fade_position_before": 1164420442,
+    "fade_position_after": 1164378112,
+    "active_before": 4,
+    "active_after": 0,
+    "data_sha256": "6f6560393220eda11e0c95238014099a8872638cd4114b30ec3fc0391b37e803"
+  },
+  {
+    "name": "negative_restart",
+    "module": "croolis",
+    "entry": 6130,
+    "continuation": "restart",
+    "duration_before": 65535,
+    "duration_after": 0,
+    "fade_position_before": 1450747226,
+    "fade_position_after": 1450770431,
+    "active_before": 5,
+    "active_after": 0,
+    "data_sha256": "e8ce39e6d5eb97d93677a724e0de37bcbca076131bfaef41755f27eea94b3daa"
+  },
+  {
+    "name": "signed_wrap_to_motion",
+    "module": "croolis",
+    "entry": 6130,
+    "continuation": "motion",
+    "duration_before": 32768,
+    "duration_after": 32764,
+    "fade_position_before": 1737074010,
+    "fade_position_after": 1737064448,
+    "active_before": 6,
+    "active_after": 6,
+    "data_sha256": "e37569a905d1009fb06e050468c10a4b8dfe6801887ab6547bee17c7870713ad"
+  },
+  {
+    "name": "wrapped_state_offsets",
+    "module": "croolis",
+    "entry": 6130,
+    "continuation": "motion",
+    "duration_before": 150,
+    "duration_after": 146,
+    "fade_position_before": 2023400794,
+    "fade_position_after": 2023358614,
+    "active_before": 7,
+    "active_after": 7,
+    "data_sha256": "c3c8757f495dc0ac3f1c9b58393d17d62c937a4ce5116ee0f05a96497134d895"
+  }
+]

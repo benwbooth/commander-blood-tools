@@ -4457,6 +4457,411 @@ def amer_slot2_selection_vectors(entry: int, late: bool) -> list[dict[str, objec
     return vectors
 
 
+def croolis_slot2_common_dispatch_vectors(entry: int) -> list[dict[str, object]]:
+    module = "croolis"
+    image = load_image(module)
+    body_size = 6
+    body_hash = "6461ac176d66dfb8ccd1ebf42c195d0ec0d81716b96773e6e3a762e7beaa33d0"
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered body changed")
+
+    data_segment = 0x5000
+    extra_segment = 0x7000
+    fs_segment = 0x9000
+    game_segment = 0xA000
+    stack_segment = 0xB000
+    motion_entry = 0x1794
+    fade_entry = 0x17E4
+    cases = (
+        ("inactive", 0x4000, 0x3000, 0),
+        ("other_model", 0x4400, 0x3200, 0x3100),
+        ("current_model", 0x4800, 0x3400, 0x3400),
+        ("high_current_model", 0xFC00, 0xFFE0, 0xFFE0),
+    )
+    vectors: list[dict[str, object]] = []
+
+    for case_index, (name, state, context, latch) in enumerate(cases):
+        data_before = bytearray(
+            (offset * 31 + case_index * 19 + 7) & 0xFF
+            for offset in range(0x10000)
+        )
+        struct.pack_into("<H", data_before, 0x2282, latch)
+        extra_before = bytes(
+            (offset * 13 + case_index + 3) & 0xFF for offset in range(0x10000)
+        )
+        fs_before = bytes(
+            (offset * 17 + case_index + 5) & 0xFF for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 23 + case_index + 9) & 0xFF for offset in range(0x10000)
+        )
+        stack_before = bytes.fromhex("877869965aa5")
+        target = fade_entry if latch == context else motion_entry
+        initial = {
+            "eax": 0xA1A12345,
+            "ebx": 0xB2B23456,
+            "ecx": 0xC3C34567,
+            "edx": 0xD4D45678,
+            "esi": 0xE5E50000 | state,
+            "edi": 0xF6F60000 | context,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0293 | (0x0400 if case_index & 1 else 0),
+        }
+        machine = execute(
+            image,
+            entry,
+            target,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (extra_segment, 0, extra_before),
+                (fs_segment, 0, fs_before),
+                (game_segment, 0, game_before),
+                (stack_segment, 0xFF00, stack_before),
+            ],
+            max_instructions=4,
+        )
+        if bytes(machine.mem_read(data_segment * 16, 0x10000)) != bytes(data_before):
+            raise AssertionError(f"{module}:{entry:#x} {name}: data changed")
+        if bytes(machine.mem_read(0, len(image))) != image:
+            raise AssertionError(f"{module}:{entry:#x} {name}: code changed")
+        for segment, expected in (
+            (extra_segment, extra_before),
+            (fs_segment, fs_before),
+            (game_segment, game_before),
+        ):
+            if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: segment {segment:#x} changed"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF00, len(stack_before))) != stack_before:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+        if machine.reg_read(UC_X86_REG_SP) != initial["sp"]:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack pointer changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "control_latch": (
+                    "current_model"
+                    if latch == context
+                    else "inactive" if latch == 0 else "other_model"
+                ),
+                "continuation": "fade" if target == fade_entry else "motion",
+                "data_sha256": hashlib.sha256(data_before).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
+def croolis_slot2_begin_fade_vectors(entry: int) -> list[dict[str, object]]:
+    module = "croolis"
+    image = load_image(module)
+    body_size = 14
+    body_hash = "24917f24c813b1498fc1a70c9607f56455a82f6e516b6d7b62a055086a4fb4c4"
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered body changed")
+
+    data_segment = 0x5000
+    extra_segment = 0x7000
+    fs_segment = 0x9000
+    game_segment = 0xA000
+    stack_segment = 0xB000
+    context = 0x3000
+    fade_entry = 0x17F2
+    fade_duration = 178
+    position_step = 30
+    cases = (
+        ("ordinary", 0x4000, 0x12340064),
+        ("fraction_underflow_preserves_integer", 0x4400, 0x12340010),
+        ("signed_high_value", 0x4800, 0x89AB8000),
+        ("wrapped_state_offsets", 0xFFC0, 0x76540008),
+    )
+    vectors: list[dict[str, object]] = []
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        encoded = struct.pack("<H", value & 0xFFFF)
+        for index, byte in enumerate(encoded):
+            memory[(offset + index) & 0xFFFF] = byte
+
+    def put_u32(memory: bytearray, offset: int, value: int) -> None:
+        encoded = struct.pack("<I", value & 0xFFFFFFFF)
+        for index, byte in enumerate(encoded):
+            memory[(offset + index) & 0xFFFF] = byte
+
+    def get_u16(memory: bytes | bytearray, offset: int) -> int:
+        return memory[offset & 0xFFFF] | (memory[(offset + 1) & 0xFFFF] << 8)
+
+    def get_u32(memory: bytes | bytearray, offset: int) -> int:
+        return get_u16(memory, offset) | (get_u16(memory, offset + 2) << 16)
+
+    for case_index, (name, state, position_y) in enumerate(cases):
+        data_before = bytearray(
+            (offset * 31 + case_index * 19 + 7) & 0xFF
+            for offset in range(0x10000)
+        )
+        put_u16(data_before, state + 0x0E, 0xBEEF)
+        put_u32(data_before, state + 0x46, position_y)
+        put_u16(data_before, context + 0x38, 0xA55A)
+        data_expected = bytearray(data_before)
+        put_u16(
+            data_expected,
+            state + 0x46,
+            (position_y & 0xFFFF) - position_step,
+        )
+        put_u16(data_expected, context + 0x38, fade_duration)
+        put_u16(data_expected, state + 0x0E, fade_entry)
+        extra_before = bytes(
+            (offset * 13 + case_index + 3) & 0xFF for offset in range(0x10000)
+        )
+        fs_before = bytes(
+            (offset * 17 + case_index + 5) & 0xFF for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 23 + case_index + 9) & 0xFF for offset in range(0x10000)
+        )
+        stack_before = bytes.fromhex("877869965aa5")
+        initial = {
+            "eax": 0xA1A12345,
+            "ebx": 0xB2B23456,
+            "ecx": 0xC3C34567,
+            "edx": 0xD4D45678,
+            "esi": 0xE5E50000 | state,
+            "edi": 0xF6F60000 | context,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0293 | (0x0400 if case_index & 1 else 0),
+        }
+        machine = execute(
+            image,
+            entry,
+            fade_entry,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (extra_segment, 0, extra_before),
+                (fs_segment, 0, fs_before),
+                (game_segment, 0, game_before),
+                (stack_segment, 0xFF00, stack_before),
+            ],
+            max_instructions=8,
+        )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(data_expected):
+            differences = [
+                (offset, actual_data[offset], data_expected[offset])
+                for offset in range(0x10000)
+                if actual_data[offset] != data_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: data differs at {differences}"
+            )
+        if bytes(machine.mem_read(0, len(image))) != image:
+            raise AssertionError(f"{module}:{entry:#x} {name}: code changed")
+        for segment, expected in (
+            (extra_segment, extra_before),
+            (fs_segment, fs_before),
+            (game_segment, game_before),
+        ):
+            if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: segment {segment:#x} changed"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF00, len(stack_before))) != stack_before:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+        if machine.reg_read(UC_X86_REG_SP) != initial["sp"]:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack pointer changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "position_y_before": position_y,
+                "position_y_after": get_u32(data_expected, state + 0x46),
+                "duration_after": get_u16(data_expected, context + 0x38),
+                "next_stage": "fade",
+                "data_sha256": hashlib.sha256(data_expected).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
+def croolis_slot2_fade_update_vectors(entry: int) -> list[dict[str, object]]:
+    module = "croolis"
+    image = load_image(module)
+    body_size = 35
+    body_hash = "07e35aed737796c8e0bb09f0f36e5f7c2fdafadb8c952c2f2de59c3b8ff6eaf5"
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered body changed")
+
+    data_segment = 0x5000
+    extra_segment = 0x7000
+    fs_segment = 0x9000
+    game_segment = 0xA000
+    stack_segment = 0xB000
+    context = 0x3000
+    motion_entry = 0x1794
+    restart_entry = 0x171D
+    active_offset = 0x16A0
+    fade_node_position_offset = 0x01BE
+    duration_step = 4
+    duration_minimum = 146
+    cases = (
+        ("ordinary_motion", 0x4000, 178, 0x1234A55A, 1),
+        ("motion_boundary", 0x4400, 150, 0x2345A55A, 2),
+        ("below_boundary_restart", 0x4800, 149, 0x3456A55A, 3),
+        ("zero_restart", 0x4C00, 0, 0x4567A55A, 4),
+        ("negative_restart", 0x5000, 0xFFFF, 0x5678A55A, 5),
+        ("signed_wrap_to_motion", 0x5400, 0x8000, 0x6789A55A, 6),
+        ("wrapped_state_offsets", 0xFE80, 150, 0x789AA55A, 7),
+    )
+    vectors: list[dict[str, object]] = []
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        encoded = struct.pack("<H", value & 0xFFFF)
+        for index, byte in enumerate(encoded):
+            memory[(offset + index) & 0xFFFF] = byte
+
+    def put_u32(memory: bytearray, offset: int, value: int) -> None:
+        encoded = struct.pack("<I", value & 0xFFFFFFFF)
+        for index, byte in enumerate(encoded):
+            memory[(offset + index) & 0xFFFF] = byte
+
+    def get_u16(memory: bytes | bytearray, offset: int) -> int:
+        return memory[offset & 0xFFFF] | (memory[(offset + 1) & 0xFFFF] << 8)
+
+    def get_u32(memory: bytes | bytearray, offset: int) -> int:
+        return get_u16(memory, offset) | (get_u16(memory, offset + 2) << 16)
+
+    def signed_word(value: int) -> int:
+        value &= 0xFFFF
+        return value if value < 0x8000 else value - 0x10000
+
+    for case_index, (name, state, duration, fade_position, active) in enumerate(cases):
+        data_before = bytearray(
+            (offset * 31 + case_index * 19 + 7) & 0xFF
+            for offset in range(0x10000)
+        )
+        put_u16(data_before, context + 0x38, duration)
+        put_u32(data_before, state + fade_node_position_offset, fade_position)
+        data_expected = bytearray(data_before)
+        put_u16(data_expected, state + fade_node_position_offset, duration)
+        next_duration = (duration - duration_step) & 0xFFFF
+        motion_requested = signed_word(next_duration) >= duration_minimum
+        put_u16(
+            data_expected,
+            context + 0x38,
+            next_duration if motion_requested else 0,
+        )
+        code_before = bytearray(image)
+        struct.pack_into("<H", code_before, active_offset, active)
+        code_expected = bytearray(code_before)
+        if not motion_requested:
+            struct.pack_into("<H", code_expected, active_offset, 0)
+        extra_before = bytes(
+            (offset * 13 + case_index + 3) & 0xFF for offset in range(0x10000)
+        )
+        fs_before = bytes(
+            (offset * 17 + case_index + 5) & 0xFF for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 23 + case_index + 9) & 0xFF for offset in range(0x10000)
+        )
+        stack_before = bytes.fromhex("877869965aa5")
+        target = motion_entry if motion_requested else restart_entry
+        initial = {
+            "eax": 0xA1A12345,
+            "ebx": 0xB2B23456,
+            "ecx": 0xC3C34567,
+            "edx": 0xD4D45678,
+            "esi": 0xE5E50000 | state,
+            "edi": 0xF6F60000 | context,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0293 | (0x0400 if case_index & 1 else 0),
+        }
+        machine = execute(
+            bytes(code_before),
+            entry,
+            target,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (extra_segment, 0, extra_before),
+                (fs_segment, 0, fs_before),
+                (game_segment, 0, game_before),
+                (stack_segment, 0xFF00, stack_before),
+            ],
+            max_instructions=20,
+        )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(data_expected):
+            differences = [
+                (offset, actual_data[offset], data_expected[offset])
+                for offset in range(0x10000)
+                if actual_data[offset] != data_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: data differs at {differences}"
+            )
+        if bytes(machine.mem_read(0, len(image))) != bytes(code_expected):
+            raise AssertionError(f"{module}:{entry:#x} {name}: code-data differs")
+        for segment, expected in (
+            (extra_segment, extra_before),
+            (fs_segment, fs_before),
+            (game_segment, game_before),
+        ):
+            if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: segment {segment:#x} changed"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF00, len(stack_before))) != stack_before:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+        if machine.reg_read(UC_X86_REG_SP) != initial["sp"]:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack pointer changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "continuation": "motion" if motion_requested else "restart",
+                "duration_before": duration,
+                "duration_after": get_u16(data_expected, context + 0x38),
+                "fade_position_before": fade_position,
+                "fade_position_after": get_u32(
+                    data_expected, state + fade_node_position_offset
+                ),
+                "active_before": active,
+                "active_after": active if motion_requested else 0,
+                "data_sha256": hashlib.sha256(data_expected).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def croolis_slot2_motion_vectors(entry: int) -> list[dict[str, object]]:
     module = "croolis"
     image = load_image(module)
@@ -19474,6 +19879,21 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "xdb_croolis_func_1794_natural.json",
         croolis_slot2_motion_vectors(0x1794),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "xdb_croolis_func_178e_natural.json",
+        croolis_slot2_common_dispatch_vectors(0x178E),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "xdb_croolis_func_17e4_natural.json",
+        croolis_slot2_begin_fade_vectors(0x17E4),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "xdb_croolis_func_17f2_natural.json",
+        croolis_slot2_fade_update_vectors(0x17F2),
         args.check,
     )
     for module, entry in (

@@ -5,7 +5,8 @@ use std::fmt;
 use commander_blood_formats::alien::AXIS_COUNT;
 
 use super::{
-    AlienCallbackSceneState, AlienCameraTransform, AlienModelPose, AlienSpecies, AlienWaveSelection,
+    AlienCallbackSceneState, AlienCameraTransform, AlienControlLatch, AlienModelPose, AlienSpecies,
+    AlienWaveSelection,
 };
 
 const PRIMARY_NODE: usize = 0;
@@ -97,6 +98,12 @@ const CROOLIS_FOLLOWER_SHIFT: u32 = 1;
 const CROOLIS_HEADING_SHIFT: u32 = 4;
 const CROOLIS_HEADING_CARRY_SHIFT: u32 = 3;
 const CROOLIS_HEADING_CARRY_MASK: u16 = 1;
+const CROOLIS_FADE_NODE: usize = 4;
+const CROOLIS_FADE_NODE_COUNT: usize = CROOLIS_FADE_NODE + 1;
+const CROOLIS_FADE_POSITION_STEP: u16 = 30;
+const CROOLIS_FADE_INITIAL_DURATION: i16 = 178;
+const CROOLIS_FADE_DURATION_STEP: i16 = 4;
+const CROOLIS_FADE_MINIMUM_DURATION: i16 = 146;
 
 /// Callback stage selected for one slot-2 animation model.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -115,6 +122,8 @@ pub enum AlienSlot2Callback {
     AmerSelection,
     /// Track AMER after it crosses into the close selection phase.
     AmerSelectionLate,
+    /// Publish CROOLIS's fade marker while retaining ordinary motion.
+    CroolisFade,
 }
 
 /// Callback-owned state parallel to one animated model node.
@@ -283,6 +292,24 @@ pub enum AlienAmerLateSelectionUpdate {
     CommonRequested,
 }
 
+/// Typed continuation chosen by CROOLIS's shared control-latch dispatch.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienCroolisCommonDispatch {
+    /// Continue immediately through ordinary CROOLIS motion.
+    MotionRequested,
+    /// Continue immediately through CROOLIS fade initialization.
+    FadeRequested,
+}
+
+/// Typed continuation chosen by one CROOLIS fade update.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienCroolisFadeUpdate {
+    /// Continue immediately through ordinary CROOLIS motion.
+    MotionRequested,
+    /// Continue immediately through the separately recovered restart routine.
+    RestartRequested,
+}
+
 /// Invalid flat state supplied to the slot-2 coordinator.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AlienSlot2Error {
@@ -307,6 +334,11 @@ pub enum AlienSlot2Error {
     },
     /// CROOLIS motion updates the primary node and three follower nodes.
     MissingCroolisMotionNodes {
+        /// Nodes supplied by the caller.
+        node_count: usize,
+    },
+    /// CROOLIS fade publication requires the fifth animated node.
+    MissingCroolisFadeNode {
         /// Nodes supplied by the caller.
         node_count: usize,
     },
@@ -783,6 +815,62 @@ pub fn update_croolis_motion(
     Ok(())
 }
 
+/// Select CROOLIS motion or fade using typed scene and model ownership.
+pub fn dispatch_croolis_common(
+    model_index: usize,
+    scene: &AlienCallbackSceneState,
+) -> AlienCroolisCommonDispatch {
+    if scene.control_latch == AlienControlLatch::Model(model_index) {
+        AlienCroolisCommonDispatch::FadeRequested
+    } else {
+        AlienCroolisCommonDispatch::MotionRequested
+    }
+}
+
+/// Initialize CROOLIS's fade timer and request same-pass fade dispatch.
+pub fn begin_croolis_fade(
+    pose: &mut AlienModelPose,
+    animation: &mut AlienSlot2AnimationState,
+) -> Result<AlienSlot2Callback, AlienSlot2Error> {
+    validate_state(AlienSpecies::Croolis, pose, animation)?;
+    let position_y = pose.nodes[PRIMARY_NODE].local_position[Y_AXIS];
+    let position_word = (position_y as u16).wrapping_sub(CROOLIS_FADE_POSITION_STEP);
+    pose.nodes[PRIMARY_NODE].local_position[Y_AXIS] =
+        replace_position_word(position_y, position_word);
+    animation.phase_timer = CROOLIS_FADE_INITIAL_DURATION;
+    animation.callback = Some(AlienSlot2Callback::CroolisFade);
+    Ok(AlienSlot2Callback::CroolisFade)
+}
+
+/// Publish and advance CROOLIS's fade timer using flat node state.
+pub fn update_croolis_fade(
+    pose: &mut AlienModelPose,
+    animation: &mut AlienSlot2AnimationState,
+    scene: &mut AlienCallbackSceneState,
+) -> Result<AlienCroolisFadeUpdate, AlienSlot2Error> {
+    validate_state(AlienSpecies::Croolis, pose, animation)?;
+    if pose.nodes.len() < CROOLIS_FADE_NODE_COUNT {
+        return Err(AlienSlot2Error::MissingCroolisFadeNode {
+            node_count: pose.nodes.len(),
+        });
+    }
+
+    let fade_position = pose.nodes[CROOLIS_FADE_NODE].local_position[Y_AXIS];
+    pose.nodes[CROOLIS_FADE_NODE].local_position[Y_AXIS] =
+        replace_position_word(fade_position, animation.phase_timer as u16);
+    let next_duration = animation
+        .phase_timer
+        .wrapping_sub(CROOLIS_FADE_DURATION_STEP);
+    if next_duration >= CROOLIS_FADE_MINIMUM_DURATION {
+        animation.phase_timer = next_duration;
+        return Ok(AlienCroolisFadeUpdate::MotionRequested);
+    }
+
+    animation.phase_timer = i16::default();
+    scene.slot2_active = false;
+    Ok(AlienCroolisFadeUpdate::RestartRequested)
+}
+
 /// Preserve the observable behavior of the unreachable steering sibling.
 ///
 /// No original alien method table or callback points at this routine. Keeping
@@ -868,6 +956,10 @@ fn transformed_component(node: &super::AlienNodePose, axis: usize) -> i16 {
     ((node.transform.translation[axis] as u32 >> u16::BITS) as u16) as i16
 }
 
+fn replace_position_word(position: i32, word: u16) -> i32 {
+    ((position as u32 & !u32::from(u16::MAX)) | u32::from(word)) as i32
+}
+
 fn prepare_amer_immediate_callback(
     pose: &AlienModelPose,
     animation: &mut AlienSlot2AnimationState,
@@ -936,6 +1028,8 @@ mod tests {
     const TOUCHED_FIELD_SENTINEL: u16 = 0x5555;
     const RANDOM_STATE_SENTINEL: u16 = 0xa55a;
     const TRANSFORM_LOW_WORD_SENTINEL: u16 = 0x6a5a;
+    const CURRENT_MODEL_INDEX: usize = 2;
+    const OTHER_MODEL_INDEX: usize = 3;
 
     #[derive(Deserialize)]
     struct Slot2Vector {
@@ -1111,6 +1205,37 @@ mod tests {
         heading_carry: u16,
         follower_pan_after: u16,
         follower_pitch_after: [u16; 2],
+    }
+
+    #[derive(Deserialize)]
+    struct CroolisCommonDispatchVector {
+        name: String,
+        module: String,
+        control_latch: String,
+        continuation: String,
+    }
+
+    #[derive(Deserialize)]
+    struct CroolisBeginFadeVector {
+        name: String,
+        module: String,
+        position_y_before: u32,
+        position_y_after: u32,
+        duration_after: u16,
+        next_stage: String,
+    }
+
+    #[derive(Deserialize)]
+    struct CroolisFadeVector {
+        name: String,
+        module: String,
+        continuation: String,
+        duration_before: u16,
+        duration_after: u16,
+        fade_position_before: u32,
+        fade_position_after: u32,
+        active_before: u16,
+        active_after: u16,
     }
 
     #[derive(Deserialize)]
@@ -1782,6 +1907,123 @@ mod tests {
     }
 
     #[test]
+    fn croolis_common_dispatch_matches_every_original_overlay_vector() {
+        let vectors: Vec<CroolisCommonDispatchVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/xdb_croolis_func_178e_natural.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            assert_eq!(vector.module, "croolis");
+            let scene = AlienCallbackSceneState {
+                control_latch: match vector.control_latch.as_str() {
+                    "inactive" => AlienControlLatch::Inactive,
+                    "other_model" => AlienControlLatch::Model(OTHER_MODEL_INDEX),
+                    "current_model" => AlienControlLatch::Model(CURRENT_MODEL_INDEX),
+                    latch => panic!("unknown CROOLIS control latch {latch}"),
+                },
+                ..AlienCallbackSceneState::default()
+            };
+            let expected = match vector.continuation.as_str() {
+                "motion" => AlienCroolisCommonDispatch::MotionRequested,
+                "fade" => AlienCroolisCommonDispatch::FadeRequested,
+                continuation => panic!("unknown CROOLIS common continuation {continuation}"),
+            };
+
+            assert_eq!(
+                dispatch_croolis_common(CURRENT_MODEL_INDEX, &scene),
+                expected,
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    #[test]
+    fn croolis_fade_entry_matches_every_original_overlay_vector() {
+        let vectors: Vec<CroolisBeginFadeVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/xdb_croolis_func_17e4_natural.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            assert_eq!(vector.module, "croolis");
+            assert_eq!(vector.next_stage, "fade");
+            let mut pose = pose(&[EMPTY_NODE_VECTOR; PRIMARY_AND_FOLLOWER_NODE_COUNT]);
+            pose.nodes[PRIMARY_NODE].local_position[Y_AXIS] = vector.position_y_before as i32;
+            let mut animation = AlienSlot2AnimationState::new(PRIMARY_AND_FOLLOWER_NODE_COUNT);
+            animation.callback = Some(AlienSlot2Callback::Update);
+
+            assert_eq!(
+                begin_croolis_fade(&mut pose, &mut animation).unwrap(),
+                AlienSlot2Callback::CroolisFade,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                pose.nodes[PRIMARY_NODE].local_position[Y_AXIS] as u32, vector.position_y_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                animation.phase_timer as u16, vector.duration_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(animation.callback, Some(AlienSlot2Callback::CroolisFade));
+        }
+    }
+
+    #[test]
+    fn croolis_fade_update_matches_every_original_overlay_vector() {
+        let vectors: Vec<CroolisFadeVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/xdb_croolis_func_17f2_natural.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            assert_eq!(vector.module, "croolis");
+            let mut pose = pose(&[EMPTY_NODE_VECTOR; CROOLIS_FADE_NODE_COUNT]);
+            pose.nodes[CROOLIS_FADE_NODE].local_position[Y_AXIS] =
+                vector.fade_position_before as i32;
+            let mut animation = AlienSlot2AnimationState::new(CROOLIS_FADE_NODE_COUNT);
+            animation.callback = Some(AlienSlot2Callback::CroolisFade);
+            animation.phase_timer = vector.duration_before as i16;
+            let mut scene = AlienCallbackSceneState {
+                slot2_active: vector.active_before != u16::default(),
+                ..AlienCallbackSceneState::default()
+            };
+            let expected = match vector.continuation.as_str() {
+                "motion" => AlienCroolisFadeUpdate::MotionRequested,
+                "restart" => AlienCroolisFadeUpdate::RestartRequested,
+                continuation => panic!("unknown CROOLIS fade continuation {continuation}"),
+            };
+
+            assert_eq!(
+                update_croolis_fade(&mut pose, &mut animation, &mut scene).unwrap(),
+                expected,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                animation.phase_timer as u16, vector.duration_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                pose.nodes[CROOLIS_FADE_NODE].local_position[Y_AXIS] as u32,
+                vector.fade_position_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                scene.slot2_active,
+                vector.active_after != u16::default(),
+                "{}",
+                vector.name
+            );
+            assert_eq!(animation.callback, Some(AlienSlot2Callback::CroolisFade));
+        }
+    }
+
+    #[test]
     fn amer_update_head_matches_every_isolated_original_overlay_vector() {
         let vectors: Vec<AmerUpdateHeadVector> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/xdb_amer_func_1692_head_natural.json"
@@ -1948,6 +2190,20 @@ mod tests {
             update_croolis_motion(&mut short_pose, &short_animation),
             Err(AlienSlot2Error::MissingCroolisMotionNodes {
                 node_count: CROOLIS_MOTION_NODE_COUNT - 1,
+            })
+        );
+
+        let mut short_fade_pose = pose(&[node; CROOLIS_FADE_NODE_COUNT - 1]);
+        let mut short_fade_animation = AlienSlot2AnimationState::new(CROOLIS_FADE_NODE_COUNT - 1);
+        let mut callback_scene = AlienCallbackSceneState::default();
+        assert_eq!(
+            update_croolis_fade(
+                &mut short_fade_pose,
+                &mut short_fade_animation,
+                &mut callback_scene,
+            ),
+            Err(AlienSlot2Error::MissingCroolisFadeNode {
+                node_count: CROOLIS_FADE_NODE_COUNT - 1,
             })
         );
     }

@@ -1,0 +1,42 @@
+[
+  {
+    "name": "ordinary",
+    "module": "croolis",
+    "entry": 6116,
+    "position_y_before": 305397860,
+    "position_y_after": 305397830,
+    "duration_after": 178,
+    "next_stage": "fade",
+    "data_sha256": "fa1e9fec2ed80cd25a1ea289f4228b26d12f28de8c38b4f52b90f9c4a7726033"
+  },
+  {
+    "name": "fraction_underflow_preserves_integer",
+    "module": "croolis",
+    "entry": 6116,
+    "position_y_before": 305397776,
+    "position_y_after": 305463282,
+    "duration_after": 178,
+    "next_stage": "fade",
+    "data_sha256": "a84b61da4f91b09227d2ca726947505feb73c4ce8af399abd6dd4a3b7e78b83f"
+  },
+  {
+    "name": "signed_high_value",
+    "module": "croolis",
+    "entry": 6116,
+    "position_y_before": 2309718016,
+    "position_y_after": 2309717986,
+    "duration_after": 178,
+    "next_stage": "fade",
+    "data_sha256": "4c2d3ee42e27f4e10dbc809824709fe9174c41b2b95ca0d02d84969de21a8c89"
+  },
+  {
+    "name": "wrapped_state_offsets",
+    "module": "croolis",
+    "entry": 6116,
+    "position_y_before": 1985216520,
+    "position_y_after": 1985282026,
+    "duration_after": 178,
+    "next_stage": "fade",
+    "data_sha256": "b75ebdc5ec1ed90f356c77c8d556327b59c4fd70eb410d60be042e8006ade067"
+  }
+]
