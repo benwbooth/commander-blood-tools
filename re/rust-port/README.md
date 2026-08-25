@@ -45,9 +45,15 @@ against twenty-four direct original-binary vectors. It retains the original
 16-bit wrapping accumulator behavior without retaining DOS mouse interrupts,
 register state, or segmented addresses.
 
-The next layer decodes each XDB's authored scene resources into owned transforms,
-vertices, faces, textures, palettes, and behavior contexts. File-relative
-relocation values are loader inputs only and become validated Rust indices.
+The typed format layer now decodes all three original XDB images: the shared
+primary mesh, 48 named behavior models, camera/root/node hierarchy, vertices,
+projection aliases, faces, 256-by-512 indexed texture atlas, display palette,
+trigonometry table, and 500-entry raster reciprocal table. It also resolves
+method-table slots to semantic behavior kinds. File-relative relocation and
+object offsets are loader inputs only and become validated Rust indices.
+
+The next runtime layer ports the shared camera-matrix, hierarchical transform,
+projection, starfield, and face-selection routines over these owned resources.
 
 Run the current interactive path with original assets:
 
