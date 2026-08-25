@@ -43,6 +43,7 @@ const SHARED_STATE_G_OPCODE: u8 = 0xC0;
 const RECORD_STATE_OPCODE: u8 = 0xC1;
 const ACTOR_RECORD_OPCODE: u8 = 0xC4;
 const WORLD_STATE_RECORD_OPCODE: u8 = 0xC5;
+const TRAVEL_RECORD_OPCODE: u8 = 0xC6;
 const TRANSFER_OPCODE: u8 = 0xCD;
 const INVERTED_CONDITION_PREFIX: u8 = GUARD_END_OPCODE;
 const OPCODE_SIZE: usize = 1;
@@ -71,6 +72,7 @@ const PAIR_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 3;
 const RECORD_STATE_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const ACTOR_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const WORLD_STATE_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
+const TRAVEL_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const BITS_PER_BYTE: u8 = u8::BITS as u8;
 const PRIMARY_NAVIGATION_OPERAND: u16 = 1;
 const SECONDARY_NAVIGATION_OPERAND: u16 = 2;
@@ -409,6 +411,17 @@ pub struct ScriptWorldStateRecordOperation {
     pub target: ScriptStateWordTriple,
     /// World-state object stored as the record relation in assignment mode.
     pub related: ScriptObjectId,
+    /// Whether query-mode equality is inverted.
+    pub inverted: bool,
+}
+
+/// One optionally inverted C6 travel relation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptTravelRecordOperation {
+    /// Bounded three-word travel-action slot.
+    pub target: ScriptStateWordTriple,
+    /// Destination object stored by the travel relation.
+    pub destination: ScriptObjectId,
     /// Whether query-mode equality is inverted.
     pub inverted: bool,
 }
@@ -1043,20 +1056,13 @@ pub fn decode_script_actor_record_operation(
     state: &ScriptState,
     directory: &ScriptDirectory,
 ) -> Result<ScriptActorRecordOperation, ScriptInstructionError> {
-    if token.opcode().byte() != ACTOR_RECORD_OPCODE {
-        return Err(ScriptInstructionError::UntranslatedOpcode {
-            opcode: token.opcode(),
-        });
-    }
-    let bytes = token.encoded_bytes();
-    let inverted = bytes.get(OPCODE_SIZE) == Some(&INVERTED_CONDITION_PREFIX);
-    let prefix_size = usize::from(inverted);
-    require_size(token, ACTOR_RECORD_SIZE + prefix_size)?;
-    let operand_offset = OPCODE_SIZE + prefix_size;
-    let encoded_target = read_word(bytes, operand_offset);
-    let target = resolve_state_word_triple(token, state, encoded_target)?;
-    let encoded_related = read_word(bytes, operand_offset + WORD_SIZE);
-    let related = resolve_active_object(token, directory, encoded_related)?;
+    let (target, related, inverted) = decode_object_record_operands(
+        token,
+        state,
+        directory,
+        ACTOR_RECORD_OPCODE,
+        ACTOR_RECORD_SIZE,
+    )?;
     Ok(ScriptActorRecordOperation {
         target,
         related,
@@ -1070,7 +1076,48 @@ pub fn decode_script_world_state_record_operation(
     state: &ScriptState,
     directory: &ScriptDirectory,
 ) -> Result<ScriptWorldStateRecordOperation, ScriptInstructionError> {
-    if token.opcode().byte() != WORLD_STATE_RECORD_OPCODE {
+    let (target, related, inverted) = decode_object_record_operands(
+        token,
+        state,
+        directory,
+        WORLD_STATE_RECORD_OPCODE,
+        WORLD_STATE_RECORD_SIZE,
+    )?;
+    Ok(ScriptWorldStateRecordOperation {
+        target,
+        related,
+        inverted,
+    })
+}
+
+/// Decode one C6 travel relation into bounded typed identities.
+pub fn decode_script_travel_record_operation(
+    token: &ScriptToken,
+    state: &ScriptState,
+    directory: &ScriptDirectory,
+) -> Result<ScriptTravelRecordOperation, ScriptInstructionError> {
+    let (target, destination, inverted) = decode_object_record_operands(
+        token,
+        state,
+        directory,
+        TRAVEL_RECORD_OPCODE,
+        TRAVEL_RECORD_SIZE,
+    )?;
+    Ok(ScriptTravelRecordOperation {
+        target,
+        destination,
+        inverted,
+    })
+}
+
+fn decode_object_record_operands(
+    token: &ScriptToken,
+    state: &ScriptState,
+    directory: &ScriptDirectory,
+    expected_opcode: u8,
+    base_size: usize,
+) -> Result<(ScriptStateWordTriple, ScriptObjectId, bool), ScriptInstructionError> {
+    if token.opcode().byte() != expected_opcode {
         return Err(ScriptInstructionError::UntranslatedOpcode {
             opcode: token.opcode(),
         });
@@ -1078,17 +1125,15 @@ pub fn decode_script_world_state_record_operation(
     let bytes = token.encoded_bytes();
     let inverted = bytes.get(OPCODE_SIZE) == Some(&INVERTED_CONDITION_PREFIX);
     let prefix_size = usize::from(inverted);
-    require_size(token, WORLD_STATE_RECORD_SIZE + prefix_size)?;
+    require_size(token, base_size + prefix_size)?;
     let operand_offset = OPCODE_SIZE + prefix_size;
-    let encoded_target = read_word(bytes, operand_offset);
-    let target = resolve_state_word_triple(token, state, encoded_target)?;
-    let encoded_related = read_word(bytes, operand_offset + WORD_SIZE);
-    let related = resolve_active_object(token, directory, encoded_related)?;
-    Ok(ScriptWorldStateRecordOperation {
-        target,
-        related,
-        inverted,
-    })
+    let target = resolve_state_word_triple(token, state, read_word(bytes, operand_offset))?;
+    let object = resolve_active_object(
+        token,
+        directory,
+        read_word(bytes, operand_offset + WORD_SIZE),
+    )?;
+    Ok((target, object, inverted))
 }
 
 fn resolve_active_object(
@@ -1259,6 +1304,7 @@ mod tests {
     const EXPECTED_RECORD_STATE_COUNT: usize = 20;
     const EXPECTED_ACTOR_RECORD_COUNTS: [usize; PROFILE_COUNT] = [9, 95, 138, 66, 81];
     const EXPECTED_WORLD_STATE_RECORD_COUNTS: [usize; PROFILE_COUNT] = [0; PROFILE_COUNT];
+    const EXPECTED_TRAVEL_RECORD_COUNTS: [usize; PROFILE_COUNT] = [0, 0, 1, 1, 0];
     const TEST_STATE_WORD_INDEX: usize = 1;
     const EXPECTED_SHIPPED_BIT_FLAG_MASK: u8 = 32;
     const EXPECTED_SHIPPED_PAIR_OPCODE: u8 = PAIR_RECORD_C_OPCODE;
@@ -1779,6 +1825,46 @@ mod tests {
                 .count();
         }
         assert_eq!(counts, EXPECTED_WORLD_STATE_RECORD_COUNTS);
+    }
+
+    #[test]
+    fn every_shipped_c6_record_is_a_typed_travel_guard() {
+        let mut counts = [usize::MIN; PROFILE_COUNT];
+
+        for profile in 1..=PROFILE_COUNT {
+            let code_data = std::fs::read(original_asset(&format!("SCRIPT{profile}.COD"))).unwrap();
+            let directory_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.DEB"))).unwrap();
+            let state_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.VAR"))).unwrap();
+            let code = decode_script_code(&code_data).unwrap();
+            let directory = decode_script_directory(&directory_data).unwrap();
+            let state = decode_script_state(&state_data, &directory).unwrap();
+
+            for token in code
+                .tokens()
+                .iter()
+                .filter(|token| token.opcode().byte() == TRAVEL_RECORD_OPCODE)
+            {
+                let operation =
+                    decode_script_travel_record_operation(token, &state, &directory).unwrap();
+                let owner = operation.target.object().unwrap();
+                assert_eq!(
+                    state.object(owner).unwrap().kind,
+                    crate::script::ScriptObjectKind::NavigationEntity
+                );
+                assert_eq!(
+                    state.object(operation.destination).unwrap().kind,
+                    crate::script::ScriptObjectKind::BlackHole
+                );
+                assert_eq!(token.mode_before(), ScriptDecodingMode::Query);
+                assert_eq!(state.word_triple(operation.target), Some([u16::MIN; 3]));
+                assert!(!operation.inverted);
+                counts[profile - 1] += 1;
+            }
+        }
+
+        assert_eq!(counts, EXPECTED_TRAVEL_RECORD_COUNTS);
     }
 
     #[test]

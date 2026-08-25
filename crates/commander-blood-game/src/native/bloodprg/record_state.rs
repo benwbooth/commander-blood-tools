@@ -5,7 +5,8 @@ use std::fmt;
 
 use commander_blood_formats::instruction::ScriptActorRecordOperation;
 use commander_blood_formats::instruction::{
-    ScriptRecordStateOperand, ScriptRecordStateOperation, ScriptWorldStateRecordOperation,
+    ScriptRecordStateOperand, ScriptRecordStateOperation, ScriptTravelRecordOperation,
+    ScriptWorldStateRecordOperation,
 };
 use commander_blood_formats::script::{
     ScriptObjectId, ScriptObjectKind, ScriptState, ScriptStateObjectReference,
@@ -30,6 +31,8 @@ pub enum ScriptActionRecord {
     ActorPresentation(ScriptObjectId),
     /// C5 link to an active world-state object.
     WorldStateLink(ScriptObjectId),
+    /// C6 travel relation to a destination object.
+    Travel(ScriptObjectId),
     /// Another native record kind currently owns the slot.
     Occupied,
 }
@@ -302,6 +305,34 @@ pub fn apply_world_state_record_operation(
     })
 }
 
+/// Apply `vm_op_c6_record_match` to one typed travel-action slot.
+pub fn apply_travel_record_operation(
+    operation: ScriptTravelRecordOperation,
+    records: &mut ScriptActionRecords,
+    runtime: &mut ScriptRuntime,
+) -> Result<ScriptRecordStateOutcome, ScriptRecordStateError> {
+    let matches =
+        records.record(operation.target) == ScriptActionRecord::Travel(operation.destination);
+    if runtime.query_mode() {
+        if matches != operation.inverted {
+            return Ok(ScriptRecordStateOutcome {
+                control: ScriptControl::Continue,
+                written_slot: None,
+            });
+        }
+        return failed_outcome(runtime);
+    }
+
+    records.set_record(
+        operation.target,
+        ScriptActionRecord::Travel(operation.destination),
+    );
+    Ok(ScriptRecordStateOutcome {
+        control: ScriptControl::Continue,
+        written_slot: Some(operation.target),
+    })
+}
+
 fn query_record_state(
     operation: ScriptRecordStateOperation,
     state: &ScriptState,
@@ -428,6 +459,7 @@ mod tests {
     const SHIPPED_ACTOR_RECORD_COUNTS: [usize; PROFILE_COUNT] = [9, 95, 138, 66, 81];
     const ACTOR_HANDLER_VECTOR_COUNT: usize = 20;
     const WORLD_STATE_HANDLER_VECTOR_COUNT: usize = 14;
+    const TRAVEL_HANDLER_VECTOR_COUNT: usize = 11;
     const FAILURE_TARGET: usize = 9_320;
     const HANDLER_VECTOR_COUNT: usize = 21;
     const DIRECTORY_ENTRY_SIZE: usize = 20;
@@ -463,6 +495,7 @@ mod tests {
     const MIXED_CELESTIAL_WORLD_KIND_MASK: u16 = CELESTIAL_BODY_KIND_MASK | WORLD_STATE_KIND_MASK;
     const ACTOR_RECORD_KIND: u16 = 196;
     const WORLD_STATE_RECORD_KIND: u16 = 197;
+    const TRAVEL_RECORD_KIND: u16 = 198;
 
     #[derive(Deserialize)]
     struct HandlerOracle {
@@ -503,6 +536,16 @@ mod tests {
         record_before: [u16; 3],
         related_kind: u16,
         related_active_byte: u16,
+        branch_failed: bool,
+    }
+
+    #[derive(Deserialize)]
+    struct TravelHandlerOracle {
+        name: String,
+        query_mode_before: u8,
+        inverted: bool,
+        operand: u16,
+        record_before: [u16; 3],
         branch_failed: bool,
     }
 
@@ -781,6 +824,76 @@ mod tests {
                 assert_eq!(
                     records.record(target),
                     ScriptActionRecord::WorldStateLink(ids[ACTOR_RELATED]),
+                    "{}",
+                    vector.name
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn travel_record_handler_matches_every_original_decision_vector() {
+        let vectors: Vec<TravelHandlerOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_6d80_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), TRAVEL_HANDLER_VECTOR_COUNT);
+
+        for vector in vectors {
+            let (state, ids) = actor_handler_fixture(
+                ScriptObjectKind::NavigationEntity,
+                ScriptObjectKind::BlackHole,
+            );
+            let target = state
+                .object_word_triple(ids[ACTOR_OWNER], OBJECT_FLAGS_WORD_INDEX)
+                .unwrap();
+            let operation = ScriptTravelRecordOperation {
+                target,
+                destination: ids[ACTOR_RELATED],
+                inverted: vector.inverted,
+            };
+            let mut records = ScriptActionRecords::default();
+            if vector.record_before[0] == TRAVEL_RECORD_KIND {
+                let destination = if vector.record_before[1] == vector.operand {
+                    ids[ACTOR_RELATED]
+                } else {
+                    ids[ACTOR_ALTERNATE_RELATED]
+                };
+                records.set_record(target, ScriptActionRecord::Travel(destination));
+            } else if vector.record_before[0] != u16::MIN {
+                records.set_record(target, ScriptActionRecord::Occupied);
+            }
+
+            let mut runtime = ScriptRuntime::new();
+            if vector.query_mode_before & QUERY_MODE_FLAG != u8::MIN {
+                runtime.begin_root_guard(ScriptCodeOffset::new(FAILURE_TARGET));
+            } else {
+                runtime.arm_root_failure_target(ScriptCodeOffset::new(FAILURE_TARGET));
+            }
+            let outcome =
+                apply_travel_record_operation(operation, &mut records, &mut runtime).unwrap();
+
+            assert_eq!(
+                outcome.control,
+                if vector.branch_failed {
+                    ScriptControl::Jump(ScriptCodeOffset::new(FAILURE_TARGET))
+                } else {
+                    ScriptControl::Continue
+                },
+                "{}",
+                vector.name
+            );
+            let expected_write = vector.query_mode_before & QUERY_MODE_FLAG == u8::MIN;
+            assert_eq!(
+                outcome.written_slot.is_some(),
+                expected_write,
+                "{}",
+                vector.name
+            );
+            if expected_write {
+                assert_eq!(
+                    records.record(target),
+                    ScriptActionRecord::Travel(ids[ACTOR_RELATED]),
                     "{}",
                     vector.name
                 );
