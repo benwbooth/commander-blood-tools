@@ -1,6 +1,7 @@
 //! Native BLOODPRG game logic translated to flat, typed Rust data.
 
 mod aboard;
+mod actor_slots;
 mod bridge_frame;
 mod camera_navigation;
 mod descript;
@@ -28,6 +29,11 @@ mod vm;
 
 pub use aboard::{
     insert_aboard_object, remove_aboard_object, AboardObjectRoster, ABOARD_OBJECT_CAPACITY,
+};
+pub use actor_slots::{
+    NAV_ACTOR_SLOT_COUNT, NavActorBusyState, NavActorHandler, NavActorMouseState,
+    NavActorSeekState, NavActorSlot, NavActorSlotBackend, NavActorSlotFlags,
+    NavActorSlotUpdateOutcome, update_nav_actor_slots,
 };
 pub use bridge_frame::{
     BridgeActorPresentationState, BridgeFrameBackend, BridgeFrameOutcome, BridgeFrameState,
