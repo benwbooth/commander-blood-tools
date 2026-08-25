@@ -201,6 +201,8 @@ mod tests {
     const FUNCTION_SIX_ACTION_INDEX: u8 = 13;
     const FUNCTION_SEVEN_ACTION_INDEX: u8 = 14;
     const TOGGLE_PAUSE_ACTION_INDEX: u8 = 15;
+    const REQUEST_SHUTDOWN_ACTION_INDEX: u8 = 4;
+    const NATIVE_LATCHED_VALUE: u8 = 1;
     const EXPECTED_SIMPLE_HANDLER_VECTOR_COUNT: usize = 11;
     const EXPECTED_PAUSE_VECTOR_COUNT: usize = 4;
 
@@ -293,7 +295,7 @@ mod tests {
                     request_input_shutdown(&mut state);
                     assert_eq!(
                         state.shutdown_requested,
-                        vector.shutdown_latch == Some(1),
+                        vector.shutdown_latch == Some(NATIVE_LATCHED_VALUE),
                         "{}",
                         vector.name
                     );
@@ -416,6 +418,6 @@ mod tests {
     }
 
     const fn request_shutdown_action_index() -> u8 {
-        4
+        REQUEST_SHUTDOWN_ACTION_INDEX
     }
 }

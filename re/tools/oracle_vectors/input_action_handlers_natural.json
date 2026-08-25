@@ -386,112 +386,217 @@
         "committed_offset": 30583,
         "latched_key": 13,
         "name": "latch_only",
+        "profile_selection": false,
         "record_kind": 1,
+        "selected_index": 3,
         "selected_word": 3
       },
       {
         "committed_offset": 60,
         "latched_key": 13,
         "name": "active_record",
+        "profile_selection": true,
         "record_kind": 1,
+        "selected_index": 3,
         "selected_word": 259
       },
       {
         "committed_offset": 30583,
         "latched_key": 13,
         "name": "inactive_record",
+        "profile_selection": true,
         "record_kind": 2,
+        "selected_index": 3,
         "selected_word": 3
       }
     ],
     "cancel": [
       {
+        "active_line": 4,
         "calls": [],
         "cancelled": false,
         "dialogue_ready": 0,
+        "dialogue_ready_before": false,
         "latched_key": 27,
-        "name": "presentation_gate_clear"
+        "name": "presentation_gate_clear",
+        "presentation_active": false,
+        "ship_active": false
       },
       {
+        "active_line": 8,
         "calls": [],
         "cancelled": false,
         "dialogue_ready": 0,
+        "dialogue_ready_before": false,
         "latched_key": 27,
-        "name": "blocked_line_window"
+        "name": "blocked_line_window",
+        "presentation_active": true,
+        "ship_active": false
       },
       {
+        "active_line": 4,
         "calls": [
           "list_d8c_init"
         ],
         "cancelled": true,
         "dialogue_ready": 1,
+        "dialogue_ready_before": false,
         "latched_key": 0,
-        "name": "cancel_dialogue_line"
+        "name": "cancel_dialogue_line",
+        "presentation_active": true,
+        "ship_active": false
       },
       {
+        "active_line": 3,
         "calls": [
           "list_d8c_init"
         ],
         "cancelled": true,
         "dialogue_ready": 0,
+        "dialogue_ready_before": false,
         "latched_key": 0,
-        "name": "cancel_other_line"
+        "name": "cancel_other_line",
+        "presentation_active": true,
+        "ship_active": false
       }
     ],
     "move_next": [
       {
+        "committed": false,
         "first_visible": 0,
+        "first_visible_before": 0,
+        "mode": "selection",
         "name": "dynamic_directory",
-        "selected": 3
+        "next_entry_kind": 1,
+        "selected": 3,
+        "selected_before": 2,
+        "source": "profile"
       },
       {
+        "committed": false,
         "first_visible": 1,
+        "first_visible_before": 0,
+        "mode": "selection",
         "name": "fixed_directory_scroll",
-        "selected": 15
+        "next_entry_kind": 1,
+        "selected": 15,
+        "selected_before": 14,
+        "source": "builtin"
       },
       {
+        "committed": false,
         "first_visible": 0,
+        "first_visible_before": 0,
+        "mode": "selection",
         "name": "directory_terminator",
-        "selected": 2
+        "next_entry_kind": 0,
+        "selected": 2,
+        "selected_before": 2,
+        "source": "profile"
       },
       {
         "active_name_offset": 12352,
+        "edit_name_bytes": [
+          112,
+          113,
+          114,
+          115,
+          116,
+          117,
+          118,
+          119,
+          120,
+          121,
+          122,
+          123,
+          124,
+          125,
+          126,
+          127
+        ],
         "edit_name_hex": "707172737475767778797a7b7c7d7e7f",
+        "mode": "save_menu",
         "name": "save_slot_next",
-        "slot": 8
+        "slot": 8,
+        "slot_before": 7
       }
     ],
     "move_previous": [
       {
+        "committed": false,
         "first_visible": 4,
+        "first_visible_before": 5,
+        "mode": "selection",
         "name": "directory_scroll",
-        "selected": 4
+        "selected": 4,
+        "selected_before": 5,
+        "source": "profile"
       },
       {
+        "committed": false,
         "first_visible": 5,
+        "first_visible_before": 5,
+        "mode": "selection",
         "name": "directory_within_window",
-        "selected": 5
+        "selected": 5,
+        "selected_before": 6,
+        "source": "profile"
       },
       {
+        "committed": false,
         "first_visible": 0,
+        "first_visible_before": 0,
+        "mode": "selection",
         "name": "directory_at_first",
-        "selected": 0
+        "selected": 0,
+        "selected_before": 0,
+        "source": "profile"
       },
       {
+        "committed": true,
         "first_visible": 5,
+        "first_visible_before": 5,
+        "mode": "selection",
         "name": "committed_directory_ignored",
-        "selected": 5
+        "selected": 5,
+        "selected_before": 5,
+        "source": "profile"
       },
       {
+        "committed": true,
         "first_visible": 5,
+        "first_visible_before": 5,
+        "mode": "inactive",
         "name": "inactive",
-        "selected": 5
+        "selected": 5,
+        "selected_before": 5,
+        "source": "builtin"
       },
       {
         "active_name_offset": 12320,
+        "edit_name_bytes": [
+          64,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70,
+          71,
+          72,
+          73,
+          74,
+          75,
+          76,
+          77,
+          78,
+          79
+        ],
         "edit_name_hex": "404142434445464748494a4b4c4d4e4f",
+        "mode": "save_menu",
         "name": "save_slot_previous",
-        "slot": 1
+        "slot": 1,
+        "slot_before": 2
       }
     ],
     "simple_handlers": [

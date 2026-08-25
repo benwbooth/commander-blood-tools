@@ -220,7 +220,12 @@ def move_previous_vectors() -> list[dict[str, object]]:
         vectors.append(
             {
                 "name": name,
+                "mode": "selection" if flags & 3 else "inactive",
+                "source": "profile" if flags & 1 else "builtin",
+                "committed": committed != 0xFFFF,
+                "selected_before": selected,
                 "selected": word(result, 0x67A2),
+                "first_visible_before": first,
                 "first_visible": word(result, 0x67A0),
             }
         )
@@ -239,9 +244,12 @@ def move_previous_vectors() -> list[dict[str, object]]:
     vectors.append(
         {
             "name": "save_slot_previous",
+            "mode": "save_menu",
+            "slot_before": 2,
             "slot": word(result, 0x2732),
             "active_name_offset": word(result, 0x2734),
             "edit_name_hex": result[0x273B:0x274B].hex(),
+            "edit_name_bytes": list(result[0x273B:0x274B]),
         }
     )
     return vectors
@@ -277,8 +285,14 @@ def move_next_vectors() -> list[dict[str, object]]:
         vectors.append(
             {
                 "name": name,
+                "mode": "selection",
+                "source": "profile" if flags & 1 else "builtin",
+                "committed": False,
+                "selected_before": selected,
                 "selected": word(result, 0x67A2),
+                "first_visible_before": first,
                 "first_visible": word(result, 0x67A0),
+                "next_entry_kind": entry_kind,
             }
         )
 
@@ -296,9 +310,12 @@ def move_next_vectors() -> list[dict[str, object]]:
     vectors.append(
         {
             "name": "save_slot_next",
+            "mode": "save_menu",
+            "slot_before": 7,
             "slot": word(result, 0x2732),
             "active_name_offset": word(result, 0x2734),
             "edit_name_hex": result[0x273B:0x274B].hex(),
+            "edit_name_bytes": list(result[0x273B:0x274B]),
         }
     )
     return vectors
@@ -368,7 +385,9 @@ def accept_vectors() -> list[dict[str, object]]:
         vectors.append(
             {
                 "name": name,
+                "profile_selection": bool(flags & 1),
                 "selected_word": selected,
+                "selected_index": selected & 0xFF,
                 "record_kind": kind,
                 "committed_offset": word(result, 0x679E),
                 "latched_key": result[0x0B15],
@@ -430,6 +449,10 @@ def cancel_vectors() -> list[dict[str, object]]:
         vectors.append(
             {
                 "name": name,
+                "presentation_active": bool(gate & 1),
+                "dialogue_ready_before": bool(dialogue & 1),
+                "ship_active": bool(ship & 4),
+                "active_line": line,
                 "cancelled": cancels,
                 "latched_key": result[0x0B15],
                 "dialogue_ready": result[0x2534],

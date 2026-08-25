@@ -22,6 +22,8 @@ mod descript;
 mod descript_lookup;
 mod framebuffer_copy;
 mod input_dispatch;
+mod input_cancel;
+mod input_selection;
 mod menu_reveal;
 mod name_area_effect;
 mod navigation;
@@ -166,6 +168,18 @@ pub use input_dispatch::{
     HostInputKey, IgnoredInputAction, InputAction, InputArrowKey, InputDispatchState,
     InputFunctionKey, dispatch_input_key, latch_input_text_byte, request_input_shutdown,
     toggle_input_pause, translate_input_key,
+};
+pub use input_cancel::{
+    CANCELLATION_BLOCKED_LINE_FIRST, CANCELLATION_BLOCKED_LINE_LAST,
+    CANCELLATION_DIALOGUE_READY_LINE, CANCELLATION_PALETTE_COLOR_COUNT,
+    InputCancellationBackend, InputCancellationOutcome, InputCancellationState,
+    PresentationResourceCursor, cancel_input_action,
+};
+pub use input_selection::{
+    INPUT_SELECTION_VISIBLE_ROWS, InputDirectoryRowId, InputSelectionError,
+    InputSelectionSource, InputSelectionState, SAVE_SLOT_NAME_LENGTH, SaveMenuState,
+    SaveSlotName, accept_input_selection, move_input_selection_next,
+    move_input_selection_previous,
 };
 pub use menu_reveal::{
     reveal_inline_menu_step, InlineMenuRevealError, InlineMenuRevealFrame,
