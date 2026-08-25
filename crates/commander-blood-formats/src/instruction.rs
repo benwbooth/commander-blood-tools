@@ -49,6 +49,8 @@ const TRAVEL_RECORD_OPCODE: u8 = 0xC6;
 const ACTIVE_OBJECT_RECORD_OPCODE: u8 = 0xC7;
 const OPAQUE_MARKER_RECORD_OPCODE: u8 = 0xC8;
 const RECORD_CLEAR_OPCODE: u8 = 0xC9;
+const HOUR_GUARD_OPCODE: u8 = 0xCA;
+const DATE_GUARD_OPCODE: u8 = 0xCB;
 const TRANSFER_OPCODE: u8 = 0xCD;
 const BRIDGE_ACTIVITY_GUARD_OPCODE: u8 = 0xCE;
 const ALTERNATE_CONCEPT_CLEAR_OPCODE: u8 = 0xCF;
@@ -88,6 +90,8 @@ const TRAVEL_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const ACTIVE_OBJECT_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const OPAQUE_MARKER_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const RECORD_CLEAR_SIZE: usize = OPCODE_SIZE + WORD_SIZE;
+const HOUR_GUARD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
+const DATE_GUARD_SIZE: usize = OPCODE_SIZE + BYTE_SIZE * 3 + WORD_SIZE;
 const ENVIRONMENT_INSTRUCTION_SIZE: usize = OPCODE_SIZE;
 const PROFILE_REQUEST_SIZE: usize = OPCODE_SIZE + BYTE_SIZE;
 const BITS_PER_BYTE: u8 = u8::BITS as u8;
@@ -282,6 +286,67 @@ pub enum ScriptEnvironmentInstruction {
     RequireTravelActivity,
     /// Continue only while contact presentation is active (D1).
     RequireContactActivity,
+}
+
+/// Relation between an authored time literal and the host clock value.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ScriptTemporalRelation {
+    /// The authored literal must be later than the current value (`0xF1`).
+    After,
+    /// The authored literal must be earlier than the current value (`0xF2`).
+    Before,
+    /// The authored literal must equal the current value (every other tag).
+    Equal,
+}
+
+/// One CA signed-hour condition.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptHourGuard {
+    relation: ScriptTemporalRelation,
+    hour: i16,
+}
+
+impl ScriptHourGuard {
+    /// Return the comparison selected by the low byte of the authored tag word.
+    pub const fn relation(self) -> ScriptTemporalRelation {
+        self.relation
+    }
+
+    /// Return the authored signed hour literal.
+    pub const fn hour(self) -> i16 {
+        self.hour
+    }
+}
+
+/// One CB month/day condition and its consumed informational year.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptDateGuard {
+    relation: ScriptTemporalRelation,
+    day: i8,
+    month: i8,
+    encoded_year: u16,
+}
+
+impl ScriptDateGuard {
+    /// Return the authored month/day comparison.
+    pub const fn relation(self) -> ScriptTemporalRelation {
+        self.relation
+    }
+
+    /// Return the authored signed day byte.
+    pub const fn day(self) -> i8 {
+        self.day
+    }
+
+    /// Return the authored signed month byte.
+    pub const fn month(self) -> i8 {
+        self.month
+    }
+
+    /// Return the year consumed but deliberately not compared by the native handler.
+    pub const fn encoded_year(self) -> u16 {
+        self.encoded_year
+    }
 }
 
 /// One A9 procedure entry gate resolved through the companion directory.
@@ -880,6 +945,42 @@ pub fn decode_script_environment_instruction(
     };
     require_size(token, ENVIRONMENT_INSTRUCTION_SIZE)?;
     Ok(instruction)
+}
+
+/// Decode one CA signed-hour guard.
+pub fn decode_script_hour_guard(
+    token: &ScriptToken,
+) -> Result<ScriptHourGuard, ScriptInstructionError> {
+    if token.opcode().byte() != HOUR_GUARD_OPCODE {
+        return Err(ScriptInstructionError::UntranslatedOpcode {
+            opcode: token.opcode(),
+        });
+    }
+    require_size(token, HOUR_GUARD_SIZE)?;
+    let bytes = token.encoded_bytes();
+    Ok(ScriptHourGuard {
+        relation: decode_temporal_relation(bytes[OPCODE_SIZE]),
+        hour: read_word(bytes, OPCODE_SIZE + WORD_SIZE) as i16,
+    })
+}
+
+/// Decode one CB signed month/day guard while retaining its ignored year word.
+pub fn decode_script_date_guard(
+    token: &ScriptToken,
+) -> Result<ScriptDateGuard, ScriptInstructionError> {
+    if token.opcode().byte() != DATE_GUARD_OPCODE {
+        return Err(ScriptInstructionError::UntranslatedOpcode {
+            opcode: token.opcode(),
+        });
+    }
+    require_size(token, DATE_GUARD_SIZE)?;
+    let bytes = token.encoded_bytes();
+    Ok(ScriptDateGuard {
+        relation: decode_temporal_relation(bytes[OPCODE_SIZE]),
+        day: bytes[OPCODE_SIZE + BYTE_SIZE] as i8,
+        month: bytes[OPCODE_SIZE + BYTE_SIZE * 2] as i8,
+        encoded_year: read_word(bytes, OPCODE_SIZE + BYTE_SIZE * 3),
+    })
 }
 
 /// Decode an A9 procedure gate without retaining its mutable COD byte.
@@ -1494,6 +1595,14 @@ fn require_size(token: &ScriptToken, expected: usize) -> Result<(), ScriptInstru
     }
 }
 
+const fn decode_temporal_relation(tag: u8) -> ScriptTemporalRelation {
+    match tag {
+        0xF1 => ScriptTemporalRelation::After,
+        0xF2 => ScriptTemporalRelation::Before,
+        _ => ScriptTemporalRelation::Equal,
+    }
+}
+
 fn read_text_word(token: &ScriptToken, offset: usize) -> Result<u16, ScriptInstructionError> {
     if offset.saturating_add(WORD_SIZE) > token.encoded_bytes().len() {
         Err(ScriptInstructionError::MalformedText {
@@ -1555,6 +1664,8 @@ mod tests {
     const EXPECTED_ALTERNATE_CONCEPT_CLEAR_COUNTS: [usize; PROFILE_COUNT] = [4, 73, 120, 42, 75];
     const EXPECTED_TRAVEL_ACTIVITY_GUARD_COUNTS: [usize; PROFILE_COUNT] = [0, 50, 89, 27, 58];
     const EXPECTED_CONTACT_ACTIVITY_GUARD_COUNTS: [usize; PROFILE_COUNT] = [1, 15, 16, 19, 14];
+    const EXPECTED_HOUR_GUARD_COUNTS: [usize; PROFILE_COUNT] = [0, 50, 30, 0, 0];
+    const EXPECTED_DATE_GUARD_COUNTS: [usize; PROFILE_COUNT] = [0, 2, 2, 0, 0];
     const TEST_STATE_WORD_INDEX: usize = 1;
     const EXPECTED_SHIPPED_BIT_FLAG_MASK: u8 = 32;
     const EXPECTED_SHIPPED_PAIR_OPCODE: u8 = PAIR_RECORD_C_OPCODE;
@@ -2427,6 +2538,37 @@ mod tests {
             }
             assert_eq!(actual_counts, expected_counts);
         }
+    }
+
+    #[test]
+    fn every_shipped_ca_and_cb_token_has_typed_clock_semantics() {
+        let mut hour_counts = [usize::MIN; PROFILE_COUNT];
+        let mut date_counts = [usize::MIN; PROFILE_COUNT];
+
+        for profile in 1..=PROFILE_COUNT {
+            let code = decode_script_code(
+                &std::fs::read(original_asset(&format!("SCRIPT{profile}.COD"))).unwrap(),
+            )
+            .unwrap();
+            for token in code.tokens() {
+                match token.opcode().byte() {
+                    HOUR_GUARD_OPCODE => {
+                        let guard = decode_script_hour_guard(token).unwrap();
+                        assert!((-128..=127).contains(&guard.hour()));
+                        hour_counts[profile - 1] += 1;
+                    }
+                    DATE_GUARD_OPCODE => {
+                        let guard = decode_script_date_guard(token).unwrap();
+                        assert!((1994..=1995).contains(&guard.encoded_year()));
+                        date_counts[profile - 1] += 1;
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        assert_eq!(hour_counts, EXPECTED_HOUR_GUARD_COUNTS);
+        assert_eq!(date_counts, EXPECTED_DATE_GUARD_COUNTS);
     }
 
     #[test]
