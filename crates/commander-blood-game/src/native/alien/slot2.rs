@@ -60,6 +60,8 @@ const AMER_RETURN_TIMER_BIAS: u16 = 20;
 const AMER_RETURN_VELOCITY_SHIFT: u32 = 18;
 const AMER_CAMERA_DEPTH_RESET: i16 = -64;
 const AMER_RETURN_CALLBACK_COUNTDOWN: u16 = 1;
+const UNREFERENCED_STEERING_RADIAL_OFFSET: i16 = 10;
+const UNREFERENCED_STEERING_TURN_STEP: i16 = 16;
 
 /// Callback stage selected for one slot-2 animation model.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -138,6 +140,13 @@ pub struct AlienSlot2SceneState {
     pub random_state: u16,
     /// CROOLIS/SCRUT initialization seed, initially zero in both overlays.
     pub species_seed: u16,
+}
+
+/// Isolated state for the steering sibling compiled but unreachable in all overlays.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct AlienUnreferencedSteeringState {
+    /// Turn selected by the preceding invocation for sign-change damping.
+    pub previous_turn: i16,
 }
 
 /// Concrete callback boundary for the slot-2 coordinator.
@@ -530,6 +539,41 @@ pub fn update_amer_common(
     Ok(AlienAmerCommonUpdate::MotionUpdated)
 }
 
+/// Preserve the observable behavior of the unreachable steering sibling.
+///
+/// No original alien method table or callback points at this routine. Keeping
+/// it translated documents the complete overlays without retaining its DOS
+/// context-pointer traversal in the modern runtime.
+pub fn update_unreferenced_steering(
+    pose: &mut AlienModelPose,
+    steering: &mut AlienUnreferencedSteeringState,
+) -> Result<i16, AlienSlot2Error> {
+    let primary = pose
+        .nodes
+        .get_mut(PRIMARY_NODE)
+        .ok_or(AlienSlot2Error::EmptyNodeList)?;
+    let camera_x = transformed_component(primary, X_AXIS);
+    let camera_z = transformed_component(primary, Z_AXIS);
+    let score = i32::from(camera_x)
+        .wrapping_mul(primary.transform.matrix[Z_AXIS][Z_AXIS])
+        .wrapping_sub(i32::from(camera_z).wrapping_mul(primary.transform.matrix[X_AXIS][Z_AXIS]));
+    let desired_turn = if score < i32::default() {
+        UNREFERENCED_STEERING_TURN_STEP
+    } else {
+        -UNREFERENCED_STEERING_TURN_STEP
+    };
+    let direction_changed = (steering.previous_turn ^ desired_turn) < i16::default();
+    let turn = if direction_changed {
+        desired_turn >> 1
+    } else {
+        desired_turn
+    };
+    steering.previous_turn = turn;
+    primary.radial_offset = UNREFERENCED_STEERING_RADIAL_OFFSET;
+    primary.angles[Y_AXIS] = primary.angles[Y_AXIS].wrapping_add(turn as u16);
+    Ok(turn)
+}
+
 fn validate_state(
     species: AlienSpecies,
     pose: &AlienModelPose,
@@ -786,6 +830,23 @@ mod tests {
         active_after: u16,
         callback_countdown_before: u16,
         callback_countdown_after: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct UnreferencedSteeringVector {
+        name: String,
+        module: String,
+        camera_x_before: u16,
+        camera_z_before: u16,
+        forward_x_before: u32,
+        forward_z_before: u32,
+        radial_before: u16,
+        radial_after: u16,
+        pan_before: u16,
+        pan_after: u16,
+        previous_turn_before: u16,
+        turn_after: u16,
+        direction_changed: bool,
     }
 
     #[derive(Default)]
@@ -1331,6 +1392,60 @@ mod tests {
             for (node, expected) in pose.nodes[1..].iter().zip(vector.followers_after) {
                 assert_eq!(node.angles[X_AXIS], expected.pitch);
                 assert_eq!(node.angles[Z_AXIS], expected.roll);
+            }
+        }
+    }
+
+    #[test]
+    fn unreferenced_steering_matches_all_three_original_overlays() {
+        for input in [
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_amer_func_1b1a_natural.json"),
+            include_str!(
+                "../../../../../re/tools/oracle_vectors/xdb_croolis_func_1a86_natural.json"
+            ),
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_scrut_func_1b3b_natural.json"),
+        ] {
+            let vectors: Vec<UnreferencedSteeringVector> = serde_json::from_str(input).unwrap();
+            for vector in vectors {
+                let mut pose = pose(&[EMPTY_NODE_VECTOR]);
+                let primary = &mut pose.nodes[PRIMARY_NODE];
+                primary.transform.translation[X_AXIS] =
+                    join_words(vector.camera_x_before, TRANSFORM_LOW_WORD_SENTINEL);
+                primary.transform.translation[Z_AXIS] =
+                    join_words(vector.camera_z_before, TRANSFORM_LOW_WORD_SENTINEL);
+                primary.transform.matrix[X_AXIS][Z_AXIS] = vector.forward_x_before as i32;
+                primary.transform.matrix[Z_AXIS][Z_AXIS] = vector.forward_z_before as i32;
+                primary.radial_offset = vector.radial_before as i16;
+                primary.angles[Y_AXIS] = vector.pan_before;
+                let mut steering = AlienUnreferencedSteeringState {
+                    previous_turn: vector.previous_turn_before as i16,
+                };
+
+                let direction_changed = (steering.previous_turn
+                    ^ if vector.turn_after as i16 >= i16::default() {
+                        UNREFERENCED_STEERING_TURN_STEP
+                    } else {
+                        -UNREFERENCED_STEERING_TURN_STEP
+                    })
+                    < i16::default();
+                assert_eq!(
+                    direction_changed, vector.direction_changed,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    update_unreferenced_steering(&mut pose, &mut steering).unwrap() as u16,
+                    vector.turn_after,
+                    "{}:{}",
+                    vector.module,
+                    vector.name
+                );
+                assert_eq!(steering.previous_turn as u16, vector.turn_after);
+                assert_eq!(
+                    pose.nodes[PRIMARY_NODE].radial_offset as u16,
+                    vector.radial_after
+                );
+                assert_eq!(pose.nodes[PRIMARY_NODE].angles[Y_AXIS], vector.pan_after);
             }
         }
     }

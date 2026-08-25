@@ -3962,6 +3962,196 @@ def amer_slot2_common_update_vectors(entry: int) -> list[dict[str, object]]:
     return vectors
 
 
+def alien_unreferenced_steering_vectors(
+    module: str, entry: int
+) -> list[dict[str, object]]:
+    image = load_image(module)
+    body_size = 69
+    body_hash = "583efaabde835eef2a35421a23eeb3e1a2dc1acd68eb27d88d336ada0e24a892"
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered body changed")
+
+    data_segment = 0x5000
+    extra_segment = 0x7000
+    fs_segment = 0x9000
+    game_segment = 0xA000
+    stack_segment = 0xB000
+    context = 0x3000
+    return_address = 0xF000
+    state_stride = 0x005E
+    stack_sentinel = bytes.fromhex("966987785aa5")
+    cases = (
+        ("positive_same_direction", 0x4000, 1, 0, 0, 1, 0x0100, -1),
+        ("positive_direction_change", 0x4400, 2, 0, 0, 1, 0x0200, 16),
+        ("negative_same_direction", 0x4800, 0, 1, 1, 0, 0x0300, 1),
+        ("negative_direction_change", 0x4C00, 0, 2, 1, 0, 0x0400, -16),
+        ("zero_score_direction_change", 0x5000, 0, 0, 0, 0, 0x0004, 1),
+        (
+            "wrapped_negative_score",
+            0x5400,
+            1,
+            -1,
+            1,
+            0x7FFFFFFF,
+            0xFFF8,
+            -16,
+        ),
+        ("wrapped_state_pointer", 0xFFC0, -3, 2, -7, 5, 0x7FFF, 0),
+    )
+    vectors: list[dict[str, object]] = []
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", memory, offset & 0xFFFF, value & 0xFFFF)
+
+    def put_u32(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<I", memory, offset & 0xFFFF, value & 0xFFFFFFFF)
+
+    def get_u16(memory: bytes | bytearray, offset: int) -> int:
+        return struct.unpack_from("<H", memory, offset & 0xFFFF)[0]
+
+    def signed_word(value: int) -> int:
+        value &= 0xFFFF
+        return value if value < 0x8000 else value - 0x10000
+
+    def signed_dword(value: int) -> int:
+        value &= 0xFFFFFFFF
+        return value if value < 0x80000000 else value - 0x100000000
+
+    for case_index, case in enumerate(cases):
+        (
+            name,
+            state_root,
+            camera_x,
+            camera_z,
+            forward_x,
+            forward_z,
+            pan,
+            previous_turn,
+        ) = case
+        state = (state_root + state_stride) & 0xFFFF
+        data_before = bytearray(
+            (offset * 31 + case_index * 19 + 7) & 0xFF
+            for offset in range(0x10000)
+        )
+        put_u16(data_before, context + 0x16, state_root)
+        put_u32(data_before, state + 0x1A, forward_x)
+        put_u32(data_before, state + 0x32, forward_z)
+        put_u16(data_before, state + 0x38, camera_x)
+        put_u16(data_before, state + 0x40, camera_z)
+        put_u16(data_before, state + 0x50, pan)
+        put_u16(data_before, state + 0x54, 0xA55A)
+        put_u16(data_before, state + 0x58, previous_turn)
+        data_expected = bytearray(data_before)
+
+        first_product = (
+            -signed_word(camera_z) * signed_dword(forward_x)
+        ) & 0xFFFFFFFF
+        second_product = (
+            signed_word(camera_x) * signed_dword(forward_z)
+        ) & 0xFFFFFFFF
+        score = (first_product + second_product) & 0xFFFFFFFF
+        desired_turn = 16 if score & 0x80000000 else -16
+        direction_changed = bool(
+            ((previous_turn & 0xFFFF) ^ (desired_turn & 0xFFFF)) & 0x8000
+        )
+        turn = desired_turn >> 1 if direction_changed else desired_turn
+        put_u16(data_expected, state + 0x54, 10)
+        put_u16(data_expected, state + 0x58, turn)
+        put_u16(data_expected, state + 0x50, pan + turn)
+
+        initial = {
+            "eax": 0xA1A12345,
+            "ebx": 0xB2B23456,
+            "ecx": 0xC3C34567,
+            "edx": 0xD4D45678,
+            "esi": 0xE5E50000,
+            "edi": 0xF6F60000 | context,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0293 | (0x0400 if case_index & 1 else 0),
+        }
+        code_before = bytearray(image)
+        code_before[return_address] = 0xCC
+        extra_before = bytes(
+            (offset * 13 + case_index + 3) & 0xFF for offset in range(0x10000)
+        )
+        fs_before = bytes(
+            (offset * 17 + case_index + 5) & 0xFF for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 23 + case_index + 9) & 0xFF for offset in range(0x10000)
+        )
+        machine = execute(
+            bytes(code_before),
+            entry,
+            return_address,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (extra_segment, 0, extra_before),
+                (fs_segment, 0, fs_before),
+                (game_segment, 0, game_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+        )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(data_expected):
+            differences = [
+                (offset, actual_data[offset], data_expected[offset])
+                for offset in range(0x10000)
+                if actual_data[offset] != data_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: data differs at {differences}"
+            )
+        if bytes(machine.mem_read(0, len(image))) != bytes(code_before):
+            raise AssertionError(f"{module}:{entry:#x} {name}: code changed")
+        for segment, expected in (
+            (extra_segment, extra_before),
+            (fs_segment, fs_before),
+            (game_segment, game_before),
+        ):
+            if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: segment {segment:#x} changed"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "camera_x_before": camera_x & 0xFFFF,
+                "camera_z_before": camera_z & 0xFFFF,
+                "forward_x_before": forward_x & 0xFFFFFFFF,
+                "forward_z_before": forward_z & 0xFFFFFFFF,
+                "score": score,
+                "score_sign": "negative" if score & 0x80000000 else "nonnegative",
+                "radial_before": get_u16(data_before, state + 0x54),
+                "radial_after": get_u16(data_expected, state + 0x54),
+                "pan_before": pan,
+                "pan_after": get_u16(data_expected, state + 0x50),
+                "previous_turn_before": previous_turn & 0xFFFF,
+                "turn_after": get_u16(data_expected, state + 0x58),
+                "direction_changed": direction_changed,
+                "data_sha256": hashlib.sha256(data_expected).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def alien_api_entry_vectors(
     module: str,
     body_hash: str,
@@ -18585,6 +18775,16 @@ def main() -> int:
         amer_slot2_common_update_vectors(0x171D),
         args.check,
     )
+    for module, entry in (
+        ("amer", 0x1B1A),
+        ("croolis", 0x1A86),
+        ("scrut", 0x1B3B),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            alien_unreferenced_steering_vectors(module, entry),
+            args.check,
+        )
     for module, entry in (
         ("amer", 0x2027),
         ("croolis", 0x206C),
