@@ -3,6 +3,7 @@
 mod aboard;
 mod actor_slots;
 mod bridge_input;
+mod bridge_console;
 mod actor_handler_black_hole;
 mod actor_handler_camera;
 mod actor_handler_hyperjump;
@@ -11,6 +12,7 @@ mod actor_handler_panel;
 mod actor_handler_radio;
 mod bridge_frame;
 mod camera_navigation;
+mod choice_list;
 mod descript;
 mod descript_lookup;
 mod menu_reveal;
@@ -20,6 +22,7 @@ mod numbers;
 mod presentation;
 mod presentation_hover;
 mod presentation_line;
+mod presentation_word_choice;
 mod procedure;
 mod record;
 mod record_state;
@@ -85,10 +88,25 @@ pub use bridge_frame::{
     BridgeActorPresentationState, BridgeFrameBackend, BridgeFrameOutcome, BridgeFrameState,
     BridgeSceneContext, BridgeSpriteRange, render_bridge_frame,
 };
+pub use bridge_console::{
+    BridgeChoiceBackend, BridgeChoicePanelPhase, BridgeConsoleActorState, BridgeConsoleChoice,
+    BridgeConsoleContext, BridgeConsoleDispatchOutcome, BridgeConsoleGate,
+    BridgeConsolePalettePlan, BridgeConsoleState, BridgeDeferredActionKind, BridgeDeferredRecord,
+    BridgeDeferredState, BridgeRecordChoice, BridgeRecordChoiceContext, BridgeRecordChoiceOutcome,
+    BridgeRecordChoiceState, ImmediateBridgeChoiceOutcome, MusicOptionLabel, OptionMenuChoice,
+    OptionMenuOutcome, OptionMenuState, Rgb6, activate_horn_choice, activate_radio_choice,
+    update_bridge_console_dispatch, update_contact_choice, update_navigation_target_choice,
+    update_option_menu,
+};
 pub use camera_navigation::{
     CameraNavigationLocation, CameraNavigationOutcome, CameraNavigationPaletteTransition,
     CameraNavigationPresentation, CameraNavigationRegionPoll, CameraNavigationShipMode,
     CameraNavigationSlot, CameraNavigationState, update_camera_navigation,
+};
+pub use choice_list::{
+    CHOICE_LIST_ROW_PITCH, CHOICE_LIST_WIDTH_PADDING, ChoiceListBackend, ChoiceListConfig,
+    ChoiceListFrame, ChoiceListPointer, ChoiceListPresentation, ChoiceListRect, ChoiceListRow,
+    ChoiceListRowKind, ChoiceListState, update_choice_list,
 };
 pub use descript::{
     CachedDescriptBackground, DescriptBackgroundCache, DescriptBackgroundCacheOutcome,
@@ -137,6 +155,11 @@ pub use presentation_line::{
     PresentationLine, PresentationLineBackend, PresentationLineFlags, PresentationLineOutcome,
     PresentationLinePlayback, PresentationLineStepper, PresentationResourceId,
     update_presentation_line,
+};
+pub use presentation_word_choice::{
+    WORD_CHOICE_TRANSITION_STEPS, PresentationWordChoice, PresentationWordChoiceBackend,
+    PresentationWordChoiceContext, PresentationWordChoiceGate, PresentationWordChoiceOutcome,
+    PresentationWordChoicePhase, PresentationWordChoiceState, update_presentation_word_choice,
 };
 pub use procedure::{
     apply_procedure_activation, evaluate_procedure_gate, ScriptProcedureStateError,
