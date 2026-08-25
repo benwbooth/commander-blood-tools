@@ -12,6 +12,7 @@ mod procedure;
 mod record;
 mod record_state;
 mod script;
+mod selected_mask;
 mod sequence;
 mod ship_view;
 mod startup;
@@ -81,6 +82,9 @@ pub use record_state::{
     ScriptActionRecord, ScriptActionRecords, ScriptRecordClearOutcome,
     ScriptRecordClearPresentationState, ScriptRecordStateError,
     ScriptRecordStateNavigationContext, ScriptRecordStateOutcome,
+};
+pub use selected_mask::{
+    PresentationChoiceMaskError, PresentationChoiceNumber, draw_presentation_choice_number,
 };
 pub use script::{ScriptControl, ScriptResumeState, ScriptRuntime, ScriptRuntimeError};
 pub use sequence::{
