@@ -13,6 +13,8 @@ pub const NODE_COUNT: usize = 16;
 pub const ANIMATION_COUNT: usize = 32;
 /// Number of Q14 cosine/sine table entries.
 pub const TRIGONOMETRY_ENTRY_COUNT: usize = 1_024;
+/// Exclusive upper bound for triangle spans accepted by the MANU3 rasterizer.
+pub const MAXIMUM_FACE_SPAN: usize = 400;
 
 const DATA_DELTA_FIELD: usize = 0x1368;
 const DATA_DIRECTORY_WORK_DELTAS: usize = 0x000c;
@@ -223,6 +225,10 @@ pub struct Manu3Asset {
     pub texture: IndexedTexture,
     /// Complete Q14 cosine/sine lookup table.
     pub trigonometry: [TrigonometryPair; TRIGONOMETRY_ENTRY_COUNT],
+    /// Fixed-point reciprocals used for native triangle orientation decisions.
+    /// The table is decoded as data because its high entries are not equivalent
+    /// to a simple integer reciprocal formula.
+    pub raster_reciprocals: [i32; MAXIMUM_FACE_SPAN],
     /// Thirty-two selector entries; repeated null selectors remain repeated.
     pub animations: [Vec<TweenCommand>; ANIMATION_COUNT],
 }
@@ -470,6 +476,8 @@ pub fn decode_manu3(data: &[u8]) -> Option<Manu3Asset> {
             sine: read_i16(data, position + size_of::<i16>())?,
         })
     })?;
+    let raster_reciprocals =
+        checked_array(|span| read_i32(data, texture_end.checked_add(span * size_of::<i32>())?))?;
 
     let animation_table = usize::from(read_u16(data, data_at(ANIMATION_TABLE_FIELD)?)?);
     let animations = checked_array(|animation| {
@@ -506,6 +514,7 @@ pub fn decode_manu3(data: &[u8]) -> Option<Manu3Asset> {
         faces,
         texture,
         trigonometry,
+        raster_reciprocals,
         animations,
     })
 }
@@ -523,6 +532,7 @@ mod tests {
     const NODE_ANIMATED_FIELD_COUNT: usize = AXIS_COUNT * 2;
     const FIRST_TRIGONOMETRY_COSINE: i16 = 16_384;
     const FIRST_TRIGONOMETRY_SINE: i16 = 0;
+    const FIRST_USABLE_RECIPROCAL: i32 = 65_536;
 
     fn original_xdb() -> Option<PathBuf> {
         [
@@ -579,6 +589,9 @@ mod tests {
                 sine: FIRST_TRIGONOMETRY_SINE,
             }
         );
+        assert_eq!(asset.raster_reciprocals.len(), MAXIMUM_FACE_SPAN);
+        assert_eq!(asset.raster_reciprocals[usize::MIN], 0);
+        assert_eq!(asset.raster_reciprocals[1], FIRST_USABLE_RECIPROCAL);
         assert_eq!(
             asset
                 .animations

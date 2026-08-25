@@ -9,6 +9,7 @@ path = "src/main.rs"
 
 [dependencies]
 anyhow = "1"
+bytemuck = { version = "1", features = ["derive"] }
 commander-blood-formats = { path = "../commander-blood-formats" }
 pollster = "0.4"
 sdl3 = { version = "0.18.4", features = ["raw-window-handle", "use-pkg-config"] }

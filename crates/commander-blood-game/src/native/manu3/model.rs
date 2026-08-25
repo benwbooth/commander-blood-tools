@@ -16,6 +16,7 @@ use super::geometry::{
     TransformParent, TrigonometryPair, TrigonometryTable, build_projection_matrices,
     project_entities, transform_point,
 };
+use super::raster::{FaceError, ModelFace, RenderTriangle, prepare_render_triangles};
 
 const X_AXIS: usize = 0;
 const Y_AXIS: usize = 1;
@@ -31,13 +32,6 @@ const REFERENCE_VERTEX_INDEX: usize = 34;
 const DEPTH_FRACTIONAL_BITS: u32 = 8;
 const VISIBLE_DEPTH_MINIMUM: i32 = 0;
 const LOW_WORD_PRESERVE_MASK: u32 = 0xffff_0000;
-
-/// One triangle retained from the original MANU3 face list.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct ModelFace {
-    /// Three indices into [`Manu3Model::vertices`].
-    pub vertices: [usize; AXIS_COUNT],
-}
 
 /// Per-frame input expected by the recovered MANU3 API coordinator.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -58,6 +52,8 @@ pub enum Manu3ModelError {
     Animation(AnimationError),
     /// Hierarchy or geometry indices are invalid.
     Geometry(GeometryError),
+    /// Face topology is invalid.
+    Face(FaceError),
 }
 
 impl Display for Manu3ModelError {
@@ -68,6 +64,7 @@ impl Display for Manu3ModelError {
             }
             Self::Animation(error) => Display::fmt(error, formatter),
             Self::Geometry(error) => Display::fmt(error, formatter),
+            Self::Face(error) => Display::fmt(error, formatter),
         }
     }
 }
@@ -86,6 +83,12 @@ impl From<GeometryError> for Manu3ModelError {
     }
 }
 
+impl From<FaceError> for Manu3ModelError {
+    fn from(error: FaceError) -> Self {
+        Self::Face(error)
+    }
+}
+
 /// Flat-memory MANU3 skeleton, animation state, geometry, and authored texture.
 pub struct Manu3Model {
     animation: Manu3Animation,
@@ -97,7 +100,9 @@ pub struct Manu3Model {
     faces: Vec<ModelFace>,
     texture: IndexedTexture,
     trigonometry: TrigonometryTable,
+    raster_reciprocals: [i32; commander_blood_formats::manu3::MAXIMUM_FACE_SPAN],
     projection_center: ProjectionCenter,
+    render_triangles: Vec<RenderTriangle>,
 }
 
 impl Manu3Model {
@@ -195,7 +200,9 @@ impl Manu3Model {
             faces,
             texture: asset.texture,
             trigonometry,
+            raster_reciprocals: asset.raster_reciprocals,
             projection_center: ProjectionCenter::default(),
+            render_triangles: Vec::new(),
         })
     }
 
@@ -207,6 +214,11 @@ impl Manu3Model {
     /// Authored triangle topology.
     pub fn faces(&self) -> &[ModelFace] {
         &self.faces
+    }
+
+    /// Visible textured triangles prepared in native activation order.
+    pub fn render_triangles(&self) -> &[RenderTriangle] {
+        &self.render_triangles
     }
 
     /// Original indexed hand texture ready for GPU upload.
@@ -255,6 +267,7 @@ impl Manu3Model {
             &self.projection_copies,
             self.projection_center,
         )?;
+        self.prepare_render_triangles()?;
         Ok(())
     }
 
@@ -273,6 +286,7 @@ impl Manu3Model {
             &self.projection_copies,
             self.projection_center,
         )?;
+        self.prepare_render_triangles()?;
         Ok(())
     }
 
@@ -309,6 +323,12 @@ impl Manu3Model {
         }
         self.projection_center.y = i32::from(cursor.y).wrapping_add(transformed[Y_AXIS] / depth);
         self.projection_center.x = i32::from(cursor.x).wrapping_sub(transformed[X_AXIS] / depth);
+    }
+
+    fn prepare_render_triangles(&mut self) -> Result<(), Manu3ModelError> {
+        self.render_triangles =
+            prepare_render_triangles(&self.vertices, &mut self.faces, &self.raster_reciprocals)?;
+        Ok(())
     }
 }
 

@@ -3,9 +3,13 @@
 use std::borrow::Cow;
 
 use anyhow::{Context, Result};
+use bytemuck::{Pod, Zeroable};
+use commander_blood_formats::manu3::IndexedTexture;
 use sdl3::video::Window;
 
 use crate::assets::OriginalFrame;
+use crate::native::manu3::model::Manu3Model;
+use crate::native::manu3::raster::RenderTriangle;
 
 const MINIMUM_SURFACE_DIMENSION: u32 = 1;
 const BASE_MIP_LEVEL: u32 = 0;
@@ -20,6 +24,35 @@ const FULLSCREEN_QUAD_VERTEX_COUNT: u32 = 6;
 const MINIMUM_DEPTH: f32 = 0.0;
 const MAXIMUM_DEPTH: f32 = 1.0;
 const CENTERING_DIVISOR: f32 = 2.0;
+const ORIGINAL_DISPLAY_ASPECT_WIDTH: u32 = 4;
+const ORIGINAL_DISPLAY_ASPECT_HEIGHT: u32 = 3;
+const MANU3_TEXTURE_BINDING: u32 = 0;
+const MANU3_PALETTE_BINDING: u32 = 1;
+const MANU3_VERTEX_COUNT_PER_FACE: usize = 3;
+const PALETTE_ENTRY_COUNT: u32 = 256;
+const DEPTH_TEXTURE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
+const CLEAR_DEPTH: f32 = 1.0;
+const EQUAL_DEPTH_VALUE: f32 = 0.5;
+const ZERO_DEPTH_RANGE: f64 = 0.0;
+
+#[repr(C)]
+#[derive(Clone, Copy, Pod, Zeroable)]
+struct Manu3GpuVertex {
+    screen: [f32; 2],
+    texture_coordinates: [f32; 2],
+    depth: f32,
+}
+
+const MANU3_VERTEX_ATTRIBUTES: [wgpu::VertexAttribute; 3] =
+    wgpu::vertex_attr_array![0 => Float32x2, 1 => Float32x2, 2 => Float32];
+
+struct Manu3Renderer {
+    pipeline: wgpu::RenderPipeline,
+    bind_group: wgpu::BindGroup,
+    vertex_buffer: wgpu::Buffer,
+    maximum_vertex_count: usize,
+    depth_view: wgpu::TextureView,
+}
 
 /// GPU state for aspect-correct presentation of a decoded original frame.
 pub struct Renderer<'window> {
@@ -29,12 +62,16 @@ pub struct Renderer<'window> {
     config: wgpu::SurfaceConfiguration,
     pipeline: wgpu::RenderPipeline,
     image_bind_group: wgpu::BindGroup,
-    image_size: (u32, u32),
+    manu3: Option<Manu3Renderer>,
 }
 
 impl<'window> Renderer<'window> {
     /// Create a high-performance wgpu device and upload one decoded original frame.
-    pub fn new(window: &'window Window, image: &OriginalFrame) -> Result<Self> {
+    pub fn new(
+        window: &'window Window,
+        image: &OriginalFrame,
+        manu3_model: Option<&Manu3Model>,
+    ) -> Result<Self> {
         let instance =
             wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle_from_env());
         let surface = create_surface::create(&instance, window)
@@ -192,6 +229,18 @@ impl<'window> Renderer<'window> {
             multiview_mask: None,
             cache: None,
         });
+        let manu3 = manu3_model.map(|model| {
+            Manu3Renderer::new(
+                &device,
+                &queue,
+                format,
+                config.width,
+                config.height,
+                image,
+                model.texture(),
+                model.faces().len(),
+            )
+        });
 
         Ok(Self {
             surface,
@@ -200,7 +249,7 @@ impl<'window> Renderer<'window> {
             config,
             pipeline,
             image_bind_group,
-            image_size: (image.width, image.height),
+            manu3,
         })
     }
 
@@ -212,10 +261,19 @@ impl<'window> Renderer<'window> {
         self.config.width = width;
         self.config.height = height;
         self.surface.configure(&self.device, &self.config);
+        if let Some(manu3) = &mut self.manu3 {
+            manu3.resize(&self.device, width, height);
+        }
     }
 
     /// Present the current original frame once.
-    pub fn render(&mut self) -> Result<()> {
+    pub fn render(&mut self, manu3_triangles: &[RenderTriangle]) -> Result<()> {
+        let manu3_vertex_count = self
+            .manu3
+            .as_ref()
+            .map(|manu3| manu3.upload(&self.queue, manu3_triangles))
+            .transpose()?
+            .unwrap_or(u32::MIN);
         let frame = match self.surface.get_current_texture() {
             wgpu::CurrentSurfaceTexture::Success(frame)
             | wgpu::CurrentSurfaceTexture::Suboptimal(frame) => frame,
@@ -241,8 +299,8 @@ impl<'window> Renderer<'window> {
         let (x, y, width, height) = aspect_fit_viewport(
             self.config.width,
             self.config.height,
-            self.image_size.0,
-            self.image_size.1,
+            ORIGINAL_DISPLAY_ASPECT_WIDTH,
+            ORIGINAL_DISPLAY_ASPECT_HEIGHT,
         );
         {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -269,10 +327,293 @@ impl<'window> Renderer<'window> {
                 u32::MIN..SINGLE_TEXTURE_LAYER,
             );
         }
+        if manu3_vertex_count != u32::MIN {
+            let manu3 = self
+                .manu3
+                .as_ref()
+                .context("MANU3 vertices were uploaded without GPU resources")?;
+            let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("Commander Blood MANU3 pass"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &view,
+                    resolve_target: None,
+                    depth_slice: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Load,
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                    view: &manu3.depth_view,
+                    depth_ops: Some(wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(CLEAR_DEPTH),
+                        store: wgpu::StoreOp::Discard,
+                    }),
+                    stencil_ops: None,
+                }),
+                timestamp_writes: None,
+                occlusion_query_set: None,
+                multiview_mask: None,
+            });
+            pass.set_viewport(x, y, width, height, MINIMUM_DEPTH, MAXIMUM_DEPTH);
+            pass.set_pipeline(&manu3.pipeline);
+            pass.set_bind_group(MANU3_TEXTURE_BINDING, &manu3.bind_group, &[]);
+            pass.set_vertex_buffer(u32::MIN, manu3.vertex_buffer.slice(..));
+            pass.draw(u32::MIN..manu3_vertex_count, u32::MIN..SINGLE_TEXTURE_LAYER);
+        }
         self.queue.submit([encoder.finish()]);
         frame.present();
         Ok(())
     }
+}
+
+impl Manu3Renderer {
+    #[allow(clippy::too_many_arguments)]
+    fn new(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        surface_format: wgpu::TextureFormat,
+        surface_width: u32,
+        surface_height: u32,
+        frame: &OriginalFrame,
+        texture: &IndexedTexture,
+        maximum_triangle_count: usize,
+    ) -> Self {
+        let texture_size = wgpu::Extent3d {
+            width: texture.width as u32,
+            height: texture.height as u32,
+            depth_or_array_layers: SINGLE_TEXTURE_LAYER,
+        };
+        let texture_image = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("MANU3 indexed hand texture"),
+            size: texture_size,
+            mip_level_count: MIP_LEVEL_COUNT,
+            sample_count: SINGLE_SAMPLE_COUNT,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::R8Uint,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+        queue.write_texture(
+            wgpu::TexelCopyTextureInfo {
+                texture: &texture_image,
+                mip_level: BASE_MIP_LEVEL,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            &texture.pixels,
+            wgpu::TexelCopyBufferLayout {
+                offset: u64::MIN,
+                bytes_per_row: Some(texture.width as u32),
+                rows_per_image: Some(texture.height as u32),
+            },
+            texture_size,
+        );
+
+        let palette_size = wgpu::Extent3d {
+            width: PALETTE_ENTRY_COUNT,
+            height: SINGLE_TEXTURE_LAYER,
+            depth_or_array_layers: SINGLE_TEXTURE_LAYER,
+        };
+        let palette_image = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("MANU3 scene palette"),
+            size: palette_size,
+            mip_level_count: MIP_LEVEL_COUNT,
+            sample_count: SINGLE_SAMPLE_COUNT,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8UnormSrgb,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+        queue.write_texture(
+            wgpu::TexelCopyTextureInfo {
+                texture: &palette_image,
+                mip_level: BASE_MIP_LEVEL,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            &frame.palette_rgba,
+            wgpu::TexelCopyBufferLayout {
+                offset: u64::MIN,
+                bytes_per_row: Some(PALETTE_ENTRY_COUNT * RGBA_BYTES_PER_PIXEL),
+                rows_per_image: Some(SINGLE_TEXTURE_LAYER),
+            },
+            palette_size,
+        );
+
+        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("MANU3 texture and palette layout"),
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: MANU3_TEXTURE_BINDING,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Uint,
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: MANU3_PALETTE_BINDING,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
+            ],
+        });
+        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("MANU3 texture and palette bind group"),
+            layout: &bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: MANU3_TEXTURE_BINDING,
+                    resource: wgpu::BindingResource::TextureView(
+                        &texture_image.create_view(&wgpu::TextureViewDescriptor::default()),
+                    ),
+                },
+                wgpu::BindGroupEntry {
+                    binding: MANU3_PALETTE_BINDING,
+                    resource: wgpu::BindingResource::TextureView(
+                        &palette_image.create_view(&wgpu::TextureViewDescriptor::default()),
+                    ),
+                },
+            ],
+        });
+        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("MANU3 indexed triangle shader"),
+            source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("manu3.wgsl"))),
+        });
+        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("MANU3 pipeline layout"),
+            bind_group_layouts: &[Some(&bind_group_layout)],
+            immediate_size: u32::MIN,
+        });
+        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("MANU3 textured triangle pipeline"),
+            layout: Some(&pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &shader,
+                entry_point: Some("vs_main"),
+                buffers: &[wgpu::VertexBufferLayout {
+                    array_stride: size_of::<Manu3GpuVertex>() as wgpu::BufferAddress,
+                    step_mode: wgpu::VertexStepMode::Vertex,
+                    attributes: &MANU3_VERTEX_ATTRIBUTES,
+                }],
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &shader,
+                entry_point: Some("fs_main"),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: surface_format,
+                    blend: None,
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+            }),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList,
+                cull_mode: None,
+                ..Default::default()
+            },
+            depth_stencil: Some(wgpu::DepthStencilState {
+                format: DEPTH_TEXTURE_FORMAT,
+                depth_write_enabled: Some(true),
+                depth_compare: Some(wgpu::CompareFunction::LessEqual),
+                stencil: wgpu::StencilState::default(),
+                bias: wgpu::DepthBiasState::default(),
+            }),
+            multisample: wgpu::MultisampleState::default(),
+            multiview_mask: None,
+            cache: None,
+        });
+        let maximum_vertex_count = maximum_triangle_count * MANU3_VERTEX_COUNT_PER_FACE;
+        let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("MANU3 dynamic vertices"),
+            size: (maximum_vertex_count * size_of::<Manu3GpuVertex>()) as wgpu::BufferAddress,
+            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+
+        Self {
+            pipeline,
+            bind_group,
+            vertex_buffer,
+            maximum_vertex_count,
+            depth_view: create_depth_view(device, surface_width, surface_height),
+        }
+    }
+
+    fn resize(&mut self, device: &wgpu::Device, width: u32, height: u32) {
+        self.depth_view = create_depth_view(device, width, height);
+    }
+
+    fn upload(&self, queue: &wgpu::Queue, triangles: &[RenderTriangle]) -> Result<u32> {
+        let vertex_count = triangles.len() * MANU3_VERTEX_COUNT_PER_FACE;
+        if vertex_count > self.maximum_vertex_count {
+            anyhow::bail!(
+                "MANU3 generated {vertex_count} vertices, exceeding the decoded capacity {}",
+                self.maximum_vertex_count
+            );
+        }
+        if triangles.is_empty() {
+            return Ok(u32::MIN);
+        }
+
+        let mut depths = triangles
+            .iter()
+            .flat_map(|triangle| triangle.vertices)
+            .map(|vertex| vertex.depth);
+        let first_depth = depths.next().context("MANU3 triangle has no vertices")?;
+        let (minimum_depth, maximum_depth) = depths
+            .fold((first_depth, first_depth), |(minimum, maximum), depth| {
+                (minimum.min(depth), maximum.max(depth))
+            });
+        let depth_range = f64::from(maximum_depth) - f64::from(minimum_depth);
+        let gpu_vertices = triangles
+            .iter()
+            .flat_map(|triangle| triangle.vertices)
+            .map(|vertex| Manu3GpuVertex {
+                screen: vertex.screen.map(f32::from),
+                texture_coordinates: vertex.texture.map(f32::from),
+                depth: if depth_range == ZERO_DEPTH_RANGE {
+                    EQUAL_DEPTH_VALUE
+                } else {
+                    ((f64::from(vertex.depth) - f64::from(minimum_depth)) / depth_range) as f32
+                },
+            })
+            .collect::<Vec<_>>();
+        queue.write_buffer(
+            &self.vertex_buffer,
+            u64::MIN,
+            bytemuck::cast_slice(&gpu_vertices),
+        );
+        Ok(gpu_vertices.len() as u32)
+    }
+}
+
+fn create_depth_view(device: &wgpu::Device, width: u32, height: u32) -> wgpu::TextureView {
+    device
+        .create_texture(&wgpu::TextureDescriptor {
+            label: Some("MANU3 depth buffer"),
+            size: wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: SINGLE_TEXTURE_LAYER,
+            },
+            mip_level_count: MIP_LEVEL_COUNT,
+            sample_count: SINGLE_SAMPLE_COUNT,
+            dimension: wgpu::TextureDimension::D2,
+            format: DEPTH_TEXTURE_FORMAT,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[],
+        })
+        .create_view(&wgpu::TextureViewDescriptor::default())
 }
 
 fn aspect_fit_viewport(
@@ -329,7 +670,16 @@ mod create_surface {
 
 #[cfg(test)]
 mod tests {
+    use std::path::{Path, PathBuf};
+
+    use commander_blood_formats::manu3::decode_manu3;
+    use commander_blood_formats::palette::{
+        MANU3_PALETTE_END, MANU3_PALETTE_START, decode_bloodprg_default_palette,
+    };
+
     use super::*;
+    use crate::native::manu3::animation::CursorPosition;
+    use crate::native::manu3::model::Manu3FrameRequest;
 
     const WIDESCREEN_WIDTH: u32 = 1920;
     const WIDESCREEN_HEIGHT: u32 = 1080;
@@ -344,6 +694,18 @@ mod tests {
     const SQUARE_EXPECTED_Y: f32 = 100.0;
     const SQUARE_EXPECTED_WIDTH: f32 = 800.0;
     const SQUARE_EXPECTED_HEIGHT: f32 = 600.0;
+    const OFFSCREEN_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8UnormSrgb;
+    const OFFSCREEN_VIEWPORTS: [(u32, u32); 2] = [(640, 360), (256, 384)];
+    const MINIMUM_VISIBLE_HAND_PIXELS: usize = 16;
+    const CENTERED_CURSOR: CursorPosition = CursorPosition { x: 160, y: 100 };
+
+    fn original_file(candidates: &[&str]) -> Option<PathBuf> {
+        candidates
+            .iter()
+            .map(Path::new)
+            .find(|path| path.is_file())
+            .map(Path::to_owned)
+    }
 
     #[test]
     fn aspect_fit_preserves_four_by_three() {
@@ -374,6 +736,245 @@ mod tests {
                 SQUARE_EXPECTED_WIDTH,
                 SQUARE_EXPECTED_HEIGHT
             )
+        );
+    }
+
+    #[test]
+    fn original_manu3_renders_nonblank_inside_wide_and_portrait_viewports() {
+        let Some(image_path) = original_file(&[
+            "output/_tmp_dat/fd/pterra1f.lbm",
+            "../../output/_tmp_dat/fd/pterra1f.lbm",
+        ]) else {
+            return;
+        };
+        let Some(executable_path) = original_file(&[
+            "output/_tmp_iso/BLOODPRG.EXE",
+            "../../output/_tmp_iso/BLOODPRG.EXE",
+        ]) else {
+            return;
+        };
+        let Some(xdb_path) = original_file(&[
+            "output/_tmp_dat/manu3.xdb",
+            "../../output/_tmp_dat/manu3.xdb",
+        ]) else {
+            return;
+        };
+        let mut frame = OriginalFrame::load_lbm(&image_path).unwrap();
+        let palette =
+            decode_bloodprg_default_palette(&std::fs::read(executable_path).unwrap()).unwrap();
+        frame.install_palette_range(&palette, MANU3_PALETTE_START..=MANU3_PALETTE_END);
+        let asset = decode_manu3(&std::fs::read(xdb_path).unwrap()).unwrap();
+        let mut model = Manu3Model::from_asset(asset).unwrap();
+        model
+            .render_frame(Manu3FrameRequest {
+                cursor: CENTERED_CURSOR,
+                animation_selector: u16::MIN,
+            })
+            .unwrap();
+        assert!(!model.render_triangles().is_empty());
+
+        let instance =
+            wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle_from_env());
+        let Ok(adapter) =
+            pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
+                power_preference: wgpu::PowerPreference::HighPerformance,
+                force_fallback_adapter: false,
+                compatible_surface: None,
+            }))
+        else {
+            return;
+        };
+        let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
+            label: Some("MANU3 offscreen test device"),
+            required_features: wgpu::Features::empty(),
+            required_limits: wgpu::Limits::default(),
+            memory_hints: wgpu::MemoryHints::Performance,
+            experimental_features: wgpu::ExperimentalFeatures::disabled(),
+            trace: wgpu::Trace::Off,
+        }))
+        .unwrap();
+
+        for (width, height) in OFFSCREEN_VIEWPORTS {
+            assert_offscreen_hand_pixels(&device, &queue, &frame, &model, width, height);
+        }
+    }
+
+    fn assert_offscreen_hand_pixels(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        frame: &OriginalFrame,
+        model: &Manu3Model,
+        width: u32,
+        height: u32,
+    ) {
+        let renderer = Manu3Renderer::new(
+            device,
+            queue,
+            OFFSCREEN_FORMAT,
+            width,
+            height,
+            frame,
+            model.texture(),
+            model.faces().len(),
+        );
+        let vertex_count = renderer.upload(queue, model.render_triangles()).unwrap();
+        let output = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("MANU3 offscreen color target"),
+            size: wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: SINGLE_TEXTURE_LAYER,
+            },
+            mip_level_count: MIP_LEVEL_COUNT,
+            sample_count: SINGLE_SAMPLE_COUNT,
+            dimension: wgpu::TextureDimension::D2,
+            format: OFFSCREEN_FORMAT,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+            view_formats: &[],
+        });
+        let output_view = output.create_view(&wgpu::TextureViewDescriptor::default());
+        let bytes_per_row = width * RGBA_BYTES_PER_PIXEL;
+        let readback = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("MANU3 offscreen readback"),
+            size: u64::from(bytes_per_row) * u64::from(height),
+            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+            mapped_at_creation: false,
+        });
+        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("MANU3 offscreen encoder"),
+        });
+        let viewport = aspect_fit_viewport(
+            width,
+            height,
+            ORIGINAL_DISPLAY_ASPECT_WIDTH,
+            ORIGINAL_DISPLAY_ASPECT_HEIGHT,
+        );
+        {
+            let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("MANU3 offscreen pass"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &output_view,
+                    resolve_target: None,
+                    depth_slice: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                    view: &renderer.depth_view,
+                    depth_ops: Some(wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(CLEAR_DEPTH),
+                        store: wgpu::StoreOp::Discard,
+                    }),
+                    stencil_ops: None,
+                }),
+                timestamp_writes: None,
+                occlusion_query_set: None,
+                multiview_mask: None,
+            });
+            pass.set_viewport(
+                viewport.0,
+                viewport.1,
+                viewport.2,
+                viewport.3,
+                MINIMUM_DEPTH,
+                MAXIMUM_DEPTH,
+            );
+            pass.set_pipeline(&renderer.pipeline);
+            pass.set_bind_group(MANU3_TEXTURE_BINDING, &renderer.bind_group, &[]);
+            pass.set_vertex_buffer(u32::MIN, renderer.vertex_buffer.slice(..));
+            pass.draw(u32::MIN..vertex_count, u32::MIN..SINGLE_TEXTURE_LAYER);
+        }
+        encoder.copy_texture_to_buffer(
+            wgpu::TexelCopyTextureInfo {
+                texture: &output,
+                mip_level: BASE_MIP_LEVEL,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            wgpu::TexelCopyBufferInfo {
+                buffer: &readback,
+                layout: wgpu::TexelCopyBufferLayout {
+                    offset: u64::MIN,
+                    bytes_per_row: Some(bytes_per_row),
+                    rows_per_image: Some(height),
+                },
+            },
+            wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: SINGLE_TEXTURE_LAYER,
+            },
+        );
+        queue.submit([encoder.finish()]);
+
+        let (sender, receiver) = std::sync::mpsc::channel();
+        readback
+            .slice(..)
+            .map_async(wgpu::MapMode::Read, move |result| {
+                sender.send(result).unwrap();
+            });
+        device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
+        receiver.recv().unwrap().unwrap();
+        let pixels = readback.slice(..).get_mapped_range();
+        let (viewport_x, viewport_y, viewport_width, viewport_height) = viewport;
+        let mut visible_pixel_count = usize::MIN;
+        for (index, pixel) in pixels
+            .chunks_exact(RGBA_BYTES_PER_PIXEL as usize)
+            .enumerate()
+        {
+            if pixel[..3] == [u8::MIN; 3] {
+                continue;
+            }
+            visible_pixel_count += 1;
+            let pixel_x = (index as u32 % width) as f32;
+            let pixel_y = (index as u32 / width) as f32;
+            assert!(pixel_x >= viewport_x && pixel_x < viewport_x + viewport_width);
+            assert!(pixel_y >= viewport_y && pixel_y < viewport_y + viewport_height);
+        }
+        let screen_bounds = model
+            .render_triangles()
+            .iter()
+            .flat_map(|triangle| triangle.vertices)
+            .fold(
+                ([i16::MAX; 2], [i16::MIN; 2]),
+                |(minimum, maximum), vertex| {
+                    (
+                        [
+                            minimum[0].min(vertex.screen[0]),
+                            minimum[1].min(vertex.screen[1]),
+                        ],
+                        [
+                            maximum[0].max(vertex.screen[0]),
+                            maximum[1].max(vertex.screen[1]),
+                        ],
+                    )
+                },
+            );
+        let nonblack_palette_entries = frame
+            .palette_rgba
+            .chunks_exact(RGBA_BYTES_PER_PIXEL as usize)
+            .filter(|entry| entry[..3] != [u8::MIN; 3])
+            .count();
+        let used_texture_indices = model
+            .texture()
+            .pixels
+            .iter()
+            .copied()
+            .collect::<std::collections::BTreeSet<_>>();
+        let nonblack_used_indices = used_texture_indices
+            .iter()
+            .filter(|index| {
+                let start = usize::from(**index) * RGBA_BYTES_PER_PIXEL as usize;
+                frame.palette_rgba[start..start + 3] != [u8::MIN; 3]
+            })
+            .count();
+        assert!(
+            visible_pixel_count >= MINIMUM_VISIBLE_HAND_PIXELS,
+            "MANU3 produced {visible_pixel_count} visible pixels from {} triangles, screen bounds {screen_bounds:?}, {nonblack_palette_entries} nonblack palette entries, and {nonblack_used_indices}/{} texture indices with nonblack colors",
+            model.render_triangles().len(),
+            used_texture_indices.len(),
         );
     }
 }

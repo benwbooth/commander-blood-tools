@@ -11627,6 +11627,18 @@ def manu3_face_bucket_sort_vectors() -> list[dict[str, object]]:
                 "module": module,
                 "entry": entry,
                 "face_count": count,
+                "faces_before": [
+                    {
+                        "vertices": [
+                            {
+                                "screen_x": screen_x,
+                                "clip_flags": clip_flags,
+                            }
+                            for screen_x, clip_flags in vertices
+                        ]
+                    }
+                    for vertices in faces
+                ],
                 "faces_after": [
                     {
                         "offset": face_list_offset + i * 8,
@@ -11745,6 +11757,7 @@ def manu3_face_bucket_sort_vectors() -> list[dict[str, object]]:
             "module": module,
             "entry": entry,
             "face_count": 0,
+            "faces_before": [],
             "iterations": 0x10000,
             "face_cursor_after": expected_registers["esi"] & 0xFFFF,
             "renderer_fallthrough": renderer,

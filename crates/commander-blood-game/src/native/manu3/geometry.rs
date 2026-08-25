@@ -141,6 +141,11 @@ impl ClipFlags {
         self.0
     }
 
+    #[cfg(test)]
+    pub(crate) const fn from_bits(bits: u16) -> Self {
+        Self(bits)
+    }
+
     fn insert(&mut self, flag: Self) {
         self.0 |= flag.0;
     }

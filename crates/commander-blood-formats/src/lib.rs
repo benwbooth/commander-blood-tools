@@ -4,3 +4,4 @@
 
 pub mod lbm;
 pub mod manu3;
+pub mod palette;
