@@ -1,0 +1,79 @@
+[
+  {
+    "name": "positive_remaining",
+    "module": "scrut",
+    "entry": 6232,
+    "continuation": "steering",
+    "steering_precision": "damping",
+    "radial_before": 3,
+    "radial_after": 1,
+    "next_callback": 6232,
+    "data_sha256": "e3e96aba2f62f6268bd6cb6ac2253799d4b01d798a6dd1b6030270bcc147b8e0"
+  },
+  {
+    "name": "negative_remaining",
+    "module": "scrut",
+    "entry": 6232,
+    "continuation": "steering",
+    "steering_precision": "damping",
+    "radial_before": 65533,
+    "radial_after": 65534,
+    "next_callback": 6232,
+    "data_sha256": "6633a9619d16d7664758ae0aa7ada94440fcadc104d0ef5cec4108fc7750ccbc"
+  },
+  {
+    "name": "positive_to_zero",
+    "module": "scrut",
+    "entry": 6232,
+    "continuation": "approach",
+    "steering_precision": null,
+    "radial_before": 1,
+    "radial_after": 0,
+    "next_callback": 6248,
+    "data_sha256": "721088e2fe5f899ff963b695d6489040019b1d682e6cb8a1d463d7ca027a2e59"
+  },
+  {
+    "name": "negative_one_remains",
+    "module": "scrut",
+    "entry": 6232,
+    "continuation": "steering",
+    "steering_precision": "damping",
+    "radial_before": 65535,
+    "radial_after": 65535,
+    "next_callback": 6232,
+    "data_sha256": "e3436d210b0b175dd3c8a1fbf12c8f284aff8021626acd15dc092ba31637ccb4"
+  },
+  {
+    "name": "zero_stays_zero",
+    "module": "scrut",
+    "entry": 6232,
+    "continuation": "approach",
+    "steering_precision": null,
+    "radial_before": 0,
+    "radial_after": 0,
+    "next_callback": 6248,
+    "data_sha256": "27ac5702a26a9ca67c61ecc901181b56862c4079208c1f04f7827d86557f4be4"
+  },
+  {
+    "name": "signed_minimum",
+    "module": "scrut",
+    "entry": 6232,
+    "continuation": "steering",
+    "steering_precision": "damping",
+    "radial_before": 32768,
+    "radial_after": 49152,
+    "next_callback": 51966,
+    "data_sha256": "b857e08c0903b216261144cb5f4aecd10b9ffe2592544ad84019a3eb6b907e87"
+  },
+  {
+    "name": "wrapped_state_offsets",
+    "module": "scrut",
+    "entry": 6232,
+    "continuation": "steering",
+    "steering_precision": "damping",
+    "radial_before": 2,
+    "radial_after": 1,
+    "next_callback": 4660,
+    "data_sha256": "24b8b734203f602adfcae07596671dc91bc0e8bc28b632b181aa5fef6141ac76"
+  }
+]

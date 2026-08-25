@@ -167,6 +167,10 @@ const SCRUT_SELECTION_MINIMUM_DEPTH: i16 = 700;
 const SCRUT_SELECTION_FIRST_LATERAL_MAXIMUM: i16 = 500;
 const SCRUT_SELECTION_FINAL_LATERAL_MAXIMUM: i16 = -500;
 const SCRUT_SELECTION_DAMPING_PARAMETER: i16 = 200;
+const SCRUT_STEERING_DAMPING_SHIFT: u32 = 20;
+const SCRUT_STEERING_APPROACH_SHIFT: u32 = 19;
+const SCRUT_STEERING_MINIMUM: i16 = -32;
+const SCRUT_STEERING_MAXIMUM: i16 = 32;
 
 /// Callback stage selected for one slot-2 animation model.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -195,6 +199,8 @@ pub enum AlienSlot2Callback {
     ScrutSelectionBegin,
     /// Damp SCRUT's radial movement before its selection approach.
     ScrutSelectionDamp,
+    /// Move SCRUT toward the camera-relative selection target.
+    ScrutSelectionApproach,
 }
 
 /// Callback-owned state parallel to one animated model node.
@@ -458,6 +464,42 @@ pub enum AlienScrutSelectionBeginUpdate {
     CameraResetRequested,
     /// Damping state was installed for immediate dispatch.
     DampingRequested,
+}
+
+/// Original fixed-point precision selected by a SCRUT steering caller.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienScrutSteeringPrecision {
+    /// Coarser steering used while radial movement is still being damped.
+    Damping,
+    /// Finer steering used during the camera-relative approach.
+    Approach,
+}
+
+impl AlienScrutSteeringPrecision {
+    fn shift(self) -> u32 {
+        match self {
+            Self::Damping => SCRUT_STEERING_DAMPING_SHIFT,
+            Self::Approach => SCRUT_STEERING_APPROACH_SHIFT,
+        }
+    }
+}
+
+/// Result produced by SCRUT's shared steering helper.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienScrutSteeringUpdate {
+    /// Rounded camera-relative steering was zero, so no pose changed.
+    NoTurn,
+    /// Primary and follower orientation state was updated.
+    TurnApplied,
+}
+
+/// Typed continuation chosen by SCRUT's radial damping callback.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienScrutDampingUpdate {
+    /// Continue immediately through the shared steering helper.
+    SteeringRequested,
+    /// Damping completed and the selection approach was installed.
+    ApproachRequested,
 }
 
 /// Invalid flat state supplied to the slot-2 coordinator.
@@ -1460,6 +1502,79 @@ pub fn update_scrut_selection_begin(
     Ok(AlienScrutSelectionBeginUpdate::DampingRequested)
 }
 
+/// Apply SCRUT's shared camera-relative steering to owned flat pose state.
+pub fn update_scrut_steering(
+    pose: &mut AlienModelPose,
+    animation: &mut AlienSlot2AnimationState,
+    precision: AlienScrutSteeringPrecision,
+) -> Result<AlienScrutSteeringUpdate, AlienSlot2Error> {
+    validate_state(AlienSpecies::Scrut, pose, animation)?;
+    if pose.nodes.len() < SCRUT_MOTION_NODE_COUNT {
+        return Err(AlienSlot2Error::MissingScrutMotionNodes {
+            node_count: pose.nodes.len(),
+        });
+    }
+
+    let primary = &mut pose.nodes[PRIMARY_NODE];
+    let camera_x = transformed_component(primary, X_AXIS);
+    let camera_z = transformed_component(primary, Z_AXIS);
+    let forward_x = primary.transform.matrix[X_AXIS][Z_AXIS];
+    let forward_z = primary.transform.matrix[Z_AXIS][Z_AXIS];
+    let score = i32::from(camera_x)
+        .wrapping_mul(forward_z)
+        .wrapping_sub(i32::from(camera_z).wrapping_mul(forward_x));
+    let shift = precision.shift();
+    let rounding_carry = ((score as u32 >> (shift - 1)) & 1) as u16;
+    let rounded = (score >> shift) as u16;
+    let rounded = rounded.wrapping_add(rounding_carry);
+    if rounded == u16::default() {
+        return Ok(AlienScrutSteeringUpdate::NoTurn);
+    }
+
+    let steering = rounded
+        .wrapping_neg()
+        .cast_signed()
+        .clamp(SCRUT_STEERING_MINIMUM, SCRUT_STEERING_MAXIMUM);
+    let mut roll = steering.wrapping_add(primary.angles[Z_AXIS] as i16);
+    let previous_turn = animation.nodes[PRIMARY_NODE].motion_parameter;
+    if (previous_turn ^ roll) < i16::default() {
+        roll >>= 1;
+        animation.nodes[PRIMARY_NODE].motion_parameter = roll;
+    }
+    roll = roll.clamp(SCRUT_PITCH_MINIMUM, SCRUT_PITCH_MAXIMUM);
+    primary.angles[Z_AXIS] = roll as u16;
+    let heading_delta = roll >> SCRUT_HEADING_SHIFT;
+    let heading_carry = (roll as u16 >> SCRUT_HEADING_CARRY_SHIFT) & SCRUT_HEADING_CARRY_MASK;
+    primary.angles[Y_AXIS] = primary.angles[Y_AXIS]
+        .wrapping_add(heading_delta as u16)
+        .wrapping_add(heading_carry);
+
+    let counter_roll = roll.wrapping_neg();
+    let follower_pan = counter_roll >> SCRUT_FOLLOWER_PAN_SHIFT;
+    let follower_roll = counter_roll >> SCRUT_FOLLOWER_ROLL_SHIFT;
+    for follower in &mut pose.nodes[1..SCRUT_MOTION_NODE_COUNT] {
+        follower.angles[Y_AXIS] = follower_pan as u16;
+        follower.angles[Z_AXIS] = follower_roll as u16;
+    }
+    Ok(AlienScrutSteeringUpdate::TurnApplied)
+}
+
+/// Damp SCRUT radial movement or install the camera-relative approach callback.
+pub fn update_scrut_selection_damping(
+    pose: &mut AlienModelPose,
+    animation: &mut AlienSlot2AnimationState,
+) -> Result<AlienScrutDampingUpdate, AlienSlot2Error> {
+    validate_state(AlienSpecies::Scrut, pose, animation)?;
+    let primary = &mut pose.nodes[PRIMARY_NODE];
+    primary.radial_offset >>= 1;
+    if primary.radial_offset != i16::default() {
+        return Ok(AlienScrutDampingUpdate::SteeringRequested);
+    }
+
+    animation.callback = Some(AlienSlot2Callback::ScrutSelectionApproach);
+    Ok(AlienScrutDampingUpdate::ApproachRequested)
+}
+
 /// Preserve the observable behavior of the unreachable steering sibling.
 ///
 /// No original alien method table or callback points at this routine. Keeping
@@ -2068,6 +2183,37 @@ mod tests {
         radial_target_after: u16,
         motion_parameter_before: u16,
         motion_parameter_after: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct ScrutDampingVector {
+        name: String,
+        module: String,
+        continuation: String,
+        steering_precision: Option<String>,
+        radial_before: u16,
+        radial_after: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct ScrutSteeringVector {
+        name: String,
+        module: String,
+        precision: String,
+        turn_applied: bool,
+        camera_x_before: u16,
+        camera_z_before: u16,
+        forward_x_before: u32,
+        forward_z_before: u32,
+        pan_before: u16,
+        pan_after: u16,
+        roll_before: u16,
+        roll_after: u16,
+        motion_parameter_before: u16,
+        motion_parameter_after: u16,
+        heading_carry: u16,
+        follower_pan_after: Option<u16>,
+        follower_roll_after: Option<u16>,
     }
 
     #[derive(Deserialize)]
@@ -3344,6 +3490,117 @@ mod tests {
                 "{}",
                 vector.name
             );
+        }
+    }
+
+    #[test]
+    fn scrut_selection_damping_matches_every_original_overlay_vector() {
+        let vectors: Vec<ScrutDampingVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/xdb_scrut_func_1858_natural.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            assert_eq!(vector.module, "scrut");
+            let mut pose = pose(&[EMPTY_NODE_VECTOR; PRIMARY_AND_FOLLOWER_NODE_COUNT]);
+            pose.nodes[PRIMARY_NODE].radial_offset = vector.radial_before as i16;
+            let mut animation = AlienSlot2AnimationState::new(PRIMARY_AND_FOLLOWER_NODE_COUNT);
+            animation.callback = Some(AlienSlot2Callback::ScrutSelectionDamp);
+            let expected = match vector.continuation.as_str() {
+                "steering" => {
+                    assert_eq!(vector.steering_precision.as_deref(), Some("damping"));
+                    AlienScrutDampingUpdate::SteeringRequested
+                }
+                "approach" => {
+                    assert_eq!(vector.steering_precision, None);
+                    AlienScrutDampingUpdate::ApproachRequested
+                }
+                continuation => panic!("unknown SCRUT damping continuation {continuation}"),
+            };
+
+            assert_eq!(
+                update_scrut_selection_damping(&mut pose, &mut animation).unwrap(),
+                expected,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                pose.nodes[PRIMARY_NODE].radial_offset as u16, vector.radial_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                animation.callback,
+                Some(if vector.continuation == "approach" {
+                    AlienSlot2Callback::ScrutSelectionApproach
+                } else {
+                    AlienSlot2Callback::ScrutSelectionDamp
+                }),
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    #[test]
+    fn scrut_steering_matches_every_original_overlay_vector() {
+        let vectors: Vec<ScrutSteeringVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/xdb_scrut_func_18d9_natural.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            assert_eq!(vector.module, "scrut");
+            let mut pose = pose(&[EMPTY_NODE_VECTOR; SCRUT_MOTION_NODE_COUNT]);
+            let primary = &mut pose.nodes[PRIMARY_NODE];
+            primary.transform.translation[X_AXIS] =
+                join_words(vector.camera_x_before, TRANSFORM_LOW_WORD_SENTINEL);
+            primary.transform.translation[Z_AXIS] =
+                join_words(vector.camera_z_before, TRANSFORM_LOW_WORD_SENTINEL);
+            primary.transform.matrix[X_AXIS][Z_AXIS] = vector.forward_x_before as i32;
+            primary.transform.matrix[Z_AXIS][Z_AXIS] = vector.forward_z_before as i32;
+            primary.angles[Y_AXIS] = vector.pan_before;
+            primary.angles[Z_AXIS] = vector.roll_before;
+            let mut animation = AlienSlot2AnimationState::new(SCRUT_MOTION_NODE_COUNT);
+            animation.nodes[PRIMARY_NODE].motion_parameter = vector.motion_parameter_before as i16;
+            let precision = match vector.precision.as_str() {
+                "damping" => AlienScrutSteeringPrecision::Damping,
+                "approach" => AlienScrutSteeringPrecision::Approach,
+                precision => panic!("unknown SCRUT steering precision {precision}"),
+            };
+            let expected = if vector.turn_applied {
+                AlienScrutSteeringUpdate::TurnApplied
+            } else {
+                AlienScrutSteeringUpdate::NoTurn
+            };
+
+            assert_eq!(
+                update_scrut_steering(&mut pose, &mut animation, precision).unwrap(),
+                expected,
+                "{}",
+                vector.name
+            );
+            let primary = &pose.nodes[PRIMARY_NODE];
+            assert_eq!(primary.angles[Y_AXIS], vector.pan_after, "{}", vector.name);
+            assert_eq!(primary.angles[Z_AXIS], vector.roll_after, "{}", vector.name);
+            assert_eq!(
+                animation.nodes[PRIMARY_NODE].motion_parameter as u16,
+                vector.motion_parameter_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                (vector.roll_after >> SCRUT_HEADING_CARRY_SHIFT) & SCRUT_HEADING_CARRY_MASK,
+                vector.heading_carry,
+                "{}",
+                vector.name
+            );
+            if let (Some(follower_pan), Some(follower_roll)) =
+                (vector.follower_pan_after, vector.follower_roll_after)
+            {
+                for follower in &pose.nodes[1..SCRUT_MOTION_NODE_COUNT] {
+                    assert_eq!(follower.angles[Y_AXIS], follower_pan, "{}", vector.name);
+                    assert_eq!(follower.angles[Z_AXIS], follower_roll, "{}", vector.name);
+                }
+            }
         }
     }
 

@@ -65,7 +65,8 @@ pub use slot2::{
     AlienAmerReturnUpdate, AlienAmerSelectionUpdate, AlienAmerSteeringUpdate, AlienAmerUpdateHead,
     AlienCroolisCommonDispatch, AlienCroolisFadeUpdate, AlienCroolisResetUpdate,
     AlienCroolisSelectionUpdate, AlienCroolisUpdateHead, AlienScrutCommonDispatch,
-    AlienScrutFadeUpdate, AlienScrutSelectionBeginUpdate, AlienScrutSelectionInit,
+    AlienScrutDampingUpdate, AlienScrutFadeUpdate, AlienScrutSelectionBeginUpdate,
+    AlienScrutSelectionInit, AlienScrutSteeringPrecision, AlienScrutSteeringUpdate,
     AlienScrutUpdateHead, AlienSlot2AnimationState, AlienSlot2Callback, AlienSlot2Callbacks,
     AlienSlot2Error, AlienSlot2NodeState, AlienSlot2SceneState, AlienSlot2Update,
     AlienUnreferencedSteeringState, CROOLIS_SELECTION_RESET_DISTANCE, begin_amer_selection,
@@ -76,7 +77,8 @@ pub use slot2::{
     update_amer_late_selection, update_amer_return, update_amer_selection, update_amer_steering,
     update_croolis_fade, update_croolis_head, update_croolis_motion,
     update_croolis_reset_or_camera, update_croolis_selection, update_scrut_fade, update_scrut_head,
-    update_scrut_motion, update_scrut_selection_begin, update_unreferenced_steering,
+    update_scrut_motion, update_scrut_selection_begin, update_scrut_selection_damping,
+    update_scrut_steering, update_unreferenced_steering,
 };
 pub use starfield::{
     AlienStar, AlienStarRejections, AlienStarfieldError, AlienStarfieldFrame, STAR_COUNT,
