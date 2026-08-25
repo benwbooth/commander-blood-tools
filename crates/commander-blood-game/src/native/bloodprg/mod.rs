@@ -41,6 +41,7 @@ mod pointer_buttons;
 mod procedure;
 mod record;
 mod record_state;
+mod resource_cache;
 mod script;
 mod screen_presentation;
 mod selected_mask;
@@ -263,6 +264,11 @@ pub use record_state::{
     ScriptActionRecord, ScriptActionRecords, ScriptRecordClearOutcome,
     ScriptRecordClearPresentationState, ScriptRecordStateError,
     ScriptRecordStateNavigationContext, ScriptRecordStateOutcome,
+};
+pub use resource_cache::{
+    BLOODPRG_RESOURCE_CATALOG_FILE_OFFSET, ORIGINAL_RESOURCE_COUNT, OriginalResourceCache,
+    OriginalResourceCatalog, PaletteResourceLoadOutcome, PaletteResourceStorage,
+    PaletteResourceTarget, ResourceCacheError, ResourceId, ResourceLoadStatus,
 };
 pub use selected_mask::{
     PresentationChoiceMaskError, PresentationChoiceNumber, draw_presentation_choice_number,

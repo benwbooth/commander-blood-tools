@@ -33675,8 +33675,15 @@ def resource_named_file_load_vectors() -> list[dict[str, object]]:
             {
                 "name": name,
                 "resource_id": resource_id,
+                "catalog_resource_id": resource_id & 0x7FFF,
                 "mode": "direct" if direct_mode else "allocated",
                 "success": expected_result == 0,
+                "source_hex": bytes(source).hex(),
+                "palette_before_hex": initial_palette[:0x300].hex(),
+                "palette_after_hex": actual_palette[:0x300].hex(),
+                "processed_resource_hex": (
+                    struct.pack("<H", file_header) + payload
+                ).hex(),
                 "path_offset": name_offset,
                 "file_size": len(source),
                 "palette_extent": palette_extent,
