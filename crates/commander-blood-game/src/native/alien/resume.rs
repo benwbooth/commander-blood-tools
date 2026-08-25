@@ -382,7 +382,7 @@ pub fn update_resume_queue(
         .into());
     }
 
-    scene.active_node = None;
+    scene.current_node = None;
     scene.transition_queue[scene.transition_queue_read_slot] = None;
     state.callback = Some(AlienResumeCallback::Pair);
     state.paired_node = Some(paired_node);
@@ -1458,6 +1458,7 @@ mod tests {
                 let mut scene = AlienCallbackSceneState {
                     transition_queue_read_slot: vector.selected_slot,
                     active_node: Some(active_node),
+                    current_node: Some(active_node),
                     transition_queue: std::array::from_fn(|slot| Some(state_node(100 + slot))),
                     ..AlienCallbackSceneState::default()
                 };
@@ -1527,8 +1528,9 @@ mod tests {
                     "{}",
                     vector.name
                 );
+                assert_eq!(scene.active_node, Some(active_node), "{}", vector.name);
                 assert_eq!(
-                    scene.active_node,
+                    scene.current_node,
                     if vector.occupied {
                         None
                     } else {

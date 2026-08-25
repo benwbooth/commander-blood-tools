@@ -21,6 +21,8 @@ pub const TEXTURE_HEIGHT: usize = 512;
 pub const PALETTE_REMAP_ENTRY_COUNT: usize = 256;
 /// Number of entries in the scene-wide alien motion-history ring.
 pub const ALIEN_RING_ENTRY_COUNT: usize = 128;
+/// Number of typed node identities in the alien resume queue.
+pub const ALIEN_RESUME_QUEUE_CAPACITY: usize = 8;
 
 const AMER_DATA_DELTA_FIELD: usize = 0x3275;
 const CROOLIS_DATA_DELTA_FIELD: usize = 0x32e5;
@@ -138,6 +140,9 @@ const SLOT2_TERTIARY_CONTEXT_FIELD: usize = 0x003c;
 const SLOT2_AMER_RANDOM_FIELD: usize = 0x0040;
 const SLOT2_COMMON_RANDOM_FIELD: usize = 0x0042;
 const SLOT2_AMER_ANIMATION_PHASE_FIELD: usize = 0x0042;
+const RESUME_PHASE_FIELD: usize = METHOD_CONTINUATION_FIELD;
+const RESUME_PAIRED_NODE_FIELD: usize = METHOD_CONTINUATION_FIELD + 2;
+const RESUME_RESUMED_NODE_FIELD: usize = METHOD_CONTINUATION_FIELD + 4;
 const RING_ENTRY_SIZE: usize = 8;
 const RING_ENTRY_PITCH_STEP_FIELD: usize = 0;
 const RING_ENTRY_PAN_STEP_FIELD: usize = 2;
@@ -175,6 +180,36 @@ const CROOLIS_SLOT2_ACTIVE_POSITION: usize = 0x16a0;
 const SCRUT_SLOT2_ACTIVE_POSITION: usize = 0x168e;
 const CROOLIS_SLOT2_SPECIES_SEED_POSITION: usize = 0x16a2;
 const SCRUT_SLOT2_SPECIES_SEED_POSITION: usize = 0x1690;
+const AMER_RESUME_ANCHOR_POSITION: usize = 0x1bc2;
+const AMER_RESUME_CURRENT_POSITION: usize = 0x1bc4;
+const AMER_RESUME_WRITE_CURSOR_POSITION: usize = 0x1bc6;
+const AMER_RESUME_READ_CURSOR_POSITION: usize = 0x1bc8;
+const AMER_RESUME_QUEUE_POSITION: usize = 0x1bca;
+const CROOLIS_RESUME_ANCHOR_POSITION: usize = 0x1b2e;
+const CROOLIS_RESUME_CURRENT_POSITION: usize = 0x1b30;
+const CROOLIS_RESUME_WRITE_CURSOR_POSITION: usize = 0x1b32;
+const CROOLIS_RESUME_READ_CURSOR_POSITION: usize = 0x1b34;
+const CROOLIS_RESUME_QUEUE_POSITION: usize = 0x1b36;
+const SCRUT_RESUME_ANCHOR_POSITION: usize = 0x1be3;
+const SCRUT_RESUME_CURRENT_POSITION: usize = 0x1be5;
+const SCRUT_RESUME_WRITE_CURSOR_POSITION: usize = 0x1be7;
+const SCRUT_RESUME_READ_CURSOR_POSITION: usize = 0x1be9;
+const SCRUT_RESUME_QUEUE_POSITION: usize = 0x1beb;
+const AMER_RESUME_BEGIN_CALLBACK: u16 = 0x1c34;
+const AMER_RESUME_PAIR_CALLBACK: u16 = 0x1c7d;
+const AMER_RESUME_TIMEOUT_CALLBACK: u16 = 0x1cbf;
+const AMER_RESUME_FINAL_CALLBACK: u16 = 0x1ccf;
+const CROOLIS_RESUME_BEGIN_CALLBACK: u16 = 0x1b85;
+const CROOLIS_RESUME_PAIR_CALLBACK: u16 = 0x1bc9;
+const CROOLIS_RESUME_TIMEOUT_CALLBACK: u16 = 0x1c0b;
+const CROOLIS_RESUME_FINAL_CALLBACK: u16 = 0x1c1b;
+const SCRUT_RESUME_BEGIN_CALLBACK: u16 = 0x1c45;
+const SCRUT_RESUME_PAIR_CALLBACK: u16 = 0x1c89;
+const SCRUT_RESUME_TIMEOUT_CALLBACK: u16 = 0x1ccb;
+const SCRUT_RESUME_FINAL_CALLBACK: u16 = 0x1cdb;
+// All shipped overlays initialize this write-only continuation field identically.
+const SHIPPED_UNUSED_RESUMED_NODE_WORD: u16 = 0x1da4;
+const RESUME_QUEUE_ENTRY_SIZE: usize = 2;
 const INVALID_METHOD_ENTRY: u16 = 0xffff;
 const ZERO_COORDINATE: i16 = 0;
 const ZERO_POSITION: [i16; AXIS_COUNT] = [ZERO_COORDINATE; AXIS_COUNT];
@@ -285,6 +320,44 @@ impl AlienXdbKind {
             Self::Scrut => Some(SCRUT_SLOT2_SPECIES_SEED_POSITION),
         }
     }
+
+    fn resume_layout(self) -> AlienResumeSourceLayout {
+        match self {
+            Self::Amer => AlienResumeSourceLayout {
+                anchor_position: AMER_RESUME_ANCHOR_POSITION,
+                current_position: AMER_RESUME_CURRENT_POSITION,
+                write_cursor_position: AMER_RESUME_WRITE_CURSOR_POSITION,
+                read_cursor_position: AMER_RESUME_READ_CURSOR_POSITION,
+                queue_position: AMER_RESUME_QUEUE_POSITION,
+                begin_callback: AMER_RESUME_BEGIN_CALLBACK,
+                pair_callback: AMER_RESUME_PAIR_CALLBACK,
+                timeout_callback: AMER_RESUME_TIMEOUT_CALLBACK,
+                final_callback: AMER_RESUME_FINAL_CALLBACK,
+            },
+            Self::Croolis => AlienResumeSourceLayout {
+                anchor_position: CROOLIS_RESUME_ANCHOR_POSITION,
+                current_position: CROOLIS_RESUME_CURRENT_POSITION,
+                write_cursor_position: CROOLIS_RESUME_WRITE_CURSOR_POSITION,
+                read_cursor_position: CROOLIS_RESUME_READ_CURSOR_POSITION,
+                queue_position: CROOLIS_RESUME_QUEUE_POSITION,
+                begin_callback: CROOLIS_RESUME_BEGIN_CALLBACK,
+                pair_callback: CROOLIS_RESUME_PAIR_CALLBACK,
+                timeout_callback: CROOLIS_RESUME_TIMEOUT_CALLBACK,
+                final_callback: CROOLIS_RESUME_FINAL_CALLBACK,
+            },
+            Self::Scrut => AlienResumeSourceLayout {
+                anchor_position: SCRUT_RESUME_ANCHOR_POSITION,
+                current_position: SCRUT_RESUME_CURRENT_POSITION,
+                write_cursor_position: SCRUT_RESUME_WRITE_CURSOR_POSITION,
+                read_cursor_position: SCRUT_RESUME_READ_CURSOR_POSITION,
+                queue_position: SCRUT_RESUME_QUEUE_POSITION,
+                begin_callback: SCRUT_RESUME_BEGIN_CALLBACK,
+                pair_callback: SCRUT_RESUME_PAIR_CALLBACK,
+                timeout_callback: SCRUT_RESUME_TIMEOUT_CALLBACK,
+                final_callback: SCRUT_RESUME_FINAL_CALLBACK,
+            },
+        }
+    }
 }
 
 /// Decoder-only locations and callback values in one original XDB image.
@@ -298,6 +371,20 @@ struct AlienRingSourceLayout {
     entries_position: usize,
     initial_course_callback: u16,
     follow_course_callback: u16,
+}
+
+/// Decoder-only source locations and callback values for resume state.
+#[derive(Clone, Copy)]
+struct AlienResumeSourceLayout {
+    anchor_position: usize,
+    current_position: usize,
+    write_cursor_position: usize,
+    read_cursor_position: usize,
+    queue_position: usize,
+    begin_callback: u16,
+    pair_callback: u16,
+    timeout_callback: u16,
+    final_callback: u16,
 }
 
 /// Fixed-point cosine and sine pair from an alien XDB.
@@ -630,6 +717,47 @@ pub struct AlienSlot2SceneData {
     pub species_seed: u16,
 }
 
+/// Callback stage stored by an initialized resume method.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienResumeCallbackData {
+    /// Consume the next queued node or apply idle orientation drift.
+    Begin,
+    /// Move the resume model toward its queued partner.
+    Pair,
+    /// Continue texture motion until the shared timeout expires.
+    Timeout,
+    /// Return to the persistent scene anchor and restart the paired node.
+    Final,
+}
+
+/// Initial continuation state for one resume behavior model.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct AlienResumeMethodData {
+    /// Authored callback stage, or `None` before one-time initialization.
+    pub callback: Option<AlienResumeCallbackData>,
+    /// Packed texture-animation phase.
+    pub phase: u16,
+    /// Ring node paired with this resume model, when present.
+    pub paired_node: Option<AlienModelNodeReference>,
+    /// Ring node most recently moved into the timeout stage, when present.
+    pub resumed_node: Option<AlienModelNodeReference>,
+}
+
+/// Initial scene-wide node queue consumed by the resume behavior.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct AlienResumeSceneData {
+    /// Persistent node published by the authored anchor behavior.
+    pub anchor_node: Option<AlienModelNodeReference>,
+    /// Most recently queued ring node.
+    pub current_node: Option<AlienModelNodeReference>,
+    /// Queue slot written by ring callbacks.
+    pub write_slot: usize,
+    /// Queue slot consumed by the resume behavior.
+    pub read_slot: usize,
+    /// Fixed queue of typed ring-node identities.
+    pub queue: [Option<AlienModelNodeReference>; ALIEN_RESUME_QUEUE_CAPACITY],
+}
+
 /// One named hierarchical model and its initial behavior method.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AlienModelData {
@@ -649,6 +777,8 @@ pub struct AlienModelData {
     pub ring: Option<AlienRingModelData>,
     /// Authored continuation state when this is a slot-2/4 animation model.
     pub slot2: Option<AlienSlot2ModelData>,
+    /// Authored continuation state when this is a resume behavior model.
+    pub resume: Option<AlienResumeMethodData>,
 }
 
 /// Indexed atlas shared by all models in one alien overlay.
@@ -695,6 +825,8 @@ pub struct AlienAsset {
     pub ring_scene: AlienRingSceneData,
     /// Initial scene-wide slot-2/4 ownership and species seed.
     pub slot2_scene: AlienSlot2SceneData,
+    /// Initial typed anchor and queue state consumed by resume behavior.
+    pub resume_scene: AlienResumeSceneData,
     /// Distance-to-palette lookup used by the starfield.
     pub star_shade_table: [u8; STAR_SHADE_TABLE_ENTRY_COUNT],
     /// Deterministic seed used to generate the static star distribution.
@@ -984,6 +1116,117 @@ fn slot2_scene_data(data: &[u8], kind: AlienXdbKind) -> Option<AlienSlot2SceneDa
     })
 }
 
+fn resume_callback(value: u16, layout: AlienResumeSourceLayout) -> Option<AlienResumeCallbackData> {
+    if value == layout.begin_callback {
+        Some(AlienResumeCallbackData::Begin)
+    } else if value == layout.pair_callback {
+        Some(AlienResumeCallbackData::Pair)
+    } else if value == layout.timeout_callback {
+        Some(AlienResumeCallbackData::Timeout)
+    } else if value == layout.final_callback {
+        Some(AlienResumeCallbackData::Final)
+    } else {
+        None
+    }
+}
+
+fn optional_model_node_reference(
+    data: &[u8],
+    data_start: usize,
+    context_offsets: &[usize],
+    target: u16,
+) -> Option<Option<AlienModelNodeReference>> {
+    if target == u16::MIN {
+        Some(None)
+    } else {
+        Some(Some(model_node_reference(
+            data,
+            data_start,
+            context_offsets,
+            usize::from(target),
+        )?))
+    }
+}
+
+fn resume_method_data(
+    data: &[u8],
+    data_start: usize,
+    context_offsets: &[usize],
+    context_offset: usize,
+    behavior: AlienBehaviorMethod,
+    kind: AlienXdbKind,
+) -> Option<Option<AlienResumeMethodData>> {
+    if behavior != AlienBehaviorMethod::Resume {
+        return Some(None);
+    }
+    let context = data_start.checked_add(context_offset)?;
+    let callback_value = read_u16(data, context + METHOD_CONTROL_FIELD)?;
+    let callback = if callback_value == u16::MIN {
+        None
+    } else {
+        Some(resume_callback(callback_value, kind.resume_layout())?)
+    };
+    let resumed_node_value = read_u16(data, context + RESUME_RESUMED_NODE_FIELD)?;
+    let resumed_node = if resumed_node_value == SHIPPED_UNUSED_RESUMED_NODE_WORD {
+        None
+    } else {
+        optional_model_node_reference(data, data_start, context_offsets, resumed_node_value)?
+    };
+    Some(Some(AlienResumeMethodData {
+        callback,
+        phase: read_u16(data, context + RESUME_PHASE_FIELD)?,
+        paired_node: optional_model_node_reference(
+            data,
+            data_start,
+            context_offsets,
+            read_u16(data, context + RESUME_PAIRED_NODE_FIELD)?,
+        )?,
+        resumed_node,
+    }))
+}
+
+fn resume_queue_slot(cursor: u16) -> Option<usize> {
+    let cursor = usize::from(cursor);
+    if cursor % RESUME_QUEUE_ENTRY_SIZE != usize::MIN {
+        return None;
+    }
+    let slot = cursor / RESUME_QUEUE_ENTRY_SIZE;
+    (slot < ALIEN_RESUME_QUEUE_CAPACITY).then_some(slot)
+}
+
+fn resume_scene_data(
+    data: &[u8],
+    data_start: usize,
+    context_offsets: &[usize],
+    kind: AlienXdbKind,
+) -> Option<AlienResumeSceneData> {
+    let layout = kind.resume_layout();
+    Some(AlienResumeSceneData {
+        anchor_node: optional_model_node_reference(
+            data,
+            data_start,
+            context_offsets,
+            read_u16(data, layout.anchor_position)?,
+        )?,
+        current_node: optional_model_node_reference(
+            data,
+            data_start,
+            context_offsets,
+            read_u16(data, layout.current_position)?,
+        )?,
+        write_slot: resume_queue_slot(read_u16(data, layout.write_cursor_position)?)?,
+        read_slot: resume_queue_slot(read_u16(data, layout.read_cursor_position)?)?,
+        queue: checked_array(|slot| {
+            optional_model_node_reference(
+                data,
+                data_start,
+                context_offsets,
+                read_u16(data, layout.queue_position + slot * RESUME_QUEUE_ENTRY_SIZE)?,
+            )
+        })?,
+    })
+}
+
 fn ring_scene_data(
     data: &[u8],
     data_start: usize,
@@ -1255,6 +1498,7 @@ fn model(
             behavior,
             kind,
         )?,
+        resume: None,
     })
 }
 
@@ -1302,6 +1546,16 @@ pub fn decode_alien_xdb(data: &[u8], kind: AlienXdbKind) -> Option<AlienAsset> {
     }
     if models.is_empty() || models.len() == CONTEXT_LIST_LIMIT {
         return None;
+    }
+    for (model, context_offset) in models.iter_mut().zip(context_offsets.iter().copied()) {
+        model.resume = resume_method_data(
+            data,
+            data_start,
+            &context_offsets,
+            context_offset,
+            model.behavior,
+            kind,
+        )?;
     }
 
     let palette_bytes = data.get(
@@ -1435,6 +1689,7 @@ pub fn decode_alien_xdb(data: &[u8], kind: AlienXdbKind) -> Option<AlienAsset> {
         },
         ring_scene: ring_scene_data(data, data_start, &context_offsets, kind)?,
         slot2_scene: slot2_scene_data(data, kind)?,
+        resume_scene: resume_scene_data(data, data_start, &context_offsets, kind)?,
         star_shade_table,
         star_seed,
     })
@@ -1645,6 +1900,42 @@ mod tests {
             assert!(asset.models.iter().all(|model| {
                 model.slot2.is_some() == (model.behavior == AlienBehaviorMethod::AnimationDispatch)
             }));
+            let (expected_anchor_model, expected_resume_read_slot) = match kind {
+                AlienXdbKind::Amer => (10, 1),
+                AlienXdbKind::Croolis => (9, 5),
+                AlienXdbKind::Scrut => (7, 6),
+            };
+            let resume_models = asset
+                .models
+                .iter()
+                .filter_map(|model| model.resume)
+                .collect::<Vec<_>>();
+            assert_eq!(
+                resume_models,
+                vec![AlienResumeMethodData {
+                    callback: Some(AlienResumeCallbackData::Begin),
+                    phase: u16::MIN,
+                    paired_node: None,
+                    resumed_node: None,
+                }]
+            );
+            assert!(asset.models.iter().all(|model| {
+                model.resume.is_some() == (model.behavior == AlienBehaviorMethod::Resume)
+            }));
+            assert_eq!(
+                asset.resume_scene.anchor_node,
+                Some(AlienModelNodeReference {
+                    model_index: expected_anchor_model,
+                    node_index: usize::MIN,
+                })
+            );
+            assert_eq!(asset.resume_scene.current_node, None);
+            assert_eq!(asset.resume_scene.write_slot, usize::MIN);
+            assert_eq!(asset.resume_scene.read_slot, expected_resume_read_slot);
+            assert_eq!(
+                asset.resume_scene.queue,
+                [None; ALIEN_RESUME_QUEUE_CAPACITY]
+            );
             let wave_states = asset
                 .models
                 .iter()
