@@ -47,6 +47,7 @@ const ACTOR_RECORD_OPCODE: u8 = 0xC4;
 const WORLD_STATE_RECORD_OPCODE: u8 = 0xC5;
 const TRAVEL_RECORD_OPCODE: u8 = 0xC6;
 const ACTIVE_OBJECT_RECORD_OPCODE: u8 = 0xC7;
+const OPAQUE_MARKER_RECORD_OPCODE: u8 = 0xC8;
 const TRANSFER_OPCODE: u8 = 0xCD;
 const INVERTED_CONDITION_PREFIX: u8 = GUARD_END_OPCODE;
 const OPCODE_SIZE: usize = 1;
@@ -79,6 +80,7 @@ const ACTOR_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const WORLD_STATE_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const TRAVEL_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const ACTIVE_OBJECT_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
+const OPAQUE_MARKER_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const BITS_PER_BYTE: u8 = u8::BITS as u8;
 const PRIMARY_NAVIGATION_OPERAND: u16 = 1;
 const SECONDARY_NAVIGATION_OPERAND: u16 = 2;
@@ -461,6 +463,21 @@ pub struct ScriptActiveObjectRecordOperation {
     pub target: ScriptStateWordTriple,
     /// Active object stored by the relation.
     pub related: ScriptObjectId,
+    /// Whether query-mode equality is inverted.
+    pub inverted: bool,
+}
+
+/// One optionally inverted C8 opaque-marker operation.
+///
+/// No shipped profile contains a C8 instruction and the native binary has no
+/// C8-specific consumer. The neutral name retains the proven record behavior
+/// without assigning an unsupported gameplay meaning.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptOpaqueMarkerRecordOperation {
+    /// Bounded three-word marker slot.
+    pub target: ScriptStateWordTriple,
+    /// Opaque second word compared in query mode and ignored in assignment mode.
+    pub comparison_word: u16,
     /// Whether query-mode equality is inverted.
     pub inverted: bool,
 }
@@ -1209,6 +1226,28 @@ pub fn decode_script_active_object_record_operation(
     })
 }
 
+/// Decode one dormant C8 opaque-marker operation into bounded state.
+pub fn decode_script_opaque_marker_record_operation(
+    token: &ScriptToken,
+    state: &ScriptState,
+) -> Result<ScriptOpaqueMarkerRecordOperation, ScriptInstructionError> {
+    if token.opcode().byte() != OPAQUE_MARKER_RECORD_OPCODE {
+        return Err(ScriptInstructionError::UntranslatedOpcode {
+            opcode: token.opcode(),
+        });
+    }
+    let bytes = token.encoded_bytes();
+    let inverted = bytes.get(OPCODE_SIZE) == Some(&INVERTED_CONDITION_PREFIX);
+    let prefix_size = usize::from(inverted);
+    require_size(token, OPAQUE_MARKER_RECORD_SIZE + prefix_size)?;
+    let operand_offset = OPCODE_SIZE + prefix_size;
+    Ok(ScriptOpaqueMarkerRecordOperation {
+        target: resolve_state_word_triple(token, state, read_word(bytes, operand_offset))?,
+        comparison_word: read_word(bytes, operand_offset + WORD_SIZE),
+        inverted,
+    })
+}
+
 fn decode_object_record_operands(
     token: &ScriptToken,
     state: &ScriptState,
@@ -1407,6 +1446,7 @@ mod tests {
     const EXPECTED_WORLD_STATE_RECORD_COUNTS: [usize; PROFILE_COUNT] = [0; PROFILE_COUNT];
     const EXPECTED_TRAVEL_RECORD_COUNTS: [usize; PROFILE_COUNT] = [0, 0, 1, 1, 0];
     const EXPECTED_ACTIVE_OBJECT_RECORD_COUNTS: [usize; PROFILE_COUNT] = [0; PROFILE_COUNT];
+    const EXPECTED_OPAQUE_MARKER_RECORD_COUNTS: [usize; PROFILE_COUNT] = [0; PROFILE_COUNT];
     const TEST_STATE_WORD_INDEX: usize = 1;
     const EXPECTED_SHIPPED_BIT_FLAG_MASK: u8 = 32;
     const EXPECTED_SHIPPED_PAIR_OPCODE: u8 = PAIR_RECORD_C_OPCODE;
@@ -2133,6 +2173,43 @@ mod tests {
         assert_eq!(
             shipped_opcode_counts(ACTIVE_OBJECT_RECORD_OPCODE),
             EXPECTED_ACTIVE_OBJECT_RECORD_COUNTS
+        );
+    }
+
+    #[test]
+    fn c8_has_typed_plain_and_inverted_forms_but_no_shipped_sites() {
+        const COMPARISON_WORD: u16 = 42_424;
+
+        let (_directory, state, owner, _related, target_offset, _related_offset) =
+            typed_object_record_fixture(crate::script::ScriptObjectKind::WorldState);
+        let plain = decode_script_code(&encoded_object_record(
+            OPAQUE_MARKER_RECORD_OPCODE,
+            target_offset,
+            COMPARISON_WORD,
+            false,
+        ))
+        .unwrap();
+        let plain =
+            decode_script_opaque_marker_record_operation(&plain.tokens()[0], &state).unwrap();
+        assert_eq!(plain.target.object(), Some(owner));
+        assert_eq!(plain.comparison_word, COMPARISON_WORD);
+        assert!(!plain.inverted);
+
+        let mut query_bytes = vec![GUARD_BEGIN_OPCODE, u8::MIN, u8::MIN];
+        query_bytes.extend_from_slice(&encoded_object_record(
+            OPAQUE_MARKER_RECORD_OPCODE,
+            target_offset,
+            COMPARISON_WORD,
+            true,
+        ));
+        let inverted = decode_script_code(&query_bytes).unwrap();
+        let inverted =
+            decode_script_opaque_marker_record_operation(&inverted.tokens()[1], &state).unwrap();
+        assert!(inverted.inverted);
+
+        assert_eq!(
+            shipped_opcode_counts(OPAQUE_MARKER_RECORD_OPCODE),
+            EXPECTED_OPAQUE_MARKER_RECORD_COUNTS
         );
     }
 

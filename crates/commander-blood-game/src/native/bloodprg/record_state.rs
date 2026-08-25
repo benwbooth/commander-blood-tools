@@ -7,8 +7,9 @@ use commander_blood_formats::instruction::{
     ScriptAboardRecordOperation, ScriptActiveObjectRecordOperation, ScriptActorRecordOperation,
 };
 use commander_blood_formats::instruction::{
-    ScriptPresentationQueueOperation, ScriptRecordStateOperand, ScriptRecordStateOperation,
-    ScriptRecordValue, ScriptTravelRecordOperation, ScriptWorldStateRecordOperation,
+    ScriptOpaqueMarkerRecordOperation, ScriptPresentationQueueOperation, ScriptRecordStateOperand,
+    ScriptRecordStateOperation, ScriptRecordValue, ScriptTravelRecordOperation,
+    ScriptWorldStateRecordOperation,
 };
 use commander_blood_formats::script::{
     ScriptObjectId, ScriptObjectKind, ScriptState, ScriptStateObjectReference,
@@ -42,6 +43,8 @@ pub enum ScriptActionRecord {
     Travel(ScriptObjectId),
     /// C7 relation to an active object.
     ActiveObjectLink(ScriptObjectId),
+    /// C8 marker carrying its opaque query word; assignments always store zero.
+    OpaqueMarker(u16),
     /// Another native record kind currently owns the slot.
     Occupied,
 }
@@ -559,6 +562,37 @@ pub fn apply_active_object_record_operation(
     })
 }
 
+/// Apply dormant `vm_op_c8_record_match` behavior to one bounded marker slot.
+///
+/// The marker has no evidenced gameplay-specific meaning: it is absent from all
+/// shipped scripts and no native routine has a C8-specific consumer.
+pub fn apply_opaque_marker_record_operation(
+    operation: ScriptOpaqueMarkerRecordOperation,
+    records: &mut ScriptActionRecords,
+    runtime: &mut ScriptRuntime,
+) -> Result<ScriptRecordStateOutcome, ScriptRecordStateError> {
+    let matches = records.record(operation.target)
+        == ScriptActionRecord::OpaqueMarker(operation.comparison_word);
+    if runtime.query_mode() {
+        if matches != operation.inverted {
+            return Ok(ScriptRecordStateOutcome {
+                control: ScriptControl::Continue,
+                written_slot: None,
+            });
+        }
+        return failed_outcome(runtime);
+    }
+
+    if records.record(operation.target) != ScriptActionRecord::Empty {
+        return failed_outcome(runtime);
+    }
+    records.set_record(operation.target, ScriptActionRecord::OpaqueMarker(u16::MIN));
+    Ok(ScriptRecordStateOutcome {
+        control: ScriptControl::Continue,
+        written_slot: Some(operation.target),
+    })
+}
+
 fn query_record_state(
     operation: ScriptRecordStateOperation,
     state: &ScriptState,
@@ -688,6 +722,7 @@ mod tests {
     const WORLD_STATE_HANDLER_VECTOR_COUNT: usize = 14;
     const TRAVEL_HANDLER_VECTOR_COUNT: usize = 11;
     const ACTIVE_OBJECT_HANDLER_VECTOR_COUNT: usize = 15;
+    const OPAQUE_MARKER_HANDLER_VECTOR_COUNT: usize = 13;
     const FAILURE_TARGET: usize = 9_320;
     const HANDLER_VECTOR_COUNT: usize = 21;
     const ABOARD_HANDLER_VECTOR_COUNT: usize = 23;
@@ -728,6 +763,7 @@ mod tests {
     const WORLD_STATE_RECORD_KIND: u16 = 197;
     const TRAVEL_RECORD_KIND: u16 = 198;
     const ACTIVE_OBJECT_RECORD_KIND: u16 = 199;
+    const OPAQUE_MARKER_RECORD_KIND: u16 = 200;
     const ABOARD_RECORD_KIND: u16 = 194;
     const ACTOR_ABOARD_LINE: u16 = 39;
     const INVENTORY_ABOARD_LINE: u16 = 43;
@@ -807,6 +843,16 @@ mod tests {
         operand: u16,
         record_before: [u16; 3],
         related_active_byte: u16,
+        branch_failed: bool,
+    }
+
+    #[derive(Deserialize)]
+    struct OpaqueMarkerHandlerOracle {
+        name: String,
+        query_mode_before: u8,
+        inverted: bool,
+        operand: u16,
+        record_before: [u16; 3],
         branch_failed: bool,
     }
 
@@ -1488,6 +1534,74 @@ mod tests {
                 assert_eq!(
                     records.record(target),
                     ScriptActionRecord::ActiveObjectLink(ids[ACTOR_RELATED]),
+                    "{}",
+                    vector.name
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn opaque_marker_handler_matches_every_original_decision_vector() {
+        let vectors: Vec<OpaqueMarkerHandlerOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_6f62_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), OPAQUE_MARKER_HANDLER_VECTOR_COUNT);
+
+        for vector in vectors {
+            let (state, ids) =
+                actor_handler_fixture(ScriptObjectKind::Actor, ScriptObjectKind::Player);
+            let target = state
+                .object_word_triple(ids[ACTOR_OWNER], OBJECT_FLAGS_WORD_INDEX)
+                .unwrap();
+            let operation = ScriptOpaqueMarkerRecordOperation {
+                target,
+                comparison_word: vector.operand,
+                inverted: vector.inverted,
+            };
+            let mut records = ScriptActionRecords::default();
+            match vector.record_before[0] {
+                OPAQUE_MARKER_RECORD_KIND => records.set_record(
+                    target,
+                    ScriptActionRecord::OpaqueMarker(vector.record_before[1]),
+                ),
+                0 => {}
+                _ => records.set_record(target, ScriptActionRecord::Occupied),
+            }
+
+            let mut runtime = ScriptRuntime::new();
+            if vector.query_mode_before & QUERY_MODE_FLAG != u8::MIN {
+                runtime.begin_root_guard(ScriptCodeOffset::new(FAILURE_TARGET));
+            } else {
+                runtime.arm_root_failure_target(ScriptCodeOffset::new(FAILURE_TARGET));
+            }
+            let outcome =
+                apply_opaque_marker_record_operation(operation, &mut records, &mut runtime)
+                    .unwrap();
+
+            assert_eq!(
+                outcome.control,
+                if vector.branch_failed {
+                    ScriptControl::Jump(ScriptCodeOffset::new(FAILURE_TARGET))
+                } else {
+                    ScriptControl::Continue
+                },
+                "{}",
+                vector.name
+            );
+            let expected_write =
+                vector.query_mode_before & QUERY_MODE_FLAG == u8::MIN && !vector.branch_failed;
+            assert_eq!(
+                outcome.written_slot.is_some(),
+                expected_write,
+                "{}",
+                vector.name
+            );
+            if expected_write {
+                assert_eq!(
+                    records.record(target),
+                    ScriptActionRecord::OpaqueMarker(u16::MIN),
                     "{}",
                     vector.name
                 );
