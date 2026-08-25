@@ -40,8 +40,9 @@ pub use record::{
     ScriptTransferRecord, ScriptTransferRecords,
 };
 pub use record_state::{
-    apply_record_state_operation, ScriptActionRecord, ScriptActionRecords,
-    ScriptRecordStateError, ScriptRecordStateNavigationContext, ScriptRecordStateOutcome,
+    apply_actor_record_operation, apply_record_state_operation, ScriptActionRecord,
+    ScriptActionRecords, ScriptRecordStateError, ScriptRecordStateNavigationContext,
+    ScriptRecordStateOutcome,
 };
 pub use script::{ScriptControl, ScriptResumeState, ScriptRuntime, ScriptRuntimeError};
 pub use sequence::{

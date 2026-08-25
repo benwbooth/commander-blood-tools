@@ -3,6 +3,7 @@
 use std::collections::BTreeMap;
 use std::fmt;
 
+use commander_blood_formats::instruction::ScriptActorRecordOperation;
 use commander_blood_formats::instruction::{ScriptRecordStateOperand, ScriptRecordStateOperation};
 use commander_blood_formats::script::{
     ScriptObjectId, ScriptObjectKind, ScriptState, ScriptStateObjectReference,
@@ -23,6 +24,8 @@ pub enum ScriptActionRecord {
     Empty,
     /// C1 navigation action carrying its typed operand.
     Navigation(ScriptRecordStateOperand),
+    /// C4 actor-presentation action carrying its related object.
+    ActorPresentation(ScriptObjectId),
     /// Another native record kind currently owns the slot.
     Occupied,
 }
@@ -194,6 +197,68 @@ pub fn apply_record_state_operation(
     })
 }
 
+/// Apply `vm_op_c4_actor` to typed actor-presentation action slots.
+pub fn apply_actor_record_operation(
+    operation: ScriptActorRecordOperation,
+    state: &ScriptState,
+    records: &mut ScriptActionRecords,
+    runtime: &mut ScriptRuntime,
+) -> Result<ScriptRecordStateOutcome, ScriptRecordStateError> {
+    let owner = operation
+        .target
+        .object()
+        .ok_or(ScriptRecordStateError::MissingOwner {
+            slot: operation.target,
+        })?;
+    let matches = object_has_flag(state, owner, ScriptObjectFlag::Active) == Some(true)
+        && records.record(operation.target)
+            == ScriptActionRecord::ActorPresentation(operation.related);
+    if runtime.query_mode() {
+        if matches != operation.inverted {
+            return Ok(ScriptRecordStateOutcome {
+                control: ScriptControl::Continue,
+                written_slot: None,
+            });
+        }
+        return failed_outcome(runtime);
+    }
+
+    if object_has_flag(state, owner, ScriptObjectFlag::Active) != Some(true)
+        || object_has_flag(state, operation.related, ScriptObjectFlag::Active) != Some(true)
+    {
+        return failed_outcome(runtime);
+    }
+    let owner_kind = state
+        .object(owner)
+        .ok_or(ScriptRecordStateError::MissingObject { object: owner })?
+        .kind;
+    let related_kind = state
+        .object(operation.related)
+        .ok_or(ScriptRecordStateError::MissingObject {
+            object: operation.related,
+        })?
+        .kind;
+    if owner_kind != ScriptObjectKind::Player && related_kind != ScriptObjectKind::Player {
+        if record_is_actor(records.record(operation.target)) {
+            return failed_outcome(runtime);
+        }
+        let reciprocal_is_actor = action_slot(state, operation.related)
+            .is_some_and(|slot| record_is_actor(records.record(slot)));
+        if reciprocal_is_actor {
+            return failed_outcome(runtime);
+        }
+    }
+
+    records.set_record(
+        operation.target,
+        ScriptActionRecord::ActorPresentation(operation.related),
+    );
+    Ok(ScriptRecordStateOutcome {
+        control: ScriptControl::Continue,
+        written_slot: Some(operation.target),
+    })
+}
+
 fn query_record_state(
     operation: ScriptRecordStateOperation,
     state: &ScriptState,
@@ -257,6 +322,10 @@ fn action_slot(state: &ScriptState, object: ScriptObjectId) -> Option<ScriptStat
     state.object_word_triple(object, field_offset / std::mem::size_of::<u16>())
 }
 
+const fn record_is_actor(record: ScriptActionRecord) -> bool {
+    matches!(record, ScriptActionRecord::ActorPresentation(_))
+}
+
 fn operand_object(
     operand: ScriptRecordStateOperand,
     context: Option<ScriptRecordStateNavigationContext>,
@@ -298,8 +367,10 @@ fn failed_outcome(
 mod tests {
     use std::path::{Path, PathBuf};
 
-    use commander_blood_formats::code::{ScriptCodeOffset, decode_script_code};
-    use commander_blood_formats::instruction::decode_script_record_state_operation;
+    use commander_blood_formats::code::{ScriptCodeOffset, ScriptDecodingMode, decode_script_code};
+    use commander_blood_formats::instruction::{
+        decode_script_actor_record_operation, decode_script_record_state_operation,
+    };
     use commander_blood_formats::script::{
         ScriptDirectory, decode_script_directory, decode_script_state,
     };
@@ -309,7 +380,10 @@ mod tests {
 
     const PROFILE_COUNT: usize = 5;
     const RECORD_STATE_OPCODE: u8 = 0xC1;
+    const ACTOR_RECORD_OPCODE: u8 = 0xC4;
     const SHIPPED_RECORD_STATE_COUNT: usize = 20;
+    const SHIPPED_ACTOR_RECORD_COUNTS: [usize; PROFILE_COUNT] = [9, 95, 138, 66, 81];
+    const ACTOR_HANDLER_VECTOR_COUNT: usize = 20;
     const FAILURE_TARGET: usize = 9_320;
     const HANDLER_VECTOR_COUNT: usize = 21;
     const DIRECTORY_ENTRY_SIZE: usize = 20;
@@ -334,6 +408,16 @@ mod tests {
     const ARCHE_OBJECT: usize = 8;
     const AUXILIARY_OWNER: usize = 9;
 
+    const ACTOR_OWNER: usize = 0;
+    const ACTOR_RELATED: usize = 1;
+    const ACTOR_ALTERNATE_RELATED: usize = 2;
+    const PLAYER_KIND_MASK: u16 = 1;
+    const CELESTIAL_BODY_KIND_MASK: u16 = 8;
+    const BLACK_HOLE_KIND_MASK: u16 = 256;
+    const WORLD_STATE_KIND_MASK: u16 = 512;
+    const MIXED_CELESTIAL_WORLD_KIND_MASK: u16 = CELESTIAL_BODY_KIND_MASK | WORLD_STATE_KIND_MASK;
+    const ACTOR_RECORD_KIND: u16 = 196;
+
     #[derive(Deserialize)]
     struct HandlerOracle {
         name: String,
@@ -342,6 +426,26 @@ mod tests {
         operand: u16,
         branch_failed: bool,
         destination_offset: Option<u16>,
+    }
+
+    #[derive(Deserialize)]
+    struct ActorHandlerOracle {
+        name: String,
+        query_mode_before: u8,
+        inverted: bool,
+        owner_kind: u16,
+        owner_flags: u16,
+        related_offset: u16,
+        related_kind: u16,
+        related_flags: u16,
+        record_before: [u16; 3],
+        reciprocal_field: ActorReciprocalOracle,
+        branch_failed: bool,
+    }
+
+    #[derive(Deserialize)]
+    struct ActorReciprocalOracle {
+        value: u16,
     }
 
     fn original_asset(name: &str) -> PathBuf {
@@ -406,6 +510,153 @@ mod tests {
         }
 
         assert_eq!(count, SHIPPED_RECORD_STATE_COUNT);
+    }
+
+    #[test]
+    fn every_shipped_c4_actor_request_has_typed_runtime_inputs() {
+        let mut counts = [usize::MIN; PROFILE_COUNT];
+
+        for profile in 1..=PROFILE_COUNT {
+            let code = decode_script_code(
+                &std::fs::read(original_asset(&format!("SCRIPT{profile}.COD"))).unwrap(),
+            )
+            .unwrap();
+            let directory = decode_script_directory(
+                &std::fs::read(original_asset(&format!("SCRIPT{profile}.DEB"))).unwrap(),
+            )
+            .unwrap();
+            let state = decode_script_state(
+                &std::fs::read(original_asset(&format!("SCRIPT{profile}.VAR"))).unwrap(),
+                &directory,
+            )
+            .unwrap();
+
+            for token in code
+                .tokens()
+                .iter()
+                .filter(|token| token.opcode().byte() == ACTOR_RECORD_OPCODE)
+            {
+                let operation =
+                    decode_script_actor_record_operation(token, &state, &directory).unwrap();
+                let mut records = ScriptActionRecords::default();
+                let mut runtime = ScriptRuntime::new();
+                let query_mode = token.mode_before() == ScriptDecodingMode::Query;
+                if query_mode {
+                    runtime.begin_root_guard(ScriptCodeOffset::new(FAILURE_TARGET));
+                } else {
+                    runtime.arm_root_failure_target(ScriptCodeOffset::new(FAILURE_TARGET));
+                }
+
+                let outcome =
+                    apply_actor_record_operation(operation, &state, &mut records, &mut runtime)
+                        .unwrap();
+
+                let owner = operation.target.object().unwrap();
+                let endpoints_active = object_has_flag(&state, owner, ScriptObjectFlag::Active)
+                    == Some(true)
+                    && object_has_flag(&state, operation.related, ScriptObjectFlag::Active)
+                        == Some(true);
+                let branch_failed = query_mode || !endpoints_active;
+                assert_eq!(
+                    outcome.control,
+                    if branch_failed {
+                        ScriptControl::Jump(ScriptCodeOffset::new(FAILURE_TARGET))
+                    } else {
+                        ScriptControl::Continue
+                    }
+                );
+                assert_eq!(outcome.written_slot.is_some(), !branch_failed);
+                if !branch_failed {
+                    assert_eq!(
+                        records.record(operation.target),
+                        ScriptActionRecord::ActorPresentation(operation.related)
+                    );
+                }
+                counts[profile - 1] += 1;
+            }
+        }
+
+        assert_eq!(counts, SHIPPED_ACTOR_RECORD_COUNTS);
+    }
+
+    #[test]
+    fn actor_record_handler_matches_every_original_decision_vector() {
+        let vectors: Vec<ActorHandlerOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_6c7e_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), ACTOR_HANDLER_VECTOR_COUNT);
+
+        for vector in vectors {
+            let owner_kind = actor_oracle_kind(vector.owner_kind);
+            let related_kind = actor_oracle_kind(vector.related_kind);
+            let (mut state, ids) = actor_handler_fixture(owner_kind, related_kind);
+            set_flags(&mut state, ids[ACTOR_OWNER], vector.owner_flags);
+            set_flags(&mut state, ids[ACTOR_RELATED], vector.related_flags);
+            let target = state
+                .object_word_triple(ids[ACTOR_OWNER], OBJECT_FLAGS_WORD_INDEX)
+                .unwrap();
+            let operation = ScriptActorRecordOperation {
+                target,
+                related: ids[ACTOR_RELATED],
+                inverted: vector.inverted,
+            };
+            let mut records = ScriptActionRecords::default();
+            if vector.record_before[0] == ACTOR_RECORD_KIND {
+                let related = if vector.record_before[1] == vector.related_offset {
+                    ids[ACTOR_RELATED]
+                } else {
+                    ids[ACTOR_ALTERNATE_RELATED]
+                };
+                records.set_record(target, ScriptActionRecord::ActorPresentation(related));
+            } else if vector.record_before[0] != u16::MIN {
+                records.set_record(target, ScriptActionRecord::Occupied);
+            }
+            if vector.reciprocal_field.value == ACTOR_RECORD_KIND {
+                let reciprocal = action_slot(&state, ids[ACTOR_RELATED]).unwrap();
+                records.set_record(
+                    reciprocal,
+                    ScriptActionRecord::ActorPresentation(ids[ACTOR_OWNER]),
+                );
+            }
+
+            let mut runtime = ScriptRuntime::new();
+            if vector.query_mode_before & QUERY_MODE_FLAG != u8::MIN {
+                runtime.begin_root_guard(ScriptCodeOffset::new(FAILURE_TARGET));
+            } else {
+                runtime.arm_root_failure_target(ScriptCodeOffset::new(FAILURE_TARGET));
+            }
+            let outcome =
+                apply_actor_record_operation(operation, &state, &mut records, &mut runtime)
+                    .unwrap();
+
+            assert_eq!(
+                outcome.control,
+                if vector.branch_failed {
+                    ScriptControl::Jump(ScriptCodeOffset::new(FAILURE_TARGET))
+                } else {
+                    ScriptControl::Continue
+                },
+                "{}",
+                vector.name
+            );
+            let expected_write =
+                vector.query_mode_before & QUERY_MODE_FLAG == u8::MIN && !vector.branch_failed;
+            assert_eq!(
+                outcome.written_slot.is_some(),
+                expected_write,
+                "{}",
+                vector.name
+            );
+            if expected_write {
+                assert_eq!(
+                    records.record(target),
+                    ScriptActionRecord::ActorPresentation(ids[ACTOR_RELATED]),
+                    "{}",
+                    vector.name
+                );
+            }
+        }
     }
 
     #[test]
@@ -633,16 +884,40 @@ mod tests {
             ScriptObjectKind::CelestialBody,
             ScriptObjectKind::Auxiliary,
         ];
+        state_fixture(&kinds)
+    }
+
+    fn actor_handler_fixture(
+        owner_kind: ScriptObjectKind,
+        related_kind: ScriptObjectKind,
+    ) -> (ScriptState, Vec<ScriptObjectId>) {
+        let (_directory, state) =
+            state_fixture(&[owner_kind, related_kind, ScriptObjectKind::Location]);
+        let ids = state.objects().iter().map(|object| object.id).collect();
+        (state, ids)
+    }
+
+    fn actor_oracle_kind(mask: u16) -> ScriptObjectKind {
+        match mask {
+            PLAYER_KIND_MASK => ScriptObjectKind::Player,
+            BLACK_HOLE_KIND_MASK => ScriptObjectKind::BlackHole,
+            WORLD_STATE_KIND_MASK => ScriptObjectKind::WorldState,
+            MIXED_CELESTIAL_WORLD_KIND_MASK => ScriptObjectKind::CelestialBody,
+            unknown => panic!("unknown C4 oracle object-kind mask {unknown}"),
+        }
+    }
+
+    fn state_fixture(kinds: &[ScriptObjectKind]) -> (ScriptDirectory, ScriptState) {
         let mut offsets = Vec::with_capacity(kinds.len());
         let mut cursor = usize::MIN;
-        for kind in kinds {
+        for kind in kinds.iter().copied() {
             offsets.push(cursor);
             cursor += kind.record_size();
         }
 
         let mut directory_data = Vec::new();
         let mut state_data = Vec::with_capacity(cursor);
-        for (index, kind) in kinds.into_iter().enumerate() {
+        for (index, kind) in kinds.iter().copied().enumerate() {
             let mut entry = [u8::MIN; DIRECTORY_ENTRY_SIZE];
             entry[0] = b'a' + u8::try_from(index).unwrap();
             entry[DIRECTORY_NAME_CAPACITY..DIRECTORY_NAME_CAPACITY + 2]

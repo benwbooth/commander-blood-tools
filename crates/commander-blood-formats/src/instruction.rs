@@ -41,6 +41,7 @@ const SHARED_STATE_E_OPCODE: u8 = 0xBE;
 const SHARED_STATE_F_OPCODE: u8 = 0xBF;
 const SHARED_STATE_G_OPCODE: u8 = 0xC0;
 const RECORD_STATE_OPCODE: u8 = 0xC1;
+const ACTOR_RECORD_OPCODE: u8 = 0xC4;
 const TRANSFER_OPCODE: u8 = 0xCD;
 const INVERTED_CONDITION_PREFIX: u8 = GUARD_END_OPCODE;
 const OPCODE_SIZE: usize = 1;
@@ -67,6 +68,7 @@ const TRANSFER_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 3;
 const BIT_FLAG_SIZE: usize = OPCODE_SIZE + WORD_SIZE + BYTE_SIZE;
 const PAIR_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 3;
 const RECORD_STATE_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
+const ACTOR_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const BITS_PER_BYTE: u8 = u8::BITS as u8;
 const PRIMARY_NAVIGATION_OPERAND: u16 = 1;
 const SECONDARY_NAVIGATION_OPERAND: u16 = 2;
@@ -383,6 +385,17 @@ pub struct ScriptRecordStateOperation {
     pub target: ScriptStateWordTriple,
     /// Typed action value or explicit special navigation selector.
     pub operand: ScriptRecordStateOperand,
+    /// Whether query-mode equality is inverted.
+    pub inverted: bool,
+}
+
+/// One optionally inverted C4 actor-presentation record operation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptActorRecordOperation {
+    /// Bounded three-word actor action slot.
+    pub target: ScriptStateWordTriple,
+    /// Active profile object stored as the actor record's relation.
+    pub related: ScriptObjectId,
     /// Whether query-mode equality is inverted.
     pub inverted: bool,
 }
@@ -897,17 +910,16 @@ pub fn decode_script_transfer(
     require_size(token, TRANSFER_SIZE + prefix_size)?;
     let operand_offset = OPCODE_SIZE + prefix_size;
     let source_record = resolve_state_word(token, state, read_word(bytes, operand_offset))?;
-    let resolve_object = |encoded_offset| {
-        directory
-            .active_objects()
-            .find_map(|(object, entry)| (entry.value == encoded_offset).then_some(object))
-            .ok_or(ScriptInstructionError::InvalidObjectReference {
-                source_offset: token.source_offset(),
-                encoded_offset,
-            })
-    };
-    let item = resolve_object(read_word(bytes, operand_offset + WORD_SIZE))?;
-    let destination = resolve_object(read_word(bytes, operand_offset + WORD_SIZE * 2))?;
+    let item = resolve_active_object(
+        token,
+        directory,
+        read_word(bytes, operand_offset + WORD_SIZE),
+    )?;
+    let destination = resolve_active_object(
+        token,
+        directory,
+        read_word(bytes, operand_offset + WORD_SIZE * 2),
+    )?;
     Ok(ScriptTransfer {
         source_record,
         item,
@@ -1015,6 +1027,52 @@ pub fn decode_script_record_state_operation(
         operand,
         inverted,
     })
+}
+
+/// Decode one C4 actor-presentation operation into bounded typed identities.
+pub fn decode_script_actor_record_operation(
+    token: &ScriptToken,
+    state: &ScriptState,
+    directory: &ScriptDirectory,
+) -> Result<ScriptActorRecordOperation, ScriptInstructionError> {
+    if token.opcode().byte() != ACTOR_RECORD_OPCODE {
+        return Err(ScriptInstructionError::UntranslatedOpcode {
+            opcode: token.opcode(),
+        });
+    }
+    let bytes = token.encoded_bytes();
+    let inverted = bytes.get(OPCODE_SIZE) == Some(&INVERTED_CONDITION_PREFIX);
+    let prefix_size = usize::from(inverted);
+    require_size(token, ACTOR_RECORD_SIZE + prefix_size)?;
+    let operand_offset = OPCODE_SIZE + prefix_size;
+    let encoded_target = read_word(bytes, operand_offset);
+    let target = state
+        .resolve_word_triple_source_offset(encoded_target)
+        .ok_or(ScriptInstructionError::InvalidStateWordTriple {
+            source_offset: token.source_offset(),
+            encoded_offset: encoded_target,
+        })?;
+    let encoded_related = read_word(bytes, operand_offset + WORD_SIZE);
+    let related = resolve_active_object(token, directory, encoded_related)?;
+    Ok(ScriptActorRecordOperation {
+        target,
+        related,
+        inverted,
+    })
+}
+
+fn resolve_active_object(
+    token: &ScriptToken,
+    directory: &ScriptDirectory,
+    encoded_offset: u16,
+) -> Result<ScriptObjectId, ScriptInstructionError> {
+    directory
+        .active_objects()
+        .find_map(|(object, entry)| (entry.value == encoded_offset).then_some(object))
+        .ok_or(ScriptInstructionError::InvalidObjectReference {
+            source_offset: token.source_offset(),
+            encoded_offset,
+        })
 }
 
 const fn is_direct_record_opcode(opcode: u8) -> bool {
@@ -1156,6 +1214,7 @@ mod tests {
     const EXPECTED_BIT_FLAG_COUNTS: [usize; PROFILE_COUNT] = [0, 2, 1, 0, 0];
     const EXPECTED_PAIR_RECORD_COUNTS: [usize; PROFILE_COUNT] = [0, 0, 2, 0, 0];
     const EXPECTED_RECORD_STATE_COUNT: usize = 20;
+    const EXPECTED_ACTOR_RECORD_COUNTS: [usize; PROFILE_COUNT] = [9, 95, 138, 66, 81];
     const EXPECTED_SHIPPED_BIT_FLAG_MASK: u8 = 32;
     const EXPECTED_SHIPPED_PAIR_OPCODE: u8 = PAIR_RECORD_C_OPCODE;
     const MAXIMUM_SHIPPED_SEQUENCE_BASENAME_LENGTH: usize = 12;
@@ -1573,6 +1632,45 @@ mod tests {
         }
 
         assert_eq!(count, EXPECTED_RECORD_STATE_COUNT);
+    }
+
+    #[test]
+    fn every_shipped_c4_record_is_a_typed_actor_request() {
+        let mut counts = [usize::MIN; PROFILE_COUNT];
+
+        for profile in 1..=PROFILE_COUNT {
+            let code_data = std::fs::read(original_asset(&format!("SCRIPT{profile}.COD"))).unwrap();
+            let directory_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.DEB"))).unwrap();
+            let state_data =
+                std::fs::read(original_asset(&format!("SCRIPT{profile}.VAR"))).unwrap();
+            let code = decode_script_code(&code_data).unwrap();
+            let directory = decode_script_directory(&directory_data).unwrap();
+            let state = decode_script_state(&state_data, &directory).unwrap();
+
+            for token in code
+                .tokens()
+                .iter()
+                .filter(|token| token.opcode().byte() == ACTOR_RECORD_OPCODE)
+            {
+                let operation =
+                    decode_script_actor_record_operation(token, &state, &directory).unwrap();
+                let owner = operation.target.object().unwrap();
+                assert_eq!(
+                    state.object(owner).unwrap().kind,
+                    crate::script::ScriptObjectKind::Actor
+                );
+                assert_eq!(
+                    state.object(operation.related).unwrap().kind,
+                    crate::script::ScriptObjectKind::Player
+                );
+                assert_eq!(state.word_triple(operation.target), Some([u16::MIN; 3]));
+                assert!(!operation.inverted);
+                counts[profile - 1] += 1;
+            }
+        }
+
+        assert_eq!(counts, EXPECTED_ACTOR_RECORD_COUNTS);
     }
 
     #[test]
