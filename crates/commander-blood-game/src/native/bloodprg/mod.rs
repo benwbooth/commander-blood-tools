@@ -9,6 +9,7 @@ mod record;
 mod record_state;
 mod script;
 mod sequence;
+mod ship_view;
 mod startup;
 mod state;
 mod text;
@@ -54,6 +55,10 @@ pub use script::{ScriptControl, ScriptResumeState, ScriptRuntime, ScriptRuntimeE
 pub use sequence::{
     load_sequence_request, offer_topic_if_presentation_active, PresentationResourceLine,
     SequencePresentationState, SequenceRequestContext,
+};
+pub use ship_view::{
+    select_ship_view_artwork, ShipViewArtworkError, ShipViewArtworkSelection,
+    ShipViewEntityId, ShipViewEntityPlacement, ShipViewResourceId, ShipViewResourceRequest,
 };
 pub use startup::{
     apply_startup_option, tokenize_startup_command, StartupAudioConfiguration, StartupAudioDriver,
