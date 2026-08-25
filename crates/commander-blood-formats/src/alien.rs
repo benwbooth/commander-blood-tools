@@ -17,10 +17,14 @@ pub const RASTER_RECIPROCAL_COUNT: usize = 500;
 pub const TEXTURE_WIDTH: usize = 256;
 /// Height of the indexed texture atlas across its two original banks.
 pub const TEXTURE_HEIGHT: usize = 512;
+/// Number of entries in the texture-index remap table.
+pub const PALETTE_REMAP_ENTRY_COUNT: usize = 256;
 
 const AMER_DATA_DELTA_FIELD: usize = 0x3275;
 const CROOLIS_DATA_DELTA_FIELD: usize = 0x32e5;
 const SCRUT_DATA_DELTA_FIELD: usize = 0x33a5;
+const AMER_PALETTE_REMAP_POSITION: usize = 0x049b;
+const OTHER_PALETTE_REMAP_POSITION: usize = 0x04dc;
 const PARAGRAPH_BYTE_COUNT: usize = 16;
 const DIRECTORY_OBJECT_DELTA_FIELD: usize = 0x000c;
 const DIRECTORY_TEXTURE_DELTA_FIELD: usize = 0x000e;
@@ -133,6 +137,13 @@ impl AlienXdbKind {
         match self {
             Self::Amer => AMER_STAR_SEED_POSITION,
             Self::Croolis | Self::Scrut => OTHER_STAR_SEED_POSITION,
+        }
+    }
+
+    fn palette_remap_position(self) -> usize {
+        match self {
+            Self::Amer => AMER_PALETTE_REMAP_POSITION,
+            Self::Croolis | Self::Scrut => OTHER_PALETTE_REMAP_POSITION,
         }
     }
 }
@@ -319,6 +330,8 @@ pub struct AlienAsset {
     pub texture: AlienTextureAtlas,
     /// Expanded 8-bit RGB display palette.
     pub palette: [[u8; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT],
+    /// Authored palette-index substitutions used to animate texture regions.
+    pub palette_remap: [u8; PALETTE_REMAP_ENTRY_COUNT],
     /// Fixed-point trigonometry lookup table.
     pub trigonometry: [AlienTrigonometryPair; TRIGONOMETRY_ENTRY_COUNT],
     /// Fixed-point face-raster reciprocal table.
@@ -741,6 +754,8 @@ pub fn decode_alien_xdb(data: &[u8], kind: AlienXdbKind) -> Option<AlienAsset> {
             .copied()
     })?;
     let star_seed = read_u32(data, raster_start + kind.star_seed_position())?;
+    let palette_remap =
+        checked_array(|index| data.get(kind.palette_remap_position() + index).copied())?;
 
     Some(AlienAsset {
         kind,
@@ -754,6 +769,7 @@ pub fn decode_alien_xdb(data: &[u8], kind: AlienXdbKind) -> Option<AlienAsset> {
                 .to_vec(),
         },
         palette,
+        palette_remap,
         trigonometry,
         raster_reciprocals,
         camera,
@@ -796,6 +812,7 @@ mod tests {
             (AlienXdbKind::Scrut, "scrut.xdb", EXPECTED_SCRUT_MODEL_COUNT),
         ];
 
+        let mut shared_palette_remap = None;
         for (kind, filename, expected_models) in cases {
             let Some(path) = original_xdb(filename) else {
                 continue;
@@ -829,6 +846,18 @@ mod tests {
                     .flatten()
                     .any(|component| *component != u8::MIN)
             );
+            assert!(
+                asset
+                    .palette_remap
+                    .iter()
+                    .enumerate()
+                    .any(|(index, entry)| usize::from(*entry) != index)
+            );
+            if let Some(expected) = shared_palette_remap {
+                assert_eq!(asset.palette_remap, expected);
+            } else {
+                shared_palette_remap = Some(asset.palette_remap);
+            }
             assert!(
                 asset
                     .raster_reciprocals

@@ -114,6 +114,13 @@ texture-V. Six unaligned source states and six zero-count address-space walks
 are deliberately rejected. Mutable UV arrays feed the wgpu triangle path
 directly, with no retained source addresses or memory facade.
 
+The palette-animation method is translated for all three species with 24
+original-binary vectors. Tests cover root and first-node motion, every phase
+exit, countdown reversal, CROOLIS/SCRUT pulse updates, both texture-page
+regions, reversed intervals, and complete 64 KiB texture-result SHA-256 hashes.
+The 256-entry remap table is decoded directly from each XDB. Runtime state uses
+typed transforms, counters, and owned texture bytes only.
+
 Run the current interactive path with original assets:
 
 ```sh

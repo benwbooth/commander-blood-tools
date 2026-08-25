@@ -93,3 +93,11 @@ unaligned source states and six zero-count address-space walks from the oracle
 suite are rejected at the typed boundary instead of being reproduced. The
 architecture gate also rejects DOS pointer and real-mode address types from the
 game crate.
+
+The palette-animation method is translated for AMER, CROOLIS, and SCRUT. The
+format layer decodes its authored 256-entry texture-index remap table, and the
+native method updates a typed model transform, cycle direction/countdown,
+species pulse levels, and bounded regions of an owned texture atlas. All 24
+binary vectors match, including complete 64 KiB texture-result SHA-256 hashes.
+It remains outside live behavior dispatch until the other active method kinds
+are translated.

@@ -4,6 +4,7 @@ mod behavior;
 mod camera;
 mod control;
 mod faces;
+mod palette;
 mod primary;
 mod projection;
 mod raster;
@@ -21,6 +22,10 @@ pub use control::{
 pub use faces::{
     AlienBehindCameraSignal, AlienFaceBucket, AlienFaceDecision, AlienFaceReference,
     AlienFaceSelection, AlienFaceSelectionError, select_faces,
+};
+pub use palette::{
+    AlienPaletteAnimationState, AlienPaletteError, AlienPaletteInput, AlienPaletteUpdate,
+    update_palette_animation,
 };
 pub use primary::{AlienPrimaryMeshFrame, AlienPrimaryMeshPose, AlienPrimaryProjectionError};
 pub use projection::{
