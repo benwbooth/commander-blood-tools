@@ -36,6 +36,8 @@ pub struct AlienCallbackSceneState {
     pub slot2_active: bool,
     /// Model currently owning CROOLIS slot-2 selection tracking.
     pub slot2_selected_model: Option<usize>,
+    /// SCRUT selection signal retained after model initialization has consumed the shared seed.
+    pub scrut_selection_signal: i16,
     /// Scene node selected by the latest successful wave bounds check.
     pub wave_selected_node: Option<AlienSceneNode>,
     /// Fixed transition queue storing typed model-node indices.

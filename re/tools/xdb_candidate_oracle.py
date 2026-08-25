@@ -7049,6 +7049,405 @@ def scrut_slot2_fade_update_vectors(entry: int) -> list[dict[str, object]]:
     return vectors
 
 
+def scrut_slot2_selection_init_vectors(entry: int) -> list[dict[str, object]]:
+    module = "scrut"
+    image = load_image(module)
+    body_size = 14
+    body_hash = "acbe284966677f18064a6d9e471feeec94f4feb440a400e8f947c966c348230a"
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered body changed")
+
+    data_segment = 0x5000
+    extra_segment = 0x7000
+    fs_segment = 0x9000
+    game_segment = 0xA000
+    stack_segment = 0xB000
+    active_offset = 0x168E
+    selection_value_offset = 0x1690
+    restart_entry = 0x1810
+    cases = (
+        ("inactive_zero", 0, 0),
+        ("active_positive", 1, 0x1234),
+        ("high_values", 0xFFFF, 0x7FFF),
+        ("negative_selection", 0x8000, 0x8000),
+    )
+    vectors: list[dict[str, object]] = []
+
+    for case_index, (name, active, selection_value) in enumerate(cases):
+        data_before = bytes(
+            (offset * 31 + case_index * 19 + 7) & 0xFF
+            for offset in range(0x10000)
+        )
+        code_before = bytearray(image)
+        struct.pack_into("<H", code_before, active_offset, active)
+        struct.pack_into("<H", code_before, selection_value_offset, selection_value)
+        code_expected = bytearray(code_before)
+        struct.pack_into("<H", code_expected, active_offset, 0)
+        struct.pack_into("<H", code_expected, selection_value_offset, 0xFFFF)
+        extra_before = bytes(
+            (offset * 13 + case_index + 3) & 0xFF for offset in range(0x10000)
+        )
+        fs_before = bytes(
+            (offset * 17 + case_index + 5) & 0xFF for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 23 + case_index + 9) & 0xFF for offset in range(0x10000)
+        )
+        stack_before = bytes.fromhex("877869965aa5")
+        initial = {
+            "eax": 0xA1A12345,
+            "ebx": 0xB2B23456,
+            "ecx": 0xC3C34567,
+            "edx": 0xD4D45678,
+            "esi": 0xE5E54000,
+            "edi": 0xF6F63000,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0293 | (0x0400 if case_index & 1 else 0),
+        }
+        machine = execute(
+            bytes(code_before),
+            entry,
+            restart_entry,
+            initial,
+            [
+                (data_segment, 0, data_before),
+                (extra_segment, 0, extra_before),
+                (fs_segment, 0, fs_before),
+                (game_segment, 0, game_before),
+                (stack_segment, 0xFF00, stack_before),
+            ],
+            max_instructions=5,
+        )
+        if bytes(machine.mem_read(data_segment * 16, 0x10000)) != data_before:
+            raise AssertionError(f"{module}:{entry:#x} {name}: data changed")
+        if bytes(machine.mem_read(0, len(image))) != bytes(code_expected):
+            raise AssertionError(f"{module}:{entry:#x} {name}: code data changed")
+        for segment, expected in (
+            (extra_segment, extra_before),
+            (fs_segment, fs_before),
+            (game_segment, game_before),
+        ):
+            if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: segment {segment:#x} changed"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF00, len(stack_before))) != stack_before:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+        if machine.reg_read(UC_X86_REG_SP) != initial["sp"]:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack pointer changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "continuation": "restart",
+                "active_before": active,
+                "active_after": 0,
+                "selection_value_before": selection_value,
+                "selection_value_after": 0xFFFF,
+                "code_sha256": hashlib.sha256(code_expected).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
+def scrut_slot2_selection_restart_vectors(entry: int) -> list[dict[str, object]]:
+    module = "scrut"
+    image = load_image(module)
+    body_size = 11
+    body_hash = "4cd8e34c2659337fefadab58f32ffe4618a3a1025ecb22d9dcf4ea952bac2676"
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered body changed")
+
+    data_segment = 0x5000
+    extra_segment = 0x7000
+    fs_segment = 0x9000
+    game_segment = 0xA000
+    stack_segment = 0xB000
+    selection_entry = 0x181B
+    cases = (
+        ("zero_fraction", 0x4000, 0, 0x1357, 0xBEEF),
+        ("positive_fraction", 0x5000, 0x1234, 0x2468, 0xCAFE),
+        ("negative_fraction", 0x6000, 0x8000, 0xFFFF, 0x0001),
+        ("wrapped_state_offsets", 0xFFC0, 0xA55A, 0x5AA5, 0x1234),
+    )
+    vectors: list[dict[str, object]] = []
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        encoded = struct.pack("<H", value & 0xFFFF)
+        for index, byte in enumerate(encoded):
+            memory[(offset + index) & 0xFFFF] = byte
+
+    def get_u16(memory: bytes | bytearray, offset: int) -> int:
+        return memory[offset & 0xFFFF] | (memory[(offset + 1) & 0xFFFF] << 8)
+
+    for case_index, (name, state, fraction, secondary_before, callback_before) in enumerate(cases):
+        data_before = bytearray(
+            (offset * 31 + case_index * 19 + 7) & 0xFF
+            for offset in range(0x10000)
+        )
+        put_u16(data_before, state + 0x0E, callback_before)
+        put_u16(data_before, state + 0x36, fraction)
+        put_u16(data_before, state + 0x56, secondary_before)
+        data_expected = bytearray(data_before)
+        put_u16(data_expected, state + 0x0E, selection_entry)
+        put_u16(data_expected, state + 0x56, fraction)
+        extra_before = bytes(
+            (offset * 13 + case_index + 3) & 0xFF for offset in range(0x10000)
+        )
+        fs_before = bytes(
+            (offset * 17 + case_index + 5) & 0xFF for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 23 + case_index + 9) & 0xFF for offset in range(0x10000)
+        )
+        stack_before = bytes.fromhex("877869965aa5")
+        initial = {
+            "eax": 0xA1A12345,
+            "ebx": 0xB2B23456,
+            "ecx": 0xC3C34567,
+            "edx": 0xD4D45678,
+            "esi": 0xE5E50000 | state,
+            "edi": 0xF6F63000,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0293 | (0x0400 if case_index & 1 else 0),
+        }
+        machine = execute(
+            image,
+            entry,
+            selection_entry,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (extra_segment, 0, extra_before),
+                (fs_segment, 0, fs_before),
+                (game_segment, 0, game_before),
+                (stack_segment, 0xFF00, stack_before),
+            ],
+            max_instructions=6,
+        )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(data_expected):
+            differences = [
+                (offset, actual_data[offset], data_expected[offset])
+                for offset in range(0x10000)
+                if actual_data[offset] != data_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: data differs at {differences}"
+            )
+        if bytes(machine.mem_read(0, len(image))) != image:
+            raise AssertionError(f"{module}:{entry:#x} {name}: code changed")
+        for segment, expected in (
+            (extra_segment, extra_before),
+            (fs_segment, fs_before),
+            (game_segment, game_before),
+        ):
+            if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: segment {segment:#x} changed"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF00, len(stack_before))) != stack_before:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+        if machine.reg_read(UC_X86_REG_SP) != initial["sp"]:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack pointer changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "next_stage": "selection_begin",
+                "transform_x_fraction": fraction,
+                "secondary_before": secondary_before,
+                "secondary_after": get_u16(data_expected, state + 0x56),
+                "data_sha256": hashlib.sha256(data_expected).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
+def scrut_slot2_selection_begin_vectors(entry: int) -> list[dict[str, object]]:
+    module = "scrut"
+    image = load_image(module)
+    body_size = 61
+    body_hash = "4a3f15007d8a7654fb57d11d8f34cf5935bd1a8f1a57cce61fec589cd864b435"
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered body changed")
+
+    data_segment = 0x5000
+    extra_segment = 0x7000
+    fs_segment = 0x9000
+    game_segment = 0xA000
+    stack_segment = 0xB000
+    selection_state_offset = 0x0B70
+    damping_entry = 0x1858
+    selection_reset_entry = 0x19CF
+    camera_reset_entry = 0x1A11
+    cases = (
+        ("selection_disabled", 0x4000, 0, 700, -500, 10),
+        ("depth_below", 0x4400, 1, 699, -500, 20),
+        ("depth_negative", 0x4800, 1, -1, -500, 30),
+        ("lateral_above_first", 0x4C00, 1, 800, 501, 40),
+        ("lateral_redundant_boundary", 0x5000, 1, 800, 500, 50),
+        ("lateral_zero", 0x5400, 1, 800, 0, 60),
+        ("accepted_edges", 0x5800, 1, 700, -500, 70),
+        ("accepted_selected", 0x5C00, 2, 1000, -501, -80),
+        ("accepted_minimum_lateral", 0x6000, 1, 32767, -32768, -32768),
+        ("wrapped_state_offsets", 0xFFC0, 1, 900, -700, 0x1234),
+    )
+    vectors: list[dict[str, object]] = []
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        encoded = struct.pack("<H", value & 0xFFFF)
+        for index, byte in enumerate(encoded):
+            memory[(offset + index) & 0xFFFF] = byte
+
+    def get_u16(memory: bytes | bytearray, offset: int) -> int:
+        return memory[offset & 0xFFFF] | (memory[(offset + 1) & 0xFFFF] << 8)
+
+    def signed_word(value: int) -> int:
+        value &= 0xFFFF
+        return value if value < 0x8000 else value - 0x10000
+
+    for case_index, (name, state, selection_state, camera_z, camera_x, roll) in enumerate(cases):
+        data_before = bytearray(
+            (offset * 31 + case_index * 19 + 7) & 0xFF
+            for offset in range(0x10000)
+        )
+        put_u16(data_before, state + 0x0E, 0x181B)
+        put_u16(data_before, state + 0x38, camera_x)
+        put_u16(data_before, state + 0x40, camera_z)
+        put_u16(data_before, state + 0x52, roll)
+        put_u16(data_before, state + 0x56, 0x2468)
+        put_u16(data_before, state + 0x58, 0x369C)
+        put_u16(data_before, state + 0x5A, 0x48B0)
+        data_expected = bytearray(data_before)
+        code_before = bytearray(image)
+        struct.pack_into("<H", code_before, selection_state_offset, selection_state)
+        if selection_state & 3 == 0:
+            continuation = "selection_reset"
+            target = selection_reset_entry
+        elif (
+            signed_word(camera_z) < 700
+            or signed_word(camera_x) > 500
+            or signed_word(camera_x) > -500
+        ):
+            continuation = "camera_reset"
+            target = camera_reset_entry
+        else:
+            continuation = "damping"
+            target = damping_entry
+            put_u16(data_expected, state + 0x0E, damping_entry)
+            put_u16(data_expected, state + 0x56, 200)
+            put_u16(data_expected, state + 0x58, 0)
+            put_u16(data_expected, state + 0x5A, roll)
+
+        extra_before = bytes(
+            (offset * 13 + case_index + 3) & 0xFF for offset in range(0x10000)
+        )
+        fs_before = bytes(
+            (offset * 17 + case_index + 5) & 0xFF for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 23 + case_index + 9) & 0xFF for offset in range(0x10000)
+        )
+        stack_before = bytes.fromhex("877869965aa5")
+        initial = {
+            "eax": 0xA1A12345,
+            "ebx": 0xB2B23456,
+            "ecx": 0xC3C34567,
+            "edx": 0xD4D45678,
+            "esi": 0xE5E50000 | state,
+            "edi": 0xF6F63000,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0293 | (0x0400 if case_index & 1 else 0),
+        }
+        machine = execute(
+            bytes(code_before),
+            entry,
+            target,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (extra_segment, 0, extra_before),
+                (fs_segment, 0, fs_before),
+                (game_segment, 0, game_before),
+                (stack_segment, 0xFF00, stack_before),
+            ],
+            max_instructions=24,
+        )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(data_expected):
+            differences = [
+                (offset, actual_data[offset], data_expected[offset])
+                for offset in range(0x10000)
+                if actual_data[offset] != data_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: data differs at {differences}"
+            )
+        if bytes(machine.mem_read(0, len(image))) != bytes(code_before):
+            raise AssertionError(f"{module}:{entry:#x} {name}: code changed")
+        for segment, expected in (
+            (extra_segment, extra_before),
+            (fs_segment, fs_before),
+            (game_segment, game_before),
+        ):
+            if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: segment {segment:#x} changed"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF00, len(stack_before))) != stack_before:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+        if machine.reg_read(UC_X86_REG_SP) != initial["sp"]:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack pointer changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "selection_state": selection_state,
+                "continuation": continuation,
+                "camera_x_before": camera_x & 0xFFFF,
+                "camera_z_before": camera_z & 0xFFFF,
+                "roll_before": roll & 0xFFFF,
+                "next_callback": get_u16(data_expected, state + 0x0E),
+                "secondary_before": get_u16(data_before, state + 0x56),
+                "secondary_after": get_u16(data_expected, state + 0x56),
+                "radial_target_before": get_u16(data_before, state + 0x58),
+                "radial_target_after": get_u16(data_expected, state + 0x58),
+                "motion_parameter_before": get_u16(data_before, state + 0x5A),
+                "motion_parameter_after": get_u16(data_expected, state + 0x5A),
+                "data_sha256": hashlib.sha256(data_expected).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def alien_unreferenced_steering_vectors(
     module: str, entry: int
 ) -> list[dict[str, object]]:
@@ -21950,6 +22349,21 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "xdb_scrut_func_17e6_natural.json",
         scrut_slot2_fade_update_vectors(0x17E6),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "xdb_scrut_func_1802_natural.json",
+        scrut_slot2_selection_init_vectors(0x1802),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "xdb_scrut_func_1810_natural.json",
+        scrut_slot2_selection_restart_vectors(0x1810),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "xdb_scrut_func_181b_natural.json",
+        scrut_slot2_selection_begin_vectors(0x181B),
         args.check,
     )
     for module, entry in (

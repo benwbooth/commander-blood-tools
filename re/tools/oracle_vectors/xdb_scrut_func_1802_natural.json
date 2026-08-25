@@ -1,0 +1,46 @@
+[
+  {
+    "name": "inactive_zero",
+    "module": "scrut",
+    "entry": 6146,
+    "continuation": "restart",
+    "active_before": 0,
+    "active_after": 0,
+    "selection_value_before": 0,
+    "selection_value_after": 65535,
+    "code_sha256": "03fa235a37dfa8951f641c6539bf91a2bfd1e5745be9914a221e4b4356b2acd1"
+  },
+  {
+    "name": "active_positive",
+    "module": "scrut",
+    "entry": 6146,
+    "continuation": "restart",
+    "active_before": 1,
+    "active_after": 0,
+    "selection_value_before": 4660,
+    "selection_value_after": 65535,
+    "code_sha256": "03fa235a37dfa8951f641c6539bf91a2bfd1e5745be9914a221e4b4356b2acd1"
+  },
+  {
+    "name": "high_values",
+    "module": "scrut",
+    "entry": 6146,
+    "continuation": "restart",
+    "active_before": 65535,
+    "active_after": 0,
+    "selection_value_before": 32767,
+    "selection_value_after": 65535,
+    "code_sha256": "03fa235a37dfa8951f641c6539bf91a2bfd1e5745be9914a221e4b4356b2acd1"
+  },
+  {
+    "name": "negative_selection",
+    "module": "scrut",
+    "entry": 6146,
+    "continuation": "restart",
+    "active_before": 32768,
+    "active_after": 0,
+    "selection_value_before": 32768,
+    "selection_value_after": 65535,
+    "code_sha256": "03fa235a37dfa8951f641c6539bf91a2bfd1e5745be9914a221e4b4356b2acd1"
+  }
+]

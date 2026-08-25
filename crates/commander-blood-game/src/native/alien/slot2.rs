@@ -162,6 +162,11 @@ const SCRUT_HEADING_CARRY_MASK: u16 = 1;
 const SCRUT_FOLLOWER_PAN_SHIFT: u32 = 1;
 const SCRUT_FOLLOWER_ROLL_SHIFT: u32 = 2;
 const SCRUT_FADE_DURATION_STEP: i16 = 4;
+const SCRUT_SELECTION_INITIAL_SIGNAL: i16 = -1;
+const SCRUT_SELECTION_MINIMUM_DEPTH: i16 = 700;
+const SCRUT_SELECTION_FIRST_LATERAL_MAXIMUM: i16 = 500;
+const SCRUT_SELECTION_FINAL_LATERAL_MAXIMUM: i16 = -500;
+const SCRUT_SELECTION_DAMPING_PARAMETER: i16 = 200;
 
 /// Callback stage selected for one slot-2 animation model.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -186,6 +191,10 @@ pub enum AlienSlot2Callback {
     CroolisSelection,
     /// Run SCRUT's compiled but unreferenced fade callback.
     ScrutFade,
+    /// Check whether SCRUT can begin camera-relative selection tracking.
+    ScrutSelectionBegin,
+    /// Damp SCRUT's radial movement before its selection approach.
+    ScrutSelectionDamp,
 }
 
 /// Callback-owned state parallel to one animated model node.
@@ -195,8 +204,8 @@ pub struct AlienSlot2NodeState {
     pub motion_parameter: i16,
     /// Desired radial displacement approached by the callback family.
     pub radial_target: u16,
-    /// SCRUT depth target retained independently from node ownership.
-    pub depth_target: i16,
+    /// Secondary species-specific timer, target, or captured fixed-point component.
+    pub secondary_motion_parameter: i16,
     /// Deterministic behavior seed used by AMER's reset path.
     pub behavior_seed: u16,
 }
@@ -433,6 +442,24 @@ pub enum AlienScrutFadeUpdate {
     RestartRequested,
 }
 
+/// Typed continuation chosen by SCRUT selection initialization.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienScrutSelectionInit {
+    /// Continue immediately through the separately recovered selection restart.
+    RestartRequested,
+}
+
+/// Typed continuation chosen by SCRUT's selection-entry callback.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienScrutSelectionBeginUpdate {
+    /// Selection ended, so restore ordinary model state and restart.
+    SelectionResetRequested,
+    /// Continue immediately through SCRUT's camera-relative reset.
+    CameraResetRequested,
+    /// Damping state was installed for immediate dispatch.
+    DampingRequested,
+}
+
 /// Invalid flat state supplied to the slot-2 coordinator.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AlienSlot2Error {
@@ -528,7 +555,7 @@ pub fn initialize_or_dispatch_slot2(
     animation.nodes[PRIMARY_NODE].motion_parameter = RESET_SIGNED_VALUE;
     animation.nodes[PRIMARY_NODE].radial_target = RESET_ANGLE;
     if species == AlienSpecies::Scrut {
-        animation.nodes[PRIMARY_NODE].depth_target = RESET_SIGNED_VALUE;
+        animation.nodes[PRIMARY_NODE].secondary_motion_parameter = RESET_SIGNED_VALUE;
     }
 
     for (node, callback_state) in pose.nodes[1..].iter().zip(&mut animation.nodes[1..]) {
@@ -538,7 +565,7 @@ pub fn initialize_or_dispatch_slot2(
             AlienSpecies::Scrut => node.local_position[X_AXIS] as i16,
         };
         if species == AlienSpecies::Scrut {
-            callback_state.depth_target = node.local_position[Z_AXIS] as i16;
+            callback_state.secondary_motion_parameter = node.local_position[Z_AXIS] as i16;
         }
     }
     Ok(AlienSlot2Update::Initialized)
@@ -1381,6 +1408,58 @@ pub fn update_scrut_fade(
     Ok(AlienScrutFadeUpdate::RestartRequested)
 }
 
+/// Initialize SCRUT's scene-wide selection state.
+pub fn begin_scrut_selection(
+    pose: &AlienModelPose,
+    animation: &AlienSlot2AnimationState,
+    scene: &mut AlienCallbackSceneState,
+) -> Result<AlienScrutSelectionInit, AlienSlot2Error> {
+    validate_state(AlienSpecies::Scrut, pose, animation)?;
+    scene.scrut_selection_signal = SCRUT_SELECTION_INITIAL_SIGNAL;
+    scene.slot2_active = false;
+    Ok(AlienScrutSelectionInit::RestartRequested)
+}
+
+/// Restart SCRUT selection and capture the transformed X fractional word.
+pub fn restart_scrut_selection(
+    pose: &AlienModelPose,
+    animation: &mut AlienSlot2AnimationState,
+) -> Result<AlienSlot2Callback, AlienSlot2Error> {
+    validate_state(AlienSpecies::Scrut, pose, animation)?;
+    animation.callback = Some(AlienSlot2Callback::ScrutSelectionBegin);
+    animation.nodes[PRIMARY_NODE].secondary_motion_parameter =
+        pose.nodes[PRIMARY_NODE].transform.translation[X_AXIS] as i16;
+    Ok(AlienSlot2Callback::ScrutSelectionBegin)
+}
+
+/// Enter SCRUT selection damping when its asymmetric camera bounds permit it.
+pub fn update_scrut_selection_begin(
+    pose: &AlienModelPose,
+    animation: &mut AlienSlot2AnimationState,
+    scene: &AlienCallbackSceneState,
+) -> Result<AlienScrutSelectionBeginUpdate, AlienSlot2Error> {
+    validate_state(AlienSpecies::Scrut, pose, animation)?;
+    if scene.wave_selection == AlienWaveSelection::Disabled {
+        return Ok(AlienScrutSelectionBeginUpdate::SelectionResetRequested);
+    }
+
+    let primary = &pose.nodes[PRIMARY_NODE];
+    let camera_z = transformed_component(primary, Z_AXIS);
+    let camera_x = transformed_component(primary, X_AXIS);
+    if camera_z < SCRUT_SELECTION_MINIMUM_DEPTH
+        || camera_x > SCRUT_SELECTION_FIRST_LATERAL_MAXIMUM
+        || camera_x > SCRUT_SELECTION_FINAL_LATERAL_MAXIMUM
+    {
+        return Ok(AlienScrutSelectionBeginUpdate::CameraResetRequested);
+    }
+
+    animation.callback = Some(AlienSlot2Callback::ScrutSelectionDamp);
+    animation.nodes[PRIMARY_NODE].secondary_motion_parameter = SCRUT_SELECTION_DAMPING_PARAMETER;
+    animation.nodes[PRIMARY_NODE].motion_parameter = primary.angles[Z_AXIS] as i16;
+    animation.nodes[PRIMARY_NODE].radial_target = u16::default();
+    Ok(AlienScrutSelectionBeginUpdate::DampingRequested)
+}
+
 /// Preserve the observable behavior of the unreachable steering sibling.
 ///
 /// No original alien method table or callback points at this routine. Keeping
@@ -1954,6 +2033,44 @@ mod tests {
     }
 
     #[derive(Deserialize)]
+    struct ScrutSelectionInitVector {
+        name: String,
+        module: String,
+        continuation: String,
+        active_before: u16,
+        active_after: u16,
+        selection_value_before: u16,
+        selection_value_after: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct ScrutSelectionRestartVector {
+        name: String,
+        module: String,
+        next_stage: String,
+        transform_x_fraction: u16,
+        secondary_before: u16,
+        secondary_after: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct ScrutSelectionBeginVector {
+        name: String,
+        module: String,
+        selection_state: u16,
+        continuation: String,
+        camera_x_before: u16,
+        camera_z_before: u16,
+        roll_before: u16,
+        secondary_before: u16,
+        secondary_after: u16,
+        radial_target_before: u16,
+        radial_target_after: u16,
+        motion_parameter_before: u16,
+        motion_parameter_after: u16,
+    }
+
+    #[derive(Deserialize)]
     struct AmerUpdateHeadVector {
         name: String,
         transfer: String,
@@ -2105,7 +2222,7 @@ mod tests {
                     animation.nodes[node_index] = AlienSlot2NodeState {
                         motion_parameter: expected.velocity_after as i16,
                         radial_target: expected.radial_target_after,
-                        depth_target: expected.depth_target_after as i16,
+                        secondary_motion_parameter: expected.depth_target_after as i16,
                         behavior_seed: u16::default(),
                     };
                 }
@@ -2116,12 +2233,13 @@ mod tests {
                     pose.nodes[PRIMARY_NODE].radial_offset = TOUCHED_FIELD_SENTINEL as i16;
                     animation.nodes[PRIMARY_NODE].motion_parameter = TOUCHED_FIELD_SENTINEL as i16;
                     if species == AlienSpecies::Scrut {
-                        animation.nodes[PRIMARY_NODE].depth_target = TOUCHED_FIELD_SENTINEL as i16;
+                        animation.nodes[PRIMARY_NODE].secondary_motion_parameter =
+                            TOUCHED_FIELD_SENTINEL as i16;
                     }
                     for node in &mut animation.nodes[1..] {
                         node.motion_parameter = TOUCHED_FIELD_SENTINEL as i16;
                         if species == AlienSpecies::Scrut {
-                            node.depth_target = TOUCHED_FIELD_SENTINEL as i16;
+                            node.secondary_motion_parameter = TOUCHED_FIELD_SENTINEL as i16;
                         }
                     }
                 }
@@ -2183,7 +2301,7 @@ mod tests {
                         expected.radial_target_after
                     );
                     assert_eq!(
-                        animation.nodes[node_index].depth_target as u16,
+                        animation.nodes[node_index].secondary_motion_parameter as u16,
                         expected.depth_target_after
                     );
                 }
@@ -3081,6 +3199,151 @@ mod tests {
                 vector.name
             );
             assert_eq!(animation.callback, Some(AlienSlot2Callback::ScrutFade));
+        }
+    }
+
+    #[test]
+    fn scrut_selection_init_matches_every_original_overlay_vector() {
+        let vectors: Vec<ScrutSelectionInitVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/xdb_scrut_func_1802_natural.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            assert_eq!(vector.module, "scrut");
+            assert_eq!(vector.continuation, "restart");
+            let pose = pose(&[EMPTY_NODE_VECTOR; PRIMARY_AND_FOLLOWER_NODE_COUNT]);
+            let animation = AlienSlot2AnimationState::new(PRIMARY_AND_FOLLOWER_NODE_COUNT);
+            let mut scene = AlienCallbackSceneState {
+                slot2_active: vector.active_before != u16::default(),
+                scrut_selection_signal: vector.selection_value_before as i16,
+                ..AlienCallbackSceneState::default()
+            };
+
+            assert_eq!(
+                begin_scrut_selection(&pose, &animation, &mut scene).unwrap(),
+                AlienScrutSelectionInit::RestartRequested,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                scene.slot2_active,
+                vector.active_after != u16::default(),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                scene.scrut_selection_signal as u16, vector.selection_value_after,
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    #[test]
+    fn scrut_selection_restart_matches_every_original_overlay_vector() {
+        let vectors: Vec<ScrutSelectionRestartVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/xdb_scrut_func_1810_natural.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            assert_eq!(vector.module, "scrut");
+            assert_eq!(vector.next_stage, "selection_begin");
+            let mut pose = pose(&[EMPTY_NODE_VECTOR; PRIMARY_AND_FOLLOWER_NODE_COUNT]);
+            pose.nodes[PRIMARY_NODE].transform.translation[X_AXIS] =
+                join_words(TRANSFORM_LOW_WORD_SENTINEL, vector.transform_x_fraction);
+            let mut animation = AlienSlot2AnimationState::new(PRIMARY_AND_FOLLOWER_NODE_COUNT);
+            animation.nodes[PRIMARY_NODE].secondary_motion_parameter =
+                vector.secondary_before as i16;
+
+            assert_eq!(
+                restart_scrut_selection(&pose, &mut animation).unwrap(),
+                AlienSlot2Callback::ScrutSelectionBegin,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                animation.callback,
+                Some(AlienSlot2Callback::ScrutSelectionBegin)
+            );
+            assert_eq!(
+                animation.nodes[PRIMARY_NODE].secondary_motion_parameter as u16,
+                vector.secondary_after,
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    #[test]
+    fn scrut_selection_begin_matches_every_original_overlay_vector() {
+        let vectors: Vec<ScrutSelectionBeginVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/xdb_scrut_func_181b_natural.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            assert_eq!(vector.module, "scrut");
+            let mut pose = pose(&[EMPTY_NODE_VECTOR; PRIMARY_AND_FOLLOWER_NODE_COUNT]);
+            let primary = &mut pose.nodes[PRIMARY_NODE];
+            primary.transform.translation[X_AXIS] =
+                join_words(vector.camera_x_before, TRANSFORM_LOW_WORD_SENTINEL);
+            primary.transform.translation[Z_AXIS] =
+                join_words(vector.camera_z_before, TRANSFORM_LOW_WORD_SENTINEL);
+            primary.angles[Z_AXIS] = vector.roll_before;
+            let mut animation = AlienSlot2AnimationState::new(PRIMARY_AND_FOLLOWER_NODE_COUNT);
+            animation.callback = Some(AlienSlot2Callback::ScrutSelectionBegin);
+            animation.nodes[PRIMARY_NODE].secondary_motion_parameter =
+                vector.secondary_before as i16;
+            animation.nodes[PRIMARY_NODE].radial_target = vector.radial_target_before;
+            animation.nodes[PRIMARY_NODE].motion_parameter = vector.motion_parameter_before as i16;
+            let scene = AlienCallbackSceneState {
+                wave_selection: match vector.selection_state {
+                    0 => AlienWaveSelection::Disabled,
+                    1 => AlienWaveSelection::Requested,
+                    2 => AlienWaveSelection::Selected,
+                    state => panic!("unknown SCRUT selection state {state}"),
+                },
+                ..AlienCallbackSceneState::default()
+            };
+            let expected = match vector.continuation.as_str() {
+                "selection_reset" => AlienScrutSelectionBeginUpdate::SelectionResetRequested,
+                "camera_reset" => AlienScrutSelectionBeginUpdate::CameraResetRequested,
+                "damping" => AlienScrutSelectionBeginUpdate::DampingRequested,
+                continuation => panic!("unknown SCRUT selection continuation {continuation}"),
+            };
+
+            assert_eq!(
+                update_scrut_selection_begin(&pose, &mut animation, &scene).unwrap(),
+                expected,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                animation.nodes[PRIMARY_NODE].secondary_motion_parameter as u16,
+                vector.secondary_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                animation.nodes[PRIMARY_NODE].radial_target, vector.radial_target_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                animation.nodes[PRIMARY_NODE].motion_parameter as u16,
+                vector.motion_parameter_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                animation.callback,
+                Some(if vector.continuation == "damping" {
+                    AlienSlot2Callback::ScrutSelectionDamp
+                } else {
+                    AlienSlot2Callback::ScrutSelectionBegin
+                }),
+                "{}",
+                vector.name
+            );
         }
     }
 

@@ -1,0 +1,42 @@
+[
+  {
+    "name": "zero_fraction",
+    "module": "scrut",
+    "entry": 6160,
+    "next_stage": "selection_begin",
+    "transform_x_fraction": 0,
+    "secondary_before": 4951,
+    "secondary_after": 0,
+    "data_sha256": "4c205ec9ac3d0937a5821ecfe70a549f3b43035a8b204c7151d2cd6933fc4e97"
+  },
+  {
+    "name": "positive_fraction",
+    "module": "scrut",
+    "entry": 6160,
+    "next_stage": "selection_begin",
+    "transform_x_fraction": 4660,
+    "secondary_before": 9320,
+    "secondary_after": 4660,
+    "data_sha256": "c366aa8e66eec67caba847490347f223bd669764f4f35b9384e314e71ecad158"
+  },
+  {
+    "name": "negative_fraction",
+    "module": "scrut",
+    "entry": 6160,
+    "next_stage": "selection_begin",
+    "transform_x_fraction": 32768,
+    "secondary_before": 65535,
+    "secondary_after": 32768,
+    "data_sha256": "2e9838604c69a47d25610045eec323d8935dce2abec74d2b74c366369861e816"
+  },
+  {
+    "name": "wrapped_state_offsets",
+    "module": "scrut",
+    "entry": 6160,
+    "next_stage": "selection_begin",
+    "transform_x_fraction": 42330,
+    "secondary_before": 23205,
+    "secondary_after": 42330,
+    "data_sha256": "79df90f4949a425b5c37b6f11232987690e173324fa0aa03167adb503004e319"
+  }
+]
