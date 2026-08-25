@@ -3,6 +3,11 @@
 use std::error::Error;
 use std::fmt;
 
+use commander_blood_formats::bloodprg::{
+    BLOODPRG_BRIDGE_PROJECTION_ANCHOR_COUNT, BLOODPRG_BRIDGE_TRIGONOMETRY_SAMPLE_COUNT,
+    BloodprgBridgeResources,
+};
+
 use crate::native::random::BloodPrng;
 
 use super::{
@@ -12,11 +17,11 @@ use super::{
 };
 
 /// Number of authored angle samples in one complete rotation.
-pub const SHIP_TRIGONOMETRY_SAMPLE_COUNT: usize = 180;
+pub const SHIP_TRIGONOMETRY_SAMPLE_COUNT: usize = BLOODPRG_BRIDGE_TRIGONOMETRY_SAMPLE_COUNT;
 /// Number of points in the bridge starfield.
 pub const SHIP_POINT_CLOUD_COUNT: usize = 1_000;
 /// Number of navigation-object anchors projected over the bridge starfield.
-pub const SHIP_OBJECT_ANCHOR_COUNT: usize = 11;
+pub const SHIP_OBJECT_ANCHOR_COUNT: usize = BLOODPRG_BRIDGE_PROJECTION_ANCHOR_COUNT;
 
 const X_AXIS: usize = 0;
 const Y_AXIS: usize = 1;
@@ -81,6 +86,29 @@ pub struct ShipPointRecord {
 pub struct ShipObjectAnchor {
     /// World-space coordinates stored as wrapping words by the original game.
     pub position: [u16; MATRIX_DIMENSION],
+}
+
+/// Owned authored resources consumed by the bridge projection pipeline.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ShipProjectionResources {
+    /// Exact two-degree trigonometry table decoded from the executable image.
+    pub trigonometry: [ShipTrigonometrySample; SHIP_TRIGONOMETRY_SAMPLE_COUNT],
+    /// Exact eleven-anchor projector input decoded from the executable image.
+    pub object_anchors: [ShipObjectAnchor; SHIP_OBJECT_ANCHOR_COUNT],
+}
+
+impl From<BloodprgBridgeResources> for ShipProjectionResources {
+    fn from(resources: BloodprgBridgeResources) -> Self {
+        Self {
+            trigonometry: resources.trigonometry.map(|sample| ShipTrigonometrySample {
+                cosine: sample.cosine,
+                sine: sample.sine,
+            }),
+            object_anchors: resources.projection_anchors.map(|anchor| ShipObjectAnchor {
+                position: anchor.position,
+            }),
+        }
+    }
 }
 
 /// Current bridge camera position in the source coordinate domain.

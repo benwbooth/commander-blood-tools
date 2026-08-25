@@ -4,6 +4,7 @@
 
 pub mod alien;
 pub mod bas;
+pub mod bloodprg;
 pub mod code;
 pub mod descript;
 pub mod descript_database;

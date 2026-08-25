@@ -55300,6 +55300,61 @@ def bridge_steer_update_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def bloodprg_bridge_resource_vectors() -> list[dict[str, object]]:
+    data_file_offset = 0xD420
+    projection_anchor_offset = 0x4F09
+    trigonometry_offset = 0x4F45
+    authored_anchor_count = 10
+    projection_anchor_count = 11
+    trigonometry_count = 180
+    anchor_size = 6
+    trigonometry_sample_size = 4
+
+    if (
+        projection_anchor_offset + authored_anchor_count * anchor_size
+        != trigonometry_offset
+    ):
+        raise AssertionError("bridge resource ranges no longer meet")
+    anchor_start = data_file_offset + projection_anchor_offset
+    anchor_end = anchor_start + projection_anchor_count * anchor_size
+    trigonometry_start = data_file_offset + trigonometry_offset
+    trigonometry_end = (
+        trigonometry_start + trigonometry_count * trigonometry_sample_size
+    )
+    if max(anchor_end, trigonometry_end) > len(EXE):
+        raise AssertionError("BLOODPRG bridge resources are truncated")
+
+    anchor_bytes = EXE[anchor_start:anchor_end]
+    trigonometry_bytes = EXE[trigonometry_start:trigonometry_end]
+    anchors = [
+        list(struct.unpack_from("<3H", anchor_bytes, index * anchor_size))
+        for index in range(projection_anchor_count)
+    ]
+    trigonometry = [
+        list(
+            struct.unpack_from(
+                "<2h", trigonometry_bytes, index * trigonometry_sample_size
+            )
+        )
+        for index in range(trigonometry_count)
+    ]
+    return [
+        {
+            "artifact_sha256": hashlib.sha256(EXE).hexdigest(),
+            "data_file_offset": data_file_offset,
+            "projection_anchor_offset": projection_anchor_offset,
+            "authored_anchor_count": authored_anchor_count,
+            "projection_anchor_count": projection_anchor_count,
+            "projection_anchor_sha256": hashlib.sha256(anchor_bytes).hexdigest(),
+            "anchors": anchors,
+            "trigonometry_offset": trigonometry_offset,
+            "trigonometry_count": trigonometry_count,
+            "trigonometry_sha256": hashlib.sha256(trigonometry_bytes).hexdigest(),
+            "trigonometry": trigonometry,
+        }
+    ]
+
+
 def screen_flags_init_vectors() -> list[dict[str, object]]:
     entry = 0x959D
     expected_hash = "7149435d9dd1aa13cc8fcae0692e9f8b70745c16634d981a16c0d143a078d1b2"
@@ -91751,6 +91806,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_963f_natural.json",
         matrix_table_clear_2a1b_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "bloodprg_bridge_resources.json",
+        bloodprg_bridge_resource_vectors(),
         args.check,
     )
     update_vector(

@@ -247,7 +247,7 @@ pub use ship_projection::{
     SHIP_TRIGONOMETRY_SAMPLE_COUNT, ShipCameraPosition, ShipObjectAnchor,
     ShipObjectSpriteProjection, ShipPlottedPoint, ShipPointCloudProjection, ShipPointRecord,
     ShipProjectedPoint, ShipProjectionAngleRole, ShipProjectionAngles, ShipProjectionClip,
-    ShipProjectionError, ShipProjectionMatrix, ShipTrigonometrySample,
+    ShipProjectionError, ShipProjectionMatrix, ShipProjectionResources, ShipTrigonometrySample,
     build_ship_projection_matrix, plot_ship_point, project_ship_object_sprites,
     project_ship_point_cloud, randomize_ship_point_cloud,
 };
