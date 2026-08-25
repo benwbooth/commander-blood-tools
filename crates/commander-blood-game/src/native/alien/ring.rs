@@ -5,7 +5,8 @@ use std::fmt;
 use commander_blood_formats::alien::AXIS_COUNT;
 
 use super::{
-    AlienCallbackSceneState, AlienControlLatch, AlienModelPose, AlienSpecies, AlienWaveSelection,
+    AlienCallbackSceneState, AlienControlLatch, AlienModelPose, AlienSceneNode, AlienSpecies,
+    AlienWaveSelection,
 };
 
 const X_AXIS: usize = 0;
@@ -445,6 +446,7 @@ pub fn update_initial_course(
 /// callbacks. This function returns that continuation explicitly so the caller
 /// can dispatch it without retaining executable addresses in runtime state.
 pub fn update_follow_course(
+    model_index: usize,
     node_index: usize,
     pose: &mut AlienModelPose,
     animation: &mut AlienRingAnimationState,
@@ -486,8 +488,12 @@ pub fn update_follow_course(
         } else {
             None
         };
-        scene.transition_queue[queue_slot] = Some(node_index);
-        scene.current_node = Some(node_index);
+        let selected_node = AlienSceneNode {
+            model_index,
+            node_index,
+        };
+        scene.transition_queue[queue_slot] = Some(selected_node);
+        scene.current_node = Some(selected_node);
         if let Some(texture_range) = texture_range {
             for texture in &mut pose.texture_coordinates[texture_range] {
                 adjust_packed_texture(texture);
@@ -888,6 +894,7 @@ mod tests {
     const CALLBACK_FEEDBACK_PHASE: u16 = 0x7777;
     const RESTART_RANDOM_INPUTS: [u16; 4] = [0, 0x1234, u16::MAX, 4];
     const ORACLE_UNCHANGED_STATE: u16 = 0xA55A;
+    const TEST_MODEL: usize = 7;
     const TYPED_UNCHANGED_NODE: usize = 99;
     const ORIGINAL_QUEUE_ENTRY_BYTES: usize = 2;
     const ORIGINAL_SELECTION_MASK: u16 = 3;
@@ -1192,13 +1199,19 @@ mod tests {
         }
     }
 
-    fn oracle_node(value: u16) -> Option<usize> {
+    fn oracle_node(value: u16) -> Option<AlienSceneNode> {
         const ORACLE_NODE_OFFSET: u16 = 0x4000;
 
         match value {
             u16::MIN => None,
-            ORACLE_NODE_OFFSET => Some(FIRST_NODE),
-            ORACLE_UNCHANGED_STATE => Some(TYPED_UNCHANGED_NODE),
+            ORACLE_NODE_OFFSET => Some(AlienSceneNode {
+                model_index: TEST_MODEL,
+                node_index: FIRST_NODE,
+            }),
+            ORACLE_UNCHANGED_STATE => Some(AlienSceneNode {
+                model_index: TEST_MODEL,
+                node_index: TYPED_UNCHANGED_NODE,
+            }),
             _ => panic!("unknown oracle node value {value:#06x}"),
         }
     }
@@ -1486,9 +1499,14 @@ mod tests {
                     current_node: oracle_node(ORACLE_UNCHANGED_STATE),
                     ..AlienCallbackSceneState::default()
                 };
-                let update =
-                    update_follow_course(FIRST_NODE, &mut pose, &mut animation, &mut scene)
-                        .unwrap();
+                let update = update_follow_course(
+                    TEST_MODEL,
+                    FIRST_NODE,
+                    &mut pose,
+                    &mut animation,
+                    &mut scene,
+                )
+                .unwrap();
 
                 assert_eq!(
                     update,

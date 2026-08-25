@@ -40,10 +40,10 @@ pub struct AlienCallbackSceneState {
     pub scrut_selection_signal: i16,
     /// Scene node selected by the latest successful wave bounds check.
     pub wave_selected_node: Option<AlienSceneNode>,
-    /// Fixed transition queue storing typed model-node indices.
-    pub transition_queue: [Option<usize>; TRANSITION_QUEUE_LENGTH],
+    /// Fixed transition queue storing typed scene-node identities.
+    pub transition_queue: [Option<AlienSceneNode>; TRANSITION_QUEUE_LENGTH],
     /// Queue slot selected by the surrounding slot-11 behavior.
     pub transition_queue_slot: usize,
-    /// Most recently published model-node index.
-    pub current_node: Option<usize>,
+    /// Most recently published scene-node identity.
+    pub current_node: Option<AlienSceneNode>,
 }

@@ -46,9 +46,9 @@ pub use raster::{
 pub use resume::{
     ALIEN_RESUME_QUEUE_CAPACITY, AlienResumeCallback, AlienResumeCallbacks,
     AlienResumeFinalStageError, AlienResumeMethodState, AlienResumePairStageError,
-    AlienResumePairStageUpdate, AlienResumePairUpdate, AlienResumeQueueContext,
-    AlienResumeQueueError, AlienResumeQueueState, AlienResumeQueueUpdate, AlienResumeTextureError,
-    AlienResumeTextureUpdate, AlienResumeTimeoutUpdate, AlienResumeUpdate,
+    AlienResumePairContext, AlienResumePairStageUpdate, AlienResumePairUpdate,
+    AlienResumeQueueContext, AlienResumeQueueError, AlienResumeQueueState, AlienResumeQueueUpdate,
+    AlienResumeTextureError, AlienResumeTextureUpdate, AlienResumeTimeoutUpdate, AlienResumeUpdate,
     initialize_or_dispatch_resume, update_resume_final_stage, update_resume_pair_stage,
     update_resume_pair_steering, update_resume_queue, update_resume_texture_motion,
     update_resume_timeout,

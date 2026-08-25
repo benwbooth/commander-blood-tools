@@ -4,9 +4,7 @@ use std::fmt;
 
 use commander_blood_formats::alien::{AlienTrigonometryPair, TRIGONOMETRY_ENTRY_COUNT};
 
-use super::{
-    AlienModelPose, AlienNodePose, AlienRingAnimationState, AlienRingCallback, AlienSpecies,
-};
+use super::{AlienNodePose, AlienRingCallback, AlienSceneNode, AlienSpecies};
 
 const X_AXIS: usize = 0;
 const Y_AXIS: usize = 1;
@@ -84,9 +82,9 @@ pub struct AlienResumeMethodState {
     /// Current phase within the resume state machine.
     pub phase: u16,
     /// Optional node paired with the currently resumed node.
-    pub paired_node: Option<usize>,
+    pub paired_node: Option<AlienSceneNode>,
     /// Optional node whose state is being resumed.
-    pub resumed_node: Option<usize>,
+    pub resumed_node: Option<AlienSceneNode>,
 }
 
 /// Flat queue shared by the resume method and the active-node selector.
@@ -95,19 +93,31 @@ pub struct AlienResumeQueueState {
     /// Slot inspected by the next begin-stage invocation.
     pub read_index: usize,
     /// Node currently published as the active queue anchor.
-    pub active_node: Option<usize>,
-    /// Queued node indices; `None` is an authored empty slot.
-    pub entries: [Option<usize>; ALIEN_RESUME_QUEUE_CAPACITY],
+    pub active_node: Option<AlienSceneNode>,
+    /// Queued scene-node identities; `None` is an authored empty slot.
+    pub entries: [Option<AlienSceneNode>; ALIEN_RESUME_QUEUE_CAPACITY],
 }
 
-/// Borrowed flat state needed when an occupied queue slot tail-dispatches.
+/// Resolved partner borrowed by an occupied resume queue slot.
+pub struct AlienResumePairContext<'a> {
+    /// Exact scene-node identity stored in the queue.
+    pub node: AlienSceneNode,
+    /// Mutable pose already resolved by the scene owner.
+    pub pose: &'a mut AlienNodePose,
+    /// Ring callback owned by the resolved partner.
+    pub callback: &'a mut AlienRingCallback,
+}
+
+/// Borrowed flat state needed when a resume queue slot is consumed.
 pub struct AlienResumeQueueContext<'a> {
-    /// Node whose method is consuming the queue.
-    pub current_node: usize,
-    /// Mutable model pose containing both current and queued nodes.
-    pub pose: &'a mut AlienModelPose,
-    /// Per-node callback state parallel to `pose.nodes`.
-    pub animation: &'a mut AlienRingAnimationState,
+    /// Exact scene-node identity whose method is consuming the queue.
+    pub current: AlienSceneNode,
+    /// Mutable pose already resolved by the scene owner.
+    pub current_pose: &'a mut AlienNodePose,
+    /// Texture coordinates owned by the current node's model.
+    pub texture_coordinates: &'a mut [[i16; TEXTURE_COMPONENT_COUNT]],
+    /// Resolved partner for an occupied slot, or `None` for an empty slot.
+    pub paired: Option<AlienResumePairContext<'a>>,
     /// Decoded trigonometry table used by pair steering.
     pub trigonometry: &'a [AlienTrigonometryPair; TRIGONOMETRY_ENTRY_COUNT],
     /// Shared resume countdown updated by an immediate in-range pairing.
@@ -185,8 +195,8 @@ pub enum AlienResumeQueueUpdate {
     },
     /// An occupied slot was consumed and immediately ran the pair stage.
     PairDispatched {
-        /// Typed node index removed from the queue.
-        paired_node: usize,
+        /// Typed scene-node identity removed from the queue.
+        paired_node: AlienSceneNode,
         /// Result of the same-invocation pair continuation.
         pair: AlienResumePairStageUpdate,
     },
@@ -259,26 +269,24 @@ pub enum AlienResumeQueueError {
         /// Invalid slot index.
         index: usize,
     },
-    /// The current node index is absent from the model pose.
-    InvalidCurrentNode {
-        /// Invalid node index.
-        index: usize,
-        /// Number of nodes in the model pose.
-        available: usize,
+    /// An empty queue slot was supplied with an unrelated partner borrow.
+    UnexpectedPairContext,
+    /// An occupied queue slot was not supplied with its resolved partner.
+    MissingPairContext {
+        /// Scene node that the caller must resolve.
+        queued: AlienSceneNode,
     },
-    /// The queued node index is absent from the pose or callback state.
-    InvalidPairedNode {
-        /// Invalid node index.
-        index: usize,
-        /// Number of pose nodes available.
-        pose_nodes: usize,
-        /// Number of callback states available.
-        animation_nodes: usize,
+    /// The supplied partner does not match the identity stored in the queue.
+    MismatchedPair {
+        /// Scene node stored in the queue.
+        queued: AlienSceneNode,
+        /// Scene node resolved by the caller.
+        supplied: AlienSceneNode,
     },
-    /// A node cannot pair with itself in the flat ownership model.
+    /// A scene node cannot pair with itself.
     AliasedPair {
-        /// Repeated node index.
-        index: usize,
+        /// Repeated scene-node identity.
+        node: AlienSceneNode,
     },
     /// The immediate pair continuation rejected its typed inputs.
     PairStage(AlienResumePairStageError),
@@ -322,53 +330,61 @@ pub fn update_resume_queue(
     queue: &mut AlienResumeQueueState,
     context: AlienResumeQueueContext<'_>,
 ) -> Result<AlienResumeQueueUpdate, AlienResumeQueueError> {
+    let AlienResumeQueueContext {
+        current,
+        current_pose,
+        texture_coordinates,
+        paired,
+        trigonometry,
+        countdown,
+    } = context;
     if queue.read_index >= ALIEN_RESUME_QUEUE_CAPACITY {
         return Err(AlienResumeQueueError::InvalidReadIndex {
             index: queue.read_index,
         });
     }
-    let node_count = context.pose.nodes.len();
-    if context.current_node >= node_count {
-        return Err(AlienResumeQueueError::InvalidCurrentNode {
-            index: context.current_node,
-            available: node_count,
-        });
-    }
-
     let Some(paired_node) = queue.entries[queue.read_index] else {
+        if paired.is_some() {
+            return Err(AlienResumeQueueError::UnexpectedPairContext);
+        }
         queue.read_index = (queue.read_index + 1) % ALIEN_RESUME_QUEUE_CAPACITY;
-        let current = &mut context.pose.nodes[context.current_node];
         let pitch = match species {
-            AlienSpecies::Amer => current.angles[PITCH_AXIS].wrapping_add(IDLE_PITCH_STEP),
+            AlienSpecies::Amer => current_pose.angles[PITCH_AXIS].wrapping_add(IDLE_PITCH_STEP),
             AlienSpecies::Croolis | AlienSpecies::Scrut => {
-                current.angles[PITCH_AXIS].wrapping_sub(IDLE_PITCH_STEP)
+                current_pose.angles[PITCH_AXIS].wrapping_sub(IDLE_PITCH_STEP)
             }
         };
-        current.angles[PITCH_AXIS] = (pitch & IDLE_PITCH_MASK).wrapping_sub(IDLE_PITCH_BIAS);
+        current_pose.angles[PITCH_AXIS] = (pitch & IDLE_PITCH_MASK).wrapping_sub(IDLE_PITCH_BIAS);
         if species == AlienSpecies::Amer {
-            current.angles[PAN_AXIS] = current.angles[PAN_AXIS].wrapping_add(AMER_IDLE_PAN_STEP);
+            current_pose.angles[PAN_AXIS] =
+                current_pose.angles[PAN_AXIS].wrapping_add(AMER_IDLE_PAN_STEP);
         }
         return Ok(AlienResumeQueueUpdate::Idle {
             read_index: queue.read_index,
         });
     };
 
-    let animation_node_count = context.animation.nodes.len();
-    if paired_node >= node_count || paired_node >= animation_node_count {
-        return Err(AlienResumeQueueError::InvalidPairedNode {
-            index: paired_node,
-            pose_nodes: node_count,
-            animation_nodes: animation_node_count,
+    let AlienResumePairContext {
+        node: supplied_node,
+        pose: paired_pose,
+        callback: paired_callback,
+    } = paired.ok_or(AlienResumeQueueError::MissingPairContext {
+        queued: paired_node,
+    })?;
+    if supplied_node != paired_node {
+        return Err(AlienResumeQueueError::MismatchedPair {
+            queued: paired_node,
+            supplied: supplied_node,
         });
     }
-    if paired_node == context.current_node {
-        return Err(AlienResumeQueueError::AliasedPair { index: paired_node });
+    if paired_node == current {
+        return Err(AlienResumeQueueError::AliasedPair { node: paired_node });
     }
     let required_textures = resume_texture_vertex_count(species);
-    if context.pose.texture_coordinates.len() < required_textures {
+    if texture_coordinates.len() < required_textures {
         return Err(AlienResumePairStageError::Texture(AlienResumeTextureError {
             required: required_textures,
-            available: context.pose.texture_coordinates.len(),
+            available: texture_coordinates.len(),
         })
         .into());
     }
@@ -378,24 +394,15 @@ pub fn update_resume_queue(
     state.callback = Some(AlienResumeCallback::Pair);
     state.paired_node = Some(paired_node);
 
-    let nodes = &mut context.pose.nodes;
-    let (current, other) = if context.current_node < paired_node {
-        let (before, from_pair) = nodes.split_at_mut(paired_node);
-        (&mut before[context.current_node], &mut from_pair[0])
-    } else {
-        let (before, from_current) = nodes.split_at_mut(context.current_node);
-        (&mut from_current[0], &mut before[paired_node])
-    };
-    let other_callback = &mut context.animation.nodes[paired_node].callback;
     let pair = update_resume_pair_stage(
         species,
         state,
-        current,
-        other,
-        other_callback,
-        &mut context.pose.texture_coordinates,
-        context.trigonometry,
-        context.countdown,
+        current_pose,
+        paired_pose,
+        paired_callback,
+        texture_coordinates,
+        trigonometry,
+        countdown,
     )?;
     Ok(AlienResumeQueueUpdate::PairDispatched { paired_node, pair })
 }
@@ -596,6 +603,14 @@ mod tests {
     use super::*;
 
     const PRESERVED_RESUMED_NODE: usize = 37;
+    const STATE_MODEL: usize = 41;
+
+    fn state_node(node_index: usize) -> AlienSceneNode {
+        AlienSceneNode {
+            model_index: STATE_MODEL,
+            node_index,
+        }
+    }
 
     #[derive(Deserialize)]
     struct ResumeVector {
@@ -845,21 +860,6 @@ mod tests {
         }
     }
 
-    fn pose(nodes: Vec<AlienNodePose>, texture_coordinates: Vec<[i16; 2]>) -> AlienModelPose {
-        let vertex_count = texture_coordinates.len();
-        AlienModelPose {
-            root: AlienTransformData::default(),
-            nodes,
-            projected_vertices: vec![Default::default(); vertex_count],
-            texture_coordinates,
-            object_positions: vec![[i16::default(); AXIS_COUNT]; vertex_count],
-            authored_vertex_count: vertex_count,
-            faces: Vec::new(),
-            last_rotation_matrix: [[i32::default(); AXIS_COUNT]; AXIS_COUNT],
-            last_common_clip: u16::default(),
-        }
-    }
-
     #[test]
     fn initialization_matches_every_original_overlay_vector() {
         for fixture in fixtures() {
@@ -870,8 +870,8 @@ mod tests {
                 let mut state = AlienResumeMethodState {
                     callback: None,
                     phase: vector.resume_step_before,
-                    paired_node: Some(usize::from(vector.resume_value_before)),
-                    resumed_node: Some(PRESERVED_RESUMED_NODE),
+                    paired_node: Some(state_node(usize::from(vector.resume_value_before))),
+                    resumed_node: Some(state_node(PRESERVED_RESUMED_NODE)),
                 };
                 let mut callbacks = CallbackRecorder::default();
 
@@ -891,7 +891,7 @@ mod tests {
                 assert_eq!(state.phase, vector.resume_step_after);
                 assert_eq!(state.paired_node, None);
                 assert_eq!(vector.resume_value_after, u16::MIN);
-                assert_eq!(state.resumed_node, Some(PRESERVED_RESUMED_NODE));
+                assert_eq!(state.resumed_node, Some(state_node(PRESERVED_RESUMED_NODE)));
                 assert!(callbacks.calls.is_empty());
             }
         }
@@ -904,12 +904,12 @@ mod tests {
             for vector in vectors.into_iter().skip(3) {
                 assert_ne!(vector.resume_before, u16::MIN);
                 assert!(vector.tail_dispatched);
-                let paired_node = Some(usize::from(vector.resume_value_before));
+                let paired_node = Some(state_node(usize::from(vector.resume_value_before)));
                 let mut state = AlienResumeMethodState {
                     callback: Some(AlienResumeCallback::Begin),
                     phase: vector.resume_step_before,
                     paired_node,
-                    resumed_node: Some(PRESERVED_RESUMED_NODE),
+                    resumed_node: Some(state_node(PRESERVED_RESUMED_NODE)),
                 };
                 let mut callbacks = CallbackRecorder::default();
 
@@ -930,7 +930,7 @@ mod tests {
                 assert_eq!(vector.resume_step_after, vector.resume_step_before);
                 assert_eq!(state.paired_node, paired_node);
                 assert_eq!(vector.resume_value_after, vector.resume_value_before);
-                assert_eq!(state.resumed_node, Some(PRESERVED_RESUMED_NODE));
+                assert_eq!(state.resumed_node, Some(state_node(PRESERVED_RESUMED_NODE)));
                 assert_eq!(
                     callbacks.calls,
                     vec![(species(&vector.module), AlienResumeCallback::Begin)]
@@ -1016,8 +1016,8 @@ mod tests {
                     assert!(matches!(target.direction, -1 | 1));
                 }
                 let preserved_callback = Some(AlienResumeCallback::Begin);
-                let preserved_paired_node = Some(17);
-                let preserved_resumed_node = Some(29);
+                let preserved_paired_node = Some(state_node(17));
+                let preserved_resumed_node = Some(state_node(29));
                 let mut state = AlienResumeMethodState {
                     callback: preserved_callback,
                     phase: vector.phase_before,
@@ -1105,8 +1105,8 @@ mod tests {
                 let mut state = AlienResumeMethodState {
                     callback: Some(AlienResumeCallback::Timeout),
                     phase: vector.phase_before,
-                    paired_node: Some(17),
-                    resumed_node: Some(29),
+                    paired_node: Some(state_node(17)),
+                    resumed_node: Some(state_node(29)),
                 };
                 let mut countdown = vector.countdown_before;
 
@@ -1141,8 +1141,8 @@ mod tests {
                     "{}",
                     vector.name
                 );
-                assert_eq!(state.paired_node, Some(17), "{}", vector.name);
-                assert_eq!(state.resumed_node, Some(29), "{}", vector.name);
+                assert_eq!(state.paired_node, Some(state_node(17)), "{}", vector.name);
+                assert_eq!(state.resumed_node, Some(state_node(29)), "{}", vector.name);
             }
         }
     }
@@ -1189,8 +1189,8 @@ mod tests {
                 let mut state = AlienResumeMethodState {
                     callback: Some(AlienResumeCallback::Pair),
                     phase: vector.phase_before,
-                    paired_node: Some(PAIRED_NODE),
-                    resumed_node: Some(PRESERVED_RESUMED_NODE),
+                    paired_node: Some(state_node(PAIRED_NODE)),
+                    resumed_node: Some(state_node(PRESERVED_RESUMED_NODE)),
                 };
                 let mut countdown = vector.countdown_before;
 
@@ -1283,9 +1283,9 @@ mod tests {
                 assert_eq!(
                     state.resumed_node,
                     Some(if vector.inside {
-                        PAIRED_NODE
+                        state_node(PAIRED_NODE)
                     } else {
-                        PRESERVED_RESUMED_NODE
+                        state_node(PRESERVED_RESUMED_NODE)
                     }),
                     "{}",
                     vector.name
@@ -1325,8 +1325,8 @@ mod tests {
                 let mut state = AlienResumeMethodState {
                     callback: Some(AlienResumeCallback::Final),
                     phase: 0x1234,
-                    paired_node: Some(PAIRED_NODE),
-                    resumed_node: Some(PRESERVED_RESUMED_NODE),
+                    paired_node: Some(state_node(PAIRED_NODE)),
+                    resumed_node: Some(state_node(PRESERVED_RESUMED_NODE)),
                 };
 
                 assert_eq!(
@@ -1394,10 +1394,15 @@ mod tests {
                     vector.name
                 );
                 assert_eq!(state.phase, 0x1234, "{}", vector.name);
-                assert_eq!(state.paired_node, Some(PAIRED_NODE), "{}", vector.name);
+                assert_eq!(
+                    state.paired_node,
+                    Some(state_node(PAIRED_NODE)),
+                    "{}",
+                    vector.name
+                );
                 assert_eq!(
                     state.resumed_node,
-                    Some(PRESERVED_RESUMED_NODE),
+                    Some(state_node(PRESERVED_RESUMED_NODE)),
                     "{}",
                     vector.name
                 );
@@ -1407,8 +1412,10 @@ mod tests {
 
     #[test]
     fn queue_owner_matches_every_well_formed_original_overlay_vector() {
+        const CURRENT_MODEL: usize = 3;
+        const PAIRED_MODEL: usize = 11;
         const CURRENT_NODE: usize = 0;
-        const PAIRED_NODE: usize = 1;
+        const PAIRED_NODE: usize = 0;
         const ACTIVE_NODE: usize = 2;
         const PRESERVED_PAIRED_NODE: usize = 17;
         const PRESERVED_RESUMED_NODE: usize = 29;
@@ -1445,16 +1452,22 @@ mod tests {
                 };
                 let mut other = node(other_position, u16::default(), u16::default());
                 other.radial_offset = 20;
-                let spare = node([u32::default(); AXIS_COUNT], u16::default(), u16::default());
-                let mut pose = pose(vec![current, other, spare], textures);
-                let mut animation = AlienRingAnimationState::new(pose.nodes.len());
-                animation.nodes[PAIRED_NODE].callback = AlienRingCallback::FollowCourse;
+                let current_node = AlienSceneNode {
+                    model_index: CURRENT_MODEL,
+                    node_index: CURRENT_NODE,
+                };
+                let paired_node = AlienSceneNode {
+                    model_index: PAIRED_MODEL,
+                    node_index: PAIRED_NODE,
+                };
+                let active_node = state_node(ACTIVE_NODE);
+                let mut paired_callback = AlienRingCallback::FollowCourse;
                 let mut queue = AlienResumeQueueState {
                     read_index: vector.selected_slot,
-                    active_node: Some(ACTIVE_NODE),
-                    entries: std::array::from_fn(|slot| Some(100 + slot)),
+                    active_node: Some(active_node),
+                    entries: std::array::from_fn(|slot| Some(state_node(100 + slot))),
                 };
-                queue.entries[vector.selected_slot] = vector.occupied.then_some(PAIRED_NODE);
+                queue.entries[vector.selected_slot] = vector.occupied.then_some(paired_node);
                 let mut expected_entries = queue.entries;
                 if vector.occupied {
                     expected_entries[vector.selected_slot] = None;
@@ -1462,8 +1475,8 @@ mod tests {
                 let mut state = AlienResumeMethodState {
                     callback: Some(AlienResumeCallback::Begin),
                     phase: vector.phase_before,
-                    paired_node: Some(PRESERVED_PAIRED_NODE),
-                    resumed_node: Some(PRESERVED_RESUMED_NODE),
+                    paired_node: Some(state_node(PRESERVED_PAIRED_NODE)),
+                    resumed_node: Some(state_node(PRESERVED_RESUMED_NODE)),
                 };
                 let mut countdown = vector.countdown_before;
                 let mut trigonometry = [AlienTrigonometryPair::default(); TRIGONOMETRY_ENTRY_COUNT];
@@ -1479,16 +1492,21 @@ mod tests {
                     &mut state,
                     &mut queue,
                     AlienResumeQueueContext {
-                        current_node: CURRENT_NODE,
-                        pose: &mut pose,
-                        animation: &mut animation,
+                        current: current_node,
+                        current_pose: &mut current,
+                        texture_coordinates: &mut textures,
+                        paired: vector.occupied.then_some(AlienResumePairContext {
+                            node: paired_node,
+                            pose: &mut other,
+                            callback: &mut paired_callback,
+                        }),
                         trigonometry: &trigonometry,
                         countdown: &mut countdown,
                     },
                 );
                 let expected_result = if vector.occupied {
                     Ok(AlienResumeQueueUpdate::PairDispatched {
-                        paired_node: PAIRED_NODE,
+                        paired_node,
                         pair: AlienResumePairStageUpdate {
                             texture: AlienResumeTextureUpdate {
                                 delta: vector.signed_delta,
@@ -1519,52 +1537,44 @@ mod tests {
                     if vector.occupied {
                         None
                     } else {
-                        Some(ACTIVE_NODE)
+                        Some(active_node)
                     },
                     "{}",
                     vector.name
                 );
                 assert_eq!(
-                    pose.nodes[CURRENT_NODE]
-                        .local_position
-                        .map(|value| value as u32),
+                    current.local_position.map(|value| value as u32),
                     vector.current_position_after,
                     "{}",
                     vector.name
                 );
                 assert_eq!(
-                    pose.nodes[PAIRED_NODE]
-                        .local_position
-                        .map(|value| value as u32),
+                    other.local_position.map(|value| value as u32),
                     vector.other_position_after,
                     "{}",
                     vector.name
                 );
                 assert_eq!(
-                    pose.nodes[CURRENT_NODE].angles[PITCH_AXIS], vector.current_pitch_after,
+                    current.angles[PITCH_AXIS], vector.current_pitch_after,
                     "{}",
                     vector.name
                 );
                 assert_eq!(
-                    pose.nodes[CURRENT_NODE].angles[PAN_AXIS], vector.current_pan_after,
+                    current.angles[PAN_AXIS], vector.current_pan_after,
                     "{}",
                     vector.name
                 );
                 assert_eq!(
-                    pose.nodes[CURRENT_NODE].radial_offset as u16, vector.current_radial_after,
+                    current.radial_offset as u16, vector.current_radial_after,
                     "{}",
                     vector.name
                 );
                 assert_eq!(
-                    pose.nodes[PAIRED_NODE].radial_offset as u16, vector.other_radial_after,
+                    other.radial_offset as u16, vector.other_radial_after,
                     "{}",
                     vector.name
                 );
-                assert_eq!(
-                    pose.texture_coordinates, expected_textures,
-                    "{}",
-                    vector.name
-                );
+                assert_eq!(textures, expected_textures, "{}", vector.name);
                 let pair_inside = vector.pair_relationship.as_deref() == Some("inside");
                 assert_eq!(
                     state.callback,
@@ -1582,9 +1592,9 @@ mod tests {
                 assert_eq!(
                     state.paired_node,
                     Some(if vector.occupied {
-                        PAIRED_NODE
+                        paired_node
                     } else {
-                        PRESERVED_PAIRED_NODE
+                        state_node(PRESERVED_PAIRED_NODE)
                     }),
                     "{}",
                     vector.name
@@ -1592,15 +1602,15 @@ mod tests {
                 assert_eq!(
                     state.resumed_node,
                     Some(if pair_inside {
-                        PAIRED_NODE
+                        paired_node
                     } else {
-                        PRESERVED_RESUMED_NODE
+                        state_node(PRESERVED_RESUMED_NODE)
                     }),
                     "{}",
                     vector.name
                 );
                 assert_eq!(
-                    animation.nodes[PAIRED_NODE].callback,
+                    paired_callback,
                     if pair_inside {
                         AlienRingCallback::BeginResumeClear
                     } else {
@@ -1615,23 +1625,24 @@ mod tests {
     }
 
     #[test]
-    fn queue_owner_rejects_invalid_flat_indices_without_mutation() {
-        const CURRENT_NODE: usize = 0;
+    fn queue_owner_rejects_invalid_typed_state_without_mutation() {
+        let current_node = state_node(0);
+        let other_node = state_node(1);
         let species = AlienSpecies::Amer;
-        let mut pose = pose(
-            vec![node([0; AXIS_COUNT], 0, 0)],
-            vec![[0; TEXTURE_COMPONENT_COUNT]; AMER_RESUME_TEXTURE_VERTEX_COUNT],
-        );
-        let original_pose = pose.clone();
-        let mut animation = AlienRingAnimationState::new(pose.nodes.len());
-        let original_animation = animation.clone();
+        let mut current = node([0; AXIS_COUNT], 0, 0);
+        let original_current = current.clone();
+        let mut other = node([0; AXIS_COUNT], 0, 0);
+        let original_other = other.clone();
+        let mut textures = vec![[0; TEXTURE_COMPONENT_COUNT]; AMER_RESUME_TEXTURE_VERTEX_COUNT];
+        let original_textures = textures.clone();
+        let mut paired_callback = AlienRingCallback::FollowCourse;
         let mut state = AlienResumeMethodState::default();
         let original_state = state;
         let mut countdown = 7;
         let trigonometry = [AlienTrigonometryPair::default(); TRIGONOMETRY_ENTRY_COUNT];
         let mut queue = AlienResumeQueueState {
             read_index: ALIEN_RESUME_QUEUE_CAPACITY,
-            active_node: Some(CURRENT_NODE),
+            active_node: Some(current_node),
             entries: [None; ALIEN_RESUME_QUEUE_CAPACITY],
         };
         let original_queue = queue.clone();
@@ -1641,9 +1652,10 @@ mod tests {
             &mut state,
             &mut queue,
             AlienResumeQueueContext {
-                current_node: CURRENT_NODE,
-                pose: &mut pose,
-                animation: &mut animation,
+                current: current_node,
+                current_pose: &mut current,
+                texture_coordinates: &mut textures,
+                paired: None,
                 trigonometry: &trigonometry,
                 countdown: &mut countdown,
             },
@@ -1656,22 +1668,28 @@ mod tests {
             })
         );
         assert_eq!(queue, original_queue);
-        assert_eq!(pose, original_pose);
-        assert_eq!(animation, original_animation);
+        assert_eq!(current, original_current);
+        assert_eq!(other, original_other);
+        assert_eq!(textures, original_textures);
         assert_eq!(state, original_state);
         assert_eq!(countdown, 7);
 
         queue.read_index = 0;
-        queue.entries[0] = Some(CURRENT_NODE);
+        queue.entries[0] = Some(current_node);
         let original_queue = queue.clone();
         let result = update_resume_queue(
             species,
             &mut state,
             &mut queue,
             AlienResumeQueueContext {
-                current_node: CURRENT_NODE,
-                pose: &mut pose,
-                animation: &mut animation,
+                current: current_node,
+                current_pose: &mut current,
+                texture_coordinates: &mut textures,
+                paired: Some(AlienResumePairContext {
+                    node: current_node,
+                    pose: &mut other,
+                    callback: &mut paired_callback,
+                }),
                 trigonometry: &trigonometry,
                 countdown: &mut countdown,
             },
@@ -1679,13 +1697,99 @@ mod tests {
 
         assert_eq!(
             result,
-            Err(AlienResumeQueueError::AliasedPair {
-                index: CURRENT_NODE,
+            Err(AlienResumeQueueError::AliasedPair { node: current_node })
+        );
+        assert_eq!(queue, original_queue);
+        assert_eq!(current, original_current);
+        assert_eq!(other, original_other);
+        assert_eq!(textures, original_textures);
+        assert_eq!(state, original_state);
+        assert_eq!(countdown, 7);
+
+        queue.entries[0] = Some(other_node);
+        let original_queue = queue.clone();
+        let result = update_resume_queue(
+            species,
+            &mut state,
+            &mut queue,
+            AlienResumeQueueContext {
+                current: current_node,
+                current_pose: &mut current,
+                texture_coordinates: &mut textures,
+                paired: None,
+                trigonometry: &trigonometry,
+                countdown: &mut countdown,
+            },
+        );
+        assert_eq!(
+            result,
+            Err(AlienResumeQueueError::MissingPairContext { queued: other_node })
+        );
+        assert_eq!(queue, original_queue);
+        assert_eq!(current, original_current);
+        assert_eq!(other, original_other);
+        assert_eq!(textures, original_textures);
+        assert_eq!(state, original_state);
+        assert_eq!(countdown, 7);
+
+        queue.entries[0] = None;
+        let original_queue = queue.clone();
+        let result = update_resume_queue(
+            species,
+            &mut state,
+            &mut queue,
+            AlienResumeQueueContext {
+                current: current_node,
+                current_pose: &mut current,
+                texture_coordinates: &mut textures,
+                paired: Some(AlienResumePairContext {
+                    node: other_node,
+                    pose: &mut other,
+                    callback: &mut paired_callback,
+                }),
+                trigonometry: &trigonometry,
+                countdown: &mut countdown,
+            },
+        );
+        assert_eq!(result, Err(AlienResumeQueueError::UnexpectedPairContext));
+        assert_eq!(queue, original_queue);
+        assert_eq!(current, original_current);
+        assert_eq!(other, original_other);
+        assert_eq!(textures, original_textures);
+        assert_eq!(state, original_state);
+        assert_eq!(countdown, 7);
+
+        queue.entries[0] = Some(other_node);
+        let supplied_node = state_node(2);
+        let original_queue = queue.clone();
+        let result = update_resume_queue(
+            species,
+            &mut state,
+            &mut queue,
+            AlienResumeQueueContext {
+                current: current_node,
+                current_pose: &mut current,
+                texture_coordinates: &mut textures,
+                paired: Some(AlienResumePairContext {
+                    node: supplied_node,
+                    pose: &mut other,
+                    callback: &mut paired_callback,
+                }),
+                trigonometry: &trigonometry,
+                countdown: &mut countdown,
+            },
+        );
+        assert_eq!(
+            result,
+            Err(AlienResumeQueueError::MismatchedPair {
+                queued: other_node,
+                supplied: supplied_node,
             })
         );
         assert_eq!(queue, original_queue);
-        assert_eq!(pose, original_pose);
-        assert_eq!(animation, original_animation);
+        assert_eq!(current, original_current);
+        assert_eq!(other, original_other);
+        assert_eq!(textures, original_textures);
         assert_eq!(state, original_state);
         assert_eq!(countdown, 7);
     }
