@@ -128,6 +128,13 @@ distance-weighted cosine motion to owned object-space vertex positions. The 30
 active cases match complete reconstructed vertex-record SHA-256 hashes.
 Hierarchy projection now consumes those mutable positions directly.
 
+The slot-3 coordinator is translated for all three species with 24 valid
+original-binary cases. Its fixed 128-entry motion-history ring uses ordinary
+owned records and slot indices, while indirect routine addresses become a typed
+callback enum and dispatch trait. Three malformed zero-count cases are rejected
+instead of reproducing the original full-address-space walk. Concrete callback
+bodies remain pending and this method is not yet connected to live dispatch.
+
 Run the current interactive path with original assets:
 
 ```sh

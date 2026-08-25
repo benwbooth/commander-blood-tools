@@ -108,3 +108,11 @@ those positions directly. Typed per-model phases drive both cyclic and
 distance-weighted cosine motion while scene state records selection requests
 and the selected model index. All 33 binary vectors match; the 30 active cases
 also match complete reconstructed vertex-record SHA-256 hashes.
+
+The slot-3 coordinator is translated for all three overlays as a flat 128-entry
+motion-history ring. Runtime nodes retain slot indices and typed callback kinds;
+the original byte cursors and callback addresses are not represented. Twenty-four
+well-formed binary cases verify initialization, generation wrapping, timer rules,
+and callback order. The three zero-count cases that walk all 65,536 original
+addresses are rejected by the nonempty typed hierarchy boundary. Concrete
+callback bodies remain outside live dispatch until they are translated.

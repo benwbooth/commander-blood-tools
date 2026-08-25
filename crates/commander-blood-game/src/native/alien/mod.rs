@@ -8,6 +8,7 @@ mod palette;
 mod primary;
 mod projection;
 mod raster;
+mod ring;
 mod scene;
 mod starfield;
 mod wave;
@@ -35,6 +36,10 @@ pub use projection::{
 pub use raster::{
     AlienRasterError, AlienRenderGeometry, AlienRenderTriangle, AlienRenderVertex,
     prepare_render_geometry,
+};
+pub use ring::{
+    AlienRingAnimationState, AlienRingCallback, AlienRingCallbacks, AlienRingEntry, AlienRingError,
+    AlienRingLifecycle, AlienRingNodeState, AlienRingUpdate, update_or_initialize_ring,
 };
 pub use scene::{AlienScene, AlienSceneError, AlienSceneFrame};
 pub use starfield::{
