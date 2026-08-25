@@ -65,7 +65,7 @@ void XDB_NEAR xdb_scrut_slot2_selection_approach(
         state->callback = xdb_scrut_slot2_selection_restart;
         return;
     }
-    if (xdb_scrut_slot2_steering_helper(state, 0x13u)) {
+    if (!xdb_scrut_slot2_steering_helper(state, 0x13u)) {
         xdb_scrut_slot2_finish_setup(state, context);
     }
 }

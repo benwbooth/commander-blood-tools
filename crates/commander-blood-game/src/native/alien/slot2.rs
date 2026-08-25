@@ -167,6 +167,15 @@ const SCRUT_SELECTION_MINIMUM_DEPTH: i16 = 700;
 const SCRUT_SELECTION_FIRST_LATERAL_MAXIMUM: i16 = 500;
 const SCRUT_SELECTION_FINAL_LATERAL_MAXIMUM: i16 = -500;
 const SCRUT_SELECTION_DAMPING_PARAMETER: i16 = 200;
+const SCRUT_APPROACH_PITCH_SHIFT: u32 = 1;
+const SCRUT_APPROACH_CAMERA_MATRIX_SHIFT: u32 = 3;
+const SCRUT_APPROACH_HORIZONTAL_EASING_SHIFT: u32 = 4;
+const SCRUT_APPROACH_VERTICAL_EASING_SHIFT: u32 = 5;
+const SCRUT_APPROACH_VERTICAL_ROUNDING_SHIFT: u32 = 4;
+const SCRUT_APPROACH_VERTICAL_ROUNDING_MASK: u16 = 1;
+const SCRUT_APPROACH_MINIMUM_DEPTH: i16 = 300;
+const SCRUT_APPROACH_LATERAL_BIAS: u16 = 3_000;
+const SCRUT_APPROACH_LATERAL_WIDTH: u16 = 6_000;
 const SCRUT_STEERING_DAMPING_SHIFT: u32 = 20;
 const SCRUT_STEERING_APPROACH_SHIFT: u32 = 19;
 const SCRUT_STEERING_MINIMUM: i16 = -32;
@@ -500,6 +509,19 @@ pub enum AlienScrutDampingUpdate {
     SteeringRequested,
     /// Damping completed and the selection approach was installed.
     ApproachRequested,
+}
+
+/// Typed continuation chosen by SCRUT's camera-relative selection approach.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienScrutApproachUpdate {
+    /// Selection ended, so continue through the shared selection-reset routine.
+    SelectionResetRequested,
+    /// The model left the approach bounds and restored the selection-entry callback.
+    SelectionRestarted,
+    /// Camera-relative steering changed the primary and follower poses.
+    Steering,
+    /// Steering was already aligned, so continue through SCRUT's finish setup.
+    FinishRequested,
 }
 
 /// Invalid flat state supplied to the slot-2 coordinator.
@@ -1575,6 +1597,62 @@ pub fn update_scrut_selection_damping(
     Ok(AlienScrutDampingUpdate::ApproachRequested)
 }
 
+/// Move SCRUT toward its camera-relative selection target in flat pose state.
+pub fn update_scrut_selection_approach(
+    pose: &mut AlienModelPose,
+    animation: &mut AlienSlot2AnimationState,
+    scene: &AlienCallbackSceneState,
+    camera: &AlienCameraTransform,
+) -> Result<AlienScrutApproachUpdate, AlienSlot2Error> {
+    validate_state(AlienSpecies::Scrut, pose, animation)?;
+    if scene.wave_selection == AlienWaveSelection::Disabled {
+        return Ok(AlienScrutApproachUpdate::SelectionResetRequested);
+    }
+
+    let signed_seed = animation.species_seed_at_initialization as i16;
+    let primary = &mut pose.nodes[PRIMARY_NODE];
+    primary.angles[X_AXIS] = ((primary.angles[X_AXIS] as i16) >> SCRUT_APPROACH_PITCH_SHIFT) as u16;
+
+    for spatial_axis in [X_AXIS, Z_AXIS] {
+        let target_word = ((camera.matrix[Z_AXIS][spatial_axis]
+            >> SCRUT_APPROACH_CAMERA_MATRIX_SHIFT) as u16)
+            .wrapping_sub(camera.view[spatial_axis] as u16)
+            .wrapping_add(signed_seed as u16);
+        let position = primary.local_position[spatial_axis];
+        let position_word = position as u16;
+        let delta = target_word.wrapping_sub(position_word).cast_signed();
+        let updated_word =
+            position_word.wrapping_add((delta >> SCRUT_APPROACH_HORIZONTAL_EASING_SHIFT) as u16);
+        primary.local_position[spatial_axis] = replace_position_word(position, updated_word);
+    }
+
+    let vertical_position = primary.local_position[Y_AXIS];
+    let vertical_word = vertical_position as u16;
+    let vertical_delta = camera.view[Y_AXIS]
+        .wrapping_add(vertical_word as i16)
+        .wrapping_neg();
+    let vertical_rounding = (vertical_delta as u16 >> SCRUT_APPROACH_VERTICAL_ROUNDING_SHIFT)
+        & SCRUT_APPROACH_VERTICAL_ROUNDING_MASK;
+    let updated_vertical_word = vertical_word
+        .wrapping_add((vertical_delta >> SCRUT_APPROACH_VERTICAL_EASING_SHIFT) as u16)
+        .wrapping_add(vertical_rounding);
+    primary.local_position[Y_AXIS] =
+        replace_position_word(vertical_position, updated_vertical_word);
+
+    let camera_z = transformed_component(primary, Z_AXIS);
+    let camera_x = transformed_component(primary, X_AXIS);
+    let lateral_position = (camera_x as u16).wrapping_add(SCRUT_APPROACH_LATERAL_BIAS);
+    if camera_z < SCRUT_APPROACH_MINIMUM_DEPTH || lateral_position > SCRUT_APPROACH_LATERAL_WIDTH {
+        animation.callback = Some(AlienSlot2Callback::ScrutSelectionBegin);
+        return Ok(AlienScrutApproachUpdate::SelectionRestarted);
+    }
+
+    match update_scrut_steering(pose, animation, AlienScrutSteeringPrecision::Approach)? {
+        AlienScrutSteeringUpdate::NoTurn => Ok(AlienScrutApproachUpdate::FinishRequested),
+        AlienScrutSteeringUpdate::TurnApplied => Ok(AlienScrutApproachUpdate::Steering),
+    }
+}
+
 /// Preserve the observable behavior of the unreachable steering sibling.
 ///
 /// No original alien method table or callback points at this routine. Keeping
@@ -1745,6 +1823,8 @@ mod tests {
     const TOUCHED_FIELD_SENTINEL: u16 = 0x5555;
     const RANDOM_STATE_SENTINEL: u16 = 0xa55a;
     const TRANSFORM_LOW_WORD_SENTINEL: u16 = 0x6a5a;
+    const FOLLOWER_PAN_SENTINEL: u16 = 0xa55a;
+    const FOLLOWER_ROLL_SENTINEL: u16 = 0x5aa5;
     const CURRENT_MODEL_INDEX: usize = 2;
     const OTHER_MODEL_INDEX: usize = 3;
     const CROOLIS_UPDATE_ENTRY: u16 = 0x1727;
@@ -2193,6 +2273,36 @@ mod tests {
         steering_precision: Option<String>,
         radial_before: u16,
         radial_after: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct ScrutApproachVector {
+        name: String,
+        module: String,
+        selection_state: u16,
+        continuation: String,
+        camera_matrix_x: u32,
+        camera_matrix_z: u32,
+        camera_view: [u16; AXIS_COUNT],
+        seed: i16,
+        pitch_before: u16,
+        pitch_after: u16,
+        positions_before: [u32; AXIS_COUNT],
+        positions_after: [u32; AXIS_COUNT],
+        camera_x_before: u16,
+        camera_z_before: u16,
+        forward_x_before: u32,
+        forward_z_before: u32,
+        turn_applied: bool,
+        pan_before: u16,
+        pan_after: u16,
+        roll_before: u16,
+        roll_after: u16,
+        motion_parameter_before: u16,
+        motion_parameter_after: u16,
+        heading_carry: u16,
+        follower_pan_after: Option<u16>,
+        follower_roll_after: Option<u16>,
     }
 
     #[derive(Deserialize)]
@@ -3538,6 +3648,131 @@ mod tests {
                 "{}",
                 vector.name
             );
+        }
+    }
+
+    #[test]
+    fn scrut_selection_approach_matches_every_original_overlay_vector() {
+        let vectors: Vec<ScrutApproachVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/xdb_scrut_func_1868_natural.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            assert_eq!(vector.module, "scrut");
+            let mut pose = pose(&[EMPTY_NODE_VECTOR; SCRUT_MOTION_NODE_COUNT]);
+            let primary = &mut pose.nodes[PRIMARY_NODE];
+            primary.transform.translation[X_AXIS] =
+                join_words(vector.camera_x_before, TRANSFORM_LOW_WORD_SENTINEL);
+            primary.transform.translation[Z_AXIS] =
+                join_words(vector.camera_z_before, TRANSFORM_LOW_WORD_SENTINEL);
+            primary.transform.matrix[X_AXIS][Z_AXIS] = vector.forward_x_before as i32;
+            primary.transform.matrix[Z_AXIS][Z_AXIS] = vector.forward_z_before as i32;
+            primary.local_position = vector.positions_before.map(|position| position as i32);
+            primary.angles[X_AXIS] = vector.pitch_before;
+            primary.angles[Y_AXIS] = vector.pan_before;
+            primary.angles[Z_AXIS] = vector.roll_before;
+            for follower in &mut pose.nodes[1..SCRUT_MOTION_NODE_COUNT] {
+                follower.angles[Y_AXIS] = FOLLOWER_PAN_SENTINEL;
+                follower.angles[Z_AXIS] = FOLLOWER_ROLL_SENTINEL;
+            }
+
+            let mut animation = AlienSlot2AnimationState::new(SCRUT_MOTION_NODE_COUNT);
+            animation.callback = Some(AlienSlot2Callback::ScrutSelectionApproach);
+            animation.species_seed_at_initialization = i32::from(vector.seed);
+            animation.nodes[PRIMARY_NODE].motion_parameter = vector.motion_parameter_before as i16;
+            let scene = AlienCallbackSceneState {
+                wave_selection: match vector.selection_state {
+                    0 => AlienWaveSelection::Disabled,
+                    1 => AlienWaveSelection::Requested,
+                    2 => AlienWaveSelection::Selected,
+                    state => panic!("unknown SCRUT selection state {state}"),
+                },
+                ..AlienCallbackSceneState::default()
+            };
+            let mut camera = AlienCameraTransform::default();
+            camera.matrix[Z_AXIS][X_AXIS] = vector.camera_matrix_x as i32;
+            camera.matrix[Z_AXIS][Z_AXIS] = vector.camera_matrix_z as i32;
+            camera.view = vector.camera_view.map(|component| component as i16);
+            let expected = match vector.continuation.as_str() {
+                "selection_reset" => AlienScrutApproachUpdate::SelectionResetRequested,
+                "selection_restart" => AlienScrutApproachUpdate::SelectionRestarted,
+                "steering" => AlienScrutApproachUpdate::Steering,
+                "finish" => AlienScrutApproachUpdate::FinishRequested,
+                continuation => panic!("unknown SCRUT approach continuation {continuation}"),
+            };
+
+            assert_eq!(
+                update_scrut_selection_approach(&mut pose, &mut animation, &scene, &camera)
+                    .unwrap(),
+                expected,
+                "{}",
+                vector.name
+            );
+            let primary = &pose.nodes[PRIMARY_NODE];
+            assert_eq!(
+                primary.angles[X_AXIS], vector.pitch_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                primary.local_position,
+                vector.positions_after.map(|position| position as i32),
+                "{}",
+                vector.name
+            );
+            assert_eq!(primary.angles[Y_AXIS], vector.pan_after, "{}", vector.name);
+            assert_eq!(primary.angles[Z_AXIS], vector.roll_after, "{}", vector.name);
+            assert_eq!(
+                animation.nodes[PRIMARY_NODE].motion_parameter as u16,
+                vector.motion_parameter_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                animation.callback,
+                Some(if vector.continuation == "selection_restart" {
+                    AlienSlot2Callback::ScrutSelectionBegin
+                } else {
+                    AlienSlot2Callback::ScrutSelectionApproach
+                }),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                vector.turn_applied,
+                vector.continuation == "steering",
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                (vector.roll_after >> SCRUT_HEADING_CARRY_SHIFT) & SCRUT_HEADING_CARRY_MASK,
+                vector.heading_carry,
+                "{}",
+                vector.name
+            );
+            match (vector.follower_pan_after, vector.follower_roll_after) {
+                (Some(follower_pan), Some(follower_roll)) => {
+                    for follower in &pose.nodes[1..SCRUT_MOTION_NODE_COUNT] {
+                        assert_eq!(follower.angles[Y_AXIS], follower_pan, "{}", vector.name);
+                        assert_eq!(follower.angles[Z_AXIS], follower_roll, "{}", vector.name);
+                    }
+                }
+                (None, None) => {
+                    for follower in &pose.nodes[1..SCRUT_MOTION_NODE_COUNT] {
+                        assert_eq!(
+                            follower.angles[Y_AXIS], FOLLOWER_PAN_SENTINEL,
+                            "{}",
+                            vector.name
+                        );
+                        assert_eq!(
+                            follower.angles[Z_AXIS], FOLLOWER_ROLL_SENTINEL,
+                            "{}",
+                            vector.name
+                        );
+                    }
+                }
+                _ => panic!("incomplete SCRUT follower expectation for {}", vector.name),
+            }
         }
     }
 

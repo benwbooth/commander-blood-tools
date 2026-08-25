@@ -152,6 +152,16 @@ static const char *check_helper_and_finish(void)
     state->field_04e = 0x40;
     xdb_test_set_slot1_selection_state(1);
     xdb_scrut_slot2_selection_approach(state, context);
+    if (state->callback == xdb_scrut_slot2_finish_update
+            || state->field_04e != 0x20) {
+        return "FAIL scrut helper turn transition";
+    }
+
+    memset(&state_space, 0, sizeof(state_space));
+    state = (xdb_alien_biased_state *)state_space.bytes;
+    state->field_040 = 0x012c;
+    state->field_04e = 0x40;
+    xdb_scrut_slot2_selection_approach(state, context);
     if (state->callback != xdb_scrut_slot2_finish_update
             || xdb_test_scrut_slot2_shared_word() != 0x03e8
             || state->field_04e != 0x00) {

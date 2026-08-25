@@ -7597,6 +7597,359 @@ def scrut_slot2_selection_damp_vectors(entry: int) -> list[dict[str, object]]:
     return vectors
 
 
+def scrut_slot2_selection_approach_vectors(entry: int) -> list[dict[str, object]]:
+    module = "scrut"
+    image = load_image(module)
+    body_size = 113
+    body_hash = "048eaf40cdc6f19b4c39d216d27cc4f028905ac6bf25716fc4808fa1fc6249dc"
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered body changed")
+
+    data_segment = 0x5000
+    extra_segment = 0x7000
+    fs_segment = 0x9000
+    game_segment = 0xA000
+    stack_segment = 0xB000
+    context = 0x3000
+    selection_state_offset = 0x0B70
+    selection_reset_entry = 0x19CF
+    selection_restart_callback = 0x1810
+    finish_entry = 0x1952
+    return_address = 0xF000
+    state_stride = 0x005E
+    follower_count = 5
+    stack_sentinel = bytes.fromhex("877869965aa5")
+    base = {
+        "state": 0x4000,
+        "selection_state": 1,
+        "camera_matrix_x": 0x00123456,
+        "camera_matrix_z": -0x00234567,
+        "camera_view": (17, -9, 33),
+        "seed": -40,
+        "pitch": 257,
+        "positions": (0x1234FFF8, 0x56780011, 0x9ABC7FF0),
+        "camera_x": 0,
+        "camera_z": 300,
+        "forward_x": 0,
+        "forward_z": 0,
+        "pan": 100,
+        "roll": 0,
+        "previous_turn": 7,
+    }
+    cases = (
+        {**base, "name": "selection_disabled", "selection_state": 0},
+        {**base, "name": "depth_below", "state": 0x4400, "camera_z": 299},
+        {**base, "name": "lateral_below", "state": 0x4800, "camera_x": -3001},
+        {**base, "name": "lateral_above", "state": 0x4C00, "camera_x": 3001},
+        {**base, "name": "negative_boundary", "state": 0x5000, "camera_x": -3000},
+        {
+            **base,
+            "name": "positive_boundary_turn",
+            "state": 0x5400,
+            "camera_x": 3000,
+            "forward_z": 0x00080000,
+            "roll": -20,
+            "previous_turn": 16,
+        },
+        {
+            **base,
+            "name": "signed_pitch_and_y_rounding",
+            "state": 0x5800,
+            "camera_view": (-32768, 17, 32767),
+            "seed": 32767,
+            "pitch": -32768,
+            "positions": (0xAAAA0001, 0xBBBB0000, 0xCCCCFFFF),
+        },
+        {
+            **base,
+            "name": "position_word_wrap",
+            "state": 0x5C00,
+            "camera_matrix_x": 0x7FFFFFFF,
+            "camera_matrix_z": -0x80000000,
+            "camera_view": (-1, -1, 1),
+            "seed": -32768,
+            "positions": (0x11117FFF, 0x2222FFFF, 0x33338000),
+        },
+        {
+            **base,
+            "name": "negative_score_turn",
+            "state": 0x6000,
+            "camera_x": -100,
+            "camera_z": 500,
+            "forward_x": 0x00080000,
+            "forward_z": 0,
+            "pan": -100,
+            "roll": 20,
+            "previous_turn": -16,
+        },
+        {
+            **base,
+            "name": "wrapped_state_offsets",
+            "state": 0xFFC0,
+            "selection_state": 2,
+            "camera_x": 1,
+            "camera_z": 300,
+            "positions": (0x4444FFFF, 0x55550010, 0x66668000),
+        },
+    )
+    vectors: list[dict[str, object]] = []
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        encoded = struct.pack("<H", value & 0xFFFF)
+        for index, byte in enumerate(encoded):
+            memory[(offset + index) & 0xFFFF] = byte
+
+    def put_u32(memory: bytearray, offset: int, value: int) -> None:
+        encoded = struct.pack("<I", value & 0xFFFFFFFF)
+        for index, byte in enumerate(encoded):
+            memory[(offset + index) & 0xFFFF] = byte
+
+    def get_u16(memory: bytes | bytearray, offset: int) -> int:
+        return memory[offset & 0xFFFF] | (memory[(offset + 1) & 0xFFFF] << 8)
+
+    def get_u32(memory: bytes | bytearray, offset: int) -> int:
+        return get_u16(memory, offset) | (get_u16(memory, offset + 2) << 16)
+
+    def signed_word(value: int) -> int:
+        value &= 0xFFFF
+        return value if value < 0x8000 else value - 0x10000
+
+    def signed_dword(value: int) -> int:
+        value &= 0xFFFFFFFF
+        return value if value < 0x80000000 else value - 0x100000000
+
+    def eased_word(current: int, target: int, shift: int) -> int:
+        delta = signed_word((target & 0xFFFF) - (current & 0xFFFF))
+        return (current + (delta >> shift)) & 0xFFFF
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        state = int(case["state"])
+        selection_state = int(case["selection_state"])
+        camera_matrix_x = int(case["camera_matrix_x"])
+        camera_matrix_z = int(case["camera_matrix_z"])
+        camera_view = tuple(int(value) for value in case["camera_view"])
+        seed = int(case["seed"])
+        pitch = int(case["pitch"])
+        positions = tuple(int(value) for value in case["positions"])
+        camera_x = int(case["camera_x"])
+        camera_z = int(case["camera_z"])
+        forward_x = int(case["forward_x"])
+        forward_z = int(case["forward_z"])
+        pan = int(case["pan"])
+        roll = int(case["roll"])
+        previous_turn = int(case["previous_turn"])
+
+        data_before = bytearray(
+            (offset * 31 + case_index * 19 + 7) & 0xFF
+            for offset in range(0x10000)
+        )
+        put_u32(data_before, 0x22D2, camera_matrix_x)
+        put_u32(data_before, 0x22DA, camera_matrix_z)
+        for axis, offset in enumerate((0x22EC, 0x22F0, 0x22F4)):
+            put_u16(data_before, offset, camera_view[axis])
+        put_u16(data_before, context + 0x3A, seed)
+        put_u16(data_before, state + 0x0E, entry)
+        put_u32(data_before, state + 0x1A, forward_x)
+        put_u32(data_before, state + 0x32, forward_z)
+        put_u16(data_before, state + 0x38, camera_x)
+        put_u16(data_before, state + 0x40, camera_z)
+        for axis, offset in enumerate((0x42, 0x46, 0x4A)):
+            put_u32(data_before, state + offset, positions[axis])
+        put_u16(data_before, state + 0x4E, pitch)
+        put_u16(data_before, state + 0x50, pan)
+        put_u16(data_before, state + 0x52, roll)
+        put_u16(data_before, state + 0x5A, previous_turn)
+        for follower_index in range(1, follower_count + 1):
+            follower = state + follower_index * state_stride
+            put_u16(data_before, follower + 0x50, 0xA55A)
+            put_u16(data_before, follower + 0x52, 0x5AA5)
+        data_expected = bytearray(data_before)
+
+        turn_applied = False
+        heading_carry = 0
+        follower_pan = None
+        follower_roll = None
+        if selection_state & 3 == 0:
+            continuation = "selection_reset"
+            target = selection_reset_entry
+            expected_sp = 0xFF00
+        else:
+            put_u16(data_expected, state + 0x4E, signed_word(pitch) >> 1)
+            x_target = signed_word(signed_dword(camera_matrix_x) >> 3)
+            x_target = (x_target - camera_view[0] + seed) & 0xFFFF
+            x_before = get_u16(data_expected, state + 0x42)
+            put_u16(data_expected, state + 0x42, eased_word(x_before, x_target, 4))
+
+            y_before = get_u16(data_expected, state + 0x46)
+            y_delta = signed_word(-(camera_view[1] + signed_word(y_before)))
+            y_rounding_carry = ((y_delta & 0xFFFF) >> 4) & 1
+            put_u16(
+                data_expected,
+                state + 0x46,
+                y_before + (y_delta >> 5) + y_rounding_carry,
+            )
+
+            z_target = signed_word(signed_dword(camera_matrix_z) >> 3)
+            z_target = (z_target - camera_view[2] + seed) & 0xFFFF
+            z_before = get_u16(data_expected, state + 0x4A)
+            put_u16(data_expected, state + 0x4A, eased_word(z_before, z_target, 4))
+
+            outside_bounds = signed_word(camera_z) < 300 or (
+                ((camera_x & 0xFFFF) + 3000) & 0xFFFF
+            ) > 6000
+            if outside_bounds:
+                continuation = "selection_restart"
+                target = return_address
+                expected_sp = 0xFF02
+                put_u16(data_expected, state + 0x0E, selection_restart_callback)
+            else:
+                score = signed_dword(
+                    signed_word(camera_x) * signed_dword(forward_z)
+                    - signed_word(camera_z) * signed_dword(forward_x)
+                )
+                shift = 19
+                rounding_carry = ((score & 0xFFFFFFFF) >> (shift - 1)) & 1
+                rounded = (((score >> shift) & 0xFFFF) + rounding_carry) & 0xFFFF
+                turn_applied = rounded != 0
+                if turn_applied:
+                    steering = signed_word(-rounded)
+                    steering = max(-32, min(32, steering))
+                    roll_after = signed_word(steering + signed_word(roll))
+                    motion_after = previous_turn & 0xFFFF
+                    if signed_word(previous_turn ^ roll_after) < 0:
+                        roll_after >>= 1
+                        motion_after = roll_after & 0xFFFF
+                    roll_after = max(-768, min(768, roll_after))
+                    heading_delta = roll_after >> 5
+                    heading_carry = ((roll_after & 0xFFFF) >> 4) & 1
+                    pan_after = (pan + heading_delta + heading_carry) & 0xFFFF
+                    counter_roll = signed_word(-roll_after)
+                    follower_pan = counter_roll >> 1
+                    follower_roll = counter_roll >> 2
+                    put_u16(data_expected, state + 0x50, pan_after)
+                    put_u16(data_expected, state + 0x52, roll_after)
+                    put_u16(data_expected, state + 0x5A, motion_after)
+                    for follower_index in range(1, follower_count + 1):
+                        follower = state + follower_index * state_stride
+                        put_u16(data_expected, follower + 0x50, follower_pan)
+                        put_u16(data_expected, follower + 0x52, follower_roll)
+                    continuation = "steering"
+                    target = return_address
+                    expected_sp = 0xFF02
+                else:
+                    continuation = "finish"
+                    target = finish_entry
+                    expected_sp = 0xFF00
+
+        code_before = bytearray(image)
+        struct.pack_into("<H", code_before, selection_state_offset, selection_state)
+        code_before[return_address] = 0xCC
+        extra_before = bytes(
+            (offset * 13 + case_index + 3) & 0xFF for offset in range(0x10000)
+        )
+        fs_before = bytes(
+            (offset * 17 + case_index + 5) & 0xFF for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 23 + case_index + 9) & 0xFF for offset in range(0x10000)
+        )
+        stack_before = struct.pack("<H", return_address) + stack_sentinel
+        initial = {
+            "eax": 0xA1A12345,
+            "ebx": 0xB2B23456,
+            "ecx": 0xC3C34567,
+            "edx": 0xD4D45678,
+            "esi": 0xE5E50000 | state,
+            "edi": 0xF6F60000 | context,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0293 | (0x0400 if case_index & 1 else 0),
+        }
+        machine = execute(
+            bytes(code_before),
+            entry,
+            target,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (extra_segment, 0, extra_before),
+                (fs_segment, 0, fs_before),
+                (game_segment, 0, game_before),
+                (stack_segment, 0xFF00, stack_before),
+            ],
+        )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(data_expected):
+            differences = [
+                (offset, actual_data[offset], data_expected[offset])
+                for offset in range(0x10000)
+                if actual_data[offset] != data_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: data differs at {differences}"
+            )
+        if bytes(machine.mem_read(0, len(image))) != bytes(code_before):
+            raise AssertionError(f"{module}:{entry:#x} {name}: code changed")
+        for segment, expected in (
+            (extra_segment, extra_before),
+            (fs_segment, fs_before),
+            (game_segment, game_before),
+        ):
+            if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: segment {segment:#x} changed"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF00, len(stack_before))) != stack_before:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+        if machine.reg_read(UC_X86_REG_SP) != expected_sp:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack pointer changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "selection_state": selection_state,
+                "continuation": continuation,
+                "camera_matrix_x": camera_matrix_x & 0xFFFFFFFF,
+                "camera_matrix_z": camera_matrix_z & 0xFFFFFFFF,
+                "camera_view": [value & 0xFFFF for value in camera_view],
+                "seed": seed,
+                "pitch_before": pitch & 0xFFFF,
+                "pitch_after": get_u16(data_expected, state + 0x4E),
+                "positions_before": [value & 0xFFFFFFFF for value in positions],
+                "positions_after": [
+                    get_u32(data_expected, state + offset)
+                    for offset in (0x42, 0x46, 0x4A)
+                ],
+                "camera_x_before": camera_x & 0xFFFF,
+                "camera_z_before": camera_z & 0xFFFF,
+                "forward_x_before": forward_x & 0xFFFFFFFF,
+                "forward_z_before": forward_z & 0xFFFFFFFF,
+                "turn_applied": turn_applied,
+                "pan_before": pan & 0xFFFF,
+                "pan_after": get_u16(data_expected, state + 0x50),
+                "roll_before": roll & 0xFFFF,
+                "roll_after": get_u16(data_expected, state + 0x52),
+                "motion_parameter_before": previous_turn & 0xFFFF,
+                "motion_parameter_after": get_u16(data_expected, state + 0x5A),
+                "heading_carry": heading_carry,
+                "follower_pan_after": None if follower_pan is None else follower_pan & 0xFFFF,
+                "follower_roll_after": None if follower_roll is None else follower_roll & 0xFFFF,
+                "next_callback": get_u16(data_expected, state + 0x0E),
+                "data_sha256": hashlib.sha256(data_expected).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def scrut_slot2_steering_vectors(entry: int) -> list[dict[str, object]]:
     module = "scrut"
     image = load_image(module)
@@ -22738,6 +23091,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "xdb_scrut_func_1858_natural.json",
         scrut_slot2_selection_damp_vectors(0x1858),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "xdb_scrut_func_1868_natural.json",
+        scrut_slot2_selection_approach_vectors(0x1868),
         args.check,
     )
     update_vector(
