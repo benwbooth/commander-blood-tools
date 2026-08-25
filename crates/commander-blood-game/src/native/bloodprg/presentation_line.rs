@@ -72,6 +72,31 @@ pub trait PresentationLineBackend {
     );
 }
 
+/// Callable presentation-line step used by higher-level actor handlers.
+pub trait PresentationLineStepper {
+    /// Line-update failure.
+    type Error;
+
+    /// Run one typed presentation-line update.
+    fn update_line(
+        &mut self,
+        line: &mut PresentationLine,
+        playback: &mut PresentationLinePlayback,
+    ) -> Result<PresentationLineOutcome, Self::Error>;
+}
+
+impl<Backend: PresentationLineBackend> PresentationLineStepper for Backend {
+    type Error = Backend::Error;
+
+    fn update_line(
+        &mut self,
+        line: &mut PresentationLine,
+        playback: &mut PresentationLinePlayback,
+    ) -> Result<PresentationLineOutcome, Self::Error> {
+        update_presentation_line(line, playback, self)
+    }
+}
+
 /// Result of one presentation-line playback update.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PresentationLineOutcome {

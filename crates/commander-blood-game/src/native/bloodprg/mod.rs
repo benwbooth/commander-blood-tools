@@ -2,6 +2,7 @@
 
 mod aboard;
 mod actor_slots;
+mod actor_handler_palette;
 mod bridge_frame;
 mod camera_navigation;
 mod descript;
@@ -35,6 +36,10 @@ pub use actor_slots::{
     NAV_ACTOR_SLOT_COUNT, NavActorBusyState, NavActorHandler, NavActorMouseState,
     NavActorSeekState, NavActorSlot, NavActorSlotBackend, NavActorSlotFlags,
     NavActorSlotUpdateOutcome, update_nav_actor_slots,
+};
+pub use actor_handler_palette::{
+    SHIP_ACTOR_PALETTE_BYTES, ShipPaletteActorBackend, ShipPaletteActorOutcome,
+    ShipPaletteActorPresentation, ShipPaletteActorState, update_ship_palette_actor,
 };
 pub use bridge_frame::{
     BridgeActorPresentationState, BridgeFrameBackend, BridgeFrameOutcome, BridgeFrameState,
@@ -84,7 +89,8 @@ pub use presentation_hover::{
 };
 pub use presentation_line::{
     PresentationLine, PresentationLineBackend, PresentationLineFlags, PresentationLineOutcome,
-    PresentationLinePlayback, PresentationResourceId, update_presentation_line,
+    PresentationLinePlayback, PresentationLineStepper, PresentationResourceId,
+    update_presentation_line,
 };
 pub use procedure::{
     apply_procedure_activation, evaluate_procedure_gate, ScriptProcedureStateError,
