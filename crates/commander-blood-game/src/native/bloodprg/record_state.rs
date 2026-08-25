@@ -4,7 +4,9 @@ use std::collections::BTreeMap;
 use std::fmt;
 
 use commander_blood_formats::instruction::ScriptActorRecordOperation;
-use commander_blood_formats::instruction::{ScriptRecordStateOperand, ScriptRecordStateOperation};
+use commander_blood_formats::instruction::{
+    ScriptRecordStateOperand, ScriptRecordStateOperation, ScriptWorldStateRecordOperation,
+};
 use commander_blood_formats::script::{
     ScriptObjectId, ScriptObjectKind, ScriptState, ScriptStateObjectReference,
     ScriptStateWordTriple,
@@ -26,6 +28,8 @@ pub enum ScriptActionRecord {
     Navigation(ScriptRecordStateOperand),
     /// C4 actor-presentation action carrying its related object.
     ActorPresentation(ScriptObjectId),
+    /// C5 link to an active world-state object.
+    WorldStateLink(ScriptObjectId),
     /// Another native record kind currently owns the slot.
     Occupied,
 }
@@ -259,6 +263,45 @@ pub fn apply_actor_record_operation(
     })
 }
 
+/// Apply `vm_op_c5_record_match` to one typed world-state link slot.
+pub fn apply_world_state_record_operation(
+    operation: ScriptWorldStateRecordOperation,
+    state: &ScriptState,
+    records: &mut ScriptActionRecords,
+    runtime: &mut ScriptRuntime,
+) -> Result<ScriptRecordStateOutcome, ScriptRecordStateError> {
+    let matches =
+        records.record(operation.target) == ScriptActionRecord::WorldStateLink(operation.related);
+    if runtime.query_mode() {
+        if matches != operation.inverted {
+            return Ok(ScriptRecordStateOutcome {
+                control: ScriptControl::Continue,
+                written_slot: None,
+            });
+        }
+        return failed_outcome(runtime);
+    }
+
+    let related_is_active_world_state =
+        object_has_flag(state, operation.related, ScriptObjectFlag::Active) == Some(true)
+            && state.object(operation.related).map(|object| object.kind)
+                == Some(ScriptObjectKind::WorldState);
+    if !related_is_active_world_state
+        || records.record(operation.target) != ScriptActionRecord::Empty
+    {
+        return failed_outcome(runtime);
+    }
+
+    records.set_record(
+        operation.target,
+        ScriptActionRecord::WorldStateLink(operation.related),
+    );
+    Ok(ScriptRecordStateOutcome {
+        control: ScriptControl::Continue,
+        written_slot: Some(operation.target),
+    })
+}
+
 fn query_record_state(
     operation: ScriptRecordStateOperation,
     state: &ScriptState,
@@ -384,6 +427,7 @@ mod tests {
     const SHIPPED_RECORD_STATE_COUNT: usize = 20;
     const SHIPPED_ACTOR_RECORD_COUNTS: [usize; PROFILE_COUNT] = [9, 95, 138, 66, 81];
     const ACTOR_HANDLER_VECTOR_COUNT: usize = 20;
+    const WORLD_STATE_HANDLER_VECTOR_COUNT: usize = 14;
     const FAILURE_TARGET: usize = 9_320;
     const HANDLER_VECTOR_COUNT: usize = 21;
     const DIRECTORY_ENTRY_SIZE: usize = 20;
@@ -415,8 +459,10 @@ mod tests {
     const CELESTIAL_BODY_KIND_MASK: u16 = 8;
     const BLACK_HOLE_KIND_MASK: u16 = 256;
     const WORLD_STATE_KIND_MASK: u16 = 512;
+    const INVENTORY_ITEM_KIND_MASK: u16 = 1_024;
     const MIXED_CELESTIAL_WORLD_KIND_MASK: u16 = CELESTIAL_BODY_KIND_MASK | WORLD_STATE_KIND_MASK;
     const ACTOR_RECORD_KIND: u16 = 196;
+    const WORLD_STATE_RECORD_KIND: u16 = 197;
 
     #[derive(Deserialize)]
     struct HandlerOracle {
@@ -446,6 +492,18 @@ mod tests {
     #[derive(Deserialize)]
     struct ActorReciprocalOracle {
         value: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct WorldStateHandlerOracle {
+        name: String,
+        query_mode_before: u8,
+        inverted: bool,
+        operand: u16,
+        record_before: [u16; 3],
+        related_kind: u16,
+        related_active_byte: u16,
+        branch_failed: bool,
     }
 
     fn original_asset(name: &str) -> PathBuf {
@@ -588,8 +646,8 @@ mod tests {
         assert_eq!(vectors.len(), ACTOR_HANDLER_VECTOR_COUNT);
 
         for vector in vectors {
-            let owner_kind = actor_oracle_kind(vector.owner_kind);
-            let related_kind = actor_oracle_kind(vector.related_kind);
+            let owner_kind = oracle_object_kind(vector.owner_kind);
+            let related_kind = oracle_object_kind(vector.related_kind);
             let (mut state, ids) = actor_handler_fixture(owner_kind, related_kind);
             set_flags(&mut state, ids[ACTOR_OWNER], vector.owner_flags);
             set_flags(&mut state, ids[ACTOR_RELATED], vector.related_flags);
@@ -652,6 +710,77 @@ mod tests {
                 assert_eq!(
                     records.record(target),
                     ScriptActionRecord::ActorPresentation(ids[ACTOR_RELATED]),
+                    "{}",
+                    vector.name
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn world_state_record_handler_matches_every_original_decision_vector() {
+        let vectors: Vec<WorldStateHandlerOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_6d18_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), WORLD_STATE_HANDLER_VECTOR_COUNT);
+
+        for vector in vectors {
+            let related_kind = oracle_object_kind(vector.related_kind);
+            let (mut state, ids) = actor_handler_fixture(ScriptObjectKind::Actor, related_kind);
+            set_flags(&mut state, ids[ACTOR_RELATED], vector.related_active_byte);
+            let target = state
+                .object_word_triple(ids[ACTOR_OWNER], OBJECT_FLAGS_WORD_INDEX)
+                .unwrap();
+            let operation = ScriptWorldStateRecordOperation {
+                target,
+                related: ids[ACTOR_RELATED],
+                inverted: vector.inverted,
+            };
+            let mut records = ScriptActionRecords::default();
+            if vector.record_before[0] == WORLD_STATE_RECORD_KIND {
+                let related = if vector.record_before[1] == vector.operand {
+                    ids[ACTOR_RELATED]
+                } else {
+                    ids[ACTOR_ALTERNATE_RELATED]
+                };
+                records.set_record(target, ScriptActionRecord::WorldStateLink(related));
+            } else if vector.record_before[0] != u16::MIN {
+                records.set_record(target, ScriptActionRecord::Occupied);
+            }
+
+            let mut runtime = ScriptRuntime::new();
+            if vector.query_mode_before & QUERY_MODE_FLAG != u8::MIN {
+                runtime.begin_root_guard(ScriptCodeOffset::new(FAILURE_TARGET));
+            } else {
+                runtime.arm_root_failure_target(ScriptCodeOffset::new(FAILURE_TARGET));
+            }
+            let outcome =
+                apply_world_state_record_operation(operation, &state, &mut records, &mut runtime)
+                    .unwrap();
+
+            assert_eq!(
+                outcome.control,
+                if vector.branch_failed {
+                    ScriptControl::Jump(ScriptCodeOffset::new(FAILURE_TARGET))
+                } else {
+                    ScriptControl::Continue
+                },
+                "{}",
+                vector.name
+            );
+            let expected_write =
+                vector.query_mode_before & QUERY_MODE_FLAG == u8::MIN && !vector.branch_failed;
+            assert_eq!(
+                outcome.written_slot.is_some(),
+                expected_write,
+                "{}",
+                vector.name
+            );
+            if expected_write {
+                assert_eq!(
+                    records.record(target),
+                    ScriptActionRecord::WorldStateLink(ids[ACTOR_RELATED]),
                     "{}",
                     vector.name
                 );
@@ -897,13 +1026,14 @@ mod tests {
         (state, ids)
     }
 
-    fn actor_oracle_kind(mask: u16) -> ScriptObjectKind {
+    fn oracle_object_kind(mask: u16) -> ScriptObjectKind {
         match mask {
             PLAYER_KIND_MASK => ScriptObjectKind::Player,
             BLACK_HOLE_KIND_MASK => ScriptObjectKind::BlackHole,
             WORLD_STATE_KIND_MASK => ScriptObjectKind::WorldState,
+            INVENTORY_ITEM_KIND_MASK => ScriptObjectKind::InventoryItem,
             MIXED_CELESTIAL_WORLD_KIND_MASK => ScriptObjectKind::CelestialBody,
-            unknown => panic!("unknown C4 oracle object-kind mask {unknown}"),
+            unknown => panic!("unknown oracle object-kind mask {unknown}"),
         }
     }
 

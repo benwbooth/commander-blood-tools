@@ -42,6 +42,7 @@ const SHARED_STATE_F_OPCODE: u8 = 0xBF;
 const SHARED_STATE_G_OPCODE: u8 = 0xC0;
 const RECORD_STATE_OPCODE: u8 = 0xC1;
 const ACTOR_RECORD_OPCODE: u8 = 0xC4;
+const WORLD_STATE_RECORD_OPCODE: u8 = 0xC5;
 const TRANSFER_OPCODE: u8 = 0xCD;
 const INVERTED_CONDITION_PREFIX: u8 = GUARD_END_OPCODE;
 const OPCODE_SIZE: usize = 1;
@@ -69,6 +70,7 @@ const BIT_FLAG_SIZE: usize = OPCODE_SIZE + WORD_SIZE + BYTE_SIZE;
 const PAIR_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 3;
 const RECORD_STATE_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const ACTOR_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
+const WORLD_STATE_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const BITS_PER_BYTE: u8 = u8::BITS as u8;
 const PRIMARY_NAVIGATION_OPERAND: u16 = 1;
 const SECONDARY_NAVIGATION_OPERAND: u16 = 2;
@@ -395,6 +397,17 @@ pub struct ScriptActorRecordOperation {
     /// Bounded three-word actor action slot.
     pub target: ScriptStateWordTriple,
     /// Active profile object stored as the actor record's relation.
+    pub related: ScriptObjectId,
+    /// Whether query-mode equality is inverted.
+    pub inverted: bool,
+}
+
+/// One optionally inverted C5 link to an active world-state object.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptWorldStateRecordOperation {
+    /// Bounded three-word destination slot.
+    pub target: ScriptStateWordTriple,
+    /// World-state object stored as the record relation in assignment mode.
     pub related: ScriptObjectId,
     /// Whether query-mode equality is inverted.
     pub inverted: bool,
@@ -1006,12 +1019,7 @@ pub fn decode_script_record_state_operation(
     require_size(token, RECORD_STATE_SIZE + prefix_size)?;
     let operand_offset = OPCODE_SIZE + prefix_size;
     let encoded_target = read_word(bytes, operand_offset);
-    let target = state
-        .resolve_word_triple_source_offset(encoded_target)
-        .ok_or(ScriptInstructionError::InvalidStateWordTriple {
-            source_offset: token.source_offset(),
-            encoded_offset: encoded_target,
-        })?;
+    let target = resolve_state_word_triple(token, state, encoded_target)?;
     let encoded_operand = read_word(bytes, operand_offset + WORD_SIZE);
     let operand = match encoded_operand {
         PRIMARY_NAVIGATION_OPERAND => ScriptRecordStateOperand::PrimaryNavigationObject,
@@ -1046,15 +1054,37 @@ pub fn decode_script_actor_record_operation(
     require_size(token, ACTOR_RECORD_SIZE + prefix_size)?;
     let operand_offset = OPCODE_SIZE + prefix_size;
     let encoded_target = read_word(bytes, operand_offset);
-    let target = state
-        .resolve_word_triple_source_offset(encoded_target)
-        .ok_or(ScriptInstructionError::InvalidStateWordTriple {
-            source_offset: token.source_offset(),
-            encoded_offset: encoded_target,
-        })?;
+    let target = resolve_state_word_triple(token, state, encoded_target)?;
     let encoded_related = read_word(bytes, operand_offset + WORD_SIZE);
     let related = resolve_active_object(token, directory, encoded_related)?;
     Ok(ScriptActorRecordOperation {
+        target,
+        related,
+        inverted,
+    })
+}
+
+/// Decode one C5 world-state link into bounded typed identities.
+pub fn decode_script_world_state_record_operation(
+    token: &ScriptToken,
+    state: &ScriptState,
+    directory: &ScriptDirectory,
+) -> Result<ScriptWorldStateRecordOperation, ScriptInstructionError> {
+    if token.opcode().byte() != WORLD_STATE_RECORD_OPCODE {
+        return Err(ScriptInstructionError::UntranslatedOpcode {
+            opcode: token.opcode(),
+        });
+    }
+    let bytes = token.encoded_bytes();
+    let inverted = bytes.get(OPCODE_SIZE) == Some(&INVERTED_CONDITION_PREFIX);
+    let prefix_size = usize::from(inverted);
+    require_size(token, WORLD_STATE_RECORD_SIZE + prefix_size)?;
+    let operand_offset = OPCODE_SIZE + prefix_size;
+    let encoded_target = read_word(bytes, operand_offset);
+    let target = resolve_state_word_triple(token, state, encoded_target)?;
+    let encoded_related = read_word(bytes, operand_offset + WORD_SIZE);
+    let related = resolve_active_object(token, directory, encoded_related)?;
+    Ok(ScriptWorldStateRecordOperation {
         target,
         related,
         inverted,
@@ -1070,6 +1100,19 @@ fn resolve_active_object(
         .active_objects()
         .find_map(|(object, entry)| (entry.value == encoded_offset).then_some(object))
         .ok_or(ScriptInstructionError::InvalidObjectReference {
+            source_offset: token.source_offset(),
+            encoded_offset,
+        })
+}
+
+fn resolve_state_word_triple(
+    token: &ScriptToken,
+    state: &ScriptState,
+    encoded_offset: u16,
+) -> Result<ScriptStateWordTriple, ScriptInstructionError> {
+    state
+        .resolve_word_triple_source_offset(encoded_offset)
+        .ok_or(ScriptInstructionError::InvalidStateWordTriple {
             source_offset: token.source_offset(),
             encoded_offset,
         })
@@ -1215,6 +1258,8 @@ mod tests {
     const EXPECTED_PAIR_RECORD_COUNTS: [usize; PROFILE_COUNT] = [0, 0, 2, 0, 0];
     const EXPECTED_RECORD_STATE_COUNT: usize = 20;
     const EXPECTED_ACTOR_RECORD_COUNTS: [usize; PROFILE_COUNT] = [9, 95, 138, 66, 81];
+    const EXPECTED_WORLD_STATE_RECORD_COUNTS: [usize; PROFILE_COUNT] = [0; PROFILE_COUNT];
+    const TEST_STATE_WORD_INDEX: usize = 1;
     const EXPECTED_SHIPPED_BIT_FLAG_MASK: u8 = 32;
     const EXPECTED_SHIPPED_PAIR_OPCODE: u8 = PAIR_RECORD_C_OPCODE;
     const MAXIMUM_SHIPPED_SEQUENCE_BASENAME_LENGTH: usize = 12;
@@ -1671,6 +1716,69 @@ mod tests {
         }
 
         assert_eq!(counts, EXPECTED_ACTOR_RECORD_COUNTS);
+    }
+
+    #[test]
+    fn c5_has_typed_plain_and_inverted_forms_but_no_shipped_sites() {
+        let directory_data = std::fs::read(original_asset("SCRIPT1.DEB")).unwrap();
+        let state_data = std::fs::read(original_asset("SCRIPT1.VAR")).unwrap();
+        let directory = decode_script_directory(&directory_data).unwrap();
+        let state = decode_script_state(&state_data, &directory).unwrap();
+        let owner = state
+            .objects()
+            .iter()
+            .find(|object| object.kind == crate::script::ScriptObjectKind::Actor)
+            .unwrap();
+        let related = state
+            .objects()
+            .iter()
+            .find(|object| object.kind == crate::script::ScriptObjectKind::WorldState)
+            .unwrap();
+        let target_offset = u16::try_from(
+            owner.source_offset() + TEST_STATE_WORD_INDEX * std::mem::size_of::<u16>(),
+        )
+        .unwrap();
+        let related_offset = directory.object(related.id).unwrap().value;
+        let encoded_operation = |inverted| {
+            let mut bytes = vec![WORLD_STATE_RECORD_OPCODE];
+            if inverted {
+                bytes.push(INVERTED_CONDITION_PREFIX);
+            }
+            bytes.extend_from_slice(&target_offset.to_le_bytes());
+            bytes.extend_from_slice(&related_offset.to_le_bytes());
+            bytes.push(CODE_END_MARKER);
+            bytes
+        };
+
+        let plain = decode_script_code(&encoded_operation(false)).unwrap();
+        let plain =
+            decode_script_world_state_record_operation(&plain.tokens()[0], &state, &directory)
+                .unwrap();
+        assert_eq!(plain.target.object(), Some(owner.id));
+        assert_eq!(plain.related, related.id);
+        assert!(!plain.inverted);
+
+        let mut query_bytes = vec![GUARD_BEGIN_OPCODE, u8::MIN, u8::MIN];
+        query_bytes.extend_from_slice(&encoded_operation(true));
+        let inverted = decode_script_code(&query_bytes).unwrap();
+        let inverted =
+            decode_script_world_state_record_operation(&inverted.tokens()[1], &state, &directory)
+                .unwrap();
+        assert!(inverted.inverted);
+
+        let mut counts = [usize::MIN; PROFILE_COUNT];
+        for profile in 1..=PROFILE_COUNT {
+            let code = decode_script_code(
+                &std::fs::read(original_asset(&format!("SCRIPT{profile}.COD"))).unwrap(),
+            )
+            .unwrap();
+            counts[profile - 1] = code
+                .tokens()
+                .iter()
+                .filter(|token| token.opcode().byte() == WORLD_STATE_RECORD_OPCODE)
+                .count();
+        }
+        assert_eq!(counts, EXPECTED_WORLD_STATE_RECORD_COUNTS);
     }
 
     #[test]
