@@ -44,6 +44,7 @@ const RECORD_STATE_OPCODE: u8 = 0xC1;
 const ACTOR_RECORD_OPCODE: u8 = 0xC4;
 const WORLD_STATE_RECORD_OPCODE: u8 = 0xC5;
 const TRAVEL_RECORD_OPCODE: u8 = 0xC6;
+const ACTIVE_OBJECT_RECORD_OPCODE: u8 = 0xC7;
 const TRANSFER_OPCODE: u8 = 0xCD;
 const INVERTED_CONDITION_PREFIX: u8 = GUARD_END_OPCODE;
 const OPCODE_SIZE: usize = 1;
@@ -73,6 +74,7 @@ const RECORD_STATE_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const ACTOR_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const WORLD_STATE_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const TRAVEL_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
+const ACTIVE_OBJECT_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const BITS_PER_BYTE: u8 = u8::BITS as u8;
 const PRIMARY_NAVIGATION_OPERAND: u16 = 1;
 const SECONDARY_NAVIGATION_OPERAND: u16 = 2;
@@ -422,6 +424,17 @@ pub struct ScriptTravelRecordOperation {
     pub target: ScriptStateWordTriple,
     /// Destination object stored by the travel relation.
     pub destination: ScriptObjectId,
+    /// Whether query-mode equality is inverted.
+    pub inverted: bool,
+}
+
+/// One optionally inverted C7 relation to an active object.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptActiveObjectRecordOperation {
+    /// Bounded three-word destination slot.
+    pub target: ScriptStateWordTriple,
+    /// Active object stored by the relation.
+    pub related: ScriptObjectId,
     /// Whether query-mode equality is inverted.
     pub inverted: bool,
 }
@@ -1110,6 +1123,26 @@ pub fn decode_script_travel_record_operation(
     })
 }
 
+/// Decode one C7 active-object relation into bounded typed identities.
+pub fn decode_script_active_object_record_operation(
+    token: &ScriptToken,
+    state: &ScriptState,
+    directory: &ScriptDirectory,
+) -> Result<ScriptActiveObjectRecordOperation, ScriptInstructionError> {
+    let (target, related, inverted) = decode_object_record_operands(
+        token,
+        state,
+        directory,
+        ACTIVE_OBJECT_RECORD_OPCODE,
+        ACTIVE_OBJECT_RECORD_SIZE,
+    )?;
+    Ok(ScriptActiveObjectRecordOperation {
+        target,
+        related,
+        inverted,
+    })
+}
+
 fn decode_object_record_operands(
     token: &ScriptToken,
     state: &ScriptState,
@@ -1305,6 +1338,7 @@ mod tests {
     const EXPECTED_ACTOR_RECORD_COUNTS: [usize; PROFILE_COUNT] = [9, 95, 138, 66, 81];
     const EXPECTED_WORLD_STATE_RECORD_COUNTS: [usize; PROFILE_COUNT] = [0; PROFILE_COUNT];
     const EXPECTED_TRAVEL_RECORD_COUNTS: [usize; PROFILE_COUNT] = [0, 0, 1, 1, 0];
+    const EXPECTED_ACTIVE_OBJECT_RECORD_COUNTS: [usize; PROFILE_COUNT] = [0; PROFILE_COUNT];
     const TEST_STATE_WORD_INDEX: usize = 1;
     const EXPECTED_SHIPPED_BIT_FLAG_MASK: u8 = 32;
     const EXPECTED_SHIPPED_PAIR_OPCODE: u8 = PAIR_RECORD_C_OPCODE;
@@ -1315,6 +1349,83 @@ mod tests {
             .join("../..")
             .join("accuracy/cblood_install/cblood")
             .join(name)
+    }
+
+    fn typed_object_record_fixture(
+        related_kind: crate::script::ScriptObjectKind,
+    ) -> (
+        ScriptDirectory,
+        ScriptState,
+        ScriptObjectId,
+        ScriptObjectId,
+        u16,
+        u16,
+    ) {
+        let directory =
+            decode_script_directory(&std::fs::read(original_asset("SCRIPT1.DEB")).unwrap())
+                .unwrap();
+        let state = decode_script_state(
+            &std::fs::read(original_asset("SCRIPT1.VAR")).unwrap(),
+            &directory,
+        )
+        .unwrap();
+        let owner = state
+            .objects()
+            .iter()
+            .find(|object| object.kind == crate::script::ScriptObjectKind::Actor)
+            .unwrap();
+        let related = state
+            .objects()
+            .iter()
+            .find(|object| object.kind == related_kind)
+            .unwrap();
+        let owner_id = owner.id;
+        let related_id = related.id;
+        let target_offset = u16::try_from(
+            owner.source_offset() + TEST_STATE_WORD_INDEX * std::mem::size_of::<u16>(),
+        )
+        .unwrap();
+        let related_offset = directory.object(related_id).unwrap().value;
+        (
+            directory,
+            state,
+            owner_id,
+            related_id,
+            target_offset,
+            related_offset,
+        )
+    }
+
+    fn encoded_object_record(
+        opcode: u8,
+        target_offset: u16,
+        related_offset: u16,
+        inverted: bool,
+    ) -> Vec<u8> {
+        let mut bytes = vec![opcode];
+        if inverted {
+            bytes.push(INVERTED_CONDITION_PREFIX);
+        }
+        bytes.extend_from_slice(&target_offset.to_le_bytes());
+        bytes.extend_from_slice(&related_offset.to_le_bytes());
+        bytes.push(CODE_END_MARKER);
+        bytes
+    }
+
+    fn shipped_opcode_counts(opcode: u8) -> [usize; PROFILE_COUNT] {
+        let mut counts = [usize::MIN; PROFILE_COUNT];
+        for profile in 1..=PROFILE_COUNT {
+            let code = decode_script_code(
+                &std::fs::read(original_asset(&format!("SCRIPT{profile}.COD"))).unwrap(),
+            )
+            .unwrap();
+            counts[profile - 1] = code
+                .tokens()
+                .iter()
+                .filter(|token| token.opcode().byte() == opcode)
+                .count();
+        }
+        counts
     }
 
     #[test]
@@ -1766,65 +1877,40 @@ mod tests {
 
     #[test]
     fn c5_has_typed_plain_and_inverted_forms_but_no_shipped_sites() {
-        let directory_data = std::fs::read(original_asset("SCRIPT1.DEB")).unwrap();
-        let state_data = std::fs::read(original_asset("SCRIPT1.VAR")).unwrap();
-        let directory = decode_script_directory(&directory_data).unwrap();
-        let state = decode_script_state(&state_data, &directory).unwrap();
-        let owner = state
-            .objects()
-            .iter()
-            .find(|object| object.kind == crate::script::ScriptObjectKind::Actor)
-            .unwrap();
-        let related = state
-            .objects()
-            .iter()
-            .find(|object| object.kind == crate::script::ScriptObjectKind::WorldState)
-            .unwrap();
-        let target_offset = u16::try_from(
-            owner.source_offset() + TEST_STATE_WORD_INDEX * std::mem::size_of::<u16>(),
-        )
-        .unwrap();
-        let related_offset = directory.object(related.id).unwrap().value;
-        let encoded_operation = |inverted| {
-            let mut bytes = vec![WORLD_STATE_RECORD_OPCODE];
-            if inverted {
-                bytes.push(INVERTED_CONDITION_PREFIX);
-            }
-            bytes.extend_from_slice(&target_offset.to_le_bytes());
-            bytes.extend_from_slice(&related_offset.to_le_bytes());
-            bytes.push(CODE_END_MARKER);
-            bytes
-        };
+        let (directory, state, owner, related, target_offset, related_offset) =
+            typed_object_record_fixture(crate::script::ScriptObjectKind::WorldState);
 
-        let plain = decode_script_code(&encoded_operation(false)).unwrap();
+        let plain = decode_script_code(&encoded_object_record(
+            WORLD_STATE_RECORD_OPCODE,
+            target_offset,
+            related_offset,
+            false,
+        ))
+        .unwrap();
         let plain =
             decode_script_world_state_record_operation(&plain.tokens()[0], &state, &directory)
                 .unwrap();
-        assert_eq!(plain.target.object(), Some(owner.id));
-        assert_eq!(plain.related, related.id);
+        assert_eq!(plain.target.object(), Some(owner));
+        assert_eq!(plain.related, related);
         assert!(!plain.inverted);
 
         let mut query_bytes = vec![GUARD_BEGIN_OPCODE, u8::MIN, u8::MIN];
-        query_bytes.extend_from_slice(&encoded_operation(true));
+        query_bytes.extend_from_slice(&encoded_object_record(
+            WORLD_STATE_RECORD_OPCODE,
+            target_offset,
+            related_offset,
+            true,
+        ));
         let inverted = decode_script_code(&query_bytes).unwrap();
         let inverted =
             decode_script_world_state_record_operation(&inverted.tokens()[1], &state, &directory)
                 .unwrap();
         assert!(inverted.inverted);
 
-        let mut counts = [usize::MIN; PROFILE_COUNT];
-        for profile in 1..=PROFILE_COUNT {
-            let code = decode_script_code(
-                &std::fs::read(original_asset(&format!("SCRIPT{profile}.COD"))).unwrap(),
-            )
-            .unwrap();
-            counts[profile - 1] = code
-                .tokens()
-                .iter()
-                .filter(|token| token.opcode().byte() == WORLD_STATE_RECORD_OPCODE)
-                .count();
-        }
-        assert_eq!(counts, EXPECTED_WORLD_STATE_RECORD_COUNTS);
+        assert_eq!(
+            shipped_opcode_counts(WORLD_STATE_RECORD_OPCODE),
+            EXPECTED_WORLD_STATE_RECORD_COUNTS
+        );
     }
 
     #[test]
@@ -1865,6 +1951,43 @@ mod tests {
         }
 
         assert_eq!(counts, EXPECTED_TRAVEL_RECORD_COUNTS);
+    }
+
+    #[test]
+    fn c7_has_typed_plain_and_inverted_forms_but_no_shipped_sites() {
+        let (directory, state, owner, related, target_offset, related_offset) =
+            typed_object_record_fixture(crate::script::ScriptObjectKind::WorldState);
+        let plain = decode_script_code(&encoded_object_record(
+            ACTIVE_OBJECT_RECORD_OPCODE,
+            target_offset,
+            related_offset,
+            false,
+        ))
+        .unwrap();
+        let plain =
+            decode_script_active_object_record_operation(&plain.tokens()[0], &state, &directory)
+                .unwrap();
+        assert_eq!(plain.target.object(), Some(owner));
+        assert_eq!(plain.related, related);
+        assert!(!plain.inverted);
+
+        let mut query_bytes = vec![GUARD_BEGIN_OPCODE, u8::MIN, u8::MIN];
+        query_bytes.extend_from_slice(&encoded_object_record(
+            ACTIVE_OBJECT_RECORD_OPCODE,
+            target_offset,
+            related_offset,
+            true,
+        ));
+        let inverted = decode_script_code(&query_bytes).unwrap();
+        let inverted =
+            decode_script_active_object_record_operation(&inverted.tokens()[1], &state, &directory)
+                .unwrap();
+        assert!(inverted.inverted);
+
+        assert_eq!(
+            shipped_opcode_counts(ACTIVE_OBJECT_RECORD_OPCODE),
+            EXPECTED_ACTIVE_OBJECT_RECORD_COUNTS
+        );
     }
 
     #[test]
