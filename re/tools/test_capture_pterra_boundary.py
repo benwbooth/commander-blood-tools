@@ -242,7 +242,7 @@ class CaptureHelperTests(unittest.TestCase):
             ],
         )
 
-    def test_pterra_intro_input_stops_when_hud_owns_phase_one(self) \
+    def test_pterra_intro_hold_stops_when_hud_owns_phase_one(self) \
             -> None:
         blockers = {"ship": 5}
         flow = {
@@ -255,119 +255,19 @@ class CaptureHelperTests(unittest.TestCase):
             "ship_hud_initialized": 0,
             "ship_target_select_phase": 0,
         }
-        self.assertTrue(capture.pterra_ship_intro_waiting_for_input(
+        self.assertTrue(capture.pterra_ship_intro_hold_active(
             blockers, flow, input_state))
         input_state["ship_hud_initialized"] = 1
         input_state["ship_target_select_phase"] = 1
-        self.assertFalse(capture.pterra_ship_intro_waiting_for_input(
+        self.assertFalse(capture.pterra_ship_intro_hold_active(
             blockers, flow, input_state))
         input_state["ship_target_select_phase"] = 2
-        self.assertFalse(capture.pterra_ship_intro_waiting_for_input(
+        self.assertFalse(capture.pterra_ship_intro_hold_active(
             blockers, flow, input_state))
 
-    def test_pterra_intro_edge_waits_for_decisive_countdown(self) -> None:
-        flow = {"dialogue_hold_countdown": 8}
-        self.assertFalse(capture.pterra_ship_intro_ready_for_edge(flow))
-        flow["dialogue_hold_countdown"] = 7
-        self.assertTrue(capture.pterra_ship_intro_ready_for_edge(flow))
-        flow["dialogue_hold_countdown"] = 0
-        self.assertFalse(capture.pterra_ship_intro_ready_for_edge(flow))
-
-    def test_pterra_intro_press_uses_guest_observable_pulse(self) -> None:
-        self.assertFalse(capture.pterra_ship_intro_press_should_release(
-            10.19, 10.0))
-        self.assertTrue(capture.pterra_ship_intro_press_should_release(
-            10.21, 10.0))
-        self.assertFalse(capture.pterra_ship_intro_press_should_release(
-            10.21, None))
-
-    def test_pterra_intro_active_pulse_cannot_start_another_press(self) \
-            -> None:
-        self.assertEqual(capture.pterra_ship_intro_input_action(
-            pressing=True, release_ready=False, latch_active=False,
-            can_press=True), "hold")
-        self.assertEqual(capture.pterra_ship_intro_input_action(
-            pressing=True, release_ready=False, latch_active=True,
-            can_press=True), "release")
-        self.assertEqual(capture.pterra_ship_intro_input_action(
-            pressing=True, release_ready=True, latch_active=False,
-            can_press=True), "release")
-        self.assertEqual(capture.pterra_ship_intro_input_action(
-            pressing=False, release_ready=False, latch_active=True,
-            can_press=True), "wait")
-        self.assertEqual(capture.pterra_ship_intro_input_action(
-            pressing=False, release_ready=False, latch_active=False,
-            can_press=True), "press")
-
-    def test_pterra_intro_rejects_latched_hud_until_hold_clears(self) \
-            -> None:
+    def test_pterra_intro_accepts_expired_hold_hud_handoff(self) -> None:
         flow = {
-            "dialogue_hold_complete": 1,
-            "dialogue_hold_countdown": 2,
-            "text_display_active": 1,
-        }
-        input_state = {
-            "ship_hud_initialized": 1,
-            "ship_target_select_phase": 1,
-        }
-        self.assertEqual(capture.pterra_ship_intro_consumed_before_expiry(
-            {"ship": 5}, flow, input_state, [4, 5], edge_count=5,
-            raw_seen=True, latch_seen=True),
-            (False, None))
-        flow["dialogue_hold_complete"] = 0
-        self.assertEqual(capture.pterra_ship_intro_consumed_before_expiry(
-            {"ship": 5}, flow, input_state, [4, 5], edge_count=5,
-            raw_seen=True, latch_seen=True),
-            (True, "hold-clear-observed"))
-
-    def test_pterra_intro_rejects_hud_handoff_with_text_gate_cleared(self) \
-            -> None:
-        flow = {
-            "dialogue_hold_complete": 0,
-            "dialogue_hold_countdown": 1,
-            "text_display_active": 0,
-        }
-        input_state = {
-            "ship_hud_initialized": 1,
-            "ship_target_select_phase": 1,
-        }
-        self.assertEqual(capture.pterra_ship_intro_consumed_before_expiry(
-            {"ship": 5}, flow, input_state, [4, 5], edge_count=6,
-            raw_seen=True, latch_seen=True), (False, None))
-
-    def test_pterra_intro_rejects_transient_clear_before_hud_stage(self) \
-            -> None:
-        flow = {
-            "dialogue_hold_complete": 0,
-            "dialogue_hold_countdown": 7,
-            "text_display_active": 1,
-        }
-        input_state = {
-            "ship_hud_initialized": 0,
-            "ship_target_select_phase": 0,
-        }
-        self.assertEqual(capture.pterra_ship_intro_consumed_before_expiry(
-            {"ship": 3}, flow, input_state, [4, 5], edge_count=5,
-            raw_seen=True, latch_seen=True), (False, None))
-
-    def test_pterra_intro_hud_handoff_requires_guest_input_evidence(self) \
-            -> None:
-        flow = {
-            "dialogue_hold_complete": 1,
-            "dialogue_hold_countdown": 2,
-            "text_display_active": 1,
-        }
-        input_state = {
-            "ship_hud_initialized": 1,
-            "ship_target_select_phase": 1,
-        }
-        self.assertEqual(capture.pterra_ship_intro_consumed_before_expiry(
-            {"ship": 5}, flow, input_state, [4, 5], edge_count=5,
-            raw_seen=True, latch_seen=False), (False, None))
-
-    def test_pterra_intro_accepts_complete_no_hold_hud_handoff(self) -> None:
-        blockers = {"ship": 5}
-        flow = {
+            "active_line": 3,
             "dialogue_hold_complete": 0,
             "dialogue_hold_countdown": 0,
         }
@@ -375,13 +275,26 @@ class CaptureHelperTests(unittest.TestCase):
             "ship_hud_initialized": 1,
             "ship_target_select_phase": 1,
         }
-        self.assertTrue(capture.pterra_ship_intro_is_naturally_complete(
-            blockers, flow, input_state, [4, 5], edge_count=0))
+        self.assertTrue(capture.pterra_ship_intro_handoff_complete(
+            {"ship": 5}, flow, input_state, [4, 5]))
 
-    def test_pterra_intro_natural_completion_rejects_ambiguous_edge(self) \
-            -> None:
-        blockers = {"ship": 5}
+    def test_pterra_intro_accepts_reused_hud_hold_fields(self) -> None:
         flow = {
+            "active_line": 3,
+            "dialogue_hold_complete": 1,
+            "dialogue_hold_countdown": 3,
+        }
+        input_state = {
+            "ship_hud_initialized": 1,
+            "ship_target_select_phase": 1,
+        }
+        self.assertTrue(capture.pterra_ship_intro_handoff_complete(
+            {"ship": 5}, flow, input_state, [4, 5]))
+
+    def test_pterra_intro_handoff_requires_full_line_sequence(self) \
+            -> None:
+        flow = {
+            "active_line": 3,
             "dialogue_hold_complete": 0,
             "dialogue_hold_countdown": 0,
         }
@@ -389,10 +302,51 @@ class CaptureHelperTests(unittest.TestCase):
             "ship_hud_initialized": 1,
             "ship_target_select_phase": 1,
         }
-        self.assertFalse(capture.pterra_ship_intro_is_naturally_complete(
-            blockers, flow, input_state, [4, 5], edge_count=1))
-        self.assertFalse(capture.pterra_ship_intro_is_naturally_complete(
-            blockers, flow, input_state, [5], edge_count=0))
+        self.assertFalse(capture.pterra_ship_intro_handoff_complete(
+            {"ship": 5}, flow, input_state, [5]))
+
+    def test_pterra_intro_skip_waits_for_hud_owned_stale_hold(self) -> None:
+        flow = {
+            "active_line": 3,
+            "text_display_active": 1,
+            "dialogue_hold_complete": 1,
+            "dialogue_hold_countdown": 4,
+        }
+        input_state = {
+            "ship_hud_initialized": 1,
+            "ship_target_select_phase": 1,
+        }
+        self.assertTrue(capture.pterra_ship_intro_skip_ready(
+            flow, input_state, [4, 5]))
+        input_state["ship_hud_initialized"] = 0
+        self.assertFalse(capture.pterra_ship_intro_skip_ready(
+            flow, input_state, [4, 5]))
+
+    def test_pterra_intro_skip_holds_until_guest_clears_stale_hold(self) \
+            -> None:
+        self.assertEqual(capture.pterra_ship_intro_skip_action(
+            pressing=False, edge_sent=False, skip_ready=True,
+            hold_complete=True, pressed_seconds=0.0), "press")
+        self.assertEqual(capture.pterra_ship_intro_skip_action(
+            pressing=True, edge_sent=True, skip_ready=False,
+            hold_complete=True, pressed_seconds=0.5), "hold")
+        self.assertEqual(capture.pterra_ship_intro_skip_action(
+            pressing=True, edge_sent=True, skip_ready=False,
+            hold_complete=True, pressed_seconds=0.6), "hold")
+        self.assertEqual(capture.pterra_ship_intro_skip_action(
+            pressing=True, edge_sent=True, skip_ready=False,
+            hold_complete=False, pressed_seconds=0.7), "release")
+        self.assertEqual(capture.pterra_ship_intro_skip_action(
+            pressing=False, edge_sent=True, skip_ready=True,
+            hold_complete=True, pressed_seconds=0.0), "wait")
+
+    def test_pterra_intro_skip_has_bounded_release(self) -> None:
+        self.assertEqual(capture.pterra_ship_intro_skip_action(
+            pressing=True, edge_sent=True, skip_ready=False,
+            hold_complete=True,
+            pressed_seconds=(
+                capture.PTERRA_SHIP_INTRO_SKIP_MAX_HOLD_SECONDS)),
+            "release")
 
     def test_scruter_bank_is_durable_encounter_entry_evidence(self) -> None:
         audio = {
@@ -654,23 +608,6 @@ class CaptureHelperTests(unittest.TestCase):
         self.assertFalse(capture.bridge_station_ready_for_click(
             (-1, -1, -1, -1)))
 
-    def test_captured_mouse_accepts_observed_target(self) -> None:
-        with mock.patch.object(capture.subprocess, "run") as run:
-            self.assertTrue(capture.move_captured_game_mouse(
-                ":9", 200, 95, 201, 93))
-        run.assert_not_called()
-
-    def test_captured_mouse_moves_in_bounded_relative_steps(self) -> None:
-        completed = mock.Mock(returncode=0)
-        with mock.patch.object(
-                capture.subprocess, "run", return_value=completed) as run:
-            self.assertFalse(capture.move_captured_game_mouse(
-                ":9", 110, 140, 201, 93))
-        self.assertEqual(
-            run.call_args.args[0],
-            ["xdotool", "mousemove_relative", "--sync", "--", "32", "-32"],
-        )
-
     def test_virtual_mouse_mapping_status_requires_named_dos_mapping(self) \
             -> None:
         name = "CommanderBloodTestMouse"
@@ -818,100 +755,6 @@ class CaptureHelperTests(unittest.TestCase):
         self.assertTrue(capture.guest_mouse_point_is_valid(202, 104))
         self.assertFalse(capture.guest_mouse_point_is_valid(2524, 100))
 
-    def test_recapture_moves_pointer_to_game_window_center(self) -> None:
-        search = mock.Mock(returncode=0, stdout="1234\n")
-        geometry = mock.Mock(
-            returncode=0, stdout="X=80\nY=100\nWIDTH=640\nHEIGHT=400\n")
-        completed = mock.Mock(returncode=0, stdout="")
-        with mock.patch.object(
-                capture.subprocess, "run",
-                side_effect=[search, geometry, completed, completed,
-                             completed]) as run:
-            result = capture.recapture_game_mouse(":9", "BLOODPRG.EXE")
-        self.assertEqual(result["window_point"], [320, 200])
-        self.assertTrue(result["window_activated"])
-        self.assertEqual(
-            [call.args[0] for call in run.call_args_list[2:4]],
-            [
-                ["xdotool", "windowactivate", "--sync", "1234"],
-                ["xdotool", "windowfocus", "--sync", "1234"],
-            ],
-        )
-        self.assertEqual(
-            run.call_args_list[-1].args[0],
-            ["xdotool", "mousemove", "--sync", "--window", "1234",
-             "320", "200"],
-        )
-
-    def test_staging_recapture_repositions_only_while_released(self) -> None:
-        search = mock.Mock(returncode=0, stdout="1234\n")
-        geometry = mock.Mock(
-            returncode=0, stdout="WIDTH=640\nHEIGHT=400\n")
-        completed = mock.Mock(returncode=0, stdout="")
-        released = mock.Mock(
-            returncode=0,
-            stdout=("BPRG_RE.EXE - to capture the mouse press Ctrl+F10 "
-                    "or click any button"))
-        captured = mock.Mock(
-            returncode=0,
-            stdout=("BPRG_RE.EXE - mouse captured, Ctrl+F10 or "
-                    "middle-click to release"))
-        with mock.patch.object(
-                capture.subprocess, "run",
-                side_effect=[search, geometry, completed, completed,
-                             released, completed, released, completed,
-                             captured]) as run, \
-                mock.patch.object(capture.time, "sleep"):
-            result = capture.recapture_game_mouse(
-                ":9", "BLOODPRG.EXE", toggle_capture=True)
-        self.assertTrue(result["capture_toggled"])
-        self.assertFalse(result["capture_state_before"])
-        self.assertTrue(result["capture_state_after"])
-        self.assertTrue(result["window_activated"])
-        self.assertEqual(
-            [call.args[0] for call in run.call_args_list[4:]],
-            [
-                ["xdotool", "getwindowname", "1234"],
-                ["xdotool", "mousemove", "--sync", "--window", "1234",
-                 "320", "200"],
-                ["xdotool", "getwindowname", "1234"],
-                ["xdotool", "click", "2"],
-                ["xdotool", "getwindowname", "1234"],
-            ],
-        )
-
-    def test_staging_recapture_releases_an_observed_capture_first(self) \
-            -> None:
-        search = mock.Mock(returncode=0, stdout="1234\n")
-        geometry = mock.Mock(
-            returncode=0, stdout="WIDTH=640\nHEIGHT=400\n")
-        completed = mock.Mock(returncode=0, stdout="")
-        released = mock.Mock(
-            returncode=0, stdout="to capture the mouse press Ctrl+F10")
-        captured = mock.Mock(returncode=0, stdout="mouse captured")
-        with mock.patch.object(
-                capture.subprocess, "run",
-                side_effect=[search, geometry, completed, completed,
-                             captured, completed, completed, released,
-                             completed, captured]) as run, \
-                mock.patch.object(capture.time, "sleep"):
-            result = capture.recapture_game_mouse(
-                ":9", "BLOODPRG.EXE", toggle_capture=True)
-        self.assertTrue(result["capture_state_before"])
-        self.assertTrue(result["capture_state_after"])
-        self.assertEqual(
-            [call.args[0] for call in run.call_args_list[4:]],
-            [
-                ["xdotool", "getwindowname", "1234"],
-                ["xdotool", "click", "2"],
-                ["xdotool", "mousemove", "--sync", "--window", "1234",
-                 "320", "200"],
-                ["xdotool", "getwindowname", "1234"],
-                ["xdotool", "click", "2"],
-                ["xdotool", "getwindowname", "1234"],
-            ],
-        )
-
     def test_mouse_capture_state_comes_from_dosbox_title_hint(self) -> None:
         self.assertTrue(capture.mouse_capture_state_from_title(
             "BPRG_RE.EXE - mouse captured, Ctrl+F10 to release"))
@@ -919,20 +762,6 @@ class CaptureHelperTests(unittest.TestCase):
             "BPRG_RE.EXE - to capture the mouse press Ctrl+F10"))
         self.assertIsNone(capture.mouse_capture_state_from_title(
             "BPRG_RE.EXE - max 100% cycles/ms"))
-
-    def test_recapture_allows_missing_ewmh_window_manager(self) -> None:
-        search = mock.Mock(returncode=0, stdout="1234\n")
-        geometry = mock.Mock(
-            returncode=0, stdout="WIDTH=640\nHEIGHT=400\n")
-        unavailable = mock.Mock(returncode=1, stdout="")
-        completed = mock.Mock(returncode=0, stdout="")
-        with mock.patch.object(
-                capture.subprocess, "run",
-                side_effect=[search, geometry, unavailable, completed,
-                             completed]):
-            result = capture.recapture_game_mouse(":9", "BLOODPRG.EXE")
-        self.assertFalse(result["window_activated"])
-        self.assertEqual(result["window_point"], [320, 200])
 
     def test_private_window_focus_never_moves_or_clicks_pointer(self) -> None:
         search = mock.Mock(returncode=0, stdout="1234\n")
@@ -952,6 +781,13 @@ class CaptureHelperTests(unittest.TestCase):
         ])
         self.assertFalse(result["pointer_moved"])
 
+    def test_capture_tool_contains_no_host_pointer_commands(self) -> None:
+        source = Path(capture.__file__).read_text(encoding="utf-8")
+        for command in (
+                "mousemove", "mousemove_relative", "mousedown", "mouseup",
+                "windowactivate"):
+            self.assertNotIn(command, source)
+
     def test_dosbox_staging_captures_mouse_on_start(self) -> None:
         self.assertEqual(
             capture.dosbox_mouse_settings("/nix/store/hash/bin/dosbox"),
@@ -960,7 +796,6 @@ class CaptureHelperTests(unittest.TestCase):
                 "-set", "mouse mouse_raw_input=false",
             ],
         )
-        self.assertTrue(capture.dosbox_needs_capture_toggle("dosbox"))
 
     def test_private_dos_mouse_captures_isolated_window_on_start(self) -> None:
         self.assertEqual(
@@ -977,7 +812,6 @@ class CaptureHelperTests(unittest.TestCase):
             capture.dosbox_mouse_settings("dosbox-x"),
             ["-set", "sdl autolock=true"],
         )
-        self.assertFalse(capture.dosbox_needs_capture_toggle("dosbox-x"))
 
     def test_bridge_rotation_progress_extends_open_watchdog(self) -> None:
         self.assertFalse(capture.bridge_navigation_timed_out(
@@ -990,15 +824,15 @@ class CaptureHelperTests(unittest.TestCase):
             last_progress_at=capture.PTERRA_BRIDGE_ROTATION_TIMEOUT_SECONDS
             - 1.0))
 
-    def test_bridge_host_pointer_recenter_requires_rotation_stall(self) \
+    def test_bridge_input_refresh_requires_rotation_stall(self) \
             -> None:
-        self.assertFalse(capture.bridge_host_pointer_needs_recenter(
+        self.assertFalse(capture.bridge_input_needs_refresh(
             now=1.9, last_rotation_at=0.0, station_ready=False))
-        self.assertTrue(capture.bridge_host_pointer_needs_recenter(
+        self.assertTrue(capture.bridge_input_needs_refresh(
             now=2.0, last_rotation_at=0.0, station_ready=False))
 
-    def test_visible_bridge_station_suppresses_host_recenter(self) -> None:
-        self.assertFalse(capture.bridge_host_pointer_needs_recenter(
+    def test_visible_bridge_station_suppresses_input_refresh(self) -> None:
+        self.assertFalse(capture.bridge_input_needs_refresh(
             now=100.0, last_rotation_at=0.0, station_ready=True))
 
     def test_bridge_station_click_gets_bounded_activation_window(self) -> None:

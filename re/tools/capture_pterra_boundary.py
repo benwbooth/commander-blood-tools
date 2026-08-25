@@ -34,7 +34,6 @@ import re
 import signal
 import struct
 import subprocess
-import threading
 import time
 from pathlib import Path
 
@@ -178,8 +177,9 @@ PTERRA_MAP_TRANSITION_TIMEOUT_SECONDS = 120.0
 PTERRA_BRIDGE_ROTATION_TIMEOUT_SECONDS = 360.0
 PTERRA_NAV_ACTIVATION_TIMEOUT_SECONDS = 30.0
 PTERRA_NAV_CHART_MAX_REOPEN_ATTEMPTS = 3
-PTERRA_BRIDGE_HOST_STALL_SECONDS = 2.0
-PTERRA_BRIDGE_HOST_RECENTER_LIMIT = 12
+PTERRA_BRIDGE_INPUT_STALL_SECONDS = 2.0
+PTERRA_BRIDGE_INPUT_REFRESH_LIMIT = 12
+PTERRA_SHIP_ACTIVATION_PRESS_TIMEOUT_SECONDS = 2.0
 VIRTUAL_DOS_MOUSE_NAME = "CommanderBloodTestMouse"
 VIRTUAL_DOS_MOUSE_STATUS = "CBMOUSE.TXT"
 VIRTUAL_DOS_MOUSE_PIPE_ENV = "DOSBOX_MANYMOUSE_TEST_PIPE"
@@ -192,11 +192,7 @@ REL_Y = 0x01
 BTN_LEFT = 0x110
 BTN_RIGHT = 0x111
 BTN_MIDDLE = 0x112
-PTERRA_NATIVE_INPUT_TIMEOUT_SECONDS = 10.0
-PTERRA_NATIVE_INPUT_EDGE_INTERVAL_SECONDS = 0.25
-PTERRA_NATIVE_INPUT_PULSE_SECONDS = 0.2
-PTERRA_NATIVE_INPUT_TRIGGER_COUNTDOWN = 7
-PTERRA_NATIVE_INPUT_MAX_EDGES = 6
+PTERRA_SHIP_INTRO_SKIP_MAX_HOLD_SECONDS = 2.0
 PTERRA_TRANSITION_SAMPLE_INTERVAL_SECONDS = 1.0
 PTERRA_TRANSITION_SAMPLE_LIMIT = 256
 GRAPHICS_POINTER_TRANSITION_LIMIT = 512
@@ -639,17 +635,6 @@ def write_guest(mem, guest_base: int, linear: int, data: bytes) -> None:
     mem.flush()
 
 
-def send_mouse_button(display: str, pressed: bool, button: int = 1) -> None:
-    env = dict(os.environ, DISPLAY=display)
-    result = subprocess.run(
-        ["xdotool", "mousedown" if pressed else "mouseup", str(button)],
-        env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        check=False)
-    if result.returncode != 0:
-        action = "press" if pressed else "release"
-        raise RuntimeError(f"could not {action} host mouse button {button}")
-
-
 def inject_guest_primary_click(mem, guest_base: int, game_segment: int,
                                x: int, y: int) -> dict[str, object]:
     """Inject the canonical position and latches for a primary edge.
@@ -732,110 +717,6 @@ def focus_private_dosbox_window(
     }
 
 
-def recapture_game_mouse(display: str, executable: str,
-                         toggle_capture: bool = False) -> dict[str, object]:
-    """Recenter the host pointer without injecting guest-relative motion."""
-    env = dict(os.environ, DISPLAY=display)
-    executable_stem = Path(executable).stem
-    search = subprocess.run(
-        ["xdotool", "search", "--name", executable_stem],
-        env=env, capture_output=True, text=True, check=False)
-    window_ids = [line.strip() for line in search.stdout.splitlines()
-                  if line.strip()]
-    if search.returncode != 0 or not window_ids:
-        raise RuntimeError(
-            f"could not locate the {executable_stem} DOSBox window")
-    window_id = window_ids[0]
-    geometry = subprocess.run(
-        ["xdotool", "getwindowgeometry", "--shell", window_id],
-        env=env, capture_output=True, text=True, check=False)
-    if geometry.returncode != 0:
-        raise RuntimeError(
-            f"could not read DOSBox window geometry for {window_id}")
-    fields = {}
-    for line in geometry.stdout.splitlines():
-        key, separator, value = line.partition("=")
-        if separator and value.lstrip("-").isdigit():
-            fields[key] = int(value)
-    width = fields.get("WIDTH", 640)
-    height = fields.get("HEIGHT", 400)
-    activate = subprocess.run(
-        ["xdotool", "windowactivate", "--sync", window_id],
-        env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        check=False)
-    focus = subprocess.run(
-        ["xdotool", "windowfocus", "--sync", window_id],
-        env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        check=False)
-    capture_state_before = None
-    if toggle_capture:
-        title = subprocess.run(
-            ["xdotool", "getwindowname", window_id], env=env,
-            capture_output=True, text=True, check=False)
-        if title.returncode != 0:
-            raise RuntimeError(
-                f"could not read mouse capture state for window {window_id}")
-        capture_state_before = mouse_capture_state_from_title(title.stdout)
-        if capture_state_before is True:
-            released = subprocess.run(
-                ["xdotool", "click", "2"], env=env,
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                check=False)
-            if released.returncode != 0:
-                raise RuntimeError(
-                    f"could not release mouse capture in window {window_id}")
-            time.sleep(0.05)
-    moved = subprocess.run(
-        ["xdotool", "mousemove", "--sync", "--window", window_id,
-         str(width // 2), str(height // 2)],
-        env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        check=False)
-    # windowactivate requires an EWMH window manager.  The isolated Xephyr
-    # display deliberately has none, so direct X focus is the required gate.
-    if focus.returncode != 0 or moved.returncode != 0:
-        raise RuntimeError(
-            f"could not recapture the DOSBox mouse in window {window_id}")
-    capture_state_after = None
-    if toggle_capture:
-        title = subprocess.run(
-            ["xdotool", "getwindowname", window_id], env=env,
-            capture_output=True, text=True, check=False)
-        capture_state_after = (
-            mouse_capture_state_from_title(title.stdout)
-            if title.returncode == 0 else None)
-        if capture_state_after is not False:
-            raise RuntimeError(
-                "DOSBox mouse was not observably released before recapture; "
-                f"title={title.stdout.strip()!r}")
-        captured = subprocess.run(
-            ["xdotool", "click", "2"], env=env,
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-            check=False)
-        if captured.returncode != 0:
-            raise RuntimeError(
-                f"could not restore mouse capture in window {window_id}")
-        time.sleep(0.05)
-        title = subprocess.run(
-            ["xdotool", "getwindowname", window_id], env=env,
-            capture_output=True, text=True, check=False)
-        capture_state_after = (
-            mouse_capture_state_from_title(title.stdout)
-            if title.returncode == 0 else None)
-        if capture_state_after is not True:
-            raise RuntimeError(
-                "DOSBox mouse capture did not become observable; "
-                f"title={title.stdout.strip()!r}")
-    return {
-        "window_id": window_id,
-        "window_size": [width, height],
-        "window_point": [width // 2, height // 2],
-        "capture_toggled": toggle_capture,
-        "capture_state_before": capture_state_before,
-        "capture_state_after": capture_state_after,
-        "window_activated": activate.returncode == 0,
-    }
-
-
 def dosbox_mouse_settings(
         executable: str, private_input: bool = False) -> list[str]:
     """Return emulator-specific settings for deterministic relative input."""
@@ -846,35 +727,6 @@ def dosbox_mouse_settings(
         "-set", f"mouse mouse_capture={capture_mode}",
         "-set", "mouse mouse_raw_input=false",
     ]
-
-
-def dosbox_needs_capture_toggle(executable: str) -> bool:
-    return Path(executable).name.lower() != "dosbox-x"
-
-
-def move_captured_game_mouse(display: str, current_x: int, current_y: int,
-                             target_x: int, target_y: int) -> bool:
-    delta_x = target_x - current_x
-    delta_y = target_y - current_y
-    if abs(delta_x) <= 2 and abs(delta_y) <= 2:
-        return True
-
-    # DOSBox reports relative motion while its mouse is captured. Small,
-    # bounded steps let the next sampled guest position close the loop even
-    # when SDL sensitivity or scaling differs between hosts.
-    step_x = max(-32, min(32, delta_x))
-    step_y = max(-32, min(32, delta_y))
-    env = dict(os.environ, DISPLAY=display)
-    moved = subprocess.run(
-        ["xdotool", "mousemove_relative", "--sync", "--",
-         str(step_x), str(step_y)],
-        env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        check=False)
-    if moved.returncode != 0:
-        raise RuntimeError(
-            "could not move the captured host mouse toward game point "
-            f"{target_x},{target_y}")
-    return False
 
 
 def parse_virtual_mouse_mapping_status(
@@ -1060,10 +912,10 @@ def pterra_destination_ready(blockers: dict[str, int],
     )
 
 
-def pterra_ship_intro_waiting_for_input(
+def pterra_ship_intro_hold_active(
         blockers: dict[str, int], flow: dict[str, object],
         input_state: dict[str, object]) -> bool:
-    """Recognize the final intro hold before the HUD owns input."""
+    """Recognize the timed final intro hold before the HUD owns input."""
     hud_initialized = int(input_state["ship_hud_initialized"])
     selector_phase = int(input_state["ship_target_select_phase"])
     return (
@@ -1077,60 +929,51 @@ def pterra_ship_intro_waiting_for_input(
     )
 
 
-def pterra_ship_intro_ready_for_edge(flow: dict[str, object]) -> bool:
-    countdown = int(flow["dialogue_hold_countdown"])
-    return 0 < countdown <= PTERRA_NATIVE_INPUT_TRIGGER_COUNTDOWN
-
-
-def pterra_ship_intro_press_should_release(
-        now: float, pressed_at: float | None) -> bool:
-    return (
-        pressed_at is not None
-        and now - pressed_at >= PTERRA_NATIVE_INPUT_PULSE_SECONDS
-    )
-
-
-def pterra_ship_intro_input_action(
-        pressing: bool, release_ready: bool, latch_active: bool,
-        can_press: bool) -> str:
-    if pressing:
-        return "release" if release_ready or latch_active else "hold"
-    if latch_active:
-        return "wait"
-    return "press" if can_press else "wait"
-
-
-def pterra_ship_intro_consumed_before_expiry(
+def pterra_ship_intro_handoff_complete(
         blockers: dict[str, int], flow: dict[str, object],
-        input_state: dict[str, object],
-        lines_seen: list[int], edge_count: int, raw_seen: bool,
-        latch_seen: bool) -> tuple[bool, str | None]:
-    del lines_seen, raw_seen, latch_seen
-    if edge_count == 0 or int(flow["dialogue_hold_countdown"]) <= 0:
-        return False, None
-    if (int(blockers["ship"]) & 4 != 0
-            and int(flow["dialogue_hold_complete"]) == 0
-            and int(flow["text_display_active"]) & 1 != 0
-            and int(input_state["ship_hud_initialized"]) & 1 != 0
-            and int(input_state["ship_target_select_phase"]) > 0):
-        return True, "hold-clear-observed"
-    return False, None
-
-
-def pterra_ship_intro_is_naturally_complete(
-        blockers: dict[str, int], flow: dict[str, object],
-        input_state: dict[str, object], lines_seen: list[int],
-        edge_count: int) -> bool:
-    """Recognize a complete countdown-to-HUD handoff with no input edge."""
+        input_state: dict[str, object], lines_seen: list[int]) -> bool:
+    """Recognize the original timed line-4/line-5-to-HUD handoff."""
     return (
-        edge_count == 0
-        and lines_seen[-2:] == [4, 5]
-        and int(flow["dialogue_hold_complete"]) == 0
-        and int(flow["dialogue_hold_countdown"]) == 0
+        lines_seen[-2:] == [4, 5]
         and int(blockers["ship"]) & 4 != 0
         and int(input_state["ship_hud_initialized"]) & 1 != 0
         and int(input_state["ship_target_select_phase"]) > 0
+        and (
+            (int(flow["dialogue_hold_complete"]) == 0
+             and int(flow["dialogue_hold_countdown"]) == 0)
+            or int(flow["active_line"]) not in (4, 5)
+        )
     )
+
+
+def pterra_ship_intro_skip_ready(
+        flow: dict[str, object], input_state: dict[str, object],
+        lines_seen: list[int]) -> bool:
+    """Find the HUD-owned window where the stale line-5 hold is consumable."""
+    return (
+        lines_seen[-2:] == [4, 5]
+        and int(input_state["ship_hud_initialized"]) & 1 != 0
+        and int(input_state["ship_target_select_phase"]) > 0
+        and int(flow["active_line"]) == 3
+        and int(flow["text_display_active"]) & 1 != 0
+        and int(flow["dialogue_hold_complete"]) & 1 != 0
+        and int(flow["dialogue_hold_countdown"]) > 0
+    )
+
+
+def pterra_ship_intro_skip_action(
+        pressing: bool, edge_sent: bool, skip_ready: bool,
+        hold_complete: bool, pressed_seconds: float) -> str:
+    """Hold one private secondary edge until the stale hold clears."""
+    if pressing:
+        if (not hold_complete
+                or pressed_seconds
+                >= PTERRA_SHIP_INTRO_SKIP_MAX_HOLD_SECONDS):
+            return "release"
+        return "hold"
+    if edge_sent:
+        return "wait"
+    return "press" if skip_ready else "wait"
 
 
 def pterra_scruter_bank_transition_observed(
@@ -1175,13 +1018,13 @@ def bridge_navigation_timed_out(
     )
 
 
-def bridge_host_pointer_needs_recenter(
+def bridge_input_needs_refresh(
         now: float, last_rotation_at: float,
         station_ready: bool) -> bool:
-    """Detect a captured host pointer pinned at the host-screen edge."""
+    """Detect stalled private relative input while rotating the bridge."""
     return (
         not station_ready
-        and now - last_rotation_at >= PTERRA_BRIDGE_HOST_STALL_SECONDS
+        and now - last_rotation_at >= PTERRA_BRIDGE_INPUT_STALL_SECONDS
     )
 
 
@@ -2009,26 +1852,6 @@ def find_ds_anchor(pid, mem, game_segment=None):
     return None, None
 
 
-def bridge_prefix_actions() -> list[str]:
-    """The proven gate prefix: logos -> title click -> CRYOBOX -> Bob."""
-    return [
-        "wait_title", "click 320 340", "wait 2",
-        "move_relative -300 0", "wait 4",
-        "move_relative -300 0", "wait 3",
-        "move_relative 100 -20", "wait 0.5",
-        "move_relative 100 -20", "wait 0.5",
-        "mouse_button 1", "wait 1",
-        "move_relative -100 -20", "wait 0.5",
-        "move_relative -100 -20", "wait 0.5",
-        "mouse_button 1", "fastforward 8", "wait 3",
-        "move_relative 100 0", "wait 0.5", "mouse_button 1",
-        "fastforward 5", "wait 1",
-        "shot d_title",
-        "key_down space", "fastforward 30", "key_up space",
-        "fastforward 10", "wait 2", "shot d_bridge", "wait_bridge",
-    ]
-
-
 def authentic_gameplay_start_actions() -> list[str]:
     """Enter the first native presentation without touching later input."""
     # DOSBox starts its captured game cursor at 160,150. The title orb is at
@@ -2049,154 +1872,6 @@ def title_transition_evidence(*, startup_presentation_line_seen: bool,
     if authentic_save_loaded:
         evidence.append("authentic-save-loaded")
     return evidence
-
-
-def rotation_lap(lap: int) -> list[str]:
-    """One full rotation attempt: park right edge, center, orb click.
-
-    The orb click coordinates come from accuracy/scenarios/nav_probe.tsv
-    (125,118 in 320-space = 250,236 in the 640x400 window).
-    """
-    actions: list[str] = []
-    for _ in range(6):
-        actions += ["move 310 100", "wait 2"]
-    actions += ["move 160 100", "wait 1"]
-    for index in range(4):
-        actions += [f"click {246 + 8 * index} 236", "wait 1"]
-    actions += ["wait 3"]
-    return actions
-
-
-def run_driver(actions: list[str], display: str, executable: str) -> None:
-    """Feed drive_real_game.sh's action vocabulary through xdotool directly.
-
-    Re-implemented here (not via the shell driver) because the game is
-    already running under this script's control.
-    """
-    env = dict(os.environ, DISPLAY=display, SDL_VIDEODRIVER="x11")
-    window_id = ""
-    executable_stem = Path(executable).stem
-    for _ in range(40):
-        output = subprocess.run(
-            ["xdotool", "search", "--name", executable_stem],
-            capture_output=True, text=True, env=env).stdout
-        lines = [line for line in output.splitlines() if line.strip()]
-        if lines:
-            window_id = lines[0]
-            break
-        time.sleep(0.5)
-    if not window_id:
-        print("drive: game window not found")
-        return
-    # Focus + activate once, then use GLOBAL (XTEST) button events like
-    # drive_real_game.sh does: per-window synthetic button events are
-    # ignored by SDL's event pump on some windows.
-    subprocess.run(["xdotool", "windowactivate", "--sync", window_id],
-                   env=env)
-    subprocess.run(["xdotool", "windowfocus", "--sync", window_id], env=env)
-
-    def emit(action: str, a: str, b: str) -> None:
-        if action == "click":
-            subprocess.run(["xdotool", "mousemove", "--window", window_id,
-                            a, b], env=env)
-            time.sleep(0.3)
-            subprocess.run(["xdotool", "mousedown", "1"], env=env)
-            time.sleep(0.2)
-            subprocess.run(["xdotool", "mouseup", "1"], env=env)
-        elif action == "move":
-            subprocess.run(["xdotool", "mousemove", "--window", window_id,
-                            str(int(a) * 2), str(int(b) * 2)], env=env)
-        elif action == "move_relative":
-            subprocess.run(["xdotool", "mousemove_relative", "--", a, b],
-                           env=env)
-        elif action == "mouse_button":
-            subprocess.run(["xdotool", "mousedown", a], env=env)
-            time.sleep(0.2)
-            subprocess.run(["xdotool", "mouseup", a], env=env)
-        elif action == "key":
-            subprocess.run(["xdotool", "keydown", "--window", window_id, a],
-                           env=env)
-            time.sleep(0.2)
-            subprocess.run(["xdotool", "keyup", "--window", window_id, a],
-                           env=env)
-        elif action == "key_down":
-            subprocess.run(["xdotool", "keydown", "--window", window_id, a],
-                           env=env)
-        elif action == "key_up":
-            subprocess.run(["xdotool", "keyup", "--window", window_id, a],
-                           env=env)  # keys stay window-targeted (safe synth)
-
-    for line in actions:
-        parts = line.split()
-        if not parts:
-            continue
-        verb = parts[0]
-        arguments = parts[1:] + ["", ""]
-        if verb == "wait" or verb == "fastforward":
-            duration = float(arguments[0])
-            if verb == "fastforward":
-                subprocess.run(["xdotool", "keydown", "--window", window_id,
-                                "Alt_L"], env=env)
-                subprocess.run(["xdotool", "keydown", "--window", window_id,
-                                "F12"], env=env)
-                time.sleep(duration)
-                subprocess.run(["xdotool", "keyup", "--window", window_id,
-                                "F12"], env=env)
-                subprocess.run(["xdotool", "keyup", "--window", window_id,
-                                "Alt_L"], env=env)
-            else:
-                time.sleep(duration)
-            continue
-        elif verb == "wait_title":
-            title_reached = False
-            for attempt in range(120):
-                probe = f"/tmp/opencode/driveshots/title_{attempt}.png"
-                subprocess.run(["import", "-window", window_id, probe],
-                               env=env)
-                stats = subprocess.run(
-                    ["magick", probe, "-crop", "100x100+270+290",
-                     "-format", "%[fx:mean.r] %[fx:mean.g] %[fx:mean.b]",
-                     "info:"],
-                    capture_output=True, text=True, env=env).stdout
-                values = [float(text) for text in stats.split()]
-                if len(values) == 3 and values[0] > 0.5 \
-                        and values[1] < 0.4 and values[2] < 0.2:
-                    print(f"drive: title reached on attempt {attempt}")
-                    title_reached = True
-                    break
-                time.sleep(0.2)
-            if not title_reached:
-                raise RuntimeError("title gate timed out")
-        elif verb == "wait_bridge":
-            # Observe the bridge gate without injecting input. A failed visual
-            # classification can mean that a legitimate call is still playing;
-            # Escape/title clicks at that point restart its resource stream.
-            bridge_reached = False
-            for attempt in range(8):
-                probe = f"/tmp/opencode/driveshots/probe_{attempt}.png"
-                subprocess.run(["import", "-window", window_id, probe],
-                               env=env)
-                stats = subprocess.run(
-                    ["magick", probe, "-format",
-                     "%[fx:mean.r] %[fx:mean.g] %[fx:mean.b] "
-                     "%[fx:standard_deviation.g]", "info:"],
-                    capture_output=True, text=True, env=env).stdout
-                values = [float(text) for text in stats.split()]
-                if len(values) == 4 and values[2] > 0.12 \
-                        and values[0] < 0.15 and values[3] < 0.12:
-                    print(f"drive: bridge reached on attempt {attempt}")
-                    bridge_reached = True
-                    break
-                time.sleep(4)
-            if not bridge_reached:
-                print("drive: bridge classifier timed out; input left untouched")
-        elif verb == "shot":
-            out_dir = os.environ.get("DRIVE_SHOT_DIR", ".")
-            subprocess.run(["import", "-window", window_id,
-                            f"{out_dir}/{arguments[0]}.png"],
-                           env=env)
-        else:
-            emit(verb, arguments[0], arguments[1])
 
 
 def linear_surface_summary(data: bytes) -> dict[str, object]:
@@ -2318,14 +1993,12 @@ def changed_interrupt_vectors(before: bytes, after: bytes) \
 
 
 def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
-                         log_path: Path, timeout: float, display: str,
-                         executable: str, manual: bool = False,
+                         log_path: Path, timeout: float, manual: bool = False,
                          open_load_menu: bool = False,
                          trigger_pterra_after_load: bool = False,
                          drive_authentic_save: bool = False,
                          guest_snapshot: Path | None = None,
                          post_pter_seconds: float = 5.0,
-                         toggle_mouse_capture: bool = False,
                          mouse_driver=None,
                          stack_bounds: dict[str, int] | None = None) \
         -> dict[str, object]:
@@ -2369,7 +2042,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
     pterra_nav_pointer_last_position = None
     pterra_nav_pointer_last_changed_at = None
     pterra_nav_pointer_recapture_count = 0
-    pterra_nav_pan_recenter_count = 0
+    pterra_nav_pan_input_refresh_count = 0
     pterra_host_mouse_ready_at = None
     pterra_nav_chart_pressing = False
     pterra_nav_chart_selected = False
@@ -2394,21 +2067,17 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
     pterra_ship_navigation_started_at = None
     pterra_ship_navigation_activated = False
     pterra_ship_region_pressing = False
+    pterra_ship_region_pressed_at = None
     pterra_ship_region_click_count = 0
-    pterra_ship_region_next_press_at = 0.0
+    pterra_ship_region_raw_seen = False
+    pterra_ship_region_latch_seen = False
     pterra_ship_intro_lines_seen: list[int] = []
-    pterra_ship_intro_started_at = None
-    pterra_ship_intro_next_edge_at = 0.0
-    pterra_ship_intro_capture_ready_at = None
-    pterra_ship_intro_edge_count = 0
-    pterra_ship_intro_input_evidence = None
-    pterra_ship_intro_pressing = False
-    pterra_ship_intro_press_started_at = None
+    pterra_ship_intro_skip_sent = False
+    pterra_ship_intro_skip_pressing = False
+    pterra_ship_intro_skip_pressed_at = None
     pterra_ship_intro_raw_seen = False
     pterra_ship_intro_latch_seen = False
-    pterra_ship_intro_hold_observed = False
-    pterra_ship_intro_dismissed = False
-    pterra_ship_intro_completed_naturally = False
+    pterra_ship_intro_completed = False
     pterra_ship_target_phases_seen: list[int] = []
     pterra_ship_hud_progress_key = None
     pterra_ship_hud_last_progress_at = None
@@ -3091,28 +2760,28 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                         # Bring station zero into view through the bridge's
                         # own edge-pan behavior. Its handler owns the complete
                         # chart-open and chart-close actor state.
-                        if bridge_host_pointer_needs_recenter(
+                        if bridge_input_needs_refresh(
                                 now, pterra_map_last_progress_at,
                                 station_ready):
-                            if (pterra_nav_pan_recenter_count >=
-                                    PTERRA_BRIDGE_HOST_RECENTER_LIMIT):
+                            if (pterra_nav_pan_input_refresh_count >=
+                                    PTERRA_BRIDGE_INPUT_REFRESH_LIMIT):
                                 hang_snapshot = snapshot_guest(
                                     mem, guest_base, anchor, cpu_addresses,
                                     hit, last_profile)
                                 hang_snapshot["reason"] = (
                                     "bridge panorama stopped responding to "
-                                    "recentered captured mouse input")
+                                    "private relative mouse input")
                                 print(
-                                    "hang: bridge panorama ignored recentered "
-                                    "captured mouse input", flush=True)
+                                    "hang: bridge panorama ignored private "
+                                    "relative mouse input", flush=True)
                                 break
-                            recapture = mouse_driver.recenter()
-                            pterra_nav_pan_recenter_count += 1
+                            refresh = mouse_driver.recenter()
+                            pterra_nav_pan_input_refresh_count += 1
                             pterra_map_last_progress_at = now
                             assert isinstance(pterra_map_setup, dict)
                             pterra_map_setup.setdefault(
-                                "bridge_pan_host_recenters", []).append(
-                                    recapture)
+                                "bridge_pan_input_refreshes", []).append(
+                                    refresh)
                         mouse_driver.move_toward(
                             int(input_state["mouse_x"]),
                             int(input_state["mouse_y"]), 2,
@@ -3393,14 +3062,6 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                         audio_flow["streamed_clip_count"])
                     pterra_travel_setup = prepare_script2_orxx_descent(
                         mem, guest_base, game_segment)
-                    intro_recapture = mouse_driver.recenter()
-                    pterra_ship_intro_input_evidence = {
-                        "adapter": "host-secondary-edge",
-                        "recapture": intro_recapture,
-                    }
-                    pterra_ship_intro_capture_ready_at = now
-                    pterra_travel_setup[
-                        "intro_input_recapture"] = intro_recapture
                     pterra_triggered = True
                     pterra_ship_navigation_started_at = now
                     print(
@@ -3417,6 +3078,10 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                     assert isinstance(input_state, dict)
                     ship_active_flags = int(blockers["ship"])
                     if ship_active_flags != 0:
+                        if pterra_ship_region_pressing:
+                            mouse_driver.button(False, button=1)
+                            pterra_ship_region_pressing = False
+                            pterra_ship_region_pressed_at = None
                         pterra_ship_navigation_activated = True
                         pterra_ship_hud_last_progress_at = now
                         assert isinstance(pterra_travel_setup, dict)
@@ -3424,6 +3089,12 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                             ship_active_flags
                         pterra_travel_setup["entity_click_count"] = \
                             pterra_ship_region_click_count
+                        pterra_travel_setup.update({
+                            "entity_raw_primary_seen":
+                                pterra_ship_region_raw_seen,
+                            "entity_guest_latch_seen":
+                                pterra_ship_region_latch_seen,
+                        })
                         print(
                             "state: native current-location interaction "
                             "activated the ship presentation",
@@ -3437,10 +3108,32 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                         assert isinstance(stations, list)
                         station_flags = int(stations[3]["flags"])
                         if pterra_ship_region_pressing:
-                            mouse_driver.button(False, button=1)
-                            pterra_ship_region_pressing = False
-                            pterra_ship_region_next_press_at = now + 0.5
-                        elif (now >= pterra_ship_region_next_press_at
+                            if int(input_state["mouse_button_state"]) & 1:
+                                pterra_ship_region_raw_seen = True
+                            if (int(input_state["primary_pressed"]) & 1
+                                    or int(input_state[
+                                        "press_pending"]) & 1):
+                                pterra_ship_region_latch_seen = True
+                            assert pterra_ship_region_pressed_at is not None
+                            if (now - pterra_ship_region_pressed_at
+                                    >= PTERRA_SHIP_ACTIVATION_PRESS_TIMEOUT_SECONDS):
+                                mouse_driver.button(False, button=1)
+                                pterra_ship_region_pressing = False
+                                pterra_ship_region_pressed_at = None
+                                hang_snapshot = snapshot_guest(
+                                    mem, guest_base, anchor, cpu_addresses,
+                                    hit, last_profile)
+                                hang_snapshot["reason"] = (
+                                    "one held current-location click did not "
+                                    "activate ship navigation; raw_seen="
+                                    f"{pterra_ship_region_raw_seen}, "
+                                    "latch_seen="
+                                    f"{pterra_ship_region_latch_seen}")
+                                print(
+                                    "hang: native current-location click was "
+                                    "not consumed", flush=True)
+                                break
+                        elif (pterra_ship_region_click_count == 0
                                 and entity_center is not None
                                 and int(entity["flags"]) & 1
                                 and station_flags & 1
@@ -3450,6 +3143,7 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                                     entity_center[0], entity_center[1])):
                             mouse_driver.button(True, button=1)
                             pterra_ship_region_pressing = True
+                            pterra_ship_region_pressed_at = now
                             pterra_ship_region_click_count += 1
                             assert isinstance(pterra_travel_setup, dict)
                             pterra_travel_setup["entity_rect"] = \
@@ -3487,181 +3181,93 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                         print(
                             "state: native ship intro reached dialogue line "
                             f"{active_line}", flush=True)
-                    intro_latch_active = bool(
-                        int(input_state["secondary_pressed"]) & 1
-                        or int(input_state["press_pending"]) & 1)
-                    if intro_latch_active:
-                        pterra_ship_intro_latch_seen = True
-                    if int(input_state["mouse_button_state"]) & 2:
-                        pterra_ship_intro_raw_seen = True
-
-                    intro_waiting_for_input = (
-                        pterra_ship_intro_waiting_for_input(
+                    intro_hold_active = (
+                        pterra_ship_intro_hold_active(
                             blockers, flow, input_state))
-                    if intro_waiting_for_input:
-                        pterra_ship_intro_hold_observed = True
+                    intro_handoff_complete = (
+                        pterra_ship_intro_handoff_complete(
+                            blockers, flow, input_state,
+                            pterra_ship_intro_lines_seen))
+                    intro_skip_ready = pterra_ship_intro_skip_ready(
+                        flow, input_state, pterra_ship_intro_lines_seen)
+                    if intro_hold_active:
                         assert isinstance(pterra_travel_setup, dict)
                         pterra_travel_setup["intro_hold_observed"] = True
-                        if pterra_ship_intro_capture_ready_at is None:
-                            recapture = mouse_driver.recenter()
-                            pterra_ship_intro_input_evidence = {
-                                "adapter": "host-secondary-edge",
-                                "recapture": recapture,
-                            }
-                            pterra_ship_intro_capture_ready_at = now
-                            assert isinstance(pterra_travel_setup, dict)
-                            pterra_travel_setup[
-                                "intro_input_recapture"] = recapture
+                        pterra_travel_setup.setdefault(
+                            "intro_hold_countdown_before",
+                            int(flow["dialogue_hold_countdown"]))
 
-                    hold_consumed, hold_resolution = (
-                        pterra_ship_intro_consumed_before_expiry(
-                            blockers, flow, input_state,
-                            pterra_ship_intro_lines_seen,
-                            pterra_ship_intro_edge_count,
-                            pterra_ship_intro_raw_seen,
-                            pterra_ship_intro_latch_seen))
-                    if not pterra_ship_intro_dismissed and hold_consumed:
-                        pterra_ship_intro_dismissed = True
+                    if int(input_state["mouse_button_state"]) & 2:
+                        pterra_ship_intro_raw_seen = True
+                    if (int(input_state["secondary_pressed"]) & 1
+                            or int(input_state["press_pending"]) & 1):
+                        pterra_ship_intro_latch_seen = True
+                    pressed_seconds = (
+                        0.0 if pterra_ship_intro_skip_pressed_at is None
+                        else now - pterra_ship_intro_skip_pressed_at)
+                    skip_action = pterra_ship_intro_skip_action(
+                        pterra_ship_intro_skip_pressing,
+                        pterra_ship_intro_skip_sent,
+                        intro_skip_ready,
+                        bool(int(flow["dialogue_hold_complete"]) & 1),
+                        pressed_seconds)
+                    if skip_action == "press":
+                        mouse_driver.button(True, button=3)
+                        pterra_ship_intro_skip_sent = True
+                        pterra_ship_intro_skip_pressing = True
+                        pterra_ship_intro_skip_pressed_at = now
                         assert isinstance(pterra_travel_setup, dict)
                         pterra_travel_setup.update({
-                            "intro_hold_dismissed": True,
-                            "intro_hold_resolution": hold_resolution,
-                            "intro_input_evidence":
-                                pterra_ship_intro_input_evidence,
-                            "intro_input_edges": pterra_ship_intro_edge_count,
+                            "intro_input_adapter":
+                                "private-manymouse-pipe",
+                            "intro_input_edges": 1,
+                        })
+                        print(
+                            "state: held one private secondary edge in the "
+                            "HUD-owned stale line-5 hold window", flush=True)
+                    elif skip_action == "release":
+                        mouse_driver.button(False, button=3)
+                        pterra_ship_intro_skip_pressing = False
+                        pterra_ship_intro_skip_pressed_at = None
+                        assert isinstance(pterra_travel_setup, dict)
+                        pterra_travel_setup.update({
                             "intro_raw_secondary_seen":
                                 pterra_ship_intro_raw_seen,
                             "intro_guest_latch_seen":
                                 pterra_ship_intro_latch_seen,
-                            "intro_hold_countdown_after": int(
-                                flow["dialogue_hold_countdown"]),
+                            "intro_hold_complete_after_edge": int(
+                                flow["dialogue_hold_complete"]),
                         })
-                        print(
-                            "state: guest cleared the native ship-intro "
-                            "hold before its countdown expired", flush=True)
-                        if pterra_ship_intro_pressing:
-                            mouse_driver.button(False, button=3)
-                            pterra_ship_intro_pressing = False
-                            pterra_ship_intro_press_started_at = None
-                    elif (not pterra_ship_intro_dismissed
-                            and intro_waiting_for_input):
-                        if (pterra_ship_intro_started_at is not None
-                                and now - pterra_ship_intro_started_at
-                                >= PTERRA_NATIVE_INPUT_TIMEOUT_SECONDS):
-                            hang_snapshot = snapshot_guest(
-                                mem, guest_base, anchor, cpu_addresses,
-                                hit, last_profile)
-                            hang_snapshot["reason"] = (
-                                "guest did not consume bounded secondary "
-                                "button edges before the ship-intro hold "
-                                "countdown expired; latch_seen="
-                                f"{pterra_ship_intro_latch_seen}, attempts="
-                                f"{pterra_ship_intro_edge_count}")
-                            print(
-                                "hang: guest did not consume bounded ship-"
-                                "intro secondary edges", flush=True)
-                            break
-                        if (int(flow["dialogue_hold_countdown"]) == 0
-                                and not pterra_ship_intro_dismissed):
-                            hang_snapshot = snapshot_guest(
-                                mem, guest_base, anchor, cpu_addresses,
-                                hit, last_profile)
-                            hang_snapshot["reason"] = (
-                                "ship-intro hold expired before a verified "
-                                "secondary-button dismissal")
-                            print(
-                                "hang: ship-intro hold expired without a "
-                                "verified secondary edge", flush=True)
-                            break
-                        release_ready = (
-                            pterra_ship_intro_press_should_release(
-                                now,
-                                pterra_ship_intro_press_started_at))
-                        can_press = (
-                            pterra_ship_intro_edge_count
-                            < PTERRA_NATIVE_INPUT_MAX_EDGES
-                            and pterra_ship_intro_ready_for_edge(flow)
-                            and pterra_ship_intro_capture_ready_at is not None
-                            and now >= pterra_ship_intro_capture_ready_at
-                            and now >= pterra_ship_intro_next_edge_at)
-                        input_action = pterra_ship_intro_input_action(
-                            pterra_ship_intro_pressing,
-                            release_ready,
-                            intro_latch_active,
-                            can_press)
-                        if input_action == "release":
-                            mouse_driver.button(False, button=3)
-                            pterra_ship_intro_pressing = False
-                            pterra_ship_intro_press_started_at = None
-                            pterra_ship_intro_next_edge_at = (
-                                now
-                                + PTERRA_NATIVE_INPUT_EDGE_INTERVAL_SECONDS)
-                        elif input_action == "press":
-                            if pterra_ship_intro_started_at is None:
-                                pterra_ship_intro_started_at = now
-                            assert isinstance(pterra_travel_setup, dict)
-                            pterra_travel_setup.setdefault(
-                                "intro_hold_countdown_before",
-                                int(flow["dialogue_hold_countdown"]))
-                            mouse_driver.button(True, button=3)
-                            pterra_ship_intro_pressing = True
-                            pterra_ship_intro_press_started_at = now
-                            pterra_ship_intro_edge_count += 1
-                            print(
-                                "state: sent native ship-intro secondary "
-                                f"edge {pterra_ship_intro_edge_count}",
-                                flush=True)
-                    if (not pterra_ship_intro_dismissed
-                            and not pterra_ship_intro_completed_naturally
-                            and not pterra_ship_intro_hold_observed
-                            and pterra_ship_intro_is_naturally_complete(
-                                blockers, flow, input_state,
-                                pterra_ship_intro_lines_seen,
-                                pterra_ship_intro_edge_count)):
-                        pterra_ship_intro_completed_naturally = True
+
+                    if (not pterra_ship_intro_completed
+                            and intro_handoff_complete):
+                        pterra_ship_intro_completed = True
                         assert isinstance(pterra_travel_setup, dict)
                         pterra_travel_setup.update({
-                            "intro_hold_observed": False,
-                            "intro_completed_naturally": True,
-                            "intro_input_edges": 0,
+                            "intro_completed": True,
+                            "intro_input_edges": int(
+                                pterra_ship_intro_skip_sent),
+                            "intro_completion_resolution":
+                                ("line-5-secondary-hud-handoff"
+                                 if pterra_ship_intro_skip_sent else
+                                 "timed-line-4-line-5-hud-handoff"),
                             "intro_selector_phase_on_completion": int(
                                 input_state["ship_target_select_phase"]),
                         })
                         print(
-                            "state: native ship intro completed through its "
-                            "countdown without an injected edge", flush=True)
+                            "state: native ship intro completed its "
+                            "line-4/line-5 HUD handoff", flush=True)
 
-                    intro_resolved = (
-                        pterra_ship_intro_dismissed
-                        or pterra_ship_intro_completed_naturally)
-                    if (pterra_ship_intro_hold_observed
-                            and not intro_resolved
-                            and int(input_state[
-                                "ship_hud_initialized"]) & 1
-                            and not intro_waiting_for_input):
-                        if pterra_ship_intro_pressing:
-                            mouse_driver.button(False, button=3)
-                            pterra_ship_intro_pressing = False
-                            pterra_ship_intro_press_started_at = None
-                        hang_snapshot = snapshot_guest(
-                            mem, guest_base, anchor, cpu_addresses,
-                            hit, last_profile)
-                        hang_snapshot["reason"] = (
-                            "observed ship-intro hold reached the HUD without "
-                            "a verified guest dismissal")
-                        print(
-                            "hang: observed ship-intro hold reached the HUD "
-                            "without verified dismissal", flush=True)
-                        break
+                    intro_resolved = pterra_ship_intro_completed
                     if (intro_resolved
                             and int(blockers["ship"]) & 4
                             and int(input_state["ship_hud_initialized"]) & 1):
                         assert isinstance(pterra_travel_setup, dict)
                         pterra_travel_setup[
-                            "hud_initialized_after_intro_dismissal"] = True
+                            "hud_initialized_after_intro"] = True
                         if int(flow["text_display_active"]) & 1:
                             pterra_travel_setup[
-                                "hud_text_active_after_intro_dismissal"] = True
+                                "hud_text_active_after_intro"] = True
 
                     if intro_resolved:
                         target_phase = int(
@@ -4184,9 +3790,12 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
             break
         time.sleep(0.01)
 
-    if pterra_ship_intro_pressing:
+    if pterra_ship_region_pressing:
+        mouse_driver.button(False, button=1)
+        pterra_ship_region_pressing = False
+    if pterra_ship_intro_skip_pressing:
         mouse_driver.button(False, button=3)
-        pterra_ship_intro_pressing = False
+        pterra_ship_intro_skip_pressing = False
 
     overall_timeout_reached = (
         time.monotonic() >= deadline
@@ -4242,11 +3851,10 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
     if (trigger_pterra_after_load
             and pterra_travel_setup is not None
             and int(pterra_travel_setup.get("pterra_access_count_before", 0)) == 0
-            and not (pterra_ship_intro_dismissed
-                     or pterra_ship_intro_completed_naturally)):
+            and not pterra_ship_intro_completed):
         errors.append(
-            "final first-visit ship intro neither consumed its observed hold "
-            "nor completed without a hold")
+            "final first-visit ship intro never completed its timed HUD "
+            "handoff")
     if trigger_pterra_after_load and not pterra_travel_command_generated:
         errors.append("native ship HUD never generated the Orxx Pterra C1 command")
     if trigger_pterra_after_load and not pterra_travel_command_consumed:
@@ -4368,8 +3976,6 @@ def main() -> None:
               "(default: 5)"))
     parser.add_argument("--drive", action="store_true",
                         help="script the navigation instead of a human")
-    parser.add_argument("--display-for-drive", default=None,
-                        help="X display holding the game when driving")
     parser.add_argument(
         "--state-pterra", action="store_true",
         help="load SCRIPT2 and select its Pterra record through recovered state")
@@ -4491,14 +4097,12 @@ def main() -> None:
                 if args.link_map is not None else None)
             snapshot = capture_state_pterra(
                 db, libc, marker, log_path, args.timeout,
-                args.display, args.executable, manual=args.manual_pterra,
+                manual=args.manual_pterra,
                 open_load_menu=args.open_load_menu,
                 trigger_pterra_after_load=args.trigger_pterra_after_load,
                 drive_authentic_save=args.drive_authentic_save,
                 guest_snapshot=args.guest_snapshot,
                 post_pter_seconds=args.post_pter_seconds,
-                toggle_mouse_capture=dosbox_needs_capture_toggle(
-                    args.dosbox),
                 mouse_driver=mouse_driver,
                 stack_bounds=stack_bounds)
             snapshot["mouse_input_adapter"] = mouse_input_evidence
@@ -4508,17 +4112,6 @@ def main() -> None:
             if errors:
                 raise RuntimeError("; ".join(str(error) for error in errors))
             return
-        if args.drive:
-            drive_display = args.display_for_drive or args.display
-            drive_actions = bridge_prefix_actions()
-            for lap in range(6):
-                drive_actions += [f"shot g_lap{lap}"] + rotation_lap(lap)
-
-            def drive() -> None:
-                time.sleep(3.0)  # let the window appear
-                run_driver(drive_actions, drive_display, args.executable)
-
-            threading.Thread(target=drive, daemon=True).start()
         deadline = time.time() + args.timeout
         hit = None
         while time.time() < deadline:
