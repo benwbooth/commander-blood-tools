@@ -61,8 +61,9 @@ pub use selection::{
     update_wave_finish, update_wave_motion, update_wave_return, update_wave_selection,
 };
 pub use slot2::{
-    AlienSlot2AnimationState, AlienSlot2Callback, AlienSlot2Callbacks, AlienSlot2Error,
-    AlienSlot2NodeState, AlienSlot2SceneState, AlienSlot2Update, initialize_or_dispatch_slot2,
+    AlienAmerReturnUpdate, AlienAmerSteeringUpdate, AlienSlot2AnimationState, AlienSlot2Callback,
+    AlienSlot2Callbacks, AlienSlot2Error, AlienSlot2NodeState, AlienSlot2SceneState,
+    AlienSlot2Update, initialize_or_dispatch_slot2, update_amer_return, update_amer_steering,
 };
 pub use starfield::{
     AlienStar, AlienStarRejections, AlienStarfieldError, AlienStarfieldFrame, STAR_COUNT,

@@ -2848,8 +2848,30 @@ def amer_slot2_return_update_vectors(entry: int) -> list[dict[str, object]]:
                 "module": module,
                 "entry": entry,
                 "path": "transition" if transition else "continue",
+                "control_state_before": get_u16(data_before, context + 0x36),
+                "control_state_after": get_u16(data_expected, context + 0x36),
                 "countdown_before": countdown,
                 "countdown_after": get_u16(data_expected, context + 0x38),
+                "velocity_before": list(velocities),
+                "velocity_after": [
+                    signed_word(get_u16(data_expected, context + offset))
+                    for offset in (0x3A, 0x3C, 0x3E)
+                ],
+                "position_before": [
+                    get_u32(data_before, state + offset)
+                    for offset in (0x42, 0x46, 0x4A)
+                ],
+                "position_after": [
+                    get_u32(data_expected, state + offset)
+                    for offset in (0x42, 0x46, 0x4A)
+                ],
+                "pan_before": field_050,
+                "pan_after": get_u16(data_expected, state + 0x50),
+                "roll_before": field_052,
+                "roll_after": get_u16(data_expected, state + 0x52),
+                "radial_before": get_u16(data_before, state + 0x54),
+                "radial_after": get_u16(data_expected, state + 0x54),
+                "callback_before": get_u16(data_before, state + 0x0E),
                 "state": state,
                 "velocity_x_after": signed_word(
                     get_u16(data_expected, context + 0x3A)
@@ -3113,14 +3135,22 @@ def amer_slot2_steer_update_vectors(entry: int) -> list[dict[str, object]]:
                 "name": name,
                 "module": module,
                 "entry": entry,
+                "path": "transition" if transition else "continue",
+                "camera_x_before": field_038,
+                "camera_z_before": field_040,
+                "camera_depth_step": depth_step,
+                "forward_x_before": field_01a & 0xFFFFFFFF,
+                "forward_z_before": field_032 & 0xFFFFFFFF,
                 "state": state,
                 "score": score,
                 "score_sign": "negative" if score & 0x80000000 else "nonnegative",
                 "turn_delta": signed_word(delta),
+                "pan_before": field_050,
                 "field_050_after": get_u16(data_expected, state + 0x50),
                 "countdown_before": countdown,
                 "countdown_decremented": decremented,
                 "countdown_after": get_u16(data_expected, state + 0x56),
+                "callback_before": get_u16(data_before, state + 0x0E),
                 "callback_after": get_u16(data_expected, state + 0x0E),
                 "data_sha256": hashlib.sha256(data_expected).hexdigest(),
                 "defined_flags": expected_flags,

@@ -4,8 +4,37 @@
     "module": "amer",
     "entry": 6355,
     "path": "continue",
+    "control_state_before": 42330,
+    "control_state_after": 42330,
     "countdown_before": 1,
     "countdown_after": 0,
+    "velocity_before": [
+      0,
+      0,
+      0
+    ],
+    "velocity_after": [
+      0,
+      0,
+      0
+    ],
+    "position_before": [
+      0,
+      0,
+      0
+    ],
+    "position_after": [
+      0,
+      0,
+      0
+    ],
+    "pan_before": 4369,
+    "pan_after": 4497,
+    "roll_before": 8738,
+    "roll_after": 8621,
+    "radial_before": 4951,
+    "radial_after": 0,
+    "callback_before": 48879,
     "state": 16384,
     "velocity_x_after": 0,
     "field_050_after": 4497,
@@ -30,8 +59,37 @@
     "module": "amer",
     "entry": 6355,
     "path": "continue",
+    "control_state_before": 42330,
+    "control_state_after": 42330,
     "countdown_before": 2,
     "countdown_after": 1,
+    "velocity_before": [
+      -1,
+      32767,
+      -32768
+    ],
+    "velocity_after": [
+      -1,
+      32767,
+      -32768
+    ],
+    "position_before": [
+      4294967295,
+      2147483647,
+      2147483648
+    ],
+    "position_after": [
+      4294967294,
+      2147516414,
+      2147450880
+    ],
+    "pan_before": 65520,
+    "pan_after": 112,
+    "roll_before": 64,
+    "roll_after": 65483,
+    "radial_before": 4951,
+    "radial_after": 0,
+    "callback_before": 48879,
     "state": 17408,
     "velocity_x_after": -1,
     "field_050_after": 112,
@@ -56,8 +114,37 @@
     "module": "amer",
     "entry": 6355,
     "path": "continue",
+    "control_state_before": 42330,
+    "control_state_after": 42330,
     "countdown_before": 32768,
     "countdown_after": 32767,
+    "velocity_before": [
+      32767,
+      -32768,
+      1
+    ],
+    "velocity_after": [
+      32767,
+      -32768,
+      1
+    ],
+    "position_before": [
+      2147483647,
+      2147483648,
+      4294967295
+    ],
+    "position_after": [
+      2147516414,
+      2147450880,
+      0
+    ],
+    "pan_before": 65424,
+    "pan_after": 16,
+    "roll_before": 116,
+    "roll_after": 65535,
+    "radial_before": 4951,
+    "radial_after": 0,
+    "callback_before": 48879,
     "state": 65464,
     "velocity_x_after": 32767,
     "field_050_after": 16,
@@ -82,8 +169,37 @@
     "module": "amer",
     "entry": 6355,
     "path": "transition",
+    "control_state_before": 42330,
+    "control_state_after": 1,
     "countdown_before": 0,
     "countdown_after": 32,
+    "velocity_before": [
+      1,
+      2,
+      3
+    ],
+    "velocity_after": [
+      0,
+      2,
+      3
+    ],
+    "position_before": [
+      4,
+      5,
+      6
+    ],
+    "position_after": [
+      4,
+      5,
+      6
+    ],
+    "pan_before": 0,
+    "pan_after": 0,
+    "roll_before": 0,
+    "roll_after": 0,
+    "radial_before": 4951,
+    "radial_after": 0,
+    "callback_before": 48879,
     "state": 18432,
     "velocity_x_after": 0,
     "field_050_after": 0,
@@ -106,8 +222,37 @@
     "module": "amer",
     "entry": 6355,
     "path": "transition",
+    "control_state_before": 42330,
+    "control_state_after": 1,
     "countdown_before": 32769,
     "countdown_after": 32,
+    "velocity_before": [
+      -9,
+      4660,
+      -4660
+    ],
+    "velocity_after": [
+      -64,
+      4660,
+      -4660
+    ],
+    "position_before": [
+      7,
+      8,
+      9
+    ],
+    "position_after": [
+      7,
+      8,
+      9
+    ],
+    "pan_before": 2047,
+    "pan_after": 2047,
+    "roll_before": 2047,
+    "roll_after": 2047,
+    "radial_before": 4951,
+    "radial_after": 0,
+    "callback_before": 48879,
     "state": 19456,
     "velocity_x_after": -64,
     "field_050_after": 2047,
@@ -130,8 +275,37 @@
     "module": "amer",
     "entry": 6355,
     "path": "transition",
+    "control_state_before": 42330,
+    "control_state_after": 1,
     "countdown_before": 0,
     "countdown_after": 32,
+    "velocity_before": [
+      4369,
+      -1,
+      1
+    ],
+    "velocity_after": [
+      64,
+      -1,
+      1
+    ],
+    "position_before": [
+      305419896,
+      2309737967,
+      2147483648
+    ],
+    "position_after": [
+      305419896,
+      2309737967,
+      2147483648
+    ],
+    "pan_before": 2048,
+    "pan_after": 63488,
+    "roll_before": 2048,
+    "roll_after": 63488,
+    "radial_before": 4951,
+    "radial_after": 0,
+    "callback_before": 48879,
     "state": 20480,
     "velocity_x_after": 64,
     "field_050_after": -2048,
@@ -154,8 +328,37 @@
     "module": "amer",
     "entry": 6355,
     "path": "transition",
+    "control_state_before": 42330,
+    "control_state_after": 1,
     "countdown_before": 65535,
     "countdown_after": 32,
+    "velocity_before": [
+      8738,
+      -13107,
+      17476
+    ],
+    "velocity_after": [
+      0,
+      -13107,
+      17476
+    ],
+    "position_before": [
+      4294967295,
+      0,
+      2147483647
+    ],
+    "position_after": [
+      4294967295,
+      0,
+      2147483647
+    ],
+    "pan_before": 65535,
+    "pan_after": 65535,
+    "roll_before": 4095,
+    "roll_after": 65535,
+    "radial_before": 4951,
+    "radial_after": 0,
+    "callback_before": 48879,
     "state": 21504,
     "velocity_x_after": 0,
     "field_050_after": -1,
