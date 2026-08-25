@@ -96,6 +96,21 @@ pub enum AlienRingCallback {
     WaveSelection,
 }
 
+/// Flat callback state for camera-relative autonomous steering.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct AlienWaveSteeringState {
+    /// Frames remaining before a new turn target is generated.
+    pub turn_countdown: i16,
+    /// Per-frame adjustment applied to the accumulated turn.
+    pub turn_step: i16,
+    /// Current signed turn accumulated by the steering callback.
+    pub turn_offset: i16,
+    /// Cyclic cosine-table phase used for roll feedback.
+    pub sample_phase: u16,
+    /// Deterministic seed used when the node is inside scene bounds.
+    pub random_seed: u16,
+}
+
 /// Per-node state used by the circular motion-history behavior.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct AlienRingNodeState {
@@ -113,6 +128,8 @@ pub struct AlienRingNodeState {
     pub wave_pan_step: i16,
     /// Per-frame roll decrement used by the wave camera transition.
     pub wave_roll_step: i16,
+    /// State used while the wave-selection callback steers an outlying node.
+    pub steering: AlienWaveSteeringState,
 }
 
 /// Timer policy selected by the recovered slot-3 coordinator.
@@ -580,6 +597,7 @@ fn initialize(
         behavior_seed: INITIAL_BEHAVIOR_SEED,
         wave_pan_step: i16::MIN,
         wave_roll_step: i16::MIN,
+        steering: AlienWaveSteeringState::default(),
     };
     animation.entries[current_slot] = AlienRingEntry {
         pitch_step: ZERO_MOTION_COMPONENT,
@@ -616,6 +634,7 @@ fn initialize(
             behavior_seed: u16::MIN,
             wave_pan_step: i16::MIN,
             wave_roll_step: i16::MIN,
+            steering: AlienWaveSteeringState::default(),
         };
         animation.entries[current_slot] = AlienRingEntry::default();
         reset_pose_node(&mut pose.nodes[node_index], initial_position);
@@ -1105,6 +1124,7 @@ mod tests {
             behavior_seed: CALLBACK_BEHAVIOR_SEED,
             wave_pan_step: i16::MIN,
             wave_roll_step: i16::MIN,
+            steering: AlienWaveSteeringState::default(),
         };
         (pose, animation)
     }
@@ -1346,6 +1366,7 @@ mod tests {
                     behavior_seed: vector.motion_before[5],
                     wave_pan_step: i16::MIN,
                     wave_roll_step: i16::MIN,
+                    steering: AlienWaveSteeringState::default(),
                 };
                 let next_ring_slot = next_slot(vector.ring_slot_before);
                 animation.entries[vector.ring_slot_before] =
@@ -1446,6 +1467,7 @@ mod tests {
                     behavior_seed: vector.motion_before[4],
                     wave_pan_step: i16::MIN,
                     wave_roll_step: i16::MIN,
+                    steering: AlienWaveSteeringState::default(),
                 };
                 let next_ring_slot = next_slot(vector.ring_slot_before);
                 animation.entries[vector.ring_slot_before] =

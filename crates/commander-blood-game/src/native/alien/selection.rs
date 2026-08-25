@@ -2,7 +2,9 @@
 
 use std::fmt;
 
-use commander_blood_formats::alien::{AXIS_COUNT, AlienNodeParent};
+use commander_blood_formats::alien::{
+    AXIS_COUNT, AlienNodeParent, AlienTrigonometryPair, TRIGONOMETRY_ENTRY_COUNT,
+};
 
 use super::{
     AlienCallbackSceneState, AlienControlLatch, AlienModelPose, AlienRingAnimationState,
@@ -39,6 +41,27 @@ const WAVE_MOTION_PHASE_LIMIT: i16 = 15;
 const WAVE_RETURN_COUNTDOWN: i16 = 64;
 const WAVE_RETURN_COUNTDOWN_STEP: i16 = 1;
 const COMPLETED_RETURN_COUNTDOWN: i16 = 0;
+const STEERING_RADIAL_OFFSET: i16 = 12;
+const STEERING_COUNTDOWN_STEP: i16 = 1;
+const STEERING_DISTANCE_LIMIT: i16 = 1_000;
+const STEERING_HALF_TURN: u16 = 0x0800;
+const STEERING_QUARTER_TURN: u16 = 0x0400;
+const STEERING_ANGLE_MASK: u16 = 0x0ffc;
+const FIXED_STEERING_COUNTDOWN: i16 = 16;
+const FIXED_STEERING_DIVISOR: i16 = 32;
+const FIXED_STEERING_SHIFT: u32 = 2;
+const RANDOM_STEERING_MASK: u16 = 0x07ff;
+const RANDOM_STEERING_BIAS: u16 = 0x03ff;
+const RANDOM_STEERING_DIVISOR_SHIFT: u32 = 1;
+const RANDOM_STEERING_DIVISOR_BIAS: u16 = 16;
+const RANDOM_STEERING_ROTATION: u32 = 3;
+const RANDOM_STEERING_BORROW_SHIFT: u32 = 2;
+const RANDOM_STEERING_BORROW_MASK: u16 = 1;
+const STEERING_PAN_SHIFT: u32 = 5;
+const STEERING_SAMPLE_PHASE_STEP: u16 = 0x0080;
+const STEERING_SAMPLE_PHASE_MASK: u16 = 0x0ffc;
+const STEERING_SAMPLE_INDEX_SHIFT: u32 = 2;
+const STEERING_SAMPLE_SHIFT: u32 = 5;
 
 /// Typed continuation selected by the slot-1 bounds callback.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -287,6 +310,93 @@ pub fn update_wave_return(
     Ok(AlienWaveReturnUpdate::SelectionRequested)
 }
 
+/// Continue autonomous steering for a node outside wave-selection bounds.
+///
+/// The decoded cosine table and view vector replace the original process-wide
+/// data references. All callback state is owned by the typed model animation.
+pub fn continue_wave_steering(
+    node_index: usize,
+    pose: &mut AlienModelPose,
+    animation: &mut AlienRingAnimationState,
+    view: [i16; AXIS_COUNT],
+    trigonometry: &[AlienTrigonometryPair; TRIGONOMETRY_ENTRY_COUNT],
+) -> Result<(), AlienSelectionError> {
+    validate_node(node_index, pose, animation)?;
+    let node = &mut pose.nodes[node_index];
+    let steering = &mut animation.nodes[node_index].steering;
+    node.radial_offset = STEERING_RADIAL_OFFSET;
+    steering.turn_countdown = steering
+        .turn_countdown
+        .wrapping_sub(STEERING_COUNTDOWN_STEP);
+
+    if steering.turn_countdown < COMPLETED_RETURN_COUNTDOWN {
+        let z_distance = (node.local_position[Z_AXIS] as i16).wrapping_add(view[Z_AXIS]);
+        let mut target = node.angles[Y_AXIS].wrapping_add(STEERING_HALF_TURN);
+        let generated_turn;
+        let divisor;
+        if z_distance < -STEERING_DISTANCE_LIMIT {
+            (generated_turn, divisor) = fixed_steering_target(target);
+            steering.turn_countdown = FIXED_STEERING_COUNTDOWN;
+        } else {
+            target = target.wrapping_add(STEERING_HALF_TURN);
+            if z_distance > STEERING_DISTANCE_LIMIT {
+                (generated_turn, divisor) = fixed_steering_target(target);
+                steering.turn_countdown = FIXED_STEERING_COUNTDOWN;
+            } else {
+                let x_distance = (node.local_position[X_AXIS] as i16).wrapping_add(view[X_AXIS]);
+                target = target.wrapping_add(STEERING_QUARTER_TURN);
+                if x_distance < -STEERING_DISTANCE_LIMIT {
+                    (generated_turn, divisor) = fixed_steering_target(target);
+                    steering.turn_countdown = FIXED_STEERING_COUNTDOWN;
+                } else {
+                    target = target.wrapping_add(STEERING_HALF_TURN);
+                    if x_distance >= STEERING_DISTANCE_LIMIT {
+                        (generated_turn, divisor) = fixed_steering_target(target);
+                        steering.turn_countdown = FIXED_STEERING_COUNTDOWN;
+                    } else {
+                        steering.random_seed = random_steering_step(steering.random_seed);
+                        generated_turn = (steering.random_seed & RANDOM_STEERING_MASK)
+                            .wrapping_sub(RANDOM_STEERING_BIAS)
+                            as i16;
+                        let magnitude = generated_turn.unsigned_abs();
+                        let generated_divisor = (magnitude >> RANDOM_STEERING_DIVISOR_SHIFT)
+                            .wrapping_add(RANDOM_STEERING_DIVISOR_BIAS);
+                        steering.turn_countdown = generated_divisor as i16;
+                        divisor = generated_divisor as i16;
+                    }
+                }
+            }
+        }
+        steering.turn_step = generated_turn.wrapping_sub(steering.turn_offset) / divisor;
+    }
+
+    steering.turn_offset = steering.turn_step.wrapping_add(steering.turn_offset);
+    node.angles[Y_AXIS] =
+        node.angles[Y_AXIS].wrapping_add((steering.turn_offset >> STEERING_PAN_SHIFT) as u16);
+    steering.sample_phase = steering
+        .sample_phase
+        .wrapping_add(STEERING_SAMPLE_PHASE_STEP)
+        & STEERING_SAMPLE_PHASE_MASK;
+    let sample_index = usize::from(steering.sample_phase >> STEERING_SAMPLE_INDEX_SHIFT);
+    let roll_feedback = trigonometry[sample_index].cosine >> STEERING_SAMPLE_SHIFT;
+    node.angles[Z_AXIS] = steering.turn_offset.wrapping_add(roll_feedback) as u16;
+    Ok(())
+}
+
+fn fixed_steering_target(target: u16) -> (i16, i16) {
+    let centered = (target & STEERING_ANGLE_MASK).wrapping_sub(STEERING_HALF_TURN) as i16;
+    (
+        (centered >> FIXED_STEERING_SHIFT).wrapping_neg(),
+        FIXED_STEERING_DIVISOR,
+    )
+}
+
+fn random_steering_step(value: u16) -> u16 {
+    value
+        .rotate_right(RANDOM_STEERING_ROTATION)
+        .wrapping_sub((value >> RANDOM_STEERING_BORROW_SHIFT) & RANDOM_STEERING_BORROW_MASK)
+}
+
 fn validate_node(
     node_index: usize,
     pose: &AlienModelPose,
@@ -358,6 +468,8 @@ mod tests {
     const ORIGINAL_WAVE_PARENT_SENTINEL: u16 = 0x1111;
     const ORIGINAL_WAVE_CALLBACK_SENTINEL: u16 = 0x2222;
     const ORIGINAL_LEAF_CALLBACK_SENTINEL: u16 = 0x5555;
+    const ORIGINAL_STEERING_ROLL_SENTINEL: u16 = 0x6666;
+    const ORIGINAL_STEERING_RADIAL_SENTINEL: u16 = 0x7777;
     const ORIGINAL_SELECTED_NODE: u16 = 0x3456;
     const ORIGINAL_SCENE_CAMERA_OFFSET: u16 = 0x22A8;
     const UNCHANGED_PULSE: i32 = 0x1357_9BDF;
@@ -456,6 +568,28 @@ mod tests {
         transitioned: bool,
     }
 
+    #[derive(Deserialize)]
+    struct WaveSteeringVector {
+        name: String,
+        module: String,
+        position: [i16; AXIS_COUNT],
+        view: [i16; AXIS_COUNT],
+        pan_before: u16,
+        pan_after: u16,
+        roll_after: u16,
+        countdown_before: u16,
+        countdown_after: u16,
+        turn_step_before: u16,
+        turn_step_after: u16,
+        turn_offset_before: u16,
+        turn_offset_after: u16,
+        sample_phase_before: u16,
+        sample_phase_after: u16,
+        sample: u16,
+        random_seed_before: u16,
+        random_seed_after: u16,
+    }
+
     fn fixtures() -> [&'static str; AXIS_COUNT] {
         [
             include_str!("../../../../../re/tools/oracle_vectors/xdb_amer_func_0bea_natural.json"),
@@ -513,6 +647,16 @@ mod tests {
                 "../../../../../re/tools/oracle_vectors/xdb_croolis_func_0cf9_natural.json"
             ),
             include_str!("../../../../../re/tools/oracle_vectors/xdb_scrut_func_0ce7_natural.json"),
+        ]
+    }
+
+    fn wave_steering_fixtures() -> [&'static str; AXIS_COUNT] {
+        [
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_amer_func_0cac_natural.json"),
+            include_str!(
+                "../../../../../re/tools/oracle_vectors/xdb_croolis_func_0d04_natural.json"
+            ),
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_scrut_func_0cf2_natural.json"),
         ]
     }
 
@@ -963,6 +1107,75 @@ mod tests {
                         assert_eq!(vector.callback_after, selection_callback(&vector.module));
                         AlienRingCallback::WaveSelection
                     }
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn wave_steering_matches_every_original_overlay_vector() {
+        for fixture in wave_steering_fixtures() {
+            let vectors: Vec<WaveSteeringVector> = serde_json::from_str(fixture).unwrap();
+            for vector in vectors {
+                let mut pose = pose([i32::MIN; AXIS_COUNT], [u32::MIN; AXIS_COUNT]);
+                pose.nodes[FIRST_NODE].local_position = vector.position.map(i32::from);
+                pose.nodes[FIRST_NODE].angles[Y_AXIS] = vector.pan_before;
+                pose.nodes[FIRST_NODE].angles[Z_AXIS] = ORIGINAL_STEERING_ROLL_SENTINEL;
+                pose.nodes[FIRST_NODE].radial_offset = ORIGINAL_STEERING_RADIAL_SENTINEL as i16;
+                let mut animation = AlienRingAnimationState::new(SINGLE_NODE_COUNT);
+                animation.nodes[FIRST_NODE].callback = AlienRingCallback::WaveSelection;
+                animation.nodes[FIRST_NODE].steering = super::super::AlienWaveSteeringState {
+                    turn_countdown: vector.countdown_before as i16,
+                    turn_step: vector.turn_step_before as i16,
+                    turn_offset: vector.turn_offset_before as i16,
+                    sample_phase: vector.sample_phase_before,
+                    random_seed: vector.random_seed_before,
+                };
+                let mut trigonometry = [AlienTrigonometryPair::default(); TRIGONOMETRY_ENTRY_COUNT];
+                let sample_index =
+                    usize::from(vector.sample_phase_after >> STEERING_SAMPLE_INDEX_SHIFT);
+                trigonometry[sample_index].cosine = vector.sample as i16;
+
+                continue_wave_steering(
+                    FIRST_NODE,
+                    &mut pose,
+                    &mut animation,
+                    vector.view,
+                    &trigonometry,
+                )
+                .unwrap();
+
+                assert_eq!(
+                    pose.nodes[FIRST_NODE].angles[Y_AXIS], vector.pan_after,
+                    "{} {}",
+                    vector.module, vector.name
+                );
+                assert_eq!(
+                    pose.nodes[FIRST_NODE].angles[Z_AXIS], vector.roll_after,
+                    "{} {}",
+                    vector.module, vector.name
+                );
+                assert_eq!(
+                    pose.nodes[FIRST_NODE].radial_offset, STEERING_RADIAL_OFFSET,
+                    "{} {}",
+                    vector.module, vector.name
+                );
+                assert_eq!(
+                    animation.nodes[FIRST_NODE].steering,
+                    super::super::AlienWaveSteeringState {
+                        turn_countdown: vector.countdown_after as i16,
+                        turn_step: vector.turn_step_after as i16,
+                        turn_offset: vector.turn_offset_after as i16,
+                        sample_phase: vector.sample_phase_after,
+                        random_seed: vector.random_seed_after,
+                    },
+                    "{} {}",
+                    vector.module,
+                    vector.name
+                );
+                assert_eq!(
+                    animation.nodes[FIRST_NODE].callback,
+                    AlienRingCallback::WaveSelection
                 );
             }
         }

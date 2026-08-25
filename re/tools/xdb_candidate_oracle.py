@@ -14942,6 +14942,183 @@ def alien_slot1_return_vectors(
     return vectors
 
 
+def alien_slot1_steering_vectors(
+    module: str,
+    entry: int,
+    body_hash: str,
+) -> list[dict[str, object]]:
+    """Exercise every steering branch in the slot-1 motion continuation."""
+    image = load_image(module)
+    body_size = 175
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered slot-1 steering changed")
+
+    cases = (
+        ("countdown_active", 1, 10, 20, 30, 40, 0x0100, -64, 0x0000, 32, 0x1357),
+        ("z_below", 0, 0, -1001, 0, 0, 0x0123, 7, 0x0080, -20, 0x2468),
+        ("z_above", 0, 0, 1001, 0, 0, 0x0456, -7, 0x0100, 20, 0x369C),
+        ("x_below", 0, -1001, 0, 0, 0, 0x0789, 9, 0x0180, -30, 0x48AD),
+        ("x_at_upper", 0, 1000, 0, 0, 0, 0x0ABC, -9, 0x0200, 30, 0x5ACE),
+        ("random_negative", 0, -1000, -1000, 0, 0, 0x0DEF, 11, 0x0280, -40, 0x0000),
+        ("random_positive", 0, 999, 1000, 0, 0, 0x0F12, -11, 0x0300, 40, 0x3FF8),
+        ("wrapped_distances", 0, 0x7FFF, 0x7FFF, 1, 1, 0x7FFF, 0x7FFF, 0x0380, 0x7FFF, 0x1FF8),
+        ("phase_and_motion_wrap", 1, 0, 0, 0, 0, 0xFFF0, 0x7FFF, 0x0FFC, 0x8001, 0xAAAA),
+    )
+    state = 0x4000
+    vectors: list[dict[str, object]] = []
+
+    def i16(value: int) -> int:
+        value &= 0xFFFF
+        return value - 0x10000 if value & 0x8000 else value
+
+    def signed_divide(numerator: int, denominator: int) -> int:
+        quotient = abs(numerator) // abs(denominator)
+        return -quotient if (numerator < 0) != (denominator < 0) else quotient
+
+    def random_step(value: int) -> int:
+        rotated = ((value >> 3) | (value << 13)) & 0xFFFF
+        return (rotated - ((value >> 2) & 1)) & 0xFFFF
+
+    for case_index, (
+        name,
+        countdown,
+        position_x,
+        position_z,
+        view_x,
+        view_z,
+        pan,
+        turn_step,
+        sample_phase,
+        turn_offset,
+        random_seed,
+    ) in enumerate(cases):
+        turn_step_before = turn_step
+        data_before = bytearray(
+            (offset * 29 + case_index * 17 + 3) & 0xFF
+            for offset in range(0x10000)
+        )
+        data_expected = bytearray(data_before)
+        cosine_samples = []
+        for sample_index in range(1024):
+            cosine = i16(sample_index * 97 + case_index * 313 + 0x1234)
+            cosine_samples.append(cosine)
+            struct.pack_into("<h", data_before, 0x0036 + sample_index * 4, cosine)
+            struct.pack_into("<h", data_expected, 0x0036 + sample_index * 4, cosine)
+        for offset, value in ((0x22EC, view_x), (0x22F4, view_z)):
+            struct.pack_into("<H", data_before, offset, value & 0xFFFF)
+            struct.pack_into("<H", data_expected, offset, value & 0xFFFF)
+        for field, value, packing in (
+            (0x10, countdown, "<H"),
+            (0x42, position_x, "<I"),
+            (0x4A, position_z, "<I"),
+            (0x50, pan, "<H"),
+            (0x52, 0x6666, "<H"),
+            (0x54, 0x7777, "<H"),
+            (0x56, turn_step, "<H"),
+            (0x58, sample_phase, "<H"),
+            (0x5A, turn_offset, "<H"),
+            (0x5C, random_seed, "<H"),
+        ):
+            mask = 0xFFFFFFFF if packing == "<I" else 0xFFFF
+            struct.pack_into(packing, data_before, state + field, value & mask)
+            struct.pack_into(packing, data_expected, state + field, value & mask)
+
+        countdown_after = i16(countdown - 1)
+        generated_turn = None
+        branch = "countdown"
+        if countdown_after < 0:
+            seed_after = random_seed
+            z_distance = i16(position_z + view_z)
+            target = (pan + 0x0800) & 0xFFFF
+            if z_distance < -1000:
+                branch = "z_below"
+            else:
+                target = (target + 0x0800) & 0xFFFF
+                if z_distance > 1000:
+                    branch = "z_above"
+                else:
+                    x_distance = i16(position_x + view_x)
+                    target = (target + 0x0400) & 0xFFFF
+                    if x_distance < -1000:
+                        branch = "x_below"
+                    else:
+                        target = (target + 0x0800) & 0xFFFF
+                        if x_distance >= 1000:
+                            branch = "x_above"
+                        else:
+                            branch = "random"
+            if branch == "random":
+                seed_after = random_step(random_seed)
+                generated_turn = i16((seed_after & 0x07FF) - 0x03FF)
+                denominator = (abs(generated_turn) >> 1) + 16
+                countdown_after = denominator
+            else:
+                target = target & 0x0FFC
+                denominator = 32
+                countdown_after = 16
+                generated_turn = -((i16(target - 0x0800)) >> 2)
+            turn_step = signed_divide(
+                i16(generated_turn - turn_offset),
+                denominator,
+            )
+        else:
+            seed_after = random_seed
+
+        accumulated_turn = i16(turn_step + turn_offset)
+        pan_after = (pan + (accumulated_turn >> 5)) & 0xFFFF
+        sample_phase_after = (sample_phase + 0x0080) & 0x0FFC
+        sample_index = sample_phase_after >> 2
+        sample = cosine_samples[sample_index]
+        roll_after = (accumulated_turn + (sample >> 5)) & 0xFFFF
+        for field, value in (
+            (0x10, countdown_after),
+            (0x50, pan_after),
+            (0x52, roll_after),
+            (0x54, 12),
+            (0x56, turn_step),
+            (0x58, sample_phase_after),
+            (0x5A, accumulated_turn),
+            (0x5C, seed_after),
+        ):
+            struct.pack_into("<H", data_expected, state + field, value & 0xFFFF)
+        data_sha256, code_sha256 = verify_alien_slot1_leaf_case(
+            module,
+            image,
+            entry,
+            case_index,
+            data_before,
+            data_expected,
+        )
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "position": [i16(position_x), 0, i16(position_z)],
+                "view": [i16(view_x), 0, i16(view_z)],
+                "pan_before": pan,
+                "pan_after": pan_after,
+                "roll_after": roll_after,
+                "countdown_before": countdown & 0xFFFF,
+                "countdown_after": countdown_after & 0xFFFF,
+                "turn_step_before": turn_step_before & 0xFFFF,
+                "turn_step_after": turn_step & 0xFFFF,
+                "turn_offset_before": turn_offset & 0xFFFF,
+                "turn_offset_after": accumulated_turn & 0xFFFF,
+                "sample_phase_before": sample_phase,
+                "sample_phase_after": sample_phase_after,
+                "sample": sample & 0xFFFF,
+                "random_seed_before": random_seed,
+                "random_seed_after": seed_after,
+                "generated_turn": None if generated_turn is None else generated_turn & 0xFFFF,
+                "branch": branch,
+                "data_sha256": data_sha256,
+                "code_sha256": code_sha256,
+            }
+        )
+    return vectors
+
+
 def alien_slot1_finish_vectors(
     module: str,
     entry: int,
@@ -16828,6 +17005,25 @@ def main() -> int:
                 body_hash,
                 selection_callback,
             ),
+            args.check,
+        )
+    for module, entry, body_hash in (
+        (
+            "amer", 0x0CAC,
+            "eaef6abb054b3214c5fc275271aedf0c4b0e82122b8622b0fd2409188f12bf33",
+        ),
+        (
+            "croolis", 0x0D04,
+            "eaef6abb054b3214c5fc275271aedf0c4b0e82122b8622b0fd2409188f12bf33",
+        ),
+        (
+            "scrut", 0x0CF2,
+            "eaef6abb054b3214c5fc275271aedf0c4b0e82122b8622b0fd2409188f12bf33",
+        ),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            alien_slot1_steering_vectors(module, entry, body_hash),
             args.check,
         )
     for (

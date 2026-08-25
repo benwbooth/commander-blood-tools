@@ -50,14 +50,14 @@ pub use ring::{
     AlienRingAnimationState, AlienRingCallback, AlienRingCallbacks, AlienRingClearUpdate,
     AlienRingCourseUpdate, AlienRingEntry, AlienRingError, AlienRingFollowerUpdate,
     AlienRingLifecycle, AlienRingNodeState, AlienRingResumeState, AlienRingUpdate,
-    begin_resume_clear, capture_resume_state, clear_next_ring_entry, restart_initial_course,
-    update_follow_course, update_initial_course, update_or_initialize_ring,
+    AlienWaveSteeringState, begin_resume_clear, capture_resume_state, clear_next_ring_entry,
+    restart_initial_course, update_follow_course, update_initial_course, update_or_initialize_ring,
 };
 pub use scene::{AlienScene, AlienSceneError, AlienSceneFrame};
 pub use selection::{
     AlienSelectionError, AlienSelectionUpdate, AlienWaveCallbackUpdate, AlienWaveMotionUpdate,
-    AlienWaveReturnUpdate, update_wave_callback, update_wave_camera, update_wave_finish,
-    update_wave_motion, update_wave_return, update_wave_selection,
+    AlienWaveReturnUpdate, continue_wave_steering, update_wave_callback, update_wave_camera,
+    update_wave_finish, update_wave_motion, update_wave_return, update_wave_selection,
 };
 pub use starfield::{
     AlienStar, AlienStarRejections, AlienStarfieldError, AlienStarfieldFrame, STAR_COUNT,
