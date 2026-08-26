@@ -297,7 +297,7 @@ pub use script_profile_request::{
 pub use script_selector::{
     SCRIPT_CONCEPT_HISTORY_LENGTH, ScriptConceptHistory, ScriptSelectionError,
     ScriptSelectionOutcome, ScriptSelectorBranch, ScriptSelectorError, ScriptSelectorState,
-    commit_selected_concept, find_selector_body,
+    collect_selector_menu, commit_selected_concept, find_selector_body,
 };
 pub use script_sequence_slots::ScriptSequenceSlots;
 pub use screen_presentation::{

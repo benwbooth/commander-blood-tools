@@ -292,6 +292,41 @@ pub fn commit_selected_concept(
     })
 }
 
+/// Publish the active BAS menu and append one pending offered topic.
+///
+/// This translates `vm_op_a3_collect` at BLOODPRG file offset `0x005AFD`.
+/// A non-menu branch leaves both the existing choice list and offered topic
+/// unchanged. Typed vectors replace the native terminated output buffer.
+pub fn collect_selector_menu(
+    dialogue: &ScriptBas,
+    state: &mut ScriptSelectorState,
+    offered_topic: &mut Option<ScriptWordId>,
+) -> Result<bool, ScriptSelectionError> {
+    let Some(branch) = state.current_branch else {
+        return Ok(false);
+    };
+    let instruction = dialogue
+        .tokens()
+        .iter()
+        .find(|token| token.source_offset() == branch.body)
+        .ok_or(ScriptSelectionError::MissingBody {
+            source_offset: branch.body,
+        })?
+        .instruction();
+    let ScriptBasInstruction::Menu(words) = instruction else {
+        return Ok(false);
+    };
+
+    state.pending_presentation_words.clear();
+    state
+        .pending_presentation_words
+        .extend(words.iter().copied());
+    if let Some(topic) = offered_topic.take() {
+        state.pending_presentation_words.push(topic);
+    }
+    Ok(true)
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::{Path, PathBuf};
@@ -306,7 +341,13 @@ mod tests {
     const EXPECTED_SELECTOR_NODE_COUNTS: [usize; PROFILE_COUNT] = [1, 122, 98, 43, 57];
     const EXPECTED_TOTAL_SELECTOR_NODE_COUNT: usize = 321;
     const SELECTION_ORACLE_VECTOR_COUNT: usize = 14;
+    const MENU_COLLECTION_ORACLE_VECTOR_COUNT: usize = 10;
     const EXPECTED_UNALIGNED_NATIVE_RING_VECTOR_COUNT: usize = 8;
+    const EXPECTED_IGNORED_MENU_COLLECTION_VECTORS: usize = 3;
+    const EXPECTED_EMPTY_MENU_COLLECTION_VECTORS: usize = 2;
+    const EXPECTED_MALFORMED_MENU_COLLECTION_VECTORS: usize = 3;
+    const EXPECTED_VALID_MENU_COLLECTION_VECTORS: usize = 2;
+    const MENU_COLLECTION_VECTOR_KIND_COUNT: usize = 4;
     const SERIALIZED_WORD_SIZE: usize = 2;
     const NATIVE_HISTORY_WORD_SIZE: u8 = 2;
     const NATIVE_SELECTOR_RESUME_BIT: u8 = 2;
@@ -350,6 +391,27 @@ mod tests {
         branch_taken: bool,
     }
 
+    #[derive(Deserialize)]
+    struct MenuCollectionOracle {
+        name: String,
+        opcode: u8,
+        source_word_offsets: Vec<u16>,
+        source_words: Vec<u16>,
+        deferred_before: u16,
+        deferred_after: u16,
+        written_words: Vec<(u16, u16)>,
+        direction: String,
+    }
+
+    #[repr(usize)]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    enum MenuCollectionVectorKind {
+        IgnoredOpcode,
+        EmptyMenu,
+        MalformedTraversal,
+        ValidMenu,
+    }
+
     fn workspace_root() -> PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
     }
@@ -385,6 +447,62 @@ mod tests {
             bytes.push(BAS_END_MARKER);
         }
         body
+    }
+
+    fn menu_collection_vector_kind(vector: &MenuCollectionOracle) -> MenuCollectionVectorKind {
+        if vector.opcode != MENU_OPCODE {
+            return MenuCollectionVectorKind::IgnoredOpcode;
+        }
+        if vector.source_words.is_empty() {
+            return MenuCollectionVectorKind::EmptyMenu;
+        }
+        let source_wraps = vector
+            .source_word_offsets
+            .windows(2)
+            .any(|positions| positions[1] < positions[0]);
+        let impossible_dictionary_word = vector.source_words.contains(&u16::MAX);
+        if vector.direction != "forward" || source_wraps || impossible_dictionary_word {
+            MenuCollectionVectorKind::MalformedTraversal
+        } else {
+            MenuCollectionVectorKind::ValidMenu
+        }
+    }
+
+    fn dictionary_with_words_at(offsets: &[u16]) -> ScriptDictionary {
+        const TEST_WORD_LENGTH: usize = 2;
+        const TERMINATOR_SIZE: usize = 1;
+
+        let last_offset = offsets.iter().copied().max().unwrap();
+        let mut bytes =
+            vec![u8::MIN; usize::from(last_offset) + TEST_WORD_LENGTH + TERMINATOR_SIZE];
+        for (index, offset) in offsets.iter().copied().enumerate() {
+            let start = usize::from(offset);
+            let label_byte = b'a' + u8::try_from(index).unwrap();
+            bytes[start..start + TEST_WORD_LENGTH].fill(label_byte);
+        }
+        decode_script_dictionary(&bytes).unwrap()
+    }
+
+    fn valid_menu_from_oracle(
+        vector: &MenuCollectionOracle,
+    ) -> (ScriptDictionary, ScriptBas, Vec<ScriptWordId>) {
+        let mut dictionary_offsets = vector.source_words.clone();
+        if vector.deferred_before != u16::MIN {
+            dictionary_offsets.push(vector.deferred_before);
+        }
+        let dictionary = dictionary_with_words_at(&dictionary_offsets);
+        let mut bytes = vec![MENU_OPCODE];
+        for source_word in &vector.source_words {
+            bytes.extend_from_slice(&source_word.to_le_bytes());
+        }
+        bytes.extend_from_slice(&u16::MIN.to_le_bytes());
+        let dialogue = decode_script_bas(&bytes, &dictionary).unwrap();
+        let words = vector
+            .source_words
+            .iter()
+            .map(|source_word| dictionary.resolve_source_offset(*source_word).unwrap())
+            .collect();
+        (dictionary, dialogue, words)
     }
 
     fn selection_dialogue(
@@ -638,6 +756,157 @@ mod tests {
             unaligned_native_ring_vectors,
             EXPECTED_UNALIGNED_NATIVE_RING_VECTOR_COUNT
         );
+    }
+
+    #[test]
+    fn menu_collection_accounts_for_every_original_natural_vector() {
+        let vectors: Vec<MenuCollectionOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_5afd_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), MENU_COLLECTION_ORACLE_VECTOR_COUNT);
+        let mut kind_counts = [usize::MIN; MENU_COLLECTION_VECTOR_KIND_COUNT];
+
+        for vector in vectors {
+            let kind = menu_collection_vector_kind(&vector);
+            kind_counts[kind as usize] += HISTORY_INSERTION_STEP;
+            if kind != MenuCollectionVectorKind::ValidMenu {
+                continue;
+            }
+
+            let (dictionary, dialogue, menu_words) = valid_menu_from_oracle(&vector);
+            let concept = menu_words[usize::MIN];
+            let mut state = ScriptSelectorState {
+                current_branch: Some(ScriptSelectorBranch {
+                    concept,
+                    body: ScriptCodeOffset::new(usize::MIN),
+                }),
+                pending_presentation_words: vec![concept],
+                ..ScriptSelectorState::default()
+            };
+            let mut offered_topic = (vector.deferred_before != u16::MIN).then(|| {
+                dictionary
+                    .resolve_source_offset(vector.deferred_before)
+                    .unwrap()
+            });
+
+            assert!(collect_selector_menu(&dialogue, &mut state, &mut offered_topic).unwrap());
+            assert_eq!(
+                offered_topic,
+                (vector.deferred_after != u16::MIN).then(|| {
+                    dictionary
+                        .resolve_source_offset(vector.deferred_after)
+                        .unwrap()
+                }),
+                "{}",
+                vector.name
+            );
+            let encoded_words = state
+                .pending_presentation_words()
+                .iter()
+                .map(|word| dictionary.source_offset(*word).unwrap())
+                .collect::<Vec<_>>();
+            let mut expected_words = vector
+                .written_words
+                .iter()
+                .map(|(_destination, value)| *value)
+                .collect::<Vec<_>>();
+            assert_eq!(expected_words.pop(), Some(u16::MIN));
+            assert_eq!(encoded_words, expected_words, "{}", vector.name);
+        }
+
+        assert_eq!(
+            kind_counts[MenuCollectionVectorKind::IgnoredOpcode as usize],
+            EXPECTED_IGNORED_MENU_COLLECTION_VECTORS
+        );
+        assert_eq!(
+            kind_counts[MenuCollectionVectorKind::EmptyMenu as usize],
+            EXPECTED_EMPTY_MENU_COLLECTION_VECTORS
+        );
+        assert_eq!(
+            kind_counts[MenuCollectionVectorKind::MalformedTraversal as usize],
+            EXPECTED_MALFORMED_MENU_COLLECTION_VECTORS
+        );
+        assert_eq!(
+            kind_counts[MenuCollectionVectorKind::ValidMenu as usize],
+            EXPECTED_VALID_MENU_COLLECTION_VECTORS
+        );
+    }
+
+    #[test]
+    fn every_shipped_selector_menu_collects_interned_words_and_an_offered_topic() {
+        let root = workspace_root();
+        let mut total_menus = usize::MIN;
+
+        for profile in 1..=PROFILE_COUNT {
+            let assets = root.join("accuracy/cblood_install/cblood");
+            let dictionary = decode_script_dictionary(
+                &std::fs::read(assets.join(format!("SCRIPT{profile}.DIC"))).unwrap(),
+            )
+            .unwrap();
+            let dialogue = decode_script_bas(
+                &std::fs::read(assets.join(format!("SCRIPT{profile}.BAS"))).unwrap(),
+                &dictionary,
+            )
+            .unwrap();
+            let graph: SelectorGraph = serde_json::from_slice(
+                &std::fs::read(root.join(format!(
+                    "re/vm/bas-control-flow/script{profile}.bas.cfg.json"
+                )))
+                .unwrap(),
+            )
+            .unwrap();
+
+            for node in &graph.nodes {
+                let body = ScriptCodeOffset::new(node.body_start);
+                let token = dialogue
+                    .tokens()
+                    .iter()
+                    .find(|token| token.source_offset() == body)
+                    .unwrap();
+                let ScriptBasInstruction::Menu(expected_words) = token.instruction() else {
+                    panic!("shipped selector body is not a menu");
+                };
+                let offered = expected_words[usize::MIN];
+                let mut offered_topic = Some(offered);
+                let mut state = ScriptSelectorState {
+                    current_branch: Some(ScriptSelectorBranch {
+                        concept: offered,
+                        body,
+                    }),
+                    ..ScriptSelectorState::default()
+                };
+
+                assert!(collect_selector_menu(&dialogue, &mut state, &mut offered_topic).unwrap());
+                let mut expected = expected_words.to_vec();
+                expected.push(offered);
+                assert_eq!(state.pending_presentation_words(), expected);
+                assert_eq!(offered_topic, None);
+                total_menus += HISTORY_INSERTION_STEP;
+            }
+        }
+
+        assert_eq!(total_menus, EXPECTED_TOTAL_SELECTOR_NODE_COUNT);
+    }
+
+    #[test]
+    fn non_menu_branches_preserve_existing_choices_and_offered_topic() {
+        let dictionary = decode_script_dictionary(b"alpha\0").unwrap();
+        let concept = dictionary.resolve_source_offset(u16::MIN).unwrap();
+        let dialogue = decode_script_bas(&[BAS_END_MARKER], &dictionary).unwrap();
+        let mut state = ScriptSelectorState {
+            current_branch: Some(ScriptSelectorBranch {
+                concept,
+                body: ScriptCodeOffset::new(usize::MIN),
+            }),
+            pending_presentation_words: vec![concept],
+            ..ScriptSelectorState::default()
+        };
+        let mut offered_topic = Some(concept);
+
+        assert!(!collect_selector_menu(&dialogue, &mut state, &mut offered_topic).unwrap());
+        assert_eq!(state.pending_presentation_words(), &[concept]);
+        assert_eq!(offered_topic, Some(concept));
     }
 
     #[test]
