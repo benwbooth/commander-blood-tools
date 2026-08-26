@@ -61,6 +61,7 @@ mod presentation_hover;
 mod presentation_line;
 mod presentation_mode;
 mod presentation_queue;
+mod presentation_resource;
 mod presentation_run;
 mod presentation_word_choice;
 mod pointer_buttons;
@@ -402,6 +403,14 @@ pub use presentation_queue::{
     PresentationQueueAdvance, PresentationQueueClock, PresentationQueueClockGates,
     PresentationQueueConsumeOutcome, PresentationQueueError, PresentationQueueState,
     presentation_queue_advance_due, presentation_resource_enabled,
+};
+pub use presentation_resource::{
+    FixedWordCopyError, PRESENTATION_PALETTE_SNAPSHOT_COLOR_COUNT, PaletteBlockDecodeError,
+    PresentationPaletteError, PresentationPaletteOutcome, PresentationPaletteState,
+    PresentationSourceLease, PresentationUpdateOutcome, PresentationUpdateState,
+    apply_presentation_palette_blocks, apply_queued_presentation_palette_blocks,
+    close_owned_presentation_source, copy_four_words_forward, finish_presentation_update,
+    presentation_resource_descriptor, synchronize_presentation_palette_snapshot,
 };
 pub use presentation_run::{
     CREDITS_VOICE_RESOURCE_PATH, PresentationRunExit, PresentationRunHost,

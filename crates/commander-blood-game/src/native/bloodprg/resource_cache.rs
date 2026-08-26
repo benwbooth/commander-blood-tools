@@ -5,11 +5,11 @@ use std::error::Error;
 use std::fmt;
 
 use commander_blood_formats::archive::{BloodArchiveError, BloodResourceName};
-use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
 
 use crate::assets::OriginalResourceStore;
 
 use super::IndexedGamePalette;
+use super::presentation_resource::{PaletteBlockDecodeError, decode_palette_blocks};
 
 /// File position of the fixed-width resource-name table in `BLOODPRG.EXE`.
 pub const BLOODPRG_RESOURCE_CATALOG_FILE_OFFSET: usize = 0x00CDF4;
@@ -21,9 +21,6 @@ pub const ORIGINAL_RESOURCE_ALLOCATION_ALIGNMENT: usize = 16;
 const RESOURCE_NAME_FIELD_SIZE: usize = 16;
 const RESOURCE_FILE_HEADER_SIZE: usize = 2;
 const RESOURCE_PALETTE_PREAMBLE_FLAG: u16 = 2;
-const RESOURCE_PALETTE_BLOCK_TERMINATOR: u16 = u16::MAX;
-const RESOURCE_PALETTE_BLOCK_START_MASK: u16 = u8::MAX as u16;
-const RESOURCE_PALETTE_BLOCK_COUNT_SHIFT: u32 = u8::BITS;
 
 /// Stable zero-based identifier from the original resource catalog.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -405,53 +402,29 @@ fn decode_palette_resource(
     }
 
     let mut palette = *live_palette;
-    let mut cursor = RESOURCE_FILE_HEADER_SIZE;
-    loop {
-        let block_header = source
-            .get(cursor..cursor + RESOURCE_FILE_HEADER_SIZE)
-            .ok_or(ResourceCacheError::TruncatedPaletteBlockHeader {
-                resource,
-                position: cursor,
-            })?;
-        cursor += RESOURCE_FILE_HEADER_SIZE;
-        let block = u16::from_le_bytes(
-            block_header
-                .try_into()
-                .expect("validated two-byte palette block header"),
-        );
-        if block == RESOURCE_PALETTE_BLOCK_TERMINATOR {
-            break;
-        }
-
-        let first_color = usize::from(block & RESOURCE_PALETTE_BLOCK_START_MASK);
-        let color_count = usize::from(block >> RESOURCE_PALETTE_BLOCK_COUNT_SHIFT);
-        let end_color = first_color
-            .checked_add(color_count)
-            .filter(|end| *end <= PALETTE_ENTRY_COUNT);
-        let Some(end_color) = end_color else {
-            return Err(ResourceCacheError::PaletteBlockOutOfRange {
+    let cursor = decode_palette_blocks(source, RESOURCE_FILE_HEADER_SIZE, &mut palette).map_err(
+        |source| match source {
+            PaletteBlockDecodeError::TruncatedHeader { position } => {
+                ResourceCacheError::TruncatedPaletteBlockHeader { resource, position }
+            }
+            PaletteBlockDecodeError::ColorsOutOfRange {
+                first_color,
+                color_count,
+            } => ResourceCacheError::PaletteBlockOutOfRange {
                 resource,
                 first_color,
                 color_count,
-            });
-        };
-        let component_byte_count = color_count * RGB_COMPONENT_COUNT;
-        let available = source.len().saturating_sub(cursor);
-        let block_bytes = source.get(cursor..cursor + component_byte_count).ok_or(
-            ResourceCacheError::TruncatedPaletteBlock {
+            },
+            PaletteBlockDecodeError::TruncatedComponents {
+                required,
+                available,
+            } => ResourceCacheError::TruncatedPaletteBlock {
                 resource,
-                required: component_byte_count,
+                required,
                 available,
             },
-        )?;
-        for (destination, color) in palette[first_color..end_color]
-            .iter_mut()
-            .zip(block_bytes.chunks_exact(RGB_COMPONENT_COUNT))
-        {
-            destination.copy_from_slice(color);
-        }
-        cursor += component_byte_count;
-    }
+        },
+    )?;
 
     let mut bytes = Vec::with_capacity(RESOURCE_FILE_HEADER_SIZE + source.len() - cursor);
     bytes.extend_from_slice(header_bytes);
@@ -464,6 +437,7 @@ mod tests {
     use std::path::PathBuf;
     use std::sync::atomic::{AtomicU64, Ordering};
 
+    use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
     use serde::Deserialize;
 
     use super::*;
@@ -479,6 +453,7 @@ mod tests {
     const PALETTE_TEST_FIRST_COLOR: usize = 2;
     const PALETTE_TEST_COLOR_COUNT: usize = 2;
     const PALETTE_TEST_HEADER: u16 = 0x5372;
+    const PALETTE_TEST_BLOCK_TERMINATOR: u16 = u16::MAX;
     const PALETTE_TEST_PAYLOAD: &[u8] = b"sprite-body";
     const NAMED_RESOURCE_ORACLE_VECTOR_COUNT: usize = 8;
     const NAMED_RESOURCE_ORACLE_SUCCESS_COUNT: usize = 6;
@@ -577,7 +552,7 @@ mod tests {
             PALETTE_TEST_COLOR_COUNT as u8,
         ]);
         source.extend_from_slice(block_colors);
-        source.extend_from_slice(&RESOURCE_PALETTE_BLOCK_TERMINATOR.to_le_bytes());
+        source.extend_from_slice(&PALETTE_TEST_BLOCK_TERMINATOR.to_le_bytes());
         source.extend_from_slice(PALETTE_TEST_PAYLOAD);
         source.into_boxed_slice()
     }
