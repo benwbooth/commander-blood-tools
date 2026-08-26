@@ -66,6 +66,7 @@ mod presentation_line;
 mod presentation_mode;
 mod presentation_present;
 mod presentation_queue;
+mod presentation_queue_service;
 mod presentation_refill;
 mod presentation_raster;
 mod presentation_resource;
@@ -439,6 +440,10 @@ pub use presentation_queue::{
     presentation_entry_activation_request, presentation_queue_advance_due,
     presentation_resource_enabled,
 };
+pub use presentation_queue_service::{
+    PresentationQueueServiceContext, PresentationQueueServiceError,
+    PresentationQueueServiceOutcome, service_presentation_queue,
+};
 pub use presentation_refill::{
     PresentationQueueLinkCursor, PresentationQueueRefillError, PresentationQueueRefillOutcome,
     refill_presentation_queue,
@@ -472,8 +477,7 @@ pub use presentation_run::{
 };
 pub use presentation_sequence_load::{
     PresentationResourceSequenceContext, PresentationResourceSequenceError,
-    PresentationResourceSequenceOutcome, PresentationSequenceSideDataError,
-    PresentationSequenceSideDataSink, load_presentation_resource_sequence,
+    PresentationResourceSequenceOutcome, load_presentation_resource_sequence,
 };
 pub use presentation_word_choice::{
     WORD_CHOICE_TRANSITION_STEPS, PresentationWordChoice, PresentationWordChoiceBackend,

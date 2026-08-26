@@ -25,6 +25,12 @@ pub struct PresentationActiveEntryState {
     pub retired: Option<ActivatedPresentationEntry>,
     /// Whether any active frame reached the presenter.
     pub frame_presented: bool,
+    /// Complete queue extent owning the active frame.
+    pub active_queue_extent: Option<usize>,
+    /// Sound side record published with the active queue entry.
+    pub active_sound_record: Option<Box<[u8]>>,
+    /// Palette blocks retained until this frame is due for presentation.
+    pub pending_palette_payload: Option<Box<[u8]>>,
 }
 
 /// Runtime gates affecting the destination and row-count policy.
@@ -591,6 +597,7 @@ mod tests {
                 active: vector.active.then(|| active_entry(&vector)),
                 retired: None,
                 frame_presented: false,
+                ..PresentationActiveEntryState::default()
             };
             let mut presenter = RecordingPresenter::default();
             let result = present_active_entry(

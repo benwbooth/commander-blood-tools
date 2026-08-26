@@ -6,11 +6,11 @@ use std::fmt;
 use super::{
     PresentationActiveEntryError, PresentationActiveEntryOutcome, PresentationActiveEntryState,
     PresentationEntryActivationRequest, PresentationEntryDisposition, PresentationEntryError,
-    PresentationEntryPolicy, PresentationEntryPresenter, PresentationEntrySideData,
-    PresentationEntryStorage, PresentationPaletteState, PresentationPresentPolicy,
-    PresentationQueueClock, PresentationQueueLinkCursor, PresentationQueueRefillError,
-    PresentationQueueRefillOutcome, PresentationQueueState, PresentationResourceDescriptor,
-    PresentationResourceId, PresentationResourceProvider, PresentationResourceStreamState,
+    PresentationEntryPolicy, PresentationEntryPresenter, PresentationEntryStorage,
+    PresentationPaletteState, PresentationPresentPolicy, PresentationQueueClock,
+    PresentationQueueLinkCursor, PresentationQueueRefillError, PresentationQueueRefillOutcome,
+    PresentationQueueState, PresentationResourceDescriptor, PresentationResourceId,
+    PresentationResourceProvider, PresentationResourceStreamState,
     PresentationResourceSwitchContext, PresentationResourceSwitchError,
     PresentationResourceSwitchOutcome, PresentationSourceError, activate_presentation_entry,
     load_initial_presentation_entry, present_active_entry, refill_presentation_queue,
@@ -19,38 +19,6 @@ use super::{
 
 const INITIAL_REFILL_ATTEMPT_COUNT: usize = 50;
 const SKIP_INITIAL_REFILL_FLAG: u8 = 64;
-
-/// Host failure while publishing an initial sound or palette side record.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct PresentationSequenceSideDataError {
-    message: String,
-}
-
-impl PresentationSequenceSideDataError {
-    /// Retain a host-facing side-record failure without a DOS error code.
-    pub fn new(message: impl Into<String>) -> Self {
-        Self {
-            message: message.into(),
-        }
-    }
-}
-
-impl fmt::Display for PresentationSequenceSideDataError {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(&self.message)
-    }
-}
-
-impl Error for PresentationSequenceSideDataError {}
-
-/// Host boundary for sound and palette records parsed before the first frame.
-pub trait PresentationSequenceSideDataSink {
-    /// Apply side records before the activated frame reaches the presenter.
-    fn apply_presentation_side_data(
-        &mut self,
-        side_data: &PresentationEntrySideData,
-    ) -> Result<(), PresentationSequenceSideDataError>;
-}
 
 /// Mutable dependencies used to load and prefill one presentation sequence.
 pub struct PresentationResourceSequenceContext<'a, Provider, Host> {
@@ -74,7 +42,7 @@ pub struct PresentationResourceSequenceContext<'a, Provider, Host> {
     pub active_entry: &'a mut PresentationActiveEntryState,
     /// Destination and row policies for first-frame presentation.
     pub present_policy: PresentationPresentPolicy,
-    /// Concrete presenter and required sound/palette side-record publisher.
+    /// Concrete flat-frame presenter.
     pub host: &'a mut Host,
     /// Queue pacing state receiving the current timer sample.
     pub clock: &'a mut PresentationQueueClock,
@@ -91,8 +59,6 @@ pub enum PresentationResourceSequenceError {
     InitialEntry(PresentationSourceError),
     /// The initial entry grammar or payload was malformed.
     Activation(PresentationEntryError),
-    /// A sound or palette side record could not be published.
-    SideData(PresentationSequenceSideDataError),
     /// Initial frame presentation failed.
     Present(PresentationActiveEntryError),
     /// A bounded prefill attempt found malformed queue or source state.
@@ -114,7 +80,6 @@ impl Error for PresentationResourceSequenceError {
             Self::Switch(source) => Some(source),
             Self::InitialEntry(source) => Some(source),
             Self::Activation(source) => Some(source),
-            Self::SideData(source) => Some(source),
             Self::Present(source) => Some(source),
             Self::Refill(source) => Some(source),
         }
@@ -136,12 +101,6 @@ impl From<PresentationSourceError> for PresentationResourceSequenceError {
 impl From<PresentationEntryError> for PresentationResourceSequenceError {
     fn from(error: PresentationEntryError) -> Self {
         Self::Activation(error)
-    }
-}
-
-impl From<PresentationSequenceSideDataError> for PresentationResourceSequenceError {
-    fn from(error: PresentationSequenceSideDataError) -> Self {
-        Self::SideData(error)
     }
 }
 
@@ -186,7 +145,7 @@ fn advance_initial_sequence_counters(queue: &mut PresentationQueueState) {
 ///
 /// This translates `resource_load_sequence` at BLOODPRG offset `0x00A15F`.
 /// It composes the concrete flat resource switch, first-entry load and
-/// activation, side-record publication, frame presentation, queue reset,
+/// activation, side-record retention, frame presentation, queue reset,
 /// counter updates, and exactly 50 refill attempts unless flag 64 suppresses
 /// prefill. The retained first-entry position replaces the native routine's
 /// accidental reuse of a storage segment as its `mm` link cursor.
@@ -197,7 +156,7 @@ pub fn load_presentation_resource_sequence<Provider, Host>(
 ) -> Result<PresentationResourceSequenceOutcome, PresentationResourceSequenceError>
 where
     Provider: PresentationResourceProvider,
-    Host: PresentationEntryPresenter + PresentationSequenceSideDataSink,
+    Host: PresentationEntryPresenter,
 {
     let resource_switch = switch_presentation_resource(
         stream,
@@ -228,27 +187,28 @@ where
         context.entry_policy,
         |link| resolve_presentation_queue_link(context.queue_buffer, link),
     )?;
-    if activation.side_data.sound_record.is_some() || activation.side_data.palette_payload.is_some()
-    {
-        context
-            .host
-            .apply_presentation_side_data(&activation.side_data)?;
-    }
+    context.active_entry.active_sound_record = activation.side_data.sound_record;
+    context.active_entry.pending_palette_payload = activation.side_data.palette_payload;
 
     let initial_entry_accepted = match activation.disposition {
         PresentationEntryDisposition::Active(entry) => {
             context.active_entry.active = Some(entry);
+            context.active_entry.active_queue_extent = Some(initial_entry.extent);
             context.queue.active_entry = true;
             true
         }
         PresentationEntryDisposition::RejectedLink { .. } => {
             context.active_entry.active = None;
+            context.active_entry.active_queue_extent = None;
             context.queue.active_entry = false;
             false
         }
     };
     let initial_present =
         present_active_entry(context.active_entry, context.present_policy, context.host)?;
+    context.active_entry.active_queue_extent = None;
+    context.active_entry.active_sound_record = None;
+    context.active_entry.pending_palette_payload = None;
     context.queue.reset(context.queue_buffer.len());
     advance_initial_sequence_counters(context.queue);
 
@@ -331,18 +291,7 @@ mod tests {
 
     #[derive(Default)]
     struct RecordingHost {
-        side_data_calls: usize,
         presentation_calls: usize,
-    }
-
-    impl PresentationSequenceSideDataSink for RecordingHost {
-        fn apply_presentation_side_data(
-            &mut self,
-            _side_data: &PresentationEntrySideData,
-        ) -> Result<(), PresentationSequenceSideDataError> {
-            self.side_data_calls += 1;
-            Ok(())
-        }
     }
 
     impl PresentationEntryPresenter for RecordingHost {
@@ -516,7 +465,6 @@ mod tests {
                     assert_eq!(outcome.refill_attempts, vector.refill_count);
                     assert_eq!(clock.previous_tick, vector.result.previous_tick);
                     assert_eq!(queue.sequence_index, vector.result.sequence);
-                    assert_eq!(host.side_data_calls, usize::MIN);
                     assert_eq!(host.presentation_calls, usize::MIN);
                 }
             }
