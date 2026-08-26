@@ -6,6 +6,7 @@ mod actor_slots;
 mod audio_bank;
 mod audio_events;
 mod audio_playback;
+mod audio_stream;
 mod bridge_input;
 mod bridge_page;
 mod bridge_panorama;
@@ -173,6 +174,13 @@ pub use audio_playback::{
     AudioDriverRequests, AudioMixOperation, AudioMixReport, AudioMixStatus, AudioPlaybackBanks,
     AudioPlaybackError, AudioPlaybackOutcome, AudioPlaybackState, AudioStreamBuffer,
     AudioStreamBufferStatus, DirectSoundPlayback, update_audio_playback,
+};
+pub use audio_stream::{
+    AUDIO_STREAM_PAGE_BYTE_COUNT, AUDIO_STREAM_WAIT_PROMPT, AudioStreamError,
+    AudioStreamLoadOutcome, AudioStreamPlaybackPosition, AudioStreamRefillOutcome,
+    AudioStreamSource, AudioStreamStartOutcome, AudioStreamState, AudioStreamSubmission,
+    AudioStreamSubmissionKind, CREATIVE_VOICE_FILE_HEADER_BYTE_COUNT, load_audio_stream_source,
+    refill_audio_stream, start_audio_stream,
 };
 pub use bridge_console::{
     BridgeChoiceBackend, BridgeChoicePanelPhase, BridgeConsoleActorState, BridgeConsoleChoice,
