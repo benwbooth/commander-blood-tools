@@ -347,8 +347,10 @@ pub use palette_update::{
     advance_palette_transition, take_palette_upload_request,
 };
 pub use pbm_image::{
+    CHART_BACK_BUFFER_RESOURCE_PATH, ORX_BACK_BUFFER_RESOURCE_PATH,
     PBM_SCENE_PALETTE_COLOR_COUNT, PbmDecodeError, PbmDecodeOptions, PbmDecodeResult, PbmMarker,
-    PbmPaletteUpdate, PbmTransparency, decode_pbm_image,
+    PbmPaletteUpdate, PbmTransparency, decode_chart_back_buffer, decode_orx_back_buffer,
+    decode_pbm_image,
 };
 pub use presentation::{
     evaluate_text_conditions, ScriptWordHistory, TextConditionEffects, TextConditionError,

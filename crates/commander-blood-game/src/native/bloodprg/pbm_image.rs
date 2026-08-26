@@ -13,6 +13,10 @@ use super::IndexedGamePalette;
 
 /// Number of leading colors updated when a scene or ship palette is retained.
 pub const PBM_SCENE_PALETTE_COLOR_COUNT: usize = 192;
+/// Native resource name selected by `back_buffer_init`.
+pub const CHART_BACK_BUFFER_RESOURCE_PATH: &str = "chart.fd";
+/// Native resource name selected by `backbuffer_clear_flags`.
+pub const ORX_BACK_BUFFER_RESOURCE_PATH: &str = "orx.fd";
 
 const PBM_MARKER: &[u8; 4] = b"PBM ";
 const COLOR_MAP_MARKER: &[u8; 4] = b"CMAP";
@@ -187,6 +191,50 @@ pub fn decode_pbm_image(
     })
 }
 
+/// Decode `CHART.FD` into the flat indexed back buffer.
+///
+/// This translates `back_buffer_init` at BLOODPRG routine offset `0x0017D9`.
+/// The selected resource, opaque pixel replacement, palette preservation, and
+/// decode result remain. Direct conversion to a temporary Mode-X page is
+/// omitted because wgpu consumes the same logical indexed pixels.
+pub fn decode_chart_back_buffer(
+    source: &[u8],
+    framebuffer: &mut [u8],
+    live_palette: &mut IndexedGamePalette,
+) -> Result<PbmDecodeResult, PbmDecodeError> {
+    decode_opaque_back_buffer(source, framebuffer, live_palette)
+}
+
+/// Decode `ORX.FD` into the flat indexed back buffer.
+///
+/// This translates `backbuffer_clear_flags` at BLOODPRG routine offset
+/// `0x001817`. The selected resource, opaque pixel replacement, palette
+/// preservation, and decode result remain. Direct conversion to a temporary
+/// Mode-X page is omitted because wgpu consumes the flat buffer directly.
+pub fn decode_orx_back_buffer(
+    source: &[u8],
+    framebuffer: &mut [u8],
+    live_palette: &mut IndexedGamePalette,
+) -> Result<PbmDecodeResult, PbmDecodeError> {
+    decode_opaque_back_buffer(source, framebuffer, live_palette)
+}
+
+fn decode_opaque_back_buffer(
+    source: &[u8],
+    framebuffer: &mut [u8],
+    live_palette: &mut IndexedGamePalette,
+) -> Result<PbmDecodeResult, PbmDecodeError> {
+    decode_pbm_image(
+        source,
+        framebuffer,
+        live_palette,
+        PbmDecodeOptions {
+            palette_update: PbmPaletteUpdate::Preserve,
+            transparency: PbmTransparency::Opaque,
+        },
+    )
+}
+
 fn find_marker(
     source: &[u8],
     start: usize,
@@ -216,6 +264,8 @@ fn chunk_payload_start(
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
     use serde::Deserialize;
     use sha2::{Digest, Sha256};
 
@@ -229,6 +279,9 @@ mod tests {
     const DIRECTION_STATE_REPLACEMENT_COUNT: usize = 1;
     const NORMAL_STREAM_LAST_PALETTE_INDEX: u8 = 167;
     const FULL_PALETTE_BYTE_COUNT: usize = PALETTE_ENTRY_COUNT * RGB_COMPONENT_COUNT;
+    const BLOODPRG_DATA_FILE_OFFSET: usize = 0x0000_D420;
+    const ORX_PATH_DATA_OFFSET: usize = 227;
+    const CHART_PATH_DATA_OFFSET: usize = 234;
 
     #[derive(Deserialize)]
     struct PbmOracle {
@@ -278,6 +331,56 @@ mod tests {
 
     fn framebuffer_hash(framebuffer: &[u8]) -> String {
         format!("{:x}", Sha256::digest(framebuffer))
+    }
+
+    #[test]
+    fn back_buffer_wrappers_decode_both_authored_resources_without_palette_changes() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let asset_root = root.join("accuracy/cblood_install/cblood");
+        let mut palette = [[17; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
+        let expected_palette = palette;
+        let mut chart_frame = vec![23; PANORAMA_FRAME_PIXEL_COUNT];
+        let mut orx_frame = vec![29; PANORAMA_FRAME_PIXEL_COUNT];
+
+        let chart = std::fs::read(asset_root.join("CHART.FD")).unwrap();
+        let chart_result =
+            decode_chart_back_buffer(&chart, &mut chart_frame, &mut palette).unwrap();
+        assert!(!chart_result.palette_changed);
+        assert_eq!(palette, expected_palette);
+        assert!(chart_frame.iter().any(|pixel| *pixel != 23));
+
+        let orx = std::fs::read(asset_root.join("ORX.FD")).unwrap();
+        let orx_result = decode_orx_back_buffer(&orx, &mut orx_frame, &mut palette).unwrap();
+        assert!(!orx_result.palette_changed);
+        assert_eq!(palette, expected_palette);
+        assert!(orx_frame.iter().any(|pixel| *pixel != 29));
+        assert_ne!(chart_frame, orx_frame);
+    }
+
+    #[test]
+    fn wrapper_resource_names_match_the_original_executable_table() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let executable = std::fs::read(root.join("re/bin/BLOODPRG.EXE")).unwrap();
+        assert_eq!(
+            c_string_at(
+                &executable,
+                BLOODPRG_DATA_FILE_OFFSET + ORX_PATH_DATA_OFFSET
+            ),
+            ORX_BACK_BUFFER_RESOURCE_PATH.as_bytes()
+        );
+        assert_eq!(
+            c_string_at(
+                &executable,
+                BLOODPRG_DATA_FILE_OFFSET + CHART_PATH_DATA_OFFSET
+            ),
+            CHART_BACK_BUFFER_RESOURCE_PATH.as_bytes()
+        );
+    }
+
+    fn c_string_at(bytes: &[u8], start: usize) -> &[u8] {
+        let tail = &bytes[start..];
+        let end = tail.iter().position(|byte| *byte == u8::MIN).unwrap();
+        &tail[..end]
     }
 
     fn options(vector: &PbmOracle) -> PbmDecodeOptions {
