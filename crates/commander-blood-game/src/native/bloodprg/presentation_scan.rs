@@ -140,6 +140,8 @@ pub struct ScriptDialogueControlDispatchContext<'a, Records = ScriptActionRecord
     pub selector: &'a mut ScriptSelectorState,
     /// Complete record store shared with BAS C9 and CD instructions.
     pub records: &'a mut Records,
+    /// Presentation globals that inline BAS instructions can change immediately.
+    pub presentation: &'a mut ScriptPresentationScanState,
     /// Character entering dialogue control.
     pub actor: ScriptObjectId,
     /// First selector node in the character's authored BAS response list.
@@ -462,6 +464,7 @@ where
         runtime,
         selector,
         records,
+        presentation,
         actor,
         selector_root,
     })

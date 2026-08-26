@@ -48,9 +48,9 @@ use super::state::{
     apply_shared_state_operation,
 };
 use super::{
-    PendingScriptProfileRequest, ScriptControl, ScriptFrameEnd, ScriptProfileRequestSlot,
-    ScriptRuntime, ScriptRuntimeError, TextInstructionExecutionError, TextInstructionState,
-    TextPresentationState, execute_text_instruction,
+    PendingScriptProfileRequest, ScriptControl, ScriptFrameEnd, ScriptPresentationScanState,
+    ScriptProfileRequestSlot, ScriptRuntime, ScriptRuntimeError, TextInstructionExecutionError,
+    TextInstructionState, TextPresentationState, execute_text_instruction,
 };
 
 /// Mutable non-profile state shared by exhaustive COD dispatch and its host services.
@@ -82,6 +82,40 @@ impl ScriptDispatchState {
         let random = self.random;
         *self = Self::default();
         self.random = random;
+    }
+
+    /// Publish the canonical post-scan globals to every translated opcode owner.
+    ///
+    /// The DOS executable stored these values once. The typed translation keeps
+    /// the specialized A6, A8, C2, and CD state separate, so each frame begins by
+    /// broadcasting the latest post-scan values before any handler can read them.
+    pub(crate) fn import_presentation_scan_state(
+        &mut self,
+        presentation: &ScriptPresentationScanState,
+    ) {
+        self.sequence_presentation.presentation_active = presentation.active;
+        self.sequence_presentation.presentation_gate_active = presentation.c2_gate_active;
+        self.aboard_presentation.presentation_gate_active = presentation.c2_gate_active;
+        self.transfer_presentation.presentation_gate_active = presentation.c2_gate_active;
+        self.text_presentation.hold_ready = presentation.hold_ready;
+        self.text_presentation.dialogue_hold_complete = presentation.dialogue_hold_complete;
+    }
+
+    /// Merge opcode writes back into the canonical state before presentation scan.
+    ///
+    /// A8, C2, and CD only release the shared C2 gate. Since every typed owner is
+    /// initialized from the same value at frame start, conjunction reproduces a
+    /// write of zero by any handler without inventing a last-writer heuristic.
+    pub(crate) fn export_presentation_scan_state(
+        &self,
+        presentation: &mut ScriptPresentationScanState,
+    ) {
+        presentation.active = self.sequence_presentation.presentation_active;
+        presentation.c2_gate_active = self.sequence_presentation.presentation_gate_active
+            && self.aboard_presentation.presentation_gate_active
+            && self.transfer_presentation.presentation_gate_active;
+        presentation.hold_ready = self.text_presentation.hold_ready;
+        presentation.dialogue_hold_complete = self.text_presentation.dialogue_hold_complete;
     }
 }
 
@@ -734,6 +768,50 @@ mod tests {
             dispatch.sequence_presentation,
             SequencePresentationState::default()
         );
+    }
+
+    #[test]
+    fn presentation_scan_globals_are_broadcast_to_every_opcode_owner() {
+        let mut dispatch = ScriptDispatchState::default();
+        let presentation = ScriptPresentationScanState {
+            active: true,
+            c2_gate_active: true,
+            hold_ready: true,
+            dialogue_hold_complete: true,
+            ..ScriptPresentationScanState::default()
+        };
+
+        dispatch.import_presentation_scan_state(&presentation);
+
+        assert!(dispatch.sequence_presentation.presentation_active);
+        assert!(dispatch.sequence_presentation.presentation_gate_active);
+        assert!(dispatch.aboard_presentation.presentation_gate_active);
+        assert!(dispatch.transfer_presentation.presentation_gate_active);
+        assert!(dispatch.text_presentation.hold_ready);
+        assert!(dispatch.text_presentation.dialogue_hold_complete);
+    }
+
+    #[test]
+    fn any_direct_presentation_handler_can_release_the_shared_c2_gate() {
+        let mut dispatch = ScriptDispatchState::default();
+        let mut presentation = ScriptPresentationScanState {
+            active: true,
+            c2_gate_active: true,
+            hold_ready: true,
+            dialogue_hold_complete: true,
+            ..ScriptPresentationScanState::default()
+        };
+        dispatch.import_presentation_scan_state(&presentation);
+        dispatch.transfer_presentation.presentation_gate_active = false;
+        dispatch.text_presentation.hold_ready = false;
+        dispatch.text_presentation.dialogue_hold_complete = false;
+
+        dispatch.export_presentation_scan_state(&mut presentation);
+
+        assert!(presentation.active);
+        assert!(!presentation.c2_gate_active);
+        assert!(!presentation.hold_ready);
+        assert!(!presentation.dialogue_hold_complete);
     }
 
     #[test]

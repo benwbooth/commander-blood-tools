@@ -242,6 +242,9 @@ impl<Backend: ScriptExecutionBackend> ScriptDispatchHost for ScriptExecutionServ
         &mut self,
         context: ScriptPreFrameContext<'_>,
     ) -> Result<(), Self::Error> {
+        context
+            .dispatch
+            .import_presentation_scan_state(&self.presentation);
         let world = context
             .builtins
             .world
@@ -325,6 +328,7 @@ impl<Backend: ScriptExecutionBackend> ScriptDispatchHost for ScriptExecutionServ
             dispatch,
             builtins,
         } = context;
+        dispatch.export_presentation_scan_state(&mut self.presentation);
         let outcome = {
             let mut adapter = PresentationAdapter {
                 code,
@@ -352,6 +356,7 @@ impl<Backend: ScriptExecutionBackend> ScriptDispatchHost for ScriptExecutionServ
             )
             .map_err(ScriptExecutionServiceError::Presentation)?
         };
+        dispatch.import_presentation_scan_state(&self.presentation);
         self.last_presentation_outcome = Some(outcome);
         Ok(())
     }
@@ -379,6 +384,7 @@ impl<Backend: ScriptExecutionBackend> ScriptPresentationScanHost<super::ScriptPr
         &mut self,
         context: ScriptDialogueControlDispatchContext<'_, super::ScriptProfileRecordState>,
     ) -> Result<(), Self::Error> {
+        let presentation = context.presentation;
         let mut host = BasExternalHost {
             backend: self.backend,
         };
@@ -401,6 +407,7 @@ impl<Backend: ScriptExecutionBackend> ScriptPresentationScanHost<super::ScriptPr
             &mut host,
         )
         .map_err(ScriptPresentationCallbackError::Dialogue)?;
+        self.dispatch.export_presentation_scan_state(presentation);
         Ok(())
     }
 
