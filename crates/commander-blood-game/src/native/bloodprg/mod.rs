@@ -64,6 +64,7 @@ mod presentation_entry;
 mod presentation_hover;
 mod presentation_line;
 mod presentation_mode;
+mod presentation_present;
 mod presentation_queue;
 mod presentation_raster;
 mod presentation_resource;
@@ -421,6 +422,11 @@ pub use presentation_line::{
 };
 pub use presentation_mode::{
     PresentationBridgeMode, update_presentation_bridge_mode,
+};
+pub use presentation_present::{
+    FlatPresentationEntryPresenter, PresentationActiveEntryError,
+    PresentationActiveEntryOutcome, PresentationActiveEntryState, PresentationEntryPresenter,
+    PresentationEntryRenderTarget, PresentationPresentPolicy, present_active_entry,
 };
 pub use presentation_queue::{
     PresentationQueueAdvance, PresentationQueueClock, PresentationQueueClockGates,

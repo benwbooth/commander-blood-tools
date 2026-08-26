@@ -11,6 +11,7 @@ use super::{
 const WORD_BYTE_COUNT: usize = size_of::<u16>();
 const LINK_ID_BYTE_COUNT: usize = size_of::<u32>();
 const LINK_RECORD_BYTE_COUNT: usize = LINK_ID_BYTE_COUNT + WORD_BYTE_COUNT;
+#[cfg(test)]
 const FRAME_HEADER_BYTE_COUNT: usize = WORD_BYTE_COUNT * 2;
 const MINIMUM_SIDE_RECORD_EXTENT: usize = WORD_BYTE_COUNT * 2;
 const SOUND_RECORD_MARKER: u16 = u16::from_le_bytes([b's', b'd']);
@@ -65,7 +66,7 @@ pub struct PresentationEntrySideData {
 pub enum PresentationEntryFrame {
     /// A zero-row frame retains only its typed header.
     Empty,
-    /// An uncompressed frame copied from its layout word through entry end.
+    /// Uncompressed coordinates and pixels following the typed frame header.
     Encoded(Box<[u8]>),
     /// A compressed frame expanded immediately into reusable storage.
     Decoded(PresentationPayload),
@@ -253,7 +254,6 @@ fn side_record_end(
 struct PresentationFrameSource<'a> {
     bytes: &'a [u8],
     end: usize,
-    layout_start: usize,
     row_mode_offset: usize,
 }
 
@@ -279,15 +279,8 @@ fn activate_frame(
     } else if layout & COMPRESSED_LAYOUT_FLAG == 0 {
         let bytes = source
             .bytes
-            .get(source.layout_start..source.end)
-            .ok_or_else(|| {
-                truncated(
-                    source.bytes,
-                    source.layout_start,
-                    source.end,
-                    FRAME_HEADER_BYTE_COUNT,
-                )
-            })?;
+            .get(cursor..source.end)
+            .ok_or_else(|| truncated(source.bytes, cursor, source.end, 0))?;
         PresentationEntryFrame::Encoded(bytes.into())
     } else if !policy.skip_back_buffer_present
         && !policy.draw_via_back_buffer
@@ -375,7 +368,6 @@ fn activate_presentation_entry_with_decoder(
             resolve_link(link).ok_or(PresentationEntryError::LinkedEntryUnavailable { link })?;
         let mut linked_cursor = 0;
         let actual_key = read_word(&linked, &mut linked_cursor, linked.len())?;
-        let linked_layout_start = linked_cursor;
         let linked_layout = read_word(&linked, &mut linked_cursor, linked.len())?;
         if actual_key != expected_key {
             PresentationEntryDisposition::RejectedLink {
@@ -388,7 +380,6 @@ fn activate_presentation_entry_with_decoder(
                 PresentationFrameSource {
                     bytes: &linked,
                     end: linked.len(),
-                    layout_start: linked_layout_start,
                     row_mode_offset: linked_cursor,
                 },
                 linked_layout,
@@ -402,7 +393,6 @@ fn activate_presentation_entry_with_decoder(
             PresentationFrameSource {
                 bytes: queue_buffer,
                 end: entry_end,
-                layout_start: marker_start,
                 row_mode_offset: cursor,
             },
             layout,
