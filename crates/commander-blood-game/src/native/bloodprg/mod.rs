@@ -70,6 +70,7 @@ mod presentation_queue_service;
 mod presentation_refill;
 mod presentation_raster;
 mod presentation_resource;
+mod presentation_scene_dispatch;
 mod presentation_source;
 mod presentation_stream;
 mod presentation_run;
@@ -443,6 +444,13 @@ pub use presentation_queue::{
 pub use presentation_queue_service::{
     PresentationQueueServiceContext, PresentationQueueServiceError,
     PresentationQueueServiceOutcome, service_presentation_queue,
+};
+pub use presentation_scene_dispatch::{
+    PresentationSceneActiveTransition, PresentationSceneDescriptor,
+    PresentationSceneDispatchContext, PresentationSceneDispatchError,
+    PresentationSceneDispatchHost, PresentationSceneDispatchOutcome,
+    PresentationSceneDispatchState, PresentationSceneImageOutcome, PresentationSceneSource,
+    dispatch_presentation_scene,
 };
 pub use presentation_refill::{
     PresentationQueueLinkCursor, PresentationQueueRefillError, PresentationQueueRefillOutcome,
