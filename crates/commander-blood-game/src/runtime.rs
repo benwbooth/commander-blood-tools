@@ -1,5 +1,6 @@
 //! Original-data discovery and flat runtime bootstrap.
 
+mod audio;
 mod bios_font;
 mod input;
 mod presentation;
@@ -9,6 +10,7 @@ mod startup;
 mod state;
 mod video;
 
+pub use audio::{RuntimeAudioHost, RuntimePcmClip, RuntimePcmMixer};
 pub use bios_font::VGA_BIOS_FONT_8X8;
 pub use input::{RuntimeInputHost, map_host_pointer_to_logical};
 pub use presentation::RuntimePresentationHost;

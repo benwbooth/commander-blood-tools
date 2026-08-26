@@ -1,7 +1,10 @@
 //! Concrete runtime services assembled for the recovered top-level lifecycle.
 
 use anyhow::{Context, Result, bail};
+use commander_blood_formats::archive::BloodResourceName;
 use commander_blood_formats::bloodprg::decode_bloodprg_bridge_resources;
+use commander_blood_formats::snd::{SndBank, VocPcm};
+use sdl3::AudioSubsystem;
 use sdl3::video::Window;
 
 use crate::native::bloodprg::{
@@ -13,12 +16,13 @@ use crate::native::bloodprg::{
 use crate::native::random::BloodPrng;
 
 use super::{
-    OriginalGameData, OriginalGameRuntime, RuntimeAssetLoadStatus, RuntimeInputHost,
-    RuntimePresentationHost, RuntimeScriptBackend, RuntimeScriptCommand, RuntimeScriptSystem,
-    VGA_BIOS_FONT_8X8,
+    OriginalGameData, OriginalGameRuntime, RuntimeAssetLoadStatus, RuntimeAudioHost,
+    RuntimeInputHost, RuntimePcmClip, RuntimePresentationHost, RuntimeScriptBackend,
+    RuntimeScriptCommand, RuntimeScriptSystem, VGA_BIOS_FONT_8X8,
 };
 
 const INITIAL_LOGICAL_POINTER: [i16; 2] = [160, 100];
+const MUSIC_RESOURCE_DIRECTORY: &[u8] = b"MU\\";
 
 /// Owned flat services that concrete `GameLifecycleHost` methods delegate to.
 ///
@@ -30,6 +34,7 @@ pub struct ModernGameServices<'window> {
     runtime: OriginalGameRuntime,
     input: RuntimeInputHost,
     presentation: RuntimePresentationHost<'window>,
+    audio: Option<RuntimeAudioHost>,
     bridge_scene: Option<BridgeScene>,
     bridge_frame: Option<BridgeSceneFrame>,
     scripts: RuntimeScriptSystem,
@@ -50,6 +55,7 @@ impl<'window> ModernGameServices<'window> {
             runtime,
             input: RuntimeInputHost::new(INITIAL_LOGICAL_POINTER),
             presentation,
+            audio: None,
             bridge_scene: None,
             bridge_frame: None,
             scripts,
@@ -123,6 +129,86 @@ impl<'window> ModernGameServices<'window> {
     /// Load the exact writable `BLOOD.SAV` directory prepared during startup.
     pub fn load_save_slots(&mut self) -> Result<RuntimeAssetLoadStatus> {
         self.runtime.load_save_slot_directory()
+    }
+
+    /// Open and resume the default SDL3 playback stream exactly once.
+    pub fn initialize_audio(&mut self, audio: &AudioSubsystem) -> Result<()> {
+        if self.audio.is_some() {
+            bail!("runtime audio is already initialized");
+        }
+        self.audio = Some(RuntimeAudioHost::open(audio)?);
+        Ok(())
+    }
+
+    /// Decode and start the navigation music selected by the active DESCRIPT record.
+    pub fn restart_navigation_music(&mut self) -> Result<()> {
+        let music_name = self
+            .scripts
+            .backend()
+            .assets()
+            .music()
+            .context("no navigation music is selected")?
+            .as_bytes();
+        let resource_name = prefixed_resource_name(MUSIC_RESOURCE_DIRECTORY, music_name)?;
+        let encoded = self
+            .runtime
+            .data()
+            .resource_store()
+            .load(&resource_name)
+            .with_context(|| {
+                format!(
+                    "loading music resource {}",
+                    String::from_utf8_lossy(resource_name.as_bytes())
+                )
+            })?;
+        let decoded = VocPcm::decode(&encoded).with_context(|| {
+            format!(
+                "decoding music resource {}",
+                String::from_utf8_lossy(resource_name.as_bytes())
+            )
+        })?;
+        self.audio_mut()?
+            .play_background(RuntimePcmClip::from_voc(&decoded))
+    }
+
+    /// Decode and play one authored clip from the currently loaded SND bank.
+    pub fn play_loaded_sound_bank_clip(&mut self, clip_index: u8) -> Result<()> {
+        let resource = self
+            .scripts
+            .backend()
+            .loaded_sound_bank()
+            .context("no DESCRIPT sound bank is loaded")?;
+        let bank = SndBank::decode(resource.encoded_bytes()).with_context(|| {
+            format!(
+                "decoding sound bank {}",
+                String::from_utf8_lossy(resource.name())
+            )
+        })?;
+        let clip = bank
+            .clip(usize::from(clip_index))
+            .with_context(|| format!("sound bank clip {clip_index} is not authored"))?;
+        let clip = RuntimePcmClip::from_snd_clip(clip)?;
+        self.audio_mut()?.play_foreground(clip)
+    }
+
+    /// Stop all modern audio and clear samples already queued in SDL.
+    pub fn stop_audio(&mut self) -> Result<()> {
+        self.audio_mut()?.stop_all()
+    }
+
+    /// Surface asynchronous SDL audio failures on the game thread.
+    pub fn check_audio(&self) -> Result<()> {
+        self.audio_ref()?.check_callback()
+    }
+
+    /// Current source-sample position of navigation music, when active.
+    pub fn navigation_music_position(&self) -> Result<Option<u64>> {
+        Ok(self.audio_ref()?.background_position())
+    }
+
+    /// Current source-sample position of the foreground voice or effect.
+    pub fn foreground_audio_position(&self) -> Result<Option<u64>> {
+        Ok(self.audio_ref()?.foreground_position())
     }
 
     /// Load one complete BloodScript profile and bind its concrete runtime services.
@@ -282,6 +368,28 @@ impl<'window> ModernGameServices<'window> {
         }
         Ok(())
     }
+
+    fn audio_ref(&self) -> Result<&RuntimeAudioHost> {
+        self.audio
+            .as_ref()
+            .context("runtime audio has not been initialized")
+    }
+
+    fn audio_mut(&mut self) -> Result<&mut RuntimeAudioHost> {
+        self.audio
+            .as_mut()
+            .context("runtime audio has not been initialized")
+    }
+}
+
+fn prefixed_resource_name(directory: &[u8], name: &[u8]) -> Result<BloodResourceName> {
+    if name.contains(&b'/') || name.contains(&b'\\') {
+        return BloodResourceName::new(name).context("validating authored audio resource path");
+    }
+    let mut path = Vec::with_capacity(directory.len() + name.len());
+    path.extend_from_slice(directory);
+    path.extend_from_slice(name);
+    BloodResourceName::new(path).context("validating prefixed audio resource path")
 }
 
 #[cfg(test)]
