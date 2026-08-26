@@ -71,6 +71,7 @@ impl Default for Scenario {
 struct OracleHost {
     scenario: Scenario,
     input_dispatches: usize,
+    pending_profiles_at_input: Vec<Option<ScriptProfileId>>,
     calls: Vec<&'static str>,
 }
 
@@ -136,6 +137,7 @@ impl GameLifecycleHost for OracleHost {
 
     fn dispatch_input(&mut self, state: &mut GameLifecycleState) -> Result<(), Self::Error> {
         self.call("input_action_dispatch");
+        self.pending_profiles_at_input.push(state.pending_profile);
         self.input_dispatches += 1;
         if self.input_dispatches == 1 {
             apply_scenario(state, self.scenario);
@@ -276,6 +278,7 @@ fn lifecycle_matches_all_original_control_flow_vectors() {
         let mut host = OracleHost {
             scenario,
             input_dispatches: usize::MIN,
+            pending_profiles_at_input: Vec::new(),
             calls: Vec::new(),
         };
         let mut state = GameLifecycleState::default();
@@ -300,6 +303,16 @@ fn lifecycle_matches_all_original_control_flow_vectors() {
         );
         assert_case_outcome(&vector.name, outcome.exit);
         assert_case_state(&vector.name, &state);
+        if scenario.panorama_opens {
+            assert_eq!(
+                host.pending_profiles_at_input.first(),
+                Some(&Some(ScriptProfileId::INITIAL)),
+                "{}",
+                vector.name
+            );
+        } else {
+            assert!(host.pending_profiles_at_input.is_empty(), "{}", vector.name);
+        }
     }
 }
 

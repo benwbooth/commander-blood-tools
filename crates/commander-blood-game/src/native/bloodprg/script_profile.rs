@@ -55,6 +55,12 @@ const BUILTIN_VIDEO_STATE_NAME: &[u8] = b"vbio";
 pub struct ScriptProfileId(u8);
 
 impl ScriptProfileId {
+    /// Profile selected by the executable's initial pending-request word.
+    ///
+    /// The shipped image stores zero at game-data offset `0x6780`; the main
+    /// loop consumes that request after the blocking opening presentation.
+    pub const INITIAL: Self = Self(u8::MIN);
+
     /// Validate a numeric profile identity against the five shipped profiles.
     pub const fn new(value: u8) -> Option<Self> {
         if value < ORIGINAL_SCRIPT_PROFILE_COUNT as u8 {

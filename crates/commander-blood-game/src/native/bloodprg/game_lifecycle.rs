@@ -544,6 +544,7 @@ fn run_game_runtime<Host: GameLifecycleHost>(
     host.run_initial_presentation(session.scene_link)?;
     host.load_default_sound_bank()?;
     host.initialize_back_buffer()?;
+    state.pending_profile = Some(ScriptProfileId::INITIAL);
 
     loop {
         host.dispatch_input(state)?;
