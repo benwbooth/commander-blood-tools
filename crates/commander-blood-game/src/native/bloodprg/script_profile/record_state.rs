@@ -251,6 +251,48 @@ impl ScriptProfileRecordState {
         }
         Ok(())
     }
+
+    pub(crate) fn refresh_from_var(
+        &mut self,
+        instructions: &[DecodedScriptInstruction],
+        state: &ScriptState,
+        dictionary: &ScriptDictionary,
+        builtins: ScriptProfileBuiltins,
+    ) -> Result<(), ScriptProfileRecordStateError> {
+        let recovered = Self::recover(instructions, state, dictionary, builtins)?;
+        self.action_records = recovered.action_records.clone();
+        self.transfer_records = recovered.transfer_records.clone();
+        self.replace_record_fields_and_roster(&recovered);
+        Ok(())
+    }
+
+    pub(crate) fn refresh_relationships_from_var(
+        &mut self,
+        instructions: &[DecodedScriptInstruction],
+        state: &ScriptState,
+        dictionary: &ScriptDictionary,
+        builtins: ScriptProfileBuiltins,
+    ) -> Result<(), ScriptProfileRecordStateError> {
+        let recovered = Self::recover(instructions, state, dictionary, builtins)?;
+        self.transfer_records = recovered.transfer_records.clone();
+        self.replace_record_fields_and_roster(&recovered);
+        Ok(())
+    }
+
+    pub(crate) fn commit_to_var(
+        &self,
+        state: &mut ScriptState,
+        directory: &ScriptDirectory,
+        dictionary: &ScriptDictionary,
+    ) -> Result<(), ScriptProfileRecordStateError> {
+        self.synchronize_into(state, directory, dictionary)
+    }
+
+    fn replace_record_fields_and_roster(&mut self, recovered: &Self) {
+        self.record_fields = recovered.record_fields.clone();
+        *self.record_runtime.aboard_objects_mut() =
+            recovered.record_runtime.aboard_objects().clone();
+    }
 }
 
 fn insert_field_domain(
