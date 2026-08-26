@@ -18,6 +18,7 @@ mod actor_handler_panel;
 mod actor_handler_radio;
 mod actor_position_state;
 mod bridge_frame;
+mod camera_approach;
 mod camera_navigation;
 mod choice_list;
 mod descript;
@@ -169,6 +170,11 @@ pub use bridge_console::{
     OptionMenuOutcome, OptionMenuState, Rgb6, activate_horn_choice, activate_radio_choice,
     update_bridge_console_dispatch, update_contact_choice, update_navigation_target_choice,
     update_option_menu,
+};
+pub use camera_approach::{
+    HYPERSPACE_SEQUENCE_COUNT, CameraApproachContext, CameraApproachHost,
+    CameraApproachOutcome, CameraApproachPresentation, CameraApproachState,
+    update_camera_approach,
 };
 pub use camera_navigation::{
     CameraNavigationLocation, CameraNavigationOutcome, CameraNavigationPaletteTransition,
