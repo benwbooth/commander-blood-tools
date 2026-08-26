@@ -2,6 +2,7 @@
 
 mod audio;
 mod bios_font;
+mod confirm_dialog;
 mod input;
 mod platform;
 mod presentation;
@@ -18,6 +19,7 @@ mod video;
 
 pub use audio::{RuntimeAudioHost, RuntimePcmClip, RuntimePcmMixer};
 pub use bios_font::VGA_BIOS_FONT_8X8;
+pub use confirm_dialog::RuntimeConfirmDialog;
 pub use input::{RuntimeInputHost, map_host_pointer_to_logical};
 pub use platform::{GAME_FRAME_DURATION, RuntimePlatformHost};
 pub use presentation::RuntimePresentationHost;
@@ -45,7 +47,8 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result, bail};
 use commander_blood_formats::archive::{BloodArchive, BloodResourceName};
 use commander_blood_formats::bloodprg::{
-    BloodprgFontResources, BloodprgPresentationCatalog, decode_bloodprg_font_resources,
+    BloodprgConfirmDialogRegions, BloodprgFontResources, BloodprgPresentationCatalog,
+    decode_bloodprg_confirm_dialog_regions, decode_bloodprg_font_resources,
     decode_bloodprg_presentation_catalog,
 };
 use commander_blood_formats::descript_database::DescriptDatabase;
@@ -211,6 +214,7 @@ pub struct OriginalGameData {
     script_profile_catalog: OriginalScriptProfileCatalog,
     writable_resource_catalog: StartupWritableResourceCatalog,
     descript_database: DescriptDatabase,
+    confirm_dialog_regions: BloodprgConfirmDialogRegions,
     font_resources: BloodprgFontResources,
     presentation_catalog: BloodprgPresentationCatalog,
     default_vga_palette: [[u8; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT],
@@ -261,6 +265,8 @@ impl OriginalGameData {
         let writable_resource_catalog =
             StartupWritableResourceCatalog::decode_bloodprg(&executable)
                 .context("decoding startup writable-resource catalog")?;
+        let confirm_dialog_regions = decode_bloodprg_confirm_dialog_regions(&executable)
+            .context("decoding confirmation-dialog hit regions")?;
         let font_resources = decode_bloodprg_font_resources(&executable)
             .context("decoding original executable font resources")?;
         let presentation_catalog = decode_bloodprg_presentation_catalog(&executable)
@@ -299,6 +305,7 @@ impl OriginalGameData {
             script_profile_catalog,
             writable_resource_catalog,
             descript_database,
+            confirm_dialog_regions,
             font_resources,
             presentation_catalog,
             default_vga_palette,
@@ -341,6 +348,11 @@ impl OriginalGameData {
     /// Parsed authored scene, dialogue, subtitle, and audio combinations.
     pub const fn descript_database(&self) -> &DescriptDatabase {
         &self.descript_database
+    }
+
+    /// Executable-authored logical hit regions for the navigation confirmation modal.
+    pub const fn confirm_dialog_regions(&self) -> &BloodprgConfirmDialogRegions {
+        &self.confirm_dialog_regions
     }
 
     /// Exact compact, subtitle, square-cap, and dialogue fonts from the executable.

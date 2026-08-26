@@ -2,22 +2,29 @@
 
 use anyhow::{Context, Result, bail};
 use commander_blood_formats::archive::BloodResourceName;
-use commander_blood_formats::bloodprg::decode_bloodprg_bridge_resources;
+use commander_blood_formats::bloodprg::{BloodprgFontResources, decode_bloodprg_bridge_resources};
+use commander_blood_formats::script::ScriptWordId;
 use commander_blood_formats::snd::{SndBank, VocPcm};
 use sdl3::AudioSubsystem;
 use sdl3::video::Window;
 
 use crate::native::bloodprg::{
-    BridgeScene, BridgeSceneFrame, BridgeSceneInput, DescriptRecordApplication, GameLifecycleState,
-    InputAction, Manu3HandFrameState, PbmDecodeResult, PointerButtonEdges, PointerButtons,
-    PointerSample, PresentationChoiceNumber, PresentationPresentPolicy, PresentationResourceId,
-    PresentationResourceSequenceOutcome, ScriptClock, ScriptFrameOutcome, ScriptProfileId,
-    ScriptProfileLoadOutcome, ShipProjectionResources, StartupPreparationOutcome,
+    BridgeScene, BridgeSceneFrame, BridgeSceneInput, ConfirmDialogOutcome, ConfirmDialogState,
+    DescriptRecordApplication, FontPoint, FontVerticalBand, GameFontFace, GameLifecycleState,
+    GamePresentationOwner, InlineMenuRevealOutcome, InlineMenuTextMetrics, InputAction,
+    Manu3HandFrameContext, Manu3HandFrameState, PbmDecodeResult, PointerButtonEdges,
+    PointerButtons, PointerSample, PresentationChoiceNumber, PresentationPresentPolicy,
+    PresentationResourceId, PresentationResourceSequenceOutcome, ScriptClock, ScriptFrameOutcome,
+    ScriptProfileId, ScriptProfileLoadOutcome, ShipPresentationState, ShipProjectionResources,
+    StartupPreparationOutcome, draw_planar_dialogue_text, measure_game_text_width,
+    reveal_inline_menu_step, update_manu3_hand_frame,
 };
+use crate::native::manu3::animation::CursorPosition;
 use crate::native::random::BloodPrng;
 
 use super::{
-    OriginalGameData, OriginalGameRuntime, RuntimeAssetLoadStatus, RuntimeAudioHost,
+    LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_PIXEL_COUNT, OriginalGameData,
+    OriginalGameRuntime, RuntimeAssetLoadStatus, RuntimeAudioHost, RuntimeConfirmDialog,
     RuntimeInputHost, RuntimePcmClip, RuntimePresentationCatalog, RuntimePresentationHost,
     RuntimePresentationPlayer, RuntimePresentationStepOutcome, RuntimeScriptBackend,
     RuntimeScriptCommand, RuntimeScriptSystem, VGA_BIOS_FONT_8X8,
@@ -26,6 +33,12 @@ use super::{
 const INITIAL_LOGICAL_POINTER: [i16; 2] = [160, 100];
 const MUSIC_RESOURCE_DIRECTORY: &[u8] = b"MU\\";
 const DEFAULT_BRIDGE_SOUND_BANK: &[u8] = b"tb.snd";
+const FULL_LOGICAL_FONT_BAND: FontVerticalBand = FontVerticalBand {
+    top: 0,
+    bottom: LOGICAL_FRAMEBUFFER_HEIGHT as i32 - 1,
+};
+const MENU_WIDTH_PROBE_ORIGIN: FontPoint = FontPoint { x: 10, y: 8 };
+const MENU_WIDTH_PROBE_COLOR: u8 = u8::MIN;
 
 /// Owned flat services that concrete `GameLifecycleHost` methods delegate to.
 ///
@@ -42,7 +55,9 @@ pub struct ModernGameServices<'window> {
     loaded_voice: Option<RuntimePcmClip>,
     bridge_scene: Option<BridgeScene>,
     bridge_frame: Option<BridgeSceneFrame>,
+    confirm_dialog: RuntimeConfirmDialog,
     manu3_hand: Manu3HandFrameState,
+    ship_presentation: ShipPresentationState,
     random: BloodPrng,
     scripts: RuntimeScriptSystem,
     main_viewport_configured: bool,
@@ -55,6 +70,7 @@ impl<'window> ModernGameServices<'window> {
         data: OriginalGameData,
         script_clock: ScriptClock,
     ) -> Result<Self> {
+        let confirm_dialog = RuntimeConfirmDialog::new(*data.confirm_dialog_regions());
         let scripts = RuntimeScriptSystem::new(&data, script_clock);
         let presentation_player = RuntimePresentationPlayer::new(data.presentation_catalog());
         let runtime = OriginalGameRuntime::new(data);
@@ -68,7 +84,9 @@ impl<'window> ModernGameServices<'window> {
             loaded_voice: None,
             bridge_scene: None,
             bridge_frame: None,
+            confirm_dialog,
             manu3_hand: Manu3HandFrameState::default(),
+            ship_presentation: ShipPresentationState::default(),
             random: BloodPrng::default(),
             scripts,
             main_viewport_configured: false,
@@ -319,6 +337,108 @@ impl<'window> ModernGameServices<'window> {
         self.manu3_hand.requested_animation = selector;
     }
 
+    /// Advance the recovered hand dispatcher and render its requested 3D frame.
+    pub fn update_manu3_hand(&mut self, context: Manu3HandFrameContext) -> Result<bool> {
+        let Some(request) = update_manu3_hand_frame(&mut self.manu3_hand, context) else {
+            return Ok(false);
+        };
+        self.runtime
+            .manu3_mut()
+            .context("MANU3 hand update requires the decoded model")?
+            .render_frame(request)
+            .context("rendering recovered MANU3 hand frame")?;
+        Ok(true)
+    }
+
+    /// Advance MANU3 from current lifecycle gates and the sampled logical pointer.
+    pub fn update_lifecycle_manu3(&mut self, state: &GameLifecycleState) -> Result<bool> {
+        let pointer = self.input.pointer_sample().position;
+        self.update_manu3_hand(Manu3HandFrameContext {
+            presentation_mode_active: state.presentation_mode,
+            hud_refresh_active: state.pause_hud_active,
+            ship_scene_dispatch_blocked: self.ship_presentation.scene_dispatch_blocked,
+            presentation_request_pending: state
+                .presentation
+                .request_flags
+                .secondary_request_pending(),
+            cursor: CursorPosition {
+                x: pointer[0],
+                y: pointer[1],
+            },
+        })
+    }
+
+    /// Borrow the canonical flat state shared by ship presentation and MANU3.
+    pub const fn ship_presentation_state(&self) -> &ShipPresentationState {
+        &self.ship_presentation
+    }
+
+    /// Mutably borrow ship presentation state for its exact frame coordinator.
+    pub fn ship_presentation_state_mut(&mut self) -> &mut ShipPresentationState {
+        &mut self.ship_presentation
+    }
+
+    /// Reveal and draw one exact frame of the current BloodScript inline menu.
+    pub fn reveal_inline_menu(
+        &mut self,
+        owner_matches: bool,
+        word_delay: u16,
+    ) -> Result<InlineMenuRevealOutcome> {
+        let dictionary = self
+            .runtime
+            .current_profile()
+            .context("inline menu rendering requires a loaded BloodScript profile")?
+            .dictionary()
+            .clone();
+        let fonts = self.runtime.data().font_resources().clone();
+        let mut metrics = RuntimeInlineMenuMetrics::new(&fonts);
+        let outcome = reveal_inline_menu_step(
+            self.scripts.text_presentation_mut(),
+            &dictionary,
+            owner_matches,
+            word_delay,
+            &mut metrics,
+        )
+        .context("advancing the recovered inline menu reveal")?;
+        metrics.finish()?;
+
+        if let InlineMenuRevealOutcome::Frame(frame) = &outcome {
+            for placement in &frame.placements {
+                let text = dictionary.word(placement.word).with_context(|| {
+                    format!(
+                        "inline menu word {} is absent from the loaded dictionary",
+                        placement.word.index()
+                    )
+                })?;
+                draw_planar_dialogue_text(
+                    self.runtime.front_buffer_mut().pixels_mut(),
+                    &fonts,
+                    text,
+                    FontPoint {
+                        x: i32::from(placement.position[0]),
+                        y: i32::from(placement.position[1]),
+                    },
+                    FULL_LOGICAL_FONT_BAND,
+                    placement.color,
+                )
+                .context("drawing an inline menu word")?;
+            }
+        }
+        Ok(outcome)
+    }
+
+    /// Reveal the live inline menu and publish its hold state to the lifecycle.
+    pub fn reveal_lifecycle_inline_menu(
+        &mut self,
+        state: &mut GameLifecycleState,
+        word_delay: u16,
+    ) -> Result<InlineMenuRevealOutcome> {
+        let owner_matches = state.presentation.owner == Some(GamePresentationOwner::DeferredMenu);
+        let outcome = self.reveal_inline_menu(owner_matches, word_delay)?;
+        self.scripts.finish_lifecycle_frame(state)?;
+        Ok(outcome)
+    }
+
     /// Consume the next value from the game's persistent recovered PRNG.
     pub fn next_random(&mut self, modulus: u16) -> u16 {
         self.random.next(modulus)
@@ -521,6 +641,26 @@ impl<'window> ModernGameServices<'window> {
         self.input.transfer_lifecycle_pointer_edges(state)
     }
 
+    /// Advance and draw the executable-authored navigation confirmation modal.
+    pub fn update_confirm_dialog(
+        &mut self,
+        state: &mut GameLifecycleState,
+    ) -> Result<ConfirmDialogOutcome> {
+        let pointer_position = self.input.pointer_sample().position;
+        self.confirm_dialog
+            .update(&mut self.runtime, state, pointer_position)
+    }
+
+    /// Borrow navigation state shared with the confirmation-dialog coordinator.
+    pub const fn confirm_dialog_state(&self) -> &ConfirmDialogState {
+        self.confirm_dialog.state()
+    }
+
+    /// Mutably borrow navigation state shared with the confirmation-dialog coordinator.
+    pub fn confirm_dialog_state_mut(&mut self) -> &mut ConfirmDialogState {
+        self.confirm_dialog.state_mut()
+    }
+
     /// Reconfigure the wgpu surface after a nonzero SDL pixel-size event.
     pub fn resize(&mut self, width: u32, height: u32) {
         self.presentation.resize(width, height);
@@ -637,9 +777,72 @@ fn prefixed_resource_name(directory: &[u8], name: &[u8]) -> Result<BloodResource
     BloodResourceName::new(path).context("validating prefixed audio resource path")
 }
 
+struct RuntimeInlineMenuMetrics<'fonts> {
+    fonts: &'fonts BloodprgFontResources,
+    scratch: Box<[u8]>,
+    error: Option<anyhow::Error>,
+}
+
+impl<'fonts> RuntimeInlineMenuMetrics<'fonts> {
+    fn new(fonts: &'fonts BloodprgFontResources) -> Self {
+        Self {
+            fonts,
+            scratch: vec![u8::MIN; LOGICAL_FRAMEBUFFER_PIXEL_COUNT].into_boxed_slice(),
+            error: None,
+        }
+    }
+
+    fn record_width(&mut self, result: Result<u16>) -> u16 {
+        match result {
+            Ok(width) => width,
+            Err(error) => {
+                if self.error.is_none() {
+                    self.error = Some(error);
+                }
+                u16::MIN
+            }
+        }
+    }
+
+    fn finish(self) -> Result<()> {
+        match self.error {
+            Some(error) => Err(error),
+            None => Ok(()),
+        }
+    }
+}
+
+impl InlineMenuTextMetrics for RuntimeInlineMenuMetrics<'_> {
+    fn rendered_width(&mut self, _word: ScriptWordId, text: &[u8]) -> u16 {
+        self.scratch.fill(u8::MIN);
+        let result = draw_planar_dialogue_text(
+            &mut self.scratch,
+            self.fonts,
+            text,
+            MENU_WIDTH_PROBE_ORIGIN,
+            FULL_LOGICAL_FONT_BAND,
+            MENU_WIDTH_PROBE_COLOR,
+        )
+        .context("measuring an inline menu word through the recovered draw routine")
+        .map(|outcome| outcome.draw_width);
+        self.record_width(result)
+    }
+
+    fn lookahead_width(&mut self, word: Option<(ScriptWordId, &[u8])>) -> u16 {
+        let result = word.map_or(Ok(u16::MIN), |(_word, text)| {
+            measure_game_text_width(text, GameFontFace::Main, self.fonts)
+                .context("measuring inline menu lookahead")
+        });
+        self.record_width(result)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::sync::atomic::{AtomicU64, Ordering};
+
+    use commander_blood_formats::bloodprg::decode_bloodprg_font_resources;
+    use commander_blood_formats::script::decode_script_dictionary;
 
     use super::*;
     use crate::runtime::OriginalGameDataPaths;
@@ -671,6 +874,23 @@ mod tests {
         fn drop(&mut self) {
             let _ = std::fs::remove_dir_all(&self.0);
         }
+    }
+
+    #[test]
+    fn inline_menu_metrics_use_valid_recovered_font_geometry() {
+        let fonts =
+            decode_bloodprg_font_resources(include_bytes!("../../../../re/bin/BLOODPRG.EXE"))
+                .unwrap();
+        let dictionary = decode_script_dictionary(b"YES\0").unwrap();
+        let (word, text) = dictionary.words().next().unwrap();
+        let mut metrics = RuntimeInlineMenuMetrics::new(&fonts);
+
+        let rendered = metrics.rendered_width(word, text);
+        let lookahead = metrics.lookahead_width(Some((word, text)));
+
+        assert_ne!(rendered, u16::MIN);
+        assert_ne!(lookahead, u16::MIN);
+        metrics.finish().unwrap();
     }
 
     #[test]

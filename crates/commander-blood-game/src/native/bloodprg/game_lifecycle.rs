@@ -246,6 +246,11 @@ impl GameLifecycleState {
         self.ui_state.modal_busy = busy;
     }
 
+    /// Return whether a confirmation, save/load, or camera modal owns the UI.
+    pub const fn modal_ui_busy(&self) -> bool {
+        self.ui_state.modal_busy
+    }
+
     /// Update the navigation-choice UI blocker without disturbing modal state.
     pub fn set_navigation_ui_busy(&mut self, busy: bool) {
         self.ui_state.navigation_busy = busy;

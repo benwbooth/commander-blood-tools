@@ -42,11 +42,15 @@ const PRESENTATION_DESCRIPTOR_HEADER_BYTE_COUNT: usize = 2;
 const PRESENTATION_RESOURCE_NAME_MAXIMUM_FIELD_BYTE_COUNT: usize = 16;
 const NO_PRESENTATION_SCENE_IMAGE_OFFSET: u16 = u16::MAX;
 const UNCLAMPED_PRESENTATION_LINE_IDS_DATA_OFFSET: usize = 0x0DBE;
+const CONFIRM_DIALOG_YES_REGION_DATA_OFFSET: usize = 0x2555;
+const CONFIRM_DIALOG_NO_REGION_DATA_OFFSET: usize = 0x255D;
 const BRIDGE_PROJECTION_ANCHOR_DATA_OFFSET: usize = 0x4F09;
 const BRIDGE_TRIGONOMETRY_DATA_OFFSET: usize = 0x4F45;
 const POSITION_COMPONENT_COUNT: usize = 3;
 const TRIGONOMETRY_COMPONENT_COUNT: usize = 2;
 const WORD_BYTE_COUNT: usize = 2;
+const RECTANGLE_COMPONENT_COUNT: usize = 4;
+const RECTANGLE_BYTE_COUNT: usize = RECTANGLE_COMPONENT_COUNT * WORD_BYTE_COUNT;
 const PROJECTION_ANCHOR_BYTE_COUNT: usize = POSITION_COMPONENT_COUNT * WORD_BYTE_COUNT;
 const TRIGONOMETRY_SAMPLE_BYTE_COUNT: usize = TRIGONOMETRY_COMPONENT_COUNT * WORD_BYTE_COUNT;
 const SQUARE_CAPS_GLYPH_HEIGHT: usize = 10;
@@ -74,6 +78,10 @@ const SMALL_FONT_GLYPH_BYTE_COUNT: usize =
 const PROJECTION_ANCHOR_FILE_OFFSET: usize =
     BLOODPRG_DATA_FILE_OFFSET + BRIDGE_PROJECTION_ANCHOR_DATA_OFFSET;
 const TRIGONOMETRY_FILE_OFFSET: usize = BLOODPRG_DATA_FILE_OFFSET + BRIDGE_TRIGONOMETRY_DATA_OFFSET;
+const CONFIRM_DIALOG_YES_REGION_FILE_OFFSET: usize =
+    BLOODPRG_DATA_FILE_OFFSET + CONFIRM_DIALOG_YES_REGION_DATA_OFFSET;
+const CONFIRM_DIALOG_NO_REGION_FILE_OFFSET: usize =
+    BLOODPRG_DATA_FILE_OFFSET + CONFIRM_DIALOG_NO_REGION_DATA_OFFSET;
 const SMALL_FONT_CHARACTER_MAP_FILE_OFFSET: usize =
     BLOODPRG_DATA_FILE_OFFSET + SMALL_FONT_CHARACTER_MAP_DATA_OFFSET;
 const SMALL_FONT_GLYPH_FILE_OFFSET: usize =
@@ -99,6 +107,8 @@ const FONT_REQUIRED_EXECUTABLE_LENGTH: usize =
     MAIN_FONT_GLYPH_FILE_OFFSET + MAIN_FONT_GLYPH_BYTE_COUNT;
 const PRESENTATION_REQUIRED_EXECUTABLE_LENGTH: usize =
     BLOODPRG_DATA_FILE_OFFSET + PRESENTATION_DESCRIPTOR_DATA_END_OFFSET;
+const CONFIRM_DIALOG_REQUIRED_EXECUTABLE_LENGTH: usize =
+    CONFIRM_DIALOG_NO_REGION_FILE_OFFSET + RECTANGLE_BYTE_COUNT;
 
 /// One executable-authored presentation-line template.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -369,6 +379,24 @@ pub struct BloodprgBridgeResources {
     pub trigonometry: [BloodprgBridgeTrigonometrySample; BLOODPRG_BRIDGE_TRIGONOMETRY_SAMPLE_COUNT],
 }
 
+/// One executable-authored logical hit rectangle.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct BloodprgHitRectangle {
+    /// Upper-left logical coordinate.
+    pub origin: [i16; 2],
+    /// Signed logical width and height consumed by the native hit tester.
+    pub size: [i16; 2],
+}
+
+/// YES and NO hit regions used by the navigation confirmation modal.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct BloodprgConfirmDialogRegions {
+    /// Affirmative response region.
+    pub yes: BloodprgHitRectangle,
+    /// Negative response region.
+    pub no: BloodprgHitRectangle,
+}
+
 /// Complete font maps, advances, and glyph bitmaps embedded in `BLOODPRG.EXE`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BloodprgFontResources {
@@ -441,6 +469,51 @@ impl fmt::Display for BloodprgBridgeResourceError {
 }
 
 impl Error for BloodprgBridgeResourceError {}
+
+/// Malformed or truncated confirmation-dialog resources in `BLOODPRG.EXE`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum BloodprgConfirmDialogResourceError {
+    /// The input does not begin with an MZ executable signature.
+    InvalidExecutableSignature,
+    /// One of the two fixed rectangle records extends beyond the image.
+    TruncatedExecutable {
+        /// Supplied executable byte count.
+        actual: usize,
+        /// Minimum byte count required by both records.
+        required: usize,
+    },
+}
+
+impl fmt::Display for BloodprgConfirmDialogResourceError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            formatter,
+            "invalid BLOODPRG confirmation-dialog resources: {self:?}"
+        )
+    }
+}
+
+impl Error for BloodprgConfirmDialogResourceError {}
+
+/// Decode the authored YES and NO hit rectangles into flat logical geometry.
+pub fn decode_bloodprg_confirm_dialog_regions(
+    executable: &[u8],
+) -> Result<BloodprgConfirmDialogRegions, BloodprgConfirmDialogResourceError> {
+    if executable.len() < CONFIRM_DIALOG_REQUIRED_EXECUTABLE_LENGTH {
+        return Err(BloodprgConfirmDialogResourceError::TruncatedExecutable {
+            actual: executable.len(),
+            required: CONFIRM_DIALOG_REQUIRED_EXECUTABLE_LENGTH,
+        });
+    }
+    if executable.get(MZ_SIGNATURE_FILE_OFFSET..MZ_SIGNATURE.len()) != Some(&MZ_SIGNATURE) {
+        return Err(BloodprgConfirmDialogResourceError::InvalidExecutableSignature);
+    }
+
+    Ok(BloodprgConfirmDialogRegions {
+        yes: read_hit_rectangle(executable, CONFIRM_DIALOG_YES_REGION_FILE_OFFSET),
+        no: read_hit_rectangle(executable, CONFIRM_DIALOG_NO_REGION_FILE_OFFSET),
+    })
+}
 
 /// Decode bridge projection anchors and trigonometry into owned arrays.
 ///
@@ -539,6 +612,16 @@ fn read_unsigned_word(data: &[u8], position: usize) -> u16 {
 
 fn read_signed_word(data: &[u8], position: usize) -> i16 {
     i16::from_le_bytes([data[position], data[position + 1]])
+}
+
+fn read_hit_rectangle(data: &[u8], position: usize) -> BloodprgHitRectangle {
+    let components: [i16; RECTANGLE_COMPONENT_COUNT] = std::array::from_fn(|component| {
+        read_signed_word(data, position + component * WORD_BYTE_COUNT)
+    });
+    BloodprgHitRectangle {
+        origin: [components[0], components[1]],
+        size: [components[2], components[3]],
+    }
 }
 
 #[cfg(test)]
@@ -687,6 +770,52 @@ mod tests {
         assert_eq!(
             decode_bloodprg_font_resources(&invalid_signature),
             Err(BloodprgFontResourceError::InvalidExecutableSignature)
+        );
+    }
+
+    #[test]
+    fn confirmation_dialog_regions_match_the_shipped_executable() {
+        let executable = include_bytes!("../../../re/bin/BLOODPRG.EXE");
+        let regions = decode_bloodprg_confirm_dialog_regions(executable).unwrap();
+        assert_eq!(
+            regions.yes,
+            BloodprgHitRectangle {
+                origin: [120, 105],
+                size: [30, 10],
+            }
+        );
+        assert_eq!(
+            regions.no,
+            BloodprgHitRectangle {
+                origin: [180, 105],
+                size: [20, 10],
+            }
+        );
+    }
+
+    #[test]
+    fn malformed_confirmation_dialog_images_are_rejected() {
+        assert_eq!(
+            decode_bloodprg_confirm_dialog_regions(&[]),
+            Err(BloodprgConfirmDialogResourceError::TruncatedExecutable {
+                actual: usize::MIN,
+                required: CONFIRM_DIALOG_REQUIRED_EXECUTABLE_LENGTH,
+            })
+        );
+
+        let truncated = vec![u8::MIN; CONFIRM_DIALOG_REQUIRED_EXECUTABLE_LENGTH - 1];
+        assert_eq!(
+            decode_bloodprg_confirm_dialog_regions(&truncated),
+            Err(BloodprgConfirmDialogResourceError::TruncatedExecutable {
+                actual: CONFIRM_DIALOG_REQUIRED_EXECUTABLE_LENGTH - 1,
+                required: CONFIRM_DIALOG_REQUIRED_EXECUTABLE_LENGTH,
+            })
+        );
+
+        let invalid_signature = vec![u8::MIN; CONFIRM_DIALOG_REQUIRED_EXECUTABLE_LENGTH];
+        assert_eq!(
+            decode_bloodprg_confirm_dialog_regions(&invalid_signature),
+            Err(BloodprgConfirmDialogResourceError::InvalidExecutableSignature)
         );
     }
 

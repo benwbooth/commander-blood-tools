@@ -222,6 +222,16 @@ impl RuntimeScriptSystem {
         &self.dispatch.sequence_presentation
     }
 
+    /// Borrow subtitle and inline-menu state produced by translated A6 handlers.
+    pub const fn text_presentation(&self) -> &TextPresentationState {
+        &self.dispatch.text_presentation
+    }
+
+    /// Mutably borrow subtitle and inline-menu state for frame-tail rendering.
+    pub fn text_presentation_mut(&mut self) -> &mut TextPresentationState {
+        &mut self.dispatch.text_presentation
+    }
+
     /// Apply a presentation-panel DESCRIPT record through the live script state.
     pub fn apply_presentation_description(
         &mut self,
