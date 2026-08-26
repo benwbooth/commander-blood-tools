@@ -260,8 +260,9 @@ impl<'window> Renderer<'window> {
         let alien = alien_asset.map(|asset| {
             AlienRenderer::new(&device, &queue, format, config.width, config.height, asset)
         });
-        let bridge =
-            bridge_palette.map(|palette| BridgeRenderer::new(&device, &queue, format, palette));
+        let bridge = bridge_palette
+            .map(|palette| BridgeRenderer::new(&device, &queue, format, palette))
+            .transpose()?;
 
         Ok(Self {
             surface,

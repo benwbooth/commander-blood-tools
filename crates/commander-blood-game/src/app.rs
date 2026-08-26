@@ -9,6 +9,7 @@ use commander_blood_formats::bloodprg::decode_bloodprg_bridge_resources;
 use commander_blood_formats::manu3::decode_manu3;
 use commander_blood_formats::palette::{
     MANU3_PALETTE_END, MANU3_PALETTE_START, decode_bloodprg_default_palette,
+    decode_bloodprg_default_vga_palette,
 };
 use commander_blood_formats::panorama::BridgePanoramaArchive;
 use sdl3::event::{Event, WindowEvent};
@@ -20,8 +21,7 @@ use crate::assets::{
 };
 use crate::native::alien::{AlienInputAction, AlienMouseSample, AlienScene};
 use crate::native::bloodprg::{
-    BridgeScene, BridgeSceneInput, BridgeSteeringInteraction, IndexedGamePalette,
-    ShipProjectionResources,
+    BridgeScene, BridgeSceneInput, BridgeSteeringInteraction, ShipProjectionResources,
 };
 use crate::native::manu3::animation::CursorPosition;
 use crate::native::manu3::model::{Manu3FrameRequest, Manu3Model};
@@ -199,7 +199,7 @@ pub fn run() -> Result<()> {
     } else {
         None
     };
-    let default_palette = executable
+    let display_palette = executable
         .as_deref()
         .map(|executable| {
             decode_bloodprg_default_palette(executable)
@@ -207,7 +207,7 @@ pub fn run() -> Result<()> {
         })
         .transpose()?;
     if manu3.is_some() {
-        let palette = default_palette
+        let palette = display_palette
             .as_ref()
             .context("MANU3 rendering requires the executable palette")?;
         image.install_palette_range(palette, MANU3_PALETTE_START..=MANU3_PALETTE_END);
@@ -239,11 +239,14 @@ pub fn run() -> Result<()> {
     } else {
         None
     };
-    let bridge_palette: Option<&IndexedGamePalette> = if bridge.is_some() {
+    let bridge_palette = if bridge.is_some() {
         Some(
-            default_palette
-                .as_ref()
-                .context("bridge rendering requires the executable palette")?,
+            decode_bloodprg_default_vga_palette(
+                executable
+                    .as_deref()
+                    .context("bridge rendering requires BLOODPRG.EXE")?,
+            )
+            .context("decoding native bridge palette from BLOODPRG.EXE")?,
         )
     } else {
         None
@@ -268,7 +271,7 @@ pub fn run() -> Result<()> {
         &image,
         manu3.as_ref(),
         alien.as_ref().map(AlienScene::asset),
-        bridge_palette,
+        bridge_palette.as_ref(),
     )?;
     let mut events = sdl.event_pump().map_err(anyhow::Error::msg)?;
     let mut rendered_frames = u64::MIN;

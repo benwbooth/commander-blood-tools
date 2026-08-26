@@ -12,9 +12,8 @@ const DEFAULT_PALETTE_BYTE_COUNT: usize = PALETTE_ENTRY_COUNT * RGB_COMPONENT_CO
 const VGA_DAC_CHANNEL_MAXIMUM: u16 = 63;
 const EIGHT_BIT_CHANNEL_MAXIMUM: u16 = 255;
 
-/// Decode the executable's 256-entry default VGA DAC palette and expand each
-/// six-bit channel to an eight-bit color component.
-pub fn decode_bloodprg_default_palette(
+/// Decode the executable's 256-entry palette without changing its six-bit VGA DAC values.
+pub fn decode_bloodprg_default_vga_palette(
     executable: &[u8],
 ) -> Option<[[u8; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT]> {
     let bytes = executable.get(
@@ -30,8 +29,22 @@ pub fn decode_bloodprg_default_palette(
             if u16::from(*value) > VGA_DAC_CHANNEL_MAXIMUM {
                 return None;
             }
+            *component = *value;
+        }
+    }
+    Some(palette)
+}
+
+/// Decode the executable's 256-entry default VGA DAC palette and expand each
+/// six-bit channel to an eight-bit color component.
+pub fn decode_bloodprg_default_palette(
+    executable: &[u8],
+) -> Option<[[u8; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT]> {
+    let mut palette = decode_bloodprg_default_vga_palette(executable)?;
+    for entry in &mut palette {
+        for component in entry {
             *component =
-                (u16::from(*value) * EIGHT_BIT_CHANNEL_MAXIMUM / VGA_DAC_CHANNEL_MAXIMUM) as u8;
+                (u16::from(*component) * EIGHT_BIT_CHANNEL_MAXIMUM / VGA_DAC_CHANNEL_MAXIMUM) as u8;
         }
     }
     Some(palette)
@@ -69,11 +82,31 @@ mod tests {
     }
 
     #[test]
+    fn raw_palette_retains_native_six_bit_dac_components() {
+        let Some(path) = original_executable() else {
+            return;
+        };
+        let executable = std::fs::read(path).unwrap();
+        let raw = decode_bloodprg_default_vga_palette(&executable).unwrap();
+        let expanded = decode_bloodprg_default_palette(&executable).unwrap();
+
+        assert!(raw.iter().flatten().all(|component| *component <= 63));
+        assert!(expanded.iter().flatten().any(|component| *component > 63));
+        for (raw, expanded) in raw.iter().flatten().zip(expanded.iter().flatten()) {
+            assert_eq!(
+                *expanded,
+                (u16::from(*raw) * EIGHT_BIT_CHANNEL_MAXIMUM / VGA_DAC_CHANNEL_MAXIMUM) as u8
+            );
+        }
+    }
+
+    #[test]
     fn rejects_missing_or_non_dac_palette_data() {
         assert!(decode_bloodprg_default_palette(&[]).is_none());
         let mut executable =
             vec![u8::MIN; DEFAULT_PALETTE_FILE_OFFSET + DEFAULT_PALETTE_BYTE_COUNT];
         executable[DEFAULT_PALETTE_FILE_OFFSET] = VGA_DAC_CHANNEL_MAXIMUM as u8 + 1;
         assert!(decode_bloodprg_default_palette(&executable).is_none());
+        assert!(decode_bloodprg_default_vga_palette(&executable).is_none());
     }
 }

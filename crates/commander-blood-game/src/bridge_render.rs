@@ -21,6 +21,8 @@ const PANORAMA_TEXTURE_BINDING: u32 = 0;
 const PALETTE_TEXTURE_BINDING: u32 = 1;
 const RGBA_COMPONENT_COUNT: usize = 4;
 const OPAQUE_ALPHA: u8 = u8::MAX;
+const VGA_DAC_CHANNEL_MAXIMUM: u16 = 63;
+const EIGHT_BIT_CHANNEL_MAXIMUM: u16 = 255;
 const STAR_VERTEX_COUNT: usize = 6;
 const STAR_PIXEL_SIZE: f32 = 1.0;
 const PANORAMA_VERTEX_COUNT: u32 = 3;
@@ -56,7 +58,7 @@ impl BridgeRenderer {
         queue: &wgpu::Queue,
         surface_format: wgpu::TextureFormat,
         palette: &IndexedGamePalette,
-    ) -> Self {
+    ) -> Result<Self> {
         let panorama_size = wgpu::Extent3d {
             width: PANORAMA_FRAME_WIDTH as u32,
             height: PANORAMA_FRAME_HEIGHT as u32,
@@ -94,7 +96,7 @@ impl BridgeRenderer {
                 origin: wgpu::Origin3d::ZERO,
                 aspect: wgpu::TextureAspect::All,
             },
-            &palette_rgba(palette),
+            &palette_rgba(palette)?,
             wgpu::TexelCopyBufferLayout {
                 offset: u64::MIN,
                 bytes_per_row: Some(PALETTE_ENTRY_COUNT as u32 * RGBA_COMPONENT_COUNT as u32),
@@ -225,14 +227,14 @@ impl BridgeRenderer {
             mapped_at_creation: false,
         });
 
-        Self {
+        Ok(Self {
             star_pipeline,
             panorama_pipeline,
             bind_group,
             panorama_texture,
             star_vertices,
             maximum_star_vertices,
-        }
+        })
     }
 
     /// Upload and encode one bridge frame in original compositing order.
@@ -350,13 +352,20 @@ impl BridgeRenderer {
     }
 }
 
-fn palette_rgba(palette: &IndexedGamePalette) -> Vec<u8> {
+fn palette_rgba(palette: &IndexedGamePalette) -> Result<Vec<u8>> {
     let mut rgba = Vec::with_capacity(PALETTE_ENTRY_COUNT * RGBA_COMPONENT_COUNT);
     for color in palette {
-        rgba.extend_from_slice(&color[..RGB_COMPONENT_COUNT]);
+        for component in &color[..RGB_COMPONENT_COUNT] {
+            if u16::from(*component) > VGA_DAC_CHANNEL_MAXIMUM {
+                anyhow::bail!("bridge palette component exceeds the six-bit VGA DAC range");
+            }
+            rgba.push(
+                (u16::from(*component) * EIGHT_BIT_CHANNEL_MAXIMUM / VGA_DAC_CHANNEL_MAXIMUM) as u8,
+            );
+        }
         rgba.push(OPAQUE_ALPHA);
     }
-    rgba
+    Ok(rgba)
 }
 
 fn star_quad(star: &ShipPlottedPoint) -> [BridgeStarGpuVertex; STAR_VERTEX_COUNT] {
@@ -394,7 +403,7 @@ mod tests {
     use std::path::{Path, PathBuf};
 
     use commander_blood_formats::bloodprg::decode_bloodprg_bridge_resources;
-    use commander_blood_formats::palette::decode_bloodprg_default_palette;
+    use commander_blood_formats::palette::decode_bloodprg_default_vga_palette;
     use commander_blood_formats::panorama::BridgePanoramaArchive;
 
     use super::*;
@@ -421,7 +430,7 @@ mod tests {
         let executable = std::fs::read(executable_path).unwrap();
         let resources =
             ShipProjectionResources::from(decode_bloodprg_bridge_resources(&executable).unwrap());
-        let palette = decode_bloodprg_default_palette(&executable).unwrap();
+        let palette = decode_bloodprg_default_vga_palette(&executable).unwrap();
         let panorama =
             BridgePanoramaArchive::decode(std::fs::read(panorama_path).unwrap().into_boxed_slice())
                 .unwrap();
@@ -477,7 +486,7 @@ mod tests {
         width: u32,
         height: u32,
     ) {
-        let renderer = BridgeRenderer::new(device, queue, OFFSCREEN_FORMAT, palette);
+        let renderer = BridgeRenderer::new(device, queue, OFFSCREEN_FORMAT, palette).unwrap();
         let output = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("bridge offscreen color target"),
             size: wgpu::Extent3d {

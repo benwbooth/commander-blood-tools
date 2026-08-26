@@ -1,12 +1,19 @@
 //! Original-data discovery and flat runtime bootstrap.
 
+mod state;
+
+pub use state::{
+    IndexedFramebuffer, LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_PIXEL_COUNT,
+    LOGICAL_FRAMEBUFFER_WIDTH, OriginalGameRuntime, RuntimeAssetLoadStatus,
+};
+
 use std::fmt;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 use commander_blood_formats::archive::{BloodArchive, BloodResourceName};
 use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
-use commander_blood_formats::palette::decode_bloodprg_default_palette;
+use commander_blood_formats::palette::decode_bloodprg_default_vga_palette;
 
 use crate::assets::{OriginalResourceSource, OriginalResourceStore};
 use crate::native::bloodprg::{
@@ -146,7 +153,7 @@ pub struct OriginalGameData {
     resource_catalog: OriginalResourceCatalog,
     script_profile_catalog: OriginalScriptProfileCatalog,
     writable_resource_catalog: StartupWritableResourceCatalog,
-    default_palette: [[u8; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT],
+    default_vga_palette: [[u8; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT],
     archive_entry_count: usize,
 }
 
@@ -179,7 +186,7 @@ impl OriginalGameData {
         let writable_resource_catalog =
             StartupWritableResourceCatalog::decode_bloodprg(&executable)
                 .context("decoding startup writable-resource catalog")?;
-        let default_palette = decode_bloodprg_default_palette(&executable)
+        let default_vga_palette = decode_bloodprg_default_vga_palette(&executable)
             .context("decoding original default palette")?;
 
         let archive_bytes = std::fs::read(paths.archive())
@@ -198,7 +205,7 @@ impl OriginalGameData {
             resource_catalog,
             script_profile_catalog,
             writable_resource_catalog,
-            default_palette,
+            default_vga_palette,
             archive_entry_count,
         })
     }
@@ -233,9 +240,9 @@ impl OriginalGameData {
         &self.writable_resource_catalog
     }
 
-    /// Default 256-color palette expanded from six-bit VGA components.
-    pub const fn default_palette(&self) -> &[[u8; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT] {
-        &self.default_palette
+    /// Default 256-color palette retaining the native six-bit VGA DAC components.
+    pub const fn default_vga_palette(&self) -> &[[u8; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT] {
+        &self.default_vga_palette
     }
 
     /// Number of original archive directory entries visible to native lookup.
@@ -310,8 +317,6 @@ impl OriginalGameData {
 mod tests {
     use super::*;
 
-    const MANU3_RESOURCE_NAME: &[u8] = b"MANU3.XDB";
-
     #[test]
     fn discovers_and_bootstraps_the_complete_original_data_set() {
         let Ok(paths) = OriginalGameDataPaths::discover(None) else {
@@ -333,11 +338,37 @@ mod tests {
             ORIGINAL_SCRIPT_PROFILE_COUNT
         );
         assert!(
-            !data
-                .load_named_resource(MANU3_RESOURCE_NAME)
-                .unwrap()
-                .is_empty()
+            data.default_vga_palette()
+                .iter()
+                .flatten()
+                .all(|component| *component <= 63)
         );
+
+        let mut runtime = OriginalGameRuntime::new(data);
+        assert_eq!(
+            runtime.load_manu3().unwrap(),
+            RuntimeAssetLoadStatus::LoadedNow
+        );
+        assert_eq!(
+            runtime.load_manu3().unwrap(),
+            RuntimeAssetLoadStatus::AlreadyLoaded
+        );
+        assert_eq!(
+            runtime.open_bridge_panorama().unwrap(),
+            RuntimeAssetLoadStatus::LoadedNow
+        );
+        assert!(runtime.bridge_panorama().unwrap().frame_count() > 0);
+        runtime.initialize_back_buffer().unwrap();
+        assert!(
+            runtime
+                .back_buffer()
+                .pixels()
+                .iter()
+                .any(|pixel| *pixel != 0)
+        );
+        let initial_profile = ScriptProfileId::new(0).unwrap();
+        runtime.load_profile(initial_profile).unwrap();
+        assert_eq!(runtime.current_profile().unwrap().id(), initial_profile);
     }
 
     #[test]
