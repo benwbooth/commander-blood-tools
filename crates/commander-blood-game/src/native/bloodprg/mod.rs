@@ -28,11 +28,13 @@ mod camera_navigation;
 mod cd_audio;
 mod choice_list;
 mod clock;
+mod confirm_dialog;
 mod descript;
 mod descript_lookup;
 mod diagnostics;
 mod framebuffer_copy;
 mod frame_transition;
+mod hud_refresh;
 mod input_dispatch;
 mod input_cancel;
 mod input_selection;
@@ -225,6 +227,11 @@ pub use choice_list::{
 pub use clock::{
     ScriptClockDate, decode_script_clock_date, decode_script_clock_hour,
 };
+pub use confirm_dialog::{
+    CONFIRM_DIALOG_BACKGROUND_PALETTE_INDEX, CONFIRM_DIALOG_FOREGROUND_PALETTE_INDEX,
+    ConfirmDialogFrame, ConfirmDialogHits, ConfirmDialogLabel, ConfirmDialogOutcome,
+    ConfirmDialogRectangle, ConfirmDialogState, update_confirm_dialog,
+};
 pub use descript::{
     CachedDescriptBackground, DescriptBackgroundCache, DescriptBackgroundCacheOutcome,
     DescriptBackgroundSource, DescriptIdleClipSource, DescriptPresentationAssets,
@@ -253,6 +260,9 @@ pub use framebuffer_copy::{
 pub use frame_transition::{
     FramebufferTransitionError, FramebufferTransitionState, TransitionRect,
     TransitionRenderRegion, advance_framebuffer_rect_transition,
+};
+pub use hud_refresh::{
+    PAUSE_HUD_PALETTE_INDEX, PauseHudRectangle, PauseHudRefresh, build_pause_hud_refresh,
 };
 pub use input_dispatch::{
     HostInputKey, IgnoredInputAction, InputAction, InputArrowKey, InputDispatchState,
