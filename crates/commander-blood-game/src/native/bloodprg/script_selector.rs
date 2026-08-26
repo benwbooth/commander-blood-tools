@@ -82,6 +82,8 @@ pub struct ScriptSelectorBranch {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ScriptSelectorState {
     history: ScriptConceptHistory,
+    current_control: Option<ScriptWordId>,
+    parent_control: Option<ScriptWordId>,
     current_branch: Option<ScriptSelectorBranch>,
     parent_branch: Option<ScriptSelectorBranch>,
     pending_presentation_words: Vec<ScriptWordId>,
@@ -103,9 +105,40 @@ impl ScriptSelectorState {
         self.current_branch
     }
 
+    /// Return the concept currently controlling actor dialogue dispatch.
+    pub const fn current_control(&self) -> Option<ScriptWordId> {
+        self.current_control
+    }
+
     /// Return the selector response suspended beneath the current branch.
     pub const fn parent_branch(&self) -> Option<ScriptSelectorBranch> {
         self.parent_branch
+    }
+
+    /// Return the suspended parent concept, when nested dialogue is active.
+    pub const fn parent_control(&self) -> Option<ScriptWordId> {
+        self.parent_control
+    }
+
+    /// Replace current and parent dialogue controls with interned concepts.
+    pub fn set_control_selections(
+        &mut self,
+        current: Option<ScriptWordId>,
+        parent: Option<ScriptWordId>,
+    ) {
+        self.current_control = current;
+        self.parent_control = parent;
+    }
+
+    pub(super) fn select_control_branch(
+        &mut self,
+        concept: ScriptWordId,
+        body: Option<ScriptCodeOffset>,
+    ) {
+        self.current_control = Some(concept);
+        if let Some(body) = body {
+            self.current_branch = Some(ScriptSelectorBranch { concept, body });
+        }
     }
 
     /// Return words prepared by the current text-presentation pass.
@@ -281,6 +314,10 @@ pub fn commit_selected_concept(
     state.pending_presentation_words.clear();
     state.history.push(concept);
     if menu_activated {
+        state.parent_control = state
+            .current_control
+            .or(state.current_branch.map(|branch| branch.concept));
+        state.current_control = Some(concept);
         state.parent_branch = state.current_branch;
         state.current_branch = matched_body.map(|body| ScriptSelectorBranch { concept, body });
     }
@@ -671,6 +708,8 @@ mod tests {
                     insertion_index,
                 )
                 .unwrap(),
+                current_control: Some(menu_word),
+                parent_control: None,
                 current_branch: Some(initial_branch),
                 parent_branch: None,
                 pending_presentation_words: vec![menu_word],

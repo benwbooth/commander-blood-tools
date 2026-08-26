@@ -68,6 +68,8 @@ impl ScriptFieldSelector {
     pub const BLACK_HOLE_COMPARISON: Self = Self(12);
     /// Relation word compared with a black-hole selector.
     pub const BLACK_HOLE_RELATION: Self = Self(14);
+    /// Active dialogue control word on actor records.
+    pub const DIALOGUE_CONTROL: Self = Self(15);
     /// Per-character high-bit-first object-link set.
     pub const OBJECT_LINKS: Self = Self(5);
     /// Object holder or current location.
