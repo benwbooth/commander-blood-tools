@@ -268,18 +268,23 @@ fn line_requests_skipped_back_buffer_present(line: u16) -> bool {
     SKIP_BACK_BUFFER_PRESENT_LINES.contains(&line)
 }
 
-fn configure_present_policy(
-    line: u16,
-    unclamped_line_ids: &[u8; UNCLAMPED_LINE_ID_COUNT],
-    policy: &mut PresentationPresentPolicy,
-    request_flags: &mut u8,
-) {
-    policy.draw_via_back_buffer = DRAW_VIA_BACK_BUFFER_LINES.contains(&line);
-    policy.skip_back_buffer_present = false;
-    policy.unclamped_rows = unclamped_line_ids.contains(&(line as u8));
-    if !policy.draw_via_back_buffer && line_requests_skipped_back_buffer_present(line) {
-        *request_flags |= PRESENTATION_REQUEST_FLAG;
-        policy.skip_back_buffer_present = true;
+impl PresentationPresentPolicy {
+    /// Resolve the frame policy and secondary-request bit for one authored line.
+    pub fn for_presentation_line(
+        line: u16,
+        unclamped_line_ids: &[u8; UNCLAMPED_LINE_ID_COUNT],
+        vertical_offset: usize,
+    ) -> (Self, bool) {
+        let mut policy = Self {
+            vertical_offset,
+            ..Self::default()
+        };
+        policy.draw_via_back_buffer = DRAW_VIA_BACK_BUFFER_LINES.contains(&line);
+        policy.unclamped_rows = unclamped_line_ids.contains(&(line as u8));
+        policy.skip_back_buffer_present =
+            !policy.draw_via_back_buffer && line_requests_skipped_back_buffer_present(line);
+        let secondary_request_pending = policy.skip_back_buffer_present;
+        (policy, secondary_request_pending)
     }
 }
 
@@ -370,12 +375,16 @@ where
 
         let image = prepare_scene_image(resource, state, context, host)?;
         state.presentation.gate_flags = PRESENTATION_ACTIVE_FLAG;
-        configure_present_policy(
-            line,
-            context.unclamped_line_ids,
-            &mut state.present_policy,
-            &mut state.presentation.request_flags,
-        );
+        let (present_policy, secondary_request_pending) =
+            PresentationPresentPolicy::for_presentation_line(
+                line,
+                context.unclamped_line_ids,
+                state.present_policy.vertical_offset,
+            );
+        state.present_policy = present_policy;
+        if secondary_request_pending {
+            state.presentation.request_flags |= PRESENTATION_REQUEST_FLAG;
+        }
         state.source = if line == SHARED_CACHE_PRESENTATION_LINE && context.shared_cache_available {
             PresentationSceneSource::SharedCache
         } else {

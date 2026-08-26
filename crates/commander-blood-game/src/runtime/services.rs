@@ -38,6 +38,7 @@ pub struct ModernGameServices<'window> {
     presentation: RuntimePresentationHost<'window>,
     presentation_player: RuntimePresentationPlayer,
     audio: Option<RuntimeAudioHost>,
+    loaded_voice: Option<RuntimePcmClip>,
     bridge_scene: Option<BridgeScene>,
     bridge_frame: Option<BridgeSceneFrame>,
     scripts: RuntimeScriptSystem,
@@ -61,6 +62,7 @@ impl<'window> ModernGameServices<'window> {
             presentation,
             presentation_player,
             audio: None,
+            loaded_voice: None,
             bridge_scene: None,
             bridge_frame: None,
             scripts,
@@ -215,6 +217,45 @@ impl<'window> ModernGameServices<'window> {
             .with_context(|| format!("sound bank clip {clip_index} is not authored"))?;
         let clip = RuntimePcmClip::from_snd_clip(clip)?;
         self.audio_mut()?.play_foreground(clip)
+    }
+
+    /// Decode and retain one authored Creative Voice resource for a later start call.
+    pub fn load_voice_resource(&mut self, path: &[u8]) -> Result<()> {
+        let resource_name =
+            BloodResourceName::new(path).context("validating voice resource path")?;
+        let encoded = self
+            .runtime
+            .data()
+            .resource_store()
+            .load(&resource_name)
+            .with_context(|| {
+                format!(
+                    "loading voice resource {}",
+                    String::from_utf8_lossy(resource_name.as_bytes())
+                )
+            })?;
+        let decoded = VocPcm::decode(&encoded).with_context(|| {
+            format!(
+                "decoding voice resource {}",
+                String::from_utf8_lossy(resource_name.as_bytes())
+            )
+        })?;
+        self.loaded_voice = Some(RuntimePcmClip::from_voc(&decoded));
+        Ok(())
+    }
+
+    /// Start the previously decoded voice clip over any active background music.
+    pub fn start_loaded_voice(&mut self) -> Result<()> {
+        let clip = self
+            .loaded_voice
+            .take()
+            .context("no decoded voice resource is waiting to start")?;
+        self.audio_mut()?.play_foreground(clip)
+    }
+
+    /// Replace the complete live indexed palette with black.
+    pub fn clear_live_palette(&mut self) {
+        self.runtime.live_palette_mut().fill([u8::MIN; 3]);
     }
 
     /// Stop all modern audio and clear samples already queued in SDL.

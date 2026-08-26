@@ -3,7 +3,8 @@
 use anyhow::{Context, Result, bail};
 use commander_blood_formats::archive::BloodResourceName;
 use commander_blood_formats::bloodprg::{
-    BLOODPRG_PRESENTATION_LINE_COUNT, BloodprgPresentationCatalog,
+    BLOODPRG_PRESENTATION_LINE_COUNT, BLOODPRG_UNCLAMPED_PRESENTATION_LINE_COUNT,
+    BloodprgPresentationCatalog,
 };
 use commander_blood_formats::descript::DescriptCharacterBackground;
 
@@ -55,6 +56,7 @@ pub struct RuntimePresentationCatalog {
     backgrounds: [RuntimePresentationBackground; BLOODPRG_PRESENTATION_LINE_COUNT],
     flags: [u8; BLOODPRG_PRESENTATION_LINE_COUNT],
     variants: [u8; BLOODPRG_PRESENTATION_LINE_COUNT],
+    unclamped_line_ids: [u8; BLOODPRG_UNCLAMPED_PRESENTATION_LINE_COUNT],
 }
 
 impl RuntimePresentationCatalog {
@@ -70,6 +72,7 @@ impl RuntimePresentationCatalog {
             backgrounds: [RuntimePresentationBackground::None; BLOODPRG_PRESENTATION_LINE_COUNT],
             flags: std::array::from_fn(|line| initial.lines()[line].flags()),
             variants: std::array::from_fn(|line| initial.lines()[line].variant()),
+            unclamped_line_ids: *initial.unclamped_line_ids(),
         }
     }
 
@@ -191,6 +194,11 @@ impl RuntimePresentationCatalog {
         self.names
             .get(usize::from(line.get()))
             .and_then(Option::as_ref)
+    }
+
+    /// Return the exact eight line IDs scanned by the recovered scene dispatcher.
+    pub const fn unclamped_line_ids(&self) -> &[u8; BLOODPRG_UNCLAMPED_PRESENTATION_LINE_COUNT] {
+        &self.unclamped_line_ids
     }
 }
 

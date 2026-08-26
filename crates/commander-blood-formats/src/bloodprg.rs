@@ -27,6 +27,8 @@ pub const BLOODPRG_SUBTITLE_FONT_GLYPH_COUNT: usize = 55;
 pub const BLOODPRG_SMALL_FONT_GLYPH_COUNT: usize = 42;
 /// Number of presentation-line templates indexed by the native scene dispatcher.
 pub const BLOODPRG_PRESENTATION_LINE_COUNT: usize = 45;
+/// Number of authored line IDs allowed to exceed the ordinary 130-row presentation band.
+pub const BLOODPRG_UNCLAMPED_PRESENTATION_LINE_COUNT: usize = 8;
 
 const MZ_SIGNATURE: [u8; 2] = [b'M', b'Z'];
 const MZ_SIGNATURE_FILE_OFFSET: usize = 0;
@@ -39,6 +41,7 @@ const PRESENTATION_SCENE_IMAGE_OFFSET_FIELD: usize = 2;
 const PRESENTATION_DESCRIPTOR_HEADER_BYTE_COUNT: usize = 2;
 const PRESENTATION_RESOURCE_NAME_MAXIMUM_FIELD_BYTE_COUNT: usize = 16;
 const NO_PRESENTATION_SCENE_IMAGE_OFFSET: u16 = u16::MAX;
+const UNCLAMPED_PRESENTATION_LINE_IDS_DATA_OFFSET: usize = 0x0DBE;
 const BRIDGE_PROJECTION_ANCHOR_DATA_OFFSET: usize = 0x4F09;
 const BRIDGE_TRIGONOMETRY_DATA_OFFSET: usize = 0x4F45;
 const POSITION_COMPONENT_COUNT: usize = 3;
@@ -132,6 +135,7 @@ impl BloodprgPresentationLineDescriptor {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BloodprgPresentationCatalog {
     lines: [BloodprgPresentationLineDescriptor; BLOODPRG_PRESENTATION_LINE_COUNT],
+    unclamped_line_ids: [u8; BLOODPRG_UNCLAMPED_PRESENTATION_LINE_COUNT],
 }
 
 impl BloodprgPresentationCatalog {
@@ -145,6 +149,11 @@ impl BloodprgPresentationCatalog {
     /// Resolve one line without native 16-bit table aliasing.
     pub fn line(&self, line: u16) -> Option<&BloodprgPresentationLineDescriptor> {
         self.lines.get(usize::from(line))
+    }
+
+    /// Return the first eight executable bytes scanned by the scene dispatcher.
+    pub const fn unclamped_line_ids(&self) -> &[u8; BLOODPRG_UNCLAMPED_PRESENTATION_LINE_COUNT] {
+        &self.unclamped_line_ids
     }
 }
 
@@ -298,6 +307,13 @@ pub fn decode_bloodprg_presentation_catalog(
         lines: lines
             .try_into()
             .expect("one descriptor is emitted for every presentation line"),
+        unclamped_line_ids: executable[BLOODPRG_DATA_FILE_OFFSET
+            + UNCLAMPED_PRESENTATION_LINE_IDS_DATA_OFFSET
+            ..BLOODPRG_DATA_FILE_OFFSET
+                + UNCLAMPED_PRESENTATION_LINE_IDS_DATA_OFFSET
+                + BLOODPRG_UNCLAMPED_PRESENTATION_LINE_COUNT]
+            .try_into()
+            .expect("the presentation catalog length check covers the line-mode table"),
     })
 }
 
@@ -532,6 +548,8 @@ mod tests {
     use super::*;
 
     const RESOURCE_ORACLE_COUNT: usize = 1;
+    const SHIPPED_UNCLAMPED_PRESENTATION_LINES: [u8; BLOODPRG_UNCLAMPED_PRESENTATION_LINE_COUNT] =
+        [41, 42, 0, 1, 4, 5, 6, 44];
 
     #[derive(Deserialize)]
     struct BridgeResourceOracle {
@@ -684,6 +702,10 @@ mod tests {
                 .lines()
                 .iter()
                 .all(|line| line.initial_scene_image_name().is_none())
+        );
+        assert_eq!(
+            catalog.unclamped_line_ids(),
+            &SHIPPED_UNCLAMPED_PRESENTATION_LINES
         );
 
         let first_names: [&[u8]; 8] = [
