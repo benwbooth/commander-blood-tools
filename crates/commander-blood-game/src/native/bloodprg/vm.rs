@@ -63,12 +63,18 @@ impl ScriptFieldSelector {
     pub const ENCOUNTER_COUNT: Self = Self(8);
     /// Matching black-hole position pair.
     pub const BLACK_HOLE_MATCH_POSITION: Self = Self(9);
+    /// First authored black-hole position pair used by the travel dispatcher.
+    pub const BLACK_HOLE_POSITION_A: Self = Self(9);
     /// Nonmatching black-hole position pair.
     pub const BLACK_HOLE_MISMATCH_POSITION: Self = Self(10);
+    /// Second authored black-hole position pair used by the travel dispatcher.
+    pub const BLACK_HOLE_POSITION_B: Self = Self(10);
     /// Direct two-word navigation position.
     pub const NAVIGATION_POSITION: Self = Self(11);
     /// Comparison word selecting a black-hole position pair.
     pub const BLACK_HOLE_COMPARISON: Self = Self(12);
+    /// Relation installed after the current black-hole relation matches.
+    pub const BLACK_HOLE_MATCH_RELATION: Self = Self(13);
     /// Relation word compared with a black-hole selector.
     pub const BLACK_HOLE_RELATION: Self = Self(14);
     /// Active dialogue control word on actor records.

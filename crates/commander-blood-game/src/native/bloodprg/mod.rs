@@ -45,6 +45,7 @@ mod record;
 mod record_state;
 mod resource_cache;
 mod script;
+mod script_action;
 mod script_block;
 mod script_control;
 mod script_frame;
@@ -266,6 +267,11 @@ pub use presentation_scan::{
     ScriptPresentationHandoff, ScriptPresentationScanContext, ScriptPresentationScanError,
     ScriptPresentationScanHost, ScriptPresentationScanOutcome, ScriptPresentationScanState,
     deferred_navigation_record, scan_script_presentations,
+};
+pub use script_action::{
+    ScriptActionContext, ScriptActionError, ScriptActionHost, ScriptActionPresentationLine,
+    ScriptActionState, ScriptShipNavigationMode, ScriptTravelActionPhase,
+    dispatch_script_action,
 };
 pub use procedure::{
     apply_procedure_activation, evaluate_procedure_gate, ScriptProcedureStateError,
