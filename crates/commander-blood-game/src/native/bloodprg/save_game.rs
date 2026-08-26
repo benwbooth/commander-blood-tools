@@ -9,7 +9,8 @@ use super::{
     LoadedScriptProfile, ORIGINAL_RESOURCE_ALLOCATION_ALIGNMENT, SAVE_SLOT_NAME_LENGTH,
     SCRIPT_PROCEDURE_PATCH_RECORD_BYTE_COUNT, SCRIPT_SEQUENCE_SAVE_BLOCK_BYTE_COUNT,
     SCRIPT_TIMER_SAVE_BLOCK_BYTE_COUNT, SaveSlotName, ScriptProcedureStateError, ScriptProfileId,
-    ScriptSequenceSaveError, apply_procedure_patch_stream, build_procedure_patch_stream,
+    ScriptProfileRecordStateError, ScriptSequenceSaveError, apply_procedure_patch_stream,
+    build_procedure_patch_stream,
 };
 
 /// Byte count of the saved zero-based script-profile identity.
@@ -227,7 +228,10 @@ impl OriginalSaveGame {
 
     /// Capture all state written by the original save path from one loaded profile.
     pub fn capture(profile: &LoadedScriptProfile) -> Result<Self, OriginalSaveGameError> {
-        let mut state_block = profile.state().encode();
+        let mut state_block = profile
+            .synchronized_state()
+            .map_err(OriginalSaveGameError::RecordState)?
+            .encode();
         let state_block_byte_count = rounded_state_block_byte_count(state_block.len())?;
         state_block.resize(state_block_byte_count, u8::MIN);
         let procedure_patch_stream =
@@ -274,7 +278,9 @@ impl OriginalSaveGame {
         let mut runtime = profile.runtime().clone();
         runtime.restore_timer_save_block(&self.timer_block);
 
-        *profile.state_mut() = state;
+        profile
+            .replace_state(state)
+            .map_err(OriginalSaveGameError::RecordState)?;
         *profile.procedures_mut() = procedures;
         *profile.sequence_slots_mut() = sequence_slots;
         *profile.runtime_mut() = runtime;
@@ -361,6 +367,8 @@ pub enum OriginalSaveGameError {
     },
     /// The saved VAR allocation is not valid for the selected directory.
     State(ScriptDataError),
+    /// Saved VAR records could not be rebuilt into coherent typed handler state.
+    RecordState(ScriptProfileRecordStateError),
     /// The saved procedure patch stream is not valid for the selected directory.
     Procedure(ScriptProcedureStateError),
     /// One saved sequence-name field is not safely terminated.
@@ -377,6 +385,7 @@ impl Error for OriginalSaveGameError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             Self::State(source) => Some(source),
+            Self::RecordState(source) => Some(source),
             Self::Procedure(source) => Some(source),
             Self::Sequence(source) => Some(source),
             _ => None,

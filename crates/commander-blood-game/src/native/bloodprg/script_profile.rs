@@ -1,5 +1,7 @@
 //! Loading and ownership of complete authored BloodScript profiles.
 
+mod record_state;
+
 use std::error::Error;
 use std::fmt;
 
@@ -26,6 +28,8 @@ use super::{
     ResourceLoadStatus, ScriptProcedureStateError, ScriptProcedureStates, ScriptRuntime,
     ScriptSelectorState, ScriptSequenceSlots,
 };
+
+pub use record_state::{ScriptProfileRecordState, ScriptProfileRecordStateError};
 
 /// File position of the five playable resource profiles in `BLOODPRG.EXE`.
 pub const BLOODPRG_SCRIPT_PROFILE_TABLE_FILE_OFFSET: usize = 0x00D3E4;
@@ -228,6 +232,7 @@ pub struct LoadedScriptProfile {
     runtime: ScriptRuntime,
     selector_state: ScriptSelectorState,
     sequence_slots: ScriptSequenceSlots,
+    record_state: ScriptProfileRecordState,
 }
 
 /// Disjoint flat borrows needed to execute one loaded BloodScript profile.
@@ -254,6 +259,8 @@ pub struct LoadedScriptExecutionParts<'a> {
     pub selector_state: &'a mut ScriptSelectorState,
     /// Persistent DESCRIPT sequence-name bindings.
     pub sequence_slots: &'a mut ScriptSequenceSlots,
+    /// VAR-backed typed values shared by record and post-frame action handlers.
+    pub record_state: &'a mut ScriptProfileRecordState,
 }
 
 impl LoadedScriptProfile {
@@ -374,7 +381,32 @@ impl LoadedScriptProfile {
             runtime: &mut self.runtime,
             selector_state: &mut self.selector_state,
             sequence_slots: &mut self.sequence_slots,
+            record_state: &mut self.record_state,
         }
+    }
+
+    /// Clone state with every typed record store committed to its VAR fields.
+    pub fn synchronized_state(&self) -> Result<ScriptState, ScriptProfileRecordStateError> {
+        let mut state = self.state.clone();
+        self.record_state
+            .synchronize_into(&mut state, &self.directory, &self.dictionary)?;
+        Ok(state)
+    }
+
+    /// Replace VAR bytes and transactionally rebuild every derived record store.
+    pub fn replace_state(
+        &mut self,
+        state: ScriptState,
+    ) -> Result<(), ScriptProfileRecordStateError> {
+        let record_state = ScriptProfileRecordState::recover(
+            &self.instructions,
+            &state,
+            &self.dictionary,
+            self.builtins,
+        )?;
+        self.state = state;
+        self.record_state = record_state;
+        Ok(())
     }
 
     /// Execute one frame through the retained semantic COD stream.
@@ -532,6 +564,8 @@ pub enum ScriptProfileError {
     ProcedureInstruction(ScriptInstructionError),
     /// A COD token could not be bound to complete typed profile state.
     Instruction(ScriptInstructionError),
+    /// VAR record fields could not be recovered into coherent typed handler state.
+    RecordState(ScriptProfileRecordStateError),
     /// Procedure gates do not form one complete typed state table.
     ProcedureState(ScriptProcedureStateError),
     /// The BAS dialogue image failed typed decoding.
@@ -561,6 +595,7 @@ impl Error for ScriptProfileError {
             Self::Code(source) => Some(source),
             Self::ProcedureInstruction(source) => Some(source),
             Self::Instruction(source) => Some(source),
+            Self::RecordState(source) => Some(source),
             Self::ProcedureState(source) => Some(source),
             Self::Dialogue(source) => Some(source),
             Self::Data { source, .. } => Some(source),
@@ -629,6 +664,9 @@ fn decode_loaded_profile(
         .collect::<Result<Box<[_]>, _>>()
         .map_err(ScriptProfileError::Instruction)?;
     let builtins = ScriptProfileBuiltins::bind(&directory);
+    let record_state =
+        ScriptProfileRecordState::recover(&instructions, &state, &dictionary, builtins)
+            .map_err(ScriptProfileError::RecordState)?;
 
     Ok(LoadedScriptProfile {
         id: profile,
@@ -644,6 +682,7 @@ fn decode_loaded_profile(
         runtime: ScriptRuntime::new(),
         selector_state: ScriptSelectorState::default(),
         sequence_slots: ScriptSequenceSlots::default(),
+        record_state,
     })
 }
 
@@ -773,6 +812,12 @@ mod tests {
             assert_eq!(
                 loaded.state().encode(),
                 std::fs::read(root.join(format!("SCRIPT{file_number}.VAR"))).unwrap()
+            );
+            assert_eq!(
+                loaded.synchronized_state().unwrap().encode(),
+                loaded.state().encode(),
+                "profile {} record stores must preserve every authored VAR byte",
+                profile.value() + 1
             );
             assert_eq!(
                 loaded.dictionary().encode(),

@@ -516,6 +516,21 @@ impl ScriptState {
         ])
     }
 
+    /// Widen one word identity to a three-word record beginning at the same position.
+    pub fn word_triple_starting_at(&self, field: ScriptStateWord) -> Option<ScriptStateWordTriple> {
+        match field.owner {
+            ScriptStateOwner::Object(object) => self.object_word_triple(object, field.word_index),
+            ScriptStateOwner::TrailingState => {
+                let byte_offset = field.word_index.checked_mul(WORD_SIZE)?;
+                let record_end = byte_offset.checked_add(WORD_SIZE * 3)?;
+                (record_end <= self.trailing_data.len()).then_some(ScriptStateWordTriple {
+                    owner: ScriptStateOwner::TrailingState,
+                    first_word_index: field.word_index,
+                })
+            }
+        }
+    }
+
     /// Assign one resolved adjacent three-word record atomically.
     pub fn set_word_triple(&mut self, field: ScriptStateWordTriple, value: [u16; 3]) -> bool {
         let Some(offset) = field.first_word_index.checked_mul(WORD_SIZE) else {

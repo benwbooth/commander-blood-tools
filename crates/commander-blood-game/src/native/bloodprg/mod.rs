@@ -586,7 +586,8 @@ pub use script_profile::{
     BLOODPRG_SCRIPT_PROFILE_TABLE_FILE_OFFSET, ORIGINAL_SCRIPT_PROFILE_COUNT,
     SCRIPT_PROFILE_RESOURCE_COUNT, LoadedScriptProfile, OriginalScriptProfileCatalog,
     ScriptProfileBuiltins, ScriptProfileDataKind, ScriptProfileError, ScriptProfileId,
-    ScriptProfileLoadOutcome, ScriptProfileManager, ScriptProfileResourceKind,
+    ScriptProfileLoadOutcome, ScriptProfileManager, ScriptProfileRecordState,
+    ScriptProfileRecordStateError, ScriptProfileResourceKind,
     ScriptProfileResources,
 };
 pub use script_profile_request::{
