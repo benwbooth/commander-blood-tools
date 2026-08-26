@@ -26,8 +26,10 @@ mod byte_move;
 mod camera_approach;
 mod camera_navigation;
 mod choice_list;
+mod clock;
 mod descript;
 mod descript_lookup;
+mod diagnostics;
 mod framebuffer_copy;
 mod input_dispatch;
 mod input_cancel;
@@ -208,6 +210,9 @@ pub use choice_list::{
     ChoiceListFrame, ChoiceListPointer, ChoiceListPresentation, ChoiceListRect, ChoiceListRow,
     ChoiceListRowKind, ChoiceListState, update_choice_list,
 };
+pub use clock::{
+    ScriptClockDate, decode_script_clock_date, decode_script_clock_hour,
+};
 pub use descript::{
     CachedDescriptBackground, DescriptBackgroundCache, DescriptBackgroundCacheOutcome,
     DescriptBackgroundSource, DescriptIdleClipSource, DescriptPresentationAssets,
@@ -223,6 +228,11 @@ pub use descript::{
 pub use descript_lookup::{
     DescriptApplicationContext, DescriptApplicationError, DescriptApplicationResult,
     DescriptRecordApplication, lookup_and_apply_descript_record,
+};
+pub use diagnostics::{
+    DiagnosticPanelLayout, DiagnosticRectangle, ErrorOverlay, ErrorOverlayLine,
+    ErrorOverlayMode, UnknownErrorOverlayMode, build_error_overlay,
+    calculate_diagnostic_panel_layout, write_diagnostic_console_text,
 };
 pub use framebuffer_copy::{
     FramebufferCopyError, FramebufferKind, LOGICAL_FRAMEBUFFER_HEIGHT,
