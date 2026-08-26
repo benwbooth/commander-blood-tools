@@ -87,6 +87,7 @@ mod subtitle_reveal;
 mod text;
 mod text_handler;
 mod text_scan;
+mod timer;
 mod vm;
 
 pub use aboard::{
@@ -495,6 +496,10 @@ pub use text_handler::{
 pub use text_scan::{
     activate_object_text, BoundTextInstruction, ScriptTextActivationError,
     ScriptTextActivationRegistry,
+};
+pub use timer::{
+    GameTimerContext, GameTimerState, GameTimerTickOutcome, GameTimerTickStatus,
+    SpeakerGateAction, SpeakerPulseState, advance_game_timer_tick,
 };
 pub use vm::{
     active_objects_in_play, count_positive_operands, object_before_threshold, object_has_flag,
