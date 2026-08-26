@@ -67,6 +67,7 @@ mod ship_projection;
 mod ship_target;
 mod ship_view;
 mod ship_hud;
+mod ship_hud_coordinator;
 mod sprite_geometry;
 mod startup;
 mod state;
@@ -382,6 +383,11 @@ pub use ship_hud::{
     SHIP_CAMERA_RESET, SHIP_HUD_PALETTE_COLOR_COUNT, SHIP_HUD_PALETTE_FIRST, IndexedGamePalette,
     ShipHudBackend, ShipHudPaletteSnapshot, ShipHudState,
     snapshot_ship_hud_palette_and_reset_camera,
+};
+pub use ship_hud_coordinator::{
+    ShipHudCoordinatorError, ShipHudCoordinatorHost, ShipHudCoordinatorOutcome,
+    ShipHudCoordinatorState, ShipHudInitializationContext, ShipHudPaletteTransition,
+    ShipHudTargetListState, update_ship_hud,
 };
 pub use ship_depth::{
     ShipDepthBandLayout, ShipDepthTransition, ShipDepthTransitionOutcome,
