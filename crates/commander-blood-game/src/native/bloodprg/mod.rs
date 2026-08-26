@@ -26,9 +26,11 @@ mod framebuffer_copy;
 mod input_dispatch;
 mod input_cancel;
 mod input_selection;
+mod location_panel_geometry;
 mod menu_reveal;
 mod name_area_effect;
 mod navigation;
+mod navigation_pick;
 mod navigation_status;
 mod navigation_wipe;
 mod numbers;
@@ -212,6 +214,10 @@ pub use input_selection::{
     SaveSlotName, accept_input_selection, move_input_selection_next,
     move_input_selection_previous,
 };
+pub use location_panel_geometry::{
+    LocationPanelGeometry, LocationPanelGeometryHost, LocationPanelGeometryState,
+    LocationPanelLayout, update_location_panel_geometry,
+};
 pub use menu_reveal::{
     reveal_inline_menu_step, InlineMenuRevealError, InlineMenuRevealFrame,
     InlineMenuRevealGate, InlineMenuRevealOutcome, InlineMenuTextMetrics,
@@ -224,6 +230,10 @@ pub use navigation::{
     navigation_actor_targets, navigation_candidates, navigation_chart_objects,
     navigation_distance, navigation_source_objects, object_links_to, objects_at_arche_position,
     presentable_navigation_objects, resolve_navigation_position, ScriptNavigationError,
+};
+pub use navigation_pick::{
+    NavigationChartMarkerEndpoint, NavigationChartPickObject, NavigationChartPickOutcome,
+    NavigationChartPickState, pick_navigation_chart_object,
 };
 pub use navigation_status::{
     NavigationStatusContext, NavigationStatusHoverMode, NavigationStatusLabels,
