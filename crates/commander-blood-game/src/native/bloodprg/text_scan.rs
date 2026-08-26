@@ -3,9 +3,18 @@
 use std::collections::BTreeMap;
 use std::fmt;
 
-use commander_blood_formats::script::{ScriptObjectId, ScriptObjectKind, ScriptState};
+use commander_blood_formats::bas::{ScriptBas, ScriptBasInstruction};
+use commander_blood_formats::code::{ScriptCode, ScriptCodeOffset};
+use commander_blood_formats::instruction::DecodedScriptInstruction;
+use commander_blood_formats::script::{
+    ScriptDirectory, ScriptObjectId, ScriptObjectKind, ScriptState,
+};
 
-use super::TextInstructionState;
+use super::{
+    ScriptBasDispatchState, ScriptFieldSelector, TextInstructionState, script_field_offset,
+};
+
+const SERIALIZED_WORD_SIZE: usize = std::mem::size_of::<u16>();
 
 /// One top-level text instruction bound to its owning object.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -66,6 +75,37 @@ pub enum ScriptTextActivationError {
         /// Missing object identity.
         object: ScriptObjectId,
     },
+    /// The object has no matching active DEB directory entry.
+    MissingDirectoryObject {
+        /// Missing object identity.
+        object: ScriptObjectId,
+    },
+    /// COD tokens and their typed instruction stream were not parallel.
+    MismatchedInstructionCount {
+        /// Number of losslessly framed COD tokens.
+        tokens: usize,
+        /// Number of typed COD instructions.
+        instructions: usize,
+    },
+    /// The object's recovered kind has no selector-2 BAS block field.
+    MissingObjectBlockField {
+        /// Object lacking the field.
+        object: ScriptObjectId,
+    },
+    /// A nonzero selector-2 value did not resolve to a BAS token boundary.
+    InvalidObjectBlockOffset {
+        /// Object owning the invalid offset.
+        object: ScriptObjectId,
+        /// Authored BAS position.
+        source_offset: ScriptCodeOffset,
+    },
+    /// A nonzero object block reached the end of BAS without AA or FF.
+    UnterminatedObjectBlock {
+        /// Object owning the block.
+        object: ScriptObjectId,
+        /// Authored BAS start position.
+        source_offset: ScriptCodeOffset,
+    },
 }
 
 impl fmt::Display for ScriptTextActivationError {
@@ -105,8 +145,116 @@ pub fn activate_object_text(
     Ok(kind)
 }
 
+/// Observable activation counts from one complete native `vm_cod_scan` pass.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptObjectTextActivationOutcome {
+    /// Decoded kind returned by the native routine.
+    pub kind: ScriptObjectKind,
+    /// Matching top-level COD A6 instructions activated.
+    pub top_level_text_count: usize,
+    /// A6 instructions activated in the object's selector-2 BAS block.
+    pub object_block_text_count: usize,
+}
+
+/// Activate every top-level and object-block A6 instruction owned by an object.
+///
+/// This is the production flat-state translation of `vm_cod_scan` at BLOODPRG
+/// file offset `0x00739B`. COD line ownership comes from the exact VAR byte
+/// offset stored in the object's DEB entry. The BAS block starts at field
+/// selector 2 and follows decoded physical token order through AA or FF.
+#[allow(clippy::too_many_arguments)]
+pub fn activate_profile_object_text(
+    code: &ScriptCode,
+    instructions: &[DecodedScriptInstruction],
+    dialogue: &ScriptBas,
+    state: &ScriptState,
+    directory: &ScriptDirectory,
+    object: ScriptObjectId,
+    cod_text_states: &mut BTreeMap<ScriptCodeOffset, TextInstructionState>,
+    bas: &mut ScriptBasDispatchState,
+) -> Result<ScriptObjectTextActivationOutcome, ScriptTextActivationError> {
+    let kind = state
+        .object(object)
+        .ok_or(ScriptTextActivationError::MissingObject { object })?
+        .kind;
+    let object_offset = directory
+        .object(object)
+        .ok_or(ScriptTextActivationError::MissingDirectoryObject { object })?
+        .value;
+    if code.tokens().len() != instructions.len() {
+        return Err(ScriptTextActivationError::MismatchedInstructionCount {
+            tokens: code.tokens().len(),
+            instructions: instructions.len(),
+        });
+    }
+
+    let mut top_level_text_count = usize::MIN;
+    for (token, instruction) in code.tokens().iter().zip(instructions) {
+        let DecodedScriptInstruction::Text(text) = instruction else {
+            continue;
+        };
+        if text.line_record.byte_offset() != usize::from(object_offset) {
+            continue;
+        }
+        cod_text_states
+            .entry(token.source_offset())
+            .or_insert_with(|| TextInstructionState::new(text))
+            .activate();
+        top_level_text_count += 1;
+    }
+
+    let block_field_offset =
+        script_field_offset(kind, ScriptFieldSelector::PRESENTATION_HANDOFF)
+            .ok_or(ScriptTextActivationError::MissingObjectBlockField { object })?;
+    let block_field = state
+        .object_word(object, block_field_offset / SERIALIZED_WORD_SIZE)
+        .ok_or(ScriptTextActivationError::MissingObjectBlockField { object })?;
+    let encoded_block_offset = state
+        .word(block_field)
+        .ok_or(ScriptTextActivationError::MissingObjectBlockField { object })?;
+    let mut object_block_text_count = usize::MIN;
+    if encoded_block_offset != u16::MIN {
+        let source_offset = ScriptCodeOffset::new(usize::from(encoded_block_offset));
+        let start = dialogue
+            .tokens()
+            .binary_search_by_key(&source_offset, |token| token.source_offset())
+            .map_err(|_| ScriptTextActivationError::InvalidObjectBlockOffset {
+                object,
+                source_offset,
+            })?;
+        let mut terminated = false;
+        for token in &dialogue.tokens()[start..] {
+            match token.instruction() {
+                ScriptBasInstruction::Text(text) => {
+                    bas.activate_text(token.source_offset(), text);
+                    object_block_text_count += 1;
+                }
+                ScriptBasInstruction::Yield | ScriptBasInstruction::End => {
+                    terminated = true;
+                    break;
+                }
+                _ => {}
+            }
+        }
+        if !terminated {
+            return Err(ScriptTextActivationError::UnterminatedObjectBlock {
+                object,
+                source_offset,
+            });
+        }
+    }
+
+    Ok(ScriptObjectTextActivationOutcome {
+        kind,
+        top_level_text_count,
+        object_block_text_count,
+    })
+}
+
 #[cfg(test)]
 mod tests {
+    use std::path::{Path, PathBuf};
+
     use commander_blood_formats::code::ScriptCodeOffset;
     use commander_blood_formats::instruction::{
         ScriptLineRecordOffset, ScriptText, ScriptTextControl,
@@ -114,12 +262,21 @@ mod tests {
     use commander_blood_formats::script::{decode_script_directory, decode_script_state};
     use serde::Deserialize;
 
+    use crate::assets::OriginalResourceStore;
+
+    use super::super::{
+        OriginalResourceCache, OriginalResourceCatalog, OriginalScriptProfileCatalog,
+        ScriptProfileId, ScriptProfileManager,
+    };
     use super::*;
 
     const ORACLE_VECTOR_COUNT: usize = 4;
     const DIRECTORY_ENTRY_SIZE: usize = 20;
     const DIRECTORY_NAME_CAPACITY: usize = 16;
     const DIRECTORY_OBJECT_KIND: u16 = 1;
+    const SHIPPED_ACTOR_COUNT: usize = 166;
+    const SHIPPED_ACTOR_COD_TEXT_COUNT: usize = 3_687;
+    const SHIPPED_ACTOR_BAS_TEXT_COUNT: usize = 1_849;
 
     #[derive(Deserialize)]
     struct TextScanOracle {
@@ -216,6 +373,89 @@ mod tests {
         activate_object_text(&profile, target, &mut registry).unwrap();
 
         assert!(registry.top_level()[0].state().is_active());
+    }
+
+    #[test]
+    fn every_shipped_actor_resolves_its_native_cod_and_bas_text_scan() {
+        let Some(root) = original_data_root() else {
+            return;
+        };
+        let executable = include_bytes!("../../../../../re/bin/BLOODPRG.EXE");
+        let store = OriginalResourceStore::new(root, None, [], true);
+        let resources = OriginalResourceCatalog::decode_bloodprg(executable).unwrap();
+        let catalog = OriginalScriptProfileCatalog::decode_bloodprg(executable).unwrap();
+        let mut cache = OriginalResourceCache::new();
+        let mut manager = ScriptProfileManager::new(catalog);
+        let mut actor_count = usize::MIN;
+        let mut top_level_text_count = usize::MIN;
+        let mut object_block_text_count = usize::MIN;
+
+        for profile_id in ScriptProfileId::all() {
+            manager
+                .select(profile_id, &mut cache, &store, &resources)
+                .unwrap();
+            let profile = manager.current().unwrap();
+
+            for actor in profile
+                .state()
+                .objects()
+                .iter()
+                .filter(|object| object.kind == ScriptObjectKind::Actor)
+            {
+                let mut cod_text_states = BTreeMap::new();
+                let mut bas = ScriptBasDispatchState::default();
+                let outcome = activate_profile_object_text(
+                    profile.code(),
+                    profile.instructions(),
+                    profile.dialogue(),
+                    profile.state(),
+                    profile.directory(),
+                    actor.id,
+                    &mut cod_text_states,
+                    &mut bas,
+                )
+                .unwrap_or_else(|error| {
+                    panic!(
+                        "profile {} actor {:?} failed: {error:?}",
+                        profile_id.value() + 1,
+                        actor.id
+                    )
+                });
+
+                assert_eq!(outcome.kind, ScriptObjectKind::Actor);
+                assert_eq!(cod_text_states.len(), outcome.top_level_text_count);
+                assert!(cod_text_states.values().all(|state| state.is_active()));
+                let active_bas_text_count = profile
+                    .dialogue()
+                    .tokens()
+                    .iter()
+                    .filter(|token| {
+                        bas.text_state(token.source_offset())
+                            .is_some_and(TextInstructionState::is_active)
+                    })
+                    .count();
+                assert_eq!(active_bas_text_count, outcome.object_block_text_count);
+
+                actor_count += 1;
+                top_level_text_count += outcome.top_level_text_count;
+                object_block_text_count += outcome.object_block_text_count;
+            }
+        }
+
+        assert_eq!(actor_count, SHIPPED_ACTOR_COUNT);
+        assert_eq!(top_level_text_count, SHIPPED_ACTOR_COD_TEXT_COUNT);
+        assert_eq!(object_block_text_count, SHIPPED_ACTOR_BAS_TEXT_COUNT);
+    }
+
+    fn original_data_root() -> Option<PathBuf> {
+        let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        [
+            workspace_root.join("output/_tmp_iso"),
+            workspace_root.join("commander-blood-audio/_tmp_iso"),
+            workspace_root.join("accuracy/cblood_install/cblood"),
+        ]
+        .into_iter()
+        .find(|root| root.join("SCRIPT1.COD").is_file())
     }
 
     fn inactive_text_state() -> TextInstructionState {

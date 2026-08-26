@@ -613,8 +613,8 @@ pub use script_selector::{
     collect_selector_menu, commit_selected_concept, find_selector_body,
 };
 pub use script_service::{
-    ScriptExecutionBackend, ScriptExecutionService, ScriptExecutionServiceError,
-    ScriptPresentationCallbackError,
+    ScriptActionCallbackError, ScriptExecutionBackend, ScriptExecutionService,
+    ScriptExecutionServiceError, ScriptPresentationCallbackError,
 };
 pub use script_sequence_slots::{
     ScriptSequenceSaveError, ScriptSequenceSlots, SCRIPT_SEQUENCE_SAVE_BLOCK_BYTE_COUNT,
@@ -722,8 +722,8 @@ pub use text_handler::{
     execute_text_instruction, handle_text_instruction,
 };
 pub use text_scan::{
-    activate_object_text, BoundTextInstruction, ScriptTextActivationError,
-    ScriptTextActivationRegistry,
+    BoundTextInstruction, ScriptObjectTextActivationOutcome, ScriptTextActivationError,
+    ScriptTextActivationRegistry, activate_object_text, activate_profile_object_text,
 };
 pub use timer::{
     GameTimerContext, GameTimerState, GameTimerTickOutcome, GameTimerTickStatus,

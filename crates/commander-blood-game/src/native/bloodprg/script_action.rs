@@ -149,7 +149,11 @@ pub trait ScriptActionHost {
     fn restart_navigation_music(&mut self) -> Result<(), Self::Error>;
 
     /// Execute the related object's COD state after an encounter-counter update.
-    fn execute_object_code(&mut self, object: ScriptObjectId) -> Result<(), Self::Error>;
+    fn execute_object_code(
+        &mut self,
+        state: &ScriptState,
+        object: ScriptObjectId,
+    ) -> Result<(), Self::Error>;
 
     /// Start native radio clip 6.
     fn play_radio_clip(&mut self) -> Result<(), Self::Error>;
@@ -485,7 +489,7 @@ fn dispatch_actor_presentation<Host: ScriptActionHost>(
             return Err(ScriptActionError::ObjectFlagUpdate { object: owner });
         }
         action.post_update_object = Some(updated_object);
-        host.execute_object_code(updated_object)
+        host.execute_object_code(state, updated_object)
             .map_err(ScriptActionError::Host)?;
     }
 
@@ -768,7 +772,11 @@ mod tests {
             Ok(())
         }
 
-        fn execute_object_code(&mut self, object: ScriptObjectId) -> Result<(), Self::Error> {
+        fn execute_object_code(
+            &mut self,
+            _state: &ScriptState,
+            object: ScriptObjectId,
+        ) -> Result<(), Self::Error> {
             self.calls.push(HostCall::ExecuteCode(object));
             Ok(())
         }

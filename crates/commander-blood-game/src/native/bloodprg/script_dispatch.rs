@@ -78,6 +78,8 @@ pub struct ScriptDispatchState {
 
 /// Mutable state exposed to the recovered post-frame presentation scan.
 pub struct ScriptPostScanContext<'a> {
+    /// Losslessly framed COD image used for object-owned text activation.
+    pub code: &'a commander_blood_formats::code::ScriptCode,
     /// Pre-bound COD instructions used to keep derived record stores coherent.
     pub instructions: &'a [DecodedScriptInstruction],
     /// Active profile's decoded BAS image.
@@ -207,6 +209,7 @@ pub fn execute_loaded_script_frame<Host: ScriptDispatchHost>(
         record_state,
     } = profile.execution_parts();
     let mut dispatcher = Dispatcher {
+        code,
         instructions,
         dialogue,
         state,
@@ -230,6 +233,7 @@ pub fn execute_loaded_script_frame<Host: ScriptDispatchHost>(
 }
 
 struct Dispatcher<'a, Host> {
+    code: &'a commander_blood_formats::code::ScriptCode,
     instructions: &'a [DecodedScriptInstruction],
     dialogue: &'a ScriptBas,
     state: &'a mut ScriptState,
@@ -537,6 +541,7 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
     fn scan_presentation(&mut self, runtime: &mut ScriptRuntime) -> Result<(), Self::Error> {
         self.host
             .scan_presentation(ScriptPostScanContext {
+                code: self.code,
                 instructions: self.instructions,
                 dialogue: self.dialogue,
                 state: self.state,

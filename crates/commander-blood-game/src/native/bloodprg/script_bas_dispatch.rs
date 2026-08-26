@@ -37,6 +37,25 @@ impl ScriptBasDispatchState {
     pub fn reset(&mut self) {
         self.text_instructions.clear();
     }
+
+    pub(super) fn activate_text(
+        &mut self,
+        source_offset: ScriptCodeOffset,
+        text: &commander_blood_formats::instruction::ScriptText,
+    ) {
+        self.text_instructions
+            .entry(source_offset)
+            .or_insert_with(|| TextInstructionState::new(text))
+            .activate();
+    }
+
+    #[cfg(test)]
+    pub(super) fn text_state(
+        &self,
+        source_offset: ScriptCodeOffset,
+    ) -> Option<TextInstructionState> {
+        self.text_instructions.get(&source_offset).copied()
+    }
 }
 
 /// Complete flat profile bindings used by one character dialogue handoff.

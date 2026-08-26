@@ -5,6 +5,7 @@ use std::fmt;
 use commander_blood_formats::code::ScriptCodeOffset;
 use commander_blood_formats::script::ScriptObjectId;
 
+use super::text_scan::activate_profile_object_text;
 use super::{
     ActorPositionStateContext, ActorPositionStateError, ScriptAboardRecordContext,
     ScriptActionContext, ScriptActionError, ScriptActionHost, ScriptActionState,
@@ -14,9 +15,9 @@ use super::{
     ScriptPreFrameContext, ScriptPresentationEntity, ScriptPresentationScanContext,
     ScriptPresentationScanError, ScriptPresentationScanHost, ScriptPresentationScanOutcome,
     ScriptPresentationScanState, ScriptRecordActionDispatchContext,
-    ScriptRecordStateNavigationContext, ScriptTransferContext, SequenceRequestContext,
-    dispatch_script_action, execute_script_dialogue_control, scan_script_presentations,
-    update_actor_position_states,
+    ScriptRecordStateNavigationContext, ScriptTextActivationError, ScriptTransferContext,
+    SequenceRequestContext, dispatch_script_action, execute_script_dialogue_control,
+    scan_script_presentations, update_actor_position_states,
 };
 
 /// Runtime facts and external effects required by translated BloodScript logic.
@@ -81,9 +82,6 @@ pub trait ScriptExecutionBackend {
     /// Restart navigation music after a descriptor-backed target change.
     fn restart_navigation_music(&mut self) -> Result<(), Self::Error>;
 
-    /// Execute an object's authored COD state after an encounter update.
-    fn execute_object_code(&mut self, object: ScriptObjectId) -> Result<(), Self::Error>;
-
     /// Start the fixed radio clip selected by a presentation action.
     fn play_radio_clip(&mut self) -> Result<(), Self::Error>;
 
@@ -94,13 +92,30 @@ pub trait ScriptExecutionBackend {
     fn reset_ship_hud(&mut self) -> Result<(), Self::Error>;
 }
 
+/// Failure while executing a C1 through C8 action callback.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ScriptActionCallbackError<BackendError> {
+    /// The translated nested `vm_cod_scan` pass rejected profile data.
+    TextActivation(ScriptTextActivationError),
+    /// Descriptor, renderer, audio, or camera work failed.
+    Backend(BackendError),
+}
+
+impl<BackendError: fmt::Debug> fmt::Display for ScriptActionCallbackError<BackendError> {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(formatter, "{self:?}")
+    }
+}
+
+impl<BackendError: fmt::Debug> std::error::Error for ScriptActionCallbackError<BackendError> {}
+
 /// Failure from an inline BAS or action callback during presentation scanning.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ScriptPresentationCallbackError<BackendError> {
     /// BAS selector or body execution failed.
     Dialogue(ScriptControlFlowError<ScriptBasDispatchError<BackendError>>),
     /// C1 through C8 post-frame action execution failed.
-    Action(ScriptActionError<BackendError>),
+    Action(ScriptActionError<ScriptActionCallbackError<BackendError>>),
     /// A profile object had no corresponding active DEB directory entry.
     MissingObjectName {
         /// Object missing its authored name.
@@ -297,6 +312,7 @@ impl<Backend: ScriptExecutionBackend> ScriptDispatchHost for ScriptExecutionServ
             .archetype
             .ok_or(ScriptExecutionServiceError::MissingArchetypeBinding)?;
         let ScriptPostScanContext {
+            code,
             instructions,
             dialogue,
             state,
@@ -310,6 +326,7 @@ impl<Backend: ScriptExecutionBackend> ScriptDispatchHost for ScriptExecutionServ
         } = context;
         let outcome = {
             let mut adapter = PresentationAdapter {
+                code,
                 instructions,
                 dialogue,
                 dictionary,
@@ -340,6 +357,7 @@ impl<Backend: ScriptExecutionBackend> ScriptDispatchHost for ScriptExecutionServ
 }
 
 struct PresentationAdapter<'a, Backend> {
+    code: &'a commander_blood_formats::code::ScriptCode,
     instructions: &'a [commander_blood_formats::instruction::DecodedScriptInstruction],
     dialogue: &'a commander_blood_formats::bas::ScriptBas,
     dictionary: &'a commander_blood_formats::script::ScriptDictionary,
@@ -360,9 +378,8 @@ impl<Backend: ScriptExecutionBackend> ScriptPresentationScanHost<super::ScriptPr
         &mut self,
         context: ScriptDialogueControlDispatchContext<'_, super::ScriptProfileRecordState>,
     ) -> Result<(), Self::Error> {
-        let mut host = ExternalHost {
+        let mut host = BasExternalHost {
             backend: self.backend,
-            directory: self.directory,
         };
         execute_script_dialogue_control(
             ScriptDialogueExecutionContext {
@@ -426,16 +443,23 @@ impl<Backend: ScriptExecutionBackend> ScriptPresentationScanHost<super::ScriptPr
         let navigation = self.backend.navigation_context();
         let action_records = &mut context.records.action_records;
         let aboard_objects = context.records.record_runtime.aboard_objects_mut();
-        let mut host = ExternalHost {
+        let request_flags = &mut self.dispatch.text_presentation.request_flags;
+        let cod_text_states = &mut self.dispatch.text_instructions;
+        let mut host = ActionExternalHost {
             backend: self.backend,
+            code: self.code,
+            instructions: self.instructions,
+            dialogue: self.dialogue,
             directory: self.directory,
+            cod_text_states,
+            bas: self.bas,
         };
         dispatch_script_action(
             ScriptActionContext {
                 state: context.state,
                 records: action_records,
                 aboard_objects,
-                request_flags: &mut self.dispatch.text_presentation.request_flags,
+                request_flags,
                 presentation: context.presentation,
                 action: self.action,
                 owner: context.owner,
@@ -450,12 +474,11 @@ impl<Backend: ScriptExecutionBackend> ScriptPresentationScanHost<super::ScriptPr
     }
 }
 
-struct ExternalHost<'a, Backend> {
+struct BasExternalHost<'a, Backend> {
     backend: &'a mut Backend,
-    directory: &'a commander_blood_formats::script::ScriptDirectory,
 }
 
-impl<Backend: ScriptExecutionBackend> ScriptBasDispatchHost for ExternalHost<'_, Backend> {
+impl<Backend: ScriptExecutionBackend> ScriptBasDispatchHost for BasExternalHost<'_, Backend> {
     type Error = Backend::Error;
 
     fn sequence_context(&self) -> SequenceRequestContext {
@@ -470,8 +493,19 @@ impl<Backend: ScriptExecutionBackend> ScriptBasDispatchHost for ExternalHost<'_,
     }
 }
 
-impl<Backend: ScriptExecutionBackend> ScriptActionHost for ExternalHost<'_, Backend> {
-    type Error = Backend::Error;
+struct ActionExternalHost<'a, Backend> {
+    backend: &'a mut Backend,
+    code: &'a commander_blood_formats::code::ScriptCode,
+    instructions: &'a [commander_blood_formats::instruction::DecodedScriptInstruction],
+    dialogue: &'a commander_blood_formats::bas::ScriptBas,
+    directory: &'a commander_blood_formats::script::ScriptDirectory,
+    cod_text_states:
+        &'a mut std::collections::BTreeMap<ScriptCodeOffset, super::TextInstructionState>,
+    bas: &'a mut ScriptBasDispatchState,
+}
+
+impl<Backend: ScriptExecutionBackend> ScriptActionHost for ActionExternalHost<'_, Backend> {
+    type Error = ScriptActionCallbackError<Backend::Error>;
 
     fn description_available(&mut self, object: ScriptObjectId) -> Result<bool, Self::Error> {
         let name = self
@@ -479,27 +513,52 @@ impl<Backend: ScriptExecutionBackend> ScriptActionHost for ExternalHost<'_, Back
             .object(object)
             .map(commander_blood_formats::script::ScriptDirectoryEntry::name)
             .expect("action dispatch validates every referenced profile object");
-        self.backend.description_available(object, name)
+        self.backend
+            .description_available(object, name)
+            .map_err(ScriptActionCallbackError::Backend)
     }
 
     fn restart_navigation_music(&mut self) -> Result<(), Self::Error> {
-        self.backend.restart_navigation_music()
+        self.backend
+            .restart_navigation_music()
+            .map_err(ScriptActionCallbackError::Backend)
     }
 
-    fn execute_object_code(&mut self, object: ScriptObjectId) -> Result<(), Self::Error> {
-        self.backend.execute_object_code(object)
+    fn execute_object_code(
+        &mut self,
+        state: &commander_blood_formats::script::ScriptState,
+        object: ScriptObjectId,
+    ) -> Result<(), Self::Error> {
+        activate_profile_object_text(
+            self.code,
+            self.instructions,
+            self.dialogue,
+            state,
+            self.directory,
+            object,
+            self.cod_text_states,
+            self.bas,
+        )
+        .map_err(ScriptActionCallbackError::TextActivation)?;
+        Ok(())
     }
 
     fn play_radio_clip(&mut self) -> Result<(), Self::Error> {
-        self.backend.play_radio_clip()
+        self.backend
+            .play_radio_clip()
+            .map_err(ScriptActionCallbackError::Backend)
     }
 
     fn start_camera_transition(&mut self) -> Result<(), Self::Error> {
-        self.backend.start_camera_transition()
+        self.backend
+            .start_camera_transition()
+            .map_err(ScriptActionCallbackError::Backend)
     }
 
     fn reset_ship_hud(&mut self) -> Result<(), Self::Error> {
-        self.backend.reset_ship_hud()
+        self.backend
+            .reset_ship_hud()
+            .map_err(ScriptActionCallbackError::Backend)
     }
 }
 
@@ -524,7 +583,6 @@ mod tests {
         EntityTransition(ScriptPresentationEntity),
         DescriptionProbe(ScriptObjectId),
         NavigationMusicRestart,
-        ObjectCode(ScriptObjectId),
         RadioClip,
         CameraTransition,
         ShipHudReset,
@@ -628,11 +686,6 @@ mod tests {
 
         fn restart_navigation_music(&mut self) -> Result<(), Self::Error> {
             self.events.push(BackendEvent::NavigationMusicRestart);
-            Ok(())
-        }
-
-        fn execute_object_code(&mut self, object: ScriptObjectId) -> Result<(), Self::Error> {
-            self.events.push(BackendEvent::ObjectCode(object));
             Ok(())
         }
 
