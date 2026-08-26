@@ -1303,6 +1303,7 @@ mod tests {
                     width: (ENTITY_EXTENT_WIDTH_BASE + entity_index) as u16,
                     height: (ENTITY_EXTENT_HEIGHT_BASE + entity_index) as u16,
                 },
+                ..BridgeSpriteEntity::default()
             };
         }
 
