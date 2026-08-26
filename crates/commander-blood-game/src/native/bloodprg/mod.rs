@@ -31,6 +31,7 @@ mod location_panel_geometry;
 mod menu_reveal;
 mod name_area_effect;
 mod navigation;
+mod navigation_camera;
 mod navigation_pick;
 mod navigation_status;
 mod navigation_wipe;
@@ -239,6 +240,14 @@ pub use navigation::{
     navigation_actor_targets, navigation_candidates, navigation_chart_objects,
     navigation_distance, navigation_source_objects, object_links_to, objects_at_arche_position,
     presentable_navigation_objects, resolve_navigation_position, ScriptNavigationError,
+};
+pub use navigation_camera::{
+    NavigationCameraContext, NavigationCameraError, NavigationCameraHost,
+    NavigationCameraOutcome, NavigationCameraState, NavigationChartArche,
+    NavigationChartCopySpan, NavigationChartEntityDraw, NavigationChartEntityState,
+    NavigationChartHand, NavigationChartHandState, NavigationChartInputState,
+    NavigationChartObject, NavigationChartObjectKind, NavigationChartWipeDirection,
+    update_navigation_camera,
 };
 pub use navigation_pick::{
     NavigationChartMarkerEndpoint, NavigationChartPickObject, NavigationChartPickOutcome,
