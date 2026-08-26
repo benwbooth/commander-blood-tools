@@ -120,6 +120,11 @@ impl<'window> ModernGameServices<'window> {
         Ok(result)
     }
 
+    /// Load the exact writable `BLOOD.SAV` directory prepared during startup.
+    pub fn load_save_slots(&mut self) -> Result<RuntimeAssetLoadStatus> {
+        self.runtime.load_save_slot_directory()
+    }
+
     /// Load one complete BloodScript profile and bind its concrete runtime services.
     pub fn load_script_profile(
         &mut self,

@@ -203,7 +203,20 @@ impl OriginalResourceStore {
     }
 
     fn loose_source_path(&self, name: &BloodResourceName) -> Result<PathBuf> {
-        Self::rooted_path(&self.loose_source_root, name)
+        let canonical_path = Self::rooted_path(&self.loose_source_root, name)?;
+        if canonical_path.try_exists().with_context(|| {
+            format!(
+                "probing canonical original resource {}",
+                canonical_path.display()
+            )
+        })? {
+            return Ok(canonical_path);
+        }
+
+        Ok(
+            Self::case_insensitive_source_path(&self.loose_source_root, &canonical_path)?
+                .unwrap_or(canonical_path),
+        )
     }
 
     fn writable_path(&self, name: &BloodResourceName) -> Result<PathBuf> {
@@ -225,6 +238,66 @@ impl OriginalResourceStore {
             }
         }
         Ok(path)
+    }
+
+    fn case_insensitive_source_path(root: &Path, canonical_path: &Path) -> Result<Option<PathBuf>> {
+        let relative = canonical_path
+            .strip_prefix(root)
+            .context("canonical resource path is outside its source root")?;
+        let mut resolved = root.to_owned();
+        for component in relative.components() {
+            let Component::Normal(authored_name) = component else {
+                bail!(
+                    "canonical resource path contains an invalid component: {}",
+                    canonical_path.display()
+                );
+            };
+            let authored_name = authored_name
+                .to_str()
+                .context("validated resource name is not representable as UTF-8")?;
+            let exact = resolved.join(authored_name);
+            if exact.try_exists().with_context(|| {
+                format!("probing original resource component {}", exact.display())
+            })? {
+                resolved = exact;
+                continue;
+            }
+
+            let mut matching_entry: Option<PathBuf> = None;
+            let entries = match std::fs::read_dir(&resolved) {
+                Ok(entries) => entries,
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+                Err(error) => {
+                    return Err(error).with_context(|| {
+                        format!("reading original resource directory {}", resolved.display())
+                    });
+                }
+            };
+            for entry in entries {
+                let entry = entry.with_context(|| {
+                    format!("reading original resource directory {}", resolved.display())
+                })?;
+                let entry_name = entry.file_name();
+                if entry_name
+                    .to_str()
+                    .is_some_and(|candidate| candidate.eq_ignore_ascii_case(authored_name))
+                {
+                    if let Some(previous) = &matching_entry {
+                        bail!(
+                            "ambiguous DOS resource name {authored_name}: {} and {}",
+                            previous.display(),
+                            entry.path().display()
+                        );
+                    }
+                    matching_entry = Some(entry.path());
+                }
+            }
+            let Some(matched) = matching_entry else {
+                return Ok(None);
+            };
+            resolved = matched;
+        }
+        Ok(Some(resolved))
     }
 }
 
@@ -535,6 +608,21 @@ mod tests {
             loose_payload.len()
         );
         assert_eq!(&*store.load(&loose_name).unwrap(), loose_payload);
+    }
+
+    #[test]
+    fn resolves_dos_loose_resource_names_without_host_case_sensitivity() {
+        let root = TemporaryResourceRoot::create();
+        let requested = resource_name(r"SAVE\GAME1.SAV");
+        let payload = b"original DOS save";
+        let host_path = root.0.join("save/game1.sav");
+        std::fs::create_dir_all(host_path.parent().unwrap()).unwrap();
+        std::fs::write(&host_path, payload).unwrap();
+        let store = OriginalResourceStore::new(root.0.clone(), None, [requested.clone()], false);
+
+        assert!(store.resource_exists(&requested).unwrap());
+        assert_eq!(store.resource_len(&requested).unwrap(), payload.len());
+        assert_eq!(&*store.load(&requested).unwrap(), payload);
     }
 
     #[test]

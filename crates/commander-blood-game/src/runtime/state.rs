@@ -3,14 +3,16 @@
 use std::fmt;
 
 use anyhow::{Context, Result, bail};
+use commander_blood_formats::archive::BloodResourceName;
 use commander_blood_formats::manu3::decode_manu3;
 use commander_blood_formats::panorama::BridgePanoramaArchive;
 
 use crate::native::bloodprg::{
     BridgeSpriteRect, CHART_BACK_BUFFER_RESOURCE_PATH, FontPoint, IndexedGamePalette,
-    LoadedScriptProfile, OriginalResourceCache, PauseHudRefresh, PbmDecodeResult, RasterPoint,
-    RasterRectOutcome, ScriptProfileId, ScriptProfileLoadOutcome, ScriptProfileManager,
-    build_pause_hud_refresh, decode_chart_back_buffer, draw_small_font_text, fill_framebuffer_rect,
+    LoadedScriptProfile, OriginalResourceCache, OriginalSaveSlotDirectory, PauseHudRefresh,
+    PbmDecodeResult, RasterPoint, RasterRectOutcome, ScriptProfileId, ScriptProfileLoadOutcome,
+    ScriptProfileManager, build_pause_hud_refresh, decode_chart_back_buffer, draw_small_font_text,
+    fill_framebuffer_rect,
 };
 use crate::native::manu3::model::Manu3Model;
 
@@ -25,6 +27,7 @@ pub const LOGICAL_FRAMEBUFFER_PIXEL_COUNT: usize =
     LOGICAL_FRAMEBUFFER_WIDTH * LOGICAL_FRAMEBUFFER_HEIGHT;
 
 const MANU3_RESOURCE_NAME: &[u8] = b"MANU3.XDB";
+const SAVE_SLOT_DIRECTORY_RESOURCE_NAME: &[u8] = b"BLOOD.SAV";
 const PAUSE_HUD_CLEAR_COLOR: u8 = u8::MIN;
 
 /// One owned 320 by 200 row-major indexed framebuffer.
@@ -87,6 +90,7 @@ pub struct OriginalGameRuntime {
     back_buffer: IndexedFramebuffer,
     manu3: Option<Manu3Model>,
     bridge_panorama: Option<BridgePanoramaArchive>,
+    save_slots: Option<OriginalSaveSlotDirectory>,
 }
 
 impl fmt::Debug for OriginalGameRuntime {
@@ -100,6 +104,7 @@ impl fmt::Debug for OriginalGameRuntime {
             )
             .field("manu3_loaded", &self.manu3.is_some())
             .field("bridge_panorama_loaded", &self.bridge_panorama.is_some())
+            .field("save_slots_loaded", &self.save_slots.is_some())
             .finish_non_exhaustive()
     }
 }
@@ -118,6 +123,7 @@ impl OriginalGameRuntime {
             back_buffer: IndexedFramebuffer::new(),
             manu3: None,
             bridge_panorama: None,
+            save_slots: None,
         }
     }
 
@@ -263,6 +269,68 @@ impl OriginalGameRuntime {
         Ok(Some(refresh))
     }
 
+    /// Load and decode the exact writable `BLOOD.SAV` slot directory once.
+    pub fn load_save_slot_directory(&mut self) -> Result<RuntimeAssetLoadStatus> {
+        if self.save_slots.is_some() {
+            return Ok(RuntimeAssetLoadStatus::AlreadyLoaded);
+        }
+        let name = save_slot_directory_resource_name()?;
+        let bytes = self
+            .data
+            .resource_store()
+            .load_writable(&name)
+            .context("loading writable BLOOD.SAV slot directory")?;
+        self.save_slots = Some(
+            OriginalSaveSlotDirectory::decode(&bytes)
+                .context("decoding writable BLOOD.SAV slot directory")?,
+        );
+        Ok(RuntimeAssetLoadStatus::LoadedNow)
+    }
+
+    /// Borrow the loaded ten-slot save directory.
+    pub const fn save_slots(&self) -> Option<&OriginalSaveSlotDirectory> {
+        self.save_slots.as_ref()
+    }
+
+    /// Mutably borrow the loaded save directory for the translated editor.
+    pub fn save_slots_mut(&mut self) -> Option<&mut OriginalSaveSlotDirectory> {
+        self.save_slots.as_mut()
+    }
+
+    /// Persist the complete loaded slot directory to the writable data root.
+    pub fn persist_save_slot_directory(&self) -> Result<usize> {
+        let directory = self
+            .save_slots
+            .as_ref()
+            .context("save-slot directory has not been loaded")?;
+        self.data
+            .resource_store()
+            .write_loose(&save_slot_directory_resource_name()?, &directory.encode())
+            .context("writing writable BLOOD.SAV slot directory")
+    }
+
+    /// Read one validated save filename strictly from the writable data root.
+    pub fn load_save_file(&self, filename: &[u8]) -> Result<Option<Box<[u8]>>> {
+        let name = BloodResourceName::new(filename).context("validating save filename")?;
+        let store = self.data.resource_store();
+        if !store.writable_resource_exists(&name)? {
+            return Ok(None);
+        }
+        store
+            .load_writable(&name)
+            .map(Some)
+            .with_context(|| format!("loading writable save {}", save_name(&name)))
+    }
+
+    /// Create or replace one validated save file below the writable data root.
+    pub fn write_save_file(&self, filename: &[u8], data: &[u8]) -> Result<usize> {
+        let name = BloodResourceName::new(filename).context("validating save filename")?;
+        self.data
+            .resource_store()
+            .write_loose(&name, data)
+            .with_context(|| format!("writing writable save {}", save_name(&name)))
+    }
+
     /// Load and bind one complete playable BloodScript profile.
     pub fn load_profile(&mut self, profile: ScriptProfileId) -> Result<ScriptProfileLoadOutcome> {
         self.profiles
@@ -286,15 +354,49 @@ impl OriginalGameRuntime {
     }
 }
 
+fn save_slot_directory_resource_name() -> Result<BloodResourceName> {
+    BloodResourceName::new(SAVE_SLOT_DIRECTORY_RESOURCE_NAME)
+        .context("validating BLOOD.SAV resource name")
+}
+
+fn save_name(name: &BloodResourceName) -> String {
+    String::from_utf8_lossy(name.as_bytes()).into_owned()
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::{Path, PathBuf};
+    use std::sync::atomic::{AtomicU64, Ordering};
 
-    use super::super::{OriginalGameData, OriginalGameDataPaths};
+    use super::super::{OriginalGameData, OriginalGameDataPaths, VGA_BIOS_FONT_8X8};
     use super::*;
 
     const TEST_BACKGROUND_COLOR: u8 = 73;
     const EXPECTED_PAUSE_LABEL_PIXEL_COUNT: usize = 46;
+    const TEST_SAVE_FILENAME: &[u8] = b"game9.sav";
+    const MISSING_SAVE_FILENAME: &[u8] = b"game8.sav";
+    const TEST_SAVE_BYTES: &[u8] = b"flat save storage";
+    static TEMPORARY_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(u64::MIN);
+
+    struct TemporaryRoot(PathBuf);
+
+    impl TemporaryRoot {
+        fn create() -> Self {
+            let sequence = TEMPORARY_ROOT_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+            let path = std::env::temp_dir().join(format!(
+                "commander-blood-save-storage-test-{}-{sequence}",
+                std::process::id()
+            ));
+            let _ = std::fs::remove_dir_all(&path);
+            Self(path)
+        }
+    }
+
+    impl Drop for TemporaryRoot {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
 
     #[test]
     fn framebuffer_has_stable_logical_dimensions_and_complete_copy_semantics() {
@@ -349,7 +451,64 @@ mod tests {
         assert_eq!(label_pixel_count, EXPECTED_PAUSE_LABEL_PIXEL_COUNT);
     }
 
+    #[test]
+    fn save_storage_uses_the_startup_prepared_writable_root_exclusively() {
+        let Some(paths) = original_data_paths() else {
+            return;
+        };
+        let writable_root = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(paths, &writable_root.0).unwrap();
+        let mut runtime = OriginalGameRuntime::new(data);
+        runtime
+            .prepare_startup_resources(&VGA_BIOS_FONT_8X8, |_frame, _palette| Ok(()))
+            .unwrap();
+        let directory_name = save_slot_directory_resource_name().unwrap();
+        let copied_directory = runtime
+            .data()
+            .resource_store()
+            .load_writable(&directory_name)
+            .unwrap();
+
+        assert_eq!(
+            runtime.load_save_slot_directory().unwrap(),
+            RuntimeAssetLoadStatus::LoadedNow
+        );
+        assert_eq!(
+            runtime.save_slots().unwrap().encode().as_slice(),
+            copied_directory.as_ref()
+        );
+        assert_eq!(
+            runtime.load_save_slot_directory().unwrap(),
+            RuntimeAssetLoadStatus::AlreadyLoaded
+        );
+        assert_eq!(
+            runtime.persist_save_slot_directory().unwrap(),
+            copied_directory.len()
+        );
+
+        assert_eq!(
+            runtime
+                .write_save_file(TEST_SAVE_FILENAME, TEST_SAVE_BYTES)
+                .unwrap(),
+            TEST_SAVE_BYTES.len()
+        );
+        assert_eq!(
+            runtime
+                .load_save_file(TEST_SAVE_FILENAME)
+                .unwrap()
+                .as_deref(),
+            Some(TEST_SAVE_BYTES)
+        );
+        assert_eq!(runtime.load_save_file(MISSING_SAVE_FILENAME).unwrap(), None);
+    }
+
     fn original_game_data() -> Option<OriginalGameData> {
+        original_data_paths().and_then(|paths| {
+            OriginalGameData::load_with_writable_root(paths, std::env::temp_dir()).ok()
+        })
+    }
+
+    fn original_data_paths() -> Option<OriginalGameDataPaths> {
         let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         [
             workspace_root.join("output/_tmp_iso"),
@@ -358,8 +517,5 @@ mod tests {
         ]
         .into_iter()
         .find_map(|root: PathBuf| OriginalGameDataPaths::from_root(root).ok())
-        .and_then(|paths| {
-            OriginalGameData::load_with_writable_root(paths, std::env::temp_dir()).ok()
-        })
     }
 }
