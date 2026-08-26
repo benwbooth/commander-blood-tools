@@ -206,6 +206,29 @@ impl ScriptRuntime {
         self.pending_skip_count = Some(count);
     }
 
+    /// Consume a pending skip count when its recovered activity bits are set.
+    ///
+    /// Authored counts use the low four bits, while the original block walker
+    /// decremented the complete byte after entering the skip path. Retaining
+    /// that distinction keeps malformed or externally restored state explicit
+    /// without recreating the native machine representation.
+    pub(crate) fn take_actionable_skip_count(&mut self) -> Option<u8> {
+        const SKIP_ACTIVITY_MASK: u8 = 0x0F;
+
+        self.pending_skip_count
+            .is_some_and(|count| count & SKIP_ACTIVITY_MASK != u8::MIN)
+            .then(|| {
+                self.pending_skip_count
+                    .take()
+                    .expect("checked pending skip remains present")
+            })
+    }
+
+    /// Discard pending token skips after a presentation continuation.
+    pub(crate) fn clear_pending_skip_count(&mut self) {
+        self.pending_skip_count = None;
+    }
+
     /// Apply `vm_op_aa_yield` using a flat execution-state flag.
     pub fn request_yield(&mut self) {
         self.yield_requested = true;

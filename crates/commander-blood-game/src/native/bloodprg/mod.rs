@@ -44,6 +44,7 @@ mod record;
 mod record_state;
 mod resource_cache;
 mod script;
+mod script_block;
 mod script_clock;
 mod script_environment;
 mod script_profile;
@@ -287,6 +288,10 @@ pub use selected_mask::{
 };
 pub use script::{
     ScriptControl, ScriptResumePhase, ScriptResumeState, ScriptRuntime, ScriptRuntimeError,
+};
+pub use script_block::{
+    ScriptBlockEnd, ScriptBlockError, ScriptBlockFlow, ScriptBlockHandler, ScriptBlockOutcome,
+    ScriptBlockStep, execute_script_block,
 };
 pub use script_clock::ScriptClock;
 pub use script_environment::ScriptEnvironmentActivity;
