@@ -98,6 +98,7 @@ mod script_environment;
 mod script_profile;
 mod script_profile_request;
 mod script_selector;
+mod script_service;
 mod script_sequence_slots;
 mod screen_presentation;
 mod selected_mask;
@@ -610,6 +611,10 @@ pub use script_selector::{
     SCRIPT_CONCEPT_HISTORY_LENGTH, ScriptConceptHistory, ScriptSelectionError,
     ScriptSelectionOutcome, ScriptSelectorBranch, ScriptSelectorError, ScriptSelectorState,
     collect_selector_menu, commit_selected_concept, find_selector_body,
+};
+pub use script_service::{
+    ScriptExecutionBackend, ScriptExecutionService, ScriptExecutionServiceError,
+    ScriptPresentationCallbackError,
 };
 pub use script_sequence_slots::{
     ScriptSequenceSaveError, ScriptSequenceSlots, SCRIPT_SEQUENCE_SAVE_BLOCK_BYTE_COUNT,

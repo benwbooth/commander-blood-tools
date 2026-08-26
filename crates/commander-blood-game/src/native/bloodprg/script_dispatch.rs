@@ -78,10 +78,18 @@ pub struct ScriptDispatchState {
 
 /// Mutable state exposed to the recovered post-frame presentation scan.
 pub struct ScriptPostScanContext<'a> {
+    /// Pre-bound COD instructions used to keep derived record stores coherent.
+    pub instructions: &'a [DecodedScriptInstruction],
+    /// Active profile's decoded BAS image.
+    pub dialogue: &'a ScriptBas,
     /// Active VAR image.
     pub state: &'a mut ScriptState,
-    /// Typed action triples synchronized with VAR after the scan.
-    pub records: &'a mut super::ScriptActionRecords,
+    /// Interned profile words.
+    pub dictionary: &'a ScriptDictionary,
+    /// Object and state-label directory.
+    pub directory: &'a ScriptDirectory,
+    /// Complete typed record state synchronized with VAR after the scan.
+    pub records: &'a mut ScriptProfileRecordState,
     /// Active selector state.
     pub selector: &'a mut ScriptSelectorState,
     /// Shared COD control flow.
@@ -514,8 +522,12 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
     fn scan_presentation(&mut self, runtime: &mut ScriptRuntime) -> Result<(), Self::Error> {
         self.host
             .scan_presentation(ScriptPostScanContext {
+                instructions: self.instructions,
+                dialogue: self.dialogue,
                 state: self.state,
-                records: &mut self.records.action_records,
+                dictionary: self.dictionary,
+                directory: self.directory,
+                records: self.records,
                 selector: self.selector,
                 runtime,
                 dispatch: self.dispatch,

@@ -13,8 +13,8 @@ use super::record_state::action_slot;
 use super::{
     AboardObjectRoster, PresentationRequestFlags, ScriptActionDispatch, ScriptActionDisposition,
     ScriptActionRecord, ScriptActionRecords, ScriptFieldSelector, ScriptNavigationError,
-    ScriptObjectFlag, ScriptPresentationScanState, insert_aboard_object,
-    resolve_navigation_position, script_field_offset, set_object_flag,
+    ScriptObjectFlag, ScriptPresentationScanState, ScriptRecordStateNavigationContext,
+    insert_aboard_object, resolve_navigation_position, script_field_offset, set_object_flag,
 };
 
 const SERIALIZED_WORD_SIZE: usize = size_of::<u16>();
@@ -133,12 +133,8 @@ pub struct ScriptActionContext<'a> {
     pub slot: ScriptStateWordTriple,
     /// Built-in player object named `blood`.
     pub player: ScriptObjectId,
-    /// Built-in navigation entity named `arche`.
-    pub arche: ScriptObjectId,
-    /// Object selected by C1's native special operand 1.
-    pub primary_navigation_object: ScriptObjectId,
-    /// Object selected by C1's native special operand 2.
-    pub secondary_navigation_object: ScriptObjectId,
+    /// Dynamic C1 navigation bindings, unnecessary for all other record kinds.
+    pub navigation: Option<ScriptRecordStateNavigationContext>,
 }
 
 /// Platform and nested-script work reached by action transitions.
@@ -190,6 +186,8 @@ pub enum ScriptActionError<HostError> {
         /// Preserved word from an unshipped action record.
         value: u16,
     },
+    /// A C1 record reached post-frame dispatch without live navigation bindings.
+    MissingNavigationContext,
     /// A decoded object's source position does not fit the original VAR word domain.
     ObjectOffsetOutOfRange {
         /// Object whose source position cannot be encoded.
@@ -268,19 +266,19 @@ fn dispatch_navigation<Host: ScriptActionHost>(
         action,
         owner,
         player,
-        arche,
-        primary_navigation_object,
-        secondary_navigation_object,
+        navigation,
         ..
     } = context;
+    let navigation = navigation.ok_or(ScriptActionError::MissingNavigationContext)?;
+    let arche = navigation.arche;
     if owner == arche && !action.navigation_approach_complete {
         return Ok(ScriptActionDispatch::default());
     }
 
     let related = resolve_navigation_operand(
         operand,
-        primary_navigation_object,
-        secondary_navigation_object,
+        navigation.primary_object,
+        navigation.secondary_object,
     )?;
     let owner_kind = object_kind(state, owner)?;
     object_kind(state, related)?;
@@ -942,9 +940,11 @@ mod tests {
                     owner,
                     slot,
                     player: self.objects[PLAYER_INDEX],
-                    arche: self.objects[ARCHE_INDEX],
-                    primary_navigation_object: self.objects[LOCATION_INDEX],
-                    secondary_navigation_object: self.objects[ANCHOR_INDEX],
+                    navigation: Some(ScriptRecordStateNavigationContext {
+                        primary_object: self.objects[LOCATION_INDEX],
+                        secondary_object: self.objects[ANCHOR_INDEX],
+                        arche: self.objects[ARCHE_INDEX],
+                    }),
                 },
                 record,
                 host,

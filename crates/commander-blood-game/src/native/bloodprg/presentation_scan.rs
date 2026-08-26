@@ -11,8 +11,9 @@ use commander_blood_formats::script::{
 use super::record_state::action_slot;
 use super::vm::set_object_flag;
 use super::{
-    ScriptActionRecord, ScriptActionRecords, ScriptFieldSelector, ScriptObjectFlag, ScriptRuntime,
-    ScriptSelectorState, object_has_flag, script_field_offset,
+    ScriptActionRecord, ScriptActionRecords, ScriptFieldSelector, ScriptObjectFlag,
+    ScriptProfileRecordState, ScriptRuntime, ScriptSelectorState, object_has_flag,
+    script_field_offset,
 };
 
 const SERIALIZED_WORD_SIZE: usize = std::mem::size_of::<u16>();
@@ -112,11 +113,11 @@ pub struct ScriptPresentationScanState {
 }
 
 /// Stable profile bindings and mutable stores used by one scan.
-pub struct ScriptPresentationScanContext<'a> {
+pub struct ScriptPresentationScanContext<'a, Records = ScriptActionRecords> {
     /// Active profile object state.
     pub state: &'a mut ScriptState,
-    /// Typed action slots written by C1 through C9 handlers.
-    pub records: &'a mut ScriptActionRecords,
+    /// Profile record store owning the typed C1 through C9 action slots.
+    pub records: &'a mut Records,
     /// Main BloodScript control-flow state.
     pub runtime: &'a mut ScriptRuntime,
     /// Dialogue branches and recent concept history.
@@ -130,13 +131,15 @@ pub struct ScriptPresentationScanContext<'a> {
 }
 
 /// Mutable profile state supplied to one inline BAS dialogue handoff.
-pub struct ScriptDialogueControlDispatchContext<'a> {
+pub struct ScriptDialogueControlDispatchContext<'a, Records = ScriptActionRecords> {
     /// Active VAR image.
     pub state: &'a mut ScriptState,
     /// Shared COD and BAS control-flow state.
     pub runtime: &'a mut ScriptRuntime,
     /// Dialogue branches and recent concept history.
     pub selector: &'a mut ScriptSelectorState,
+    /// Complete record store shared with BAS C9 and CD instructions.
+    pub records: &'a mut Records,
     /// Character entering dialogue control.
     pub actor: ScriptObjectId,
     /// First selector node in the character's authored BAS response list.
@@ -144,11 +147,11 @@ pub struct ScriptDialogueControlDispatchContext<'a> {
 }
 
 /// Mutable profile state supplied to one inline C1-through-C8 action dispatch.
-pub struct ScriptRecordActionDispatchContext<'a> {
+pub struct ScriptRecordActionDispatchContext<'a, Records = ScriptActionRecords> {
     /// Active VAR image.
     pub state: &'a mut ScriptState,
-    /// Typed action triples synchronized with VAR.
-    pub records: &'a mut ScriptActionRecords,
+    /// Complete record store owning the typed action triples.
+    pub records: &'a mut Records,
     /// Presentation coordinator state shared with the surrounding scan.
     pub presentation: &'a mut ScriptPresentationScanState,
     /// Object owning the actionable slot.
@@ -181,14 +184,14 @@ pub struct ScriptActionDispatch {
 }
 
 /// Semantic callbacks reached by the presentation scan.
-pub trait ScriptPresentationScanHost {
+pub trait ScriptPresentationScanHost<Records = ScriptActionRecords> {
     /// Typed callback failure.
     type Error;
 
     /// Enter a character's authored BAS dialogue selector.
     fn dispatch_dialogue_control(
         &mut self,
-        context: ScriptDialogueControlDispatchContext<'_>,
+        context: ScriptDialogueControlDispatchContext<'_, Records>,
     ) -> Result<(), Self::Error>;
 
     /// Resolve presentation assets for the related object name.
@@ -209,8 +212,37 @@ pub trait ScriptPresentationScanHost {
     /// Dispatch one actionable C1-through-C8 record through the 5B38 ladder.
     fn dispatch_record_action(
         &mut self,
-        context: ScriptRecordActionDispatchContext<'_>,
+        context: ScriptRecordActionDispatchContext<'_, Records>,
     ) -> Result<ScriptActionDispatch, Self::Error>;
+}
+
+/// Access to the action triples required by the recovered presentation scan.
+pub trait ScriptActionRecordStore {
+    /// Borrow the typed C1 through C9 action slots.
+    fn action_records(&self) -> &ScriptActionRecords;
+
+    /// Mutably borrow the typed C1 through C9 action slots.
+    fn action_records_mut(&mut self) -> &mut ScriptActionRecords;
+}
+
+impl ScriptActionRecordStore for ScriptActionRecords {
+    fn action_records(&self) -> &ScriptActionRecords {
+        self
+    }
+
+    fn action_records_mut(&mut self) -> &mut ScriptActionRecords {
+        self
+    }
+}
+
+impl ScriptActionRecordStore for ScriptProfileRecordState {
+    fn action_records(&self) -> &ScriptActionRecords {
+        &self.action_records
+    }
+
+    fn action_records_mut(&mut self) -> &mut ScriptActionRecords {
+        &mut self.action_records
+    }
 }
 
 /// One character dialogue handoff emitted during a scan.
@@ -290,10 +322,14 @@ impl<HostError: fmt::Debug> std::error::Error for ScriptPresentationScanError<Ho
 /// This translates `presentation_scan` at BLOODPRG file offset `0x005816`.
 /// Stable object identities, typed action records, and explicit coordinator
 /// state replace the DEB pointer walk, selector arithmetic, and packed globals.
-pub fn scan_script_presentations<Host: ScriptPresentationScanHost>(
-    context: ScriptPresentationScanContext<'_>,
+pub fn scan_script_presentations<Records, Host>(
+    context: ScriptPresentationScanContext<'_, Records>,
     host: &mut Host,
-) -> Result<ScriptPresentationScanOutcome, ScriptPresentationScanError<Host::Error>> {
+) -> Result<ScriptPresentationScanOutcome, ScriptPresentationScanError<Host::Error>>
+where
+    Records: ScriptActionRecordStore,
+    Host: ScriptPresentationScanHost<Records>,
+{
     let ScriptPresentationScanContext {
         state,
         records,
@@ -365,21 +401,25 @@ pub fn scan_script_presentations<Host: ScriptPresentationScanHost>(
     Ok(outcome)
 }
 
-struct CharacterHandoffContext<'a> {
+struct CharacterHandoffContext<'a, Records> {
     state: &'a mut ScriptState,
-    records: &'a mut ScriptActionRecords,
+    records: &'a mut Records,
     runtime: &'a mut ScriptRuntime,
     selector: &'a mut ScriptSelectorState,
     presentation: &'a mut ScriptPresentationScanState,
     player: ScriptObjectId,
 }
 
-fn scan_character_handoff<Host: ScriptPresentationScanHost>(
-    context: CharacterHandoffContext<'_>,
+fn scan_character_handoff<Records, Host>(
+    context: CharacterHandoffContext<'_, Records>,
     actor: ScriptObjectId,
     host: &mut Host,
     outcome: &mut ScriptPresentationScanOutcome,
-) -> Result<(), ScriptPresentationScanError<Host::Error>> {
+) -> Result<(), ScriptPresentationScanError<Host::Error>>
+where
+    Records: ScriptActionRecordStore,
+    Host: ScriptPresentationScanHost<Records>,
+{
     let CharacterHandoffContext {
         state,
         records,
@@ -399,7 +439,7 @@ fn scan_character_handoff<Host: ScriptPresentationScanHost>(
     }
     let slot = action_slot(state, actor)
         .ok_or(ScriptPresentationScanError::MissingActionSlot { object: actor })?;
-    if records.record(slot) != ScriptActionRecord::ActorPresentation(player) {
+    if records.action_records().record(slot) != ScriptActionRecord::ActorPresentation(player) {
         return Ok(());
     }
     let field_offset = script_field_offset(
@@ -421,6 +461,7 @@ fn scan_character_handoff<Host: ScriptPresentationScanHost>(
         state,
         runtime,
         selector,
+        records,
         actor,
         selector_root,
     })
@@ -432,20 +473,24 @@ fn scan_character_handoff<Host: ScriptPresentationScanHost>(
     Ok(())
 }
 
-struct PlayerPresentationContext<'a> {
+struct PlayerPresentationContext<'a, Records> {
     state: &'a mut ScriptState,
-    records: &'a ScriptActionRecords,
+    records: &'a Records,
     runtime: &'a mut ScriptRuntime,
     selector: &'a mut ScriptSelectorState,
     presentation: &'a mut ScriptPresentationScanState,
 }
 
-fn scan_player_presentation<Host: ScriptPresentationScanHost>(
-    context: PlayerPresentationContext<'_>,
+fn scan_player_presentation<Records, Host>(
+    context: PlayerPresentationContext<'_, Records>,
     player: ScriptObjectId,
     host: &mut Host,
     outcome: &mut ScriptPresentationScanOutcome,
-) -> Result<(), ScriptPresentationScanError<Host::Error>> {
+) -> Result<(), ScriptPresentationScanError<Host::Error>>
+where
+    Records: ScriptActionRecordStore,
+    Host: ScriptPresentationScanHost<Records>,
+{
     let PlayerPresentationContext {
         state,
         records,
@@ -455,7 +500,7 @@ fn scan_player_presentation<Host: ScriptPresentationScanHost>(
     } = context;
     let slot = action_slot(state, player)
         .ok_or(ScriptPresentationScanError::MissingActionSlot { object: player })?;
-    if let ScriptActionRecord::ActorPresentation(related) = records.record(slot) {
+    if let ScriptActionRecord::ActorPresentation(related) = records.action_records().record(slot) {
         if state.object(related).is_none() {
             return Err(ScriptPresentationScanError::MissingObject { object: related });
         }
@@ -509,13 +554,16 @@ fn scan_player_presentation<Host: ScriptPresentationScanHost>(
     Ok(())
 }
 
-fn drain_deferred_record<HostError>(
+fn drain_deferred_record<Records, HostError>(
     state: &ScriptState,
-    records: &mut ScriptActionRecords,
+    records: &mut Records,
     presentation: &mut ScriptPresentationScanState,
     player: ScriptObjectId,
     arche: ScriptObjectId,
-) -> Result<Option<ScriptStateWordTriple>, ScriptPresentationScanError<HostError>> {
+) -> Result<Option<ScriptStateWordTriple>, ScriptPresentationScanError<HostError>>
+where
+    Records: ScriptActionRecordStore,
+{
     let ScriptDeferredRecord::Complete { record, actionable } = presentation.deferred else {
         return Ok(None);
     };
@@ -529,26 +577,32 @@ fn drain_deferred_record<HostError>(
         action_slot(state, player)
             .ok_or(ScriptPresentationScanError::MissingActionSlot { object: player })?
     };
-    records.set_record(target, record);
-    records.set_actionable(target, actionable);
+    records.action_records_mut().set_record(target, record);
+    records
+        .action_records_mut()
+        .set_actionable(target, actionable);
     presentation.deferred = ScriptDeferredRecord::Empty;
     Ok(Some(target))
 }
 
-fn dispatch_action<Host: ScriptPresentationScanHost>(
+fn dispatch_action<Records, Host>(
     state: &mut ScriptState,
-    records: &mut ScriptActionRecords,
+    records: &mut Records,
     presentation: &mut ScriptPresentationScanState,
     owner: ScriptObjectId,
     host: &mut Host,
     outcome: &mut ScriptPresentationScanOutcome,
-) -> Result<(), ScriptPresentationScanError<Host::Error>> {
+) -> Result<(), ScriptPresentationScanError<Host::Error>>
+where
+    Records: ScriptActionRecordStore,
+    Host: ScriptPresentationScanHost<Records>,
+{
     let slot = action_slot(state, owner)
         .ok_or(ScriptPresentationScanError::MissingActionSlot { object: owner })?;
-    if !records.is_actionable(slot) {
+    if !records.action_records().is_actionable(slot) {
         return Ok(());
     }
-    let record = records.record(slot);
+    let record = records.action_records().record(slot);
     let dispatch = host
         .dispatch_record_action(ScriptRecordActionDispatchContext {
             state,
@@ -561,8 +615,12 @@ fn dispatch_action<Host: ScriptPresentationScanHost>(
         .map_err(ScriptPresentationScanError::Host)?;
     match dispatch.disposition {
         ScriptActionDisposition::Retain => {}
-        ScriptActionDisposition::Suppress => records.set_actionable(slot, false),
-        ScriptActionDisposition::Clear => records.set_record(slot, ScriptActionRecord::Empty),
+        ScriptActionDisposition::Suppress => {
+            records.action_records_mut().set_actionable(slot, false)
+        }
+        ScriptActionDisposition::Clear => records
+            .action_records_mut()
+            .set_record(slot, ScriptActionRecord::Empty),
     }
     presentation.pair_write_disabled |= dispatch.disable_pair_writes;
     outcome.actions.push(ScriptPresentationAction {
