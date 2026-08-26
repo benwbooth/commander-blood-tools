@@ -77,6 +77,34 @@ pub enum ScriptControlFlowError<HandlerError> {
     Selection(ScriptSelectionError),
 }
 
+/// Mutable state supplied while one selected BAS response body executes.
+pub struct ScriptSelectorBlockContext<'a> {
+    /// Active profile's fully decoded BAS dialogue image.
+    pub dialogue: &'a ScriptBas,
+    /// First instruction of the selected response body.
+    pub start: ScriptCodeOffset,
+    /// Active VAR image.
+    pub state: &'a mut ScriptState,
+    /// Shared COD and BAS control-flow state.
+    pub runtime: &'a mut ScriptRuntime,
+    /// Dialogue branches and recent concept history.
+    pub selector: &'a mut ScriptSelectorState,
+    /// Topic appended to the next collected menu.
+    pub offered_topic: &'a mut Option<ScriptWordId>,
+}
+
+/// Executor for selected BAS bodies that need access to complete profile state.
+pub trait ScriptSelectorControlHost {
+    /// Typed BAS instruction failure.
+    type Error;
+
+    /// Execute one current or parent response body in native call order.
+    fn execute_block(
+        &mut self,
+        context: ScriptSelectorBlockContext<'_>,
+    ) -> Result<ScriptBlockOutcome, ScriptBlockError<Self::Error>>;
+}
+
 impl<HandlerError: fmt::Debug> fmt::Display for ScriptControlFlowError<HandlerError> {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(formatter, "{self:?}")
@@ -98,6 +126,25 @@ pub fn execute_selector_control<Handler: ScriptBlockHandler>(
     offered_topic: &mut Option<ScriptWordId>,
     handler: &mut Handler,
 ) -> Result<ScriptControlFlowOutcome, ScriptControlFlowError<Handler::Error>> {
+    execute_selector_control_with_host(
+        state,
+        context,
+        runtime,
+        selector_state,
+        offered_topic,
+        &mut BlockHandlerControlHost(handler),
+    )
+}
+
+/// Select and execute dialogue bodies through a complete-state BAS host.
+pub fn execute_selector_control_with_host<Host: ScriptSelectorControlHost>(
+    state: &mut ScriptState,
+    context: ScriptControlFlowContext<'_>,
+    runtime: &mut ScriptRuntime,
+    selector_state: &mut ScriptSelectorState,
+    offered_topic: &mut Option<ScriptWordId>,
+    host: &mut Host,
+) -> Result<ScriptControlFlowOutcome, ScriptControlFlowError<Host::Error>> {
     let actor_kind = state
         .object(context.actor)
         .ok_or(ScriptControlFlowError::MissingObject {
@@ -157,7 +204,16 @@ pub fn execute_selector_control<Handler: ScriptBlockHandler>(
     selector_state.select_control_branch(selected_control, current_body);
 
     let current_execution = current_body
-        .map(|body| execute_script_block(context.dialogue, body, runtime, handler))
+        .map(|body| {
+            host.execute_block(ScriptSelectorBlockContext {
+                dialogue: context.dialogue,
+                start: body,
+                state,
+                runtime,
+                selector: selector_state,
+                offered_topic,
+            })
+        })
         .transpose()
         .map_err(ScriptControlFlowError::Block)?;
     let menu_collected = if current_body.is_some() {
@@ -167,7 +223,16 @@ pub fn execute_selector_control<Handler: ScriptBlockHandler>(
         false
     };
     let parent_execution = parent_body
-        .map(|body| execute_script_block(context.dialogue, body, runtime, handler))
+        .map(|body| {
+            host.execute_block(ScriptSelectorBlockContext {
+                dialogue: context.dialogue,
+                start: body,
+                state,
+                runtime,
+                selector: selector_state,
+                offered_topic,
+            })
+        })
         .transpose()
         .map_err(ScriptControlFlowError::Block)?;
 
@@ -179,6 +244,21 @@ pub fn execute_selector_control<Handler: ScriptBlockHandler>(
         parent_execution,
         menu_collected,
     })
+}
+
+struct BlockHandlerControlHost<'a, Handler>(&'a mut Handler);
+
+impl<Handler: ScriptBlockHandler> ScriptSelectorControlHost
+    for BlockHandlerControlHost<'_, Handler>
+{
+    type Error = Handler::Error;
+
+    fn execute_block(
+        &mut self,
+        context: ScriptSelectorBlockContext<'_>,
+    ) -> Result<ScriptBlockOutcome, ScriptBlockError<Self::Error>> {
+        execute_script_block(context.dialogue, context.start, context.runtime, self.0)
+    }
 }
 
 fn selector_at(

@@ -88,6 +88,7 @@ mod save_load_menu;
 mod scene_transition;
 mod script;
 mod script_action;
+mod script_bas_dispatch;
 mod script_block;
 mod script_control;
 mod script_dispatch;
@@ -511,6 +512,10 @@ pub use script_action::{
     ScriptActionState, ScriptShipNavigationMode, ScriptTravelActionPhase,
     dispatch_script_action,
 };
+pub use script_bas_dispatch::{
+    ScriptBasDispatchError, ScriptBasDispatchHost, ScriptBasDispatchState,
+    ScriptDialogueExecutionContext, execute_script_dialogue_control,
+};
 pub use procedure::{
     apply_procedure_activation, apply_procedure_patch_stream, build_procedure_patch_stream,
     evaluate_procedure_gate, ScriptProcedureStateError, ScriptProcedureStates,
@@ -576,7 +581,8 @@ pub use script_block::{
 };
 pub use script_control::{
     ScriptControlFlowContext, ScriptControlFlowError, ScriptControlFlowOutcome,
-    execute_selector_control,
+    ScriptSelectorBlockContext, ScriptSelectorControlHost, execute_selector_control,
+    execute_selector_control_with_host,
 };
 pub use script_dispatch::{
     ScriptDispatchError, ScriptDispatchHost, ScriptDispatchState, ScriptPostScanContext,
