@@ -66,6 +66,7 @@ mod record;
 mod record_state;
 mod resource_cache;
 mod save_game;
+mod save_load_menu;
 mod script;
 mod script_action;
 mod script_block;
@@ -426,12 +427,17 @@ pub use resource_cache::{
     OriginalResourceCatalog, PaletteResourceLoadOutcome, PaletteResourceStorage,
     PaletteResourceTarget, ResourceCacheError, ResourceId, ResourceLoadStatus,
 };
-pub use save_game {
+pub use save_game::{
     original_save_state_block_byte_count, OriginalSaveGame, OriginalSaveGameError,
     OriginalSaveSlot, OriginalSaveSlotDirectory, OriginalSaveSlotDirectoryError,
     ORIGINAL_QUICK_SAVE_SLOT_INDEX, ORIGINAL_SAVE_FIXED_HEADER_BYTE_COUNT,
     ORIGINAL_SAVE_PROFILE_BYTE_COUNT, ORIGINAL_SAVE_SLOT_COUNT,
     ORIGINAL_SAVE_SLOT_DIRECTORY_BYTE_COUNT, ORIGINAL_SAVE_SLOT_RECORD_BYTE_COUNT,
+};
+pub use save_load_menu::{
+    OriginalSaveProfileBackend, SaveLoadHost, SaveLoadListPass, SaveLoadMenuError,
+    SaveLoadMenuOutcome, SaveLoadMenuPhase, SaveLoadMenuState, SaveLoadRequests,
+    SaveLoadSelection, SaveProfileBackend, SavedProfileLifecycle, update_save_load_menu,
 };
 pub use selected_mask::{
     PresentationChoiceMaskError, PresentationChoiceNumber, draw_presentation_choice_number,

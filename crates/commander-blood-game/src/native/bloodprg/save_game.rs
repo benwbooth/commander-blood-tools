@@ -157,6 +157,25 @@ pub struct OriginalSaveGame {
 }
 
 impl OriginalSaveGame {
+    /// Decode only the leading profile identity needed before loading its resources.
+    pub fn decode_profile(data: &[u8]) -> Result<ScriptProfileId, OriginalSaveGameError> {
+        if data.len() < ORIGINAL_SAVE_PROFILE_BYTE_COUNT {
+            return Err(OriginalSaveGameError::Truncated {
+                required: ORIGINAL_SAVE_PROFILE_BYTE_COUNT,
+                actual: data.len(),
+            });
+        }
+        let encoded_profile = u16::from_le_bytes(
+            data[..ORIGINAL_SAVE_PROFILE_BYTE_COUNT]
+                .try_into()
+                .expect("validated two-byte save profile"),
+        );
+        u8::try_from(encoded_profile)
+            .ok()
+            .and_then(ScriptProfileId::new)
+            .ok_or(OriginalSaveGameError::InvalidProfile { encoded_profile })
+    }
+
     /// Decode one save after profile loading has supplied its rounded state size.
     ///
     /// The original obtains `state_block_byte_count` from `resource_get_field4`
@@ -178,15 +197,7 @@ impl OriginalSaveGame {
             });
         }
 
-        let encoded_profile = u16::from_le_bytes(
-            data[..ORIGINAL_SAVE_PROFILE_BYTE_COUNT]
-                .try_into()
-                .expect("validated two-byte save profile"),
-        );
-        let profile = u8::try_from(encoded_profile)
-            .ok()
-            .and_then(ScriptProfileId::new)
-            .ok_or(OriginalSaveGameError::InvalidProfile { encoded_profile })?;
+        let profile = Self::decode_profile(data)?;
         let timer_start = ORIGINAL_SAVE_PROFILE_BYTE_COUNT;
         let sequence_start = timer_start + SCRIPT_TIMER_SAVE_BLOCK_BYTE_COUNT;
         let state_start = ORIGINAL_SAVE_FIXED_HEADER_BYTE_COUNT;
@@ -442,6 +453,10 @@ mod tests {
         let data = std::fs::read(original_asset("GAME1.SAV")).unwrap();
         let state_file = std::fs::read(original_asset("SCRIPT2.VAR")).unwrap();
         assert_eq!(state_file.len(), SECOND_PROFILE_STATE_FILE_BYTE_COUNT);
+        assert_eq!(
+            OriginalSaveGame::decode_profile(&data).unwrap(),
+            SECOND_PROFILE
+        );
         let save = OriginalSaveGame::decode(&data, SECOND_PROFILE_STATE_BLOCK_BYTE_COUNT).unwrap();
 
         assert_eq!(save.profile(), SECOND_PROFILE);
@@ -481,6 +496,10 @@ mod tests {
     #[test]
     fn malformed_boundaries_and_profile_mismatches_are_rejected() {
         let data = std::fs::read(original_asset("GAME1.SAV")).unwrap();
+        assert!(matches!(
+            OriginalSaveGame::decode_profile(&data[..ORIGINAL_SAVE_PROFILE_BYTE_COUNT - 1]),
+            Err(OriginalSaveGameError::Truncated { .. })
+        ));
         assert!(matches!(
             OriginalSaveGame::decode(&data[..ORIGINAL_SAVE_FIXED_HEADER_BYTE_COUNT - 1], 0),
             Err(OriginalSaveGameError::Truncated { .. })
