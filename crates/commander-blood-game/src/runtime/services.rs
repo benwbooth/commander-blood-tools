@@ -23,6 +23,7 @@ use super::{
 
 const INITIAL_LOGICAL_POINTER: [i16; 2] = [160, 100];
 const MUSIC_RESOURCE_DIRECTORY: &[u8] = b"MU\\";
+const DEFAULT_BRIDGE_SOUND_BANK: &[u8] = b"tb.snd";
 
 /// Owned flat services that concrete `GameLifecycleHost` methods delegate to.
 ///
@@ -137,6 +138,27 @@ impl<'window> ModernGameServices<'window> {
             bail!("runtime audio is already initialized");
         }
         self.audio = Some(RuntimeAudioHost::open(audio)?);
+        Ok(())
+    }
+
+    /// Load and validate the authored startup `CARTE.SPR` cache resource.
+    pub fn load_initial_cartography_resource(&mut self) -> Result<()> {
+        let _ = self.runtime.load_startup_cartography_resource()?;
+        Ok(())
+    }
+
+    /// Load and validate the default `SN\\TB.SND` resident bridge sound bank.
+    pub fn load_default_sound_bank(&mut self) -> Result<()> {
+        self.scripts
+            .backend_mut()
+            .load_resident_sound_bank(DEFAULT_BRIDGE_SOUND_BANK)
+            .context("loading default bridge sound bank")?;
+        let loaded = self
+            .scripts
+            .backend()
+            .loaded_sound_bank()
+            .context("default bridge sound bank was not retained")?;
+        SndBank::decode(loaded.encoded_bytes()).context("decoding default bridge sound bank")?;
         Ok(())
     }
 
@@ -479,6 +501,7 @@ mod tests {
         }
         let sdl = sdl3::init().unwrap();
         let video = sdl.video().unwrap();
+        let audio = sdl.audio().unwrap();
         let window = video
             .window("Commander Blood service test", 640, 480)
             .position_centered()
@@ -500,7 +523,14 @@ mod tests {
             services.open_bridge_panorama().unwrap(),
             RuntimeAssetLoadStatus::LoadedNow
         );
+        assert_eq!(
+            services.load_save_slots().unwrap(),
+            RuntimeAssetLoadStatus::LoadedNow
+        );
+        services.initialize_audio(&audio).unwrap();
+        services.load_initial_cartography_resource().unwrap();
         services.initialize_bridge_scene(TEST_CLOCK_SEED).unwrap();
+        services.load_default_sound_bank().unwrap();
         services.initialize_back_buffer().unwrap();
         services
             .load_script_profile(ScriptProfileId::new(u8::MIN).unwrap())

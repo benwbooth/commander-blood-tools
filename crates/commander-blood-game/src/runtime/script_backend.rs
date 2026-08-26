@@ -276,6 +276,11 @@ impl RuntimeScriptBackend {
         self.sound_loader.loaded.as_ref()
     }
 
+    /// Load one authored resident SND bank through the same resource service as DESCRIPT.
+    pub fn load_resident_sound_bank(&mut self, bank_name: &[u8]) -> Result<()> {
+        self.sound_loader.load_sound_bank(bank_name)
+    }
+
     /// Return the object whose DESCRIPT record currently owns presentation assets.
     pub const fn active_description_object(&self) -> Option<ScriptObjectId> {
         self.active_description_object
@@ -545,6 +550,7 @@ mod tests {
 
     const SHIPPED_DESCRIPT_RECORD_COUNT: usize = 145;
     const SHIPPED_MISSING_BACKGROUND: &[u8] = b"FD\\marais1d.lbm";
+    const DEFAULT_BRIDGE_SOUND_BANK: &[u8] = b"tb.snd";
     const TEST_CLOCK: ScriptClock = ScriptClock {
         hour: 12,
         day: 2,
@@ -627,6 +633,24 @@ mod tests {
             backend.missing_background_resources(),
             &[Box::from(SHIPPED_MISSING_BACKGROUND)]
         );
+    }
+
+    #[test]
+    fn default_bridge_sound_bank_loads_from_original_resources() {
+        let Some(paths) = original_data_paths() else {
+            return;
+        };
+        let writable_root = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(paths, &writable_root.0).unwrap();
+        let mut backend = RuntimeScriptBackend::new(&data, TEST_CLOCK);
+
+        backend
+            .load_resident_sound_bank(DEFAULT_BRIDGE_SOUND_BANK)
+            .unwrap();
+        let resource = backend.loaded_sound_bank().unwrap();
+        assert_eq!(resource.name(), DEFAULT_BRIDGE_SOUND_BANK);
+        assert!(!resource.encoded_bytes().is_empty());
+        commander_blood_formats::snd::SndBank::decode(resource.encoded_bytes()).unwrap();
     }
 
     #[test]

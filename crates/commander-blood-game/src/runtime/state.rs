@@ -11,10 +11,10 @@ use crate::native::bloodprg::{
     BRIDGE_SPRITE_ENTITY_COUNT, BridgeFrameState, BridgeSpriteEntity, BridgeSpritePosition,
     BridgeSpriteRect, CHART_BACK_BUFFER_RESOURCE_PATH, CameraApproachState, FontPoint,
     IndexedGamePalette, LoadedScriptProfile, NameAreaEffectOutcome, NameAreaEffectState,
-    OriginalResourceCache, OriginalSaveSlotDirectory, PaletteResourceStorage,
-    PaletteResourceTarget, PauseHudRefresh, PbmDecodeResult, RasterPoint, RasterRectOutcome,
-    ResourceId, ScriptPresentationEntity, ScriptProfileId, ScriptProfileLoadOutcome,
-    ScriptProfileManager, ShipHudState, ShipViewArtworkSelection,
+    OriginalResourceCache, OriginalSaveSlotDirectory, PaletteResourceLoadOutcome,
+    PaletteResourceStorage, PaletteResourceTarget, PauseHudRefresh, PbmDecodeResult, RasterPoint,
+    RasterRectOutcome, ResourceId, ScriptPresentationEntity, ScriptProfileId,
+    ScriptProfileLoadOutcome, ScriptProfileManager, ShipHudState, ShipViewArtworkSelection,
     activate_bridge_sprite_from_resource, advance_bridge_sprite_state, build_pause_hud_refresh,
     decode_chart_back_buffer, draw_small_font_text, fill_framebuffer_rect,
     select_ship_view_artwork, update_name_area_effect,
@@ -33,6 +33,8 @@ pub const LOGICAL_FRAMEBUFFER_PIXEL_COUNT: usize =
 
 const MANU3_RESOURCE_NAME: &[u8] = b"MANU3.XDB";
 const SAVE_SLOT_DIRECTORY_RESOURCE_NAME: &[u8] = b"BLOOD.SAV";
+const STARTUP_CARTOGRAPHY_RESOURCE: ResourceId = ResourceId::new(44);
+const STARTUP_CARTOGRAPHY_RESOURCE_NAME: &[u8] = b"carte.spr";
 const PAUSE_HUD_CLEAR_COLOR: u8 = u8::MIN;
 const DIALOGUE_OVERLAY_ENTITY_INDEX: usize = 4;
 const NAME_AREA_EFFECT_ENTITY_INDEX: usize = 2;
@@ -392,6 +394,41 @@ impl OriginalGameRuntime {
         .context("decoding CHART.FD")
     }
 
+    /// Load the authored `CARTE.SPR` startup resource into the flat cache.
+    ///
+    /// This is the semantic form of resource ID 44 loaded by `bloodprg_main`
+    /// immediately after audio initialization. The palette preamble is applied
+    /// to the live palette and the decoded sprite remains cache-owned.
+    pub fn load_startup_cartography_resource(&mut self) -> Result<PaletteResourceLoadOutcome> {
+        let catalog_name = self
+            .data
+            .resource_catalog()
+            .name(STARTUP_CARTOGRAPHY_RESOURCE)
+            .context("startup cartography resource ID is not authored")?;
+        if catalog_name.as_bytes() != STARTUP_CARTOGRAPHY_RESOURCE_NAME {
+            bail!(
+                "startup resource {} is {}, expected {}",
+                STARTUP_CARTOGRAPHY_RESOURCE.value(),
+                String::from_utf8_lossy(catalog_name.as_bytes()),
+                String::from_utf8_lossy(STARTUP_CARTOGRAPHY_RESOURCE_NAME)
+            );
+        }
+        self.resource_cache
+            .load_palette_resource(
+                self.data.resource_store(),
+                self.data.resource_catalog(),
+                STARTUP_CARTOGRAPHY_RESOURCE,
+                PaletteResourceTarget::Cached,
+                &mut self.live_palette,
+            )
+            .context("loading startup CARTE.SPR resource")
+    }
+
+    /// Borrow the cached decoded `CARTE.SPR` payload after startup.
+    pub fn startup_cartography_resource(&self) -> Option<&[u8]> {
+        self.resource_cache.resolve(STARTUP_CARTOGRAPHY_RESOURCE)
+    }
+
     /// Draw the exact pause clear rectangle and compact-font label into the front buffer.
     pub fn draw_pause_hud(&mut self, active: bool) -> Result<Option<PauseHudRefresh>> {
         let Some(refresh) = build_pause_hud_refresh(u8::from(active)) else {
@@ -536,6 +573,8 @@ mod tests {
 
     use commander_blood_formats::script::ScriptObjectKind;
 
+    use crate::native::bloodprg::ResourceLoadStatus;
+
     use super::super::{OriginalGameData, OriginalGameDataPaths, VGA_BIOS_FONT_8X8};
     use super::*;
 
@@ -618,6 +657,28 @@ mod tests {
             }
         }
         assert_eq!(label_pixel_count, EXPECTED_PAUSE_LABEL_PIXEL_COUNT);
+    }
+
+    #[test]
+    fn startup_cartography_resource_is_palette_decoded_and_cache_owned() {
+        let Some(data) = original_game_data() else {
+            return;
+        };
+        let mut runtime = OriginalGameRuntime::new(data);
+        assert!(runtime.startup_cartography_resource().is_none());
+
+        let first = runtime.load_startup_cartography_resource().unwrap();
+        assert_eq!(
+            first.storage,
+            PaletteResourceStorage::Cached(ResourceLoadStatus::LoadedNow)
+        );
+        assert!(!runtime.startup_cartography_resource().unwrap().is_empty());
+
+        let second = runtime.load_startup_cartography_resource().unwrap();
+        assert_eq!(
+            second.storage,
+            PaletteResourceStorage::Cached(ResourceLoadStatus::AlreadyLoaded)
+        );
     }
 
     #[test]
