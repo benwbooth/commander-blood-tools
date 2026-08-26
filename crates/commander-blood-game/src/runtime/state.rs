@@ -10,13 +10,14 @@ use commander_blood_formats::panorama::BridgePanoramaArchive;
 use crate::native::bloodprg::{
     BRIDGE_SPRITE_ENTITY_COUNT, BridgeFrameState, BridgeSpriteEntity, BridgeSpritePosition,
     BridgeSpriteRect, CHART_BACK_BUFFER_RESOURCE_PATH, CameraApproachState, FontPoint,
-    IndexedGamePalette, LoadedScriptProfile, NameAreaEffectOutcome, NameAreaEffectState,
-    OriginalResourceCache, OriginalSaveSlotDirectory, PaletteResourceLoadOutcome,
-    PaletteResourceStorage, PaletteResourceTarget, PauseHudRefresh, PbmDecodeResult, RasterPoint,
-    RasterRectOutcome, ResourceId, ScriptPresentationEntity, ScriptProfileId,
-    ScriptProfileLoadOutcome, ScriptProfileManager, ShipHudState, ShipViewArtworkSelection,
-    activate_bridge_sprite_from_resource, advance_bridge_sprite_state, build_pause_hud_refresh,
-    decode_chart_back_buffer, draw_small_font_text, fill_framebuffer_rect,
+    GameFontDrawOutcome, IndexedGamePalette, LoadedScriptProfile, NameAreaEffectOutcome,
+    NameAreaEffectState, OriginalResourceCache, OriginalSaveSlotDirectory,
+    PaletteResourceLoadOutcome, PaletteResourceStorage, PaletteResourceTarget, PauseHudRefresh,
+    PbmDecodeResult, PresentationChoiceNumber, RasterPoint, RasterRectOutcome, ResourceId,
+    ScriptPresentationEntity, ScriptProfileId, ScriptProfileLoadOutcome, ScriptProfileManager,
+    ShipHudState, ShipViewArtworkSelection, activate_bridge_sprite_from_resource,
+    advance_bridge_sprite_state, build_pause_hud_refresh, decode_chart_back_buffer,
+    draw_presentation_choice_number, draw_small_font_text, fill_framebuffer_rect,
     select_ship_view_artwork, update_name_area_effect,
 };
 use crate::native::manu3::model::Manu3Model;
@@ -39,6 +40,7 @@ const PAUSE_HUD_CLEAR_COLOR: u8 = u8::MIN;
 const DIALOGUE_OVERLAY_ENTITY_INDEX: usize = 4;
 const NAME_AREA_EFFECT_ENTITY_INDEX: usize = 2;
 const SHIP_VIEW_TRANSITION_ENTITY_INDEX: usize = 31;
+const PRESENTATION_PANEL_ENTITY_INDEX: usize = 31;
 
 /// One owned 320 by 200 row-major indexed framebuffer.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -209,6 +211,15 @@ impl OriginalGameRuntime {
             .with_context(|| format!("transitioning bridge presentation entity {entity_index}"))
     }
 
+    /// Mark the bridge presentation panel entity for its recovered opening transition.
+    pub fn transition_presentation_panel_entity(&mut self) -> Result<bool> {
+        advance_bridge_sprite_state(
+            &mut self.bridge_sprite_entities,
+            PRESENTATION_PANEL_ENTITY_INDEX,
+        )
+        .context("transitioning the bridge presentation panel entity")
+    }
+
     /// Arm the translated camera-approach state machine for a travel action.
     pub fn start_camera_transition(&mut self) {
         self.camera_approach.phase = u8::MIN;
@@ -310,6 +321,29 @@ impl OriginalGameRuntime {
     /// Mutably borrow the logical presentation frame.
     pub fn front_buffer_mut(&mut self) -> &mut IndexedFramebuffer {
         &mut self.front_buffer
+    }
+
+    /// Draw one compact-font line into the active flat framebuffer.
+    pub fn draw_small_font_line(
+        &mut self,
+        text: &[u8],
+        origin: FontPoint,
+        color: u8,
+    ) -> Result<GameFontDrawOutcome> {
+        draw_small_font_text(
+            self.front_buffer.pixels_mut(),
+            self.data.font_resources(),
+            text,
+            origin,
+            color,
+        )
+        .context("drawing compact game-font text")
+    }
+
+    /// Draw the selected presentation-choice number into the active framebuffer.
+    pub fn draw_presentation_choice(&mut self, choice: PresentationChoiceNumber) -> Result<usize> {
+        draw_presentation_choice_number(choice, self.front_buffer.pixels_mut())
+            .map_err(|error| anyhow::anyhow!("drawing presentation choice mask: {error:?}"))
     }
 
     /// Logical background frame retained across scene composition.

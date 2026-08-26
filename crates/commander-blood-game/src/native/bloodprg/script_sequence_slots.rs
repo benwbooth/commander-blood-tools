@@ -47,6 +47,16 @@ pub struct ScriptSequenceSlots {
 }
 
 impl ScriptSequenceSlots {
+    /// Return all six sequence names in their stable presentation-choice order.
+    pub fn ordered_names(&self) -> [Option<&[u8]>; ScriptSequenceSlot::COUNT] {
+        std::array::from_fn(|index| {
+            self.slots[index]
+                .name
+                .as_ref()
+                .map(ScriptSequenceSlotName::as_bytes)
+        })
+    }
+
     /// Return the name currently assigned to one slot.
     pub fn name(&self, slot: ScriptSequenceSlot) -> Option<&ScriptSequenceSlotName> {
         self.slots[slot.index()].name.as_ref()
@@ -223,6 +233,15 @@ mod tests {
         slots.clear();
         assert_eq!(slots.name(first), None);
         assert_eq!(slots.name(second), None);
+    }
+
+    #[test]
+    fn ordered_names_expose_the_six_choice_slots_without_fixed_fields() {
+        let slots = ScriptSequenceSlots::default();
+        assert_eq!(
+            slots.ordered_names(),
+            [Some(b"present".as_slice()), None, None, None, None, None]
+        );
     }
 
     #[test]

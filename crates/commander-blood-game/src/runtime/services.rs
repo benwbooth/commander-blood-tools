@@ -8,10 +8,11 @@ use sdl3::AudioSubsystem;
 use sdl3::video::Window;
 
 use crate::native::bloodprg::{
-    BridgeScene, BridgeSceneFrame, BridgeSceneInput, GameLifecycleState, InputAction,
-    PbmDecodeResult, PointerButtonEdges, PointerButtons, PointerSample, PresentationPresentPolicy,
-    PresentationResourceId, PresentationResourceSequenceOutcome, ScriptClock, ScriptFrameOutcome,
-    ScriptProfileId, ScriptProfileLoadOutcome, ShipProjectionResources, StartupPreparationOutcome,
+    BridgeScene, BridgeSceneFrame, BridgeSceneInput, DescriptRecordApplication, GameLifecycleState,
+    InputAction, Manu3HandFrameState, PbmDecodeResult, PointerButtonEdges, PointerButtons,
+    PointerSample, PresentationChoiceNumber, PresentationPresentPolicy, PresentationResourceId,
+    PresentationResourceSequenceOutcome, ScriptClock, ScriptFrameOutcome, ScriptProfileId,
+    ScriptProfileLoadOutcome, ShipProjectionResources, StartupPreparationOutcome,
 };
 use crate::native::random::BloodPrng;
 
@@ -41,6 +42,8 @@ pub struct ModernGameServices<'window> {
     loaded_voice: Option<RuntimePcmClip>,
     bridge_scene: Option<BridgeScene>,
     bridge_frame: Option<BridgeSceneFrame>,
+    manu3_hand: Manu3HandFrameState,
+    random: BloodPrng,
     scripts: RuntimeScriptSystem,
     main_viewport_configured: bool,
 }
@@ -65,6 +68,8 @@ impl<'window> ModernGameServices<'window> {
             loaded_voice: None,
             bridge_scene: None,
             bridge_frame: None,
+            manu3_hand: Manu3HandFrameState::default(),
+            random: BloodPrng::default(),
             scripts,
             main_viewport_configured: false,
         })
@@ -113,13 +118,12 @@ impl<'window> ModernGameServices<'window> {
             .runtime
             .take_bridge_panorama()
             .context("bridge panorama must be opened before scene initialization")?;
-        let mut random = BloodPrng::default();
-        random.seed_from_clock_register(packed_clock_seed);
+        self.random.seed_from_clock_register(packed_clock_seed);
         self.bridge_scene = Some(
             BridgeScene::new(
                 panorama,
                 ShipProjectionResources::from(resources),
-                &mut random,
+                &mut self.random,
             )
             .context("constructing live bridge scene")?,
         );
@@ -286,6 +290,50 @@ impl<'window> ModernGameServices<'window> {
         self.scripts.load_profile(&mut self.runtime, profile)
     }
 
+    /// Return the six BloodScript sequence records in presentation-choice order.
+    pub fn presentation_sequence_records(
+        &self,
+    ) -> Result<[Option<Box<[u8]>>; PresentationChoiceNumber::COUNT]> {
+        let profile = self
+            .runtime
+            .current_profile()
+            .context("presentation choices require a loaded BloodScript profile")?;
+        Ok(profile
+            .sequence_slots()
+            .ordered_names()
+            .map(|name| name.map(Box::from)))
+    }
+
+    /// Apply one selected DESCRIPT record through the live BloodScript text state.
+    pub fn apply_presentation_description(
+        &mut self,
+        name: &[u8],
+    ) -> Result<Option<DescriptRecordApplication>> {
+        let application = self.scripts.apply_presentation_description(name)?;
+        self.synchronize_script_presentations()?;
+        Ok(application)
+    }
+
+    /// Queue one recovered MANU3 animation selector for the frame-tail dispatcher.
+    pub fn request_manu3_animation(&mut self, selector: u16) {
+        self.manu3_hand.requested_animation = selector;
+    }
+
+    /// Consume the next value from the game's persistent recovered PRNG.
+    pub fn next_random(&mut self, modulus: u16) -> u16 {
+        self.random.next(modulus)
+    }
+
+    /// Borrow the persistent MANU3 selector and presentation-delay state.
+    pub const fn manu3_hand_state(&self) -> &Manu3HandFrameState {
+        &self.manu3_hand
+    }
+
+    /// Mutably borrow the persistent MANU3 selector and presentation-delay state.
+    pub fn manu3_hand_state_mut(&mut self) -> &mut Manu3HandFrameState {
+        &mut self.manu3_hand
+    }
+
     /// Execute one complete translated COD/BAS/presentation frame.
     pub fn execute_script_frame(&mut self, enabled: bool) -> Result<ScriptFrameOutcome> {
         self.scripts.execute_frame(&mut self.runtime, enabled)
@@ -362,6 +410,11 @@ impl<'window> ModernGameServices<'window> {
         self.presentation_player.has_stream() && !self.presentation_player.is_finished()
     }
 
+    /// Number of HNM frames retired by the currently selected presentation stream.
+    pub fn presentation_decoded_frame_count(&self) -> u64 {
+        self.presentation_player.decoded_frame_count()
+    }
+
     /// Release the retained presentation source after completion or cancellation.
     pub fn finish_presentation_sequence(&mut self) -> bool {
         self.presentation_player.finish().is_some()
@@ -409,15 +462,26 @@ impl<'window> ModernGameServices<'window> {
                     self.runtime.start_camera_transition();
                 }
                 RuntimeScriptCommand::ResetShipHud => {
-                    self.runtime.reset_ship_hud()?;
-                    self.bridge_scene
-                        .as_mut()
-                        .context("ship HUD reset requires an initialized bridge scene")?
-                        .reset_camera();
+                    self.reset_ship_hud()?;
                 }
             }
         }
         Ok(command_count)
+    }
+
+    /// Transition the bridge panel entity used by the six-choice presentation screen.
+    pub fn transition_presentation_panel_entity(&mut self) -> Result<bool> {
+        self.runtime.transition_presentation_panel_entity()
+    }
+
+    /// Restore ship artwork, HUD palette, and the flat bridge camera origin.
+    pub fn reset_ship_hud(&mut self) -> Result<()> {
+        self.runtime.reset_ship_hud()?;
+        self.bridge_scene
+            .as_mut()
+            .context("ship HUD reset requires an initialized bridge scene")?
+            .reset_camera();
+        Ok(())
     }
 
     /// Draw and immediately present the pause HUD when the recovered gate is active.

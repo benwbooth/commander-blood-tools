@@ -221,6 +221,17 @@ impl RuntimeScriptSystem {
     pub const fn sequence_presentation(&self) -> &SequencePresentationState {
         &self.dispatch.sequence_presentation
     }
+
+    /// Apply a presentation-panel DESCRIPT record through the live script state.
+    pub fn apply_presentation_description(
+        &mut self,
+        name: &[u8],
+    ) -> Result<Option<DescriptRecordApplication>> {
+        let Self { dispatch, service } = self;
+        service
+            .backend_mut()
+            .apply_description(name, true, &mut dispatch.text_presentation)
+    }
 }
 
 /// Concrete flat backend state shared by the script service and game lifecycle.
