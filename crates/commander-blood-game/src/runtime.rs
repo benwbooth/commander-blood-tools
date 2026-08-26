@@ -3,6 +3,7 @@
 mod audio;
 mod bios_font;
 mod input;
+mod platform;
 mod presentation;
 mod script_backend;
 mod services;
@@ -13,6 +14,7 @@ mod video;
 pub use audio::{RuntimeAudioHost, RuntimePcmClip, RuntimePcmMixer};
 pub use bios_font::VGA_BIOS_FONT_8X8;
 pub use input::{RuntimeInputHost, map_host_pointer_to_logical};
+pub use platform::{GAME_FRAME_DURATION, RuntimePlatformHost};
 pub use presentation::RuntimePresentationHost;
 pub use script_backend::{
     LoadedRuntimeResource, RuntimeScriptBackend, RuntimeScriptCommand, RuntimeScriptSystem,
