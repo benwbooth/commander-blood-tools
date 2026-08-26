@@ -10,7 +10,8 @@ use crate::assets::{OriginalResourceSource, OriginalResourceStore};
 use super::{
     PresentationByteSource, PresentationPaletteError, PresentationPaletteState,
     PresentationQueueState, PresentationResourceId, PresentationSourceError,
-    PresentationSourceLease, apply_presentation_palette_blocks, presentation_resource_descriptor,
+    PresentationSourceLease, apply_presentation_palette_blocks, close_owned_presentation_source,
+    presentation_resource_descriptor,
 };
 
 const ENTRY_HEADER_BYTE_COUNT: usize = size_of::<u16>();
@@ -137,6 +138,8 @@ pub struct PresentationResourceStreamState {
     pub lease: PresentationSourceLease,
     /// Complete active source and its current read position.
     pub source: Option<PresentationByteSource>,
+    /// Exclusive end of the currently selected range in the owned source.
+    pub(crate) active_range_end: Option<usize>,
 }
 
 impl PresentationResourceStreamState {
@@ -149,7 +152,52 @@ impl PresentationResourceStreamState {
 
     /// Return bytes remaining in the active owned source.
     pub fn source_remaining(&self) -> Option<usize> {
-        self.source.as_ref().map(PresentationByteSource::remaining)
+        let source = self.source.as_ref()?;
+        Some(
+            self.active_range_end
+                .unwrap_or(source.bytes().len())
+                .saturating_sub(source.position()),
+        )
+    }
+
+    /// Select one validated range as the source consumed by queue refill.
+    pub(crate) fn select_range(
+        &mut self,
+        range: PresentationSourceRange,
+    ) -> Result<(), PresentationSourceError> {
+        let source = self
+            .source
+            .as_mut()
+            .ok_or(PresentationSourceError::SourceUnavailable)?;
+        let source_len = source.bytes().len();
+        let range_end = range.position.checked_add(range.remaining).ok_or(
+            PresentationSourceError::SourceRangeOutOfBounds {
+                position: range.position,
+                remaining: range.remaining,
+                source_len,
+            },
+        )?;
+        if range_end > source_len {
+            return Err(PresentationSourceError::SourceRangeOutOfBounds {
+                position: range.position,
+                remaining: range.remaining,
+                source_len,
+            });
+        }
+        source.seek(range.position)?;
+        self.active_range_end = Some(range_end);
+        Ok(())
+    }
+
+    /// Release a source owned only by this stream and reset queue range bounds.
+    pub(crate) fn close_owned_source(&mut self, queue: &mut PresentationQueueState) -> bool {
+        let closed = close_owned_presentation_source(&mut self.lease, queue);
+        if closed {
+            self.source = None;
+            self.active_range_end = None;
+            self.ready = false;
+        }
+        closed
     }
 }
 
@@ -319,6 +367,7 @@ pub fn switch_presentation_resource<Provider: PresentationResourceProvider>(
     state.range = None;
     state.index_range = None;
     state.source = None;
+    state.active_range_end = None;
     state.lease = PresentationSourceLease::Closed;
     context.queue.reset(context.queue_capacity);
     context.queue.status_bits = u8::MIN;
@@ -333,6 +382,7 @@ pub fn switch_presentation_resource<Provider: PresentationResourceProvider>(
     state.absolute_origin = opened.absolute_origin;
     state.lease = opened.lease;
     state.source = Some(opened.source);
+    state.active_range_end = state.source.as_ref().map(|source| source.bytes().len());
     let source = state
         .source
         .as_mut()

@@ -66,6 +66,7 @@ mod presentation_line;
 mod presentation_mode;
 mod presentation_present;
 mod presentation_queue;
+mod presentation_refill;
 mod presentation_raster;
 mod presentation_resource;
 mod presentation_source;
@@ -411,6 +412,7 @@ pub use presentation_entry::{
     ActivatedPresentationEntry, PresentationEntryActivation, PresentationEntryDisposition,
     PresentationEntryError, PresentationEntryFrame, PresentationEntryPolicy,
     PresentationEntrySideData, PresentationLinkId, activate_presentation_entry,
+    resolve_presentation_queue_link,
 };
 pub use presentation_hover::{
     PresentationHitAreas, PresentationHitRectangle, PresentationHitSelection,
@@ -435,6 +437,10 @@ pub use presentation_queue::{
     PresentationQueueConsumeOutcome, PresentationQueueError, PresentationQueueState,
     presentation_entry_activation_request, presentation_queue_advance_due,
     presentation_resource_enabled,
+};
+pub use presentation_refill::{
+    PresentationQueueLinkCursor, PresentationQueueRefillError, PresentationQueueRefillOutcome,
+    refill_presentation_queue,
 };
 pub use presentation_raster::{
     PresentationRasterError, PresentationRectBlitOutcome, PresentationScanlineState,

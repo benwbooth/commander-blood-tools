@@ -21,11 +21,11 @@ const COMPRESSED_LAYOUT_FLAG: u16 = 0x0200;
 const NO_COORDINATES_LAYOUT_FLAG: u16 = 0x0400;
 const TRANSPARENT_ROW_MODE: u8 = u8::MAX;
 
-/// Opaque identifier for an entry held by the flat resource store.
+/// Opaque identifier for an entry retained in the flat presentation queue.
 ///
 /// The native queue wrote a far pointer into this four-byte field. The modern
-/// refill path instead writes a stable resource identifier and resolves it
-/// without exposing an address or segmented-memory convention.
+/// refill path writes a checked queue position and resolves it without exposing
+/// an address or segmented-memory convention.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct PresentationLinkId(u32);
 
@@ -35,10 +35,41 @@ impl PresentationLinkId {
         Self(value)
     }
 
-    /// Return the resource-store value encoded by this identifier.
+    /// Construct an identifier for one representable flat queue position.
+    pub fn from_queue_offset(offset: usize) -> Option<Self> {
+        u32::try_from(offset).ok().map(Self)
+    }
+
+    /// Return the serialized queue identifier.
     pub const fn get(self) -> u32 {
         self.0
     }
+
+    /// Return this identifier as a host queue position.
+    pub fn queue_offset(self) -> Option<usize> {
+        usize::try_from(self.0).ok()
+    }
+}
+
+/// Resolve one synthetic link to a complete retained queue entry.
+///
+/// A linked entry begins with its extent word. Checked flat slicing replaces
+/// the original far-pointer dereference and rejects stale or overwritten queue
+/// positions before entry activation.
+pub fn resolve_presentation_queue_link(
+    queue_buffer: &[u8],
+    link: PresentationLinkId,
+) -> Option<Box<[u8]>> {
+    let start = link.queue_offset()?;
+    let header_end = start.checked_add(WORD_BYTE_COUNT)?;
+    let extent = usize::from(u16::from_le_bytes(
+        queue_buffer.get(start..header_end)?.try_into().ok()?,
+    ));
+    let end = start.checked_add(extent)?;
+    (extent >= WORD_BYTE_COUNT)
+        .then(|| queue_buffer.get(start..end))
+        .flatten()
+        .map(Box::from)
 }
 
 /// Runtime gates controlling immediate versus deferred frame expansion.
@@ -95,7 +126,7 @@ pub enum PresentationEntryDisposition {
     /// A linked resource changed generation and the stale queue entry must be
     /// consumed without becoming active.
     RejectedLink {
-        /// Resource-store identifier requested by the queue.
+        /// Retained queue entry requested by the link record.
         link: PresentationLinkId,
         /// Generation key captured when the link record was synthesized.
         expected_key: u16,
@@ -147,7 +178,7 @@ pub enum PresentationEntryError {
     },
     /// The flat resource store could not resolve a linked entry.
     LinkedEntryUnavailable {
-        /// Requested resource-store identifier.
+        /// Requested retained queue entry.
         link: PresentationLinkId,
     },
     /// Immediate payload expansion rejected the compressed stream.

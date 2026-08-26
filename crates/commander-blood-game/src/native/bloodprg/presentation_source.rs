@@ -72,6 +72,15 @@ pub enum PresentationSourceError {
         /// Complete source byte count.
         source_len: usize,
     },
+    /// A selected source range extends beyond the owned resource.
+    SourceRangeOutOfBounds {
+        /// First byte selected by the range.
+        position: usize,
+        /// Number of bytes selected by the range.
+        remaining: usize,
+        /// Complete source byte count.
+        source_len: usize,
+    },
     /// Queue accounting or destination geometry rejected the transfer.
     Queue(PresentationQueueError),
     /// Queue capacity names bytes not owned by the supplied flat buffer.
