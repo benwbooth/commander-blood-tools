@@ -56,6 +56,7 @@ mod palette_host;
 mod palette_update;
 mod pbm_image;
 mod presentation;
+mod presentation_ad;
 mod presentation_choice;
 mod presentation_decode;
 mod presentation_hover;
@@ -385,6 +386,10 @@ pub use pbm_image::{
 };
 pub use presentation::{
     evaluate_text_conditions, ScriptWordHistory, TextConditionEffects, TextConditionError,
+};
+pub use presentation_ad::{
+    PresentationAdError, PresentationAdOutcome, PresentationRectDecodeOutcome,
+    decode_presentation_ad, decode_presentation_rect,
 };
 pub use presentation_choice::{
     PresentationChoiceError, PresentationChoiceItem, PresentationChoiceOutcome,
