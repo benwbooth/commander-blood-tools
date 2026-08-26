@@ -38,6 +38,7 @@ mod input_cancel;
 mod input_selection;
 mod location_panel;
 mod location_panel_geometry;
+mod manu3_hand;
 mod menu_reveal;
 mod name_area_effect;
 mod navigation;
@@ -280,6 +281,9 @@ pub use location_panel::{
 pub use location_panel_geometry::{
     LocationPanelGeometry, LocationPanelGeometryHost, LocationPanelGeometryState,
     LocationPanelLayout, update_location_panel_geometry,
+};
+pub use manu3_hand::{
+    Manu3HandFrameContext, Manu3HandFrameState, update_manu3_hand_frame,
 };
 pub use menu_reveal::{
     reveal_inline_menu_step, InlineMenuRevealError, InlineMenuRevealFrame,
