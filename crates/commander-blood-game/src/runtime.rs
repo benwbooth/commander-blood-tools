@@ -5,6 +5,7 @@ mod bios_font;
 mod input;
 mod platform;
 mod presentation;
+mod presentation_catalog;
 mod script_backend;
 mod services;
 mod startup;
@@ -16,6 +17,7 @@ pub use bios_font::VGA_BIOS_FONT_8X8;
 pub use input::{RuntimeInputHost, map_host_pointer_to_logical};
 pub use platform::{GAME_FRAME_DURATION, RuntimePlatformHost};
 pub use presentation::RuntimePresentationHost;
+pub use presentation_catalog::{RuntimePresentationBackground, RuntimePresentationCatalog};
 pub use script_backend::{
     LoadedRuntimeResource, RuntimeScriptBackend, RuntimeScriptCommand, RuntimeScriptSystem,
 };
