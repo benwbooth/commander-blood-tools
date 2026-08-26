@@ -22,6 +22,10 @@ const MIP_LEVEL_COUNT: u32 = 1;
 const SINGLE_SAMPLE_COUNT: u32 = 1;
 const SINGLE_TEXTURE_LAYER: u32 = 1;
 const RGBA_BYTES_PER_PIXEL: u32 = 4;
+const RGBA_COMPONENT_COUNT: usize = 4;
+const OPAQUE_ALPHA: u8 = u8::MAX;
+const VGA_DAC_CHANNEL_MAXIMUM: u16 = 63;
+const EIGHT_BIT_CHANNEL_MAXIMUM: u16 = 255;
 const IMAGE_TEXTURE_BINDING: u32 = 0;
 const IMAGE_SAMPLER_BINDING: u32 = 1;
 const DESIRED_FRAME_LATENCY: u32 = 2;
@@ -68,6 +72,9 @@ pub struct Renderer<'window> {
     config: wgpu::SurfaceConfiguration,
     pipeline: wgpu::RenderPipeline,
     image_bind_group: wgpu::BindGroup,
+    image_texture: wgpu::Texture,
+    image_width: u32,
+    image_height: u32,
     manu3: Option<Manu3Renderer>,
     alien: Option<AlienRenderer>,
     bridge: Option<BridgeRenderer>,
@@ -271,6 +278,9 @@ impl<'window> Renderer<'window> {
             config,
             pipeline,
             image_bind_group,
+            image_texture,
+            image_width: image.width,
+            image_height: image.height,
             manu3,
             alien,
             bridge,
@@ -291,6 +301,49 @@ impl<'window> Renderer<'window> {
         if let Some(alien) = &mut self.alien {
             alien.resize(&self.device, width, height);
         }
+    }
+
+    /// Upload one complete indexed frame using native six-bit VGA palette values.
+    pub fn upload_indexed_frame(
+        &self,
+        indexed_pixels: &[u8],
+        palette: &IndexedGamePalette,
+    ) -> Result<()> {
+        let expected_pixel_count = usize::try_from(self.image_width)
+            .ok()
+            .and_then(|width| {
+                usize::try_from(self.image_height)
+                    .ok()
+                    .and_then(|height| width.checked_mul(height))
+            })
+            .context("artwork texture dimensions exceed the host collection limit")?;
+        if indexed_pixels.len() != expected_pixel_count {
+            anyhow::bail!(
+                "indexed frame has {} pixels; artwork texture requires {expected_pixel_count}",
+                indexed_pixels.len()
+            );
+        }
+        let rgba = indexed_frame_rgba(indexed_pixels, palette)?;
+        self.queue.write_texture(
+            wgpu::TexelCopyTextureInfo {
+                texture: &self.image_texture,
+                mip_level: BASE_MIP_LEVEL,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            &rgba,
+            wgpu::TexelCopyBufferLayout {
+                offset: u64::MIN,
+                bytes_per_row: Some(self.image_width * RGBA_BYTES_PER_PIXEL),
+                rows_per_image: Some(self.image_height),
+            },
+            wgpu::Extent3d {
+                width: self.image_width,
+                height: self.image_height,
+                depth_or_array_layers: SINGLE_TEXTURE_LAYER,
+            },
+        );
+        Ok(())
     }
 
     /// Present the current artwork, MANU3, alien, or bridge frame once.
@@ -429,6 +482,23 @@ impl<'window> Renderer<'window> {
         frame.present();
         Ok(())
     }
+}
+
+fn indexed_frame_rgba(indexed_pixels: &[u8], palette: &IndexedGamePalette) -> Result<Vec<u8>> {
+    let mut rgba = Vec::with_capacity(indexed_pixels.len() * RGBA_COMPONENT_COUNT);
+    for palette_index in indexed_pixels {
+        let color = palette[usize::from(*palette_index)];
+        for component in color {
+            if u16::from(component) > VGA_DAC_CHANNEL_MAXIMUM {
+                anyhow::bail!("frame palette component exceeds the six-bit VGA DAC range");
+            }
+            rgba.push(
+                (u16::from(component) * EIGHT_BIT_CHANNEL_MAXIMUM / VGA_DAC_CHANNEL_MAXIMUM) as u8,
+            );
+        }
+        rgba.push(OPAQUE_ALPHA);
+    }
+    Ok(rgba)
 }
 
 impl Manu3Renderer {
@@ -801,6 +871,19 @@ mod tests {
                 SQUARE_EXPECTED_HEIGHT
             )
         );
+    }
+
+    #[test]
+    fn indexed_frame_conversion_expands_native_dac_values_and_rejects_invalid_components() {
+        let mut palette = [[u8::MIN; 3]; PALETTE_ENTRY_COUNT as usize];
+        palette[1] = [63, 32, 0];
+        assert_eq!(
+            indexed_frame_rgba(&[1, 0], &palette).unwrap(),
+            [255, 129, 0, 255, 0, 0, 0, 255]
+        );
+
+        palette[1][0] = 64;
+        assert!(indexed_frame_rgba(&[1], &palette).is_err());
     }
 
     #[test]
