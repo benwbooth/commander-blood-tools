@@ -34,6 +34,7 @@ mod descript_lookup;
 mod diagnostics;
 mod framebuffer_copy;
 mod frame_transition;
+mod game_lifecycle;
 mod hud_refresh;
 mod input_dispatch;
 mod input_cancel;
@@ -266,6 +267,12 @@ pub use framebuffer_copy::{
 pub use frame_transition::{
     FramebufferTransitionError, FramebufferTransitionState, TransitionRect,
     TransitionRenderRegion, advance_framebuffer_rect_transition,
+};
+pub use game_lifecycle::{
+    GameLifecycleError, GameLifecycleExit, GameLifecycleHost, GameLifecycleOutcome,
+    GameLifecycleState, GameMenuWordSource, GamePresentationOwner, GamePresentationScheduler,
+    GameProfileChangeBlockers, GameProfileLoadStatus, GameSceneLink, GameVmRunStatus,
+    run_game_lifecycle,
 };
 pub use hud_refresh::{
     PAUSE_HUD_PALETTE_INDEX, PauseHudRectangle, PauseHudRefresh, build_pause_hud_refresh,
