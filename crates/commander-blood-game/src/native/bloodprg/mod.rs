@@ -26,6 +26,7 @@ mod framebuffer_copy;
 mod input_dispatch;
 mod input_cancel;
 mod input_selection;
+mod location_panel;
 mod location_panel_geometry;
 mod menu_reveal;
 mod name_area_effect;
@@ -214,6 +215,13 @@ pub use input_selection::{
     InputSelectionSource, InputSelectionState, SAVE_SLOT_NAME_LENGTH, SaveMenuState,
     SaveSlotName, accept_input_selection, move_input_selection_next,
     move_input_selection_previous,
+};
+pub use location_panel::{
+    LocationInfoPanelContext, LocationInfoPanelHost, LocationInfoPanelOutcome,
+    LocationInfoPanelState, LocationPanelArtwork, LocationPanelInterpolation,
+    LocationPanelLocation, LocationPanelPhase, LocationPanelRect, LocationPanelRects,
+    LocationPanelSource, LocationPanelSpriteRange, LocationPanelTextDraw,
+    LocationPanelTransitionProgress, update_location_info_panel,
 };
 pub use location_panel_geometry::{
     LocationPanelGeometry, LocationPanelGeometryHost, LocationPanelGeometryState,
