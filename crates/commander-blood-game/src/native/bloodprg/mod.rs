@@ -5,6 +5,7 @@ mod alien_cycle;
 mod actor_slots;
 mod audio_bank;
 mod audio_events;
+mod audio_playback;
 mod bridge_input;
 mod bridge_page;
 mod bridge_panorama;
@@ -167,6 +168,11 @@ pub use bridge_frame::{
 pub use audio_bank::{LoadedSoundBank, SoundBankUsage, load_sound_bank};
 pub use audio_events::{
     AudioClipRequest, AudioEventContext, AudioEventError, AudioEventState, process_audio_events,
+};
+pub use audio_playback::{
+    AudioDriverRequests, AudioMixOperation, AudioMixReport, AudioMixStatus, AudioPlaybackBanks,
+    AudioPlaybackError, AudioPlaybackOutcome, AudioPlaybackState, AudioStreamBuffer,
+    AudioStreamBufferStatus, DirectSoundPlayback, update_audio_playback,
 };
 pub use bridge_console::{
     BridgeChoiceBackend, BridgeChoicePanelPhase, BridgeConsoleActorState, BridgeConsoleChoice,
