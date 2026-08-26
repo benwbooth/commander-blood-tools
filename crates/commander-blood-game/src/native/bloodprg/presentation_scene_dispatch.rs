@@ -149,7 +149,7 @@ pub struct PresentationSceneDispatchContext<'a, RecordId, ImageId> {
     /// Record related from the active C4 triple.
     pub active_record_related: Option<&'a RecordId>,
     /// Typed identity of Scruter Jo's object record.
-    pub scruter_jo_record: &'a RecordId,
+    pub scruter_jo_record: Option<&'a RecordId>,
     /// Exactly the first eight native line IDs that enable unclamped rows.
     pub unclamped_line_ids: &'a [u8; UNCLAMPED_LINE_ID_COUNT],
     /// Whether line eight can use a shared cached resource source.
@@ -158,6 +158,17 @@ pub struct PresentationSceneDispatchContext<'a, RecordId, ImageId> {
     pub scene_palette: &'a mut IndexedGamePalette,
     /// Captured scene colors 128 through 191.
     pub presentation_palette: &'a mut ShipHudPaletteSnapshot,
+}
+
+/// Queue counters and frame work returned by one concrete service pass.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct PresentationSceneQueueService {
+    /// Whether the service pass retired a frame into the logical display.
+    pub frame_presented: bool,
+    /// Current source-entry metric used by transition thresholds.
+    pub entry_metric: u16,
+    /// Current one-based queue read index.
+    pub read_wrap_index: u16,
 }
 
 /// Already translated resource and renderer operations called by the coordinator.
@@ -194,7 +205,7 @@ pub trait PresentationSceneDispatchHost<ImageId> {
     fn service_presentation_queue(
         &mut self,
         policy: PresentationPresentPolicy,
-    ) -> Result<bool, Self::Error>;
+    ) -> Result<PresentationSceneQueueService, Self::Error>;
 
     /// Return whether the presentation source remains open or draining.
     fn presentation_source_open_or_draining(&mut self) -> bool;
@@ -235,6 +246,8 @@ pub enum PresentationSceneDispatchError<HostError> {
     MissingSceneDescriptor(PresentationResourceId),
     /// Line 29 had no typed related record to compare with Scruter Jo.
     MissingActiveRecordRelation,
+    /// The loaded profile has no Scruter Jo object for line 29 comparison.
+    MissingScruterJoRecord,
     /// Adding the 130-row image band overflowed the host row domain.
     SceneBandOverflow {
         /// Authored vertical row offset.
@@ -259,6 +272,7 @@ where
             Self::Host(source) => Some(source),
             Self::MissingSceneDescriptor(_)
             | Self::MissingActiveRecordRelation
+            | Self::MissingScruterJoRecord
             | Self::SceneBandOverflow { .. } => None,
         }
     }
@@ -367,7 +381,10 @@ where
             let related = context
                 .active_record_related
                 .ok_or(PresentationSceneDispatchError::MissingActiveRecordRelation)?;
-            state.alien_overlay_armed = related == context.scruter_jo_record;
+            let scruter_jo = context
+                .scruter_jo_record
+                .ok_or(PresentationSceneDispatchError::MissingScruterJoRecord)?;
+            state.alien_overlay_armed = related == scruter_jo;
         } else if state.alien_overlay_armed {
             state.temporary_sound_trigger = true;
             return Ok(PresentationSceneDispatchOutcome::AlienOverlayTriggered);
@@ -418,9 +435,12 @@ where
     if state.dispatch_blocked {
         return Ok(PresentationSceneDispatchOutcome::ActiveDispatchBlocked);
     }
-    state.frame_presented = host
+    let service = host
         .service_presentation_queue(state.present_policy)
         .map_err(PresentationSceneDispatchError::Host)?;
+    state.frame_presented = service.frame_presented;
+    state.entry_metric = service.entry_metric;
+    state.read_wrap_index = service.read_wrap_index;
     if !host.presentation_source_open_or_draining() {
         if state.ship_active_flags & SHIP_ACTIVE_PRESENTATION_FLAG != u16::MIN {
             state.presentation.bridge_redraw_pending = PRESENTATION_ACTIVE_FLAG;
@@ -529,6 +549,8 @@ mod tests {
     struct RecordingHost {
         events: Vec<Event>,
         source_open_or_draining: bool,
+        entry_metric: u16,
+        read_wrap_index: u16,
     }
 
     impl PresentationSceneDispatchHost<u16> for RecordingHost {
@@ -585,9 +607,13 @@ mod tests {
         fn service_presentation_queue(
             &mut self,
             _policy: PresentationPresentPolicy,
-        ) -> Result<bool, Self::Error> {
+        ) -> Result<PresentationSceneQueueService, Self::Error> {
             self.events.push(Event::ServiceQueue);
-            Ok(false)
+            Ok(PresentationSceneQueueService {
+                frame_presented: false,
+                entry_metric: self.entry_metric,
+                read_wrap_index: self.read_wrap_index,
+            })
         }
 
         fn presentation_source_open_or_draining(&mut self) -> bool {
@@ -737,7 +763,7 @@ mod tests {
             let mut context = PresentationSceneDispatchContext {
                 scenes: &scenes,
                 active_record_related: Some(&relation),
-                scruter_jo_record: &SCRUTER_RECORD_ID,
+                scruter_jo_record: Some(&SCRUTER_RECORD_ID),
                 unclamped_line_ids: &mode_ids,
                 shared_cache_available: vector.name == "banked_line_builds_black_remap",
                 scene_palette: &mut scene_palette,
@@ -746,6 +772,8 @@ mod tests {
             let mut host = RecordingHost {
                 events: Vec::new(),
                 source_open_or_draining: vector.name != "active_line_five_teardown",
+                entry_metric: state.entry_metric,
+                read_wrap_index: state.read_wrap_index,
             };
 
             dispatch_presentation_scene(&mut state, &mut context, &mut host).unwrap();
@@ -859,7 +887,7 @@ mod tests {
         let mut context = PresentationSceneDispatchContext {
             scenes: &[],
             active_record_related: Some(&relation),
-            scruter_jo_record: &SCRUTER_RECORD_ID,
+            scruter_jo_record: Some(&SCRUTER_RECORD_ID),
             unclamped_line_ids: &[u8::MIN; UNCLAMPED_LINE_ID_COUNT],
             shared_cache_available: false,
             scene_palette: &mut scene_palette,
@@ -868,6 +896,8 @@ mod tests {
         let mut host = RecordingHost {
             events: Vec::new(),
             source_open_or_draining: true,
+            entry_metric: u16::MIN,
+            read_wrap_index: u16::MIN,
         };
 
         for line in [i16::MIN as u16, u16::MAX] {

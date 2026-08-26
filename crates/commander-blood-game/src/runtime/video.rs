@@ -73,6 +73,17 @@ pub struct RuntimePresentationStepOutcome {
     pub queue: PresentationQueueServiceOutcome,
     /// Whether no frame remains in the selected source or queue.
     pub stream_finished: bool,
+    /// Native-width queue counters sampled after this service pass.
+    pub queue_metrics: RuntimePresentationQueueMetrics,
+}
+
+/// Queue counters consumed by recovered scene-transition thresholds.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct RuntimePresentationQueueMetrics {
+    /// Current source-entry metric.
+    pub entry_metric: u16,
+    /// One-based index of the entry currently being consumed.
+    pub read_wrap_index: u16,
 }
 
 /// Persistent flat ownership for one streamed HNM resource.
@@ -221,6 +232,7 @@ impl RuntimePresentationStream {
         Ok(RuntimePresentationStepOutcome {
             queue,
             stream_finished: self.finished,
+            queue_metrics: self.queue_metrics()?,
         })
     }
 
@@ -237,6 +249,14 @@ impl RuntimePresentationStream {
     /// Exact authored resource currently supplying the stream.
     pub fn resource_name(&self) -> &BloodResourceName {
         &self.descriptors[usize::MIN].filename
+    }
+
+    fn queue_metrics(&self) -> Result<RuntimePresentationQueueMetrics> {
+        Ok(RuntimePresentationQueueMetrics {
+            entry_metric: u16::try_from(self.stream.entry_metric)
+                .context("presentation entry metric exceeds the native word range")?,
+            read_wrap_index: self.queue.read_wrap_index,
+        })
     }
 }
 

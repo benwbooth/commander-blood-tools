@@ -8,6 +8,7 @@ mod presentation;
 mod presentation_catalog;
 mod presentation_player;
 mod presentation_run;
+mod presentation_scene;
 mod script_backend;
 mod services;
 mod startup;
@@ -22,6 +23,7 @@ pub use presentation::RuntimePresentationHost;
 pub use presentation_catalog::{RuntimePresentationBackground, RuntimePresentationCatalog};
 pub use presentation_player::RuntimePresentationPlayer;
 pub use presentation_run::{RuntimePresentationRunOutcome, run_runtime_presentation};
+pub use presentation_scene::RuntimePresentationScene;
 pub use script_backend::{
     LoadedRuntimeResource, RuntimeScriptBackend, RuntimeScriptCommand, RuntimeScriptSystem,
 };
@@ -31,7 +33,8 @@ pub use state::{
     LOGICAL_FRAMEBUFFER_WIDTH, OriginalGameRuntime, RuntimeAssetLoadStatus,
 };
 pub use video::{
-    RuntimePresentationRequest, RuntimePresentationStepOutcome, RuntimePresentationStream,
+    RuntimePresentationQueueMetrics, RuntimePresentationRequest, RuntimePresentationStepOutcome,
+    RuntimePresentationStream,
 };
 
 use std::fmt;

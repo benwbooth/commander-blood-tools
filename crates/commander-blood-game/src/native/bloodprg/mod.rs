@@ -452,8 +452,8 @@ pub use presentation_scene_dispatch::{
     PresentationSceneActiveTransition, PresentationSceneDescriptor,
     PresentationSceneDispatchContext, PresentationSceneDispatchError,
     PresentationSceneDispatchHost, PresentationSceneDispatchOutcome,
-    PresentationSceneDispatchState, PresentationSceneImageOutcome, PresentationSceneSource,
-    dispatch_presentation_scene,
+    PresentationSceneDispatchState, PresentationSceneImageOutcome, PresentationSceneQueueService,
+    PresentationSceneSource, dispatch_presentation_scene,
 };
 pub use presentation_refill::{
     PresentationQueueLinkCursor, PresentationQueueRefillError, PresentationQueueRefillOutcome,

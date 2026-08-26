@@ -17,9 +17,9 @@ use crate::native::random::BloodPrng;
 
 use super::{
     OriginalGameData, OriginalGameRuntime, RuntimeAssetLoadStatus, RuntimeAudioHost,
-    RuntimeInputHost, RuntimePcmClip, RuntimePresentationHost, RuntimePresentationPlayer,
-    RuntimePresentationStepOutcome, RuntimeScriptBackend, RuntimeScriptCommand,
-    RuntimeScriptSystem, VGA_BIOS_FONT_8X8,
+    RuntimeInputHost, RuntimePcmClip, RuntimePresentationCatalog, RuntimePresentationHost,
+    RuntimePresentationPlayer, RuntimePresentationStepOutcome, RuntimeScriptBackend,
+    RuntimeScriptCommand, RuntimeScriptSystem, VGA_BIOS_FONT_8X8,
 };
 
 const INITIAL_LOGICAL_POINTER: [i16; 2] = [160, 100];
@@ -365,6 +365,11 @@ impl<'window> ModernGameServices<'window> {
     /// Release the retained presentation source after completion or cancellation.
     pub fn finish_presentation_sequence(&mut self) -> bool {
         self.presentation_player.finish().is_some()
+    }
+
+    /// Borrow resolved fixed and DESCRIPT-authored presentation metadata.
+    pub const fn presentation_catalog(&self) -> &RuntimePresentationCatalog {
+        self.presentation_player.catalog()
     }
 
     /// Borrow the concrete script backend for lifecycle-state updates.
