@@ -3,6 +3,7 @@
 use std::collections::BTreeSet;
 use std::ops::RangeInclusive;
 use std::path::{Component, Path, PathBuf};
+use std::sync::Arc;
 
 use anyhow::{Context, Result, bail};
 use commander_blood_formats::archive::{BloodArchive, BloodResourceName};
@@ -27,7 +28,7 @@ pub enum OriginalResourceSource {
 pub struct OriginalResourceStore {
     loose_source_root: PathBuf,
     writable_root: PathBuf,
-    archive: Option<BloodArchive>,
+    archive: Option<Arc<BloodArchive>>,
     loose_names: BTreeSet<BloodResourceName>,
     force_loose: bool,
 }
@@ -60,7 +61,7 @@ impl OriginalResourceStore {
         Self {
             loose_source_root,
             writable_root,
-            archive,
+            archive: archive.map(Arc::new),
             loose_names: loose_names.into_iter().collect(),
             force_loose,
         }
@@ -608,6 +609,28 @@ mod tests {
             loose_payload.len()
         );
         assert_eq!(&*store.load(&loose_name).unwrap(), loose_payload);
+    }
+
+    #[test]
+    fn cloned_resource_stores_share_the_immutable_archive_allocation() {
+        let root = TemporaryResourceRoot::create();
+        let embedded_name = resource_name("EMBED.DAT");
+        let archive = BloodArchive::decode(archive_bytes(&[(
+            embedded_name.clone(),
+            b"shared archive payload",
+        )]))
+        .unwrap();
+        let store = OriginalResourceStore::new(root.0.clone(), Some(archive), [], false);
+        let clone = store.clone();
+
+        assert!(Arc::ptr_eq(
+            store.archive.as_ref().unwrap(),
+            clone.archive.as_ref().unwrap()
+        ));
+        assert_eq!(
+            clone.load(&embedded_name).unwrap(),
+            store.load(&embedded_name).unwrap()
+        );
     }
 
     #[test]
