@@ -33,6 +33,7 @@ mod descript;
 mod descript_lookup;
 mod diagnostics;
 mod framebuffer_copy;
+mod font;
 mod frame_transition;
 mod game_lifecycle;
 mod hud_refresh;
@@ -268,6 +269,7 @@ pub use framebuffer_copy::{
     copy_full_frame_to_back_buffer, copy_full_frame_to_display, copy_work_surface_span,
     fill_back_buffer_band, fill_display_band, present_chunky_frame,
 };
+pub use font::{GameFontError, GameFontFace, measure_game_text_width};
 pub use frame_transition::{
     FramebufferTransitionError, FramebufferTransitionState, TransitionRect,
     TransitionRenderRegion, advance_framebuffer_rect_transition,
