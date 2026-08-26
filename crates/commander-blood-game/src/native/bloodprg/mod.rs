@@ -18,6 +18,7 @@ mod actor_handler_panel;
 mod actor_handler_radio;
 mod actor_position_state;
 mod bridge_frame;
+mod byte_move;
 mod camera_approach;
 mod camera_navigation;
 mod choice_list;
@@ -171,6 +172,7 @@ pub use bridge_console::{
     update_bridge_console_dispatch, update_contact_choice, update_navigation_target_choice,
     update_option_menu,
 };
+pub use byte_move::{ByteMoveError, move_bytes_in_place};
 pub use camera_approach::{
     HYPERSPACE_SEQUENCE_COUNT, CameraApproachContext, CameraApproachHost,
     CameraApproachOutcome, CameraApproachPresentation, CameraApproachState,
