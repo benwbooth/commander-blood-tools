@@ -21,6 +21,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 use commander_blood_formats::archive::{BloodArchive, BloodResourceName};
+use commander_blood_formats::descript_database::DescriptDatabase;
 use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
 use commander_blood_formats::palette::decode_bloodprg_default_vga_palette;
 
@@ -39,6 +40,8 @@ pub const ORIGINAL_EXECUTABLE_FILENAME: &str = "BLOODPRG.EXE";
 pub const ORIGINAL_TITLE_FILENAME: &str = "BLOOD.LBM";
 /// Name of the original bridge panorama archive.
 pub const ORIGINAL_BRIDGE_PANORAMA_FILENAME: &str = "TB.BIG";
+/// Name of the authored scene, dialogue, subtitle, and audio catalog.
+pub const ORIGINAL_DESCRIPT_FILENAME: &str = "DESCRIPT.DES";
 
 const DATA_ROOT_ENVIRONMENT_VARIABLE: &str = "CBLOOD_DATA";
 const WRITABLE_DATA_ROOT_ENVIRONMENT_VARIABLE: &str = "CBLOOD_WRITE_DATA";
@@ -59,6 +62,7 @@ pub struct OriginalGameDataPaths {
     executable: PathBuf,
     title: PathBuf,
     bridge_panorama: PathBuf,
+    descript: PathBuf,
 }
 
 impl OriginalGameDataPaths {
@@ -77,6 +81,7 @@ impl OriginalGameDataPaths {
             executable: root.join(ORIGINAL_EXECUTABLE_FILENAME),
             title: root.join(ORIGINAL_TITLE_FILENAME),
             bridge_panorama: root.join(ORIGINAL_BRIDGE_PANORAMA_FILENAME),
+            descript: root.join(ORIGINAL_DESCRIPT_FILENAME),
             root,
         };
         for path in [
@@ -84,6 +89,7 @@ impl OriginalGameDataPaths {
             &paths.executable,
             &paths.title,
             &paths.bridge_panorama,
+            &paths.descript,
         ] {
             if !path.is_file() {
                 bail!(
@@ -141,6 +147,11 @@ impl OriginalGameDataPaths {
     pub fn bridge_panorama(&self) -> &Path {
         &self.bridge_panorama
     }
+
+    /// Authored `DESCRIPT.DES` presentation database path.
+    pub fn descript(&self) -> &Path {
+        &self.descript
+    }
 }
 
 /// Structural metrics from decoding one complete shipped BloodScript profile.
@@ -166,6 +177,7 @@ pub struct OriginalGameData {
     resource_catalog: OriginalResourceCatalog,
     script_profile_catalog: OriginalScriptProfileCatalog,
     writable_resource_catalog: StartupWritableResourceCatalog,
+    descript_database: DescriptDatabase,
     default_vga_palette: [[u8; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT],
     archive_entry_count: usize,
 }
@@ -178,6 +190,10 @@ impl fmt::Debug for OriginalGameData {
             .field("executable_byte_count", &self.executable.len())
             .field("archive_entry_count", &self.archive_entry_count)
             .field("resource_count", &self.resource_catalog.len())
+            .field(
+                "descript_record_count",
+                &self.descript_database.records().len(),
+            )
             .field(
                 "writable_resource_count",
                 &self.writable_resource_catalog.len(),
@@ -210,6 +226,11 @@ impl OriginalGameData {
                 .context("decoding startup writable-resource catalog")?;
         let default_vga_palette = decode_bloodprg_default_vga_palette(&executable)
             .context("decoding original default palette")?;
+        let descript_bytes = std::fs::read(paths.descript())
+            .with_context(|| format!("reading {}", paths.descript().display()))?;
+        let descript_database = DescriptDatabase::parse(&descript_bytes).map_err(|error| {
+            anyhow::anyhow!("decoding {}: {error:?}", paths.descript().display())
+        })?;
 
         let archive_bytes = std::fs::read(paths.archive())
             .with_context(|| format!("reading {}", paths.archive().display()))?
@@ -232,6 +253,7 @@ impl OriginalGameData {
             resource_catalog,
             script_profile_catalog,
             writable_resource_catalog,
+            descript_database,
             default_vga_palette,
             archive_entry_count,
         })
@@ -265,6 +287,11 @@ impl OriginalGameData {
     /// Startup resources copied to the writable data root when absent.
     pub const fn writable_resource_catalog(&self) -> &StartupWritableResourceCatalog {
         &self.writable_resource_catalog
+    }
+
+    /// Parsed authored scene, dialogue, subtitle, and audio combinations.
+    pub const fn descript_database(&self) -> &DescriptDatabase {
+        &self.descript_database
     }
 
     /// Default 256-color palette retaining the native six-bit VGA DAC components.
@@ -366,6 +393,8 @@ pub fn discover_writable_data_root(explicit_root: Option<&Path>) -> Result<PathB
 mod tests {
     use super::*;
 
+    const ORIGINAL_DESCRIPT_RECORD_COUNT: usize = 145;
+
     #[test]
     fn discovers_and_bootstraps_the_complete_original_data_set() {
         let Ok(paths) = OriginalGameDataPaths::discover(None) else {
@@ -382,6 +411,11 @@ mod tests {
             crate::native::bloodprg::STARTUP_WRITABLE_RESOURCE_COUNT
         );
         assert!(data.archive_entry_count() > crate::native::bloodprg::ORIGINAL_RESOURCE_COUNT);
+        assert_eq!(
+            data.descript_database().records().len(),
+            ORIGINAL_DESCRIPT_RECORD_COUNT
+        );
+        assert!(data.descript_database().lookup(b"Scruter_Jo").is_some());
         assert_eq!(
             data.validate_script_profiles().unwrap().len(),
             ORIGINAL_SCRIPT_PROFILE_COUNT

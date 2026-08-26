@@ -587,8 +587,8 @@ pub use script_control::{
 };
 pub use script_dispatch::{
     ScriptDispatchError, ScriptDispatchHost, ScriptDispatchState, ScriptPostScanContext,
-    execute_loaded_script_frame, frame_execution_was_disabled, pending_profile_request,
-    selected_concept,
+    ScriptPreFrameContext, execute_loaded_script_frame, frame_execution_was_disabled,
+    pending_profile_request, selected_concept,
 };
 pub use script_frame::{
     ScriptFrameEnd, ScriptFrameError, ScriptFrameFlow, ScriptFrameHost, ScriptFrameOutcome,

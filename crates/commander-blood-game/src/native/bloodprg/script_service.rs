@@ -3,19 +3,20 @@
 use std::fmt;
 
 use commander_blood_formats::code::ScriptCodeOffset;
-use commander_blood_formats::script::{ScriptObjectId, ScriptState};
+use commander_blood_formats::script::ScriptObjectId;
 
 use super::{
-    ScriptAboardRecordContext, ScriptActionContext, ScriptActionError, ScriptActionHost,
-    ScriptActionState, ScriptBasDispatchError, ScriptBasDispatchHost, ScriptBasDispatchState,
-    ScriptClock, ScriptControlFlowError, ScriptDialogueControlDispatchContext,
-    ScriptDialogueExecutionContext, ScriptDispatchHost, ScriptDispatchState,
-    ScriptEnvironmentActivity, ScriptPostScanContext, ScriptPresentationEntity,
-    ScriptPresentationScanContext, ScriptPresentationScanError, ScriptPresentationScanHost,
-    ScriptPresentationScanOutcome, ScriptPresentationScanState, ScriptRecordActionDispatchContext,
-    ScriptRecordStateNavigationContext, ScriptRuntime, ScriptTransferContext,
-    SequenceRequestContext, dispatch_script_action, execute_script_dialogue_control,
-    scan_script_presentations,
+    ActorPositionStateContext, ActorPositionStateError, ScriptAboardRecordContext,
+    ScriptActionContext, ScriptActionError, ScriptActionHost, ScriptActionState,
+    ScriptBasDispatchError, ScriptBasDispatchHost, ScriptBasDispatchState, ScriptClock,
+    ScriptControlFlowError, ScriptDialogueControlDispatchContext, ScriptDialogueExecutionContext,
+    ScriptDispatchHost, ScriptDispatchState, ScriptEnvironmentActivity, ScriptPostScanContext,
+    ScriptPreFrameContext, ScriptPresentationEntity, ScriptPresentationScanContext,
+    ScriptPresentationScanError, ScriptPresentationScanHost, ScriptPresentationScanOutcome,
+    ScriptPresentationScanState, ScriptRecordActionDispatchContext,
+    ScriptRecordStateNavigationContext, ScriptTransferContext, SequenceRequestContext,
+    dispatch_script_action, execute_script_dialogue_control, scan_script_presentations,
+    update_actor_position_states,
 };
 
 /// Runtime facts and external effects required by translated BloodScript logic.
@@ -26,14 +27,6 @@ use super::{
 pub trait ScriptExecutionBackend {
     /// Backend failure propagated without erasing its concrete type.
     type Error;
-
-    /// Apply the recovered pre-frame object-state processor.
-    fn prepare_script_state(
-        &mut self,
-        state: &mut ScriptState,
-        runtime: &mut ScriptRuntime,
-        dispatch: &mut ScriptDispatchState,
-    ) -> Result<(), Self::Error>;
 
     /// Return current bridge, travel, and contact activity.
     fn environment_activity(&self) -> ScriptEnvironmentActivity;
@@ -66,6 +59,7 @@ pub trait ScriptExecutionBackend {
     fn lookup_presentation_description(
         &mut self,
         related: ScriptObjectId,
+        name: &[u8],
     ) -> Result<(), Self::Error>;
 
     /// Restart the name-area visual after new assets are staged.
@@ -78,7 +72,11 @@ pub trait ScriptExecutionBackend {
     ) -> Result<(), Self::Error>;
 
     /// Return whether an object has a descriptor record.
-    fn description_available(&mut self, object: ScriptObjectId) -> Result<bool, Self::Error>;
+    fn description_available(
+        &mut self,
+        object: ScriptObjectId,
+        name: &[u8],
+    ) -> Result<bool, Self::Error>;
 
     /// Restart navigation music after a descriptor-backed target change.
     fn restart_navigation_music(&mut self) -> Result<(), Self::Error>;
@@ -103,6 +101,11 @@ pub enum ScriptPresentationCallbackError<BackendError> {
     Dialogue(ScriptControlFlowError<ScriptBasDispatchError<BackendError>>),
     /// C1 through C8 post-frame action execution failed.
     Action(ScriptActionError<BackendError>),
+    /// A profile object had no corresponding active DEB directory entry.
+    MissingObjectName {
+        /// Object missing its authored name.
+        object: ScriptObjectId,
+    },
     /// Descriptor, renderer, audio, camera, or nested-script work failed.
     Backend(BackendError),
 }
@@ -122,6 +125,10 @@ pub enum ScriptExecutionServiceError<BackendError> {
     MissingPlayerBinding,
     /// A shipped profile did not bind its required `arche` object.
     MissingArchetypeBinding,
+    /// A shipped profile did not bind its required `orxx` world object.
+    MissingWorldBinding,
+    /// Recovered actor-position normalization found invalid profile state.
+    ActorPosition(ActorPositionStateError),
     /// The post-frame presentation and action scan failed.
     Presentation(ScriptPresentationScanError<ScriptPresentationCallbackError<BackendError>>),
     /// A pre-frame or COD-time backend operation failed.
@@ -217,13 +224,29 @@ impl<Backend: ScriptExecutionBackend> ScriptDispatchHost for ScriptExecutionServ
 
     fn prepare_script_state(
         &mut self,
-        state: &mut ScriptState,
-        runtime: &mut ScriptRuntime,
-        dispatch: &mut ScriptDispatchState,
+        context: ScriptPreFrameContext<'_>,
     ) -> Result<(), Self::Error> {
-        self.backend
-            .prepare_script_state(state, runtime, dispatch)
-            .map_err(ScriptExecutionServiceError::Backend)
+        let world = context
+            .builtins
+            .world
+            .ok_or(ScriptExecutionServiceError::MissingWorldBinding)?;
+        let arche = context
+            .builtins
+            .archetype
+            .ok_or(ScriptExecutionServiceError::MissingArchetypeBinding)?;
+        update_actor_position_states(
+            context.state,
+            ActorPositionStateContext {
+                request_flags: context.dispatch.text_presentation.request_flags,
+                text_display_active: context.dispatch.text_presentation.subtitle_display_active,
+                honk: context.builtins.horn,
+                post_update: self.action.post_update_object,
+                world,
+                arche,
+            },
+        )
+        .map_err(ScriptExecutionServiceError::ActorPosition)?;
+        Ok(())
     }
 
     fn environment_activity(&self) -> ScriptEnvironmentActivity {
@@ -339,6 +362,7 @@ impl<Backend: ScriptExecutionBackend> ScriptPresentationScanHost<super::ScriptPr
     ) -> Result<(), Self::Error> {
         let mut host = ExternalHost {
             backend: self.backend,
+            directory: self.directory,
         };
         execute_script_dialogue_control(
             ScriptDialogueExecutionContext {
@@ -366,8 +390,13 @@ impl<Backend: ScriptExecutionBackend> ScriptPresentationScanHost<super::ScriptPr
         &mut self,
         related: ScriptObjectId,
     ) -> Result<(), Self::Error> {
+        let name = self
+            .directory
+            .object(related)
+            .map(commander_blood_formats::script::ScriptDirectoryEntry::name)
+            .ok_or(ScriptPresentationCallbackError::MissingObjectName { object: related })?;
         self.backend
-            .lookup_presentation_description(related)
+            .lookup_presentation_description(related, name)
             .map_err(ScriptPresentationCallbackError::Backend)
     }
 
@@ -399,6 +428,7 @@ impl<Backend: ScriptExecutionBackend> ScriptPresentationScanHost<super::ScriptPr
         let aboard_objects = context.records.record_runtime.aboard_objects_mut();
         let mut host = ExternalHost {
             backend: self.backend,
+            directory: self.directory,
         };
         dispatch_script_action(
             ScriptActionContext {
@@ -422,6 +452,7 @@ impl<Backend: ScriptExecutionBackend> ScriptPresentationScanHost<super::ScriptPr
 
 struct ExternalHost<'a, Backend> {
     backend: &'a mut Backend,
+    directory: &'a commander_blood_formats::script::ScriptDirectory,
 }
 
 impl<Backend: ScriptExecutionBackend> ScriptBasDispatchHost for ExternalHost<'_, Backend> {
@@ -443,7 +474,12 @@ impl<Backend: ScriptExecutionBackend> ScriptActionHost for ExternalHost<'_, Back
     type Error = Backend::Error;
 
     fn description_available(&mut self, object: ScriptObjectId) -> Result<bool, Self::Error> {
-        self.backend.description_available(object)
+        let name = self
+            .directory
+            .object(object)
+            .map(commander_blood_formats::script::ScriptDirectoryEntry::name)
+            .expect("action dispatch validates every referenced profile object");
+        self.backend.description_available(object, name)
     }
 
     fn restart_navigation_music(&mut self) -> Result<(), Self::Error> {
@@ -483,7 +519,6 @@ mod tests {
 
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     enum BackendEvent {
-        Prepared,
         DescriptionLookup(ScriptObjectId),
         NameAreaRestart,
         EntityTransition(ScriptPresentationEntity),
@@ -502,16 +537,6 @@ mod tests {
 
     impl ScriptExecutionBackend for RecordingBackend {
         type Error = Infallible;
-
-        fn prepare_script_state(
-            &mut self,
-            _state: &mut ScriptState,
-            _runtime: &mut ScriptRuntime,
-            _dispatch: &mut ScriptDispatchState,
-        ) -> Result<(), Self::Error> {
-            self.events.push(BackendEvent::Prepared);
-            Ok(())
-        }
 
         fn environment_activity(&self) -> ScriptEnvironmentActivity {
             ScriptEnvironmentActivity {
@@ -573,6 +598,7 @@ mod tests {
         fn lookup_presentation_description(
             &mut self,
             related: ScriptObjectId,
+            _name: &[u8],
         ) -> Result<(), Self::Error> {
             self.events.push(BackendEvent::DescriptionLookup(related));
             Ok(())
@@ -591,7 +617,11 @@ mod tests {
             Ok(())
         }
 
-        fn description_available(&mut self, object: ScriptObjectId) -> Result<bool, Self::Error> {
+        fn description_available(
+            &mut self,
+            object: ScriptObjectId,
+            _name: &[u8],
+        ) -> Result<bool, Self::Error> {
             self.events.push(BackendEvent::DescriptionProbe(object));
             Ok(true)
         }
@@ -672,10 +702,6 @@ mod tests {
                     .expect("completed post-frame scan")
                     .processed_objects,
                 object_count
-            );
-            assert_eq!(
-                service.backend().events.first(),
-                Some(&BackendEvent::Prepared)
             );
             profile.synchronized_state().unwrap();
         }

@@ -100,6 +100,18 @@ pub struct ScriptPostScanContext<'a> {
     pub builtins: ScriptProfileBuiltins,
 }
 
+/// Complete flat profile state exposed to the recovered pre-frame processor.
+pub struct ScriptPreFrameContext<'a> {
+    /// Active VAR image.
+    pub state: &'a mut ScriptState,
+    /// Shared COD control-flow state.
+    pub runtime: &'a mut ScriptRuntime,
+    /// Shared presentation and action-dispatch state.
+    pub dispatch: &'a mut ScriptDispatchState,
+    /// Native specially named object bindings.
+    pub builtins: ScriptProfileBuiltins,
+}
+
 /// Platform and presentation facts required by otherwise fully translated COD handlers.
 pub trait ScriptDispatchHost {
     /// Host callback failure.
@@ -108,9 +120,7 @@ pub trait ScriptDispatchHost {
     /// Apply the recovered pre-frame object-state processor and refresh activity flags.
     fn prepare_script_state(
         &mut self,
-        state: &mut ScriptState,
-        runtime: &mut ScriptRuntime,
-        dispatch: &mut ScriptDispatchState,
+        context: ScriptPreFrameContext<'_>,
     ) -> Result<(), Self::Error>;
 
     /// Return current bridge, travel, and contact activity for CE-D1.
@@ -239,7 +249,12 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
 
     fn prepare_script_state(&mut self, runtime: &mut ScriptRuntime) -> Result<(), Self::Error> {
         self.host
-            .prepare_script_state(self.state, runtime, self.dispatch)
+            .prepare_script_state(ScriptPreFrameContext {
+                state: self.state,
+                runtime,
+                dispatch: self.dispatch,
+                builtins: self.builtins,
+            })
             .map_err(ScriptDispatchError::Host)?;
         self.records
             .refresh_from_var(
@@ -614,9 +629,7 @@ mod tests {
 
         fn prepare_script_state(
             &mut self,
-            _state: &mut ScriptState,
-            _runtime: &mut ScriptRuntime,
-            _dispatch: &mut ScriptDispatchState,
+            _context: ScriptPreFrameContext<'_>,
         ) -> Result<(), Self::Error> {
             Ok(())
         }
