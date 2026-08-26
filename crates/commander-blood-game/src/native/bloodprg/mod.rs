@@ -65,7 +65,8 @@ mod text_scan;
 mod vm;
 
 pub use aboard::{
-    insert_aboard_object, remove_aboard_object, AboardObjectRoster, ABOARD_OBJECT_CAPACITY,
+    insert_aboard_object, rebuild_aboard_roster, remove_aboard_object, AboardObjectRoster,
+    AboardRosterError, ABOARD_OBJECT_CAPACITY,
 };
 pub use actor_slots::{
     NAV_ACTOR_SLOT_COUNT, NavActorBusyState, NavActorHandler, NavActorMouseState,
