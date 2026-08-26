@@ -107,7 +107,7 @@ pub fn stage_descript_caption(
 ) {
     presentation.subtitle_text = Box::from(command.text());
     presentation.subtitle_display_active = true;
-    presentation.subtitle_reveal_cursor = usize::MIN;
+    presentation.subtitle_reveal_cursor = None;
 }
 
 /// Video resources selected by one decoded DESCRIPT record.
@@ -833,7 +833,7 @@ mod tests {
             assert!(tail.is_empty(), "{}", vector.name);
 
             let mut presentation = TextPresentationState {
-                subtitle_reveal_cursor: usize::MAX,
+                subtitle_reveal_cursor: Some(usize::MAX),
                 ..TextPresentationState::default()
             };
             stage_descript_caption(&command, &mut presentation);
@@ -851,7 +851,8 @@ mod tests {
                 vector.name
             );
             assert_eq!(
-                presentation.subtitle_reveal_cursor, vector.reveal_timer_after,
+                presentation.subtitle_reveal_cursor,
+                (vector.reveal_timer_after != usize::MIN).then_some(vector.reveal_timer_after),
                 "{}",
                 vector.name
             );

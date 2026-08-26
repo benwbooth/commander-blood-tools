@@ -125,8 +125,8 @@ pub struct TextPresentationState {
     pub dialogue_chatter_seed_pending: bool,
     /// Seeded dialogue chatter is currently eligible for playback.
     pub dialogue_chatter_active: bool,
-    /// Number of subtitle bytes already exposed by the reveal animation.
-    pub subtitle_reveal_cursor: usize,
+    /// Number of subtitle bytes already exposed, or `None` before initialization.
+    pub subtitle_reveal_cursor: Option<usize>,
     /// The main presentation loop has not yet consumed the new menu.
     pub menu_pending: bool,
     /// Number of leading menu words before the first section separator.
@@ -158,7 +158,7 @@ impl Default for TextPresentationState {
             subtitle_voice_trigger: false,
             dialogue_chatter_seed_pending: false,
             dialogue_chatter_active: false,
-            subtitle_reveal_cursor: usize::MIN,
+            subtitle_reveal_cursor: None,
             menu_pending: false,
             menu_word_count: usize::MIN,
             menu_reveal_count: usize::MIN,
@@ -307,7 +307,7 @@ pub fn handle_text_instruction(
         presentation.menu_deferred = false;
         presentation.subtitle_word_list_mode = false;
         presentation.subtitle_display_active = true;
-        presentation.subtitle_reveal_cursor = usize::MIN;
+        presentation.subtitle_reveal_cursor = None;
         presentation.yield_signal = presentation
             .yield_signal
             .wrapping_add(TEXT_YIELD_SIGNAL_INCREMENT);
@@ -531,7 +531,7 @@ mod tests {
                 hold_ready: true,
                 request_flags: PresentationRequestFlags::decode(INITIAL_REQUEST_FLAGS),
                 yield_signal: INITIAL_YIELD_SIGNAL,
-                subtitle_reveal_cursor: INITIAL_REVEAL_CURSOR,
+                subtitle_reveal_cursor: Some(INITIAL_REVEAL_CURSOR),
                 menu_pending: true,
                 ..TextPresentationState::default()
             };
@@ -621,7 +621,7 @@ mod tests {
                 assert!(presentation.subtitle_display_active);
                 assert!(!presentation.menu_deferred);
                 assert!(presentation.subtitle_voice_trigger);
-                assert_eq!(presentation.subtitle_reveal_cursor, usize::MIN);
+                assert_eq!(presentation.subtitle_reveal_cursor, None);
                 assert_eq!(presentation.subtitle_text.as_ref(), expected);
                 assert!(presentation.menu_words.is_empty());
             } else if accepted {
@@ -643,7 +643,8 @@ mod tests {
                 assert!(presentation.subtitle_text.is_empty(), "{}", vector.name);
                 assert!(presentation.menu_words.is_empty(), "{}", vector.name);
                 assert_eq!(
-                    presentation.subtitle_reveal_cursor, INITIAL_REVEAL_CURSOR,
+                    presentation.subtitle_reveal_cursor,
+                    Some(INITIAL_REVEAL_CURSOR),
                     "{}",
                     vector.name
                 );

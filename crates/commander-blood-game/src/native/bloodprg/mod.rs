@@ -73,6 +73,7 @@ mod ship_hud_coordinator;
 mod sprite_geometry;
 mod startup;
 mod state;
+mod subtitle_reveal;
 mod text;
 mod text_handler;
 mod text_scan;
@@ -370,6 +371,11 @@ pub use sequence::{
 pub use sequence_subtitles::{
     CenteredSequenceSubtitleLine, SequenceSubtitleOutcome, SequenceSubtitlePlayback,
     SequenceSubtitleRenderer, present_sequence_subtitle,
+};
+pub use subtitle_reveal::{
+    SubtitleFrameDraw, SubtitleFramePrimitive, SubtitleFramePrimitiveKind, SubtitleRevealError,
+    SubtitleRevealGate, SubtitleRevealLine, SubtitleRevealOutcome, SubtitleRevealPhase,
+    SubtitleRevealRenderer, SubtitleRevealState, update_subtitle_reveal,
 };
 pub use ship_projection::{
     FULL_SHIP_PROJECTION_CLIP, SHIP_OBJECT_ANCHOR_COUNT, SHIP_POINT_CLOUD_COUNT,
