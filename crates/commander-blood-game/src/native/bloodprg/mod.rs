@@ -93,6 +93,7 @@ mod ship_target;
 mod ship_view;
 mod ship_hud;
 mod ship_hud_coordinator;
+mod sprite_blitter;
 mod sprite_geometry;
 mod startup;
 mod startup_cleanup;
@@ -559,6 +560,10 @@ pub use ship_navigation::{
 pub use ship_presentation::{
     ShipPresentationHost, ShipPresentationOutcome, ShipPresentationState,
     update_ship_presentation,
+};
+pub use sprite_blitter::{
+    BridgeSpriteBlitError, BridgeSpriteBlitOutcome, BridgeSpriteRemapSelection,
+    BridgeSpriteRemapTables, blit_raw_opaque_sprite, blit_raw_transparent_sprite,
 };
 pub use sprite_geometry::{
     BRIDGE_SPRITE_ENTITY_COUNT, BridgeSpriteActivationError, BridgeSpriteBlitterMode,
