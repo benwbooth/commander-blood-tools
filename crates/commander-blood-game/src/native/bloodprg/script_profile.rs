@@ -18,6 +18,9 @@ use commander_blood_formats::script::{
 
 use crate::assets::OriginalResourceStore;
 
+use super::script_frame::{
+    DecodedScriptFrameHost, ScriptFrameError, ScriptFrameOutcome, execute_decoded_script_frame,
+};
 use super::{
     OriginalResourceCache, OriginalResourceCatalog, ResourceCacheError, ResourceId,
     ResourceLoadStatus, ScriptProcedureStateError, ScriptProcedureStates, ScriptRuntime,
@@ -227,6 +230,32 @@ pub struct LoadedScriptProfile {
     sequence_slots: ScriptSequenceSlots,
 }
 
+/// Disjoint flat borrows needed to execute one loaded BloodScript profile.
+pub struct LoadedScriptExecutionParts<'a> {
+    /// Losslessly framed COD image used for source-position traversal.
+    pub code: &'a ScriptCode,
+    /// Pre-bound semantic instruction parallel to each framed COD token.
+    pub instructions: &'a [DecodedScriptInstruction],
+    /// Decoded BAS dialogue and menu program.
+    pub dialogue: &'a ScriptBas,
+    /// Mutable VAR object and trailing state.
+    pub state: &'a mut ScriptState,
+    /// Interned DIC words referenced by COD and BAS instructions.
+    pub dictionary: &'a ScriptDictionary,
+    /// DEB object, procedure, and label bindings.
+    pub directory: &'a ScriptDirectory,
+    /// Native specially named object bindings.
+    pub builtins: ScriptProfileBuiltins,
+    /// Mutable procedure enable-state table.
+    pub procedures: &'a mut ScriptProcedureStates,
+    /// Main COD control-flow and timer state.
+    pub runtime: &'a mut ScriptRuntime,
+    /// BAS selector branches and concept history.
+    pub selector_state: &'a mut ScriptSelectorState,
+    /// Persistent DESCRIPT sequence-name bindings.
+    pub sequence_slots: &'a mut ScriptSequenceSlots,
+}
+
 impl LoadedScriptProfile {
     /// Return this profile's zero-based identity.
     pub const fn id(&self) -> ScriptProfileId {
@@ -329,6 +358,38 @@ impl LoadedScriptProfile {
     /// Mutably borrow the profile's sequence-name bindings for CC assignments.
     pub fn sequence_slots_mut(&mut self) -> &mut ScriptSequenceSlots {
         &mut self.sequence_slots
+    }
+
+    /// Borrow every independently owned profile component needed by one VM frame.
+    pub fn execution_parts(&mut self) -> LoadedScriptExecutionParts<'_> {
+        LoadedScriptExecutionParts {
+            code: &self.code,
+            instructions: &self.instructions,
+            dialogue: &self.dialogue,
+            state: &mut self.state,
+            dictionary: &self.dictionary,
+            directory: &self.directory,
+            builtins: self.builtins,
+            procedures: &mut self.procedures,
+            runtime: &mut self.runtime,
+            selector_state: &mut self.selector_state,
+            sequence_slots: &mut self.sequence_slots,
+        }
+    }
+
+    /// Execute one frame through the retained semantic COD stream.
+    pub fn execute_frame<Host: DecodedScriptFrameHost>(
+        &mut self,
+        execution_enabled: bool,
+        host: &mut Host,
+    ) -> Result<ScriptFrameOutcome, ScriptFrameError<Host::Error>> {
+        execute_decoded_script_frame(
+            &self.code,
+            &self.instructions,
+            execution_enabled,
+            &mut self.runtime,
+            host,
+        )
     }
 }
 

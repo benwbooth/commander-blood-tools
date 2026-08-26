@@ -3,6 +3,7 @@
 use std::fmt;
 
 use commander_blood_formats::code::{ScriptCode, ScriptCodeOffset, ScriptToken};
+use commander_blood_formats::instruction::DecodedScriptInstruction;
 
 use super::ScriptRuntime;
 
@@ -74,6 +75,29 @@ pub trait ScriptFrameHost {
     fn scan_presentation(&mut self, runtime: &mut ScriptRuntime) -> Result<(), Self::Error>;
 }
 
+/// Semantic operations surrounding traversal of a pre-decoded COD program.
+pub trait DecodedScriptFrameHost {
+    /// Typed failure returned by state preparation, dispatch, or post-scans.
+    type Error;
+
+    /// Update transient object state before the first instruction executes.
+    fn prepare_script_state(&mut self, runtime: &mut ScriptRuntime) -> Result<(), Self::Error>;
+
+    /// Execute one pre-bound instruction and select its next source position.
+    fn execute_instruction(
+        &mut self,
+        token: &ScriptToken,
+        instruction: &DecodedScriptInstruction,
+        runtime: &mut ScriptRuntime,
+    ) -> Result<ScriptFrameStep, Self::Error>;
+
+    /// Commit any concept selected during this frame after traversal stops.
+    fn commit_selected_concept(&mut self, runtime: &mut ScriptRuntime) -> Result<(), Self::Error>;
+
+    /// Scan presentation records after selected-concept processing.
+    fn scan_presentation(&mut self, runtime: &mut ScriptRuntime) -> Result<(), Self::Error>;
+}
+
 /// Reason one script frame completed without an execution error.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ScriptFrameEnd {
@@ -103,6 +127,18 @@ pub struct ScriptFrameOutcome {
 /// Invalid typed traversal state or translated host failure.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ScriptFrameError<HostError> {
+    /// The retained semantic stream is not parallel to the framed COD tokens.
+    InstructionCountMismatch {
+        /// Number of losslessly framed tokens.
+        token_count: usize,
+        /// Number of retained semantic instructions.
+        instruction_count: usize,
+    },
+    /// A framed source position has no corresponding retained instruction.
+    MissingDecodedInstruction {
+        /// Source position lacking semantic state.
+        source_offset: ScriptCodeOffset,
+    },
     /// Selector-active execution lacks its saved restart position.
     MissingResumeCursor,
     /// Presentation requested a saved cursor before any loop target existed.
@@ -141,6 +177,168 @@ pub fn execute_script_frame<Host: ScriptFrameHost>(
     runtime: &mut ScriptRuntime,
     host: &mut Host,
 ) -> Result<ScriptFrameOutcome, ScriptFrameError<Host::Error>> {
+    execute_script_frame_inner(code, execution_enabled, runtime, &mut RawFrameHost(host))
+}
+
+/// Execute one COD pass using the typed stream retained by a loaded profile.
+pub fn execute_decoded_script_frame<Host: DecodedScriptFrameHost>(
+    code: &ScriptCode,
+    instructions: &[DecodedScriptInstruction],
+    execution_enabled: bool,
+    runtime: &mut ScriptRuntime,
+    host: &mut Host,
+) -> Result<ScriptFrameOutcome, ScriptFrameError<Host::Error>> {
+    if code.tokens().len() != instructions.len() {
+        return Err(ScriptFrameError::InstructionCountMismatch {
+            token_count: code.tokens().len(),
+            instruction_count: instructions.len(),
+        });
+    }
+    execute_script_frame_inner(
+        code,
+        execution_enabled,
+        runtime,
+        &mut TypedFrameHost {
+            tokens: code.tokens(),
+            instructions,
+            host,
+        },
+    )
+}
+
+trait FrameHost {
+    type Error;
+
+    fn prepare_script_state(
+        &mut self,
+        runtime: &mut ScriptRuntime,
+    ) -> Result<(), ScriptFrameError<Self::Error>>;
+
+    fn execute_instruction(
+        &mut self,
+        token: &ScriptToken,
+        runtime: &mut ScriptRuntime,
+    ) -> Result<ScriptFrameStep, ScriptFrameError<Self::Error>>;
+
+    fn commit_selected_concept(
+        &mut self,
+        runtime: &mut ScriptRuntime,
+    ) -> Result<(), ScriptFrameError<Self::Error>>;
+
+    fn scan_presentation(
+        &mut self,
+        runtime: &mut ScriptRuntime,
+    ) -> Result<(), ScriptFrameError<Self::Error>>;
+}
+
+struct RawFrameHost<'a, Host>(&'a mut Host);
+
+impl<Host: ScriptFrameHost> FrameHost for RawFrameHost<'_, Host> {
+    type Error = Host::Error;
+
+    fn prepare_script_state(
+        &mut self,
+        runtime: &mut ScriptRuntime,
+    ) -> Result<(), ScriptFrameError<Self::Error>> {
+        self.0
+            .prepare_script_state(runtime)
+            .map_err(ScriptFrameError::Host)
+    }
+
+    fn execute_instruction(
+        &mut self,
+        token: &ScriptToken,
+        runtime: &mut ScriptRuntime,
+    ) -> Result<ScriptFrameStep, ScriptFrameError<Self::Error>> {
+        self.0
+            .execute_instruction(token, runtime)
+            .map_err(ScriptFrameError::Host)
+    }
+
+    fn commit_selected_concept(
+        &mut self,
+        runtime: &mut ScriptRuntime,
+    ) -> Result<(), ScriptFrameError<Self::Error>> {
+        self.0
+            .commit_selected_concept(runtime)
+            .map_err(ScriptFrameError::Host)
+    }
+
+    fn scan_presentation(
+        &mut self,
+        runtime: &mut ScriptRuntime,
+    ) -> Result<(), ScriptFrameError<Self::Error>> {
+        self.0
+            .scan_presentation(runtime)
+            .map_err(ScriptFrameError::Host)
+    }
+}
+
+struct TypedFrameHost<'a, Host> {
+    tokens: &'a [ScriptToken],
+    instructions: &'a [DecodedScriptInstruction],
+    host: &'a mut Host,
+}
+
+impl<Host: DecodedScriptFrameHost> FrameHost for TypedFrameHost<'_, Host> {
+    type Error = Host::Error;
+
+    fn prepare_script_state(
+        &mut self,
+        runtime: &mut ScriptRuntime,
+    ) -> Result<(), ScriptFrameError<Self::Error>> {
+        self.host
+            .prepare_script_state(runtime)
+            .map_err(ScriptFrameError::Host)
+    }
+
+    fn execute_instruction(
+        &mut self,
+        token: &ScriptToken,
+        runtime: &mut ScriptRuntime,
+    ) -> Result<ScriptFrameStep, ScriptFrameError<Self::Error>> {
+        let index = self
+            .tokens
+            .binary_search_by_key(&token.source_offset(), ScriptToken::source_offset)
+            .map_err(|_| ScriptFrameError::MissingDecodedInstruction {
+                source_offset: token.source_offset(),
+            })?;
+        let instruction =
+            self.instructions
+                .get(index)
+                .ok_or(ScriptFrameError::MissingDecodedInstruction {
+                    source_offset: token.source_offset(),
+                })?;
+        self.host
+            .execute_instruction(token, instruction, runtime)
+            .map_err(ScriptFrameError::Host)
+    }
+
+    fn commit_selected_concept(
+        &mut self,
+        runtime: &mut ScriptRuntime,
+    ) -> Result<(), ScriptFrameError<Self::Error>> {
+        self.host
+            .commit_selected_concept(runtime)
+            .map_err(ScriptFrameError::Host)
+    }
+
+    fn scan_presentation(
+        &mut self,
+        runtime: &mut ScriptRuntime,
+    ) -> Result<(), ScriptFrameError<Self::Error>> {
+        self.host
+            .scan_presentation(runtime)
+            .map_err(ScriptFrameError::Host)
+    }
+}
+
+fn execute_script_frame_inner<Host: FrameHost>(
+    code: &ScriptCode,
+    execution_enabled: bool,
+    runtime: &mut ScriptRuntime,
+    host: &mut Host,
+) -> Result<ScriptFrameOutcome, ScriptFrameError<Host::Error>> {
     if !execution_enabled {
         return Ok(ScriptFrameOutcome {
             end: ScriptFrameEnd::ExecutionDisabled,
@@ -151,8 +349,7 @@ pub fn execute_script_frame<Host: ScriptFrameHost>(
         });
     }
 
-    host.prepare_script_state(runtime)
-        .map_err(ScriptFrameError::Host)?;
+    host.prepare_script_state(runtime)?;
 
     let mut cursor = if runtime.selector_resume_active() {
         runtime
@@ -174,9 +371,7 @@ pub fn execute_script_frame<Host: ScriptFrameHost>(
         let token = token_at(code, cursor).ok_or(ScriptFrameError::MissingInstruction {
             source_offset: cursor,
         })?;
-        let step = host
-            .execute_instruction(token, runtime)
-            .map_err(ScriptFrameError::Host)?;
+        let step = host.execute_instruction(token, runtime)?;
         executed_instructions += 1;
         cursor = step.next_instruction;
 
@@ -223,10 +418,8 @@ pub fn execute_script_frame<Host: ScriptFrameHost>(
         }
     };
 
-    host.commit_selected_concept(runtime)
-        .map_err(ScriptFrameError::Host)?;
-    host.scan_presentation(runtime)
-        .map_err(ScriptFrameError::Host)?;
+    host.commit_selected_concept(runtime)?;
+    host.scan_presentation(runtime)?;
 
     Ok(ScriptFrameOutcome {
         end,
@@ -247,9 +440,14 @@ fn token_at(code: &ScriptCode, source_offset: ScriptCodeOffset) -> Option<&Scrip
 #[cfg(test)]
 mod tests {
     use std::collections::VecDeque;
+    use std::convert::Infallible;
     use std::path::{Path, PathBuf};
 
     use commander_blood_formats::code::decode_script_code;
+    use commander_blood_formats::instruction::decode_complete_script_instruction;
+    use commander_blood_formats::script::{
+        decode_script_dictionary, decode_script_directory, decode_script_state,
+    };
     use serde::Deserialize;
 
     use super::*;
@@ -351,6 +549,43 @@ mod tests {
 
         fn scan_presentation(&mut self, _runtime: &mut ScriptRuntime) -> Result<(), Self::Error> {
             self.events.push("presentation_scan");
+            Ok(())
+        }
+    }
+
+    #[derive(Default)]
+    struct RecordingDecodedHost {
+        opcodes: Vec<u8>,
+    }
+
+    impl DecodedScriptFrameHost for RecordingDecodedHost {
+        type Error = Infallible;
+
+        fn prepare_script_state(
+            &mut self,
+            _runtime: &mut ScriptRuntime,
+        ) -> Result<(), Self::Error> {
+            Ok(())
+        }
+
+        fn execute_instruction(
+            &mut self,
+            token: &ScriptToken,
+            _instruction: &DecodedScriptInstruction,
+            _runtime: &mut ScriptRuntime,
+        ) -> Result<ScriptFrameStep, Self::Error> {
+            self.opcodes.push(token.opcode().byte());
+            Ok(ScriptFrameStep::continue_at(token.end_offset()))
+        }
+
+        fn commit_selected_concept(
+            &mut self,
+            _runtime: &mut ScriptRuntime,
+        ) -> Result<(), Self::Error> {
+            Ok(())
+        }
+
+        fn scan_presentation(&mut self, _runtime: &mut ScriptRuntime) -> Result<(), Self::Error> {
             Ok(())
         }
     }
@@ -510,6 +745,68 @@ mod tests {
             assert_eq!(outcome.skipped_instructions, usize::MIN);
             assert_eq!(outcome.presentation_yields, usize::MIN);
         }
+    }
+
+    #[test]
+    fn every_shipped_cod_image_traverses_its_parallel_semantic_stream() {
+        for profile in 1..=ORIGINAL_PROFILE_COUNT {
+            let code = decode_script_code(
+                &std::fs::read(original_asset(&format!("SCRIPT{profile}.COD"))).unwrap(),
+            )
+            .unwrap();
+            let directory = decode_script_directory(
+                &std::fs::read(original_asset(&format!("SCRIPT{profile}.DEB"))).unwrap(),
+            )
+            .unwrap();
+            let dictionary = decode_script_dictionary(
+                &std::fs::read(original_asset(&format!("SCRIPT{profile}.DIC"))).unwrap(),
+            )
+            .unwrap();
+            let state = decode_script_state(
+                &std::fs::read(original_asset(&format!("SCRIPT{profile}.VAR"))).unwrap(),
+                &directory,
+            )
+            .unwrap();
+            let instructions = code
+                .tokens()
+                .iter()
+                .map(|token| {
+                    decode_complete_script_instruction(token, &state, &directory, &dictionary)
+                })
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap();
+            let mut runtime = ScriptRuntime::new();
+            let mut host = RecordingDecodedHost::default();
+            let outcome =
+                execute_decoded_script_frame(&code, &instructions, true, &mut runtime, &mut host)
+                    .unwrap();
+
+            assert_eq!(outcome.end, ScriptFrameEnd::EndMarker);
+            assert_eq!(outcome.executed_instructions, instructions.len());
+            assert_eq!(
+                host.opcodes,
+                code.tokens()
+                    .iter()
+                    .map(|token| token.opcode().byte())
+                    .collect::<Vec<_>>()
+            );
+        }
+    }
+
+    #[test]
+    fn typed_frame_rejects_a_nonparallel_instruction_stream() {
+        let code = code_with_token_count(1);
+        let mut runtime = ScriptRuntime::new();
+        let mut host = RecordingDecodedHost::default();
+
+        assert_eq!(
+            execute_decoded_script_frame(&code, &[], true, &mut runtime, &mut host),
+            Err(ScriptFrameError::InstructionCountMismatch {
+                token_count: 1,
+                instruction_count: 0,
+            })
+        );
+        assert!(host.opcodes.is_empty());
     }
 
     #[test]
