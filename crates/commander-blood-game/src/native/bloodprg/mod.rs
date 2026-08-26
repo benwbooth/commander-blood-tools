@@ -32,6 +32,7 @@ mod descript;
 mod descript_lookup;
 mod diagnostics;
 mod framebuffer_copy;
+mod frame_transition;
 mod input_dispatch;
 mod input_cancel;
 mod input_selection;
@@ -46,6 +47,7 @@ mod navigation_status;
 mod navigation_wipe;
 mod numbers;
 mod palette_pipeline;
+mod palette_update;
 mod pbm_image;
 mod presentation;
 mod presentation_hover;
@@ -83,6 +85,7 @@ mod ship_hud;
 mod ship_hud_coordinator;
 mod sprite_geometry;
 mod startup;
+mod startup_cleanup;
 mod state;
 mod subtitle_reveal;
 mod text;
@@ -246,6 +249,10 @@ pub use framebuffer_copy::{
     FramebufferCopyError, FramebufferKind, LOGICAL_FRAMEBUFFER_HEIGHT,
     LOGICAL_FRAMEBUFFER_WIDTH, copy_work_surface_span,
 };
+pub use frame_transition::{
+    FramebufferTransitionError, FramebufferTransitionState, TransitionRect,
+    TransitionRenderRegion, advance_framebuffer_rect_transition,
+};
 pub use input_dispatch::{
     HostInputKey, IgnoredInputAction, InputAction, InputArrowKey, InputDispatchState,
     InputFunctionKey, dispatch_input_key, latch_input_text_byte, request_input_shutdown,
@@ -317,6 +324,10 @@ pub use palette_pipeline::{
     PalettePipelineError, PaletteRemapTable, SCENE_PALETTE_CLEAR_COLOR_COUNT,
     TINT_PALETTE_BANK_SIZE, build_banked_tint_table, build_palette_blend_remap_table,
     clear_scene_palette_entries, interpolate_palette_range,
+};
+pub use palette_update::{
+    PaletteInterpolationRequest, PaletteTransitionState, PaletteUploadState,
+    advance_palette_transition, take_palette_upload_request,
 };
 pub use pbm_image::{
     PBM_SCENE_PALETTE_COLOR_COUNT, PbmDecodeError, PbmDecodeOptions, PbmDecodeResult, PbmMarker,
@@ -490,6 +501,9 @@ pub use sprite_geometry::{
 pub use startup::{
     apply_startup_option, tokenize_startup_command, StartupAudioConfiguration, StartupAudioDriver,
     StartupConfiguration,
+};
+pub use startup_cleanup::{
+    STARTUP_TRANSIENT_PATH_COUNT, StartupTransientFileHost, delete_startup_transient_files,
 };
 pub use state::{
     apply_bit_flag_operation, apply_shared_bit_operation, apply_shared_state_operation,
