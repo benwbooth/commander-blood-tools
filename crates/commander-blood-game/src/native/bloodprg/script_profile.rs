@@ -4,8 +4,13 @@ use std::error::Error;
 use std::fmt;
 
 use commander_blood_formats::bas::{ScriptBas, ScriptBasError, decode_script_bas};
-use commander_blood_formats::code::{ScriptCode, ScriptCodeError, decode_script_code};
-use commander_blood_formats::instruction::{ScriptInstructionError, decode_script_procedure_gate};
+use commander_blood_formats::code::{
+    ScriptCode, ScriptCodeError, ScriptCodeOffset, ScriptToken, decode_script_code,
+};
+use commander_blood_formats::instruction::{
+    DecodedScriptInstruction, ScriptInstructionError, decode_complete_script_instruction,
+    decode_script_procedure_gate,
+};
 use commander_blood_formats::script::{
     ScriptDataError, ScriptDictionary, ScriptDirectory, ScriptObjectId, ScriptState,
     ScriptSymbolKind, decode_script_dictionary, decode_script_directory, decode_script_state,
@@ -210,6 +215,7 @@ pub struct LoadedScriptProfile {
     id: ScriptProfileId,
     resources: ScriptProfileResources,
     code: ScriptCode,
+    instructions: Box<[DecodedScriptInstruction]>,
     dialogue: ScriptBas,
     state: ScriptState,
     dictionary: ScriptDictionary,
@@ -235,6 +241,24 @@ impl LoadedScriptProfile {
     /// Borrow the decoded COD instruction image.
     pub const fn code(&self) -> &ScriptCode {
         &self.code
+    }
+
+    /// Borrow the typed COD instructions in the same order as the lossless tokens.
+    pub fn instructions(&self) -> &[DecodedScriptInstruction] {
+        &self.instructions
+    }
+
+    /// Resolve a source position to its pre-bound semantic instruction.
+    pub fn instruction_at(
+        &self,
+        source_offset: ScriptCodeOffset,
+    ) -> Option<&DecodedScriptInstruction> {
+        let index = self
+            .code
+            .tokens()
+            .binary_search_by_key(&source_offset, ScriptToken::source_offset)
+            .ok()?;
+        self.instructions.get(index)
     }
 
     /// Borrow the decoded BAS dialogue and menu image.
@@ -445,6 +469,8 @@ pub enum ScriptProfileError {
     Code(ScriptCodeError),
     /// A procedure entry could not be resolved against the decoded directory.
     ProcedureInstruction(ScriptInstructionError),
+    /// A COD token could not be bound to complete typed profile state.
+    Instruction(ScriptInstructionError),
     /// Procedure gates do not form one complete typed state table.
     ProcedureState(ScriptProcedureStateError),
     /// The BAS dialogue image failed typed decoding.
@@ -473,6 +499,7 @@ impl Error for ScriptProfileError {
             Self::Resource(source) => Some(source),
             Self::Code(source) => Some(source),
             Self::ProcedureInstruction(source) => Some(source),
+            Self::Instruction(source) => Some(source),
             Self::ProcedureState(source) => Some(source),
             Self::Dialogue(source) => Some(source),
             Self::Data { source, .. } => Some(source),
@@ -534,12 +561,19 @@ fn decode_loaded_profile(
         kind: ScriptProfileDataKind::State,
         source,
     })?;
+    let instructions = code
+        .tokens()
+        .iter()
+        .map(|token| decode_complete_script_instruction(token, &state, &directory, &dictionary))
+        .collect::<Result<Box<[_]>, _>>()
+        .map_err(ScriptProfileError::Instruction)?;
     let builtins = ScriptProfileBuiltins::bind(&directory);
 
     Ok(LoadedScriptProfile {
         id: profile,
         resources,
         code,
+        instructions,
         dialogue,
         state,
         dictionary,
@@ -664,6 +698,13 @@ mod tests {
                 loaded.code().encode(),
                 std::fs::read(root.join(format!("SCRIPT{file_number}.COD"))).unwrap()
             );
+            assert_eq!(loaded.instructions().len(), loaded.code().tokens().len());
+            for (token, instruction) in loaded.code().tokens().iter().zip(loaded.instructions()) {
+                assert_eq!(
+                    loaded.instruction_at(token.source_offset()),
+                    Some(instruction)
+                );
+            }
             assert_eq!(
                 loaded.dialogue().encode(),
                 std::fs::read(root.join(format!("SCRIPT{file_number}.BAS"))).unwrap()
