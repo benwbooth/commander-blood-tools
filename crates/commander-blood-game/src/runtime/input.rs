@@ -5,10 +5,10 @@ use std::collections::VecDeque;
 use sdl3::keyboard::Keycode;
 
 use crate::native::bloodprg::{
-    HostInputKey, InputAction, InputArrowKey, InputDispatchState, InputFunctionKey,
-    PointerButtonEdges, PointerButtonState, PointerButtons, PointerSample, PointerSampleState,
-    dispatch_input_key, latch_input_text_byte, request_input_shutdown, toggle_input_pause,
-    translate_input_key, update_pointer_button_edges, update_pointer_sample,
+    GameLifecycleState, HostInputKey, InputAction, InputArrowKey, InputDispatchState,
+    InputFunctionKey, PointerButtonEdges, PointerButtonState, PointerButtons, PointerSample,
+    PointerSampleState, dispatch_input_key, latch_input_text_byte, request_input_shutdown,
+    toggle_input_pause, translate_input_key, update_pointer_button_edges, update_pointer_sample,
 };
 
 const ORIGINAL_DISPLAY_ASPECT_WIDTH: f32 = 4.0;
@@ -17,6 +17,7 @@ const LOGICAL_SCREEN_WIDTH: f32 = 320.0;
 const LOGICAL_SCREEN_HEIGHT: f32 = 200.0;
 const CENTERING_DIVISOR: f32 = 2.0;
 const MINIMUM_OUTPUT_DIMENSION: f32 = 1.0;
+const POINTER_PRESS_LATCHED: u8 = 1;
 
 /// SDL-facing input state with typed keys and logical pointer coordinates.
 ///
@@ -91,6 +92,17 @@ impl RuntimeInputHost {
         action
     }
 
+    /// Dispatch one key and publish pause and shutdown latches to the main lifecycle.
+    pub fn dispatch_lifecycle_input(
+        &mut self,
+        state: &mut GameLifecycleState,
+    ) -> Option<InputAction> {
+        let action = self.dispatch_next(state.profile_change_blockers.save_active);
+        state.pause_hud_active = self.dispatch.paused;
+        state.exit_requested |= self.dispatch.shutdown_requested;
+        action
+    }
+
     /// Current translated key, pause, and shutdown latches.
     pub const fn dispatch_state(&self) -> &InputDispatchState {
         &self.dispatch
@@ -133,6 +145,21 @@ impl RuntimeInputHost {
     pub fn consume_pointer_presses(&mut self) -> PointerButtonEdges {
         let edges = self.pointer_buttons.edges;
         self.pointer_buttons.edges = PointerButtonEdges::default();
+        edges
+    }
+
+    /// Transfer newly detected pointer edges into the lifecycle's one-frame latches.
+    pub fn transfer_lifecycle_pointer_edges(
+        &mut self,
+        state: &mut GameLifecycleState,
+    ) -> PointerButtonEdges {
+        self.update_pointer_buttons();
+        let edges = self.consume_pointer_presses();
+        state.primary_pointer_pressed |= edges.primary_pressed;
+        state.secondary_pointer_pressed |= edges.secondary_pressed;
+        if edges.press_pending {
+            state.pointer_press_pending = POINTER_PRESS_LATCHED;
+        }
         edges
     }
 
@@ -252,6 +279,25 @@ mod tests {
     }
 
     #[test]
+    fn lifecycle_dispatch_receives_pause_and_shutdown_without_losing_the_action() {
+        let mut input = RuntimeInputHost::new(INITIAL_POSITION);
+        let mut lifecycle = GameLifecycleState::default();
+        assert_eq!(input.queue_text("P"), usize::from(true));
+
+        assert_eq!(
+            input.dispatch_lifecycle_input(&mut lifecycle),
+            Some(InputAction::TogglePause(b'P'))
+        );
+        assert!(lifecycle.pause_hud_active);
+        assert!(!lifecycle.exit_requested);
+
+        input.request_shutdown();
+        assert_eq!(input.dispatch_lifecycle_input(&mut lifecycle), None);
+        assert!(lifecycle.pause_hud_active);
+        assert!(lifecycle.exit_requested);
+    }
+
+    #[test]
     fn pointer_mapping_follows_the_letterboxed_original_surface() {
         assert_eq!(
             map_host_pointer_to_logical(WIDESCREEN_OUTPUT, WIDESCREEN_CENTER),
@@ -284,6 +330,45 @@ mod tests {
             input.consume_pointer_presses(),
             PointerButtonEdges::default()
         );
+    }
+
+    #[test]
+    fn lifecycle_pointer_transfer_owns_each_new_press_once() {
+        let mut input = RuntimeInputHost::new(INITIAL_POSITION);
+        let mut lifecycle = GameLifecycleState::default();
+        input.poll_pointer(
+            WIDESCREEN_OUTPUT,
+            WIDESCREEN_CENTER,
+            PointerButtons::from_bits(PointerButton::Primary as u16),
+        );
+
+        let primary = input.transfer_lifecycle_pointer_edges(&mut lifecycle);
+        assert!(primary.primary_pressed);
+        assert!(lifecycle.primary_pointer_pressed);
+        assert!(!lifecycle.secondary_pointer_pressed);
+        assert_eq!(lifecycle.pointer_press_pending, POINTER_PRESS_LATCHED);
+        assert_eq!(
+            input.consume_pointer_presses(),
+            PointerButtonEdges::default()
+        );
+
+        lifecycle.primary_pointer_pressed = false;
+        lifecycle.pointer_press_pending = u8::MIN;
+        input.poll_pointer(WIDESCREEN_OUTPUT, WIDESCREEN_CENTER, PointerButtons::NONE);
+        assert_eq!(
+            input.transfer_lifecycle_pointer_edges(&mut lifecycle),
+            PointerButtonEdges::default()
+        );
+        input.poll_pointer(
+            WIDESCREEN_OUTPUT,
+            WIDESCREEN_CENTER,
+            PointerButtons::from_bits(PointerButton::Secondary as u16),
+        );
+        let secondary = input.transfer_lifecycle_pointer_edges(&mut lifecycle);
+        assert!(secondary.secondary_pressed);
+        assert!(!lifecycle.primary_pointer_pressed);
+        assert!(lifecycle.secondary_pointer_pressed);
+        assert_eq!(lifecycle.pointer_press_pending, POINTER_PRESS_LATCHED);
     }
 
     #[test]

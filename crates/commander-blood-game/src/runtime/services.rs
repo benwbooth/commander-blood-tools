@@ -5,7 +5,8 @@ use commander_blood_formats::bloodprg::decode_bloodprg_bridge_resources;
 use sdl3::video::Window;
 
 use crate::native::bloodprg::{
-    BridgeScene, BridgeSceneFrame, BridgeSceneInput, PbmDecodeResult, ScriptClock,
+    BridgeScene, BridgeSceneFrame, BridgeSceneInput, GameLifecycleState, InputAction,
+    PbmDecodeResult, PointerButtonEdges, PointerButtons, PointerSample, ScriptClock,
     ScriptFrameOutcome, ScriptProfileId, ScriptProfileLoadOutcome, ShipProjectionResources,
     StartupPreparationOutcome,
 };
@@ -156,6 +157,32 @@ impl<'window> ModernGameServices<'window> {
         self.presentation
             .present_frame(&self.runtime, self.bridge_frame.as_ref())?;
         Ok(true)
+    }
+
+    /// Dispatch one queued SDL key and synchronize lifecycle pause and exit state.
+    pub fn dispatch_lifecycle_input(
+        &mut self,
+        state: &mut GameLifecycleState,
+    ) -> Option<InputAction> {
+        self.input.dispatch_lifecycle_input(state)
+    }
+
+    /// Sample one host pointer position into the original logical surface.
+    pub fn poll_lifecycle_pointer(
+        &mut self,
+        output_size: [f32; 2],
+        host_position: [f32; 2],
+        buttons: PointerButtons,
+    ) -> PointerSample {
+        self.input.poll_pointer(output_size, host_position, buttons)
+    }
+
+    /// Move newly detected SDL pointer edges into the lifecycle latches.
+    pub fn update_lifecycle_pointer_buttons(
+        &mut self,
+        state: &mut GameLifecycleState,
+    ) -> PointerButtonEdges {
+        self.input.transfer_lifecycle_pointer_edges(state)
     }
 
     /// Reconfigure the wgpu surface after a nonzero SDL pixel-size event.
