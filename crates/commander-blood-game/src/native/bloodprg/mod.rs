@@ -337,7 +337,8 @@ pub use presentation_word_choice::{
 };
 pub use pointer_buttons::{
     PointerButton, PointerButtonEdges, PointerButtonState, PointerButtons,
-    update_pointer_button_edges,
+    PointerLogicalRange, PointerSample, PointerSampleState, update_pointer_button_edges,
+    update_pointer_sample,
 };
 pub use presentation_scan::{
     ScriptActionDispatch, ScriptActionDisposition, ScriptDeferredRecord,

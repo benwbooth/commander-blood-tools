@@ -41,6 +41,66 @@ impl PointerButtons {
     }
 }
 
+/// Logical coordinate bounds requested by the native game.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PointerLogicalRange {
+    /// Inclusive horizontal minimum and maximum.
+    pub horizontal: [u16; 2],
+    /// Inclusive vertical minimum and maximum.
+    pub vertical: [u16; 2],
+}
+
+impl PointerLogicalRange {
+    /// Retain one authored pointer range without changing host-global state.
+    ///
+    /// This is the flat configuration replacement for `mouse_set_ranges` at
+    /// BLOODPRG routine offset `0x000D4A`. SDL samples are mapped into these
+    /// values by the owning scene instead of programming an INT 33h driver.
+    pub const fn new(min_x: u16, max_x: u16, min_y: u16, max_y: u16) -> Self {
+        Self {
+            horizontal: [min_x, max_x],
+            vertical: [min_y, max_y],
+        }
+    }
+}
+
+/// One atomic logical pointer sample from SDL.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct PointerSample {
+    /// Signed logical position preserving the native word interpretation.
+    pub position: [i16; 2],
+    /// Complete sampled button word.
+    pub buttons: PointerButtons,
+}
+
+/// Current and previous pointer state used for movement-idle detection.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct PointerSampleState {
+    /// Most recently published position and buttons.
+    pub current: PointerSample,
+    /// Position used by the next movement comparison.
+    pub previous_position: [i16; 2],
+}
+
+/// Publish one pointer sample and reset the idle counter only on movement.
+///
+/// This translates `poll_mouse` at BLOODPRG routine offset `0x000D0E`.
+/// SDL supplies one stable sample in place of INT 33h; signed coordinate casts,
+/// complete button bits, prior-position updates, and idle reset remain exact.
+pub fn update_pointer_sample(
+    state: &mut PointerSampleState,
+    sample: PointerSample,
+    motion_idle_counter: &mut u16,
+) -> bool {
+    state.current = sample;
+    let moved = state.previous_position != sample.position;
+    if moved {
+        state.previous_position = sample.position;
+        *motion_idle_counter = u16::MIN;
+    }
+    moved
+}
+
 /// Press latches retained until the owning interaction consumes them.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct PointerButtonEdges {
@@ -106,6 +166,8 @@ mod tests {
     const STABLE_SAMPLE_VECTOR_COUNT: usize = 13;
     const VOLATILE_PROBE_VECTOR_COUNT: usize = ORACLE_VECTOR_COUNT - STABLE_SAMPLE_VECTOR_COUNT;
     const NATIVE_LATCHED_VALUE: u8 = 1;
+    const POINTER_POLL_ORACLE_VECTOR_COUNT: usize = 5;
+    const POINTER_RANGE_ORACLE_VECTOR_COUNT: usize = 3;
 
     #[derive(Deserialize)]
     struct ButtonEdgeOracle {
@@ -118,6 +180,90 @@ mod tests {
         secondary_after: u8,
         pending_after: u8,
         result_ax: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct PointerPollOracle {
+        name: String,
+        driver: PointerPollDriver,
+        previous: PointerPollPrevious,
+        moved: bool,
+        stored_idle: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct PointerPollDriver {
+        x: u16,
+        y: u16,
+        buttons: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct PointerPollPrevious {
+        x: u16,
+        y: u16,
+        idle: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct PointerRangeOracle {
+        min_x: u16,
+        max_x: u16,
+        min_y: u16,
+        max_y: u16,
+    }
+
+    #[test]
+    fn pointer_samples_match_every_original_poll_vector() {
+        let vectors: Vec<PointerPollOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_0d0e_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), POINTER_POLL_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let mut state = PointerSampleState {
+                current: PointerSample::default(),
+                previous_position: [
+                    signed_word(vector.previous.x),
+                    signed_word(vector.previous.y),
+                ],
+            };
+            let sample = PointerSample {
+                position: [signed_word(vector.driver.x), signed_word(vector.driver.y)],
+                buttons: PointerButtons::from_bits(vector.driver.buttons),
+            };
+            let mut idle = vector.previous.idle;
+
+            assert_eq!(
+                update_pointer_sample(&mut state, sample, &mut idle),
+                vector.moved,
+                "{}",
+                vector.name
+            );
+            assert_eq!(state.current, sample, "{}", vector.name);
+            assert_eq!(state.previous_position, sample.position, "{}", vector.name);
+            assert_eq!(idle, vector.stored_idle, "{}", vector.name);
+        }
+    }
+
+    #[test]
+    fn logical_ranges_retain_every_original_driver_argument_vector() {
+        let vectors: Vec<PointerRangeOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_0d4a_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), POINTER_RANGE_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            assert_eq!(
+                PointerLogicalRange::new(vector.min_x, vector.max_x, vector.min_y, vector.max_y,),
+                PointerLogicalRange {
+                    horizontal: [vector.min_x, vector.max_x],
+                    vertical: [vector.min_y, vector.max_y],
+                }
+            );
+        }
     }
 
     #[test]
@@ -212,5 +358,9 @@ mod tests {
         .unwrap();
         assert_eq!(vectors.len(), ORACLE_VECTOR_COUNT);
         vectors
+    }
+
+    fn signed_word(value: u16) -> i16 {
+        i16::from_ne_bytes(value.to_ne_bytes())
     }
 }
