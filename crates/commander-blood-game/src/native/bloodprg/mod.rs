@@ -1,6 +1,7 @@
 //! Native BLOODPRG game logic translated to flat, typed Rust data.
 
 mod aboard;
+mod alien_cycle;
 mod actor_slots;
 mod bridge_input;
 mod bridge_page;
@@ -74,6 +75,11 @@ mod vm;
 pub use aboard::{
     insert_aboard_object, rebuild_aboard_roster, remove_aboard_object, AboardObjectRoster,
     AboardRosterError, ABOARD_OBJECT_CAPACITY,
+};
+pub use alien_cycle::{
+    AlienOverlayCycleHost, AlienOverlayCycleOutcome, AlienOverlayCycleState,
+    AlienOverlayGraphicsTail, AlienOverlaySharedState, AlienOverlaySoundBank,
+    AlienOverlayViewport, run_alien_overlay_cycle,
 };
 pub use actor_slots::{
     NAV_ACTOR_SLOT_COUNT, NavActorBusyState, NavActorHandler, NavActorMouseState,
