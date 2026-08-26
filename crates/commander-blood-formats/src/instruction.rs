@@ -51,6 +51,7 @@ const OPAQUE_MARKER_RECORD_OPCODE: u8 = 0xC8;
 const RECORD_CLEAR_OPCODE: u8 = 0xC9;
 const HOUR_GUARD_OPCODE: u8 = 0xCA;
 const DATE_GUARD_OPCODE: u8 = 0xCB;
+const SEQUENCE_SLOT_ASSIGNMENT_OPCODE: u8 = 0xCC;
 const TRANSFER_OPCODE: u8 = 0xCD;
 const BRIDGE_ACTIVITY_GUARD_OPCODE: u8 = 0xCE;
 const ALTERNATE_CONCEPT_CLEAR_OPCODE: u8 = 0xCF;
@@ -92,6 +93,7 @@ const OPAQUE_MARKER_RECORD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const RECORD_CLEAR_SIZE: usize = OPCODE_SIZE + WORD_SIZE;
 const HOUR_GUARD_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const DATE_GUARD_SIZE: usize = OPCODE_SIZE + BYTE_SIZE * 3 + WORD_SIZE;
+const MINIMUM_SEQUENCE_SLOT_ASSIGNMENT_SIZE: usize = OPCODE_SIZE + BYTE_SIZE + WORD_SIZE;
 const ENVIRONMENT_INSTRUCTION_SIZE: usize = OPCODE_SIZE;
 const PROFILE_REQUEST_SIZE: usize = OPCODE_SIZE + BYTE_SIZE;
 const BITS_PER_BYTE: u8 = u8::BITS as u8;
@@ -113,6 +115,10 @@ const TEXT_SKIP_COUNT_SHIFT: u32 = 12;
 const TEXT_SKIP_COUNT_MASK: u16 = 0x0007;
 const TEXT_WORD_SECTION_SEPARATOR: u16 = u16::MAX;
 const TEXT_WORD_TERMINATOR: u16 = u16::MIN;
+const FIRST_SEQUENCE_SLOT: u8 = 1;
+const SEQUENCE_SLOT_COUNT: u8 = 6;
+const LAST_SEQUENCE_SLOT: u8 = FIRST_SEQUENCE_SLOT + SEQUENCE_SLOT_COUNT - 1;
+const MAXIMUM_SEQUENCE_SLOT_NAME_LENGTH: usize = 15;
 
 /// Index in the 128-word transient countdown/state table saved with the game.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -255,6 +261,78 @@ pub struct ScriptTopicOffer {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ScriptSequenceRequest {
     basename: Box<[u8]>,
+}
+
+/// One of the six DESCRIPT sequence-name slots encoded as values one through six.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct ScriptSequenceSlot(u8);
+
+impl ScriptSequenceSlot {
+    /// Number of sequence names retained by the original presentation state.
+    pub const COUNT: usize = SEQUENCE_SLOT_COUNT as usize;
+
+    /// Decode the one-based slot number authored in BloodScript bytecode.
+    pub const fn decode(encoded: u8) -> Option<Self> {
+        if encoded >= FIRST_SEQUENCE_SLOT && encoded <= LAST_SEQUENCE_SLOT {
+            Some(Self(encoded - FIRST_SEQUENCE_SLOT))
+        } else {
+            None
+        }
+    }
+
+    /// Return this slot's zero-based index in an owned Rust collection.
+    pub const fn index(self) -> usize {
+        self.0 as usize
+    }
+
+    /// Return the one-based value serialized in BloodScript bytecode.
+    pub const fn encode(self) -> u8 {
+        self.0 + FIRST_SEQUENCE_SLOT
+    }
+}
+
+/// Owned DESCRIPT sequence-record name assigned to one presentation slot.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ScriptSequenceSlotName(Box<[u8]>);
+
+impl ScriptSequenceSlotName {
+    /// Longest name that fits in the original 16-byte field with its trailing NUL.
+    pub const MAXIMUM_BYTE_LENGTH: usize = MAXIMUM_SEQUENCE_SLOT_NAME_LENGTH;
+
+    /// Build a bounded name without retaining the original fixed-width field.
+    pub fn new(name: impl Into<Box<[u8]>>) -> Option<Self> {
+        let name = name.into();
+        (name.len() <= Self::MAXIMUM_BYTE_LENGTH && !name.contains(&u8::MIN)).then_some(Self(name))
+    }
+
+    /// Return the case-sensitive DESCRIPT directory name exactly as authored.
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+/// One CC assignment of a DESCRIPT sequence name to a presentation slot.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ScriptSequenceSlotAssignment {
+    slot: ScriptSequenceSlot,
+    name: ScriptSequenceSlotName,
+}
+
+impl ScriptSequenceSlotAssignment {
+    /// Return the selected sequence-name slot.
+    pub const fn slot(&self) -> ScriptSequenceSlot {
+        self.slot
+    }
+
+    /// Return the assigned DESCRIPT directory name.
+    pub fn name(&self) -> &ScriptSequenceSlotName {
+        &self.name
+    }
+
+    /// Split the assignment into values suitable for owned runtime storage.
+    pub fn into_parts(self) -> (ScriptSequenceSlot, ScriptSequenceSlotName) {
+        (self.slot, self.name)
+    }
 }
 
 /// One D2 request to switch the active five-file BloodScript profile.
@@ -693,6 +771,20 @@ pub enum ScriptInstructionError {
         /// Token position.
         source_offset: ScriptCodeOffset,
     },
+    /// A CC token names a presentation slot outside the six-entry shipped table.
+    InvalidSequenceSlot {
+        /// Token position.
+        source_offset: ScriptCodeOffset,
+        /// Original one-based slot byte.
+        encoded: u8,
+    },
+    /// A CC token's terminated name does not fit one original sequence-name field.
+    InvalidSequenceSlotName {
+        /// Token position.
+        source_offset: ScriptCodeOffset,
+        /// Name length excluding its encoded NUL terminator.
+        byte_length: usize,
+    },
     /// An A9 token is not the entry instruction of a declared procedure.
     InvalidProcedureGate {
         /// Token position.
@@ -981,6 +1073,44 @@ pub fn decode_script_date_guard(
         month: bytes[OPCODE_SIZE + BYTE_SIZE * 2] as i8,
         encoded_year: read_word(bytes, OPCODE_SIZE + BYTE_SIZE * 3),
     })
+}
+
+/// Decode one CC bounded DESCRIPT sequence-slot assignment.
+pub fn decode_script_sequence_slot_assignment(
+    token: &ScriptToken,
+) -> Result<ScriptSequenceSlotAssignment, ScriptInstructionError> {
+    if token.opcode().byte() != SEQUENCE_SLOT_ASSIGNMENT_OPCODE {
+        return Err(ScriptInstructionError::UntranslatedOpcode {
+            opcode: token.opcode(),
+        });
+    }
+    let bytes = token.encoded_bytes();
+    if bytes.len() < MINIMUM_SEQUENCE_SLOT_ASSIGNMENT_SIZE
+        || bytes[bytes.len() - WORD_SIZE..] != [u8::MIN; WORD_SIZE]
+        || bytes[OPCODE_SIZE + BYTE_SIZE..bytes.len() - WORD_SIZE].contains(&u8::MIN)
+    {
+        return Err(ScriptInstructionError::InvalidSequenceSlotName {
+            source_offset: token.source_offset(),
+            byte_length: bytes
+                .len()
+                .saturating_sub(OPCODE_SIZE + BYTE_SIZE + WORD_SIZE),
+        });
+    }
+    let encoded_slot = bytes[OPCODE_SIZE];
+    let slot = ScriptSequenceSlot::decode(encoded_slot).ok_or(
+        ScriptInstructionError::InvalidSequenceSlot {
+            source_offset: token.source_offset(),
+            encoded: encoded_slot,
+        },
+    )?;
+    let name_bytes = &bytes[OPCODE_SIZE + BYTE_SIZE..bytes.len() - WORD_SIZE];
+    let name = ScriptSequenceSlotName::new(Box::<[u8]>::from(name_bytes)).ok_or(
+        ScriptInstructionError::InvalidSequenceSlotName {
+            source_offset: token.source_offset(),
+            byte_length: name_bytes.len(),
+        },
+    )?;
+    Ok(ScriptSequenceSlotAssignment { slot, name })
 }
 
 /// Decode an A9 procedure gate without retaining its mutable COD byte.
@@ -1627,6 +1757,8 @@ mod tests {
     use std::path::{Path, PathBuf};
 
     use crate::code::decode_script_code;
+    use crate::descript::DescriptRecordKind;
+    use crate::descript_database::DescriptDatabase;
     use crate::script::{decode_script_dictionary, decode_script_directory, decode_script_state};
 
     use super::*;
@@ -1666,6 +1798,7 @@ mod tests {
     const EXPECTED_CONTACT_ACTIVITY_GUARD_COUNTS: [usize; PROFILE_COUNT] = [1, 15, 16, 19, 14];
     const EXPECTED_HOUR_GUARD_COUNTS: [usize; PROFILE_COUNT] = [0, 50, 30, 0, 0];
     const EXPECTED_DATE_GUARD_COUNTS: [usize; PROFILE_COUNT] = [0, 2, 2, 0, 0];
+    const EXPECTED_SEQUENCE_SLOT_ASSIGNMENT_COUNTS: [usize; PROFILE_COUNT] = [0, 7, 12, 11, 6];
     const TEST_STATE_WORD_INDEX: usize = 1;
     const EXPECTED_SHIPPED_BIT_FLAG_MASK: u8 = 32;
     const EXPECTED_SHIPPED_PAIR_OPCODE: u8 = PAIR_RECORD_C_OPCODE;
@@ -2569,6 +2702,82 @@ mod tests {
 
         assert_eq!(hour_counts, EXPECTED_HOUR_GUARD_COUNTS);
         assert_eq!(date_counts, EXPECTED_DATE_GUARD_COUNTS);
+    }
+
+    #[test]
+    fn every_shipped_cc_token_names_a_descript_sequence_in_a_bounded_slot() {
+        let descript =
+            DescriptDatabase::parse(&std::fs::read(original_asset("DESCRIPT.DES")).unwrap())
+                .unwrap();
+        let sequence_names = descript
+            .records()
+            .iter()
+            .filter(|record| record.kind() == DescriptRecordKind::Sequence)
+            .map(|record| record.name())
+            .collect::<BTreeSet<_>>();
+        let mut assignment_counts = [usize::MIN; PROFILE_COUNT];
+
+        for profile in 1..=PROFILE_COUNT {
+            let code = decode_script_code(
+                &std::fs::read(original_asset(&format!("SCRIPT{profile}.COD"))).unwrap(),
+            )
+            .unwrap();
+            for token in code.tokens() {
+                if token.opcode().byte() != SEQUENCE_SLOT_ASSIGNMENT_OPCODE {
+                    continue;
+                }
+                let assignment = decode_script_sequence_slot_assignment(token).unwrap();
+                assert!(
+                    (FIRST_SEQUENCE_SLOT..=LAST_SEQUENCE_SLOT)
+                        .contains(&assignment.slot().encode())
+                );
+                assert!(
+                    assignment.name().as_bytes().len()
+                        <= ScriptSequenceSlotName::MAXIMUM_BYTE_LENGTH
+                );
+                assert!(sequence_names.contains(assignment.name().as_bytes()));
+                assignment_counts[profile - 1] += 1;
+            }
+        }
+
+        assert_eq!(assignment_counts, EXPECTED_SEQUENCE_SLOT_ASSIGNMENT_COUNTS);
+    }
+
+    #[test]
+    fn cc_decoder_rejects_native_adjacent_memory_writes() {
+        for encoded_slot in [u8::MIN, 7, 128, 129, u8::MAX] {
+            let code = decode_script_code(&[
+                SEQUENCE_SLOT_ASSIGNMENT_OPCODE,
+                encoded_slot,
+                b'x',
+                u8::MIN,
+                u8::MIN,
+                CODE_END_MARKER,
+            ])
+            .unwrap();
+            assert_eq!(
+                decode_script_sequence_slot_assignment(&code.tokens()[0]).unwrap_err(),
+                ScriptInstructionError::InvalidSequenceSlot {
+                    source_offset: ScriptCodeOffset::new(usize::MIN),
+                    encoded: encoded_slot,
+                }
+            );
+        }
+
+        let mut overlong = vec![SEQUENCE_SLOT_ASSIGNMENT_OPCODE, FIRST_SEQUENCE_SLOT];
+        overlong.extend(std::iter::repeat_n(
+            b'x',
+            ScriptSequenceSlotName::MAXIMUM_BYTE_LENGTH + 1,
+        ));
+        overlong.extend_from_slice(&[u8::MIN, u8::MIN, CODE_END_MARKER]);
+        let code = decode_script_code(&overlong).unwrap();
+        assert_eq!(
+            decode_script_sequence_slot_assignment(&code.tokens()[0]).unwrap_err(),
+            ScriptInstructionError::InvalidSequenceSlotName {
+                source_offset: ScriptCodeOffset::new(usize::MIN),
+                byte_length: ScriptSequenceSlotName::MAXIMUM_BYTE_LENGTH + 1,
+            }
+        );
     }
 
     #[test]

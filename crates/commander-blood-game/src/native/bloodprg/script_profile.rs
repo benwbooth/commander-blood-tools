@@ -14,7 +14,7 @@ use crate::assets::OriginalResourceStore;
 
 use super::{
     OriginalResourceCache, OriginalResourceCatalog, ResourceCacheError, ResourceId,
-    ResourceLoadStatus, ScriptRuntime,
+    ResourceLoadStatus, ScriptRuntime, ScriptSequenceSlots,
 };
 
 /// File position of the five playable resource profiles in `BLOODPRG.EXE`.
@@ -213,6 +213,7 @@ pub struct LoadedScriptProfile {
     directory: ScriptDirectory,
     builtins: ScriptProfileBuiltins,
     runtime: ScriptRuntime,
+    sequence_slots: ScriptSequenceSlots,
 }
 
 impl LoadedScriptProfile {
@@ -269,6 +270,16 @@ impl LoadedScriptProfile {
     /// Mutably borrow this profile's control-flow runtime.
     pub fn runtime_mut(&mut self) -> &mut ScriptRuntime {
         &mut self.runtime
+    }
+
+    /// Borrow the profile's six DESCRIPT sequence-name bindings.
+    pub const fn sequence_slots(&self) -> &ScriptSequenceSlots {
+        &self.sequence_slots
+    }
+
+    /// Mutably borrow the profile's sequence-name bindings for CC assignments.
+    pub fn sequence_slots_mut(&mut self) -> &mut ScriptSequenceSlots {
+        &mut self.sequence_slots
     }
 }
 
@@ -480,6 +491,7 @@ fn decode_loaded_profile(
         directory,
         builtins,
         runtime: ScriptRuntime::new(),
+        sequence_slots: ScriptSequenceSlots::default(),
     })
 }
 
@@ -496,6 +508,8 @@ fn loaded_resource(
 mod tests {
     use std::path::{Path, PathBuf};
 
+    use commander_blood_formats::instruction::decode_script_sequence_slot_assignment;
+
     use super::*;
 
     const FIRST_PROFILE: ScriptProfileId = ScriptProfileId(0);
@@ -503,6 +517,7 @@ mod tests {
     const FIRST_PROFILE_RESOURCES: [u16; SCRIPT_PROFILE_RESOURCE_COUNT] = [2, 3, 4, 5, 6];
     const SECOND_PROFILE_RESOURCES: [u16; SCRIPT_PROFILE_RESOURCE_COUNT] = [37, 38, 39, 40, 41];
     const FINAL_PROFILE_RESOURCES: [u16; SCRIPT_PROFILE_RESOURCE_COUNT] = [86, 87, 88, 89, 90];
+    const SEQUENCE_SLOT_ASSIGNMENT_OPCODE: u8 = 0xCC;
 
     fn original_data_root() -> Option<PathBuf> {
         [
@@ -649,6 +664,30 @@ mod tests {
             .select(SECOND_PROFILE, &mut cache, &store, &resources)
             .unwrap();
         manager.current_mut().unwrap().runtime_mut().request_yield();
+        let assignment = manager
+            .current()
+            .unwrap()
+            .code()
+            .tokens()
+            .iter()
+            .find(|token| token.opcode().byte() == SEQUENCE_SLOT_ASSIGNMENT_OPCODE)
+            .map(decode_script_sequence_slot_assignment)
+            .unwrap()
+            .unwrap();
+        let assigned_slot = assignment.slot();
+        manager
+            .current_mut()
+            .unwrap()
+            .sequence_slots_mut()
+            .assign(assignment);
+        assert!(
+            manager
+                .current()
+                .unwrap()
+                .sequence_slots()
+                .name(assigned_slot)
+                .is_some()
+        );
         let outcome = manager
             .select(SECOND_PROFILE, &mut cache, &store, &resources)
             .unwrap();
@@ -660,5 +699,13 @@ mod tests {
             [ResourceLoadStatus::AlreadyLoaded; SCRIPT_PROFILE_RESOURCE_COUNT]
         );
         assert!(!manager.current().unwrap().runtime().yield_requested());
+        assert_eq!(
+            manager
+                .current()
+                .unwrap()
+                .sequence_slots()
+                .name(assigned_slot),
+            None
+        );
     }
 }
