@@ -8,6 +8,15 @@ use commander_blood_formats::script::ScriptWordId;
 
 use crate::native::random::BloodPrng;
 
+/// Byte count of the timer and reserved-state block stored in original saves.
+pub const SCRIPT_TIMER_SAVE_BLOCK_BYTE_COUNT: usize = 512;
+
+const SCRIPT_TIMER_WORD_BYTE_COUNT: usize = 2;
+const SCRIPT_TIMER_WORD_BLOCK_BYTE_COUNT: usize =
+    ScriptTimerSlot::COUNT * SCRIPT_TIMER_WORD_BYTE_COUNT;
+const SCRIPT_TIMER_SAVE_RESERVED_BYTE_COUNT: usize =
+    SCRIPT_TIMER_SAVE_BLOCK_BYTE_COUNT - SCRIPT_TIMER_WORD_BLOCK_BYTE_COUNT;
+
 /// Program-counter action produced by one translated BloodScript handler.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ScriptControl {
@@ -66,6 +75,7 @@ pub struct ScriptRuntime {
     pending_skip_count: Option<u8>,
     yield_requested: bool,
     timer_words: [u16; ScriptTimerSlot::COUNT],
+    timer_save_reserved_bytes: [u8; SCRIPT_TIMER_SAVE_RESERVED_BYTE_COUNT],
 }
 
 impl Default for ScriptRuntime {
@@ -87,6 +97,7 @@ impl ScriptRuntime {
             pending_skip_count: None,
             yield_requested: false,
             timer_words: [u16::MAX; ScriptTimerSlot::COUNT],
+            timer_save_reserved_bytes: [u8::MAX; SCRIPT_TIMER_SAVE_RESERVED_BYTE_COUNT],
         }
     }
 
@@ -310,6 +321,46 @@ impl ScriptRuntime {
         self.timer_words[slot.index()]
     }
 
+    /// Encode the complete fixed timer block written by the original save path.
+    ///
+    /// BloodScript can address the first 128 little-endian words. The remaining
+    /// 256 bytes have no direct or immediate-base accesses in `BLOODPRG.EXE`,
+    /// but the native save and load routines copy them as part of the same
+    /// 512-byte region. They therefore remain opaque persistent bytes rather
+    /// than becoming invented gameplay fields.
+    pub fn encode_timer_save_block(&self) -> [u8; SCRIPT_TIMER_SAVE_BLOCK_BYTE_COUNT] {
+        let mut block = [u8::MIN; SCRIPT_TIMER_SAVE_BLOCK_BYTE_COUNT];
+        for (word, destination) in self.timer_words.iter().zip(
+            block[..SCRIPT_TIMER_WORD_BLOCK_BYTE_COUNT]
+                .chunks_exact_mut(SCRIPT_TIMER_WORD_BYTE_COUNT),
+        ) {
+            destination.copy_from_slice(&word.to_le_bytes());
+        }
+        block[SCRIPT_TIMER_WORD_BLOCK_BYTE_COUNT..]
+            .copy_from_slice(&self.timer_save_reserved_bytes);
+        block
+    }
+
+    /// Restore the complete fixed timer block read by the original load path.
+    pub fn restore_timer_save_block(&mut self, block: &[u8; SCRIPT_TIMER_SAVE_BLOCK_BYTE_COUNT]) {
+        for (source, word) in block[..SCRIPT_TIMER_WORD_BLOCK_BYTE_COUNT]
+            .chunks_exact(SCRIPT_TIMER_WORD_BYTE_COUNT)
+            .zip(&mut self.timer_words)
+        {
+            *word = u16::from_le_bytes(
+                source
+                    .try_into()
+                    .expect("fixed two-byte serialized timer word"),
+            );
+        }
+        self.timer_save_reserved_bytes
+            .copy_from_slice(&block[SCRIPT_TIMER_WORD_BLOCK_BYTE_COUNT..]);
+    }
+
+    pub(super) fn preserve_timer_save_reserved_bytes(&mut self, previous: &Self) {
+        self.timer_save_reserved_bytes = previous.timer_save_reserved_bytes;
+    }
+
     /// Apply any instruction currently represented by the typed control IR.
     pub fn apply_instruction(
         &mut self,
@@ -476,6 +527,44 @@ mod tests {
             dictionary.resolve_source_offset(0).unwrap(),
             dictionary.resolve_source_offset(6).unwrap(),
         )
+    }
+
+    #[test]
+    fn timer_save_block_round_trips_typed_words_and_reserved_bytes() {
+        const FIRST_TIMER_VALUE: u16 = 0x1234;
+        const LAST_TIMER_VALUE: u16 = 0xFEDC;
+
+        let first = ScriptTimerSlot::decode(u8::MIN).unwrap();
+        let last = ScriptTimerSlot::decode((ScriptTimerSlot::COUNT - 1) as u8).unwrap();
+        let mut source = [u8::MIN; SCRIPT_TIMER_SAVE_BLOCK_BYTE_COUNT];
+        source[..SCRIPT_TIMER_WORD_BYTE_COUNT].copy_from_slice(&FIRST_TIMER_VALUE.to_le_bytes());
+        let last_word_start = SCRIPT_TIMER_WORD_BLOCK_BYTE_COUNT - SCRIPT_TIMER_WORD_BYTE_COUNT;
+        source[last_word_start..SCRIPT_TIMER_WORD_BLOCK_BYTE_COUNT]
+            .copy_from_slice(&LAST_TIMER_VALUE.to_le_bytes());
+        for (index, byte) in source[SCRIPT_TIMER_WORD_BLOCK_BYTE_COUNT..]
+            .iter_mut()
+            .enumerate()
+        {
+            *byte = index as u8;
+        }
+
+        let mut runtime = ScriptRuntime::new();
+        runtime.restore_timer_save_block(&source);
+
+        assert_eq!(runtime.timer(first), FIRST_TIMER_VALUE);
+        assert_eq!(runtime.timer(last), LAST_TIMER_VALUE);
+        assert_eq!(runtime.encode_timer_save_block(), source);
+    }
+
+    #[test]
+    fn fresh_timer_save_block_matches_the_executable_static_region() {
+        const BLOODPRG_INITIAL_TIMER_BLOCK_FILE_OFFSET: usize = 0x013EFE;
+
+        let executable = include_bytes!("../../../../../re/bin/BLOODPRG.EXE");
+        let expected = &executable[BLOODPRG_INITIAL_TIMER_BLOCK_FILE_OFFSET
+            ..BLOODPRG_INITIAL_TIMER_BLOCK_FILE_OFFSET + SCRIPT_TIMER_SAVE_BLOCK_BYTE_COUNT];
+
+        assert_eq!(ScriptRuntime::new().encode_timer_save_block(), expected);
     }
 
     #[derive(Deserialize)]

@@ -340,7 +340,9 @@ impl ScriptProfileManager {
     /// This is the typed ownership translation of `vm_resource_profile_select`
     /// at BLOODPRG file offset `0x0053A0`. Selecting a different profile first
     /// releases all five old resource IDs. Selecting the same profile reuses the
-    /// bytes but still rebuilds decoded state and a fresh [`ScriptRuntime`].
+    /// bytes but still rebuilds decoded state and a fresh [`ScriptRuntime`]. The
+    /// sequence-name fields and reserved half of the save block remain global,
+    /// matching the native data region that profile selection does not clear.
     pub fn select(
         &mut self,
         profile: ScriptProfileId,
@@ -348,6 +350,12 @@ impl ScriptProfileManager {
         store: &OriginalResourceStore,
         resources: &OriginalResourceCatalog,
     ) -> Result<ScriptProfileLoadOutcome, ScriptProfileError> {
+        let previous_runtime = self.current.as_ref().map(|current| current.runtime.clone());
+        let retained_sequence_slots = self
+            .current
+            .as_ref()
+            .map(|current| current.sequence_slots.clone())
+            .unwrap_or_default();
         let profile_changed = self
             .current
             .as_ref()
@@ -377,7 +385,14 @@ impl ScriptProfileManager {
                 .map_err(ScriptProfileError::Resource)?;
         }
 
-        self.current = Some(decode_loaded_profile(profile, profile_resources, cache)?);
+        let mut loaded = decode_loaded_profile(profile, profile_resources, cache)?;
+        if let Some(previous_runtime) = &previous_runtime {
+            loaded
+                .runtime
+                .preserve_timer_save_reserved_bytes(previous_runtime);
+        }
+        loaded.sequence_slots = retained_sequence_slots;
+        self.current = Some(loaded);
         Ok(ScriptProfileLoadOutcome {
             profile_changed,
             released_resources,
@@ -550,7 +565,9 @@ fn loaded_resource(
 mod tests {
     use std::path::{Path, PathBuf};
 
-    use commander_blood_formats::instruction::decode_script_sequence_slot_assignment;
+    use commander_blood_formats::instruction::{
+        ScriptTimerSlot, decode_script_sequence_slot_assignment,
+    };
 
     use super::*;
 
@@ -693,7 +710,7 @@ mod tests {
     }
 
     #[test]
-    fn selecting_the_same_profile_reuses_bytes_but_resets_control_state() {
+    fn selecting_the_same_profile_resets_control_state_but_retains_global_save_fields() {
         let Some(root) = original_data_root() else {
             return;
         };
@@ -721,11 +738,26 @@ mod tests {
             .unwrap()
             .unwrap();
         let assigned_slot = assignment.slot();
+        let assigned_name = assignment.name().as_bytes().to_vec();
         manager
             .current_mut()
             .unwrap()
             .sequence_slots_mut()
             .assign(assignment);
+        let timer_slot = ScriptTimerSlot::decode(u8::MIN).unwrap();
+        let mut timer_block = manager
+            .current()
+            .unwrap()
+            .runtime()
+            .encode_timer_save_block();
+        timer_block[..2].copy_from_slice(&u16::MIN.to_le_bytes());
+        let reserved_start = ScriptTimerSlot::COUNT * 2;
+        timer_block[reserved_start] = 0x42;
+        manager
+            .current_mut()
+            .unwrap()
+            .runtime_mut()
+            .restore_timer_save_block(&timer_block);
         let selected_concept = manager
             .current()
             .unwrap()
@@ -773,8 +805,22 @@ mod tests {
                 .current()
                 .unwrap()
                 .sequence_slots()
-                .name(assigned_slot),
-            None
+                .name(assigned_slot)
+                .unwrap()
+                .as_bytes(),
+            assigned_name
+        );
+        assert_eq!(
+            manager.current().unwrap().runtime().timer(timer_slot),
+            u16::MAX
+        );
+        assert_eq!(
+            manager
+                .current()
+                .unwrap()
+                .runtime()
+                .encode_timer_save_block()[reserved_start],
+            0x42
         );
     }
 }

@@ -65,6 +65,7 @@ mod procedure;
 mod record;
 mod record_state;
 mod resource_cache;
+mod save_game;
 mod script;
 mod script_action;
 mod script_block;
@@ -400,6 +401,7 @@ pub use script_action::{
 pub use procedure::{
     apply_procedure_activation, apply_procedure_patch_stream, build_procedure_patch_stream,
     evaluate_procedure_gate, ScriptProcedureStateError, ScriptProcedureStates,
+    SCRIPT_PROCEDURE_PATCH_RECORD_BYTE_COUNT,
 };
 pub use record::{
     apply_direct_record_operation, apply_record_pair_operation, apply_transfer, ScriptRecordError,
@@ -419,15 +421,24 @@ pub use record_state::{
     ScriptRecordStateNavigationContext, ScriptRecordStateOutcome,
 };
 pub use resource_cache::{
-    BLOODPRG_RESOURCE_CATALOG_FILE_OFFSET, ORIGINAL_RESOURCE_COUNT, OriginalResourceCache,
+    BLOODPRG_RESOURCE_CATALOG_FILE_OFFSET, ORIGINAL_RESOURCE_ALLOCATION_ALIGNMENT,
+    ORIGINAL_RESOURCE_COUNT, OriginalResourceCache,
     OriginalResourceCatalog, PaletteResourceLoadOutcome, PaletteResourceStorage,
     PaletteResourceTarget, ResourceCacheError, ResourceId, ResourceLoadStatus,
+};
+pub use save_game {
+    original_save_state_block_byte_count, OriginalSaveGame, OriginalSaveGameError,
+    OriginalSaveSlot, OriginalSaveSlotDirectory, OriginalSaveSlotDirectoryError,
+    ORIGINAL_QUICK_SAVE_SLOT_INDEX, ORIGINAL_SAVE_FIXED_HEADER_BYTE_COUNT,
+    ORIGINAL_SAVE_PROFILE_BYTE_COUNT, ORIGINAL_SAVE_SLOT_COUNT,
+    ORIGINAL_SAVE_SLOT_DIRECTORY_BYTE_COUNT, ORIGINAL_SAVE_SLOT_RECORD_BYTE_COUNT,
 };
 pub use selected_mask::{
     PresentationChoiceMaskError, PresentationChoiceNumber, draw_presentation_choice_number,
 };
 pub use script::{
     ScriptControl, ScriptResumePhase, ScriptResumeState, ScriptRuntime, ScriptRuntimeError,
+    SCRIPT_TIMER_SAVE_BLOCK_BYTE_COUNT,
 };
 pub use script_block::{
     ScriptBlockEnd, ScriptBlockError, ScriptBlockFlow, ScriptBlockHandler, ScriptBlockOutcome,
@@ -458,7 +469,9 @@ pub use script_selector::{
     ScriptSelectionOutcome, ScriptSelectorBranch, ScriptSelectorError, ScriptSelectorState,
     collect_selector_menu, commit_selected_concept, find_selector_body,
 };
-pub use script_sequence_slots::ScriptSequenceSlots;
+pub use script_sequence_slots::{
+    ScriptSequenceSaveError, ScriptSequenceSlots, SCRIPT_SEQUENCE_SAVE_BLOCK_BYTE_COUNT,
+};
 pub use screen_presentation::{
     PresentationDescriptPlan, PresentationMusicChange, PresentationPanelPhase,
     PresentationPanelStep, PresentationRenderRegion, PresentationRenderTarget,

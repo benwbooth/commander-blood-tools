@@ -7,7 +7,8 @@ use commander_blood_formats::script::{ScriptDirectory, ScriptProcedureId};
 
 use super::{ScriptControl, ScriptRuntime};
 
-const LEGACY_PROCEDURE_PATCH_RECORD_SIZE: usize = 3;
+/// Byte count of one target/value record in an original save patch stream.
+pub const SCRIPT_PROCEDURE_PATCH_RECORD_BYTE_COUNT: usize = 3;
 const LEGACY_PROCEDURE_PATCH_VALUE_OFFSET: usize = 2;
 const ENABLED_FLAG_MASK: u8 = 1;
 
@@ -154,8 +155,9 @@ pub fn build_procedure_patch_stream(
     directory: &ScriptDirectory,
     procedures: &ScriptProcedureStates,
 ) -> Result<Vec<u8>, ScriptProcedureStateError> {
-    let mut stream =
-        Vec::with_capacity(directory.procedures().count() * LEGACY_PROCEDURE_PATCH_RECORD_SIZE);
+    let mut stream = Vec::with_capacity(
+        directory.procedures().count() * SCRIPT_PROCEDURE_PATCH_RECORD_BYTE_COUNT,
+    );
     for (procedure, entry) in directory.procedures() {
         let enabled = procedures.is_enabled(procedure)?;
         stream.extend_from_slice(&entry.value.to_le_bytes());
@@ -177,15 +179,15 @@ pub fn apply_procedure_patch_stream(
 ) -> Result<Option<ScriptProcedureId>, ScriptProcedureStateError> {
     if !stream
         .len()
-        .is_multiple_of(LEGACY_PROCEDURE_PATCH_RECORD_SIZE)
+        .is_multiple_of(SCRIPT_PROCEDURE_PATCH_RECORD_BYTE_COUNT)
     {
         return Err(ScriptProcedureStateError::InvalidPatchStreamLength {
             byte_length: stream.len(),
         });
     }
 
-    let mut updates = Vec::with_capacity(stream.len() / LEGACY_PROCEDURE_PATCH_RECORD_SIZE);
-    for record in stream.chunks_exact(LEGACY_PROCEDURE_PATCH_RECORD_SIZE) {
+    let mut updates = Vec::with_capacity(stream.len() / SCRIPT_PROCEDURE_PATCH_RECORD_BYTE_COUNT);
+    for record in stream.chunks_exact(SCRIPT_PROCEDURE_PATCH_RECORD_BYTE_COUNT) {
         let encoded_target = u16::from_le_bytes(
             record[..LEGACY_PROCEDURE_PATCH_VALUE_OFFSET]
                 .try_into()
@@ -507,7 +509,7 @@ mod tests {
             let stream = build_procedure_patch_stream(&directory, &expected).unwrap();
             let original_code = code.encode();
             for (record, (_procedure, entry)) in stream
-                .chunks_exact(LEGACY_PROCEDURE_PATCH_RECORD_SIZE)
+                .chunks_exact(SCRIPT_PROCEDURE_PATCH_RECORD_BYTE_COUNT)
                 .zip(directory.procedures())
             {
                 assert_eq!(

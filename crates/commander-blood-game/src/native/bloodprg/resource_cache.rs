@@ -15,9 +15,10 @@ use super::IndexedGamePalette;
 pub const BLOODPRG_RESOURCE_CATALOG_FILE_OFFSET: usize = 0x00CDF4;
 /// Number of resource names authored in the original executable.
 pub const ORIGINAL_RESOURCE_COUNT: usize = 95;
+/// Paragraph-size rounding applied to original resource allocations.
+pub const ORIGINAL_RESOURCE_ALLOCATION_ALIGNMENT: usize = 16;
 
 const RESOURCE_NAME_FIELD_SIZE: usize = 16;
-const RESOURCE_ALLOCATION_ALIGNMENT: usize = 16;
 const RESOURCE_FILE_HEADER_SIZE: usize = 2;
 const RESOURCE_PALETTE_PREAMBLE_FLAG: u16 = 2;
 const RESOURCE_PALETTE_BLOCK_TERMINATOR: u16 = u16::MAX;
@@ -376,8 +377,10 @@ fn catalog_name(
 
 fn rounded_allocation_byte_count(byte_count: usize) -> Result<usize, ResourceCacheError> {
     byte_count
-        .checked_add(RESOURCE_ALLOCATION_ALIGNMENT - 1)
-        .map(|value| value / RESOURCE_ALLOCATION_ALIGNMENT * RESOURCE_ALLOCATION_ALIGNMENT)
+        .checked_add(ORIGINAL_RESOURCE_ALLOCATION_ALIGNMENT - 1)
+        .map(|value| {
+            value / ORIGINAL_RESOURCE_ALLOCATION_ALIGNMENT * ORIGINAL_RESOURCE_ALLOCATION_ALIGNMENT
+        })
         .ok_or(ResourceCacheError::ResourceTooLarge(byte_count))
 }
 
