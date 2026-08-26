@@ -7,6 +7,7 @@ use super::framebuffer_copy::{LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_WI
 use super::sprite_geometry::BridgeSpriteRect;
 
 const PALETTE_ENTRY_COUNT: usize = 256;
+const RECT_EDGE_OFFSET: i32 = 1;
 const LOGICAL_FRAMEBUFFER_PIXEL_COUNT: usize =
     LOGICAL_FRAMEBUFFER_WIDTH * LOGICAL_FRAMEBUFFER_HEIGHT;
 
@@ -54,6 +55,19 @@ pub enum RasterRectOutcome {
         /// Number of modified pixels.
         pixel_count: usize,
     },
+}
+
+/// Results of the four ordered span calls that draw one rectangle outline.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct RasterOutlineOutcome {
+    /// Top horizontal edge.
+    pub top: RasterSpanOutcome,
+    /// Left vertical edge.
+    pub left: RasterSpanOutcome,
+    /// Right vertical edge.
+    pub right: RasterSpanOutcome,
+    /// Bottom horizontal edge.
+    pub bottom: RasterSpanOutcome,
 }
 
 /// Invalid flat framebuffer or clipping geometry.
@@ -161,6 +175,94 @@ pub fn draw_vertical_span(
             y: clipped_top,
         },
         pixel_count,
+    })
+}
+
+/// Draw the logical pixels selected by the native planar horizontal span.
+///
+/// This translates `gfx_clipped_span_fill` at BLOODPRG offset `0x0039BB`.
+/// Its signed clipping and low-bit remap selection are identical in logical
+/// pixel space to [`draw_horizontal_span`]. The modern renderer removes VGA
+/// sequencer ports, plane masks, interleaved plane addresses, and inherited
+/// direction state rather than recreating planar video memory.
+pub fn draw_planar_horizontal_span(
+    framebuffer: &mut [u8],
+    clip: BridgeSpriteRect,
+    start: RasterPoint,
+    width_word: u16,
+    paint: RasterSpanPaint<'_>,
+) -> Result<RasterSpanOutcome, RasterPrimitiveError> {
+    draw_horizontal_span(framebuffer, clip, start, width_word, paint)
+}
+
+/// Draw the logical pixels selected by the native planar vertical span.
+///
+/// This translates `gfx_clipped_planar_vertical_span` at BLOODPRG offset
+/// `0x003AB3`. Its signed clipping and low-bit remap selection are identical in
+/// logical pixel space to [`draw_vertical_span`]. The flat renderer replaces
+/// the VGA map-mask write and 80-byte plane stride with direct pixel rows.
+pub fn draw_planar_vertical_span(
+    framebuffer: &mut [u8],
+    clip: BridgeSpriteRect,
+    start: RasterPoint,
+    height_word: u16,
+    paint: RasterSpanPaint<'_>,
+) -> Result<RasterSpanOutcome, RasterPrimitiveError> {
+    draw_vertical_span(framebuffer, clip, start, height_word, paint)
+}
+
+/// Draw a four-edge rectangle outline in the native call order.
+///
+/// This translates `composite_draw_a` at BLOODPRG offset `0x003B45`. Top,
+/// left, right, and bottom spans are submitted in that order. Signed logical
+/// coordinates retain the useful result of the native 16-bit edge arithmetic
+/// without exposing register or segmented-framebuffer state.
+pub fn draw_rect_outline(
+    framebuffer: &mut [u8],
+    clip: BridgeSpriteRect,
+    origin: RasterPoint,
+    width_word: u16,
+    height_word: u16,
+    paint: RasterSpanPaint<'_>,
+) -> Result<RasterOutlineOutcome, RasterPrimitiveError> {
+    let signed_width = i32::from(width_word as i16);
+    let signed_height = i32::from(height_word as i16);
+    let right_x = origin
+        .x
+        .saturating_add(signed_width)
+        .saturating_sub(RECT_EDGE_OFFSET);
+    let bottom_y = origin
+        .y
+        .saturating_add(signed_height)
+        .saturating_sub(RECT_EDGE_OFFSET);
+
+    let top = draw_horizontal_span(framebuffer, clip, origin, width_word, paint)?;
+    let left = draw_vertical_span(framebuffer, clip, origin, height_word, paint)?;
+    let right = draw_vertical_span(
+        framebuffer,
+        clip,
+        RasterPoint {
+            x: right_x,
+            y: origin.y,
+        },
+        height_word,
+        paint,
+    )?;
+    let bottom = draw_horizontal_span(
+        framebuffer,
+        clip,
+        RasterPoint {
+            x: origin.x,
+            y: bottom_y,
+        },
+        width_word,
+        paint,
+    )?;
+    Ok(RasterOutlineOutcome {
+        top,
+        left,
+        right,
+        bottom,
     })
 }
 
@@ -318,6 +420,9 @@ mod tests {
     const VERTICAL_SPAN_ORACLE_COUNT: usize = 14;
     const RECT_REMAP_ORACLE_COUNT: usize = 21;
     const RECT_FILL_ORACLE_COUNT: usize = 27;
+    const PLANAR_HORIZONTAL_ORACLE_COUNT: usize = 27;
+    const PLANAR_VERTICAL_ORACLE_COUNT: usize = 21;
+    const RECT_OUTLINE_ORACLE_COUNT: usize = 4;
     const REMAP_ENABLED_FLAG: u8 = 1;
     const FRAMEBUFFER_INDEX_MULTIPLIER: usize = 37;
     const FRAMEBUFFER_CASE_MULTIPLIER: usize = 41;
@@ -371,6 +476,54 @@ mod tests {
         clip: [u16; 4],
         rejected: bool,
         clipped_rect: [u16; 4],
+    }
+
+    #[derive(Deserialize)]
+    struct PlanarHorizontalOracle {
+        name: String,
+        x: u16,
+        y: u16,
+        input_width: u16,
+        color: u8,
+        clip: [u16; 4],
+        rejected: bool,
+        clipped_x: u16,
+        clipped_width: u16,
+        remap_flag: u8,
+    }
+
+    #[derive(Deserialize)]
+    struct PlanarVerticalOracle {
+        name: String,
+        x: u16,
+        input_y: u16,
+        input_height: u16,
+        color: u8,
+        clip: [u16; 4],
+        rejected: bool,
+        clipped_y: u16,
+        clipped_height: u16,
+        remap_flag: u8,
+    }
+
+    #[derive(Deserialize)]
+    struct RectOutlineOracle {
+        name: String,
+        color_word: u16,
+        x: u16,
+        y: u16,
+        width: u16,
+        height: u16,
+        calls: [RectOutlineCallOracle; 4],
+    }
+
+    #[derive(Deserialize)]
+    struct RectOutlineCallOracle {
+        primitive: String,
+        color_word: u16,
+        x: u16,
+        y: u16,
+        extent: u16,
     }
 
     #[test]
@@ -572,6 +725,158 @@ mod tests {
         }
     }
 
+    #[test]
+    fn planar_horizontal_spans_match_every_flat_original_vector() {
+        let vectors: Vec<PlanarHorizontalOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_39bb_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), PLANAR_HORIZONTAL_ORACLE_COUNT);
+
+        for (case_index, vector) in vectors.iter().enumerate() {
+            let clip = rect(vector.clip);
+            let mut framebuffer = framebuffer(case_index);
+            let before = framebuffer.clone();
+            let remap = remap_table(case_index);
+            let paint = paint(vector.color, vector.remap_flag, &remap);
+            let result = draw_planar_horizontal_span(
+                &mut framebuffer,
+                clip,
+                RasterPoint {
+                    x: i32::from(vector.x as i16),
+                    y: i32::from(vector.y as i16),
+                },
+                vector.input_width,
+                paint,
+            );
+            assert_horizontal_result(
+                result,
+                &mut framebuffer,
+                &before,
+                clip,
+                RasterPoint {
+                    x: i32::from(vector.clipped_x as i16),
+                    y: i32::from(vector.y as i16),
+                },
+                usize::from(vector.clipped_width),
+                vector.rejected,
+                paint,
+                &vector.name,
+            );
+        }
+    }
+
+    #[test]
+    fn planar_vertical_spans_match_every_flat_original_vector() {
+        let vectors: Vec<PlanarVerticalOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_3ab3_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), PLANAR_VERTICAL_ORACLE_COUNT);
+
+        for (case_index, vector) in vectors.iter().enumerate() {
+            let clip = rect(vector.clip);
+            let mut framebuffer = framebuffer(case_index);
+            let before = framebuffer.clone();
+            let remap = remap_table(case_index);
+            let paint = paint(vector.color, vector.remap_flag, &remap);
+            let result = draw_planar_vertical_span(
+                &mut framebuffer,
+                clip,
+                RasterPoint {
+                    x: i32::from(vector.x as i16),
+                    y: i32::from(vector.input_y as i16),
+                },
+                vector.input_height,
+                paint,
+            );
+            assert_vertical_result(
+                result,
+                &mut framebuffer,
+                &before,
+                clip,
+                RasterPoint {
+                    x: i32::from(vector.x as i16),
+                    y: i32::from(vector.clipped_y as i16),
+                },
+                usize::from(vector.clipped_height),
+                vector.rejected,
+                paint,
+                &vector.name,
+            );
+        }
+    }
+
+    #[test]
+    fn rectangle_outline_matches_every_original_call_vector() {
+        let vectors: Vec<RectOutlineOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_3b45_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), RECT_OUTLINE_ORACLE_COUNT);
+
+        for (case_index, vector) in vectors.iter().enumerate() {
+            let clip = BridgeSpriteRect {
+                left: i32::from(u16::MIN),
+                right: LOGICAL_FRAMEBUFFER_WIDTH as i32,
+                top: i32::from(u16::MIN),
+                bottom: LOGICAL_FRAMEBUFFER_HEIGHT as i32,
+            };
+            let mut framebuffer = framebuffer(case_index);
+            let mut expected_framebuffer = framebuffer.clone();
+            let paint = RasterSpanPaint::Solid(vector.color_word as u8);
+            let actual = draw_rect_outline(
+                &mut framebuffer,
+                clip,
+                RasterPoint {
+                    x: i32::from(vector.x as i16),
+                    y: i32::from(vector.y as i16),
+                },
+                vector.width,
+                vector.height,
+                paint,
+            )
+            .unwrap();
+
+            assert_eq!(
+                vector.calls.each_ref().map(|call| call.color_word),
+                [vector.color_word; 4]
+            );
+            assert_eq!(
+                vector.calls.each_ref().map(|call| call.primitive.as_str()),
+                ["horizontal", "vertical", "vertical", "horizontal"]
+            );
+            let expected = RasterOutlineOutcome {
+                top: draw_oracle_outline_call(
+                    &mut expected_framebuffer,
+                    clip,
+                    &vector.calls[0],
+                    paint,
+                ),
+                left: draw_oracle_outline_call(
+                    &mut expected_framebuffer,
+                    clip,
+                    &vector.calls[1],
+                    paint,
+                ),
+                right: draw_oracle_outline_call(
+                    &mut expected_framebuffer,
+                    clip,
+                    &vector.calls[2],
+                    paint,
+                ),
+                bottom: draw_oracle_outline_call(
+                    &mut expected_framebuffer,
+                    clip,
+                    &vector.calls[3],
+                    paint,
+                ),
+            };
+            assert_eq!(actual, expected, "{}", vector.name);
+            assert_eq!(framebuffer, expected_framebuffer, "{}", vector.name);
+        }
+    }
+
     fn apply_expected_horizontal(
         actual: &mut [u8],
         before: &[u8],
@@ -600,6 +905,95 @@ mod tests {
             );
         }
         assert_eq!(actual, expected);
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn assert_horizontal_result(
+        result: Result<RasterSpanOutcome, RasterPrimitiveError>,
+        actual: &mut [u8],
+        before: &[u8],
+        clip: BridgeSpriteRect,
+        expected_start: RasterPoint,
+        expected_count: usize,
+        rejected: bool,
+        paint: RasterSpanPaint<'_>,
+        name: &str,
+    ) {
+        if !valid_clip(clip) {
+            assert_eq!(
+                result,
+                Err(RasterPrimitiveError::ClipOutsideDisplay(clip)),
+                "{name}"
+            );
+            assert_eq!(actual, before, "{name}");
+        } else if rejected {
+            assert_eq!(result, Ok(RasterSpanOutcome::Rejected), "{name}");
+            assert_eq!(actual, before, "{name}");
+        } else {
+            assert_eq!(
+                result,
+                Ok(RasterSpanOutcome::Drawn {
+                    start: expected_start,
+                    pixel_count: expected_count,
+                }),
+                "{name}"
+            );
+            apply_expected_horizontal(actual, before, expected_start, expected_count, paint);
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn assert_vertical_result(
+        result: Result<RasterSpanOutcome, RasterPrimitiveError>,
+        actual: &mut [u8],
+        before: &[u8],
+        clip: BridgeSpriteRect,
+        expected_start: RasterPoint,
+        expected_count: usize,
+        rejected: bool,
+        paint: RasterSpanPaint<'_>,
+        name: &str,
+    ) {
+        if !valid_clip(clip) {
+            assert_eq!(
+                result,
+                Err(RasterPrimitiveError::ClipOutsideDisplay(clip)),
+                "{name}"
+            );
+            assert_eq!(actual, before, "{name}");
+        } else if rejected {
+            assert_eq!(result, Ok(RasterSpanOutcome::Rejected), "{name}");
+            assert_eq!(actual, before, "{name}");
+        } else {
+            assert_eq!(
+                result,
+                Ok(RasterSpanOutcome::Drawn {
+                    start: expected_start,
+                    pixel_count: expected_count,
+                }),
+                "{name}"
+            );
+            apply_expected_vertical(actual, before, expected_start, expected_count, paint);
+        }
+    }
+
+    fn draw_oracle_outline_call(
+        framebuffer: &mut [u8],
+        clip: BridgeSpriteRect,
+        call: &RectOutlineCallOracle,
+        paint: RasterSpanPaint<'_>,
+    ) -> RasterSpanOutcome {
+        let start = RasterPoint {
+            x: i32::from(call.x as i16),
+            y: i32::from(call.y as i16),
+        };
+        match call.primitive.as_str() {
+            "horizontal" => {
+                draw_horizontal_span(framebuffer, clip, start, call.extent, paint).unwrap()
+            }
+            "vertical" => draw_vertical_span(framebuffer, clip, start, call.extent, paint).unwrap(),
+            primitive => panic!("unknown outline primitive {primitive}"),
+        }
     }
 
     #[allow(clippy::too_many_arguments)]

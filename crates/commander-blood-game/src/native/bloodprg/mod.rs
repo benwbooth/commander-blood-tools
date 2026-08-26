@@ -424,8 +424,9 @@ pub use procedure::{
     SCRIPT_PROCEDURE_PATCH_RECORD_BYTE_COUNT,
 };
 pub use raster_primitives::{
-    RasterPoint, RasterPrimitiveError, RasterRectOutcome, RasterSpanOutcome, RasterSpanPaint,
-    draw_horizontal_span, draw_vertical_span, fill_framebuffer_rect, remap_framebuffer_rect,
+    RasterOutlineOutcome, RasterPoint, RasterPrimitiveError, RasterRectOutcome, RasterSpanOutcome,
+    RasterSpanPaint, draw_horizontal_span, draw_planar_horizontal_span, draw_planar_vertical_span,
+    draw_rect_outline, draw_vertical_span, fill_framebuffer_rect, remap_framebuffer_rect,
 };
 pub use record::{
     apply_direct_record_operation, apply_record_pair_operation, apply_transfer, ScriptRecordError,
