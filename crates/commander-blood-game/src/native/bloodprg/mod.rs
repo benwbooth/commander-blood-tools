@@ -63,6 +63,7 @@ mod sequence_subtitles;
 mod ship_depth;
 mod ship_presentation;
 mod ship_projection;
+mod ship_target;
 mod ship_view;
 mod ship_hud;
 mod sprite_geometry;
@@ -366,6 +367,11 @@ pub use ship_projection::{
     ShipProjectionError, ShipProjectionMatrix, ShipProjectionResources, ShipTrigonometrySample,
     build_ship_projection_matrix, plot_ship_point, project_ship_object_sprites,
     project_ship_point_cloud, randomize_ship_point_cloud,
+};
+pub use ship_target::{
+    ShipTargetListPass, ShipTargetListSelection, ShipTargetListSource, ShipTargetSelectionError,
+    ShipTargetSelectionHost, ShipTargetSelectionOutcome, ShipTargetSelectionState,
+    select_ship_target,
 };
 pub use ship_view::{
     select_ship_view_artwork, ShipViewArtworkError, ShipViewArtworkSelection,
