@@ -5,14 +5,16 @@ use commander_blood_formats::bloodprg::decode_bloodprg_bridge_resources;
 use sdl3::video::Window;
 
 use crate::native::bloodprg::{
-    BridgeScene, BridgeSceneFrame, BridgeSceneInput, PbmDecodeResult, ShipProjectionResources,
+    BridgeScene, BridgeSceneFrame, BridgeSceneInput, PbmDecodeResult, ScriptClock,
+    ScriptFrameOutcome, ScriptProfileId, ScriptProfileLoadOutcome, ShipProjectionResources,
     StartupPreparationOutcome,
 };
 use crate::native::random::BloodPrng;
 
 use super::{
     OriginalGameData, OriginalGameRuntime, RuntimeAssetLoadStatus, RuntimeInputHost,
-    RuntimePresentationHost, VGA_BIOS_FONT_8X8,
+    RuntimePresentationHost, RuntimeScriptBackend, RuntimeScriptCommand, RuntimeScriptSystem,
+    VGA_BIOS_FONT_8X8,
 };
 
 const INITIAL_LOGICAL_POINTER: [i16; 2] = [160, 100];
@@ -29,12 +31,18 @@ pub struct ModernGameServices<'window> {
     presentation: RuntimePresentationHost<'window>,
     bridge_scene: Option<BridgeScene>,
     bridge_frame: Option<BridgeSceneFrame>,
+    scripts: RuntimeScriptSystem,
     main_viewport_configured: bool,
 }
 
 impl<'window> ModernGameServices<'window> {
     /// Allocate flat game state and an artwork-only loading renderer.
-    pub fn new(window: &'window Window, data: OriginalGameData) -> Result<Self> {
+    pub fn new(
+        window: &'window Window,
+        data: OriginalGameData,
+        script_clock: ScriptClock,
+    ) -> Result<Self> {
+        let scripts = RuntimeScriptSystem::new(&data, script_clock);
         let runtime = OriginalGameRuntime::new(data);
         let presentation = RuntimePresentationHost::new_startup(window, &runtime)?;
         Ok(Self {
@@ -43,6 +51,7 @@ impl<'window> ModernGameServices<'window> {
             presentation,
             bridge_scene: None,
             bridge_frame: None,
+            scripts,
             main_viewport_configured: false,
         })
     }
@@ -108,6 +117,34 @@ impl<'window> ModernGameServices<'window> {
         let result = self.runtime.initialize_back_buffer()?;
         self.runtime.restore_back_buffer();
         Ok(result)
+    }
+
+    /// Load one complete BloodScript profile and bind its concrete runtime services.
+    pub fn load_script_profile(
+        &mut self,
+        profile: ScriptProfileId,
+    ) -> Result<ScriptProfileLoadOutcome> {
+        self.scripts.load_profile(&mut self.runtime, profile)
+    }
+
+    /// Execute one complete translated COD/BAS/presentation frame.
+    pub fn execute_script_frame(&mut self, enabled: bool) -> Result<ScriptFrameOutcome> {
+        self.scripts.execute_frame(&mut self.runtime, enabled)
+    }
+
+    /// Borrow the concrete script backend for lifecycle-state updates.
+    pub const fn script_backend(&self) -> &RuntimeScriptBackend {
+        self.scripts.backend()
+    }
+
+    /// Mutably borrow the concrete script backend for lifecycle-state updates.
+    pub fn script_backend_mut(&mut self) -> &mut RuntimeScriptBackend {
+        self.scripts.backend_mut()
+    }
+
+    /// Drain ordered renderer, audio, camera, and HUD commands from BloodScript.
+    pub fn take_script_commands(&mut self) -> Vec<RuntimeScriptCommand> {
+        self.scripts.take_commands()
     }
 
     /// Reconfigure the wgpu surface after a nonzero SDL pixel-size event.
@@ -212,6 +249,11 @@ mod tests {
     use crate::runtime::OriginalGameDataPaths;
 
     const TEST_CLOCK_SEED: u8 = 17;
+    const TEST_SCRIPT_CLOCK: ScriptClock = ScriptClock {
+        hour: 12,
+        day: 2,
+        month: 1,
+    };
 
     static TEMPORARY_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(u64::MIN);
 
@@ -254,7 +296,7 @@ mod tests {
             .unwrap();
         let writable_root = TemporaryRoot::create();
         let data = OriginalGameData::load_with_writable_root(paths, &writable_root.0).unwrap();
-        let mut services = ModernGameServices::new(&window, data).unwrap();
+        let mut services = ModernGameServices::new(&window, data, TEST_SCRIPT_CLOCK).unwrap();
 
         let startup = services.prepare_startup_resources().unwrap();
         assert!(startup.write_directory_created);
@@ -269,6 +311,14 @@ mod tests {
         );
         services.initialize_bridge_scene(TEST_CLOCK_SEED).unwrap();
         services.initialize_back_buffer().unwrap();
+        services
+            .load_script_profile(ScriptProfileId::new(u8::MIN).unwrap())
+            .unwrap();
+        let script = services.execute_script_frame(true).unwrap();
+        assert_ne!(
+            script.end,
+            crate::native::bloodprg::ScriptFrameEnd::ExecutionDisabled
+        );
         let bridge_frame = services
             .render_bridge_frame(BridgeSceneInput::default())
             .unwrap();

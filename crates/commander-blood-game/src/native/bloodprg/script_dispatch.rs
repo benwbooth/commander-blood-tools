@@ -76,6 +76,15 @@ pub struct ScriptDispatchState {
     pub profile_request: ScriptProfileRequestSlot,
 }
 
+impl ScriptDispatchState {
+    /// Reset state owned by one loaded profile while preserving the session PRNG.
+    pub fn reset_for_profile_change(&mut self) {
+        let random = self.random;
+        *self = Self::default();
+        self.random = random;
+    }
+}
+
 /// Mutable state exposed to the recovered post-frame presentation scan.
 pub struct ScriptPostScanContext<'a> {
     /// Losslessly framed COD image used for object-owned text activation.
@@ -706,6 +715,25 @@ mod tests {
         .into_iter()
         .find(|root| root.join("SCRIPT1.COD").is_file())
         .map(Path::to_owned)
+    }
+
+    #[test]
+    fn profile_reset_preserves_session_random_state_only() {
+        let mut dispatch = ScriptDispatchState::default();
+        dispatch.random.seed = 4_660;
+        dispatch.random.counter = 9;
+        dispatch.text_presentation.subtitle_display_active = true;
+        dispatch.sequence_presentation.finale_requested = true;
+
+        dispatch.reset_for_profile_change();
+
+        assert_eq!(dispatch.random.seed, 4_660);
+        assert_eq!(dispatch.random.counter, 9);
+        assert_eq!(dispatch.text_presentation, TextPresentationState::default());
+        assert_eq!(
+            dispatch.sequence_presentation,
+            SequencePresentationState::default()
+        );
     }
 
     #[test]

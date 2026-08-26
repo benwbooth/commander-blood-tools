@@ -13,12 +13,13 @@ use crate::native::bloodprg::{
     DescriptApplicationContext, DescriptBackgroundCache, DescriptBackgroundSource,
     DescriptIdleClipSource, DescriptPresentationAssets, DescriptRecordApplication,
     DescriptSoundBankLoader, LoadedScriptProfile, ScriptAboardRecordContext, ScriptClock,
-    ScriptEnvironmentActivity, ScriptExecutionBackend, ScriptPresentationEntity,
+    ScriptDispatchState, ScriptEnvironmentActivity, ScriptExecutionBackend, ScriptExecutionService,
+    ScriptFrameOutcome, ScriptPresentationEntity, ScriptProfileId, ScriptProfileLoadOutcome,
     ScriptRecordStateNavigationContext, ScriptTransferContext, SequenceRequestContext,
-    TextPresentationState, lookup_and_apply_descript_record,
+    TextPresentationState, execute_loaded_script_frame, lookup_and_apply_descript_record,
 };
 
-use super::OriginalGameData;
+use super::{OriginalGameData, OriginalGameRuntime};
 
 const RADIO_CLIP_INDEX: u8 = 6;
 const BACKGROUND_RESOURCE_DIRECTORY: &[u8] = b"FD\\";
@@ -72,6 +73,71 @@ pub enum RuntimeScriptCommand {
     StartCameraTransition,
     /// Rebuild the ship HUD and reset its 3D camera state.
     ResetShipHud,
+}
+
+/// Complete profile-independent state surrounding translated BloodScript execution.
+pub struct RuntimeScriptSystem {
+    dispatch: ScriptDispatchState,
+    service: ScriptExecutionService<RuntimeScriptBackend>,
+}
+
+impl RuntimeScriptSystem {
+    /// Construct the script system from validated original data and a host clock.
+    pub fn new(data: &OriginalGameData, clock: ScriptClock) -> Self {
+        Self {
+            dispatch: ScriptDispatchState::default(),
+            service: ScriptExecutionService::new(RuntimeScriptBackend::new(data, clock)),
+        }
+    }
+
+    /// Load one profile, reset profile-local state, and bind exact DEB names.
+    pub fn load_profile(
+        &mut self,
+        runtime: &mut OriginalGameRuntime,
+        profile: ScriptProfileId,
+    ) -> Result<ScriptProfileLoadOutcome> {
+        let outcome = runtime.load_profile(profile)?;
+        self.dispatch.reset_for_profile_change();
+        self.service.reset_for_profile_change();
+        self.service.backend_mut().bind_profile(
+            runtime
+                .current_profile()
+                .context("profile loader did not retain the selected profile")?,
+        );
+        Ok(outcome)
+    }
+
+    /// Execute one complete translated COD/BAS/presentation frame.
+    pub fn execute_frame(
+        &mut self,
+        runtime: &mut OriginalGameRuntime,
+        enabled: bool,
+    ) -> Result<ScriptFrameOutcome> {
+        execute_loaded_script_frame(
+            runtime
+                .current_profile_mut()
+                .context("no BloodScript profile is loaded")?,
+            enabled,
+            &mut self.dispatch,
+            &mut self.service,
+        )
+        .map_err(|error| anyhow!("executing BloodScript frame: {error:?}"))
+    }
+
+    /// Borrow the concrete backend for lifecycle-state synchronization.
+    pub const fn backend(&self) -> &RuntimeScriptBackend {
+        self.service.backend()
+    }
+
+    /// Mutably borrow the concrete backend for lifecycle-state synchronization.
+    pub fn backend_mut(&mut self) -> &mut RuntimeScriptBackend {
+        self.service.backend_mut()
+    }
+
+    /// Drain ordered renderer, audio, camera, and HUD commands.
+    pub fn take_commands(&mut self) -> Vec<RuntimeScriptCommand> {
+        self.service.backend_mut().take_commands()
+    }
 }
 
 /// Concrete flat backend state shared by the script service and game lifecycle.
@@ -472,10 +538,7 @@ mod tests {
     use std::path::{Path, PathBuf};
     use std::sync::atomic::{AtomicU64, Ordering};
 
-    use crate::native::bloodprg::{
-        ORIGINAL_SCRIPT_PROFILE_COUNT, ScriptDispatchState, ScriptExecutionService, ScriptFrameEnd,
-        ScriptProfileId, execute_loaded_script_frame,
-    };
+    use crate::native::bloodprg::{ORIGINAL_SCRIPT_PROFILE_COUNT, ScriptFrameEnd, ScriptProfileId};
 
     use super::super::OriginalGameDataPaths;
     use super::*;
@@ -601,29 +664,27 @@ mod tests {
         };
         let writable_root = TemporaryRoot::create();
         let data = OriginalGameData::load_with_writable_root(paths, &writable_root.0).unwrap();
-        let mut backend = RuntimeScriptBackend::new(&data, TEST_CLOCK);
-        backend.set_environment_activity(ScriptEnvironmentActivity {
-            bridge_active: true,
-            travel_active: true,
-            contact_active: true,
-        });
-        backend.set_sequence_context(SequenceRequestContext {
-            ship_active: true,
-            scene_gate_active: true,
-        });
-        let mut service = ScriptExecutionService::new(backend);
+        let mut scripts = RuntimeScriptSystem::new(&data, TEST_CLOCK);
+        scripts
+            .backend_mut()
+            .set_environment_activity(ScriptEnvironmentActivity {
+                bridge_active: true,
+                travel_active: true,
+                contact_active: true,
+            });
+        scripts
+            .backend_mut()
+            .set_sequence_context(SequenceRequestContext {
+                ship_active: true,
+                scene_gate_active: true,
+            });
         let mut runtime = super::super::OriginalGameRuntime::new(data);
         let mut executed_profile_count = usize::MIN;
 
         for profile_id in ScriptProfileId::all() {
-            runtime.load_profile(profile_id).unwrap();
-            service.reset_for_profile_change();
-            let builtins = {
-                let profile = runtime.current_profile().unwrap();
-                service.backend_mut().bind_profile(profile);
-                profile.builtins()
-            };
-            service.backend_mut().set_navigation_context(
+            scripts.load_profile(&mut runtime, profile_id).unwrap();
+            let builtins = runtime.current_profile().unwrap().builtins();
+            scripts.backend_mut().set_navigation_context(
                 builtins
                     .player
                     .zip(builtins.archetype)
@@ -633,19 +694,14 @@ mod tests {
                         arche,
                     }),
             );
-            let mut dispatch = ScriptDispatchState::default();
-            let outcome = execute_loaded_script_frame(
-                runtime.current_profile_mut().unwrap(),
-                true,
-                &mut dispatch,
-                &mut service,
-            )
-            .unwrap_or_else(|error| {
-                panic!(
-                    "profile {} concrete backend failed: {error:?}",
-                    profile_id.value() + 1
-                )
-            });
+            let outcome = scripts
+                .execute_frame(&mut runtime, true)
+                .unwrap_or_else(|error| {
+                    panic!(
+                        "profile {} runtime script system failed: {error:?}",
+                        profile_id.value() + 1
+                    )
+                });
             assert_ne!(outcome.end, ScriptFrameEnd::ExecutionDisabled);
             runtime
                 .current_profile_mut()
