@@ -1,0 +1,473 @@
+//! Loading-screen and writable-resource preparation from the original catalog.
+
+use std::error::Error;
+use std::fmt;
+
+use commander_blood_formats::archive::{BloodArchiveError, BloodResourceName};
+
+use super::IndexedGamePalette;
+
+/// File position of the writable-resource table in `BLOODPRG.EXE`.
+pub const BLOODPRG_WRITABLE_RESOURCE_CATALOG_FILE_OFFSET: usize = 0x00D679;
+/// Number of fixed-width resource names visited during original startup.
+pub const STARTUP_WRITABLE_RESOURCE_COUNT: usize = 125;
+
+const WRITABLE_RESOURCE_NAME_FIELD_SIZE: usize = 16;
+const STARTUP_LOADING_TEXT: &[u8] = b"LOADING";
+const STARTUP_LOADING_TEXT_POSITION: [u16; 2] = [130, 96];
+const STARTUP_LOADING_TEXT_COLOR: u8 = 239;
+const STARTUP_LOADING_TEXT_BYTE_LIMIT: usize = 255;
+const STARTUP_LOADING_BACKGROUND_COLOR: u8 = 0;
+
+/// Stable index into the original writable-resource table.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct StartupWritableResourceId(usize);
+
+impl StartupWritableResourceId {
+    /// Return the zero-based authored table index.
+    pub const fn index(self) -> usize {
+        self.0
+    }
+}
+
+/// Exact ordered startup resource catalog decoded from the executable.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StartupWritableResourceCatalog {
+    names: Box<[BloodResourceName]>,
+}
+
+impl StartupWritableResourceCatalog {
+    /// Decode all 125 names and reject malformed executable data.
+    pub fn decode_bloodprg(executable: &[u8]) -> Result<Self, StartupWritableCatalogError> {
+        let required = BLOODPRG_WRITABLE_RESOURCE_CATALOG_FILE_OFFSET
+            + STARTUP_WRITABLE_RESOURCE_COUNT * WRITABLE_RESOURCE_NAME_FIELD_SIZE;
+        if executable.len() < required {
+            return Err(StartupWritableCatalogError::ExecutableTooShort {
+                required,
+                actual: executable.len(),
+            });
+        }
+
+        let mut names = Vec::with_capacity(STARTUP_WRITABLE_RESOURCE_COUNT);
+        for resource_index in 0..STARTUP_WRITABLE_RESOURCE_COUNT {
+            let start = BLOODPRG_WRITABLE_RESOURCE_CATALOG_FILE_OFFSET
+                + resource_index * WRITABLE_RESOURCE_NAME_FIELD_SIZE;
+            let field = &executable[start..start + WRITABLE_RESOURCE_NAME_FIELD_SIZE];
+            let name_length = field.iter().position(|byte| *byte == u8::MIN).ok_or(
+                StartupWritableCatalogError::UnterminatedName {
+                    resource: StartupWritableResourceId(resource_index),
+                },
+            )?;
+            let name = BloodResourceName::new(&field[..name_length]).map_err(|source| {
+                StartupWritableCatalogError::InvalidName {
+                    resource: StartupWritableResourceId(resource_index),
+                    source,
+                }
+            })?;
+            names.push(name);
+        }
+        Ok(Self {
+            names: names.into_boxed_slice(),
+        })
+    }
+
+    /// Number of authored entries, including deliberate duplicate names.
+    pub fn len(&self) -> usize {
+        self.names.len()
+    }
+
+    /// Return whether the decoded catalog is empty.
+    pub fn is_empty(&self) -> bool {
+        self.names.is_empty()
+    }
+
+    /// Iterate over stable identifiers and authored names in native order.
+    pub fn iter(
+        &self,
+    ) -> impl ExactSizeIterator<Item = (StartupWritableResourceId, &BloodResourceName)> {
+        self.names
+            .iter()
+            .enumerate()
+            .map(|(index, name)| (StartupWritableResourceId(index), name))
+    }
+}
+
+/// Invalid executable bounds or malformed fixed-width startup name.
+#[derive(Debug)]
+pub enum StartupWritableCatalogError {
+    /// The executable ends before the complete 125-entry table.
+    ExecutableTooShort {
+        /// Minimum required byte count.
+        required: usize,
+        /// Actual executable byte count.
+        actual: usize,
+    },
+    /// One fixed-width name has no NUL terminator.
+    UnterminatedName {
+        /// Entry owning the malformed field.
+        resource: StartupWritableResourceId,
+    },
+    /// One extracted name is invalid for archive and loose-file lookup.
+    InvalidName {
+        /// Entry owning the malformed field.
+        resource: StartupWritableResourceId,
+        /// Validation failure.
+        source: BloodArchiveError,
+    },
+}
+
+impl fmt::Display for StartupWritableCatalogError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            formatter,
+            "invalid startup writable-resource catalog: {self:?}"
+        )
+    }
+}
+
+impl Error for StartupWritableCatalogError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::InvalidName { source, .. } => Some(source),
+            _ => None,
+        }
+    }
+}
+
+/// Text draw requested by the original loading frame.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct StartupLoadingText {
+    /// ASCII bytes rendered by the game font.
+    pub text: &'static [u8],
+    /// Logical upper-left baseline position.
+    pub position: [u16; 2],
+    /// Indexed palette color.
+    pub color: u8,
+    /// Maximum source bytes accepted by the original renderer.
+    pub byte_limit: usize,
+}
+
+/// Modern rendering and explicit-root filesystem operations used by startup.
+pub trait StartupPreparationHost {
+    /// Host failure propagated without inventing resource data.
+    type Error;
+
+    /// Publish the bridge panorama palette used by the loading screen.
+    fn publish_loading_palette(&mut self, palette: &IndexedGamePalette) -> Result<(), Self::Error>;
+
+    /// Clear the loading framebuffer to one indexed color.
+    fn clear_loading_frame(&mut self, color: u8) -> Result<(), Self::Error>;
+
+    /// Draw the authored loading label.
+    fn draw_loading_text(&mut self, text: StartupLoadingText) -> Result<(), Self::Error>;
+
+    /// Present the completed loading frame through the modern renderer.
+    fn present_loading_frame(&mut self) -> Result<(), Self::Error>;
+
+    /// Ensure the explicit writable root exists; false retains native mkdir failure.
+    fn ensure_write_directory(&mut self) -> Result<bool, Self::Error>;
+
+    /// Probe one authored name below the explicit writable root.
+    fn writable_resource_exists(
+        &mut self,
+        resource: StartupWritableResourceId,
+        name: &BloodResourceName,
+    ) -> Result<bool, Self::Error>;
+
+    /// Copy one missing resource from the configured source store to the writable root.
+    fn copy_resource_to_writable(
+        &mut self,
+        resource: StartupWritableResourceId,
+        name: &BloodResourceName,
+    ) -> Result<(), Self::Error>;
+}
+
+/// Completed startup probe and copy summary.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StartupPreparationOutcome {
+    /// Whether write-root creation reported success.
+    pub write_directory_created: bool,
+    /// Number of authored table entries probed.
+    pub probed_resources: usize,
+    /// Entries copied because their writable counterpart was absent.
+    pub copied_resources: Vec<StartupWritableResourceId>,
+}
+
+/// Draw the loading screen and prepare every authored writable resource.
+///
+/// This translates `startup_loading_screen_and_write_directory_prepare` at
+/// BLOODPRG file offset `0x0016A7`. The exact 125-entry order and duplicate
+/// names are retained. Explicit source and writable roots replace DOS drives,
+/// current-directory mutation, fixed path buffers, and the native `SS=DS`
+/// separator dependency.
+pub fn prepare_startup_writable_resources<Host: StartupPreparationHost>(
+    catalog: &StartupWritableResourceCatalog,
+    loading_palette: &IndexedGamePalette,
+    host: &mut Host,
+) -> Result<StartupPreparationOutcome, Host::Error> {
+    host.publish_loading_palette(loading_palette)?;
+    host.clear_loading_frame(STARTUP_LOADING_BACKGROUND_COLOR)?;
+    host.draw_loading_text(StartupLoadingText {
+        text: STARTUP_LOADING_TEXT,
+        position: STARTUP_LOADING_TEXT_POSITION,
+        color: STARTUP_LOADING_TEXT_COLOR,
+        byte_limit: STARTUP_LOADING_TEXT_BYTE_LIMIT,
+    })?;
+    host.present_loading_frame()?;
+
+    let write_directory_created = host.ensure_write_directory()?;
+    let mut copied_resources = Vec::new();
+    for (resource, name) in catalog.iter() {
+        if !host.writable_resource_exists(resource, name)? {
+            host.copy_resource_to_writable(resource, name)?;
+            copied_resources.push(resource);
+        }
+    }
+    Ok(StartupPreparationOutcome {
+        write_directory_created,
+        probed_resources: catalog.len(),
+        copied_resources,
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeSet;
+    use std::convert::Infallible;
+
+    use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
+    use serde::Deserialize;
+    use sha2::{Digest, Sha256};
+
+    use super::*;
+
+    const ORACLE_VECTOR_COUNT: usize = 5;
+    const PALETTE_COMPONENT_MASK: usize = 63;
+    const PALETTE_ENTRY_STEP: usize = 17;
+    const PALETTE_CASE_STEP: usize = 29;
+    const PALETTE_SEED: usize = 3;
+
+    #[derive(Deserialize)]
+    struct GraphicsCall {
+        call: String,
+        palette_sha256: Option<String>,
+        color: Option<u8>,
+        text: Option<String>,
+        x: Option<u16>,
+        y: Option<u16>,
+        color_and_limit: Option<u16>,
+    }
+
+    #[derive(Deserialize)]
+    struct StartupOracle {
+        case: String,
+        graphics_calls: Vec<GraphicsCall>,
+        mkdir_success: bool,
+        find_count: usize,
+        find_sequence_sha256: String,
+        directory_enter_count: usize,
+        missing_indices: Vec<usize>,
+    }
+
+    #[derive(Clone, Debug, PartialEq, Eq)]
+    enum RecordedGraphicsCall {
+        Palette(String),
+        Clear(u8),
+        Text(StartupLoadingText),
+        Present,
+    }
+
+    struct OracleHost {
+        graphics: Vec<RecordedGraphicsCall>,
+        mkdir_success: bool,
+        missing: BTreeSet<usize>,
+        probed: Vec<(usize, Vec<u8>)>,
+        copied: Vec<(usize, Vec<u8>)>,
+    }
+
+    impl StartupPreparationHost for OracleHost {
+        type Error = Infallible;
+
+        fn publish_loading_palette(
+            &mut self,
+            palette: &IndexedGamePalette,
+        ) -> Result<(), Self::Error> {
+            let mut hasher = Sha256::new();
+            for color in palette {
+                hasher.update(color);
+            }
+            self.graphics.push(RecordedGraphicsCall::Palette(format!(
+                "{:x}",
+                hasher.finalize()
+            )));
+            Ok(())
+        }
+
+        fn clear_loading_frame(&mut self, color: u8) -> Result<(), Self::Error> {
+            self.graphics.push(RecordedGraphicsCall::Clear(color));
+            Ok(())
+        }
+
+        fn draw_loading_text(&mut self, text: StartupLoadingText) -> Result<(), Self::Error> {
+            self.graphics.push(RecordedGraphicsCall::Text(text));
+            Ok(())
+        }
+
+        fn present_loading_frame(&mut self) -> Result<(), Self::Error> {
+            self.graphics.push(RecordedGraphicsCall::Present);
+            Ok(())
+        }
+
+        fn ensure_write_directory(&mut self) -> Result<bool, Self::Error> {
+            Ok(self.mkdir_success)
+        }
+
+        fn writable_resource_exists(
+            &mut self,
+            resource: StartupWritableResourceId,
+            name: &BloodResourceName,
+        ) -> Result<bool, Self::Error> {
+            self.probed
+                .push((resource.index(), name.as_bytes().to_vec()));
+            Ok(!self.missing.contains(&resource.index()))
+        }
+
+        fn copy_resource_to_writable(
+            &mut self,
+            resource: StartupWritableResourceId,
+            name: &BloodResourceName,
+        ) -> Result<(), Self::Error> {
+            self.copied
+                .push((resource.index(), name.as_bytes().to_vec()));
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn startup_preparation_matches_every_original_oracle_vector() {
+        let executable = include_bytes!("../../../../../re/bin/BLOODPRG.EXE");
+        let catalog = StartupWritableResourceCatalog::decode_bloodprg(executable).unwrap();
+        let vectors: Vec<StartupOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_16a7_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), ORACLE_VECTOR_COUNT);
+        assert_eq!(catalog.len(), STARTUP_WRITABLE_RESOURCE_COUNT);
+
+        for (case_index, vector) in vectors.into_iter().enumerate() {
+            let palette = loading_palette(case_index);
+            let mut host = OracleHost {
+                graphics: Vec::new(),
+                mkdir_success: vector.mkdir_success,
+                missing: vector.missing_indices.iter().copied().collect(),
+                probed: Vec::new(),
+                copied: Vec::new(),
+            };
+
+            let outcome =
+                prepare_startup_writable_resources(&catalog, &palette, &mut host).unwrap();
+
+            assert_eq!(
+                host.graphics,
+                expected_graphics(&vector.graphics_calls),
+                "{}",
+                vector.case
+            );
+            assert_eq!(outcome.write_directory_created, vector.mkdir_success);
+            assert_eq!(outcome.probed_resources, vector.find_count);
+            assert_eq!(host.probed.len(), vector.directory_enter_count);
+            assert_eq!(
+                resource_sequence_hash(host.probed.iter().map(|(_, name)| name.as_slice())),
+                vector.find_sequence_sha256,
+                "{}",
+                vector.case
+            );
+            assert_eq!(
+                outcome
+                    .copied_resources
+                    .iter()
+                    .map(|resource| resource.index())
+                    .collect::<Vec<_>>(),
+                vector.missing_indices,
+                "{}",
+                vector.case
+            );
+            assert_eq!(
+                host.copied
+                    .iter()
+                    .map(|(index, _name)| *index)
+                    .collect::<Vec<_>>(),
+                vector.missing_indices,
+                "{}",
+                vector.case
+            );
+        }
+    }
+
+    #[test]
+    fn malformed_catalog_bounds_and_terminators_are_rejected() {
+        let executable = include_bytes!("../../../../../re/bin/BLOODPRG.EXE");
+        assert!(matches!(
+            StartupWritableResourceCatalog::decode_bloodprg(
+                &executable[..BLOODPRG_WRITABLE_RESOURCE_CATALOG_FILE_OFFSET]
+            ),
+            Err(StartupWritableCatalogError::ExecutableTooShort { .. })
+        ));
+
+        let required = BLOODPRG_WRITABLE_RESOURCE_CATALOG_FILE_OFFSET
+            + STARTUP_WRITABLE_RESOURCE_COUNT * WRITABLE_RESOURCE_NAME_FIELD_SIZE;
+        let mut malformed = executable[..required].to_vec();
+        malformed[BLOODPRG_WRITABLE_RESOURCE_CATALOG_FILE_OFFSET
+            ..BLOODPRG_WRITABLE_RESOURCE_CATALOG_FILE_OFFSET + WRITABLE_RESOURCE_NAME_FIELD_SIZE]
+            .fill(b'X');
+        assert!(matches!(
+            StartupWritableResourceCatalog::decode_bloodprg(&malformed),
+            Err(StartupWritableCatalogError::UnterminatedName { .. })
+        ));
+    }
+
+    fn loading_palette(case_index: usize) -> IndexedGamePalette {
+        let mut palette = [[u8::MIN; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
+        for (flat_index, component) in palette.iter_mut().flatten().enumerate() {
+            *component =
+                ((flat_index * PALETTE_ENTRY_STEP + case_index * PALETTE_CASE_STEP + PALETTE_SEED)
+                    & PALETTE_COMPONENT_MASK) as u8;
+        }
+        palette
+    }
+
+    fn expected_graphics(calls: &[GraphicsCall]) -> Vec<RecordedGraphicsCall> {
+        calls
+            .iter()
+            .map(|call| match call.call.as_str() {
+                "vga_palette_write" => {
+                    RecordedGraphicsCall::Palette(call.palette_sha256.clone().unwrap())
+                }
+                "blit_fill_row_5221" => RecordedGraphicsCall::Clear(call.color.unwrap()),
+                "font8x8_text_draw_display" => {
+                    let packed = call.color_and_limit.unwrap();
+                    assert_eq!(call.text.as_deref(), Some("LOADING"));
+                    RecordedGraphicsCall::Text(StartupLoadingText {
+                        text: STARTUP_LOADING_TEXT,
+                        position: [call.x.unwrap(), call.y.unwrap()],
+                        color: packed as u8,
+                        byte_limit: usize::from(packed >> u8::BITS),
+                    })
+                }
+                "chunky_to_planar_framebuffer" => RecordedGraphicsCall::Present,
+                other => panic!("unknown startup graphics call {other}"),
+            })
+            .collect()
+    }
+
+    fn resource_sequence_hash<'a>(names: impl Iterator<Item = &'a [u8]>) -> String {
+        let mut hasher = Sha256::new();
+        for (index, name) in names.enumerate() {
+            if index != 0 {
+                hasher.update([u8::MIN]);
+            }
+            hasher.update(name);
+        }
+        format!("{:x}", hasher.finalize())
+    }
+}

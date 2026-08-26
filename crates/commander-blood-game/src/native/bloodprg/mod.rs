@@ -94,6 +94,7 @@ mod ship_hud_coordinator;
 mod sprite_geometry;
 mod startup;
 mod startup_cleanup;
+mod startup_prepare;
 mod state;
 mod subtitle_reveal;
 mod text;
@@ -557,6 +558,12 @@ pub use startup::{
 };
 pub use startup_cleanup::{
     STARTUP_TRANSIENT_PATH_COUNT, StartupTransientFileHost, delete_startup_transient_files,
+};
+pub use startup_prepare::{
+    BLOODPRG_WRITABLE_RESOURCE_CATALOG_FILE_OFFSET, STARTUP_WRITABLE_RESOURCE_COUNT,
+    StartupLoadingText, StartupPreparationHost, StartupPreparationOutcome,
+    StartupWritableCatalogError, StartupWritableResourceCatalog, StartupWritableResourceId,
+    prepare_startup_writable_resources,
 };
 pub use state::{
     apply_bit_flag_operation, apply_shared_bit_operation, apply_shared_state_operation,
