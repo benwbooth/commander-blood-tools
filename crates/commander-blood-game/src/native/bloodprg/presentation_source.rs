@@ -37,6 +37,18 @@ impl PresentationByteSource {
     pub fn remaining(&self) -> usize {
         self.bytes.len() - self.position
     }
+
+    /// Move to a validated flat byte position within this owned stream.
+    pub fn seek(&mut self, position: usize) -> Result<(), PresentationSourceError> {
+        if position > self.bytes.len() {
+            return Err(PresentationSourceError::PositionOutOfRange {
+                position,
+                source_len: self.bytes.len(),
+            });
+        }
+        self.position = position;
+        Ok(())
+    }
 }
 
 /// Invalid owned-source or queue transfer.
@@ -52,6 +64,13 @@ pub enum PresentationSourceError {
         requested: usize,
         /// Available bytes from the current position.
         remaining: usize,
+    },
+    /// A flat seek requested a position beyond the owned source.
+    PositionOutOfRange {
+        /// Requested absolute byte position within the owned source.
+        position: usize,
+        /// Complete source byte count.
+        source_len: usize,
     },
     /// Queue accounting or destination geometry rejected the transfer.
     Queue(PresentationQueueError),

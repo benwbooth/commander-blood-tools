@@ -69,6 +69,7 @@ mod presentation_queue;
 mod presentation_raster;
 mod presentation_resource;
 mod presentation_source;
+mod presentation_stream;
 mod presentation_run;
 mod presentation_word_choice;
 mod pointer_buttons;
@@ -451,6 +452,12 @@ pub use presentation_source::{
     PresentationByteSource, PresentationEntryExtent, PresentationSourceError,
     append_presentation_source_bytes, load_initial_presentation_entry,
     read_presentation_entry_extent,
+};
+pub use presentation_stream::{
+    OpenedPresentationResource, PresentationResourceDescriptor, PresentationResourceOpenError,
+    PresentationResourceProvider, PresentationResourceStreamState,
+    PresentationResourceSwitchContext, PresentationResourceSwitchError,
+    PresentationResourceSwitchOutcome, PresentationSourceRange, switch_presentation_resource,
 };
 pub use presentation_run::{
     CREDITS_VOICE_RESOURCE_PATH, PresentationRunExit, PresentationRunHost,
