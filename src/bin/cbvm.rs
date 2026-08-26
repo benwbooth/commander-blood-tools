@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result, bail};
 use commander_blood_tools::bas_cfg::{self, BasControlFlow};
 use commander_blood_tools::contact_manifest;
+use commander_blood_tools::descript_source;
 use commander_blood_tools::vm_bundle;
 use commander_blood_tools::vm_cfg::{self, CodControlFlow};
 use commander_blood_tools::vm_profile::{self, ProfileImages};
@@ -12,7 +13,7 @@ const PROFILE_EXTENSIONS: [&str; 5] = ["COD", "BAS", "DEB", "DIC", "VAR"];
 
 fn usage() -> ! {
     eprintln!(
-        "usage:\n  cbvm disassemble <cod|bas> <image> <dictionary> <output>\n  cbvm assemble <source> <output>\n  cbvm decompile-bundle <game-dir> <output-dir>\n  cbvm decompile-unified <game-dir> <output-dir>\n  cbvm compile-profile <source> <output-dir>\n  cbvm compile-bundle <source-dir> <game-dir> <output-dir>\n  cbvm build-runtime-tree <source-dir> <game-dir> <output-dir>\n  cbvm analyze-control-flow <game-dir> <output-dir>\n  cbvm analyze-bas-control-flow <game-dir> <output-dir>\n  cbvm analyze-contact-manifest <game-dir> <output-dir>"
+        "usage:\n  cbvm disassemble <cod|bas> <image> <dictionary> <output>\n  cbvm assemble <source> <output>\n  cbvm decompile-descript <DESCRIPT.DES> <output>\n  cbvm compile-descript <source> <output> [reference-DESCRIPT.DES]\n  cbvm decompile-bundle <game-dir> <output-dir>\n  cbvm decompile-unified <game-dir> <output-dir>\n  cbvm compile-profile <source> <output-dir>\n  cbvm compile-bundle <source-dir> <game-dir> <output-dir>\n  cbvm build-runtime-tree <source-dir> <game-dir> <output-dir>\n  cbvm analyze-control-flow <game-dir> <output-dir>\n  cbvm analyze-bas-control-flow <game-dir> <output-dir>\n  cbvm analyze-contact-manifest <game-dir> <output-dir>"
     );
     std::process::exit(2);
 }
@@ -169,6 +170,62 @@ fn main() -> Result<()> {
             let text = std::fs::read_to_string(&source)
                 .with_context(|| format!("reading {}", source.display()))?;
             let image = vm_source::assemble(&text)?;
+            std::fs::write(&output, &image)
+                .with_context(|| format!("writing {}", output.display()))?;
+            println!("wrote {}: {} byte(s)", output.display(), image.len());
+        }
+        Some("decompile-descript") => {
+            let input = PathBuf::from(args.next().unwrap_or_else(|| usage()));
+            let output = PathBuf::from(args.next().unwrap_or_else(|| usage()));
+            if args.next().is_some() {
+                usage();
+            }
+            let image =
+                std::fs::read(&input).with_context(|| format!("reading {}", input.display()))?;
+            let decompiled = descript_source::decompile(&image)?;
+            if let Some(parent) = output
+                .parent()
+                .filter(|parent| !parent.as_os_str().is_empty())
+            {
+                std::fs::create_dir_all(parent)?;
+            }
+            std::fs::write(&output, &decompiled.source)
+                .with_context(|| format!("writing {}", output.display()))?;
+            println!(
+                "verified {} -> {}: {} record(s), {} command(s), byte-exact round trip",
+                input.display(),
+                output.display(),
+                decompiled.record_count,
+                decompiled.command_count
+            );
+        }
+        Some("compile-descript") => {
+            let source = PathBuf::from(args.next().unwrap_or_else(|| usage()));
+            let output = PathBuf::from(args.next().unwrap_or_else(|| usage()));
+            let reference = args.next().map(PathBuf::from);
+            if args.next().is_some() {
+                usage();
+            }
+            let text = std::fs::read_to_string(&source)
+                .with_context(|| format!("reading {}", source.display()))?;
+            let image = descript_source::compile(&text)?;
+            if let Some(reference) = reference {
+                let expected = std::fs::read(&reference)
+                    .with_context(|| format!("reading {}", reference.display()))?;
+                if image != expected {
+                    bail!(
+                        "compiled DESCRIPT differs from reference {}",
+                        reference.display()
+                    );
+                }
+                println!("verified byte-exact against {}", reference.display());
+            }
+            if let Some(parent) = output
+                .parent()
+                .filter(|parent| !parent.as_os_str().is_empty())
+            {
+                std::fs::create_dir_all(parent)?;
+            }
             std::fs::write(&output, &image)
                 .with_context(|| format!("writing {}", output.display()))?;
             println!("wrote {}: {} byte(s)", output.display(), image.len());

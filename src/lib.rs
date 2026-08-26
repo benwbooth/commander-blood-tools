@@ -34,6 +34,7 @@ pub mod contact_manifest;
 pub mod croolis;
 pub mod decompress;
 pub mod descript;
+pub mod descript_source;
 pub mod engine;
 pub mod entity;
 pub mod ext;
