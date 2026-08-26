@@ -46,6 +46,7 @@ mod resource_cache;
 mod script;
 mod script_block;
 mod script_control;
+mod script_frame;
 mod script_clock;
 mod script_environment;
 mod script_profile;
@@ -297,6 +298,10 @@ pub use script_block::{
 pub use script_control::{
     ScriptControlFlowContext, ScriptControlFlowError, ScriptControlFlowOutcome,
     execute_selector_control,
+};
+pub use script_frame::{
+    ScriptFrameEnd, ScriptFrameError, ScriptFrameFlow, ScriptFrameHost, ScriptFrameOutcome,
+    ScriptFrameStep, execute_script_frame,
 };
 pub use script_clock::ScriptClock;
 pub use script_environment::ScriptEnvironmentActivity;

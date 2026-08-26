@@ -22,6 +22,8 @@ pub enum ScriptControl {
 pub struct ScriptResumeState {
     /// Typed destination in the current COD image.
     pub target: ScriptCodeOffset,
+    /// Instruction position saved after a presentation-producing handler.
+    pub saved_cursor: Option<ScriptCodeOffset>,
     /// Value selected by the presentation path before execution resumes.
     pub value: u16,
     /// Semantic phase represented by the native resume-state byte.
@@ -60,6 +62,7 @@ pub struct ScriptRuntime {
     selected_concept: Option<ScriptWordId>,
     alternate_concept: Option<ScriptWordId>,
     resume: Option<ScriptResumeState>,
+    retained_resume_target: Option<ScriptCodeOffset>,
     pending_skip_count: Option<u8>,
     yield_requested: bool,
     timer_words: [u16; ScriptTimerSlot::COUNT],
@@ -80,6 +83,7 @@ impl ScriptRuntime {
             selected_concept: None,
             alternate_concept: None,
             resume: None,
+            retained_resume_target: None,
             pending_skip_count: None,
             yield_requested: false,
             timer_words: [u16::MAX; ScriptTimerSlot::COUNT],
@@ -107,6 +111,14 @@ impl ScriptRuntime {
     /// Return the complete pending resume state.
     pub const fn resume_state(&self) -> Option<ScriptResumeState> {
         self.resume
+    }
+
+    /// Return the cursor saved by the most recent presentation yield.
+    pub const fn saved_resume_cursor(&self) -> Option<ScriptCodeOffset> {
+        match self.resume {
+            Some(resume) => resume.saved_cursor,
+            None => None,
+        }
     }
 
     /// Return the number of framed instructions to skip after this handler.
@@ -147,8 +159,10 @@ impl ScriptRuntime {
 
     /// Arm a destination used by presentation resume logic.
     pub fn set_resume_target(&mut self, target: Option<ScriptCodeOffset>) {
+        self.retained_resume_target = target.or(self.retained_resume_target);
         self.resume = target.map(|target| ScriptResumeState {
             target,
+            saved_cursor: None,
             value: u16::MIN,
             phase: ScriptResumePhase::LoopArmed,
         });
@@ -156,11 +170,58 @@ impl ScriptRuntime {
 
     /// Arm a presentation resume destination with its selected value.
     pub fn arm_resume(&mut self, target: ScriptCodeOffset, value: u16) {
+        self.retained_resume_target = Some(target);
         self.resume = Some(ScriptResumeState {
             target,
+            saved_cursor: None,
             value,
             phase: ScriptResumePhase::LoopArmed,
         });
+    }
+
+    /// Retain the native loop destination without arming a resume phase.
+    ///
+    /// The original keeps this destination in a distinct global after a loop
+    /// completes. Save restoration and the frame executor use this method to
+    /// represent that persistent authored destination directly.
+    pub fn retain_resume_target(&mut self, target: ScriptCodeOffset) {
+        self.retained_resume_target = Some(target);
+    }
+
+    /// Save a post-handler cursor and advance the semantic resume phase.
+    pub(crate) fn save_resume_cursor(&mut self, cursor: ScriptCodeOffset) -> bool {
+        if let Some(resume) = &mut self.resume {
+            resume.saved_cursor = Some(cursor);
+            if resume.phase == ScriptResumePhase::LoopArmed {
+                resume.phase = ScriptResumePhase::SelectorResumeActive;
+            }
+            return true;
+        }
+
+        let Some(target) = self.retained_resume_target else {
+            return false;
+        };
+        self.resume = Some(ScriptResumeState {
+            target,
+            saved_cursor: Some(cursor),
+            value: u16::MIN,
+            phase: ScriptResumePhase::LoopArmed,
+        });
+        true
+    }
+
+    /// Consume a loop-armed destination after a non-yielding instruction.
+    pub(crate) fn take_loop_resume_target(&mut self) -> Option<ScriptCodeOffset> {
+        if !matches!(
+            self.resume,
+            Some(ScriptResumeState {
+                phase: ScriptResumePhase::LoopArmed,
+                ..
+            })
+        ) {
+            return None;
+        }
+        self.resume.take().map(|resume| resume.target)
     }
 
     /// Promote a loop-armed resume to the selector-active phase.
@@ -623,6 +684,7 @@ mod tests {
             runtime.resume_state(),
             Some(ScriptResumeState {
                 target,
+                saved_cursor: None,
                 value: SAVED_CONCEPT_ENCODING,
                 phase: ScriptResumePhase::SelectorResumeActive,
             })
