@@ -30,6 +30,7 @@ use super::{
     AlienAmerFinishUpdate, AlienAmerLateSelectionUpdate, AlienAmerSelectionUpdate,
     AlienAmerUpdateHead, AlienBehaviorError, AlienBehindCameraSignal, AlienCallbackSceneState,
     AlienCameraAngles, AlienCameraControl, AlienCameraStep, AlienCameraTransform,
+    AlienControlLatch,
     AlienCroolisCommonDispatch, AlienCroolisFadeUpdate, AlienCroolisResetUpdate,
     AlienCroolisSelectionUpdate, AlienCroolisUpdateHead, AlienFaceSelection,
     AlienFaceSelectionError, AlienModelPose, AlienMouseSample, AlienNodePose,
@@ -1312,7 +1313,11 @@ impl AlienScene {
 
     /// Advance all currently translated native frame stages in original order.
     pub fn step(&mut self, mouse: AlienMouseSample) -> Result<AlienSceneFrame, AlienSceneError> {
+        self.control.interaction_signal = control_input_signal(self.callback_state.control_latch);
         let camera_step = self.control.step(self.species, mouse);
+        if self.species == AlienSpecies::Amer {
+            self.callback_state.control_latch = AlienControlLatch::Inactive;
+        }
         self.camera.update(
             AlienCameraAngles {
                 pitch: self.control.pitch,
@@ -1491,6 +1496,9 @@ impl AlienScene {
                 )
                 .map_err(|error| AlienSceneError::ModelProjection { model_index, error })?;
         }
+        if self.species != AlienSpecies::Amer {
+            self.callback_state.control_latch = AlienControlLatch::Inactive;
+        }
         let models = select_faces(self.species, &mut self.models)?;
         let geometry = prepare_render_geometry(
             &self.asset.primary_model.mesh,
@@ -1504,13 +1512,14 @@ impl AlienScene {
         match models.behind_camera {
             AlienBehindCameraSignal::Unchanged => {}
             AlienBehindCameraSignal::General => {
-                self.control.interaction_signal = ACTIVE_INTERACTION_SIGNAL;
+                self.callback_state.control_latch = AlienControlLatch::Signal;
             }
             AlienBehindCameraSignal::Model(model_index) => {
                 self.selected_model = Some(model_index);
-                self.control.interaction_signal = ACTIVE_INTERACTION_SIGNAL;
+                self.callback_state.control_latch = AlienControlLatch::Model(model_index);
             }
         }
+        self.control.interaction_signal = control_input_signal(self.callback_state.control_latch);
 
         Ok(AlienSceneFrame {
             camera_step,
@@ -1535,6 +1544,13 @@ impl AlienScene {
     /// Whether a translated bounds method requested leaving this scene.
     pub fn exit_requested(&self) -> bool {
         self.exit_requested != u16::MIN
+    }
+}
+
+fn control_input_signal(control_latch: AlienControlLatch) -> u16 {
+    match control_latch {
+        AlienControlLatch::Inactive => u16::MIN,
+        AlienControlLatch::Signal | AlienControlLatch::Model(_) => ACTIVE_INTERACTION_SIGNAL,
     }
 }
 

@@ -11,6 +11,7 @@ mod projection;
 mod raster;
 mod resume;
 mod ring;
+mod runtime;
 mod scene;
 mod selection;
 mod slot2;
@@ -60,6 +61,9 @@ pub use ring::{
     AlienRingUpdate, AlienWaveSteeringState, begin_resume_clear, capture_resume_state,
     clear_next_ring_entry, restart_initial_course, update_follow_course, update_initial_course,
     update_or_initialize_ring,
+};
+pub use runtime::{
+    AlienFrameCallback, AlienRuntimeStatus, AlienRuntimeStep, AlienSceneRuntime,
 };
 pub use scene::{AlienResumeRuntimeError, AlienScene, AlienSceneError, AlienSceneFrame};
 pub use selection::{
