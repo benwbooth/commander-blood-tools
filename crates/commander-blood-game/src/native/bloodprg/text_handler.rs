@@ -3,11 +3,16 @@
 use std::fmt;
 
 use commander_blood_formats::instruction::{ScriptText, ScriptTextWord};
-use commander_blood_formats::script::{ScriptDictionary, ScriptWordId};
+use commander_blood_formats::script::{
+    ScriptDictionary, ScriptObjectKind, ScriptState, ScriptWordId,
+};
+
+use crate::native::random::BloodPrng;
 
 use super::{
-    evaluate_text_conditions, ScriptRuntime, ScriptWordHistory, TextConditionEffects,
-    TextConditionError,
+    ScriptActionRecord, ScriptFieldSelector, ScriptFrameFlow, ScriptRuntime, ScriptSelectorState,
+    ScriptWordHistory, TextConditionEffects, TextConditionError, evaluate_text_conditions,
+    script_field_offset,
 };
 
 const SUBTITLE_LINE_LIMIT: u8 = 35;
@@ -16,6 +21,12 @@ const CONDITION_YIELD_SIGNAL: u8 = 1;
 const TEXT_REQUEST_PENDING: u8 = 1;
 const SECONDARY_PRESENTATION_REQUEST_PENDING: u8 = 2;
 const CHARACTER_LENGTH_INCREMENT: u8 = 1;
+const TEXT_RANDOM_MODULUS: u16 = 5;
+const LINE_FLAGS_BYTE_OFFSET: usize = std::mem::size_of::<u16>();
+const LINE_ALREADY_SHOWN_FLAG: u16 = 0x8000;
+const RECORD_SELECTOR_SHIFT: u32 = 1;
+const RECORD_SELECTOR_MASK: u8 = 0x07;
+const FIRST_CONDITIONAL_RECORD_SELECTOR: u8 = 1;
 
 /// Typed state replacing the active bit that the DOS handler changed in COD bytes.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -239,6 +250,161 @@ impl From<TextConditionError> for TextHandlerError {
     }
 }
 
+/// Result of resolving and executing one A6 instruction against its owned VAR record.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct TextInstructionExecution {
+    /// Semantic result returned by the translated A6 handler.
+    pub outcome: TextHandlerOutcome,
+    /// Frame traversal requested by the published presentation, if any.
+    pub flow: ScriptFrameFlow,
+}
+
+/// Invalid profile state encountered while binding A6 to its authored line record.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TextInstructionExecutionError {
+    /// The encoded line position cannot address its flags word.
+    MissingLineFlags {
+        /// Authored byte position of the line record.
+        line_offset: usize,
+    },
+    /// The actor action field used by the C4 presentation gate is absent.
+    MissingPresentationField {
+        /// Authored byte position of the line record.
+        line_offset: usize,
+    },
+    /// The optional condition selector has no actor field in the recovered matrix.
+    MissingConditionField {
+        /// Recovered field selector row.
+        selector: ScriptFieldSelector,
+    },
+    /// The translated A6 handler rejected its typed instruction or condition input.
+    Handler(TextHandlerError),
+}
+
+impl fmt::Display for TextInstructionExecutionError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(formatter, "{self:?}")
+    }
+}
+
+impl std::error::Error for TextInstructionExecutionError {}
+
+impl From<TextHandlerError> for TextInstructionExecutionError {
+    fn from(error: TextHandlerError) -> Self {
+        Self::Handler(error)
+    }
+}
+
+/// Resolve and execute A6 directly from flat typed profile state.
+///
+/// The line's flags word, C4 gate, and optional comparison field are derived
+/// from the recovered VAR field matrix. This is the production replacement for
+/// the native far line-table pointer; no platform or renderer callback is
+/// involved in deciding whether authored text runs.
+#[allow(clippy::too_many_arguments)]
+pub fn execute_text_instruction(
+    text: &ScriptText,
+    instruction_state: &mut TextInstructionState,
+    dictionary: &ScriptDictionary,
+    state: &mut ScriptState,
+    selector: &mut ScriptSelectorState,
+    script: &mut ScriptRuntime,
+    random: &mut BloodPrng,
+    presentation: &mut TextPresentationState,
+) -> Result<TextInstructionExecution, TextInstructionExecutionError> {
+    let line_offset = text.line_record.byte_offset();
+    let flags_offset = line_offset
+        .checked_add(LINE_FLAGS_BYTE_OFFSET)
+        .and_then(|offset| u16::try_from(offset).ok())
+        .and_then(|offset| state.resolve_word_source_offset(offset))
+        .ok_or(TextInstructionExecutionError::MissingLineFlags { line_offset })?;
+    let flags = state
+        .word(flags_offset)
+        .ok_or(TextInstructionExecutionError::MissingLineFlags { line_offset })?;
+
+    let presentation_byte_offset =
+        script_field_offset(ScriptObjectKind::Actor, ScriptFieldSelector::ACTION)
+            .expect("the recovered actor matrix retains its action field");
+    let presentation_kind = line_offset
+        .checked_add(presentation_byte_offset)
+        .and_then(|offset| u16::try_from(offset).ok())
+        .and_then(|offset| state.resolve_word_source_offset(offset))
+        .and_then(|field| state.word(field))
+        .ok_or(TextInstructionExecutionError::MissingPresentationField { line_offset })?;
+    let mut line = TextLineState {
+        kind: if presentation_kind == ScriptActionRecord::ACTOR_PRESENTATION_KIND {
+            TextLineKind::Presentation
+        } else {
+            TextLineKind::Other
+        },
+        already_shown: flags & LINE_ALREADY_SHOWN_FLAG != u16::MIN,
+    };
+
+    let gate = text_handler_gate(*instruction_state, line, presentation);
+    let random_result = (gate.is_none() && text.control.uses_random_gate())
+        .then(|| random.next(TEXT_RANDOM_MODULUS));
+    let record_value = if gate.is_none() && text.control.uses_record_condition() {
+        let selector_index = ((text.control.detail() >> RECORD_SELECTOR_SHIFT)
+            & RECORD_SELECTOR_MASK)
+            .wrapping_add(FIRST_CONDITIONAL_RECORD_SELECTOR);
+        let field_selector = ScriptFieldSelector::new(selector_index)
+            .expect("masked A6 condition selector remains inside the field matrix");
+        let field_byte_offset = script_field_offset(ScriptObjectKind::Actor, field_selector)
+            .ok_or(TextInstructionExecutionError::MissingConditionField {
+                selector: field_selector,
+            })?;
+        Some(
+            line_offset
+                .checked_add(field_byte_offset)
+                .and_then(|offset| u16::try_from(offset).ok())
+                .and_then(|offset| state.resolve_word_source_offset(offset))
+                .and_then(|field| state.word(field))
+                .ok_or(TextInstructionExecutionError::MissingConditionField {
+                    selector: field_selector,
+                })?,
+        )
+    } else {
+        None
+    };
+    let history = (gate.is_none() && text.control.uses_history_condition())
+        .then(|| selector.history().snapshot());
+    let outcome = handle_text_instruction(
+        text,
+        instruction_state,
+        &mut line,
+        dictionary,
+        script,
+        presentation,
+        TextConditionInputs {
+            random_result,
+            record_value,
+            history: history.as_ref(),
+        },
+    )?;
+
+    let published = matches!(
+        outcome,
+        TextHandlerOutcome::SubtitlePublished | TextHandlerOutcome::MenuPublished
+    );
+    if published {
+        let updated = state.set_word(flags_offset, flags | LINE_ALREADY_SHOWN_FLAG);
+        debug_assert!(updated, "resolved A6 flags word remains writable");
+        if text.control.arms_resume() {
+            selector.replace_presentation_words(
+                presentation.condition_presentation_words.iter().copied(),
+            );
+        }
+    }
+    let flow = if !published {
+        ScriptFrameFlow::Continue
+    } else if text.control.arms_resume() {
+        ScriptFrameFlow::SaveResumeCursor
+    } else {
+        ScriptFrameFlow::ContinueAfterPresentation
+    };
+    Ok(TextInstructionExecution { outcome, flow })
+}
+
 /// Apply the recovered `vm_op_a6_text` behavior to typed flat runtime state.
 pub fn handle_text_instruction(
     text: &ScriptText,
@@ -259,20 +425,8 @@ pub fn handle_text_instruction(
         script.arm_resume(target, u16::MIN);
     }
 
-    if !instruction_state.active {
-        return Ok(TextHandlerOutcome::Gated(TextHandlerGate::Inactive));
-    }
-    if presentation.subtitle_display_active {
-        return Ok(TextHandlerOutcome::Gated(TextHandlerGate::SubtitleActive));
-    }
-    if presentation.menu_deferred {
-        return Ok(TextHandlerOutcome::Gated(TextHandlerGate::MenuDeferred));
-    }
-    if line.already_shown {
-        return Ok(TextHandlerOutcome::Gated(TextHandlerGate::AlreadyShown));
-    }
-    if line.kind != TextLineKind::Presentation {
-        return Ok(TextHandlerOutcome::Gated(TextHandlerGate::WrongLineKind));
+    if let Some(gate) = text_handler_gate(*instruction_state, *line, presentation) {
+        return Ok(TextHandlerOutcome::Gated(gate));
     }
 
     let mut condition_effects = TextConditionEffects::default();
@@ -342,6 +496,26 @@ pub fn handle_text_instruction(
     }
 }
 
+fn text_handler_gate(
+    instruction: TextInstructionState,
+    line: TextLineState,
+    presentation: &TextPresentationState,
+) -> Option<TextHandlerGate> {
+    if !instruction.active {
+        Some(TextHandlerGate::Inactive)
+    } else if presentation.subtitle_display_active {
+        Some(TextHandlerGate::SubtitleActive)
+    } else if presentation.menu_deferred {
+        Some(TextHandlerGate::MenuDeferred)
+    } else if line.already_shown {
+        Some(TextHandlerGate::AlreadyShown)
+    } else if line.kind != TextLineKind::Presentation {
+        Some(TextHandlerGate::WrongLineKind)
+    } else {
+        None
+    }
+}
+
 fn assemble_subtitle(
     words: &[ScriptTextWord],
     dictionary: &ScriptDictionary,
@@ -400,7 +574,9 @@ const fn is_attached_punctuation(byte: u8) -> bool {
 mod tests {
     use commander_blood_formats::code::ScriptCodeOffset;
     use commander_blood_formats::instruction::{ScriptLineRecordOffset, ScriptTextControl};
-    use commander_blood_formats::script::decode_script_dictionary;
+    use commander_blood_formats::script::{
+        ScriptObjectKind, decode_script_dictionary, decode_script_directory, decode_script_state,
+    };
     use serde::Deserialize;
 
     use super::*;
@@ -411,6 +587,9 @@ mod tests {
     const INITIAL_REQUEST_FLAGS: u8 = 0xA0;
     const INITIAL_YIELD_SIGNAL: u8 = 0x40;
     const INITIAL_REVEAL_CURSOR: usize = 0x7777;
+    const DIRECTORY_ENTRY_SIZE: usize = 20;
+    const DIRECTORY_NAME_CAPACITY: usize = 16;
+    const ACTIVE_DIRECTORY_ENTRY: u16 = 1;
 
     #[derive(Deserialize)]
     struct TextHandlerOracle {
@@ -479,6 +658,35 @@ mod tests {
                 .then_some(5),
             words: instruction_words(&vector.name, dictionary).into_boxed_slice(),
         }
+    }
+
+    fn actor_line_state(flags: u16, presentation_kind: u16, condition_value: u16) -> ScriptState {
+        let mut directory_entry = [u8::MIN; DIRECTORY_ENTRY_SIZE];
+        directory_entry[..5].copy_from_slice(b"actor");
+        directory_entry[DIRECTORY_NAME_CAPACITY..DIRECTORY_NAME_CAPACITY + 2]
+            .copy_from_slice(&u16::MIN.to_le_bytes());
+        directory_entry[DIRECTORY_NAME_CAPACITY + 2..]
+            .copy_from_slice(&ACTIVE_DIRECTORY_ENTRY.to_le_bytes());
+        let mut directory_bytes = directory_entry.to_vec();
+        directory_bytes.extend_from_slice(&[u8::MIN; DIRECTORY_ENTRY_SIZE]);
+        let directory = decode_script_directory(&directory_bytes).unwrap();
+
+        let mut state_bytes = vec![u8::MIN; ScriptObjectKind::Actor.record_size()];
+        state_bytes[..2].copy_from_slice(&ScriptObjectKind::Actor.mask().to_le_bytes());
+        state_bytes[LINE_FLAGS_BYTE_OFFSET..LINE_FLAGS_BYTE_OFFSET + 2]
+            .copy_from_slice(&flags.to_le_bytes());
+        let condition_offset = script_field_offset(
+            ScriptObjectKind::Actor,
+            ScriptFieldSelector::new(FIRST_CONDITIONAL_RECORD_SELECTOR).unwrap(),
+        )
+        .unwrap();
+        state_bytes[condition_offset..condition_offset + 2]
+            .copy_from_slice(&condition_value.to_le_bytes());
+        let action_offset =
+            script_field_offset(ScriptObjectKind::Actor, ScriptFieldSelector::ACTION).unwrap();
+        state_bytes[action_offset..action_offset + 2]
+            .copy_from_slice(&presentation_kind.to_le_bytes());
+        decode_script_state(&state_bytes, &directory).unwrap()
     }
 
     fn expected_gate(path: &str) -> Option<TextHandlerGate> {
@@ -654,6 +862,58 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn production_a6_binding_reads_and_updates_the_authored_actor_record() {
+        let dictionary = dictionary();
+        let text = ScriptText {
+            line_record: ScriptLineRecordOffset::decode(0),
+            presentation_selector: 4,
+            control: ScriptTextControl::decode(0x8005),
+            resume_target: None,
+            record_condition_operand: Some(5),
+            words: vec![dictionary_word(&dictionary, 0x0100)].into_boxed_slice(),
+        };
+        let mut instruction_state = TextInstructionState::new(&text);
+        let mut state = actor_line_state(u16::MIN, ScriptActionRecord::ACTOR_PRESENTATION_KIND, 10);
+        let mut selector = ScriptSelectorState::default();
+        let mut script = ScriptRuntime::new();
+        let mut random = BloodPrng::default();
+        let mut presentation = TextPresentationState::default();
+
+        let execution = execute_text_instruction(
+            &text,
+            &mut instruction_state,
+            &dictionary,
+            &mut state,
+            &mut selector,
+            &mut script,
+            &mut random,
+            &mut presentation,
+        )
+        .unwrap();
+        assert_eq!(execution.outcome, TextHandlerOutcome::MenuPublished);
+        assert_eq!(execution.flow, ScriptFrameFlow::ContinueAfterPresentation);
+        let flags = state.resolve_word_source_offset(2).unwrap();
+        assert_eq!(state.word(flags).unwrap(), LINE_ALREADY_SHOWN_FLAG);
+
+        let second = execute_text_instruction(
+            &text,
+            &mut instruction_state,
+            &dictionary,
+            &mut state,
+            &mut selector,
+            &mut script,
+            &mut random,
+            &mut TextPresentationState::default(),
+        )
+        .unwrap();
+        assert_eq!(
+            second.outcome,
+            TextHandlerOutcome::Gated(TextHandlerGate::AlreadyShown)
+        );
+        assert_eq!(second.flow, ScriptFrameFlow::Continue);
     }
 
     #[test]

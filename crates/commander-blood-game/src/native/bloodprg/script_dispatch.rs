@@ -5,7 +5,7 @@ use std::fmt;
 
 use commander_blood_formats::bas::ScriptBas;
 use commander_blood_formats::code::{ScriptCodeOffset, ScriptToken};
-use commander_blood_formats::instruction::{DecodedScriptInstruction, ScriptText};
+use commander_blood_formats::instruction::DecodedScriptInstruction;
 use commander_blood_formats::script::{
     ScriptDictionary, ScriptDirectory, ScriptState, ScriptWordId,
 };
@@ -49,7 +49,8 @@ use super::state::{
 };
 use super::{
     PendingScriptProfileRequest, ScriptControl, ScriptFrameEnd, ScriptProfileRequestSlot,
-    ScriptRuntime, ScriptRuntimeError, TextInstructionState, TextPresentationState,
+    ScriptRuntime, ScriptRuntimeError, TextInstructionExecutionError, TextInstructionState,
+    TextPresentationState, execute_text_instruction,
 };
 
 /// Mutable non-profile state shared by exhaustive COD dispatch and its host services.
@@ -73,28 +74,6 @@ pub struct ScriptDispatchState {
     pub record_clear_presentation: ScriptRecordClearPresentationState,
     /// D2 request retained until the main loop completes profile replacement.
     pub profile_request: ScriptProfileRequestSlot,
-}
-
-/// State exposed to the host-dependent A6 presentation handler.
-pub struct ScriptTextDispatchContext<'a> {
-    /// Current lossless token, used as the stable mutable-instruction key.
-    pub token: &'a ScriptToken,
-    /// Complete decoded A6 semantics.
-    pub text: &'a ScriptText,
-    /// Mutable active bit formerly stored inside COD.
-    pub instruction_state: &'a mut TextInstructionState,
-    /// Active profile dictionary.
-    pub dictionary: &'a ScriptDictionary,
-    /// Active profile VAR state.
-    pub state: &'a mut ScriptState,
-    /// Active selector history and pending presentation words.
-    pub selector: &'a mut ScriptSelectorState,
-    /// Shared COD control-flow state.
-    pub runtime: &'a mut ScriptRuntime,
-    /// Original pseudo-random stream.
-    pub random: &'a mut BloodPrng,
-    /// Shared subtitle, menu, and request state.
-    pub presentation: &'a mut TextPresentationState,
 }
 
 /// Mutable state exposed to the recovered post-frame presentation scan.
@@ -125,12 +104,6 @@ pub trait ScriptDispatchHost {
         runtime: &mut ScriptRuntime,
         dispatch: &mut ScriptDispatchState,
     ) -> Result<(), Self::Error>;
-
-    /// Execute A6 using resolved line state and presentation inputs.
-    fn execute_text(
-        &mut self,
-        context: ScriptTextDispatchContext<'_>,
-    ) -> Result<ScriptFrameFlow, Self::Error>;
 
     /// Return current bridge, travel, and contact activity for CE-D1.
     fn environment_activity(&self) -> ScriptEnvironmentActivity;
@@ -182,6 +155,8 @@ pub enum ScriptDispatchError<HostError> {
     ProfileRecord(ScriptProfileRecordStateError),
     /// A selected concept could not enter its BAS body.
     Selection(ScriptSelectionError),
+    /// A6 could not bind or execute its authored VAR line record.
+    Text(TextInstructionExecutionError),
 }
 
 impl<HostError: fmt::Debug> fmt::Display for ScriptDispatchError<HostError> {
@@ -286,21 +261,18 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
                     .text_instructions
                     .entry(token.source_offset())
                     .or_insert_with(|| TextInstructionState::new(text));
-                let flow = self
-                    .host
-                    .execute_text(ScriptTextDispatchContext {
-                        token,
-                        text,
-                        instruction_state,
-                        dictionary: self.dictionary,
-                        state: self.state,
-                        selector: self.selector,
-                        runtime,
-                        random: &mut self.dispatch.random,
-                        presentation: &mut self.dispatch.text_presentation,
-                    })
-                    .map_err(ScriptDispatchError::Host)?;
-                return Ok(step_with_flow(token.end_offset(), flow));
+                let execution = execute_text_instruction(
+                    text,
+                    instruction_state,
+                    self.dictionary,
+                    self.state,
+                    self.selector,
+                    runtime,
+                    &mut self.dispatch.random,
+                    &mut self.dispatch.text_presentation,
+                )
+                .map_err(ScriptDispatchError::Text)?;
+                return Ok(step_with_flow(token.end_offset(), execution.flow));
             }
             DecodedScriptInstruction::TopicOffer(offer) => {
                 offer_topic_if_presentation_active(
@@ -622,7 +594,6 @@ mod tests {
 
     struct TraversalHost {
         builtins: ScriptProfileBuiltins,
-        text_calls: usize,
         scans: usize,
     }
 
@@ -636,14 +607,6 @@ mod tests {
             _dispatch: &mut ScriptDispatchState,
         ) -> Result<(), Self::Error> {
             Ok(())
-        }
-
-        fn execute_text(
-            &mut self,
-            _context: ScriptTextDispatchContext<'_>,
-        ) -> Result<ScriptFrameFlow, Self::Error> {
-            self.text_calls += 1;
-            Ok(ScriptFrameFlow::Continue)
         }
 
         fn environment_activity(&self) -> ScriptEnvironmentActivity {
@@ -735,7 +698,6 @@ mod tests {
             let mut dispatch = ScriptDispatchState::default();
             let mut host = TraversalHost {
                 builtins: profile.builtins(),
-                text_calls: 0,
                 scans: 0,
             };
 

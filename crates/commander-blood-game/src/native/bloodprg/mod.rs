@@ -579,8 +579,8 @@ pub use script_control::{
 };
 pub use script_dispatch::{
     ScriptDispatchError, ScriptDispatchHost, ScriptDispatchState, ScriptPostScanContext,
-    ScriptTextDispatchContext, execute_loaded_script_frame, frame_execution_was_disabled,
-    pending_profile_request, selected_concept,
+    execute_loaded_script_frame, frame_execution_was_disabled, pending_profile_request,
+    selected_concept,
 };
 pub use script_frame::{
     ScriptFrameEnd, ScriptFrameError, ScriptFrameFlow, ScriptFrameHost, ScriptFrameOutcome,
@@ -704,9 +704,10 @@ pub use state::{
 };
 pub use text::{bounded_nul_byte_len, nul_terminated_byte_len, nul_terminated_bytes_equal};
 pub use text_handler::{
-    handle_text_instruction, PresentationRequestFlags, TextConditionInputs, TextHandlerError,
-    TextHandlerGate, TextHandlerOutcome, TextInstructionState, TextLineKind, TextLineState,
-    TextPresentationState,
+    PresentationRequestFlags, TextConditionInputs, TextHandlerError, TextHandlerGate,
+    TextHandlerOutcome, TextInstructionExecution, TextInstructionExecutionError,
+    TextInstructionState, TextLineKind, TextLineState, TextPresentationState,
+    execute_text_instruction, handle_text_instruction,
 };
 pub use text_scan::{
     activate_object_text, BoundTextInstruction, ScriptTextActivationError,

@@ -51,6 +51,11 @@ pub enum ScriptActionRecord {
     Occupied,
 }
 
+impl ScriptActionRecord {
+    /// Serialized record kind written by the C4 actor-presentation operation.
+    pub const ACTOR_PRESENTATION_KIND: u16 = 0x00C4;
+}
+
 /// Sparse typed action slots; absent entries are empty.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ScriptActionRecords {

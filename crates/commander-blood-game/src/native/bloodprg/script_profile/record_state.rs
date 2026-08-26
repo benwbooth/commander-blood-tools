@@ -23,7 +23,6 @@ use super::ScriptProfileBuiltins;
 const RECORD_KIND_NAVIGATION: u16 = 0x00C1;
 const RECORD_KIND_ABOARD: u16 = 0x00C2;
 const RECORD_KIND_PRESENTATION_QUEUE: u16 = 0x00C3;
-const RECORD_KIND_ACTOR_PRESENTATION: u16 = 0x00C4;
 const RECORD_KIND_WORLD_STATE: u16 = 0x00C5;
 const RECORD_KIND_TRAVEL: u16 = 0x00C6;
 const RECORD_KIND_ACTIVE_OBJECT: u16 = 0x00C7;
@@ -371,7 +370,7 @@ fn decode_action_record(raw: [u16; 3], state: &ScriptState) -> ScriptActionRecor
         RECORD_KIND_PRESENTATION_QUEUE => decode_object(raw[1], state)
             .map(ScriptActionRecord::PresentationQueue)
             .unwrap_or(ScriptActionRecord::Occupied),
-        RECORD_KIND_ACTOR_PRESENTATION => decode_object(raw[1], state)
+        ScriptActionRecord::ACTOR_PRESENTATION_KIND => decode_object(raw[1], state)
             .map(ScriptActionRecord::ActorPresentation)
             .unwrap_or(ScriptActionRecord::Occupied),
         RECORD_KIND_WORLD_STATE => decode_object(raw[1], state)
@@ -408,7 +407,7 @@ fn encode_action_record(
             PRESENTATION_QUEUE_AUX_WORD,
         ],
         ScriptActionRecord::ActorPresentation(related) => [
-            RECORD_KIND_ACTOR_PRESENTATION,
+            ScriptActionRecord::ACTOR_PRESENTATION_KIND,
             encode_object(related, directory)?,
             0,
         ],
