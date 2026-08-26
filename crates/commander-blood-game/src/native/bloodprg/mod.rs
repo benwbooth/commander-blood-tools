@@ -72,6 +72,7 @@ mod presentation_resource;
 mod presentation_source;
 mod presentation_stream;
 mod presentation_run;
+mod presentation_sequence_load;
 mod presentation_word_choice;
 mod pointer_buttons;
 mod presentation_scan;
@@ -468,6 +469,11 @@ pub use presentation_stream::{
 pub use presentation_run::{
     CREDITS_VOICE_RESOURCE_PATH, PresentationRunExit, PresentationRunHost,
     PresentationRunState, run_presentation_line_one_stream, run_presentation_line_zero,
+};
+pub use presentation_sequence_load::{
+    PresentationResourceSequenceContext, PresentationResourceSequenceError,
+    PresentationResourceSequenceOutcome, PresentationSequenceSideDataError,
+    PresentationSequenceSideDataSink, load_presentation_resource_sequence,
 };
 pub use presentation_word_choice::{
     WORD_CHOICE_TRANSITION_STEPS, PresentationWordChoice, PresentationWordChoiceBackend,
