@@ -3,6 +3,8 @@
 use std::error::Error;
 use std::fmt;
 
+use crate::archive::{BloodArchiveError, BloodResourceName};
+
 /// Number of authored navigation anchors stored before the angle table.
 pub const BLOODPRG_BRIDGE_AUTHORED_ANCHOR_COUNT: usize = 10;
 /// Number of anchors consumed by the recovered bridge object projector.
@@ -23,10 +25,20 @@ pub const BLOODPRG_MAIN_FONT_GLYPH_COUNT: usize = 86;
 pub const BLOODPRG_SUBTITLE_FONT_GLYPH_COUNT: usize = 55;
 /// Number of compact small-font glyphs embedded in the executable.
 pub const BLOODPRG_SMALL_FONT_GLYPH_COUNT: usize = 42;
+/// Number of presentation-line templates indexed by the native scene dispatcher.
+pub const BLOODPRG_PRESENTATION_LINE_COUNT: usize = 45;
 
 const MZ_SIGNATURE: [u8; 2] = [b'M', b'Z'];
 const MZ_SIGNATURE_FILE_OFFSET: usize = 0;
 const BLOODPRG_DATA_FILE_OFFSET: usize = 0xD420;
+const PRESENTATION_INDEX_DATA_OFFSET: usize = 0x1FB5;
+const PRESENTATION_DESCRIPTOR_DATA_END_OFFSET: usize = 0x24F5;
+const PRESENTATION_INDEX_ENTRY_BYTE_COUNT: usize = 4;
+const PRESENTATION_DESCRIPTOR_OFFSET_FIELD: usize = 0;
+const PRESENTATION_SCENE_IMAGE_OFFSET_FIELD: usize = 2;
+const PRESENTATION_DESCRIPTOR_HEADER_BYTE_COUNT: usize = 2;
+const PRESENTATION_RESOURCE_NAME_MAXIMUM_FIELD_BYTE_COUNT: usize = 16;
+const NO_PRESENTATION_SCENE_IMAGE_OFFSET: u16 = u16::MAX;
 const BRIDGE_PROJECTION_ANCHOR_DATA_OFFSET: usize = 0x4F09;
 const BRIDGE_TRIGONOMETRY_DATA_OFFSET: usize = 0x4F45;
 const POSITION_COMPONENT_COUNT: usize = 3;
@@ -82,6 +94,239 @@ const REQUIRED_EXECUTABLE_LENGTH: usize = TRIGONOMETRY_FILE_OFFSET
     + BLOODPRG_BRIDGE_TRIGONOMETRY_SAMPLE_COUNT * TRIGONOMETRY_SAMPLE_BYTE_COUNT;
 const FONT_REQUIRED_EXECUTABLE_LENGTH: usize =
     MAIN_FONT_GLYPH_FILE_OFFSET + MAIN_FONT_GLYPH_BYTE_COUNT;
+const PRESENTATION_REQUIRED_EXECUTABLE_LENGTH: usize =
+    BLOODPRG_DATA_FILE_OFFSET + PRESENTATION_DESCRIPTOR_DATA_END_OFFSET;
+
+/// One executable-authored presentation-line template.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BloodprgPresentationLineDescriptor {
+    flags: u8,
+    variant: u8,
+    resource_name: BloodResourceName,
+    initial_scene_image_name: Option<BloodResourceName>,
+}
+
+impl BloodprgPresentationLineDescriptor {
+    /// Low-byte stream behavior flags used by the presentation queue.
+    pub const fn flags(&self) -> u8 {
+        self.flags
+    }
+
+    /// Initial high-byte stream variant installed before dynamic scene selection.
+    pub const fn variant(&self) -> u8 {
+        self.variant
+    }
+
+    /// Initial HNM resource name, including its authored DOS directory.
+    pub const fn resource_name(&self) -> &BloodResourceName {
+        &self.resource_name
+    }
+
+    /// Initial scene artwork, absent for every entry in the shipped executable.
+    pub const fn initial_scene_image_name(&self) -> Option<&BloodResourceName> {
+        self.initial_scene_image_name.as_ref()
+    }
+}
+
+/// Complete executable-authored presentation-line template catalog.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BloodprgPresentationCatalog {
+    lines: [BloodprgPresentationLineDescriptor; BLOODPRG_PRESENTATION_LINE_COUNT],
+}
+
+impl BloodprgPresentationCatalog {
+    /// Return every presentation line in native line-number order.
+    pub const fn lines(
+        &self,
+    ) -> &[BloodprgPresentationLineDescriptor; BLOODPRG_PRESENTATION_LINE_COUNT] {
+        &self.lines
+    }
+
+    /// Resolve one line without native 16-bit table aliasing.
+    pub fn line(&self, line: u16) -> Option<&BloodprgPresentationLineDescriptor> {
+        self.lines.get(usize::from(line))
+    }
+}
+
+/// Malformed executable presentation-line tables.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum BloodprgPresentationCatalogError {
+    /// The input does not begin with an MZ executable signature.
+    InvalidExecutableSignature,
+    /// The executable ends before the complete index and descriptor area.
+    TruncatedExecutable {
+        /// Supplied executable byte count.
+        actual: usize,
+        /// Minimum byte count required by the presentation tables.
+        required: usize,
+    },
+    /// Descriptor slots do not progress through distinct bounded regions.
+    InvalidDescriptorRange {
+        /// Zero-based presentation line.
+        line: usize,
+        /// Start relative to the executable data image.
+        start: usize,
+        /// Exclusive end relative to the executable data image.
+        end: usize,
+    },
+    /// A descriptor's resource name has no terminator inside its own slot.
+    MissingResourceNameTerminator {
+        /// Zero-based presentation line.
+        line: usize,
+    },
+    /// A descriptor resource name is not a valid original archive name.
+    InvalidResourceName {
+        /// Zero-based presentation line.
+        line: usize,
+        /// Exact resource-name validation failure.
+        source: BloodArchiveError,
+    },
+    /// An initial scene-image pointer falls outside the executable data image.
+    InvalidSceneImageOffset {
+        /// Zero-based presentation line.
+        line: usize,
+        /// Invalid data-image-relative position.
+        offset: usize,
+    },
+    /// An initial scene-image name has no terminator in its bounded field.
+    MissingSceneImageNameTerminator {
+        /// Zero-based presentation line.
+        line: usize,
+    },
+    /// An initial scene-image name is not a valid original archive name.
+    InvalidSceneImageName {
+        /// Zero-based presentation line.
+        line: usize,
+        /// Exact resource-name validation failure.
+        source: BloodArchiveError,
+    },
+}
+
+impl fmt::Display for BloodprgPresentationCatalogError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(formatter, "invalid BLOODPRG presentation catalog: {self:?}")
+    }
+}
+
+impl Error for BloodprgPresentationCatalogError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::InvalidResourceName { source, .. }
+            | Self::InvalidSceneImageName { source, .. } => Some(source),
+            _ => None,
+        }
+    }
+}
+
+/// Decode every executable-authored presentation-line template into flat owned values.
+///
+/// The source index contains DOS data-segment offsets, including mutable scene-image
+/// pointers. This loader resolves those serialized positions once and does not expose
+/// them to runtime game code.
+pub fn decode_bloodprg_presentation_catalog(
+    executable: &[u8],
+) -> Result<BloodprgPresentationCatalog, BloodprgPresentationCatalogError> {
+    if executable.len() < PRESENTATION_REQUIRED_EXECUTABLE_LENGTH {
+        return Err(BloodprgPresentationCatalogError::TruncatedExecutable {
+            actual: executable.len(),
+            required: PRESENTATION_REQUIRED_EXECUTABLE_LENGTH,
+        });
+    }
+    if executable.get(MZ_SIGNATURE_FILE_OFFSET..MZ_SIGNATURE.len()) != Some(&MZ_SIGNATURE) {
+        return Err(BloodprgPresentationCatalogError::InvalidExecutableSignature);
+    }
+
+    let index_file_offset = BLOODPRG_DATA_FILE_OFFSET + PRESENTATION_INDEX_DATA_OFFSET;
+    let descriptor_offsets: [usize; BLOODPRG_PRESENTATION_LINE_COUNT] =
+        std::array::from_fn(|line| {
+            let entry = index_file_offset + line * PRESENTATION_INDEX_ENTRY_BYTE_COUNT;
+            usize::from(read_unsigned_word(
+                executable,
+                entry + PRESENTATION_DESCRIPTOR_OFFSET_FIELD,
+            ))
+        });
+    let scene_image_offsets: [u16; BLOODPRG_PRESENTATION_LINE_COUNT] =
+        std::array::from_fn(|line| {
+            let entry = index_file_offset + line * PRESENTATION_INDEX_ENTRY_BYTE_COUNT;
+            read_unsigned_word(executable, entry + PRESENTATION_SCENE_IMAGE_OFFSET_FIELD)
+        });
+
+    let descriptor_data_start = PRESENTATION_INDEX_DATA_OFFSET
+        + BLOODPRG_PRESENTATION_LINE_COUNT * PRESENTATION_INDEX_ENTRY_BYTE_COUNT;
+    let mut lines = Vec::with_capacity(BLOODPRG_PRESENTATION_LINE_COUNT);
+    for line in 0..BLOODPRG_PRESENTATION_LINE_COUNT {
+        let start = descriptor_offsets[line];
+        let end = descriptor_offsets
+            .get(line + 1)
+            .copied()
+            .unwrap_or(PRESENTATION_DESCRIPTOR_DATA_END_OFFSET);
+        if start < descriptor_data_start
+            || start
+                .checked_add(PRESENTATION_DESCRIPTOR_HEADER_BYTE_COUNT)
+                .is_none_or(|header_end| header_end >= end)
+            || end > PRESENTATION_DESCRIPTOR_DATA_END_OFFSET
+        {
+            return Err(BloodprgPresentationCatalogError::InvalidDescriptorRange {
+                line,
+                start,
+                end,
+            });
+        }
+
+        let descriptor =
+            &executable[BLOODPRG_DATA_FILE_OFFSET + start..BLOODPRG_DATA_FILE_OFFSET + end];
+        let name_field = &descriptor[PRESENTATION_DESCRIPTOR_HEADER_BYTE_COUNT..];
+        let name_length = name_field
+            .iter()
+            .position(|byte| *byte == u8::MIN)
+            .ok_or(BloodprgPresentationCatalogError::MissingResourceNameTerminator { line })?;
+        let resource_name =
+            BloodResourceName::new(&name_field[..name_length]).map_err(|source| {
+                BloodprgPresentationCatalogError::InvalidResourceName { line, source }
+            })?;
+        let initial_scene_image_name =
+            decode_presentation_scene_image_name(executable, line, scene_image_offsets[line])?;
+        lines.push(BloodprgPresentationLineDescriptor {
+            flags: descriptor[0],
+            variant: descriptor[1],
+            resource_name,
+            initial_scene_image_name,
+        });
+    }
+
+    Ok(BloodprgPresentationCatalog {
+        lines: lines
+            .try_into()
+            .expect("one descriptor is emitted for every presentation line"),
+    })
+}
+
+fn decode_presentation_scene_image_name(
+    executable: &[u8],
+    line: usize,
+    data_offset: u16,
+) -> Result<Option<BloodResourceName>, BloodprgPresentationCatalogError> {
+    if data_offset == NO_PRESENTATION_SCENE_IMAGE_OFFSET {
+        return Ok(None);
+    }
+
+    let offset = usize::from(data_offset);
+    let file_offset = BLOODPRG_DATA_FILE_OFFSET
+        .checked_add(offset)
+        .ok_or(BloodprgPresentationCatalogError::InvalidSceneImageOffset { line, offset })?;
+    let field_end = file_offset
+        .checked_add(PRESENTATION_RESOURCE_NAME_MAXIMUM_FIELD_BYTE_COUNT)
+        .filter(|end| *end <= executable.len())
+        .ok_or(BloodprgPresentationCatalogError::InvalidSceneImageOffset { line, offset })?;
+    let field = &executable[file_offset..field_end];
+    let name_length = field
+        .iter()
+        .position(|byte| *byte == u8::MIN)
+        .ok_or(BloodprgPresentationCatalogError::MissingSceneImageNameTerminator { line })?;
+    BloodResourceName::new(&field[..name_length])
+        .map(Some)
+        .map_err(|source| BloodprgPresentationCatalogError::InvalidSceneImageName { line, source })
+}
 
 /// One world-space navigation anchor decoded from the executable image.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -424,6 +669,118 @@ mod tests {
         assert_eq!(
             decode_bloodprg_font_resources(&invalid_signature),
             Err(BloodprgFontResourceError::InvalidExecutableSignature)
+        );
+    }
+
+    #[test]
+    fn presentation_catalog_matches_every_shipped_line_template() {
+        let executable = include_bytes!("../../../re/bin/BLOODPRG.EXE");
+        let catalog = decode_bloodprg_presentation_catalog(executable).unwrap();
+        assert_eq!(catalog.lines().len(), BLOODPRG_PRESENTATION_LINE_COUNT);
+        assert!(catalog.lines().iter().all(|line| line.flags() == 0));
+        assert!(catalog.lines().iter().all(|line| line.variant() == 16));
+        assert!(
+            catalog
+                .lines()
+                .iter()
+                .all(|line| line.initial_scene_image_name().is_none())
+        );
+
+        let first_names: [&[u8]; 8] = [
+            b"sq\\mind.HNM",
+            b"sq\\the_star.HNM",
+            b"sq\\xxxxxxxxxxxx",
+            b"pl\\xxxxxxxxxxxx",
+            b"sq\\ejectorx.HNM",
+            b"sq\\ejection.HNM",
+            b"sq\\xxxxxxxxxxxx",
+            b"sq\\xxxxxxxxxxxx",
+        ];
+        for (line, expected) in first_names.into_iter().enumerate() {
+            assert_eq!(catalog.lines()[line].resource_name().as_bytes(), expected);
+        }
+        for line in 8..=40 {
+            assert_eq!(
+                catalog.lines()[line].resource_name().as_bytes(),
+                b"pe\\xxxxxxxxxxxx"
+            );
+        }
+        let final_names: [&[u8]; 4] = [
+            b"sq\\cryogel.hnm",
+            b"sq\\cryorad.hnm",
+            b"ob\\xxxxxxxxxxxx",
+            b"sq\\pollup.hnm",
+        ];
+        for (line, expected) in (41..BLOODPRG_PRESENTATION_LINE_COUNT).zip(final_names) {
+            assert_eq!(catalog.lines()[line].resource_name().as_bytes(), expected);
+        }
+    }
+
+    #[test]
+    fn presentation_catalog_resolves_scene_names_without_retaining_offsets() {
+        let mut executable = include_bytes!("../../../re/bin/BLOODPRG.EXE").to_vec();
+        let first_entry = BLOODPRG_DATA_FILE_OFFSET + PRESENTATION_INDEX_DATA_OFFSET;
+        let first_name_data_offset = 0x206B_u16;
+        executable[first_entry + PRESENTATION_SCENE_IMAGE_OFFSET_FIELD
+            ..first_entry + PRESENTATION_SCENE_IMAGE_OFFSET_FIELD + WORD_BYTE_COUNT]
+            .copy_from_slice(&first_name_data_offset.to_le_bytes());
+
+        let catalog = decode_bloodprg_presentation_catalog(&executable).unwrap();
+        assert_eq!(
+            catalog.lines()[0]
+                .initial_scene_image_name()
+                .unwrap()
+                .as_bytes(),
+            b"sq\\mind.HNM"
+        );
+    }
+
+    #[test]
+    fn malformed_presentation_catalogs_fail_inside_bounded_fields() {
+        assert_eq!(
+            decode_bloodprg_presentation_catalog(&[]),
+            Err(BloodprgPresentationCatalogError::TruncatedExecutable {
+                actual: 0,
+                required: PRESENTATION_REQUIRED_EXECUTABLE_LENGTH,
+            })
+        );
+
+        let mut invalid_signature = vec![u8::MIN; PRESENTATION_REQUIRED_EXECUTABLE_LENGTH];
+        assert_eq!(
+            decode_bloodprg_presentation_catalog(&invalid_signature),
+            Err(BloodprgPresentationCatalogError::InvalidExecutableSignature)
+        );
+
+        invalid_signature[..MZ_SIGNATURE.len()].copy_from_slice(&MZ_SIGNATURE);
+        let first_entry = BLOODPRG_DATA_FILE_OFFSET + PRESENTATION_INDEX_DATA_OFFSET;
+        let first_descriptor = usize::from(read_unsigned_word(
+            &invalid_signature,
+            first_entry + PRESENTATION_DESCRIPTOR_OFFSET_FIELD,
+        ));
+        assert_eq!(
+            decode_bloodprg_presentation_catalog(&invalid_signature),
+            Err(BloodprgPresentationCatalogError::InvalidDescriptorRange {
+                line: 0,
+                start: first_descriptor,
+                end: first_descriptor,
+            })
+        );
+
+        let mut missing_terminator = include_bytes!("../../../re/bin/BLOODPRG.EXE").to_vec();
+        let first_descriptor = PRESENTATION_INDEX_DATA_OFFSET
+            + BLOODPRG_PRESENTATION_LINE_COUNT * PRESENTATION_INDEX_ENTRY_BYTE_COUNT;
+        let second_descriptor = usize::from(read_unsigned_word(
+            &missing_terminator,
+            first_entry + PRESENTATION_INDEX_ENTRY_BYTE_COUNT,
+        ));
+        missing_terminator[BLOODPRG_DATA_FILE_OFFSET
+            + first_descriptor
+            + PRESENTATION_DESCRIPTOR_HEADER_BYTE_COUNT
+            ..BLOODPRG_DATA_FILE_OFFSET + second_descriptor]
+            .fill(b'x');
+        assert_eq!(
+            decode_bloodprg_presentation_catalog(&missing_terminator),
+            Err(BloodprgPresentationCatalogError::MissingResourceNameTerminator { line: 0 })
         );
     }
 

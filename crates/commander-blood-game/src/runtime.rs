@@ -33,7 +33,10 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 use commander_blood_formats::archive::{BloodArchive, BloodResourceName};
-use commander_blood_formats::bloodprg::{BloodprgFontResources, decode_bloodprg_font_resources};
+use commander_blood_formats::bloodprg::{
+    BloodprgFontResources, BloodprgPresentationCatalog, decode_bloodprg_font_resources,
+    decode_bloodprg_presentation_catalog,
+};
 use commander_blood_formats::descript_database::DescriptDatabase;
 use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
 use commander_blood_formats::name_area_effect::{
@@ -198,6 +201,7 @@ pub struct OriginalGameData {
     writable_resource_catalog: StartupWritableResourceCatalog,
     descript_database: DescriptDatabase,
     font_resources: BloodprgFontResources,
+    presentation_catalog: BloodprgPresentationCatalog,
     default_vga_palette: [[u8; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT],
     name_area_effect_sequences: Box<[NameAreaEffectSequence]>,
     world_artwork_layout: Box<[WorldArtworkLayout]>,
@@ -248,6 +252,8 @@ impl OriginalGameData {
                 .context("decoding startup writable-resource catalog")?;
         let font_resources = decode_bloodprg_font_resources(&executable)
             .context("decoding original executable font resources")?;
+        let presentation_catalog = decode_bloodprg_presentation_catalog(&executable)
+            .context("decoding executable presentation-line catalog")?;
         let default_vga_palette = decode_bloodprg_default_vga_palette(&executable)
             .context("decoding original default palette")?;
         let name_area_effect_sequences = decode_bloodprg_name_area_effect_sequences(&executable)
@@ -283,6 +289,7 @@ impl OriginalGameData {
             writable_resource_catalog,
             descript_database,
             font_resources,
+            presentation_catalog,
             default_vga_palette,
             name_area_effect_sequences,
             world_artwork_layout,
@@ -328,6 +335,11 @@ impl OriginalGameData {
     /// Exact compact, subtitle, square-cap, and dialogue fonts from the executable.
     pub const fn font_resources(&self) -> &BloodprgFontResources {
         &self.font_resources
+    }
+
+    /// Initial streamed-video templates indexed by authored presentation line.
+    pub const fn presentation_catalog(&self) -> &BloodprgPresentationCatalog {
+        &self.presentation_catalog
     }
 
     /// Default 256-color palette retaining the native six-bit VGA DAC components.
@@ -471,6 +483,10 @@ mod tests {
         assert_eq!(
             data.world_artwork_layout().len(),
             ORIGINAL_WORLD_ARTWORK_LAYOUT_COUNT
+        );
+        assert_eq!(
+            data.presentation_catalog().lines().len(),
+            commander_blood_formats::bloodprg::BLOODPRG_PRESENTATION_LINE_COUNT
         );
         assert_eq!(
             data.validate_script_profiles().unwrap().len(),
