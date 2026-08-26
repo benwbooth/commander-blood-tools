@@ -371,8 +371,8 @@ pub use script_action::{
     dispatch_script_action,
 };
 pub use procedure::{
-    apply_procedure_activation, evaluate_procedure_gate, ScriptProcedureStateError,
-    ScriptProcedureStates,
+    apply_procedure_activation, apply_procedure_patch_stream, build_procedure_patch_stream,
+    evaluate_procedure_gate, ScriptProcedureStateError, ScriptProcedureStates,
 };
 pub use record::{
     apply_direct_record_operation, apply_record_pair_operation, apply_transfer, ScriptRecordError,

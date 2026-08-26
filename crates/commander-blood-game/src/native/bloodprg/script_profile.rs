@@ -5,6 +5,7 @@ use std::fmt;
 
 use commander_blood_formats::bas::{ScriptBas, ScriptBasError, decode_script_bas};
 use commander_blood_formats::code::{ScriptCode, ScriptCodeError, decode_script_code};
+use commander_blood_formats::instruction::{ScriptInstructionError, decode_script_procedure_gate};
 use commander_blood_formats::script::{
     ScriptDataError, ScriptDictionary, ScriptDirectory, ScriptObjectId, ScriptState,
     ScriptSymbolKind, decode_script_dictionary, decode_script_directory, decode_script_state,
@@ -14,7 +15,8 @@ use crate::assets::OriginalResourceStore;
 
 use super::{
     OriginalResourceCache, OriginalResourceCatalog, ResourceCacheError, ResourceId,
-    ResourceLoadStatus, ScriptRuntime, ScriptSelectorState, ScriptSequenceSlots,
+    ResourceLoadStatus, ScriptProcedureStateError, ScriptProcedureStates, ScriptRuntime,
+    ScriptSelectorState, ScriptSequenceSlots,
 };
 
 /// File position of the five playable resource profiles in `BLOODPRG.EXE`.
@@ -26,6 +28,7 @@ pub const SCRIPT_PROFILE_RESOURCE_COUNT: usize = 5;
 
 const SERIALIZED_RESOURCE_ID_SIZE: usize = 2;
 const SENTINEL_PROFILE_COUNT: usize = 1;
+const PROCEDURE_GATE_OPCODE: u8 = 0xA9;
 const BUILTIN_PLAYER_NAME: &[u8] = b"blood";
 const BUILTIN_WORLD_NAME: &[u8] = b"orxx";
 const BUILTIN_HORN_NAME: &[u8] = b"Honk";
@@ -212,6 +215,7 @@ pub struct LoadedScriptProfile {
     dictionary: ScriptDictionary,
     directory: ScriptDirectory,
     builtins: ScriptProfileBuiltins,
+    procedures: ScriptProcedureStates,
     runtime: ScriptRuntime,
     selector_state: ScriptSelectorState,
     sequence_slots: ScriptSequenceSlots,
@@ -261,6 +265,16 @@ impl LoadedScriptProfile {
     /// Return the native VM's specially named object bindings.
     pub const fn builtins(&self) -> ScriptProfileBuiltins {
         self.builtins
+    }
+
+    /// Borrow the profile's mutable procedure-gate state.
+    pub const fn procedures(&self) -> &ScriptProcedureStates {
+        &self.procedures
+    }
+
+    /// Mutably borrow procedure-gate state for A9, AB, and save restoration.
+    pub fn procedures_mut(&mut self) -> &mut ScriptProcedureStates {
+        &mut self.procedures
     }
 
     /// Borrow the fresh control-flow runtime associated with this profile.
@@ -414,6 +428,10 @@ pub enum ScriptProfileError {
     },
     /// The COD instruction image failed lossless framing.
     Code(ScriptCodeError),
+    /// A procedure entry could not be resolved against the decoded directory.
+    ProcedureInstruction(ScriptInstructionError),
+    /// Procedure gates do not form one complete typed state table.
+    ProcedureState(ScriptProcedureStateError),
     /// The BAS dialogue image failed typed decoding.
     Dialogue(ScriptBasError),
     /// A VAR, DIC, or DEB companion image failed typed decoding.
@@ -439,6 +457,8 @@ impl Error for ScriptProfileError {
         match self {
             Self::Resource(source) => Some(source),
             Self::Code(source) => Some(source),
+            Self::ProcedureInstruction(source) => Some(source),
+            Self::ProcedureState(source) => Some(source),
             Self::Dialogue(source) => Some(source),
             Self::Data { source, .. } => Some(source),
             _ => None,
@@ -474,6 +494,15 @@ fn decode_loaded_profile(
         resources.resource(ScriptProfileResourceKind::Code),
     )?)
     .map_err(ScriptProfileError::Code)?;
+    let procedure_gates = code
+        .tokens()
+        .iter()
+        .filter(|token| token.opcode().byte() == PROCEDURE_GATE_OPCODE)
+        .map(|token| decode_script_procedure_gate(token, &directory))
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(ScriptProfileError::ProcedureInstruction)?;
+    let procedures = ScriptProcedureStates::from_gates(&procedure_gates)
+        .map_err(ScriptProfileError::ProcedureState)?;
     let dialogue = decode_script_bas(
         loaded_resource(
             cache,
@@ -501,6 +530,7 @@ fn decode_loaded_profile(
         dictionary,
         directory,
         builtins,
+        procedures,
         runtime: ScriptRuntime::new(),
         selector_state: ScriptSelectorState::default(),
         sequence_slots: ScriptSequenceSlots::default(),
@@ -632,6 +662,10 @@ mod tests {
             assert_eq!(
                 loaded.directory().encode(),
                 std::fs::read(root.join(format!("SCRIPT{file_number}.DEB"))).unwrap()
+            );
+            assert_eq!(
+                loaded.procedures().len(),
+                loaded.directory().procedures().count()
             );
             let builtins = loaded.builtins();
             assert!(builtins.player.is_some());
