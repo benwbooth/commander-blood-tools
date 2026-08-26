@@ -563,7 +563,8 @@ pub use ship_presentation::{
 };
 pub use sprite_blitter::{
     BridgeSpriteBlitError, BridgeSpriteBlitOutcome, BridgeSpriteRemapSelection,
-    BridgeSpriteRemapTables, blit_raw_opaque_sprite, blit_raw_transparent_sprite,
+    BridgeSpriteRemapTables, BridgeSpriteRleBlitOutcome, blit_raw_opaque_sprite,
+    blit_raw_transparent_sprite, blit_rle_opaque_sprite, blit_rle_transparent_sprite,
 };
 pub use sprite_geometry::{
     BRIDGE_SPRITE_ENTITY_COUNT, BridgeSpriteActivationError, BridgeSpriteBlitterMode,
