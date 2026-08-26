@@ -1476,8 +1476,11 @@ impl AlienScene {
                             behavior,
                         });
                     }
-                    AlienBehaviorMethod::NoOperation
-                    | AlienBehaviorMethod::Wave
+                    AlienBehaviorMethod::NoOperation => {
+                        super::run_no_operation();
+                        None
+                    }
+                    AlienBehaviorMethod::Wave
                     | AlienBehaviorMethod::AnimationDispatch
                     | AlienBehaviorMethod::RingAnimation
                     | AlienBehaviorMethod::PaletteUpdate

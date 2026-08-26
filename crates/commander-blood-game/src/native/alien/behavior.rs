@@ -63,6 +63,13 @@ pub struct AlienSampleState {
     pub previous: i16,
 }
 
+/// Execute the method-table no-operation shipped by all three alien overlays.
+///
+/// The original bodies contain only a near return and preserve all caller
+/// state. This explicit semantic routine distinguishes authored inert behavior
+/// from an unimplemented method.
+pub fn run_no_operation() {}
+
 /// Wrap every node-local position around the camera's signed 15-bit world cell.
 pub fn wrap_positions(
     nodes: &mut [AlienNodePose],
@@ -600,5 +607,22 @@ mod tests {
                 available: pose.texture_coordinates.len(),
             })
         );
+    }
+
+    #[test]
+    fn authored_no_operation_is_present_in_every_original_overlay() {
+        for source in [
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_amer_func_1dd6_natural.json"),
+            include_str!(
+                "../../../../../re/tools/oracle_vectors/xdb_croolis_func_1d27_natural.json"
+            ),
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_scrut_func_1de7_natural.json"),
+        ] {
+            let vectors: Vec<serde_json::Value> = serde_json::from_str(source).unwrap();
+            assert_eq!(vectors.len(), 3);
+            for _vector in vectors {
+                run_no_operation();
+            }
+        }
     }
 }

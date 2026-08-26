@@ -20,7 +20,7 @@ mod wave;
 
 pub use behavior::{
     AlienBehaviorError, AlienSampleState, adjust_state, anchor_state, apply_sample_delta,
-    apply_scaled_sample_delta, bounds_then_wrap, wrap_positions,
+    apply_scaled_sample_delta, bounds_then_wrap, run_no_operation, wrap_positions,
 };
 pub use callback::{ALIEN_TRANSITION_QUEUE_CAPACITY, AlienCallbackSceneState, AlienControlLatch};
 pub use camera::{AlienCameraAngles, AlienCameraTransform};

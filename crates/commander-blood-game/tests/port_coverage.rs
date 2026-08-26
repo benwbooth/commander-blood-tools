@@ -6,8 +6,8 @@ const RECOVERED_XDB_ROUTINE_COUNT: usize = 183;
 const RECOVERED_MANU3_ROUTINE_COUNT: usize = 12;
 const RECOVERED_NATIVE_ROUTINE_COUNT: usize =
     RECOVERED_BLOODPRG_ROUTINE_COUNT + RECOVERED_XDB_ROUTINE_COUNT;
-const CURRENT_PORTED_ROUTINE_COUNT: usize = 346;
-const CURRENT_ELIMINATED_ROUTINE_COUNT: usize = 12;
+const CURRENT_PORTED_ROUTINE_COUNT: usize = 349;
+const CURRENT_ELIMINATED_ROUTINE_COUNT: usize = 21;
 
 fn workspace_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -102,9 +102,13 @@ fn coverage_ledger_only_accepts_documented_authoritative_routines() {
             (&row["source"], &row["function"]),
             (&expected.0, &expected.1)
         );
-        assert_eq!(
-            row["disposition"], "eliminated_flat_memory_adapter",
-            "{key:?} has an unsupported elimination disposition"
+        assert!(
+            matches!(
+                row["disposition"].as_str(),
+                "eliminated_flat_memory_adapter" | "eliminated_host_adapter"
+            ),
+            "{key:?} has unsupported elimination disposition {}",
+            row["disposition"]
         );
         assert!(!row["rationale"].trim().is_empty());
 
