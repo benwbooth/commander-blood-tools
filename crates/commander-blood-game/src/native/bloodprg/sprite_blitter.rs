@@ -11,6 +11,7 @@ const FRAME_HEIGHT_OFFSET: usize = 2;
 const FRAME_X_ORIGIN_OFFSET: usize = 4;
 const FRAME_Y_ORIGIN_OFFSET: usize = 6;
 const FRAME_HEADER_BYTE_COUNT: usize = 8;
+const FIXED_POINT_FRACTION_BITS: u32 = 16;
 const DESTINATION_REMAP_SHIFT: u32 = 8;
 const DESTINATION_REMAP_MASK: u16 = 3;
 const DIRECT_COLOR_MODE: u16 = 0;
@@ -65,6 +66,23 @@ pub struct BridgeSpriteRleBlitOutcome {
     pub destination_start: [i32; 2],
     /// Destination-color operation used by a transparent blit.
     pub remap: Option<BridgeSpriteRemapSelection>,
+}
+
+/// Fixed-point geometry selected by one scaled transparent sprite blit.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct BridgeSpriteScaledBlitOutcome {
+    /// Horizontal 16.16 source advance, absent when destination width is zero.
+    pub x_step_16_16: Option<u32>,
+    /// Vertical 16.16 source advance, absent when either destination extent is zero.
+    pub y_step_16_16: Option<u32>,
+    /// Horizontal and vertical 16.16 source positions after leading-edge clipping.
+    pub fixed_start_16_16: [u32; 2],
+    /// Signed destination extent after clipping. A nonpositive component draws nothing.
+    pub clipped_extent: [i16; 2],
+    /// First destination pixel considered after leading-edge clipping.
+    pub destination_start: [i16; 2],
+    /// Number of source pixels sampled before transparent zeroes were discarded.
+    pub sampled_pixel_count: usize,
 }
 
 /// Invalid frame, entity geometry, clipping state, or flat framebuffer access.
@@ -177,6 +195,171 @@ pub fn blit_rle_opaque_sprite(
     framebuffer: &mut [u8],
 ) -> Result<BridgeSpriteRleBlitOutcome, BridgeSpriteBlitError> {
     blit_rle_sprite(entity, selection, resource_bytes, framebuffer, None)
+}
+
+/// Scale a raw sprite with source-zero transparency.
+///
+/// This translates `sprite_blit_scaled_transparent` at BLOODPRG routine offset
+/// `0x004F62`. It retains the original unsigned 16.16 nearest-neighbor steps,
+/// signed clipping, zero-sized early returns, and source-zero transparency.
+/// The native routine deliberately ignores frame origins, flip state, and color
+/// remapping; this API therefore does not accept those irrelevant inputs.
+pub fn blit_scaled_transparent_sprite(
+    entity: &BridgeSpriteEntity,
+    resource_bytes: &[u8],
+    framebuffer: &mut [u8],
+) -> Result<BridgeSpriteScaledBlitOutcome, BridgeSpriteBlitError> {
+    let frame = entity.frame.ok_or(BridgeSpriteBlitError::MissingFrame)?;
+    let frame_header_end = frame
+        .byte_offset
+        .checked_add(FRAME_HEADER_BYTE_COUNT)
+        .ok_or(BridgeSpriteBlitError::TruncatedFrame)?;
+    let frame_header = resource_bytes
+        .get(frame.byte_offset..frame_header_end)
+        .ok_or(BridgeSpriteBlitError::TruncatedFrame)?;
+    let source_width = read_u16(frame_header, FRAME_STRIDE_OFFSET);
+    let source_height = read_u16(frame_header, FRAME_HEIGHT_OFFSET);
+    let mut outcome = BridgeSpriteScaledBlitOutcome {
+        x_step_16_16: None,
+        y_step_16_16: None,
+        fixed_start_16_16: [u32::MIN; 2],
+        clipped_extent: [entity.extent.width as i16, entity.extent.height as i16],
+        destination_start: [entity.draw_position.x as i16, entity.draw_position.y as i16],
+        sampled_pixel_count: usize::MIN,
+    };
+
+    if entity.extent.width == u16::MIN {
+        return Ok(outcome);
+    }
+    let x_step =
+        (u32::from(source_width) << FIXED_POINT_FRACTION_BITS) / u32::from(entity.extent.width);
+    outcome.x_step_16_16 = Some(x_step);
+
+    if entity.extent.height == u16::MIN {
+        return Ok(outcome);
+    }
+    let y_step =
+        (u32::from(source_height) << FIXED_POINT_FRACTION_BITS) / u32::from(entity.extent.height);
+    outcome.y_step_16_16 = Some(y_step);
+
+    let dirty_region = entity
+        .dirty_region
+        .ok_or(BridgeSpriteBlitError::MissingDirtyRegion)?;
+    let dirty_left = dirty_region.left as i16;
+    let dirty_right = dirty_region.right as i16;
+    let dirty_top = dirty_region.top as i16;
+    let dirty_bottom = dirty_region.bottom as i16;
+    let mut destination_x = entity.draw_position.x as i16;
+    let mut destination_y = entity.draw_position.y as i16;
+    let mut draw_width = entity.extent.width;
+    let mut draw_height = entity.extent.height;
+    let mut x_start = u32::MIN;
+    let mut y_start = u32::MIN;
+
+    if destination_y < dirty_top {
+        let clipped = dirty_top.wrapping_sub(destination_y) as u16;
+        draw_height = draw_height.wrapping_sub(clipped);
+        y_start = u32::from(clipped).wrapping_mul(y_step);
+        destination_y = dirty_top;
+    }
+    let sprite_bottom = entity.draw_position.y.wrapping_add(entity.extent.height) as i16;
+    if sprite_bottom >= dirty_bottom {
+        let clipped = sprite_bottom.wrapping_sub(dirty_bottom) as u16;
+        draw_height = draw_height.wrapping_sub(clipped);
+    }
+
+    if destination_x < dirty_left {
+        let clipped = dirty_left.wrapping_sub(destination_x) as u16;
+        draw_width = draw_width.wrapping_sub(clipped);
+        x_start = u32::from(clipped).wrapping_mul(x_step);
+        destination_x = dirty_left;
+    }
+    let sprite_right = entity.draw_position.x.wrapping_add(entity.extent.width) as i16;
+    if sprite_right >= dirty_right {
+        let clipped = sprite_right.wrapping_sub(dirty_right) as u16;
+        draw_width = draw_width.wrapping_sub(clipped);
+    }
+
+    outcome.fixed_start_16_16 = [x_start, y_start];
+    outcome.clipped_extent = [draw_width as i16, draw_height as i16];
+    outcome.destination_start = [destination_x, destination_y];
+    if !outcome.clipped_extent[0].is_positive() || !outcome.clipped_extent[1].is_positive() {
+        return Ok(outcome);
+    }
+
+    let visible_width = usize::from(draw_width);
+    let visible_height = usize::from(draw_height);
+    validate_forward_destination(
+        destination_x,
+        destination_y,
+        visible_width,
+        visible_height,
+        framebuffer.len(),
+    )?;
+
+    let mut sampled_pixels = Vec::with_capacity(
+        visible_width
+            .checked_mul(visible_height)
+            .ok_or(BridgeSpriteBlitError::DestinationOutsideFramebuffer)?,
+    );
+    let mut y_position = y_start;
+    for row in 0..visible_height {
+        let source_y = (y_position >> FIXED_POINT_FRACTION_BITS) as u16;
+        let mut x_position = x_start;
+        for column in 0..visible_width {
+            let source_x = (x_position >> FIXED_POINT_FRACTION_BITS) as u16;
+            let source_index = source_y.wrapping_mul(source_width).wrapping_add(source_x);
+            let source_offset = frame_header_end
+                .checked_add(usize::from(source_index))
+                .ok_or(BridgeSpriteBlitError::SourceOutsideFrame)?;
+            let source_pixel = *resource_bytes
+                .get(source_offset)
+                .ok_or(BridgeSpriteBlitError::SourceOutsideFrame)?;
+            let destination_index = (destination_y as usize + row) * LOGICAL_FRAMEBUFFER_WIDTH
+                + destination_x as usize
+                + column;
+            sampled_pixels.push((destination_index, source_pixel));
+            x_position = x_position.wrapping_add(x_step);
+        }
+        y_position = y_position.wrapping_add(y_step);
+    }
+
+    outcome.sampled_pixel_count = sampled_pixels.len();
+    for (destination_index, source_pixel) in sampled_pixels {
+        if source_pixel != u8::MIN {
+            framebuffer[destination_index] = source_pixel;
+        }
+    }
+    Ok(outcome)
+}
+
+fn validate_forward_destination(
+    destination_x: i16,
+    destination_y: i16,
+    draw_width: usize,
+    draw_height: usize,
+    framebuffer_len: usize,
+) -> Result<(), BridgeSpriteBlitError> {
+    let required = LOGICAL_FRAMEBUFFER_WIDTH * LOGICAL_FRAMEBUFFER_HEIGHT;
+    if framebuffer_len < required {
+        return Err(BridgeSpriteBlitError::FramebufferTooShort {
+            actual: framebuffer_len,
+        });
+    }
+    let left = usize::try_from(destination_x)
+        .map_err(|_| BridgeSpriteBlitError::DestinationOutsideFramebuffer)?;
+    let top = usize::try_from(destination_y)
+        .map_err(|_| BridgeSpriteBlitError::DestinationOutsideFramebuffer)?;
+    if left
+        .checked_add(draw_width)
+        .is_none_or(|right| right > LOGICAL_FRAMEBUFFER_WIDTH)
+        || top
+            .checked_add(draw_height)
+            .is_none_or(|bottom| bottom > LOGICAL_FRAMEBUFFER_HEIGHT)
+    {
+        return Err(BridgeSpriteBlitError::DestinationOutsideFramebuffer);
+    }
+    Ok(())
 }
 
 fn blit_rle_sprite(
@@ -735,6 +918,7 @@ mod tests {
     const NONCANONICAL_FLIP_ORACLE_COUNT: usize = 2;
     const RLE_BLITTER_ORACLE_COUNT: usize = 10;
     const RLE_NONCANONICAL_FLIP_ORACLE_COUNT: usize = 1;
+    const SCALED_BLITTER_ORACLE_COUNT: usize = 10;
     const FRAME_HEIGHT_PADDING: usize = 3;
     const MINIMUM_FRAME_HEIGHT: usize = 8;
     const PIXEL_ROW_MULTIPLIER: usize = 29;
@@ -747,6 +931,13 @@ mod tests {
     const RLE_PIXEL_COLUMN_MULTIPLIER: usize = 19;
     const RLE_PIXEL_CASE_MULTIPLIER: usize = 11;
     const RLE_TRANSPARENT_PATTERN_DIVISOR: usize = 5;
+    const SCALED_PIXEL_ROW_MULTIPLIER: usize = 53;
+    const SCALED_PIXEL_COLUMN_MULTIPLIER: usize = 29;
+    const SCALED_PIXEL_CASE_MULTIPLIER: usize = 17;
+    const SCALED_TRANSPARENT_ROW_MULTIPLIER: usize = 3;
+    const SCALED_TRANSPARENT_PATTERN_DIVISOR: usize = 4;
+    const SCALED_NONZERO_PIXEL_OFFSET: usize = 1;
+    const ZERO_EXTENT_FIRST_PIXEL: u8 = 167;
     const RLE_SPLIT_COLUMN: usize = 4;
     const RLE_REPEAT_LENGTH: usize = 4;
     const FRAMEBUFFER_INDEX_MULTIPLIER: usize = 13;
@@ -764,6 +955,8 @@ mod tests {
     const ADVANCED_CLIP_X_ORIGIN: i16 = 2;
     const MALFORMED_RLE_STRIDE: u16 = 4;
     const MALFORMED_RLE_HEIGHT: u16 = 1;
+    const TRUNCATED_SCALED_SOURCE_WIDTH: u16 = 1;
+    const TRUNCATED_SCALED_SOURCE_HEIGHT: u16 = 1;
     const SYNTHETIC_RESOURCE_ID: ResourceId = ResourceId::new(1);
 
     #[derive(Deserialize)]
@@ -804,6 +997,23 @@ mod tests {
         selected_remap_offset: Option<u16>,
     }
 
+    #[derive(Deserialize)]
+    struct ScaledBlitterOracle {
+        name: String,
+        draw: [u16; 2],
+        extent: [u16; 2],
+        source_extent: [u16; 2],
+        frame_origin_offset: [i16; 2],
+        dirty_rect: [u16; 4],
+        x_step_16_16: Option<u32>,
+        y_step_16_16: Option<u32>,
+        fixed_start_16_16: [u32; 2],
+        clipped_extent: [u16; 2],
+        destination_start: [i16; 2],
+        sampled_pixels: Vec<[usize; 6]>,
+        changed_pixels: Vec<[usize; 3]>,
+    }
+
     #[test]
     fn raw_transparent_blitter_matches_every_canonical_original_vector() {
         run_raw_oracles(
@@ -834,6 +1044,54 @@ mod tests {
             include_str!("../../../../../re/tools/oracle_vectors/func_4cd6_natural.json"),
             false,
         );
+    }
+
+    #[test]
+    fn scaled_transparent_blitter_matches_every_original_vector() {
+        let vectors: Vec<ScaledBlitterOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_4f62_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), SCALED_BLITTER_ORACLE_COUNT);
+
+        for (case_index, vector) in vectors.iter().enumerate() {
+            let resource = synthetic_scaled_frame(vector, case_index);
+            let entity = synthetic_scaled_entity(vector);
+            let mut framebuffer = synthetic_framebuffer(case_index);
+            let mut expected = framebuffer.clone();
+            for change in &vector.changed_pixels {
+                expected[change[0]] = change[2] as u8;
+            }
+
+            let outcome =
+                blit_scaled_transparent_sprite(&entity, &resource, &mut framebuffer).unwrap();
+
+            assert_eq!(framebuffer, expected, "{}", vector.name);
+            assert_eq!(outcome.x_step_16_16, vector.x_step_16_16, "{}", vector.name);
+            assert_eq!(outcome.y_step_16_16, vector.y_step_16_16, "{}", vector.name);
+            assert_eq!(
+                outcome.fixed_start_16_16, vector.fixed_start_16_16,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                outcome.clipped_extent,
+                vector.clipped_extent.map(|value| value as i16),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                outcome.destination_start, vector.destination_start,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                outcome.sampled_pixel_count,
+                vector.sampled_pixels.len(),
+                "{}",
+                vector.name
+            );
+        }
     }
 
     #[test]
@@ -889,6 +1147,35 @@ mod tests {
                 &mut framebuffer,
             ),
             Err(BridgeSpriteBlitError::MalformedRleRow)
+        );
+        assert_eq!(framebuffer, before);
+
+        let mut truncated_scaled = Vec::new();
+        truncated_scaled.extend_from_slice(&TRUNCATED_SCALED_SOURCE_WIDTH.to_le_bytes());
+        truncated_scaled.extend_from_slice(&TRUNCATED_SCALED_SOURCE_HEIGHT.to_le_bytes());
+        truncated_scaled.extend_from_slice(&i16::MIN.to_le_bytes());
+        truncated_scaled.extend_from_slice(&i16::MIN.to_le_bytes());
+        let entity = BridgeSpriteEntity {
+            frame: Some(BridgeSpriteFrameReference {
+                resource: SYNTHETIC_RESOURCE_ID,
+                frame_index: usize::MIN,
+                byte_offset: usize::MIN,
+            }),
+            extent: BridgeSpriteExtent {
+                width: TRUNCATED_SCALED_SOURCE_WIDTH,
+                height: TRUNCATED_SCALED_SOURCE_HEIGHT,
+            },
+            dirty_region: Some(BridgeSpriteRect {
+                left: i32::from(u16::MIN),
+                right: i32::from(TRUNCATED_SCALED_SOURCE_WIDTH),
+                top: i32::from(u16::MIN),
+                bottom: i32::from(TRUNCATED_SCALED_SOURCE_HEIGHT),
+            }),
+            ..BridgeSpriteEntity::default()
+        };
+        assert_eq!(
+            blit_scaled_transparent_sprite(&entity, &truncated_scaled, &mut framebuffer),
+            Err(BridgeSpriteBlitError::SourceOutsideFrame)
         );
         assert_eq!(framebuffer, before);
     }
@@ -1119,6 +1406,37 @@ mod tests {
         frame
     }
 
+    fn synthetic_scaled_frame(vector: &ScaledBlitterOracle, case_index: usize) -> Vec<u8> {
+        let source_width = usize::from(vector.source_extent[0]);
+        let source_height = usize::from(vector.source_extent[1]);
+        let mut pixels = Vec::with_capacity(source_width.saturating_mul(source_height).max(1));
+        for row in 0..source_height {
+            for column in 0..source_width {
+                let mut value = (row * SCALED_PIXEL_ROW_MULTIPLIER
+                    + column * SCALED_PIXEL_COLUMN_MULTIPLIER
+                    + case_index * SCALED_PIXEL_CASE_MULTIPLIER
+                    + SCALED_NONZERO_PIXEL_OFFSET) as u8;
+                if (row * SCALED_TRANSPARENT_ROW_MULTIPLIER + column + case_index)
+                    .is_multiple_of(SCALED_TRANSPARENT_PATTERN_DIVISOR)
+                {
+                    value = u8::MIN;
+                }
+                pixels.push(value);
+            }
+        }
+        if pixels.is_empty() {
+            pixels.push(ZERO_EXTENT_FIRST_PIXEL);
+        }
+
+        let mut frame = Vec::with_capacity(FRAME_HEADER_BYTE_COUNT + pixels.len());
+        frame.extend_from_slice(&vector.source_extent[0].to_le_bytes());
+        frame.extend_from_slice(&vector.source_extent[1].to_le_bytes());
+        frame.extend_from_slice(&vector.frame_origin_offset[0].to_le_bytes());
+        frame.extend_from_slice(&vector.frame_origin_offset[1].to_le_bytes());
+        frame.extend_from_slice(&pixels);
+        frame
+    }
+
     fn encode_rle_test_row(encoded: &mut Vec<u8>, values: &mut [u8], kind: &str) {
         match kind {
             "literal" => encode_literal(encoded, values),
@@ -1188,6 +1506,26 @@ mod tests {
     fn synthetic_rle_entity(vector: &RleBlitterOracle) -> BridgeSpriteEntity {
         BridgeSpriteEntity {
             flags: BridgeSpriteFlags::from_bits(vector.flags),
+            frame: Some(BridgeSpriteFrameReference {
+                resource: SYNTHETIC_RESOURCE_ID,
+                frame_index: usize::MIN,
+                byte_offset: usize::MIN,
+            }),
+            draw_position: BridgeSpritePosition {
+                x: vector.draw[0],
+                y: vector.draw[1],
+            },
+            extent: BridgeSpriteExtent {
+                width: vector.extent[0],
+                height: vector.extent[1],
+            },
+            dirty_region: Some(rect(vector.dirty_rect)),
+            ..BridgeSpriteEntity::default()
+        }
+    }
+
+    fn synthetic_scaled_entity(vector: &ScaledBlitterOracle) -> BridgeSpriteEntity {
+        BridgeSpriteEntity {
             frame: Some(BridgeSpriteFrameReference {
                 resource: SYNTHETIC_RESOURCE_ID,
                 frame_index: usize::MIN,
