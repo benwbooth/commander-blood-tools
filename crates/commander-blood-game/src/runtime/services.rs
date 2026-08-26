@@ -11,11 +11,12 @@ use sdl3::video::Window;
 use crate::native::bloodprg::{
     BridgeScene, BridgeSceneFrame, BridgeSceneInput, ConfirmDialogOutcome, ConfirmDialogState,
     DescriptRecordApplication, FontPoint, FontVerticalBand, GameFontFace, GameLifecycleState,
-    GamePresentationOwner, InlineMenuRevealOutcome, InlineMenuTextMetrics, InputAction,
-    Manu3HandFrameContext, Manu3HandFrameState, PbmDecodeResult, PointerButtonEdges,
+    GamePresentationOwner, GameSceneLink, InlineMenuRevealOutcome, InlineMenuTextMetrics,
+    InputAction, Manu3HandFrameContext, Manu3HandFrameState, PbmDecodeResult, PointerButtonEdges,
     PointerButtons, PointerSample, PresentationChoiceNumber, PresentationPresentPolicy,
-    PresentationResourceId, PresentationResourceSequenceOutcome, ScriptClock, ScriptFrameOutcome,
-    ScriptProfileId, ScriptProfileLoadOutcome, ShipPresentationState, ShipProjectionResources,
+    PresentationResourceId, PresentationResourceSequenceOutcome, PresentationScreenOutcome,
+    PresentationScreenState, ScriptClock, ScriptFrameOutcome, ScriptProfileId,
+    ScriptProfileLoadOutcome, ShipPresentationState, ShipProjectionResources,
     StartupPreparationOutcome, draw_planar_dialogue_text, measure_game_text_width,
     reveal_inline_menu_step, update_manu3_hand_frame,
 };
@@ -26,8 +27,8 @@ use super::{
     LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_PIXEL_COUNT, OriginalGameData,
     OriginalGameRuntime, RuntimeAssetLoadStatus, RuntimeAudioHost, RuntimeConfirmDialog,
     RuntimeInputHost, RuntimePcmClip, RuntimePresentationCatalog, RuntimePresentationHost,
-    RuntimePresentationPlayer, RuntimePresentationStepOutcome, RuntimeScriptBackend,
-    RuntimeScriptCommand, RuntimeScriptSystem, VGA_BIOS_FONT_8X8,
+    RuntimePresentationPlayer, RuntimePresentationScreen, RuntimePresentationStepOutcome,
+    RuntimeScriptBackend, RuntimeScriptCommand, RuntimeScriptSystem, VGA_BIOS_FONT_8X8,
 };
 
 const INITIAL_LOGICAL_POINTER: [i16; 2] = [160, 100];
@@ -55,6 +56,7 @@ pub struct ModernGameServices<'window> {
     loaded_voice: Option<RuntimePcmClip>,
     bridge_scene: Option<BridgeScene>,
     bridge_frame: Option<BridgeSceneFrame>,
+    presentation_screen: Option<RuntimePresentationScreen>,
     confirm_dialog: RuntimeConfirmDialog,
     manu3_hand: Manu3HandFrameState,
     ship_presentation: ShipPresentationState,
@@ -74,6 +76,7 @@ impl<'window> ModernGameServices<'window> {
         let scripts = RuntimeScriptSystem::new(&data, script_clock);
         let presentation_player = RuntimePresentationPlayer::new(data.presentation_catalog());
         let runtime = OriginalGameRuntime::new(data);
+        let presentation_screen = RuntimePresentationScreen::new(*runtime.live_palette())?;
         let presentation = RuntimePresentationHost::new_startup(window, &runtime)?;
         Ok(Self {
             runtime,
@@ -84,6 +87,7 @@ impl<'window> ModernGameServices<'window> {
             loaded_voice: None,
             bridge_scene: None,
             bridge_frame: None,
+            presentation_screen: Some(presentation_screen),
             confirm_dialog,
             manu3_hand: Manu3HandFrameState::default(),
             ship_presentation: ShipPresentationState::default(),
@@ -320,6 +324,53 @@ impl<'window> ModernGameServices<'window> {
             .sequence_slots()
             .ordered_names()
             .map(|name| name.map(Box::from)))
+    }
+
+    /// Enable or disable the bridge's recovered six-choice presentation panel.
+    pub fn set_presentation_screen_active(&mut self, active: bool) -> Result<()> {
+        self.presentation_screen
+            .as_mut()
+            .context("presentation screen is already being updated")?
+            .state_mut()
+            .set_active(active);
+        Ok(())
+    }
+
+    /// Borrow the bridge presentation state published to its frame coordinator.
+    pub fn presentation_screen_state(&self) -> Result<&PresentationScreenState> {
+        Ok(self
+            .presentation_screen
+            .as_ref()
+            .context("presentation screen is already being updated")?
+            .state())
+    }
+
+    /// Advance the bridge presentation panel from live script and pointer state.
+    pub fn update_presentation_screen(
+        &mut self,
+        queued_scene_link: &GameSceneLink,
+        primary_pointer_pressed: bool,
+    ) -> Result<PresentationScreenOutcome> {
+        let active_record_related = self.scripts.backend().active_description_object();
+        let scruter_jo_record = self
+            .runtime
+            .current_profile()
+            .and_then(|profile| profile.builtins().scruter_jo);
+        let mut screen = self
+            .presentation_screen
+            .take()
+            .context("presentation screen update is reentrant")?;
+        screen
+            .state_mut()
+            .set_primary_pressed(primary_pointer_pressed);
+        let outcome = screen.update(
+            self,
+            queued_scene_link,
+            active_record_related,
+            scruter_jo_record,
+        );
+        self.presentation_screen = Some(screen);
+        outcome
     }
 
     /// Apply one selected DESCRIPT record through the live BloodScript text state.
