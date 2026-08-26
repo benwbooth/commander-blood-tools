@@ -211,6 +211,18 @@ impl BridgeSpriteBlitterMode {
             Self::ReservedSeven => RESERVED_SEVEN_BLITTER_INDEX,
         }
     }
+
+    /// Return whether the authored dispatch target has no observable behavior.
+    ///
+    /// Original slots five through seven each target a one-byte near return.
+    /// Keeping that fact on the semantic mode prevents placeholder callbacks
+    /// from leaking the DOS dispatch ABI into the flat renderer.
+    pub const fn is_authored_no_operation(self) -> bool {
+        matches!(
+            self,
+            Self::ReservedFive | Self::ReservedSix | Self::ReservedSeven
+        )
+    }
 }
 
 /// Mode and orientation selected for one sprite rasterizer dispatch.
@@ -693,7 +705,9 @@ pub fn render_bridge_sprite_dirty_range(
             };
             for dirty_region in dirty_regions.iter().copied() {
                 entity.dirty_region = Some(dirty_region);
-                if entity_bounds.intersects(dirty_region) {
+                if entity_bounds.intersects(dirty_region)
+                    && !selection.mode.is_authored_no_operation()
+                {
                     draw_requests.push(BridgeSpriteDrawRequest {
                         entity_index,
                         dirty_region,
@@ -924,6 +938,13 @@ mod tests {
         selected_mode_after: Option<u16>,
         flip_x_after: u8,
         flip_y_after: u8,
+    }
+
+    #[derive(Deserialize)]
+    struct NoOperationBlitterOracle {
+        entry: String,
+        opcode: String,
+        registers_and_flags_preserved: bool,
     }
 
     struct ActivationCase<'a> {
@@ -1220,6 +1241,56 @@ mod tests {
                     assert_eq!(entity.dirty_region, expected_region, "{}", vector.name);
                 }
             }
+        }
+    }
+
+    #[test]
+    fn authored_no_operation_blitters_produce_no_draw_requests() {
+        let cases = [
+            (
+                BridgeSpriteBlitterMode::ReservedFive,
+                include_str!("../../../../../re/tools/oracle_vectors/func_509a_natural.json"),
+            ),
+            (
+                BridgeSpriteBlitterMode::ReservedSix,
+                include_str!("../../../../../re/tools/oracle_vectors/func_509b_natural.json"),
+            ),
+            (
+                BridgeSpriteBlitterMode::ReservedSeven,
+                include_str!("../../../../../re/tools/oracle_vectors/func_509c_natural.json"),
+            ),
+        ];
+        let dirty_region = BridgeSpriteRect {
+            left: i32::from(u16::MIN),
+            right: i32::from(u16::MAX),
+            top: i32::from(u16::MIN),
+            bottom: i32::from(u16::MAX),
+        };
+
+        for (mode, input) in cases {
+            let vectors: Vec<NoOperationBlitterOracle> = serde_json::from_str(input).unwrap();
+            let [vector] = vectors.as_slice() else {
+                panic!("authored no-operation oracle must contain exactly one vector");
+            };
+            assert_eq!(vector.entry, format!("0x{:06x}", 0x005095 + mode.index()));
+            assert_eq!(vector.opcode, "c3");
+            assert!(vector.registers_and_flags_preserved);
+            assert!(mode.is_authored_no_operation());
+
+            let mut entities = [BridgeSpriteEntity {
+                flags: BridgeSpriteFlags::from_bits(
+                    STATE_ZERO_FLAG | (mode.index() << BLITTER_MODE_SHIFT),
+                ),
+                extent: BridgeSpriteExtent {
+                    width: u16::MAX,
+                    height: u16::MAX,
+                },
+                ..BridgeSpriteEntity::default()
+            }];
+            let outcome =
+                render_bridge_sprite_dirty_range(&mut entities, 0, 0, &[dirty_region]).unwrap();
+            assert!(outcome.draw_requests.is_empty());
+            assert_eq!(outcome.selected_blitter_after.unwrap().mode, mode);
         }
     }
 
