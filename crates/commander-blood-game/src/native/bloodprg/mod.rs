@@ -561,11 +561,14 @@ pub use ship_presentation::{
     update_ship_presentation,
 };
 pub use sprite_geometry::{
-    BRIDGE_SPRITE_ENTITY_COUNT, BridgeSpriteActivationError, BridgeSpriteEntity,
+    BRIDGE_SPRITE_ENTITY_COUNT, BridgeSpriteActivationError, BridgeSpriteBlitterMode,
+    BridgeSpriteBlitterSelection, BridgeSpriteClipSnapshotFlags, BridgeSpriteCommitOutcome,
+    BridgeSpriteDirtyRegions, BridgeSpriteDrawRequest, BridgeSpriteEntity,
     BridgeSpriteEntityError, BridgeSpriteExtent, BridgeSpriteFlags, BridgeSpriteFrameReference,
-    BridgeSpriteGeometryUpdate, BridgeSpritePosition, BridgeSpriteRangeError,
-    activate_bridge_sprite_from_resource, advance_bridge_sprite_state,
-    mark_bridge_sprite_range_dirty, populate_bridge_sprite_from_cache,
+    BridgeSpriteGeometryUpdate, BridgeSpritePosition, BridgeSpriteRangeError, BridgeSpriteRect,
+    BridgeSpriteRenderOutcome, activate_bridge_sprite_from_resource, advance_bridge_sprite_state,
+    commit_bridge_sprite_dirty_range, mark_bridge_sprite_range_dirty,
+    populate_bridge_sprite_from_cache, render_bridge_sprite_dirty_range,
     update_bridge_sprite_extent, update_bridge_sprite_position,
 };
 pub use startup::{

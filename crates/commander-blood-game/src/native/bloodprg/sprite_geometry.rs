@@ -11,10 +11,23 @@ pub const BRIDGE_SPRITE_ENTITY_COUNT: usize = 32;
 const STATE_ZERO_FLAG: u16 = 1;
 const DIRTY_FLAG: u16 = 2;
 const EXTENT_CHANGED_FLAG: u16 = 16;
+const HORIZONTAL_FLIP_FLAG: u16 = 32;
+const VERTICAL_FLIP_FLAG: u16 = 64;
 const RESOURCE_FRAME_ENCODING_FLAG: u16 = 4;
 const VISIBLE_FLAG: u16 = 128;
 const GEOMETRY_UPDATE_MASK: u16 = STATE_ZERO_FLAG | VISIBLE_FLAG;
 const ACTIVATED_FLAGS: u16 = STATE_ZERO_FLAG | DIRTY_FLAG | VISIBLE_FLAG;
+const BLITTER_MODE_SHIFT: u32 = 2;
+const BLITTER_MODE_MASK: u16 = 7;
+const CLIP_SNAPSHOT_PENDING_FLAG: u16 = 1;
+const RAW_TRANSPARENT_BLITTER_INDEX: u16 = 0;
+const RLE_TRANSPARENT_BLITTER_INDEX: u16 = 1;
+const RAW_OPAQUE_BLITTER_INDEX: u16 = 2;
+const RLE_OPAQUE_BLITTER_INDEX: u16 = 3;
+const SCALED_TRANSPARENT_BLITTER_INDEX: u16 = 4;
+const RESERVED_FIVE_BLITTER_INDEX: u16 = 5;
+const RESERVED_SIX_BLITTER_INDEX: u16 = 6;
+const RESERVED_SEVEN_BLITTER_INDEX: u16 = 7;
 const RESOURCE_HEADER_BYTE_COUNT: usize = 4;
 const RESOURCE_FRAME_TABLE_ENTRY_BYTE_COUNT: usize = size_of::<u32>();
 const SPRITE_FRAME_HEADER_BYTE_COUNT: usize = 8;
@@ -54,8 +67,30 @@ impl BridgeSpriteFlags {
         self.0 & EXTENT_CHANGED_FLAG != u16::MIN
     }
 
+    const fn needs_geometry_commit(self) -> bool {
+        self.0 & (STATE_ZERO_FLAG | DIRTY_FLAG) == STATE_ZERO_FLAG | DIRTY_FLAG
+    }
+
+    const fn is_state_zero(self) -> bool {
+        self.0 & STATE_ZERO_FLAG != u16::MIN
+    }
+
+    const fn blitter_selection(self) -> BridgeSpriteBlitterSelection {
+        BridgeSpriteBlitterSelection {
+            mode: BridgeSpriteBlitterMode::from_index(
+                (self.0 >> BLITTER_MODE_SHIFT) & BLITTER_MODE_MASK,
+            ),
+            flip_horizontal: self.0 & HORIZONTAL_FLIP_FLAG != u16::MIN,
+            flip_vertical: self.0 & VERTICAL_FLIP_FLAG != u16::MIN,
+        }
+    }
+
     fn mark_dirty(&mut self) {
         self.0 |= DIRTY_FLAG;
+    }
+
+    fn clear_dirty(&mut self) {
+        self.0 &= !DIRTY_FLAG;
     }
 
     fn transition_active_slot_to_dirty(&mut self) -> bool {
@@ -106,6 +141,135 @@ pub struct BridgeSpritePosition {
     pub y: u16,
 }
 
+/// Half-open signed rectangle used for clipping and dirty-region redraws.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct BridgeSpriteRect {
+    /// Inclusive left edge.
+    pub left: i32,
+    /// Exclusive right edge.
+    pub right: i32,
+    /// Inclusive top edge.
+    pub top: i32,
+    /// Exclusive bottom edge.
+    pub bottom: i32,
+}
+
+impl BridgeSpriteRect {
+    const fn intersects(self, other: Self) -> bool {
+        self.left < other.right
+            && self.top < other.bottom
+            && self.right > other.left
+            && self.bottom > other.top
+    }
+}
+
+/// Recovered sprite rasterizer selected by entity flag bits.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum BridgeSpriteBlitterMode {
+    /// Copy raw pixels while preserving transparent source zeroes.
+    RawTransparent,
+    /// Decode RLE pixels while preserving transparent source zeroes.
+    RleTransparent,
+    /// Copy every raw source pixel, including zeroes.
+    RawOpaque,
+    /// Decode and copy every RLE source pixel.
+    RleOpaque,
+    /// Scale raw transparent pixels to the entity destination extent.
+    ScaledTransparent,
+    /// Authored dispatch slot whose original target immediately returns.
+    ReservedFive,
+    /// Authored dispatch slot whose original target immediately returns.
+    ReservedSix,
+    /// Authored dispatch slot whose original target immediately returns.
+    ReservedSeven,
+}
+
+impl BridgeSpriteBlitterMode {
+    const fn from_index(index: u16) -> Self {
+        match index {
+            RAW_TRANSPARENT_BLITTER_INDEX => Self::RawTransparent,
+            RLE_TRANSPARENT_BLITTER_INDEX => Self::RleTransparent,
+            RAW_OPAQUE_BLITTER_INDEX => Self::RawOpaque,
+            RLE_OPAQUE_BLITTER_INDEX => Self::RleOpaque,
+            SCALED_TRANSPARENT_BLITTER_INDEX => Self::ScaledTransparent,
+            RESERVED_FIVE_BLITTER_INDEX => Self::ReservedFive,
+            RESERVED_SIX_BLITTER_INDEX => Self::ReservedSix,
+            _ => Self::ReservedSeven,
+        }
+    }
+
+    /// Return the original zero-based dispatch-table index.
+    pub const fn index(self) -> u16 {
+        match self {
+            Self::RawTransparent => RAW_TRANSPARENT_BLITTER_INDEX,
+            Self::RleTransparent => RLE_TRANSPARENT_BLITTER_INDEX,
+            Self::RawOpaque => RAW_OPAQUE_BLITTER_INDEX,
+            Self::RleOpaque => RLE_OPAQUE_BLITTER_INDEX,
+            Self::ScaledTransparent => SCALED_TRANSPARENT_BLITTER_INDEX,
+            Self::ReservedFive => RESERVED_FIVE_BLITTER_INDEX,
+            Self::ReservedSix => RESERVED_SIX_BLITTER_INDEX,
+            Self::ReservedSeven => RESERVED_SEVEN_BLITTER_INDEX,
+        }
+    }
+}
+
+/// Mode and orientation selected for one sprite rasterizer dispatch.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct BridgeSpriteBlitterSelection {
+    /// Pixel encoding and opacity behavior.
+    pub mode: BridgeSpriteBlitterMode,
+    /// Draw source columns in reverse order.
+    pub flip_horizontal: bool,
+    /// Draw source rows in reverse order.
+    pub flip_vertical: bool,
+}
+
+/// One intersecting entity and dirty-region pair ready for rasterization.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct BridgeSpriteDrawRequest {
+    /// Entity whose selected frame should be rasterized.
+    pub entity_index: usize,
+    /// Clipping rectangle for this dispatch.
+    pub dirty_region: BridgeSpriteRect,
+    /// Rasterizer and orientation selected by entity flags.
+    pub selection: BridgeSpriteBlitterSelection,
+}
+
+/// Dirty-list snapshot control bits retained from the recovered game state.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct BridgeSpriteClipSnapshotFlags(u16);
+
+impl BridgeSpriteClipSnapshotFlags {
+    /// Preserve all recovered bits, including currently unnamed ones.
+    pub const fn from_bits(bits: u16) -> Self {
+        Self(bits)
+    }
+
+    /// Return the complete recovered flag word.
+    pub const fn bits(self) -> u16 {
+        self.0
+    }
+
+    const fn is_pending(self) -> bool {
+        self.0 & CLIP_SNAPSHOT_PENDING_FLAG != u16::MIN
+    }
+
+    fn clear(&mut self) {
+        self.0 = u16::MIN;
+    }
+}
+
+/// Owned clipping and dirty-region state shared by sprite frame stages.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct BridgeSpriteDirtyRegions {
+    /// Recovered snapshot control flags.
+    pub snapshot_flags: BridgeSpriteClipSnapshotFlags,
+    /// Current clipping bounds copied when a snapshot is pending.
+    pub clip_bounds: BridgeSpriteRect,
+    /// Ordered half-open rectangles requiring redraw.
+    pub regions: Vec<BridgeSpriteRect>,
+}
+
 /// Stable location of a decoded sprite frame in the flat resource cache.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct BridgeSpriteFrameReference {
@@ -132,6 +296,10 @@ pub struct BridgeSpriteEntity {
     pub extent: BridgeSpriteExtent,
     /// Last rendered extent, initialized independently for each dimension.
     pub committed_extent: BridgeSpriteExtent,
+    /// Last rendered draw position.
+    pub committed_draw_position: BridgeSpritePosition,
+    /// Last dirty region considered for this entity.
+    pub dirty_region: Option<BridgeSpriteRect>,
 }
 
 /// Invalid entity activation request or malformed sprite resource.
@@ -441,6 +609,123 @@ pub fn mark_bridge_sprite_range_dirty(
         }))
 }
 
+/// Observable result of the sprite geometry commit stage.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum BridgeSpriteCommitOutcome {
+    /// Pending clip bounds replaced the current dirty-region list.
+    ClipSnapshotPublished,
+    /// Current geometry was copied into matching dirty state-zero entities.
+    GeometryCommitted {
+        /// Number of entity records whose geometry was copied.
+        entity_count: usize,
+    },
+}
+
+/// Commit dirty sprite geometry or publish pending clipping bounds.
+///
+/// This translates `sprite_slot_commit_dirty_range` at BLOODPRG routine offset
+/// `0x0043F7`. A pending clip snapshot has priority and replaces the native
+/// sentinel-terminated rectangle list with one owned region. Otherwise, only
+/// entities carrying both dirty and state-zero copy current geometry.
+pub fn commit_bridge_sprite_dirty_range(
+    entities: &mut [BridgeSpriteEntity],
+    first_entity_index: usize,
+    last_entity_index: usize,
+    dirty_regions: &mut BridgeSpriteDirtyRegions,
+) -> Result<BridgeSpriteCommitOutcome, BridgeSpriteRangeError> {
+    if dirty_regions.snapshot_flags.is_pending() {
+        dirty_regions.regions.clear();
+        dirty_regions.regions.push(dirty_regions.clip_bounds);
+        dirty_regions.snapshot_flags.clear();
+        return Ok(BridgeSpriteCommitOutcome::ClipSnapshotPublished);
+    }
+    validate_entity_range(entities, first_entity_index, last_entity_index)?;
+
+    let mut entity_count = 0;
+    for entity in &mut entities[first_entity_index..=last_entity_index] {
+        if entity.flags.needs_geometry_commit() {
+            entity.committed_draw_position = entity.draw_position;
+            entity.committed_extent = entity.extent;
+            entity_count += 1;
+        }
+    }
+    Ok(BridgeSpriteCommitOutcome::GeometryCommitted { entity_count })
+}
+
+/// Explicit output of the sprite dirty-region dispatch stage.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct BridgeSpriteRenderOutcome {
+    /// Intersecting entity-region pairs in original dispatch order.
+    pub draw_requests: Box<[BridgeSpriteDrawRequest]>,
+    /// Selection left by the final active entity in the reverse walk.
+    pub selected_blitter_after: Option<BridgeSpriteBlitterSelection>,
+}
+
+/// Build sprite draw requests for every dirty-region intersection.
+///
+/// This translates `sprite_slot_dirty_range_render` at BLOODPRG routine offset
+/// `0x004471`. Entities are visited from last to first, each active entity tests
+/// dirty regions in list order, and every visited entity loses its dirty bit.
+/// An empty dirty list retains the original early return without mutation.
+pub fn render_bridge_sprite_dirty_range(
+    entities: &mut [BridgeSpriteEntity],
+    first_entity_index: usize,
+    last_entity_index: usize,
+    dirty_regions: &[BridgeSpriteRect],
+) -> Result<BridgeSpriteRenderOutcome, BridgeSpriteRangeError> {
+    if dirty_regions.is_empty() {
+        return Ok(BridgeSpriteRenderOutcome::default());
+    }
+    validate_entity_range(entities, first_entity_index, last_entity_index)?;
+
+    let mut draw_requests = Vec::new();
+    let mut selected_blitter_after = None;
+    for entity_index in (first_entity_index..=last_entity_index).rev() {
+        let entity = &mut entities[entity_index];
+        if entity.flags.is_state_zero() {
+            let selection = entity.flags.blitter_selection();
+            selected_blitter_after = Some(selection);
+            let entity_bounds = BridgeSpriteRect {
+                left: i32::from(entity.draw_position.x as i16),
+                right: i32::from(entity.draw_position.x as i16) + i32::from(entity.extent.width),
+                top: i32::from(entity.draw_position.y as i16),
+                bottom: i32::from(entity.draw_position.y as i16) + i32::from(entity.extent.height),
+            };
+            for dirty_region in dirty_regions.iter().copied() {
+                entity.dirty_region = Some(dirty_region);
+                if entity_bounds.intersects(dirty_region) {
+                    draw_requests.push(BridgeSpriteDrawRequest {
+                        entity_index,
+                        dirty_region,
+                        selection,
+                    });
+                }
+            }
+        }
+        entity.flags.clear_dirty();
+    }
+
+    Ok(BridgeSpriteRenderOutcome {
+        draw_requests: draw_requests.into_boxed_slice(),
+        selected_blitter_after,
+    })
+}
+
+fn validate_entity_range(
+    entities: &[BridgeSpriteEntity],
+    first_entity_index: usize,
+    last_entity_index: usize,
+) -> Result<(), BridgeSpriteRangeError> {
+    if first_entity_index > last_entity_index || last_entity_index >= entities.len() {
+        return Err(BridgeSpriteRangeError {
+            first_entity_index,
+            last_entity_index,
+            entity_count: entities.len(),
+        });
+    }
+    Ok(())
+}
+
 /// Update one bridge sprite's logical draw position.
 ///
 /// This translates `sprite_slot_position_update` at BLOODPRG routine offset
@@ -530,9 +815,18 @@ mod tests {
     const ENTITY_POPULATE_ORACLE_COUNT: usize = 14;
     const ENTITY_ACTIVATION_ORACLE_COUNT: usize = 15;
     const RANGE_DIRTY_ORACLE_COUNT: usize = 4;
+    const DIRTY_COMMIT_ORACLE_COUNT: usize = 5;
+    const DIRTY_RENDER_ORACLE_COUNT: usize = 6;
     const COORDINATE_COUNT: usize = 2;
+    const RECTANGLE_COMPONENT_COUNT: usize = 4;
     const MAXIMUM_SYNTHETIC_RESOURCE_BYTE_COUNT: usize = 1_000_000;
     const DIRECT_RESOURCE_ID: ResourceId = ResourceId::new(63);
+    const CURRENT_GEOMETRY_BASE: usize = 4_096;
+    const CURRENT_GEOMETRY_ENTITY_STEP: usize = 7;
+    const CURRENT_GEOMETRY_FIELD_STEP: usize = 273;
+    const COMMITTED_GEOMETRY_BASE: usize = 32_768;
+    const COMMITTED_GEOMETRY_ENTITY_STEP: usize = 11;
+    const COMMITTED_GEOMETRY_FIELD_STEP: usize = 257;
 
     #[derive(Deserialize)]
     struct PositionOracle {
@@ -602,6 +896,34 @@ mod tests {
         last_object_id: usize,
         input_flags: Vec<u16>,
         output_flags: Vec<u16>,
+    }
+
+    #[derive(Deserialize)]
+    struct DirtyCommitOracle {
+        name: String,
+        first_object_id: usize,
+        last_object_id: usize,
+        slot_flags: Vec<u16>,
+        snapshot_flags_before: u16,
+        snapshot_flags_after: u16,
+        clip_bounds: [u16; RECTANGLE_COMPONENT_COUNT],
+        committed_geometry_after: Vec<[u16; RECTANGLE_COMPONENT_COUNT]>,
+        wrote_clip_snapshot: bool,
+    }
+
+    #[derive(Deserialize)]
+    struct DirtyRenderOracle {
+        name: String,
+        first_object_id: usize,
+        last_object_id: usize,
+        input_flags: Vec<u16>,
+        output_flags: Vec<u16>,
+        dirty_rects: Vec<[u16; RECTANGLE_COMPONENT_COUNT]>,
+        slot_geometry: [u16; RECTANGLE_COMPONENT_COUNT],
+        blitter_modes_called: Vec<u16>,
+        selected_mode_after: Option<u16>,
+        flip_x_after: u8,
+        flip_y_after: u8,
     }
 
     struct ActivationCase<'a> {
@@ -728,6 +1050,176 @@ mod tests {
                 "{}",
                 vector.name
             );
+        }
+    }
+
+    #[test]
+    fn dirty_geometry_commit_matches_every_original_vector() {
+        let vectors: Vec<DirtyCommitOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_43f7_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), DIRTY_COMMIT_ORACLE_COUNT);
+
+        for vector in vectors {
+            let mut entities = [BridgeSpriteEntity::default(); BRIDGE_SPRITE_ENTITY_COUNT];
+            for (index, flags) in vector.slot_flags.iter().copied().enumerate() {
+                let entity_index = vector.first_object_id + index;
+                let current = generated_geometry(
+                    entity_index,
+                    CURRENT_GEOMETRY_BASE,
+                    CURRENT_GEOMETRY_ENTITY_STEP,
+                    CURRENT_GEOMETRY_FIELD_STEP,
+                );
+                let committed = generated_geometry(
+                    entity_index,
+                    COMMITTED_GEOMETRY_BASE,
+                    COMMITTED_GEOMETRY_ENTITY_STEP,
+                    COMMITTED_GEOMETRY_FIELD_STEP,
+                );
+                entities[entity_index].flags = BridgeSpriteFlags::from_bits(flags);
+                entities[entity_index].draw_position = position([current[0], current[1]]);
+                entities[entity_index].extent = extent([current[2], current[3]]);
+                entities[entity_index].committed_draw_position =
+                    position([committed[0], committed[1]]);
+                entities[entity_index].committed_extent = extent([committed[2], committed[3]]);
+            }
+            let original_region = BridgeSpriteRect {
+                left: 50,
+                right: 60,
+                top: 70,
+                bottom: 80,
+            };
+            let mut dirty_regions = BridgeSpriteDirtyRegions {
+                snapshot_flags: BridgeSpriteClipSnapshotFlags::from_bits(
+                    vector.snapshot_flags_before,
+                ),
+                clip_bounds: rect(vector.clip_bounds),
+                regions: vec![original_region],
+            };
+
+            let outcome = commit_bridge_sprite_dirty_range(
+                &mut entities,
+                vector.first_object_id,
+                vector.last_object_id,
+                &mut dirty_regions,
+            )
+            .unwrap();
+            assert_eq!(
+                dirty_regions.snapshot_flags.bits(),
+                vector.snapshot_flags_after,
+                "{}",
+                vector.name
+            );
+            if vector.wrote_clip_snapshot {
+                assert_eq!(
+                    dirty_regions.regions,
+                    [rect(vector.clip_bounds)],
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    outcome,
+                    BridgeSpriteCommitOutcome::ClipSnapshotPublished,
+                    "{}",
+                    vector.name
+                );
+            } else {
+                assert_eq!(dirty_regions.regions, [original_region], "{}", vector.name);
+                let committed_count = vector
+                    .slot_flags
+                    .iter()
+                    .filter(|flags| {
+                        **flags & (STATE_ZERO_FLAG | DIRTY_FLAG) == STATE_ZERO_FLAG | DIRTY_FLAG
+                    })
+                    .count();
+                assert_eq!(
+                    outcome,
+                    BridgeSpriteCommitOutcome::GeometryCommitted {
+                        entity_count: committed_count,
+                    },
+                    "{}",
+                    vector.name
+                );
+            }
+            for (index, expected) in vector.committed_geometry_after.iter().enumerate() {
+                let entity = entities[vector.first_object_id + index];
+                assert_eq!(
+                    [
+                        entity.committed_draw_position.x,
+                        entity.committed_draw_position.y,
+                        entity.committed_extent.width,
+                        entity.committed_extent.height,
+                    ],
+                    *expected,
+                    "{}",
+                    vector.name
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn dirty_render_dispatch_matches_every_original_vector() {
+        let vectors: Vec<DirtyRenderOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_4471_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), DIRTY_RENDER_ORACLE_COUNT);
+
+        for vector in vectors {
+            let mut entities = [BridgeSpriteEntity::default(); BRIDGE_SPRITE_ENTITY_COUNT];
+            for (index, flags) in vector.input_flags.iter().copied().enumerate() {
+                let entity = &mut entities[vector.first_object_id + index];
+                entity.flags = BridgeSpriteFlags::from_bits(flags);
+                entity.draw_position = position([vector.slot_geometry[0], vector.slot_geometry[1]]);
+                entity.extent = extent([vector.slot_geometry[2], vector.slot_geometry[3]]);
+            }
+            let before = entities;
+            let dirty_regions: Vec<BridgeSpriteRect> =
+                vector.dirty_rects.iter().copied().map(rect).collect();
+
+            let outcome = render_bridge_sprite_dirty_range(
+                &mut entities,
+                vector.first_object_id,
+                vector.last_object_id,
+                &dirty_regions,
+            )
+            .unwrap();
+            let output_flags: Vec<u16> = entities[vector.first_object_id..=vector.last_object_id]
+                .iter()
+                .map(|entity| entity.flags.bits())
+                .collect();
+            assert_eq!(output_flags, vector.output_flags, "{}", vector.name);
+            let called_modes: Vec<u16> = outcome
+                .draw_requests
+                .iter()
+                .map(|request| request.selection.mode.index())
+                .collect();
+            assert_eq!(called_modes, vector.blitter_modes_called, "{}", vector.name);
+            let expected_selection =
+                vector
+                    .selected_mode_after
+                    .map(|mode| BridgeSpriteBlitterSelection {
+                        mode: BridgeSpriteBlitterMode::from_index(mode),
+                        flip_horizontal: vector.flip_x_after != u8::MIN,
+                        flip_vertical: vector.flip_y_after != u8::MIN,
+                    });
+            assert_eq!(
+                outcome.selected_blitter_after, expected_selection,
+                "{}",
+                vector.name
+            );
+            if dirty_regions.is_empty() {
+                assert_eq!(entities, before, "{}", vector.name);
+            } else {
+                for (index, flags) in vector.input_flags.iter().copied().enumerate() {
+                    let entity = entities[vector.first_object_id + index];
+                    let expected_region = (flags & STATE_ZERO_FLAG != u16::MIN)
+                        .then(|| *dirty_regions.last().unwrap());
+                    assert_eq!(entity.dirty_region, expected_region, "{}", vector.name);
+                }
+            }
         }
     }
 
@@ -1000,5 +1492,23 @@ mod tests {
             width: words[0],
             height: words[1],
         }
+    }
+
+    fn rect(words: [u16; RECTANGLE_COMPONENT_COUNT]) -> BridgeSpriteRect {
+        BridgeSpriteRect {
+            left: i32::from(words[0] as i16),
+            right: i32::from(words[1] as i16),
+            top: i32::from(words[2] as i16),
+            bottom: i32::from(words[3] as i16),
+        }
+    }
+
+    fn generated_geometry(
+        entity_index: usize,
+        base: usize,
+        entity_step: usize,
+        field_step: usize,
+    ) -> [u16; RECTANGLE_COMPONENT_COUNT] {
+        std::array::from_fn(|field| (base + entity_index * entity_step + field * field_step) as u16)
     }
 }
