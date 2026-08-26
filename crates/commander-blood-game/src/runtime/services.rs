@@ -258,6 +258,20 @@ impl<'window> ModernGameServices<'window> {
         Ok(outcome)
     }
 
+    /// Execute one translated script frame with main-loop state exchange and effects.
+    pub fn execute_and_apply_lifecycle_script_frame(
+        &mut self,
+        state: &mut GameLifecycleState,
+    ) -> Result<ScriptFrameOutcome> {
+        let execution_enabled = state.vm_execution_enabled;
+        let outcome =
+            self.scripts
+                .execute_lifecycle_frame(&mut self.runtime, state, execution_enabled)?;
+        self.synchronize_script_presentations()?;
+        self.process_script_commands()?;
+        Ok(outcome)
+    }
+
     /// Copy DESCRIPT and A8 name selections into the flat presentation catalog.
     pub fn synchronize_script_presentations(&mut self) -> Result<()> {
         self.presentation_player

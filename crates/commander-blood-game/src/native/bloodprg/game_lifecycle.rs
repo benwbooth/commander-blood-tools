@@ -11,6 +11,25 @@ const SECONDARY_POINTER_PRESS_STATE: u8 = 2;
 const DEFAULT_PRESENTATION_LINE: u16 = 8;
 const COMPLETION_AUDIO_RESET_FRAMES: u16 = 120;
 
+/// Recovered low UI bits shared by presentation, modal, and navigation systems.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+struct GameUiState {
+    /// Native bit 0 enables presentation-interface and DESCRIPT name handling.
+    presentation_interface_active: bool,
+    /// Native bit 1 is checked by profile switching but has no recovered writer.
+    reserved_profile_blocker: bool,
+    /// Native bit 2 is shared by modal presentation, save/load, and camera work.
+    modal_busy: bool,
+    /// Native bit 3 is owned by navigation-choice transitions.
+    navigation_busy: bool,
+}
+
+impl GameUiState {
+    const fn profile_change_blocked(self) -> bool {
+        self.reserved_profile_blocker || self.modal_busy || self.navigation_busy
+    }
+}
+
 /// Semantic target forwarded to scene and presentation coordinators.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum GameSceneLink {
@@ -191,8 +210,8 @@ pub struct GameLifecycleState {
     pub navigation_target_selected: bool,
     /// Presentation mode suppresses ordinary VM execution.
     pub presentation_mode: bool,
-    /// UI modes that postpone profile replacement are active.
-    pub profile_ui_blocked: bool,
+    /// Recovered low UI bits kept private behind semantic subsystem accessors.
+    ui_state: GameUiState,
     /// Pending playable profile selected by BloodScript.
     pub pending_profile: Option<ScriptProfileId>,
     /// Other subsystem ownership that postpones profile replacement.
@@ -212,6 +231,31 @@ pub struct GameLifecycleState {
 }
 
 impl GameLifecycleState {
+    /// Return whether the presentation interface and DESCRIPT name path are active.
+    pub const fn presentation_interface_active(&self) -> bool {
+        self.ui_state.presentation_interface_active
+    }
+
+    /// Update the presentation interface bit without disturbing profile blockers.
+    pub fn set_presentation_interface_active(&mut self, active: bool) {
+        self.ui_state.presentation_interface_active = active;
+    }
+
+    /// Update the shared modal UI blocker without disturbing navigation state.
+    pub fn set_modal_ui_busy(&mut self, busy: bool) {
+        self.ui_state.modal_busy = busy;
+    }
+
+    /// Update the navigation-choice UI blocker without disturbing modal state.
+    pub fn set_navigation_ui_busy(&mut self, busy: bool) {
+        self.ui_state.navigation_busy = busy;
+    }
+
+    /// Return whether any recovered UI bit postpones a pending profile change.
+    pub const fn profile_ui_blocked(&self) -> bool {
+        self.ui_state.profile_change_blocked()
+    }
+
     fn profile_change_blocked(&self) -> bool {
         let blockers = self.profile_change_blockers;
         self.presentation.active
@@ -489,6 +533,7 @@ fn run_game_runtime<Host: GameLifecycleHost>(
     host.load_initial_audio_resource()?;
 
     state.presentation_mode = true;
+    state.set_presentation_interface_active(true);
     state.navigation_rebuild_pending = true;
     host.randomize_ship_point_cloud()?;
     host.run_initial_presentation(session.scene_link)?;
@@ -516,7 +561,7 @@ fn run_game_runtime<Host: GameLifecycleHost>(
         }
 
         if let Some(profile) = state.pending_profile
-            && !state.profile_ui_blocked
+            && !state.profile_ui_blocked()
             && !state.profile_change_blocked()
         {
             if host.load_profile(profile, state)? == GameProfileLoadStatus::Failed {

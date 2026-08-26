@@ -12,12 +12,12 @@ use crate::assets::OriginalResourceStore;
 use crate::native::bloodprg::{
     DescriptApplicationContext, DescriptBackgroundCache, DescriptBackgroundSource,
     DescriptIdleClipSource, DescriptPresentationAssets, DescriptRecordApplication,
-    DescriptSoundBankLoader, LoadedScriptProfile, ScriptAboardRecordContext, ScriptClock,
-    ScriptDispatchState, ScriptEnvironmentActivity, ScriptExecutionBackend, ScriptExecutionService,
-    ScriptFrameOutcome, ScriptPresentationEntity, ScriptProfileId, ScriptProfileLoadOutcome,
-    ScriptRecordStateNavigationContext, ScriptTransferContext, SequencePresentationState,
-    SequenceRequestContext, TextPresentationState, execute_loaded_script_frame,
-    lookup_and_apply_descript_record,
+    DescriptSoundBankLoader, GameLifecycleState, LoadedScriptProfile, ScriptAboardRecordContext,
+    ScriptClock, ScriptDispatchState, ScriptEnvironmentActivity, ScriptExecutionBackend,
+    ScriptExecutionService, ScriptFrameOutcome, ScriptPresentationEntity, ScriptProfileId,
+    ScriptProfileLoadOutcome, ScriptRecordStateNavigationContext, ScriptTransferContext,
+    SequencePresentationState, SequenceRequestContext, TextPresentationState,
+    execute_loaded_script_frame, lookup_and_apply_descript_record,
 };
 
 use super::{OriginalGameData, OriginalGameRuntime};
@@ -123,6 +123,83 @@ impl RuntimeScriptSystem {
             &mut self.service,
         )
         .map_err(|error| anyhow!("executing BloodScript frame: {error:?}"))
+    }
+
+    /// Import globals owned by the recovered main loop before one VM pass.
+    pub fn prepare_lifecycle_frame(&mut self, lifecycle: &GameLifecycleState) {
+        let source = &lifecycle.presentation;
+        {
+            let presentation = self.service.presentation_state_mut();
+            presentation.active = source.active;
+            presentation.c2_gate_active = source.c2_presentation_gate;
+            presentation.word_choice_active = source.word_choice_active;
+            presentation.start_locked = source.start_locked;
+            presentation.hold_ready = source.hold_ready;
+            presentation.dialogue_hold_complete = source.dialogue_hold_complete;
+            presentation.name_lookup_enabled = lifecycle.presentation_interface_active();
+            self.dispatch.import_presentation_scan_state(presentation);
+        }
+        let text = &mut self.dispatch.text_presentation;
+        text.subtitle_display_active = source.subtitle_display_active;
+        text.menu_deferred = source.menu_deferred;
+        text.request_flags = source.request_flags;
+        text.subtitle_word_list_mode = source.subtitle_word_list_mode;
+        text.subtitle_voice_trigger = source.subtitle_voice_trigger;
+        text.menu_pending = source.text_menu_pending;
+        text.dialogue_hold_countdown = source.dialogue_hold_countdown;
+        self.dispatch.record_clear_presentation.sequence_active = source.sequence_active;
+
+        self.service
+            .backend_mut()
+            .set_sequence_context(SequenceRequestContext {
+                ship_active: source.ship_active,
+                scene_gate_active: source.scene_gate_active,
+            });
+        self.service
+            .backend_mut()
+            .set_ship_interface_active(lifecycle.presentation_interface_active());
+    }
+
+    /// Publish BloodScript writes to the recovered main-loop globals after a VM pass.
+    pub fn finish_lifecycle_frame(&self, lifecycle: &mut GameLifecycleState) -> Result<()> {
+        let presentation = self.service.presentation_state();
+        let target = &mut lifecycle.presentation;
+        target.active = presentation.active;
+        target.c2_presentation_gate = presentation.c2_gate_active;
+        target.word_choice_active = presentation.word_choice_active;
+        target.start_locked = presentation.start_locked;
+        target.hold_ready = presentation.hold_ready;
+        target.dialogue_hold_complete = presentation.dialogue_hold_complete;
+
+        let text = &self.dispatch.text_presentation;
+        target.subtitle_display_active = text.subtitle_display_active;
+        target.menu_deferred = text.menu_deferred;
+        target.request_flags = text.request_flags;
+        target.subtitle_word_list_mode = text.subtitle_word_list_mode;
+        target.subtitle_voice_trigger = text.subtitle_voice_trigger;
+        target.text_menu_pending = text.menu_pending;
+        target.dialogue_hold_countdown = text.dialogue_hold_countdown;
+        target.sequence_active = self.dispatch.record_clear_presentation.sequence_active;
+        lifecycle.set_modal_ui_busy(presentation.ui_busy);
+        lifecycle.pending_profile = self
+            .dispatch
+            .profile_request
+            .pending_profile()
+            .context("resolving BloodScript profile request")?;
+        Ok(())
+    }
+
+    /// Execute one VM pass with exact main-loop state exchange on both sides.
+    pub fn execute_lifecycle_frame(
+        &mut self,
+        runtime: &mut OriginalGameRuntime,
+        lifecycle: &mut GameLifecycleState,
+        enabled: bool,
+    ) -> Result<ScriptFrameOutcome> {
+        self.prepare_lifecycle_frame(lifecycle);
+        let outcome = self.execute_frame(runtime, enabled)?;
+        self.finish_lifecycle_frame(lifecycle)?;
+        Ok(outcome)
     }
 
     /// Borrow the concrete backend for lifecycle-state synchronization.
@@ -549,6 +626,9 @@ mod tests {
     use std::path::{Path, PathBuf};
     use std::sync::atomic::{AtomicU64, Ordering};
 
+    use commander_blood_formats::code::decode_script_code;
+    use commander_blood_formats::instruction::decode_script_profile_request;
+
     use crate::native::bloodprg::{ORIGINAL_SCRIPT_PROFILE_COUNT, ScriptFrameEnd, ScriptProfileId};
 
     use super::super::OriginalGameDataPaths;
@@ -562,6 +642,9 @@ mod tests {
         day: 2,
         month: 1,
     };
+    const PROFILE_REQUEST_OPCODE: u8 = 0xD2;
+    const SCRIPT_END_OPCODE: u8 = 0xFF;
+    const REQUESTED_PROFILE_NUMBER: u8 = 3;
     static TEMPORARY_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(u64::MIN);
 
     struct TemporaryRoot(std::path::PathBuf);
@@ -657,6 +740,111 @@ mod tests {
         assert_eq!(resource.name(), DEFAULT_BRIDGE_SOUND_BANK);
         assert!(!resource.encoded_bytes().is_empty());
         commander_blood_formats::snd::SndBank::decode(resource.encoded_bytes()).unwrap();
+    }
+
+    #[test]
+    fn lifecycle_exchange_preserves_shared_native_presentation_globals() {
+        let Some(paths) = original_data_paths() else {
+            return;
+        };
+        let writable_root = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(paths, &writable_root.0).unwrap();
+        let mut scripts = RuntimeScriptSystem::new(&data, TEST_CLOCK);
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.presentation.active = true;
+        lifecycle.presentation.ship_active = true;
+        lifecycle.presentation.c2_presentation_gate = true;
+        lifecycle.presentation.scene_gate_active = true;
+        lifecycle.presentation.sequence_active = true;
+        lifecycle.presentation.word_choice_active = true;
+        lifecycle.presentation.start_locked = true;
+        lifecycle.presentation.hold_ready = true;
+        lifecycle.presentation.dialogue_hold_complete = true;
+        lifecycle.presentation.subtitle_display_active = true;
+        lifecycle.presentation.menu_deferred = true;
+        lifecycle.presentation.request_flags =
+            crate::native::bloodprg::PresentationRequestFlags::decode(3);
+        lifecycle.presentation.subtitle_word_list_mode = true;
+        lifecycle.presentation.subtitle_voice_trigger = true;
+        lifecycle.presentation.text_menu_pending = true;
+        lifecycle.presentation.dialogue_hold_countdown = 12;
+        lifecycle.set_presentation_interface_active(true);
+
+        scripts.prepare_lifecycle_frame(&lifecycle);
+
+        let presentation = scripts.service.presentation_state();
+        assert!(presentation.active);
+        assert!(presentation.c2_gate_active);
+        assert!(presentation.word_choice_active);
+        assert!(presentation.start_locked);
+        assert!(presentation.hold_ready);
+        assert!(presentation.dialogue_hold_complete);
+        assert!(scripts.dispatch.sequence_presentation.presentation_active);
+        assert!(
+            scripts
+                .dispatch
+                .aboard_presentation
+                .presentation_gate_active
+        );
+        assert!(
+            scripts
+                .dispatch
+                .transfer_presentation
+                .presentation_gate_active
+        );
+        assert_eq!(
+            scripts.service.backend().sequence_context(),
+            SequenceRequestContext {
+                ship_active: true,
+                scene_gate_active: true,
+            }
+        );
+        assert!(scripts.service.presentation_state().name_lookup_enabled);
+
+        let presentation = scripts.service.presentation_state_mut();
+        presentation.active = false;
+        presentation.c2_gate_active = false;
+        presentation.word_choice_active = false;
+        presentation.start_locked = false;
+        presentation.hold_ready = false;
+        presentation.dialogue_hold_complete = false;
+        presentation.ui_busy = true;
+        scripts.dispatch.text_presentation.subtitle_display_active = false;
+        scripts.dispatch.text_presentation.menu_deferred = false;
+        scripts.dispatch.text_presentation.request_flags =
+            crate::native::bloodprg::PresentationRequestFlags::default();
+        scripts.dispatch.text_presentation.subtitle_word_list_mode = false;
+        scripts.dispatch.text_presentation.subtitle_voice_trigger = false;
+        scripts.dispatch.text_presentation.menu_pending = false;
+        scripts.dispatch.text_presentation.dialogue_hold_countdown = 4;
+        scripts.dispatch.record_clear_presentation.sequence_active = false;
+        let code = decode_script_code(&[
+            PROFILE_REQUEST_OPCODE,
+            REQUESTED_PROFILE_NUMBER,
+            SCRIPT_END_OPCODE,
+        ])
+        .unwrap();
+        let request = decode_script_profile_request(&code.tokens()[0]).unwrap();
+        scripts.dispatch.profile_request.schedule(request);
+
+        scripts.finish_lifecycle_frame(&mut lifecycle).unwrap();
+
+        assert!(!lifecycle.presentation.active);
+        assert!(!lifecycle.presentation.c2_presentation_gate);
+        assert!(!lifecycle.presentation.sequence_active);
+        assert!(!lifecycle.presentation.word_choice_active);
+        assert!(!lifecycle.presentation.start_locked);
+        assert!(!lifecycle.presentation.hold_ready);
+        assert!(!lifecycle.presentation.dialogue_hold_complete);
+        assert!(!lifecycle.presentation.subtitle_display_active);
+        assert!(!lifecycle.presentation.menu_deferred);
+        assert_eq!(lifecycle.presentation.request_flags.bits(), u8::MIN);
+        assert!(!lifecycle.presentation.subtitle_word_list_mode);
+        assert!(!lifecycle.presentation.subtitle_voice_trigger);
+        assert!(!lifecycle.presentation.text_menu_pending);
+        assert_eq!(lifecycle.presentation.dialogue_hold_countdown, 4);
+        assert!(lifecycle.profile_ui_blocked());
+        assert_eq!(lifecycle.pending_profile, ScriptProfileId::new(2));
     }
 
     #[test]

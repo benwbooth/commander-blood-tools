@@ -245,6 +245,24 @@ impl GameLifecycleHost for OracleHost {
 }
 
 #[test]
+fn recovered_ui_bits_keep_presentation_and_profile_gates_independent() {
+    let mut state = GameLifecycleState::default();
+    state.set_presentation_interface_active(true);
+    assert!(state.presentation_interface_active());
+    assert!(!state.profile_ui_blocked());
+
+    state.set_modal_ui_busy(true);
+    assert!(state.profile_ui_blocked());
+    state.set_navigation_ui_busy(true);
+    state.set_modal_ui_busy(false);
+    assert!(state.profile_ui_blocked());
+
+    state.set_navigation_ui_busy(false);
+    assert!(!state.profile_ui_blocked());
+    assert!(state.presentation_interface_active());
+}
+
+#[test]
 fn lifecycle_matches_all_original_control_flow_vectors() {
     let vectors: Vec<MainOracle> = serde_json::from_str(include_str!(
         "../../../../../re/tools/oracle_vectors/func_0eb0_natural.json"
@@ -290,7 +308,8 @@ fn apply_scenario(state: &mut GameLifecycleState, scenario: Scenario) {
     state.pause_hud_active = false;
     state.pointer_position_locked = false;
     state.pointer_press_pending = u8::MIN;
-    state.profile_ui_blocked = false;
+    state.set_modal_ui_busy(false);
+    state.set_navigation_ui_busy(false);
     state.pending_profile = scenario.pending_profile;
     state.profile_change_blockers = GameProfileChangeBlockers::default();
     state.presentation_mode = scenario.presentation_mode;
