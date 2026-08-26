@@ -100,6 +100,10 @@ impl PresentationRequestFlags {
     pub(super) fn request_secondary(&mut self) {
         self.0 |= SECONDARY_PRESENTATION_REQUEST_PENDING;
     }
+
+    pub(super) fn clear_primary_requests(&mut self) {
+        self.0 &= !(TEXT_REQUEST_PENDING | SECONDARY_PRESENTATION_REQUEST_PENDING);
+    }
 }
 
 /// Flat presentation state shared with audio, subtitle, and menu systems.

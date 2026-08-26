@@ -67,6 +67,7 @@ mod record_state;
 mod resource_cache;
 mod save_game;
 mod save_load_menu;
+mod scene_transition;
 mod script;
 mod script_action;
 mod script_block;
@@ -439,6 +440,12 @@ pub use save_load_menu::{
     SaveLoadMenuOutcome, SaveLoadMenuPhase, SaveLoadMenuState, SaveLoadRequests,
     SaveLoadSelection, SaveProfileBackend, SavedProfileLifecycle, update_save_load_menu,
 };
+pub use scene_transition::{
+    SceneImageBand, SceneImageLoadOptions, SceneManu3Animation, ScenePaletteTransition,
+    SceneTransitionError, SceneTransitionHost, SceneTransitionLine, SceneTransitionOutcome,
+    SceneTransitionPalettes, SceneTransitionPhase, SceneTransitionRecordKind,
+    SceneTransitionRecordSource, SceneTransitionState, update_scene_transition,
+};
 pub use selected_mask::{
     PresentationChoiceMaskError, PresentationChoiceNumber, draw_presentation_choice_number,
 };
@@ -542,7 +549,7 @@ pub use ship_presentation::{
 pub use sprite_geometry::{
     BRIDGE_SPRITE_ENTITY_COUNT, BridgeSpriteEntity, BridgeSpriteEntityError, BridgeSpriteExtent,
     BridgeSpriteFlags, BridgeSpriteGeometryUpdate, BridgeSpritePosition,
-    update_bridge_sprite_extent, update_bridge_sprite_position,
+    advance_bridge_sprite_state, update_bridge_sprite_extent, update_bridge_sprite_position,
 };
 pub use startup::{
     apply_startup_option, tokenize_startup_command, StartupAudioConfiguration, StartupAudioDriver,

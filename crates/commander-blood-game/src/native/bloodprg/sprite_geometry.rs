@@ -51,6 +51,14 @@ impl BridgeSpriteFlags {
         self.0 |= DIRTY_FLAG;
     }
 
+    fn advance_state_zero(&mut self) -> bool {
+        if !self.is_visible() || self.0 & STATE_ZERO_FLAG == u16::MIN {
+            return false;
+        }
+        self.0 = self.0 & !STATE_ZERO_FLAG | DIRTY_FLAG;
+        true
+    }
+
     fn mark_scaled_extent(&mut self) {
         self.0 |= EXTENT_CHANGED_FLAG | DIRTY_FLAG;
     }
@@ -107,6 +115,25 @@ pub struct BridgeSpriteGeometryUpdate {
     pub extent_changed: bool,
     /// A prior scaled-extent state returned to the comparison extent.
     pub scaled_extent_cleared: bool,
+}
+
+/// Advance one active bridge sprite from state zero to its dirty state.
+///
+/// This translates `entity_flag_state_transition` at BLOODPRG routine offset
+/// `0x0041D1`. All unrelated low and high flag bits are retained while checked
+/// flat indexing replaces the original fixed `GS` table address.
+pub fn advance_bridge_sprite_state(
+    entities: &mut [BridgeSpriteEntity],
+    entity_index: usize,
+) -> Result<bool, BridgeSpriteEntityError> {
+    let entity_count = entities.len();
+    let entity = entities
+        .get_mut(entity_index)
+        .ok_or(BridgeSpriteEntityError {
+            entity_index,
+            entity_count,
+        })?;
+    Ok(entity.flags.advance_state_zero())
 }
 
 /// Invalid bridge sprite entity selection.
@@ -215,6 +242,7 @@ mod tests {
 
     const POSITION_ORACLE_COUNT: usize = 6;
     const EXTENT_ORACLE_COUNT: usize = 8;
+    const STATE_TRANSITION_ORACLE_COUNT: usize = 7;
     const COORDINATE_COUNT: usize = 2;
 
     #[derive(Deserialize)]
@@ -238,6 +266,43 @@ mod tests {
         source_extent: [u16; COORDINATE_COUNT],
         output_flags: u16,
         output_extent: [u16; COORDINATE_COUNT],
+    }
+
+    #[derive(Deserialize)]
+    struct StateTransitionOracle {
+        name: String,
+        object_id: usize,
+        input_flags: u16,
+        output_flags: u16,
+    }
+
+    #[test]
+    fn state_transition_matches_every_original_vector() {
+        let vectors: Vec<StateTransitionOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_41d1_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), STATE_TRANSITION_ORACLE_COUNT);
+
+        for vector in vectors {
+            let mut entities = [BridgeSpriteEntity::default(); BRIDGE_SPRITE_ENTITY_COUNT];
+            entities[vector.object_id].flags = BridgeSpriteFlags::from_bits(vector.input_flags);
+
+            let changed = advance_bridge_sprite_state(&mut entities, vector.object_id).unwrap();
+
+            assert_eq!(
+                entities[vector.object_id].flags.bits(),
+                vector.output_flags,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                changed,
+                vector.input_flags != vector.output_flags,
+                "{}",
+                vector.name
+            );
+        }
     }
 
     #[test]
