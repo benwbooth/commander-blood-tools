@@ -279,7 +279,9 @@ pub use resource_cache::{
 pub use selected_mask::{
     PresentationChoiceMaskError, PresentationChoiceNumber, draw_presentation_choice_number,
 };
-pub use script::{ScriptControl, ScriptResumeState, ScriptRuntime, ScriptRuntimeError};
+pub use script::{
+    ScriptControl, ScriptResumePhase, ScriptResumeState, ScriptRuntime, ScriptRuntimeError,
+};
 pub use script_clock::ScriptClock;
 pub use script_environment::ScriptEnvironmentActivity;
 pub use script_profile::{
@@ -292,7 +294,11 @@ pub use script_profile::{
 pub use script_profile_request::{
     PendingScriptProfileRequest, ScriptProfileRequestError, ScriptProfileRequestSlot,
 };
-pub use script_selector::{ScriptSelectorError, find_selector_body};
+pub use script_selector::{
+    SCRIPT_CONCEPT_HISTORY_LENGTH, ScriptConceptHistory, ScriptSelectionError,
+    ScriptSelectionOutcome, ScriptSelectorBranch, ScriptSelectorError, ScriptSelectorState,
+    commit_selected_concept, find_selector_body,
+};
 pub use script_sequence_slots::ScriptSequenceSlots;
 pub use screen_presentation::{
     PresentationDescriptPlan, PresentationMusicChange, PresentationPanelPhase,

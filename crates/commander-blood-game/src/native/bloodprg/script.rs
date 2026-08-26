@@ -24,6 +24,17 @@ pub struct ScriptResumeState {
     pub target: ScriptCodeOffset,
     /// Value selected by the presentation path before execution resumes.
     pub value: u16,
+    /// Semantic phase represented by the native resume-state byte.
+    pub phase: ScriptResumePhase,
+}
+
+/// Distinct behavior selected by the native resume-state values.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ScriptResumePhase {
+    /// A6 armed a loop target; ordinary execution can consume it once.
+    LoopArmed,
+    /// A selector body yielded and later concept guards use its saved choice.
+    SelectorResumeActive,
 }
 
 /// Invalid typed runtime state detected while applying an instruction.
@@ -118,6 +129,11 @@ impl ScriptRuntime {
         self.selected_concept = concept;
     }
 
+    /// Return the primary concept awaiting selector dispatch.
+    pub const fn selected_concept(&self) -> Option<ScriptWordId> {
+        self.selected_concept
+    }
+
     /// Set the alternate concept used by resumed menu handling.
     pub fn set_alternate_concept(&mut self, concept: Option<ScriptWordId>) {
         self.alternate_concept = concept;
@@ -134,12 +150,55 @@ impl ScriptRuntime {
         self.resume = target.map(|target| ScriptResumeState {
             target,
             value: u16::MIN,
+            phase: ScriptResumePhase::LoopArmed,
         });
     }
 
     /// Arm a presentation resume destination with its selected value.
     pub fn arm_resume(&mut self, target: ScriptCodeOffset, value: u16) {
-        self.resume = Some(ScriptResumeState { target, value });
+        self.resume = Some(ScriptResumeState {
+            target,
+            value,
+            phase: ScriptResumePhase::LoopArmed,
+        });
+    }
+
+    /// Promote a loop-armed resume to the selector-active phase.
+    pub fn activate_selector_resume(&mut self) -> bool {
+        let Some(resume) = &mut self.resume else {
+            return false;
+        };
+        resume.phase = ScriptResumePhase::SelectorResumeActive;
+        true
+    }
+
+    /// Return whether selector guards must use the saved alternate concept.
+    pub const fn selector_resume_active(&self) -> bool {
+        matches!(
+            self.resume,
+            Some(ScriptResumeState {
+                phase: ScriptResumePhase::SelectorResumeActive,
+                ..
+            })
+        )
+    }
+
+    /// Save the selected concept for resumed selector guards.
+    pub fn save_resume_concept(&mut self, concept: ScriptWordId, encoded_value: u16) -> bool {
+        let Some(resume) = &mut self.resume else {
+            return false;
+        };
+        if resume.phase != ScriptResumePhase::SelectorResumeActive {
+            return false;
+        }
+        resume.value = encoded_value;
+        self.alternate_concept = Some(concept);
+        true
+    }
+
+    /// Consume the primary concept selected during the current presentation pass.
+    pub fn take_selected_concept(&mut self) -> Option<ScriptWordId> {
+        self.selected_concept.take()
     }
 
     /// Arm an authored number of framed instructions to skip.
@@ -517,6 +576,35 @@ mod tests {
             runtime.concept_guard(beta, false).unwrap(),
             ScriptControl::Continue
         );
+    }
+
+    #[test]
+    fn resume_state_uses_semantic_phases_for_selector_dispatch() {
+        const SAVED_CONCEPT_ENCODING: u16 = 10;
+
+        let (alpha, _beta) = dictionary_words();
+        let target = ScriptCodeOffset::new(700);
+        let mut runtime = ScriptRuntime::new();
+
+        assert!(!runtime.activate_selector_resume());
+        runtime.arm_resume(target, u16::MIN);
+        assert_eq!(
+            runtime.resume_state().unwrap().phase,
+            ScriptResumePhase::LoopArmed
+        );
+        assert!(!runtime.save_resume_concept(alpha, SAVED_CONCEPT_ENCODING));
+
+        assert!(runtime.activate_selector_resume());
+        assert!(runtime.save_resume_concept(alpha, SAVED_CONCEPT_ENCODING));
+        assert_eq!(
+            runtime.resume_state(),
+            Some(ScriptResumeState {
+                target,
+                value: SAVED_CONCEPT_ENCODING,
+                phase: ScriptResumePhase::SelectorResumeActive,
+            })
+        );
+        assert_eq!(runtime.alternate_concept(), Some(alpha));
     }
 
     #[test]

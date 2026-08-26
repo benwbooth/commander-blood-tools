@@ -772,6 +772,13 @@ impl ScriptDictionary {
         self.source_offsets.get(&source_offset).copied()
     }
 
+    /// Return the original DIC byte position of one interned word.
+    pub fn source_offset(&self, word: ScriptWordId) -> Option<u16> {
+        self.source_offsets
+            .iter()
+            .find_map(|(source_offset, candidate)| (*candidate == word).then_some(*source_offset))
+    }
+
     /// Return the bytes owned by one interned word identity.
     pub fn word(&self, word: ScriptWordId) -> Option<&[u8]> {
         self.words.get(word.index()).map(AsRef::as_ref)
@@ -1012,6 +1019,9 @@ mod tests {
                 dictionary.resolve_source_offset(u16::MIN).unwrap().index(),
                 0
             );
+            for (source_offset, word) in &dictionary.source_offsets {
+                assert_eq!(dictionary.source_offset(*word), Some(*source_offset));
+            }
         }
     }
 

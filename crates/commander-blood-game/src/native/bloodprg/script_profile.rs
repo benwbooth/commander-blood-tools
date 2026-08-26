@@ -14,7 +14,7 @@ use crate::assets::OriginalResourceStore;
 
 use super::{
     OriginalResourceCache, OriginalResourceCatalog, ResourceCacheError, ResourceId,
-    ResourceLoadStatus, ScriptRuntime, ScriptSequenceSlots,
+    ResourceLoadStatus, ScriptRuntime, ScriptSelectorState, ScriptSequenceSlots,
 };
 
 /// File position of the five playable resource profiles in `BLOODPRG.EXE`.
@@ -213,6 +213,7 @@ pub struct LoadedScriptProfile {
     directory: ScriptDirectory,
     builtins: ScriptProfileBuiltins,
     runtime: ScriptRuntime,
+    selector_state: ScriptSelectorState,
     sequence_slots: ScriptSequenceSlots,
 }
 
@@ -270,6 +271,16 @@ impl LoadedScriptProfile {
     /// Mutably borrow this profile's control-flow runtime.
     pub fn runtime_mut(&mut self) -> &mut ScriptRuntime {
         &mut self.runtime
+    }
+
+    /// Borrow the profile's dialogue selector and concept-history state.
+    pub const fn selector_state(&self) -> &ScriptSelectorState {
+        &self.selector_state
+    }
+
+    /// Mutably borrow the profile's dialogue selector and concept-history state.
+    pub fn selector_state_mut(&mut self) -> &mut ScriptSelectorState {
+        &mut self.selector_state
     }
 
     /// Borrow the profile's six DESCRIPT sequence-name bindings.
@@ -491,6 +502,7 @@ fn decode_loaded_profile(
         directory,
         builtins,
         runtime: ScriptRuntime::new(),
+        selector_state: ScriptSelectorState::default(),
         sequence_slots: ScriptSequenceSlots::default(),
     })
 }
@@ -680,6 +692,25 @@ mod tests {
             .unwrap()
             .sequence_slots_mut()
             .assign(assignment);
+        let selected_concept = manager
+            .current()
+            .unwrap()
+            .dictionary()
+            .words()
+            .next()
+            .unwrap()
+            .0;
+        manager
+            .current_mut()
+            .unwrap()
+            .selector_state_mut()
+            .history_mut()
+            .push(selected_concept);
+        manager
+            .current_mut()
+            .unwrap()
+            .selector_state_mut()
+            .replace_presentation_words([selected_concept]);
         assert!(
             manager
                 .current()
@@ -699,6 +730,10 @@ mod tests {
             [ResourceLoadStatus::AlreadyLoaded; SCRIPT_PROFILE_RESOURCE_COUNT]
         );
         assert!(!manager.current().unwrap().runtime().yield_requested());
+        assert_eq!(
+            manager.current().unwrap().selector_state(),
+            &ScriptSelectorState::default()
+        );
         assert_eq!(
             manager
                 .current()
