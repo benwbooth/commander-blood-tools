@@ -33,6 +33,21 @@ impl Default for ShipHudState {
     }
 }
 
+impl ShipHudState {
+    /// Capture the ship-HUD palette window and restore the authored camera origin.
+    ///
+    /// The caller performs the translated HUD artwork selection first. Keeping
+    /// the capture as a state operation lets modern hosts invoke the recovered
+    /// drawing logic directly instead of supplying an artificial callback.
+    pub fn capture_palette_and_reset_camera(&mut self, live_palette: &IndexedGamePalette) {
+        self.palette_snapshot.copy_from_slice(
+            &live_palette
+                [SHIP_HUD_PALETTE_FIRST..SHIP_HUD_PALETTE_FIRST + SHIP_HUD_PALETTE_COLOR_COUNT],
+        );
+        self.camera = SHIP_CAMERA_RESET;
+    }
+}
+
 /// Host HUD drawing performed immediately before the palette capture.
 pub trait ShipHudBackend {
     /// Draw the HUD and apply any resulting changes to the live palette.
@@ -50,11 +65,7 @@ pub fn snapshot_ship_hud_palette_and_reset_camera<Backend: ShipHudBackend>(
     backend: &mut Backend,
 ) {
     backend.draw_ship_hud(live_palette);
-    state.palette_snapshot.copy_from_slice(
-        &live_palette
-            [SHIP_HUD_PALETTE_FIRST..SHIP_HUD_PALETTE_FIRST + SHIP_HUD_PALETTE_COLOR_COUNT],
-    );
-    state.camera = SHIP_CAMERA_RESET;
+    state.capture_palette_and_reset_camera(live_palette);
 }
 
 #[cfg(test)]

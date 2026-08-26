@@ -8,6 +8,7 @@ const CAMERA_Z_CRUISE: u16 = 20_000;
 const CAMERA_Z_ACCELERATION_STEP: u16 = 100;
 const CAMERA_Z_FINAL: i16 = 30_000;
 const CAMERA_X_RESET: i16 = 10_000;
+const CAMERA_Y_RESET: i16 = 12_000;
 const HYPERSPACE_ACTIVE_LINE: u16 = 6;
 const TRANSITION_ENTITY: u16 = 4;
 const FIRST_DIRTY_ENTITY: u16 = 21;
@@ -81,6 +82,25 @@ pub struct CameraApproachState {
     pub active_line: u16,
     /// Whether the scene presentation callback is still busy.
     pub presentation_pending: bool,
+}
+
+impl Default for CameraApproachState {
+    fn default() -> Self {
+        Self {
+            phase: u8::MIN,
+            actor_presentation: CameraApproachPresentation::Inactive,
+            camera_view_active: false,
+            transition_pending: false,
+            ui_active: false,
+            camera: [CAMERA_X_RESET, CAMERA_Y_RESET, i16::MIN],
+            forward_acceleration: u16::MIN,
+            projection_angle: u16::MIN,
+            hyperspace_sequence_index: u16::MIN,
+            hyperspace_resource: Box::default(),
+            active_line: u16::MIN,
+            presentation_pending: false,
+        }
+    }
 }
 
 /// Read-only resources required by one camera-approach update.

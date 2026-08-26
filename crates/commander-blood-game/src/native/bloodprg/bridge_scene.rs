@@ -152,6 +152,13 @@ impl BridgeScene {
         self.steering
     }
 
+    /// Restore the authored camera origin used when rebuilding the ship HUD.
+    pub fn reset_camera(&mut self) {
+        self.camera = ShipCameraPosition {
+            position: SHIP_CAMERA_RESET.map(|component| component as u16),
+        };
+    }
+
     /// Advance steering and generate the exact starfield and panorama layers.
     pub fn render_frame(
         &mut self,

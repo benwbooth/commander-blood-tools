@@ -8,11 +8,16 @@ use commander_blood_formats::manu3::decode_manu3;
 use commander_blood_formats::panorama::BridgePanoramaArchive;
 
 use crate::native::bloodprg::{
-    BridgeSpriteRect, CHART_BACK_BUFFER_RESOURCE_PATH, FontPoint, IndexedGamePalette,
-    LoadedScriptProfile, OriginalResourceCache, OriginalSaveSlotDirectory, PauseHudRefresh,
-    PbmDecodeResult, RasterPoint, RasterRectOutcome, ScriptProfileId, ScriptProfileLoadOutcome,
-    ScriptProfileManager, build_pause_hud_refresh, decode_chart_back_buffer, draw_small_font_text,
-    fill_framebuffer_rect,
+    BRIDGE_SPRITE_ENTITY_COUNT, BridgeFrameState, BridgeSpriteEntity, BridgeSpritePosition,
+    BridgeSpriteRect, CHART_BACK_BUFFER_RESOURCE_PATH, CameraApproachState, FontPoint,
+    IndexedGamePalette, LoadedScriptProfile, NameAreaEffectOutcome, NameAreaEffectState,
+    OriginalResourceCache, OriginalSaveSlotDirectory, PaletteResourceStorage,
+    PaletteResourceTarget, PauseHudRefresh, PbmDecodeResult, RasterPoint, RasterRectOutcome,
+    ResourceId, ScriptPresentationEntity, ScriptProfileId, ScriptProfileLoadOutcome,
+    ScriptProfileManager, ShipHudState, ShipViewArtworkSelection,
+    activate_bridge_sprite_from_resource, advance_bridge_sprite_state, build_pause_hud_refresh,
+    decode_chart_back_buffer, draw_small_font_text, fill_framebuffer_rect,
+    select_ship_view_artwork, update_name_area_effect,
 };
 use crate::native::manu3::model::Manu3Model;
 
@@ -29,6 +34,9 @@ pub const LOGICAL_FRAMEBUFFER_PIXEL_COUNT: usize =
 const MANU3_RESOURCE_NAME: &[u8] = b"MANU3.XDB";
 const SAVE_SLOT_DIRECTORY_RESOURCE_NAME: &[u8] = b"BLOOD.SAV";
 const PAUSE_HUD_CLEAR_COLOR: u8 = u8::MIN;
+const DIALOGUE_OVERLAY_ENTITY_INDEX: usize = 4;
+const NAME_AREA_EFFECT_ENTITY_INDEX: usize = 2;
+const SHIP_VIEW_TRANSITION_ENTITY_INDEX: usize = 31;
 
 /// One owned 320 by 200 row-major indexed framebuffer.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -91,6 +99,12 @@ pub struct OriginalGameRuntime {
     manu3: Option<Manu3Model>,
     bridge_panorama: Option<BridgePanoramaArchive>,
     save_slots: Option<OriginalSaveSlotDirectory>,
+    bridge_frame_state: BridgeFrameState,
+    bridge_sprite_entities: [BridgeSpriteEntity; BRIDGE_SPRITE_ENTITY_COUNT],
+    camera_approach: CameraApproachState,
+    name_area_effect: NameAreaEffectState,
+    ship_hud: ShipHudState,
+    world_artwork_layout: Box<[commander_blood_formats::world_art::WorldArtworkLayout]>,
 }
 
 impl fmt::Debug for OriginalGameRuntime {
@@ -114,6 +128,7 @@ impl OriginalGameRuntime {
     pub fn new(data: OriginalGameData) -> Self {
         let profiles = ScriptProfileManager::new(data.script_profile_catalog().clone());
         let live_palette = *data.default_vga_palette();
+        let world_artwork_layout = data.world_artwork_layout().to_vec().into_boxed_slice();
         Self {
             data,
             resource_cache: OriginalResourceCache::new(),
@@ -124,6 +139,12 @@ impl OriginalGameRuntime {
             manu3: None,
             bridge_panorama: None,
             save_slots: None,
+            bridge_frame_state: BridgeFrameState::default(),
+            bridge_sprite_entities: [BridgeSpriteEntity::default(); BRIDGE_SPRITE_ENTITY_COUNT],
+            camera_approach: CameraApproachState::default(),
+            name_area_effect: NameAreaEffectState::default(),
+            ship_hud: ShipHudState::default(),
+            world_artwork_layout,
         }
     }
 
@@ -140,6 +161,143 @@ impl OriginalGameRuntime {
     /// Mutably borrow the live native six-bit palette.
     pub fn live_palette_mut(&mut self) -> &mut IndexedGamePalette {
         &mut self.live_palette
+    }
+
+    /// Persistent typed bridge-frame coordinator state.
+    pub const fn bridge_frame_state(&self) -> &BridgeFrameState {
+        &self.bridge_frame_state
+    }
+
+    /// Complete flat sprite entity table shared by bridge presentation systems.
+    pub fn bridge_sprite_entities(&self) -> &[BridgeSpriteEntity; BRIDGE_SPRITE_ENTITY_COUNT] {
+        &self.bridge_sprite_entities
+    }
+
+    /// Current ship-camera approach state started by BloodScript travel actions.
+    pub const fn camera_approach(&self) -> &CameraApproachState {
+        &self.camera_approach
+    }
+
+    /// Current character-name palette effect state.
+    pub const fn name_area_effect(&self) -> &NameAreaEffectState {
+        &self.name_area_effect
+    }
+
+    /// Most recent ship-HUD palette snapshot and camera reset.
+    pub const fn ship_hud(&self) -> &ShipHudState {
+        &self.ship_hud
+    }
+
+    /// Request the deterministic first frame of the authored name-area effect.
+    pub fn restart_name_area_effect(&mut self) {
+        self.name_area_effect.active = true;
+        self.name_area_effect.restart_requested = true;
+    }
+
+    /// Advance one fixed bridge presentation entity emitted by BloodScript.
+    pub fn transition_presentation_entity(
+        &mut self,
+        entity: ScriptPresentationEntity,
+    ) -> Result<bool> {
+        let entity_index = match entity {
+            ScriptPresentationEntity::DialogueOverlay => DIALOGUE_OVERLAY_ENTITY_INDEX,
+            ScriptPresentationEntity::NameAreaEffect => NAME_AREA_EFFECT_ENTITY_INDEX,
+        };
+        advance_bridge_sprite_state(&mut self.bridge_sprite_entities, entity_index)
+            .with_context(|| format!("transitioning bridge presentation entity {entity_index}"))
+    }
+
+    /// Arm the translated camera-approach state machine for a travel action.
+    pub fn start_camera_transition(&mut self) {
+        self.camera_approach.phase = u8::MIN;
+        self.camera_approach.transition_pending = true;
+        self.bridge_frame_state.set_transition_pending(true);
+    }
+
+    /// Advance one frame of the executable-authored character-name palette effect.
+    pub fn advance_name_area_effect(
+        &mut self,
+        random_index: &mut impl FnMut(usize) -> usize,
+    ) -> Result<NameAreaEffectOutcome> {
+        update_name_area_effect(
+            self.data.name_area_effect_sequences(),
+            &mut self.name_area_effect,
+            self.front_buffer.pixels_mut(),
+            random_index,
+        )
+        .context("updating the bridge name-area palette effect")
+    }
+
+    /// Select current-position artwork, activate its sprite, and reset the ship HUD.
+    pub fn reset_ship_hud(&mut self) -> Result<ShipViewArtworkSelection> {
+        let Self {
+            data,
+            resource_cache,
+            profiles,
+            live_palette,
+            bridge_sprite_entities,
+            ship_hud,
+            world_artwork_layout,
+            ..
+        } = self;
+        advance_bridge_sprite_state(bridge_sprite_entities, SHIP_VIEW_TRANSITION_ENTITY_INDEX)
+            .context("transitioning the ship-view artwork entity")?;
+
+        let profile = profiles
+            .current()
+            .context("ship HUD reset requires a loaded BloodScript profile")?;
+        let current = profile
+            .builtins()
+            .archetype
+            .context("loaded BloodScript profile has no arche object")?;
+        let selection = select_ship_view_artwork(
+            profile.directory(),
+            profile.state(),
+            current,
+            world_artwork_layout,
+        )
+        .context("selecting ship-view artwork for the current position")?;
+
+        if let (Some(request), Some(placement)) =
+            (selection.resource_request, selection.entity_placement)
+        {
+            let resource = ResourceId::new(request.resource.value());
+            let loaded = resource_cache
+                .load_palette_resource(
+                    data.resource_store(),
+                    data.resource_catalog(),
+                    resource,
+                    PaletteResourceTarget::Direct,
+                    live_palette,
+                )
+                .with_context(|| {
+                    format!("loading ship-view artwork resource {}", resource.value())
+                })?;
+            let PaletteResourceStorage::Direct(bytes) = loaded.storage else {
+                bail!("direct ship-view artwork load unexpectedly returned cached storage");
+            };
+            let activated = activate_bridge_sprite_from_resource(
+                bridge_sprite_entities,
+                usize::from(placement.entity.value()),
+                resource,
+                &bytes,
+                BridgeSpritePosition {
+                    x: placement.position[0] as u16,
+                    y: placement.position[1] as u16,
+                },
+                usize::from(placement.frame),
+            )
+            .context("activating selected ship-view artwork sprite")?;
+            if !activated {
+                bail!(
+                    "ship-view artwork resource {} has no authored initial frame",
+                    resource.value()
+                );
+            }
+        }
+
+        ship_hud.capture_palette_and_reset_camera(live_palette);
+        Ok(selection)
     }
 
     /// Logical frame submitted to the modern renderer.
@@ -376,6 +534,8 @@ mod tests {
     use std::path::{Path, PathBuf};
     use std::sync::atomic::{AtomicU64, Ordering};
 
+    use commander_blood_formats::script::ScriptObjectKind;
+
     use super::super::{OriginalGameData, OriginalGameDataPaths, VGA_BIOS_FONT_8X8};
     use super::*;
 
@@ -384,6 +544,7 @@ mod tests {
     const TEST_SAVE_FILENAME: &[u8] = b"game9.sav";
     const MISSING_SAVE_FILENAME: &[u8] = b"game8.sav";
     const TEST_SAVE_BYTES: &[u8] = b"flat save storage";
+    const INITIAL_SCRIPT_PROFILE: u8 = 0;
     static TEMPORARY_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(u64::MIN);
 
     struct TemporaryRoot(PathBuf);
@@ -508,6 +669,97 @@ mod tests {
             Some(TEST_SAVE_BYTES)
         );
         assert_eq!(runtime.load_save_file(MISSING_SAVE_FILENAME).unwrap(), None);
+    }
+
+    #[test]
+    fn shipped_destination_selects_and_activates_real_ship_view_artwork() {
+        let Some(data) = original_game_data() else {
+            return;
+        };
+        let mut runtime = OriginalGameRuntime::new(data);
+        runtime
+            .load_profile(ScriptProfileId::new(INITIAL_SCRIPT_PROFILE).unwrap())
+            .unwrap();
+
+        let layout_names = runtime
+            .data()
+            .world_artwork_layout()
+            .iter()
+            .map(|layout| layout.name().to_vec())
+            .collect::<Vec<_>>();
+        let (current, destination_position) = {
+            let profile = runtime.current_profile().unwrap();
+            let current = profile.builtins().archetype.unwrap();
+            let destination = profile
+                .directory()
+                .active_objects()
+                .find_map(|(object, entry)| {
+                    let state_object = profile.state().object(object)?;
+                    (object != current
+                        && state_object.kind != ScriptObjectKind::BlackHole
+                        && layout_names.iter().any(|name| name == entry.name()))
+                    .then_some((object, state_object.kind))
+                })
+                .expect("profile must contain a direct-position world-artwork object");
+            let byte_offset = crate::native::bloodprg::script_field_offset(
+                destination.1,
+                crate::native::bloodprg::ScriptFieldSelector::NAVIGATION_POSITION,
+            )
+            .expect("destination must have a navigation position");
+            let position_field = profile
+                .state()
+                .object_word_pair(destination.0, byte_offset / std::mem::size_of::<u16>())
+                .unwrap();
+            (current, profile.state().word_pair(position_field).unwrap())
+        };
+        {
+            let profile = runtime.current_profile_mut().unwrap();
+            let current_kind = profile.state().object(current).unwrap().kind;
+            let byte_offset = crate::native::bloodprg::script_field_offset(
+                current_kind,
+                crate::native::bloodprg::ScriptFieldSelector::NAVIGATION_POSITION,
+            )
+            .unwrap();
+            let position_field = profile
+                .state()
+                .object_word_pair(current, byte_offset / std::mem::size_of::<u16>())
+                .unwrap();
+            assert!(
+                profile
+                    .state_mut()
+                    .set_word_pair(position_field, destination_position)
+            );
+        }
+
+        let selection = runtime.reset_ship_hud().unwrap();
+        assert_eq!(
+            usize::from(selection.transitioned_entity.value()),
+            SHIP_VIEW_TRANSITION_ENTITY_INDEX
+        );
+        let placement = selection
+            .entity_placement
+            .expect("destination must select world artwork");
+        assert!(selection.resource_request.is_some());
+        let entity = &runtime.bridge_sprite_entities()[usize::from(placement.entity.value())];
+        assert!(entity.flags.is_visible());
+        assert!(entity.frame.is_some());
+        assert_eq!(
+            entity.draw_position,
+            BridgeSpritePosition {
+                x: placement.position[0] as u16,
+                y: placement.position[1] as u16,
+            }
+        );
+        assert_eq!(
+            runtime.ship_hud().camera,
+            crate::native::bloodprg::SHIP_CAMERA_RESET
+        );
+        assert_eq!(
+            runtime.ship_hud().palette_snapshot.as_slice(),
+            &runtime.live_palette()[crate::native::bloodprg::SHIP_HUD_PALETTE_FIRST
+                ..crate::native::bloodprg::SHIP_HUD_PALETTE_FIRST
+                    + crate::native::bloodprg::SHIP_HUD_PALETTE_COLOR_COUNT]
+        );
     }
 
     fn original_game_data() -> Option<OriginalGameData> {

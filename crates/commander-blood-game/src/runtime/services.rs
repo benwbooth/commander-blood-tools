@@ -224,6 +224,13 @@ impl<'window> ModernGameServices<'window> {
         self.scripts.execute_frame(&mut self.runtime, enabled)
     }
 
+    /// Execute one translated script frame and apply every ordered host command it emitted.
+    pub fn execute_and_apply_script_frame(&mut self, enabled: bool) -> Result<ScriptFrameOutcome> {
+        let outcome = self.execute_script_frame(enabled)?;
+        self.process_script_commands()?;
+        Ok(outcome)
+    }
+
     /// Borrow the concrete script backend for lifecycle-state updates.
     pub const fn script_backend(&self) -> &RuntimeScriptBackend {
         self.scripts.backend()
@@ -237,6 +244,39 @@ impl<'window> ModernGameServices<'window> {
     /// Drain ordered renderer, audio, camera, and HUD commands from BloodScript.
     pub fn take_script_commands(&mut self) -> Vec<RuntimeScriptCommand> {
         self.scripts.take_commands()
+    }
+
+    /// Apply all pending BloodScript side effects to concrete flat runtime services.
+    pub fn process_script_commands(&mut self) -> Result<usize> {
+        let commands = self.take_script_commands();
+        let command_count = commands.len();
+        for command in commands {
+            match command {
+                RuntimeScriptCommand::RestartNameAreaEffect => {
+                    self.runtime.restart_name_area_effect();
+                }
+                RuntimeScriptCommand::TransitionPresentationEntity(entity) => {
+                    self.runtime.transition_presentation_entity(entity)?;
+                }
+                RuntimeScriptCommand::RestartNavigationMusic => {
+                    self.restart_navigation_music()?;
+                }
+                RuntimeScriptCommand::PlayRadioClip { clip_index } => {
+                    self.play_loaded_sound_bank_clip(clip_index)?;
+                }
+                RuntimeScriptCommand::StartCameraTransition => {
+                    self.runtime.start_camera_transition();
+                }
+                RuntimeScriptCommand::ResetShipHud => {
+                    self.runtime.reset_ship_hud()?;
+                    self.bridge_scene
+                        .as_mut()
+                        .context("ship HUD reset requires an initialized bridge scene")?
+                        .reset_camera();
+                }
+            }
+        }
+        Ok(command_count)
     }
 
     /// Draw and immediately present the pause HUD when the recovered gate is active.

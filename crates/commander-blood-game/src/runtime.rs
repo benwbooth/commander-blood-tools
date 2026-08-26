@@ -34,7 +34,13 @@ use commander_blood_formats::archive::{BloodArchive, BloodResourceName};
 use commander_blood_formats::bloodprg::{BloodprgFontResources, decode_bloodprg_font_resources};
 use commander_blood_formats::descript_database::DescriptDatabase;
 use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
+use commander_blood_formats::name_area_effect::{
+    NameAreaEffectSequence, decode_bloodprg_name_area_effect_sequences,
+};
 use commander_blood_formats::palette::decode_bloodprg_default_vga_palette;
+use commander_blood_formats::world_art::{
+    WorldArtworkLayout, decode_bloodprg_world_artwork_layout,
+};
 
 use crate::assets::{OriginalResourceSource, OriginalResourceStore};
 use crate::native::bloodprg::{
@@ -191,6 +197,8 @@ pub struct OriginalGameData {
     descript_database: DescriptDatabase,
     font_resources: BloodprgFontResources,
     default_vga_palette: [[u8; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT],
+    name_area_effect_sequences: Box<[NameAreaEffectSequence]>,
+    world_artwork_layout: Box<[WorldArtworkLayout]>,
     archive_entry_count: usize,
 }
 
@@ -240,6 +248,10 @@ impl OriginalGameData {
             .context("decoding original executable font resources")?;
         let default_vga_palette = decode_bloodprg_default_vga_palette(&executable)
             .context("decoding original default palette")?;
+        let name_area_effect_sequences = decode_bloodprg_name_area_effect_sequences(&executable)
+            .context("decoding executable name-area effect sequences")?;
+        let world_artwork_layout = decode_bloodprg_world_artwork_layout(&executable)
+            .context("decoding executable world-artwork layout")?;
         let descript_bytes = std::fs::read(paths.descript())
             .with_context(|| format!("reading {}", paths.descript().display()))?;
         let descript_database = DescriptDatabase::parse(&descript_bytes).map_err(|error| {
@@ -270,6 +282,8 @@ impl OriginalGameData {
             descript_database,
             font_resources,
             default_vga_palette,
+            name_area_effect_sequences,
+            world_artwork_layout,
             archive_entry_count,
         })
     }
@@ -317,6 +331,16 @@ impl OriginalGameData {
     /// Default 256-color palette retaining the native six-bit VGA DAC components.
     pub const fn default_vga_palette(&self) -> &[[u8; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT] {
         &self.default_vga_palette
+    }
+
+    /// Authored palette-effect sequences used by the bridge character-name area.
+    pub fn name_area_effect_sequences(&self) -> &[NameAreaEffectSequence] {
+        &self.name_area_effect_sequences
+    }
+
+    /// Immutable starting copy of the executable's world-artwork selection table.
+    pub fn world_artwork_layout(&self) -> &[WorldArtworkLayout] {
+        &self.world_artwork_layout
     }
 
     /// Number of original archive directory entries visible to native lookup.
@@ -414,6 +438,8 @@ mod tests {
     use super::*;
 
     const ORIGINAL_DESCRIPT_RECORD_COUNT: usize = 145;
+    const ORIGINAL_NAME_AREA_EFFECT_SEQUENCE_COUNT: usize = 10;
+    const ORIGINAL_WORLD_ARTWORK_LAYOUT_COUNT: usize = 42;
 
     #[test]
     fn discovers_and_bootstraps_the_complete_original_data_set() {
@@ -436,6 +462,14 @@ mod tests {
             ORIGINAL_DESCRIPT_RECORD_COUNT
         );
         assert!(data.descript_database().lookup(b"Scruter_Jo").is_some());
+        assert_eq!(
+            data.name_area_effect_sequences().len(),
+            ORIGINAL_NAME_AREA_EFFECT_SEQUENCE_COUNT
+        );
+        assert_eq!(
+            data.world_artwork_layout().len(),
+            ORIGINAL_WORLD_ARTWORK_LAYOUT_COUNT
+        );
         assert_eq!(
             data.validate_script_profiles().unwrap().len(),
             ORIGINAL_SCRIPT_PROFILE_COUNT
