@@ -5,6 +5,7 @@ use sdl3::video::Window;
 
 use crate::assets::OriginalFrame;
 use crate::native::bloodprg::{BridgeSceneFrame, IndexedGamePalette};
+use crate::native::manu3::raster::RenderTriangle;
 use crate::render::{Renderer, indexed_frame_rgba, indexed_palette_rgba};
 
 use super::{
@@ -14,27 +15,39 @@ use super::{
 
 /// SDL/wgpu presentation state for the original logical framebuffer and bridge.
 pub struct RuntimePresentationHost<'window> {
+    window: &'window Window,
     renderer: Renderer<'window>,
     presented_frame_count: u64,
 }
 
 impl<'window> RuntimePresentationHost<'window> {
-    /// Create the main-game renderer with bridge and optional MANU3 resources.
-    pub fn new(window: &'window Window, runtime: &OriginalGameRuntime) -> Result<Self> {
+    /// Create the artwork-only renderer used by the loading screen.
+    pub fn new_startup(window: &'window Window, runtime: &OriginalGameRuntime) -> Result<Self> {
         let initial_frame =
             runtime_original_frame(runtime.front_buffer().pixels(), runtime.live_palette())?;
-        let renderer = Renderer::new(
-            window,
-            &initial_frame,
-            runtime.manu3(),
-            None,
-            Some(runtime.live_palette()),
-        )
-        .context("initializing main-game wgpu presentation")?;
+        let renderer = Renderer::new(window, &initial_frame, None, None, None)
+            .context("initializing startup wgpu presentation")?;
         Ok(Self {
+            window,
             renderer,
             presented_frame_count: u64::MIN,
         })
+    }
+
+    /// Create the main-game renderer with bridge and optional MANU3 resources.
+    pub fn new_main_game(window: &'window Window, runtime: &OriginalGameRuntime) -> Result<Self> {
+        let renderer = main_game_renderer(window, runtime)?;
+        Ok(Self {
+            window,
+            renderer,
+            presented_frame_count: u64::MIN,
+        })
+    }
+
+    /// Replace the startup renderer after MANU3 and bridge data are available.
+    pub fn configure_main_game(&mut self, runtime: &OriginalGameRuntime) -> Result<()> {
+        self.renderer = main_game_renderer(self.window, runtime)?;
+        Ok(())
     }
 
     /// Reconfigure the wgpu surface after an SDL pixel-size change.
@@ -44,9 +57,27 @@ impl<'window> RuntimePresentationHost<'window> {
 
     /// Upload the runtime's complete indexed frame and current VGA palette.
     pub fn submit_indexed_frame(&mut self, runtime: &OriginalGameRuntime) -> Result<()> {
+        self.submit_frame(runtime.front_buffer(), runtime.live_palette())
+    }
+
+    /// Upload one complete logical frame supplied by startup or presentation code.
+    pub fn submit_frame(
+        &mut self,
+        frame: &super::IndexedFramebuffer,
+        palette: &IndexedGamePalette,
+    ) -> Result<()> {
         self.renderer
-            .upload_indexed_frame(runtime.front_buffer().pixels(), runtime.live_palette())
+            .upload_indexed_frame(frame.pixels(), palette)
             .context("uploading translated indexed game frame")
+    }
+
+    /// Present indexed artwork without a 3D base scene.
+    pub fn present_artwork(&mut self, manu3_triangles: &[RenderTriangle]) -> Result<()> {
+        self.renderer
+            .render(manu3_triangles, None, None)
+            .context("presenting translated artwork frame")?;
+        self.presented_frame_count = self.presented_frame_count.wrapping_add(1);
+        Ok(())
     }
 
     /// Present indexed artwork or one bridge frame, then composite MANU3.
@@ -70,6 +101,22 @@ impl<'window> RuntimePresentationHost<'window> {
     pub const fn presented_frame_count(&self) -> u64 {
         self.presented_frame_count
     }
+}
+
+fn main_game_renderer<'window>(
+    window: &'window Window,
+    runtime: &OriginalGameRuntime,
+) -> Result<Renderer<'window>> {
+    let initial_frame =
+        runtime_original_frame(runtime.front_buffer().pixels(), runtime.live_palette())?;
+    Renderer::new(
+        window,
+        &initial_frame,
+        runtime.manu3(),
+        None,
+        Some(runtime.live_palette()),
+    )
+    .context("initializing main-game wgpu presentation")
 }
 
 fn runtime_original_frame(
