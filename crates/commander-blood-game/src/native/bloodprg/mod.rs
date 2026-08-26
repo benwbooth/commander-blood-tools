@@ -500,10 +500,11 @@ pub use pointer_buttons::{
 };
 pub use presentation_scan::{
     ScriptActionDispatch, ScriptActionDisposition, ScriptDeferredRecord,
-    ScriptDeferredRecordKind, ScriptPresentationAction, ScriptPresentationEntity,
-    ScriptPresentationHandoff, ScriptPresentationScanContext, ScriptPresentationScanError,
-    ScriptPresentationScanHost, ScriptPresentationScanOutcome, ScriptPresentationScanState,
-    deferred_navigation_record, scan_script_presentations,
+    ScriptDeferredRecordKind, ScriptDialogueControlDispatchContext, ScriptPresentationAction,
+    ScriptPresentationEntity, ScriptPresentationHandoff, ScriptPresentationScanContext,
+    ScriptPresentationScanError, ScriptPresentationScanHost, ScriptPresentationScanOutcome,
+    ScriptPresentationScanState, ScriptRecordActionDispatchContext, deferred_navigation_record,
+    scan_script_presentations,
 };
 pub use script_action::{
     ScriptActionContext, ScriptActionError, ScriptActionHost, ScriptActionPresentationLine,

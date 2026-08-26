@@ -129,6 +129,36 @@ pub struct ScriptPresentationScanContext<'a> {
     pub arche: ScriptObjectId,
 }
 
+/// Mutable profile state supplied to one inline BAS dialogue handoff.
+pub struct ScriptDialogueControlDispatchContext<'a> {
+    /// Active VAR image.
+    pub state: &'a mut ScriptState,
+    /// Shared COD and BAS control-flow state.
+    pub runtime: &'a mut ScriptRuntime,
+    /// Dialogue branches and recent concept history.
+    pub selector: &'a mut ScriptSelectorState,
+    /// Character entering dialogue control.
+    pub actor: ScriptObjectId,
+    /// First selector node in the character's authored BAS response list.
+    pub selector_root: ScriptCodeOffset,
+}
+
+/// Mutable profile state supplied to one inline C1-through-C8 action dispatch.
+pub struct ScriptRecordActionDispatchContext<'a> {
+    /// Active VAR image.
+    pub state: &'a mut ScriptState,
+    /// Typed action triples synchronized with VAR.
+    pub records: &'a mut ScriptActionRecords,
+    /// Presentation coordinator state shared with the surrounding scan.
+    pub presentation: &'a mut ScriptPresentationScanState,
+    /// Object owning the actionable slot.
+    pub owner: ScriptObjectId,
+    /// Typed action slot.
+    pub slot: ScriptStateWordTriple,
+    /// Record observed after any deferred overwrite.
+    pub record: ScriptActionRecord,
+}
+
 /// Action-record disposition returned by the translated 5B38 dispatcher.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum ScriptActionDisposition {
@@ -158,8 +188,7 @@ pub trait ScriptPresentationScanHost {
     /// Enter a character's authored BAS dialogue selector.
     fn dispatch_dialogue_control(
         &mut self,
-        actor: ScriptObjectId,
-        selector_root: ScriptCodeOffset,
+        context: ScriptDialogueControlDispatchContext<'_>,
     ) -> Result<(), Self::Error>;
 
     /// Resolve presentation assets for the related object name.
@@ -180,9 +209,7 @@ pub trait ScriptPresentationScanHost {
     /// Dispatch one actionable C1-through-C8 record through the 5B38 ladder.
     fn dispatch_record_action(
         &mut self,
-        owner: ScriptObjectId,
-        slot: ScriptStateWordTriple,
-        record: ScriptActionRecord,
+        context: ScriptRecordActionDispatchContext<'_>,
     ) -> Result<ScriptActionDispatch, Self::Error>;
 }
 
@@ -292,10 +319,14 @@ pub fn scan_script_presentations<Host: ScriptPresentationScanHost>(
         let run_action = match kind {
             ScriptObjectKind::Actor => {
                 scan_character_handoff(
-                    state,
-                    records,
-                    presentation,
-                    player,
+                    CharacterHandoffContext {
+                        state,
+                        records,
+                        runtime,
+                        selector,
+                        presentation,
+                        player,
+                    },
                     object,
                     host,
                     &mut outcome,
@@ -334,15 +365,29 @@ pub fn scan_script_presentations<Host: ScriptPresentationScanHost>(
     Ok(outcome)
 }
 
-fn scan_character_handoff<Host: ScriptPresentationScanHost>(
-    state: &ScriptState,
-    records: &ScriptActionRecords,
-    presentation: &ScriptPresentationScanState,
+struct CharacterHandoffContext<'a> {
+    state: &'a mut ScriptState,
+    records: &'a mut ScriptActionRecords,
+    runtime: &'a mut ScriptRuntime,
+    selector: &'a mut ScriptSelectorState,
+    presentation: &'a mut ScriptPresentationScanState,
     player: ScriptObjectId,
+}
+
+fn scan_character_handoff<Host: ScriptPresentationScanHost>(
+    context: CharacterHandoffContext<'_>,
     actor: ScriptObjectId,
     host: &mut Host,
     outcome: &mut ScriptPresentationScanOutcome,
 ) -> Result<(), ScriptPresentationScanError<Host::Error>> {
+    let CharacterHandoffContext {
+        state,
+        records,
+        runtime,
+        selector,
+        presentation,
+        player,
+    } = context;
     if !presentation.active
         || presentation.c2_gate_active
         || presentation.word_choice_active
@@ -372,8 +417,14 @@ fn scan_character_handoff<Host: ScriptPresentationScanHost>(
         return Ok(());
     }
     let selector_root = ScriptCodeOffset::new(usize::from(target));
-    host.dispatch_dialogue_control(actor, selector_root)
-        .map_err(ScriptPresentationScanError::Host)?;
+    host.dispatch_dialogue_control(ScriptDialogueControlDispatchContext {
+        state,
+        runtime,
+        selector,
+        actor,
+        selector_root,
+    })
+    .map_err(ScriptPresentationScanError::Host)?;
     outcome.handoffs.push(ScriptPresentationHandoff {
         actor,
         selector_root,
@@ -485,7 +536,7 @@ fn drain_deferred_record<HostError>(
 }
 
 fn dispatch_action<Host: ScriptPresentationScanHost>(
-    state: &ScriptState,
+    state: &mut ScriptState,
     records: &mut ScriptActionRecords,
     presentation: &mut ScriptPresentationScanState,
     owner: ScriptObjectId,
@@ -499,7 +550,14 @@ fn dispatch_action<Host: ScriptPresentationScanHost>(
     }
     let record = records.record(slot);
     let dispatch = host
-        .dispatch_record_action(owner, slot, record)
+        .dispatch_record_action(ScriptRecordActionDispatchContext {
+            state,
+            records,
+            presentation,
+            owner,
+            slot,
+            record,
+        })
         .map_err(ScriptPresentationScanError::Host)?;
     match dispatch.disposition {
         ScriptActionDisposition::Retain => {}
@@ -574,8 +632,7 @@ mod tests {
 
         fn dispatch_dialogue_control(
             &mut self,
-            _actor: ScriptObjectId,
-            _selector_root: ScriptCodeOffset,
+            _context: ScriptDialogueControlDispatchContext<'_>,
         ) -> Result<(), Self::Error> {
             self.events.push("control");
             Ok(())
@@ -607,9 +664,7 @@ mod tests {
 
         fn dispatch_record_action(
             &mut self,
-            _owner: ScriptObjectId,
-            _slot: ScriptStateWordTriple,
-            _record: ScriptActionRecord,
+            _context: ScriptRecordActionDispatchContext<'_>,
         ) -> Result<ScriptActionDispatch, Self::Error> {
             self.events.push("action");
             Ok(ScriptActionDispatch::default())
