@@ -15,8 +15,9 @@ use crate::native::bloodprg::{
     DescriptSoundBankLoader, LoadedScriptProfile, ScriptAboardRecordContext, ScriptClock,
     ScriptDispatchState, ScriptEnvironmentActivity, ScriptExecutionBackend, ScriptExecutionService,
     ScriptFrameOutcome, ScriptPresentationEntity, ScriptProfileId, ScriptProfileLoadOutcome,
-    ScriptRecordStateNavigationContext, ScriptTransferContext, SequenceRequestContext,
-    TextPresentationState, execute_loaded_script_frame, lookup_and_apply_descript_record,
+    ScriptRecordStateNavigationContext, ScriptTransferContext, SequencePresentationState,
+    SequenceRequestContext, TextPresentationState, execute_loaded_script_frame,
+    lookup_and_apply_descript_record,
 };
 
 use super::{OriginalGameData, OriginalGameRuntime};
@@ -137,6 +138,11 @@ impl RuntimeScriptSystem {
     /// Drain ordered renderer, audio, camera, and HUD commands.
     pub fn take_commands(&mut self) -> Vec<RuntimeScriptCommand> {
         self.service.backend_mut().take_commands()
+    }
+
+    /// Borrow topic and A8 sequence state produced by the translated dispatcher.
+    pub const fn sequence_presentation(&self) -> &SequencePresentationState {
+        &self.dispatch.sequence_presentation
     }
 }
 

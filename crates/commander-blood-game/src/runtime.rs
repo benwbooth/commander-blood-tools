@@ -6,6 +6,7 @@ mod input;
 mod platform;
 mod presentation;
 mod presentation_catalog;
+mod presentation_player;
 mod script_backend;
 mod services;
 mod startup;
@@ -18,6 +19,7 @@ pub use input::{RuntimeInputHost, map_host_pointer_to_logical};
 pub use platform::{GAME_FRAME_DURATION, RuntimePlatformHost};
 pub use presentation::RuntimePresentationHost;
 pub use presentation_catalog::{RuntimePresentationBackground, RuntimePresentationCatalog};
+pub use presentation_player::RuntimePresentationPlayer;
 pub use script_backend::{
     LoadedRuntimeResource, RuntimeScriptBackend, RuntimeScriptCommand, RuntimeScriptSystem,
 };

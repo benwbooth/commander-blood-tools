@@ -9,16 +9,17 @@ use sdl3::video::Window;
 
 use crate::native::bloodprg::{
     BridgeScene, BridgeSceneFrame, BridgeSceneInput, GameLifecycleState, InputAction,
-    PbmDecodeResult, PointerButtonEdges, PointerButtons, PointerSample, ScriptClock,
-    ScriptFrameOutcome, ScriptProfileId, ScriptProfileLoadOutcome, ShipProjectionResources,
-    StartupPreparationOutcome,
+    PbmDecodeResult, PointerButtonEdges, PointerButtons, PointerSample, PresentationPresentPolicy,
+    PresentationResourceId, PresentationResourceSequenceOutcome, ScriptClock, ScriptFrameOutcome,
+    ScriptProfileId, ScriptProfileLoadOutcome, ShipProjectionResources, StartupPreparationOutcome,
 };
 use crate::native::random::BloodPrng;
 
 use super::{
     OriginalGameData, OriginalGameRuntime, RuntimeAssetLoadStatus, RuntimeAudioHost,
-    RuntimeInputHost, RuntimePcmClip, RuntimePresentationHost, RuntimeScriptBackend,
-    RuntimeScriptCommand, RuntimeScriptSystem, VGA_BIOS_FONT_8X8,
+    RuntimeInputHost, RuntimePcmClip, RuntimePresentationHost, RuntimePresentationPlayer,
+    RuntimePresentationStepOutcome, RuntimeScriptBackend, RuntimeScriptCommand,
+    RuntimeScriptSystem, VGA_BIOS_FONT_8X8,
 };
 
 const INITIAL_LOGICAL_POINTER: [i16; 2] = [160, 100];
@@ -35,6 +36,7 @@ pub struct ModernGameServices<'window> {
     runtime: OriginalGameRuntime,
     input: RuntimeInputHost,
     presentation: RuntimePresentationHost<'window>,
+    presentation_player: RuntimePresentationPlayer,
     audio: Option<RuntimeAudioHost>,
     bridge_scene: Option<BridgeScene>,
     bridge_frame: Option<BridgeSceneFrame>,
@@ -50,12 +52,14 @@ impl<'window> ModernGameServices<'window> {
         script_clock: ScriptClock,
     ) -> Result<Self> {
         let scripts = RuntimeScriptSystem::new(&data, script_clock);
+        let presentation_player = RuntimePresentationPlayer::new(data.presentation_catalog());
         let runtime = OriginalGameRuntime::new(data);
         let presentation = RuntimePresentationHost::new_startup(window, &runtime)?;
         Ok(Self {
             runtime,
             input: RuntimeInputHost::new(INITIAL_LOGICAL_POINTER),
             presentation,
+            presentation_player,
             audio: None,
             bridge_scene: None,
             bridge_frame: None,
@@ -249,8 +253,63 @@ impl<'window> ModernGameServices<'window> {
     /// Execute one translated script frame and apply every ordered host command it emitted.
     pub fn execute_and_apply_script_frame(&mut self, enabled: bool) -> Result<ScriptFrameOutcome> {
         let outcome = self.execute_script_frame(enabled)?;
+        self.synchronize_script_presentations()?;
         self.process_script_commands()?;
         Ok(outcome)
+    }
+
+    /// Copy DESCRIPT and A8 name selections into the flat presentation catalog.
+    pub fn synchronize_script_presentations(&mut self) -> Result<()> {
+        self.presentation_player
+            .apply_descript_assets(self.scripts.backend().assets())?;
+        let basename = &self.scripts.sequence_presentation().sequence_basename;
+        if !basename.is_empty() {
+            self.presentation_player
+                .select_script_sequence_video(basename)?;
+        }
+        Ok(())
+    }
+
+    /// Select one authored clip from the active DESCRIPT sequence record.
+    pub fn select_descript_sequence_video(&mut self, basename: &[u8]) -> Result<()> {
+        self.presentation_player
+            .select_descript_sequence_video(basename)
+    }
+
+    /// Select the current hyperspace clip for presentation line six.
+    pub fn select_hyperspace_video(&mut self, basename: &[u8]) -> Result<()> {
+        self.presentation_player.select_hyperspace_video(basename)
+    }
+
+    /// Resolve and bootstrap one authored presentation line.
+    pub fn load_presentation_sequence(
+        &mut self,
+        line: PresentationResourceId,
+        policy: PresentationPresentPolicy,
+        timer_tick: u16,
+    ) -> Result<PresentationResourceSequenceOutcome> {
+        self.presentation_player
+            .load(&mut self.runtime, line, policy, timer_tick)
+    }
+
+    /// Advance the active presentation queue with explicit clock samples.
+    pub fn service_presentation_sequence(
+        &mut self,
+        audio_position: u16,
+        timer_tick: u16,
+    ) -> Result<RuntimePresentationStepOutcome> {
+        self.presentation_player
+            .service_frame(&mut self.runtime, audio_position, timer_tick)
+    }
+
+    /// Return whether a presentation stream is retained and still draining.
+    pub fn presentation_stream_active(&self) -> bool {
+        self.presentation_player.has_stream() && !self.presentation_player.is_finished()
+    }
+
+    /// Release the retained presentation source after completion or cancellation.
+    pub fn finish_presentation_sequence(&mut self) -> bool {
+        self.presentation_player.finish().is_some()
     }
 
     /// Borrow the concrete script backend for lifecycle-state updates.
