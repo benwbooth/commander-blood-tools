@@ -42,6 +42,20 @@ pub enum RasterSpanOutcome {
     },
 }
 
+/// Observable geometry selected by a rectangle primitive.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RasterRectOutcome {
+    /// Signed extent or clipping rejected the rectangle without mutation.
+    Rejected,
+    /// One clipped rectangle was drawn.
+    Drawn {
+        /// Half-open logical rectangle that was modified.
+        rect: BridgeSpriteRect,
+        /// Number of modified pixels.
+        pixel_count: usize,
+    },
+}
+
 /// Invalid flat framebuffer or clipping geometry.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RasterPrimitiveError {
@@ -52,6 +66,8 @@ pub enum RasterPrimitiveError {
     },
     /// The clip rectangle is inverted or outside the logical display.
     ClipOutsideDisplay(BridgeSpriteRect),
+    /// Native wrapping selected pixels outside the flat logical display.
+    RectangleOutsideDisplay(BridgeSpriteRect),
 }
 
 impl fmt::Display for RasterPrimitiveError {
@@ -148,6 +164,98 @@ pub fn draw_vertical_span(
     })
 }
 
+/// Transform every pixel in a clipped rectangle through an authored palette table.
+///
+/// This translates `framebuffer_rect_palette_remap` at BLOODPRG offset
+/// `0x00339E`. It retains signed nonpositive-extent rejection, half-open
+/// clipping, and the shipped routine's use of the horizontal right clip bound
+/// as its lower vertical bound. Flat logical coordinates replace far display
+/// and table pointers, 16-bit offset wrapping, and inherited direction state.
+pub fn remap_framebuffer_rect(
+    framebuffer: &mut [u8],
+    clip: BridgeSpriteRect,
+    origin: RasterPoint,
+    width_word: u16,
+    height_word: u16,
+    remap: &[u8; PALETTE_ENTRY_COUNT],
+) -> Result<RasterRectOutcome, RasterPrimitiveError> {
+    draw_rectangle(
+        framebuffer,
+        clip,
+        origin,
+        width_word,
+        height_word,
+        clip.right,
+        RasterSpanPaint::Remap(remap),
+    )
+}
+
+/// Fill every pixel in a clipped rectangle with one palette index.
+///
+/// This translates `framebuffer_rect_fill` at BLOODPRG offset `0x003C6C`.
+/// It retains signed nonpositive-extent rejection and half-open clipping while
+/// replacing pointer-alignment-specific byte and dword stores, segment-offset
+/// wrapping, and inherited direction state with one checked flat rectangle.
+pub fn fill_framebuffer_rect(
+    framebuffer: &mut [u8],
+    clip: BridgeSpriteRect,
+    origin: RasterPoint,
+    width_word: u16,
+    height_word: u16,
+    color: u8,
+) -> Result<RasterRectOutcome, RasterPrimitiveError> {
+    draw_rectangle(
+        framebuffer,
+        clip,
+        origin,
+        width_word,
+        height_word,
+        clip.bottom,
+        RasterSpanPaint::Solid(color),
+    )
+}
+
+fn draw_rectangle(
+    framebuffer: &mut [u8],
+    clip: BridgeSpriteRect,
+    origin: RasterPoint,
+    width_word: u16,
+    height_word: u16,
+    lower_bound: i32,
+    paint: RasterSpanPaint<'_>,
+) -> Result<RasterRectOutcome, RasterPrimitiveError> {
+    validate_flat_raster(framebuffer, clip)?;
+    let signed_width = i32::from(width_word as i16);
+    let signed_height = i32::from(height_word as i16);
+    if signed_width <= i32::from(u16::MIN) || signed_height <= i32::from(u16::MIN) {
+        return Ok(RasterRectOutcome::Rejected);
+    }
+
+    let rect = BridgeSpriteRect {
+        left: origin.x.max(clip.left),
+        right: origin.x.saturating_add(signed_width).min(clip.right),
+        top: origin.y.max(clip.top),
+        bottom: origin.y.saturating_add(signed_height).min(lower_bound),
+    };
+    if rect.left >= rect.right || rect.top >= rect.bottom {
+        return Ok(RasterRectOutcome::Rejected);
+    }
+    validate_flat_rectangle(rect)?;
+
+    let left = usize::try_from(rect.left).expect("validated rectangle left edge");
+    let right = usize::try_from(rect.right).expect("validated rectangle right edge");
+    let top = usize::try_from(rect.top).expect("validated rectangle top edge");
+    let bottom = usize::try_from(rect.bottom).expect("validated rectangle bottom edge");
+    for row in top..bottom {
+        let first = row * LOGICAL_FRAMEBUFFER_WIDTH + left;
+        paint_pixels(&mut framebuffer[first..first + (right - left)], paint);
+    }
+    Ok(RasterRectOutcome::Drawn {
+        rect,
+        pixel_count: (right - left) * (bottom - top),
+    })
+}
+
 fn validate_flat_raster(
     framebuffer: &[u8],
     clip: BridgeSpriteRect,
@@ -165,6 +273,19 @@ fn validate_flat_raster(
         && clip.bottom <= LOGICAL_FRAMEBUFFER_HEIGHT as i32;
     if !valid {
         return Err(RasterPrimitiveError::ClipOutsideDisplay(clip));
+    }
+    Ok(())
+}
+
+fn validate_flat_rectangle(rect: BridgeSpriteRect) -> Result<(), RasterPrimitiveError> {
+    let valid = rect.left >= i32::from(u16::MIN)
+        && rect.left < rect.right
+        && rect.right <= LOGICAL_FRAMEBUFFER_WIDTH as i32
+        && rect.top >= i32::from(u16::MIN)
+        && rect.top < rect.bottom
+        && rect.bottom <= LOGICAL_FRAMEBUFFER_HEIGHT as i32;
+    if !valid {
+        return Err(RasterPrimitiveError::RectangleOutsideDisplay(rect));
     }
     Ok(())
 }
@@ -195,6 +316,8 @@ mod tests {
 
     const HORIZONTAL_SPAN_ORACLE_COUNT: usize = 14;
     const VERTICAL_SPAN_ORACLE_COUNT: usize = 14;
+    const RECT_REMAP_ORACLE_COUNT: usize = 21;
+    const RECT_FILL_ORACLE_COUNT: usize = 27;
     const REMAP_ENABLED_FLAG: u8 = 1;
     const FRAMEBUFFER_INDEX_MULTIPLIER: usize = 37;
     const FRAMEBUFFER_CASE_MULTIPLIER: usize = 41;
@@ -229,6 +352,25 @@ mod tests {
         clipped_y: u16,
         clipped_height: u16,
         remap_flag: u8,
+    }
+
+    #[derive(Deserialize)]
+    struct RectRemapOracle {
+        name: String,
+        input_rect: [u16; 4],
+        clip: [u16; 4],
+        rejected: bool,
+        clipped_rect: [u16; 4],
+    }
+
+    #[derive(Deserialize)]
+    struct RectFillOracle {
+        name: String,
+        color: u8,
+        input_rect: [u16; 4],
+        clip: [u16; 4],
+        rejected: bool,
+        clipped_rect: [u16; 4],
     }
 
     #[test]
@@ -359,6 +501,77 @@ mod tests {
         }
     }
 
+    #[test]
+    fn rectangle_remaps_match_every_flat_original_vector() {
+        let vectors: Vec<RectRemapOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_339e_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), RECT_REMAP_ORACLE_COUNT);
+
+        for (case_index, vector) in vectors.iter().enumerate() {
+            let clip = rect(vector.clip);
+            let expected_rect = sized_rect(vector.clipped_rect);
+            let mut framebuffer = framebuffer(case_index);
+            let before = framebuffer.clone();
+            let remap = remap_table(case_index);
+            let result = remap_framebuffer_rect(
+                &mut framebuffer,
+                clip,
+                point(vector.input_rect),
+                vector.input_rect[2],
+                vector.input_rect[3],
+                &remap,
+            );
+
+            assert_rectangle_result(
+                result,
+                &mut framebuffer,
+                &before,
+                clip,
+                expected_rect,
+                vector.rejected,
+                RasterSpanPaint::Remap(&remap),
+                &vector.name,
+            );
+        }
+    }
+
+    #[test]
+    fn rectangle_fills_match_every_flat_original_vector() {
+        let vectors: Vec<RectFillOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_3c6c_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), RECT_FILL_ORACLE_COUNT);
+
+        for (case_index, vector) in vectors.iter().enumerate() {
+            let clip = rect(vector.clip);
+            let expected_rect = sized_rect(vector.clipped_rect);
+            let mut framebuffer = framebuffer(case_index);
+            let before = framebuffer.clone();
+            let result = fill_framebuffer_rect(
+                &mut framebuffer,
+                clip,
+                point(vector.input_rect),
+                vector.input_rect[2],
+                vector.input_rect[3],
+                vector.color,
+            );
+
+            assert_rectangle_result(
+                result,
+                &mut framebuffer,
+                &before,
+                clip,
+                expected_rect,
+                vector.rejected,
+                RasterSpanPaint::Solid(vector.color),
+                &vector.name,
+            );
+        }
+    }
+
     fn apply_expected_horizontal(
         actual: &mut [u8],
         before: &[u8],
@@ -387,6 +600,59 @@ mod tests {
             );
         }
         assert_eq!(actual, expected);
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn assert_rectangle_result(
+        result: Result<RasterRectOutcome, RasterPrimitiveError>,
+        actual: &mut [u8],
+        before: &[u8],
+        clip: BridgeSpriteRect,
+        expected_rect: BridgeSpriteRect,
+        rejected: bool,
+        paint: RasterSpanPaint<'_>,
+        name: &str,
+    ) {
+        if !valid_clip(clip) {
+            assert_eq!(
+                result,
+                Err(RasterPrimitiveError::ClipOutsideDisplay(clip)),
+                "{name}"
+            );
+            assert_eq!(actual, before, "{name}");
+            return;
+        }
+        if rejected {
+            assert_eq!(result, Ok(RasterRectOutcome::Rejected), "{name}");
+            assert_eq!(actual, before, "{name}");
+            return;
+        }
+        if !valid_draw_rect(expected_rect) {
+            assert_eq!(
+                result,
+                Err(RasterPrimitiveError::RectangleOutsideDisplay(expected_rect)),
+                "{name}"
+            );
+            assert_eq!(actual, before, "{name}");
+            return;
+        }
+
+        let width = usize::try_from(expected_rect.right - expected_rect.left).unwrap();
+        let height = usize::try_from(expected_rect.bottom - expected_rect.top).unwrap();
+        assert_eq!(
+            result,
+            Ok(RasterRectOutcome::Drawn {
+                rect: expected_rect,
+                pixel_count: width * height,
+            }),
+            "{name}"
+        );
+        let mut expected = before.to_vec();
+        for row in expected_rect.top as usize..expected_rect.bottom as usize {
+            let first = row * LOGICAL_FRAMEBUFFER_WIDTH + expected_rect.left as usize;
+            paint_pixels(&mut expected[first..first + width], paint);
+        }
+        assert_eq!(actual, expected, "{name}");
     }
 
     fn framebuffer(case_index: usize) -> Vec<u8> {
@@ -423,6 +689,24 @@ mod tests {
         }
     }
 
+    fn point(words: [u16; 4]) -> RasterPoint {
+        RasterPoint {
+            x: i32::from(words[0] as i16),
+            y: i32::from(words[1] as i16),
+        }
+    }
+
+    fn sized_rect(words: [u16; 4]) -> BridgeSpriteRect {
+        let left = i32::from(words[0] as i16);
+        let top = i32::from(words[1] as i16);
+        BridgeSpriteRect {
+            left,
+            right: left.saturating_add(i32::from(words[2] as i16)),
+            top,
+            bottom: top.saturating_add(i32::from(words[3] as i16)),
+        }
+    }
+
     fn valid_clip(clip: BridgeSpriteRect) -> bool {
         clip.left >= i32::from(u16::MIN)
             && clip.left <= clip.right
@@ -430,5 +714,14 @@ mod tests {
             && clip.top >= i32::from(u16::MIN)
             && clip.top <= clip.bottom
             && clip.bottom <= LOGICAL_FRAMEBUFFER_HEIGHT as i32
+    }
+
+    fn valid_draw_rect(rect: BridgeSpriteRect) -> bool {
+        rect.left >= i32::from(u16::MIN)
+            && rect.left < rect.right
+            && rect.right <= LOGICAL_FRAMEBUFFER_WIDTH as i32
+            && rect.top >= i32::from(u16::MIN)
+            && rect.top < rect.bottom
+            && rect.bottom <= LOGICAL_FRAMEBUFFER_HEIGHT as i32
     }
 }
