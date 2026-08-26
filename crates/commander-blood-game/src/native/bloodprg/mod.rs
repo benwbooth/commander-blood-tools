@@ -57,6 +57,7 @@ mod palette_update;
 mod pbm_image;
 mod presentation;
 mod presentation_choice;
+mod presentation_decode;
 mod presentation_hover;
 mod presentation_line;
 mod presentation_mode;
@@ -388,6 +389,10 @@ pub use presentation::{
 pub use presentation_choice::{
     PresentationChoiceError, PresentationChoiceItem, PresentationChoiceOutcome,
     PresentationChoiceState, update_presentation_choice,
+};
+pub use presentation_decode::{
+    AbDecodeOutcome, PairLzDecodeOutcome, PresentationDecodeError, decode_presentation_ab,
+    decode_presentation_pair_lz,
 };
 pub use presentation_hover::{
     PresentationHitAreas, PresentationHitRectangle, PresentationHitSelection,
