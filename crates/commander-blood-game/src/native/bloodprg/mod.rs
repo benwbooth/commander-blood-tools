@@ -3,6 +3,7 @@
 mod aboard;
 mod alien_cycle;
 mod actor_slots;
+mod audio_events;
 mod bridge_input;
 mod bridge_page;
 mod bridge_panorama;
@@ -161,6 +162,9 @@ pub use actor_position_state::{
 pub use bridge_frame::{
     BridgeActorPresentationState, BridgeFrameBackend, BridgeFrameOutcome, BridgeFrameState,
     BridgeSceneContext, BridgeSpriteRange, render_bridge_frame,
+};
+pub use audio_events::{
+    AudioClipRequest, AudioEventContext, AudioEventError, AudioEventState, process_audio_events,
 };
 pub use bridge_console::{
     BridgeChoiceBackend, BridgeChoicePanelPhase, BridgeConsoleActorState, BridgeConsoleChoice,
