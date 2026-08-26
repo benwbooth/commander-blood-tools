@@ -15,6 +15,7 @@ mod actor_handler_hyperjump;
 mod actor_handler_palette;
 mod actor_handler_panel;
 mod actor_handler_radio;
+mod actor_position_state;
 mod bridge_frame;
 mod camera_navigation;
 mod choice_list;
@@ -129,6 +130,10 @@ pub use actor_handler_panel::{
 pub use actor_handler_radio::{
     RadioActorBackend, RadioActorDeferredAction, RadioActorOutcome, RadioActorPresentation,
     RadioActorState, update_radio_actor,
+};
+pub use actor_position_state::{
+    ActorPositionStateContext, ActorPositionStateError, ActorPositionStateOutcome,
+    update_actor_position_states,
 };
 pub use bridge_frame::{
     BridgeActorPresentationState, BridgeFrameBackend, BridgeFrameOutcome, BridgeFrameState,

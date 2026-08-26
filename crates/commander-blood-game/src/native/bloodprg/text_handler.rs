@@ -84,6 +84,11 @@ impl PresentationRequestFlags {
         self.0 & SECONDARY_PRESENTATION_REQUEST_PENDING != u8::MIN
     }
 
+    /// Return whether either primary text or secondary presentation work is pending.
+    pub const fn any_request_pending(self) -> bool {
+        self.0 & (TEXT_REQUEST_PENDING | SECONDARY_PRESENTATION_REQUEST_PENDING) != u8::MIN
+    }
+
     fn request_text(&mut self) {
         self.0 |= TEXT_REQUEST_PENDING;
     }
