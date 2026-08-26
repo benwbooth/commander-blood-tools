@@ -8,6 +8,20 @@ use super::sprite_geometry::BridgeSpriteRect;
 
 const PALETTE_ENTRY_COUNT: usize = 256;
 const RECT_EDGE_OFFSET: i32 = 1;
+const NOISE_COLOR: u8 = 239;
+const NOISE_PATTERN_BITS: u8 = 16;
+const NOISE_TOP_BIT_SHIFT: u32 = 15;
+const NOISE_RANDOM_MODULUS: u16 = u16::MAX;
+const NOISE_PATTERN_STEP_SHIFT: u32 = 1;
+const NOISE_INITIAL_ROTATION_BIT: u16 = 1;
+const SPARSE_HIGHLIGHT_MODE_WORD: u16 = 1;
+const SPARSE_CLEAR_MODE_WORD: u16 = 2;
+const SPARSE_PATTERN_LEFT_SHIFT: u32 = 4;
+const SPARSE_ROTATION_SHIFT: u32 = 3;
+const SPARSE_PATTERN_RIGHT_SHIFT: u32 = 13;
+const TOGGLE_PATTERN_LEFT_SHIFT: u32 = 3;
+const TOGGLE_ROTATION_SHIFT: u32 = 2;
+const TOGGLE_PATTERN_RIGHT_SHIFT: u32 = 14;
 const LOGICAL_FRAMEBUFFER_PIXEL_COUNT: usize =
     LOGICAL_FRAMEBUFFER_WIDTH * LOGICAL_FRAMEBUFFER_HEIGHT;
 
@@ -68,6 +82,44 @@ pub struct RasterOutlineOutcome {
     pub right: RasterSpanOutcome,
     /// Bottom horizontal edge.
     pub bottom: RasterSpanOutcome,
+}
+
+/// Authored pixel-write family selected by `framebuffer_noise_rect`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RasterNoiseMode {
+    /// Set only selected pixels to palette index 239.
+    SparseHighlight,
+    /// Clear only selected pixels to palette index zero.
+    SparseClear,
+    /// Write every pixel from a stateful zero/239 toggle stream.
+    Toggle,
+}
+
+impl RasterNoiseMode {
+    /// Decode the native mode word without retaining its arbitrary fallback values.
+    pub const fn from_native_word(mode: u16) -> Self {
+        match mode {
+            SPARSE_HIGHLIGHT_MODE_WORD => Self::SparseHighlight,
+            SPARSE_CLEAR_MODE_WORD => Self::SparseClear,
+            _ => Self::Toggle,
+        }
+    }
+}
+
+/// Observable work performed by the patterned-noise rectangle.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RasterNoiseOutcome {
+    /// Signed extent or clipping rejected the rectangle without consuming random state.
+    Rejected,
+    /// One clipped rectangle consumed the generated pattern.
+    Drawn {
+        /// Half-open logical rectangle visited by the bitstream.
+        rect: BridgeSpriteRect,
+        /// Number of pixels visited, including sparse pixels left unchanged.
+        visited_pixel_count: usize,
+        /// Initial pattern returned by the injected native PRNG.
+        initial_pattern: u16,
+    },
 }
 
 /// Invalid flat framebuffer or clipping geometry.
@@ -317,6 +369,114 @@ pub fn fill_framebuffer_rect(
     )
 }
 
+/// Draw the native patterned-noise effect into a clipped flat rectangle.
+///
+/// This translates `framebuffer_noise_rect` at BLOODPRG offset `0x003B85`.
+/// It retains the single post-clip PRNG call, sparse highlight and clear modes,
+/// full toggle stream, 16-bit pattern refresh, cross-row bit count, and the
+/// shipped use of the horizontal right bound as the lower vertical bound.
+/// Flat rows replace segment-offset carry and inherited direction state.
+pub fn draw_framebuffer_noise_rect<Random>(
+    framebuffer: &mut [u8],
+    clip: BridgeSpriteRect,
+    mode: RasterNoiseMode,
+    origin: RasterPoint,
+    width_word: u16,
+    height_word: u16,
+    mut random_below: Random,
+) -> Result<RasterNoiseOutcome, RasterPrimitiveError>
+where
+    Random: FnMut(u16) -> u16,
+{
+    validate_flat_raster(framebuffer, clip)?;
+    let Some(rect) = clipped_rectangle(origin, width_word, height_word, clip, clip.right) else {
+        return Ok(RasterNoiseOutcome::Rejected);
+    };
+    validate_flat_rectangle(rect)?;
+
+    let initial_pattern = random_below(NOISE_RANDOM_MODULUS);
+    let mut stream = NoiseBitStream::new(initial_pattern, mode);
+    let mut current_color = u8::MIN;
+    let left = usize::try_from(rect.left).expect("validated noise rectangle left edge");
+    let right = usize::try_from(rect.right).expect("validated noise rectangle right edge");
+    let top = usize::try_from(rect.top).expect("validated noise rectangle top edge");
+    let bottom = usize::try_from(rect.bottom).expect("validated noise rectangle bottom edge");
+
+    for row in top..bottom {
+        let first = row * LOGICAL_FRAMEBUFFER_WIDTH + left;
+        for pixel in &mut framebuffer[first..first + (right - left)] {
+            let selected = stream.next_bit();
+            match mode {
+                RasterNoiseMode::SparseHighlight if selected => *pixel = NOISE_COLOR,
+                RasterNoiseMode::SparseClear if selected => *pixel = u8::MIN,
+                RasterNoiseMode::Toggle => {
+                    if selected {
+                        current_color ^= NOISE_COLOR;
+                    }
+                    *pixel = current_color;
+                }
+                RasterNoiseMode::SparseHighlight | RasterNoiseMode::SparseClear => {}
+            }
+        }
+        stream.finish_flat_row();
+    }
+
+    Ok(RasterNoiseOutcome::Drawn {
+        rect,
+        visited_pixel_count: (right - left) * (bottom - top),
+        initial_pattern,
+    })
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct NoiseBitStream {
+    pattern: u16,
+    rotation_bit: u16,
+    bits_remaining: u8,
+    mode: RasterNoiseMode,
+}
+
+impl NoiseBitStream {
+    const fn new(pattern: u16, mode: RasterNoiseMode) -> Self {
+        Self {
+            pattern,
+            rotation_bit: NOISE_INITIAL_ROTATION_BIT,
+            bits_remaining: NOISE_PATTERN_BITS,
+            mode,
+        }
+    }
+
+    fn next_bit(&mut self) -> bool {
+        let next_bit = self.pattern >> NOISE_TOP_BIT_SHIFT;
+        self.pattern = self.pattern.wrapping_shl(NOISE_PATTERN_STEP_SHIFT) | self.rotation_bit;
+        self.rotation_bit = next_bit;
+        self.bits_remaining -= 1;
+        if self.bits_remaining == u8::MIN {
+            let old_pattern = self.pattern;
+            self.pattern = match self.mode {
+                RasterNoiseMode::SparseHighlight | RasterNoiseMode::SparseClear => {
+                    self.pattern.wrapping_shl(SPARSE_PATTERN_LEFT_SHIFT)
+                        | self.rotation_bit << SPARSE_ROTATION_SHIFT
+                        | self.pattern >> SPARSE_PATTERN_RIGHT_SHIFT
+                }
+                RasterNoiseMode::Toggle => {
+                    self.pattern.wrapping_shl(TOGGLE_PATTERN_LEFT_SHIFT)
+                        | self.rotation_bit << TOGGLE_ROTATION_SHIFT
+                        | self.pattern >> TOGGLE_PATTERN_RIGHT_SHIFT
+                }
+            };
+            self.pattern ^= old_pattern;
+            self.rotation_bit = u16::MIN;
+            self.bits_remaining = NOISE_PATTERN_BITS;
+        }
+        next_bit != u16::MIN
+    }
+
+    fn finish_flat_row(&mut self) {
+        self.rotation_bit = u16::MIN;
+    }
+}
+
 fn draw_rectangle(
     framebuffer: &mut [u8],
     clip: BridgeSpriteRect,
@@ -327,21 +487,9 @@ fn draw_rectangle(
     paint: RasterSpanPaint<'_>,
 ) -> Result<RasterRectOutcome, RasterPrimitiveError> {
     validate_flat_raster(framebuffer, clip)?;
-    let signed_width = i32::from(width_word as i16);
-    let signed_height = i32::from(height_word as i16);
-    if signed_width <= i32::from(u16::MIN) || signed_height <= i32::from(u16::MIN) {
+    let Some(rect) = clipped_rectangle(origin, width_word, height_word, clip, lower_bound) else {
         return Ok(RasterRectOutcome::Rejected);
-    }
-
-    let rect = BridgeSpriteRect {
-        left: origin.x.max(clip.left),
-        right: origin.x.saturating_add(signed_width).min(clip.right),
-        top: origin.y.max(clip.top),
-        bottom: origin.y.saturating_add(signed_height).min(lower_bound),
     };
-    if rect.left >= rect.right || rect.top >= rect.bottom {
-        return Ok(RasterRectOutcome::Rejected);
-    }
     validate_flat_rectangle(rect)?;
 
     let left = usize::try_from(rect.left).expect("validated rectangle left edge");
@@ -356,6 +504,28 @@ fn draw_rectangle(
         rect,
         pixel_count: (right - left) * (bottom - top),
     })
+}
+
+fn clipped_rectangle(
+    origin: RasterPoint,
+    width_word: u16,
+    height_word: u16,
+    clip: BridgeSpriteRect,
+    lower_bound: i32,
+) -> Option<BridgeSpriteRect> {
+    let signed_width = i32::from(width_word as i16);
+    let signed_height = i32::from(height_word as i16);
+    if signed_width <= i32::from(u16::MIN) || signed_height <= i32::from(u16::MIN) {
+        return None;
+    }
+
+    let rect = BridgeSpriteRect {
+        left: origin.x.max(clip.left),
+        right: origin.x.saturating_add(signed_width).min(clip.right),
+        top: origin.y.max(clip.top),
+        bottom: origin.y.saturating_add(signed_height).min(lower_bound),
+    };
+    (rect.left < rect.right && rect.top < rect.bottom).then_some(rect)
 }
 
 fn validate_flat_raster(
@@ -413,6 +583,7 @@ fn paint_pixel(pixel: &mut u8, paint: RasterSpanPaint<'_>) {
 #[cfg(test)]
 mod tests {
     use serde::Deserialize;
+    use sha2::{Digest, Sha256};
 
     use super::*;
 
@@ -423,6 +594,10 @@ mod tests {
     const PLANAR_HORIZONTAL_ORACLE_COUNT: usize = 27;
     const PLANAR_VERTICAL_ORACLE_COUNT: usize = 21;
     const RECT_OUTLINE_ORACLE_COUNT: usize = 4;
+    const NOISE_RECT_ORACLE_COUNT: usize = 25;
+    const NOISE_NATIVE_HASH_ORACLE_COUNT: usize = 22;
+    const EXPECTED_NOISE_RANDOM_CALL_COUNT: usize = 1;
+    const DOS_SEGMENT_BYTE_COUNT: usize = u16::MAX as usize + 1;
     const REMAP_ENABLED_FLAG: u8 = 1;
     const FRAMEBUFFER_INDEX_MULTIPLIER: usize = 37;
     const FRAMEBUFFER_CASE_MULTIPLIER: usize = 41;
@@ -524,6 +699,20 @@ mod tests {
         x: u16,
         y: u16,
         extent: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct NoiseRectOracle {
+        name: String,
+        mode: u16,
+        input_rect: [u16; 4],
+        clip: [u16; 4],
+        rejected: bool,
+        clipped_rect: [u16; 4],
+        prng_pattern: u16,
+        display_offset: u16,
+        direction_flag: bool,
+        output_segment_sha256: String,
     }
 
     #[test]
@@ -877,6 +1066,93 @@ mod tests {
         }
     }
 
+    #[test]
+    fn noise_rectangles_match_every_flat_original_vector() {
+        let vectors: Vec<NoiseRectOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_3b85_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), NOISE_RECT_ORACLE_COUNT);
+        let mut native_hash_matches = usize::MIN;
+
+        for (case_index, vector) in vectors.iter().enumerate() {
+            let clip = rect(vector.clip);
+            let expected_rect = sized_rect(vector.clipped_rect);
+            let mut framebuffer = noise_framebuffer(case_index, vector.display_offset);
+            let before = framebuffer.clone();
+            let mut random_calls = usize::MIN;
+            let result = draw_framebuffer_noise_rect(
+                &mut framebuffer,
+                clip,
+                RasterNoiseMode::from_native_word(vector.mode),
+                point(vector.input_rect),
+                vector.input_rect[2],
+                vector.input_rect[3],
+                |modulus| {
+                    assert_eq!(modulus, NOISE_RANDOM_MODULUS, "{}", vector.name);
+                    random_calls += 1;
+                    vector.prng_pattern
+                },
+            );
+
+            if !valid_clip(clip) {
+                assert_eq!(
+                    result,
+                    Err(RasterPrimitiveError::ClipOutsideDisplay(clip)),
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(random_calls, usize::MIN, "{}", vector.name);
+                assert_eq!(framebuffer, before, "{}", vector.name);
+            } else if vector.rejected {
+                assert_eq!(result, Ok(RasterNoiseOutcome::Rejected), "{}", vector.name);
+                assert_eq!(random_calls, usize::MIN, "{}", vector.name);
+                assert_eq!(framebuffer, before, "{}", vector.name);
+            } else if !valid_draw_rect(expected_rect) {
+                assert_eq!(
+                    result,
+                    Err(RasterPrimitiveError::RectangleOutsideDisplay(expected_rect)),
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(random_calls, usize::MIN, "{}", vector.name);
+                assert_eq!(framebuffer, before, "{}", vector.name);
+            } else {
+                let visited_pixel_count = usize::try_from(
+                    (expected_rect.right - expected_rect.left)
+                        * (expected_rect.bottom - expected_rect.top),
+                )
+                .unwrap();
+                assert_eq!(
+                    result,
+                    Ok(RasterNoiseOutcome::Drawn {
+                        rect: expected_rect,
+                        visited_pixel_count,
+                        initial_pattern: vector.prng_pattern,
+                    }),
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    random_calls, EXPECTED_NOISE_RANDOM_CALL_COUNT,
+                    "{}",
+                    vector.name
+                );
+            }
+
+            if noise_has_native_flat_layout(vector, clip, expected_rect) {
+                native_hash_matches += 1;
+                assert_eq!(
+                    noise_output_hash(&framebuffer, case_index, vector.display_offset),
+                    vector.output_segment_sha256,
+                    "{}",
+                    vector.name
+                );
+            }
+        }
+        assert_eq!(native_hash_matches, NOISE_NATIVE_HASH_ORACLE_COUNT);
+    }
+
     fn apply_expected_horizontal(
         actual: &mut [u8],
         before: &[u8],
@@ -1057,6 +1333,64 @@ mod tests {
                     + FRAMEBUFFER_COLOR_OFFSET) as u8
             })
             .collect()
+    }
+
+    fn noise_output_seed(case_index: usize) -> Vec<u8> {
+        (usize::MIN..DOS_SEGMENT_BYTE_COUNT)
+            .map(|index| {
+                (index * FRAMEBUFFER_INDEX_MULTIPLIER
+                    + case_index * FRAMEBUFFER_CASE_MULTIPLIER
+                    + FRAMEBUFFER_COLOR_OFFSET) as u8
+            })
+            .collect()
+    }
+
+    fn noise_framebuffer(case_index: usize, display_offset: u16) -> Vec<u8> {
+        let output = noise_output_seed(case_index);
+        (usize::MIN..LOGICAL_FRAMEBUFFER_PIXEL_COUNT)
+            .map(|index| output[(usize::from(display_offset) + index) % DOS_SEGMENT_BYTE_COUNT])
+            .collect()
+    }
+
+    fn noise_output_hash(framebuffer: &[u8], case_index: usize, display_offset: u16) -> String {
+        let mut output = noise_output_seed(case_index);
+        for (index, pixel) in framebuffer.iter().copied().enumerate() {
+            output[(usize::from(display_offset) + index) % DOS_SEGMENT_BYTE_COUNT] = pixel;
+        }
+        format!("{:x}", Sha256::digest(output))
+    }
+
+    fn noise_has_native_flat_layout(
+        vector: &NoiseRectOracle,
+        clip: BridgeSpriteRect,
+        rect: BridgeSpriteRect,
+    ) -> bool {
+        if vector.rejected {
+            return true;
+        }
+        if !valid_clip(clip) || !valid_draw_rect(rect) {
+            return false;
+        }
+        let mode = RasterNoiseMode::from_native_word(vector.mode);
+        if vector.direction_flag && mode == RasterNoiseMode::Toggle {
+            return false;
+        }
+
+        let width = u32::try_from(rect.right - rect.left).unwrap();
+        let height = u32::try_from(rect.bottom - rect.top).unwrap();
+        let row_skip = LOGICAL_FRAMEBUFFER_WIDTH as u32 - width;
+        let mut pixel = u32::from(vector.display_offset)
+            .wrapping_add(rect.top as u32 * LOGICAL_FRAMEBUFFER_WIDTH as u32)
+            .wrapping_add(rect.left as u32)
+            & u32::from(u16::MAX);
+        for _ in u32::MIN..height {
+            pixel = pixel.wrapping_add(width) & u32::from(u16::MAX);
+            if pixel + row_skip > u32::from(u16::MAX) {
+                return false;
+            }
+            pixel = pixel.wrapping_add(row_skip) & u32::from(u16::MAX);
+        }
+        true
     }
 
     fn remap_table(case_index: usize) -> [u8; PALETTE_ENTRY_COUNT] {
