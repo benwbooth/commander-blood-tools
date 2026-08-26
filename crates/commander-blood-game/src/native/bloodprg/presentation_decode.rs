@@ -43,9 +43,9 @@ pub enum PresentationDecodeError {
         /// Requested backward distance.
         distance: usize,
     },
-    /// An AB token requests a zero or forward copy rather than decoded history.
+    /// An internal or future AB token requests a nonnegative copy displacement.
     NonBackwardDisplacement {
-        /// Signed displacement encoded by the compressed stream.
+        /// Signed displacement supplied to the match copier.
         displacement: i16,
     },
     /// Decoding would exceed the original offset-sized output domain.
@@ -234,7 +234,10 @@ pub fn decode_presentation_ab(source: &[u8]) -> Result<AbDecodeOutcome, Presenta
             let high = usize::from(reader.read_bit()?);
             let low = usize::from(reader.read_bit()?);
             let encoded_length = (high << AB_SHORT_LENGTH_SHIFT) | low;
-            (i16::from(reader.read_byte()? as i8), encoded_length)
+            // The original loads AL and then forces AH to 0xff. This makes
+            // every short token a distance in -256..=-1, including bytes below
+            // 0x80; it is not an i8 sign extension.
+            (i16::from(reader.read_byte()?) - 256, encoded_length)
         } else {
             let packed = reader.read_word()?;
             let mut encoded_length = usize::from(packed & AB_LONG_LENGTH_MASK);
@@ -414,7 +417,7 @@ mod tests {
 
     use super::*;
 
-    const AB_VECTOR_COUNT: usize = 9;
+    const AB_VECTOR_COUNT: usize = 10;
     const PAIR_VECTOR_COUNT: usize = 13;
     const FLAT_PAIR_VECTOR_COUNT: usize = 11;
     const DESTINATION_PATTERN_STEP: usize = 23;

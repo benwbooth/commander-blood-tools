@@ -6,7 +6,7 @@ use std::path::{Component, Path, PathBuf};
 use std::sync::Arc;
 
 use anyhow::{Context, Result, bail};
-use commander_blood_formats::archive::{BloodArchive, BloodResourceName};
+use commander_blood_formats::archive::{BloodArchive, BloodArchiveEntry, BloodResourceName};
 
 const RGBA_COMPONENT_COUNT: usize = 4;
 const OPAQUE_ALPHA: u8 = 255;
@@ -75,6 +75,11 @@ impl OriginalResourceStore {
     /// Root used for saves and startup resources copied out of the archive.
     pub fn writable_root(&self) -> &Path {
         &self.writable_root
+    }
+
+    /// Borrow the validated packed-archive directory when one is configured.
+    pub fn archive_entries(&self) -> Option<&[BloodArchiveEntry]> {
+        self.archive.as_deref().map(BloodArchive::entries)
     }
 
     /// Select the source that can satisfy one resource request.

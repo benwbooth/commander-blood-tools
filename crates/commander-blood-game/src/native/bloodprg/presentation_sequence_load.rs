@@ -127,6 +127,8 @@ pub struct PresentationResourceSequenceOutcome {
     pub initial_entry_accepted: bool,
     /// Rendering work completed for the first entry.
     pub initial_present: PresentationActiveEntryOutcome,
+    /// Complete embedded sound side-record retired with the first frame.
+    pub initial_sound_record: Option<Box<[u8]>>,
     /// Number of bounded refill calls made after queue reset.
     pub refill_attempts: usize,
     /// Total source bytes appended by those refill calls.
@@ -206,8 +208,8 @@ where
     };
     let initial_present =
         present_active_entry(context.active_entry, context.present_policy, context.host)?;
+    let initial_sound_record = context.active_entry.active_sound_record.take();
     context.active_entry.active_queue_extent = None;
-    context.active_entry.active_sound_record = None;
     context.active_entry.pending_palette_payload = None;
     context.queue.reset(context.queue_buffer.len());
     advance_initial_sequence_counters(context.queue);
@@ -236,6 +238,7 @@ where
         initial_entry_extent: initial_entry.extent,
         initial_entry_accepted,
         initial_present,
+        initial_sound_record,
         refill_attempts,
         refill_transferred_bytes,
         link_cursor,

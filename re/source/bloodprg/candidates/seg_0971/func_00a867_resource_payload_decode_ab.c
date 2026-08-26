@@ -59,7 +59,7 @@ void CB_NEAR resource_payload_decode_ab(
             RESOURCE_DECODE_READ_BIT(bit);
             length = (cb_u16)((length << 1) | bit);
             RESOURCE_DECODE_READ_BYTE(value);
-            displacement = (cb_i16)(cb_i8)value;
+            displacement = (cb_i16)((cb_u16)value | 0xff00u);
         } else {
             RESOURCE_DECODE_READ_WORD(control_word);
             length = (cb_u16)(control_word & 7u);

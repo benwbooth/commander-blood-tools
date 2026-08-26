@@ -79585,7 +79585,7 @@ def resource_payload_decode_ab_vectors() -> list[dict[str, object]]:
             elif kind == "short":
                 displacement = int(token[1])
                 length = int(token[2])
-                if not (-128 <= displacement <= -1 and 2 <= length <= 5):
+                if not (-256 <= displacement <= -1 and 2 <= length <= 5):
                     raise AssertionError("invalid short resource decoder token")
                 length_code = length - 2
                 emit_bit(0)
@@ -79681,6 +79681,13 @@ def resource_payload_decode_ab_vectors() -> list[dict[str, object]]:
             [("literal", 0x80 + index) for index in range(20)] + [("end",)],
             0xFFE0,
             0x9999,
+        ),
+        (
+            "short_unsigned_distance",
+            [("literal", value) for value in b"ABCDEFGH"]
+            + [("long", -8, 243), ("short", -251, 3), ("end",)],
+            0x1234,
+            0x2000,
         ),
     ]
     source_segment = 0x2000

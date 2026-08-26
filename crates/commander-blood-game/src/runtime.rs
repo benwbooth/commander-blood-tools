@@ -7,6 +7,7 @@ mod script_backend;
 mod services;
 mod startup;
 mod state;
+mod video;
 
 pub use bios_font::VGA_BIOS_FONT_8X8;
 pub use input::{RuntimeInputHost, map_host_pointer_to_logical};
@@ -18,6 +19,9 @@ pub use services::ModernGameServices;
 pub use state::{
     IndexedFramebuffer, LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_PIXEL_COUNT,
     LOGICAL_FRAMEBUFFER_WIDTH, OriginalGameRuntime, RuntimeAssetLoadStatus,
+};
+pub use video::{
+    RuntimePresentationRequest, RuntimePresentationStepOutcome, RuntimePresentationStream,
 };
 
 use std::fmt;

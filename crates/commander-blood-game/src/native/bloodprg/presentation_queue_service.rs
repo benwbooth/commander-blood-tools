@@ -85,6 +85,8 @@ pub enum PresentationQueueServiceOutcome {
         palette: Option<PresentationPaletteOutcome>,
         /// Rendering work completed when the frame was due.
         present: Option<PresentationActiveEntryOutcome>,
+        /// Complete embedded sound side-record retired with the due frame.
+        sound_record: Option<Box<[u8]>>,
         /// Queue retirement completed when the frame was due.
         consumed: Option<PresentationQueueConsumeOutcome>,
         /// Result of the final latched refill.
@@ -278,6 +280,7 @@ where
         );
         let mut palette = None;
         let mut present = None;
+        let mut sound_record = None;
         let mut consumed = None;
         if advance.due {
             if let Some(payload) = context.active_entry.pending_palette_payload.take() {
@@ -298,10 +301,10 @@ where
                 context.present_policy,
                 context.host,
             )?);
+            sound_record = context.active_entry.active_sound_record.take();
             consumed = Some(context.queue.consume_entry(entry_extent)?);
             context.queue.active_entry = false;
             context.active_entry.active_queue_extent = None;
-            context.active_entry.active_sound_record = None;
         }
         let refill = latched_refill(stream, context)?;
         return Ok(PresentationQueueServiceOutcome::Active {
@@ -309,6 +312,7 @@ where
             advance,
             palette,
             present,
+            sound_record,
             consumed,
             refill,
         });
@@ -332,6 +336,9 @@ mod tests {
     const EMPTY_FRAME_LAYOUT: u16 = 1_024;
     const EMPTY_FRAME_EXTENT: usize = 6;
     const PALETTE_FRAME_EXTENT: usize = 12;
+    const SOUND_FRAME_EXTENT: usize = 12;
+    const SOUND_RECORD_EXTENT: usize = 6;
+    const SOUND_RECORD_PAYLOAD: [u8; 2] = [0x12, 0x34];
     const RETRY_FRAME_EXTENT: usize = 3_002;
 
     #[derive(Deserialize)]
@@ -566,5 +573,71 @@ mod tests {
             assert!(!queue.rollover_latched, "{}", vector.name);
             assert!(!vector.calls.is_empty() || vector.name == "no_file_handle");
         }
+    }
+
+    #[test]
+    fn due_frame_returns_its_embedded_sound_record_to_the_runtime() {
+        let mut queue_buffer = vec![u8::MIN; QUEUE_BUFFER_BYTE_COUNT];
+        write_word(&mut queue_buffer, usize::MIN, SOUND_FRAME_EXTENT);
+        write_word(&mut queue_buffer, 2, u16::from_le_bytes(*b"sd") as usize);
+        write_word(&mut queue_buffer, 4, SOUND_RECORD_EXTENT);
+        queue_buffer[6..8].copy_from_slice(&SOUND_RECORD_PAYLOAD);
+        write_word(&mut queue_buffer, 8, EMPTY_FRAME_LAYOUT as usize);
+        let mut queue = PresentationQueueState {
+            head: SOUND_FRAME_EXTENT,
+            tail: usize::MIN,
+            queued_bytes: SOUND_FRAME_EXTENT,
+            buffer_capacity: QUEUE_BUFFER_BYTE_COUNT,
+            wrap_limit: QUEUE_BUFFER_BYTE_COUNT,
+            read_wrap_index: 1,
+            ..PresentationQueueState::default()
+        };
+        let mut stream = PresentationResourceStreamState {
+            ready: true,
+            lease: PresentationSourceLease::SharedArchive,
+            source: Some(PresentationByteSource::new(Box::<[u8]>::default())),
+            ..PresentationResourceStreamState::default()
+        };
+        let mut active_entry = PresentationActiveEntryState::default();
+        let mut host = RecordingHost::default();
+        let mut palette = PresentationPaletteState::default();
+        let mut clock = PresentationQueueClock::default();
+        let mut audio_position = || u16::MIN;
+        let mut timer_tick = || u16::MIN;
+        let mut link_cursor = PresentationQueueLinkCursor::default();
+        let outcome = service_presentation_queue(
+            &mut stream,
+            &mut PresentationQueueServiceContext {
+                descriptors: &[],
+                queue: &mut queue,
+                queue_buffer: &mut queue_buffer,
+                entry_policy: PresentationEntryPolicy {
+                    sound_enabled: true,
+                    ..PresentationEntryPolicy::default()
+                },
+                active_entry: &mut active_entry,
+                present_policy: PresentationPresentPolicy {
+                    skip_back_buffer_present: true,
+                    ..PresentationPresentPolicy::default()
+                },
+                host: &mut host,
+                palette: &mut palette,
+                render_update_flags: u8::MIN,
+                clock: &mut clock,
+                clock_gates: PresentationQueueClockGates::default(),
+                audio_position: &mut audio_position,
+                timer_tick: &mut timer_tick,
+                link_cursor: &mut link_cursor,
+            },
+        )
+        .unwrap();
+
+        let PresentationQueueServiceOutcome::Active { sound_record, .. } = outcome else {
+            panic!("sound-bearing frame did not become active");
+        };
+        let mut expected = (SOUND_RECORD_EXTENT as u16).to_le_bytes().to_vec();
+        expected.extend_from_slice(&SOUND_RECORD_PAYLOAD);
+        assert_eq!(sound_record.as_deref(), Some(expected.as_slice()));
+        assert!(active_entry.active_sound_record.is_none());
     }
 }

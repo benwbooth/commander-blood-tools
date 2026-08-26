@@ -162,6 +162,14 @@ impl OriginalGameRuntime {
         self.front_buffer.copy_from(&self.back_buffer);
     }
 
+    /// Borrow both flat framebuffers for one translated presentation operation.
+    pub(super) fn presentation_buffers_mut(&mut self) -> (&mut [u8], &mut [u8]) {
+        (
+            self.front_buffer.pixels_mut(),
+            self.back_buffer.pixels_mut(),
+        )
+    }
+
     /// Decode the original MANU3 model from `BLOOD.DAT` once.
     pub fn load_manu3(&mut self) -> Result<RuntimeAssetLoadStatus> {
         if self.manu3.is_some() {
