@@ -16,8 +16,8 @@ use super::{
     ScriptPresentationScanError, ScriptPresentationScanHost, ScriptPresentationScanOutcome,
     ScriptPresentationScanState, ScriptRecordActionDispatchContext,
     ScriptRecordStateNavigationContext, ScriptTextActivationError, ScriptTransferContext,
-    SequenceRequestContext, dispatch_script_action, execute_script_dialogue_control,
-    scan_script_presentations, update_actor_position_states,
+    SequenceRequestContext, TextPresentationState, dispatch_script_action,
+    execute_script_dialogue_control, scan_script_presentations, update_actor_position_states,
 };
 
 /// Runtime facts and external effects required by translated BloodScript logic.
@@ -61,6 +61,7 @@ pub trait ScriptExecutionBackend {
         &mut self,
         related: ScriptObjectId,
         name: &[u8],
+        text: &mut TextPresentationState,
     ) -> Result<(), Self::Error>;
 
     /// Restart the name-area visual after new assets are staged.
@@ -413,7 +414,7 @@ impl<Backend: ScriptExecutionBackend> ScriptPresentationScanHost<super::ScriptPr
             .map(commander_blood_formats::script::ScriptDirectoryEntry::name)
             .ok_or(ScriptPresentationCallbackError::MissingObjectName { object: related })?;
         self.backend
-            .lookup_presentation_description(related, name)
+            .lookup_presentation_description(related, name, &mut self.dispatch.text_presentation)
             .map_err(ScriptPresentationCallbackError::Backend)
     }
 
@@ -657,6 +658,7 @@ mod tests {
             &mut self,
             related: ScriptObjectId,
             _name: &[u8],
+            _text: &mut TextPresentationState,
         ) -> Result<(), Self::Error> {
             self.events.push(BackendEvent::DescriptionLookup(related));
             Ok(())

@@ -119,6 +119,18 @@ impl OriginalResourceStore {
         }
     }
 
+    /// Return whether one original resource is currently resolvable.
+    pub fn resource_exists(&self, name: &BloodResourceName) -> Result<bool> {
+        match self.source(name) {
+            OriginalResourceSource::EmbeddedArchive => Ok(true),
+            OriginalResourceSource::LooseFile => {
+                let path = self.loose_source_path(name)?;
+                path.try_exists()
+                    .with_context(|| format!("probing original resource {}", path.display()))
+            }
+        }
+    }
+
     /// Load one resource into a single owned byte allocation.
     ///
     /// This translates `resource_file_load` at BLOODPRG file offset
