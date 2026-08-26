@@ -65,6 +65,7 @@ mod presentation_word_choice;
 mod pointer_buttons;
 mod presentation_scan;
 mod procedure;
+mod raster_primitives;
 mod record;
 mod record_state;
 mod resource_cache;
@@ -421,6 +422,10 @@ pub use procedure::{
     apply_procedure_activation, apply_procedure_patch_stream, build_procedure_patch_stream,
     evaluate_procedure_gate, ScriptProcedureStateError, ScriptProcedureStates,
     SCRIPT_PROCEDURE_PATCH_RECORD_BYTE_COUNT,
+};
+pub use raster_primitives::{
+    RasterPoint, RasterPrimitiveError, RasterSpanOutcome, RasterSpanPaint, draw_horizontal_span,
+    draw_vertical_span,
 };
 pub use record::{
     apply_direct_record_operation, apply_record_pair_operation, apply_transfer, ScriptRecordError,
