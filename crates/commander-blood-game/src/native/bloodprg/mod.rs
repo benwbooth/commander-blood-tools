@@ -57,6 +57,7 @@ mod presentation_choice;
 mod presentation_hover;
 mod presentation_line;
 mod presentation_mode;
+mod presentation_run;
 mod presentation_word_choice;
 mod pointer_buttons;
 mod presentation_scan;
@@ -367,6 +368,10 @@ pub use presentation_line::{
 };
 pub use presentation_mode::{
     PresentationBridgeMode, update_presentation_bridge_mode,
+};
+pub use presentation_run::{
+    CREDITS_VOICE_RESOURCE_PATH, PresentationRunExit, PresentationRunHost,
+    PresentationRunState, run_presentation_line_one_stream, run_presentation_line_zero,
 };
 pub use presentation_word_choice::{
     WORD_CHOICE_TRANSITION_STEPS, PresentationWordChoice, PresentationWordChoiceBackend,
