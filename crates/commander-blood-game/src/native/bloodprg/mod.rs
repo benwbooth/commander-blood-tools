@@ -47,6 +47,7 @@ mod script_clock;
 mod script_environment;
 mod script_profile;
 mod script_profile_request;
+mod script_selector;
 mod script_sequence_slots;
 mod screen_presentation;
 mod selected_mask;
@@ -291,6 +292,7 @@ pub use script_profile::{
 pub use script_profile_request::{
     PendingScriptProfileRequest, ScriptProfileRequestError, ScriptProfileRequestSlot,
 };
+pub use script_selector::{ScriptSelectorError, find_selector_body};
 pub use script_sequence_slots::ScriptSequenceSlots;
 pub use screen_presentation::{
     PresentationDescriptPlan, PresentationMusicChange, PresentationPanelPhase,
