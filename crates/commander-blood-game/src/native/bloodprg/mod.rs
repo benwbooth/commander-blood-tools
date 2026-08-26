@@ -263,7 +263,9 @@ pub use diagnostics::{
 };
 pub use framebuffer_copy::{
     FramebufferCopyError, FramebufferKind, LOGICAL_FRAMEBUFFER_HEIGHT,
-    LOGICAL_FRAMEBUFFER_WIDTH, copy_work_surface_span,
+    LOGICAL_FRAMEBUFFER_WIDTH, copy_full_frame_to_back_buffer,
+    copy_full_frame_to_display, copy_work_surface_span, fill_back_buffer_band,
+    fill_display_band,
 };
 pub use frame_transition::{
     FramebufferTransitionError, FramebufferTransitionState, TransitionRect,

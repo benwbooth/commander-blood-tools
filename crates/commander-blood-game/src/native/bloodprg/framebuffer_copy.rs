@@ -13,6 +13,8 @@ const LOGICAL_FRAMEBUFFER_PIXEL_COUNT: usize =
 /// Which flat framebuffer failed runtime validation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FramebufferKind {
+    /// Display surface receiving complete frames and band fills.
+    DisplayBuffer,
     /// Surface from which bridge graphics are copied.
     WorkSurface,
     /// Back buffer receiving the copied pixels.
@@ -37,6 +39,13 @@ pub enum FramebufferCopyError {
         y: usize,
         /// Number of pixels to copy.
         width: usize,
+    },
+    /// The requested vertical band is inverted or outside the logical display.
+    BandOutsideDisplay {
+        /// Inclusive first row of the band.
+        top: usize,
+        /// Exclusive final row of the band.
+        bottom: usize,
     },
 }
 
@@ -78,6 +87,90 @@ pub fn copy_work_surface_span(
     Ok(())
 }
 
+/// Fill one half-open row band in the display framebuffer.
+///
+/// This translates `blit_fill_row_5221` at BLOODPRG offset `0x003D7B`.
+/// Logical row indices replace byte-swapped wrapping offsets and the ignored
+/// offset half of the native far framebuffer pointer.
+pub fn fill_display_band(
+    display_buffer: &mut [u8],
+    top: usize,
+    bottom: usize,
+    color: u8,
+) -> Result<(), FramebufferCopyError> {
+    fill_framebuffer_band(
+        display_buffer,
+        FramebufferKind::DisplayBuffer,
+        top,
+        bottom,
+        color,
+    )
+}
+
+/// Fill one half-open row band in the back buffer.
+///
+/// This translates `back_buffer_fill` at BLOODPRG offset `0x003DBF` over the
+/// same checked flat geometry as [`fill_display_band`].
+pub fn fill_back_buffer_band(
+    back_buffer: &mut [u8],
+    top: usize,
+    bottom: usize,
+    color: u8,
+) -> Result<(), FramebufferCopyError> {
+    fill_framebuffer_band(back_buffer, FramebufferKind::BackBuffer, top, bottom, color)
+}
+
+/// Copy one complete logical frame to the display framebuffer.
+///
+/// This translates `full_screen_blit` at BLOODPRG offset `0x003E46` without
+/// segmented source and destination offset wrapping.
+pub fn copy_full_frame_to_display(
+    source: &[u8],
+    display_buffer: &mut [u8],
+) -> Result<(), FramebufferCopyError> {
+    copy_full_frame(source, display_buffer, FramebufferKind::DisplayBuffer)
+}
+
+/// Copy one complete logical frame to the back buffer.
+///
+/// This translates `fullscreen_copy_to_backbuffer` at BLOODPRG offset
+/// `0x003E5B` without segmented source and destination offset wrapping.
+pub fn copy_full_frame_to_back_buffer(
+    source: &[u8],
+    back_buffer: &mut [u8],
+) -> Result<(), FramebufferCopyError> {
+    copy_full_frame(source, back_buffer, FramebufferKind::BackBuffer)
+}
+
+fn fill_framebuffer_band(
+    framebuffer: &mut [u8],
+    kind: FramebufferKind,
+    top: usize,
+    bottom: usize,
+    color: u8,
+) -> Result<(), FramebufferCopyError> {
+    validate_surface(framebuffer, kind)?;
+    if top > bottom || bottom > LOGICAL_FRAMEBUFFER_HEIGHT {
+        return Err(FramebufferCopyError::BandOutsideDisplay { top, bottom });
+    }
+    let start = top * LOGICAL_FRAMEBUFFER_WIDTH;
+    let end = bottom * LOGICAL_FRAMEBUFFER_WIDTH;
+    framebuffer[start..end].fill(color);
+    Ok(())
+}
+
+fn copy_full_frame(
+    source: &[u8],
+    destination: &mut [u8],
+    destination_kind: FramebufferKind,
+) -> Result<(), FramebufferCopyError> {
+    validate_surface(source, FramebufferKind::WorkSurface)?;
+    validate_surface(destination, destination_kind)?;
+    destination[..LOGICAL_FRAMEBUFFER_PIXEL_COUNT]
+        .copy_from_slice(&source[..LOGICAL_FRAMEBUFFER_PIXEL_COUNT]);
+    Ok(())
+}
+
 fn validate_surface(surface: &[u8], kind: FramebufferKind) -> Result<(), FramebufferCopyError> {
     if surface.len() < LOGICAL_FRAMEBUFFER_PIXEL_COUNT {
         return Err(FramebufferCopyError::SurfaceTooShort {
@@ -96,6 +189,8 @@ mod tests {
     use super::*;
 
     const ORACLE_VECTOR_COUNT: usize = 12;
+    const BAND_FILL_ORACLE_VECTOR_COUNT: usize = 10;
+    const FULL_FRAME_COPY_ORACLE_VECTOR_COUNT: usize = 6;
 
     #[derive(Deserialize)]
     struct CopyOracle {
@@ -104,6 +199,25 @@ mod tests {
         y: usize,
         width: usize,
         copied_sha256: String,
+    }
+
+    #[derive(Deserialize)]
+    struct BandFillOracle {
+        name: String,
+        top: usize,
+        bottom: usize,
+        color: u8,
+        destination_offset: usize,
+        dword_count: usize,
+        written_byte_count: usize,
+    }
+
+    #[derive(Deserialize)]
+    struct FullFrameCopyOracle {
+        name: String,
+        source_offset: usize,
+        destination_offset: usize,
+        copied_byte_count: usize,
     }
 
     #[test]
@@ -175,5 +289,119 @@ mod tests {
                 actual: LOGICAL_FRAMEBUFFER_PIXEL_COUNT - 1,
             })
         );
+    }
+
+    #[test]
+    fn display_and_back_buffer_band_fills_match_flat_original_vectors() {
+        verify_band_fills(
+            include_str!("../../../../../re/tools/oracle_vectors/func_3d7b_natural.json"),
+            fill_display_band,
+        );
+        verify_band_fills(
+            include_str!("../../../../../re/tools/oracle_vectors/func_3dbf_natural.json"),
+            fill_back_buffer_band,
+        );
+    }
+
+    #[test]
+    fn complete_frame_copies_match_every_original_extent_vector() {
+        verify_full_frame_copies(
+            include_str!("../../../../../re/tools/oracle_vectors/func_3e46_natural.json"),
+            copy_full_frame_to_display,
+        );
+        verify_full_frame_copies(
+            include_str!("../../../../../re/tools/oracle_vectors/func_3e5b_natural.json"),
+            copy_full_frame_to_back_buffer,
+        );
+    }
+
+    #[test]
+    fn new_framebuffer_primitives_reject_incomplete_surfaces() {
+        let mut short = vec![u8::MIN; LOGICAL_FRAMEBUFFER_PIXEL_COUNT - 1];
+        assert_eq!(
+            fill_display_band(&mut short, 0, 1, 7),
+            Err(FramebufferCopyError::SurfaceTooShort {
+                surface: FramebufferKind::DisplayBuffer,
+                actual: LOGICAL_FRAMEBUFFER_PIXEL_COUNT - 1,
+            })
+        );
+
+        let complete = vec![u8::MIN; LOGICAL_FRAMEBUFFER_PIXEL_COUNT];
+        assert_eq!(
+            copy_full_frame_to_back_buffer(&short, &mut complete.clone()),
+            Err(FramebufferCopyError::SurfaceTooShort {
+                surface: FramebufferKind::WorkSurface,
+                actual: LOGICAL_FRAMEBUFFER_PIXEL_COUNT - 1,
+            })
+        );
+    }
+
+    fn verify_band_fills(
+        input: &str,
+        fill: fn(&mut [u8], usize, usize, u8) -> Result<(), FramebufferCopyError>,
+    ) {
+        let vectors: Vec<BandFillOracle> = serde_json::from_str(input).unwrap();
+        assert_eq!(vectors.len(), BAND_FILL_ORACLE_VECTOR_COUNT);
+
+        for (case_index, vector) in vectors.into_iter().enumerate() {
+            let mut framebuffer: Vec<u8> = (0..LOGICAL_FRAMEBUFFER_PIXEL_COUNT)
+                .map(|index| (index * 13 + case_index * 29 + 5) as u8)
+                .collect();
+            let before = framebuffer.clone();
+            let result = fill(&mut framebuffer, vector.top, vector.bottom, vector.color);
+
+            let valid = vector.top <= vector.bottom && vector.bottom <= LOGICAL_FRAMEBUFFER_HEIGHT;
+            if valid {
+                result.unwrap_or_else(|error| panic!("{}: {error}", vector.name));
+                let start = vector.top * LOGICAL_FRAMEBUFFER_WIDTH;
+                let end = vector.bottom * LOGICAL_FRAMEBUFFER_WIDTH;
+                assert_eq!(vector.destination_offset, start, "{}", vector.name);
+                assert_eq!(vector.dword_count * 4, end - start, "{}", vector.name);
+                assert_eq!(vector.written_byte_count, end - start, "{}", vector.name);
+                assert_eq!(&framebuffer[..start], &before[..start], "{}", vector.name);
+                assert!(
+                    framebuffer[start..end]
+                        .iter()
+                        .all(|pixel| *pixel == vector.color),
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(&framebuffer[end..], &before[end..], "{}", vector.name);
+            } else {
+                assert_eq!(
+                    result,
+                    Err(FramebufferCopyError::BandOutsideDisplay {
+                        top: vector.top,
+                        bottom: vector.bottom,
+                    }),
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(framebuffer, before, "{}", vector.name);
+            }
+        }
+    }
+
+    fn verify_full_frame_copies(
+        input: &str,
+        copy: fn(&[u8], &mut [u8]) -> Result<(), FramebufferCopyError>,
+    ) {
+        let vectors: Vec<FullFrameCopyOracle> = serde_json::from_str(input).unwrap();
+        assert_eq!(vectors.len(), FULL_FRAME_COPY_ORACLE_VECTOR_COUNT);
+
+        for (case_index, vector) in vectors.into_iter().enumerate() {
+            let source: Vec<u8> = (0..LOGICAL_FRAMEBUFFER_PIXEL_COUNT)
+                .map(|index| (index * 37 + case_index * 11 + 3) as u8)
+                .collect();
+            let mut destination = vec![u8::MAX; LOGICAL_FRAMEBUFFER_PIXEL_COUNT];
+            copy(&source, &mut destination)
+                .unwrap_or_else(|error| panic!("{}: {error}", vector.name));
+            assert_eq!(destination, source, "{}", vector.name);
+            assert_eq!(
+                vector.copied_byte_count, LOGICAL_FRAMEBUFFER_PIXEL_COUNT,
+                "{} source offset {} destination offset {}",
+                vector.name, vector.source_offset, vector.destination_offset
+            );
+        }
     }
 }
