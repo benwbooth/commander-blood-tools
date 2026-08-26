@@ -9,7 +9,9 @@ const POSITIVE_OPERAND_BOUNDARY: i16 = 0;
 const FIELD_SELECTOR_COUNT: usize = 21;
 const OBJECT_KIND_COUNT: usize = 9;
 const OBJECT_FLAGS_BYTE_OFFSET: usize = 2;
+const OBJECT_ACCESS_COUNTER_BYTE_OFFSET: usize = 20;
 const OBJECT_HEADER_WORD_SIZE: usize = std::mem::size_of::<u16>();
+const OBJECT_ACCESS_KIND_MASK: u16 = 0x0118;
 const OBJECT_ACTIVE_FLAG: u16 = 1;
 const OBJECT_IN_PLAY_FLAG: u16 = 2;
 const OBJECT_PRESENTABLE_FLAG: u16 = 32;
@@ -142,6 +144,45 @@ pub fn active_objects_in_play(state: &ScriptState) -> Vec<ScriptObjectId> {
         .collect()
 }
 
+/// Increment the visit counter of each in-play navigation destination.
+///
+/// This translates `object_heap_access` at BLOODPRG file offset `0x00149B`.
+/// The original walks active DEB entries and mutates byte 20 of matching VAR
+/// records. Decoded object identities and kinds replace that offset walk while
+/// retaining the celestial, navigation-entity, and black-hole mask, the in-play
+/// gate, authored object order, and eight-bit counter wraparound.
+pub fn increment_object_access_counters(state: &mut ScriptState) -> usize {
+    let objects = state
+        .objects()
+        .iter()
+        .map(|object| (object.id, object.kind))
+        .collect::<Vec<_>>();
+    let mut incremented = usize::MIN;
+
+    for (object, kind) in objects {
+        let flags_field = state
+            .object_byte(object, OBJECT_FLAGS_BYTE_OFFSET)
+            .expect("decoded state object contains its flags byte");
+        let flags = state
+            .byte(flags_field)
+            .expect("resolved object flags byte remains readable");
+        if !object_tracks_access(kind.mask(), flags) {
+            continue;
+        }
+
+        let counter_field = state
+            .object_byte(object, OBJECT_ACCESS_COUNTER_BYTE_OFFSET)
+            .expect("access-tracked object kind contains its counter byte");
+        let counter = state
+            .byte(counter_field)
+            .expect("resolved object access counter remains readable");
+        assert!(state.set_byte(counter_field, counter.wrapping_add(1)));
+        incremented += 1;
+    }
+
+    incremented
+}
+
 /// Test one typed object-header flag without exposing the serialized header word.
 pub fn object_has_flag(
     state: &ScriptState,
@@ -231,8 +272,15 @@ fn object_flags(bytes: &[u8]) -> u16 {
     )
 }
 
+const fn object_tracks_access(kind_mask: u16, flags: u8) -> bool {
+    kind_mask & OBJECT_ACCESS_KIND_MASK != u16::MIN && flags & OBJECT_IN_PLAY_FLAG as u8 != u8::MIN
+}
+
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeMap;
+    use std::path::{Path, PathBuf};
+
     use serde::Deserialize;
 
     use commander_blood_formats::script::{
@@ -246,6 +294,8 @@ mod tests {
     const FIELD_ORACLE_VECTOR_COUNT: usize = 8;
     const THRESHOLD_ORACLE_VECTOR_COUNT: usize = 9;
     const ACTIVE_OBJECT_ORACLE_VECTOR_COUNT: usize = 5;
+    const OBJECT_ACCESS_ORACLE_VECTOR_COUNT: usize = 6;
+    const SCRIPT_PROFILE_COUNT: usize = 5;
     const DIRECTORY_NAME_CAPACITY: usize = 16;
     const DIRECTORY_ENTRY_SIZE: usize = 20;
     const ACTOR_RECORD_SIZE: usize = 72;
@@ -304,6 +354,29 @@ mod tests {
         object_offset: u16,
         entry_kind: u16,
         flags: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct ObjectAccessOracleVector {
+        name: String,
+        processed_entries: usize,
+        entries: Vec<ObjectAccessOracleEntry>,
+    }
+
+    #[derive(Deserialize)]
+    struct ObjectAccessOracleEntry {
+        object_offset: u16,
+        object_kind: u16,
+        flags: u8,
+        access_count_before: u8,
+        access_count_after: u8,
+    }
+
+    fn original_asset(name: &str) -> PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../..")
+            .join("accuracy/cblood_install/cblood")
+            .join(name)
     }
 
     #[test]
@@ -422,6 +495,94 @@ mod tests {
                 .map(|object| active_entries[object.index()].object_offset)
                 .collect::<Vec<_>>();
             assert_eq!(actual, vector.active_objects, "{}", vector.name);
+        }
+    }
+
+    #[test]
+    fn object_access_updates_match_every_original_semantic_vector() {
+        let vectors: Vec<ObjectAccessOracleVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_149b_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), OBJECT_ACCESS_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let mut counters = BTreeMap::new();
+            for entry in vector.entries.iter().take(vector.processed_entries) {
+                let counter = counters
+                    .entry(entry.object_offset)
+                    .or_insert(entry.access_count_before);
+                if object_tracks_access(entry.object_kind, entry.flags) {
+                    *counter = counter.wrapping_add(1);
+                }
+            }
+            for entry in vector.entries.iter().take(vector.processed_entries) {
+                assert_eq!(
+                    counters[&entry.object_offset], entry.access_count_after,
+                    "{}",
+                    vector.name
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn every_shipped_profile_updates_owned_access_counters() {
+        for profile in 1..=SCRIPT_PROFILE_COUNT {
+            let directory = decode_script_directory(
+                &std::fs::read(original_asset(&format!("SCRIPT{profile}.DEB"))).unwrap(),
+            )
+            .unwrap();
+            let mut state = decode_script_state(
+                &std::fs::read(original_asset(&format!("SCRIPT{profile}.VAR"))).unwrap(),
+                &directory,
+            )
+            .unwrap();
+            let expected = state
+                .objects()
+                .iter()
+                .map(|object| {
+                    let flags_field = state
+                        .object_byte(object.id, OBJECT_FLAGS_BYTE_OFFSET)
+                        .unwrap();
+                    let flags = state.byte(flags_field).unwrap();
+                    let counter = state
+                        .object_byte(object.id, OBJECT_ACCESS_COUNTER_BYTE_OFFSET)
+                        .and_then(|field| state.byte(field));
+                    (
+                        object.id,
+                        object_tracks_access(object.kind.mask(), flags),
+                        counter,
+                    )
+                })
+                .collect::<Vec<_>>();
+            let expected_increment_count = expected
+                .iter()
+                .filter(|(_object, increments, _counter)| *increments)
+                .count();
+
+            assert_eq!(
+                increment_object_access_counters(&mut state),
+                expected_increment_count,
+                "SCRIPT{profile}"
+            );
+            for (object, increments, before) in expected {
+                if let Some(before) = before {
+                    let field = state
+                        .object_byte(object, OBJECT_ACCESS_COUNTER_BYTE_OFFSET)
+                        .unwrap();
+                    assert_eq!(
+                        state.byte(field).unwrap(),
+                        if increments {
+                            before.wrapping_add(1)
+                        } else {
+                            before
+                        },
+                        "SCRIPT{profile} object {}",
+                        object.index()
+                    );
+                }
+            }
         }
     }
 

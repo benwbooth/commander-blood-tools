@@ -524,7 +524,7 @@ pub use timer::{
     SpeakerGateAction, SpeakerPulseState, advance_game_timer_tick,
 };
 pub use vm::{
-    active_objects_in_play, count_positive_operands, object_before_threshold, object_has_flag,
-    resolve_dictionary_object, script_field_offset, ScriptFieldSelector, ScriptObjectFlag,
-    set_object_flag,
+    active_objects_in_play, count_positive_operands, increment_object_access_counters,
+    object_before_threshold, object_has_flag, resolve_dictionary_object, script_field_offset,
+    set_object_flag, ScriptFieldSelector, ScriptObjectFlag,
 };
