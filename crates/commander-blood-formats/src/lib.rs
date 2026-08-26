@@ -16,4 +16,5 @@ pub mod name_area_effect;
 pub mod palette;
 pub mod panorama;
 pub mod script;
+pub mod snd;
 pub mod world_art;
