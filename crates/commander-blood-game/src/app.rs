@@ -53,6 +53,7 @@ const MAXIMUM_ACTIVE_SCENE_COUNT: usize = 1;
 #[derive(Debug, Default, PartialEq, Eq)]
 struct Options {
     data: Option<PathBuf>,
+    write_data: Option<PathBuf>,
     asset: Option<PathBuf>,
     bloodprg: Option<PathBuf>,
     manu3: Option<PathBuf>,
@@ -85,6 +86,13 @@ impl Options {
                 "--data" => {
                     options.data = Some(PathBuf::from(
                         arguments.next().context("--data requires a directory")?,
+                    ));
+                }
+                "--write-data" => {
+                    options.write_data = Some(PathBuf::from(
+                        arguments
+                            .next()
+                            .context("--write-data requires a directory")?,
                     ));
                 }
                 "--asset" => {
@@ -129,9 +137,10 @@ impl Options {
 
 fn print_usage() {
     println!(
-        "Usage: commander-blood [--data DIRECTORY] [--asset IMAGE.LBM] [--manu3 MANU3.XDB | --alien ALIEN.XDB | --bridge] [--panorama TB.BIG] [--bloodprg BLOODPRG.EXE] [--frames COUNT]\n\
+        "Usage: commander-blood [--data DIRECTORY] [--write-data DIRECTORY] [--asset IMAGE.LBM] [--manu3 MANU3.XDB | --alien ALIEN.XDB | --bridge] [--panorama TB.BIG] [--bloodprg BLOODPRG.EXE] [--frames COUNT]\n\
          \n\
-         CBLOOD_DATA may point to the original game-data directory."
+         CBLOOD_DATA may point to the original game-data directory.\n\
+         CBLOOD_WRITE_DATA may point to the writable save-data directory."
     );
 }
 
@@ -146,7 +155,10 @@ pub fn run() -> Result<()> {
     };
     let original_data = if options.data.is_some() || !options.uses_diagnostic_overrides() {
         let paths = OriginalGameDataPaths::discover(options.data.as_deref())?;
-        Some(OriginalGameData::load(paths)?)
+        Some(match options.write_data.as_deref() {
+            Some(writable_root) => OriginalGameData::load_with_writable_root(paths, writable_root)?,
+            None => OriginalGameData::load(paths)?,
+        })
     } else {
         None
     };

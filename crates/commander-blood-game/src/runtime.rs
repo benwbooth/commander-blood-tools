@@ -32,6 +32,10 @@ pub const ORIGINAL_TITLE_FILENAME: &str = "BLOOD.LBM";
 pub const ORIGINAL_BRIDGE_PANORAMA_FILENAME: &str = "TB.BIG";
 
 const DATA_ROOT_ENVIRONMENT_VARIABLE: &str = "CBLOOD_DATA";
+const WRITABLE_DATA_ROOT_ENVIRONMENT_VARIABLE: &str = "CBLOOD_WRITE_DATA";
+const XDG_DATA_HOME_ENVIRONMENT_VARIABLE: &str = "XDG_DATA_HOME";
+const HOME_ENVIRONMENT_VARIABLE: &str = "HOME";
+const USER_DATA_DIRECTORY_NAME: &str = "commander-blood";
 const KNOWN_DATA_ROOTS: [&str; 3] = [
     "commander-blood-audio/_tmp_iso",
     "output/_tmp_iso",
@@ -104,7 +108,7 @@ impl OriginalGameDataPaths {
         )
     }
 
-    /// Root containing the original files and writable loose resources.
+    /// Read-only root containing the original game files.
     pub fn root(&self) -> &Path {
         &self.root
     }
@@ -174,8 +178,17 @@ impl fmt::Debug for OriginalGameData {
 }
 
 impl OriginalGameData {
-    /// Read and validate the complete original game-data set.
+    /// Read and validate the complete original game-data set using the host's user-data root.
     pub fn load(paths: OriginalGameDataPaths) -> Result<Self> {
+        let writable_root = discover_writable_data_root(None)?;
+        Self::load_with_writable_root(paths, writable_root)
+    }
+
+    /// Read original data while keeping all runtime-owned files below `writable_root`.
+    pub fn load_with_writable_root(
+        paths: OriginalGameDataPaths,
+        writable_root: impl Into<PathBuf>,
+    ) -> Result<Self> {
         let executable = std::fs::read(paths.executable())
             .with_context(|| format!("reading {}", paths.executable().display()))?
             .into_boxed_slice();
@@ -195,8 +208,13 @@ impl OriginalGameData {
         let archive = BloodArchive::decode(archive_bytes)
             .with_context(|| format!("decoding {}", paths.archive().display()))?;
         let archive_entry_count = archive.entries().len();
-        let resource_store =
-            OriginalResourceStore::new(paths.root().to_owned(), Some(archive), [], false);
+        let resource_store = OriginalResourceStore::with_writable_root(
+            paths.root().to_owned(),
+            writable_root.into(),
+            Some(archive),
+            [],
+            false,
+        );
 
         Ok(Self {
             paths,
@@ -313,6 +331,28 @@ impl OriginalGameData {
     }
 }
 
+/// Select the flat host directory that owns saves and startup-copied resources.
+pub fn discover_writable_data_root(explicit_root: Option<&Path>) -> Result<PathBuf> {
+    if let Some(root) = explicit_root {
+        return Ok(root.to_owned());
+    }
+    if let Some(root) = std::env::var_os(WRITABLE_DATA_ROOT_ENVIRONMENT_VARIABLE) {
+        return Ok(PathBuf::from(root));
+    }
+    if let Some(root) = std::env::var_os(XDG_DATA_HOME_ENVIRONMENT_VARIABLE) {
+        return Ok(PathBuf::from(root).join(USER_DATA_DIRECTORY_NAME));
+    }
+    if let Some(home) = std::env::var_os(HOME_ENVIRONMENT_VARIABLE) {
+        return Ok(PathBuf::from(home)
+            .join(".local")
+            .join("share")
+            .join(USER_DATA_DIRECTORY_NAME));
+    }
+    Ok(std::env::current_dir()
+        .context("resolving current directory for writable game data")?
+        .join(USER_DATA_DIRECTORY_NAME))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -369,6 +409,25 @@ mod tests {
         let initial_profile = ScriptProfileId::new(0).unwrap();
         runtime.load_profile(initial_profile).unwrap();
         assert_eq!(runtime.current_profile().unwrap().id(), initial_profile);
+    }
+
+    #[test]
+    fn explicit_writable_root_does_not_replace_the_original_source_root() {
+        let Ok(paths) = OriginalGameDataPaths::discover(None) else {
+            return;
+        };
+        let writable_root = std::env::temp_dir().join(format!(
+            "commander-blood-runtime-test-{}",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_dir_all(&writable_root);
+        let data =
+            OriginalGameData::load_with_writable_root(paths.clone(), &writable_root).unwrap();
+
+        assert_eq!(data.paths().root(), paths.root());
+        assert_eq!(data.resource_store().loose_source_root(), paths.root());
+        assert_eq!(data.resource_store().writable_root(), writable_root);
+        assert!(!writable_root.exists());
     }
 
     #[test]

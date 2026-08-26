@@ -25,7 +25,8 @@ pub enum OriginalResourceSource {
 /// Unified resource loader replacing DOS files and expanded-memory backends.
 #[derive(Clone, Debug)]
 pub struct OriginalResourceStore {
-    loose_root: PathBuf,
+    loose_source_root: PathBuf,
+    writable_root: PathBuf,
     archive: Option<BloodArchive>,
     loose_names: BTreeSet<BloodResourceName>,
     force_loose: bool,
@@ -39,12 +40,40 @@ impl OriginalResourceStore {
         loose_names: impl IntoIterator<Item = BloodResourceName>,
         force_loose: bool,
     ) -> Self {
-        Self {
+        Self::with_writable_root(
+            loose_root.clone(),
             loose_root,
+            archive,
+            loose_names,
+            force_loose,
+        )
+    }
+
+    /// Construct a loader with independent read-only source and writable roots.
+    pub fn with_writable_root(
+        loose_source_root: PathBuf,
+        writable_root: PathBuf,
+        archive: Option<BloodArchive>,
+        loose_names: impl IntoIterator<Item = BloodResourceName>,
+        force_loose: bool,
+    ) -> Self {
+        Self {
+            loose_source_root,
+            writable_root,
             archive,
             loose_names: loose_names.into_iter().collect(),
             force_loose,
         }
+    }
+
+    /// Root used when a resource must be read as an external loose file.
+    pub fn loose_source_root(&self) -> &Path {
+        &self.loose_source_root
+    }
+
+    /// Root used for saves and startup resources copied out of the archive.
+    pub fn writable_root(&self) -> &Path {
+        &self.writable_root
     }
 
     /// Select the source that can satisfy one resource request.
@@ -80,7 +109,7 @@ impl OriginalResourceStore {
                 .expect("source selection validated the archive member")
                 .len()),
             OriginalResourceSource::LooseFile => {
-                let path = self.loose_path(name)?;
+                let path = self.loose_source_path(name)?;
                 let byte_count = std::fs::metadata(&path)
                     .with_context(|| format!("reading resource metadata {}", path.display()))?
                     .len();
@@ -104,7 +133,7 @@ impl OriginalResourceStore {
                     .expect("source selection validated the archive member"),
             )),
             OriginalResourceSource::LooseFile => {
-                let path = self.loose_path(name)?;
+                let path = self.loose_source_path(name)?;
                 Ok(std::fs::read(&path)
                     .with_context(|| format!("reading original resource {}", path.display()))?
                     .into_boxed_slice())
@@ -118,10 +147,28 @@ impl OriginalResourceStore {
     /// `0x002B6B`. The configured root replaces drive and current-directory
     /// changes, and Rust's complete-slice write replaces chunk cursor updates.
     pub fn write_loose(&self, name: &BloodResourceName, data: &[u8]) -> Result<usize> {
-        let path = self.loose_path(name)?;
+        let path = self.writable_path(name)?;
+        let parent = path
+            .parent()
+            .context("writable resource path has no parent directory")?;
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating writable data directory {}", parent.display()))?;
         std::fs::write(&path, data)
             .with_context(|| format!("writing original resource {}", path.display()))?;
         Ok(data.len())
+    }
+
+    /// Return whether one named resource exists below the writable root.
+    pub fn writable_resource_exists(&self, name: &BloodResourceName) -> Result<bool> {
+        Ok(self.writable_path(name)?.is_file())
+    }
+
+    /// Read one named resource strictly from the writable root.
+    pub fn load_writable(&self, name: &BloodResourceName) -> Result<Box<[u8]>> {
+        let path = self.writable_path(name)?;
+        Ok(std::fs::read(&path)
+            .with_context(|| format!("reading writable resource {}", path.display()))?
+            .into_boxed_slice())
     }
 
     /// Copy a nonempty resource to a loose destination below the data root.
@@ -143,13 +190,21 @@ impl OriginalResourceStore {
         Ok(true)
     }
 
-    fn loose_path(&self, name: &BloodResourceName) -> Result<PathBuf> {
+    fn loose_source_path(&self, name: &BloodResourceName) -> Result<PathBuf> {
+        Self::rooted_path(&self.loose_source_root, name)
+    }
+
+    fn writable_path(&self, name: &BloodResourceName) -> Result<PathBuf> {
+        Self::rooted_path(&self.writable_root, name)
+    }
+
+    fn rooted_path(root: &Path, name: &BloodResourceName) -> Result<PathBuf> {
         let folded = name.archive_lookup_key();
         let host_name = std::str::from_utf8(&folded)
             .expect("validated ASCII resource name")
             .replace('\\', "/");
         let relative = Path::new(&host_name);
-        let mut path = self.loose_root.clone();
+        let mut path = root.to_owned();
         for component in relative.components() {
             match component {
                 Component::Normal(part) => path.push(part),
@@ -503,5 +558,37 @@ mod tests {
             usize::MIN
         );
         assert!(std::fs::read(root.0.join("COPIED.DAT")).unwrap().is_empty());
+    }
+
+    #[test]
+    fn keeps_loose_source_reads_separate_from_writable_runtime_files() {
+        let source_root = TemporaryResourceRoot::create();
+        let writable_root = TemporaryResourceRoot::create();
+        let resource = resource_name(r"NEST\STATE.DAT");
+        let source_payload = b"original loose data";
+        let writable_payload = b"runtime-owned data";
+        let source_path = source_root.0.join("NEST/STATE.DAT");
+        std::fs::create_dir_all(source_path.parent().unwrap()).unwrap();
+        std::fs::write(&source_path, source_payload).unwrap();
+        let store = OriginalResourceStore::with_writable_root(
+            source_root.0.clone(),
+            writable_root.0.clone(),
+            None,
+            [resource.clone()],
+            false,
+        );
+
+        assert_eq!(store.loose_source_root(), source_root.0);
+        assert_eq!(store.writable_root(), writable_root.0);
+        assert_eq!(&*store.load(&resource).unwrap(), source_payload);
+        assert!(!store.writable_resource_exists(&resource).unwrap());
+
+        assert_eq!(
+            store.write_loose(&resource, writable_payload).unwrap(),
+            writable_payload.len()
+        );
+        assert_eq!(&*store.load(&resource).unwrap(), source_payload);
+        assert_eq!(&*store.load_writable(&resource).unwrap(), writable_payload);
+        assert_eq!(std::fs::read(source_path).unwrap(), source_payload);
     }
 }
