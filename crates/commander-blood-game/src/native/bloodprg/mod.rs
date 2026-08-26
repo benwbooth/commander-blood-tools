@@ -262,10 +262,10 @@ pub use diagnostics::{
     calculate_diagnostic_panel_layout, write_diagnostic_console_text,
 };
 pub use framebuffer_copy::{
-    FramebufferCopyError, FramebufferKind, LOGICAL_FRAMEBUFFER_HEIGHT,
-    LOGICAL_FRAMEBUFFER_WIDTH, copy_full_frame_to_back_buffer,
-    copy_full_frame_to_display, copy_work_surface_span, fill_back_buffer_band,
-    fill_display_band,
+    ChunkyFramePresentation, FramebufferCopyError, FramebufferKind,
+    LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_WIDTH,
+    copy_full_frame_to_back_buffer, copy_full_frame_to_display, copy_work_surface_span,
+    fill_back_buffer_band, fill_display_band, present_chunky_frame,
 };
 pub use frame_transition::{
     FramebufferTransitionError, FramebufferTransitionState, TransitionRect,

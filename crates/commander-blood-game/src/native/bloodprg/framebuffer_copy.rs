@@ -9,6 +9,10 @@ pub const LOGICAL_FRAMEBUFFER_HEIGHT: usize = 200;
 
 const LOGICAL_FRAMEBUFFER_PIXEL_COUNT: usize =
     LOGICAL_FRAMEBUFFER_WIDTH * LOGICAL_FRAMEBUFFER_HEIGHT;
+const CROPPED_PRESENT_FIRST_ROW: usize = 35;
+const CROPPED_PRESENT_LAST_ROW_EXCLUSIVE: usize = 165;
+const MAXIMUM_CROPPED_PRESENT_DEPTH: usize =
+    (CROPPED_PRESENT_LAST_ROW_EXCLUSIVE - CROPPED_PRESENT_FIRST_ROW) / 2;
 
 /// Which flat framebuffer failed runtime validation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -46,6 +50,11 @@ pub enum FramebufferCopyError {
         top: usize,
         /// Exclusive final row of the band.
         bottom: usize,
+    },
+    /// A ship-depth crop would invert the authored presentation band.
+    CropDepthOutsideDisplay {
+        /// Requested inward crop depth in logical rows.
+        depth: usize,
     },
 }
 
@@ -142,6 +151,61 @@ pub fn copy_full_frame_to_back_buffer(
     copy_full_frame(source, back_buffer, FramebufferKind::BackBuffer)
 }
 
+/// Region copied from the logical framebuffer into the presented frame.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ChunkyFramePresentation {
+    /// Every logical row was copied.
+    FullFrame,
+    /// The symmetric ship-depth crop copied this half-open row range.
+    Cropped {
+        /// First copied logical row.
+        first_row: usize,
+        /// Exclusive final copied logical row.
+        last_row_exclusive: usize,
+    },
+    /// Maximum depth intentionally produced an empty crop.
+    Empty,
+}
+
+/// Copy the visible portion of a chunky indexed frame into presentation state.
+///
+/// This translates `chunky_to_planar_framebuffer` at BLOODPRG offset
+/// `0x003ECE`. In the flat port there are no VGA planes or sequencer map-mask
+/// writes: the same row region is copied directly between complete indexed
+/// frames. Crop depth is validated before mutation, replacing native wrapping
+/// subtraction and offset arithmetic.
+pub fn present_chunky_frame(
+    source: &[u8],
+    presented: &mut [u8],
+    crop_enabled: bool,
+    depth: usize,
+) -> Result<ChunkyFramePresentation, FramebufferCopyError> {
+    validate_surface(source, FramebufferKind::WorkSurface)?;
+    validate_surface(presented, FramebufferKind::DisplayBuffer)?;
+
+    if !crop_enabled {
+        presented[..LOGICAL_FRAMEBUFFER_PIXEL_COUNT]
+            .copy_from_slice(&source[..LOGICAL_FRAMEBUFFER_PIXEL_COUNT]);
+        return Ok(ChunkyFramePresentation::FullFrame);
+    }
+    if depth > MAXIMUM_CROPPED_PRESENT_DEPTH {
+        return Err(FramebufferCopyError::CropDepthOutsideDisplay { depth });
+    }
+    if depth == MAXIMUM_CROPPED_PRESENT_DEPTH {
+        return Ok(ChunkyFramePresentation::Empty);
+    }
+
+    let first_row = CROPPED_PRESENT_FIRST_ROW + depth;
+    let last_row_exclusive = CROPPED_PRESENT_LAST_ROW_EXCLUSIVE - depth;
+    let start = first_row * LOGICAL_FRAMEBUFFER_WIDTH;
+    let end = last_row_exclusive * LOGICAL_FRAMEBUFFER_WIDTH;
+    presented[start..end].copy_from_slice(&source[start..end]);
+    Ok(ChunkyFramePresentation::Cropped {
+        first_row,
+        last_row_exclusive,
+    })
+}
+
 fn fill_framebuffer_band(
     framebuffer: &mut [u8],
     kind: FramebufferKind,
@@ -191,6 +255,8 @@ mod tests {
     const ORACLE_VECTOR_COUNT: usize = 12;
     const BAND_FILL_ORACLE_VECTOR_COUNT: usize = 10;
     const FULL_FRAME_COPY_ORACLE_VECTOR_COUNT: usize = 6;
+    const CHUNKY_PRESENT_ORACLE_VECTOR_COUNT: usize = 8;
+    const VGA_PLANE_COUNT: usize = 4;
 
     #[derive(Deserialize)]
     struct CopyOracle {
@@ -218,6 +284,16 @@ mod tests {
         source_offset: usize,
         destination_offset: usize,
         copied_byte_count: usize,
+    }
+
+    #[derive(Deserialize)]
+    struct ChunkyPresentOracle {
+        name: String,
+        gate: u8,
+        depth: usize,
+        cropped: bool,
+        early_return: bool,
+        bytes_per_plane: usize,
     }
 
     #[test]
@@ -334,6 +410,76 @@ mod tests {
                 actual: LOGICAL_FRAMEBUFFER_PIXEL_COUNT - 1,
             })
         );
+    }
+
+    #[test]
+    fn chunky_presentation_matches_every_flat_original_crop_vector() {
+        let vectors: Vec<ChunkyPresentOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_3ece_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), CHUNKY_PRESENT_ORACLE_VECTOR_COUNT);
+
+        for (case_index, vector) in vectors.into_iter().enumerate() {
+            let source: Vec<u8> = (0..LOGICAL_FRAMEBUFFER_PIXEL_COUNT)
+                .map(|index| (index * 37 + case_index * 29 + 11) as u8)
+                .collect();
+            let mut presented: Vec<u8> = (0..LOGICAL_FRAMEBUFFER_PIXEL_COUNT)
+                .map(|index| (index * 13 + case_index * 17 + 7) as u8)
+                .collect();
+            let before = presented.clone();
+            let crop_enabled = vector.gate & 1 != u8::MIN;
+            assert_eq!(crop_enabled, vector.cropped, "{}", vector.name);
+            let result = present_chunky_frame(&source, &mut presented, crop_enabled, vector.depth);
+
+            if crop_enabled && vector.depth > MAXIMUM_CROPPED_PRESENT_DEPTH {
+                assert_eq!(
+                    result,
+                    Err(FramebufferCopyError::CropDepthOutsideDisplay {
+                        depth: vector.depth,
+                    }),
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(presented, before, "{}", vector.name);
+                continue;
+            }
+
+            let outcome = result.unwrap_or_else(|error| panic!("{}: {error}", vector.name));
+            let (first_row, last_row_exclusive) = match outcome {
+                ChunkyFramePresentation::FullFrame => (0, LOGICAL_FRAMEBUFFER_HEIGHT),
+                ChunkyFramePresentation::Cropped {
+                    first_row,
+                    last_row_exclusive,
+                } => (first_row, last_row_exclusive),
+                ChunkyFramePresentation::Empty => (
+                    CROPPED_PRESENT_FIRST_ROW + MAXIMUM_CROPPED_PRESENT_DEPTH,
+                    CROPPED_PRESENT_LAST_ROW_EXCLUSIVE - MAXIMUM_CROPPED_PRESENT_DEPTH,
+                ),
+            };
+            assert_eq!(
+                vector.early_return,
+                outcome == ChunkyFramePresentation::Empty,
+                "{}",
+                vector.name
+            );
+            let start = first_row * LOGICAL_FRAMEBUFFER_WIDTH;
+            let end = last_row_exclusive * LOGICAL_FRAMEBUFFER_WIDTH;
+            assert_eq!(
+                vector.bytes_per_plane * VGA_PLANE_COUNT,
+                end - start,
+                "{}",
+                vector.name
+            );
+            assert_eq!(&presented[..start], &before[..start], "{}", vector.name);
+            assert_eq!(
+                &presented[start..end],
+                &source[start..end],
+                "{}",
+                vector.name
+            );
+            assert_eq!(&presented[end..], &before[end..], "{}", vector.name);
+        }
     }
 
     fn verify_band_fills(
