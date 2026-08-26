@@ -188,7 +188,7 @@ pub trait BridgeFrameBackend {
     fn update_actor_slots(&mut self, state: &mut BridgeFrameState);
     /// Render dirty sprites from one semantic range.
     fn render_dirty_sprites(&mut self, range: BridgeSpriteRange, state: &mut BridgeFrameState);
-    /// Copy retained secondary dirty regions into the primary list.
+    /// Copy dirty work-surface pixels into the display surface.
     fn copy_dirty_regions(&mut self, state: &mut BridgeFrameState);
     /// Reconcile camera state against the scene's typed comparison extent.
     fn check_camera_state(

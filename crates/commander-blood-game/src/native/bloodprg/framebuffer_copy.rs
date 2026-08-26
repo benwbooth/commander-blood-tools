@@ -2,6 +2,8 @@
 
 use std::fmt;
 
+use super::sprite_geometry::BridgeSpriteRect;
+
 /// Width of the original logical display in pixels.
 pub const LOGICAL_FRAMEBUFFER_WIDTH: usize = 320;
 /// Height of the original logical display in pixels.
@@ -55,6 +57,17 @@ pub enum FramebufferCopyError {
     CropDepthOutsideDisplay {
         /// Requested inward crop depth in logical rows.
         depth: usize,
+    },
+    /// A dirty rectangle is inverted, empty vertically, or outside the logical display.
+    DirtyRegionOutsideDisplay {
+        /// Inclusive left edge.
+        left: i32,
+        /// Exclusive right edge.
+        right: i32,
+        /// Inclusive top edge.
+        top: i32,
+        /// Exclusive bottom edge.
+        bottom: i32,
     },
 }
 
@@ -149,6 +162,90 @@ pub fn copy_full_frame_to_back_buffer(
     back_buffer: &mut [u8],
 ) -> Result<(), FramebufferCopyError> {
     copy_full_frame(source, back_buffer, FramebufferKind::BackBuffer)
+}
+
+/// Summary of pixels copied for one dirty-region presentation pass.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct DirtyRegionCopyOutcome {
+    /// Number of half-open rectangles processed in their authored order.
+    pub copied_region_count: usize,
+    /// Number of horizontal rows copied across all rectangles.
+    pub copied_row_count: usize,
+    /// Total number of indexed pixels copied.
+    pub copied_pixel_count: usize,
+}
+
+/// Copy dirty rectangles from the secondary surface into the display surface.
+///
+/// This translates `dirty_rects_copy_secondary_to_primary` at BLOODPRG offset
+/// `0x00509D`. It retains the low-bit gate, ordered rectangle traversal, and
+/// half-open edges while replacing the signed sentinel, segmented framebuffer
+/// aliases, alignment-specific copy loops, and wrapping offsets with a typed
+/// rectangle slice and validated flat framebuffers.
+pub fn copy_dirty_regions_to_display(
+    dirty_copy_requested: bool,
+    regions: &[BridgeSpriteRect],
+    secondary_buffer: &[u8],
+    display_buffer: &mut [u8],
+) -> Result<DirtyRegionCopyOutcome, FramebufferCopyError> {
+    if !dirty_copy_requested || regions.is_empty() {
+        return Ok(DirtyRegionCopyOutcome::default());
+    }
+    validate_surface(secondary_buffer, FramebufferKind::WorkSurface)?;
+    validate_surface(display_buffer, FramebufferKind::DisplayBuffer)?;
+
+    let mut outcome = DirtyRegionCopyOutcome::default();
+    let mut validated = Vec::with_capacity(regions.len());
+    for region in regions {
+        let valid = region.left >= i32::from(u16::MIN)
+            && region.left <= region.right
+            && region.right <= LOGICAL_FRAMEBUFFER_WIDTH as i32
+            && region.top >= i32::from(u16::MIN)
+            && region.top < region.bottom
+            && region.bottom <= LOGICAL_FRAMEBUFFER_HEIGHT as i32;
+        if !valid {
+            return Err(FramebufferCopyError::DirtyRegionOutsideDisplay {
+                left: region.left,
+                right: region.right,
+                top: region.top,
+                bottom: region.bottom,
+            });
+        }
+        let left = region.left as usize;
+        let right = region.right as usize;
+        let top = region.top as usize;
+        let bottom = region.bottom as usize;
+        let width = right - left;
+        let row_count = bottom - top;
+        outcome.copied_row_count = outcome.copied_row_count.checked_add(row_count).ok_or(
+            FramebufferCopyError::DirtyRegionOutsideDisplay {
+                left: region.left,
+                right: region.right,
+                top: region.top,
+                bottom: region.bottom,
+            },
+        )?;
+        outcome.copied_pixel_count = outcome
+            .copied_pixel_count
+            .checked_add(width * row_count)
+            .ok_or(FramebufferCopyError::DirtyRegionOutsideDisplay {
+                left: region.left,
+                right: region.right,
+                top: region.top,
+                bottom: region.bottom,
+            })?;
+        validated.push((left, right, top, bottom));
+    }
+
+    for (left, right, top, bottom) in validated {
+        for row in top..bottom {
+            let start = row * LOGICAL_FRAMEBUFFER_WIDTH + left;
+            let end = row * LOGICAL_FRAMEBUFFER_WIDTH + right;
+            display_buffer[start..end].copy_from_slice(&secondary_buffer[start..end]);
+        }
+    }
+    outcome.copied_region_count = regions.len();
+    Ok(outcome)
 }
 
 /// Region copied from the logical framebuffer into the presented frame.
@@ -256,7 +353,15 @@ mod tests {
     const BAND_FILL_ORACLE_VECTOR_COUNT: usize = 10;
     const FULL_FRAME_COPY_ORACLE_VECTOR_COUNT: usize = 6;
     const CHUNKY_PRESENT_ORACLE_VECTOR_COUNT: usize = 8;
+    const DIRTY_REGION_COPY_ORACLE_VECTOR_COUNT: usize = 8;
     const VGA_PLANE_COUNT: usize = 4;
+    const DIRTY_COPY_REQUESTED_FLAG: u8 = 1;
+    const DISPLAY_INDEX_MULTIPLIER: usize = 13;
+    const DISPLAY_CASE_MULTIPLIER: usize = 31;
+    const DISPLAY_COLOR_OFFSET: usize = 7;
+    const SECONDARY_INDEX_MULTIPLIER: usize = 29;
+    const SECONDARY_CASE_MULTIPLIER: usize = 17;
+    const SECONDARY_COLOR_OFFSET: usize = 3;
 
     #[derive(Deserialize)]
     struct CopyOracle {
@@ -294,6 +399,15 @@ mod tests {
         cropped: bool,
         early_return: bool,
         bytes_per_plane: usize,
+    }
+
+    #[derive(Deserialize)]
+    struct DirtyRegionCopyOracle {
+        name: String,
+        dirty_copy_flags: u8,
+        rectangles: Vec<[i32; 4]>,
+        copied_rows: Vec<[usize; 2]>,
+        copied_bytes: usize,
     }
 
     #[test]
@@ -389,6 +503,110 @@ mod tests {
             include_str!("../../../../../re/tools/oracle_vectors/func_3e5b_natural.json"),
             copy_full_frame_to_back_buffer,
         );
+    }
+
+    #[test]
+    fn dirty_region_copies_match_every_original_vector() {
+        let vectors: Vec<DirtyRegionCopyOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_509d_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), DIRTY_REGION_COPY_ORACLE_VECTOR_COUNT);
+
+        for (case_index, vector) in vectors.iter().enumerate() {
+            let secondary: Vec<u8> = (0..LOGICAL_FRAMEBUFFER_PIXEL_COUNT)
+                .map(|index| {
+                    (index * SECONDARY_INDEX_MULTIPLIER
+                        + case_index * SECONDARY_CASE_MULTIPLIER
+                        + SECONDARY_COLOR_OFFSET) as u8
+                })
+                .collect();
+            let mut display: Vec<u8> = (0..LOGICAL_FRAMEBUFFER_PIXEL_COUNT)
+                .map(|index| {
+                    (index * DISPLAY_INDEX_MULTIPLIER
+                        + case_index * DISPLAY_CASE_MULTIPLIER
+                        + DISPLAY_COLOR_OFFSET) as u8
+                })
+                .collect();
+            let mut expected = display.clone();
+            for [start, width] in &vector.copied_rows {
+                let end = start + width;
+                expected[*start..end].copy_from_slice(&secondary[*start..end]);
+            }
+            let regions: Vec<BridgeSpriteRect> = vector
+                .rectangles
+                .iter()
+                .map(|rectangle| BridgeSpriteRect {
+                    left: rectangle[0],
+                    right: rectangle[1],
+                    top: rectangle[2],
+                    bottom: rectangle[3],
+                })
+                .collect();
+
+            let outcome = copy_dirty_regions_to_display(
+                vector.dirty_copy_flags & DIRTY_COPY_REQUESTED_FLAG != u8::MIN,
+                &regions,
+                &secondary,
+                &mut display,
+            )
+            .unwrap_or_else(|error| panic!("{}: {error}", vector.name));
+
+            assert_eq!(display, expected, "{}", vector.name);
+            assert_eq!(
+                outcome.copied_region_count,
+                if vector.dirty_copy_flags & DIRTY_COPY_REQUESTED_FLAG == u8::MIN {
+                    usize::MIN
+                } else {
+                    regions.len()
+                },
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                outcome.copied_row_count,
+                vector.copied_rows.len(),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                outcome.copied_pixel_count, vector.copied_bytes,
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    #[test]
+    fn invalid_dirty_region_is_rejected_before_any_copy() {
+        let secondary = vec![1; LOGICAL_FRAMEBUFFER_PIXEL_COUNT];
+        let mut display = vec![2; LOGICAL_FRAMEBUFFER_PIXEL_COUNT];
+        let before = display.clone();
+        let regions = [
+            BridgeSpriteRect {
+                left: 1,
+                right: 4,
+                top: 2,
+                bottom: 3,
+            },
+            BridgeSpriteRect {
+                left: 7,
+                right: 3,
+                top: 5,
+                bottom: 6,
+            },
+        ];
+
+        assert_eq!(
+            copy_dirty_regions_to_display(true, &regions, &secondary, &mut display),
+            Err(FramebufferCopyError::DirtyRegionOutsideDisplay {
+                left: 7,
+                right: 3,
+                top: 5,
+                bottom: 6,
+            })
+        );
+        assert_eq!(display, before);
     }
 
     #[test]

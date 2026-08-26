@@ -263,8 +263,8 @@ pub use diagnostics::{
     calculate_diagnostic_panel_layout, write_diagnostic_console_text,
 };
 pub use framebuffer_copy::{
-    ChunkyFramePresentation, FramebufferCopyError, FramebufferKind,
-    LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_WIDTH,
+    ChunkyFramePresentation, DirtyRegionCopyOutcome, FramebufferCopyError, FramebufferKind,
+    LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_WIDTH, copy_dirty_regions_to_display,
     copy_full_frame_to_back_buffer, copy_full_frame_to_display, copy_work_surface_span,
     fill_back_buffer_band, fill_display_band, present_chunky_frame,
 };

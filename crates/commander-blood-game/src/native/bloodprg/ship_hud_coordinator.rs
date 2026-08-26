@@ -146,7 +146,7 @@ pub trait ShipHudCoordinatorHost<RecordId> {
     fn remap_hud_band(&mut self, rows: Range<u16>);
     /// Commit dirty ship entities within the supplied inclusive range.
     fn commit_ship_entities(&mut self, entities: Range<u16>);
-    /// Copy secondary dirty regions into the primary list.
+    /// Copy dirty work-surface pixels into the display surface.
     fn copy_dirty_regions(&mut self);
     /// Advance the separately recovered target selector.
     fn update_target_selection(&mut self) -> ShipTargetSelectionOutcome<RecordId>;
