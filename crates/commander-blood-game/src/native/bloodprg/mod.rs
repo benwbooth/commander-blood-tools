@@ -25,6 +25,7 @@ mod bridge_frame;
 mod byte_move;
 mod camera_approach;
 mod camera_navigation;
+mod cd_audio;
 mod choice_list;
 mod clock;
 mod descript;
@@ -205,6 +206,12 @@ pub use camera_navigation::{
     CameraNavigationLocation, CameraNavigationOutcome, CameraNavigationPaletteTransition,
     CameraNavigationPresentation, CameraNavigationRegionPoll, CameraNavigationShipMode,
     CameraNavigationSlot, CameraNavigationState, update_camera_navigation,
+};
+pub use cd_audio::{
+    CdAudioChannelMix, CdAudioInputChannel, CdAudioPlaybackCommand, CdAudioPreparationOutcome,
+    CdAudioState, CdAudioTrackSpan, ENCOUNTER_CD_CHANNEL_MIX, ENCOUNTER_CD_CHANNEL_VOLUME,
+    ENCOUNTER_CD_TRACK_NUMBER, EncounterCdTrackMetadata, PackedCdPosition,
+    detect_cd_audio_source, play_cd_audio_track_two, prepare_cd_audio, stop_cd_audio,
 };
 pub use choice_list::{
     CHOICE_LIST_ROW_PITCH, CHOICE_LIST_WIDTH_PADDING, ChoiceListBackend, ChoiceListConfig,
