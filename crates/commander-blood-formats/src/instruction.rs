@@ -728,6 +728,68 @@ pub enum ScriptInstruction {
     Yield,
 }
 
+/// Complete typed semantic domain of one shipped BloodScript COD token.
+///
+/// The original executable dispatches these families through a native handler
+/// table. Grouping the already recovered family-specific values here gives the
+/// modern runtime one exhaustive input type without erasing distinctions that
+/// matter to the individual handlers.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum DecodedScriptInstruction {
+    /// A0-A5 or AA control-flow operation.
+    Control(ScriptInstruction),
+    /// A6 dialogue or subtitle instruction.
+    Text(ScriptText),
+    /// A7 optional presentation topic.
+    TopicOffer(ScriptTopicOffer),
+    /// A8 sequence-resource request.
+    SequenceRequest(ScriptSequenceRequest),
+    /// A9 mutable procedure gate.
+    ProcedureGate(ScriptProcedureGate),
+    /// AB procedure enable-state assignment.
+    ProcedureActivation(ScriptProcedureActivation),
+    /// AE or B0 masked shared-state operation.
+    SharedBit(ScriptSharedBitOperation),
+    /// B1, B4-B6, or BE-C0 shared-state operation.
+    SharedState(ScriptSharedStateOperation),
+    /// AD, AF, B2-B3, or BA-BC direct record operation.
+    DirectRecord(ScriptDirectRecordOperation),
+    /// B7 byte-backed bit flag operation.
+    BitFlag(ScriptBitFlagOperation),
+    /// B8, B9, or BD adjacent record pair assignment.
+    RecordPair(ScriptRecordPairOperation),
+    /// C1 navigation action-record operation.
+    RecordState(ScriptRecordStateOperation),
+    /// C2 aboard-object action-record operation.
+    AboardRecord(ScriptAboardRecordOperation),
+    /// C3 presentation-queue action-record operation.
+    PresentationQueue(ScriptPresentationQueueOperation),
+    /// C4 actor-presentation action-record operation.
+    ActorRecord(ScriptActorRecordOperation),
+    /// C5 world-state action-record operation.
+    WorldStateRecord(ScriptWorldStateRecordOperation),
+    /// C6 travel action-record operation.
+    TravelRecord(ScriptTravelRecordOperation),
+    /// C7 active-object action-record operation.
+    ActiveObjectRecord(ScriptActiveObjectRecordOperation),
+    /// C8 dormant opaque-marker action-record operation.
+    OpaqueMarkerRecord(ScriptOpaqueMarkerRecordOperation),
+    /// C9 action-record teardown.
+    RecordClear(ScriptRecordClearOperation),
+    /// CA signed-hour guard.
+    HourGuard(ScriptHourGuard),
+    /// CB month/day guard.
+    DateGuard(ScriptDateGuard),
+    /// CC DESCRIPT sequence-slot assignment.
+    SequenceSlotAssignment(ScriptSequenceSlotAssignment),
+    /// CD object-transfer operation.
+    Transfer(ScriptTransfer),
+    /// CE-D1 presentation-environment operation.
+    Environment(ScriptEnvironmentInstruction),
+    /// D2 script-profile replacement request.
+    ProfileRequest(ScriptProfileRequest),
+}
+
 /// Failure while converting a framed token into known instruction semantics.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ScriptInstructionError {
@@ -884,6 +946,116 @@ pub fn decode_script_instruction(
             opcode: token.opcode(),
         }),
     }
+}
+
+/// Decode any shipped COD opcode into one exhaustive semantic value.
+///
+/// The recovered AC handler is a second yield entry used by BAS selector
+/// blocks, but AC has no site in the five shipped COD images and remains owned
+/// by the BAS decoder. Any malformed or unsupported token remains an explicit
+/// error instead of entering the runtime as an opaque operation.
+pub fn decode_complete_script_instruction(
+    token: &ScriptToken,
+    state: &ScriptState,
+    directory: &ScriptDirectory,
+    dictionary: &ScriptDictionary,
+) -> Result<DecodedScriptInstruction, ScriptInstructionError> {
+    let decoded = match token.opcode().byte() {
+        GUARD_BEGIN_OPCODE | GUARD_END_OPCODE | RANDOM_GUARD_OPCODE | CONCEPT_GUARD_OPCODE
+        | JUMP_OPCODE | TIMER_STATE_OPCODE | YIELD_OPCODE => {
+            DecodedScriptInstruction::Control(decode_script_instruction(token, dictionary)?)
+        }
+        TEXT_OPCODE => DecodedScriptInstruction::Text(decode_script_text(token, dictionary)?),
+        TOPIC_OFFER_OPCODE => {
+            DecodedScriptInstruction::TopicOffer(decode_script_topic_offer(token, dictionary)?)
+        }
+        SEQUENCE_REQUEST_OPCODE => {
+            DecodedScriptInstruction::SequenceRequest(decode_script_sequence_request(token)?)
+        }
+        PROCEDURE_GATE_OPCODE => {
+            DecodedScriptInstruction::ProcedureGate(decode_script_procedure_gate(token, directory)?)
+        }
+        PROCEDURE_ACTIVATION_OPCODE => DecodedScriptInstruction::ProcedureActivation(
+            decode_script_procedure_activation(token, directory)?,
+        ),
+        SHARED_BIT_STATE_A_OPCODE | SHARED_BIT_STATE_B_OPCODE => {
+            DecodedScriptInstruction::SharedBit(decode_script_shared_bit_operation(token, state)?)
+        }
+        SHARED_STATE_A_OPCODE
+        | SHARED_STATE_B_OPCODE
+        | SHARED_STATE_C_OPCODE
+        | SHARED_STATE_D_OPCODE
+        | SHARED_STATE_E_OPCODE
+        | SHARED_STATE_F_OPCODE
+        | SHARED_STATE_G_OPCODE => DecodedScriptInstruction::SharedState(
+            decode_script_shared_state_operation(token, state)?,
+        ),
+        DIRECT_RECORD_A_OPCODE
+        | DIRECT_RECORD_B_OPCODE
+        | DIRECT_RECORD_C_OPCODE
+        | DIRECT_RECORD_D_OPCODE
+        | DIRECT_RECORD_E_OPCODE
+        | DIRECT_RECORD_F_OPCODE
+        | DIRECT_RECORD_TOPIC_OPCODE => DecodedScriptInstruction::DirectRecord(
+            decode_script_direct_record_operation(token, state, directory, dictionary)?,
+        ),
+        BIT_FLAG_OPCODE => {
+            DecodedScriptInstruction::BitFlag(decode_script_bit_flag_operation(token, state)?)
+        }
+        PAIR_RECORD_A_OPCODE | PAIR_RECORD_B_OPCODE | PAIR_RECORD_C_OPCODE => {
+            DecodedScriptInstruction::RecordPair(decode_script_record_pair_operation(token, state)?)
+        }
+        RECORD_STATE_OPCODE => DecodedScriptInstruction::RecordState(
+            decode_script_record_state_operation(token, state, directory)?,
+        ),
+        ABOARD_RECORD_OPCODE => DecodedScriptInstruction::AboardRecord(
+            decode_script_aboard_record_operation(token, state, directory)?,
+        ),
+        PRESENTATION_QUEUE_OPCODE => DecodedScriptInstruction::PresentationQueue(
+            decode_script_presentation_queue_operation(token, state, directory)?,
+        ),
+        ACTOR_RECORD_OPCODE => DecodedScriptInstruction::ActorRecord(
+            decode_script_actor_record_operation(token, state, directory)?,
+        ),
+        WORLD_STATE_RECORD_OPCODE => DecodedScriptInstruction::WorldStateRecord(
+            decode_script_world_state_record_operation(token, state, directory)?,
+        ),
+        TRAVEL_RECORD_OPCODE => DecodedScriptInstruction::TravelRecord(
+            decode_script_travel_record_operation(token, state, directory)?,
+        ),
+        ACTIVE_OBJECT_RECORD_OPCODE => DecodedScriptInstruction::ActiveObjectRecord(
+            decode_script_active_object_record_operation(token, state, directory)?,
+        ),
+        OPAQUE_MARKER_RECORD_OPCODE => DecodedScriptInstruction::OpaqueMarkerRecord(
+            decode_script_opaque_marker_record_operation(token, state)?,
+        ),
+        RECORD_CLEAR_OPCODE => DecodedScriptInstruction::RecordClear(
+            decode_script_record_clear_operation(token, state)?,
+        ),
+        HOUR_GUARD_OPCODE => DecodedScriptInstruction::HourGuard(decode_script_hour_guard(token)?),
+        DATE_GUARD_OPCODE => DecodedScriptInstruction::DateGuard(decode_script_date_guard(token)?),
+        SEQUENCE_SLOT_ASSIGNMENT_OPCODE => DecodedScriptInstruction::SequenceSlotAssignment(
+            decode_script_sequence_slot_assignment(token)?,
+        ),
+        TRANSFER_OPCODE => {
+            DecodedScriptInstruction::Transfer(decode_script_transfer(token, state, directory)?)
+        }
+        BRIDGE_ACTIVITY_GUARD_OPCODE
+        | ALTERNATE_CONCEPT_CLEAR_OPCODE
+        | TRAVEL_ACTIVITY_GUARD_OPCODE
+        | CONTACT_ACTIVITY_GUARD_OPCODE => {
+            DecodedScriptInstruction::Environment(decode_script_environment_instruction(token)?)
+        }
+        PROFILE_REQUEST_OPCODE => {
+            DecodedScriptInstruction::ProfileRequest(decode_script_profile_request(token)?)
+        }
+        _ => {
+            return Err(ScriptInstructionError::UntranslatedOpcode {
+                opcode: token.opcode(),
+            });
+        }
+    };
+    Ok(decoded)
 }
 
 /// Decode the complete authored structure of one A6 text token.
@@ -1886,6 +2058,48 @@ mod tests {
                 .count();
         }
         counts
+    }
+
+    #[test]
+    fn every_shipped_cod_token_has_one_complete_typed_decoding() {
+        let mut shipped_opcodes = BTreeSet::new();
+        let mut decoded_token_count = usize::MIN;
+
+        for profile in 1..=PROFILE_COUNT {
+            let code = decode_script_code(
+                &std::fs::read(original_asset(&format!("SCRIPT{profile}.COD"))).unwrap(),
+            )
+            .unwrap();
+            let directory = decode_script_directory(
+                &std::fs::read(original_asset(&format!("SCRIPT{profile}.DEB"))).unwrap(),
+            )
+            .unwrap();
+            let dictionary = decode_script_dictionary(
+                &std::fs::read(original_asset(&format!("SCRIPT{profile}.DIC"))).unwrap(),
+            )
+            .unwrap();
+            let state = decode_script_state(
+                &std::fs::read(original_asset(&format!("SCRIPT{profile}.VAR"))).unwrap(),
+                &directory,
+            )
+            .unwrap();
+
+            for token in code.tokens() {
+                decode_complete_script_instruction(token, &state, &directory, &dictionary)
+                    .unwrap_or_else(|error| {
+                        panic!(
+                            "profile {profile} token {} opcode {:#04X} lacks complete semantics: {error}",
+                            token.source_offset().index(),
+                            token.opcode().byte()
+                        )
+                    });
+                shipped_opcodes.insert(token.opcode().byte());
+                decoded_token_count += 1;
+            }
+        }
+
+        assert!(decoded_token_count > usize::MIN);
+        assert!(!shipped_opcodes.contains(&0xAC));
     }
 
     #[test]
