@@ -12,6 +12,17 @@ pub const INPUT_SELECTION_VISIBLE_ROWS: usize = 15;
 /// Bytes retained for one editable save-slot name.
 pub const SAVE_SLOT_NAME_LENGTH: usize = 16;
 const SELECTION_STEP: usize = 1;
+const SAVE_SLOT_CHARACTER_LIMIT: usize = 14;
+const SAVE_SLOT_ENTER_KEY: u8 = b'\r';
+const SAVE_SLOT_BACKSPACE_KEY: u8 = 8;
+const SAVE_SLOT_ROW_HEIGHT: u16 = 10;
+const SAVE_SLOT_ROW_PITCH: u16 = 11;
+const SAVE_SLOT_ROW_TOP: u16 = 39;
+const SAVE_SLOT_TEXT_INSET: u16 = 10;
+const SAVE_SLOT_TEXT_Y_INSET: u16 = 1;
+const SAVE_SLOT_BACKGROUND_PALETTE_INDEX: u8 = 232;
+const SAVE_SLOT_TEXT_PALETTE_INDEX: u8 = 239;
+const ERASED_SAVE_SLOT_CHARACTER: u8 = b' ';
 
 /// Directory supplying rows to the active selection window.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -84,6 +95,52 @@ pub struct SaveMenuState {
     pub edit_name: SaveSlotName,
 }
 
+/// Logical geometry supplied by the surrounding save/load menu.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SaveSlotEditorLayout {
+    /// Horizontal origin of each save-slot row.
+    pub row_x: u16,
+    /// Width of each save-slot row.
+    pub row_width: u16,
+}
+
+/// Logical rectangle cleared behind the active save-slot name.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SaveSlotEditorRectangle {
+    /// Horizontal origin.
+    pub x: u16,
+    /// Vertical origin.
+    pub y: u16,
+    /// Width in logical pixels.
+    pub width: u16,
+    /// Height in logical pixels.
+    pub height: u16,
+}
+
+/// Renderer-independent draw plan for the active save-slot row.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SaveSlotEditorFrame {
+    /// Row cleared before rendering the edited name.
+    pub clear_region: SaveSlotEditorRectangle,
+    /// Palette index used to clear the row.
+    pub background_palette_index: u8,
+    /// Current fixed-width name rendered in the row.
+    pub name: SaveSlotName,
+    /// Logical text origin.
+    pub text_position: [u16; 2],
+    /// Palette index used by the square-cap font.
+    pub text_palette_index: u8,
+}
+
+/// Result of one save-slot editor update.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SaveSlotEditorOutcome {
+    /// The edit remains active and the returned row must be rendered.
+    Editing(SaveSlotEditorFrame),
+    /// Enter committed the complete fixed-width name without another draw.
+    Committed,
+}
+
 /// Invalid typed input-selection state.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum InputSelectionError {
@@ -93,6 +150,13 @@ pub enum InputSelectionError {
         selected: usize,
         /// Number of owned slot names.
         slot_count: usize,
+    },
+    /// The shared native name length would address outside the owned name.
+    InvalidSaveSlotNameLength {
+        /// Invalid externally computed length.
+        length: usize,
+        /// Number of bytes in one owned slot name.
+        capacity: usize,
     },
 }
 
@@ -219,6 +283,69 @@ pub fn accept_input_selection(
     Some(committed)
 }
 
+/// Apply one key and produce the active save-slot row draw plan.
+///
+/// This translates `save_slot_name_edit_step` at BLOODPRG routine offset
+/// `0x001DD8`. It retains the lowercase-and-digit input domain, the authored
+/// length-14 insertion stop, Backspace replacement with a space, full 16-byte
+/// Enter commit, low-byte row selection, wrapping screen coordinates, and the
+/// exact row colors. Owned names and logical rectangles replace unchecked near
+/// copies and direct VGA draw calls.
+pub fn update_save_slot_editor(
+    state: &mut SaveMenuState,
+    name_length: usize,
+    key: Option<u8>,
+    layout: SaveSlotEditorLayout,
+) -> Result<SaveSlotEditorOutcome, InputSelectionError> {
+    if name_length > SAVE_SLOT_NAME_LENGTH {
+        return Err(InputSelectionError::InvalidSaveSlotNameLength {
+            length: name_length,
+            capacity: SAVE_SLOT_NAME_LENGTH,
+        });
+    }
+
+    if let Some(key) = key {
+        if key == SAVE_SLOT_ENTER_KEY {
+            if name_length != usize::MIN {
+                validate_save_slot(state)?;
+                state.slot_names[state.selected_slot] = state.edit_name;
+                return Ok(SaveSlotEditorOutcome::Committed);
+            }
+        } else if key.is_ascii_digit() || key.is_ascii_lowercase() {
+            if name_length != SAVE_SLOT_CHARACTER_LIMIT {
+                let Some(character) = state.edit_name.0.get_mut(name_length) else {
+                    return Err(InputSelectionError::InvalidSaveSlotNameLength {
+                        length: name_length,
+                        capacity: SAVE_SLOT_NAME_LENGTH,
+                    });
+                };
+                *character = key;
+            }
+        } else if key == SAVE_SLOT_BACKSPACE_KEY && name_length != usize::MIN {
+            state.edit_name.0[name_length - 1] = ERASED_SAVE_SLOT_CHARACTER;
+        }
+    }
+
+    let row_y = u16::from(state.selected_slot as u8)
+        .wrapping_mul(SAVE_SLOT_ROW_PITCH)
+        .wrapping_add(SAVE_SLOT_ROW_TOP);
+    Ok(SaveSlotEditorOutcome::Editing(SaveSlotEditorFrame {
+        clear_region: SaveSlotEditorRectangle {
+            x: layout.row_x,
+            y: row_y,
+            width: layout.row_width,
+            height: SAVE_SLOT_ROW_HEIGHT,
+        },
+        background_palette_index: SAVE_SLOT_BACKGROUND_PALETTE_INDEX,
+        name: state.edit_name,
+        text_position: [
+            layout.row_x.wrapping_add(SAVE_SLOT_TEXT_INSET),
+            row_y.wrapping_add(SAVE_SLOT_TEXT_Y_INSET),
+        ],
+        text_palette_index: SAVE_SLOT_TEXT_PALETTE_INDEX,
+    }))
+}
+
 fn validate_save_slot(save_menu: &SaveMenuState) -> Result<(), InputSelectionError> {
     if save_menu.selected_slot < save_menu.slot_names.len() {
         Ok(())
@@ -248,6 +375,9 @@ mod tests {
     const ACCEPT_VECTOR_COUNT: usize = 3;
     const ENTER_KEY_BYTE: u8 = b'\r';
     const ORIGINAL_NO_COMMIT_SENTINEL: u16 = 0x7777;
+    const SAVE_EDITOR_VECTOR_COUNT: usize = 10;
+    const INITIAL_EDIT_NAME: [u8; SAVE_SLOT_NAME_LENGTH] = *b"alpha beta      ";
+    const INITIAL_ACTIVE_NAME: [u8; SAVE_SLOT_NAME_LENGTH] = [b'm'; SAVE_SLOT_NAME_LENGTH];
 
     #[derive(Deserialize)]
     struct InputHandlerOracle {
@@ -255,10 +385,170 @@ mod tests {
     }
 
     #[derive(Deserialize)]
+    struct SaveEditorOracle {
+        name: String,
+        key: u8,
+        name_length: usize,
+        selected_index: usize,
+        edit_buffer_hex: String,
+        active_name_hex: String,
+        committed: bool,
+        calls: Vec<serde_json::Value>,
+    }
+
+    #[derive(Deserialize)]
     struct InputHandlerVectors {
         move_previous: Vec<MovementOracle>,
         move_next: Vec<MovementOracle>,
         accept: Vec<AcceptOracle>,
+    }
+
+    #[test]
+    fn save_slot_editor_matches_every_original_vector() {
+        let vectors: Vec<SaveEditorOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_1dd8_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), SAVE_EDITOR_VECTOR_COUNT);
+
+        for vector in vectors {
+            let mut state = SaveMenuState {
+                selected_slot: vector.selected_index,
+                slot_names: vec![
+                    SaveSlotName::from_bytes(INITIAL_ACTIVE_NAME);
+                    vector.selected_index.min(4) + 1
+                ],
+                edit_name: SaveSlotName::from_bytes(INITIAL_EDIT_NAME),
+            };
+            let first_call = vector.calls.first();
+            let layout = SaveSlotEditorLayout {
+                row_x: first_call
+                    .and_then(|call| call.get("x"))
+                    .and_then(serde_json::Value::as_u64)
+                    .unwrap_or(50) as u16,
+                row_width: first_call
+                    .and_then(|call| call.get("width"))
+                    .and_then(serde_json::Value::as_u64)
+                    .unwrap_or(140) as u16,
+            };
+            let outcome = update_save_slot_editor(
+                &mut state,
+                vector.name_length,
+                (vector.key != u8::MIN).then_some(vector.key),
+                layout,
+            )
+            .unwrap_or_else(|error| panic!("{}: {error}", vector.name));
+
+            assert_eq!(
+                state.edit_name.bytes(),
+                decode_fixed_name(&vector.edit_buffer_hex),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                matches!(outcome, SaveSlotEditorOutcome::Committed),
+                vector.committed,
+                "{}",
+                vector.name
+            );
+            if vector.committed {
+                assert_eq!(
+                    state.slot_names[state.selected_slot].bytes(),
+                    decode_fixed_name(&vector.active_name_hex),
+                    "{}",
+                    vector.name
+                );
+                assert!(vector.calls.is_empty(), "{}", vector.name);
+            } else {
+                let SaveSlotEditorOutcome::Editing(frame) = outcome else {
+                    unreachable!()
+                };
+                let clear = &vector.calls[0];
+                let text = &vector.calls[1];
+                assert_eq!(
+                    frame.clear_region.x,
+                    clear["x"].as_u64().unwrap() as u16,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    frame.clear_region.y,
+                    clear["y"].as_u64().unwrap() as u16,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    frame.clear_region.width,
+                    clear["width"].as_u64().unwrap() as u16,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    frame.clear_region.height,
+                    clear["height"].as_u64().unwrap() as u16,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    frame.background_palette_index,
+                    clear["color"].as_u64().unwrap() as u8,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    frame.text_position[0],
+                    text["x"].as_u64().unwrap() as u16,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    frame.text_position[1],
+                    text["y"].as_u64().unwrap() as u16,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    frame.text_palette_index,
+                    text["color"].as_u64().unwrap() as u8,
+                    "{}",
+                    vector.name
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn save_slot_editor_rejects_a_flat_name_index_outside_the_owned_field() {
+        let mut state = SaveMenuState {
+            selected_slot: usize::MIN,
+            slot_names: vec![SaveSlotName::default()],
+            edit_name: SaveSlotName::default(),
+        };
+
+        assert_eq!(
+            update_save_slot_editor(
+                &mut state,
+                SAVE_SLOT_NAME_LENGTH + 1,
+                Some(b'a'),
+                SaveSlotEditorLayout {
+                    row_x: u16::MIN,
+                    row_width: u16::MIN,
+                },
+            ),
+            Err(InputSelectionError::InvalidSaveSlotNameLength {
+                length: SAVE_SLOT_NAME_LENGTH + 1,
+                capacity: SAVE_SLOT_NAME_LENGTH,
+            })
+        );
+    }
+
+    fn decode_fixed_name(encoded: &str) -> [u8; SAVE_SLOT_NAME_LENGTH] {
+        assert_eq!(encoded.len(), SAVE_SLOT_NAME_LENGTH * 2);
+        let mut bytes = [u8::MIN; SAVE_SLOT_NAME_LENGTH];
+        for (index, byte) in bytes.iter_mut().enumerate() {
+            *byte = u8::from_str_radix(&encoded[index * 2..index * 2 + 2], 16).unwrap();
+        }
+        bytes
     }
 
     #[derive(Deserialize)]

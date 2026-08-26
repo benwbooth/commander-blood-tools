@@ -278,8 +278,9 @@ pub use input_cancel::{
 pub use input_selection::{
     INPUT_SELECTION_VISIBLE_ROWS, InputDirectoryRowId, InputSelectionError,
     InputSelectionSource, InputSelectionState, SAVE_SLOT_NAME_LENGTH, SaveMenuState,
-    SaveSlotName, accept_input_selection, move_input_selection_next,
-    move_input_selection_previous,
+    SaveSlotEditorFrame, SaveSlotEditorLayout, SaveSlotEditorOutcome,
+    SaveSlotEditorRectangle, SaveSlotName, accept_input_selection,
+    move_input_selection_next, move_input_selection_previous, update_save_slot_editor,
 };
 pub use location_panel::{
     LocationInfoPanelContext, LocationInfoPanelHost, LocationInfoPanelOutcome,
