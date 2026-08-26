@@ -21,13 +21,14 @@ use crate::assets::{
 };
 use crate::native::alien::{AlienInputAction, AlienMouseSample, AlienScene};
 use crate::native::bloodprg::{
-    BridgeScene, BridgeSceneInput, BridgeSteeringInteraction, ShipProjectionResources,
+    BridgeScene, BridgeSceneInput, BridgeSteeringInteraction, InputAction, PointerButton,
+    PointerButtons, ShipProjectionResources,
 };
 use crate::native::manu3::animation::CursorPosition;
 use crate::native::manu3::model::{Manu3FrameRequest, Manu3Model};
 use crate::native::random::BloodPrng;
 use crate::render::Renderer;
-use crate::runtime::{OriginalGameData, OriginalGameDataPaths};
+use crate::runtime::{OriginalGameData, OriginalGameDataPaths, RuntimeInputHost};
 
 const DEFAULT_WINDOW_WIDTH: u32 = 1280;
 const DEFAULT_WINDOW_HEIGHT: u32 = 960;
@@ -38,12 +39,9 @@ const ORIGINAL_DISPLAY_ASPECT_WIDTH: f32 = 4.0;
 const ORIGINAL_DISPLAY_ASPECT_HEIGHT: f32 = 3.0;
 const ORIGINAL_SCREEN_WIDTH: f32 = 320.0;
 const ORIGINAL_SCREEN_HEIGHT: f32 = 200.0;
-const VIEWPORT_CENTER_DIVISOR: f32 = 2.0;
 const INITIAL_CURSOR: CursorPosition = CursorPosition { x: 160, y: 100 };
 const ALIEN_DRIVER_WIDTH: u32 = 640;
 const ALIEN_DRIVER_HEIGHT: u32 = 1_024;
-const PRIMARY_MOUSE_BUTTON: u16 = 0x0001;
-const SECONDARY_MOUSE_BUTTON: u16 = 0x0002;
 const SECONDS_PER_MINUTE: u64 = 60;
 const DECIMAL_RADIX: u8 = 10;
 const PACKED_BCD_DIGIT_SHIFT: u32 = 4;
@@ -286,8 +284,9 @@ pub fn run() -> Result<()> {
         bridge_palette.as_ref(),
     )?;
     let mut events = sdl.event_pump().map_err(anyhow::Error::msg)?;
+    video.text_input().start(&window);
     let mut rendered_frames = u64::MIN;
-    let mut cursor = INITIAL_CURSOR;
+    let mut input = RuntimeInputHost::new([INITIAL_CURSOR.x, INITIAL_CURSOR.y]);
     let mut bridge_horizontal_delta = NO_MOUSE_MOTION;
 
     'running: loop {
@@ -311,14 +310,9 @@ pub fn run() -> Result<()> {
                     );
                 }
                 Event::MouseMotion {
-                    window_id,
-                    x,
-                    y,
-                    xrel,
-                    ..
+                    window_id, xrel, ..
                 } if window_id == window.id() => {
                     let (width, height) = window.size();
-                    cursor = map_cursor_to_original(width as f32, height as f32, x, y);
                     bridge_horizontal_delta +=
                         map_horizontal_delta_to_original(width as f32, height as f32, xrel);
                 }
@@ -326,19 +320,40 @@ pub fn run() -> Result<()> {
                     keycode: Some(keycode),
                     ..
                 } => {
-                    if let Some(scene) = &mut alien {
-                        let action = match keycode {
-                            Keycode::Up => AlienInputAction::IncreaseDepth,
-                            Keycode::Down => AlienInputAction::DecreaseDepth,
-                            Keycode::Space => AlienInputAction::Interact,
-                            _ => AlienInputAction::None,
-                        };
-                        if action != AlienInputAction::None {
-                            scene.control.queue_action(action);
-                        }
-                    }
+                    input.queue_keycode(keycode);
+                }
+                Event::TextInput {
+                    window_id, text, ..
+                } if window_id == window.id() => {
+                    input.queue_text(&text);
                 }
                 _ => {}
+            }
+        }
+
+        let mouse = events.mouse_state();
+        let (window_width, window_height) = window.size();
+        let pointer_buttons = pointer_buttons(&mouse);
+        let pointer_sample = input.poll_pointer(
+            [window_width as f32, window_height as f32],
+            [mouse.x(), mouse.y()],
+            pointer_buttons,
+        );
+        input.update_pointer_buttons();
+        let cursor = CursorPosition {
+            x: pointer_sample.position[0],
+            y: pointer_sample.position[1],
+        };
+        let dispatched_action = input.dispatch_next(false);
+        if let (Some(scene), Some(action)) = (&mut alien, dispatched_action) {
+            let alien_action = match action {
+                InputAction::MovePrevious => AlienInputAction::IncreaseDepth,
+                InputAction::MoveNext => AlienInputAction::DecreaseDepth,
+                InputAction::Cancel => AlienInputAction::Interact,
+                _ => AlienInputAction::None,
+            };
+            if alien_action != AlienInputAction::None {
+                scene.control.queue_action(alien_action);
             }
         }
 
@@ -354,18 +369,14 @@ pub fn run() -> Result<()> {
             .unwrap_or(&[]);
         let alien_frame = alien
             .as_mut()
-            .map(|scene| {
-                let mouse = events.mouse_state();
-                scene.step(map_cursor_to_alien(cursor, pointer_buttons(&mouse)))
-            })
+            .map(|scene| scene.step(map_cursor_to_alien(cursor, pointer_buttons.bits())))
             .transpose()?;
         let bridge_frame = bridge
             .as_mut()
             .map(|scene| {
-                let mouse = events.mouse_state();
                 scene.render_frame(BridgeSceneInput {
                     horizontal_delta: bridge_horizontal_delta.round() as i32,
-                    pointer_buttons: pointer_buttons(&mouse),
+                    pointer_buttons: pointer_buttons.bits(),
                     interaction: BridgeSteeringInteraction::Free,
                 })
             })
@@ -383,15 +394,15 @@ pub fn run() -> Result<()> {
     Ok(())
 }
 
-fn pointer_buttons(mouse: &sdl3::mouse::MouseState) -> u16 {
-    let mut buttons = u16::MIN;
+fn pointer_buttons(mouse: &sdl3::mouse::MouseState) -> PointerButtons {
+    let mut buttons = PointerButtons::NONE.bits();
     if mouse.is_mouse_button_pressed(MouseButton::Left) {
-        buttons |= PRIMARY_MOUSE_BUTTON;
+        buttons |= PointerButton::Primary as u16;
     }
     if mouse.is_mouse_button_pressed(MouseButton::Right) {
-        buttons |= SECONDARY_MOUSE_BUTTON;
+        buttons |= PointerButton::Secondary as u16;
     }
-    buttons
+    PointerButtons::from_bits(buttons)
 }
 
 fn host_clock_seed_byte() -> Result<u8> {
@@ -430,28 +441,6 @@ fn map_cursor_to_alien(cursor: CursorPosition, buttons: u16) -> AlienMouseSample
     }
 }
 
-fn map_cursor_to_original(
-    output_width: f32,
-    output_height: f32,
-    cursor_x: f32,
-    cursor_y: f32,
-) -> CursorPosition {
-    let scale = (output_width / ORIGINAL_DISPLAY_ASPECT_WIDTH)
-        .min(output_height / ORIGINAL_DISPLAY_ASPECT_HEIGHT);
-    let viewport_width = ORIGINAL_DISPLAY_ASPECT_WIDTH * scale;
-    let viewport_height = ORIGINAL_DISPLAY_ASPECT_HEIGHT * scale;
-    let viewport_x = (output_width - viewport_width) / VIEWPORT_CENTER_DIVISOR;
-    let viewport_y = (output_height - viewport_height) / VIEWPORT_CENTER_DIVISOR;
-    let x = ((cursor_x - viewport_x) * ORIGINAL_SCREEN_WIDTH / viewport_width)
-        .clamp(0.0, ORIGINAL_SCREEN_WIDTH - 1.0);
-    let y = ((cursor_y - viewport_y) * ORIGINAL_SCREEN_HEIGHT / viewport_height)
-        .clamp(0.0, ORIGINAL_SCREEN_HEIGHT - 1.0);
-    CursorPosition {
-        x: x as i16,
-        y: y as i16,
-    }
-}
-
 fn map_horizontal_delta_to_original(
     output_width: f32,
     output_height: f32,
@@ -476,38 +465,24 @@ mod tests {
     const LAST_CLOCK_SECOND_BCD: u8 = 0x59;
 
     #[test]
-    fn mouse_coordinates_follow_the_letterboxed_original_display() {
-        assert_eq!(
-            map_cursor_to_original(
-                WIDESCREEN_WIDTH,
-                WIDESCREEN_HEIGHT,
-                WIDESCREEN_WIDTH / VIEWPORT_CENTER_DIVISOR,
-                WIDESCREEN_HEIGHT / VIEWPORT_CENTER_DIVISOR,
-            ),
-            INITIAL_CURSOR
-        );
-        assert_eq!(
-            map_cursor_to_original(WIDESCREEN_WIDTH, WIDESCREEN_HEIGHT, 0.0, 0.0),
-            CursorPosition { x: 0, y: 0 }
-        );
-    }
-
-    #[test]
     fn original_cursor_maps_to_the_alien_driver_range_without_pointer_warping() {
         assert_eq!(
-            map_cursor_to_alien(INITIAL_CURSOR, PRIMARY_MOUSE_BUTTON),
+            map_cursor_to_alien(INITIAL_CURSOR, PointerButton::Primary as u16),
             AlienMouseSample {
                 x: 320,
                 y: 512,
-                buttons: PRIMARY_MOUSE_BUTTON,
+                buttons: PointerButton::Primary as u16,
             }
         );
         assert_eq!(
-            map_cursor_to_alien(CursorPosition { x: 0, y: 0 }, SECONDARY_MOUSE_BUTTON),
+            map_cursor_to_alien(
+                CursorPosition { x: 0, y: 0 },
+                PointerButton::Secondary as u16,
+            ),
             AlienMouseSample {
                 x: 0,
                 y: 0,
-                buttons: SECONDARY_MOUSE_BUTTON,
+                buttons: PointerButton::Secondary as u16,
             }
         );
     }

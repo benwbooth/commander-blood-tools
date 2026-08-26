@@ -1,10 +1,12 @@
 //! Original-data discovery and flat runtime bootstrap.
 
 mod bios_font;
+mod input;
 mod startup;
 mod state;
 
 pub use bios_font::VGA_BIOS_FONT_8X8;
+pub use input::{RuntimeInputHost, map_host_pointer_to_logical};
 pub use state::{
     IndexedFramebuffer, LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_PIXEL_COUNT,
     LOGICAL_FRAMEBUFFER_WIDTH, OriginalGameRuntime, RuntimeAssetLoadStatus,
