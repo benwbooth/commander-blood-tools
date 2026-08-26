@@ -418,8 +418,10 @@ pub use presentation_mode::{
 };
 pub use presentation_queue::{
     PresentationQueueAdvance, PresentationQueueClock, PresentationQueueClockGates,
+    PresentationEntryActivationRequest, PresentationEntryReadiness, PresentationEntryStorage,
     PresentationQueueConsumeOutcome, PresentationQueueError, PresentationQueueState,
-    presentation_queue_advance_due, presentation_resource_enabled,
+    presentation_entry_activation_request, presentation_queue_advance_due,
+    presentation_resource_enabled,
 };
 pub use presentation_raster::{
     PresentationRasterError, PresentationRectBlitOutcome, PresentationScanlineState,

@@ -9,6 +9,8 @@ const QUEUE_ACCOUNTING_BYTE_COUNT: usize = 10;
 const SOURCE_ROLLOVER_FLAG: u16 = 128;
 const SOURCE_FINISHED_FLAG: u8 = 1;
 const QUEUE_CLOSED_FLAG: u8 = 2;
+const LINK_ENTRY_MARKER: u16 = 0x6D6D;
+const ALTERNATE_ENTRY_STORAGE_FLAG: u16 = 0x0040;
 const AUDIO_CLOCK_PERIOD: u16 = 16_384;
 const AUDIO_ADVANCE_THRESHOLD: u16 = 920;
 
@@ -76,6 +78,20 @@ pub enum PresentationQueueError {
         /// Requested occupancy increase.
         byte_count: usize,
     },
+    /// Queue storage is empty, truncated, or disagrees with the owned capacity.
+    BufferUnavailable {
+        /// Queue capacity required by the state.
+        required: usize,
+        /// Bytes available in the owned buffer.
+        available: usize,
+    },
+    /// The next entry header begins outside the owned circular buffer.
+    TailOutsideBuffer {
+        /// Requested header position.
+        tail: usize,
+        /// Available circular-buffer bytes.
+        capacity: usize,
+    },
 }
 
 impl fmt::Display for PresentationQueueError {
@@ -93,6 +109,110 @@ pub struct PresentationQueueConsumeOutcome {
     pub wrapped: bool,
     /// Tail position selected for the next entry.
     pub next_tail: usize,
+}
+
+/// Owned storage selected for an entry that requires decompression.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PresentationEntryStorage {
+    /// Primary reusable presentation buffer.
+    Default,
+    /// Alternate buffer selected by the resource flag.
+    Alternate,
+}
+
+/// Arguments passed from readiness checking to typed entry activation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PresentationEntryActivationRequest {
+    /// Complete queue entry extent including its extent word.
+    pub entry_extent: usize,
+    /// First payload byte after the extent word in the circular buffer.
+    pub payload_offset: usize,
+    /// Reusable destination buffer selected for this entry.
+    pub storage: PresentationEntryStorage,
+}
+
+/// Result of checking whether the queue can publish an active entry.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PresentationEntryReadiness {
+    /// An entry is already active and remains ready for presentation.
+    AlreadyActive,
+    /// No complete entry is currently available.
+    NotReady,
+    /// A complete entry should be parsed and activated.
+    Activate(PresentationEntryActivationRequest),
+}
+
+impl PresentationEntryReadiness {
+    /// Return the Boolean result exposed by the original routine.
+    pub const fn is_ready(self) -> bool {
+        !matches!(self, Self::NotReady)
+    }
+}
+
+fn circular_word(buffer: &[u8], offset: usize) -> Result<u16, PresentationQueueError> {
+    if buffer.is_empty() {
+        return Err(PresentationQueueError::BufferUnavailable {
+            required: size_of::<u16>(),
+            available: usize::MIN,
+        });
+    }
+    if offset >= buffer.len() {
+        return Err(PresentationQueueError::TailOutsideBuffer {
+            tail: offset,
+            capacity: buffer.len(),
+        });
+    }
+    let next = (offset + size_of::<u8>()) % buffer.len();
+    Ok(u16::from_le_bytes([buffer[offset], buffer[next]]))
+}
+
+/// Select a complete queue entry for typed activation.
+///
+/// This translates `list_d8c_activate_ready` at BLOODPRG offset `0x00A20C`.
+/// Circular byte positions retain the queue's authored wrap behavior, while
+/// native storage segments become an explicit destination choice.
+pub fn presentation_entry_activation_request(
+    queue: &PresentationQueueState,
+    buffer: &[u8],
+    resource_flags: u16,
+) -> Result<PresentationEntryReadiness, PresentationQueueError> {
+    if queue.active_entry {
+        return Ok(PresentationEntryReadiness::AlreadyActive);
+    }
+    if queue.queued_bytes == usize::MIN {
+        return Ok(PresentationEntryReadiness::NotReady);
+    }
+    if queue.buffer_capacity == usize::MIN || queue.buffer_capacity > buffer.len() {
+        return Err(PresentationQueueError::BufferUnavailable {
+            required: queue.buffer_capacity,
+            available: buffer.len(),
+        });
+    }
+    if queue.tail >= queue.buffer_capacity {
+        return Err(PresentationQueueError::TailOutsideBuffer {
+            tail: queue.tail,
+            capacity: queue.buffer_capacity,
+        });
+    }
+
+    let entry_extent = usize::from(circular_word(buffer, queue.tail)?);
+    let payload_offset = (queue.tail + size_of::<u16>()) % queue.buffer_capacity;
+    let marker = circular_word(buffer, payload_offset)?;
+    if marker != LINK_ENTRY_MARKER && queue.queued_bytes < entry_extent {
+        return Ok(PresentationEntryReadiness::NotReady);
+    }
+    let storage = if resource_flags & ALTERNATE_ENTRY_STORAGE_FLAG == u16::MIN {
+        PresentationEntryStorage::Default
+    } else {
+        PresentationEntryStorage::Alternate
+    };
+    Ok(PresentationEntryReadiness::Activate(
+        PresentationEntryActivationRequest {
+            entry_extent,
+            payload_offset,
+            storage,
+        },
+    ))
 }
 
 impl PresentationQueueState {
@@ -395,6 +515,8 @@ mod tests {
     const ENQUEUE_FLAT_VECTOR_COUNT: usize = 2;
     const RESET_VECTOR_COUNT: usize = 5;
     const BOUNDS_VECTOR_COUNT: usize = 20;
+    const ACTIVATE_READY_VECTOR_COUNT: usize = 7;
+    const CIRCULAR_TEST_CAPACITY: usize = u16::MAX as usize + 1;
 
     #[derive(Deserialize)]
     struct RolloverOracle {
@@ -491,6 +613,96 @@ mod tests {
         name: String,
         buffer_end: u16,
         result_wrap_limit: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct ActivateReadyOracle {
+        name: String,
+        ready: bool,
+        active_segment: u16,
+        queued_bytes: usize,
+        entry_extent: u16,
+        entry_marker: u16,
+        resource_flags: u16,
+        calls: Vec<ActivateCall>,
+    }
+
+    #[derive(Deserialize)]
+    struct ActivateCall {
+        entry_offset: u16,
+    }
+
+    fn write_circular_word(buffer: &mut [u8], offset: usize, value: u16) {
+        let bytes = value.to_le_bytes();
+        let next = (offset + size_of::<u8>()) % buffer.len();
+        buffer[offset] = bytes[0];
+        buffer[next] = bytes[1];
+    }
+
+    #[test]
+    fn activation_readiness_matches_every_original_vector() {
+        let vectors: Vec<ActivateReadyOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_a20c_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), ACTIVATE_READY_VECTOR_COUNT);
+
+        for vector in vectors {
+            let expected_payload = vector
+                .calls
+                .first()
+                .map(|call| usize::from(call.entry_offset));
+            let tail = expected_payload.map_or(usize::MIN, |payload| {
+                (payload + CIRCULAR_TEST_CAPACITY - size_of::<u16>()) % CIRCULAR_TEST_CAPACITY
+            });
+            let mut buffer = vec![0xCC; CIRCULAR_TEST_CAPACITY];
+            write_circular_word(&mut buffer, tail, vector.entry_extent);
+            write_circular_word(
+                &mut buffer,
+                (tail + size_of::<u16>()) % CIRCULAR_TEST_CAPACITY,
+                vector.entry_marker,
+            );
+            let queue = PresentationQueueState {
+                tail,
+                queued_bytes: vector.queued_bytes,
+                buffer_capacity: buffer.len(),
+                active_entry: vector.active_segment != u16::MIN,
+                ..PresentationQueueState::default()
+            };
+            let result =
+                presentation_entry_activation_request(&queue, &buffer, vector.resource_flags)
+                    .unwrap();
+            assert_eq!(result.is_ready(), vector.ready, "{}", vector.name);
+
+            match (result, expected_payload) {
+                (PresentationEntryReadiness::AlreadyActive, None) => {
+                    assert_ne!(vector.active_segment, u16::MIN, "{}", vector.name);
+                }
+                (PresentationEntryReadiness::NotReady, None) => {
+                    assert_eq!(vector.active_segment, u16::MIN, "{}", vector.name);
+                }
+                (PresentationEntryReadiness::Activate(request), Some(payload_offset)) => {
+                    assert_eq!(request.entry_extent, usize::from(vector.entry_extent));
+                    assert_eq!(request.payload_offset, payload_offset, "{}", vector.name);
+                    assert_eq!(
+                        request.storage,
+                        if vector.resource_flags & ALTERNATE_ENTRY_STORAGE_FLAG == u16::MIN {
+                            PresentationEntryStorage::Default
+                        } else {
+                            PresentationEntryStorage::Alternate
+                        },
+                        "{}",
+                        vector.name
+                    );
+                }
+                (actual, expected) => {
+                    panic!(
+                        "{}: activation result {actual:?}, expected {expected:?}",
+                        vector.name
+                    )
+                }
+            }
+        }
     }
 
     #[test]
