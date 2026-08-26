@@ -199,6 +199,11 @@ impl OriginalGameRuntime {
         self.bridge_panorama.as_ref()
     }
 
+    /// Transfer the decoded panorama to the live bridge scene.
+    pub fn take_bridge_panorama(&mut self) -> Option<BridgePanoramaArchive> {
+        self.bridge_panorama.take()
+    }
+
     /// Decode `CHART.FD` into the retained logical background.
     pub fn initialize_back_buffer(&mut self) -> Result<PbmDecodeResult> {
         let bytes = self

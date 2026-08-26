@@ -1,9 +1,14 @@
 //! Concrete runtime services assembled for the recovered top-level lifecycle.
 
 use anyhow::{Context, Result, bail};
+use commander_blood_formats::bloodprg::decode_bloodprg_bridge_resources;
 use sdl3::video::Window;
 
-use crate::native::bloodprg::{BridgeSceneFrame, PbmDecodeResult, StartupPreparationOutcome};
+use crate::native::bloodprg::{
+    BridgeScene, BridgeSceneFrame, BridgeSceneInput, PbmDecodeResult, ShipProjectionResources,
+    StartupPreparationOutcome,
+};
+use crate::native::random::BloodPrng;
 
 use super::{
     OriginalGameData, OriginalGameRuntime, RuntimeAssetLoadStatus, RuntimeInputHost,
@@ -22,6 +27,8 @@ pub struct ModernGameServices<'window> {
     runtime: OriginalGameRuntime,
     input: RuntimeInputHost,
     presentation: RuntimePresentationHost<'window>,
+    bridge_scene: Option<BridgeScene>,
+    bridge_frame: Option<BridgeSceneFrame>,
     main_viewport_configured: bool,
 }
 
@@ -34,6 +41,8 @@ impl<'window> ModernGameServices<'window> {
             runtime,
             input: RuntimeInputHost::new(INITIAL_LOGICAL_POINTER),
             presentation,
+            bridge_scene: None,
+            bridge_frame: None,
             main_viewport_configured: false,
         })
     }
@@ -70,6 +79,30 @@ impl<'window> ModernGameServices<'window> {
         self.runtime.open_bridge_panorama()
     }
 
+    /// Construct the live bridge and consume its exact startup PRNG sequence.
+    pub fn initialize_bridge_scene(&mut self, packed_clock_seed: u8) -> Result<()> {
+        if self.bridge_scene.is_some() {
+            bail!("bridge scene is already initialized");
+        }
+        let resources = decode_bloodprg_bridge_resources(self.runtime.data().executable())
+            .context("decoding bridge projection resources")?;
+        let panorama = self
+            .runtime
+            .take_bridge_panorama()
+            .context("bridge panorama must be opened before scene initialization")?;
+        let mut random = BloodPrng::default();
+        random.seed_from_clock_register(packed_clock_seed);
+        self.bridge_scene = Some(
+            BridgeScene::new(
+                panorama,
+                ShipProjectionResources::from(resources),
+                &mut random,
+            )
+            .context("constructing live bridge scene")?,
+        );
+        Ok(())
+    }
+
     /// Decode `CHART.FD` and restore it into the current presentation frame.
     pub fn initialize_back_buffer(&mut self) -> Result<PbmDecodeResult> {
         let result = self.runtime.initialize_back_buffer()?;
@@ -98,11 +131,44 @@ impl<'window> ModernGameServices<'window> {
         self.presentation.present_artwork(triangles)
     }
 
+    /// Advance the translated bridge steering, panorama, and point-cloud frame.
+    pub fn render_bridge_frame(&mut self, input: BridgeSceneInput) -> Result<&BridgeSceneFrame> {
+        let scene = self
+            .bridge_scene
+            .as_mut()
+            .context("bridge scene has not been initialized")?;
+        self.bridge_frame = Some(
+            scene
+                .render_frame(input)
+                .context("rendering bridge scene")?,
+        );
+        Ok(self
+            .bridge_frame
+            .as_ref()
+            .expect("rendered bridge frame was retained"))
+    }
+
     /// Present one translated bridge scene frame and optional MANU3 overlay.
     pub fn present_bridge_frame(&mut self, bridge_frame: &BridgeSceneFrame) -> Result<()> {
         self.ensure_main_viewport()?;
         self.presentation
             .present_frame(&self.runtime, Some(bridge_frame))
+    }
+
+    /// Present the most recently generated bridge frame.
+    pub fn present_current_bridge_frame(&mut self) -> Result<()> {
+        self.ensure_main_viewport()?;
+        let frame = self
+            .bridge_frame
+            .as_ref()
+            .context("no rendered bridge frame is ready")?;
+        self.presentation.present_frame(&self.runtime, Some(frame))
+    }
+
+    /// Drop the live bridge and its owned panorama during shutdown.
+    pub fn close_bridge_scene(&mut self) -> bool {
+        self.bridge_frame = None;
+        self.bridge_scene.take().is_some()
     }
 
     /// Core owned game state used by translated script and scene systems.
@@ -145,6 +211,8 @@ mod tests {
     use super::*;
     use crate::runtime::OriginalGameDataPaths;
 
+    const TEST_CLOCK_SEED: u8 = 17;
+
     static TEMPORARY_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(u64::MIN);
 
     struct TemporaryRoot(std::path::PathBuf);
@@ -168,6 +236,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires an active desktop and serialized SDL/wgpu ownership"]
     fn real_services_run_the_complete_available_startup_slice() {
         let Ok(paths) = OriginalGameDataPaths::discover(None) else {
             return;
@@ -198,11 +267,17 @@ mod tests {
             services.open_bridge_panorama().unwrap(),
             RuntimeAssetLoadStatus::LoadedNow
         );
+        services.initialize_bridge_scene(TEST_CLOCK_SEED).unwrap();
         services.initialize_back_buffer().unwrap();
+        let bridge_frame = services
+            .render_bridge_frame(BridgeSceneInput::default())
+            .unwrap();
+        assert!(!bridge_frame.starfield.plotted.is_empty());
         services.submit_indexed_frame().unwrap();
-        services.present_artwork().unwrap();
+        services.present_current_bridge_frame().unwrap();
 
         assert_eq!(services.presented_frame_count(), 2);
+        assert!(services.close_bridge_scene());
         assert!(
             services
                 .runtime()
