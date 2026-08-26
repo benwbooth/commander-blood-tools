@@ -25,6 +25,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 use commander_blood_formats::archive::{BloodArchive, BloodResourceName};
+use commander_blood_formats::bloodprg::{BloodprgFontResources, decode_bloodprg_font_resources};
 use commander_blood_formats::descript_database::DescriptDatabase;
 use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
 use commander_blood_formats::palette::decode_bloodprg_default_vga_palette;
@@ -182,6 +183,7 @@ pub struct OriginalGameData {
     script_profile_catalog: OriginalScriptProfileCatalog,
     writable_resource_catalog: StartupWritableResourceCatalog,
     descript_database: DescriptDatabase,
+    font_resources: BloodprgFontResources,
     default_vga_palette: [[u8; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT],
     archive_entry_count: usize,
 }
@@ -228,6 +230,8 @@ impl OriginalGameData {
         let writable_resource_catalog =
             StartupWritableResourceCatalog::decode_bloodprg(&executable)
                 .context("decoding startup writable-resource catalog")?;
+        let font_resources = decode_bloodprg_font_resources(&executable)
+            .context("decoding original executable font resources")?;
         let default_vga_palette = decode_bloodprg_default_vga_palette(&executable)
             .context("decoding original default palette")?;
         let descript_bytes = std::fs::read(paths.descript())
@@ -258,6 +262,7 @@ impl OriginalGameData {
             script_profile_catalog,
             writable_resource_catalog,
             descript_database,
+            font_resources,
             default_vga_palette,
             archive_entry_count,
         })
@@ -296,6 +301,11 @@ impl OriginalGameData {
     /// Parsed authored scene, dialogue, subtitle, and audio combinations.
     pub const fn descript_database(&self) -> &DescriptDatabase {
         &self.descript_database
+    }
+
+    /// Exact compact, subtitle, square-cap, and dialogue fonts from the executable.
+    pub const fn font_resources(&self) -> &BloodprgFontResources {
+        &self.font_resources
     }
 
     /// Default 256-color palette retaining the native six-bit VGA DAC components.

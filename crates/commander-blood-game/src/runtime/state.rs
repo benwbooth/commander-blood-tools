@@ -2,14 +2,15 @@
 
 use std::fmt;
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use commander_blood_formats::manu3::decode_manu3;
 use commander_blood_formats::panorama::BridgePanoramaArchive;
 
 use crate::native::bloodprg::{
-    CHART_BACK_BUFFER_RESOURCE_PATH, IndexedGamePalette, LoadedScriptProfile,
-    OriginalResourceCache, PbmDecodeResult, ScriptProfileId, ScriptProfileLoadOutcome,
-    ScriptProfileManager, decode_chart_back_buffer,
+    BridgeSpriteRect, CHART_BACK_BUFFER_RESOURCE_PATH, FontPoint, IndexedGamePalette,
+    LoadedScriptProfile, OriginalResourceCache, PauseHudRefresh, PbmDecodeResult, RasterPoint,
+    RasterRectOutcome, ScriptProfileId, ScriptProfileLoadOutcome, ScriptProfileManager,
+    build_pause_hud_refresh, decode_chart_back_buffer, draw_small_font_text, fill_framebuffer_rect,
 };
 use crate::native::manu3::model::Manu3Model;
 
@@ -24,6 +25,7 @@ pub const LOGICAL_FRAMEBUFFER_PIXEL_COUNT: usize =
     LOGICAL_FRAMEBUFFER_WIDTH * LOGICAL_FRAMEBUFFER_HEIGHT;
 
 const MANU3_RESOURCE_NAME: &[u8] = b"MANU3.XDB";
+const PAUSE_HUD_CLEAR_COLOR: u8 = u8::MIN;
 
 /// One owned 320 by 200 row-major indexed framebuffer.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -218,6 +220,49 @@ impl OriginalGameRuntime {
         .context("decoding CHART.FD")
     }
 
+    /// Draw the exact pause clear rectangle and compact-font label into the front buffer.
+    pub fn draw_pause_hud(&mut self, active: bool) -> Result<Option<PauseHudRefresh>> {
+        let Some(refresh) = build_pause_hud_refresh(u8::from(active)) else {
+            return Ok(None);
+        };
+        let display_clip = BridgeSpriteRect {
+            left: i32::from(u16::MIN),
+            right: i32::try_from(LOGICAL_FRAMEBUFFER_WIDTH)
+                .context("logical framebuffer width exceeds i32")?,
+            top: i32::from(u16::MIN),
+            bottom: i32::try_from(LOGICAL_FRAMEBUFFER_HEIGHT)
+                .context("logical framebuffer height exceeds i32")?,
+        };
+        let clear = refresh.clear_region;
+        let clear_outcome = fill_framebuffer_rect(
+            self.front_buffer.pixels_mut(),
+            display_clip,
+            RasterPoint {
+                x: i32::from(clear.x),
+                y: i32::from(clear.y),
+            },
+            clear.width,
+            clear.height,
+            PAUSE_HUD_CLEAR_COLOR,
+        )
+        .context("clearing the translated pause HUD region")?;
+        if clear_outcome == RasterRectOutcome::Rejected {
+            bail!("authored pause HUD rectangle was rejected by the logical display clip");
+        }
+        draw_small_font_text(
+            self.front_buffer.pixels_mut(),
+            self.data.font_resources(),
+            refresh.text,
+            FontPoint {
+                x: i32::from(refresh.text_position[0]),
+                y: i32::from(refresh.text_position[1]),
+            },
+            refresh.text_palette_index,
+        )
+        .context("drawing the translated pause HUD label")?;
+        Ok(Some(refresh))
+    }
+
     /// Load and bind one complete playable BloodScript profile.
     pub fn load_profile(&mut self, profile: ScriptProfileId) -> Result<ScriptProfileLoadOutcome> {
         self.profiles
@@ -243,16 +288,78 @@ impl OriginalGameRuntime {
 
 #[cfg(test)]
 mod tests {
+    use std::path::{Path, PathBuf};
+
+    use super::super::{OriginalGameData, OriginalGameDataPaths};
     use super::*;
+
+    const TEST_BACKGROUND_COLOR: u8 = 73;
+    const EXPECTED_PAUSE_LABEL_PIXEL_COUNT: usize = 46;
 
     #[test]
     fn framebuffer_has_stable_logical_dimensions_and_complete_copy_semantics() {
         let mut source = IndexedFramebuffer::new();
         let mut destination = IndexedFramebuffer::new();
-        source.clear(73);
+        source.clear(TEST_BACKGROUND_COLOR);
         destination.copy_from(&source);
 
         assert_eq!(destination.pixels().len(), LOGICAL_FRAMEBUFFER_PIXEL_COUNT);
-        assert!(destination.pixels().iter().all(|pixel| *pixel == 73));
+        assert!(
+            destination
+                .pixels()
+                .iter()
+                .all(|pixel| *pixel == TEST_BACKGROUND_COLOR)
+        );
+    }
+
+    #[test]
+    fn pause_hud_composes_exact_geometry_with_the_executable_font() {
+        let Some(data) = original_game_data() else {
+            return;
+        };
+        let mut runtime = OriginalGameRuntime::new(data);
+        runtime.front_buffer_mut().clear(TEST_BACKGROUND_COLOR);
+        let unchanged = runtime.front_buffer().clone();
+
+        assert_eq!(runtime.draw_pause_hud(false).unwrap(), None);
+        assert_eq!(runtime.front_buffer(), &unchanged);
+
+        let refresh = runtime.draw_pause_hud(true).unwrap().unwrap();
+        assert_eq!(refresh, build_pause_hud_refresh(u8::from(true)).unwrap());
+        let clear = refresh.clear_region;
+        let mut label_pixel_count = usize::MIN;
+        for y in usize::MIN..LOGICAL_FRAMEBUFFER_HEIGHT {
+            for x in usize::MIN..LOGICAL_FRAMEBUFFER_WIDTH {
+                let pixel = runtime.front_buffer().pixels()[y * LOGICAL_FRAMEBUFFER_WIDTH + x];
+                let inside = x >= usize::from(clear.x)
+                    && x < usize::from(clear.x + clear.width)
+                    && y >= usize::from(clear.y)
+                    && y < usize::from(clear.y + clear.height);
+                if inside {
+                    assert!(
+                        pixel == PAUSE_HUD_CLEAR_COLOR || pixel == refresh.text_palette_index,
+                        "unexpected pause pixel {pixel} at {x},{y}"
+                    );
+                    label_pixel_count += usize::from(pixel == refresh.text_palette_index);
+                } else {
+                    assert_eq!(pixel, TEST_BACKGROUND_COLOR, "outside pixel at {x},{y}");
+                }
+            }
+        }
+        assert_eq!(label_pixel_count, EXPECTED_PAUSE_LABEL_PIXEL_COUNT);
+    }
+
+    fn original_game_data() -> Option<OriginalGameData> {
+        let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        [
+            workspace_root.join("output/_tmp_iso"),
+            workspace_root.join("commander-blood-audio/_tmp_iso"),
+            workspace_root.join("accuracy/cblood_install/cblood"),
+        ]
+        .into_iter()
+        .find_map(|root: PathBuf| OriginalGameDataPaths::from_root(root).ok())
+        .and_then(|paths| {
+            OriginalGameData::load_with_writable_root(paths, std::env::temp_dir()).ok()
+        })
     }
 }

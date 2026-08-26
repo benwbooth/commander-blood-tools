@@ -147,6 +147,17 @@ impl<'window> ModernGameServices<'window> {
         self.scripts.take_commands()
     }
 
+    /// Draw and immediately present the pause HUD when the recovered gate is active.
+    pub fn refresh_pause_hud(&mut self, active: bool) -> Result<bool> {
+        if self.runtime.draw_pause_hud(active)?.is_none() {
+            return Ok(false);
+        }
+        self.presentation.submit_indexed_frame(&self.runtime)?;
+        self.presentation
+            .present_frame(&self.runtime, self.bridge_frame.as_ref())?;
+        Ok(true)
+    }
+
     /// Reconfigure the wgpu surface after a nonzero SDL pixel-size event.
     pub fn resize(&mut self, width: u32, height: u32) {
         self.presentation.resize(width, height);
