@@ -46,7 +46,7 @@ const SECONDS_PER_MINUTE: u64 = 60;
 const DECIMAL_RADIX: u8 = 10;
 const PACKED_BCD_DIGIT_SHIFT: u32 = 4;
 const NO_MOUSE_MOTION: f32 = 0.0;
-const MAXIMUM_ACTIVE_SCENE_COUNT: usize = 1;
+const MAXIMUM_BASE_SCENE_COUNT: usize = 1;
 
 #[derive(Debug, Default, PartialEq, Eq)]
 struct Options {
@@ -167,11 +167,9 @@ pub fn run() -> Result<()> {
     };
     let mut image = OriginalFrame::load_lbm(&path)?;
     let bridge_requested = options.bridge || options.panorama.is_some();
-    let active_scene_count = usize::from(options.manu3.is_some())
-        + usize::from(options.alien.is_some())
-        + usize::from(bridge_requested);
-    if active_scene_count > MAXIMUM_ACTIVE_SCENE_COUNT {
-        bail!("--manu3, --alien, and --bridge select different scenes");
+    let base_scene_count = usize::from(options.alien.is_some()) + usize::from(bridge_requested);
+    if base_scene_count > MAXIMUM_BASE_SCENE_COUNT {
+        bail!("--alien and --bridge select different base scenes");
     }
     let mut manu3 = options
         .manu3

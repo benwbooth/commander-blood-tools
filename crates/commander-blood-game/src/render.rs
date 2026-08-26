@@ -43,7 +43,7 @@ const DEPTH_TEXTURE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Fl
 const CLEAR_DEPTH: f32 = 1.0;
 const EQUAL_DEPTH_VALUE: f32 = 0.5;
 const ZERO_DEPTH_RANGE: f64 = 0.0;
-const MAXIMUM_ACTIVE_SCENE_COUNT: usize = 1;
+const MAXIMUM_BASE_SCENE_RENDERER_COUNT: usize = 1;
 
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
@@ -89,11 +89,10 @@ impl<'window> Renderer<'window> {
         alien_asset: Option<&AlienAsset>,
         bridge_palette: Option<&IndexedGamePalette>,
     ) -> Result<Self> {
-        let active_scene_count = usize::from(manu3_model.is_some())
-            + usize::from(alien_asset.is_some())
-            + usize::from(bridge_palette.is_some());
-        if active_scene_count > MAXIMUM_ACTIVE_SCENE_COUNT {
-            anyhow::bail!("only one modern 3D scene renderer may be active");
+        let base_scene_renderer_count =
+            usize::from(alien_asset.is_some()) + usize::from(bridge_palette.is_some());
+        if base_scene_renderer_count > MAXIMUM_BASE_SCENE_RENDERER_COUNT {
+            anyhow::bail!("only one modern base-scene renderer may be active");
         }
         let instance =
             wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle_from_env());
@@ -353,12 +352,11 @@ impl<'window> Renderer<'window> {
         alien_frame: Option<&AlienSceneFrame>,
         bridge_frame: Option<&BridgeSceneFrame>,
     ) -> Result<()> {
-        let manu3_vertex_count = self
-            .manu3
-            .as_ref()
-            .map(|manu3| manu3.upload(&self.queue, manu3_triangles))
-            .transpose()?
-            .unwrap_or(u32::MIN);
+        let manu3_vertex_count = match &self.manu3 {
+            Some(manu3) => manu3.upload(&self.queue, manu3_triangles)?,
+            None if manu3_triangles.is_empty() => u32::MIN,
+            None => anyhow::bail!("MANU3 triangles supplied without overlay GPU resources"),
+        };
         let frame = match self.surface.get_current_texture() {
             wgpu::CurrentSurfaceTexture::Success(frame)
             | wgpu::CurrentSurfaceTexture::Suboptimal(frame) => frame,
@@ -387,11 +385,14 @@ impl<'window> Renderer<'window> {
             ORIGINAL_DISPLAY_ASPECT_WIDTH,
             ORIGINAL_DISPLAY_ASPECT_HEIGHT,
         );
-        if let Some(alien) = &self.alien {
-            if bridge_frame.is_some() {
-                anyhow::bail!("bridge frame supplied to the alien scene renderer");
-            }
-            let alien_frame = alien_frame.context("alien renderer has no native scene frame")?;
+        if alien_frame.is_some() && bridge_frame.is_some() {
+            anyhow::bail!("alien and bridge frames cannot be presented together");
+        }
+        if let Some(alien_frame) = alien_frame {
+            let alien = self
+                .alien
+                .as_ref()
+                .context("alien frame supplied without alien GPU resources")?;
             alien.encode(
                 &self.queue,
                 &mut encoder,
@@ -399,11 +400,11 @@ impl<'window> Renderer<'window> {
                 (x, y, width, height),
                 alien_frame,
             )?;
-        } else if let Some(bridge) = &self.bridge {
-            if alien_frame.is_some() {
-                anyhow::bail!("alien frame supplied to the bridge scene renderer");
-            }
-            let bridge_frame = bridge_frame.context("bridge renderer has no native scene frame")?;
+        } else if let Some(bridge_frame) = bridge_frame {
+            let bridge = self
+                .bridge
+                .as_ref()
+                .context("bridge frame supplied without bridge GPU resources")?;
             bridge.encode(
                 &self.queue,
                 &mut encoder,
@@ -412,12 +413,6 @@ impl<'window> Renderer<'window> {
                 bridge_frame,
             )?;
         } else {
-            if alien_frame.is_some() {
-                anyhow::bail!("alien scene frame supplied without alien GPU resources");
-            }
-            if bridge_frame.is_some() {
-                anyhow::bail!("bridge scene frame supplied without bridge GPU resources");
-            }
             {
                 let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                     label: Some("Commander Blood artwork pass"),
@@ -443,40 +438,40 @@ impl<'window> Renderer<'window> {
                     u32::MIN..SINGLE_TEXTURE_LAYER,
                 );
             }
-            if manu3_vertex_count != u32::MIN {
-                let manu3 = self
-                    .manu3
-                    .as_ref()
-                    .context("MANU3 vertices were uploaded without GPU resources")?;
-                let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                    label: Some("Commander Blood MANU3 pass"),
-                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                        view: &view,
-                        resolve_target: None,
-                        depth_slice: None,
-                        ops: wgpu::Operations {
-                            load: wgpu::LoadOp::Load,
-                            store: wgpu::StoreOp::Store,
-                        },
-                    })],
-                    depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                        view: &manu3.depth_view,
-                        depth_ops: Some(wgpu::Operations {
-                            load: wgpu::LoadOp::Clear(CLEAR_DEPTH),
-                            store: wgpu::StoreOp::Discard,
-                        }),
-                        stencil_ops: None,
+        }
+        if manu3_vertex_count != u32::MIN {
+            let manu3 = self
+                .manu3
+                .as_ref()
+                .context("MANU3 vertices were uploaded without GPU resources")?;
+            let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("Commander Blood MANU3 overlay pass"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &view,
+                    resolve_target: None,
+                    depth_slice: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Load,
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                    view: &manu3.depth_view,
+                    depth_ops: Some(wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(CLEAR_DEPTH),
+                        store: wgpu::StoreOp::Discard,
                     }),
-                    timestamp_writes: None,
-                    occlusion_query_set: None,
-                    multiview_mask: None,
-                });
-                pass.set_viewport(x, y, width, height, MINIMUM_DEPTH, MAXIMUM_DEPTH);
-                pass.set_pipeline(&manu3.pipeline);
-                pass.set_bind_group(MANU3_TEXTURE_BINDING, &manu3.bind_group, &[]);
-                pass.set_vertex_buffer(u32::MIN, manu3.vertex_buffer.slice(..));
-                pass.draw(u32::MIN..manu3_vertex_count, u32::MIN..SINGLE_TEXTURE_LAYER);
-            }
+                    stencil_ops: None,
+                }),
+                timestamp_writes: None,
+                occlusion_query_set: None,
+                multiview_mask: None,
+            });
+            pass.set_viewport(x, y, width, height, MINIMUM_DEPTH, MAXIMUM_DEPTH);
+            pass.set_pipeline(&manu3.pipeline);
+            pass.set_bind_group(MANU3_TEXTURE_BINDING, &manu3.bind_group, &[]);
+            pass.set_vertex_buffer(u32::MIN, manu3.vertex_buffer.slice(..));
+            pass.draw(u32::MIN..manu3_vertex_count, u32::MIN..SINGLE_TEXTURE_LAYER);
         }
         self.queue.submit([encoder.finish()]);
         frame.present();
@@ -484,7 +479,11 @@ impl<'window> Renderer<'window> {
     }
 }
 
-fn indexed_frame_rgba(indexed_pixels: &[u8], palette: &IndexedGamePalette) -> Result<Vec<u8>> {
+/// Expand one complete indexed frame from native six-bit VGA values to RGBA.
+pub(crate) fn indexed_frame_rgba(
+    indexed_pixels: &[u8],
+    palette: &IndexedGamePalette,
+) -> Result<Vec<u8>> {
     let mut rgba = Vec::with_capacity(indexed_pixels.len() * RGBA_COMPONENT_COUNT);
     for palette_index in indexed_pixels {
         let color = palette[usize::from(*palette_index)];
@@ -499,6 +498,12 @@ fn indexed_frame_rgba(indexed_pixels: &[u8], palette: &IndexedGamePalette) -> Re
         rgba.push(OPAQUE_ALPHA);
     }
     Ok(rgba)
+}
+
+/// Expand the native six-bit VGA palette to packed RGBA entries.
+pub(crate) fn indexed_palette_rgba(palette: &IndexedGamePalette) -> Result<Vec<u8>> {
+    let indices = (u8::MIN..=u8::MAX).collect::<Vec<_>>();
+    indexed_frame_rgba(&indices, palette)
 }
 
 impl Manu3Renderer {
