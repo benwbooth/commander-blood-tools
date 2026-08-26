@@ -272,8 +272,9 @@ pub use framebuffer_copy::{
 };
 pub use font::{
     BiosFont8x8, FontPoint, FontVerticalBand, GameFontDrawError, GameFontDrawOutcome, GameFontError,
-    GameFontFace, draw_bios_font_text, draw_main_font_text, draw_square_caps_text,
-    measure_game_text_width,
+    GameFontFace, SubtitleRevealDrawOutcome, draw_bios_font_text, draw_main_font_text,
+    draw_planar_dialogue_text, draw_planar_square_caps_text, draw_small_font_text,
+    draw_square_caps_text, draw_subtitle_reveal_line, measure_game_text_width,
 };
 pub use frame_transition::{
     FramebufferTransitionError, FramebufferTransitionState, TransitionRect,
