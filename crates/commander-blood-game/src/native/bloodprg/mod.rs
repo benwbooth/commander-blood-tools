@@ -61,6 +61,7 @@ mod selected_mask;
 mod sequence;
 mod sequence_subtitles;
 mod ship_depth;
+mod ship_navigation;
 mod ship_presentation;
 mod ship_projection;
 mod ship_target;
@@ -385,6 +386,11 @@ pub use ship_hud::{
 pub use ship_depth::{
     ShipDepthBandLayout, ShipDepthTransition, ShipDepthTransitionOutcome,
     advance_ship_depth, prepare_ship_depth_band,
+};
+pub use ship_navigation::{
+    ShipNavigationAccessCounter, ShipNavigationCandidate, ShipNavigationContext,
+    ShipNavigationHost, ShipNavigationOutcome, ShipNavigationRelation, ShipNavigationState,
+    update_ship_navigation,
 };
 pub use ship_presentation::{
     ShipPresentationHost, ShipPresentationOutcome, ShipPresentationState,
