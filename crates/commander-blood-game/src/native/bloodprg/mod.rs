@@ -60,6 +60,7 @@ mod presentation_choice;
 mod presentation_hover;
 mod presentation_line;
 mod presentation_mode;
+mod presentation_queue;
 mod presentation_run;
 mod presentation_word_choice;
 mod pointer_buttons;
@@ -396,6 +397,11 @@ pub use presentation_line::{
 };
 pub use presentation_mode::{
     PresentationBridgeMode, update_presentation_bridge_mode,
+};
+pub use presentation_queue::{
+    PresentationQueueAdvance, PresentationQueueClock, PresentationQueueClockGates,
+    PresentationQueueConsumeOutcome, PresentationQueueError, PresentationQueueState,
+    presentation_queue_advance_due, presentation_resource_enabled,
 };
 pub use presentation_run::{
     CREDITS_VOICE_RESOURCE_PATH, PresentationRunExit, PresentationRunHost,
