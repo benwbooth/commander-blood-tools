@@ -13,6 +13,7 @@ const OBJECT_HEADER_WORD_SIZE: usize = std::mem::size_of::<u16>();
 const OBJECT_ACTIVE_FLAG: u16 = 1;
 const OBJECT_IN_PLAY_FLAG: u16 = 2;
 const OBJECT_PRESENTABLE_FLAG: u16 = 32;
+const OBJECT_PRESENTATION_BLOCKED_FLAG: u16 = 32_768;
 
 const FIELD_OFFSETS: [[u8; OBJECT_KIND_COUNT]; FIELD_SELECTOR_COUNT] = [
     [2, 2, 2, 2, 2, 2, 2, 2, 2],
@@ -51,6 +52,8 @@ pub enum ScriptObjectFlag {
     InPlay,
     /// Object can be moved aboard through the C2 presentation path.
     Presentable,
+    /// Object is latched into or blocked from a presentation handoff.
+    PresentationBlocked,
 }
 
 impl ScriptFieldSelector {
@@ -143,8 +146,33 @@ pub fn object_has_flag(
         ScriptObjectFlag::Active => OBJECT_ACTIVE_FLAG,
         ScriptObjectFlag::InPlay => OBJECT_IN_PLAY_FLAG,
         ScriptObjectFlag::Presentable => OBJECT_PRESENTABLE_FLAG,
+        ScriptObjectFlag::PresentationBlocked => OBJECT_PRESENTATION_BLOCKED_FLAG,
     };
     Some(object_flags(state.object(object)?.bytes()) & mask != u16::MIN)
+}
+
+/// Set or clear one recovered object-header flag through typed owned state.
+pub fn set_object_flag(
+    state: &mut ScriptState,
+    object: ScriptObjectId,
+    flag: ScriptObjectFlag,
+    enabled: bool,
+) -> bool {
+    let mask = match flag {
+        ScriptObjectFlag::Active => OBJECT_ACTIVE_FLAG,
+        ScriptObjectFlag::InPlay => OBJECT_IN_PLAY_FLAG,
+        ScriptObjectFlag::Presentable => OBJECT_PRESENTABLE_FLAG,
+        ScriptObjectFlag::PresentationBlocked => OBJECT_PRESENTATION_BLOCKED_FLAG,
+    };
+    let Some(field) = state.object_word(object, OBJECT_FLAGS_BYTE_OFFSET / OBJECT_HEADER_WORD_SIZE)
+    else {
+        return false;
+    };
+    let Some(flags) = state.word(field) else {
+        return false;
+    };
+    let flags = if enabled { flags | mask } else { flags & !mask };
+    state.set_word(field, flags)
 }
 
 /// Resolve an interned dictionary word to an active script object.

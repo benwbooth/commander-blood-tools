@@ -151,6 +151,20 @@ impl ScriptSelectorState {
         self.pending_presentation_words.clear();
         self.pending_presentation_words.extend(words);
     }
+
+    /// Clear active dialogue branches while retaining conversation history.
+    pub fn clear_presentation_branches(&mut self) {
+        self.current_control = None;
+        self.parent_control = None;
+        self.current_branch = None;
+        self.parent_branch = None;
+        self.pending_presentation_words.clear();
+    }
+
+    /// Clear all recent concepts at the end of a presentation session.
+    pub fn clear_concept_history(&mut self) {
+        self.history = ScriptConceptHistory::default();
+    }
 }
 
 /// Observable result of consuming one selected dialogue concept.

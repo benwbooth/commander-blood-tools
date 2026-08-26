@@ -39,6 +39,7 @@ mod presentation_line;
 mod presentation_mode;
 mod presentation_word_choice;
 mod pointer_buttons;
+mod presentation_scan;
 mod procedure;
 mod record;
 mod record_state;
@@ -259,6 +260,13 @@ pub use pointer_buttons::{
     PointerButton, PointerButtonEdges, PointerButtonState, PointerButtons,
     update_pointer_button_edges,
 };
+pub use presentation_scan::{
+    ScriptActionDispatch, ScriptActionDisposition, ScriptDeferredRecord,
+    ScriptDeferredRecordKind, ScriptPresentationAction, ScriptPresentationEntity,
+    ScriptPresentationHandoff, ScriptPresentationScanContext, ScriptPresentationScanError,
+    ScriptPresentationScanHost, ScriptPresentationScanOutcome, ScriptPresentationScanState,
+    deferred_navigation_record, scan_script_presentations,
+};
 pub use procedure::{
     apply_procedure_activation, evaluate_procedure_gate, ScriptProcedureStateError,
     ScriptProcedureStates,
@@ -380,4 +388,5 @@ pub use text_scan::{
 pub use vm::{
     active_objects_in_play, count_positive_operands, object_before_threshold, object_has_flag,
     resolve_dictionary_object, script_field_offset, ScriptFieldSelector, ScriptObjectFlag,
+    set_object_flag,
 };

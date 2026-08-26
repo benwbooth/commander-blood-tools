@@ -1,6 +1,6 @@
 //! Typed C1 action records and navigation-state dispatch.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
 use commander_blood_formats::instruction::{
@@ -55,6 +55,7 @@ pub enum ScriptActionRecord {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ScriptActionRecords {
     records: BTreeMap<ScriptStateWordTriple, ScriptActionRecord>,
+    suppressed_actions: BTreeSet<ScriptStateWordTriple>,
 }
 
 impl ScriptActionRecords {
@@ -67,8 +68,24 @@ impl ScriptActionRecords {
     pub fn set_record(&mut self, slot: ScriptStateWordTriple, record: ScriptActionRecord) {
         if record == ScriptActionRecord::Empty {
             self.records.remove(&slot);
+            self.suppressed_actions.remove(&slot);
         } else {
             self.records.insert(slot, record);
+            self.suppressed_actions.remove(&slot);
+        }
+    }
+
+    /// Return whether the slot contains unprocessed action work.
+    pub fn is_actionable(&self, slot: ScriptStateWordTriple) -> bool {
+        self.record(slot) != ScriptActionRecord::Empty && !self.suppressed_actions.contains(&slot)
+    }
+
+    /// Mark whether a retained record should be dispatched by the post-frame scan.
+    pub fn set_actionable(&mut self, slot: ScriptStateWordTriple, actionable: bool) {
+        if actionable || self.record(slot) == ScriptActionRecord::Empty {
+            self.suppressed_actions.remove(&slot);
+        } else {
+            self.suppressed_actions.insert(slot);
         }
     }
 }
@@ -692,7 +709,10 @@ fn parent_object(state: &ScriptState, object: ScriptObjectId) -> Option<ScriptOb
     }
 }
 
-fn action_slot(state: &ScriptState, object: ScriptObjectId) -> Option<ScriptStateWordTriple> {
+pub(super) fn action_slot(
+    state: &ScriptState,
+    object: ScriptObjectId,
+) -> Option<ScriptStateWordTriple> {
     let state_object = state.object(object)?;
     let field_offset = script_field_offset(state_object.kind, ScriptFieldSelector::ACTION)?;
     state.object_word_triple(object, field_offset / std::mem::size_of::<u16>())
