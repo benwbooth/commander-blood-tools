@@ -51,6 +51,7 @@ mod navigation_status;
 mod navigation_wipe;
 mod numbers;
 mod palette_pipeline;
+mod palette_host;
 mod palette_update;
 mod pbm_image;
 mod presentation;
@@ -352,6 +353,9 @@ pub use palette_pipeline::{
     PalettePipelineError, PaletteRemapTable, SCENE_PALETTE_CLEAR_COLOR_COUNT,
     TINT_PALETTE_BANK_SIZE, build_banked_tint_table, build_palette_blend_remap_table,
     clear_scene_palette_entries, interpolate_palette_range,
+};
+pub use palette_host::{
+    IndexedPalettePublisher, clear_live_palette, publish_live_palette,
 };
 pub use palette_update::{
     PaletteInterpolationRequest, PaletteTransitionState, PaletteUploadState,
