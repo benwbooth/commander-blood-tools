@@ -59,6 +59,7 @@ mod screen_presentation;
 mod selected_mask;
 mod sequence;
 mod sequence_subtitles;
+mod ship_depth;
 mod ship_projection;
 mod ship_view;
 mod ship_hud;
@@ -367,6 +368,10 @@ pub use ship_hud::{
     SHIP_CAMERA_RESET, SHIP_HUD_PALETTE_COLOR_COUNT, SHIP_HUD_PALETTE_FIRST, IndexedGamePalette,
     ShipHudBackend, ShipHudPaletteSnapshot, ShipHudState,
     snapshot_ship_hud_palette_and_reset_camera,
+};
+pub use ship_depth::{
+    ShipDepthBandLayout, ShipDepthTransition, ShipDepthTransitionOutcome,
+    advance_ship_depth, prepare_ship_depth_band,
 };
 pub use sprite_geometry::{
     BRIDGE_SPRITE_ENTITY_COUNT, BridgeSpriteEntity, BridgeSpriteEntityError, BridgeSpriteExtent,
