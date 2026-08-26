@@ -270,7 +270,11 @@ pub use framebuffer_copy::{
     copy_full_frame_to_back_buffer, copy_full_frame_to_display, copy_work_surface_span,
     fill_back_buffer_band, fill_display_band, present_chunky_frame,
 };
-pub use font::{GameFontError, GameFontFace, measure_game_text_width};
+pub use font::{
+    BiosFont8x8, FontPoint, FontVerticalBand, GameFontDrawError, GameFontDrawOutcome, GameFontError,
+    GameFontFace, draw_bios_font_text, draw_main_font_text, draw_square_caps_text,
+    measure_game_text_width,
+};
 pub use frame_transition::{
     FramebufferTransitionError, FramebufferTransitionState, TransitionRect,
     TransitionRenderRegion, advance_framebuffer_rect_transition,
