@@ -60,6 +60,7 @@ mod presentation_ad;
 mod presentation_choice;
 mod presentation_decode;
 mod presentation_dispatch;
+mod presentation_entry;
 mod presentation_hover;
 mod presentation_line;
 mod presentation_mode;
@@ -403,6 +404,11 @@ pub use presentation_decode::{
 pub use presentation_dispatch::{
     PresentationDispatchError, PresentationPayload, PresentationPayloadKind,
     decode_presentation_payload, presentation_payload_kind,
+};
+pub use presentation_entry::{
+    ActivatedPresentationEntry, PresentationEntryActivation, PresentationEntryDisposition,
+    PresentationEntryError, PresentationEntryFrame, PresentationEntryPolicy,
+    PresentationEntrySideData, PresentationLinkId, activate_presentation_entry,
 };
 pub use presentation_hover::{
     PresentationHitAreas, PresentationHitRectangle, PresentationHitSelection,
