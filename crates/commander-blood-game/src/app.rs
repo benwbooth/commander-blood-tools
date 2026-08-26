@@ -27,6 +27,7 @@ use crate::native::manu3::animation::CursorPosition;
 use crate::native::manu3::model::{Manu3FrameRequest, Manu3Model};
 use crate::native::random::BloodPrng;
 use crate::render::Renderer;
+use crate::runtime::{OriginalGameData, OriginalGameDataPaths};
 
 const DEFAULT_WINDOW_WIDTH: u32 = 1280;
 const DEFAULT_WINDOW_HEIGHT: u32 = 960;
@@ -51,6 +52,7 @@ const MAXIMUM_ACTIVE_SCENE_COUNT: usize = 1;
 
 #[derive(Debug, Default, PartialEq, Eq)]
 struct Options {
+    data: Option<PathBuf>,
     asset: Option<PathBuf>,
     bloodprg: Option<PathBuf>,
     manu3: Option<PathBuf>,
@@ -66,11 +68,25 @@ enum ParseOutcome {
 }
 
 impl Options {
+    fn uses_diagnostic_overrides(&self) -> bool {
+        self.asset.is_some()
+            || self.bloodprg.is_some()
+            || self.manu3.is_some()
+            || self.alien.is_some()
+            || self.bridge
+            || self.panorama.is_some()
+    }
+
     fn parse() -> Result<ParseOutcome> {
         let mut options = Self::default();
         let mut arguments = std::env::args().skip(PROGRAM_NAME_ARGUMENT_COUNT);
         while let Some(argument) = arguments.next() {
             match argument.as_str() {
+                "--data" => {
+                    options.data = Some(PathBuf::from(
+                        arguments.next().context("--data requires a directory")?,
+                    ));
+                }
                 "--asset" => {
                     options.asset = Some(PathBuf::from(
                         arguments.next().context("--asset requires a path")?,
@@ -113,7 +129,7 @@ impl Options {
 
 fn print_usage() {
     println!(
-        "Usage: commander-blood [--asset IMAGE.LBM] [--manu3 MANU3.XDB | --alien ALIEN.XDB | --bridge] [--panorama TB.BIG] [--bloodprg BLOODPRG.EXE] [--frames COUNT]\n\
+        "Usage: commander-blood [--data DIRECTORY] [--asset IMAGE.LBM] [--manu3 MANU3.XDB | --alien ALIEN.XDB | --bridge] [--panorama TB.BIG] [--bloodprg BLOODPRG.EXE] [--frames COUNT]\n\
          \n\
          CBLOOD_DATA may point to the original game-data directory."
     );
@@ -128,7 +144,17 @@ pub fn run() -> Result<()> {
             return Ok(());
         }
     };
-    let path = find_title_image(options.asset.as_deref())?;
+    let original_data = if options.data.is_some() || !options.uses_diagnostic_overrides() {
+        let paths = OriginalGameDataPaths::discover(options.data.as_deref())?;
+        Some(OriginalGameData::load(paths)?)
+    } else {
+        None
+    };
+    let path = match (options.asset.as_deref(), original_data.as_ref()) {
+        (Some(path), _) => find_title_image(Some(path))?,
+        (None, Some(data)) => data.paths().title().to_owned(),
+        (None, None) => find_title_image(None)?,
+    };
     let mut image = OriginalFrame::load_lbm(&path)?;
     let bridge_requested = options.bridge || options.panorama.is_some();
     let active_scene_count = usize::from(options.manu3.is_some())
@@ -159,11 +185,17 @@ pub fn run() -> Result<()> {
         })
         .transpose()?;
     let executable = if manu3.is_some() || bridge_requested {
-        let executable_path = find_bloodprg_executable(options.bloodprg.as_deref())?;
-        Some(
-            std::fs::read(&executable_path)
-                .with_context(|| format!("reading {}", executable_path.display()))?,
-        )
+        if let Some(path) = options.bloodprg.as_deref() {
+            Some(std::fs::read(path).with_context(|| format!("reading {}", path.display()))?)
+        } else if let Some(data) = original_data.as_ref() {
+            Some(data.executable().to_vec())
+        } else {
+            let executable_path = find_bloodprg_executable(None)?;
+            Some(
+                std::fs::read(&executable_path)
+                    .with_context(|| format!("reading {}", executable_path.display()))?,
+            )
+        }
     } else {
         None
     };
@@ -186,7 +218,11 @@ pub fn run() -> Result<()> {
             .context("bridge rendering requires BLOODPRG.EXE")?;
         let resources = decode_bloodprg_bridge_resources(executable)
             .context("decoding bridge projection resources from BLOODPRG.EXE")?;
-        let panorama_path = find_bridge_panorama(options.panorama.as_deref())?;
+        let panorama_path = match (options.panorama.as_deref(), original_data.as_ref()) {
+            (Some(path), _) => find_bridge_panorama(Some(path))?,
+            (None, Some(data)) => data.paths().bridge_panorama().to_owned(),
+            (None, None) => find_bridge_panorama(None)?,
+        };
         let panorama = BridgePanoramaArchive::decode(
             std::fs::read(&panorama_path)
                 .with_context(|| format!("reading {}", panorama_path.display()))?
