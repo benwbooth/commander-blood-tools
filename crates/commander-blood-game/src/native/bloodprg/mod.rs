@@ -61,6 +61,7 @@ mod presentation_hover;
 mod presentation_line;
 mod presentation_mode;
 mod presentation_queue;
+mod presentation_raster;
 mod presentation_resource;
 mod presentation_source;
 mod presentation_run;
@@ -404,6 +405,10 @@ pub use presentation_queue::{
     PresentationQueueAdvance, PresentationQueueClock, PresentationQueueClockGates,
     PresentationQueueConsumeOutcome, PresentationQueueError, PresentationQueueState,
     presentation_queue_advance_due, presentation_resource_enabled,
+};
+pub use presentation_raster::{
+    PresentationRasterError, PresentationRectBlitOutcome, PresentationScanlineState,
+    advance_presentation_scanline, blit_presentation_rect,
 };
 pub use presentation_resource::{
     FixedWordCopyError, PRESENTATION_PALETTE_SNAPSHOT_COLOR_COUNT, PaletteBlockDecodeError,
