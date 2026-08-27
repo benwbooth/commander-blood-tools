@@ -351,7 +351,7 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
     }
 
     fn refill_audio_stream(&mut self) -> Result<()> {
-        self.services.check_audio()
+        self.services.refill_navigation_music()
     }
 
     fn process_audio(&mut self, _state: &mut GameLifecycleState) -> Result<()> {

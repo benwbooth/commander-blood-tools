@@ -22,8 +22,8 @@ use crate::assets::{
 use crate::native::alien::{AlienInputAction, AlienMouseSample, AlienScene};
 use crate::native::bloodprg::{
     BRIDGE_SPRITE_ENTITY_COUNT, BridgeScene, BridgeSceneInput, BridgeSpriteEntity,
-    BridgeSteeringInteraction, GameLifecycleState, InputAction, PointerButton, PointerButtons,
-    ScriptClock, ShipProjectionResources, run_game_lifecycle,
+    BridgeSteeringInteraction, GameLifecycleError, GameLifecycleState, InputAction, PointerButton,
+    PointerButtons, ScriptClock, ShipProjectionResources, run_game_lifecycle,
 };
 use crate::native::manu3::animation::CursorPosition;
 use crate::native::manu3::model::{Manu3FrameRequest, Manu3Model};
@@ -451,8 +451,20 @@ fn run_production_game(options: &Options) -> Result<()> {
         options.frame_limit,
     );
     let mut state = GameLifecycleState::default();
-    run_game_lifecycle(&mut state, &mut host)
-        .map_err(|error| anyhow::anyhow!(error.to_string()))?;
+    match run_game_lifecycle(&mut state, &mut host) {
+        Ok(_) => {}
+        Err(GameLifecycleError::Runtime(error)) => {
+            return Err(error.context("game runtime failed"));
+        }
+        Err(GameLifecycleError::Shutdown(error)) => {
+            return Err(error.context("game shutdown failed"));
+        }
+        Err(GameLifecycleError::RuntimeAndShutdown { runtime, shutdown }) => {
+            return Err(runtime.context(format!(
+                "game runtime failed; shutdown also failed: {shutdown:#}"
+            )));
+        }
+    }
     Ok(())
 }
 

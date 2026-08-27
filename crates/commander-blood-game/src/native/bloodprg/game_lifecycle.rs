@@ -329,7 +329,14 @@ impl<HostError: fmt::Display> fmt::Display for GameLifecycleError<HostError> {
     }
 }
 
-impl<HostError: Error + 'static> Error for GameLifecycleError<HostError> {}
+impl<HostError: Error + 'static> Error for GameLifecycleError<HostError> {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::Runtime(error) | Self::Shutdown(error) => Some(error),
+            Self::RuntimeAndShutdown { runtime, .. } => Some(runtime),
+        }
+    }
+}
 
 /// SDL, wgpu, resource, audio, and translated subsystem boundaries.
 pub trait GameLifecycleHost {

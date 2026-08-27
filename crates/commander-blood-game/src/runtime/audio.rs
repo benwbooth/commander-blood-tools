@@ -2,11 +2,21 @@
 
 use std::sync::{Arc, Mutex, MutexGuard};
 
-use anyhow::{Result, anyhow, bail};
-use commander_blood_formats::snd::{SndClip, VocPcm};
+use anyhow::{Context, Result, anyhow, bail};
+use commander_blood_formats::snd::{
+    SND_CLIP_HEADER_BYTE_COUNT, SndClip, VocPcm, snd_sample_rate_hz,
+};
 use sdl3::AudioSubsystem;
 use sdl3::audio::{
     AudioCallback, AudioFormat, AudioFormatNum, AudioSpec, AudioStream, AudioStreamWithCallback,
+};
+
+use crate::native::bloodprg::{
+    AudioDriverRequests, AudioPlaybackBanks, AudioPlaybackOutcome, AudioPlaybackState,
+    AudioStreamBuffer, AudioStreamBufferStatus, AudioStreamPlaybackPosition,
+    AudioStreamRefillOutcome, AudioStreamStartOutcome, AudioStreamState, AudioStreamSubmission,
+    AudioStreamSubmissionKind, load_audio_stream_source, refill_audio_stream, start_audio_stream,
+    update_audio_playback,
 };
 
 const RUNTIME_AUDIO_OUTPUT_RATE_HZ: u32 = 48_000;
@@ -14,6 +24,8 @@ const RUNTIME_AUDIO_CHANNEL_COUNT: i32 = 1;
 const PCM_FRACTIONAL_BITS: u32 = 32;
 const UNSIGNED_PCM_SILENCE: u8 = 128;
 const UNSIGNED_PCM_SCALE: f32 = 128.0;
+const SND_CLIP_RATE_CODE_INDEX: usize = 4;
+const LAST_STREAM_BUFFER_INDEX: usize = 1;
 
 /// Validated owned unsigned 8-bit mono PCM ready for runtime playback.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -55,6 +67,17 @@ impl RuntimePcmClip {
             .pcm()
             .ok_or_else(|| anyhow!("SND clip {} has no PCM payload", clip.index()))?;
         Self::new(sample_rate_hz, Arc::<[u8]>::from(samples))
+    }
+
+    fn from_encoded_snd(encoded: &[u8]) -> Result<Self> {
+        let rate_code = encoded
+            .get(SND_CLIP_RATE_CODE_INDEX)
+            .copied()
+            .context("encoded SND clip has no sample-rate byte")?;
+        let samples = encoded
+            .get(SND_CLIP_HEADER_BYTE_COUNT..)
+            .context("encoded SND clip has no PCM payload")?;
+        Self::new(snd_sample_rate_hz(rate_code), Arc::<[u8]>::from(samples))
     }
 
     /// Return the source rate before SDL output conversion.
@@ -104,6 +127,217 @@ impl PcmCursor {
         let sample = self.clip.samples[position as usize];
         self.fractional_position = self.fractional_position.wrapping_add(self.fractional_step);
         Some(sample)
+    }
+}
+
+#[derive(Clone, Debug)]
+struct StreamBufferCursor {
+    buffer_index: usize,
+    fractional_position: u64,
+    fractional_step: u64,
+    total_fractional_position: u64,
+}
+
+/// Flat host ownership for the recovered two-buffer music stream.
+#[derive(Clone, Debug)]
+struct RuntimeMusicStream {
+    playback: AudioPlaybackState,
+    stream: AudioStreamState,
+    output_rate_hz: u32,
+    source_rate_hz: Option<u32>,
+    cursor: Option<StreamBufferCursor>,
+}
+
+impl RuntimeMusicStream {
+    fn new(output_rate_hz: u32) -> Self {
+        let empty_buffer = || AudioStreamBuffer {
+            header: [u8::MIN; SND_CLIP_HEADER_BYTE_COUNT],
+            samples: Box::new([]),
+            status: AudioStreamBufferStatus::Free,
+        };
+        Self {
+            playback: AudioPlaybackState {
+                playback_enabled: true,
+                driver_requests: AudioDriverRequests::default(),
+                packed_stream_samples: false,
+                stream_buffers: [empty_buffer(), empty_buffer()],
+            },
+            stream: AudioStreamState {
+                channel_active: true,
+                source: None,
+                next_page_index: u16::MIN,
+                block_header: [u8::MIN; SND_CLIP_HEADER_BYTE_COUNT],
+                music_resource_changed: false,
+            },
+            output_rate_hz,
+            source_rate_hz: None,
+            cursor: None,
+        }
+    }
+
+    fn load(&mut self, encoded_voc: &[u8], source_rate_hz: u32) -> Result<()> {
+        load_audio_stream_source(&mut self.playback, &mut self.stream, encoded_voc)
+            .map_err(anyhow::Error::new)
+            .context("loading recovered navigation-audio stream state")?;
+        self.source_rate_hz = Some(source_rate_hz);
+        self.cursor = None;
+        for buffer in &mut self.playback.stream_buffers {
+            buffer.status = AudioStreamBufferStatus::Free;
+        }
+        Ok(())
+    }
+
+    fn start(&mut self) -> Result<()> {
+        let outcome = start_audio_stream(&mut self.playback, &mut self.stream)
+            .map_err(anyhow::Error::new)
+            .context("starting recovered navigation-audio stream")?;
+        match outcome {
+            AudioStreamStartOutcome::Inactive => {
+                bail!("navigation-audio stream start was rejected by its recovered gates")
+            }
+            AudioStreamStartOutcome::Started(submission) => {
+                self.submit(submission);
+                Ok(())
+            }
+        }
+    }
+
+    fn refill(&mut self) -> Result<AudioStreamRefillOutcome> {
+        let position = self.playback_position();
+        let outcome = refill_audio_stream(&mut self.playback, &mut self.stream, || position)
+            .map_err(anyhow::Error::new)
+            .context("refilling recovered navigation-audio stream")?;
+        if let AudioStreamRefillOutcome::Submitted(submission) = outcome {
+            self.submit(submission);
+        }
+        Ok(outcome)
+    }
+
+    fn update_clip(
+        &mut self,
+        request: crate::native::bloodprg::AudioClipRequest,
+        banks: AudioPlaybackBanks<'_>,
+    ) -> Result<AudioPlaybackOutcome> {
+        let position = match self.playback_position() {
+            AudioStreamPlaybackPosition::Playing(remaining) => Some(remaining),
+            AudioStreamPlaybackPosition::Stopped | AudioStreamPlaybackPosition::Unavailable => None,
+        };
+        update_audio_playback(&mut self.playback, request, banks, || position)
+            .map_err(anyhow::Error::new)
+            .context("applying recovered sound-clip playback semantics")
+    }
+
+    fn submit(&mut self, submission: AudioStreamSubmission) {
+        match submission.kind {
+            AudioStreamSubmissionKind::Start | AudioStreamSubmissionKind::Restart => {
+                for buffer in &mut self.playback.stream_buffers {
+                    buffer.status = AudioStreamBufferStatus::Free;
+                }
+                self.playback.stream_buffers[submission.buffer_index].status =
+                    AudioStreamBufferStatus::ReadyAndDriverOwned;
+                self.cursor = Some(StreamBufferCursor {
+                    buffer_index: submission.buffer_index,
+                    fractional_position: u64::MIN,
+                    fractional_step: self.fractional_step(),
+                    total_fractional_position: u64::MIN,
+                });
+            }
+            AudioStreamSubmissionKind::Service => {
+                self.playback.stream_buffers[submission.buffer_index].status =
+                    AudioStreamBufferStatus::DriverOwned;
+            }
+        }
+    }
+
+    fn stop(&mut self) {
+        self.cursor = None;
+        self.playback.driver_requests = AudioDriverRequests::default();
+        for buffer in &mut self.playback.stream_buffers {
+            buffer.status = AudioStreamBufferStatus::Free;
+        }
+    }
+
+    fn discard_pending(&mut self) -> bool {
+        if self.cursor.is_some() || !self.playback.driver_requests.stream_start_requested {
+            return false;
+        }
+        self.playback.driver_requests = AudioDriverRequests::default();
+        self.source_rate_hz = None;
+        self.stream.source.take().is_some()
+    }
+
+    fn pending(&self) -> bool {
+        self.playback.driver_requests.stream_start_requested
+    }
+
+    fn source_position(&self) -> Option<u64> {
+        self.cursor
+            .as_ref()
+            .map(|cursor| cursor.total_fractional_position >> PCM_FRACTIONAL_BITS)
+    }
+
+    fn playback_position(&self) -> AudioStreamPlaybackPosition {
+        let Some(cursor) = self.cursor.as_ref() else {
+            return AudioStreamPlaybackPosition::Stopped;
+        };
+        let buffer = &self.playback.stream_buffers[cursor.buffer_index];
+        let source_position = cursor.fractional_position >> PCM_FRACTIONAL_BITS;
+        let remaining = (buffer.samples.len() as u64).saturating_sub(source_position);
+        match u16::try_from(remaining) {
+            Ok(u16::MIN) => AudioStreamPlaybackPosition::Stopped,
+            Ok(remaining) => AudioStreamPlaybackPosition::Playing(remaining),
+            Err(_) => AudioStreamPlaybackPosition::Unavailable,
+        }
+    }
+
+    fn render_unsigned(&mut self, output: &mut [u8]) -> bool {
+        let was_active = self.cursor.is_some();
+        for destination in output {
+            *destination = self.next_sample().unwrap_or(UNSIGNED_PCM_SILENCE);
+        }
+        was_active
+    }
+
+    fn next_sample(&mut self) -> Option<u8> {
+        loop {
+            let cursor = self.cursor.as_mut()?;
+            let buffer_index = cursor.buffer_index;
+            let sample_count = self.playback.stream_buffers[buffer_index].samples.len() as u64;
+            let source_position = cursor.fractional_position >> PCM_FRACTIONAL_BITS;
+            if source_position < sample_count {
+                let sample =
+                    self.playback.stream_buffers[buffer_index].samples[source_position as usize];
+                cursor.fractional_position = cursor
+                    .fractional_position
+                    .wrapping_add(cursor.fractional_step);
+                cursor.total_fractional_position = cursor
+                    .total_fractional_position
+                    .wrapping_add(cursor.fractional_step);
+                return Some(sample);
+            }
+
+            let overflow = cursor
+                .fractional_position
+                .saturating_sub(sample_count << PCM_FRACTIONAL_BITS);
+            self.playback.stream_buffers[buffer_index].status = AudioStreamBufferStatus::Free;
+            let next_buffer_index = LAST_STREAM_BUFFER_INDEX - buffer_index;
+            if !matches!(
+                self.playback.stream_buffers[next_buffer_index].status,
+                AudioStreamBufferStatus::DriverOwned | AudioStreamBufferStatus::ReadyAndDriverOwned
+            ) {
+                self.cursor = None;
+                return None;
+            }
+            self.playback.stream_buffers[next_buffer_index].status =
+                AudioStreamBufferStatus::ReadyAndDriverOwned;
+            cursor.buffer_index = next_buffer_index;
+            cursor.fractional_position = overflow;
+        }
+    }
+
+    fn fractional_step(&self) -> u64 {
+        (u64::from(self.source_rate_hz.unwrap_or(self.output_rate_hz)) << PCM_FRACTIONAL_BITS)
+            / u64::from(self.output_rate_hz)
     }
 }
 
@@ -186,6 +420,25 @@ impl RuntimePcmMixer {
             self.foreground = None;
         }
     }
+
+    fn render_foreground_unsigned(&mut self, output: &mut [u8]) -> bool {
+        let was_active = self.foreground.is_some();
+        for destination in output {
+            *destination = self
+                .foreground
+                .as_mut()
+                .and_then(PcmCursor::next_sample)
+                .unwrap_or(UNSIGNED_PCM_SILENCE);
+        }
+        if self
+            .foreground
+            .as_ref()
+            .is_some_and(|cursor| cursor.source_position() >= cursor.clip.samples.len() as u64)
+        {
+            self.foreground = None;
+        }
+        was_active
+    }
 }
 
 impl Default for RuntimePcmMixer {
@@ -194,15 +447,27 @@ impl Default for RuntimePcmMixer {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct SharedAudioState {
     mixer: RuntimePcmMixer,
+    music_stream: RuntimeMusicStream,
     callback_error: Option<String>,
+}
+
+impl Default for SharedAudioState {
+    fn default() -> Self {
+        Self {
+            mixer: RuntimePcmMixer::default(),
+            music_stream: RuntimeMusicStream::new(RUNTIME_AUDIO_OUTPUT_RATE_HZ),
+            callback_error: None,
+        }
+    }
 }
 
 struct RuntimeAudioCallback {
     shared: Arc<Mutex<SharedAudioState>>,
     unsigned_samples: Vec<u8>,
+    foreground_samples: Vec<u8>,
     output_samples: Vec<f32>,
 }
 
@@ -211,11 +476,31 @@ impl AudioCallback<f32> for RuntimeAudioCallback {
         let requested = usize::try_from(requested).unwrap_or(usize::MIN);
         self.unsigned_samples
             .resize(requested, UNSIGNED_PCM_SILENCE);
+        self.foreground_samples
+            .resize(requested, UNSIGNED_PCM_SILENCE);
         self.output_samples
             .resize(requested, <f32 as AudioFormatNum>::SILENCE);
         {
             let mut shared = lock_shared(&self.shared);
-            shared.mixer.render_unsigned(&mut self.unsigned_samples);
+            if shared
+                .music_stream
+                .render_unsigned(&mut self.unsigned_samples)
+            {
+                let foreground_active = shared
+                    .mixer
+                    .render_foreground_unsigned(&mut self.foreground_samples);
+                if foreground_active {
+                    for (destination, foreground) in self
+                        .unsigned_samples
+                        .iter_mut()
+                        .zip(self.foreground_samples.iter().copied())
+                    {
+                        *destination = average_unsigned_pcm(foreground, *destination);
+                    }
+                }
+            } else {
+                shared.mixer.render_unsigned(&mut self.unsigned_samples);
+            }
         }
         for (destination, sample) in self
             .output_samples
@@ -243,6 +528,7 @@ impl RuntimeAudioHost {
         let callback = RuntimeAudioCallback {
             shared: Arc::clone(&shared),
             unsigned_samples: Vec::new(),
+            foreground_samples: Vec::new(),
             output_samples: Vec::new(),
         };
         let spec = AudioSpec {
@@ -262,7 +548,75 @@ impl RuntimeAudioHost {
     /// Start or replace looping background music.
     pub fn play_background(&mut self, clip: RuntimePcmClip) -> Result<()> {
         self.check_callback()?;
-        lock_shared(&self.shared).mixer.play_background(clip);
+        let mut shared = lock_shared(&self.shared);
+        shared.music_stream.stop();
+        shared.mixer.play_background(clip);
+        Ok(())
+    }
+
+    /// Load one validated VOC into the recovered flat stream lifecycle.
+    pub fn load_background_stream(
+        &mut self,
+        encoded_voc: &[u8],
+        source_rate_hz: u32,
+    ) -> Result<()> {
+        self.check_callback()?;
+        let mut shared = lock_shared(&self.shared);
+        shared.mixer.stop_background();
+        shared.music_stream.load(encoded_voc, source_rate_hz)?;
+        drop(shared);
+        self.stream
+            .clear()
+            .map_err(|error| anyhow!("clearing replaced SDL3 music stream: {error}"))
+    }
+
+    /// Start the VOC retained by [`Self::load_background_stream`].
+    pub fn start_background_stream(&mut self) -> Result<()> {
+        self.check_callback()?;
+        lock_shared(&self.shared).music_stream.start()
+    }
+
+    /// Queue at most one recovered 16 KiB stream page.
+    pub fn refill_background_stream(&mut self) -> Result<AudioStreamRefillOutcome> {
+        self.check_callback()?;
+        lock_shared(&self.shared).music_stream.refill()
+    }
+
+    /// Report whether a loaded stream is waiting for its explicit start call.
+    pub fn background_stream_pending(&self) -> bool {
+        lock_shared(&self.shared).music_stream.pending()
+    }
+
+    /// Discard a loaded stream that has not started.
+    pub fn discard_pending_background_stream(&mut self) -> bool {
+        lock_shared(&self.shared).music_stream.discard_pending()
+    }
+
+    /// Apply one recovered SND request to direct playback or the live music buffers.
+    pub fn play_sound_request(
+        &mut self,
+        request: crate::native::bloodprg::AudioClipRequest,
+        banks: AudioPlaybackBanks<'_>,
+    ) -> Result<()> {
+        self.check_callback()?;
+        let mut shared = lock_shared(&self.shared);
+        let outcome = shared.music_stream.update_clip(request, banks)?;
+        let direct_playback = match outcome {
+            AudioPlaybackOutcome::PlaybackDisabled => false,
+            AudioPlaybackOutcome::StopAndPlay(playback) => {
+                let clip = RuntimePcmClip::from_encoded_snd(&playback.encoded_clip)?;
+                shared.music_stream.stop();
+                shared.mixer.play_exclusive(clip);
+                true
+            }
+            AudioPlaybackOutcome::StreamMix(_) => false,
+        };
+        drop(shared);
+        if direct_playback {
+            self.stream
+                .clear()
+                .map_err(|error| anyhow!("clearing SDL3 stream before direct playback: {error}"))?;
+        }
         Ok(())
     }
 
@@ -276,7 +630,10 @@ impl RuntimeAudioHost {
     /// Stop prior sound and start one exclusive clip.
     pub fn play_exclusive(&mut self, clip: RuntimePcmClip) -> Result<()> {
         self.check_callback()?;
-        lock_shared(&self.shared).mixer.play_exclusive(clip);
+        let mut shared = lock_shared(&self.shared);
+        shared.music_stream.stop();
+        shared.mixer.play_exclusive(clip);
+        drop(shared);
         self.stream
             .clear()
             .map_err(|error| anyhow!("clearing SDL3 audio stream: {error}"))?;
@@ -285,7 +642,10 @@ impl RuntimeAudioHost {
 
     /// Stop every source and clear samples already queued in SDL.
     pub fn stop_all(&mut self) -> Result<()> {
-        lock_shared(&self.shared).mixer.stop_all();
+        let mut shared = lock_shared(&self.shared);
+        shared.music_stream.stop();
+        shared.mixer.stop_all();
+        drop(shared);
         self.stream
             .clear()
             .map_err(|error| anyhow!("clearing SDL3 audio stream: {error}"))?;
@@ -294,7 +654,10 @@ impl RuntimeAudioHost {
 
     /// Stop background music while allowing a foreground clip to finish.
     pub fn stop_background(&mut self) -> Result<()> {
-        lock_shared(&self.shared).mixer.stop_background();
+        let mut shared = lock_shared(&self.shared);
+        shared.music_stream.stop();
+        shared.mixer.stop_background();
+        drop(shared);
         self.stream
             .clear()
             .map_err(|error| anyhow!("clearing SDL3 audio stream: {error}"))?;
@@ -303,7 +666,11 @@ impl RuntimeAudioHost {
 
     /// Return the current source-sample position of looping music.
     pub fn background_position(&self) -> Option<u64> {
-        lock_shared(&self.shared).mixer.background_position()
+        let shared = lock_shared(&self.shared);
+        shared
+            .music_stream
+            .source_position()
+            .or_else(|| shared.mixer.background_position())
     }
 
     /// Return the current source-sample position of the foreground clip.
@@ -334,9 +701,17 @@ fn average_unsigned_pcm(source: u8, destination: u8) -> u8 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use commander_blood_formats::snd::SndBank;
+
+    use crate::native::bloodprg::{
+        AUDIO_STREAM_PAGE_BYTE_COUNT, AudioClipRequest, AudioMixStatus,
+        CREATIVE_VOICE_FILE_HEADER_BYTE_COUNT,
+    };
 
     const TEST_OUTPUT_RATE_HZ: u32 = 10;
     const HALF_OUTPUT_RATE_HZ: u32 = TEST_OUTPUT_RATE_HZ / 2;
+    const TEST_STREAM_RATE_HZ: u32 = 11_111;
+    const TEST_STREAM_RATE_CODE: u8 = 166;
 
     #[test]
     fn foreground_is_averaged_over_music_in_the_unsigned_domain() {
@@ -388,5 +763,123 @@ mod tests {
 
         assert_eq!(output, [9, 8]);
         assert_eq!(mixer.background_position(), None);
+    }
+
+    #[test]
+    fn recovered_stream_hands_off_between_original_sized_buffers() {
+        let payload = generated_stream_payload(AUDIO_STREAM_PAGE_BYTE_COUNT * 2);
+        let encoded = encoded_voc_stream(&payload);
+        let mut stream = RuntimeMusicStream::new(TEST_STREAM_RATE_HZ);
+        stream
+            .load(&encoded, TEST_STREAM_RATE_HZ)
+            .expect("synthetic stream loads");
+        stream.start().expect("synthetic stream starts");
+        assert_eq!(
+            stream.playback.stream_buffers[0].status,
+            AudioStreamBufferStatus::ReadyAndDriverOwned
+        );
+
+        assert!(matches!(
+            stream.refill().expect("second page queues"),
+            AudioStreamRefillOutcome::Submitted(AudioStreamSubmission {
+                kind: AudioStreamSubmissionKind::Service,
+                buffer_index: 1,
+                source_page_index: 1,
+                ..
+            })
+        ));
+        let mut output = vec![u8::MIN; AUDIO_STREAM_PAGE_BYTE_COUNT + 1];
+        assert!(stream.render_unsigned(&mut output));
+
+        let first_page_pcm_count = AUDIO_STREAM_PAGE_BYTE_COUNT - SND_CLIP_HEADER_BYTE_COUNT;
+        assert_eq!(
+            &output[..first_page_pcm_count],
+            &payload[SND_CLIP_HEADER_BYTE_COUNT..AUDIO_STREAM_PAGE_BYTE_COUNT]
+        );
+        assert_eq!(
+            &output[first_page_pcm_count..AUDIO_STREAM_PAGE_BYTE_COUNT],
+            &[u8::MIN; SND_CLIP_HEADER_BYTE_COUNT]
+        );
+        assert_eq!(
+            output[AUDIO_STREAM_PAGE_BYTE_COUNT],
+            payload[AUDIO_STREAM_PAGE_BYTE_COUNT]
+        );
+        assert_eq!(
+            stream.playback.stream_buffers[0].status,
+            AudioStreamBufferStatus::Free
+        );
+        assert_eq!(
+            stream.playback.stream_buffers[1].status,
+            AudioStreamBufferStatus::ReadyAndDriverOwned
+        );
+    }
+
+    #[test]
+    fn recovered_dialogue_mix_mutates_samples_consumed_by_stream() {
+        let payload = generated_stream_payload(AUDIO_STREAM_PAGE_BYTE_COUNT * 2);
+        let encoded = encoded_voc_stream(&payload);
+        let mut stream = RuntimeMusicStream::new(TEST_STREAM_RATE_HZ);
+        stream.load(&encoded, TEST_STREAM_RATE_HZ).unwrap();
+        stream.start().unwrap();
+
+        let voice_samples = [200, 180, 160, 140];
+        let streamed_dialogue = bank_with_one_clip(&voice_samples);
+        let resident_effects = empty_bank();
+        let outcome = stream
+            .update_clip(
+                AudioClipRequest::StreamedDialogue { index: 0 },
+                AudioPlaybackBanks {
+                    resident_effects: &resident_effects,
+                    streamed_dialogue: &streamed_dialogue,
+                },
+            )
+            .unwrap();
+        assert!(matches!(
+            outcome,
+            AudioPlaybackOutcome::StreamMix(report)
+                if report.status == AudioMixStatus::Mixed
+        ));
+
+        let original = &payload[SND_CLIP_HEADER_BYTE_COUNT..][..voice_samples.len()];
+        let mut output = [u8::MIN; 4];
+        assert!(stream.render_unsigned(&mut output));
+        assert_eq!(
+            output,
+            [
+                average_unsigned_pcm(voice_samples[0], original[0]),
+                average_unsigned_pcm(voice_samples[1], original[1]),
+                average_unsigned_pcm(voice_samples[2], original[2]),
+                original[3],
+            ]
+        );
+    }
+
+    fn encoded_voc_stream(payload: &[u8]) -> Vec<u8> {
+        let mut encoded = vec![u8::MIN; CREATIVE_VOICE_FILE_HEADER_BYTE_COUNT];
+        encoded.extend_from_slice(payload);
+        encoded
+    }
+
+    fn generated_stream_payload(byte_count: usize) -> Vec<u8> {
+        let mut payload = (0..byte_count)
+            .map(|index| (index.wrapping_mul(29).wrapping_add(17)) as u8)
+            .collect::<Vec<_>>();
+        payload[SND_CLIP_RATE_CODE_INDEX] = TEST_STREAM_RATE_CODE;
+        payload
+    }
+
+    fn bank_with_one_clip(samples: &[u8]) -> SndBank {
+        let mut clip = vec![u8::MIN; SND_CLIP_HEADER_BYTE_COUNT];
+        clip[SND_CLIP_RATE_CODE_INDEX] = TEST_STREAM_RATE_CODE;
+        clip.extend_from_slice(samples);
+        let mut encoded = vec![1, 0, 0, 0];
+        encoded.extend_from_slice(&0_u32.to_le_bytes());
+        encoded.extend_from_slice(&(clip.len() as u32).to_le_bytes());
+        encoded.extend_from_slice(&clip);
+        SndBank::decode(&encoded).unwrap()
+    }
+
+    fn empty_bank() -> SndBank {
+        SndBank::decode(&[u8::MIN; 8]).unwrap()
     }
 }

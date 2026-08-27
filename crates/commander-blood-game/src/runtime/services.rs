@@ -16,27 +16,28 @@ use sdl3::video::Window;
 
 use crate::native::alien::AlienSceneFrame;
 use crate::native::bloodprg::{
-    AudioClipRequest, AudioEventContext, AudioEventState, BRIDGE_CONSOLE_TINT_FIRST,
-    BRIDGE_DARK_PALETTE_ADJUSTMENT, BRIDGE_SPRITE_ENTITY_COUNT, BridgeActorPresentationState,
-    BridgePageBackend, BridgePageState, BridgePageTarget, BridgePaletteAdjustment, BridgeScene,
-    BridgeSceneFrame, BridgeSceneInput, BridgeScreenInitializationBackend,
-    BridgeScreenInitializationState, BridgeSpriteCommitOutcome, BridgeSpriteRasterOutcome,
-    BridgeSteeringInteraction, BridgeSteeringOutcome, CameraPageFlipOutcome,
-    CdAudioPreparationOutcome, CdAudioState, ChoiceListConfig, ChoiceListFrame, ChoiceListPointer,
-    ChoiceListState, ConfirmDialogOutcome, ConfirmDialogState, DescriptMusicSelectionOutcome,
-    DescriptRecordApplication, DirtyRegionCopyOutcome, FontPoint, FontVerticalBand, GameFontFace,
-    GameLifecycleState, GamePresentationOwner, GameSceneLink, IndexedGamePalette,
-    InlineMenuRevealOutcome, InlineMenuTextMetrics, InputAction, LoadedSoundBank,
-    Manu3HandFrameContext, Manu3HandFrameState, NAV_ACTOR_SLOT_COUNT, NameAreaEffectOutcome,
-    NavActorSlot, NavActorSlotUpdateOutcome, OriginalSaveGame, PbmDecodeResult, PointerButtonEdges,
-    PointerButtons, PointerSample, PresentationBridgeMode, PresentationChoiceNumber,
-    PresentationHitAreas, PresentationHitRectangle, PresentationHitSelection,
-    PresentationHoverOutcome, PresentationHoverState, PresentationPresentPolicy,
-    PresentationResourceId, PresentationResourceSequenceOutcome, PresentationSceneDispatchOutcome,
-    PresentationScreenOutcome, PresentationScreenState, PresentationWordChoiceOutcome,
-    RasterRectOutcome, SCENE_PALETTE_CLEAR_COLOR_COUNT, SHIP_CAMERA_RESET, SceneTransitionState,
-    ScriptClock, ScriptFrameOutcome, ScriptPresentationEntity, ScriptPresentationScanState,
-    ScriptProfileId, ScriptProfileLoadOutcome, ScriptShipNavigationMode, ScriptTravelActionPhase,
+    AudioClipRequest, AudioEventContext, AudioEventState, AudioPlaybackBanks,
+    BRIDGE_CONSOLE_TINT_FIRST, BRIDGE_DARK_PALETTE_ADJUSTMENT, BRIDGE_SPRITE_ENTITY_COUNT,
+    BridgeActorPresentationState, BridgePageBackend, BridgePageState, BridgePageTarget,
+    BridgePaletteAdjustment, BridgeScene, BridgeSceneFrame, BridgeSceneInput,
+    BridgeScreenInitializationBackend, BridgeScreenInitializationState, BridgeSpriteCommitOutcome,
+    BridgeSpriteRasterOutcome, BridgeSteeringInteraction, BridgeSteeringOutcome,
+    CameraPageFlipOutcome, CdAudioPreparationOutcome, CdAudioState, ChoiceListConfig,
+    ChoiceListFrame, ChoiceListPointer, ChoiceListState, ConfirmDialogOutcome, ConfirmDialogState,
+    DescriptMusicSelectionOutcome, DescriptRecordApplication, DirtyRegionCopyOutcome, FontPoint,
+    FontVerticalBand, GameFontFace, GameLifecycleState, GamePresentationOwner, GameSceneLink,
+    IndexedGamePalette, InlineMenuRevealOutcome, InlineMenuTextMetrics, InputAction,
+    LoadedSoundBank, Manu3HandFrameContext, Manu3HandFrameState, NAV_ACTOR_SLOT_COUNT,
+    NameAreaEffectOutcome, NavActorSlot, NavActorSlotUpdateOutcome, OriginalSaveGame,
+    PbmDecodeResult, PointerButtonEdges, PointerButtons, PointerSample, PresentationBridgeMode,
+    PresentationChoiceNumber, PresentationHitAreas, PresentationHitRectangle,
+    PresentationHitSelection, PresentationHoverOutcome, PresentationHoverState,
+    PresentationPresentPolicy, PresentationResourceId, PresentationResourceSequenceOutcome,
+    PresentationSceneDispatchOutcome, PresentationScreenOutcome, PresentationScreenState,
+    PresentationWordChoiceOutcome, RasterRectOutcome, SCENE_PALETTE_CLEAR_COLOR_COUNT,
+    SHIP_CAMERA_RESET, SceneTransitionState, ScriptClock, ScriptFrameOutcome,
+    ScriptPresentationEntity, ScriptPresentationScanState, ScriptProfileId,
+    ScriptProfileLoadOutcome, ScriptShipNavigationMode, ScriptTravelActionPhase,
     ShipDepthTransitionOutcome, ShipHudInitializationContext, ShipPresentationOutcome,
     ShipPresentationState, ShipProjectionResources, ShipTargetSelectionState, ShipViewEntityId,
     SoundBankUsage, StartupPreparationOutcome, TextPresentationState, clear_scene_palette_entries,
@@ -120,7 +121,6 @@ pub struct ModernGameServices<'window> {
     audio: Option<RuntimeAudioHost>,
     resident_sound_bank: Option<LoadedSoundBank>,
     audio_events: AudioEventState,
-    loaded_music: Option<RuntimePcmClip>,
     loaded_voice: Option<RuntimePcmClip>,
     bridge_scene: Option<BridgeScene>,
     bridge_frame: Option<BridgeSceneFrame>,
@@ -187,7 +187,6 @@ impl<'window> ModernGameServices<'window> {
                 dialogue_seed: u16::MIN,
                 last_clip: u16::MIN,
             },
-            loaded_music: None,
             loaded_voice: None,
             bridge_scene: None,
             bridge_frame: None,
@@ -502,17 +501,14 @@ impl<'window> ModernGameServices<'window> {
                 String::from_utf8_lossy(resource_name.as_bytes())
             )
         })?;
-        self.loaded_music = Some(RuntimePcmClip::from_voc(&decoded));
-        Ok(())
+        self.audio_mut()?
+            .load_background_stream(&encoded, decoded.sample_rate_hz())
+            .context("staging recovered navigation music stream")
     }
 
     /// Start the retained navigation music as a looping background source.
     pub fn start_loaded_navigation_music(&mut self) -> Result<()> {
-        let clip = self
-            .loaded_music
-            .take()
-            .context("no decoded navigation music is waiting to start")?;
-        self.audio_mut()?.play_background(clip)
+        self.audio_mut()?.start_background_stream()
     }
 
     /// Decode and start the navigation music selected by the active DESCRIPT record.
@@ -531,7 +527,7 @@ impl<'window> ModernGameServices<'window> {
         if self.navigation_music_position()?.is_some() {
             return self.check_audio();
         }
-        if self.loaded_music.is_none() {
+        if !self.audio_ref()?.background_stream_pending() {
             self.load_navigation_music()?;
         }
         self.start_loaded_navigation_music()
@@ -543,14 +539,9 @@ impl<'window> ModernGameServices<'window> {
     }
 
     fn play_resident_sound_bank_clip(&mut self, clip_index: u16) -> Result<()> {
-        let clip = self
-            .resident_sound_bank()
-            .context("playing a resident sound effect")?
-            .bank
-            .clip(usize::from(clip_index))
-            .with_context(|| format!("resident sound bank clip {clip_index} is not authored"))?;
-        let clip = RuntimePcmClip::from_snd_clip(clip)?;
-        self.audio_mut()?.play_foreground(clip)
+        self.play_sound_request(AudioClipRequest::VoiceReaction {
+            bank_index: clip_index,
+        })
     }
 
     /// Start optional physical-track-two playback for an alien encounter.
@@ -624,7 +615,14 @@ impl<'window> ModernGameServices<'window> {
 
     /// Release decoded navigation music that has not yet entered SDL playback.
     pub fn discard_loaded_music(&mut self) -> bool {
-        self.loaded_music.take().is_some()
+        self.audio
+            .as_mut()
+            .is_some_and(RuntimeAudioHost::discard_pending_background_stream)
+    }
+
+    /// Advance the recovered music double-buffer lifecycle by at most one page.
+    pub fn refill_navigation_music(&mut self) -> Result<()> {
+        self.audio_mut()?.refill_background_stream().map(|_| ())
     }
 
     /// Surface asynchronous SDL audio failures on the game thread.
@@ -747,16 +745,40 @@ impl<'window> ModernGameServices<'window> {
     }
 
     fn play_streamed_dialogue_clip(&mut self, clip_index: u16) -> Result<()> {
-        let clip = self
-            .scripts
-            .backend()
-            .streamed_sound_bank()
-            .context("no streamed DESCRIPT sound bank is loaded")?
-            .bank
-            .clip(usize::from(clip_index))
-            .with_context(|| format!("streamed dialogue clip {clip_index} is not authored"))?;
-        let clip = RuntimePcmClip::from_snd_clip(clip)?;
-        self.audio_mut()?.play_foreground(clip)
+        self.play_sound_request(AudioClipRequest::StreamedDialogue { index: clip_index })
+    }
+
+    fn play_sound_request(&mut self, request: AudioClipRequest) -> Result<()> {
+        let resident = self
+            .resident_sound_bank
+            .as_ref()
+            .context("no resident effects sound bank is loaded")?;
+        let streamed = match request {
+            AudioClipRequest::VoiceReaction { .. } => self
+                .scripts
+                .backend()
+                .streamed_sound_bank()
+                .map_or(&resident.bank, |loaded| &loaded.bank),
+            AudioClipRequest::StreamedDialogue { .. } => {
+                &self
+                    .scripts
+                    .backend()
+                    .streamed_sound_bank()
+                    .context("no streamed DESCRIPT sound bank is loaded")?
+                    .bank
+            }
+        };
+        let audio = self
+            .audio
+            .as_mut()
+            .context("runtime audio has not been initialized")?;
+        audio.play_sound_request(
+            request,
+            AudioPlaybackBanks {
+                resident_effects: &resident.bank,
+                streamed_dialogue: streamed,
+            },
+        )
     }
 
     /// Current source-sample position of navigation music, when active.
