@@ -19,8 +19,8 @@ use crate::native::bloodprg::{
     DescriptRecordApplication, DirtyRegionCopyOutcome, FontPoint, FontVerticalBand, GameFontFace,
     GameLifecycleState, GamePresentationOwner, GameSceneLink, IndexedGamePalette,
     InlineMenuRevealOutcome, InlineMenuTextMetrics, InputAction, Manu3HandFrameContext,
-    Manu3HandFrameState, PbmDecodeResult, PointerButtonEdges, PointerButtons, PointerSample,
-    PresentationChoiceNumber, PresentationPresentPolicy, PresentationResourceId,
+    Manu3HandFrameState, OriginalSaveGame, PbmDecodeResult, PointerButtonEdges, PointerButtons,
+    PointerSample, PresentationChoiceNumber, PresentationPresentPolicy, PresentationResourceId,
     PresentationResourceSequenceOutcome, PresentationSceneDispatchOutcome,
     PresentationScreenOutcome, PresentationScreenState, PresentationWordChoiceOutcome,
     SCENE_PALETTE_CLEAR_COLOR_COUNT, ScriptClock, ScriptFrameOutcome, ScriptProfileId,
@@ -28,8 +28,8 @@ use crate::native::bloodprg::{
     ShipHudInitializationContext, ShipPresentationOutcome, ShipPresentationState,
     ShipProjectionResources, ShipTargetSelectionState, ShipViewEntityId, StartupPreparationOutcome,
     TextPresentationState, clear_scene_palette_entries, draw_planar_dialogue_text,
-    measure_game_text_width, objects_at_arche_position, presentable_navigation_objects,
-    reveal_inline_menu_step, update_manu3_hand_frame,
+    measure_game_text_width, objects_at_arche_position, original_save_state_block_byte_count,
+    presentable_navigation_objects, reveal_inline_menu_step, update_manu3_hand_frame,
 };
 use crate::native::manu3::animation::CursorPosition;
 use crate::native::random::BloodPrng;
@@ -45,10 +45,10 @@ use super::{
     RuntimeInputHost, RuntimePaletteTransition, RuntimePaletteTransitionConfig,
     RuntimePaletteTransitionOutcome, RuntimePcmClip, RuntimePresentationCatalog,
     RuntimePresentationHost, RuntimePresentationPlayer, RuntimePresentationScreen,
-    RuntimePresentationStepOutcome, RuntimePresentationWordChoice, RuntimeScriptBackend,
-    RuntimeScriptCommand, RuntimeScriptSystem, RuntimeShipHud, RuntimeShipNavigation,
-    RuntimeShipTargetSelection, RuntimeShipTargetSelector, RuntimeSubtitleReveal,
-    VGA_BIOS_FONT_8X8,
+    RuntimePresentationStepOutcome, RuntimePresentationWordChoice, RuntimeSaveLoad,
+    RuntimeScriptBackend, RuntimeScriptCommand, RuntimeScriptSystem, RuntimeShipHud,
+    RuntimeShipNavigation, RuntimeShipTargetSelection, RuntimeShipTargetSelector,
+    RuntimeSubtitleReveal, VGA_BIOS_FONT_8X8,
 };
 
 const INITIAL_LOGICAL_POINTER: [i16; 2] = [160, 100];
@@ -86,6 +86,7 @@ pub struct ModernGameServices<'window> {
     bridge_frame: Option<BridgeSceneFrame>,
     presentation_screen: Option<RuntimePresentationScreen>,
     presentation_word_choice: Option<RuntimePresentationWordChoice>,
+    save_load: Option<RuntimeSaveLoad>,
     ship_hud: Option<RuntimeShipHud>,
     ship_navigation: Option<RuntimeShipNavigation>,
     ship_target_selector: Option<RuntimeShipTargetSelector>,
@@ -127,6 +128,7 @@ impl<'window> ModernGameServices<'window> {
             bridge_frame: None,
             presentation_screen: Some(presentation_screen),
             presentation_word_choice: Some(RuntimePresentationWordChoice::default()),
+            save_load: Some(RuntimeSaveLoad::default()),
             ship_hud: Some(RuntimeShipHud::default()),
             ship_navigation: Some(RuntimeShipNavigation::default()),
             ship_target_selector: Some(RuntimeShipTargetSelector::default()),
@@ -392,6 +394,108 @@ impl<'window> ModernGameServices<'window> {
         self.ship_navigation = Some(RuntimeShipNavigation::default());
         self.ship_target_selector = Some(RuntimeShipTargetSelector::default());
         Ok(outcome)
+    }
+
+    /// Capture the active typed profile in the original `GAME*.SAV` format.
+    pub fn capture_original_save_game(&self) -> Result<OriginalSaveGame> {
+        OriginalSaveGame::capture(
+            self.runtime
+                .current_profile()
+                .context("cannot save without a loaded BloodScript profile")?,
+        )
+        .map_err(Into::into)
+    }
+
+    /// Restore one original save through profile selection, initialization, and HUD rebuild.
+    pub fn restore_original_save_game(
+        &mut self,
+        data: &[u8],
+        state: &mut GameLifecycleState,
+    ) -> Result<()> {
+        let profile = OriginalSaveGame::decode_profile(data)
+            .context("decoding the saved BloodScript profile")?;
+        self.load_script_profile(profile)?;
+        state.pending_profile = None;
+        state.vm_execution_enabled = true;
+        self.execute_and_apply_lifecycle_script_frame(state)
+            .context("initializing the saved BloodScript profile")?;
+
+        let state_byte_count = original_save_state_block_byte_count(
+            self.runtime
+                .current_profile()
+                .context("saved profile initialization did not retain a profile")?,
+        )
+        .context("resolving the saved profile state allocation")?;
+        let save = OriginalSaveGame::decode(data, state_byte_count)
+            .context("decoding the complete original save image")?;
+        save.restore_into(
+            self.runtime
+                .current_profile_mut()
+                .context("saved profile disappeared before state restoration")?,
+        )
+        .context("restoring the original save blocks")?;
+        self.reset_ship_hud()
+            .context("rebuilding the ship HUD after save restoration")?;
+        state.navigation_rebuild_pending = true;
+        state.navigation_transition_pending = false;
+        Ok(())
+    }
+
+    /// Advance the complete recovered save/load menu against concrete runtime services.
+    pub fn update_runtime_save_load(
+        &mut self,
+        state: &mut GameLifecycleState,
+    ) -> Result<crate::native::bloodprg::SaveLoadMenuOutcome> {
+        let mut save_load = self
+            .save_load
+            .take()
+            .context("save/load update is reentrant")?;
+        let outcome = save_load.update(self, state);
+        self.save_load = Some(save_load);
+        outcome
+    }
+
+    /// Route one translated input action to save/load when it owns the UI.
+    pub fn queue_save_load_input(&mut self, action: InputAction) -> Result<bool> {
+        Ok(self
+            .save_load
+            .as_mut()
+            .context("save/load is already being updated")?
+            .queue_input(action))
+    }
+
+    /// Open the ordinary save-slot editor.
+    pub fn request_save_menu(&mut self) -> Result<()> {
+        self.save_load
+            .as_mut()
+            .context("save/load is already being updated")?
+            .request_save();
+        Ok(())
+    }
+
+    /// Open the ordinary load-slot selector.
+    pub fn request_load_menu(&mut self) -> Result<()> {
+        self.save_load
+            .as_mut()
+            .context("save/load is already being updated")?
+            .request_load();
+        Ok(())
+    }
+
+    /// Request an immediate save to the reserved tenth slot.
+    pub fn request_quick_save(&mut self) -> Result<()> {
+        self.save_load
+            .as_mut()
+            .context("save/load is already being updated")?
+            .request_quick_save();
+        Ok(())
+    }
+
+    /// Borrow the persistent save/load adapter state.
+    pub fn runtime_save_load(&self) -> Result<&RuntimeSaveLoad> {
+        self.save_load
+            .as_ref()
+            .context("save/load is already being updated")
     }
 
     /// Advance the recovered ship HUD against concrete flat runtime services.

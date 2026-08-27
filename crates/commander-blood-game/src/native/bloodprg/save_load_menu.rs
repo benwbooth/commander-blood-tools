@@ -109,6 +109,17 @@ impl SaveLoadMenuState {
     pub fn request_quick_save(&mut self) {
         self.requests.quick_save = true;
     }
+
+    /// Close any active save/load interaction through the shared cleanup path.
+    pub fn cancel(&mut self) {
+        close_save_load_menu(self);
+        self.requests.quick_save = false;
+    }
+
+    /// Return whether any save/load operation currently owns input.
+    pub const fn is_active(&self) -> bool {
+        self.requests.save || self.requests.load || self.requests.quick_save
+    }
 }
 
 impl Default for SaveLoadMenuState {
