@@ -5,6 +5,20 @@ original data files as authoritative resources. `ported.tsv` is deliberately
 conservative: a routine is listed only after its Rust behavior has direct binary
 oracle coverage and documentation.
 
+## Completion status
+
+All 520 recovered native routines are accounted for by the checked coverage
+ledgers: 470 routines have documented Rust implementations and 50 DOS memory,
+hardware, or authored no-operation adapters have documented eliminations. The
+coverage test rejects missing, duplicate, or unsupported mappings.
+
+The real-data acceptance suite restores an authentic save, reloads every script
+profile and companion resource set, enters and completes an authored path for
+all 65 recovered contacts, decodes every navigation world, and exercises the
+production SDL3/wgpu Pterra HUD transition. These gates establish implementation
+coverage and broad behavioral readiness; they do not replace a continuous
+start-to-credits playthrough.
+
 ## Memory model
 
 The runtime uses a flat address space. Skeleton parents, vertices, faces,
@@ -103,8 +117,8 @@ direct binary cases verify camera-relative position wrapping, bounds and exit
 updates, anchor publication, and the AMER/CROOLIS half-delta versus SCRUT fixed
 state adjustment. Three malformed zero-count wrapping vectors are rejected by
 the typed API instead of reproducing a 65,536-iteration address-space walk.
-These operations remain outside the live scene loop until every method-table
-variant needed by shipped models has a real implementation.
+Every method-table variant selected by the shipped models is connected to the
+live `AlienScene::step` dispatch.
 
 The full-scale and one-sixteenth-scale cyclic sample methods are translated for
 all three species as typed texture animation. Thirty well-formed binary cases
@@ -132,15 +146,16 @@ The slot-3 coordinator is translated for all three species with 24 valid
 original-binary cases. Its fixed 128-entry motion-history ring uses ordinary
 owned records and slot indices, while indirect routine addresses become a typed
 callback enum and dispatch trait. Three malformed zero-count cases are rejected
-instead of reproducing the original full-address-space walk. Concrete callback
-bodies remain pending and this method is not yet connected to live dispatch.
+instead of reproducing the original full-address-space walk. Its concrete
+callbacks are connected to the live scene loop through typed dispatch.
 
 Four supporting slot-3 callback operations are translated for every species:
 course restart, resume-clear setup, resume capture, and timer-gated history
 clearing. All 42 direct binary vectors match their represented state. Captured
 nodes use `Option<usize>` and ring positions use checked slots; callback entry
 addresses and byte cursors do not survive into runtime data. The initial-course
-and follower-course callback bodies remain pending direct oracle coverage.
+and follower-course callback bodies are translated, oracle-tested, and invoked
+by the slot-3 coordinator.
 
 The slot-13 resume coordinator is translated for all three species with 18
 direct binary cases. Callback presence is a typed enum option, and paired or
