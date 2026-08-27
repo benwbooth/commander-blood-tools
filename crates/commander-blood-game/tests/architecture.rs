@@ -145,3 +145,18 @@ fn modern_game_does_not_ship_runtime_memory_captures() {
         }
     }
 }
+
+#[test]
+fn production_runtime_opens_only_the_imported_loose_asset_store() {
+    let game_root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let runtime = std::fs::read_to_string(game_root.join("src/runtime.rs")).unwrap();
+    let lifecycle =
+        std::fs::read_to_string(game_root.join("src/runtime/game_lifecycle.rs")).unwrap();
+    let importer = std::fs::read_to_string(game_root.join("src/asset_import.rs")).unwrap();
+
+    assert!(!runtime.contains("BloodArchive::decode"));
+    assert!(!runtime.contains("std::fs::read(paths.archive"));
+    assert!(!lifecycle.contains("archive_entries()"));
+    assert!(importer.contains("BloodArchive::decode"));
+    assert!(importer.contains("RESOURCE_DIRECTORY_NAME"));
+}

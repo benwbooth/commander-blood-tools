@@ -159,15 +159,12 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
 
     fn initialize_archive_index(&mut self) -> Result<()> {
         let data = self.services.runtime().data();
-        let indexed_entries = data
-            .resource_store()
-            .archive_entries()
-            .context("BLOOD.DAT has no decoded archive index")?;
-        if indexed_entries.len() != data.archive_entry_count() {
+        let indexed_resource_count = data.resource_store().resource_names().len();
+        if indexed_resource_count != data.imported_resource_count() {
             bail!(
-                "decoded BLOOD.DAT index has {} entries; expected {}",
-                indexed_entries.len(),
-                data.archive_entry_count()
+                "imported loose-resource index has {} entries; expected {}",
+                indexed_resource_count,
+                data.imported_resource_count()
             );
         }
         self.archive_index_initialized = true;

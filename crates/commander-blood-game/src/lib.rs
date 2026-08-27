@@ -10,6 +10,7 @@
 
 mod alien_render;
 pub mod app;
+mod asset_import;
 pub mod assets;
 mod bridge_render;
 pub mod native;

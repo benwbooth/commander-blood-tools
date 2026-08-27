@@ -359,23 +359,17 @@ mod tests {
         let data = OriginalGameData::load_with_writable_root(paths, std::env::temp_dir()).unwrap();
         let resource_names: BTreeSet<_> = data
             .resource_store()
-            .archive_entries()
-            .unwrap()
-            .iter()
-            .filter(|entry| {
-                entry
-                    .name()
-                    .as_bytes()
+            .resource_names()
+            .into_iter()
+            .filter(|name| {
+                name.as_bytes()
                     .get(
-                        entry
-                            .name()
-                            .as_bytes()
+                        name.as_bytes()
                             .len()
                             .saturating_sub(HNM_FILENAME_SUFFIX.len())..,
                     )
                     .is_some_and(|suffix| suffix.eq_ignore_ascii_case(HNM_FILENAME_SUFFIX))
             })
-            .map(|entry| entry.name().clone())
             .collect();
         assert_eq!(resource_names.len(), SHIPPED_HNM_RESOURCE_COUNT);
         let mut runtime = OriginalGameRuntime::new(data);

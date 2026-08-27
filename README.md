@@ -11,6 +11,30 @@ parsing, script recovery, rendering, audio, and real-game oracle comparison.
 See [docs/decompilation-roadmap.md](docs/decompilation-roadmap.md) for the full
 reverse-engineering and Rust reimplementation plan.
 
+## Rust Game Port
+
+The modern SDL3/wgpu executable imports the original installation into a
+versioned loose-asset store on first launch. `BLOOD.DAT` is read only by this
+one-time importer; subsequent game processes load ordinary files through
+`assets-v1/manifest.json` and never open the archive.
+
+```sh
+nix develop --command cargo run -p commander-blood-game --bin commander-blood -- \
+  --data /path/to/original/commander-blood
+```
+
+The default immutable asset cache is
+`$XDG_DATA_HOME/commander-blood/assets-v1`, falling back to
+`~/.local/share/commander-blood/assets-v1`. Set `CBLOOD_ASSET_CACHE` to select
+another location. Saves remain separate and use `CBLOOD_WRITE_DATA` or the
+parent Commander Blood user-data directory.
+
+The manifest records every effective DOS resource, original archive or loose
+origin, exact byte count, SHA-256 digest, and media kind. HNM, SND, and VOC files
+remain lossless original resources in this first normalized format so palette,
+frame-timing, subtitle, music, chatter, and effect behavior can still be checked
+against the recovered decoders before standard media derivatives replace them.
+
 ## Commands
 
 Run through the flake so `ffmpeg`, `7z`, `curl`, and Rust are all on `PATH`:

@@ -80,7 +80,7 @@ use std::fmt;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
-use commander_blood_formats::archive::{BloodArchive, BloodResourceName};
+use commander_blood_formats::archive::BloodResourceName;
 use commander_blood_formats::bloodprg::{
     BloodprgBridgeMenuText, BloodprgConfirmDialogRegions, BloodprgFontResources,
     BloodprgHyperspaceResources, BloodprgNavigationResources, BloodprgPresentationCatalog,
@@ -98,6 +98,10 @@ use commander_blood_formats::world_art::{
     WorldArtworkLayout, decode_bloodprg_world_artwork_layout,
 };
 
+use crate::asset_import::{
+    ASSET_MANIFEST_FILENAME, AssetImportOutcome, IMPORTED_ASSET_DIRECTORY_NAME,
+    ImportedAssetManifest, RESOURCE_DIRECTORY_NAME, import_original_assets,
+};
 use crate::assets::OriginalResourceStore;
 use crate::native::bloodprg::{
     ORIGINAL_SCRIPT_PROFILE_COUNT, OriginalResourceCache, OriginalResourceCatalog,
@@ -119,6 +123,7 @@ pub const ORIGINAL_DESCRIPT_FILENAME: &str = "DESCRIPT.DES";
 pub const ORIGINAL_SAVE_DIRECTORY_FILENAME: &str = "BLOOD.SAV";
 
 const DATA_ROOT_ENVIRONMENT_VARIABLE: &str = "CBLOOD_DATA";
+const ASSET_CACHE_ROOT_ENVIRONMENT_VARIABLE: &str = "CBLOOD_ASSET_CACHE";
 const WRITABLE_DATA_ROOT_ENVIRONMENT_VARIABLE: &str = "CBLOOD_WRITE_DATA";
 const XDG_DATA_HOME_ENVIRONMENT_VARIABLE: &str = "XDG_DATA_HOME";
 const HOME_ENVIRONMENT_VARIABLE: &str = "HOME";
@@ -133,15 +138,16 @@ const KNOWN_DATA_ROOTS: [&str; 3] = [
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OriginalGameDataPaths {
     root: PathBuf,
-    archive: PathBuf,
+    resource_root: PathBuf,
     executable: PathBuf,
     title: PathBuf,
     bridge_panorama: PathBuf,
     descript: PathBuf,
+    manifest: ImportedAssetManifest,
 }
 
 impl OriginalGameDataPaths {
-    /// Resolve and validate every required companion below `root`.
+    /// Resolve an imported loose store, importing one original installation when needed.
     pub fn from_root(root: impl Into<PathBuf>) -> Result<Self> {
         let root = root.into();
         if !root.is_dir() {
@@ -151,16 +157,56 @@ impl OriginalGameDataPaths {
             );
         }
 
+        if root.join(ASSET_MANIFEST_FILENAME).is_file() {
+            return Self::from_imported_root(root);
+        }
+        if !root_file_exists_case_insensitive(&root, ORIGINAL_ARCHIVE_FILENAME)? {
+            bail!(
+                "Commander Blood data root has neither an imported manifest nor {ORIGINAL_ARCHIVE_FILENAME}: {}",
+                root.display()
+            );
+        }
+        let imported_root = discover_asset_cache_root(None)?;
+        if ImportedAssetManifest::load(&imported_root).is_err() {
+            eprintln!(
+                "Importing original Commander Blood assets into {}. This one-time operation may take several minutes.",
+                imported_root.display()
+            );
+        }
+        let outcome = import_original_assets(&root, &imported_root).with_context(|| {
+            format!(
+                "importing original Commander Blood assets from {}",
+                root.display()
+            )
+        })?;
+        if let AssetImportOutcome::Imported { resource_count } = outcome {
+            eprintln!(
+                "Imported {resource_count} loose Commander Blood resources into {}.",
+                imported_root.display()
+            );
+        }
+        Self::from_imported_root(imported_root)
+    }
+
+    fn from_imported_root(root: PathBuf) -> Result<Self> {
+        let manifest = ImportedAssetManifest::load(&root)?;
+
         let paths = Self {
-            archive: root.join(ORIGINAL_ARCHIVE_FILENAME),
-            executable: root.join(ORIGINAL_EXECUTABLE_FILENAME),
-            title: root.join(ORIGINAL_TITLE_FILENAME),
-            bridge_panorama: root.join(ORIGINAL_BRIDGE_PANORAMA_FILENAME),
-            descript: root.join(ORIGINAL_DESCRIPT_FILENAME),
+            resource_root: root.join(RESOURCE_DIRECTORY_NAME),
+            executable: manifest.companion_path(&root, ORIGINAL_EXECUTABLE_FILENAME)?,
+            title: manifest.companion_path(&root, ORIGINAL_TITLE_FILENAME)?,
+            bridge_panorama: manifest.companion_path(&root, ORIGINAL_BRIDGE_PANORAMA_FILENAME)?,
+            descript: manifest.companion_path(&root, ORIGINAL_DESCRIPT_FILENAME)?,
+            manifest,
             root,
         };
+        if !paths.resource_root.is_dir() {
+            bail!(
+                "required imported resource directory is missing: {}",
+                paths.resource_root.display()
+            );
+        }
         for path in [
-            &paths.archive,
             &paths.executable,
             &paths.title,
             &paths.bridge_panorama,
@@ -173,12 +219,6 @@ impl OriginalGameDataPaths {
                 );
             }
         }
-        if !root_file_exists_case_insensitive(&paths.root, ORIGINAL_SAVE_DIRECTORY_FILENAME)? {
-            bail!(
-                "required Commander Blood startup file is missing: {}",
-                paths.root.join(ORIGINAL_SAVE_DIRECTORY_FILENAME).display()
-            );
-        }
         Ok(paths)
     }
 
@@ -186,6 +226,11 @@ impl OriginalGameDataPaths {
     pub fn discover(explicit_root: Option<&Path>) -> Result<Self> {
         if let Some(root) = explicit_root {
             return Self::from_root(root);
+        }
+
+        let imported_root = discover_asset_cache_root(None)?;
+        if let Ok(paths) = Self::from_imported_root(imported_root) {
+            return Ok(paths);
         }
 
         let mut candidates = Vec::new();
@@ -209,9 +254,9 @@ impl OriginalGameDataPaths {
         &self.root
     }
 
-    /// Packed `BLOOD.DAT` path.
-    pub fn archive(&self) -> &Path {
-        &self.archive
+    /// Directory containing every imported resource as an ordinary loose file.
+    pub fn resource_root(&self) -> &Path {
+        &self.resource_root
     }
 
     /// Original `BLOODPRG.EXE` path.
@@ -232,6 +277,10 @@ impl OriginalGameDataPaths {
     /// Authored `DESCRIPT.DES` presentation database path.
     pub fn descript(&self) -> &Path {
         &self.descript
+    }
+
+    fn manifest(&self) -> &ImportedAssetManifest {
+        &self.manifest
     }
 }
 
@@ -289,6 +338,7 @@ pub struct OriginalGameData {
     name_area_effect_sequences: Box<[NameAreaEffectSequence]>,
     world_artwork_layout: Box<[WorldArtworkLayout]>,
     archive_entry_count: usize,
+    imported_resource_count: usize,
 }
 
 impl fmt::Debug for OriginalGameData {
@@ -298,6 +348,7 @@ impl fmt::Debug for OriginalGameData {
             .field("paths", &self.paths)
             .field("executable_byte_count", &self.executable.len())
             .field("archive_entry_count", &self.archive_entry_count)
+            .field("imported_resource_count", &self.imported_resource_count)
             .field("resource_count", &self.resource_catalog.len())
             .field(
                 "descript_record_count",
@@ -357,18 +408,15 @@ impl OriginalGameData {
             anyhow::anyhow!("decoding {}: {error:?}", paths.descript().display())
         })?;
 
-        let archive_bytes = std::fs::read(paths.archive())
-            .with_context(|| format!("reading {}", paths.archive().display()))?
-            .into_boxed_slice();
-        let archive = BloodArchive::decode(archive_bytes)
-            .with_context(|| format!("decoding {}", paths.archive().display()))?;
-        let archive_entry_count = archive.entries().len();
+        let archive_entry_count = paths.manifest().source_archive_entry_count;
+        let imported_resource_count = paths.manifest().resources.len();
+        let resource_names = paths.manifest().resource_names()?;
         let resource_store = OriginalResourceStore::with_writable_root(
-            paths.root().to_owned(),
+            paths.resource_root().to_owned(),
             writable_root.into(),
-            Some(archive),
-            [],
-            false,
+            None,
+            resource_names,
+            true,
         );
 
         Ok(Self {
@@ -389,6 +437,7 @@ impl OriginalGameData {
             name_area_effect_sequences,
             world_artwork_layout,
             archive_entry_count,
+            imported_resource_count,
         })
     }
 
@@ -477,6 +526,11 @@ impl OriginalGameData {
         self.archive_entry_count
     }
 
+    /// Number of unique effective resources represented by the imported loose manifest.
+    pub const fn imported_resource_count(&self) -> usize {
+        self.imported_resource_count
+    }
+
     /// Decode every playable BloodScript profile through the original resource service.
     pub fn validate_script_profiles(&self) -> Result<Vec<ScriptProfileValidation>> {
         let mut validations = Vec::with_capacity(ORIGINAL_SCRIPT_PROFILE_COUNT);
@@ -560,6 +614,17 @@ pub fn discover_writable_data_root(explicit_root: Option<&Path>) -> Result<PathB
     Ok(std::env::current_dir()
         .context("resolving current directory for writable game data")?
         .join(USER_DATA_DIRECTORY_NAME))
+}
+
+/// Select the versioned directory that owns immutable imported game assets.
+pub fn discover_asset_cache_root(explicit_root: Option<&Path>) -> Result<PathBuf> {
+    if let Some(root) = explicit_root {
+        return Ok(root.to_owned());
+    }
+    if let Some(root) = std::env::var_os(ASSET_CACHE_ROOT_ENVIRONMENT_VARIABLE) {
+        return Ok(PathBuf::from(root));
+    }
+    Ok(discover_writable_data_root(None)?.join(IMPORTED_ASSET_DIRECTORY_NAME))
 }
 
 #[cfg(test)]
@@ -657,7 +722,10 @@ mod tests {
             OriginalGameData::load_with_writable_root(paths.clone(), &writable_root).unwrap();
 
         assert_eq!(data.paths().root(), paths.root());
-        assert_eq!(data.resource_store().loose_source_root(), paths.root());
+        assert_eq!(
+            data.resource_store().loose_source_root(),
+            paths.resource_root()
+        );
         assert_eq!(data.resource_store().writable_root(), writable_root);
         assert!(!writable_root.exists());
     }
@@ -675,28 +743,14 @@ mod tests {
     }
 
     #[test]
-    fn data_root_requires_the_case_insensitive_startup_save_template() {
-        let root = std::env::temp_dir().join(format!(
-            "commander-blood-startup-save-data-{}",
+    fn asset_cache_root_is_versioned_below_the_writable_data_root() {
+        let writable_root = std::env::temp_dir().join(format!(
+            "commander-blood-cache-root-test-{}",
             std::process::id()
         ));
-        let _ = std::fs::remove_dir_all(&root);
-        std::fs::create_dir_all(&root).unwrap();
-        for filename in [
-            ORIGINAL_ARCHIVE_FILENAME,
-            ORIGINAL_EXECUTABLE_FILENAME,
-            ORIGINAL_TITLE_FILENAME,
-            ORIGINAL_BRIDGE_PANORAMA_FILENAME,
-            ORIGINAL_DESCRIPT_FILENAME,
-        ] {
-            std::fs::write(root.join(filename), []).unwrap();
-        }
-
-        let error = OriginalGameDataPaths::from_root(&root).unwrap_err();
-        assert!(error.to_string().contains(ORIGINAL_SAVE_DIRECTORY_FILENAME));
-        std::fs::write(root.join("blood.sav"), []).unwrap();
-        assert!(OriginalGameDataPaths::from_root(&root).is_ok());
-
-        std::fs::remove_dir_all(root).unwrap();
+        assert_eq!(
+            discover_asset_cache_root(Some(&writable_root)).unwrap(),
+            writable_root
+        );
     }
 }

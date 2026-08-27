@@ -82,6 +82,15 @@ impl OriginalResourceStore {
         self.archive.as_deref().map(BloodArchive::entries)
     }
 
+    /// Return every resource name represented by the configured storage index.
+    pub fn resource_names(&self) -> BTreeSet<BloodResourceName> {
+        let mut names = self.loose_names.clone();
+        if let Some(archive) = &self.archive {
+            names.extend(archive.entries().iter().map(|entry| entry.name().clone()));
+        }
+        names
+    }
+
     /// Select the source that can satisfy one resource request.
     ///
     /// This translates `resource_source_select` at BLOODPRG file offset
