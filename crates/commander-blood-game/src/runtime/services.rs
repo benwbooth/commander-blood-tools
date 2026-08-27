@@ -28,10 +28,11 @@ use super::choice_list::{draw_choice_list_rows, prepare_choice_list_frame};
 use super::{
     LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_PIXEL_COUNT, OriginalGameData,
     OriginalGameRuntime, RuntimeAssetLoadStatus, RuntimeAudioHost, RuntimeConfirmDialog,
-    RuntimeInputHost, RuntimePcmClip, RuntimePresentationCatalog, RuntimePresentationHost,
-    RuntimePresentationPlayer, RuntimePresentationScreen, RuntimePresentationStepOutcome,
-    RuntimePresentationWordChoice, RuntimeScriptBackend, RuntimeScriptCommand, RuntimeScriptSystem,
-    RuntimeSubtitleReveal, VGA_BIOS_FONT_8X8,
+    RuntimeInputHost, RuntimePaletteTransition, RuntimePaletteTransitionOutcome, RuntimePcmClip,
+    RuntimePresentationCatalog, RuntimePresentationHost, RuntimePresentationPlayer,
+    RuntimePresentationScreen, RuntimePresentationStepOutcome, RuntimePresentationWordChoice,
+    RuntimeScriptBackend, RuntimeScriptCommand, RuntimeScriptSystem, RuntimeSubtitleReveal,
+    VGA_BIOS_FONT_8X8,
 };
 
 const INITIAL_LOGICAL_POINTER: [i16; 2] = [160, 100];
@@ -63,6 +64,7 @@ pub struct ModernGameServices<'window> {
     presentation_screen: Option<RuntimePresentationScreen>,
     presentation_word_choice: Option<RuntimePresentationWordChoice>,
     subtitle_reveal: Option<RuntimeSubtitleReveal>,
+    palette_transition: RuntimePaletteTransition,
     confirm_dialog: RuntimeConfirmDialog,
     manu3_hand: Manu3HandFrameState,
     ship_presentation: ShipPresentationState,
@@ -96,6 +98,7 @@ impl<'window> ModernGameServices<'window> {
             presentation_screen: Some(presentation_screen),
             presentation_word_choice: Some(RuntimePresentationWordChoice::default()),
             subtitle_reveal: Some(RuntimeSubtitleReveal::default()),
+            palette_transition: RuntimePaletteTransition::default(),
             confirm_dialog,
             manu3_hand: Manu3HandFrameState::default(),
             ship_presentation: ShipPresentationState::default(),
@@ -396,6 +399,21 @@ impl<'window> ModernGameServices<'window> {
         let outcome = outcome?;
         self.scripts.finish_lifecycle_frame(state)?;
         Ok(outcome)
+    }
+
+    /// Advance the shared palette fade and reproduce its input-latch upload gate.
+    pub fn update_lifecycle_palette_transition(
+        &mut self,
+        state: &mut GameLifecycleState,
+    ) -> Result<RuntimePaletteTransitionOutcome> {
+        self.palette_transition
+            .update(self.runtime.live_palette_mut(), state)
+            .context("advancing the recovered palette transition")
+    }
+
+    /// Mutably borrow the transition owner used by scene and HUD coordinators.
+    pub fn palette_transition_mut(&mut self) -> &mut RuntimePaletteTransition {
+        &mut self.palette_transition
     }
 
     /// Enable or disable the bridge's recovered six-choice presentation panel.

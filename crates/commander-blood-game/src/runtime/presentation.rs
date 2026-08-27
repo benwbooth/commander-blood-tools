@@ -86,6 +86,9 @@ impl<'window> RuntimePresentationHost<'window> {
         runtime: &OriginalGameRuntime,
         bridge_frame: Option<&BridgeSceneFrame>,
     ) -> Result<()> {
+        // Frame-tail text and palette work occurs after the native chunky-copy
+        // boundary, so refresh the modern texture immediately before drawing.
+        self.submit_indexed_frame(runtime)?;
         let manu3_triangles = runtime
             .manu3()
             .map(|model| model.render_triangles())

@@ -5,6 +5,7 @@ mod bios_font;
 mod choice_list;
 mod confirm_dialog;
 mod input;
+mod palette_transition;
 mod platform;
 mod presentation;
 mod presentation_catalog;
@@ -24,6 +25,9 @@ pub use audio::{RuntimeAudioHost, RuntimePcmClip, RuntimePcmMixer};
 pub use bios_font::VGA_BIOS_FONT_8X8;
 pub use confirm_dialog::RuntimeConfirmDialog;
 pub use input::{RuntimeInputHost, map_host_pointer_to_logical};
+pub use palette_transition::{
+    RuntimePaletteTransition, RuntimePaletteTransitionConfig, RuntimePaletteTransitionOutcome,
+};
 pub use platform::{GAME_FRAME_DURATION, RuntimePlatformHost};
 pub use presentation::RuntimePresentationHost;
 pub use presentation_catalog::{RuntimePresentationBackground, RuntimePresentationCatalog};
