@@ -17,7 +17,7 @@ use crate::native::bloodprg::{
     ScriptExecutionService, ScriptFrameOutcome, ScriptPresentationEntity, ScriptProfileId,
     ScriptProfileLoadOutcome, ScriptRecordStateNavigationContext, ScriptTransferContext,
     SequencePresentationState, SequenceRequestContext, TextPresentationState,
-    execute_loaded_script_frame, lookup_and_apply_descript_record,
+    deferred_navigation_record, execute_loaded_script_frame, lookup_and_apply_descript_record,
 };
 
 use super::{OriginalGameData, OriginalGameRuntime};
@@ -264,6 +264,27 @@ impl RuntimeScriptSystem {
         service
             .backend_mut()
             .apply_description(name, true, &mut dispatch.text_presentation)
+    }
+
+    /// Apply a DESCRIPT record by stable profile object identity.
+    pub fn apply_object_description(
+        &mut self,
+        object: ScriptObjectId,
+    ) -> Result<Option<DescriptRecordApplication>> {
+        let Self { dispatch, service } = self;
+        let name = service.backend().object_name(object)?.to_vec();
+        let application = service.backend_mut().apply_description(
+            &name,
+            true,
+            &mut dispatch.text_presentation,
+        )?;
+        service.backend_mut().active_description_object = application.map(|_| object);
+        Ok(application)
+    }
+
+    /// Queue the complete typed C1 action emitted by a ship-HUD target choice.
+    pub fn defer_navigation_target(&mut self, target: ScriptObjectId) {
+        self.service.presentation_state_mut().deferred = deferred_navigation_record(target, true);
     }
 }
 

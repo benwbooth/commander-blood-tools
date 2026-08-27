@@ -1,6 +1,7 @@
 //! Owned flat game state assembled from translated systems and original resources.
 
 use std::fmt;
+use std::ops::Range;
 
 use anyhow::{Context, Result, bail};
 use commander_blood_formats::archive::BloodResourceName;
@@ -8,17 +9,19 @@ use commander_blood_formats::manu3::decode_manu3;
 use commander_blood_formats::panorama::BridgePanoramaArchive;
 
 use crate::native::bloodprg::{
-    BRIDGE_SPRITE_ENTITY_COUNT, BridgeFrameState, BridgeSpriteEntity, BridgeSpritePosition,
-    BridgeSpriteRect, CHART_BACK_BUFFER_RESOURCE_PATH, CameraApproachState, FontPoint,
-    GameFontDrawOutcome, IndexedGamePalette, LoadedScriptProfile, NameAreaEffectOutcome,
+    BRIDGE_SPRITE_ENTITY_COUNT, BridgeFrameState, BridgeSpriteClipSnapshotFlags,
+    BridgeSpriteCommitOutcome, BridgeSpriteDirtyRegions, BridgeSpriteEntity, BridgeSpritePosition,
+    BridgeSpriteRect, CHART_BACK_BUFFER_RESOURCE_PATH, CameraApproachState, DirtyRegionCopyOutcome,
+    FontPoint, GameFontDrawOutcome, IndexedGamePalette, LoadedScriptProfile, NameAreaEffectOutcome,
     NameAreaEffectState, OriginalResourceCache, OriginalSaveSlotDirectory,
     PaletteResourceLoadOutcome, PaletteResourceStorage, PaletteResourceTarget, PauseHudRefresh,
     PbmDecodeResult, PresentationChoiceNumber, RasterPoint, RasterRectOutcome, ResourceId,
     ScriptPresentationEntity, ScriptProfileId, ScriptProfileLoadOutcome, ScriptProfileManager,
     ShipDepthBandLayout, ShipHudState, ShipViewArtworkSelection, ShipViewEntityId,
     activate_bridge_sprite_from_resource, advance_bridge_sprite_state, build_pause_hud_refresh,
-    decode_chart_back_buffer, draw_presentation_choice_number, draw_small_font_text,
-    fill_framebuffer_rect, select_ship_view_artwork, update_name_area_effect,
+    commit_bridge_sprite_dirty_range, copy_dirty_regions_to_display, decode_chart_back_buffer,
+    draw_presentation_choice_number, draw_small_font_text, fill_framebuffer_rect,
+    select_ship_view_artwork, update_name_area_effect,
 };
 use crate::native::manu3::model::Manu3Model;
 
@@ -43,6 +46,13 @@ const SHIP_VIEW_TRANSITION_ENTITY_INDEX: usize = 31;
 const PRESENTATION_PANEL_ENTITY_INDEX: usize = 31;
 const LOGICAL_FRAMEBUFFER_HALF_HEIGHT: usize = 100;
 const SHIP_TRAVEL_CLEAR_COLOR: u8 = u8::MIN;
+const SHIP_DIRTY_SNAPSHOT_PENDING: u16 = 1;
+const LOGICAL_DISPLAY_CLIP: BridgeSpriteRect = BridgeSpriteRect {
+    left: 0,
+    right: LOGICAL_FRAMEBUFFER_WIDTH as i32,
+    top: 0,
+    bottom: LOGICAL_FRAMEBUFFER_HEIGHT as i32,
+};
 
 /// One owned 320 by 200 row-major indexed framebuffer.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -107,6 +117,7 @@ pub struct OriginalGameRuntime {
     save_slots: Option<OriginalSaveSlotDirectory>,
     bridge_frame_state: BridgeFrameState,
     bridge_sprite_entities: [BridgeSpriteEntity; BRIDGE_SPRITE_ENTITY_COUNT],
+    bridge_dirty_regions: BridgeSpriteDirtyRegions,
     camera_approach: CameraApproachState,
     name_area_effect: NameAreaEffectState,
     ship_hud: ShipHudState,
@@ -147,6 +158,7 @@ impl OriginalGameRuntime {
             save_slots: None,
             bridge_frame_state: BridgeFrameState::default(),
             bridge_sprite_entities: [BridgeSpriteEntity::default(); BRIDGE_SPRITE_ENTITY_COUNT],
+            bridge_dirty_regions: BridgeSpriteDirtyRegions::default(),
             camera_approach: CameraApproachState::default(),
             name_area_effect: NameAreaEffectState::default(),
             ship_hud: ShipHudState::default(),
@@ -368,6 +380,48 @@ impl OriginalGameRuntime {
     /// Capture the current display as the source page for the ship-depth effect.
     pub fn capture_ship_depth_source(&mut self) {
         self.back_buffer.copy_from(&self.front_buffer);
+    }
+
+    /// Clear the retained secondary surface used by first-time ship-HUD setup.
+    pub fn clear_back_buffer(&mut self) {
+        self.back_buffer.clear(u8::MIN);
+    }
+
+    /// Publish the full logical clip and commit the requested ship entity range.
+    pub fn commit_ship_entity_geometry(
+        &mut self,
+        entities: Range<u16>,
+    ) -> Result<BridgeSpriteCommitOutcome> {
+        if entities.is_empty() {
+            bail!("ship entity commit range is empty");
+        }
+        self.bridge_dirty_regions.snapshot_flags =
+            BridgeSpriteClipSnapshotFlags::from_bits(SHIP_DIRTY_SNAPSHOT_PENDING);
+        self.bridge_dirty_regions.clip_bounds = LOGICAL_DISPLAY_CLIP;
+        commit_bridge_sprite_dirty_range(
+            &mut self.bridge_sprite_entities,
+            usize::from(entities.start),
+            usize::from(entities.end - 1),
+            &mut self.bridge_dirty_regions,
+        )
+        .context("committing ship entity geometry")
+    }
+
+    /// Restore every published dirty rectangle from the retained back buffer.
+    pub fn copy_ship_dirty_regions(&mut self) -> Result<DirtyRegionCopyOutcome> {
+        let Self {
+            bridge_dirty_regions,
+            front_buffer,
+            back_buffer,
+            ..
+        } = self;
+        copy_dirty_regions_to_display(
+            true,
+            &bridge_dirty_regions.regions,
+            back_buffer.pixels(),
+            front_buffer.pixels_mut(),
+        )
+        .context("copying ship dirty regions to the display")
     }
 
     /// Copy the recovered upper and lower ship-depth bands between flat buffers.

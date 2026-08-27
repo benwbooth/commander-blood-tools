@@ -104,6 +104,8 @@ pub struct ShipHudCoordinatorState<RecordId> {
     pub exit_pending: bool,
     /// Whether the depth door is still opening.
     pub depth_opening: bool,
+    /// Low-byte movement selected for the shared depth transition.
+    pub depth_step: u8,
     /// Whether entity geometry has been snapshotted for clipping.
     pub clip_snapshot_ready: bool,
     /// Whether subtitle presentation currently owns the text surface.
@@ -128,12 +130,14 @@ pub struct ShipHudCoordinatorState<RecordId> {
 pub trait ShipHudCoordinatorHost<RecordId> {
     /// Clear the back buffer before first-time HUD setup.
     fn clear_back_buffer(&mut self);
+    /// Publish the recovered bridge seek target and panorama frame.
+    fn initialize_bridge_view(&mut self, seek_target_arc: u16, view_frame: u16);
     /// Rebuild VM navigation state after HUD activation.
     fn process_vm_state(&mut self);
     /// Build presentable typed records below one root.
     fn build_presentable_targets(&mut self, root: &RecordId) -> Vec<RecordId>;
-    /// Load one selected record's description assets.
-    fn load_target_description(&mut self, target: &RecordId);
+    /// Load one selected record's description assets and report a music change.
+    fn load_target_description(&mut self, target: &RecordId) -> bool;
     /// Dispatch the initial authored ship scene line.
     fn dispatch_ship_scene_line(&mut self, vertical_offset: u16);
     /// Copy the display surface into the back buffer.
@@ -142,14 +146,14 @@ pub trait ShipHudCoordinatorHost<RecordId> {
     fn compose_depth_band(&mut self);
     /// Update bridge steering for the current frame.
     fn update_bridge_steering(&mut self);
-    /// Apply the HUD's dark palette remap within the supplied row range.
-    fn remap_hud_band(&mut self, rows: Range<u16>);
+    /// Rebuild the HUD's dark palette remap under the supplied temporary clip.
+    fn prepare_hud_remap(&mut self, rows: Range<u16>);
     /// Commit dirty ship entities within the supplied inclusive range.
     fn commit_ship_entities(&mut self, entities: Range<u16>);
     /// Copy dirty work-surface pixels into the display surface.
     fn copy_dirty_regions(&mut self);
-    /// Advance the separately recovered target selector.
-    fn update_target_selection(&mut self) -> ShipTargetSelectionOutcome<RecordId>;
+    /// Advance the target selector and return its updated depth-transition state.
+    fn update_target_selection(&mut self) -> (ShipTargetSelectionOutcome<RecordId>, bool, u8);
     /// Reset the audio driver after a music-source change.
     fn reset_audio_driver(&mut self);
     /// Load the new presentation music source.
@@ -206,7 +210,7 @@ where
 
     host.update_bridge_steering();
     if state.ui_state & SHIP_HUD_UI_FLAG != u16::MIN {
-        host.remap_hud_band(SHIP_HUD_BAND_TOP..SHIP_HUD_BAND_BOTTOM);
+        host.prepare_hud_remap(SHIP_HUD_BAND_TOP..SHIP_HUD_BAND_BOTTOM);
     }
 
     state.clip_snapshot_ready = true;
@@ -225,7 +229,10 @@ where
         state.palette_transition.increment = u16::MIN;
     }
     state.frame_presented = true;
-    match host.update_target_selection() {
+    let (selection, depth_opening, depth_step) = host.update_target_selection();
+    state.depth_opening = depth_opening;
+    state.depth_step = depth_step;
+    match selection {
         ShipTargetSelectionOutcome::Transitioning | ShipTargetSelectionOutcome::NoSelection => {
             Ok(ShipHudCoordinatorOutcome::NoSelection)
         }
@@ -233,13 +240,14 @@ where
         ShipTargetSelectionOutcome::Selected(target) => {
             if target != state.current_target {
                 state.current_target = target.clone();
-                host.load_target_description(&target);
+                state.music_source_changed = host.load_target_description(&target);
             }
 
             if state.music_source_changed {
                 host.compose_depth_band();
                 host.reset_audio_driver();
                 host.load_music_source();
+                state.music_source_changed = false;
             }
             host.start_audio_stream();
             state.deferred_navigation_target = Some(target);
@@ -267,6 +275,7 @@ where
     host.clear_back_buffer();
     state.bridge_seek_target_arc = u16::MIN;
     state.bridge_view_frame = INITIAL_BRIDGE_VIEW_FRAME;
+    host.initialize_bridge_view(state.bridge_seek_target_arc, state.bridge_view_frame);
     state.ui_state |= SHIP_HUD_UI_FLAG;
     state.manu3_animation_requested = true;
     state.initialized = true;
@@ -290,7 +299,7 @@ where
             .cloned()
             .ok_or(ShipHudCoordinatorError::MissingInitialTarget)?;
     }
-    host.load_target_description(&state.current_target);
+    state.music_source_changed = host.load_target_description(&state.current_target);
 
     state.scene_dispatch_blocked = true;
     state.active_line = Some(SHIP_HUD_ACTIVE_LINE);
@@ -368,6 +377,9 @@ mod tests {
     struct OracleHost {
         calls: VecDeque<String>,
         selection: u16,
+        music_changed: bool,
+        depth_opening: bool,
+        depth_step: u8,
     }
 
     impl OracleHost {
@@ -381,6 +393,11 @@ mod tests {
             self.expect("backclear");
         }
 
+        fn initialize_bridge_view(&mut self, seek_target_arc: u16, view_frame: u16) {
+            assert_eq!(seek_target_arc, u16::MIN);
+            assert_eq!(view_frame, INITIAL_BRIDGE_VIEW_FRAME);
+        }
+
         fn process_vm_state(&mut self) {
             self.expect("state");
         }
@@ -390,8 +407,9 @@ mod tests {
             vec![FIRST_PRESENTABLE_TARGET]
         }
 
-        fn load_target_description(&mut self, _target: &u16) {
+        fn load_target_description(&mut self, _target: &u16) -> bool {
             self.expect("c2");
+            self.music_changed
         }
 
         fn dispatch_ship_scene_line(&mut self, vertical_offset: u16) {
@@ -411,7 +429,7 @@ mod tests {
             self.expect("bridge");
         }
 
-        fn remap_hud_band(&mut self, rows: Range<u16>) {
+        fn prepare_hud_remap(&mut self, rows: Range<u16>) {
             self.expect("palette");
             assert_eq!(rows, SHIP_HUD_BAND_TOP..SHIP_HUD_BAND_BOTTOM);
         }
@@ -425,13 +443,18 @@ mod tests {
             self.expect("dirty");
         }
 
-        fn update_target_selection(&mut self) -> ShipTargetSelectionOutcome<u16> {
+        fn update_target_selection(&mut self) -> (ShipTargetSelectionOutcome<u16>, bool, u8) {
             self.expect("target");
-            match self.selection {
+            let outcome = match self.selection {
                 u16::MIN => ShipTargetSelectionOutcome::NoSelection,
-                u16::MAX => ShipTargetSelectionOutcome::CloseRequested,
+                u16::MAX => {
+                    self.depth_opening = true;
+                    self.depth_step = 6;
+                    ShipTargetSelectionOutcome::CloseRequested
+                }
                 target => ShipTargetSelectionOutcome::Selected(target),
-            }
+            };
+            (outcome, self.depth_opening, self.depth_step)
         }
 
         fn reset_audio_driver(&mut self) {
@@ -470,6 +493,9 @@ mod tests {
             let mut host = OracleHost {
                 calls,
                 selection: vector.selection,
+                music_changed: vector.music_changed != u8::MIN,
+                depth_opening: vector.opening != u8::MIN,
+                depth_step: u8::MIN,
             };
 
             let outcome = update_ship_hud(&mut state, &context, &mut host).unwrap();
@@ -491,22 +517,23 @@ mod tests {
 
         impl ShipHudCoordinatorHost<u16> for EmptyHost {
             fn clear_back_buffer(&mut self) {}
+            fn initialize_bridge_view(&mut self, _seek_target_arc: u16, _view_frame: u16) {}
             fn process_vm_state(&mut self) {}
             fn build_presentable_targets(&mut self, _root: &u16) -> Vec<u16> {
                 Vec::new()
             }
-            fn load_target_description(&mut self, _target: &u16) {
+            fn load_target_description(&mut self, _target: &u16) -> bool {
                 panic!("missing target must fail before lookup");
             }
             fn dispatch_ship_scene_line(&mut self, _vertical_offset: u16) {}
             fn copy_display_to_back_buffer(&mut self) {}
             fn compose_depth_band(&mut self) {}
             fn update_bridge_steering(&mut self) {}
-            fn remap_hud_band(&mut self, _rows: Range<u16>) {}
+            fn prepare_hud_remap(&mut self, _rows: Range<u16>) {}
             fn commit_ship_entities(&mut self, _entities: Range<u16>) {}
             fn copy_dirty_regions(&mut self) {}
-            fn update_target_selection(&mut self) -> ShipTargetSelectionOutcome<u16> {
-                ShipTargetSelectionOutcome::NoSelection
+            fn update_target_selection(&mut self) -> (ShipTargetSelectionOutcome<u16>, bool, u8) {
+                (ShipTargetSelectionOutcome::NoSelection, false, u8::MIN)
             }
             fn reset_audio_driver(&mut self) {}
             fn load_music_source(&mut self) {}
@@ -577,6 +604,7 @@ mod tests {
             },
             exit_pending: vector.exit_pending != u8::MIN,
             depth_opening: vector.opening != u8::MIN,
+            depth_step: u8::MIN,
             clip_snapshot_ready: false,
             text_display_active: vector.text_active != u8::MIN,
             text_reveal_complete: vector.text_character == u8::MIN,

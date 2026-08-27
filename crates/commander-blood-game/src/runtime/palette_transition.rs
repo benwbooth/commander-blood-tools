@@ -75,6 +75,11 @@ impl RuntimePaletteTransition {
         self.state.percent = percent;
     }
 
+    /// Synchronize an increment changed by another recovered presentation owner.
+    pub fn set_increment(&mut self, increment: u16) {
+        self.state.increment = increment;
+    }
+
     /// Replace all transition inputs after validating the typed color interval.
     pub fn configure(
         &mut self,

@@ -159,6 +159,12 @@ impl BridgeScene {
         };
     }
 
+    /// Apply the bridge globals written when the recovered ship HUD opens.
+    pub fn initialize_hud_view(&mut self, seek_target_arc: u16, view_frame: u16) {
+        self.seek.target_arc = seek_target_arc;
+        self.steering.view_frame = view_frame;
+    }
+
     /// Advance steering and generate the exact starfield and panorama layers.
     pub fn render_frame(
         &mut self,

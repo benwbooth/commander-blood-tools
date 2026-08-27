@@ -150,6 +150,11 @@ impl RuntimePcmMixer {
         self.foreground = None;
     }
 
+    /// Stop looping background music without interrupting foreground speech.
+    pub fn stop_background(&mut self) {
+        self.background = None;
+    }
+
     /// Return the current source-sample position of looping music.
     pub fn background_position(&self) -> Option<u64> {
         self.background.as_ref().map(PcmCursor::source_position)
@@ -287,6 +292,15 @@ impl RuntimeAudioHost {
         self.check_callback()
     }
 
+    /// Stop background music while allowing a foreground clip to finish.
+    pub fn stop_background(&mut self) -> Result<()> {
+        lock_shared(&self.shared).mixer.stop_background();
+        self.stream
+            .clear()
+            .map_err(|error| anyhow!("clearing SDL3 audio stream: {error}"))?;
+        self.check_callback()
+    }
+
     /// Return the current source-sample position of looping music.
     pub fn background_position(&self) -> Option<u64> {
         lock_shared(&self.shared).mixer.background_position()
@@ -360,5 +374,19 @@ mod tests {
         assert_eq!(output, [3, UNSIGNED_PCM_SILENCE]);
         assert_eq!(mixer.background_position(), None);
         assert_eq!(mixer.foreground_position(), None);
+    }
+
+    #[test]
+    fn stopping_background_preserves_foreground_playback() {
+        let mut mixer = RuntimePcmMixer::new(TEST_OUTPUT_RATE_HZ).unwrap();
+        mixer.play_background(RuntimePcmClip::new(TEST_OUTPUT_RATE_HZ, [1, 2]).unwrap());
+        mixer.play_foreground(RuntimePcmClip::new(TEST_OUTPUT_RATE_HZ, [9, 8]).unwrap());
+
+        mixer.stop_background();
+        let mut output = [0; 2];
+        mixer.render_unsigned(&mut output);
+
+        assert_eq!(output, [9, 8]);
+        assert_eq!(mixer.background_position(), None);
     }
 }

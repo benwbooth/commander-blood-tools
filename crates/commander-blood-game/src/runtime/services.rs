@@ -1,27 +1,32 @@
 //! Concrete runtime services assembled for the recovered top-level lifecycle.
 
+use std::ops::Range;
+
 use anyhow::{Context, Result, bail};
 use commander_blood_formats::archive::BloodResourceName;
 use commander_blood_formats::bloodprg::{BloodprgFontResources, decode_bloodprg_bridge_resources};
+use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
 use commander_blood_formats::script::{ScriptObjectId, ScriptWordId};
 use commander_blood_formats::snd::{SndBank, VocPcm};
 use sdl3::AudioSubsystem;
 use sdl3::video::Window;
 
 use crate::native::bloodprg::{
-    BridgeScene, BridgeSceneFrame, BridgeSceneInput, ChoiceListConfig, ChoiceListFrame,
-    ChoiceListPointer, ChoiceListState, ConfirmDialogOutcome, ConfirmDialogState,
-    DescriptRecordApplication, FontPoint, FontVerticalBand, GameFontFace, GameLifecycleState,
-    GamePresentationOwner, GameSceneLink, InlineMenuRevealOutcome, InlineMenuTextMetrics,
-    InputAction, Manu3HandFrameContext, Manu3HandFrameState, PbmDecodeResult, PointerButtonEdges,
-    PointerButtons, PointerSample, PresentationChoiceNumber, PresentationPresentPolicy,
-    PresentationResourceId, PresentationResourceSequenceOutcome, PresentationSceneDispatchOutcome,
-    PresentationScreenOutcome, PresentationScreenState, PresentationWordChoiceOutcome, ScriptClock,
+    BridgeScene, BridgeSceneFrame, BridgeSceneInput, BridgeSpriteCommitOutcome,
+    BridgeSteeringInteraction, ChoiceListConfig, ChoiceListFrame, ChoiceListPointer,
+    ChoiceListState, ConfirmDialogOutcome, ConfirmDialogState, DescriptMusicSelectionOutcome,
+    DescriptRecordApplication, DirtyRegionCopyOutcome, FontPoint, FontVerticalBand, GameFontFace,
+    GameLifecycleState, GamePresentationOwner, GameSceneLink, InlineMenuRevealOutcome,
+    InlineMenuTextMetrics, InputAction, Manu3HandFrameContext, Manu3HandFrameState,
+    PbmDecodeResult, PointerButtonEdges, PointerButtons, PointerSample, PresentationChoiceNumber,
+    PresentationPresentPolicy, PresentationResourceId, PresentationResourceSequenceOutcome,
+    PresentationSceneDispatchOutcome, PresentationScreenOutcome, PresentationScreenState,
+    PresentationWordChoiceOutcome, SCENE_PALETTE_CLEAR_COLOR_COUNT, ScriptClock,
     ScriptFrameOutcome, ScriptProfileId, ScriptProfileLoadOutcome, ShipDepthTransitionOutcome,
     ShipHudInitializationContext, ShipPresentationState, ShipProjectionResources,
     ShipTargetSelectionState, ShipViewEntityId, StartupPreparationOutcome, TextPresentationState,
-    draw_planar_dialogue_text, measure_game_text_width, reveal_inline_menu_step,
-    update_manu3_hand_frame,
+    draw_planar_dialogue_text, measure_game_text_width, objects_at_arche_position,
+    presentable_navigation_objects, reveal_inline_menu_step, update_manu3_hand_frame,
 };
 use crate::native::manu3::animation::CursorPosition;
 use crate::native::random::BloodPrng;
@@ -31,10 +36,11 @@ use super::ship_target::ship_hud_arche_link;
 use super::{
     LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_PIXEL_COUNT, OriginalGameData,
     OriginalGameRuntime, RuntimeAssetLoadStatus, RuntimeAudioHost, RuntimeConfirmDialog,
-    RuntimeInputHost, RuntimePaletteTransition, RuntimePaletteTransitionOutcome, RuntimePcmClip,
-    RuntimePresentationCatalog, RuntimePresentationHost, RuntimePresentationPlayer,
-    RuntimePresentationScreen, RuntimePresentationStepOutcome, RuntimePresentationWordChoice,
-    RuntimeScriptBackend, RuntimeScriptCommand, RuntimeScriptSystem, RuntimeShipTargetSelection,
+    RuntimeInputHost, RuntimePaletteTransition, RuntimePaletteTransitionConfig,
+    RuntimePaletteTransitionOutcome, RuntimePcmClip, RuntimePresentationCatalog,
+    RuntimePresentationHost, RuntimePresentationPlayer, RuntimePresentationScreen,
+    RuntimePresentationStepOutcome, RuntimePresentationWordChoice, RuntimeScriptBackend,
+    RuntimeScriptCommand, RuntimeScriptSystem, RuntimeShipHud, RuntimeShipTargetSelection,
     RuntimeShipTargetSelector, RuntimeSubtitleReveal, VGA_BIOS_FONT_8X8,
 };
 
@@ -48,6 +54,8 @@ const FULL_LOGICAL_FONT_BAND: FontVerticalBand = FontVerticalBand {
 const MENU_WIDTH_PROBE_ORIGIN: FontPoint = FontPoint { x: 10, y: 8 };
 const MENU_WIDTH_PROBE_COLOR: u8 = u8::MIN;
 const CHOICE_LIST_SELECTION_SOUND_CLIP: u8 = u8::MIN;
+const NO_BRIDGE_HORIZONTAL_MOTION: i32 = 0;
+const SHIP_HUD_PALETTE_TRANSITION_INCREMENT: u16 = 10;
 
 /// Owned flat services that concrete `GameLifecycleHost` methods delegate to.
 ///
@@ -61,11 +69,13 @@ pub struct ModernGameServices<'window> {
     presentation: RuntimePresentationHost<'window>,
     presentation_player: RuntimePresentationPlayer,
     audio: Option<RuntimeAudioHost>,
+    loaded_music: Option<RuntimePcmClip>,
     loaded_voice: Option<RuntimePcmClip>,
     bridge_scene: Option<BridgeScene>,
     bridge_frame: Option<BridgeSceneFrame>,
     presentation_screen: Option<RuntimePresentationScreen>,
     presentation_word_choice: Option<RuntimePresentationWordChoice>,
+    ship_hud: Option<RuntimeShipHud>,
     ship_target_selector: Option<RuntimeShipTargetSelector>,
     subtitle_reveal: Option<RuntimeSubtitleReveal>,
     palette_transition: RuntimePaletteTransition,
@@ -96,11 +106,13 @@ impl<'window> ModernGameServices<'window> {
             presentation,
             presentation_player,
             audio: None,
+            loaded_music: None,
             loaded_voice: None,
             bridge_scene: None,
             bridge_frame: None,
             presentation_screen: Some(presentation_screen),
             presentation_word_choice: Some(RuntimePresentationWordChoice::default()),
+            ship_hud: Some(RuntimeShipHud::default()),
             ship_target_selector: Some(RuntimeShipTargetSelector::default()),
             subtitle_reveal: Some(RuntimeSubtitleReveal::default()),
             palette_transition: RuntimePaletteTransition::default(),
@@ -210,8 +222,8 @@ impl<'window> ModernGameServices<'window> {
         Ok(())
     }
 
-    /// Decode and start the navigation music selected by the active DESCRIPT record.
-    pub fn restart_navigation_music(&mut self) -> Result<()> {
+    /// Decode and retain navigation music selected by the active DESCRIPT record.
+    pub fn load_navigation_music(&mut self) -> Result<()> {
         let music_name = self
             .scripts
             .backend()
@@ -237,8 +249,39 @@ impl<'window> ModernGameServices<'window> {
                 String::from_utf8_lossy(resource_name.as_bytes())
             )
         })?;
-        self.audio_mut()?
-            .play_background(RuntimePcmClip::from_voc(&decoded))
+        self.loaded_music = Some(RuntimePcmClip::from_voc(&decoded));
+        Ok(())
+    }
+
+    /// Start the retained navigation music as a looping background source.
+    pub fn start_loaded_navigation_music(&mut self) -> Result<()> {
+        let clip = self
+            .loaded_music
+            .take()
+            .context("no decoded navigation music is waiting to start")?;
+        self.audio_mut()?.play_background(clip)
+    }
+
+    /// Decode and start the navigation music selected by the active DESCRIPT record.
+    pub fn restart_navigation_music(&mut self) -> Result<()> {
+        self.load_navigation_music()?;
+        self.start_loaded_navigation_music()
+    }
+
+    /// Stop only the looping navigation source before replacing its resource.
+    pub fn stop_navigation_music(&mut self) -> Result<()> {
+        self.audio_mut()?.stop_background()
+    }
+
+    /// Start retained music, or keep the current navigation stream running.
+    pub fn ensure_navigation_music(&mut self) -> Result<()> {
+        if self.navigation_music_position()?.is_some() {
+            return self.check_audio();
+        }
+        if self.loaded_music.is_none() {
+            self.load_navigation_music()?;
+        }
+        self.start_loaded_navigation_music()
     }
 
     /// Decode and play one authored clip from the currently loaded SND bank.
@@ -326,8 +369,39 @@ impl<'window> ModernGameServices<'window> {
         profile: ScriptProfileId,
     ) -> Result<ScriptProfileLoadOutcome> {
         let outcome = self.scripts.load_profile(&mut self.runtime, profile)?;
+        self.ship_hud = Some(RuntimeShipHud::default());
         self.ship_target_selector = Some(RuntimeShipTargetSelector::default());
         Ok(outcome)
+    }
+
+    /// Advance the recovered ship HUD against concrete flat runtime services.
+    pub fn update_runtime_ship_hud(
+        &mut self,
+        state: &mut GameLifecycleState,
+    ) -> Result<crate::native::bloodprg::ShipHudCoordinatorOutcome> {
+        let mut ship_hud = self
+            .ship_hud
+            .take()
+            .context("ship HUD update is reentrant")?;
+        let outcome = ship_hud.update(self, state);
+        self.ship_hud = Some(ship_hud);
+        outcome
+    }
+
+    /// Force the concrete HUD adapter through first-time setup on its next frame.
+    pub fn request_ship_hud_reinitialization(&mut self) -> Result<()> {
+        self.ship_hud
+            .as_mut()
+            .context("ship HUD is already being updated")?
+            .request_reinitialization();
+        Ok(())
+    }
+
+    /// Borrow the persistent recovered ship HUD adapter state.
+    pub fn runtime_ship_hud(&self) -> Result<&RuntimeShipHud> {
+        self.ship_hud
+            .as_ref()
+            .context("ship HUD is already being updated")
     }
 
     /// Advance and draw the recovered ship-HUD target selector.
@@ -385,6 +459,120 @@ impl<'window> ModernGameServices<'window> {
                 .location_scene_top_row()
                 .unwrap_or(u16::MIN),
         })
+    }
+
+    /// Rebuild the active object census sharing Arche's navigation position.
+    pub fn ship_objects_at_arche_position(&self) -> Result<Vec<ScriptObjectId>> {
+        let profile = self
+            .runtime
+            .current_profile()
+            .context("ship HUD VM processing requires a loaded BloodScript profile")?;
+        let arche = profile
+            .builtins()
+            .archetype
+            .context("loaded BloodScript profile has no Arche object")?;
+        objects_at_arche_position(profile.state(), arche)
+            .map_err(|error| anyhow::anyhow!("rebuilding ship HUD VM state: {error:?}"))
+    }
+
+    /// Build the target-first presentable list below one typed navigation root.
+    pub fn presentable_ship_targets(&self, root: ScriptObjectId) -> Result<Vec<ScriptObjectId>> {
+        let profile = self
+            .runtime
+            .current_profile()
+            .context("ship target traversal requires a loaded BloodScript profile")?;
+        let arche = profile
+            .builtins()
+            .archetype
+            .context("loaded BloodScript profile has no Arche object")?;
+        presentable_navigation_objects(profile.state(), root, arche)
+            .map_err(|error| anyhow::anyhow!("building presentable ship targets: {error:?}"))
+    }
+
+    /// Apply one selected target's DESCRIPT record and report a changed music source.
+    pub fn apply_ship_target_description(&mut self, target: ScriptObjectId) -> Result<bool> {
+        let application = self
+            .scripts
+            .apply_object_description(target)?
+            .with_context(|| format!("ship target {target:?} has no DESCRIPT record"))?;
+        self.synchronize_script_presentations()?;
+        Ok(matches!(
+            application.music_selection(),
+            Some(DescriptMusicSelectionOutcome::Changed)
+        ))
+    }
+
+    /// Publish the selected target as the complete deferred C1 navigation action.
+    pub fn defer_ship_navigation_target(&mut self, target: ScriptObjectId) {
+        self.scripts.defer_navigation_target(target);
+    }
+
+    /// Clear the retained ship-HUD setup surface.
+    pub fn clear_ship_hud_back_buffer(&mut self) {
+        self.runtime.clear_back_buffer();
+    }
+
+    /// Apply the bridge seek target and panorama frame written by HUD setup.
+    pub fn initialize_ship_hud_bridge_view(
+        &mut self,
+        seek_target_arc: u16,
+        view_frame: u16,
+    ) -> Result<()> {
+        self.bridge_scene
+            .as_mut()
+            .context("ship HUD setup requires an initialized bridge scene")?
+            .initialize_hud_view(seek_target_arc, view_frame);
+        Ok(())
+    }
+
+    /// Advance bridge steering while the ship target list owns interaction.
+    pub fn render_ship_hud_bridge_frame(&mut self) -> Result<()> {
+        let pointer = self.input.pointer_sample();
+        self.render_bridge_frame(BridgeSceneInput {
+            horizontal_delta: NO_BRIDGE_HORIZONTAL_MOTION,
+            pointer_buttons: pointer.buttons.bits(),
+            interaction: BridgeSteeringInteraction::MenuEngaged,
+        })?;
+        Ok(())
+    }
+
+    /// Publish the full clip and commit one half-open ship entity range.
+    pub fn commit_ship_entities(
+        &mut self,
+        entities: Range<u16>,
+    ) -> Result<BridgeSpriteCommitOutcome> {
+        self.runtime.commit_ship_entity_geometry(entities)
+    }
+
+    /// Restore current ship dirty rectangles from the retained secondary surface.
+    pub fn copy_ship_dirty_regions(&mut self) -> Result<DirtyRegionCopyOutcome> {
+        self.runtime.copy_ship_dirty_regions()
+    }
+
+    /// Configure the original black-to-HUD-tail palette transition.
+    pub fn configure_ship_hud_palette_transition(&mut self) -> Result<()> {
+        let source = *self.runtime.live_palette();
+        let mut target = [[u8::MIN; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
+        target[SCENE_PALETTE_CLEAR_COLOR_COUNT] =
+            self.runtime.ship_hud().palette_snapshot[usize::MIN];
+        let last = u8::try_from(SCENE_PALETTE_CLEAR_COLOR_COUNT)
+            .context("ship HUD palette boundary exceeds an indexed palette")?;
+        self.palette_transition
+            .configure(RuntimePaletteTransitionConfig {
+                source,
+                target,
+                initial_percent: u16::MIN,
+                increment: SHIP_HUD_PALETTE_TRANSITION_INCREMENT,
+                colors: u8::MIN..=last,
+            })
+            .context("configuring the ship HUD palette transition")
+    }
+
+    /// Synchronize palette progress changed inside the recovered HUD coordinator.
+    pub fn synchronize_ship_hud_palette_progress(&mut self, percent: u16, increment: u16) {
+        self.palette_transition.set_progress_percent(percent);
+        self.palette_transition.set_increment(increment);
+        self.ship_presentation.transition_percent = percent;
     }
 
     /// Return the six BloodScript sequence records in presentation-choice order.
@@ -481,6 +669,11 @@ impl<'window> ModernGameServices<'window> {
     /// Mutably borrow the transition owner used by scene and HUD coordinators.
     pub fn palette_transition_mut(&mut self) -> &mut RuntimePaletteTransition {
         &mut self.palette_transition
+    }
+
+    /// Borrow the transition owner used by scene and HUD coordinators.
+    pub const fn palette_transition(&self) -> &RuntimePaletteTransition {
+        &self.palette_transition
     }
 
     /// Enable or disable the bridge's recovered six-choice presentation panel.
@@ -820,6 +1013,11 @@ impl<'window> ModernGameServices<'window> {
     /// Borrow the live subtitle, menu, and word-choice state produced by BloodScript.
     pub const fn text_presentation(&self) -> &TextPresentationState {
         self.scripts.text_presentation()
+    }
+
+    /// Mutably borrow the shared subtitle and inline-menu presentation state.
+    pub fn text_presentation_mut(&mut self) -> &mut TextPresentationState {
+        self.scripts.text_presentation_mut()
     }
 
     /// Publish a completed word choice to BloodScript and refresh lifecycle gates.
