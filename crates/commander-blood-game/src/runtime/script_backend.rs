@@ -13,14 +13,14 @@ use crate::native::bloodprg::{
     DescriptApplicationContext, DescriptBackgroundCache, DescriptBackgroundSource,
     DescriptIdleClipSource, DescriptPresentationAssets, DescriptRecordApplication,
     DescriptSoundBankLoader, GameLifecycleState, LoadedScriptProfile, LoadedSoundBank,
-    ScriptAboardRecordContext, ScriptActionRecord, ScriptActionState, ScriptClock,
-    ScriptDeferredRecord, ScriptDispatchState, ScriptEnvironmentActivity, ScriptExecutionBackend,
-    ScriptExecutionService, ScriptFrameOutcome, ScriptPresentationEntity,
+    OriginalSaveGame, ScriptAboardRecordContext, ScriptActionRecord, ScriptActionState,
+    ScriptClock, ScriptDeferredRecord, ScriptDispatchState, ScriptEnvironmentActivity,
+    ScriptExecutionBackend, ScriptExecutionService, ScriptFrameOutcome, ScriptPresentationEntity,
     ScriptPresentationScanOutcome, ScriptPresentationScanState, ScriptProfileId,
     ScriptProfileLoadOutcome, ScriptRecordStateNavigationContext, ScriptShipNavigationMode,
     ScriptTransferContext, SequencePresentationState, SequenceRequestContext, SoundBankUsage,
     TextPresentationState, deferred_navigation_record, execute_loaded_script_frame,
-    load_sound_bank, lookup_and_apply_descript_record,
+    load_sound_bank, lookup_and_apply_descript_record, original_save_state_block_byte_count,
 };
 
 use super::{OriginalGameData, OriginalGameRuntime};
@@ -364,6 +364,53 @@ impl RuntimeScriptSystem {
         action.ship_navigation_mode = ScriptShipNavigationMode::Active;
         action.current_ship_target
     }
+}
+
+/// Initialize an already selected profile, then transactionally restore one original save image.
+///
+/// Profile resource selection remains with the caller because the concrete SDL service also
+/// rebuilds profile-owned HUD, navigation, and scene adapters. Keeping the data-only transaction
+/// here gives production and headless campaign validation one exact flat-memory restore path.
+pub fn initialize_and_restore_original_save_game(
+    scripts: &mut RuntimeScriptSystem,
+    runtime: &mut OriginalGameRuntime,
+    lifecycle: &mut GameLifecycleState,
+    data: &[u8],
+) -> Result<()> {
+    let saved_profile =
+        OriginalSaveGame::decode_profile(data).context("decoding the saved BloodScript profile")?;
+    let loaded_profile = runtime
+        .current_profile()
+        .context("save restoration requires a loaded BloodScript profile")?
+        .id();
+    if loaded_profile != saved_profile {
+        bail!(
+            "loaded BloodScript profile {} does not match saved profile {}",
+            loaded_profile.value(),
+            saved_profile.value()
+        );
+    }
+
+    lifecycle.pending_profile = None;
+    lifecycle.vm_execution_enabled = true;
+    scripts
+        .execute_lifecycle_frame(runtime, lifecycle, true)
+        .context("initializing the saved BloodScript profile")?;
+
+    let state_byte_count = original_save_state_block_byte_count(
+        runtime
+            .current_profile()
+            .context("saved profile initialization did not retain a profile")?,
+    )
+    .context("resolving the saved profile state allocation")?;
+    let save = OriginalSaveGame::decode(data, state_byte_count)
+        .context("decoding the complete original save image")?;
+    save.restore_into(
+        runtime
+            .current_profile_mut()
+            .context("saved profile disappeared before state restoration")?,
+    )
+    .context("restoring the original save blocks")
 }
 
 /// Concrete flat backend state shared by the script service and game lifecycle.

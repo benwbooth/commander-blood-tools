@@ -5,12 +5,15 @@ use commander_blood_formats::instruction::{
 };
 use commander_blood_formats::script::ScriptObjectId;
 use commander_blood_game::native::bloodprg::{
-    ScriptActionRecord, ScriptClock, ScriptEnvironmentActivity, ScriptFieldSelector,
-    ScriptObjectFlag, ScriptProfileId, ScriptRecordStateNavigationContext, SequenceRequestContext,
-    object_has_flag, script_field_offset, set_object_flag,
+    GameLifecycleState, LoadedScriptProfile, OriginalSaveGame, ResourceLoadStatus,
+    SCRIPT_PROFILE_RESOURCE_COUNT, ScriptActionRecord, ScriptClock, ScriptEnvironmentActivity,
+    ScriptFieldSelector, ScriptObjectFlag, ScriptProfileId, ScriptProfileResourceKind,
+    ScriptRecordStateNavigationContext, SequenceRequestContext, object_has_flag,
+    script_field_offset, set_object_flag,
 };
 use commander_blood_game::runtime::{
     OriginalGameData, OriginalGameDataPaths, OriginalGameRuntime, RuntimeScriptSystem,
+    initialize_and_restore_original_save_game,
 };
 use serde::Deserialize;
 
@@ -19,8 +22,17 @@ const CONTACT_MANIFEST_JSON: &str =
 const EXPECTED_CONTACT_PROCEDURE_COUNT: usize = 65;
 const FIRST_SCRIPT_NUMBER: u8 = 1;
 const SCRIPT_NAME_PREFIX: &str = "SCRIPT";
+const PROFILE_RESOURCE_NAME_PREFIX: &str = "script";
+const AUTHENTIC_SAVE_FILENAMES: &[&str] = &["GAME1.SAV", "game1.sav"];
 const PROCEDURE_ENTRY_BIAS: usize = 1;
 const MAXIMUM_ENTRY_FRAMES: usize = 32;
+const PROFILE_RESOURCE_IDENTITIES: &[(ScriptProfileResourceKind, &str)] = &[
+    (ScriptProfileResourceKind::Code, "cod"),
+    (ScriptProfileResourceKind::Dialogue, "bas"),
+    (ScriptProfileResourceKind::State, "var"),
+    (ScriptProfileResourceKind::Dictionary, "dic"),
+    (ScriptProfileResourceKind::Directory, "deb"),
+];
 const ORACLE_CLOCK: ScriptClock = ScriptClock {
     hour: 12,
     day: 2,
@@ -81,6 +93,111 @@ fn contact_manifest_declares_every_recovered_contact_entry() {
             .procedures
             .iter()
             .all(|scenario| scenario.texts.iter().any(|text| !text.subtitle.is_empty()))
+    );
+}
+
+#[test]
+#[ignore = "requires original Commander Blood data"]
+fn every_profile_handoff_reloads_the_exact_authored_companion_set() {
+    let paths = OriginalGameDataPaths::discover(None).unwrap();
+    let mut transition_count = usize::MIN;
+
+    for source in ScriptProfileId::all() {
+        for target in ScriptProfileId::all() {
+            let data =
+                OriginalGameData::load_with_writable_root(paths.clone(), std::env::temp_dir())
+                    .unwrap();
+            let mut scripts = RuntimeScriptSystem::new(&data, ORACLE_CLOCK);
+            let mut runtime = OriginalGameRuntime::new(data);
+
+            let source_outcome = scripts.load_profile(&mut runtime, source).unwrap();
+            assert!(source_outcome.profile_changed);
+            assert_eq!(source_outcome.released_resources, usize::MIN);
+            assert_eq!(
+                source_outcome.resource_statuses,
+                [ResourceLoadStatus::LoadedNow; SCRIPT_PROFILE_RESOURCE_COUNT]
+            );
+            assert_profile_companions(&runtime, source);
+            scripts.execute_frame(&mut runtime, true).unwrap();
+
+            let target_outcome = scripts.load_profile(&mut runtime, target).unwrap();
+            let profile_changed = source != target;
+            assert_eq!(target_outcome.profile_changed, profile_changed);
+            assert_eq!(
+                target_outcome.released_resources,
+                if profile_changed {
+                    SCRIPT_PROFILE_RESOURCE_COUNT
+                } else {
+                    usize::MIN
+                },
+                "profile {} -> {} released the wrong companion count",
+                source.value(),
+                target.value()
+            );
+            assert_eq!(
+                target_outcome.resource_statuses,
+                [if profile_changed {
+                    ResourceLoadStatus::LoadedNow
+                } else {
+                    ResourceLoadStatus::AlreadyLoaded
+                }; SCRIPT_PROFILE_RESOURCE_COUNT],
+                "profile {} -> {} retained the wrong companion resources",
+                source.value(),
+                target.value()
+            );
+            assert_profile_companions(&runtime, target);
+            let outcome = scripts.execute_frame(&mut runtime, true).unwrap();
+            assert!(
+                outcome.next_instruction.is_some(),
+                "profile {} -> {} initialization terminated the VM",
+                source.value(),
+                target.value()
+            );
+            transition_count += 1;
+        }
+    }
+
+    assert_eq!(
+        transition_count,
+        ScriptProfileId::all().count() * ScriptProfileId::all().count()
+    );
+}
+
+#[test]
+#[ignore = "requires original Commander Blood data and authentic GAME1.SAV"]
+fn authentic_save_restores_through_the_production_flat_transaction() {
+    let paths = OriginalGameDataPaths::discover(None).unwrap();
+    let save_bytes = AUTHENTIC_SAVE_FILENAMES
+        .iter()
+        .find_map(|name| std::fs::read(paths.root().join(name)).ok())
+        .expect("complete original data root has no authentic GAME1.SAV");
+    let saved_profile = OriginalSaveGame::decode_profile(&save_bytes).unwrap();
+    let data = OriginalGameData::load_with_writable_root(paths, std::env::temp_dir()).unwrap();
+    let mut scripts = RuntimeScriptSystem::new(&data, ORACLE_CLOCK);
+    let mut runtime = OriginalGameRuntime::new(data);
+    scripts.load_profile(&mut runtime, saved_profile).unwrap();
+    let mut lifecycle = GameLifecycleState::default();
+
+    initialize_and_restore_original_save_game(
+        &mut scripts,
+        &mut runtime,
+        &mut lifecycle,
+        &save_bytes,
+    )
+    .unwrap();
+
+    assert_eq!(runtime.current_profile().unwrap().id(), saved_profile);
+    assert_eq!(lifecycle.pending_profile, None);
+    assert!(lifecycle.vm_execution_enabled);
+    let recaptured = OriginalSaveGame::capture(runtime.current_profile().unwrap()).unwrap();
+    assert_eq!(recaptured.encode(), save_bytes);
+
+    let outcome = scripts
+        .execute_lifecycle_frame(&mut runtime, &mut lifecycle, true)
+        .unwrap();
+    assert!(
+        outcome.next_instruction.is_some(),
+        "authentic save terminated on its first resumed VM frame"
     );
 }
 
@@ -213,6 +330,37 @@ fn profile_id(script: &str) -> ScriptProfileId {
         .unwrap_or_else(|error| panic!("invalid script profile number in {script:?}: {error}"));
     ScriptProfileId::new(profile_number - FIRST_SCRIPT_NUMBER)
         .unwrap_or_else(|| panic!("script profile {script:?} is outside the shipped profile set"))
+}
+
+fn assert_profile_companions(runtime: &OriginalGameRuntime, expected: ScriptProfileId) {
+    let profile = runtime
+        .current_profile()
+        .expect("profile loader must retain the selected profile");
+    assert_eq!(profile.id(), expected);
+    assert_profile_resource_names(runtime, profile);
+}
+
+fn assert_profile_resource_names(runtime: &OriginalGameRuntime, profile: &LoadedScriptProfile) {
+    let profile_number = profile.id().value() + FIRST_SCRIPT_NUMBER;
+    let catalog = runtime.data().resource_catalog();
+    for &(kind, extension) in PROFILE_RESOURCE_IDENTITIES {
+        let resource = profile.resources().resource(kind);
+        let actual = catalog.name(resource).unwrap_or_else(|| {
+            panic!(
+                "profile resource {} is absent from the catalog",
+                resource.value()
+            )
+        });
+        let expected = format!("{PROFILE_RESOURCE_NAME_PREFIX}{profile_number}.{extension}");
+        assert_eq!(
+            actual.as_bytes(),
+            expected.as_bytes(),
+            "profile {} {:?} resource {} has the wrong authored identity",
+            profile.id().value(),
+            kind,
+            resource.value()
+        );
+    }
 }
 
 fn configure_contact_entry(

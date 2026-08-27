@@ -43,10 +43,10 @@ use crate::native::bloodprg::{
     SoundBankUsage, StartupPreparationOutcome, TextPresentationState, clear_scene_palette_entries,
     deactivate_nav_actor_slots, draw_planar_dialogue_text, fill_display_band,
     increment_object_access_counters, initialize_bridge_screen, load_sound_bank,
-    measure_game_text_width, objects_at_arche_position, original_save_state_block_byte_count,
-    play_cd_audio_track_two, prepare_cd_audio, presentable_navigation_objects,
-    process_audio_events, render_bridge_page, reveal_inline_menu_step, stop_cd_audio,
-    update_manu3_hand_frame, update_presentation_bridge_mode, update_presentation_hover,
+    measure_game_text_width, objects_at_arche_position, play_cd_audio_track_two, prepare_cd_audio,
+    presentable_navigation_objects, process_audio_events, render_bridge_page,
+    reveal_inline_menu_step, stop_cd_audio, update_manu3_hand_frame,
+    update_presentation_bridge_mode, update_presentation_hover,
 };
 use crate::native::manu3::animation::CursorPosition;
 use crate::native::random::BloodPrng;
@@ -72,7 +72,7 @@ use super::{
     RuntimePresentationWordChoice, RuntimeSaveLoad, RuntimeSceneTransition, RuntimeScriptBackend,
     RuntimeScriptCommand, RuntimeScriptSystem, RuntimeShipHud, RuntimeShipNavigation,
     RuntimeShipTargetSelection, RuntimeShipTargetSelector, RuntimeSubtitleReveal,
-    VGA_BIOS_FONT_8X8,
+    VGA_BIOS_FONT_8X8, initialize_and_restore_original_save_game,
 };
 
 const INITIAL_LOGICAL_POINTER: [i16; 2] = [160, 100];
@@ -851,25 +851,12 @@ impl<'window> ModernGameServices<'window> {
         let profile = OriginalSaveGame::decode_profile(data)
             .context("decoding the saved BloodScript profile")?;
         self.load_script_profile(profile)?;
-        state.pending_profile = None;
-        state.vm_execution_enabled = true;
-        self.execute_and_apply_lifecycle_script_frame(state)
-            .context("initializing the saved BloodScript profile")?;
-
-        let state_byte_count = original_save_state_block_byte_count(
-            self.runtime
-                .current_profile()
-                .context("saved profile initialization did not retain a profile")?,
-        )
-        .context("resolving the saved profile state allocation")?;
-        let save = OriginalSaveGame::decode(data, state_byte_count)
-            .context("decoding the complete original save image")?;
-        save.restore_into(
-            self.runtime
-                .current_profile_mut()
-                .context("saved profile disappeared before state restoration")?,
-        )
-        .context("restoring the original save blocks")?;
+        initialize_and_restore_original_save_game(
+            &mut self.scripts,
+            &mut self.runtime,
+            state,
+            data,
+        )?;
         self.reset_ship_hud()
             .context("rebuilding the ship HUD after save restoration")?;
         state.navigation_rebuild_pending = true;
