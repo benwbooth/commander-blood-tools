@@ -37,6 +37,8 @@ pub const BLOODPRG_TEXT_SPEED_LABEL_COUNT: usize = 5;
 pub const BLOODPRG_HYPERSPACE_SEQUENCE_COUNT: usize = 8;
 /// Number of executable-authored bridge actor records.
 pub const BLOODPRG_NAV_ACTOR_RECORD_COUNT: usize = 6;
+/// Number of radial-wipe endpoints shared by closing and opening navigation frames.
+pub const BLOODPRG_NAVIGATION_WIPE_ENDPOINT_COUNT: usize = 9;
 
 const MZ_SIGNATURE: [u8; 2] = [b'M', b'Z'];
 const MZ_SIGNATURE_FILE_OFFSET: usize = 0;
@@ -70,6 +72,15 @@ const NAV_ACTOR_TARGET_ARC_FIELD_OFFSET: usize = 10;
 const NAV_ACTOR_HIT_RECTANGLE_FIELD_OFFSET: usize = 12;
 const NAV_ACTOR_DRAW_POSITION_FIELD_OFFSET: usize = 20;
 const NO_NAV_ACTOR_TRANSITION_RESOURCE: u16 = u16::MAX;
+const NAVIGATION_PLANET_LABEL_DATA_OFFSET: usize = 0x012E;
+const NAVIGATION_SHIP_LABEL_DATA_OFFSET: usize = 0x0137;
+const NAVIGATION_BLACK_HOLE_LABEL_DATA_OFFSET: usize = 0x013E;
+const NAVIGATION_LIFE_SUPPORT_LABEL_DATA_OFFSET: usize = 0x014B;
+const NAVIGATION_LABEL_DATA_END_OFFSET: usize = 0x015A;
+const NAVIGATION_WIPE_ENDPOINTS_DATA_OFFSET: usize = 0x2752;
+const NAVIGATION_WIPE_ENDPOINT_COMPONENT_COUNT: usize = 2;
+const NAVIGATION_WIPE_ENDPOINT_BYTE_COUNT: usize =
+    NAVIGATION_WIPE_ENDPOINT_COMPONENT_COUNT * WORD_BYTE_COUNT;
 const POINTER_LIST_SENTINEL: u16 = u16::MAX;
 const MENU_LABEL_MAXIMUM_BYTE_COUNT: usize = 32;
 const BRIDGE_PROJECTION_ANCHOR_DATA_OFFSET: usize = 0x4F09;
@@ -145,6 +156,167 @@ const MENU_TEXT_REQUIRED_EXECUTABLE_LENGTH: usize = BLOODPRG_DATA_FILE_OFFSET
 const HYPERSPACE_RESOURCES_REQUIRED_EXECUTABLE_LENGTH: usize = BLOODPRG_DATA_FILE_OFFSET
     + HYPERSPACE_SEQUENCE_NAMES_DATA_OFFSET
     + BLOODPRG_HYPERSPACE_SEQUENCE_COUNT * HYPERSPACE_SEQUENCE_NAME_FIELD_BYTE_COUNT;
+const NAVIGATION_RESOURCES_REQUIRED_EXECUTABLE_LENGTH: usize = BLOODPRG_DATA_FILE_OFFSET
+    + NAVIGATION_WIPE_ENDPOINTS_DATA_OFFSET
+    + BLOODPRG_NAVIGATION_WIPE_ENDPOINT_COUNT * NAVIGATION_WIPE_ENDPOINT_BYTE_COUNT;
+
+/// Authored title and roster labels used by navigation panels.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BloodprgNavigationLabels {
+    planet: Box<[u8]>,
+    ship: Box<[u8]>,
+    black_hole: Box<[u8]>,
+    life_support: Box<[u8]>,
+}
+
+impl BloodprgNavigationLabels {
+    /// Prefix for an ordinary planet or celestial location.
+    pub const fn planet(&self) -> &[u8] {
+        &self.planet
+    }
+
+    /// Prefix for a ship navigation entity.
+    pub const fn ship(&self) -> &[u8] {
+        &self.ship
+    }
+
+    /// Prefix for a black-hole destination.
+    pub const fn black_hole(&self) -> &[u8] {
+        &self.black_hole
+    }
+
+    /// Heading above the location's active life-support roster.
+    pub const fn life_support(&self) -> &[u8] {
+        &self.life_support
+    }
+}
+
+/// Flat navigation constants decoded from initialized executable data.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BloodprgNavigationResources {
+    wipe_endpoints:
+        [[u16; NAVIGATION_WIPE_ENDPOINT_COMPONENT_COUNT]; BLOODPRG_NAVIGATION_WIPE_ENDPOINT_COUNT],
+    labels: BloodprgNavigationLabels,
+}
+
+impl BloodprgNavigationResources {
+    /// Nine radial-wipe endpoints in executable lookup order.
+    pub const fn wipe_endpoints(
+        &self,
+    ) -> &[[u16; NAVIGATION_WIPE_ENDPOINT_COMPONENT_COUNT]; BLOODPRG_NAVIGATION_WIPE_ENDPOINT_COUNT]
+    {
+        &self.wipe_endpoints
+    }
+
+    /// Exact game-font labels used by navigation status and location panels.
+    pub const fn labels(&self) -> &BloodprgNavigationLabels {
+        &self.labels
+    }
+}
+
+/// Malformed navigation constants in `BLOODPRG.EXE`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum BloodprgNavigationResourcesError {
+    /// The input does not begin with an MZ executable signature.
+    InvalidExecutableSignature,
+    /// The executable ends before the complete endpoint table.
+    TruncatedExecutable {
+        /// Supplied executable byte count.
+        actual: usize,
+        /// Minimum byte count required by all navigation constants.
+        required: usize,
+    },
+    /// One bounded label region has no C-string terminator.
+    MissingLabelTerminator {
+        /// Data-image-relative start of the malformed label.
+        label_offset: usize,
+    },
+    /// One label contains a byte outside the printable game-font range.
+    InvalidLabelByte {
+        /// Data-image-relative start of the malformed label.
+        label_offset: usize,
+        /// Rejected source byte.
+        byte: u8,
+    },
+}
+
+impl fmt::Display for BloodprgNavigationResourcesError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(formatter, "invalid BLOODPRG navigation resources: {self:?}")
+    }
+}
+
+impl Error for BloodprgNavigationResourcesError {}
+
+/// Decode navigation labels and radial-wipe geometry into owned flat values.
+pub fn decode_bloodprg_navigation_resources(
+    executable: &[u8],
+) -> Result<BloodprgNavigationResources, BloodprgNavigationResourcesError> {
+    if executable.len() < NAVIGATION_RESOURCES_REQUIRED_EXECUTABLE_LENGTH {
+        return Err(BloodprgNavigationResourcesError::TruncatedExecutable {
+            actual: executable.len(),
+            required: NAVIGATION_RESOURCES_REQUIRED_EXECUTABLE_LENGTH,
+        });
+    }
+    if executable.get(MZ_SIGNATURE_FILE_OFFSET..MZ_SIGNATURE.len()) != Some(&MZ_SIGNATURE) {
+        return Err(BloodprgNavigationResourcesError::InvalidExecutableSignature);
+    }
+
+    let wipe_table = BLOODPRG_DATA_FILE_OFFSET + NAVIGATION_WIPE_ENDPOINTS_DATA_OFFSET;
+    let wipe_endpoints = std::array::from_fn(|endpoint| {
+        let position = wipe_table + endpoint * NAVIGATION_WIPE_ENDPOINT_BYTE_COUNT;
+        std::array::from_fn(|component| {
+            read_unsigned_word(executable, position + component * WORD_BYTE_COUNT)
+        })
+    });
+    let labels = BloodprgNavigationLabels {
+        planet: read_navigation_label(
+            executable,
+            NAVIGATION_PLANET_LABEL_DATA_OFFSET,
+            NAVIGATION_SHIP_LABEL_DATA_OFFSET,
+        )?,
+        ship: read_navigation_label(
+            executable,
+            NAVIGATION_SHIP_LABEL_DATA_OFFSET,
+            NAVIGATION_BLACK_HOLE_LABEL_DATA_OFFSET,
+        )?,
+        black_hole: read_navigation_label(
+            executable,
+            NAVIGATION_BLACK_HOLE_LABEL_DATA_OFFSET,
+            NAVIGATION_LIFE_SUPPORT_LABEL_DATA_OFFSET,
+        )?,
+        life_support: read_navigation_label(
+            executable,
+            NAVIGATION_LIFE_SUPPORT_LABEL_DATA_OFFSET,
+            NAVIGATION_LABEL_DATA_END_OFFSET,
+        )?,
+    };
+    Ok(BloodprgNavigationResources {
+        wipe_endpoints,
+        labels,
+    })
+}
+
+fn read_navigation_label(
+    executable: &[u8],
+    label_offset: usize,
+    label_end_offset: usize,
+) -> Result<Box<[u8]>, BloodprgNavigationResourcesError> {
+    let field = &executable
+        [BLOODPRG_DATA_FILE_OFFSET + label_offset..BLOODPRG_DATA_FILE_OFFSET + label_end_offset];
+    let length = field
+        .iter()
+        .position(|byte| *byte == u8::MIN)
+        .ok_or(BloodprgNavigationResourcesError::MissingLabelTerminator { label_offset })?;
+    if let Some(byte) = field[..length]
+        .iter()
+        .copied()
+        .find(|byte| !matches!(byte, b' '..=b'~'))
+    {
+        return Err(BloodprgNavigationResourcesError::InvalidLabelByte { label_offset, byte });
+    }
+    Ok(field[..length].into())
+}
 
 /// Flat, validated hyperspace clip names decoded from the executable data image.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -1082,6 +1254,55 @@ mod tests {
                 actor_record(0, 19, Some(21), 0, [18, 111, 96, 47], [17, 104]),
                 actor_record(0, 18, Some(20), 0, [215, 112, 75, 27], [195, 110]),
             ]
+        );
+    }
+
+    #[test]
+    fn navigation_resources_match_initialized_executable_data() {
+        let executable = include_bytes!("../../../re/bin/BLOODPRG.EXE");
+        let resources = decode_bloodprg_navigation_resources(executable).unwrap();
+
+        assert_eq!(
+            resources.wipe_endpoints(),
+            &[
+                [160, 0],
+                [140, 0],
+                [120, 0],
+                [60, 0],
+                [0, 0],
+                [0, 50],
+                [0, 90],
+                [0, 130],
+                [0, 190],
+            ]
+        );
+        assert_eq!(resources.labels().planet(), b"PLANET: ");
+        assert_eq!(resources.labels().ship(), b"SHIP: ");
+        assert_eq!(resources.labels().black_hole(), b"BLACK HOLE: ");
+        assert_eq!(resources.labels().life_support(), b"LIFE SUPPORT:");
+    }
+
+    #[test]
+    fn malformed_navigation_resources_are_rejected_before_use() {
+        let mut executable = include_bytes!("../../../re/bin/BLOODPRG.EXE").to_vec();
+        let planet_start = BLOODPRG_DATA_FILE_OFFSET + NAVIGATION_PLANET_LABEL_DATA_OFFSET;
+        let planet_end = BLOODPRG_DATA_FILE_OFFSET + NAVIGATION_SHIP_LABEL_DATA_OFFSET;
+        executable[planet_start..planet_end].fill(b'P');
+        assert_eq!(
+            decode_bloodprg_navigation_resources(&executable),
+            Err(BloodprgNavigationResourcesError::MissingLabelTerminator {
+                label_offset: NAVIGATION_PLANET_LABEL_DATA_OFFSET,
+            })
+        );
+
+        let mut executable = include_bytes!("../../../re/bin/BLOODPRG.EXE").to_vec();
+        executable[planet_start] = 1;
+        assert_eq!(
+            decode_bloodprg_navigation_resources(&executable),
+            Err(BloodprgNavigationResourcesError::InvalidLabelByte {
+                label_offset: NAVIGATION_PLANET_LABEL_DATA_OFFSET,
+                byte: 1,
+            })
         );
     }
 
