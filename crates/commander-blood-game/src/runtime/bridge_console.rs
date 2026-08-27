@@ -64,7 +64,6 @@ impl RuntimeBridgeConsole {
         lifecycle: &mut GameLifecycleState,
     ) -> Result<()> {
         if self.options.text_options_active {
-            self.update_text_speed_menu(services)?;
             self.publish_interface_ownership(lifecycle);
             return Ok(());
         }
@@ -109,6 +108,18 @@ impl RuntimeBridgeConsole {
                 self.update_selected_handler(choice, services, lifecycle)?;
             }
             BridgeConsoleDispatchOutcome::Gated(_) => {}
+        }
+        self.publish_interface_ownership(lifecycle);
+        Ok(())
+    }
+
+    pub(super) fn update_presentation_choice(
+        &mut self,
+        services: &mut ModernGameServices<'_>,
+        lifecycle: &mut GameLifecycleState,
+    ) -> Result<()> {
+        if self.options.text_options_active {
+            self.update_text_speed_menu(services)?;
         }
         self.publish_interface_ownership(lifecycle);
         Ok(())

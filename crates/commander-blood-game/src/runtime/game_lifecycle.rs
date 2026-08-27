@@ -338,6 +338,9 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
             interaction: Self::bridge_interaction(state),
         })?;
         self.services.update_runtime_bridge_console(state)?;
+        self.services
+            .update_presentation_screen(&self.current_scene_link, state.primary_pointer_pressed)?;
+        self.services.consume_presentation_screen_outputs(state)?;
         Ok(())
     }
 
@@ -383,10 +386,8 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
         self.services.update_runtime_save_load(state).map(|_| ())
     }
 
-    fn update_presentation_choices(&mut self, state: &mut GameLifecycleState) -> Result<()> {
-        self.services
-            .update_presentation_screen(&self.current_scene_link, state.primary_pointer_pressed)?;
-        self.services.consume_presentation_screen_outputs(state)
+    fn update_presentation_choice(&mut self, state: &mut GameLifecycleState) -> Result<()> {
+        self.services.update_runtime_presentation_choice(state)
     }
 
     fn mark_presentation_ready(&mut self, state: &mut GameLifecycleState) -> Result<()> {

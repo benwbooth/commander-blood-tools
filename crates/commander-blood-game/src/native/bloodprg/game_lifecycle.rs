@@ -424,7 +424,7 @@ pub trait GameLifecycleHost {
     /// Advance save/load UI and transactions.
     fn update_save_load(&mut self, state: &mut GameLifecycleState) -> Result<(), Self::Error>;
     /// Advance presentation-choice transitions.
-    fn update_presentation_choices(
+    fn update_presentation_choice(
         &mut self,
         state: &mut GameLifecycleState,
     ) -> Result<(), Self::Error>;
@@ -732,7 +732,7 @@ fn run_frame_tail<Host: GameLifecycleHost>(
     host.update_ship_presentation(scene_link, state)?;
     host.update_scene_transition(scene_link, state)?;
     host.update_save_load(state)?;
-    host.update_presentation_choices(state)?;
+    host.update_presentation_choice(state)?;
     if state.frame_presented {
         host.mark_presentation_ready(state)?;
     }

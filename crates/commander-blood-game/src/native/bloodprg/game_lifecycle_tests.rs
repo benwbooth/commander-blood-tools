@@ -213,7 +213,7 @@ impl GameLifecycleHost for OracleHost {
 
     state_host_call!(update_save_load, "save_load_menu_step");
     state_host_call!(
-        update_presentation_choices,
+        update_presentation_choice,
         "presentation_choice_transition_step"
     );
     state_host_call!(mark_presentation_ready, "presentation_ready_gate");

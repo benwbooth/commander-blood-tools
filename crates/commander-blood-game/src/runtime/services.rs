@@ -2267,6 +2267,20 @@ impl<'window> ModernGameServices<'window> {
         outcome
     }
 
+    /// Advance the text-speed choice at its recovered main-loop position.
+    pub fn update_runtime_presentation_choice(
+        &mut self,
+        state: &mut GameLifecycleState,
+    ) -> Result<()> {
+        let mut console = self
+            .bridge_console
+            .take()
+            .context("presentation choice update is reentrant")?;
+        let outcome = console.update_presentation_choice(self, state);
+        self.bridge_console = Some(console);
+        outcome
+    }
+
     /// Present one translated bridge scene frame and optional MANU3 overlay.
     pub fn present_bridge_frame(&mut self, bridge_frame: &BridgeSceneFrame) -> Result<()> {
         self.ensure_main_viewport()?;
@@ -2640,6 +2654,39 @@ mod tests {
             !lifecycle
                 .profile_change_blockers
                 .navigation_actor_transition_active
+        );
+        services.set_presentation_screen_active(true).unwrap();
+        assert_eq!(
+            services.presentation_screen_state().unwrap().phase(),
+            crate::native::bloodprg::PresentationPanelPhase::Begin
+        );
+        services
+            .update_runtime_bridge_console(&mut lifecycle)
+            .unwrap();
+        assert_eq!(
+            services.presentation_screen_state().unwrap().phase(),
+            crate::native::bloodprg::PresentationPanelPhase::Begin
+        );
+        assert_eq!(
+            services
+                .update_presentation_screen(&GameSceneLink::Initial, false)
+                .unwrap(),
+            PresentationScreenOutcome::Initialized
+        );
+        assert_eq!(
+            services.presentation_screen_state().unwrap().phase(),
+            crate::native::bloodprg::PresentationPanelPhase::Opening(
+                crate::native::bloodprg::PresentationPanelStep::One
+            )
+        );
+        services
+            .update_runtime_presentation_choice(&mut lifecycle)
+            .unwrap();
+        assert_eq!(
+            services.presentation_screen_state().unwrap().phase(),
+            crate::native::bloodprg::PresentationPanelPhase::Opening(
+                crate::native::bloodprg::PresentationPanelStep::One
+            )
         );
         assert!(services.close_bridge_scene());
         assert!(
