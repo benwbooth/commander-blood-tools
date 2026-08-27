@@ -27,8 +27,8 @@ use crate::native::bloodprg::{
     IndexedGamePalette, InlineMenuRevealOutcome, InlineMenuTextMetrics, InputAction,
     LoadedSoundBank, Manu3HandFrameContext, Manu3HandFrameState, NAV_ACTOR_SLOT_COUNT,
     NavActorSlot, OriginalSaveGame, PbmDecodeResult, PointerButtonEdges, PointerButtons,
-    PointerSample, PresentationChoiceNumber, PresentationPresentPolicy, PresentationResourceId,
-    PresentationResourceSequenceOutcome, PresentationSceneDispatchOutcome,
+    PointerSample, PresentationBridgeMode, PresentationChoiceNumber, PresentationPresentPolicy,
+    PresentationResourceId, PresentationResourceSequenceOutcome, PresentationSceneDispatchOutcome,
     PresentationScreenOutcome, PresentationScreenState, PresentationWordChoiceOutcome,
     SCENE_PALETTE_CLEAR_COLOR_COUNT, SHIP_CAMERA_RESET, SceneTransitionState, ScriptClock,
     ScriptFrameOutcome, ScriptPresentationEntity, ScriptPresentationScanState, ScriptProfileId,
@@ -41,7 +41,7 @@ use crate::native::bloodprg::{
     measure_game_text_width, objects_at_arche_position, original_save_state_block_byte_count,
     play_cd_audio_track_two, prepare_cd_audio, presentable_navigation_objects,
     process_audio_events, render_bridge_page, reveal_inline_menu_step, stop_cd_audio,
-    update_manu3_hand_frame,
+    update_manu3_hand_frame, update_presentation_bridge_mode,
 };
 use crate::native::manu3::animation::CursorPosition;
 use crate::native::random::BloodPrng;
@@ -87,6 +87,7 @@ const NAVIGATION_PALETTE_TRANSITION_INCREMENT: u16 = 10;
 const PRESENTATION_CHOICE_MANU3_ANIMATION: u16 = 14;
 const FIRST_SHIP_PROJECTION_ENTITY: u16 = 21;
 const AFTER_LAST_SHIP_PROJECTION_ENTITY: u16 = BRIDGE_SPRITE_ENTITY_COUNT as u16;
+const RECOVERED_PRESENTATION_MODE_BLOCKED: bool = false;
 
 /// Owned flat services that concrete `GameLifecycleHost` methods delegate to.
 ///
@@ -107,6 +108,7 @@ pub struct ModernGameServices<'window> {
     bridge_scene: Option<BridgeScene>,
     bridge_frame: Option<BridgeSceneFrame>,
     bridge_screen: BridgeScreenInitializationState,
+    bridge_presentation_mode: Option<PresentationBridgeMode>,
     nav_actor_slots: [NavActorSlot; NAV_ACTOR_SLOT_COUNT],
     bridge_console: Option<RuntimeBridgeConsole>,
     presentation_screen: Option<RuntimePresentationScreen>,
@@ -168,6 +170,7 @@ impl<'window> ModernGameServices<'window> {
             bridge_scene: None,
             bridge_frame: None,
             bridge_screen: BridgeScreenInitializationState::default(),
+            bridge_presentation_mode: None,
             nav_actor_slots: [NavActorSlot::default(); NAV_ACTOR_SLOT_COUNT],
             bridge_console: Some(bridge_console),
             presentation_screen: Some(presentation_screen),
@@ -2247,26 +2250,27 @@ impl<'window> ModernGameServices<'window> {
 
     /// Advance the translated bridge steering, panorama, and point-cloud frame.
     pub fn render_bridge_frame(&mut self, input: BridgeSceneInput) -> Result<&BridgeSceneFrame> {
-        let Self {
-            runtime,
-            bridge_scene,
-            bridge_frame,
-            ..
-        } = self;
-        let scene = bridge_scene
-            .as_mut()
-            .context("bridge scene has not been initialized")?;
-        let mut frame = scene
-            .render_frame(input, runtime.bridge_sprite_entities_mut())
-            .context("rendering bridge scene")?;
-        frame.object_sprite_pixels = runtime
-            .rasterize_ship_object_layer()
-            .context("rendering bridge ship-object layer")?
-            .into_pixels();
-        *bridge_frame = Some(frame);
-        Ok(bridge_frame
-            .as_ref()
-            .expect("rendered bridge frame was retained"))
+        let view_frame = {
+            let scene = self
+                .bridge_scene
+                .as_mut()
+                .context("bridge scene has not been initialized")?;
+            scene.update_steering(input);
+            i16::try_from(scene.steering().view_frame)
+                .context("bridge panorama frame exceeds the signed native range")?
+        };
+        // The executable's independent bit-one gate has no recovered writer.
+        update_presentation_bridge_mode(
+            view_frame,
+            RECOVERED_PRESENTATION_MODE_BLOCKED,
+            &mut self.bridge_presentation_mode,
+        );
+        self.render_current_bridge_frame()
+    }
+
+    /// Presentation band selected from the current authored panorama frame.
+    pub const fn bridge_presentation_mode(&self) -> Option<PresentationBridgeMode> {
+        self.bridge_presentation_mode
     }
 
     /// Prepare a bridge frame from current steering without consuming host input.
@@ -2850,6 +2854,10 @@ mod tests {
             .render_bridge_frame(BridgeSceneInput::default())
             .unwrap();
         assert!(!bridge_frame.starfield.plotted.is_empty());
+        assert_eq!(
+            services.bridge_presentation_mode(),
+            Some(PresentationBridgeMode::FirstBand)
+        );
         services.input_mut().poll_pointer(
             [320.0, 200.0],
             [200.0, 80.0],
