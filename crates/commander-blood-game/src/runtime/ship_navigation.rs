@@ -115,6 +115,7 @@ impl RuntimeShipNavigation {
 
         let native_outcome;
         let deferred_error;
+        let description_applied;
         {
             let mut backend = RuntimeShipNavigationBackend {
                 services,
@@ -130,6 +131,7 @@ impl RuntimeShipNavigation {
                 honk: profile_context.honk,
                 primary_pointer_pressed,
                 list_style,
+                description_applied: false,
                 deferred_error: None,
             };
             native_outcome = update_ship_navigation(
@@ -140,6 +142,7 @@ impl RuntimeShipNavigation {
                 },
                 &mut backend,
             );
+            description_applied = backend.description_applied;
             deferred_error = backend.deferred_error.take();
         }
 
@@ -156,6 +159,9 @@ impl RuntimeShipNavigation {
         if let Some(error) = deferred_error {
             self.state = Some(state);
             return Err(error);
+        }
+        if description_applied {
+            import_description_text_state(&mut state, services.text_presentation());
         }
         if let Some(target) = state.deferred_navigation_record.take() {
             services.defer_ship_actor_presentation(target);
@@ -415,6 +421,16 @@ fn export_live_state(
     lifecycle.navigation_rebuild_pending = state.navigation_screen_rebuild_pending;
 }
 
+fn import_description_text_state(
+    state: &mut ShipNavigationState<ScriptObjectId>,
+    text: &crate::native::bloodprg::TextPresentationState,
+) {
+    state.presentation_deferred = text.menu_deferred;
+    state.text_display_active = text.subtitle_display_active;
+    state.presentation_hold_ready = text.hold_ready;
+    state.presentation_request_flags = text.request_flags.bits();
+}
+
 const fn flag_is_active(flags: u8) -> bool {
     flags & ACTIVE_FLAG != u8::MIN
 }
@@ -437,6 +453,7 @@ struct RuntimeShipNavigationBackend<'services, 'window, 'lifecycle, 'platform> {
     honk: ScriptObjectId,
     primary_pointer_pressed: bool,
     list_style: RuntimeChoiceListStyle,
+    description_applied: bool,
     deferred_error: Option<anyhow::Error>,
 }
 
@@ -523,6 +540,7 @@ impl ShipNavigationHost<ScriptObjectId> for RuntimeShipNavigationBackend<'_, '_,
     }
 
     fn load_candidate_description(&mut self, candidate: &ScriptObjectId) {
+        self.description_applied = true;
         let result = self
             .services
             .apply_ship_target_description(*candidate)

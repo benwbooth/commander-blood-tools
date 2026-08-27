@@ -100,6 +100,7 @@ impl RuntimeShipHud {
 
         let native_outcome;
         let deferred_error;
+        let description_applied;
         {
             let mut backend = RuntimeShipHudBackend {
                 services,
@@ -109,13 +110,18 @@ impl RuntimeShipHud {
                 remap_table: &mut self.remap_table,
                 remap_palette: &mut self.remap_palette,
                 remap_rows: &mut self.remap_rows,
+                description_applied: false,
                 deferred_error: None,
             };
             native_outcome = update_ship_hud(&mut state, &context, &mut backend);
+            description_applied = backend.description_applied;
             deferred_error = backend.deferred_error.take();
         }
         if let Some(error) = deferred_error {
             return Err(error);
+        }
+        if description_applied {
+            import_description_text_state(&mut state, services.text_presentation());
         }
         let outcome = native_outcome
             .map_err(|error| anyhow::anyhow!("invalid recovered ship HUD state: {error:?}"))?;
@@ -133,7 +139,7 @@ impl RuntimeShipHud {
             state.palette_transition.increment,
         );
         if let Some(target) = state.deferred_navigation_target.take() {
-            services.defer_ship_navigation_target(target);
+            services.queue_ship_hud_navigation_target(target)?;
         }
         export_live_state(&state, services, lifecycle);
         self.coordinator = Some(state);
@@ -259,6 +265,15 @@ fn text_reveal_complete(text: &crate::native::bloodprg::TextPresentationState) -
     text.subtitle_reveal_cursor == Some(text.subtitle_text.len())
 }
 
+fn import_description_text_state(
+    state: &mut ShipHudCoordinatorState<ScriptObjectId>,
+    text: &crate::native::bloodprg::TextPresentationState,
+) {
+    state.subtitle_display_mode = text.subtitle_word_list_mode;
+    state.text_display_active = text.subtitle_display_active;
+    state.text_reveal_complete = text_reveal_complete(text);
+}
+
 const fn flag_is_active(flags: u8) -> bool {
     flags & ACTIVE_FLAG != u8::MIN
 }
@@ -279,6 +294,7 @@ struct RuntimeShipHudBackend<'services, 'window> {
     remap_table: &'services mut PaletteRemapTable,
     remap_palette: &'services mut Option<IndexedGamePalette>,
     remap_rows: &'services mut Option<Range<u16>>,
+    description_applied: bool,
     deferred_error: Option<anyhow::Error>,
 }
 
@@ -338,6 +354,7 @@ impl ShipHudCoordinatorHost<ScriptObjectId> for RuntimeShipHudBackend<'_, '_> {
 
     fn load_target_description(&mut self, target: &ScriptObjectId) -> bool {
         self.ensure_selector(*target);
+        self.description_applied = true;
         let result = self.services.apply_ship_target_description(*target);
         self.record(result, false)
     }

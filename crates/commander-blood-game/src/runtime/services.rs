@@ -1176,6 +1176,12 @@ impl<'window> ModernGameServices<'window> {
         self.scripts.defer_navigation_target(target);
     }
 
+    /// Write the selected ship-HUD target to the native `orxx` C1 action slot.
+    pub fn queue_ship_hud_navigation_target(&mut self, target: ScriptObjectId) -> Result<()> {
+        self.scripts
+            .queue_ship_hud_navigation_target(&mut self.runtime, target)
+    }
+
     /// Publish the complete non-actionable C4 record emitted by navigation presentation.
     pub fn defer_ship_actor_presentation(&mut self, target: ScriptObjectId) {
         self.scripts.defer_actor_presentation(target);
@@ -3203,7 +3209,7 @@ mod tests {
     use commander_blood_formats::script::decode_script_dictionary;
 
     use super::*;
-    use crate::native::bloodprg::PointerButton;
+    use crate::native::bloodprg::{ChoiceListRowKind, PointerButton, ScriptDeferredRecord};
     use crate::runtime::OriginalGameDataPaths;
     use crate::runtime::camera_approach::update_runtime_camera_approach;
 
@@ -3227,6 +3233,11 @@ mod tests {
     const STATUS_TEST_ORIGIN: [u16; 2] = [40, 50];
     const STATUS_TEST_EXTENT: [u16; 2] = [30, 20];
     const STATUS_TEST_ACTIVE_FLAGS: u16 = 1;
+    const PTERRA_NAME: &[u8] = b"Pterra";
+    const ARK_NAME: &[u8] = b"Ark";
+    const PTERRA_BACKGROUND_NAME: &[u8] = b"pterra1f.lbm";
+    const ALTERNATE_SCRIPT_PROFILE_VALUE: u8 = 1;
+    const TARGET_SELECTOR_SETTLE_FRAME_LIMIT: usize = 16;
     const AUTHORED_RADIO_TERMINAL_FRAME: u16 = 11;
     const AUTHORED_ACTOR_RESOURCES: [u16; NAV_ACTOR_SLOT_COUNT] = [17, 13, 15, 16, 19, 18];
     const AUTHORED_ACTOR_TRANSITION_RESOURCES: [Option<u16>; NAV_ACTOR_SLOT_COUNT] =
@@ -3905,6 +3916,147 @@ mod tests {
                 .iter()
                 .any(|pixel| *pixel != u8::MIN)
         );
+        exercise_pterra_hud_transition(&mut services);
         assert!(services.close_bridge_scene());
+    }
+
+    fn exercise_pterra_hud_transition(services: &mut ModernGameServices<'_>) {
+        services
+            .load_script_profile(ScriptProfileId::new(ALTERNATE_SCRIPT_PROFILE_VALUE).unwrap())
+            .unwrap();
+        services
+            .load_script_profile(ScriptProfileId::INITIAL)
+            .unwrap();
+        services.ship_presentation = ShipPresentationState::default();
+        let (arche, ark, pterra) = {
+            let profile = services.runtime().current_profile().unwrap();
+            (
+                profile.builtins().archetype.unwrap(),
+                profile.builtins().ark.unwrap(),
+                profile.directory().find_active_object(PTERRA_NAME).unwrap(),
+            )
+        };
+        {
+            let action = services.scripts.action_state_mut();
+            action.ship_navigation_mode = ScriptShipNavigationMode::Active;
+            action.current_ship_target = Some(pterra);
+            action.navigation_approach_complete = true;
+        }
+
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.vm_execution_enabled = true;
+        services.defer_ship_navigation_target(pterra);
+        services
+            .execute_and_apply_lifecycle_script_frame(&mut lifecycle)
+            .unwrap();
+        services
+            .execute_and_apply_lifecycle_script_frame(&mut lifecycle)
+            .unwrap();
+        assert_eq!(services.current_ship_navigation_target().unwrap(), pterra);
+        assert_eq!(
+            ship_hud_arche_link(services.runtime().current_profile().unwrap().state(), arche,)
+                .unwrap()
+                .0,
+            pterra
+        );
+        assert_eq!(
+            services.update_runtime_ship_hud(&mut lifecycle).unwrap(),
+            crate::native::bloodprg::ShipHudCoordinatorOutcome::TextInactive
+        );
+        let targets = services
+            .runtime_ship_hud()
+            .unwrap()
+            .coordinator()
+            .unwrap()
+            .presentable_targets
+            .clone();
+        let target_names = targets
+            .iter()
+            .map(|target| {
+                services
+                    .runtime()
+                    .current_profile()
+                    .unwrap()
+                    .directory()
+                    .object(*target)
+                    .unwrap()
+                    .name()
+                    .to_vec()
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(target_names, [ARK_NAME.to_vec()]);
+        assert_eq!(
+            services
+                .runtime_ship_hud()
+                .unwrap()
+                .coordinator()
+                .unwrap()
+                .current_target,
+            pterra
+        );
+        let ark_index = targets.iter().position(|target| *target == ark).unwrap();
+
+        let background_slot = DescriptBackgroundSlot::decode(NAVIGATION_BACKGROUND_SLOT).unwrap();
+        let background = services
+            .scripts
+            .backend()
+            .backgrounds()
+            .get(background_slot)
+            .unwrap();
+        assert_eq!(background.source_name(), PTERRA_BACKGROUND_NAME);
+        assert!(!background.encoded_image().is_empty());
+
+        {
+            let text = services.text_presentation_mut();
+            text.subtitle_display_active = true;
+            text.subtitle_reveal_cursor = Some(text.subtitle_text.len());
+        }
+        lifecycle.presentation.subtitle_display_active = true;
+        for _ in usize::MIN..TARGET_SELECTOR_SETTLE_FRAME_LIMIT {
+            services.update_runtime_ship_hud(&mut lifecycle).unwrap();
+        }
+        let ark_row = services
+            .ship_target_selector
+            .as_ref()
+            .unwrap()
+            .last_frame()
+            .unwrap()
+            .rows
+            .iter()
+            .find_map(|row| {
+                matches!(row.kind, ChoiceListRowKind::Item(index) if index == ark_index)
+                    .then_some(row.position)
+            })
+            .unwrap();
+        services.input_mut().poll_pointer(
+            LOGICAL_TEST_OUTPUT_SIZE,
+            ark_row.map(f32::from),
+            PointerButtons::from_bits(PointerButton::Primary as u16),
+        );
+        assert_eq!(
+            services.update_runtime_ship_hud(&mut lifecycle).unwrap(),
+            crate::native::bloodprg::ShipHudCoordinatorOutcome::TargetQueued
+        );
+        assert_eq!(
+            services.presentation_scan_state().deferred,
+            ScriptDeferredRecord::Empty
+        );
+
+        services
+            .execute_and_apply_lifecycle_script_frame(&mut lifecycle)
+            .unwrap();
+        assert_eq!(services.current_ship_navigation_target().unwrap(), ark);
+        assert_eq!(
+            services.scripts.action_state().ship_navigation_mode,
+            ScriptShipNavigationMode::Active
+        );
+        assert!(
+            services
+                .runtime()
+                .back_buffer()
+                .pixels()
+                .iter()
+                .any(|pixel| *pixel != u8::MIN)
+        );
     }
 }

@@ -135,7 +135,9 @@ pub struct ScriptActionContext<'a> {
     pub slot: ScriptStateWordTriple,
     /// Built-in player object named `blood`.
     pub player: ScriptObjectId,
-    /// Dynamic C1 navigation bindings, unnecessary for all other record kinds.
+    /// Built-in navigation object named `arche`.
+    pub arche: ScriptObjectId,
+    /// Dynamic bindings used only by C1's special raw operands 1 and 2.
     pub navigation: Option<ScriptRecordStateNavigationContext>,
 }
 
@@ -272,20 +274,15 @@ fn dispatch_navigation<Host: ScriptActionHost>(
         action,
         owner,
         player,
+        arche,
         navigation,
         ..
     } = context;
-    let navigation = navigation.ok_or(ScriptActionError::MissingNavigationContext)?;
-    let arche = navigation.arche;
     if owner == arche && !action.navigation_approach_complete {
         return Ok(ScriptActionDispatch::default());
     }
 
-    let related = resolve_navigation_operand(
-        operand,
-        navigation.primary_object,
-        navigation.secondary_object,
-    )?;
+    let related = resolve_navigation_operand(operand, navigation)?;
     let owner_kind = object_kind(state, owner)?;
     object_kind(state, related)?;
     let holder = object_word(state, owner, ScriptFieldSelector::HOLDER_OR_LOCATION)?;
@@ -603,12 +600,15 @@ fn dispatch_travel<Host: ScriptActionHost>(
 
 fn resolve_navigation_operand<HostError>(
     operand: ScriptRecordStateOperand,
-    primary: ScriptObjectId,
-    secondary: ScriptObjectId,
+    navigation: Option<ScriptRecordStateNavigationContext>,
 ) -> Result<ScriptObjectId, ScriptActionError<HostError>> {
     match operand {
-        ScriptRecordStateOperand::PrimaryNavigationObject => Ok(primary),
-        ScriptRecordStateOperand::SecondaryNavigationObject => Ok(secondary),
+        ScriptRecordStateOperand::PrimaryNavigationObject => navigation
+            .map(|context| context.primary_object)
+            .ok_or(ScriptActionError::MissingNavigationContext),
+        ScriptRecordStateOperand::SecondaryNavigationObject => navigation
+            .map(|context| context.secondary_object)
+            .ok_or(ScriptActionError::MissingNavigationContext),
         ScriptRecordStateOperand::Object(object) => Ok(object),
         ScriptRecordStateOperand::NativeWord(value) => {
             Err(ScriptActionError::UnsupportedNavigationOperand { value })
@@ -938,6 +938,21 @@ mod tests {
             record: ScriptActionRecord,
             host: &mut MockHost,
         ) -> Result<ScriptActionDispatch, ScriptActionError<&'static str>> {
+            let navigation = Some(ScriptRecordStateNavigationContext {
+                primary_object: self.objects[LOCATION_INDEX],
+                secondary_object: self.objects[ANCHOR_INDEX],
+                arche: self.objects[ARCHE_INDEX],
+            });
+            self.dispatch_with_navigation(owner_index, record, navigation, host)
+        }
+
+        fn dispatch_with_navigation(
+            &mut self,
+            owner_index: usize,
+            record: ScriptActionRecord,
+            navigation: Option<ScriptRecordStateNavigationContext>,
+            host: &mut MockHost,
+        ) -> Result<ScriptActionDispatch, ScriptActionError<&'static str>> {
             let owner = self.objects[owner_index];
             let slot = action_slot(&self.state, owner).unwrap();
             dispatch_script_action(
@@ -951,11 +966,8 @@ mod tests {
                     owner,
                     slot,
                     player: self.objects[PLAYER_INDEX],
-                    navigation: Some(ScriptRecordStateNavigationContext {
-                        primary_object: self.objects[LOCATION_INDEX],
-                        secondary_object: self.objects[ANCHOR_INDEX],
-                        arche: self.objects[ARCHE_INDEX],
-                    }),
+                    arche: self.objects[ARCHE_INDEX],
+                    navigation,
                 },
                 record,
                 host,
@@ -1027,6 +1039,28 @@ mod tests {
                 ScriptObjectFlag::Active
             ),
             Some(false)
+        );
+    }
+
+    #[test]
+    fn concrete_navigation_target_does_not_require_dynamic_operand_bindings() {
+        let mut fixture = Fixture::new();
+        let mut host = MockHost::default();
+        let target = fixture.objects[ANCHOR_INDEX];
+
+        let dispatch = fixture
+            .dispatch_with_navigation(
+                WORLD_INDEX,
+                ScriptActionRecord::Navigation(ScriptRecordStateOperand::Object(target)),
+                None,
+                &mut host,
+            )
+            .unwrap();
+
+        assert_eq!(dispatch, clear_dispatch());
+        assert_eq!(
+            position(&fixture.state, fixture.objects[WORLD_INDEX]),
+            [300, 400]
         );
     }
 

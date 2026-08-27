@@ -479,6 +479,10 @@ impl<Backend: ScriptExecutionBackend> ScriptPresentationScanHost<super::ScriptPr
                 owner: context.owner,
                 slot: context.slot,
                 player,
+                arche: self
+                    .builtins
+                    .archetype
+                    .expect("service validates the Arche binding before scanning"),
                 navigation,
             },
             context.record,

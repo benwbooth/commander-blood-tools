@@ -1,11 +1,13 @@
 //! Concrete original-resource and host-command backend for translated BloodScript.
 
 use std::collections::BTreeMap;
+use std::mem::size_of;
 
 use anyhow::{Context, Result, anyhow, bail};
 use commander_blood_formats::archive::BloodResourceName;
 use commander_blood_formats::descript::DescriptRecordKind;
 use commander_blood_formats::descript_database::DescriptDatabase;
+use commander_blood_formats::instruction::ScriptRecordStateOperand;
 use commander_blood_formats::script::{ScriptObjectId, ScriptWordId};
 
 use crate::assets::OriginalResourceStore;
@@ -15,12 +17,13 @@ use crate::native::bloodprg::{
     DescriptSoundBankLoader, GameLifecycleState, LoadedScriptProfile, LoadedSoundBank,
     OriginalSaveGame, ScriptAboardRecordContext, ScriptActionRecord, ScriptActionState,
     ScriptClock, ScriptDeferredRecord, ScriptDispatchState, ScriptEnvironmentActivity,
-    ScriptExecutionBackend, ScriptExecutionService, ScriptFrameOutcome, ScriptPresentationEntity,
-    ScriptPresentationScanOutcome, ScriptPresentationScanState, ScriptProfileId,
-    ScriptProfileLoadOutcome, ScriptRecordStateNavigationContext, ScriptShipNavigationMode,
-    ScriptTransferContext, SequencePresentationState, SequenceRequestContext, SoundBankUsage,
-    TextPresentationState, deferred_navigation_record, execute_loaded_script_frame,
-    load_sound_bank, lookup_and_apply_descript_record, original_save_state_block_byte_count,
+    ScriptExecutionBackend, ScriptExecutionService, ScriptFieldSelector, ScriptFrameOutcome,
+    ScriptPresentationEntity, ScriptPresentationScanOutcome, ScriptPresentationScanState,
+    ScriptProfileId, ScriptProfileLoadOutcome, ScriptRecordStateNavigationContext,
+    ScriptShipNavigationMode, ScriptTransferContext, SequencePresentationState,
+    SequenceRequestContext, SoundBankUsage, TextPresentationState, deferred_navigation_record,
+    execute_loaded_script_frame, load_sound_bank, lookup_and_apply_descript_record,
+    original_save_state_block_byte_count, script_field_offset,
 };
 
 use super::{OriginalGameData, OriginalGameRuntime};
@@ -310,9 +313,49 @@ impl RuntimeScriptSystem {
         Ok(application)
     }
 
-    /// Queue the complete typed C1 action emitted by a ship-HUD target choice.
+    /// Queue a complete C1 for the deferred presentation path through Arche.
     pub fn defer_navigation_target(&mut self, target: ScriptObjectId) {
         self.service.presentation_state_mut().deferred = deferred_navigation_record(target, true);
+    }
+
+    /// Write the C1 emitted by `ship_3d_hud_init` directly to `orxx`'s action slot.
+    pub fn queue_ship_hud_navigation_target(
+        &mut self,
+        runtime: &mut OriginalGameRuntime,
+        target: ScriptObjectId,
+    ) -> Result<()> {
+        let profile = runtime
+            .current_profile_mut()
+            .context("ship HUD navigation requires a loaded BloodScript profile")?;
+        let world = profile
+            .builtins()
+            .world
+            .context("loaded BloodScript profile has no orxx object")?;
+        profile
+            .state()
+            .object(target)
+            .with_context(|| format!("ship HUD navigation target {target:?} is absent"))?;
+        let world_kind = profile
+            .state()
+            .object(world)
+            .context("loaded BloodScript profile has no bound orxx state object")?
+            .kind;
+        let action_offset = script_field_offset(world_kind, ScriptFieldSelector::ACTION)
+            .context("orxx has no C1 action field")?;
+        let action_slot = profile
+            .state()
+            .object_word_triple(world, action_offset / size_of::<u16>())
+            .context("orxx has a truncated C1 action field")?;
+        let parts = profile.execution_parts();
+        parts.record_state.action_records.set_record(
+            action_slot,
+            ScriptActionRecord::Navigation(ScriptRecordStateOperand::Object(target)),
+        );
+        parts
+            .record_state
+            .commit_to_var(parts.state, parts.directory, parts.dictionary)
+            .context("committing the ship HUD C1 action to BloodScript VAR state")?;
+        Ok(())
     }
 
     /// Queue the non-actionable C4 record emitted by the ship navigation coordinator.
