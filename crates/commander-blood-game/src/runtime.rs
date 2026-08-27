@@ -115,6 +115,8 @@ pub const ORIGINAL_TITLE_FILENAME: &str = "BLOOD.LBM";
 pub const ORIGINAL_BRIDGE_PANORAMA_FILENAME: &str = "TB.BIG";
 /// Name of the authored scene, dialogue, subtitle, and audio catalog.
 pub const ORIGINAL_DESCRIPT_FILENAME: &str = "DESCRIPT.DES";
+/// Name of the original writable save-slot template copied during startup.
+pub const ORIGINAL_SAVE_DIRECTORY_FILENAME: &str = "BLOOD.SAV";
 
 const DATA_ROOT_ENVIRONMENT_VARIABLE: &str = "CBLOOD_DATA";
 const WRITABLE_DATA_ROOT_ENVIRONMENT_VARIABLE: &str = "CBLOOD_WRITE_DATA";
@@ -171,6 +173,12 @@ impl OriginalGameDataPaths {
                 );
             }
         }
+        if !root_file_exists_case_insensitive(&paths.root, ORIGINAL_SAVE_DIRECTORY_FILENAME)? {
+            bail!(
+                "required Commander Blood startup file is missing: {}",
+                paths.root.join(ORIGINAL_SAVE_DIRECTORY_FILENAME).display()
+            );
+        }
         Ok(paths)
     }
 
@@ -225,6 +233,26 @@ impl OriginalGameDataPaths {
     pub fn descript(&self) -> &Path {
         &self.descript
     }
+}
+
+fn root_file_exists_case_insensitive(root: &Path, filename: &str) -> Result<bool> {
+    let exact = root.join(filename);
+    if exact.is_file() {
+        return Ok(true);
+    }
+    for entry in std::fs::read_dir(root)
+        .with_context(|| format!("reading Commander Blood data root {}", root.display()))?
+    {
+        let entry = entry
+            .with_context(|| format!("reading Commander Blood data root {}", root.display()))?;
+        let Some(candidate) = entry.file_name().to_str().map(str::to_owned) else {
+            continue;
+        };
+        if candidate.eq_ignore_ascii_case(filename) && entry.path().is_file() {
+            return Ok(true);
+        }
+    }
+    Ok(false)
 }
 
 /// Structural metrics from decoding one complete shipped BloodScript profile.
@@ -644,5 +672,31 @@ mod tests {
         let error = OriginalGameDataPaths::from_root(&missing).unwrap_err();
         assert!(error.to_string().contains(ORIGINAL_ARCHIVE_FILENAME));
         std::fs::remove_dir_all(missing).unwrap();
+    }
+
+    #[test]
+    fn data_root_requires_the_case_insensitive_startup_save_template() {
+        let root = std::env::temp_dir().join(format!(
+            "commander-blood-startup-save-data-{}",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(&root).unwrap();
+        for filename in [
+            ORIGINAL_ARCHIVE_FILENAME,
+            ORIGINAL_EXECUTABLE_FILENAME,
+            ORIGINAL_TITLE_FILENAME,
+            ORIGINAL_BRIDGE_PANORAMA_FILENAME,
+            ORIGINAL_DESCRIPT_FILENAME,
+        ] {
+            std::fs::write(root.join(filename), []).unwrap();
+        }
+
+        let error = OriginalGameDataPaths::from_root(&root).unwrap_err();
+        assert!(error.to_string().contains(ORIGINAL_SAVE_DIRECTORY_FILENAME));
+        std::fs::write(root.join("blood.sav"), []).unwrap();
+        assert!(OriginalGameDataPaths::from_root(&root).is_ok());
+
+        std::fs::remove_dir_all(root).unwrap();
     }
 }
