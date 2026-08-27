@@ -298,8 +298,7 @@ impl BridgeView {
                     ANGLE_UNITS_PER_REVOLUTION as i32,
                 );
             }
-            self.frame =
-                wrap(self.frame as i32 + step, PANORAMA_FRAME_COUNT as i32) as u16;
+            self.frame = wrap(self.frame as i32 + step, PANORAMA_FRAME_COUNT as i32) as u16;
             return true;
         }
 
@@ -315,10 +314,7 @@ impl BridgeView {
                 return false;
             }
             let toward_view = ring_delta(arc_mouse, arc_view, ARC_PER_REVOLUTION).signum();
-            let clamped_arc = wrap(
-                arc_view - toward_view * MENU_CLAMP_ARC,
-                ARC_PER_REVOLUTION,
-            );
+            let clamped_arc = wrap(arc_view - toward_view * MENU_CLAMP_ARC, ARC_PER_REVOLUTION);
             self.ring_mouse_x = clamped_arc * 4;
             return false;
         }
@@ -492,7 +488,13 @@ impl BridgeView {
         if self.frame < MENU_FRAME_MIN || self.frame > MENU_FRAME_MAX {
             return;
         }
-        let expand = |c: [u8; 3]| [c[0] << 2 | c[0] >> 4, c[1] << 2 | c[1] >> 4, c[2] << 2 | c[2] >> 4];
+        let expand = |c: [u8; 3]| {
+            [
+                c[0] << 2 | c[0] >> 4,
+                c[1] << 2 | c[1] >> 4,
+                c[2] << 2 | c[2] >> 4,
+            ]
+        };
         for row in 0..MENU_ROW_COUNT {
             palette[MENU_ROW_DAC_BASE + row] = expand(MENU_ROW_IDLE_DAC);
         }
@@ -620,7 +622,10 @@ mod tests {
             steps += 1;
         }
         assert_eq!(view.frame, 45);
-        assert!(steps >= 5, "half-distance easing takes several ticks, got {steps}");
+        assert!(
+            steps >= 5,
+            "half-distance easing takes several ticks, got {steps}"
+        );
     }
 
     #[test]
@@ -630,7 +635,11 @@ mod tests {
         view.seeking = true;
         view.seek_target_arc = 0; // helm, 10 frames forward across the wrap
         view.update_view();
-        assert!(view.frame > 170 || view.frame == 0, "went the short way: {}", view.frame);
+        assert!(
+            view.frame > 170 || view.frame == 0,
+            "went the short way: {}",
+            view.frame
+        );
     }
 
     #[test]

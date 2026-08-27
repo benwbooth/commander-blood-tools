@@ -200,7 +200,11 @@ impl HandMesh {
         let mut uvs = Vec::with_capacity(nvert + nalias);
         for i in 0..nvert {
             let at = i * 20;
-            verts.push([rdi16(SEG2, at + 4), rdi16(SEG2, at + 6), rdi16(SEG2, at + 8)]);
+            verts.push([
+                rdi16(SEG2, at + 4),
+                rdi16(SEG2, at + 6),
+                rdi16(SEG2, at + 8),
+            ]);
             uvs.push([rdi16(SEG2, at), rdi16(SEG2, at + 2)]);
         }
         let mut alias_src = Vec::with_capacity(nalias);
@@ -221,13 +225,23 @@ impl HandMesh {
                 rd16(SEG2, at + 6) / 20,
             ]);
         }
-        HandMesh { pose_sel: 1, pose: None, state, verts, uvs, alias_src, faces }
+        HandMesh {
+            pose_sel: 1,
+            pose: None,
+            state,
+            verts,
+            uvs,
+            alias_src,
+            faces,
+        }
     }
 
     #[inline]
     fn st16(&self, off: usize) -> i32 {
-        i16::from_le_bytes([self.state[off - STATE_BASE], self.state[off - STATE_BASE + 1]])
-            as i32
+        i16::from_le_bytes([
+            self.state[off - STATE_BASE],
+            self.state[off - STATE_BASE + 1],
+        ]) as i32
     }
     #[inline]
     fn st32(&self, off: usize) -> i64 {
@@ -256,7 +270,11 @@ impl HandMesh {
             r
         };
         let read_t = |at: usize| {
-            [self.st32(at + 0x36), self.st32(at + 0x3A), self.st32(at + 0x3E)]
+            [
+                self.st32(at + 0x36),
+                self.st32(at + 0x3A),
+                self.st32(at + 0x3E),
+            ]
         };
         out.insert(0x2274, (read_rows(0x2274), read_t(0x2274)));
         let mut result = Vec::with_capacity(16);
@@ -264,8 +282,11 @@ impl HandMesh {
             let at = WRIST + i * 0x5E;
             let parent = rd_parent(&self.state, at);
             let (prow, pt) = out[&(parent as usize)];
-            let (mut a1, mut a2, a3) =
-                (self.st16(at + 0x4E), self.st16(at + 0x50), self.st16(at + 0x52));
+            let (mut a1, mut a2, a3) = (
+                self.st16(at + 0x4E),
+                self.st16(at + 0x50),
+                self.st16(at + 0x52),
+            );
             if at == WRIST {
                 // The cursor law (entry 0x0000): pitch += (y-100)*2, yaw += (x-160)*2.
                 a1 += (cy - 100) * 2;
@@ -298,7 +319,9 @@ impl HandMesh {
                 ];
                 let mut t = [0i64; 3];
                 for r in 0..3 {
-                    t[r] = prow[r * 3] * l[0] + prow[r * 3 + 1] * l[1] + prow[r * 3 + 2] * l[2]
+                    t[r] = prow[r * 3] * l[0]
+                        + prow[r * 3 + 1] * l[1]
+                        + prow[r * 3 + 2] * l[2]
                         + pt[r];
                 }
                 t
@@ -360,7 +383,10 @@ impl HandMesh {
         }
         // Aliases resolve to their source's projected point.
         for &src in &self.alias_src {
-            let p = pts.get(src as usize).copied().unwrap_or((-4096.0, -4096.0, 1.0));
+            let p = pts
+                .get(src as usize)
+                .copied()
+                .unwrap_or((-4096.0, -4096.0, 1.0));
             pts.push(p);
         }
         // Hidden surfaces resolve PER PIXEL by depth (a z-buffer computes the same
@@ -422,10 +448,9 @@ impl HandMesh {
             }
             for field in [0x42usize, 0x46, 0x4A] {
                 let o = rec + field;
-                let pv = i32::from_le_bytes([prev[o], prev[o + 1], prev[o + 2], prev[o + 3]])
-                    as f32;
-                let cv = i32::from_le_bytes([cur[o], cur[o + 1], cur[o + 2], cur[o + 3]])
-                    as f32;
+                let pv =
+                    i32::from_le_bytes([prev[o], prev[o + 1], prev[o + 2], prev[o + 3]]) as f32;
+                let cv = i32::from_le_bytes([cur[o], cur[o + 1], cur[o + 2], cur[o + 3]]) as f32;
                 let v = (pv + (cv - pv) * a) as i32;
                 self.state[o..o + 4].copy_from_slice(&v.to_le_bytes());
             }
@@ -497,14 +522,21 @@ impl HandMesh {
                 } else {
                     let xr = rows[0] * x + rows[1] * y + rows[2] * z + t[0];
                     let yr = rows[3] * x + rows[4] * y + rows[5] * z + t[1];
-                    pts.push(((xr / depth + ctr_x) as f32, (-(yr / depth) + ctr_y) as f32, depth as f32));
+                    pts.push((
+                        (xr / depth + ctr_x) as f32,
+                        (-(yr / depth) + ctr_y) as f32,
+                        depth as f32,
+                    ));
                 }
                 vi += 1;
             }
         }
         // Aliases resolve to their source's projected point (as in draw()).
         for &src in &self.alias_src {
-            let p = pts.get(src as usize).copied().unwrap_or((-4096.0, -4096.0, 1.0));
+            let p = pts
+                .get(src as usize)
+                .copied()
+                .unwrap_or((-4096.0, -4096.0, 1.0));
             pts.push(p);
         }
         pts
@@ -555,8 +587,8 @@ fn fill_triangle_tex(
             if w0 >= bias0 && w1 >= bias1 && w2 >= bias2 {
                 let u = (tb[0] as f32 * w0 + tc[0] as f32 * w1 + ta[0] as f32 * w2)
                     .clamp(0.0, 255.0) as usize;
-                let v = (tb[1] as f32 * w0 + tc[1] as f32 * w1 + ta[1] as f32 * w2)
-                    .max(0.0) as usize;
+                let v =
+                    (tb[1] as f32 * w0 + tc[1] as f32 * w1 + ta[1] as f32 * w2).max(0.0) as usize;
                 let z = a.2 * w2 + b.2 * w0 + c.2 * w1;
                 let pi = y as usize * w + x as usize;
                 if z >= zbuf[pi] {
@@ -636,7 +668,12 @@ impl PosePlayer {
             }
             at += 8;
         }
-        Some(PosePlayer { seq, cursor: 0, phase: 0, active: Vec::new() })
+        Some(PosePlayer {
+            seq,
+            cursor: 0,
+            phase: 0,
+            active: Vec::new(),
+        })
     }
 
     /// One frame: construct due groups (phase match), step active tweens; writes go
@@ -661,7 +698,8 @@ impl PosePlayer {
             let end = g[3] as i16 as i32;
             let cur = cells(target, None) as i32;
             let step = ((end - cur) << 16) / count as i32;
-            self.active.push((count - 1, target, (cur << 16) + step, step));
+            self.active
+                .push((count - 1, target, (cur << 16) + step, step));
             self.cursor += 1;
         }
         // Step active tweens (0x19B): write value, decrement, accumulate.
@@ -735,10 +773,13 @@ mod tests {
     /// when the asset tree is absent.
     #[test]
     fn trig_tables_are_manu3_xdb_bytes() {
-        let xdb = ["export_check/_tmp_dat/manu3.xdb", "output/_tmp_iso/manu3.xdb",
-                   "../export_check/_tmp_dat/manu3.xdb"]
-            .iter()
-            .find_map(|p| std::fs::read(p).ok());
+        let xdb = [
+            "export_check/_tmp_dat/manu3.xdb",
+            "output/_tmp_iso/manu3.xdb",
+            "../export_check/_tmp_dat/manu3.xdb",
+        ]
+        .iter()
+        .find_map(|p| std::fs::read(p).ok());
         let Some(xdb) = xdb else { return };
         let at = super::TRIG_XDB_OFFSET;
         assert!(xdb.len() >= at + super::TRIG.len(), "xdb too short");
@@ -758,7 +799,9 @@ mod tests {
         // real animations — at least one must terminate AND animate cells.
         let mut animated = false;
         for si in 0..8 {
-            let Some(mut p) = PosePlayer::new(si) else { continue };
+            let Some(mut p) = PosePlayer::new(si) else {
+                continue;
+            };
             let mut store = std::collections::HashMap::new();
             let mut frames = 0;
             while !p.done() && frames < 4000 {
@@ -799,7 +842,10 @@ mod tests {
         assert_ne!(before, m.state, "pose sequences move the joints");
         let mut fb = vec![0u8; 320 * 200];
         m.draw(&mut fb, 320, 200, 160, 100);
-        assert!(fb.iter().any(|&p| p != 0), "the animated hand still renders");
+        assert!(
+            fb.iter().any(|&p| p != 0),
+            "the animated hand still renders"
+        );
     }
 
     #[test]

@@ -48,8 +48,13 @@ fn main() {
     e.render_ship_view();
 
     let target = objects[0].marker;
-    let opened = e.nav_chart_click(target.0 + 1, target.1 + 1, 0, |o| m.location_panel_rows(o, &status_headers()));
-    println!("click at {target:?} -> opened {opened}, state {:?}", e.location_panel.state);
+    let opened = e.nav_chart_click(target.0 + 1, target.1 + 1, 0, |o| {
+        m.location_panel_rows(o, &status_headers())
+    });
+    println!(
+        "click at {target:?} -> opened {opened}, state {:?}",
+        e.location_panel.state
+    );
     for i in 0..12 {
         e.render_ship_view();
         if i == 3 || i == 11 {
@@ -60,8 +65,14 @@ fn main() {
             }
             let _ = std::fs::create_dir_all("accuracy/comparisons");
             std::fs::write(&ppm_path, ppm).unwrap();
-            println!("frame {i}: state {:?} -> {ppm_path}", e.location_panel.state);
+            println!(
+                "frame {i}: state {:?} -> {ppm_path}",
+                e.location_panel.state
+            );
         }
     }
-    println!("panel rows: {:?}", m.location_panel_rows(objects[0].object, &status_headers()));
+    println!(
+        "panel rows: {:?}",
+        m.location_panel_rows(objects[0].object, &status_headers())
+    );
 }

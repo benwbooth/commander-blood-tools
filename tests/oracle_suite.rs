@@ -9,7 +9,9 @@
 //! is absent are skipped, not failed — the suite runs wherever the assets are
 //! present and is a no-op otherwise.
 
-use commander_blood_tools::engine::{EngineState, MouseInput, ENGINE_SCREEN_HEIGHT, ENGINE_SCREEN_WIDTH};
+use commander_blood_tools::engine::{
+    ENGINE_SCREEN_HEIGHT, ENGINE_SCREEN_WIDTH, EngineState, MouseInput,
+};
 use commander_blood_tools::tbbig::BridgePanorama;
 use std::path::Path;
 
@@ -106,11 +108,21 @@ fn representative_oracle_suite() {
         let mut e = EngineState::new();
         e.load_bridge(iso);
         e.bridge_active = true;
-        e.step(MouseInput { x: 160, y: 100, buttons: 0, ..Default::default() });
+        e.step(MouseInput {
+            x: 160,
+            y: 100,
+            buttons: 0,
+            ..Default::default()
+        });
         e.bridge.frame = 55;
         e.bridge.ring_mouse_x = 320;
         e.bridge.mouse_y = 100;
-        e.step(MouseInput { x: 160, y: 100, buttons: 0, ..Default::default() });
+        e.step(MouseInput {
+            x: 160,
+            y: 100,
+            buttons: 0,
+            ..Default::default()
+        });
         // Render to RGB through the engine's scene palette.
         let rgb: Vec<u8> = e
             .framebuffer
@@ -124,7 +136,11 @@ fn representative_oracle_suite() {
         // panorama-only match is ~2.5; 8.0 is the no-hand tolerance that branch
         // actually exercised.
         let threshold = 8.0;
-        results.push(Scenario { name: "engine-console-render", mean_abs: mean_abs(&rgb, &live), threshold });
+        results.push(Scenario {
+            name: "engine-console-render",
+            mean_abs: mean_abs(&rgb, &live),
+            threshold,
+        });
     }
 
     if results.is_empty() {
@@ -134,7 +150,10 @@ fn representative_oracle_suite() {
 
     // Report + assert the whole suite.
     let mut failures = Vec::new();
-    eprintln!("--- representative oracle suite ({} scenarios) ---", results.len());
+    eprintln!(
+        "--- representative oracle suite ({} scenarios) ---",
+        results.len()
+    );
     for s in &results {
         eprintln!(
             "  {:<26} mean_abs={:>6.2}  (< {:.1})  {}",
@@ -177,12 +196,17 @@ fn representative_oracle_suite() {
 fn list_widget_left_edge_matches_the_formula_in_two_captures() {
     // (path, expected leading x). The spans are measured, not asserted.
     let cases = [
-        ("accuracy/captures/bridge/psychotherapy_topics.ppm", 170usize),
+        (
+            "accuracy/captures/bridge/psychotherapy_topics.ppm",
+            170usize,
+        ),
         ("accuracy/captures/dialogue/honk_talk_menu.ppm", 173usize),
     ];
     let mut checked = 0;
     for (path, expect_x) in cases {
-        let Some(px) = read_ppm(Path::new(path)).or_else(|| read_ppm(Path::new(&format!("../{path}")))) else {
+        let Some(px) =
+            read_ppm(Path::new(path)).or_else(|| read_ppm(Path::new(&format!("../{path}"))))
+        else {
             eprintln!("skipped: no {path}");
             continue;
         };
@@ -231,8 +255,7 @@ fn list_widget_left_edge_matches_the_formula_in_two_captures() {
 #[test]
 fn choice_box_is_centred_on_the_decoded_anchor() {
     let path = "accuracy/captures/dialogue/post2_menu_choice.ppm";
-    let Some(px) = read_ppm(Path::new(path))
-        .or_else(|| read_ppm(Path::new(&format!("../{path}"))))
+    let Some(px) = read_ppm(Path::new(path)).or_else(|| read_ppm(Path::new(&format!("../{path}"))))
     else {
         eprintln!("skipped: no {path}");
         return;
@@ -279,9 +302,12 @@ fn console_band_is_panorama_frame_90_through_the_remap() {
         eprintln!("skipped: no CD data");
         return;
     };
-    let harvested = ["accuracy/captures/console_band.idx", "../accuracy/captures/console_band.idx"]
-        .into_iter()
-        .find_map(|p| std::fs::read(p).ok());
+    let harvested = [
+        "accuracy/captures/console_band.idx",
+        "../accuracy/captures/console_band.idx",
+    ]
+    .into_iter()
+    .find_map(|p| std::fs::read(p).ok());
     let Some(harvested) = harvested else {
         eprintln!("skipped: no console_band.idx");
         return;
@@ -298,9 +324,7 @@ fn console_band_is_panorama_frame_90_through_the_remap() {
     let top = commander_blood_tools::tbbig::CONSOLE_BAND_TOP;
     let height = commander_blood_tools::tbbig::CONSOLE_BAND_HEIGHT;
     let composed: Vec<u8> = (top..top + height)
-        .flat_map(|y| {
-            (0..ENGINE_SCREEN_WIDTH).map(move |x| (y * ENGINE_SCREEN_WIDTH + x))
-        })
+        .flat_map(|y| (0..ENGINE_SCREEN_WIDTH).map(move |x| y * ENGINE_SCREEN_WIDTH + x))
         .map(|i| table[frame[i] as usize])
         .collect();
 
@@ -328,8 +352,8 @@ fn console_band_is_panorama_frame_90_through_the_remap() {
 #[test]
 fn viewscreen_static_matches_the_captures_two_colour_distribution() {
     let path = "accuracy/captures/bridge/nav_screen_opened.ppm";
-    let Some(live) = read_ppm(Path::new(path))
-        .or_else(|| read_ppm(Path::new(&format!("../{path}"))))
+    let Some(live) =
+        read_ppm(Path::new(path)).or_else(|| read_ppm(Path::new(&format!("../{path}"))))
     else {
         eprintln!("skipped: no {path}");
         return;
@@ -340,7 +364,9 @@ fn viewscreen_static_matches_the_captures_two_colour_distribution() {
     for y in 0..135usize {
         for x in 0..ENGINE_SCREEN_WIDTH {
             let o = (y * ENGINE_SCREEN_WIDTH + x) * 3;
-            *counts.entry([live[o], live[o + 1], live[o + 2]]).or_insert(0usize) += 1;
+            *counts
+                .entry([live[o], live[o + 1], live[o + 2]])
+                .or_insert(0usize) += 1;
         }
     }
     let mut ranked: Vec<_> = counts.into_iter().collect();
@@ -353,7 +379,10 @@ fn viewscreen_static_matches_the_captures_two_colour_distribution() {
         "the static must be TWO colours; top two cover {}/{total}",
         dark_n + light_n
     );
-    assert!(dark[0] < 40 && light[0] > 200, "one dark, one light: {dark:?} {light:?}");
+    assert!(
+        dark[0] < 40 && light[0] > 200,
+        "one dark, one light: {dark:?} {light:?}"
+    );
 
     // The split the port documents from oracle intro_215M: ~54/46.
     let dark_pct = dark_n * 100 / (dark_n + light_n);
@@ -373,7 +402,10 @@ fn viewscreen_static_matches_the_captures_two_colour_distribution() {
         }
     }
     let mean_run = ENGINE_SCREEN_WIDTH as f64 / runs as f64;
-    assert!(mean_run < 2.5, "per-pixel noise expected, mean run {mean_run:.2}");
+    assert!(
+        mean_run < 2.5,
+        "per-pixel noise expected, mean run {mean_run:.2}"
+    );
 
     // And the static STOPS where the console band starts. Not "no white below" --
     // the band has bright content of its own (483px, first attempt asserted zero
@@ -443,7 +475,9 @@ fn identify_capture() {
     for root in roots {
         let mut stack = vec![root];
         while let Some(dir) = stack.pop() {
-            let Ok(entries) = std::fs::read_dir(&dir) else { continue };
+            let Ok(entries) = std::fs::read_dir(&dir) else {
+                continue;
+            };
             for e in entries.flatten() {
                 let p = e.path();
                 if p.is_dir() {
@@ -464,15 +498,17 @@ fn identify_capture() {
     eprintln!("scanning {} HNM asset(s)", hnms.len());
 
     for target in targets {
-        let Some(live) = read_ppm(Path::new(&target))
-            .or_else(|| read_ppm(Path::new(&format!("../{target}"))))
+        let Some(live) =
+            read_ppm(Path::new(&target)).or_else(|| read_ppm(Path::new(&format!("../{target}"))))
         else {
             eprintln!("  no such capture: {target}");
             continue;
         };
         let mut best: Vec<(f64, String, usize)> = Vec::new();
         for path in &hnms {
-            let Ok(h) = commander_blood_tools::hnm::HnmFile::open(path) else { continue };
+            let Ok(h) = commander_blood_tools::hnm::HnmFile::open(path) else {
+                continue;
+            };
             let mut fb = vec![0u8; ENGINE_SCREEN_WIDTH * 200];
             let mut pal = [[0u8; 3]; 256];
             for idx in 0..h.frame_count().min(40) {
@@ -524,8 +560,8 @@ fn nav_screen_render_distance() {
         return;
     };
     let path = "accuracy/captures/bridge/nav_screen_opened.ppm";
-    let Some(live) = read_ppm(Path::new(path))
-        .or_else(|| read_ppm(Path::new(&format!("../{path}"))))
+    let Some(live) =
+        read_ppm(Path::new(path)).or_else(|| read_ppm(Path::new(&format!("../{path}"))))
     else {
         eprintln!("skipped: no {path}");
         return;
@@ -537,9 +573,19 @@ fn nav_screen_render_distance() {
     let mut e = EngineState::new();
     e.load_bridge(iso);
     e.bridge_active = true;
-    e.step(MouseInput { x: 160, y: 100, buttons: 0, ..Default::default() });
+    e.step(MouseInput {
+        x: 160,
+        y: 100,
+        buttons: 0,
+        ..Default::default()
+    });
     e.bridge.frame = commander_blood_tools::bridge::STATION_REST_FRAMES[2];
-    e.step(MouseInput { x: 160, y: 100, buttons: 0, ..Default::default() });
+    e.step(MouseInput {
+        x: 160,
+        y: 100,
+        buttons: 0,
+        ..Default::default()
+    });
     let rgb: Vec<u8> = e
         .framebuffer
         .iter()
@@ -554,8 +600,17 @@ fn nav_screen_render_distance() {
             projection_angle_2f6d: 90 % 180,
             angle_2f6f: 0,
         };
-        let origin = Ship3dProjectionOrigin { x: 0x8000, y: 0x8000, z: 0x8000 };
-        let viewport = Ship3dProjectionViewport { left: 0, right: 320, top: 0, bottom: 200 };
+        let origin = Ship3dProjectionOrigin {
+            x: 0x8000,
+            y: 0x8000,
+            z: 0x8000,
+        };
+        let viewport = Ship3dProjectionViewport {
+            left: 0,
+            right: 320,
+            top: 0,
+            bottom: 200,
+        };
         match render_ship_3d_starfield(&mut prng, angles, origin, viewport) {
             None => eprintln!("STAR LAYER: render_ship_3d_starfield returned None"),
             Some(r) => {
@@ -608,8 +663,18 @@ fn concept_menu_mask_bounds() {
         return;
     };
     let labels: Vec<String> = [
-        "TALK", "EGO", "SUPER_EGO", "UNDER_EGO", "END_OF_MONTH", "LIBIDO", "WHO", "WHERE", "WHEN",
-        "WHAT", "HOW", "WHY",
+        "TALK",
+        "EGO",
+        "SUPER_EGO",
+        "UNDER_EGO",
+        "END_OF_MONTH",
+        "LIBIDO",
+        "WHO",
+        "WHERE",
+        "WHEN",
+        "WHAT",
+        "HOW",
+        "WHY",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -624,7 +689,7 @@ fn concept_menu_mask_bounds() {
             && (b - 138).abs() < 45
             && (r.max(g).max(b) - r.min(g).min(b)) < 25
     };
-    let mut bounds = |name: &str, f: &dyn Fn(usize, usize) -> bool| {
+    let bounds = |name: &str, f: &dyn Fn(usize, usize) -> bool| {
         let (mut x0, mut x1, mut y0, mut y1, mut n) = (9999usize, 0usize, 9999usize, 0usize, 0u32);
         for y in 0..200 {
             for x in 0..ENGINE_SCREEN_WIDTH {
@@ -654,9 +719,14 @@ fn concept_menu_mask_bounds() {
             let o = (y * ENGINE_SCREEN_WIDTH + x) * 3;
             is_grey(cap[o], cap[o + 1], cap[o + 2])
         });
-        eprintln!("row {row:2} y{y0:3}: port x={p:4}  live x={l:4}  {}", labels[row]);
+        eprintln!(
+            "row {row:2} y{y0:3}: port x={p:4}  live x={l:4}  {}",
+            labels[row]
+        );
     }
-    bounds("port ", &|x, y| e.framebuffer[y * ENGINE_SCREEN_WIDTH + x] == 0xE8);
+    bounds("port ", &|x, y| {
+        e.framebuffer[y * ENGINE_SCREEN_WIDTH + x] == 0xE8
+    });
     bounds("live ", &|x, y| {
         let o = (y * ENGINE_SCREEN_WIDTH + x) * 3;
         is_grey(cap[o], cap[o + 1], cap[o + 2])
@@ -674,8 +744,18 @@ fn concept_menu_text_matches_live_game_capture() {
     // the compare region below covers rows 0..=10, glyph-verified against the capture
     // (the 12th row WHY at y~155 and the trailing indented "44" are outside it).
     let labels: Vec<String> = [
-        "TALK", "EGO", "SUPER_EGO", "UNDER_EGO", "END_OF_MONTH", "LIBIDO", "WHO", "WHERE", "WHEN",
-        "WHAT", "HOW", "WHY",
+        "TALK",
+        "EGO",
+        "SUPER_EGO",
+        "UNDER_EGO",
+        "END_OF_MONTH",
+        "LIBIDO",
+        "WHO",
+        "WHERE",
+        "WHEN",
+        "WHAT",
+        "HOW",
+        "WHY",
     ]
     .iter()
     .map(|s| s.to_string())

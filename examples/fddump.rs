@@ -11,7 +11,9 @@ fn main() {
                     buf.extend_from_slice(&c);
                 }
                 let base = p.rsplit('/').next().unwrap().replace('.', "_");
-                let out = format!("/tmp/ben/nix-shell.K54TJW/claude-1000/-home-ben-src-commander-blood-tools/47e60fe4-6817-4d2f-a5e9-d628c3ddc80a/scratchpad/fd_{base}.ppm");
+                let out = format!(
+                    "/tmp/ben/nix-shell.K54TJW/claude-1000/-home-ben-src-commander-blood-tools/47e60fe4-6817-4d2f-a5e9-d628c3ddc80a/scratchpad/fd_{base}.ppm"
+                );
                 std::fs::write(&out, buf).unwrap();
                 println!("{p}: {w}x{h} -> {out}");
             }

@@ -22,6 +22,7 @@ const GAME_TIMER_DIVISOR: u64 = 5_958;
 /// Timer interrupts assigned to one main-loop frame by `bloodprg_main`.
 const GAME_FRAME_TIMER_TICKS: u64 = 8;
 const NANOSECONDS_PER_SECOND: u64 = 1_000_000_000;
+const MEASURED_GAME_FRAME_MILLISECONDS: u64 = 46;
 const MINIMUM_SURFACE_DIMENSION: u32 = 1;
 const ORIGINAL_DISPLAY_ASPECT_WIDTH: f32 = 4.0;
 const ORIGINAL_DISPLAY_ASPECT_HEIGHT: f32 = 3.0;
@@ -30,16 +31,25 @@ const ALIEN_DRIVER_WIDTH: f32 = 640.0;
 const ALIEN_DRIVER_HEIGHT: f32 = 1_024.0;
 const ALIEN_DRIVER_CENTER: [f32; 2] = [ALIEN_DRIVER_WIDTH / 2.0, ALIEN_DRIVER_HEIGHT / 2.0];
 
-/// Exact recovered target duration of one original game update.
+/// Exact recovered timer budget of one original game update.
 ///
 /// `BLOODPRG.EXE` programs PIT divisor 5,958 and reloads an eight-interrupt
 /// frame counter at the head of its main loop. The rounded nanosecond duration
-/// is about 39.95 ms, or 25.03 game updates per second.
-pub const GAME_FRAME_DURATION: Duration = Duration::from_nanos(
+/// is about 39.95 ms, or 25.03 game updates per second. The shipped game
+/// regularly overruns this budget on its target hardware.
+pub const RECOVERED_FRAME_BUDGET: Duration = Duration::from_nanos(
     (GAME_TIMER_DIVISOR * GAME_FRAME_TIMER_TICKS * NANOSECONDS_PER_SECOND
         + PIT_INPUT_FREQUENCY_HZ / 2)
         / PIT_INPUT_FREQUENCY_HZ,
 );
+
+/// Measured duration of a presented gameplay frame in the DOS runtime.
+///
+/// The binary-oracle page-flip probe records approximately 21.6 presented
+/// frames per second at the bridge hub. Simulation follows that observed
+/// cadence; modern rendering can interpolate between simulation updates
+/// independently when a higher visual frame rate is added.
+pub const GAME_FRAME_DURATION: Duration = Duration::from_millis(MEASURED_GAME_FRAME_MILLISECONDS);
 
 /// SDL-facing state owned by the production game lifecycle host.
 pub struct RuntimePlatformHost<'window> {
@@ -47,17 +57,20 @@ pub struct RuntimePlatformHost<'window> {
     events: EventPump,
     frame_clock: GameFrameClock,
     bridge_horizontal_delta: f32,
+    pointer_buttons: PointerButtons,
     alien_pointer: Option<[f32; 2]>,
 }
 
 impl<'window> RuntimePlatformHost<'window> {
     /// Bind the SDL event pump to the game window without taking cursor control.
     pub fn new(window: &'window Window, events: EventPump) -> Self {
+        let pointer_buttons = pointer_buttons(&events.mouse_state());
         Self {
             window,
             events,
             frame_clock: GameFrameClock::default(),
             bridge_horizontal_delta: 0.0,
+            pointer_buttons,
             alien_pointer: None,
         }
     }
@@ -84,7 +97,6 @@ impl<'window> RuntimePlatformHost<'window> {
     ) -> Result<RuntimeAlienOverlayFrameInput> {
         self.frame_clock.begin_frame(Instant::now());
         let platform_shutdown = self.pump_events(services);
-        let mouse = self.events.mouse_state();
         let key_events = services
             .input_mut()
             .drain_alien_key_events(platform_shutdown);
@@ -93,7 +105,7 @@ impl<'window> RuntimePlatformHost<'window> {
             .context("alien pointer was not centered before overlay entry")?;
         Ok(RuntimeAlienOverlayFrameInput::from_driver_pointer(
             pointer,
-            pointer_buttons(&mouse),
+            self.pointer_buttons,
             key_events,
         ))
     }
@@ -149,6 +161,20 @@ impl<'window> RuntimePlatformHost<'window> {
                             map_horizontal_delta_to_logical(output_size, xrel);
                     }
                 }
+                Event::MouseButtonDown {
+                    window_id: event_window_id,
+                    mouse_btn,
+                    ..
+                } if event_window_id == window_id => {
+                    set_pointer_button(&mut self.pointer_buttons, mouse_btn, true);
+                }
+                Event::MouseButtonUp {
+                    window_id: event_window_id,
+                    mouse_btn,
+                    ..
+                } if event_window_id == window_id => {
+                    set_pointer_button(&mut self.pointer_buttons, mouse_btn, false);
+                }
                 Event::KeyDown {
                     window_id: event_window_id,
                     keycode: Some(keycode),
@@ -176,15 +202,13 @@ impl<'window> RuntimePlatformHost<'window> {
         services.poll_lifecycle_pointer(
             [width as f32, height as f32],
             [mouse.x(), mouse.y()],
-            pointer_buttons(&mouse),
+            self.pointer_buttons,
         )
     }
 
     /// Consume relative horizontal mouse motion in original logical pixels.
     pub fn take_bridge_horizontal_delta(&mut self) -> i32 {
-        let delta = self.bridge_horizontal_delta.round() as i32;
-        self.bridge_horizontal_delta = 0.0;
-        delta
+        take_whole_motion(&mut self.bridge_horizontal_delta)
     }
 
     /// Sleep only for the unused portion of the current recovered frame budget.
@@ -232,6 +256,26 @@ fn pointer_buttons(mouse: &MouseState) -> PointerButtons {
     PointerButtons::from_bits(buttons)
 }
 
+fn set_pointer_button(buttons: &mut PointerButtons, button: MouseButton, pressed: bool) {
+    let bit = match button {
+        MouseButton::Left => PointerButton::Primary as u16,
+        MouseButton::Right => PointerButton::Secondary as u16,
+        _ => return,
+    };
+    let updated = if pressed {
+        buttons.bits() | bit
+    } else {
+        buttons.bits() & !bit
+    };
+    *buttons = PointerButtons::from_bits(updated);
+}
+
+fn take_whole_motion(accumulated: &mut f32) -> i32 {
+    let whole = accumulated.trunc();
+    *accumulated -= whole;
+    whole as i32
+}
+
 fn map_horizontal_delta_to_logical(output_size: [f32; 2], horizontal_delta: f32) -> f32 {
     let output_width = output_size[0].max(1.0);
     let output_height = output_size[1].max(1.0);
@@ -260,16 +304,24 @@ mod tests {
 
     const WIDESCREEN_OUTPUT: [f32; 2] = [1_920.0, 1_080.0];
     const WIDESCREEN_VIEWPORT_WIDTH: f32 = 1_440.0;
-    const EXPECTED_FRAME_NANOSECONDS: u64 = 39_946_965;
+    const EXPECTED_FRAME_BUDGET_NANOSECONDS: u64 = 39_946_965;
+    const EXPECTED_MEASURED_UPDATE_RATE: f64 = 1_000.0 / 46.0;
 
     #[test]
-    fn frame_duration_comes_from_the_recovered_pit_programming() {
+    fn frame_budget_comes_from_the_recovered_pit_programming() {
         assert_eq!(
-            GAME_FRAME_DURATION.as_nanos(),
-            EXPECTED_FRAME_NANOSECONDS as u128
+            RECOVERED_FRAME_BUDGET.as_nanos(),
+            EXPECTED_FRAME_BUDGET_NANOSECONDS as u128
         );
-        let update_rate = 1.0 / GAME_FRAME_DURATION.as_secs_f64();
+        let update_rate = 1.0 / RECOVERED_FRAME_BUDGET.as_secs_f64();
         assert!((update_rate - 25.03).abs() < 0.01);
+    }
+
+    #[test]
+    fn simulation_uses_the_measured_dos_page_flip_cadence() {
+        let update_rate = 1.0 / GAME_FRAME_DURATION.as_secs_f64();
+        assert!((update_rate - EXPECTED_MEASURED_UPDATE_RATE).abs() < 0.01);
+        assert!(GAME_FRAME_DURATION > RECOVERED_FRAME_BUDGET);
     }
 
     #[test]
@@ -294,6 +346,43 @@ mod tests {
             map_horizontal_delta_to_logical(WIDESCREEN_OUTPUT, WIDESCREEN_VIEWPORT_WIDTH,),
             LOGICAL_SCREEN_WIDTH
         );
+    }
+
+    #[test]
+    fn subpixel_bridge_motion_is_retained_across_frames_in_both_directions() {
+        let mut positive = 0.0;
+        for _ in 0..3 {
+            positive += 0.25;
+            assert_eq!(take_whole_motion(&mut positive), 0);
+        }
+        positive += 0.25;
+        assert_eq!(take_whole_motion(&mut positive), 1);
+        assert_eq!(positive, 0.0);
+
+        let mut negative = 0.0;
+        for _ in 0..3 {
+            negative -= 0.25;
+            assert_eq!(take_whole_motion(&mut negative), 0);
+        }
+        negative -= 0.25;
+        assert_eq!(take_whole_motion(&mut negative), -1);
+        assert_eq!(negative, 0.0);
+    }
+
+    #[test]
+    fn mouse_button_events_publish_stable_semantic_button_bits() {
+        let mut buttons = PointerButtons::NONE;
+        set_pointer_button(&mut buttons, MouseButton::Left, true);
+        assert_eq!(buttons.bits(), PointerButton::Primary as u16);
+        set_pointer_button(&mut buttons, MouseButton::Right, true);
+        assert_eq!(
+            buttons.bits(),
+            PointerButton::Primary as u16 | PointerButton::Secondary as u16
+        );
+        set_pointer_button(&mut buttons, MouseButton::Left, false);
+        assert_eq!(buttons.bits(), PointerButton::Secondary as u16);
+        set_pointer_button(&mut buttons, MouseButton::Right, false);
+        assert_eq!(buttons, PointerButtons::NONE);
     }
 
     #[test]

@@ -47,7 +47,6 @@ pub(super) fn lookup_character_background(record_name: &str) -> Option<&'static 
         .map(|(_, hnm)| *hnm)
 }
 
-
 struct DialogueSegment {
     text: String,
     active_line_id: u16,
@@ -312,7 +311,6 @@ pub(super) fn create_character_video_from_scene(
     mp4_dir: &Path,
     hnm_music: &HashMap<String, String>,
 ) -> Result<bool, Box<dyn Error>> {
-
     let snd_bank = SndBank::read(snd_path)?;
 
     // Collect valid clip+animation pairs

@@ -283,7 +283,7 @@ negative; capture past the event before concluding.
 
 ## Faithful-VM passes (commits 1020-1026) — status closures
 - **VM executor + decompiler (1020/1021)**: every opcode ported from the dispatch table asm;
-  decompiled/SCRIPT1-5.bas are the readable source of the whole script logic.
+  `re/vm/profiles/script1-5.blood` are the readable source of the whole script logic and data.
 - **All dialogue VM-driven (1022/1023)**: SCRIPT1 console dispatch (Izwalito guidance -> HONK ->
   CRYOBOX flag -> {EXPLANATIONS,GAME} concept -> RUN PROFILE 1) + SCRIPT2-5 hosts/concepts/
   profile chains. Legacy stream playback = fallback only.

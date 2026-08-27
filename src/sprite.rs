@@ -376,11 +376,17 @@ mod tests {
         assert_eq!(px, vec![0xAA, 0xAA, 0xAA, 0xBB]);
         // A literal run of 3: control 0x02 -> copy next 3 bytes.
         let frame2 = [3u8, 0, 0, 0, 0, 0, 0, 0, 0x02, 0x11, 0x22, 0x33];
-        assert_eq!(decode_rle_frame(&frame2, 1).unwrap(), vec![0x11, 0x22, 0x33]);
+        assert_eq!(
+            decode_rle_frame(&frame2, 1).unwrap(),
+            vec![0x11, 0x22, 0x33]
+        );
         // Index 0 in the decoded output is the transparent value the blit skips
         // (blit_sprite_frame_centered / the decoded di+=cx transparent-skip path).
         let frame3 = [4u8, 0, 0, 0, 0, 0, 0, 0, 0xFE, 0x00, 0x00, 0x77];
-        assert_eq!(decode_rle_frame(&frame3, 1).unwrap(), vec![0x00, 0x00, 0x00, 0x77]);
+        assert_eq!(
+            decode_rle_frame(&frame3, 1).unwrap(),
+            vec![0x00, 0x00, 0x00, 0x77]
+        );
     }
 
     #[test]
@@ -414,7 +420,10 @@ mod tests {
         let mut standard = 0;
         for entry in std::fs::read_dir(&dir).unwrap() {
             let path = entry.unwrap().path();
-            if path.extension().and_then(|e| e.to_str()).map(|e| e.eq_ignore_ascii_case("spr"))
+            if path
+                .extension()
+                .and_then(|e| e.to_str())
+                .map(|e| e.eq_ignore_ascii_case("spr"))
                 != Some(true)
             {
                 continue;
@@ -436,14 +445,25 @@ mod tests {
                 .unwrap_or_else(|| panic!("{name}: standard bank (flags {flags}) must decode"));
             assert!(!frames.is_empty(), "{name}: has frames");
             // No frame is silently dropped: the decoded count equals the header frame count.
-            assert_eq!(frames.len(), header_count, "{name}: decoded all header frames");
+            assert_eq!(
+                frames.len(),
+                header_count,
+                "{name}: decoded all header frames"
+            );
             for f in &frames {
-                assert_eq!(f.indices.len(), f.width * f.height, "{name}: frame index count");
+                assert_eq!(
+                    f.indices.len(),
+                    f.width * f.height,
+                    "{name}: frame index count"
+                );
             }
             standard += 1;
         }
         if standard > 0 {
-            assert_eq!(standard, 43, "all 43 standard sprite banks decode (41 RLE + 2 raw)");
+            assert_eq!(
+                standard, 43,
+                "all 43 standard sprite banks decode (41 RLE + 2 raw)"
+            );
         }
     }
 
@@ -452,15 +472,34 @@ mod tests {
         // Two orb frames of different heights, both with yoff+h == 82 (the BORXX invariant).
         // Drawn with blit_sprite_frame_at at the same base, their BOTTOM edges must coincide -
         // the game's bottom-anchored growth, which centre-blitting would not reproduce.
-        let small = SpriteFrameImage { width: 1, height: 4, x_offset: 0, y_offset: 6, indices: vec![5; 4] };
-        let big = SpriteFrameImage { width: 1, height: 8, x_offset: 0, y_offset: 2, indices: vec![5; 8] };
-        assert_eq!(small.y_offset as usize + small.height, big.y_offset as usize + big.height);
+        let small = SpriteFrameImage {
+            width: 1,
+            height: 4,
+            x_offset: 0,
+            y_offset: 6,
+            indices: vec![5; 4],
+        };
+        let big = SpriteFrameImage {
+            width: 1,
+            height: 8,
+            x_offset: 0,
+            y_offset: 2,
+            indices: vec![5; 8],
+        };
+        assert_eq!(
+            small.y_offset as usize + small.height,
+            big.y_offset as usize + big.height
+        );
         let bottom = |f: &SpriteFrameImage| {
             let mut fb = vec![0u8; 1 * 16];
             blit_sprite_frame_at(&mut fb, 1, 16, f, 0, 0);
             (0..16).rev().find(|&y| fb[y] != 0).unwrap()
         };
-        assert_eq!(bottom(&small), bottom(&big), "bottom edges coincide (bottom-anchored)");
+        assert_eq!(
+            bottom(&small),
+            bottom(&big),
+            "bottom edges coincide (bottom-anchored)"
+        );
     }
 
     #[test]
@@ -483,11 +522,24 @@ mod tests {
                 data[6 + i * 4],
                 data[7 + i * 4],
             ]) as usize;
-            assert_eq!(f.x_offset, u16::from_le_bytes([data[start + 4], data[start + 5]]));
-            assert_eq!(f.y_offset, u16::from_le_bytes([data[start + 6], data[start + 7]]));
+            assert_eq!(
+                f.x_offset,
+                u16::from_le_bytes([data[start + 4], data[start + 5]])
+            );
+            assert_eq!(
+                f.y_offset,
+                u16::from_le_bytes([data[start + 6], data[start + 7]])
+            );
         }
         // The orb frames genuinely vary their y-offset (animation anchoring).
-        assert!(frames.iter().map(|f| f.y_offset).collect::<std::collections::BTreeSet<_>>().len() > 1);
+        assert!(
+            frames
+                .iter()
+                .map(|f| f.y_offset)
+                .collect::<std::collections::BTreeSet<_>>()
+                .len()
+                > 1
+        );
     }
 
     #[test]
@@ -522,7 +574,12 @@ mod tests {
             t[1] = 2; // any pixel of 1 becomes 2, so tinting is observable
             t
         };
-        let letterbox = ClipWindow { left: 0, right: 320, top: 40, bottom: 120 };
+        let letterbox = ClipWindow {
+            left: 0,
+            right: 320,
+            top: 40,
+            bottom: 120,
+        };
 
         let mut fb = vec![1u8; W * H];
         remap_rect_indexed_clipped(&mut fb, W, H, &table, 0, 0, 8, 190, letterbox);
@@ -533,8 +590,16 @@ mod tests {
 
         // BOTTOM is not: the rect runs past row 120 because the ladder compared
         // against `right` (320), which y+height never reaches.
-        assert_eq!(fb[121 * W], 2, "the letterbox floor does NOT clip the remap");
-        assert_eq!(fb[189 * W], 2, "the rect tints to its full requested height");
+        assert_eq!(
+            fb[121 * W],
+            2,
+            "the letterbox floor does NOT clip the remap"
+        );
+        assert_eq!(
+            fb[189 * W],
+            2,
+            "the rect tints to its full requested height"
+        );
 
         // The bound that DOES fire is `right`. y+height > 320 is clamped, so a rect
         // starting at the clip top can only extend to row 320-40 = 280 -> off-screen
@@ -544,7 +609,12 @@ mod tests {
         assert_eq!(tall[199 * W], 2, "clamped by `right`=320, not by `bottom`");
 
         // Horizontal clipping is ordinary: left and right both apply.
-        let window = ClipWindow { left: 10, right: 20, top: 0, bottom: 200 };
+        let window = ClipWindow {
+            left: 10,
+            right: 20,
+            top: 0,
+            bottom: 200,
+        };
         let mut side = vec![1u8; W * H];
         remap_rect_indexed_clipped(&mut side, W, H, &table, 0, 0, 320, 1, window);
         assert_eq!(side[9], 1, "left of the clip window is untouched");

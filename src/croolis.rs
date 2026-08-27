@@ -571,7 +571,10 @@ mod tests {
         assert_eq!(cam.axis(2), 7);
 
         // And a negative accumulator floors, matching an arithmetic shift.
-        let mut down = AlienCamera { y_fixed: -1, ..Default::default() };
+        let mut down = AlienCamera {
+            y_fixed: -1,
+            ..Default::default()
+        };
         assert_eq!(down.y(), -1, "sar rounds toward -inf, not toward zero");
         down.y_fixed = -(1 << 16);
         assert_eq!(down.y(), -1);
@@ -588,7 +591,10 @@ mod tests {
         // State set, object at origin, anim_offset 0x3C (sy=0), camera 0 -> in window.
         obj.state_flag = 1;
         obj.pos = [0, 0, 0];
-        assert!(obj.proximity_visible(AlienCamera::default(), 0x3C), "on-screen object is visible");
+        assert!(
+            obj.proximity_visible(AlienCamera::default(), 0x3C),
+            "on-screen object is visible"
+        );
         assert_eq!(obj.anim_counter, 1, "counter advanced");
         // Push x outside +-0x100 -> not visible (but counter still advances).
         obj.pos = [0x400, 0, 0];
@@ -655,7 +661,10 @@ mod tests {
     #[test]
     fn vtable_dispatch_routes_methods() {
         assert_eq!(AlienMethod::from_vtable_offset(0x1D27), AlienMethod::Null);
-        assert_eq!(AlienMethod::from_vtable_offset(0x16A4), AlienMethod::AnimStateMachine);
+        assert_eq!(
+            AlienMethod::from_vtable_offset(0x16A4),
+            AlienMethod::AnimStateMachine
+        );
         assert_eq!(
             AlienMethod::from_vtable_offset(0x0A30),
             AlienMethod::SubBehaviour(0x0A30)
@@ -669,7 +678,10 @@ mod tests {
         }
         let mut anim = AlienObject::new(0x1);
         let changed = (0..100).any(|_| anim.dispatch(&mut stream));
-        assert!(changed, "anim-state object changes state within its timer window");
+        assert!(
+            changed,
+            "anim-state object changes state within its timer window"
+        );
     }
 
     #[test]

@@ -137,7 +137,15 @@ impl ExtWorld {
                 x: w(o + 6),
                 y: w(o + 8),
             };
-            if obj != (ExtObject { id: 0, kind: 0, reserved: 0, x: 0, y: 0 }) {
+            if obj
+                != (ExtObject {
+                    id: 0,
+                    kind: 0,
+                    reserved: 0,
+                    x: 0,
+                    y: 0,
+                })
+            {
                 out.push(obj);
             }
             o += 10;
@@ -199,10 +207,17 @@ mod tests {
             };
             let ext = parse_ext(&data).unwrap_or_else(|| panic!("{w}.EXT parses"));
             let objs = ext.objects(&data);
-            let first = objs.first().unwrap_or_else(|| panic!("{w}.EXT has an object"));
+            let first = objs
+                .first()
+                .unwrap_or_else(|| panic!("{w}.EXT has an object"));
             assert_eq!(first.id, 1, "{w} initial object id");
             assert_eq!(first.kind, 4, "{w} initial object type");
-            assert!(first.x <= 320 && first.y <= 200, "{w} object pos ({},{})", first.x, first.y);
+            assert!(
+                first.x <= 320 && first.y <= 200,
+                "{w} object pos ({},{})",
+                first.x,
+                first.y
+            );
             checked += 1;
         }
         if checked > 0 {
@@ -234,7 +249,9 @@ mod tests {
 
     #[test]
     fn first_section_is_a_valid_adjacency_table() {
-        let Some(data) = load("VENUSIA.EXT") else { return };
+        let Some(data) = load("VENUSIA.EXT") else {
+            return;
+        };
         let ext = parse_ext(&data).unwrap();
         // All record links reference valid record indices.
         assert!(ext.links_are_valid());
@@ -265,7 +282,9 @@ mod tests {
         let mut checked = 0;
         for name in names {
             let Some(data) = load(name) else { continue };
-            let Some(ext) = parse_ext(&data) else { continue };
+            let Some(ext) = parse_ext(&data) else {
+                continue;
+            };
             if !ext.terminated || ext.table1.is_empty() {
                 continue;
             }
@@ -290,7 +309,10 @@ mod tests {
         // universal mesh signature. venusia is high, magnus/cyber ~0.
         if let Some(v) = load("VENUSIA.EXT") {
             let ext = parse_ext(&v).unwrap();
-            assert!(ext.ascending_triple_percent() >= 60, "venusia is highly ascending");
+            assert!(
+                ext.ascending_triple_percent() >= 60,
+                "venusia is highly ascending"
+            );
             // Ascending records are in-range and strictly ordered.
             for f in ext.ascending_triple_records() {
                 assert!(f[0] < f[1] && f[1] < f[2] && f[2] <= ext.max_index());
@@ -311,7 +333,11 @@ mod tests {
     #[test]
     fn object_records_decode_the_initial_world_object() {
         // Each world's first object record is id=1, type=4 at a world-specific position.
-        for (name, x, y) in [("VENUSIA.EXT", 134, 117), ("MAGNUS.EXT", 169, 92), ("BLACK.EXT", 199, 42)] {
+        for (name, x, y) in [
+            ("VENUSIA.EXT", 134, 117),
+            ("MAGNUS.EXT", 169, 92),
+            ("BLACK.EXT", 199, 42),
+        ] {
             let Some(data) = load(name) else { continue };
             let ext = parse_ext(&data).unwrap();
             let objs = ext.objects(&data);

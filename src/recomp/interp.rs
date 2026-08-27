@@ -25,11 +25,25 @@ use super::machine::{Machine, Regs};
 pub enum Exit {
     Ret,
     Retf,
-    Int { vector: u8 },
-    In { port: u16, size: u8 },
-    Out { port: u16, size: u8, value: u32 },
+    Int {
+        vector: u8,
+    },
+    In {
+        port: u16,
+        size: u8,
+    },
+    Out {
+        port: u16,
+        size: u8,
+        value: u32,
+    },
     Hlt,
-    Unimplemented { cs: u16, ip: u16, byte: u8, what: &'static str },
+    Unimplemented {
+        cs: u16,
+        ip: u16,
+        byte: u8,
+        what: &'static str,
+    },
     StepLimit,
 }
 
@@ -342,9 +356,20 @@ impl Cpu {
                              si={:#06x} di={:#06x} ds={:#06x} es={:#06x} ss:sp={:#06x}:{sp:#06x} \
                              near-caller={:04x}:{near_return:04x} stack=[{:04x},{:04x},{:04x},{:04x}] \
                              @ {} steps",
-                            m.regs.ax(), m.regs.bx(), m.regs.cx(), m.regs.dx(),
-                            m.regs.si(), m.regs.di(), m.regs.ds, m.regs.es, m.regs.ss,
-                            self.cs, stack_word(0), stack_word(2), stack_word(4), stack_word(6),
+                            m.regs.ax(),
+                            m.regs.bx(),
+                            m.regs.cx(),
+                            m.regs.dx(),
+                            m.regs.si(),
+                            m.regs.di(),
+                            m.regs.ds,
+                            m.regs.es,
+                            m.regs.ss,
+                            self.cs,
+                            stack_word(0),
+                            stack_word(2),
+                            stack_word(4),
+                            stack_word(6),
                             self.steps
                         );
                     }
@@ -359,8 +384,7 @@ impl Cpu {
                             let ss = m.regs.ss as u32;
                             let r16 = |o: u32| {
                                 m.mem[(ss * 16 + o) as usize % m.mem.len()] as u32
-                                    | ((m.mem[(ss * 16 + o + 1) as usize % m.mem.len()]
-                                        as u32)
+                                    | ((m.mem[(ss * 16 + o + 1) as usize % m.mem.len()] as u32)
                                         << 8)
                             };
                             let (rip, rcs) = (r16(sp), r16(sp + 2));
@@ -512,7 +536,14 @@ impl Cpu {
             };
             let off = base.wrapping_add(disp);
             let seg = self.resolve_seg(m, ovr, def_ss);
-            (md, reg, Rm::Mem { seg, off: off as u32 })
+            (
+                md,
+                reg,
+                Rm::Mem {
+                    seg,
+                    off: off as u32,
+                },
+            )
         } else {
             // 32-bit addressing (0x67 prefix): full modrm/SIB. Offsets are NOT wrapped to 16
             // bits — Machine::lin adds the full 32-bit value (matching the real CPU + oracle).
@@ -613,7 +644,14 @@ impl Cpu {
             }
         }
         if m.capture_ip == Some((self.cs, ip0)) && m.captured.is_none() {
-            m.captured = Some((m.regs.ss, m.regs.ds, m.regs.es, m.regs.si(), m.regs.bp(), m.regs.bx()));
+            m.captured = Some((
+                m.regs.ss,
+                m.regs.ds,
+                m.regs.es,
+                m.regs.si(),
+                m.regs.bp(),
+                m.regs.bx(),
+            ));
             let (ss, sp) = (m.regs.ss, m.regs.sp());
             let w = |off: u16| m.read16(ss, sp.wrapping_add(off) as u32);
             m.capture_ret = Some((sp, w(0), w(2), w(4)));
@@ -1554,10 +1592,7 @@ impl Cpu {
             0xd5 => {
                 // aad
                 let base = self.fetch8(m);
-                let r = m
-                    .regs
-                    .al()
-                    .wrapping_add(m.regs.ah().wrapping_mul(base));
+                let r = m.regs.al().wrapping_add(m.regs.ah().wrapping_mul(base));
                 m.regs.set_al(r);
                 m.regs.set_ah(0);
                 m.regs.zf = r == 0;
@@ -1632,27 +1667,27 @@ impl Cpu {
                 return Some(Exit::In {
                     port: m.regs.dx(),
                     size: 1,
-                })
+                });
             }
             0xed => {
                 return Some(Exit::In {
                     port: m.regs.dx(),
                     size: if opsz { 4 } else { 2 },
-                })
+                });
             }
             0xee => {
                 return Some(Exit::Out {
                     port: m.regs.dx(),
                     size: 1,
                     value: m.regs.al() as u32,
-                })
+                });
             }
             0xef => {
                 return Some(Exit::Out {
                     port: m.regs.dx(),
                     size: if opsz { 4 } else { 2 },
                     value: if opsz { m.regs.eax } else { m.regs.ax() as u32 },
-                })
+                });
             }
 
             // ---- call/jmp ----

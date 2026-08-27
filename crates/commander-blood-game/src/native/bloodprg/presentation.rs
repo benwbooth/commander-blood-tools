@@ -179,7 +179,7 @@ fn history_contains_required_matches(
 mod tests {
     use commander_blood_formats::code::ScriptCodeOffset;
     use commander_blood_formats::instruction::{ScriptLineRecordOffset, ScriptTextControl};
-    use commander_blood_formats::script::{decode_script_dictionary, ScriptDictionary};
+    use commander_blood_formats::script::{ScriptDictionary, decode_script_dictionary};
     use serde::Deserialize;
 
     use super::*;
@@ -281,30 +281,36 @@ mod tests {
     #[test]
     fn random_and_signed_record_conditions_short_circuit() {
         let mut effects = TextConditionEffects::default();
-        assert!(!evaluate_text_conditions(
-            &text(0x0002, None, Vec::new()),
-            Some(1),
-            None,
-            None,
-            &mut effects,
-        )
-        .unwrap());
-        assert!(evaluate_text_conditions(
-            &text(0x0004, Some(u16::MAX), Vec::new()),
-            None,
-            Some(0),
-            None,
-            &mut effects,
-        )
-        .unwrap());
-        assert!(!evaluate_text_conditions(
-            &text(0x0104, Some(7), Vec::new()),
-            None,
-            Some(8),
-            None,
-            &mut effects,
-        )
-        .unwrap());
+        assert!(
+            !evaluate_text_conditions(
+                &text(0x0002, None, Vec::new()),
+                Some(1),
+                None,
+                None,
+                &mut effects,
+            )
+            .unwrap()
+        );
+        assert!(
+            evaluate_text_conditions(
+                &text(0x0004, Some(u16::MAX), Vec::new()),
+                None,
+                Some(0),
+                None,
+                &mut effects,
+            )
+            .unwrap()
+        );
+        assert!(
+            !evaluate_text_conditions(
+                &text(0x0104, Some(7), Vec::new()),
+                None,
+                Some(8),
+                None,
+                &mut effects,
+            )
+            .unwrap()
+        );
     }
 
     #[test]
@@ -371,14 +377,16 @@ mod tests {
                 ScriptTextWord::Dictionary(words[1]),
             ],
         );
-        assert!(evaluate_text_conditions(
-            &instruction,
-            None,
-            None,
-            Some(&history),
-            &mut TextConditionEffects::default(),
-        )
-        .unwrap());
+        assert!(
+            evaluate_text_conditions(
+                &instruction,
+                None,
+                None,
+                Some(&history),
+                &mut TextConditionEffects::default(),
+            )
+            .unwrap()
+        );
     }
 
     #[test]

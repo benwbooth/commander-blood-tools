@@ -345,7 +345,8 @@ pub(super) fn parse_descript(path: &Path) -> Result<DescriptDb, Box<dyn Error>> 
             .iter()
             .position(|&b| b == 0)
             .unwrap_or(16);
-        let name = commander_blood_tools::font::cp437_string(&data[table_pos..table_pos + name_len]);
+        let name =
+            commander_blood_tools::font::cp437_string(&data[table_pos..table_pos + name_len]);
         let ptr = u16::from_le_bytes([data[table_pos + 16], data[table_pos + 17]]) as usize;
         if ptr == 0 || ptr + 2 > data.len() {
             continue;
@@ -765,23 +766,36 @@ mod tests {
         );
 
         let ours = parse_descript(path).expect("extract parser");
-        let theirs = commander_blood_tools::descript::DescriptDb::parse(&raw)
-            .expect("runtime parser");
+        let theirs =
+            commander_blood_tools::descript::DescriptDb::parse(&raw).expect("runtime parser");
 
         let our_names: Vec<&str> = ours.record_names().collect();
         let their_names: Vec<&str> = theirs.records.iter().map(|r| r.name.as_str()).collect();
-        assert_eq!(our_names, their_names, "the two parsers disagree on the records");
-        assert_eq!(our_names.len(), count, "every directory entry became a record");
+        assert_eq!(
+            our_names, their_names,
+            "the two parsers disagree on the records"
+        );
+        assert_eq!(
+            our_names.len(),
+            count,
+            "every directory entry became a record"
+        );
 
         // Subtitle cues are the richest per-record payload (tick + text), so they
         // are where a divergence in the command walk would actually show.
         for name in &our_names {
             let a = ours.record(name).expect("extract record");
             let b = theirs.record(name).expect("runtime record");
-            let a_cues: Vec<(u16, &str)> =
-                a.subtitles.iter().map(|c| (c.tick, c.text.as_str())).collect();
-            let b_cues: Vec<(u16, &str)> =
-                b.subtitles.iter().map(|c| (c.tick, c.text.as_str())).collect();
+            let a_cues: Vec<(u16, &str)> = a
+                .subtitles
+                .iter()
+                .map(|c| (c.tick, c.text.as_str()))
+                .collect();
+            let b_cues: Vec<(u16, &str)> = b
+                .subtitles
+                .iter()
+                .map(|c| (c.tick, c.text.as_str()))
+                .collect();
             assert_eq!(a_cues, b_cues, "{name}: subtitle cues diverge");
         }
 

@@ -30,7 +30,12 @@ impl VmDrive {
         let dic = crate::script::parse_dictionary(dic_raw);
         let mut texts = HashMap::new();
         for t in crate::vm::walk(cod, 0, cod.len()) {
-            if let VmToken::Text { offset, word_offsets, .. } = t {
+            if let VmToken::Text {
+                offset,
+                word_offsets,
+                ..
+            } = t
+            {
                 let text: String = word_offsets
                     .iter()
                     .take_while(|&&w| w != 0xFFFF)
@@ -40,13 +45,17 @@ impl VmDrive {
                 texts.insert(offset, text);
             }
         }
-        let words: HashMap<String, u16> =
-            dic.iter().map(|(&o, w)| (w.to_lowercase(), o)).collect();
+        let words: HashMap<String, u16> = dic.iter().map(|(&o, w)| (w.to_lowercase(), o)).collect();
         let symbols: HashMap<String, u16> = crate::engine::deb_actor_name_map(deb)
             .into_iter()
             .map(|(off, name)| (name.to_lowercase(), off))
             .collect();
-        VmDrive { m, texts, words, symbols }
+        VmDrive {
+            m,
+            texts,
+            words,
+            symbols,
+        }
     }
 
     /// One passive frame: VM frame + the idle beat. No promotion — queued

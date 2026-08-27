@@ -113,7 +113,12 @@ pub(super) fn decode_lbm(data: &[u8]) -> Option<Lbm> {
         pixels = packed;
     }
 
-    Some(Lbm { width, height, pixels, palette })
+    Some(Lbm {
+        width,
+        height,
+        pixels,
+        palette,
+    })
 }
 
 #[cfg(test)]
@@ -139,7 +144,14 @@ mod tests {
         assert_eq!(img.pixels.len(), img.width * img.height);
         let nonzero_pal = img.palette.iter().filter(|c| **c != [0, 0, 0]).count();
         assert!(nonzero_pal > 16, "palette populated: {nonzero_pal}");
-        let distinct = img.pixels.iter().collect::<std::collections::HashSet<_>>().len();
-        assert!(distinct > 8, "image not uniform: {distinct} distinct indices");
+        let distinct = img
+            .pixels
+            .iter()
+            .collect::<std::collections::HashSet<_>>()
+            .len();
+        assert!(
+            distinct > 8,
+            "image not uniform: {distinct} distinct indices"
+        );
     }
 }

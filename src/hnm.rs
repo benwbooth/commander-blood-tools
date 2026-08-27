@@ -190,17 +190,15 @@ impl HnmFile {
         // data) and always draw at the band origin. Ignoring the pair drew every RLE
         // delta sub-frame at (0,0), smearing them across the screen (the intro
         // trail/speckle artifact).
-        let (dst_x, dst_y) = if checksum == 0xAD
-            && self.data[fds + 4] & 0x04 == 0
-            && fds + 10 <= self.data.len()
-        {
-            (
-                u16::from_le_bytes([self.data[fds + 6], self.data[fds + 7]]) as usize,
-                u16::from_le_bytes([self.data[fds + 8], self.data[fds + 9]]) as usize,
-            )
-        } else {
-            (0, 0)
-        };
+        let (dst_x, dst_y) =
+            if checksum == 0xAD && self.data[fds + 4] & 0x04 == 0 && fds + 10 <= self.data.len() {
+                (
+                    u16::from_le_bytes([self.data[fds + 6], self.data[fds + 7]]) as usize,
+                    u16::from_le_bytes([self.data[fds + 8], self.data[fds + 9]]) as usize,
+                )
+            } else {
+                (0, 0)
+            };
 
         if let Some(pixels) = pixels {
             let cw = fw.min(VIEWPORT_W.saturating_sub(dst_x));
@@ -313,7 +311,9 @@ mod tests {
         let mut stack = vec![root.to_path_buf()];
         let mut files = Vec::new();
         while let Some(dir) = stack.pop() {
-            let Ok(rd) = std::fs::read_dir(&dir) else { continue };
+            let Ok(rd) = std::fs::read_dir(&dir) else {
+                continue;
+            };
             for e in rd.filter_map(|e| e.ok()) {
                 let p = e.path();
                 if p.is_dir() {
@@ -325,12 +325,17 @@ mod tests {
         }
         let mut checked = 0;
         for p in &files {
-            let hnm = HnmFile::open(p).unwrap_or_else(|e| panic!("{}: open failed: {e}", p.display()));
+            let hnm =
+                HnmFile::open(p).unwrap_or_else(|e| panic!("{}: open failed: {e}", p.display()));
             assert!(hnm.frame_count() > 0, "{}: zero frames", p.display());
             let (w, h, _m) = hnm
                 .frame_dims(0)
                 .unwrap_or_else(|| panic!("{}: no frame-0 dims", p.display()));
-            assert!((1..=511).contains(&w) && (1..=255).contains(&h), "{}: dims {w}x{h}", p.display());
+            assert!(
+                (1..=511).contains(&w) && (1..=255).contains(&h),
+                "{}: dims {w}x{h}",
+                p.display()
+            );
             // Decode EVERY frame (not just frame 0): exercises the inter-frame DELTA decode and
             // the incremental 'pl' palette updates across the whole clip - the paths where a
             // later-frame bug hides. A generously-sized fb (max mode-X) absorbs each sub-frame.

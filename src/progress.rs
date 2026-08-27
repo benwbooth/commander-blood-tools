@@ -10,7 +10,7 @@
 //! nav destinations and speech-event actors — real game entities — so this is the decoded
 //! progression model driven by decoded content, not an invented state machine.
 
-use crate::entity::{flag, EntityObject};
+use crate::entity::{EntityObject, flag};
 
 /// The player's game progression: a set of trackable entities (locations, crew) keyed by
 /// name, each carrying the decoded [`EntityObject`] flag state.
@@ -22,7 +22,9 @@ pub struct GameProgress {
 impl GameProgress {
     /// An empty progression.
     pub fn new() -> Self {
-        Self { entries: Vec::new() }
+        Self {
+            entries: Vec::new(),
+        }
     }
 
     fn find(&self, name: &str) -> Option<usize> {
@@ -72,7 +74,10 @@ impl GameProgress {
 
     /// The number that have been visited.
     pub fn visited_count(&self) -> usize {
-        self.entries.iter().filter(|(_, o)| o.flags & flag::STATE0 == 0).count()
+        self.entries
+            .iter()
+            .filter(|(_, o)| o.flags & flag::STATE0 == 0)
+            .count()
     }
 
     /// Whether every registered location/crew has been visited (drives the ending).

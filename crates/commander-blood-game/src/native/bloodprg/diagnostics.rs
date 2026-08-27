@@ -370,11 +370,13 @@ mod tests {
                 assert_eq!(line.palette_index, original.color.unwrap());
             }
             assert_relative_line_geometry(&overlay, mode);
-            assert!(vector
-                .calls
-                .iter()
-                .filter(|call| call.callee == "small_text_render")
-                .all(|call| call.x.is_some() && call.y.is_some()));
+            assert!(
+                vector
+                    .calls
+                    .iter()
+                    .filter(|call| call.callee == "small_text_render")
+                    .all(|call| call.x.is_some() && call.y.is_some())
+            );
         }
     }
 

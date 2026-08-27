@@ -68,9 +68,9 @@ pub fn cp437_string(bytes: &[u8]) -> String {
 /// stays visible rather than silently vanishing.
 fn cp437_char(b: u8) -> char {
     const HIGH: [char; 48] = [
-        'Ç', 'ü', 'é', 'â', 'ä', 'à', 'å', 'ç', 'ê', 'ë', 'è', 'ï', 'î', 'ì', 'Ä', 'Å',
-        'É', 'æ', 'Æ', 'ô', 'ö', 'ò', 'û', 'ù', 'ÿ', 'Ö', 'Ü', '¢', '£', '¥', '₧', 'ƒ',
-        'á', 'í', 'ó', 'ú', 'ñ', 'Ñ', 'ª', 'º', '¿', '⌐', '¬', '½', '¼', '¡', '«', '»',
+        'Ç', 'ü', 'é', 'â', 'ä', 'à', 'å', 'ç', 'ê', 'ë', 'è', 'ï', 'î', 'ì', 'Ä', 'Å', 'É', 'æ',
+        'Æ', 'ô', 'ö', 'ò', 'û', 'ù', 'ÿ', 'Ö', 'Ü', '¢', '£', '¥', '₧', 'ƒ', 'á', 'í', 'ó', 'ú',
+        'ñ', 'Ñ', 'ª', 'º', '¿', '⌐', '¬', '½', '¼', '¡', '«', '»',
     ];
     if b < 0x80 {
         b as char
@@ -369,7 +369,10 @@ mod tests {
                 .max()
                 .map(|c| c + 1 + 2);
             if let Some(dv) = derived {
-                assert_eq!(dv, SQUARE_CAPS_WIDTHS[gi] as usize, "advance for glyph {gi}");
+                assert_eq!(
+                    dv, SQUARE_CAPS_WIDTHS[gi] as usize,
+                    "advance for glyph {gi}"
+                );
             }
         }
     }
@@ -401,16 +404,27 @@ mod tests {
                 .unwrap_or_else(|| panic!("engine missing glyph for {ch:?} (exe idx {idx})"));
             checked += 1;
             let idx = idx as usize;
-            assert_eq!(g.rows, exe[rows + idx * 8..rows + idx * 8 + 8], "glyph '{ch}' rows");
+            assert_eq!(
+                g.rows,
+                exe[rows + idx * 8..rows + idx * 8 + 8],
+                "glyph '{ch}' rows"
+            );
             assert_eq!(g.advance as u8, exe[adv + idx], "glyph '{ch}' advance");
         }
-        assert_eq!(checked, 73, "expected 73 printable non-space glyphs incl. lowercase");
+        assert_eq!(
+            checked, 73,
+            "expected 73 printable non-space glyphs incl. lowercase"
+        );
 
         // WHOLE-TABLE check. The loop above stops at 127, which is why this test
         // passed for so long against a table truncated to 128 entries: the missing
         // range was never looked at. The real table runs to the advance table at
         // 0x14CD2, i.e. 176 bytes, and comparing all of it is what pins the length.
-        assert_eq!(GAME_FONT_CHAR_MAP.len(), adv - map, "table length = map..advances");
+        assert_eq!(
+            GAME_FONT_CHAR_MAP.len(),
+            adv - map,
+            "table length = map..advances"
+        );
         assert_eq!(
             &GAME_FONT_CHAR_MAP[..],
             &exe[map..adv],
@@ -425,9 +439,20 @@ mod tests {
     #[test]
     fn accented_characters_render_because_the_table_is_176_long() {
         for (ch, glyph) in [
-            ('ü', 0x49u8), ('é', 0x44), ('ä', 0x41), ('à', 0x42), ('ç', 0x4b),
-            ('ë', 0x43), ('è', 0x44), ('ï', 0x45), ('ì', 0x46), ('ö', 0x47),
-            ('ò', 0x48), ('ù', 0x4a), ('¿', 0x1b), ('¡', 0x1d),
+            ('ü', 0x49u8),
+            ('é', 0x44),
+            ('ä', 0x41),
+            ('à', 0x42),
+            ('ç', 0x4b),
+            ('ë', 0x43),
+            ('è', 0x44),
+            ('ï', 0x45),
+            ('ì', 0x46),
+            ('ö', 0x47),
+            ('ò', 0x48),
+            ('ù', 0x4a),
+            ('¿', 0x1b),
+            ('¡', 0x1d),
         ] {
             let b = cp437_byte(ch).unwrap_or_else(|| panic!("{ch:?} has no CP437 byte"));
             assert_eq!(GAME_FONT_CHAR_MAP[b as usize], glyph, "{ch:?} glyph index");
@@ -435,7 +460,11 @@ mod tests {
             assert!(game_font_advance(ch) > 0, "{ch:?} must advance the pen");
         }
         for ch in ['A', 'Z', 'a', 'z', '0', '9', '?', '!'] {
-            assert_eq!(cp437_byte(ch), Some(ch as u8), "ASCII round-trips unchanged");
+            assert_eq!(
+                cp437_byte(ch),
+                Some(ch as u8),
+                "ASCII round-trips unchanged"
+            );
             assert!(game_font_glyph(ch).is_some(), "{ch:?} still renders");
         }
     }
@@ -443,13 +472,15 @@ mod tests {
     /// Real bytes from the shipped data files.
     #[test]
     fn cp437_decode_beats_utf8_lossy_on_real_game_bytes() {
-        let porte_cles = b"porte_cl\x82s";           // SCRIPT1.DEB record 6
+        let porte_cles = b"porte_cl\x82s"; // SCRIPT1.DEB record 6
         assert_eq!(cp437_string(porte_cles), "porte_clés");
         assert_eq!(String::from_utf8_lossy(porte_cles), "porte_cl\u{fffd}s");
-        let glycerium = b"glyc\x82rium";              // SCRIPT3.DIC, a DISPLAYED word
+        let glycerium = b"glyc\x82rium"; // SCRIPT3.DIC, a DISPLAYED word
         assert_eq!(cp437_string(glycerium), "glycérium");
         assert!(
-            cp437_string(glycerium).chars().all(|c| game_font_glyph(c).is_some()),
+            cp437_string(glycerium)
+                .chars()
+                .all(|c| game_font_glyph(c).is_some()),
             "every character of a decoded word must have a glyph"
         );
     }
@@ -467,10 +498,6 @@ mod tests {
         assert_eq!(after, GAME_FONT_SPACE_ADVANCE);
     }
 
-    /// The BAKED glyph bitmaps and advances must equal the image, not merely be
-    /// self-consistent: these are what every text surface draws. `GAME_FONT_CHAR_MAP`
-    /// is covered by `bloodprg`'s extractor test; these two were not covered at all.
-    #[test]
     /// The BOLD console face must reach its accented entries.
     ///
     /// Its map is 176 bytes (`0x145CA - 0x1451A`), and `0x80..0xAF` holds twelve real
@@ -485,21 +512,36 @@ mod tests {
             return;
         };
         let font = BoldConsoleFont::load_from_exe(&exe).expect("bold face loads");
-        assert_eq!(BoldConsoleFont::MAP_LEN, 176, "map extent = gap to the glyphs");
+        assert_eq!(
+            BoldConsoleFont::MAP_LEN,
+            176,
+            "map extent = gap to the glyphs"
+        );
 
         // The folds the table actually contains, read from the image at 0x1451A.
         for (ch, plain) in [('é', 'e'), ('à', 'a'), ('ç', 'c'), ('ö', 'o'), ('ù', 'u')] {
-            let a = font.glyph_index(ch).unwrap_or_else(|| panic!("{ch:?} has no glyph"));
-            let b = font.glyph_index(plain).unwrap_or_else(|| panic!("{plain:?} has no glyph"));
+            let a = font
+                .glyph_index(ch)
+                .unwrap_or_else(|| panic!("{ch:?} has no glyph"));
+            let b = font
+                .glyph_index(plain)
+                .unwrap_or_else(|| panic!("{plain:?} has no glyph"));
             assert_eq!(a, b, "{ch:?} folds onto {plain:?}");
         }
 
         // ...and drawing one actually marks pixels, which indexing by Unicode did not.
         let mut fb = vec![0u8; 320 * 200];
         font.draw(&mut fb, 320, 200, "é", 0, 0, 0xEE);
-        assert!(fb.iter().any(|&p| p == 0xEE), "an accented glyph must render");
+        assert!(
+            fb.iter().any(|&p| p == 0xEE),
+            "an accented glyph must render"
+        );
     }
 
+    /// The BAKED glyph bitmaps and advances must equal the image, not merely be
+    /// self-consistent: these are what every text surface draws. `GAME_FONT_CHAR_MAP`
+    /// is covered by `bloodprg`'s extractor test; these two were not covered at all.
+    #[test]
     fn game_font_glyphs_and_widths_match_the_image() {
         let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
             .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
@@ -680,54 +722,294 @@ impl BoldConsoleFont {
 /// fell back to the thin built-in font, so menu text rendered in two typefaces at
 /// once. All 48 are now present.
 pub const SQUARE_CAPS_GLYPHS: [(char, [u16; 8]); 48] = [
-    ('A', [0x7f00, 0x8100, 0x8100, 0x8100, 0x8100, 0xbf00, 0x8100, 0x8100]),
-    ('B', [0xfe00, 0x0200, 0x8200, 0xbf00, 0x8100, 0x8100, 0x8100, 0xff00]),
-    ('C', [0xfe00, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0xff00]),
-    ('D', [0xfe00, 0x0300, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0xff00]),
-    ('E', [0xff00, 0x8000, 0x8000, 0xbf00, 0x8000, 0x8000, 0x8000, 0xff00]),
-    ('F', [0xff00, 0x8000, 0x8000, 0xbf00, 0x8000, 0x8000, 0x8000, 0x8000]),
-    ('G', [0xfe00, 0x8000, 0x8000, 0x8000, 0x8000, 0x8100, 0x8100, 0xff00]),
-    ('H', [0x8100, 0x8100, 0x8100, 0x8100, 0xbf00, 0x8100, 0x8100, 0x8100]),
-    ('I', [0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000]),
-    ('J', [0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x8100, 0xff00]),
-    ('K', [0x8200, 0x8200, 0x8200, 0x8200, 0xbe00, 0x8100, 0x8100, 0x8100]),
-    ('L', [0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0xff00]),
-    ('M', [0xf780, 0x8880, 0x8880, 0x8080, 0x8080, 0x8080, 0x8080, 0x8080]),
-    ('N', [0xfe00, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100]),
-    ('O', [0x7e00, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x7e00]),
-    ('P', [0xff00, 0x8100, 0x8100, 0x8100, 0x8100, 0xbf00, 0x8000, 0x8000]),
-    ('Q', [0xff00, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0xfd00, 0x0100]),
-    ('R', [0xff00, 0x8100, 0x8100, 0x8100, 0x8100, 0xbe00, 0x8100, 0x8100]),
-    ('S', [0xff00, 0x8000, 0x8000, 0xff00, 0x0100, 0x0100, 0x0100, 0xff00]),
-    ('T', [0xff00, 0x0000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000]),
-    ('U', [0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0xff00]),
-    ('V', [0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8200, 0xfc00]),
-    ('W', [0x8080, 0x8080, 0x8080, 0x8080, 0x8080, 0x8880, 0x8880, 0x7700]),
-    ('X', [0x8100, 0x8100, 0x8100, 0x7e00, 0x8100, 0x8100, 0x8100, 0x8100]),
-    ('Y', [0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0xff00, 0x0400, 0x0400]),
-    ('Z', [0xff00, 0x0100, 0x0100, 0x7e00, 0x8000, 0x8000, 0x8000, 0xff00]),
-    ('0', [0x7e00, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x7e00]),
-    ('1', [0x4000, 0xc000, 0x4000, 0x4000, 0x4000, 0x4000, 0x4000, 0x4000]),
-    ('2', [0x7e00, 0x8100, 0x0100, 0x0100, 0x7e00, 0x8000, 0x8000, 0xff00]),
-    ('3', [0xfe00, 0x0100, 0x0100, 0x1e00, 0x0100, 0x0100, 0x0100, 0xfe00]),
-    ('4', [0x8000, 0x8000, 0x8000, 0x8400, 0x8400, 0xff00, 0x0400, 0x0400]),
-    ('5', [0xff00, 0x8000, 0x8000, 0xfe00, 0x0100, 0x0100, 0x0100, 0xfe00]),
-    ('6', [0x7e00, 0x8000, 0x8000, 0xfe00, 0x8100, 0x8100, 0x8100, 0x7e00]),
-    ('7', [0xff00, 0x0100, 0x0100, 0x0200, 0x0200, 0x0200, 0x0200, 0x0200]),
-    ('8', [0x7e00, 0x8100, 0x8100, 0x7e00, 0x8100, 0x8100, 0x8100, 0x7e00]),
-    ('9', [0x7e00, 0x8100, 0x8100, 0x8100, 0x7f00, 0x0100, 0x0100, 0x7e00]),
-    ('?', [0xff00, 0x8100, 0x0100, 0x0100, 0x0f00, 0x0800, 0x0000, 0x0800]),
-    ('!', [0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x0000, 0x8000]),
-    ('.', [0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x8000]),
-    (':', [0x0000, 0x0000, 0x0000, 0x8000, 0x0000, 0x0000, 0x0000, 0x8000]),
-    (';', [0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x8000, 0x0000, 0x8000]),
-    ('_', [0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0xf000]),
-    ('-', [0x0000, 0x0000, 0x0000, 0x0000, 0xfe00, 0x0000, 0x0000, 0x0000]),
-    ('+', [0x0000, 0x1000, 0x1000, 0x1000, 0xfe00, 0x1000, 0x1000, 0x1000]),
-    ('"', [0xa000, 0xa000, 0xa000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000]),
-    (',', [0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x8000]),
-    ('\'', [0x8000, 0x8000, 0x8000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000]),
-    (' ', [0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000]),
+    (
+        'A',
+        [
+            0x7f00, 0x8100, 0x8100, 0x8100, 0x8100, 0xbf00, 0x8100, 0x8100,
+        ],
+    ),
+    (
+        'B',
+        [
+            0xfe00, 0x0200, 0x8200, 0xbf00, 0x8100, 0x8100, 0x8100, 0xff00,
+        ],
+    ),
+    (
+        'C',
+        [
+            0xfe00, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0xff00,
+        ],
+    ),
+    (
+        'D',
+        [
+            0xfe00, 0x0300, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0xff00,
+        ],
+    ),
+    (
+        'E',
+        [
+            0xff00, 0x8000, 0x8000, 0xbf00, 0x8000, 0x8000, 0x8000, 0xff00,
+        ],
+    ),
+    (
+        'F',
+        [
+            0xff00, 0x8000, 0x8000, 0xbf00, 0x8000, 0x8000, 0x8000, 0x8000,
+        ],
+    ),
+    (
+        'G',
+        [
+            0xfe00, 0x8000, 0x8000, 0x8000, 0x8000, 0x8100, 0x8100, 0xff00,
+        ],
+    ),
+    (
+        'H',
+        [
+            0x8100, 0x8100, 0x8100, 0x8100, 0xbf00, 0x8100, 0x8100, 0x8100,
+        ],
+    ),
+    (
+        'I',
+        [
+            0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000,
+        ],
+    ),
+    (
+        'J',
+        [
+            0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x8100, 0xff00,
+        ],
+    ),
+    (
+        'K',
+        [
+            0x8200, 0x8200, 0x8200, 0x8200, 0xbe00, 0x8100, 0x8100, 0x8100,
+        ],
+    ),
+    (
+        'L',
+        [
+            0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0xff00,
+        ],
+    ),
+    (
+        'M',
+        [
+            0xf780, 0x8880, 0x8880, 0x8080, 0x8080, 0x8080, 0x8080, 0x8080,
+        ],
+    ),
+    (
+        'N',
+        [
+            0xfe00, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100,
+        ],
+    ),
+    (
+        'O',
+        [
+            0x7e00, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x7e00,
+        ],
+    ),
+    (
+        'P',
+        [
+            0xff00, 0x8100, 0x8100, 0x8100, 0x8100, 0xbf00, 0x8000, 0x8000,
+        ],
+    ),
+    (
+        'Q',
+        [
+            0xff00, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0xfd00, 0x0100,
+        ],
+    ),
+    (
+        'R',
+        [
+            0xff00, 0x8100, 0x8100, 0x8100, 0x8100, 0xbe00, 0x8100, 0x8100,
+        ],
+    ),
+    (
+        'S',
+        [
+            0xff00, 0x8000, 0x8000, 0xff00, 0x0100, 0x0100, 0x0100, 0xff00,
+        ],
+    ),
+    (
+        'T',
+        [
+            0xff00, 0x0000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000,
+        ],
+    ),
+    (
+        'U',
+        [
+            0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0xff00,
+        ],
+    ),
+    (
+        'V',
+        [
+            0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8200, 0xfc00,
+        ],
+    ),
+    (
+        'W',
+        [
+            0x8080, 0x8080, 0x8080, 0x8080, 0x8080, 0x8880, 0x8880, 0x7700,
+        ],
+    ),
+    (
+        'X',
+        [
+            0x8100, 0x8100, 0x8100, 0x7e00, 0x8100, 0x8100, 0x8100, 0x8100,
+        ],
+    ),
+    (
+        'Y',
+        [
+            0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0xff00, 0x0400, 0x0400,
+        ],
+    ),
+    (
+        'Z',
+        [
+            0xff00, 0x0100, 0x0100, 0x7e00, 0x8000, 0x8000, 0x8000, 0xff00,
+        ],
+    ),
+    (
+        '0',
+        [
+            0x7e00, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x7e00,
+        ],
+    ),
+    (
+        '1',
+        [
+            0x4000, 0xc000, 0x4000, 0x4000, 0x4000, 0x4000, 0x4000, 0x4000,
+        ],
+    ),
+    (
+        '2',
+        [
+            0x7e00, 0x8100, 0x0100, 0x0100, 0x7e00, 0x8000, 0x8000, 0xff00,
+        ],
+    ),
+    (
+        '3',
+        [
+            0xfe00, 0x0100, 0x0100, 0x1e00, 0x0100, 0x0100, 0x0100, 0xfe00,
+        ],
+    ),
+    (
+        '4',
+        [
+            0x8000, 0x8000, 0x8000, 0x8400, 0x8400, 0xff00, 0x0400, 0x0400,
+        ],
+    ),
+    (
+        '5',
+        [
+            0xff00, 0x8000, 0x8000, 0xfe00, 0x0100, 0x0100, 0x0100, 0xfe00,
+        ],
+    ),
+    (
+        '6',
+        [
+            0x7e00, 0x8000, 0x8000, 0xfe00, 0x8100, 0x8100, 0x8100, 0x7e00,
+        ],
+    ),
+    (
+        '7',
+        [
+            0xff00, 0x0100, 0x0100, 0x0200, 0x0200, 0x0200, 0x0200, 0x0200,
+        ],
+    ),
+    (
+        '8',
+        [
+            0x7e00, 0x8100, 0x8100, 0x7e00, 0x8100, 0x8100, 0x8100, 0x7e00,
+        ],
+    ),
+    (
+        '9',
+        [
+            0x7e00, 0x8100, 0x8100, 0x8100, 0x7f00, 0x0100, 0x0100, 0x7e00,
+        ],
+    ),
+    (
+        '?',
+        [
+            0xff00, 0x8100, 0x0100, 0x0100, 0x0f00, 0x0800, 0x0000, 0x0800,
+        ],
+    ),
+    (
+        '!',
+        [
+            0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x0000, 0x8000,
+        ],
+    ),
+    (
+        '.',
+        [
+            0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x8000,
+        ],
+    ),
+    (
+        ':',
+        [
+            0x0000, 0x0000, 0x0000, 0x8000, 0x0000, 0x0000, 0x0000, 0x8000,
+        ],
+    ),
+    (
+        ';',
+        [
+            0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x8000, 0x0000, 0x8000,
+        ],
+    ),
+    (
+        '_',
+        [
+            0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0xf000,
+        ],
+    ),
+    (
+        '-',
+        [
+            0x0000, 0x0000, 0x0000, 0x0000, 0xfe00, 0x0000, 0x0000, 0x0000,
+        ],
+    ),
+    (
+        '+',
+        [
+            0x0000, 0x1000, 0x1000, 0x1000, 0xfe00, 0x1000, 0x1000, 0x1000,
+        ],
+    ),
+    (
+        '"',
+        [
+            0xa000, 0xa000, 0xa000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+        ],
+    ),
+    (
+        ',',
+        [
+            0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x8000,
+        ],
+    ),
+    (
+        '\'',
+        [
+            0x8000, 0x8000, 0x8000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+        ],
+    ),
+    (
+        ' ',
+        [
+            0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+        ],
+    ),
 ];
 
 /// Per-glyph advances at `DS:0x7412` (file `0x14832`), indexed by glyph.
@@ -737,7 +1019,9 @@ pub const SQUARE_CAPS_GLYPHS: [(char, [u16; 8]); 48] = [
 /// (`'A'`=10, `'I'`=3, `'M'`=11) — but the table is the game's own data, so the port
 /// now reads it instead of re-deriving it.
 pub const SQUARE_CAPS_WIDTHS: [u8; 48] = [
-    0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x03, 0x0a, 0x0a, 0x0a, 0x0b, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0b, 0x0a, 0x0a, 0x0a, 0x0a, 0x04, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x03, 0x03, 0x03, 0x03, 0x06, 0x09, 0x09, 0x05, 0x03, 0x03, 0x01,
+    0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x03, 0x0a, 0x0a, 0x0a, 0x0b, 0x0a, 0x0a, 0x0a,
+    0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0b, 0x0a, 0x0a, 0x0a, 0x0a, 0x04, 0x0a, 0x0a, 0x0a, 0x0a,
+    0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x03, 0x03, 0x03, 0x03, 0x06, 0x09, 0x09, 0x05, 0x03, 0x03, 0x01,
 ];
 
 /// CP437 -> square-caps glyph index, `DS:0x7362` (file `0x14782`). `0xff` = no glyph.
@@ -754,7 +1038,6 @@ pub const SQUARE_CAPS_CHAR_MAP: [u8; 176] = [
     0xff, 0xff, 0xff, 0xff, 0x0e, 0x0e, 0xff, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 ];
-
 
 /// Square-caps glyph index for a character, via the game's own xlat at `DS:0x7362`.
 ///

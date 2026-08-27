@@ -324,8 +324,9 @@ mod tests {
     /// (retf-callee) functions the random-fuzz oracle cannot.
     fn verify_det(name: &str, f: fn(&mut Machine), exe: &[u8]) -> bool {
         let raw = match std::fs::read_to_string(format!("re/tools/oracle_vectors/{name}_det.json"))
-            .or_else(|_| std::fs::read_to_string(format!("../re/tools/oracle_vectors/{name}_det.json")))
-        {
+            .or_else(|_| {
+                std::fs::read_to_string(format!("../re/tools/oracle_vectors/{name}_det.json"))
+            }) {
             Ok(s) => s,
             Err(_) => return false,
         };
@@ -335,8 +336,10 @@ mod tests {
         // lift sees a pristine deterministic image every time.
         let mut m = Machine::new();
         m.mem[..exe.len()].copy_from_slice(exe);
-        let written: std::collections::HashSet<usize> =
-            vecs.iter().flat_map(|v| v.mem_writes.iter().map(|(a, _)| *a)).collect();
+        let written: std::collections::HashSet<usize> = vecs
+            .iter()
+            .flat_map(|v| v.mem_writes.iter().map(|(a, _)| *a))
+            .collect();
         for (i, v) in vecs.iter().enumerate() {
             for &a in &written {
                 m.mem[a] = if a < exe.len() { exe[a] } else { 0 };
@@ -456,7 +459,9 @@ mod tests {
                 match cpu.run(&mut m, 2_000_000) {
                     interp::Exit::Ret | interp::Exit::Retf => {}
                     interp::Exit::Unimplemented { cs, ip, byte, what } => {
-                        *unimpl.entry(format!("{what} (op {byte:#04x})")).or_default() += 1;
+                        *unimpl
+                            .entry(format!("{what} (op {byte:#04x})"))
+                            .or_default() += 1;
                         failures.push(format!(
                             "{name} vec {i}: UNIMPLEMENTED {what} op {byte:#04x} near {cs:#06x}:{ip:#06x}"
                         ));
@@ -618,14 +623,14 @@ mod tests {
             let defined: u16 = match mn {
                 "add" | "sub" | "adc" | "sbb" | "cmp" | "neg" | "xadd" => all6,
                 "and" | "or" | "xor" | "test" => 0x8d5 & !0x810, // CF/OF cleared, AF undefined
-                "inc" | "dec" => all6 & !1, // CF unaffected
+                "inc" | "dec" => all6 & !1,                      // CF unaffected
                 // Shifts/rotates: CF is DEFINED (the bit shifted out / rotated through) for any
                 // nonzero count; the other flags are count-dependent/undefined. A wrong carry-out
                 // silently corrupts chained-rotate loops (e.g. the subtitle glyph plotter), so
                 // assert CF here. (Count could be 0 → CF unchanged, but that still matches Unicorn.)
                 "shl" | "shr" | "sar" | "rol" | "ror" | "sal" | "rcl" | "rcr" => 1, // CF (bit 0)
-                "bt" | "btr" | "bts" | "btc" => 1, // CF only
-                "bsf" | "bsr" => 0x40, // ZF only
+                "bt" | "btr" | "bts" | "btc" => 1,                                  // CF only
+                "bsf" | "bsr" => 0x40,                                              // ZF only
                 _ => 0,
             };
             let cur = (m.regs.cf as u16)
@@ -643,7 +648,12 @@ mod tests {
                 ));
             }
             if !bad.is_empty() && fails.len() < 40 {
-                fails.push(format!("vec {i} [{}] {}: {}", v.code, v.asm, bad.join(", ")));
+                fails.push(format!(
+                    "vec {i} [{}] {}: {}",
+                    v.code,
+                    v.asm,
+                    bad.join(", ")
+                ));
             } else if !bad.is_empty() {
                 fails.push(String::new());
             }
@@ -656,7 +666,11 @@ mod tests {
             shown.is_empty(),
             "diff-fuzz mismatches ({} shown):\n{}",
             shown.len(),
-            shown.iter().map(|s| s.as_str()).collect::<Vec<_>>().join("\n")
+            shown
+                .iter()
+                .map(|s| s.as_str())
+                .collect::<Vec<_>>()
+                .join("\n")
         );
     }
 
@@ -1231,8 +1245,17 @@ mod tests {
         let no = crate::engine::EngineState::CONFIRM_NO_REGION;
         let e = crate::engine::EngineState::new();
         for (mx, my) in [
-            (120i32, 105i32), (150, 115), (151, 105), (119, 105), (120, 116),
-            (180, 105), (200, 115), (201, 105), (179, 110), (0, 0), (160, 110),
+            (120i32, 105i32),
+            (150, 115),
+            (151, 105),
+            (119, 105),
+            (120, 116),
+            (180, 105),
+            (200, 115),
+            (201, 105),
+            (179, 110),
+            (0, 0),
+            (160, 110),
         ] {
             let lift_yes = hit(yes, mx, my);
             let lift_no = hit(no, mx, my);
@@ -1277,7 +1300,11 @@ mod tests {
             // `0x6068`'s FIRST visit going straight to `0x6082` — the empty list.
             // The original sweep always entered the body, so "stops immediately"
             // and "stops after N" were the same path to it (audit-fixes #580).
-            ("empty when the first entry ends the scan", &[(0x0100, 0, 0x0002)], &[]),
+            (
+                "empty when the first entry ends the scan",
+                &[(0x0100, 0, 0x0002)],
+                &[],
+            ),
             // `0x6073` is `test BYTE fs:[bx+2],2` — bit 1 among any other bits
             // qualifies, and no other bit does. Every earlier row used exactly
             // 0x0002 or 0x0000, which cannot tell a bit test from an equality.
@@ -1420,18 +1447,37 @@ mod tests {
         };
 
         for text in [
-            "PLANET: ", "SHIP: ", "BLACK HOLE: ", "LIFE SUPPORT:", "Oddland",
-            "ARE_YOU_SURE?", "YES", "NO", "LOADING", "PAUSE", "a b", "  ",
+            "PLANET: ",
+            "SHIP: ",
+            "BLACK HOLE: ",
+            "LIFE SUPPORT:",
+            "Oddland",
+            "ARE_YOU_SURE?",
+            "YES",
+            "NO",
+            "LOADING",
+            "PAUSE",
+            "a b",
+            "  ",
             // The `js 0x31CE` SKIP path (audit-fixes #578). 89 of the 176 xlat
             // entries are 0xff, and the printable ones are `#$%&()*/<=>@[\]^`{|}~`.
             // Every string above is drawable ASCII, so the skip was never taken and
             // the sweep could not tell "contributes 0" from "contributes a width".
-            "A#B", "(x)", "100%", "a/b", "<@>", "[]{}",
+            "A#B",
+            "(x)",
+            "100%",
+            "a/b",
+            "<@>",
+            "[]{}",
             // Entries PAST 128, reachable only now that the string is CP437-encoded.
-            "café", "réacteur", "Ärger", "à côté",
+            "café",
+            "réacteur",
+            "Ärger",
+            "à côté",
             // Skipped char adjacent to a space -- the two zero-width paths in one
             // string, which take different branches out of the same loop head.
-            "a # b", "( )",
+            "a # b",
+            "( )",
         ] {
             let lifted = width_of(text);
             let native = crate::font::game_font_drawn_width(text) as u16;
@@ -1509,15 +1555,31 @@ mod tests {
         let list = [PLANET, SHIP, HOLE, BOTH_AT, BOTH_AWAY];
 
         let probes = [
-            (48i32, 58i32), (60, 66), (61, 58), (98, 58), (120, 58), (98, 70),
-            (148, 58), (163, 64), (164, 58), (5, 5), (250, 90), (52, 62),
+            (48i32, 58i32),
+            (60, 66),
+            (61, 58),
+            (98, 58),
+            (120, 58),
+            (98, 70),
+            (148, 58),
+            (163, 64),
+            (164, 58),
+            (5, 5),
+            (250, 90),
+            (52, 62),
             // BOTH_AT, marker (50,120): ship box is 21x10 from (48,118), the
             // black-hole box 19x12. x=69 is inside the ship box only; y=130 is
             // inside the black-hole box only. One probe per disagreeing edge.
-            (69, 120), (50, 130), (48, 118), (70, 120),
+            (69, 120),
+            (50, 130),
+            (48, 118),
+            (70, 120),
             // BOTH_AWAY, FAR marker (200,150) with the black-hole box: x=217 hits,
             // x=219 (which the ship box would reach) must not, and y=160 hits.
-            (217, 150), (219, 150), (200, 160), (200, 120),
+            (217, 150),
+            (219, 150),
+            (200, 160),
+            (200, 120),
         ];
         for (mx, my) in probes {
             let mut m = Machine::new();
@@ -1540,7 +1602,11 @@ mod tests {
             m.write16(GS, u32::from(ARCHE) + 0x22, CONTEXT);
             for obj in list {
                 for off in (0..0x24u32).step_by(2) {
-                    m.write16(GS, u32::from(obj) + off, native.rec_read_pub(obj + off as u16));
+                    m.write16(
+                        GS,
+                        u32::from(obj) + off,
+                        native.rec_read_pub(obj + off as u16),
+                    );
                 }
             }
             let sp = m.regs.sp() as u32;
@@ -1661,7 +1727,9 @@ mod tests {
         // rejects that had never run (audit-fixes #579). Then fifteen `z` for the
         // `cmp bl,0x0E` cap at `0x1E12`, and backspaces past empty for the
         // `or bx,bx / je` guard at `0x1E1F`.
-        let keys: Vec<u8> = b"ab9zQ\x08cd".iter().copied()
+        let keys: Vec<u8> = b"ab9zQ\x08cd"
+            .iter()
+            .copied()
             .chain([8u8, b'x'])
             .chain(b"!~:@[`".iter().copied())
             .chain(std::iter::repeat(b'z').take(15))
@@ -1711,7 +1779,11 @@ mod tests {
         m.write16(m.regs.ss, sp.wrapping_add(2), 0x0020);
         super::auto::func_1dd8(&mut m);
         assert!(!m.regs.cf, "empty name must not commit (0x1DF1)");
-        assert_eq!(e.save_ui_key(13), None, "port must not commit an empty name");
+        assert_eq!(
+            e.save_ui_key(13),
+            None,
+            "port must not commit an empty name"
+        );
         assert!(e.save_ui_active, "and the editor stays open");
 
         // ENTER ON A REAL NAME: `0x1DF5..0x1DFF` copies FOUR DWORDS (16 bytes) from
@@ -1744,7 +1816,10 @@ mod tests {
             .collect::<String>()
             .trim_end()
             .to_string();
-        assert_eq!(committed, "hero7", "the rep movsd lands the name in the slot");
+        assert_eq!(
+            committed, "hero7",
+            "the rep movsd lands the name in the slot"
+        );
         assert_eq!(e.save_ui_key(13), Some("hero7".to_string()));
         assert!(!e.save_ui_active, "committing closes the editor");
         // SIXTEEN bytes, not fourteen: `cx=4 / rep movsd`. The two bytes past the
@@ -1879,15 +1954,22 @@ mod tests {
 
         // Real labels: the words the menus actually measure.
         for text in [
-            "TALK", "CANCEL", "BOB_MORLOCK", "EGO", "LIBIDO", "REMEMBER", "BYE_BYE",
-            "ONE", "PLANET", "W", "I", "AB",
+            "TALK",
+            "CANCEL",
+            "BOB_MORLOCK",
+            "EGO",
+            "LIBIDO",
+            "REMEMBER",
+            "BYE_BYE",
+            "ONE",
+            "PLANET",
+            "W",
+            "I",
+            "AB",
         ] {
             let lifted = measure(text);
             let native = crate::font::square_caps_text_width(text) as u16;
-            assert_eq!(
-                lifted, native,
-                "{text:?}: lift {lifted} vs native {native}"
-            );
+            assert_eq!(lifted, native, "{text:?}: lift {lifted} vs native {native}");
         }
 
         // THE EMPTY STRING diverges, and the divergence is deliberate. `0x30FE`
@@ -1956,7 +2038,7 @@ mod tests {
         let mut lifted = [0u16; SLOTS];
         let mut native = crate::vm::VmMachine::new();
         let script: Vec<(u16, bool)> = vec![
-            (0x100, true),  // insert into an empty list
+            (0x100, true), // insert into an empty list
             (0x200, true),
             (0x100, true),  // duplicate: already present
             (0x100, false), // remove a present value
@@ -2010,12 +2092,15 @@ mod tests {
             assert!(run(&mut lifted, v, true));
             assert!(native.special_slot_insert_pub(v));
             assert!(
-            saw_full,
-            "the fill never reached a full list, so 0x6019 (insert fails) never ran"
-        );
-    }
+                saw_full,
+                "the fill never reached a full list, so 0x6019 (insert fails) never ran"
+            );
+        }
         assert!(!run(&mut lifted, 0xBEEF, true), "a full list must clear CF");
-        assert!(!native.special_slot_insert_pub(0xBEEF), "and so must the port");
+        assert!(
+            !native.special_slot_insert_pub(0xBEEF),
+            "and so must the port"
+        );
         assert_eq!(lifted.to_vec(), native.ship_slots_pub().to_vec());
     }
 

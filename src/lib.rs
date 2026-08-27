@@ -155,7 +155,10 @@ mod selfref_assert_tests {
             Err(_) => return,
         };
         let text = String::from_utf8_lossy(&out.stdout);
-        assert!(out.status.success(), "ungrounded length assertions:\n{text}");
+        assert!(
+            out.status.success(),
+            "ungrounded length assertions:\n{text}"
+        );
         let n: usize = text
             .split_whitespace()
             .next()
@@ -255,7 +258,10 @@ mod claimed_test_tests {
         if text.trim().is_empty() {
             return;
         }
-        assert!(out.status.success(), "doc names a test that does not exist:\n{text}");
+        assert!(
+            out.status.success(),
+            "doc names a test that does not exist:\n{text}"
+        );
     }
 }
 
@@ -281,7 +287,10 @@ mod content_literal_tests {
         if text.trim().is_empty() {
             return;
         }
-        assert!(out.status.success(), "game text in the port's source:\n{text}");
+        assert!(
+            out.status.success(),
+            "game text in the port's source:\n{text}"
+        );
     }
 }
 
@@ -306,7 +315,10 @@ mod opcode_handler_tests {
         if text.trim().is_empty() {
             return;
         }
-        assert!(out.status.success(), "opcode handler citations wrong:\n{text}");
+        assert!(
+            out.status.success(),
+            "opcode handler citations wrong:\n{text}"
+        );
         let checked: usize = text
             .split_whitespace()
             .next()
@@ -342,7 +354,10 @@ mod opsize_mnemonic_tests {
         if text.trim().is_empty() {
             return;
         }
-        assert!(out.status.success(), "convert-mnemonic citations wrong:\n{text}");
+        assert!(
+            out.status.success(),
+            "convert-mnemonic citations wrong:\n{text}"
+        );
         // The sweep must still be resolving citations to bytes; a regex that
         // stopped matching would pass forever. One of them (0x379B `66 98`) is a
         // GENUINE cwde, so this cannot be satisfied by rewriting every site.
@@ -351,7 +366,10 @@ mod opsize_mnemonic_tests {
             .next()
             .and_then(|n| n.parse().ok())
             .unwrap_or(0);
-        assert!(checked >= 8, "expected resolved convert citations, got: {text}");
+        assert!(
+            checked >= 8,
+            "expected resolved convert citations, got: {text}"
+        );
     }
 }
 
@@ -387,7 +405,10 @@ mod offset_pair_tests {
             .next()
             .and_then(|n| n.parse().ok())
             .unwrap_or(0);
-        assert!(checked >= 15, "expected the sweep to find pairs, got: {text}");
+        assert!(
+            checked >= 15,
+            "expected the sweep to find pairs, got: {text}"
+        );
     }
 }
 
@@ -397,7 +418,10 @@ mod tick_rate_tests {
     #[test]
     fn game_tick_is_not_the_video_frame_rate() {
         let hz = 1.0 / super::GAME_TICK_SECS;
-        assert!((hz - 25.03).abs() < 0.05, "8 PIT ticks at 1193182/5958 -> {hz} Hz");
+        assert!(
+            (hz - 25.03).abs() < 0.05,
+            "8 PIT ticks at 1193182/5958 -> {hz} Hz"
+        );
         // The two must not be conflated: a tick count divided by HNM_FPS is 1.67x
         // too long, which is what extract did before this entry.
         assert!(

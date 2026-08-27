@@ -167,7 +167,7 @@ fn read_state_word(
 mod tests {
     use std::path::{Path, PathBuf};
 
-    use commander_blood_formats::code::{decode_script_code, ScriptCodeOffset};
+    use commander_blood_formats::code::{ScriptCodeOffset, decode_script_code};
     use commander_blood_formats::instruction::{
         decode_script_bit_flag_operation, decode_script_shared_bit_operation,
         decode_script_shared_state_operation,

@@ -2659,7 +2659,10 @@ mod assemble_tests {
         // The trailing space before each break is the original's: `0x6722` writes the
         // space and `0x6728` counts it BEFORE the comparison decides to break.
         for line in out.split('\n').take(2) {
-            assert!(line.ends_with(' '), "the space is written before the CR: {line:?}");
+            assert!(
+                line.ends_with(' '),
+                "the space is written before the CR: {line:?}"
+            );
             assert_eq!(line.chars().count(), 27, "three words and their spaces");
         }
     }
@@ -2696,7 +2699,10 @@ mod decode_text_tests {
         let list = [0x000C, 0x0010, 0xFFFF, 0x0020, 0x0030];
         let got = decode_vm_words(&words, &list).expect("menu-bearing line must decode");
         assert_eq!(got, vec!["hello".to_string(), "world".to_string()]);
-        assert!(!got.iter().any(|w| w == "loop" || w == "extra"), "no menu words");
+        assert!(
+            !got.iter().any(|w| w == "loop" || w == "extra"),
+            "no menu words"
+        );
 
         // A list with NO separator is unchanged.
         let plain = [0x000C, 0x0010];
@@ -4491,10 +4497,15 @@ mod tests {
     /// verified one, so this counts it from the shipped scripts.
     #[test]
     fn a6_menu_bearing_line_count_matches_the_recorded_figure() {
-        let dir = ["output/_tmp_iso", "../output/_tmp_iso", "output/scripts", "../output/scripts"]
-            .iter()
-            .map(Path::new)
-            .find(|p| p.exists());
+        let dir = [
+            "output/_tmp_iso",
+            "../output/_tmp_iso",
+            "output/scripts",
+            "../output/scripts",
+        ]
+        .iter()
+        .map(Path::new)
+        .find(|p| p.exists());
         let Some(dir) = dir else { return };
 
         // Three counts, because "dropped" and "menu-bearing" are not the same
@@ -4507,11 +4518,15 @@ mod tests {
             let Some(cod_path) = find_file_recursive(dir, &format!("SCRIPT{index}.COD")) else {
                 continue;
             };
-            let Ok(cod) = fs::read(cod_path) else { continue };
+            let Ok(cod) = fs::read(cod_path) else {
+                continue;
+            };
             let Some(dic_path) = find_file_recursive(dir, &format!("SCRIPT{index}.DIC")) else {
                 continue;
             };
-            let Ok(dic_raw) = fs::read(dic_path) else { continue };
+            let Ok(dic_raw) = fs::read(dic_path) else {
+                continue;
+            };
             let words = commander_blood_tools::script::parse_dictionary(&dic_raw);
             for token in crate::extract::vm::walk(&cod, 0, cod.len()) {
                 if let vm::VmToken::Text { word_offsets, .. } = token {
@@ -4536,10 +4551,15 @@ mod tests {
 
     #[test]
     fn the_post_update_ladder_with_real_deb_context() {
-        let dir = ["output/_tmp_iso", "../output/_tmp_iso", "output/scripts", "../output/scripts"]
-            .iter()
-            .map(Path::new)
-            .find(|p| p.exists());
+        let dir = [
+            "output/_tmp_iso",
+            "../output/_tmp_iso",
+            "output/scripts",
+            "../output/scripts",
+        ]
+        .iter()
+        .map(Path::new)
+        .find(|p| p.exists());
         let Some(dir) = dir else { return };
 
         let (mut pairs, mut handoffs, mut bumps, mut with_deb) = (0usize, 0usize, 0usize, 0usize);
@@ -4550,8 +4570,12 @@ mod tests {
             ) else {
                 continue;
             };
-            let Ok(cod) = fs::read(cod_path) else { continue };
-            let Ok(deb) = fs::read(deb_path) else { continue };
+            let Ok(cod) = fs::read(cod_path) else {
+                continue;
+            };
+            let Ok(deb) = fs::read(deb_path) else {
+                continue;
+            };
             let var = find_file_recursive(dir, &format!("SCRIPT{index}.VAR"))
                 .and_then(|p| fs::read(p).ok())
                 .unwrap_or_default();
@@ -4564,7 +4588,10 @@ mod tests {
             bumps += trace.post_update.encounter_counter_bumps.len();
         }
 
-        assert!(with_deb >= 3, "only {with_deb} scripts had both a COD and a DEB");
+        assert!(
+            with_deb >= 3,
+            "only {with_deb} scripts had both a COD and a DEB"
+        );
         // MEASURED. Whatever these are, they are the answer to #238: if they are
         // all zero the ladder does not fire on shipped bytecode even with its
         // records resolved, and the exporter is reporting the truth.
@@ -4594,10 +4621,15 @@ mod tests {
     /// in-range target lies inside the script's own bytecode.
     #[test]
     fn branch_events_stay_inside_their_scripts_stream() {
-        let iso = ["output/_tmp_iso", "../output/_tmp_iso", "output/scripts", "../output/scripts"]
-            .iter()
-            .map(Path::new)
-            .find(|p| p.exists());
+        let iso = [
+            "output/_tmp_iso",
+            "../output/_tmp_iso",
+            "output/scripts",
+            "../output/scripts",
+        ]
+        .iter()
+        .map(Path::new)
+        .find(|p| p.exists());
         let Some(iso) = iso else { return };
         let Ok(branches) = parse_script_branch_trace(iso, None) else {
             return;
@@ -4659,10 +4691,15 @@ mod tests {
     ///     pair produces targets in the tens of thousands and fails here.
     #[test]
     fn text_token_offsets_advance_and_loop_targets_stay_in_the_stream() {
-        let iso = ["output/_tmp_iso", "../output/_tmp_iso", "output/scripts", "../output/scripts"]
-            .iter()
-            .map(Path::new)
-            .find(|p| p.exists());
+        let iso = [
+            "output/_tmp_iso",
+            "../output/_tmp_iso",
+            "output/scripts",
+            "../output/scripts",
+        ]
+        .iter()
+        .map(Path::new)
+        .find(|p| p.exists());
         let Some(iso) = iso else { return };
         let Ok(rows) = parse_script_text_flags(iso, None, &HashMap::new()) else {
             return;
@@ -4705,10 +4742,17 @@ mod tests {
             }
         }
 
-        assert!(rows.len() > 100, "only {} text tokens; too few to check", rows.len());
+        assert!(
+            rows.len() > 100,
+            "only {} text tokens; too few to check",
+            rows.len()
+        );
         // 170 across the five scripts, measured -- enough that the bound is
         // exercised rather than skipped.
-        assert!(targets > 100, "only {targets} loop targets seen; that half of the check is thin");
+        assert!(
+            targets > 100,
+            "only {targets} loop targets seen; that half of the check is thin"
+        );
     }
 
     /// THE TOKEN WALKER MUST STAY IN STEP WITH THE REAL BYTECODE.
@@ -4726,10 +4770,15 @@ mod tests {
     /// game's own five scripts.
     #[test]
     fn the_cod_walker_stays_inside_the_vm_dispatch_range() {
-        let iso = ["output/_tmp_iso", "../output/_tmp_iso", "output/scripts", "../output/scripts"]
-            .iter()
-            .map(Path::new)
-            .find(|p| p.exists());
+        let iso = [
+            "output/_tmp_iso",
+            "../output/_tmp_iso",
+            "output/scripts",
+            "../output/scripts",
+        ]
+        .iter()
+        .map(Path::new)
+        .find(|p| p.exists());
         let Some(iso) = iso else { return };
         let Ok(rows) = parse_script_disassembly(iso, None, &HashMap::new()) else {
             return;
@@ -4752,10 +4801,16 @@ mod tests {
                 in_range += 1;
             }
             // A row must also describe a real span of bytes.
-            assert!(row.len > 0, "a token of length 0 would never advance the walk");
+            assert!(
+                row.len > 0,
+                "a token of length 0 would never advance the walk"
+            );
         }
 
-        assert!(total > 200, "only {total} tokens decoded; the sample proves little");
+        assert!(
+            total > 200,
+            "only {total} tokens decoded; the sample proves little"
+        );
         let share = in_range as f64 / total as f64;
         assert!(
             share > 0.99,

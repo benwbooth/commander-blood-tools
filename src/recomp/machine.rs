@@ -948,7 +948,11 @@ impl Regs {
         self.set_dx(if self.ax() & 0x8000 != 0 { 0xffff } else { 0 });
     }
     pub fn cdq(&mut self) {
-        self.edx = if self.eax & 0x8000_0000 != 0 { 0xffff_ffff } else { 0 };
+        self.edx = if self.eax & 0x8000_0000 != 0 {
+            0xffff_ffff
+        } else {
+            0
+        };
     }
 }
 
@@ -1019,7 +1023,11 @@ impl Vga {
                     if self.map_mask & (1 << p) == 0 {
                         continue;
                     }
-                    let sr = if self.set_reset & (1 << p) != 0 { 0xff } else { 0x00 };
+                    let sr = if self.set_reset & (1 << p) != 0 {
+                        0xff
+                    } else {
+                        0x00
+                    };
                     let out = (sr & eff) | (l[p as usize] & !eff);
                     self.planes[p as usize * 0x10000 + o] = out;
                 }
@@ -1039,7 +1047,11 @@ impl Vga {
                         _ => {
                             // mode 0: optional set/reset substitution per plane
                             if self.enable_sr & (1 << p) != 0 {
-                                if self.set_reset & (1 << p) != 0 { 0xff } else { 0x00 }
+                                if self.set_reset & (1 << p) != 0 {
+                                    0xff
+                                } else {
+                                    0x00
+                                }
                             } else {
                                 rot
                             }
@@ -1192,7 +1204,8 @@ impl Machine {
         if let Some(range) = &self.read_watch {
             if range.contains(&a) {
                 let mut hits = self.read_hits.borrow_mut();
-                if hits.len() < 4000 && !hits.iter().any(|h| h.1 == self.regs.cs && h.2 == self.ip) {
+                if hits.len() < 4000 && !hits.iter().any(|h| h.1 == self.regs.cs && h.2 == self.ip)
+                {
                     hits.push((a, self.regs.cs, self.ip));
                 }
             }
@@ -1212,7 +1225,9 @@ impl Machine {
     /// replay those bytes onto Unicorn. No-op unless wlog is active.
     pub fn log_range(&mut self, start: usize, len: usize) {
         if self.wlog.is_some() {
-            let v: Vec<(u32, u8)> = (start..start + len).map(|a| (a as u32, self.mem[a])).collect();
+            let v: Vec<(u32, u8)> = (start..start + len)
+                .map(|a| (a as u32, self.mem[a]))
+                .collect();
             self.wlog.as_mut().unwrap().extend(v);
         }
     }

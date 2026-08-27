@@ -22,7 +22,11 @@ fn main() {
         commander_blood_tools::script::parse_script_dir(iso, &descript, &hnm_music).unwrap();
     let bundle = bundles.iter().find(|b| b.script == "SCRIPT1").unwrap();
     let mut map = std::collections::HashMap::new();
-    for e in bundle.speech_events.iter().filter(|e| !e.text.trim().is_empty()) {
+    for e in bundle
+        .speech_events
+        .iter()
+        .filter(|e| !e.text.trim().is_empty())
+    {
         map.insert(e.offset, e.text.clone());
     }
     let cod = std::fs::read("output/_tmp_iso/SCRIPT1.COD").unwrap();

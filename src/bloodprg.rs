@@ -3428,8 +3428,16 @@ mod tests {
             }
         }
         let past = SCRIPT_RESOURCE_PROFILE_COUNT * SCRIPT_RESOURCE_PROFILE_SLOT_COUNT;
-        assert_eq!(word(past), 0, "the table does not end after {} rows", SCRIPT_RESOURCE_PROFILE_COUNT);
-        assert_eq!(SCRIPT_RESOURCE_PROFILE_STRIDE, SCRIPT_RESOURCE_PROFILE_SLOT_COUNT * 2);
+        assert_eq!(
+            word(past),
+            0,
+            "the table does not end after {} rows",
+            SCRIPT_RESOURCE_PROFILE_COUNT
+        );
+        assert_eq!(
+            SCRIPT_RESOURCE_PROFILE_STRIDE,
+            SCRIPT_RESOURCE_PROFILE_SLOT_COUNT * 2
+        );
 
         // CROSS-CHECK against the resource directory (#203): each row's five IDs
         // must name one script's .cod/.bas/.var/.dic/.deb.
@@ -3441,15 +3449,25 @@ mod tests {
             let ids: Vec<usize> = (0..SCRIPT_RESOURCE_PROFILE_SLOT_COUNT)
                 .map(|slot| word(row * SCRIPT_RESOURCE_PROFILE_SLOT_COUNT + slot) as usize)
                 .collect();
-            let files: Vec<&str> = ids.iter().filter_map(|&i| names.get(i).map(String::as_str)).collect();
-            assert_eq!(files.len(), 5, "row {row} ids {ids:?} are not all in the directory");
+            let files: Vec<&str> = ids
+                .iter()
+                .filter_map(|&i| names.get(i).map(String::as_str))
+                .collect();
+            assert_eq!(
+                files.len(),
+                5,
+                "row {row} ids {ids:?} are not all in the directory"
+            );
             let stem = files[0].split('.').next().unwrap_or_default().to_string();
             assert!(
                 stem.starts_with("script"),
                 "row {row} starts at {:?}, which is not a script resource",
                 files[0]
             );
-            let exts: Vec<&str> = files.iter().map(|f| f.split('.').nth(1).unwrap_or("")).collect();
+            let exts: Vec<&str> = files
+                .iter()
+                .map(|f| f.split('.').nth(1).unwrap_or(""))
+                .collect();
             assert_eq!(
                 exts,
                 vec!["cod", "bas", "var", "dic", "deb"],
@@ -3519,19 +3537,48 @@ mod tests {
     fn render_and_sound_offsets_land_on_prologues() {
         let Some(binary) = fixture() else { return };
         let img = binary.image_bytes();
-        let is_prologue = |b: u8| (0x50..=0x57).contains(&b)
-            || matches!(b, 0x06 | 0x0E | 0x16 | 0x1E | 0x66 | 0x60);
+        let is_prologue = |b: u8| {
+            (0x50..=0x57).contains(&b) || matches!(b, 0x06 | 0x0E | 0x16 | 0x1E | 0x66 | 0x60)
+        };
 
         for (name, seg, off) in [
-            ("VGA_DAC_PALETTE_LOAD", RENDER_SEGMENT, RENDER_VGA_DAC_PALETTE_LOAD_OFFSET),
-            ("VGA_DAC_PALETTE_CLEAR", RENDER_SEGMENT, RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET),
-            ("FIXED_8X8_TEXT", RENDER_SEGMENT, RENDER_FIXED_8X8_TEXT_OFFSET),
-            ("FONT_STRING_WIDTH", RENDER_SEGMENT, RENDER_FONT_STRING_WIDTH_OFFSET),
+            (
+                "VGA_DAC_PALETTE_LOAD",
+                RENDER_SEGMENT,
+                RENDER_VGA_DAC_PALETTE_LOAD_OFFSET,
+            ),
+            (
+                "VGA_DAC_PALETTE_CLEAR",
+                RENDER_SEGMENT,
+                RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET,
+            ),
+            (
+                "FIXED_8X8_TEXT",
+                RENDER_SEGMENT,
+                RENDER_FIXED_8X8_TEXT_OFFSET,
+            ),
+            (
+                "FONT_STRING_WIDTH",
+                RENDER_SEGMENT,
+                RENDER_FONT_STRING_WIDTH_OFFSET,
+            ),
             ("UI_TEXT", RENDER_SEGMENT, RENDER_UI_TEXT_OFFSET),
             ("STRING", RENDER_SEGMENT, RENDER_STRING_OFFSET),
-            ("RECT_REMAP", RENDER_SEGMENT, RENDER_FRAMEBUFFER_RECT_REMAP_OFFSET),
-            ("PLANAR_UI_TEXT", RENDER_SEGMENT, RENDER_PLANAR_UI_TEXT_OFFSET),
-            ("PLANAR_DIALOGUE_TEXT", RENDER_SEGMENT, RENDER_PLANAR_DIALOGUE_TEXT_OFFSET),
+            (
+                "RECT_REMAP",
+                RENDER_SEGMENT,
+                RENDER_FRAMEBUFFER_RECT_REMAP_OFFSET,
+            ),
+            (
+                "PLANAR_UI_TEXT",
+                RENDER_SEGMENT,
+                RENDER_PLANAR_UI_TEXT_OFFSET,
+            ),
+            (
+                "PLANAR_DIALOGUE_TEXT",
+                RENDER_SEGMENT,
+                RENDER_PLANAR_DIALOGUE_TEXT_OFFSET,
+            ),
             ("SND_ENTRY", SND_ENTRY_SEGMENT, SND_ENTRY_OFFSET),
             ("SND_BANK_LOAD", SND_BANK_LOAD_SEGMENT, SND_BANK_LOAD_OFFSET),
         ] {
@@ -3558,7 +3605,11 @@ mod tests {
 
         // The five the recompiler independently identified as functions.
         for (seg, off, lifted) in [
-            (RENDER_SEGMENT, RENDER_VGA_DAC_PALETTE_LOAD_OFFSET, 0x2F90usize),
+            (
+                RENDER_SEGMENT,
+                RENDER_VGA_DAC_PALETTE_LOAD_OFFSET,
+                0x2F90usize,
+            ),
             (RENDER_SEGMENT, RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET, 0x2FA6),
             (RENDER_SEGMENT, RENDER_FONT_STRING_WIDTH_OFFSET, 0x30CD),
             (RENDER_SEGMENT, RENDER_STRING_OFFSET, 0x3192),
@@ -3592,8 +3643,13 @@ mod tests {
         // entries -> 50 pairs; this said "51 adjacent pairs" until #419). What IS true of
         // a jump table and not of arbitrary bytes: every live entry is a near
         // offset inside one segment's span, and the last slot is NULL.
-        let handlers: Vec<u16> = (0..52).map(|i| word(OPCODE_HANDLER_TABLE_FILE_OFFSET + i * 2)).collect();
-        assert_eq!(handlers[51], 0, "the 0xD3 slot is NULL (52 entries, last empty)");
+        let handlers: Vec<u16> = (0..52)
+            .map(|i| word(OPCODE_HANDLER_TABLE_FILE_OFFSET + i * 2))
+            .collect();
+        assert_eq!(
+            handlers[51], 0,
+            "the 0xD3 slot is NULL (52 entries, last empty)"
+        );
         // COUNT the ascent claim above instead of restating it (audit-fixes #419).
         // 51 live entries have FIFTY adjacent pairs, not 51 -- the comment said
         // "30 of the 51 adjacent pairs", which is off by one in the denominator
@@ -3627,7 +3683,9 @@ mod tests {
         );
 
         // The script profile table: small ascending indices.
-        let profiles: Vec<u16> = (0..4).map(|i| word(SCRIPT_RESOURCE_PROFILE_TABLE_FILE_OFFSET + i * 2)).collect();
+        let profiles: Vec<u16> = (0..4)
+            .map(|i| word(SCRIPT_RESOURCE_PROFILE_TABLE_FILE_OFFSET + i * 2))
+            .collect();
         assert_eq!(profiles, vec![2, 3, 4, 5], "profile table is not 2,3,4,5");
 
         // The dialogue font's ASCII map opens with the UNMAPPED sentinel, since
@@ -3651,7 +3709,10 @@ mod tests {
             "the byte before the advances is not the ASCII map's 0xFF tail, so \
              this offset is not the table's start"
         );
-        assert_ne!(img[advances_at], 0xFF, "the advances start inside the ASCII map");
+        assert_ne!(
+            img[advances_at], 0xFF,
+            "the advances start inside the ASCII map"
+        );
         let advances = &img[advances_at..advances_at + 48];
         assert!(
             advances.iter().all(|&a| (1..=24).contains(&a)),
@@ -3668,7 +3729,9 @@ mod tests {
         );
 
         // The sprite blitter jump table: ascending near offsets, like the handlers.
-        let blitters: Vec<u16> = (0..6).map(|i| word(RENDER_SPRITE_BLITTER_TABLE_FILE_OFFSET + i * 2)).collect();
+        let blitters: Vec<u16> = (0..6)
+            .map(|i| word(RENDER_SPRITE_BLITTER_TABLE_FILE_OFFSET + i * 2))
+            .collect();
         assert!(
             blitters.windows(2).all(|w| w[0] < w[1]),
             "the blitter table is not ascending: {blitters:x?}"
@@ -3735,8 +3798,8 @@ mod tests {
             ("DEPTH_SCROLL_STEP", SHIP_3D_DEPTH_SCROLL_STEP_OFFSET),
         ] {
             let opcode = exe[base + offset as usize];
-            let is_push = (0x50..=0x57).contains(&opcode)
-                || matches!(opcode, 0x06 | 0x0E | 0x16 | 0x1E);
+            let is_push =
+                (0x50..=0x57).contains(&opcode) || matches!(opcode, 0x06 | 0x0E | 0x16 | 0x1E);
             assert!(
                 is_push || opcode == 0x66 || opcode == 0xF6,
                 "{name} offset {offset:#06x} lands on {opcode:#04x}, not a prologue"
@@ -3843,10 +3906,7 @@ mod tests {
 
         // The shipped value of the global the steps are written into.
         let at = binary.ds_to_file(TEXT_SPEED_STEP_DS);
-        let shipped = u16::from_le_bytes([
-            binary.image_bytes()[at],
-            binary.image_bytes()[at + 1],
-        ]);
+        let shipped = u16::from_le_bytes([binary.image_bytes()[at], binary.image_bytes()[at + 1]]);
         assert_eq!(at, 0x0DEEA);
         assert_eq!(shipped, TEXT_SPEED_STEP_INITIAL);
         assert_eq!(
@@ -3856,7 +3916,6 @@ mod tests {
         );
     }
 
-    #[test]
     /// A mode-control SENTINEL and a VARIABLE LENGTH are different properties of the
     /// same byte, and the table says so plainly (audit-fixes #588).
     #[test]
@@ -3870,11 +3929,19 @@ mod tests {
         // nor dispatch bounds its index (see VM_OPCODE_TABLE_ENTRIES), so the entries
         // past 0xD3 are the adjacent string and must not be read as opcode facts.
         let real = &specs[..VM_OPCODE_TABLE_ENTRIES];
-        let variable: Vec<u8> = real.iter().filter(|s| s.variable_length).map(|s| s.opcode).collect();
+        let variable: Vec<u8> = real
+            .iter()
+            .filter(|s| s.variable_length)
+            .map(|s| s.opcode)
+            .collect();
         // The five the vm module documents as length-0: the TEXT opcode plus four
         // bare 1-byte ones. Read from the shipped table, not transcribed.
         assert_eq!(variable, vec![0xA6, 0xA8, 0xAC, 0xCC, 0xD3]);
-        assert_eq!(real.last().expect("52 entries").opcode, 0xD3, "the table ends at 0xD3");
+        assert_eq!(
+            real.last().expect("52 entries").opcode,
+            0xD3,
+            "the table ends at 0xD3"
+        );
         // And the tail really is the string, which is what makes the slice necessary:
         // 0xD4/0xD5 spell "me"/"mo" of `memoire libre` at file 0x143A0.
         assert_eq!(
@@ -3884,7 +3951,10 @@ mod tests {
         );
 
         let sentinels: Vec<&VmOpcodeSpec> = real.iter().filter(|s| s.mode_control).collect();
-        assert!(sentinels.len() > 20, "the table is full of mode-control opcodes");
+        assert!(
+            sentinels.len() > 20,
+            "the table is full of mode-control opcodes"
+        );
         for spec in &sentinels {
             assert!(
                 !spec.variable_length,
@@ -3899,9 +3969,13 @@ mod tests {
         }
         // 0xA3 is the concrete case the doc names: sentinel 0xFB, length 3.
         let a3 = real.iter().find(|s| s.opcode == 0xA3).expect("0xA3");
-        assert_eq!((a3.len_mode1_or_sentinel, a3.len_mode0, a3.mode_control), (0xFB, 3, true));
+        assert_eq!(
+            (a3.len_mode1_or_sentinel, a3.len_mode0, a3.mode_control),
+            (0xFB, 3, true)
+        );
     }
 
+    #[test]
     fn parses_mz_header_and_address_conversions() {
         let Some(binary) = fixture() else {
             eprintln!("skipping: BLOODPRG.EXE not available");
@@ -3993,7 +4067,10 @@ mod tests {
         //   0x53D8  the SLOTS per profile    5
         let raw = binary.image_bytes();
         let imm16 = |at: usize| u16::from_le_bytes([raw[at], raw[at + 1]]) as usize;
-        assert_eq!(imm16(0x53CC), SCRIPT_RESOURCE_PROFILE_TABLE_FS_OFFSET as usize);
+        assert_eq!(
+            imm16(0x53CC),
+            SCRIPT_RESOURCE_PROFILE_TABLE_FS_OFFSET as usize
+        );
         assert_eq!(imm16(0x53CF), SCRIPT_RESOURCE_PROFILE_STRIDE);
         assert_eq!(imm16(0x53D8), SCRIPT_RESOURCE_PROFILE_SLOT_COUNT);
         // The COUNT is bounded by the DATA, not by code: rows 0..4 hold ascending
@@ -4004,7 +4081,10 @@ mod tests {
                     + (i + 1) * SCRIPT_RESOURCE_PROFILE_STRIDE]
         };
         for i in 0..SCRIPT_RESOURCE_PROFILE_COUNT {
-            assert!(row(i).iter().any(|&b| b != 0), "profile {i} must be populated");
+            assert!(
+                row(i).iter().any(|&b| b != 0),
+                "profile {i} must be populated"
+            );
         }
         assert!(
             row(SCRIPT_RESOURCE_PROFILE_COUNT).iter().all(|&b| b == 0),
@@ -5147,7 +5227,11 @@ mod tests {
             );
         }
         // Ascending, so the `take_while` that resolves a file offset is valid.
-        assert!(super::KNOWN_CODE_SEGMENTS.windows(2).all(|w| w[0].1 < w[1].1));
+        assert!(
+            super::KNOWN_CODE_SEGMENTS
+                .windows(2)
+                .all(|w| w[0].1 < w[1].1)
+        );
         // The four verified independently this session are present.
         for seg in [0x0299u16, 0x04DA, 0x071E, 0x0A9A] {
             assert!(

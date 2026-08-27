@@ -15,7 +15,14 @@ fn main() {
         for sx in (40..=280).step_by(40) {
             let p = format!("boot_frames/hg_{sx}_{sy}.ppm");
             if let Ok(d) = std::fs::read(&p) {
-                let hdr = d.iter().enumerate().filter(|&(_, &b)| b == b'\n').nth(2).unwrap().0 + 1;
+                let hdr = d
+                    .iter()
+                    .enumerate()
+                    .filter(|&(_, &b)| b == b'\n')
+                    .nth(2)
+                    .unwrap()
+                    .0
+                    + 1;
                 frames.push(d[hdr..].to_vec());
             }
         }
@@ -42,7 +49,12 @@ fn main() {
     for frame in 0..180u16 {
         e.bridge.frame = frame;
         // park the mouse far corner so the hand sits mostly off-frame
-        e.step(MouseInput { x: 315, y: 5, buttons: 0, ..Default::default() });
+        e.step(MouseInput {
+            x: 315,
+            y: 5,
+            buttons: 0,
+            ..Default::default()
+        });
         e.bridge.frame = frame;
         let mut acc = 0f64;
         // compare rows 0..200, columns excluding the right edge (hand at 315,5 covers
@@ -66,11 +78,19 @@ fn main() {
             best = (mean, frame);
         }
     }
-    println!("best port frame vs oracle ring-45 bg: frame {} mean_abs {:.2}", best.1, best.0);
+    println!(
+        "best port frame vs oracle ring-45 bg: frame {} mean_abs {:.2}",
+        best.1, best.0
+    );
 
     // dump the best frame side-by-side for visual inspection
     e.bridge.frame = best.1;
-    e.step(MouseInput { x: 315, y: 5, buttons: 0, ..Default::default() });
+    e.step(MouseInput {
+        x: 315,
+        y: 5,
+        buttons: 0,
+        ..Default::default()
+    });
     e.bridge.frame = best.1;
     let mut sbs = vec![0u8; 640 * 200 * 3];
     for y in 0..200 {

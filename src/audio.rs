@@ -15,8 +15,8 @@
 //! knowing about it.
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 /// One sound feeding the shared mixer.
 struct MixSource {
@@ -94,7 +94,13 @@ impl AudioMixer {
     pub fn add(&mut self, pcm: Arc<Vec<u8>>, step: usize, looped: bool) -> usize {
         self.next_id += 1;
         let id = self.next_id;
-        self.sources.push(MixSource { id, pcm, pos: 0, step, looped });
+        self.sources.push(MixSource {
+            id,
+            pcm,
+            pos: 0,
+            step,
+            looped,
+        });
         id
     }
 
@@ -193,7 +199,10 @@ impl MusicPlayer {
         // DESTINATION changed, from a private stream to the shared mixer.
         let step = (((src_rate as u64) << 16) / dev_rate as u64) as usize;
         let id = mixer().lock().ok()?.add(Arc::new(pcm), step, looped);
-        Some(Self { id, stop: Arc::new(AtomicBool::new(false)) })
+        Some(Self {
+            id,
+            stop: Arc::new(AtomicBool::new(false)),
+        })
     }
 
     pub fn stop(&mut self) {
@@ -301,7 +310,11 @@ mod tests {
         let mut out2 = vec![0u8; 4];
         mix2.render(&mut out2);
         for i in 0..4 {
-            assert_eq!(out2[i], crate::snd::snd_mix_average(b[i], a[i]), "sample {i}");
+            assert_eq!(
+                out2[i],
+                crate::snd::snd_mix_average(b[i], a[i]),
+                "sample {i}"
+            );
         }
 
         // Removing a source stops it contributing.
@@ -320,7 +333,11 @@ mod tests {
         let mut out = vec![0u8; 8];
         mix.render(&mut out);
         assert_eq!(&out[..2], &[0x10, 0x20], "the data plays");
-        assert_eq!(&out[2..], &[crate::snd::SILENCE; 6], "then silence past the end");
+        assert_eq!(
+            &out[2..],
+            &[crate::snd::SILENCE; 6],
+            "then silence past the end"
+        );
         assert_eq!(mix.active(), 0, "a finished play-once source is dropped");
 
         let mut looping = AudioMixer::default();

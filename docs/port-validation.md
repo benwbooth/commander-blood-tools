@@ -111,7 +111,7 @@ the decoded click dispatch itself) and no-VM fallback labels. The Bob screen's t
 render still reads BOB_TOPICS — converting it to the line-carried menu is the follow-up.
 
 ## STORY-PROGRESSION MAP (bytecode-extracted, 2026-07-23) — the frontier's exact chain
-From decompiled/SCRIPT2.bas + COD operand reads (assembly-first):
+From `re/vm/profiles/script2.blood` plus COD operand reads (assembly-first):
 - **Scruter_Jo.talk = record 1860 rel 40** (C4 @0005) — his presentation explains
   CYBERSPACE ('you go get BIONIUM in CYBERSPACE of SCRUTER JO', @038C) and the
   BIOXX->Mantas->BIONIUM loop (@04B5..04C7).

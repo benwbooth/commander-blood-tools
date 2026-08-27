@@ -369,10 +369,8 @@ pub(crate) fn bas_token_at(
     if opcode == 0xA7 {
         let end = offset.checked_add(3)?;
         let value = read_word(image, offset + 1)?;
-        return (end <= image.len()).then_some((
-            end,
-            BasToken::PresentationRegister { offset, value },
-        ));
+        return (end <= image.len())
+            .then_some((end, BasToken::PresentationRegister { offset, value }));
     }
 
     if matches!(opcode, 0xA8 | 0xAE | 0xB0 | 0xB4 | 0xC0 | 0xC9 | 0xCD) {
@@ -518,7 +516,10 @@ pub(crate) fn token_comment(token: &VmToken, dictionary: &HashMap<u16, String>) 
             ..
         } => format!(
             "CONCEPT_GUARD word=0x{word_offset:04X} inverted={inverted} {:?}",
-            dictionary.get(word_offset).map(String::as_str).unwrap_or("")
+            dictionary
+                .get(word_offset)
+                .map(String::as_str)
+                .unwrap_or("")
         ),
         VmToken::Jump { target, .. } => format!("JUMP target=0x{target:04X}"),
         VmToken::StateArray {

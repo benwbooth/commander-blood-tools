@@ -312,8 +312,12 @@ mod tests {
         if !path.exists() {
             path = std::path::PathBuf::from("../accuracy/cdrive/cblood/TB.BIG");
         }
-        let Ok(bytes) = std::fs::read(&path) else { return };
-        let Some(archive) = BridgePanorama::parse(bytes) else { return };
+        let Ok(bytes) = std::fs::read(&path) else {
+            return;
+        };
+        let Some(archive) = BridgePanorama::parse(bytes) else {
+            return;
+        };
         assert!(archive.frame_count() > 0);
 
         // How many leading rows are a single palette index, per frame.
@@ -357,7 +361,11 @@ mod tests {
         // And the station rest angles are whole frames under the same division:
         // 0x000/0x05A/0x0B4/0x10E are degrees, half of each is the frame (#107).
         for angle in [0x000u16, 0x05A, 0x0B4, 0x10E] {
-            assert_eq!(angle % 2, 0, "rest angle {angle:#x} halves to a whole frame");
+            assert_eq!(
+                angle % 2,
+                0,
+                "rest angle {angle:#x} halves to a whole frame"
+            );
         }
     }
     use super::*;
@@ -373,25 +381,35 @@ mod tests {
 
     #[test]
     fn parses_directory_of_180_frames() {
-        let Some(pan) = load_real_archive() else { return };
+        let Some(pan) = load_real_archive() else {
+            return;
+        };
         assert_eq!(pan.frame_count(), PANORAMA_FRAME_COUNT);
     }
 
     #[test]
     fn every_frame_unpacks_to_exactly_one_screen() {
-        let Some(pan) = load_real_archive() else { return };
+        let Some(pan) = load_real_archive() else {
+            return;
+        };
         for frame in 0..pan.frame_count() {
             let mut screen = vec![0u8; PANORAMA_FRAME_PIXELS];
             let header = pan
                 .unpack_frame_over(frame, &mut screen, false)
                 .unwrap_or_else(|| panic!("frame {frame} failed to unpack"));
-            assert!(header.station < 4, "frame {frame} station {}", header.station);
+            assert!(
+                header.station < 4,
+                "frame {frame} station {}",
+                header.station
+            );
         }
     }
 
     #[test]
     fn frame_zero_header_matches_binary_observation() {
-        let Some(pan) = load_real_archive() else { return };
+        let Some(pan) = load_real_archive() else {
+            return;
+        };
         // Directly observed values of the first chunk's header: the orange
         // eye-orb of the wide helm view sits at x 133..184, y 130..174.
         assert_eq!(
@@ -408,7 +426,9 @@ mod tests {
 
     #[test]
     fn station_sectors_partition_the_ring() {
-        let Some(pan) = load_real_archive() else { return };
+        let Some(pan) = load_real_archive() else {
+            return;
+        };
         let stations: Vec<u16> = (0..pan.frame_count())
             .map(|f| pan.frame_header(f).unwrap().station)
             .collect();
@@ -426,7 +446,9 @@ mod tests {
     /// game draws over the panorama.
     #[test]
     fn console_rest_frame_matches_live_game_capture() {
-        let Some(pan) = load_real_archive() else { return };
+        let Some(pan) = load_real_archive() else {
+            return;
+        };
         let capture_path = Path::new("accuracy/captures/bridge/console_rest.ppm");
         if !capture_path.exists() {
             return;
@@ -458,7 +480,9 @@ mod tests {
     /// catches any decode regression across the ring, not just the rest frame.
     #[test]
     fn steered_frames_match_live_game_captures() {
-        let Some(pan) = load_real_archive() else { return };
+        let Some(pan) = load_real_archive() else {
+            return;
+        };
         let dac = &crate::palette::GAME_SCREEN_PALETTE_DAC;
         let expand = |v: u8| (v << 2) | (v >> 4);
         for (frame, capture_name) in [(15usize, "rotate_left"), (64, "rotate_right")] {

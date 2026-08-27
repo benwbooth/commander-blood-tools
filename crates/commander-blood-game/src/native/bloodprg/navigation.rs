@@ -164,9 +164,7 @@ pub fn presentable_navigation_objects(
     let mut source = Vec::with_capacity(state.objects().len());
     source.push(target);
     source.extend(navigation_source_objects(state, target)?);
-    Ok(filter_presentable_navigation_objects(
-        state, &source, arche,
-    ))
+    Ok(filter_presentable_navigation_objects(state, &source, arche))
 }
 
 /// Resolve the live coordinate pair used for one navigation object.
@@ -192,11 +190,8 @@ pub fn resolve_navigation_position(
             .ok_or(ScriptNavigationError::MissingObject { object: current })?;
         match state_object.kind {
             ScriptObjectKind::BlackHole => {
-                let comparison = read_object_word(
-                    state,
-                    current,
-                    ScriptFieldSelector::BLACK_HOLE_COMPARISON,
-                )?;
+                let comparison =
+                    read_object_word(state, current, ScriptFieldSelector::BLACK_HOLE_COMPARISON)?;
                 let selector = if comparison == black_hole_compare {
                     ScriptFieldSelector::BLACK_HOLE_MATCH_POSITION
                 } else {
@@ -207,18 +202,11 @@ pub fn resolve_navigation_position(
             ScriptObjectKind::CelestialBody
             | ScriptObjectKind::NavigationEntity
             | ScriptObjectKind::WorldState => {
-                return object_word_pair(
-                    state,
-                    current,
-                    ScriptFieldSelector::NAVIGATION_POSITION,
-                );
+                return object_word_pair(state, current, ScriptFieldSelector::NAVIGATION_POSITION);
             }
             _ => {
-                let parent = object_reference(
-                    state,
-                    current,
-                    ScriptFieldSelector::HOLDER_OR_LOCATION,
-                )?;
+                let parent =
+                    object_reference(state, current, ScriptFieldSelector::HOLDER_OR_LOCATION)?;
                 current = match parent {
                     ScriptStateObjectReference::Object(parent) => parent,
                     ScriptStateObjectReference::Sentinel => arche,
@@ -252,11 +240,7 @@ pub fn navigation_distance(
         .kind;
 
     let first_position = if first_kind == ScriptObjectKind::BlackHole {
-        compare = read_object_word(
-            state,
-            second,
-            ScriptFieldSelector::BLACK_HOLE_RELATION,
-        )?;
+        compare = read_object_word(state, second, ScriptFieldSelector::BLACK_HOLE_RELATION)?;
         resolve_navigation_position(state, first, arche, compare)?
     } else if first_kind == ScriptObjectKind::Auxiliary {
         state
@@ -267,11 +251,7 @@ pub fn navigation_distance(
     };
 
     let second_position = if second_kind == ScriptObjectKind::BlackHole {
-        compare = read_object_word(
-            state,
-            first,
-            ScriptFieldSelector::BLACK_HOLE_RELATION,
-        )?;
+        compare = read_object_word(state, first, ScriptFieldSelector::BLACK_HOLE_RELATION)?;
         resolve_navigation_position(state, second, arche, compare)?
     } else if second_kind == ScriptObjectKind::Auxiliary {
         state
@@ -346,11 +326,7 @@ fn filter_objects_at_arche_position(
     arche: ScriptObjectId,
     candidates: &[ScriptObjectId],
 ) -> Result<Vec<ScriptObjectId>, ScriptNavigationError> {
-    let arche_position = object_word_pair(
-        state,
-        arche,
-        ScriptFieldSelector::NAVIGATION_POSITION,
-    )?;
+    let arche_position = object_word_pair(state, arche, ScriptFieldSelector::NAVIGATION_POSITION)?;
     let arche_position = state
         .word_pair(arche_position)
         .ok_or(ScriptNavigationError::MissingPositionField { object: arche })?;
@@ -397,11 +373,8 @@ fn filter_objects_at_arche_position(
             _ => continue,
         };
 
-        let position = object_word_pair(
-            state,
-            effective,
-            ScriptFieldSelector::NAVIGATION_POSITION,
-        )?;
+        let position =
+            object_word_pair(state, effective, ScriptFieldSelector::NAVIGATION_POSITION)?;
         if state.word_pair(position) == Some(arche_position) {
             output.push(candidate);
         }
@@ -792,49 +765,43 @@ mod tests {
         assert_eq!(vectors.len(), NAVIGATION_CANDIDATE_VECTOR_COUNT);
 
         for vector in vectors {
-            let (kinds, flags, source_indices, honk_index): (&[_], &[_], &[_], usize) =
-                match vector.name.as_str() {
-                    "empty_source" => (&[ScriptObjectKind::Actor], &[1], &[], 0),
-                    "two_active_kind_two" => (
-                        &[ScriptObjectKind::Actor; 3],
-                        &[0, 1, 165],
-                        &[1, 2],
-                        0,
-                    ),
-                    "exclude_honk_before_record_read" => {
-                        (&[ScriptObjectKind::Actor; 3], &[0, 1, 1], &[1, 2], 1)
-                    }
-                    "mixed_kind_and_activity" => (
-                        &[
-                            ScriptObjectKind::Actor,
-                            ScriptObjectKind::Player,
-                            ScriptObjectKind::Actor,
-                            ScriptObjectKind::BlackHole,
-                            ScriptObjectKind::Actor,
-                            ScriptObjectKind::Actor,
-                        ],
-                        &[0, 1, 0, 1, 128, 129],
-                        &[1, 2, 3, 4, 5],
-                        0,
-                    ),
-                    "zero_offset_is_valid" | "unsigned_high_offsets" => (
-                        &[ScriptObjectKind::Actor; 3],
-                        &[1, 1, 0],
-                        &[0, 1],
-                        2,
-                    ),
-                    "all_rejected" => (
-                        &[
-                            ScriptObjectKind::Actor,
-                            ScriptObjectKind::CelestialBody,
-                            ScriptObjectKind::Actor,
-                        ],
-                        &[1, 1, 254],
-                        &[0, 1, 2],
-                        0,
-                    ),
-                    name => panic!("unknown navigation-candidate oracle {name}"),
-                };
+            let (kinds, flags, source_indices, honk_index): (&[_], &[_], &[_], usize) = match vector
+                .name
+                .as_str()
+            {
+                "empty_source" => (&[ScriptObjectKind::Actor], &[1], &[], 0),
+                "two_active_kind_two" => (&[ScriptObjectKind::Actor; 3], &[0, 1, 165], &[1, 2], 0),
+                "exclude_honk_before_record_read" => {
+                    (&[ScriptObjectKind::Actor; 3], &[0, 1, 1], &[1, 2], 1)
+                }
+                "mixed_kind_and_activity" => (
+                    &[
+                        ScriptObjectKind::Actor,
+                        ScriptObjectKind::Player,
+                        ScriptObjectKind::Actor,
+                        ScriptObjectKind::BlackHole,
+                        ScriptObjectKind::Actor,
+                        ScriptObjectKind::Actor,
+                    ],
+                    &[0, 1, 0, 1, 128, 129],
+                    &[1, 2, 3, 4, 5],
+                    0,
+                ),
+                "zero_offset_is_valid" | "unsigned_high_offsets" => {
+                    (&[ScriptObjectKind::Actor; 3], &[1, 1, 0], &[0, 1], 2)
+                }
+                "all_rejected" => (
+                    &[
+                        ScriptObjectKind::Actor,
+                        ScriptObjectKind::CelestialBody,
+                        ScriptObjectKind::Actor,
+                    ],
+                    &[1, 1, 254],
+                    &[0, 1, 2],
+                    0,
+                ),
+                name => panic!("unknown navigation-candidate oracle {name}"),
+            };
             let mut state = navigation_fixture(kinds, &vec![None; kinds.len()]);
             let objects = state
                 .objects()
@@ -935,7 +902,12 @@ mod tests {
                 .iter()
                 .map(|index| objects[*index])
                 .collect::<Vec<_>>();
-            assert_eq!(source.len(), vector.processed_entries.len(), "{}", vector.name);
+            assert_eq!(
+                source.len(),
+                vector.processed_entries.len(),
+                "{}",
+                vector.name
+            );
             let expected = vector
                 .output
                 .iter()
@@ -1035,10 +1007,8 @@ mod tests {
 
     #[test]
     fn navigation_actor_targets_begin_with_the_in_play_object_set() {
-        let mut state = navigation_fixture(
-            &[ScriptObjectKind::Actor; 4],
-            &[None, None, None, None],
-        );
+        let mut state =
+            navigation_fixture(&[ScriptObjectKind::Actor; 4], &[None, None, None, None]);
         let objects = state
             .objects()
             .iter()
@@ -1174,11 +1144,7 @@ mod tests {
                 .collect::<Vec<_>>();
 
             assert_eq!(
-                filter_presentable_navigation_objects(
-                    &state,
-                    &source,
-                    objects[case.arche_index]
-                ),
+                filter_presentable_navigation_objects(&state, &source, objects[case.arche_index]),
                 expected,
                 "{}",
                 vector.name
@@ -1203,7 +1169,9 @@ mod tests {
             .map(|object| object.id)
             .collect::<Vec<_>>();
         for object in &objects[..3] {
-            let field = state.object_byte(*object, OBJECT_FLAGS_BYTE_OFFSET).unwrap();
+            let field = state
+                .object_byte(*object, OBJECT_FLAGS_BYTE_OFFSET)
+                .unwrap();
             assert!(state.set_byte(field, 2));
         }
 
@@ -1280,15 +1248,17 @@ mod tests {
             .collect::<Vec<_>>();
         let arche = objects[4];
         let comparison = 30_583;
-        assert!(state.set_word(
-            object_field(
-                &state,
-                objects[6],
-                ScriptFieldSelector::BLACK_HOLE_COMPARISON
+        assert!(
+            state.set_word(
+                object_field(
+                    &state,
+                    objects[6],
+                    ScriptFieldSelector::BLACK_HOLE_COMPARISON
+                )
+                .unwrap(),
+                comparison
             )
-            .unwrap(),
-            comparison
-        ));
+        );
 
         for vector in vectors {
             let (object, expected_owner, selector, compare) = match vector.name.as_str() {

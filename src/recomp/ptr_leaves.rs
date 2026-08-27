@@ -143,7 +143,10 @@ mod tests {
             );
         }
         // The case that separates the two forms.
-        let panel = crate::engine::LocationInfoPanel { scale: 86, ..Default::default() };
+        let panel = crate::engine::LocationInfoPanel {
+            scale: 86,
+            ..Default::default()
+        };
         assert_eq!(panel.entity_draw_scale(), 2);
         assert_ne!(panel.entity_draw_scale(), (3u16 * 86 / 2 + 1) as u8);
     }
@@ -315,8 +318,12 @@ mod tests {
         );
         let (l, o) = (&m_lift.regs, &m_oracle.regs);
         for (name, lv, ov) in [
-            ("AX", l.ax(), o.ax()), ("BX", l.bx(), o.bx()), ("CX", l.cx(), o.cx()),
-            ("DX", l.dx(), o.dx()), ("SI", l.si(), o.si()), ("DI", l.di(), o.di()),
+            ("AX", l.ax(), o.ax()),
+            ("BX", l.bx(), o.bx()),
+            ("CX", l.cx(), o.cx()),
+            ("DX", l.dx(), o.dx()),
+            ("SI", l.si(), o.si()),
+            ("DI", l.di(), o.di()),
             ("BP", l.bp(), o.bp()),
         ] {
             assert_eq!(lv, ov, "func_a4ed: {name} lift {lv:#x} vs real {ov:#x}");

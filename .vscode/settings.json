@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "*.blood": "bloodscript",
+        "*.descript": "commander-blood-descript"
+    }
+}

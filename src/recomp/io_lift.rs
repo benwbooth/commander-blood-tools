@@ -229,7 +229,13 @@ pub fn func_79c(rt: &mut Runtime) {
 /// clobbers AX/DX. (ds==gs in the oracle seed, so gs_checks cover these DS writes.)
 pub fn func_17af(rt: &mut Runtime) {
     let ds = rt.m.regs.ds;
-    let clamp = |v: u16| if v & 0x8000 != 0 { 0 } else { v.wrapping_add(0x4000) };
+    let clamp = |v: u16| {
+        if v & 0x8000 != 0 {
+            0
+        } else {
+            v.wrapping_add(0x4000)
+        }
+    };
     let p0 = clamp(rt.m.read16(ds, 0x5219));
     rt.m.write16(ds, 0x5219, p0);
     let p1 = clamp(rt.m.read16(ds, 0x521d));
@@ -414,7 +420,10 @@ mod tests {
     use std::path::PathBuf;
 
     fn test_runtime() -> Runtime {
-        Runtime::new(PathBuf::from("accuracy/cdrive"), PathBuf::from("output/_tmp_iso"))
+        Runtime::new(
+            PathBuf::from("accuracy/cdrive"),
+            PathBuf::from("output/_tmp_iso"),
+        )
     }
 
     /// The raw BLOODPRG.EXE image, mirrored at physical 0 (CS=0, IP=file offset) exactly as the
@@ -525,11 +534,32 @@ mod tests {
             ("func_cc0", 0x0cc0, func_cc0, &[], &[], false),
             ("func_d4a", 0x0d4a, func_d4a, &[], &[], false),
             ("func_cef", 0x0cef, func_cef, &[], &[], false),
-            ("func_d0e", 0x0d0e, func_d0e, &[0xa2a, 0xa2c, 0xa2e, 0xa38, 0xa3a, 0xb3b], &[], false),
+            (
+                "func_d0e",
+                0x0d0e,
+                func_d0e,
+                &[0xa2a, 0xa2c, 0xa2e, 0xa38, 0xa3a, 0xb3b],
+                &[],
+                false,
+            ),
             // INT 23h vector at 0:[0x8c/0x8e], INT 24h vector at 0:[0x90/0x92].
-            ("func_bff", 0x0bff, func_bff, &[], &[0x8c, 0x8e, 0x90, 0x92], false),
+            (
+                "func_bff",
+                0x0bff,
+                func_bff,
+                &[],
+                &[0x8c, 0x8e, 0x90, 0x92],
+                false,
+            ),
             // saved vector gs:[0xb1d/0xb1f], timer-state gs:[0xb21/0xb25/0xb27]; INT 08h at 0:[0x20/0x22].
-            ("func_79c", 0x079c, func_79c, &[0xb1d, 0xb1f, 0xb21, 0xb25, 0xb27], &[0x20, 0x22], false),
+            (
+                "func_79c",
+                0x079c,
+                func_79c,
+                &[0xb1d, 0xb1f, 0xb21, 0xb25, 0xb27],
+                &[0x20, 0x22],
+                false,
+            ),
             // clears gs:[0xb21]; restores INT 08h at 0:[0x20/0x22] to the saved gs:[0xb1d/0xb1f].
             ("func_7ea", 0x07ea, func_7ea, &[0xb21], &[0x20, 0x22], false),
             // CD-present flag gs:[0xae6] (byte); a near-ret leaf via int 2Fh.
@@ -541,7 +571,14 @@ mod tests {
             // reads CMOS RTC (in 0x71) → cs:[0xaee] (cs=0 here, so a segment-0 word write).
             ("func_2dd3", 0x2dd3, func_2dd3, &[], &[0xaee], false),
             // clamps+advances the two page offsets ds:[0x5219]/[0x521d] (ds==gs seed) + CRTC out.
-            ("func_17af", 0x17af, func_17af, &[0x5219, 0x521d], &[], false),
+            (
+                "func_17af",
+                0x17af,
+                func_17af,
+                &[0x5219, 0x521d],
+                &[],
+                false,
+            ),
         ];
         for &(name, offset, lift, gs_checks, seg0_checks, check_dac) in leaves {
             let mut rt_lift = test_runtime();
@@ -561,7 +598,13 @@ mod tests {
 
             let l = &rt_lift.m.regs;
             let o = &rt_oracle.m.regs;
-            assert_eq!(l.ax(), o.ax(), "{name}: AX (lift {:#x} vs real {:#x})", l.ax(), o.ax());
+            assert_eq!(
+                l.ax(),
+                o.ax(),
+                "{name}: AX (lift {:#x} vs real {:#x})",
+                l.ax(),
+                o.ax()
+            );
             assert_eq!(l.bx(), o.bx(), "{name}: BX");
             assert_eq!(l.cx(), o.cx(), "{name}: CX");
             assert_eq!(l.dx(), o.dx(), "{name}: DX");
@@ -572,7 +615,10 @@ mod tests {
                 rt_oracle.m.read8(0x40, 0x49),
                 "{name}: BIOS video mode"
             );
-            assert_eq!(rt_lift.mouse_shown, rt_oracle.mouse_shown, "{name}: mouse_shown");
+            assert_eq!(
+                rt_lift.mouse_shown, rt_oracle.mouse_shown,
+                "{name}: mouse_shown"
+            );
             let gs = l.gs;
             for &off in gs_checks {
                 assert_eq!(
@@ -621,8 +667,16 @@ mod tests {
         rt.m.regs.set_dx(0xBBBB);
         func_d4a(&mut rt);
         assert_eq!(rt.m.regs.sp(), 0x0100, "d4a net-zero SP");
-        assert_eq!((rt.m.regs.ax(), rt.m.regs.bx()), (0x0010, 0x0130), "d4a preserves AX/BX");
-        assert_eq!((rt.m.regs.cx(), rt.m.regs.dx()), (0xAAAA, 0xBBBB), "d4a preserves CX/DX");
+        assert_eq!(
+            (rt.m.regs.ax(), rt.m.regs.bx()),
+            (0x0010, 0x0130),
+            "d4a preserves AX/BX"
+        );
+        assert_eq!(
+            (rt.m.regs.cx(), rt.m.regs.dx()),
+            (0xAAAA, 0xBBBB),
+            "d4a preserves CX/DX"
+        );
 
         // func_cef: reset+hide the mouse; reset (fn 0) sets the driver's state.
         let mut rt = test_runtime();

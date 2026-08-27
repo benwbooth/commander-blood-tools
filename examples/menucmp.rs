@@ -11,8 +11,14 @@ fn oracle_bg() -> Vec<u8> {
     for sy in (20..=190).step_by(34) {
         for sx in (40..=280).step_by(40) {
             if let Ok(d) = std::fs::read(format!("boot_frames/hg_{sx}_{sy}.ppm")) {
-                let hdr =
-                    d.iter().enumerate().filter(|&(_, &b)| b == b'\n').nth(2).unwrap().0 + 1;
+                let hdr = d
+                    .iter()
+                    .enumerate()
+                    .filter(|&(_, &b)| b == b'\n')
+                    .nth(2)
+                    .unwrap()
+                    .0
+                    + 1;
                 frames.push(d[hdr..].to_vec());
             }
         }
@@ -50,7 +56,12 @@ fn main() {
     let mut best = (f64::MAX, 0u16);
     for frame in 0..180u16 {
         e.bridge.frame = frame;
-        e.step(MouseInput { x: 315, y: 5, buttons: 0, ..Default::default() });
+        e.step(MouseInput {
+            x: 315,
+            y: 5,
+            buttons: 0,
+            ..Default::default()
+        });
         e.bridge.frame = frame;
         let (mut acc, mut cnt) = (0f64, 0f64);
         for y in 0..200usize {
@@ -74,7 +85,12 @@ fn main() {
     println!("best frame {} mean_abs {:.2} (menu open)", best.1, best.0);
 
     e.bridge.frame = best.1;
-    e.step(MouseInput { x: 315, y: 5, buttons: 0, ..Default::default() });
+    e.step(MouseInput {
+        x: 315,
+        y: 5,
+        buttons: 0,
+        ..Default::default()
+    });
     e.bridge.frame = best.1;
     // Region errors: the menu box (oracle: x~170..305, y~55..165), left half.
     let regions = [

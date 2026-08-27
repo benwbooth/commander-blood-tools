@@ -151,26 +151,38 @@ mod tests {
     #[test]
     fn advance_state_matches_0x41d1() {
         // active + state0 -> clears state0, sets state1.
-        let mut e = EntityObject { flags: flag::ACTIVE | flag::STATE0, ..Default::default() };
+        let mut e = EntityObject {
+            flags: flag::ACTIVE | flag::STATE0,
+            ..Default::default()
+        };
         e.advance_state();
         assert_eq!(e.flags & flag::STATE0, 0);
         assert_eq!(e.flags & flag::STATE1, flag::STATE1);
         // inactive object: no change.
-        let mut n = EntityObject { flags: flag::STATE0, ..Default::default() };
+        let mut n = EntityObject {
+            flags: flag::STATE0,
+            ..Default::default()
+        };
         n.advance_state();
         assert_eq!(n.flags, flag::STATE0);
     }
 
     #[test]
     fn toggle_family_gated_on_active() {
-        let mut e = EntityObject { flags: flag::ACTIVE | flag::STATE0, ..Default::default() };
+        let mut e = EntityObject {
+            flags: flag::ACTIVE | flag::STATE0,
+            ..Default::default()
+        };
         e.toggle(flag::TOGGLE6);
         assert_eq!(e.flags & flag::TOGGLE6, flag::TOGGLE6, "bit toggled on");
         assert_eq!(e.flags & flag::STATE1, flag::STATE1, "state advanced");
         e.toggle(flag::TOGGLE6);
         assert_eq!(e.flags & flag::TOGGLE6, 0, "bit toggled off");
         // inactive: no toggle.
-        let mut n = EntityObject { flags: 0, ..Default::default() };
+        let mut n = EntityObject {
+            flags: 0,
+            ..Default::default()
+        };
         n.toggle(flag::TOGGLE6);
         assert_eq!(n.flags, 0);
     }

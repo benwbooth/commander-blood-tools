@@ -102,7 +102,9 @@ fn dos_wildcard_match(pattern: &str, name: &str) -> bool {
     }
     let p = mask(pattern);
     let n = mask(name);
-    p.iter().zip(n.iter()).all(|(pc, nc)| *pc == b'?' || pc == nc)
+    p.iter()
+        .zip(n.iter())
+        .all(|(pc, nc)| *pc == b'?' || pc == nc)
 }
 
 pub struct Runtime {
@@ -162,7 +164,7 @@ pub struct Runtime {
     /// Transient by design: not serialized with savestates.
     mouse_rel_pending: (i32, i32),
     pub(crate) mouse_buttons: u16,
-    mouse_presses: [(u16, u16, u16); 2],  // per button: count, last x, last y
+    mouse_presses: [(u16, u16, u16); 2], // per button: count, last x, last y
     mouse_releases: [(u16, u16, u16); 2],
     mouse_handler: Option<(u16, u16, u16)>, // event mask, seg, off
     mouse_pending: u16,                     // accumulated event mask awaiting delivery
@@ -180,7 +182,7 @@ pub struct Runtime {
     /// audio timing is diffed against (e.g. the intro reel is silent until the cinematic).
     pub sb_play_log: Vec<(u64, u32, u32)>,
     pub trace_ints: bool,
-    pub ip_sample: Option<std::collections::HashMap<(u16,u16), u64>>,
+    pub ip_sample: Option<std::collections::HashMap<(u16, u16), u64>>,
     pub force_sub: bool,
     pub trace_glyph: bool,
     pub glyph_log: Vec<(u8, u32, u8)>, // (plane_mask, offset, value) for subtitle-row writes
@@ -198,7 +200,7 @@ pub struct Runtime {
     dma_tc: u8, // terminal-count status bits
     // SoundBlaster DSP at base 0x220 (game config S162227: SB16, IRQ 2, DMA 1).
     sb_reset_state: u8,
-    sb_out: VecDeque<u8>,      // bytes readable at 0x22A
+    sb_out: VecDeque<u8>,                 // bytes readable at 0x22A
     sb_cmd: Option<(u8, Vec<u8>, usize)>, // in-progress command: (cmd, args, needed)
     sb_time_constant: u8,
     sb_rate_hz: u32,
@@ -248,8 +250,16 @@ impl Runtime {
         // VGA.
         let vga = self.m.vga.as_ref().expect("runtime always has vga");
         w.write_all(&vga.planes)?;
-        for v in [vga.map_mask, vga.read_map, vga.write_mode, vga.bit_mask,
-                  vga.set_reset, vga.enable_sr, vga.logic_op, vga.rotate] {
+        for v in [
+            vga.map_mask,
+            vga.read_map,
+            vga.write_mode,
+            vga.bit_mask,
+            vga.set_reset,
+            vga.enable_sr,
+            vga.logic_op,
+            vga.rotate,
+        ] {
             wr_u8(&mut w, v)?;
         }
         wr_bool(&mut w, vga.chain4)?;
@@ -263,7 +273,9 @@ impl Runtime {
         wr_u64(&mut w, self.cpu.steps)?;
         // Runtime scalars.
         wr_u8(&mut w, self.cur_drive)?;
-        for c in &self.cwd { wr_str(&mut w, c)?; }
+        for c in &self.cwd {
+            wr_str(&mut w, c)?;
+        }
         wr_u16(&mut w, self.dta.0)?;
         wr_u16(&mut w, self.dta.1)?;
         wr_u32(&mut w, self.ticks)?;
@@ -280,7 +292,9 @@ impl Runtime {
                 Some(pages) => {
                     wr_u8(&mut w, 1)?;
                     wr_u32(&mut w, pages.len() as u32)?;
-                    for &pg in pages { wr_u32(&mut w, pg)?; }
+                    for &pg in pages {
+                        wr_u32(&mut w, pg)?;
+                    }
                 }
             }
         }
@@ -288,7 +302,10 @@ impl Runtime {
         for slot in &self.ems_map {
             match slot {
                 None => wr_u8(&mut w, 0)?,
-                Some(pg) => { wr_u8(&mut w, 1)?; wr_u32(&mut w, *pg)?; }
+                Some(pg) => {
+                    wr_u8(&mut w, 1)?;
+                    wr_u32(&mut w, *pg)?;
+                }
             }
         }
         // VGA front-end registers.
@@ -309,53 +326,76 @@ impl Runtime {
         wr_u16(&mut w, self.alloc_next)?;
         // Input queues.
         wr_u32(&mut w, self.kbd_queue.len() as u32)?;
-        for &(a, b) in &self.kbd_queue { wr_u8(&mut w, a)?; wr_u8(&mut w, b)?; }
+        for &(a, b) in &self.kbd_queue {
+            wr_u8(&mut w, a)?;
+            wr_u8(&mut w, b)?;
+        }
         wr_u32(&mut w, self.bios_keys.len() as u32)?;
-        for &(a, b) in &self.bios_keys { wr_u8(&mut w, a)?; wr_u8(&mut w, b)?; }
+        for &(a, b) in &self.bios_keys {
+            wr_u8(&mut w, a)?;
+            wr_u8(&mut w, b)?;
+        }
         wr_u32(&mut w, self.kbd_irq_pending)?;
         // Mouse.
         wr_u16(&mut w, self.mouse_x)?;
         wr_u16(&mut w, self.mouse_y)?;
         wr_u16(&mut w, self.mouse_buttons)?;
         for p in self.mouse_presses.iter().chain(self.mouse_releases.iter()) {
-            wr_u16(&mut w, p.0)?; wr_u16(&mut w, p.1)?; wr_u16(&mut w, p.2)?;
+            wr_u16(&mut w, p.0)?;
+            wr_u16(&mut w, p.1)?;
+            wr_u16(&mut w, p.2)?;
         }
         match self.mouse_handler {
             None => wr_u8(&mut w, 0)?,
             Some((a, b, c)) => {
-                wr_u8(&mut w, 1)?; wr_u16(&mut w, a)?; wr_u16(&mut w, b)?; wr_u16(&mut w, c)?;
+                wr_u8(&mut w, 1)?;
+                wr_u16(&mut w, a)?;
+                wr_u16(&mut w, b)?;
+                wr_u16(&mut w, c)?;
             }
         }
         wr_u16(&mut w, self.mouse_pending)?;
         wr_bool(&mut w, self.mouse_saved.is_some())?;
         if let Some((regs, a, b, c, d)) = &self.mouse_saved {
-            for v in [regs.eax, regs.ebx, regs.ecx, regs.edx, regs.esi, regs.edi, regs.ebp, regs.esp] {
+            for v in [
+                regs.eax, regs.ebx, regs.ecx, regs.edx, regs.esi, regs.edi, regs.ebp, regs.esp,
+            ] {
                 wr_u32(&mut w, v)?;
             }
             for v in [regs.cs, regs.ds, regs.es, regs.ss, regs.fs, regs.gs] {
                 wr_u16(&mut w, v)?;
             }
-            for v in [regs.cf, regs.zf, regs.sf, regs.of, regs.pf, regs.af, regs.df] {
+            for v in [
+                regs.cf, regs.zf, regs.sf, regs.of, regs.pf, regs.af, regs.df,
+            ] {
                 wr_bool(&mut w, v)?;
             }
-            wr_u16(&mut w, *a)?; wr_u16(&mut w, *b)?; wr_bool(&mut w, *c)?; wr_u16(&mut w, *d)?;
+            wr_u16(&mut w, *a)?;
+            wr_u16(&mut w, *b)?;
+            wr_bool(&mut w, *c)?;
+            wr_u16(&mut w, *d)?;
         }
         wr_u16(&mut w, self.mouse_shown as u16)?;
         // DMA + SoundBlaster.
         wr_bool(&mut w, self.dma_flipflop)?;
         for arr in [&self.dma_addr, &self.dma_count, &self.dma_cur_count] {
-            for &v in arr.iter() { wr_u16(&mut w, v)?; }
+            for &v in arr.iter() {
+                wr_u16(&mut w, v)?;
+            }
         }
         w.write_all(&self.dma_page)?;
         w.write_all(&self.dma_mode)?;
         wr_u8(&mut w, self.dma_tc)?;
         wr_u8(&mut w, self.sb_reset_state)?;
         wr_u32(&mut w, self.sb_out.len() as u32)?;
-        for &b in &self.sb_out { wr_u8(&mut w, b)?; }
+        for &b in &self.sb_out {
+            wr_u8(&mut w, b)?;
+        }
         match &self.sb_cmd {
             None => wr_u8(&mut w, 0)?,
             Some((c, args, need)) => {
-                wr_u8(&mut w, 1)?; wr_u8(&mut w, *c)?;
+                wr_u8(&mut w, 1)?;
+                wr_u8(&mut w, *c)?;
                 wr_u32(&mut w, args.len() as u32)?;
                 w.write_all(args)?;
                 wr_u32(&mut w, *need as u32)?;
@@ -400,11 +440,29 @@ impl Runtime {
         let mut magic = [0u8; 8];
         rdr.read_exact(&mut magic)?;
         assert_eq!(&magic, b"CBSAVE01", "savestate version mismatch");
-        fn rd_u64(r: &mut dyn Read) -> u64 { let mut b = [0; 8]; r.read_exact(&mut b).unwrap(); u64::from_le_bytes(b) }
-        fn rd_u32(r: &mut dyn Read) -> u32 { let mut b = [0; 4]; r.read_exact(&mut b).unwrap(); u32::from_le_bytes(b) }
-        fn rd_u16(r: &mut dyn Read) -> u16 { let mut b = [0; 2]; r.read_exact(&mut b).unwrap(); u16::from_le_bytes(b) }
-        fn rd_u8(r: &mut dyn Read) -> u8 { let mut b = [0; 1]; r.read_exact(&mut b).unwrap(); b[0] }
-        fn rd_bool(r: &mut dyn Read) -> bool { rd_u8(r) != 0 }
+        fn rd_u64(r: &mut dyn Read) -> u64 {
+            let mut b = [0; 8];
+            r.read_exact(&mut b).unwrap();
+            u64::from_le_bytes(b)
+        }
+        fn rd_u32(r: &mut dyn Read) -> u32 {
+            let mut b = [0; 4];
+            r.read_exact(&mut b).unwrap();
+            u32::from_le_bytes(b)
+        }
+        fn rd_u16(r: &mut dyn Read) -> u16 {
+            let mut b = [0; 2];
+            r.read_exact(&mut b).unwrap();
+            u16::from_le_bytes(b)
+        }
+        fn rd_u8(r: &mut dyn Read) -> u8 {
+            let mut b = [0; 1];
+            r.read_exact(&mut b).unwrap();
+            b[0]
+        }
+        fn rd_bool(r: &mut dyn Read) -> bool {
+            rd_u8(r) != 0
+        }
         fn rd_str(r: &mut dyn Read) -> String {
             let n = rd_u32(r) as usize;
             let mut b = vec![0; n];
@@ -413,12 +471,27 @@ impl Runtime {
         }
         fn rd_regs(r: &mut dyn Read) -> super::machine::Regs {
             let mut regs = super::machine::Regs::default();
-            regs.eax = rd_u32(r); regs.ebx = rd_u32(r); regs.ecx = rd_u32(r); regs.edx = rd_u32(r);
-            regs.esi = rd_u32(r); regs.edi = rd_u32(r); regs.ebp = rd_u32(r); regs.esp = rd_u32(r);
-            regs.cs = rd_u16(r); regs.ds = rd_u16(r); regs.es = rd_u16(r);
-            regs.ss = rd_u16(r); regs.fs = rd_u16(r); regs.gs = rd_u16(r);
-            regs.cf = rd_bool(r); regs.zf = rd_bool(r); regs.sf = rd_bool(r); regs.of = rd_bool(r);
-            regs.pf = rd_bool(r); regs.af = rd_bool(r); regs.df = rd_bool(r);
+            regs.eax = rd_u32(r);
+            regs.ebx = rd_u32(r);
+            regs.ecx = rd_u32(r);
+            regs.edx = rd_u32(r);
+            regs.esi = rd_u32(r);
+            regs.edi = rd_u32(r);
+            regs.ebp = rd_u32(r);
+            regs.esp = rd_u32(r);
+            regs.cs = rd_u16(r);
+            regs.ds = rd_u16(r);
+            regs.es = rd_u16(r);
+            regs.ss = rd_u16(r);
+            regs.fs = rd_u16(r);
+            regs.gs = rd_u16(r);
+            regs.cf = rd_bool(r);
+            regs.zf = rd_bool(r);
+            regs.sf = rd_bool(r);
+            regs.of = rd_bool(r);
+            regs.pf = rd_bool(r);
+            regs.af = rd_bool(r);
+            regs.df = rd_bool(r);
             regs
         }
         let r = &mut rdr;
@@ -430,19 +503,29 @@ impl Runtime {
         {
             let vga = self.m.vga.as_mut().expect("runtime always has vga");
             r.read_exact(&mut vga.planes)?;
-            vga.map_mask = rd_u8(r); vga.read_map = rd_u8(r); vga.write_mode = rd_u8(r);
-            vga.bit_mask = rd_u8(r); vga.set_reset = rd_u8(r); vga.enable_sr = rd_u8(r);
-            vga.logic_op = rd_u8(r); vga.rotate = rd_u8(r);
+            vga.map_mask = rd_u8(r);
+            vga.read_map = rd_u8(r);
+            vga.write_mode = rd_u8(r);
+            vga.bit_mask = rd_u8(r);
+            vga.set_reset = rd_u8(r);
+            vga.enable_sr = rd_u8(r);
+            vga.logic_op = rd_u8(r);
+            vga.rotate = rd_u8(r);
             vga.chain4 = rd_bool(r);
             let mut l = [0u8; 4];
             r.read_exact(&mut l)?;
             vga.latches.set(l);
         }
-        self.cpu.cs = rd_u16(r); self.cpu.ip = rd_u16(r);
-        self.cpu.depth = rd_u32(r); self.cpu.iflag = rd_bool(r);
-        self.cpu.flags_high = rd_u16(r); self.cpu.steps = rd_u64(r);
+        self.cpu.cs = rd_u16(r);
+        self.cpu.ip = rd_u16(r);
+        self.cpu.depth = rd_u32(r);
+        self.cpu.iflag = rd_bool(r);
+        self.cpu.flags_high = rd_u16(r);
+        self.cpu.steps = rd_u64(r);
         self.cur_drive = rd_u8(r);
-        for c in self.cwd.iter_mut() { *c = rd_str(r); }
+        for c in self.cwd.iter_mut() {
+            *c = rd_str(r);
+        }
         self.dta = (rd_u16(r), rd_u16(r));
         self.ticks = rd_u32(r);
         self.next_tick_at = rd_u64(r);
@@ -453,7 +536,9 @@ impl Runtime {
         let n = rd_u32(r) as usize;
         self.ems_handles = (0..n)
             .map(|_| {
-                if rd_u8(r) == 0 { None } else {
+                if rd_u8(r) == 0 {
+                    None
+                } else {
                     let k = rd_u32(r) as usize;
                     Some((0..k).map(|_| rd_u32(r)).collect())
                 }
@@ -486,10 +571,18 @@ impl Runtime {
         self.mouse_x = rd_u16(r);
         self.mouse_y = rd_u16(r);
         self.mouse_buttons = rd_u16(r);
-        for slot in self.mouse_presses.iter_mut().chain(self.mouse_releases.iter_mut()) {
+        for slot in self
+            .mouse_presses
+            .iter_mut()
+            .chain(self.mouse_releases.iter_mut())
+        {
             *slot = (rd_u16(r), rd_u16(r), rd_u16(r));
         }
-        self.mouse_handler = if rd_u8(r) == 0 { None } else { Some((rd_u16(r), rd_u16(r), rd_u16(r))) };
+        self.mouse_handler = if rd_u8(r) == 0 {
+            None
+        } else {
+            Some((rd_u16(r), rd_u16(r), rd_u16(r)))
+        };
         self.mouse_pending = rd_u16(r);
         self.mouse_saved = if rd_bool(r) {
             let regs = rd_regs(r);
@@ -499,8 +592,14 @@ impl Runtime {
         };
         self.mouse_shown = rd_u16(r) as i16;
         self.dma_flipflop = rd_bool(r);
-        for arr in [&mut self.dma_addr, &mut self.dma_count, &mut self.dma_cur_count] {
-            for v in arr.iter_mut() { *v = rd_u16(r); }
+        for arr in [
+            &mut self.dma_addr,
+            &mut self.dma_count,
+            &mut self.dma_cur_count,
+        ] {
+            for v in arr.iter_mut() {
+                *v = rd_u16(r);
+            }
         }
         r.read_exact(&mut self.dma_page)?;
         r.read_exact(&mut self.dma_mode)?;
@@ -508,7 +607,9 @@ impl Runtime {
         self.sb_reset_state = rd_u8(r);
         let n = rd_u32(r) as usize;
         self.sb_out = (0..n).map(|_| rd_u8(r)).collect();
-        self.sb_cmd = if rd_u8(r) == 0 { None } else {
+        self.sb_cmd = if rd_u8(r) == 0 {
+            None
+        } else {
             let c = rd_u8(r);
             let k = rd_u32(r) as usize;
             let mut args = vec![0; k];
@@ -517,7 +618,9 @@ impl Runtime {
         };
         self.sb_time_constant = rd_u8(r);
         self.sb_rate_hz = rd_u32(r);
-        self.sb_play = if rd_u8(r) == 0 { None } else {
+        self.sb_play = if rd_u8(r) == 0 {
+            None
+        } else {
             Some((rd_u32(r) as usize, rd_u64(r), rd_u32(r), rd_bool(r)))
         };
         self.sb_pcm_rate = rd_u32(r);
@@ -525,7 +628,9 @@ impl Runtime {
         let n = rd_u32(r) as usize;
         self.files = (0..n)
             .map(|_| {
-                if rd_u8(r) == 0 { return None; }
+                if rd_u8(r) == 0 {
+                    return None;
+                }
                 let path = PathBuf::from(rd_str(r));
                 let writable = rd_bool(r);
                 let pos = rd_u64(r);
@@ -683,7 +788,12 @@ impl Runtime {
     }
 
     /// Build PSP + environment and load the MZ executable, exactly like DOS EXEC.
-    pub fn load_exe(&mut self, exe: &[u8], cmd_tail: &str, program_path: &str) -> Result<(), String> {
+    pub fn load_exe(
+        &mut self,
+        exe: &[u8],
+        cmd_tail: &str,
+        program_path: &str,
+    ) -> Result<(), String> {
         if exe.len() < 28 || &exe[0..2] != b"MZ" {
             return Err("not an MZ executable".into());
         }
@@ -790,7 +900,10 @@ impl Runtime {
             format!("{}\\{}", self.cwd[drive as usize], p)
         };
         let mut host = root.clone();
-        let comps: Vec<&str> = rel.split('\\').filter(|c| !c.is_empty() && *c != ".").collect();
+        let comps: Vec<&str> = rel
+            .split('\\')
+            .filter(|c| !c.is_empty() && *c != ".")
+            .collect();
         for (i, comp) in comps.iter().enumerate() {
             if *comp == ".." {
                 host.pop();
@@ -962,7 +1075,9 @@ impl Runtime {
                 }
             }
             // int 9 keyboard IRQ (only when the game hooked it; int 16h polls work regardless)
-            if self.kbd_irq_pending > 0 && self.cpu.iflag && self.ivt_hooked(9)
+            if self.kbd_irq_pending > 0
+                && self.cpu.iflag
+                && self.ivt_hooked(9)
                 && self.pic_mask0 & 0x02 == 0
             {
                 self.kbd_irq_pending -= 1;
@@ -1058,7 +1173,12 @@ impl Runtime {
                 }
                 Exit::Unimplemented { cs, ip, byte, what } => {
                     let ctx: Vec<String> = (0..8)
-                        .map(|i| format!("{:02x}", self.m.read8(cs, ip.wrapping_sub(1).wrapping_add(i) as u32)))
+                        .map(|i| {
+                            format!(
+                                "{:02x}",
+                                self.m.read8(cs, ip.wrapping_sub(1).wrapping_add(i) as u32)
+                            )
+                        })
                         .collect();
                     return RunEnd::Fatal(format!(
                         "unimplemented {what} (op {byte:#04x}) at {cs:04x}:{ip:04x} bytes [{}]",
@@ -1109,9 +1229,7 @@ impl Runtime {
         while self.exit_code.is_none() && self.cpu.steps < skip {
             match self.run(skip) {
                 RunEnd::StepBudget | RunEnd::Exited(_) => break,
-                RunEnd::Fatal(e) => {
-                    return Err(std::io::Error::new(std::io::ErrorKind::Other, e))
-                }
+                RunEnd::Fatal(e) => return Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
             }
         }
         self.m.vga_linear = true; // from here, VRAM is linear on both sides
@@ -1273,7 +1391,7 @@ impl Runtime {
                     return Err(std::io::Error::new(
                         std::io::ErrorKind::Other,
                         "depth-0 ret in lockstep",
-                    ))
+                    ));
                 }
             }
         }
@@ -1290,14 +1408,22 @@ impl Runtime {
                 let ch = (port >> 1) as usize;
                 let v = self.dma_addr[ch]; // current address not modelled separately
                 self.dma_flipflop = !self.dma_flipflop;
-                if self.dma_flipflop { (v & 0xff) as u32 } else { (v >> 8) as u32 }
+                if self.dma_flipflop {
+                    (v & 0xff) as u32
+                } else {
+                    (v >> 8) as u32
+                }
             }
             0x01 | 0x03 | 0x05 | 0x07 => {
                 let ch = (port >> 1) as usize;
                 self.tick_sb_playback();
                 let v = self.dma_cur_count[ch];
                 self.dma_flipflop = !self.dma_flipflop;
-                if self.dma_flipflop { (v & 0xff) as u32 } else { (v >> 8) as u32 }
+                if self.dma_flipflop {
+                    (v & 0xff) as u32
+                } else {
+                    (v >> 8) as u32
+                }
             }
             0x08 => {
                 let v = self.dma_tc as u32;
@@ -1308,7 +1434,10 @@ impl Runtime {
             0x22a => {
                 let v = self.sb_out.pop_front().unwrap_or(0xff) as u32;
                 if self.trace_ints {
-                    eprintln!("SB in 22a -> {v:#x} @{:04x}:{:04x}", self.cpu.cs, self.cpu.ip);
+                    eprintln!(
+                        "SB in 22a -> {v:#x} @{:04x}:{:04x}",
+                        self.cpu.cs, self.cpu.ip
+                    );
                 }
                 v
             }
@@ -1316,13 +1445,19 @@ impl Runtime {
             0x22e => {
                 let v = if self.sb_out.is_empty() { 0x7f } else { 0xff };
                 if self.trace_ints {
-                    eprintln!("SB in 22e -> {v:#x} @{:04x}:{:04x}", self.cpu.cs, self.cpu.ip);
+                    eprintln!(
+                        "SB in 22e -> {v:#x} @{:04x}:{:04x}",
+                        self.cpu.cs, self.cpu.ip
+                    );
                 }
                 v
             }
             0x224 | 0x225 => {
                 if self.trace_ints {
-                    eprintln!("SB MIXER read port {port:#x} idx={:#x} @{:04x}:{:04x}", self.cmos_idx, self.cpu.cs, self.cpu.ip);
+                    eprintln!(
+                        "SB MIXER read port {port:#x} idx={:#x} @{:04x}:{:04x}",
+                        self.cmos_idx, self.cpu.cs, self.cpu.ip
+                    );
                 }
                 0
             } // mixer
@@ -1341,7 +1476,11 @@ impl Runtime {
                 let hblank = vsync || (self.cpu.steps % 97) < 20;
                 ((vsync as u32) << 3) | hblank as u32
             }
-            0x60 => self.kbd_queue.pop_front().map(|(s, _)| s as u32).unwrap_or(0),
+            0x60 => self
+                .kbd_queue
+                .pop_front()
+                .map(|(s, _)| s as u32)
+                .unwrap_or(0),
             0x61 => 0x20,
             0x71 => match self.cmos_idx {
                 0x00 => 0x27, // RTC seconds (fixed: deterministic PRNG seed)
@@ -1357,9 +1496,9 @@ impl Runtime {
             0x3d4 => self.crtc_idx as u32,
             0x42 => (self.cpu.steps >> 2) as u32 & 0xff, // PIT ch2: a moving count
             0x40 => (self.cpu.steps >> 1) as u32 & 0xff,
-            0x201 => 0xff, // joystick: none
-            0x21 => self.pic_mask0 as u32,  // 8259 master IMR
-            0xa1 => self.pic_mask1 as u32,  // 8259 slave IMR
+            0x201 => 0xff,                 // joystick: none
+            0x21 => self.pic_mask0 as u32, // 8259 master IMR
+            0xa1 => self.pic_mask1 as u32, // 8259 slave IMR
             _ => {
                 if self.trace_ints {
                     eprintln!("in port {port:#x}");
@@ -1392,7 +1531,10 @@ impl Runtime {
                     if self.trace_ints {
                         eprintln!(
                             "DMA ch{ch} count={:#06x} addr={:#06x} page={:#04x} @step {}",
-                            self.dma_count[ch], self.dma_addr[ch], self.dma_page[ch], self.cpu.steps
+                            self.dma_count[ch],
+                            self.dma_addr[ch],
+                            self.dma_page[ch],
+                            self.cpu.steps
                         );
                     }
                 }
@@ -1442,8 +1584,8 @@ impl Runtime {
                     self.pit_phase = 0;
                     let d = ((v as u32) << 8) | self.pit_lo as u32;
                     self.pit_divisor = if d == 0 { 0x1_0000 } else { d };
-                    self.steps_per_tick = (self.pit_divisor as u64
-                        * self.cpu_steps_per_second / 1_193_182).max(1000);
+                    self.steps_per_tick =
+                        (self.pit_divisor as u64 * self.cpu_steps_per_second / 1_193_182).max(1000);
                     if self.trace_ints {
                         eprintln!(
                             "PIT ch0 divisor {:#x} -> {} steps/tick",
@@ -1784,7 +1926,7 @@ impl Runtime {
             0x0016 | 0x0017 => {}
             0x0024 => {
                 self.m.regs.set_bx(0x0805); // driver 8.05
-                self.m.regs.set_ch(4);      // PS/2
+                self.m.regs.set_ch(4); // PS/2
                 self.m.regs.set_cl(0);
             }
             _ => {}
@@ -1850,8 +1992,7 @@ impl Runtime {
                 if self.ems_next_page + want > EMS_MAX_PAGES as u32 {
                     self.m.regs.set_ah(0x88); // not enough pages
                 } else {
-                    let pages: Vec<u32> =
-                        (self.ems_next_page..self.ems_next_page + want).collect();
+                    let pages: Vec<u32> = (self.ems_next_page..self.ems_next_page + want).collect();
                     self.ems_next_page += want;
                     self.ems_handles.push(Some(pages));
                     self.m.regs.set_dx((self.ems_handles.len() - 1) as u16);
@@ -1898,7 +2039,9 @@ impl Runtime {
             }
             0x47 | 0x48 => self.m.regs.set_ah(0), // save/restore page map: mappings persist
             0x4b => {
-                self.m.regs.set_bx(self.ems_handles.iter().flatten().count() as u16);
+                self.m
+                    .regs
+                    .set_bx(self.ems_handles.iter().flatten().count() as u16);
                 self.m.regs.set_ah(0);
             }
             0x4c => {
@@ -1945,7 +2088,10 @@ impl Runtime {
 
     fn sb_dsp_exec(&mut self, cmd: u8, args: &[u8]) {
         if self.trace_ints {
-            eprintln!("SB DSP cmd {cmd:#04x} args {args:x?} @step {}", self.cpu.steps);
+            eprintln!(
+                "SB DSP cmd {cmd:#04x} args {args:x?} @step {}",
+                self.cpu.steps
+            );
         }
         match cmd {
             0x40 => {
@@ -1965,9 +2111,9 @@ impl Runtime {
                 let len = self.dma_count[1] as u32 + 1;
                 self.sb_start_playback(len, true);
             }
-            0x48 => {} // block size: playback uses the DMA count
-            0xd0 | 0xd3 => {} // pause / speaker off
-            0xd1 | 0xd4 => {} // speaker on / continue
+            0x48 => {}                   // block size: playback uses the DMA count
+            0xd0 | 0xd3 => {}            // pause / speaker off
+            0xd1 | 0xd4 => {}            // speaker on / continue
             0xda => self.sb_play = None, // exit auto-init
             0xe0 => {
                 let a = args[0];
@@ -1995,7 +2141,8 @@ impl Runtime {
             self.sb_pcm_rate = self.sb_rate_hz;
         }
         self.sb_play = Some((ch, self.cpu.steps, len, auto));
-        self.sb_play_log.push((self.cpu.steps, len, self.sb_rate_hz));
+        self.sb_play_log
+            .push((self.cpu.steps, len, self.sb_rate_hz));
         self.dma_cur_count[ch] = self.dma_count[ch];
     }
 
@@ -2005,8 +2152,7 @@ impl Runtime {
             return;
         };
         let elapsed = self.cpu.steps - start;
-        let played =
-            (elapsed * self.sb_rate_hz as u64 / self.cpu_steps_per_second) as u32;
+        let played = (elapsed * self.sb_rate_hz as u64 / self.cpu_steps_per_second) as u32;
         if played >= len {
             self.dma_tc |= 1 << ch;
             self.dma_cur_count[ch] = 0xffff;
@@ -2128,8 +2274,14 @@ impl Runtime {
                 // FindFirst: pattern in DS:DX, attrs in CX; results via the DTA
                 let pattern = self.read_asciiz(self.m.regs.ds, self.m.regs.dx());
                 if self.trace_ints {
-                    let found = self.resolve(&pattern, false).map(|p| p.exists()).unwrap_or(false);
-                    eprintln!("FindFirst \"{pattern}\" -> {}", if found { "found" } else { "NONE" });
+                    let found = self
+                        .resolve(&pattern, false)
+                        .map(|p| p.exists())
+                        .unwrap_or(false);
+                    eprintln!(
+                        "FindFirst \"{pattern}\" -> {}",
+                        if found { "found" } else { "NONE" }
+                    );
                 }
                 let want_dirs = self.m.regs.cx() & 0x10 != 0;
                 let (dir_part, file_part) = match pattern.rfind(['\\', ':']) {
@@ -2202,8 +2354,10 @@ impl Runtime {
                         } else {
                             &path[..]
                         };
-                        self.cwd[drive as usize] =
-                            rest.trim_start_matches('\\').trim_end_matches('\\').to_uppercase();
+                        self.cwd[drive as usize] = rest
+                            .trim_start_matches('\\')
+                            .trim_end_matches('\\')
+                            .to_uppercase();
                         self.cpu.patch_frame_cf(&mut self.m, false);
                     }
                     _ => {
@@ -2215,11 +2369,16 @@ impl Runtime {
             0x3c => {
                 // create/truncate
                 let path = self.read_asciiz(self.m.regs.ds, self.m.regs.dx());
-                self.opened_files.push((self.cpu.steps, format!("CREATE:{path}")));
+                self.opened_files
+                    .push((self.cpu.steps, format!("CREATE:{path}")));
                 match self.resolve(&path, true) {
                     Ok(p) => match std::fs::File::create(&p) {
                         Ok(f) => {
-                            let h = self.alloc_handle(HostFile { f, path: p.clone(), writable: true });
+                            let h = self.alloc_handle(HostFile {
+                                f,
+                                path: p.clone(),
+                                writable: true,
+                            });
                             self.m.regs.set_ax(h);
                             self.cpu.patch_frame_cf(&mut self.m, false);
                         }
@@ -2239,21 +2398,33 @@ impl Runtime {
                 let path = self.read_asciiz(self.m.regs.ds, self.m.regs.dx());
                 self.opened_files.push((self.cpu.steps, path.clone()));
                 let write = self.m.regs.al() & 3 != 0;
-                let opened = self.resolve(&path, false).ok().filter(|p| {
-                    std::fs::OpenOptions::new().read(true).write(write).open(p).is_ok()
-                }).is_some();
+                let opened = self
+                    .resolve(&path, false)
+                    .ok()
+                    .filter(|p| {
+                        std::fs::OpenOptions::new()
+                            .read(true)
+                            .write(write)
+                            .open(p)
+                            .is_ok()
+                    })
+                    .is_some();
                 if self.trace_ints {
-                    eprintln!("int21 open \"{path}\" -> {}", if opened { "OK" } else { "FAIL" });
+                    eprintln!(
+                        "int21 open \"{path}\" -> {}",
+                        if opened { "OK" } else { "FAIL" }
+                    );
                 }
                 match self.resolve(&path, false) {
                     Ok(p) => {
-                        let res = std::fs::OpenOptions::new()
-                            .read(true)
-                            .write(write)
-                            .open(&p);
+                        let res = std::fs::OpenOptions::new().read(true).write(write).open(&p);
                         match res {
                             Ok(f) => {
-                                let h = self.alloc_handle(HostFile { f, path: p.clone(), writable: write });
+                                let h = self.alloc_handle(HostFile {
+                                    f,
+                                    path: p.clone(),
+                                    writable: write,
+                                });
                                 self.m.regs.set_ax(h);
                                 self.cpu.patch_frame_cf(&mut self.m, false);
                             }
@@ -2413,7 +2584,11 @@ impl Runtime {
             }
             0x47 => {
                 // getcwd of DL (0=default)
-                let d = if self.m.regs.dl() == 0 { self.cur_drive } else { self.m.regs.dl() - 1 };
+                let d = if self.m.regs.dl() == 0 {
+                    self.cur_drive
+                } else {
+                    self.m.regs.dl() - 1
+                };
                 let cwd = self.cwd[d as usize].clone();
                 let (ds, si) = (self.m.regs.ds, self.m.regs.si() as u32);
                 for (i, b) in cwd.bytes().enumerate() {
@@ -2570,7 +2745,11 @@ impl Runtime {
             let mut line = String::new();
             for col in 0..80 {
                 let ch = self.m.mem[0xb8000 + (row * 80 + col) * 2];
-                line.push(if (0x20..0x7f).contains(&ch) { ch as char } else { ' ' });
+                line.push(if (0x20..0x7f).contains(&ch) {
+                    ch as char
+                } else {
+                    ' '
+                });
             }
             let t = line.trim_end();
             if !t.is_empty() {
@@ -2590,10 +2769,23 @@ impl Runtime {
             "cs:ip={:04x}:{:04x} iflag={} ticks={} steps_per_tick={} pit={:#x} \n\
              ivt8={:04x}:{:04x} ivt9={:04x}:{:04x} ivt1c={:04x}:{:04x} \n\
              seq={:02x?} gc={:02x?} crtc0c/0d/13={:02x}/{:02x}/{:02x} chain4={} mouse_handler={:?}",
-            self.cpu.cs, self.cpu.ip, self.cpu.iflag, self.ticks, self.steps_per_tick,
+            self.cpu.cs,
+            self.cpu.ip,
+            self.cpu.iflag,
+            self.ticks,
+            self.steps_per_tick,
             self.pit_divisor,
-            ivt8.0, ivt8.1, ivt9.0, ivt9.1, ivt1c.0, ivt1c.1,
-            self.seq, self.gc, self.crtc[0x0c], self.crtc[0x0d], self.crtc[0x13],
+            ivt8.0,
+            ivt8.1,
+            ivt9.0,
+            ivt9.1,
+            ivt1c.0,
+            ivt1c.1,
+            self.seq,
+            self.gc,
+            self.crtc[0x0c],
+            self.crtc[0x0d],
+            self.crtc[0x13],
             self.m.vga.as_deref().map(|v| v.chain4).unwrap_or(true),
             self.mouse_handler,
         ) + &{
@@ -2607,9 +2799,14 @@ impl Runtime {
             }
             hooks += &format!(
                 "\nsb: play={:?} pcm_bytes={} rate={} dma1 base={:04x} cnt={:04x} cur={:04x} page={:02x} mode={:02x}",
-                self.sb_play, self.sb_pcm.len(), self.sb_rate_hz,
-                self.dma_addr[1], self.dma_count[1], self.dma_cur_count[1],
-                self.dma_page[1], self.dma_mode[1],
+                self.sb_play,
+                self.sb_pcm.len(),
+                self.sb_rate_hz,
+                self.dma_addr[1],
+                self.dma_count[1],
+                self.dma_cur_count[1],
+                self.dma_page[1],
+                self.dma_mode[1],
             );
             hooks
         }

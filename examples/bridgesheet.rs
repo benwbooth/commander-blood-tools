@@ -24,7 +24,12 @@ fn main() {
     let mut sheet = vec![0u8; cols * fw * rows * fh * 3];
     for (i, &fr) in frames.iter().enumerate() {
         e.bridge.frame = fr;
-        e.step(MouseInput { x: 315, y: 5, buttons: 0, ..Default::default() });
+        e.step(MouseInput {
+            x: 315,
+            y: 5,
+            buttons: 0,
+            ..Default::default()
+        });
         e.bridge.frame = fr;
         let (gx, gy) = (i % cols, i / cols);
         for y in 0..fh {

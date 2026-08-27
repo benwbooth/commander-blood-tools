@@ -4972,8 +4972,8 @@ fn main() {
         };
         click(&mut rt, 100, 98); // CANCEL the arrival presentation (the real gate)
         let _ = rt.run(rt.cpu.steps + 30_000_000); // full teardown (the scenario's wait 20)
-                                                   // The HONK console row -> fresh presentation. NO settle after: capture starts
-                                                   // at the click so the reveal is caught mid-flight.
+        // The HONK console row -> fresh presentation. NO settle after: capture starts
+        // at the click so the reveal is caught mid-flight.
         click(&mut rt, 230, 88);
         for i in 0..160 {
             let _ = rt.run(rt.cpu.steps + 150_000);

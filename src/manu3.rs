@@ -259,9 +259,15 @@ mod tests {
     #[test]
     fn pyramid_angles_mask_to_trig_offsets() {
         // Each angle field masked to 0xFFC (clears low 2 bits + bits above 0x0FFC).
-        assert_eq!(menu_pyramid_angles(0x1234, 0x0FFF, 0x0003), [0x0234, 0x0FFC, 0x0000]);
+        assert_eq!(
+            menu_pyramid_angles(0x1234, 0x0FFF, 0x0003),
+            [0x0234, 0x0FFC, 0x0000]
+        );
         // Already-aligned angles pass through.
-        assert_eq!(menu_pyramid_angles(0x0400, 0x0800, 0x0FFC), [0x0400, 0x0800, 0x0FFC]);
+        assert_eq!(
+            menu_pyramid_angles(0x0400, 0x0800, 0x0FFC),
+            [0x0400, 0x0800, 0x0FFC]
+        );
     }
 
     #[test]
@@ -279,7 +285,9 @@ mod tests {
         // Item 0's descriptor in the real overlay: phase 1, count 124, target 0x11B0,
         // end 300 (0x012C). Skips if the asset isn't present.
         let path = ["output/_tmp_dat/manu3.xdb", "../output/_tmp_dat/manu3.xdb"]
-            .iter().map(std::path::Path::new).find(|p| p.exists());
+            .iter()
+            .map(std::path::Path::new)
+            .find(|p| p.exists());
         let Some(path) = path else { return };
         let data = std::fs::read(path).unwrap();
         let d = MenuAnimDescriptor::parse(&data, 0x6254).unwrap();
@@ -293,7 +301,11 @@ mod tests {
         for _ in 0..d.count {
             t.step();
         }
-        assert!((299..=300).contains(&t.output()), "reaches ~300, got {}", t.output());
+        assert!(
+            (299..=300).contains(&t.output()),
+            "reaches ~300, got {}",
+            t.output()
+        );
     }
 
     #[test]
@@ -302,7 +314,9 @@ mod tests {
         // handler = base + table[item] must land inside the overlay's code. Skips if
         // the asset isn't present.
         let path = ["output/_tmp_dat/manu3.xdb", "../output/_tmp_dat/manu3.xdb"]
-            .iter().map(std::path::Path::new).find(|p| p.exists());
+            .iter()
+            .map(std::path::Path::new)
+            .find(|p| p.exists());
         let Some(path) = path else { return };
         let data = std::fs::read(path).unwrap();
         let base = u16::from_le_bytes([data[0x2306], data[0x2307]]);
@@ -344,7 +358,11 @@ mod tests {
         // (`dec cx` @0x214), so the first value written is current + delta = 15,
         // NOT the unmoved 10 (audit-fixes #486). Eight writes then land on 50.
         let mut t = MenuTween::to_target(10, 50, 8);
-        assert_eq!(t.output(), 15, "first write is current + delta, pre-advanced");
+        assert_eq!(
+            t.output(),
+            15,
+            "first write is current + delta, pre-advanced"
+        );
         for _ in 0..8 {
             t.step();
         }

@@ -34,8 +34,7 @@ fn err(a: &[i64; 9], b: &[i64; 9]) -> i64 {
 fn main() {
     let ds = std::fs::read("accuracy/manu3/manu3_ds.bin").unwrap();
     let rdi16 = |at: usize| i16::from_le_bytes([ds[at], ds[at + 1]]) as i32;
-    let rdi32 =
-        |at: usize| i32::from_le_bytes([ds[at], ds[at + 1], ds[at + 2], ds[at + 3]]) as i64;
+    let rdi32 = |at: usize| i32::from_le_bytes([ds[at], ds[at + 1], ds[at + 2], ds[at + 3]]) as i64;
     let stored = |si: usize| {
         let rec = 0x2394 + si * 0x5e;
         let mut m = [0i64; 9];

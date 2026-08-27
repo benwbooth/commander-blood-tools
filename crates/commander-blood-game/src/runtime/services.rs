@@ -3366,6 +3366,32 @@ mod tests {
         );
         services.load_default_sound_bank().unwrap();
         services.initialize_back_buffer().unwrap();
+
+        let ordinary_gameplay = GameLifecycleState::default();
+        services
+            .input_mut()
+            .poll_pointer([320.0, 200.0], [160.0, 100.0], PointerButtons::NONE);
+        assert!(services.update_lifecycle_manu3(&ordinary_gameplay).unwrap());
+        let centered_hand = services.runtime().manu3().unwrap().projection_center();
+        assert!(
+            !services
+                .runtime()
+                .manu3()
+                .unwrap()
+                .render_triangles()
+                .is_empty(),
+            "the production MANU3 path produced no visible hand triangles"
+        );
+        services
+            .input_mut()
+            .poll_pointer([320.0, 200.0], [240.0, 100.0], PointerButtons::NONE);
+        assert!(services.update_lifecycle_manu3(&ordinary_gameplay).unwrap());
+        assert_ne!(
+            services.runtime().manu3().unwrap().projection_center(),
+            centered_hand,
+            "the production hand did not follow logical pointer motion"
+        );
+
         services.initialize_bridge_screen(false, false).unwrap();
         assert!(!services.bridge_screen_state().screen_rebuild_pending);
         assert!(!services.bridge_screen_state().palette_refresh_in_progress);

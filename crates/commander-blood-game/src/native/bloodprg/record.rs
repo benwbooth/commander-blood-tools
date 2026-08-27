@@ -12,9 +12,9 @@ use commander_blood_formats::script::{
 };
 
 use super::{
-    insert_aboard_object, remove_aboard_object, script_field_offset, AboardObjectRoster,
-    PresentationRequestFlags, ScriptControl, ScriptFieldSelector, ScriptRuntime,
-    ScriptRuntimeError,
+    AboardObjectRoster, PresentationRequestFlags, ScriptControl, ScriptFieldSelector,
+    ScriptRuntime, ScriptRuntimeError, insert_aboard_object, remove_aboard_object,
+    script_field_offset,
 };
 
 /// Owned typed values for relationship and topic fields reached by direct-record tokens.
@@ -400,10 +400,10 @@ pub fn apply_transfer(
 mod tests {
     use std::path::{Path, PathBuf};
 
-    use commander_blood_formats::code::{decode_script_code, ScriptCodeOffset};
+    use commander_blood_formats::code::{ScriptCodeOffset, decode_script_code};
     use commander_blood_formats::instruction::decode_script_record_pair_operation;
     use commander_blood_formats::script::{
-        decode_script_directory, decode_script_state, ScriptDirectory, ScriptState,
+        ScriptDirectory, ScriptState, decode_script_directory, decode_script_state,
     };
     use serde::Deserialize;
 
@@ -496,8 +496,7 @@ mod tests {
             token_data.push(END_MARKER);
             let code = decode_script_code(&token_data).unwrap();
             let mut state = decode_script_state(&state_data, &directory).unwrap();
-            let operation =
-                decode_script_record_pair_operation(&code.tokens()[0], &state).unwrap();
+            let operation = decode_script_record_pair_operation(&code.tokens()[0], &state).unwrap();
             assert_eq!(operation.target.object(), Some(owner), "{}", vector.name);
             assert!(state.set_word_pair(operation.target, vector.pair_before));
             let initial_reference = if vector.secondary_link_before == u16::MIN {
@@ -643,11 +642,13 @@ mod tests {
                         object
                     ));
                 }
-                assert!(record_runtime
-                    .aboard_objects()
-                    .slots()
-                    .iter()
-                    .all(Option::is_some));
+                assert!(
+                    record_runtime
+                        .aboard_objects()
+                        .slots()
+                        .iter()
+                        .all(Option::is_some)
+                );
             }
             let mut script_runtime = ScriptRuntime::new();
             if vector.query_mode_before & QUERY_MODE_MASK != u8::MIN {

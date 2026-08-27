@@ -1,0 +1,71 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "Commander Blood DESCRIPT",
+    "scopeName": "source.commander-blood-descript",
+    "patterns": [
+        {
+            "name": "comment.line.number-sign.commander-blood-descript",
+            "match": "#.*$"
+        },
+        {
+            "name": "string.quoted.double.commander-blood-descript",
+            "begin": "\"",
+            "beginCaptures": {
+                "0": {
+                    "name": "punctuation.definition.string.begin.commander-blood-descript"
+                }
+            },
+            "end": "\"",
+            "endCaptures": {
+                "0": {
+                    "name": "punctuation.definition.string.end.commander-blood-descript"
+                }
+            },
+            "patterns": [
+                {
+                    "name": "constant.character.escape.commander-blood-descript",
+                    "match": "\\\\(?:[\\\"nrt]|x[0-9A-Fa-f]{2})"
+                }
+            ]
+        },
+        {
+            "match": "^(descript)(\\s+)([0-9]+)\\s*$",
+            "captures": {
+                "1": {
+                    "name": "keyword.control.header.commander-blood-descript"
+                },
+                "3": {
+                    "name": "constant.numeric.version.commander-blood-descript"
+                }
+            }
+        },
+        {
+            "name": "storage.type.record.commander-blood-descript",
+            "match": "\\b(?:sequence|object|location|character)\\b"
+        },
+        {
+            "name": "keyword.control.command.commander-blood-descript",
+            "match": "\\b(?:subtitle|music|video|caption|top_row|background|talk|idle|right_video|left_video|sound_bank|portrait)\\b"
+        },
+        {
+            "name": "constant.language.background.commander-blood-descript",
+            "match": "\\b(?:front|right|left|back|none)\\b"
+        },
+        {
+            "name": "keyword.other.modifier.commander-blood-descript",
+            "match": "\\b(?:frame|over)\\b"
+        },
+        {
+            "name": "constant.numeric.decimal.commander-blood-descript",
+            "match": "(?<![A-Za-z_])[-+]?[0-9]+\\b"
+        },
+        {
+            "name": "keyword.operator.assignment.commander-blood-descript",
+            "match": "="
+        },
+        {
+            "name": "punctuation.section.block.commander-blood-descript",
+            "match": "[{}]"
+        }
+    ]
+}

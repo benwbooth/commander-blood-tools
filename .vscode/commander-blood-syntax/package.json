@@ -1,0 +1,58 @@
+{
+    "name": "commander-blood-languages",
+    "displayName": "Commander Blood Languages",
+    "description": "Project-local syntax highlighting for BloodScript and DESCRIPT source files.",
+    "version": "0.1.0",
+    "publisher": "local",
+    "private": true,
+    "engines": {
+        "vscode": "^1.80.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "extensionKind": [
+        "ui",
+        "workspace"
+    ],
+    "contributes": {
+        "languages": [
+            {
+                "id": "bloodscript",
+                "aliases": [
+                    "BloodScript",
+                    "bloodscript"
+                ],
+                "extensions": [
+                    ".blood"
+                ],
+                "firstLine": "^bloodscript\\s+[0-9]+\\s*$",
+                "configuration": "./language-configuration-bloodscript.json"
+            },
+            {
+                "id": "commander-blood-descript",
+                "aliases": [
+                    "Commander Blood DESCRIPT",
+                    "DESCRIPT"
+                ],
+                "extensions": [
+                    ".descript"
+                ],
+                "firstLine": "^descript\\s+[0-9]+\\s*$",
+                "configuration": "./language-configuration-descript.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "bloodscript",
+                "scopeName": "source.bloodscript",
+                "path": "./syntaxes/bloodscript.tmLanguage.json"
+            },
+            {
+                "language": "commander-blood-descript",
+                "scopeName": "source.commander-blood-descript",
+                "path": "./syntaxes/descript.tmLanguage.json"
+            }
+        ]
+    }
+}

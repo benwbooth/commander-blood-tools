@@ -8,8 +8,14 @@ fn oracle_bg() -> Vec<u8> {
     for sy in (20..=190).step_by(34) {
         for sx in (40..=280).step_by(40) {
             if let Ok(d) = std::fs::read(format!("boot_frames/hg_{sx}_{sy}.ppm")) {
-                let hdr =
-                    d.iter().enumerate().filter(|&(_, &b)| b == b'\n').nth(2).unwrap().0 + 1;
+                let hdr = d
+                    .iter()
+                    .enumerate()
+                    .filter(|&(_, &b)| b == b'\n')
+                    .nth(2)
+                    .unwrap()
+                    .0
+                    + 1;
                 frames.push(d[hdr..].to_vec());
             }
         }
@@ -32,13 +38,17 @@ fn main() {
     let mut results: Vec<(f64, String, usize)> = Vec::new();
     for sub in ["sq", "ob", "pl", "pe", "fd"] {
         let dir = format!("output/_tmp_dat/{sub}");
-        let Ok(rd) = std::fs::read_dir(&dir) else { continue };
+        let Ok(rd) = std::fs::read_dir(&dir) else {
+            continue;
+        };
         for entry in rd.flatten() {
             let path = entry.path();
             if path.extension().map(|e| e != "hnm").unwrap_or(true) {
                 continue;
             }
-            let Ok(h) = HnmFile::open(&path) else { continue };
+            let Ok(h) = HnmFile::open(&path) else {
+                continue;
+            };
             let mut fb = vec![0u8; 320 * 200];
             let mut pal = [[0u8; 3]; 256];
             let nf = h.frame_count();
@@ -64,7 +74,11 @@ fn main() {
                         }
                     }
                 }
-                results.push((acc / cnt, format!("{sub}/{}", entry.file_name().to_string_lossy()), probe));
+                results.push((
+                    acc / cnt,
+                    format!("{sub}/{}", entry.file_name().to_string_lossy()),
+                    probe,
+                ));
             }
         }
     }

@@ -47,8 +47,7 @@ use crate::ship3d::{
     render_ship_3d_starfield,
 };
 use crate::sprite::{
-    SpriteFrameImage, blit_sprite_frame_at, blit_sprite_frame_centered,
-    decode_sprite_bank_indices,
+    SpriteFrameImage, blit_sprite_frame_at, blit_sprite_frame_centered, decode_sprite_bank_indices,
 };
 use crate::vm::{LineState, VmToken, execute_trace, walk};
 use std::collections::HashMap;
@@ -1091,8 +1090,11 @@ impl EngineState {
             if path.exists() {
                 self.intro_hnms.push(path);
                 // The record's subtitle cues + music are timed over the sequence from its 1st clip.
-                self.intro_cues
-                    .push(if i == 0 { record.subtitles.clone() } else { Vec::new() });
+                self.intro_cues.push(if i == 0 {
+                    record.subtitles.clone()
+                } else {
+                    Vec::new()
+                });
                 self.intro_music
                     .push(if i == 0 { music.clone() } else { None });
                 // In-game cutscenes play FULL-SCREEN — the console band is intro-montage-only.
@@ -1228,9 +1230,7 @@ impl EngineState {
             .flatten()
             .flatten()
             .filter_map(|e| e.file_name().to_str().map(str::to_string))
-            .filter(|n| {
-                n.to_lowercase().starts_with(prefix) && n.to_lowercase().ends_with(".hnm")
-            })
+            .filter(|n| n.to_lowercase().starts_with(prefix) && n.to_lowercase().ends_with(".hnm"))
             .collect();
         names.sort();
         self.tv_channels = names
@@ -1332,7 +1332,11 @@ impl EngineState {
         let hnm = &self.tv_channels[ch];
         let count = hnm.frame_count().max(1);
         self.scene_palette = hnm.palette;
-        hnm.decode_frame(self.scene_frame % count, &mut self.scene_buffer, &mut self.scene_palette);
+        hnm.decode_frame(
+            self.scene_frame % count,
+            &mut self.scene_buffer,
+            &mut self.scene_palette,
+        );
         self.framebuffer.copy_from_slice(&self.scene_buffer);
         self.scene_frame += 1;
     }
@@ -1545,8 +1549,7 @@ impl EngineState {
     /// the inverse of the game's `screen = ring - (frame*8 - 160)` rebase — so
     /// absolute click coordinates can be tested with the decoded hit math.
     fn point_virtual_cursor(view: &mut crate::bridge::BridgeView, x: u16, y: u16) {
-        view.ring_mouse_x = (x as i32
-            + view.frame as i32 * crate::bridge::RING_PX_PER_FRAME
+        view.ring_mouse_x = (x as i32 + view.frame as i32 * crate::bridge::RING_PX_PER_FRAME
             - crate::bridge::HALF_SCREEN)
             .rem_euclid(crate::tbbig::ANGLE_UNITS_PER_REVOLUTION as i32);
         view.mouse_y = y as i32;
@@ -1644,22 +1647,23 @@ impl EngineState {
                 pen += 4;
                 continue;
             }
-            let advance = match Self::console_glyph_index(ch).and_then(|gi| self.console_font.get(gi)) {
-                Some(glyph) => {
-                    for gy in 0..glyph.height {
-                        for gx in 0..glyph.width {
-                            if glyph.indices[gy * glyph.width + gx] != 0 {
-                                let (px, py) = (pen + gx, y + gy);
-                                if px < ENGINE_SCREEN_WIDTH && py < ENGINE_SCREEN_HEIGHT {
-                                    self.framebuffer[py * ENGINE_SCREEN_WIDTH + px] = color;
+            let advance =
+                match Self::console_glyph_index(ch).and_then(|gi| self.console_font.get(gi)) {
+                    Some(glyph) => {
+                        for gy in 0..glyph.height {
+                            for gx in 0..glyph.width {
+                                if glyph.indices[gy * glyph.width + gx] != 0 {
+                                    let (px, py) = (pen + gx, y + gy);
+                                    if px < ENGINE_SCREEN_WIDTH && py < ENGINE_SCREEN_HEIGHT {
+                                        self.framebuffer[py * ENGINE_SCREEN_WIDTH + px] = color;
+                                    }
                                 }
                             }
                         }
+                        glyph.width + 1
                     }
-                    glyph.width + 1
-                }
-                None => 8,
-            };
+                    None => 8,
+                };
             pen += advance;
         }
         pen
@@ -1732,8 +1736,11 @@ impl EngineState {
                 let x0 = 225usize.saturating_sub(w / 2);
                 let top = Self::choice_box_top_y(rows);
                 for (i, label) in labels.iter().enumerate() {
-                    let color =
-                        if self.console_box_selected == Some(i) { 0xEF } else { 0xE8 };
+                    let color = if self.console_box_selected == Some(i) {
+                        0xEF
+                    } else {
+                        0xE8
+                    };
                     // Each label is CENTERED in the box (0x855C/0x8555:
                     // label_x = x0 + 10 + (widest - width)/2), not left-aligned
                     // at x0+4; short labels indent to center on the anchor.
@@ -1783,7 +1790,6 @@ impl EngineState {
         }
         self.draw_hand_cursor();
     }
-
 
     /// Load the BOB_MORLOCK contact screen: Bob's talk-head video (pe/aabob.hnm,
     /// the oracle's red-face eye close-up) as the live scene, with FRIGO.FD (the
@@ -1881,7 +1887,11 @@ impl EngineState {
         let x0 = Self::CHOICE_BOX_ANCHOR_CONCEPT.saturating_sub(box_w / 2);
         let top = Self::choice_box_top_y(topics.len());
         for (i, label) in topics.iter().enumerate() {
-            let color = if self.console_box_selected == Some(i) { 0xEF } else { 0xE8 };
+            let color = if self.console_box_selected == Some(i) {
+                0xEF
+            } else {
+                0xE8
+            };
             crate::font::draw_square_caps(
                 &mut self.framebuffer,
                 ENGINE_SCREEN_WIDTH,
@@ -2247,12 +2257,16 @@ impl EngineState {
         use crate::bloodprg::DS_BASE;
         for off in Self::UI_STRING_OFFSETS {
             let start = DS_BASE + off as usize;
-            let Some(len) = exe.get(start..).and_then(|t| t.iter().position(|&b| b == 0))
+            let Some(len) = exe
+                .get(start..)
+                .and_then(|t| t.iter().position(|&b| b == 0))
             else {
                 continue;
             };
-            self.ds_strings
-                .insert(off, String::from_utf8_lossy(&exe[start..start + len]).into_owned());
+            self.ds_strings.insert(
+                off,
+                String::from_utf8_lossy(&exe[start..start + len]).into_owned(),
+            );
         }
     }
 
@@ -2265,9 +2279,17 @@ impl EngineState {
     /// `LOADING` from `0x16BC` and `PAUSE` from `0x1ABB`.
     pub fn draw_status_overlay(&mut self, loading: bool) {
         let (text, (x, y), color) = if loading {
-            (self.ds_text(Self::LOADING_TEXT_DS).to_string(), Self::LOADING_POS, Self::LOADING_COLOR)
+            (
+                self.ds_text(Self::LOADING_TEXT_DS).to_string(),
+                Self::LOADING_POS,
+                Self::LOADING_COLOR,
+            )
         } else {
-            (self.ds_text(Self::PAUSE_TEXT_DS).to_string(), Self::PAUSE_POS, Self::PAUSE_COLOR)
+            (
+                self.ds_text(Self::PAUSE_TEXT_DS).to_string(),
+                Self::PAUSE_POS,
+                Self::PAUSE_COLOR,
+            )
         };
         draw_text_indexed(
             &mut self.framebuffer,
@@ -2355,11 +2377,8 @@ impl EngineState {
     /// The `(DS offset, file offset)` pairs, kept as address evidence now that the
     /// strings themselves are read: `0x17B` @`0x14FE`, `0x189` @`0x150C`, `0x18D`
     /// @`0x151A` (audit-fixes #524).
-    pub const CONFIRM_STRING_TABLE: [(u16, usize); 3] = [
-        (0x017B, 0x0D59B),
-        (0x0189, 0x0D5A9),
-        (0x018D, 0x0D5AD),
-    ];
+    pub const CONFIRM_STRING_TABLE: [(u16, usize); 3] =
+        [(0x017B, 0x0D59B), (0x0189, 0x0D5A9), (0x018D, 0x0D5AD)];
 
     /// Draw the confirm dialog. The box is the same tinted window every other
     /// panel uses (`0x299:0xCDC` shares the blit family with `0x299:0x40E`).
@@ -2381,9 +2400,18 @@ impl EngineState {
         // `0x299:0x176`, called once per line at 0x1507/0x1515/0x1520.)
         const TEXT: u8 = 0xE8;
         for (text, (x, y)) in [
-            (self.ds_text(Self::CONFIRM_TITLE_DS).to_string(), Self::CONFIRM_TITLE_POS),
-            (self.ds_text(Self::CONFIRM_YES_DS).to_string(), (Self::CONFIRM_YES_REGION.0, Self::CONFIRM_YES_REGION.1)),
-            (self.ds_text(Self::CONFIRM_NO_DS).to_string(), (Self::CONFIRM_NO_REGION.0, Self::CONFIRM_NO_REGION.1)),
+            (
+                self.ds_text(Self::CONFIRM_TITLE_DS).to_string(),
+                Self::CONFIRM_TITLE_POS,
+            ),
+            (
+                self.ds_text(Self::CONFIRM_YES_DS).to_string(),
+                (Self::CONFIRM_YES_REGION.0, Self::CONFIRM_YES_REGION.1),
+            ),
+            (
+                self.ds_text(Self::CONFIRM_NO_DS).to_string(),
+                (Self::CONFIRM_NO_REGION.0, Self::CONFIRM_NO_REGION.1),
+            ),
         ] {
             draw_text_indexed(
                 &mut self.framebuffer,
@@ -2611,7 +2639,11 @@ impl EngineState {
         let anchor = Self::CHOICE_BOX_ANCHOR_CONCEPT;
         let x0 = anchor.saturating_sub((widest + 20) / 2);
         for (i, label) in labels.iter().take(12).enumerate() {
-            let color = if selected == Some(i) { TEXT_SELECTED } else { TEXT };
+            let color = if selected == Some(i) {
+                TEXT_SELECTED
+            } else {
+                TEXT
+            };
             // FLUSH-LEFT, not centred. `0x857D` (`sub bx,[bp] / shr bx,1 /
             // add bx,cx`) is a centring computation, and the port applied it here
             // — but the live game does not centre THIS list: every row of the
@@ -2670,7 +2702,10 @@ impl EngineState {
     /// This is the whole menu behavior (concept menus are flat sequential leaves).
     pub fn bas_menu_interact(&mut self, row: usize) -> Option<String> {
         let labels = self.current_bas_menu_labels();
-        if labels.get(row).is_some_and(|l| crate::bas_vm::BasMenuStack::is_back_topic(l)) {
+        if labels
+            .get(row)
+            .is_some_and(|l| crate::bas_vm::BasMenuStack::is_back_topic(l))
+        {
             self.bas_topic_click(row);
             self.bas_responses = None; // fresh monologue for the menu we backed out to
             return None;
@@ -2679,7 +2714,9 @@ impl EngineState {
             self.bas_start_responses();
         }
         let offset = self.bas_advance_response()?;
-        self.bas_menus.as_ref().and_then(|s| s.response_text(offset))
+        self.bas_menus
+            .as_ref()
+            .and_then(|s| s.response_text(offset))
     }
 
     /// Handle a screen click on the displayed BAS concept menu: map (x,y) to a topic
@@ -2699,7 +2736,11 @@ impl EngineState {
     pub fn sync_topic_menu_from_bas(&mut self) {
         let labels = self.current_bas_menu_labels();
         if !labels.is_empty() {
-            self.topic_menu = labels.into_iter().enumerate().map(|(i, l)| (l, i)).collect();
+            self.topic_menu = labels
+                .into_iter()
+                .enumerate()
+                .map(|(i, l)| (l, i))
+                .collect();
             self.topic_selected = None;
             self.topic_menu_is_bas = true;
         }
@@ -2917,7 +2958,11 @@ impl EngineState {
             projection_angle_2f6d: self.bridge.frame % 180,
             angle_2f6f: 0,
         };
-        let origin = Ship3dProjectionOrigin { x: 0x8000, y: 0x8000, z: 0x8000 };
+        let origin = Ship3dProjectionOrigin {
+            x: 0x8000,
+            y: 0x8000,
+            z: 0x8000,
+        };
         let viewport = Ship3dProjectionViewport {
             left: 0,
             right: ENGINE_SCREEN_WIDTH as u16,
@@ -2929,11 +2974,13 @@ impl EngineState {
             // (colour-0 keyed windows); the 320x200 fb keeps only the panorama.
             self.framebuffer.iter_mut().for_each(|p| *p = 0);
             let pts = crate::ship3d::randomize_ship_3d_point_cloud(&mut prng);
-            if let Some(matrix) =
-                crate::ship3d::build_ship_3d_projection_matrix(&crate::ship3d::SHIP_3D_ANGLE_TABLE, angles)
-            {
-                self.gpu_stars =
-                    Some(crate::ship3d::ship_3d_point_cloud_points(&pts, origin, matrix, viewport));
+            if let Some(matrix) = crate::ship3d::build_ship_3d_projection_matrix(
+                &crate::ship3d::SHIP_3D_ANGLE_TABLE,
+                angles,
+            ) {
+                self.gpu_stars = Some(crate::ship3d::ship_3d_point_cloud_points(
+                    &pts, origin, matrix, viewport,
+                ));
             }
             self.gpu_bg_colorkey = true;
         } else if let Some(render) = render_ship_3d_starfield(&mut prng, angles, origin, viewport) {
@@ -2948,8 +2995,12 @@ impl EngineState {
             {
                 // Refresh the current station's eye-orb click rectangle exactly
                 // as the frame loader does (0x9877..0x9889).
-                let orb_box = (header.box_x != 0xFFFF)
-                    .then_some([header.box_x, header.box_y, header.box_width, header.box_height]);
+                let orb_box = (header.box_x != 0xFFFF).then_some([
+                    header.box_x,
+                    header.box_y,
+                    header.box_width,
+                    header.box_height,
+                ]);
                 self.bridge.set_frame_orb_box(header.station, orb_box);
             }
         }
@@ -3023,7 +3074,11 @@ impl EngineState {
         }
         let hnm = &self.cyber_tunnels[self.cyber_segment.min(n - 1)];
         self.scene_palette = hnm.palette;
-        hnm.decode_frame(self.scene_frame, &mut self.scene_buffer, &mut self.scene_palette);
+        hnm.decode_frame(
+            self.scene_frame,
+            &mut self.scene_buffer,
+            &mut self.scene_palette,
+        );
         self.framebuffer.copy_from_slice(&self.scene_buffer);
         self.scene_frame += 1;
         // HUD overlay: a course reticle (steered) + a journey progress bar.
@@ -3167,11 +3222,12 @@ impl EngineState {
         }
         for y in 0..140usize {
             for x in 0..ENGINE_SCREEN_WIDTH {
-                self.viewscreen_noise =
-                    self.viewscreen_noise.wrapping_mul(1103515245).wrapping_add(12345);
+                self.viewscreen_noise = self
+                    .viewscreen_noise
+                    .wrapping_mul(1103515245)
+                    .wrapping_add(12345);
                 let v = (self.viewscreen_noise >> 16) as u8;
-                self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] =
-                    if v & 1 == 0 { 224 } else { 239 };
+                self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] = if v & 1 == 0 { 224 } else { 239 };
             }
         }
         self.overlay_console_band();
@@ -3368,7 +3424,9 @@ impl EngineState {
 
     /// The display name of the currently selected/dialled contact.
     pub fn phone_contact_name(&self) -> Option<&str> {
-        self.phone_contacts.get(self.phone_contact).map(|(n, _)| n.as_str())
+        self.phone_contacts
+            .get(self.phone_contact)
+            .map(|(n, _)| n.as_str())
     }
 
     /// Whether the call is connected (showing the talk-head video feed).
@@ -3401,7 +3459,9 @@ impl EngineState {
             .iter()
             .take(7)
             .map(|(n, _)| crate::font::square_caps_text_width(n))
-            .chain(std::iter::once(crate::font::square_caps_text_width("CANCEL")))
+            .chain(std::iter::once(crate::font::square_caps_text_width(
+                "CANCEL",
+            )))
             .max()
             .unwrap_or(0);
         let row = self.choice_box_row_at(x, y, contacts + 1, widest)?;
@@ -3517,7 +3577,11 @@ impl EngineState {
         let hnm = &self.alien_views[idx];
         let count = hnm.frame_count().max(1);
         self.scene_palette = hnm.palette;
-        hnm.decode_frame(self.scene_frame % count, &mut self.scene_buffer, &mut self.scene_palette);
+        hnm.decode_frame(
+            self.scene_frame % count,
+            &mut self.scene_buffer,
+            &mut self.scene_palette,
+        );
         self.framebuffer.copy_from_slice(&self.scene_buffer);
         self.scene_frame += 1;
     }
@@ -3549,7 +3613,11 @@ impl EngineState {
             }
             return;
         }
-        hnm.decode_frame(self.scene_frame, &mut self.scene_buffer, &mut self.scene_palette);
+        hnm.decode_frame(
+            self.scene_frame,
+            &mut self.scene_buffer,
+            &mut self.scene_palette,
+        );
         self.scene_hnm = Some(hnm);
         let frame = self.scene_frame;
         self.scene_frame += 1;
@@ -3565,7 +3633,12 @@ impl EngineState {
         // puts the console on screen ahead of the montage; the remap itself is
         // faithful now and runs first, so the film area is banked exactly as the
         // game banks it.
-        if self.intro_pyramid.get(self.intro_index).copied().unwrap_or(false) {
+        if self
+            .intro_pyramid
+            .get(self.intro_index)
+            .copied()
+            .unwrap_or(false)
+        {
             self.apply_console_bank_remap();
             self.overlay_console_band();
         }
@@ -3605,7 +3678,11 @@ impl EngineState {
         self.scene_palette[Self::INTRO_CREDIT_COLOR_INDEX as usize] = [245, 245, 245];
         // Multi-line credits ("CRYO Interactive Entertainment" / "1995") draw centred,
         // 10 rows apart, first line at the real-measured row 69.
-        for (i, line) in text.split(['\n', '\r']).filter(|l| !l.trim().is_empty()).enumerate() {
+        for (i, line) in text
+            .split(['\n', '\r'])
+            .filter(|l| !l.trim().is_empty())
+            .enumerate()
+        {
             let width: usize = line.chars().map(crate::font::game_font_advance).sum();
             let x = ENGINE_SCREEN_WIDTH.saturating_sub(width) / 2;
             draw_text_indexed(
@@ -3899,7 +3976,11 @@ impl EngineState {
         self.dialogue_segments.clear();
         self.dialogue_segment_pos = 0;
         self.dialogue = (0..lines.len())
-            .map(|offset| LineState { offset, actor_offset: None, location_offset: None })
+            .map(|offset| LineState {
+                offset,
+                actor_offset: None,
+                location_offset: None,
+            })
             .collect();
         self.dialogue_texts = lines.iter().map(|(t, _)| t.clone()).collect();
         self.dialogue_is_speech = vec![true; self.dialogue_texts.len()];
@@ -4005,8 +4086,9 @@ impl EngineState {
         let step = self.text_speed_step;
         let reveal = len.saturating_mul(u32::from(reveal_frames_per_char(step)));
         let hold = u32::from(reveal_complete_hold_ticks(step));
-        self.dialogue_hold_frames.max(reveal.saturating_add(hold))
-        .max(min_hold)
+        self.dialogue_hold_frames
+            .max(reveal.saturating_add(hold))
+            .max(min_hold)
     }
 
     /// Whether a dialogue scene is currently the active view (playing, with no overlay
@@ -4216,7 +4298,9 @@ impl EngineState {
         if rooms.is_empty() {
             return false;
         }
-        let Some(img) = std::fs::read(&rooms[0]).ok().and_then(|d| crate::lbm::decode_pbm(&d))
+        let Some(img) = std::fs::read(&rooms[0])
+            .ok()
+            .and_then(|d| crate::lbm::decode_pbm(&d))
         else {
             return false;
         };
@@ -4265,7 +4349,9 @@ impl EngineState {
             return;
         }
         let next = (visit.current as i32 + delta).rem_euclid(n as i32) as usize;
-        if let Some(img) = std::fs::read(&visit.rooms[next]).ok().and_then(|d| crate::lbm::decode_pbm(&d))
+        if let Some(img) = std::fs::read(&visit.rooms[next])
+            .ok()
+            .and_then(|d| crate::lbm::decode_pbm(&d))
         {
             visit.current = next;
             visit.image = img;
@@ -4274,7 +4360,9 @@ impl EngineState {
 
     /// The visited world's room count + current index (for HUD/tests), if active.
     pub fn world_room_position(&self) -> Option<(usize, usize)> {
-        self.world_location.as_ref().map(|v| (v.current, v.rooms.len()))
+        self.world_location
+            .as_ref()
+            .map(|v| (v.current, v.rooms.len()))
     }
 
     /// Whether the world-location landing screen is active.
@@ -4399,10 +4487,12 @@ impl EngineState {
                 .unwrap_or("")
                 .to_lowercase();
             let floor = crate::levels::art_floor(&file);
-            let abbrev = crate::levels::world_location_abbrev(&visit.name.to_lowercase())
-                .unwrap_or("");
+            let abbrev =
+                crate::levels::world_location_abbrev(&visit.name.to_lowercase()).unwrap_or("");
             // Match against the abbreviation, skipping any leading floor digit.
-            let body = file.strip_prefix(|c: char| c.is_ascii_digit()).unwrap_or(&file);
+            let body = file
+                .strip_prefix(|c: char| c.is_ascii_digit())
+                .unwrap_or(&file);
             match crate::levels::parse_room_view(body, abbrev) {
                 Some((room, view)) => {
                     let facing = match view {
@@ -4414,7 +4504,12 @@ impl EngineState {
                     };
                     format!("{}  FLOOR {floor} ROOM {}  {}", visit.name, room, facing)
                 }
-                None => format!("{}  {}/{}", visit.name, visit.current + 1, visit.rooms.len()),
+                None => format!(
+                    "{}  {}/{}",
+                    visit.name,
+                    visit.current + 1,
+                    visit.rooms.len()
+                ),
             }
         };
         // Blit the decoded room background (320x200 fills the screen).
@@ -4483,9 +4578,8 @@ impl EngineState {
             NAV_DESTINATION_POINTS, SHIP_3D_ANGLE_TABLE, SHIP_3D_OBJECT_VISIBLE_FLAG,
             SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG, Ship3dMatrixAngles, Ship3dProjectionOrigin,
             Ship3dProjectionPoint, Ship3dProjectionViewport, build_ship_3d_projection_matrix,
-            collect_ship_3d_dirty_sprite_slot_render_commands,
-            commit_ship_3d_global_clip_snapshot, commit_ship_3d_sprite_slot_dirty_geometry,
-            project_ship_3d_object_sprite,
+            collect_ship_3d_dirty_sprite_slot_render_commands, commit_ship_3d_global_clip_snapshot,
+            commit_ship_3d_sprite_slot_dirty_geometry, project_ship_3d_object_sprite,
         };
         let Some(m) = build_ship_3d_projection_matrix(
             &SHIP_3D_ANGLE_TABLE,
@@ -4837,7 +4931,12 @@ impl EngineState {
     /// The caller supplies the object because the selection itself is
     /// [`crate::vm::VmMachine::nav_chart_pick`]'s job; `0x901D`'s refusal to open
     /// on the object you are already at is enforced here too.
-    pub fn open_location_info_panel(&mut self, object: u16, current_location: u16, cursor: (i32, i32)) -> bool {
+    pub fn open_location_info_panel(
+        &mut self,
+        object: u16,
+        current_location: u16,
+        cursor: (i32, i32),
+    ) -> bool {
         if object == 0 || object == current_location {
             return false; // 0x901D: `cmp ax,es:[arche+0x16] / je`
         }
@@ -4875,7 +4974,9 @@ impl EngineState {
     /// The interpolation is the game's own gate — `step_ship_3d_interpolation_gate`,
     /// `0x8B:0xFAD` — over the four rect words, `LOCATION_PANEL_ZOOM_STEPS` steps.
     pub fn step_location_info_panel(&mut self) -> Option<[u16; 4]> {
-        use crate::ship3d::{step_ship_3d_interpolation_gate, Ship3dInterpolationGate, Ship3dInterpolationStep};
+        use crate::ship3d::{
+            Ship3dInterpolationGate, Ship3dInterpolationStep, step_ship_3d_interpolation_gate,
+        };
         let panel = self.location_panel;
         let (source, dest) = match panel.state {
             LocationPanelState::Idle | LocationPanelState::Open => return None,
@@ -5062,7 +5163,8 @@ impl EngineState {
                 // (audit-fixes #542, #543, #571).
                 const CURSOR_COLOR: u8 = 0xFE;
                 self.scene_palette[CURSOR_COLOR as usize] = [245, 245, 160];
-                let cursor_x = (self.compass_angle as usize % 180) * (ENGINE_SCREEN_WIDTH - 1) / 179;
+                let cursor_x =
+                    (self.compass_angle as usize % 180) * (ENGINE_SCREEN_WIDTH - 1) / 179;
                 for dy in 0..4 {
                     let row = dy * ENGINE_SCREEN_WIDTH;
                     if let Some(px) = self.framebuffer.get_mut(row + cursor_x) {
@@ -5102,8 +5204,11 @@ impl EngineState {
                 // than through the decoded widget (see NAV_DEST_X's doc, #239).
                 // Falls back to the compass-target label.
                 if !self.nav_destinations.is_empty() {
-                    let labels: Vec<String> =
-                        self.nav_destinations.iter().map(|(l, _)| l.clone()).collect();
+                    let labels: Vec<String> = self
+                        .nav_destinations
+                        .iter()
+                        .map(|(l, _)| l.clone())
+                        .collect();
                     for (i, label) in labels.iter().enumerate() {
                         let y = (Self::NAV_DEST_Y + i as i32 * Self::NAV_DEST_PITCH) as usize;
                         draw_text_indexed(
@@ -5244,7 +5349,9 @@ impl EngineState {
     /// The name of the world the nav compass currently targets (for "visit this
     /// destination" input).
     pub fn targeted_world_name(&self) -> Option<&'static str> {
-        self.nav_world_labels.get(self.targeted_world_index()).copied()
+        self.nav_world_labels
+            .get(self.targeted_world_index())
+            .copied()
     }
 
     /// The index into [`Self::nav_world_labels`] the compass heading currently targets:
@@ -5301,7 +5408,11 @@ impl EngineState {
         let fully = visible >= total;
         let on_console =
             self.panorama.is_some() && self.scene_hnm.is_none() && !self.console_band_dialogue;
-        let pitch = if on_console { 10 } else { crate::font::GAME_FONT_LINE_HEIGHT };
+        let pitch = if on_console {
+            10
+        } else {
+            crate::font::GAME_FONT_LINE_HEIGHT
+        };
         // CONSOLE-BAND PRESENTATION subtitles (the boot/tutorial screen: character
         // video atop the pyramid deck): WHITE (console-bank index 0xEF=239, one of the
         // OCR's known subtitle indices), CENTRED on x=160, first line at y=110 with
@@ -5418,7 +5529,6 @@ impl EngineState {
         }
     }
 
-
     /// Render the current dialogue line's frame into the framebuffer: clear, then
     /// draw the reconstructed subtitle text. (The talk-HNM scene background layer
     /// composites behind this once the HNM decoder is moved into the lib.)
@@ -5454,8 +5564,7 @@ impl EngineState {
             for y in by..(by + bh).min(ENGINE_SCREEN_HEIGHT) {
                 for x in bx..(bx + bw).min(ENGINE_SCREEN_WIDTH) {
                     let edge = y == by || y + 1 == by + bh || x == bx || x + 1 == bx + bw;
-                    self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] =
-                        if edge { 0xEF } else { 0xE0 };
+                    self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] = if edge { 0xEF } else { 0xE0 };
                 }
             }
             self.presentation_open_phase += 1;
@@ -5474,8 +5583,10 @@ impl EngineState {
             self.scene_palette = crate::palette::game_screen_palette();
             for y in 0..140usize {
                 for x in 0..ENGINE_SCREEN_WIDTH {
-                    self.viewscreen_noise =
-                        self.viewscreen_noise.wrapping_mul(1103515245).wrapping_add(12345);
+                    self.viewscreen_noise = self
+                        .viewscreen_noise
+                        .wrapping_mul(1103515245)
+                        .wrapping_add(12345);
                     let v = (self.viewscreen_noise >> 16) as u8;
                     self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] =
                         if v & 1 == 0 { 224 } else { 239 };
@@ -5489,8 +5600,7 @@ impl EngineState {
             // conversation system, e.g. HONK's TALK/ONE..NINE).
             self.render_bridge_background();
             if !self.topic_menu.is_empty() {
-                let labels: Vec<String> =
-                    self.topic_menu.iter().map(|(l, _)| l.clone()).collect();
+                let labels: Vec<String> = self.topic_menu.iter().map(|(l, _)| l.clone()).collect();
                 self.draw_list_menu(&labels, self.topic_selected);
             }
             self.scene_buffer.copy_from_slice(&self.framebuffer);
@@ -5655,8 +5765,11 @@ impl EngineState {
         // the rect that moves. The gate writes through `di`, so the live rect steps
         // toward the widget's.
         let target = self.console_open_target_rect();
-        let step =
-            crate::ship3d::step_ship_3d_interpolation_gate(&mut gate, target, self.console_open_rect);
+        let step = crate::ship3d::step_ship_3d_interpolation_gate(
+            &mut gate,
+            target,
+            self.console_open_rect,
+        );
         match step {
             Some(crate::ship3d::Ship3dInterpolationStep::Complete) => Some(row),
             Some(crate::ship3d::Ship3dInterpolationStep::Active(rect)) => {
@@ -5941,7 +6054,10 @@ mod tests {
         // The fourth word is NOT part of the origin -- it is 16, and reading a
         // fourth component would silently extend the vector.
         let fourth = u16::from_le_bytes([exe[at + 6], exe[at + 7]]);
-        assert_eq!(fourth, 16, "the word after the origin is not what was decoded");
+        assert_eq!(
+            fourth, 16,
+            "the word after the origin is not what was decoded"
+        );
     }
     use super::*;
 
@@ -5972,7 +6088,10 @@ mod tests {
             e.phone_active,
             "the telephone must be open once the ten-tick gate completes"
         );
-        assert!(e.console_open.is_none(), "the animation must not stay armed");
+        assert!(
+            e.console_open.is_none(),
+            "the animation must not stay armed"
+        );
     }
 
     /// The box must TRAVEL, and it must start on the clicked row.
@@ -6023,7 +6142,10 @@ mod tests {
         let before = e.framebuffer.clone();
         e.step(MouseInput::default());
         let rect = e.console_open_rect;
-        assert!(rect[2] > 0 && rect[3] > 0, "the rect must have an extent to tint");
+        assert!(
+            rect[2] > 0 && rect[3] > 0,
+            "the rect must have an extent to tint"
+        );
 
         let inside = |fb: &[u8], x: usize, y: usize| fb[y * ENGINE_SCREEN_WIDTH + x];
         let (x, y) = (rect[0] as usize + 1, rect[1] as usize + 1);
@@ -6074,10 +6196,7 @@ mod tests {
             let rd = |ext: &str| std::fs::read(iso.join(format!("SCRIPT{n}.{ext}"))).unwrap();
             let mut e = EngineState::new();
             e.load_dialogue_scenes(&rd("COD"), &rd("VAR"), &rd("DIC"), &rd("DEB"), &db, assets);
-            assert!(
-                e.dialogue_len() > 0,
-                "SCRIPT{n}'s dialogue surface loads"
-            );
+            assert!(e.dialogue_len() > 0, "SCRIPT{n}'s dialogue surface loads");
         }
     }
 
@@ -6086,19 +6205,32 @@ mod tests {
     #[test]
     fn bridge_console_matches_live_game_capture() {
         let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
-            .iter().map(Path::new).find(|p| p.join("TB.BIG").exists());
-        let capture_path = ["accuracy/captures/bridge/console_rest.ppm",
-            "../accuracy/captures/bridge/console_rest.ppm"]
-            .iter().map(Path::new).find(|p| p.exists());
-        let (Some(iso), Some(capture_path)) = (iso, capture_path) else { return };
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("TB.BIG").exists());
+        let capture_path = [
+            "accuracy/captures/bridge/console_rest.ppm",
+            "../accuracy/captures/bridge/console_rest.ppm",
+        ]
+        .iter()
+        .map(Path::new)
+        .find(|p| p.exists());
+        let (Some(iso), Some(capture_path)) = (iso, capture_path) else {
+            return;
+        };
         let raw = std::fs::read(capture_path).unwrap();
         let body_at = raw.windows(4).position(|w| w == b"255\n").unwrap() + 4;
         let capture = &raw[body_at..];
-        assert_eq!(capture.len(), ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT * 3);
+        assert_eq!(
+            capture.len(),
+            ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT * 3
+        );
 
         let mut e = EngineState::new();
         e.load_bridge(iso);
-        if e.panorama.is_none() { return; }
+        if e.panorama.is_none() {
+            return;
+        }
         // NOTE: the capture-sprite hand atlas that used to be loaded here is gone.
         // It was never drawn -- the faithful hand is manu3_hand::HandMesh, decoded from
         // manu3.xdb's own mesh and cursor law.
@@ -6106,13 +6238,27 @@ mod tests {
         // Prime prev_pos so the render step sees zero cursor motion, then
         // reproduce the live probe's state exactly: view frame 55, cursor at
         // ring 320 (screen x 40), y 100 — the state the capture was taken in.
-        e.step(MouseInput { x: 40, y: 100, buttons: 0, ..Default::default() });
+        e.step(MouseInput {
+            x: 40,
+            y: 100,
+            buttons: 0,
+            ..Default::default()
+        });
         e.bridge.frame = 55;
         e.bridge.ring_mouse_x = 320;
         e.bridge.mouse_y = 100;
-        e.step(MouseInput { x: 40, y: 100, buttons: 0, ..Default::default() });
+        e.step(MouseInput {
+            x: 40,
+            y: 100,
+            buttons: 0,
+            ..Default::default()
+        });
         assert_eq!(e.bridge.frame, 55, "view must not drift during the render");
-        assert_eq!(e.bridge.mouse_screen_x(), 40, "virtual cursor at the capture position");
+        assert_eq!(
+            e.bridge.mouse_screen_x(),
+            40,
+            "virtual cursor at the capture position"
+        );
 
         // Measure CONSOLE fidelity — excluding the pointing-hand region. The hand is
         // a live 3D model (never renders identically twice, in the real game or the
@@ -6123,21 +6269,25 @@ mod tests {
         let mut total_abs = 0u64;
         let mut counted = 0u64;
         for (pixel, &index) in e.framebuffer.iter().enumerate() {
-            let (px, py) = ((pixel % ENGINE_SCREEN_WIDTH) as i32, (pixel / ENGINE_SCREEN_WIDTH) as i32);
+            let (px, py) = (
+                (pixel % ENGINE_SCREEN_WIDTH) as i32,
+                (pixel / ENGINE_SCREEN_WIDTH) as i32,
+            );
             if px >= hand_box.0 && px < hand_box.2 && py >= hand_box.1 && py < hand_box.3 {
                 continue; // skip the hand region
             }
             let ours = e.scene_palette[index as usize];
             for channel in 0..3 {
-                total_abs +=
-                    (ours[channel] as i32 - capture[pixel * 3 + channel] as i32).unsigned_abs() as u64;
+                total_abs += (ours[channel] as i32 - capture[pixel * 3 + channel] as i32)
+                    .unsigned_abs() as u64;
             }
             counted += 3;
         }
         let mean_abs = total_abs as f64 / counted as f64;
         // Optional visual QA: BRIDGE_DUMP=<path.ppm> writes the rendered frame.
         if let Ok(dump) = std::env::var("BRIDGE_DUMP") {
-            let mut ppm = format!("P6\n{ENGINE_SCREEN_WIDTH} {ENGINE_SCREEN_HEIGHT}\n255\n").into_bytes();
+            let mut ppm =
+                format!("P6\n{ENGINE_SCREEN_WIDTH} {ENGINE_SCREEN_HEIGHT}\n255\n").into_bytes();
             for &index in e.framebuffer.iter() {
                 ppm.extend_from_slice(&e.scene_palette[index as usize]);
             }
@@ -6250,9 +6400,7 @@ mod tests {
                 (imm16(0x14E7), imm16(0x14EA), imm16(0x14ED), imm16(0x14F0)),
                 EngineState::CONFIRM_BOX
             );
-            let region = |at: usize| {
-                (imm16(at), imm16(at + 2), imm16(at + 4), imm16(at + 6))
-            };
+            let region = |at: usize| (imm16(at), imm16(at + 2), imm16(at + 4), imm16(at + 6));
             assert_eq!(region(0xD420 + 0x2555), EngineState::CONFIRM_YES_REGION);
             assert_eq!(region(0xD420 + 0x255D), EngineState::CONFIRM_NO_REGION);
         }
@@ -6335,9 +6483,9 @@ mod tests {
             .map(std::path::Path::new)
             .find(|p| p.join("TB.BIG").exists());
         let Some(iso) = iso else { return };
-        let Some(pan) = crate::tbbig::BridgePanorama::parse(
-            std::fs::read(iso.join("TB.BIG")).unwrap(),
-        ) else {
+        let Some(pan) =
+            crate::tbbig::BridgePanorama::parse(std::fs::read(iso.join("TB.BIG")).unwrap())
+        else {
             return;
         };
         let px = pan
@@ -6353,11 +6501,7 @@ mod tests {
             .map(|&p| table[p as usize])
             .collect();
         let captured: &[u8] = include_bytes!("../accuracy/captures/console_band.idx");
-        assert_eq!(
-            composed.len(),
-            captured.len(),
-            "the band is 320x60"
-        );
+        assert_eq!(composed.len(), captured.len(), "the band is 320x60");
         assert!(
             composed == captured,
             "the real asset must reproduce the capture byte-for-byte"
@@ -6373,8 +6517,7 @@ mod tests {
                 pan.frame_pixels(f).is_some_and(|px| {
                     px.len() == crate::tbbig::PANORAMA_FRAME_PIXELS
                         && px[crate::tbbig::CONSOLE_BAND_TOP * ENGINE_SCREEN_WIDTH
-                            ..(crate::tbbig::CONSOLE_BAND_TOP
-                                + crate::tbbig::CONSOLE_BAND_HEIGHT)
+                            ..(crate::tbbig::CONSOLE_BAND_TOP + crate::tbbig::CONSOLE_BAND_HEIGHT)
                                 * ENGINE_SCREEN_WIDTH]
                             .iter()
                             .map(|&p| table[p as usize])
@@ -6416,7 +6559,11 @@ mod tests {
         let mut e = EngineState::new();
         e.save_slots = (0..EngineState::SAVE_SLOT_ROWS)
             .map(|i| crate::bloodsav::SaveSlot {
-                name: if i == 3 { "OLDNAME".into() } else { String::new() },
+                name: if i == 3 {
+                    "OLDNAME".into()
+                } else {
+                    String::new()
+                },
                 file: format!("game{}.sav", i + 1),
             })
             .collect();
@@ -6433,14 +6580,20 @@ mod tests {
             probe.draw_list_menu(&[needle.to_string()], None);
             probe.framebuffer.iter().any(|&p| p != 0)
         };
-        assert!(rows_drawn("AB"), "the probe font can draw the edit text at all");
+        assert!(
+            rows_drawn("AB"),
+            "the probe font can draw the edit text at all"
+        );
         // The old hand-composed bar is gone: nothing paints a solid 0xE8 band
         // across x63..137 at y39..48.
         let band = (39..49usize)
             .flat_map(|y| (63..138usize).map(move |x| (x, y)))
             .filter(|&(x, y)| e.framebuffer[y * ENGINE_SCREEN_WIDTH + x] == 0xE8)
             .count();
-        assert!(band < 700, "the measured grey bar must not be painted: {band}px");
+        assert!(
+            band < 700,
+            "the measured grey bar must not be painted: {band}px"
+        );
         // And the widget's own extra row is present in the row set — READ FROM
         // THE IMAGE, not compared to a copy of itself. This asserted
         // `OPTION_BOX_LABEL == "CANCEL"`, which is a tautology: both sides are
@@ -6490,8 +6643,7 @@ mod tests {
         let first_x = |row: usize| -> Option<usize> {
             let top = EngineState::choice_box_top_y(labels.len()) + row * 11;
             (top..top + 8).find_map(|y| {
-                (0..ENGINE_SCREEN_WIDTH)
-                    .find(|&x| e.framebuffer[y * ENGINE_SCREEN_WIDTH + x] != 0)
+                (0..ENGINE_SCREEN_WIDTH).find(|&x| e.framebuffer[y * ENGINE_SCREEN_WIDTH + x] != 0)
             })
         };
         let wide = first_x(0).expect("wide label drew");
@@ -6504,25 +6656,33 @@ mod tests {
             .map(|l| crate::font::square_caps_text_width(l))
             .max()
             .unwrap();
-        let expected = EngineState::CHOICE_BOX_ANCHOR_CONCEPT
-            .saturating_sub((widest + 20) / 2)
-            + 10;
+        let expected =
+            EngineState::CHOICE_BOX_ANCHOR_CONCEPT.saturating_sub((widest + 20) / 2) + 10;
         assert_eq!(wide, expected);
     }
 
     #[test]
     fn choice_box_is_a_tint_of_the_panorama_not_a_painted_box() {
         let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
-            .iter().map(Path::new).find(|p| p.join("TB.BIG").exists());
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("TB.BIG").exists());
         let Some(iso) = iso else { return };
         let mut e = EngineState::new();
         e.load_bridge(iso);
         e.load_console_font(iso);
-        if e.panorama.is_none() { return; }
+        if e.panorama.is_none() {
+            return;
+        }
         // Open the MENU submenu (a choice box) and render one frame.
         e.bridge_active = true;
         e.menu_submenu_active = true;
-        e.step(MouseInput { x: 160, y: 100, buttons: 0, ..Default::default() });
+        e.step(MouseInput {
+            x: 160,
+            y: 100,
+            buttons: 0,
+            ..Default::default()
+        });
         // The box is a TINT of whatever it covers (0x84D8: si=[0xAC8], the
         // 50%-toward-black table, into 0x299:0x40E) — not a painted border+fill.
         // So the assertion is that the region got DARKER and stayed VARIED, and
@@ -6538,7 +6698,11 @@ mod tests {
             }
             n
         };
-        assert!(count(0xE8) > 20, "choice-box text (0xE8) present: {}", count(0xE8));
+        assert!(
+            count(0xE8) > 20,
+            "choice-box text (0xE8) present: {}",
+            count(0xE8)
+        );
         // A painted box would flatten the region to one or two indices; a tint
         // preserves the panorama's structure underneath.
         let distinct: std::collections::HashSet<u8> = (92..118usize)
@@ -6563,8 +6727,13 @@ mod tests {
         // The click band is the box's rendered extent [x0, x1] (0x84EE..0x84F6),
         // shared with the draw via choice_box_geometry — not the old fixed
         // 40..160 that only fit a centered box with labels <=100px.
-        let width_of =
-            |labels: &[String]| labels.iter().map(|l| crate::font::square_caps_text_width(l)).max().unwrap();
+        let width_of = |labels: &[String]| {
+            labels
+                .iter()
+                .map(|l| crate::font::square_caps_text_width(l))
+                .max()
+                .unwrap()
+        };
 
         // Centered box (kind 2): narrow labels floor to 100 -> anchor 100, w 120,
         // so the band is exactly 40..160 (no regression for the common case).
@@ -6576,8 +6745,16 @@ mod tests {
         assert_eq!((x0, x1), (40, 160), "narrow centered box spans 40..160");
         let y0 = EngineState::choice_box_top_y(2) as u16 + 2; // row 0
         assert_eq!(e.console_box_click(100, y0), Some(0), "center hits row 0");
-        assert_eq!(e.console_box_click(39, y0), None, "just left of the box misses");
-        assert_eq!(e.console_box_click(161, y0), None, "just right of the box misses");
+        assert_eq!(
+            e.console_box_click(39, y0),
+            None,
+            "just left of the box misses"
+        );
+        assert_eq!(
+            e.console_box_click(161, y0),
+            None,
+            "just right of the box misses"
+        );
 
         // World box (kind 10): anchors at 80, floors to 55 -> the band is shifted
         // and narrower. x=130 sits inside the OLD fixed 40..160 band but OUTSIDE
@@ -6594,7 +6771,11 @@ mod tests {
             None,
             "x=130 no longer wrongly hits the anchor-80 world box"
         );
-        assert_eq!(e.console_box_click(80, yb), Some(0), "center of the world box hits");
+        assert_eq!(
+            e.console_box_click(80, yb),
+            Some(0),
+            "center of the world box hits"
+        );
     }
 
     /// Oracle: the telephone choice box renders its item text exactly where the
@@ -6604,10 +6785,13 @@ mod tests {
     /// masks to overlap, which only happens with proportional-centered layout.
     #[test]
     fn choice_box_text_matches_live_game_capture() {
-        let path = ["accuracy/captures/bridge/choice_box_bob_morlock.ppm", "../accuracy/captures/bridge/choice_box_bob_morlock.ppm"]
-            .iter()
-            .map(Path::new)
-            .find(|p| p.exists());
+        let path = [
+            "accuracy/captures/bridge/choice_box_bob_morlock.ppm",
+            "../accuracy/captures/bridge/choice_box_bob_morlock.ppm",
+        ]
+        .iter()
+        .map(Path::new)
+        .find(|p| p.exists());
         let Some(path) = path else { return };
         let raw = std::fs::read(path).unwrap();
         let at = raw.windows(4).position(|w| w == b"255\n").unwrap() + 4;
@@ -6642,7 +6826,10 @@ mod tests {
         }
         let iou = inter as f64 / uni as f64;
         eprintln!("choice-box text IoU = {iou:.3} (inter={inter}, union={uni})");
-        assert!(iou > 0.55, "choice-box text must overlap the live capture (IoU {iou:.3} <= 0.55)");
+        assert!(
+            iou > 0.55,
+            "choice-box text must overlap the live capture (IoU {iou:.3} <= 0.55)"
+        );
     }
 
     /// Oracle: a single-item choice box (the lone "CANCEL" offered post-tutorial)
@@ -6651,10 +6838,13 @@ mod tests {
     /// `post2_option_choice.ppm` (CANCEL at x73..130, y95..102).
     #[test]
     fn choice_box_single_item_is_vertically_centered_vs_capture() {
-        let path = ["accuracy/captures/bridge/post2_option_choice.ppm", "../accuracy/captures/bridge/post2_option_choice.ppm"]
-            .iter()
-            .map(Path::new)
-            .find(|p| p.exists());
+        let path = [
+            "accuracy/captures/bridge/post2_option_choice.ppm",
+            "../accuracy/captures/bridge/post2_option_choice.ppm",
+        ]
+        .iter()
+        .map(Path::new)
+        .find(|p| p.exists());
         let Some(path) = path else { return };
         let raw = std::fs::read(path).unwrap();
         let at = raw.windows(4).position(|w| w == b"255\n").unwrap() + 4;
@@ -6717,8 +6907,14 @@ mod tests {
             (n > 0).then(|| sum / n as f64)
         };
         let fb = e.framebuffer.clone();
-        let port_y = centroid_y(Box::new(move |x, y| fb[y * ENGINE_SCREEN_WIDTH + x] == 0xE8)).unwrap();
-        let live_y = centroid_y(Box::new(move |x, y| is_grey((y * ENGINE_SCREEN_WIDTH + x) * 3))).unwrap();
+        let port_y = centroid_y(Box::new(move |x, y| {
+            fb[y * ENGINE_SCREEN_WIDTH + x] == 0xE8
+        }))
+        .unwrap();
+        let live_y = centroid_y(Box::new(move |x, y| {
+            is_grey((y * ENGINE_SCREEN_WIDTH + x) * 3)
+        }))
+        .unwrap();
         eprintln!("single-CANCEL vertical centroid: port={port_y:.1} live={live_y:.1}");
         assert!(
             (port_y - live_y).abs() < 2.0,
@@ -6741,24 +6937,39 @@ mod tests {
             return;
         };
         let mut e = EngineState::new();
-        assert!(e.current_bas_menu_labels().is_empty(), "no menus before load");
+        assert!(
+            e.current_bas_menu_labels().is_empty(),
+            "no menus before load"
+        );
         e.load_bas_menus(&bas, &dic);
         let entry = e.current_bas_menu_labels();
-        assert!(entry.iter().any(|l| l == "OPTIMIZATION"), "entry = top-level menu: {entry:?}");
+        assert!(
+            entry.iter().any(|l| l == "OPTIMIZATION"),
+            "entry = top-level menu: {entry:?}"
+        );
         // Navigate: enter the fear/anger sub-menu (BAS 0x42d, verified live) → current.
         assert!(e.bas_menus.as_mut().unwrap().push(0x42d));
         assert!(e.current_bas_menu_labels().iter().any(|l| l == "FEAR"));
         // Clicking a non-back topic (row 1 = FEAR) stays on the menu (plays a response).
         let after_fear = e.bas_topic_click(1);
-        assert!(after_fear.iter().any(|l| l == "FEAR"), "emotion topic stays: {after_fear:?}");
+        assert!(
+            after_fear.iter().any(|l| l == "FEAR"),
+            "emotion topic stays: {after_fear:?}"
+        );
         // Clicking row 0 (TALK, the back-out) POPS to the top-level entry menu —
         // exactly what the running game does (MENUTREE: talk → parent 0x2f).
         let after_talk = e.bas_topic_click(0);
-        assert!(after_talk.iter().any(|l| l == "OPTIMIZATION"), "talk pops to parent: {after_talk:?}");
+        assert!(
+            after_talk.iter().any(|l| l == "OPTIMIZATION"),
+            "talk pops to parent: {after_talk:?}"
+        );
         // Syncing renders the current BAS menu as the topic menu (so it displays).
         e.sync_topic_menu_from_bas();
         assert!(!e.topic_menu.is_empty(), "topic menu populated from BAS");
-        assert_eq!(e.topic_menu.get(1).map(|(l, _)| l.as_str()), Some("OPTIMIZATION"));
+        assert_eq!(
+            e.topic_menu.get(1).map(|(l, _)| l.as_str()),
+            Some("OPTIMIZATION")
+        );
         // Enter the fear/anger menu and play its response monologue one at a time.
         e.bas_menus.as_mut().unwrap().push(0x42d);
         e.bas_start_responses();
@@ -6772,9 +6983,17 @@ mod tests {
         // clicking TALK (row 0) pops back out to the parent menu.
         e.bas_start_responses();
         let sub = e.bas_menu_interact(1).expect("fear -> subtitle");
-        assert!(sub.contains("several ways to lose"), "first subtitle: {sub:?}");
+        assert!(
+            sub.contains("several ways to lose"),
+            "first subtitle: {sub:?}"
+        );
         assert!(e.bas_menu_interact(0).is_none(), "talk pops (no subtitle)");
-        assert!(e.current_bas_menu_labels().iter().any(|l| l == "OPTIMIZATION"), "popped to parent");
+        assert!(
+            e.current_bas_menu_labels()
+                .iter()
+                .any(|l| l == "OPTIMIZATION"),
+            "popped to parent"
+        );
     }
 
     /// The LIST MENU renders the square-capitals face in the widget's own colours
@@ -6806,27 +7025,47 @@ mod tests {
             n
         };
         // Unselected rows use 0xE8; the selected row uses the bright 0xEF.
-        assert!(count_in(0xE8, 82, 92) > 10, "TALK row (centered top=83) in square-caps 0xE8");
-        assert!(count_in(0xEF, 93, 103) > 6, "selected ONE row (y=94) in bright 0xEF");
+        assert!(
+            count_in(0xE8, 82, 92) > 10,
+            "TALK row (centered top=83) in square-caps 0xE8"
+        );
+        assert!(
+            count_in(0xEF, 93, 103) > 6,
+            "selected ONE row (y=94) in bright 0xEF"
+        );
     }
 
     #[test]
     fn bridge_renders_the_real_panorama() {
         let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
-            .iter().map(Path::new).find(|p| p.join("TB.BIG").exists());
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("TB.BIG").exists());
         let Some(iso) = iso else { return };
         let mut e = EngineState::new();
         e.load_bridge(iso);
         assert!(e.panorama.is_some(), "TB.BIG parses");
         e.bridge_active = true;
-        e.step(MouseInput { x: 160, y: 100, buttons: 0, ..Default::default() });
-        assert!(e.framebuffer.iter().any(|&p| p != 0), "bridge draws the panorama");
+        e.step(MouseInput {
+            x: 160,
+            y: 100,
+            buttons: 0,
+            ..Default::default()
+        });
+        assert!(
+            e.framebuffer.iter().any(|&p| p != 0),
+            "bridge draws the panorama"
+        );
         // At the menu rest frame, the decoded golden-menu hit math maps clicks to
         // rows: HONK (row 0) at the box top, OPTION (row 4) at the bottom.
         e.bridge.frame = crate::bridge::MENU_REST_FRAME;
         assert_eq!(e.console_menu_click(232, 0x48 + 1), Some(0));
         assert_eq!(e.console_menu_click(232, 0x48 + 4 * 0x12 + 1), Some(4));
-        assert_eq!(e.console_menu_click(100, 0x48 + 1), None, "left of the menu box");
+        assert_eq!(
+            e.console_menu_click(100, 0x48 + 1),
+            None,
+            "left of the menu box"
+        );
         // Away from the menu sector the menu is not clickable at all.
         e.bridge.frame = 90;
         assert_eq!(e.console_menu_click(232, 0x48 + 1), None);
@@ -6835,18 +7074,39 @@ mod tests {
     #[test]
     fn alien_view_rotates_through_prerendered_angles() {
         let assets = ["output/_tmp_dat", "../output/_tmp_dat"]
-            .iter().map(Path::new).find(|p| p.join("pe").is_dir());
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("pe").is_dir());
         let Some(assets) = assets else { return };
         let mut e = EngineState::new();
         e.load_alien_view(assets, "scrut");
-        if e.alien_views.is_empty() { return; }
+        if e.alien_views.is_empty() {
+            return;
+        }
         e.alien_view_active = true;
         // Steer full left, capture; steer full right, capture: different rotation view.
-        for _ in 0..12 { e.step(MouseInput { x: 5, y: 100, buttons: 0, ..Default::default() }); }
+        for _ in 0..12 {
+            e.step(MouseInput {
+                x: 5,
+                y: 100,
+                buttons: 0,
+                ..Default::default()
+            });
+        }
         let left = e.framebuffer.clone();
-        for _ in 0..12 { e.step(MouseInput { x: 315, y: 100, buttons: 0, ..Default::default() }); }
+        for _ in 0..12 {
+            e.step(MouseInput {
+                x: 315,
+                y: 100,
+                buttons: 0,
+                ..Default::default()
+            });
+        }
         assert!(left.iter().any(|&p| p != 0), "alien renders");
-        assert_ne!(left, e.framebuffer, "mouse rotates to a different pre-rendered view");
+        assert_ne!(
+            left, e.framebuffer,
+            "mouse rotates to a different pre-rendered view"
+        );
     }
 
     #[test]
@@ -6858,7 +7118,12 @@ mod tests {
         let Some(assets) = assets else { return };
         let mut e = EngineState::new();
         e.on_ship = true;
-        e.load_intro(assets, &crate::descript::DescriptDb { records: Vec::new() });
+        e.load_intro(
+            assets,
+            &crate::descript::DescriptDb {
+                records: Vec::new(),
+            },
+        );
         assert!(e.intro_active(), "intro activates when clips are present");
         // While the intro runs, the main (nav) view must NOT render — the intro owns
         // the frame — and the intro must produce real (non-blank) content at some point.
@@ -6890,9 +7155,12 @@ mod tests {
             .map(Path::new)
             .find(|p| p.join("sq").join("cliptoot.hnm").exists());
         let Some(assets) = assets else { return };
-        let db = ["output/_tmp_iso/DESCRIPT.DES", "../output/_tmp_iso/DESCRIPT.DES"]
-            .iter()
-            .find_map(|p| crate::descript::DescriptDb::parse_file(p).ok());
+        let db = [
+            "output/_tmp_iso/DESCRIPT.DES",
+            "../output/_tmp_iso/DESCRIPT.DES",
+        ]
+        .iter()
+        .find_map(|p| crate::descript::DescriptDb::parse_file(p).ok());
         let Some(db) = db else { return };
         // Sanity: the credit clip and its cues must be wired from the data.
         let mut e = EngineState::new();
@@ -6913,7 +7181,11 @@ mod tests {
         for _ in 0..4000 {
             e.step(MouseInput::default());
             if e.intro_index == credit_clip
-                && e.framebuffer.iter().filter(|&&p| p == EngineState::INTRO_CREDIT_COLOR_INDEX).count() > 100
+                && e.framebuffer
+                    .iter()
+                    .filter(|&&p| p == EngineState::INTRO_CREDIT_COLOR_INDEX)
+                    .count()
+                    > 100
             {
                 drew_credit = true;
                 break;
@@ -6922,7 +7194,10 @@ mod tests {
                 break;
             }
         }
-        assert!(drew_credit, "the CRYO publisher credit is overlaid during the intro");
+        assert!(
+            drew_credit,
+            "the CRYO publisher credit is overlaid during the intro"
+        );
     }
 
     /// Intro AUDIO timing, faithful to the DESCRIPT data: the MINDSCAPE/Microfolie's logo reel
@@ -6936,9 +7211,12 @@ mod tests {
             .map(Path::new)
             .find(|p| p.join("sq").join("cliptoot.hnm").exists());
         let Some(assets) = assets else { return };
-        let db = ["output/_tmp_iso/DESCRIPT.DES", "../output/_tmp_iso/DESCRIPT.DES"]
-            .iter()
-            .find_map(|p| crate::descript::DescriptDb::parse_file(p).ok());
+        let db = [
+            "output/_tmp_iso/DESCRIPT.DES",
+            "../output/_tmp_iso/DESCRIPT.DES",
+        ]
+        .iter()
+        .find_map(|p| crate::descript::DescriptDb::parse_file(p).ok());
         let Some(db) = db else { return };
         let mut e = EngineState::new();
         e.load_intro(assets, &db);
@@ -6976,9 +7254,12 @@ mod tests {
             .map(Path::new)
             .find(|p| p.join("sq").join("maledict.hnm").exists());
         let Some(assets) = assets else { return };
-        let db = ["output/_tmp_iso/DESCRIPT.DES", "../output/_tmp_iso/DESCRIPT.DES"]
-            .iter()
-            .find_map(|p| crate::descript::DescriptDb::parse_file(p).ok());
+        let db = [
+            "output/_tmp_iso/DESCRIPT.DES",
+            "../output/_tmp_iso/DESCRIPT.DES",
+        ]
+        .iter()
+        .find_map(|p| crate::descript::DescriptDb::parse_file(p).ok());
         let Some(db) = db else { return };
         let rec = db
             .records
@@ -6986,11 +7267,21 @@ mod tests {
             .find(|r| r.name == "maledict")
             .expect("maledict cutscene record");
         let mut e = EngineState::new();
-        assert!(e.start_descript_cutscene(rec, assets), "the cutscene starts");
+        assert!(
+            e.start_descript_cutscene(rec, assets),
+            "the cutscene starts"
+        );
         // HNM, music, and tick-subtitles all come from the record — data-driven, not hardcoded.
         assert!(e.intro_hnms[0].file_stem().is_some_and(|s| s == "maledict"));
-        assert_eq!(e.intro_music[0].as_deref(), Some("klings.voc"), "cutscene music from the record");
-        assert!(!e.intro_cues[0].is_empty(), "the curse subtitles play with the cutscene");
+        assert_eq!(
+            e.intro_music[0].as_deref(),
+            Some("klings.voc"),
+            "cutscene music from the record"
+        );
+        assert!(
+            !e.intro_cues[0].is_empty(),
+            "the curse subtitles play with the cutscene"
+        );
         assert!(
             e.intro_cues[0].iter().any(|c| c.text.contains("CURSED")),
             "the record's subtitle text is carried"
@@ -7031,7 +7322,11 @@ mod tests {
         for _ in 0..600 {
             e.step(MouseInput::default());
         }
-        assert_eq!(e.dialogue_cursor(), 3, "auto-play holds on the last opening line");
+        assert_eq!(
+            e.dialogue_cursor(),
+            3,
+            "auto-play holds on the last opening line"
+        );
         assert!(!e.dialogue_finished(), "the held dialogue is not finished");
         // Clicking the TALK topic (row 0) plays its segment only, then re-holds.
         // A 2-row menu centers with its top row at y=89 (choice_box_top_y(2)).
@@ -7040,7 +7335,11 @@ mod tests {
         for _ in 0..600 {
             e.step(MouseInput::default());
         }
-        assert_eq!(e.dialogue_cursor(), 6, "the topic segment holds before the next topic");
+        assert_eq!(
+            e.dialogue_cursor(),
+            6,
+            "the topic segment holds before the next topic"
+        );
     }
 
     /// The TV plays the real DESCRIPT PROGRAMMING: the broadcast records that self-identify via
@@ -7054,9 +7353,12 @@ mod tests {
             .map(Path::new)
             .find(|p| p.join("sq").join("hatetv02.hnm").exists());
         let Some(assets) = assets else { return };
-        let db = ["output/_tmp_iso/DESCRIPT.DES", "../output/_tmp_iso/DESCRIPT.DES"]
-            .iter()
-            .find_map(|p| crate::descript::DescriptDb::parse_file(p).ok());
+        let db = [
+            "output/_tmp_iso/DESCRIPT.DES",
+            "../output/_tmp_iso/DESCRIPT.DES",
+        ]
+        .iter()
+        .find_map(|p| crate::descript::DescriptDb::parse_file(p).ok());
         let Some(db) = db else { return };
         let mut e = EngineState::new();
         e.load_tv_programs(&db, assets);
@@ -7065,7 +7367,10 @@ mod tests {
         // `venus` ad is the christmas/year seasonal variant, so accept either in that slot.
         let names: Vec<&str> = e.tv_programs.iter().map(|p| p.name.as_str()).collect();
         for expect in ["garde", "hatetv", "match", "microkid", "ppit", "scrut"] {
-            assert!(names.contains(&expect), "channel lineup includes {expect}, got {names:?}");
+            assert!(
+                names.contains(&expect),
+                "channel lineup includes {expect}, got {names:?}"
+            );
         }
         assert!(
             names.contains(&"venus") || names.contains(&"christmas") || names.contains(&"year"),
@@ -7077,7 +7382,11 @@ mod tests {
         }
         let hate = names.iter().position(|n| *n == "hatetv").unwrap();
         e.tv_channel = hate;
-        assert_eq!(e.tv_music(), Some("hatetv.voc"), "the HATE-TV channel carries its music");
+        assert_eq!(
+            e.tv_music(),
+            Some("hatetv.voc"),
+            "the HATE-TV channel carries its music"
+        );
         // Render a few frames: the picture shows and the tick-1 "YOU ARE WATCHING HATE TV" cue
         // is drawn (reserved credit-colour glyphs present).
         e.tv_active = true;
@@ -7085,17 +7394,27 @@ mod tests {
             e.render_tv();
         }
         let nonblank = e.framebuffer.iter().filter(|&&p| p != 0).count();
-        assert!(nonblank > 1000, "the broadcast picture renders ({nonblank} px)");
+        assert!(
+            nonblank > 1000,
+            "the broadcast picture renders ({nonblank} px)"
+        );
         let cue_px = e
             .framebuffer
             .iter()
             .filter(|&&p| p == EngineState::INTRO_CREDIT_COLOR_INDEX)
             .count();
-        assert!(cue_px > 50, "the broadcast subtitle cue is drawn ({cue_px} px)");
+        assert!(
+            cue_px > 50,
+            "the broadcast subtitle cue is drawn ({cue_px} px)"
+        );
         // Switching channels restarts the new broadcast and switches its music (hatetv → match,
         // whose gameshow runs on the HATE-TV music family, hatetv2.voc).
         e.switch_tv_channel(1);
-        assert_eq!(e.tv_music(), Some("hatetv2.voc"), "next channel's music after switch");
+        assert_eq!(
+            e.tv_music(),
+            Some("hatetv2.voc"),
+            "next channel's music after switch"
+        );
     }
 
     /// The intro montage (`cliptoot.hnm`) plays FULL-LENGTH under the pyramid console — VERIFIED
@@ -7110,9 +7429,12 @@ mod tests {
             .map(Path::new)
             .find(|p| p.join("sq").join("cliptoot.hnm").exists());
         let Some(assets) = assets else { return };
-        let db = ["output/_tmp_iso/DESCRIPT.DES", "../output/_tmp_iso/DESCRIPT.DES"]
-            .iter()
-            .find_map(|p| crate::descript::DescriptDb::parse_file(p).ok());
+        let db = [
+            "output/_tmp_iso/DESCRIPT.DES",
+            "../output/_tmp_iso/DESCRIPT.DES",
+        ]
+        .iter()
+        .find_map(|p| crate::descript::DescriptDb::parse_file(p).ok());
         let Some(db) = db else { return };
         let mut e = EngineState::new();
         e.load_intro(assets, &db);
@@ -7124,7 +7446,10 @@ mod tests {
         let full_len = crate::hnm::HnmFile::open(&e.intro_hnms[credit])
             .map(|h| h.frame_count())
             .unwrap_or(0);
-        assert!(full_len > 1000, "cliptoot is the long montage ({full_len} frames)");
+        assert!(
+            full_len > 1000,
+            "cliptoot is the long montage ({full_len} frames)"
+        );
         // Drive the intro through, counting frames spent in the montage clip.
         let mut montage_frames = 0usize;
         for _ in 0..4000 {
@@ -7152,9 +7477,12 @@ mod tests {
             .map(Path::new)
             .find(|p| p.join("sq").join("hatetv02.hnm").exists());
         let Some(assets) = assets else { return };
-        let db = ["output/_tmp_iso/DESCRIPT.DES", "../output/_tmp_iso/DESCRIPT.DES"]
-            .iter()
-            .find_map(|p| crate::descript::DescriptDb::parse_file(p).ok());
+        let db = [
+            "output/_tmp_iso/DESCRIPT.DES",
+            "../output/_tmp_iso/DESCRIPT.DES",
+        ]
+        .iter()
+        .find_map(|p| crate::descript::DescriptDb::parse_file(p).ok());
         let Some(db) = db else { return };
         let mut e = EngineState::new();
         e.load_tv_programs(&db, assets);
@@ -7214,9 +7542,12 @@ mod tests {
             .map(Path::new)
             .find(|p| p.join("sq").join("maledict.hnm").exists());
         let Some(assets) = assets else { return };
-        let db = ["output/_tmp_iso/DESCRIPT.DES", "../output/_tmp_iso/DESCRIPT.DES"]
-            .iter()
-            .find_map(|p| crate::descript::DescriptDb::parse_file(p).ok());
+        let db = [
+            "output/_tmp_iso/DESCRIPT.DES",
+            "../output/_tmp_iso/DESCRIPT.DES",
+        ]
+        .iter()
+        .find_map(|p| crate::descript::DescriptDb::parse_file(p).ok());
         let Some(db) = db else { return };
         let rec = db.records.iter().find(|r| r.name == "maledict").unwrap();
         let mut e = EngineState::new();
@@ -7241,9 +7572,12 @@ mod tests {
             .map(Path::new)
             .find(|p| p.join("sq").join("cliptoot.hnm").exists());
         let Some(assets) = assets else { return };
-        let db = ["output/_tmp_iso/DESCRIPT.DES", "../output/_tmp_iso/DESCRIPT.DES"]
-            .iter()
-            .find_map(|p| crate::descript::DescriptDb::parse_file(p).ok());
+        let db = [
+            "output/_tmp_iso/DESCRIPT.DES",
+            "../output/_tmp_iso/DESCRIPT.DES",
+        ]
+        .iter()
+        .find_map(|p| crate::descript::DescriptDb::parse_file(p).ok());
         let Some(db) = db else { return };
         let mut e = EngineState::new();
         e.load_intro(assets, &db);
@@ -7280,9 +7614,12 @@ mod tests {
             .map(Path::new)
             .find(|p| p.join("sq").join("cliptoot.hnm").exists());
         let Some(assets) = assets else { return };
-        let db = ["output/_tmp_iso/DESCRIPT.DES", "../output/_tmp_iso/DESCRIPT.DES"]
-            .iter()
-            .find_map(|p| crate::descript::DescriptDb::parse_file(p).ok());
+        let db = [
+            "output/_tmp_iso/DESCRIPT.DES",
+            "../output/_tmp_iso/DESCRIPT.DES",
+        ]
+        .iter()
+        .find_map(|p| crate::descript::DescriptDb::parse_file(p).ok());
         let Some(db) = db else { return };
         let mut e = EngineState::new();
         e.load_intro(assets, &db);
@@ -7296,7 +7633,10 @@ mod tests {
                 .filter(|&&p| p >= 224)
                 .count()
         };
-        assert!(band_px(&e) < 2000, "the logo reel plays full-screen (no console band)");
+        assert!(
+            band_px(&e) < 2000,
+            "the logo reel plays full-screen (no console band)"
+        );
         // Advance to the montage clip (index 1): the band composites over the bottom.
         while e.intro_index() == 0 && e.intro_active() {
             e.render_intro_frame();
@@ -7317,18 +7657,30 @@ mod tests {
     #[test]
     fn full_playable_loop_end_to_end() {
         let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
-            .iter().map(Path::new).find(|p| p.join("DESCRIPT.DES").is_file());
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("DESCRIPT.DES").is_file());
         let assets = ["output/_tmp_dat", "../output/_tmp_dat"]
-            .iter().map(Path::new).find(|p| p.join("sq").is_dir());
-        let (Some(iso), Some(assets)) = (iso, assets) else { return };
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("sq").is_dir());
+        let (Some(iso), Some(assets)) = (iso, assets) else {
+            return;
+        };
         let db = crate::descript::DescriptDb::parse_file(iso.join("DESCRIPT.DES")).unwrap();
         let rd = |ext: &str| std::fs::read(iso.join(format!("SCRIPT1.{ext}")));
-        let (Ok(cod), Ok(var), Ok(dic), Ok(deb)) = (rd("COD"), rd("VAR"), rd("DIC"), rd("DEB")) else { return };
+        let (Ok(cod), Ok(var), Ok(dic), Ok(deb)) = (rd("COD"), rd("VAR"), rd("DIC"), rd("DEB"))
+        else {
+            return;
+        };
 
         let mut e = EngineState::new();
         e.load_dialogue_scenes(&cod, &var, &dic, &deb, &db, assets);
         e.dialogue_hold_frames = 20;
-        if let (Ok(c), Ok(b)) = (std::fs::read(iso.join("CARTE.SPR")), std::fs::read(iso.join("BORXX.SPR"))) {
+        if let (Ok(c), Ok(b)) = (
+            std::fs::read(iso.join("CARTE.SPR")),
+            std::fs::read(iso.join("BORXX.SPR")),
+        ) {
             e.load_nav_sprites(&c, &b);
         }
         e.load_title(iso);
@@ -7350,35 +7702,55 @@ mod tests {
         let mut intro_ended = false;
         for _ in 0..4000 {
             e.step(MouseInput::default());
-            if !e.intro_active() { intro_ended = true; break; }
+            if !e.intro_active() {
+                intro_ended = true;
+                break;
+            }
         }
         assert!(intro_ended, "intro sequence finishes");
 
         // Every screen renders real content.
         e.on_ship = true;
-        for _ in 0..8 { e.step(MouseInput::default()); }
+        for _ in 0..8 {
+            e.step(MouseInput::default());
+        }
         assert!(nonblank(&e.framebuffer) > 500, "nav view renders");
         if has_chart {
             // With CHART.FD present the nav view is the real star-map: a rich, many-colour
             // image, not a sparse procedural starfield.
-            let distinct = e.framebuffer.iter().collect::<std::collections::HashSet<_>>().len();
-            assert!(distinct > 40, "nav view shows the real CHART.FD star-map ({distinct} colours)");
+            let distinct = e
+                .framebuffer
+                .iter()
+                .collect::<std::collections::HashSet<_>>()
+                .len();
+            assert!(
+                distinct > 40,
+                "nav view shows the real CHART.FD star-map ({distinct} colours)"
+            );
         }
         e.bridge_active = true;
-        for _ in 0..4 { e.step(MouseInput::default()); }
+        for _ in 0..4 {
+            e.step(MouseInput::default());
+        }
         assert!(nonblank(&e.framebuffer) > 500, "bridge renders");
         e.bridge_active = false;
         e.tv_active = true;
-        for _ in 0..8 { e.step(MouseInput::default()); }
+        for _ in 0..8 {
+            e.step(MouseInput::default());
+        }
         assert!(nonblank(&e.framebuffer) > 500, "TV renders");
         e.tv_active = false;
         e.cyber_active = true;
-        for _ in 0..8 { e.step(MouseInput::default()); }
+        for _ in 0..8 {
+            e.step(MouseInput::default());
+        }
         assert!(nonblank(&e.framebuffer) > 500, "cyberspace renders");
         e.cyber_active = false;
         e.alien_view_active = true;
         e.arm_alien_intro();
-        for _ in 0..12 { e.step(MouseInput::default()); }
+        for _ in 0..12 {
+            e.step(MouseInput::default());
+        }
         assert!(nonblank(&e.framebuffer) > 500, "alien view renders");
         e.alien_view_active = false;
 
@@ -7388,11 +7760,17 @@ mod tests {
         let mut finished = false;
         for _ in 0..20000 {
             e.step(MouseInput::default());
-            if e.dialogue_finished() { finished = true; break; }
+            if e.dialogue_finished() {
+                finished = true;
+                break;
+            }
         }
         assert!(finished, "SCRIPT1 dialogue scene completes");
         assert!(total > 1, "SCRIPT1 has real dialogue lines ({total})");
-        assert!(e.dialogue_cursor() + 1 >= total, "cursor reached the last line");
+        assert!(
+            e.dialogue_cursor() + 1 >= total,
+            "cursor reached the last line"
+        );
     }
 
     /// The SAVE-SLOT UI matches the oracle capture (vs_011) and the DOS edit law
@@ -7402,7 +7780,9 @@ mod tests {
     #[test]
     fn save_slot_ui_edits_by_the_0x1dd8_law_and_renders_through_the_widget() {
         let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
-            .iter().map(Path::new).find(|p| p.join("TB.BIG").exists());
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("TB.BIG").exists());
         let Some(iso) = iso else { return };
         let mut e = EngineState::new();
         e.load_bridge(iso);
@@ -7411,7 +7791,10 @@ mod tests {
         e.bridge.frame = 45;
         e.save_ui_active = true;
         assert!(e.save_ui_key(b'A').is_none());
-        assert_eq!(e.save_ui_name, "", "uppercase is rejected (the 0x1DD8 filter)");
+        assert_eq!(
+            e.save_ui_name, "",
+            "uppercase is rejected (the 0x1DD8 filter)"
+        );
         for &c in b"ab" {
             assert!(e.save_ui_key(c).is_none());
         }
@@ -7422,7 +7805,11 @@ mod tests {
         assert_eq!(e.save_ui_name.len(), 14, "the 14-char cap");
         e.save_ui_key(8);
         assert_eq!(e.save_ui_name.len(), 13, "backspace deletes");
-        e.step(MouseInput { x: 300, y: 190, ..Default::default() });
+        e.step(MouseInput {
+            x: 300,
+            y: 190,
+            ..Default::default()
+        });
         // The screen is the LIST WIDGET showing the slots with the edit buffer
         // swapped into the edited row (0x8573), not the capture-measured grey bar
         // at x63..137/y39..48 this used to assert. Check the typed text renders in
@@ -7456,15 +7843,26 @@ mod tests {
     #[test]
     fn cryobox_console_function_renders() {
         let assets = ["output/_tmp_dat", "../output/_tmp_dat"]
-            .iter().map(Path::new).find(|p| p.join("sq").join("cryorad.hnm").exists());
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("sq").join("cryorad.hnm").exists());
         let Some(assets) = assets else { return };
         let mut e = EngineState::new();
         assert!(e.load_cryobox(assets), "cryorad.hnm loads");
         e.cryobox_active = true;
-        for _ in 0..16 { e.step(MouseInput::default()); }
+        for _ in 0..16 {
+            e.step(MouseInput::default());
+        }
         // The cryo-chamber fills the frame in real (many-colour) content.
-        assert!(e.framebuffer.iter().filter(|&&p| p != 0).count() > 5000, "cryo-chamber renders");
-        let distinct = e.framebuffer.iter().collect::<std::collections::HashSet<_>>().len();
+        assert!(
+            e.framebuffer.iter().filter(|&&p| p != 0).count() > 5000,
+            "cryo-chamber renders"
+        );
+        let distinct = e
+            .framebuffer
+            .iter()
+            .collect::<std::collections::HashSet<_>>()
+            .len();
         assert!(distinct > 20, "cryo-chamber has real colour ({distinct})");
     }
 
@@ -7474,20 +7872,34 @@ mod tests {
     #[test]
     fn telephone_console_function_renders() {
         let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
-            .iter().map(Path::new).find(|p| p.join("BAPPEL.SPR").is_file());
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("BAPPEL.SPR").is_file());
         let assets = ["output/_tmp_dat", "../output/_tmp_dat"]
-            .iter().map(Path::new).find(|p| p.join("pe").is_dir());
-        let (Some(iso), Some(assets)) = (iso, assets) else { return };
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("pe").is_dir());
+        let (Some(iso), Some(assets)) = (iso, assets) else {
+            return;
+        };
         let mut e = EngineState::new();
-        assert!(e.load_telephone(iso, assets), "BAPPEL.SPR + talk-heads load");
+        assert!(
+            e.load_telephone(iso, assets),
+            "BAPPEL.SPR + talk-heads load"
+        );
         assert!(e.load_console_font(iso), "console font loads");
         e.load_nav_chart(iso);
         assert!(e.phone_contact_count() >= 3, "several crew are callable");
         e.phone_active = true;
         // Dialling: the widget + contact list render as real content.
-        for _ in 0..8 { e.step(MouseInput::default()); }
+        for _ in 0..8 {
+            e.step(MouseInput::default());
+        }
         assert!(!e.phone_connected(), "starts on the dial screen");
-        assert!(e.framebuffer.iter().filter(|&&p| p != 0).count() > 500, "dial screen renders");
+        assert!(
+            e.framebuffer.iter().filter(|&&p| p != 0).count() > 500,
+            "dial screen renders"
+        );
         // A click on the second contact row (choice-box row 1) connects that call.
         // The box is vertically centred for (contacts+CANCEL) rows, so derive row
         // 1's y from that layout rather than assuming a fixed anchor.
@@ -7499,9 +7911,18 @@ mod tests {
         assert!(e.phone_connected(), "call connected");
         let name = e.phone_contact_name().unwrap().to_string();
         // Connected: the crew's talk-head HNM feed fills the frame in colour.
-        for _ in 0..8 { e.step(MouseInput::default()); }
-        let distinct = e.framebuffer.iter().collect::<std::collections::HashSet<_>>().len();
-        assert!(distinct > 16, "call feed for {name} has real colour ({distinct})");
+        for _ in 0..8 {
+            e.step(MouseInput::default());
+        }
+        let distinct = e
+            .framebuffer
+            .iter()
+            .collect::<std::collections::HashSet<_>>()
+            .len();
+        assert!(
+            distinct > 16,
+            "call feed for {name} has real colour ({distinct})"
+        );
         // Hanging up returns to the dial screen.
         e.phone_hangup();
         assert!(!e.phone_connected(), "hung up back to dial");
@@ -7513,7 +7934,9 @@ mod tests {
     #[test]
     fn menu_submenu_decoded_from_real_console() {
         let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
-            .iter().map(Path::new).find(|p| p.join("HONKF.SPR").is_file());
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("HONKF.SPR").is_file());
         let Some(iso) = iso else { return };
         let mut e = EngineState::new();
         assert!(e.load_console_font(iso), "console font loads");
@@ -7561,22 +7984,38 @@ mod tests {
     #[test]
     fn cyberspace_traversal_reaches_destination() {
         let assets = ["output/_tmp_dat", "../output/_tmp_dat"]
-            .iter().map(Path::new).find(|p| p.join("sq").is_dir());
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("sq").is_dir());
         let Some(assets) = assets else { return };
         let mut e = EngineState::new();
         e.load_cyberspace(assets);
         let (_, total) = e.cyber_progress();
-        if total == 0 { return; }
+        if total == 0 {
+            return;
+        }
         e.cyber_active = true;
         e.start_cyberspace();
         assert!(!e.cyber_arrived, "starts before the destination");
         // Steering right moves the on-course reticle; the frame stays real content.
-        for _ in 0..8 { e.step(MouseInput { x: 260, y: 100, buttons: 0, ..Default::default() }); }
-        assert!(e.framebuffer.iter().filter(|&&p| p != 0).count() > 500, "tunnel + HUD render");
+        for _ in 0..8 {
+            e.step(MouseInput {
+                x: 260,
+                y: 100,
+                buttons: 0,
+                ..Default::default()
+            });
+        }
+        assert!(
+            e.framebuffer.iter().filter(|&&p| p != 0).count() > 500,
+            "tunnel + HUD render"
+        );
         // Fly the whole journey to arrival.
         for _ in 0..30000 {
             e.step(MouseInput::default());
-            if e.cyber_arrived { break; }
+            if e.cyber_arrived {
+                break;
+            }
         }
         assert!(e.cyber_arrived, "traversal reaches the destination");
         let (seg, tot) = e.cyber_progress();
@@ -7588,7 +8027,9 @@ mod tests {
     #[test]
     fn ending_finale_plays_to_completion() {
         let assets = ["output/_tmp_dat", "../output/_tmp_dat"]
-            .iter().map(Path::new).find(|p| p.join("sq").join("fin.hnm").exists());
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("sq").join("fin.hnm").exists());
         let Some(assets) = assets else { return };
         let mut e = EngineState::new();
         assert!(e.load_ending(assets), "fin.hnm loads");
@@ -7597,12 +8038,21 @@ mod tests {
         assert!(!e.ending_finished(), "finale not finished at the start");
         // First frame renders real (many-colour) content.
         e.step(MouseInput::default());
-        assert!(e.framebuffer.iter().filter(|&&p| p != 0).count() > 5000, "finale renders");
-        let distinct = e.framebuffer.iter().collect::<std::collections::HashSet<_>>().len();
+        assert!(
+            e.framebuffer.iter().filter(|&&p| p != 0).count() > 5000,
+            "finale renders"
+        );
+        let distinct = e
+            .framebuffer
+            .iter()
+            .collect::<std::collections::HashSet<_>>()
+            .len();
         assert!(distinct > 16, "finale has real colour ({distinct})");
         // Step through to completion.
         for _ in 0..4000 {
-            if e.ending_finished() { break; }
+            if e.ending_finished() {
+                break;
+            }
             e.step(MouseInput::default());
         }
         assert!(e.ending_finished(), "finale plays through all frames");
@@ -7634,7 +8084,10 @@ mod tests {
         let mut dst = EngineState::new();
         dst.set_speech_dialogue(lines);
         dst.restore_save(&save);
-        assert!(dst.tv_active && !dst.on_ship, "restored to the comms screen");
+        assert!(
+            dst.tv_active && !dst.on_ship,
+            "restored to the comms screen"
+        );
         assert_eq!(dst.compass_angle, 120, "restored the nav heading");
         assert_eq!(dst.dialogue_cursor(), 3, "resumed at the saved line");
         assert_eq!(
@@ -7649,18 +8102,22 @@ mod tests {
     #[test]
     fn speech_dialogue_plays_all_lines() {
         let mut e = EngineState::new();
-        let lines: Vec<(String, Option<std::path::PathBuf>)> = (0..250)
-            .map(|i| (format!("line {i}"), None))
-            .collect();
+        let lines: Vec<(String, Option<std::path::PathBuf>)> =
+            (0..250).map(|i| (format!("line {i}"), None)).collect();
         e.set_speech_dialogue(lines);
         assert_eq!(e.dialogue_len(), 250, "all speech lines loaded");
         assert_eq!(e.current_subtitle(), Some("line 0"));
         e.on_ship = false;
         for _ in 0..40000 {
             e.step(MouseInput::default());
-            if e.dialogue_finished() { break; }
+            if e.dialogue_finished() {
+                break;
+            }
         }
-        assert!(e.dialogue_cursor() + 1 >= 250, "cursor advances through all lines");
+        assert!(
+            e.dialogue_cursor() + 1 >= 250,
+            "cursor advances through all lines"
+        );
     }
 
     /// The choose-a-location nav: a destination list is offered on the star-map, a click
@@ -7687,14 +8144,20 @@ mod tests {
         for _ in 0..100 {
             e.step_ship_3d_nav_state();
         }
-        assert!(!e.ship3d_transition.transition_armed, "not armed before 120 ticks");
+        assert!(
+            !e.ship3d_transition.transition_armed,
+            "not armed before 120 ticks"
+        );
         assert_eq!(e.ship3d_depth.depth_offset, 0, "no sweep before arming");
 
         // Past the threshold it arms, opens with step 4 (0xB6A0), and sweeps.
         for _ in 0..40 {
             e.step_ship_3d_nav_state();
         }
-        assert!(e.ship3d_transition.transition_armed, "armed once hold > 120");
+        assert!(
+            e.ship3d_transition.transition_armed,
+            "armed once hold > 120"
+        );
         assert_eq!(e.ship3d_transition.depth_step, 4, "open step is 4 (0xB6A0)");
         assert!(
             e.ship3d_depth.depth_offset > 0,
@@ -7736,7 +8199,8 @@ mod tests {
         assert!(
             moved || cleared,
             "procedural update never ran: angle {} flags {:#x}",
-            e.ship3d_procedural.angle, e.ship3d_procedural.hud_flags
+            e.ship3d_procedural.angle,
+            e.ship3d_procedural.hud_flags
         );
         // And the hold counter it reads is the same one the transition gate uses.
         assert_eq!(e.ship3d_procedural.hold_ticks, e.ship3d_hold_ticks);
@@ -7801,10 +8265,13 @@ mod tests {
     /// menu rows, gluing them onto the spoken line.
     #[test]
     fn choice_menu_rows_do_not_leak_into_the_spoken_subtitle() {
-        let dir = ["accuracy/cblood_install/cblood", "../accuracy/cblood_install/cblood"]
-            .iter()
-            .map(Path::new)
-            .find(|p| p.join("SCRIPT1.COD").is_file());
+        let dir = [
+            "accuracy/cblood_install/cblood",
+            "../accuracy/cblood_install/cblood",
+        ]
+        .iter()
+        .map(Path::new)
+        .find(|p| p.join("SCRIPT1.COD").is_file());
         let Some(dir) = dir else { return };
         let cod = std::fs::read(dir.join("SCRIPT1.COD")).unwrap();
         let dic = std::fs::read(dir.join("SCRIPT1.DIC")).unwrap();
@@ -7853,7 +8320,11 @@ mod tests {
         let top = EngineState::choice_box_top_y(8);
         assert_eq!(top, 56, "y = (200-(8*11+8))/2 + 4");
         assert_eq!(EngineState::CHOICE_BOX_PITCH, 11, "add bp,0xB @0x847A");
-        assert_eq!(EngineState::CHOICE_BOX_ANCHOR_CONCEPT, 0xE1, "mov [0xAC6],0xE1 @0x89A6");
+        assert_eq!(
+            EngineState::CHOICE_BOX_ANCHOR_CONCEPT,
+            0xE1,
+            "mov [0xAC6],0xE1 @0x89A6"
+        );
         // x0 = anchor - (widest + 0x14)/2; the capture's x=170 implies a 110px box,
         // i.e. a widest label of 90px — consistent, not coincidental.
         let box_w = 90 + 0x14;
@@ -7873,7 +8344,11 @@ mod tests {
             Err(_) => return,
         };
         let start = EngineState::OPTION_BOX_LABEL_FILE_OFFSET;
-        let end = start + exe[start..].iter().position(|&b| b == 0).expect("NUL-terminated");
+        let end = start
+            + exe[start..]
+                .iter()
+                .position(|&b| b == 0)
+                .expect("NUL-terminated");
         let mut probe = EngineState::new();
         probe.load_ds_strings(&exe);
         assert_eq!(
@@ -7895,7 +8370,7 @@ mod tests {
 
     #[test]
     fn a_chart_click_opens_the_panel_and_the_next_click_closes_it() {
-        use crate::vm::{LocationPanelRow, LOCATION_PANEL_BOX, LOCATION_PANEL_ZOOM_STEPS};
+        use crate::vm::{LOCATION_PANEL_BOX, LOCATION_PANEL_ZOOM_STEPS, LocationPanelRow};
         const ODDLAND: u16 = 0x0F98;
         const HERE: u16 = 0x0200;
         let mut e = EngineState::new();
@@ -7947,7 +8422,10 @@ mod tests {
             *entry = [i as u8, i as u8, i as u8];
         }
         for _ in 0..LOCATION_PANEL_ZOOM_STEPS {
-            assert!(e.render_nav_info_panel_frame(), "one drawn rect per zoom step");
+            assert!(
+                e.render_nav_info_panel_frame(),
+                "one drawn rect per zoom step"
+            );
         }
         // The step AFTER the last one is where the gate reports Complete
         // (`stc` at 0x1EB9 -> the caller's `jae` falls through), so that frame
@@ -7976,16 +8454,23 @@ mod tests {
 
     #[test]
     fn nav_slots_carry_their_entity_ids_and_answer_the_hover_gate() {
-        use crate::ship3d::{ship_3d_nav_entity_for_slot, SHIP_3D_ENTITY_COUNT};
+        use crate::ship3d::{SHIP_3D_ENTITY_COUNT, ship_3d_nav_entity_for_slot};
         // 0x9B98: slot i is entity 0x15 + i, and the table stops at 32 entities.
-        assert_eq!(ship_3d_nav_entity_for_slot(0), Some((0x15, 0x6212 + 0x15 * 32)));
+        assert_eq!(
+            ship_3d_nav_entity_for_slot(0),
+            Some((0x15, 0x6212 + 0x15 * 32))
+        );
         assert_eq!(ship_3d_nav_entity_for_slot(10), Some((0x1F, 0x65F2)));
         assert_eq!(
             ship_3d_nav_entity_for_slot(10).unwrap().1,
             0x65F2,
             "entity 0x1F IS the DS:0x65F2 record the hover gate reads"
         );
-        assert_eq!(ship_3d_nav_entity_for_slot(11), None, "past the 32-entity table");
+        assert_eq!(
+            ship_3d_nav_entity_for_slot(11),
+            None,
+            "past the 32-entity table"
+        );
 
         let mut e = EngineState::new();
         e.ship3d_nav_slots.resize_with(11, Default::default);
@@ -8004,11 +8489,20 @@ mod tests {
         last.draw_y = 60;
         last.extent_width = 20;
         last.extent_height = 10;
-        assert!(!e.nav_hover_status_active((105, 62)), "state bit0 clear -> no panel");
+        assert!(
+            !e.nav_hover_status_active((105, 62)),
+            "state bit0 clear -> no panel"
+        );
         e.ship3d_nav_slots.last_mut().unwrap().flags |= 1;
         assert!(e.nav_hover_status_active((105, 62)));
-        assert!(e.nav_hover_status_active((100, 60)), "the near edge is inside");
-        assert!(e.nav_hover_status_active((120, 70)), "and so is the far edge");
+        assert!(
+            e.nav_hover_status_active((100, 60)),
+            "the near edge is inside"
+        );
+        assert!(
+            e.nav_hover_status_active((120, 70)),
+            "and so is the far edge"
+        );
         assert!(!e.nav_hover_status_active((121, 70)));
         assert!(!e.nav_hover_status_active((105, 71)));
     }
@@ -8069,7 +8563,10 @@ mod tests {
             e.location_panel.entity_draw_scale() > 1,
             "0x90FF bumps the entity scale every zoom frame"
         );
-        assert!(e.step_location_info_panel().is_none(), "Open does not animate");
+        assert!(
+            e.step_location_info_panel().is_none(),
+            "Open does not animate"
+        );
 
         // Close: the same count of steps the other way, ending idle with the
         // selection cleared (0x921C).
@@ -8088,7 +8585,7 @@ mod tests {
 
     #[test]
     fn the_info_panel_tints_its_rect_and_draws_its_rows() {
-        use crate::vm::{LocationPanelRow, LOCATION_PANEL_BOX};
+        use crate::vm::{LOCATION_PANEL_BOX, LocationPanelRow};
         let mut e = EngineState::new();
         // A palette where every index has a distinct grey, so the 50% tint
         // resolves to a DIFFERENT index and the remap is observable.
@@ -8158,10 +8655,7 @@ mod tests {
     #[test]
     fn nav_frame_drives_the_interpolation_gate_and_sequence_fsm() {
         let mut e = EngineState::new();
-        e.set_nav_destinations(vec![
-            ("EKATOMB".into(), vec![]),
-            ("VENUSIA".into(), vec![]),
-        ]);
+        e.set_nav_destinations(vec![("EKATOMB".into(), vec![]), ("VENUSIA".into(), vec![])]);
         e.on_ship = true;
         assert!(e.nav_view_active(), "nav view must be the active surface");
 
@@ -8212,14 +8706,15 @@ mod tests {
         if e.nav_pyramids.len() < 6 {
             return;
         }
-        e.set_nav_destinations(vec![
-            ("EKATOMB".into(), vec![]),
-            ("VENUSIA".into(), vec![]),
-        ]);
+        e.set_nav_destinations(vec![("EKATOMB".into(), vec![]), ("VENUSIA".into(), vec![])]);
         e.on_ship = true;
         e.render_ship_view();
 
-        assert_eq!(e.ship3d_nav_slots.len(), 2, "one persistent slot per destination");
+        assert_eq!(
+            e.ship3d_nav_slots.len(),
+            2,
+            "one persistent slot per destination"
+        );
         assert!(
             !e.ship3d_dirty_rects.rects.is_empty(),
             "the clip snapshot must seed the dirty-rect list"
@@ -8254,17 +8749,28 @@ mod tests {
         use crate::ship3d::{
             NAV_DESTINATION_POINTS, SHIP_3D_ANGLE_TABLE, SHIP_3D_OBJECT_VISIBLE_FLAG,
             Ship3dMatrixAngles, Ship3dObjectSpriteDescriptor, Ship3dProjectionOrigin,
-            Ship3dProjectionPoint, build_ship_3d_projection_matrix,
-            project_ship_3d_object_sprite,
+            Ship3dProjectionPoint, build_ship_3d_projection_matrix, project_ship_3d_object_sprite,
         };
         let m = build_ship_3d_projection_matrix(
             &SHIP_3D_ANGLE_TABLE,
-            Ship3dMatrixAngles { angle_2f71: 0, projection_angle_2f6d: 0, angle_2f6f: 0 },
+            Ship3dMatrixAngles {
+                angle_2f71: 0,
+                projection_angle_2f6d: 0,
+                angle_2f6f: 0,
+            },
         )
         .expect("matrix builds");
         let p = NAV_DESTINATION_POINTS[0];
-        let anchor = Ship3dProjectionPoint { x: p[0] as u16, y: p[1] as u16, z: p[2] as u16 };
-        let cam = Ship3dProjectionOrigin { x: 10000, y: 12000, z: 0 };
+        let anchor = Ship3dProjectionPoint {
+            x: p[0] as u16,
+            y: p[1] as u16,
+            z: p[2] as u16,
+        };
+        let cam = Ship3dProjectionOrigin {
+            x: 10000,
+            y: 12000,
+            z: 0,
+        };
 
         let mut visible = Ship3dObjectSpriteDescriptor {
             flags: SHIP_3D_OBJECT_VISIBLE_FLAG,
@@ -8277,7 +8783,10 @@ mod tests {
             "a visible destination must project"
         );
 
-        let mut hidden = Ship3dObjectSpriteDescriptor { flags: 0, ..visible };
+        let mut hidden = Ship3dObjectSpriteDescriptor {
+            flags: 0,
+            ..visible
+        };
         assert!(
             project_ship_3d_object_sprite(anchor, cam, m, &mut hidden).is_none(),
             "the 0x9BE1 active-bit gate must suppress an inactive entity"
@@ -8287,16 +8796,24 @@ mod tests {
     #[test]
     fn nav_destination_points_coincide_rather_than_fanning_out() {
         use crate::ship3d::NAV_DESTINATION_POINTS;
-        assert_eq!(NAV_DESTINATION_POINTS.len(), 10, "DS:0x4F09 holds TEN records");
+        assert_eq!(
+            NAV_DESTINATION_POINTS.len(),
+            10,
+            "DS:0x4F09 holds TEN records"
+        );
         assert!(
-            NAV_DESTINATION_POINTS.iter().all(|p| *p == [10200, 12100, 900]),
+            NAV_DESTINATION_POINTS
+                .iter()
+                .all(|p| *p == [10200, 12100, 900]),
             "every baked entry is the same point"
         );
 
         let render = |n: usize| -> Vec<u8> {
             let mut e = EngineState::new();
             e.set_nav_destinations(
-                (0..n).map(|i| (format!("D{i}"), vec![])).collect::<Vec<_>>(),
+                (0..n)
+                    .map(|i| (format!("D{i}"), vec![]))
+                    .collect::<Vec<_>>(),
             );
             e.on_ship = true;
             e.render_ship_view();
@@ -8316,9 +8833,18 @@ mod tests {
     fn nav_destination_list_choose_a_location() {
         let mut e = EngineState::new();
         let dests: Vec<(String, Vec<(String, Option<std::path::PathBuf>)>)> = vec![
-            ("EKATOMB".into(), (0..5).map(|i| (format!("daddy {i}"), None)).collect()),
-            ("VENUSIA".into(), (0..7).map(|i| (format!("bug {i}"), None)).collect()),
-            ("KORTEX".into(), (0..3).map(|i| (format!("hom {i}"), None)).collect()),
+            (
+                "EKATOMB".into(),
+                (0..5).map(|i| (format!("daddy {i}"), None)).collect(),
+            ),
+            (
+                "VENUSIA".into(),
+                (0..7).map(|i| (format!("bug {i}"), None)).collect(),
+            ),
+            (
+                "KORTEX".into(),
+                (0..3).map(|i| (format!("hom {i}"), None)).collect(),
+            ),
         ];
         e.set_nav_destinations(dests);
         assert_eq!(e.nav_destination_count(), 3);
@@ -8343,7 +8869,9 @@ mod tests {
     #[test]
     fn console_font_loads_and_menu_rows_render() {
         let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
-            .iter().map(Path::new).find(|p| p.join("HONKF.SPR").is_file());
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("HONKF.SPR").is_file());
         let Some(iso) = iso else { return };
         let mut e = EngineState::new();
         assert!(e.load_console_font(iso), "HONKF.SPR console font loads");
@@ -8365,35 +8893,66 @@ mod tests {
         };
         for (ch, upper_dot, tail) in [(':', true, false), (',', false, true), (';', true, true)] {
             let g = EngineState::console_glyph_index(ch).expect("punctuation maps");
-            assert_eq!(ink(g, 2) || ink(g, 3), upper_dot, "{ch:?} upper dot (frame {g})");
+            assert_eq!(
+                ink(g, 2) || ink(g, 3),
+                upper_dot,
+                "{ch:?} upper dot (frame {g})"
+            );
             assert_eq!(ink(g, 7), tail, "{ch:?} descender tail (frame {g})");
         }
         // '.' is the one with neither.
         let dot = EngineState::console_glyph_index('.').unwrap();
-        assert!(!ink(dot, 2) && !ink(dot, 3) && !ink(dot, 7), "'.' has no dot above and no tail");
-        if e.panorama.is_none() { return; }
+        assert!(
+            !ink(dot, 2) && !ink(dot, 3) && !ink(dot, 7),
+            "'.' has no dot above and no tail"
+        );
+        if e.panorama.is_none() {
+            return;
+        }
         e.bridge_active = true;
-        e.step(MouseInput { x: 160, y: 100, buttons: 0, ..Default::default() });
+        e.step(MouseInput {
+            x: 160,
+            y: 100,
+            buttons: 0,
+            ..Default::default()
+        });
         // The baked menu glyphs use one palette index per row (0x7B + row).
         let menu_pixels = e
             .framebuffer
             .iter()
             .filter(|&&p| (0x7B..0x80).contains(&(p as usize)))
             .count();
-        assert!(menu_pixels > 200, "golden menu rows present ({menu_pixels} px)");
+        assert!(
+            menu_pixels > 200,
+            "golden menu rows present ({menu_pixels} px)"
+        );
         // A click on the HONK row (option 0) is detected; off-menu clicks are not.
         e.bridge.frame = crate::bridge::MENU_REST_FRAME;
-        assert_eq!(e.console_menu_click(232, 0x48 + 1), Some(0), "HONK row clickable");
-        assert_eq!(e.console_menu_click(10, 190), None, "off-menu click hits nothing");
+        assert_eq!(
+            e.console_menu_click(232, 0x48 + 1),
+            Some(0),
+            "HONK row clickable"
+        );
+        assert_eq!(
+            e.console_menu_click(10, 190),
+            None,
+            "off-menu click hits nothing"
+        );
     }
 
     #[test]
     fn script1_tutorial_chains_to_script2() {
         let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
-            .iter().map(Path::new).find(|p| p.join("SCRIPT1.COD").is_file());
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("SCRIPT1.COD").is_file());
         let assets = ["output/_tmp_dat", "../output/_tmp_dat"]
-            .iter().map(Path::new).find(|p| p.join("sq").is_dir());
-        let (Some(iso), Some(assets)) = (iso, assets) else { return };
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("sq").is_dir());
+        let (Some(iso), Some(assets)) = (iso, assets) else {
+            return;
+        };
         let db = crate::descript::DescriptDb::parse_file(iso.join("DESCRIPT.DES")).unwrap();
         let rd = |ext: &str| std::fs::read(iso.join(format!("SCRIPT1.{ext}"))).unwrap();
         let mut e = EngineState::new();
@@ -8402,11 +8961,17 @@ mod tests {
         e.on_ship = false;
         for _ in 0..20000 {
             e.step(MouseInput::default());
-            if e.dialogue_finished() { break; }
+            if e.dialogue_finished() {
+                break;
+            }
         }
         assert!(e.dialogue_finished(), "SCRIPT1 tutorial completes");
         // Its D2 handoff requests profile 1 -> the driver loads SCRIPT(1+1)=SCRIPT2.
-        assert_eq!(e.pending_next_scene(), Some(1), "SCRIPT1 chains to SCRIPT2 via D2");
+        assert_eq!(
+            e.pending_next_scene(),
+            Some(1),
+            "SCRIPT1 chains to SCRIPT2 via D2"
+        );
     }
 
     #[test]
@@ -8456,9 +9021,17 @@ mod tests {
         e.on_ship = true;
         e.compass_angle = 90;
         for _ in 0..10 {
-            e.step(MouseInput { x: 315, y: 100, buttons: 0, ..Default::default() });
+            e.step(MouseInput {
+                x: 315,
+                y: 100,
+                buttons: 0,
+                ..Default::default()
+            });
         }
-        assert_eq!(e.compass_angle, 90, "mouse position does not steer the chart view");
+        assert_eq!(
+            e.compass_angle, 90,
+            "mouse position does not steer the chart view"
+        );
     }
 
     #[test]
@@ -8902,10 +9475,23 @@ mod tests {
     fn nav_click_does_not_commit_a_heading() {
         let mut e = EngineState::new();
         e.on_ship = true;
-        e.step(MouseInput { x: 200, y: 100, buttons: 0, ..Default::default() });
+        e.step(MouseInput {
+            x: 200,
+            y: 100,
+            buttons: 0,
+            ..Default::default()
+        });
         assert!(e.take_nav_selection().is_none());
-        e.step(MouseInput { x: 200, y: 100, buttons: 1, ..Default::default() });
-        assert!(e.take_nav_selection().is_none(), "bare nav clicks select nothing");
+        e.step(MouseInput {
+            x: 200,
+            y: 100,
+            buttons: 1,
+            ..Default::default()
+        });
+        assert!(
+            e.take_nav_selection().is_none(),
+            "bare nav clicks select nothing"
+        );
     }
 
     /// audit-fixes #325. `LOADING`, `PAUSE` and `LAST` are not transcriptions to
@@ -8999,7 +9585,11 @@ mod tests {
             return;
         };
         let word = |off: usize| u16::from_le_bytes([cod[off], cod[off + 1]]);
-        assert_eq!(word(0x4A9), 0x02FC, "first menu word offset -> explanations");
+        assert_eq!(
+            word(0x4A9),
+            0x02FC,
+            "first menu word offset -> explanations"
+        );
         assert_eq!(word(0x4AB), 0x0309, "second -> game");
         assert_eq!(word(0x4AD), 0x0000, "the list is zero-terminated");
     }
@@ -9041,10 +9631,11 @@ mod tests {
         // (`add al,dl / cmp al,0x23` @0x672A). Corrected in audit-fixes #313 --
         // this comment used to say "once the line reaches 35", which is the
         // reactive rule the port had and the game does not.
-        let words: Vec<String> = "You can wake Cap'n Bob by clicking on the CRYO chamber control panel now"
-            .split_whitespace()
-            .map(str::to_string)
-            .collect();
+        let words: Vec<String> =
+            "You can wake Cap'n Bob by clicking on the CRYO chamber control panel now"
+                .split_whitespace()
+                .map(str::to_string)
+                .collect();
         let assembled = assemble_words(&words);
         assert!(assembled.contains('\n'), "long line wraps: {assembled:?}");
         for line in assembled.split('\n') {
@@ -9065,17 +9656,31 @@ mod tests {
         let rows_with_text = (0..30)
             .filter(|&r| e.framebuffer[r * w..(r + 1) * w].iter().any(|&p| p == 0xFD))
             .count();
-        assert!(rows_with_text > 8, "text occupies multiple wrapped rows (rows={rows_with_text})");
+        assert!(
+            rows_with_text > 8,
+            "text occupies multiple wrapped rows (rows={rows_with_text})"
+        );
     }
 
     #[test]
     fn dialogue_hold_scales_with_line_length() {
         let mut e = EngineState::new();
         e.dialogue_hold_frames = 20;
-        e.dialogue_texts = vec!["Hi".into(), "A rather long dialogue line that should linger longer".into()];
+        e.dialogue_texts = vec![
+            "Hi".into(),
+            "A rather long dialogue line that should linger longer".into(),
+        ];
         e.dialogue = vec![
-            LineState { offset: 0, actor_offset: None, location_offset: None },
-            LineState { offset: 1, actor_offset: None, location_offset: None },
+            LineState {
+                offset: 0,
+                actor_offset: None,
+                location_offset: None,
+            },
+            LineState {
+                offset: 1,
+                actor_offset: None,
+                location_offset: None,
+            },
         ];
         e.dialogue_cursor = 0;
         let short = e.current_line_hold();
@@ -9088,14 +9693,20 @@ mod tests {
     #[test]
     fn title_screen_loads_and_shows_the_decoded_box_art() {
         let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
-            .iter().map(std::path::Path::new).find(|p| p.exists());
+            .iter()
+            .map(std::path::Path::new)
+            .find(|p| p.exists());
         let Some(iso) = iso else { return };
         let mut e = EngineState::new();
         assert!(e.load_title(iso), "BLOOD.LBM title art loads");
         assert!(e.title_active());
         // The title takes render precedence and fills the framebuffer with real art.
         e.step(MouseInput::default());
-        let distinct = e.framebuffer.iter().collect::<std::collections::BTreeSet<_>>().len();
+        let distinct = e
+            .framebuffer
+            .iter()
+            .collect::<std::collections::BTreeSet<_>>()
+            .len();
         assert!(distinct >= 8, "title art renders ({distinct} indices)");
         // Dismissing advances past the title.
         e.dismiss_title();
@@ -9106,32 +9717,54 @@ mod tests {
     fn world_ext_objects_are_marked_on_the_location() {
         // The markers are DEBUG-ONLY overlays (no such markers in the binary).
         unsafe { std::env::set_var("CB_DEBUG", "1") };
-        let dat = ["output/_tmp_dat","../output/_tmp_dat"].iter().map(std::path::Path::new).find(|p| p.exists());
-        let iso = ["output/_tmp_iso","../output/_tmp_iso"].iter().map(std::path::Path::new).find(|p| p.exists());
-        let (Some(dat), Some(iso)) = (dat, iso) else { return };
+        let dat = ["output/_tmp_dat", "../output/_tmp_dat"]
+            .iter()
+            .map(std::path::Path::new)
+            .find(|p| p.exists());
+        let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter()
+            .map(std::path::Path::new)
+            .find(|p| p.exists());
+        let (Some(dat), Some(iso)) = (dat, iso) else {
+            return;
+        };
         let mut e = EngineState::new();
-        if !e.visit_world("venusia", dat) { return; }
+        if !e.visit_world("venusia", dat) {
+            return;
+        }
         let ext = std::fs::read(iso.join("VENUSIA.EXT")).unwrap();
         let n = e.set_world_ext(&ext);
         assert!(n >= 1, "venusia has >=1 decoded object");
         // Rendering marks them: the marker index 0xFD appears in the framebuffer.
         e.step(MouseInput::default());
-        assert!(e.framebuffer.iter().any(|&p| p == 0xFD), "object marker rendered");
+        assert!(
+            e.framebuffer.iter().any(|&p| p == 0xFD),
+            "object marker rendered"
+        );
     }
 
     #[test]
     fn visiting_a_world_loads_its_decoded_location_background() {
         let assets = ["output/_tmp_dat", "../output/_tmp_dat"]
-            .iter().map(std::path::Path::new).find(|p| p.exists());
+            .iter()
+            .map(std::path::Path::new)
+            .find(|p| p.exists());
         let Some(assets) = assets else { return };
         let mut e = EngineState::new();
         assert!(!e.world_location_active());
         // Visiting a mapped world loads its fd/ room background.
-        assert!(e.visit_world("venusia", assets), "venusia has decoded location art");
+        assert!(
+            e.visit_world("venusia", assets),
+            "venusia has decoded location art"
+        );
         assert!(e.world_location_active());
         // The landing screen renders the background (non-blank framebuffer).
         e.step(MouseInput::default());
-        let distinct = e.framebuffer.iter().collect::<std::collections::BTreeSet<_>>().len();
+        let distinct = e
+            .framebuffer
+            .iter()
+            .collect::<std::collections::BTreeSet<_>>()
+            .len();
         assert!(distinct > 8, "location background renders real content");
         // Venusia has multiple rooms (floors 1f/2f/3f); cycling advances + wraps.
         let (start, count) = e.world_room_position().unwrap();
@@ -9142,7 +9775,11 @@ mod tests {
         e.cycle_world_room(-1);
         assert_eq!(e.world_room_position().unwrap().0, 0);
         e.cycle_world_room(-1);
-        assert_eq!(e.world_room_position().unwrap().0, count - 1, "wraps backward");
+        assert_eq!(
+            e.world_room_position().unwrap().0,
+            count - 1,
+            "wraps backward"
+        );
         // Leaving returns to nav.
         e.leave_world();
         assert!(!e.world_location_active());
@@ -9161,7 +9798,11 @@ mod tests {
         assert_eq!(e.targeted_world_index(), 0);
         let n = crate::levels::primary_worlds().count();
         e.compass_angle = 179;
-        assert_eq!(e.targeted_world_index(), n - 1, "max heading targets the last world");
+        assert_eq!(
+            e.targeted_world_index(),
+            n - 1,
+            "max heading targets the last world"
+        );
         // Monotonic, in-range across the full sweep.
         for a in 0..180u16 {
             e.compass_angle = a;

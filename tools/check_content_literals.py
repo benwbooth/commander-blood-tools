@@ -41,8 +41,8 @@ SENTENCE = re.compile(r"[.!?]|\b(?:you|your|the|and|are|is|not|this|that)\b", re
 
 # The port talking to its developer, not the game talking to the player.
 DIAGNOSTIC = re.compile(
-    r"(expect|panic|eprintln|println|format!|write!|writeln|"
-    r"assert|debug|warn|error|info|todo!|unimplemented)",
+    r"(anyhow|bail|ensure|expect|panic|eprintln|println|format!|write!|writeln|"
+    r"assert|debug|warn|error|info|todo!|unimplemented|unreachable)",
     re.I,
 )
 # Failure text reads like prose but is the port's own diagnostic vocabulary.

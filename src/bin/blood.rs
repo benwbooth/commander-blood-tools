@@ -89,7 +89,10 @@ fn scancode_ascii(scan: u8) -> u8 {
         (0x31, b'n'),
         (0x32, b'm'),
     ];
-    MAP.iter().find(|(s, _)| *s == scan).map(|(_, a)| *a).unwrap_or(0)
+    MAP.iter()
+        .find(|(s, _)| *s == scan)
+        .map(|(_, a)| *a)
+        .unwrap_or(0)
 }
 
 fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
@@ -114,7 +117,11 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
             }
             "key" => {
                 let scan = arg(1) as u8;
-                let ascii = if w.len() > 2 { arg(2) as u8 } else { scancode_ascii(scan) };
+                let ascii = if w.len() > 2 {
+                    arg(2) as u8
+                } else {
+                    scancode_ascii(scan)
+                };
                 rt.key_event(scan, ascii);
             }
             "move" | "press" | "release" | "click" => {
@@ -143,30 +150,43 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
             }
             "shot" => {
                 let name = w.get(1).unwrap_or(&"shot");
-                rt.write_ppm(&out_dir.join(format!("{name}.ppm"))).map_err(|e| e.to_string())?;
+                rt.write_ppm(&out_dir.join(format!("{name}.ppm")))
+                    .map_err(|e| e.to_string())?;
                 eprintln!("shot {name} at tick {}", rt.ticks());
             }
             "font" => {
                 let ds = rt.m.regs.ds;
                 let ss = rt.m.regs.ss;
                 let dump = |seg: u16, off: u32, n: u32, rt: &Runtime| -> String {
-                    (0..n).map(|i| format!("{:02x}", rt.m.read8(seg, off + i))).collect::<Vec<_>>().join(" ")
+                    (0..n)
+                        .map(|i| format!("{:02x}", rt.m.read8(seg, off + i)))
+                        .collect::<Vec<_>>()
+                        .join(" ")
                 };
                 eprintln!("ds={ds:04x} ss={ss:04x}");
-                eprintln!("DS:6fa8 (ascii->glyph map, 'A'=0x41): {}", dump(ds, 0x6fa8 + 0x41, 8, &rt));
+                eprintln!(
+                    "DS:6fa8 (ascii->glyph map, 'A'=0x41): {}",
+                    dump(ds, 0x6fa8 + 0x41, 8, &rt)
+                );
                 eprintln!("DS:7028 (glyphs)   : {}", dump(ds, 0x7028, 20, &rt));
                 eprintln!("SS:7028 (glyphs)   : {}", dump(ss, 0x7028, 20, &rt));
                 let gs = rt.m.regs.gs;
                 let fb_off = rt.m.read16(gs, 0x5219);
                 let fb_seg = rt.m.read16(gs, 0x521b);
                 eprintln!("gs={gs:04x} framebuffer ptr gs:5219 = {fb_seg:04x}:{fb_off:04x}");
-                eprintln!("DS:70fa (subtitle map @'A'): {}", dump(ds, 0x70fa + 0x41, 8, &rt));
+                eprintln!(
+                    "DS:70fa (subtitle map @'A'): {}",
+                    dump(ds, 0x70fa + 0x41, 8, &rt)
+                );
                 eprintln!("DS:71aa (subtitle glyphs)  : {}", dump(ds, 0x71aa, 24, &rt));
                 // during the subtitle blit DS==gs (chars read from the gs state buffer via DS:si)
                 eprintln!("gs:70fa (map @'A'): {}", dump(gs, 0x70fa + 0x41, 8, &rt));
                 eprintln!("gs:71aa (glyphs)  : {}", dump(gs, 0x71aa, 24, &rt));
                 let gidx = rt.m.read8(gs, 0x70fa + 0x57) as u32;
-                eprintln!("(gs) 'W'->glyph {gidx:#x}, bitmap: {}", dump(gs, 0x71aa + gidx*8, 8, &rt));
+                eprintln!(
+                    "(gs) 'W'->glyph {gidx:#x}, bitmap: {}",
+                    dump(gs, 0x71aa + gidx * 8, 8, &rt)
+                );
             }
             "watchaddr" => {
                 let off = usize::from_str_radix(w.get(1).unwrap_or(&"67bc"), 16).unwrap_or(0x67bc);
@@ -177,7 +197,8 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
             }
             "watchlin" => {
                 // watchlin <hexlinear>: all writes to a raw linear address
-                let lin = usize::from_str_radix(w.get(1).unwrap_or(&"2e4c0"), 16).unwrap_or(0x2e4c0);
+                let lin =
+                    usize::from_str_radix(w.get(1).unwrap_or(&"2e4c0"), 16).unwrap_or(0x2e4c0);
                 rt.m.watch_addr = Some(lin);
                 rt.m.addr_hits.clear();
                 eprintln!("watching all writes to lin {lin:#x}");
@@ -193,14 +214,27 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
             }
             "trace" => {
                 let gs = rt.m.regs.gs;
-                eprintln!("  crtc_start={:#06x} 5219={:04x}:{:04x} 521d={:04x}:{:04x}",
+                eprintln!(
+                    "  crtc_start={:#06x} 5219={:04x}:{:04x} 521d={:04x}:{:04x}",
                     ((rt.crtc_reg(0x0c) as u16) << 8) | rt.crtc_reg(0x0d) as u16,
-                    rt.m.read16(gs,0x521b), rt.m.read16(gs,0x5219),
-                    rt.m.read16(gs,0x521f), rt.m.read16(gs,0x521d));
-                eprintln!("t{:>4} 5e58={:04x} 5e65={:04x} b31={:04x} b37={:04x} 67bc={:02x} 67bb={:02x} 5e64={:02x} 27e2={:04x} 679a={:04x}",
+                    rt.m.read16(gs, 0x521b),
+                    rt.m.read16(gs, 0x5219),
+                    rt.m.read16(gs, 0x521f),
+                    rt.m.read16(gs, 0x521d)
+                );
+                eprintln!(
+                    "t{:>4} 5e58={:04x} 5e65={:04x} b31={:04x} b37={:04x} 67bc={:02x} 67bb={:02x} 5e64={:02x} 27e2={:04x} 679a={:04x}",
                     rt.ticks(),
-                    rt.m.read16(gs,0x5e58), rt.m.read16(gs,0x5e65), rt.m.read16(gs,0xb31), rt.m.read16(gs,0xb37),
-                    rt.m.read8(gs,0x67bc), rt.m.read8(gs,0x67bb), rt.m.read8(gs,0x5e64), rt.m.read16(gs,0x27e2), rt.m.read16(gs,0x679a));
+                    rt.m.read16(gs, 0x5e58),
+                    rt.m.read16(gs, 0x5e65),
+                    rt.m.read16(gs, 0xb31),
+                    rt.m.read16(gs, 0xb37),
+                    rt.m.read8(gs, 0x67bc),
+                    rt.m.read8(gs, 0x67bb),
+                    rt.m.read8(gs, 0x5e64),
+                    rt.m.read16(gs, 0x27e2),
+                    rt.m.read16(gs, 0x679a)
+                );
             }
             "trapset" => {
                 // arm exec counters for the glyph blitter entry + reveal draw glyph-call site
@@ -234,21 +268,34 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
             }
             "capdump" => {
                 match rt.m.captured {
-                    Some((ss,ds,es,si,bp,bx)) => {
-                        eprintln!("at glyph blit: ss={ss:04x} ds={ds:04x} es={es:04x} si={si:04x} bp={bp:04x} bx={bx:04x}");
-                        let fss = (0..8).map(|i| format!("{:02x}", rt.m.read8(ss, 0x71aa+i))).collect::<Vec<_>>().join(" ");
-                        let fgs = (0..8).map(|i| format!("{:02x}", rt.m.read8(0x0e84, 0x71aa+i))).collect::<Vec<_>>().join(" ");
+                    Some((ss, ds, es, si, bp, bx)) => {
+                        eprintln!(
+                            "at glyph blit: ss={ss:04x} ds={ds:04x} es={es:04x} si={si:04x} bp={bp:04x} bx={bx:04x}"
+                        );
+                        let fss = (0..8)
+                            .map(|i| format!("{:02x}", rt.m.read8(ss, 0x71aa + i)))
+                            .collect::<Vec<_>>()
+                            .join(" ");
+                        let fgs = (0..8)
+                            .map(|i| format!("{:02x}", rt.m.read8(0x0e84, 0x71aa + i)))
+                            .collect::<Vec<_>>()
+                            .join(" ");
                         eprintln!("  SS:71aa (glyph src) = {fss}");
                         eprintln!("  gs:71aa (valid font)= {fgs}");
                     }
                     None => eprintln!("glyph blitter not captured"),
                 }
-                eprintln!("glyph pixel targets (es:di): {:04x?}", &rt.m.captured2[..rt.m.captured2.len().min(12)]);
+                eprintln!(
+                    "glyph pixel targets (es:di): {:04x?}",
+                    &rt.m.captured2[..rt.m.captured2.len().min(12)]
+                );
             }
             "trapdump" => {
                 let mut rows: Vec<_> = rt.m.trap_ips.iter().collect();
                 rows.sort();
-                for ((cs,ip),n) in rows { eprintln!("  {cs:04x}:{ip:04x} executed {n} times"); }
+                for ((cs, ip), n) in rows {
+                    eprintln!("  {cs:04x}:{ip:04x} executed {n} times");
+                }
             }
             "tracevga" => {
                 // trace VGA page-1 (a000:8000) subtitle-band writes during the next draw
@@ -268,33 +315,61 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                 eprintln!("range writes: {}", hits.len());
                 // per-code-address summary: count + value histogram
                 use std::collections::HashMap;
-                let mut by_code: HashMap<(u16,u16), (usize, HashMap<u8,usize>)> = HashMap::new();
+                let mut by_code: HashMap<(u16, u16), (usize, HashMap<u8, usize>)> = HashMap::new();
                 for (_a, v, cs, ip) in &hits {
-                    let e = by_code.entry((*cs,*ip)).or_default();
-                    e.0 += 1; *e.1.entry(*v).or_default() += 1;
+                    let e = by_code.entry((*cs, *ip)).or_default();
+                    e.0 += 1;
+                    *e.1.entry(*v).or_default() += 1;
                 }
                 let mut rows: Vec<_> = by_code.into_iter().collect();
-                rows.sort_by_key(|(_,v)| std::cmp::Reverse(v.0));
-                for ((cs,ip),(n,vals)) in rows.into_iter().take(12) {
+                rows.sort_by_key(|(_, v)| std::cmp::Reverse(v.0));
+                for ((cs, ip), (n, vals)) in rows.into_iter().take(12) {
                     let rel = cs.wrapping_sub(0x1a2);
-                    let file = 0x600 + (rel as usize)*16 + ip as usize;
-                    let mut vv: Vec<_> = vals.into_iter().collect(); vv.sort_by_key(|(_,c)| std::cmp::Reverse(*c));
-                    let top: Vec<String> = vv.iter().take(4).map(|(val,c)| format!("0x{val:02x}x{c}")).collect();
-                    eprintln!("  {cs:04x}:{ip:04x} (file {file:#07x}) n={n} vals=[{}]", top.join(" "));
+                    let file = 0x600 + (rel as usize) * 16 + ip as usize;
+                    let mut vv: Vec<_> = vals.into_iter().collect();
+                    vv.sort_by_key(|(_, c)| std::cmp::Reverse(*c));
+                    let top: Vec<String> = vv
+                        .iter()
+                        .take(4)
+                        .map(|(val, c)| format!("0x{val:02x}x{c}"))
+                        .collect();
+                    eprintln!(
+                        "  {cs:04x}:{ip:04x} (file {file:#07x}) n={n} vals=[{}]",
+                        top.join(" ")
+                    );
                 }
                 rt.m.trace_range = None;
             }
             "fbptr" => {
                 let gs = rt.m.regs.gs;
-                let r32 = |off: u32| ((rt.m.read16(gs, off+2) as u32) << 16) | rt.m.read16(gs, off) as u32;
-                eprintln!("gs:5219 (cur FB) = {:04x}:{:04x}", rt.m.read16(gs,0x521b), rt.m.read16(gs,0x5219));
-                eprintln!("gs:521d (alt FB) = {:04x}:{:04x}", rt.m.read16(gs,0x521f), rt.m.read16(gs,0x521d));
-                eprintln!("gs:5221 (disp)   = {:04x}:{:04x}", rt.m.read16(gs,0x5223), rt.m.read16(gs,0x5221));
+                let r32 = |off: u32| {
+                    ((rt.m.read16(gs, off + 2) as u32) << 16) | rt.m.read16(gs, off) as u32
+                };
+                eprintln!(
+                    "gs:5219 (cur FB) = {:04x}:{:04x}",
+                    rt.m.read16(gs, 0x521b),
+                    rt.m.read16(gs, 0x5219)
+                );
+                eprintln!(
+                    "gs:521d (alt FB) = {:04x}:{:04x}",
+                    rt.m.read16(gs, 0x521f),
+                    rt.m.read16(gs, 0x521d)
+                );
+                eprintln!(
+                    "gs:5221 (disp)   = {:04x}:{:04x}",
+                    rt.m.read16(gs, 0x5223),
+                    rt.m.read16(gs, 0x5221)
+                );
                 let _ = r32;
             }
             "remap" => {
                 let gs = rt.m.regs.gs;
-                let d = |off: u32, n: u32| (0..n).map(|i| format!("{:02x}", rt.m.read8(gs, off + i))).collect::<Vec<_>>().join(" ");
+                let d = |off: u32, n: u32| {
+                    (0..n)
+                        .map(|i| format!("{:02x}", rt.m.read8(gs, off + i)))
+                        .collect::<Vec<_>>()
+                        .join(" ")
+                };
                 eprintln!("remap 5f11[0..32]: {}", d(0x5f11, 32));
                 eprintln!("remap 5f11[0xf0..]: {}", d(0x5f11 + 0xf0, 16));
                 eprintln!("cmd-table 5e6f: {}", d(0x5e6f, 16));
@@ -305,7 +380,11 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                 let mut t = String::new();
                 for i in 0..48u32 {
                     let b = rt.m.read8(gs, 0x190 + i);
-                    t.push(if (0x20..0x7f).contains(&b) { b as char } else { '.' });
+                    t.push(if (0x20..0x7f).contains(&b) {
+                        b as char
+                    } else {
+                        '.'
+                    });
                 }
                 eprintln!("gs:0190 source text: \"{t}\"");
             }
@@ -315,43 +394,84 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                 for i in 0..48u32 {
                     let b = rt.m.read8(gs, 0x0e18 + i);
                     txt.push_str(&format!("{:02x}", b));
-                    txt.push(if (0x20..0x7f).contains(&b) { b as char } else { '.' });
+                    txt.push(if (0x20..0x7f).contains(&b) {
+                        b as char
+                    } else {
+                        '.'
+                    });
                     txt.push(' ');
                 }
                 eprintln!("buffer gs:0E18: {txt}");
-                eprintln!("reveal_ptr={:04x} (offset {})", rt.m.read16(gs, 0x5e58), rt.m.read16(gs, 0x5e58).wrapping_sub(0x0e18));
-                eprintln!("gates: 67bb={:02x} 67bc={:02x} b35={:04x} cfb={:02x}",
-                    rt.m.read8(gs, 0x67bb), rt.m.read8(gs, 0x67bc),
-                    rt.m.read16(gs, 0xb35), rt.m.read8(gs, 0xcfb));
-                eprintln!("draw-mode: 5e65(state)={:04x} 5b56(remap flag)={:02x} 5e64={:02x} 27e2={:04x} 679a={:04x}",
-                    rt.m.read16(gs, 0x5e65), rt.m.read8(gs, 0x5b56),
-                    rt.m.read8(gs, 0x5e64), rt.m.read16(gs, 0x27e2), rt.m.read16(gs, 0x679a));
+                eprintln!(
+                    "reveal_ptr={:04x} (offset {})",
+                    rt.m.read16(gs, 0x5e58),
+                    rt.m.read16(gs, 0x5e58).wrapping_sub(0x0e18)
+                );
+                eprintln!(
+                    "gates: 67bb={:02x} 67bc={:02x} b35={:04x} cfb={:02x}",
+                    rt.m.read8(gs, 0x67bb),
+                    rt.m.read8(gs, 0x67bc),
+                    rt.m.read16(gs, 0xb35),
+                    rt.m.read8(gs, 0xcfb)
+                );
+                eprintln!(
+                    "draw-mode: 5e65(state)={:04x} 5b56(remap flag)={:02x} 5e64={:02x} 27e2={:04x} 679a={:04x}",
+                    rt.m.read16(gs, 0x5e65),
+                    rt.m.read8(gs, 0x5b56),
+                    rt.m.read8(gs, 0x5e64),
+                    rt.m.read16(gs, 0x27e2),
+                    rt.m.read16(gs, 0x679a)
+                );
             }
             "presflags" => {
                 let gs = rt.m.regs.gs;
-                eprintln!("67b0={:02x} 67bc={:02x} 679a={:04x} (needs 679a==0x67b0 or 67b0&1) 6724fp={:04x}:{:04x} 674a={:04x}:{:04x} 6728={:04x}:{:04x}",
-                    rt.m.read8(gs,0x67b0), rt.m.read8(gs,0x67bc), rt.m.read16(gs,0x679a),
-                    rt.m.read16(gs,0x6726), rt.m.read16(gs,0x6724),
-                    rt.m.read16(gs,0x674c), rt.m.read16(gs,0x674a),
-                    rt.m.read16(gs,0x672a), rt.m.read16(gs,0x6728));
+                eprintln!(
+                    "67b0={:02x} 67bc={:02x} 679a={:04x} (needs 679a==0x67b0 or 67b0&1) 6724fp={:04x}:{:04x} 674a={:04x}:{:04x} 6728={:04x}:{:04x}",
+                    rt.m.read8(gs, 0x67b0),
+                    rt.m.read8(gs, 0x67bc),
+                    rt.m.read16(gs, 0x679a),
+                    rt.m.read16(gs, 0x6726),
+                    rt.m.read16(gs, 0x6724),
+                    rt.m.read16(gs, 0x674c),
+                    rt.m.read16(gs, 0x674a),
+                    rt.m.read16(gs, 0x672a),
+                    rt.m.read16(gs, 0x6728)
+                );
             }
             "revsample" => {
                 let count = if w.len() > 1 { arg(1) } else { 20 };
                 let step = if w.len() > 2 { arg(2) } else { 20 };
                 for _ in 0..count {
                     let gs = rt.m.regs.gs;
-                    let txt: String = (0..12u32).map(|i| {
-                        let b = rt.m.read8(gs, 0x0e18 + i);
-                        if (0x20..0x7f).contains(&b) { b as char } else { '.' }
-                    }).collect();
-                    eprintln!("t{:>5} phase={} pos={:04x} 67ac={:02x} ade={:02x} ba3={:02x} ba0={:02x} ae2={:02x} 67bc={:02x} 5e64={:02x} 27e2={:02x} txt='{}'",
+                    let txt: String = (0..12u32)
+                        .map(|i| {
+                            let b = rt.m.read8(gs, 0x0e18 + i);
+                            if (0x20..0x7f).contains(&b) {
+                                b as char
+                            } else {
+                                '.'
+                            }
+                        })
+                        .collect();
+                    eprintln!(
+                        "t{:>5} phase={} pos={:04x} 67ac={:02x} ade={:02x} ba3={:02x} ba0={:02x} ae2={:02x} 67bc={:02x} 5e64={:02x} 27e2={:02x} txt='{}'",
                         rt.ticks(),
-                        rt.m.read16(gs,0x5e65), rt.m.read16(gs,0x5e58),
-                        rt.m.read8(gs,0x67ac), rt.m.read8(gs,0xade), rt.m.read8(gs,0xba3),
-                        rt.m.read8(gs,0xba0), rt.m.read8(gs,0xae2), rt.m.read8(gs,0x67bc),
-                        rt.m.read8(gs,0x5e64), rt.m.read8(gs,0x27e2), txt);
+                        rt.m.read16(gs, 0x5e65),
+                        rt.m.read16(gs, 0x5e58),
+                        rt.m.read8(gs, 0x67ac),
+                        rt.m.read8(gs, 0xade),
+                        rt.m.read8(gs, 0xba3),
+                        rt.m.read8(gs, 0xba0),
+                        rt.m.read8(gs, 0xae2),
+                        rt.m.read8(gs, 0x67bc),
+                        rt.m.read8(gs, 0x5e64),
+                        rt.m.read8(gs, 0x27e2),
+                        txt
+                    );
                     for _ in 0..step {
-                        if !run_tick(&mut rt).map_err(|e| format!("line {}: {e}", ln + 1))? { return Ok(()); }
+                        if !run_tick(&mut rt).map_err(|e| format!("line {}: {e}", ln + 1))? {
+                            return Ok(());
+                        }
                     }
                 }
             }
@@ -360,42 +480,73 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                 let mut hits = 0;
                 let mem = &rt.m.mem;
                 for i in 0..mem.len().saturating_sub(needle.len()) {
-                    if &mem[i..i+needle.len()] == needle {
+                    if &mem[i..i + needle.len()] == needle {
                         let seg = (i >> 4) as u32;
-                        eprintln!("  found '{}' at lin {:#07x} (~{:04x}:{:04x})",
-                            String::from_utf8_lossy(needle), i, seg, (i as u32)&0xf);
+                        eprintln!(
+                            "  found '{}' at lin {:#07x} (~{:04x}:{:04x})",
+                            String::from_utf8_lossy(needle),
+                            i,
+                            seg,
+                            (i as u32) & 0xf
+                        );
                         hits += 1;
-                        if hits >= 8 { break; }
+                        if hits >= 8 {
+                            break;
+                        }
                     }
                 }
-                eprintln!("memfind '{}': {} hits", String::from_utf8_lossy(needle), hits);
+                eprintln!(
+                    "memfind '{}': {} hits",
+                    String::from_utf8_lossy(needle),
+                    hits
+                );
             }
             "rdw" => {
                 let off = u32::from_str_radix(w.get(1).unwrap_or(&"6eb0"), 16).unwrap_or(0);
                 let n = w.get(2).and_then(|s| s.parse().ok()).unwrap_or(8u32);
                 let gs = rt.m.regs.gs;
-                let vals: Vec<String> = (0..n).map(|i| format!("{:04x}", rt.m.read16(gs, off + i*2))).collect();
+                let vals: Vec<String> = (0..n)
+                    .map(|i| format!("{:04x}", rt.m.read16(gs, off + i * 2)))
+                    .collect();
                 eprintln!("gs:{off:04x} words: {}", vals.join(" "));
                 // C4 opcode = idx 0x24, handler at table+0x24*2
-                let c4 = rt.m.read16(gs, 0x6eb0 + 0x24*2);
+                let c4 = rt.m.read16(gs, 0x6eb0 + 0x24 * 2);
                 let c4_cs = rt.m.regs.cs; // handler is in the VM code seg; report file via 0x4da base
-                let c4_file = 0x600 + 0x4dausize*16 + c4 as usize;
-                eprintln!("  C4 opcode handler ptr = {c4:04x} (VM-seg offset; ~file {c4_file:#07x}) cs~{c4_cs:04x}");
+                let c4_file = 0x600 + 0x4dausize * 16 + c4 as usize;
+                eprintln!(
+                    "  C4 opcode handler ptr = {c4:04x} (VM-seg offset; ~file {c4_file:#07x}) cs~{c4_cs:04x}"
+                );
             }
             "vmtrace" => {
                 // record al at cs:ip (default 067c:0274 = VM opcode; or pass cs ip to trace elsewhere)
-                let cs = w.get(1).and_then(|s| u16::from_str_radix(s,16).ok()).unwrap_or(0x067c);
-                let ip = w.get(2).and_then(|s| u16::from_str_radix(s,16).ok()).unwrap_or(0x0274);
+                let cs = w
+                    .get(1)
+                    .and_then(|s| u16::from_str_radix(s, 16).ok())
+                    .unwrap_or(0x067c);
+                let ip = w
+                    .get(2)
+                    .and_then(|s| u16::from_str_radix(s, 16).ok())
+                    .unwrap_or(0x0274);
                 rt.m.vm_trace_ip = Some((cs, ip));
                 rt.m.vm_ops.clear();
                 eprintln!("al trace armed at {cs:04x}:{ip:04x}");
             }
             "vmdump" => {
                 let ops = &rt.m.vm_ops;
-                eprintln!("VM opcodes ({}): {}", ops.len(),
-                    ops.iter().map(|b| format!("{b:02x}")).collect::<Vec<_>>().join(" "));
+                eprintln!(
+                    "VM opcodes ({}): {}",
+                    ops.len(),
+                    ops.iter()
+                        .map(|b| format!("{b:02x}"))
+                        .collect::<Vec<_>>()
+                        .join(" ")
+                );
                 // opcodes are 0xA0-based; note key ones: C4=present, D2=schedule
-                let key: Vec<String> = ops.iter().filter(|b| **b >= 0xc0).map(|b| format!("{b:02x}")).collect();
+                let key: Vec<String> = ops
+                    .iter()
+                    .filter(|b| **b >= 0xc0)
+                    .map(|b| format!("{b:02x}"))
+                    .collect();
                 eprintln!("  >=0xC0 opcodes seen: {}", key.join(" "));
             }
             "resname" => {
@@ -404,16 +555,25 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                     if let Ok(id) = ids.parse::<u32>() {
                         let mut name = String::new();
                         for i in 0..14u32 {
-                            let b = rt.m.read8(fs, 0x0c04 + id*16 + i);
-                            if b == 0 { break; }
-                            name.push(if (0x20..0x7f).contains(&b) { b as char } else { '.' });
+                            let b = rt.m.read8(fs, 0x0c04 + id * 16 + i);
+                            if b == 0 {
+                                break;
+                            }
+                            name.push(if (0x20..0x7f).contains(&b) {
+                                b as char
+                            } else {
+                                '.'
+                            });
                         }
                         // resource_handle_resolve (0x5320): bx=id<<3; seg=fs:[bx], flags=fs:[bx+2]; loaded iff flags&3
-                        let hseg = rt.m.read16(fs, id*8);
-                        let hflags = rt.m.read16(fs, id*8 + 2);
-                        let hsize = rt.m.read16(fs, id*8 + 4) as u32 | ((rt.m.read16(fs, id*8+6) as u32) << 16);
-                        eprintln!("  id {id}: \"{name}\"  handle[seg={hseg:04x} flags={hflags:04x} loaded={} size={hsize}]",
-                            hflags & 3 != 0);
+                        let hseg = rt.m.read16(fs, id * 8);
+                        let hflags = rt.m.read16(fs, id * 8 + 2);
+                        let hsize = rt.m.read16(fs, id * 8 + 4) as u32
+                            | ((rt.m.read16(fs, id * 8 + 6) as u32) << 16);
+                        eprintln!(
+                            "  id {id}: \"{name}\"  handle[seg={hseg:04x} flags={hflags:04x} loaded={} size={hsize}]",
+                            hflags & 3 != 0
+                        );
                     }
                 }
             }
@@ -423,9 +583,16 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                 let mut t = String::new();
                 for i in 0..40u32 {
                     let b = rt.m.read8(gs, off + i);
-                    t.push(if (0x20..0x7f).contains(&b) { b as char } else { '.' });
+                    t.push(if (0x20..0x7f).contains(&b) {
+                        b as char
+                    } else {
+                        '.'
+                    });
                 }
-                eprintln!("gs:{off:04x} = \"{t}\"  [0xc49 handle={:04x}]", rt.m.read16(gs, 0xc49));
+                eprintln!(
+                    "gs:{off:04x} = \"{t}\"  [0xc49 handle={:04x}]",
+                    rt.m.read16(gs, 0xc49)
+                );
             }
             "trapadd" => {
                 let cs = u16::from_str_radix(w.get(1).unwrap_or(&"0cbd"), 16).unwrap_or(0);
@@ -433,7 +600,10 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                 rt.m.trap_ips.insert((cs, ip), 0);
                 eprintln!("trap added {cs:04x}:{ip:04x}");
             }
-            "trapclear" => { rt.m.trap_ips.clear(); eprintln!("traps cleared"); }
+            "trapclear" => {
+                rt.m.trap_ips.clear();
+                eprintln!("traps cleared");
+            }
             "capret" => {
                 // capret <cs_hex> <ip_hex>: capture the return address (dispatch site) when (cs,ip) is first hit
                 let cs = u16::from_str_radix(w.get(1).unwrap_or(&"0cbd"), 16).unwrap_or(0x0cbd);
@@ -446,19 +616,27 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
             "capretdump" => {
                 if let Some((sp, w0, w1, w2)) = rt.m.capture_ret {
                     // interpret [ss:sp] as near-return ip in the same cs, and far (ip,cs)
-                    let cs = rt.m.capture_ip.map(|(c,_)| c).unwrap_or(0);
-                    let near_file = 0x600 + (cs.wrapping_sub(0x1a2) as usize)*16 + w0 as usize;
+                    let cs = rt.m.capture_ip.map(|(c, _)| c).unwrap_or(0);
+                    let near_file = 0x600 + (cs.wrapping_sub(0x1a2) as usize) * 16 + w0 as usize;
                     let far_cs = w1;
-                    let far_file = 0x600 + (far_cs.wrapping_sub(0x1a2) as usize)*16 + w0 as usize;
+                    let far_file = 0x600 + (far_cs.wrapping_sub(0x1a2) as usize) * 16 + w0 as usize;
                     eprintln!("capret sp={sp:04x} stack=[{w0:04x} {w1:04x} {w2:04x}]");
-                    eprintln!("  if NEAR call: caller ret {cs:04x}:{w0:04x} (file {near_file:#07x})");
-                    eprintln!("  if FAR  call: caller ret {far_cs:04x}:{w0:04x} (file {far_file:#07x})");
-                    if let Some((ss,ds,es,si,bp,bx)) = rt.m.captured {
-                        eprintln!("  regs at entry: ss={ss:04x} ds={ds:04x} es={es:04x} si={si:04x} bp={bp:04x} bx={bx:04x}");
+                    eprintln!(
+                        "  if NEAR call: caller ret {cs:04x}:{w0:04x} (file {near_file:#07x})"
+                    );
+                    eprintln!(
+                        "  if FAR  call: caller ret {far_cs:04x}:{w0:04x} (file {far_file:#07x})"
+                    );
+                    if let Some((ss, ds, es, si, bp, bx)) = rt.m.captured {
+                        eprintln!(
+                            "  regs at entry: ss={ss:04x} ds={ds:04x} es={es:04x} si={si:04x} bp={bp:04x} bx={bx:04x}"
+                        );
                     }
-                    if let Some((pcs,pip)) = rt.m.captured_prev {
-                        let pfile = 0x600 + (pcs.wrapping_sub(0x1a2) as usize)*16 + pip as usize;
-                        eprintln!("  PREV instr (jump/call source): {pcs:04x}:{pip:04x} (file {pfile:#07x})");
+                    if let Some((pcs, pip)) = rt.m.captured_prev {
+                        let pfile = 0x600 + (pcs.wrapping_sub(0x1a2) as usize) * 16 + pip as usize;
+                        eprintln!(
+                            "  PREV instr (jump/call source): {pcs:04x}:{pip:04x} (file {pfile:#07x})"
+                        );
                     }
                 } else {
                     eprintln!("capret: not hit");
@@ -466,20 +644,34 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
             }
             "capsegdump" => {
                 if let Some(seg) = &rt.m.captured_seg {
-                    eprintln!("captured ds:0..64 = {}", seg.iter().map(|b| format!("{b:02x}")).collect::<Vec<_>>().join(" "));
-                } else { eprintln!("capseg: not hit"); }
+                    eprintln!(
+                        "captured ds:0..64 = {}",
+                        seg.iter()
+                            .map(|b| format!("{b:02x}"))
+                            .collect::<Vec<_>>()
+                            .join(" ")
+                    );
+                } else {
+                    eprintln!("capseg: not hit");
+                }
             }
-            "ipstart" => { rt.ip_sample = Some(Default::default()); eprintln!("ip sampling on"); }
+            "ipstart" => {
+                rt.ip_sample = Some(Default::default());
+                eprintln!("ip sampling on");
+            }
             "ipdump" => {
                 if let Some(h) = rt.ip_sample.take() {
                     let mut v: Vec<_> = h.into_iter().collect();
-                    v.sort_by_key(|(_,c)| std::cmp::Reverse(*c));
-                    let total: u64 = v.iter().map(|(_,c)| *c).sum();
+                    v.sort_by_key(|(_, c)| std::cmp::Reverse(*c));
+                    let total: u64 = v.iter().map(|(_, c)| *c).sum();
                     eprintln!("ip histogram (top hot spots, total {total} samples):");
-                    for ((cs,ip),c) in v.into_iter().take(14) {
+                    for ((cs, ip), c) in v.into_iter().take(14) {
                         let rel = cs.wrapping_sub(0x1a2);
-                        let file = 0x600 + (rel as usize)*16 + ip as usize;
-                        eprintln!("  {cs:04x}:{ip:04x} (seg 0x{rel:x} file {file:#07x}): {c} ({:.0}%)", 100.0*c as f64/total as f64);
+                        let file = 0x600 + (rel as usize) * 16 + ip as usize;
+                        eprintln!(
+                            "  {cs:04x}:{ip:04x} (seg 0x{rel:x} file {file:#07x}): {c} ({:.0}%)",
+                            100.0 * c as f64 / total as f64
+                        );
                     }
                 }
             }
@@ -489,15 +681,31 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                 let id = rt.m.read16(gs, 0xc3b);
                 let mut name = String::new();
                 for i in 0..14u32 {
-                    let b = rt.m.read8(fs, 0x0c04 + (id as u32)*16 + i);
-                    if b == 0 { break; }
-                    name.push(if (0x20..0x7f).contains(&b) { b as char } else { '.' });
+                    let b = rt.m.read8(fs, 0x0c04 + (id as u32) * 16 + i);
+                    if b == 0 {
+                        break;
+                    }
+                    name.push(if (0x20..0x7f).contains(&b) {
+                        b as char
+                    } else {
+                        '.'
+                    });
                 }
                 eprintln!("resource [0xc3b]={id} fs={fs:04x} name-table entry = \"{name}\"");
                 // also dump a few nearby resource ids' names
                 for rid in [id.wrapping_sub(1), id, id.wrapping_add(1)] {
-                    let mut n=String::new();
-                    for i in 0..14u32 { let b=rt.m.read8(fs,0x0c04+(rid as u32)*16+i); if b==0{break} n.push(if (0x20..0x7f).contains(&b){b as char}else{'.'}); }
+                    let mut n = String::new();
+                    for i in 0..14u32 {
+                        let b = rt.m.read8(fs, 0x0c04 + (rid as u32) * 16 + i);
+                        if b == 0 {
+                            break;
+                        }
+                        n.push(if (0x20..0x7f).contains(&b) {
+                            b as char
+                        } else {
+                            '.'
+                        });
+                    }
                     eprintln!("  id {rid}: \"{n}\"");
                 }
             }
@@ -506,9 +714,15 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                 let gs = rt.m.regs.gs;
                 eprintln!(
                     "tick {} gs={:04x} reveal_ptr(5E58)={:04x} timer(B31)={:04x} speed(ACA)={:04x} buf0(0E18)={:02x}{:02x}{:02x}{:02x}",
-                    rt.ticks(), gs,
-                    rt.m.read16(gs, 0x5e58), rt.m.read16(gs, 0xb31), rt.m.read16(gs, 0xaca),
-                    rt.m.read8(gs, 0x0e18), rt.m.read8(gs, 0x0e19), rt.m.read8(gs, 0x0e1a), rt.m.read8(gs, 0x0e1b),
+                    rt.ticks(),
+                    gs,
+                    rt.m.read16(gs, 0x5e58),
+                    rt.m.read16(gs, 0xb31),
+                    rt.m.read16(gs, 0xaca),
+                    rt.m.read8(gs, 0x0e18),
+                    rt.m.read8(gs, 0x0e19),
+                    rt.m.read8(gs, 0x0e1a),
+                    rt.m.read8(gs, 0x0e1b),
                 );
             }
             "watchef" => {
@@ -539,13 +753,17 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                 for (cs, ip, ds, si, _addr) in &hits {
                     let rel = cs.wrapping_sub(0x1a2);
                     let file = 0x600 + (rel as usize) * 16 + *ip as usize;
-                    eprintln!("  cs:ip={cs:04x}:{ip:04x} (seg 0x{rel:x}, file ~{file:#07x}) src ds:si={ds:04x}:{si:04x}");
+                    eprintln!(
+                        "  cs:ip={cs:04x}:{ip:04x} (seg 0x{rel:x}, file ~{file:#07x}) src ds:si={ds:04x}:{si:04x}"
+                    );
                 }
                 // dump the chunky source around the first hit's ds:si
                 if let Some((_, _, ds, si, _)) = hits.first() {
                     let base = si.saturating_sub(4);
                     let mut chunk = Vec::new();
-                    for i in 0..320u32 { chunk.push(rt.m.read8(*ds, base as u32 + i)); }
+                    for i in 0..320u32 {
+                        chunk.push(rt.m.read8(*ds, base as u32 + i));
+                    }
                     std::fs::write(out_dir.join("chunky_src.bin"), &chunk).unwrap();
                     eprintln!("dumped 320B chunky source at {ds:04x}:{base:04x}");
                 }
@@ -560,7 +778,9 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                             *cnt.entry(v.planes[plane * 0x10000 + o]).or_default() += 1;
                         }
                     }
-                    let fdfe = cnt.get(&0xfd).copied().unwrap_or(0) + cnt.get(&0xfe).copied().unwrap_or(0) + cnt.get(&0xff).copied().unwrap_or(0);
+                    let fdfe = cnt.get(&0xfd).copied().unwrap_or(0)
+                        + cnt.get(&0xfe).copied().unwrap_or(0)
+                        + cnt.get(&0xff).copied().unwrap_or(0);
                     let ef = cnt.get(&0xef).copied().unwrap_or(0);
                     eprintln!("{name}: 0xFD/FE/FF pixels={fdfe}  0xEF pixels={ef}");
                 }
@@ -578,7 +798,10 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                     }
                 }
                 std::fs::write(out_dir.join("vram_sub.bin"), &out).unwrap();
-                eprintln!("dumped {} bytes of subtitle VRAM (35 rows x 4 planes x 80)", out.len());
+                eprintln!(
+                    "dumped {} bytes of subtitle VRAM (35 rows x 4 planes x 80)",
+                    out.len()
+                );
             }
             "forcesub" => {
                 rt.force_sub = true;
@@ -588,15 +811,25 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                 let v = rt.m.vga.as_deref().unwrap();
                 eprintln!(
                     "VGA: chain4={} map_mask={:#x} read_map={} write_mode={} bit_mask={:#x} set_reset={:#x} enable_sr={:#x} logic_op={} rotate={}",
-                    v.chain4, v.map_mask, v.read_map, v.write_mode, v.bit_mask, v.set_reset, v.enable_sr, v.logic_op, v.rotate,
+                    v.chain4,
+                    v.map_mask,
+                    v.read_map,
+                    v.write_mode,
+                    v.bit_mask,
+                    v.set_reset,
+                    v.enable_sr,
+                    v.logic_op,
+                    v.rotate,
                 );
             }
             other => return Err(format!("line {}: unknown command {other}", ln + 1)),
         }
     }
-    rt.write_ppm(&out_dir.join("end.ppm")).map_err(|e| e.to_string())?;
+    rt.write_ppm(&out_dir.join("end.ppm"))
+        .map_err(|e| e.to_string())?;
     if !rt.sb_pcm.is_empty() {
-        write_wav(&out_dir.join("end.wav"), &rt.sb_pcm, rt.sb_pcm_rate).map_err(|e| e.to_string())?;
+        write_wav(&out_dir.join("end.wav"), &rt.sb_pcm, rt.sb_pcm_rate)
+            .map_err(|e| e.to_string())?;
         eprintln!("wav: {} bytes at {} Hz", rt.sb_pcm.len(), rt.sb_pcm_rate);
     }
     Ok(())

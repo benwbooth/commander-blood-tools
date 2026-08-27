@@ -1,6 +1,6 @@
 //! Command-tail tokenization and startup-option handling recovered from BLOODPRG.
 
-use super::{parse_startup_audio_number, STARTUP_AUDIO_NUMBER_LENGTH};
+use super::{STARTUP_AUDIO_NUMBER_LENGTH, parse_startup_audio_number};
 
 const OPTION_PREFIX_LENGTH: usize = 3;
 const AUDIO_TRAILING_DIGIT_INDEX: usize = STARTUP_AUDIO_NUMBER_LENGTH;

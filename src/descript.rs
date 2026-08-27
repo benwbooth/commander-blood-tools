@@ -518,9 +518,12 @@ mod tests {
     /// Skips if the game data isn't in this checkout.
     #[test]
     fn parses_real_descript_des_consistently() {
-        let db = ["output/_tmp_iso/DESCRIPT.DES", "../output/_tmp_iso/DESCRIPT.DES"]
-            .iter()
-            .find_map(|p| DescriptDb::parse_file(p).ok());
+        let db = [
+            "output/_tmp_iso/DESCRIPT.DES",
+            "../output/_tmp_iso/DESCRIPT.DES",
+        ]
+        .iter()
+        .find_map(|p| DescriptDb::parse_file(p).ok());
         let Some(db) = db else { return };
         assert_eq!(db.records.len(), 145, "DESCRIPT.DES record count");
         for r in &db.records {
@@ -546,9 +549,12 @@ mod tests {
     /// game data isn't in this checkout.
     #[test]
     fn real_subtitles_are_monotonic_and_font_renderable() {
-        let db = ["output/_tmp_iso/DESCRIPT.DES", "../output/_tmp_iso/DESCRIPT.DES"]
-            .iter()
-            .find_map(|p| DescriptDb::parse_file(p).ok());
+        let db = [
+            "output/_tmp_iso/DESCRIPT.DES",
+            "../output/_tmp_iso/DESCRIPT.DES",
+        ]
+        .iter()
+        .find_map(|p| DescriptDb::parse_file(p).ok());
         let Some(db) = db else { return };
         let exe = match std::fs::read("re/bin/BLOODPRG.EXE")
             .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
@@ -562,10 +568,18 @@ mod tests {
         for r in &db.records {
             let mut prev = 0u16;
             for cue in &r.subtitles {
-                assert!(cue.tick >= prev, "{}: subtitle ticks must be non-decreasing", r.name);
+                assert!(
+                    cue.tick >= prev,
+                    "{}: subtitle ticks must be non-decreasing",
+                    r.name
+                );
                 prev = cue.tick;
                 for ch in cue.text.chars() {
-                    assert!(renderable(ch), "{}: char {ch:?} not in the game font", r.name);
+                    assert!(
+                        renderable(ch),
+                        "{}: char {ch:?} not in the game font",
+                        r.name
+                    );
                 }
                 cues += 1;
             }
@@ -581,18 +595,26 @@ mod tests {
     /// verified game font. Skips if the game data isn't in this checkout.
     #[test]
     fn intro_credit_is_sourced_and_renders_cleanly() {
-        let db = ["output/_tmp_iso/DESCRIPT.DES", "../output/_tmp_iso/DESCRIPT.DES"]
-            .iter()
-            .find_map(|p| DescriptDb::parse_file(p).ok());
+        let db = [
+            "output/_tmp_iso/DESCRIPT.DES",
+            "../output/_tmp_iso/DESCRIPT.DES",
+        ]
+        .iter()
+        .find_map(|p| DescriptDb::parse_file(p).ok());
         let Some(db) = db else { return };
 
         // (1) Both credit lines must be present as subtitle cues (sourced, not fabricated).
-        let all_subtitles: Vec<&str> =
-            db.records.iter().flat_map(|r| r.subtitles.iter().map(|c| c.text.as_str())).collect();
+        let all_subtitles: Vec<&str> = db
+            .records
+            .iter()
+            .flat_map(|r| r.subtitles.iter().map(|c| c.text.as_str()))
+            .collect();
         let cryo = all_subtitles
             .iter()
             .find(|t| t.contains("CRYO Interactive Entertainment"))
-            .expect("credit line 'CRYO Interactive Entertainment' must be sourced from DESCRIPT.DES");
+            .expect(
+                "credit line 'CRYO Interactive Entertainment' must be sourced from DESCRIPT.DES",
+            );
         assert!(
             all_subtitles.iter().any(|t| t.contains("Commander BLOOD")),
             "credit line 'Commander BLOOD' must be sourced from DESCRIPT.DES"
@@ -604,11 +626,15 @@ mod tests {
         const HEIGHT: usize = crate::VIEWPORT_H;
         let mut screen = vec![0u8; WIDTH * HEIGHT];
         const CREDIT_COLOR: u8 = 15;
-        let right_edge = crate::font::draw_text_indexed(&mut screen, WIDTH, HEIGHT, cryo, 20, 100, CREDIT_COLOR);
+        let right_edge =
+            crate::font::draw_text_indexed(&mut screen, WIDTH, HEIGHT, cryo, 20, 100, CREDIT_COLOR);
 
         let lit = screen.iter().filter(|&&p| p == CREDIT_COLOR).count();
         assert!(lit > 100, "credit should light many pixels, got {lit}");
-        assert!(right_edge > 20 && right_edge < WIDTH, "credit must fit on screen, right edge {right_edge}");
+        assert!(
+            right_edge > 20 && right_edge < WIDTH,
+            "credit must fit on screen, right edge {right_edge}"
+        );
         // The rendered pixels are exactly the credit color — nothing scrambled or out of palette.
         assert!(screen.iter().all(|&p| p == 0 || p == CREDIT_COLOR));
     }

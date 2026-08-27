@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::Path;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 
 pub const SND_CLIP_HEADER_LEN: usize = 6;
 pub const SND_PCM_FORMAT_TAG: u8 = 1;
@@ -342,7 +342,10 @@ impl SndStream {
             // The buffer spans its 6-byte header AND the `[si+4]` length of
             // samples after it, because `0xBB24` mixes at `buffer + 6`.
             let end = (start + SND_VOICE_HEADER_LEN + len as usize).min(data.len());
-            SndVoice { buffer: data[start..end].to_vec(), state: 0 }
+            SndVoice {
+                buffer: data[start..end].to_vec(),
+                state: 0,
+            }
         };
         let spans = snd_voice_buffer_spans();
         Self {
@@ -371,9 +374,10 @@ impl SndStream {
     /// keeping the substitution to this one function is what stops the invention
     /// from spreading into the mixing rules.
     pub fn dma_remaining_equivalent(&self, voice: usize, played: usize) -> u16 {
-        let len = self.voices.get(voice).map_or(0, |v| {
-            v.buffer.len().saturating_sub(SND_VOICE_HEADER_LEN)
-        });
+        let len = self
+            .voices
+            .get(voice)
+            .map_or(0, |v| v.buffer.len().saturating_sub(SND_VOICE_HEADER_LEN));
         if len == 0 {
             return 0;
         }
@@ -487,7 +491,11 @@ pub fn stream_mix_span(position: u16, buffer_len: u16, samples: u16) -> Option<S
     };
     if offset >= buffer_len {
         // 0xBB3C `jae 0xBB76`: this pass writes nothing; it is all remainder.
-        return Some(StreamMixSpan { offset, count: 0, remainder: samples });
+        return Some(StreamMixSpan {
+            offset,
+            count: 0,
+            remainder: samples,
+        });
     }
     let space = buffer_len - offset; // 0xBB43..0xBB46
     let count = samples.min(space); // 0xBB48/0xBB4C
@@ -761,7 +769,9 @@ mod tests {
         if !path.exists() {
             path = std::path::PathBuf::from("../output/_tmp_dat/dnsdb.drv");
         }
-        let Ok(drv) = std::fs::read(&path) else { return };
+        let Ok(drv) = std::fs::read(&path) else {
+            return;
+        };
 
         // The driver opens with its entry-vector table: E9 rel16 near jumps.
         assert_eq!(drv[0], 0xE9, "the driver starts with its vector table");
@@ -792,7 +802,9 @@ mod tests {
         if !path.exists() {
             path = std::path::PathBuf::from("../output/_tmp_dat/sn/tb.snd");
         }
-        let Ok(bank) = SndBank::read(&path) else { return };
+        let Ok(bank) = SndBank::read(&path) else {
+            return;
+        };
         let Some(clip) = (0..bank.clip_count()).find_map(|i| bank.clip(i)) else {
             return;
         };
@@ -827,7 +839,9 @@ mod tests {
         stream.voices[0].state = SND_VOICE_STATE_ACTIVE;
 
         let take = pcm.len().min(0x200);
-        let written = stream.mix_chunk(0x3F00, &pcm[..take]).expect("active voice");
+        let written = stream
+            .mix_chunk(0x3F00, &pcm[..take])
+            .expect("active voice");
         assert_eq!(written, take);
         let at = SND_VOICE_HEADER_LEN + 0x100; // |0x3F00 - 0x4000|
         for k in 0..take {
@@ -851,7 +865,11 @@ mod tests {
         // Header plus samples: 0xBB24 mixes at buffer+6.
         assert_eq!(stream.voices[0].buffer.len(), SND_VOICE_HEADER_LEN + 0x4000);
         // The buffer holds the SOUND, not silence -- the point of 0xBBE7.
-        assert!(stream.voices[0].buffer[SND_VOICE_HEADER_LEN..].iter().all(|&b| b == 0x40));
+        assert!(
+            stream.voices[0].buffer[SND_VOICE_HEADER_LEN..]
+                .iter()
+                .all(|&b| b == 0x40)
+        );
 
         // Nothing is fed while both voices are idle (0xBB1F jne 0xBB93).
         assert_eq!(stream.mix_chunk(0x100, &[0xFF; 16]), None);
@@ -864,11 +882,23 @@ mod tests {
         // the chunk and what was already there -- not a replacement.
         let at = SND_VOICE_HEADER_LEN + 0x100;
         assert_eq!(stream.voices[0].buffer[at], snd_mix_average(0xC0, 0x40));
-        assert_eq!(stream.voices[0].buffer[at + 16], before[at + 16], "past the span");
-        assert_eq!(stream.voices[0].buffer[at - 1], before[at - 1], "before the span");
+        assert_eq!(
+            stream.voices[0].buffer[at + 16],
+            before[at + 16],
+            "past the span"
+        );
+        assert_eq!(
+            stream.voices[0].buffer[at - 1],
+            before[at - 1],
+            "before the span"
+        );
 
         // The second voice is untouched: only the active one is fed.
-        assert!(stream.voices[1].buffer[SND_VOICE_HEADER_LEN..].iter().all(|&b| b == 0x40));
+        assert!(
+            stream.voices[1].buffer[SND_VOICE_HEADER_LEN..]
+                .iter()
+                .all(|&b| b == 0x40)
+        );
     }
 
     /// The wrap span (`0xBB76`) and the half-rate source accounting.
@@ -1016,7 +1046,11 @@ mod tests {
         let mut out = [0u8; 4];
         let written = mix_unsigned_pcm_sources(&[&short, &long], &mut out);
         assert_eq!(written, 4, "the longest source sets the length");
-        assert_eq!(out[3], snd_mix_average(long[3], SILENCE), "past the short source");
+        assert_eq!(
+            out[3],
+            snd_mix_average(long[3], SILENCE),
+            "past the short source"
+        );
 
         // Silence is 0x80: mixing nothing leaves the buffer at the zero level.
         let mut empty = [0u8; 4];
@@ -1056,7 +1090,9 @@ mod tests {
         let mut out = Vec::new();
         let mut stack = vec![std::path::PathBuf::from(root)];
         while let Some(d) = stack.pop() {
-            let Ok(rd) = std::fs::read_dir(&d) else { continue };
+            let Ok(rd) = std::fs::read_dir(&d) else {
+                continue;
+            };
             for e in rd.filter_map(|e| e.ok()) {
                 let p = e.path();
                 if p.is_dir() {
@@ -1109,7 +1145,11 @@ mod tests {
         for p in &files {
             let data = std::fs::read(p).unwrap();
             // Must at least have the "Creative Voice File" signature.
-            assert!(data.starts_with(b"Creative Voice File"), "{}: not a VOC", p.display());
+            assert!(
+                data.starts_with(b"Creative Voice File"),
+                "{}: not a VOC",
+                p.display()
+            );
             if let Some((pcm, rate)) = parse_voc_pcm(&data) {
                 assert!(!pcm.is_empty() && rate > 0, "{}: empty PCM", p.display());
                 with_pcm += 1;

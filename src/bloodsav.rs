@@ -180,8 +180,7 @@ impl BloodSave {
         }
         let profile = u16::from_le_bytes([data[0], data[1]]);
         let flags = data[PROFILE_SIZE..PROFILE_SIZE + FLAGS_SIZE].to_vec();
-        let state =
-            data[PROFILE_SIZE + FLAGS_SIZE..HEADER_SIZE].to_vec();
+        let state = data[PROFILE_SIZE + FLAGS_SIZE..HEADER_SIZE].to_vec();
         let runtime = data[HEADER_SIZE..].to_vec();
         Some(BloodSave {
             profile,
@@ -232,9 +231,7 @@ impl BloodSave {
     /// instruction reads or writes in place — which is why the save and load pair
     /// are the only places its size appears.
     pub fn flag_bit(&self, byte: usize, bit: u8) -> bool {
-        self.flags
-            .get(byte)
-            .is_some_and(|b| b & (1 << bit) != 0)
+        self.flags.get(byte).is_some_and(|b| b & (1 << bit) != 0)
     }
 }
 
@@ -266,7 +263,10 @@ mod tests {
 
         let slots = parse_slot_directory(&dir).expect("the writer's output must parse");
         assert_eq!(slots.len(), SLOT_COUNT);
-        assert_eq!(slots[0].name, name, "the typed name did not survive the round trip");
+        assert_eq!(
+            slots[0].name, name,
+            "the typed name did not survive the round trip"
+        );
         assert_eq!(slots[0].file, "game1.sav");
         assert_eq!(slots[9].file, "game10.sav");
         // Untyped slots read as empty, not as a run of spaces.
@@ -315,11 +315,18 @@ mod tests {
     /// blood.sav (that name is only opened at BOOT as a legacy/quick slot probe).
     #[test]
     fn parses_the_real_slot_directory() {
-        let paths = ["accuracy/cdrive/cblood/blood.sav", "../accuracy/cdrive/cblood/blood.sav"];
+        let paths = [
+            "accuracy/cdrive/cblood/blood.sav",
+            "../accuracy/cdrive/cblood/blood.sav",
+        ];
         let Some(data) = paths.iter().find_map(|p| std::fs::read(p).ok()) else {
             return;
         };
-        assert_eq!(data.len(), SLOT_COUNT * SLOT_RECORD_LEN, "ten 32-byte records");
+        assert_eq!(
+            data.len(),
+            SLOT_COUNT * SLOT_RECORD_LEN,
+            "ten 32-byte records"
+        );
         let slots = parse_slot_directory(&data).expect("the real directory parses");
         assert_eq!(slots.len(), SLOT_COUNT);
         // Every slot names its own file, in order.
@@ -341,10 +348,7 @@ mod tests {
             "accuracy/cdrive/cblood/blood.sav",
             "../accuracy/cdrive/cblood/blood.sav",
         ];
-        let Some(data) = paths
-            .iter()
-            .find_map(|p| std::fs::read(p).ok())
-        else {
+        let Some(data) = paths.iter().find_map(|p| std::fs::read(p).ok()) else {
             return;
         };
         let save = BloodSave::parse(&data).expect("real blood.sav parses");
@@ -383,7 +387,11 @@ mod tests {
         // ...and the source/destination globals, including the deliberate
         // asymmetry: the writer takes the CURRENT profile, the reader posts it as
         // PENDING for the main loop to dispatch.
-        assert_eq!(imm16(0x1C64), SAVE_PROFILE_SOURCE_DS as usize, "save mov dx");
+        assert_eq!(
+            imm16(0x1C64),
+            SAVE_PROFILE_SOURCE_DS as usize,
+            "save mov dx"
+        );
         assert_eq!(imm16(0x1C6E), FLAGS_SOURCE_DS as usize, "flags mov dx");
         assert_eq!(imm16(0x1C73), STATE_SOURCE_DS as usize, "state mov dx");
         assert_eq!(imm16(0x1CEC), LOAD_PROFILE_DEST_DS as usize, "load mov dx");
@@ -402,8 +410,7 @@ mod tests {
             "../output/_tmp_iso/blood.sav",
         ]
         .iter()
-        .find_map(|p| std::fs::read(p).ok())
-        else {
+        .find_map(|p| std::fs::read(p).ok()) else {
             return;
         };
         assert_eq!(bytes.len(), super::SLOT_COUNT * super::SLOT_RECORD_LEN);

@@ -12,9 +12,8 @@ fn main() {
     let tex = std::fs::read("accuracy/manu3/manu3_seg4_1c94.bin").unwrap();
     let rd16 = |d: &[u8], at: usize| u16::from_le_bytes([d[at], d[at + 1]]) as usize;
     let rdi16 = |d: &[u8], at: usize| i16::from_le_bytes([d[at], d[at + 1]]) as i64;
-    let rdi32 = |d: &[u8], at: usize| {
-        i32::from_le_bytes([d[at], d[at + 1], d[at + 2], d[at + 3]]) as i64
-    };
+    let rdi32 =
+        |d: &[u8], at: usize| i32::from_le_bytes([d[at], d[at + 1], d[at + 2], d[at + 3]]) as i64;
 
     // Vertex pool: 110 x 20B at seg2:0 (+0/+2 UV, +4..+8 model xyz), then 32 aliases.
     let nvert = 110usize;
@@ -28,16 +27,36 @@ fn main() {
     let mut vi = 0usize;
     while vi < nvert {
         let cnt = rd16(&ds, rec + 2);
-        let xr_row = [rdi32(&ds, rec + 0x12), rdi32(&ds, rec + 0x16), rdi32(&ds, rec + 0x1a)];
-        let yr_row = [rdi32(&ds, rec + 0x1e), rdi32(&ds, rec + 0x22), rdi32(&ds, rec + 0x26)];
-        let zr_row = [rdi32(&ds, rec + 0x2a), rdi32(&ds, rec + 0x2e), rdi32(&ds, rec + 0x32)];
-        let t = [rdi32(&ds, rec + 0x36), rdi32(&ds, rec + 0x3a), rdi32(&ds, rec + 0x3e)];
+        let xr_row = [
+            rdi32(&ds, rec + 0x12),
+            rdi32(&ds, rec + 0x16),
+            rdi32(&ds, rec + 0x1a),
+        ];
+        let yr_row = [
+            rdi32(&ds, rec + 0x1e),
+            rdi32(&ds, rec + 0x22),
+            rdi32(&ds, rec + 0x26),
+        ];
+        let zr_row = [
+            rdi32(&ds, rec + 0x2a),
+            rdi32(&ds, rec + 0x2e),
+            rdi32(&ds, rec + 0x32),
+        ];
+        let t = [
+            rdi32(&ds, rec + 0x36),
+            rdi32(&ds, rec + 0x3a),
+            rdi32(&ds, rec + 0x3e),
+        ];
         for _ in 0..cnt {
             if vi >= nvert {
                 break;
             }
             let at = vi * 20;
-            let v = [rdi16(&seg2, at + 4), rdi16(&seg2, at + 6), rdi16(&seg2, at + 8)];
+            let v = [
+                rdi16(&seg2, at + 4),
+                rdi16(&seg2, at + 6),
+                rdi16(&seg2, at + 8),
+            ];
             let dot = |r: &[i64; 3]| r[0] * v[0] + r[1] * v[1] + r[2] * v[2];
             let depth = (dot(&zr_row) + t[2]) >> 8;
             if depth <= 0 {
@@ -51,7 +70,11 @@ fn main() {
         }
         rec += 0x5e;
     }
-    println!("verts projected: {} (records used: {})", pts.len(), (rec - base) / 0x5e);
+    println!(
+        "verts projected: {} (records used: {})",
+        pts.len(),
+        (rec - base) / 0x5e
+    );
     // Aliases: 20B records after the pool, +4 = source vertex byte-offset in the pool.
     for a in 0..nalias {
         let at = (nvert + a) * 20;
@@ -132,14 +155,22 @@ fn main() {
             }
         }
     }
-    println!("bbox: ({x0},{y0})..({x1},{y1})  {}x{}", x1 - x0 + 1, y1 - y0 + 1);
+    println!(
+        "bbox: ({x0},{y0})..({x1},{y1})  {}x{}",
+        x1 - x0 + 1,
+        y1 - y0 + 1
+    );
 
     // Save as RGB using the game palette range the hand indices live in: reuse the
     // gp[] palette install the engine does — approximate with a grayscale if absent.
     let mut rgb = vec![0u8; 320 * 200 * 3];
     // Simple: show indices as intensity ramp (shape is what matters here).
     for (i, &p) in fb.iter().enumerate() {
-        let v = if p == 0 { 0 } else { 40 + (p as u16 * 3 / 4) as u8 };
+        let v = if p == 0 {
+            0
+        } else {
+            40 + (p as u16 * 3 / 4) as u8
+        };
         rgb[i * 3] = v;
         rgb[i * 3 + 1] = v.saturating_add(20);
         rgb[i * 3 + 2] = v.saturating_add(40);

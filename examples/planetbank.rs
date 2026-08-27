@@ -18,7 +18,11 @@ fn main() {
         if let Ok(ext) = std::fs::read(iso.join(format!("{}.EXT", world.to_uppercase()))) {
             e.set_world_ext(&ext);
         }
-        e.step(MouseInput { x: 160, y: 100, ..Default::default() });
+        e.step(MouseInput {
+            x: 160,
+            y: 100,
+            ..Default::default()
+        });
         let mut ppm = b"P6\n320 200\n255\n".to_vec();
         for &px in e.framebuffer.iter() {
             ppm.extend_from_slice(&e.scene_palette[px as usize]);

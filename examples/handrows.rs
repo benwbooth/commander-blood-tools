@@ -18,7 +18,12 @@ fn main() {
         // stored layout: X row (0..2), Y row (3..5), Z row (6..8)
         let cnt = rdi16(rec + 2);
         println!("seg {si:2} cnt={cnt:3} angles={a:?}");
-        println!("  stored X={:?} Y={:?} Z={:?}", &stored[0..3], &stored[3..6], &stored[6..9]);
+        println!(
+            "  stored X={:?} Y={:?} Z={:?}",
+            &stored[0..3],
+            &stored[3..6],
+            &stored[6..9]
+        );
         println!(
             "  built  r0={:?} r1={:?} r2={:?}",
             &m[0..3],

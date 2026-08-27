@@ -1085,7 +1085,6 @@ pub(super) fn apply_reserved_subtitle_palette(pal: &mut [[u8; 3]; 256]) {
 // A second copy here was unused and unwatched -- the duplication class that hid the
 // 128-vs-176 font truncation (audit-fixes #97).
 
-
 #[cfg(test)]
 mod tests {
     use super::*;

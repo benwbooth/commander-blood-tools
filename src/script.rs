@@ -148,10 +148,7 @@ pub fn parse_dictionary(data: &[u8]) -> HashMap<u16, String> {
             pos += 1;
         }
         if pos > start {
-            words.insert(
-                start as u16,
-                crate::font::cp437_string(&data[start..pos]),
-            );
+            words.insert(start as u16, crate::font::cp437_string(&data[start..pos]));
         }
         pos += 1;
     }
@@ -603,9 +600,11 @@ mod tests {
             "SCRIPT1 must expose the garde cutscene it references, got {cutscenes:?}"
         );
         // And each name resolves to a real DESCRIPT Sequence record (the cutscene player's input).
-        assert!(cutscenes.iter().all(|n| db
-            .record(n)
-            .is_some_and(|r| r.kind == RecordKind::Sequence)));
+        assert!(
+            cutscenes
+                .iter()
+                .all(|n| db.record(n).is_some_and(|r| r.kind == RecordKind::Sequence))
+        );
         // maledict is referenced by SOME script (verified separately via inspect-scripts).
         assert!(
             bundles

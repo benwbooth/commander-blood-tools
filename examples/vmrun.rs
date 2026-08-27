@@ -1,7 +1,13 @@
-use commander_blood_tools::vm::{self, VmMachine, VmEvent, VmToken};
+use commander_blood_tools::vm::{self, VmEvent, VmMachine, VmToken};
 fn main() {
-    let n: u32 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(1);
-    let concept: u16 = std::env::args().nth(2).and_then(|s| s.parse().ok()).unwrap_or(0);
+    let n: u32 = std::env::args()
+        .nth(1)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(1);
+    let concept: u16 = std::env::args()
+        .nth(2)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0);
     let cod = std::fs::read(format!("output/_tmp_iso/SCRIPT{n}.COD")).unwrap();
     let var = std::fs::read(format!("output/_tmp_iso/SCRIPT{n}.VAR")).unwrap();
     // Map token offset -> text for display
@@ -34,8 +40,13 @@ fn main() {
             let pc = m.pc;
             let op = m.cod.get(pc).copied().unwrap_or(0xFF);
             let alive = m.step();
-            println!("step {i}: pc={pc} op={op:#04x} -> pc={} stack={:?} q={} alive={alive}", m.pc, m.stack, m.query);
-            if !alive { break; }
+            println!(
+                "step {i}: pc={pc} op={op:#04x} -> pc={} stack={:?} q={} alive={alive}",
+                m.pc, m.stack, m.query
+            );
+            if !alive {
+                break;
+            }
         }
         return;
     }
@@ -45,31 +56,51 @@ fn main() {
         for e in &evs {
             match e {
                 VmEvent::Text { offset } => {
-                    let text: String = toks.iter().find_map(|t| match t {
-                        VmToken::Text { offset: o, word_offsets, .. } if o == offset => {
-                            Some(
+                    let text: String = toks
+                        .iter()
+                        .find_map(|t| match t {
+                            VmToken::Text {
+                                offset: o,
+                                word_offsets,
+                                ..
+                            } if o == offset => Some(
                                 word_offsets
                                     .iter()
                                     .filter_map(|w| dic.get(w).cloned())
                                     .collect::<Vec<_>>()
                                     .join(" "),
-                            )
-                        }
-                        _ => None,
-                    }).unwrap_or_default();
-                    println!("TEXT @{offset}: {}", text.replace('\n', " ").chars().take(60).collect::<String>());
+                            ),
+                            _ => None,
+                        })
+                        .unwrap_or_default();
+                    println!(
+                        "TEXT @{offset}: {}",
+                        text.replace('\n', " ").chars().take(60).collect::<String>()
+                    );
                 }
                 VmEvent::Actor { offset } => println!("ACTOR @{offset}"),
                 VmEvent::ProfileRequest(p) => println!("PROFILE {p}"),
                 VmEvent::LoadString(s) => println!("STR {s}"),
                 VmEvent::QueuePresentation { offset } => println!("QUEUE @{offset:#x}"),
-                VmEvent::Transfer { object, to, related } => {
+                VmEvent::Transfer {
+                    object,
+                    to,
+                    related,
+                } => {
                     println!("TRANSFER obj @{object:#x} -> @{to:#x} (rel {related:#x})")
                 }
             }
             total += 1;
-            if total > 40 { println!("... (truncated)"); return; }
+            if total > 40 {
+                println!("... (truncated)");
+                return;
+            }
         }
-        if evs.is_empty() { println!("[no events, frame {frame}]"); if frame > 3 { break; } }
+        if evs.is_empty() {
+            println!("[no events, frame {frame}]");
+            if frame > 3 {
+                break;
+            }
+        }
     }
 }

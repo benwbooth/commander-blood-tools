@@ -3228,7 +3228,6 @@ pub const SHIP_3D_HUD_PYRAMID_VERTICES: [[i16; 3]; 32] = [
     [13323, 8194, 6719],
 ];
 
-
 /// As [`render_star_map_navview`], but pans the pyramid field horizontally by
 /// `compass_angle` (0..179) so the view rotates with the ship's heading (mouse
 /// steering) — the interactive nav behaviour. Nearer rows pan more than far rows
@@ -3289,13 +3288,23 @@ pub fn project_star_map_point(
 /// central eye-orb — the systems tile the ground plane and the compass heading pans the
 /// field. Uses the real 0x9BBA projection math (verified), so the perspective is the
 /// game's, not a hand-drawn approximation. `light`/`dark`/`orb` are palette indices.
-pub fn render_star_map_navview_projected(buffer: &mut [u8], light: u8, dark: u8, orb: u8, compass_angle: u16) {
+pub fn render_star_map_navview_projected(
+    buffer: &mut [u8],
+    light: u8,
+    dark: u8,
+    orb: u8,
+    compass_angle: u16,
+) {
     const W: isize = SHIP_3D_PROJECTION_SCREEN_WIDTH as isize;
     const H: isize = SHIP_3D_PROJECTION_SCREEN_HEIGHT as isize;
     // Camera pitched down over a ground plane of star systems; heading pans in x.
     let m = match build_ship_3d_projection_matrix(
         &SHIP_3D_ANGLE_TABLE,
-        Ship3dMatrixAngles { angle_2f71: 0, projection_angle_2f6d: 0, angle_2f6f: 10 },
+        Ship3dMatrixAngles {
+            angle_2f71: 0,
+            projection_angle_2f6d: 0,
+            angle_2f6f: 10,
+        },
     ) {
         Some(m) => m,
         None => return,
@@ -3353,7 +3362,6 @@ pub fn render_star_map_navview_projected(buffer: &mut [u8], light: u8, dark: u8,
         }
     }
 }
-
 
 pub fn render_ship_3d_pyramid_hud(buffer: &mut [u8], grid_color: u8, orb_color: u8) {
     const W: isize = SHIP_3D_PROJECTION_SCREEN_WIDTH as isize; // 320
@@ -5283,7 +5291,11 @@ mod tests {
         };
         // cs = 0x1CE for the PRNG (`0x1CE:0xB02` is `0x2DE2`), so base = 0x22E0.
         let base = 0x600 + 0x1CE * 16;
-        assert_eq!(base + 0xB02, 0x2DE2, "the segment base does not place the PRNG");
+        assert_eq!(
+            base + 0xB02,
+            0x2DE2,
+            "the segment base does not place the PRNG"
+        );
         assert_eq!(
             &exe[base + 0xAEE..base + 0xAF3],
             &[0, 0, 0, 0, 0],
@@ -5315,11 +5327,18 @@ mod tests {
         let word = |off: usize| u16::from_le_bytes([exe[ds + off], exe[ds + off + 1]]);
 
         // The shipped values at DS:0x2F65/67/69.
-        assert_eq!((word(0x2F65), word(0x2F67), word(0x2F69)), (10000, 12000, 0));
+        assert_eq!(
+            (word(0x2F65), word(0x2F67), word(0x2F69)),
+            (10000, 12000, 0)
+        );
 
         // The full reset writes exactly those three (`c7 06 <disp> <imm>`).
         let mov_word = |at: usize| -> (u16, u16) {
-            assert_eq!(&exe[at..at + 2], &[0xC7, 0x06], "{at:#x} is not mov word [mem],imm");
+            assert_eq!(
+                &exe[at..at + 2],
+                &[0xC7, 0x06],
+                "{at:#x} is not mov word [mem],imm"
+            );
             (
                 u16::from_le_bytes([exe[at + 2], exe[at + 3]]),
                 u16::from_le_bytes([exe[at + 4], exe[at + 5]]),
@@ -5374,7 +5393,10 @@ mod tests {
         // transcription choice.
         let n = SHIP_3D_TEMP_SND_CALLBACK_OFFSETS.len();
         let past = u16::from_le_bytes([exe[at + n * 2], exe[at + n * 2 + 1]]);
-        assert_eq!(past, 0, "the table does not end where the port says it does");
+        assert_eq!(
+            past, 0,
+            "the table does not end where the port says it does"
+        );
         assert_eq!(
             n as u8, SHIP_3D_TEMP_SND_PHASE_COUNT,
             "the phase count and the table length disagree"
@@ -5383,7 +5405,9 @@ mod tests {
         // The offsets are strictly increasing, as consecutive entry points must
         // be -- a transposed pair would still pass a set comparison.
         assert!(
-            SHIP_3D_TEMP_SND_CALLBACK_OFFSETS.windows(2).all(|w| w[0] < w[1]),
+            SHIP_3D_TEMP_SND_CALLBACK_OFFSETS
+                .windows(2)
+                .all(|w| w[0] < w[1]),
             "callback offsets are not in ascending order"
         );
     }
@@ -5473,8 +5497,18 @@ mod tests {
     fn the_dirty_rect_collector_honours_its_filter_and_field_widths() {
         let dirty = Ship3dDirtyRectList {
             rects: vec![
-                Ship3dProjectionViewport { left: 50, top: 50, right: 100, bottom: 100 },
-                Ship3dProjectionViewport { left: 200, top: 20, right: 260, bottom: 60 },
+                Ship3dProjectionViewport {
+                    left: 50,
+                    top: 50,
+                    right: 100,
+                    bottom: 100,
+                },
+                Ship3dProjectionViewport {
+                    left: 200,
+                    top: 20,
+                    right: 260,
+                    bottom: 60,
+                },
             ],
             sentinel: SHIP_3D_DIRTY_RECT_SENTINEL,
         };
@@ -5494,14 +5528,21 @@ mod tests {
                 collect_ship_3d_dirty_sprite_slot_render_commands(&mut slots, &dirty, 0, 0);
 
             if flags & SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG == 0 {
-                assert!(commands.is_empty(), "an inactive slot emitted {} command(s)", commands.len());
+                assert!(
+                    commands.is_empty(),
+                    "an inactive slot emitted {} command(s)",
+                    commands.len()
+                );
             }
             for command in &commands {
                 assert!(
                     ship_3d_rects_intersect(command.slot_rect, command.dirty_rect),
                     "emitted a command for rects that do not intersect"
                 );
-                assert!(command.dispatch_index <= 7, "dispatch index is a 3-bit field");
+                assert!(
+                    command.dispatch_index <= 7,
+                    "dispatch index is a 3-bit field"
+                );
                 assert!(
                     command.destination_remap_mode <= 3,
                     "remap mode is a 2-bit field"
@@ -5515,16 +5556,26 @@ mod tests {
                 "the dirty flag survived the pass (seed {seed})"
             );
         }
-        assert!(emitted > 20, "only {emitted} commands; the sweep proves little");
+        assert!(
+            emitted > 20,
+            "only {emitted} commands; the sweep proves little"
+        );
 
         // An empty rect list and an inverted range both produce nothing.
         let mut slots = vec![Ship3dObjectSpriteDescriptor {
             flags: SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG,
             ..Default::default()
         }];
-        let empty = Ship3dDirtyRectList { rects: Vec::new(), sentinel: SHIP_3D_DIRTY_RECT_SENTINEL };
-        assert!(collect_ship_3d_dirty_sprite_slot_render_commands(&mut slots, &empty, 0, 0).is_empty());
-        assert!(collect_ship_3d_dirty_sprite_slot_render_commands(&mut slots, &dirty, 5, 0).is_empty());
+        let empty = Ship3dDirtyRectList {
+            rects: Vec::new(),
+            sentinel: SHIP_3D_DIRTY_RECT_SENTINEL,
+        };
+        assert!(
+            collect_ship_3d_dirty_sprite_slot_render_commands(&mut slots, &empty, 0, 0).is_empty()
+        );
+        assert!(
+            collect_ship_3d_dirty_sprite_slot_render_commands(&mut slots, &dirty, 5, 0).is_empty()
+        );
     }
 
     /// THE DISPATCH FSM CANNOT SELECT A HANDLER THAT DOES NOT EXIST.
@@ -5584,8 +5635,7 @@ mod tests {
                         // Ungated: any selection must be a real handler index.
                         let mut state = Ship3dNavChoiceState::default();
                         let gates = Ship3dNavChoiceGates::default();
-                        let Some(_r) =
-                            update_ship_3d_nav_choice_dispatch(&mut state, gates, input)
+                        let Some(_r) = update_ship_3d_nav_choice_dispatch(&mut state, gates, input)
                         else {
                             continue;
                         };
@@ -5599,11 +5649,11 @@ mod tests {
                                 "hovered choice {hovered} is outside 1..={}",
                                 SHIP_3D_NAV_CHOICE_COUNT
                             );
-                            let palette = _r.highlighted_palette_index.expect("hover sets a colour");
+                            let palette =
+                                _r.highlighted_palette_index.expect("hover sets a colour");
                             assert!(
                                 (SHIP_3D_NAV_CHOICE_PALETTE_FIRST
-                                    ..SHIP_3D_NAV_CHOICE_PALETTE_FIRST
-                                        + SHIP_3D_NAV_CHOICE_COUNT)
+                                    ..SHIP_3D_NAV_CHOICE_PALETTE_FIRST + SHIP_3D_NAV_CHOICE_COUNT)
                                     .contains(&palette),
                                 "palette index {palette:#x} is outside the choice bank"
                             );
@@ -5636,7 +5686,10 @@ mod tests {
             }
         }
         assert!(gated_seen > 0, "the blocking-gate path never ran");
-        assert!(selected > 50, "only {selected} selections; the sweep proves little");
+        assert!(
+            selected > 50,
+            "only {selected} selections; the sweep proves little"
+        );
     }
 
     /// THE WHOLE PROJECTION CHAIN, ending at the pixel: the game's angle table
@@ -5708,7 +5761,10 @@ mod tests {
                             None,
                             "a second point at the same offset was accepted"
                         );
-                        assert_eq!(buffer[pixel.offset], shade, "the first shade was overwritten");
+                        assert_eq!(
+                            buffer[pixel.offset], shade,
+                            "the first shade was overwritten"
+                        );
                         plotted += 1;
                     }
                     None => assert!(
@@ -5721,7 +5777,10 @@ mod tests {
         // A floor on COVERAGE, not a measurement: the assertions above are
         // vacuous if almost nothing reaches the plot stage. 96 points got through
         // at step 3, so the sweep was widened rather than the bar lowered.
-        assert!(plotted > 100, "only {plotted} points plotted; the sweep proves little");
+        assert!(
+            plotted > 100,
+            "only {plotted} points plotted; the sweep proves little"
+        );
     }
 
     /// PROJECTED DEPTH CANNOT EXCEED THE DISTANCE, because the matrix row it is
@@ -5736,9 +5795,12 @@ mod tests {
     #[test]
     fn projected_depth_never_exceeds_the_points_distance() {
         let origin = Ship3dProjectionOrigin { x: 0, y: 0, z: 0 };
-        let point = Ship3dProjectionPoint { x: 300, y: 200, z: 500 };
-        let distance =
-            ((300f64).powi(2) + (200f64).powi(2) + (500f64).powi(2)).sqrt();
+        let point = Ship3dProjectionPoint {
+            x: 300,
+            y: 200,
+            z: 500,
+        };
+        let distance = ((300f64).powi(2) + (200f64).powi(2) + (500f64).powi(2)).sqrt();
 
         let mut hits = 0usize;
         let mut best = 0f64;
@@ -5748,8 +5810,7 @@ mod tests {
                 projection_angle_2f6d: (step * 2) % 180,
                 angle_2f6f: 0,
             };
-            let Some(matrix) = build_ship_3d_projection_matrix(&SHIP_3D_ANGLE_TABLE, angles)
-            else {
+            let Some(matrix) = build_ship_3d_projection_matrix(&SHIP_3D_ANGLE_TABLE, angles) else {
                 continue;
             };
             let Some(projected): Option<Ship3dProjectedPoint> =
@@ -5767,7 +5828,10 @@ mod tests {
             hits += 1;
         }
 
-        assert!(hits > 20, "only {hits} angles projected; the sweep is too narrow");
+        assert!(
+            hits > 20,
+            "only {hits} angles projected; the sweep is too narrow"
+        );
         // NON-VACUOUS: some angle must look nearly straight at the point, or the
         // bound above would be satisfied by any small depth (including a broken
         // one that always returned 1).
@@ -5780,11 +5844,23 @@ mod tests {
     /// The origin itself has zero depth and is culled (`depth <= 0` @`0x2F65`).
     #[test]
     fn a_point_at_the_origin_is_culled() {
-        let origin = Ship3dProjectionOrigin { x: 400, y: 400, z: 400 };
-        let point = Ship3dProjectionPoint { x: 400, y: 400, z: 400 };
+        let origin = Ship3dProjectionOrigin {
+            x: 400,
+            y: 400,
+            z: 400,
+        };
+        let point = Ship3dProjectionPoint {
+            x: 400,
+            y: 400,
+            z: 400,
+        };
         let matrix = build_ship_3d_projection_matrix(
             &SHIP_3D_ANGLE_TABLE,
-            Ship3dMatrixAngles { angle_2f71: 0, projection_angle_2f6d: 0, angle_2f6f: 0 },
+            Ship3dMatrixAngles {
+                angle_2f71: 0,
+                projection_angle_2f6d: 0,
+                angle_2f6f: 0,
+            },
         )
         .expect("the identity-ish matrix builds");
         assert_eq!(
@@ -6053,14 +6129,29 @@ mod tests {
         //   screen = (dot >> 7) idiv depth + centre;  centre_x = 0xA0, centre_y = 0x64.
         // Assert the ported constants match the disassembly exactly.
         assert_eq!(SHIP_3D_PROJECTION_AXIS_SHIFT, 7, "native sar eax,7");
-        assert_eq!(SHIP_3D_PROJECTION_SCREEN_CENTER_X, 160, "native add ax,0xA0 (=160)");
-        assert_eq!(SHIP_3D_PROJECTION_SCREEN_CENTER_Y, 100, "native add ax,0x64 (=100)");
+        assert_eq!(
+            SHIP_3D_PROJECTION_SCREEN_CENTER_X, 160,
+            "native add ax,0xA0 (=160)"
+        );
+        assert_eq!(
+            SHIP_3D_PROJECTION_SCREEN_CENTER_Y, 100,
+            "native add ax,0x64 (=100)"
+        );
         // project_ship_3d_axis reproduces `numerator idiv depth + centre` exactly.
         // e.g. numerator=(dot>>7)=1000, depth=8 -> 125 + 160 = 285.
-        assert_eq!(project_ship_3d_axis(1000, 8, SHIP_3D_PROJECTION_SCREEN_CENTER_X), 285);
+        assert_eq!(
+            project_ship_3d_axis(1000, 8, SHIP_3D_PROJECTION_SCREEN_CENTER_X),
+            285
+        );
         // A point on the view axis (numerator 0) projects to the screen centre.
-        assert_eq!(project_ship_3d_axis(0, 100, SHIP_3D_PROJECTION_SCREEN_CENTER_X), 160);
-        assert_eq!(project_ship_3d_axis(0, 100, SHIP_3D_PROJECTION_SCREEN_CENTER_Y), 100);
+        assert_eq!(
+            project_ship_3d_axis(0, 100, SHIP_3D_PROJECTION_SCREEN_CENTER_X),
+            160
+        );
+        assert_eq!(
+            project_ship_3d_axis(0, 100, SHIP_3D_PROJECTION_SCREEN_CENTER_Y),
+            100
+        );
     }
 
     #[test]
@@ -6084,14 +6175,20 @@ mod tests {
         // Phase 2: Z accelerates.
         let z_before = cam.origin_z;
         cam.step();
-        assert!(cam.origin_z >= z_before && cam.z_accel == 0x64, "Z accelerates");
+        assert!(
+            cam.origin_z >= z_before && cam.z_accel == 0x64,
+            "Z accelerates"
+        );
         while cam.phase == 2 {
             cam.step();
         }
         // Phase 3 reset then phase 4 sets Z=0x7530.
         assert_eq!(cam.phase, 3);
         cam.step();
-        assert_eq!((cam.origin_x, cam.origin_z, cam.angle_2f71), (0x2710, 0x4E20, 0));
+        assert_eq!(
+            (cam.origin_x, cam.origin_z, cam.angle_2f71),
+            (0x2710, 0x4E20, 0)
+        );
         cam.step(); // phase 4
         assert_eq!(cam.origin_z, 0x7530);
         cam.step();
@@ -6131,11 +6228,12 @@ mod tests {
         assert!(projected > 0, "some HUD vertices must project on-screen");
     }
 
-
     #[test]
     fn star_map_projection_matches_decoded_formula() {
         // Identity-ish matrix: row_x=[1<<7,0,0], row_y=[0,1<<7,0], row_z=[0,0,1<<15].
-        let m = Ship3dProjectionMatrix { terms: [128, 0, 0, 0, 128, 0, 0, 0, 32768] };
+        let m = Ship3dProjectionMatrix {
+            terms: [128, 0, 0, 0, 128, 0, 0, 0, 32768],
+        };
         let origin = [0, 0, 0];
         // pos (10, 20, 4): depth = (4*32768)>>15 = 4; sx = ((10*128)>>7)/4 + 160 = 10/4+160 = 162;
         // sy = ((20*128)>>7)/4 + 100 = 20/4+100 = 105; scale = 0x100000/4 = 0x40000.
@@ -6151,7 +6249,9 @@ mod tests {
     /// point entirely (audit-fixes #586).
     #[test]
     fn the_camera_subtract_wraps_in_sixteen_bits() {
-        let m = Ship3dProjectionMatrix { terms: [128, 0, 0, 0, 128, 0, 0, 0, 32768] };
+        let m = Ship3dProjectionMatrix {
+            terms: [128, 0, 0, 0, 128, 0, 0, 0, 32768],
+        };
         // z separation 40004 - 4 = 40000, which does NOT fit in i16: as a word it is
         // 0x9C40, sign-extended to -25536. Depth is therefore negative, and the
         // `depth += 0x10000` fixup @0x9C29 is what rescues it.
@@ -6162,12 +6262,15 @@ mod tests {
         // A 32-bit subtract would have given depth 40000 with NO fixup, and the
         // fixup only fires on a negative — so the two readings agree here by
         // arithmetic accident. The x axis is where they part company:
-        let (x16, _, _) = project_star_map_point([40010, 20, 40004], [10, 0, 4], &m)
-            .expect("projects");
+        let (x16, _, _) =
+            project_star_map_point([40010, 20, 40004], [10, 0, 4], &m).expect("projects");
         // 16-bit: 40000 -> -25536, so sx = ((-25536*128)>>7)/40000 + 160 = 160.
         assert_eq!(x16, 160 + (-25536i32) / 40000, "x from the WRAPPED delta");
         // 32-bit would have been 160 + 40000/40000 = 161. Different pixel.
-        assert_ne!(x16, 161, "a 32-bit subtract would put this star a pixel right");
+        assert_ne!(
+            x16, 161,
+            "a 32-bit subtract would put this star a pixel right"
+        );
     }
 
     #[test]
@@ -6182,7 +6285,6 @@ mod tests {
         render_star_map_navview_projected(&mut fb2, 200, 90, 240, 40);
         assert!(fb != fb2, "grid pans with heading");
     }
-
 
     #[test]
     fn pyramid_hud_draws_only_in_the_bottom_band() {
@@ -10002,14 +10104,6 @@ mod tests {
         );
     }
 
-    #[test]
-    /// The invariant the per-frame call depends on: same seed -> same cloud.
-    ///
-    /// The game randomizes ONCE at `0x0FD3` (boot). `EngineState` calls
-    /// `render_ship_3d_starfield` every frame instead, which re-randomizes — safe
-    /// only while the seed is constant. If that ever becomes a real RTC read the
-    /// stars start boiling, and nothing else in the tree would notice.
-    #[test]
     /// `0x44F2`'s `jge`/`jle` are SIGNED, and a slot hanging off the left edge is
     /// the case that tells the two readings apart.
     #[test]
@@ -10041,14 +10135,30 @@ mod tests {
         );
     }
 
+    /// The invariant the per-frame call depends on: same seed -> same cloud.
+    ///
+    /// The game randomizes ONCE at `0x0FD3` (boot). `EngineState` calls
+    /// `render_ship_3d_starfield` every frame instead, which re-randomizes — safe
+    /// only while the seed is constant. If that ever becomes a real RTC read the
+    /// stars start boiling, and nothing else in the tree would notice.
+    #[test]
     fn the_starfield_is_stable_only_because_the_seed_is() {
         let angles = Ship3dMatrixAngles {
             angle_2f71: 0,
             projection_angle_2f6d: 11,
             angle_2f6f: 0,
         };
-        let origin = Ship3dProjectionOrigin { x: 0x8000, y: 0x8000, z: 0x8000 };
-        let viewport = Ship3dProjectionViewport { left: 0, right: 320, top: 0, bottom: 200 };
+        let origin = Ship3dProjectionOrigin {
+            x: 0x8000,
+            y: 0x8000,
+            z: 0x8000,
+        };
+        let viewport = Ship3dProjectionViewport {
+            left: 0,
+            right: 320,
+            top: 0,
+            bottom: 200,
+        };
         let shot = |seed: u8| {
             let mut prng = BloodPrng::seeded_from_rtc_seconds(seed);
             render_ship_3d_starfield(&mut prng, angles, origin, viewport)
@@ -10059,9 +10169,14 @@ mod tests {
         assert_eq!(shot(17), shot(17), "same seed must give the same cloud");
         // NOT VACUOUS: a different seed really does move the stars, so the equality
         // above is a property of the seed and not of a renderer that ignores it.
-        assert_ne!(shot(17), shot(42), "a different seed must give a different cloud");
+        assert_ne!(
+            shot(17),
+            shot(42),
+            "a different seed must give a different cloud"
+        );
     }
 
+    #[test]
     fn render_ship_3d_starfield_uses_real_table_and_plots_points() {
         // Full faithful path: PRNG -> randomized cloud -> recovered angle table
         // -> camera matrix -> depth-shaded buffer. The point cloud spans the
@@ -10344,10 +10459,22 @@ mod tests {
         assert_eq!(word(0x9749), super::SHIP_3D_PROCEDURAL_HALF_TURN);
         assert_eq!(word(0x974E), super::SHIP_3D_PROCEDURAL_FULL_TURN);
         // thresholds and steps
-        assert_eq!(exe[0x9754] as u16, super::SHIP_3D_PROCEDURAL_CLOSE_ANGLE_THRESHOLD);
-        assert_eq!(exe[0x9764] as u16, super::SHIP_3D_PROCEDURAL_TARGET_LIST_THRESHOLD);
-        assert_eq!(exe[0x977E] as u16, super::SHIP_3D_PROCEDURAL_TARGET_LIST_STEP);
-        assert_eq!(exe[0x97C6] as u16, super::SHIP_3D_PROCEDURAL_AUTO_ROTATE_STEP);
+        assert_eq!(
+            exe[0x9754] as u16,
+            super::SHIP_3D_PROCEDURAL_CLOSE_ANGLE_THRESHOLD
+        );
+        assert_eq!(
+            exe[0x9764] as u16,
+            super::SHIP_3D_PROCEDURAL_TARGET_LIST_THRESHOLD
+        );
+        assert_eq!(
+            exe[0x977E] as u16,
+            super::SHIP_3D_PROCEDURAL_TARGET_LIST_STEP
+        );
+        assert_eq!(
+            exe[0x97C6] as u16,
+            super::SHIP_3D_PROCEDURAL_AUTO_ROTATE_STEP
+        );
         // the cursor ring: `add cx,0x5a0` @0x979D, wrap `add bx,0x5a0` @0x9807
         assert_eq!(word(0x979F), super::SHIP_3D_PROCEDURAL_MOUSE_RING);
         assert_eq!(word(0x9809), super::SHIP_3D_PROCEDURAL_MOUSE_CENTER_X);
@@ -10361,7 +10488,11 @@ mod tests {
         // `and word ptr [0xa2a], 0xfff8` is `83 26 2a 0a f8` -- the `83 /N ib`
         // form, whose immediate is ONE BYTE, SIGN-EXTENDED. Reading a word here
         // yields 0xF80A, which is the next instruction's bytes, not a mask.
-        assert_eq!(&exe[0x97F6..0x97F8], &[0x83, 0x26], "83 /4: and r/m16, imm8");
+        assert_eq!(
+            &exe[0x97F6..0x97F8],
+            &[0x83, 0x26],
+            "83 /4: and r/m16, imm8"
+        );
         assert_eq!(
             exe[0x97FA] as i8 as i16 as u16,
             super::SHIP_3D_PROCEDURAL_MOUSE_ALIGN_MASK
@@ -10371,7 +10502,11 @@ mod tests {
         // before `mov [0x2795],bx` (89 1e 95 27) @0x97E3. This is what licenses the
         // port's `angle * 2` when it hands frames to degree-space arithmetic.
         assert_eq!(&exe[0x97E1..0x97E3], &[0xD1, 0xEB], "shr bx,1");
-        assert_eq!(&exe[0x97E3..0x97E7], &[0x89, 0x1E, 0x95, 0x27], "mov [0x2795],bx");
+        assert_eq!(
+            &exe[0x97E3..0x97E7],
+            &[0x89, 0x1E, 0x95, 0x27],
+            "mov [0x2795],bx"
+        );
         // and the panorama really is 180 frames of 2 degrees
         assert_eq!(
             super::SHIP_3D_PROCEDURAL_FULL_TURN / 2,

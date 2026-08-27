@@ -3,35 +3,17 @@
 use std::fmt;
 
 use commander_blood_formats::alien::{
-    AlienAsset, AlienBehaviorMethod, AlienResumeCallbackData, AlienRingInitialCallbackData,
-    AlienRingLifecycleData, AlienSlot2InitialCallbackData, AlienTransformData,
-    AlienTrigonometryPair, AlienWaveSelectionData, AlienXdbKind, AXIS_COUNT,
+    AXIS_COUNT, AlienAsset, AlienBehaviorMethod, AlienResumeCallbackData,
+    AlienRingInitialCallbackData, AlienRingLifecycleData, AlienSlot2InitialCallbackData,
+    AlienTransformData, AlienTrigonometryPair, AlienWaveSelectionData, AlienXdbKind,
     TRIGONOMETRY_ENTRY_COUNT,
 };
 
 use super::{
-    adjust_state, anchor_state, begin_amer_selection, begin_croolis_fade, begin_croolis_selection,
-    begin_resume_clear, begin_scrut_finish, begin_scrut_selection, bounds_then_wrap,
-    capture_resume_state, clear_next_ring_entry, continue_wave_steering, dispatch_croolis_common,
-    dispatch_scrut_common, generate_starfield, initialize_or_dispatch_resume,
-    initialize_or_dispatch_slot2, prepare_render_geometry, reset_amer_motion,
-    reset_scrut_selection, restart_amer_update, restart_croolis_update, restart_initial_course,
-    restart_scrut_selection, restart_scrut_update, select_faces, update_amer_common,
-    update_amer_finish, update_amer_head, update_amer_late_selection, update_amer_return,
-    update_amer_selection, update_amer_steering, update_croolis_fade, update_croolis_head,
-    update_croolis_motion, update_croolis_reset_or_camera, update_croolis_selection,
-    update_follow_course, update_initial_course, update_or_initialize_ring,
-    update_or_initialize_wave, update_palette_animation, update_resume_final_stage,
-    update_resume_pair_stage, update_resume_queue, update_resume_timeout, update_scrut_fade,
-    update_scrut_finish, update_scrut_head, update_scrut_motion, update_scrut_reset_or_camera,
-    update_scrut_selection_approach, update_scrut_selection_begin, update_scrut_selection_damping,
-    update_scrut_steering, update_wave_callback, update_wave_camera, update_wave_finish,
-    update_wave_motion, update_wave_return, update_wave_selection, wrap_positions,
     AlienAmerFinishUpdate, AlienAmerLateSelectionUpdate, AlienAmerSelectionUpdate,
     AlienAmerUpdateHead, AlienBehaviorError, AlienBehindCameraSignal, AlienCallbackSceneState,
     AlienCameraAngles, AlienCameraControl, AlienCameraStep, AlienCameraTransform,
-    AlienControlLatch,
-    AlienCroolisCommonDispatch, AlienCroolisFadeUpdate, AlienCroolisResetUpdate,
+    AlienControlLatch, AlienCroolisCommonDispatch, AlienCroolisFadeUpdate, AlienCroolisResetUpdate,
     AlienCroolisSelectionUpdate, AlienCroolisUpdateHead, AlienFaceSelection,
     AlienFaceSelectionError, AlienModelPose, AlienMouseSample, AlienNodePose,
     AlienPaletteAnimationState, AlienPaletteError, AlienPaletteInput, AlienPrimaryMeshFrame,
@@ -47,7 +29,24 @@ use super::{
     AlienSelectionUpdate, AlienSlot2AnimationState, AlienSlot2Callback, AlienSlot2Callbacks,
     AlienSlot2Error, AlienSlot2NodeState, AlienSlot2SceneState, AlienSpecies, AlienStarfieldError,
     AlienStarfieldFrame, AlienWaveCallbackUpdate, AlienWaveError, AlienWaveMethodState,
-    AlienWaveSelection, CROOLIS_AUTONOMOUS_RESET_DISTANCE,
+    AlienWaveSelection, CROOLIS_AUTONOMOUS_RESET_DISTANCE, adjust_state, anchor_state,
+    begin_amer_selection, begin_croolis_fade, begin_croolis_selection, begin_resume_clear,
+    begin_scrut_finish, begin_scrut_selection, bounds_then_wrap, capture_resume_state,
+    clear_next_ring_entry, continue_wave_steering, dispatch_croolis_common, dispatch_scrut_common,
+    generate_starfield, initialize_or_dispatch_resume, initialize_or_dispatch_slot2,
+    prepare_render_geometry, reset_amer_motion, reset_scrut_selection, restart_amer_update,
+    restart_croolis_update, restart_initial_course, restart_scrut_selection, restart_scrut_update,
+    select_faces, update_amer_common, update_amer_finish, update_amer_head,
+    update_amer_late_selection, update_amer_return, update_amer_selection, update_amer_steering,
+    update_croolis_fade, update_croolis_head, update_croolis_motion,
+    update_croolis_reset_or_camera, update_croolis_selection, update_follow_course,
+    update_initial_course, update_or_initialize_ring, update_or_initialize_wave,
+    update_palette_animation, update_resume_final_stage, update_resume_pair_stage,
+    update_resume_queue, update_resume_timeout, update_scrut_fade, update_scrut_finish,
+    update_scrut_head, update_scrut_motion, update_scrut_reset_or_camera,
+    update_scrut_selection_approach, update_scrut_selection_begin, update_scrut_selection_damping,
+    update_scrut_steering, update_wave_callback, update_wave_camera, update_wave_finish,
+    update_wave_motion, update_wave_return, update_wave_selection, wrap_positions,
 };
 
 const INITIAL_VIEW: [i16; AXIS_COUNT] = [1_885, -239, -9_790];
@@ -1561,7 +1560,7 @@ fn control_input_signal(control_latch: AlienControlLatch) -> u16 {
 mod tests {
     use std::path::{Path, PathBuf};
 
-    use commander_blood_formats::alien::{decode_alien_xdb, AlienXdbKind};
+    use commander_blood_formats::alien::{AlienXdbKind, decode_alien_xdb};
 
     use crate::native::alien::AlienResumeUpdate;
 

@@ -140,8 +140,7 @@ mod tests {
         // old text-speed step 5; the sibling assertion below was already written
         // this way.
         assert!(
-            (events[0].start_time - (1.0 + 3.0 / default_subtitle_reveal_chars_per_second()))
-                .abs()
+            (events[0].start_time - (1.0 + 3.0 / default_subtitle_reveal_chars_per_second())).abs()
                 < f64::EPSILON
         );
         assert!(

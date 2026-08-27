@@ -3,10 +3,16 @@
 use commander_blood_tools::decompress::decompress_rle_173;
 
 fn main() {
-    for name in ["output/_tmp_dat/sq/ppit01.hnm", "output/_tmp_dat/sq/cliptoot.hnm"] {
+    for name in [
+        "output/_tmp_dat/sq/ppit01.hnm",
+        "output/_tmp_dat/sq/cliptoot.hnm",
+    ] {
         let h = commander_blood_tools::hnm::HnmFile::open(std::path::Path::new(name)).unwrap();
-        println!("{name}: {} frames, first offsets {:?}", h.frame_count(),
-            (0..5).map(|i| h.frame_dims(i)).collect::<Vec<_>>());
+        println!(
+            "{name}: {} frames, first offsets {:?}",
+            h.frame_count(),
+            (0..5).map(|i| h.frame_dims(i)).collect::<Vec<_>>()
+        );
     }
     let d = std::fs::read("output/_tmp_dat/sq/ppit01.hnm").unwrap();
     let hs = u16::from_le_bytes([d[0], d[1]]) as usize;

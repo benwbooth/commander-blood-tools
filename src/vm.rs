@@ -151,27 +151,90 @@ pub const OPCODE_DESC: [(u8, u8); 0x60] = [
 /// (talk = object + 58). Consumers: the A6 gate's field-0x13 lookup (0x6664),
 /// vm_field_offset (0x6023), the CD transfer's field-0x11 relink.
 pub const FIELD_OFFSETS: [[u8; 16]; 0x15] = [
-    [0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00],
-    [0x04, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
-    [0x00, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
-    [0x00, 0x32, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
-    [0x00, 0x34, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
-    [0x00, 0x1e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
-    [0x00, 0x00, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
-    [0x00, 0x38, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
-    [0x00, 0x36, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
-    [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
-    [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
-    [0x00, 0x00, 0x00, 0x18, 0x18, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
-    [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
-    [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
-    [0x20, 0x44, 0x1c, 0x1c, 0x22, 0x00, 0x00, 0x16, 0x00, 0x10, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00],
-    [0x00, 0x46, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
-    [0x00, 0x14, 0x14, 0x14, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
-    [0x06, 0x18, 0x16, 0x16, 0x16, 0x00, 0x00, 0x14, 0x00, 0x04, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00],
-    [0x00, 0x00, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
-    [0x08, 0x3a, 0x00, 0x00, 0x1c, 0x00, 0x00, 0x00, 0x00, 0x0a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
-    [0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+    [
+        0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x00, 0x00, 0x00, 0x00,
+        0x00,
+    ],
+    [
+        0x04, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00,
+    ],
+    [
+        0x00, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00,
+    ],
+    [
+        0x00, 0x32, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00,
+    ],
+    [
+        0x00, 0x34, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00,
+    ],
+    [
+        0x00, 0x1e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00,
+    ],
+    [
+        0x00, 0x00, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00,
+    ],
+    [
+        0x00, 0x38, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00,
+    ],
+    [
+        0x00, 0x36, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00,
+    ],
+    [
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00,
+    ],
+    [
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00,
+    ],
+    [
+        0x00, 0x00, 0x00, 0x18, 0x18, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00,
+    ],
+    [
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00,
+    ],
+    [
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00,
+    ],
+    [
+        0x20, 0x44, 0x1c, 0x1c, 0x22, 0x00, 0x00, 0x16, 0x00, 0x10, 0x16, 0x00, 0x00, 0x00, 0x00,
+        0x00,
+    ],
+    [
+        0x00, 0x46, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00,
+    ],
+    [
+        0x00, 0x14, 0x14, 0x14, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00,
+    ],
+    [
+        0x06, 0x18, 0x16, 0x16, 0x16, 0x00, 0x00, 0x14, 0x00, 0x04, 0x14, 0x00, 0x00, 0x00, 0x00,
+        0x00,
+    ],
+    [
+        0x00, 0x00, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00,
+    ],
+    [
+        0x08, 0x3a, 0x00, 0x00, 0x1c, 0x00, 0x00, 0x00, 0x00, 0x0a, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00,
+    ],
+    [
+        0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00,
+    ],
 ];
 
 /// Field offset for a record kind, per the engine's matrix (None = absent).
@@ -363,15 +426,14 @@ impl QuerySetMode {
             Err(compare_state_words(operator, cur as i16, op2 as i16).unwrap_or(false))
         } else {
             let new = match operator {
-                0xF5 => op2,                    // SET
-                0xF6 => cur.wrapping_add(op2),  // ADD
-                0xF7 => cur.wrapping_sub(op2),  // SUB
+                0xF5 => op2,                   // SET
+                0xF6 => cur.wrapping_add(op2), // ADD
+                0xF7 => cur.wrapping_sub(op2), // SUB
                 _ => cur,
             };
             Ok(new)
         }
     }
-
 }
 /// The byte `0xFF`, which reaches the selector cell as the WORD `0xFFFF`:
 /// `lodsb` @`0x668D` reads b3, `98` @`0x668E` sign-extends it (a bare `0x98` is
@@ -875,9 +937,10 @@ fn simple_ascii_payload(cod: &[u8], start: usize, end: usize) -> Option<String> 
     let payload_end = end.checked_sub(2)?;
     if start > payload_end
         || cod.get(payload_end..end) != Some(&[0, 0])
-        || !cod.get(start..payload_end)?.iter().all(|byte| {
-            byte.is_ascii_graphic() && !matches!(*byte, b'"' | b'\\')
-        })
+        || !cod
+            .get(start..payload_end)?
+            .iter()
+            .all(|byte| byte.is_ascii_graphic() && !matches!(*byte, b'"' | b'\\'))
     {
         return None;
     }
@@ -913,10 +976,7 @@ pub enum VmToken {
         len: usize,
     },
     /// `0xA1` leaves query mode and pops one guard target when present.
-    GuardPop {
-        offset: usize,
-        len: usize,
-    },
+    GuardPop { offset: usize, len: usize },
     /// `0xA3 [0xA1] <word_offset:u16>` branches when the selected concept does
     /// not match (or, with the prefix, does match) the dictionary word.
     ConceptGuard {
@@ -970,10 +1030,7 @@ pub enum VmToken {
         len: usize,
     },
     /// `0xCF` clears the alternate concept selection and resume state.
-    ClearAlternateConcept {
-        offset: usize,
-        len: usize,
-    },
+    ClearAlternateConcept { offset: usize, len: usize },
     /// Operand-free `0xCE`/`0xD0`/`0xD1` branch through the current guard target
     /// using the presentation or game-flag condition handled by the native VM.
     FlagBranch {
@@ -1239,7 +1296,11 @@ pub fn encode_token(t: &VmToken) -> Option<Vec<u8>> {
             w(&mut b, *target);
         }
         VmToken::GuardPop { .. } => b.push(OP_POP),
-        VmToken::ConceptGuard { word_offset, inverted, .. } => {
+        VmToken::ConceptGuard {
+            word_offset,
+            inverted,
+            ..
+        } => {
             b.push(OP_CONCEPT_GUARD);
             if *inverted {
                 b.push(OP_POP);
@@ -1288,7 +1349,12 @@ pub fn encode_token(t: &VmToken) -> Option<Vec<u8>> {
             }
             b.push(*opcode);
         }
-        VmToken::Actor { record_offset, related_record_offset, inverted, .. } => {
+        VmToken::Actor {
+            record_offset,
+            related_record_offset,
+            inverted,
+            ..
+        } => {
             b.push(0xC4);
             if *inverted {
                 b.push(0xA1);
@@ -1296,7 +1362,12 @@ pub fn encode_token(t: &VmToken) -> Option<Vec<u8>> {
             w(&mut b, *record_offset);
             w(&mut b, *related_record_offset);
         }
-        VmToken::RecordLink { record_offset, related_record_offset, inverted, .. } => {
+        VmToken::RecordLink {
+            record_offset,
+            related_record_offset,
+            inverted,
+            ..
+        } => {
             b.push(0xC3);
             if *inverted {
                 b.push(0xA1);
@@ -1304,7 +1375,13 @@ pub fn encode_token(t: &VmToken) -> Option<Vec<u8>> {
             w(&mut b, *record_offset);
             w(&mut b, *related_record_offset);
         }
-        VmToken::RecordEntry { entry_opcode, record_offset, operand, inverted, .. } => {
+        VmToken::RecordEntry {
+            entry_opcode,
+            record_offset,
+            operand,
+            inverted,
+            ..
+        } => {
             b.push(*entry_opcode);
             if *inverted {
                 b.push(0xA1);
@@ -1316,7 +1393,13 @@ pub fn encode_token(t: &VmToken) -> Option<Vec<u8>> {
             b.push(0xC9);
             w(&mut b, *record_offset);
         }
-        VmToken::RecordState { opcode, record_offset, operand, inverted, .. } => {
+        VmToken::RecordState {
+            opcode,
+            record_offset,
+            operand,
+            inverted,
+            ..
+        } => {
             b.push(*opcode);
             if *inverted {
                 b.push(0xA1);
@@ -1324,7 +1407,12 @@ pub fn encode_token(t: &VmToken) -> Option<Vec<u8>> {
             w(&mut b, *record_offset);
             w(&mut b, *operand);
         }
-        VmToken::BitFlag { flag_offset, bit_index, clear, .. } => {
+        VmToken::BitFlag {
+            flag_offset,
+            bit_index,
+            clear,
+            ..
+        } => {
             b.push(OP_BIT_FLAG);
             if *clear {
                 b.push(0xA1);
@@ -1374,25 +1462,47 @@ pub fn encode_token(t: &VmToken) -> Option<Vec<u8>> {
             w(&mut b, *record_offset);
             w(&mut b, *value);
         }
-        VmToken::GlobalWordCompare { operator, tag, value, .. } => {
+        VmToken::GlobalWordCompare {
+            operator,
+            tag,
+            value,
+            ..
+        } => {
             b.push(OP_GLOBAL_WORD_COMPARE);
             b.push(*operator);
             b.push(*tag);
             w(&mut b, *value);
         }
-        VmToken::GlobalPairCompare { operator, packed_value, encoded_year, .. } => {
+        VmToken::GlobalPairCompare {
+            operator,
+            packed_value,
+            encoded_year,
+            ..
+        } => {
             b.push(OP_GLOBAL_PAIR_COMPARE);
             b.push(*operator);
             w(&mut b, *packed_value);
             w(&mut b, *encoded_year);
         }
-        VmToken::PairRecord { opcode, record_offset, first_word, second_word, .. } => {
+        VmToken::PairRecord {
+            opcode,
+            record_offset,
+            first_word,
+            second_word,
+            ..
+        } => {
             b.push(*opcode);
             w(&mut b, *record_offset);
             w(&mut b, *first_word);
             w(&mut b, *second_word);
         }
-        VmToken::RecordTriple { record_offset, first_word, second_word, inverted, .. } => {
+        VmToken::RecordTriple {
+            record_offset,
+            first_word,
+            second_word,
+            inverted,
+            ..
+        } => {
             b.push(OP_RECORD_TRIPLE);
             if *inverted {
                 b.push(0xA1);
@@ -1405,7 +1515,9 @@ pub fn encode_token(t: &VmToken) -> Option<Vec<u8>> {
             b.push(OP_SCRIPT_PROFILE_REQUEST);
             b.push(*operand);
         }
-        VmToken::Op { opcode, operands, .. } => {
+        VmToken::Op {
+            opcode, operands, ..
+        } => {
             b.push(*opcode);
             b.extend_from_slice(operands);
         }
@@ -3964,8 +4076,7 @@ fn derive_ship_3d_position_runtime(
         ) {
             continue;
         }
-        let Some(parent_field) =
-            vm_field_offset(ship3d::SHIP_3D_FIELD_SELECTOR_PARENT_LINK, kind)
+        let Some(parent_field) = vm_field_offset(ship3d::SHIP_3D_FIELD_SELECTOR_PARENT_LINK, kind)
         else {
             continue;
         };
@@ -3997,10 +4108,7 @@ fn derive_ship_3d_position_runtime(
                 ship3d::SHIP_3D_FIELD_SELECTOR_KIND100_MATCH_WORD,
                 ship3d::SHIP_3D_OBJECT_KIND_POSITION_KIND100,
             ),
-            kind100_relation_word: read(
-                ship3d::SHIP_3D_FIELD_SELECTOR_KIND100_RELATION_WORD,
-                kind,
-            ),
+            kind100_relation_word: read(ship3d::SHIP_3D_FIELD_SELECTOR_KIND100_RELATION_WORD, kind),
         });
 
         // The coordinate pair for every selector that can resolve a position on
@@ -4086,11 +4194,8 @@ fn resolve_c1_record_state_ship3d_target(
         let position_runtime = match runtime.position_runtime.as_ref() {
             Some(supplied) => supplied,
             None => {
-                derived = derive_ship_3d_position_runtime(
-                    state,
-                    &[owner_offset, operand],
-                    arche_object,
-                );
+                derived =
+                    derive_ship_3d_position_runtime(state, &[owner_offset, operand], arche_object);
                 &derived
             }
         };
@@ -4160,15 +4265,13 @@ fn write_c1_record_state_ship3d(
     let Some(runtime) = context.ship3d_c1_runtime.as_ref() else {
         return None;
     };
-    let Some(target_offset) =
-        resolve_c1_record_state_ship3d_target(
-            state,
-            runtime,
-            owner_offset,
-            operand,
-            context.named_object_offsets.arche.unwrap_or(0),
-        )
-    else {
+    let Some(target_offset) = resolve_c1_record_state_ship3d_target(
+        state,
+        runtime,
+        owner_offset,
+        operand,
+        context.named_object_offsets.arche.unwrap_or(0),
+    ) else {
         return None;
     };
     let Some(target_offset) = target_offset else {
@@ -5739,7 +5842,6 @@ pub fn emit_scene_events(lines: &[LineInput]) -> Vec<SceneEvent> {
     events
 }
 
-
 // ============================================================================
 // FAITHFUL VM EXECUTOR — ported opcode-by-opcode from the BLOODPRG disassembly
 // (dispatch 0x5627 via the handler table at file 0x142D0; every handler cited).
@@ -5767,7 +5869,11 @@ pub enum VmEvent {
     QueuePresentation { offset: usize },
     /// `0xCD` — an object TRANSFER (teleport/confiscation; handler 0x69C7:
     /// container field 0x11 relink + special-slot bookkeeping).
-    Transfer { object: usize, to: usize, related: usize },
+    Transfer {
+        object: usize,
+        to: usize,
+        related: usize,
+    },
 }
 
 /// The script VM's machine state, mirroring the game's own arrays byte-for-byte.
@@ -5986,7 +6092,6 @@ pub struct VmMachine {
 }
 
 impl Default for VmMachine {
-
     fn default() -> Self {
         VmMachine {
             pc: 0,
@@ -6180,8 +6285,7 @@ impl VmMachine {
                     continue;
                 }
                 let obj_kind = self.rec_read(obj);
-                let Some(field) =
-                    vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, obj_kind)
+                let Some(field) = vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, obj_kind)
                 else {
                     continue;
                 };
@@ -6282,8 +6386,8 @@ impl VmMachine {
                     }
                     pc += 4;
                 }
-                0xAD | 0xAF | 0xB2 | 0xB3 | 0xBA | 0xBB | 0xBC | 0xB1 | 0xB4
-                | 0xB5 | 0xB6 | 0xBE | 0xBF | 0xC0 => {
+                0xAD | 0xAF | 0xB2 | 0xB3 | 0xBA | 0xBB | 0xBC | 0xB1 | 0xB4 | 0xB5 | 0xB6
+                | 0xBE | 0xBF | 0xC0 => {
                     // The wildcard equality guard (SCRIPT2 @000A: AF 4E 0F A0 0D
                     // = rec_0F4E == 3488): its record operand IS the location
                     // variable.
@@ -6606,7 +6710,10 @@ impl VmMachine {
         &self,
         seeds: &[u16],
         arche: u16,
-    ) -> (Vec<ship3d::Ship3dPositionRecord>, Vec<ship3d::Ship3dPositionField>) {
+    ) -> (
+        Vec<ship3d::Ship3dPositionRecord>,
+        Vec<ship3d::Ship3dPositionField>,
+    ) {
         let mut offsets: Vec<u16> = Vec::new();
         let mut queue: Vec<u16> = seeds.iter().copied().filter(|o| *o != 0).collect();
         if arche != 0 {
@@ -6854,12 +6961,7 @@ impl VmMachine {
         /// The recursive body of `0x624B`; see [`VmMachine::build_nav_source_list`]
         /// for the disassembly. Named for its selector so it does not collide with
         /// the token walker `walk` in this file.
-        fn walk_selector11_children(
-            m: &VmMachine,
-            target: u16,
-            out: &mut Vec<u16>,
-            depth: usize,
-        ) {
+        fn walk_selector11_children(m: &VmMachine, target: u16, out: &mut Vec<u16>, depth: usize) {
             if depth > 32 {
                 return; // cycle guard; the game's data is a tree
             }
@@ -7085,7 +7187,11 @@ impl VmMachine {
             color: LOCATION_PANEL_HEADER_COLOR,
             text: headers.life_support.clone(),
         });
-        for (i, entry) in self.source_list_display_rows(object).into_iter().enumerate() {
+        for (i, entry) in self
+            .source_list_display_rows(object)
+            .into_iter()
+            .enumerate()
+        {
             rows.push(LocationPanelRow {
                 x: LOCATION_PANEL_X,
                 y: LOCATION_PANEL_Y + LOCATION_PANEL_ROW_PITCH * (2 + i as i32),
@@ -7165,7 +7271,12 @@ impl VmMachine {
     /// Returns the FIRST object hit in list order, or `None` (`xor ax,ax` at
     /// `0x9337`). `arche_context` is `es:[arche+0x22]`, the word the black-hole
     /// branch compares against.
-    pub fn nav_chart_pick(&self, list: &[u16], mouse: (i32, i32), arche_context: u16) -> Option<u16> {
+    pub fn nav_chart_pick(
+        &self,
+        list: &[u16],
+        mouse: (i32, i32),
+        arche_context: u16,
+    ) -> Option<u16> {
         list.iter().copied().find(|&object| {
             nav_chart_marker_contains(
                 self.nav_chart_marker(object, arche_context),
@@ -7310,7 +7421,9 @@ impl VmMachine {
             // 0x7273: fetch the next source word. The game reads a buffer that
             // always carries its 0xFFFF terminator; a slice that simply ends is
             // the same stopping condition.
-            let Some(&next) = source.get(index) else { break };
+            let Some(&next) = source.get(index) else {
+                break;
+            };
             index += 1;
             if next == 0xFFFF {
                 break;
@@ -7695,7 +7808,10 @@ impl VmMachine {
     }
 
     fn rec_read(&self, off: u16) -> u16 {
-        self.line_records.get(off as usize / 2).copied().unwrap_or(0)
+        self.line_records
+            .get(off as usize / 2)
+            .copied()
+            .unwrap_or(0)
     }
 
     /// Public record read for the drive layer.
@@ -7791,7 +7907,11 @@ impl VmMachine {
                     flipped = true;
                 }
                 let operand = self.lodsw();
-                let sel = if self.concept_alt_active { self.concept_alt } else { self.concept };
+                let sel = if self.concept_alt_active {
+                    self.concept_alt
+                } else {
+                    self.concept
+                };
                 if sel == 0 {
                     self.branch();
                 } else if sel == operand {
@@ -7834,7 +7954,18 @@ impl VmMachine {
             0xA6 => {
                 let start = self.pc - 1;
                 match decode_text(&self.cod, start, self.cod.len()) {
-                    Some((VmToken::Text { offset, line_index, flags_b4, flags_b5, loop_target, ref word_offsets, .. }, next)) => {
+                    Some((
+                        VmToken::Text {
+                            offset,
+                            line_index,
+                            flags_b4,
+                            flags_b5,
+                            loop_target,
+                            ref word_offsets,
+                            ..
+                        },
+                        next,
+                    )) => {
                         let has_menu = word_offsets.contains(&0xFFFF);
                         // THE PRESENTATION GATE (0x6664..0x6678): the A6 play
                         // path requires the ACTIVE record's field-0x13 slot to
@@ -7969,8 +8100,7 @@ impl VmMachine {
                 self.query = true;
                 let flags = self.lodsb();
                 if flags & 1 == 0 {
-                    let t = self.u8_at(self.pc) as usize
-                        | (self.u8_at(self.pc + 1) as usize) << 8;
+                    let t = self.u8_at(self.pc) as usize | (self.u8_at(self.pc + 1) as usize) << 8;
                     self.pc = t;
                 } else {
                     let v = self.lodsw();
@@ -8269,8 +8399,7 @@ impl VmMachine {
                 let off = self.lodsw();
                 let related = self.lodsw();
                 if self.query {
-                    let pass = self.rec_read(off) == 0xC3
-                        && self.rec_read(off + 2) == related;
+                    let pass = self.rec_read(off) == 0xC3 && self.rec_read(off + 2) == related;
                     if pass == flipped {
                         self.branch();
                     }
@@ -8278,7 +8407,9 @@ impl VmMachine {
                     self.rec_write(off, 0xC3);
                     self.rec_write(off + 2, related);
                     self.rec_write(off + 4, 1);
-                    self.events.push(VmEvent::QueuePresentation { offset: off as usize });
+                    self.events.push(VmEvent::QueuePresentation {
+                        offset: off as usize,
+                    });
                 }
             }
             // 0xC5..0xC8 record-entry family (0x6D18/0x6D80/0x6DCF/0x6F62). These
@@ -8379,7 +8510,9 @@ impl VmMachine {
                             self.rec_write(off, 0xC4);
                             self.rec_write(off + 2, related);
                             self.active_actor = Some(off);
-                            self.events.push(VmEvent::Actor { offset: off as usize });
+                            self.events.push(VmEvent::Actor {
+                                offset: off as usize,
+                            });
                         }
                     }
                 }
@@ -8406,7 +8539,11 @@ impl VmMachine {
                 let _skip = self.lodsb();
                 let val = self.lodsw();
                 let bh = (val >> 8) as u8;
-                let cont = if tag == 0xF1 { bh == self.global_aaa } else { true };
+                let cont = if tag == 0xF1 {
+                    bh == self.global_aaa
+                } else {
+                    true
+                };
                 if !cont {
                     self.branch();
                 }
@@ -8615,7 +8752,6 @@ fn token_len_at(cod: &[u8], pos: usize, op: u8, query: bool) -> usize {
     }
 }
 
-
 // ============================================================================
 // DECOMPILER — static translation of the COD bytecode into a readable BASIC-
 // like listing, using the faithfully-decoded opcode semantics (VmMachine above).
@@ -8648,9 +8784,8 @@ pub fn decompile_script(
             })
             .unwrap_or_else(|| format!("rec_{off:04X}"))
     };
-    let word_of = |w: u16| -> String {
-        dic.get(&w).cloned().unwrap_or_else(|| format!("word_{w}"))
-    };
+    let word_of =
+        |w: u16| -> String { dic.get(&w).cloned().unwrap_or_else(|| format!("word_{w}")) };
     while pc < cod.len() {
         while blocks.last().is_some_and(|&e| pc >= e) {
             blocks.pop();
@@ -8734,7 +8869,16 @@ pub fn decompile_script(
             }
             OP_TEXT => {
                 match decode_text(cod, pc, cod.len()) {
-                    Some((VmToken::Text { flags_b4, flags_b5, voice_selector, word_offsets, .. }, next)) => {
+                    Some((
+                        VmToken::Text {
+                            flags_b4,
+                            flags_b5,
+                            voice_selector,
+                            word_offsets,
+                            ..
+                        },
+                        next,
+                    )) => {
                         // The word list has TWO sections split by 0xFFFF: the spoken
                         // line, then the CHOICE-MENU words (SCRIPT1.COD @0x4A7 is the
                         // canonical example -- "Click quick, Cap'n Bob is waiting ..."
@@ -8780,12 +8924,8 @@ pub fn decompile_script(
                             Some(m) if !m.is_empty() => format!("  MENU[{m}]"),
                             _ => String::new(),
                         };
-                        line = format!(
-                            "SAY \"{}\"{}{}",
-                            text.replace('\n', " / "),
-                            menu_part,
-                            attr
-                        );
+                        line =
+                            format!("SAY \"{}\"{}{}", text.replace('\n', " / "), menu_part, attr);
                         pc = next;
                     }
                     _ => {
@@ -8829,9 +8969,15 @@ pub fn decompile_script(
                 let recoff = read_u16(cod, p).unwrap_or(0);
                 let related = read_u16(cod, p + 2).unwrap_or(0);
                 if query {
-                    line = format!("GUARD {neg}active_actor == {} (related {related})", name_of(recoff as usize));
+                    line = format!(
+                        "GUARD {neg}active_actor == {} (related {related})",
+                        name_of(recoff as usize)
+                    );
                 } else {
-                    line = format!("START PRESENTATION {} (related {related})", name_of(recoff as usize));
+                    line = format!(
+                        "START PRESENTATION {} (related {related})",
+                        name_of(recoff as usize)
+                    );
                 }
                 pc = p + 4;
             }
@@ -8980,8 +9126,8 @@ mod tests {
     #[test]
     fn the_countdown_beat_is_exactly_eight_twentyfifths_of_a_frame() {
         const PIT_DIVISOR: f64 = 5958.0; // 0x1746, func_79c @0x07C0 (#411)
-        const FRAME_TICKS: f64 = 8.0;    // [0xB2D] budget, 0x0FFB (#476)
-        const BEAT_TICKS: f64 = 25.0;    // [0xB27] reload 0x19, 0x07D5 (#411)
+        const FRAME_TICKS: f64 = 8.0; // [0xB2D] budget, 0x0FFB (#476)
+        const BEAT_TICKS: f64 = 25.0; // [0xB27] reload 0x19, 0x07D5 (#411)
         let pit_hz = 1_193_182.0 / PIT_DIVISOR;
         let frame_secs = FRAME_TICKS / pit_hz;
         let beat_hz = pit_hz / BEAT_TICKS;
@@ -9004,7 +9150,6 @@ mod tests {
             "the old measured-mix value was ~0.3685, 15% above 0.32"
         );
     }
-
 
     /// `scan_zero_word` DIFFERENTIALLED against `func_6293`.
     ///
@@ -9139,10 +9284,15 @@ mod tests {
     /// the point is to replace "undecided" with a number.
     #[test]
     fn the_post_update_ladder_on_the_shipped_scripts() {
-        let dir = ["output/_tmp_iso", "../output/_tmp_iso", "output/scripts", "../output/scripts"]
-            .iter()
-            .map(std::path::Path::new)
-            .find(|p| p.exists());
+        let dir = [
+            "output/_tmp_iso",
+            "../output/_tmp_iso",
+            "output/scripts",
+            "../output/scripts",
+        ]
+        .iter()
+        .map(std::path::Path::new)
+        .find(|p| p.exists());
         let Some(dir) = dir else { return };
 
         let (mut pairs, mut handoffs, mut bumps, mut scripts) = (0usize, 0usize, 0usize, 0usize);
@@ -9162,10 +9312,16 @@ mod tests {
             // a record offset of 0 is the null record and would mean the ladder
             // paired something with nothing.
             for pair in &post.actor_record_pairs {
-                assert_ne!(pair.record_offset, 0, "SCRIPT{index}: paired the null record");
+                assert_ne!(
+                    pair.record_offset, 0,
+                    "SCRIPT{index}: paired the null record"
+                );
             }
             for handoff in &post.presentation_handoffs {
-                assert_ne!(handoff.record_offset, 0, "SCRIPT{index}: null handoff record");
+                assert_ne!(
+                    handoff.record_offset, 0,
+                    "SCRIPT{index}: null handoff record"
+                );
             }
         }
 
@@ -9196,10 +9352,15 @@ mod tests {
     /// request is the sentinel reports nothing pending.
     #[test]
     fn profile_requests_sit_on_the_d2_opcode_in_the_real_scripts() {
-        let dir = ["output/_tmp_iso", "../output/_tmp_iso", "output/scripts", "../output/scripts"]
-            .iter()
-            .map(std::path::Path::new)
-            .find(|p| p.exists());
+        let dir = [
+            "output/_tmp_iso",
+            "../output/_tmp_iso",
+            "output/scripts",
+            "../output/scripts",
+        ]
+        .iter()
+        .map(std::path::Path::new)
+        .find(|p| p.exists());
         let Some(dir) = dir else { return };
 
         let mut events = 0usize;
@@ -9227,7 +9388,11 @@ mod tests {
             // nothing pending, per `cmp word [0x6780],-1` @`0x108E`.
             if let Some(last) = trace.script_profile_requests.last() {
                 if last.profile_index == 0xFFFF {
-                    assert_eq!(trace.pending_script_profile(), None, "sentinel not filtered");
+                    assert_eq!(
+                        trace.pending_script_profile(),
+                        None,
+                        "sentinel not filtered"
+                    );
                 } else {
                     assert_eq!(trace.pending_script_profile(), Some(last.profile_index));
                 }
@@ -9242,7 +9407,10 @@ mod tests {
         // assertion above runs twice. That is enough to be non-vacuous and not
         // enough to be reassuring; the sentinel branch below carries more of the
         // weight. Stated so nobody reads `events > 0` as coverage.
-        assert!(events >= 2, "only {events} profile requests seen (2 expected)");
+        assert!(
+            events >= 2,
+            "only {events} profile requests seen (2 expected)"
+        );
     }
 
     /// THE VM MUST NOT DESYNC ON THE GAME'S OWN BYTECODE.
@@ -9263,10 +9431,15 @@ mod tests {
     /// and a broken one cannot fake.
     #[test]
     fn the_vm_runs_the_shipped_scripts_without_desyncing() {
-        let dir = ["output/_tmp_iso", "../output/_tmp_iso", "output/scripts", "../output/scripts"]
-            .iter()
-            .map(std::path::Path::new)
-            .find(|p| p.exists());
+        let dir = [
+            "output/_tmp_iso",
+            "../output/_tmp_iso",
+            "output/scripts",
+            "../output/scripts",
+        ]
+        .iter()
+        .map(std::path::Path::new)
+        .find(|p| p.exists());
         let Some(dir) = dir else { return };
 
         let mut ran = 0usize;
@@ -9307,9 +9480,15 @@ mod tests {
 
         // All five shipped scripts run; require at least three in case a
         // checkout carries fewer.
-        assert!(ran >= 3, "only {ran} scripts executed; the sweep proves little");
+        assert!(
+            ran >= 3,
+            "only {ran} scripts executed; the sweep proves little"
+        );
         // 5 scripts, 1534 branch events measured -- the sweep really executes.
-        assert!(branch_events > 1_000, "only {branch_events} branch events seen");
+        assert!(
+            branch_events > 1_000,
+            "only {branch_events} branch events seen"
+        );
     }
 
     /// The three hit boxes are IMMEDIATES in the picker; read them back out of
@@ -9323,7 +9502,11 @@ mod tests {
         };
         // `c7 06 <disp16> <imm16>` = mov word [disp],imm
         let mov_word = |at: usize| -> (u16, u16) {
-            assert_eq!(&exe[at..at + 2], &[0xC7, 0x06], "{at:#x} is not `mov word [mem],imm`");
+            assert_eq!(
+                &exe[at..at + 2],
+                &[0xC7, 0x06],
+                "{at:#x} is not `mov word [mem],imm`"
+            );
             (
                 u16::from_le_bytes([exe[at + 2], exe[at + 3]]),
                 u16::from_le_bytes([exe[at + 4], exe[at + 5]]),
@@ -9342,10 +9525,24 @@ mod tests {
         }
 
         // The gates select on the same kind bits the chart filter uses.
-        assert_eq!(u16::from_le_bytes([exe[0x92CB + 4], exe[0x92CB + 5]]), 0x0100);
-        assert_eq!(u16::from_le_bytes([exe[0x92F4 + 4], exe[0x92F4 + 5]]), 0x0010);
-        assert_eq!(NAV_CHART_KIND_MASK & 0x0100, 0x0100, "black hole is a charted kind");
-        assert_eq!(NAV_CHART_KIND_MASK & 0x0010, 0x0010, "ship is a charted kind");
+        assert_eq!(
+            u16::from_le_bytes([exe[0x92CB + 4], exe[0x92CB + 5]]),
+            0x0100
+        );
+        assert_eq!(
+            u16::from_le_bytes([exe[0x92F4 + 4], exe[0x92F4 + 5]]),
+            0x0010
+        );
+        assert_eq!(
+            NAV_CHART_KIND_MASK & 0x0100,
+            0x0100,
+            "black hole is a charted kind"
+        );
+        assert_eq!(
+            NAV_CHART_KIND_MASK & 0x0010,
+            0x0010,
+            "ship is a charted kind"
+        );
     }
 
     /// `TALK_FIELD` and `LOCATION_FIELD` are ENTRIES IN THE FIELD MATRIX at
@@ -9367,7 +9564,11 @@ mod tests {
         let at = |selector: usize, column: usize| exe[base + selector * 16 + column] as u16;
 
         assert_eq!(at(0x13, 1), TALK_FIELD, "matrix[0x13][1] is the talk field");
-        assert_eq!(at(6, 2), LOCATION_FIELD, "matrix[6][2] is the location field");
+        assert_eq!(
+            at(6, 2),
+            LOCATION_FIELD,
+            "matrix[6][2] is the location field"
+        );
         assert_eq!(at(9, 8), LOCATION_FIELD, "and the kind-8 column agrees");
 
         // Selector 0 is uniform 0x02 across its live columns -- a field every kind
@@ -9462,8 +9663,15 @@ mod tests {
         assert_eq!(
             names,
             vec![
-                "blood", "orxx", "honk", "menu", "arche", "cryobox", "ark",
-                "scruter_jo", "vbio",
+                "blood",
+                "orxx",
+                "honk",
+                "menu",
+                "arche",
+                "cryobox",
+                "ark",
+                "scruter_jo",
+                "vbio",
             ],
             "the game's built-in name table"
         );
@@ -9750,7 +9958,11 @@ mod tests {
                 break;
             }
         }
-        assert_eq!(m.rec_read(0x12C6), 1, "FINAL WARNING set kill along the way");
+        assert_eq!(
+            m.rec_read(0x12C6),
+            1,
+            "FINAL WARNING set kill along the way"
+        );
         assert!(
             offsets.iter().any(|&o| (0x2F97..0x3070).contains(&o)),
             "departure radio emits (got {offsets:x?})"
@@ -9773,14 +9985,17 @@ mod tests {
             return;
         };
         let cod = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.COD")).unwrap();
-        let var = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.VAR")).unwrap();
         let dic_raw = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.DIC")).unwrap();
         let dic = crate::script::parse_dictionary(&dic_raw);
         let toks = walk(&cod, 0, cod.len());
         let text_of = |off: usize| -> String {
             toks.iter()
                 .find_map(|t| match t {
-                    VmToken::Text { offset: o, word_offsets, .. } if *o == off => Some(
+                    VmToken::Text {
+                        offset: o,
+                        word_offsets,
+                        ..
+                    } if *o == off => Some(
                         word_offsets
                             .iter()
                             .take_while(|&&w| w != 0xFFFF)
@@ -9827,7 +10042,10 @@ mod tests {
             for _ in 0..80 {
                 let evs = m.run_frame();
                 m.tick_state_countdowns();
-                if evs.iter().any(|e| matches!(e, VmEvent::QueuePresentation { offset: 0x6FC })) {
+                if evs
+                    .iter()
+                    .any(|e| matches!(e, VmEvent::QueuePresentation { offset: 0x6FC }))
+                {
                     break;
                 }
             }
@@ -9865,7 +10083,10 @@ mod tests {
         let a = play();
         let b = play();
         assert!(!a.is_empty(), "the interception plays");
-        assert_eq!(a, b, "the variant is deterministic (same seed -> same roll)");
+        assert_eq!(
+            a, b,
+            "the variant is deterministic (same seed -> same roll)"
+        );
     }
 
     /// The examination model targets the RIGHT field: the frontend hook writes
@@ -9896,7 +10117,11 @@ mod tests {
         );
         // And the endgame gate reads exactly 0x13C2 (AF guard @6CA2).
         let cod = std::fs::read(std::path::Path::new(iso).join("SCRIPT3.COD")).unwrap();
-        assert_eq!(&cod[0x6CA2..0x6CA5], &[0xAF, 0xC2, 0x13], "the AF guard reads 0x13C2");
+        assert_eq!(
+            &cod[0x6CA2..0x6CA5],
+            &[0xAF, 0xC2, 0x13],
+            "the AF guard reads 0x13C2"
+        );
     }
 
     /// THE FIRST LINE-LEVEL DUAL-RUN: the ORACLE (the real game under the
@@ -9923,7 +10148,11 @@ mod tests {
         let text_of = |offset: usize| -> String {
             toks.iter()
                 .find_map(|t| match t {
-                    VmToken::Text { offset: o, word_offsets, .. } if *o == offset => Some(
+                    VmToken::Text {
+                        offset: o,
+                        word_offsets,
+                        ..
+                    } if *o == offset => Some(
                         word_offsets
                             .iter()
                             .take_while(|&&w| w != 0xFFFF)
@@ -10021,10 +10250,22 @@ mod tests {
         }
         // Kind is a bit-flag; the column is bsf(kind). Kind 2 (character) is the
         // common object: location = obj+0x18 (24), talk = obj+0x3A (58).
-        assert_eq!(field_offset(2, 0x11), Some(24), "kind-2 character location = obj+0x18");
-        assert_eq!(field_offset(2, 0x13), Some(58), "kind-2 character talk = obj+0x3A");
+        assert_eq!(
+            field_offset(2, 0x11),
+            Some(24),
+            "kind-2 character location = obj+0x18"
+        );
+        assert_eq!(
+            field_offset(2, 0x13),
+            Some(58),
+            "kind-2 character talk = obj+0x3A"
+        );
         // kind-1 built-ins use column 0: location = obj+0x06.
-        assert_eq!(field_offset(1, 0x11), Some(6), "kind-1 location = obj+0x06 (bsf=0)");
+        assert_eq!(
+            field_offset(1, 0x11),
+            Some(6),
+            "kind-1 location = obj+0x06 (bsf=0)"
+        );
         assert_eq!(field_offset(0, 0x11), None, "kind 0 has no fields");
     }
 
@@ -10100,7 +10341,10 @@ mod tests {
                 }
             }
         }
-        assert!(zones.len() >= 4, "the zone list comes from the stream (got {zones:x?})");
+        assert!(
+            zones.len() >= 4,
+            "the zone list comes from the stream (got {zones:x?})"
+        );
         // The talkable-actor list, likewise from the stream's own C4 guards.
         let mut actors: Vec<u16> = Vec::new();
         for t in walk(&cod, 0, cod.len()) {
@@ -10129,9 +10373,7 @@ mod tests {
         // (the identity code IS exxos: wrong answers explode the ship @01C6).
         let preferred: Vec<u16> = ["exxos", "teleport", "yes", "buy", "game"]
             .iter()
-            .filter_map(|name| {
-                dic.iter().find(|(_, w)| w == name).map(|(&o, _)| o)
-            })
+            .filter_map(|name| dic.iter().find(|(_, w)| w == name).map(|(&o, _)| o))
             .collect();
 
         let mut texts = 0usize;
@@ -10150,9 +10392,7 @@ mod tests {
                         if let Some((VmToken::Text { word_offsets, .. }, _)) =
                             decode_text(&m.cod, offset, m.cod.len())
                         {
-                            if let Some(sep) =
-                                word_offsets.iter().position(|&w| w == 0xFFFF)
-                            {
+                            if let Some(sep) = word_offsets.iter().position(|&w| w == 0xFFFF) {
                                 menu = Some(word_offsets[sep + 1..].to_vec());
                             }
                         }
@@ -10164,8 +10404,11 @@ mod tests {
             if let Some(words) = menu {
                 // Cycle through the menu's own concepts, avoiding bye_bye when
                 // something else is on offer.
-                let picks: Vec<u16> =
-                    words.iter().copied().filter(|&w| w != bye && w != 0).collect();
+                let picks: Vec<u16> = words
+                    .iter()
+                    .copied()
+                    .filter(|&w| w != bye && w != 0)
+                    .collect();
                 if let Some(&p) = picks.iter().find(|w| preferred.contains(w)) {
                     m.dispatch_concept(p);
                 } else if !picks.is_empty() {
@@ -10256,7 +10499,11 @@ mod tests {
             let _ = m.run_frame();
             m.tick_state_countdowns();
         }
-        assert_eq!(m.rec_read(0x12FC), 5, "stage 5 fires from its own guards (C1)");
+        assert_eq!(
+            m.rec_read(0x12FC),
+            5,
+            "stage 5 fires from its own guards (C1)"
+        );
 
         // Stage 6: the gift given (parf @7A3C; the perfume delivered to 1658
         // per the stage-6 guard) + Scruter_Mac talking.
@@ -10307,7 +10554,11 @@ mod tests {
                 break;
             }
         }
-        assert_eq!(m.rec_read(0x6FC), 0xC3, "the customs C3 queues on the idle sweep");
+        assert_eq!(
+            m.rec_read(0x6FC),
+            0xC3,
+            "the customs C3 queues on the idle sweep"
+        );
         let mut customs = false;
         for _ in 0..500 {
             for ev in m.run_frame() {
@@ -10361,12 +10612,20 @@ mod tests {
         for _ in 0..5 {
             let _ = m.run_frame();
         }
-        assert_eq!(m.rec_read(0x0722), 4070, "SCRIPT3's init relocates the world");
+        assert_eq!(
+            m.rec_read(0x0722),
+            4070,
+            "SCRIPT3's init relocates the world"
+        );
         // Named variables are PER-SCRIPT (each DEB carries its own table):
         // SCRIPT3's vbio is record 0x13EE (the init bytes: C0 EE 13 F5 C1 03),
         // not SCRIPT2's 0x126C — the frontend's cyber-arrival hook must
         // resolve the name through the loaded script's DEB.
-        assert_eq!(m.rec_read(0x13EE), 3, "vbio (SCRIPT3's 0x13EE) arrives at 3");
+        assert_eq!(
+            m.rec_read(0x13EE),
+            3,
+            "vbio (SCRIPT3's 0x13EE) arrives at 3"
+        );
         let slot4: Vec<u8> = m.records16[3 * 16..3 * 16 + 6].to_vec();
         assert_eq!(&slot4[..5], b"venus", "char slot 4 binds its DESCRIPT name");
 
@@ -10433,7 +10692,7 @@ mod tests {
         // placements land in the beats' own order, the endgame gate queues
         // Jerry Khan's return, the Oddland briefing plays, and RUN PROFILE 3
         // hands off to SCRIPT4.
-        let mut play_beat = |m: &mut VmMachine, talk: u16, flag: u16, want: u16| {
+        let play_beat = |m: &mut VmMachine, talk: u16, flag: u16, want: u16| {
             m.start_actor_presentation(talk, 40);
             for _ in 0..300 {
                 let _ = m.run_frame();
@@ -10499,7 +10758,10 @@ mod tests {
                 break;
             }
         }
-        assert!(splatched, "the SPLATCH teleport beat drives (examination-between-visits order)");
+        assert!(
+            splatched,
+            "the SPLATCH teleport beat drives (examination-between-visits order)"
+        );
         if m.presentation_busy {
             if let Some(a) = m.active_actor {
                 m.rec_write(a, 0);
@@ -10551,7 +10813,11 @@ mod tests {
                 break;
             }
         }
-        assert_eq!(m.rec_read(0x042C), 0xC3, "the endgame gate queues Jerry Khan's return");
+        assert_eq!(
+            m.rec_read(0x042C),
+            0xC3,
+            "the endgame gate queues Jerry Khan's return"
+        );
         let mut briefing = false;
         for _ in 0..400 {
             for ev in m.run_frame() {
@@ -10570,7 +10836,10 @@ mod tests {
             }
         }
         assert!(briefing, "the Oddland briefing plays");
-        assert_eq!(m.pending_profile, 3, "RUN PROFILE 3 — the SCRIPT3 -> SCRIPT4 handoff");
+        assert_eq!(
+            m.pending_profile, 3,
+            "RUN PROFILE 3 — the SCRIPT3 -> SCRIPT4 handoff"
+        );
 
         // ACT THREE (SCRIPT4, the Oddland chase): load on the handoff, let the
         // init + world one-shots settle, then the endgame manifest in story
@@ -10602,7 +10871,11 @@ mod tests {
                 break;
             }
         }
-        assert_eq!(m.rec_read(0x0504), 0xC3, "SCRIPT4's endgame queues Jerry Khan's return");
+        assert_eq!(
+            m.rec_read(0x0504),
+            0xC3,
+            "SCRIPT4's endgame queues Jerry Khan's return"
+        );
         let mut homeward = false;
         for _ in 0..400 {
             for ev in m.run_frame() {
@@ -10621,7 +10894,10 @@ mod tests {
             }
         }
         assert!(homeward, "the homeward briefing plays");
-        assert_eq!(m.pending_profile, 4, "RUN PROFILE 4 — the SCRIPT4 -> SCRIPT5 handoff");
+        assert_eq!(
+            m.pending_profile, 4,
+            "RUN PROFILE 4 — the SCRIPT4 -> SCRIPT5 handoff"
+        );
 
         // THE FINALE (SCRIPT5, the Bigbang wedding concert): load on the
         // handoff, settle, satisfy the concert block's own guards (@1511:
@@ -10746,7 +11022,11 @@ mod tests {
         let mut m = VmMachine::new();
         m.load_cod(&cod);
         m.load_var(&var);
-        assert_eq!(m.location_var_offset(), Some(0x0F4E), "the location variable is discovered");
+        assert_eq!(
+            m.location_var_offset(),
+            Some(0x0F4E),
+            "the location variable is discovered"
+        );
 
         // The player flees immediately — the travel write lands before the
         // SCRUTs' calls, so the district one-shot branches on the fled zone.
@@ -10833,7 +11113,10 @@ mod tests {
             m.tick_state_countdowns();
         }
         assert_eq!(m.state[3], 0);
-        assert_eq!(m.state[4], 190, "state[4] mid-count (matches the live-oracle observation)");
+        assert_eq!(
+            m.state[4], 190,
+            "state[4] mid-count (matches the live-oracle observation)"
+        );
 
         // The guard block @2744: A9 enters query mode, A5 state[3]==0 falls
         // through, the C3 queues the typed request, the POKEs re-gate.
@@ -10999,13 +11282,25 @@ mod tests {
                 .collect()
         };
         let t1 = texts(m.run_frame());
-        assert!(t1.contains(&1134), "'You found the right button' plays for actor 1428");
-        assert!(!t1.contains(&1576), "HONK's welcome does NOT play for actor 1428");
-        assert!(!t1.contains(&16), "the daily menu does NOT play for actor 1428");
+        assert!(
+            t1.contains(&1134),
+            "'You found the right button' plays for actor 1428"
+        );
+        assert!(
+            !t1.contains(&1576),
+            "HONK's welcome does NOT play for actor 1428"
+        );
+        assert!(
+            !t1.contains(&16),
+            "the daily menu does NOT play for actor 1428"
+        );
         // The player clicks HONK: his welcome block runs.
         m.start_actor_presentation(2148, 40);
         let t2 = texts(m.run_frame());
-        assert!(t2.contains(&1576), "HONK's welcome plays for his presentation");
+        assert!(
+            t2.contains(&1576),
+            "HONK's welcome plays for his presentation"
+        );
         // A MENU click on a fresh machine plays the daily menu, once.
         let mut menu = VmMachine::new();
         menu.load_cod(&cod);
@@ -11023,7 +11318,10 @@ mod tests {
         let t3 = texts(menu.run_frame());
         assert!(t3.contains(&16), "the daily menu plays for the MENU actor");
         let t4 = texts(menu.run_frame());
-        assert!(t4.is_empty(), "the presentation ended (C9) — nothing repeats unprompted");
+        assert!(
+            t4.is_empty(),
+            "the presentation ended (C9) — nothing repeats unprompted"
+        );
     }
 
     use super::*;
@@ -11097,7 +11395,10 @@ mod tests {
                 assert_eq!(*related_record_offset, 0x5678, "second operand");
                 // And len must cover opcode + prefix + both operands, so that the next
                 // token starts in the right place.
-                assert!(*len >= 6, "len {len} must span the prefix and both operands");
+                assert!(
+                    *len >= 6,
+                    "len {len} must span the prefix and both operands"
+                );
             }
             other => panic!("expected an Actor token, got {other:?}"),
         }
@@ -11106,7 +11407,11 @@ mod tests {
         // proves the skip is driven by the byte and not applied blindly.
         let plain = vec![OP_ACTOR, 0x34, 0x12, 0x78, 0x56, 0x00, 0x00];
         match walk(&plain, 0, plain.len()).first().expect("token") {
-            VmToken::Actor { record_offset, inverted, .. } => {
+            VmToken::Actor {
+                record_offset,
+                inverted,
+                ..
+            } => {
                 assert!(!inverted);
                 assert_eq!(*record_offset, 0x1234);
             }
@@ -11142,7 +11447,10 @@ mod tests {
 
         // Fill values (0x7684): negatives pass through sign-extended, and 0xFF must
         // produce EXACTLY the sentinel the reader tests at 0x9D71.
-        assert_eq!(dlg_line_asset_id_from_source_byte(0xFF), DLG_LINE_ASSET_NONE);
+        assert_eq!(
+            dlg_line_asset_id_from_source_byte(0xFF),
+            DLG_LINE_ASSET_NONE
+        );
         assert_eq!(dlg_line_asset_id_from_source_byte(0xFE), 0xFFFE);
         // Non-negatives become (byte-1)*16 PLUS THE BASE 0xDD7 (`add ax,0xdd7`
         // @0x7691). CORRECTED in audit-fixes #318 -- this asserted the scaled
@@ -11155,8 +11463,14 @@ mod tests {
             DLG_ASSET_NAME_TABLE_BASE,
             "byte 1 is index 0 ON THE BASE -- exactly the 0x0DD7 the probe saw"
         );
-        assert_eq!(dlg_line_asset_id_from_source_byte(2), DLG_ASSET_NAME_TABLE_BASE + 16);
-        assert_eq!(dlg_line_asset_id_from_source_byte(5), DLG_ASSET_NAME_TABLE_BASE + 64);
+        assert_eq!(
+            dlg_line_asset_id_from_source_byte(2),
+            DLG_ASSET_NAME_TABLE_BASE + 16
+        );
+        assert_eq!(
+            dlg_line_asset_id_from_source_byte(5),
+            DLG_ASSET_NAME_TABLE_BASE + 64
+        );
         // Every non-negative result is name-table aligned RELATIVE TO THE BASE.
         for b in 1..=0x7Fu8 {
             let v = dlg_line_asset_id_from_source_byte(b);
@@ -11195,7 +11509,11 @@ mod tests {
         let split = |ws: &[u16]| -> Vec<u16> {
             ws[..ws.iter().position(|&w| w == 0xFFFF).unwrap_or(ws.len())].to_vec()
         };
-        assert_eq!(split(&list), spoken, "spoken section stops at the separator");
+        assert_eq!(
+            split(&list),
+            spoken,
+            "spoken section stops at the separator"
+        );
         assert!(!split(&list).iter().any(|w| menu.contains(w)));
 
         // A list with NO separator is unaffected — the common case must not regress.
@@ -11216,16 +11534,23 @@ mod tests {
     /// offset). This pins the split against the real shipped files.
     #[test]
     fn a6_word_list_splits_the_spoken_line_from_the_choice_menu() {
-        let dir = ["accuracy/cblood_install/cblood", "../accuracy/cblood_install/cblood"]
-            .iter()
-            .map(std::path::Path::new)
-            .find(|p| p.join("SCRIPT1.COD").is_file());
+        let dir = [
+            "accuracy/cblood_install/cblood",
+            "../accuracy/cblood_install/cblood",
+        ]
+        .iter()
+        .map(std::path::Path::new)
+        .find(|p| p.join("SCRIPT1.COD").is_file());
         let Some(dir) = dir else { return };
         let cod = std::fs::read(dir.join("SCRIPT1.COD")).unwrap();
         let dic = std::fs::read(dir.join("SCRIPT1.DIC")).unwrap();
         let word = |o: u16| -> String {
             let o = o as usize;
-            let end = dic[o..].iter().position(|&b| b == 0).map(|n| o + n).unwrap_or(dic.len());
+            let end = dic[o..]
+                .iter()
+                .position(|&b| b == 0)
+                .map(|n| o + n)
+                .unwrap_or(dic.len());
             crate::font::cp437_string(&dic[o..end])
         };
 
@@ -11250,7 +11575,10 @@ mod tests {
         let sep = words.iter().position(|&w| w == 0xFFFF).unwrap();
 
         let spoken: Vec<String> = words[..sep].iter().map(|&w| word(w)).collect();
-        assert_eq!(spoken, ["Click", "quick,", "Cap'n", "Bob", "is", "waiting", "..."]);
+        assert_eq!(
+            spoken,
+            ["Click", "quick,", "Cap'n", "Bob", "is", "waiting", "..."]
+        );
 
         let menu: Vec<String> = words[sep + 1..].iter().map(|&w| word(w)).collect();
         assert_eq!(menu, ["explanations", "game"]);
@@ -11394,7 +11722,10 @@ mod tests {
                 seen.iter().map(|o| format!("{o:02X}")).collect::<Vec<_>>()
             );
         }
-        assert!(!seen.contains(&0xD3), "0xD3 is unused by the shipped scripts");
+        assert!(
+            !seen.contains(&0xD3),
+            "0xD3 is unused by the shipped scripts"
+        );
         // PIN THE COUNT the comment above states (audit-fixes #416 found the same
         // shape of remembered figure wrong by 37 elsewhere). `seen` is computed
         // from the corpus right here, so asserting it costs nothing and turns a
@@ -11416,13 +11747,33 @@ mod tests {
         // against it.
         let q = QuerySetMode { query: true };
         // 0xFFFF (-1) is LESS than 1, not greater.
-        assert_eq!(q.apply_operator(0xF1, 0xFFFF, 1), Err(true), "0xFFFF < 1 signed");
-        assert_eq!(q.apply_operator(0xF2, 0xFFFF, 1), Err(false), "0xFFFF is NOT > 1");
+        assert_eq!(
+            q.apply_operator(0xF1, 0xFFFF, 1),
+            Err(true),
+            "0xFFFF < 1 signed"
+        );
+        assert_eq!(
+            q.apply_operator(0xF2, 0xFFFF, 1),
+            Err(false),
+            "0xFFFF is NOT > 1"
+        );
         assert_eq!(q.apply_operator(0xF3, 0xFFFF, 1), Err(true), "0xFFFF <= 1");
-        assert_eq!(q.apply_operator(0xF4, 0xFFFF, 1), Err(false), "0xFFFF is NOT >= 1");
+        assert_eq!(
+            q.apply_operator(0xF4, 0xFFFF, 1),
+            Err(false),
+            "0xFFFF is NOT >= 1"
+        );
         // 0x8000 (-32768) is the extreme negative.
-        assert_eq!(q.apply_operator(0xF1, 0x8000, 0), Err(true), "0x8000 < 0 signed");
-        assert_eq!(q.apply_operator(0xF2, 0x7FFF, 0x8000), Err(true), "0x7FFF > 0x8000 signed");
+        assert_eq!(
+            q.apply_operator(0xF1, 0x8000, 0),
+            Err(true),
+            "0x8000 < 0 signed"
+        );
+        assert_eq!(
+            q.apply_operator(0xF2, 0x7FFF, 0x8000),
+            Err(true),
+            "0x7FFF > 0x8000 signed"
+        );
         // Equality/inequality are sign-agnostic and unchanged.
         assert_eq!(q.apply_operator(0xF5, 0xFFFF, 0xFFFF), Err(true));
         assert_eq!(q.apply_operator(0xF0, 0xFFFF, 0xFFFF), Err(false));
@@ -11448,7 +11799,6 @@ mod tests {
         // SUB wraps like the 16-bit hardware.
         assert_eq!(set.apply_operator(0xF7, 0, 1), Ok(0xFFFF));
     }
-
 
     #[test]
     fn decoded_control_opcodes_are_in_the_valid_range_and_distinct() {
@@ -12000,7 +12350,10 @@ mod tests {
         m.stack.push(0x99);
         m.pc = 0;
         m.step();
-        assert_eq!(m.pc, 5, "matching record -> pass -> fall through past the 5-byte token");
+        assert_eq!(
+            m.pc, 5,
+            "matching record -> pass -> fall through past the 5-byte token"
+        );
         assert_eq!(m.stack.len(), 1, "no branch taken on a match");
     }
 
@@ -12027,7 +12380,11 @@ mod tests {
         m.stack.push(0x99);
         m.pc = 0;
         m.step();
-        assert_eq!(m.rec_read_pub(0x84), 0xC4, "both active -> C4 state record written");
+        assert_eq!(
+            m.rec_read_pub(0x84),
+            0xC4,
+            "both active -> C4 state record written"
+        );
         assert_eq!(m.rec_read_pub(0x86), 0x10, "related operand stored at +2");
         assert_eq!(m.active_actor, Some(0x84));
         assert_eq!(m.pc, 5, "no branch: fell through the 5-byte token");
@@ -12075,7 +12432,11 @@ mod tests {
         m.query = false;
         m.pc = 0;
         m.step();
-        assert_eq!(m.rec_read_pub(0x86), 0x10, "kind-1 object -> write despite already-set");
+        assert_eq!(
+            m.rec_read_pub(0x86),
+            0x10,
+            "kind-1 object -> write despite already-set"
+        );
         assert_eq!(m.active_actor, Some(0x84));
 
         // (6) object table unloaded (opcode-only scaffolding) -> the guard is
@@ -12085,7 +12446,11 @@ mod tests {
         m.query = false;
         m.pc = 0;
         m.step();
-        assert_eq!(m.rec_read_pub(0x84), 0xC4, "no DEB loaded -> unconditional write");
+        assert_eq!(
+            m.rec_read_pub(0x84),
+            0xC4,
+            "no DEB loaded -> unconditional write"
+        );
         assert_eq!(m.active_actor, Some(0x84));
     }
 
@@ -12120,8 +12485,14 @@ mod tests {
         m.load_var(&var);
         m.load_deb_objects(&deb);
 
-        assert!(!m.directory.is_empty(), "the DEB must populate the directory");
-        assert!(m.blood_offset.is_some(), "and resolve `blood` by name (0x5486)");
+        assert!(
+            !m.directory.is_empty(),
+            "the DEB must populate the directory"
+        );
+        assert!(
+            m.blood_offset.is_some(),
+            "and resolve `blood` by name (0x5486)"
+        );
 
         // Walk the directory the way 0x582F..0x5A6B does and collect the
         // selector-0x13 slots of ACTIVE objects.
@@ -12185,7 +12556,9 @@ mod tests {
         // The sequence ends where the decode said it does: `jne` @0x10C3.
         assert_eq!(at, 0x10C3, "ten operands, ending at the branch");
         // And every one of INPUT_GATE_A..H is among them (#332), while I is not.
-        for g in [0x24F3u16, 0x2751, 0x5E64, 0x2565, 0x2736, 0x2737, 0x27DA, 0x2792] {
+        for g in [
+            0x24F3u16, 0x2751, 0x5E64, 0x2565, 0x2736, 0x2737, 0x27DA, 0x2792,
+        ] {
             assert!(found.contains(&g), "gate operand {g:#06x} missing");
         }
         assert!(
@@ -12409,7 +12782,10 @@ mod tests {
 
         // MEASURED, and pinned so a data change cannot move it silently:
         // 23 C1 tokens, NONE inverted, none reached in query mode linearly.
-        assert!(total > 0, "the corpus must contain C1 tokens to say anything");
+        assert!(
+            total > 0,
+            "the corpus must contain C1 tokens to say anything"
+        );
         assert_eq!(
             inverted, 0,
             "no shipped C1 token is followed by 0xA1, so dl == 0 at every site"
@@ -12515,7 +12891,8 @@ mod tests {
     #[test]
     fn c1_distance_redirect_moves_the_write_to_the_parent_on_the_live_path() {
         let link1 = vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C2, 1).expect("kind 1 sel-0x11");
-        let link10 = vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C2, 0x10).expect("kind 0x10 sel-0x11");
+        let link10 =
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C2, 0x10).expect("kind 0x10 sel-0x11");
         let pos8 = vm_field_offset(ship3d::SHIP_3D_FIELD_SELECTOR_POSITION, 8).expect("kind 8 pos");
         let pos10 =
             vm_field_offset(ship3d::SHIP_3D_FIELD_SELECTOR_POSITION, 0x10).expect("kind 0x10 pos");
@@ -12620,10 +12997,18 @@ mod tests {
         m.stack.push(0x99);
         m.pc = 0;
         m.step();
-        assert_eq!(m.rec_read_pub(owner + dest_fo), 0xC1, "written at the selector-0x13 slot");
+        assert_eq!(
+            m.rec_read_pub(owner + dest_fo),
+            0xC1,
+            "written at the selector-0x13 slot"
+        );
         assert_eq!(m.rec_read_pub(owner + dest_fo + 2), operand);
         assert_eq!(m.rec_read_pub(owner + dest_fo + 4), 2);
-        assert_eq!(m.rec_read_pub(0x84), 0, "the operand record itself is NOT written");
+        assert_eq!(
+            m.rec_read_pub(0x84),
+            0,
+            "the operand record itself is NOT written"
+        );
 
         // Gate FAILS (bit1 clear) -> NO branch and nothing written. CORRECTED in
         // audit-fixes #295: this asserted a branch, but the scan's only
@@ -12636,7 +13021,10 @@ mod tests {
         m.stack.push(0x99);
         m.pc = 0;
         m.step();
-        assert_ne!(m.pc, 0x99, "no source entry passes -> the sentinel does NOT branch");
+        assert_ne!(
+            m.pc, 0x99,
+            "no source entry passes -> the sentinel does NOT branch"
+        );
         assert_eq!(m.rec_read_pub(owner + dest_fo), 0);
 
         // Destination already occupied -> branch (0x6C59).
@@ -12916,11 +13304,18 @@ mod tests {
         m.rec_write_pub(HOST + counter, 0);
         assert_eq!(
             m.location_status_block(&test_status_headers()).unwrap(),
-            vec!["BLACK HOLE: Oddland".to_string(), "LIFE SUPPORT:".to_string()]
+            vec![
+                "BLACK HOLE: Oddland".to_string(),
+                "LIFE SUPPORT:".to_string()
+            ]
         );
 
         // With no DEB loaded there is no arche, so no panel at all.
-        assert!(VmMachine::new().location_status_block(&test_status_headers()).is_none());
+        assert!(
+            VmMachine::new()
+                .location_status_block(&test_status_headers())
+                .is_none()
+        );
     }
 
     #[test]
@@ -12957,23 +13352,45 @@ mod tests {
         assert_eq!(
             rows,
             vec![
-                LocationPanelRow { x: 0x6E, y: 0x19, color: 0xEE, text: "PLANET: ".into() },
+                LocationPanelRow {
+                    x: 0x6E,
+                    y: 0x19,
+                    color: 0xEE,
+                    text: "PLANET: ".into()
+                },
                 LocationPanelRow {
                     x: 0x6E + header_w + 6,
                     y: 0x19,
                     color: 0xEE,
                     text: "Oddland".into()
                 },
-                LocationPanelRow { x: 0x6E, y: 0x23, color: 0xEE, text: "LIFE SUPPORT:".into() },
-                LocationPanelRow { x: 0x6E, y: 0x2D, color: 0xFE, text: "Bob".into() },
+                LocationPanelRow {
+                    x: 0x6E,
+                    y: 0x23,
+                    color: 0xEE,
+                    text: "LIFE SUPPORT:".into()
+                },
+                LocationPanelRow {
+                    x: 0x6E,
+                    y: 0x2D,
+                    color: 0xFE,
+                    text: "Bob".into()
+                },
             ]
         );
 
         // 0x916D is a BIT test here (the hover composer's 0x836C is an equality),
         // so a kind carrying 0x10 among other bits still reads as SHIP.
         m.rec_write_pub(PLACE, LOCATION_KIND_SHIP | 0x40);
-        assert_eq!(m.location_panel_rows(PLACE, &test_status_headers())[0].text, "SHIP: ");
-        assert_eq!(m.location_status_block(&test_status_headers()), None, "no arche -> no hover block");
+        assert_eq!(
+            m.location_panel_rows(PLACE, &test_status_headers())[0].text,
+            "SHIP: "
+        );
+        assert_eq!(
+            m.location_status_block(&test_status_headers()),
+            None,
+            "no arche -> no hover block"
+        );
     }
 
     #[test]
@@ -13011,7 +13428,10 @@ mod tests {
             vec![0x100, 0x200, 0x300],
             "0x723D's `test bx,0x118` then keeps only the three chart kinds"
         );
-        assert_eq!(NAV_CHART_KIND_MASK, 0x08 | LOCATION_KIND_SHIP | LOCATION_KIND_BLACK_HOLE);
+        assert_eq!(
+            NAV_CHART_KIND_MASK,
+            0x08 | LOCATION_KIND_SHIP | LOCATION_KIND_BLACK_HOLE
+        );
     }
 
     #[test]
@@ -13046,7 +13466,10 @@ mod tests {
             .arche_offset
             .map(|a| m.rec_read(a + 0x22))
             .unwrap_or_default();
-        assert_eq!(m.nav_chart_pick(&chart, (x + 2, y + 2), arche_context), Some(object));
+        assert_eq!(
+            m.nav_chart_pick(&chart, (x + 2, y + 2), arche_context),
+            Some(object)
+        );
         assert_eq!(m.nav_chart_pick(&chart, (0, 0), arche_context), None);
 
         // The other scripts chart NOTHING from their initial .VAR: the in-play
@@ -13202,7 +13625,10 @@ mod tests {
         let mut var = vec![0; 0x0300];
         state_set_u16(&mut var, owner, 2);
         state_set_u16(&mut var, related, 2);
-        assert_eq!(post_update_encounter_counter(&mut var, owner, related), None);
+        assert_eq!(
+            post_update_encounter_counter(&mut var, owner, related),
+            None
+        );
         assert_eq!(state_u16(&var, owner + counter), 0);
         assert_eq!(state_u16(&var, related + counter), 0);
         assert_eq!(state_u16(&var, owner + 2), 0);
@@ -13212,7 +13638,10 @@ mod tests {
         let mut var = vec![0; 0x0300];
         state_set_u16(&mut var, owner, 1);
         state_set_u16(&mut var, related, 1);
-        assert_eq!(post_update_encounter_counter(&mut var, owner, related), None);
+        assert_eq!(
+            post_update_encounter_counter(&mut var, owner, related),
+            None
+        );
         assert_eq!(state_u16(&var, owner + 2), 0, "no bump -> no bit15 either");
     }
 
@@ -13327,12 +13756,19 @@ mod tests {
         m.rec_write_pub(arche + 2, ENTITY_CANDIDATE_READY_BIT as u16);
 
         let list = m.entity_candidate_list(pass, &[bad_kind, not_ready, arche, 0xFFFF]);
-        assert_eq!(list, vec![pass + 4], "only the passing object, stored as RECORD+4");
+        assert_eq!(
+            list,
+            vec![pass + 4],
+            "only the passing object, stored as RECORD+4"
+        );
 
         // And the reader turns that entry back into the record the commit takes.
         let fallback = [0xFFFFu16];
         assert_eq!(m.ship_3d_target_record_select(&list, &fallback, 0), pass);
-        assert!(m.world_click_select(pass), "the round trip commits a C1 record");
+        assert!(
+            m.world_click_select(pass),
+            "the round trip commits a C1 record"
+        );
     }
 
     /// `0xB2BB`: the row->record conversion, and the fallback rule that makes the
@@ -13345,13 +13781,28 @@ mod tests {
         let primary = [0x0144u16, 0x0184, 0xFFFF];
         let fallback = [0x2600u16, 0xFFFF];
 
-        assert_eq!(m.ship_3d_target_record_select(&primary, &fallback, 0), 0x0140);
-        assert_eq!(m.ship_3d_target_record_select(&primary, &fallback, 1), 0x0180);
+        assert_eq!(
+            m.ship_3d_target_record_select(&primary, &fallback, 0),
+            0x0140
+        );
+        assert_eq!(
+            m.ship_3d_target_record_select(&primary, &fallback, 1),
+            0x0180
+        );
         // The terminator row is the back row, and so is anything past the end.
-        assert_eq!(m.ship_3d_target_record_select(&primary, &fallback, 2), 0xFFFF);
-        assert_eq!(m.ship_3d_target_record_select(&primary, &fallback, 9), 0xFFFF);
+        assert_eq!(
+            m.ship_3d_target_record_select(&primary, &fallback, 2),
+            0xFFFF
+        );
+        assert_eq!(
+            m.ship_3d_target_record_select(&primary, &fallback, 9),
+            0xFFFF
+        );
         // 0xB31D: the widget's "no selection" is 0xFFFF and yields 0, NOT the back row.
-        assert_eq!(m.ship_3d_target_record_select(&primary, &fallback, 0xFFFF), 0);
+        assert_eq!(
+            m.ship_3d_target_record_select(&primary, &fallback, 0xFFFF),
+            0
+        );
 
         // Primary empty -> the DS fallback list, whose names are not in records:
         // the selection is discarded for the CURRENT target (0xB347).
@@ -13375,7 +13826,10 @@ mod tests {
         assert!(!m.world_click_select(0), "nothing hit -> no record");
         assert_eq!(m.rec_read_pub(slot), 0);
 
-        assert!(m.world_click_select(0x0140), "a new target creates the C1 record");
+        assert!(
+            m.world_click_select(0x0140),
+            "a new target creates the C1 record"
+        );
         assert_eq!(m.rec_read_pub(slot), 0xC1, "record typed C1");
         assert_eq!(m.rec_read_pub(slot + 2), 0x0140, "target stored at +2");
         assert_eq!(m.rec_read_pub(slot + 4), 0, "+4 cleared");
@@ -13384,7 +13838,11 @@ mod tests {
         // Re-clicking the SAME target must not rewrite (cmp ax,[0x251b] @0xB21A).
         m.rec_write_pub(slot, 0xBEEF);
         assert!(!m.world_click_select(0x0140), "same target -> no rewrite");
-        assert_eq!(m.rec_read_pub(slot), 0xBEEF, "record untouched for the current target");
+        assert_eq!(
+            m.rec_read_pub(slot),
+            0xBEEF,
+            "record untouched for the current target"
+        );
 
         // A DIFFERENT target does rewrite.
         assert!(m.world_click_select(0x0180));
@@ -13405,8 +13863,8 @@ mod tests {
         let item = 0x0200u16;
         let action = source + 0x3A;
         let blood_action = blood + 0x08;
-        let holder = item
-            + vm_field_offset(0x11, 0x0400).expect("kind-0x0400 selector-0x11 holder");
+        let holder =
+            item + vm_field_offset(0x11, 0x0400).expect("kind-0x0400 selector-0x11 holder");
 
         let mut m = VmMachine::new();
         m.object_offsets = vec![blood, source, item];
@@ -13429,7 +13887,11 @@ mod tests {
         assert_eq!(m.rec_read_pub(action), 0xBEEF, "op1 is not rewritten");
         assert_eq!(m.rec_read_pub(action + 2), 0xCAFE);
         assert_eq!(m.rec_read_pub(action + 4), 0x1234);
-        assert_eq!(m.rec_read_pub(holder), 0xFFFF, "aboard is the holder sentinel");
+        assert_eq!(
+            m.rec_read_pub(holder),
+            0xFFFF,
+            "aboard is the holder sentinel"
+        );
         assert!(m.ship_slots.contains(&item));
         assert_eq!(
             m.events,
@@ -13477,7 +13939,11 @@ mod tests {
             0xFF,
         ]);
         assert!(m.step());
-        assert_eq!(m.rec_read_pub(holder), 0x7777, "full hold cancels the write");
+        assert_eq!(
+            m.rec_read_pub(holder),
+            0x7777,
+            "full hold cancels the write"
+        );
         assert!(m.events.is_empty(), "cancelled transfer emits no event");
     }
 
@@ -13511,7 +13977,10 @@ mod tests {
             0xFFFF,
             "selector-0x11 field written (was a no-op)"
         );
-        assert!(m.ship_slots.contains(&0x10), "target inserted into the special slots");
+        assert!(
+            m.ship_slots.contains(&0x10),
+            "target inserted into the special slots"
+        );
 
         // SET with the 0x20 bit clear: no write — and crucially NO BRANCH (every
         // SET failure path in 0x6E78.. jumps to the RET at 0x6EEC).
@@ -13571,7 +14040,10 @@ mod tests {
         // Gate CLOSED (flag_274f false, the boot state): no request.
         let mut m = VmMachine::new();
         load(&mut m, "cliptoot.hnm");
-        assert!(!m.presentation_request_pending, "no request while the gate is closed");
+        assert!(
+            !m.presentation_request_pending,
+            "no request while the gate is closed"
+        );
         assert_eq!(m.rec_read_pub(0x6788), 0, "active line untouched");
 
         // Gate OPEN: the request fires — active line 7, latch set, 0x1FA3 = 0xFFFF.
@@ -13586,7 +14058,11 @@ mod tests {
         // active line and confirm it is not rewritten.
         m.rec_write_pub(0x6788, 0);
         load(&mut m, "other.hnm");
-        assert_eq!(m.rec_read_pub(0x6788), 0, "latch suppresses the repeat request");
+        assert_eq!(
+            m.rec_read_pub(0x6788),
+            0,
+            "latch suppresses the repeat request"
+        );
 
         // The presentation teardown (0xC9) releases the latch, so a later 0xA8
         // can request again — without this the latch would suppress them forever.
@@ -13597,7 +14073,11 @@ mod tests {
         m.step();
         assert!(!m.presentation_request_pending, "teardown clears the latch");
         load(&mut m, "again.hnm");
-        assert_eq!(m.rec_read_pub(0x6788), 7, "a new request can be raised after teardown");
+        assert_eq!(
+            m.rec_read_pub(0x6788),
+            7,
+            "a new request can be raised after teardown"
+        );
     }
 
     #[test]
@@ -13631,8 +14111,16 @@ mod tests {
         assert_eq!(m.rec_read_pub(0x84), 0, "type word cleared");
         assert_eq!(m.rec_read_pub(0x86), 0, "+2 cleared (was only +0 before)");
         assert_eq!(m.rec_read_pub(0x88), 0, "+4 cleared");
-        assert_eq!(m.rec_read_pub(recip), 0, "the related object's C4 reciprocal cleared");
-        assert_eq!(m.rec_read_pub(recip.wrapping_add(2)), 0, "reciprocal +2 cleared");
+        assert_eq!(
+            m.rec_read_pub(recip),
+            0,
+            "the related object's C4 reciprocal cleared"
+        );
+        assert_eq!(
+            m.rec_read_pub(recip.wrapping_add(2)),
+            0,
+            "reciprocal +2 cleared"
+        );
         assert_eq!(m.active_actor, None, "the presentation ended");
 
         // The point of the reciprocal clear: a LATER C4 SET for that actor must
@@ -13680,10 +14168,19 @@ mod tests {
 
         // Prefix-only, byte-exact: neither a different name nor a different
         // case matches the handler's four byte compares.
-        assert!(!load("cliptoot.hnm").fin_requested, "an ordinary name does not latch");
-        assert!(!load("FIN.HNM").fin_requested, "the compare is case-sensitive");
+        assert!(
+            !load("cliptoot.hnm").fin_requested,
+            "an ordinary name does not latch"
+        );
+        assert!(
+            !load("FIN.HNM").fin_requested,
+            "the compare is case-sensitive"
+        );
         assert!(!load("fi").fin_requested, "a short string cannot match");
-        assert!(!load("affin.hnm").fin_requested, "the match is a PREFIX, not a substring");
+        assert!(
+            !load("affin.hnm").fin_requested,
+            "the match is a PREFIX, not a substring"
+        );
     }
 
     #[test]
@@ -13707,7 +14204,11 @@ mod tests {
         m.stack.push(0x99);
         m.pc = 0;
         m.step();
-        assert_eq!(m.rec_read_pub(0x84), 0xC1, "C1 state record written (was a no-op)");
+        assert_eq!(
+            m.rec_read_pub(0x84),
+            0xC1,
+            "C1 state record written (was a no-op)"
+        );
         assert_eq!(m.rec_read_pub(0x86), 0x30, "operand stored at +2");
         assert_eq!(m.rec_read_pub(0x88), 2, "+4 = 2");
         assert_eq!(m.pc, 5, "no branch on a successful write");
@@ -16341,13 +16842,20 @@ mod tests {
         let mut var = vec![0u8; 0x0400];
         state_set_u16(&mut var, owner, 0x0002);
         state_set_u16(&mut var, owner + parent_field, parent);
-        state_set_u16(&mut var, parent, ship3d::SHIP_3D_OBJECT_KIND_POSITION_DIRECT_8);
+        state_set_u16(
+            &mut var,
+            parent,
+            ship3d::SHIP_3D_OBJECT_KIND_POSITION_DIRECT_8,
+        );
 
         let derived = derive_ship_3d_position_runtime(&var, &[owner], 0);
 
         let offsets: Vec<u16> = derived.records.iter().map(|r| r.offset).collect();
         assert!(offsets.contains(&owner), "the seed record");
-        assert!(offsets.contains(&parent), "and the record its parent link names");
+        assert!(
+            offsets.contains(&parent),
+            "and the record its parent link names"
+        );
 
         let owner_record = derived
             .records
@@ -17300,11 +17808,16 @@ mod tests {
         };
         let cod = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.COD")).unwrap();
         // The scr>5 gate: C0, record 0x1276, cmp-op 0xC1F2, value 5.
-        assert_eq!(&cod[0x1221..0x1228], &[0xC0, 0x76, 0x12, 0xF2, 0xC1, 0x05, 0x00]);
+        assert_eq!(
+            &cod[0x1221..0x1228],
+            &[0xC0, 0x76, 0x12, 0xF2, 0xC1, 0x05, 0x00]
+        );
         // Each concept guard is followed by its D2 profile run inside the block.
-        for (a3_off, d2_off, profile_operand) in
-            [(0x1257usize, 0x1269usize, 3u8), (0x1272, 0x1284, 4), (0x128D, 0x129F, 5)]
-        {
+        for (a3_off, d2_off, profile_operand) in [
+            (0x1257usize, 0x1269usize, 3u8),
+            (0x1272, 0x1284, 4),
+            (0x128D, 0x129F, 5),
+        ] {
             assert_eq!(cod[a3_off], 0xA3, "A3 concept guard at {a3_off:#x}");
             assert_eq!(cod[d2_off], 0xD2, "D2 profile run at {d2_off:#x}");
             assert_eq!(
@@ -17317,8 +17830,7 @@ mod tests {
         // The A3 operands resolve to the DIC words "3"/"4"/"5".
         let dic = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.DIC")).unwrap();
         for (a3_off, word) in [(0x1257usize, b"3"), (0x1272, b"4"), (0x128D, b"5")] {
-            let opnd =
-                u16::from_le_bytes([cod[a3_off + 1], cod[a3_off + 2]]) as usize;
+            let opnd = u16::from_le_bytes([cod[a3_off + 1], cod[a3_off + 2]]) as usize;
             let end = dic[opnd..].iter().position(|&b| b == 0).unwrap() + opnd;
             assert_eq!(&dic[opnd..end], word, "A3 @{a3_off:#x} word");
         }
@@ -17358,7 +17870,9 @@ mod tests {
         }
         // The Honk boot block's line records ([0628]..[0750] region) must appear
         // in bytecode order, ending with the CRYOBOX instruction at 0x750.
-        let expected = [0x628usize, 0x64C, 0x664, 0x68A, 0x6AA, 0x6DA, 0x6F8, 0x714, 0x734, 0x750];
+        let expected = [
+            0x628usize, 0x64C, 0x664, 0x68A, 0x6AA, 0x6DA, 0x6F8, 0x714, 0x734, 0x750,
+        ];
         let mut cursor = 0usize;
         for e in expected {
             let pos = offsets[cursor..].iter().position(|&o| o == e);
@@ -17405,8 +17919,11 @@ mod tests {
             }
         }
         // And the groups are disjoint: three groups, three distinct handlers.
-        let mut seen: Vec<usize> = vec![handler(super::ASSIGN_7[0]), handler(super::BITMASK_5[0]),
-                                        handler(super::ASSIGN_5[0])];
+        let mut seen: Vec<usize> = vec![
+            handler(super::ASSIGN_7[0]),
+            handler(super::BITMASK_5[0]),
+            handler(super::ASSIGN_5[0]),
+        ];
         seen.sort_unstable();
         seen.dedup();
         assert_eq!(seen.len(), 3);
@@ -17435,7 +17952,11 @@ mod tests {
         // then nine `or al, byte ptr [imm16]` = 0A 06 lo hi, stride 4
         for (i, gate) in gates.iter().enumerate().skip(1) {
             let at = 0x109F + (i - 1) * 4;
-            assert_eq!(&exe[at..at + 2], &[0x0A, 0x06], "or al,[imm16] at {at:#07x}");
+            assert_eq!(
+                &exe[at..at + 2],
+                &[0x0A, 0x06],
+                "or al,[imm16] at {at:#07x}"
+            );
             assert_eq!(
                 u16::from_le_bytes([exe[at + 2], exe[at + 3]]),
                 *gate,

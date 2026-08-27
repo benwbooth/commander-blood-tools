@@ -65,7 +65,10 @@ pub fn decode_menus(bas: &[u8], dic: &[u8], min_labels: usize) -> Vec<ConceptMen
             }
         }
         if labels.len() >= min_labels {
-            menus.push(ConceptMenu { bas_offset: b, labels });
+            menus.push(ConceptMenu {
+                bas_offset: b,
+                labels,
+            });
             b = j;
         } else {
             b += 1;
@@ -77,11 +80,14 @@ pub fn decode_menus(bas: &[u8], dic: &[u8], min_labels: usize) -> Vec<ConceptMen
 /// Find the first decoded menu whose (case-insensitive) label set contains all of
 /// `required` — used to locate a specific menu (e.g. the destination list) by its
 /// known members without depending on its `.BAS` offset.
-pub fn find_menu_containing<'a>(menus: &'a [ConceptMenu], required: &[&str]) -> Option<&'a ConceptMenu> {
+pub fn find_menu_containing<'a>(
+    menus: &'a [ConceptMenu],
+    required: &[&str],
+) -> Option<&'a ConceptMenu> {
     menus.iter().find(|m| {
-        required.iter().all(|r| {
-            m.labels.iter().any(|l| l.eq_ignore_ascii_case(r))
-        })
+        required
+            .iter()
+            .all(|r| m.labels.iter().any(|l| l.eq_ignore_ascii_case(r)))
     })
 }
 
@@ -114,8 +120,18 @@ mod tests {
         assert_eq!(
             got,
             [
-                "TALK", "EGO", "SUPER_EGO", "UNDER_EGO", "END_OF_MONTH", "LIBIDO", "WHO", "WHERE",
-                "WHEN", "WHAT", "HOW", "WHY"
+                "TALK",
+                "EGO",
+                "SUPER_EGO",
+                "UNDER_EGO",
+                "END_OF_MONTH",
+                "LIBIDO",
+                "WHO",
+                "WHERE",
+                "WHEN",
+                "WHAT",
+                "HOW",
+                "WHY"
             ]
         );
     }
@@ -133,6 +149,10 @@ mod tests {
             .expect("destination menu present");
         assert!(dest.labels.iter().any(|l| l.eq_ignore_ascii_case("pterra")));
         // Plenty of per-character conversation menus are recovered too.
-        assert!(menus.len() > 10, "many concept menus decoded: {}", menus.len());
+        assert!(
+            menus.len() > 10,
+            "many concept menus decoded: {}",
+            menus.len()
+        );
     }
 }

@@ -16,8 +16,8 @@
 //! sub-menu each topic opens) come from the BAS control flow and are wired as the
 //! VM's dialogue execution reaches each `0xA3`.
 
-use crate::concept_menu::{decode_menus, ConceptMenu};
-use crate::vm::{walk, VmToken};
+use crate::concept_menu::{ConceptMenu, decode_menus};
+use crate::vm::{VmToken, walk};
 
 /// The `0xAC` opcode terminates a menu's response block (verified via BASSTEP trace).
 const MENU_BLOCK_END: u8 = 0xAC;
@@ -71,14 +71,23 @@ pub fn parse_menu_block(bas: &[u8], dic: &[u8], menu_offset: usize) -> Option<Me
     for tok in walk(bas, p, bas.len()) {
         match tok {
             VmToken::Text { offset, .. } => responses.push(offset),
-            VmToken::Op { opcode: MENU_BLOCK_END, offset, .. } => {
+            VmToken::Op {
+                opcode: MENU_BLOCK_END,
+                offset,
+                ..
+            } => {
                 end = offset;
                 break;
             }
             _ => {}
         }
     }
-    Some(MenuBlock { menu_offset, topics, responses, end })
+    Some(MenuBlock {
+        menu_offset,
+        topics,
+        responses,
+        end,
+    })
 }
 
 /// Sequential response player for a menu block whose responses are a monologue shown
@@ -95,7 +104,10 @@ pub struct SequentialResponses {
 impl SequentialResponses {
     /// Start playing a menu block's responses (in stream order).
     pub fn new(block: &MenuBlock) -> Self {
-        Self { responses: block.responses.clone(), shown: 0 }
+        Self {
+            responses: block.responses.clone(),
+            shown: 0,
+        }
     }
 
     /// The next response `0xA6` BAS offset to display, advancing the shown count.
@@ -171,7 +183,12 @@ impl BasMenuStack {
     pub fn new(bas: &[u8], dic: &[u8]) -> Option<Self> {
         let menus = decode_menus(bas, dic, 3);
         let entry = menus.first()?.bas_offset;
-        Some(Self { menus, stack: vec![entry], bas: bas.to_vec(), dic: dic.to_vec() })
+        Some(Self {
+            menus,
+            stack: vec![entry],
+            bas: bas.to_vec(),
+            dic: dic.to_vec(),
+        })
     }
 
     /// The menu currently displayed (the top of the stack = `gs:0x6772`).
@@ -198,7 +215,12 @@ impl BasMenuStack {
     /// active concept menu. Empty if no menu/block is active.
     pub fn current_menu_dialogue(&self) -> Vec<String> {
         self.current_block()
-            .map(|b| b.responses.iter().filter_map(|&o| self.response_text(o)).collect())
+            .map(|b| {
+                b.responses
+                    .iter()
+                    .filter_map(|&o| self.response_text(o))
+                    .collect()
+            })
             .unwrap_or_default()
     }
 
@@ -317,8 +339,16 @@ mod tests {
         assert_eq!(block.topics.len(), 7, "topics: {:?}", block.topics);
         assert!(block.topics.iter().any(|t| t == "fear"));
         // The block terminates at the 0xAC the trace hit (si=0x612).
-        assert_eq!(block.end, 0x612, "block ends at the traced 0xAC (got {:#x})", block.end);
-        assert!(!block.responses.is_empty(), "has 0xA6 responses: {}", block.responses.len());
+        assert_eq!(
+            block.end, 0x612,
+            "block ends at the traced 0xAC (got {:#x})",
+            block.end
+        );
+        assert!(
+            !block.responses.is_empty(),
+            "has 0xA6 responses: {}",
+            block.responses.len()
+        );
     }
 
     /// The fear/anger menu block is a PURE SEQUENTIAL TEXT dialogue: a proper VM
@@ -447,7 +477,10 @@ mod tests {
         assert_eq!(first, 0x43e);
         // And the played response assembles to its actual on-screen subtitle.
         let text = st.response_text(first).expect("response text");
-        assert!(text.contains("several ways to lose"), "response text: {text:?}");
+        assert!(
+            text.contains("several ways to lose"),
+            "response text: {text:?}"
+        );
         // The full menu monologue is available as renderable dialogue lines.
         let dialogue = st.current_menu_dialogue();
         assert_eq!(dialogue.len(), 13, "13 response lines");

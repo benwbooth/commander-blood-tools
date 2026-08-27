@@ -123,8 +123,7 @@ impl GpuPresenter {
                 backends: backend,
                 ..Default::default()
             });
-            let dh =
-                RawDisplayHandle::Xcb(XcbDisplayHandle::new(NonNull::new(xcb_conn), screen));
+            let dh = RawDisplayHandle::Xcb(XcbDisplayHandle::new(NonNull::new(xcb_conn), screen));
             let wh = RawWindowHandle::Xcb(XcbWindowHandle::new(
                 NonZeroU32::new(window).ok_or_else(|| anyhow::anyhow!("zero window id"))?,
             ));
@@ -150,9 +149,9 @@ impl GpuPresenter {
                 eprintln!("[gpu] {backend:?}: no adapter");
                 continue;
             };
-            let Ok((device, queue)) = pollster::block_on(
-                adapter.request_device(&wgpu::DeviceDescriptor::default()),
-            ) else {
+            let Ok((device, queue)) =
+                pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor::default()))
+            else {
                 eprintln!("[gpu] {backend:?}: no device");
                 continue;
             };
@@ -197,7 +196,11 @@ impl GpuPresenter {
         // Background: 320x200 RGBA texture + nearest sampler.
         let bg_tex = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("bg"),
-            size: wgpu::Extent3d { width: 320, height: 200, depth_or_array_layers: 1 },
+            size: wgpu::Extent3d {
+                width: 320,
+                height: 200,
+                depth_or_array_layers: 1,
+            },
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
@@ -324,11 +327,19 @@ impl GpuPresenter {
                 bytes_per_row: Some(hand_tex_w),
                 rows_per_image: Some(tex_h),
             },
-            wgpu::Extent3d { width: hand_tex_w, height: tex_h, depth_or_array_layers: 1 },
+            wgpu::Extent3d {
+                width: hand_tex_w,
+                height: tex_h,
+                depth_or_array_layers: 1,
+            },
         );
         let pal_tex = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("palette"),
-            size: wgpu::Extent3d { width: 256, height: 1, depth_or_array_layers: 1 },
+            size: wgpu::Extent3d {
+                width: 256,
+                height: 1,
+                depth_or_array_layers: 1,
+            },
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
@@ -535,7 +546,11 @@ impl GpuPresenter {
         device
             .create_texture(&wgpu::TextureDescriptor {
                 label: Some("depth"),
-                size: wgpu::Extent3d { width: w.max(1), height: h.max(1), depth_or_array_layers: 1 },
+                size: wgpu::Extent3d {
+                    width: w.max(1),
+                    height: h.max(1),
+                    depth_or_array_layers: 1,
+                },
                 mip_level_count: 1,
                 sample_count: 1,
                 dimension: wgpu::TextureDimension::D2,
@@ -584,7 +599,11 @@ impl GpuPresenter {
                 bytes_per_row: Some(320 * 4),
                 rows_per_image: Some(200),
             },
-            wgpu::Extent3d { width: 320, height: 200, depth_or_array_layers: 1 },
+            wgpu::Extent3d {
+                width: 320,
+                height: 200,
+                depth_or_array_layers: 1,
+            },
         );
         // Palette LUT upload (for the hand shader).
         let mut pal = vec![0u8; 256 * 4];
@@ -600,8 +619,16 @@ impl GpuPresenter {
                 aspect: wgpu::TextureAspect::All,
             },
             &pal,
-            wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(1024), rows_per_image: Some(1) },
-            wgpu::Extent3d { width: 256, height: 1, depth_or_array_layers: 1 },
+            wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(1024),
+                rows_per_image: Some(1),
+            },
+            wgpu::Extent3d {
+                width: 256,
+                height: 1,
+                depth_or_array_layers: 1,
+            },
         );
 
         // Letterbox geometry (same integer-scale rule as the software path).
@@ -609,9 +636,7 @@ impl GpuPresenter {
         let scale = ((ww / 320.0).min(wh / 200.0)).floor().max(1.0);
         let (dw, dh) = (320.0 * scale, 200.0 * scale);
         let (ox, oy) = (((ww - dw) / 2.0).max(0.0), ((wh - dh) / 2.0).max(0.0));
-        let to_ndc = |x: f32, y: f32| -> [f32; 2] {
-            [(x / ww) * 2.0 - 1.0, 1.0 - (y / wh) * 2.0]
-        };
+        let to_ndc = |x: f32, y: f32| -> [f32; 2] { [(x / ww) * 2.0 - 1.0, 1.0 - (y / wh) * 2.0] };
         let p0 = to_ndc(ox, oy);
         let p1 = to_ndc(ox + dw, oy + dh);
         let quad: [[f32; 4]; 6] = [
@@ -643,7 +668,13 @@ impl GpuPresenter {
                 let sx = ox + v[0] * scale;
                 let sy = oy + v[1] * scale;
                 let ndc = to_ndc(sx, sy);
-                verts.push([ndc[0], ndc[1], (v[2] / (max_depth * 2.0)).clamp(0.0, 1.0), v[3], v[4]]);
+                verts.push([
+                    ndc[0],
+                    ndc[1],
+                    (v[2] / (max_depth * 2.0)).clamp(0.0, 1.0),
+                    v[3],
+                    v[4],
+                ]);
             }
         }
         let vcount = verts.len().min(self.hand_vcap);
@@ -724,7 +755,5 @@ impl GpuPresenter {
 
 /// Plain-old-data cast for tightly-packed [f32; N] slices.
 fn bytemuck_cast<T: Copy>(data: &[T]) -> &[u8] {
-    unsafe {
-        std::slice::from_raw_parts(data.as_ptr() as *const u8, std::mem::size_of_val(data))
-    }
+    unsafe { std::slice::from_raw_parts(data.as_ptr() as *const u8, std::mem::size_of_val(data)) }
 }

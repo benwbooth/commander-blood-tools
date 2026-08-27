@@ -48,7 +48,7 @@ pub use input::{RuntimeInputHost, map_host_pointer_to_logical};
 pub use palette_transition::{
     RuntimePaletteTransition, RuntimePaletteTransitionConfig, RuntimePaletteTransitionOutcome,
 };
-pub use platform::{GAME_FRAME_DURATION, RuntimePlatformHost};
+pub use platform::{GAME_FRAME_DURATION, RECOVERED_FRAME_BUDGET, RuntimePlatformHost};
 pub use presentation::RuntimePresentationHost;
 pub use presentation_catalog::{RuntimePresentationBackground, RuntimePresentationCatalog};
 pub use presentation_player::RuntimePresentationPlayer;
@@ -98,7 +98,7 @@ use commander_blood_formats::world_art::{
     WorldArtworkLayout, decode_bloodprg_world_artwork_layout,
 };
 
-use crate::assets::{OriginalResourceSource, OriginalResourceStore};
+use crate::assets::OriginalResourceStore;
 use crate::native::bloodprg::{
     ORIGINAL_SCRIPT_PROFILE_COUNT, OriginalResourceCache, OriginalResourceCatalog,
     OriginalScriptProfileCatalog, ResourceLoadStatus, ScriptProfileId, ScriptProfileManager,
@@ -477,7 +477,7 @@ impl OriginalGameData {
         self.archive_entry_count
     }
 
-    /// Decode every playable BloodScript profile through the archive-backed resource service.
+    /// Decode every playable BloodScript profile through the original resource service.
     pub fn validate_script_profiles(&self) -> Result<Vec<ScriptProfileValidation>> {
         let mut validations = Vec::with_capacity(ORIGINAL_SCRIPT_PROFILE_COUNT);
         for profile in ScriptProfileId::all() {
@@ -490,9 +490,9 @@ impl OriginalGameData {
                         resource.value()
                     )
                 })?;
-                if self.resource_store.source(name) != OriginalResourceSource::EmbeddedArchive {
+                if !self.resource_store.resource_exists(name)? {
                     bail!(
-                        "profile {} resource {} ({}) is not present in BLOOD.DAT",
+                        "profile {} resource {} ({}) is not resolvable from the original data set",
                         profile.value(),
                         resource.value(),
                         String::from_utf8_lossy(name.as_bytes())

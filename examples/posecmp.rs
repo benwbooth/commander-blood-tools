@@ -19,7 +19,9 @@ struct Sprite {
 
 fn load_atlas(dir: &Path) -> Vec<Sprite> {
     let mut out = Vec::new();
-    let Ok(rd) = std::fs::read_dir(dir) else { return out };
+    let Ok(rd) = std::fs::read_dir(dir) else {
+        return out;
+    };
     for e in rd.flatten() {
         let name = e.file_name().to_string_lossy().into_owned();
         let Some((a, b)) = name
@@ -30,8 +32,12 @@ fn load_atlas(dir: &Path) -> Vec<Sprite> {
         else {
             continue;
         };
-        let (Ok(cx), Ok(cy)) = (a.parse(), b.parse()) else { continue };
-        let Ok(d) = std::fs::read(e.path()) else { continue };
+        let (Ok(cx), Ok(cy)) = (a.parse(), b.parse()) else {
+            continue;
+        };
+        let Ok(d) = std::fs::read(e.path()) else {
+            continue;
+        };
         if d.len() < 8 {
             continue;
         }
@@ -40,7 +46,14 @@ fn load_atlas(dir: &Path) -> Vec<Sprite> {
         if w == 0 || h == 0 || d.len() < 8 + w * h {
             continue;
         }
-        out.push(Sprite { cx, cy, anchor: (ax, ay), w, h, idx: d[8..8 + w * h].to_vec() });
+        out.push(Sprite {
+            cx,
+            cy,
+            anchor: (ax, ay),
+            w,
+            h,
+            idx: d[8..8 + w * h].to_vec(),
+        });
     }
     out
 }
@@ -52,7 +65,9 @@ fn main() {
         return;
     }
     println!("{} atlas sprites (live captures)", atlas.len());
-    let selectors: &[u16] = &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF, 0x10];
+    let selectors: &[u16] = &[
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF, 0x10,
+    ];
 
     // Pre-render each selector's settled hand once per unique cursor.
     let mut per_sel_hits: std::collections::HashMap<u16, (usize, f64)> = Default::default();
@@ -115,6 +130,9 @@ fn main() {
     let mut rows: Vec<_> = per_sel_hits.into_iter().collect();
     rows.sort_by_key(|(_, (n, _))| std::cmp::Reverse(*n));
     for (sel, (n, sum)) in rows {
-        println!("  selector {sel:#04x}: {n} sprites, mean {:.1}%", sum / n as f64 * 100.0);
+        println!(
+            "  selector {sel:#04x}: {n} sprites, mean {:.1}%",
+            sum / n as f64 * 100.0
+        );
     }
 }

@@ -137,7 +137,9 @@ impl SaveState {
                 "compass_angle" => compass_angle = value.trim().parse().ok(),
                 "dialogue_cursor" => dialogue_cursor = value.trim().parse().ok(),
                 "phone_contact" => phone_contact = value.trim().parse().ok(),
-                "phone_connected" => phone_connected = value.trim().parse::<u8>().ok().map(|v| v != 0),
+                "phone_connected" => {
+                    phone_connected = value.trim().parse::<u8>().ok().map(|v| v != 0)
+                }
                 "text_speed_step" => text_speed_step = value.trim().parse().ok(),
                 "visited" => {
                     visited = Some(

@@ -19,6 +19,8 @@ Run through the flake so `ffmpeg`, `7z`, `curl`, and Rust are all on `PATH`:
 nix develop --command cargo run -- <output-dir>
 nix develop --command cargo run -- inspect-bloodprg [re/bin/BLOODPRG.EXE]
 nix develop --command cargo run -- inspect-vm /path/to/SCRIPT1.COD [/path/to/SCRIPT1.VAR]
+nix develop --command cargo run --bin cbvm -- decompile-descript /path/to/DESCRIPT.DES re/descript/DESCRIPT.descript
+nix develop --command cargo run --bin cbvm -- compile-descript re/descript/DESCRIPT.descript /tmp/DESCRIPT.DES /path/to/DESCRIPT.DES
 nix develop --command cargo run --bin cbvm -- decompile-bundle /path/to/game re/vm/source
 nix develop --command cargo run --bin cbvm -- decompile-unified /path/to/game re/vm/profiles
 nix develop --command cargo run --bin cbvm -- compile-profile re/vm/profiles/script1.blood /tmp/script1
@@ -44,6 +46,9 @@ bounded interpreter line-state snapshots when a matching `SCRIPT*.VAR` is
 provided.
 `cbvm decompile-bundle` emits parseable lossless assembly for all five `.COD`
 and five `.BAS` VM images, then assembles each result and requires byte equality.
+`cbvm decompile-descript` emits readable typed source for the shared presentation
+database and requires an internal byte-exact round trip. `cbvm compile-descript`
+can independently compare the generated image with the shipped `DESCRIPT.DES`.
 `cbvm decompile-unified` emits one BloodScript v8 profile for each five-resource
 COD/BAS/DEB/DIC/VAR bundle and recompiles all five outputs byte-exactly before
 writing source. See [re/vm/README.md](re/vm/README.md) for the verification

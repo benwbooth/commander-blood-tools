@@ -44,8 +44,14 @@ fn main() {
         // label: print tip info
         let pts = mesh.debug_project(160, 100);
         let tip = pts[34];
-        println!("pose {sel:#x}: tip=({:.0},{:.0}) verts_on_screen={}", tip.0, tip.1,
-            pts.iter().filter(|p| p.0 >= 0.0 && p.0 < 320.0 && p.1 >= 0.0 && p.1 < 200.0).count());
+        println!(
+            "pose {sel:#x}: tip=({:.0},{:.0}) verts_on_screen={}",
+            tip.0,
+            tip.1,
+            pts.iter()
+                .filter(|p| p.0 >= 0.0 && p.0 < 320.0 && p.1 >= 0.0 && p.1 < 200.0)
+                .count()
+        );
     }
     let mut out = format!("P6\n{} {}\n255\n", tw * cols, th * rows).into_bytes();
     out.extend_from_slice(&sheet);

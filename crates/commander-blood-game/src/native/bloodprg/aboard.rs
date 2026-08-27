@@ -125,8 +125,8 @@ mod tests {
     use std::path::{Path, PathBuf};
 
     use commander_blood_formats::script::{
-        decode_script_directory, decode_script_state, ScriptDirectory, ScriptObjectKind,
-        ScriptState,
+        ScriptDirectory, ScriptObjectKind, ScriptState, decode_script_directory,
+        decode_script_state,
     };
     use serde::Deserialize;
 

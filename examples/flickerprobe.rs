@@ -21,7 +21,10 @@ fn tri_sig(tris: &Option<Vec<[[f32; 5]; 3]>>) -> String {
                     maxy = maxy.max(v[1]);
                 }
             }
-            format!("{} tris bbox=({minx:.1},{miny:.1})..({maxx:.1},{maxy:.1})", t.len())
+            format!(
+                "{} tris bbox=({minx:.1},{miny:.1})..({maxx:.1},{maxy:.1})",
+                t.len()
+            )
         }
     }
 }
@@ -44,7 +47,12 @@ fn main() {
         h
     };
     for cycle in 0..3 {
-        e.step(MouseInput { x: 160, y: 100, buttons: 0, ..Default::default() });
+        e.step(MouseInput {
+            x: 160,
+            y: 100,
+            buttons: 0,
+            ..Default::default()
+        });
         let tick = e.gpu_hand.take();
         println!(
             "tick {cycle}:  {} stars={} key={} fb={:x}",

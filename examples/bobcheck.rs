@@ -13,7 +13,11 @@ fn main() {
         None,
     )]);
     e.load_bob_contact(iso, Path::new("output/_tmp_dat"));
-    e.step(MouseInput { x: 120, y: 130, ..Default::default() });
+    e.step(MouseInput {
+        x: 120,
+        y: 130,
+        ..Default::default()
+    });
     let mut ppm = b"P6\n320 200\n255\n".to_vec();
     for &px in e.framebuffer.iter() {
         ppm.extend_from_slice(&e.scene_palette[px as usize]);

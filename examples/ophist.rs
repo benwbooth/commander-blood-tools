@@ -1,7 +1,7 @@
 //! Histogram the length-only (Op) tokens across all scripts — the operand-modeling
 //! priority list for the round-trip compiler.
 
-use commander_blood_tools::vm::{walk, VmToken};
+use commander_blood_tools::vm::{VmToken, walk};
 use std::collections::HashMap;
 
 fn main() {

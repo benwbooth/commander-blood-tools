@@ -187,7 +187,11 @@ pub fn init_level_directory(image: &[u8]) -> usize {
                 LevelKind::Resource
             };
             let stem: &'static str = Box::leak(level_stem(&name).to_owned().into_boxed_str());
-            LevelEntry { index: index as u8, stem, kind }
+            LevelEntry {
+                index: index as u8,
+                stem,
+                kind,
+            }
         })
         .collect();
     let len = entries.len();
@@ -226,59 +230,271 @@ pub fn level_entry_from_image(image: &[u8], index: u16) -> Option<(String, Level
 }
 
 pub const LEVEL_DIRECTORY: &[LevelEntry] = &[
-    LevelEntry { index: 0, stem: "fupcom", kind: LevelKind::Sprite },
-    LevelEntry { index: 1, stem: "nosound.drv", kind: LevelKind::Resource },
-    LevelEntry { index: 2, stem: "script1.cod", kind: LevelKind::Script },
-    LevelEntry { index: 3, stem: "script1.bas", kind: LevelKind::Script },
-    LevelEntry { index: 4, stem: "script1.var", kind: LevelKind::Script },
-    LevelEntry { index: 5, stem: "script1.dic", kind: LevelKind::Script },
-    LevelEntry { index: 6, stem: "script1.deb", kind: LevelKind::Script },
-    LevelEntry { index: 7, stem: "radio", kind: LevelKind::Sprite },
-    LevelEntry { index: 8, stem: "buffer", kind: LevelKind::Resource },
-    LevelEntry { index: 9, stem: "buffer", kind: LevelKind::Resource },
-    LevelEntry { index: 10, stem: "buffer", kind: LevelKind::Resource },
-    LevelEntry { index: 11, stem: "buffer", kind: LevelKind::Resource },
-    LevelEntry { index: 12, stem: "buffer", kind: LevelKind::Resource },
-    LevelEntry { index: 13, stem: "bappel", kind: LevelKind::Sprite },
-    LevelEntry { index: 14, stem: "bappel", kind: LevelKind::Sprite },
-    LevelEntry { index: 15, stem: "btv", kind: LevelKind::Sprite },
-    LevelEntry { index: 16, stem: "borxx", kind: LevelKind::Sprite },
-    LevelEntry { index: 17, stem: "bcarte", kind: LevelKind::Sprite },
-    LevelEntry { index: 18, stem: "bhyper", kind: LevelKind::Sprite },
-    LevelEntry { index: 19, stem: "bpol", kind: LevelKind::Sprite },
-    LevelEntry { index: 20, stem: "aphyper", kind: LevelKind::Sprite },
-    LevelEntry { index: 21, stem: "appol", kind: LevelKind::Sprite },
-    LevelEntry { index: 22, stem: "black", kind: LevelKind::World },
-    LevelEntry { index: 23, stem: "kult", kind: LevelKind::World },
-    LevelEntry { index: 24, stem: "rondo", kind: LevelKind::World },
-    LevelEntry { index: 25, stem: "venusia", kind: LevelKind::World },
-    LevelEntry { index: 26, stem: "erazor", kind: LevelKind::World },
-    LevelEntry { index: 27, stem: "mastacho", kind: LevelKind::World },
-    LevelEntry { index: 28, stem: "magnus", kind: LevelKind::World },
-    LevelEntry { index: 29, stem: "ekatomb", kind: LevelKind::World },
-    LevelEntry { index: 30, stem: "crazy", kind: LevelKind::World },
-    LevelEntry { index: 31, stem: "eden", kind: LevelKind::World },
-    LevelEntry { index: 32, stem: "kortex", kind: LevelKind::World },
-    LevelEntry { index: 33, stem: "vista", kind: LevelKind::World },
-    LevelEntry { index: 34, stem: "moskito", kind: LevelKind::World },
-    LevelEntry { index: 35, stem: "pterra", kind: LevelKind::World },
-    LevelEntry { index: 36, stem: "cyber", kind: LevelKind::World },
-    LevelEntry { index: 37, stem: "script2.cod", kind: LevelKind::Script },
-    LevelEntry { index: 38, stem: "script2.bas", kind: LevelKind::Script },
-    LevelEntry { index: 39, stem: "script2.var", kind: LevelKind::Script },
-    LevelEntry { index: 40, stem: "script2.dic", kind: LevelKind::Script },
-    LevelEntry { index: 41, stem: "script2.deb", kind: LevelKind::Script },
-    LevelEntry { index: 42, stem: "dnsdb.drv", kind: LevelKind::Resource },
-    LevelEntry { index: 43, stem: "corpo", kind: LevelKind::World },
-    LevelEntry { index: 44, stem: "carte", kind: LevelKind::Sprite },
-    LevelEntry { index: 45, stem: "bigark", kind: LevelKind::World },
-    LevelEntry { index: 46, stem: "cyber2", kind: LevelKind::World },
-    LevelEntry { index: 47, stem: "cyber3", kind: LevelKind::World },
-    LevelEntry { index: 48, stem: "eden2", kind: LevelKind::World },
-    LevelEntry { index: 49, stem: "eden3", kind: LevelKind::World },
-    LevelEntry { index: 50, stem: "ekatomb2", kind: LevelKind::World },
-    LevelEntry { index: 51, stem: "ekatomb3", kind: LevelKind::World },
-    LevelEntry { index: 52, stem: "erazor2", kind: LevelKind::World },
+    LevelEntry {
+        index: 0,
+        stem: "fupcom",
+        kind: LevelKind::Sprite,
+    },
+    LevelEntry {
+        index: 1,
+        stem: "nosound.drv",
+        kind: LevelKind::Resource,
+    },
+    LevelEntry {
+        index: 2,
+        stem: "script1.cod",
+        kind: LevelKind::Script,
+    },
+    LevelEntry {
+        index: 3,
+        stem: "script1.bas",
+        kind: LevelKind::Script,
+    },
+    LevelEntry {
+        index: 4,
+        stem: "script1.var",
+        kind: LevelKind::Script,
+    },
+    LevelEntry {
+        index: 5,
+        stem: "script1.dic",
+        kind: LevelKind::Script,
+    },
+    LevelEntry {
+        index: 6,
+        stem: "script1.deb",
+        kind: LevelKind::Script,
+    },
+    LevelEntry {
+        index: 7,
+        stem: "radio",
+        kind: LevelKind::Sprite,
+    },
+    LevelEntry {
+        index: 8,
+        stem: "buffer",
+        kind: LevelKind::Resource,
+    },
+    LevelEntry {
+        index: 9,
+        stem: "buffer",
+        kind: LevelKind::Resource,
+    },
+    LevelEntry {
+        index: 10,
+        stem: "buffer",
+        kind: LevelKind::Resource,
+    },
+    LevelEntry {
+        index: 11,
+        stem: "buffer",
+        kind: LevelKind::Resource,
+    },
+    LevelEntry {
+        index: 12,
+        stem: "buffer",
+        kind: LevelKind::Resource,
+    },
+    LevelEntry {
+        index: 13,
+        stem: "bappel",
+        kind: LevelKind::Sprite,
+    },
+    LevelEntry {
+        index: 14,
+        stem: "bappel",
+        kind: LevelKind::Sprite,
+    },
+    LevelEntry {
+        index: 15,
+        stem: "btv",
+        kind: LevelKind::Sprite,
+    },
+    LevelEntry {
+        index: 16,
+        stem: "borxx",
+        kind: LevelKind::Sprite,
+    },
+    LevelEntry {
+        index: 17,
+        stem: "bcarte",
+        kind: LevelKind::Sprite,
+    },
+    LevelEntry {
+        index: 18,
+        stem: "bhyper",
+        kind: LevelKind::Sprite,
+    },
+    LevelEntry {
+        index: 19,
+        stem: "bpol",
+        kind: LevelKind::Sprite,
+    },
+    LevelEntry {
+        index: 20,
+        stem: "aphyper",
+        kind: LevelKind::Sprite,
+    },
+    LevelEntry {
+        index: 21,
+        stem: "appol",
+        kind: LevelKind::Sprite,
+    },
+    LevelEntry {
+        index: 22,
+        stem: "black",
+        kind: LevelKind::World,
+    },
+    LevelEntry {
+        index: 23,
+        stem: "kult",
+        kind: LevelKind::World,
+    },
+    LevelEntry {
+        index: 24,
+        stem: "rondo",
+        kind: LevelKind::World,
+    },
+    LevelEntry {
+        index: 25,
+        stem: "venusia",
+        kind: LevelKind::World,
+    },
+    LevelEntry {
+        index: 26,
+        stem: "erazor",
+        kind: LevelKind::World,
+    },
+    LevelEntry {
+        index: 27,
+        stem: "mastacho",
+        kind: LevelKind::World,
+    },
+    LevelEntry {
+        index: 28,
+        stem: "magnus",
+        kind: LevelKind::World,
+    },
+    LevelEntry {
+        index: 29,
+        stem: "ekatomb",
+        kind: LevelKind::World,
+    },
+    LevelEntry {
+        index: 30,
+        stem: "crazy",
+        kind: LevelKind::World,
+    },
+    LevelEntry {
+        index: 31,
+        stem: "eden",
+        kind: LevelKind::World,
+    },
+    LevelEntry {
+        index: 32,
+        stem: "kortex",
+        kind: LevelKind::World,
+    },
+    LevelEntry {
+        index: 33,
+        stem: "vista",
+        kind: LevelKind::World,
+    },
+    LevelEntry {
+        index: 34,
+        stem: "moskito",
+        kind: LevelKind::World,
+    },
+    LevelEntry {
+        index: 35,
+        stem: "pterra",
+        kind: LevelKind::World,
+    },
+    LevelEntry {
+        index: 36,
+        stem: "cyber",
+        kind: LevelKind::World,
+    },
+    LevelEntry {
+        index: 37,
+        stem: "script2.cod",
+        kind: LevelKind::Script,
+    },
+    LevelEntry {
+        index: 38,
+        stem: "script2.bas",
+        kind: LevelKind::Script,
+    },
+    LevelEntry {
+        index: 39,
+        stem: "script2.var",
+        kind: LevelKind::Script,
+    },
+    LevelEntry {
+        index: 40,
+        stem: "script2.dic",
+        kind: LevelKind::Script,
+    },
+    LevelEntry {
+        index: 41,
+        stem: "script2.deb",
+        kind: LevelKind::Script,
+    },
+    LevelEntry {
+        index: 42,
+        stem: "dnsdb.drv",
+        kind: LevelKind::Resource,
+    },
+    LevelEntry {
+        index: 43,
+        stem: "corpo",
+        kind: LevelKind::World,
+    },
+    LevelEntry {
+        index: 44,
+        stem: "carte",
+        kind: LevelKind::Sprite,
+    },
+    LevelEntry {
+        index: 45,
+        stem: "bigark",
+        kind: LevelKind::World,
+    },
+    LevelEntry {
+        index: 46,
+        stem: "cyber2",
+        kind: LevelKind::World,
+    },
+    LevelEntry {
+        index: 47,
+        stem: "cyber3",
+        kind: LevelKind::World,
+    },
+    LevelEntry {
+        index: 48,
+        stem: "eden2",
+        kind: LevelKind::World,
+    },
+    LevelEntry {
+        index: 49,
+        stem: "eden3",
+        kind: LevelKind::World,
+    },
+    LevelEntry {
+        index: 50,
+        stem: "ekatomb2",
+        kind: LevelKind::World,
+    },
+    LevelEntry {
+        index: 51,
+        stem: "ekatomb3",
+        kind: LevelKind::World,
+    },
+    LevelEntry {
+        index: 52,
+        stem: "erazor2",
+        kind: LevelKind::World,
+    },
 ];
 
 /// The primary navigable planet worlds — the distinct destinations shown on the nav
@@ -386,7 +602,11 @@ pub fn art_belongs_to_world(filename: &str, world: &str) -> bool {
     };
     let f = filename;
     f.starts_with(abbrev)
-        || (f.as_bytes().first().map(|b| b.is_ascii_digit()).unwrap_or(false)
+        || (f
+            .as_bytes()
+            .first()
+            .map(|b| b.is_ascii_digit())
+            .unwrap_or(false)
             && f[1..].starts_with(abbrev))
 }
 
@@ -448,48 +668,174 @@ pub const WORLD_ART_TABLE_FILE_OFFSET: usize = 0xFFE7;
 /// byte-for-byte by `world_art_directory_matches_the_ds2bc7_table`, which also
 /// checks every id resolves to a real filename record.
 pub const WORLD_ART_DIRECTORY: [WorldArtEntry; 42] = [
-    WorldArtEntry { name: "Kortex",      resource_id: 32 },
-    WorldArtEntry { name: "Kukaracha",   resource_id: 75 },
-    WorldArtEntry { name: "Ekatomb",     resource_id: 29 },
-    WorldArtEntry { name: "Shark",       resource_id: 92 },
-    WorldArtEntry { name: "Cyberock",    resource_id: 36 },
-    WorldArtEntry { name: "Mastachok",   resource_id: 27 },
-    WorldArtEntry { name: "Crazystone",  resource_id: 30 },
-    WorldArtEntry { name: "Rondo",       resource_id: 24 },
-    WorldArtEntry { name: "Venusia",     resource_id: 25 },
-    WorldArtEntry { name: "Vista",       resource_id: 33 },
-    WorldArtEntry { name: "Eden",        resource_id: 31 },
-    WorldArtEntry { name: "Qx20",        resource_id: 64 },
-    WorldArtEntry { name: "Corpo",       resource_id: 43 },
-    WorldArtEntry { name: "Pterra",      resource_id: 35 },
-    WorldArtEntry { name: "Erazor",      resource_id: 26 },
-    WorldArtEntry { name: "Magnus",      resource_id: 28 },
-    WorldArtEntry { name: "Ondoya",      resource_id: 94 },
-    WorldArtEntry { name: "Tumul",       resource_id: 74 },
-    WorldArtEntry { name: "Malus",       resource_id: 59 },
-    WorldArtEntry { name: "Bonus",       resource_id: 54 },
-    WorldArtEntry { name: "Kult",        resource_id: 23 },
-    WorldArtEntry { name: "Troma",       resource_id: 55 },
-    WorldArtEntry { name: "Attrox",      resource_id: 56 },
-    WorldArtEntry { name: "Trashlando",  resource_id: 32 },
-    WorldArtEntry { name: "Moskito",     resource_id: 34 },
-    WorldArtEntry { name: "Oddland",     resource_id: 72 },
-    WorldArtEntry { name: "Ekato",       resource_id: 50 },
-    WorldArtEntry { name: "Erazo",       resource_id: 52 },
-    WorldArtEntry { name: "Masta",       resource_id: 61 },
-    WorldArtEntry { name: "Ron",         resource_id: 65 },
-    WorldArtEntry { name: "Venusia2",    resource_id: 69 },
-    WorldArtEntry { name: "Vistar",      resource_id: 70 },
-    WorldArtEntry { name: "Edena",       resource_id: 48 },
-    WorldArtEntry { name: "Golgos",      resource_id: 62 },
-    WorldArtEntry { name: "Lovia",       resource_id: 63 },
-    WorldArtEntry { name: "Sat",         resource_id: 67 },
-    WorldArtEntry { name: "Tempest",     resource_id: 68 },
-    WorldArtEntry { name: "Vulcan",      resource_id: 71 },
-    WorldArtEntry { name: "Magnu",       resource_id: 58 },
-    WorldArtEntry { name: "Kraner",      resource_id: 73 },
-    WorldArtEntry { name: "Cyborg",      resource_id: 60 },
-    WorldArtEntry { name: "Bigbang",     resource_id: 91 },
+    WorldArtEntry {
+        name: "Kortex",
+        resource_id: 32,
+    },
+    WorldArtEntry {
+        name: "Kukaracha",
+        resource_id: 75,
+    },
+    WorldArtEntry {
+        name: "Ekatomb",
+        resource_id: 29,
+    },
+    WorldArtEntry {
+        name: "Shark",
+        resource_id: 92,
+    },
+    WorldArtEntry {
+        name: "Cyberock",
+        resource_id: 36,
+    },
+    WorldArtEntry {
+        name: "Mastachok",
+        resource_id: 27,
+    },
+    WorldArtEntry {
+        name: "Crazystone",
+        resource_id: 30,
+    },
+    WorldArtEntry {
+        name: "Rondo",
+        resource_id: 24,
+    },
+    WorldArtEntry {
+        name: "Venusia",
+        resource_id: 25,
+    },
+    WorldArtEntry {
+        name: "Vista",
+        resource_id: 33,
+    },
+    WorldArtEntry {
+        name: "Eden",
+        resource_id: 31,
+    },
+    WorldArtEntry {
+        name: "Qx20",
+        resource_id: 64,
+    },
+    WorldArtEntry {
+        name: "Corpo",
+        resource_id: 43,
+    },
+    WorldArtEntry {
+        name: "Pterra",
+        resource_id: 35,
+    },
+    WorldArtEntry {
+        name: "Erazor",
+        resource_id: 26,
+    },
+    WorldArtEntry {
+        name: "Magnus",
+        resource_id: 28,
+    },
+    WorldArtEntry {
+        name: "Ondoya",
+        resource_id: 94,
+    },
+    WorldArtEntry {
+        name: "Tumul",
+        resource_id: 74,
+    },
+    WorldArtEntry {
+        name: "Malus",
+        resource_id: 59,
+    },
+    WorldArtEntry {
+        name: "Bonus",
+        resource_id: 54,
+    },
+    WorldArtEntry {
+        name: "Kult",
+        resource_id: 23,
+    },
+    WorldArtEntry {
+        name: "Troma",
+        resource_id: 55,
+    },
+    WorldArtEntry {
+        name: "Attrox",
+        resource_id: 56,
+    },
+    WorldArtEntry {
+        name: "Trashlando",
+        resource_id: 32,
+    },
+    WorldArtEntry {
+        name: "Moskito",
+        resource_id: 34,
+    },
+    WorldArtEntry {
+        name: "Oddland",
+        resource_id: 72,
+    },
+    WorldArtEntry {
+        name: "Ekato",
+        resource_id: 50,
+    },
+    WorldArtEntry {
+        name: "Erazo",
+        resource_id: 52,
+    },
+    WorldArtEntry {
+        name: "Masta",
+        resource_id: 61,
+    },
+    WorldArtEntry {
+        name: "Ron",
+        resource_id: 65,
+    },
+    WorldArtEntry {
+        name: "Venusia2",
+        resource_id: 69,
+    },
+    WorldArtEntry {
+        name: "Vistar",
+        resource_id: 70,
+    },
+    WorldArtEntry {
+        name: "Edena",
+        resource_id: 48,
+    },
+    WorldArtEntry {
+        name: "Golgos",
+        resource_id: 62,
+    },
+    WorldArtEntry {
+        name: "Lovia",
+        resource_id: 63,
+    },
+    WorldArtEntry {
+        name: "Sat",
+        resource_id: 67,
+    },
+    WorldArtEntry {
+        name: "Tempest",
+        resource_id: 68,
+    },
+    WorldArtEntry {
+        name: "Vulcan",
+        resource_id: 71,
+    },
+    WorldArtEntry {
+        name: "Magnu",
+        resource_id: 58,
+    },
+    WorldArtEntry {
+        name: "Kraner",
+        resource_id: 73,
+    },
+    WorldArtEntry {
+        name: "Cyborg",
+        resource_id: 60,
+    },
+    WorldArtEntry {
+        name: "Bigbang",
+        resource_id: 91,
+    },
 ];
 
 /// The artwork resource id for an object's inline NAME, matched the way the
@@ -581,7 +927,10 @@ mod tests {
         // That absence is what makes the segment field offset 0; any other offset
         // would encode a displacement.
         assert_eq!(&exe[0x51B7..0x51B9], &[0x8B, 0x07]);
-        assert_eq!(RESOURCE_DESCRIPTOR_SEGMENT, 0, "mod=00 carries no displacement");
+        assert_eq!(
+            RESOURCE_DESCRIPTOR_SEGMENT, 0,
+            "mod=00 carries no displacement"
+        );
 
         // 83 4f 02 02 = or word [bx+2],2
         assert_eq!(&exe[0x51B3..0x51B7], &[0x83, 0x4F, 0x02, 0x02]);
@@ -651,9 +1000,17 @@ mod tests {
         // level_directory_literal_matches_the_image).
         assert_eq!(names[1], "nosound.drv");
         // The literal holds indices 0..=52, so 53 is the first omitted slot.
-        assert_eq!(LEVEL_DIRECTORY.len(), 53, "the literal's size, checked not assumed");
+        assert_eq!(
+            LEVEL_DIRECTORY.len(),
+            53,
+            "the literal's size, checked not assumed"
+        );
         assert_eq!(names[53], "erazor3.ext", "the first slot the literal omits");
-        assert_eq!(names.len() - LEVEL_DIRECTORY.len(), 42, "entries never transcribed");
+        assert_eq!(
+            names.len() - LEVEL_DIRECTORY.len(),
+            42,
+            "entries never transcribed"
+        );
     }
 
     /// The transcribed [`LEVEL_DIRECTORY`] against the bytes it was copied from.
@@ -666,7 +1023,10 @@ mod tests {
             return;
         };
         let names = parse_level_directory(&exe);
-        assert!(names.len() >= LEVEL_DIRECTORY.len(), "image has at least the literal");
+        assert!(
+            names.len() >= LEVEL_DIRECTORY.len(),
+            "image has at least the literal"
+        );
 
         for entry in LEVEL_DIRECTORY {
             let actual = &names[entry.index as usize];
@@ -706,7 +1066,10 @@ mod tests {
                 &rec[..name_len]
             );
             // The padding really is padding, not the next field bleeding in.
-            assert!(rec[name_len..16].iter().all(|&b| b == 0), "record {index} padding");
+            assert!(
+                rec[name_len..16].iter().all(|&b| b == 0),
+                "record {index} padding"
+            );
         }
     }
     use super::*;
@@ -757,7 +1120,9 @@ mod tests {
             .unwrap();
         assert_eq!(highest_art as usize, NAME_COUNT - 1);
         assert!(
-            LEVEL_DIRECTORY.iter().all(|e| (e.index as usize) < NAME_COUNT),
+            LEVEL_DIRECTORY
+                .iter()
+                .all(|e| (e.index as usize) < NAME_COUNT),
             "every ported entry indexes inside the table"
         );
     }
@@ -872,17 +1237,23 @@ mod tests {
     fn world_location_art_prefixes_resolve_to_real_fd_files() {
         // Each mapped world must have at least one matching fd/ location LBM.
         let dir = ["output/_tmp_dat/fd", "../output/_tmp_dat/fd"]
-            .iter().map(std::path::Path::new).find(|p| p.exists());
+            .iter()
+            .map(std::path::Path::new)
+            .find(|p| p.exists());
         let Some(dir) = dir else { return };
         let files: Vec<String> = std::fs::read_dir(dir)
             .unwrap()
             .filter_map(|e| e.ok())
             .map(|e| e.file_name().to_string_lossy().to_lowercase())
             .collect();
-        for world in ["venusia", "eden", "ekatomb", "kult", "magnus", "kortex", "pterra"] {
+        for world in [
+            "venusia", "eden", "ekatomb", "kult", "magnus", "kortex", "pterra",
+        ] {
             let prefix = world_location_art_prefix(world).unwrap();
             assert!(
-                files.iter().any(|f| f.starts_with(prefix) && f.ends_with(".lbm")),
+                files
+                    .iter()
+                    .any(|f| f.starts_with(prefix) && f.ends_with(".lbm")),
                 "world {world} -> prefix {prefix} has an fd/ LBM"
             );
         }
@@ -898,7 +1269,9 @@ mod tests {
     #[test]
     fn ext_world_header_byte_distribution() {
         let dir = ["output/_tmp_iso", "../output/_tmp_iso"]
-            .iter().map(std::path::Path::new).find(|p| p.exists());
+            .iter()
+            .map(std::path::Path::new)
+            .find(|p| p.exists());
         let Some(dir) = dir else { return };
         let mut b7: std::collections::BTreeMap<u8, usize> = Default::default();
         let mut b3: std::collections::BTreeMap<u8, usize> = Default::default();
@@ -908,7 +1281,9 @@ mod tests {
             if p.extension().and_then(|e| e.to_str()) != Some("EXT") {
                 continue;
             }
-            let Ok(data) = std::fs::read(&p) else { continue };
+            let Ok(data) = std::fs::read(&p) else {
+                continue;
+            };
             if data.len() < 8 {
                 continue;
             }
@@ -921,12 +1296,20 @@ mod tests {
             return;
         }
         assert_eq!(total, 50, "shipped .EXT worlds");
-        assert_eq!(b7.values().sum::<usize>(), total, "the spread must SUM to the set");
+        assert_eq!(
+            b7.values().sum::<usize>(),
+            total,
+            "the spread must SUM to the set"
+        );
         assert_eq!(b7.get(&0x81).copied().unwrap_or(0), 37);
         assert_eq!(b7.get(&0x80).copied().unwrap_or(0), 10);
         assert_eq!(b7.get(&0x84).copied().unwrap_or(0), 1);
         assert_eq!(b7.get(&0x8B).copied().unwrap_or(0), 1);
-        assert_eq!(b7.get(&0x00).copied().unwrap_or(0), 1, "the value the doc missed");
+        assert_eq!(
+            b7.get(&0x00).copied().unwrap_or(0),
+            1,
+            "the value the doc missed"
+        );
         assert_eq!(b3.get(&0x01).copied().unwrap_or(0), 49);
         assert_eq!(b3.get(&0x02).copied().unwrap_or(0), 1);
     }
@@ -936,7 +1319,9 @@ mod tests {
         // Every world file — planets and cyberspace alike — begins with EXT_WORLD_MAGIC.
         // Confirms the shared format. Skips if assets aren't present.
         let dir = ["output/_tmp_iso", "../output/_tmp_iso"]
-            .iter().map(std::path::Path::new).find(|p| p.exists());
+            .iter()
+            .map(std::path::Path::new)
+            .find(|p| p.exists());
         let Some(dir) = dir else { return };
         // SWEEP every shipped world, do not sample. The eight names this test
         // used to list all sat in the 37 files whose eighth byte is 0x81, which
@@ -947,7 +1332,9 @@ mod tests {
             if p.extension().and_then(|e| e.to_str()) != Some("EXT") {
                 continue;
             }
-            let Ok(data) = std::fs::read(&p) else { continue };
+            let Ok(data) = std::fs::read(&p) else {
+                continue;
+            };
             assert!(
                 is_ext_world(&data),
                 "{} is not recognised as a world file",
@@ -990,7 +1377,11 @@ mod tests {
         // `init_level_directory` existed: any earlier test installing the real
         // table changed the answer. Keying off `directory().len()` removes the
         // dependence instead of hiding it behind a bigger constant.
-        let expected = if dir_len > LEVEL_DIRECTORY.len() { 32 } else { 16 };
+        let expected = if dir_len > LEVEL_DIRECTORY.len() {
+            32
+        } else {
+            16
+        };
         assert_eq!(names.len(), expected, "directory has {dir_len} slots");
 
         // Either way the filter's shape holds: every survivor is a World whose
