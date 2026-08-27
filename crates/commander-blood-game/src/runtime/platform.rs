@@ -6,13 +6,14 @@ use std::time::{Duration, Instant};
 use anyhow::{Context, Result, bail};
 use sdl3::EventPump;
 use sdl3::event::{Event, WindowEvent};
-use sdl3::mouse::{MouseButton, MouseState};
+use sdl3::mouse::{MouseButton, MouseState, MouseUtil};
 use sdl3::video::Window;
 
 use crate::native::bloodprg::{
     GameLifecycleState, InputAction, PointerButton, PointerButtons, PointerSample,
 };
 
+use super::input::INITIAL_LOGICAL_POINTER;
 use super::{ModernGameServices, RuntimeAlienOverlayFrameInput};
 
 /// Input frequency of the IBM PC programmable interval timer.
@@ -24,10 +25,13 @@ const GAME_FRAME_TIMER_TICKS: u64 = 8;
 const NANOSECONDS_PER_SECOND: u64 = 1_000_000_000;
 const MEASURED_GAME_FRAME_MILLISECONDS: u64 = 46;
 const MEASURED_PRESENTATION_FRAME_MILLISECONDS: u64 = 68;
+const MODERN_VISUAL_REFRESH_HZ: u64 = 60;
 const MINIMUM_SURFACE_DIMENSION: u32 = 1;
 const ORIGINAL_DISPLAY_ASPECT_WIDTH: f32 = 4.0;
 const ORIGINAL_DISPLAY_ASPECT_HEIGHT: f32 = 3.0;
 const LOGICAL_SCREEN_WIDTH: f32 = 320.0;
+const LOGICAL_SCREEN_HEIGHT: f32 = 200.0;
+const LOGICAL_SCREEN_MAXIMUM: [f32; 2] = [LOGICAL_SCREEN_WIDTH - 1.0, LOGICAL_SCREEN_HEIGHT - 1.0];
 const ALIEN_DRIVER_WIDTH: f32 = 640.0;
 const ALIEN_DRIVER_HEIGHT: f32 = 1_024.0;
 const ALIEN_DRIVER_CENTER: [f32; 2] = [ALIEN_DRIVER_WIDTH / 2.0, ALIEN_DRIVER_HEIGHT / 2.0];
@@ -60,26 +64,35 @@ pub const GAME_FRAME_DURATION: Duration = Duration::from_millis(MEASURED_GAME_FR
 pub const PRESENTATION_FRAME_DURATION: Duration =
     Duration::from_millis(MEASURED_PRESENTATION_FRAME_MILLISECONDS);
 
+/// Render-only refresh interval used between recovered C simulation ticks.
+pub const VISUAL_FRAME_DURATION: Duration =
+    Duration::from_nanos(NANOSECONDS_PER_SECOND / MODERN_VISUAL_REFRESH_HZ);
+
 /// SDL-facing state owned by the production game lifecycle host.
 pub struct RuntimePlatformHost<'window> {
     window: &'window Window,
+    mouse: MouseUtil,
     events: EventPump,
     frame_clock: GameFrameClock,
     bridge_horizontal_delta: f32,
     pointer_buttons: PointerButtons,
+    logical_pointer: [f32; 2],
     alien_pointer: Option<[f32; 2]>,
 }
 
 impl<'window> RuntimePlatformHost<'window> {
-    /// Bind the SDL event pump to the game window without taking cursor control.
-    pub fn new(window: &'window Window, events: EventPump) -> Self {
+    /// Bind SDL relative input to a flat virtual pointer owned by the game.
+    pub fn new(window: &'window Window, mouse: MouseUtil, events: EventPump) -> Self {
         let pointer_buttons = pointer_buttons(&events.mouse_state());
+        mouse.set_relative_mouse_mode(window, true);
         Self {
             window,
+            mouse,
             events,
             frame_clock: GameFrameClock::default(),
             bridge_horizontal_delta: 0.0,
             pointer_buttons,
+            logical_pointer: INITIAL_LOGICAL_POINTER.map(f32::from),
             alien_pointer: None,
         }
     }
@@ -153,6 +166,20 @@ impl<'window> RuntimePlatformHost<'window> {
                         height.max(MINIMUM_SURFACE_DIMENSION),
                     );
                 }
+                Event::Window {
+                    window_id: event_window_id,
+                    win_event: WindowEvent::FocusLost,
+                    ..
+                } if event_window_id == window_id => {
+                    self.mouse.set_relative_mouse_mode(self.window, false);
+                }
+                Event::Window {
+                    window_id: event_window_id,
+                    win_event: WindowEvent::FocusGained,
+                    ..
+                } if event_window_id == window_id => {
+                    self.mouse.set_relative_mouse_mode(self.window, true);
+                }
                 Event::MouseMotion {
                     window_id: event_window_id,
                     xrel,
@@ -166,8 +193,9 @@ impl<'window> RuntimePlatformHost<'window> {
                         pointer[0] = (pointer[0] + delta[0]).clamp(0.0, ALIEN_DRIVER_WIDTH);
                         pointer[1] = (pointer[1] + delta[1]).clamp(0.0, ALIEN_DRIVER_HEIGHT);
                     } else {
-                        self.bridge_horizontal_delta +=
-                            map_horizontal_delta_to_logical(output_size, xrel);
+                        let delta = map_motion_to_logical(output_size, [xrel, yrel]);
+                        self.bridge_horizontal_delta += delta[0];
+                        integrate_logical_pointer(&mut self.logical_pointer, delta);
                     }
                 }
                 Event::MouseButtonDown {
@@ -204,15 +232,14 @@ impl<'window> RuntimePlatformHost<'window> {
         platform_shutdown
     }
 
-    /// Sample the current SDL pointer into the original logical viewport.
+    /// Publish the virtual relative pointer into the recovered input sampler.
     pub fn poll_pointer(&mut self, services: &mut ModernGameServices<'window>) -> PointerSample {
-        let mouse = self.events.mouse_state();
-        let (width, height) = self.window.size();
-        services.poll_lifecycle_pointer(
-            [width as f32, height as f32],
-            [mouse.x(), mouse.y()],
-            self.pointer_buttons,
-        )
+        services.publish_lifecycle_logical_pointer(self.logical_pointer(), self.pointer_buttons)
+    }
+
+    /// Current flat logical pointer, including visual-only relative motion.
+    pub fn logical_pointer(&self) -> [i16; 2] {
+        self.logical_pointer.map(|coordinate| coordinate as i16)
     }
 
     /// Consume relative horizontal mouse motion in original logical pixels.
@@ -230,6 +257,31 @@ impl<'window> RuntimePlatformHost<'window> {
         self.pace_frame_for(PRESENTATION_FRAME_DURATION)
     }
 
+    /// Wait for one render-only refresh opportunity inside the current game tick.
+    ///
+    /// Returns `false` once the recovered frame deadline has been reached. SDL
+    /// events are retained immediately, but lifecycle input is still dispatched
+    /// only by the next C simulation frame.
+    pub fn wait_for_visual_refresh(
+        &mut self,
+        services: &mut ModernGameServices<'window>,
+    ) -> Result<bool> {
+        let remaining = self
+            .frame_clock
+            .remaining(Instant::now(), GAME_FRAME_DURATION)
+            .context("visual refresh started without a game frame budget")?;
+        if remaining <= VISUAL_FRAME_DURATION {
+            if !remaining.is_zero() {
+                thread::sleep(remaining);
+            }
+            self.frame_clock.finish_frame();
+            return Ok(false);
+        }
+        thread::sleep(VISUAL_FRAME_DURATION);
+        self.pump_events(services);
+        Ok(true)
+    }
+
     fn pace_frame_for(&mut self, duration: Duration) -> Result<()> {
         let remaining = self
             .frame_clock
@@ -240,6 +292,12 @@ impl<'window> RuntimePlatformHost<'window> {
         }
         self.frame_clock.finish_frame();
         Ok(())
+    }
+}
+
+impl Drop for RuntimePlatformHost<'_> {
+    fn drop(&mut self) {
+        self.mouse.set_relative_mouse_mode(self.window, false);
     }
 }
 
@@ -294,13 +352,23 @@ fn take_whole_motion(accumulated: &mut f32) -> i32 {
     whole as i32
 }
 
-fn map_horizontal_delta_to_logical(output_size: [f32; 2], horizontal_delta: f32) -> f32 {
+fn map_motion_to_logical(output_size: [f32; 2], motion: [f32; 2]) -> [f32; 2] {
     let output_width = output_size[0].max(1.0);
     let output_height = output_size[1].max(1.0);
     let scale = (output_width / ORIGINAL_DISPLAY_ASPECT_WIDTH)
         .min(output_height / ORIGINAL_DISPLAY_ASPECT_HEIGHT);
     let viewport_width = ORIGINAL_DISPLAY_ASPECT_WIDTH * scale;
-    horizontal_delta * LOGICAL_SCREEN_WIDTH / viewport_width
+    let viewport_height = ORIGINAL_DISPLAY_ASPECT_HEIGHT * scale;
+    [
+        motion[0] * LOGICAL_SCREEN_WIDTH / viewport_width,
+        motion[1] * LOGICAL_SCREEN_HEIGHT / viewport_height,
+    ]
+}
+
+fn integrate_logical_pointer(pointer: &mut [f32; 2], delta: [f32; 2]) {
+    for axis in 0..pointer.len() {
+        pointer[axis] = (pointer[axis] + delta[axis]).clamp(0.0, LOGICAL_SCREEN_MAXIMUM[axis]);
+    }
 }
 
 fn map_motion_to_alien_driver(output_size: [f32; 2], motion: [f32; 2]) -> [f32; 2] {
@@ -383,8 +451,38 @@ mod tests {
     #[test]
     fn relative_mouse_motion_scales_through_the_letterboxed_viewport() {
         assert_eq!(
-            map_horizontal_delta_to_logical(WIDESCREEN_OUTPUT, WIDESCREEN_VIEWPORT_WIDTH,),
-            LOGICAL_SCREEN_WIDTH
+            map_motion_to_logical(
+                WIDESCREEN_OUTPUT,
+                [
+                    WIDESCREEN_VIEWPORT_WIDTH,
+                    WIDESCREEN_VIEWPORT_WIDTH * 3.0 / 4.0
+                ],
+            ),
+            [LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT]
+        );
+    }
+
+    #[test]
+    fn virtual_pointer_clamps_without_discarding_relative_bridge_motion() {
+        let mut pointer = INITIAL_LOGICAL_POINTER.map(f32::from);
+        let delta = [-LOGICAL_SCREEN_WIDTH * 2.0, LOGICAL_SCREEN_HEIGHT * 2.0];
+        let bridge_motion = delta[0];
+        integrate_logical_pointer(&mut pointer, delta);
+
+        assert_eq!(pointer, [0.0, LOGICAL_SCREEN_MAXIMUM[1]]);
+        assert_eq!(bridge_motion, -LOGICAL_SCREEN_WIDTH * 2.0);
+    }
+
+    #[test]
+    fn visual_refresh_rate_does_not_change_recovered_simulation_rate() {
+        assert_eq!(
+            VISUAL_FRAME_DURATION,
+            Duration::from_nanos(NANOSECONDS_PER_SECOND / MODERN_VISUAL_REFRESH_HZ)
+        );
+        assert!(VISUAL_FRAME_DURATION < GAME_FRAME_DURATION);
+        assert_eq!(
+            GAME_FRAME_DURATION.as_millis(),
+            MEASURED_GAME_FRAME_MILLISECONDS as u128
         );
     }
 

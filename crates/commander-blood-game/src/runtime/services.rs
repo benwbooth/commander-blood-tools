@@ -56,6 +56,7 @@ use super::camera_navigation::RuntimeCameraNavigation;
 use super::choice_list::{
     RuntimeChoiceListStyle, draw_choice_list_rows, prepare_choice_list_frame,
 };
+use super::input::INITIAL_LOGICAL_POINTER;
 use super::navigation_chart::RuntimeNavigationChart;
 use super::navigation_status::RuntimeNavigationStatus;
 use super::presentation_screen::RuntimeSceneTransitionDispatchContext;
@@ -74,7 +75,6 @@ use super::{
     VGA_BIOS_FONT_8X8, initialize_and_restore_original_save_game,
 };
 
-const INITIAL_LOGICAL_POINTER: [i16; 2] = [160, 100];
 const MUSIC_RESOURCE_DIRECTORY: &[u8] = b"MU\\";
 const SOUND_BANK_RESOURCE_DIRECTORY: &[u8] = b"SN\\";
 const DEFAULT_BRIDGE_SOUND_BANK: &[u8] = b"tb.snd";
@@ -1945,6 +1945,24 @@ impl<'window> ModernGameServices<'window> {
         })
     }
 
+    /// Reproject the current MANU3 pose for a visual-only host refresh.
+    ///
+    /// This does not advance the recovered animation selector, phase, or tween
+    /// records. The next simulation frame remains the only place where the C
+    /// frame-tail MANU3 dispatcher changes game state.
+    pub fn reproject_manu3_for_pointer(&mut self, pointer: [i16; 2]) -> Result<bool> {
+        let Some(model) = self.runtime.manu3_mut() else {
+            return Ok(false);
+        };
+        model
+            .reproject_frame(CursorPosition {
+                x: pointer[0],
+                y: pointer[1],
+            })
+            .context("reprojecting the current MANU3 pose")?;
+        Ok(true)
+    }
+
     /// Borrow the canonical flat state shared by ship presentation and MANU3.
     pub const fn ship_presentation_state(&self) -> &ShipPresentationState {
         &self.ship_presentation
@@ -2393,6 +2411,15 @@ impl<'window> ModernGameServices<'window> {
         buttons: PointerButtons,
     ) -> PointerSample {
         self.input.poll_pointer(output_size, host_position, buttons)
+    }
+
+    /// Publish a platform-owned pointer already in original logical coordinates.
+    pub fn publish_lifecycle_logical_pointer(
+        &mut self,
+        position: [i16; 2],
+        buttons: PointerButtons,
+    ) -> PointerSample {
+        self.input.publish_logical_pointer(position, buttons)
     }
 
     /// Move newly detected SDL pointer edges into the lifecycle latches.

@@ -252,11 +252,23 @@ impl Manu3Model {
         self.animation.step_tweens()?;
         self.apply_animation_targets();
 
+        self.project_current_pose(request.cursor)
+    }
+
+    /// Reproject the current authored pose without advancing animation state.
+    ///
+    /// Modern presentation can call this between recovered C simulation ticks
+    /// so the hand follows relative pointer samples at display cadence.
+    pub fn reproject_frame(&mut self, cursor: CursorPosition) -> Result<(), Manu3ModelError> {
+        self.project_current_pose(cursor)
+    }
+
+    fn project_current_pose(&mut self, cursor: CursorPosition) -> Result<(), Manu3ModelError> {
         let saved_view = [
             self.nodes[usize::MIN].angles[X_AXIS],
             self.nodes[usize::MIN].angles[Y_AXIS],
         ];
-        let adjusted_view = adjusted_view_angles(saved_view, request.cursor);
+        let adjusted_view = adjusted_view_angles(saved_view, cursor);
         self.nodes[usize::MIN].angles[X_AXIS] = adjusted_view[X_AXIS];
         self.nodes[usize::MIN].angles[Y_AXIS] = adjusted_view[Y_AXIS];
         build_projection_matrices(
@@ -267,7 +279,7 @@ impl Manu3Model {
         self.nodes[usize::MIN].angles[X_AXIS] = saved_view[X_AXIS];
         self.nodes[usize::MIN].angles[Y_AXIS] = saved_view[Y_AXIS];
 
-        self.update_projection_center(request.cursor);
+        self.update_projection_center(cursor);
         project_entities(
             &self.nodes,
             &mut self.vertices,
@@ -502,6 +514,43 @@ mod tests {
                 .unwrap();
         }
         assert_ne!(model.nodes, before);
+    }
+
+    #[test]
+    fn visual_reprojection_preserves_authored_animation_state() {
+        let Some(path) = original_xdb() else {
+            return;
+        };
+        let asset = decode_manu3(&std::fs::read(path).unwrap()).unwrap();
+        let mut model = Manu3Model::from_asset(asset).unwrap();
+        model
+            .render_frame(Manu3FrameRequest {
+                cursor: CENTERED_CURSOR,
+                animation_selector: 1,
+            })
+            .unwrap();
+        let animation_before = model.animation.clone();
+        let pose_before = model
+            .nodes
+            .iter()
+            .map(|node| (node.local_position, node.angles))
+            .collect::<Vec<_>>();
+        let triangles_before = model.render_triangles.clone();
+
+        model
+            .reproject_frame(CursorPosition { x: 240, y: 150 })
+            .unwrap();
+
+        assert_eq!(model.animation, animation_before);
+        assert_eq!(
+            model
+                .nodes
+                .iter()
+                .map(|node| (node.local_position, node.angles))
+                .collect::<Vec<_>>(),
+            pose_before
+        );
+        assert_ne!(model.render_triangles, triangles_before);
     }
 
     #[test]

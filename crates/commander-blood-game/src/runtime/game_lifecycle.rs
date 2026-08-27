@@ -42,6 +42,7 @@ pub struct RuntimeGameLifecycleHost<'window, 'audio> {
     packed_clock_seed: u8,
     frame_limit: Option<u64>,
     main_frames_presented: u64,
+    manu3_visible: bool,
     current_scene_link: GameSceneLink,
     timer: GameTimerState,
     startup_timer_runtime: ScriptRuntime,
@@ -67,6 +68,7 @@ impl<'window, 'audio> RuntimeGameLifecycleHost<'window, 'audio> {
             packed_clock_seed,
             frame_limit,
             main_frames_presented: u64::MIN,
+            manu3_visible: false,
             current_scene_link: GameSceneLink::Initial,
             timer: GameTimerState::default(),
             startup_timer_runtime: ScriptRuntime::default(),
@@ -405,7 +407,8 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
     }
 
     fn update_manu3(&mut self, state: &mut GameLifecycleState) -> Result<()> {
-        self.services.update_lifecycle_manu3(state).map(|_| ())
+        self.manu3_visible = self.services.update_lifecycle_manu3(state)?;
+        Ok(())
     }
 
     fn update_palette_transition(&mut self, state: &mut GameLifecycleState) -> Result<()> {
@@ -418,7 +421,14 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
         if self.services.presentation_stream_active() {
             self.platform.pace_presentation_frame()
         } else {
-            self.platform.pace_frame()
+            while self.platform.wait_for_visual_refresh(&mut self.services)? {
+                if self.manu3_visible {
+                    self.services
+                        .reproject_manu3_for_pointer(self.platform.logical_pointer())?;
+                }
+                self.services.present_current_bridge_frame()?;
+            }
+            Ok(())
         }
     }
 

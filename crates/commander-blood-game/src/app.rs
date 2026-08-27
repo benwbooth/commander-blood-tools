@@ -445,7 +445,7 @@ fn run_production_game(options: &Options) -> Result<()> {
     video.text_input().start(&window);
 
     let services = ModernGameServices::new(&window, data, clock.script)?;
-    let platform = RuntimePlatformHost::new(&window, events);
+    let platform = RuntimePlatformHost::new(&window, sdl.mouse(), events);
     let mut host = RuntimeGameLifecycleHost::new(
         services,
         platform,

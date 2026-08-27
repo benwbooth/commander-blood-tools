@@ -32,6 +32,12 @@ const BIOS_SCAN_CODE_SHIFT: u32 = 8;
 const BIOS_P_SCAN_CODE: u16 = 0x19;
 const ASCII_ESCAPE: u8 = 27;
 
+/// Logical pointer position installed by `bloodprg_main` after line zero.
+///
+/// The DOS mouse driver receives `(720, 150)`. Bridge steering translates the
+/// horizontal ring coordinate back to screen x 160 before MANU3 consumes it.
+pub(super) const INITIAL_LOGICAL_POINTER: [i16; 2] = [160, 150];
+
 /// SDL-facing input state with typed keys and logical pointer coordinates.
 ///
 /// Key events remain queued until the translated main loop consumes them. This
@@ -147,10 +153,19 @@ impl RuntimeInputHost {
         host_position: [f32; 2],
         buttons: PointerButtons,
     ) -> PointerSample {
-        let sample = PointerSample {
-            position: map_host_pointer_to_logical(output_size, host_position),
+        self.publish_logical_pointer(
+            map_host_pointer_to_logical(output_size, host_position),
             buttons,
-        };
+        )
+    }
+
+    /// Publish a pointer already expressed in the original logical surface.
+    pub fn publish_logical_pointer(
+        &mut self,
+        position: [i16; 2],
+        buttons: PointerButtons,
+    ) -> PointerSample {
+        let sample = PointerSample { position, buttons };
         update_pointer_sample(
             &mut self.pointer_sample,
             sample,
@@ -402,6 +417,16 @@ mod tests {
             input.consume_pointer_presses(),
             PointerButtonEdges::default()
         );
+    }
+
+    #[test]
+    fn logical_pointer_publication_bypasses_host_viewport_mapping() {
+        let mut input = RuntimeInputHost::new(INITIAL_POSITION);
+        let expected = [319, 150];
+        let sample = input.publish_logical_pointer(expected, PointerButtons::NONE);
+
+        assert_eq!(sample.position, expected);
+        assert_eq!(input.pointer_sample(), sample);
     }
 
     #[test]
