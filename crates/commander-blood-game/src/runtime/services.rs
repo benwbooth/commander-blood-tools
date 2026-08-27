@@ -21,16 +21,17 @@ use crate::native::bloodprg::{
     DescriptMusicSelectionOutcome, DescriptRecordApplication, DirtyRegionCopyOutcome, FontPoint,
     FontVerticalBand, GameFontFace, GameLifecycleState, GamePresentationOwner, GameSceneLink,
     IndexedGamePalette, InlineMenuRevealOutcome, InlineMenuTextMetrics, InputAction,
-    Manu3HandFrameContext, Manu3HandFrameState, OriginalSaveGame, PbmDecodeResult,
-    PointerButtonEdges, PointerButtons, PointerSample, PresentationChoiceNumber,
-    PresentationPresentPolicy, PresentationResourceId, PresentationResourceSequenceOutcome,
-    PresentationSceneDispatchOutcome, PresentationScreenOutcome, PresentationScreenState,
-    PresentationWordChoiceOutcome, SCENE_PALETTE_CLEAR_COLOR_COUNT, SceneTransitionState,
-    ScriptClock, ScriptFrameOutcome, ScriptPresentationScanState, ScriptProfileId,
-    ScriptProfileLoadOutcome, ScriptShipNavigationMode, ShipDepthTransitionOutcome,
-    ShipHudInitializationContext, ShipPresentationOutcome, ShipPresentationState,
-    ShipProjectionResources, ShipTargetSelectionState, ShipViewEntityId, StartupPreparationOutcome,
-    TextPresentationState, clear_scene_palette_entries, draw_planar_dialogue_text,
+    Manu3HandFrameContext, Manu3HandFrameState, NAV_ACTOR_SLOT_COUNT, NavActorSlot,
+    OriginalSaveGame, PbmDecodeResult, PointerButtonEdges, PointerButtons, PointerSample,
+    PresentationChoiceNumber, PresentationPresentPolicy, PresentationResourceId,
+    PresentationResourceSequenceOutcome, PresentationSceneDispatchOutcome,
+    PresentationScreenOutcome, PresentationScreenState, PresentationWordChoiceOutcome,
+    SCENE_PALETTE_CLEAR_COLOR_COUNT, SHIP_CAMERA_RESET, SceneTransitionState, ScriptClock,
+    ScriptFrameOutcome, ScriptPresentationScanState, ScriptProfileId, ScriptProfileLoadOutcome,
+    ScriptShipNavigationMode, ShipDepthTransitionOutcome, ShipHudInitializationContext,
+    ShipPresentationOutcome, ShipPresentationState, ShipProjectionResources,
+    ShipTargetSelectionState, ShipViewEntityId, StartupPreparationOutcome, TextPresentationState,
+    clear_scene_palette_entries, deactivate_nav_actor_slots, draw_planar_dialogue_text,
     fill_display_band, increment_object_access_counters, measure_game_text_width,
     objects_at_arche_position, original_save_state_block_byte_count, play_cd_audio_track_two,
     prepare_cd_audio, presentable_navigation_objects, reveal_inline_menu_step, stop_cd_audio,
@@ -94,6 +95,7 @@ pub struct ModernGameServices<'window> {
     loaded_voice: Option<RuntimePcmClip>,
     bridge_scene: Option<BridgeScene>,
     bridge_frame: Option<BridgeSceneFrame>,
+    nav_actor_slots: [NavActorSlot; NAV_ACTOR_SLOT_COUNT],
     bridge_console: Option<RuntimeBridgeConsole>,
     presentation_screen: Option<RuntimePresentationScreen>,
     presentation_word_choice: Option<RuntimePresentationWordChoice>,
@@ -142,6 +144,7 @@ impl<'window> ModernGameServices<'window> {
             loaded_voice: None,
             bridge_scene: None,
             bridge_frame: None,
+            nav_actor_slots: [NavActorSlot::default(); NAV_ACTOR_SLOT_COUNT],
             bridge_console: Some(bridge_console),
             presentation_screen: Some(presentation_screen),
             presentation_word_choice: Some(RuntimePresentationWordChoice::default()),
@@ -222,6 +225,100 @@ impl<'window> ModernGameServices<'window> {
             .context("constructing live bridge scene")?,
         );
         Ok(())
+    }
+
+    /// Rebuild the concrete bridge resources touched by camera travel setup.
+    pub(super) fn initialize_camera_transition_screen(&mut self) -> Result<()> {
+        let Self {
+            runtime,
+            bridge_palette,
+            nav_actor_slots,
+            ..
+        } = self;
+        *runtime.live_palette_mut() = *bridge_palette;
+        runtime
+            .rebuild_bridge_sprite_remap_tables()
+            .context("rebuilding camera-transition sprite remaps")?;
+        runtime
+            .activate_retained_bridge_background()
+            .context("activating the camera-transition bridge background")?;
+        deactivate_nav_actor_slots(nav_actor_slots);
+        Ok(())
+    }
+
+    /// Mark one inclusive camera-transition entity range dirty.
+    pub(super) fn mark_camera_transition_entities(
+        &mut self,
+        first: u16,
+        last: u16,
+    ) -> Result<usize> {
+        let end = last
+            .checked_add(1)
+            .context("camera-transition entity range ends at u16::MAX")?;
+        self.runtime.mark_ship_entity_geometry_dirty(first..end)
+    }
+
+    /// Clear the recovered navigation band before projection work.
+    pub(super) fn clear_camera_projection_band(&mut self, color: u8) -> Result<()> {
+        self.runtime.clear_ship_projection_band(color)
+    }
+
+    /// Apply the camera coordinator's flat pose and build its projection matrix.
+    pub(super) fn build_camera_projection_matrix(
+        &mut self,
+        camera: [i16; 3],
+        projection_angle: u16,
+    ) -> Result<()> {
+        let scene = self
+            .bridge_scene
+            .as_mut()
+            .context("camera projection requires an initialized bridge scene")?;
+        scene.set_camera_approach_pose(camera, projection_angle);
+        scene
+            .build_camera_projection_matrix()
+            .context("building the camera-transition projection matrix")
+    }
+
+    /// Project the bridge point cloud through the prepared camera matrix.
+    pub(super) fn project_camera_point_cloud(&mut self) -> Result<()> {
+        self.bridge_scene
+            .as_mut()
+            .context("camera projection requires an initialized bridge scene")?
+            .project_camera_point_cloud()
+            .context("projecting the camera-transition point cloud")
+    }
+
+    /// Project ship entities through the prepared camera matrix.
+    pub(super) fn project_camera_object_sprites(&mut self) -> Result<()> {
+        let Self {
+            runtime,
+            bridge_scene,
+            ..
+        } = self;
+        bridge_scene
+            .as_mut()
+            .context("camera projection requires an initialized bridge scene")?
+            .project_camera_object_sprites(runtime.bridge_sprite_entities_mut())
+            .context("projecting camera-transition ship objects")
+    }
+
+    /// Synchronize a non-rendering camera phase with the live bridge scene.
+    pub(super) fn set_camera_approach_pose(
+        &mut self,
+        camera: [i16; 3],
+        projection_angle: u16,
+    ) -> Result<()> {
+        self.bridge_scene
+            .as_mut()
+            .context("camera transition requires an initialized bridge scene")?
+            .set_camera_approach_pose(camera, projection_angle);
+        Ok(())
+    }
+
+    /// Capture the HUD palette and restore both camera-state representations.
+    pub(super) fn snapshot_camera_transition_hud(&mut self) -> Result<[i16; 3]> {
+        self.snapshot_navigation_hud_palette_and_camera()?;
+        Ok(SHIP_CAMERA_RESET)
     }
 
     /// Decode `CHART.FD` and restore it into the current presentation frame.
@@ -2151,6 +2248,7 @@ mod tests {
     use super::*;
     use crate::native::bloodprg::PointerButton;
     use crate::runtime::OriginalGameDataPaths;
+    use crate::runtime::camera_approach::update_runtime_camera_approach;
 
     const TEST_CLOCK_SEED: u8 = 17;
     const TEST_SCRIPT_CLOCK: ScriptClock = ScriptClock {
@@ -2158,6 +2256,8 @@ mod tests {
         day: 2,
         month: 1,
     };
+    const HYPERSPACE_PRESENTATION_LINE: PresentationResourceId = PresentationResourceId::new(6);
+    const MAXIMUM_CAMERA_TRANSITION_FRAMES: usize = 2_048;
 
     static TEMPORARY_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(u64::MIN);
 
@@ -2201,12 +2301,12 @@ mod tests {
     #[test]
     #[ignore = "requires an active desktop and serialized SDL/wgpu ownership"]
     fn real_services_run_the_complete_available_startup_slice() {
-        let Ok(paths) = OriginalGameDataPaths::discover(None) else {
-            return;
-        };
-        if std::env::var_os("WAYLAND_DISPLAY").is_none() && std::env::var_os("DISPLAY").is_none() {
-            return;
-        }
+        let paths = OriginalGameDataPaths::discover(None)
+            .expect("ignored real-services test requires the original game data");
+        assert!(
+            std::env::var_os("WAYLAND_DISPLAY").is_some() || std::env::var_os("DISPLAY").is_some(),
+            "ignored real-services test requires an active desktop"
+        );
         let sdl = sdl3::init().unwrap();
         let video = sdl.video().unwrap();
         let audio = sdl.audio().unwrap();
@@ -2293,6 +2393,49 @@ mod tests {
         services.present_current_bridge_frame().unwrap();
 
         assert_eq!(services.presented_frame_count(), 2);
+        services.runtime_mut().start_camera_transition();
+        let mut hyperspace_queued = false;
+        let mut camera_transition_completed = false;
+        for _ in usize::MIN..MAXIMUM_CAMERA_TRANSITION_FRAMES {
+            let outcome = update_runtime_camera_approach(
+                &mut services,
+                GameSceneLink::Initial,
+                &mut lifecycle,
+            )
+            .unwrap();
+            services
+                .render_bridge_frame(BridgeSceneInput {
+                    interaction: BridgeSteeringInteraction::MenuEngaged,
+                    ..BridgeSceneInput::default()
+                })
+                .unwrap();
+            match outcome {
+                Some(crate::native::bloodprg::CameraApproachOutcome::HyperspaceQueued) => {
+                    hyperspace_queued = true;
+                }
+                Some(crate::native::bloodprg::CameraApproachOutcome::TransitionCompleted) => {
+                    camera_transition_completed = true;
+                    break;
+                }
+                _ => {}
+            }
+        }
+        assert!(hyperspace_queued);
+        assert!(camera_transition_completed);
+        assert_eq!(
+            services
+                .presentation_catalog()
+                .resource_name(HYPERSPACE_PRESENTATION_LINE)
+                .unwrap()
+                .as_bytes(),
+            b"SQ\\hyper_00.hnm"
+        );
+        assert!(!lifecycle.modal_ui_busy());
+        assert!(
+            !lifecycle
+                .profile_change_blockers
+                .navigation_actor_transition_active
+        );
         assert!(services.close_bridge_scene());
         assert!(
             services

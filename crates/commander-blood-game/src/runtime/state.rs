@@ -26,9 +26,9 @@ use crate::native::bloodprg::{
     advance_bridge_sprite_state, build_banked_tint_table, build_palette_blend_remap_table,
     build_pause_hud_refresh, commit_bridge_sprite_dirty_range, copy_dirty_regions_to_display,
     decode_chart_back_buffer, decode_orx_back_buffer, decode_pbm_image,
-    draw_presentation_choice_number, draw_small_font_text, fill_framebuffer_rect,
-    populate_bridge_sprite_from_cache, rasterize_bridge_sprite_range, select_ship_view_artwork,
-    update_name_area_effect,
+    draw_presentation_choice_number, draw_small_font_text, fill_display_band,
+    fill_framebuffer_rect, mark_bridge_sprite_range_dirty, populate_bridge_sprite_from_cache,
+    rasterize_bridge_sprite_range, select_ship_view_artwork, update_name_area_effect,
 };
 use crate::native::manu3::model::Manu3Model;
 
@@ -275,6 +275,21 @@ impl OriginalGameRuntime {
     /// Current ship-camera approach state started by BloodScript travel actions.
     pub const fn camera_approach(&self) -> &CameraApproachState {
         &self.camera_approach
+    }
+
+    /// Temporarily transfer camera state to its frame coordinator.
+    pub(super) fn take_camera_approach(&mut self) -> CameraApproachState {
+        std::mem::take(&mut self.camera_approach)
+    }
+
+    /// Restore camera state after one translated coordinator frame.
+    pub(super) fn restore_camera_approach(&mut self, state: CameraApproachState) {
+        self.camera_approach = state;
+    }
+
+    /// Keep the bridge frame gate synchronized with the camera coordinator.
+    pub(super) fn set_camera_transition_pending(&mut self, pending: bool) {
+        self.bridge_frame_state.set_transition_pending(pending);
     }
 
     /// Current character-name palette effect state.
@@ -541,6 +556,30 @@ impl OriginalGameRuntime {
             &mut self.bridge_dirty_regions,
         )
         .context("committing ship entity geometry")
+    }
+
+    /// Apply the recovered active-to-dirty transition to an inclusive entity range.
+    pub fn mark_ship_entity_geometry_dirty(&mut self, entities: Range<u16>) -> Result<usize> {
+        if entities.is_empty() {
+            bail!("ship entity dirty range is empty");
+        }
+        mark_bridge_sprite_range_dirty(
+            &mut self.bridge_sprite_entities,
+            usize::from(entities.start),
+            usize::from(entities.end - 1),
+        )
+        .context("marking ship entity geometry dirty")
+    }
+
+    /// Clear the logical 3D navigation band before a camera-travel projection.
+    pub fn clear_ship_projection_band(&mut self, color: u8) -> Result<()> {
+        fill_display_band(
+            self.front_buffer.pixels_mut(),
+            NAVIGATION_SCENE_FIRST_ROW,
+            NAVIGATION_SCENE_LAST_ROW,
+            color,
+        )
+        .context("clearing the ship projection band")
     }
 
     /// Restore every published dirty rectangle from the retained back buffer.

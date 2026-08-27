@@ -139,8 +139,8 @@ pub trait CameraApproachHost<SceneLink> {
     /// Clear the ship projection row before rendering a transition frame.
     fn clear_projection_row(&mut self, color: u8);
 
-    /// Rebuild the ship projection matrix.
-    fn build_projection_matrix(&mut self);
+    /// Rebuild the ship projection matrix from the coordinator's flat camera state.
+    fn build_projection_matrix(&mut self, camera: [i16; 3], projection_angle: u16);
 
     /// Project the ship point cloud.
     fn project_point_cloud(&mut self);
@@ -259,7 +259,7 @@ pub fn update_camera_approach<SceneLink, Host: CameraApproachHost<SceneLink>>(
     }
 
     host.clear_projection_row(RENDER_CLEAR_COLOR);
-    host.build_projection_matrix();
+    host.build_projection_matrix(state.camera, state.projection_angle);
     host.project_point_cloud();
     host.project_object_sprites();
     Ok(CameraApproachOutcome::FrameRendered)
@@ -388,7 +388,7 @@ mod tests {
             self.calls.push(HostCall::ClearProjectionRow(color));
         }
 
-        fn build_projection_matrix(&mut self) {
+        fn build_projection_matrix(&mut self, _camera: [i16; 3], _projection_angle: u16) {
             self.calls.push(HostCall::BuildProjectionMatrix);
         }
 

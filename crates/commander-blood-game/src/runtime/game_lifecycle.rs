@@ -12,6 +12,7 @@ use crate::native::bloodprg::{
     advance_game_timer_tick,
 };
 
+use super::camera_approach::update_runtime_camera_approach;
 use super::{
     ModernGameServices, RuntimeAssetLoadStatus, RuntimePlatformHost, run_runtime_presentation,
 };
@@ -324,6 +325,7 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
                 .initialize_bridge_screen(state.presentation_mode)?;
             state.navigation_rebuild_pending = false;
         }
+        update_runtime_camera_approach(&mut self.services, link, state)?;
         let pointer = self.services.input().pointer_sample();
         self.services.render_bridge_frame(BridgeSceneInput {
             horizontal_delta: self.platform.take_bridge_horizontal_delta(),

@@ -4,6 +4,7 @@ mod alien_overlay;
 mod audio;
 mod bios_font;
 mod bridge_console;
+mod camera_approach;
 mod choice_list;
 mod confirm_dialog;
 mod game_lifecycle;
@@ -76,9 +77,9 @@ use anyhow::{Context, Result, bail};
 use commander_blood_formats::archive::{BloodArchive, BloodResourceName};
 use commander_blood_formats::bloodprg::{
     BloodprgBridgeMenuText, BloodprgConfirmDialogRegions, BloodprgFontResources,
-    BloodprgPresentationCatalog, decode_bloodprg_bridge_menu_text,
+    BloodprgHyperspaceResources, BloodprgPresentationCatalog, decode_bloodprg_bridge_menu_text,
     decode_bloodprg_confirm_dialog_regions, decode_bloodprg_font_resources,
-    decode_bloodprg_presentation_catalog,
+    decode_bloodprg_hyperspace_resources, decode_bloodprg_presentation_catalog,
 };
 use commander_blood_formats::descript_database::DescriptDatabase;
 use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
@@ -245,6 +246,7 @@ pub struct OriginalGameData {
     descript_database: DescriptDatabase,
     confirm_dialog_regions: BloodprgConfirmDialogRegions,
     bridge_menu_text: BloodprgBridgeMenuText,
+    hyperspace_resources: BloodprgHyperspaceResources,
     font_resources: BloodprgFontResources,
     presentation_catalog: BloodprgPresentationCatalog,
     default_vga_palette: [[u8; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT],
@@ -299,6 +301,8 @@ impl OriginalGameData {
             .context("decoding confirmation-dialog hit regions")?;
         let bridge_menu_text = decode_bloodprg_bridge_menu_text(&executable)
             .context("decoding bridge options and text-speed labels")?;
+        let hyperspace_resources = decode_bloodprg_hyperspace_resources(&executable)
+            .context("decoding camera-travel hyperspace resources")?;
         let font_resources = decode_bloodprg_font_resources(&executable)
             .context("decoding original executable font resources")?;
         let presentation_catalog = decode_bloodprg_presentation_catalog(&executable)
@@ -339,6 +343,7 @@ impl OriginalGameData {
             descript_database,
             confirm_dialog_regions,
             bridge_menu_text,
+            hyperspace_resources,
             font_resources,
             presentation_catalog,
             default_vga_palette,
@@ -391,6 +396,11 @@ impl OriginalGameData {
     /// Exact bridge options, text-speed choices, and shared cancel label.
     pub const fn bridge_menu_text(&self) -> &BloodprgBridgeMenuText {
         &self.bridge_menu_text
+    }
+
+    /// Exact eight-clip hyperspace cycle selected by the camera coordinator.
+    pub const fn hyperspace_resources(&self) -> &BloodprgHyperspaceResources {
+        &self.hyperspace_resources
     }
 
     /// Exact compact, subtitle, square-cap, and dialogue fonts from the executable.

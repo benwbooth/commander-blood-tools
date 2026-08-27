@@ -15,10 +15,11 @@ use super::{
     BRIDGE_CURSOR_UNITS_PER_VIEW_FRAME, BRIDGE_LOGICAL_SCREEN_CENTER_X, BridgeSpriteEntity,
     BridgeSteeringInteraction, BridgeSteeringOutcome, BridgeSteeringState,
     FULL_SHIP_PROJECTION_CLIP, NavActorSeekState, SHIP_CAMERA_RESET, SHIP_POINT_CLOUD_COUNT,
-    ShipCameraPosition, ShipObjectSpriteProjection, ShipPointCloudProjection, ShipPointRecord,
-    ShipProjectionAngles, ShipProjectionError, ShipProjectionResources,
-    build_ship_projection_matrix, project_ship_object_sprites_against_source_extent,
-    project_ship_point_cloud, randomize_ship_point_cloud, update_bridge_steering,
+    SHIP_TRIGONOMETRY_SAMPLE_COUNT, ShipCameraPosition, ShipObjectSpriteProjection,
+    ShipPointCloudProjection, ShipPointRecord, ShipProjectionAngles, ShipProjectionError,
+    ShipProjectionMatrix, ShipProjectionResources, build_ship_projection_matrix,
+    project_ship_object_sprites_against_source_extent, project_ship_point_cloud,
+    randomize_ship_point_cloud, update_bridge_steering,
 };
 
 /// Authored golden-console rest frame used when entering the bridge hub.
@@ -70,6 +71,8 @@ pub enum BridgeSceneError {
     Panorama(BridgePanoramaError),
     /// Typed projection state could not produce a frame.
     Projection(ShipProjectionError),
+    /// Camera projection stages were called out of recovered order.
+    ProjectionStageUnavailable(&'static str),
 }
 
 impl fmt::Display for BridgeSceneError {
@@ -99,9 +102,19 @@ pub struct BridgeScene {
     projection_resources: ShipProjectionResources,
     point_cloud: Box<[ShipPointRecord]>,
     camera: ShipCameraPosition,
+    camera_yaw: u16,
+    prepared_projection: Option<PreparedBridgeProjection>,
     steering: BridgeSteeringState,
     seek: NavActorSeekState,
     presentation_link: u16,
+}
+
+#[derive(Clone, Debug)]
+struct PreparedBridgeProjection {
+    navigation_heading: u16,
+    matrix: ShipProjectionMatrix,
+    starfield: Option<ShipPointCloudProjection>,
+    object_sprites: Option<Box<[ShipObjectSpriteProjection]>>,
 }
 
 impl BridgeScene {
@@ -146,6 +159,8 @@ impl BridgeScene {
             camera: ShipCameraPosition {
                 position: SHIP_CAMERA_RESET.map(|component| component as u16),
             },
+            camera_yaw: u16::MIN,
+            prepared_projection: None,
             steering,
             seek: NavActorSeekState::default(),
             presentation_link: INITIAL_PRESENTATION_LINK,
@@ -170,9 +185,71 @@ impl BridgeScene {
 
     /// Restore the authored camera origin used when rebuilding the ship HUD.
     pub fn reset_camera(&mut self) {
-        self.camera = ShipCameraPosition {
-            position: SHIP_CAMERA_RESET.map(|component| component as u16),
+        self.set_camera_approach_pose(SHIP_CAMERA_RESET, u16::MIN);
+    }
+
+    /// Apply the flat signed camera coordinates and yaw owned by camera travel.
+    pub fn set_camera_approach_pose(&mut self, camera: [i16; 3], camera_yaw: u16) {
+        let camera = ShipCameraPosition {
+            position: camera.map(|component| component as u16),
         };
+        if self.camera != camera || self.camera_yaw != camera_yaw {
+            self.camera = camera;
+            self.camera_yaw = camera_yaw;
+            self.prepared_projection = None;
+        }
+    }
+
+    /// Build and retain the projection matrix requested by camera travel.
+    pub fn build_camera_projection_matrix(&mut self) -> Result<(), BridgeSceneError> {
+        let matrix = build_ship_projection_matrix(
+            &self.projection_resources.trigonometry,
+            ShipProjectionAngles {
+                camera_yaw: camera_yaw_table_index(self.camera_yaw),
+                navigation_heading: self.steering.projection_heading,
+                camera_roll: u16::MIN,
+            },
+        )?;
+        self.prepared_projection = Some(PreparedBridgeProjection {
+            navigation_heading: self.steering.projection_heading,
+            matrix,
+            starfield: None,
+            object_sprites: None,
+        });
+        Ok(())
+    }
+
+    /// Project the persistent starfield through the retained camera matrix.
+    pub fn project_camera_point_cloud(&mut self) -> Result<(), BridgeSceneError> {
+        let prepared = self.prepared_projection.as_mut().ok_or(
+            BridgeSceneError::ProjectionStageUnavailable("camera matrix"),
+        )?;
+        let mut occupancy = vec![u8::MIN; PANORAMA_FRAME_PIXEL_COUNT];
+        prepared.starfield = Some(project_ship_point_cloud(
+            &self.point_cloud,
+            self.camera,
+            prepared.matrix,
+            FULL_SHIP_PROJECTION_CLIP,
+            &mut occupancy,
+        )?);
+        Ok(())
+    }
+
+    /// Project ship object entities through the retained camera matrix.
+    pub fn project_camera_object_sprites(
+        &mut self,
+        sprite_entities: &mut [BridgeSpriteEntity],
+    ) -> Result<(), BridgeSceneError> {
+        let prepared = self.prepared_projection.as_mut().ok_or(
+            BridgeSceneError::ProjectionStageUnavailable("camera matrix"),
+        )?;
+        prepared.object_sprites = Some(project_ship_object_sprites_against_source_extent(
+            &self.projection_resources.object_anchors,
+            self.camera,
+            prepared.matrix,
+            sprite_entities,
+        )?);
+        Ok(())
     }
 
     /// Apply the bridge globals written when the recovered ship HUD opens.
@@ -201,28 +278,48 @@ impl BridgeScene {
         );
         self.presentation_link = steering.presentation_link;
 
-        let matrix = build_ship_projection_matrix(
-            &self.projection_resources.trigonometry,
-            ShipProjectionAngles {
-                camera_yaw: u16::MIN,
-                navigation_heading: self.steering.projection_heading,
-                camera_roll: u16::MIN,
-            },
-        )?;
-        let mut star_occupancy = vec![u8::MIN; PANORAMA_FRAME_PIXEL_COUNT];
-        let starfield = project_ship_point_cloud(
-            &self.point_cloud,
-            self.camera,
-            matrix,
-            FULL_SHIP_PROJECTION_CLIP,
-            &mut star_occupancy,
-        )?;
-        let object_sprites = project_ship_object_sprites_against_source_extent(
-            &self.projection_resources.object_anchors,
-            self.camera,
-            matrix,
-            sprite_entities,
-        )?;
+        let prepared = self
+            .prepared_projection
+            .take()
+            .filter(|prepared| prepared.navigation_heading == self.steering.projection_heading);
+        let matrix = if let Some(prepared) = prepared.as_ref() {
+            prepared.matrix
+        } else {
+            build_ship_projection_matrix(
+                &self.projection_resources.trigonometry,
+                ShipProjectionAngles {
+                    camera_yaw: camera_yaw_table_index(self.camera_yaw),
+                    navigation_heading: self.steering.projection_heading,
+                    camera_roll: u16::MIN,
+                },
+            )?
+        };
+        let starfield = if let Some(starfield) = prepared
+            .as_ref()
+            .and_then(|prepared| prepared.starfield.as_ref())
+        {
+            starfield.clone()
+        } else {
+            let mut star_occupancy = vec![u8::MIN; PANORAMA_FRAME_PIXEL_COUNT];
+            project_ship_point_cloud(
+                &self.point_cloud,
+                self.camera,
+                matrix,
+                FULL_SHIP_PROJECTION_CLIP,
+                &mut star_occupancy,
+            )?
+        };
+        let object_sprites =
+            if let Some(object_sprites) = prepared.and_then(|prepared| prepared.object_sprites) {
+                object_sprites
+            } else {
+                project_ship_object_sprites_against_source_extent(
+                    &self.projection_resources.object_anchors,
+                    self.camera,
+                    matrix,
+                    sprite_entities,
+                )?
+            };
         let panorama_frame = usize::from(self.steering.view_frame);
         let mut panorama_pixels = vec![u8::MIN; PANORAMA_FRAME_PIXEL_COUNT].into_boxed_slice();
         let metadata = self.panorama.decode_frame_over(
@@ -248,6 +345,17 @@ fn native_ring_input(screen_x: u16, frame_angle_bias: u16, horizontal_delta: i32
         .wrapping_add(frame_angle_bias)
         .wrapping_add(BRIDGE_CURSOR_RING_UNIT_COUNT)
         .wrapping_add(horizontal_delta as u16)
+}
+
+fn camera_yaw_table_index(camera_yaw: u16) -> u16 {
+    // The executable stores a duplicate angle-zero sample immediately after
+    // the 180 logical entries. Camera travel deliberately publishes 180 as its
+    // wrap sentinel, so map only that value to the equivalent owned sample.
+    if camera_yaw == SHIP_TRIGONOMETRY_SAMPLE_COUNT as u16 {
+        u16::MIN
+    } else {
+        camera_yaw
+    }
 }
 
 #[cfg(test)]
@@ -292,6 +400,14 @@ mod tests {
                 + BRIDGE_CURSOR_RING_UNIT_COUNT
                 + LARGE_POINTER_DELTA as u16
         );
+        assert_eq!(
+            camera_yaw_table_index(SHIP_TRIGONOMETRY_SAMPLE_COUNT as u16),
+            u16::MIN
+        );
+        assert_eq!(
+            camera_yaw_table_index(SHIP_TRIGONOMETRY_SAMPLE_COUNT as u16 + 1),
+            SHIP_TRIGONOMETRY_SAMPLE_COUNT as u16 + 1
+        );
     }
 
     #[test]
@@ -320,6 +436,13 @@ mod tests {
             ..BridgeSpriteEntity::default()
         };
 
+        assert_eq!(
+            scene.project_camera_point_cloud(),
+            Err(BridgeSceneError::ProjectionStageUnavailable(
+                "camera matrix"
+            ))
+        );
+
         let centered = scene
             .render_frame(BridgeSceneInput::default(), &mut sprite_entities)
             .unwrap();
@@ -336,6 +459,23 @@ mod tests {
         assert!(!centered.starfield.plotted.is_empty());
         assert_eq!(centered.object_sprites.len(), 1);
         assert!(!centered.steering.view_changed);
+        scene.set_camera_approach_pose([9_500, 12_000, 1_500], 23);
+        scene.build_camera_projection_matrix().unwrap();
+        scene.project_camera_point_cloud().unwrap();
+        scene
+            .project_camera_object_sprites(&mut sprite_entities)
+            .unwrap();
+        let camera_frame = scene
+            .render_frame(
+                BridgeSceneInput {
+                    interaction: BridgeSteeringInteraction::MenuEngaged,
+                    ..BridgeSceneInput::default()
+                },
+                &mut sprite_entities,
+            )
+            .unwrap();
+        assert!(!camera_frame.starfield.plotted.is_empty());
+        assert_eq!(camera_frame.object_sprites.len(), 1);
         assert_eq!(
             scene.steering().cursor_ring_position,
             BRIDGE_LOGICAL_SCREEN_CENTER_X

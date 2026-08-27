@@ -33,6 +33,8 @@ pub const BLOODPRG_UNCLAMPED_PRESENTATION_LINE_COUNT: usize = 8;
 pub const BLOODPRG_OPTION_MENU_LABEL_COUNT: usize = 5;
 /// Number of choices in the executable-authored text-speed menu.
 pub const BLOODPRG_TEXT_SPEED_LABEL_COUNT: usize = 5;
+/// Number of executable-authored hyperspace clips selected by camera travel.
+pub const BLOODPRG_HYPERSPACE_SEQUENCE_COUNT: usize = 8;
 
 const MZ_SIGNATURE: [u8; 2] = [b'M', b'Z'];
 const MZ_SIGNATURE_FILE_OFFSET: usize = 0;
@@ -53,6 +55,8 @@ const INITIAL_TEXT_SPEED_STEP_DATA_OFFSET: usize = 0x0ACA;
 const OPTION_MENU_POINTER_LIST_DATA_OFFSET: usize = 0x2567;
 const MUSIC_ON_LABEL_DATA_OFFSET: usize = 0x2578;
 const TEXT_SPEED_POINTER_LIST_DATA_OFFSET: usize = 0x259D;
+const HYPERSPACE_SEQUENCE_NAMES_DATA_OFFSET: usize = 0x1F22;
+const HYPERSPACE_SEQUENCE_NAME_FIELD_BYTE_COUNT: usize = 16;
 const POINTER_LIST_SENTINEL: u16 = u16::MAX;
 const MENU_LABEL_MAXIMUM_BYTE_COUNT: usize = 32;
 const BRIDGE_PROJECTION_ANCHOR_DATA_OFFSET: usize = 0x4F09;
@@ -123,6 +127,113 @@ const CONFIRM_DIALOG_REQUIRED_EXECUTABLE_LENGTH: usize =
 const MENU_TEXT_REQUIRED_EXECUTABLE_LENGTH: usize = BLOODPRG_DATA_FILE_OFFSET
     + TEXT_SPEED_POINTER_LIST_DATA_OFFSET
     + (BLOODPRG_TEXT_SPEED_LABEL_COUNT + 1) * WORD_BYTE_COUNT;
+const HYPERSPACE_RESOURCES_REQUIRED_EXECUTABLE_LENGTH: usize = BLOODPRG_DATA_FILE_OFFSET
+    + HYPERSPACE_SEQUENCE_NAMES_DATA_OFFSET
+    + BLOODPRG_HYPERSPACE_SEQUENCE_COUNT * HYPERSPACE_SEQUENCE_NAME_FIELD_BYTE_COUNT;
+
+/// Flat, validated hyperspace clip names decoded from the executable data image.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BloodprgHyperspaceResources {
+    sequence_names: [Box<[u8]>; BLOODPRG_HYPERSPACE_SEQUENCE_COUNT],
+}
+
+impl BloodprgHyperspaceResources {
+    /// Return `hyper_00.hnm` through `hyper_07.hnm` in native selection order.
+    pub const fn sequence_names(&self) -> &[Box<[u8]>; BLOODPRG_HYPERSPACE_SEQUENCE_COUNT] {
+        &self.sequence_names
+    }
+}
+
+/// Malformed camera-travel resources in `BLOODPRG.EXE`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum BloodprgHyperspaceResourcesError {
+    /// The input does not begin with an MZ executable signature.
+    InvalidExecutableSignature,
+    /// The executable ends before the complete fixed-width name table.
+    TruncatedExecutable {
+        /// Supplied executable byte count.
+        actual: usize,
+        /// Minimum byte count required by the table.
+        required: usize,
+    },
+    /// One fixed-width source field has no C-string terminator.
+    MissingNameTerminator {
+        /// Zero-based sequence index.
+        sequence: usize,
+    },
+    /// Bytes after a sequence name's terminator are not zero-filled.
+    NonZeroNamePadding {
+        /// Zero-based sequence index.
+        sequence: usize,
+        /// Unexpected padding byte.
+        byte: u8,
+    },
+    /// A decoded name is not accepted by the shared DOS resource-name type.
+    InvalidResourceName {
+        /// Zero-based sequence index.
+        sequence: usize,
+        /// Resource-name validation failure.
+        source: BloodArchiveError,
+    },
+}
+
+impl fmt::Display for BloodprgHyperspaceResourcesError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(formatter, "invalid BLOODPRG hyperspace resources: {self:?}")
+    }
+}
+
+impl Error for BloodprgHyperspaceResourcesError {}
+
+/// Decode the fixed-width hyperspace clip table into ordinary owned strings.
+pub fn decode_bloodprg_hyperspace_resources(
+    executable: &[u8],
+) -> Result<BloodprgHyperspaceResources, BloodprgHyperspaceResourcesError> {
+    if executable.len() < HYPERSPACE_RESOURCES_REQUIRED_EXECUTABLE_LENGTH {
+        return Err(BloodprgHyperspaceResourcesError::TruncatedExecutable {
+            actual: executable.len(),
+            required: HYPERSPACE_RESOURCES_REQUIRED_EXECUTABLE_LENGTH,
+        });
+    }
+    if executable.get(MZ_SIGNATURE_FILE_OFFSET..MZ_SIGNATURE.len()) != Some(&MZ_SIGNATURE) {
+        return Err(BloodprgHyperspaceResourcesError::InvalidExecutableSignature);
+    }
+
+    let table_file_offset = BLOODPRG_DATA_FILE_OFFSET + HYPERSPACE_SEQUENCE_NAMES_DATA_OFFSET;
+    let names = (0..BLOODPRG_HYPERSPACE_SEQUENCE_COUNT)
+        .map(|sequence| {
+            let start = table_file_offset + sequence * HYPERSPACE_SEQUENCE_NAME_FIELD_BYTE_COUNT;
+            let field = &executable[start..start + HYPERSPACE_SEQUENCE_NAME_FIELD_BYTE_COUNT];
+            let length = field
+                .iter()
+                .position(|byte| *byte == u8::MIN)
+                .ok_or(BloodprgHyperspaceResourcesError::MissingNameTerminator { sequence })?;
+            if let Some(byte) = field[length + 1..]
+                .iter()
+                .copied()
+                .find(|byte| *byte != u8::MIN)
+            {
+                return Err(BloodprgHyperspaceResourcesError::NonZeroNamePadding {
+                    sequence,
+                    byte,
+                });
+            }
+            BloodResourceName::new(&field[..length])
+                .map(|name| Box::from(name.as_bytes()))
+                .map_err(
+                    |source| BloodprgHyperspaceResourcesError::InvalidResourceName {
+                        sequence,
+                        source,
+                    },
+                )
+        })
+        .collect::<Result<Vec<_>, _>>()?
+        .try_into()
+        .map_err(|_| unreachable!("decoded exactly BLOODPRG_HYPERSPACE_SEQUENCE_COUNT names"))?;
+    Ok(BloodprgHyperspaceResources {
+        sequence_names: names,
+    })
+}
 
 /// Flat, owned bridge-menu text decoded from the executable's data image.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -1158,6 +1269,60 @@ mod tests {
         );
         assert_eq!(text.cancel_label(), b"CANCEL");
         assert_eq!(text.initial_text_speed_step(), 2);
+    }
+
+    #[test]
+    fn hyperspace_resources_match_the_shipped_executable() {
+        let executable = include_bytes!("../../../re/bin/BLOODPRG.EXE");
+        let resources = decode_bloodprg_hyperspace_resources(executable).unwrap();
+        let names = resources
+            .sequence_names()
+            .iter()
+            .map(Box::as_ref)
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            names,
+            [
+                b"hyper_00.hnm".as_slice(),
+                b"hyper_01.hnm".as_slice(),
+                b"hyper_02.hnm".as_slice(),
+                b"hyper_03.hnm".as_slice(),
+                b"hyper_04.hnm".as_slice(),
+                b"hyper_05.hnm".as_slice(),
+                b"hyper_06.hnm".as_slice(),
+                b"hyper_07.hnm".as_slice(),
+            ]
+        );
+    }
+
+    #[test]
+    fn malformed_hyperspace_resources_are_rejected_before_runtime_use() {
+        assert_eq!(
+            decode_bloodprg_hyperspace_resources(&[]),
+            Err(BloodprgHyperspaceResourcesError::TruncatedExecutable {
+                actual: 0,
+                required: HYPERSPACE_RESOURCES_REQUIRED_EXECUTABLE_LENGTH,
+            })
+        );
+
+        let mut executable = include_bytes!("../../../re/bin/BLOODPRG.EXE").to_vec();
+        let first_name = BLOODPRG_DATA_FILE_OFFSET + HYPERSPACE_SEQUENCE_NAMES_DATA_OFFSET;
+        executable[first_name..first_name + HYPERSPACE_SEQUENCE_NAME_FIELD_BYTE_COUNT].fill(b'x');
+        assert_eq!(
+            decode_bloodprg_hyperspace_resources(&executable),
+            Err(BloodprgHyperspaceResourcesError::MissingNameTerminator { sequence: 0 })
+        );
+
+        let mut executable = include_bytes!("../../../re/bin/BLOODPRG.EXE").to_vec();
+        executable[first_name + HYPERSPACE_SEQUENCE_NAME_FIELD_BYTE_COUNT - 1] = b'x';
+        assert_eq!(
+            decode_bloodprg_hyperspace_resources(&executable),
+            Err(BloodprgHyperspaceResourcesError::NonZeroNamePadding {
+                sequence: 0,
+                byte: b'x',
+            })
+        );
     }
 
     #[test]
