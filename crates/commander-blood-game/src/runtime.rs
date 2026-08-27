@@ -1,5 +1,6 @@
 //! Original-data discovery and flat runtime bootstrap.
 
+mod alien_overlay;
 mod audio;
 mod bios_font;
 mod choice_list;
@@ -26,6 +27,10 @@ mod subtitles;
 mod video;
 mod word_choice;
 
+pub use alien_overlay::{
+    RuntimeAlienOverlayCycle, RuntimeAlienOverlayFrameHost, RuntimeAlienOverlayFrameInput,
+    RuntimeAlienOverlayOutcome, run_runtime_alien_overlay,
+};
 pub use audio::{RuntimeAudioHost, RuntimePcmClip, RuntimePcmMixer};
 pub use bios_font::VGA_BIOS_FONT_8X8;
 pub use confirm_dialog::RuntimeConfirmDialog;

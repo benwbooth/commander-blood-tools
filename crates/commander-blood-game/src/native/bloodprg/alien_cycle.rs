@@ -144,7 +144,7 @@ pub trait AlienOverlayCycleHost {
     fn load_alien_overlay(&mut self, overlay: AlienXdbKind) -> Result<(), Self::Error>;
 
     /// Capture the currently active sound-header state.
-    fn capture_sound_header(&mut self) -> Self::SoundHeader;
+    fn capture_sound_header(&mut self) -> Result<Self::SoundHeader, Self::Error>;
 
     /// Load one original sound archive and publish its loader flags.
     fn load_sound_bank(
@@ -167,19 +167,19 @@ pub trait AlienOverlayCycleHost {
     fn stop_cd_audio(&mut self) -> Result<(), Self::Error>;
 
     /// Restore the sound header captured before the temporary bank load.
-    fn restore_sound_header(&mut self, header: Self::SoundHeader);
+    fn restore_sound_header(&mut self, header: Self::SoundHeader) -> Result<(), Self::Error>;
 
     /// Reload the MANU3 hand model into owned decoded storage.
     fn reload_manu3(&mut self) -> Result<(), Self::Error>;
 
     /// Clear the native transition row after restoring MANU3.
-    fn clear_transition_row(&mut self);
+    fn clear_transition_row(&mut self) -> Result<(), Self::Error>;
 
     /// Clear the active sequence back buffer while band composition is disabled.
-    fn clear_sequence_back_buffer(&mut self);
+    fn clear_sequence_back_buffer(&mut self) -> Result<(), Self::Error>;
 
     /// Initialize the ordinary bridge back buffer.
-    fn initialize_back_buffer(&mut self);
+    fn initialize_back_buffer(&mut self) -> Result<(), Self::Error>;
 
     /// Reload the current scene image into the initialized back buffer.
     fn reload_scene_image(&mut self) -> Result<(), Self::Error>;
@@ -206,7 +206,7 @@ pub fn run_alien_overlay_cycle<H: AlienOverlayCycleHost>(
     state.next_overlay = next_overlay(overlay);
 
     host.load_alien_overlay(overlay)?;
-    let saved_sound_header = host.capture_sound_header();
+    let saved_sound_header = host.capture_sound_header()?;
     host.load_sound_bank(
         AlienOverlaySoundBank::AlienScene,
         &mut state.sound_loader_flags,
@@ -220,9 +220,9 @@ pub fn run_alien_overlay_cycle<H: AlienOverlayCycleHost>(
     state.sound_loader_flags = saved_loader_flags;
 
     host.load_sound_bank(AlienOverlaySoundBank::Bridge, &mut state.sound_loader_flags)?;
-    host.restore_sound_header(saved_sound_header);
+    host.restore_sound_header(saved_sound_header)?;
     host.reload_manu3()?;
-    host.clear_transition_row();
+    host.clear_transition_row()?;
 
     state.viewport = AlienOverlayViewport::ORIGINAL;
     state.mouse_idle_frames = u16::MIN;
@@ -231,12 +231,12 @@ pub fn run_alien_overlay_cycle<H: AlienOverlayCycleHost>(
 
     let tail = if state.shared.sequence_flags & SHIP_SEQUENCE_ACTIVE != u16::MIN {
         state.plane_band_enabled = false;
-        host.clear_sequence_back_buffer();
+        host.clear_sequence_back_buffer()?;
         state.plane_band_enabled = true;
         state.loaded_scene_resource = false;
         AlienOverlayGraphicsTail::Sequence
     } else {
-        host.initialize_back_buffer();
+        host.initialize_back_buffer()?;
         state.pbm_palette_refresh = false;
         state.pbm_transparent_zero = false;
         host.reload_scene_image()?;
@@ -297,8 +297,8 @@ mod tests {
             Ok(())
         }
 
-        fn capture_sound_header(&mut self) -> Self::SoundHeader {
-            0
+        fn capture_sound_header(&mut self) -> Result<Self::SoundHeader, Self::Error> {
+            Ok(0)
         }
 
         fn load_sound_bank(
@@ -338,23 +338,28 @@ mod tests {
             Ok(())
         }
 
-        fn restore_sound_header(&mut self, _header: Self::SoundHeader) {}
+        fn restore_sound_header(&mut self, _header: Self::SoundHeader) -> Result<(), Self::Error> {
+            Ok(())
+        }
 
         fn reload_manu3(&mut self) -> Result<(), Self::Error> {
             self.calls.push("resource_file_load_manu3");
             Ok(())
         }
 
-        fn clear_transition_row(&mut self) {
+        fn clear_transition_row(&mut self) -> Result<(), Self::Error> {
             self.calls.push("blit_fill_row_5221");
+            Ok(())
         }
 
-        fn clear_sequence_back_buffer(&mut self) {
+        fn clear_sequence_back_buffer(&mut self) -> Result<(), Self::Error> {
             self.calls.push("backbuffer_clear_flags");
+            Ok(())
         }
 
-        fn initialize_back_buffer(&mut self) {
+        fn initialize_back_buffer(&mut self) -> Result<(), Self::Error> {
             self.calls.push("back_buffer_init");
+            Ok(())
         }
 
         fn reload_scene_image(&mut self) -> Result<(), Self::Error> {

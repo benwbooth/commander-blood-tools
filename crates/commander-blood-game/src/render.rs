@@ -304,6 +304,27 @@ impl<'window> Renderer<'window> {
         }
     }
 
+    /// Install or replace the decoded alien scene used by synchronous overlays.
+    ///
+    /// Bridge GPU resources remain resident and are selected again as soon as
+    /// callers stop supplying alien frames. This mirrors the original overlay
+    /// return without rebuilding the bridge panorama or projection state.
+    pub fn install_alien_scene(&mut self, asset: &AlienAsset) {
+        self.alien = Some(AlienRenderer::new(
+            &self.device,
+            &self.queue,
+            self.config.format,
+            self.config.width,
+            self.config.height,
+            asset,
+        ));
+    }
+
+    /// Release the temporary alien GPU resources after its XDB loop returns.
+    pub fn remove_alien_scene(&mut self) -> bool {
+        self.alien.take().is_some()
+    }
+
     /// Upload one complete indexed frame using native six-bit VGA palette values.
     pub fn upload_indexed_frame(
         &self,

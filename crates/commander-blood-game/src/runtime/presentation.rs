@@ -1,9 +1,11 @@
 //! Indexed-frame and modern 3D composition for the translated game lifecycle.
 
 use anyhow::{Context, Result, bail};
+use commander_blood_formats::alien::AlienAsset;
 use sdl3::video::Window;
 
 use crate::assets::OriginalFrame;
+use crate::native::alien::AlienSceneFrame;
 use crate::native::bloodprg::{BridgeSceneFrame, IndexedGamePalette};
 use crate::native::manu3::raster::RenderTriangle;
 use crate::render::{Renderer, indexed_frame_rgba, indexed_palette_rgba};
@@ -98,6 +100,25 @@ impl<'window> RuntimePresentationHost<'window> {
             .context("presenting translated game frame")?;
         self.presented_frame_count = self.presented_frame_count.wrapping_add(1);
         Ok(())
+    }
+
+    /// Upload immutable GPU resources for one decoded interactive alien scene.
+    pub fn begin_alien_overlay(&mut self, asset: &AlienAsset) {
+        self.renderer.install_alien_scene(asset);
+    }
+
+    /// Present one full-screen alien frame without indexed UI or MANU3 layers.
+    pub fn present_alien_overlay_frame(&mut self, frame: &AlienSceneFrame) -> Result<()> {
+        self.renderer
+            .render(&[], Some(frame), None)
+            .context("presenting translated alien-overlay frame")?;
+        self.presented_frame_count = self.presented_frame_count.wrapping_add(1);
+        Ok(())
+    }
+
+    /// Release temporary alien GPU resources while retaining the bridge renderer.
+    pub fn finish_alien_overlay(&mut self) -> bool {
+        self.renderer.remove_alien_scene()
     }
 
     /// Number of frames submitted to the window surface.

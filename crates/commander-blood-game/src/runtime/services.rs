@@ -3,6 +3,7 @@
 use std::ops::Range;
 
 use anyhow::{Context, Result, bail};
+use commander_blood_formats::alien::AlienAsset;
 use commander_blood_formats::archive::BloodResourceName;
 use commander_blood_formats::bloodprg::{BloodprgFontResources, decode_bloodprg_bridge_resources};
 use commander_blood_formats::descript::DescriptBackgroundSlot;
@@ -12,9 +13,10 @@ use commander_blood_formats::snd::{SndBank, VocPcm};
 use sdl3::AudioSubsystem;
 use sdl3::video::Window;
 
+use crate::native::alien::AlienSceneFrame;
 use crate::native::bloodprg::{
     BridgeScene, BridgeSceneFrame, BridgeSceneInput, BridgeSpriteCommitOutcome,
-    BridgeSteeringInteraction, ChoiceListConfig, ChoiceListFrame, ChoiceListPointer,
+    BridgeSteeringInteraction, CdAudioState, ChoiceListConfig, ChoiceListFrame, ChoiceListPointer,
     ChoiceListState, ConfirmDialogOutcome, ConfirmDialogState, DescriptMusicSelectionOutcome,
     DescriptRecordApplication, DirtyRegionCopyOutcome, FontPoint, FontVerticalBand, GameFontFace,
     GameLifecycleState, GamePresentationOwner, GameSceneLink, IndexedGamePalette,
@@ -28,8 +30,9 @@ use crate::native::bloodprg::{
     ShipHudInitializationContext, ShipPresentationOutcome, ShipPresentationState,
     ShipProjectionResources, ShipTargetSelectionState, ShipViewEntityId, StartupPreparationOutcome,
     TextPresentationState, clear_scene_palette_entries, draw_planar_dialogue_text,
-    measure_game_text_width, objects_at_arche_position, original_save_state_block_byte_count,
-    presentable_navigation_objects, reveal_inline_menu_step, update_manu3_hand_frame,
+    fill_display_band, measure_game_text_width, objects_at_arche_position,
+    original_save_state_block_byte_count, play_cd_audio_track_two, presentable_navigation_objects,
+    reveal_inline_menu_step, stop_cd_audio, update_manu3_hand_frame,
 };
 use crate::native::manu3::animation::CursorPosition;
 use crate::native::random::BloodPrng;
@@ -41,14 +44,14 @@ use super::ship_presentation::update_runtime_ship_presentation as run_runtime_sh
 use super::ship_target::ship_hud_arche_link;
 use super::{
     LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_PIXEL_COUNT, OriginalGameData,
-    OriginalGameRuntime, RuntimeAssetLoadStatus, RuntimeAudioHost, RuntimeConfirmDialog,
-    RuntimeInputHost, RuntimePaletteTransition, RuntimePaletteTransitionConfig,
-    RuntimePaletteTransitionOutcome, RuntimePcmClip, RuntimePresentationCatalog,
-    RuntimePresentationHost, RuntimePresentationPlayer, RuntimePresentationScreen,
-    RuntimePresentationStepOutcome, RuntimePresentationWordChoice, RuntimeSaveLoad,
-    RuntimeScriptBackend, RuntimeScriptCommand, RuntimeScriptSystem, RuntimeShipHud,
-    RuntimeShipNavigation, RuntimeShipTargetSelection, RuntimeShipTargetSelector,
-    RuntimeSubtitleReveal, VGA_BIOS_FONT_8X8,
+    OriginalGameRuntime, RuntimeAlienOverlayCycle, RuntimeAssetLoadStatus, RuntimeAudioHost,
+    RuntimeConfirmDialog, RuntimeInputHost, RuntimePaletteTransition,
+    RuntimePaletteTransitionConfig, RuntimePaletteTransitionOutcome, RuntimePcmClip,
+    RuntimePlatformHost, RuntimePresentationCatalog, RuntimePresentationHost,
+    RuntimePresentationPlayer, RuntimePresentationScreen, RuntimePresentationStepOutcome,
+    RuntimePresentationWordChoice, RuntimeSaveLoad, RuntimeScriptBackend, RuntimeScriptCommand,
+    RuntimeScriptSystem, RuntimeShipHud, RuntimeShipNavigation, RuntimeShipTargetSelection,
+    RuntimeShipTargetSelector, RuntimeSubtitleReveal, VGA_BIOS_FONT_8X8,
 };
 
 const INITIAL_LOGICAL_POINTER: [i16; 2] = [160, 100];
@@ -89,6 +92,7 @@ pub struct ModernGameServices<'window> {
     save_load: Option<RuntimeSaveLoad>,
     ship_hud: Option<RuntimeShipHud>,
     ship_navigation: Option<RuntimeShipNavigation>,
+    alien_overlay: Option<RuntimeAlienOverlayCycle>,
     ship_target_selector: Option<RuntimeShipTargetSelector>,
     choice_list_style: RuntimeChoiceListStyle,
     subtitle_reveal: Option<RuntimeSubtitleReveal>,
@@ -99,6 +103,7 @@ pub struct ModernGameServices<'window> {
     ship_presentation: ShipPresentationState,
     random: BloodPrng,
     scripts: RuntimeScriptSystem,
+    cd_audio: CdAudioState,
     main_viewport_configured: bool,
 }
 
@@ -131,6 +136,7 @@ impl<'window> ModernGameServices<'window> {
             save_load: Some(RuntimeSaveLoad::default()),
             ship_hud: Some(RuntimeShipHud::default()),
             ship_navigation: Some(RuntimeShipNavigation::default()),
+            alien_overlay: Some(RuntimeAlienOverlayCycle::default()),
             ship_target_selector: Some(RuntimeShipTargetSelector::default()),
             choice_list_style: RuntimeChoiceListStyle::default(),
             subtitle_reveal: Some(RuntimeSubtitleReveal::default()),
@@ -141,6 +147,7 @@ impl<'window> ModernGameServices<'window> {
             ship_presentation: ShipPresentationState::default(),
             random: BloodPrng::default(),
             scripts,
+            cd_audio: CdAudioState::default(),
             main_viewport_configured: false,
         })
     }
@@ -326,6 +333,26 @@ impl<'window> ModernGameServices<'window> {
             .with_context(|| format!("sound bank clip {clip_index} is not authored"))?;
         let clip = RuntimePcmClip::from_snd_clip(clip)?;
         self.audio_mut()?.play_foreground(clip)
+    }
+
+    /// Start optional physical-track-two playback for an alien encounter.
+    ///
+    /// Extracted DOS data normally has no CD-DA track, which preserves the
+    /// original disabled MSCDEX gate. A prepared track must be bound to a real
+    /// modern audio source before this method will accept its play command.
+    pub(super) fn start_encounter_cd_audio(&mut self) -> Result<()> {
+        if play_cd_audio_track_two(&mut self.cd_audio).is_some() {
+            bail!("encounter CD track metadata is prepared without a playback source");
+        }
+        Ok(())
+    }
+
+    /// Stop optional encounter CD playback when a physical-track source exists.
+    pub(super) fn stop_encounter_cd_audio(&mut self) -> Result<()> {
+        if stop_cd_audio(&mut self.cd_audio).is_some() {
+            bail!("encounter CD track metadata is prepared without a playback source");
+        }
+        Ok(())
     }
 
     /// Decode and retain one authored Creative Voice resource for a later start call.
@@ -535,12 +562,13 @@ impl<'window> ModernGameServices<'window> {
     pub fn update_runtime_ship_navigation(
         &mut self,
         state: &mut GameLifecycleState,
+        platform: &mut RuntimePlatformHost<'window>,
     ) -> Result<crate::native::bloodprg::ShipNavigationOutcome> {
         let mut navigation = self
             .ship_navigation
             .take()
             .context("ship navigation update is reentrant")?;
-        let outcome = navigation.update(self, state);
+        let outcome = navigation.update(self, state, platform);
         self.ship_navigation = Some(navigation);
         outcome
     }
@@ -552,13 +580,36 @@ impl<'window> ModernGameServices<'window> {
             .context("ship navigation is already being updated")
     }
 
+    /// Run the recovered synchronous alien-overlay coordinator to completion.
+    pub fn run_runtime_alien_overlay_cycle(
+        &mut self,
+        state: &mut GameLifecycleState,
+        platform: &mut RuntimePlatformHost<'window>,
+    ) -> Result<crate::native::bloodprg::AlienOverlayCycleOutcome> {
+        let mut overlay = self
+            .alien_overlay
+            .take()
+            .context("alien-overlay cycle is reentrant")?;
+        let outcome = overlay.run(self, state, platform);
+        self.alien_overlay = Some(overlay);
+        outcome
+    }
+
+    /// Borrow persistent round-robin and shared overlay state.
+    pub fn runtime_alien_overlay(&self) -> Result<&RuntimeAlienOverlayCycle> {
+        self.alien_overlay
+            .as_ref()
+            .context("alien-overlay cycle is already running")
+    }
+
     /// Advance the recovered top-level ship presentation state machine.
     pub fn update_runtime_ship_presentation(
         &mut self,
         scene_link: GameSceneLink,
         state: &mut GameLifecycleState,
+        platform: &mut RuntimePlatformHost<'window>,
     ) -> Result<ShipPresentationOutcome> {
-        run_runtime_ship_presentation(self, scene_link, state)
+        run_runtime_ship_presentation(self, scene_link, state, platform)
     }
 
     /// Advance and draw the recovered ship-HUD target selector.
@@ -780,6 +831,107 @@ impl<'window> ModernGameServices<'window> {
             .context("presentation screen is already being updated")?
             .scene_state()
             .temporary_sound_trigger)
+    }
+
+    pub(super) fn alien_overlay_flags(&self) -> Result<(bool, bool)> {
+        Ok(self
+            .presentation_screen
+            .as_ref()
+            .context("presentation screen is already being updated")?
+            .alien_overlay_flags())
+    }
+
+    pub(super) fn set_alien_overlay_flags(&mut self, armed: bool, pending: bool) -> Result<()> {
+        self.presentation_screen
+            .as_mut()
+            .context("presentation screen is already being updated")?
+            .set_alien_overlay_flags(armed, pending);
+        Ok(())
+    }
+
+    pub(super) fn read_alien_timing_scale(&self) -> Result<u16> {
+        let profile = self
+            .runtime
+            .current_profile()
+            .context("alien overlay requires a loaded BloodScript profile")?;
+        let source_offset = profile
+            .builtins()
+            .video_state_offset
+            .context("loaded BloodScript profile has no vbio timing word")?;
+        let field = profile
+            .state()
+            .resolve_word_source_offset(source_offset)
+            .context("vbio timing offset does not resolve to an aligned VAR word")?;
+        profile
+            .state()
+            .word(field)
+            .context("vbio timing word is outside the loaded VAR state")
+    }
+
+    pub(super) fn write_alien_timing_scale(&mut self, timing_scale: u16) -> Result<()> {
+        let profile = self
+            .runtime
+            .current_profile_mut()
+            .context("alien overlay lost its loaded BloodScript profile")?;
+        let source_offset = profile
+            .builtins()
+            .video_state_offset
+            .context("loaded BloodScript profile has no vbio timing word")?;
+        let field = profile
+            .state()
+            .resolve_word_source_offset(source_offset)
+            .context("vbio timing offset does not resolve to an aligned VAR word")?;
+        if !profile.state_mut().set_word(field, timing_scale) {
+            bail!("failed to restore the vbio timing word");
+        }
+        Ok(())
+    }
+
+    pub(super) fn begin_alien_overlay(&mut self, asset: &AlienAsset) -> Result<()> {
+        self.ensure_main_viewport()?;
+        self.presentation.begin_alien_overlay(asset);
+        Ok(())
+    }
+
+    pub(super) fn present_alien_overlay_frame(&mut self, frame: &AlienSceneFrame) -> Result<()> {
+        self.ensure_main_viewport()?;
+        self.presentation.present_alien_overlay_frame(frame)
+    }
+
+    pub(super) fn finish_alien_overlay(&mut self) -> bool {
+        self.presentation.finish_alien_overlay()
+    }
+
+    pub(super) fn clear_alien_overlay_transition_frame(&mut self) -> Result<()> {
+        fill_display_band(
+            self.runtime.front_buffer_mut().pixels_mut(),
+            usize::MIN,
+            LOGICAL_FRAMEBUFFER_HEIGHT,
+            u8::MIN,
+        )
+        .context("clearing the display after an alien overlay")
+    }
+
+    pub(super) fn restore_sequence_back_buffer(&mut self) -> Result<()> {
+        self.runtime.restore_sequence_back_buffer().map(|_| ())
+    }
+
+    pub(super) fn reload_current_scene_image(&mut self) -> Result<()> {
+        let slot = self
+            .presentation_screen
+            .as_ref()
+            .context("presentation screen is already being updated")?
+            .loaded_scene_image()
+            .context("alien overlay returned without a retained scene image")?;
+        let encoded = self
+            .scripts
+            .backend()
+            .backgrounds()
+            .get(slot)
+            .with_context(|| format!("DESCRIPT background slot {slot:?} is not loaded"))?
+            .encoded_image()
+            .to_vec();
+        self.runtime.reload_scene_back_buffer(&encoded).map(|_| ())
     }
 
     /// Clear only the 192 scene colors, preserving the bridge console palette tail.

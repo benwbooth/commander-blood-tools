@@ -7,15 +7,16 @@ use crate::native::bloodprg::{
     ShipPresentationState, ShipViewEntityId, update_ship_presentation,
 };
 
-use super::ModernGameServices;
+use super::{ModernGameServices, RuntimePlatformHost};
 
 const SHIP_PRESENTATION_ACTIVE_FLAG: u16 = 1;
 
 /// Run one ship presentation frame over the canonical flat runtime state.
-pub(super) fn update_runtime_ship_presentation(
-    services: &mut ModernGameServices<'_>,
+pub(super) fn update_runtime_ship_presentation<'window>(
+    services: &mut ModernGameServices<'window>,
     scene_link: GameSceneLink,
     lifecycle: &mut GameLifecycleState,
+    platform: &mut RuntimePlatformHost<'window>,
 ) -> Result<ShipPresentationOutcome> {
     let mut state = std::mem::take(services.ship_presentation_state_mut());
     let outcome;
@@ -24,6 +25,7 @@ pub(super) fn update_runtime_ship_presentation(
         let mut backend = RuntimeShipPresentationBackend {
             services,
             lifecycle,
+            platform,
             deferred_error: None,
         };
         outcome = update_ship_presentation(&mut state, &scene_link, &mut backend);
@@ -40,13 +42,14 @@ pub(super) fn update_runtime_ship_presentation(
     Ok(outcome)
 }
 
-struct RuntimeShipPresentationBackend<'services, 'window, 'lifecycle> {
+struct RuntimeShipPresentationBackend<'services, 'window, 'lifecycle, 'platform> {
     services: &'services mut ModernGameServices<'window>,
     lifecycle: &'lifecycle mut GameLifecycleState,
+    platform: &'platform mut RuntimePlatformHost<'window>,
     deferred_error: Option<anyhow::Error>,
 }
 
-impl RuntimeShipPresentationBackend<'_, '_, '_> {
+impl RuntimeShipPresentationBackend<'_, '_, '_, '_> {
     fn record<T>(&mut self, result: Result<T>, fallback: T) -> T {
         match result {
             Ok(value) => value,
@@ -68,7 +71,7 @@ impl RuntimeShipPresentationBackend<'_, '_, '_> {
     }
 }
 
-impl ShipPresentationHost for RuntimeShipPresentationBackend<'_, '_, '_> {
+impl ShipPresentationHost for RuntimeShipPresentationBackend<'_, '_, '_, '_> {
     type SceneLink = GameSceneLink;
 
     fn transition_entity(&mut self, entity: ShipViewEntityId) {
@@ -117,7 +120,7 @@ impl ShipPresentationHost for RuntimeShipPresentationBackend<'_, '_, '_> {
         self.import_state(state);
         let result = self
             .services
-            .update_runtime_ship_navigation(self.lifecycle)
+            .update_runtime_ship_navigation(self.lifecycle, self.platform)
             .map(|_| ());
         self.export_state(state);
         self.record(result, ());

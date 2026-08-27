@@ -19,7 +19,7 @@ use crate::native::bloodprg::{
 };
 
 use super::choice_list::{RuntimeChoiceListStyle, draw_choice_list_rows};
-use super::{ModernGameServices, OriginalGameRuntime};
+use super::{ModernGameServices, OriginalGameRuntime, RuntimePlatformHost};
 
 const ACTIVE_FLAG: u8 = 1;
 const SHIP_ACTIVE_FLAG: u16 = 1;
@@ -83,6 +83,7 @@ impl RuntimeShipNavigation {
         &mut self,
         services: &mut ModernGameServices<'window>,
         lifecycle: &mut GameLifecycleState,
+        platform: &mut RuntimePlatformHost<'window>,
     ) -> Result<ShipNavigationOutcome> {
         let current_target = services.current_ship_navigation_target()?;
         let profile_context = resolve_profile_context(services, current_target)?;
@@ -110,12 +111,15 @@ impl RuntimeShipNavigation {
         self.target_rect = state.choice_target_rect;
         let trigger_before_update = state.trigger_requested;
         let list_style = services.choice_list_style();
+        let primary_pointer_pressed = lifecycle.primary_pointer_pressed;
 
         let native_outcome;
         let deferred_error;
         {
             let mut backend = RuntimeShipNavigationBackend {
                 services,
+                lifecycle,
+                platform,
                 choice_list: &mut self.choice_list,
                 transition: &mut self.transition,
                 current_rect: &mut self.current_rect,
@@ -124,7 +128,7 @@ impl RuntimeShipNavigation {
                 remap_table: &mut self.remap_table,
                 root_source_offset: profile_context.root_source_offset,
                 honk: profile_context.honk,
-                primary_pointer_pressed: lifecycle.primary_pointer_pressed,
+                primary_pointer_pressed,
                 list_style,
                 deferred_error: None,
             };
@@ -419,8 +423,10 @@ const fn replace_active_flag(flags: u8, active: bool) -> u8 {
     (flags & !ACTIVE_FLAG) | active as u8
 }
 
-struct RuntimeShipNavigationBackend<'services, 'window> {
+struct RuntimeShipNavigationBackend<'services, 'window, 'lifecycle, 'platform> {
     services: &'services mut ModernGameServices<'window>,
+    lifecycle: &'lifecycle mut GameLifecycleState,
+    platform: &'platform mut RuntimePlatformHost<'window>,
     choice_list: &'services mut ChoiceListState,
     transition: &'services mut FramebufferTransitionState,
     current_rect: &'services mut ChoiceListRect,
@@ -434,7 +440,7 @@ struct RuntimeShipNavigationBackend<'services, 'window> {
     deferred_error: Option<anyhow::Error>,
 }
 
-impl RuntimeShipNavigationBackend<'_, '_> {
+impl RuntimeShipNavigationBackend<'_, '_, '_, '_> {
     fn record<T>(&mut self, result: Result<T>, fallback: T) -> T {
         match result {
             Ok(value) => value,
@@ -502,7 +508,7 @@ impl RuntimeShipNavigationBackend<'_, '_> {
     }
 }
 
-impl ShipNavigationHost<ScriptObjectId> for RuntimeShipNavigationBackend<'_, '_> {
+impl ShipNavigationHost<ScriptObjectId> for RuntimeShipNavigationBackend<'_, '_, '_, '_> {
     fn build_navigation_candidates(
         &mut self,
         current_target: &ScriptObjectId,
@@ -566,12 +572,11 @@ impl ShipNavigationHost<ScriptObjectId> for RuntimeShipNavigationBackend<'_, '_>
     }
 
     fn run_alien_overlay_cycle(&mut self) {
-        let pending = self.record(self.services.alien_overlay_trigger_pending(), false);
-        if pending && self.deferred_error.is_none() {
-            self.deferred_error = Some(anyhow::anyhow!(
-                "alien overlay runtime adapter is not connected to ship navigation yet"
-            ));
-        }
+        let result = self
+            .services
+            .run_runtime_alien_overlay_cycle(self.lifecycle, self.platform)
+            .map(|_| ());
+        self.record(result, ());
     }
 
     fn update_bridge_steering(&mut self) {

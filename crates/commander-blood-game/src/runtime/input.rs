@@ -18,6 +18,19 @@ const LOGICAL_SCREEN_HEIGHT: f32 = 200.0;
 const CENTERING_DIVISOR: f32 = 2.0;
 const MINIMUM_OUTPUT_DIMENSION: f32 = 1.0;
 const POINTER_PRESS_LATCHED: u8 = 1;
+const BIOS_ESCAPE_KEY: u16 = 0x011b;
+const BIOS_BACKSPACE_KEY: u16 = 0x0e08;
+const BIOS_ENTER_KEY: u16 = 0x1c0d;
+const BIOS_SPACE_KEY: u16 = 0x3920;
+const BIOS_DELETE_KEY: u16 = 0x5300;
+const BIOS_ARROW_UP_KEY: u16 = 0x4800;
+const BIOS_ARROW_DOWN_KEY: u16 = 0x5000;
+const BIOS_ARROW_LEFT_KEY: u16 = 0x4b00;
+const BIOS_ARROW_RIGHT_KEY: u16 = 0x4d00;
+const BIOS_FUNCTION_KEY_BASE: u16 = 0x3b00;
+const BIOS_SCAN_CODE_SHIFT: u32 = 8;
+const BIOS_P_SCAN_CODE: u16 = 0x19;
+const ASCII_ESCAPE: u8 = 27;
 
 /// SDL-facing input state with typed keys and logical pointer coordinates.
 ///
@@ -101,6 +114,20 @@ impl RuntimeInputHost {
         state.pause_hud_active = self.dispatch.paused;
         state.exit_requested |= self.dispatch.shutdown_requested;
         action
+    }
+
+    /// Drain queued host keys as the BIOS words consumed by an alien XDB loop.
+    ///
+    /// Unlike ordinary lifecycle dispatch, the overlay drains every available
+    /// key after each rendered frame. A platform shutdown contributes Escape
+    /// so the synchronous overlay returns before the outer lifecycle handles
+    /// its already-latched shutdown request.
+    pub fn drain_alien_key_events(&mut self, platform_shutdown: bool) -> Vec<u16> {
+        let mut events: Vec<_> = self.pending_keys.drain(..).map(alien_bios_key).collect();
+        if platform_shutdown && !events.iter().any(|event| *event as u8 == ASCII_ESCAPE) {
+            events.push(BIOS_ESCAPE_KEY);
+        }
+        events
     }
 
     /// Current translated key, pause, and shutdown latches.
@@ -218,6 +245,28 @@ fn host_key_for_sdl_keycode(keycode: Keycode) -> Option<HostInputKey> {
     }
 }
 
+fn alien_bios_key(key: HostInputKey) -> u16 {
+    match key {
+        HostInputKey::Character(character) => {
+            let ascii = character as u8;
+            let scan_code = u16::from(matches!(character, 'p' | 'P')) * BIOS_P_SCAN_CODE;
+            scan_code << BIOS_SCAN_CODE_SHIFT | u16::from(ascii)
+        }
+        HostInputKey::Backspace => BIOS_BACKSPACE_KEY,
+        HostInputKey::Enter => BIOS_ENTER_KEY,
+        HostInputKey::Escape => BIOS_ESCAPE_KEY,
+        HostInputKey::Space => BIOS_SPACE_KEY,
+        HostInputKey::Delete => BIOS_DELETE_KEY,
+        HostInputKey::Arrow(InputArrowKey::Up) => BIOS_ARROW_UP_KEY,
+        HostInputKey::Arrow(InputArrowKey::Down) => BIOS_ARROW_DOWN_KEY,
+        HostInputKey::Arrow(InputArrowKey::Left) => BIOS_ARROW_LEFT_KEY,
+        HostInputKey::Arrow(InputArrowKey::Right) => BIOS_ARROW_RIGHT_KEY,
+        HostInputKey::Function(function) => {
+            BIOS_FUNCTION_KEY_BASE + (function as u16) * (1 << BIOS_SCAN_CODE_SHIFT)
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -295,6 +344,29 @@ mod tests {
         assert_eq!(input.dispatch_lifecycle_input(&mut lifecycle), None);
         assert!(lifecycle.pause_hud_active);
         assert!(lifecycle.exit_requested);
+    }
+
+    #[test]
+    fn alien_overlay_drains_bios_words_in_arrival_order() {
+        let mut input = RuntimeInputHost::new(INITIAL_POSITION);
+        assert!(input.queue_keycode(Keycode::Up));
+        assert!(input.queue_keycode(Keycode::Space));
+        assert_eq!(input.queue_text("p"), 1);
+
+        assert_eq!(
+            input.drain_alien_key_events(false),
+            [BIOS_ARROW_UP_KEY, BIOS_SPACE_KEY, 0x1970]
+        );
+        assert_eq!(input.pending_key_count(), 0);
+    }
+
+    #[test]
+    fn platform_shutdown_exits_an_alien_overlay_without_duplicate_escape() {
+        let mut input = RuntimeInputHost::new(INITIAL_POSITION);
+        assert_eq!(input.drain_alien_key_events(true), [BIOS_ESCAPE_KEY]);
+
+        assert!(input.queue_keycode(Keycode::Escape));
+        assert_eq!(input.drain_alien_key_events(true), [BIOS_ESCAPE_KEY]);
     }
 
     #[test]

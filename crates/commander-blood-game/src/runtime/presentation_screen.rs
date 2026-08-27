@@ -76,6 +76,25 @@ impl RuntimePresentationScreen {
         &self.scene_state
     }
 
+    /// Return the armed and pending flags consumed by the alien-overlay coordinator.
+    pub(super) const fn alien_overlay_flags(&self) -> (bool, bool) {
+        (
+            self.scene_state.alien_overlay_armed,
+            self.scene_state.temporary_sound_trigger,
+        )
+    }
+
+    /// Publish the coordinator's consumed alien-overlay flags.
+    pub(super) fn set_alien_overlay_flags(&mut self, armed: bool, pending: bool) {
+        self.scene_state.alien_overlay_armed = armed;
+        self.scene_state.temporary_sound_trigger = pending;
+    }
+
+    /// Return the DESCRIPT background that must be restored after an overlay.
+    pub(super) const fn loaded_scene_image(&self) -> Option<DescriptBackgroundSlot> {
+        self.scene_state.loaded_scene_image
+    }
+
     /// Invalidate the cached scene identity before navigation replaces its background.
     pub fn invalidate_scene_image(&mut self) {
         self.scene_state.loaded_scene_image = None;

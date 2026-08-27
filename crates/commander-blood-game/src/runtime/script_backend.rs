@@ -464,6 +464,11 @@ impl RuntimeScriptBackend {
         self.sound_loader.load_sound_bank(bank_name)
     }
 
+    /// Restore the complete resident bank captured before a temporary overlay swap.
+    pub fn restore_resident_sound_bank(&mut self, bank: LoadedRuntimeResource) {
+        self.sound_loader.loaded = Some(bank);
+    }
+
     /// Return the object whose DESCRIPT record currently owns presentation assets.
     pub const fn active_description_object(&self) -> Option<ScriptObjectId> {
         self.active_description_object

@@ -3,7 +3,7 @@
 use std::thread;
 use std::time::{Duration, Instant};
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use sdl3::EventPump;
 use sdl3::event::{Event, WindowEvent};
 use sdl3::mouse::{MouseButton, MouseState};
@@ -13,7 +13,7 @@ use crate::native::bloodprg::{
     GameLifecycleState, InputAction, PointerButton, PointerButtons, PointerSample,
 };
 
-use super::ModernGameServices;
+use super::{ModernGameServices, RuntimeAlienOverlayFrameInput};
 
 /// Input frequency of the IBM PC programmable interval timer.
 const PIT_INPUT_FREQUENCY_HZ: u64 = 1_193_182;
@@ -26,6 +26,9 @@ const MINIMUM_SURFACE_DIMENSION: u32 = 1;
 const ORIGINAL_DISPLAY_ASPECT_WIDTH: f32 = 4.0;
 const ORIGINAL_DISPLAY_ASPECT_HEIGHT: f32 = 3.0;
 const LOGICAL_SCREEN_WIDTH: f32 = 320.0;
+const ALIEN_DRIVER_WIDTH: f32 = 640.0;
+const ALIEN_DRIVER_HEIGHT: f32 = 1_024.0;
+const ALIEN_DRIVER_CENTER: [f32; 2] = [ALIEN_DRIVER_WIDTH / 2.0, ALIEN_DRIVER_HEIGHT / 2.0];
 
 /// Exact recovered target duration of one original game update.
 ///
@@ -44,6 +47,7 @@ pub struct RuntimePlatformHost<'window> {
     events: EventPump,
     frame_clock: GameFrameClock,
     bridge_horizontal_delta: f32,
+    alien_pointer: Option<[f32; 2]>,
 }
 
 impl<'window> RuntimePlatformHost<'window> {
@@ -54,6 +58,7 @@ impl<'window> RuntimePlatformHost<'window> {
             events,
             frame_clock: GameFrameClock::default(),
             bridge_horizontal_delta: 0.0,
+            alien_pointer: None,
         }
     }
 
@@ -68,10 +73,54 @@ impl<'window> RuntimePlatformHost<'window> {
         state: &mut GameLifecycleState,
     ) -> Option<InputAction> {
         self.frame_clock.begin_frame(Instant::now());
+        self.pump_events(services);
+        services.dispatch_lifecycle_input(state)
+    }
+
+    /// Pump one synchronous alien-overlay frame without dispatching ordinary UI actions.
+    pub fn poll_alien_overlay_frame(
+        &mut self,
+        services: &mut ModernGameServices<'window>,
+    ) -> Result<RuntimeAlienOverlayFrameInput> {
+        self.frame_clock.begin_frame(Instant::now());
+        let platform_shutdown = self.pump_events(services);
+        let mouse = self.events.mouse_state();
+        let key_events = services
+            .input_mut()
+            .drain_alien_key_events(platform_shutdown);
+        let pointer = self
+            .alien_pointer
+            .context("alien pointer was not centered before overlay entry")?;
+        Ok(RuntimeAlienOverlayFrameInput::from_driver_pointer(
+            pointer,
+            pointer_buttons(&mouse),
+            key_events,
+        ))
+    }
+
+    /// Center the overlay's virtual mouse driver without moving the real cursor.
+    pub fn begin_alien_overlay_input(&mut self) -> Result<()> {
+        if self.alien_pointer.is_some() {
+            bail!("alien-overlay input is already active");
+        }
+        self.alien_pointer = Some(ALIEN_DRIVER_CENTER);
+        Ok(())
+    }
+
+    /// Release the temporary virtual pointer after the XDB loop exits.
+    pub fn finish_alien_overlay_input(&mut self) -> bool {
+        self.alien_pointer.take().is_some()
+    }
+
+    fn pump_events(&mut self, services: &mut ModernGameServices<'window>) -> bool {
         let window_id = self.window.id();
+        let mut platform_shutdown = false;
         for event in self.events.poll_iter() {
             match event {
-                Event::Quit { .. } => services.input_mut().request_shutdown(),
+                Event::Quit { .. } => {
+                    services.input_mut().request_shutdown();
+                    platform_shutdown = true;
+                }
                 Event::Window {
                     window_id: event_window_id,
                     win_event: WindowEvent::PixelSizeChanged(_, _) | WindowEvent::Resized(_, _),
@@ -86,11 +135,19 @@ impl<'window> RuntimePlatformHost<'window> {
                 Event::MouseMotion {
                     window_id: event_window_id,
                     xrel,
+                    yrel,
                     ..
                 } if event_window_id == window_id => {
                     let (width, height) = self.window.size();
-                    self.bridge_horizontal_delta +=
-                        map_horizontal_delta_to_logical([width as f32, height as f32], xrel);
+                    let output_size = [width as f32, height as f32];
+                    if let Some(pointer) = &mut self.alien_pointer {
+                        let delta = map_motion_to_alien_driver(output_size, [xrel, yrel]);
+                        pointer[0] = (pointer[0] + delta[0]).clamp(0.0, ALIEN_DRIVER_WIDTH);
+                        pointer[1] = (pointer[1] + delta[1]).clamp(0.0, ALIEN_DRIVER_HEIGHT);
+                    } else {
+                        self.bridge_horizontal_delta +=
+                            map_horizontal_delta_to_logical(output_size, xrel);
+                    }
                 }
                 Event::KeyDown {
                     window_id: event_window_id,
@@ -109,7 +166,7 @@ impl<'window> RuntimePlatformHost<'window> {
                 _ => {}
             }
         }
-        services.dispatch_lifecycle_input(state)
+        platform_shutdown
     }
 
     /// Sample the current SDL pointer into the original logical viewport.
@@ -184,6 +241,19 @@ fn map_horizontal_delta_to_logical(output_size: [f32; 2], horizontal_delta: f32)
     horizontal_delta * LOGICAL_SCREEN_WIDTH / viewport_width
 }
 
+fn map_motion_to_alien_driver(output_size: [f32; 2], motion: [f32; 2]) -> [f32; 2] {
+    let output_width = output_size[0].max(1.0);
+    let output_height = output_size[1].max(1.0);
+    let scale = (output_width / ORIGINAL_DISPLAY_ASPECT_WIDTH)
+        .min(output_height / ORIGINAL_DISPLAY_ASPECT_HEIGHT);
+    let viewport_width = ORIGINAL_DISPLAY_ASPECT_WIDTH * scale;
+    let viewport_height = ORIGINAL_DISPLAY_ASPECT_HEIGHT * scale;
+    [
+        motion[0] * ALIEN_DRIVER_WIDTH / viewport_width,
+        motion[1] * ALIEN_DRIVER_HEIGHT / viewport_height,
+    ]
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -223,6 +293,17 @@ mod tests {
         assert_eq!(
             map_horizontal_delta_to_logical(WIDESCREEN_OUTPUT, WIDESCREEN_VIEWPORT_WIDTH,),
             LOGICAL_SCREEN_WIDTH
+        );
+    }
+
+    #[test]
+    fn alien_mouse_motion_scales_to_its_virtual_driver_without_cursor_warping() {
+        assert_eq!(
+            map_motion_to_alien_driver(
+                WIDESCREEN_OUTPUT,
+                [WIDESCREEN_VIEWPORT_WIDTH, WIDESCREEN_OUTPUT[1]],
+            ),
+            [ALIEN_DRIVER_WIDTH, ALIEN_DRIVER_HEIGHT]
         );
     }
 }

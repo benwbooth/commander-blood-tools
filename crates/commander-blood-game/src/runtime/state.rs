@@ -4,6 +4,7 @@ use std::fmt;
 use std::ops::Range;
 
 use anyhow::{Context, Result, bail};
+use commander_blood_formats::alien::{AlienAsset, AlienXdbKind, decode_alien_xdb};
 use commander_blood_formats::archive::BloodResourceName;
 use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
 use commander_blood_formats::manu3::decode_manu3;
@@ -24,9 +25,10 @@ use crate::native::bloodprg::{
     ShipViewArtworkSelection, ShipViewEntityId, activate_bridge_sprite_from_retained_framebuffer,
     advance_bridge_sprite_state, build_banked_tint_table, build_palette_blend_remap_table,
     build_pause_hud_refresh, commit_bridge_sprite_dirty_range, copy_dirty_regions_to_display,
-    decode_chart_back_buffer, decode_pbm_image, draw_presentation_choice_number,
-    draw_small_font_text, fill_framebuffer_rect, populate_bridge_sprite_from_cache,
-    rasterize_bridge_sprite_range, select_ship_view_artwork, update_name_area_effect,
+    decode_chart_back_buffer, decode_orx_back_buffer, decode_pbm_image,
+    draw_presentation_choice_number, draw_small_font_text, fill_framebuffer_rect,
+    populate_bridge_sprite_from_cache, rasterize_bridge_sprite_range, select_ship_view_artwork,
+    update_name_area_effect,
 };
 use crate::native::manu3::model::Manu3Model;
 
@@ -41,6 +43,9 @@ pub const LOGICAL_FRAMEBUFFER_PIXEL_COUNT: usize =
     LOGICAL_FRAMEBUFFER_WIDTH * LOGICAL_FRAMEBUFFER_HEIGHT;
 
 const MANU3_RESOURCE_NAME: &[u8] = b"MANU3.XDB";
+const AMER_RESOURCE_NAME: &[u8] = b"AMER.XDB";
+const CROOLIS_RESOURCE_NAME: &[u8] = b"CROOLIS.XDB";
+const SCRUT_RESOURCE_NAME: &[u8] = b"SCRUT.XDB";
 const SAVE_SLOT_DIRECTORY_RESOURCE_NAME: &[u8] = b"BLOOD.SAV";
 const STARTUP_CARTOGRAPHY_RESOURCE: ResourceId = ResourceId::new(44);
 const STARTUP_CARTOGRAPHY_RESOURCE_NAME: &[u8] = b"carte.spr";
@@ -498,6 +503,20 @@ impl OriginalGameRuntime {
         .context("decoding the ship navigation background")
     }
 
+    /// Restore the retained scene PBM after a full-screen alien overlay returns.
+    pub fn reload_scene_back_buffer(&mut self, encoded_image: &[u8]) -> Result<PbmDecodeResult> {
+        decode_pbm_image(
+            encoded_image,
+            self.back_buffer.pixels_mut(),
+            &mut self.live_palette,
+            PbmDecodeOptions {
+                palette_update: PbmPaletteUpdate::Preserve,
+                transparency: PbmTransparency::Opaque,
+            },
+        )
+        .context("decoding the retained scene background")
+    }
+
     /// Capture the HUD palette window without selecting artwork or changing entities.
     pub fn snapshot_ship_hud_palette(&mut self) {
         self.ship_hud
@@ -573,6 +592,26 @@ impl OriginalGameRuntime {
         Ok(RuntimeAssetLoadStatus::LoadedNow)
     }
 
+    /// Load and decode one authored interactive alien XDB into flat owned data.
+    pub fn load_alien_overlay(&self, kind: AlienXdbKind) -> Result<AlienAsset> {
+        let resource_name = match kind {
+            AlienXdbKind::Amer => AMER_RESOURCE_NAME,
+            AlienXdbKind::Croolis => CROOLIS_RESOURCE_NAME,
+            AlienXdbKind::Scrut => SCRUT_RESOURCE_NAME,
+        };
+        let bytes = self
+            .data
+            .load_named_resource(resource_name)
+            .with_context(|| {
+                format!(
+                    "loading {} from original resources",
+                    String::from_utf8_lossy(resource_name)
+                )
+            })?;
+        decode_alien_xdb(&bytes, kind)
+            .with_context(|| format!("decoding {}", String::from_utf8_lossy(resource_name)))
+    }
+
     /// Borrow the decoded MANU3 runtime model.
     pub const fn manu3(&self) -> Option<&Manu3Model> {
         self.manu3.as_ref()
@@ -621,6 +660,22 @@ impl OriginalGameRuntime {
             &mut self.live_palette,
         )
         .context("decoding CHART.FD")
+    }
+
+    /// Decode `ORX.FD` and publish it as the active sequence background.
+    pub fn restore_sequence_back_buffer(&mut self) -> Result<PbmDecodeResult> {
+        let bytes = self
+            .data
+            .load_named_resource(crate::native::bloodprg::ORX_BACK_BUFFER_RESOURCE_PATH.as_bytes())
+            .context("loading ORX.FD")?;
+        let result = decode_orx_back_buffer(
+            &bytes,
+            self.back_buffer.pixels_mut(),
+            &mut self.live_palette,
+        )
+        .context("decoding ORX.FD")?;
+        self.restore_back_buffer();
+        Ok(result)
     }
 
     /// Load the authored `CARTE.SPR` startup resource into the flat cache.
