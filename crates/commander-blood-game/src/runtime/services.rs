@@ -56,6 +56,7 @@ use super::camera_navigation::RuntimeCameraNavigation;
 use super::choice_list::{
     RuntimeChoiceListStyle, draw_choice_list_rows, prepare_choice_list_frame,
 };
+use super::navigation_chart::RuntimeNavigationChart;
 use super::presentation_screen::RuntimeSceneTransitionDispatchContext;
 use super::ship_presentation::update_runtime_ship_presentation as run_runtime_ship_presentation;
 use super::ship_target::ship_hud_arche_link;
@@ -129,6 +130,7 @@ pub struct ModernGameServices<'window> {
     bridge_actors: Option<RuntimeBridgeActors>,
     bridge_console: Option<RuntimeBridgeConsole>,
     camera_navigation: Option<RuntimeCameraNavigation>,
+    navigation_chart: Option<RuntimeNavigationChart>,
     presentation_screen: Option<RuntimePresentationScreen>,
     presentation_word_choice: Option<RuntimePresentationWordChoice>,
     save_load: Option<RuntimeSaveLoad>,
@@ -198,6 +200,7 @@ impl<'window> ModernGameServices<'window> {
             bridge_actors: Some(RuntimeBridgeActors::default()),
             bridge_console: Some(bridge_console),
             camera_navigation: Some(RuntimeCameraNavigation::default()),
+            navigation_chart: Some(RuntimeNavigationChart::default()),
             presentation_screen: Some(presentation_screen),
             presentation_word_choice: Some(RuntimePresentationWordChoice::default()),
             save_load: Some(RuntimeSaveLoad::default()),
@@ -2565,6 +2568,34 @@ impl<'window> ModernGameServices<'window> {
         outcome
     }
 
+    /// Advance the recovered chart wipe, interaction, and location panel.
+    pub(super) fn update_runtime_navigation_chart(
+        &mut self,
+        lifecycle: &mut GameLifecycleState,
+        navigation_animation_phase: u8,
+    ) -> Result<crate::native::bloodprg::NavigationCameraOutcome> {
+        let transition_step = self
+            .bridge_actors
+            .as_ref()
+            .context("bridge actor state is already being updated")?
+            .camera_transition_step();
+        let mut chart = self
+            .navigation_chart
+            .take()
+            .context("navigation chart update is reentrant")?;
+        let outcome = chart.update(self, lifecycle, transition_step, navigation_animation_phase);
+        let remaining = chart.transition_step();
+        let panel_active = chart.location_panel_active();
+        self.navigation_chart = Some(chart);
+        let actors = self
+            .bridge_actors
+            .as_mut()
+            .context("bridge actor state disappeared during navigation update")?;
+        actors.set_camera_transition_step(remaining);
+        actors.set_location_panel_active(panel_active);
+        outcome.context("updating recovered navigation chart")
+    }
+
     /// Advance the executable-authored character-name palette noise.
     pub(super) fn advance_bridge_name_area_effect(&mut self) -> Result<NameAreaEffectOutcome> {
         let Self {
@@ -2588,7 +2619,7 @@ impl<'window> ModernGameServices<'window> {
         )
     }
 
-    fn render_current_bridge_frame_with_palette_refresh(
+    pub(super) fn render_current_bridge_frame_with_palette_refresh(
         &mut self,
         refresh_live_palette: bool,
     ) -> Result<&BridgeSceneFrame> {
@@ -2634,6 +2665,33 @@ impl<'window> ModernGameServices<'window> {
             .bridge_frame
             .as_ref()
             .expect("rendered bridge frame was retained"))
+    }
+
+    /// Flatten the current modern bridge layers into one logical indexed page.
+    ///
+    /// This is used only as the source page for the recovered camera wipe. The
+    /// order matches the bridge base pass: stars, projected objects, then
+    /// panorama. The current indexed page is intentionally excluded because it
+    /// contains the chart being replaced by this opening wipe.
+    pub(super) fn compose_current_bridge_work_surface(&self, destination: &mut [u8]) -> Result<()> {
+        if destination.len() != LOGICAL_FRAMEBUFFER_PIXEL_COUNT {
+            bail!(
+                "bridge work surface has {} pixels; expected {}",
+                destination.len(),
+                LOGICAL_FRAMEBUFFER_PIXEL_COUNT
+            );
+        }
+        let frame = self
+            .bridge_frame
+            .as_ref()
+            .context("bridge work-surface composition requires a rendered frame")?;
+        destination.fill(u8::MIN);
+        for star in &frame.starfield.plotted {
+            destination[star.framebuffer_index] = star.palette_index;
+        }
+        overlay_nonzero_indices(destination, &frame.object_sprite_pixels);
+        overlay_nonzero_indices(destination, &frame.panorama_pixels);
+        Ok(())
     }
 
     /// Composite one recovered bridge sprite range into the retained GPU layer.
@@ -2784,6 +2842,14 @@ impl<'window> ModernGameServices<'window> {
         self.audio
             .as_mut()
             .context("runtime audio has not been initialized")
+    }
+}
+
+fn overlay_nonzero_indices(destination: &mut [u8], source: &[u8]) {
+    for (destination, source) in destination.iter_mut().zip(source.iter().copied()) {
+        if source != u8::MIN {
+            *destination = source;
+        }
     }
 }
 
@@ -3062,8 +3128,14 @@ mod tests {
     const HYPERSPACE_PRESENTATION_LINE: PresentationResourceId = PresentationResourceId::new(6);
     const MAXIMUM_CAMERA_TRANSITION_FRAMES: usize = 2_048;
     const TEST_OUTPUT_SIZE: [f32; 2] = [640.0, 480.0];
+    const LOGICAL_TEST_OUTPUT_SIZE: [f32; 2] = [320.0, 200.0];
     const TEST_LOGICAL_TO_HOST_SCALE: [f32; 2] = [2.0, 2.4];
     const FIRST_ADVANCED_PRESENTATION_FRAME: u16 = 1;
+    const OBJECT_ACCESS_COUNTER_BYTE_OFFSET: usize = 20;
+    const VISITED_DESTINATION_COUNT: u8 = 1;
+    const LOCATION_PANEL_OPENING_SETTLE_FRAMES: usize = 9;
+    const LOCATION_PANEL_CLOSING_SETTLE_FRAMES: usize = 8;
+    const POINTER_PRESS_PENDING: u8 = 1;
     const AUTHORED_RADIO_TERMINAL_FRAME: u16 = 11;
     const AUTHORED_ACTOR_RESOURCES: [u16; NAV_ACTOR_SLOT_COUNT] = [17, 13, 15, 16, 19, 18];
     const AUTHORED_ACTOR_TRANSITION_RESOURCES: [Option<u16>; NAV_ACTOR_SLOT_COUNT] =
@@ -3273,6 +3345,186 @@ mod tests {
                 .unwrap(),
             NavActorSlotUpdateOutcome::Updated
         );
+        let chart_candidates = services
+            .runtime()
+            .current_profile()
+            .unwrap()
+            .state()
+            .objects()
+            .iter()
+            .filter(|object| {
+                matches!(
+                    object.kind,
+                    ScriptObjectKind::CelestialBody
+                        | ScriptObjectKind::NavigationEntity
+                        | ScriptObjectKind::BlackHole
+                )
+            })
+            .map(|object| object.id)
+            .collect::<Vec<_>>();
+        for (index, object) in chart_candidates.iter().enumerate() {
+            assert!(crate::native::bloodprg::set_object_flag(
+                services
+                    .runtime_mut()
+                    .current_profile_mut()
+                    .unwrap()
+                    .state_mut(),
+                *object,
+                crate::native::bloodprg::ScriptObjectFlag::InPlay,
+                true,
+            ));
+            if index != usize::MIN {
+                let state = services
+                    .runtime_mut()
+                    .current_profile_mut()
+                    .unwrap()
+                    .state_mut();
+                let counter = state
+                    .object_byte(*object, OBJECT_ACCESS_COUNTER_BYTE_OFFSET)
+                    .expect("chart destination must contain its access counter");
+                assert!(state.set_byte(counter, VISITED_DESTINATION_COUNT));
+            }
+        }
+        services
+            .bridge_actors
+            .as_mut()
+            .unwrap()
+            .set_camera_transition_step(crate::native::bloodprg::CAMERA_VIEW_TRANSITION_STEPS);
+        for _ in usize::MIN..usize::from(crate::native::bloodprg::CAMERA_VIEW_TRANSITION_STEPS) {
+            assert!(matches!(
+                services
+                    .update_runtime_navigation_chart(&mut lifecycle, u8::MIN)
+                    .unwrap(),
+                crate::native::bloodprg::NavigationCameraOutcome::TransitionFrame {
+                    direction: crate::native::bloodprg::NavigationChartWipeDirection::Closing,
+                    ..
+                }
+            ));
+        }
+        assert_eq!(
+            services
+                .navigation_chart
+                .as_ref()
+                .unwrap()
+                .chart_object_count(),
+            chart_candidates.len()
+        );
+        assert_eq!(
+            services
+                .update_runtime_navigation_chart(&mut lifecycle, u8::MIN)
+                .unwrap(),
+            crate::native::bloodprg::NavigationCameraOutcome::Inactive
+        );
+        let panel_marker = {
+            let profile = services.runtime().current_profile().unwrap();
+            let arche = profile.builtins().archetype.unwrap();
+            let current = services.current_arche_navigation_target().unwrap().0;
+            let target = crate::native::bloodprg::navigation_chart_objects(profile.state())
+                .into_iter()
+                .find(|object| {
+                    *object != current
+                        && profile
+                            .state()
+                            .object(*object)
+                            .is_some_and(|record| record.kind == ScriptObjectKind::CelestialBody)
+                        && profile.directory().object(*object).is_some_and(|entry| {
+                            services
+                                .runtime()
+                                .data()
+                                .world_artwork_layout()
+                                .iter()
+                                .any(|artwork| artwork.name() == entry.name())
+                        })
+                })
+                .expect("profile must contain an authored planet panel");
+            let marker = crate::native::bloodprg::resolve_navigation_position(
+                profile.state(),
+                target,
+                arche,
+                u16::MIN,
+            )
+            .unwrap();
+            profile.state().word_pair(marker).unwrap()
+        };
+        services.set_bridge_camera_view_active(true);
+        services.input_mut().poll_pointer(
+            LOGICAL_TEST_OUTPUT_SIZE,
+            panel_marker.map(f32::from),
+            PointerButtons::from_bits(PointerButton::Primary as u16),
+        );
+        lifecycle.primary_pointer_pressed = true;
+        lifecycle.pointer_press_pending = POINTER_PRESS_PENDING;
+        assert_eq!(
+            services
+                .update_runtime_navigation_chart(&mut lifecycle, u8::MIN)
+                .unwrap(),
+            crate::native::bloodprg::NavigationCameraOutcome::LocationPanelOpened
+        );
+        services.input_mut().poll_pointer(
+            LOGICAL_TEST_OUTPUT_SIZE,
+            panel_marker.map(f32::from),
+            PointerButtons::default(),
+        );
+        lifecycle.primary_pointer_pressed = false;
+        lifecycle.pointer_press_pending = u8::MIN;
+        for _ in usize::MIN..LOCATION_PANEL_OPENING_SETTLE_FRAMES {
+            assert_eq!(
+                services
+                    .update_runtime_navigation_chart(&mut lifecycle, u8::MIN)
+                    .unwrap(),
+                crate::native::bloodprg::NavigationCameraOutcome::LocationPanel
+            );
+        }
+        assert!(
+            services
+                .navigation_chart
+                .as_ref()
+                .unwrap()
+                .location_panel_active()
+        );
+        lifecycle.primary_pointer_pressed = true;
+        lifecycle.pointer_press_pending = POINTER_PRESS_PENDING;
+        assert_eq!(
+            services
+                .update_runtime_navigation_chart(&mut lifecycle, u8::MIN)
+                .unwrap(),
+            crate::native::bloodprg::NavigationCameraOutcome::LocationPanel
+        );
+        lifecycle.primary_pointer_pressed = false;
+        lifecycle.pointer_press_pending = u8::MIN;
+        for _ in usize::MIN..LOCATION_PANEL_CLOSING_SETTLE_FRAMES {
+            services
+                .update_runtime_navigation_chart(&mut lifecycle, u8::MIN)
+                .unwrap();
+        }
+        assert!(
+            !services
+                .navigation_chart
+                .as_ref()
+                .unwrap()
+                .location_panel_active()
+        );
+        let closed_chart = services.runtime().front_buffer().pixels().to_vec();
+        services
+            .bridge_actors
+            .as_mut()
+            .unwrap()
+            .set_camera_transition_step(crate::native::bloodprg::CAMERA_VIEW_TRANSITION_STEPS);
+        for _ in usize::MIN..usize::from(crate::native::bloodprg::CAMERA_VIEW_TRANSITION_STEPS) {
+            assert!(matches!(
+                services
+                    .update_runtime_navigation_chart(&mut lifecycle, u8::MIN)
+                    .unwrap(),
+                crate::native::bloodprg::NavigationCameraOutcome::TransitionFrame {
+                    direction: crate::native::bloodprg::NavigationChartWipeDirection::Opening,
+                    ..
+                }
+            ));
+        }
+        let opening_source = services.navigation_chart.as_ref().unwrap().work_surface();
+        assert_ne!(opening_source, closed_chart);
+        assert!(opening_source.iter().any(|pixel| *pixel != u8::MIN));
+        services.set_bridge_camera_view_active(false);
         assert_ne!(plotted_star_count, usize::MIN);
         assert_eq!(
             services.bridge_presentation_mode(),

@@ -62,8 +62,8 @@ pub struct NavigationChartObject<ObjectId> {
     pub name: Box<[u8]>,
     /// Original logical marker position.
     pub marker: [u16; 2],
-    /// Secondary world link; its absence requests the extra chart marker.
-    pub secondary_link: Option<ObjectId>,
+    /// Whether the native access counter requests the extra chart marker.
+    pub show_secondary_marker: bool,
 }
 
 /// Arche marker and current-location data used by chart presentation.
@@ -499,6 +499,11 @@ where
         width: POINTER_PANEL_EXTENT,
         height: POINTER_PANEL_EXTENT,
     };
+    state.panel.geometry.layout.current = state.input.pointer;
+    state.panel.geometry.layout.target = [
+        state.panel_rects.target.x as u16,
+        state.panel_rects.target.y as u16,
+    ];
     host.transition_chart_entity(ARCHE_CHART_ENTITY);
     transition_secondary_entities(state.secondary_marker_count, host);
     Ok(NavigationCameraOutcome::LocationPanelOpened)
@@ -547,7 +552,7 @@ where
                 position: object.marker,
                 frame,
             });
-            if object.secondary_link.is_none() {
+            if object.show_secondary_marker {
                 let entity = FIRST_SECONDARY_CHART_ENTITY
                     .checked_add(state.secondary_marker_count as u16)
                     .filter(|entity| *entity < FINAL_CHART_ENTITY)
@@ -1020,7 +1025,7 @@ mod tests {
                 },
                 b"ALPHA",
                 [50, 60],
-                None,
+                true,
             ))
         } else if vector.name.contains("click_current") {
             Some(chart_object(
@@ -1028,7 +1033,7 @@ mod tests {
                 NavigationChartObjectKind::default(),
                 b"CURRENT",
                 [12, 10],
-                Some(PICKED_LOCATION),
+                false,
             ))
         } else {
             None
@@ -1047,7 +1052,7 @@ mod tests {
                         },
                         b"ALPHA",
                         [50, 60],
-                        None,
+                        true,
                     ),
                     chart_object(
                         4_352,
@@ -1057,7 +1062,7 @@ mod tests {
                         },
                         b"BETA",
                         [100, 70],
-                        Some(PICKED_LOCATION),
+                        false,
                     ),
                 ]
             } else {
@@ -1074,14 +1079,14 @@ mod tests {
         kind: NavigationChartObjectKind,
         name: &[u8],
         marker: [u16; 2],
-        secondary_link: Option<u16>,
+        show_secondary_marker: bool,
     ) -> NavigationChartObject<u16> {
         NavigationChartObject {
             id,
             kind,
             name: Box::from(name),
             marker,
-            secondary_link,
+            show_secondary_marker,
         }
     }
 

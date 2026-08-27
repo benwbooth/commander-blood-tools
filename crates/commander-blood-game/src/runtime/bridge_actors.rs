@@ -65,6 +65,29 @@ impl RuntimeBridgeActors {
         self.panel.completion_latched
     }
 
+    /// Return the camera actor's sole eight-step chart-transition countdown.
+    pub(super) const fn camera_transition_step(&self) -> u8 {
+        match self.camera.camera_animation {
+            CameraViewAnimation::Unchanged => u8::MIN,
+            CameraViewAnimation::Transitioning { steps_remaining } => steps_remaining,
+        }
+    }
+
+    /// Synchronize the countdown after one translated navigation-camera frame.
+    pub(super) fn set_camera_transition_step(&mut self, steps_remaining: u8) {
+        self.camera.camera_animation = if steps_remaining == u8::MIN {
+            CameraViewAnimation::Unchanged
+        } else {
+            CameraViewAnimation::Transitioning { steps_remaining }
+        };
+    }
+
+    /// Publish location-panel ownership to actor blockers and camera presentation.
+    pub(super) fn set_location_panel_active(&mut self, active: bool) {
+        self.location_panel.active = active;
+        self.camera.location_panel_active = active;
+    }
+
     pub(super) fn update(
         &mut self,
         services: &mut ModernGameServices<'_>,

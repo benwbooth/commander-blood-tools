@@ -342,6 +342,8 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
         self.services.commit_ship_entities(0..32)?;
         self.services.update_runtime_bridge_actors(state)?;
         if self.services.runtime().current_profile().is_some() {
+            self.services
+                .update_runtime_navigation_chart(state, self.timer.navigation_animation_phase)?;
             self.services.update_runtime_camera_navigation(state)?;
         }
         self.services

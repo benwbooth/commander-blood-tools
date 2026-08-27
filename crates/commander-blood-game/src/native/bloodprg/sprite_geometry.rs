@@ -62,6 +62,18 @@ impl BridgeSpriteFlags {
         self.0 & GEOMETRY_UPDATE_MASK != u16::MIN
     }
 
+    /// Publish the low active and dirty bits used by interactive chart entities.
+    ///
+    /// The navigation camera always sets both bits before optionally clearing
+    /// the active bit from its timer mask. Resource visibility and every other
+    /// recovered flag remain unchanged.
+    pub fn publish_navigation_state(&mut self, active: bool) {
+        self.0 |= STATE_ZERO_FLAG | DIRTY_FLAG;
+        if !active {
+            self.0 &= !STATE_ZERO_FLAG;
+        }
+    }
+
     /// Whether current geometry must be committed or redrawn.
     pub const fn is_dirty(self) -> bool {
         self.0 & DIRTY_FLAG != u16::MIN
@@ -960,6 +972,19 @@ mod tests {
         extent_source: [u16; COORDINATE_COUNT],
         committed_extents_before: [u16; COORDINATE_COUNT],
         draw_position: [u16; COORDINATE_COUNT],
+    }
+
+    #[test]
+    fn navigation_publication_preserves_noninteractive_sprite_flags() {
+        let preserved =
+            VISIBLE_FLAG | HORIZONTAL_FLIP_FLAG | VERTICAL_FLIP_FLAG | RESOURCE_FRAME_ENCODING_FLAG;
+        let mut flags = BridgeSpriteFlags::from_bits(preserved);
+
+        flags.publish_navigation_state(true);
+        assert_eq!(flags.bits(), preserved | STATE_ZERO_FLAG | DIRTY_FLAG);
+
+        flags.publish_navigation_state(false);
+        assert_eq!(flags.bits(), preserved | DIRTY_FLAG);
     }
 
     #[derive(Deserialize)]

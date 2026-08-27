@@ -16,20 +16,22 @@ use crate::native::bloodprg::{
     BridgeSpriteEntity, BridgeSpriteExtent, BridgeSpritePosition, BridgeSpriteRasterOutcome,
     BridgeSpriteRasterTarget, BridgeSpriteRect, BridgeSpriteRemapTables,
     CHART_BACK_BUFFER_RESOURCE_PATH, CameraApproachState, DirtyRegionCopyOutcome, FontPoint,
-    GameFontDrawOutcome, IndexedGamePalette, LoadedScriptProfile, NameAreaEffectOutcome,
-    NameAreaEffectState, OriginalResourceCache, OriginalSaveSlotDirectory, PaletteRemapTable,
-    PaletteResourceLoadOutcome, PaletteResourceStorage, PaletteResourceTarget, PauseHudRefresh,
-    PbmDecodeOptions, PbmDecodeResult, PbmPaletteUpdate, PbmTransparency, PresentationChoiceNumber,
-    PresentationLineBackend, PresentationResourceId, RasterPoint, RasterRectOutcome, ResourceId,
-    ScriptPresentationEntity, ScriptProfileId, ScriptProfileLoadOutcome, ScriptProfileManager,
-    ShipDepthBandLayout, ShipHudState, ShipViewArtworkSelection, ShipViewEntityId,
-    activate_bridge_sprite_from_retained_framebuffer, advance_bridge_sprite_state,
-    build_banked_tint_table, build_palette_blend_remap_table, build_pause_hud_refresh,
-    commit_bridge_sprite_dirty_range, copy_dirty_regions_to_display, decode_chart_back_buffer,
-    decode_orx_back_buffer, decode_pbm_image, draw_presentation_choice_number,
-    draw_small_font_text, fill_display_band, fill_framebuffer_rect, mark_bridge_sprite_range_dirty,
+    FontVerticalBand, GameFontDrawOutcome, GameFontFace, IndexedGamePalette, LoadedScriptProfile,
+    NameAreaEffectOutcome, NameAreaEffectState, OriginalResourceCache, OriginalSaveSlotDirectory,
+    PaletteRemapTable, PaletteResourceLoadOutcome, PaletteResourceStorage, PaletteResourceTarget,
+    PauseHudRefresh, PbmDecodeOptions, PbmDecodeResult, PbmPaletteUpdate, PbmTransparency,
+    PresentationChoiceNumber, PresentationLineBackend, PresentationResourceId, RasterPoint,
+    RasterRectOutcome, ResourceId, ScriptPresentationEntity, ScriptProfileId,
+    ScriptProfileLoadOutcome, ScriptProfileManager, ShipDepthBandLayout, ShipHudState,
+    ShipViewArtworkSelection, ShipViewEntityId, activate_bridge_sprite_from_retained_framebuffer,
+    advance_bridge_sprite_state, build_banked_tint_table, build_palette_blend_remap_table,
+    build_pause_hud_refresh, commit_bridge_sprite_dirty_range, copy_dirty_regions_to_display,
+    copy_work_surface_span, decode_chart_back_buffer, decode_orx_back_buffer, decode_pbm_image,
+    draw_main_font_text, draw_presentation_choice_number, draw_small_font_text, fill_display_band,
+    fill_framebuffer_rect, mark_bridge_sprite_range_dirty, measure_game_text_width,
     populate_bridge_sprite_from_cache, rasterize_bridge_sprite_range, remap_framebuffer_rect,
-    select_ship_view_artwork, update_name_area_effect,
+    select_ship_view_artwork, update_bridge_sprite_extent, update_bridge_sprite_position,
+    update_name_area_effect,
 };
 use crate::native::manu3::model::Manu3Model;
 
@@ -68,6 +70,10 @@ const BRIDGE_COMPLETION_REMAP_WIDTH: u16 = 50;
 const BRIDGE_COMPLETION_REMAP_HEIGHT: u16 = 44;
 const BLACK_REMAP_TARGET: [u8; RGB_COMPONENT_COUNT] = [u8::MIN; RGB_COMPONENT_COUNT];
 const LOGICAL_FRAMEBUFFER_ORIGIN: i32 = 0;
+const FULL_LOGICAL_FONT_BAND: FontVerticalBand = FontVerticalBand {
+    top: LOGICAL_FRAMEBUFFER_ORIGIN,
+    bottom: LOGICAL_FRAMEBUFFER_HEIGHT as i32 - 1,
+};
 const LOGICAL_DISPLAY_CLIP: BridgeSpriteRect = BridgeSpriteRect {
     left: LOGICAL_FRAMEBUFFER_ORIGIN,
     right: LOGICAL_FRAMEBUFFER_WIDTH as i32,
@@ -295,6 +301,41 @@ impl OriginalGameRuntime {
         .context("rasterizing bridge sprite entity range")
     }
 
+    /// Composite one executable-authored entity range into the active display.
+    pub(super) fn rasterize_ship_entity_range_to_front(
+        &mut self,
+        entities: Range<u16>,
+    ) -> Result<BridgeSpriteRasterOutcome> {
+        if entities.is_empty() {
+            bail!("ship entity raster range is empty");
+        }
+        let Self {
+            resource_cache,
+            bridge_sprite_entities,
+            bridge_dirty_regions,
+            front_buffer,
+            back_buffer,
+            bridge_dark_remap,
+            bridge_console_tint,
+            ..
+        } = self;
+        rasterize_bridge_sprite_range(
+            bridge_sprite_entities,
+            usize::from(entities.start)..=usize::from(entities.end - 1),
+            |resource| resource_cache.resolve(resource),
+            BridgeSpriteRasterTarget {
+                dirty_regions: &bridge_dirty_regions.regions,
+                retained_framebuffer: back_buffer.pixels(),
+                framebuffer: front_buffer.pixels_mut(),
+                remap_tables: BridgeSpriteRemapTables {
+                    first: bridge_dark_remap,
+                    second: bridge_console_tint,
+                },
+            },
+        )
+        .context("rasterizing bridge sprites into the active display")
+    }
+
     /// Current ship-camera approach state started by BloodScript travel actions.
     pub const fn camera_approach(&self) -> &CameraApproachState {
         &self.camera_approach
@@ -493,6 +534,30 @@ impl OriginalGameRuntime {
         .context("drawing compact game-font text")
     }
 
+    /// Measure one line through the executable-embedded main game font.
+    pub(super) fn measure_main_font_line(&self, text: &[u8]) -> Result<u16> {
+        measure_game_text_width(text, GameFontFace::Main, self.data.font_resources())
+            .context("measuring main game-font text")
+    }
+
+    /// Draw one line through the executable-embedded main game font.
+    pub(super) fn draw_main_font_line(
+        &mut self,
+        text: &[u8],
+        origin: FontPoint,
+        color: u8,
+    ) -> Result<GameFontDrawOutcome> {
+        draw_main_font_text(
+            self.front_buffer.pixels_mut(),
+            self.data.font_resources(),
+            text,
+            origin,
+            FULL_LOGICAL_FONT_BAND,
+            color,
+        )
+        .context("drawing main game-font text")
+    }
+
     /// Draw the selected presentation-choice number into the active framebuffer.
     pub fn draw_presentation_choice(&mut self, choice: PresentationChoiceNumber) -> Result<usize> {
         draw_presentation_choice_number(choice, self.front_buffer.pixels_mut())
@@ -507,6 +572,42 @@ impl OriginalGameRuntime {
     /// Copy the complete retained background into the presentation frame.
     pub fn restore_back_buffer(&mut self) {
         self.front_buffer.copy_from(&self.back_buffer);
+    }
+
+    /// Copy one checked span from a flat staging surface to the active display.
+    pub(super) fn publish_work_surface_span(
+        &mut self,
+        work_surface: &[u8],
+        x: u16,
+        y: u16,
+        width: u16,
+    ) -> Result<()> {
+        copy_work_surface_span(
+            work_surface,
+            self.front_buffer.pixels_mut(),
+            usize::from(x),
+            usize::from(y),
+            usize::from(width),
+        )
+        .context("publishing a navigation work-surface span")
+    }
+
+    /// Apply the bridge's recovered 50-percent dark remap to one logical rectangle.
+    pub(super) fn remap_bridge_dark_region(
+        &mut self,
+        origin: RasterPoint,
+        width: u16,
+        height: u16,
+    ) -> Result<RasterRectOutcome> {
+        remap_framebuffer_rect(
+            self.front_buffer.pixels_mut(),
+            LOGICAL_DISPLAY_CLIP,
+            origin,
+            width,
+            height,
+            &self.bridge_dark_remap,
+        )
+        .context("remapping a navigation panel rectangle")
     }
 
     /// Capture the current display as the source page for the ship-depth effect.
@@ -786,6 +887,113 @@ impl OriginalGameRuntime {
     /// Borrow the cached decoded `CARTE.SPR` payload after startup.
     pub fn startup_cartography_resource(&self) -> Option<&[u8]> {
         self.resource_cache.resolve(STARTUP_CARTOGRAPHY_RESOURCE)
+    }
+
+    /// Load one palette-prefixed sprite into the flat resource cache.
+    pub(super) fn load_cached_palette_sprite(&mut self, resource: ResourceId) -> Result<()> {
+        let loaded = self
+            .resource_cache
+            .load_palette_resource(
+                self.data.resource_store(),
+                self.data.resource_catalog(),
+                resource,
+                PaletteResourceTarget::Cached,
+                &mut self.live_palette,
+            )
+            .with_context(|| format!("loading palette sprite resource {}", resource.value()))?;
+        if !matches!(loaded.storage, PaletteResourceStorage::Cached(_)) {
+            bail!(
+                "palette sprite resource {} did not retain cache ownership",
+                resource.value()
+            );
+        }
+        Ok(())
+    }
+
+    /// Populate one checked bridge sprite slot from a cached resource frame.
+    pub(super) fn populate_cached_bridge_sprite(
+        &mut self,
+        entity_index: usize,
+        resource: ResourceId,
+        position: BridgeSpritePosition,
+        frame_index: usize,
+    ) -> Result<bool> {
+        populate_bridge_sprite_from_cache(
+            &self.resource_cache,
+            &mut self.bridge_sprite_entities,
+            entity_index,
+            resource,
+            position,
+            frame_index,
+        )
+        .with_context(|| {
+            format!(
+                "populating bridge sprite entity {entity_index} from resource {} frame {frame_index}",
+                resource.value()
+            )
+        })
+    }
+
+    /// Read one bridge sprite's decoded source extent.
+    pub(super) fn bridge_sprite_source_extent(
+        &self,
+        entity_index: usize,
+    ) -> Result<BridgeSpriteExtent> {
+        self.bridge_sprite_entities
+            .get(entity_index)
+            .map(|entity| entity.source_extent)
+            .with_context(|| format!("bridge sprite entity {entity_index} is absent"))
+    }
+
+    /// Advance one checked bridge sprite through its recovered active-state transition.
+    pub(super) fn transition_bridge_sprite(&mut self, entity_index: usize) -> Result<bool> {
+        advance_bridge_sprite_state(&mut self.bridge_sprite_entities, entity_index)
+            .with_context(|| format!("transitioning bridge sprite entity {entity_index}"))
+    }
+
+    /// Publish the timer-selected interactive state of one chart entity.
+    pub(super) fn publish_navigation_sprite_state(
+        &mut self,
+        entity_index: usize,
+        active: bool,
+    ) -> Result<()> {
+        let entity_count = self.bridge_sprite_entities.len();
+        let entity = self
+            .bridge_sprite_entities
+            .get_mut(entity_index)
+            .with_context(|| {
+                format!("navigation sprite entity {entity_index} is outside {entity_count} records")
+            })?;
+        entity.flags.publish_navigation_state(active);
+        Ok(())
+    }
+
+    /// Update one panel sprite's scaled extent against a typed comparison extent.
+    pub(super) fn update_bridge_sprite_extent(
+        &mut self,
+        entity_index: usize,
+        requested: BridgeSpriteExtent,
+        comparison: BridgeSpriteExtent,
+    ) -> Result<()> {
+        update_bridge_sprite_extent(
+            &mut self.bridge_sprite_entities,
+            entity_index,
+            requested,
+            comparison,
+        )
+        .with_context(|| format!("updating bridge sprite entity {entity_index} extent"))?;
+        Ok(())
+    }
+
+    /// Update one panel sprite's logical destination position.
+    pub(super) fn update_bridge_sprite_position(
+        &mut self,
+        entity_index: usize,
+        position: BridgeSpritePosition,
+    ) -> Result<()> {
+        update_bridge_sprite_position(&mut self.bridge_sprite_entities, entity_index, position)
+            .with_context(|| format!("updating bridge sprite entity {entity_index} position"))?;
+        Ok(())
     }
 
     /// Draw the exact pause clear rectangle and compact-font label into the front buffer.
