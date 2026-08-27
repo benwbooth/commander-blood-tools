@@ -346,6 +346,26 @@ impl<'window> Renderer<'window> {
             );
         }
         let rgba = indexed_frame_rgba(indexed_pixels, palette)?;
+        self.upload_rgba_frame(&rgba)
+    }
+
+    /// Upload one complete true-color logical frame.
+    pub(crate) fn upload_rgba_frame(&self, rgba: &[u8]) -> Result<()> {
+        let expected_byte_count = usize::try_from(self.image_width)
+            .ok()
+            .and_then(|width| {
+                usize::try_from(self.image_height)
+                    .ok()
+                    .and_then(|height| width.checked_mul(height))
+            })
+            .and_then(|pixels| pixels.checked_mul(RGBA_COMPONENT_COUNT))
+            .context("artwork texture dimensions exceed the host collection limit")?;
+        if rgba.len() != expected_byte_count {
+            anyhow::bail!(
+                "RGBA frame has {} bytes; artwork texture requires {expected_byte_count}",
+                rgba.len()
+            );
+        }
         self.queue.write_texture(
             wgpu::TexelCopyTextureInfo {
                 texture: &self.image_texture,
@@ -353,7 +373,7 @@ impl<'window> Renderer<'window> {
                 origin: wgpu::Origin3d::ZERO,
                 aspect: wgpu::TextureAspect::All,
             },
-            &rgba,
+            rgba,
             wgpu::TexelCopyBufferLayout {
                 offset: u64::MIN,
                 bytes_per_row: Some(self.image_width * RGBA_BYTES_PER_PIXEL),

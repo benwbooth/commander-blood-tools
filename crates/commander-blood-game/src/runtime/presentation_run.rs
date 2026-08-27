@@ -3,7 +3,7 @@
 use anyhow::{Context, Result, bail};
 
 use crate::native::bloodprg::{
-    CREDITS_VOICE_RESOURCE_PATH, GameLifecycleState, PresentationPresentPolicy,
+    CREDITS_VOICE_RESOURCE_PATH, GameLifecycleState, InputAction, PresentationPresentPolicy,
     PresentationResourceId, PresentationRunExit, PresentationRunHost, PresentationRunState,
     run_presentation_line_one_stream, run_presentation_line_zero,
 };
@@ -102,9 +102,15 @@ impl PresentationRunHost for RuntimePresentationRunHost<'_, '_> {
     }
 
     fn dispatch_input(&mut self, state: &mut PresentationRunState) -> Result<()> {
-        self.platform
+        let action = self
+            .platform
             .dispatch_events(self.services, &mut self.input_state);
-        state.input_stop_gate = u8::from(self.input_state.exit_requested);
+        let cancelled = action == Some(InputAction::Cancel);
+        if cancelled {
+            self.services.finish_presentation_sequence();
+            self.active_policy = None;
+        }
+        state.input_stop_gate = u8::from(self.input_state.exit_requested || cancelled);
         Ok(())
     }
 

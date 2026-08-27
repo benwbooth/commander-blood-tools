@@ -8,8 +8,8 @@ use sdl3::AudioSubsystem;
 use crate::native::bloodprg::{
     BridgeSceneInput, BridgeSteeringInteraction, CdAudioPreparationOutcome, ConfirmDialogOutcome,
     GameLifecycleHost, GameLifecycleState, GameProfileLoadStatus, GameSceneLink, GameTimerContext,
-    GameTimerState, GameVmRunStatus, PresentationResourceId, ScriptProfileId, ScriptRuntime,
-    advance_game_timer_tick,
+    GameTimerState, GameVmRunStatus, InputAction, PresentationResourceId, ScriptProfileId,
+    ScriptRuntime, advance_game_timer_tick,
 };
 
 use super::bridge_frame::run_runtime_bridge_frame;
@@ -25,6 +25,7 @@ const DEFERRED_MENU_SCENE_LINK_TARGET: u16 = 26_544;
 const PRESENTATION_MENU_BUFFER_LINK_TARGET: u16 = u16::MIN;
 const GAME_TIMER_TICKS_PER_FRAME: usize = 8;
 const COMPLETION_VOICE_RESOURCE: &[u8] = b"mu\\tablo2.voc";
+const PRIMARY_POINTER_PRESS_RETAIN_FRAMES: u8 = 1;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 enum RuntimeAudioStartupStage {
@@ -259,7 +260,16 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
         }
         self.advance_frame_timers(state)?;
         if let Some(action) = self.platform.dispatch_events(&mut self.services, state) {
-            self.services.queue_save_load_input(action)?;
+            let presentation_accept = routes_to_presentation_accept(
+                action,
+                self.services.presentation_screen_state()?.active(),
+            );
+            if presentation_accept {
+                state.primary_pointer_pressed = true;
+                state.pointer_press_pending = PRIMARY_POINTER_PRESS_RETAIN_FRAMES;
+            } else {
+                self.services.queue_save_load_input(action)?;
+            }
         }
         Ok(())
     }
@@ -497,6 +507,10 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
     }
 }
 
+const fn routes_to_presentation_accept(action: InputAction, presentation_active: bool) -> bool {
+    presentation_active && matches!(action, InputAction::Cancel)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -535,5 +549,12 @@ mod tests {
             RuntimeGameLifecycleHost::bridge_interaction(&state),
             BridgeSteeringInteraction::MenuEngaged
         );
+    }
+
+    #[test]
+    fn escape_is_routed_to_the_active_bridge_presentation_only() {
+        assert!(routes_to_presentation_accept(InputAction::Cancel, true));
+        assert!(!routes_to_presentation_accept(InputAction::Cancel, false));
+        assert!(!routes_to_presentation_accept(InputAction::Accept, true));
     }
 }

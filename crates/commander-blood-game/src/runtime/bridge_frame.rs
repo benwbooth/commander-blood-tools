@@ -26,6 +26,10 @@ pub(super) fn run_runtime_bridge_frame(
     input: BridgeSceneInput,
     navigation_animation_phase: u8,
 ) -> Result<BridgeFrameOutcome> {
+    let presentation_primary_pressed = lifecycle.primary_pointer_pressed;
+    let presentation_freezes_bridge = lifecycle.presentation.c2_presentation_gate
+        || services.presentation_stream_active()
+        || services.presentation_screen_state()?.active();
     let scene_dispatch_pending = services.bridge_scene_dispatch_pending();
     let transition_pending = services.runtime().camera_approach().transition_pending;
     let primary_camera_view = services.bridge_actor_camera_transition_step()? == u8::MIN;
@@ -49,6 +53,8 @@ pub(super) fn run_runtime_bridge_frame(
             lifecycle,
             input,
             navigation_animation_phase,
+            presentation_primary_pressed,
+            presentation_freezes_bridge,
         };
         coordinate_bridge_frame(&mut state, &mut context, &mut backend)
             .context("coordinating recovered bridge frame")
@@ -62,6 +68,8 @@ struct RuntimeBridgeFrameBackend<'state, 'window> {
     lifecycle: &'state mut GameLifecycleState,
     input: BridgeSceneInput,
     navigation_animation_phase: u8,
+    presentation_primary_pressed: bool,
+    presentation_freezes_bridge: bool,
 }
 
 impl BridgeFrameBackend for RuntimeBridgeFrameBackend<'_, '_> {
@@ -100,6 +108,9 @@ impl BridgeFrameBackend for RuntimeBridgeFrameBackend<'_, '_> {
         context: &mut BridgeSceneContext<Self::SceneLink, Self::ComparisonExtent>,
         _state: &mut crate::native::bloodprg::BridgeFrameState,
     ) -> Result<bool> {
+        if self.presentation_freezes_bridge {
+            return Ok(false);
+        }
         let comparison_extent = self
             .services
             .runtime()
@@ -215,7 +226,7 @@ impl BridgeFrameBackend for RuntimeBridgeFrameBackend<'_, '_> {
         state: &mut crate::native::bloodprg::BridgeFrameState,
     ) -> Result<()> {
         self.services
-            .update_presentation_screen(scene_link, self.lifecycle.primary_pointer_pressed)?;
+            .update_presentation_screen(scene_link, self.presentation_primary_pressed)?;
         self.services
             .consume_presentation_screen_outputs(self.lifecycle)?;
         state.set_frame_ready(self.lifecycle.frame_presented);

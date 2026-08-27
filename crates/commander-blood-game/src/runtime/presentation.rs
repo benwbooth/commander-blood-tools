@@ -24,7 +24,14 @@ pub(super) enum RuntimeBridgeComposition {
     BridgeScene,
     /// Present the wgpu bridge followed by indexed UI pixels and MANU3.
     BridgeSceneWithIndexedOverlay,
+    /// Present the true-color bridge with only the opaque panel rows above it.
+    BridgeSceneWithTrueColorPanel,
 }
+
+const PRESENTATION_PANEL_FIRST_ROW: usize = 10;
+const PRESENTATION_PANEL_AFTER_LAST_ROW: usize = 140;
+const RGBA_COMPONENT_COUNT: usize = 4;
+const OPAQUE_ALPHA: u8 = u8::MAX;
 
 /// SDL/wgpu presentation state for the original logical framebuffer and bridge.
 pub struct RuntimePresentationHost<'window> {
@@ -87,6 +94,14 @@ impl<'window> RuntimePresentationHost<'window> {
             .context("uploading translated indexed game frame")
     }
 
+    /// Upload only the authored bridge-panel rows as an RGBA overlay.
+    fn submit_true_color_panel(&mut self, runtime: &OriginalGameRuntime) -> Result<()> {
+        let rgba = true_color_panel_rgba(runtime.front_buffer().pixels(), runtime.live_palette())?;
+        self.renderer_ref()?
+            .upload_rgba_frame(&rgba)
+            .context("uploading true-color bridge presentation panel")
+    }
+
     /// Present indexed artwork without a 3D base scene.
     pub fn present_artwork(&mut self, manu3_triangles: &[RenderTriangle]) -> Result<()> {
         self.renderer_mut()?
@@ -105,7 +120,11 @@ impl<'window> RuntimePresentationHost<'window> {
     ) -> Result<()> {
         // Frame-tail text and palette work occurs after the native chunky-copy
         // boundary, so refresh the modern texture immediately before drawing.
-        self.submit_indexed_frame(runtime)?;
+        if composition == RuntimeBridgeComposition::BridgeSceneWithTrueColorPanel {
+            self.submit_true_color_panel(runtime)?;
+        } else {
+            self.submit_indexed_frame(runtime)?;
+        }
         let manu3_triangles = runtime
             .manu3()
             .map(|model| model.render_triangles())
@@ -119,6 +138,9 @@ impl<'window> RuntimePresentationHost<'window> {
                 renderer.render(manu3_triangles, None, Some(bridge_frame))
             }
             RuntimeBridgeComposition::BridgeSceneWithIndexedOverlay => {
+                renderer.render_with_indexed_overlay(manu3_triangles, None, Some(bridge_frame))
+            }
+            RuntimeBridgeComposition::BridgeSceneWithTrueColorPanel => {
                 renderer.render_with_indexed_overlay(manu3_triangles, None, Some(bridge_frame))
             }
         }
@@ -204,6 +226,33 @@ fn runtime_original_frame(
     })
 }
 
+fn true_color_panel_rgba(indexed_pixels: &[u8], palette: &IndexedGamePalette) -> Result<Vec<u8>> {
+    if indexed_pixels.len() != LOGICAL_FRAMEBUFFER_PIXEL_COUNT {
+        bail!(
+            "runtime frame has {} pixels; expected {LOGICAL_FRAMEBUFFER_PIXEL_COUNT}",
+            indexed_pixels.len()
+        );
+    }
+    let palette_rgba = indexed_palette_rgba(palette)?;
+    let mut rgba = vec![u8::MIN; LOGICAL_FRAMEBUFFER_PIXEL_COUNT * RGBA_COMPONENT_COUNT];
+    for row in PRESENTATION_PANEL_FIRST_ROW..PRESENTATION_PANEL_AFTER_LAST_ROW {
+        let first_pixel = row * LOGICAL_FRAMEBUFFER_WIDTH;
+        let after_last_pixel = first_pixel + LOGICAL_FRAMEBUFFER_WIDTH;
+        for (pixel, palette_index) in indexed_pixels[first_pixel..after_last_pixel]
+            .iter()
+            .copied()
+            .enumerate()
+        {
+            let source = usize::from(palette_index) * RGBA_COMPONENT_COUNT;
+            let destination = (first_pixel + pixel) * RGBA_COMPONENT_COUNT;
+            rgba[destination..destination + RGBA_COMPONENT_COUNT]
+                .copy_from_slice(&palette_rgba[source..source + RGBA_COMPONENT_COUNT]);
+            rgba[destination + RGBA_COMPONENT_COUNT - 1] = OPAQUE_ALPHA;
+        }
+    }
+    Ok(rgba)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -239,5 +288,23 @@ mod tests {
         invalid_palette[255][2] = 64;
         let pixels = vec![u8::MIN; LOGICAL_FRAMEBUFFER_PIXEL_COUNT];
         assert!(runtime_original_frame(&pixels, &invalid_palette).is_err());
+    }
+
+    #[test]
+    fn true_color_panel_is_opaque_only_inside_the_authored_panel_rows() {
+        let mut palette = [[u8::MIN; 3]; 256];
+        palette[usize::from(TEST_PALETTE_INDEX)] = TEST_COLOR;
+        let pixels = vec![TEST_PALETTE_INDEX; LOGICAL_FRAMEBUFFER_PIXEL_COUNT];
+        let rgba = true_color_panel_rgba(&pixels, &palette).unwrap();
+
+        let before_panel = (PRESENTATION_PANEL_FIRST_ROW - 1) * LOGICAL_FRAMEBUFFER_WIDTH;
+        let inside_panel = PRESENTATION_PANEL_FIRST_ROW * LOGICAL_FRAMEBUFFER_WIDTH;
+        let after_panel = PRESENTATION_PANEL_AFTER_LAST_ROW * LOGICAL_FRAMEBUFFER_WIDTH;
+        assert_eq!(rgba[before_panel * RGBA_COMPONENT_COUNT + 3], u8::MIN);
+        assert_eq!(
+            &rgba[inside_panel * RGBA_COMPONENT_COUNT..(inside_panel + 1) * RGBA_COMPONENT_COUNT],
+            &EXPANDED_TEST_COLOR
+        );
+        assert_eq!(rgba[after_panel * RGBA_COMPONENT_COUNT + 3], u8::MIN);
     }
 }

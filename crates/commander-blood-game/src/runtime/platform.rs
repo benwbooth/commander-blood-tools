@@ -13,7 +13,7 @@ use crate::native::bloodprg::{
     GameLifecycleState, InputAction, PointerButton, PointerButtons, PointerSample,
 };
 
-use super::input::INITIAL_LOGICAL_POINTER;
+use super::input::{INITIAL_LOGICAL_POINTER, map_host_pointer_to_logical};
 use super::{ModernGameServices, RuntimeAlienOverlayFrameInput};
 
 /// Input frequency of the IBM PC programmable interval timer.
@@ -31,7 +31,6 @@ const ORIGINAL_DISPLAY_ASPECT_WIDTH: f32 = 4.0;
 const ORIGINAL_DISPLAY_ASPECT_HEIGHT: f32 = 3.0;
 const LOGICAL_SCREEN_WIDTH: f32 = 320.0;
 const LOGICAL_SCREEN_HEIGHT: f32 = 200.0;
-const LOGICAL_SCREEN_MAXIMUM: [f32; 2] = [LOGICAL_SCREEN_WIDTH - 1.0, LOGICAL_SCREEN_HEIGHT - 1.0];
 const ALIEN_DRIVER_WIDTH: f32 = 640.0;
 const ALIEN_DRIVER_HEIGHT: f32 = 1_024.0;
 const ALIEN_DRIVER_CENTER: [f32; 2] = [ALIEN_DRIVER_WIDTH / 2.0, ALIEN_DRIVER_HEIGHT / 2.0];
@@ -81,10 +80,14 @@ pub struct RuntimePlatformHost<'window> {
 }
 
 impl<'window> RuntimePlatformHost<'window> {
-    /// Bind SDL relative input to a flat virtual pointer owned by the game.
+    /// Bind SDL input without capturing the desktop pointer.
+    ///
+    /// The ordinary bridge uses the host pointer directly. Relative capture is
+    /// scoped to the synchronous alien overlay, whose recovered driver consumes
+    /// unbounded motion rather than a window position.
     pub fn new(window: &'window Window, mouse: MouseUtil, events: EventPump) -> Self {
         let pointer_buttons = pointer_buttons(&events.mouse_state());
-        mouse.set_relative_mouse_mode(window, true);
+        mouse.set_relative_mouse_mode(window, false);
         Self {
             window,
             mouse,
@@ -138,12 +141,17 @@ impl<'window> RuntimePlatformHost<'window> {
             bail!("alien-overlay input is already active");
         }
         self.alien_pointer = Some(ALIEN_DRIVER_CENTER);
+        self.mouse.set_relative_mouse_mode(self.window, true);
         Ok(())
     }
 
     /// Release the temporary virtual pointer after the XDB loop exits.
     pub fn finish_alien_overlay_input(&mut self) -> bool {
-        self.alien_pointer.take().is_some()
+        let released = self.alien_pointer.take().is_some();
+        if released {
+            self.mouse.set_relative_mouse_mode(self.window, false);
+        }
+        released
     }
 
     fn pump_events(&mut self, services: &mut ModernGameServices<'window>) -> bool {
@@ -178,10 +186,13 @@ impl<'window> RuntimePlatformHost<'window> {
                     win_event: WindowEvent::FocusGained,
                     ..
                 } if event_window_id == window_id => {
-                    self.mouse.set_relative_mouse_mode(self.window, true);
+                    self.mouse
+                        .set_relative_mouse_mode(self.window, self.alien_pointer.is_some());
                 }
                 Event::MouseMotion {
                     window_id: event_window_id,
+                    x,
+                    y,
                     xrel,
                     yrel,
                     ..
@@ -195,7 +206,8 @@ impl<'window> RuntimePlatformHost<'window> {
                     } else {
                         let delta = map_motion_to_logical(output_size, [xrel, yrel]);
                         self.bridge_horizontal_delta += delta[0];
-                        integrate_logical_pointer(&mut self.logical_pointer, delta);
+                        self.logical_pointer =
+                            map_host_pointer_to_logical(output_size, [x, y]).map(f32::from);
                     }
                 }
                 Event::MouseButtonDown {
@@ -232,12 +244,12 @@ impl<'window> RuntimePlatformHost<'window> {
         platform_shutdown
     }
 
-    /// Publish the virtual relative pointer into the recovered input sampler.
+    /// Publish the window-relative host pointer into the recovered input sampler.
     pub fn poll_pointer(&mut self, services: &mut ModernGameServices<'window>) -> PointerSample {
         services.publish_lifecycle_logical_pointer(self.logical_pointer(), self.pointer_buttons)
     }
 
-    /// Current flat logical pointer, including visual-only relative motion.
+    /// Current flat logical pointer mapped through the aspect-correct viewport.
     pub fn logical_pointer(&self) -> [i16; 2] {
         self.logical_pointer.map(|coordinate| coordinate as i16)
     }
@@ -365,12 +377,6 @@ fn map_motion_to_logical(output_size: [f32; 2], motion: [f32; 2]) -> [f32; 2] {
     ]
 }
 
-fn integrate_logical_pointer(pointer: &mut [f32; 2], delta: [f32; 2]) {
-    for axis in 0..pointer.len() {
-        pointer[axis] = (pointer[axis] + delta[axis]).clamp(0.0, LOGICAL_SCREEN_MAXIMUM[axis]);
-    }
-}
-
 fn map_motion_to_alien_driver(output_size: [f32; 2], motion: [f32; 2]) -> [f32; 2] {
     let output_width = output_size[0].max(1.0);
     let output_height = output_size[1].max(1.0);
@@ -460,17 +466,6 @@ mod tests {
             ),
             [LOGICAL_SCREEN_WIDTH, LOGICAL_SCREEN_HEIGHT]
         );
-    }
-
-    #[test]
-    fn virtual_pointer_clamps_without_discarding_relative_bridge_motion() {
-        let mut pointer = INITIAL_LOGICAL_POINTER.map(f32::from);
-        let delta = [-LOGICAL_SCREEN_WIDTH * 2.0, LOGICAL_SCREEN_HEIGHT * 2.0];
-        let bridge_motion = delta[0];
-        integrate_logical_pointer(&mut pointer, delta);
-
-        assert_eq!(pointer, [0.0, LOGICAL_SCREEN_MAXIMUM[1]]);
-        assert_eq!(bridge_motion, -LOGICAL_SCREEN_WIDTH * 2.0);
     }
 
     #[test]

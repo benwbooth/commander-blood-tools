@@ -2904,11 +2904,10 @@ impl<'window> ModernGameServices<'window> {
     pub fn present_bridge_frame(&mut self, bridge_frame: &BridgeSceneFrame) -> Result<()> {
         self.ensure_main_viewport()?;
         let composition = select_bridge_composition(
-            self.presentation_player.has_stream()
-                || self
-                    .presentation_screen
-                    .as_ref()
-                    .is_some_and(|screen| screen.state().active()),
+            self.presentation_player.has_stream(),
+            self.presentation_screen
+                .as_ref()
+                .is_some_and(|screen| screen.state().active()),
             bridge_frame.steering.view_changed,
         );
         self.presentation
@@ -2923,11 +2922,10 @@ impl<'window> ModernGameServices<'window> {
             .as_ref()
             .context("no rendered bridge frame is ready")?;
         let composition = select_bridge_composition(
-            self.presentation_player.has_stream()
-                || self
-                    .presentation_screen
-                    .as_ref()
-                    .is_some_and(|screen| screen.state().active()),
+            self.presentation_player.has_stream(),
+            self.presentation_screen
+                .as_ref()
+                .is_some_and(|screen| screen.state().active()),
             frame.steering.view_changed,
         );
         self.presentation
@@ -2994,10 +2992,13 @@ fn overlay_nonzero_indices(destination: &mut [u8], source: &[u8]) {
 }
 
 const fn select_bridge_composition(
-    indexed_framebuffer_owned: bool,
+    presentation_stream_active: bool,
+    presentation_panel_active: bool,
     bridge_view_changed: bool,
 ) -> RuntimeBridgeComposition {
-    if indexed_framebuffer_owned {
+    if presentation_panel_active {
+        RuntimeBridgeComposition::BridgeSceneWithTrueColorPanel
+    } else if presentation_stream_active {
         RuntimeBridgeComposition::IndexedFramebuffer
     } else if bridge_view_changed {
         RuntimeBridgeComposition::BridgeScene
@@ -3316,19 +3317,27 @@ mod tests {
     #[test]
     fn bridge_composition_never_duplicates_owned_or_moving_indexed_backgrounds() {
         assert_eq!(
-            select_bridge_composition(true, false),
+            select_bridge_composition(true, false, false),
             RuntimeBridgeComposition::IndexedFramebuffer
         );
         assert_eq!(
-            select_bridge_composition(true, true),
+            select_bridge_composition(true, false, true),
             RuntimeBridgeComposition::IndexedFramebuffer
         );
         assert_eq!(
-            select_bridge_composition(false, true),
+            select_bridge_composition(false, true, false),
+            RuntimeBridgeComposition::BridgeSceneWithTrueColorPanel
+        );
+        assert_eq!(
+            select_bridge_composition(true, true, true),
+            RuntimeBridgeComposition::BridgeSceneWithTrueColorPanel
+        );
+        assert_eq!(
+            select_bridge_composition(false, false, true),
             RuntimeBridgeComposition::BridgeScene
         );
         assert_eq!(
-            select_bridge_composition(false, false),
+            select_bridge_composition(false, false, false),
             RuntimeBridgeComposition::BridgeSceneWithIndexedOverlay
         );
     }
