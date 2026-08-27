@@ -1038,6 +1038,7 @@ mod tests {
     use crate::runtime::{OriginalGameData, OriginalGameDataPaths};
 
     const TEST_VIDEO_RESOURCE: &[u8] = br"SQ\LOGO01.HNM";
+    const SHIPPED_HNM_RESOURCE_COUNT: usize = 701;
 
     #[test]
     fn derivative_paths_preserve_dos_resource_identity() {
@@ -1132,6 +1133,17 @@ mod tests {
         assert!(entry.metadata_byte_count > 0);
 
         std::fs::remove_dir_all(&scratch).unwrap();
+    }
+
+    #[test]
+    #[ignore = "requires original Commander Blood data, FFmpeg, and substantial CPU time"]
+    fn every_real_hnm_generates_a_verified_lossless_webm_derivative() {
+        let paths = OriginalGameDataPaths::discover(None).unwrap();
+        let data = OriginalGameData::load_with_writable_root(paths, std::env::temp_dir()).unwrap();
+        let mut runtime = OriginalGameRuntime::new(data);
+
+        let video_count = prepare_lossless_webm_derivatives_for_runtime(&mut runtime).unwrap();
+        assert_eq!(video_count, SHIPPED_HNM_RESOURCE_COUNT);
     }
 
     fn build_rgb_planar_frame_for_dimensions(
