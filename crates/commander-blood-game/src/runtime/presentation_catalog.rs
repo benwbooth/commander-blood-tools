@@ -76,22 +76,28 @@ impl RuntimePresentationCatalog {
         }
     }
 
-    /// Replace all location, object, and character fields selected by one DESCRIPT record.
+    /// Apply filename slots written by one DESCRIPT record.
+    ///
+    /// `vm_c2_descript_lookup` resets its cursors and per-record counts, but it
+    /// does not erase the fixed filename and talk-entry buffers. An absent
+    /// opcode therefore leaves that presentation line bound to its prior
+    /// resource.
     pub fn apply_descript_assets(&mut self, assets: &DescriptPresentationAssets) -> Result<()> {
-        self.names[LOCATION_PRESENTATION_LINE] = optional_prefixed_name(
-            LOCATION_RESOURCE_DIRECTORY,
-            assets.location_scene_video(),
-            "location presentation",
-        )?;
-        self.names[CHARACTER_IDLE_PRESENTATION_LINE] = optional_prefixed_name(
-            CHARACTER_RESOURCE_DIRECTORY,
-            assets.idle_clip().map(|clip| clip.video().as_bytes()),
-            "character idle presentation",
-        )?;
-        self.backgrounds[CHARACTER_IDLE_PRESENTATION_LINE] = assets
-            .idle_clip()
-            .map(|clip| clip.background().into())
-            .unwrap_or(RuntimePresentationBackground::None);
+        if let Some(video) = assets.location_scene_video() {
+            self.names[LOCATION_PRESENTATION_LINE] = Some(prefixed_name(
+                LOCATION_RESOURCE_DIRECTORY,
+                video,
+                "location presentation",
+            )?);
+        }
+        if let Some(clip) = assets.idle_clip() {
+            self.names[CHARACTER_IDLE_PRESENTATION_LINE] = Some(prefixed_name(
+                CHARACTER_RESOURCE_DIRECTORY,
+                clip.video().as_bytes(),
+                "character idle presentation",
+            )?);
+            self.backgrounds[CHARACTER_IDLE_PRESENTATION_LINE] = clip.background().into();
+        }
 
         if assets.talk_clips().len() > CHARACTER_TALK_PRESENTATION_LINE_COUNT {
             bail!(
@@ -99,25 +105,23 @@ impl RuntimePresentationCatalog {
                 assets.talk_clips().len()
             );
         }
-        for line in FIRST_CHARACTER_TALK_PRESENTATION_LINE
-            ..FIRST_CHARACTER_TALK_PRESENTATION_LINE + CHARACTER_TALK_PRESENTATION_LINE_COUNT
-        {
-            self.names[line] = None;
-            self.backgrounds[line] = RuntimePresentationBackground::None;
-        }
         // Opcodes 09/0A write these names before opcode-07 talk entries in every
         // shipped character record. Talk entries 31 and 32 intentionally alias
         // lines 39 and 40, so preserve that native last-write-wins ordering.
-        self.names[CHARACTER_RIGHT_PRESENTATION_LINE] = optional_prefixed_name(
-            CHARACTER_RESOURCE_DIRECTORY,
-            assets.character_right_scene_video(),
-            "right character presentation",
-        )?;
-        self.names[CHARACTER_LEFT_PRESENTATION_LINE] = optional_prefixed_name(
-            CHARACTER_RESOURCE_DIRECTORY,
-            assets.character_left_scene_video(),
-            "left character presentation",
-        )?;
+        if let Some(video) = assets.character_right_scene_video() {
+            self.names[CHARACTER_RIGHT_PRESENTATION_LINE] = Some(prefixed_name(
+                CHARACTER_RESOURCE_DIRECTORY,
+                video,
+                "right character presentation",
+            )?);
+        }
+        if let Some(video) = assets.character_left_scene_video() {
+            self.names[CHARACTER_LEFT_PRESENTATION_LINE] = Some(prefixed_name(
+                CHARACTER_RESOURCE_DIRECTORY,
+                video,
+                "left character presentation",
+            )?);
+        }
         for (index, clip) in assets.talk_clips().iter().enumerate() {
             let line = FIRST_CHARACTER_TALK_PRESENTATION_LINE + index;
             self.names[line] = Some(prefixed_name(
@@ -128,11 +132,13 @@ impl RuntimePresentationCatalog {
             self.backgrounds[line] = clip.background().into();
         }
 
-        self.names[OBJECT_PRESENTATION_LINE] = optional_prefixed_name(
-            OBJECT_RESOURCE_DIRECTORY,
-            assets.object_scene_video(),
-            "object presentation",
-        )?;
+        if let Some(video) = assets.object_scene_video() {
+            self.names[OBJECT_PRESENTATION_LINE] = Some(prefixed_name(
+                OBJECT_RESOURCE_DIRECTORY,
+                video,
+                "object presentation",
+            )?);
+        }
         Ok(())
     }
 
@@ -220,16 +226,6 @@ fn dynamic_presentation_lines() -> impl Iterator<Item = usize> {
     )
 }
 
-fn optional_prefixed_name(
-    directory: &[u8],
-    basename: Option<&[u8]>,
-    context: &str,
-) -> Result<Option<BloodResourceName>> {
-    basename
-        .map(|basename| prefixed_name(directory, basename, context))
-        .transpose()
-}
-
 fn prefixed_name(directory: &[u8], basename: &[u8], context: &str) -> Result<BloodResourceName> {
     if basename.contains(&b'/') || basename.contains(&b'\\') {
         return BloodResourceName::new(basename).with_context(|| context.to_owned());
@@ -265,6 +261,62 @@ mod tests {
         assert_eq!(opening.descriptor_flags, 0);
         assert_eq!(opening.variant, 16);
         assert!(catalog.request(FIRST_DYNAMIC_PRESENTATION_LINE).is_err());
+    }
+
+    #[test]
+    fn unrelated_descript_records_preserve_native_filename_slots() {
+        let Some(data) = original_data() else {
+            return;
+        };
+        let mut backend = RuntimeScriptBackend::new(
+            &data,
+            ScriptClock {
+                hour: 12,
+                day: 1,
+                month: 1,
+            },
+        );
+        let mut catalog = RuntimePresentationCatalog::new(data.presentation_catalog());
+        let mut text = TextPresentationState::default();
+
+        backend
+            .apply_description(b"Ondoya", true, &mut text)
+            .unwrap()
+            .unwrap();
+        catalog.apply_descript_assets(backend.assets()).unwrap();
+        let location = catalog.names[LOCATION_PRESENTATION_LINE].clone().unwrap();
+
+        backend
+            .apply_description(b"Scruter_Jo", true, &mut text)
+            .unwrap()
+            .unwrap();
+        catalog.apply_descript_assets(backend.assets()).unwrap();
+        let character = catalog.names[CHARACTER_IDLE_PRESENTATION_LINE]
+            .clone()
+            .unwrap();
+        assert_eq!(
+            catalog.names[LOCATION_PRESENTATION_LINE],
+            Some(location.clone())
+        );
+
+        backend
+            .apply_description(b"hat", true, &mut text)
+            .unwrap()
+            .unwrap();
+        catalog.apply_descript_assets(backend.assets()).unwrap();
+        let object = catalog.names[OBJECT_PRESENTATION_LINE].clone().unwrap();
+
+        backend
+            .apply_description(b"present", true, &mut text)
+            .unwrap()
+            .unwrap();
+        catalog.apply_descript_assets(backend.assets()).unwrap();
+        assert_eq!(catalog.names[LOCATION_PRESENTATION_LINE], Some(location));
+        assert_eq!(
+            catalog.names[CHARACTER_IDLE_PRESENTATION_LINE],
+            Some(character)
+        );
+        assert_eq!(catalog.names[OBJECT_PRESENTATION_LINE], Some(object));
     }
 
     #[test]

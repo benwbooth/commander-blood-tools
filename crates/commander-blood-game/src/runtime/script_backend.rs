@@ -988,17 +988,8 @@ mod tests {
                     .backend_mut()
                     .apply_action_description(object, &name, &mut text)
                     .unwrap();
-                if applied
-                    && scripts
-                        .backend()
-                        .assets()
-                        .location_scene_video()
-                        .is_some()
-                {
-                    assert_eq!(
-                        scripts.backend().active_description_object(),
-                        Some(object)
-                    );
+                if applied && scripts.backend().assets().location_scene_video().is_some() {
+                    assert_eq!(scripts.backend().active_description_object(), Some(object));
                     return;
                 }
             }
