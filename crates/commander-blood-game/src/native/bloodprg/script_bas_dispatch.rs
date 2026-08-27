@@ -6,9 +6,9 @@ use std::fmt;
 use commander_blood_formats::bas::{ScriptBas, ScriptBasInstruction, ScriptBasToken};
 use commander_blood_formats::code::ScriptCodeOffset;
 use commander_blood_formats::instruction::{
-    DecodedScriptInstruction, ScriptInstructionError, decode_script_record_clear_operation,
-    decode_script_shared_bit_operation, decode_script_shared_state_operation,
-    decode_script_transfer,
+    DecodedScriptInstruction, ScriptInstructionError, ScriptTextWord,
+    decode_script_record_clear_operation, decode_script_shared_bit_operation,
+    decode_script_shared_state_operation, decode_script_transfer,
 };
 use commander_blood_formats::script::{
     ScriptDictionary, ScriptDirectory, ScriptObjectId, ScriptState, ScriptWordId,
@@ -185,6 +185,17 @@ pub fn execute_script_dialogue_control<Host: ScriptBasDispatchHost>(
         )
     };
     dispatch.sequence_presentation.offered_topic = offered_topic;
+    if result.as_ref().is_ok_and(|outcome| outcome.menu_collected) {
+        let menu_words = selector
+            .pending_presentation_words()
+            .iter()
+            .copied()
+            .map(ScriptTextWord::Dictionary)
+            .collect::<Vec<_>>()
+            .into_boxed_slice();
+        dispatch.text_presentation.menu_word_count = menu_words.len();
+        dispatch.text_presentation.menu_words = menu_words;
+    }
     result
 }
 
@@ -515,7 +526,7 @@ mod tests {
                 let parts = profile.execution_parts();
                 let mut dispatch = ScriptDispatchState::default();
                 dispatch.sequence_presentation.presentation_active = true;
-                execute_script_dialogue_control(
+                let outcome = execute_script_dialogue_control(
                     ScriptDialogueExecutionContext {
                         actor,
                         selector_root: ScriptCodeOffset::new(node.offset),
@@ -540,6 +551,13 @@ mod tests {
                         node.offset
                     )
                 });
+                if outcome.menu_collected {
+                    assert!(!dispatch.text_presentation.menu_words.is_empty());
+                    assert_eq!(
+                        dispatch.text_presentation.menu_word_count,
+                        dispatch.text_presentation.menu_words.len()
+                    );
+                }
                 profile.synchronized_state().unwrap();
                 executed_lists += 1;
             }

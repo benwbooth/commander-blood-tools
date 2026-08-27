@@ -426,7 +426,6 @@ pub struct RuntimeScriptBackend {
     clock: ScriptClock,
     sequence_context: SequenceRequestContext,
     navigation_context: Option<ScriptRecordStateNavigationContext>,
-    selector_root: Option<commander_blood_formats::code::ScriptCodeOffset>,
     ship_interface_active: bool,
     active_description_object: Option<ScriptObjectId>,
     last_descript_application: Option<DescriptRecordApplication>,
@@ -449,7 +448,6 @@ impl RuntimeScriptBackend {
             clock,
             sequence_context: SequenceRequestContext::default(),
             navigation_context: None,
-            selector_root: None,
             ship_interface_active: false,
             active_description_object: None,
             last_descript_application: None,
@@ -465,7 +463,6 @@ impl RuntimeScriptBackend {
             .map(|(object, entry)| (object, Box::from(entry.name())))
             .collect();
         self.active_description_object = None;
-        self.selector_root = None;
     }
 
     /// Apply one exact DESCRIPT record through real original-resource loaders.
@@ -514,14 +511,6 @@ impl RuntimeScriptBackend {
     /// Bind the dynamic C1 navigation operands for the current bridge frame.
     pub fn set_navigation_context(&mut self, context: Option<ScriptRecordStateNavigationContext>) {
         self.navigation_context = context;
-    }
-
-    /// Bind the active BAS selector root used by concept commits.
-    pub fn set_selector_root(
-        &mut self,
-        root: Option<commander_blood_formats::code::ScriptCodeOffset>,
-    ) {
-        self.selector_root = root;
     }
 
     /// Update whether the ship interface suppresses new transfer presentations.
@@ -636,10 +625,6 @@ impl ScriptExecutionBackend for RuntimeScriptBackend {
             ship_interface_active: self.ship_interface_active,
             descriptor_available: self.object_has_description(item)?,
         })
-    }
-
-    fn selector_root(&self) -> Option<commander_blood_formats::code::ScriptCodeOffset> {
-        self.selector_root
     }
 
     fn lookup_presentation_description(

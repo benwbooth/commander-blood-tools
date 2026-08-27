@@ -408,6 +408,19 @@ pub fn execute_text_instruction(
             selector.replace_presentation_words(
                 presentation.condition_presentation_words.iter().copied(),
             );
+            if matches!(outcome, TextHandlerOutcome::SubtitlePublished)
+                && !presentation.condition_presentation_words.is_empty()
+            {
+                let choice_words = presentation
+                    .condition_presentation_words
+                    .iter()
+                    .copied()
+                    .map(ScriptTextWord::Dictionary)
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice();
+                presentation.menu_word_count = choice_words.len();
+                presentation.menu_words = choice_words;
+            }
         }
     }
     let flow = if !published {
@@ -929,6 +942,60 @@ mod tests {
             TextHandlerOutcome::Gated(TextHandlerGate::AlreadyShown)
         );
         assert_eq!(second.flow, ScriptFrameFlow::Continue);
+    }
+
+    #[test]
+    fn subtitle_resume_choices_publish_the_flat_choice_buffer() {
+        let dictionary = dictionary();
+        let first_choice = dictionary_word(&dictionary, 0x0300);
+        let second_choice = dictionary_word(&dictionary, 0x0320);
+        let text = ScriptText {
+            line_record: ScriptLineRecordOffset::decode(0),
+            presentation_selector: 4,
+            control: ScriptTextControl::decode(0x8030),
+            resume_target: Some(ScriptCodeOffset::new(0x3333)),
+            record_condition_operand: None,
+            words: vec![
+                dictionary_word(&dictionary, 0x0100),
+                ScriptTextWord::SectionSeparator,
+                first_choice,
+                second_choice,
+            ]
+            .into_boxed_slice(),
+        };
+        let mut state = actor_line_state(
+            u16::MIN,
+            ScriptActionRecord::ACTOR_PRESENTATION_KIND,
+            u16::MIN,
+        );
+        let mut selector = ScriptSelectorState::default();
+        let mut presentation = TextPresentationState::default();
+
+        let execution = execute_text_instruction(
+            &text,
+            &mut TextInstructionState::new(&text),
+            &dictionary,
+            &mut state,
+            &mut selector,
+            &mut ScriptRuntime::new(),
+            &mut BloodPrng::default(),
+            &mut presentation,
+        )
+        .unwrap();
+
+        assert_eq!(execution.outcome, TextHandlerOutcome::SubtitlePublished);
+        assert_eq!(execution.flow, ScriptFrameFlow::SaveResumeCursor);
+        let expected_choices = [first_choice, second_choice].map(|word| match word {
+            ScriptTextWord::Dictionary(word) => word,
+            ScriptTextWord::SectionSeparator => unreachable!(),
+        });
+        assert_eq!(selector.pending_presentation_words(), expected_choices);
+        assert_eq!(
+            presentation.menu_words.as_ref(),
+            [first_choice, second_choice]
+        );
+        assert_eq!(presentation.menu_word_count, expected_choices.len());
+        assert_eq!(presentation.subtitle_text.as_ref(), b"HELLO \r");
     }
 
     #[test]

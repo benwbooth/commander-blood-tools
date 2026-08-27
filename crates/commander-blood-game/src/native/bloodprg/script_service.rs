@@ -53,9 +53,6 @@ pub trait ScriptExecutionBackend {
         item: ScriptObjectId,
     ) -> Result<ScriptTransferContext, Self::Error>;
 
-    /// Return the active BAS selector root for a committed concept.
-    fn selector_root(&self) -> Option<ScriptCodeOffset>;
-
     /// Resolve and stage presentation assets for an object.
     fn lookup_presentation_description(
         &mut self,
@@ -165,6 +162,7 @@ pub struct ScriptExecutionService<Backend> {
     presentation: ScriptPresentationScanState,
     action: ScriptActionState,
     bas: ScriptBasDispatchState,
+    selector_root: Option<ScriptCodeOffset>,
     last_presentation_outcome: Option<ScriptPresentationScanOutcome>,
 }
 
@@ -176,6 +174,7 @@ impl<Backend> ScriptExecutionService<Backend> {
             presentation: ScriptPresentationScanState::default(),
             action: ScriptActionState::default(),
             bas: ScriptBasDispatchState::default(),
+            selector_root: None,
             last_presentation_outcome: None,
         }
     }
@@ -225,6 +224,7 @@ impl<Backend> ScriptExecutionService<Backend> {
         self.presentation = ScriptPresentationScanState::default();
         self.action = ScriptActionState::default();
         self.bas.reset();
+        self.selector_root = None;
         self.last_presentation_outcome = None;
     }
 }
@@ -303,7 +303,7 @@ impl<Backend: ScriptExecutionBackend> ScriptDispatchHost for ScriptExecutionServ
     }
 
     fn selector_root(&self) -> Option<ScriptCodeOffset> {
-        self.backend.selector_root()
+        self.selector_root
     }
 
     fn scan_presentation(&mut self, context: ScriptPostScanContext<'_>) -> Result<(), Self::Error> {
@@ -340,6 +340,7 @@ impl<Backend: ScriptExecutionBackend> ScriptDispatchHost for ScriptExecutionServ
                 dispatch,
                 bas: &mut self.bas,
                 action: &mut self.action,
+                selector_root: &mut self.selector_root,
                 backend: &mut self.backend,
             };
             scan_script_presentations(
@@ -356,6 +357,9 @@ impl<Backend: ScriptExecutionBackend> ScriptDispatchHost for ScriptExecutionServ
             )
             .map_err(ScriptExecutionServiceError::Presentation)?
         };
+        if outcome.presentation_ended {
+            self.selector_root = None;
+        }
         dispatch.import_presentation_scan_state(&self.presentation);
         self.last_presentation_outcome = Some(outcome);
         Ok(())
@@ -372,6 +376,7 @@ struct PresentationAdapter<'a, Backend> {
     dispatch: &'a mut ScriptDispatchState,
     bas: &'a mut ScriptBasDispatchState,
     action: &'a mut ScriptActionState,
+    selector_root: &'a mut Option<ScriptCodeOffset>,
     backend: &'a mut Backend,
 }
 
@@ -384,6 +389,7 @@ impl<Backend: ScriptExecutionBackend> ScriptPresentationScanHost<super::ScriptPr
         &mut self,
         context: ScriptDialogueControlDispatchContext<'_, super::ScriptProfileRecordState>,
     ) -> Result<(), Self::Error> {
+        *self.selector_root = Some(context.selector_root);
         let presentation = context.presentation;
         let mut host = BasExternalHost {
             backend: self.backend,
@@ -655,10 +661,6 @@ mod tests {
                 ship_interface_active: false,
                 descriptor_available: true,
             })
-        }
-
-        fn selector_root(&self) -> Option<ScriptCodeOffset> {
-            None
         }
 
         fn lookup_presentation_description(

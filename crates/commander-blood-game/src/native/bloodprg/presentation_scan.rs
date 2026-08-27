@@ -16,6 +16,8 @@ use super::{
     script_field_offset,
 };
 
+const SELECTOR_YIELD_PREFIX_SIZE: u16 = 1;
+
 const SERIALIZED_WORD_SIZE: usize = std::mem::size_of::<u16>();
 
 /// Record kind retained when save restoration provides no related object yet.
@@ -80,8 +82,6 @@ pub struct ScriptPresentationScanState {
     pub word_choice_active: bool,
     /// A presentation has started but has not released its handoff lock.
     pub start_locked: bool,
-    /// The current primary presentation record is still a C4 actor link.
-    pub primary_actor_record_active: bool,
     /// UI mode requests a descriptor lookup when a player presentation starts.
     pub name_lookup_enabled: bool,
     /// The name-area visual effect is enabled for the current UI mode.
@@ -434,9 +434,16 @@ where
         || presentation.c2_gate_active
         || presentation.word_choice_active
         || presentation.start_locked
-        || !presentation.primary_actor_record_active
         || object_has_flag(state, actor, ScriptObjectFlag::PresentationBlocked) != Some(false)
     {
+        return Ok(());
+    }
+    let primary_slot = action_slot(state, player)
+        .ok_or(ScriptPresentationScanError::MissingActionSlot { object: player })?;
+    if !matches!(
+        records.action_records().record(primary_slot),
+        ScriptActionRecord::ActorPresentation(_)
+    ) {
         return Ok(());
     }
     let slot = action_slot(state, actor)
@@ -458,7 +465,8 @@ where
     if target == u16::MIN {
         return Ok(());
     }
-    let selector_root = ScriptCodeOffset::new(usize::from(target));
+    let selector_root =
+        ScriptCodeOffset::new(usize::from(target.wrapping_add(SELECTOR_YIELD_PREFIX_SIZE)));
     host.dispatch_dialogue_control(ScriptDialogueControlDispatchContext {
         state,
         runtime,
@@ -661,6 +669,7 @@ mod tests {
     const DIRECTORY_ENTRY_SIZE: usize = 20;
     const DIRECTORY_NAME_CAPACITY: usize = 16;
     const DIRECTORY_ACTIVE_KIND: u16 = 1;
+    const TEST_SELECTOR_PREFIX: usize = 51;
     const TEST_SELECTOR_ROOT: usize = 52;
     const PLAYER_INDEX: usize = 0;
     const ACTOR_INDEX: usize = 1;
@@ -686,6 +695,7 @@ mod tests {
     #[derive(Default)]
     struct RecordingHost {
         events: Vec<&'static str>,
+        selector_roots: Vec<ScriptCodeOffset>,
     }
 
     impl ScriptPresentationScanHost for RecordingHost {
@@ -693,9 +703,10 @@ mod tests {
 
         fn dispatch_dialogue_control(
             &mut self,
-            _context: ScriptDialogueControlDispatchContext<'_>,
+            context: ScriptDialogueControlDispatchContext<'_>,
         ) -> Result<(), Self::Error> {
             self.events.push("control");
+            self.selector_roots.push(context.selector_root);
             Ok(())
         }
 
@@ -836,12 +847,15 @@ mod tests {
             "kind2_handoff_then_action" => {
                 set_active(fixture, ACTOR_INDEX, true);
                 fixture.presentation.active = true;
-                fixture.presentation.primary_actor_record_active = true;
+                fixture.records.set_record(
+                    slot(fixture, PLAYER_INDEX),
+                    ScriptActionRecord::ActorPresentation(actor),
+                );
                 fixture.records.set_record(
                     slot(fixture, ACTOR_INDEX),
                     ScriptActionRecord::ActorPresentation(player),
                 );
-                set_handoff_target(fixture, TEST_SELECTOR_ROOT);
+                set_handoff_target(fixture, TEST_SELECTOR_PREFIX);
             }
             "kind2_blocked_owner_still_runs_action" => {
                 set_active(fixture, ACTOR_INDEX, true);
@@ -852,17 +866,23 @@ mod tests {
                     true,
                 ));
                 fixture.presentation.active = true;
-                fixture.presentation.primary_actor_record_active = true;
+                fixture.records.set_record(
+                    slot(fixture, PLAYER_INDEX),
+                    ScriptActionRecord::ActorPresentation(actor),
+                );
                 fixture.records.set_record(
                     slot(fixture, ACTOR_INDEX),
                     ScriptActionRecord::ActorPresentation(player),
                 );
-                set_handoff_target(fixture, TEST_SELECTOR_ROOT);
+                set_handoff_target(fixture, TEST_SELECTOR_PREFIX);
             }
             "kind2_negative_value_suppresses_action" => {
                 set_active(fixture, ACTOR_INDEX, true);
                 fixture.presentation.active = true;
-                fixture.presentation.primary_actor_record_active = true;
+                fixture.records.set_record(
+                    slot(fixture, PLAYER_INDEX),
+                    ScriptActionRecord::ActorPresentation(actor),
+                );
                 let action_slot = slot(fixture, ACTOR_INDEX);
                 fixture
                     .records
@@ -1064,6 +1084,13 @@ mod tests {
                 vector.name
             );
             assert!(!fixture.presentation.pair_write_disabled);
+
+            if vector.name == "kind2_handoff_then_action" {
+                assert_eq!(
+                    host.selector_roots,
+                    [ScriptCodeOffset::new(TEST_SELECTOR_ROOT)]
+                );
+            }
 
             if vector.name == "kind1_teardown_clears_history_before_action" {
                 assert!(
