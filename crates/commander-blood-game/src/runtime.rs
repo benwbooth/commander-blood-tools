@@ -12,6 +12,7 @@ mod confirm_dialog;
 mod game_lifecycle;
 mod input;
 mod navigation_chart;
+mod navigation_status;
 mod palette_transition;
 mod platform;
 mod presentation;

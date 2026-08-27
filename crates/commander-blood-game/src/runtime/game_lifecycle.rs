@@ -352,6 +352,7 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
         if state.frame_presented {
             self.services.rasterize_bridge_frame_sprite_range(1..20)?;
             self.services.advance_bridge_name_area_effect()?;
+            self.services.update_runtime_navigation_status(state)?;
             self.services.update_runtime_bridge_console(state)?;
             if self.services.bridge_actor_completion_latched()? {
                 self.services.remap_bridge_completion_region()?;

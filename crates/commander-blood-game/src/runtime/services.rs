@@ -57,6 +57,7 @@ use super::choice_list::{
     RuntimeChoiceListStyle, draw_choice_list_rows, prepare_choice_list_frame,
 };
 use super::navigation_chart::RuntimeNavigationChart;
+use super::navigation_status::RuntimeNavigationStatus;
 use super::presentation_screen::RuntimeSceneTransitionDispatchContext;
 use super::ship_presentation::update_runtime_ship_presentation as run_runtime_ship_presentation;
 use super::ship_target::ship_hud_arche_link;
@@ -131,6 +132,7 @@ pub struct ModernGameServices<'window> {
     bridge_console: Option<RuntimeBridgeConsole>,
     camera_navigation: Option<RuntimeCameraNavigation>,
     navigation_chart: Option<RuntimeNavigationChart>,
+    navigation_status: Option<RuntimeNavigationStatus>,
     presentation_screen: Option<RuntimePresentationScreen>,
     presentation_word_choice: Option<RuntimePresentationWordChoice>,
     save_load: Option<RuntimeSaveLoad>,
@@ -201,6 +203,7 @@ impl<'window> ModernGameServices<'window> {
             bridge_console: Some(bridge_console),
             camera_navigation: Some(RuntimeCameraNavigation::default()),
             navigation_chart: Some(RuntimeNavigationChart::default()),
+            navigation_status: Some(RuntimeNavigationStatus::default()),
             presentation_screen: Some(presentation_screen),
             presentation_word_choice: Some(RuntimePresentationWordChoice::default()),
             save_load: Some(RuntimeSaveLoad::default()),
@@ -2596,6 +2599,26 @@ impl<'window> ModernGameServices<'window> {
         outcome.context("updating recovered navigation chart")
     }
 
+    /// Compose or clear the executable-authored bridge location status hover.
+    pub(super) fn update_runtime_navigation_status(
+        &mut self,
+        lifecycle: &mut GameLifecycleState,
+    ) -> Result<crate::native::bloodprg::NavigationStatusOutcome> {
+        let snapshot = self
+            .navigation_chart
+            .as_ref()
+            .context("navigation chart is already being updated")?
+            .status_snapshot()
+            .context("navigation status requires a decoded chart world")?;
+        let mut status = self
+            .navigation_status
+            .take()
+            .context("navigation status update is reentrant")?;
+        let outcome = status.update(self, lifecycle, &snapshot);
+        self.navigation_status = Some(status);
+        outcome.context("updating recovered navigation status")
+    }
+
     /// Advance the executable-authored character-name palette noise.
     pub(super) fn advance_bridge_name_area_effect(&mut self) -> Result<NameAreaEffectOutcome> {
         let Self {
@@ -3136,6 +3159,9 @@ mod tests {
     const LOCATION_PANEL_OPENING_SETTLE_FRAMES: usize = 9;
     const LOCATION_PANEL_CLOSING_SETTLE_FRAMES: usize = 8;
     const POINTER_PRESS_PENDING: u8 = 1;
+    const STATUS_TEST_ORIGIN: [u16; 2] = [40, 50];
+    const STATUS_TEST_EXTENT: [u16; 2] = [30, 20];
+    const STATUS_TEST_ACTIVE_FLAGS: u16 = 1;
     const AUTHORED_RADIO_TERMINAL_FRAME: u16 = 11;
     const AUTHORED_ACTOR_RESOURCES: [u16; NAV_ACTOR_SLOT_COUNT] = [17, 13, 15, 16, 19, 18];
     const AUTHORED_ACTOR_TRANSITION_RESOURCES: [Option<u16>; NAV_ACTOR_SLOT_COUNT] =
@@ -3525,6 +3551,83 @@ mod tests {
         assert_ne!(opening_source, closed_chart);
         assert!(opening_source.iter().any(|pixel| *pixel != u8::MIN));
         services.set_bridge_camera_view_active(false);
+        lifecycle.navigation_transition_pending = false;
+        lifecycle.presentation.active = false;
+        lifecycle.presentation.subtitle_word_list_mode = false;
+        {
+            let text = services.text_presentation_mut();
+            text.subtitle_display_active = false;
+            text.subtitle_word_list_mode = false;
+        }
+        let status_entity_index = crate::runtime::navigation_status::NAVIGATION_STATUS_ENTITY_INDEX;
+        let original_status_entity =
+            services.runtime().bridge_sprite_entities()[status_entity_index];
+        {
+            let status_entity =
+                &mut services.runtime_mut().bridge_sprite_entities_mut()[status_entity_index];
+            status_entity.flags =
+                crate::native::bloodprg::BridgeSpriteFlags::from_bits(STATUS_TEST_ACTIVE_FLAGS);
+            status_entity.draw_position = crate::native::bloodprg::BridgeSpritePosition {
+                x: STATUS_TEST_ORIGIN[0],
+                y: STATUS_TEST_ORIGIN[1],
+            };
+            status_entity.extent = crate::native::bloodprg::BridgeSpriteExtent {
+                width: STATUS_TEST_EXTENT[0],
+                height: STATUS_TEST_EXTENT[1],
+            };
+        }
+        let status_entity = services.runtime().bridge_sprite_entities()[status_entity_index];
+        services.input_mut().poll_pointer(
+            TEST_OUTPUT_SIZE,
+            [
+                f32::from(status_entity.draw_position.x) * TEST_LOGICAL_TO_HOST_SCALE[0],
+                f32::from(status_entity.draw_position.y) * TEST_LOGICAL_TO_HOST_SCALE[1],
+            ],
+            PointerButtons::default(),
+        );
+        let status_outcome = services
+            .update_runtime_navigation_status(&mut lifecycle)
+            .unwrap();
+        assert!(
+            matches!(
+                status_outcome,
+                crate::native::bloodprg::NavigationStatusOutcome::Composed { .. }
+            ),
+            "unexpected navigation status outcome: {status_outcome:?}"
+        );
+        let status_text = services.text_presentation().subtitle_text.clone();
+        assert!(status_text.ends_with(b"\r\r"));
+        assert!(services.text_presentation().subtitle_word_list_mode);
+        assert!(lifecycle.presentation.subtitle_word_list_mode);
+
+        let status_right = status_entity
+            .draw_position
+            .x
+            .wrapping_add(status_entity.extent.width);
+        let outside_x = if status_entity.draw_position.x != u16::MIN {
+            status_entity.draw_position.x - 1
+        } else {
+            status_right.saturating_add(1)
+        };
+        services.input_mut().poll_pointer(
+            TEST_OUTPUT_SIZE,
+            [
+                f32::from(outside_x) * TEST_LOGICAL_TO_HOST_SCALE[0],
+                f32::from(status_entity.draw_position.y) * TEST_LOGICAL_TO_HOST_SCALE[1],
+            ],
+            PointerButtons::default(),
+        );
+        assert_eq!(
+            services
+                .update_runtime_navigation_status(&mut lifecycle)
+                .unwrap(),
+            crate::native::bloodprg::NavigationStatusOutcome::PointerOutside
+        );
+        assert_eq!(services.text_presentation().subtitle_text, status_text);
+        assert!(!services.text_presentation().subtitle_word_list_mode);
+        assert!(!lifecycle.presentation.subtitle_word_list_mode);
+        services.runtime_mut().bridge_sprite_entities_mut()[status_entity_index] =
+            original_status_entity;
         assert_ne!(plotted_star_count, usize::MIN);
         assert_eq!(
             services.bridge_presentation_mode(),

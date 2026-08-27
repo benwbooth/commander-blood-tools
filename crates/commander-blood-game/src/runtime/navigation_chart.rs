@@ -3,7 +3,7 @@
 use anyhow::{Context, Result, anyhow, bail};
 use commander_blood_formats::bloodprg::BLOODPRG_NAVIGATION_WIPE_ENDPOINT_COUNT;
 use commander_blood_formats::script::{
-    ScriptObjectId, ScriptObjectKind, ScriptState, ScriptStateWordPair,
+    ScriptObjectId, ScriptObjectKind, ScriptState, ScriptStateObjectReference, ScriptStateWordPair,
 };
 
 use crate::native::bloodprg::{
@@ -49,6 +49,7 @@ pub(super) struct RuntimeNavigationChart {
     work_surface: Box<[u8]>,
     staging_surface: Box<[u8]>,
     pending_spans: Vec<NavigationChartCopySpan>,
+    status_snapshot: Option<RuntimeNavigationStatusSnapshot>,
 }
 
 impl Default for RuntimeNavigationChart {
@@ -64,6 +65,7 @@ impl Default for RuntimeNavigationChart {
             work_surface: vec![u8::MIN; LOGICAL_FRAMEBUFFER_PIXEL_COUNT].into_boxed_slice(),
             staging_surface: vec![u8::MIN; LOGICAL_FRAMEBUFFER_PIXEL_COUNT].into_boxed_slice(),
             pending_spans: Vec::new(),
+            status_snapshot: None,
         }
     }
 }
@@ -77,6 +79,11 @@ impl RuntimeNavigationChart {
     /// Whether the location-information panel currently owns chart interaction.
     pub(super) fn location_panel_active(&self) -> bool {
         self.state.panel.active || self.state.panel.selected_location.is_some()
+    }
+
+    /// Return the current typed location and roster captured during chart work.
+    pub(super) fn status_snapshot(&self) -> Option<RuntimeNavigationStatusSnapshot> {
+        self.status_snapshot.clone()
     }
 
     /// Number of in-play destinations captured on the first closing frame.
@@ -100,6 +107,7 @@ impl RuntimeNavigationChart {
         navigation_animation_phase: u8,
     ) -> Result<NavigationCameraOutcome> {
         let world = RuntimeNavigationWorld::decode(services.runtime())?;
+        self.status_snapshot = Some(world.status_snapshot());
         let comparison_extent = services
             .runtime()
             .bridge_sprite_source_extent(LOCATION_PANEL_ENTITY)
@@ -157,7 +165,16 @@ struct RuntimeNavigationLocation {
     id: ScriptObjectId,
     kind: NavigationStatusLocationKind,
     name: Box<[u8]>,
-    sources: Vec<LocationPanelSource>,
+    sources: Vec<RuntimeNavigationSource>,
+}
+
+#[derive(Clone)]
+struct RuntimeNavigationSource {
+    kind: ScriptObjectKind,
+    active: bool,
+    life_support_visits: u16,
+    location: Option<ScriptObjectId>,
+    name: Box<[u8]>,
 }
 
 struct RuntimeNavigationArtwork {
@@ -165,6 +182,7 @@ struct RuntimeNavigationArtwork {
     resource: ResourceId,
 }
 
+#[derive(Clone)]
 struct RuntimeNavigationLabels {
     planet: Box<[u8]>,
     ship: Box<[u8]>,
@@ -182,7 +200,37 @@ struct RuntimeNavigationWorld {
     locations: Vec<RuntimeNavigationLocation>,
     artwork: Vec<RuntimeNavigationArtwork>,
     labels: RuntimeNavigationLabels,
+    status_snapshot: RuntimeNavigationStatusSnapshot,
     wipe_endpoints: [[u16; 2]; BLOODPRG_NAVIGATION_WIPE_ENDPOINT_COUNT],
+}
+
+/// Owned location data shared with the late bridge navigation-status pass.
+#[derive(Clone)]
+pub(super) struct RuntimeNavigationStatusSnapshot {
+    pub(super) location_kind: NavigationStatusLocationKind,
+    pub(super) location_name: Box<[u8]>,
+    pub(super) sources: Vec<RuntimeNavigationStatusSource>,
+    pub(super) ark_location: ScriptObjectId,
+    pub(super) labels: RuntimeNavigationStatusLabels,
+}
+
+/// One typed descendant considered by the navigation-status roster filter.
+#[derive(Clone)]
+pub(super) struct RuntimeNavigationStatusSource {
+    pub(super) kind: ScriptObjectKind,
+    pub(super) active: bool,
+    pub(super) life_support_visits: u16,
+    pub(super) location: Option<ScriptObjectId>,
+    pub(super) name: Box<[u8]>,
+}
+
+/// Owned executable-authored labels used by the navigation-status composer.
+#[derive(Clone)]
+pub(super) struct RuntimeNavigationStatusLabels {
+    pub(super) planet: Box<[u8]>,
+    pub(super) ship: Box<[u8]>,
+    pub(super) black_hole: Box<[u8]>,
+    pub(super) life_support: Box<[u8]>,
 }
 
 impl RuntimeNavigationWorld {
@@ -194,8 +242,13 @@ impl RuntimeNavigationWorld {
             .builtins()
             .archetype
             .context("loaded BloodScript profile has no Arche object")?;
+        let ark_location = profile
+            .builtins()
+            .ark
+            .context("loaded BloodScript profile has no Ark object")?;
         let current_location = super::ship_target::ship_hud_arche_link(profile.state(), arche)?.0;
-        let current_location_kind = chart_kind(object_kind(profile, current_location)?);
+        let current_location_object_kind = object_kind(profile, current_location)?;
+        let current_location_kind = chart_kind(current_location_object_kind);
         let arche_marker = read_position(
             profile.state(),
             resolve_navigation_position(profile.state(), arche, arche, u16::MIN)
@@ -289,7 +342,41 @@ impl RuntimeNavigationWorld {
         }
 
         let navigation = runtime.data().navigation_resources();
-        let labels = navigation.labels();
+        let decoded_labels = navigation.labels();
+        let labels = RuntimeNavigationLabels {
+            planet: decoded_labels.planet().into(),
+            ship: decoded_labels.ship().into(),
+            black_hole: decoded_labels.black_hole().into(),
+            life_support: decoded_labels.life_support().into(),
+        };
+        let status_snapshot = RuntimeNavigationStatusSnapshot {
+            location_kind: status_kind(current_location_object_kind),
+            location_name: profile
+                .directory()
+                .object(current_location)
+                .with_context(|| {
+                    format!("current navigation location {current_location:?} has no name")
+                })?
+                .name()
+                .into(),
+            sources: location_sources(profile, current_location)?
+                .into_iter()
+                .map(|source| RuntimeNavigationStatusSource {
+                    kind: source.kind,
+                    active: source.active,
+                    life_support_visits: source.life_support_visits,
+                    location: source.location,
+                    name: source.name,
+                })
+                .collect(),
+            ark_location,
+            labels: RuntimeNavigationStatusLabels {
+                planet: labels.planet.clone(),
+                ship: labels.ship.clone(),
+                black_hole: labels.black_hole.clone(),
+                life_support: labels.life_support.clone(),
+            },
+        };
         let artwork = runtime
             .data()
             .world_artwork_layout()
@@ -308,12 +395,8 @@ impl RuntimeNavigationWorld {
             pick_objects,
             locations,
             artwork,
-            labels: RuntimeNavigationLabels {
-                planet: labels.planet().into(),
-                ship: labels.ship().into(),
-                black_hole: labels.black_hole().into(),
-                life_support: labels.life_support().into(),
-            },
+            labels,
+            status_snapshot,
             wipe_endpoints: *navigation.wipe_endpoints(),
         })
     }
@@ -323,6 +406,10 @@ impl RuntimeNavigationWorld {
             .iter()
             .find(|location| location.id == id)
             .with_context(|| format!("selected navigation location {id:?} is absent"))
+    }
+
+    fn status_snapshot(&self) -> RuntimeNavigationStatusSnapshot {
+        self.status_snapshot.clone()
     }
 
     fn chart_object(&self, id: ScriptObjectId) -> Result<NavigationChartObject<ScriptObjectId>> {
@@ -572,7 +659,7 @@ impl NavigationCameraHost<ScriptObjectId, BridgeSpriteExtent>
 
 struct RuntimeLocationPanelBackend<'state, 'window> {
     services: &'state mut ModernGameServices<'window>,
-    sources: &'state [LocationPanelSource],
+    sources: &'state [RuntimeNavigationSource],
     callback_error: Option<anyhow::Error>,
 }
 
@@ -734,7 +821,16 @@ impl LocationInfoPanelHost<ResourceId, ScriptObjectId, BridgeSpriteExtent>
         &mut self,
         _location: &ScriptObjectId,
     ) -> Result<Vec<LocationPanelSource>> {
-        Ok(self.sources.to_vec())
+        Ok(self
+            .sources
+            .iter()
+            .map(|source| LocationPanelSource {
+                kind: source.kind,
+                active: source.active,
+                life_support_visits: source.life_support_visits,
+                name: source.name.clone(),
+            })
+            .collect())
     }
 
     fn release_panel_entity(&mut self) {
@@ -837,7 +933,7 @@ fn navigation_labels(labels: &RuntimeNavigationLabels) -> NavigationStatusLabels
 fn location_sources(
     profile: &LoadedScriptProfile,
     location: ScriptObjectId,
-) -> Result<Vec<LocationPanelSource>> {
+) -> Result<Vec<RuntimeNavigationSource>> {
     navigation_source_objects(profile.state(), location)
         .context("building location-panel source objects")?
         .into_iter()
@@ -852,7 +948,7 @@ fn location_sources(
                 .with_context(|| format!("navigation source {source:?} has no name"))?
                 .name()
                 .into();
-            Ok(LocationPanelSource {
+            Ok(RuntimeNavigationSource {
                 kind: object.kind,
                 active: object_has_flag(profile.state(), source, ScriptObjectFlag::Active)
                     .unwrap_or(false),
@@ -862,6 +958,11 @@ fn location_sources(
                     ScriptFieldSelector::ENCOUNTER_COUNT,
                 )
                 .unwrap_or(u16::MIN),
+                location: read_optional_object_reference(
+                    profile,
+                    source,
+                    ScriptFieldSelector::HOLDER_OR_LOCATION,
+                )?,
                 name,
             })
         })
@@ -937,6 +1038,32 @@ fn read_optional_object_word(
         .state()
         .object_word(object, offset / WORD_BYTE_COUNT)?;
     profile.state().word(field)
+}
+
+fn read_optional_object_reference(
+    profile: &LoadedScriptProfile,
+    object: ScriptObjectId,
+    selector: ScriptFieldSelector,
+) -> Result<Option<ScriptObjectId>> {
+    let record = profile
+        .state()
+        .object(object)
+        .with_context(|| format!("navigation source {object:?} is absent"))?;
+    let offset = script_field_offset(record.kind, selector).with_context(|| {
+        format!(
+            "navigation source {object:?} has no field for selector {}",
+            selector.index()
+        )
+    })?;
+    let field = profile
+        .state()
+        .object_word(object, offset / WORD_BYTE_COUNT)
+        .with_context(|| format!("navigation source {object:?} relation is unreadable"))?;
+    match profile.state().object_reference(field) {
+        Some(ScriptStateObjectReference::Object(location)) => Ok(Some(location)),
+        Some(ScriptStateObjectReference::Sentinel) => Ok(None),
+        None => bail!("navigation source {object:?} has an invalid location relation"),
+    }
 }
 
 fn read_position(state: &ScriptState, field: ScriptStateWordPair) -> Result<[u16; 2]> {
