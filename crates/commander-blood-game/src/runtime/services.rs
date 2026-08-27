@@ -3,7 +3,7 @@
 use anyhow::{Context, Result, bail};
 use commander_blood_formats::archive::BloodResourceName;
 use commander_blood_formats::bloodprg::{BloodprgFontResources, decode_bloodprg_bridge_resources};
-use commander_blood_formats::script::ScriptWordId;
+use commander_blood_formats::script::{ScriptObjectId, ScriptWordId};
 use commander_blood_formats::snd::{SndBank, VocPcm};
 use sdl3::AudioSubsystem;
 use sdl3::video::Window;
@@ -18,22 +18,24 @@ use crate::native::bloodprg::{
     PresentationResourceId, PresentationResourceSequenceOutcome, PresentationSceneDispatchOutcome,
     PresentationScreenOutcome, PresentationScreenState, PresentationWordChoiceOutcome, ScriptClock,
     ScriptFrameOutcome, ScriptProfileId, ScriptProfileLoadOutcome, ShipDepthTransitionOutcome,
-    ShipPresentationState, ShipProjectionResources, ShipViewEntityId, StartupPreparationOutcome,
-    TextPresentationState, draw_planar_dialogue_text, measure_game_text_width,
-    reveal_inline_menu_step, update_manu3_hand_frame,
+    ShipHudInitializationContext, ShipPresentationState, ShipProjectionResources,
+    ShipTargetSelectionState, ShipViewEntityId, StartupPreparationOutcome, TextPresentationState,
+    draw_planar_dialogue_text, measure_game_text_width, reveal_inline_menu_step,
+    update_manu3_hand_frame,
 };
 use crate::native::manu3::animation::CursorPosition;
 use crate::native::random::BloodPrng;
 
 use super::choice_list::{draw_choice_list_rows, prepare_choice_list_frame};
+use super::ship_target::ship_hud_arche_link;
 use super::{
     LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_PIXEL_COUNT, OriginalGameData,
     OriginalGameRuntime, RuntimeAssetLoadStatus, RuntimeAudioHost, RuntimeConfirmDialog,
     RuntimeInputHost, RuntimePaletteTransition, RuntimePaletteTransitionOutcome, RuntimePcmClip,
     RuntimePresentationCatalog, RuntimePresentationHost, RuntimePresentationPlayer,
     RuntimePresentationScreen, RuntimePresentationStepOutcome, RuntimePresentationWordChoice,
-    RuntimeScriptBackend, RuntimeScriptCommand, RuntimeScriptSystem, RuntimeSubtitleReveal,
-    VGA_BIOS_FONT_8X8,
+    RuntimeScriptBackend, RuntimeScriptCommand, RuntimeScriptSystem, RuntimeShipTargetSelection,
+    RuntimeShipTargetSelector, RuntimeSubtitleReveal, VGA_BIOS_FONT_8X8,
 };
 
 const INITIAL_LOGICAL_POINTER: [i16; 2] = [160, 100];
@@ -64,6 +66,7 @@ pub struct ModernGameServices<'window> {
     bridge_frame: Option<BridgeSceneFrame>,
     presentation_screen: Option<RuntimePresentationScreen>,
     presentation_word_choice: Option<RuntimePresentationWordChoice>,
+    ship_target_selector: Option<RuntimeShipTargetSelector>,
     subtitle_reveal: Option<RuntimeSubtitleReveal>,
     palette_transition: RuntimePaletteTransition,
     confirm_dialog: RuntimeConfirmDialog,
@@ -98,6 +101,7 @@ impl<'window> ModernGameServices<'window> {
             bridge_frame: None,
             presentation_screen: Some(presentation_screen),
             presentation_word_choice: Some(RuntimePresentationWordChoice::default()),
+            ship_target_selector: Some(RuntimeShipTargetSelector::default()),
             subtitle_reveal: Some(RuntimeSubtitleReveal::default()),
             palette_transition: RuntimePaletteTransition::default(),
             confirm_dialog,
@@ -321,7 +325,66 @@ impl<'window> ModernGameServices<'window> {
         &mut self,
         profile: ScriptProfileId,
     ) -> Result<ScriptProfileLoadOutcome> {
-        self.scripts.load_profile(&mut self.runtime, profile)
+        let outcome = self.scripts.load_profile(&mut self.runtime, profile)?;
+        self.ship_target_selector = Some(RuntimeShipTargetSelector::default());
+        Ok(outcome)
+    }
+
+    /// Advance and draw the recovered ship-HUD target selector.
+    pub fn update_ship_target_selection(
+        &mut self,
+        state: &mut ShipTargetSelectionState<ScriptObjectId>,
+        presentable_targets: &[ScriptObjectId],
+    ) -> Result<RuntimeShipTargetSelection> {
+        let pointer = self.input.pointer_sample();
+        let mut selector = self
+            .ship_target_selector
+            .take()
+            .context("ship target selector update is reentrant")?;
+        let outcome = selector.update(
+            &mut self.runtime,
+            ChoiceListPointer {
+                position: pointer.position,
+                primary_pressed: pointer
+                    .buttons
+                    .contains(crate::native::bloodprg::PointerButton::Primary),
+            },
+            state,
+            presentable_targets,
+        );
+        self.ship_target_selector = Some(selector);
+        let outcome = outcome?;
+        if outcome.selection_sound_requested {
+            self.play_loaded_sound_bank_clip(CHOICE_LIST_SELECTION_SOUND_CLIP)?;
+        }
+        Ok(outcome)
+    }
+
+    /// Resolve the active profile inputs consumed by first-time ship-HUD setup.
+    pub fn ship_hud_initialization_context(
+        &self,
+    ) -> Result<ShipHudInitializationContext<ScriptObjectId>> {
+        let profile = self
+            .runtime
+            .current_profile()
+            .context("ship HUD initialization requires a loaded BloodScript profile")?;
+        let arche = profile
+            .builtins()
+            .archetype
+            .context("loaded BloodScript profile has no Arche object")?;
+        let (arche_link, linked_record_is_direct_target) =
+            ship_hud_arche_link(profile.state(), arche)?;
+        Ok(ShipHudInitializationContext {
+            arche,
+            arche_link,
+            linked_record_is_direct_target,
+            scene_top_row: self
+                .scripts
+                .backend()
+                .assets()
+                .location_scene_top_row()
+                .unwrap_or(u16::MIN),
+        })
     }
 
     /// Return the six BloodScript sequence records in presentation-choice order.

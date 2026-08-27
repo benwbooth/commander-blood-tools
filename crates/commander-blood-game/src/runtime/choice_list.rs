@@ -80,6 +80,10 @@ impl RuntimeChoiceListBackend<'_> {
         }
     }
 
+    pub(super) fn runtime_mut(&mut self) -> &mut OriginalGameRuntime {
+        self.runtime
+    }
+
     pub(super) fn remap_region(&mut self, origin: RasterPoint, width: u16, height: u16) {
         let result = remap_framebuffer_rect(
             self.runtime.front_buffer_mut().pixels_mut(),

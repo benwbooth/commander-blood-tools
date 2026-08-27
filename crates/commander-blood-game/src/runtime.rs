@@ -15,6 +15,7 @@ mod presentation_scene;
 mod presentation_screen;
 mod script_backend;
 mod services;
+mod ship_target;
 mod startup;
 mod state;
 mod subtitles;
@@ -39,6 +40,7 @@ pub use script_backend::{
     LoadedRuntimeResource, RuntimeScriptBackend, RuntimeScriptCommand, RuntimeScriptSystem,
 };
 pub use services::ModernGameServices;
+pub use ship_target::{RuntimeShipTargetSelection, RuntimeShipTargetSelector};
 pub use state::{
     IndexedFramebuffer, LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_PIXEL_COUNT,
     LOGICAL_FRAMEBUFFER_WIDTH, OriginalGameRuntime, RuntimeAssetLoadStatus,
