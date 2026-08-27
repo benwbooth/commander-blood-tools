@@ -1,6 +1,10 @@
 //! Top-level ship presentation phase coordinator.
 
 use super::ShipViewEntityId;
+use super::ship_depth::{
+    ShipDepthBandLayout, ShipDepthTransition, ShipDepthTransitionOutcome, advance_ship_depth,
+    prepare_ship_depth_band,
+};
 
 const PRESENTATION_ACTIVE: u16 = 1;
 const DIALOGUE_PHASE: u16 = 2;
@@ -38,6 +42,12 @@ pub struct ShipPresentationState {
     pub depth_offset: u16,
     /// Bit flags controlling the opening depth transition.
     pub depth_opening_flags: u8,
+    /// Bit flags controlling the closing depth transition.
+    pub depth_closing_flags: u8,
+    /// Low-byte movement applied by each active depth-transition frame.
+    pub depth_step: u8,
+    /// Whether the two-band ship-depth composition is active.
+    pub depth_band_enabled: bool,
     /// Dialogue phase-completion flags.
     pub dialogue_phase_ready: u8,
     /// Active C2 presentation gate.
@@ -56,6 +66,35 @@ impl ShipPresentationState {
     /// Return whether the ship HUD phase suppresses the ordinary subtitle hold.
     pub const fn hud_active(&self) -> bool {
         self.flags & HUD_PHASE != u16::MIN
+    }
+
+    /// Advance the recovered ship-depth transition over this canonical state.
+    pub fn advance_depth_transition(&mut self) -> ShipDepthTransitionOutcome {
+        let mut depth = ShipDepthTransition {
+            depth: self.depth_offset,
+            opening_flags: u16::from(self.depth_opening_flags),
+            closing_flags: u16::from(self.depth_closing_flags),
+            step: self.depth_step,
+        };
+        let outcome = advance_ship_depth(&mut depth);
+        self.depth_offset = depth.depth;
+        self.depth_opening_flags = depth.opening_flags.to_le_bytes()[0];
+        self.depth_closing_flags = depth.closing_flags.to_le_bytes()[0];
+        outcome
+    }
+
+    /// Prepare the flat two-band layout and synchronize palette progress.
+    pub fn prepare_depth_band(
+        &mut self,
+        palette_transition_increment: u16,
+    ) -> Option<ShipDepthBandLayout> {
+        prepare_ship_depth_band(
+            u16::from(self.depth_band_enabled),
+            self.depth_offset,
+            palette_transition_increment,
+            &mut self.transition_percent,
+            u16::MIN,
+        )
     }
 }
 
@@ -206,6 +245,13 @@ mod tests {
     const DIALOGUE_READY_ADDRESS: usize = 9_524;
     const REDRAW_PENDING_ADDRESS: usize = 10_200;
     const ACTIVE_LINE_ADDRESS: usize = 26_504;
+    const UNCHANGED_DEPTH_CLOSING_FLAGS: u8 = 187;
+    const UNCHANGED_DEPTH_STEP: u8 = 11;
+    const TEST_DEPTH_STEP: u8 = 4;
+    const TEST_PALETTE_INCREMENT: u16 = 9;
+    const EXPECTED_DEPTH_AFTER_ADVANCE: u16 = 4;
+    const EXPECTED_BAND_BYTE_COUNT: u16 = 3_120;
+    const EXPECTED_TRANSITION_PERCENT: u16 = 92;
 
     #[derive(Deserialize)]
     struct PresentationVector {
@@ -279,6 +325,9 @@ mod tests {
                 scene_dispatch_blocked: true,
                 depth_offset: 48_059,
                 depth_opening_flags: 204,
+                depth_closing_flags: UNCHANGED_DEPTH_CLOSING_FLAGS,
+                depth_step: UNCHANGED_DEPTH_STEP,
+                depth_band_enabled: true,
                 dialogue_phase_ready: vector.ready,
                 presentation_gate: vector.presentation_gate,
                 hud_initialization_pending: vector.hud_pending,
@@ -303,6 +352,27 @@ mod tests {
                 vector.name
             );
         }
+    }
+
+    #[test]
+    fn canonical_ship_state_owns_depth_advance_and_flat_band_intent() {
+        let mut state = ShipPresentationState {
+            depth_offset: u16::MIN,
+            depth_opening_flags: u8::from(true),
+            depth_step: TEST_DEPTH_STEP,
+            depth_band_enabled: true,
+            transition_percent: u16::MIN,
+            ..ShipPresentationState::default()
+        };
+
+        assert_eq!(
+            state.advance_depth_transition(),
+            ShipDepthTransitionOutcome::OpeningAdvanced
+        );
+        assert_eq!(state.depth_offset, EXPECTED_DEPTH_AFTER_ADVANCE);
+        let layout = state.prepare_depth_band(TEST_PALETTE_INCREMENT).unwrap();
+        assert_eq!(layout.byte_count, EXPECTED_BAND_BYTE_COUNT);
+        assert_eq!(state.transition_percent, EXPECTED_TRANSITION_PERCENT);
     }
 
     fn apply_expected_writes(state: &mut ShipPresentationState, writes: &[[u32; 3]]) {

@@ -70,6 +70,11 @@ impl RuntimePaletteTransition {
         &self.state
     }
 
+    /// Synchronize progress written by the recovered ship-depth compositor.
+    pub fn set_progress_percent(&mut self, percent: u16) {
+        self.state.percent = percent;
+    }
+
     /// Replace all transition inputs after validating the typed color interval.
     pub fn configure(
         &mut self,

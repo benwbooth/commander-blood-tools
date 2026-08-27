@@ -17,9 +17,10 @@ use crate::native::bloodprg::{
     PointerButtons, PointerSample, PresentationChoiceNumber, PresentationPresentPolicy,
     PresentationResourceId, PresentationResourceSequenceOutcome, PresentationScreenOutcome,
     PresentationScreenState, PresentationWordChoiceOutcome, ScriptClock, ScriptFrameOutcome,
-    ScriptProfileId, ScriptProfileLoadOutcome, ShipPresentationState, ShipProjectionResources,
-    StartupPreparationOutcome, TextPresentationState, draw_planar_dialogue_text,
-    measure_game_text_width, reveal_inline_menu_step, update_manu3_hand_frame,
+    ScriptProfileId, ScriptProfileLoadOutcome, ShipDepthTransitionOutcome, ShipPresentationState,
+    ShipProjectionResources, StartupPreparationOutcome, TextPresentationState,
+    draw_planar_dialogue_text, measure_game_text_width, reveal_inline_menu_step,
+    update_manu3_hand_frame,
 };
 use crate::native::manu3::animation::CursorPosition;
 use crate::native::random::BloodPrng;
@@ -406,9 +407,12 @@ impl<'window> ModernGameServices<'window> {
         &mut self,
         state: &mut GameLifecycleState,
     ) -> Result<RuntimePaletteTransitionOutcome> {
-        self.palette_transition
+        let outcome = self
+            .palette_transition
             .update(self.runtime.live_palette_mut(), state)
-            .context("advancing the recovered palette transition")
+            .context("advancing the recovered palette transition")?;
+        self.ship_presentation.transition_percent = self.palette_transition.state().percent;
+        Ok(outcome)
     }
 
     /// Mutably borrow the transition owner used by scene and HUD coordinators.
@@ -517,6 +521,31 @@ impl<'window> ModernGameServices<'window> {
     /// Mutably borrow ship presentation state for its exact frame coordinator.
     pub fn ship_presentation_state_mut(&mut self) -> &mut ShipPresentationState {
         &mut self.ship_presentation
+    }
+
+    /// Capture the current indexed display as the ship-depth source frame.
+    pub fn capture_ship_depth_source(&mut self) {
+        self.runtime.capture_ship_depth_source();
+    }
+
+    /// Advance the canonical recovered ship-depth state by one frame.
+    pub fn advance_ship_depth(&mut self) -> ShipDepthTransitionOutcome {
+        self.ship_presentation.advance_depth_transition()
+    }
+
+    /// Apply the current ship-depth bands to the flat indexed framebuffer.
+    pub fn compose_ship_depth_bands(&mut self) -> Result<bool> {
+        self.ship_presentation.transition_percent = self.palette_transition.state().percent;
+        let increment = self.palette_transition.state().increment;
+        let Some(layout) = self.ship_presentation.prepare_depth_band(increment) else {
+            return Ok(false);
+        };
+        self.palette_transition
+            .set_progress_percent(self.ship_presentation.transition_percent);
+        self.runtime
+            .compose_ship_depth_bands(layout)
+            .context("composing recovered ship-depth bands")?;
+        Ok(true)
     }
 
     /// Reveal and draw one exact frame of the current BloodScript inline menu.
