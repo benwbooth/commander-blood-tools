@@ -407,8 +407,8 @@ pub trait GameLifecycleHost {
     fn update_confirm_dialog(&mut self, state: &mut GameLifecycleState) -> Result<(), Self::Error>;
     /// Refill streamed voice audio.
     fn refill_audio_stream(&mut self) -> Result<(), Self::Error>;
-    /// Process queued sound and mixer work.
-    fn process_audio(&mut self) -> Result<(), Self::Error>;
+    /// Process queued sound and mixer work against current presentation state.
+    fn process_audio(&mut self, state: &mut GameLifecycleState) -> Result<(), Self::Error>;
     /// Advance ship presentation state.
     fn update_ship_presentation(
         &mut self,
@@ -728,7 +728,7 @@ fn run_frame_tail<Host: GameLifecycleHost>(
     host.render_bridge_frame(scene_link, state)?;
     host.update_confirm_dialog(state)?;
     host.refill_audio_stream()?;
-    host.process_audio()?;
+    host.process_audio(state)?;
     host.update_ship_presentation(scene_link, state)?;
     host.update_scene_transition(scene_link, state)?;
     host.update_save_load(state)?;

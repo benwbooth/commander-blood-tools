@@ -191,7 +191,7 @@ impl GameLifecycleHost for OracleHost {
 
     state_host_call!(update_confirm_dialog, "confirm_dialog_step");
     plain_host_call!(refill_audio_stream, "snd_stream_refill");
-    plain_host_call!(process_audio, "audio_process_ade");
+    state_host_call!(process_audio, "audio_process_ade");
 
     fn update_ship_presentation(
         &mut self,

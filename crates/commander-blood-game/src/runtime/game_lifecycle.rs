@@ -82,7 +82,10 @@ impl<'window, 'audio> RuntimeGameLifecycleHost<'window, 'audio> {
         &self.services
     }
 
-    fn advance_frame_timers(&mut self, state: &mut GameLifecycleState) {
+    fn advance_frame_timers(&mut self, state: &mut GameLifecycleState) -> Result<()> {
+        let (chatter_cooldown, dialogue_delay) = self.services.audio_event_timer_counters();
+        self.timer.chatter_cooldown = chatter_cooldown;
+        self.timer.dialogue_delay = dialogue_delay;
         self.timer.dialogue_hold_countdown = state.presentation.dialogue_hold_countdown;
         self.timer.clip_playback_state = state.completion_audio_reset_frames.unwrap_or(u16::MIN);
         let context = GameTimerContext {
@@ -101,6 +104,8 @@ impl<'window, 'audio> RuntimeGameLifecycleHost<'window, 'audio> {
         state.presentation.dialogue_hold_countdown = self.timer.dialogue_hold_countdown;
         state.completion_audio_reset_frames =
             (self.timer.clip_playback_state != u16::MIN).then_some(self.timer.clip_playback_state);
+        self.services
+            .synchronize_audio_event_timers(self.timer.chatter_cooldown, self.timer.dialogue_delay)
     }
 
     fn frame_limit_reached(&self) -> bool {
@@ -253,7 +258,7 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
             state.exit_requested = true;
             return Ok(());
         }
-        self.advance_frame_timers(state);
+        self.advance_frame_timers(state)?;
         if let Some(action) = self.platform.dispatch_events(&mut self.services, state) {
             self.services.queue_save_load_input(action)?;
         }
@@ -350,8 +355,8 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
         self.services.check_audio()
     }
 
-    fn process_audio(&mut self) -> Result<()> {
-        self.services.check_audio()
+    fn process_audio(&mut self, _state: &mut GameLifecycleState) -> Result<()> {
+        self.services.process_runtime_audio_events().map(|_| ())
     }
 
     fn update_ship_presentation(

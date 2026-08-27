@@ -12,14 +12,15 @@ use crate::assets::OriginalResourceStore;
 use crate::native::bloodprg::{
     DescriptApplicationContext, DescriptBackgroundCache, DescriptBackgroundSource,
     DescriptIdleClipSource, DescriptPresentationAssets, DescriptRecordApplication,
-    DescriptSoundBankLoader, GameLifecycleState, LoadedScriptProfile, ScriptAboardRecordContext,
-    ScriptActionRecord, ScriptActionState, ScriptClock, ScriptDeferredRecord, ScriptDispatchState,
-    ScriptEnvironmentActivity, ScriptExecutionBackend, ScriptExecutionService, ScriptFrameOutcome,
-    ScriptPresentationEntity, ScriptPresentationScanOutcome, ScriptPresentationScanState,
-    ScriptProfileId, ScriptProfileLoadOutcome, ScriptRecordStateNavigationContext,
-    ScriptShipNavigationMode, ScriptTransferContext, SequencePresentationState,
-    SequenceRequestContext, TextPresentationState, deferred_navigation_record,
-    execute_loaded_script_frame, lookup_and_apply_descript_record,
+    DescriptSoundBankLoader, GameLifecycleState, LoadedScriptProfile, LoadedSoundBank,
+    ScriptAboardRecordContext, ScriptActionRecord, ScriptActionState, ScriptClock,
+    ScriptDeferredRecord, ScriptDispatchState, ScriptEnvironmentActivity, ScriptExecutionBackend,
+    ScriptExecutionService, ScriptFrameOutcome, ScriptPresentationEntity,
+    ScriptPresentationScanOutcome, ScriptPresentationScanState, ScriptProfileId,
+    ScriptProfileLoadOutcome, ScriptRecordStateNavigationContext, ScriptShipNavigationMode,
+    ScriptTransferContext, SequencePresentationState, SequenceRequestContext, SoundBankUsage,
+    TextPresentationState, deferred_navigation_record, execute_loaded_script_frame,
+    load_sound_bank, lookup_and_apply_descript_record,
 };
 
 use super::{OriginalGameData, OriginalGameRuntime};
@@ -479,19 +480,19 @@ impl RuntimeScriptBackend {
         &self.background_source.missing_resources
     }
 
-    /// Borrow the most recently loaded SND bank and its encoded bytes.
-    pub fn loaded_sound_bank(&self) -> Option<&LoadedRuntimeResource> {
+    /// Borrow the most recently loaded streamed-dialogue SND resource.
+    pub fn loaded_streamed_sound_bank_resource(&self) -> Option<&LoadedRuntimeResource> {
         self.sound_loader.loaded.as_ref()
     }
 
-    /// Load one authored resident SND bank through the same resource service as DESCRIPT.
-    pub fn load_resident_sound_bank(&mut self, bank_name: &[u8]) -> Result<()> {
-        self.sound_loader.load_sound_bank(bank_name)
+    /// Borrow the validated streamed-dialogue bank selected by DESCRIPT or radio state.
+    pub fn streamed_sound_bank(&self) -> Option<&LoadedSoundBank> {
+        self.sound_loader.decoded.as_ref()
     }
 
-    /// Restore the complete resident bank captured before a temporary overlay swap.
-    pub fn restore_resident_sound_bank(&mut self, bank: LoadedRuntimeResource) {
-        self.sound_loader.loaded = Some(bank);
+    /// Load one authored streamed SND bank through the DESCRIPT resource service.
+    pub fn load_streamed_sound_bank(&mut self, bank_name: &[u8]) -> Result<()> {
+        self.sound_loader.load_sound_bank(bank_name)
     }
 
     /// Return the object whose DESCRIPT record currently owns presentation assets.
@@ -667,6 +668,7 @@ impl DescriptBackgroundSource for RuntimeBackgroundSource {
 struct RuntimeSoundBankLoader {
     store: OriginalResourceStore,
     loaded: Option<LoadedRuntimeResource>,
+    decoded: Option<LoadedSoundBank>,
 }
 
 impl RuntimeSoundBankLoader {
@@ -674,6 +676,7 @@ impl RuntimeSoundBankLoader {
         Self {
             store,
             loaded: None,
+            decoded: None,
         }
     }
 }
@@ -684,7 +687,11 @@ impl DescriptSoundBankLoader for RuntimeSoundBankLoader {
     fn load_sound_bank(&mut self, bank_name: &[u8]) -> Result<()> {
         let encoded_bytes =
             load_prefixed_resource(&self.store, SOUND_BANK_RESOURCE_DIRECTORY, bank_name)?;
+        let decoded = load_sound_bank(true, SoundBankUsage::StreamedDialogue, &encoded_bytes)
+            .context("decoding streamed dialogue sound bank")?
+            .context("streamed dialogue sound loading was unexpectedly disabled")?;
         self.loaded = Some(LoadedRuntimeResource::new(bank_name, encoded_bytes));
+        self.decoded = Some(decoded);
         Ok(())
     }
 }
@@ -832,9 +839,10 @@ mod tests {
                 loaded_sound_bank = true;
                 assert!(
                     backend
-                        .loaded_sound_bank()
+                        .loaded_streamed_sound_bank_resource()
                         .is_some_and(|resource| !resource.encoded_bytes().is_empty())
                 );
+                assert!(backend.streamed_sound_bank().is_some());
             }
             if application.idle_clip_loaded() {
                 loaded_idle_clip = true;
@@ -856,7 +864,7 @@ mod tests {
     }
 
     #[test]
-    fn default_bridge_sound_bank_loads_from_original_resources() {
+    fn streamed_sound_bank_loads_from_original_resources() {
         let Some(paths) = original_data_paths() else {
             return;
         };
@@ -865,12 +873,15 @@ mod tests {
         let mut backend = RuntimeScriptBackend::new(&data, TEST_CLOCK);
 
         backend
-            .load_resident_sound_bank(DEFAULT_BRIDGE_SOUND_BANK)
+            .load_streamed_sound_bank(DEFAULT_BRIDGE_SOUND_BANK)
             .unwrap();
-        let resource = backend.loaded_sound_bank().unwrap();
+        let resource = backend.loaded_streamed_sound_bank_resource().unwrap();
         assert_eq!(resource.name(), DEFAULT_BRIDGE_SOUND_BANK);
         assert!(!resource.encoded_bytes().is_empty());
-        commander_blood_formats::snd::SndBank::decode(resource.encoded_bytes()).unwrap();
+        assert_eq!(
+            backend.streamed_sound_bank().unwrap().usage,
+            SoundBankUsage::StreamedDialogue
+        );
     }
 
     #[test]

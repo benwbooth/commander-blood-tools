@@ -6,13 +6,11 @@ use commander_blood_formats::alien::{AlienAsset, AlienXdbKind};
 use crate::native::alien::{AlienMouseSample, AlienSceneFrame, AlienSceneRuntime};
 use crate::native::bloodprg::{
     AlienOverlayCycleHost, AlienOverlayCycleOutcome, AlienOverlayCycleState,
-    AlienOverlaySharedState, AlienOverlaySoundBank, GameLifecycleState, PointerButtons,
-    run_alien_overlay_cycle,
+    AlienOverlaySharedState, AlienOverlaySoundBank, GameLifecycleState, LoadedSoundBank,
+    PointerButtons, run_alien_overlay_cycle,
 };
 
-use super::{
-    LoadedRuntimeResource, ModernGameServices, RuntimeAssetLoadStatus, RuntimePlatformHost,
-};
+use super::{ModernGameServices, RuntimeAssetLoadStatus, RuntimePlatformHost};
 
 const ALIEN_DRIVER_WIDTH: u32 = 640;
 const ALIEN_DRIVER_HEIGHT: u32 = 1_024;
@@ -175,7 +173,7 @@ struct RuntimeAlienOverlayCycleBackend<'services, 'window, 'platform, 'clock> {
 }
 
 impl AlienOverlayCycleHost for RuntimeAlienOverlayCycleBackend<'_, '_, '_, '_> {
-    type SoundHeader = LoadedRuntimeResource;
+    type SoundHeader = LoadedSoundBank;
     type Error = anyhow::Error;
 
     fn load_alien_overlay(&mut self, overlay: AlienXdbKind) -> Result<()> {
@@ -186,8 +184,7 @@ impl AlienOverlayCycleHost for RuntimeAlienOverlayCycleBackend<'_, '_, '_, '_> {
 
     fn capture_sound_header(&mut self) -> Result<Self::SoundHeader> {
         self.services
-            .script_backend()
-            .loaded_sound_bank()
+            .resident_sound_bank()
             .cloned()
             .context("alien overlay started without a resident sound bank")
     }
@@ -202,8 +199,7 @@ impl AlienOverlayCycleHost for RuntimeAlienOverlayCycleBackend<'_, '_, '_, '_> {
             AlienOverlaySoundBank::Bridge => BRIDGE_SOUND_BANK_NAME,
         };
         self.services
-            .script_backend_mut()
-            .load_resident_sound_bank(name)
+            .load_resident_sound_bank_resource(name)
             .with_context(|| {
                 format!(
                     "loading temporary sound bank {}",
@@ -244,9 +240,7 @@ impl AlienOverlayCycleHost for RuntimeAlienOverlayCycleBackend<'_, '_, '_, '_> {
     }
 
     fn restore_sound_header(&mut self, header: Self::SoundHeader) -> Result<()> {
-        self.services
-            .script_backend_mut()
-            .restore_resident_sound_bank(header);
+        self.services.restore_resident_sound_bank(header);
         Ok(())
     }
 

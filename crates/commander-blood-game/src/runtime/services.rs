@@ -7,20 +7,22 @@ use commander_blood_formats::alien::AlienAsset;
 use commander_blood_formats::archive::BloodResourceName;
 use commander_blood_formats::bloodprg::{BloodprgFontResources, decode_bloodprg_bridge_resources};
 use commander_blood_formats::descript::DescriptBackgroundSlot;
+use commander_blood_formats::instruction::ScriptTextWord;
 use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
 use commander_blood_formats::script::{ScriptObjectId, ScriptWordId};
-use commander_blood_formats::snd::{SndBank, VocPcm};
+use commander_blood_formats::snd::VocPcm;
 use sdl3::AudioSubsystem;
 use sdl3::video::Window;
 
 use crate::native::alien::AlienSceneFrame;
 use crate::native::bloodprg::{
-    BridgeScene, BridgeSceneFrame, BridgeSceneInput, BridgeSpriteCommitOutcome,
-    BridgeSteeringInteraction, CdAudioPreparationOutcome, CdAudioState, ChoiceListConfig,
-    ChoiceListFrame, ChoiceListPointer, ChoiceListState, ConfirmDialogOutcome, ConfirmDialogState,
-    DescriptMusicSelectionOutcome, DescriptRecordApplication, DirtyRegionCopyOutcome, FontPoint,
-    FontVerticalBand, GameFontFace, GameLifecycleState, GamePresentationOwner, GameSceneLink,
-    IndexedGamePalette, InlineMenuRevealOutcome, InlineMenuTextMetrics, InputAction,
+    AudioClipRequest, AudioEventContext, AudioEventState, BridgeScene, BridgeSceneFrame,
+    BridgeSceneInput, BridgeSpriteCommitOutcome, BridgeSteeringInteraction,
+    CdAudioPreparationOutcome, CdAudioState, ChoiceListConfig, ChoiceListFrame, ChoiceListPointer,
+    ChoiceListState, ConfirmDialogOutcome, ConfirmDialogState, DescriptMusicSelectionOutcome,
+    DescriptRecordApplication, DirtyRegionCopyOutcome, FontPoint, FontVerticalBand, GameFontFace,
+    GameLifecycleState, GamePresentationOwner, GameSceneLink, IndexedGamePalette,
+    InlineMenuRevealOutcome, InlineMenuTextMetrics, InputAction, LoadedSoundBank,
     Manu3HandFrameContext, Manu3HandFrameState, NAV_ACTOR_SLOT_COUNT, NavActorSlot,
     OriginalSaveGame, PbmDecodeResult, PointerButtonEdges, PointerButtons, PointerSample,
     PresentationChoiceNumber, PresentationPresentPolicy, PresentationResourceId,
@@ -30,11 +32,12 @@ use crate::native::bloodprg::{
     ScriptFrameOutcome, ScriptPresentationScanState, ScriptProfileId, ScriptProfileLoadOutcome,
     ScriptShipNavigationMode, ShipDepthTransitionOutcome, ShipHudInitializationContext,
     ShipPresentationOutcome, ShipPresentationState, ShipProjectionResources,
-    ShipTargetSelectionState, ShipViewEntityId, StartupPreparationOutcome, TextPresentationState,
-    clear_scene_palette_entries, deactivate_nav_actor_slots, draw_planar_dialogue_text,
-    fill_display_band, increment_object_access_counters, measure_game_text_width,
-    objects_at_arche_position, original_save_state_block_byte_count, play_cd_audio_track_two,
-    prepare_cd_audio, presentable_navigation_objects, reveal_inline_menu_step, stop_cd_audio,
+    ShipTargetSelectionState, ShipViewEntityId, SoundBankUsage, StartupPreparationOutcome,
+    TextPresentationState, clear_scene_palette_entries, deactivate_nav_actor_slots,
+    draw_planar_dialogue_text, fill_display_band, increment_object_access_counters,
+    load_sound_bank, measure_game_text_width, objects_at_arche_position,
+    original_save_state_block_byte_count, play_cd_audio_track_two, prepare_cd_audio,
+    presentable_navigation_objects, process_audio_events, reveal_inline_menu_step, stop_cd_audio,
     update_manu3_hand_frame,
 };
 use crate::native::manu3::animation::CursorPosition;
@@ -62,6 +65,7 @@ use super::{
 
 const INITIAL_LOGICAL_POINTER: [i16; 2] = [160, 100];
 const MUSIC_RESOURCE_DIRECTORY: &[u8] = b"MU\\";
+const SOUND_BANK_RESOURCE_DIRECTORY: &[u8] = b"SN\\";
 const DEFAULT_BRIDGE_SOUND_BANK: &[u8] = b"tb.snd";
 const RADIO_SOUND_BANK: &[u8] = b"radio.snd";
 const FULL_LOGICAL_FONT_BAND: FontVerticalBand = FontVerticalBand {
@@ -91,6 +95,8 @@ pub struct ModernGameServices<'window> {
     presentation: RuntimePresentationHost<'window>,
     presentation_player: RuntimePresentationPlayer,
     audio: Option<RuntimeAudioHost>,
+    resident_sound_bank: Option<LoadedSoundBank>,
+    audio_events: AudioEventState,
     loaded_music: Option<RuntimePcmClip>,
     loaded_voice: Option<RuntimePcmClip>,
     bridge_scene: Option<BridgeScene>,
@@ -140,6 +146,17 @@ impl<'window> ModernGameServices<'window> {
             presentation,
             presentation_player,
             audio: None,
+            resident_sound_bank: None,
+            audio_events: AudioEventState {
+                playback_enabled: false,
+                menu_words_pending: false,
+                dialogue_armed: false,
+                voice_reaction_requested: false,
+                voice_cooldown: u8::MIN,
+                dialogue_delay: u16::MIN,
+                dialogue_seed: u16::MIN,
+                last_clip: u16::MIN,
+            },
             loaded_music: None,
             loaded_voice: None,
             bridge_scene: None,
@@ -359,32 +376,59 @@ impl<'window> ModernGameServices<'window> {
 
     /// Load and validate the default `SN\\TB.SND` resident bridge sound bank.
     pub fn load_default_sound_bank(&mut self) -> Result<()> {
-        self.scripts
-            .backend_mut()
-            .load_resident_sound_bank(DEFAULT_BRIDGE_SOUND_BANK)
-            .context("loading default bridge sound bank")?;
-        let loaded = self
-            .scripts
-            .backend()
-            .loaded_sound_bank()
-            .context("default bridge sound bank was not retained")?;
-        SndBank::decode(loaded.encoded_bytes()).context("decoding default bridge sound bank")?;
-        Ok(())
+        self.load_resident_sound_bank_resource(DEFAULT_BRIDGE_SOUND_BANK)
+            .context("loading default bridge sound bank")
     }
 
-    /// Load and validate the authored `SN\\RADIO.SND` resident bridge bank.
+    /// Load and validate the authored `SN\\RADIO.SND` streamed radio bank.
     pub fn load_radio_sound_bank(&mut self) -> Result<()> {
         self.scripts
             .backend_mut()
-            .load_resident_sound_bank(RADIO_SOUND_BANK)
+            .load_streamed_sound_bank(RADIO_SOUND_BANK)
             .context("loading radio bridge sound bank")?;
-        let loaded = self
-            .scripts
+        self.scripts
             .backend()
-            .loaded_sound_bank()
-            .context("radio bridge sound bank was not retained")?;
-        SndBank::decode(loaded.encoded_bytes()).context("decoding radio bridge sound bank")?;
+            .streamed_sound_bank()
+            .context("radio bridge sound bank was not retained")
+            .map(|_| ())
+    }
+
+    /// Load one effects bank into the persistent resident slot used by low clip indices.
+    pub(super) fn load_resident_sound_bank_resource(&mut self, bank_name: &[u8]) -> Result<()> {
+        let resource_name = prefixed_resource_name(SOUND_BANK_RESOURCE_DIRECTORY, bank_name)?;
+        let encoded = self
+            .runtime
+            .data()
+            .resource_store()
+            .load(&resource_name)
+            .with_context(|| {
+                format!(
+                    "loading resident sound bank {}",
+                    String::from_utf8_lossy(resource_name.as_bytes())
+                )
+            })?;
+        self.resident_sound_bank = load_sound_bank(
+            self.audio_is_initialized(),
+            SoundBankUsage::ResidentEffects,
+            &encoded,
+        )
+        .context("decoding resident sound bank")?;
+        if self.resident_sound_bank.is_none() {
+            bail!("resident sound bank was loaded before SDL audio initialization");
+        }
         Ok(())
+    }
+
+    /// Snapshot the current resident bank while a synchronous alien overlay replaces it.
+    pub(super) fn resident_sound_bank(&self) -> Result<&LoadedSoundBank> {
+        self.resident_sound_bank
+            .as_ref()
+            .context("no resident effects sound bank is loaded")
+    }
+
+    /// Restore a resident effects bank captured before a temporary overlay.
+    pub(super) fn restore_resident_sound_bank(&mut self, bank: LoadedSoundBank) {
+        self.resident_sound_bank = Some(bank);
     }
 
     /// Decode and retain navigation music selected by the active DESCRIPT record.
@@ -451,20 +495,16 @@ impl<'window> ModernGameServices<'window> {
 
     /// Decode and play one authored clip from the currently loaded SND bank.
     pub fn play_loaded_sound_bank_clip(&mut self, clip_index: u8) -> Result<()> {
-        let resource = self
-            .scripts
-            .backend()
-            .loaded_sound_bank()
-            .context("no DESCRIPT sound bank is loaded")?;
-        let bank = SndBank::decode(resource.encoded_bytes()).with_context(|| {
-            format!(
-                "decoding sound bank {}",
-                String::from_utf8_lossy(resource.name())
-            )
-        })?;
-        let clip = bank
+        self.play_resident_sound_bank_clip(u16::from(clip_index))
+    }
+
+    fn play_resident_sound_bank_clip(&mut self, clip_index: u16) -> Result<()> {
+        let clip = self
+            .resident_sound_bank()
+            .context("playing a resident sound effect")?
+            .bank
             .clip(usize::from(clip_index))
-            .with_context(|| format!("sound bank clip {clip_index} is not authored"))?;
+            .with_context(|| format!("resident sound bank clip {clip_index} is not authored"))?;
         let clip = RuntimePcmClip::from_snd_clip(clip)?;
         self.audio_mut()?.play_foreground(clip)
     }
@@ -546,6 +586,133 @@ impl<'window> ModernGameServices<'window> {
     /// Surface asynchronous SDL audio failures on the game thread.
     pub fn check_audio(&self) -> Result<()> {
         self.audio_ref()?.check_callback()
+    }
+
+    /// Return native timer counters owned by the recovered audio-event selector.
+    pub const fn audio_event_timer_counters(&self) -> (u16, u16) {
+        (
+            self.audio_events.voice_cooldown as u16,
+            self.audio_events.dialogue_delay,
+        )
+    }
+
+    /// Publish interrupt-timer decrements back to the recovered audio-event selector.
+    pub fn synchronize_audio_event_timers(
+        &mut self,
+        voice_cooldown: u16,
+        dialogue_delay: u16,
+    ) -> Result<()> {
+        self.audio_events.voice_cooldown = u8::try_from(voice_cooldown)
+            .context("voice chatter cooldown exceeds its native byte range")?;
+        self.audio_events.dialogue_delay = dialogue_delay;
+        Ok(())
+    }
+
+    /// Select and play the original deterministic dialogue and chatter events.
+    pub fn process_runtime_audio_events(&mut self) -> Result<Box<[AudioClipRequest]>> {
+        self.check_audio()?;
+
+        let (menu_words_pending, dialogue_armed, voice_reaction_requested, menu_tokens) = {
+            let text = self.scripts.text_presentation_mut();
+            (
+                std::mem::take(&mut text.dialogue_chatter_seed_pending),
+                text.dialogue_chatter_active,
+                text.subtitle_voice_trigger,
+                text.menu_words.clone(),
+            )
+        };
+        self.audio_events.playback_enabled = self.audio_is_initialized();
+        self.audio_events.menu_words_pending |= menu_words_pending;
+        self.audio_events.dialogue_armed = dialogue_armed;
+        self.audio_events.voice_reaction_requested = voice_reaction_requested;
+
+        let menu_words = self.resolve_audio_menu_words(&menu_tokens)?;
+        let (clip_count, delay_base, delay_limit) = self
+            .scripts
+            .backend()
+            .streamed_sound_bank()
+            .map(|loaded| {
+                let header = loaded.bank.header();
+                (
+                    header.clip_count,
+                    header.dialogue_delay_base,
+                    header.dialogue_delay_limit,
+                )
+            })
+            .unwrap_or((u16::MIN, u8::MIN, u8::MIN));
+        if self.audio_events.dialogue_armed
+            && self.audio_events.dialogue_delay == u16::MIN
+            && clip_count == u16::MIN
+        {
+            bail!("dialogue chatter is armed without a streamed DESCRIPT sound bank");
+        }
+
+        let requests = {
+            let audio_events = &mut self.audio_events;
+            let random = &mut self.random;
+            process_audio_events(
+                audio_events,
+                AudioEventContext {
+                    dialogue_suppressed: false,
+                    menu_words: &menu_words,
+                    streamed_dialogue_clip_count: clip_count,
+                    dialogue_delay_base: delay_base,
+                    dialogue_delay_limit: delay_limit,
+                },
+                |upper_bound| random.next(upper_bound),
+            )
+            .context("selecting dialogue and chatter audio events")?
+        };
+        self.scripts.text_presentation_mut().dialogue_chatter_active =
+            self.audio_events.dialogue_armed;
+
+        for request in requests.iter().copied() {
+            match request {
+                AudioClipRequest::StreamedDialogue { index } => {
+                    self.play_streamed_dialogue_clip(index)?;
+                }
+                AudioClipRequest::VoiceReaction { bank_index } => {
+                    self.play_resident_sound_bank_clip(bank_index)?;
+                }
+            }
+        }
+        Ok(requests)
+    }
+
+    fn resolve_audio_menu_words(&self, words: &[ScriptTextWord]) -> Result<Vec<Box<[u8]>>> {
+        if words.is_empty() {
+            return Ok(Vec::new());
+        }
+        let dictionary = self
+            .runtime
+            .current_profile()
+            .context("dialogue chatter words require a loaded BloodScript profile")?
+            .dictionary();
+        words
+            .iter()
+            .take_while(|word| matches!(word, ScriptTextWord::Dictionary(_)))
+            .map(|word| match word {
+                ScriptTextWord::Dictionary(word) => {
+                    dictionary.word(*word).map(Box::from).with_context(|| {
+                        format!("resolving dialogue chatter dictionary word {word:?}")
+                    })
+                }
+                ScriptTextWord::SectionSeparator => unreachable!("section separators terminate"),
+            })
+            .collect()
+    }
+
+    fn play_streamed_dialogue_clip(&mut self, clip_index: u16) -> Result<()> {
+        let clip = self
+            .scripts
+            .backend()
+            .streamed_sound_bank()
+            .context("no streamed DESCRIPT sound bank is loaded")?
+            .bank
+            .clip(usize::from(clip_index))
+            .with_context(|| format!("streamed dialogue clip {clip_index} is not authored"))?;
+        let clip = RuntimePcmClip::from_snd_clip(clip)?;
+        self.audio_mut()?.play_foreground(clip)
     }
 
     /// Current source-sample position of navigation music, when active.
@@ -2348,6 +2515,44 @@ mod tests {
             script.end,
             crate::native::bloodprg::ScriptFrameEnd::ExecutionDisabled
         );
+        let resident_bank = services.resident_sound_bank().unwrap().clone();
+        services
+            .script_backend_mut()
+            .load_streamed_sound_bank(DEFAULT_BRIDGE_SOUND_BANK)
+            .unwrap();
+        let dictionary_word = services
+            .runtime()
+            .current_profile()
+            .unwrap()
+            .dictionary()
+            .words()
+            .next()
+            .unwrap()
+            .0;
+        services.audio_events = AudioEventState {
+            playback_enabled: true,
+            menu_words_pending: false,
+            dialogue_armed: false,
+            voice_reaction_requested: false,
+            voice_cooldown: u8::MIN,
+            dialogue_delay: u16::MIN,
+            dialogue_seed: u16::MIN,
+            last_clip: u16::MIN,
+        };
+        {
+            let text = services.scripts.text_presentation_mut();
+            text.dialogue_chatter_seed_pending = true;
+            text.dialogue_chatter_active = false;
+            text.subtitle_voice_trigger = false;
+            text.menu_words = Box::new([ScriptTextWord::Dictionary(dictionary_word)]);
+        }
+        assert!(services.process_runtime_audio_events().unwrap().is_empty());
+        let dialogue_requests = services.process_runtime_audio_events().unwrap();
+        assert!(matches!(
+            dialogue_requests.as_ref(),
+            [AudioClipRequest::StreamedDialogue { .. }]
+        ));
+        assert_eq!(services.resident_sound_bank().unwrap(), &resident_bank);
         let horn = services
             .runtime()
             .current_profile()
