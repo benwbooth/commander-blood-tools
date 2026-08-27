@@ -94,7 +94,7 @@ impl<'window> RuntimePresentationHost<'window> {
             .map(|model| model.render_triangles())
             .unwrap_or(&[]);
         self.renderer
-            .render(manu3_triangles, None, bridge_frame)
+            .render_with_indexed_overlay(manu3_triangles, None, bridge_frame)
             .context("presenting translated game frame")?;
         self.presented_frame_count = self.presented_frame_count.wrapping_add(1);
         Ok(())

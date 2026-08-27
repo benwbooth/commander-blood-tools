@@ -23,6 +23,7 @@ const SINGLE_SAMPLE_COUNT: u32 = 1;
 const SINGLE_TEXTURE_LAYER: u32 = 1;
 const RGBA_BYTES_PER_PIXEL: u32 = 4;
 const RGBA_COMPONENT_COUNT: usize = 4;
+const TRANSPARENT_ALPHA: u8 = u8::MIN;
 const OPAQUE_ALPHA: u8 = u8::MAX;
 const VGA_DAC_CHANNEL_MAXIMUM: u16 = 63;
 const EIGHT_BIT_CHANNEL_MAXIMUM: u16 = 255;
@@ -44,6 +45,18 @@ const CLEAR_DEPTH: f32 = 1.0;
 const EQUAL_DEPTH_VALUE: f32 = 0.5;
 const ZERO_DEPTH_RANGE: f64 = 0.0;
 const MAXIMUM_BASE_SCENE_RENDERER_COUNT: usize = 1;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum BaseSceneArtwork {
+    Hide,
+    CompositeIndexedOverlay,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ArtworkPass {
+    OpaqueBase,
+    TransparentOverlay,
+}
 
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
@@ -71,6 +84,7 @@ pub struct Renderer<'window> {
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
     pipeline: wgpu::RenderPipeline,
+    overlay_pipeline: wgpu::RenderPipeline,
     image_bind_group: wgpu::BindGroup,
     image_texture: wgpu::Texture,
     image_width: u32,
@@ -222,35 +236,22 @@ impl<'window> Renderer<'window> {
             bind_group_layouts: &[Some(&bind_group_layout)],
             immediate_size: u32::MIN,
         });
-        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("original artwork pipeline"),
-            layout: Some(&pipeline_layout),
-            vertex: wgpu::VertexState {
-                module: &shader,
-                entry_point: Some("vs_main"),
-                buffers: &[],
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
-            },
-            fragment: Some(wgpu::FragmentState {
-                module: &shader,
-                entry_point: Some("fs_main"),
-                targets: &[Some(wgpu::ColorTargetState {
-                    format,
-                    blend: None,
-                    write_mask: wgpu::ColorWrites::ALL,
-                })],
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
-            }),
-            primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleList,
-                cull_mode: None,
-                ..Default::default()
-            },
-            depth_stencil: None,
-            multisample: wgpu::MultisampleState::default(),
-            multiview_mask: None,
-            cache: None,
-        });
+        let pipeline = create_artwork_pipeline(
+            &device,
+            &pipeline_layout,
+            &shader,
+            format,
+            "original artwork pipeline",
+            None,
+        );
+        let overlay_pipeline = create_artwork_pipeline(
+            &device,
+            &pipeline_layout,
+            &shader,
+            format,
+            "indexed artwork overlay pipeline",
+            Some(wgpu::BlendState::ALPHA_BLENDING),
+        );
         let manu3 = manu3_model.map(|model| {
             Manu3Renderer::new(
                 &device,
@@ -276,6 +277,7 @@ impl<'window> Renderer<'window> {
             queue,
             config,
             pipeline,
+            overlay_pipeline,
             image_bind_group,
             image_texture,
             image_width: image.width,
@@ -345,12 +347,46 @@ impl<'window> Renderer<'window> {
         Ok(())
     }
 
-    /// Present the current artwork, MANU3, alien, or bridge frame once.
+    /// Present artwork or one base scene, followed by the optional MANU3 model.
+    ///
+    /// An alien or bridge frame replaces the indexed artwork. Use
+    /// [`Self::render_with_indexed_overlay`] when the indexed frame contains
+    /// game UI that must be composited over the base scene.
     pub fn render(
         &mut self,
         manu3_triangles: &[RenderTriangle],
         alien_frame: Option<&AlienSceneFrame>,
         bridge_frame: Option<&BridgeSceneFrame>,
+    ) -> Result<()> {
+        self.render_layers(
+            manu3_triangles,
+            alien_frame,
+            bridge_frame,
+            BaseSceneArtwork::Hide,
+        )
+    }
+
+    /// Present one base scene, composite the indexed game UI, then draw MANU3.
+    pub fn render_with_indexed_overlay(
+        &mut self,
+        manu3_triangles: &[RenderTriangle],
+        alien_frame: Option<&AlienSceneFrame>,
+        bridge_frame: Option<&BridgeSceneFrame>,
+    ) -> Result<()> {
+        self.render_layers(
+            manu3_triangles,
+            alien_frame,
+            bridge_frame,
+            BaseSceneArtwork::CompositeIndexedOverlay,
+        )
+    }
+
+    fn render_layers(
+        &mut self,
+        manu3_triangles: &[RenderTriangle],
+        alien_frame: Option<&AlienSceneFrame>,
+        bridge_frame: Option<&BridgeSceneFrame>,
+        base_scene_artwork: BaseSceneArtwork,
     ) -> Result<()> {
         let manu3_vertex_count = match &self.manu3 {
             Some(manu3) => manu3.upload(&self.queue, manu3_triangles)?,
@@ -388,6 +424,7 @@ impl<'window> Renderer<'window> {
         if alien_frame.is_some() && bridge_frame.is_some() {
             anyhow::bail!("alien and bridge frames cannot be presented together");
         }
+        let base_scene_present = alien_frame.is_some() || bridge_frame.is_some();
         if let Some(alien_frame) = alien_frame {
             let alien = self
                 .alien
@@ -412,32 +449,9 @@ impl<'window> Renderer<'window> {
                 (x, y, width, height),
                 bridge_frame,
             )?;
-        } else {
-            {
-                let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                    label: Some("Commander Blood artwork pass"),
-                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                        view: &view,
-                        resolve_target: None,
-                        depth_slice: None,
-                        ops: wgpu::Operations {
-                            load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
-                            store: wgpu::StoreOp::Store,
-                        },
-                    })],
-                    depth_stencil_attachment: None,
-                    timestamp_writes: None,
-                    occlusion_query_set: None,
-                    multiview_mask: None,
-                });
-                pass.set_viewport(x, y, width, height, MINIMUM_DEPTH, MAXIMUM_DEPTH);
-                pass.set_pipeline(&self.pipeline);
-                pass.set_bind_group(IMAGE_TEXTURE_BINDING, &self.image_bind_group, &[]);
-                pass.draw(
-                    u32::MIN..FULLSCREEN_QUAD_VERTEX_COUNT,
-                    u32::MIN..SINGLE_TEXTURE_LAYER,
-                );
-            }
+        }
+        if let Some(artwork_pass) = artwork_pass(base_scene_present, base_scene_artwork) {
+            self.encode_artwork(&mut encoder, &view, (x, y, width, height), artwork_pass);
         }
         if manu3_vertex_count != u32::MIN {
             let manu3 = self
@@ -477,12 +491,124 @@ impl<'window> Renderer<'window> {
         frame.present();
         Ok(())
     }
+
+    fn encode_artwork(
+        &self,
+        encoder: &mut wgpu::CommandEncoder,
+        target: &wgpu::TextureView,
+        viewport: (f32, f32, f32, f32),
+        artwork_pass: ArtworkPass,
+    ) {
+        let overlay = artwork_pass == ArtworkPass::TransparentOverlay;
+        let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            label: Some(if overlay {
+                "Commander Blood indexed overlay pass"
+            } else {
+                "Commander Blood artwork pass"
+            }),
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                view: target,
+                resolve_target: None,
+                depth_slice: None,
+                ops: wgpu::Operations {
+                    load: if overlay {
+                        wgpu::LoadOp::Load
+                    } else {
+                        wgpu::LoadOp::Clear(wgpu::Color::BLACK)
+                    },
+                    store: wgpu::StoreOp::Store,
+                },
+            })],
+            depth_stencil_attachment: None,
+            timestamp_writes: None,
+            occlusion_query_set: None,
+            multiview_mask: None,
+        });
+        pass.set_viewport(
+            viewport.0,
+            viewport.1,
+            viewport.2,
+            viewport.3,
+            MINIMUM_DEPTH,
+            MAXIMUM_DEPTH,
+        );
+        pass.set_pipeline(if overlay {
+            &self.overlay_pipeline
+        } else {
+            &self.pipeline
+        });
+        pass.set_bind_group(IMAGE_TEXTURE_BINDING, &self.image_bind_group, &[]);
+        pass.draw(
+            u32::MIN..FULLSCREEN_QUAD_VERTEX_COUNT,
+            u32::MIN..SINGLE_TEXTURE_LAYER,
+        );
+    }
+}
+
+const fn artwork_pass(
+    base_scene_present: bool,
+    base_scene_artwork: BaseSceneArtwork,
+) -> Option<ArtworkPass> {
+    if !base_scene_present {
+        return Some(ArtworkPass::OpaqueBase);
+    }
+    match base_scene_artwork {
+        BaseSceneArtwork::Hide => None,
+        BaseSceneArtwork::CompositeIndexedOverlay => Some(ArtworkPass::TransparentOverlay),
+    }
+}
+
+fn create_artwork_pipeline(
+    device: &wgpu::Device,
+    layout: &wgpu::PipelineLayout,
+    shader: &wgpu::ShaderModule,
+    format: wgpu::TextureFormat,
+    label: &'static str,
+    blend: Option<wgpu::BlendState>,
+) -> wgpu::RenderPipeline {
+    device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        label: Some(label),
+        layout: Some(layout),
+        vertex: wgpu::VertexState {
+            module: shader,
+            entry_point: Some("vs_main"),
+            buffers: &[],
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+        },
+        fragment: Some(wgpu::FragmentState {
+            module: shader,
+            entry_point: Some("fs_main"),
+            targets: &[Some(wgpu::ColorTargetState {
+                format,
+                blend,
+                write_mask: wgpu::ColorWrites::ALL,
+            })],
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+        }),
+        primitive: wgpu::PrimitiveState {
+            topology: wgpu::PrimitiveTopology::TriangleList,
+            cull_mode: None,
+            ..Default::default()
+        },
+        depth_stencil: None,
+        multisample: wgpu::MultisampleState::default(),
+        multiview_mask: None,
+        cache: None,
+    })
 }
 
 /// Expand one complete indexed frame from native six-bit VGA values to RGBA.
 pub(crate) fn indexed_frame_rgba(
     indexed_pixels: &[u8],
     palette: &IndexedGamePalette,
+) -> Result<Vec<u8>> {
+    expand_indexed_rgba(indexed_pixels, palette, true)
+}
+
+fn expand_indexed_rgba(
+    indexed_pixels: &[u8],
+    palette: &IndexedGamePalette,
+    transparent_zero: bool,
 ) -> Result<Vec<u8>> {
     let mut rgba = Vec::with_capacity(indexed_pixels.len() * RGBA_COMPONENT_COUNT);
     for palette_index in indexed_pixels {
@@ -495,7 +621,11 @@ pub(crate) fn indexed_frame_rgba(
                 (u16::from(component) * EIGHT_BIT_CHANNEL_MAXIMUM / VGA_DAC_CHANNEL_MAXIMUM) as u8,
             );
         }
-        rgba.push(OPAQUE_ALPHA);
+        rgba.push(if transparent_zero && *palette_index == u8::MIN {
+            TRANSPARENT_ALPHA
+        } else {
+            OPAQUE_ALPHA
+        });
     }
     Ok(rgba)
 }
@@ -503,7 +633,7 @@ pub(crate) fn indexed_frame_rgba(
 /// Expand the native six-bit VGA palette to packed RGBA entries.
 pub(crate) fn indexed_palette_rgba(palette: &IndexedGamePalette) -> Result<Vec<u8>> {
     let indices = (u8::MIN..=u8::MAX).collect::<Vec<_>>();
-    indexed_frame_rgba(&indices, palette)
+    expand_indexed_rgba(&indices, palette, false)
 }
 
 impl Manu3Renderer {
@@ -884,11 +1014,39 @@ mod tests {
         palette[1] = [63, 32, 0];
         assert_eq!(
             indexed_frame_rgba(&[1, 0], &palette).unwrap(),
-            [255, 129, 0, 255, 0, 0, 0, 255]
+            [255, 129, 0, 255, 0, 0, 0, 0]
         );
 
         palette[1][0] = 64;
         assert!(indexed_frame_rgba(&[1], &palette).is_err());
+    }
+
+    #[test]
+    fn indexed_frame_zero_is_transparent_but_palette_entries_remain_opaque() {
+        let mut palette = [[u8::MIN; 3]; PALETTE_ENTRY_COUNT as usize];
+        palette[usize::from(u8::MIN)] = [63, 32, 0];
+
+        assert_eq!(
+            indexed_frame_rgba(&[u8::MIN], &palette).unwrap(),
+            [255, 129, 0, TRANSPARENT_ALPHA]
+        );
+        assert_eq!(
+            &indexed_palette_rgba(&palette).unwrap()[..RGBA_COMPONENT_COUNT],
+            &[255, 129, 0, OPAQUE_ALPHA]
+        );
+    }
+
+    #[test]
+    fn indexed_artwork_only_overlays_production_base_scenes() {
+        assert_eq!(
+            artwork_pass(false, BaseSceneArtwork::Hide),
+            Some(ArtworkPass::OpaqueBase)
+        );
+        assert_eq!(artwork_pass(true, BaseSceneArtwork::Hide), None);
+        assert_eq!(
+            artwork_pass(true, BaseSceneArtwork::CompositeIndexedOverlay),
+            Some(ArtworkPass::TransparentOverlay)
+        );
     }
 
     #[test]
