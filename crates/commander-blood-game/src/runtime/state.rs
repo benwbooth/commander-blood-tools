@@ -15,7 +15,7 @@ use crate::native::bloodprg::{
     PaletteResourceLoadOutcome, PaletteResourceStorage, PaletteResourceTarget, PauseHudRefresh,
     PbmDecodeResult, PresentationChoiceNumber, RasterPoint, RasterRectOutcome, ResourceId,
     ScriptPresentationEntity, ScriptProfileId, ScriptProfileLoadOutcome, ScriptProfileManager,
-    ShipDepthBandLayout, ShipHudState, ShipViewArtworkSelection,
+    ShipDepthBandLayout, ShipHudState, ShipViewArtworkSelection, ShipViewEntityId,
     activate_bridge_sprite_from_resource, advance_bridge_sprite_state, build_pause_hud_refresh,
     decode_chart_back_buffer, draw_presentation_choice_number, draw_small_font_text,
     fill_framebuffer_rect, select_ship_view_artwork, update_name_area_effect,
@@ -42,6 +42,7 @@ const NAME_AREA_EFFECT_ENTITY_INDEX: usize = 2;
 const SHIP_VIEW_TRANSITION_ENTITY_INDEX: usize = 31;
 const PRESENTATION_PANEL_ENTITY_INDEX: usize = 31;
 const LOGICAL_FRAMEBUFFER_HALF_HEIGHT: usize = 100;
+const SHIP_TRAVEL_CLEAR_COLOR: u8 = u8::MIN;
 
 /// One owned 320 by 200 row-major indexed framebuffer.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -221,6 +222,13 @@ impl OriginalGameRuntime {
         .context("transitioning the bridge presentation panel entity")
     }
 
+    /// Advance any fixed ship-view entity selected by the recovered coordinator.
+    pub fn transition_ship_view_entity(&mut self, entity: ShipViewEntityId) -> Result<bool> {
+        let entity_index = usize::from(entity.value());
+        advance_bridge_sprite_state(&mut self.bridge_sprite_entities, entity_index)
+            .with_context(|| format!("transitioning ship-view entity {entity_index}"))
+    }
+
     /// Arm the translated camera-approach state machine for a travel action.
     pub fn start_camera_transition(&mut self) {
         self.camera_approach.phase = u8::MIN;
@@ -365,6 +373,11 @@ impl OriginalGameRuntime {
     /// Copy the recovered upper and lower ship-depth bands between flat buffers.
     pub fn compose_ship_depth_bands(&mut self, layout: ShipDepthBandLayout) -> Result<()> {
         copy_ship_depth_bands(&mut self.front_buffer, &self.back_buffer, layout)
+    }
+
+    /// Clear the complete display after the recovered travel redraw request.
+    pub fn clear_ship_travel_display(&mut self) {
+        self.front_buffer.clear(SHIP_TRAVEL_CLEAR_COLOR);
     }
 
     /// Borrow both flat framebuffers for one translated presentation operation.

@@ -9,11 +9,12 @@ use crate::native::bloodprg::{
     GameSceneLink, PaletteRemapTable, PresentationChoiceNumber, PresentationDescriptPlan,
     PresentationMusicChange, PresentationPanelPhase, PresentationRenderRegion,
     PresentationRenderTarget, PresentationResourceId, PresentationSceneContext,
-    PresentationSceneDispatchState, PresentationSceneStatus, PresentationScreenBackend,
-    PresentationScreenOutcome, PresentationScreenState, RasterNoiseMode, RasterPoint,
-    RasterSpanPaint, SequenceSubtitlePlayback, SequenceSubtitleRenderer, build_banked_tint_table,
-    draw_framebuffer_noise_rect, draw_rect_outline, fill_framebuffer_rect,
-    present_sequence_subtitle, remap_framebuffer_rect, update_presentation_screen,
+    PresentationSceneDispatchOutcome, PresentationSceneDispatchState, PresentationSceneStatus,
+    PresentationScreenBackend, PresentationScreenOutcome, PresentationScreenState, RasterNoiseMode,
+    RasterPoint, RasterSpanPaint, SequenceSubtitlePlayback, SequenceSubtitleRenderer,
+    ShipPresentationState, build_banked_tint_table, draw_framebuffer_noise_rect, draw_rect_outline,
+    fill_framebuffer_rect, present_sequence_subtitle, remap_framebuffer_rect,
+    update_presentation_screen,
 };
 
 use super::{ModernGameServices, OriginalGameRuntime, RuntimePresentationScene};
@@ -28,6 +29,7 @@ const PRESENTATION_CONTENT_TOP: usize = 10;
 const SEQUENCE_PRESENTATION_LINE: PresentationResourceId = PresentationResourceId::new(2);
 const PRESENTATION_ACTIVE_GATE: u8 = 1;
 const PRESENTATION_REQUEST_GATE: u8 = 2;
+const SHIP_DEPTH_TRANSITION_ACTIVE: u8 = 1;
 const PRESENTATION_PANEL_SOUND_CLIP: u8 = 1;
 const PRESENTATION_SELECTION_ANIMATION: u16 = 14;
 const BRIDGE_CONSOLE_TINT_FIRST: u8 = 224;
@@ -74,6 +76,25 @@ impl RuntimePresentationScreen {
         &self.scene_state
     }
 
+    /// Dispatch the ship coordinator's current line through the shared scene owner.
+    pub fn dispatch_ship_scene<'window>(
+        &mut self,
+        services: &mut ModernGameServices<'window>,
+        ship: &mut ShipPresentationState,
+        active_record_related: Option<ScriptObjectId>,
+        scruter_jo_record: Option<ScriptObjectId>,
+    ) -> Result<PresentationSceneDispatchOutcome> {
+        import_ship_scene_state(ship, &mut self.scene_state);
+        let outcome = self.scene.dispatch(
+            services,
+            &mut self.scene_state,
+            active_record_related,
+            scruter_jo_record,
+        );
+        export_ship_scene_state(&self.scene_state, ship);
+        outcome
+    }
+
     /// Advance one exact panel frame using original resources and modern host services.
     pub fn update<'window>(
         &mut self,
@@ -112,6 +133,35 @@ impl RuntimePresentationScreen {
             (Ok(outcome), None) => Ok(outcome),
         }
     }
+}
+
+fn import_ship_scene_state(
+    ship: &ShipPresentationState,
+    scene: &mut PresentationSceneDispatchState<DescriptBackgroundSlot>,
+) {
+    scene.presentation.active_line = (ship.active_line != u16::MIN).then_some(ship.active_line);
+    scene.presentation.gate_flags = (scene.presentation.gate_flags & !PRESENTATION_ACTIVE_GATE)
+        | u8::from(ship.presentation_gate & u16::from(PRESENTATION_ACTIVE_GATE) != u16::MIN);
+    scene.dispatch_blocked = ship.scene_dispatch_blocked;
+    scene.ship_active_flags = ship.flags;
+    scene.palette_transition_percent = ship.transition_percent;
+    scene.depth_opening = ship.depth_opening_flags & SHIP_DEPTH_TRANSITION_ACTIVE != u8::MIN;
+    scene.depth_step = ship.depth_step;
+}
+
+fn export_ship_scene_state(
+    scene: &PresentationSceneDispatchState<DescriptBackgroundSlot>,
+    ship: &mut ShipPresentationState,
+) {
+    ship.active_line = scene.presentation.active_line.unwrap_or(u16::MIN);
+    ship.presentation_gate = (ship.presentation_gate & !u16::from(PRESENTATION_ACTIVE_GATE))
+        | u16::from(scene.presentation.gate_flags & PRESENTATION_ACTIVE_GATE);
+    ship.scene_dispatch_blocked = scene.dispatch_blocked;
+    ship.flags = scene.ship_active_flags;
+    ship.transition_percent = scene.palette_transition_percent;
+    ship.depth_opening_flags =
+        (ship.depth_opening_flags & !SHIP_DEPTH_TRANSITION_ACTIVE) | u8::from(scene.depth_opening);
+    ship.depth_step = scene.depth_step;
 }
 
 struct RuntimePresentationScreenBackend<'services, 'window> {
@@ -415,10 +465,69 @@ fn region_origin(region: PresentationRenderRegion) -> RasterPoint {
 mod tests {
     use super::*;
 
+    const INITIAL_LINE: u16 = 42;
+    const INITIAL_PRESENTATION_GATE: u16 = 257;
+    const INITIAL_SCENE_GATE_FLAGS: u8 = 128;
+    const INITIAL_SHIP_FLAGS: u16 = 5;
+    const INITIAL_TRANSITION_PERCENT: u16 = 75;
+    const INITIAL_DEPTH_FLAGS: u8 = 129;
+    const INITIAL_DEPTH_STEP: u8 = 6;
+    const EXPORTED_PRESENTATION_GATE: u16 = 256;
+    const EXPORTED_SHIP_FLAGS: u16 = 17;
+    const EXPORTED_TRANSITION_PERCENT: u16 = 100;
+    const EXPORTED_DEPTH_FLAGS: u8 = 128;
+    const EXPORTED_DEPTH_STEP: u8 = 2;
+
     #[test]
     fn inactive_screen_does_not_require_a_loaded_profile() {
         let state = PresentationScreenState::default();
         assert!(!state.active());
         assert_eq!(state.phase(), PresentationPanelPhase::Begin);
+    }
+
+    #[test]
+    fn ship_scene_adapter_preserves_unowned_flag_bits_in_both_directions() {
+        let mut ship = ShipPresentationState {
+            flags: INITIAL_SHIP_FLAGS,
+            scene_dispatch_blocked: true,
+            active_line: INITIAL_LINE,
+            presentation_gate: INITIAL_PRESENTATION_GATE,
+            transition_percent: INITIAL_TRANSITION_PERCENT,
+            depth_opening_flags: INITIAL_DEPTH_FLAGS,
+            depth_step: INITIAL_DEPTH_STEP,
+            ..ShipPresentationState::default()
+        };
+        let mut scene = PresentationSceneDispatchState::<DescriptBackgroundSlot>::default();
+        scene.presentation.gate_flags = INITIAL_SCENE_GATE_FLAGS;
+
+        import_ship_scene_state(&ship, &mut scene);
+
+        assert_eq!(scene.presentation.active_line, Some(INITIAL_LINE));
+        assert_eq!(
+            scene.presentation.gate_flags,
+            INITIAL_SCENE_GATE_FLAGS | PRESENTATION_ACTIVE_GATE
+        );
+        assert!(scene.dispatch_blocked);
+        assert_eq!(scene.ship_active_flags, INITIAL_SHIP_FLAGS);
+        assert_eq!(scene.palette_transition_percent, INITIAL_TRANSITION_PERCENT);
+        assert!(scene.depth_opening);
+        assert_eq!(scene.depth_step, INITIAL_DEPTH_STEP);
+
+        scene.presentation.active_line = None;
+        scene.presentation.gate_flags &= !PRESENTATION_ACTIVE_GATE;
+        scene.dispatch_blocked = false;
+        scene.ship_active_flags = EXPORTED_SHIP_FLAGS;
+        scene.palette_transition_percent = EXPORTED_TRANSITION_PERCENT;
+        scene.depth_opening = false;
+        scene.depth_step = EXPORTED_DEPTH_STEP;
+        export_ship_scene_state(&scene, &mut ship);
+
+        assert_eq!(ship.active_line, u16::MIN);
+        assert_eq!(ship.presentation_gate, EXPORTED_PRESENTATION_GATE);
+        assert!(!ship.scene_dispatch_blocked);
+        assert_eq!(ship.flags, EXPORTED_SHIP_FLAGS);
+        assert_eq!(ship.transition_percent, EXPORTED_TRANSITION_PERCENT);
+        assert_eq!(ship.depth_opening_flags, EXPORTED_DEPTH_FLAGS);
+        assert_eq!(ship.depth_step, EXPORTED_DEPTH_STEP);
     }
 }

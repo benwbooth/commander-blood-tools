@@ -15,12 +15,12 @@ use crate::native::bloodprg::{
     GamePresentationOwner, GameSceneLink, InlineMenuRevealOutcome, InlineMenuTextMetrics,
     InputAction, Manu3HandFrameContext, Manu3HandFrameState, PbmDecodeResult, PointerButtonEdges,
     PointerButtons, PointerSample, PresentationChoiceNumber, PresentationPresentPolicy,
-    PresentationResourceId, PresentationResourceSequenceOutcome, PresentationScreenOutcome,
-    PresentationScreenState, PresentationWordChoiceOutcome, ScriptClock, ScriptFrameOutcome,
-    ScriptProfileId, ScriptProfileLoadOutcome, ShipDepthTransitionOutcome, ShipPresentationState,
-    ShipProjectionResources, StartupPreparationOutcome, TextPresentationState,
-    draw_planar_dialogue_text, measure_game_text_width, reveal_inline_menu_step,
-    update_manu3_hand_frame,
+    PresentationResourceId, PresentationResourceSequenceOutcome, PresentationSceneDispatchOutcome,
+    PresentationScreenOutcome, PresentationScreenState, PresentationWordChoiceOutcome, ScriptClock,
+    ScriptFrameOutcome, ScriptProfileId, ScriptProfileLoadOutcome, ShipDepthTransitionOutcome,
+    ShipPresentationState, ShipProjectionResources, ShipViewEntityId, StartupPreparationOutcome,
+    TextPresentationState, draw_planar_dialogue_text, measure_game_text_width,
+    reveal_inline_menu_step, update_manu3_hand_frame,
 };
 use crate::native::manu3::animation::CursorPosition;
 use crate::native::random::BloodPrng;
@@ -546,6 +546,35 @@ impl<'window> ModernGameServices<'window> {
             .compose_ship_depth_bands(layout)
             .context("composing recovered ship-depth bands")?;
         Ok(true)
+    }
+
+    /// Advance one fixed ship-view entity selected by the top-level coordinator.
+    pub fn transition_ship_view_entity(&mut self, entity: ShipViewEntityId) -> Result<bool> {
+        self.runtime.transition_ship_view_entity(entity)
+    }
+
+    /// Dispatch the ship's active authored line through the shared scene player.
+    pub fn dispatch_ship_scene(&mut self) -> Result<PresentationSceneDispatchOutcome> {
+        let active_record_related = self.scripts.backend().active_description_object();
+        let scruter_jo_record = self
+            .runtime
+            .current_profile()
+            .and_then(|profile| profile.builtins().scruter_jo);
+        let mut screen = self
+            .presentation_screen
+            .take()
+            .context("ship scene dispatch is reentrant")?;
+        let mut ship = std::mem::take(&mut self.ship_presentation);
+        let outcome =
+            screen.dispatch_ship_scene(self, &mut ship, active_record_related, scruter_jo_record);
+        self.ship_presentation = ship;
+        self.presentation_screen = Some(screen);
+        outcome
+    }
+
+    /// Clear the recovered full-screen travel redraw surface.
+    pub fn clear_ship_travel_display(&mut self) {
+        self.runtime.clear_ship_travel_display();
     }
 
     /// Reveal and draw one exact frame of the current BloodScript inline menu.
