@@ -178,8 +178,34 @@ fn production_video_derivatives_are_generated_through_the_recovered_decoder() {
     assert!(importer.contains("service_frame(runtime"));
     assert!(importer.contains("build_indexed_planar_frame"));
     assert!(importer.contains("build_mask_planar_frame"));
-    assert!(importer.contains("decode_webm_stream_hash"));
+    assert!(importer.contains("MatroskaFile::open"));
+    assert!(importer.contains("Decoder::new"));
+    assert!(importer.contains("Encoder::new"));
+    assert!(importer.contains("SegmentBuilder::new"));
     assert!(importer.contains("decoded_rgb_sha256 != rgb_stream_sha256"));
     assert!(importer.contains("decoded_index_sha256 != indexed_video_stream_sha256"));
     assert!(importer.contains("decoded_mask_sha256 != mask_stream_sha256"));
+}
+
+#[test]
+fn production_game_does_not_spawn_external_programs() {
+    let game_root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let mut sources = Vec::new();
+    rust_sources(&game_root.join("src"), &mut sources);
+
+    for source_path in sources {
+        let source = std::fs::read_to_string(&source_path).unwrap();
+        for forbidden in [
+            "std::process::Command",
+            "use std::process::{Command",
+            "use std::process::Command",
+            "CBLOOD_FFMPEG",
+        ] {
+            assert!(
+                !source.contains(forbidden),
+                "{} invokes external program through {forbidden}",
+                source_path.display()
+            );
+        }
+    }
 }

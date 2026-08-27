@@ -41,10 +41,12 @@ Every HNM is decoded twice by the recovered game decoder and exported below
 `media-v1/video-v1` as three lossless VP9 WebM streams: viewable 4:4:4 RGB,
 palette indices, and a compositing-ownership mask. A JSON sidecar preserves
 palette updates, embedded sound records, service-call positions, and queue
-counters. FFmpeg decodes each generated stream again and the importer requires
-exact raw-frame SHA-256 equality before installing the cache atomically. HNM
-remains the gameplay source until the normalized indexed/mask reader passes the
-same runtime parity gates. See [docs/normalized-media.md](docs/normalized-media.md).
+counters. The game links libvpx and libwebm directly; it does not launch an
+external transcoder. An in-process Matroska demuxer and independent libvpx
+decoder read each generated stream again, and the importer requires exact
+raw-frame SHA-256 equality before installing the cache atomically. HNM remains
+the gameplay source until the normalized indexed/mask reader passes the same
+runtime parity gates. See [docs/normalized-media.md](docs/normalized-media.md).
 
 ## Commands
 

@@ -55,12 +55,15 @@ authored by the stream. Values that remain different depend on prior scene state
 and are excluded from RGB/index output by the ownership mask. This preserves
 delta frames and transparent character overlays without filename heuristics.
 
-Each WebM is encoded as lossless VP9 profile 1, decoded back to planar bytes by
-FFmpeg, and compared with the exact pre-encode SHA-256 stream hash. The complete
-cache is installed atomically only after all source hashes, output hashes,
-metadata, and frame counts validate. WebM timestamps use a nominal 25 fps for
-tool compatibility and are explicitly non-authoritative; the recorded game
-service positions and runtime audio/software clocks remain the timing oracle.
+Each WebM is encoded as lossless VP9 profile 1 by the linked libvpx library and
+muxed through the linked libwebm library. An in-process Matroska demuxer and a
+fresh libvpx decoder then recover the planar bytes and compare them with the
+exact pre-encode SHA-256 stream hash. The game launches no external transcoder.
+The complete cache is installed atomically only after all source hashes, output
+hashes, metadata, and frame counts validate. WebM timestamps use a nominal 25
+fps for tool compatibility and are explicitly non-authoritative; the recorded
+game service positions and runtime audio/software clocks remain the timing
+oracle.
 
 Gameplay still reads canonical loose HNM resources. Switching playback to the
 index and mask streams is a separate parity-gated step: the normalized reader

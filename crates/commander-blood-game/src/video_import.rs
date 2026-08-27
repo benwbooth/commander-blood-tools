@@ -2,14 +2,26 @@
 
 use std::collections::BTreeSet;
 use std::fmt::Write as _;
-use std::io::{BufReader, Read, Write};
+use std::io::{BufReader, Read};
+use std::num::NonZero;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
 
 use anyhow::{Context, Result, bail};
 use commander_blood_formats::archive::BloodResourceName;
+use matroska_demuxer::{Frame, MatroskaFile, TrackType};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use vpx_rs::enc::ctrl::{EncoderControlSet, Vp9ColorRange};
+use vpx_rs::enc::{CodecId as EncoderCodecId, EncoderProfile};
+use vpx_rs::image::UVImagePlanes;
+use vpx_rs::{
+    DecodedImageData, Decoder, DecoderConfig, Encoder, EncoderConfig, EncoderFrameFlags,
+    EncodingDeadline, ImageFormat, Packet, RateControl, Timebase, YUVImageData,
+};
+use webm::mux::{
+    ColorPrimaries, ColorRange, ColorSubsampling, MatrixCoefficients, SegmentBuilder, SegmentMode,
+    TransferCharacteristics, VideoCodecId, Writer,
+};
 
 use crate::asset_import::{
     checked_relative_path, replace_directory, sha256_hex, temporary_sibling,
@@ -25,8 +37,8 @@ use crate::runtime::{
 
 const VIDEO_DIRECTORY_NAME: &str = "video-v1";
 const VIDEO_MANIFEST_FILENAME: &str = "manifest.json";
-const VIDEO_SCHEMA_VERSION: u32 = 1;
-const VIDEO_METADATA_SCHEMA_VERSION: u32 = 1;
+const VIDEO_SCHEMA_VERSION: u32 = 2;
+const VIDEO_METADATA_SCHEMA_VERSION: u32 = 2;
 const TEMPORARY_VIDEO_INFIX: &str = "generate";
 const HNM_FILENAME_SUFFIX: &[u8] = b".HNM";
 const WEBM_EXTENSION: &str = "webm";
@@ -35,17 +47,15 @@ const MASK_PATH_INFIX: &str = "mask";
 const INDEX_PATH_INFIX: &str = "index";
 const NOMINAL_FRAME_RATE_NUMERATOR: u32 = 25;
 const NOMINAL_FRAME_RATE_DENOMINATOR: u32 = 1;
-const FFMPEG_ENVIRONMENT_VARIABLE: &str = "CBLOOD_FFMPEG";
-const DEVELOPMENT_FFMPEG_ENVIRONMENT_VARIABLE: &str = "FFMPEG";
-const DEFAULT_FFMPEG_EXECUTABLE: &str = "ffmpeg";
-const VP9_PROFILE: &str = "1";
-const VP9_CPU_USED: &str = "4";
-const VP9_ROW_MULTITHREADING: &str = "1";
-const VP9_LOSSLESS: &str = "1";
-const VP9_PIXEL_FORMAT: &str = "gbrp";
-const VP9_COLOR_RANGE: &str = "pc";
-const VP9_COLOR_SPACE: &str = "rgb";
-const VP9_DEADLINE: &str = "good";
+const VIDEO_CODEC_BACKEND: &str = "vpx-rs 0.2.1/libvpx + webm 2.2.1/libwebm";
+const VP9_ENCODER_THREAD_COUNT: u32 = 4;
+const VP9_DECODER_THREAD_COUNT: u32 = 4;
+const VP9_CPU_USED: i32 = 4;
+const VP9_ROW_MULTITHREADING: bool = true;
+const VP9_BIT_DEPTH: u8 = 8;
+const WEBM_VP9_CODEC_ID: &str = "V_VP9";
+const PLANAR_PIXEL_FORMAT: &str = "gbrp";
+const NANOSECONDS_PER_SECOND: u64 = 1_000_000_000;
 const FRAME_PROGRESS_INTERVAL: usize = 25;
 const MAXIMUM_TRACE_SERVICE_CALLS: usize = u16::MAX as usize;
 const PRIMARY_FRAMEBUFFER_SEED: u8 = u8::MIN;
@@ -65,7 +75,7 @@ const PLANAR_FRAME_BYTE_COUNT: usize = FRAME_PIXEL_COUNT * RGB_COMPONENT_COUNT;
 struct VideoDerivativeManifest {
     schema_version: u32,
     source_asset_manifest_sha256: String,
-    ffmpeg_version: String,
+    codec_backend: String,
     nominal_frame_rate: [u32; 2],
     timestamps_authoritative: bool,
     videos: Vec<VideoDerivativeEntry>,
@@ -263,8 +273,6 @@ fn prepare_lossless_webm_derivatives_for_runtime(
         return Ok(manifest.videos.len());
     }
 
-    let ffmpeg = ffmpeg_executable();
-    let ffmpeg_version = ffmpeg_version(&ffmpeg)?;
     let resource_store = runtime.data().resource_store().clone();
     let default_palette = *runtime.data().default_vga_palette();
     let mut resource_names: Vec<_> = resource_store
@@ -305,8 +313,6 @@ fn prepare_lossless_webm_derivatives_for_runtime(
         &resource_names,
         default_palette,
         &temporary_root,
-        &ffmpeg,
-        ffmpeg_version,
         source_asset_manifest_sha256.clone(),
     );
     let manifest = match generated {
@@ -335,8 +341,6 @@ fn generate_videos(
     resource_names: &[BloodResourceName],
     default_palette: IndexedGamePalette,
     root: &Path,
-    ffmpeg: &Path,
-    ffmpeg_version: String,
     source_asset_manifest_sha256: String,
 ) -> Result<VideoDerivativeManifest> {
     let secondary_palette = alternate_palette(default_palette)?;
@@ -375,7 +379,6 @@ fn generate_videos(
         validate_parallel_traces(resource_name, &primary, &secondary)?;
         videos.push(write_video_derivative(
             root,
-            ffmpeg,
             resource_name,
             source_sha256,
             &primary,
@@ -385,7 +388,7 @@ fn generate_videos(
     Ok(VideoDerivativeManifest {
         schema_version: VIDEO_SCHEMA_VERSION,
         source_asset_manifest_sha256,
-        ffmpeg_version,
+        codec_backend: VIDEO_CODEC_BACKEND.to_owned(),
         nominal_frame_rate: [NOMINAL_FRAME_RATE_NUMERATOR, NOMINAL_FRAME_RATE_DENOMINATOR],
         timestamps_authoritative: false,
         videos,
@@ -522,7 +525,6 @@ fn validate_parallel_traces(
 
 fn write_video_derivative(
     root: &Path,
-    ffmpeg: &Path,
     resource_name: &BloodResourceName,
     source_sha256: String,
     primary: &[TraceFrame],
@@ -542,10 +544,10 @@ fn write_video_derivative(
     }
 
     let rgb_stream_sha256 =
-        encode_lossless_vp9(ffmpeg, &webm_path, primary.len(), |frame_index, output| {
+        encode_lossless_vp9(&webm_path, primary.len(), |frame_index, output| {
             build_rgb_planar_frame(&primary[frame_index], &secondary[frame_index], output)
         })?;
-    let decoded_rgb_sha256 = decode_webm_stream_hash(ffmpeg, &webm_path, primary.len())?;
+    let decoded_rgb_sha256 = decode_webm_stream_hash(&webm_path, primary.len())?;
     if decoded_rgb_sha256 != rgb_stream_sha256 {
         bail!(
             "lossless VP9 RGB verification failed: {}",
@@ -554,10 +556,10 @@ fn write_video_derivative(
     }
 
     let indexed_video_stream_sha256 =
-        encode_lossless_vp9(ffmpeg, &index_path, primary.len(), |frame_index, output| {
+        encode_lossless_vp9(&index_path, primary.len(), |frame_index, output| {
             build_indexed_planar_frame(&primary[frame_index], &secondary[frame_index], output)
         })?;
-    let decoded_index_sha256 = decode_webm_stream_hash(ffmpeg, &index_path, primary.len())?;
+    let decoded_index_sha256 = decode_webm_stream_hash(&index_path, primary.len())?;
     if decoded_index_sha256 != indexed_video_stream_sha256 {
         bail!(
             "lossless VP9 index verification failed: {}",
@@ -566,10 +568,10 @@ fn write_video_derivative(
     }
 
     let mask_stream_sha256 =
-        encode_lossless_vp9(ffmpeg, &mask_path, primary.len(), |frame_index, output| {
+        encode_lossless_vp9(&mask_path, primary.len(), |frame_index, output| {
             build_mask_planar_frame(&primary[frame_index], &secondary[frame_index], output)
         })?;
-    let decoded_mask_sha256 = decode_webm_stream_hash(ffmpeg, &mask_path, primary.len())?;
+    let decoded_mask_sha256 = decode_webm_stream_hash(&mask_path, primary.len())?;
     if decoded_mask_sha256 != mask_stream_sha256 {
         bail!(
             "lossless VP9 mask verification failed: {}",
@@ -673,7 +675,7 @@ fn build_video_metadata(
         frame_count: primary.len(),
         nominal_frame_rate: [NOMINAL_FRAME_RATE_NUMERATOR, NOMINAL_FRAME_RATE_DENOMINATOR],
         timestamps_authoritative: false,
-        rgb_pixel_format: VP9_PIXEL_FORMAT.to_owned(),
+        rgb_pixel_format: PLANAR_PIXEL_FORMAT.to_owned(),
         rgb_stream_sha256,
         indexed_video_stream_sha256,
         mask_stream_sha256,
@@ -751,64 +753,78 @@ fn build_mask_planar_frame(
 }
 
 fn encode_lossless_vp9(
-    ffmpeg: &Path,
     destination: &Path,
     frame_count: usize,
     mut frame: impl FnMut(usize, &mut Vec<u8>) -> Result<()>,
 ) -> Result<String> {
-    let dimensions = format!(
-        "{}x{}",
-        LOGICAL_FRAMEBUFFER_WIDTH, LOGICAL_FRAMEBUFFER_HEIGHT
-    );
-    let frame_rate = format!("{NOMINAL_FRAME_RATE_NUMERATOR}/{NOMINAL_FRAME_RATE_DENOMINATOR}");
-    let mut child = Command::new(ffmpeg)
-        .args([
-            "-hide_banner",
-            "-loglevel",
-            "error",
-            "-nostdin",
-            "-f",
-            "rawvideo",
-            "-pixel_format",
-            VP9_PIXEL_FORMAT,
-            "-video_size",
-            &dimensions,
-            "-framerate",
-            &frame_rate,
-            "-i",
-            "pipe:0",
-            "-an",
-            "-c:v",
-            "libvpx-vp9",
-            "-profile:v",
-            VP9_PROFILE,
-            "-lossless",
-            VP9_LOSSLESS,
-            "-pix_fmt",
-            VP9_PIXEL_FORMAT,
-            "-color_range",
-            VP9_COLOR_RANGE,
-            "-colorspace",
-            VP9_COLOR_SPACE,
-            "-deadline",
-            VP9_DEADLINE,
-            "-cpu-used",
-            VP9_CPU_USED,
-            "-row-mt",
-            VP9_ROW_MULTITHREADING,
-            "-f",
-            "webm",
-            "-y",
-        ])
-        .arg(destination)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::null())
-        .stderr(Stdio::inherit())
-        .spawn()
-        .with_context(|| format!("starting FFmpeg encoder {}", ffmpeg.display()))?;
-    let mut stdin = child.stdin.take().context("FFmpeg encoder has no stdin")?;
+    let width = u32::try_from(LOGICAL_FRAMEBUFFER_WIDTH).context("video width exceeds u32")?;
+    let height = u32::try_from(LOGICAL_FRAMEBUFFER_HEIGHT).context("video height exceeds u32")?;
+    let mut config = EncoderConfig::<u8>::new(
+        EncoderCodecId::VP9,
+        width,
+        height,
+        Timebase {
+            num: NonZero::new(NOMINAL_FRAME_RATE_DENOMINATOR)
+                .context("video timebase numerator is zero")?,
+            den: NonZero::new(NOMINAL_FRAME_RATE_NUMERATOR)
+                .context("video timebase denominator is zero")?,
+        },
+        RateControl::Lossless,
+    )
+    .context("creating lossless VP9 configuration")?;
+    config.profile = EncoderProfile::Vp9Profile1;
+    config.threads = VP9_ENCODER_THREAD_COUNT;
+    config.lag_in_frames = u32::MIN;
+    let mut encoder = Encoder::new(config).context("initializing lossless VP9 encoder")?;
+    encoder
+        .codec_control_set(EncoderControlSet::CpuUsed(VP9_CPU_USED))
+        .context("setting VP9 CPU usage")?;
+    encoder
+        .codec_control_set(EncoderControlSet::EnableAutoAltRef(u32::MIN))
+        .context("disabling VP9 alternate-reference frames")?;
+    encoder
+        .codec_control_set(EncoderControlSet::Vp9RowMT(VP9_ROW_MULTITHREADING))
+        .context("enabling VP9 row multithreading")?;
+    encoder
+        .codec_control_set(EncoderControlSet::Vp9ColorSpace(
+            vpx_rs::vpx_sys::vpx_color_space::VPX_CS_SRGB,
+        ))
+        .context("setting VP9 RGB color space")?;
+    encoder
+        .codec_control_set(EncoderControlSet::Vp9ColorRange(Vp9ColorRange::Full))
+        .context("setting VP9 full color range")?;
+
+    let file = std::fs::File::create(destination)
+        .with_context(|| format!("creating WebM derivative {}", destination.display()))?;
+    let writer = Writer::new(file);
+    let builder = SegmentBuilder::new(writer)
+        .context("creating WebM segment")?
+        .set_writing_app(VIDEO_CODEC_BACKEND)
+        .context("setting WebM writing application")?
+        .set_mode(SegmentMode::File)
+        .context("setting seekable WebM mode")?;
+    let (builder, video_track) = builder
+        .add_video_track(width, height, VideoCodecId::VP9, None)
+        .context("adding VP9 WebM track")?;
+    let builder = builder
+        .set_color(
+            video_track,
+            VP9_BIT_DEPTH,
+            ColorSubsampling::default(),
+            ColorRange::Full,
+        )
+        .context("setting WebM 4:4:4 full-range color")?
+        .set_transfer_characteristics(video_track, TransferCharacteristics::Iec61966_2_1)
+        .context("setting WebM sRGB transfer characteristics")?
+        .set_primaries(video_track, ColorPrimaries::Bt709)
+        .context("setting WebM color primaries")?
+        .set_matrix_coefficients(video_track, MatrixCoefficients::Identity)
+        .context("setting WebM RGB matrix")?;
+    let mut segment = builder.build();
+
     let mut encoded_frame = Vec::with_capacity(PLANAR_FRAME_BYTE_COUNT);
     let mut hasher = Sha256::new();
+    let mut packet_count = usize::MIN;
     for frame_index in 0..frame_count {
         frame(frame_index, &mut encoded_frame)?;
         if encoded_frame.len() != PLANAR_FRAME_BYTE_COUNT {
@@ -819,68 +835,166 @@ fn encode_lossless_vp9(
             );
         }
         hasher.update(&encoded_frame);
-        stdin
-            .write_all(&encoded_frame)
-            .with_context(|| format!("streaming raw frame {frame_index} to FFmpeg"))?;
+        let image = YUVImageData::from_raw_data(
+            ImageFormat::I444,
+            LOGICAL_FRAMEBUFFER_WIDTH,
+            LOGICAL_FRAMEBUFFER_HEIGHT,
+            &encoded_frame,
+        )
+        .with_context(|| format!("wrapping normalized frame {frame_index}"))?;
+        let packets = encoder
+            .encode(
+                i64::try_from(frame_index).context("frame index exceeds i64")?,
+                u64::from(NOMINAL_FRAME_RATE_DENOMINATOR),
+                image,
+                EncodingDeadline::GoodQuality,
+                EncoderFrameFlags::empty(),
+            )
+            .with_context(|| format!("encoding lossless VP9 frame {frame_index}"))?;
+        for packet in packets {
+            if let Packet::CompressedFrame(compressed) = packet {
+                let pts = u64::try_from(compressed.pts)
+                    .context("VP9 encoder returned a negative timestamp")?;
+                let timestamp_ns = pts
+                    .checked_mul(NANOSECONDS_PER_SECOND)
+                    .and_then(|value| value.checked_mul(u64::from(NOMINAL_FRAME_RATE_DENOMINATOR)))
+                    .and_then(|value| value.checked_div(u64::from(NOMINAL_FRAME_RATE_NUMERATOR)))
+                    .context("VP9 timestamp overflow")?;
+                segment
+                    .add_frame(
+                        video_track,
+                        &compressed.data,
+                        timestamp_ns,
+                        compressed.flags.is_key,
+                    )
+                    .with_context(|| format!("muxing VP9 frame {frame_index}"))?;
+                packet_count += 1;
+            }
+        }
     }
-    drop(stdin);
-    let status = child.wait().context("waiting for FFmpeg encoder")?;
-    if !status.success() {
-        bail!("FFmpeg lossless VP9 encoder exited with {status}");
+    if packet_count != frame_count {
+        bail!("VP9 encoder produced {packet_count} frames; expected {frame_count}");
+    }
+    let duration_ns = u64::try_from(frame_count)
+        .context("video frame count exceeds u64")?
+        .checked_mul(NANOSECONDS_PER_SECOND)
+        .and_then(|value| value.checked_mul(u64::from(NOMINAL_FRAME_RATE_DENOMINATOR)))
+        .and_then(|value| value.checked_div(u64::from(NOMINAL_FRAME_RATE_NUMERATOR)))
+        .context("WebM duration overflow")?;
+    segment
+        .finalize(Some(duration_ns))
+        .map_err(|_| anyhow::anyhow!("finalizing WebM derivative {}", destination.display()))?;
+    Ok(finish_sha256(hasher))
+}
+
+fn decode_webm_stream_hash(source: &Path, frame_count: usize) -> Result<String> {
+    let file = std::fs::File::open(source)
+        .with_context(|| format!("opening WebM derivative {}", source.display()))?;
+    let mut webm = MatroskaFile::open(file)
+        .with_context(|| format!("demuxing WebM derivative {}", source.display()))?;
+    let track = webm
+        .tracks()
+        .iter()
+        .find(|track| track.track_type() == TrackType::Video)
+        .context("generated WebM has no video track")?;
+    if track.codec_id() != WEBM_VP9_CODEC_ID {
+        bail!(
+            "generated WebM has codec {}; expected {WEBM_VP9_CODEC_ID}",
+            track.codec_id()
+        );
+    }
+    let video = track
+        .video()
+        .context("generated WebM video track has no dimensions")?;
+    if video.pixel_width().get() != LOGICAL_FRAMEBUFFER_WIDTH as u64
+        || video.pixel_height().get() != LOGICAL_FRAMEBUFFER_HEIGHT as u64
+    {
+        bail!("generated WebM has unexpected video dimensions");
+    }
+    let track_number = track.track_number().get();
+    let width = u32::try_from(LOGICAL_FRAMEBUFFER_WIDTH).context("video width exceeds u32")?;
+    let height = u32::try_from(LOGICAL_FRAMEBUFFER_HEIGHT).context("video height exceeds u32")?;
+    let mut decoder_config = DecoderConfig::new(vpx_rs::dec::CodecId::VP9, width, height);
+    decoder_config.threads = VP9_DECODER_THREAD_COUNT;
+    let mut decoder = Decoder::new(decoder_config).context("initializing VP9 verifier")?;
+    let mut hasher = Sha256::new();
+    let mut decoded_frame_count = usize::MIN;
+    let mut compressed = Frame::default();
+    while webm
+        .next_frame(&mut compressed)
+        .with_context(|| format!("reading WebM frames from {}", source.display()))?
+    {
+        if compressed.track != track_number {
+            continue;
+        }
+        for image in decoder
+            .decode(&compressed.data)
+            .with_context(|| format!("decoding VP9 frame from {}", source.display()))?
+        {
+            hash_decoded_i444_frame(&mut hasher, image.data())?;
+            decoded_frame_count += 1;
+        }
+    }
+    if decoded_frame_count != frame_count {
+        bail!(
+            "VP9 verifier decoded {decoded_frame_count} frames from {}; expected {frame_count}",
+            source.display()
+        );
     }
     Ok(finish_sha256(hasher))
 }
 
-fn decode_webm_stream_hash(ffmpeg: &Path, source: &Path, frame_count: usize) -> Result<String> {
-    let mut child = Command::new(ffmpeg)
-        .args(["-hide_banner", "-loglevel", "error", "-nostdin", "-i"])
-        .arg(source)
-        .args([
-            "-map",
-            "0:v:0",
-            "-fps_mode",
-            "passthrough",
-            "-f",
-            "rawvideo",
-            "-pix_fmt",
-            VP9_PIXEL_FORMAT,
-            "pipe:1",
-        ])
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::inherit())
-        .spawn()
-        .with_context(|| format!("starting FFmpeg verifier {}", ffmpeg.display()))?;
-    let stdout = child
-        .stdout
-        .take()
-        .context("FFmpeg verifier has no stdout")?;
-    let mut stdout = BufReader::new(stdout);
-    let mut decoded_frame = vec![u8::MIN; PLANAR_FRAME_BYTE_COUNT];
-    let mut hasher = Sha256::new();
-    for frame_index in 0..frame_count {
-        stdout.read_exact(&mut decoded_frame).with_context(|| {
-            format!(
-                "reading verified frame {frame_index} from {}",
-                source.display()
-            )
-        })?;
-        hasher.update(&decoded_frame);
-    }
-    let mut extra = [u8::MIN; 1];
-    if stdout
-        .read(&mut extra)
-        .context("checking for extra decoded frames")?
-        != usize::MIN
+fn hash_decoded_i444_frame(hasher: &mut Sha256, image: DecodedImageData<'_>) -> Result<()> {
+    let DecodedImageData::Data8b(image) = image else {
+        bail!("lossless VP9 verifier returned a high-bit-depth frame");
+    };
+    if image.format() != ImageFormat::I444
+        || image.width() != LOGICAL_FRAMEBUFFER_WIDTH
+        || image.height() != LOGICAL_FRAMEBUFFER_HEIGHT
     {
-        bail!("FFmpeg decoded extra frames from {}", source.display());
+        bail!("lossless VP9 verifier returned an unexpected frame format");
     }
-    drop(stdout);
-    let status = child.wait().context("waiting for FFmpeg verifier")?;
-    if !status.success() {
-        bail!("FFmpeg VP9 verifier exited with {status}");
+    let planes = image.planes();
+    hash_plane_rows(
+        hasher,
+        planes.y,
+        planes.y_stride(),
+        LOGICAL_FRAMEBUFFER_WIDTH,
+        LOGICAL_FRAMEBUFFER_HEIGHT,
+    )?;
+    let UVImagePlanes::Separate(chroma) = planes.uv else {
+        bail!("lossless VP9 verifier returned interleaved chroma");
+    };
+    hash_plane_rows(
+        hasher,
+        chroma.u,
+        chroma.u_stride(),
+        LOGICAL_FRAMEBUFFER_WIDTH,
+        LOGICAL_FRAMEBUFFER_HEIGHT,
+    )?;
+    hash_plane_rows(
+        hasher,
+        chroma.v,
+        chroma.v_stride(),
+        LOGICAL_FRAMEBUFFER_WIDTH,
+        LOGICAL_FRAMEBUFFER_HEIGHT,
+    )
+}
+
+fn hash_plane_rows(
+    hasher: &mut Sha256,
+    plane: &[u8],
+    stride: usize,
+    width: usize,
+    height: usize,
+) -> Result<()> {
+    if stride < width || plane.len() < stride.saturating_mul(height) {
+        bail!("lossless VP9 verifier returned a truncated image plane");
     }
-    Ok(finish_sha256(hasher))
+    for row in plane.chunks_exact(stride).take(height) {
+        hasher.update(&row[..width]);
+    }
+    Ok(())
 }
 
 fn derivative_paths(resource_name: &BloodResourceName) -> Result<(String, String, String, String)> {
@@ -997,29 +1111,6 @@ fn display_resource_name(name: &BloodResourceName) -> String {
         .expect("validated resource names are ASCII")
 }
 
-fn ffmpeg_executable() -> PathBuf {
-    std::env::var_os(FFMPEG_ENVIRONMENT_VARIABLE)
-        .or_else(|| std::env::var_os(DEVELOPMENT_FFMPEG_ENVIRONMENT_VARIABLE))
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(DEFAULT_FFMPEG_EXECUTABLE))
-}
-
-fn ffmpeg_version(ffmpeg: &Path) -> Result<String> {
-    let output = Command::new(ffmpeg)
-        .arg("-version")
-        .output()
-        .with_context(|| format!("running FFmpeg {}", ffmpeg.display()))?;
-    if !output.status.success() {
-        bail!("FFmpeg version probe exited with {}", output.status);
-    }
-    String::from_utf8(output.stdout)
-        .context("FFmpeg version output is not UTF-8")?
-        .lines()
-        .next()
-        .context("FFmpeg version output is empty")
-        .map(str::to_owned)
-}
-
 fn hex_bytes(bytes: &[u8]) -> String {
     let mut encoded = String::with_capacity(bytes.len() * 2);
     for byte in bytes {
@@ -1084,7 +1175,7 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "requires original Commander Blood data and FFmpeg"]
+    #[ignore = "requires original Commander Blood data"]
     fn real_hnm_round_trips_exactly_through_lossless_webm() {
         let paths = OriginalGameDataPaths::discover(None).unwrap();
         let scratch = std::env::temp_dir().join(format!(
@@ -1116,10 +1207,8 @@ mod tests {
         .unwrap();
         validate_parallel_traces(&resource_name, &primary, &secondary).unwrap();
 
-        let ffmpeg = ffmpeg_executable();
         let entry = write_video_derivative(
             &scratch,
-            &ffmpeg,
             &resource_name,
             source_sha256,
             &primary,
@@ -1136,7 +1225,7 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "requires original Commander Blood data, FFmpeg, and substantial CPU time"]
+    #[ignore = "requires original Commander Blood data and substantial CPU time"]
     fn every_real_hnm_generates_a_verified_lossless_webm_derivative() {
         let paths = OriginalGameDataPaths::discover(None).unwrap();
         let data = OriginalGameData::load_with_writable_root(paths, std::env::temp_dir()).unwrap();

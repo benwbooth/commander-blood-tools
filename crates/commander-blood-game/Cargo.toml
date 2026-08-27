@@ -11,11 +11,14 @@ path = "src/main.rs"
 anyhow = "1"
 bytemuck = { version = "1", features = ["derive"] }
 commander-blood-formats = { path = "../commander-blood-formats" }
+matroska-demuxer = "0.8.1"
 pollster = "0.4"
 sdl3 = { version = "0.18.4", features = ["raw-window-handle", "use-pkg-config"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"
+vpx-rs = "0.2.1"
+webm = "2.2.1"
 wgpu = "29.0.1"
 
 [dev-dependencies]

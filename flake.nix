@@ -78,6 +78,7 @@
                 ffmpeg
                 imagemagick
                 jq
+                libvpx
                 nasm
                 p7zip
                 pkg-config
@@ -101,6 +102,7 @@
                 ))
                 (mkDosboxStagingCbtest pkgs)
                 ripgrep
+                rustPlatform.bindgenHook
                 rust-analyzer
                 rustc
                 rustfmt
@@ -142,7 +144,7 @@
                 ./crates/commander-blood-game
               ];
             };
-            cargoHash = "sha256-SG5YeVjgHBImcGXs2M92/cVOsV6GUiKfgb59vVYBqHM=";
+            cargoHash = "sha256-+Ib1nxqiUm4BF+1Frf0mg3qoJGwnDn1iQezarPLMrDY=";
             cargoBuildFlags = [
               "-p"
               "commander-blood-game"
@@ -152,10 +154,12 @@
             nativeBuildInputs = with pkgs; [
               makeWrapper
               pkg-config
+              rustPlatform.bindgenHook
             ];
             buildInputs = with pkgs; [
               alsa-lib
               libGL
+              libvpx
               libx11
               libxcb
               libxcursor
@@ -169,7 +173,6 @@
             doCheck = false;
             postFixup = ''
               wrapProgram "$out/bin/commander-blood" \
-                --prefix PATH : "${pkgs.lib.makeBinPath [ pkgs.ffmpeg ]}" \
                 --prefix LD_LIBRARY_PATH : \
                   "/run/opengl-driver/lib:${
                     pkgs.lib.makeLibraryPath (
@@ -177,6 +180,7 @@
                       [
                         alsa-lib
                         libGL
+                        libvpx
                         libx11
                         libxcb
                         libxcursor
