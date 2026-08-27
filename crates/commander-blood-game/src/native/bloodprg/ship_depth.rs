@@ -8,6 +8,8 @@ const BAND_DEPTH_BIAS: u16 = 35;
 const BAND_ROW_BYTES: u16 = 80;
 const BAND_SOURCE_SPLIT: u16 = 57_152;
 const BAND_DESTINATION_SPLIT: u16 = 16_000;
+const LOGICAL_FRAMEBUFFER_HALF_HEIGHT: u16 = 100;
+const LOGICAL_FRAMEBUFFER_HEIGHT: u16 = 200;
 
 /// Mutable depth-door state retained by the bridge presentation coordinator.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -90,6 +92,51 @@ pub struct ShipDepthBandLayout {
     pub first_destination: u16,
     /// Start of the second band in the destination page.
     pub second_destination: u16,
+}
+
+/// Row-major form of the two-band copy used by the flat modern framebuffer.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct ShipDepthBandRows {
+    /// Number of rows copied by each band.
+    pub(crate) row_count: u16,
+    /// First source row copied into the top of the display.
+    pub(crate) upper_source_start: u16,
+    /// First source row copied into the bottom of the display.
+    pub(crate) lower_source_start: u16,
+    /// First destination row of the upper band.
+    pub(crate) upper_destination_start: u16,
+    /// First destination row of the lower band.
+    pub(crate) lower_destination_start: u16,
+}
+
+impl ShipDepthBandLayout {
+    /// Convert the native planar-byte result into logical 320-pixel rows.
+    ///
+    /// Only layouts targeting the start of one complete framebuffer are
+    /// accepted. The original write-mode-one copy moved all four VGA planes,
+    /// making each 80-byte planar row exactly one 320-pixel logical row.
+    pub(crate) fn logical_rows(self) -> Option<ShipDepthBandRows> {
+        if self.first_destination != u16::MIN
+            || !self.byte_count.is_multiple_of(BAND_ROW_BYTES)
+            || self.second_source != BAND_SOURCE_SPLIT
+            || self.first_source != BAND_SOURCE_SPLIT.wrapping_sub(self.byte_count)
+            || self.second_destination != BAND_DESTINATION_SPLIT.wrapping_sub(self.byte_count)
+        {
+            return None;
+        }
+
+        let row_count = self.byte_count / BAND_ROW_BYTES;
+        if row_count > LOGICAL_FRAMEBUFFER_HALF_HEIGHT {
+            return None;
+        }
+        Some(ShipDepthBandRows {
+            row_count,
+            upper_source_start: LOGICAL_FRAMEBUFFER_HALF_HEIGHT - row_count,
+            lower_source_start: LOGICAL_FRAMEBUFFER_HALF_HEIGHT,
+            upper_destination_start: u16::MIN,
+            lower_destination_start: LOGICAL_FRAMEBUFFER_HEIGHT - row_count,
+        })
+    }
 }
 
 /// Prepare the visible band transition from native routine `0x00B6DD`.
@@ -239,6 +286,52 @@ mod tests {
                 vector.name
             );
         }
+    }
+
+    #[test]
+    fn shipped_depth_layouts_convert_to_flat_logical_rows() {
+        let mut percent = u16::MIN;
+        let closed = prepare_ship_depth_band(
+            ACTIVE_FLAG,
+            u16::MIN,
+            TRANSITION_INCREMENT_HOLD,
+            &mut percent,
+            u16::MIN,
+        )
+        .unwrap()
+        .logical_rows()
+        .unwrap();
+        assert_eq!(
+            closed,
+            ShipDepthBandRows {
+                row_count: BAND_DEPTH_BIAS,
+                upper_source_start: LOGICAL_FRAMEBUFFER_HALF_HEIGHT - BAND_DEPTH_BIAS,
+                lower_source_start: LOGICAL_FRAMEBUFFER_HALF_HEIGHT,
+                upper_destination_start: u16::MIN,
+                lower_destination_start: LOGICAL_FRAMEBUFFER_HEIGHT - BAND_DEPTH_BIAS,
+            }
+        );
+
+        let open = prepare_ship_depth_band(
+            ACTIVE_FLAG,
+            FULLY_OPEN_DEPTH,
+            TRANSITION_INCREMENT_HOLD,
+            &mut percent,
+            u16::MIN,
+        )
+        .unwrap()
+        .logical_rows()
+        .unwrap();
+        assert_eq!(
+            open,
+            ShipDepthBandRows {
+                row_count: LOGICAL_FRAMEBUFFER_HALF_HEIGHT,
+                upper_source_start: u16::MIN,
+                lower_source_start: LOGICAL_FRAMEBUFFER_HALF_HEIGHT,
+                upper_destination_start: u16::MIN,
+                lower_destination_start: LOGICAL_FRAMEBUFFER_HALF_HEIGHT,
+            }
+        );
     }
 
     fn outcome_for_path(path: &str) -> ShipDepthTransitionOutcome {

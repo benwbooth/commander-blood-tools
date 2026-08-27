@@ -15,10 +15,10 @@ use crate::native::bloodprg::{
     PaletteResourceLoadOutcome, PaletteResourceStorage, PaletteResourceTarget, PauseHudRefresh,
     PbmDecodeResult, PresentationChoiceNumber, RasterPoint, RasterRectOutcome, ResourceId,
     ScriptPresentationEntity, ScriptProfileId, ScriptProfileLoadOutcome, ScriptProfileManager,
-    ShipHudState, ShipViewArtworkSelection, activate_bridge_sprite_from_resource,
-    advance_bridge_sprite_state, build_pause_hud_refresh, decode_chart_back_buffer,
-    draw_presentation_choice_number, draw_small_font_text, fill_framebuffer_rect,
-    select_ship_view_artwork, update_name_area_effect,
+    ShipDepthBandLayout, ShipHudState, ShipViewArtworkSelection,
+    activate_bridge_sprite_from_resource, advance_bridge_sprite_state, build_pause_hud_refresh,
+    decode_chart_back_buffer, draw_presentation_choice_number, draw_small_font_text,
+    fill_framebuffer_rect, select_ship_view_artwork, update_name_area_effect,
 };
 use crate::native::manu3::model::Manu3Model;
 
@@ -41,6 +41,7 @@ const DIALOGUE_OVERLAY_ENTITY_INDEX: usize = 4;
 const NAME_AREA_EFFECT_ENTITY_INDEX: usize = 2;
 const SHIP_VIEW_TRANSITION_ENTITY_INDEX: usize = 31;
 const PRESENTATION_PANEL_ENTITY_INDEX: usize = 31;
+const LOGICAL_FRAMEBUFFER_HALF_HEIGHT: usize = 100;
 
 /// One owned 320 by 200 row-major indexed framebuffer.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -356,6 +357,16 @@ impl OriginalGameRuntime {
         self.front_buffer.copy_from(&self.back_buffer);
     }
 
+    /// Capture the current display as the source page for the ship-depth effect.
+    pub fn capture_ship_depth_source(&mut self) {
+        self.back_buffer.copy_from(&self.front_buffer);
+    }
+
+    /// Copy the recovered upper and lower ship-depth bands between flat buffers.
+    pub fn compose_ship_depth_bands(&mut self, layout: ShipDepthBandLayout) -> Result<()> {
+        copy_ship_depth_bands(&mut self.front_buffer, &self.back_buffer, layout)
+    }
+
     /// Borrow both flat framebuffers for one translated presentation operation.
     pub(super) fn presentation_buffers_mut(&mut self) -> (&mut [u8], &mut [u8]) {
         (
@@ -591,6 +602,40 @@ impl OriginalGameRuntime {
     }
 }
 
+fn copy_ship_depth_bands(
+    destination: &mut IndexedFramebuffer,
+    source: &IndexedFramebuffer,
+    layout: ShipDepthBandLayout,
+) -> Result<()> {
+    let rows = layout
+        .logical_rows()
+        .context("ship-depth layout does not describe one flat logical framebuffer")?;
+    let row_count = usize::from(rows.row_count);
+    if row_count > LOGICAL_FRAMEBUFFER_HALF_HEIGHT {
+        bail!("ship-depth band exceeds half of the logical framebuffer");
+    }
+    let upper_source = framebuffer_row_span(rows.upper_source_start, rows.row_count)?;
+    let lower_source = framebuffer_row_span(rows.lower_source_start, rows.row_count)?;
+    let upper_destination = framebuffer_row_span(rows.upper_destination_start, rows.row_count)?;
+    let lower_destination = framebuffer_row_span(rows.lower_destination_start, rows.row_count)?;
+
+    destination.pixels_mut()[upper_destination].copy_from_slice(&source.pixels()[upper_source]);
+    destination.pixels_mut()[lower_destination].copy_from_slice(&source.pixels()[lower_source]);
+    Ok(())
+}
+
+fn framebuffer_row_span(start: u16, count: u16) -> Result<std::ops::Range<usize>> {
+    let start = usize::from(start);
+    let count = usize::from(count);
+    let end = start
+        .checked_add(count)
+        .context("logical framebuffer row span overflowed")?;
+    if end > LOGICAL_FRAMEBUFFER_HEIGHT {
+        bail!("logical framebuffer row span {start}..{end} exceeds the display");
+    }
+    Ok(start * LOGICAL_FRAMEBUFFER_WIDTH..end * LOGICAL_FRAMEBUFFER_WIDTH)
+}
+
 fn save_slot_directory_resource_name() -> Result<BloodResourceName> {
     BloodResourceName::new(SAVE_SLOT_DIRECTORY_RESOURCE_NAME)
         .context("validating BLOOD.SAV resource name")
@@ -618,6 +663,14 @@ mod tests {
     const MISSING_SAVE_FILENAME: &[u8] = b"game8.sav";
     const TEST_SAVE_BYTES: &[u8] = b"flat save storage";
     const INITIAL_SCRIPT_PROFILE: u8 = 0;
+    const CLOSED_SHIP_DEPTH: u16 = u16::MIN;
+    const FULLY_OPEN_SHIP_DEPTH: u16 = 65;
+    const SHIP_DEPTH_TRANSITION_HOLD: u16 = 10;
+    const CLOSED_SHIP_BAND_ROW_COUNT: usize = 35;
+    const CLOSED_SHIP_UPPER_SOURCE_START: usize = 65;
+    const CLOSED_SHIP_LOWER_DESTINATION_START: usize = 165;
+    const SHIP_DEPTH_SOURCE_SPLIT: usize = 100;
+    const UNTOUCHED_SHIP_DEPTH_PIXEL: u8 = u8::MAX;
     static TEMPORARY_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(u64::MIN);
 
     struct TemporaryRoot(PathBuf);
@@ -654,6 +707,61 @@ mod tests {
                 .iter()
                 .all(|pixel| *pixel == TEST_BACKGROUND_COLOR)
         );
+    }
+
+    #[test]
+    fn ship_depth_bands_copy_captured_rows_without_vga_page_emulation() {
+        let mut source = IndexedFramebuffer::new();
+        for (row_index, row) in source
+            .pixels_mut()
+            .chunks_exact_mut(LOGICAL_FRAMEBUFFER_WIDTH)
+            .enumerate()
+        {
+            row.fill(u8::try_from(row_index).unwrap());
+        }
+        let mut destination = IndexedFramebuffer::new();
+        destination.clear(UNTOUCHED_SHIP_DEPTH_PIXEL);
+        let mut percent = u16::MIN;
+        let closed_layout = crate::native::bloodprg::prepare_ship_depth_band(
+            u16::from(true),
+            CLOSED_SHIP_DEPTH,
+            SHIP_DEPTH_TRANSITION_HOLD,
+            &mut percent,
+            u16::MIN,
+        )
+        .unwrap();
+
+        copy_ship_depth_bands(&mut destination, &source, closed_layout).unwrap();
+
+        for (row_index, row) in destination
+            .pixels()
+            .chunks_exact(LOGICAL_FRAMEBUFFER_WIDTH)
+            .enumerate()
+        {
+            let expected = if row_index < CLOSED_SHIP_BAND_ROW_COUNT {
+                u8::try_from(row_index + CLOSED_SHIP_UPPER_SOURCE_START).unwrap()
+            } else if row_index >= CLOSED_SHIP_LOWER_DESTINATION_START {
+                u8::try_from(
+                    SHIP_DEPTH_SOURCE_SPLIT + row_index - CLOSED_SHIP_LOWER_DESTINATION_START,
+                )
+                .unwrap()
+            } else {
+                UNTOUCHED_SHIP_DEPTH_PIXEL
+            };
+            assert!(row.iter().all(|pixel| *pixel == expected));
+        }
+
+        destination.clear(UNTOUCHED_SHIP_DEPTH_PIXEL);
+        let open_layout = crate::native::bloodprg::prepare_ship_depth_band(
+            u16::from(true),
+            FULLY_OPEN_SHIP_DEPTH,
+            SHIP_DEPTH_TRANSITION_HOLD,
+            &mut percent,
+            u16::MIN,
+        )
+        .unwrap();
+        copy_ship_depth_bands(&mut destination, &source, open_layout).unwrap();
+        assert_eq!(destination, source);
     }
 
     #[test]
