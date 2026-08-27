@@ -17,18 +17,21 @@ use sdl3::video::Window;
 use crate::native::alien::AlienSceneFrame;
 use crate::native::bloodprg::{
     AudioClipRequest, AudioEventContext, AudioEventState, BRIDGE_CONSOLE_TINT_FIRST,
-    BRIDGE_DARK_PALETTE_ADJUSTMENT, BRIDGE_SPRITE_ENTITY_COUNT, BridgePageBackend, BridgePageState,
-    BridgePageTarget, BridgePaletteAdjustment, BridgeScene, BridgeSceneFrame, BridgeSceneInput,
-    BridgeScreenInitializationBackend, BridgeScreenInitializationState, BridgeSpriteCommitOutcome,
-    BridgeSteeringInteraction, CdAudioPreparationOutcome, CdAudioState, ChoiceListConfig,
-    ChoiceListFrame, ChoiceListPointer, ChoiceListState, ConfirmDialogOutcome, ConfirmDialogState,
-    DescriptMusicSelectionOutcome, DescriptRecordApplication, DirtyRegionCopyOutcome, FontPoint,
-    FontVerticalBand, GameFontFace, GameLifecycleState, GamePresentationOwner, GameSceneLink,
-    IndexedGamePalette, InlineMenuRevealOutcome, InlineMenuTextMetrics, InputAction,
-    LoadedSoundBank, Manu3HandFrameContext, Manu3HandFrameState, NAV_ACTOR_SLOT_COUNT,
-    NavActorSlot, OriginalSaveGame, PbmDecodeResult, PointerButtonEdges, PointerButtons,
-    PointerSample, PresentationBridgeMode, PresentationChoiceNumber, PresentationPresentPolicy,
-    PresentationResourceId, PresentationResourceSequenceOutcome, PresentationSceneDispatchOutcome,
+    BRIDGE_DARK_PALETTE_ADJUSTMENT, BRIDGE_SPRITE_ENTITY_COUNT, BridgeActorPresentationState,
+    BridgePageBackend, BridgePageState, BridgePageTarget, BridgePaletteAdjustment, BridgeScene,
+    BridgeSceneFrame, BridgeSceneInput, BridgeScreenInitializationBackend,
+    BridgeScreenInitializationState, BridgeSpriteCommitOutcome, BridgeSteeringInteraction,
+    CdAudioPreparationOutcome, CdAudioState, ChoiceListConfig, ChoiceListFrame, ChoiceListPointer,
+    ChoiceListState, ConfirmDialogOutcome, ConfirmDialogState, DescriptMusicSelectionOutcome,
+    DescriptRecordApplication, DirtyRegionCopyOutcome, FontPoint, FontVerticalBand, GameFontFace,
+    GameLifecycleState, GamePresentationOwner, GameSceneLink, IndexedGamePalette,
+    InlineMenuRevealOutcome, InlineMenuTextMetrics, InputAction, LoadedSoundBank,
+    Manu3HandFrameContext, Manu3HandFrameState, NAV_ACTOR_SLOT_COUNT, NavActorSlot,
+    OriginalSaveGame, PbmDecodeResult, PointerButtonEdges, PointerButtons, PointerSample,
+    PresentationBridgeMode, PresentationChoiceNumber, PresentationHitAreas,
+    PresentationHitRectangle, PresentationHitSelection, PresentationHoverOutcome,
+    PresentationHoverState, PresentationPresentPolicy, PresentationResourceId,
+    PresentationResourceSequenceOutcome, PresentationSceneDispatchOutcome,
     PresentationScreenOutcome, PresentationScreenState, PresentationWordChoiceOutcome,
     SCENE_PALETTE_CLEAR_COLOR_COUNT, SHIP_CAMERA_RESET, SceneTransitionState, ScriptClock,
     ScriptFrameOutcome, ScriptPresentationEntity, ScriptPresentationScanState, ScriptProfileId,
@@ -41,7 +44,7 @@ use crate::native::bloodprg::{
     measure_game_text_width, objects_at_arche_position, original_save_state_block_byte_count,
     play_cd_audio_track_two, prepare_cd_audio, presentable_navigation_objects,
     process_audio_events, render_bridge_page, reveal_inline_menu_step, stop_cd_audio,
-    update_manu3_hand_frame, update_presentation_bridge_mode,
+    update_manu3_hand_frame, update_presentation_bridge_mode, update_presentation_hover,
 };
 use crate::native::manu3::animation::CursorPosition;
 use crate::native::random::BloodPrng;
@@ -88,6 +91,10 @@ const PRESENTATION_CHOICE_MANU3_ANIMATION: u16 = 14;
 const FIRST_SHIP_PROJECTION_ENTITY: u16 = 21;
 const AFTER_LAST_SHIP_PROJECTION_ENTITY: u16 = BRIDGE_SPRITE_ENTITY_COUNT as u16;
 const RECOVERED_PRESENTATION_MODE_BLOCKED: bool = false;
+const PRIMARY_PRESENTATION_ACTOR_SLOT: usize = 0;
+const SECONDARY_PRESENTATION_ACTOR_SLOT: usize = 2;
+const DISABLED_PRESENTATION_HIT_RECT: PresentationHitRectangle =
+    PresentationHitRectangle::new([-1; 2], [-1; 2]);
 
 /// Owned flat services that concrete `GameLifecycleHost` methods delegate to.
 ///
@@ -109,6 +116,7 @@ pub struct ModernGameServices<'window> {
     bridge_frame: Option<BridgeSceneFrame>,
     bridge_screen: BridgeScreenInitializationState,
     bridge_presentation_mode: Option<PresentationBridgeMode>,
+    presentation_hover: PresentationHoverState<BridgeActorPresentationState>,
     nav_actor_slots: [NavActorSlot; NAV_ACTOR_SLOT_COUNT],
     bridge_console: Option<RuntimeBridgeConsole>,
     presentation_screen: Option<RuntimePresentationScreen>,
@@ -171,6 +179,11 @@ impl<'window> ModernGameServices<'window> {
             bridge_frame: None,
             bridge_screen: BridgeScreenInitializationState::default(),
             bridge_presentation_mode: None,
+            presentation_hover: PresentationHoverState::new(
+                false,
+                BridgeActorPresentationState::Unchanged,
+                BridgeActorPresentationState::Unchanged,
+            ),
             nav_actor_slots: [NavActorSlot::default(); NAV_ACTOR_SLOT_COUNT],
             bridge_console: Some(bridge_console),
             presentation_screen: Some(presentation_screen),
@@ -2265,12 +2278,48 @@ impl<'window> ModernGameServices<'window> {
             RECOVERED_PRESENTATION_MODE_BLOCKED,
             &mut self.bridge_presentation_mode,
         );
-        self.render_current_bridge_frame()
+        self.render_current_bridge_frame()?;
+        self.update_bridge_presentation_hover();
+        Ok(self
+            .bridge_frame
+            .as_ref()
+            .expect("rendered bridge frame was retained"))
     }
 
     /// Presentation band selected from the current authored panorama frame.
     pub const fn bridge_presentation_mode(&self) -> Option<PresentationBridgeMode> {
         self.bridge_presentation_mode
+    }
+
+    /// Persistent hover ownership selected from panorama-authored actor boxes.
+    pub const fn presentation_hover(
+        &self,
+    ) -> &PresentationHoverState<BridgeActorPresentationState> {
+        &self.presentation_hover
+    }
+
+    /// Update presentation hover through the recovered inclusive hit test.
+    pub fn update_bridge_presentation_hover(&mut self) -> PresentationHoverOutcome {
+        let selection = match self.bridge_presentation_mode {
+            Some(PresentationBridgeMode::Outer) => Some(PresentationHitSelection::Primary),
+            Some(PresentationBridgeMode::SecondBand) => Some(PresentationHitSelection::Secondary),
+            Some(PresentationBridgeMode::FirstBand | PresentationBridgeMode::ThirdBand) | None => {
+                None
+            }
+        };
+        let primary = self.nav_actor_slots[PRIMARY_PRESENTATION_ACTOR_SLOT]
+            .hit_region
+            .unwrap_or(DISABLED_PRESENTATION_HIT_RECT);
+        let secondary = self.nav_actor_slots[SECONDARY_PRESENTATION_ACTOR_SLOT]
+            .hit_region
+            .unwrap_or(DISABLED_PRESENTATION_HIT_RECT);
+        update_presentation_hover(
+            selection,
+            PresentationHitAreas::new(primary, secondary),
+            self.input.pointer_sample().position,
+            BridgeActorPresentationState::PresentationHover,
+            &mut self.presentation_hover,
+        )
     }
 
     /// Prepare a bridge frame from current steering without consuming host input.
@@ -2289,6 +2338,7 @@ impl<'window> ModernGameServices<'window> {
             bridge_scene,
             bridge_frame,
             bridge_palette,
+            nav_actor_slots,
             ..
         } = self;
         let scene = bridge_scene
@@ -2304,6 +2354,17 @@ impl<'window> ModernGameServices<'window> {
             )
             .context("rendering current bridge scene")?;
         *runtime.live_palette_mut() = live_palette;
+        for (slot, orb_box) in nav_actor_slots
+            .iter_mut()
+            .zip(frame.station_orb_boxes.iter().copied())
+        {
+            slot.hit_region = orb_box.map(|orb_box| {
+                PresentationHitRectangle::new(
+                    orb_box.origin.map(|coordinate| coordinate as i16),
+                    orb_box.size.map(|extent| extent as i16),
+                )
+            });
+        }
         frame.object_sprite_pixels = runtime
             .rasterize_ship_object_layer()
             .context("rendering current bridge ship-object layer")?
@@ -2853,10 +2914,20 @@ mod tests {
         let bridge_frame = services
             .render_bridge_frame(BridgeSceneInput::default())
             .unwrap();
+        let station_index = bridge_frame.metadata.station.index();
+        let station_orb = bridge_frame.metadata.orb_box;
         assert!(!bridge_frame.starfield.plotted.is_empty());
         assert_eq!(
             services.bridge_presentation_mode(),
             Some(PresentationBridgeMode::FirstBand)
+        );
+        assert!(!services.presentation_hover().active());
+        assert_eq!(
+            services.nav_actor_slots[station_index].hit_region,
+            station_orb.map(|orb_box| PresentationHitRectangle::new(
+                orb_box.origin.map(|coordinate| coordinate as i16),
+                orb_box.size.map(|extent| extent as i16),
+            ))
         );
         services.input_mut().poll_pointer(
             [320.0, 200.0],

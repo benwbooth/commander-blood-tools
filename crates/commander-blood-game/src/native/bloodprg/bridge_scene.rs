@@ -47,6 +47,8 @@ pub struct BridgeSceneFrame {
     pub panorama_frame: usize,
     /// Typed station and eye-orb metadata decoded with the panorama pixels.
     pub metadata: BridgePanoramaFrameMetadata,
+    /// Current station hit boxes published into the first four actor slots.
+    pub station_orb_boxes: BridgeStationOrbBoxes,
     /// Opaque indexed panorama layer; index zero becomes transparent on the GPU.
     pub panorama_pixels: Box<[u8]>,
     /// Exact fixed-point starfield projection generated before panorama compositing.
@@ -289,8 +291,7 @@ impl BridgeScene {
         &mut self,
         sprite_entities: &mut [BridgeSpriteEntity],
     ) -> Result<BridgeSceneFrame, BridgeSceneError> {
-        let panorama_palette =
-            [[u8::MIN; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
+        let panorama_palette = [[u8::MIN; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
         let mut live_palette = panorama_palette;
         self.render_current_frame_with_palette(
             sprite_entities,
@@ -371,6 +372,7 @@ impl BridgeScene {
         Ok(BridgeSceneFrame {
             panorama_frame,
             metadata,
+            station_orb_boxes,
             panorama_pixels,
             starfield,
             object_sprites,
@@ -501,6 +503,11 @@ mod tests {
             usize::from(INITIAL_BRIDGE_VIEW_FRAME)
         );
         assert_eq!(centered.metadata.station, BridgeStation::Console);
+        assert_eq!(
+            centered.station_orb_boxes[centered.metadata.station.index()],
+            centered.metadata.orb_box
+        );
+        assert_eq!(centered.station_orb_boxes.iter().flatten().count(), 1);
         assert_eq!(centered.panorama_pixels.len(), PANORAMA_FRAME_PIXEL_COUNT);
         assert_eq!(
             centered.object_sprite_pixels.len(),

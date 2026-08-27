@@ -1,5 +1,7 @@
 //! Bridge actor-slot coordination over typed flags and callbacks.
 
+use super::PresentationHitRectangle;
+
 /// Number of authored bridge actor slots.
 pub const NAV_ACTOR_SLOT_COUNT: usize = 6;
 
@@ -72,6 +74,8 @@ pub struct NavActorSlot {
     pub flags: NavActorSlotFlags,
     /// Authored target arc in the doubled bridge-frame coordinate domain.
     pub target_arc: u16,
+    /// Current panorama-authored hit region, when this station is visible.
+    pub hit_region: Option<PresentationHitRectangle>,
 }
 
 /// Mouse edge state consumed by active actor slots.
@@ -367,6 +371,7 @@ mod tests {
             let mut slots = std::array::from_fn(|index| NavActorSlot {
                 flags: flags_from_native_word(vector.first_words_before[index]),
                 target_arc: index as u16 * QUARTER_TURN_ARC,
+                hit_region: None,
             });
             let target_arcs = slots.map(|slot| slot.target_arc);
 
@@ -415,6 +420,7 @@ mod tests {
         let mut slots = std::array::from_fn(|index| NavActorSlot {
             flags: NavActorSlotFlags::default(),
             target_arc: TARGET_ARCS[index],
+            hit_region: None,
         });
         let (slot, flags) = match name {
             "active_bit_four_clears_mouse_before_hit" => (Some(0), 5),

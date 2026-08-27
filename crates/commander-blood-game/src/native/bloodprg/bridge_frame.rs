@@ -14,6 +14,8 @@ pub enum BridgeActorPresentationState {
     SteeringRight,
     /// Steering changed while the pointer was on the left side of the screen.
     SteeringLeft,
+    /// Pointer hover owns one authored presentation orb.
+    PresentationHover,
 }
 
 /// Typed sprite groups committed or redrawn by the bridge coordinator.
