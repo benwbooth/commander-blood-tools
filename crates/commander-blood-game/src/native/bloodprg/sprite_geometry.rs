@@ -52,6 +52,11 @@ impl BridgeSpriteFlags {
         self.0 & VISIBLE_FLAG != u16::MIN
     }
 
+    /// Whether the entity's native low active-state bit is set.
+    pub const fn is_active(self) -> bool {
+        self.0 & STATE_ZERO_FLAG != u16::MIN
+    }
+
     /// Whether position and extent setters accept changes for this entity.
     pub const fn accepts_geometry_updates(self) -> bool {
         self.0 & GEOMETRY_UPDATE_MASK != u16::MIN

@@ -6,6 +6,7 @@ mod bios_font;
 mod bridge_actors;
 mod bridge_console;
 mod camera_approach;
+mod camera_navigation;
 mod choice_list;
 mod confirm_dialog;
 mod game_lifecycle;

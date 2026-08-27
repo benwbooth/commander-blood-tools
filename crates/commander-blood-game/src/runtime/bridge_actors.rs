@@ -55,6 +55,16 @@ pub(super) struct RuntimeBridgeActors {
 }
 
 impl RuntimeBridgeActors {
+    /// Clear frame latches reset by the recovered bridge-screen initializer.
+    pub(super) fn reset_bridge_screen_latches(&mut self) {
+        self.panel.completion_latched = false;
+    }
+
+    /// Return whether the panel actor latched completion for final remapping.
+    pub(super) const fn completion_latched(&self) -> bool {
+        self.panel.completion_latched
+    }
+
     pub(super) fn update(
         &mut self,
         services: &mut ModernGameServices<'_>,

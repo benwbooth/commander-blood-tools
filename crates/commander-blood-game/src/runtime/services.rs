@@ -21,25 +21,25 @@ use crate::native::bloodprg::{
     BridgePageBackend, BridgePageState, BridgePageTarget, BridgePaletteAdjustment, BridgeScene,
     BridgeSceneFrame, BridgeSceneInput, BridgeScreenInitializationBackend,
     BridgeScreenInitializationState, BridgeSpriteCommitOutcome, BridgeSpriteRasterOutcome,
-    BridgeSteeringInteraction, CameraPageFlipOutcome, CdAudioPreparationOutcome, CdAudioState,
-    ChoiceListConfig, ChoiceListFrame, ChoiceListPointer, ChoiceListState, ConfirmDialogOutcome,
-    ConfirmDialogState, DescriptMusicSelectionOutcome, DescriptRecordApplication,
-    DirtyRegionCopyOutcome, FontPoint, FontVerticalBand, GameFontFace, GameLifecycleState,
-    GamePresentationOwner, GameSceneLink, IndexedGamePalette, InlineMenuRevealOutcome,
-    InlineMenuTextMetrics, InputAction, LoadedSoundBank, Manu3HandFrameContext,
-    Manu3HandFrameState, NAV_ACTOR_SLOT_COUNT, NavActorSlot, NavActorSlotUpdateOutcome,
-    OriginalSaveGame, PbmDecodeResult, PointerButtonEdges, PointerButtons, PointerSample,
-    PresentationBridgeMode, PresentationChoiceNumber, PresentationHitAreas,
-    PresentationHitRectangle, PresentationHitSelection, PresentationHoverOutcome,
-    PresentationHoverState, PresentationPresentPolicy, PresentationResourceId,
-    PresentationResourceSequenceOutcome, PresentationSceneDispatchOutcome,
+    BridgeSteeringInteraction, BridgeSteeringOutcome, CameraPageFlipOutcome,
+    CdAudioPreparationOutcome, CdAudioState, ChoiceListConfig, ChoiceListFrame, ChoiceListPointer,
+    ChoiceListState, ConfirmDialogOutcome, ConfirmDialogState, DescriptMusicSelectionOutcome,
+    DescriptRecordApplication, DirtyRegionCopyOutcome, FontPoint, FontVerticalBand, GameFontFace,
+    GameLifecycleState, GamePresentationOwner, GameSceneLink, IndexedGamePalette,
+    InlineMenuRevealOutcome, InlineMenuTextMetrics, InputAction, LoadedSoundBank,
+    Manu3HandFrameContext, Manu3HandFrameState, NAV_ACTOR_SLOT_COUNT, NameAreaEffectOutcome,
+    NavActorSlot, NavActorSlotUpdateOutcome, OriginalSaveGame, PbmDecodeResult, PointerButtonEdges,
+    PointerButtons, PointerSample, PresentationBridgeMode, PresentationChoiceNumber,
+    PresentationHitAreas, PresentationHitRectangle, PresentationHitSelection,
+    PresentationHoverOutcome, PresentationHoverState, PresentationPresentPolicy,
+    PresentationResourceId, PresentationResourceSequenceOutcome, PresentationSceneDispatchOutcome,
     PresentationScreenOutcome, PresentationScreenState, PresentationWordChoiceOutcome,
-    SCENE_PALETTE_CLEAR_COLOR_COUNT, SHIP_CAMERA_RESET, SceneTransitionState, ScriptClock,
-    ScriptFrameOutcome, ScriptPresentationEntity, ScriptPresentationScanState, ScriptProfileId,
-    ScriptProfileLoadOutcome, ScriptShipNavigationMode, ShipDepthTransitionOutcome,
-    ShipHudInitializationContext, ShipPresentationOutcome, ShipPresentationState,
-    ShipProjectionResources, ShipTargetSelectionState, ShipViewEntityId, SoundBankUsage,
-    StartupPreparationOutcome, TextPresentationState, clear_scene_palette_entries,
+    RasterRectOutcome, SCENE_PALETTE_CLEAR_COLOR_COUNT, SHIP_CAMERA_RESET, SceneTransitionState,
+    ScriptClock, ScriptFrameOutcome, ScriptPresentationEntity, ScriptPresentationScanState,
+    ScriptProfileId, ScriptProfileLoadOutcome, ScriptShipNavigationMode,
+    ShipDepthTransitionOutcome, ShipHudInitializationContext, ShipPresentationOutcome,
+    ShipPresentationState, ShipProjectionResources, ShipTargetSelectionState, ShipViewEntityId,
+    SoundBankUsage, StartupPreparationOutcome, TextPresentationState, clear_scene_palette_entries,
     deactivate_nav_actor_slots, draw_planar_dialogue_text, fill_display_band,
     increment_object_access_counters, initialize_bridge_screen, load_sound_bank,
     measure_game_text_width, objects_at_arche_position, original_save_state_block_byte_count,
@@ -52,6 +52,7 @@ use crate::native::random::BloodPrng;
 
 use super::bridge_actors::RuntimeBridgeActors;
 use super::bridge_console::RuntimeBridgeConsole;
+use super::camera_navigation::RuntimeCameraNavigation;
 use super::choice_list::{
     RuntimeChoiceListStyle, draw_choice_list_rows, prepare_choice_list_frame,
 };
@@ -127,6 +128,7 @@ pub struct ModernGameServices<'window> {
     nav_actor_slots: [NavActorSlot; NAV_ACTOR_SLOT_COUNT],
     bridge_actors: Option<RuntimeBridgeActors>,
     bridge_console: Option<RuntimeBridgeConsole>,
+    camera_navigation: Option<RuntimeCameraNavigation>,
     presentation_screen: Option<RuntimePresentationScreen>,
     presentation_word_choice: Option<RuntimePresentationWordChoice>,
     save_load: Option<RuntimeSaveLoad>,
@@ -195,6 +197,7 @@ impl<'window> ModernGameServices<'window> {
             nav_actor_slots: [NavActorSlot::default(); NAV_ACTOR_SLOT_COUNT],
             bridge_actors: Some(RuntimeBridgeActors::default()),
             bridge_console: Some(bridge_console),
+            camera_navigation: Some(RuntimeCameraNavigation::default()),
             presentation_screen: Some(presentation_screen),
             presentation_word_choice: Some(RuntimePresentationWordChoice::default()),
             save_load: Some(RuntimeSaveLoad::default()),
@@ -1770,6 +1773,10 @@ impl<'window> ModernGameServices<'window> {
         *self.runtime.live_palette_mut() = live_palette;
         self.nav_actor_slots = actor_slots;
         outcome.context("running the recovered bridge screen initializer")?;
+        self.bridge_actors
+            .as_mut()
+            .context("bridge actor state is already being updated")?
+            .reset_bridge_screen_latches();
         if startup_presentation_mode {
             let screen = self
                 .presentation_screen
@@ -2410,27 +2417,38 @@ impl<'window> ModernGameServices<'window> {
 
     /// Advance the translated bridge steering, panorama, and point-cloud frame.
     pub fn render_bridge_frame(&mut self, input: BridgeSceneInput) -> Result<&BridgeSceneFrame> {
-        let view_frame = {
-            let scene = self
-                .bridge_scene
-                .as_mut()
-                .context("bridge scene has not been initialized")?;
-            scene.update_steering(input);
-            i16::try_from(scene.steering().view_frame)
-                .context("bridge panorama frame exceeds the signed native range")?
-        };
-        // The executable's independent bit-one gate has no recovered writer.
-        update_presentation_bridge_mode(
-            view_frame,
-            RECOVERED_PRESENTATION_MODE_BLOCKED,
-            &mut self.bridge_presentation_mode,
-        );
+        self.update_bridge_steering(input)?;
+        self.update_bridge_presentation_mode_bits()?;
         self.render_current_bridge_frame()?;
         self.update_bridge_presentation_hover();
         Ok(self
             .bridge_frame
             .as_ref()
             .expect("rendered bridge frame was retained"))
+    }
+
+    /// Advance only the recovered steering state without drawing a frame.
+    pub(super) fn update_bridge_steering(
+        &mut self,
+        input: BridgeSceneInput,
+    ) -> Result<BridgeSteeringOutcome> {
+        Ok(self
+            .bridge_scene
+            .as_mut()
+            .context("bridge scene has not been initialized")?
+            .update_steering(input))
+    }
+
+    /// Select the authored presentation band for the current panorama frame.
+    pub(super) fn update_bridge_presentation_mode_bits(&mut self) -> Result<()> {
+        let view_frame = self.bridge_view_frame()?;
+        // The executable's independent bit-one gate has no recovered writer.
+        update_presentation_bridge_mode(
+            view_frame,
+            RECOVERED_PRESENTATION_MODE_BLOCKED,
+            &mut self.bridge_presentation_mode,
+        );
+        Ok(())
     }
 
     /// Run the recovered page flip and preserve its low-byte camera toggle bit.
@@ -2520,6 +2538,47 @@ impl<'window> ModernGameServices<'window> {
         self.nav_actor_slots = slots;
         self.bridge_actors = Some(actors);
         outcome.context("updating recovered bridge actors")
+    }
+
+    /// Return the recovered panel-actor completion latch.
+    pub(super) fn bridge_actor_completion_latched(&self) -> Result<bool> {
+        Ok(self
+            .bridge_actors
+            .as_ref()
+            .context("bridge actor state is already being updated")?
+            .completion_latched())
+    }
+
+    /// Advance the exact destination-region camera-navigation state machine.
+    pub(super) fn update_runtime_camera_navigation(
+        &mut self,
+        lifecycle: &mut GameLifecycleState,
+    ) -> Result<crate::native::bloodprg::CameraNavigationOutcome> {
+        let mut navigation = self
+            .camera_navigation
+            .take()
+            .context("camera navigation update is reentrant")?;
+        let mut slot = self.nav_actor_slots[3];
+        let outcome = navigation.update(self, lifecycle, &mut slot);
+        self.nav_actor_slots[3] = slot;
+        self.camera_navigation = Some(navigation);
+        outcome
+    }
+
+    /// Advance the executable-authored character-name palette noise.
+    pub(super) fn advance_bridge_name_area_effect(&mut self) -> Result<NameAreaEffectOutcome> {
+        let Self {
+            runtime, random, ..
+        } = self;
+        runtime.advance_name_area_effect(&mut |modulus| {
+            let modulus = u16::try_from(modulus).unwrap_or(u16::MAX);
+            usize::from(random.next(modulus))
+        })
+    }
+
+    /// Apply the final fixed bridge-console tint after actor completion.
+    pub(super) fn remap_bridge_completion_region(&mut self) -> Result<RasterRectOutcome> {
+        self.runtime.remap_bridge_completion_region()
     }
 
     /// Prepare a bridge frame from current steering without consuming host input.
@@ -3202,6 +3261,12 @@ mod tests {
                 bridge_frame.starfield.plotted.len(),
             )
         };
+        assert_eq!(
+            services
+                .update_runtime_camera_navigation(&mut lifecycle)
+                .unwrap(),
+            crate::native::bloodprg::CameraNavigationOutcome::UnsupportedLocation
+        );
         assert_eq!(
             services
                 .update_runtime_bridge_actors(&mut lifecycle)

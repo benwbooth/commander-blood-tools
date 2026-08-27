@@ -28,8 +28,8 @@ use crate::native::bloodprg::{
     commit_bridge_sprite_dirty_range, copy_dirty_regions_to_display, decode_chart_back_buffer,
     decode_orx_back_buffer, decode_pbm_image, draw_presentation_choice_number,
     draw_small_font_text, fill_display_band, fill_framebuffer_rect, mark_bridge_sprite_range_dirty,
-    populate_bridge_sprite_from_cache, rasterize_bridge_sprite_range, select_ship_view_artwork,
-    update_name_area_effect,
+    populate_bridge_sprite_from_cache, rasterize_bridge_sprite_range, remap_framebuffer_rect,
+    select_ship_view_artwork, update_name_area_effect,
 };
 use crate::native::manu3::model::Manu3Model;
 
@@ -63,6 +63,9 @@ const NAVIGATION_SCENE_LAST_ROW: usize = 165;
 const NAVIGATION_SCENE_CLEAR_COLOR: u8 = u8::MIN;
 const SHIP_DIRTY_SNAPSHOT_PENDING: u16 = 1;
 const BRIDGE_DARK_REMAP_PERCENT: u8 = 50;
+const BRIDGE_COMPLETION_REMAP_ORIGIN: RasterPoint = RasterPoint { x: 137, y: 139 };
+const BRIDGE_COMPLETION_REMAP_WIDTH: u16 = 50;
+const BRIDGE_COMPLETION_REMAP_HEIGHT: u16 = 44;
 const BLACK_REMAP_TARGET: [u8; RGB_COMPONENT_COUNT] = [u8::MIN; RGB_COMPONENT_COUNT];
 const LOGICAL_FRAMEBUFFER_ORIGIN: i32 = 0;
 const LOGICAL_DISPLAY_CLIP: BridgeSpriteRect = BridgeSpriteRect {
@@ -376,6 +379,19 @@ impl OriginalGameRuntime {
             random_index,
         )
         .context("updating the bridge name-area palette effect")
+    }
+
+    /// Apply the coordinator's fixed final tint to the completed panel region.
+    pub fn remap_bridge_completion_region(&mut self) -> Result<RasterRectOutcome> {
+        remap_framebuffer_rect(
+            self.front_buffer.pixels_mut(),
+            LOGICAL_DISPLAY_CLIP,
+            BRIDGE_COMPLETION_REMAP_ORIGIN,
+            BRIDGE_COMPLETION_REMAP_WIDTH,
+            BRIDGE_COMPLETION_REMAP_HEIGHT,
+            &self.bridge_console_tint,
+        )
+        .context("remapping the completed bridge panel region")
     }
 
     /// Select current-position artwork, activate its sprite, and reset the ship HUD.

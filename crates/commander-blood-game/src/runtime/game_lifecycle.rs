@@ -339,11 +339,22 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
             pointer_buttons: pointer.buttons.bits(),
             interaction: Self::bridge_interaction(state),
         })?;
+        self.services.commit_ship_entities(0..32)?;
         self.services.update_runtime_bridge_actors(state)?;
-        self.services.update_runtime_bridge_console(state)?;
+        if self.services.runtime().current_profile().is_some() {
+            self.services.update_runtime_camera_navigation(state)?;
+        }
         self.services
             .update_presentation_screen(&self.current_scene_link, state.primary_pointer_pressed)?;
         self.services.consume_presentation_screen_outputs(state)?;
+        if state.frame_presented {
+            self.services.rasterize_bridge_frame_sprite_range(1..20)?;
+            self.services.advance_bridge_name_area_effect()?;
+            self.services.update_runtime_bridge_console(state)?;
+            if self.services.bridge_actor_completion_latched()? {
+                self.services.remap_bridge_completion_region()?;
+            }
+        }
         Ok(())
     }
 
