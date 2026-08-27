@@ -20,18 +20,19 @@ use crate::native::bloodprg::{
     BRIDGE_DARK_PALETTE_ADJUSTMENT, BRIDGE_SPRITE_ENTITY_COUNT, BridgeActorPresentationState,
     BridgePageBackend, BridgePageState, BridgePageTarget, BridgePaletteAdjustment, BridgeScene,
     BridgeSceneFrame, BridgeSceneInput, BridgeScreenInitializationBackend,
-    BridgeScreenInitializationState, BridgeSpriteCommitOutcome, BridgeSteeringInteraction,
-    CameraPageFlipOutcome, CdAudioPreparationOutcome, CdAudioState, ChoiceListConfig,
-    ChoiceListFrame, ChoiceListPointer, ChoiceListState, ConfirmDialogOutcome, ConfirmDialogState,
-    DescriptMusicSelectionOutcome, DescriptRecordApplication, DirtyRegionCopyOutcome, FontPoint,
-    FontVerticalBand, GameFontFace, GameLifecycleState, GamePresentationOwner, GameSceneLink,
-    IndexedGamePalette, InlineMenuRevealOutcome, InlineMenuTextMetrics, InputAction,
-    LoadedSoundBank, Manu3HandFrameContext, Manu3HandFrameState, NAV_ACTOR_SLOT_COUNT,
-    NavActorSlot, NavActorSlotUpdateOutcome, OriginalSaveGame, PbmDecodeResult, PointerButtonEdges,
-    PointerButtons, PointerSample, PresentationBridgeMode, PresentationChoiceNumber,
-    PresentationHitAreas, PresentationHitRectangle, PresentationHitSelection,
-    PresentationHoverOutcome, PresentationHoverState, PresentationPresentPolicy,
-    PresentationResourceId, PresentationResourceSequenceOutcome, PresentationSceneDispatchOutcome,
+    BridgeScreenInitializationState, BridgeSpriteCommitOutcome, BridgeSpriteRasterOutcome,
+    BridgeSteeringInteraction, CameraPageFlipOutcome, CdAudioPreparationOutcome, CdAudioState,
+    ChoiceListConfig, ChoiceListFrame, ChoiceListPointer, ChoiceListState, ConfirmDialogOutcome,
+    ConfirmDialogState, DescriptMusicSelectionOutcome, DescriptRecordApplication,
+    DirtyRegionCopyOutcome, FontPoint, FontVerticalBand, GameFontFace, GameLifecycleState,
+    GamePresentationOwner, GameSceneLink, IndexedGamePalette, InlineMenuRevealOutcome,
+    InlineMenuTextMetrics, InputAction, LoadedSoundBank, Manu3HandFrameContext,
+    Manu3HandFrameState, NAV_ACTOR_SLOT_COUNT, NavActorSlot, NavActorSlotUpdateOutcome,
+    OriginalSaveGame, PbmDecodeResult, PointerButtonEdges, PointerButtons, PointerSample,
+    PresentationBridgeMode, PresentationChoiceNumber, PresentationHitAreas,
+    PresentationHitRectangle, PresentationHitSelection, PresentationHoverOutcome,
+    PresentationHoverState, PresentationPresentPolicy, PresentationResourceId,
+    PresentationResourceSequenceOutcome, PresentationSceneDispatchOutcome,
     PresentationScreenOutcome, PresentationScreenState, PresentationWordChoiceOutcome,
     SCENE_PALETTE_CLEAR_COLOR_COUNT, SHIP_CAMERA_RESET, SceneTransitionState, ScriptClock,
     ScriptFrameOutcome, ScriptPresentationEntity, ScriptPresentationScanState, ScriptProfileId,
@@ -2532,46 +2533,61 @@ impl<'window> ModernGameServices<'window> {
         &mut self,
         refresh_live_palette: bool,
     ) -> Result<&BridgeSceneFrame> {
-        let Self {
-            runtime,
-            bridge_scene,
-            bridge_frame,
-            bridge_palette,
-            nav_actor_slots,
-            ..
-        } = self;
-        let scene = bridge_scene
-            .as_mut()
-            .context("bridge scene has not been initialized")?;
-        let mut live_palette = *runtime.live_palette();
-        let mut frame = scene
-            .render_current_frame_with_palette(
-                runtime.bridge_sprite_entities_mut(),
-                refresh_live_palette,
-                bridge_palette,
-                &mut live_palette,
-            )
-            .context("rendering current bridge scene")?;
-        *runtime.live_palette_mut() = live_palette;
-        for (slot, orb_box) in nav_actor_slots
-            .iter_mut()
-            .zip(frame.station_orb_boxes.iter().copied())
         {
-            slot.hit_region = orb_box.map(|orb_box| {
-                PresentationHitRectangle::new(
-                    orb_box.origin.map(|coordinate| coordinate as i16),
-                    orb_box.size.map(|extent| extent as i16),
+            let Self {
+                runtime,
+                bridge_scene,
+                bridge_frame,
+                bridge_palette,
+                nav_actor_slots,
+                ..
+            } = self;
+            let scene = bridge_scene
+                .as_mut()
+                .context("bridge scene has not been initialized")?;
+            let mut live_palette = *runtime.live_palette();
+            let frame = scene
+                .render_current_frame_with_palette(
+                    runtime.bridge_sprite_entities_mut(),
+                    refresh_live_palette,
+                    bridge_palette,
+                    &mut live_palette,
                 )
-            });
+                .context("rendering current bridge scene")?;
+            *runtime.live_palette_mut() = live_palette;
+            for (slot, orb_box) in nav_actor_slots
+                .iter_mut()
+                .zip(frame.station_orb_boxes.iter().copied())
+            {
+                slot.hit_region = orb_box.map(|orb_box| {
+                    PresentationHitRectangle::new(
+                        orb_box.origin.map(|coordinate| coordinate as i16),
+                        orb_box.size.map(|extent| extent as i16),
+                    )
+                });
+            }
+            *bridge_frame = Some(frame);
         }
-        frame.object_sprite_pixels = runtime
-            .rasterize_ship_object_layer()
-            .context("rendering current bridge ship-object layer")?
-            .into_pixels();
-        *bridge_frame = Some(frame);
-        Ok(bridge_frame
+        self.rasterize_bridge_frame_sprite_range(
+            FIRST_SHIP_PROJECTION_ENTITY..AFTER_LAST_SHIP_PROJECTION_ENTITY,
+        )?;
+        Ok(self
+            .bridge_frame
             .as_ref()
             .expect("rendered bridge frame was retained"))
+    }
+
+    /// Composite one recovered bridge sprite range into the retained GPU layer.
+    pub(super) fn rasterize_bridge_frame_sprite_range(
+        &mut self,
+        entities: Range<u16>,
+    ) -> Result<BridgeSpriteRasterOutcome> {
+        let frame = self
+            .bridge_frame
+            .as_mut()
+            .context("bridge sprite rasterization requires a rendered frame")?;
+        self.runtime
+            .rasterize_ship_entity_range(entities, &mut frame.object_sprite_pixels)
     }
 
     /// Return the current logical panorama frame used by bridge hit testing.

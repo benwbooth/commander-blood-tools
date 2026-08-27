@@ -161,55 +161,84 @@ pub trait BridgeFrameBackend {
     type SceneLink;
     /// Typed source extent used by camera-state checks.
     type ComparisonExtent;
+    /// Backend failure from resource, rendering, world, or presentation work.
+    type Error;
 
     /// Dispatch an already pending scene and stop this bridge frame.
-    fn dispatch_scene(&mut self, scene_link: &Self::SceneLink, state: &mut BridgeFrameState);
+    fn dispatch_scene(
+        &mut self,
+        scene_link: &Self::SceneLink,
+        state: &mut BridgeFrameState,
+    ) -> Result<(), Self::Error>;
     /// Rebuild screen flags before the normal frame sequence.
-    fn initialize_screen_flags(&mut self, state: &mut BridgeFrameState);
+    fn initialize_screen_flags(&mut self, state: &mut BridgeFrameState) -> Result<(), Self::Error>;
     /// Update bridge steering, including replacement of the current scene context.
     fn update_steering(
         &mut self,
         context: &mut BridgeSceneContext<Self::SceneLink, Self::ComparisonExtent>,
         state: &mut BridgeFrameState,
-    ) -> bool;
+    ) -> Result<bool, Self::Error>;
     /// Present the steering update immediately.
-    fn flip_page(&mut self, state: &mut BridgeFrameState);
+    fn flip_page(&mut self, state: &mut BridgeFrameState) -> Result<(), Self::Error>;
     /// Advance the camera transition state machine.
     fn advance_camera_transition(
         &mut self,
         scene_link: &Self::SceneLink,
         state: &mut BridgeFrameState,
-    );
+    ) -> Result<(), Self::Error>;
     /// Update presentation-mode bits before committing sprites.
-    fn update_presentation_mode_bits(&mut self, state: &mut BridgeFrameState);
+    fn update_presentation_mode_bits(
+        &mut self,
+        state: &mut BridgeFrameState,
+    ) -> Result<(), Self::Error>;
     /// Commit current geometry for one semantic sprite range.
-    fn commit_sprite_geometry(&mut self, range: BridgeSpriteRange, state: &mut BridgeFrameState);
+    fn commit_sprite_geometry(
+        &mut self,
+        range: BridgeSpriteRange,
+        state: &mut BridgeFrameState,
+    ) -> Result<(), Self::Error>;
     /// Dispatch presentation-mode rendering.
-    fn dispatch_presentation_mode(&mut self, state: &mut BridgeFrameState);
+    fn dispatch_presentation_mode(
+        &mut self,
+        state: &mut BridgeFrameState,
+    ) -> Result<(), Self::Error>;
     /// Update all bridge actor slots.
-    fn update_actor_slots(&mut self, state: &mut BridgeFrameState);
+    fn update_actor_slots(&mut self, state: &mut BridgeFrameState) -> Result<(), Self::Error>;
     /// Render dirty sprites from one semantic range.
-    fn render_dirty_sprites(&mut self, range: BridgeSpriteRange, state: &mut BridgeFrameState);
+    fn render_dirty_sprites(
+        &mut self,
+        range: BridgeSpriteRange,
+        state: &mut BridgeFrameState,
+    ) -> Result<(), Self::Error>;
     /// Copy dirty work-surface pixels into the display surface.
-    fn copy_dirty_regions(&mut self, state: &mut BridgeFrameState);
+    fn copy_dirty_regions(&mut self, state: &mut BridgeFrameState) -> Result<(), Self::Error>;
     /// Reconcile camera state against the scene's typed comparison extent.
     fn check_camera_state(
         &mut self,
         comparison_extent: &Self::ComparisonExtent,
         state: &mut BridgeFrameState,
-    );
+    ) -> Result<(), Self::Error>;
     /// Update camera navigation after state reconciliation.
-    fn update_camera_navigation(&mut self, state: &mut BridgeFrameState);
+    fn update_camera_navigation(&mut self, state: &mut BridgeFrameState)
+    -> Result<(), Self::Error>;
     /// Update the bridge presentation screen for the current scene link.
-    fn update_screen_mode(&mut self, scene_link: &Self::SceneLink, state: &mut BridgeFrameState);
+    fn update_screen_mode(
+        &mut self,
+        scene_link: &Self::SceneLink,
+        state: &mut BridgeFrameState,
+    ) -> Result<(), Self::Error>;
     /// Apply the character-name-area palette effect.
-    fn update_name_area_palette(&mut self, state: &mut BridgeFrameState);
+    fn update_name_area_palette(&mut self, state: &mut BridgeFrameState)
+    -> Result<(), Self::Error>;
     /// Update navigation state after the frame becomes ready.
-    fn update_navigation_state(&mut self, state: &mut BridgeFrameState);
+    fn update_navigation_state(&mut self, state: &mut BridgeFrameState) -> Result<(), Self::Error>;
     /// Dispatch a pending navigation choice.
-    fn dispatch_navigation_choice(&mut self, state: &mut BridgeFrameState);
+    fn dispatch_navigation_choice(
+        &mut self,
+        state: &mut BridgeFrameState,
+    ) -> Result<(), Self::Error>;
     /// Apply the fixed completion-region palette remap.
-    fn remap_completion_region(&mut self, state: &mut BridgeFrameState);
+    fn remap_completion_region(&mut self, state: &mut BridgeFrameState) -> Result<(), Self::Error>;
 }
 
 /// Terminal path taken by one bridge-frame update.
@@ -234,67 +263,69 @@ pub fn render_bridge_frame<Backend: BridgeFrameBackend>(
     state: &mut BridgeFrameState,
     context: &mut BridgeSceneContext<Backend::SceneLink, Backend::ComparisonExtent>,
     backend: &mut Backend,
-) -> BridgeFrameOutcome {
+) -> Result<BridgeFrameOutcome, Backend::Error> {
     if !state.active {
-        return BridgeFrameOutcome::Inactive;
+        return Ok(BridgeFrameOutcome::Inactive);
     }
 
     if state.scene_dispatch_pending {
-        backend.dispatch_scene(context.scene_link(), state);
-        return BridgeFrameOutcome::SceneDispatched;
+        backend.dispatch_scene(context.scene_link(), state)?;
+        return Ok(BridgeFrameOutcome::SceneDispatched);
     }
 
     if state.screen_rebuild_pending {
         state.actor_presentation = BridgeActorPresentationState::Rebuilding;
         state.previous_presentation = BridgeActorPresentationState::Rebuilding;
-        backend.initialize_screen_flags(state);
+        backend.initialize_screen_flags(state)?;
     }
 
-    if backend.update_steering(context, state) {
+    if backend.update_steering(context, state)? {
         state.actor_presentation = if state.mouse_x <= BRIDGE_LEFT_SCREEN_EDGE {
             BridgeActorPresentationState::SteeringLeft
         } else {
             BridgeActorPresentationState::SteeringRight
         };
-        backend.flip_page(state);
+        backend.flip_page(state)?;
     }
 
     if state.transition_pending {
-        backend.advance_camera_transition(context.scene_link(), state);
+        backend.advance_camera_transition(context.scene_link(), state)?;
     }
-    backend.update_presentation_mode_bits(state);
-    backend.commit_sprite_geometry(BridgeSpriteRange::All, state);
+    backend.update_presentation_mode_bits(state)?;
+    backend.commit_sprite_geometry(BridgeSpriteRange::All, state)?;
     state.clip_snapshot_ready = true;
-    backend.dispatch_presentation_mode(state);
-    backend.update_actor_slots(state);
+    backend.dispatch_presentation_mode(state)?;
+    backend.update_actor_slots(state)?;
 
     if !state.presentation_queued {
         if state.transition_pending {
-            backend.render_dirty_sprites(BridgeSpriteRange::Transition, state);
+            backend.render_dirty_sprites(BridgeSpriteRange::Transition, state)?;
         } else if state.primary_camera_view {
-            backend.copy_dirty_regions(state);
+            backend.copy_dirty_regions(state)?;
         }
     }
 
-    backend.check_camera_state(context.comparison_extent(), state);
-    backend.update_camera_navigation(state);
-    backend.update_screen_mode(context.scene_link(), state);
+    backend.check_camera_state(context.comparison_extent(), state)?;
+    backend.update_camera_navigation(state)?;
+    backend.update_screen_mode(context.scene_link(), state)?;
     if !state.frame_ready {
-        return BridgeFrameOutcome::WaitingForFrame;
+        return Ok(BridgeFrameOutcome::WaitingForFrame);
     }
 
-    backend.render_dirty_sprites(BridgeSpriteRange::Actors, state);
-    backend.update_name_area_palette(state);
-    backend.update_navigation_state(state);
-    backend.dispatch_navigation_choice(state);
+    backend.render_dirty_sprites(BridgeSpriteRange::Actors, state)?;
+    backend.update_name_area_palette(state)?;
+    backend.update_navigation_state(state)?;
+    backend.dispatch_navigation_choice(state)?;
     if state.actor_completion {
-        backend.remap_completion_region(state);
+        backend.remap_completion_region(state)?;
     }
-    BridgeFrameOutcome::Presented
+    Ok(BridgeFrameOutcome::Presented)
 }
 
 #[cfg(test)]
 mod tests {
+    use std::convert::Infallible;
+
     use serde::Deserialize;
 
     use super::*;
@@ -371,106 +402,164 @@ mod tests {
     impl BridgeFrameBackend for RecordingBackend {
         type SceneLink = u16;
         type ComparisonExtent = u16;
+        type Error = Infallible;
 
-        fn dispatch_scene(&mut self, scene_link: &u16, _state: &mut BridgeFrameState) {
+        fn dispatch_scene(
+            &mut self,
+            scene_link: &u16,
+            _state: &mut BridgeFrameState,
+        ) -> Result<(), Self::Error> {
             self.calls.push(RecordedCall::DispatchScene);
             self.dispatched_links.push(*scene_link);
+            Ok(())
         }
 
-        fn initialize_screen_flags(&mut self, state: &mut BridgeFrameState) {
+        fn initialize_screen_flags(
+            &mut self,
+            state: &mut BridgeFrameState,
+        ) -> Result<(), Self::Error> {
             self.calls.push(RecordedCall::InitializeScreen);
             if self.transition_during_initialize {
                 state.set_transition_pending(true);
             }
+            Ok(())
         }
 
         fn update_steering(
             &mut self,
             context: &mut BridgeSceneContext<u16, u16>,
             _state: &mut BridgeFrameState,
-        ) -> bool {
+        ) -> Result<bool, Self::Error> {
             self.calls.push(RecordedCall::UpdateSteering);
             *context = BridgeSceneContext::new(self.replacement_link, self.replacement_extent);
-            self.bridge_changed
+            Ok(self.bridge_changed)
         }
 
-        fn flip_page(&mut self, _state: &mut BridgeFrameState) {
+        fn flip_page(&mut self, _state: &mut BridgeFrameState) -> Result<(), Self::Error> {
             self.calls.push(RecordedCall::FlipPage);
+            Ok(())
         }
 
-        fn advance_camera_transition(&mut self, _scene_link: &u16, _state: &mut BridgeFrameState) {
+        fn advance_camera_transition(
+            &mut self,
+            _scene_link: &u16,
+            _state: &mut BridgeFrameState,
+        ) -> Result<(), Self::Error> {
             self.calls.push(RecordedCall::AdvanceTransition);
+            Ok(())
         }
 
-        fn update_presentation_mode_bits(&mut self, _state: &mut BridgeFrameState) {
+        fn update_presentation_mode_bits(
+            &mut self,
+            _state: &mut BridgeFrameState,
+        ) -> Result<(), Self::Error> {
             self.calls.push(RecordedCall::UpdateModeBits);
+            Ok(())
         }
 
         fn commit_sprite_geometry(
             &mut self,
             range: BridgeSpriteRange,
             _state: &mut BridgeFrameState,
-        ) {
+        ) -> Result<(), Self::Error> {
             self.calls.push(RecordedCall::CommitSprites(range));
+            Ok(())
         }
 
-        fn dispatch_presentation_mode(&mut self, _state: &mut BridgeFrameState) {
+        fn dispatch_presentation_mode(
+            &mut self,
+            _state: &mut BridgeFrameState,
+        ) -> Result<(), Self::Error> {
             self.calls.push(RecordedCall::DispatchMode);
+            Ok(())
         }
 
-        fn update_actor_slots(&mut self, state: &mut BridgeFrameState) {
+        fn update_actor_slots(&mut self, state: &mut BridgeFrameState) -> Result<(), Self::Error> {
             self.calls.push(RecordedCall::UpdateActorSlots);
             if self.queue_during_actor_update {
                 state.set_presentation_queued(true);
             }
+            Ok(())
         }
 
         fn render_dirty_sprites(
             &mut self,
             range: BridgeSpriteRange,
             _state: &mut BridgeFrameState,
-        ) {
+        ) -> Result<(), Self::Error> {
             self.calls.push(RecordedCall::RenderSprites(range));
+            Ok(())
         }
 
-        fn copy_dirty_regions(&mut self, _state: &mut BridgeFrameState) {
+        fn copy_dirty_regions(&mut self, _state: &mut BridgeFrameState) -> Result<(), Self::Error> {
             self.calls.push(RecordedCall::CopyDirtyRegions);
+            Ok(())
         }
 
-        fn check_camera_state(&mut self, comparison_extent: &u16, _state: &mut BridgeFrameState) {
+        fn check_camera_state(
+            &mut self,
+            comparison_extent: &u16,
+            _state: &mut BridgeFrameState,
+        ) -> Result<(), Self::Error> {
             self.calls.push(RecordedCall::CheckCamera);
             self.checked_extents.push(*comparison_extent);
+            Ok(())
         }
 
-        fn update_camera_navigation(&mut self, _state: &mut BridgeFrameState) {
+        fn update_camera_navigation(
+            &mut self,
+            _state: &mut BridgeFrameState,
+        ) -> Result<(), Self::Error> {
             self.calls.push(RecordedCall::UpdateCamera);
+            Ok(())
         }
 
-        fn update_screen_mode(&mut self, scene_link: &u16, state: &mut BridgeFrameState) {
+        fn update_screen_mode(
+            &mut self,
+            scene_link: &u16,
+            state: &mut BridgeFrameState,
+        ) -> Result<(), Self::Error> {
             self.calls.push(RecordedCall::UpdateScreen);
             self.screen_links.push(*scene_link);
             if self.frame_ready_during_screen_update {
                 state.set_frame_ready(true);
             }
+            Ok(())
         }
 
-        fn update_name_area_palette(&mut self, _state: &mut BridgeFrameState) {
+        fn update_name_area_palette(
+            &mut self,
+            _state: &mut BridgeFrameState,
+        ) -> Result<(), Self::Error> {
             self.calls.push(RecordedCall::UpdateNameArea);
+            Ok(())
         }
 
-        fn update_navigation_state(&mut self, _state: &mut BridgeFrameState) {
+        fn update_navigation_state(
+            &mut self,
+            _state: &mut BridgeFrameState,
+        ) -> Result<(), Self::Error> {
             self.calls.push(RecordedCall::UpdateNavigation);
+            Ok(())
         }
 
-        fn dispatch_navigation_choice(&mut self, state: &mut BridgeFrameState) {
+        fn dispatch_navigation_choice(
+            &mut self,
+            state: &mut BridgeFrameState,
+        ) -> Result<(), Self::Error> {
             self.calls.push(RecordedCall::DispatchChoice);
             if self.completion_during_choice {
                 state.set_actor_completion(true);
             }
+            Ok(())
         }
 
-        fn remap_completion_region(&mut self, _state: &mut BridgeFrameState) {
+        fn remap_completion_region(
+            &mut self,
+            _state: &mut BridgeFrameState,
+        ) -> Result<(), Self::Error> {
             self.calls.push(RecordedCall::CompletionRemap);
+            Ok(())
         }
     }
 
@@ -573,7 +662,7 @@ mod tests {
                 checked_extents: Vec::new(),
             };
 
-            let outcome = render_bridge_frame(&mut state, &mut context, &mut backend);
+            let outcome = render_bridge_frame(&mut state, &mut context, &mut backend).unwrap();
 
             assert_eq!(backend.calls, expected_calls, "{}", vector.name);
             assert_eq!(state.presentation_queued(), vector.queue_after & 1 != 0);

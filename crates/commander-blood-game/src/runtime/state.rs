@@ -13,11 +13,11 @@ use commander_blood_formats::panorama::BridgePanoramaArchive;
 use crate::native::bloodprg::{
     BRIDGE_CONSOLE_TINT_FIRST, BRIDGE_SPRITE_ENTITY_COUNT, BridgeFrameState,
     BridgeSpriteClipSnapshotFlags, BridgeSpriteCommitOutcome, BridgeSpriteDirtyRegions,
-    BridgeSpriteEntity, BridgeSpriteExtent, BridgeSpritePosition, BridgeSpriteRasterTarget,
-    BridgeSpriteRect, BridgeSpriteRemapTables, CHART_BACK_BUFFER_RESOURCE_PATH,
-    CameraApproachState, DirtyRegionCopyOutcome, FontPoint, GameFontDrawOutcome,
-    IndexedGamePalette, LoadedScriptProfile, NameAreaEffectOutcome, NameAreaEffectState,
-    OriginalResourceCache, OriginalSaveSlotDirectory, PaletteRemapTable,
+    BridgeSpriteEntity, BridgeSpriteExtent, BridgeSpritePosition, BridgeSpriteRasterOutcome,
+    BridgeSpriteRasterTarget, BridgeSpriteRect, BridgeSpriteRemapTables,
+    CHART_BACK_BUFFER_RESOURCE_PATH, CameraApproachState, DirtyRegionCopyOutcome, FontPoint,
+    GameFontDrawOutcome, IndexedGamePalette, LoadedScriptProfile, NameAreaEffectOutcome,
+    NameAreaEffectState, OriginalResourceCache, OriginalSaveSlotDirectory, PaletteRemapTable,
     PaletteResourceLoadOutcome, PaletteResourceStorage, PaletteResourceTarget, PauseHudRefresh,
     PbmDecodeOptions, PbmDecodeResult, PbmPaletteUpdate, PbmTransparency, PresentationChoiceNumber,
     PresentationLineBackend, PresentationResourceId, RasterPoint, RasterRectOutcome, ResourceId,
@@ -54,8 +54,6 @@ const PAUSE_HUD_CLEAR_COLOR: u8 = u8::MIN;
 const DIALOGUE_OVERLAY_ENTITY_INDEX: usize = 4;
 const NAME_AREA_EFFECT_ENTITY_INDEX: usize = 2;
 const SHIP_VIEW_TRANSITION_ENTITY_INDEX: usize = 31;
-const FIRST_SHIP_OBJECT_ENTITY_INDEX: usize = 21;
-const LAST_SHIP_OBJECT_ENTITY_INDEX: usize = 31;
 const PRESENTATION_PANEL_ENTITY_INDEX: usize = 31;
 const RETAINED_BRIDGE_BACKGROUND_ENTITY_INDEX: usize = 20;
 const LOGICAL_FRAMEBUFFER_HALF_HEIGHT: usize = 100;
@@ -96,11 +94,6 @@ impl IndexedFramebuffer {
     /// Mutably borrow all row-major palette indices.
     pub fn pixels_mut(&mut self) -> &mut [u8] {
         &mut self.pixels
-    }
-
-    /// Consume the framebuffer and return its owned row-major pixels.
-    pub(super) fn into_pixels(self) -> Box<[u8]> {
-        self.pixels
     }
 
     /// Replace every pixel with one palette index.
@@ -254,33 +247,49 @@ impl OriginalGameRuntime {
         .context("building the bridge console sprite tint")
     }
 
-    /// Rasterize projected ship objects into a fresh transparent bridge layer.
-    pub fn rasterize_ship_object_layer(&mut self) -> Result<IndexedFramebuffer> {
+    /// Composite one executable-authored entity range into a bridge sprite layer.
+    ///
+    /// The half-open range retains ordinary flat indices while preserving the
+    /// native reverse entity walk and current dirty-region order.
+    pub fn rasterize_ship_entity_range(
+        &mut self,
+        entities: Range<u16>,
+        layer: &mut [u8],
+    ) -> Result<BridgeSpriteRasterOutcome> {
+        if entities.is_empty() {
+            bail!("ship entity raster range is empty");
+        }
+        if layer.len() != LOGICAL_FRAMEBUFFER_PIXEL_COUNT {
+            bail!(
+                "bridge sprite layer has {} pixels; expected {}",
+                layer.len(),
+                LOGICAL_FRAMEBUFFER_PIXEL_COUNT
+            );
+        }
         let Self {
             resource_cache,
             bridge_sprite_entities,
+            bridge_dirty_regions,
             back_buffer,
             bridge_dark_remap,
             bridge_console_tint,
             ..
         } = self;
-        let mut layer = IndexedFramebuffer::new();
         rasterize_bridge_sprite_range(
             bridge_sprite_entities,
-            FIRST_SHIP_OBJECT_ENTITY_INDEX..=LAST_SHIP_OBJECT_ENTITY_INDEX,
+            usize::from(entities.start)..=usize::from(entities.end - 1),
             |resource| resource_cache.resolve(resource),
             BridgeSpriteRasterTarget {
-                dirty_regions: &[LOGICAL_DISPLAY_CLIP],
+                dirty_regions: &bridge_dirty_regions.regions,
                 retained_framebuffer: back_buffer.pixels(),
-                framebuffer: layer.pixels_mut(),
+                framebuffer: layer,
                 remap_tables: BridgeSpriteRemapTables {
                     first: bridge_dark_remap,
                     second: bridge_console_tint,
                 },
             },
         )
-        .context("rasterizing projected ship-object sprites")?;
-        Ok(layer)
+        .context("rasterizing bridge sprite entity range")
     }
 
     /// Current ship-camera approach state started by BloodScript travel actions.
@@ -1340,7 +1349,11 @@ mod tests {
             ]
         );
         runtime.rebuild_bridge_sprite_remap_tables().unwrap();
-        let object_layer = runtime.rasterize_ship_object_layer().unwrap();
+        runtime.commit_ship_entity_geometry(0..32).unwrap();
+        let mut object_layer = IndexedFramebuffer::new();
+        runtime
+            .rasterize_ship_entity_range(21..32, object_layer.pixels_mut())
+            .unwrap();
         assert!(object_layer.pixels().iter().any(|pixel| *pixel != u8::MIN));
         assert_eq!(
             runtime.ship_hud().camera,
