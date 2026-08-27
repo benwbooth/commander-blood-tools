@@ -31,7 +31,7 @@ use super::{
     RuntimeInputHost, RuntimePcmClip, RuntimePresentationCatalog, RuntimePresentationHost,
     RuntimePresentationPlayer, RuntimePresentationScreen, RuntimePresentationStepOutcome,
     RuntimePresentationWordChoice, RuntimeScriptBackend, RuntimeScriptCommand, RuntimeScriptSystem,
-    VGA_BIOS_FONT_8X8,
+    RuntimeSubtitleReveal, VGA_BIOS_FONT_8X8,
 };
 
 const INITIAL_LOGICAL_POINTER: [i16; 2] = [160, 100];
@@ -62,6 +62,7 @@ pub struct ModernGameServices<'window> {
     bridge_frame: Option<BridgeSceneFrame>,
     presentation_screen: Option<RuntimePresentationScreen>,
     presentation_word_choice: Option<RuntimePresentationWordChoice>,
+    subtitle_reveal: Option<RuntimeSubtitleReveal>,
     confirm_dialog: RuntimeConfirmDialog,
     manu3_hand: Manu3HandFrameState,
     ship_presentation: ShipPresentationState,
@@ -94,6 +95,7 @@ impl<'window> ModernGameServices<'window> {
             bridge_frame: None,
             presentation_screen: Some(presentation_screen),
             presentation_word_choice: Some(RuntimePresentationWordChoice::default()),
+            subtitle_reveal: Some(RuntimeSubtitleReveal::default()),
             confirm_dialog,
             manu3_hand: Manu3HandFrameState::default(),
             ship_presentation: ShipPresentationState::default(),
@@ -377,6 +379,23 @@ impl<'window> ModernGameServices<'window> {
         let outcome = word_choice.update(self, state);
         self.presentation_word_choice = Some(word_choice);
         outcome
+    }
+
+    /// Advance and draw the executable-authored progressive subtitle surface.
+    pub fn update_lifecycle_subtitles(
+        &mut self,
+        state: &mut GameLifecycleState,
+    ) -> Result<crate::native::bloodprg::SubtitleRevealOutcome> {
+        let mut subtitle = self
+            .subtitle_reveal
+            .take()
+            .context("subtitle reveal update is reentrant")?;
+        subtitle.import_lifecycle_state(&state.presentation, self.ship_presentation.hud_active());
+        let outcome = subtitle.update(&mut self.runtime, self.scripts.text_presentation_mut());
+        self.subtitle_reveal = Some(subtitle);
+        let outcome = outcome?;
+        self.scripts.finish_lifecycle_frame(state)?;
+        Ok(outcome)
     }
 
     /// Enable or disable the bridge's recovered six-choice presentation panel.

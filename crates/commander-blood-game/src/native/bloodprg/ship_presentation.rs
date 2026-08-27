@@ -52,6 +52,13 @@ pub struct ShipPresentationState {
     pub active_line: u16,
 }
 
+impl ShipPresentationState {
+    /// Return whether the ship HUD phase suppresses the ordinary subtitle hold.
+    pub const fn hud_active(&self) -> bool {
+        self.flags & HUD_PHASE != u16::MIN
+    }
+}
+
 /// Subsystems called by the ship presentation coordinator.
 pub trait ShipPresentationHost {
     /// Typed scene link forwarded to the scene dispatcher.

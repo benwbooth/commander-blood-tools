@@ -16,6 +16,7 @@ mod script_backend;
 mod services;
 mod startup;
 mod state;
+mod subtitles;
 mod video;
 mod word_choice;
 
@@ -38,6 +39,7 @@ pub use state::{
     IndexedFramebuffer, LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_PIXEL_COUNT,
     LOGICAL_FRAMEBUFFER_WIDTH, OriginalGameRuntime, RuntimeAssetLoadStatus,
 };
+pub use subtitles::RuntimeSubtitleReveal;
 pub use video::{
     RuntimePresentationQueueMetrics, RuntimePresentationRequest, RuntimePresentationStepOutcome,
     RuntimePresentationStream,
