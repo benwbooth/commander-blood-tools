@@ -228,17 +228,27 @@ impl OriginalGameRuntime {
 
     /// Rebuild both destination-color tables used by bridge sprite entities.
     pub fn rebuild_bridge_sprite_remap_tables(&mut self) -> Result<()> {
+        self.rebuild_bridge_dark_remap_table()?;
+        self.rebuild_bridge_console_tint_table(BRIDGE_CONSOLE_TINT_FIRST)
+    }
+
+    /// Rebuild the executable-authored 50 percent bridge-to-black remap.
+    pub fn rebuild_bridge_dark_remap_table(&mut self) -> Result<()> {
         build_palette_blend_remap_table(
             &self.live_palette,
             &mut self.bridge_dark_remap,
             BRIDGE_DARK_REMAP_PERCENT,
             BLACK_REMAP_TARGET,
         )
-        .context("building the bridge dark sprite remap")?;
+        .context("building the bridge dark sprite remap")
+    }
+
+    /// Rebuild the banked bridge-console tint table at its authored first index.
+    pub fn rebuild_bridge_console_tint_table(&mut self, first_index: u8) -> Result<()> {
         build_banked_tint_table(
             &self.live_palette,
             &mut self.bridge_console_tint,
-            BRIDGE_CONSOLE_TINT_FIRST,
+            first_index,
         )
         .context("building the bridge console sprite tint")
     }

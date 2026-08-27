@@ -16,26 +16,28 @@ use sdl3::video::Window;
 
 use crate::native::alien::AlienSceneFrame;
 use crate::native::bloodprg::{
-    AudioClipRequest, AudioEventContext, AudioEventState, BridgeScene, BridgeSceneFrame,
-    BridgeSceneInput, BridgeSpriteCommitOutcome, BridgeSteeringInteraction,
-    CdAudioPreparationOutcome, CdAudioState, ChoiceListConfig, ChoiceListFrame, ChoiceListPointer,
-    ChoiceListState, ConfirmDialogOutcome, ConfirmDialogState, DescriptMusicSelectionOutcome,
-    DescriptRecordApplication, DirtyRegionCopyOutcome, FontPoint, FontVerticalBand, GameFontFace,
-    GameLifecycleState, GamePresentationOwner, GameSceneLink, IndexedGamePalette,
-    InlineMenuRevealOutcome, InlineMenuTextMetrics, InputAction, LoadedSoundBank,
-    Manu3HandFrameContext, Manu3HandFrameState, NAV_ACTOR_SLOT_COUNT, NavActorSlot,
-    OriginalSaveGame, PbmDecodeResult, PointerButtonEdges, PointerButtons, PointerSample,
-    PresentationChoiceNumber, PresentationPresentPolicy, PresentationResourceId,
-    PresentationResourceSequenceOutcome, PresentationSceneDispatchOutcome,
-    PresentationScreenOutcome, PresentationScreenState, PresentationWordChoiceOutcome,
-    SCENE_PALETTE_CLEAR_COLOR_COUNT, SHIP_CAMERA_RESET, SceneTransitionState, ScriptClock,
-    ScriptFrameOutcome, ScriptPresentationScanState, ScriptProfileId, ScriptProfileLoadOutcome,
+    AudioClipRequest, AudioEventContext, AudioEventState, BRIDGE_CONSOLE_TINT_FIRST,
+    BRIDGE_DARK_PALETTE_ADJUSTMENT, BridgePaletteAdjustment, BridgeScene, BridgeSceneFrame,
+    BridgeSceneInput, BridgeScreenInitializationBackend, BridgeScreenInitializationState,
+    BridgeSpriteCommitOutcome, BridgeSteeringInteraction, CdAudioPreparationOutcome, CdAudioState,
+    ChoiceListConfig, ChoiceListFrame, ChoiceListPointer, ChoiceListState, ConfirmDialogOutcome,
+    ConfirmDialogState, DescriptMusicSelectionOutcome, DescriptRecordApplication,
+    DirtyRegionCopyOutcome, FontPoint, FontVerticalBand, GameFontFace, GameLifecycleState,
+    GamePresentationOwner, GameSceneLink, IndexedGamePalette, InlineMenuRevealOutcome,
+    InlineMenuTextMetrics, InputAction, LoadedSoundBank, Manu3HandFrameContext,
+    Manu3HandFrameState, NAV_ACTOR_SLOT_COUNT, NavActorSlot, OriginalSaveGame, PbmDecodeResult,
+    PointerButtonEdges, PointerButtons, PointerSample, PresentationChoiceNumber,
+    PresentationPresentPolicy, PresentationResourceId, PresentationResourceSequenceOutcome,
+    PresentationSceneDispatchOutcome, PresentationScreenOutcome, PresentationScreenState,
+    PresentationWordChoiceOutcome, SCENE_PALETTE_CLEAR_COLOR_COUNT, SHIP_CAMERA_RESET,
+    SceneTransitionState, ScriptClock, ScriptFrameOutcome, ScriptPresentationEntity,
+    ScriptPresentationScanState, ScriptProfileId, ScriptProfileLoadOutcome,
     ScriptShipNavigationMode, ShipDepthTransitionOutcome, ShipHudInitializationContext,
     ShipPresentationOutcome, ShipPresentationState, ShipProjectionResources,
     ShipTargetSelectionState, ShipViewEntityId, SoundBankUsage, StartupPreparationOutcome,
     TextPresentationState, clear_scene_palette_entries, deactivate_nav_actor_slots,
     draw_planar_dialogue_text, fill_display_band, increment_object_access_counters,
-    load_sound_bank, measure_game_text_width, objects_at_arche_position,
+    initialize_bridge_screen, load_sound_bank, measure_game_text_width, objects_at_arche_position,
     original_save_state_block_byte_count, play_cd_audio_track_two, prepare_cd_audio,
     presentable_navigation_objects, process_audio_events, reveal_inline_menu_step, stop_cd_audio,
     update_manu3_hand_frame,
@@ -101,6 +103,7 @@ pub struct ModernGameServices<'window> {
     loaded_voice: Option<RuntimePcmClip>,
     bridge_scene: Option<BridgeScene>,
     bridge_frame: Option<BridgeSceneFrame>,
+    bridge_screen: BridgeScreenInitializationState,
     nav_actor_slots: [NavActorSlot; NAV_ACTOR_SLOT_COUNT],
     bridge_console: Option<RuntimeBridgeConsole>,
     presentation_screen: Option<RuntimePresentationScreen>,
@@ -161,6 +164,7 @@ impl<'window> ModernGameServices<'window> {
             loaded_voice: None,
             bridge_scene: None,
             bridge_frame: None,
+            bridge_screen: BridgeScreenInitializationState::default(),
             nav_actor_slots: [NavActorSlot::default(); NAV_ACTOR_SLOT_COUNT],
             bridge_console: Some(bridge_console),
             presentation_screen: Some(presentation_screen),
@@ -1567,9 +1571,31 @@ impl<'window> ModernGameServices<'window> {
 
     /// Rebuild the retained bridge surface and arm the startup reverse panel.
     pub fn initialize_bridge_screen(&mut self, startup_presentation_mode: bool) -> Result<()> {
-        self.runtime
-            .activate_retained_bridge_background()
-            .context("activating retained bridge artwork during screen rebuild")?;
+        let panorama_frame = self.bridge_view_frame()? as u16;
+        let transition_pending = self.runtime.bridge_frame_state().transition_pending();
+        let mut screen_state = std::mem::take(&mut self.bridge_screen);
+        screen_state.screen_rebuild_pending = true;
+        screen_state.reverse_presentation_active = startup_presentation_mode;
+        let mut panorama_palette = self.bridge_palette;
+        let mut live_palette = *self.runtime.live_palette();
+        let mut actor_slots = std::mem::take(&mut self.nav_actor_slots);
+        let outcome = {
+            let mut backend = RuntimeBridgeScreenBackend { services: self };
+            initialize_bridge_screen(
+                transition_pending,
+                panorama_frame,
+                &mut screen_state,
+                &mut panorama_palette,
+                &mut live_palette,
+                &mut actor_slots,
+                &mut backend,
+            )
+        };
+        self.bridge_screen = screen_state;
+        self.bridge_palette = panorama_palette;
+        *self.runtime.live_palette_mut() = live_palette;
+        self.nav_actor_slots = actor_slots;
+        outcome.context("running the recovered bridge screen initializer")?;
         if startup_presentation_mode {
             let screen = self
                 .presentation_screen
@@ -1580,6 +1606,11 @@ impl<'window> ModernGameServices<'window> {
             screen.set_reverse(true);
         }
         Ok(())
+    }
+
+    /// Borrow the exact bridge-screen state retained between rebuilds.
+    pub const fn bridge_screen_state(&self) -> &BridgeScreenInitializationState {
+        &self.bridge_screen
     }
 
     /// Borrow the bridge presentation state published to its frame coordinator.
@@ -2227,6 +2258,30 @@ impl<'window> ModernGameServices<'window> {
             .expect("rendered bridge frame was retained"))
     }
 
+    /// Prepare a bridge frame from current steering without consuming host input.
+    pub fn render_current_bridge_frame(&mut self) -> Result<&BridgeSceneFrame> {
+        let Self {
+            runtime,
+            bridge_scene,
+            bridge_frame,
+            ..
+        } = self;
+        let scene = bridge_scene
+            .as_mut()
+            .context("bridge scene has not been initialized")?;
+        let mut frame = scene
+            .render_current_frame(runtime.bridge_sprite_entities_mut())
+            .context("rendering current bridge scene")?;
+        frame.object_sprite_pixels = runtime
+            .rasterize_ship_object_layer()
+            .context("rendering current bridge ship-object layer")?
+            .into_pixels();
+        *bridge_frame = Some(frame);
+        Ok(bridge_frame
+            .as_ref()
+            .expect("rendered bridge frame was retained"))
+    }
+
     /// Return the current logical panorama frame used by bridge hit testing.
     pub fn bridge_view_frame(&self) -> Result<i16> {
         let frame = self
@@ -2346,6 +2401,87 @@ impl<'window> ModernGameServices<'window> {
         self.audio
             .as_mut()
             .context("runtime audio has not been initialized")
+    }
+}
+
+struct RuntimeBridgeScreenBackend<'services, 'window> {
+    services: &'services mut ModernGameServices<'window>,
+}
+
+impl BridgeScreenInitializationBackend for RuntimeBridgeScreenBackend<'_, '_> {
+    type Error = anyhow::Error;
+
+    fn prepare_page(&mut self, _state: &mut BridgeScreenInitializationState) -> Result<()> {
+        self.services.render_current_bridge_frame().map(|_| ())
+    }
+
+    fn load_panorama_frame(
+        &mut self,
+        frame: u16,
+        panorama_palette: &mut IndexedGamePalette,
+        _state: &mut BridgeScreenInitializationState,
+    ) -> Result<()> {
+        let actual_frame = self.services.render_current_bridge_frame()?.panorama_frame;
+        if actual_frame != usize::from(frame) {
+            bail!(
+                "bridge screen requested panorama frame {frame}, but steering prepared {actual_frame}"
+            );
+        }
+        *panorama_palette = self.services.bridge_palette;
+        Ok(())
+    }
+
+    fn clear_secondary_page(&mut self, _state: &mut BridgeScreenInitializationState) -> Result<()> {
+        self.services.runtime.clear_back_buffer();
+        Ok(())
+    }
+
+    fn populate_bridge_background(
+        &mut self,
+        _panorama_palette: &mut IndexedGamePalette,
+        _state: &mut BridgeScreenInitializationState,
+    ) -> Result<()> {
+        self.services
+            .runtime
+            .activate_retained_bridge_background()
+            .context("populating the bridge background during screen initialization")
+    }
+
+    fn mark_presentation_entity_dirty(
+        &mut self,
+        _state: &mut BridgeScreenInitializationState,
+    ) -> Result<()> {
+        self.services
+            .runtime
+            .transition_presentation_entity(ScriptPresentationEntity::DialogueOverlay)
+            .map(|_| ())
+            .context("transitioning the bridge presentation entity during screen initialization")
+    }
+
+    fn build_palette_adjustment(
+        &mut self,
+        adjustment: BridgePaletteAdjustment,
+        _state: &mut BridgeScreenInitializationState,
+    ) -> Result<()> {
+        if adjustment != BRIDGE_DARK_PALETTE_ADJUSTMENT {
+            bail!("bridge screen requested an unsupported palette adjustment: {adjustment:?}");
+        }
+        self.services.runtime.rebuild_bridge_dark_remap_table()
+    }
+
+    fn build_console_tint(
+        &mut self,
+        first_palette_index: u8,
+        _state: &mut BridgeScreenInitializationState,
+    ) -> Result<()> {
+        if first_palette_index != BRIDGE_CONSOLE_TINT_FIRST {
+            bail!(
+                "bridge screen requested console tint index {first_palette_index}; expected {BRIDGE_CONSOLE_TINT_FIRST}"
+            );
+        }
+        self.services
+            .runtime
+            .rebuild_bridge_console_tint_table(first_palette_index)
     }
 }
 
@@ -2521,6 +2657,11 @@ mod tests {
         services.initialize_bridge_scene(TEST_CLOCK_SEED).unwrap();
         services.load_default_sound_bank().unwrap();
         services.initialize_back_buffer().unwrap();
+        services.initialize_bridge_screen(false).unwrap();
+        assert!(!services.bridge_screen_state().screen_rebuild_pending);
+        assert!(!services.bridge_screen_state().palette_refresh_in_progress);
+        assert!(services.bridge_screen_state().palette_dirty);
+        assert!(services.bridge_screen_state().clip_snapshot_ready);
         services
             .load_script_profile(ScriptProfileId::new(u8::MIN).unwrap())
             .unwrap();

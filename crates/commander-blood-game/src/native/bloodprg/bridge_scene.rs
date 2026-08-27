@@ -107,6 +107,7 @@ pub struct BridgeScene {
     steering: BridgeSteeringState,
     seek: NavActorSeekState,
     presentation_link: u16,
+    last_steering: BridgeSteeringOutcome,
 }
 
 #[derive(Clone, Debug)]
@@ -164,6 +165,10 @@ impl BridgeScene {
             steering,
             seek: NavActorSeekState::default(),
             presentation_link: INITIAL_PRESENTATION_LINK,
+            last_steering: BridgeSteeringOutcome {
+                view_changed: false,
+                presentation_link: INITIAL_PRESENTATION_LINK,
+            },
         })
     }
 
@@ -258,12 +263,8 @@ impl BridgeScene {
         self.steering.view_frame = view_frame;
     }
 
-    /// Advance steering and generate the exact starfield and panorama layers.
-    pub fn render_frame(
-        &mut self,
-        input: BridgeSceneInput,
-        sprite_entities: &mut [BridgeSpriteEntity],
-    ) -> Result<BridgeSceneFrame, BridgeSceneError> {
+    /// Advance only the recovered bridge steering state.
+    pub fn update_steering(&mut self, input: BridgeSceneInput) -> BridgeSteeringOutcome {
         self.steering.cursor_ring_position = native_ring_input(
             self.steering.cursor_ring_position,
             self.steering.frame_angle_bias,
@@ -277,6 +278,16 @@ impl BridgeScene {
             self.presentation_link,
         );
         self.presentation_link = steering.presentation_link;
+        self.last_steering = steering;
+        steering
+    }
+
+    /// Generate layers for the current steering state without consuming input.
+    pub fn render_current_frame(
+        &mut self,
+        sprite_entities: &mut [BridgeSpriteEntity],
+    ) -> Result<BridgeSceneFrame, BridgeSceneError> {
+        let steering = self.last_steering;
 
         let prepared = self
             .prepared_projection
@@ -337,6 +348,16 @@ impl BridgeScene {
             object_sprite_pixels: vec![u8::MIN; PANORAMA_FRAME_PIXEL_COUNT].into_boxed_slice(),
             steering,
         })
+    }
+
+    /// Advance steering and generate the exact starfield and panorama layers.
+    pub fn render_frame(
+        &mut self,
+        input: BridgeSceneInput,
+        sprite_entities: &mut [BridgeSpriteEntity],
+    ) -> Result<BridgeSceneFrame, BridgeSceneError> {
+        self.update_steering(input);
+        self.render_current_frame(sprite_entities)
     }
 }
 
