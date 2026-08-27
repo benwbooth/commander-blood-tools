@@ -771,3 +771,120 @@ fn transition_rect(rect: ChoiceListRect) -> TransitionRect {
         rect.size[1] as i16,
     )
 }
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeSet;
+    use std::path::Path;
+
+    use crate::native::bloodprg::ScriptProfileId;
+    use crate::runtime::{OriginalGameData, OriginalGameDataPaths};
+
+    use super::*;
+
+    const PTERRA_OBJECT_NAME: &[u8] = b"Pterra";
+    const EXPECTED_PTERRA_CANDIDATE_NAMES: [&[&[u8]]; 5] =
+        [&[b"Scruter_K"], &[b"Scruter_Jo"], &[], &[b"Scruter_K"], &[]];
+    const EXPECTED_NAVIGATION_CANDIDATE_OCCURRENCES: [usize; 5] = [60, 62, 70, 81, 60];
+
+    #[test]
+    fn every_profile_resolves_pterra_navigation_candidates_through_flat_state() {
+        let Some(data) = original_game_data() else {
+            return;
+        };
+        let mut runtime = OriginalGameRuntime::new(data);
+
+        for profile_id in ScriptProfileId::all() {
+            runtime.load_profile(profile_id).unwrap();
+            let profile = runtime.current_profile().unwrap();
+            let pterra = profile
+                .directory()
+                .find_active_object(PTERRA_OBJECT_NAME)
+                .unwrap();
+            let honk = profile.builtins().horn.unwrap();
+            let root_source_offset = profile.state().objects()[usize::MIN].source_offset();
+            let candidates = build_candidates(&runtime, pterra, honk, root_source_offset).unwrap();
+            let mut unique_candidates = BTreeSet::new();
+            let names = candidates
+                .iter()
+                .map(|candidate| {
+                    assert!(unique_candidates.insert(candidate.record));
+                    if let ShipNavigationRelation::Object(related) = candidate.relation {
+                        assert!(profile.state().object(related).is_some());
+                    }
+                    let name = profile.directory().object(candidate.record).unwrap().name();
+                    assert!(runtime.data().descript_database().lookup(name).is_some());
+                    name
+                })
+                .collect::<Vec<_>>();
+            assert_eq!(
+                names,
+                EXPECTED_PTERRA_CANDIDATE_NAMES[usize::from(profile_id.value())],
+                "SCRIPT{} Pterra candidate mapping",
+                profile_id.value() + 1
+            );
+            assert!(
+                runtime
+                    .data()
+                    .descript_database()
+                    .lookup(PTERRA_OBJECT_NAME)
+                    .is_some()
+            );
+        }
+    }
+
+    #[test]
+    fn every_authored_target_resolves_runtime_navigation_candidates() {
+        let Some(data) = original_game_data() else {
+            return;
+        };
+        let mut runtime = OriginalGameRuntime::new(data);
+
+        for profile_id in ScriptProfileId::all() {
+            runtime.load_profile(profile_id).unwrap();
+            let profile = runtime.current_profile().unwrap();
+            let honk = profile.builtins().horn.unwrap();
+            let root_source_offset = profile.state().objects()[usize::MIN].source_offset();
+            let mut candidate_count = usize::MIN;
+            for target in profile.state().objects() {
+                let candidates = build_candidates(&runtime, target.id, honk, root_source_offset)
+                    .unwrap_or_else(|error| {
+                        panic!(
+                            "SCRIPT{} target {:?} failed candidate resolution: {error:#}",
+                            profile_id.value() + 1,
+                            target.id
+                        )
+                    });
+                let mut unique_candidates = BTreeSet::new();
+                for candidate in candidates {
+                    assert!(unique_candidates.insert(candidate.record));
+                    assert!(profile.directory().object(candidate.record).is_some());
+                    if let ShipNavigationRelation::Object(related) = candidate.relation {
+                        assert!(profile.state().object(related).is_some());
+                    }
+                    candidate_count += 1;
+                }
+            }
+            assert_eq!(
+                candidate_count,
+                EXPECTED_NAVIGATION_CANDIDATE_OCCURRENCES[usize::from(profile_id.value())],
+                "SCRIPT{} navigation candidate count",
+                profile_id.value() + 1
+            );
+        }
+    }
+
+    fn original_game_data() -> Option<OriginalGameData> {
+        let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        [
+            workspace_root.join("output/_tmp_iso"),
+            workspace_root.join("commander-blood-audio/_tmp_iso"),
+            workspace_root.join("accuracy/cblood_install/cblood"),
+        ]
+        .into_iter()
+        .find_map(|root| OriginalGameDataPaths::from_root(root).ok())
+        .and_then(|paths| {
+            OriginalGameData::load_with_writable_root(paths, std::env::temp_dir()).ok()
+        })
+    }
+}
