@@ -3128,13 +3128,13 @@ impl BridgePageBackend for RuntimeBridgeScreenBackend<'_, '_> {
         &mut self,
         target: BridgePageTarget,
         frame: u16,
-        _state: &BridgePageState,
+        state: &BridgePageState,
     ) -> Result<()> {
         if target != BridgePageTarget::Primary {
             bail!("bridge panorama load requested unsupported target {target:?}");
         }
         self.ensure_panorama_frame(frame, self.palette_refresh_in_progress)?;
-        self.compose_panorama_page(_state.transparent_zero)
+        self.compose_panorama_page(state.transparent_zero)
     }
 }
 
