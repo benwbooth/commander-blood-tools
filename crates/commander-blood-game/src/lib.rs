@@ -13,6 +13,7 @@ pub mod app;
 mod asset_import;
 pub mod assets;
 mod bridge_render;
+mod media_import;
 pub mod native;
 pub mod render;
 pub mod runtime;

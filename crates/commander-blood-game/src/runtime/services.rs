@@ -10,7 +10,6 @@ use commander_blood_formats::descript::DescriptBackgroundSlot;
 use commander_blood_formats::instruction::ScriptTextWord;
 use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
 use commander_blood_formats::script::{ScriptObjectId, ScriptObjectKind, ScriptWordId};
-use commander_blood_formats::snd::VocPcm;
 use sdl3::AudioSubsystem;
 use sdl3::video::Window;
 
@@ -484,26 +483,24 @@ impl<'window> ModernGameServices<'window> {
             .context("no navigation music is selected")?
             .as_bytes();
         let resource_name = prefixed_resource_name(MUSIC_RESOURCE_DIRECTORY, music_name)?;
-        let encoded = self
+        let normalized = self
             .runtime
             .data()
-            .resource_store()
-            .load(&resource_name)
+            .normalized_media()
+            .load_voc(&resource_name)
             .with_context(|| {
                 format!(
-                    "loading music resource {}",
+                    "loading normalized music resource {}",
                     String::from_utf8_lossy(resource_name.as_bytes())
                 )
             })?;
-        let decoded = VocPcm::decode(&encoded).with_context(|| {
-            format!(
-                "decoding music resource {}",
-                String::from_utf8_lossy(resource_name.as_bytes())
-            )
-        })?;
         self.audio_mut()?
-            .load_background_stream(&encoded, decoded.sample_rate_hz())
-            .context("staging recovered navigation music stream")
+            .load_background_pcm_stream(
+                &normalized.samples,
+                normalized.sample_rate_hz,
+                normalized.sample_rate_code,
+            )
+            .context("staging normalized navigation music stream")
     }
 
     /// Start the retained navigation music as a looping background source.
@@ -568,24 +565,21 @@ impl<'window> ModernGameServices<'window> {
     pub fn load_voice_resource(&mut self, path: &[u8]) -> Result<()> {
         let resource_name =
             BloodResourceName::new(path).context("validating voice resource path")?;
-        let encoded = self
+        let normalized = self
             .runtime
             .data()
-            .resource_store()
-            .load(&resource_name)
+            .normalized_media()
+            .load_voc(&resource_name)
             .with_context(|| {
                 format!(
-                    "loading voice resource {}",
+                    "loading normalized voice resource {}",
                     String::from_utf8_lossy(resource_name.as_bytes())
                 )
             })?;
-        let decoded = VocPcm::decode(&encoded).with_context(|| {
-            format!(
-                "decoding voice resource {}",
-                String::from_utf8_lossy(resource_name.as_bytes())
-            )
-        })?;
-        self.loaded_voice = Some(RuntimePcmClip::from_voc(&decoded));
+        self.loaded_voice = Some(RuntimePcmClip::new(
+            normalized.sample_rate_hz,
+            normalized.samples,
+        )?);
         Ok(())
     }
 

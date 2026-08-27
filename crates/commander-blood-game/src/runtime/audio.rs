@@ -15,8 +15,8 @@ use crate::native::bloodprg::{
     AudioDriverRequests, AudioPlaybackBanks, AudioPlaybackOutcome, AudioPlaybackState,
     AudioStreamBuffer, AudioStreamBufferStatus, AudioStreamPlaybackPosition,
     AudioStreamRefillOutcome, AudioStreamStartOutcome, AudioStreamState, AudioStreamSubmission,
-    AudioStreamSubmissionKind, load_audio_stream_source, refill_audio_stream, start_audio_stream,
-    update_audio_playback,
+    AudioStreamSubmissionKind, load_audio_pcm_stream_source, load_audio_stream_source,
+    refill_audio_stream, start_audio_stream, update_audio_playback,
 };
 
 const RUNTIME_AUDIO_OUTPUT_RATE_HZ: u32 = 48_000;
@@ -179,6 +179,28 @@ impl RuntimeMusicStream {
         load_audio_stream_source(&mut self.playback, &mut self.stream, encoded_voc)
             .map_err(anyhow::Error::new)
             .context("loading recovered navigation-audio stream state")?;
+        self.source_rate_hz = Some(source_rate_hz);
+        self.cursor = None;
+        for buffer in &mut self.playback.stream_buffers {
+            buffer.status = AudioStreamBufferStatus::Free;
+        }
+        Ok(())
+    }
+
+    fn load_pcm(
+        &mut self,
+        samples: &[u8],
+        source_rate_hz: u32,
+        sample_rate_code: u8,
+    ) -> Result<()> {
+        load_audio_pcm_stream_source(
+            &mut self.playback,
+            &mut self.stream,
+            samples,
+            sample_rate_code,
+        )
+        .map_err(anyhow::Error::new)
+        .context("loading normalized navigation-audio stream state")?;
         self.source_rate_hz = Some(source_rate_hz);
         self.cursor = None;
         for buffer in &mut self.playback.stream_buffers {
@@ -564,6 +586,25 @@ impl RuntimeAudioHost {
         let mut shared = lock_shared(&self.shared);
         shared.mixer.stop_background();
         shared.music_stream.load(encoded_voc, source_rate_hz)?;
+        drop(shared);
+        self.stream
+            .clear()
+            .map_err(|error| anyhow!("clearing replaced SDL3 music stream: {error}"))
+    }
+
+    /// Load normalized unsigned 8-bit PCM into the recovered flat stream lifecycle.
+    pub fn load_background_pcm_stream(
+        &mut self,
+        samples: &[u8],
+        source_rate_hz: u32,
+        sample_rate_code: u8,
+    ) -> Result<()> {
+        self.check_callback()?;
+        let mut shared = lock_shared(&self.shared);
+        shared.mixer.stop_background();
+        shared
+            .music_stream
+            .load_pcm(samples, source_rate_hz, sample_rate_code)?;
         drop(shared);
         self.stream
             .clear()

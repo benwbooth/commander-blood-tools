@@ -103,6 +103,7 @@ use crate::asset_import::{
     ImportedAssetManifest, RESOURCE_DIRECTORY_NAME, import_original_assets,
 };
 use crate::assets::OriginalResourceStore;
+use crate::media_import::NormalizedMediaStore;
 use crate::native::bloodprg::{
     ORIGINAL_SCRIPT_PROFILE_COUNT, OriginalResourceCache, OriginalResourceCatalog,
     OriginalScriptProfileCatalog, ResourceLoadStatus, ScriptProfileId, ScriptProfileManager,
@@ -144,6 +145,7 @@ pub struct OriginalGameDataPaths {
     bridge_panorama: PathBuf,
     descript: PathBuf,
     manifest: ImportedAssetManifest,
+    media_store: NormalizedMediaStore,
 }
 
 impl OriginalGameDataPaths {
@@ -190,6 +192,7 @@ impl OriginalGameDataPaths {
 
     fn from_imported_root(root: PathBuf) -> Result<Self> {
         let manifest = ImportedAssetManifest::load(&root)?;
+        let media_store = NormalizedMediaStore::prepare(&root, &manifest)?;
 
         let paths = Self {
             resource_root: root.join(RESOURCE_DIRECTORY_NAME),
@@ -198,6 +201,7 @@ impl OriginalGameDataPaths {
             bridge_panorama: manifest.companion_path(&root, ORIGINAL_BRIDGE_PANORAMA_FILENAME)?,
             descript: manifest.companion_path(&root, ORIGINAL_DESCRIPT_FILENAME)?,
             manifest,
+            media_store,
             root,
         };
         if !paths.resource_root.is_dir() {
@@ -339,6 +343,8 @@ pub struct OriginalGameData {
     world_artwork_layout: Box<[WorldArtworkLayout]>,
     archive_entry_count: usize,
     imported_resource_count: usize,
+    normalized_audio_count: usize,
+    media_store: NormalizedMediaStore,
 }
 
 impl fmt::Debug for OriginalGameData {
@@ -349,6 +355,7 @@ impl fmt::Debug for OriginalGameData {
             .field("executable_byte_count", &self.executable.len())
             .field("archive_entry_count", &self.archive_entry_count)
             .field("imported_resource_count", &self.imported_resource_count)
+            .field("normalized_audio_count", &self.normalized_audio_count)
             .field("resource_count", &self.resource_catalog.len())
             .field(
                 "descript_record_count",
@@ -410,6 +417,8 @@ impl OriginalGameData {
 
         let archive_entry_count = paths.manifest().source_archive_entry_count;
         let imported_resource_count = paths.manifest().resources.len();
+        let normalized_audio_count = paths.media_store.audio_entry_count();
+        let media_store = paths.media_store.clone();
         let resource_names = paths.manifest().resource_names()?;
         let resource_store = OriginalResourceStore::with_writable_root(
             paths.resource_root().to_owned(),
@@ -438,6 +447,8 @@ impl OriginalGameData {
             world_artwork_layout,
             archive_entry_count,
             imported_resource_count,
+            normalized_audio_count,
+            media_store,
         })
     }
 
@@ -454,6 +465,10 @@ impl OriginalGameData {
     /// Archive-or-loose resource service used by translated game systems.
     pub const fn resource_store(&self) -> &OriginalResourceStore {
         &self.resource_store
+    }
+
+    pub(crate) const fn normalized_media(&self) -> &NormalizedMediaStore {
+        &self.media_store
     }
 
     /// Stable resource-ID catalog decoded from the executable.

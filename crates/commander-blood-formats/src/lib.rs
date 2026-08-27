@@ -17,4 +17,5 @@ pub mod palette;
 pub mod panorama;
 pub mod script;
 pub mod snd;
+pub mod wav;
 pub mod world_art;

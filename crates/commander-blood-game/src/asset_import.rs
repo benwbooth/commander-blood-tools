@@ -443,7 +443,7 @@ fn validate_entry<'a>(
     Ok(())
 }
 
-fn checked_relative_path(root: &Path, relative: &str) -> Result<PathBuf> {
+pub(crate) fn checked_relative_path(root: &Path, relative: &str) -> Result<PathBuf> {
     let relative_path = Path::new(relative);
     if relative_path.is_absolute()
         || relative_path
@@ -499,7 +499,7 @@ fn case_insensitive_child(root: &Path, filename: &str) -> Result<Option<PathBuf>
     Ok(matched)
 }
 
-fn sha256_hex(bytes: &[u8]) -> String {
+pub(crate) fn sha256_hex(bytes: &[u8]) -> String {
     let digest = Sha256::digest(bytes);
     let mut encoded = String::with_capacity(SHA256_BYTE_COUNT * 2);
     for byte in digest {
@@ -508,7 +508,7 @@ fn sha256_hex(bytes: &[u8]) -> String {
     encoded
 }
 
-fn temporary_sibling(destination: &Path, infix: &str) -> Result<PathBuf> {
+pub(crate) fn temporary_sibling(destination: &Path, infix: &str) -> Result<PathBuf> {
     let parent = destination
         .parent()
         .with_context(|| format!("asset destination has no parent: {}", destination.display()))?;
@@ -525,7 +525,7 @@ fn temporary_sibling(destination: &Path, infix: &str) -> Result<PathBuf> {
     )))
 }
 
-fn replace_directory(temporary: &Path, destination: &Path) -> Result<()> {
+pub(crate) fn replace_directory(temporary: &Path, destination: &Path) -> Result<()> {
     let parent = destination
         .parent()
         .with_context(|| format!("asset destination has no parent: {}", destination.display()))?;

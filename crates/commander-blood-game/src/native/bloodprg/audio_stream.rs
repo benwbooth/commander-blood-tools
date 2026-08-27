@@ -202,6 +202,36 @@ pub fn load_audio_stream_source(
         });
     }
     let payload = &encoded_voc[CREATIVE_VOICE_FILE_HEADER_BYTE_COUNT..];
+    load_audio_stream_payload(playback, stream, payload)
+}
+
+/// Load exact unsigned 8-bit PCM into the recovered music stream lifecycle.
+///
+/// The original driver consumed a six-byte Creative Voice block header before
+/// the samples. Normalized WAVE derivatives retain the samples and rate code,
+/// so this reconstructs only that driver-facing header rather than reopening
+/// the original VOC container.
+pub fn load_audio_pcm_stream_source(
+    playback: &mut AudioPlaybackState,
+    stream: &mut AudioStreamState,
+    samples: &[u8],
+    sample_rate_code: u8,
+) -> Result<AudioStreamLoadOutcome, AudioStreamError> {
+    let mut payload = Vec::with_capacity(SND_CLIP_HEADER_BYTE_COUNT + samples.len());
+    payload.resize(SND_CLIP_HEADER_BYTE_COUNT, u8::MIN);
+    payload[STREAM_RATE_CODE_HEADER_INDEX] = sample_rate_code;
+    payload.extend_from_slice(samples);
+    load_audio_stream_payload(playback, stream, &payload)
+}
+
+fn load_audio_stream_payload(
+    playback: &mut AudioPlaybackState,
+    stream: &mut AudioStreamState,
+    payload: &[u8],
+) -> Result<AudioStreamLoadOutcome, AudioStreamError> {
+    if !playback.playback_enabled || !stream.channel_active {
+        return Ok(AudioStreamLoadOutcome::Inactive);
+    }
     if payload.is_empty() {
         return Err(AudioStreamError::EmptyPayload);
     }
@@ -581,6 +611,24 @@ mod tests {
                 }
             );
         }
+    }
+
+    #[test]
+    fn normalized_pcm_loader_reconstructs_only_the_driver_header() {
+        let samples = [0, 64, 128, 255];
+        let sample_rate_code = 166;
+        let mut playback = playback_state(true);
+        let mut stream = stream_state(true, None);
+
+        let outcome =
+            load_audio_pcm_stream_source(&mut playback, &mut stream, &samples, sample_rate_code)
+                .unwrap();
+
+        assert!(matches!(outcome, AudioStreamLoadOutcome::Loaded { .. }));
+        let payload = stream.source.unwrap().payload;
+        assert_eq!(payload.len(), SND_CLIP_HEADER_BYTE_COUNT + samples.len());
+        assert_eq!(payload[STREAM_RATE_CODE_HEADER_INDEX], sample_rate_code);
+        assert_eq!(&payload[SND_CLIP_HEADER_BYTE_COUNT..], samples);
     }
 
     #[test]
