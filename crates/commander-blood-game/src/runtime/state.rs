@@ -217,6 +217,16 @@ impl OriginalGameRuntime {
         &self.bridge_frame_state
     }
 
+    /// Temporarily transfer coordinator state to one complete bridge frame.
+    pub(super) fn take_bridge_frame_state(&mut self) -> BridgeFrameState {
+        std::mem::take(&mut self.bridge_frame_state)
+    }
+
+    /// Restore coordinator state after all concrete frame callbacks complete.
+    pub(super) fn restore_bridge_frame_state(&mut self, state: BridgeFrameState) {
+        self.bridge_frame_state = state;
+    }
+
     /// Complete flat sprite entity table shared by bridge presentation systems.
     pub fn bridge_sprite_entities(&self) -> &[BridgeSpriteEntity; BRIDGE_SPRITE_ENTITY_COUNT] {
         &self.bridge_sprite_entities

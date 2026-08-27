@@ -105,13 +105,10 @@ impl RuntimeNavigationChart {
         lifecycle: &mut GameLifecycleState,
         transition_step: u8,
         navigation_animation_phase: u8,
+        comparison_extent: BridgeSpriteExtent,
     ) -> Result<NavigationCameraOutcome> {
         let world = RuntimeNavigationWorld::decode(services.runtime())?;
         self.status_snapshot = Some(world.status_snapshot());
-        let comparison_extent = services
-            .runtime()
-            .bridge_sprite_source_extent(LOCATION_PANEL_ENTITY)
-            .unwrap_or_default();
         let pointer = services.input().pointer_sample();
         self.state.transition_step = transition_step;
         self.state.active = services.bridge_camera_view_active();

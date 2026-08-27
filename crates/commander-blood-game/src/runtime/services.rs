@@ -36,7 +36,7 @@ use crate::native::bloodprg::{
     PresentationScreenOutcome, PresentationScreenState, PresentationWordChoiceOutcome,
     RasterRectOutcome, SCENE_PALETTE_CLEAR_COLOR_COUNT, SHIP_CAMERA_RESET, SceneTransitionState,
     ScriptClock, ScriptFrameOutcome, ScriptPresentationEntity, ScriptPresentationScanState,
-    ScriptProfileId, ScriptProfileLoadOutcome, ScriptShipNavigationMode,
+    ScriptProfileId, ScriptProfileLoadOutcome, ScriptShipNavigationMode, ScriptTravelActionPhase,
     ShipDepthTransitionOutcome, ShipHudInitializationContext, ShipPresentationOutcome,
     ShipPresentationState, ShipProjectionResources, ShipTargetSelectionState, ShipViewEntityId,
     SoundBankUsage, StartupPreparationOutcome, TextPresentationState, clear_scene_palette_entries,
@@ -1750,8 +1750,22 @@ impl<'window> ModernGameServices<'window> {
         startup_presentation_mode: bool,
         ship_active: bool,
     ) -> Result<()> {
-        let panorama_frame = self.bridge_view_frame()? as u16;
         let transition_pending = self.runtime.bridge_frame_state().transition_pending();
+        self.initialize_bridge_screen_with_transition(
+            startup_presentation_mode,
+            ship_active,
+            transition_pending,
+        )
+    }
+
+    /// Rebuild bridge flags against the coordinator's transferred transition state.
+    pub(super) fn initialize_bridge_screen_with_transition(
+        &mut self,
+        startup_presentation_mode: bool,
+        ship_active: bool,
+        transition_pending: bool,
+    ) -> Result<()> {
+        let panorama_frame = self.bridge_view_frame()? as u16;
         let mut screen_state = std::mem::take(&mut self.bridge_screen);
         screen_state.screen_rebuild_pending = true;
         screen_state.reverse_presentation_active = startup_presentation_mode;
@@ -2555,6 +2569,23 @@ impl<'window> ModernGameServices<'window> {
             .completion_latched())
     }
 
+    /// Return the camera actor's current chart-transition countdown.
+    pub(super) fn bridge_actor_camera_transition_step(&self) -> Result<u8> {
+        Ok(self
+            .bridge_actors
+            .as_ref()
+            .context("bridge actor state is already being updated")?
+            .camera_transition_step())
+    }
+
+    /// Whether C6 reached the bridge coordinator's early scene-dispatch phase.
+    pub(super) fn bridge_scene_dispatch_pending(&self) -> bool {
+        matches!(
+            self.scripts.action_state().travel_phase,
+            ScriptTravelActionPhase::WaitingForPresentation
+        )
+    }
+
     /// Advance the exact destination-region camera-navigation state machine.
     pub(super) fn update_runtime_camera_navigation(
         &mut self,
@@ -2572,10 +2603,29 @@ impl<'window> ModernGameServices<'window> {
     }
 
     /// Advance the recovered chart wipe, interaction, and location panel.
+    #[cfg(test)]
     pub(super) fn update_runtime_navigation_chart(
         &mut self,
         lifecycle: &mut GameLifecycleState,
         navigation_animation_phase: u8,
+    ) -> Result<crate::native::bloodprg::NavigationCameraOutcome> {
+        let comparison_extent = self
+            .runtime
+            .bridge_sprite_source_extent(usize::MIN)
+            .context("reading navigation chart comparison extent")?;
+        self.update_runtime_navigation_chart_with_comparison(
+            lifecycle,
+            navigation_animation_phase,
+            comparison_extent,
+        )
+    }
+
+    /// Advance the navigation chart against the coordinator's typed extent.
+    pub(super) fn update_runtime_navigation_chart_with_comparison(
+        &mut self,
+        lifecycle: &mut GameLifecycleState,
+        navigation_animation_phase: u8,
+        comparison_extent: crate::native::bloodprg::BridgeSpriteExtent,
     ) -> Result<crate::native::bloodprg::NavigationCameraOutcome> {
         let transition_step = self
             .bridge_actors
@@ -2586,7 +2636,13 @@ impl<'window> ModernGameServices<'window> {
             .navigation_chart
             .take()
             .context("navigation chart update is reentrant")?;
-        let outcome = chart.update(self, lifecycle, transition_step, navigation_animation_phase);
+        let outcome = chart.update(
+            self,
+            lifecycle,
+            transition_step,
+            navigation_animation_phase,
+            comparison_extent,
+        );
         let remaining = chart.transition_step();
         let panel_active = chart.location_panel_active();
         self.navigation_chart = Some(chart);
@@ -3808,7 +3864,6 @@ mod tests {
                 crate::native::bloodprg::PresentationPanelStep::One
             )
         );
-        assert!(services.close_bridge_scene());
         assert!(
             services
                 .runtime()
@@ -3817,5 +3872,30 @@ mod tests {
                 .iter()
                 .any(|pixel| *pixel != u8::MIN)
         );
+        services.set_presentation_screen_active(false).unwrap();
+        lifecycle.set_presentation_interface_active(true);
+        lifecycle.frame_presented = true;
+        lifecycle.presentation.c2_presentation_gate = false;
+        assert_eq!(
+            crate::runtime::bridge_frame::run_runtime_bridge_frame(
+                &mut services,
+                &mut lifecycle,
+                GameSceneLink::Initial,
+                BridgeSceneInput::default(),
+                u8::MIN,
+            )
+            .unwrap(),
+            crate::native::bloodprg::BridgeFrameOutcome::Presented
+        );
+        assert!(
+            services
+                .bridge_frame
+                .as_ref()
+                .unwrap()
+                .panorama_pixels
+                .iter()
+                .any(|pixel| *pixel != u8::MIN)
+        );
+        assert!(services.close_bridge_scene());
     }
 }

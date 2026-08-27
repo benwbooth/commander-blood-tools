@@ -12,7 +12,7 @@ use crate::native::bloodprg::{
     advance_game_timer_tick,
 };
 
-use super::camera_approach::update_runtime_camera_approach;
+use super::bridge_frame::run_runtime_bridge_frame;
 use super::{
     ModernGameServices, RuntimeAssetLoadStatus, RuntimePlatformHost, run_runtime_presentation,
 };
@@ -325,39 +325,18 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
         state: &mut GameLifecycleState,
     ) -> Result<()> {
         self.current_scene_link = link;
-        if state.navigation_rebuild_pending {
-            self.services.initialize_bridge_screen(
-                state.presentation_mode,
-                state.presentation.ship_active,
-            )?;
-            state.navigation_rebuild_pending = false;
-        }
-        update_runtime_camera_approach(&mut self.services, link, state)?;
         let pointer = self.services.input().pointer_sample();
-        self.services.render_bridge_frame(BridgeSceneInput {
-            horizontal_delta: self.platform.take_bridge_horizontal_delta(),
-            pointer_buttons: pointer.buttons.bits(),
-            interaction: Self::bridge_interaction(state),
-        })?;
-        self.services.commit_ship_entities(0..32)?;
-        self.services.update_runtime_bridge_actors(state)?;
-        if self.services.runtime().current_profile().is_some() {
-            self.services
-                .update_runtime_navigation_chart(state, self.timer.navigation_animation_phase)?;
-            self.services.update_runtime_camera_navigation(state)?;
-        }
-        self.services
-            .update_presentation_screen(&self.current_scene_link, state.primary_pointer_pressed)?;
-        self.services.consume_presentation_screen_outputs(state)?;
-        if state.frame_presented {
-            self.services.rasterize_bridge_frame_sprite_range(1..20)?;
-            self.services.advance_bridge_name_area_effect()?;
-            self.services.update_runtime_navigation_status(state)?;
-            self.services.update_runtime_bridge_console(state)?;
-            if self.services.bridge_actor_completion_latched()? {
-                self.services.remap_bridge_completion_region()?;
-            }
-        }
+        run_runtime_bridge_frame(
+            &mut self.services,
+            state,
+            link,
+            BridgeSceneInput {
+                horizontal_delta: self.platform.take_bridge_horizontal_delta(),
+                pointer_buttons: pointer.buttons.bits(),
+                interaction: Self::bridge_interaction(state),
+            },
+            self.timer.navigation_animation_phase,
+        )?;
         Ok(())
     }
 

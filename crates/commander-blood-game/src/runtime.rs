@@ -5,6 +5,7 @@ mod audio;
 mod bios_font;
 mod bridge_actors;
 mod bridge_console;
+mod bridge_frame;
 mod camera_approach;
 mod camera_navigation;
 mod choice_list;
