@@ -3,6 +3,7 @@
 mod alien_overlay;
 mod audio;
 mod bios_font;
+mod bridge_console;
 mod choice_list;
 mod confirm_dialog;
 mod game_lifecycle;
@@ -74,7 +75,8 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result, bail};
 use commander_blood_formats::archive::{BloodArchive, BloodResourceName};
 use commander_blood_formats::bloodprg::{
-    BloodprgConfirmDialogRegions, BloodprgFontResources, BloodprgPresentationCatalog,
+    BloodprgBridgeMenuText, BloodprgConfirmDialogRegions, BloodprgFontResources,
+    BloodprgPresentationCatalog, decode_bloodprg_bridge_menu_text,
     decode_bloodprg_confirm_dialog_regions, decode_bloodprg_font_resources,
     decode_bloodprg_presentation_catalog,
 };
@@ -242,6 +244,7 @@ pub struct OriginalGameData {
     writable_resource_catalog: StartupWritableResourceCatalog,
     descript_database: DescriptDatabase,
     confirm_dialog_regions: BloodprgConfirmDialogRegions,
+    bridge_menu_text: BloodprgBridgeMenuText,
     font_resources: BloodprgFontResources,
     presentation_catalog: BloodprgPresentationCatalog,
     default_vga_palette: [[u8; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT],
@@ -294,6 +297,8 @@ impl OriginalGameData {
                 .context("decoding startup writable-resource catalog")?;
         let confirm_dialog_regions = decode_bloodprg_confirm_dialog_regions(&executable)
             .context("decoding confirmation-dialog hit regions")?;
+        let bridge_menu_text = decode_bloodprg_bridge_menu_text(&executable)
+            .context("decoding bridge options and text-speed labels")?;
         let font_resources = decode_bloodprg_font_resources(&executable)
             .context("decoding original executable font resources")?;
         let presentation_catalog = decode_bloodprg_presentation_catalog(&executable)
@@ -333,6 +338,7 @@ impl OriginalGameData {
             writable_resource_catalog,
             descript_database,
             confirm_dialog_regions,
+            bridge_menu_text,
             font_resources,
             presentation_catalog,
             default_vga_palette,
@@ -380,6 +386,11 @@ impl OriginalGameData {
     /// Executable-authored logical hit regions for the navigation confirmation modal.
     pub const fn confirm_dialog_regions(&self) -> &BloodprgConfirmDialogRegions {
         &self.confirm_dialog_regions
+    }
+
+    /// Exact bridge options, text-speed choices, and shared cancel label.
+    pub const fn bridge_menu_text(&self) -> &BloodprgBridgeMenuText {
+        &self.bridge_menu_text
     }
 
     /// Exact compact, subtitle, square-cap, and dialogue fonts from the executable.
@@ -538,6 +549,8 @@ mod tests {
             data.presentation_catalog().lines().len(),
             commander_blood_formats::bloodprg::BLOODPRG_PRESENTATION_LINE_COUNT
         );
+        assert_eq!(data.bridge_menu_text().option_labels()[0].as_ref(), b"TEXT");
+        assert_eq!(data.bridge_menu_text().initial_text_speed_step(), 2);
         assert_eq!(
             data.validate_script_profiles().unwrap().len(),
             ORIGINAL_SCRIPT_PROFILE_COUNT

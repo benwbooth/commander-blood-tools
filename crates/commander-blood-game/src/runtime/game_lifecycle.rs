@@ -6,9 +6,9 @@ use anyhow::{Context, Result, bail};
 use sdl3::AudioSubsystem;
 
 use crate::native::bloodprg::{
-    BridgeSceneInput, BridgeSteeringInteraction, CdAudioPreparationOutcome, GameLifecycleHost,
-    GameLifecycleState, GameProfileLoadStatus, GameSceneLink, GameTimerContext, GameTimerState,
-    GameVmRunStatus, PresentationResourceId, ScriptProfileId, ScriptRuntime,
+    BridgeSceneInput, BridgeSteeringInteraction, CdAudioPreparationOutcome, ConfirmDialogOutcome,
+    GameLifecycleHost, GameLifecycleState, GameProfileLoadStatus, GameSceneLink, GameTimerContext,
+    GameTimerState, GameVmRunStatus, PresentationResourceId, ScriptProfileId, ScriptRuntime,
     advance_game_timer_tick,
 };
 
@@ -118,6 +118,7 @@ impl<'window, 'audio> RuntimeGameLifecycleHost<'window, 'audio> {
 
     fn bridge_interaction(state: &GameLifecycleState) -> BridgeSteeringInteraction {
         let menu_active = state.modal_ui_busy()
+            || state.profile_change_blockers.navigation_choice_active
             || state.presentation.word_choice_active
             || state.presentation.menu_deferred
             || state.presentation.subtitle_display_active;
@@ -329,11 +330,18 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
             pointer_buttons: pointer.buttons.bits(),
             interaction: Self::bridge_interaction(state),
         })?;
+        self.services.update_runtime_bridge_console(state)?;
         Ok(())
     }
 
     fn update_confirm_dialog(&mut self, state: &mut GameLifecycleState) -> Result<()> {
-        self.services.update_confirm_dialog(state).map(|_| ())
+        let outcome = self.services.update_confirm_dialog(state)?;
+        if matches!(outcome, ConfirmDialogOutcome::Confirmed(_))
+            && self.services.confirm_dialog_state().navigation_choice_gate & 1 != 0
+        {
+            state.exit_requested = true;
+        }
+        Ok(())
     }
 
     fn refill_audio_stream(&mut self) -> Result<()> {

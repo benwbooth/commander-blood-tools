@@ -39,6 +39,7 @@ use crate::native::bloodprg::{
 use crate::native::manu3::animation::CursorPosition;
 use crate::native::random::BloodPrng;
 
+use super::bridge_console::RuntimeBridgeConsole;
 use super::choice_list::{
     RuntimeChoiceListStyle, draw_choice_list_rows, prepare_choice_list_frame,
 };
@@ -61,6 +62,7 @@ use super::{
 const INITIAL_LOGICAL_POINTER: [i16; 2] = [160, 100];
 const MUSIC_RESOURCE_DIRECTORY: &[u8] = b"MU\\";
 const DEFAULT_BRIDGE_SOUND_BANK: &[u8] = b"tb.snd";
+const RADIO_SOUND_BANK: &[u8] = b"radio.snd";
 const FULL_LOGICAL_FONT_BAND: FontVerticalBand = FontVerticalBand {
     top: 0,
     bottom: LOGICAL_FRAMEBUFFER_HEIGHT as i32 - 1,
@@ -92,6 +94,7 @@ pub struct ModernGameServices<'window> {
     loaded_voice: Option<RuntimePcmClip>,
     bridge_scene: Option<BridgeScene>,
     bridge_frame: Option<BridgeSceneFrame>,
+    bridge_console: Option<RuntimeBridgeConsole>,
     presentation_screen: Option<RuntimePresentationScreen>,
     presentation_word_choice: Option<RuntimePresentationWordChoice>,
     save_load: Option<RuntimeSaveLoad>,
@@ -121,6 +124,8 @@ impl<'window> ModernGameServices<'window> {
         script_clock: ScriptClock,
     ) -> Result<Self> {
         let confirm_dialog = RuntimeConfirmDialog::new(*data.confirm_dialog_regions());
+        let initial_text_speed_step = data.bridge_menu_text().initial_text_speed_step();
+        let bridge_console = RuntimeBridgeConsole::new(initial_text_speed_step);
         let scripts = RuntimeScriptSystem::new(&data, script_clock);
         let presentation_player = RuntimePresentationPlayer::new(data.presentation_catalog());
         let runtime = OriginalGameRuntime::new(data);
@@ -137,6 +142,7 @@ impl<'window> ModernGameServices<'window> {
             loaded_voice: None,
             bridge_scene: None,
             bridge_frame: None,
+            bridge_console: Some(bridge_console),
             presentation_screen: Some(presentation_screen),
             presentation_word_choice: Some(RuntimePresentationWordChoice::default()),
             save_load: Some(RuntimeSaveLoad::default()),
@@ -146,7 +152,7 @@ impl<'window> ModernGameServices<'window> {
             alien_overlay: Some(RuntimeAlienOverlayCycle::default()),
             ship_target_selector: Some(RuntimeShipTargetSelector::default()),
             choice_list_style: RuntimeChoiceListStyle::default(),
-            subtitle_reveal: Some(RuntimeSubtitleReveal::default()),
+            subtitle_reveal: Some(RuntimeSubtitleReveal::new(initial_text_speed_step)),
             palette_transition: RuntimePaletteTransition::default(),
             bridge_palette,
             confirm_dialog,
@@ -266,6 +272,21 @@ impl<'window> ModernGameServices<'window> {
             .loaded_sound_bank()
             .context("default bridge sound bank was not retained")?;
         SndBank::decode(loaded.encoded_bytes()).context("decoding default bridge sound bank")?;
+        Ok(())
+    }
+
+    /// Load and validate the authored `SN\\RADIO.SND` resident bridge bank.
+    pub fn load_radio_sound_bank(&mut self) -> Result<()> {
+        self.scripts
+            .backend_mut()
+            .load_resident_sound_bank(RADIO_SOUND_BANK)
+            .context("loading radio bridge sound bank")?;
+        let loaded = self
+            .scripts
+            .backend()
+            .loaded_sound_bank()
+            .context("radio bridge sound bank was not retained")?;
+        SndBank::decode(loaded.encoded_bytes()).context("decoding radio bridge sound bank")?;
         Ok(())
     }
 
@@ -433,6 +454,11 @@ impl<'window> ModernGameServices<'window> {
     /// Current source-sample position of navigation music, when active.
     pub fn navigation_music_position(&self) -> Result<Option<u64>> {
         Ok(self.audio_ref()?.background_position())
+    }
+
+    /// Report whether SDL audio has completed startup initialization.
+    pub const fn audio_is_initialized(&self) -> bool {
+        self.audio.is_some()
     }
 
     /// Current source-sample position of the foreground voice or effect.
@@ -1580,6 +1606,15 @@ impl<'window> ModernGameServices<'window> {
             .text_speed_step)
     }
 
+    /// Apply a player-selected text-speed step to future subtitle and menu timing.
+    pub fn set_dialogue_word_delay(&mut self, step: u16) -> Result<()> {
+        self.subtitle_reveal
+            .as_mut()
+            .context("subtitle reveal is already being updated")?
+            .set_text_speed_step(step);
+        Ok(())
+    }
+
     /// Consume the next value from the game's persistent recovered PRNG.
     pub fn next_random(&mut self, modulus: u16) -> u16 {
         self.random.next(modulus)
@@ -1928,6 +1963,46 @@ impl<'window> ModernGameServices<'window> {
             .expect("rendered bridge frame was retained"))
     }
 
+    /// Return the current logical panorama frame used by bridge hit testing.
+    pub fn bridge_view_frame(&self) -> Result<i16> {
+        let frame = self
+            .bridge_scene
+            .as_ref()
+            .context("bridge scene has not been initialized")?
+            .steering()
+            .view_frame;
+        i16::try_from(frame).context("bridge panorama frame exceeds the signed native range")
+    }
+
+    /// Request the recovered automatic panorama seek used when a console row opens.
+    pub fn request_bridge_seek(&mut self, target_arc: u16) -> Result<()> {
+        self.bridge_scene
+            .as_mut()
+            .context("bridge scene has not been initialized")?
+            .request_seek(target_arc);
+        Ok(())
+    }
+
+    /// Report whether the bridge is still completing an automatic console seek.
+    pub fn bridge_seek_requested(&self) -> Result<bool> {
+        Ok(self
+            .bridge_scene
+            .as_ref()
+            .context("bridge scene has not been initialized")?
+            .seek_requested())
+    }
+
+    /// Advance the recovered bridge-console dispatcher and its active submenu.
+    pub fn update_runtime_bridge_console(&mut self, state: &mut GameLifecycleState) -> Result<()> {
+        let mut console = self
+            .bridge_console
+            .take()
+            .context("bridge console update is reentrant")?;
+        let outcome = console.update(self, state);
+        self.bridge_console = Some(console);
+        outcome
+    }
+
     /// Present one translated bridge scene frame and optional MANU3 overlay.
     pub fn present_bridge_frame(&mut self, bridge_frame: &BridgeSceneFrame) -> Result<()> {
         self.ensure_main_viewport()?;
@@ -2074,6 +2149,7 @@ mod tests {
     use commander_blood_formats::script::decode_script_dictionary;
 
     use super::*;
+    use crate::native::bloodprg::PointerButton;
     use crate::runtime::OriginalGameDataPaths;
 
     const TEST_CLOCK_SEED: u8 = 17;
@@ -2172,10 +2248,47 @@ mod tests {
             script.end,
             crate::native::bloodprg::ScriptFrameEnd::ExecutionDisabled
         );
+        let horn = services
+            .runtime()
+            .current_profile()
+            .unwrap()
+            .builtins()
+            .horn
+            .unwrap();
         let bridge_frame = services
             .render_bridge_frame(BridgeSceneInput::default())
             .unwrap();
         assert!(!bridge_frame.starfield.plotted.is_empty());
+        services.input_mut().poll_pointer(
+            [320.0, 200.0],
+            [200.0, 80.0],
+            PointerButtons::from_bits(PointerButton::Primary as u16),
+        );
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.primary_pointer_pressed = true;
+        services
+            .update_runtime_bridge_console(&mut lifecycle)
+            .unwrap();
+        assert!(services.bridge_seek_requested().unwrap());
+        services
+            .render_bridge_frame(BridgeSceneInput {
+                pointer_buttons: PointerButton::Primary as u16,
+                interaction: BridgeSteeringInteraction::MenuEngaged,
+                ..BridgeSceneInput::default()
+            })
+            .unwrap();
+        services
+            .update_runtime_bridge_console(&mut lifecycle)
+            .unwrap();
+        assert!(!services.bridge_seek_requested().unwrap());
+        assert!(!lifecycle.profile_change_blockers.navigation_choice_active);
+        assert_eq!(
+            services.presentation_scan_state().deferred,
+            crate::native::bloodprg::ScriptDeferredRecord::Complete {
+                record: crate::native::bloodprg::ScriptActionRecord::ActorPresentation(horn),
+                actionable: false,
+            }
+        );
         services.submit_indexed_frame().unwrap();
         services.present_current_bridge_frame().unwrap();
 

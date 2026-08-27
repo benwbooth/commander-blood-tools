@@ -29,6 +29,10 @@ pub const BLOODPRG_SMALL_FONT_GLYPH_COUNT: usize = 42;
 pub const BLOODPRG_PRESENTATION_LINE_COUNT: usize = 45;
 /// Number of authored line IDs allowed to exceed the ordinary 130-row presentation band.
 pub const BLOODPRG_UNCLAMPED_PRESENTATION_LINE_COUNT: usize = 8;
+/// Number of commands in the executable-authored bridge options menu.
+pub const BLOODPRG_OPTION_MENU_LABEL_COUNT: usize = 5;
+/// Number of choices in the executable-authored text-speed menu.
+pub const BLOODPRG_TEXT_SPEED_LABEL_COUNT: usize = 5;
 
 const MZ_SIGNATURE: [u8; 2] = [b'M', b'Z'];
 const MZ_SIGNATURE_FILE_OFFSET: usize = 0;
@@ -44,6 +48,13 @@ const NO_PRESENTATION_SCENE_IMAGE_OFFSET: u16 = u16::MAX;
 const UNCLAMPED_PRESENTATION_LINE_IDS_DATA_OFFSET: usize = 0x0DBE;
 const CONFIRM_DIALOG_YES_REGION_DATA_OFFSET: usize = 0x2555;
 const CONFIRM_DIALOG_NO_REGION_DATA_OFFSET: usize = 0x255D;
+const LIST_WIDGET_CANCEL_LABEL_DATA_OFFSET: usize = 0x0174;
+const INITIAL_TEXT_SPEED_STEP_DATA_OFFSET: usize = 0x0ACA;
+const OPTION_MENU_POINTER_LIST_DATA_OFFSET: usize = 0x2567;
+const MUSIC_ON_LABEL_DATA_OFFSET: usize = 0x2578;
+const TEXT_SPEED_POINTER_LIST_DATA_OFFSET: usize = 0x259D;
+const POINTER_LIST_SENTINEL: u16 = u16::MAX;
+const MENU_LABEL_MAXIMUM_BYTE_COUNT: usize = 32;
 const BRIDGE_PROJECTION_ANCHOR_DATA_OFFSET: usize = 0x4F09;
 const BRIDGE_TRIGONOMETRY_DATA_OFFSET: usize = 0x4F45;
 const POSITION_COMPONENT_COUNT: usize = 3;
@@ -109,6 +120,180 @@ const PRESENTATION_REQUIRED_EXECUTABLE_LENGTH: usize =
     BLOODPRG_DATA_FILE_OFFSET + PRESENTATION_DESCRIPTOR_DATA_END_OFFSET;
 const CONFIRM_DIALOG_REQUIRED_EXECUTABLE_LENGTH: usize =
     CONFIRM_DIALOG_NO_REGION_FILE_OFFSET + RECTANGLE_BYTE_COUNT;
+const MENU_TEXT_REQUIRED_EXECUTABLE_LENGTH: usize = BLOODPRG_DATA_FILE_OFFSET
+    + TEXT_SPEED_POINTER_LIST_DATA_OFFSET
+    + (BLOODPRG_TEXT_SPEED_LABEL_COUNT + 1) * WORD_BYTE_COUNT;
+
+/// Flat, owned bridge-menu text decoded from the executable's data image.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BloodprgBridgeMenuText {
+    option_labels: [Box<[u8]>; BLOODPRG_OPTION_MENU_LABEL_COUNT],
+    music_on_label: Box<[u8]>,
+    text_speed_labels: [Box<[u8]>; BLOODPRG_TEXT_SPEED_LABEL_COUNT],
+    cancel_label: Box<[u8]>,
+    initial_text_speed_step: u16,
+}
+
+impl BloodprgBridgeMenuText {
+    /// Return `TEXT`, the current music-toggle face, `SAVE`, `LOAD`, and `QUIT` labels.
+    pub const fn option_labels(&self) -> &[Box<[u8]>; BLOODPRG_OPTION_MENU_LABEL_COUNT] {
+        &self.option_labels
+    }
+
+    /// Return the alternate music-toggle face used when playback is disabled.
+    pub const fn music_on_label(&self) -> &[u8] {
+        &self.music_on_label
+    }
+
+    /// Return the five labels ordered from very fast through very slow.
+    pub const fn text_speed_labels(&self) -> &[Box<[u8]>; BLOODPRG_TEXT_SPEED_LABEL_COUNT] {
+        &self.text_speed_labels
+    }
+
+    /// Return the shared trailing label used by cancellable bridge lists.
+    pub const fn cancel_label(&self) -> &[u8] {
+        &self.cancel_label
+    }
+
+    /// Return the subtitle-speed step shipped in the executable's initialized data.
+    pub const fn initial_text_speed_step(&self) -> u16 {
+        self.initial_text_speed_step
+    }
+}
+
+/// Malformed bridge-menu text tables in `BLOODPRG.EXE`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum BloodprgBridgeMenuTextError {
+    /// The input does not begin with an MZ executable signature.
+    InvalidExecutableSignature,
+    /// The executable ends before the complete pointer tables.
+    TruncatedExecutable {
+        /// Supplied executable byte count.
+        actual: usize,
+        /// Minimum byte count required by the menu tables.
+        required: usize,
+    },
+    /// A fixed-size pointer list does not end with the native all-ones marker.
+    MissingPointerListSentinel {
+        /// Data-image-relative pointer-list position.
+        list_offset: usize,
+        /// Unexpected word stored after the final expected pointer.
+        actual: u16,
+    },
+    /// A label pointer does not address a byte in the executable image.
+    LabelPointerOutsideExecutable {
+        /// Data-image-relative label pointer.
+        label_offset: usize,
+    },
+    /// A label has no terminator within its bounded source field.
+    MissingLabelTerminator {
+        /// Data-image-relative label pointer.
+        label_offset: usize,
+    },
+    /// A label contains a control or non-ASCII byte not accepted by the game font.
+    InvalidLabelByte {
+        /// Data-image-relative label pointer.
+        label_offset: usize,
+        /// Invalid byte value.
+        byte: u8,
+    },
+}
+
+impl fmt::Display for BloodprgBridgeMenuTextError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(formatter, "invalid BLOODPRG bridge-menu text: {self:?}")
+    }
+}
+
+impl Error for BloodprgBridgeMenuTextError {}
+
+/// Decode all bridge options and text-speed labels into flat owned byte strings.
+///
+/// The two source tables contain data-segment offsets terminated by `0xFFFF`.
+/// This loader resolves those serialized offsets once, validates each bounded
+/// NUL-terminated label, and exposes no segmented address to runtime game code.
+pub fn decode_bloodprg_bridge_menu_text(
+    executable: &[u8],
+) -> Result<BloodprgBridgeMenuText, BloodprgBridgeMenuTextError> {
+    if executable.len() < MENU_TEXT_REQUIRED_EXECUTABLE_LENGTH {
+        return Err(BloodprgBridgeMenuTextError::TruncatedExecutable {
+            actual: executable.len(),
+            required: MENU_TEXT_REQUIRED_EXECUTABLE_LENGTH,
+        });
+    }
+    if executable.get(MZ_SIGNATURE_FILE_OFFSET..MZ_SIGNATURE.len()) != Some(&MZ_SIGNATURE) {
+        return Err(BloodprgBridgeMenuTextError::InvalidExecutableSignature);
+    }
+
+    let option_labels = decode_menu_pointer_list::<BLOODPRG_OPTION_MENU_LABEL_COUNT>(
+        executable,
+        OPTION_MENU_POINTER_LIST_DATA_OFFSET,
+    )?;
+    let text_speed_labels = decode_menu_pointer_list::<BLOODPRG_TEXT_SPEED_LABEL_COUNT>(
+        executable,
+        TEXT_SPEED_POINTER_LIST_DATA_OFFSET,
+    )?;
+
+    Ok(BloodprgBridgeMenuText {
+        option_labels,
+        music_on_label: decode_menu_label(executable, MUSIC_ON_LABEL_DATA_OFFSET)?,
+        text_speed_labels,
+        cancel_label: decode_menu_label(executable, LIST_WIDGET_CANCEL_LABEL_DATA_OFFSET)?,
+        initial_text_speed_step: read_unsigned_word(
+            executable,
+            BLOODPRG_DATA_FILE_OFFSET + INITIAL_TEXT_SPEED_STEP_DATA_OFFSET,
+        ),
+    })
+}
+
+fn decode_menu_pointer_list<const LABEL_COUNT: usize>(
+    executable: &[u8],
+    list_offset: usize,
+) -> Result<[Box<[u8]>; LABEL_COUNT], BloodprgBridgeMenuTextError> {
+    let list_file_offset = BLOODPRG_DATA_FILE_OFFSET + list_offset;
+    let sentinel = read_unsigned_word(executable, list_file_offset + LABEL_COUNT * WORD_BYTE_COUNT);
+    if sentinel != POINTER_LIST_SENTINEL {
+        return Err(BloodprgBridgeMenuTextError::MissingPointerListSentinel {
+            list_offset,
+            actual: sentinel,
+        });
+    }
+
+    let labels = (0..LABEL_COUNT)
+        .map(|index| {
+            let pointer =
+                read_unsigned_word(executable, list_file_offset + index * WORD_BYTE_COUNT);
+            decode_menu_label(executable, usize::from(pointer))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    labels
+        .try_into()
+        .map_err(|_| unreachable!("decoded exactly LABEL_COUNT labels"))
+}
+
+fn decode_menu_label(
+    executable: &[u8],
+    label_offset: usize,
+) -> Result<Box<[u8]>, BloodprgBridgeMenuTextError> {
+    let file_offset = BLOODPRG_DATA_FILE_OFFSET + label_offset;
+    let available = executable
+        .get(file_offset..)
+        .ok_or(BloodprgBridgeMenuTextError::LabelPointerOutsideExecutable { label_offset })?;
+    let bounded = &available[..available.len().min(MENU_LABEL_MAXIMUM_BYTE_COUNT + 1)];
+    let length = bounded
+        .iter()
+        .position(|byte| *byte == u8::MIN)
+        .ok_or(BloodprgBridgeMenuTextError::MissingLabelTerminator { label_offset })?;
+    let label = &bounded[..length];
+    if let Some(byte) = label
+        .iter()
+        .copied()
+        .find(|byte| !byte.is_ascii_graphic() && *byte != b' ')
+    {
+        return Err(BloodprgBridgeMenuTextError::InvalidLabelByte { label_offset, byte });
+    }
+    Ok(label.into())
+}
 
 /// One executable-authored presentation-line template.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -932,6 +1117,73 @@ mod tests {
         assert_eq!(
             decode_bloodprg_presentation_catalog(&missing_terminator),
             Err(BloodprgPresentationCatalogError::MissingResourceNameTerminator { line: 0 })
+        );
+    }
+
+    #[test]
+    fn bridge_menu_text_matches_the_shipped_executable() {
+        let executable = include_bytes!("../../../re/bin/BLOODPRG.EXE");
+        let text = decode_bloodprg_bridge_menu_text(executable).unwrap();
+        let option_labels = text
+            .option_labels()
+            .iter()
+            .map(Box::as_ref)
+            .collect::<Vec<_>>();
+        let speed_labels = text
+            .text_speed_labels()
+            .iter()
+            .map(Box::as_ref)
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            option_labels,
+            [
+                b"TEXT".as_slice(),
+                b"MUSIC_OFF".as_slice(),
+                b"SAVE".as_slice(),
+                b"LOAD".as_slice(),
+                b"QUIT".as_slice(),
+            ]
+        );
+        assert_eq!(text.music_on_label(), b"MUSIC_ON");
+        assert_eq!(
+            speed_labels,
+            [
+                b"VERY FAST".as_slice(),
+                b"FAST".as_slice(),
+                b"MEDIUM".as_slice(),
+                b"SLOW".as_slice(),
+                b"VERY SLOW".as_slice(),
+            ]
+        );
+        assert_eq!(text.cancel_label(), b"CANCEL");
+        assert_eq!(text.initial_text_speed_step(), 2);
+    }
+
+    #[test]
+    fn malformed_bridge_menu_tables_are_rejected_before_pointer_use() {
+        assert_eq!(
+            decode_bloodprg_bridge_menu_text(&[]),
+            Err(BloodprgBridgeMenuTextError::TruncatedExecutable {
+                actual: 0,
+                required: MENU_TEXT_REQUIRED_EXECUTABLE_LENGTH,
+            })
+        );
+
+        let mut executable = include_bytes!("../../../re/bin/BLOODPRG.EXE").to_vec();
+        executable[BLOODPRG_DATA_FILE_OFFSET
+            + OPTION_MENU_POINTER_LIST_DATA_OFFSET
+            + BLOODPRG_OPTION_MENU_LABEL_COUNT * WORD_BYTE_COUNT
+            ..BLOODPRG_DATA_FILE_OFFSET
+                + OPTION_MENU_POINTER_LIST_DATA_OFFSET
+                + (BLOODPRG_OPTION_MENU_LABEL_COUNT + 1) * WORD_BYTE_COUNT]
+            .copy_from_slice(&u16::MIN.to_le_bytes());
+        assert_eq!(
+            decode_bloodprg_bridge_menu_text(&executable),
+            Err(BloodprgBridgeMenuTextError::MissingPointerListSentinel {
+                list_offset: OPTION_MENU_POINTER_LIST_DATA_OFFSET,
+                actual: u16::MIN,
+            })
         );
     }
 

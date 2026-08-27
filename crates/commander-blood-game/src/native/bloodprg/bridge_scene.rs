@@ -157,6 +157,17 @@ impl BridgeScene {
         self.steering
     }
 
+    /// Request automatic steering toward one native bridge arc.
+    pub fn request_seek(&mut self, target_arc: u16) {
+        self.seek.target_arc = target_arc;
+        self.seek.requested = true;
+    }
+
+    /// Report whether an automatic bridge seek remains pending.
+    pub const fn seek_requested(&self) -> bool {
+        self.seek.requested
+    }
+
     /// Restore the authored camera origin used when rebuilding the ship HUD.
     pub fn reset_camera(&mut self) {
         self.camera = ShipCameraPosition {

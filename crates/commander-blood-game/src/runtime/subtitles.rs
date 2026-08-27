@@ -12,7 +12,6 @@ use crate::native::bloodprg::{
 
 use super::{LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_WIDTH, OriginalGameRuntime};
 
-const INITIAL_TEXT_SPEED_STEP: u16 = 2;
 const SUBTITLE_TEXT_ORIGIN: [u16; 2] = [10, 8];
 const DARK_FRAME_REMAP_PERCENT: u8 = 50;
 const BLACK_BLEND_TARGET: [u8; 3] = [u8::MIN; 3];
@@ -70,11 +69,12 @@ pub struct RuntimeSubtitleReveal {
     remap_palette: Option<crate::native::bloodprg::IndexedGamePalette>,
 }
 
-impl Default for RuntimeSubtitleReveal {
-    fn default() -> Self {
+impl RuntimeSubtitleReveal {
+    /// Construct subtitle timing from the step decoded out of `BLOODPRG.EXE`.
+    pub fn new(initial_text_speed_step: u16) -> Self {
         Self {
             state: SubtitleRevealState {
-                text_speed_step: INITIAL_TEXT_SPEED_STEP,
+                text_speed_step: initial_text_speed_step,
                 text_origin: SUBTITLE_TEXT_ORIGIN,
                 ..SubtitleRevealState::default()
             },
@@ -82,9 +82,6 @@ impl Default for RuntimeSubtitleReveal {
             remap_palette: None,
         }
     }
-}
-
-impl RuntimeSubtitleReveal {
     /// Borrow the exact reveal phase, timer, origin, and host gates.
     pub const fn state(&self) -> &SubtitleRevealState {
         &self.state
@@ -245,6 +242,8 @@ impl SubtitleRevealRenderer for RuntimeSubtitleRenderer<'_, '_> {
 mod tests {
     use std::sync::atomic::{AtomicU64, Ordering};
 
+    use commander_blood_formats::bloodprg::decode_bloodprg_bridge_menu_text;
+
     use super::*;
     use crate::runtime::{OriginalGameData, OriginalGameDataPaths};
 
@@ -289,12 +288,13 @@ mod tests {
             return;
         };
         let executable = std::fs::read(paths.executable()).unwrap();
+        let menu_text = decode_bloodprg_bridge_menu_text(&executable).unwrap();
         assert_eq!(
             read_executable_word(
                 &executable,
                 BLOODPRG_DATA_FILE_OFFSET + INITIAL_TEXT_SPEED_DATA_OFFSET
             ),
-            INITIAL_TEXT_SPEED_STEP
+            menu_text.initial_text_speed_step()
         );
         assert_eq!(
             [
@@ -347,6 +347,7 @@ mod tests {
         };
         let writable_root = TemporaryRoot::create();
         let data = OriginalGameData::load_with_writable_root(paths, &writable_root.0).unwrap();
+        let initial_text_speed_step = data.bridge_menu_text().initial_text_speed_step();
         let mut runtime = OriginalGameRuntime::new(data);
         runtime
             .front_buffer_mut()
@@ -357,7 +358,7 @@ mod tests {
             subtitle_text: Box::from(b"ARK\r".as_slice()),
             ..TextPresentationState::default()
         };
-        let mut subtitle = RuntimeSubtitleReveal::default();
+        let mut subtitle = RuntimeSubtitleReveal::new(initial_text_speed_step);
 
         assert!(matches!(
             subtitle.update(&mut runtime, &mut presentation).unwrap(),

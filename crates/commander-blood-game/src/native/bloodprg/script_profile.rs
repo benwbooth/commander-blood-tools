@@ -333,6 +333,11 @@ impl LoadedScriptProfile {
         self.builtins
     }
 
+    /// Borrow the canonical typed record stores recovered from this profile's VAR image.
+    pub const fn record_state(&self) -> &ScriptProfileRecordState {
+        &self.record_state
+    }
+
     /// Borrow the profile's mutable procedure-gate state.
     pub const fn procedures(&self) -> &ScriptProcedureStates {
         &self.procedures
