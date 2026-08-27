@@ -81,6 +81,22 @@ pub struct CameraPresentationActorState<RecordLink> {
     pub screen_rebuild_pending: bool,
 }
 
+impl<RecordLink> Default for CameraPresentationActorState<RecordLink> {
+    fn default() -> Self {
+        Self {
+            active: false,
+            selected_location: None,
+            presentation: CameraActorPresentation::default(),
+            mouse_primary_pressed: false,
+            camera_view_active: false,
+            camera_animation: CameraViewAnimation::default(),
+            location_panel_active: false,
+            redraw_requested: false,
+            screen_rebuild_pending: false,
+        }
+    }
+}
+
 /// Line, page, audio, entity, and ship services used by the camera actor.
 pub trait CameraPresentationActorBackend: PresentationLineStepper {
     /// Mark the location-panel entity for a state transition.

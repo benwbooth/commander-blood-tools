@@ -192,6 +192,11 @@ impl BridgeScene {
         self.seek.requested
     }
 
+    /// Return the authored arc retained by the automatic steering owner.
+    pub const fn seek_target_arc(&self) -> u16 {
+        self.seek.target_arc
+    }
+
     /// Restore the authored camera origin used when rebuilding the ship HUD.
     pub fn reset_camera(&mut self) {
         self.set_camera_approach_pose(SHIP_CAMERA_RESET, u16::MIN);

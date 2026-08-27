@@ -368,6 +368,23 @@ impl From<BridgeSpriteEntityError> for BridgeSpriteActivationError {
     }
 }
 
+/// Read the frame-count word consumed as a presentation-line terminal marker.
+///
+/// The original line helper does not subtract one. On its completion tick it
+/// can therefore ask the entity setter for an index equal to the frame count;
+/// the setter ignores that out-of-range request before the line reports
+/// completion. Returning the authored word unchanged preserves that behavior.
+pub(super) fn bridge_sprite_presentation_terminal_frame(
+    resource_bytes: &[u8],
+) -> Result<u16, BridgeSpriteActivationError> {
+    if resource_bytes.len() < RESOURCE_HEADER_BYTE_COUNT {
+        return Err(BridgeSpriteActivationError::ResourceHeaderTooShort {
+            actual: resource_bytes.len(),
+        });
+    }
+    Ok(read_u16(resource_bytes, size_of::<u16>()))
+}
+
 /// Activate one entity from a resource already retained by the flat cache.
 ///
 /// This translates `entity_object_populate` at BLOODPRG routine offset
@@ -1070,15 +1087,17 @@ mod tests {
         let cache = OriginalResourceCache::new();
         let mut entities = [BridgeSpriteEntity::default(); BRIDGE_SPRITE_ENTITY_COUNT];
         let before = entities;
-        assert!(!populate_bridge_sprite_from_cache(
-            &cache,
-            &mut entities,
-            1,
-            ResourceId::new(2),
-            BridgeSpritePosition { x: 10, y: 20 },
-            0,
-        )
-        .unwrap());
+        assert!(
+            !populate_bridge_sprite_from_cache(
+                &cache,
+                &mut entities,
+                1,
+                ResourceId::new(2),
+                BridgeSpritePosition { x: 10, y: 20 },
+                0,
+            )
+            .unwrap()
+        );
         assert_eq!(entities, before);
     }
 

@@ -97,6 +97,8 @@ pub struct ScriptActionState {
     pub travel_phase: ScriptTravelActionPhase,
     /// Whether the travel presentation actor is still busy.
     pub travel_actor_busy: bool,
+    /// C6 cleared the aliased bridge actor-slot flag after camera completion.
+    pub travel_actor_clear_requested: bool,
     /// Whether a camera transition still has frames to execute.
     pub camera_transition_in_progress: bool,
     /// Whether the camera view currently owns presentation input.
@@ -534,6 +536,7 @@ fn dispatch_travel<Host: ScriptActionHost>(
             }
             action.travel_phase = ScriptTravelActionPhase::WaitingForPresentation;
             action.travel_actor_busy = false;
+            action.travel_actor_clear_requested = true;
             action.camera_view_active = false;
             action.active_line = Some(ScriptActionPresentationLine::TravelReady);
             return Ok(ScriptActionDispatch::default());
@@ -1379,6 +1382,7 @@ mod tests {
             ScriptTravelActionPhase::WaitingForPresentation
         );
         assert!(!fixture.action.travel_actor_busy);
+        assert!(fixture.action.travel_actor_clear_requested);
         assert!(!fixture.action.camera_view_active);
         assert_eq!(
             fixture.action.active_line,

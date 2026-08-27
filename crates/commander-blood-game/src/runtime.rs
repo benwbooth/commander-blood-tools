@@ -3,6 +3,7 @@
 mod alien_overlay;
 mod audio;
 mod bios_font;
+mod bridge_actors;
 mod bridge_console;
 mod camera_approach;
 mod choice_list;

@@ -253,11 +253,14 @@ impl NavActorHandler {
 
 /// Mouse, entity, and actor-handler boundaries used by the coordinator.
 pub trait NavActorSlotBackend {
+    /// Backend failure from entity or actor services.
+    type Error;
+
     /// Hit-test one active slot and update its typed flags as needed.
-    fn hit_test(&mut self, slot_index: usize, slot: &mut NavActorSlot);
+    fn hit_test(&mut self, slot_index: usize, slot: &mut NavActorSlot, mouse: NavActorMouseState);
 
     /// Reset the shared presentation entity after a locked arc mismatch.
-    fn reset_presentation_entity(&mut self, slot_index: usize);
+    fn reset_presentation_entity(&mut self, slot_index: usize) -> Result<(), Self::Error>;
 
     /// Run the recovered handler associated with this slot.
     ///
@@ -267,8 +270,10 @@ pub trait NavActorSlotBackend {
         &mut self,
         handler: NavActorHandler,
         slot_index: usize,
+        mouse: &mut NavActorMouseState,
+        seek: &NavActorSeekState,
         slots: &mut [NavActorSlot; NAV_ACTOR_SLOT_COUNT],
-    );
+    ) -> Result<(), Self::Error>;
 }
 
 /// Terminal result of one actor-slot update pass.
@@ -304,9 +309,9 @@ pub fn update_nav_actor_slots<Backend: NavActorSlotBackend>(
     seek: &mut NavActorSeekState,
     slots: &mut [NavActorSlot; NAV_ACTOR_SLOT_COUNT],
     backend: &mut Backend,
-) -> NavActorSlotUpdateOutcome {
+) -> Result<NavActorSlotUpdateOutcome, Backend::Error> {
     if busy.any() {
-        return NavActorSlotUpdateOutcome::Busy;
+        return Ok(NavActorSlotUpdateOutcome::Busy);
     }
 
     for slot_index in 0..NAV_ACTOR_SLOT_COUNT {
@@ -316,7 +321,7 @@ pub fn update_nav_actor_slots<Backend: NavActorSlotBackend>(
                 mouse.press_pending = false;
             }
 
-            backend.hit_test(slot_index, &mut slots[slot_index]);
+            backend.hit_test(slot_index, &mut slots[slot_index], *mouse);
             let flags = slots[slot_index].flags;
             let current_arc = bridge_view_frame.wrapping_mul(2);
             if flags.auto_seek && current_arc != slots[slot_index].target_arc {
@@ -324,13 +329,19 @@ pub fn update_nav_actor_slots<Backend: NavActorSlotBackend>(
                 seek.requested = true;
             } else if flags.locked && current_arc != slots[slot_index].target_arc {
                 slots[slot_index].flags = NavActorSlotFlags::active_only();
-                backend.reset_presentation_entity(slot_index);
+                backend.reset_presentation_entity(slot_index)?;
             }
         }
 
-        backend.update_actor(NavActorHandler::for_slot(slot_index), slot_index, slots);
+        backend.update_actor(
+            NavActorHandler::for_slot(slot_index),
+            slot_index,
+            mouse,
+            seek,
+            slots,
+        )?;
     }
-    NavActorSlotUpdateOutcome::Updated
+    Ok(NavActorSlotUpdateOutcome::Updated)
 }
 
 #[cfg(test)]
@@ -374,6 +385,7 @@ mod tests {
         calls: Vec<String>,
         hit_slot: Option<usize>,
         mutate_after_slot: Option<(usize, usize, NavActorSlotFlags)>,
+        hit_mouse_samples: Vec<NavActorMouseState>,
     }
 
     #[test]
@@ -439,24 +451,35 @@ mod tests {
     }
 
     impl NavActorSlotBackend for OracleBackend {
-        fn hit_test(&mut self, slot_index: usize, slot: &mut NavActorSlot) {
+        type Error = std::convert::Infallible;
+
+        fn hit_test(
+            &mut self,
+            slot_index: usize,
+            slot: &mut NavActorSlot,
+            mouse: NavActorMouseState,
+        ) {
             self.calls.push(String::from("mouse_hit_test"));
+            self.hit_mouse_samples.push(mouse);
             if self.hit_slot == Some(slot_index) {
                 slot.flags.auto_seek = true;
             }
         }
 
-        fn reset_presentation_entity(&mut self, _slot_index: usize) {
+        fn reset_presentation_entity(&mut self, _slot_index: usize) -> Result<(), Self::Error> {
             self.calls
                 .push(String::from("entity_flag_state_transition"));
+            Ok(())
         }
 
         fn update_actor(
             &mut self,
             handler: NavActorHandler,
             slot_index: usize,
+            _mouse: &mut NavActorMouseState,
+            _seek: &NavActorSeekState,
             slots: &mut [NavActorSlot; NAV_ACTOR_SLOT_COUNT],
-        ) {
+        ) -> Result<(), Self::Error> {
             self.calls.push(format!(
                 "actor_handler_{}",
                 match handler {
@@ -473,6 +496,7 @@ mod tests {
             {
                 slots[target_slot].flags = flags;
             }
+            Ok(())
         }
     }
 
@@ -505,7 +529,8 @@ mod tests {
                 &mut seek,
                 &mut slots,
                 &mut backend,
-            );
+            )
+            .unwrap();
 
             assert_eq!(
                 outcome,
@@ -581,6 +606,34 @@ mod tests {
         }
     }
 
+    #[test]
+    fn clear_mouse_flag_reaches_hit_testing_before_the_slot_handler() {
+        let mut slots = [NavActorSlot::default(); NAV_ACTOR_SLOT_COUNT];
+        slots[0].flags = NavActorSlotFlags {
+            active: true,
+            clear_mouse_before_hit: true,
+            ..NavActorSlotFlags::default()
+        };
+        let mut mouse = NavActorMouseState {
+            primary_pressed: true,
+            press_pending: true,
+        };
+        let mut seek = NavActorSeekState::default();
+        let mut backend = oracle_backend("clear_mouse_before_hit");
+
+        update_nav_actor_slots(
+            NavActorBusyState::default(),
+            u16::MIN,
+            &mut mouse,
+            &mut seek,
+            &mut slots,
+            &mut backend,
+        )
+        .unwrap();
+
+        assert_eq!(backend.hit_mouse_samples, [NavActorMouseState::default()]);
+    }
+
     const fn flags_from_native_word(word: u16) -> NavActorSlotFlags {
         NavActorSlotFlags {
             active: word & NATIVE_ACTIVE_FLAG != 0,
@@ -641,6 +694,7 @@ mod tests {
                 1,
                 decode_flags(3),
             )),
+            hit_mouse_samples: Vec::new(),
         }
     }
 

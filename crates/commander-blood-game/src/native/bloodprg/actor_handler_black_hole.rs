@@ -63,7 +63,7 @@ pub enum BlackHoleActorPresentation {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BlackHolePresentationActorState<RecordLink> {
     /// Last exact black-hole target accepted from Arche's current location.
-    pub target_record: RecordLink,
+    pub target_record: Option<RecordLink>,
     /// Record staged for deferred travel processing.
     pub deferred_record: Option<RecordLink>,
     /// Semantic deferred action kind.
@@ -74,6 +74,26 @@ pub struct BlackHolePresentationActorState<RecordLink> {
     pub presentation: BlackHoleActorPresentation,
     /// The later travel-transition phase must restart from its beginning.
     pub transition_phase_reset: bool,
+}
+
+impl<RecordLink> Default for BlackHolePresentationActorState<RecordLink> {
+    fn default() -> Self {
+        Self {
+            target_record: None,
+            deferred_record: None,
+            deferred_action: BlackHoleDeferredAction::default(),
+            target_presentation_cleared: false,
+            presentation: BlackHoleActorPresentation::default(),
+            transition_phase_reset: false,
+        }
+    }
+}
+
+impl<RecordLink> BlackHolePresentationActorState<RecordLink> {
+    /// Consume the target promoted to deferred C6 ownership by this actor.
+    pub fn take_deferred_record(&mut self) -> Option<RecordLink> {
+        self.deferred_record.take()
+    }
 }
 
 /// Read-only bridge and navigation inputs for one actor update.
@@ -154,7 +174,7 @@ pub fn update_black_hole_presentation_actor<
             state.target_presentation_cleared = true;
             state.presentation = BlackHoleActorPresentation::Entry;
             if backend.update_line(line, line_playback)? == PresentationLineOutcome::Completed {
-                state.deferred_record = Some(state.target_record.clone());
+                state.deferred_record = state.target_record.clone();
                 state.deferred_action = BlackHoleDeferredAction::Travel;
                 state.transition_phase_reset = true;
                 line.flags = empty_line();
@@ -181,7 +201,7 @@ pub fn update_black_hole_presentation_actor<
     else {
         return Ok(BlackHolePresentationActorOutcome::NoBlackHoleTarget);
     };
-    state.target_record = target.record.clone();
+    state.target_record = Some(target.record.clone());
 
     if !line_playback.reverse && !context.camera_state_enables_absent_line {
         return Ok(BlackHolePresentationActorOutcome::Inactive);
@@ -355,7 +375,7 @@ mod tests {
             };
             let deferred_written = vector.deferred_type_after == 198;
             let mut state = BlackHolePresentationActorState {
-                target_record: target_before,
+                target_record: Some(target_before),
                 deferred_record: Some(if deferred_written {
                     TEST_PREVIOUS_DEFERRED_RECORD
                 } else {
@@ -420,7 +440,8 @@ mod tests {
                 vector.name
             );
             assert_eq!(
-                state.target_record, vector.target_record_after,
+                state.target_record,
+                Some(vector.target_record_after),
                 "{}",
                 vector.name
             );

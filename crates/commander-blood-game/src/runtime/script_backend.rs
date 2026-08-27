@@ -323,6 +323,23 @@ impl RuntimeScriptSystem {
         };
     }
 
+    /// Queue the complete typed C6 action emitted by black-hole presentation.
+    pub fn defer_travel_target(&mut self, target: ScriptObjectId) {
+        self.service.presentation_state_mut().deferred = ScriptDeferredRecord::Complete {
+            record: ScriptActionRecord::Travel(target),
+            actionable: true,
+        };
+    }
+
+    /// Release the C2 scene gate and its secondary request after actor 3 closes it.
+    pub fn finish_actor_scene_presentation(&mut self) {
+        self.service.presentation_state_mut().c2_gate_active = false;
+        self.dispatch
+            .text_presentation
+            .request_flags
+            .clear_secondary_request();
+    }
+
     /// Borrow persistent semantic state produced by C1 through C8 actions.
     pub const fn action_state(&self) -> &ScriptActionState {
         self.service.action_state()

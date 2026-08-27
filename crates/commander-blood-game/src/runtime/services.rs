@@ -9,7 +9,7 @@ use commander_blood_formats::bloodprg::{BloodprgFontResources, decode_bloodprg_b
 use commander_blood_formats::descript::DescriptBackgroundSlot;
 use commander_blood_formats::instruction::ScriptTextWord;
 use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
-use commander_blood_formats::script::{ScriptObjectId, ScriptWordId};
+use commander_blood_formats::script::{ScriptObjectId, ScriptObjectKind, ScriptWordId};
 use commander_blood_formats::snd::VocPcm;
 use sdl3::AudioSubsystem;
 use sdl3::video::Window;
@@ -21,17 +21,17 @@ use crate::native::bloodprg::{
     BridgePageBackend, BridgePageState, BridgePageTarget, BridgePaletteAdjustment, BridgeScene,
     BridgeSceneFrame, BridgeSceneInput, BridgeScreenInitializationBackend,
     BridgeScreenInitializationState, BridgeSpriteCommitOutcome, BridgeSteeringInteraction,
-    CdAudioPreparationOutcome, CdAudioState, ChoiceListConfig, ChoiceListFrame, ChoiceListPointer,
-    ChoiceListState, ConfirmDialogOutcome, ConfirmDialogState, DescriptMusicSelectionOutcome,
-    DescriptRecordApplication, DirtyRegionCopyOutcome, FontPoint, FontVerticalBand, GameFontFace,
-    GameLifecycleState, GamePresentationOwner, GameSceneLink, IndexedGamePalette,
-    InlineMenuRevealOutcome, InlineMenuTextMetrics, InputAction, LoadedSoundBank,
-    Manu3HandFrameContext, Manu3HandFrameState, NAV_ACTOR_SLOT_COUNT, NavActorSlot,
-    OriginalSaveGame, PbmDecodeResult, PointerButtonEdges, PointerButtons, PointerSample,
-    PresentationBridgeMode, PresentationChoiceNumber, PresentationHitAreas,
-    PresentationHitRectangle, PresentationHitSelection, PresentationHoverOutcome,
-    PresentationHoverState, PresentationPresentPolicy, PresentationResourceId,
-    PresentationResourceSequenceOutcome, PresentationSceneDispatchOutcome,
+    CameraPageFlipOutcome, CdAudioPreparationOutcome, CdAudioState, ChoiceListConfig,
+    ChoiceListFrame, ChoiceListPointer, ChoiceListState, ConfirmDialogOutcome, ConfirmDialogState,
+    DescriptMusicSelectionOutcome, DescriptRecordApplication, DirtyRegionCopyOutcome, FontPoint,
+    FontVerticalBand, GameFontFace, GameLifecycleState, GamePresentationOwner, GameSceneLink,
+    IndexedGamePalette, InlineMenuRevealOutcome, InlineMenuTextMetrics, InputAction,
+    LoadedSoundBank, Manu3HandFrameContext, Manu3HandFrameState, NAV_ACTOR_SLOT_COUNT,
+    NavActorSlot, NavActorSlotUpdateOutcome, OriginalSaveGame, PbmDecodeResult, PointerButtonEdges,
+    PointerButtons, PointerSample, PresentationBridgeMode, PresentationChoiceNumber,
+    PresentationHitAreas, PresentationHitRectangle, PresentationHitSelection,
+    PresentationHoverOutcome, PresentationHoverState, PresentationPresentPolicy,
+    PresentationResourceId, PresentationResourceSequenceOutcome, PresentationSceneDispatchOutcome,
     PresentationScreenOutcome, PresentationScreenState, PresentationWordChoiceOutcome,
     SCENE_PALETTE_CLEAR_COLOR_COUNT, SHIP_CAMERA_RESET, SceneTransitionState, ScriptClock,
     ScriptFrameOutcome, ScriptPresentationEntity, ScriptPresentationScanState, ScriptProfileId,
@@ -49,6 +49,7 @@ use crate::native::bloodprg::{
 use crate::native::manu3::animation::CursorPosition;
 use crate::native::random::BloodPrng;
 
+use super::bridge_actors::RuntimeBridgeActors;
 use super::bridge_console::RuntimeBridgeConsole;
 use super::choice_list::{
     RuntimeChoiceListStyle, draw_choice_list_rows, prepare_choice_list_frame,
@@ -85,6 +86,8 @@ const NO_BRIDGE_HORIZONTAL_MOTION: i32 = 0;
 const SHIP_HUD_PALETTE_TRANSITION_INCREMENT: u16 = 10;
 const NAVIGATION_BACKGROUND_SLOT: u8 = 1;
 const SHIP_NAVIGATION_ACTIVE_FLAGS: u16 = 9;
+const SHIP_PRESENTATION_HUD_FLAG: u16 = 8;
+const BRIDGE_REDRAW_REQUESTED: u8 = 1;
 const SHIP_NAVIGATION_STATUS_LINE: u16 = 3;
 const NAVIGATION_PALETTE_TRANSITION_INCREMENT: u16 = 10;
 const PRESENTATION_CHOICE_MANU3_ANIMATION: u16 = 14;
@@ -95,6 +98,9 @@ const PRIMARY_PRESENTATION_ACTOR_SLOT: usize = 0;
 const SECONDARY_PRESENTATION_ACTOR_SLOT: usize = 2;
 const DISABLED_PRESENTATION_HIT_RECT: PresentationHitRectangle =
     PresentationHitRectangle::new([-1; 2], [-1; 2]);
+const BRIDGE_ACTOR_PALETTE_COLOR_COUNT: usize = 192;
+const CAMERA_PAGE_SHIP_ACTIVE_RESULT: u16 = 21;
+const CAMERA_PAGE_TOGGLE_BIT: u16 = 2;
 
 /// Owned flat services that concrete `GameLifecycleHost` methods delegate to.
 ///
@@ -118,6 +124,7 @@ pub struct ModernGameServices<'window> {
     bridge_presentation_mode: Option<PresentationBridgeMode>,
     presentation_hover: PresentationHoverState<BridgeActorPresentationState>,
     nav_actor_slots: [NavActorSlot; NAV_ACTOR_SLOT_COUNT],
+    bridge_actors: Option<RuntimeBridgeActors>,
     bridge_console: Option<RuntimeBridgeConsole>,
     presentation_screen: Option<RuntimePresentationScreen>,
     presentation_word_choice: Option<RuntimePresentationWordChoice>,
@@ -185,6 +192,7 @@ impl<'window> ModernGameServices<'window> {
                 BridgeActorPresentationState::Unchanged,
             ),
             nav_actor_slots: [NavActorSlot::default(); NAV_ACTOR_SLOT_COUNT],
+            bridge_actors: Some(RuntimeBridgeActors::default()),
             bridge_console: Some(bridge_console),
             presentation_screen: Some(presentation_screen),
             presentation_word_choice: Some(RuntimePresentationWordChoice::default()),
@@ -1154,6 +1162,82 @@ impl<'window> ModernGameServices<'window> {
         self.scripts.defer_actor_presentation(target);
     }
 
+    /// Publish the complete deferred C6 action emitted by black-hole presentation.
+    pub(super) fn defer_ship_travel_target(&mut self, target: ScriptObjectId) {
+        self.scripts.defer_travel_target(target);
+    }
+
+    /// Return the C3 owner waiting for radio actor 4 to complete its line.
+    pub(super) const fn pending_ship_presentation_owner(&self) -> Option<ScriptObjectId> {
+        self.scripts.action_state().pending_presentation_owner
+    }
+
+    /// Clear the C3 owner after radio actor 4 promotes it to a C4 record.
+    pub(super) fn clear_pending_ship_presentation_owner(&mut self) {
+        self.scripts.action_state_mut().pending_presentation_owner = None;
+    }
+
+    /// Synchronize the exact slot-4 active-only gate consumed by C6 travel.
+    pub(super) fn set_ship_travel_actor_ready(&mut self, ready: bool) {
+        self.scripts.action_state_mut().travel_actor_busy = ready;
+    }
+
+    /// Consume C6's write to the flag byte aliased by bridge actor slot 4.
+    pub(super) fn take_ship_travel_actor_clear_requested(&mut self) -> bool {
+        std::mem::take(&mut self.scripts.action_state_mut().travel_actor_clear_requested)
+    }
+
+    /// Reset C6 travel to its first phase before publishing a new record.
+    pub(super) fn reset_ship_travel_phase(&mut self) {
+        let action = self.scripts.action_state_mut();
+        action.travel_phase = Default::default();
+        action.travel_actor_clear_requested = false;
+    }
+
+    /// Return whether the shared camera transition still owns bridge frames.
+    pub(super) const fn bridge_camera_transition_active(&self) -> bool {
+        self.scripts.action_state().camera_transition_in_progress
+    }
+
+    /// Arm the concrete camera approach used by actor 0 or actor 5.
+    pub(super) fn start_bridge_camera_transition(&mut self) {
+        self.scripts
+            .action_state_mut()
+            .camera_transition_in_progress = true;
+        self.runtime.start_camera_transition();
+    }
+
+    /// Return whether the camera page currently replaces the ordinary bridge.
+    pub(super) const fn bridge_camera_view_active(&self) -> bool {
+        self.scripts.action_state().camera_view_active
+    }
+
+    /// Publish camera-page ownership after actor 5 toggles it.
+    pub(super) fn set_bridge_camera_view_active(&mut self, active: bool) {
+        self.scripts.action_state_mut().camera_view_active = active;
+    }
+
+    /// Resolve Arche's exact current navigation link and decoded object kind.
+    pub(super) fn current_arche_navigation_target(
+        &self,
+    ) -> Result<(ScriptObjectId, ScriptObjectKind)> {
+        let profile = self
+            .runtime
+            .current_profile()
+            .context("bridge actors require a loaded BloodScript profile")?;
+        let arche = profile
+            .builtins()
+            .archetype
+            .context("loaded BloodScript profile has no Arche object")?;
+        let (target, _) = ship_hud_arche_link(profile.state(), arche)?;
+        let kind = profile
+            .state()
+            .object(target)
+            .with_context(|| format!("Arche navigation target {target:?} is absent"))?
+            .kind;
+        Ok((target, kind))
+    }
+
     /// Return the current typed ship target selected by script or HUD state.
     pub fn current_ship_navigation_target(&self) -> Result<ScriptObjectId> {
         self.scripts
@@ -1383,6 +1467,37 @@ impl<'window> ModernGameServices<'window> {
         Ok(())
     }
 
+    /// Flatten the first 192 live VGA colors copied by bridge actor 2.
+    pub(super) fn bridge_actor_live_palette(
+        &self,
+    ) -> [u8; BRIDGE_ACTOR_PALETTE_COLOR_COUNT * RGB_COMPONENT_COUNT] {
+        let mut bytes = [u8::MIN; BRIDGE_ACTOR_PALETTE_COLOR_COUNT * RGB_COMPONENT_COUNT];
+        for (destination, color) in bytes.chunks_exact_mut(RGB_COMPONENT_COUNT).zip(
+            self.runtime
+                .live_palette()
+                .iter()
+                .take(BRIDGE_ACTOR_PALETTE_COLOR_COUNT),
+        ) {
+            destination.copy_from_slice(color);
+        }
+        bytes
+    }
+
+    /// Commit actor 2's 192-color snapshot to the retained bridge palette.
+    pub(super) fn apply_bridge_actor_palette(
+        &mut self,
+        bytes: &[u8; BRIDGE_ACTOR_PALETTE_COLOR_COUNT * RGB_COMPONENT_COUNT],
+    ) {
+        for (color, source) in self
+            .bridge_palette
+            .iter_mut()
+            .take(BRIDGE_ACTOR_PALETTE_COLOR_COUNT)
+            .zip(bytes.chunks_exact(RGB_COMPONENT_COUNT))
+        {
+            color.copy_from_slice(source);
+        }
+    }
+
     /// Configure the original bridge-panorama-to-black full-palette transition.
     pub fn configure_navigation_bridge_palette_transition(&mut self) -> Result<()> {
         self.palette_transition
@@ -1589,6 +1704,34 @@ impl<'window> ModernGameServices<'window> {
             .state_mut()
             .set_active(active);
         Ok(())
+    }
+
+    /// Synchronize the shared bridge-actor redraw bit with the panel owner.
+    pub(super) fn set_bridge_actor_redraw_requested(&mut self, requested: bool) -> Result<()> {
+        self.presentation_screen
+            .as_mut()
+            .context("presentation screen is already being updated")?
+            .state_mut()
+            .set_redraw_requested(requested);
+        Ok(())
+    }
+
+    /// Finish the C2 scene queue through the state owners used by modern frames.
+    pub(super) fn finish_bridge_actor_scene_presentation(
+        &mut self,
+        lifecycle: &mut GameLifecycleState,
+    ) {
+        self.finish_presentation_sequence();
+        if self.ship_presentation.flags & SHIP_PRESENTATION_HUD_FLAG != u16::MIN {
+            self.ship_presentation.bridge_redraw_pending = BRIDGE_REDRAW_REQUESTED;
+        }
+        lifecycle.presentation.active_line = None;
+        lifecycle.presentation.c2_presentation_gate = false;
+        lifecycle
+            .presentation
+            .request_flags
+            .clear_secondary_request();
+        self.scripts.finish_actor_scene_presentation();
     }
 
     /// Rebuild the retained bridge surface and arm the startup reverse panel.
@@ -2289,6 +2432,43 @@ impl<'window> ModernGameServices<'window> {
             .expect("rendered bridge frame was retained"))
     }
 
+    /// Run the recovered page flip and preserve its low-byte camera toggle bit.
+    pub(super) fn flip_bridge_camera_page(
+        &mut self,
+        ship_active: bool,
+    ) -> Result<CameraPageFlipOutcome> {
+        let panorama_frame = self.bridge_view_frame()? as u16;
+        let mut page_state = BridgePageState {
+            palette_dirty: self.bridge_screen.palette_dirty,
+            transparent_zero: self.bridge_screen.transparent_zero,
+            dirty_copy_requested: self.bridge_screen.dirty_copy_requested,
+        };
+        let palette_refresh_in_progress = self.bridge_screen.palette_refresh_in_progress;
+        {
+            let mut backend = RuntimeBridgeScreenBackend {
+                services: self,
+                ship_active,
+                palette_refresh_in_progress,
+            };
+            render_bridge_page(ship_active, panorama_frame, &mut page_state, &mut backend)
+                .context("flipping the bridge camera page")?;
+        }
+        self.bridge_screen.palette_dirty = page_state.palette_dirty;
+        self.bridge_screen.transparent_zero = page_state.transparent_zero;
+        self.bridge_screen.dirty_copy_requested = page_state.dirty_copy_requested;
+
+        let native_result = if ship_active {
+            CAMERA_PAGE_SHIP_ACTIVE_RESULT
+        } else {
+            panorama_frame
+        };
+        Ok(if native_result & CAMERA_PAGE_TOGGLE_BIT != u16::MIN {
+            CameraPageFlipOutcome::ToggleCameraView
+        } else {
+            CameraPageFlipOutcome::KeepCurrentView
+        })
+    }
+
     /// Presentation band selected from the current authored panorama frame.
     pub const fn bridge_presentation_mode(&self) -> Option<PresentationBridgeMode> {
         self.bridge_presentation_mode
@@ -2323,6 +2503,22 @@ impl<'window> ModernGameServices<'window> {
             BridgeActorPresentationState::PresentationHover,
             &mut self.presentation_hover,
         )
+    }
+
+    /// Advance all six executable-authored bridge actor slots in native order.
+    pub fn update_runtime_bridge_actors(
+        &mut self,
+        lifecycle: &mut GameLifecycleState,
+    ) -> Result<NavActorSlotUpdateOutcome> {
+        let mut actors = self
+            .bridge_actors
+            .take()
+            .context("bridge actor update is reentrant")?;
+        let mut slots = std::mem::take(&mut self.nav_actor_slots);
+        let outcome = actors.update(self, lifecycle, &mut slots);
+        self.nav_actor_slots = slots;
+        self.bridge_actors = Some(actors);
+        outcome.context("updating recovered bridge actors")
     }
 
     /// Prepare a bridge frame from current steering without consuming host input.
@@ -2407,6 +2603,15 @@ impl<'window> ModernGameServices<'window> {
             .seek_requested())
     }
 
+    /// Return the current automatic-seek arc retained by the bridge scene.
+    pub(super) fn bridge_seek_target_arc(&self) -> Result<u16> {
+        Ok(self
+            .bridge_scene
+            .as_ref()
+            .context("bridge scene has not been initialized")?
+            .seek_target_arc())
+    }
+
     /// Advance the recovered bridge-console dispatcher and its active submenu.
     pub fn update_runtime_bridge_console(&mut self, state: &mut GameLifecycleState) -> Result<()> {
         let mut console = self
@@ -2416,6 +2621,13 @@ impl<'window> ModernGameServices<'window> {
         let outcome = console.update(self, state);
         self.bridge_console = Some(console);
         outcome
+    }
+
+    /// Return whether a bridge-console row retains native selection ownership.
+    pub(super) fn bridge_console_item_selected(&self) -> bool {
+        self.bridge_console
+            .as_ref()
+            .is_some_and(RuntimeBridgeConsole::selected_item_active)
     }
 
     /// Advance the text-speed choice at its recovered main-loop position.
@@ -2774,6 +2986,10 @@ mod tests {
     };
     const HYPERSPACE_PRESENTATION_LINE: PresentationResourceId = PresentationResourceId::new(6);
     const MAXIMUM_CAMERA_TRANSITION_FRAMES: usize = 2_048;
+    const TEST_OUTPUT_SIZE: [f32; 2] = [640.0, 480.0];
+    const TEST_LOGICAL_TO_HOST_SCALE: [f32; 2] = [2.0, 2.4];
+    const FIRST_ADVANCED_PRESENTATION_FRAME: u16 = 1;
+    const AUTHORED_RADIO_TERMINAL_FRAME: u16 = 11;
     const AUTHORED_ACTOR_RESOURCES: [u16; NAV_ACTOR_SLOT_COUNT] = [17, 13, 15, 16, 19, 18];
     const AUTHORED_ACTOR_TRANSITION_RESOURCES: [Option<u16>; NAV_ACTOR_SLOT_COUNT] =
         [None, None, None, None, Some(21), Some(20)];
@@ -2959,12 +3175,24 @@ mod tests {
             .builtins()
             .horn
             .unwrap();
-        let bridge_frame = services
-            .render_bridge_frame(BridgeSceneInput::default())
-            .unwrap();
-        let station_index = bridge_frame.metadata.station.index();
-        let station_orb = bridge_frame.metadata.orb_box;
-        assert!(!bridge_frame.starfield.plotted.is_empty());
+        let mut lifecycle = GameLifecycleState::default();
+        let (station_index, station_orb, plotted_star_count) = {
+            let bridge_frame = services
+                .render_bridge_frame(BridgeSceneInput::default())
+                .unwrap();
+            (
+                bridge_frame.metadata.station.index(),
+                bridge_frame.metadata.orb_box,
+                bridge_frame.starfield.plotted.len(),
+            )
+        };
+        assert_eq!(
+            services
+                .update_runtime_bridge_actors(&mut lifecycle)
+                .unwrap(),
+            NavActorSlotUpdateOutcome::Updated
+        );
+        assert_ne!(plotted_star_count, usize::MIN);
         assert_eq!(
             services.bridge_presentation_mode(),
             Some(PresentationBridgeMode::FirstBand)
@@ -2977,12 +3205,69 @@ mod tests {
                 orb_box.size.map(|extent| extent as i16),
             ))
         );
+        let actor_hit_region = services.nav_actor_slots[station_index]
+            .hit_region
+            .expect("the initial bridge station must have an actor hit region");
+        services
+            .scripts
+            .action_state_mut()
+            .pending_presentation_owner = Some(horn);
+        let actor_pointer = services.input_mut().poll_pointer(
+            TEST_OUTPUT_SIZE,
+            [
+                f32::from(actor_hit_region.origin()[0]) * TEST_LOGICAL_TO_HOST_SCALE[0],
+                f32::from(actor_hit_region.origin()[1]) * TEST_LOGICAL_TO_HOST_SCALE[1],
+            ],
+            PointerButtons::from_bits(PointerButton::Primary as u16),
+        );
+        assert!(actor_hit_region.contains(actor_pointer.position));
+        assert!(
+            services.nav_actor_slots[station_index].flags.active,
+            "station {station_index} has inactive actor flags {:?}",
+            services.nav_actor_slots[station_index].flags
+        );
+        lifecycle.primary_pointer_pressed = true;
+        assert_eq!(
+            services
+                .update_runtime_bridge_actors(&mut lifecycle)
+                .unwrap(),
+            NavActorSlotUpdateOutcome::Updated
+        );
+        assert!(services.nav_actor_slots[station_index].flags.auto_seek);
+        if services.bridge_seek_requested().unwrap() {
+            services
+                .render_bridge_frame(BridgeSceneInput {
+                    interaction: BridgeSteeringInteraction::MenuEngaged,
+                    ..BridgeSceneInput::default()
+                })
+                .unwrap();
+            assert!(!services.bridge_seek_requested().unwrap());
+            assert_eq!(
+                services
+                    .update_runtime_bridge_actors(&mut lifecycle)
+                    .unwrap(),
+                NavActorSlotUpdateOutcome::Updated
+            );
+        }
+        assert!(
+            services.nav_actor_slots[station_index]
+                .flags
+                .clear_mouse_before_hit
+        );
+        assert_eq!(
+            services.nav_actor_slots[station_index].line.terminal_frame,
+            AUTHORED_RADIO_TERMINAL_FRAME
+        );
+        assert_eq!(
+            services.nav_actor_slots[station_index].line.frame,
+            FIRST_ADVANCED_PRESENTATION_FRAME
+        );
+        services.clear_pending_ship_presentation_owner();
         services.input_mut().poll_pointer(
             [320.0, 200.0],
             [200.0, 80.0],
             PointerButtons::from_bits(PointerButton::Primary as u16),
         );
-        let mut lifecycle = GameLifecycleState::default();
         lifecycle.primary_pointer_pressed = true;
         services
             .update_runtime_bridge_console(&mut lifecycle)

@@ -35,6 +35,12 @@ pub struct RadioActorState<RecordLink> {
     redraw_requested: bool,
 }
 
+impl<RecordLink> Default for RadioActorState<RecordLink> {
+    fn default() -> Self {
+        Self::new(None, None, false)
+    }
+}
+
 impl<RecordLink> RadioActorState<RecordLink> {
     /// Build state from typed pending and deferred VM record relationships.
     pub fn new(
@@ -74,6 +80,21 @@ impl<RecordLink> RadioActorState<RecordLink> {
     /// Return whether the bridge needs a redraw.
     pub const fn redraw_requested(&self) -> bool {
         self.redraw_requested
+    }
+
+    /// Synchronize the VM-owned pending presentation record before an update.
+    pub fn set_pending_record(&mut self, pending_record: Option<RecordLink>) {
+        self.pending_record = pending_record;
+    }
+
+    /// Synchronize the shared bridge redraw bit before this actor runs.
+    pub fn set_redraw_requested(&mut self, redraw_requested: bool) {
+        self.redraw_requested = redraw_requested;
+    }
+
+    /// Consume the record promoted to deferred C4 ownership by this actor.
+    pub fn take_deferred_record(&mut self) -> Option<RecordLink> {
+        self.deferred_record.take()
     }
 }
 

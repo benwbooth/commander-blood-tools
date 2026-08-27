@@ -20,15 +20,16 @@ use crate::native::bloodprg::{
     OriginalResourceCache, OriginalSaveSlotDirectory, PaletteRemapTable,
     PaletteResourceLoadOutcome, PaletteResourceStorage, PaletteResourceTarget, PauseHudRefresh,
     PbmDecodeOptions, PbmDecodeResult, PbmPaletteUpdate, PbmTransparency, PresentationChoiceNumber,
-    RasterPoint, RasterRectOutcome, ResourceId, ScriptPresentationEntity, ScriptProfileId,
-    ScriptProfileLoadOutcome, ScriptProfileManager, ShipDepthBandLayout, ShipHudState,
-    ShipViewArtworkSelection, ShipViewEntityId, activate_bridge_sprite_from_retained_framebuffer,
-    advance_bridge_sprite_state, build_banked_tint_table, build_palette_blend_remap_table,
-    build_pause_hud_refresh, commit_bridge_sprite_dirty_range, copy_dirty_regions_to_display,
-    decode_chart_back_buffer, decode_orx_back_buffer, decode_pbm_image,
-    draw_presentation_choice_number, draw_small_font_text, fill_display_band,
-    fill_framebuffer_rect, mark_bridge_sprite_range_dirty, populate_bridge_sprite_from_cache,
-    rasterize_bridge_sprite_range, select_ship_view_artwork, update_name_area_effect,
+    PresentationLineBackend, PresentationResourceId, RasterPoint, RasterRectOutcome, ResourceId,
+    ScriptPresentationEntity, ScriptProfileId, ScriptProfileLoadOutcome, ScriptProfileManager,
+    ShipDepthBandLayout, ShipHudState, ShipViewArtworkSelection, ShipViewEntityId,
+    activate_bridge_sprite_from_retained_framebuffer, advance_bridge_sprite_state,
+    build_banked_tint_table, build_palette_blend_remap_table, build_pause_hud_refresh,
+    commit_bridge_sprite_dirty_range, copy_dirty_regions_to_display, decode_chart_back_buffer,
+    decode_orx_back_buffer, decode_pbm_image, draw_presentation_choice_number,
+    draw_small_font_text, fill_display_band, fill_framebuffer_rect, mark_bridge_sprite_range_dirty,
+    populate_bridge_sprite_from_cache, rasterize_bridge_sprite_range, select_ship_view_artwork,
+    update_name_area_effect,
 };
 use crate::native::manu3::model::Manu3Model;
 
@@ -887,6 +888,64 @@ impl OriginalGameRuntime {
     /// Mutably borrow the currently loaded playable profile for VM execution.
     pub fn current_profile_mut(&mut self) -> Option<&mut LoadedScriptProfile> {
         self.profiles.current_mut()
+    }
+}
+
+impl PresentationLineBackend for OriginalGameRuntime {
+    type Error = anyhow::Error;
+
+    fn load_resource(&mut self, resource: PresentationResourceId) -> Result<u16> {
+        let resource = ResourceId::new(resource.get());
+        self.resource_cache
+            .load_by_id(
+                self.data.resource_store(),
+                self.data.resource_catalog(),
+                resource,
+            )
+            .with_context(|| {
+                format!("loading bridge presentation resource {}", resource.value())
+            })?;
+        self.resource_cache
+            .presentation_terminal_frame(resource)
+            .with_context(|| {
+                format!(
+                    "reading bridge presentation resource {} frame count",
+                    resource.value()
+                )
+            })?
+            .with_context(|| {
+                format!(
+                    "bridge presentation resource {} was not cached",
+                    resource.value()
+                )
+            })
+    }
+
+    fn draw_resource_frame(
+        &mut self,
+        resource: PresentationResourceId,
+        frame: u16,
+        position: [u16; 2],
+    ) -> Result<()> {
+        let resource = ResourceId::new(resource.get());
+        populate_bridge_sprite_from_cache(
+            &self.resource_cache,
+            &mut self.bridge_sprite_entities,
+            DIALOGUE_OVERLAY_ENTITY_INDEX,
+            resource,
+            BridgeSpritePosition {
+                x: position[0],
+                y: position[1],
+            },
+            usize::from(frame),
+        )
+        .with_context(|| {
+            format!(
+                "drawing bridge presentation resource {} frame {frame}",
+                resource.value()
+            )
+        })?;
+        Ok(())
     }
 }
 

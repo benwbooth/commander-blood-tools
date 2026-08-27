@@ -10,6 +10,9 @@ use crate::assets::OriginalResourceStore;
 
 use super::IndexedGamePalette;
 use super::presentation_resource::{PaletteBlockDecodeError, decode_palette_blocks};
+use super::sprite_geometry::{
+    BridgeSpriteActivationError, bridge_sprite_presentation_terminal_frame,
+};
 
 /// File position of the fixed-width resource-name table in `BLOODPRG.EXE`.
 pub const BLOODPRG_RESOURCE_CATALOG_FILE_OFFSET: usize = 0x00CDF4;
@@ -244,6 +247,16 @@ impl OriginalResourceCache {
     /// `0x005320`; callers receive a checked slice instead of machine state.
     pub fn resolve(&self, resource: ResourceId) -> Option<&[u8]> {
         self.entries.get(&resource).map(|entry| &*entry.bytes)
+    }
+
+    /// Read the raw frame-count word used as a presentation terminal marker.
+    pub fn presentation_terminal_frame(
+        &self,
+        resource: ResourceId,
+    ) -> Result<Option<u16>, BridgeSpriteActivationError> {
+        self.resolve(resource)
+            .map(bridge_sprite_presentation_terminal_frame)
+            .transpose()
     }
 
     /// Return the original allocator's 16-byte-rounded size metadata.

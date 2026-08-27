@@ -60,6 +60,18 @@ pub struct HyperjumpPresentationActorState<RecordLink> {
     pub transition_pending: bool,
 }
 
+impl<RecordLink> Default for HyperjumpPresentationActorState<RecordLink> {
+    fn default() -> Self {
+        Self {
+            deferred_record: None,
+            deferred_action: HyperjumpDeferredAction::default(),
+            target_presentation_cleared: false,
+            presentation: HyperjumpActorPresentation::default(),
+            transition_pending: false,
+        }
+    }
+}
+
 /// Dynamic panel, camera, line, entity, and audio services used by this actor.
 pub trait HyperjumpPresentationActorBackend: PresentationLineStepper {
     /// Return the current location-panel ownership and playback gates.

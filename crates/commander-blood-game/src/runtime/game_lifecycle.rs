@@ -339,6 +339,7 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
             pointer_buttons: pointer.buttons.bits(),
             interaction: Self::bridge_interaction(state),
         })?;
+        self.services.update_runtime_bridge_actors(state)?;
         self.services.update_runtime_bridge_console(state)?;
         self.services
             .update_presentation_screen(&self.current_scene_link, state.primary_pointer_pressed)?;

@@ -69,7 +69,7 @@ pub trait PresentationLineBackend {
         resource: PresentationResourceId,
         frame: u16,
         position: [u16; 2],
-    );
+    ) -> Result<(), Self::Error>;
 }
 
 /// Callable presentation-line step used by higher-level actor handlers.
@@ -133,7 +133,7 @@ pub fn update_presentation_line<Backend: PresentationLineBackend>(
         line.flags.resource_loaded = true;
     }
 
-    backend.draw_resource_frame(line.resource, line.frame, line.position);
+    backend.draw_resource_frame(line.resource, line.frame, line.position)?;
     let completed = if playback.reverse {
         if line.frame == u16::MIN {
             true
@@ -203,9 +203,10 @@ mod tests {
             _resource: PresentationResourceId,
             frame: u16,
             _position: [u16; 2],
-        ) {
+        ) -> Result<(), Self::Error> {
             self.calls.push(String::from("entity_setter"));
             self.drawn_frame = Some(frame);
+            Ok(())
         }
     }
 

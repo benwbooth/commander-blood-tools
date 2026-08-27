@@ -58,6 +58,10 @@ impl RuntimeBridgeConsole {
         }
     }
 
+    pub(super) const fn selected_item_active(&self) -> bool {
+        self.console.selected.is_some()
+    }
+
     pub(super) fn update(
         &mut self,
         services: &mut ModernGameServices<'_>,
