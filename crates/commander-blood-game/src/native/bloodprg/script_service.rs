@@ -70,11 +70,12 @@ pub trait ScriptExecutionBackend {
         entity: ScriptPresentationEntity,
     ) -> Result<(), Self::Error>;
 
-    /// Return whether an object has a descriptor record.
-    fn description_available(
+    /// Apply an action-selected object's descriptor record when present.
+    fn apply_action_description(
         &mut self,
         object: ScriptObjectId,
         name: &[u8],
+        text: &mut TextPresentationState,
     ) -> Result<bool, Self::Error>;
 
     /// Restart navigation music after a descriptor-backed target change.
@@ -457,7 +458,6 @@ impl<Backend: ScriptExecutionBackend> ScriptPresentationScanHost<super::ScriptPr
         let navigation = self.backend.navigation_context();
         let action_records = &mut context.records.action_records;
         let aboard_objects = context.records.record_runtime.aboard_objects_mut();
-        let request_flags = &mut self.dispatch.text_presentation.request_flags;
         let cod_text_states = &mut self.dispatch.text_instructions;
         let mut host = ActionExternalHost {
             backend: self.backend,
@@ -473,7 +473,7 @@ impl<Backend: ScriptExecutionBackend> ScriptPresentationScanHost<super::ScriptPr
                 state: context.state,
                 records: action_records,
                 aboard_objects,
-                request_flags,
+                text: &mut self.dispatch.text_presentation,
                 presentation: context.presentation,
                 action: self.action,
                 owner: context.owner,
@@ -525,14 +525,18 @@ struct ActionExternalHost<'a, Backend> {
 impl<Backend: ScriptExecutionBackend> ScriptActionHost for ActionExternalHost<'_, Backend> {
     type Error = ScriptActionCallbackError<Backend::Error>;
 
-    fn description_available(&mut self, object: ScriptObjectId) -> Result<bool, Self::Error> {
+    fn apply_description(
+        &mut self,
+        object: ScriptObjectId,
+        text: &mut TextPresentationState,
+    ) -> Result<bool, Self::Error> {
         let name = self
             .directory
             .object(object)
             .map(commander_blood_formats::script::ScriptDirectoryEntry::name)
             .expect("action dispatch validates every referenced profile object");
         self.backend
-            .description_available(object, name)
+            .apply_action_description(object, name, text)
             .map_err(ScriptActionCallbackError::Backend)
     }
 
@@ -690,10 +694,11 @@ mod tests {
             Ok(())
         }
 
-        fn description_available(
+        fn apply_action_description(
             &mut self,
             object: ScriptObjectId,
             _name: &[u8],
+            _text: &mut TextPresentationState,
         ) -> Result<bool, Self::Error> {
             self.events.push(BackendEvent::DescriptionProbe(object));
             Ok(true)

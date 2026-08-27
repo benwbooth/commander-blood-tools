@@ -694,9 +694,16 @@ impl ScriptExecutionBackend for RuntimeScriptBackend {
         Ok(())
     }
 
-    fn description_available(&mut self, object: ScriptObjectId, name: &[u8]) -> Result<bool> {
+    fn apply_action_description(
+        &mut self,
+        object: ScriptObjectId,
+        name: &[u8],
+        text: &mut TextPresentationState,
+    ) -> Result<bool> {
         self.validate_object_name(object, name)?;
-        Ok(self.database.lookup(name).is_some())
+        let application = self.apply_description(name, true, text)?;
+        self.active_description_object = application.map(|_| object);
+        Ok(application.is_some())
     }
 
     fn restart_navigation_music(&mut self) -> Result<()> {
@@ -953,6 +960,51 @@ mod tests {
             backend.missing_background_resources(),
             &[Box::from(SHIPPED_MISSING_BACKGROUND)]
         );
+    }
+
+    #[test]
+    fn action_description_lookup_applies_location_video_for_shipped_profile_object() {
+        let Some(paths) = original_data_paths() else {
+            return;
+        };
+        let writable_root = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(paths, &writable_root.0).unwrap();
+        let mut scripts = RuntimeScriptSystem::new(&data, TEST_CLOCK);
+        let mut runtime = super::super::OriginalGameRuntime::new(data);
+        let mut text = TextPresentationState::default();
+
+        for profile_id in ScriptProfileId::all() {
+            scripts.load_profile(&mut runtime, profile_id).unwrap();
+            let objects = runtime
+                .current_profile()
+                .unwrap()
+                .directory()
+                .active_objects()
+                .map(|(object, entry)| (object, entry.name().to_vec()))
+                .collect::<Vec<_>>();
+
+            for (object, name) in objects {
+                let applied = scripts
+                    .backend_mut()
+                    .apply_action_description(object, &name, &mut text)
+                    .unwrap();
+                if applied
+                    && scripts
+                        .backend()
+                        .assets()
+                        .location_scene_video()
+                        .is_some()
+                {
+                    assert_eq!(
+                        scripts.backend().active_description_object(),
+                        Some(object)
+                    );
+                    return;
+                }
+            }
+        }
+
+        panic!("no shipped profile object applied a DESCRIPT location video");
     }
 
     #[test]

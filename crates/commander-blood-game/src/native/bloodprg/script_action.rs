@@ -14,7 +14,8 @@ use super::{
     AboardObjectRoster, PresentationRequestFlags, ScriptActionDispatch, ScriptActionDisposition,
     ScriptActionRecord, ScriptActionRecords, ScriptFieldSelector, ScriptNavigationError,
     ScriptObjectFlag, ScriptPresentationScanState, ScriptRecordStateNavigationContext,
-    insert_aboard_object, resolve_navigation_position, script_field_offset, set_object_flag,
+    TextPresentationState, insert_aboard_object, resolve_navigation_position, script_field_offset,
+    set_object_flag,
 };
 
 const SERIALIZED_WORD_SIZE: usize = size_of::<u16>();
@@ -123,8 +124,8 @@ pub struct ScriptActionContext<'a> {
     pub records: &'a mut ScriptActionRecords,
     /// Fixed-capacity roster replacing the native aboard-object offset array.
     pub aboard_objects: &'a mut AboardObjectRoster,
-    /// Presentation request flags shared with text and sequence scheduling.
-    pub request_flags: &'a mut PresentationRequestFlags,
+    /// Text and request state updated by action-triggered DESCRIPT records.
+    pub text: &'a mut TextPresentationState,
     /// Post-frame presentation state shared with the surrounding scan.
     pub presentation: &'a mut ScriptPresentationScanState,
     /// Action-specific ship, radio, and travel state.
@@ -146,8 +147,12 @@ pub trait ScriptActionHost {
     /// Callback failure.
     type Error;
 
-    /// Return whether an object name resolves to a DESCRIPT record.
-    fn description_available(&mut self, object: ScriptObjectId) -> Result<bool, Self::Error>;
+    /// Apply an object's DESCRIPT record and report whether it exists.
+    fn apply_description(
+        &mut self,
+        object: ScriptObjectId,
+        text: &mut TextPresentationState,
+    ) -> Result<bool, Self::Error>;
 
     /// Copy the ship band and restart streaming from the selected music path.
     fn restart_navigation_music(&mut self) -> Result<(), Self::Error>;
@@ -269,7 +274,7 @@ fn dispatch_navigation<Host: ScriptActionHost>(
     let ScriptActionContext {
         state,
         records,
-        request_flags,
+        text,
         presentation,
         action,
         owner,
@@ -308,7 +313,7 @@ fn dispatch_navigation<Host: ScriptActionHost>(
             true
         } else {
             let available = host
-                .description_available(related)
+                .apply_description(related, text)
                 .map_err(ScriptActionError::Host)?;
             if available && action.navigation_music_changed {
                 host.restart_navigation_music()
@@ -323,7 +328,7 @@ fn dispatch_navigation<Host: ScriptActionHost>(
             action.ship_navigation_mode = ScriptShipNavigationMode::TargetSelected;
             action.presentation_words_pending = false;
             presentation.word_choice_active = false;
-            *request_flags = PresentationRequestFlags::default();
+            text.request_flags = PresentationRequestFlags::default();
             presentation.c2_gate_active = false;
             action.ship_hud_refresh_requested = true;
             action.bridge_redraw_pending = false;
@@ -380,7 +385,7 @@ fn dispatch_aboard_request<Host: ScriptActionHost>(
     let ScriptActionContext {
         state,
         aboard_objects,
-        request_flags,
+        text,
         presentation,
         action,
         ..
@@ -397,17 +402,17 @@ fn dispatch_aboard_request<Host: ScriptActionHost>(
         });
     }
 
-    if !presentation.name_lookup_enabled && !request_flags.secondary_request_pending() {
+    if !presentation.name_lookup_enabled && !text.request_flags.secondary_request_pending() {
         if related_kind == ScriptObjectKind::Actor {
             presentation.c2_gate_active = false;
             action.active_line = Some(ScriptActionPresentationLine::CharacterAboard);
         } else if related_kind == ScriptObjectKind::InventoryItem
             && host
-                .description_available(related)
+                .apply_description(related, text)
                 .map_err(ScriptActionError::Host)?
         {
             presentation.c2_gate_active = false;
-            request_flags.request_secondary();
+            text.request_flags.request_secondary();
             action.active_line = Some(ScriptActionPresentationLine::InventoryAboard);
         }
     }
@@ -765,7 +770,11 @@ mod tests {
     impl ScriptActionHost for MockHost {
         type Error = &'static str;
 
-        fn description_available(&mut self, object: ScriptObjectId) -> Result<bool, Self::Error> {
+        fn apply_description(
+            &mut self,
+            object: ScriptObjectId,
+            _text: &mut TextPresentationState,
+        ) -> Result<bool, Self::Error> {
             self.calls.push(HostCall::Description(object));
             Ok(self.description_available)
         }
@@ -804,7 +813,7 @@ mod tests {
         state: ScriptState,
         records: ScriptActionRecords,
         aboard: AboardObjectRoster,
-        requests: PresentationRequestFlags,
+        text: TextPresentationState,
         presentation: ScriptPresentationScanState,
         action: ScriptActionState,
         objects: Vec<ScriptObjectId>,
@@ -925,7 +934,7 @@ mod tests {
                 state,
                 records: ScriptActionRecords::default(),
                 aboard: AboardObjectRoster::default(),
-                requests: PresentationRequestFlags::default(),
+                text: TextPresentationState::default(),
                 presentation: ScriptPresentationScanState::default(),
                 action: ScriptActionState::default(),
                 objects,
@@ -960,7 +969,7 @@ mod tests {
                     state: &mut self.state,
                     records: &mut self.records,
                     aboard_objects: &mut self.aboard,
-                    request_flags: &mut self.requests,
+                    text: &mut self.text,
                     presentation: &mut self.presentation,
                     action: &mut self.action,
                     owner,
@@ -1073,7 +1082,7 @@ mod tests {
         fixture.action.presentation_words_pending = true;
         fixture.presentation.word_choice_active = true;
         fixture.presentation.c2_gate_active = true;
-        fixture.requests = PresentationRequestFlags::decode(3);
+        fixture.text.request_flags = PresentationRequestFlags::decode(3);
         let mut host = MockHost::default();
         let target = fixture.objects[ANCHOR_INDEX];
 
@@ -1101,7 +1110,7 @@ mod tests {
         fixture.action.presentation_words_pending = true;
         fixture.presentation.word_choice_active = true;
         fixture.presentation.c2_gate_active = true;
-        fixture.requests = PresentationRequestFlags::decode(3);
+        fixture.text.request_flags = PresentationRequestFlags::decode(3);
         let mut host = MockHost {
             description_available: true,
             ..MockHost::default()
@@ -1121,7 +1130,7 @@ mod tests {
         assert!(!fixture.action.presentation_words_pending);
         assert!(!fixture.presentation.word_choice_active);
         assert!(!fixture.presentation.c2_gate_active);
-        assert_eq!(fixture.requests.bits(), u8::MIN);
+        assert_eq!(fixture.text.request_flags.bits(), u8::MIN);
         assert!(fixture.action.ship_hud_refresh_requested);
         assert_eq!(fixture.action.scene_vertical_offset, 55);
         assert_eq!(
@@ -1257,7 +1266,7 @@ mod tests {
             )
             .unwrap();
         assert_eq!(host.calls, [HostCall::Description(inventory)]);
-        assert!(fixture.requests.secondary_request_pending());
+        assert!(fixture.text.request_flags.secondary_request_pending());
         assert_eq!(
             fixture.action.active_line,
             Some(ScriptActionPresentationLine::InventoryAboard)
