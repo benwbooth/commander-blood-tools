@@ -11,7 +11,8 @@ use crate::native::bloodprg::{
     PresentationRenderTarget, PresentationResourceId, PresentationSceneContext,
     PresentationSceneDispatchOutcome, PresentationSceneDispatchState, PresentationSceneStatus,
     PresentationScreenBackend, PresentationScreenOutcome, PresentationScreenState, RasterNoiseMode,
-    RasterPoint, RasterSpanPaint, SequenceSubtitlePlayback, SequenceSubtitleRenderer,
+    RasterPoint, RasterSpanPaint, SceneTransitionLine, SceneTransitionState,
+    ScriptPresentationScanState, SequenceSubtitlePlayback, SequenceSubtitleRenderer,
     ShipPresentationState, build_banked_tint_table, draw_framebuffer_noise_rect, draw_rect_outline,
     fill_framebuffer_rect, present_sequence_subtitle, remap_framebuffer_rect,
     update_presentation_screen,
@@ -41,6 +42,15 @@ pub struct RuntimePresentationScreen {
     scene_state: PresentationSceneDispatchState<DescriptBackgroundSlot>,
     scene: RuntimePresentationScene,
     console_tint: PaletteRemapTable,
+}
+
+pub(super) struct RuntimeSceneTransitionDispatchContext<'state> {
+    pub transition: &'state mut SceneTransitionState,
+    pub presentation: &'state mut ScriptPresentationScanState,
+    pub lifecycle: &'state mut crate::native::bloodprg::GameLifecycleState,
+    pub active_record_related: ScriptObjectId,
+    pub scruter_jo_record: Option<ScriptObjectId>,
+    pub palette_transition_percent: &'state mut u16,
 }
 
 impl RuntimePresentationScreen {
@@ -124,6 +134,59 @@ impl RuntimePresentationScreen {
             scruter_jo_record,
         );
         export_ship_scene_state(&self.scene_state, ship);
+        outcome
+    }
+
+    /// Dispatch a contact transition through the shared scene and stream owner.
+    pub(super) fn dispatch_scene_transition<'window>(
+        &mut self,
+        services: &mut ModernGameServices<'window>,
+        context: RuntimeSceneTransitionDispatchContext<'_>,
+    ) -> Result<PresentationSceneDispatchOutcome> {
+        let RuntimeSceneTransitionDispatchContext {
+            transition,
+            presentation,
+            lifecycle,
+            active_record_related,
+            scruter_jo_record,
+            palette_transition_percent,
+        } = context;
+        let scene = &mut self.scene_state;
+        scene.presentation.active_line = transition.active_line.map(SceneTransitionLine::number);
+        scene.presentation.gate_flags = (scene.presentation.gate_flags & !PRESENTATION_ACTIVE_GATE)
+            | u8::from(presentation.active);
+        scene.presentation.bridge_redraw_pending = u8::from(transition.redraw_pending);
+        scene.presentation.request_flags = lifecycle.presentation.request_flags.bits();
+        scene.sequence_active = lifecycle.presentation.sequence_active;
+        scene.scene_gate = transition.scene_gate_active;
+        scene.dispatch_blocked = transition.bridge_blocked;
+        scene.present_policy.vertical_offset = usize::from(transition.image_vertical_offset);
+        scene.palette_transition_percent = *palette_transition_percent;
+
+        let outcome = self.scene.dispatch(
+            services,
+            scene,
+            Some(active_record_related),
+            scruter_jo_record,
+        );
+
+        transition.active_line = scene
+            .presentation
+            .active_line
+            .map(SceneTransitionLine::from_number);
+        transition.redraw_pending = scene.presentation.bridge_redraw_pending != u8::MIN;
+        transition.bridge_blocked = scene.dispatch_blocked;
+        presentation.active = scene.presentation.gate_flags & PRESENTATION_ACTIVE_GATE != u8::MIN;
+        lifecycle.presentation.request_flags =
+            crate::native::bloodprg::PresentationRequestFlags::decode(
+                scene.presentation.request_flags,
+            );
+        lifecycle.presentation.sequence_active = scene.sequence_active;
+        lifecycle.presentation.active_line = scene.presentation.active_line;
+        lifecycle.presentation.list_entry_metric = scene.entry_metric;
+        lifecycle.presentation.list_read_wrap_index = scene.read_wrap_index;
+        lifecycle.frame_presented |= scene.frame_presented;
+        *palette_transition_percent = scene.palette_transition_percent;
         outcome
     }
 

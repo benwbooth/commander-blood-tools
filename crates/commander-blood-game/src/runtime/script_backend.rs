@@ -15,11 +15,11 @@ use crate::native::bloodprg::{
     DescriptSoundBankLoader, GameLifecycleState, LoadedScriptProfile, ScriptAboardRecordContext,
     ScriptActionRecord, ScriptActionState, ScriptClock, ScriptDeferredRecord, ScriptDispatchState,
     ScriptEnvironmentActivity, ScriptExecutionBackend, ScriptExecutionService, ScriptFrameOutcome,
-    ScriptPresentationEntity, ScriptPresentationScanOutcome, ScriptProfileId,
-    ScriptProfileLoadOutcome, ScriptRecordStateNavigationContext, ScriptShipNavigationMode,
-    ScriptTransferContext, SequencePresentationState, SequenceRequestContext,
-    TextPresentationState, deferred_navigation_record, execute_loaded_script_frame,
-    lookup_and_apply_descript_record,
+    ScriptPresentationEntity, ScriptPresentationScanOutcome, ScriptPresentationScanState,
+    ScriptProfileId, ScriptProfileLoadOutcome, ScriptRecordStateNavigationContext,
+    ScriptShipNavigationMode, ScriptTransferContext, SequencePresentationState,
+    SequenceRequestContext, TextPresentationState, deferred_navigation_record,
+    execute_loaded_script_frame, lookup_and_apply_descript_record,
 };
 
 use super::{OriginalGameData, OriginalGameRuntime};
@@ -235,6 +235,16 @@ impl RuntimeScriptSystem {
         &mut self.dispatch.text_presentation
     }
 
+    /// Borrow the persistent presentation-scan state shared with scene coordinators.
+    pub const fn presentation_scan_state(&self) -> &ScriptPresentationScanState {
+        self.service.presentation_state()
+    }
+
+    /// Mutably borrow presentation-scan state for a frame-tail scene coordinator.
+    pub fn presentation_scan_state_mut(&mut self) -> &mut ScriptPresentationScanState {
+        self.service.presentation_state_mut()
+    }
+
     /// Publish one completed dialogue choice to the VM and clear its text owner.
     pub fn complete_word_choice(
         &mut self,
@@ -281,6 +291,21 @@ impl RuntimeScriptSystem {
             &mut dispatch.text_presentation,
         )?;
         service.backend_mut().active_description_object = application.map(|_| object);
+        Ok(application)
+    }
+
+    /// Apply one object's DESCRIPT record to state owned by a frame-tail coordinator.
+    pub fn apply_object_description_to_text(
+        &mut self,
+        object: ScriptObjectId,
+        text: &mut TextPresentationState,
+    ) -> Result<Option<DescriptRecordApplication>> {
+        let name = self.service.backend().object_name(object)?.to_vec();
+        let application = self
+            .service
+            .backend_mut()
+            .apply_description(&name, true, text)?;
+        self.service.backend_mut().active_description_object = application.map(|_| object);
         Ok(application)
     }
 

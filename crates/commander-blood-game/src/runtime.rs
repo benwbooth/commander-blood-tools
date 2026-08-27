@@ -15,6 +15,7 @@ mod presentation_run;
 mod presentation_scene;
 mod presentation_screen;
 mod save_load;
+mod scene_transition;
 mod script_backend;
 mod services;
 mod ship_hud;
@@ -46,6 +47,7 @@ pub use presentation_run::{RuntimePresentationRunOutcome, run_runtime_presentati
 pub use presentation_scene::RuntimePresentationScene;
 pub use presentation_screen::RuntimePresentationScreen;
 pub use save_load::RuntimeSaveLoad;
+pub use scene_transition::RuntimeSceneTransition;
 pub use script_backend::{
     LoadedRuntimeResource, RuntimeScriptBackend, RuntimeScriptCommand, RuntimeScriptSystem,
 };

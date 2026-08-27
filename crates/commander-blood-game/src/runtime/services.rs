@@ -25,14 +25,15 @@ use crate::native::bloodprg::{
     PointerSample, PresentationChoiceNumber, PresentationPresentPolicy, PresentationResourceId,
     PresentationResourceSequenceOutcome, PresentationSceneDispatchOutcome,
     PresentationScreenOutcome, PresentationScreenState, PresentationWordChoiceOutcome,
-    SCENE_PALETTE_CLEAR_COLOR_COUNT, ScriptClock, ScriptFrameOutcome, ScriptProfileId,
-    ScriptProfileLoadOutcome, ScriptShipNavigationMode, ShipDepthTransitionOutcome,
-    ShipHudInitializationContext, ShipPresentationOutcome, ShipPresentationState,
-    ShipProjectionResources, ShipTargetSelectionState, ShipViewEntityId, StartupPreparationOutcome,
-    TextPresentationState, clear_scene_palette_entries, draw_planar_dialogue_text,
-    fill_display_band, measure_game_text_width, objects_at_arche_position,
-    original_save_state_block_byte_count, play_cd_audio_track_two, presentable_navigation_objects,
-    reveal_inline_menu_step, stop_cd_audio, update_manu3_hand_frame,
+    SCENE_PALETTE_CLEAR_COLOR_COUNT, SceneTransitionState, ScriptClock, ScriptFrameOutcome,
+    ScriptPresentationScanState, ScriptProfileId, ScriptProfileLoadOutcome,
+    ScriptShipNavigationMode, ShipDepthTransitionOutcome, ShipHudInitializationContext,
+    ShipPresentationOutcome, ShipPresentationState, ShipProjectionResources,
+    ShipTargetSelectionState, ShipViewEntityId, StartupPreparationOutcome, TextPresentationState,
+    clear_scene_palette_entries, draw_planar_dialogue_text, fill_display_band,
+    measure_game_text_width, objects_at_arche_position, original_save_state_block_byte_count,
+    play_cd_audio_track_two, presentable_navigation_objects, reveal_inline_menu_step,
+    stop_cd_audio, update_manu3_hand_frame,
 };
 use crate::native::manu3::animation::CursorPosition;
 use crate::native::random::BloodPrng;
@@ -40,6 +41,7 @@ use crate::native::random::BloodPrng;
 use super::choice_list::{
     RuntimeChoiceListStyle, draw_choice_list_rows, prepare_choice_list_frame,
 };
+use super::presentation_screen::RuntimeSceneTransitionDispatchContext;
 use super::ship_presentation::update_runtime_ship_presentation as run_runtime_ship_presentation;
 use super::ship_target::ship_hud_arche_link;
 use super::{
@@ -49,9 +51,10 @@ use super::{
     RuntimePaletteTransitionConfig, RuntimePaletteTransitionOutcome, RuntimePcmClip,
     RuntimePlatformHost, RuntimePresentationCatalog, RuntimePresentationHost,
     RuntimePresentationPlayer, RuntimePresentationScreen, RuntimePresentationStepOutcome,
-    RuntimePresentationWordChoice, RuntimeSaveLoad, RuntimeScriptBackend, RuntimeScriptCommand,
-    RuntimeScriptSystem, RuntimeShipHud, RuntimeShipNavigation, RuntimeShipTargetSelection,
-    RuntimeShipTargetSelector, RuntimeSubtitleReveal, VGA_BIOS_FONT_8X8,
+    RuntimePresentationWordChoice, RuntimeSaveLoad, RuntimeSceneTransition, RuntimeScriptBackend,
+    RuntimeScriptCommand, RuntimeScriptSystem, RuntimeShipHud, RuntimeShipNavigation,
+    RuntimeShipTargetSelection, RuntimeShipTargetSelector, RuntimeSubtitleReveal,
+    VGA_BIOS_FONT_8X8,
 };
 
 const INITIAL_LOGICAL_POINTER: [i16; 2] = [160, 100];
@@ -92,6 +95,7 @@ pub struct ModernGameServices<'window> {
     save_load: Option<RuntimeSaveLoad>,
     ship_hud: Option<RuntimeShipHud>,
     ship_navigation: Option<RuntimeShipNavigation>,
+    scene_transition: Option<RuntimeSceneTransition>,
     alien_overlay: Option<RuntimeAlienOverlayCycle>,
     ship_target_selector: Option<RuntimeShipTargetSelector>,
     choice_list_style: RuntimeChoiceListStyle,
@@ -136,6 +140,7 @@ impl<'window> ModernGameServices<'window> {
             save_load: Some(RuntimeSaveLoad::default()),
             ship_hud: Some(RuntimeShipHud::default()),
             ship_navigation: Some(RuntimeShipNavigation::default()),
+            scene_transition: Some(RuntimeSceneTransition::default()),
             alien_overlay: Some(RuntimeAlienOverlayCycle::default()),
             ship_target_selector: Some(RuntimeShipTargetSelector::default()),
             choice_list_style: RuntimeChoiceListStyle::default(),
@@ -422,6 +427,7 @@ impl<'window> ModernGameServices<'window> {
         let outcome = self.scripts.load_profile(&mut self.runtime, profile)?;
         self.ship_hud = Some(RuntimeShipHud::default());
         self.ship_navigation = Some(RuntimeShipNavigation::default());
+        self.scene_transition = Some(RuntimeSceneTransition::default());
         self.ship_target_selector = Some(RuntimeShipTargetSelector::default());
         Ok(outcome)
     }
@@ -578,6 +584,59 @@ impl<'window> ModernGameServices<'window> {
         self.ship_navigation
             .as_ref()
             .context("ship navigation is already being updated")
+    }
+
+    /// Arm a contact-driven scene transition from one decoded script object.
+    pub fn request_scene_transition(&mut self, target: ScriptObjectId) -> Result<()> {
+        let profile = self
+            .runtime
+            .current_profile()
+            .context("a scene transition requires a loaded BloodScript profile")?;
+        let target_kind = profile
+            .state()
+            .object(target)
+            .with_context(|| format!("scene-transition target {target:?} is absent"))?
+            .kind;
+        let current = self
+            .scripts
+            .backend()
+            .active_description_object()
+            .and_then(|object| {
+                profile
+                    .state()
+                    .object(object)
+                    .map(|record| (object, record.kind))
+            });
+        let mut transition = self
+            .scene_transition
+            .take()
+            .context("scene transition is already being updated")?;
+        let outcome = transition.begin(current, (target, target_kind));
+        self.scene_transition = Some(transition);
+        outcome
+    }
+
+    /// Advance the persistent contact scene transition by one game frame.
+    pub fn update_runtime_scene_transition(
+        &mut self,
+        scene_link: GameSceneLink,
+        state: &mut GameLifecycleState,
+        platform: &mut RuntimePlatformHost<'window>,
+    ) -> Result<crate::native::bloodprg::SceneTransitionOutcome> {
+        let mut transition = self
+            .scene_transition
+            .take()
+            .context("scene transition is reentrant")?;
+        let outcome = transition.update(self, state, scene_link, platform);
+        self.scene_transition = Some(transition);
+        outcome
+    }
+
+    /// Borrow the persistent contact scene-transition adapter.
+    pub fn runtime_scene_transition(&self) -> Result<&RuntimeSceneTransition> {
+        self.scene_transition
+            .as_ref()
+            .context("scene transition is already being updated")
     }
 
     /// Run the recovered synchronous alien-overlay coordinator to completion.
@@ -811,6 +870,17 @@ impl<'window> ModernGameServices<'window> {
             .context("presentation screen is already being updated")?
             .stage_navigation_palette(&palette);
         Ok(result)
+    }
+
+    pub(super) fn stage_presentation_scene_palette(
+        &mut self,
+        palette: &IndexedGamePalette,
+    ) -> Result<()> {
+        self.presentation_screen
+            .as_mut()
+            .context("presentation screen is already being updated")?
+            .stage_navigation_palette(palette);
+        Ok(())
     }
 
     /// Clear rows 35 through 164 before decoding the navigation background.
@@ -1209,6 +1279,19 @@ impl<'window> ModernGameServices<'window> {
         Ok(application)
     }
 
+    pub(super) fn apply_scene_transition_description(
+        &mut self,
+        object: ScriptObjectId,
+        text: &mut TextPresentationState,
+    ) -> Result<()> {
+        self.scripts
+            .apply_object_description_to_text(object, text)?
+            .with_context(|| {
+                format!("scene-transition object {object:?} has no DESCRIPT record")
+            })?;
+        self.synchronize_script_presentations()
+    }
+
     /// Queue one recovered MANU3 animation selector for the frame-tail dispatcher.
     pub fn request_manu3_animation(&mut self, selector: u16) {
         self.manu3_hand.requested_animation = selector;
@@ -1300,6 +1383,37 @@ impl<'window> ModernGameServices<'window> {
         let outcome =
             screen.dispatch_ship_scene(self, &mut ship, active_record_related, scruter_jo_record);
         self.ship_presentation = ship;
+        self.presentation_screen = Some(screen);
+        outcome
+    }
+
+    pub(super) fn dispatch_scene_transition(
+        &mut self,
+        transition: &mut SceneTransitionState,
+        presentation: &mut ScriptPresentationScanState,
+        lifecycle: &mut GameLifecycleState,
+        active_record_related: ScriptObjectId,
+        palette_transition_percent: &mut u16,
+    ) -> Result<PresentationSceneDispatchOutcome> {
+        let scruter_jo_record = self
+            .runtime
+            .current_profile()
+            .and_then(|profile| profile.builtins().scruter_jo);
+        let mut screen = self
+            .presentation_screen
+            .take()
+            .context("scene-transition dispatch is reentrant")?;
+        let outcome = screen.dispatch_scene_transition(
+            self,
+            RuntimeSceneTransitionDispatchContext {
+                transition,
+                presentation,
+                lifecycle,
+                active_record_related,
+                scruter_jo_record,
+                palette_transition_percent,
+            },
+        );
         self.presentation_screen = Some(screen);
         outcome
     }
@@ -1503,6 +1617,27 @@ impl<'window> ModernGameServices<'window> {
     /// Borrow the concrete script backend for lifecycle-state updates.
     pub const fn script_backend(&self) -> &RuntimeScriptBackend {
         self.scripts.backend()
+    }
+
+    pub(super) const fn presentation_scan_state(&self) -> &ScriptPresentationScanState {
+        self.scripts.presentation_scan_state()
+    }
+
+    pub(super) fn latest_presentation_started(&self) -> Option<ScriptObjectId> {
+        self.scripts
+            .last_presentation_outcome()
+            .and_then(|outcome| outcome.presentation_started)
+    }
+
+    pub(super) fn commit_scene_transition_presentation(
+        &mut self,
+        presentation: ScriptPresentationScanState,
+        text: TextPresentationState,
+        lifecycle: &mut GameLifecycleState,
+    ) -> Result<()> {
+        *self.scripts.presentation_scan_state_mut() = presentation;
+        *self.scripts.text_presentation_mut() = text;
+        self.scripts.finish_lifecycle_frame(lifecycle)
     }
 
     /// Mutably borrow the concrete script backend for lifecycle-state updates.

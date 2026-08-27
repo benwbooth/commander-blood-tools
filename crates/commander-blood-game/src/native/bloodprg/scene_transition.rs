@@ -20,6 +20,12 @@ const SCENE_PALETTE_COLOR_COUNT: usize = 64;
 const SCENE_PALETTE_LAST_COLOR: usize = SCENE_PALETTE_FIRST_COLOR + SCENE_PALETTE_COLOR_COUNT - 1;
 const SCENE_PALETTE_DARKEN_AMOUNT: u8 = 40;
 const SCENE_PALETTE_TRANSITION_INCREMENT: u8 = 5;
+const ALIEN_OVERLAY_ENTRY_LINE: u16 = 7;
+const PALETTE_FADE_IN_LINE: u16 = 39;
+const PALETTE_FADE_OUT_LINE: u16 = 40;
+const DESCRIPTION_LOOKUP_LINE: u16 = 41;
+const COMPLETE_LINE: u16 = 42;
+const NON_PRESENTATION_LOADED_LINE: u16 = 43;
 
 /// Priority phase of the scene transition after replacing native flag aliases.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -77,6 +83,34 @@ pub enum SceneTransitionLine {
     NonPresentationLoaded,
     /// A line owned by another coordinator and preserved without reinterpretation.
     Other(u16),
+}
+
+impl SceneTransitionLine {
+    /// Decode one authored presentation line without discarding unknown values.
+    pub const fn from_number(number: u16) -> Self {
+        match number {
+            ALIEN_OVERLAY_ENTRY_LINE => Self::AlienOverlayEntry,
+            PALETTE_FADE_IN_LINE => Self::PaletteFadeIn,
+            PALETTE_FADE_OUT_LINE => Self::PaletteFadeOut,
+            DESCRIPTION_LOOKUP_LINE => Self::DescriptionLookup,
+            COMPLETE_LINE => Self::Complete,
+            NON_PRESENTATION_LOADED_LINE => Self::NonPresentationLoaded,
+            other => Self::Other(other),
+        }
+    }
+
+    /// Return the original authored presentation-line number.
+    pub const fn number(self) -> u16 {
+        match self {
+            Self::AlienOverlayEntry => ALIEN_OVERLAY_ENTRY_LINE,
+            Self::PaletteFadeIn => PALETTE_FADE_IN_LINE,
+            Self::PaletteFadeOut => PALETTE_FADE_OUT_LINE,
+            Self::DescriptionLookup => DESCRIPTION_LOOKUP_LINE,
+            Self::Complete => COMPLETE_LINE,
+            Self::NonPresentationLoaded => NON_PRESENTATION_LOADED_LINE,
+            Self::Other(number) => number,
+        }
+    }
 }
 
 /// MANU3 animation selected by this coordinator.
@@ -225,6 +259,7 @@ pub trait SceneTransitionHost {
     fn lookup_scene_description(
         &mut self,
         source: SceneTransitionRecordSource,
+        text: &mut TextPresentationState,
     ) -> Result<(), Self::Error>;
 
     /// Dispatch the current authored scene line before phase-specific work.
@@ -316,7 +351,7 @@ pub fn update_scene_transition<Host: SceneTransitionHost>(
         state.phase = SceneTransitionPhase::LoadImage;
         state.record_source = SceneTransitionRecordSource::Deferred;
         state.active_line = Some(SceneTransitionLine::DescriptionLookup);
-        host.lookup_scene_description(state.record_source)
+        host.lookup_scene_description(state.record_source, text)
             .map_err(SceneTransitionError::Host)?;
         return Ok(SceneTransitionOutcome::Initialized);
     }
@@ -604,6 +639,7 @@ mod tests {
         fn lookup_scene_description(
             &mut self,
             _source: SceneTransitionRecordSource,
+            _text: &mut TextPresentationState,
         ) -> Result<(), Self::Error> {
             self.calls.push(RecordedCall::Lookup);
             Ok(())
