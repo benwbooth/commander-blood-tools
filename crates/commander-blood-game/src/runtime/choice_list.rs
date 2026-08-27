@@ -23,6 +23,33 @@ const FULL_LOGICAL_FONT_BAND: FontVerticalBand = FontVerticalBand {
     bottom: LOGICAL_FRAMEBUFFER_HEIGHT as i32 - 1,
 };
 
+/// Canonical values of the three mutable globals controlling list layout.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(super) struct RuntimeChoiceListStyle {
+    /// Shared horizontal list anchor.
+    pub center_x: i16,
+    /// Whether each measured row retains its own width.
+    pub preserve_individual_widths: bool,
+    /// Whether the synthetic cancel row is appended.
+    pub extra_cancel_entry: bool,
+}
+
+impl RuntimeChoiceListStyle {
+    /// Values written by `ship_3d_hud_init` before target selection.
+    pub const SHIP_TARGET: Self = Self {
+        center_x: 80,
+        preserve_individual_widths: true,
+        extra_cancel_entry: true,
+    };
+
+    /// Values written by `presentation_ready_gate` when a word choice opens.
+    pub const PRESENTATION_WORD_CHOICE: Self = Self {
+        center_x: 225,
+        preserve_individual_widths: false,
+        extra_cancel_entry: false,
+    };
+}
+
 pub(super) fn prepare_choice_list_frame(
     runtime: &mut OriginalGameRuntime,
     labels: &[&[u8]],

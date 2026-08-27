@@ -34,6 +34,12 @@ impl RuntimePresentationWordChoice {
         &self.state
     }
 
+    /// Close the dialogue chooser and discard its profile-local transition state.
+    pub fn reset(&mut self) {
+        self.state = PresentationWordChoiceState::default();
+        self.transition = FramebufferTransitionState::default();
+    }
+
     /// Advance and draw one exact dialogue-choice frame.
     pub fn update<'window>(
         &mut self,
@@ -41,6 +47,7 @@ impl RuntimePresentationWordChoice {
         lifecycle: &mut GameLifecycleState,
     ) -> Result<PresentationWordChoiceOutcome> {
         self.import_lifecycle_state(services, lifecycle)?;
+        let phase_before_update = self.state.phase;
         if self.state.phase == PresentationWordChoicePhase::Closed {
             self.transition = FramebufferTransitionState {
                 total_steps: WORD_CHOICE_TRANSITION_STEPS as u8,
@@ -86,6 +93,11 @@ impl RuntimePresentationWordChoice {
         );
         backend.list.finish()?;
         drop(backend);
+        if phase_before_update == PresentationWordChoicePhase::Closed
+            && self.state.phase != PresentationWordChoicePhase::Closed
+        {
+            services.activate_presentation_word_choice_style();
+        }
 
         match &outcome {
             PresentationWordChoiceOutcome::AwaitingSelection(frame) => {

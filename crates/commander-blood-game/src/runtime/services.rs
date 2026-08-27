@@ -5,6 +5,7 @@ use std::ops::Range;
 use anyhow::{Context, Result, bail};
 use commander_blood_formats::archive::BloodResourceName;
 use commander_blood_formats::bloodprg::{BloodprgFontResources, decode_bloodprg_bridge_resources};
+use commander_blood_formats::descript::DescriptBackgroundSlot;
 use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
 use commander_blood_formats::script::{ScriptObjectId, ScriptWordId};
 use commander_blood_formats::snd::{SndBank, VocPcm};
@@ -16,22 +17,26 @@ use crate::native::bloodprg::{
     BridgeSteeringInteraction, ChoiceListConfig, ChoiceListFrame, ChoiceListPointer,
     ChoiceListState, ConfirmDialogOutcome, ConfirmDialogState, DescriptMusicSelectionOutcome,
     DescriptRecordApplication, DirtyRegionCopyOutcome, FontPoint, FontVerticalBand, GameFontFace,
-    GameLifecycleState, GamePresentationOwner, GameSceneLink, InlineMenuRevealOutcome,
-    InlineMenuTextMetrics, InputAction, Manu3HandFrameContext, Manu3HandFrameState,
-    PbmDecodeResult, PointerButtonEdges, PointerButtons, PointerSample, PresentationChoiceNumber,
-    PresentationPresentPolicy, PresentationResourceId, PresentationResourceSequenceOutcome,
-    PresentationSceneDispatchOutcome, PresentationScreenOutcome, PresentationScreenState,
-    PresentationWordChoiceOutcome, SCENE_PALETTE_CLEAR_COLOR_COUNT, ScriptClock,
-    ScriptFrameOutcome, ScriptProfileId, ScriptProfileLoadOutcome, ShipDepthTransitionOutcome,
+    GameLifecycleState, GamePresentationOwner, GameSceneLink, IndexedGamePalette,
+    InlineMenuRevealOutcome, InlineMenuTextMetrics, InputAction, Manu3HandFrameContext,
+    Manu3HandFrameState, PbmDecodeResult, PointerButtonEdges, PointerButtons, PointerSample,
+    PresentationChoiceNumber, PresentationPresentPolicy, PresentationResourceId,
+    PresentationResourceSequenceOutcome, PresentationSceneDispatchOutcome,
+    PresentationScreenOutcome, PresentationScreenState, PresentationWordChoiceOutcome,
+    SCENE_PALETTE_CLEAR_COLOR_COUNT, ScriptClock, ScriptFrameOutcome, ScriptProfileId,
+    ScriptProfileLoadOutcome, ScriptShipNavigationMode, ShipDepthTransitionOutcome,
     ShipHudInitializationContext, ShipPresentationState, ShipProjectionResources,
     ShipTargetSelectionState, ShipViewEntityId, StartupPreparationOutcome, TextPresentationState,
-    draw_planar_dialogue_text, measure_game_text_width, objects_at_arche_position,
-    presentable_navigation_objects, reveal_inline_menu_step, update_manu3_hand_frame,
+    clear_scene_palette_entries, draw_planar_dialogue_text, measure_game_text_width,
+    objects_at_arche_position, presentable_navigation_objects, reveal_inline_menu_step,
+    update_manu3_hand_frame,
 };
 use crate::native::manu3::animation::CursorPosition;
 use crate::native::random::BloodPrng;
 
-use super::choice_list::{draw_choice_list_rows, prepare_choice_list_frame};
+use super::choice_list::{
+    RuntimeChoiceListStyle, draw_choice_list_rows, prepare_choice_list_frame,
+};
 use super::ship_target::ship_hud_arche_link;
 use super::{
     LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_PIXEL_COUNT, OriginalGameData,
@@ -40,8 +45,9 @@ use super::{
     RuntimePaletteTransitionOutcome, RuntimePcmClip, RuntimePresentationCatalog,
     RuntimePresentationHost, RuntimePresentationPlayer, RuntimePresentationScreen,
     RuntimePresentationStepOutcome, RuntimePresentationWordChoice, RuntimeScriptBackend,
-    RuntimeScriptCommand, RuntimeScriptSystem, RuntimeShipHud, RuntimeShipTargetSelection,
-    RuntimeShipTargetSelector, RuntimeSubtitleReveal, VGA_BIOS_FONT_8X8,
+    RuntimeScriptCommand, RuntimeScriptSystem, RuntimeShipHud, RuntimeShipNavigation,
+    RuntimeShipTargetSelection, RuntimeShipTargetSelector, RuntimeSubtitleReveal,
+    VGA_BIOS_FONT_8X8,
 };
 
 const INITIAL_LOGICAL_POINTER: [i16; 2] = [160, 100];
@@ -56,6 +62,10 @@ const MENU_WIDTH_PROBE_COLOR: u8 = u8::MIN;
 const CHOICE_LIST_SELECTION_SOUND_CLIP: u8 = u8::MIN;
 const NO_BRIDGE_HORIZONTAL_MOTION: i32 = 0;
 const SHIP_HUD_PALETTE_TRANSITION_INCREMENT: u16 = 10;
+const NAVIGATION_BACKGROUND_SLOT: u8 = 1;
+const SHIP_NAVIGATION_ACTIVE_FLAGS: u16 = 9;
+const SHIP_NAVIGATION_STATUS_LINE: u16 = 3;
+const NAVIGATION_PALETTE_TRANSITION_INCREMENT: u16 = 10;
 
 /// Owned flat services that concrete `GameLifecycleHost` methods delegate to.
 ///
@@ -76,9 +86,12 @@ pub struct ModernGameServices<'window> {
     presentation_screen: Option<RuntimePresentationScreen>,
     presentation_word_choice: Option<RuntimePresentationWordChoice>,
     ship_hud: Option<RuntimeShipHud>,
+    ship_navigation: Option<RuntimeShipNavigation>,
     ship_target_selector: Option<RuntimeShipTargetSelector>,
+    choice_list_style: RuntimeChoiceListStyle,
     subtitle_reveal: Option<RuntimeSubtitleReveal>,
     palette_transition: RuntimePaletteTransition,
+    bridge_palette: IndexedGamePalette,
     confirm_dialog: RuntimeConfirmDialog,
     manu3_hand: Manu3HandFrameState,
     ship_presentation: ShipPresentationState,
@@ -98,6 +111,7 @@ impl<'window> ModernGameServices<'window> {
         let scripts = RuntimeScriptSystem::new(&data, script_clock);
         let presentation_player = RuntimePresentationPlayer::new(data.presentation_catalog());
         let runtime = OriginalGameRuntime::new(data);
+        let bridge_palette = *runtime.live_palette();
         let presentation_screen = RuntimePresentationScreen::new(*runtime.live_palette())?;
         let presentation = RuntimePresentationHost::new_startup(window, &runtime)?;
         Ok(Self {
@@ -113,9 +127,12 @@ impl<'window> ModernGameServices<'window> {
             presentation_screen: Some(presentation_screen),
             presentation_word_choice: Some(RuntimePresentationWordChoice::default()),
             ship_hud: Some(RuntimeShipHud::default()),
+            ship_navigation: Some(RuntimeShipNavigation::default()),
             ship_target_selector: Some(RuntimeShipTargetSelector::default()),
+            choice_list_style: RuntimeChoiceListStyle::default(),
             subtitle_reveal: Some(RuntimeSubtitleReveal::default()),
             palette_transition: RuntimePaletteTransition::default(),
+            bridge_palette,
             confirm_dialog,
             manu3_hand: Manu3HandFrameState::default(),
             ship_presentation: ShipPresentationState::default(),
@@ -162,6 +179,7 @@ impl<'window> ModernGameServices<'window> {
         if self.bridge_scene.is_some() {
             bail!("bridge scene is already initialized");
         }
+        self.bridge_palette = *self.runtime.live_palette();
         let resources = decode_bloodprg_bridge_resources(self.runtime.data().executable())
             .context("decoding bridge projection resources")?;
         let panorama = self
@@ -370,6 +388,7 @@ impl<'window> ModernGameServices<'window> {
     ) -> Result<ScriptProfileLoadOutcome> {
         let outcome = self.scripts.load_profile(&mut self.runtime, profile)?;
         self.ship_hud = Some(RuntimeShipHud::default());
+        self.ship_navigation = Some(RuntimeShipNavigation::default());
         self.ship_target_selector = Some(RuntimeShipTargetSelector::default());
         Ok(outcome)
     }
@@ -404,6 +423,27 @@ impl<'window> ModernGameServices<'window> {
             .context("ship HUD is already being updated")
     }
 
+    /// Advance the recovered ship-navigation coordinator against concrete runtime services.
+    pub fn update_runtime_ship_navigation(
+        &mut self,
+        state: &mut GameLifecycleState,
+    ) -> Result<crate::native::bloodprg::ShipNavigationOutcome> {
+        let mut navigation = self
+            .ship_navigation
+            .take()
+            .context("ship navigation update is reentrant")?;
+        let outcome = navigation.update(self, state);
+        self.ship_navigation = Some(navigation);
+        outcome
+    }
+
+    /// Borrow the persistent flat ship-navigation adapter state.
+    pub fn runtime_ship_navigation(&self) -> Result<&RuntimeShipNavigation> {
+        self.ship_navigation
+            .as_ref()
+            .context("ship navigation is already being updated")
+    }
+
     /// Advance and draw the recovered ship-HUD target selector.
     pub fn update_ship_target_selection(
         &mut self,
@@ -432,6 +472,21 @@ impl<'window> ModernGameServices<'window> {
             self.play_loaded_sound_bank_clip(CHOICE_LIST_SELECTION_SOUND_CLIP)?;
         }
         Ok(outcome)
+    }
+
+    /// Return the last values written to the shared native list-layout globals.
+    pub(super) const fn choice_list_style(&self) -> RuntimeChoiceListStyle {
+        self.choice_list_style
+    }
+
+    /// Publish the values written by first-time ship HUD initialization.
+    pub(super) fn activate_ship_target_list_style(&mut self) {
+        self.choice_list_style = RuntimeChoiceListStyle::SHIP_TARGET;
+    }
+
+    /// Publish the values written when a dialogue word choice first opens.
+    pub(super) fn activate_presentation_word_choice_style(&mut self) {
+        self.choice_list_style = RuntimeChoiceListStyle::PRESENTATION_WORD_CHOICE;
     }
 
     /// Resolve the active profile inputs consumed by first-time ship-HUD setup.
@@ -505,6 +560,158 @@ impl<'window> ModernGameServices<'window> {
     /// Publish the selected target as the complete deferred C1 navigation action.
     pub fn defer_ship_navigation_target(&mut self, target: ScriptObjectId) {
         self.scripts.defer_navigation_target(target);
+    }
+
+    /// Publish the complete non-actionable C4 record emitted by navigation presentation.
+    pub fn defer_ship_actor_presentation(&mut self, target: ScriptObjectId) {
+        self.scripts.defer_actor_presentation(target);
+    }
+
+    /// Return the current typed ship target selected by script or HUD state.
+    pub fn current_ship_navigation_target(&self) -> Result<ScriptObjectId> {
+        self.scripts
+            .action_state()
+            .current_ship_target
+            .or_else(|| {
+                self.ship_hud
+                    .as_ref()
+                    .and_then(RuntimeShipHud::coordinator)
+                    .map(|state| state.current_target)
+            })
+            .context("ship navigation has no current target")
+    }
+
+    /// Return the scene row currently committed by the C1 action dispatcher.
+    pub fn ship_navigation_scene_vertical_offset(&self) -> u16 {
+        self.scripts.action_state().scene_vertical_offset
+    }
+
+    /// Publish the navigation scene row back to the shared C1 action state.
+    pub fn set_ship_navigation_scene_vertical_offset(&mut self, vertical_offset: u16) {
+        self.scripts.action_state_mut().scene_vertical_offset = vertical_offset;
+    }
+
+    /// Return whether the presentation dispatcher retains a reusable scene image.
+    pub fn ship_navigation_scene_image_cached(&self) -> Result<bool> {
+        Ok(self
+            .presentation_screen
+            .as_ref()
+            .context("presentation screen is already being updated")?
+            .scene_state()
+            .loaded_scene_image
+            .is_some())
+    }
+
+    /// Return the dialogue chooser phase shared with navigation teardown.
+    pub fn presentation_word_choice_phase(
+        &self,
+    ) -> Result<crate::native::bloodprg::PresentationWordChoicePhase> {
+        Ok(self
+            .presentation_word_choice
+            .as_ref()
+            .context("presentation word choice is already being updated")?
+            .state()
+            .phase)
+    }
+
+    /// Return whether the concrete ship HUD has completed its one-time setup.
+    pub fn ship_hud_initialized(&self) -> Result<bool> {
+        Ok(self
+            .ship_hud
+            .as_ref()
+            .context("ship HUD is already being updated")?
+            .coordinator()
+            .is_some_and(|state| state.initialized))
+    }
+
+    /// Decode cached DESCRIPT background slot one into the retained navigation frame.
+    pub fn stage_ship_navigation_background(&mut self) -> Result<PbmDecodeResult> {
+        let slot = DescriptBackgroundSlot::decode(NAVIGATION_BACKGROUND_SLOT)
+            .expect("navigation background slot is in the authored range");
+        let encoded = self
+            .scripts
+            .backend()
+            .backgrounds()
+            .get(slot)
+            .context("navigation DESCRIPT background slot one is not loaded")?
+            .encoded_image()
+            .to_vec();
+        let result = self.runtime.stage_navigation_background(&encoded)?;
+        let palette = *self.runtime.live_palette();
+        self.presentation_screen
+            .as_mut()
+            .context("presentation screen is already being updated")?
+            .stage_navigation_palette(&palette);
+        Ok(result)
+    }
+
+    /// Clear rows 35 through 164 before decoding the navigation background.
+    pub fn clear_ship_navigation_band(&mut self) -> Result<()> {
+        self.presentation_screen
+            .as_mut()
+            .context("presentation screen is already being updated")?
+            .invalidate_scene_image();
+        self.runtime.clear_navigation_background_band();
+        Ok(())
+    }
+
+    /// Return whether presentation completion requested an interactive alien overlay.
+    pub fn alien_overlay_trigger_pending(&self) -> Result<bool> {
+        Ok(self
+            .presentation_screen
+            .as_ref()
+            .context("presentation screen is already being updated")?
+            .scene_state()
+            .temporary_sound_trigger)
+    }
+
+    /// Clear only the 192 scene colors, preserving the bridge console palette tail.
+    pub fn clear_navigation_scene_palette(&mut self) {
+        clear_scene_palette_entries(self.runtime.live_palette_mut());
+    }
+
+    /// Decode CHART.FD into the retained background without presenting it early.
+    pub fn initialize_navigation_back_buffer(&mut self) -> Result<PbmDecodeResult> {
+        self.runtime.initialize_back_buffer()
+    }
+
+    /// Capture the HUD palette and restore the modern bridge camera origin.
+    pub fn snapshot_navigation_hud_palette_and_camera(&mut self) -> Result<()> {
+        self.runtime.snapshot_ship_hud_palette();
+        self.bridge_scene
+            .as_mut()
+            .context("navigation reset requires an initialized bridge scene")?
+            .reset_camera();
+        Ok(())
+    }
+
+    /// Configure the original bridge-panorama-to-black full-palette transition.
+    pub fn configure_navigation_bridge_palette_transition(&mut self) -> Result<()> {
+        self.palette_transition
+            .configure(RuntimePaletteTransitionConfig {
+                source: self.bridge_palette,
+                target: [[u8::MIN; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT],
+                initial_percent: u16::MIN,
+                increment: NAVIGATION_PALETTE_TRANSITION_INCREMENT,
+                colors: u8::MIN..=u8::MAX,
+            })
+            .context("configuring the navigation bridge palette transition")
+    }
+
+    /// Reset the dialogue word-choice owner when navigation returns to the bridge.
+    pub fn reset_navigation_word_choice(&mut self) -> Result<()> {
+        self.presentation_word_choice
+            .as_mut()
+            .context("presentation word choice is already being updated")?
+            .reset();
+        Ok(())
+    }
+
+    /// Mark the script-side ship interface inactive after full navigation teardown.
+    pub fn finish_ship_navigation_reset(&mut self) {
+        let action = self.scripts.action_state_mut();
+        action.ship_navigation_mode = ScriptShipNavigationMode::Inactive;
+        action.bridge_redraw_pending = false;
     }
 
     /// Clear the retained ship-HUD setup surface.
@@ -917,6 +1124,7 @@ impl<'window> ModernGameServices<'window> {
     /// Execute one translated script frame and apply every ordered host command it emitted.
     pub fn execute_and_apply_script_frame(&mut self, enabled: bool) -> Result<ScriptFrameOutcome> {
         let outcome = self.execute_script_frame(enabled)?;
+        self.synchronize_script_ship_state();
         self.synchronize_script_presentations()?;
         self.process_script_commands()?;
         Ok(outcome)
@@ -931,9 +1139,32 @@ impl<'window> ModernGameServices<'window> {
         let outcome =
             self.scripts
                 .execute_lifecycle_frame(&mut self.runtime, state, execution_enabled)?;
+        self.synchronize_script_ship_state();
         self.synchronize_script_presentations()?;
         self.process_script_commands()?;
         Ok(outcome)
+    }
+
+    /// Publish one-frame BloodScript target changes into the canonical ship FSM state.
+    pub fn synchronize_script_ship_state(&mut self) {
+        let presentation_target = self
+            .scripts
+            .last_presentation_outcome()
+            .and_then(|outcome| outcome.presentation_started);
+        let selected_target = self.scripts.take_selected_ship_target();
+        let Some(target) = selected_target.or(presentation_target) else {
+            return;
+        };
+
+        let action = self.scripts.action_state_mut();
+        action.current_ship_target = Some(target);
+        action.ship_navigation_mode = ScriptShipNavigationMode::Active;
+        action.bridge_redraw_pending = false;
+        self.ship_presentation.flags = SHIP_NAVIGATION_ACTIVE_FLAGS;
+        self.ship_presentation.bridge_redraw_pending = u8::MIN;
+        if selected_target.is_some() {
+            self.ship_presentation.active_line = SHIP_NAVIGATION_STATUS_LINE;
+        }
     }
 
     /// Copy DESCRIPT and A8 name selections into the flat presentation catalog.

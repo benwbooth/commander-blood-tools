@@ -15,11 +15,12 @@ use crate::native::bloodprg::{
     FontPoint, GameFontDrawOutcome, IndexedGamePalette, LoadedScriptProfile, NameAreaEffectOutcome,
     NameAreaEffectState, OriginalResourceCache, OriginalSaveSlotDirectory,
     PaletteResourceLoadOutcome, PaletteResourceStorage, PaletteResourceTarget, PauseHudRefresh,
-    PbmDecodeResult, PresentationChoiceNumber, RasterPoint, RasterRectOutcome, ResourceId,
-    ScriptPresentationEntity, ScriptProfileId, ScriptProfileLoadOutcome, ScriptProfileManager,
-    ShipDepthBandLayout, ShipHudState, ShipViewArtworkSelection, ShipViewEntityId,
-    activate_bridge_sprite_from_resource, advance_bridge_sprite_state, build_pause_hud_refresh,
-    commit_bridge_sprite_dirty_range, copy_dirty_regions_to_display, decode_chart_back_buffer,
+    PbmDecodeOptions, PbmDecodeResult, PbmPaletteUpdate, PbmTransparency, PresentationChoiceNumber,
+    RasterPoint, RasterRectOutcome, ResourceId, ScriptPresentationEntity, ScriptProfileId,
+    ScriptProfileLoadOutcome, ScriptProfileManager, ShipDepthBandLayout, ShipHudState,
+    ShipViewArtworkSelection, ShipViewEntityId, activate_bridge_sprite_from_resource,
+    advance_bridge_sprite_state, build_pause_hud_refresh, commit_bridge_sprite_dirty_range,
+    copy_dirty_regions_to_display, decode_chart_back_buffer, decode_pbm_image,
     draw_presentation_choice_number, draw_small_font_text, fill_framebuffer_rect,
     select_ship_view_artwork, update_name_area_effect,
 };
@@ -46,6 +47,9 @@ const SHIP_VIEW_TRANSITION_ENTITY_INDEX: usize = 31;
 const PRESENTATION_PANEL_ENTITY_INDEX: usize = 31;
 const LOGICAL_FRAMEBUFFER_HALF_HEIGHT: usize = 100;
 const SHIP_TRAVEL_CLEAR_COLOR: u8 = u8::MIN;
+const NAVIGATION_SCENE_FIRST_ROW: usize = 35;
+const NAVIGATION_SCENE_LAST_ROW: usize = 165;
+const NAVIGATION_SCENE_CLEAR_COLOR: u8 = u8::MIN;
 const SHIP_DIRTY_SNAPSHOT_PENDING: u16 = 1;
 const LOGICAL_DISPLAY_CLIP: BridgeSpriteRect = BridgeSpriteRect {
     left: 0,
@@ -385,6 +389,33 @@ impl OriginalGameRuntime {
     /// Clear the retained secondary surface used by first-time ship-HUD setup.
     pub fn clear_back_buffer(&mut self) {
         self.back_buffer.clear(u8::MIN);
+    }
+
+    /// Clear the original half-open navigation band in the retained background.
+    pub fn clear_navigation_background_band(&mut self) {
+        let start = NAVIGATION_SCENE_FIRST_ROW * LOGICAL_FRAMEBUFFER_WIDTH;
+        let end = NAVIGATION_SCENE_LAST_ROW * LOGICAL_FRAMEBUFFER_WIDTH;
+        self.back_buffer.pixels_mut()[start..end].fill(NAVIGATION_SCENE_CLEAR_COLOR);
+    }
+
+    /// Decode the cached navigation PBM into the retained background.
+    pub fn stage_navigation_background(&mut self, encoded_image: &[u8]) -> Result<PbmDecodeResult> {
+        decode_pbm_image(
+            encoded_image,
+            self.back_buffer.pixels_mut(),
+            &mut self.live_palette,
+            PbmDecodeOptions {
+                palette_update: PbmPaletteUpdate::SceneColors,
+                transparency: PbmTransparency::TransparentZero,
+            },
+        )
+        .context("decoding the ship navigation background")
+    }
+
+    /// Capture the HUD palette window without selecting artwork or changing entities.
+    pub fn snapshot_ship_hud_palette(&mut self) {
+        self.ship_hud
+            .capture_palette_and_reset_camera(&self.live_palette);
     }
 
     /// Publish the full logical clip and commit the requested ship entity range.

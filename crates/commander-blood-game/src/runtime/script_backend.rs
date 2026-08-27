@@ -13,11 +13,13 @@ use crate::native::bloodprg::{
     DescriptApplicationContext, DescriptBackgroundCache, DescriptBackgroundSource,
     DescriptIdleClipSource, DescriptPresentationAssets, DescriptRecordApplication,
     DescriptSoundBankLoader, GameLifecycleState, LoadedScriptProfile, ScriptAboardRecordContext,
-    ScriptClock, ScriptDispatchState, ScriptEnvironmentActivity, ScriptExecutionBackend,
-    ScriptExecutionService, ScriptFrameOutcome, ScriptPresentationEntity, ScriptProfileId,
-    ScriptProfileLoadOutcome, ScriptRecordStateNavigationContext, ScriptTransferContext,
-    SequencePresentationState, SequenceRequestContext, TextPresentationState,
-    deferred_navigation_record, execute_loaded_script_frame, lookup_and_apply_descript_record,
+    ScriptActionRecord, ScriptActionState, ScriptClock, ScriptDeferredRecord, ScriptDispatchState,
+    ScriptEnvironmentActivity, ScriptExecutionBackend, ScriptExecutionService, ScriptFrameOutcome,
+    ScriptPresentationEntity, ScriptPresentationScanOutcome, ScriptProfileId,
+    ScriptProfileLoadOutcome, ScriptRecordStateNavigationContext, ScriptShipNavigationMode,
+    ScriptTransferContext, SequencePresentationState, SequenceRequestContext,
+    TextPresentationState, deferred_navigation_record, execute_loaded_script_frame,
+    lookup_and_apply_descript_record,
 };
 
 use super::{OriginalGameData, OriginalGameRuntime};
@@ -285,6 +287,39 @@ impl RuntimeScriptSystem {
     /// Queue the complete typed C1 action emitted by a ship-HUD target choice.
     pub fn defer_navigation_target(&mut self, target: ScriptObjectId) {
         self.service.presentation_state_mut().deferred = deferred_navigation_record(target, true);
+    }
+
+    /// Queue the non-actionable C4 record emitted by the ship navigation coordinator.
+    pub fn defer_actor_presentation(&mut self, target: ScriptObjectId) {
+        self.service.presentation_state_mut().deferred = ScriptDeferredRecord::Complete {
+            record: ScriptActionRecord::ActorPresentation(target),
+            actionable: false,
+        };
+    }
+
+    /// Borrow persistent semantic state produced by C1 through C8 actions.
+    pub const fn action_state(&self) -> &ScriptActionState {
+        self.service.action_state()
+    }
+
+    /// Mutably borrow action state for synchronization with the outer ship coordinator.
+    pub fn action_state_mut(&mut self) -> &mut ScriptActionState {
+        self.service.action_state_mut()
+    }
+
+    /// Borrow the observable result of the most recent post-frame presentation scan.
+    pub const fn last_presentation_outcome(&self) -> Option<&ScriptPresentationScanOutcome> {
+        self.service.last_presentation_outcome()
+    }
+
+    /// Consume the one-frame C1 target-selection transition while retaining its target.
+    pub fn take_selected_ship_target(&mut self) -> Option<ScriptObjectId> {
+        let action = self.service.action_state_mut();
+        if action.ship_navigation_mode != ScriptShipNavigationMode::TargetSelected {
+            return None;
+        }
+        action.ship_navigation_mode = ScriptShipNavigationMode::Active;
+        action.current_ship_target
     }
 }
 

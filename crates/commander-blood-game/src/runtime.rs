@@ -16,6 +16,7 @@ mod presentation_screen;
 mod script_backend;
 mod services;
 mod ship_hud;
+mod ship_navigation;
 mod ship_target;
 mod startup;
 mod state;
@@ -42,6 +43,7 @@ pub use script_backend::{
 };
 pub use services::ModernGameServices;
 pub use ship_hud::RuntimeShipHud;
+pub use ship_navigation::RuntimeShipNavigation;
 pub use ship_target::{RuntimeShipTargetSelection, RuntimeShipTargetSelector};
 pub use state::{
     IndexedFramebuffer, LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_PIXEL_COUNT,

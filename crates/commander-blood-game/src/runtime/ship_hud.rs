@@ -94,6 +94,9 @@ impl RuntimeShipHud {
             selector.depth_step = services.ship_presentation_state().depth_step;
         }
         let initialized_before = state.initialized;
+        if !initialized_before {
+            services.activate_ship_target_list_style();
+        }
 
         let native_outcome;
         let deferred_error;

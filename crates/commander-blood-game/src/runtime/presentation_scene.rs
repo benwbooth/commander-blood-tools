@@ -21,6 +21,7 @@ use crate::native::bloodprg::{
 use super::{ModernGameServices, RuntimePresentationBackground};
 
 const TIMER_TICK_INCREMENT: u16 = 1;
+const PRESENTATION_PALETTE_FIRST_COLOR: usize = 128;
 
 /// Palette and timing state retained by every presentation-scene caller.
 pub struct RuntimePresentationScene {
@@ -98,6 +99,14 @@ impl RuntimePresentationScene {
     /// Captured scene colors 128 through 191.
     pub const fn presentation_palette(&self) -> &ShipHudPaletteSnapshot {
         &self.presentation_palette
+    }
+
+    /// Synchronize the scene palette and its 128-through-191 presentation window.
+    pub fn stage_navigation_palette(&mut self, palette: &IndexedGamePalette) {
+        self.scene_palette = *palette;
+        let end = PRESENTATION_PALETTE_FIRST_COLOR + self.presentation_palette.len();
+        self.presentation_palette
+            .copy_from_slice(&palette[PRESENTATION_PALETTE_FIRST_COLOR..end]);
     }
 }
 

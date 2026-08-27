@@ -76,6 +76,19 @@ impl RuntimePresentationScreen {
         &self.scene_state
     }
 
+    /// Invalidate the cached scene identity before navigation replaces its background.
+    pub fn invalidate_scene_image(&mut self) {
+        self.scene_state.loaded_scene_image = None;
+    }
+
+    /// Publish the PBM palette staged by ship navigation to the scene dispatcher.
+    pub fn stage_navigation_palette(
+        &mut self,
+        palette: &crate::native::bloodprg::IndexedGamePalette,
+    ) {
+        self.scene.stage_navigation_palette(palette);
+    }
+
     /// Dispatch the ship coordinator's current line through the shared scene owner.
     pub fn dispatch_ship_scene<'window>(
         &mut self,
@@ -142,6 +155,7 @@ fn import_ship_scene_state(
     scene.presentation.active_line = (ship.active_line != u16::MIN).then_some(ship.active_line);
     scene.presentation.gate_flags = (scene.presentation.gate_flags & !PRESENTATION_ACTIVE_GATE)
         | u8::from(ship.presentation_gate & u16::from(PRESENTATION_ACTIVE_GATE) != u16::MIN);
+    scene.presentation.bridge_redraw_pending = ship.bridge_redraw_pending;
     scene.dispatch_blocked = ship.scene_dispatch_blocked;
     scene.ship_active_flags = ship.flags;
     scene.palette_transition_percent = ship.transition_percent;
@@ -156,6 +170,7 @@ fn export_ship_scene_state(
     ship.active_line = scene.presentation.active_line.unwrap_or(u16::MIN);
     ship.presentation_gate = (ship.presentation_gate & !u16::from(PRESENTATION_ACTIVE_GATE))
         | u16::from(scene.presentation.gate_flags & PRESENTATION_ACTIVE_GATE);
+    ship.bridge_redraw_pending = scene.presentation.bridge_redraw_pending;
     ship.scene_dispatch_blocked = scene.dispatch_blocked;
     ship.flags = scene.ship_active_flags;
     ship.transition_percent = scene.palette_transition_percent;
@@ -472,6 +487,7 @@ mod tests {
     const INITIAL_TRANSITION_PERCENT: u16 = 75;
     const INITIAL_DEPTH_FLAGS: u8 = 129;
     const INITIAL_DEPTH_STEP: u8 = 6;
+    const INITIAL_BRIDGE_REDRAW: u8 = 1;
     const EXPORTED_PRESENTATION_GATE: u16 = 256;
     const EXPORTED_SHIP_FLAGS: u16 = 17;
     const EXPORTED_TRANSITION_PERCENT: u16 = 100;
@@ -495,6 +511,7 @@ mod tests {
             transition_percent: INITIAL_TRANSITION_PERCENT,
             depth_opening_flags: INITIAL_DEPTH_FLAGS,
             depth_step: INITIAL_DEPTH_STEP,
+            bridge_redraw_pending: INITIAL_BRIDGE_REDRAW,
             ..ShipPresentationState::default()
         };
         let mut scene = PresentationSceneDispatchState::<DescriptBackgroundSlot>::default();
@@ -512,6 +529,10 @@ mod tests {
         assert_eq!(scene.palette_transition_percent, INITIAL_TRANSITION_PERCENT);
         assert!(scene.depth_opening);
         assert_eq!(scene.depth_step, INITIAL_DEPTH_STEP);
+        assert_eq!(
+            scene.presentation.bridge_redraw_pending,
+            INITIAL_BRIDGE_REDRAW
+        );
 
         scene.presentation.active_line = None;
         scene.presentation.gate_flags &= !PRESENTATION_ACTIVE_GATE;
@@ -520,6 +541,7 @@ mod tests {
         scene.palette_transition_percent = EXPORTED_TRANSITION_PERCENT;
         scene.depth_opening = false;
         scene.depth_step = EXPORTED_DEPTH_STEP;
+        scene.presentation.bridge_redraw_pending = u8::MIN;
         export_ship_scene_state(&scene, &mut ship);
 
         assert_eq!(ship.active_line, u16::MIN);
@@ -529,5 +551,6 @@ mod tests {
         assert_eq!(ship.transition_percent, EXPORTED_TRANSITION_PERCENT);
         assert_eq!(ship.depth_opening_flags, EXPORTED_DEPTH_FLAGS);
         assert_eq!(ship.depth_step, EXPORTED_DEPTH_STEP);
+        assert_eq!(ship.bridge_redraw_pending, u8::MIN);
     }
 }
