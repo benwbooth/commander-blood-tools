@@ -45,8 +45,10 @@ const STAR_VERTEX_ATTRIBUTES: [wgpu::VertexAttribute; 2] =
 pub(crate) struct BridgeRenderer {
     star_pipeline: wgpu::RenderPipeline,
     panorama_pipeline: wgpu::RenderPipeline,
-    bind_group: wgpu::BindGroup,
+    panorama_bind_group: wgpu::BindGroup,
+    object_sprite_bind_group: wgpu::BindGroup,
     panorama_texture: wgpu::Texture,
+    object_sprite_texture: wgpu::Texture,
     star_vertices: wgpu::Buffer,
     maximum_star_vertices: usize,
 }
@@ -66,6 +68,16 @@ impl BridgeRenderer {
         };
         let panorama_texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("bridge indexed panorama"),
+            size: panorama_size,
+            mip_level_count: MIP_LEVEL_COUNT,
+            sample_count: SINGLE_SAMPLE_COUNT,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::R8Uint,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+        let object_sprite_texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("bridge indexed object sprites"),
             size: panorama_size,
             mip_level_count: MIP_LEVEL_COUNT,
             sample_count: SINGLE_SAMPLE_COUNT,
@@ -130,14 +142,32 @@ impl BridgeRenderer {
                 },
             ],
         });
-        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("bridge indexed layers bind group"),
+        let panorama_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("bridge panorama bind group"),
             layout: &bind_group_layout,
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: PANORAMA_TEXTURE_BINDING,
                     resource: wgpu::BindingResource::TextureView(
                         &panorama_texture.create_view(&wgpu::TextureViewDescriptor::default()),
+                    ),
+                },
+                wgpu::BindGroupEntry {
+                    binding: PALETTE_TEXTURE_BINDING,
+                    resource: wgpu::BindingResource::TextureView(
+                        &palette_texture.create_view(&wgpu::TextureViewDescriptor::default()),
+                    ),
+                },
+            ],
+        });
+        let object_sprite_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("bridge object sprite bind group"),
+            layout: &bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: PANORAMA_TEXTURE_BINDING,
+                    resource: wgpu::BindingResource::TextureView(
+                        &object_sprite_texture.create_view(&wgpu::TextureViewDescriptor::default()),
                     ),
                 },
                 wgpu::BindGroupEntry {
@@ -230,8 +260,10 @@ impl BridgeRenderer {
         Ok(Self {
             star_pipeline,
             panorama_pipeline,
-            bind_group,
+            panorama_bind_group,
+            object_sprite_bind_group,
             panorama_texture,
+            object_sprite_texture,
             star_vertices,
             maximum_star_vertices,
         })
@@ -267,14 +299,14 @@ impl BridgeRenderer {
             set_viewport(&mut pass, viewport);
             if star_vertex_count != u32::MIN {
                 pass.set_pipeline(&self.star_pipeline);
-                pass.set_bind_group(PANORAMA_TEXTURE_BINDING, &self.bind_group, &[]);
+                pass.set_bind_group(PANORAMA_TEXTURE_BINDING, &self.panorama_bind_group, &[]);
                 pass.set_vertex_buffer(u32::MIN, self.star_vertices.slice(..));
                 pass.draw(u32::MIN..star_vertex_count, u32::MIN..SINGLE_TEXTURE_LAYER);
             }
         }
         {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("bridge transparent panorama pass"),
+                label: Some("bridge object sprite and panorama pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: target,
                     resolve_target: None,
@@ -291,7 +323,16 @@ impl BridgeRenderer {
             });
             set_viewport(&mut pass, viewport);
             pass.set_pipeline(&self.panorama_pipeline);
-            pass.set_bind_group(PANORAMA_TEXTURE_BINDING, &self.bind_group, &[]);
+            pass.set_bind_group(
+                PANORAMA_TEXTURE_BINDING,
+                &self.object_sprite_bind_group,
+                &[],
+            );
+            pass.draw(
+                u32::MIN..PANORAMA_VERTEX_COUNT,
+                u32::MIN..SINGLE_TEXTURE_LAYER,
+            );
+            pass.set_bind_group(PANORAMA_TEXTURE_BINDING, &self.panorama_bind_group, &[]);
             pass.draw(
                 u32::MIN..PANORAMA_VERTEX_COUNT,
                 u32::MIN..SINGLE_TEXTURE_LAYER,
@@ -308,6 +349,13 @@ impl BridgeRenderer {
                 PANORAMA_FRAME_PIXEL_COUNT
             );
         }
+        if frame.object_sprite_pixels.len() != PANORAMA_FRAME_PIXEL_COUNT {
+            anyhow::bail!(
+                "bridge object layer contains {} pixels, expected {}",
+                frame.object_sprite_pixels.len(),
+                PANORAMA_FRAME_PIXEL_COUNT
+            );
+        }
         queue.write_texture(
             wgpu::TexelCopyTextureInfo {
                 texture: &self.panorama_texture,
@@ -316,6 +364,25 @@ impl BridgeRenderer {
                 aspect: wgpu::TextureAspect::All,
             },
             &frame.panorama_pixels,
+            wgpu::TexelCopyBufferLayout {
+                offset: u64::MIN,
+                bytes_per_row: Some(PANORAMA_FRAME_WIDTH as u32),
+                rows_per_image: Some(PANORAMA_FRAME_HEIGHT as u32),
+            },
+            wgpu::Extent3d {
+                width: PANORAMA_FRAME_WIDTH as u32,
+                height: PANORAMA_FRAME_HEIGHT as u32,
+                depth_or_array_layers: SINGLE_TEXTURE_LAYER,
+            },
+        );
+        queue.write_texture(
+            wgpu::TexelCopyTextureInfo {
+                texture: &self.object_sprite_texture,
+                mip_level: BASE_MIP_LEVEL,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            &frame.object_sprite_pixels,
             wgpu::TexelCopyBufferLayout {
                 offset: u64::MIN,
                 bytes_per_row: Some(PANORAMA_FRAME_WIDTH as u32),
@@ -421,6 +488,16 @@ mod tests {
     const BYTES_PER_PIXEL: u32 = 4;
     const TEST_CLOCK_BYTE: u8 = 17;
     const MINIMUM_VISIBLE_PIXELS: usize = 1_000;
+    const LOGICAL_OUTPUT_WIDTH: u32 = PANORAMA_FRAME_WIDTH as u32;
+    const LOGICAL_OUTPUT_HEIGHT: u32 = PANORAMA_FRAME_HEIGHT as u32;
+    const OBJECT_SAMPLE_X: usize = PANORAMA_FRAME_WIDTH / 2;
+    const OBJECT_SAMPLE_Y: usize = PANORAMA_FRAME_HEIGHT / 2;
+    const OBJECT_SAMPLE_PALETTE_INDEX: u8 = 17;
+    const PANORAMA_SAMPLE_PALETTE_INDEX: u8 = 23;
+    const RED_DAC_COLOR: [u8; RGB_COMPONENT_COUNT] = [63, u8::MIN, u8::MIN];
+    const GREEN_DAC_COLOR: [u8; RGB_COMPONENT_COUNT] = [u8::MIN, 63, u8::MIN];
+    const RED_RGBA_COLOR: [u8; RGBA_COMPONENT_COUNT] = [u8::MAX, u8::MIN, u8::MIN, u8::MAX];
+    const GREEN_RGBA_COLOR: [u8; RGBA_COMPONENT_COUNT] = [u8::MIN, u8::MAX, u8::MIN, u8::MAX];
 
     #[test]
     fn original_bridge_renders_nonblank_inside_wide_and_portrait_viewports() {
@@ -453,12 +530,75 @@ mod tests {
         }
     }
 
+    #[test]
+    fn object_sprite_layer_is_visible_through_transparent_panorama_and_below_opaque_panorama() {
+        let Some(executable_path) = original_file("BLOODPRG.EXE") else {
+            return;
+        };
+        let Some(panorama_path) = original_file("TB.BIG") else {
+            return;
+        };
+        let executable = std::fs::read(executable_path).unwrap();
+        let resources =
+            ShipProjectionResources::from(decode_bloodprg_bridge_resources(&executable).unwrap());
+        let panorama =
+            BridgePanoramaArchive::decode(std::fs::read(panorama_path).unwrap().into_boxed_slice())
+                .unwrap();
+        let mut random = BloodPrng::default();
+        random.seed_from_clock_register(TEST_CLOCK_BYTE);
+        let mut scene = BridgeScene::new(panorama, resources, &mut random).unwrap();
+        let mut sprite_entities = [BridgeSpriteEntity::default(); BRIDGE_SPRITE_ENTITY_COUNT];
+        let mut frame = scene
+            .render_frame(BridgeSceneInput::default(), &mut sprite_entities)
+            .unwrap();
+        frame.starfield.plotted = Box::default();
+        frame.panorama_pixels.fill(u8::MIN);
+        frame.object_sprite_pixels.fill(u8::MIN);
+        let sample_index = OBJECT_SAMPLE_Y * PANORAMA_FRAME_WIDTH + OBJECT_SAMPLE_X;
+        frame.object_sprite_pixels[sample_index] = OBJECT_SAMPLE_PALETTE_INDEX;
+
+        let mut palette = [[u8::MIN; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
+        palette[usize::from(OBJECT_SAMPLE_PALETTE_INDEX)] = RED_DAC_COLOR;
+        palette[usize::from(PANORAMA_SAMPLE_PALETTE_INDEX)] = GREEN_DAC_COLOR;
+        let Some((device, queue)) = offscreen_device() else {
+            return;
+        };
+
+        let object_only = render_offscreen_bridge(
+            &device,
+            &queue,
+            &palette,
+            &frame,
+            LOGICAL_OUTPUT_WIDTH,
+            LOGICAL_OUTPUT_HEIGHT,
+        );
+        assert_eq!(rgba_at(&object_only, sample_index), RED_RGBA_COLOR);
+
+        frame.panorama_pixels[sample_index] = PANORAMA_SAMPLE_PALETTE_INDEX;
+        let panorama_over_object = render_offscreen_bridge(
+            &device,
+            &queue,
+            &palette,
+            &frame,
+            LOGICAL_OUTPUT_WIDTH,
+            LOGICAL_OUTPUT_HEIGHT,
+        );
+        assert_eq!(
+            rgba_at(&panorama_over_object, sample_index),
+            GREEN_RGBA_COLOR
+        );
+    }
+
     fn original_file(filename: &str) -> Option<PathBuf> {
         [
             Path::new("output/_tmp_iso").join(filename),
             Path::new("../../output/_tmp_iso").join(filename),
             Path::new("commander-blood-audio/_tmp_iso").join(filename),
             Path::new("../../commander-blood-audio/_tmp_iso").join(filename),
+            Path::new("re/bin").join(filename),
+            Path::new("../../re/bin").join(filename),
+            Path::new("accuracy/cblood_install/cblood").join(filename),
+            Path::new("../../accuracy/cblood_install/cblood").join(filename),
         ]
         .into_iter()
         .find(|path| path.is_file())
@@ -492,6 +632,31 @@ mod tests {
         width: u32,
         height: u32,
     ) {
+        let pixels = render_offscreen_bridge(device, queue, palette, frame, width, height);
+        let viewport =
+            aspect_fit_viewport(width, height, ORIGINAL_ASPECT_WIDTH, ORIGINAL_ASPECT_HEIGHT);
+        let mut visible_pixels = usize::MIN;
+        for (index, pixel) in pixels.chunks_exact(BYTES_PER_PIXEL as usize).enumerate() {
+            if pixel[..RGB_COMPONENT_COUNT] == [u8::MIN; RGB_COMPONENT_COUNT] {
+                continue;
+            }
+            visible_pixels += 1;
+            let pixel_x = (index as u32 % width) as f32;
+            let pixel_y = (index as u32 / width) as f32;
+            assert!(pixel_x >= viewport.0 && pixel_x < viewport.0 + viewport.2);
+            assert!(pixel_y >= viewport.1 && pixel_y < viewport.1 + viewport.3);
+        }
+        assert!(visible_pixels >= MINIMUM_VISIBLE_PIXELS);
+    }
+
+    fn render_offscreen_bridge(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        palette: &IndexedGamePalette,
+        frame: &BridgeSceneFrame,
+        width: u32,
+        height: u32,
+    ) -> Vec<u8> {
         let renderer = BridgeRenderer::new(device, queue, OFFSCREEN_FORMAT, palette).unwrap();
         let output = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("bridge offscreen color target"),
@@ -555,17 +720,16 @@ mod tests {
         device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
         receiver.recv().unwrap().unwrap();
         let pixels = readback.slice(..).get_mapped_range();
-        let mut visible_pixels = usize::MIN;
-        for (index, pixel) in pixels.chunks_exact(BYTES_PER_PIXEL as usize).enumerate() {
-            if pixel[..RGB_COMPONENT_COUNT] == [u8::MIN; RGB_COMPONENT_COUNT] {
-                continue;
-            }
-            visible_pixels += 1;
-            let pixel_x = (index as u32 % width) as f32;
-            let pixel_y = (index as u32 / width) as f32;
-            assert!(pixel_x >= viewport.0 && pixel_x < viewport.0 + viewport.2);
-            assert!(pixel_y >= viewport.1 && pixel_y < viewport.1 + viewport.3);
-        }
-        assert!(visible_pixels >= MINIMUM_VISIBLE_PIXELS);
+        let owned_pixels = pixels.to_vec();
+        drop(pixels);
+        readback.unmap();
+        owned_pixels
+    }
+
+    fn rgba_at(pixels: &[u8], pixel_index: usize) -> [u8; RGBA_COMPONENT_COUNT] {
+        let byte_index = pixel_index * RGBA_COMPONENT_COUNT;
+        pixels[byte_index..byte_index + RGBA_COMPONENT_COUNT]
+            .try_into()
+            .unwrap()
     }
 }

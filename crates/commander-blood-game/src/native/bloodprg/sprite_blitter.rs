@@ -5,8 +5,8 @@ use std::fmt;
 
 use super::framebuffer_copy::{LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_WIDTH};
 use super::sprite_geometry::{
-    BridgeSpriteBlitterSelection, BridgeSpriteEntity, BridgeSpriteFrameReference,
-    BridgeSpriteFrameSource,
+    BridgeSpriteBlitterMode, BridgeSpriteBlitterSelection, BridgeSpriteEntity,
+    BridgeSpriteFrameReference, BridgeSpriteFrameSource,
 };
 
 const FRAME_STRIDE_OFFSET: usize = 0;
@@ -20,6 +20,9 @@ const DESTINATION_REMAP_MASK: u16 = 3;
 const DIRECT_COLOR_MODE: u16 = 0;
 const FIRST_DESTINATION_REMAP_MODE: u16 = 1;
 const PALETTE_ENTRY_COUNT: usize = 256;
+const LOGICAL_SCREEN_ORIGIN: i32 = 0;
+const LAST_PIXEL_OFFSET: i32 = 1;
+const LAST_SOURCE_INDEX_OFFSET: usize = 1;
 
 /// Destination-color table selected by the high entity flag byte.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -95,6 +98,22 @@ pub enum BridgeSpriteBlitError {
     MissingFrame,
     /// A packed-resource blitter received the retained framebuffer source.
     RetainedFramebufferRequiresSurfaceBlit,
+    /// The retained-framebuffer blitter received a cached resource frame.
+    CachedResourceRequiresResourceBlit,
+    /// The retained bridge surface has an incomplete logical framebuffer.
+    RetainedFramebufferTooShort {
+        /// Number of available indexed pixels.
+        actual: usize,
+    },
+    /// The retained surface entity no longer describes one logical framebuffer.
+    RetainedFramebufferExtentMismatch {
+        /// Width and height bound to the source entity.
+        source: [u16; 2],
+        /// Width and height requested at the destination.
+        destination: [u16; 2],
+    },
+    /// A retained framebuffer selected a packed-resource-only rasterizer.
+    UnsupportedRetainedFramebufferBlitter(BridgeSpriteBlitterMode),
     /// No dirty region was assigned by the dispatch stage.
     MissingDirtyRegion,
     /// The frame header or declared pixel payload exceeds the resource.
@@ -176,6 +195,165 @@ pub fn blit_raw_opaque_sprite(
     framebuffer: &mut [u8],
 ) -> Result<BridgeSpriteBlitOutcome, BridgeSpriteBlitError> {
     blit_raw_sprite(entity, selection, resource_bytes, framebuffer, None)
+}
+
+/// Copy the retained bridge surface through one ordinary flat sprite entity.
+///
+/// Native entity 20 points at a synthetic frame header immediately before the
+/// secondary VGA page. The flat runtime binds that page directly, so this path
+/// performs the same clipping, flipping, transparency, and destination remap
+/// without manufacturing a resource header or aliasing framebuffer storage.
+pub fn blit_retained_framebuffer_sprite(
+    entity: &BridgeSpriteEntity,
+    selection: BridgeSpriteBlitterSelection,
+    retained_framebuffer: &[u8],
+    framebuffer: &mut [u8],
+    remap_tables: BridgeSpriteRemapTables<'_>,
+) -> Result<BridgeSpriteBlitOutcome, BridgeSpriteBlitError> {
+    let frame = entity.frame.ok_or(BridgeSpriteBlitError::MissingFrame)?;
+    if !matches!(frame.source, BridgeSpriteFrameSource::RetainedFramebuffer) {
+        return Err(BridgeSpriteBlitError::CachedResourceRequiresResourceBlit);
+    }
+    if !matches!(
+        selection.mode,
+        BridgeSpriteBlitterMode::RawTransparent | BridgeSpriteBlitterMode::RawOpaque
+    ) {
+        return Err(BridgeSpriteBlitError::UnsupportedRetainedFramebufferBlitter(selection.mode));
+    }
+
+    let required = LOGICAL_FRAMEBUFFER_WIDTH * LOGICAL_FRAMEBUFFER_HEIGHT;
+    if retained_framebuffer.len() < required {
+        return Err(BridgeSpriteBlitError::RetainedFramebufferTooShort {
+            actual: retained_framebuffer.len(),
+        });
+    }
+    if framebuffer.len() < required {
+        return Err(BridgeSpriteBlitError::FramebufferTooShort {
+            actual: framebuffer.len(),
+        });
+    }
+    let logical_extent = [
+        LOGICAL_FRAMEBUFFER_WIDTH as u16,
+        LOGICAL_FRAMEBUFFER_HEIGHT as u16,
+    ];
+    let source_extent = [entity.source_extent.width, entity.source_extent.height];
+    let destination_extent = [entity.extent.width, entity.extent.height];
+    if source_extent != logical_extent || destination_extent != logical_extent {
+        return Err(BridgeSpriteBlitError::RetainedFramebufferExtentMismatch {
+            source: source_extent,
+            destination: destination_extent,
+        });
+    }
+
+    let dirty_region = entity
+        .dirty_region
+        .ok_or(BridgeSpriteBlitError::MissingDirtyRegion)?;
+    let sprite_left = i32::from(entity.draw_position.x as i16);
+    let sprite_top = i32::from(entity.draw_position.y as i16);
+    let sprite_right = sprite_left + LOGICAL_FRAMEBUFFER_WIDTH as i32;
+    let sprite_bottom = sprite_top + LOGICAL_FRAMEBUFFER_HEIGHT as i32;
+    let left = sprite_left
+        .max(dirty_region.left)
+        .max(LOGICAL_SCREEN_ORIGIN);
+    let right = sprite_right
+        .min(dirty_region.right)
+        .min(LOGICAL_FRAMEBUFFER_WIDTH as i32);
+    let top = sprite_top.max(dirty_region.top).max(LOGICAL_SCREEN_ORIGIN);
+    let bottom = sprite_bottom
+        .min(dirty_region.bottom)
+        .min(LOGICAL_FRAMEBUFFER_HEIGHT as i32);
+    if left >= right || top >= bottom {
+        return Err(BridgeSpriteBlitError::ClipOutsideEntity);
+    }
+
+    let draw_width =
+        usize::try_from(right - left).map_err(|_| BridgeSpriteBlitError::ClipOutsideEntity)?;
+    let draw_height =
+        usize::try_from(bottom - top).map_err(|_| BridgeSpriteBlitError::ClipOutsideEntity)?;
+    let destination_start = [
+        if selection.flip_horizontal {
+            right - LAST_PIXEL_OFFSET
+        } else {
+            left
+        },
+        if selection.flip_vertical {
+            bottom - LAST_PIXEL_OFFSET
+        } else {
+            top
+        },
+    ];
+    let first_source_x = source_coordinate(
+        destination_start[0],
+        sprite_left,
+        LOGICAL_FRAMEBUFFER_WIDTH,
+        selection.flip_horizontal,
+    )?;
+    let first_source_y = source_coordinate(
+        destination_start[1],
+        sprite_top,
+        LOGICAL_FRAMEBUFFER_HEIGHT,
+        selection.flip_vertical,
+    )?;
+    let source_start_pixel = first_source_y * LOGICAL_FRAMEBUFFER_WIDTH + first_source_x;
+    let remap = (selection.mode == BridgeSpriteBlitterMode::RawTransparent)
+        .then(|| select_remap(entity.flags.bits()));
+
+    for row in 0..draw_height {
+        let destination_y = if selection.flip_vertical {
+            bottom - LAST_PIXEL_OFFSET - row as i32
+        } else {
+            top + row as i32
+        };
+        let source_y = source_coordinate(
+            destination_y,
+            sprite_top,
+            LOGICAL_FRAMEBUFFER_HEIGHT,
+            selection.flip_vertical,
+        )?;
+        for column in 0..draw_width {
+            let destination_x = if selection.flip_horizontal {
+                right - LAST_PIXEL_OFFSET - column as i32
+            } else {
+                left + column as i32
+            };
+            let source_x = source_coordinate(
+                destination_x,
+                sprite_left,
+                LOGICAL_FRAMEBUFFER_WIDTH,
+                selection.flip_horizontal,
+            )?;
+            let source_pixel =
+                retained_framebuffer[source_y * LOGICAL_FRAMEBUFFER_WIDTH + source_x];
+            let destination_index =
+                destination_y as usize * LOGICAL_FRAMEBUFFER_WIDTH + destination_x as usize;
+            match remap {
+                None => framebuffer[destination_index] = source_pixel,
+                Some(BridgeSpriteRemapSelection::Direct) if source_pixel != u8::MIN => {
+                    framebuffer[destination_index] = source_pixel;
+                }
+                Some(BridgeSpriteRemapSelection::FirstDestinationTable)
+                    if source_pixel != u8::MIN =>
+                {
+                    framebuffer[destination_index] =
+                        remap_tables.first[usize::from(framebuffer[destination_index])];
+                }
+                Some(BridgeSpriteRemapSelection::SecondDestinationTable)
+                    if source_pixel != u8::MIN =>
+                {
+                    framebuffer[destination_index] =
+                        remap_tables.second[usize::from(framebuffer[destination_index])];
+                }
+                Some(_) => {}
+            }
+        }
+    }
+
+    Ok(BridgeSpriteBlitOutcome {
+        clipped_extent: [draw_width, draw_height],
+        source_start_pixel,
+        destination_start,
+        remap,
+    })
 }
 
 /// Decode a transparent RLE sprite into the indexed framebuffer.
@@ -904,6 +1082,24 @@ const fn select_remap(flags: u16) -> BridgeSpriteRemapSelection {
         FIRST_DESTINATION_REMAP_MODE => BridgeSpriteRemapSelection::FirstDestinationTable,
         _ => BridgeSpriteRemapSelection::SecondDestinationTable,
     }
+}
+
+fn source_coordinate(
+    destination: i32,
+    sprite_origin: i32,
+    source_extent: usize,
+    flipped: bool,
+) -> Result<usize, BridgeSpriteBlitError> {
+    let local = usize::try_from(destination - sprite_origin)
+        .map_err(|_| BridgeSpriteBlitError::SourceOutsideFrame)?;
+    if local >= source_extent {
+        return Err(BridgeSpriteBlitError::SourceOutsideFrame);
+    }
+    Ok(if flipped {
+        source_extent - local - LAST_SOURCE_INDEX_OFFSET
+    } else {
+        local
+    })
 }
 
 fn signed_wrapping_sum(base: u16, signed_offset: i16, extent: u16) -> i32 {

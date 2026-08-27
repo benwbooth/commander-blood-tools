@@ -183,6 +183,9 @@ impl<'window> ModernGameServices<'window> {
             bail!("bridge scene is already initialized");
         }
         self.bridge_palette = *self.runtime.live_palette();
+        self.runtime
+            .rebuild_bridge_sprite_remap_tables()
+            .context("building bridge sprite remap tables")?;
         let resources = decode_bloodprg_bridge_resources(self.runtime.data().executable())
             .context("decoding bridge projection resources")?;
         let panorama = self
@@ -1514,11 +1517,14 @@ impl<'window> ModernGameServices<'window> {
         let scene = bridge_scene
             .as_mut()
             .context("bridge scene has not been initialized")?;
-        *bridge_frame = Some(
-            scene
-                .render_frame(input, runtime.bridge_sprite_entities_mut())
-                .context("rendering bridge scene")?,
-        );
+        let mut frame = scene
+            .render_frame(input, runtime.bridge_sprite_entities_mut())
+            .context("rendering bridge scene")?;
+        frame.object_sprite_pixels = runtime
+            .rasterize_ship_object_layer()
+            .context("rendering bridge ship-object layer")?
+            .into_pixels();
+        *bridge_frame = Some(frame);
         Ok(bridge_frame
             .as_ref()
             .expect("rendered bridge frame was retained"))

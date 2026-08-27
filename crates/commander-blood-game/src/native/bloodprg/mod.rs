@@ -114,6 +114,7 @@ mod ship_hud;
 mod ship_hud_coordinator;
 mod sprite_blitter;
 mod sprite_geometry;
+mod sprite_raster;
 mod startup;
 mod startup_cleanup;
 mod startup_prepare;
@@ -685,7 +686,8 @@ pub use sprite_blitter::{
     BridgeSpriteBlitError, BridgeSpriteBlitOutcome, BridgeSpriteRemapSelection,
     BridgeSpriteRemapTables, BridgeSpriteRleBlitOutcome, BridgeSpriteScaledBlitOutcome,
     blit_raw_opaque_sprite, blit_raw_transparent_sprite, blit_rle_opaque_sprite,
-    blit_rle_transparent_sprite, blit_scaled_transparent_sprite,
+    blit_retained_framebuffer_sprite, blit_rle_transparent_sprite,
+    blit_scaled_transparent_sprite,
 };
 pub use sprite_geometry::{
     BRIDGE_SPRITE_ENTITY_COUNT, BridgeSpriteActivationError, BridgeSpriteBlitterMode,
@@ -698,6 +700,10 @@ pub use sprite_geometry::{
     advance_bridge_sprite_state, commit_bridge_sprite_dirty_range, mark_bridge_sprite_range_dirty,
     populate_bridge_sprite_from_cache, render_bridge_sprite_dirty_range,
     update_bridge_sprite_extent, update_bridge_sprite_position,
+};
+pub use sprite_raster::{
+    BridgeSpriteRasterError, BridgeSpriteRasterOutcome, BridgeSpriteRasterTarget,
+    rasterize_bridge_sprite_range,
 };
 pub use startup::{
     apply_startup_option, tokenize_startup_command, StartupAudioConfiguration, StartupAudioDriver,

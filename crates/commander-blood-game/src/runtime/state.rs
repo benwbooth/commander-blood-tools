@@ -5,24 +5,28 @@ use std::ops::Range;
 
 use anyhow::{Context, Result, bail};
 use commander_blood_formats::archive::BloodResourceName;
+use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
 use commander_blood_formats::manu3::decode_manu3;
 use commander_blood_formats::panorama::BridgePanoramaArchive;
 
 use crate::native::bloodprg::{
-    BRIDGE_SPRITE_ENTITY_COUNT, BridgeFrameState, BridgeSpriteClipSnapshotFlags,
-    BridgeSpriteCommitOutcome, BridgeSpriteDirtyRegions, BridgeSpriteEntity, BridgeSpriteExtent,
-    BridgeSpritePosition, BridgeSpriteRect, CHART_BACK_BUFFER_RESOURCE_PATH, CameraApproachState,
-    DirtyRegionCopyOutcome, FontPoint, GameFontDrawOutcome, IndexedGamePalette, LoadedScriptProfile,
-    NameAreaEffectOutcome, NameAreaEffectState, OriginalResourceCache, OriginalSaveSlotDirectory,
+    BRIDGE_CONSOLE_TINT_FIRST, BRIDGE_SPRITE_ENTITY_COUNT, BridgeFrameState,
+    BridgeSpriteClipSnapshotFlags, BridgeSpriteCommitOutcome, BridgeSpriteDirtyRegions,
+    BridgeSpriteEntity, BridgeSpriteExtent, BridgeSpritePosition, BridgeSpriteRasterTarget,
+    BridgeSpriteRect, BridgeSpriteRemapTables, CHART_BACK_BUFFER_RESOURCE_PATH,
+    CameraApproachState, DirtyRegionCopyOutcome, FontPoint, GameFontDrawOutcome,
+    IndexedGamePalette, LoadedScriptProfile, NameAreaEffectOutcome, NameAreaEffectState,
+    OriginalResourceCache, OriginalSaveSlotDirectory, PaletteRemapTable,
     PaletteResourceLoadOutcome, PaletteResourceStorage, PaletteResourceTarget, PauseHudRefresh,
     PbmDecodeOptions, PbmDecodeResult, PbmPaletteUpdate, PbmTransparency, PresentationChoiceNumber,
     RasterPoint, RasterRectOutcome, ResourceId, ScriptPresentationEntity, ScriptProfileId,
     ScriptProfileLoadOutcome, ScriptProfileManager, ShipDepthBandLayout, ShipHudState,
-    ShipViewArtworkSelection, ShipViewEntityId, activate_bridge_sprite_from_resource,
-    activate_bridge_sprite_from_retained_framebuffer, advance_bridge_sprite_state,
+    ShipViewArtworkSelection, ShipViewEntityId, activate_bridge_sprite_from_retained_framebuffer,
+    advance_bridge_sprite_state, build_banked_tint_table, build_palette_blend_remap_table,
     build_pause_hud_refresh, commit_bridge_sprite_dirty_range, copy_dirty_regions_to_display,
     decode_chart_back_buffer, decode_pbm_image, draw_presentation_choice_number,
-    draw_small_font_text, fill_framebuffer_rect, select_ship_view_artwork, update_name_area_effect,
+    draw_small_font_text, fill_framebuffer_rect, populate_bridge_sprite_from_cache,
+    rasterize_bridge_sprite_range, select_ship_view_artwork, update_name_area_effect,
 };
 use crate::native::manu3::model::Manu3Model;
 
@@ -44,6 +48,8 @@ const PAUSE_HUD_CLEAR_COLOR: u8 = u8::MIN;
 const DIALOGUE_OVERLAY_ENTITY_INDEX: usize = 4;
 const NAME_AREA_EFFECT_ENTITY_INDEX: usize = 2;
 const SHIP_VIEW_TRANSITION_ENTITY_INDEX: usize = 31;
+const FIRST_SHIP_OBJECT_ENTITY_INDEX: usize = 21;
+const LAST_SHIP_OBJECT_ENTITY_INDEX: usize = 31;
 const PRESENTATION_PANEL_ENTITY_INDEX: usize = 31;
 const RETAINED_BRIDGE_BACKGROUND_ENTITY_INDEX: usize = 20;
 const LOGICAL_FRAMEBUFFER_HALF_HEIGHT: usize = 100;
@@ -52,10 +58,13 @@ const NAVIGATION_SCENE_FIRST_ROW: usize = 35;
 const NAVIGATION_SCENE_LAST_ROW: usize = 165;
 const NAVIGATION_SCENE_CLEAR_COLOR: u8 = u8::MIN;
 const SHIP_DIRTY_SNAPSHOT_PENDING: u16 = 1;
+const BRIDGE_DARK_REMAP_PERCENT: u8 = 50;
+const BLACK_REMAP_TARGET: [u8; RGB_COMPONENT_COUNT] = [u8::MIN; RGB_COMPONENT_COUNT];
+const LOGICAL_FRAMEBUFFER_ORIGIN: i32 = 0;
 const LOGICAL_DISPLAY_CLIP: BridgeSpriteRect = BridgeSpriteRect {
-    left: 0,
+    left: LOGICAL_FRAMEBUFFER_ORIGIN,
     right: LOGICAL_FRAMEBUFFER_WIDTH as i32,
-    top: 0,
+    top: LOGICAL_FRAMEBUFFER_ORIGIN,
     bottom: LOGICAL_FRAMEBUFFER_HEIGHT as i32,
 };
 
@@ -81,6 +90,11 @@ impl IndexedFramebuffer {
     /// Mutably borrow all row-major palette indices.
     pub fn pixels_mut(&mut self) -> &mut [u8] {
         &mut self.pixels
+    }
+
+    /// Consume the framebuffer and return its owned row-major pixels.
+    pub(super) fn into_pixels(self) -> Box<[u8]> {
+        self.pixels
     }
 
     /// Replace every pixel with one palette index.
@@ -123,6 +137,8 @@ pub struct OriginalGameRuntime {
     bridge_frame_state: BridgeFrameState,
     bridge_sprite_entities: [BridgeSpriteEntity; BRIDGE_SPRITE_ENTITY_COUNT],
     bridge_dirty_regions: BridgeSpriteDirtyRegions,
+    bridge_dark_remap: PaletteRemapTable,
+    bridge_console_tint: PaletteRemapTable,
     camera_approach: CameraApproachState,
     name_area_effect: NameAreaEffectState,
     ship_hud: ShipHudState,
@@ -164,6 +180,8 @@ impl OriginalGameRuntime {
             bridge_frame_state: BridgeFrameState::default(),
             bridge_sprite_entities: [BridgeSpriteEntity::default(); BRIDGE_SPRITE_ENTITY_COUNT],
             bridge_dirty_regions: BridgeSpriteDirtyRegions::default(),
+            bridge_dark_remap: [u8::MIN; PALETTE_ENTRY_COUNT],
+            bridge_console_tint: [u8::MIN; PALETTE_ENTRY_COUNT],
             camera_approach: CameraApproachState::default(),
             name_area_effect: NameAreaEffectState::default(),
             ship_hud: ShipHudState::default(),
@@ -201,6 +219,52 @@ impl OriginalGameRuntime {
         &mut self,
     ) -> &mut [BridgeSpriteEntity; BRIDGE_SPRITE_ENTITY_COUNT] {
         &mut self.bridge_sprite_entities
+    }
+
+    /// Rebuild both destination-color tables used by bridge sprite entities.
+    pub fn rebuild_bridge_sprite_remap_tables(&mut self) -> Result<()> {
+        build_palette_blend_remap_table(
+            &self.live_palette,
+            &mut self.bridge_dark_remap,
+            BRIDGE_DARK_REMAP_PERCENT,
+            BLACK_REMAP_TARGET,
+        )
+        .context("building the bridge dark sprite remap")?;
+        build_banked_tint_table(
+            &self.live_palette,
+            &mut self.bridge_console_tint,
+            BRIDGE_CONSOLE_TINT_FIRST,
+        )
+        .context("building the bridge console sprite tint")
+    }
+
+    /// Rasterize projected ship objects into a fresh transparent bridge layer.
+    pub fn rasterize_ship_object_layer(&mut self) -> Result<IndexedFramebuffer> {
+        let Self {
+            resource_cache,
+            bridge_sprite_entities,
+            back_buffer,
+            bridge_dark_remap,
+            bridge_console_tint,
+            ..
+        } = self;
+        let mut layer = IndexedFramebuffer::new();
+        rasterize_bridge_sprite_range(
+            bridge_sprite_entities,
+            FIRST_SHIP_OBJECT_ENTITY_INDEX..=LAST_SHIP_OBJECT_ENTITY_INDEX,
+            |resource| resource_cache.resolve(resource),
+            BridgeSpriteRasterTarget {
+                dirty_regions: &[LOGICAL_DISPLAY_CLIP],
+                retained_framebuffer: back_buffer.pixels(),
+                framebuffer: layer.pixels_mut(),
+                remap_tables: BridgeSpriteRemapTables {
+                    first: bridge_dark_remap,
+                    second: bridge_console_tint,
+                },
+            },
+        )
+        .context("rasterizing projected ship-object sprites")?;
+        Ok(layer)
     }
 
     /// Current ship-camera approach state started by BloodScript travel actions.
@@ -313,20 +377,20 @@ impl OriginalGameRuntime {
                     data.resource_store(),
                     data.resource_catalog(),
                     resource,
-                    PaletteResourceTarget::Direct,
+                    PaletteResourceTarget::Cached,
                     live_palette,
                 )
                 .with_context(|| {
                     format!("loading ship-view artwork resource {}", resource.value())
                 })?;
-            let PaletteResourceStorage::Direct(bytes) = loaded.storage else {
-                bail!("direct ship-view artwork load unexpectedly returned cached storage");
+            if !matches!(loaded.storage, PaletteResourceStorage::Cached(_)) {
+                bail!("ship-view artwork load did not retain cache ownership");
             };
-            let activated = activate_bridge_sprite_from_resource(
+            let activated = populate_bridge_sprite_from_cache(
+                resource_cache,
                 bridge_sprite_entities,
                 usize::from(placement.entity.value()),
                 resource,
-                &bytes,
                 BridgeSpritePosition {
                     x: placement.position[0] as u16,
                     y: placement.position[1] as u16,
@@ -772,7 +836,10 @@ mod tests {
 
     use commander_blood_formats::script::ScriptObjectKind;
 
-    use crate::native::bloodprg::ResourceLoadStatus;
+    use crate::native::bloodprg::{
+        ResourceLoadStatus, SHIP_OBJECT_ANCHOR_COUNT, ShipCameraPosition, ShipObjectAnchor,
+        ShipProjectionMatrix, project_ship_object_sprites_against_source_extent,
+    };
 
     use super::super::{OriginalGameData, OriginalGameDataPaths, VGA_BIOS_FONT_8X8};
     use super::*;
@@ -791,6 +858,11 @@ mod tests {
     const CLOSED_SHIP_LOWER_DESTINATION_START: usize = 165;
     const SHIP_DEPTH_SOURCE_SPLIT: usize = 100;
     const UNTOUCHED_SHIP_DEPTH_PIXEL: u8 = u8::MAX;
+    const FIRST_SHIP_OBJECT_ANCHOR_INDEX: usize = 0;
+    const Z_AXIS: usize = 2;
+    const NATURAL_OBJECT_DEPTH: u16 = 1_024;
+    const Q15_UNIT: i32 = 32_768;
+    const EXPECTED_PROJECTED_SHIP_OBJECT_COUNT: usize = 1;
     static TEMPORARY_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(u64::MIN);
 
     struct TemporaryRoot(PathBuf);
@@ -1062,7 +1134,14 @@ mod tests {
         let placement = selection
             .entity_placement
             .expect("destination must select world artwork");
-        assert!(selection.resource_request.is_some());
+        let requested_resource = ResourceId::new(
+            selection
+                .resource_request
+                .expect("destination must request world artwork")
+                .resource
+                .value(),
+        );
+        assert!(runtime.resource_cache.is_loaded(requested_resource));
         let entity = &runtime.bridge_sprite_entities()[usize::from(placement.entity.value())];
         assert!(entity.flags.is_visible());
         assert!(entity.frame.is_some());
@@ -1073,6 +1152,33 @@ mod tests {
                 y: placement.position[1] as u16,
             }
         );
+        let mut anchors = [ShipObjectAnchor::default(); SHIP_OBJECT_ANCHOR_COUNT];
+        anchors[FIRST_SHIP_OBJECT_ANCHOR_INDEX].position[Z_AXIS] = NATURAL_OBJECT_DEPTH;
+        let matrix = ShipProjectionMatrix {
+            rows: [
+                [Q15_UNIT, i32::MIN, i32::MIN],
+                [i32::MIN, Q15_UNIT, i32::MIN],
+                [i32::MIN, i32::MIN, Q15_UNIT],
+            ],
+        };
+        let projections = project_ship_object_sprites_against_source_extent(
+            &anchors,
+            ShipCameraPosition::default(),
+            matrix,
+            &mut runtime.bridge_sprite_entities,
+        )
+        .unwrap();
+        assert_eq!(projections.len(), EXPECTED_PROJECTED_SHIP_OBJECT_COUNT);
+        assert_eq!(
+            projections[0].screen,
+            [
+                (LOGICAL_FRAMEBUFFER_WIDTH / 2) as u16,
+                (LOGICAL_FRAMEBUFFER_HEIGHT / 2) as u16,
+            ]
+        );
+        runtime.rebuild_bridge_sprite_remap_tables().unwrap();
+        let object_layer = runtime.rasterize_ship_object_layer().unwrap();
+        assert!(object_layer.pixels().iter().any(|pixel| *pixel != u8::MIN));
         assert_eq!(
             runtime.ship_hud().camera,
             crate::native::bloodprg::SHIP_CAMERA_RESET

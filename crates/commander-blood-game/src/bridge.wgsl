@@ -1,5 +1,6 @@
 const LOGICAL_WIDTH: f32 = 320.0;
 const LOGICAL_HEIGHT: f32 = 200.0;
+const FULLSCREEN_TRIANGLE_SCALE: f32 = 2.0;
 
 @group(0) @binding(0)
 var panorama: texture_2d<u32>;
@@ -47,8 +48,13 @@ fn vs_panorama(@builtin(vertex_index) vertex_index: u32) -> PanoramaVertexOutput
     let x = f32((vertex_index << 1u) & 2u);
     let y = f32(vertex_index & 2u);
     var output: PanoramaVertexOutput;
-    output.position = vec4<f32>(x - 1.0, 1.0 - y, 0.0, 1.0);
-    output.texture_coordinates = vec2<f32>(x, y) * 0.5;
+    output.position = vec4<f32>(
+        x * FULLSCREEN_TRIANGLE_SCALE - 1.0,
+        1.0 - y * FULLSCREEN_TRIANGLE_SCALE,
+        0.0,
+        1.0,
+    );
+    output.texture_coordinates = vec2<f32>(x, y);
     return output;
 }
 
