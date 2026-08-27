@@ -406,6 +406,41 @@ pub fn project_ship_object_sprites(
     extent_comparison: BridgeSpriteExtent,
     entities: &mut [BridgeSpriteEntity],
 ) -> Result<Box<[ShipObjectSpriteProjection]>, ShipProjectionError> {
+    project_ship_object_sprites_with_extent_comparison(anchors, camera, matrix, entities, |_, _| {
+        extent_comparison
+    })
+}
+
+/// Project bridge navigation anchors using each entity's decoded source extent.
+///
+/// The original call leaves `BP` pointing at its projection matrix while the
+/// extent helper interprets matrix bytes as a far comparison pointer. That
+/// segment alias is preserved by [`project_ship_object_sprites`] for oracle
+/// work, but it has no valid owner in a flat address space. Runtime rendering
+/// uses the source-frame dimensions that the helper is logically meant to
+/// compare against, clearing the scaled flag at the sprite's natural size.
+pub fn project_ship_object_sprites_against_source_extent(
+    anchors: &[ShipObjectAnchor],
+    camera: ShipCameraPosition,
+    matrix: ShipProjectionMatrix,
+    entities: &mut [BridgeSpriteEntity],
+) -> Result<Box<[ShipObjectSpriteProjection]>, ShipProjectionError> {
+    project_ship_object_sprites_with_extent_comparison(
+        anchors,
+        camera,
+        matrix,
+        entities,
+        |_, entity| entity.source_extent,
+    )
+}
+
+fn project_ship_object_sprites_with_extent_comparison(
+    anchors: &[ShipObjectAnchor],
+    camera: ShipCameraPosition,
+    matrix: ShipProjectionMatrix,
+    entities: &mut [BridgeSpriteEntity],
+    mut extent_comparison_for: impl FnMut(usize, &BridgeSpriteEntity) -> BridgeSpriteExtent,
+) -> Result<Box<[ShipObjectSpriteProjection]>, ShipProjectionError> {
     if anchors.len() != SHIP_OBJECT_ANCHOR_COUNT {
         return Err(ShipProjectionError::InvalidObjectAnchorCount {
             actual: anchors.len(),
@@ -463,6 +498,7 @@ pub fn project_ship_object_sprites(
             width: scale_object_dimension(source_extent.width, depth_scale),
             height: scale_object_dimension(source_extent.height, depth_scale),
         };
+        let extent_comparison = extent_comparison_for(entity_index, &staged_entities[entity_index]);
         update_bridge_sprite_extent(
             &mut staged_entities,
             entity_index,
@@ -1101,6 +1137,52 @@ mod tests {
                 vector.name
             );
         }
+    }
+
+    #[test]
+    fn flat_runtime_compares_projected_extents_with_each_source_frame() {
+        const NATURAL_DEPTH: u16 = 1_024;
+        const SOURCE_WIDTH: u16 = 40;
+        const SOURCE_HEIGHT: u16 = 24;
+
+        let mut anchors = [ShipObjectAnchor::default(); SHIP_OBJECT_ANCHOR_COUNT];
+        anchors[SHIP_OBJECT_ANCHOR_COUNT - ENTITY_INDEX_STEP].position[Z_AXIS] = NATURAL_DEPTH;
+        let matrix = ShipProjectionMatrix {
+            rows: [
+                [ORACLE_POSITIVE_UNIT, ORACLE_ZERO, ORACLE_ZERO],
+                [ORACLE_ZERO, ORACLE_POSITIVE_UNIT, ORACLE_ZERO],
+                [ORACLE_ZERO, ORACLE_ZERO, ORACLE_POSITIVE_UNIT],
+            ],
+        };
+        let source_extent = BridgeSpriteExtent {
+            width: SOURCE_WIDTH,
+            height: SOURCE_HEIGHT,
+        };
+        let mut entities = [BridgeSpriteEntity::default(); BRIDGE_SPRITE_ENTITY_COUNT];
+        entities[FIRST_NAVIGATION_ENTITY_INDEX] = BridgeSpriteEntity {
+            flags: BridgeSpriteFlags::from_bits(
+                ENTITY_STATE_ZERO_BIT | ENTITY_VISIBLE_BIT | ENTITY_EXTENT_CHANGED_BIT,
+            ),
+            source_extent,
+            extent: source_extent,
+            ..BridgeSpriteEntity::default()
+        };
+
+        let projections = project_ship_object_sprites_against_source_extent(
+            &anchors,
+            ShipCameraPosition::default(),
+            matrix,
+            &mut entities,
+        )
+        .unwrap();
+
+        assert_eq!(projections.len(), 1);
+        assert_eq!(projections[0].scaled_extent, source_extent);
+        assert!(
+            !entities[FIRST_NAVIGATION_ENTITY_INDEX]
+                .flags
+                .has_scaled_extent()
+        );
     }
 
     #[test]

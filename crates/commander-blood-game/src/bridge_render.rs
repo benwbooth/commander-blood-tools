@@ -407,7 +407,10 @@ mod tests {
     use commander_blood_formats::panorama::BridgePanoramaArchive;
 
     use super::*;
-    use crate::native::bloodprg::{BridgeScene, BridgeSceneInput, ShipProjectionResources};
+    use crate::native::bloodprg::{
+        BRIDGE_SPRITE_ENTITY_COUNT, BridgeScene, BridgeSceneInput, BridgeSpriteEntity,
+        ShipProjectionResources,
+    };
     use crate::native::random::BloodPrng;
     use crate::render::aspect_fit_viewport;
 
@@ -437,7 +440,10 @@ mod tests {
         let mut random = BloodPrng::default();
         random.seed_from_clock_register(TEST_CLOCK_BYTE);
         let mut scene = BridgeScene::new(panorama, resources, &mut random).unwrap();
-        let frame = scene.render_frame(BridgeSceneInput::default()).unwrap();
+        let mut sprite_entities = [BridgeSpriteEntity::default(); BRIDGE_SPRITE_ENTITY_COUNT];
+        let frame = scene
+            .render_frame(BridgeSceneInput::default(), &mut sprite_entities)
+            .unwrap();
         let Some((device, queue)) = offscreen_device() else {
             return;
         };

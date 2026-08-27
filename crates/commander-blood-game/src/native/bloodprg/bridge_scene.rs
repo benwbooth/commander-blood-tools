@@ -12,12 +12,13 @@ use crate::native::random::BloodPrng;
 
 use super::{
     BRIDGE_ARC_UNITS_PER_VIEW_FRAME, BRIDGE_CURSOR_RING_UNIT_COUNT,
-    BRIDGE_CURSOR_UNITS_PER_VIEW_FRAME, BRIDGE_LOGICAL_SCREEN_CENTER_X, BridgeSteeringInteraction,
-    BridgeSteeringOutcome, BridgeSteeringState, FULL_SHIP_PROJECTION_CLIP, NavActorSeekState,
-    SHIP_CAMERA_RESET, SHIP_POINT_CLOUD_COUNT, ShipCameraPosition, ShipPointCloudProjection,
-    ShipPointRecord, ShipProjectionAngles, ShipProjectionError, ShipProjectionResources,
-    build_ship_projection_matrix, project_ship_point_cloud, randomize_ship_point_cloud,
-    update_bridge_steering,
+    BRIDGE_CURSOR_UNITS_PER_VIEW_FRAME, BRIDGE_LOGICAL_SCREEN_CENTER_X, BridgeSpriteEntity,
+    BridgeSteeringInteraction, BridgeSteeringOutcome, BridgeSteeringState,
+    FULL_SHIP_PROJECTION_CLIP, NavActorSeekState, SHIP_CAMERA_RESET, SHIP_POINT_CLOUD_COUNT,
+    ShipCameraPosition, ShipObjectSpriteProjection, ShipPointCloudProjection, ShipPointRecord,
+    ShipProjectionAngles, ShipProjectionError, ShipProjectionResources,
+    build_ship_projection_matrix, project_ship_object_sprites_against_source_extent,
+    project_ship_point_cloud, randomize_ship_point_cloud, update_bridge_steering,
 };
 
 /// Authored golden-console rest frame used when entering the bridge hub.
@@ -47,6 +48,8 @@ pub struct BridgeSceneFrame {
     pub panorama_pixels: Box<[u8]>,
     /// Exact fixed-point starfield projection generated before panorama compositing.
     pub starfield: ShipPointCloudProjection,
+    /// Perspective projections applied to visible navigation sprite entities.
+    pub object_sprites: Box<[ShipObjectSpriteProjection]>,
     /// Observable steering result for bridge interaction and presentation routing.
     pub steering: BridgeSteeringOutcome,
 }
@@ -169,6 +172,7 @@ impl BridgeScene {
     pub fn render_frame(
         &mut self,
         input: BridgeSceneInput,
+        sprite_entities: &mut [BridgeSpriteEntity],
     ) -> Result<BridgeSceneFrame, BridgeSceneError> {
         self.steering.cursor_ring_position = native_ring_input(
             self.steering.cursor_ring_position,
@@ -200,6 +204,12 @@ impl BridgeScene {
             FULL_SHIP_PROJECTION_CLIP,
             &mut star_occupancy,
         )?;
+        let object_sprites = project_ship_object_sprites_against_source_extent(
+            &self.projection_resources.object_anchors,
+            self.camera,
+            matrix,
+            sprite_entities,
+        )?;
         let panorama_frame = usize::from(self.steering.view_frame);
         let mut panorama_pixels = vec![u8::MIN; PANORAMA_FRAME_PIXEL_COUNT].into_boxed_slice();
         let metadata = self.panorama.decode_frame_over(
@@ -213,6 +223,7 @@ impl BridgeScene {
             metadata,
             panorama_pixels,
             starfield,
+            object_sprites,
             steering,
         })
     }
@@ -232,11 +243,16 @@ mod tests {
     use commander_blood_formats::bloodprg::decode_bloodprg_bridge_resources;
     use commander_blood_formats::panorama::BridgeStation;
 
+    use super::super::{BRIDGE_SPRITE_ENTITY_COUNT, BridgeSpriteExtent, BridgeSpriteFlags};
     use super::*;
 
     const TEST_CLOCK_BYTE: u8 = 17;
     const LARGE_POINTER_DELTA: i32 = 160;
     const NO_POINTER_DELTA: i32 = 0;
+    const FIRST_NAVIGATION_ENTITY_INDEX: usize = 21;
+    const ACTIVE_VISIBLE_SPRITE_FLAGS: u16 = 129;
+    const TEST_SPRITE_WIDTH: u16 = 40;
+    const TEST_SPRITE_HEIGHT: u16 = 24;
 
     #[test]
     fn ring_adapter_reconstructs_the_native_absolute_input_without_cursor_warping() {
@@ -280,8 +296,19 @@ mod tests {
         let mut random = BloodPrng::default();
         random.seed_from_clock_register(TEST_CLOCK_BYTE);
         let mut scene = BridgeScene::new(panorama, resources.into(), &mut random).unwrap();
+        let mut sprite_entities = [BridgeSpriteEntity::default(); BRIDGE_SPRITE_ENTITY_COUNT];
+        sprite_entities[FIRST_NAVIGATION_ENTITY_INDEX] = BridgeSpriteEntity {
+            flags: BridgeSpriteFlags::from_bits(ACTIVE_VISIBLE_SPRITE_FLAGS),
+            source_extent: BridgeSpriteExtent {
+                width: TEST_SPRITE_WIDTH,
+                height: TEST_SPRITE_HEIGHT,
+            },
+            ..BridgeSpriteEntity::default()
+        };
 
-        let centered = scene.render_frame(BridgeSceneInput::default()).unwrap();
+        let centered = scene
+            .render_frame(BridgeSceneInput::default(), &mut sprite_entities)
+            .unwrap();
         assert_eq!(
             centered.panorama_frame,
             usize::from(INITIAL_BRIDGE_VIEW_FRAME)
@@ -289,6 +316,7 @@ mod tests {
         assert_eq!(centered.metadata.station, BridgeStation::Console);
         assert_eq!(centered.panorama_pixels.len(), PANORAMA_FRAME_PIXEL_COUNT);
         assert!(!centered.starfield.plotted.is_empty());
+        assert_eq!(centered.object_sprites.len(), 1);
         assert!(!centered.steering.view_changed);
         assert_eq!(
             scene.steering().cursor_ring_position,
@@ -296,10 +324,13 @@ mod tests {
         );
 
         let steered = scene
-            .render_frame(BridgeSceneInput {
-                horizontal_delta: LARGE_POINTER_DELTA,
-                ..BridgeSceneInput::default()
-            })
+            .render_frame(
+                BridgeSceneInput {
+                    horizontal_delta: LARGE_POINTER_DELTA,
+                    ..BridgeSceneInput::default()
+                },
+                &mut sprite_entities,
+            )
             .unwrap();
         assert!(steered.steering.view_changed);
         assert_ne!(steered.panorama_frame, centered.panorama_frame);

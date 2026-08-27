@@ -1505,17 +1505,21 @@ impl<'window> ModernGameServices<'window> {
 
     /// Advance the translated bridge steering, panorama, and point-cloud frame.
     pub fn render_bridge_frame(&mut self, input: BridgeSceneInput) -> Result<&BridgeSceneFrame> {
-        let scene = self
-            .bridge_scene
+        let Self {
+            runtime,
+            bridge_scene,
+            bridge_frame,
+            ..
+        } = self;
+        let scene = bridge_scene
             .as_mut()
             .context("bridge scene has not been initialized")?;
-        self.bridge_frame = Some(
+        *bridge_frame = Some(
             scene
-                .render_frame(input)
+                .render_frame(input, runtime.bridge_sprite_entities_mut())
                 .context("rendering bridge scene")?,
         );
-        Ok(self
-            .bridge_frame
+        Ok(bridge_frame
             .as_ref()
             .expect("rendered bridge frame was retained"))
     }

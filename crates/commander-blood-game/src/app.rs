@@ -21,8 +21,8 @@ use crate::assets::{
 };
 use crate::native::alien::{AlienInputAction, AlienMouseSample, AlienScene};
 use crate::native::bloodprg::{
-    BridgeScene, BridgeSceneInput, BridgeSteeringInteraction, InputAction, PointerButton,
-    PointerButtons, ShipProjectionResources,
+    BRIDGE_SPRITE_ENTITY_COUNT, BridgeScene, BridgeSceneInput, BridgeSpriteEntity,
+    BridgeSteeringInteraction, InputAction, PointerButton, PointerButtons, ShipProjectionResources,
 };
 use crate::native::manu3::animation::CursorPosition;
 use crate::native::manu3::model::{Manu3FrameRequest, Manu3Model};
@@ -286,6 +286,7 @@ pub fn run() -> Result<()> {
     let mut rendered_frames = u64::MIN;
     let mut input = RuntimeInputHost::new([INITIAL_CURSOR.x, INITIAL_CURSOR.y]);
     let mut bridge_horizontal_delta = NO_MOUSE_MOTION;
+    let mut bridge_sprite_entities = [BridgeSpriteEntity::default(); BRIDGE_SPRITE_ENTITY_COUNT];
 
     'running: loop {
         for event in events.poll_iter() {
@@ -372,11 +373,14 @@ pub fn run() -> Result<()> {
         let bridge_frame = bridge
             .as_mut()
             .map(|scene| {
-                scene.render_frame(BridgeSceneInput {
-                    horizontal_delta: bridge_horizontal_delta.round() as i32,
-                    pointer_buttons: pointer_buttons.bits(),
-                    interaction: BridgeSteeringInteraction::Free,
-                })
+                scene.render_frame(
+                    BridgeSceneInput {
+                        horizontal_delta: bridge_horizontal_delta.round() as i32,
+                        pointer_buttons: pointer_buttons.bits(),
+                        interaction: BridgeSteeringInteraction::Free,
+                    },
+                    &mut bridge_sprite_entities,
+                )
             })
             .transpose()?;
         bridge_horizontal_delta = NO_MOUSE_MOTION;

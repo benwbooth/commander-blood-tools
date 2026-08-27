@@ -196,6 +196,13 @@ impl OriginalGameRuntime {
         &self.bridge_sprite_entities
     }
 
+    /// Mutably borrow bridge entities while assembling one runtime frame.
+    pub(super) fn bridge_sprite_entities_mut(
+        &mut self,
+    ) -> &mut [BridgeSpriteEntity; BRIDGE_SPRITE_ENTITY_COUNT] {
+        &mut self.bridge_sprite_entities
+    }
+
     /// Current ship-camera approach state started by BloodScript travel actions.
     pub const fn camera_approach(&self) -> &CameraApproachState {
         &self.camera_approach

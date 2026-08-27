@@ -646,7 +646,8 @@ pub use ship_projection::{
     ShipProjectedPoint, ShipProjectionAngleRole, ShipProjectionAngles, ShipProjectionClip,
     ShipProjectionError, ShipProjectionMatrix, ShipProjectionResources, ShipTrigonometrySample,
     build_ship_projection_matrix, plot_ship_point, project_ship_object_sprites,
-    project_ship_point_cloud, randomize_ship_point_cloud,
+    project_ship_object_sprites_against_source_extent, project_ship_point_cloud,
+    randomize_ship_point_cloud,
 };
 pub use ship_target::{
     ShipTargetListPass, ShipTargetListSelection, ShipTargetListSource, ShipTargetSelectionError,
