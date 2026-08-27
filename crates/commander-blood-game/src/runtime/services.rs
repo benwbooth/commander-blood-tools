@@ -25,11 +25,11 @@ use crate::native::bloodprg::{
     PresentationScreenOutcome, PresentationScreenState, PresentationWordChoiceOutcome,
     SCENE_PALETTE_CLEAR_COLOR_COUNT, ScriptClock, ScriptFrameOutcome, ScriptProfileId,
     ScriptProfileLoadOutcome, ScriptShipNavigationMode, ShipDepthTransitionOutcome,
-    ShipHudInitializationContext, ShipPresentationState, ShipProjectionResources,
-    ShipTargetSelectionState, ShipViewEntityId, StartupPreparationOutcome, TextPresentationState,
-    clear_scene_palette_entries, draw_planar_dialogue_text, measure_game_text_width,
-    objects_at_arche_position, presentable_navigation_objects, reveal_inline_menu_step,
-    update_manu3_hand_frame,
+    ShipHudInitializationContext, ShipPresentationOutcome, ShipPresentationState,
+    ShipProjectionResources, ShipTargetSelectionState, ShipViewEntityId, StartupPreparationOutcome,
+    TextPresentationState, clear_scene_palette_entries, draw_planar_dialogue_text,
+    measure_game_text_width, objects_at_arche_position, presentable_navigation_objects,
+    reveal_inline_menu_step, update_manu3_hand_frame,
 };
 use crate::native::manu3::animation::CursorPosition;
 use crate::native::random::BloodPrng;
@@ -37,6 +37,7 @@ use crate::native::random::BloodPrng;
 use super::choice_list::{
     RuntimeChoiceListStyle, draw_choice_list_rows, prepare_choice_list_frame,
 };
+use super::ship_presentation::update_runtime_ship_presentation as run_runtime_ship_presentation;
 use super::ship_target::ship_hud_arche_link;
 use super::{
     LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_PIXEL_COUNT, OriginalGameData,
@@ -442,6 +443,15 @@ impl<'window> ModernGameServices<'window> {
         self.ship_navigation
             .as_ref()
             .context("ship navigation is already being updated")
+    }
+
+    /// Advance the recovered top-level ship presentation state machine.
+    pub fn update_runtime_ship_presentation(
+        &mut self,
+        scene_link: GameSceneLink,
+        state: &mut GameLifecycleState,
+    ) -> Result<ShipPresentationOutcome> {
+        run_runtime_ship_presentation(self, scene_link, state)
     }
 
     /// Advance and draw the recovered ship-HUD target selector.

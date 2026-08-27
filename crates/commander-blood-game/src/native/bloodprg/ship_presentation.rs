@@ -106,17 +106,17 @@ pub trait ShipPresentationHost {
     /// Advance one fixed bridge entity's flag state.
     fn transition_entity(&mut self, entity: ShipViewEntityId);
     /// Advance the separately recovered depth transition.
-    fn advance_depth(&mut self);
+    fn advance_depth(&mut self, state: &mut ShipPresentationState);
     /// Submit the separately recovered two-band presentation effect.
-    fn compose_depth_band(&mut self);
+    fn compose_depth_band(&mut self, state: &mut ShipPresentationState);
     /// Dispatch the current linked scene before phase-specific work.
-    fn dispatch_scene(&mut self, scene_link: &Self::SceneLink);
+    fn dispatch_scene(&mut self, state: &mut ShipPresentationState, scene_link: &Self::SceneLink);
     /// Initialize or advance the ship HUD.
-    fn update_hud(&mut self);
+    fn update_hud(&mut self, state: &mut ShipPresentationState);
     /// Clear the travelling display band.
     fn clear_travel_band(&mut self);
     /// Advance navigation presentation state.
-    fn update_navigation(&mut self);
+    fn update_navigation(&mut self, state: &mut ShipPresentationState);
 }
 
 /// Terminal path selected by one ship presentation update.
@@ -170,9 +170,9 @@ pub fn update_ship_presentation<H: ShipPresentationHost>(
         return ShipPresentationOutcome::Initialized;
     }
 
-    host.advance_depth();
-    host.compose_depth_band();
-    host.dispatch_scene(scene_link);
+    host.advance_depth(state);
+    host.compose_depth_band(state);
+    host.dispatch_scene(state, scene_link);
 
     if entry_flags & DIALOGUE_PHASE != u16::MIN {
         if state.dialogue_phase_ready & PHASE_READY == u8::MIN {
@@ -205,7 +205,7 @@ pub fn update_ship_presentation<H: ShipPresentationHost>(
         if state.hud_initialization_pending & HUD_INITIALIZATION_PENDING == u8::MIN
             || state.transition_percent == TRANSITION_COMPLETE_PERCENT
         {
-            host.update_hud();
+            host.update_hud(state);
         }
         return ShipPresentationOutcome::Hud;
     }
@@ -222,7 +222,7 @@ pub fn update_ship_presentation<H: ShipPresentationHost>(
     }
 
     if entry_flags & NAVIGATION_PHASE != u16::MIN {
-        host.update_navigation();
+        host.update_navigation(state);
         return ShipPresentationOutcome::Navigation;
     }
 
@@ -284,19 +284,23 @@ mod tests {
             self.calls.push(format!("entity:{}", entity.value()));
         }
 
-        fn advance_depth(&mut self) {
+        fn advance_depth(&mut self, _state: &mut ShipPresentationState) {
             self.calls.push("depth".to_owned());
         }
 
-        fn compose_depth_band(&mut self) {
+        fn compose_depth_band(&mut self, _state: &mut ShipPresentationState) {
             self.calls.push("band".to_owned());
         }
 
-        fn dispatch_scene(&mut self, _scene_link: &Self::SceneLink) {
+        fn dispatch_scene(
+            &mut self,
+            _state: &mut ShipPresentationState,
+            _scene_link: &Self::SceneLink,
+        ) {
             self.calls.push("dispatch".to_owned());
         }
 
-        fn update_hud(&mut self) {
+        fn update_hud(&mut self, _state: &mut ShipPresentationState) {
             self.calls.push("hud".to_owned());
         }
 
@@ -304,7 +308,7 @@ mod tests {
             self.calls.push("fill".to_owned());
         }
 
-        fn update_navigation(&mut self) {
+        fn update_navigation(&mut self, _state: &mut ShipPresentationState) {
             self.calls.push("nav".to_owned());
         }
     }

@@ -17,6 +17,7 @@ mod script_backend;
 mod services;
 mod ship_hud;
 mod ship_navigation;
+mod ship_presentation;
 mod ship_target;
 mod startup;
 mod state;
