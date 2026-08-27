@@ -757,11 +757,25 @@ impl OriginalGameRuntime {
     }
 
     /// Borrow both flat framebuffers for one translated presentation operation.
-    pub(super) fn presentation_buffers_mut(&mut self) -> (&mut [u8], &mut [u8]) {
+    pub(crate) fn presentation_buffers_mut(&mut self) -> (&mut [u8], &mut [u8]) {
         (
             self.front_buffer.pixels_mut(),
             self.back_buffer.pixels_mut(),
         )
+    }
+
+    pub(crate) fn reset_video_conversion_state(
+        &mut self,
+        palette: IndexedGamePalette,
+        palette_index: u8,
+    ) {
+        self.live_palette = palette;
+        self.front_buffer.clear(palette_index);
+        self.back_buffer.clear(palette_index);
+    }
+
+    pub(crate) fn into_data(self) -> OriginalGameData {
+        self.data
     }
 
     /// Decode the original MANU3 model from `BLOOD.DAT` once.

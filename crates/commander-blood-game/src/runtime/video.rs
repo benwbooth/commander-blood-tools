@@ -251,7 +251,7 @@ impl RuntimePresentationStream {
         &self.descriptors[usize::MIN].filename
     }
 
-    fn queue_metrics(&self) -> Result<RuntimePresentationQueueMetrics> {
+    pub(crate) fn queue_metrics(&self) -> Result<RuntimePresentationQueueMetrics> {
         Ok(RuntimePresentationQueueMetrics {
             entry_metric: u16::try_from(self.stream.entry_metric)
                 .context("presentation entry metric exceeds the native word range")?,

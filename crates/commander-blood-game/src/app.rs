@@ -423,6 +423,7 @@ fn run_production_game(options: &Options) -> Result<()> {
         Some(writable_root) => OriginalGameData::load_with_writable_root(paths, writable_root)?,
         None => OriginalGameData::load(paths)?,
     };
+    let data = crate::video_import::prepare_lossless_webm_derivatives(data)?;
     let clock = host_clock_sample()?;
     let sdl = sdl3::init().map_err(anyhow::Error::msg)?;
     let video = sdl.video().map_err(anyhow::Error::msg)?;

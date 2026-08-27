@@ -195,6 +195,14 @@ impl NormalizedMediaStore {
         self.manifest.audio.len()
     }
 
+    pub(crate) fn root(&self) -> &Path {
+        &self.media_root
+    }
+
+    pub(crate) fn source_asset_manifest_sha256(&self) -> &str {
+        &self.manifest.source_asset_manifest_sha256
+    }
+
     pub(crate) fn load_voc(&self, name: &BloodResourceName) -> Result<NormalizedPcmClip> {
         self.load(name, None, NormalizedAudioKind::Voc)
     }

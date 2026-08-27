@@ -17,3 +17,4 @@ mod media_import;
 pub mod native;
 pub mod render;
 pub mod runtime;
+mod video_import;

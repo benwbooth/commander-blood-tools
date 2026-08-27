@@ -166,3 +166,20 @@ fn production_runtime_opens_only_the_imported_loose_asset_store() {
     assert!(services.contains(".normalized_media()"));
     assert!(!services.contains("VocPcm::decode"));
 }
+
+#[test]
+fn production_video_derivatives_are_generated_through_the_recovered_decoder() {
+    let game_root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let app = std::fs::read_to_string(game_root.join("src/app.rs")).unwrap();
+    let importer = std::fs::read_to_string(game_root.join("src/video_import.rs")).unwrap();
+
+    assert!(app.contains("prepare_lossless_webm_derivatives(data)"));
+    assert!(importer.contains("RuntimePresentationStream::load"));
+    assert!(importer.contains("service_frame(runtime"));
+    assert!(importer.contains("build_indexed_planar_frame"));
+    assert!(importer.contains("build_mask_planar_frame"));
+    assert!(importer.contains("decode_webm_stream_hash"));
+    assert!(importer.contains("decoded_rgb_sha256 != rgb_stream_sha256"));
+    assert!(importer.contains("decoded_index_sha256 != indexed_video_stream_sha256"));
+    assert!(importer.contains("decoded_mask_sha256 != mask_stream_sha256"));
+}

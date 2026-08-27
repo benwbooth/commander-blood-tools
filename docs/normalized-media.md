@@ -35,21 +35,34 @@ Ogg Vorbis or Opus is not the canonical audio format because both are lossy.
 They may be optional distribution derivatives later, but they cannot replace the
 exact WAVE oracle.
 
-## Video Gate
+## Lossless Video
 
-HNM is not treated as a simple sequence of opaque RGB frames. The runtime uses:
+`assets-v1/media-v1/video-v1` contains verified VP9/WebM derivatives for every
+HNM resource. HNM is not flattened into only an opaque RGB movie. Each source
+produces:
 
-- indexed frame pixels and per-stream palette changes;
-- delta updates that depend on prior decoder state;
-- transparent character layers composited over another scene;
-- authored frame cadence and subtitle synchronization.
+- `NAME.webm`: lossless full-range `gbrp` RGB for viewing and future upscaling;
+- `NAME.index.webm`: lossless palette indices repeated across the three planes;
+- `NAME.mask.webm`: lossless ownership values, 255 for authored pixels and 0
+  for pixels inherited from the underlying scene;
+- `NAME.json`: six-bit palette updates, embedded sound records, service-call
+  positions, queue metrics, dimensions, frame counts, and stream hashes.
 
-A direct WebM transcode would flatten those semantics and could reintroduce the
-same presentation inaccuracies the reverse engineering removed. Before runtime
-video switches formats, the importer must classify each HNM use, serialize
-palette and timing metadata, preserve alpha for composited layers, and compare
-every normalized decoded frame against the existing HNM decoder.
+The importer runs the recovered HNM presentation decoder twice. One trace starts
+with the default palette and zero-filled framebuffers; the other starts with the
+complement palette and 255-filled framebuffers. Values that converge were
+authored by the stream. Values that remain different depend on prior scene state
+and are excluded from RGB/index output by the ownership mask. This preserves
+delta frames and transparent character overlays without filename heuristics.
 
-For opaque video, a lossless Matroska/FFV1 master is the likely verification
-format and WebM/AV1 is a possible playback derivative. Transparent and
-palette-driven streams need an explicit sidecar or frame representation first.
+Each WebM is encoded as lossless VP9 profile 1, decoded back to planar bytes by
+FFmpeg, and compared with the exact pre-encode SHA-256 stream hash. The complete
+cache is installed atomically only after all source hashes, output hashes,
+metadata, and frame counts validate. WebM timestamps use a nominal 25 fps for
+tool compatibility and are explicitly non-authoritative; the recorded game
+service positions and runtime audio/software clocks remain the timing oracle.
+
+Gameplay still reads canonical loose HNM resources. Switching playback to the
+index and mask streams is a separate parity-gated step: the normalized reader
+must reproduce framebuffers, palettes, sound records, queue metrics, and scene
+transitions before HNM decoding can be removed from production.

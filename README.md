@@ -31,16 +31,20 @@ parent Commander Blood user-data directory.
 
 The asset manifest records every effective DOS resource, original archive or
 loose origin, exact byte count, SHA-256 digest, and media kind. First launch also
-creates `assets-v1/media-v1`: a source-manifest-keyed derivative cache containing
-standard RIFF/WAVE files. All 8-bit mono samples and authored rates round-trip
-exactly. Production music and standalone voice playback read these WAVE files;
-each SND bank clip is exported as WAVE while its bank-level timing and selection
-metadata remain in the canonical loose SND resource for now.
+creates `assets-v1/media-v1`, a source-manifest-keyed derivative cache. Audio is
+stored as standard RIFF/WAVE files; all 8-bit mono samples and authored rates
+round-trip exactly. Production music and standalone voice playback read these
+WAVE files. Each SND bank clip is exported as WAVE while its bank-level timing
+and selection metadata remain in the canonical loose SND resource for now.
 
-HNM video remains in its canonical loose form. Its indexed palettes, delta
-frames, transparent character overlays, and authored timing must be represented
-explicitly before a standard video container can replace it without changing
-game behavior. See [docs/normalized-media.md](docs/normalized-media.md).
+Every HNM is decoded twice by the recovered game decoder and exported below
+`media-v1/video-v1` as three lossless VP9 WebM streams: viewable 4:4:4 RGB,
+palette indices, and a compositing-ownership mask. A JSON sidecar preserves
+palette updates, embedded sound records, service-call positions, and queue
+counters. FFmpeg decodes each generated stream again and the importer requires
+exact raw-frame SHA-256 equality before installing the cache atomically. HNM
+remains the gameplay source until the normalized indexed/mask reader passes the
+same runtime parity gates. See [docs/normalized-media.md](docs/normalized-media.md).
 
 ## Commands
 

@@ -169,6 +169,7 @@
             doCheck = false;
             postFixup = ''
               wrapProgram "$out/bin/commander-blood" \
+                --prefix PATH : "${pkgs.lib.makeBinPath [ pkgs.ffmpeg ]}" \
                 --prefix LD_LIBRARY_PATH : \
                   "/run/opengl-driver/lib:${
                     pkgs.lib.makeLibraryPath (
