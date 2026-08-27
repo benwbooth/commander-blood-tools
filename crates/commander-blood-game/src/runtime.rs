@@ -109,6 +109,7 @@ use crate::native::bloodprg::{
     OriginalScriptProfileCatalog, ResourceLoadStatus, ScriptProfileId, ScriptProfileManager,
     StartupWritableResourceCatalog,
 };
+use crate::script_rebuild::prepare_verified_script_artifacts;
 
 /// Name of the original packed resource archive.
 pub const ORIGINAL_ARCHIVE_FILENAME: &str = "BLOOD.DAT";
@@ -381,6 +382,19 @@ impl OriginalGameData {
         paths: OriginalGameDataPaths,
         writable_root: impl Into<PathBuf>,
     ) -> Result<Self> {
+        let writable_root = writable_root.into();
+        let verified_scripts = prepare_verified_script_artifacts(
+            paths.descript(),
+            paths.resource_root(),
+            &writable_root,
+        )
+        .context("checking editable game-script sources")?;
+        if verified_scripts.rebuilt_unit_count != 0 {
+            eprintln!(
+                "Rebuilt and byte-exactly verified {} newer game-script source unit(s).",
+                verified_scripts.rebuilt_unit_count
+            );
+        }
         let executable = std::fs::read(paths.executable())
             .with_context(|| format!("reading {}", paths.executable().display()))?
             .into_boxed_slice();
@@ -409,8 +423,12 @@ impl OriginalGameData {
             .context("decoding executable name-area effect sequences")?;
         let world_artwork_layout = decode_bloodprg_world_artwork_layout(&executable)
             .context("decoding executable world-artwork layout")?;
-        let descript_bytes = std::fs::read(paths.descript())
-            .with_context(|| format!("reading {}", paths.descript().display()))?;
+        let descript_bytes = match verified_scripts.descript {
+            Some(bytes) => bytes,
+            None => std::fs::read(paths.descript())
+                .with_context(|| format!("reading {}", paths.descript().display()))?
+                .into_boxed_slice(),
+        };
         let descript_database = DescriptDatabase::parse(&descript_bytes).map_err(|error| {
             anyhow::anyhow!("decoding {}: {error:?}", paths.descript().display())
         })?;
@@ -420,13 +438,14 @@ impl OriginalGameData {
         let normalized_audio_count = paths.media_store.audio_entry_count();
         let media_store = paths.media_store.clone();
         let resource_names = paths.manifest().resource_names()?;
-        let resource_store = OriginalResourceStore::with_writable_root(
+        let mut resource_store = OriginalResourceStore::with_writable_root(
             paths.resource_root().to_owned(),
-            writable_root.into(),
+            writable_root,
             None,
             resource_names,
             true,
         );
+        resource_store.install_verified_overrides(verified_scripts.resources);
 
         Ok(Self {
             paths,

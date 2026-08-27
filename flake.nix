@@ -142,9 +142,12 @@
                 ./src
                 ./crates/commander-blood-formats
                 ./crates/commander-blood-game
+                ./crates/commander-blood-script-compiler
+                ./re/descript
+                ./re/vm/profiles
               ];
             };
-            cargoHash = "sha256-+Ib1nxqiUm4BF+1Frf0mg3qoJGwnDn1iQezarPLMrDY=";
+            cargoHash = "sha256-k1GREP3U3MbJ4dlLACMH804wZWvkpaXi1bYUrfNPEZI=";
             cargoBuildFlags = [
               "-p"
               "commander-blood-game"
@@ -171,6 +174,13 @@
               wayland
             ];
             doCheck = false;
+            postInstall = ''
+              install -Dm444 re/descript/DESCRIPT.descript \
+                "$out/share/commander-blood/re/descript/DESCRIPT.descript"
+              mkdir -p "$out/share/commander-blood/re/vm/profiles"
+              install -m444 re/vm/profiles/script*.blood \
+                "$out/share/commander-blood/re/vm/profiles/"
+            '';
             postFixup = ''
               wrapProgram "$out/bin/commander-blood" \
                 --prefix LD_LIBRARY_PATH : \

@@ -29,6 +29,15 @@ The default immutable asset cache is
 another location. Saves remain separate and use `CBLOOD_WRITE_DATA` or the
 parent Commander Blood user-data directory.
 
+Startup also checks the editable `re/descript/DESCRIPT.descript` and
+`re/vm/profiles/script*.blood` sources against their compiled resources. When a
+source is newer, it is compiled in-process and every generated file must match
+the imported original byte-for-byte before it is installed in
+`compiled-scripts-v1` below the writable data directory. A checksum mismatch
+aborts startup and leaves the last verified files untouched. Installed packages
+ship these sources beside the executable; set `CBLOOD_SCRIPT_SOURCE` to an
+alternate `re` directory while editing them.
+
 The asset manifest records every effective DOS resource, original archive or
 loose origin, exact byte count, SHA-256 digest, and media kind. First launch also
 creates `assets-v1/media-v1`, a source-manifest-keyed derivative cache. Audio is

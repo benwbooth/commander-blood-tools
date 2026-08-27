@@ -300,6 +300,7 @@ dependencies = [
  "anyhow",
  "bytemuck",
  "commander-blood-formats",
+ "commander-blood-script-compiler",
  "matroska-demuxer",
  "pollster",
  "sdl3",
@@ -309,6 +310,15 @@ dependencies = [
  "vpx-rs",
  "webm",
  "wgpu 29.0.4",
+]
+
+[[package]]
+name = "commander-blood-script-compiler"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

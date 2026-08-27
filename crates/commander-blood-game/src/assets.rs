@@ -1,6 +1,6 @@
 //! Typed loading of original Commander Blood artwork.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::ops::RangeInclusive;
 use std::path::{Component, Path, PathBuf};
 use std::sync::Arc;
@@ -30,6 +30,7 @@ pub struct OriginalResourceStore {
     writable_root: PathBuf,
     archive: Option<Arc<BloodArchive>>,
     loose_names: BTreeSet<BloodResourceName>,
+    verified_overrides: BTreeMap<BloodResourceName, Arc<[u8]>>,
     force_loose: bool,
 }
 
@@ -63,8 +64,21 @@ impl OriginalResourceStore {
             writable_root,
             archive: archive.map(Arc::new),
             loose_names: loose_names.into_iter().collect(),
+            verified_overrides: BTreeMap::new(),
             force_loose,
         }
+    }
+
+    /// Install source-compiled bytes after they have been verified against the original resource.
+    pub(crate) fn install_verified_overrides(
+        &mut self,
+        overrides: impl IntoIterator<Item = (BloodResourceName, Box<[u8]>)>,
+    ) {
+        self.verified_overrides.extend(
+            overrides
+                .into_iter()
+                .map(|(name, bytes)| (name, Arc::from(bytes))),
+        );
     }
 
     /// Root used when a resource must be read as an external loose file.
@@ -97,7 +111,10 @@ impl OriginalResourceStore {
     /// `0x002693`. The authored loose-name allowlist remains case-sensitive;
     /// archive lookup uses the executable's distinct DOS byte folding.
     pub fn source(&self, name: &BloodResourceName) -> OriginalResourceSource {
-        if self.force_loose || self.loose_names.contains(name) {
+        if self.verified_overrides.contains_key(name)
+            || self.force_loose
+            || self.loose_names.contains(name)
+        {
             return OriginalResourceSource::LooseFile;
         }
         if self
@@ -116,6 +133,9 @@ impl OriginalResourceStore {
     /// This is the typed host equivalent of `resource_name_lookup` at
     /// BLOODPRG file offset `0x0028CA`.
     pub fn resource_len(&self, name: &BloodResourceName) -> Result<usize> {
+        if let Some(bytes) = self.verified_overrides.get(name) {
+            return Ok(bytes.len());
+        }
         match self.source(name) {
             OriginalResourceSource::EmbeddedArchive => Ok(self
                 .archive
@@ -136,6 +156,9 @@ impl OriginalResourceStore {
 
     /// Return whether one original resource is currently resolvable.
     pub fn resource_exists(&self, name: &BloodResourceName) -> Result<bool> {
+        if self.verified_overrides.contains_key(name) {
+            return Ok(true);
+        }
         match self.source(name) {
             OriginalResourceSource::EmbeddedArchive => Ok(true),
             OriginalResourceSource::LooseFile => {
@@ -152,6 +175,9 @@ impl OriginalResourceStore {
     /// `0x002ABB`. XMS, EMS, chunk cursors, and address wrapping are obsolete;
     /// consumers receive the exact member or loose-file bytes directly.
     pub fn load(&self, name: &BloodResourceName) -> Result<Box<[u8]>> {
+        if let Some(bytes) = self.verified_overrides.get(name) {
+            return Ok(Box::from(bytes.as_ref()));
+        }
         match self.source(name) {
             OriginalResourceSource::EmbeddedArchive => Ok(Box::from(
                 self.archive
@@ -594,6 +620,21 @@ mod tests {
 
             assert_eq!(store.source(&requested), expected, "{}", vector.filename);
         }
+    }
+
+    #[test]
+    fn verified_source_compilation_overrides_original_resource_bytes() {
+        let name = resource_name("SCRIPT1.COD");
+        let mut store = OriginalResourceStore::new(PathBuf::new(), None, [], false);
+        store.install_verified_overrides([(
+            name.clone(),
+            Box::from(&b"verified source output"[..]),
+        )]);
+
+        assert_eq!(store.source(&name), OriginalResourceSource::LooseFile);
+        assert!(store.resource_exists(&name).unwrap());
+        assert_eq!(store.resource_len(&name).unwrap(), 22);
+        assert_eq!(&*store.load(&name).unwrap(), b"verified source output");
     }
 
     #[test]

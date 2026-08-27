@@ -11,6 +11,7 @@ path = "src/main.rs"
 anyhow = "1"
 bytemuck = { version = "1", features = ["derive"] }
 commander-blood-formats = { path = "../commander-blood-formats" }
+commander-blood-script-compiler = { path = "../commander-blood-script-compiler" }
 matroska-demuxer = "0.8.1"
 pollster = "0.4"
 sdl3 = { version = "0.18.4", features = ["raw-window-handle", "use-pkg-config"] }

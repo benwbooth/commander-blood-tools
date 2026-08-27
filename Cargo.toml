@@ -4,7 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace]
-members = ["crates/commander-blood-formats", "crates/commander-blood-game"]
+members = [
+    "crates/commander-blood-formats",
+    "crates/commander-blood-game",
+    "crates/commander-blood-script-compiler",
+]
 resolver = "2"
 
 [dependencies]

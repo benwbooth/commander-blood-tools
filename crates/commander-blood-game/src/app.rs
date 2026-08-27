@@ -156,7 +156,8 @@ fn print_usage() {
          \n\
          CBLOOD_DATA may point to the original game-data directory.\n\
          CBLOOD_ASSET_CACHE may select the versioned imported loose-asset directory.\n\
-         CBLOOD_WRITE_DATA may point to the writable save-data directory."
+         CBLOOD_WRITE_DATA may point to the writable save-data directory.\n\
+         CBLOOD_SCRIPT_SOURCE may select an editable re script-source directory."
     );
 }
 

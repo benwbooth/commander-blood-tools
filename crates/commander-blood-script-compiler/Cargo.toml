@@ -1,0 +1,14 @@
+[package]
+name = "commander-blood-script-compiler"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+# The shared implementation's exhaustive unit tests remain owned by the tools crate.
+test = false
+doctest = false
+
+[dependencies]
+anyhow = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
