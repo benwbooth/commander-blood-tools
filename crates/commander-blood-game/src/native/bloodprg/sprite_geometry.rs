@@ -282,15 +282,27 @@ pub struct BridgeSpriteDirtyRegions {
     pub regions: Vec<BridgeSpriteRect>,
 }
 
-/// Stable location of a decoded sprite frame in the flat resource cache.
+/// Owned source supplying pixels for one bridge sprite frame.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum BridgeSpriteFrameSource {
+    /// A decoded sprite retained under its authored resource identifier.
+    CachedResource {
+        /// Original resource catalog identifier owning the frame bytes.
+        resource: ResourceId,
+        /// Byte offset of the frame header from the start of the resource.
+        byte_offset: usize,
+    },
+    /// The runtime's retained 320 by 200 bridge framebuffer.
+    RetainedFramebuffer,
+}
+
+/// Stable location of a decoded sprite frame in flat runtime storage.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct BridgeSpriteFrameReference {
-    /// Original resource catalog identifier owning the frame bytes.
-    pub resource: ResourceId,
+    /// Owned byte source replacing the native far frame pointer.
+    pub source: BridgeSpriteFrameSource,
     /// Zero-based frame selected from the resource directory.
     pub frame_index: usize,
-    /// Byte offset of the frame header from the start of the resource.
-    pub byte_offset: usize,
 }
 
 /// Render-facing geometry owned by one bridge sprite entity.
@@ -403,6 +415,43 @@ pub fn activate_bridge_sprite_from_resource(
     )
 }
 
+/// Activate one entity over the runtime's retained logical framebuffer.
+///
+/// The original game describes its back buffer as a one-frame raw sprite in
+/// the viewport allocation and passes that allocation to
+/// `entity_object_populate`. The modern runtime represents that alias directly:
+/// no synthetic resource bytes, segment arithmetic, or framebuffer copy is
+/// needed to bind the background entity.
+pub fn activate_bridge_sprite_from_retained_framebuffer(
+    entities: &mut [BridgeSpriteEntity],
+    entity_index: usize,
+    extent: BridgeSpriteExtent,
+    draw_position: BridgeSpritePosition,
+) -> Result<(), BridgeSpriteEntityError> {
+    let entity_count = entities.len();
+    let entity = entities
+        .get_mut(entity_index)
+        .ok_or(BridgeSpriteEntityError {
+            entity_index,
+            entity_count,
+        })?;
+    entity.flags = BridgeSpriteFlags::from_bits(ACTIVATED_FLAGS);
+    entity.frame = Some(BridgeSpriteFrameReference {
+        source: BridgeSpriteFrameSource::RetainedFramebuffer,
+        frame_index: usize::MIN,
+    });
+    entity.source_extent = extent;
+    entity.extent = extent;
+    if entity.committed_extent.width == u16::MIN {
+        entity.committed_extent.width = extent.width;
+    }
+    if entity.committed_extent.height == u16::MIN {
+        entity.committed_extent.height = extent.height;
+    }
+    entity.draw_position = draw_position;
+    Ok(())
+}
+
 fn populate_bridge_sprite_from_resolved_resource(
     entities: &mut [BridgeSpriteEntity],
     entity_index: usize,
@@ -490,9 +539,11 @@ fn populate_bridge_sprite_from_resolved_resource(
         resource_flags & RESOURCE_FRAME_ENCODING_FLAG | ACTIVATED_FLAGS,
     );
     entity.frame = Some(BridgeSpriteFrameReference {
-        resource,
+        source: BridgeSpriteFrameSource::CachedResource {
+            resource,
+            byte_offset: frame_byte_offset,
+        },
         frame_index,
-        byte_offset: frame_byte_offset,
     });
     entity.source_extent = extent;
     entity.extent = extent;
@@ -1019,18 +1070,55 @@ mod tests {
         let cache = OriginalResourceCache::new();
         let mut entities = [BridgeSpriteEntity::default(); BRIDGE_SPRITE_ENTITY_COUNT];
         let before = entities;
-        assert!(
-            !populate_bridge_sprite_from_cache(
-                &cache,
-                &mut entities,
-                1,
-                ResourceId::new(2),
-                BridgeSpritePosition { x: 10, y: 20 },
-                0,
-            )
-            .unwrap()
-        );
+        assert!(!populate_bridge_sprite_from_cache(
+            &cache,
+            &mut entities,
+            1,
+            ResourceId::new(2),
+            BridgeSpritePosition { x: 10, y: 20 },
+            0,
+        )
+        .unwrap());
         assert_eq!(entities, before);
+    }
+
+    #[test]
+    fn retained_framebuffer_activation_models_the_native_viewport_descriptor() {
+        const BACKGROUND_ENTITY_INDEX: usize = 20;
+        const FRAME_WIDTH: u16 = 320;
+        const FRAME_HEIGHT: u16 = 200;
+        const PRESERVED_COMMITTED_WIDTH: u16 = 77;
+
+        let mut entities = [BridgeSpriteEntity::default(); BRIDGE_SPRITE_ENTITY_COUNT];
+        entities[BACKGROUND_ENTITY_INDEX].committed_extent.width = PRESERVED_COMMITTED_WIDTH;
+        let extent = BridgeSpriteExtent {
+            width: FRAME_WIDTH,
+            height: FRAME_HEIGHT,
+        };
+        let draw_position = BridgeSpritePosition::default();
+
+        activate_bridge_sprite_from_retained_framebuffer(
+            &mut entities,
+            BACKGROUND_ENTITY_INDEX,
+            extent,
+            draw_position,
+        )
+        .unwrap();
+
+        let entity = entities[BACKGROUND_ENTITY_INDEX];
+        assert_eq!(entity.flags.bits(), ACTIVATED_FLAGS);
+        assert_eq!(
+            entity.frame,
+            Some(BridgeSpriteFrameReference {
+                source: BridgeSpriteFrameSource::RetainedFramebuffer,
+                frame_index: usize::MIN,
+            })
+        );
+        assert_eq!(entity.source_extent, extent);
+        assert_eq!(entity.extent, extent);
+        assert_eq!(entity.draw_position, draw_position);
+        assert_eq!(entity.committed_extent.width, PRESERVED_COMMITTED_WIDTH);
+        assert_eq!(entity.committed_extent.height, FRAME_HEIGHT);
     }
 
     #[test]
@@ -1483,9 +1571,11 @@ mod tests {
         assert_eq!(
             entity.frame,
             Some(BridgeSpriteFrameReference {
-                resource: case.resource,
+                source: BridgeSpriteFrameSource::CachedResource {
+                    resource: case.resource,
+                    byte_offset: frame_byte_offset,
+                },
                 frame_index: case.frame_index,
-                byte_offset: frame_byte_offset,
             }),
             "{}",
             case.name

@@ -10,19 +10,19 @@ use commander_blood_formats::panorama::BridgePanoramaArchive;
 
 use crate::native::bloodprg::{
     BRIDGE_SPRITE_ENTITY_COUNT, BridgeFrameState, BridgeSpriteClipSnapshotFlags,
-    BridgeSpriteCommitOutcome, BridgeSpriteDirtyRegions, BridgeSpriteEntity, BridgeSpritePosition,
-    BridgeSpriteRect, CHART_BACK_BUFFER_RESOURCE_PATH, CameraApproachState, DirtyRegionCopyOutcome,
-    FontPoint, GameFontDrawOutcome, IndexedGamePalette, LoadedScriptProfile, NameAreaEffectOutcome,
-    NameAreaEffectState, OriginalResourceCache, OriginalSaveSlotDirectory,
+    BridgeSpriteCommitOutcome, BridgeSpriteDirtyRegions, BridgeSpriteEntity, BridgeSpriteExtent,
+    BridgeSpritePosition, BridgeSpriteRect, CHART_BACK_BUFFER_RESOURCE_PATH, CameraApproachState,
+    DirtyRegionCopyOutcome, FontPoint, GameFontDrawOutcome, IndexedGamePalette, LoadedScriptProfile,
+    NameAreaEffectOutcome, NameAreaEffectState, OriginalResourceCache, OriginalSaveSlotDirectory,
     PaletteResourceLoadOutcome, PaletteResourceStorage, PaletteResourceTarget, PauseHudRefresh,
     PbmDecodeOptions, PbmDecodeResult, PbmPaletteUpdate, PbmTransparency, PresentationChoiceNumber,
     RasterPoint, RasterRectOutcome, ResourceId, ScriptPresentationEntity, ScriptProfileId,
     ScriptProfileLoadOutcome, ScriptProfileManager, ShipDepthBandLayout, ShipHudState,
     ShipViewArtworkSelection, ShipViewEntityId, activate_bridge_sprite_from_resource,
-    advance_bridge_sprite_state, build_pause_hud_refresh, commit_bridge_sprite_dirty_range,
-    copy_dirty_regions_to_display, decode_chart_back_buffer, decode_pbm_image,
-    draw_presentation_choice_number, draw_small_font_text, fill_framebuffer_rect,
-    select_ship_view_artwork, update_name_area_effect,
+    activate_bridge_sprite_from_retained_framebuffer, advance_bridge_sprite_state,
+    build_pause_hud_refresh, commit_bridge_sprite_dirty_range, copy_dirty_regions_to_display,
+    decode_chart_back_buffer, decode_pbm_image, draw_presentation_choice_number,
+    draw_small_font_text, fill_framebuffer_rect, select_ship_view_artwork, update_name_area_effect,
 };
 use crate::native::manu3::model::Manu3Model;
 
@@ -45,6 +45,7 @@ const DIALOGUE_OVERLAY_ENTITY_INDEX: usize = 4;
 const NAME_AREA_EFFECT_ENTITY_INDEX: usize = 2;
 const SHIP_VIEW_TRANSITION_ENTITY_INDEX: usize = 31;
 const PRESENTATION_PANEL_ENTITY_INDEX: usize = 31;
+const RETAINED_BRIDGE_BACKGROUND_ENTITY_INDEX: usize = 20;
 const LOGICAL_FRAMEBUFFER_HALF_HEIGHT: usize = 100;
 const SHIP_TRAVEL_CLEAR_COLOR: u8 = u8::MIN;
 const NAVIGATION_SCENE_FIRST_ROW: usize = 35;
@@ -389,6 +390,20 @@ impl OriginalGameRuntime {
     /// Clear the retained secondary surface used by first-time ship-HUD setup.
     pub fn clear_back_buffer(&mut self) {
         self.back_buffer.clear(u8::MIN);
+    }
+
+    /// Bind the retained bridge background to the dynamic full-screen sprite entity.
+    pub fn activate_retained_bridge_background(&mut self) -> Result<()> {
+        activate_bridge_sprite_from_retained_framebuffer(
+            &mut self.bridge_sprite_entities,
+            RETAINED_BRIDGE_BACKGROUND_ENTITY_INDEX,
+            BridgeSpriteExtent {
+                width: LOGICAL_FRAMEBUFFER_WIDTH as u16,
+                height: LOGICAL_FRAMEBUFFER_HEIGHT as u16,
+            },
+            BridgeSpritePosition::default(),
+        )
+        .context("activating the retained bridge background entity")
     }
 
     /// Clear the original half-open navigation band in the retained background.

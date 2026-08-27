@@ -4,7 +4,10 @@ use std::error::Error;
 use std::fmt;
 
 use super::framebuffer_copy::{LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_WIDTH};
-use super::sprite_geometry::{BridgeSpriteBlitterSelection, BridgeSpriteEntity};
+use super::sprite_geometry::{
+    BridgeSpriteBlitterSelection, BridgeSpriteEntity, BridgeSpriteFrameReference,
+    BridgeSpriteFrameSource,
+};
 
 const FRAME_STRIDE_OFFSET: usize = 0;
 const FRAME_HEIGHT_OFFSET: usize = 2;
@@ -90,6 +93,8 @@ pub struct BridgeSpriteScaledBlitOutcome {
 pub enum BridgeSpriteBlitError {
     /// The entity has no selected resource frame.
     MissingFrame,
+    /// A packed-resource blitter received the retained framebuffer source.
+    RetainedFramebufferRequiresSurfaceBlit,
     /// No dirty region was assigned by the dispatch stage.
     MissingDirtyRegion,
     /// The frame header or declared pixel payload exceeds the resource.
@@ -125,6 +130,17 @@ impl fmt::Display for BridgeSpriteBlitError {
 }
 
 impl Error for BridgeSpriteBlitError {}
+
+fn cached_frame_byte_offset(
+    frame: BridgeSpriteFrameReference,
+) -> Result<usize, BridgeSpriteBlitError> {
+    match frame.source {
+        BridgeSpriteFrameSource::CachedResource { byte_offset, .. } => Ok(byte_offset),
+        BridgeSpriteFrameSource::RetainedFramebuffer => {
+            Err(BridgeSpriteBlitError::RetainedFramebufferRequiresSurfaceBlit)
+        }
+    }
+}
 
 /// Rasterize a raw sprite while preserving transparent source zeroes.
 ///
@@ -210,12 +226,12 @@ pub fn blit_scaled_transparent_sprite(
     framebuffer: &mut [u8],
 ) -> Result<BridgeSpriteScaledBlitOutcome, BridgeSpriteBlitError> {
     let frame = entity.frame.ok_or(BridgeSpriteBlitError::MissingFrame)?;
-    let frame_header_end = frame
-        .byte_offset
+    let frame_byte_offset = cached_frame_byte_offset(frame)?;
+    let frame_header_end = frame_byte_offset
         .checked_add(FRAME_HEADER_BYTE_COUNT)
         .ok_or(BridgeSpriteBlitError::TruncatedFrame)?;
     let frame_header = resource_bytes
-        .get(frame.byte_offset..frame_header_end)
+        .get(frame_byte_offset..frame_header_end)
         .ok_or(BridgeSpriteBlitError::TruncatedFrame)?;
     let source_width = read_u16(frame_header, FRAME_STRIDE_OFFSET);
     let source_height = read_u16(frame_header, FRAME_HEIGHT_OFFSET);
@@ -370,11 +386,11 @@ fn blit_rle_sprite(
     remap_tables: Option<BridgeSpriteRemapTables<'_>>,
 ) -> Result<BridgeSpriteRleBlitOutcome, BridgeSpriteBlitError> {
     let frame = entity.frame.ok_or(BridgeSpriteBlitError::MissingFrame)?;
+    let frame_byte_offset = cached_frame_byte_offset(frame)?;
     let dirty_region = entity
         .dirty_region
         .ok_or(BridgeSpriteBlitError::MissingDirtyRegion)?;
-    let encoded_start = frame
-        .byte_offset
+    let encoded_start = frame_byte_offset
         .checked_add(FRAME_HEADER_BYTE_COUNT)
         .ok_or(BridgeSpriteBlitError::TruncatedFrame)?;
     if encoded_start > resource_bytes.len() {
@@ -383,14 +399,14 @@ fn blit_rle_sprite(
 
     let frame_stride = usize::from(read_u16(
         resource_bytes,
-        frame.byte_offset + FRAME_STRIDE_OFFSET,
+        frame_byte_offset + FRAME_STRIDE_OFFSET,
     ));
     let frame_height = usize::from(read_u16(
         resource_bytes,
-        frame.byte_offset + FRAME_HEIGHT_OFFSET,
+        frame_byte_offset + FRAME_HEIGHT_OFFSET,
     ));
-    let frame_x_origin = read_i16(resource_bytes, frame.byte_offset + FRAME_X_ORIGIN_OFFSET);
-    let frame_y_origin = read_i16(resource_bytes, frame.byte_offset + FRAME_Y_ORIGIN_OFFSET);
+    let frame_x_origin = read_i16(resource_bytes, frame_byte_offset + FRAME_X_ORIGIN_OFFSET);
+    let frame_y_origin = read_i16(resource_bytes, frame_byte_offset + FRAME_Y_ORIGIN_OFFSET);
     let mut draw_width = usize::from(entity.extent.width);
     let mut draw_height = usize::from(entity.extent.height);
     if frame_stride == usize::MIN
@@ -445,8 +461,7 @@ fn blit_rle_sprite(
     }
 
     let encoded_cursor = encoded_position - encoded_start;
-    let cursor_origin_offset = frame
-        .byte_offset
+    let cursor_origin_offset = frame_byte_offset
         .checked_add(encoded_cursor)
         .and_then(|offset| offset.checked_add(FRAME_X_ORIGIN_OFFSET))
         .ok_or(BridgeSpriteBlitError::SourceOutsideFrame)?;
@@ -627,11 +642,11 @@ fn blit_raw_sprite(
     remap_tables: Option<BridgeSpriteRemapTables<'_>>,
 ) -> Result<BridgeSpriteBlitOutcome, BridgeSpriteBlitError> {
     let frame = entity.frame.ok_or(BridgeSpriteBlitError::MissingFrame)?;
+    let frame_byte_offset = cached_frame_byte_offset(frame)?;
     let dirty_region = entity
         .dirty_region
         .ok_or(BridgeSpriteBlitError::MissingDirtyRegion)?;
-    let frame_header_end = frame
-        .byte_offset
+    let frame_header_end = frame_byte_offset
         .checked_add(FRAME_HEADER_BYTE_COUNT)
         .ok_or(BridgeSpriteBlitError::TruncatedFrame)?;
     if frame_header_end > resource_bytes.len() {
@@ -640,14 +655,14 @@ fn blit_raw_sprite(
 
     let frame_stride = usize::from(read_u16(
         resource_bytes,
-        frame.byte_offset + FRAME_STRIDE_OFFSET,
+        frame_byte_offset + FRAME_STRIDE_OFFSET,
     ));
     let frame_height = usize::from(read_u16(
         resource_bytes,
-        frame.byte_offset + FRAME_HEIGHT_OFFSET,
+        frame_byte_offset + FRAME_HEIGHT_OFFSET,
     ));
-    let frame_x_origin = read_i16(resource_bytes, frame.byte_offset + FRAME_X_ORIGIN_OFFSET);
-    let frame_y_origin = read_i16(resource_bytes, frame.byte_offset + FRAME_Y_ORIGIN_OFFSET);
+    let frame_x_origin = read_i16(resource_bytes, frame_byte_offset + FRAME_X_ORIGIN_OFFSET);
+    let frame_y_origin = read_i16(resource_bytes, frame_byte_offset + FRAME_Y_ORIGIN_OFFSET);
     let frame_pixel_byte_count = frame_stride
         .checked_mul(frame_height)
         .ok_or(BridgeSpriteBlitError::TruncatedFrame)?;
@@ -706,8 +721,7 @@ fn blit_raw_sprite(
         }
     }
 
-    let cursor_origin_offset = frame
-        .byte_offset
+    let cursor_origin_offset = frame_byte_offset
         .checked_add(source_cursor)
         .and_then(|offset| offset.checked_add(FRAME_X_ORIGIN_OFFSET))
         .ok_or(BridgeSpriteBlitError::SourceOutsideFrame)?;
@@ -911,7 +925,7 @@ mod tests {
     use super::*;
     use crate::native::bloodprg::{
         BridgeSpriteBlitterMode, BridgeSpriteExtent, BridgeSpriteFlags, BridgeSpriteFrameReference,
-        BridgeSpritePosition, BridgeSpriteRect, ResourceId,
+        BridgeSpriteFrameSource, BridgeSpritePosition, BridgeSpriteRect, ResourceId,
     };
 
     const RAW_BLITTER_ORACLE_COUNT: usize = 10;
@@ -1123,9 +1137,11 @@ mod tests {
         malformed_rle.push((MALFORMED_RLE_STRIDE - 1) as u8);
         let entity = BridgeSpriteEntity {
             frame: Some(BridgeSpriteFrameReference {
-                resource: SYNTHETIC_RESOURCE_ID,
+                source: BridgeSpriteFrameSource::CachedResource {
+                    resource: SYNTHETIC_RESOURCE_ID,
+                    byte_offset: usize::MIN,
+                },
                 frame_index: usize::MIN,
-                byte_offset: usize::MIN,
             }),
             extent: BridgeSpriteExtent {
                 width: MALFORMED_RLE_STRIDE,
@@ -1157,9 +1173,11 @@ mod tests {
         truncated_scaled.extend_from_slice(&i16::MIN.to_le_bytes());
         let entity = BridgeSpriteEntity {
             frame: Some(BridgeSpriteFrameReference {
-                resource: SYNTHETIC_RESOURCE_ID,
+                source: BridgeSpriteFrameSource::CachedResource {
+                    resource: SYNTHETIC_RESOURCE_ID,
+                    byte_offset: usize::MIN,
+                },
                 frame_index: usize::MIN,
-                byte_offset: usize::MIN,
             }),
             extent: BridgeSpriteExtent {
                 width: TRUNCATED_SCALED_SOURCE_WIDTH,
@@ -1486,9 +1504,11 @@ mod tests {
         BridgeSpriteEntity {
             flags: BridgeSpriteFlags::from_bits(vector.flags),
             frame: Some(BridgeSpriteFrameReference {
-                resource: SYNTHETIC_RESOURCE_ID,
+                source: BridgeSpriteFrameSource::CachedResource {
+                    resource: SYNTHETIC_RESOURCE_ID,
+                    byte_offset: usize::MIN,
+                },
                 frame_index: usize::MIN,
-                byte_offset: usize::MIN,
             }),
             draw_position: BridgeSpritePosition {
                 x: vector.draw[0],
@@ -1507,9 +1527,11 @@ mod tests {
         BridgeSpriteEntity {
             flags: BridgeSpriteFlags::from_bits(vector.flags),
             frame: Some(BridgeSpriteFrameReference {
-                resource: SYNTHETIC_RESOURCE_ID,
+                source: BridgeSpriteFrameSource::CachedResource {
+                    resource: SYNTHETIC_RESOURCE_ID,
+                    byte_offset: usize::MIN,
+                },
                 frame_index: usize::MIN,
-                byte_offset: usize::MIN,
             }),
             draw_position: BridgeSpritePosition {
                 x: vector.draw[0],
@@ -1527,9 +1549,11 @@ mod tests {
     fn synthetic_scaled_entity(vector: &ScaledBlitterOracle) -> BridgeSpriteEntity {
         BridgeSpriteEntity {
             frame: Some(BridgeSpriteFrameReference {
-                resource: SYNTHETIC_RESOURCE_ID,
+                source: BridgeSpriteFrameSource::CachedResource {
+                    resource: SYNTHETIC_RESOURCE_ID,
+                    byte_offset: usize::MIN,
+                },
                 frame_index: usize::MIN,
-                byte_offset: usize::MIN,
             }),
             draw_position: BridgeSpritePosition {
                 x: vector.draw[0],
