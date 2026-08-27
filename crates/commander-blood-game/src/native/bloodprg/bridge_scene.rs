@@ -3,6 +3,7 @@
 use std::error::Error;
 use std::fmt;
 
+use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
 use commander_blood_formats::panorama::{
     BridgePanoramaArchive, BridgePanoramaError, BridgePanoramaFrameMetadata,
     PANORAMA_FRAME_PIXEL_COUNT, PanoramaDecodeMode, SHIPPED_PANORAMA_FRAME_COUNT,
@@ -12,12 +13,13 @@ use crate::native::random::BloodPrng;
 
 use super::{
     BRIDGE_ARC_UNITS_PER_VIEW_FRAME, BRIDGE_CURSOR_RING_UNIT_COUNT,
-    BRIDGE_CURSOR_UNITS_PER_VIEW_FRAME, BRIDGE_LOGICAL_SCREEN_CENTER_X, BridgeSpriteEntity,
-    BridgeSteeringInteraction, BridgeSteeringOutcome, BridgeSteeringState,
-    FULL_SHIP_PROJECTION_CLIP, NavActorSeekState, SHIP_CAMERA_RESET, SHIP_POINT_CLOUD_COUNT,
-    SHIP_TRIGONOMETRY_SAMPLE_COUNT, ShipCameraPosition, ShipObjectSpriteProjection,
-    ShipPointCloudProjection, ShipPointRecord, ShipProjectionAngles, ShipProjectionError,
-    ShipProjectionMatrix, ShipProjectionResources, build_ship_projection_matrix,
+    BRIDGE_CURSOR_UNITS_PER_VIEW_FRAME, BRIDGE_LOGICAL_SCREEN_CENTER_X, BridgePanoramaLoadTarget,
+    BridgeSpriteEntity, BridgeStationOrbBoxes, BridgeSteeringInteraction, BridgeSteeringOutcome,
+    BridgeSteeringState, FULL_SHIP_PROJECTION_CLIP, IndexedGamePalette, NavActorSeekState,
+    SHIP_CAMERA_RESET, SHIP_POINT_CLOUD_COUNT, SHIP_TRIGONOMETRY_SAMPLE_COUNT, ShipCameraPosition,
+    ShipObjectSpriteProjection, ShipPointCloudProjection, ShipPointRecord, ShipProjectionAngles,
+    ShipProjectionError, ShipProjectionMatrix, ShipProjectionResources,
+    build_ship_projection_matrix, load_bridge_panorama_frame,
     project_ship_object_sprites_against_source_extent, project_ship_point_cloud,
     randomize_ship_point_cloud, update_bridge_steering,
 };
@@ -287,6 +289,25 @@ impl BridgeScene {
         &mut self,
         sprite_entities: &mut [BridgeSpriteEntity],
     ) -> Result<BridgeSceneFrame, BridgeSceneError> {
+        let panorama_palette =
+            [[u8::MIN; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
+        let mut live_palette = panorama_palette;
+        self.render_current_frame_with_palette(
+            sprite_entities,
+            false,
+            &panorama_palette,
+            &mut live_palette,
+        )
+    }
+
+    /// Generate the current layers through the recovered panorama loader.
+    pub fn render_current_frame_with_palette(
+        &mut self,
+        sprite_entities: &mut [BridgeSpriteEntity],
+        refresh_live_palette: bool,
+        panorama_palette: &IndexedGamePalette,
+        live_palette: &mut IndexedGamePalette,
+    ) -> Result<BridgeSceneFrame, BridgeSceneError> {
         let steering = self.last_steering;
 
         let prepared = self
@@ -333,10 +354,18 @@ impl BridgeScene {
             };
         let panorama_frame = usize::from(self.steering.view_frame);
         let mut panorama_pixels = vec![u8::MIN; PANORAMA_FRAME_PIXEL_COUNT].into_boxed_slice();
-        let metadata = self.panorama.decode_frame_over(
+        let mut station_orb_boxes = BridgeStationOrbBoxes::default();
+        let metadata = load_bridge_panorama_frame(
+            &self.panorama,
             panorama_frame,
-            &mut panorama_pixels,
             PanoramaDecodeMode::Opaque,
+            BridgePanoramaLoadTarget::new(
+                &mut panorama_pixels,
+                &mut station_orb_boxes,
+                refresh_live_palette,
+                panorama_palette,
+                live_palette,
+            ),
         )?;
 
         Ok(BridgeSceneFrame {

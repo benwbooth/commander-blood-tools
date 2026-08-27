@@ -326,8 +326,10 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
     ) -> Result<()> {
         self.current_scene_link = link;
         if state.navigation_rebuild_pending {
-            self.services
-                .initialize_bridge_screen(state.presentation_mode)?;
+            self.services.initialize_bridge_screen(
+                state.presentation_mode,
+                state.presentation.ship_active,
+            )?;
             state.navigation_rebuild_pending = false;
         }
         update_runtime_camera_approach(&mut self.services, link, state)?;
