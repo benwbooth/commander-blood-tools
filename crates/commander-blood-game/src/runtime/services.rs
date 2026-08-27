@@ -59,6 +59,7 @@ use super::choice_list::{
 use super::input::INITIAL_LOGICAL_POINTER;
 use super::navigation_chart::RuntimeNavigationChart;
 use super::navigation_status::RuntimeNavigationStatus;
+use super::presentation::RuntimeBridgeComposition;
 use super::presentation_screen::RuntimeSceneTransitionDispatchContext;
 use super::ship_presentation::update_runtime_ship_presentation as run_runtime_ship_presentation;
 use super::ship_target::ship_hud_arche_link;
@@ -2390,8 +2391,15 @@ impl<'window> ModernGameServices<'window> {
             return Ok(false);
         }
         self.presentation.submit_indexed_frame(&self.runtime)?;
-        self.presentation
-            .present_frame(&self.runtime, self.bridge_frame.as_ref())?;
+        let bridge_frame = self
+            .bridge_frame
+            .as_ref()
+            .context("pause HUD requires a rendered bridge frame")?;
+        self.presentation.present_frame(
+            &self.runtime,
+            bridge_frame,
+            RuntimeBridgeComposition::BridgeSceneWithIndexedOverlay,
+        )?;
         Ok(true)
     }
 
@@ -2895,8 +2903,16 @@ impl<'window> ModernGameServices<'window> {
     /// Present one translated bridge scene frame and optional MANU3 overlay.
     pub fn present_bridge_frame(&mut self, bridge_frame: &BridgeSceneFrame) -> Result<()> {
         self.ensure_main_viewport()?;
+        let composition = select_bridge_composition(
+            self.presentation_player.has_stream()
+                || self
+                    .presentation_screen
+                    .as_ref()
+                    .is_some_and(|screen| screen.state().active()),
+            bridge_frame.steering.view_changed,
+        );
         self.presentation
-            .present_frame(&self.runtime, Some(bridge_frame))
+            .present_frame(&self.runtime, bridge_frame, composition)
     }
 
     /// Present the most recently generated bridge frame.
@@ -2906,7 +2922,16 @@ impl<'window> ModernGameServices<'window> {
             .bridge_frame
             .as_ref()
             .context("no rendered bridge frame is ready")?;
-        self.presentation.present_frame(&self.runtime, Some(frame))
+        let composition = select_bridge_composition(
+            self.presentation_player.has_stream()
+                || self
+                    .presentation_screen
+                    .as_ref()
+                    .is_some_and(|screen| screen.state().active()),
+            frame.steering.view_changed,
+        );
+        self.presentation
+            .present_frame(&self.runtime, frame, composition)
     }
 
     /// Drop the live bridge and its owned panorama during shutdown.
@@ -2965,6 +2990,19 @@ fn overlay_nonzero_indices(destination: &mut [u8], source: &[u8]) {
         if source != u8::MIN {
             *destination = source;
         }
+    }
+}
+
+const fn select_bridge_composition(
+    indexed_framebuffer_owned: bool,
+    bridge_view_changed: bool,
+) -> RuntimeBridgeComposition {
+    if indexed_framebuffer_owned {
+        RuntimeBridgeComposition::IndexedFramebuffer
+    } else if bridge_view_changed {
+        RuntimeBridgeComposition::BridgeScene
+    } else {
+        RuntimeBridgeComposition::BridgeSceneWithIndexedOverlay
     }
 }
 
@@ -3274,6 +3312,26 @@ mod tests {
         month: 1,
     };
     const HYPERSPACE_PRESENTATION_LINE: PresentationResourceId = PresentationResourceId::new(6);
+
+    #[test]
+    fn bridge_composition_never_duplicates_owned_or_moving_indexed_backgrounds() {
+        assert_eq!(
+            select_bridge_composition(true, false),
+            RuntimeBridgeComposition::IndexedFramebuffer
+        );
+        assert_eq!(
+            select_bridge_composition(true, true),
+            RuntimeBridgeComposition::IndexedFramebuffer
+        );
+        assert_eq!(
+            select_bridge_composition(false, true),
+            RuntimeBridgeComposition::BridgeScene
+        );
+        assert_eq!(
+            select_bridge_composition(false, false),
+            RuntimeBridgeComposition::BridgeSceneWithIndexedOverlay
+        );
+    }
     const MAXIMUM_CAMERA_TRANSITION_FRAMES: usize = 2_048;
     const TEST_OUTPUT_SIZE: [f32; 2] = [640.0, 480.0];
     const LOGICAL_TEST_OUTPUT_SIZE: [f32; 2] = [320.0, 200.0];

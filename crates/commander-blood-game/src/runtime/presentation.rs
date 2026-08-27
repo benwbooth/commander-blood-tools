@@ -15,6 +15,17 @@ use super::{
     OriginalGameRuntime,
 };
 
+/// Layer selection for one modern bridge presentation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum RuntimeBridgeComposition {
+    /// Present the complete indexed framebuffer without the independently rendered bridge.
+    IndexedFramebuffer,
+    /// Present only the current wgpu bridge and MANU3 layers.
+    BridgeScene,
+    /// Present the wgpu bridge followed by indexed UI pixels and MANU3.
+    BridgeSceneWithIndexedOverlay,
+}
+
 /// SDL/wgpu presentation state for the original logical framebuffer and bridge.
 pub struct RuntimePresentationHost<'window> {
     window: &'window Window,
@@ -86,10 +97,11 @@ impl<'window> RuntimePresentationHost<'window> {
     }
 
     /// Present indexed artwork or one bridge frame, then composite MANU3.
-    pub fn present_frame(
+    pub(super) fn present_frame(
         &mut self,
         runtime: &OriginalGameRuntime,
-        bridge_frame: Option<&BridgeSceneFrame>,
+        bridge_frame: &BridgeSceneFrame,
+        composition: RuntimeBridgeComposition,
     ) -> Result<()> {
         // Frame-tail text and palette work occurs after the native chunky-copy
         // boundary, so refresh the modern texture immediately before drawing.
@@ -98,9 +110,19 @@ impl<'window> RuntimePresentationHost<'window> {
             .manu3()
             .map(|model| model.render_triangles())
             .unwrap_or(&[]);
-        self.renderer_mut()?
-            .render_with_indexed_overlay(manu3_triangles, None, bridge_frame)
-            .context("presenting translated game frame")?;
+        let renderer = self.renderer_mut()?;
+        match composition {
+            RuntimeBridgeComposition::IndexedFramebuffer => {
+                renderer.render(manu3_triangles, None, None)
+            }
+            RuntimeBridgeComposition::BridgeScene => {
+                renderer.render(manu3_triangles, None, Some(bridge_frame))
+            }
+            RuntimeBridgeComposition::BridgeSceneWithIndexedOverlay => {
+                renderer.render_with_indexed_overlay(manu3_triangles, None, Some(bridge_frame))
+            }
+        }
+        .context("presenting translated game frame")?;
         self.presented_frame_count = self.presented_frame_count.wrapping_add(1);
         Ok(())
     }
