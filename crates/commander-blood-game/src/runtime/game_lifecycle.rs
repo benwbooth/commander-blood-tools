@@ -415,7 +415,11 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
     }
 
     fn pace_frame(&mut self) -> Result<()> {
-        self.platform.pace_frame()
+        if self.services.presentation_stream_active() {
+            self.platform.pace_presentation_frame()
+        } else {
+            self.platform.pace_frame()
+        }
     }
 
     fn present_frame(&mut self) -> Result<()> {

@@ -151,7 +151,7 @@ impl PresentationRunHost for RuntimePresentationRunHost<'_, '_> {
 
     fn present_frame(&mut self) -> Result<()> {
         self.services.submit_indexed_frame()?;
-        self.platform.pace_frame()?;
+        self.platform.pace_presentation_frame()?;
         self.services.present_artwork()
     }
 

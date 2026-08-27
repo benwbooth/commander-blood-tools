@@ -2971,6 +2971,17 @@ impl RuntimeBridgeScreenBackend<'_, '_> {
         }
         Ok(())
     }
+
+    fn compose_panorama_page(&mut self, transparent_zero: bool) -> Result<()> {
+        let panorama = &self
+            .services
+            .bridge_frame
+            .as_ref()
+            .context("bridge frame was not retained for page composition")?
+            .panorama_pixels;
+        let (_front, back) = self.services.runtime.presentation_buffers_mut();
+        compose_bridge_page(back, panorama, transparent_zero)
+    }
 }
 
 impl BridgeScreenInitializationBackend for RuntimeBridgeScreenBackend<'_, '_> {
@@ -3000,12 +3011,13 @@ impl BridgeScreenInitializationBackend for RuntimeBridgeScreenBackend<'_, '_> {
         state: &mut BridgeScreenInitializationState,
     ) -> Result<()> {
         self.ensure_panorama_frame(frame, state.palette_refresh_in_progress)?;
+        self.compose_panorama_page(state.transparent_zero)?;
         *panorama_palette = self.services.bridge_palette;
         Ok(())
     }
 
     fn clear_secondary_page(&mut self, _state: &mut BridgeScreenInitializationState) -> Result<()> {
-        self.services.runtime.clear_back_buffer();
+        self.services.bridge_frame = None;
         Ok(())
     }
 
@@ -3065,7 +3077,7 @@ impl BridgePageBackend for RuntimeBridgeScreenBackend<'_, '_> {
         if target != BridgePageTarget::Secondary {
             bail!("bridge page clear requested unsupported target {target:?}");
         }
-        self.services.runtime.clear_back_buffer();
+        self.services.bridge_frame = None;
         Ok(())
     }
 
@@ -3121,8 +3133,29 @@ impl BridgePageBackend for RuntimeBridgeScreenBackend<'_, '_> {
         if target != BridgePageTarget::Primary {
             bail!("bridge panorama load requested unsupported target {target:?}");
         }
-        self.ensure_panorama_frame(frame, self.palette_refresh_in_progress)
+        self.ensure_panorama_frame(frame, self.palette_refresh_in_progress)?;
+        self.compose_panorama_page(_state.transparent_zero)
     }
+}
+
+fn compose_bridge_page(
+    destination: &mut [u8],
+    panorama: &[u8],
+    transparent_zero: bool,
+) -> Result<()> {
+    if destination.len() != panorama.len() {
+        bail!(
+            "bridge page has {} pixels, but panorama has {}",
+            destination.len(),
+            panorama.len()
+        );
+    }
+    if transparent_zero {
+        overlay_nonzero_indices(destination, panorama);
+    } else {
+        destination.copy_from_slice(panorama);
+    }
+    Ok(())
 }
 
 fn prefixed_resource_name(directory: &[u8], name: &[u8]) -> Result<BloodResourceName> {
@@ -3224,6 +3257,18 @@ mod tests {
     const LOCATION_PANEL_OPENING_SETTLE_FRAMES: usize = 9;
     const LOCATION_PANEL_CLOSING_SETTLE_FRAMES: usize = 8;
     const POINTER_PRESS_PENDING: u8 = 1;
+
+    #[test]
+    fn bridge_page_composition_preserves_chart_pixels_only_in_transparent_mode() {
+        let panorama = [u8::MIN, 7, u8::MIN, 9];
+        let mut transparent_page = [1, 2, 3, 4];
+        compose_bridge_page(&mut transparent_page, &panorama, true).unwrap();
+        assert_eq!(transparent_page, [1, 7, 3, 9]);
+
+        let mut replacing_page = [1, 2, 3, 4];
+        compose_bridge_page(&mut replacing_page, &panorama, false).unwrap();
+        assert_eq!(replacing_page, panorama);
+    }
     const STATUS_TEST_ORIGIN: [u16; 2] = [40, 50];
     const STATUS_TEST_EXTENT: [u16; 2] = [30, 20];
     const STATUS_TEST_ACTIVE_FLAGS: u16 = 1;

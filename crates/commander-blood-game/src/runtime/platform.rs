@@ -23,6 +23,7 @@ const GAME_TIMER_DIVISOR: u64 = 5_958;
 const GAME_FRAME_TIMER_TICKS: u64 = 8;
 const NANOSECONDS_PER_SECOND: u64 = 1_000_000_000;
 const MEASURED_GAME_FRAME_MILLISECONDS: u64 = 46;
+const MEASURED_PRESENTATION_FRAME_MILLISECONDS: u64 = 68;
 const MINIMUM_SURFACE_DIMENSION: u32 = 1;
 const ORIGINAL_DISPLAY_ASPECT_WIDTH: f32 = 4.0;
 const ORIGINAL_DISPLAY_ASPECT_HEIGHT: f32 = 3.0;
@@ -50,6 +51,14 @@ pub const RECOVERED_FRAME_BUDGET: Duration = Duration::from_nanos(
 /// cadence; modern rendering can interpolate between simulation updates
 /// independently when a higher visual frame rate is added.
 pub const GAME_FRAME_DURATION: Duration = Duration::from_millis(MEASURED_GAME_FRAME_MILLISECONDS);
+
+/// Measured duration of one software-clocked HNM presentation frame.
+///
+/// A dense DOSBox-X oracle capture places the 263-frame `MIND.HNM` stream at
+/// approximately 18 seconds, including the original decoder's workload. This
+/// cadence is intentionally separate from ordinary bridge simulation updates.
+pub const PRESENTATION_FRAME_DURATION: Duration =
+    Duration::from_millis(MEASURED_PRESENTATION_FRAME_MILLISECONDS);
 
 /// SDL-facing state owned by the production game lifecycle host.
 pub struct RuntimePlatformHost<'window> {
@@ -213,9 +222,18 @@ impl<'window> RuntimePlatformHost<'window> {
 
     /// Sleep only for the unused portion of the current recovered frame budget.
     pub fn pace_frame(&mut self) -> Result<()> {
+        self.pace_frame_for(GAME_FRAME_DURATION)
+    }
+
+    /// Sleep for the unused portion of the measured DOS HNM presentation frame.
+    pub fn pace_presentation_frame(&mut self) -> Result<()> {
+        self.pace_frame_for(PRESENTATION_FRAME_DURATION)
+    }
+
+    fn pace_frame_for(&mut self, duration: Duration) -> Result<()> {
         let remaining = self
             .frame_clock
-            .remaining(Instant::now())
+            .remaining(Instant::now(), duration)
             .context("game frame pacing started without a frame budget")?;
         if !remaining.is_zero() {
             thread::sleep(remaining);
@@ -227,21 +245,21 @@ impl<'window> RuntimePlatformHost<'window> {
 
 #[derive(Default)]
 struct GameFrameClock {
-    deadline: Option<Instant>,
+    started_at: Option<Instant>,
 }
 
 impl GameFrameClock {
     fn begin_frame(&mut self, now: Instant) {
-        self.deadline = Some(now + GAME_FRAME_DURATION);
+        self.started_at = Some(now);
     }
 
-    fn remaining(&self, now: Instant) -> Option<Duration> {
-        self.deadline
-            .map(|deadline| deadline.saturating_duration_since(now))
+    fn remaining(&self, now: Instant, duration: Duration) -> Option<Duration> {
+        self.started_at
+            .map(|started_at| (started_at + duration).saturating_duration_since(now))
     }
 
     fn finish_frame(&mut self) {
-        self.deadline = None;
+        self.started_at = None;
     }
 }
 
@@ -306,6 +324,10 @@ mod tests {
     const WIDESCREEN_VIEWPORT_WIDTH: f32 = 1_440.0;
     const EXPECTED_FRAME_BUDGET_NANOSECONDS: u64 = 39_946_965;
     const EXPECTED_MEASURED_UPDATE_RATE: f64 = 1_000.0 / 46.0;
+    const EXPECTED_PRESENTATION_UPDATE_RATE: f64 = 1_000.0 / 68.0;
+    const OPENING_PRESENTATION_FRAME_COUNT: u32 = 263;
+    const ORACLE_OPENING_DURATION_MINIMUM: Duration = Duration::from_millis(17_500);
+    const ORACLE_OPENING_DURATION_MAXIMUM: Duration = Duration::from_millis(18_500);
 
     #[test]
     fn frame_budget_comes_from_the_recovered_pit_programming() {
@@ -325,19 +347,37 @@ mod tests {
     }
 
     #[test]
+    fn hnm_pacing_matches_the_dense_dos_opening_oracle() {
+        let update_rate = 1.0 / PRESENTATION_FRAME_DURATION.as_secs_f64();
+        assert!((update_rate - EXPECTED_PRESENTATION_UPDATE_RATE).abs() < 0.01);
+        let opening_duration = PRESENTATION_FRAME_DURATION * OPENING_PRESENTATION_FRAME_COUNT;
+        assert!(opening_duration >= ORACLE_OPENING_DURATION_MINIMUM);
+        assert!(opening_duration <= ORACLE_OPENING_DURATION_MAXIMUM);
+    }
+
+    #[test]
     fn each_frame_gets_an_independent_budget_without_catch_up_bursts() {
         let start = Instant::now();
         let mut clock = GameFrameClock::default();
         clock.begin_frame(start);
-        assert_eq!(clock.remaining(start), Some(GAME_FRAME_DURATION));
         assert_eq!(
-            clock.remaining(start + GAME_FRAME_DURATION + Duration::from_millis(1)),
+            clock.remaining(start, GAME_FRAME_DURATION),
+            Some(GAME_FRAME_DURATION)
+        );
+        assert_eq!(
+            clock.remaining(
+                start + GAME_FRAME_DURATION + Duration::from_millis(1),
+                GAME_FRAME_DURATION,
+            ),
             Some(Duration::ZERO)
         );
 
         let next_start = start + GAME_FRAME_DURATION + Duration::from_millis(1);
         clock.begin_frame(next_start);
-        assert_eq!(clock.remaining(next_start), Some(GAME_FRAME_DURATION));
+        assert_eq!(
+            clock.remaining(next_start, PRESENTATION_FRAME_DURATION),
+            Some(PRESENTATION_FRAME_DURATION)
+        );
     }
 
     #[test]

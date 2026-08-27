@@ -147,13 +147,20 @@ impl RuntimeNavigationChart {
         if !self.state.input.press_pending {
             lifecycle.pointer_press_pending = u8::MIN;
         }
-        lifecycle.set_presentation_interface_active(self.state.ui_active);
+        publish_navigation_ui_activation(lifecycle, self.state.ui_active);
         if self.state.hand != hand_before {
             let hand = services.manu3_hand_state_mut();
             hand.current_animation = hand_selector(self.state.hand.current);
             hand.requested_animation = hand_selector(self.state.hand.requested);
         }
         Ok(outcome)
+    }
+}
+
+/// Publish the native `vm_ui_flags |= 4` write without clearing other UI owners.
+fn publish_navigation_ui_activation(lifecycle: &mut GameLifecycleState, active: bool) {
+    if active {
+        lifecycle.set_presentation_interface_active(true);
     }
 }
 
@@ -1084,6 +1091,16 @@ mod tests {
         ORIGINAL_SCRIPT_PROFILE_COUNT, ScriptProfileId, set_object_flag,
     };
     use crate::runtime::{OriginalGameData, OriginalGameDataPaths};
+
+    #[test]
+    fn inactive_navigation_chart_preserves_another_ui_owner() {
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.set_presentation_interface_active(true);
+
+        publish_navigation_ui_activation(&mut lifecycle, false);
+
+        assert!(lifecycle.presentation_interface_active());
+    }
 
     #[test]
     fn panel_interpolation_matches_recovered_divide_before_multiply_order() {

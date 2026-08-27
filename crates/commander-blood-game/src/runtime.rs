@@ -48,7 +48,9 @@ pub use input::{RuntimeInputHost, map_host_pointer_to_logical};
 pub use palette_transition::{
     RuntimePaletteTransition, RuntimePaletteTransitionConfig, RuntimePaletteTransitionOutcome,
 };
-pub use platform::{GAME_FRAME_DURATION, RECOVERED_FRAME_BUDGET, RuntimePlatformHost};
+pub use platform::{
+    GAME_FRAME_DURATION, PRESENTATION_FRAME_DURATION, RECOVERED_FRAME_BUDGET, RuntimePlatformHost,
+};
 pub use presentation::RuntimePresentationHost;
 pub use presentation_catalog::{RuntimePresentationBackground, RuntimePresentationCatalog};
 pub use presentation_player::RuntimePresentationPlayer;
