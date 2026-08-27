@@ -130,6 +130,72 @@
           pkgs = import nixpkgs { inherit system; };
         in
         {
+          commander-blood = pkgs.rustPlatform.buildRustPackage {
+            pname = "commander-blood";
+            version = "0.1.0";
+            src = pkgs.lib.fileset.toSource {
+              root = ./.;
+              fileset = pkgs.lib.fileset.unions [
+                ./Cargo.toml
+                ./Cargo.lock
+                ./src
+                ./crates/commander-blood-formats
+                ./crates/commander-blood-game
+              ];
+            };
+            cargoHash = "sha256-SG5YeVjgHBImcGXs2M92/cVOsV6GUiKfgb59vVYBqHM=";
+            cargoBuildFlags = [
+              "-p"
+              "commander-blood-game"
+              "--bin"
+              "commander-blood"
+            ];
+            nativeBuildInputs = with pkgs; [
+              makeWrapper
+              pkg-config
+            ];
+            buildInputs = with pkgs; [
+              alsa-lib
+              libGL
+              libx11
+              libxcb
+              libxcursor
+              libxi
+              libxkbcommon
+              libxrandr
+              sdl3
+              vulkan-loader
+              wayland
+            ];
+            doCheck = false;
+            postFixup = ''
+              wrapProgram "$out/bin/commander-blood" \
+                --prefix LD_LIBRARY_PATH : \
+                  "/run/opengl-driver/lib:${
+                    pkgs.lib.makeLibraryPath (
+                      with pkgs;
+                      [
+                        alsa-lib
+                        libGL
+                        libx11
+                        libxcb
+                        libxcursor
+                        libxi
+                        libxkbcommon
+                        libxrandr
+                        sdl3
+                        vulkan-loader
+                        wayland
+                      ]
+                    )
+                  }"
+            '';
+            meta = {
+              description = "Modern SDL3 and wgpu port of Commander Blood";
+              mainProgram = "commander-blood";
+              platforms = pkgs.lib.platforms.linux;
+            };
+          };
           dosbox-staging-cbtest = mkDosboxStagingCbtest pkgs;
         }
       );
