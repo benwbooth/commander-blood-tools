@@ -16,24 +16,25 @@ use sdl3::video::Window;
 use crate::native::alien::AlienSceneFrame;
 use crate::native::bloodprg::{
     BridgeScene, BridgeSceneFrame, BridgeSceneInput, BridgeSpriteCommitOutcome,
-    BridgeSteeringInteraction, CdAudioState, ChoiceListConfig, ChoiceListFrame, ChoiceListPointer,
-    ChoiceListState, ConfirmDialogOutcome, ConfirmDialogState, DescriptMusicSelectionOutcome,
-    DescriptRecordApplication, DirtyRegionCopyOutcome, FontPoint, FontVerticalBand, GameFontFace,
-    GameLifecycleState, GamePresentationOwner, GameSceneLink, IndexedGamePalette,
-    InlineMenuRevealOutcome, InlineMenuTextMetrics, InputAction, Manu3HandFrameContext,
-    Manu3HandFrameState, OriginalSaveGame, PbmDecodeResult, PointerButtonEdges, PointerButtons,
-    PointerSample, PresentationChoiceNumber, PresentationPresentPolicy, PresentationResourceId,
-    PresentationResourceSequenceOutcome, PresentationSceneDispatchOutcome,
-    PresentationScreenOutcome, PresentationScreenState, PresentationWordChoiceOutcome,
-    SCENE_PALETTE_CLEAR_COLOR_COUNT, SceneTransitionState, ScriptClock, ScriptFrameOutcome,
-    ScriptPresentationScanState, ScriptProfileId, ScriptProfileLoadOutcome,
-    ScriptShipNavigationMode, ShipDepthTransitionOutcome, ShipHudInitializationContext,
-    ShipPresentationOutcome, ShipPresentationState, ShipProjectionResources,
-    ShipTargetSelectionState, ShipViewEntityId, StartupPreparationOutcome, TextPresentationState,
-    clear_scene_palette_entries, draw_planar_dialogue_text, fill_display_band,
-    measure_game_text_width, objects_at_arche_position, original_save_state_block_byte_count,
-    play_cd_audio_track_two, presentable_navigation_objects, reveal_inline_menu_step,
-    stop_cd_audio, update_manu3_hand_frame,
+    BridgeSteeringInteraction, CdAudioPreparationOutcome, CdAudioState, ChoiceListConfig,
+    ChoiceListFrame, ChoiceListPointer, ChoiceListState, ConfirmDialogOutcome, ConfirmDialogState,
+    DescriptMusicSelectionOutcome, DescriptRecordApplication, DirtyRegionCopyOutcome, FontPoint,
+    FontVerticalBand, GameFontFace, GameLifecycleState, GamePresentationOwner, GameSceneLink,
+    IndexedGamePalette, InlineMenuRevealOutcome, InlineMenuTextMetrics, InputAction,
+    Manu3HandFrameContext, Manu3HandFrameState, OriginalSaveGame, PbmDecodeResult,
+    PointerButtonEdges, PointerButtons, PointerSample, PresentationChoiceNumber,
+    PresentationPresentPolicy, PresentationResourceId, PresentationResourceSequenceOutcome,
+    PresentationSceneDispatchOutcome, PresentationScreenOutcome, PresentationScreenState,
+    PresentationWordChoiceOutcome, SCENE_PALETTE_CLEAR_COLOR_COUNT, SceneTransitionState,
+    ScriptClock, ScriptFrameOutcome, ScriptPresentationScanState, ScriptProfileId,
+    ScriptProfileLoadOutcome, ScriptShipNavigationMode, ShipDepthTransitionOutcome,
+    ShipHudInitializationContext, ShipPresentationOutcome, ShipPresentationState,
+    ShipProjectionResources, ShipTargetSelectionState, ShipViewEntityId, StartupPreparationOutcome,
+    TextPresentationState, clear_scene_palette_entries, draw_planar_dialogue_text,
+    fill_display_band, increment_object_access_counters, measure_game_text_width,
+    objects_at_arche_position, original_save_state_block_byte_count, play_cd_audio_track_two,
+    prepare_cd_audio, presentable_navigation_objects, reveal_inline_menu_step, stop_cd_audio,
+    update_manu3_hand_frame,
 };
 use crate::native::manu3::animation::CursorPosition;
 use crate::native::random::BloodPrng;
@@ -73,6 +74,7 @@ const NAVIGATION_BACKGROUND_SLOT: u8 = 1;
 const SHIP_NAVIGATION_ACTIVE_FLAGS: u16 = 9;
 const SHIP_NAVIGATION_STATUS_LINE: u16 = 3;
 const NAVIGATION_PALETTE_TRANSITION_INCREMENT: u16 = 10;
+const PRESENTATION_CHOICE_MANU3_ANIMATION: u16 = 14;
 
 /// Owned flat services that concrete `GameLifecycleHost` methods delegate to.
 ///
@@ -235,6 +237,15 @@ impl<'window> ModernGameServices<'window> {
         }
         self.audio = Some(RuntimeAudioHost::open(audio)?);
         Ok(())
+    }
+
+    /// Prepare optional physical-track metadata when a modern source is available.
+    ///
+    /// The extracted DOS release does not include CD-DA track two, so startup
+    /// currently selects the native unavailable path. A future track asset can
+    /// supply typed metadata here without reintroducing MSCDEX request blocks.
+    pub fn prepare_optional_cd_audio(&mut self) -> CdAudioPreparationOutcome {
+        prepare_cd_audio(&mut self.cd_audio, None)
     }
 
     /// Load and validate the authored startup `CARTE.SPR` cache resource.
@@ -404,6 +415,16 @@ impl<'window> ModernGameServices<'window> {
         self.audio_mut()?.stop_all()
     }
 
+    /// Release a decoded voice clip that was loaded but never started.
+    pub fn discard_loaded_voice(&mut self) -> bool {
+        self.loaded_voice.take().is_some()
+    }
+
+    /// Release decoded navigation music that has not yet entered SDL playback.
+    pub fn discard_loaded_music(&mut self) -> bool {
+        self.loaded_music.take().is_some()
+    }
+
     /// Surface asynchronous SDL audio failures on the game thread.
     pub fn check_audio(&self) -> Result<()> {
         self.audio_ref()?.check_callback()
@@ -430,6 +451,29 @@ impl<'window> ModernGameServices<'window> {
         self.scene_transition = Some(RuntimeSceneTransition::default());
         self.ship_target_selector = Some(RuntimeShipTargetSelector::default());
         Ok(outcome)
+    }
+
+    /// Reconstruct every profile-derived record store from synchronized VAR state.
+    pub fn rebuild_script_record_state(&mut self) -> Result<()> {
+        let profile = self
+            .runtime
+            .current_profile_mut()
+            .context("record-state reconstruction requires a loaded BloodScript profile")?;
+        let synchronized = profile
+            .synchronized_state()
+            .context("synchronizing typed records into BloodScript VAR state")?;
+        profile
+            .replace_state(synchronized)
+            .context("reconstructing typed records from BloodScript VAR state")
+    }
+
+    /// Increment all in-play navigation access counters after a profile change.
+    pub fn refresh_object_access_counters(&mut self) -> Result<usize> {
+        let profile = self
+            .runtime
+            .current_profile_mut()
+            .context("object-access refresh requires a loaded BloodScript profile")?;
+        Ok(increment_object_access_counters(profile.state_mut()))
     }
 
     /// Capture the active typed profile in the original `GAME*.SAV` format.
@@ -959,8 +1003,7 @@ impl<'window> ModernGameServices<'window> {
 
     pub(super) fn begin_alien_overlay(&mut self, asset: &AlienAsset) -> Result<()> {
         self.ensure_main_viewport()?;
-        self.presentation.begin_alien_overlay(asset);
-        Ok(())
+        self.presentation.begin_alien_overlay(asset)
     }
 
     pub(super) fn present_alien_overlay_frame(&mut self, frame: &AlienSceneFrame) -> Result<()> {
@@ -1232,6 +1275,23 @@ impl<'window> ModernGameServices<'window> {
         Ok(())
     }
 
+    /// Rebuild the retained bridge surface and arm the startup reverse panel.
+    pub fn initialize_bridge_screen(&mut self, startup_presentation_mode: bool) -> Result<()> {
+        self.runtime
+            .activate_retained_bridge_background()
+            .context("activating retained bridge artwork during screen rebuild")?;
+        if startup_presentation_mode {
+            let screen = self
+                .presentation_screen
+                .as_mut()
+                .context("presentation screen is already being updated")?
+                .state_mut();
+            screen.set_active(true);
+            screen.set_reverse(true);
+        }
+        Ok(())
+    }
+
     /// Borrow the bridge presentation state published to its frame coordinator.
     pub fn presentation_screen_state(&self) -> Result<&PresentationScreenState> {
         Ok(self
@@ -1267,6 +1327,32 @@ impl<'window> ModernGameServices<'window> {
         );
         self.presentation_screen = Some(screen);
         outcome
+    }
+
+    /// Transfer one-shot panel outputs into the owning lifecycle state.
+    pub fn consume_presentation_screen_outputs(
+        &mut self,
+        state: &mut GameLifecycleState,
+    ) -> Result<()> {
+        let screen = self
+            .presentation_screen
+            .as_mut()
+            .context("presentation screen is already being updated")?
+            .state_mut();
+        let screen_rebuild_pending = screen.take_screen_rebuild_pending();
+        let completion_audio_pending = screen.take_completion_audio_pending();
+        let choice_animation_requested = screen.take_choice_change_animation_requested();
+        let startup_mode_completed = screen.take_reverse_resource_variant_restored();
+
+        state.navigation_rebuild_pending |= screen_rebuild_pending;
+        state.presentation.completion_audio_pending |= completion_audio_pending;
+        if choice_animation_requested {
+            self.manu3_hand.requested_animation = PRESENTATION_CHOICE_MANU3_ANIMATION;
+        }
+        if startup_mode_completed {
+            state.presentation_mode = false;
+        }
+        Ok(())
     }
 
     /// Apply one selected DESCRIPT record through the live BloodScript text state.
@@ -1484,6 +1570,16 @@ impl<'window> ModernGameServices<'window> {
         Ok(outcome)
     }
 
+    /// Return the recovered text-speed value shared by menu and subtitle timing.
+    pub fn dialogue_word_delay(&self) -> Result<u16> {
+        Ok(self
+            .subtitle_reveal
+            .as_ref()
+            .context("subtitle reveal is already being updated")?
+            .state()
+            .text_speed_step)
+    }
+
     /// Consume the next value from the game's persistent recovered PRNG.
     pub fn next_random(&mut self, modulus: u16) -> u16 {
         self.random.next(modulus)
@@ -1607,6 +1703,21 @@ impl<'window> ModernGameServices<'window> {
     /// Release the retained presentation source after completion or cancellation.
     pub fn finish_presentation_sequence(&mut self) -> bool {
         self.presentation_player.finish().is_some()
+    }
+
+    /// Release every presentation owner retained across lifecycle frames.
+    pub fn finish_runtime_presentations(&mut self) -> Result<()> {
+        self.finish_presentation_sequence();
+        self.presentation_screen
+            .as_mut()
+            .context("presentation screen is already being updated")?
+            .state_mut()
+            .set_active(false);
+        self.presentation_word_choice
+            .as_mut()
+            .context("presentation word choice is already being updated")?
+            .reset();
+        Ok(())
     }
 
     /// Borrow resolved fixed and DESCRIPT-authored presentation metadata.

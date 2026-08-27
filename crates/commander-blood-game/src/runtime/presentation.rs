@@ -18,7 +18,7 @@ use super::{
 /// SDL/wgpu presentation state for the original logical framebuffer and bridge.
 pub struct RuntimePresentationHost<'window> {
     window: &'window Window,
-    renderer: Renderer<'window>,
+    renderer: Option<Renderer<'window>>,
     presented_frame_count: u64,
 }
 
@@ -31,7 +31,7 @@ impl<'window> RuntimePresentationHost<'window> {
             .context("initializing startup wgpu presentation")?;
         Ok(Self {
             window,
-            renderer,
+            renderer: Some(renderer),
             presented_frame_count: u64::MIN,
         })
     }
@@ -41,20 +41,23 @@ impl<'window> RuntimePresentationHost<'window> {
         let renderer = main_game_renderer(window, runtime)?;
         Ok(Self {
             window,
-            renderer,
+            renderer: Some(renderer),
             presented_frame_count: u64::MIN,
         })
     }
 
     /// Replace the startup renderer after MANU3 and bridge data are available.
     pub fn configure_main_game(&mut self, runtime: &OriginalGameRuntime) -> Result<()> {
-        self.renderer = main_game_renderer(self.window, runtime)?;
+        self.renderer = None;
+        self.renderer = Some(main_game_renderer(self.window, runtime)?);
         Ok(())
     }
 
     /// Reconfigure the wgpu surface after an SDL pixel-size change.
     pub fn resize(&mut self, width: u32, height: u32) {
-        self.renderer.resize(width, height);
+        if let Some(renderer) = &mut self.renderer {
+            renderer.resize(width, height);
+        }
     }
 
     /// Upload the runtime's complete indexed frame and current VGA palette.
@@ -68,14 +71,14 @@ impl<'window> RuntimePresentationHost<'window> {
         frame: &super::IndexedFramebuffer,
         palette: &IndexedGamePalette,
     ) -> Result<()> {
-        self.renderer
+        self.renderer_ref()?
             .upload_indexed_frame(frame.pixels(), palette)
             .context("uploading translated indexed game frame")
     }
 
     /// Present indexed artwork without a 3D base scene.
     pub fn present_artwork(&mut self, manu3_triangles: &[RenderTriangle]) -> Result<()> {
-        self.renderer
+        self.renderer_mut()?
             .render(manu3_triangles, None, None)
             .context("presenting translated artwork frame")?;
         self.presented_frame_count = self.presented_frame_count.wrapping_add(1);
@@ -95,7 +98,7 @@ impl<'window> RuntimePresentationHost<'window> {
             .manu3()
             .map(|model| model.render_triangles())
             .unwrap_or(&[]);
-        self.renderer
+        self.renderer_mut()?
             .render_with_indexed_overlay(manu3_triangles, None, bridge_frame)
             .context("presenting translated game frame")?;
         self.presented_frame_count = self.presented_frame_count.wrapping_add(1);
@@ -103,13 +106,14 @@ impl<'window> RuntimePresentationHost<'window> {
     }
 
     /// Upload immutable GPU resources for one decoded interactive alien scene.
-    pub fn begin_alien_overlay(&mut self, asset: &AlienAsset) {
-        self.renderer.install_alien_scene(asset);
+    pub fn begin_alien_overlay(&mut self, asset: &AlienAsset) -> Result<()> {
+        self.renderer_mut()?.install_alien_scene(asset);
+        Ok(())
     }
 
     /// Present one full-screen alien frame without indexed UI or MANU3 layers.
     pub fn present_alien_overlay_frame(&mut self, frame: &AlienSceneFrame) -> Result<()> {
-        self.renderer
+        self.renderer_mut()?
             .render(&[], Some(frame), None)
             .context("presenting translated alien-overlay frame")?;
         self.presented_frame_count = self.presented_frame_count.wrapping_add(1);
@@ -118,12 +122,26 @@ impl<'window> RuntimePresentationHost<'window> {
 
     /// Release temporary alien GPU resources while retaining the bridge renderer.
     pub fn finish_alien_overlay(&mut self) -> bool {
-        self.renderer.remove_alien_scene()
+        self.renderer
+            .as_mut()
+            .is_some_and(Renderer::remove_alien_scene)
     }
 
     /// Number of frames submitted to the window surface.
     pub const fn presented_frame_count(&self) -> u64 {
         self.presented_frame_count
+    }
+
+    fn renderer_ref(&self) -> Result<&Renderer<'window>> {
+        self.renderer
+            .as_ref()
+            .context("wgpu renderer is being reconfigured")
+    }
+
+    fn renderer_mut(&mut self) -> Result<&mut Renderer<'window>> {
+        self.renderer
+            .as_mut()
+            .context("wgpu renderer is being reconfigured")
     }
 }
 

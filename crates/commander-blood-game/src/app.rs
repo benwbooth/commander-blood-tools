@@ -22,13 +22,17 @@ use crate::assets::{
 use crate::native::alien::{AlienInputAction, AlienMouseSample, AlienScene};
 use crate::native::bloodprg::{
     BRIDGE_SPRITE_ENTITY_COUNT, BridgeScene, BridgeSceneInput, BridgeSpriteEntity,
-    BridgeSteeringInteraction, InputAction, PointerButton, PointerButtons, ShipProjectionResources,
+    BridgeSteeringInteraction, GameLifecycleState, InputAction, PointerButton, PointerButtons,
+    ScriptClock, ShipProjectionResources, run_game_lifecycle,
 };
 use crate::native::manu3::animation::CursorPosition;
 use crate::native::manu3::model::{Manu3FrameRequest, Manu3Model};
 use crate::native::random::BloodPrng;
 use crate::render::Renderer;
-use crate::runtime::{OriginalGameData, OriginalGameDataPaths, RuntimeInputHost};
+use crate::runtime::{
+    ModernGameServices, OriginalGameData, OriginalGameDataPaths, RuntimeGameLifecycleHost,
+    RuntimeInputHost, RuntimePlatformHost,
+};
 
 const DEFAULT_WINDOW_WIDTH: u32 = 1280;
 const DEFAULT_WINDOW_HEIGHT: u32 = 960;
@@ -43,10 +47,23 @@ const INITIAL_CURSOR: CursorPosition = CursorPosition { x: 160, y: 100 };
 const ALIEN_DRIVER_WIDTH: u32 = 640;
 const ALIEN_DRIVER_HEIGHT: u32 = 1_024;
 const SECONDS_PER_MINUTE: u64 = 60;
+const MINUTES_PER_HOUR: u64 = 60;
+const HOURS_PER_DAY: u64 = 24;
+const SECONDS_PER_HOUR: u64 = SECONDS_PER_MINUTE * MINUTES_PER_HOUR;
+const SECONDS_PER_DAY: u64 = SECONDS_PER_HOUR * HOURS_PER_DAY;
 const DECIMAL_RADIX: u8 = 10;
 const PACKED_BCD_DIGIT_SHIFT: u32 = 4;
 const NO_MOUSE_MOTION: f32 = 0.0;
 const MAXIMUM_BASE_SCENE_COUNT: usize = 1;
+const UNIX_EPOCH_YEAR: u64 = 1_970;
+const MONTH_COUNT: usize = 12;
+const FEBRUARY_INDEX: usize = 1;
+const LEAP_DAY: u16 = 1;
+const ONE_BASED_CALENDAR_OFFSET: u16 = 1;
+const MONTH_LENGTHS: [u16; MONTH_COUNT] = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+const LEAP_YEAR_INTERVAL: u64 = 4;
+const LEAP_YEAR_CENTURY_INTERVAL: u64 = 100;
+const LEAP_YEAR_CYCLE: u64 = 400;
 
 #[derive(Debug, Default, PartialEq, Eq)]
 struct Options {
@@ -151,6 +168,9 @@ pub fn run() -> Result<()> {
             return Ok(());
         }
     };
+    if !options.uses_diagnostic_overrides() {
+        return run_production_game(&options);
+    }
     let original_data = if options.data.is_some() || !options.uses_diagnostic_overrides() {
         let paths = OriginalGameDataPaths::discover(options.data.as_deref())?;
         Some(match options.write_data.as_deref() {
@@ -396,6 +416,46 @@ pub fn run() -> Result<()> {
     Ok(())
 }
 
+fn run_production_game(options: &Options) -> Result<()> {
+    let paths = OriginalGameDataPaths::discover(options.data.as_deref())?;
+    let data = match options.write_data.as_deref() {
+        Some(writable_root) => OriginalGameData::load_with_writable_root(paths, writable_root)?,
+        None => OriginalGameData::load(paths)?,
+    };
+    let clock = host_clock_sample()?;
+    let sdl = sdl3::init().map_err(anyhow::Error::msg)?;
+    let video = sdl.video().map_err(anyhow::Error::msg)?;
+    let audio = sdl.audio().map_err(anyhow::Error::msg)?;
+    let window = video
+        .window(
+            "Commander Blood",
+            DEFAULT_WINDOW_WIDTH,
+            DEFAULT_WINDOW_HEIGHT,
+        )
+        .position_centered()
+        .resizable()
+        .high_pixel_density()
+        .metal_view()
+        .build()
+        .map_err(|error| anyhow::anyhow!(error.to_string()))?;
+    let events = sdl.event_pump().map_err(anyhow::Error::msg)?;
+    video.text_input().start(&window);
+
+    let services = ModernGameServices::new(&window, data, clock.script)?;
+    let platform = RuntimePlatformHost::new(&window, events);
+    let mut host = RuntimeGameLifecycleHost::new(
+        services,
+        platform,
+        &audio,
+        clock.packed_second,
+        options.frame_limit,
+    );
+    let mut state = GameLifecycleState::default();
+    run_game_lifecycle(&mut state, &mut host)
+        .map_err(|error| anyhow::anyhow!(error.to_string()))?;
+    Ok(())
+}
+
 fn pointer_buttons(mouse: &sdl3::mouse::MouseState) -> PointerButtons {
     let mut buttons = PointerButtons::NONE.bits();
     if mouse.is_mouse_button_pressed(MouseButton::Left) {
@@ -408,11 +468,65 @@ fn pointer_buttons(mouse: &sdl3::mouse::MouseState) -> PointerButtons {
 }
 
 fn host_clock_seed_byte() -> Result<u8> {
+    Ok(host_clock_sample()?.packed_second)
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct HostClockSample {
+    script: ScriptClock,
+    packed_second: u8,
+}
+
+fn host_clock_sample() -> Result<HostClockSample> {
     let elapsed = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .context("host clock precedes the Unix epoch")?;
-    let seconds = (elapsed.as_secs() % SECONDS_PER_MINUTE) as u8;
-    Ok(pack_clock_seconds(seconds))
+    let elapsed_seconds = elapsed.as_secs();
+    let second = u8::try_from(elapsed_seconds % SECONDS_PER_MINUTE)
+        .expect("second within one minute fits u8");
+    let hour = i16::try_from((elapsed_seconds % SECONDS_PER_DAY) / SECONDS_PER_HOUR)
+        .expect("hour within one day fits i16");
+    let (month, day) = utc_month_day(elapsed_seconds / SECONDS_PER_DAY);
+    Ok(HostClockSample {
+        script: ScriptClock { hour, day, month },
+        packed_second: pack_clock_seconds(second),
+    })
+}
+
+fn utc_month_day(mut days_since_epoch: u64) -> (i8, i8) {
+    let mut year = UNIX_EPOCH_YEAR;
+    loop {
+        let year_days = u64::from(days_in_year(year));
+        if days_since_epoch < year_days {
+            break;
+        }
+        days_since_epoch -= year_days;
+        year += 1;
+    }
+
+    for (month_index, base_length) in MONTH_LENGTHS.into_iter().enumerate() {
+        let month_length =
+            base_length + u16::from(month_index == FEBRUARY_INDEX && is_leap_year(year)) * LEAP_DAY;
+        if days_since_epoch < u64::from(month_length) {
+            let month = i8::try_from(month_index + usize::from(ONE_BASED_CALENDAR_OFFSET))
+                .expect("one-based month fits i8");
+            let day = i8::try_from(days_since_epoch + u64::from(ONE_BASED_CALENDAR_OFFSET))
+                .expect("one-based day fits i8");
+            return (month, day);
+        }
+        days_since_epoch -= u64::from(month_length);
+    }
+    unreachable!("validated Gregorian year contains every remaining day")
+}
+
+const fn days_in_year(year: u64) -> u16 {
+    if is_leap_year(year) { 366 } else { 365 }
+}
+
+const fn is_leap_year(year: u64) -> bool {
+    year.is_multiple_of(LEAP_YEAR_INTERVAL)
+        && (!year.is_multiple_of(LEAP_YEAR_CENTURY_INTERVAL)
+            || year.is_multiple_of(LEAP_YEAR_CYCLE))
 }
 
 fn pack_clock_seconds(seconds: u8) -> u8 {
@@ -465,6 +579,8 @@ mod tests {
     const LAST_CLOCK_SECOND: u8 = 59;
     const FIRST_DOUBLE_DIGIT_BCD: u8 = 0x10;
     const LAST_CLOCK_SECOND_BCD: u8 = 0x59;
+    const FIRST_DAY_OF_1971: u64 = 365;
+    const LEAP_DAY_2000: u64 = 11_016;
 
     #[test]
     fn original_cursor_maps_to_the_alien_driver_range_without_pointer_warping() {
@@ -522,5 +638,12 @@ mod tests {
             FIRST_DOUBLE_DIGIT_BCD
         );
         assert_eq!(pack_clock_seconds(LAST_CLOCK_SECOND), LAST_CLOCK_SECOND_BCD);
+    }
+
+    #[test]
+    fn unix_days_map_to_the_script_month_and_day() {
+        assert_eq!(utc_month_day(u64::MIN), (1, 1));
+        assert_eq!(utc_month_day(FIRST_DAY_OF_1971), (1, 1));
+        assert_eq!(utc_month_day(LEAP_DAY_2000), (2, 29));
     }
 }

@@ -5,8 +5,8 @@ const LINE_ONE: u16 = 1;
 const ACTIVE_GATE_FLAG: u8 = 1;
 const CLEAR_PALETTE_INDEX: u8 = 0;
 
-/// Host-normalized path of the authored credits voice stream.
-pub const CREDITS_VOICE_RESOURCE_PATH: &str = "mu/credits.voc";
+/// Authored DOS path of the credits voice stream.
+pub const CREDITS_VOICE_RESOURCE_PATH: &str = "mu\\credits.voc";
 
 /// Shared presentation state touched by the line-zero and line-one runners.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -246,6 +246,11 @@ mod tests {
             include_str!("../../../../../re/tools/oracle_vectors/func_1f10_natural.json"),
             run_presentation_line_one_stream,
         );
+    }
+
+    #[test]
+    fn credits_voice_uses_the_archive_authored_dos_path() {
+        assert_eq!(CREDITS_VOICE_RESOURCE_PATH, "mu\\credits.voc");
     }
 
     fn verify_runs(

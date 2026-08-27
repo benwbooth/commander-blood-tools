@@ -5,6 +5,7 @@ mod audio;
 mod bios_font;
 mod choice_list;
 mod confirm_dialog;
+mod game_lifecycle;
 mod input;
 mod palette_transition;
 mod platform;
@@ -35,6 +36,7 @@ pub use alien_overlay::{
 pub use audio::{RuntimeAudioHost, RuntimePcmClip, RuntimePcmMixer};
 pub use bios_font::VGA_BIOS_FONT_8X8;
 pub use confirm_dialog::RuntimeConfirmDialog;
+pub use game_lifecycle::RuntimeGameLifecycleHost;
 pub use input::{RuntimeInputHost, map_host_pointer_to_logical};
 pub use palette_transition::{
     RuntimePaletteTransition, RuntimePaletteTransitionConfig, RuntimePaletteTransitionOutcome,

@@ -356,9 +356,29 @@ impl PresentationScreenState {
         self.choice_change_animation_requested
     }
 
+    /// Consume the one-shot request to rebuild bridge screen state.
+    pub fn take_screen_rebuild_pending(&mut self) -> bool {
+        std::mem::take(&mut self.screen_rebuild_pending)
+    }
+
+    /// Consume the one-shot completion voice request.
+    pub fn take_completion_audio_pending(&mut self) -> bool {
+        std::mem::take(&mut self.completion_audio_pending)
+    }
+
+    /// Consume the one-shot MANU3 choice-change request.
+    pub fn take_choice_change_animation_requested(&mut self) -> bool {
+        std::mem::take(&mut self.choice_change_animation_requested)
+    }
+
     /// Return whether reverse close restored its resource variant.
     pub const fn reverse_resource_variant_restored(&self) -> bool {
         self.reverse_resource_variant_restored
+    }
+
+    /// Consume the startup reverse-close signal that enables ordinary VM frames.
+    pub fn take_reverse_resource_variant_restored(&mut self) -> bool {
+        std::mem::take(&mut self.reverse_resource_variant_restored)
     }
 }
 
