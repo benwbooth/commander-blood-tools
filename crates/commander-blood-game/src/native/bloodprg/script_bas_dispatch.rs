@@ -424,21 +424,46 @@ mod tests {
     use crate::assets::OriginalResourceStore;
     use crate::native::bloodprg::{
         OriginalResourceCache, OriginalResourceCatalog, OriginalScriptProfileCatalog,
-        ScriptFieldSelector, ScriptProfileId, ScriptProfileManager, script_field_offset,
+        ScriptFieldSelector, ScriptProfileId, ScriptProfileManager, ScriptSelectionOutcome,
+        TextPresentationState, commit_selected_concept, script_field_offset,
     };
 
     const SERIALIZED_WORD_SIZE: usize = std::mem::size_of::<u16>();
+    const FIRST_CONCEPT_HISTORY_SLOT: usize = usize::MIN;
     const EXPECTED_SELECTOR_NODE_COUNTS: [usize; 5] = [1, 122, 98, 43, 57];
     const EXPECTED_TOTAL_SELECTOR_NODE_COUNT: usize = 321;
+    const EXPECTED_TOTAL_MENU_CHOICE_COUNT: usize = 1_396;
 
     #[derive(Deserialize)]
     struct SelectorGraph {
+        lists: Vec<SelectorList>,
         nodes: Vec<SelectorNode>,
     }
 
     #[derive(Deserialize)]
     struct SelectorNode {
         offset: usize,
+        selector: u16,
+        body_start: usize,
+        list_index: usize,
+        menu_choices: Vec<SelectorMenuChoice>,
+    }
+
+    #[derive(Deserialize)]
+    struct SelectorList {
+        entrypoint: SelectorEntrypoint,
+        node_offsets: Vec<usize>,
+    }
+
+    #[derive(Deserialize)]
+    struct SelectorEntrypoint {
+        object_name: String,
+        root_node: usize,
+    }
+
+    #[derive(Deserialize)]
+    struct SelectorMenuChoice {
+        offset: u16,
     }
 
     struct TestHost;
@@ -564,5 +589,191 @@ mod tests {
         }
 
         assert_eq!(executed_lists, EXPECTED_TOTAL_SELECTOR_NODE_COUNT);
+    }
+
+    #[test]
+    fn every_recovered_menu_choice_commits_and_dispatches_through_typed_runtime() {
+        let Some(root) = original_data_root() else {
+            return;
+        };
+        let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let executable = include_bytes!("../../../../../re/bin/BLOODPRG.EXE");
+        let store = OriginalResourceStore::new(root, None, [], true);
+        let resources = OriginalResourceCatalog::decode_bloodprg(executable).unwrap();
+        let catalog = OriginalScriptProfileCatalog::decode_bloodprg(executable).unwrap();
+        let mut cache = OriginalResourceCache::new();
+        let mut manager = ScriptProfileManager::new(catalog);
+        let mut dispatched_choices = usize::MIN;
+
+        for profile_id in ScriptProfileId::all() {
+            manager
+                .select(profile_id, &mut cache, &store, &resources)
+                .unwrap();
+            let template = manager.current().unwrap().clone();
+            let graph: SelectorGraph = serde_json::from_slice(
+                &std::fs::read(workspace_root.join(format!(
+                    "re/vm/bas-control-flow/script{}.bas.cfg.json",
+                    profile_id.value() + 1
+                )))
+                .unwrap(),
+            )
+            .unwrap();
+
+            for node in &graph.nodes {
+                let list = &graph.lists[node.list_index];
+                for choice in &node.menu_choices {
+                    let mut profile = template.clone();
+                    let actor = profile
+                        .directory()
+                        .find_active_object(list.entrypoint.object_name.as_bytes())
+                        .unwrap_or_else(|| {
+                            panic!(
+                                "SCRIPT{} has no active object named {}",
+                                profile_id.value() + 1,
+                                list.entrypoint.object_name
+                            )
+                        });
+                    let control = profile
+                        .dictionary()
+                        .resolve_source_offset(node.selector)
+                        .unwrap();
+                    let selected = profile
+                        .dictionary()
+                        .resolve_source_offset(choice.offset)
+                        .unwrap();
+                    let expected_menu = node
+                        .menu_choices
+                        .iter()
+                        .map(|menu_choice| {
+                            profile
+                                .dictionary()
+                                .resolve_source_offset(menu_choice.offset)
+                                .unwrap()
+                        })
+                        .collect::<Vec<_>>();
+                    profile
+                        .selector_state_mut()
+                        .set_control_selections(Some(control), None);
+
+                    let mut dispatch = ScriptDispatchState::default();
+                    dispatch.sequence_presentation.presentation_active = true;
+                    let mut bas = ScriptBasDispatchState::default();
+                    let initial_outcome = {
+                        let parts = profile.execution_parts();
+                        execute_script_dialogue_control(
+                            ScriptDialogueExecutionContext {
+                                actor,
+                                selector_root: ScriptCodeOffset::new(node.offset),
+                                instructions: parts.instructions,
+                                dialogue: parts.dialogue,
+                                state: parts.state,
+                                dictionary: parts.dictionary,
+                                directory: parts.directory,
+                                builtins: parts.builtins,
+                                runtime: parts.runtime,
+                                selector: parts.selector_state,
+                                records: parts.record_state,
+                                dispatch: &mut dispatch,
+                                bas: &mut bas,
+                            },
+                            &mut TestHost,
+                        )
+                    }
+                    .unwrap_or_else(|error| {
+                        panic!(
+                            "SCRIPT{} node {:#06x} failed before selecting {:#06x}: {error:?}",
+                            profile_id.value() + 1,
+                            node.offset,
+                            choice.offset
+                        )
+                    });
+                    assert_eq!(
+                        initial_outcome.current_body,
+                        Some(ScriptCodeOffset::new(node.body_start))
+                    );
+                    assert!(initial_outcome.menu_collected);
+                    assert_eq!(
+                        profile.selector_state().pending_presentation_words(),
+                        expected_menu
+                    );
+                    assert!(expected_menu.contains(&selected));
+
+                    profile.runtime_mut().set_selected_concept(Some(selected));
+                    dispatch.text_presentation = TextPresentationState::default();
+                    let expected_matched_body = list.node_offsets.iter().find_map(|node_offset| {
+                        let candidate = graph
+                            .nodes
+                            .iter()
+                            .find(|candidate| candidate.offset == *node_offset)
+                            .unwrap();
+                        (candidate.selector == choice.offset)
+                            .then_some(ScriptCodeOffset::new(candidate.body_start))
+                    });
+                    let selection_outcome = {
+                        let parts = profile.execution_parts();
+                        commit_selected_concept(
+                            parts.runtime,
+                            parts.dictionary,
+                            parts.dialogue,
+                            Some(ScriptCodeOffset::new(list.entrypoint.root_node)),
+                            parts.selector_state,
+                        )
+                    }
+                    .unwrap();
+                    assert_eq!(
+                        selection_outcome,
+                        ScriptSelectionOutcome::Committed {
+                            concept: selected,
+                            matched_body: expected_matched_body,
+                            menu_activated: expected_matched_body.is_some(),
+                        }
+                    );
+
+                    let response_root = expected_matched_body
+                        .map(|_| list.entrypoint.root_node)
+                        .unwrap_or(node.offset);
+                    let expected_response_body = expected_matched_body
+                        .unwrap_or_else(|| ScriptCodeOffset::new(node.body_start));
+                    let response_outcome = {
+                        let parts = profile.execution_parts();
+                        execute_script_dialogue_control(
+                            ScriptDialogueExecutionContext {
+                                actor,
+                                selector_root: ScriptCodeOffset::new(response_root),
+                                instructions: parts.instructions,
+                                dialogue: parts.dialogue,
+                                state: parts.state,
+                                dictionary: parts.dictionary,
+                                directory: parts.directory,
+                                builtins: parts.builtins,
+                                runtime: parts.runtime,
+                                selector: parts.selector_state,
+                                records: parts.record_state,
+                                dispatch: &mut dispatch,
+                                bas: &mut bas,
+                            },
+                            &mut TestHost,
+                        )
+                    }
+                    .unwrap_or_else(|error| {
+                        panic!(
+                            "SCRIPT{} node {:#06x} failed after selecting {:#06x}: {error:?}",
+                            profile_id.value() + 1,
+                            node.offset,
+                            choice.offset
+                        )
+                    });
+                    assert_eq!(response_outcome.current_body, Some(expected_response_body));
+                    assert_eq!(
+                        profile.selector_state().history().entries()[FIRST_CONCEPT_HISTORY_SLOT],
+                        Some(selected)
+                    );
+                    profile.synchronized_state().unwrap();
+                    dispatched_choices += 1;
+                }
+            }
+        }
+
+        assert_eq!(dispatched_choices, EXPECTED_TOTAL_MENU_CHOICE_COUNT);
     }
 }
