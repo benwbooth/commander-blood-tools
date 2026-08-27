@@ -35,6 +35,8 @@ pub const BLOODPRG_OPTION_MENU_LABEL_COUNT: usize = 5;
 pub const BLOODPRG_TEXT_SPEED_LABEL_COUNT: usize = 5;
 /// Number of executable-authored hyperspace clips selected by camera travel.
 pub const BLOODPRG_HYPERSPACE_SEQUENCE_COUNT: usize = 8;
+/// Number of executable-authored bridge actor records.
+pub const BLOODPRG_NAV_ACTOR_RECORD_COUNT: usize = 6;
 
 const MZ_SIGNATURE: [u8; 2] = [b'M', b'Z'];
 const MZ_SIGNATURE_FILE_OFFSET: usize = 0;
@@ -57,6 +59,17 @@ const MUSIC_ON_LABEL_DATA_OFFSET: usize = 0x2578;
 const TEXT_SPEED_POINTER_LIST_DATA_OFFSET: usize = 0x259D;
 const HYPERSPACE_SEQUENCE_NAMES_DATA_OFFSET: usize = 0x1F22;
 const HYPERSPACE_SEQUENCE_NAME_FIELD_BYTE_COUNT: usize = 16;
+const NAV_ACTOR_RECORDS_DATA_OFFSET: usize = 0x2A1B;
+const NAV_ACTOR_RECORD_BYTE_COUNT: usize = 24;
+const NAV_ACTOR_FLAGS_FIELD_OFFSET: usize = 0;
+const NAV_ACTOR_RESOURCE_FIELD_OFFSET: usize = 2;
+const NAV_ACTOR_TRANSITION_RESOURCE_FIELD_OFFSET: usize = 4;
+const NAV_ACTOR_TERMINAL_FRAME_FIELD_OFFSET: usize = 6;
+const NAV_ACTOR_FRAME_FIELD_OFFSET: usize = 8;
+const NAV_ACTOR_TARGET_ARC_FIELD_OFFSET: usize = 10;
+const NAV_ACTOR_HIT_RECTANGLE_FIELD_OFFSET: usize = 12;
+const NAV_ACTOR_DRAW_POSITION_FIELD_OFFSET: usize = 20;
+const NO_NAV_ACTOR_TRANSITION_RESOURCE: u16 = u16::MAX;
 const POINTER_LIST_SENTINEL: u16 = u16::MAX;
 const MENU_LABEL_MAXIMUM_BYTE_COUNT: usize = 32;
 const BRIDGE_PROJECTION_ANCHOR_DATA_OFFSET: usize = 0x4F09;
@@ -93,6 +106,8 @@ const SMALL_FONT_GLYPH_BYTE_COUNT: usize =
 const PROJECTION_ANCHOR_FILE_OFFSET: usize =
     BLOODPRG_DATA_FILE_OFFSET + BRIDGE_PROJECTION_ANCHOR_DATA_OFFSET;
 const TRIGONOMETRY_FILE_OFFSET: usize = BLOODPRG_DATA_FILE_OFFSET + BRIDGE_TRIGONOMETRY_DATA_OFFSET;
+const NAV_ACTOR_RECORDS_FILE_OFFSET: usize =
+    BLOODPRG_DATA_FILE_OFFSET + NAV_ACTOR_RECORDS_DATA_OFFSET;
 const CONFIRM_DIALOG_YES_REGION_FILE_OFFSET: usize =
     BLOODPRG_DATA_FILE_OFFSET + CONFIRM_DIALOG_YES_REGION_DATA_OFFSET;
 const CONFIRM_DIALOG_NO_REGION_FILE_OFFSET: usize =
@@ -666,6 +681,31 @@ pub struct BloodprgBridgeTrigonometrySample {
     pub sine: i16,
 }
 
+/// One flat bridge actor record decoded from the executable data image.
+///
+/// The original program aliases these same 24 bytes as navigation-slot and
+/// presentation-line state. Keeping the complete authored record together
+/// preserves that relationship without exposing segmented addresses.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct BloodprgNavActorRecord {
+    /// Shared low-byte navigation and presentation flags.
+    pub flags: u8,
+    /// Primary sprite resource catalog identity.
+    pub resource_id: u16,
+    /// Optional transition sprite resource catalog identity.
+    pub transition_resource_id: Option<u16>,
+    /// Initial terminal animation frame.
+    pub terminal_frame: u16,
+    /// Initial frame selected for presentation.
+    pub frame: u16,
+    /// Navigation target in the doubled bridge-frame coordinate domain.
+    pub target_arc: u16,
+    /// Persistent authored mouse-hit rectangle.
+    pub hit_rectangle: BloodprgHitRectangle,
+    /// Logical sprite draw position.
+    pub draw_position: [u16; 2],
+}
+
 /// Complete bridge projection resources decoded from `BLOODPRG.EXE`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BloodprgBridgeResources {
@@ -673,6 +713,8 @@ pub struct BloodprgBridgeResources {
     pub projection_anchors: [BloodprgBridgeAnchor; BLOODPRG_BRIDGE_PROJECTION_ANCHOR_COUNT],
     /// Complete authored two-degree angle table.
     pub trigonometry: [BloodprgBridgeTrigonometrySample; BLOODPRG_BRIDGE_TRIGONOMETRY_SAMPLE_COUNT],
+    /// Six records shared by bridge navigation and actor presentation logic.
+    pub nav_actor_records: [BloodprgNavActorRecord; BLOODPRG_NAV_ACTOR_RECORD_COUNT],
 }
 
 /// One executable-authored logical hit rectangle.
@@ -847,9 +889,43 @@ pub fn decode_bloodprg_bridge_resources(
         sample.sine = read_signed_word(executable, position + WORD_BYTE_COUNT);
     }
 
+    let nav_actor_records = std::array::from_fn(|index| {
+        let position = NAV_ACTOR_RECORDS_FILE_OFFSET + index * NAV_ACTOR_RECORD_BYTE_COUNT;
+        let transition_resource_id = read_unsigned_word(
+            executable,
+            position + NAV_ACTOR_TRANSITION_RESOURCE_FIELD_OFFSET,
+        );
+        BloodprgNavActorRecord {
+            flags: executable[position + NAV_ACTOR_FLAGS_FIELD_OFFSET],
+            resource_id: read_unsigned_word(executable, position + NAV_ACTOR_RESOURCE_FIELD_OFFSET),
+            transition_resource_id: (transition_resource_id != NO_NAV_ACTOR_TRANSITION_RESOURCE)
+                .then_some(transition_resource_id),
+            terminal_frame: read_unsigned_word(
+                executable,
+                position + NAV_ACTOR_TERMINAL_FRAME_FIELD_OFFSET,
+            ),
+            frame: read_unsigned_word(executable, position + NAV_ACTOR_FRAME_FIELD_OFFSET),
+            target_arc: read_unsigned_word(
+                executable,
+                position + NAV_ACTOR_TARGET_ARC_FIELD_OFFSET,
+            ),
+            hit_rectangle: read_hit_rectangle(
+                executable,
+                position + NAV_ACTOR_HIT_RECTANGLE_FIELD_OFFSET,
+            ),
+            draw_position: std::array::from_fn(|component| {
+                read_unsigned_word(
+                    executable,
+                    position + NAV_ACTOR_DRAW_POSITION_FIELD_OFFSET + component * WORD_BYTE_COUNT,
+                )
+            }),
+        }
+    });
+
     Ok(BloodprgBridgeResources {
         projection_anchors,
         trigonometry,
+        nav_actor_records,
     })
 }
 
@@ -987,6 +1063,26 @@ mod tests {
                 vector.trigonometry
             );
         }
+    }
+
+    #[test]
+    fn bridge_actor_records_match_the_original_executable_table() {
+        let executable = include_bytes!("../../../re/bin/BLOODPRG.EXE");
+        let records = decode_bloodprg_bridge_resources(executable)
+            .unwrap()
+            .nav_actor_records;
+
+        assert_eq!(
+            records,
+            [
+                actor_record(1, 17, None, 0, [0, 0, 0, 0], [132, 108]),
+                actor_record(1, 13, None, 90, [0, 0, 0, 0], [110, 42]),
+                actor_record(9, 15, None, 180, [0, 0, 0, 0], [137, 139]),
+                actor_record(1, 16, None, 270, [0, 0, 0, 0], [156, 63]),
+                actor_record(0, 19, Some(21), 0, [18, 111, 96, 47], [17, 104]),
+                actor_record(0, 18, Some(20), 0, [215, 112, 75, 27], [195, 110]),
+            ]
+        );
     }
 
     #[test]
@@ -1372,5 +1468,28 @@ mod tests {
             }
         }
         executable
+    }
+
+    const fn actor_record(
+        flags: u8,
+        resource_id: u16,
+        transition_resource_id: Option<u16>,
+        target_arc: u16,
+        hit_rectangle: [i16; RECTANGLE_COMPONENT_COUNT],
+        draw_position: [u16; 2],
+    ) -> BloodprgNavActorRecord {
+        BloodprgNavActorRecord {
+            flags,
+            resource_id,
+            transition_resource_id,
+            terminal_frame: u16::MIN,
+            frame: u16::MIN,
+            target_arc,
+            hit_rectangle: BloodprgHitRectangle {
+                origin: [hit_rectangle[0], hit_rectangle[1]],
+                size: [hit_rectangle[2], hit_rectangle[3]],
+            },
+            draw_position,
+        }
     }
 }

@@ -251,19 +251,22 @@ impl<'window> ModernGameServices<'window> {
             .context("building bridge sprite remap tables")?;
         let resources = decode_bloodprg_bridge_resources(self.runtime.data().executable())
             .context("decoding bridge projection resources")?;
+        let nav_actor_slots = resources
+            .nav_actor_records
+            .map(NavActorSlot::from_executable_record);
         let panorama = self
             .runtime
             .take_bridge_panorama()
             .context("bridge panorama must be opened before scene initialization")?;
         self.random.seed_from_clock_register(packed_clock_seed);
-        self.bridge_scene = Some(
-            BridgeScene::new(
-                panorama,
-                ShipProjectionResources::from(resources),
-                &mut self.random,
-            )
-            .context("constructing live bridge scene")?,
-        );
+        let bridge_scene = BridgeScene::new(
+            panorama,
+            ShipProjectionResources::from(resources),
+            &mut self.random,
+        )
+        .context("constructing live bridge scene")?;
+        self.nav_actor_slots = nav_actor_slots;
+        self.bridge_scene = Some(bridge_scene);
         Ok(())
     }
 
@@ -2771,6 +2774,18 @@ mod tests {
     };
     const HYPERSPACE_PRESENTATION_LINE: PresentationResourceId = PresentationResourceId::new(6);
     const MAXIMUM_CAMERA_TRANSITION_FRAMES: usize = 2_048;
+    const AUTHORED_ACTOR_RESOURCES: [u16; NAV_ACTOR_SLOT_COUNT] = [17, 13, 15, 16, 19, 18];
+    const AUTHORED_ACTOR_TRANSITION_RESOURCES: [Option<u16>; NAV_ACTOR_SLOT_COUNT] =
+        [None, None, None, None, Some(21), Some(20)];
+    const AUTHORED_ACTOR_TARGET_ARCS: [u16; NAV_ACTOR_SLOT_COUNT] = [0, 90, 180, 270, 0, 0];
+    const AUTHORED_ACTOR_DRAW_POSITIONS: [[u16; 2]; NAV_ACTOR_SLOT_COUNT] = [
+        [132, 108],
+        [110, 42],
+        [137, 139],
+        [156, 63],
+        [17, 104],
+        [195, 110],
+    ];
 
     static TEMPORARY_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(u64::MIN);
 
@@ -2851,6 +2866,39 @@ mod tests {
         services.initialize_audio(&audio).unwrap();
         services.load_initial_cartography_resource().unwrap();
         services.initialize_bridge_scene(TEST_CLOCK_SEED).unwrap();
+        assert_eq!(
+            services
+                .nav_actor_slots
+                .map(|slot| slot.line.resource.get()),
+            AUTHORED_ACTOR_RESOURCES
+        );
+        assert_eq!(
+            services.nav_actor_slots.map(|slot| {
+                slot.line
+                    .transition_resource
+                    .map(PresentationResourceId::get)
+            }),
+            AUTHORED_ACTOR_TRANSITION_RESOURCES
+        );
+        assert_eq!(
+            services.nav_actor_slots.map(|slot| slot.target_arc),
+            AUTHORED_ACTOR_TARGET_ARCS
+        );
+        assert_eq!(
+            services.nav_actor_slots.map(|slot| slot.line.position),
+            AUTHORED_ACTOR_DRAW_POSITIONS
+        );
+        assert_eq!(
+            services.nav_actor_slots.map(|slot| slot.hit_region),
+            [
+                None,
+                None,
+                None,
+                None,
+                Some(PresentationHitRectangle::new([18, 111], [96, 47])),
+                Some(PresentationHitRectangle::new([215, 112], [75, 27])),
+            ]
+        );
         services.load_default_sound_bank().unwrap();
         services.initialize_back_buffer().unwrap();
         services.initialize_bridge_screen(false, false).unwrap();

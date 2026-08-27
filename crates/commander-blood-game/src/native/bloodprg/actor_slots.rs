@@ -1,9 +1,18 @@
 //! Bridge actor-slot coordination over typed flags and callbacks.
 
-use super::PresentationHitRectangle;
+use commander_blood_formats::bloodprg::{BloodprgHitRectangle, BloodprgNavActorRecord};
+
+use super::{
+    PresentationHitRectangle, PresentationLine, PresentationLineFlags, PresentationResourceId,
+};
 
 /// Number of authored bridge actor slots.
 pub const NAV_ACTOR_SLOT_COUNT: usize = 6;
+
+const NAV_ACTOR_ACTIVE_FLAG: u8 = 1;
+const NAV_ACTOR_LOCKED_FLAG: u8 = 2;
+const NAV_ACTOR_CLEAR_MOUSE_FLAG: u8 = 4;
+const NAV_ACTOR_AUTO_SEEK_FLAG: u8 = 8;
 
 /// Conditions that suspend all bridge actor-slot updates.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -65,6 +74,74 @@ impl NavActorSlotFlags {
             auto_seek: false,
         }
     }
+
+    /// Decode the low flag byte shared by the native slot and line views.
+    pub const fn from_executable(flags: u8) -> Self {
+        Self {
+            active: flags & NAV_ACTOR_ACTIVE_FLAG != u8::MIN,
+            locked: flags & NAV_ACTOR_LOCKED_FLAG != u8::MIN,
+            clear_mouse_before_hit: flags & NAV_ACTOR_CLEAR_MOUSE_FLAG != u8::MIN,
+            auto_seek: flags & NAV_ACTOR_AUTO_SEEK_FLAG != u8::MIN,
+        }
+    }
+
+    /// Encode the shared low flag byte for executable-oracle comparisons.
+    pub const fn executable_flags(self) -> u8 {
+        (if self.active {
+            NAV_ACTOR_ACTIVE_FLAG
+        } else {
+            u8::MIN
+        }) | (if self.locked {
+            NAV_ACTOR_LOCKED_FLAG
+        } else {
+            u8::MIN
+        }) | (if self.clear_mouse_before_hit {
+            NAV_ACTOR_CLEAR_MOUSE_FLAG
+        } else {
+            u8::MIN
+        }) | (if self.auto_seek {
+            NAV_ACTOR_AUTO_SEEK_FLAG
+        } else {
+            u8::MIN
+        })
+    }
+}
+
+impl From<NavActorSlotFlags> for PresentationLineFlags {
+    fn from(flags: NavActorSlotFlags) -> Self {
+        Self {
+            present: flags.active,
+            transition_latched: flags.locked,
+            resource_loaded: flags.clear_mouse_before_hit,
+            ready: flags.auto_seek,
+        }
+    }
+}
+
+impl From<PresentationLineFlags> for NavActorSlotFlags {
+    fn from(flags: PresentationLineFlags) -> Self {
+        Self {
+            active: flags.present,
+            locked: flags.transition_latched,
+            clear_mouse_before_hit: flags.resource_loaded,
+            auto_seek: flags.ready,
+        }
+    }
+}
+
+/// Presentation payload carried by the native actor-slot record alias.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct NavActorLineState {
+    /// Current sprite resource selected by this actor.
+    pub resource: PresentationResourceId,
+    /// Optional authored resource used by the actor's transition pass.
+    pub transition_resource: Option<PresentationResourceId>,
+    /// Last frame reported by the loaded resource header.
+    pub terminal_frame: u16,
+    /// Frame submitted on the next accepted update.
+    pub frame: u16,
+    /// Logical sprite draw position.
+    pub position: [u16; 2],
 }
 
 /// One bridge actor's coordinator-visible state.
@@ -76,6 +153,53 @@ pub struct NavActorSlot {
     pub target_arc: u16,
     /// Current panorama-authored hit region, when this station is visible.
     pub hit_region: Option<PresentationHitRectangle>,
+    /// Resource, frame, and draw state aliased by the native line handler.
+    pub line: NavActorLineState,
+}
+
+impl NavActorSlot {
+    /// Construct one flat runtime slot from its executable-authored record.
+    pub fn from_executable_record(record: BloodprgNavActorRecord) -> Self {
+        Self {
+            flags: NavActorSlotFlags::from_executable(record.flags),
+            target_arc: record.target_arc,
+            hit_region: persistent_hit_region(record.hit_rectangle),
+            line: NavActorLineState {
+                resource: PresentationResourceId::new(record.resource_id),
+                transition_resource: record
+                    .transition_resource_id
+                    .map(PresentationResourceId::new),
+                terminal_frame: record.terminal_frame,
+                frame: record.frame,
+                position: record.draw_position,
+            },
+        }
+    }
+
+    /// Materialize the line-handler view using this slot's canonical flags.
+    pub fn presentation_line(self) -> PresentationLine {
+        PresentationLine {
+            flags: self.flags.into(),
+            resource: self.line.resource,
+            terminal_frame: self.line.terminal_frame,
+            frame: self.line.frame,
+            position: self.line.position,
+        }
+    }
+
+    /// Commit a line-handler update back into the shared actor record.
+    pub fn apply_presentation_line(&mut self, line: PresentationLine) {
+        self.flags = line.flags.into();
+        self.line.resource = line.resource;
+        self.line.terminal_frame = line.terminal_frame;
+        self.line.frame = line.frame;
+        self.line.position = line.position;
+    }
+}
+
+fn persistent_hit_region(rectangle: BloodprgHitRectangle) -> Option<PresentationHitRectangle> {
+    (rectangle != BloodprgHitRectangle::default())
+        .then(|| PresentationHitRectangle::new(rectangle.origin, rectangle.size))
 }
 
 /// Mouse edge state consumed by active actor slots.
@@ -211,6 +335,7 @@ pub fn update_nav_actor_slots<Backend: NavActorSlotBackend>(
 
 #[cfg(test)]
 mod tests {
+    use commander_blood_formats::bloodprg::decode_bloodprg_bridge_resources;
     use serde::Deserialize;
 
     use super::*;
@@ -249,6 +374,68 @@ mod tests {
         calls: Vec<String>,
         hit_slot: Option<usize>,
         mutate_after_slot: Option<(usize, usize, NavActorSlotFlags)>,
+    }
+
+    #[test]
+    fn executable_actor_records_map_to_one_flat_runtime_state() {
+        let executable = include_bytes!("../../../../../re/bin/BLOODPRG.EXE");
+        let records = decode_bloodprg_bridge_resources(executable)
+            .unwrap()
+            .nav_actor_records;
+        let slots = records.map(NavActorSlot::from_executable_record);
+
+        for (slot, record) in slots.into_iter().zip(records) {
+            assert_eq!(slot.flags.executable_flags(), record.flags);
+            assert_eq!(slot.target_arc, record.target_arc);
+            assert_eq!(slot.line.resource.get(), record.resource_id);
+            assert_eq!(
+                slot.line
+                    .transition_resource
+                    .map(PresentationResourceId::get),
+                record.transition_resource_id
+            );
+            assert_eq!(slot.line.terminal_frame, record.terminal_frame);
+            assert_eq!(slot.line.frame, record.frame);
+            assert_eq!(slot.line.position, record.draw_position);
+            assert_eq!(
+                slot.hit_region,
+                (record.hit_rectangle != BloodprgHitRectangle::default()).then(|| {
+                    PresentationHitRectangle::new(
+                        record.hit_rectangle.origin,
+                        record.hit_rectangle.size,
+                    )
+                })
+            );
+            assert_eq!(
+                slot.presentation_line().flags,
+                PresentationLineFlags::from(slot.flags)
+            );
+        }
+    }
+
+    #[test]
+    fn line_updates_commit_back_to_the_canonical_slot_flags() {
+        let executable = include_bytes!("../../../../../re/bin/BLOODPRG.EXE");
+        let record = decode_bloodprg_bridge_resources(executable)
+            .unwrap()
+            .nav_actor_records[0];
+        let mut slot = NavActorSlot::from_executable_record(record);
+        let mut line = slot.presentation_line();
+        line.flags = PresentationLineFlags {
+            present: true,
+            transition_latched: true,
+            resource_loaded: true,
+            ready: true,
+        };
+        line.resource = PresentationResourceId::new(19);
+        line.terminal_frame = 7;
+        line.frame = 3;
+        line.position = [17, 104];
+
+        slot.apply_presentation_line(line);
+
+        assert_eq!(slot.flags.executable_flags(), 15);
+        assert_eq!(slot.presentation_line(), line);
     }
 
     impl NavActorSlotBackend for OracleBackend {
@@ -372,6 +559,7 @@ mod tests {
                 flags: flags_from_native_word(vector.first_words_before[index]),
                 target_arc: index as u16 * QUARTER_TURN_ARC,
                 hit_region: None,
+                line: NavActorLineState::default(),
             });
             let target_arcs = slots.map(|slot| slot.target_arc);
 
@@ -421,6 +609,7 @@ mod tests {
             flags: NavActorSlotFlags::default(),
             target_arc: TARGET_ARCS[index],
             hit_region: None,
+            line: NavActorLineState::default(),
         });
         let (slot, flags) = match name {
             "active_bit_four_clears_mouse_before_hit" => (Some(0), 5),

@@ -1,7 +1,7 @@
 //! Resource-backed bridge presentation-line playback.
 
 /// Typed identity of one presentation animation resource.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub struct PresentationResourceId(u16);
 
 impl PresentationResourceId {
