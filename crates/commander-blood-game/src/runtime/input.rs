@@ -76,7 +76,11 @@ impl RuntimeInputHost {
         let Some(key) = host_key_for_sdl_keycode(keycode) else {
             return false;
         };
-        self.pending_keys.push_back(key);
+        if matches!(key, HostInputKey::Escape) {
+            self.pending_keys.push_front(key);
+        } else {
+            self.pending_keys.push_back(key);
+        }
         true
     }
 
@@ -308,6 +312,16 @@ mod tests {
             )))
         );
         assert_eq!(input.dispatch_next(false), None);
+    }
+
+    #[test]
+    fn escape_preempts_queued_text_for_modal_cancellation() {
+        let mut input = RuntimeInputHost::new(INITIAL_POSITION);
+        input.queue_text("queued");
+        assert!(input.queue_keycode(Keycode::Escape));
+
+        assert_eq!(input.dispatch_next(false), Some(InputAction::Cancel));
+        assert_eq!(input.pending_key_count(), "queued".len());
     }
 
     #[test]

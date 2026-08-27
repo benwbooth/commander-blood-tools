@@ -215,6 +215,7 @@ pub struct PresentationScreenState {
     selected_choice: PresentationChoiceNumber,
     reverse: bool,
     primary_pressed: bool,
+    cancel_requested: bool,
     scene_status: PresentationSceneStatus,
     scene_lines: Vec<Box<[u8]>>,
     next_scene_line: usize,
@@ -238,6 +239,7 @@ impl Default for PresentationScreenState {
             selected_choice: PresentationChoiceNumber::One,
             reverse: false,
             primary_pressed: false,
+            cancel_requested: false,
             scene_status: PresentationSceneStatus::default(),
             scene_lines: Vec::new(),
             next_scene_line: usize::MIN,
@@ -259,6 +261,9 @@ impl PresentationScreenState {
     /// Set whether the bridge presentation panel owns this frame.
     pub fn set_active(&mut self, active: bool) {
         self.active = active;
+        if !active {
+            self.cancel_requested = false;
+        }
     }
 
     /// Return whether the bridge presentation panel owns this frame.
@@ -294,6 +299,15 @@ impl PresentationScreenState {
     /// Set the primary-button edge for this frame.
     pub fn set_primary_pressed(&mut self, pressed: bool) {
         self.primary_pressed = pressed;
+    }
+
+    /// Latch a keyboard cancellation until the panel can consume it.
+    pub fn request_cancel(&mut self) {
+        self.cancel_requested = true;
+    }
+
+    const fn accept_input_requested(&self) -> bool {
+        self.primary_pressed || self.cancel_requested
     }
 
     /// Replace scene queue state, normally from an outer bridge dispatcher.
@@ -480,8 +494,17 @@ pub fn update_presentation_screen<Backend: PresentationScreenBackend>(
     if !state.active {
         return Ok(PresentationScreenOutcome::Inactive);
     }
+    if state.cancel_requested
+        && state.reverse
+        && !matches!(
+            state.phase,
+            PresentationPanelPhase::Closing(_) | PresentationPanelPhase::Finalizing
+        )
+    {
+        return Ok(accept_input(state, backend));
+    }
     if state.scene_status.queued {
-        if state.primary_pressed {
+        if state.accept_input_requested() {
             return Ok(accept_input(state, backend));
         }
         return dispatch_and_pump(
@@ -531,7 +554,7 @@ pub fn update_presentation_screen<Backend: PresentationScreenBackend>(
                     CONTENT_NOISE,
                 );
                 backend.draw_choice_number(state.selected_choice);
-                return if state.primary_pressed {
+                return if state.accept_input_requested() {
                     Ok(accept_input(state, backend))
                 } else {
                     Ok(PresentationScreenOutcome::WaitingForSelection)
@@ -625,6 +648,7 @@ fn accept_input<Backend: PresentationScreenBackend>(
     state: &mut PresentationScreenState,
     backend: &mut Backend,
 ) -> PresentationScreenOutcome {
+    state.cancel_requested = false;
     if state.reverse {
         state.phase = PresentationPanelPhase::Closing(PresentationPanelStep::Six);
         if state.scene_status.queued {
@@ -913,6 +937,29 @@ mod tests {
         assert!(!state.redraw_requested());
         assert!(state.screen_rebuild_pending());
         assert!(state.completion_audio_pending());
+    }
+
+    #[test]
+    fn reverse_panel_retains_escape_until_it_can_start_closing() {
+        let mut state = PresentationScreenState::default();
+        state.set_active(true);
+        state.set_reverse(true);
+        state.set_phase(PresentationPanelPhase::Opening(
+            PresentationPanelStep::Three,
+        ));
+        state.request_cancel();
+        let records = std::array::from_fn(|_| None);
+        let mut backend = oracle_backend("steady_empty_reverse_mode_starts_close");
+
+        let outcome =
+            update_presentation_screen(&mut state, &records, &QUEUED_SCENE_LINK, &mut backend)
+                .unwrap();
+
+        assert_eq!(outcome, PresentationScreenOutcome::InputAccepted);
+        assert_eq!(
+            state.phase(),
+            PresentationPanelPhase::Closing(PresentationPanelStep::Six)
+        );
     }
 
     fn oracle_state(vector: &ScreenOracle) -> PresentationScreenState {

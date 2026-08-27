@@ -1833,6 +1833,20 @@ impl<'window> ModernGameServices<'window> {
             .state())
     }
 
+    /// Latch Escape directly in the active bridge presentation panel.
+    pub fn request_presentation_cancel(&mut self) -> Result<bool> {
+        let screen = self
+            .presentation_screen
+            .as_mut()
+            .context("presentation screen is already being updated")?
+            .state_mut();
+        if !screen.active() {
+            return Ok(false);
+        }
+        screen.request_cancel();
+        Ok(true)
+    }
+
     /// Advance the bridge presentation panel from live script and pointer state.
     pub fn update_presentation_screen(
         &mut self,
@@ -2908,6 +2922,7 @@ impl<'window> ModernGameServices<'window> {
             self.presentation_screen
                 .as_ref()
                 .is_some_and(|screen| screen.state().active()),
+            false,
             bridge_frame.steering.view_changed,
         );
         self.presentation
@@ -2915,7 +2930,7 @@ impl<'window> ModernGameServices<'window> {
     }
 
     /// Present the most recently generated bridge frame.
-    pub fn present_current_bridge_frame(&mut self) -> Result<()> {
+    pub fn present_current_bridge_frame(&mut self, indexed_ui_active: bool) -> Result<()> {
         self.ensure_main_viewport()?;
         let frame = self
             .bridge_frame
@@ -2926,6 +2941,7 @@ impl<'window> ModernGameServices<'window> {
             self.presentation_screen
                 .as_ref()
                 .is_some_and(|screen| screen.state().active()),
+            indexed_ui_active,
             frame.steering.view_changed,
         );
         self.presentation
@@ -2994,6 +3010,7 @@ fn overlay_nonzero_indices(destination: &mut [u8], source: &[u8]) {
 const fn select_bridge_composition(
     presentation_stream_active: bool,
     presentation_panel_active: bool,
+    indexed_ui_active: bool,
     bridge_view_changed: bool,
 ) -> RuntimeBridgeComposition {
     if presentation_panel_active {
@@ -3002,8 +3019,10 @@ const fn select_bridge_composition(
         RuntimeBridgeComposition::IndexedFramebuffer
     } else if bridge_view_changed {
         RuntimeBridgeComposition::BridgeScene
-    } else {
+    } else if indexed_ui_active {
         RuntimeBridgeComposition::BridgeSceneWithIndexedOverlay
+    } else {
+        RuntimeBridgeComposition::BridgeScene
     }
 }
 
@@ -3317,28 +3336,32 @@ mod tests {
     #[test]
     fn bridge_composition_never_duplicates_owned_or_moving_indexed_backgrounds() {
         assert_eq!(
-            select_bridge_composition(true, false, false),
+            select_bridge_composition(true, false, false, false),
             RuntimeBridgeComposition::IndexedFramebuffer
         );
         assert_eq!(
-            select_bridge_composition(true, false, true),
+            select_bridge_composition(true, false, false, true),
             RuntimeBridgeComposition::IndexedFramebuffer
         );
         assert_eq!(
-            select_bridge_composition(false, true, false),
+            select_bridge_composition(false, true, false, false),
             RuntimeBridgeComposition::BridgeSceneWithTrueColorPanel
         );
         assert_eq!(
-            select_bridge_composition(true, true, true),
+            select_bridge_composition(true, true, false, true),
             RuntimeBridgeComposition::BridgeSceneWithTrueColorPanel
         );
         assert_eq!(
-            select_bridge_composition(false, false, true),
+            select_bridge_composition(false, false, true, true),
             RuntimeBridgeComposition::BridgeScene
         );
         assert_eq!(
-            select_bridge_composition(false, false, false),
+            select_bridge_composition(false, false, true, false),
             RuntimeBridgeComposition::BridgeSceneWithIndexedOverlay
+        );
+        assert_eq!(
+            select_bridge_composition(false, false, false, false),
+            RuntimeBridgeComposition::BridgeScene
         );
     }
     const MAXIMUM_CAMERA_TRANSITION_FRAMES: usize = 2_048;
@@ -3964,7 +3987,7 @@ mod tests {
             }
         );
         services.submit_indexed_frame().unwrap();
-        services.present_current_bridge_frame().unwrap();
+        services.present_current_bridge_frame(false).unwrap();
 
         assert_eq!(services.presented_frame_count(), 2);
         services.runtime_mut().start_camera_transition();

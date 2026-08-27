@@ -25,7 +25,6 @@ const DEFERRED_MENU_SCENE_LINK_TARGET: u16 = 26_544;
 const PRESENTATION_MENU_BUFFER_LINK_TARGET: u16 = u16::MIN;
 const GAME_TIMER_TICKS_PER_FRAME: usize = 8;
 const COMPLETION_VOICE_RESOURCE: &[u8] = b"mu\\tablo2.voc";
-const PRIMARY_POINTER_PRESS_RETAIN_FRAMES: u8 = 1;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 enum RuntimeAudioStartupStage {
@@ -44,6 +43,7 @@ pub struct RuntimeGameLifecycleHost<'window, 'audio> {
     frame_limit: Option<u64>,
     main_frames_presented: u64,
     manu3_visible: bool,
+    indexed_bridge_ui_active: bool,
     current_scene_link: GameSceneLink,
     timer: GameTimerState,
     startup_timer_runtime: ScriptRuntime,
@@ -70,6 +70,7 @@ impl<'window, 'audio> RuntimeGameLifecycleHost<'window, 'audio> {
             frame_limit,
             main_frames_presented: u64::MIN,
             manu3_visible: false,
+            indexed_bridge_ui_active: false,
             current_scene_link: GameSceneLink::Initial,
             timer: GameTimerState::default(),
             startup_timer_runtime: ScriptRuntime::default(),
@@ -136,6 +137,24 @@ impl<'window, 'audio> RuntimeGameLifecycleHost<'window, 'audio> {
         } else {
             BridgeSteeringInteraction::Free
         }
+    }
+
+    fn indexed_bridge_ui_active(state: &GameLifecycleState) -> bool {
+        let blockers = state.profile_change_blockers;
+        state.pause_hud_active
+            || state.modal_ui_busy()
+            || state.navigation_transition_pending
+            || state.presentation.active
+            || state.presentation.ship_active
+            || state.presentation.word_choice_active
+            || state.presentation.menu_deferred
+            || state.presentation.subtitle_display_active
+            || blockers.render_update_active
+            || blockers.navigation_choice_active
+            || blockers.save_active
+            || blockers.load_active
+            || blockers.navigation_transition_active
+            || blockers.navigation_actor_transition_active
     }
 }
 
@@ -260,14 +279,9 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
         }
         self.advance_frame_timers(state)?;
         if let Some(action) = self.platform.dispatch_events(&mut self.services, state) {
-            let presentation_accept = routes_to_presentation_accept(
-                action,
-                self.services.presentation_screen_state()?.active(),
-            );
-            if presentation_accept {
-                state.primary_pointer_pressed = true;
-                state.pointer_press_pending = PRIMARY_POINTER_PRESS_RETAIN_FRAMES;
-            } else {
+            let presentation_cancelled = matches!(action, InputAction::Cancel)
+                && self.services.request_presentation_cancel()?;
+            if !presentation_cancelled {
                 self.services.queue_save_load_input(action)?;
             }
         }
@@ -422,6 +436,7 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
     }
 
     fn update_palette_transition(&mut self, state: &mut GameLifecycleState) -> Result<()> {
+        self.indexed_bridge_ui_active = Self::indexed_bridge_ui_active(state);
         self.services
             .update_lifecycle_palette_transition(state)
             .map(|_| ())
@@ -436,14 +451,16 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
                     self.services
                         .reproject_manu3_for_pointer(self.platform.logical_pointer())?;
                 }
-                self.services.present_current_bridge_frame()?;
+                self.services
+                    .present_current_bridge_frame(self.indexed_bridge_ui_active)?;
             }
             Ok(())
         }
     }
 
     fn present_frame(&mut self) -> Result<()> {
-        self.services.present_current_bridge_frame()?;
+        self.services
+            .present_current_bridge_frame(self.indexed_bridge_ui_active)?;
         self.main_frames_presented = self.main_frames_presented.wrapping_add(1);
         Ok(())
     }
@@ -507,10 +524,6 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
     }
 }
 
-const fn routes_to_presentation_accept(action: InputAction, presentation_active: bool) -> bool {
-    presentation_active && matches!(action, InputAction::Cancel)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -549,12 +562,12 @@ mod tests {
             RuntimeGameLifecycleHost::bridge_interaction(&state),
             BridgeSteeringInteraction::MenuEngaged
         );
+        assert!(RuntimeGameLifecycleHost::indexed_bridge_ui_active(&state));
     }
 
     #[test]
-    fn escape_is_routed_to_the_active_bridge_presentation_only() {
-        assert!(routes_to_presentation_accept(InputAction::Cancel, true));
-        assert!(!routes_to_presentation_accept(InputAction::Cancel, false));
-        assert!(!routes_to_presentation_accept(InputAction::Accept, true));
+    fn idle_bridge_does_not_claim_an_indexed_overlay() {
+        let state = GameLifecycleState::default();
+        assert!(!RuntimeGameLifecycleHost::indexed_bridge_ui_active(&state));
     }
 }

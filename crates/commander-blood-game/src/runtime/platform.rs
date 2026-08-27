@@ -31,6 +31,9 @@ const ORIGINAL_DISPLAY_ASPECT_WIDTH: f32 = 4.0;
 const ORIGINAL_DISPLAY_ASPECT_HEIGHT: f32 = 3.0;
 const LOGICAL_SCREEN_WIDTH: f32 = 320.0;
 const LOGICAL_SCREEN_HEIGHT: f32 = 200.0;
+const BRIDGE_EDGE_SCROLL_ZONE_WIDTH: f32 = 32.0;
+const BRIDGE_EDGE_SCROLL_MINIMUM_DELTA: f32 = 8.0;
+const BRIDGE_EDGE_SCROLL_MAXIMUM_DELTA: f32 = 32.0;
 const ALIEN_DRIVER_WIDTH: f32 = 640.0;
 const ALIEN_DRIVER_HEIGHT: f32 = 1_024.0;
 const ALIEN_DRIVER_CENTER: [f32; 2] = [ALIEN_DRIVER_WIDTH / 2.0, ALIEN_DRIVER_HEIGHT / 2.0];
@@ -76,6 +79,7 @@ pub struct RuntimePlatformHost<'window> {
     bridge_horizontal_delta: f32,
     pointer_buttons: PointerButtons,
     logical_pointer: [f32; 2],
+    pointer_inside_window: bool,
     alien_pointer: Option<[f32; 2]>,
 }
 
@@ -96,6 +100,7 @@ impl<'window> RuntimePlatformHost<'window> {
             bridge_horizontal_delta: 0.0,
             pointer_buttons,
             logical_pointer: INITIAL_LOGICAL_POINTER.map(f32::from),
+            pointer_inside_window: false,
             alien_pointer: None,
         }
     }
@@ -179,6 +184,7 @@ impl<'window> RuntimePlatformHost<'window> {
                     win_event: WindowEvent::FocusLost,
                     ..
                 } if event_window_id == window_id => {
+                    self.pointer_inside_window = false;
                     self.mouse.set_relative_mouse_mode(self.window, false);
                 }
                 Event::Window {
@@ -188,6 +194,20 @@ impl<'window> RuntimePlatformHost<'window> {
                 } if event_window_id == window_id => {
                     self.mouse
                         .set_relative_mouse_mode(self.window, self.alien_pointer.is_some());
+                }
+                Event::Window {
+                    window_id: event_window_id,
+                    win_event: WindowEvent::MouseEnter,
+                    ..
+                } if event_window_id == window_id => {
+                    self.pointer_inside_window = true;
+                }
+                Event::Window {
+                    window_id: event_window_id,
+                    win_event: WindowEvent::MouseLeave,
+                    ..
+                } if event_window_id == window_id => {
+                    self.pointer_inside_window = false;
                 }
                 Event::MouseMotion {
                     window_id: event_window_id,
@@ -204,6 +224,7 @@ impl<'window> RuntimePlatformHost<'window> {
                         pointer[0] = (pointer[0] + delta[0]).clamp(0.0, ALIEN_DRIVER_WIDTH);
                         pointer[1] = (pointer[1] + delta[1]).clamp(0.0, ALIEN_DRIVER_HEIGHT);
                     } else {
+                        self.pointer_inside_window = true;
                         let delta = map_motion_to_logical(output_size, [xrel, yrel]);
                         self.bridge_horizontal_delta += delta[0];
                         self.logical_pointer =
@@ -254,8 +275,12 @@ impl<'window> RuntimePlatformHost<'window> {
         self.logical_pointer.map(|coordinate| coordinate as i16)
     }
 
-    /// Consume relative horizontal mouse motion in original logical pixels.
+    /// Consume horizontal mouse motion plus uncaptured edge-scroll velocity.
     pub fn take_bridge_horizontal_delta(&mut self) -> i32 {
+        self.bridge_horizontal_delta += edge_scroll_delta(
+            self.logical_pointer[0],
+            self.pointer_inside_window && self.alien_pointer.is_none(),
+        );
         take_whole_motion(&mut self.bridge_horizontal_delta)
     }
 
@@ -362,6 +387,26 @@ fn take_whole_motion(accumulated: &mut f32) -> i32 {
     let whole = accumulated.trunc();
     *accumulated -= whole;
     whole as i32
+}
+
+fn edge_scroll_delta(logical_x: f32, pointer_inside_window: bool) -> f32 {
+    if !pointer_inside_window {
+        return 0.0;
+    }
+    if logical_x < BRIDGE_EDGE_SCROLL_ZONE_WIDTH {
+        return -edge_scroll_speed(BRIDGE_EDGE_SCROLL_ZONE_WIDTH - logical_x);
+    }
+    let right_zone_start = LOGICAL_SCREEN_WIDTH - BRIDGE_EDGE_SCROLL_ZONE_WIDTH;
+    if logical_x >= right_zone_start {
+        return edge_scroll_speed(logical_x - right_zone_start);
+    }
+    0.0
+}
+
+fn edge_scroll_speed(edge_depth: f32) -> f32 {
+    let normalized = (edge_depth / BRIDGE_EDGE_SCROLL_ZONE_WIDTH).clamp(0.0, 1.0);
+    BRIDGE_EDGE_SCROLL_MINIMUM_DELTA
+        + normalized * (BRIDGE_EDGE_SCROLL_MAXIMUM_DELTA - BRIDGE_EDGE_SCROLL_MINIMUM_DELTA)
 }
 
 fn map_motion_to_logical(output_size: [f32; 2], motion: [f32; 2]) -> [f32; 2] {
@@ -500,6 +545,28 @@ mod tests {
         negative -= 0.25;
         assert_eq!(take_whole_motion(&mut negative), -1);
         assert_eq!(negative, 0.0);
+    }
+
+    #[test]
+    fn uncaptured_pointer_scrolls_continuously_at_bridge_edges() {
+        assert_eq!(edge_scroll_delta(LOGICAL_SCREEN_WIDTH / 2.0, true), 0.0);
+        assert_eq!(edge_scroll_delta(0.0, false), 0.0);
+        assert_eq!(
+            edge_scroll_delta(0.0, true),
+            -BRIDGE_EDGE_SCROLL_MAXIMUM_DELTA
+        );
+        assert_eq!(
+            edge_scroll_delta(LOGICAL_SCREEN_WIDTH - 1.0, true),
+            edge_scroll_speed(BRIDGE_EDGE_SCROLL_ZONE_WIDTH - 1.0)
+        );
+        assert!(
+            edge_scroll_delta(BRIDGE_EDGE_SCROLL_ZONE_WIDTH - 1.0, true)
+                <= -BRIDGE_EDGE_SCROLL_MINIMUM_DELTA
+        );
+        assert!(
+            edge_scroll_delta(LOGICAL_SCREEN_WIDTH - BRIDGE_EDGE_SCROLL_ZONE_WIDTH, true)
+                >= BRIDGE_EDGE_SCROLL_MINIMUM_DELTA
+        );
     }
 
     #[test]
