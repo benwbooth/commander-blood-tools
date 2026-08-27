@@ -120,7 +120,12 @@ pub enum PresentationWordChoiceOutcome {
     /// The list remains open without a selection.
     AwaitingSelection(ChoiceListFrame),
     /// One interned word was selected and closing began.
-    Selected(ScriptWordId),
+    Selected {
+        /// Interned concept selected by the player.
+        word: ScriptWordId,
+        /// Final interactive list frame drawn before closing.
+        frame: ChoiceListFrame,
+    },
     /// Closing interpolation remains in progress.
     Closing,
     /// The selected word was published and all presentation latches cleared.
@@ -190,7 +195,10 @@ pub fn update_presentation_word_choice<Backend: PresentationWordChoiceBackend>(
         };
         state.selected_word = Some(choice.word);
         state.phase = PresentationWordChoicePhase::Closing;
-        return PresentationWordChoiceOutcome::Selected(choice.word);
+        return PresentationWordChoiceOutcome::Selected {
+            word: choice.word,
+            frame,
+        };
     }
 
     if !backend.advance_word_choice_transition(state.animation_target, state.current_rect) {
@@ -311,7 +319,7 @@ mod tests {
                 "{}: {outcome:?}",
                 vector.name
             );
-            if let PresentationWordChoiceOutcome::Selected(word) = outcome {
+            if let PresentationWordChoiceOutcome::Selected { word, .. } = outcome {
                 assert_eq!(
                     Some(word),
                     native_selection.map(|index| words[index]),
@@ -380,7 +388,7 @@ mod tests {
             }
             PresentationWordChoiceOutcome::Opening => status == "opening_incomplete",
             PresentationWordChoiceOutcome::AwaitingSelection(_) => status == "negative_selection",
-            PresentationWordChoiceOutcome::Selected(_) => status == "selected",
+            PresentationWordChoiceOutcome::Selected { .. } => status == "selected",
             PresentationWordChoiceOutcome::Closing => status == "closing_incomplete",
             PresentationWordChoiceOutcome::Completed(_) => status == "complete",
         }

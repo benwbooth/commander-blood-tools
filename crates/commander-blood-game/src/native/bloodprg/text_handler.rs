@@ -95,9 +95,19 @@ impl PresentationRequestFlags {
         self.0 & SECONDARY_PRESENTATION_REQUEST_PENDING != u8::MIN
     }
 
+    /// Return whether primary dialogue text work is pending.
+    pub const fn text_request_pending(self) -> bool {
+        self.0 & TEXT_REQUEST_PENDING != u8::MIN
+    }
+
     /// Return whether either primary text or secondary presentation work is pending.
     pub const fn any_request_pending(self) -> bool {
         self.0 & (TEXT_REQUEST_PENDING | SECONDARY_PRESENTATION_REQUEST_PENDING) != u8::MIN
+    }
+
+    /// Clear text and secondary presentation requests after their owner completes.
+    pub fn clear_pending_requests(&mut self) {
+        self.clear_primary_requests();
     }
 
     fn request_text(&mut self) {

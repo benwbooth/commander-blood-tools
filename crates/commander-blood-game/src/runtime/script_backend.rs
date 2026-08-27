@@ -6,7 +6,7 @@ use anyhow::{Context, Result, anyhow, bail};
 use commander_blood_formats::archive::BloodResourceName;
 use commander_blood_formats::descript::DescriptRecordKind;
 use commander_blood_formats::descript_database::DescriptDatabase;
-use commander_blood_formats::script::ScriptObjectId;
+use commander_blood_formats::script::{ScriptObjectId, ScriptWordId};
 
 use crate::assets::OriginalResourceStore;
 use crate::native::bloodprg::{
@@ -178,6 +178,7 @@ impl RuntimeScriptSystem {
         target.subtitle_word_list_mode = text.subtitle_word_list_mode;
         target.subtitle_voice_trigger = text.subtitle_voice_trigger;
         target.text_menu_pending = text.menu_pending;
+        target.word_buffer_nonempty = text.menu_word_count != usize::MIN;
         target.dialogue_hold_countdown = text.dialogue_hold_countdown;
         target.sequence_active = self.dispatch.record_clear_presentation.sequence_active;
         lifecycle.set_modal_ui_busy(presentation.ui_busy);
@@ -230,6 +231,28 @@ impl RuntimeScriptSystem {
     /// Mutably borrow subtitle and inline-menu state for frame-tail rendering.
     pub fn text_presentation_mut(&mut self) -> &mut TextPresentationState {
         &mut self.dispatch.text_presentation
+    }
+
+    /// Publish one completed dialogue choice to the VM and clear its text owner.
+    pub fn complete_word_choice(
+        &mut self,
+        runtime: &mut OriginalGameRuntime,
+        concept: ScriptWordId,
+    ) -> Result<()> {
+        runtime
+            .current_profile_mut()
+            .context("completing a word choice requires a loaded BloodScript profile")?
+            .runtime_mut()
+            .set_selected_concept(Some(concept));
+        self.service.presentation_state_mut().word_choice_active = false;
+        let text = &mut self.dispatch.text_presentation;
+        text.menu_deferred = false;
+        text.subtitle_display_active = false;
+        text.dialogue_hold_complete = false;
+        text.request_flags.clear_pending_requests();
+        text.menu_words = Box::new([]);
+        text.menu_word_count = usize::MIN;
+        Ok(())
     }
 
     /// Apply a presentation-panel DESCRIPT record through the live script state.
@@ -648,7 +671,7 @@ mod tests {
     use std::sync::atomic::{AtomicU64, Ordering};
 
     use commander_blood_formats::code::decode_script_code;
-    use commander_blood_formats::instruction::decode_script_profile_request;
+    use commander_blood_formats::instruction::{ScriptTextWord, decode_script_profile_request};
 
     use crate::native::bloodprg::{ORIGINAL_SCRIPT_PROFILE_COUNT, ScriptFrameEnd, ScriptProfileId};
 
@@ -666,6 +689,7 @@ mod tests {
     const PROFILE_REQUEST_OPCODE: u8 = 0xD2;
     const SCRIPT_END_OPCODE: u8 = 0xFF;
     const REQUESTED_PROFILE_NUMBER: u8 = 3;
+    const ALL_PRESENTATION_REQUESTS: u8 = 3;
     static TEMPORARY_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(u64::MIN);
 
     struct TemporaryRoot(std::path::PathBuf);
@@ -837,6 +861,7 @@ mod tests {
         scripts.dispatch.text_presentation.subtitle_word_list_mode = false;
         scripts.dispatch.text_presentation.subtitle_voice_trigger = false;
         scripts.dispatch.text_presentation.menu_pending = false;
+        scripts.dispatch.text_presentation.menu_word_count = 2;
         scripts.dispatch.text_presentation.dialogue_hold_countdown = 4;
         scripts.dispatch.record_clear_presentation.sequence_active = false;
         let code = decode_script_code(&[
@@ -863,9 +888,63 @@ mod tests {
         assert!(!lifecycle.presentation.subtitle_word_list_mode);
         assert!(!lifecycle.presentation.subtitle_voice_trigger);
         assert!(!lifecycle.presentation.text_menu_pending);
+        assert!(lifecycle.presentation.word_buffer_nonempty);
         assert_eq!(lifecycle.presentation.dialogue_hold_countdown, 4);
         assert!(lifecycle.profile_ui_blocked());
         assert_eq!(lifecycle.pending_profile, ScriptProfileId::new(2));
+    }
+
+    #[test]
+    fn completed_word_choice_publishes_the_concept_and_releases_text_ownership() {
+        let Some(paths) = original_data_paths() else {
+            return;
+        };
+        let writable_root = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(paths, &writable_root.0).unwrap();
+        let mut scripts = RuntimeScriptSystem::new(&data, TEST_CLOCK);
+        let mut runtime = super::super::OriginalGameRuntime::new(data);
+        scripts
+            .load_profile(&mut runtime, ScriptProfileId::INITIAL)
+            .unwrap();
+        let selected_concept = runtime
+            .current_profile()
+            .unwrap()
+            .dictionary()
+            .words()
+            .next()
+            .unwrap()
+            .0;
+
+        scripts.service.presentation_state_mut().word_choice_active = true;
+        let text = &mut scripts.dispatch.text_presentation;
+        text.menu_deferred = true;
+        text.subtitle_display_active = true;
+        text.dialogue_hold_complete = true;
+        text.request_flags =
+            crate::native::bloodprg::PresentationRequestFlags::decode(ALL_PRESENTATION_REQUESTS);
+        text.menu_words = Box::new([ScriptTextWord::Dictionary(selected_concept)]);
+        text.menu_word_count = text.menu_words.len();
+
+        scripts
+            .complete_word_choice(&mut runtime, selected_concept)
+            .unwrap();
+
+        assert_eq!(
+            runtime
+                .current_profile()
+                .unwrap()
+                .runtime()
+                .selected_concept(),
+            Some(selected_concept)
+        );
+        assert!(!scripts.service.presentation_state().word_choice_active);
+        let text = &scripts.dispatch.text_presentation;
+        assert!(!text.menu_deferred);
+        assert!(!text.subtitle_display_active);
+        assert!(!text.dialogue_hold_complete);
+        assert_eq!(text.request_flags.bits(), u8::MIN);
+        assert!(text.menu_words.is_empty());
+        assert_eq!(text.menu_word_count, usize::MIN);
     }
 
     #[test]

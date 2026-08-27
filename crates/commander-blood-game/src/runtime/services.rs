@@ -9,26 +9,29 @@ use sdl3::AudioSubsystem;
 use sdl3::video::Window;
 
 use crate::native::bloodprg::{
-    BridgeScene, BridgeSceneFrame, BridgeSceneInput, ConfirmDialogOutcome, ConfirmDialogState,
+    BridgeScene, BridgeSceneFrame, BridgeSceneInput, ChoiceListConfig, ChoiceListFrame,
+    ChoiceListPointer, ChoiceListState, ConfirmDialogOutcome, ConfirmDialogState,
     DescriptRecordApplication, FontPoint, FontVerticalBand, GameFontFace, GameLifecycleState,
     GamePresentationOwner, GameSceneLink, InlineMenuRevealOutcome, InlineMenuTextMetrics,
     InputAction, Manu3HandFrameContext, Manu3HandFrameState, PbmDecodeResult, PointerButtonEdges,
     PointerButtons, PointerSample, PresentationChoiceNumber, PresentationPresentPolicy,
     PresentationResourceId, PresentationResourceSequenceOutcome, PresentationScreenOutcome,
-    PresentationScreenState, ScriptClock, ScriptFrameOutcome, ScriptProfileId,
-    ScriptProfileLoadOutcome, ShipPresentationState, ShipProjectionResources,
-    StartupPreparationOutcome, draw_planar_dialogue_text, measure_game_text_width,
-    reveal_inline_menu_step, update_manu3_hand_frame,
+    PresentationScreenState, PresentationWordChoiceOutcome, ScriptClock, ScriptFrameOutcome,
+    ScriptProfileId, ScriptProfileLoadOutcome, ShipPresentationState, ShipProjectionResources,
+    StartupPreparationOutcome, TextPresentationState, draw_planar_dialogue_text,
+    measure_game_text_width, reveal_inline_menu_step, update_manu3_hand_frame,
 };
 use crate::native::manu3::animation::CursorPosition;
 use crate::native::random::BloodPrng;
 
+use super::choice_list::{draw_choice_list_rows, prepare_choice_list_frame};
 use super::{
     LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_PIXEL_COUNT, OriginalGameData,
     OriginalGameRuntime, RuntimeAssetLoadStatus, RuntimeAudioHost, RuntimeConfirmDialog,
     RuntimeInputHost, RuntimePcmClip, RuntimePresentationCatalog, RuntimePresentationHost,
     RuntimePresentationPlayer, RuntimePresentationScreen, RuntimePresentationStepOutcome,
-    RuntimeScriptBackend, RuntimeScriptCommand, RuntimeScriptSystem, VGA_BIOS_FONT_8X8,
+    RuntimePresentationWordChoice, RuntimeScriptBackend, RuntimeScriptCommand, RuntimeScriptSystem,
+    VGA_BIOS_FONT_8X8,
 };
 
 const INITIAL_LOGICAL_POINTER: [i16; 2] = [160, 100];
@@ -40,6 +43,7 @@ const FULL_LOGICAL_FONT_BAND: FontVerticalBand = FontVerticalBand {
 };
 const MENU_WIDTH_PROBE_ORIGIN: FontPoint = FontPoint { x: 10, y: 8 };
 const MENU_WIDTH_PROBE_COLOR: u8 = u8::MIN;
+const CHOICE_LIST_SELECTION_SOUND_CLIP: u8 = u8::MIN;
 
 /// Owned flat services that concrete `GameLifecycleHost` methods delegate to.
 ///
@@ -57,6 +61,7 @@ pub struct ModernGameServices<'window> {
     bridge_scene: Option<BridgeScene>,
     bridge_frame: Option<BridgeSceneFrame>,
     presentation_screen: Option<RuntimePresentationScreen>,
+    presentation_word_choice: Option<RuntimePresentationWordChoice>,
     confirm_dialog: RuntimeConfirmDialog,
     manu3_hand: Manu3HandFrameState,
     ship_presentation: ShipPresentationState,
@@ -88,6 +93,7 @@ impl<'window> ModernGameServices<'window> {
             bridge_scene: None,
             bridge_frame: None,
             presentation_screen: Some(presentation_screen),
+            presentation_word_choice: Some(RuntimePresentationWordChoice::default()),
             confirm_dialog,
             manu3_hand: Manu3HandFrameState::default(),
             ship_presentation: ShipPresentationState::default(),
@@ -324,6 +330,53 @@ impl<'window> ModernGameServices<'window> {
             .sequence_slots()
             .ordered_names()
             .map(|name| name.map(Box::from)))
+    }
+
+    /// Lay out, interact with, and draw one recovered bridge choice list.
+    pub fn update_choice_list(
+        &mut self,
+        labels: &[&[u8]],
+        config: ChoiceListConfig<'_>,
+        state: &mut ChoiceListState,
+        primary_pointer_pressed: bool,
+    ) -> Result<ChoiceListFrame> {
+        let pointer = self.input.pointer_sample().position;
+        let frame = prepare_choice_list_frame(
+            &mut self.runtime,
+            labels,
+            config,
+            state,
+            ChoiceListPointer {
+                position: pointer,
+                primary_pressed: primary_pointer_pressed,
+            },
+        )?;
+        if frame.selected_item.is_some() || frame.cancelled {
+            self.play_loaded_sound_bank_clip(CHOICE_LIST_SELECTION_SOUND_CLIP)?;
+        }
+        let fonts = self.runtime.data().font_resources().clone();
+        draw_choice_list_rows(
+            &mut self.runtime,
+            &fonts,
+            labels,
+            config.cancel_label,
+            &frame,
+        )?;
+        Ok(frame)
+    }
+
+    /// Advance the BloodScript dialogue choice gate and publish its concept.
+    pub fn update_lifecycle_word_choice(
+        &mut self,
+        state: &mut GameLifecycleState,
+    ) -> Result<PresentationWordChoiceOutcome> {
+        let mut word_choice = self
+            .presentation_word_choice
+            .take()
+            .context("presentation word-choice update is reentrant")?;
+        let outcome = word_choice.update(self, state);
+        self.presentation_word_choice = Some(word_choice);
+        outcome
     }
 
     /// Enable or disable the bridge's recovered six-choice presentation panel.
@@ -604,6 +657,22 @@ impl<'window> ModernGameServices<'window> {
     /// Mutably borrow the concrete script backend for lifecycle-state updates.
     pub fn script_backend_mut(&mut self) -> &mut RuntimeScriptBackend {
         self.scripts.backend_mut()
+    }
+
+    /// Borrow the live subtitle, menu, and word-choice state produced by BloodScript.
+    pub const fn text_presentation(&self) -> &TextPresentationState {
+        self.scripts.text_presentation()
+    }
+
+    /// Publish a completed word choice to BloodScript and refresh lifecycle gates.
+    pub fn complete_word_choice(
+        &mut self,
+        concept: ScriptWordId,
+        state: &mut GameLifecycleState,
+    ) -> Result<()> {
+        self.scripts
+            .complete_word_choice(&mut self.runtime, concept)?;
+        self.scripts.finish_lifecycle_frame(state)
     }
 
     /// Drain ordered renderer, audio, camera, and HUD commands from BloodScript.

@@ -2,6 +2,7 @@
 
 mod audio;
 mod bios_font;
+mod choice_list;
 mod confirm_dialog;
 mod input;
 mod platform;
@@ -16,6 +17,7 @@ mod services;
 mod startup;
 mod state;
 mod video;
+mod word_choice;
 
 pub use audio::{RuntimeAudioHost, RuntimePcmClip, RuntimePcmMixer};
 pub use bios_font::VGA_BIOS_FONT_8X8;
@@ -40,6 +42,7 @@ pub use video::{
     RuntimePresentationQueueMetrics, RuntimePresentationRequest, RuntimePresentationStepOutcome,
     RuntimePresentationStream,
 };
+pub use word_choice::RuntimePresentationWordChoice;
 
 use std::fmt;
 use std::path::{Path, PathBuf};
