@@ -62,6 +62,7 @@ struct Scenario {
     secondary_pointer_pressed: bool,
     pointer_press_pending: u8,
     pause_hud_active: bool,
+    navigation_ui_busy: bool,
 }
 
 impl Default for Scenario {
@@ -89,6 +90,7 @@ impl Default for Scenario {
             secondary_pointer_pressed: false,
             pointer_press_pending: u8::MIN,
             pause_hud_active: false,
+            navigation_ui_busy: false,
         }
     }
 }
@@ -286,10 +288,12 @@ fn recovered_ui_bits_keep_presentation_and_profile_gates_independent() {
     state.set_modal_ui_busy(true);
     assert!(state.profile_ui_blocked());
     state.set_navigation_ui_busy(true);
+    assert!(state.navigation_ui_busy());
     state.set_modal_ui_busy(false);
     assert!(state.profile_ui_blocked());
 
     state.set_navigation_ui_busy(false);
+    assert!(!state.navigation_ui_busy());
     assert!(!state.profile_ui_blocked());
     assert!(state.presentation_interface_active());
 }
@@ -377,6 +381,26 @@ fn runtime_errors_clean_up_without_playing_the_credits() {
     assert!(host.calls.contains(&"close_bridge_panorama"));
 }
 
+#[test]
+fn automatic_bridge_seek_suppresses_native_pointer_polling() {
+    let mut host = OracleHost {
+        scenario: Scenario {
+            frames: 1,
+            navigation_ui_busy: true,
+            ..Scenario::default()
+        },
+        input_dispatches: usize::MIN,
+        pending_profiles_at_input: Vec::new(),
+        calls: Vec::new(),
+        fail_bridge_render: false,
+    };
+    let mut state = GameLifecycleState::default();
+
+    run_game_lifecycle(&mut state, &mut host).unwrap();
+
+    assert!(!host.calls.contains(&"poll_mouse"));
+}
+
 fn apply_scenario(state: &mut GameLifecycleState, scenario: Scenario) {
     state.exit_requested = false;
     state.pause_hud_active = scenario.pause_hud_active;
@@ -385,6 +409,7 @@ fn apply_scenario(state: &mut GameLifecycleState, scenario: Scenario) {
     state.secondary_pointer_pressed = scenario.secondary_pointer_pressed;
     state.set_modal_ui_busy(false);
     state.set_navigation_ui_busy(false);
+    state.set_navigation_ui_busy(scenario.navigation_ui_busy);
     state.pending_profile = scenario.pending_profile;
     state.profile_change_blockers = GameProfileChangeBlockers::default();
     state.presentation_mode = scenario.presentation_mode;

@@ -119,7 +119,7 @@ impl RuntimeCameraNavigation {
                 ship.scene_dispatch_blocked = self.state.scene_dispatch_blocked();
                 ship.depth_offset = self.state.ship_depth_offset();
                 ship.depth_opening_flags = self.state.depth_opening() as u8;
-                lifecycle.set_presentation_interface_active(self.state.ui_active());
+                publish_destination_entry_ui(lifecycle);
                 lifecycle.presentation.dialogue_hold_complete = self.state.dialogue_hold_complete();
                 services.request_ship_hud_reinitialization()?;
             }
@@ -127,6 +127,10 @@ impl RuntimeCameraNavigation {
         }
         Ok(outcome)
     }
+}
+
+fn publish_destination_entry_ui(lifecycle: &mut GameLifecycleState) {
+    lifecycle.set_low_ui_state_word(u16::MIN);
 }
 
 struct RuntimeDestinationRegionPoll {
@@ -212,5 +216,15 @@ mod tests {
             std::array::from_fn(|component| (color * RGB_COMPONENT_COUNT + component) as u8)
         });
         assert_eq!(expand_palette(&flatten_palette(&palette)), palette);
+    }
+
+    #[test]
+    fn destination_entry_reproduces_the_native_full_ui_word_clear() {
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.set_low_ui_state_word(15);
+
+        publish_destination_entry_ui(&mut lifecycle);
+
+        assert_eq!(lifecycle.low_ui_state_word(), u16::MIN);
     }
 }

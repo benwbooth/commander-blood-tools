@@ -158,7 +158,7 @@ impl RuntimeNavigationChart {
 /// Publish the native `vm_ui_flags |= 4` write without clearing other UI owners.
 fn publish_navigation_ui_activation(lifecycle: &mut GameLifecycleState, active: bool) {
     if active {
-        lifecycle.set_presentation_interface_active(true);
+        lifecycle.set_modal_ui_busy(true);
     }
 }
 
@@ -1104,6 +1104,20 @@ mod tests {
         publish_navigation_ui_activation(&mut lifecycle, false);
 
         assert!(lifecycle.presentation_interface_active());
+    }
+
+    #[test]
+    fn active_navigation_chart_ors_native_ui_bit_two() {
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.set_presentation_interface_active(true);
+        lifecycle.set_navigation_ui_busy(true);
+
+        publish_navigation_ui_activation(&mut lifecycle, true);
+
+        assert!(lifecycle.presentation_interface_active());
+        assert!(lifecycle.modal_ui_busy());
+        assert!(lifecycle.navigation_ui_busy());
+        assert_eq!(lifecycle.low_ui_state_word(), 13);
     }
 
     #[test]

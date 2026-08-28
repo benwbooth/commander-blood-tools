@@ -304,6 +304,11 @@ impl GameLifecycleState {
         self.ui_state.navigation_busy = busy;
     }
 
+    /// Return whether automatic bridge steering owns native UI bit three.
+    pub const fn navigation_ui_busy(&self) -> bool {
+        self.ui_state.navigation_busy
+    }
+
     /// Return whether any recovered UI bit postpones a pending profile change.
     pub const fn profile_ui_blocked(&self) -> bool {
         self.ui_state.profile_change_blocked()
@@ -603,7 +608,8 @@ fn run_game_runtime<Host: GameLifecycleHost>(
 
     loop {
         host.dispatch_input(state)?;
-        if !state.pause_hud_active && !state.pointer_position_locked {
+        if !state.pause_hud_active && !state.pointer_position_locked && !state.navigation_ui_busy()
+        {
             host.poll_pointer(state)?;
             consume_pointer_press_state(state);
         }

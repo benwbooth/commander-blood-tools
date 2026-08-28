@@ -156,6 +156,7 @@ impl RuntimeBridgeActors {
         if seek.requested && (!seek_requested_before || seek.target_arc != seek_target_before) {
             services.request_bridge_seek(seek.target_arc)?;
         }
+        publish_bridge_seek_ui(lifecycle, seek.requested);
         services.set_bridge_actor_redraw_requested(self.playback.redraw_requested)?;
         // Native UI bit 2 is both the actor redraw latch and the bridge menu clamp.
         lifecycle.set_modal_ui_busy(self.playback.redraw_requested);
@@ -163,6 +164,29 @@ impl RuntimeBridgeActors {
             slots[BLACK_HOLE_ACTOR_SLOT].flags.executable_flags() == ACTIVE_ONLY_SLOT_FLAGS,
         );
         Ok(outcome)
+    }
+}
+
+fn publish_bridge_seek_ui(lifecycle: &mut GameLifecycleState, requested: bool) {
+    lifecycle.set_navigation_ui_busy(requested);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bridge_seek_owns_native_ui_bit_three_for_its_exact_lifetime() {
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.set_modal_ui_busy(true);
+
+        publish_bridge_seek_ui(&mut lifecycle, true);
+        assert!(lifecycle.navigation_ui_busy());
+        assert!(lifecycle.modal_ui_busy());
+
+        publish_bridge_seek_ui(&mut lifecycle, false);
+        assert!(!lifecycle.navigation_ui_busy());
+        assert!(lifecycle.modal_ui_busy());
     }
 }
 

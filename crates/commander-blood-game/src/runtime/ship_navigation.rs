@@ -88,14 +88,15 @@ impl RuntimeShipNavigation {
     ) -> Result<ShipNavigationOutcome> {
         let current_target = services.current_ship_navigation_target()?;
         let profile_context = resolve_profile_context(services, current_target)?;
-        let mut state = self.state.clone().unwrap_or_else(|| {
-            initial_state(
+        let mut state = match self.state.clone() {
+            Some(state) => state,
+            None => initial_state(
                 services,
                 lifecycle,
                 current_target,
                 profile_context.access_counter,
-            )
-        });
+            )?,
+        };
         import_live_state(
             &mut state,
             services,
@@ -179,7 +180,7 @@ impl RuntimeShipNavigation {
         if take_navigation_snapshot_request(&mut state.navigation_snapshot_pending) {
             services.request_quick_save()?;
         }
-        export_live_state(&state, services, lifecycle);
+        export_live_state(&state, services, lifecycle)?;
         self.state = Some(state);
         Ok(native_outcome)
     }
@@ -292,11 +293,11 @@ fn initial_state(
     lifecycle: &GameLifecycleState,
     current_target: ScriptObjectId,
     access_counter: ShipNavigationAccessCounter,
-) -> ShipNavigationState<ScriptObjectId> {
+) -> Result<ShipNavigationState<ScriptObjectId>> {
     let ship = *services.ship_presentation_state();
     let text = services.text_presentation();
     let palette = services.palette_transition().state();
-    ShipNavigationState {
+    Ok(ShipNavigationState {
         trigger_requested: flag_is_active(ship.bridge_redraw_pending),
         sequence_active: lifecycle.presentation.sequence_active,
         exit_pending: false,
@@ -315,7 +316,7 @@ fn initial_state(
         scene_image_cached: false,
         resource_vertical_offset: services.ship_navigation_scene_vertical_offset(),
         text_menu_pending: text.menu_pending,
-        text_selection: None,
+        text_selection: import_text_selection(text.selected_line)?,
         depth_closing: flag_is_active(ship.depth_closing_flags),
         depth_step: ship.depth_step,
         frame_presented: lifecycle.frame_presented,
@@ -337,7 +338,7 @@ fn initial_state(
         palette_transition_last: palette.last,
         palette_transition_percent: palette.percent,
         palette_transition_increment: palette.increment,
-    }
+    })
 }
 
 fn import_live_state(
@@ -361,7 +362,7 @@ fn import_live_state(
     state.scene_image_cached = services.ship_navigation_scene_image_cached()?;
     state.resource_vertical_offset = services.ship_navigation_scene_vertical_offset();
     state.text_menu_pending = text.menu_pending;
-    state.text_selection = None;
+    state.text_selection = import_text_selection(text.selected_line)?;
     state.depth_closing = flag_is_active(ship.depth_closing_flags);
     state.depth_step = ship.depth_step;
     state.frame_presented = lifecycle.frame_presented;
@@ -385,7 +386,7 @@ fn export_live_state(
     state: &ShipNavigationState<ScriptObjectId>,
     services: &mut ModernGameServices<'_>,
     lifecycle: &mut GameLifecycleState,
-) {
+) -> Result<()> {
     {
         let ship = services.ship_presentation_state_mut();
         ship.flags = state.ship_active_flags;
@@ -403,7 +404,7 @@ fn export_live_state(
     {
         let text = services.text_presentation_mut();
         text.menu_pending = state.text_menu_pending;
-        text.selected_line = None;
+        text.selected_line = export_text_selection(state.text_selection)?;
         text.subtitle_display_active = state.text_display_active;
         text.menu_deferred = state.presentation_deferred;
         text.hold_ready = state.presentation_hold_ready;
@@ -427,6 +428,24 @@ fn export_live_state(
     lifecycle.presentation.text_menu_pending = state.text_menu_pending;
     lifecycle.frame_presented = state.frame_presented;
     lifecycle.navigation_rebuild_pending = state.navigation_screen_rebuild_pending;
+    Ok(())
+}
+
+fn import_text_selection(selection: Option<i8>) -> Result<Option<usize>> {
+    selection
+        .map(|line| {
+            usize::try_from(line)
+                .context("negative BloodScript text selector is not a valid selected line")
+        })
+        .transpose()
+}
+
+fn export_text_selection(selection: Option<usize>) -> Result<Option<i8>> {
+    selection
+        .map(|line| {
+            i8::try_from(line).context("ship-navigation text selector exceeds native signed byte")
+        })
+        .transpose()
 }
 
 fn take_navigation_snapshot_request(pending: &mut bool) -> bool {
@@ -845,6 +864,18 @@ mod tests {
 
         assert!(take_navigation_snapshot_request(&mut pending));
         assert!(!take_navigation_snapshot_request(&mut pending));
+    }
+
+    #[test]
+    fn text_selector_round_trips_until_native_navigation_explicitly_clears_it() {
+        let selected = Some(5_i8);
+
+        let native = import_text_selection(selected).unwrap();
+
+        assert_eq!(native, Some(5));
+        assert_eq!(export_text_selection(native).unwrap(), selected);
+        assert!(import_text_selection(Some(-2)).is_err());
+        assert!(export_text_selection(Some(usize::from(i8::MAX as u8) + 1)).is_err());
     }
 
     #[test]
