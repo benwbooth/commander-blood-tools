@@ -985,6 +985,11 @@ mod tests {
         day: 2,
         month: 1,
     };
+    const UPDATED_TEST_CLOCK: ScriptClock = ScriptClock {
+        hour: 23,
+        day: 29,
+        month: 2,
+    };
     const PROFILE_REQUEST_OPCODE: u8 = 0xD2;
     const SCRIPT_END_OPCODE: u8 = 0xFF;
     const REQUESTED_PROFILE_NUMBER: u8 = 3;
@@ -1020,6 +1025,20 @@ mod tests {
         fn drop(&mut self) {
             let _ = std::fs::remove_dir_all(&self.0);
         }
+    }
+
+    #[test]
+    fn script_clock_sample_can_refresh_before_each_vm_pass() {
+        let Some(paths) = original_data_paths() else {
+            return;
+        };
+        let writable_root = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(paths, &writable_root.0).unwrap();
+        let mut backend = RuntimeScriptBackend::new(&data, TEST_CLOCK);
+
+        assert_eq!(backend.clock(), TEST_CLOCK);
+        backend.set_clock(UPDATED_TEST_CLOCK);
+        assert_eq!(backend.clock(), UPDATED_TEST_CLOCK);
     }
 
     #[test]

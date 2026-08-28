@@ -10,6 +10,7 @@ path = "src/main.rs"
 [dependencies]
 anyhow = "1"
 bytemuck = { version = "1", features = ["derive"] }
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 commander-blood-formats = { path = "../commander-blood-formats" }
 commander-blood-script-compiler = { path = "../commander-blood-script-compiler" }
 matroska-demuxer = "0.8.1"

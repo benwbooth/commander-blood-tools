@@ -1,9 +1,9 @@
 //! SDL host lifecycle for the modern game executable.
 
 use std::path::{Path, PathBuf};
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use anyhow::{Context, Result, bail};
+use chrono::{Datelike, Local, Timelike};
 use commander_blood_formats::alien::{AlienXdbKind, decode_alien_xdb};
 use commander_blood_formats::bloodprg::decode_bloodprg_bridge_resources;
 use commander_blood_formats::manu3::decode_manu3;
@@ -46,24 +46,10 @@ const ORIGINAL_SCREEN_HEIGHT: f32 = 200.0;
 const INITIAL_CURSOR: CursorPosition = CursorPosition { x: 160, y: 100 };
 const ALIEN_DRIVER_WIDTH: u32 = 640;
 const ALIEN_DRIVER_HEIGHT: u32 = 1_024;
-const SECONDS_PER_MINUTE: u64 = 60;
-const MINUTES_PER_HOUR: u64 = 60;
-const HOURS_PER_DAY: u64 = 24;
-const SECONDS_PER_HOUR: u64 = SECONDS_PER_MINUTE * MINUTES_PER_HOUR;
-const SECONDS_PER_DAY: u64 = SECONDS_PER_HOUR * HOURS_PER_DAY;
 const DECIMAL_RADIX: u8 = 10;
 const PACKED_BCD_DIGIT_SHIFT: u32 = 4;
 const NO_MOUSE_MOTION: f32 = 0.0;
 const MAXIMUM_BASE_SCENE_COUNT: usize = 1;
-const UNIX_EPOCH_YEAR: u64 = 1_970;
-const MONTH_COUNT: usize = 12;
-const FEBRUARY_INDEX: usize = 1;
-const LEAP_DAY: u16 = 1;
-const ONE_BASED_CALENDAR_OFFSET: u16 = 1;
-const MONTH_LENGTHS: [u16; MONTH_COUNT] = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-const LEAP_YEAR_INTERVAL: u64 = 4;
-const LEAP_YEAR_CENTURY_INTERVAL: u64 = 100;
-const LEAP_YEAR_CYCLE: u64 = 400;
 
 #[derive(Debug, Default, PartialEq, Eq)]
 struct Options {
@@ -464,6 +450,7 @@ fn run_production_game(options: &Options) -> Result<()> {
         platform,
         &audio,
         clock.packed_second,
+        host_script_clock,
         options.frame_limit,
     );
     let mut state = GameLifecycleState::default();
@@ -499,6 +486,10 @@ fn host_clock_seed_byte() -> Result<u8> {
     Ok(host_clock_sample()?.packed_second)
 }
 
+fn host_script_clock() -> Result<ScriptClock> {
+    Ok(host_clock_sample()?.script)
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct HostClockSample {
     script: ScriptClock,
@@ -506,55 +497,26 @@ struct HostClockSample {
 }
 
 fn host_clock_sample() -> Result<HostClockSample> {
-    let elapsed = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .context("host clock precedes the Unix epoch")?;
-    let elapsed_seconds = elapsed.as_secs();
-    let second = u8::try_from(elapsed_seconds % SECONDS_PER_MINUTE)
-        .expect("second within one minute fits u8");
-    let hour = i16::try_from((elapsed_seconds % SECONDS_PER_DAY) / SECONDS_PER_HOUR)
-        .expect("hour within one day fits i16");
-    let (month, day) = utc_month_day(elapsed_seconds / SECONDS_PER_DAY);
+    let now = Local::now();
+    host_clock_sample_from_local_fields(now.hour(), now.month(), now.day(), now.second())
+}
+
+fn host_clock_sample_from_local_fields(
+    hour: u32,
+    month: u32,
+    day: u32,
+    second: u32,
+) -> Result<HostClockSample> {
     Ok(HostClockSample {
-        script: ScriptClock { hour, day, month },
-        packed_second: pack_clock_seconds(second),
+        script: ScriptClock {
+            hour: i16::try_from(hour).context("local clock hour exceeds script state")?,
+            day: i8::try_from(day).context("local clock day exceeds script state")?,
+            month: i8::try_from(month).context("local clock month exceeds script state")?,
+        },
+        packed_second: pack_clock_seconds(
+            u8::try_from(second).context("local clock second exceeds packed RTC state")?,
+        ),
     })
-}
-
-fn utc_month_day(mut days_since_epoch: u64) -> (i8, i8) {
-    let mut year = UNIX_EPOCH_YEAR;
-    loop {
-        let year_days = u64::from(days_in_year(year));
-        if days_since_epoch < year_days {
-            break;
-        }
-        days_since_epoch -= year_days;
-        year += 1;
-    }
-
-    for (month_index, base_length) in MONTH_LENGTHS.into_iter().enumerate() {
-        let month_length =
-            base_length + u16::from(month_index == FEBRUARY_INDEX && is_leap_year(year)) * LEAP_DAY;
-        if days_since_epoch < u64::from(month_length) {
-            let month = i8::try_from(month_index + usize::from(ONE_BASED_CALENDAR_OFFSET))
-                .expect("one-based month fits i8");
-            let day = i8::try_from(days_since_epoch + u64::from(ONE_BASED_CALENDAR_OFFSET))
-                .expect("one-based day fits i8");
-            return (month, day);
-        }
-        days_since_epoch -= u64::from(month_length);
-    }
-    unreachable!("validated Gregorian year contains every remaining day")
-}
-
-const fn days_in_year(year: u64) -> u16 {
-    if is_leap_year(year) { 366 } else { 365 }
-}
-
-const fn is_leap_year(year: u64) -> bool {
-    year.is_multiple_of(LEAP_YEAR_INTERVAL)
-        && (!year.is_multiple_of(LEAP_YEAR_CENTURY_INTERVAL)
-            || year.is_multiple_of(LEAP_YEAR_CYCLE))
 }
 
 fn pack_clock_seconds(seconds: u8) -> u8 {
@@ -607,8 +569,9 @@ mod tests {
     const LAST_CLOCK_SECOND: u8 = 59;
     const FIRST_DOUBLE_DIGIT_BCD: u8 = 0x10;
     const LAST_CLOCK_SECOND_BCD: u8 = 0x59;
-    const FIRST_DAY_OF_1971: u64 = 365;
-    const LEAP_DAY_2000: u64 = 11_016;
+    const TEST_LOCAL_HOUR: u32 = 23;
+    const TEST_LOCAL_MONTH: u32 = 2;
+    const TEST_LOCAL_DAY: u32 = 29;
 
     #[test]
     fn original_cursor_maps_to_the_alien_driver_range_without_pointer_warping() {
@@ -669,9 +632,22 @@ mod tests {
     }
 
     #[test]
-    fn unix_days_map_to_the_script_month_and_day() {
-        assert_eq!(utc_month_day(u64::MIN), (1, 1));
-        assert_eq!(utc_month_day(FIRST_DAY_OF_1971), (1, 1));
-        assert_eq!(utc_month_day(LEAP_DAY_2000), (2, 29));
+    fn local_clock_fields_map_to_script_and_packed_rtc_state() {
+        let sample = host_clock_sample_from_local_fields(
+            TEST_LOCAL_HOUR,
+            TEST_LOCAL_MONTH,
+            TEST_LOCAL_DAY,
+            u32::from(LAST_CLOCK_SECOND),
+        )
+        .unwrap();
+        assert_eq!(
+            sample.script,
+            ScriptClock {
+                hour: TEST_LOCAL_HOUR as i16,
+                month: TEST_LOCAL_MONTH as i8,
+                day: TEST_LOCAL_DAY as i8,
+            }
+        );
+        assert_eq!(sample.packed_second, LAST_CLOCK_SECOND_BCD);
     }
 }

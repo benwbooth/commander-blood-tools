@@ -2301,6 +2301,11 @@ impl<'window> ModernGameServices<'window> {
         &mut self.manu3_hand
     }
 
+    /// Publish the local civil clock sampled immediately before a BloodScript pass.
+    pub fn set_script_clock(&mut self, clock: ScriptClock) {
+        self.scripts.backend_mut().set_clock(clock);
+    }
+
     /// Execute one complete translated COD/BAS/presentation frame.
     pub fn execute_script_frame(&mut self, enabled: bool) -> Result<ScriptFrameOutcome> {
         self.synchronize_script_action_runtime_state(u16::MIN)?;

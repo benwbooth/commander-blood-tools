@@ -9,7 +9,7 @@ use crate::native::bloodprg::{
     BridgeSceneInput, BridgeSteeringInteraction, CdAudioPreparationOutcome, ConfirmDialogOutcome,
     GameLifecycleHost, GameLifecycleState, GameProfileLoadStatus, GameSceneLink, GameTimerContext,
     GameTimerState, GameVmRunStatus, InputAction, InputCancellationOutcome, PresentationResourceId,
-    ScriptProfileId, ScriptRuntime, advance_game_timer_tick,
+    ScriptClock, ScriptProfileId, ScriptRuntime, advance_game_timer_tick,
 };
 
 use super::bridge_frame::run_runtime_bridge_frame;
@@ -40,6 +40,7 @@ pub struct RuntimeGameLifecycleHost<'window, 'audio> {
     platform: RuntimePlatformHost<'window>,
     audio: &'audio AudioSubsystem,
     packed_clock_seed: u8,
+    script_clock_source: fn() -> Result<ScriptClock>,
     frame_limit: Option<u64>,
     main_frames_presented: u64,
     manu3_visible: bool,
@@ -60,6 +61,7 @@ impl<'window, 'audio> RuntimeGameLifecycleHost<'window, 'audio> {
         platform: RuntimePlatformHost<'window>,
         audio: &'audio AudioSubsystem,
         packed_clock_seed: u8,
+        script_clock_source: fn() -> Result<ScriptClock>,
         frame_limit: Option<u64>,
     ) -> Self {
         Self {
@@ -67,6 +69,7 @@ impl<'window, 'audio> RuntimeGameLifecycleHost<'window, 'audio> {
             platform,
             audio,
             packed_clock_seed,
+            script_clock_source,
             frame_limit,
             main_frames_presented: u64::MIN,
             manu3_visible: false,
@@ -315,6 +318,9 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
     }
 
     fn run_vm(&mut self, state: &mut GameLifecycleState) -> Result<GameVmRunStatus> {
+        let clock =
+            (self.script_clock_source)().context("sampling the host clock for BloodScript")?;
+        self.services.set_script_clock(clock);
         self.services
             .execute_and_apply_lifecycle_script_frame(state)?;
         if self.services.take_script_mouse_idle_reset_request() {
