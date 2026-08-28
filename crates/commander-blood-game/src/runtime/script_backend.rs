@@ -160,8 +160,12 @@ impl RuntimeScriptSystem {
         export_ship_presentation_state(&self.dispatch, ship);
     }
 
-    /// Import globals owned by the recovered main loop before one VM pass.
-    pub fn prepare_lifecycle_frame(&mut self, lifecycle: &GameLifecycleState) {
+    /// Refresh lifecycle-owned presentation scan fields before exporting VM state.
+    ///
+    /// Late subtitle and menu renderers mutate text state outside a VM pass. They
+    /// must refresh these fields before using the common exporter so an older VM
+    /// snapshot cannot overwrite actor- or scheduler-owned lifecycle state.
+    pub fn prepare_lifecycle_scan_state(&mut self, lifecycle: &GameLifecycleState) {
         let source = &lifecycle.presentation;
         {
             let presentation = self.service.presentation_state_mut();
@@ -175,6 +179,13 @@ impl RuntimeScriptSystem {
             presentation.name_lookup_enabled = lifecycle.presentation_interface_active();
             self.dispatch.import_presentation_scan_state(presentation);
         }
+        self.dispatch.record_clear_presentation.sequence_active = source.sequence_active;
+    }
+
+    /// Import globals owned by the recovered main loop before one VM pass.
+    pub fn prepare_lifecycle_frame(&mut self, lifecycle: &GameLifecycleState) {
+        self.prepare_lifecycle_scan_state(lifecycle);
+        let source = &lifecycle.presentation;
         let text = &mut self.dispatch.text_presentation;
         text.subtitle_display_active = source.subtitle_display_active;
         text.menu_deferred = source.menu_deferred;
@@ -184,8 +195,6 @@ impl RuntimeScriptSystem {
         text.menu_pending = source.text_menu_pending;
         text.selected_line = source.text_selector;
         text.dialogue_hold_countdown = source.dialogue_hold_countdown;
-        self.dispatch.record_clear_presentation.sequence_active = source.sequence_active;
-
         self.service
             .backend_mut()
             .set_sequence_context(SequenceRequestContext {

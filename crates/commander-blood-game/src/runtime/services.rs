@@ -1816,6 +1816,7 @@ impl<'window> ModernGameServices<'window> {
         let outcome = subtitle.update(&mut self.runtime, self.scripts.text_presentation_mut());
         self.subtitle_reveal = Some(subtitle);
         let outcome = outcome?;
+        self.scripts.prepare_lifecycle_scan_state(state);
         self.scripts.finish_lifecycle_frame(state)?;
         Ok(outcome)
     }
@@ -2058,6 +2059,7 @@ impl<'window> ModernGameServices<'window> {
         let choice_animation_requested = screen.take_choice_change_animation_requested();
         let startup_mode_completed = screen.take_reverse_resource_variant_restored();
 
+        state.set_modal_ui_busy(screen.redraw_requested());
         state.navigation_rebuild_pending |= screen_rebuild_pending;
         state.presentation.completion_audio_pending |= completion_audio_pending;
         if choice_animation_requested {
@@ -2320,6 +2322,7 @@ impl<'window> ModernGameServices<'window> {
     ) -> Result<InlineMenuRevealOutcome> {
         let owner_matches = state.presentation.owner == Some(GamePresentationOwner::DeferredMenu);
         let outcome = self.reveal_inline_menu(owner_matches, word_delay)?;
+        self.scripts.prepare_lifecycle_scan_state(state);
         self.scripts.finish_lifecycle_frame(state)?;
         Ok(outcome)
     }
@@ -4638,7 +4641,27 @@ mod tests {
             services.manu3_hand_state().current_animation,
             Manu3AnimationSelector::RadioOrb.value()
         );
+        let word_delay = services.dialogue_word_delay().unwrap();
+        services
+            .reveal_lifecycle_inline_menu(&mut lifecycle, word_delay)
+            .unwrap();
+        assert!(
+            lifecycle.modal_ui_busy(),
+            "late inline-menu export cleared native UI bit 2 while the radio actor owned it"
+        );
+        services.update_lifecycle_subtitles(&mut lifecycle).unwrap();
+        assert!(
+            lifecycle.modal_ui_busy(),
+            "late subtitle export cleared native UI bit 2 while the radio actor owned it"
+        );
         for _ in usize::MIN..RADIO_COMPLETION_FRAME_LIMIT {
+            services
+                .execute_and_apply_lifecycle_script_frame(&mut lifecycle)
+                .unwrap();
+            assert!(
+                lifecycle.modal_ui_busy(),
+                "the interleaved BloodScript pass cleared native UI bit 2 while the radio actor still owned its line"
+            );
             services
                 .update_runtime_bridge_actors(&mut lifecycle)
                 .unwrap();
